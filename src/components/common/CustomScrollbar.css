@@ -1,0 +1,16 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CustomScrollbar — 原生滚动容器薄包装
+
+   关键设计：
+   - 容器 overflow 由 inline style 注入 (auto/scroll)
+   - overscroll-behavior: contain 阻断 macOS/iOS 橡皮筋
+   - 不使用 contain / scrollbar-gutter，让浏览器主线程合成器自由优化滚动
+   - 滚动条外观使用浏览器原生（无 ::-webkit-scrollbar 覆盖）
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.custom-scrollbar-container {
+  position: relative;
+  overscroll-behavior: contain;
+  /* iOS 惯性滚动 */
+  -webkit-overflow-scrolling: touch;
+}

@@ -1,0 +1,921 @@
+.up-universal-player {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  background: #000;
+  overflow: hidden;
+  user-select: none;
+}
+
+.up-player-core {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.up-player-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.up-player-loading,
+.up-player-error {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: var(--text-base);
+  backdrop-filter: blur(12px);
+}
+
+.up-loading-spinner {
+  color: #fff;
+  animation: up-spin 1s linear infinite;
+}
+
+@keyframes up-spin {
+  to { transform: rotate(360deg); }
+}
+
+.up-player-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.up-player-error-content svg {
+  color: var(--color-favorite-active);
+}
+
+.up-retry-btn {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: var(--text-base);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.up-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== Player Header ===== */
+.up-player-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding: var(--space-md) var(--space-md);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.up-player-header-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.up-player-header-hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.up-header-back {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.up-header-back:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.up-header-title {
+  margin-left: var(--space-md);
+  color: #fff;
+  font-size: var(--text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Control Bar ===== */
+.up-control-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.up-control-bar-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.up-control-bar-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.up-control-bar-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.up-control-left,
+.up-control-right {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.up-control-feature {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.up-control-window {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-left: var(--space-sm);
+}
+
+.up-control-right > .up-popover-control {
+  margin-left: var(--space-sm);
+}
+
+.up-time-display-inline {
+  margin-left: var(--space-xs);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.up-control-btn {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+  min-width: var(--icon-xl);
+  min-height: var(--icon-xl);
+  padding: var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-base);
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.up-control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.up-control-btn-active {
+  color: var(--color-primary);
+}
+
+.up-speed-label {
+  font-size: var(--text-sm);
+}
+
+/* ===== Progress Bar ===== */
+.up-progress-container {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.up-time-display {
+  min-width: var(--icon-xl);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.up-progress-bar {
+  position: relative;
+  flex: 1;
+  height: var(--space-xs);
+  border-radius: var(--space-2xs);
+  background: rgba(255, 255, 255, 0.2);
+  transition: height 0.15s;
+  cursor: pointer;
+}
+
+.up-progress-bar:hover,
+.up-progress-dragging {
+  height: var(--space-sm);
+}
+
+.up-progress-live {
+  cursor: default;
+}
+
+.up-progress-buffered {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: var(--space-2xs);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.up-progress-played {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: var(--space-2xs);
+  background: var(--color-primary);
+}
+
+.up-progress-thumb {
+  position: absolute;
+  top: 50%;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.up-progress-bar:hover .up-progress-thumb,
+.up-progress-dragging .up-progress-thumb {
+  opacity: 1;
+}
+
+.up-progress-tooltip {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ===== Volume Control ===== */
+.up-volume-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.up-volume-slider-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-md) var(--space-sm);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.85);
+  transform: translateX(-50%);
+}
+
+.up-volume-slider {
+  width: var(--layout-player-vol-w);
+  height: var(--space-xs);
+  border-radius: var(--space-2xs);
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(-90deg);
+  appearance: none;
+  outline: none;
+  transform-origin: center;
+}
+
+.up-volume-slider::-webkit-slider-thumb {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: 50%;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* ===== Popover ===== */
+.up-popover-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.up-popover {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  z-index: 30;
+  min-width: var(--layout-channel-num-w);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+.up-popover-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-base);
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.up-popover-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.up-popover-item-active {
+  color: var(--color-primary);
+}
+
+.up-more-popover {
+  min-width: var(--layout-popover-wide-min-w);
+}
+
+.up-more-popover .up-popover-item {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.up-popover-item-check {
+  flex-shrink: 0;
+  width: var(--space-sm);
+  height: var(--space-sm);
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* ===== Live Indicator ===== */
+.up-live-indicator {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 77, 79, 0.15);
+  color: var(--color-error);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.up-live-dot {
+  width: var(--space-sm);
+  height: var(--space-sm);
+  border-radius: 50%;
+  background: var(--color-error);
+  animation: up-live-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes up-live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== IPTV Channel List (Cascading) ===== */
+.up-channel-list-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  transition: opacity 0.3s ease;
+}
+
+.up-channel-list-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.up-channel-list-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.up-channel-list {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--layout-episode-panel-w);
+  background: rgba(0, 0, 0, 0.60);
+  transition: transform 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+.up-channel-list-hidden .up-channel-list {
+  transform: translateX(-100%);
+}
+
+.up-channel-list-header {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm);
+  color: #fff;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.up-channel-list-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 分组面板 - 完全隐藏滚动条但保留滚动能力 */
+.up-channel-groups {
+  flex-shrink: 0;
+  width: 40%;
+  max-width: 40%;
+  padding: var(--space-xs) 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  scroll-behavior: smooth;
+}
+
+.up-channel-groups::-webkit-scrollbar {
+  display: none;
+}
+
+.up-channel-group-item {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--text-base);
+  text-align: left;
+  overflow: hidden;
+  transition: background 0.15s, color 0.15s, padding-left 0.2s;
+  cursor: pointer;
+}
+
+.up-channel-group-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+/* 活跃分组 - 左侧蓝色竖条指示，强化级联关系 */
+.up-channel-group-active {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.up-channel-group-active::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--space-2xs);
+  height: var(--space-lg);
+  border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
+  background: var(--color-primary);
+  transform: translateY(-50%);
+}
+
+.up-channel-group-active:hover {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary-hover);
+}
+
+.up-channel-group-name {
+  display: flex;
+  flex: 1;
+  gap: var(--space-sm);
+  align-items: center;
+  min-width: 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.up-channel-group-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 分组频道数量 - 圆角药丸标签 */
+.up-channel-group-count {
+  flex-shrink: 0;
+  min-width: var(--space-lg);
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.up-channel-group-active .up-channel-group-count {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 75%, transparent);
+}
+
+/* 频道面板 - 完全隐藏滚动条 */
+.up-channel-channels {
+  flex: 1;
+  padding: var(--space-xs) 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+
+.up-channel-channels::-webkit-scrollbar {
+  display: none;
+}
+
+.up-channel-item {
+  position: relative;
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-sm) 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+  text-align: left;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+
+.up-channel-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+/* 活跃频道 - 右侧播放指示圆点 */
+.up-channel-item-active {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.up-channel-item-active:hover {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary-hover);
+}
+
+.up-channel-logo {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.up-channel-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.up-channel-item-num {
+  flex-shrink: 0;
+  min-width: var(--space-lg);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: var(--text-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.up-channel-item-active .up-channel-item-num {
+  color: color-mix(in srgb, var(--color-primary) 65%, transparent);
+}
+
+.up-channel-item-logo {
+  flex-shrink: 0;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.up-channel-item-logo-fallback {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.up-channel-item-name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.up-channel-item-name .marquee-container,
+.up-channel-group-name .marquee-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.up-channel-item-quality {
+  flex-shrink: 0;
+  padding: var(--space-3xs) var(--space-xs);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--space-2xs);
+  color: rgba(255, 255, 255, 0.35);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.up-channel-item-active .up-channel-item-quality {
+  border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 65%, transparent);
+}
+
+.up-channel-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: var(--text-base);
+}
+
+/* 频道列表跑马灯：默认暂停，悬停/选中时播放 */
+.up-channel-group-item .marquee-track.marquee-scrolling,
+.up-channel-item .marquee-track.marquee-scrolling {
+  animation-play-state: paused;
+}
+
+.up-channel-group-item:hover .marquee-track.marquee-scrolling,
+.up-channel-group-active:hover .marquee-track.marquee-scrolling,
+.up-channel-item:hover .marquee-track.marquee-scrolling,
+.up-channel-item-active .marquee-track.marquee-scrolling {
+  animation-play-state: running;
+}
+
+/* ===== Platform: TV ===== */
+.up-platform-tv .up-control-btn {
+  min-width: var(--space-3xl);
+  min-height: var(--space-3xl);
+  padding: var(--space-sm);
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-header-back {
+  width: var(--space-3xl);
+  height: var(--space-3xl);
+}
+
+.up-platform-tv .up-header-title {
+  font-size: var(--text-2xl);
+}
+
+.up-platform-tv .up-time-display {
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-popover-item {
+  min-height: var(--space-3xl);
+  padding: var(--space-md) var(--space-md);
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-control-btn:focus,
+.up-platform-tv .up-popover-item:focus,
+.up-platform-tv .up-channel-item:focus,
+.up-platform-tv .up-channel-group-item:focus {
+  outline: var(--layout-outline-width) solid var(--color-primary);
+  outline-offset: var(--space-2xs);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.up-platform-tv .up-channel-list {
+  width: var(--layout-episode-panel-w-alt);
+}
+
+.up-platform-tv .up-channel-group-item {
+  min-height: var(--space-3xl);
+  padding: var(--space-md) var(--space-md);
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-channel-item {
+  min-height: var(--space-3xl);
+  padding: var(--space-md) 0;
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-channel-list-header {
+  font-size: var(--text-2xl);
+}
+
+/* TV 焦点高亮 */
+.up-channel-group-focused {
+  outline: var(--layout-outline-width) solid var(--color-primary);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: #fff;
+}
+
+.up-channel-item-focused {
+  outline: var(--layout-outline-width) solid var(--color-primary);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: #fff;
+}
+
+/* ===== Platform: Mobile ===== */
+.up-platform-mobile .up-control-btn {
+  min-width: var(--space-2xl);
+  min-height: var(--space-2xl);
+}
+
+.up-platform-mobile .up-header-back {
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+}
+
+.up-platform-mobile .up-header-title {
+  font-size: var(--text-base);
+}
+
+.up-platform-mobile .up-popover {
+  min-width: var(--layout-time-display-min-w);
+}
+
+.up-platform-mobile .up-channel-list {
+  width: var(--layout-channel-list-w);
+}
+
+.up-platform-mobile .up-universal-player {
+  border-radius: 0;
+}
+
+/* ===== Platform: Desktop ===== */
+.up-platform-desktop .up-control-btn {
+  min-width: var(--space-2xl);
+  min-height: var(--space-2xl);
+}
+
+.up-platform-desktop .up-control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Resposive: sm (640) ===== */
+@media (width <= 639px) {
+  .up-universal-player {
+    border-radius: 0;
+  }
+
+  .up-channel-list {
+    width: var(--layout-channel-list-w-sm);
+  }
+
+  .up-control-feature .up-popover-control:not(:first-child) {
+    display: none;
+  }
+}
+
+/* ===== Resposive: md (768) ===== */
+@media (width >= 640px) and (width <= 767px) {
+  .up-channel-list {
+    width: var(--layout-channel-list-w-md);
+  }
+}
+
+/* ===== Resposive: lg (1024) ===== */
+@media (width >= 768px) and (width <= 1023px) {
+  .up-channel-list {
+    width: var(--layout-channel-list-w);
+  }
+}
+
+/* ===== Resposive: xl (1280) ===== */
+@media (width >= 1280px) and (width <= 1919px) {
+  .up-channel-list {
+    width: var(--layout-channel-list-w-xl);
+  }
+}
+
+/* ===== Resposive: 2xl (1920) ===== */
+@media (width >= 1920px) and (width <= 2559px) {
+  .up-channel-list {
+    width: var(--layout-channel-list-w-2xl);
+  }
+}
+
+/* Channel loading overlay - centered on screen during channel switching */
+.up-channel-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.up-channel-loading-icon {
+  color: #fff;
+  animation: up-channel-spin 1s linear infinite;
+}
+
+.up-channel-loading-speed {
+  margin-top: var(--space-md);
+  color: #ccc;
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes up-channel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Resposive: 3xl (2560) and 4xl (3840) handled by variables.css ===== */

@@ -1,0 +1,379 @@
+@import "@/assets/styles/variables.css";
+@import "@/assets/styles/animations.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: var(--text-base);
+}
+
+/* 滚动条 — 极简 6px 淡色，全局规则（应用所有 overflow 元素）
+   说明：thumb 默认极淡色，hover/active 渐深以提供可发现性。
+   横滚容器通过下方白名单例外永久隐藏。 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-color) transparent;
+}
+*::-webkit-scrollbar {
+  width: var(--space-xs);
+  height: var(--space-xs);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  min-height: calc(var(--space-xl) + var(--space-md));
+  border-radius: var(--radius-full);
+  background: var(--scrollbar-color);
+  transition: background 0.2s ease;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color-hover);
+}
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-color-active);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* 彻底隐藏原生滚动条上下两端的箭头按钮（含 Windows classic 主题下渲染的三角）
+   - 同时禁用 start / end / increment / decrement / horizontal / vertical 各子状态
+   - 配合 appearance: none 防止 Webkit 仍渲染装饰性按钮 */
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:start,
+*::-webkit-scrollbar-button:end,
+*::-webkit-scrollbar-button:increment,
+*::-webkit-scrollbar-button:decrement,
+*::-webkit-scrollbar-button:single-button,
+*::-webkit-scrollbar-button:double-button,
+*::-webkit-scrollbar-button:horizontal,
+*::-webkit-scrollbar-button:vertical {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  appearance: none !important;
+}
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb {
+  appearance: none !important;
+}
+
+/* ── 例外：横滚容器永久隐藏滚动条（按需求 1） ─────────────── */
+.tmdb-movierow-scroll,
+.daily-picks-scroll,
+.category-quick-access__inner,
+.detail-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tmdb-movierow-scroll::-webkit-scrollbar,
+.daily-picks-scroll::-webkit-scrollbar,
+.category-quick-access__inner::-webkit-scrollbar,
+.detail-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+}
+
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning header,
+html.theme-transitioning footer,
+html.theme-transitioning main,
+html.theme-transitioning nav,
+html.theme-transitioning aside,
+html.theme-transitioning section,
+html.theme-transitioning article,
+html.theme-transitioning .card,
+html.theme-transitioning .btn,
+html.theme-transitioning button,
+html.theme-transitioning input,
+html.theme-transitioning select,
+html.theme-transitioning textarea,
+html.theme-transitioning [class*="-card"],
+html.theme-transitioning [class*="-btn"],
+html.theme-transitioning [class*="-nav"],
+html.theme-transitioning [class*="-header"],
+html.theme-transitioning [class*="-footer"],
+html.theme-transitioning [class*="-bar"] {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
+}
+
+.empty-state-wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--layout-loading-min-height);
+}
+
+.empty-state-icon {
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+.empty-retry-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-base);
+  font-weight: 500;
+  transition: background-color 0.2s, opacity 0.2s;
+  cursor: pointer;
+}
+
+.empty-retry-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.empty-retry-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empty-retry-spin {
+  animation: empty-retry-spin 1s linear infinite;
+}
+
+@keyframes empty-retry-spin {
+  from {
+  transform: rotate(0deg);
+}
+  to {
+  transform: rotate(360deg);
+}
+}
+
+.back-btn {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border: none;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: var(--color-surface-hover);
+  transform: scale(1.05);
+}
+
+.back-btn:active {
+  transform: scale(0.95);
+}
+
+.back-btn svg {
+  width: calc(var(--icon-xl) / 2);
+  height: calc(var(--icon-xl) / 2);
+}
+
+.back-btn.on-dark {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.back-btn.on-dark:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .back-btn.on-dark {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+[data-theme="light"] .back-btn.on-dark:hover {
+  background: var(--color-surface-hover);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content {
+  position: fixed;
+  z-index: 1001;
+  max-height: 85vh;
+  background: var(--color-surface);
+  color: var(--color-text);
+  overflow-y: auto;
+  box-shadow: var(--shadow-card);
+  outline: none;
+}
+
+.modal-title {
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.modal-body {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.modal-close:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+@keyframes modalSlideUp {
+  from {
+  opacity: 0;
+  transform: translateY(100%);
+}
+  to {
+  opacity: 1;
+  transform: translateY(0);
+}
+}
+
+/* ── 页面过渡动画 ────────────────────────────── */
+@keyframes pageFadeIn {
+  from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+  to   {
+  opacity: 1;
+  transform: translateY(0);
+}
+}
+.page-transition {
+  animation: pageFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* 防止滚动条出现/消失导致的页面抖动 */
+main {
+  scrollbar-gutter: stable;
+}
+
+@keyframes modalFadeScale {
+  from {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
+}
+  to {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+}
+
+@media (width <= 767px) {
+  .modal-content {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: var(--space-lg) var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+  .modal-close {
+  top: var(--space-sm);
+  right: var(--space-sm);
+}
+}
+
+@media (width >= 768px) {
+  .modal-content {
+  top: 50%;
+  left: 50%;
+  width: 90%;
+  max-width: var(--layout-modal-max-width);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  transform: translate(-50%, -50%);
+  animation: modalFadeScale 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+  .modal-close {
+  top: var(--space-sm);
+  right: var(--space-sm);
+}
+}
+
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VideoCard 统一网格 — 全局通用工具类
+   - 列数由 --card-cols 驱动（375px → 3840px 共 6 档）
+   - minmax(0, 1fr) 防止子项被长标题撑爆
+   - gap 使用 --grid-gap（项目通用网格间距）
+   ═══════════════════════════════════════════════════════════════════════════ */
+.video-card-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--grid-gap);
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--color-surface);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .modal-close:hover {
+  background: var(--color-surface-hover);
+}

@@ -1,0 +1,979 @@
+/* ============================================================
+   Detail — 详情页（frontend-design-pro 精修）
+   双层渐变 hero + 噪声纹理 + 交错入场动画 + 弹性交互
+   适配：Mobile / Desktop / TV
+   Design Dials: VARIANCE=8 MOTION=6 DENSITY=4
+   ============================================================ */
+
+.detail-page {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  color: var(--color-text);
+  animation: detailPageIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes detailPageIn {
+  from {
+  opacity: 0;
+}
+  to   {
+  opacity: 1;
+}
+}
+
+/* ── Hero 区 ───────────────────────────────────── */
+
+.detail-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: var(--layout-episode-panel-w);
+  margin: var(--space-sm);
+  margin-bottom: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.detail-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  animation: heroBgReveal 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: opacity, filter;
+}
+
+@keyframes heroBgReveal {
+  from {
+  opacity: 0;
+  filter: brightness(0.6);
+}
+  to   {
+  opacity: 1;
+  filter: brightness(1);
+}
+}
+
+/* 噪声纹理层 */
+.detail-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* 双层渐变叠加 */
+.detail-hero-gradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.detail-hero-gradient-1 {
+  background: linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.12) 100%);
+}
+.detail-hero-gradient-2 {
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 55%, rgba(0,0,0,0.02) 100%);
+}
+
+/* ── 返回按钮栏 — 固定在导航栏下方 ──────────── */
+
+.detail-back-bar {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 40;
+  padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(to bottom, var(--color-background), transparent);
+}
+
+.detail-back {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  height: var(--comp-btn-min-height);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: rgba(255,255,255,0.9);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.detail-back:hover {
+  color: var(--color-primary);
+}
+
+/* ── 官方页面链接 ────────────────────────────── */
+.detail-official-link {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  z-index: 20;
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  height: var(--comp-btn-min-height);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: rgba(255,255,255,0.9);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.detail-official-link:hover {
+  color: #fff;
+}
+
+/* ── Hero 内容 ─────────────────────────────────── */
+
+.detail-hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  justify-content: flex-end;
+  padding: var(--space-md) var(--space-md);
+}
+
+.detail-hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+  max-width: var(--layout-modal-max-width);
+  overflow: hidden;
+}
+
+/* Hero 交错入场 */
+.detail-hero-left > *:nth-child(1) {
+  animation: heroItemIn 0.6s 0.1s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.detail-hero-left > *:nth-child(2) {
+  animation: heroItemIn 0.6s 0.2s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.detail-hero-left > *:nth-child(3) {
+  animation: heroItemIn 0.6s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.detail-hero-left > *:nth-child(4) {
+  animation: heroItemIn 0.6s 0.4s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.detail-hero-left > *:nth-child(5) {
+  animation: heroItemIn 0.6s 0.5s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+@keyframes heroItemIn {
+  from {
+  opacity: 0;
+  transform: translateY(18px);
+}
+  to   {
+  opacity: 1;
+  transform: translateY(0);
+}
+}
+
+@keyframes heroPosterIn {
+  from {
+  opacity: 0;
+  transform: translateX(30px) scale(0.95);
+}
+  to   {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+}
+
+
+
+/* TMDB Logo */
+.detail-hero-logo {
+  max-width: var(--layout-channel-list-w-md);
+  max-height: var(--header-height);
+  margin-bottom: var(--space-sm);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
+/* 标题（无 logo 时的回落） */
+.detail-hero-title {
+  margin: 0 0 var(--space-sm);
+  color: #fff;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+
+/* 标语 */
+.detail-hero-tagline {
+  margin: 0;
+  color: rgba(255,255,255,0.8);
+  font-size: var(--text-base);
+  font-style: italic;
+}
+
+/* ── Meta 行（对齐轮播图风格） ──────────────────── */
+
+.detail-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  font-size: var(--text-sm);
+}
+
+.detail-hero-rating {
+  color: #f5c518;
+  font-weight: 600;
+}
+
+.detail-hero-meta-item {
+  color: rgba(255,255,255,0.8);
+}
+
+.detail-hero-meta-item--type {
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.15);
+  font-size: var(--text-xs);
+}
+
+/* ── 简介 ──────────────────────────────────────── */
+
+.detail-hero-desc {
+  display: -webkit-box;
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* ── 按钮组 ────────────────────────────────────── */
+
+.detail-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  animation: heroItemIn 0.6s 0.55s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+.detail-btn {
+  display: inline-flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  min-height: var(--comp-btn-min-width);
+  padding: 0 var(--space-lg);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  /* 中文 4 字（"立即播放" / "加入收藏"）默认 normal 在窄容器下会被按字换行，
+     显式 nowrap 保证按钮内文字始终在同一行。 */
+  white-space: nowrap;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.2s ease,
+              box-shadow 0.2s ease,
+              border-color 0.2s ease;
+  cursor: pointer;
+}
+.detail-btn:hover {
+  transform: scale(1.04);
+}
+.detail-btn:active {
+  transform: scale(0.96);
+}
+
+.detail-btn-play {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.detail-btn-play:hover {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.detail-btn-collect {
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.detail-btn-collect:hover {
+  border-color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+}
+.detail-btn-collect.active {
+  border-color: rgba(255,77,79,0.5);
+  background: rgba(255,77,79,0.15);
+  color: var(--color-favorite-active);
+}
+
+/* ── 桌面端右侧海报 ────────────────────────────── */
+
+.detail-hero-poster {
+  display: none;
+  flex-shrink: 0;
+  align-self: flex-end;
+  width: var(--layout-popover-wide-min-w);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  animation: heroPosterIn 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+.detail-hero-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Tab 导航 ──────────────────────────────────── */
+
+.detail-tabs {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  margin-bottom: var(--space-xs);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* 永久隐藏横滚条（移动端触摸滑动 / 桌面端 Tab 不溢出） */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.detail-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.detail-tab {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.25s, border-color 0.25s;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.detail-tab:hover {
+  color: var(--color-text);
+}
+
+.detail-tab--active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Tab 切换时内容区淡入 */
+@keyframes tabContentIn {
+  from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+  to   {
+  opacity: 1;
+  transform: translateY(0);
+}
+}
+
+/* ── 内容卡片 ──────────────────────────────────── */
+
+.detail-content {
+  margin: var(--space-xs) var(--space-sm) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 基础信息 ──────────────────────────────────── */
+
+.detail-info-block {
+  margin-bottom: var(--space-lg);
+}
+.detail-info-block:last-child {
+  margin-bottom: 0;
+}
+
+.detail-info-block h3 {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.detail-info-block p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.detail-info,
+.detail-sources,
+.detail-seasons {
+  padding: var(--space-md) var(--space-md);
+  color: var(--color-text);
+  animation: tabContentIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.detail-section-title {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.detail-section-subtitle {
+  margin: var(--space-lg) 0 var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+.detail-info-card {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm) 0;
+  color: var(--color-text);
+}
+.detail-info-card svg {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  opacity: 0.7;
+}
+.detail-info-card span {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+.detail-info-card strong {
+  margin-left: var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.detail-info-item {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.detail-info-item:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.detail-info-item svg {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.detail-info-item span {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+.detail-info-item strong {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* 演员 — 横向多行排列 */
+.detail-cast-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.detail-cast-item {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  width: var(--header-height);
+  text-align: center;
+}
+.detail-cast-item img {
+  width: var(--layout-tabbar-height);
+  height: var(--layout-tabbar-height);
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.detail-cast-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--layout-tabbar-height);
+  height: var(--layout-tabbar-height);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+}
+.detail-cast-name {
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.detail-cast-role {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* ── 播放列表 ──────────────────────────────────── */
+
+.detail-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.detail-source-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.detail-source-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-hover-bg);
+}
+.detail-source-name {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.detail-source-meta {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.detail-source-quality {
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+}
+
+/* 状态区 */
+.detail-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-2xl) var(--space-md);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+.detail-state svg {
+  opacity: 0.4;
+}
+.detail-state p {
+  margin: 0;
+}
+.detail-state span {
+  font-size: var(--text-xs);
+}
+
+.detail-retry-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.detail-retry-btn:hover {
+  background: var(--color-primary-light);
+}
+.detail-retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.detail-retry-btn--inline {
+  align-self: center;
+  margin-top: 0;
+}
+
+/* ── 季信息 ────────────────────────────────────── */
+
+.detail-seasons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+.detail-season-card {
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  overflow: hidden;
+}
+.detail-season-poster {
+  flex-shrink: 0;
+  width: var(--layout-time-display-min-w);
+  border-radius: var(--radius-sm);
+  background: var(--color-placeholder);
+  overflow: hidden;
+}
+.detail-season-poster img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+}
+.detail-season-info {
+  flex: 1;
+  min-width: 0;
+  /* 高度受限于封面：2/3 比例下 90px 宽 ≈ 135px 高 */
+  max-height: var(--layout-card-daily-width);
+  overflow: hidden;
+}
+.detail-season-info h4 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail-season-info span {
+  display: inline-block;
+  margin-right: var(--space-md);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.detail-season-info p {
+  display: -webkit-box;
+  margin: var(--space-sm) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+
+/* ── 推荐区（首页 TMDBMovieRow 风格） ──────────── */
+
+.detail-recommend {
+  margin: 0 var(--space-sm) var(--space-sm);
+  padding: var(--space-md) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.detail-recommend:last-child {
+  margin-bottom: var(--space-lg);
+}
+
+.detail-recommend-title {
+  margin: 0 0 var(--space-sm);
+  padding: 0 var(--space-md);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+/* 多行网格 — 列数由 --card-cols 统一驱动 */
+.detail-recommend-row {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* ── Not Found ─────────────────────────────────── */
+
+.detail-not-found {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  color: var(--color-text-tertiary);
+}
+.detail-not-found .detail-back {
+  position: static;
+  margin-bottom: var(--space-md);
+}
+
+/* ============================================================
+   Mobile (≤ 767px)
+   ============================================================ */
+
+@media (width <= 767px) {
+  .detail-hero {
+  min-height: var(--layout-card-daily-width);
+}
+
+  .detail-hero-content {
+  padding: var(--space-md) var(--space-sm);
+}
+
+  .detail-hero-logo {
+  max-width: var(--layout-popover-wide-min-w);
+  max-height: var(--layout-tabbar-height);
+}
+  .detail-hero-title {
+  font-size: var(--text-xl);
+}
+  .detail-hero-left {
+  gap: var(--space-sm);
+  max-width: 100%;
+}
+  .detail-hero-meta {
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+}
+  .detail-hero-desc {
+  font-size: var(--text-xs);
+  -webkit-line-clamp: 2;
+}
+  .detail-hero-actions {
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+  .detail-btn {
+  gap: var(--space-xs);
+  min-height: var(--comp-btn-min-height);
+  padding: 0 var(--space-md);
+  font-size: var(--text-xs);
+}
+  .detail-btn svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+  .detail-tab {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs);
+}
+
+  .detail-info-grid {
+  grid-template-columns: 1fr;
+}
+
+  .detail-seasons {
+  grid-template-columns: 1fr;
+}
+  .detail-season-poster {
+  width: var(--comp-thumb-size);
+}
+  .detail-season-info {
+  max-height: none;
+}
+  .detail-season-info p {
+  -webkit-line-clamp: 3;
+}
+}
+
+/* ============================================================
+   Desktop (≥ 1024px)
+   ============================================================ */
+
+@media (width >= 1024px) {
+  .detail-hero {
+  min-height: var(--layout-hero-height);
+}
+
+  .detail-hero-content {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: var(--space-xl) var(--space-lg);
+}
+
+  .detail-hero-left {
+  flex: 1;
+  /* 桌面端：左侧不再受 --layout-hero-height 限制（避免按钮组被迫换行）。
+     之前 calc(100% - 140px - 21px) 在 1024px 视口下会让按钮内
+     "立即播放" / "加入收藏" 中文被压缩换行（按钮内文字未在同一行显示）。
+     改为仅减右侧海报宽度，不再减 --space-lg，保证按钮内文字单行。 */
+  min-width: 0;
+  max-width: calc(100% - var(--layout-popover-wide-min-w));
+  /* 给一个很小的内边距，避免标题/按钮紧贴 hero 边缘 */
+  padding: var(--space-2xs);
+}
+
+  .detail-hero-logo {
+  max-width: var(--layout-episode-panel-w);
+  max-height: var(--layout-tabbar-height);
+}
+
+  /* 桌面端强制"立即播放" + "加入收藏" 同一行，不允许 wrap */
+  .detail-hero-actions {
+  flex-wrap: nowrap;
+}
+
+  /* 按钮层级：在 .detail-hero-content 内 DOM 顺序中
+     .detail-hero-poster 在 .detail-hero-left 之后，覆盖按钮。
+     给 .detail-btn 显式 z-index 让 hover 缩放时不被海报遮挡。 */
+  .detail-btn {
+  position: relative;
+  z-index: 2;
+}
+
+  .detail-hero-poster {
+  display: block;
+}
+
+  .detail-hero-desc {
+  -webkit-line-clamp: 3;
+}
+
+  .detail-seasons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+  .detail-season-card {
+  flex-direction: row;
+}
+  .detail-season-info {
+  max-height: none;
+}
+
+  .detail-tab-content {
+  max-width: var(--layout-hero-height);
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+}
+
+/* ============================================================
+   Large Desktop (≥ 1440px)
+   ============================================================ */
+
+@media (width >= 1440px) {
+  .detail-hero {
+  min-height: var(--layout-hero-height);
+}
+
+  .detail-hero-content {
+  padding: var(--space-2xl) var(--space-2xl);
+}
+
+  .detail-hero-left {
+  /* 大屏不再单独限制 max-width：
+     继承 ≥1024 桌面端的 calc(100% - var(--layout-popover-wide-min-w))，
+     避免 var(--layout-hero-height)（语义为高度，200-500px）误用作宽度，
+     导致标题/简介/按钮组在 1440+ 视口被压缩。 */
+}
+
+  .detail-hero-logo {
+  /* 修复：var(--layout-hero-height) 语义为高度（200-500px），
+     误用作 max-width 会让 logo 渲染过窄。升级到 --layout-episode-panel-w-alt（440px）。 */
+  max-width: var(--layout-episode-panel-w-alt);
+  max-height: var(--layout-channel-num-w);
+}
+
+  .detail-hero-poster {
+  width: var(--layout-source-url-max-w);
+}
+
+  .detail-hero-desc {
+  -webkit-line-clamp: 4;
+  font-size: var(--text-base);
+}
+}
+
+/* ============================================================
+   TV 端
+   ============================================================ */
+
+[data-device="tv"] .detail-hero {
+  min-height: var(--layout-hero-height);
+}
+
+[data-device="tv"] .detail-hero-title {
+  font-size: var(--text-4xl);
+}
+[data-device="tv"] .detail-hero-desc {
+  font-size: var(--text-lg);
+}
+
+[data-device="tv"] .detail-tab {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-base);
+}
+
+[data-device="tv"] .detail-chip {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-sm);
+}
+
+[data-device="tv"] .detail-btn {
+  height: var(--comp-btn-min-width);
+  padding: 0 var(--space-lg);
+  font-size: var(--text-base);
+}
+

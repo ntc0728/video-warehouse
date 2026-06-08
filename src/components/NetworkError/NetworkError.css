@@ -1,0 +1,183 @@
+.network-error-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-xl);
+  background: var(--color-background);
+  text-align: center;
+}
+
+.network-error-icon {
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-3xl);
+}
+
+.network-error-content {
+  flex: 1;
+}
+
+.network-error-title {
+  margin-bottom: var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.network-error-retry-info {
+  margin-bottom: var(--space-sm);
+  color: var(--color-primary);
+  font-size: var(--text-base);
+}
+
+.network-error-details {
+  margin-top: var(--space-md);
+}
+
+.network-error-toggle {
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--text-base);
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.network-error-toggle:hover {
+  color: var(--color-primary-hover);
+}
+
+.network-error-stack {
+  max-width: var(--layout-modal-max-width);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-tag-bg);
+  text-align: left;
+}
+
+.network-error-message {
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.network-error-stack-trace {
+  max-height: var(--layout-error-detail-height);
+  margin: 0;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow: auto;
+  word-break: break-all;
+}
+
+.network-error-retry-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-base);
+  font-weight: 500;
+  transition: background-color 0.2s, opacity 0.2s;
+  cursor: pointer;
+}
+
+.network-error-retry-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.network-error-retry-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.network-error-spin-icon {
+  animation: network-error-spin 1s linear infinite;
+}
+
+@keyframes network-error-spin {
+  to { transform: rotate(360deg); }
+}
+
+.network-error-subtitle {
+  margin-top: var(--space-sm);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.network-error-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border: var(--layout-spinner-border) solid #f3f3f3;
+  border-top: var(--layout-spinner-border) solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Inline variant */
+.network-error-inline {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin: var(--space-sm) 0;
+  padding: var(--space-md) var(--space-md);
+  border: 1px solid #ffe58f;
+  border-radius: var(--radius-sm);
+  background: #fffbe6;
+}
+
+.network-error-inline-icon {
+  font-size: var(--text-lg);
+}
+
+.network-error-inline-text {
+  flex: 1;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-base);
+}
+
+.network-error-inline-retry {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.network-error-inline-retry:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Mobile */
+@media (width <= 767px) {
+  .network-error-retry-btn {
+    width: 100%;
+  }
+}

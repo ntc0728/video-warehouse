@@ -1,0 +1,105 @@
+.settings-page {
+  /* 桌面端居中与间距由 Tailwind 工具类控制（mx-auto max-w-2xl space-y-6 px-4 py-6 md:px-6） */
+  overflow-x: hidden;
+}
+
+.picker-modal-content {
+  max-height: 60vh;
+  padding: var(--space-sm) var(--space-xs);
+  overflow-y: auto;
+}
+
+.source-select {
+  width: var(--layout-select-w);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.source-select:focus {
+  border-color: var(--color-primary);
+}
+
+@media (width <= 767px) {
+  .source-select {
+    width: var(--layout-select-w-mobile);
+  }
+}
+
+.settings-btn-mini {
+  min-height: var(--icon-xl) !important;
+  line-height: 1;
+}
+
+/* 滚动条使用全局无感样式 */
+
+@media (width <= 767px) {
+  .picker-modal-content {
+    max-height: 50vh;
+  }
+}
+
+.theme-switcher {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.theme-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.theme-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.theme-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 700;
+}
+
+.setting-modal-content {
+  padding: var(--space-sm);
+}
+
+.setting-modal-desc {
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.setting-modal-input {
+  width: 100%;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+
+.setting-modal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}

@@ -1,0 +1,145 @@
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-surface);
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid var(--color-border-light);
+}
+
+/* ── App Shell (垂直布局) ──────────────────────────────────
+   桌面：StickyHeader (auto) + CustomScrollbar (flex: 1)
+   移动：StickyHeader (auto) + CustomScrollbar (flex: 1) + TabBar (auto)
+
+   - StickyHeader 作为第一行常驻视口顶部（不参与滚动）
+   - CustomScrollbar 紧接 StickyHeader 下方，滚动条 thumb 真实起点 = 导航栏底部
+   - 沉浸式页面（首页/详情页）下，StickyHeader 改用 position: fixed，
+     CustomScrollbar 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
+*/
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-shell__scroll {
+  /* CustomScrollbar 用 flex: 1 占据剩余高度，min-height: 0 允许内部滚动 */
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.sidebar-title {
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-toggle-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.sidebar-nav {
+  padding: var(--space-sm) 0;
+}
+
+.sidebar-nav-item {
+  position: relative;
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  color: var(--color-text-secondary);
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.sidebar-nav-item:hover:not(.active) {
+  background-color: var(--color-surface-hover);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 700;
+}
+
+.sidebar-nav-indicator {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--space-2xs);
+  height: 60%;
+  border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
+  background-color: var(--color-primary);
+  transform: translateY(-50%);
+  animation: indicatorSlideIn 0.3s ease-out both;
+}
+
+.sidebar-nav-icon {
+  display: flex;
+  align-items: center;
+  font-size: var(--text-xl);
+  transition: transform 0.2s;
+}
+
+.sidebar-nav-item:hover .sidebar-nav-icon {
+  transform: scale(1.08);
+}
+
+.sidebar-nav-text {
+  font-size: var(--text-base);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-nav-item.active .sidebar-nav-text {
+  font-weight: 600;
+}
+
+.mobile-tab-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  background-color: var(--color-surface);
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.mobile-tab-bar [data-state="active"] {
+  /* 移除 tabPop 动画：避免 transform: scale 引起的整页抖动 */
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .mobile-tab-bar {
+  border-top-color: var(--color-border-light);
+}

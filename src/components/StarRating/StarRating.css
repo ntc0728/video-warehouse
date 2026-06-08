@@ -1,0 +1,35 @@
+.star-rating {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.star-rating-stars {
+  display: flex;
+  gap: var(--space-2xs);
+}
+
+.star-btn {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2xs);
+  border: none;
+  background: none;
+  color: var(--color-text-tertiary);
+  transition: transform 0.15s;
+  cursor: pointer;
+}
+
+.star-btn:hover {
+  transform: scale(1.15);
+}
+
+.star-btn.filled {
+  color: var(--color-favorite-active);
+}
+
+.star-rating-label {
+  color: var(--color-favorite-active);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}

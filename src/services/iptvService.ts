@@ -1,0 +1,309 @@
+/**
+ * IPTV 服务
+ * 负责 M3U/M3U8 播放列表的获取、解析和频道可用性检测
+ * 支持多源类型识别（单流/多频道）、代理转发和频道批量可用性检查
+ */
+import type { IPTVChannel, IPTVSettings } from '@/types/iptv';
+import { getText } from './httpClient';
+
+const DEFAULT_IPTV_URL = 'https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u';
+
+/**
+ * IPTV 源类型枚举
+ * SINGLE_STREAM: 单流（如单个直播地址）
+ * MULTI_CHANNEL: 多频道（M3U 播放列表包含多个频道）
+ * UNKNOWN: 未知类型
+ */
+export enum SourceType {
+  SINGLE_STREAM = 'single',
+  MULTI_CHANNEL = 'multi',
+  UNKNOWN = 'unknown',
+}
+
+export interface SourceAnalysis {
+  type: SourceType;
+  channelCount: number;
+  rawContent: string;
+}
+
+/**
+ * 检测 M3U 内容的源类型
+ * 通过分析 #EXTINF 标签数量和 #EXT-X-STREAM-INF 等特征判断
+ */
+export function detectSourceType(content: string): SourceAnalysis {
+  const channelMatches = content.match(/#EXTINF:/g) || [];
+  const channelCount = channelMatches.length;
+
+  if (channelCount > 1) {
+    return { type: SourceType.MULTI_CHANNEL, channelCount, rawContent: content };
+  }
+
+  if (channelCount === 1) {
+    return { type: SourceType.MULTI_CHANNEL, channelCount, rawContent: content };
+  }
+
+  // 无 #EXTINF 但包含 HLS Master Playlist 特征，视为单流
+  if (content.includes('#EXTM3U') && (content.includes('#EXT-X-STREAM-INF') || content.includes('#EXT-X-MEDIA'))) {
+    return { type: SourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
+  }
+
+  if (content.startsWith('#EXTM3U') || content.startsWith('#EXTINF:')) {
+    return { type: SourceType.MULTI_CHANNEL, channelCount: 1, rawContent: content };
+  }
+
+  return { type: SourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
+}
+
+async function fetchContent(url: string): Promise<string> {
+  return getText(url, { timeout: 15000, retries: 1 });
+}
+
+/**
+ * 判断 URL 是否需要通过代理访问
+ * 根据配置的代理URL和正则模式匹配决定
+ */
+function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
+  if (!proxyUrl) return false;
+  if (!pattern) return true;
+  try {
+    return new RegExp(pattern).test(url);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * 构建请求 URL，需要代理时拼接代理地址
+ */
+function buildRequestUrl(targetUrl: string, proxyUrl?: string, pattern?: string): string {
+  if (shouldProxy(targetUrl, proxyUrl, pattern)) {
+    return `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(targetUrl)}`;
+  }
+  return targetUrl;
+}
+
+export { shouldProxy };
+
+/**
+ * 从远程获取并解析 M3U 播放列表
+ * 支持代理转发，返回频道列表和源类型信息
+ */
+export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
+  channels: IPTVChannel[];
+  sourceType: SourceType;
+}> {
+  const aggregatorUrl = settings?.aggregatorUrl || DEFAULT_IPTV_URL;
+  const proxyUrl = settings?.proxyUrl;
+  const pattern = settings?.proxyPattern;
+  const requestUrl = buildRequestUrl(aggregatorUrl, proxyUrl, pattern);
+
+  const rawContent = await fetchContent(requestUrl);
+
+
+  const channels = parseM3U8Content(rawContent, aggregatorUrl);
+
+  const analysis = detectSourceType(rawContent);
+
+
+  return {
+    channels,
+    sourceType: analysis.type,
+  };
+}
+
+/**
+ * 解析 HLS Master Playlist，提取子流 URL
+ * 当 M3U8 内容为 Master Playlist 时，从中提取 .m3u 子流地址
+ */
+function resolveMasterPlaylistUrl(content: string, baseUrl: string): string {
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('.m3u')) {
+      if (trimmed.startsWith('http')) {
+        return trimmed;
+      }
+      // 相对路径拼接为完整 URL
+      try {
+        const base = new URL(baseUrl);
+        return new URL(trimmed, base).href;
+      } catch {
+        return trimmed;
+      }
+    }
+  }
+  return baseUrl;
+}
+
+/**
+ * 解析 M3U/M3U8 内容为频道列表
+ * 解析 #EXTINF 标签提取频道名称、Logo、分组等信息
+ * 若标准解析无结果，尝试识别为 Master Playlist 或单流源
+ */
+function parseM3U8Content(content: string, sourceUrl?: string): IPTVChannel[] {
+  const channels: IPTVChannel[] = [];
+  const lines = content.split('\n');
+
+  let currentChannel: Partial<IPTVChannel> = {};
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line.startsWith('#EXTINF:')) {
+      const info = line.replace('#EXTINF:', '');
+      const parts = info.split(',');
+
+      currentChannel = {
+        id: `channel-${channels.length}`,
+        name: parts[1]?.trim() || `Channel ${channels.length}`,
+      };
+
+      // 从属性中提取 Logo、分组信息和 tvg-id
+      const attributes = parts[0];
+      const logoMatch = attributes.match(/tvg-logo="([^"]*)"/);
+      const groupMatch = attributes.match(/group-title="([^"]*)"/);
+      const tvgIdMatch = attributes.match(/tvg-id="([^"]*)"/);
+
+      if (logoMatch) currentChannel.logo = logoMatch[1];
+      if (groupMatch) currentChannel.group = groupMatch[1];
+      if (tvgIdMatch) currentChannel.tvgId = tvgIdMatch[1];
+    } else if (line && !line.startsWith('#')) {
+      // 非 # 开头的行视为频道 URL
+      currentChannel.url = line;
+
+      if (currentChannel.name && currentChannel.url) {
+        channels.push(currentChannel as IPTVChannel);
+      }
+      currentChannel = {};
+    }
+  }
+
+  // 标准解析无结果时，尝试其他格式识别
+  if (channels.length === 0 && sourceUrl) {
+    const hasMasterPlaylist = content.includes('#EXT-X-STREAM-INF') || content.includes('#EXT-X-MEDIA');
+    if (hasMasterPlaylist) {
+      const resolvedUrl = resolveMasterPlaylistUrl(content, sourceUrl);
+      channels.push({
+        id: 'channel-single-1',
+        name: '直播',
+        url: resolvedUrl,
+        group: '直播',
+      });
+    } else if (content.includes('#EXTM3U')) {
+      channels.push({
+        id: 'channel-single-1',
+        name: '直播',
+        url: sourceUrl,
+        group: '直播',
+      });
+    } else if (sourceUrl.includes('.m3u') || sourceUrl.includes('.m3u8')) {
+      channels.push({
+        id: 'channel-single-1',
+        name: '直播',
+        url: sourceUrl,
+        group: '直播',
+      });
+    }
+  }
+
+  return channels;
+}
+
+/**
+ * 检测单个频道的可用性
+ * 通过创建隐藏的 video 元素尝试加载频道 URL
+ * 若能在超时时间内触发 canplay 事件则视为可用
+ */
+export async function checkChannelAvailability(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.volume = 0;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let resolved = false;
+
+    const cleanup = () => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('error', onError);
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeAttribute('src');
+      video.load();
+      video.src = '';
+    };
+
+    const onCanPlay = () => {
+      if (video.readyState >= 2) {
+        cleanup();
+        resolve(true);
+      }
+    };
+
+    const onLoadedMetadata = () => {
+      video.addEventListener('canplay', onCanPlay, { once: true });
+      timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(false);
+      }, 5000);
+    };
+
+    const onError = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+    video.addEventListener('error', onError, { once: true });
+
+    // 全局超时保护，防止长时间无响应
+    timeoutId = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, 10000);
+
+    video.src = url;
+    video.load();
+  });
+}
+
+/**
+ * 批量检测频道可用性
+ * 逐个检测频道，每次检测间隔 100ms 以避免过度并发
+ * 支持通过 AbortSignal 中断检测过程
+ */
+export async function checkChannelsAvailability(
+  channels: Array<{ id: string; url: string }>,
+  onProgress?: (checked: number, total: number) => void,
+  signal?: AbortSignal
+): Promise<Map<string, boolean>> {
+  const results = new Map<string, boolean>();
+  const total = channels.length;
+  let checked = 0;
+
+  const checkWithAbort = async (url: string): Promise<boolean> => {
+    if (signal?.aborted) {
+      return false;
+    }
+    return checkChannelAvailability(url);
+  };
+
+  for (const channel of channels) {
+    if (signal?.aborted) break;
+
+    const available = await checkWithAbort(channel.url);
+    results.set(channel.id, available);
+    checked++;
+    onProgress?.(checked, total);
+
+    // 检测间隔，避免过度并发占用带宽
+    if (checked < total && !signal?.aborted) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  return results;
+}

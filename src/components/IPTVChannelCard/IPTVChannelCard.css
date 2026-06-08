@@ -1,0 +1,363 @@
+/* ========================================
+   IPTV 频道卡片 — Mobile First 竖排布局
+   Logo 上 + 名称/分组下 + 收藏按钮右上
+   四设备端独立尺寸
+   ======================================== */
+
+/* ---- Base: Mobile (< 768px) ---- */
+.iptv-channel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.iptv-channel-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.iptv-channel-card:active {
+  transform: scale(0.98);
+}
+
+.iptv-channel-card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.iptv-channel-card.unavailable {
+  opacity: 0.6;
+}
+
+/* Card body — vertical stack */
+.iptv-channel-card .card-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---- Cover ---- */
+.iptv-card-cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  background-color: var(--color-placeholder);
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+}
+
+.iptv-card-cover .lazy-image-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.iptv-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+/* ---- Availability badge ---- */
+.availability-badge {
+  position: absolute;
+  bottom: var(--space-xs);
+  left: var(--space-xs);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--badge-size);
+  height: var(--badge-size);
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+}
+
+.availability-badge.available {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.availability-badge.unavailable {
+  background-color: var(--color-error);
+  color: white;
+}
+
+/* ---- Info area ---- */
+.iptv-card-info {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  justify-content: center;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.iptv-card-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.iptv-card-title.marquee {
+  text-overflow: clip;
+  animation: marquee 8s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(0); }
+  75%  { transform: translateX(var(--marquee-dist, -50px)); }
+  100% { transform: translateX(var(--marquee-dist, -50px)); }
+}
+
+.iptv-card-group {
+  position: absolute;
+  right: var(--space-2xs);
+  bottom: var(--space-2xs);
+  z-index: 2;
+  max-width: 60%;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Favorite button ---- */
+/* 默认未收藏：透明度 0 + 缩小，hover/focus 时显形；已收藏常驻 */
+.iptv-card-favorite {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-favorite-bg);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.iptv-card-favorite.hover-visible {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+
+.iptv-channel-card:hover .iptv-card-favorite.hover-visible,
+.iptv-channel-card:focus-within .iptv-card-favorite.hover-visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.iptv-card-favorite.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.iptv-card-favorite:hover {
+  transform: scale(1.15);
+}
+
+.iptv-card-favorite.active {
+  background-color: var(--color-favorite-active-bg);
+  color: var(--color-favorite-active);
+  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
+}
+
+.iptv-card-favorite.active.visible {
+  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.35);
+}
+
+/* Mobile：未收藏按钮也常驻以保证可点（触摸设备无 hover 行为） */
+@media (width <= 767px) {
+  .iptv-card-favorite.hover-visible {
+    opacity: 0.85;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+}
+
+/* TV 端：聚焦时按钮显形（遥控可达） */
+[data-device="tv"] .iptv-card-favorite.hover-visible {
+  opacity: 0;
+  transform: scale(0.8);
+}
+[data-device="tv"] .iptv-channel-card:focus-within .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-card-favorite.hover-visible:focus-visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+
+/* ========================================
+   Tablet: 768–1023px
+   ======================================== */
+@media (width >= 768px) and (width <= 1023px) {
+  .iptv-card-cover {
+    aspect-ratio: 16 / 10;
+  }
+
+  .iptv-card-title {
+    font-size: var(--text-sm);
+  }
+
+  .iptv-card-group {
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
+  .iptv-card-info {
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+  }
+
+  .iptv-card-favorite {
+    width: var(--icon-xl);
+    height: var(--icon-xl);
+  }
+
+  .iptv-channel-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .iptv-channel-card:hover .iptv-card-cover img {
+    transform: scale(1.06);
+  }
+
+  .iptv-channel-card:hover .availability-badge {
+    transform: scale(1.15);
+  }
+}
+
+
+/* ========================================
+   Desktop: ≥ 1024px
+   ======================================== */
+@media (width >= 1024px) {
+  .iptv-card-cover {
+    aspect-ratio: 16 / 9;
+  }
+
+  .iptv-card-title {
+    font-size: var(--text-sm);
+  }
+
+  .iptv-card-group {
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    max-width: 50%;
+    padding: var(--space-3xs) var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
+  .iptv-card-info {
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .iptv-card-favorite {
+    width: var(--icon-xl);
+    height: var(--icon-xl);
+  }
+
+  .iptv-channel-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .iptv-channel-card:hover .iptv-card-cover img {
+    transform: scale(1.06);
+  }
+
+  .iptv-channel-card:hover .availability-badge {
+    transform: scale(1.15);
+  }
+}
+
+
+/* ========================================
+   TV 设备：大字 + 大触控区 + 焦点环
+   ======================================== */
+[data-device="tv"] .iptv-channel-card,
+[data-device="tv"].iptv-channel-card {
+  border-radius: var(--radius-md);
+}
+
+[data-device="tv"] .iptv-card-cover {
+  aspect-ratio: 16 / 9;
+}
+
+[data-device="tv"] .iptv-card-title {
+  font-size: var(--text-base);
+  -webkit-line-clamp: 2;
+  line-height: 1.4;
+}
+
+[data-device="tv"] .iptv-card-group {
+  right: var(--space-sm);
+  bottom: var(--space-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+[data-device="tv"] .iptv-card-info {
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+[data-device="tv"] .iptv-card-favorite {
+  top: var(--space-sm);
+  right: var(--space-sm);
+  width: var(--comp-btn-min-width);
+  height: var(--comp-btn-min-width);
+  font-size: var(--text-xl);
+}
+
+[data-device="tv"] .iptv-channel-card:focus-visible {
+  box-shadow: 0 0 0 4px var(--color-primary);
+  outline: none;
+}

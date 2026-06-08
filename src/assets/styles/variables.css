@@ -1,0 +1,339 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Design Tokens — 流体缩放体系 (375px → 3840px)
+   
+   四组 Token，每组独立的缩放节奏：
+   - Typography (--text-*)    : 1.4x~1.9x  字号温和增长
+   - Spacing    (--space-*)   : 2.0x~2.2x  间距积极增长
+   - Icon       (--icon-*)    : 2.2x~2.3x  图标激进增长 (TV 需辨识)
+   - Component  (--comp-*)    : 1.5x~1.8x  控件尺寸增长
+
+   公式: clamp(MINpx, PREFERRED + COEFF * 100vw, MAXpx)
+         其中 PREFERRED = (MIN * maxVw - MAX * minVw) / range / 16 * 1rem
+               COEFF    = (MAX - MIN) / range
+               minVw=375, maxVw=3840, range=3465
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Colors ─────────────────────────────────────────────────────────── */
+  --color-primary: #000;
+  --color-primary-hover: #333;
+  --color-primary-light: rgba(0, 0, 0, 0.05);
+  --color-primary-bg: rgba(0, 0, 0, 0.08);
+  --color-primary-shadow: rgba(0, 0, 0, 0.15);
+  --color-progress-stripe: rgba(255, 255, 255, 0.15);
+  --color-background: #f5f5f5;
+  --color-surface: #fff;
+  --color-surface-hover: rgba(0, 0, 0, 0.05);
+  --color-hover-bg: rgba(0, 0, 0, 0.05);
+  --color-surface-elevated: #fff;
+  --color-text: #000;
+  --color-text-secondary: #666;
+  --color-text-tertiary: #999;
+  --color-text-inverse: #fff;
+  --color-border: #d9d9d9;
+  --color-border-light: #e8e8e8;
+  --color-placeholder: #f5f5f5;
+  --color-placeholder-shimmer-a: #f0f0f0;
+  --color-placeholder-shimmer-b: #e6e6e6;
+  --color-tag-bg: #f5f5f5;
+  --color-favorite-bg: #f5f5f5;
+  --color-favorite-active-bg: #fff2e8;
+  --color-favorite-active: #fa8c16;
+  --color-page-btn-bg: #f5f5f5;
+  --color-page-btn-hover-bg: rgba(0, 0, 0, 0.05);
+  --color-page-info: #666;
+  --color-input-bg: #fff;
+  --color-input-border: #d9d9d9;
+  --color-tab-active-bg: #000;
+  --color-tab-active-text: #fff;
+  --color-tab-inactive-text: #a0a0a0;
+  --color-success: #52c41a;
+  --color-error: #ff4d4f;
+  --color-warning: #fa8c16;
+
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* ── Typography (375→1440px 固定, 1440→3840px TV端放大) ────────────── */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 14px;
+  --text-lg:   16px;
+  --text-xl:   18px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  /* ── Spacing (积极增长 ~2.0x–2.2x) ──────────────────────────────────── */
+  --space-3xs: clamp(1px,  0.056rem + 0.029vw, 2px);    /* 1→2   (+100%) */
+  --space-2xs: clamp(2px,  0.111rem + 0.058vw, 4px);    /* 2→4   (+100%) */
+  --space-xs:  clamp(4px,  0.223rem + 0.115vw, 8px);    /* 4→8   (+100%) */
+  --space-sm:  clamp(8px,  0.459rem + 0.173vw, 14px);   /* 8→14  (+75%)  */
+  --space-md:  clamp(12px, 0.669rem + 0.346vw, 24px);   /* 12→24 (+100%) */
+  --space-lg:  clamp(18px, 1.003rem + 0.520vw, 36px);   /* 18→36 (+100%) */
+  --space-xl:  clamp(24px, 1.311rem + 0.808vw, 52px);   /* 24→52 (+117%) */
+  --space-2xl: clamp(36px, 2.006rem + 1.039vw, 72px);   /* 36→72 (+100%) */
+  --space-3xl: clamp(48px, 2.648rem + 1.501vw, 100px);  /* 48→100 (+108%) */
+
+  /* ── Icons (375→1440px 固定, 1440→3840px TV端放大) ───────────────── */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 28px;
+
+  /* ── Pagination Dots (分页圆点 — TV 端不放大,保持小圆点) ────────────── */
+  --dot-size:     clamp(6px,  0.300rem + 0.208vw, 10px);  /* 6→10   圆点 */
+  --dot-active-w: clamp(20px, 1.000rem + 0.417vw, 28px); /* 20→28  激活胶囊宽 */
+  --dot-active-h: clamp(6px,  0.300rem + 0.208vw, 10px);  /* 6→10   激活胶囊高(同 --dot-size) */
+  --dot-gap:      clamp(4px,  0.200rem + 0.167vw, 8px);   /* 4→8    圆点间距 */
+
+  /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
+  --comp-btn-min-height: clamp(36px, 2.061rem + 0.808vw, 64px);  /* 36→64 */
+  --comp-btn-min-width:  clamp(44px, 2.615rem + 0.577vw, 64px);  /* 44→64 */
+  --comp-input-height:   clamp(36px, 2.115rem + 0.577vw, 56px);  /* 36→56 */
+  --comp-thumb-size:     clamp(16px, 0.892rem + 0.462vw, 32px);  /* 16→32 */
+  --switch-track-height: clamp(20px, 1.196rem + 0.231vw, 28px);  /* 20→28 */
+  --switch-track-width:  clamp(36px, 2.142rem + 0.462vw, 52px);  /* 36→52 */
+  --switch-thumb-size:   clamp(16px, 0.919rem + 0.346vw, 28px);  /* 16→28 */
+  --switch-thumb-offset: clamp(18px, 1.057rem + 0.289vw, 28px);  /* 18→28 */
+  --radio-size:          clamp(16px, 0.892rem + 0.462vw, 32px);  /* 16→32 */
+  --radio-dot-size:      clamp(8px,  0.432rem + 0.289vw, 18px);  /* 8→18 */
+  --badge-size:          clamp(12px, 0.642rem + 0.462vw, 28px);  /* 12→28 */
+
+  /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
+  --radius-sm: clamp(4px,  0.236rem + 0.058vw, 6px);    /* 4→6   (+50%)  */
+  --radius-md: clamp(8px,  0.473rem + 0.115vw, 12px);   /* 8→12  (+50%)  */
+  --radius-lg: clamp(12px, 0.696rem + 0.231vw, 20px);   /* 12→20 (+67%)  */
+  --radius-full: 9999px;                                /* 胶囊专用：不缩放，圆弧完美 */
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  --grid-gap: clamp(16px, 0.892rem + 0.462vw, 32px);    /* 16→32 (+100%) */
+
+  /* ── Focus Ring ──────────────────────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+
+  /* ── Safe Area ───────────────────────────────────────────────────────── */
+  --safe-area-x: 0px;
+  --safe-area-y: 0px;
+
+  /* ── Breakpoints (for JS reference, not used in @media) ──────────────── */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1920px;
+  --breakpoint-3xl: 2560px;
+  --breakpoint-4xl: 3840px;
+
+  /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
+  --layout-loading-min-height: 300px;
+  --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px);
+  --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px);
+  --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px);
+  --layout-hero-height-mobile: 280px;
+  --layout-card-daily-width:   200px;
+  --layout-grid-min-col:       220px;
+  --layout-error-detail-height: 200px;
+  --layout-spinner-border:     3px;
+  --layout-perf-panel-min-w:   280px;
+  --layout-channel-num-w:      120px;
+  --layout-quality-badge-min-w: 84px;
+  --layout-vol-popup-w:        60px;
+  --layout-vol-popup-h:        300px;
+  --layout-vol-slider-w:       180px;
+  --layout-player-vol-w:       80px;
+  --layout-popover-min-w:      100px;
+  --layout-popover-wide-min-w: 140px;
+  --layout-episode-panel-w:    420px;
+  --layout-episode-panel-w-alt: 440px;
+  --layout-time-display-min-w: 90px;
+  --layout-channel-list-w:     300px;
+  --layout-channel-list-w-sm:  260px;
+  --layout-channel-list-w-md:  320px;
+  --layout-channel-list-w-lg:  300px;
+  --layout-channel-list-w-xl:  360px;
+  --layout-channel-list-w-2xl: 400px;
+  --layout-source-url-max-w:   160px;
+  --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
+  --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */
+  --layout-groups-collapsed-h: 76px;
+  --layout-select-w:           140px;
+  --layout-select-w-mobile:    120px;
+  --layout-detail-hero-play-icon: 8.571rem;
+  --layout-outline-width:      2px;
+  --layout-tabbar-height:      56px;
+  --layout-datepicker-width:   340px;
+
+  /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
+  --card-cols: 3;   /* 默认：移动端 (< 768)             */
+  --row-cols:  var(--card-cols);
+
+  /* ── Sticky Header ───────────────────────────────────────────────────── */
+  --header-height: clamp(60px, 3.375rem + 1vw, 76px);
+  --header-height-compact: 48px;
+
+  /* ── Glass Effect (玻璃态背景) ───────────────────────────────────────── */
+  /* 普通页面导航栏背景（65% 玻璃,透出页面背景 35% — 解决"导航栏不透明"问题） */
+  --glass-bg-strong:   color-mix(in srgb, var(--color-background) 65%, transparent);
+  /* Immersive 页面导航栏背景（25% 玻璃,透出 hero 海报 75%） */
+  --glass-bg:          color-mix(in srgb, var(--color-background) 25%, transparent);
+  /* 模糊半径（saturate 提升色彩饱和度补偿 blur 损失） */
+  --glass-blur:        saturate(180%) blur(14px);
+  /* 玻璃层下方的细分隔阴影 */
+  --glass-shadow:      0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+
+  /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
+  --scrollbar-width: 6px;
+  --scrollbar-width-thin: 4px;
+  --scrollbar-color: rgba(0, 0, 0, 0.15);
+  --scrollbar-color-hover: rgba(0, 0, 0, 0.3);
+  --scrollbar-color-active: rgba(0, 0, 0, 0.45);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TV / Large Screen — typography & icon scale-up (1440px → 3840px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (width >= 1440px) {
+  :root {
+    --text-xs:   clamp(12px, 0.375rem + 0.417vw, 22px);   /* 12→22 */
+    --text-sm:   clamp(13px, 0.325rem + 0.542vw, 26px);   /* 13→26 */
+    --text-base: clamp(14px, 0.275rem + 0.667vw, 30px);   /* 14→30 */
+    --text-lg:   clamp(16px, 0.250rem + 0.833vw, 36px);   /* 16→36 */
+    --text-xl:   clamp(18px, 0.300rem + 0.917vw, 40px);   /* 18→40 */
+    --text-2xl:  clamp(24px, 0.525rem + 1.083vw, 50px);   /* 24→50 */
+    --text-3xl:  clamp(30px, 0.750rem + 1.250vw, 60px);   /* 30→60 */
+    --icon-sm:   clamp(16px, 0.100rem + 1.000vw, 40px);   /* 16→40 */
+    --icon-md:   clamp(20px, 0.200rem + 1.167vw, 48px);   /* 20→48 */
+    --icon-lg:   clamp(24px, 0.150rem + 1.500vw, 60px);   /* 24→60 */
+    --icon-xl:   clamp(28px, 0.100rem + 1.833vw, 72px);   /* 28→72 */
+    --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
+    --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
+    --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  激活胶囊高 */
+    --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Card Columns — 6 档视口断点梯度 (v4：每行偶数列数)
+   < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
+   ≥ 768  → 6   (平板)
+   ≥ 1024 → 6   (小桌面)
+   ≥ 1280 → 8   (PC 默认)
+   ≥ 1920 → 8   (大屏)
+   ≥ 2560 → 10  (TV)
+   ≥ 3840 → 10  (4K TV)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (width >= 768px) {
+  :root {
+    --card-cols: 6;
+    --row-cols: 6;
+  }
+}
+
+@media (width >= 1024px) {
+  :root {
+    --card-cols: 6;
+    --row-cols: 6;
+  }
+}
+
+@media (width >= 1280px) {
+  :root {
+    --card-cols: 8;
+    --row-cols: 8;
+  }
+}
+
+@media (width >= 1920px) {
+  :root {
+    --card-cols: 8;
+    --row-cols: 8;
+  }
+}
+
+@media (width >= 2560px) {
+  :root {
+    --card-cols: 10;
+    --row-cols: 10;
+  }
+}
+
+@media (width >= 3840px) {
+  :root {
+    --card-cols: 10;
+    --row-cols: 10;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark Theme — colors & shadows only (dimension tokens from :root)
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --color-primary: #fff;
+  --color-primary-hover: #e5e5e5;
+  --color-primary-light: rgba(255, 255, 255, 0.08);
+  --color-primary-bg: rgba(255, 255, 255, 0.1);
+  --color-primary-shadow: rgba(255, 255, 255, 0.2);
+  --color-progress-stripe: rgba(0, 0, 0, 0.18);
+  --color-background: #141414;
+  --color-surface: #1f1f1f;
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-hover-bg: rgba(255, 255, 255, 0.08);
+  --color-surface-elevated: #262626;
+  --color-text: #fff;
+  --color-text-secondary: #a0a0a0;
+  --color-text-tertiary: #666;
+  --color-text-inverse: #141414;
+  --color-border: #434343;
+  --color-border-light: #303030;
+  --color-placeholder: #262626;
+  --color-placeholder-shimmer-a: #1f1f1f;
+  --color-placeholder-shimmer-b: #303030;
+  --color-tag-bg: #262626;
+  --color-favorite-bg: #303030;
+  --color-favorite-active-bg: #3a2000;
+  --color-favorite-active: #d89614;
+  --color-page-btn-bg: #262626;
+  --color-page-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --color-page-info: #a0a0a0;
+  --color-input-bg: #1f1f1f;
+  --color-input-border: #434343;
+  --color-tab-active-bg: #fff;
+  --color-tab-active-text: #000;
+  --color-tab-inactive-text: #a0a0a0;
+  --color-success: #49aa19;
+  --color-error: #d32029;
+  --color-warning: #d89614;
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
+
+  /* Glass Effect (暗色 — 透明度更弱以覆盖深色页面) */
+  --glass-bg-strong:   color-mix(in srgb, var(--color-background) 55%, transparent);
+  --glass-bg:          color-mix(in srgb, var(--color-background) 18%, transparent);
+  --glass-blur:        saturate(180%) blur(14px);
+  --glass-shadow:      0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.25);
+
+  /* Scrollbar — 暗色 (白色极淡) */
+  --scrollbar-color: rgba(255, 255, 255, 0.18);
+  --scrollbar-color-hover: rgba(255, 255, 255, 0.35);
+  --scrollbar-color-active: rgba(255, 255, 255, 0.55);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TV — discrete overrides (minimum touch targets, focus ring, safe area)
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-device="tv"] {
+  --safe-area-x: 3vw;
+  --safe-area-y: 2vh;
+
+  /* Minimum 48dp touch target for TV remote navigation */
+  --comp-btn-min-height: var(--space-3xl);
+  --comp-btn-min-width:  var(--space-3xl);
+
+  /* Thicker focus ring for visibility at 3m viewing distance */
+  --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
+}
