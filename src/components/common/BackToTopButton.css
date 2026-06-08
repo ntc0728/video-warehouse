@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════════════
+   BackToTopButton — 玻璃感返回顶部按钮
+   参考 Ouonnki TV 设计：bg-background/90 + backdrop-blur + rounded-full
+
+   设计要点：
+   - 玻璃感：半透明背景 + backdrop-filter blur + saturate
+   - 圆角：var(--radius-full)
+   - 阴影：双层 rgba(0,0,0, X%)，hover 时加深
+   - 动画：CSS keyframe（pop-in / pop-out），无 framer-motion 依赖
+   - 位置：右下，bottom = AppLayout paddingBottom + 自身高度 + 一段 gap
+   ═══════════════════════════════════════════════════════════════ */
+
+.back-to-top-button {
+  position: fixed;
+  right: var(--space-lg);
+  bottom: var(--space-2xl);
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-3xl);
+  height: var(--space-3xl);
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 90%);
+  color: var(--color-text);
+  /* 默认（即将退场）状态：低不透明 + 微下移 + 微缩 */
+  opacity: 0;
+  transform: translateY(8px) scale(0.92);
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
+  backdrop-filter: blur(8px) saturate(180%);
+  cursor: pointer;
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 18%),
+    0 1px 3px rgb(0 0 0 / 12%);
+  pointer-events: none;
+}
+
+/* ── 进 / 退场状态 ────────────────────────────────────── */
+.back-to-top-button--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  animation: back-to-top-button-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.back-to-top-button--exiting {
+  /* 不显式写 transition：让默认样式生效，自动从 visible → 默认 */
+  animation: back-to-top-button-pop-out 0.2s ease both;
+}
+
+.back-to-top-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 20px rgb(0 0 0 / 26%),
+    0 2px 6px rgb(0 0 0 / 18%);
+}
+
+.back-to-top-button--visible:hover {
+  /* hover 时需保持 translateY(-2px)，不要被 base 的 transform 覆盖 */
+  transform: translateY(-2px);
+}
+
+.back-to-top-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 18%),
+    0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.back-to-top-button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--focus-ring),
+    0 4px 12px rgb(0 0 0 / 18%);
+}
+
+/* ── 图标尺寸 ─────────────────────────────────────────── */
+.back-to-top-button__icon {
+  flex-shrink: 0;
+  width: 60%;
+  height: 60%;
+}
+
+/* ── Dark theme: 更明显的玻璃感 + 边框强化 ───────────── */
+[data-theme="dark"] .back-to-top-button {
+  border-color: var(--color-border);
+  background: rgb(20 20 20 / 80%);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 50%),
+    0 1px 3px rgb(0 0 0 / 40%);
+}
+
+[data-theme="dark"] .back-to-top-button:hover {
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 60%),
+    0 2px 6px rgb(0 0 0 / 50%);
+}
+
+[data-theme="dark"] .back-to-top-button:active {
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 40%),
+    0 1px 2px rgb(0 0 0 / 30%);
+}
+
+/* ── TV 端：放大点击区（用 --space-3xl 的 ~1.2 倍） ─── */
+[data-device="tv"] .back-to-top-button {
+  width: calc(var(--space-3xl) * 1.2);
+  height: calc(var(--space-3xl) * 1.2);
+}
+
+/* ── Mobile: 适配安全区，避开 TabBar ──────────────── */
+@media (width <= 767px) {
+  .back-to-top-button {
+    right: var(--space-md);
+    bottom: calc(var(--space-3xl) + var(--space-md));
+  }
+}
+
+/* ── Reduced motion：关闭所有动画 ────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top-button {
+    transition: none;
+    animation: none !important;
+  }
+
+  .back-to-top-button:hover,
+  .back-to-top-button:active,
+  .back-to-top-button--visible {
+    transform: none;
+  }
+}
+
+@keyframes back-to-top-button-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes back-to-top-button-pop-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+}

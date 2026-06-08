@@ -1,0 +1,155 @@
+.skeleton-iptv-card {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.skeleton-logo {
+  flex-shrink: 0;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  border-radius: var(--space-sm);
+  background-color: var(--color-placeholder);
+  overflow: hidden;
+}
+
+.skeleton-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+.skeleton-name {
+  width: 70%;
+  height: var(--space-md);
+}
+
+.skeleton-group {
+  width: 50%;
+  height: var(--space-sm);
+}
+
+.skeleton-actions {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.skeleton-btn {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border-radius: 50%;
+}
+
+.skeleton-shimmer {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a, #f0f0f0) 25%,
+    var(--color-placeholder-shimmer-b, #e0e0e0) 50%,
+    var(--color-placeholder-shimmer-a, #f0f0f0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-iptv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--layout-grid-min-col), 1fr));
+  gap: var(--space-sm);
+  padding: 0 var(--space-xs);
+}
+
+/* Responsive */
+@media (width <= 1024px) {
+  .skeleton-iptv-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+}
+
+@media (width <= 767px) {
+  .skeleton-iptv-card {
+    height: 100%;
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  .skeleton-logo {
+    width: var(--icon-xl);
+    height: var(--icon-xl);
+    border-radius: var(--radius-sm);
+  }
+
+  .skeleton-info {
+    flex-direction: column;
+    gap: 0;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .skeleton-name {
+    width: 70%;
+    height: var(--space-sm);
+  }
+
+  .skeleton-group {
+    width: 50%;
+    height: var(--space-xs);
+  }
+
+  .skeleton-actions {
+    flex-direction: row;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .skeleton-btn {
+    width: var(--space-md);
+    height: var(--space-md);
+  }
+
+  .skeleton-iptv-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xs);
+  }
+}
+
+@media (width >= 1920px) {
+  .skeleton-iptv-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-md);
+  }
+}
+
+@media (width >= 2560px) {
+  .skeleton-iptv-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (width >= 3840px) {
+  .skeleton-iptv-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}

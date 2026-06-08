@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json.schemastore.org/stylelintrc.json",
+  "extends": [
+    "stylelint-config-standard"
+  ],
+  "plugins": [
+    "stylelint-order"
+  ],
+  "rules": {
+    "alpha-value-notation": null,
+    "color-function-alias-notation": null,
+    "color-function-notation": null,
+    "comment-empty-line-before": null,
+    "declaration-empty-line-before": null,
+    "font-family-name-quotes": null,
+    "function-name-case": null,
+    "import-notation": null,
+    "keyframes-name-pattern": null,
+    "no-descending-specificity": null,
+    "no-invalid-position-at-import-rule": null,
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": [
+          "composes",
+          "compose-with"
+        ]
+      }
+    ],
+    "rule-empty-line-before": null,
+    "selector-not-notation": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": [
+          "deep",
+          "global",
+          "slotted"
+        ]
+      }
+    ],
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9-]*(__[a-z][a-z0-9-]*)?(--[a-z][a-z0-9-]*)?$",
+      {
+        "message": "类名应遵循 BEM 风格：block[__element][--modifier]，仅小写字母、数字、连字符",
+        "severity": "warning"
+      }
+    ],
+    "selector-pseudo-element-no-unknown": [
+      true,
+      {
+        "ignorePseudoElements": [
+          "v-deep",
+          "v-global",
+          "v-slotted"
+        ]
+      }
+    ],
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "apply",
+          "config",
+          "layer",
+          "responsive",
+          "screen",
+          "tailwind",
+          "variants"
+        ]
+      }
+    ],
+    "function-no-unknown": [
+      true,
+      {
+        "ignoreFunctions": [
+          "theme",
+          "screen"
+        ]
+      }
+    ],
+    "value-keyword-case": null,
+
+    "order/order": [
+      [
+        "custom-properties",
+        "dollar-variables",
+        "at-variables",
+        "declarations",
+        "rules",
+        "at-rules"
+      ],
+      {
+        "severity": "warning"
+      }
+    ],
+    "order/properties-order": [
+      [
+        "content",
+        "position",
+        "inset",
+        "top",
+        "right",
+        "bottom",
+        "left",
+        "z-index",
+        "display",
+        "flex",
+        "flex-direction",
+        "flex-wrap",
+        "flex-grow",
+        "flex-shrink",
+        "flex-basis",
+        "grid",
+        "grid-template",
+        "grid-template-columns",
+        "grid-template-rows",
+        "grid-template-areas",
+        "grid-column",
+        "grid-row",
+        "grid-area",
+        "gap",
+        "row-gap",
+        "column-gap",
+        "justify-content",
+        "justify-items",
+        "justify-self",
+        "align-content",
+        "align-items",
+        "align-self",
+        "order",
+        "width",
+        "min-width",
+        "max-width",
+        "height",
+        "min-height",
+        "max-height",
+        "margin",
+        "margin-top",
+        "margin-right",
+        "margin-bottom",
+        "margin-left",
+        "padding",
+        "padding-top",
+        "padding-right",
+        "padding-bottom",
+        "padding-left",
+        "border",
+        "border-width",
+        "border-style",
+        "border-color",
+        "border-radius",
+        "background",
+        "background-color",
+        "background-image",
+        "background-size",
+        "background-position",
+        "background-repeat",
+        "color",
+        "font",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        "line-height",
+        "text-align",
+        "text-decoration",
+        "text-transform",
+        "letter-spacing",
+        "white-space",
+        "overflow",
+        "overflow-x",
+        "overflow-y",
+        "clip",
+        "visibility",
+        "opacity",
+        "transform",
+        "transition",
+        "animation"
+      ],
+      {
+        "severity": "warning"
+      }
+    ],
+
+    "declaration-property-value-disallowed-list": {
+      "width": [
+        "100vw"
+      ],
+      "max-width": [
+        "100vw"
+      ],
+      "min-width": [
+        "100vw"
+      ],
+      "height": [
+        "100vh"
+      ],
+      "max-height": [
+        "100vh"
+      ],
+      "min-height": [
+        "100vh"
+      ]
+    },
+    "declaration-property-unit-disallowed-list": [
+      {
+        "font-size": ["px"],
+        "padding": ["px"],
+        "padding-top": ["px"],
+        "padding-right": ["px"],
+        "padding-bottom": ["px"],
+        "padding-left": ["px"],
+        "margin": ["px"],
+        "margin-top": ["px"],
+        "margin-right": ["px"],
+        "margin-bottom": ["px"],
+        "margin-left": ["px"],
+        "gap": ["px"],
+        "row-gap": ["px"],
+        "column-gap": ["px"],
+        "width": ["px"],
+        "min-width": ["px"],
+        "max-width": ["px"],
+        "height": ["px"],
+        "min-height": ["px"],
+        "max-height": ["px"],
+        "top": ["px"],
+        "right": ["px"],
+        "bottom": ["px"],
+        "left": ["px"],
+        "border-radius": ["px"],
+        "inset": ["px"],
+        "inset-block": ["px"],
+        "inset-inline": ["px"]
+      },
+      { "severity": "error" }
+    ]
+  },
+  "ignoreFiles": [
+    "node_modules/**/*",
+    "dist/**/*",
+    "build/**/*",
+    "**/*.min.css"
+  ]
+}

@@ -1,0 +1,156 @@
+.lazy-image-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  background-color: var(--color-placeholder);
+  overflow: hidden;
+}
+
+.lazy-image-container.loaded {
+  background-color: transparent;
+}
+
+.lazy-image-container.error {
+  background-color: var(--color-surface-hover);
+}
+
+.lazy-image-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.lazy-image-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-spinner {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border: 2px solid var(--color-placeholder);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.lazy-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  object-fit: cover;
+}
+
+.lazy-image-container.loaded .lazy-image {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 命中 session 缓存：DOM 重建时直接以最终态渲染，跳过 0.5s 渐显动画 */
+.lazy-image-container--cached .lazy-image {
+  opacity: 1;
+  transform: scale(1);
+  transition: none;
+}
+
+.lazy-image-container.loaded .lazy-image-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Brand variant: progress bar 进度条与抠图同框，占位淡出更柔 */
+.lazy-image-container--brand .lazy-image-placeholder {
+  background: transparent;
+  animation: none;
+}
+
+.lazy-image-container--brand .lazy-image-placeholder .card-cover-loading {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-placeholder-shimmer-a) 0%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 100%
+  );
+}
+
+.lazy-image-container--brand.loaded .lazy-image-placeholder {
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.lazy-image-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+.lazy-image-bg-container {
+  position: relative;
+  transition: background-image 0.3s ease;
+}
+
+.lazy-image-bg-loading {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@media (width <= 767px) {
+  .lazy-image-container {
+    min-height: 0;
+  }
+
+  .lazy-image {
+    transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+                transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lazy-image,
+  .lazy-image-placeholder,
+  .lazy-image-bg-loading {
+    transform: none !important;
+    transition: opacity 0.15s linear;
+    animation: none;
+  }
+}

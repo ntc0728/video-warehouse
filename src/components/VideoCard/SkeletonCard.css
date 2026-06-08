@@ -1,0 +1,60 @@
+.skeleton-card {
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.skeleton-card-cover {
+  position: relative;
+  background: var(--color-placeholder);
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+}
+
+.skeleton-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.skeleton-shimmer {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-title {
+  width: 80%;
+  height: var(--space-md);
+}
+
+.skeleton-year {
+  width: 50%;
+  height: var(--space-md);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 3), minmax(0, 1fr));
+  gap: var(--grid-gap);
+  padding: var(--space-sm) 0;
+}
+
+

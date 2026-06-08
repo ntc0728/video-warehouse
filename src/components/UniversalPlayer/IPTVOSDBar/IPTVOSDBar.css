@@ -1,0 +1,421 @@
+/* ===== IPTV OSD Control Bar ===== */
+.iptv-osd-bar {
+  position: absolute;
+  bottom: var(--space-xl);
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  gap: 0;
+  align-items: center;
+  width: min(var(--osd-bar-width, calc(100% - var(--header-height))), var(--layout-modal-max-width));
+
+  min-height: var(--space-3xl);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.60);
+  transform: translateX(-50%);
+  transition: opacity 200ms ease, transform 200ms ease;
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+}
+
+.iptv-osd-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.iptv-osd-hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  pointer-events: none;
+}
+
+/* Left section: channel number + logo + name row */
+.iptv-osd-left {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  width: var(--layout-channel-num-w);
+  text-align: center;
+}
+
+.iptv-osd-channel-number {
+  flex-shrink: 0;
+  color: #fff;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.iptv-osd-channel-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.iptv-osd-logo-wrapper {
+  flex-shrink: 0;
+}
+
+.iptv-osd-logo {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  border-radius: 50%;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.iptv-osd-logo-fallback {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  border-radius: 50%;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.iptv-osd-logo-fallback span {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+.iptv-osd-name-marquee {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.iptv-osd-name-marquee .marquee-text {
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Marquee shared styles */
+.marquee-container {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.marquee-track {
+  display: flex;
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.marquee-track.marquee-scrolling {
+  animation: marquee-scroll 10s linear infinite;
+}
+
+/* Slower marquee for program titles (current + next) */
+.iptv-osd-program-marquee .marquee-track.marquee-scrolling,
+.iptv-osd-next-marquee .marquee-track.marquee-scrolling {
+  animation-duration: 25s;
+}
+
+.marquee-text {
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Center section: program info + controls */
+.iptv-osd-center {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--space-md);
+  overflow: hidden;
+}
+
+/* Program row: unified style for current and next */
+.iptv-osd-program-row,
+.iptv-osd-next-row {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.iptv-osd-current-label {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.iptv-osd-label-prefix {
+  flex-shrink: 0;
+  color: var(--color-primary-hover);
+  font-weight: 500;
+}
+
+.iptv-osd-label-title {
+  color: #eee;
+}
+
+/* Next program row */
+.iptv-osd-next-row {
+  color: #eee;
+}
+
+.iptv-osd-next-row .next-label {
+  flex-shrink: 0;
+  color: var(--color-primary-hover);
+  font-weight: 500;
+}
+
+/* Program marquee - auto-scroll long program titles */
+.iptv-osd-program-marquee {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.iptv-osd-program-marquee .marquee-text {
+  color: #eee;
+  font-size: var(--text-sm);
+}
+
+.iptv-osd-next-content {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.iptv-osd-next-marquee {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.iptv-osd-next-marquee .marquee-text {
+  color: #eee;
+  font-size: var(--text-sm);
+}
+
+/* Controls row: action buttons - horizontal layout, smallest font */
+.iptv-osd-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  justify-content: center;
+  align-items: center;
+  margin-top: var(--space-xs);
+}
+
+.iptv-osd-btn-group {
+  display: flex;
+  gap: var(--space-3xs);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.iptv-osd-btn-group .iptv-osd-control-btn {
+  border-radius: 0;
+}
+
+.iptv-osd-control-btn {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-3xs);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: none;
+  background: transparent;
+  color: #aaa;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.iptv-osd-control-btn svg {
+  flex-shrink: 0;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  fill: currentColor;
+}
+
+.iptv-osd-control-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.iptv-osd-control-btn:active {
+  transform: scale(0.95);
+}
+
+.iptv-osd-ch-btn {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-2xs);
+  align-items: center;
+}
+
+.iptv-osd-ch-btn-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  align-items: center;
+  line-height: 1;
+}
+
+.iptv-osd-ch-btn-inner svg {
+  display: block;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+/* Right section: network speed + source line + time */
+.iptv-osd-right {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  justify-content: center;
+  align-items: center;
+  min-width: var(--layout-quality-badge-min-w);
+}
+
+.iptv-osd-network-speed {
+  color: #bbb;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.iptv-osd-source-text {
+  color: #bbb;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.iptv-osd-time {
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Volume Popup (unchanged) ===== */
+.iptv-volume-popup {
+  position: absolute;
+  top: 50%;
+  right: var(--space-lg);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: var(--layout-vol-popup-w);
+  height: var(--layout-vol-popup-h);
+  padding: var(--space-md) 0;
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.55);
+  transform: translateY(-50%);
+  transition: opacity 200ms ease;
+  backdrop-filter: blur(8px);
+}
+
+.iptv-volume-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.iptv-volume-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.iptv-volume-icon {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.iptv-volume-slider-wrapper {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
+.iptv-volume-slider {
+  width: var(--layout-vol-slider-w);
+  height: var(--space-xs);
+  border-radius: var(--space-2xs);
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(-90deg);
+  appearance: none;
+  outline: none;
+  transform-origin: center;
+}
+
+.iptv-volume-slider::-webkit-slider-thumb {
+  width: var(--space-md);
+  height: var(--space-md);
+  border: var(--layout-outline-width) solid var(--color-primary);
+  border-radius: 50%;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+}
+
+.iptv-volume-slider::-moz-range-thumb {
+  width: var(--space-md);
+  height: var(--space-md);
+  border: var(--layout-outline-width) solid var(--color-primary);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+.iptv-volume-percent {
+  flex-shrink: 0;
+  color: #fff;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

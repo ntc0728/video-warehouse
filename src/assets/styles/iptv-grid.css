@@ -1,0 +1,43 @@
+.iptv-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  grid-auto-rows: auto;
+  align-content: start;
+}
+
+@media (width <= 767px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (width >= 768px) and (width <= 1023px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (width >= 1440px) and (width <= 1919px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (width >= 1920px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (width >= 2560px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media (width >= 3840px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}

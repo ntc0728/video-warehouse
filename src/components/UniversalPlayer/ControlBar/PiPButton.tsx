@@ -1,0 +1,21 @@
+import { PictureInPicture2 } from 'lucide-react';
+
+interface PiPButtonProps {
+  isPiP: boolean;
+  onClick: () => void;
+}
+
+export default function PiPButton({ isPiP, onClick }: PiPButtonProps) {
+  const supported = typeof document !== 'undefined' && !!document.pictureInPictureEnabled;
+  if (!supported) return null;
+
+  return (
+    <button
+      className={`up-control-btn ${isPiP ? 'up-control-btn-active' : ''}`}
+      onClick={onClick}
+      title="画中画 (P)"
+    >
+      <PictureInPicture2 size={20} />
+    </button>
+  );
+}

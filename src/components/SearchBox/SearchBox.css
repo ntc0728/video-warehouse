@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SearchBox — 公共搜索框
+   结构：<div .search-box-wrap> 外层容器
+         ├ <div .search-box>        内部框（仅含 icon + input + clear）
+         └ <button .search-box__submit>  搜索按钮：独立在方框外，box 紧贴左侧
+   variant="header"：用于顶部 StickyHeader 中央
+   variant="browse"：用于 BrowseHeader 中间
+   主题感知：边框 / 背景 / 文字 / 占位符色全部使用 CSS 变量
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.search-box-wrap {
+  display: flex;
+  /* 强制单行：父容器宽度不足时也不允许 box 和 submit 换行 */
+  flex-wrap: nowrap;
+  /* box 与 submit 紧贴，视觉上一体化但 DOM 分离 */
+  gap: 0;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── Variant wrap（外层容器） ───────────────────── */
+
+.search-box-wrap--header {
+  max-width: var(--layout-searchbox-header-max-w);
+}
+
+.search-box-wrap--browse {
+  max-width: min(var(--layout-searchbox-browse-max-w), 100%);
+}
+
+/* ── 内部方框（仅 icon + input + clear） ─────────── */
+
+.search-box {
+  display: flex;
+  flex: 1;
+  gap: var(--space-xs);
+  align-items: center;
+  min-width: 0;
+  height: var(--comp-input-height);
+  padding: 0 var(--space-sm);
+  /* box 只圆左侧：与右侧 submit 按钮拼成一个完整胶囊 */
+  border: 1px solid var(--color-border);
+  border-right: none;
+  border-radius: var(--radius-full) 0 0 var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+/* header variant 玻璃态：仅作用于 box（不含 submit） */
+.search-box--header {
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.search-box:focus-within {
+  border-color: var(--color-primary);
+  /* 仅在左侧绘制 focus halo（不重叠到 submit 那一侧） */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline: none;
+}
+
+/* ── Icon ──────────────────────────────────────────── */
+
+.search-box__icon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  transition: color 0.15s ease;
+}
+
+.search-box:focus-within .search-box__icon {
+  color: var(--color-primary);
+}
+
+/* ── Input ─────────────────────────────────────────── */
+
+.search-box__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}
+
+.search-box__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* 去掉浏览器原生 search input 的清除按钮（我们用自定义 X） */
+.search-box__input::-webkit-search-decoration,
+.search-box__input::-webkit-search-cancel-button,
+.search-box__input::-webkit-search-results-button,
+.search-box__input::-webkit-search-results-decoration {
+  appearance: none;
+  display: none;
+}
+
+/* ── Clear (X) ─────────────────────────────────────── */
+
+.search-box__clear {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-thumb-size);
+  height: var(--comp-thumb-size);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.search-box__clear:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* ── Submit（独立在方框外） ───────────────────────── */
+
+.search-box__submit {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  justify-content: center;
+  align-items: center;
+  height: var(--comp-input-height);
+  /* submit 紧贴 box 右侧外，仅圆角右半部分（与 box 左侧圆角拼成完整胶囊） */
+  padding: 0 var(--space-md);
+  border: 1px solid var(--color-primary);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.search-box__submit:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+
+.search-box__submit:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.search-box__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.search-box__submit-icon {
+  display: none;
+}
+
+/* ── Mobile: 隐藏 submit 文字、显示 submit 图标 ─────── */
+
+@media (width <= 767px) {
+  .search-box-wrap--header {
+    max-width: 100%;
+  }
+  .search-box__submit {
+    width: var(--comp-input-height);
+    padding: 0;
+  }
+  .search-box__submit-text {
+    display: none;
+  }
+  .search-box__submit-icon {
+    display: block;
+  }
+}
+
+/* ── TV: 放大字号与图标 ────────────────────────────── */
+
+[data-device="tv"] .search-box,
+[data-device="tv"] .search-box__submit {
+  height: var(--comp-input-height-tv, calc(var(--comp-input-height) * 1.4));
+  font-size: var(--text-base);
+}
+
+[data-device="tv"] .search-box {
+  padding: 0 var(--space-md);
+}
+
+[data-device="tv"] .search-box__icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+[data-device="tv"] .search-box__submit {
+  padding: 0 var(--space-lg);
+}
+
+/* ── Reduced motion ────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .search-box,
+  .search-box__clear,
+  .search-box__submit,
+  .search-box__icon {
+    transition: none;
+  }
+}

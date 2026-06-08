@@ -1,0 +1,70 @@
+/* ============================================================
+   Home — 首页样式 v2
+   单页布局：Hero + Categories + 8 行横滚数据
+   筛选相关样式已迁出至 /browse 独立页面（src/pages/Browse/Browse.css）
+   7 客户端 · 3 主题感知
+   ============================================================ */
+
+.home-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+  padding: 0 var(--space-md);
+  background-color: var(--color-background);
+  box-sizing: border-box;
+}
+
+/* 桌面端 hero 左侧额外留出 = 滚动条宽度的空间，避免滚动条与 hero 标题/海报重叠 */
+@media (width >= 640px) {
+  .home-page {
+    padding-left: calc(var(--space-md) + var(--scrollbar-width));
+  }
+}
+
+/* ── Rows container ──────────────────────────────────── */
+
+.home-rows {
+  padding: var(--space-md) 0 var(--space-lg);
+}
+
+/* ── Empty / Error ──────────────────────────────────── */
+
+.home-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-3xl) var(--space-md);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.home-empty-icon {
+  opacity: 0.4;
+}
+
+.home-empty-text {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* ── Mobile ──────────────────────────────────────────── */
+
+@media (width <= 639px) {
+  .home-page {
+    padding-left: 0;
+  }
+}
+
+/* ── TV ──────────────────────────────────────────────── */
+
+/* ── Reduced motion ──────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

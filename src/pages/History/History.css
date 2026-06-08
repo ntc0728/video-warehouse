@@ -1,0 +1,198 @@
+/* History — 历史页 */
+.history-page {
+  padding: var(--space-md);
+}
+
+.category-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+.category-tab {
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  box-shadow: 0 0 0 0 transparent;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.category-tab:hover {
+  background: var(--color-hover-bg);
+}
+.category-tab.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  box-shadow: 0 1px 3px var(--color-primary-shadow);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+.history-header h1 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.history-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.history-btn:hover {
+  background: var(--color-hover-bg);
+}
+.history-btn--danger {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+.history-btn--danger:hover {
+  background: rgba(255,77,79,0.1);
+}
+
+.history-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+.history-search {
+  display: flex;
+  flex: 1;
+  gap: var(--space-xs);
+  align-items: center;
+  min-width: var(--layout-vol-slider-w);
+  max-width: var(--layout-channel-list-w-md);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.history-search svg {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+.history-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  outline: none;
+}
+.history-search button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.history-select-all {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) 0 var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+.history-select-all:hover {
+  color: var(--color-text);
+}
+
+.history-group {
+  margin-bottom: var(--space-lg);
+}
+.history-group-title {
+  margin: 0 0 var(--space-sm);
+  padding-bottom: var(--space-xs);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--space-sm);
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.history-card {
+  position: relative;
+}
+.history-card.selected .video-card {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+.history-card-check {
+  position: absolute;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 5;
+  display: flex;
+  padding: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  cursor: pointer;
+}
+.history-card-del {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  z-index: 5;
+  display: flex;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.5);
+  color: rgba(255,255,255,0.7);
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+.history-card:hover .history-card-del,
+.history-card-del:hover {
+  opacity: 1;
+}
+.history-card-del:hover {
+  color: #ff4d4f;
+}
+
+.history-sentinel {
+  height: var(--comp-thumb-size);
+}
+
+@media (width <= 767px) {
+  .history-page {
+  padding: var(--space-sm);
+}
+  .history-search {
+  max-width: none;
+}
+  .history-card-del {
+  opacity: 1;
+}
+}

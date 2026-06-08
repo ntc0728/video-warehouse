@@ -1,0 +1,59 @@
+# 依赖
+node_modules
+
+# 构建产物
+dist
+build
+*.tsbuildinfo
+vite.config.d.ts
+
+# 环境变量
+.env
+.env.local
+
+# 日志
+*.log
+
+# Cloudflare Worker
+.wrangler
+
+# 代码图谱
+.codegraph
+
+# AI 工具本地配置
+.claude/
+.reasonix/
+.trae-cn/
+
+# Trae 本地生成文档
+.trae/documents/
+.trae/specs/
+
+# 备份
+backups/
+
+# 脚本产物
+output/
+
+# 测试数据
+epg_test.xml
+data/iptv.m3u
+
+# 评审产物
+docs/css-component-review-report.docx
+docs/css-standards.md
+docs/responsive-guidelines.md
+
+# 旧规则文件
+CLAUDE.md
+rules.md
+
+# 截图
+shots/
+ScreenShot_*.png
+
+# 构建和 lint 输出
+build-final.txt
+lint-final.txt
+lint-output.txt
+lintcss-final.txt

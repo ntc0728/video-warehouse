@@ -1,0 +1,333 @@
+/**
+ * ��Ƶ���ݷ���
+ * �����Զ����ƵԴ��CMS �ɼ�վ API����ȡ��Ƶ�б�������
+ * ͨ������ httpClient��axios��ͳһ�������� / ��ʱ / ����
+ */
+import type { Video, VideoType } from '@/types/video';
+import { getVideoSources, getIPTVSources } from './sourceService';
+import { getJSON } from './httpClient';
+
+export { getVideoSources };
+
+interface SourceStatus {
+  index: number;
+  name: string;
+  available: boolean;
+  error?: string;
+}
+
+/**
+ * CMS 视频源返回的单条记录原始结构（不同 CMS 字段命名略有差异，全部用可选 + 容错处理）
+ */
+interface CMSVideoItem {
+  vod_id: string | number;
+  vod_name?: string;
+  vod_pic?: string;
+  vod_type?: string | number;
+  vod_year?: string;
+  vod_area?: string;
+  vod_content?: string;
+  vod_class?: string;
+  vod_actor?: string;
+  vod_director?: string;
+  vod_duration?: string;
+  vod_url?: string;
+  vod_play_from?: string;
+  vod_play_url?: string;
+}
+
+/**
+ * CMS 视频源列表/详情接口的顶层响应结构
+ */
+interface CMSListResponse {
+  list?: CMSVideoItem[];
+  page?: number;
+  total?: number;
+}
+
+const VOD_TYPE_MAP: Record<number, VideoType> = {
+  1: 'movie',
+  2: 'tv',
+  3: 'variety',
+  4: 'anime',
+};
+
+function mapVodType(raw: string | number | undefined | null): VideoType | undefined {
+  if (typeof raw === 'number') return VOD_TYPE_MAP[raw];
+  if (typeof raw === 'string') {
+    const num = parseInt(raw, 10);
+    if (!isNaN(num)) return VOD_TYPE_MAP[num];
+    if (raw === 'movie' || raw === 'tv' || raw === 'variety' || raw === 'anime') {
+      return raw;
+    }
+  }
+  return undefined;
+}
+
+export async function checkVideoSourceAvailability(
+  sourceIndex: number,
+  timeout: number = 8000
+): Promise<SourceStatus> {
+  const sources = await getVideoSources();
+  const source = sources[sourceIndex];
+
+  if (!source) {
+    return { index: sourceIndex, name: 'δ֪', available: false, error: '��ƵԴ���ò�����' };
+  }
+
+  try {
+    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout });
+    if (data && Array.isArray(data.list)) {
+      return { index: sourceIndex, name: source.name, available: true };
+    }
+    return { index: sourceIndex, name: source.name, available: false, error: '��Ӧ��ʽ�쳣' };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      index: sourceIndex,
+      name: source.name,
+      available: false,
+      error: message || '未知错误',
+    };
+  }
+}
+
+export interface SourceCheckResult extends SourceStatus {
+  videoCount?: number;
+  elapsed: number;
+}
+
+export async function checkAllVideoSources(
+  concurrency: number = 5,
+  timeout: number = 10000
+): Promise<{
+  results: SourceCheckResult[];
+  totalAvailable: number;
+  totalSources: number;
+}> {
+  const sources = await getVideoSources();
+  if (sources.length === 0) return { results: [], totalAvailable: 0, totalSources: 0 };
+
+  const results: SourceCheckResult[] = [];
+  let index = 0;
+
+  async function worker(): Promise<void> {
+    while (index < sources.length) {
+      const i = index++;
+      const start = Date.now();
+      const status = await checkVideoSourceAvailability(i, timeout);
+      const elapsed = Date.now() - start;
+
+      let videoCount: number | undefined;
+      if (status.available) {
+        try {
+          const result = await fetchVideosBySource(i);
+          if (!result.error) videoCount = result.videos.length;
+        } catch {
+          // 单个数据源失败不影响其他源的统计
+        }
+      }
+      results.push({ ...status, videoCount, elapsed });
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, sources.length) }, () => worker());
+  await Promise.all(workers);
+  results.sort((a, b) => a.index - b.index);
+
+  return {
+    results,
+    totalAvailable: results.filter((r) => r.available).length,
+    totalSources: results.length,
+  };
+}
+
+export async function findAvailableVideoSource(
+  preferredIndex?: number,
+  timeout: number = 8000
+): Promise<{ index: number; name: string } | null> {
+  const sources = await getVideoSources();
+  if (sources.length === 0) return null;
+
+  if (preferredIndex !== undefined && preferredIndex >= 0 && preferredIndex < sources.length) {
+    const status = await checkVideoSourceAvailability(preferredIndex, timeout);
+    if (status.available) return { index: preferredIndex, name: sources[preferredIndex].name };
+  }
+
+  for (let i = 0; i < sources.length; i++) {
+    if (i === preferredIndex) continue;
+    const status = await checkVideoSourceAvailability(i, timeout);
+    if (status.available) return { index: i, name: sources[i].name };
+  }
+
+  if (preferredIndex !== undefined && preferredIndex >= 0 && preferredIndex < sources.length) {
+    return { index: preferredIndex, name: sources[preferredIndex].name };
+  }
+  return sources.length > 0 ? { index: 0, name: sources[0].name } : null;
+}
+
+function mapVideoItem(item: CMSVideoItem): Video {
+  return {
+    id: String(item.vod_id),
+    title: item.vod_name ?? '',
+    cover: item.vod_pic ?? '',
+    type: mapVodType(item.vod_type) ?? 'movie',
+    year: item.vod_year ? parseInt(item.vod_year) : undefined,
+    region: item.vod_area,
+    description: item.vod_content,
+    tags: item.vod_class ? item.vod_class.split(',').filter(Boolean) : [],
+    actors: item.vod_actor ? item.vod_actor.split(',').filter(Boolean) : [],
+    director: item.vod_director,
+    duration: item.vod_duration ? parseInt(item.vod_duration) : undefined,
+    sources: item.vod_url ? [{
+      id: 'default', name: 'Ĭ��', url: item.vod_url.split(',')[0], type: 'mp4' as const,
+    }] : [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+export async function fetchVideosBySource(sourceIndex: number): Promise<{
+  videos: Video[];
+  sourceInfo?: { index: number; name: string };
+  error?: string;
+}> {
+  const sources = await getVideoSources();
+  const source = sources[sourceIndex];
+  if (!source) return { videos: [], error: 'δ�ҵ����õ���ƵԴ' };
+
+  try {
+    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000 });
+    if (data.list && Array.isArray(data.list)) {
+      return {
+        videos: data.list.map(mapVideoItem),
+        sourceInfo: { index: sourceIndex, name: source.name },
+      };
+    }
+    return {
+      videos: [],
+      sourceInfo: { index: sourceIndex, name: source.name },
+      error: `����Դ ${source.name} ��Ӧ��ʽ�쳣`,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Failed to fetch videos from ${source.name}:`, error);
+    return {
+      videos: [],
+      sourceInfo: { index: sourceIndex, name: source.name },
+      error: `无法连接到 ${source.name}：${message || '未知错误'}`,
+    };
+  }
+}
+
+function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: Video['sources']; episodes: Video['episodes'] } {
+  const fromList = vodPlayFrom ? vodPlayFrom.split('$$$').filter(Boolean) : [];
+  const urlList = vodPlayUrl ? vodPlayUrl.split('$$$').filter(Boolean) : [];
+  if (fromList.length === 0 || urlList.length === 0) return { sources: [], episodes: undefined };
+
+  const allSources: Video['sources'] = [];
+  const episodesMap = new Map<string, { title: string; sources: Video['sources'] }>();
+
+  for (let i = 0; i < fromList.length; i++) {
+    const sourceName = fromList[i].trim() || `Դ${i + 1}`;
+    const urlStr = urlList[i] || '';
+    const episodes = urlStr.split('#').filter(Boolean);
+    if (episodes.length === 0) continue;
+
+    if (episodes.length === 1) {
+      const parts = episodes[0].split('$');
+      const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      if (url) {
+        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
+        allSources.push({ id: `source-${i}`, name: sourceName, url, type, isDefault: allSources.length === 0 });
+      }
+    } else {
+      for (let j = 0; j < episodes.length; j++) {
+        const parts = episodes[j].split('$');
+        const epTitle = parts.length > 1 ? parts[0] : `��${j + 1}��`;
+        const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+        if (!url) continue;
+        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
+        const sourceId = `source-${i}-ep-${j}`;
+        const epKey = `${epTitle}-${j}`;
+        if (!episodesMap.has(epKey)) episodesMap.set(epKey, { title: epTitle, sources: [] });
+        episodesMap.get(epKey)!.sources.push({ id: sourceId, name: sourceName, url, type, isDefault: i === 0 });
+      }
+    }
+  }
+
+  let episodes: Video['episodes'] | undefined;
+  if (episodesMap.size > 0) {
+    episodes = Array.from(episodesMap.entries()).map(([key, ep], index) => ({
+      id: key, title: ep.title, number: index + 1, sources: ep.sources,
+    }));
+  }
+  return { sources: allSources, episodes };
+}
+
+export async function fetchVideoDetail(sourceIndex: number, videoId: string): Promise<Video | null> {
+  const sources = await getVideoSources();
+  const source = sources[sourceIndex];
+  if (!source) return null;
+
+  try {
+    const detailUrl = `${source.api}?ac=detail&vod_id=${videoId}`;
+    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
+    if (data.list && Array.isArray(data.list) && data.list.length > 0) {
+      const item = data.list[0];
+      const { sources: playSources, episodes } = parsePlaySources(
+        item.vod_play_from || '', item.vod_play_url || ''
+      );
+      return { ...mapVideoItem(item), sources: playSources, episodes };
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch video detail from ${source.name}:`, error);
+  }
+  return null;
+}
+
+export async function searchVideoByTitle(title: string, year?: number): Promise<Video | null> {
+  const sources = await getVideoSources();
+  if (sources.length === 0) return null;
+
+  let sourceIndex = 0;
+  try {
+    const stored = localStorage.getItem('app-settings');
+    if (stored) sourceIndex = JSON.parse(stored)?.state?.videoSourceIndex ?? 0;
+  } catch { /* ignore */ }
+
+  const searchTerm = year ? `${title} ${year}` : title;
+
+  const trySearch = async (index: number): Promise<Video | null> => {
+    const source = sources[index];
+    if (!source) return null;
+    try {
+      const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
+      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+      if (!data.list || !Array.isArray(data.list) || data.list.length === 0) return null;
+      const match = data.list.find((item: CMSVideoItem) => {
+        const t = item.vod_name || '';
+        return t === title || t.includes(title) || title.includes(t);
+      });
+      return match ? mapVideoItem(match) : mapVideoItem(data.list[0]);
+    } catch {
+      return null;
+    }
+  };
+
+  let result = await trySearch(sourceIndex);
+  if (result) return result;
+
+  for (let i = 0; i < Math.min(sources.length, 5); i++) {
+    if (i === sourceIndex) continue;
+    result = await trySearch(i);
+    if (result) return result;
+  }
+  return null;
+}
+
+export async function fetchIPTVUrl(sourceIndex: number): Promise<string> {
+  const sources = await getIPTVSources();
+  const source = sources[sourceIndex];
+  return source?.url || sources[0]?.url || '';
+}

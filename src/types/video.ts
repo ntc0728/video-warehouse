@@ -1,0 +1,63 @@
+/**
+ * 视频相关类型定义
+ * 定义视频、剧集、播放源、筛选条件等核心数据结构
+ */
+
+/** 视频类型：电影、剧集、综艺、动漫 */
+export type VideoType = 'movie' | 'tv' | 'variety' | 'anime';
+
+/** 播放源类型：MP4直链、HLS流、DASH流、网盘 */
+export type SourceType = 'mp4' | 'm3u8' | 'dash' | 'pan';
+
+/** 视频播放源，表示一个可播放的视频地址 */
+export interface VideoSource {
+  id: string;
+  name: string;
+  url: string;
+  type: SourceType;
+  quality?: string;
+  isDefault?: boolean;
+}
+
+/** 剧集信息，每集可包含多个播放源 */
+export interface Episode {
+  id: string;
+  title: string;
+  number: number;
+  cover?: string;
+  sources: VideoSource[];
+}
+
+/** 视频实体，包含基本信息、播放源和剧集列表 */
+export interface Video {
+  id: string;
+  title: string;
+  cover: string;
+  type: VideoType;
+  year?: number;
+  region?: string;
+  tags: string[];
+  description?: string;
+  actors: string[];
+  director?: string;
+  duration?: number;
+  sources: VideoSource[];
+  episodes?: Episode[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** 视频导入数据格式，支持字段映射 */
+export interface VideoImportData {
+  videos: Video[];
+  mapping?: Record<string, string>;
+}
+
+/** 视频筛选条件，支持按类型、年份、地区、标签和关键词过滤 */
+export interface VideoFilter {
+  type?: VideoType;
+  year?: number;
+  region?: string;
+  tags?: string[];
+  keyword?: string;
+}

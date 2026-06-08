@@ -1,0 +1,56 @@
+.iptv-player-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+.iptv-player-container {
+  position: relative;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+.iptv-player-container .up-universal-player {
+  width: 100%;
+  height: 100%;
+}
+
+.iptv-player-info {
+  flex-shrink: 0;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.info-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-2xs) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.info-row svg {
+  width: var(--space-md);
+  height: var(--space-md);
+  opacity: 0.6;
+}
+
+.info-row .label {
+  min-width: var(--space-2xl);
+  color: var(--color-text-tertiary);
+}
+
+.info-row .value {
+  color: var(--color-text);
+}

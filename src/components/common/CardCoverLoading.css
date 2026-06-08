@@ -1,0 +1,192 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CardCoverLoading — 卡片封面 Loading
+
+   设计：
+   - KinoTV 抠图：background-clip:text + 金/蓝/橙渐变 + 衬线字体
+   - 进度条：复用 AppLoading slide+stripes 动画
+   - 适配：Mobile / Desktop / TV 三套尺寸
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.card-cover-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  /* 调大：让 KinoTV 文字与下方进度条之间有更舒展的呼吸感（原 --space-sm → --space-lg） */
+  gap: var(--space-lg);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-sm);
+  background: var(--color-placeholder);
+  background-image: linear-gradient(
+    135deg,
+    var(--color-placeholder-shimmer-a) 0%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 100%
+  );
+  background-size: 200% 200%;
+  overflow: hidden;
+  animation: card-cover-loading-bg 4s ease-in-out infinite;
+  box-sizing: border-box;
+}
+
+@keyframes card-cover-loading-bg {
+  0%   {
+  background-position: 0% 0%;
+}
+  50%  {
+  background-position: 100% 100%;
+}
+  100% {
+  background-position: 0% 0%;
+}
+}
+
+/* ── 抠图层：KinoTV 文字 ─────────────────────────────────── */
+.card-cover-loading__brand {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+}
+
+.card-cover-loading__brand-text {
+  background: linear-gradient(
+    180deg,
+    #f5c87a 0%,
+    #e8a04e 30%,
+    #2a3a78 65%,
+    #ff7a3d 100%
+  );
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: clamp(var(--text-xl), 1rem + 0.9vw, var(--text-3xl));
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  animation: card-cover-loading-pulse 2.4s ease-in-out infinite;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.12))
+    drop-shadow(0 0 6px rgba(0, 0, 0, 0.08));
+}
+
+@keyframes card-cover-loading-pulse {
+  0%, 100% {
+  opacity: 0.85;
+  transform: translateY(0);
+}
+  50%      {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+}
+
+/* ── 进度条 ─────────────────────────────────────────────────────── */
+.card-cover-loading__progress {
+  position: relative;
+  width: 60%;
+  height: var(--space-3xs);
+  border-radius: var(--radius-full);
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+
+.card-cover-loading__progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+  background-image: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: var(--space-sm) var(--space-sm);
+  animation:
+    card-cover-loading-slide 1.4s ease-in-out infinite,
+    card-cover-loading-stripes 0.7s linear infinite;
+}
+
+@keyframes card-cover-loading-slide {
+  0%   {
+  transform: translateX(-100%);
+}
+  100% {
+  transform: translateX(350%);
+}
+}
+
+@keyframes card-cover-loading-stripes {
+  0%   {
+  background-position: 0 0;
+}
+  100% {
+  background-position: var(--space-sm) 0;
+}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Dark Theme — 抠图渐变与装饰微调
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .card-cover-loading__brand-text {
+  background: linear-gradient(
+    180deg,
+    #f8d99a 0%,
+    #f0b465 30%,
+    #4a5fa8 65%,
+    #ff8a4d 100%
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.08))
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.12));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TV 端 — 放大字号与装饰
+   ═══════════════════════════════════════════════════════════════════════ */
+.card-cover-loading--tv .card-cover-loading__brand-text {
+  font-size: clamp(var(--text-2xl), 1.5rem + 1.2vw, var(--text-3xl));
+  letter-spacing: 0.16em;
+}
+
+.card-cover-loading--tv .card-cover-loading__progress {
+  width: 55%;
+  height: var(--space-2xs);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Mobile — 紧凑尺寸
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width <= 767px) {
+  .card-cover-loading__brand-text {
+  font-size: var(--text-base);
+  letter-spacing: 0.1em;
+}
+
+  .card-cover-loading__progress {
+  width: 50%;
+}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   可访问性：减少动画
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .card-cover-loading,
+  .card-cover-loading__brand-text,
+  .card-cover-loading__progress-bar {
+  animation: none;
+}
+}
