@@ -29,9 +29,19 @@
   max-width: min(var(--layout-searchbox-browse-max-w), 100%);
 }
 
+/* iptv / 收藏 / 历史：搜索框占满工具栏剩余空间（与其它按钮共享一行） */
+.search-box-wrap--iptv {
+  max-width: none;
+  flex: 1 1 auto;
+  /* 父级 toolbar 多为 flex-wrap: wrap,加 min-width 防止被 chip
+     挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
+  min-width: var(--comp-input-min-w, 200px);
+}
+
 /* ── 内部方框（仅 icon + input + clear） ─────────── */
 
 .search-box {
+  position: relative;
   display: flex;
   flex: 1;
   gap: var(--space-xs);
@@ -55,10 +65,14 @@
   backdrop-filter: blur(8px);
 }
 
+/* iptv variant：独立使用 box（无 submit），完整圆角 + 保留右边框 */
+.search-box--iptv {
+  border-right: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
 .search-box:focus-within {
   border-color: var(--color-primary);
-  /* 仅在左侧绘制 focus halo（不重叠到 submit 那一侧） */
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
   outline: none;
 }
 
@@ -77,16 +91,24 @@
 /* ── Input ─────────────────────────────────────────── */
 
 .search-box__input {
-  flex: 1;
+  /* 关键:width:0 + flex:1 1 0 让 input 起始宽度 0,完全由 flex 算法分配剩余空间。
+     这样 input 内容(text)变化时不会"撑开"容器,彻底消除 flex 重算抖动。 */
+  width: 0;
+  flex: 1 1 0;
   min-width: 0;
   height: 100%;
   padding: 0;
+  /* 右侧预留 clear button 空间,避免 X 出现/消失导致 input 宽度抖动 */
+  padding-right: var(--comp-thumb-size);
   border: none;
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
   font-size: inherit;
   outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-box__input::placeholder {

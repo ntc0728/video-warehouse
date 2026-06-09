@@ -14,11 +14,10 @@ import './IPTVChannelCard.css';
 
 interface IPTVChannelCardProps {
   channel: IPTVChannel;
-  index?: number;
   hideFavorite?: boolean;
 }
 
-const IPTVChannelCard = memo(function IPTVChannelCard({ channel, index = 0, hideFavorite = false }: IPTVChannelCardProps) {
+const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false }: IPTVChannelCardProps) {
   const navigate = useNavigate();
   // 使用 selector 单独订阅需要的字段,避免每张卡片都订阅整个 IPTVStore。
   // 频道列表 N 张卡片同时订阅任一字段变化会触发 N 次重渲染。
@@ -56,7 +55,10 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, index = 0, hide
     }
   }, [handlePlay]);
 
-  const staggerDelay = { animationDelay: `${index * 0.012}s` };
+  // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
+  // 末尾卡片等数百毫秒才淡入"的问题。首屏 60 张几乎同时淡入,整体节奏仍
+  // 由 cardFadeIn (0.18s) 提供。
+  const staggerDelay = { animationDelay: '0.012s' };
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
 

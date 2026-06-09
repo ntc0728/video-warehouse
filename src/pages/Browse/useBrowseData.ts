@@ -11,6 +11,10 @@
  * - 单一来源：URL 是筛选状态的真相（refresh / 分享 / 前进后退 全部恢复）
  * - store 仅作为内存缓存层：discoverResults / discoverPagination 由 store 持有
  * - 重置语义：filterSig 变化 → fetchDiscover(1, { reset: true }) 强制覆盖旧数据
+ *
+ * v5:移除 skeletonBatches 计数与相关 effect（v3+v4 引入的内联骨架占位图已废弃）。
+ *   懒加载 loading 态由 `isLoadingMore` 布尔直接驱动 UI spinner,
+ *   不再有 "在飞批次数" 概念,加载成功/失败都同帧结束(spinner 消失)。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -18,7 +22,7 @@ import type { FilterBarValue } from '@/components/FilterBar';
 import { useTMDBStore } from '@/stores';
 import { buildFilterSig } from '@/lib/filterSig';
 import { SORT_OPTIONS } from './constants';
-import { FILTER_DEBOUNCE_MS, LOAD_MORE_THROTTLE_MS } from './constants';
+import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
 /** 把 FilterBarValue 转成 store 需要的 TMDBFilterOptions */
@@ -54,6 +58,7 @@ export function useBrowseData() {
   const {
     discoverResults,
     discoverPagination,
+    discoverLastStatus,
     loading,
     errors,
     setFilter,
@@ -165,16 +170,23 @@ export function useBrowseData() {
   );
 
   // ── 5. 懒加载 ──────────────────────────────────────
-  const loadMoreRef = useRef<number>(0);  // 上次触发时间戳
   const hasMore = discoverPagination.page < discoverPagination.totalPages;
-  const isLoadingMore = loading.discover && discoverResults.length > 0;
+  /**
+   * "正在加载更多"的判定(v5):
+   * - loading.discover && discoverResults.length > 0  → 仍处于请求飞行中
+   * - discoverLastStatus === 'success'               → 最近一次请求已成功,spinner 该走
+   * - discoverLastStatus === 'error'                 → 已失败,spinner 立即消失(无缓冲)
+   *
+   * 区别于 v4:不再有"占位骨架"概念,spinner 直接由 isLoadingMore 驱动
+   *   - 成功:isLoadingMore 翻 false 同一帧 spinner 消失(无 300ms 兜底)
+   *   - 失败:同 success,spinner 立即消失,卡片数量保持不变
+   */
+  const isLoadingMore =
+    loading.discover && discoverResults.length > 0 && discoverLastStatus !== 'success';
 
   const loadMore = useCallback(() => {
     if (loading.discover) return;
     if (!hasMore) return;
-    const now = Date.now();
-    if (now - loadMoreRef.current < LOAD_MORE_THROTTLE_MS) return;
-    loadMoreRef.current = now;
 
     const nextPage = discoverPagination.page + 1;
     if (urlQ) {
@@ -187,12 +199,29 @@ export function useBrowseData() {
     }
   }, [loading.discover, hasMore, discoverPagination.page, urlQ, filterValue.category, fetchDiscover, fetchTopRated]);
 
+  /**
+   * 重试当前筛选条件下的首次加载（清空错误、强制 reset 拉 page=1）
+   * 用于错误页"重试"按钮。无副作用,可在任意时刻调用,内部走 store 异步流程。
+   */
+  const retry = useCallback(() => {
+    if (loading.discover) return;
+    setFilter(toStoreFilter(filterValue));
+    if (urlQ) {
+      void useTMDBStore.getState().search(urlQ, 1, { reset: true });
+    } else if (filterValue.category === 'top') {
+      void fetchTopRated(1, { reset: true });
+    } else {
+      void fetchDiscover(1, { reset: true });
+    }
+  }, [loading.discover, filterValue, urlQ, setFilter, fetchDiscover, fetchTopRated]);
+
   return {
     filterValue,
     updateFilter,
     isUpdating,
     isRefreshing,
     loadMore,
+    retry,
     hasMore,
     isLoadingMore,
     discoverResults,

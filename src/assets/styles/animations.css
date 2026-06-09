@@ -239,3 +239,14 @@
 [data-theme="dark"] .ripple-container .ripple-effect {
   background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
+
+/* ── 通用懒加载文字态(全平台使用) ──────────────────────
+   - padding 给哨兵下方留出滚动空间
+   - text-align: center + tertiary 色与"次要信息"语义一致
+   - 所有懒加载页(IPTV / Browse / Collections / History)共用此样式 */
+.load-more-hint {
+  padding: var(--space-md);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-base);
+  text-align: center;
+}

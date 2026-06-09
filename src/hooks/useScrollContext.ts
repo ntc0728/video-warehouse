@@ -6,7 +6,7 @@
  * 滚动容器 ref，用于：
  *  - useScrollRestore：保存/恢复滚动位置
  *  - 主动调用 scrollTo（IPTV 切换分组、usePagination 跳页等）
- *  - BackToTop：监听 scrollTop
+ *  - BackToTopButton：监听 scrollTop,超过阈值时显示按钮
  *
  * 替换旧的 `document.querySelector('main')` 死代码 — 项目中根本不存在 <main> 元素。
  */

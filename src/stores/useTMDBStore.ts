@@ -168,6 +168,17 @@ interface TMDBStoreState {
   // ---- Discover ----
   discoverResults: TMDBVideoItem[];
   discoverPagination: { page: number; totalPages: number; totalResults: number };
+  /**
+   * 最近一次 discover / search / top-rated 懒加载请求的最终状态
+   * - null      : 从未发起过请求（初始态）
+   * - 'pending' : 请求进行中（loading.discover === true 时通常为此态）
+   * - 'success' : 最近一次请求已成功拿到数据
+   * - 'error'   : 最近一次请求失败
+   *
+   * 用途：让骨架移除条件与"API 响应成功"对齐,避免快速响应(< 100ms)
+   * 或请求失败时骨架闪烁。
+   */
+  discoverLastStatus: 'pending' | 'success' | 'error' | null;
 
   // ---- Filters ----
   filterOptions: TMDBFilterOptions;
@@ -404,6 +415,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   discoverResults: [],
   discoverPagination: { page: 1, totalPages: 0, totalResults: 0 },
+  discoverLastStatus: null,
 
   filterOptions: { ...DEFAULT_FILTER_OPTIONS },
 
@@ -765,6 +777,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       searchQuery: query,
       loading: { ...s.loading, discover: true },
       errors: { ...s.errors, discover: null },
+      // 进入 pending:UI 侧用此位阻止在 API 响应前移除骨架
+      discoverLastStatus: 'pending',
     }));
     try {
       const data = await searchMulti(query, page);
@@ -784,11 +798,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           totalResults: data.total_results,
         },
         loading: { ...s.loading, discover: false },
+        discoverLastStatus: 'success',
       }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Search failed' },
+        discoverLastStatus: 'error',
       }));
     }
   },
@@ -797,7 +813,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     // 排行榜（top）分类请使用 fetchTopRated（专用 top_rated 端点）
     const { filterOptions } = get();
     const forceReset = opts?.reset === true;
-    set((s) => ({ loading: { ...s.loading, discover: true }, errors: { ...s.errors, discover: null } }));
+    set((s) => ({
+      loading: { ...s.loading, discover: true },
+      errors: { ...s.errors, discover: null },
+      discoverLastStatus: 'pending',
+    }));
     try {
       let results: TMDBVideoItem[] = [];
       let totalPages = 0;
@@ -834,11 +854,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
             : results,
         discoverPagination: { page, totalPages, totalResults },
         loading: { ...s.loading, discover: false },
+        discoverLastStatus: 'success',
       }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Discover failed' },
+        discoverLastStatus: 'error',
       }));
     }
   },
@@ -846,7 +868,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   /** 排行榜分类：直接调 top_rated 端点，合并 movie + tv，按 vote_average.desc 排序 */
   fetchTopRated: async (page = 1, opts?: { reset?: boolean }) => {
     const forceReset = opts?.reset === true;
-    set((s) => ({ loading: { ...s.loading, discover: true }, errors: { ...s.errors, discover: null } }));
+    set((s) => ({
+      loading: { ...s.loading, discover: true },
+      errors: { ...s.errors, discover: null },
+      discoverLastStatus: 'pending',
+    }));
     try {
       const [movieData, tvData] = await Promise.all([
         fetchTopRatedMovies(),
@@ -871,11 +897,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           totalResults: movieData.total_results + tvData.total_results,
         },
         loading: { ...s.loading, discover: false },
+        discoverLastStatus: 'success',
       }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Top rated fetch failed' },
+        discoverLastStatus: 'error',
       }));
     }
   },

@@ -7,7 +7,6 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 0 var(--space-3xl);
   background-color: var(--color-background);
   animation: browse-fade-in 0.25s ease both;
 }
@@ -103,29 +102,8 @@
 }
 
 /* ── Grid ─────────────────────────────────────────── */
-
-.browse-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  gap: var(--grid-gap, var(--space-md));
-  width: max-content;
-  /* grid 收缩到内容宽 */
-  max-width: 100%;
-  /* 父容器窄时不溢出 */
-  margin: 0 auto;
-  /* grid 水平居中，左右空白对称 */
-  padding: var(--space-md) var(--space-lg) var(--space-xl);
-  animation: browse-grid-fade 0.3s ease both;
-}
-
-@keyframes browse-grid-fade {
-  from {
-  opacity: 0.4;
-}
-  to   {
-  opacity: 1;
-}
-}
+/* 视觉契约已上提到 @/components/VideoCard/VideoCard.css 的 .video-card-grid,
+   Browse / Collections / History 三处 grid 容器共用同一份样式。 */
 
 /* ── Skeleton（首次加载占位） ──────────────────────── */
 
@@ -184,6 +162,23 @@
   font-size: var(--text-sm);
 }
 
+.browse-page__error-retry {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.browse-page__error-retry:hover {
+  opacity: 0.85;
+}
+
 /* ── LoadMore ─────────────────────────────────────── */
 
 .browse-loadmore {
@@ -191,7 +186,6 @@
   flex-direction: column;
   gap: var(--space-md);
   align-items: center;
-  padding: var(--space-md) var(--space-md);
 }
 
 /* "下滑加载更多" — 静态文字态，2.4s 呼吸动画（0.55↔0.85） */
@@ -219,16 +213,10 @@
   }
 }
 
-/* 加载中骨架占位：与 grid 列宽对齐，避免快速滚动时 grid 末端视觉断档 */
-.browse-loadmore-skeleton {
-  width: 100%;
-  max-width: 100%;
-  padding: 0;
-}
-
-.browse-loadmore-skeleton .skeleton-grid {
-  padding: 0;
-}
+/* 加载中骨架占位:v4 已移除独立 .browse-loadmore-skeleton 容器,
+   骨架由 .browse-grid 内联渲染(紧跟真实卡片,实现接龙)。
+   旧的 .browse-loadmore-skeleton / .browse-loadmore-skeleton .skeleton-grid
+   样式已废弃,本文件不再持有。 */
 
 .browse-loadmore-loading {
   display: inline-flex;
@@ -260,12 +248,6 @@
   opacity: 0.7;
 }
 
-.browse-loadmore-sentinel {
-  width: 100%;
-  height: var(--comp-thumb-size);
-  pointer-events: none;
-}
-
 /* ═══════════════════════════════════════════════════════════════════════
    响应式断点
    ═══════════════════════════════════════════════════════════════════════ */
@@ -291,14 +273,14 @@
   font-size: var(--text-xs);
 }
 
-  .browse-grid {
-  padding: var(--space-sm) var(--space-md) var(--space-lg);
+  .video-card-grid {
+  padding: var(--space-sm) var(--space-md) 0;
 }
 }
 
 /* ── Large Desktop (≥ 1920) ──────────────────────── */
 @media (width >= 1920px) {
-  .browse-grid {
+  .video-card-grid {
   gap: var(--space-lg);
 }
 }
@@ -321,7 +303,7 @@
   font-size: var(--text-base);
 }
 
-.browse-page--tv .browse-grid {
+[data-device="tv"] .video-card-grid {
   gap: var(--space-lg);
   padding: var(--space-lg) var(--space-xl);
 }
@@ -329,7 +311,7 @@
 /* ── Reduced motion ──────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .browse-page,
-  .browse-grid,
+  .video-card-grid,
   .browse-loadmore-spinner,
   .browse-loadmore-hint {
     animation: none !important;

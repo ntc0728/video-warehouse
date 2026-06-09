@@ -366,7 +366,8 @@ main {
   gap: var(--grid-gap);
   width: max-content;
   max-width: 100%;
-  margin: 0 auto;
+  /* 不足一行时不再居中,沿父容器左侧排列 */
+  margin: 0;
 }
 
 [data-theme="dark"] .modal-content {
@@ -376,4 +377,86 @@ main {
 
 [data-theme="dark"] .modal-close:hover {
   background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
+   列数：3 (≤767px / 768-1023px) → 4 (≥1024px) → 5 (1440-1919) → 6 (≥1920) → 7 (≥2560) → 8 (≥3840)
+   暴露为 CSS 变量 --iptv-cols,便于其他网格复用同一列数策略 */
+.iptv-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--iptv-cols, 4), 1fr);
+  gap: var(--space-lg);
+  grid-auto-rows: auto;
+  align-content: start;
+}
+
+@media (width <= 767px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 3), 1fr);
+  }
+}
+
+@media (width >= 768px) and (width <= 1023px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 3), 1fr);
+  }
+}
+
+@media (width >= 1440px) and (width <= 1919px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 5), 1fr);
+  }
+}
+
+@media (width >= 1920px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 6), 1fr);
+  }
+}
+
+@media (width >= 2560px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 7), 1fr);
+  }
+}
+
+@media (width >= 3840px) {
+  .iptv-channel-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 8), 1fr);
+  }
+}
+
+:root {
+  --iptv-cols: 3;
+}
+
+@media (width >= 1024px) {
+  :root {
+    --iptv-cols: 4;
+  }
+}
+
+@media (width >= 1440px) and (width <= 1919px) {
+  :root {
+    --iptv-cols: 5;
+  }
+}
+
+@media (width >= 1920px) {
+  :root {
+    --iptv-cols: 6;
+  }
+}
+
+@media (width >= 2560px) {
+  :root {
+    --iptv-cols: 7;
+  }
+}
+
+@media (width >= 3840px) {
+  :root {
+    --iptv-cols: 8;
+  }
 }

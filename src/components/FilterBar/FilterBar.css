@@ -71,7 +71,6 @@
 }
 
 .filter-bar__label--clickable:hover {
-  border-color: var(--color-primary);
   background: var(--color-surface-hover, var(--color-surface));
   color: var(--color-primary);
 }

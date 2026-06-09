@@ -57,5 +57,3 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
 // ── 列表分页配置 ────────────────────────────────────────
 /** 防抖：用户点击 chip 后等待多久发起 API 请求 */
 export const FILTER_DEBOUNCE_MS = 300;
-/** 加载更多节流：避免连续滚动触发多次请求 */
-export const LOAD_MORE_THROTTLE_MS = 1500;

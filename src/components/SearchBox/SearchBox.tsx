@@ -125,17 +125,16 @@ export default function SearchBox({
           autoComplete="off"
           spellCheck={false}
         />
-        {value && (
-          <button
-            type="button"
-            className="search-box__clear"
-            onClick={handleClear}
-            aria-label="清空搜索"
-            tabIndex={-1}
-          >
-            <X size={14} aria-hidden="true" />
-          </button>
-        )}
+        <button
+          type="button"
+          className="search-box__clear"
+          onClick={handleClear}
+          aria-label="清空搜索"
+          tabIndex={-1}
+          data-empty={value ? 'false' : 'true'}
+        >
+          <X size={14} aria-hidden="true" />
+        </button>
       </div>
       {/* 搜索按钮：独立在 search-box 方框外，box 紧贴按钮左侧 */}
       <button

@@ -29,7 +29,6 @@ const typeLabels: Record<string, string> = {
 
 const VideoCard = memo(function VideoCard({
   video,
-  index = 0,
   rating,
   hideFavorite = false,
 }: VideoCardProps) {
@@ -72,7 +71,10 @@ const VideoCard = memo(function VideoCard({
     if (e.key === 'Enter') handleClick();
   }, [handleClick]);
 
-  const stagger = { animationDelay: `${index * 0.03}s` };
+  // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
+  // 末尾卡片等数百毫秒才淡入"的问题。Browse 页一次性列表更大,累加效应更
+  // 明显,改为固定后整批几乎同时淡入。
+  const stagger = { animationDelay: '0.012s' };
 
   return (
     <div

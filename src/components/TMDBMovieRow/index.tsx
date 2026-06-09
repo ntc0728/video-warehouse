@@ -251,7 +251,7 @@ function TMDBMovieRow({
           {isLoading ? (
             <SkeletonCards />
           ) : (
-            items.map((item, idx) => (
+            items.map((item) => (
               <div
                 key={item.id}
                 className="tmdb-movierow-card"
@@ -264,7 +264,7 @@ function TMDBMovieRow({
                   }
                 }}
               >
-                <VideoCard video={toVideo(item)} index={idx} rating={item.voteAverage} />
+                <VideoCard video={toVideo(item)} rating={item.voteAverage} />
               </div>
             ))
           )}
