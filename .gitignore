@@ -45,6 +45,9 @@ data/iptv.m3u
 # 文档
 docs/
 
+# 脚本（开发辅助脚本不入版本控制）
+scripts/
+
 # 旧规则文件
 CLAUDE.md
 rules.md
