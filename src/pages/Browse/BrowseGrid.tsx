@@ -3,10 +3,14 @@
  *
  * 接收 TMDBVideoItem 列表，映射为 VideoCard 需要的 Video 形状。
  * 网格使用 CSS Grid + auto-fill，自适应 2 → 7 列。
+ *
+ * 设计:
+ *  - 单一职责:仅渲染真实卡片,加载态由父级控制
+ *  - 性能:不需要 useMemo
  */
-import { VideoCard } from '@/components/VideoCard';
 import type { TMDBVideoItem } from '@/stores/useTMDBStore';
 import type { Video, VideoType } from '@/types/video';
+import { VideoCard } from '@/components/VideoCard';
 import './Browse.css';
 
 interface BrowseGridProps {
@@ -31,13 +35,13 @@ function toVideo(item: TMDBVideoItem): Video {
 
 export default function BrowseGrid({ items }: BrowseGridProps) {
   if (items.length === 0) return null;
+
   return (
-    <div className="browse-grid">
-      {items.map((item, idx) => (
+    <div className="video-card-grid">
+      {items.map((item) => (
         <VideoCard
           key={item.id}
           video={toVideo(item)}
-          index={idx}
           rating={item.voteAverage}
         />
       ))}

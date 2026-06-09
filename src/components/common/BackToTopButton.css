@@ -6,8 +6,9 @@
    - 玻璃感：半透明背景 + backdrop-filter blur + saturate
    - 圆角：var(--radius-full)
    - 阴影：双层 rgba(0,0,0, X%)，hover 时加深
-   - 动画：CSS keyframe（pop-in / pop-out），无 framer-motion 依赖
+   - 动画：CSS keyframe（slide-up + fade）进/退场，无 framer-motion 依赖
    - 位置：右下，bottom = AppLayout paddingBottom + 自身高度 + 一段 gap
+   - 尺寸：var(--space-2xl) (36-72px)，比 v1 缩小一档
    ═══════════════════════════════════════════════════════════════ */
 
 .back-to-top-button {
@@ -18,21 +19,21 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: var(--space-3xl);
-  height: var(--space-3xl);
+  width: var(--space-2xl);
+  height: var(--space-2xl);
   padding: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: rgb(255 255 255 / 90%);
   color: var(--color-text);
-  /* 默认（即将退场）状态：低不透明 + 微下移 + 微缩 */
+  /* 默认（即将退场）状态：低不透明 + 下移 20px + 微缩 */
   opacity: 0;
-  transform: translateY(8px) scale(0.92);
+  transform: translateY(20px) scale(0.95);
   transition:
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.2s ease,
     background 0.2s ease,
-    opacity 0.2s ease;
+    opacity 0.25s ease;
   backdrop-filter: blur(8px) saturate(180%);
   cursor: pointer;
   box-shadow:
@@ -46,12 +47,12 @@
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
-  animation: back-to-top-button-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: back-to-top-button-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .back-to-top-button--exiting {
   /* 不显式写 transition：让默认样式生效，自动从 visible → 默认 */
-  animation: back-to-top-button-pop-out 0.2s ease both;
+  animation: back-to-top-button-slide-out 0.25s ease both;
 }
 
 .back-to-top-button:hover {
@@ -108,10 +109,10 @@
     0 1px 2px rgb(0 0 0 / 30%);
 }
 
-/* ── TV 端：放大点击区（用 --space-3xl 的 ~1.2 倍） ─── */
+/* ── TV 端：放大点击区（用 --space-2xl 的 ~1.2 倍） ─── */
 [data-device="tv"] .back-to-top-button {
-  width: calc(var(--space-3xl) * 1.2);
-  height: calc(var(--space-3xl) * 1.2);
+  width: calc(var(--space-2xl) * 1.2);
+  height: calc(var(--space-2xl) * 1.2);
 }
 
 /* ── Mobile: 适配安全区，避开 TabBar ──────────────── */
@@ -136,15 +137,10 @@
   }
 }
 
-@keyframes back-to-top-button-pop-in {
+@keyframes back-to-top-button-slide-in {
   0% {
     opacity: 0;
-    transform: translateY(8px) scale(0.92);
-  }
-
-  60% {
-    opacity: 1;
-    transform: translateY(0) scale(1.06);
+    transform: translateY(20px) scale(0.95);
   }
 
   100% {
@@ -153,7 +149,7 @@
   }
 }
 
-@keyframes back-to-top-button-pop-out {
+@keyframes back-to-top-button-slide-out {
   0% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -161,6 +157,6 @@
 
   100% {
     opacity: 0;
-    transform: translateY(8px) scale(0.92);
+    transform: translateY(20px) scale(0.95);
   }
 }

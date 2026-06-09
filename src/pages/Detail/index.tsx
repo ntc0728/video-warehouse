@@ -12,7 +12,7 @@ import { fetchVideoDetail, findAvailableVideoSource } from '@/services/videoServ
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
 import type { Video, VideoSource } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
-import { AppLoading } from '@/components/common';
+import { AppLoading, BackToTopButton } from '@/components/common';
 import { VideoCard } from '@/components/VideoCard';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
@@ -435,9 +435,9 @@ export default function DetailPage() {
         <section className="detail-recommend">
           <h2 className="detail-recommend-title">相关推荐</h2>
           <div className="detail-recommend-row">
-            {similarResults.map((item, idx) => (
+            {similarResults.map((item) => (
               <div key={item.id} className="detail-recommend-card">
-                <VideoCard video={toVideoItem(item, tmdbMediaType)} index={idx} rating={item.vote_average} />
+                <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
               </div>
             ))}
           </div>
@@ -448,14 +448,16 @@ export default function DetailPage() {
         <section className="detail-recommend">
           <h2 className="detail-recommend-title">你可能还喜欢</h2>
           <div className="detail-recommend-row">
-            {recommendedResults.map((item, idx) => (
+            {recommendedResults.map((item) => (
               <div key={item.id} className="detail-recommend-card">
-                <VideoCard video={toVideoItem(item, tmdbMediaType)} index={idx} rating={item.vote_average} />
+                <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
               </div>
             ))}
           </div>
         </section>
       )}
+
+      <BackToTopButton />
     </div>
   );
 }

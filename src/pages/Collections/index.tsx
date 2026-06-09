@@ -6,9 +6,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { Empty } from '@/components/common';
+import { Empty, BackToTopButton } from '@/components/common';
 import { Search, X, Trash2, CheckSquare, Square } from 'lucide-react';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { CollectionRecord } from '@/types/store';
@@ -18,6 +20,8 @@ const TYPE_OPTIONS: { label: string; value: VideoType | '' }[] = [
   { label: '全部', value: '' }, { label: '电影', value: 'movie' },
   { label: '剧集', value: 'tv' }, { label: '综艺', value: 'variety' }, { label: '动漫', value: 'anime' },
 ];
+
+const PAGE_SIZE = 30;
 
 type Tab = 'video' | 'iptv';
 
@@ -36,7 +40,9 @@ export default function CollectionsPage() {
   const [search, setSearch] = useState(saved?.search || '');
   const [typeFilter, setTypeFilter] = useState<VideoType | ''>((saved?.filter?.type as VideoType | '') || '');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections');
 
   // 离开时保存状态
@@ -81,6 +87,30 @@ export default function CollectionsPage() {
 
   const currentList: CollectionVideoItem[] | IPTVChannel[] = activeTab === 'video' ? collectedVideos : favoriteChannels;
 
+  // 切 tab / 搜索 / 筛选变化时,重置 visibleCount 到首屏
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeTab, search, typeFilter]);
+
+  // ── 懒加载切片 ─────────────────────────────────
+  const displayedList = useMemo(
+    () => (currentList as (CollectionVideoItem | IPTVChannel)[]).slice(0, visibleCount),
+    [currentList, visibleCount],
+  );
+  const hasMore = visibleCount < currentList.length;
+  const loadMore = () => {
+    setVisibleCount((v) => Math.min(v + PAGE_SIZE, currentList.length));
+  };
+
+  // 哨兵由 useInfiniteScroll 自带;rootMargin 与 IPTV 保持一致
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore,
+    isLoading: false,
+    onLoadMore: loadMore,
+    rootMargin: '100px',
+    scrollContainerRef,
+  });
+
   const toggleSelect = (id: string) => setSelected((p) => {
     const n = new Set(p);
     if (n.has(id)) n.delete(id);
@@ -113,9 +143,29 @@ export default function CollectionsPage() {
 
       {/* 搜索 + 筛选 */}
       <div className="collection-toolbar">
-        <div className="collection-search">
-          <Search size={16} /><input placeholder="搜索…" value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <button onClick={() => setSearch('')}><X size={14} /></button>}
+        <div className="search-box-wrap search-box-wrap--iptv" role="search">
+          <div className="search-box search-box--iptv">
+            <Search size={16} className="search-box__icon" aria-hidden="true" />
+            <input
+              type="text"
+              className="search-box__input"
+              placeholder="搜索…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="搜索"
+            />
+            <button
+              type="button"
+              className="search-box__clear"
+              onClick={() => setSearch('')}
+              aria-label="清空搜索"
+              tabIndex={-1}
+              aria-hidden={!search}
+              data-empty={search ? 'false' : 'true'}
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </div>
         </div>
         {activeTab === 'video' && (
           <div className="collection-filters">{TYPE_OPTIONS.map(t => (
@@ -138,25 +188,38 @@ export default function CollectionsPage() {
       {currentList.length === 0 ? (
         <Empty title="暂无收藏" description={activeTab === 'video' ? '去首页发现喜欢的影片吧' : '去 IPTV 页面收藏喜欢的频道吧'} />
       ) : activeTab === 'video' ? (
-        <div className="collection-grid">
-          {activeTab === 'video' && (currentList as CollectionVideoItem[]).map((video, idx) => (
+        <div className="video-card-grid">
+          {activeTab === 'video' && (displayedList as CollectionVideoItem[]).map((video) => (
             <div key={video.id} className={`collection-card ${selected.has(video.id) ? 'selected' : ''}`}>
               <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }}>
                 {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
               </button>
               <button className="collection-card-del" onClick={(e) => { e.stopPropagation(); removeCollection(video.id); }} title="删除"><Trash2 size={14} /></button>
-              <VideoCard video={video} index={idx} rating={video._rating} hideFavorite />
+              <VideoCard video={video} rating={video._rating} hideFavorite />
             </div>
           ))}
         </div>
       ) : (
         <div className="iptv-channel-grid">
-          {activeTab === 'iptv' && (currentList as IPTVChannel[]).map((ch, idx) => (
-            <IPTVChannelCard key={ch.id} channel={ch} index={idx} hideFavorite />
+          {activeTab === 'iptv' && (displayedList as IPTVChannel[]).map((ch) => (
+            <IPTVChannelCard key={ch.id} channel={ch} hideFavorite />
           ))}
         </div>
       )}
 
+      {/* 懒加载:哨兵 + 文字态(与 IPTV 风格一致) */}
+      {currentList.length > 0 && (
+        <>
+          <div ref={sentinelRef} aria-hidden="true" />
+          <div className="load-more-hint">
+            {hasMore
+              ? `已加载 ${displayedList.length} / ${currentList.length}`
+              : `已加载 ${displayedList.length} / ${currentList.length} · 已显示全部`}
+          </div>
+        </>
+      )}
+
+      <BackToTopButton />
     </div>
   );
 }

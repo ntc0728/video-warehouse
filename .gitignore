@@ -29,6 +29,9 @@ vite.config.d.ts
 .trae/documents/
 .trae/specs/
 
+# Trae 本地规则（含 agent 测试要求参考，不纳入版本控制）
+.trae/rules/
+
 # 备份
 backups/
 
@@ -39,10 +42,8 @@ output/
 epg_test.xml
 data/iptv.m3u
 
-# 评审产物
-docs/css-component-review-report.docx
-docs/css-standards.md
-docs/responsive-guidelines.md
+# 文档
+docs/
 
 # 旧规则文件
 CLAUDE.md
@@ -57,3 +58,7 @@ build-final.txt
 lint-final.txt
 lint-output.txt
 lintcss-final.txt
+
+# agent-browser 工具临时产物 / 本地配置
+b64.tmp
+agent-browser.json

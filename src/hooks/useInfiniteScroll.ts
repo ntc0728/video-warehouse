@@ -2,11 +2,11 @@
  * 通用无限滚动 Hook（双保险：IntersectionObserver + scroll 兜底）
  *
  * 用法：
- *   const { sentinelRef } = useInfiniteScroll({
+ *   const { sentinelRef, resetLoading } = useInfiniteScroll({
  *     hasMore,           // 是否还有更多数据
  *     isLoading,         // 当前是否正在加载（防止重复触发）
  *     onLoadMore,        // 触发加载的回调
- *     rootMargin,        // 提前多少像素触发，默认 200px
+ *     rootMargin,        // 提前多少像素触发（默认 200px）
  *     scrollContainerRef,// 可选：自定义滚动容器（默认 window）
  *     canLoadMore,       // 可选：业务级开关（默认 true）
  *     disabled,          // 可选：外部完全禁用（默认 false）
@@ -16,17 +16,18 @@
  *     <>
  *       <List />
  *       <div ref={sentinelRef} aria-hidden="true" />
+ *       <div className="load-more-hint">...</div>
  *     </>
  *   );
  *
+ *   分批渲染 / 同步切片场景下，onLoadMore 内调用 resetLoading() 释放锁，让哨兵再次触发。
+ *   异步加载场景无需调用（hook 内部 useEffect 会随 isLoading 翻转自动重置）。
+ *
  * 设计要点：
- * - 双保险：IO + scroll 事件兜底（快速滚动到距底部 < 200px 时一定触发）
+ * - 双保险：IO + scroll 事件兜底（快速滚动/wheel 惯性到距底部 < 200px 时一定触发）
  * - 去重：isLoadingRef（最新 isLoading 同步）+ pageLoadingRef（本次 page 加载中）
  *   防止 IO 与 scroll 同时触发导致重复加载
  * - 业务开关：canLoadMore 业务前置未达成时跳过触发
- *
- * 替代旧版本：旧 Hook 混入 mobileCount / pageSize / isMobile 切片逻辑，
- * 现已上移到业务层（useBrowseData）。本 Hook 仅负责「哨兵可见/接近底部 → 触发回调」。
  */
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
 
@@ -65,15 +66,8 @@ export function useInfiniteScroll({
   const isLoadingRef = useRef(isLoading);
   const pageLoadingRef = useRef(false);
   const onLoadMoreRef = useRef(onLoadMore);
+  const triggerLoadRef = useRef<() => void>(() => {});
   onLoadMoreRef.current = onLoadMore;
-
-  // 同步 isLoading → isLoadingRef，并在加载结束时重置 pageLoadingRef
-  useEffect(() => {
-    isLoadingRef.current = isLoading;
-    if (!isLoading) {
-      pageLoadingRef.current = false;
-    }
-  }, [isLoading]);
 
   /** 核心触发逻辑：所有去重开关都集中在这里 */
   const triggerLoad = useCallback(() => {
@@ -82,10 +76,39 @@ export function useInfiniteScroll({
     pageLoadingRef.current = true;
     onLoadMoreRef.current();
   }, [disabled, hasMore, canLoadMore]);
+  triggerLoadRef.current = triggerLoad;
+
+  /** 业务层显式释放 pageLoadingRef 锁（同步切片 / 分批渲染场景下 onLoadMore 后调用） */
+  const resetLoading = useCallback(() => {
+    pageLoadingRef.current = false;
+  }, []);
+
+  // 同步 isLoading → isLoadingRef，并在加载结束时重置 pageLoadingRef。
+  // 关键点：isLoading 翻 false 瞬间，强制让 IO 重新评估哨兵位置（disconnect + reobserve）。
+  // - 哨兵仍在视口内 → IO 会主动 callback（isIntersecting=true）→ triggerLoad → 加载下一页
+  // - 哨兵已不在视口（用户已向上滚离底部）→ IO 不会 callback → 不触发
+  // 这样既保留"翻 false 后用户若还在底部就继续加载"的体验,又避免"用户已滚离但
+  // 翻 false 仍强制加载"的过度触发。
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+    if (!isLoading) {
+      pageLoadingRef.current = false;
+      const observer = observerRef.current;
+      const sentinel = sentinelRef.current;
+      if (observer && sentinel) {
+        observer.disconnect();
+        observer.observe(sentinel);
+      }
+    }
+  }, [isLoading]);
 
   // ── 1) IntersectionObserver 监听 ──
+  // 注意:此处不再把 isLoading 作为依赖。旧实现会在 isLoading 翻 true 时 disconnect
+  // IO、翻 false 时重建,导致异步场景下 IO 反复重建、配合节流产生"看起来在加载
+  // 但实际被拦下"的体验。改为：IO 持续 observe 哨兵,由 triggerLoad 内部的
+  // isLoadingRef + pageLoadingRef 双重去重,既保留去重语义又消除 IO 重建抖动。
   useEffect(() => {
-    if (disabled || !hasMore || isLoading) {
+    if (disabled || !hasMore) {
       observerRef.current?.disconnect();
       observerRef.current = null;
       return;
@@ -100,7 +123,7 @@ export function useInfiniteScroll({
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          triggerLoad();
+          triggerLoadRef.current();
         }
       },
       { root, rootMargin, threshold: 0.01 },
@@ -111,7 +134,7 @@ export function useInfiniteScroll({
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [disabled, hasMore, isLoading, rootMargin, scrollContainerRef, triggerLoad]);
+  }, [disabled, hasMore, rootMargin, scrollContainerRef]);
 
   // ── 2) scroll 事件兜底 ──
   // 快速滚动/wheel 惯性下 IO 可能来不及触发；额外监听 scroll，
@@ -141,5 +164,5 @@ export function useInfiniteScroll({
     };
   }, [disabled, hasMore, canLoadMore, scrollContainerRef, triggerLoad]);
 
-  return { sentinelRef };
+  return { sentinelRef, resetLoading };
 }

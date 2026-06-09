@@ -1,4 +1,27 @@
 /* ============================================================
+   公共 Grid 容器 — Browse / Collections / History 共用
+   视觉契约:6 列自适应 grid,水平 padding 由 grid 自管(页面级 padding 0)
+   ============================================================ */
+
+.video-card-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--grid-gap, var(--space-md));
+  /* width: 100% 让 grid 撑满父容器,1fr 才能均分列宽;
+     旧实现用 max-content 会让 1fr 退化为 0,grid 永远收缩到内容自然宽(单卡约 60px),
+     视觉上卡片"远远小于"父容器应有的尺寸。 */
+  width: 100%;
+  margin: 0;
+  padding: var(--space-md) var(--space-lg) 0;
+  animation: video-card-grid-fade 0.3s ease both;
+}
+
+@keyframes video-card-grid-fade {
+  from { opacity: 0.4; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
    VideoCard — 竖版海报卡片（2:3）
    评分左上 / 收藏右上 / 年份左下 / 类型右下 / 溢出跑马灯
    ============================================================ */

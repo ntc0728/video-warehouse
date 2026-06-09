@@ -6,8 +6,11 @@
  * 渲染层级：
  *   BrowseHeader        顶部（返回 + 分类标题 + 结果数）
  *   FilterBar           筛选条（含 isUpdating spinner）
- *   BrowseGrid          视频网格（首次加载未到时用 SkeletonGrid 占位）
- *   BrowseLoadMore      懒加载触发器（IntersectionObserver + 按钮）
+ *   BrowseGrid          视频网格
+ *   哨兵 + 文字态       独立 div,与 IPTV 风格一致
+ *
+ * 懒加载:哨兵 `<div ref={sentinelRef} />` + 文字态 `<BrowseLoadMore>`,
+ *  与 IPTV 一样由本页 useInfiniteScroll 管理。rootMargin 100px。
  *
  * 多端适配：
  *  - 移动端：紧凑 padding / 较小字号
@@ -18,6 +21,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
+import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useTMDBStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
@@ -34,6 +39,7 @@ export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  const scrollContainerRef = useScrollContainer();
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse');
@@ -45,6 +51,7 @@ export default function BrowsePage() {
     isUpdating,
     isRefreshing,
     loadMore,
+    retry,
     hasMore,
     isLoadingMore,
     discoverResults,
@@ -52,6 +59,19 @@ export default function BrowsePage() {
     isLoading,
     error,
   } = useBrowseData();
+
+  // ── 懒加载触发（双保险:IO + scroll 兜底）────────────
+  // 哨兵由本页 useInfiniteScroll 自带的 sentinelRef 持有,在 JSX 中以
+  //  `<div ref={sentinelRef} aria-hidden="true" />` 形式渲染,位于
+  //  .browse-grid 外部,与 IPTV 风格完全一致。
+  //  rootMargin 与 IPTV 保持一致:'100px'。
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore,
+    isLoading: isLoadingMore,
+    onLoadMore: loadMore,
+    rootMargin: '100px',
+    scrollContainerRef,
+  });
 
   // genres & countries 兜底拉取（保证 FilterBar 渲染时有列表）
   const { movieGenres, tvGenres, fetchGenresAndCountries } = useTMDBStore();
@@ -114,6 +134,13 @@ export default function BrowsePage() {
         <div className="browse-page__error">
           <AlertCircle size={32} className="browse-page__error-icon" />
           <p className="browse-page__error-text">{error}</p>
+          <button
+            type="button"
+            className="browse-page__error-retry"
+            onClick={retry}
+          >
+            重试
+          </button>
         </div>
       )}
 
@@ -125,7 +152,7 @@ export default function BrowsePage() {
         />
       )}
 
-      {/* 已有数据：渲染 grid */}
+      {/* 已有数据:渲染 grid */}
       {discoverResults.length > 0 && (
         <BrowseGrid items={discoverResults} />
       )}
@@ -137,13 +164,20 @@ export default function BrowsePage() {
         </div>
       )}
 
-      {/* 懒加载触发器 */}
-      <BrowseLoadMore
-        hasMore={hasMore}
-        isLoading={isLoadingMore}
-        onLoadMore={loadMore}
-        hasItems={discoverResults.length > 0}
-      />
+      {/* 懒加载:哨兵 always 挂载 + LoadMore 文字态(与 IPTV 风格一致)
+          哨兵不再被 discoverResults.length > 0 门控：
+          - 旧实现下"加载失败导致 discoverResults 为空"时哨兵永不挂载,错误恢复后
+            也无法继续懒加载,用户体感"懒加载失效"。
+          - 现在哨兵 always 在 DOM 中,IO 持续 observe;LoadMore 文字态在无数据时
+            隐藏(避免显示"下滑加载更多"误导用户)。 */}
+      <div ref={sentinelRef} aria-hidden="true" />
+      {discoverResults.length > 0 && (
+        <BrowseLoadMore
+          hasMore={hasMore}
+          isLoading={isLoadingMore}
+          hasItems={discoverResults.length > 0}
+        />
+      )}
 
       {/* 返回顶部按钮（主题感知：light/dark 阴影/边框自动切换） */}
       <BackToTopButton />

@@ -13,4 +13,13 @@
   overscroll-behavior: contain;
   /* iOS 惯性滚动 */
   -webkit-overflow-scrolling: touch;
+  /*
+   * 始终预留垂直滚动条空间(scrollbar-gutter: stable)。
+   * 否则当滚动容器内容高度变化(例如 Collections/History 搜索过滤、
+   * IPTV 频道数变化)时,浏览器只在"需要时"才显示滚动条,
+   * 滚动条出现/消失的 10px 差异会回传到 page 宽度,
+   * 进而引起 toolbar / searchBox 宽度 ±10px 抖动。
+   * "stable" 强制在容器右侧始终保留 gutter,内容宽度不再随滚动条显隐抖动。
+   */
+  scrollbar-gutter: stable;
 }

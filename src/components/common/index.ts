@@ -4,6 +4,5 @@ export { default as AppLoading } from './AppLoading';
 export { default as CardCoverLoading } from './CardCoverLoading';
 export { default as Empty } from './Empty';
 export { default as RippleButton } from './RippleButton';
-export { default as BackToTop } from './BackToTop';
 export { default as BackToTopButton } from './BackToTopButton';
 export { default as CustomScrollbar } from './CustomScrollbar';

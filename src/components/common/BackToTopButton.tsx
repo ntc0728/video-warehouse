@@ -1,10 +1,10 @@
 /**
  * BackToTopButton — 玻璃感"返回顶部"按钮
  *
- * 较基础 BackToTop 的额外能力：
  * - 路径切换自动重置：useLocation 监听 pathname 变化，强制隐藏
- * - 进出场动画：CSS keyframe（pop-in / pop-out）模拟 Framer Motion 的 AnimatePresence
+ * - 进出场动画：CSS keyframe（slide-up + fade）模拟 AnimatePresence
  * - 玻璃感样式：半透明 + backdrop-filter blur + saturate（详见 BackToTopButton.css）
+ * - 位置：position: fixed 固定在浏览器可视口右下角
  * - 业务回调：onVisibilityChange（可选）让父级感知可见性变化
  *
  * 注意：项目未引入 framer-motion，纯 CSS 方案更轻量。
@@ -26,7 +26,7 @@ interface BackToTopButtonProps {
   onVisibilityChange?: (visible: boolean) => void;
 }
 
-const EXIT_DURATION_MS = 200;
+const EXIT_DURATION_MS = 250;
 
 export default function BackToTopButton({
   threshold = 280,

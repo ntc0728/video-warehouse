@@ -1,16 +1,26 @@
 /**
  * IPTV 直播页面
  * 展示 IPTV 频道列表，支持分组筛选、关键词搜索、频道可用性检测和分页浏览
+ *
+ * 懒加载策略（v5 改造）：
+ * - 移除所有 SkeletonCard 渲染（v3/v4 引入的灰色占位卡视作视觉噪音,本版本彻底移除）
+ * - 触发懒加载 → setVisibleCount(v => v + IPTV_PAGE_SIZE) 立即同步追加真实频道
+ * - 无 300ms 同步切片（切片目的就是"让用户先看清骨架",现在无骨架,切片无意义）
+ * - hint 文字态：
+ *     有更多 → "已加载 X / Y"（继续滚动触发下一批）
+ *     全部展示 → "已加载 X / Y · 已显示全部"
+ * - 触发距离：100px = 距视口底 100px 时触发。比 200px 更接近底部，符合"几乎
+ *   滚到底才加载"的体感,且 IO 缩小后 scroll 事件兜底仍能在 100px 范围内触达。
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useIPTVStore, useNavStore } from '@/stores';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
-import { Empty, AppLoading, BackToTop } from '@/components/common';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { Empty, AppLoading, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useShallow } from 'zustand/react/shallow';
-import { X, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, X, CheckCircle2, XCircle } from 'lucide-react';
 import './IPTV.css';
 
 /** 防抖 Hook：延迟更新值，避免频繁触发搜索过滤 */
@@ -43,6 +53,9 @@ function getDisplayHostname(url: string): string {
  * 用 sessionStorage 显式追踪会话内首次进入,保证按当前 aggregatorUrl 拉一次。
  */
 const IPTV_SESSION_KEY = 'iptv-page-visited-this-session';
+
+/** 单次渲染的频道数；超过则通过哨兵滚动加载下一批 */
+const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
   // 高频更新字段 (availabilityProgress) 与低频数据/动作分两组订阅,避免每频道
@@ -100,12 +113,11 @@ export default function IPTVPage() {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [selectedGroup, debouncedKeyword, scrollContainerRef]);
 
+  const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
   const [needCollapse, setNeedCollapse] = useState(false);
   const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const groupsRef = useRef<HTMLDivElement>(null);
-
-  const isMobile = useIsMobile();
 
   /** 按分组和关键词筛选频道 */
   const filteredChannels = useMemo(() => {
@@ -122,6 +134,13 @@ export default function IPTVPage() {
 
     return result;
   }, [channels, selectedGroup, debouncedKeyword]);
+
+  /** 实际渲染的子集，由 useInfiniteScroll 滚动哨兵分批追加 */
+  const displayedChannels = useMemo(
+    () => filteredChannels.slice(0, visibleCount),
+    [filteredChannels, visibleCount]
+  );
+  const hasMore = visibleCount < filteredChannels.length;
 
   /** 检测分组标签区域是否溢出，需要折叠（通过 offsetTop 实测行数） */
   const checkGroupsOverflow = useCallback(() => {
@@ -205,6 +224,31 @@ export default function IPTVPage() {
     }
   }, [isLoading, channels.length, isInitialLoad]);
 
+  // 切换分组 / 搜索 / 源刷新时,把已渲染数重置回单批大小,
+  // 避免用户回到筛选结果时还停留在上一次滚动到的位置。
+  useEffect(() => {
+    setVisibleCount(IPTV_PAGE_SIZE);
+  }, [selectedGroup, debouncedKeyword, channels.length]);
+
+  const { sentinelRef, resetLoading } = useInfiniteScroll({
+    hasMore,
+    isLoading: false,           // 永远 false（v5: 懒加载追加真实频道是同步的,无 loading 中间态）
+    onLoadMore: () => {
+      // v5: 触发懒加载 → 立即追加真实频道（无 setTimeout 切片,无骨架）
+      setVisibleCount((v) => v + IPTV_PAGE_SIZE);
+      // 同步场景:onLoadMore 不经过异步,立刻释放 pageLoadingRef
+      // 让哨兵再次可见时能继续触发下一批
+      resetLoading();
+    },
+    scrollContainerRef,
+    canLoadMore: !isLoading && !isInitialLoad,
+    // 触发距离: 100px = "距视口底 100px 时就触发" 的预加载区
+    // 太大(200px/400px)会让用户觉得"还没滚到就加载了"或"已经滚了一段才加载"。
+    // 100px 接近底部,符合"滚到底前一点点就加载"的体感,scroll 事件兜底
+    // (FALLBACK_THRESHOLD_PX=200) 仍能在 100-200px 范围内触达,不会留白。
+    rootMargin: '100px',
+  });
+
   const handleSearch = useCallback((keyword: string) => {
     setSearchKeyword(keyword);
   }, []);
@@ -241,17 +285,29 @@ export default function IPTVPage() {
 
       {!hasNoData && (
         <div className="iptv-toolbar">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="搜索频道..."
-              value={searchKeyword}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="search-input"
-            />
-            {searchKeyword && (
-              <button className="search-clear" onClick={() => handleSearch('')}><X size={10} /></button>
-            )}
+          <div className="search-box-wrap search-box-wrap--iptv" role="search">
+            <div className="search-box search-box--iptv">
+              <Search size={16} className="search-box__icon" aria-hidden="true" />
+              <input
+                type="text"
+                className="search-box__input"
+                placeholder="搜索频道..."
+                value={searchKeyword}
+                onChange={(e) => handleSearch(e.target.value)}
+                aria-label="搜索"
+              />
+              <button
+                type="button"
+                className="search-box__clear"
+                onClick={() => handleSearch('')}
+                aria-label="清空搜索"
+                tabIndex={-1}
+                aria-hidden={!searchKeyword}
+                data-empty={searchKeyword ? 'false' : 'true'}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
           </div>
           {isCheckingAvailability ? (
             <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
@@ -343,16 +399,34 @@ export default function IPTVPage() {
         ) : filteredChannels.length === 0 ? (
           <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
         ) : (
-          <div className="iptv-channel-grid">
-            {filteredChannels.map((channel, idx) => (
-              <IPTVChannelCard key={channel.id} channel={channel} index={idx} />
-            ))}
-          </div>
+          <>
+            {/*
+              v5: 无骨架渲染。
+              IPTV 频道数据是本地解析的 M3U8 列表,首次 refreshChannels 后 channels 一次性就位,
+              懒加载只是把已经存在的频道从 visibleCount 切到下批,不存在"等待后端返回"阶段,
+              因此不需要 SkeletonCard 过渡,直接展示真实频道。
+            */}
+            <div className="iptv-channel-grid">
+              {displayedChannels.map((channel) => (
+                <IPTVChannelCard
+                  key={channel.id}
+                  channel={channel}
+                />
+              ))}
+            </div>
+
+            <div ref={sentinelRef} aria-hidden="true" />
+            <div className="load-more-hint">
+              {hasMore
+                ? `已加载 ${displayedChannels.length} / ${filteredChannels.length}`
+                : `已加载 ${displayedChannels.length} / ${filteredChannels.length} · 已显示全部`}
+            </div>
+          </>
         )}
 
       </div>
 
-      {isMobile && <BackToTop scrollRef={scrollContainerRef} />}
+      <BackToTopButton />
     </div>
   );
 }

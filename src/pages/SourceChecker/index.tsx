@@ -3,6 +3,7 @@ import { Button } from '@/components/ui';
 import { checkAllVideoSources, getVideoSources } from '@/services/videoService';
 import type { SourceCheckResult } from '@/services/videoService';
 import type { VideoSourceConfig } from '@/types/source';
+import { BackToTopButton } from '@/components/common';
 import './SourceChecker.css';
 
 type SourceItem = SourceCheckResult & { config?: VideoSourceConfig };
@@ -141,6 +142,8 @@ export default function SourceCheckerPage() {
           </tbody>
         </table>
       )}
+
+      <BackToTopButton />
     </div>
   );
 }

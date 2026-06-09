@@ -1,6 +1,16 @@
 /* Collections — 收藏页 */
+/* 页面级 padding 已去除(让 .video-card-grid 水平边距 100% 自管),
+   改由 header / tabs / toolbar / select-all 等子元素自管水平 padding。 */
 .collection-page {
-  padding: var(--space-md);
+  padding: 0;
+}
+
+.collection-page > .collection-header,
+.collection-page > .category-tabs,
+.collection-page > .collection-toolbar,
+.collection-page > .collection-select-all {
+  padding-right: var(--space-lg);
+  padding-left: var(--space-lg);
 }
 
 .category-tabs {
@@ -74,37 +84,6 @@
   align-items: center;
   margin-bottom: var(--space-md);
 }
-.collection-search {
-  display: flex;
-  flex: 1;
-  gap: var(--space-xs);
-  align-items: center;
-  min-width: var(--layout-vol-slider-w);
-  max-width: var(--layout-channel-list-w-md);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-}
-.collection-search svg {
-  flex-shrink: 0;
-  color: var(--color-text-tertiary);
-}
-.collection-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  outline: none;
-}
-.collection-search button {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-}
 .collection-filters {
   display: flex;
   flex-wrap: wrap;
@@ -146,14 +125,6 @@
   color: var(--color-text);
 }
 
-.collection-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  gap: var(--space-sm);
-  width: max-content;
-  max-width: 100%;
-  margin: 0 auto;
-}
 .collection-card {
   position: relative;
 }
@@ -201,13 +172,14 @@
 }
 
 @media (width <= 767px) {
-  .collection-page {
-  padding: var(--space-sm);
-}
-  .collection-search {
-  max-width: none;
-}
+  .collection-page > .collection-header,
+  .collection-page > .category-tabs,
+  .collection-page > .collection-toolbar,
+  .collection-page > .collection-select-all {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
   .collection-card-del {
-  opacity: 1;
-}
+    opacity: 1;
+  }
 }

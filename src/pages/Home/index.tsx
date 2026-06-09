@@ -10,7 +10,7 @@ import { useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore } from '@/stores';
-import { AppLoading } from '@/components/common';
+import { AppLoading, BackToTopButton } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -126,6 +126,8 @@ export default function HomePage() {
         <TMDBMovieRow title="高分剧集" items={topRatedTv} isLoading={loading.topRatedTv} error={errors.topRatedTv} />
         <TMDBMovieRow title="今日播出" items={airingTodayTv} isLoading={loading.airingTodayTv} error={errors.airingTodayTv} />
       </div>
+
+      <BackToTopButton />
     </div>
   );
 }
