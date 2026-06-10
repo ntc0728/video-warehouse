@@ -1,11 +1,14 @@
 .iptv-page {
+  position: relative;
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   min-height: 100%;
-  padding: var(--space-md);
   background-color: var(--color-background);
   box-sizing: border-box;
 }
+
+/* IPTV 页 load-more-hint 改回绝对定位，贴 .iptv-page 底部 */
 
 .iptv-header {
   display: flex;
@@ -240,7 +243,11 @@
 }
 
 .iptv-content {
-  display: block;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: calc(var(--space-2xl) + var(--space-md));
 }
 
 @media (width <= 767px) {

@@ -2,12 +2,13 @@
  * 收藏页面（重构）
  * 影视 + IPTV 双 Tab，懒加载、搜索、筛选、多选删除、清除全部
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
-import { Search, X, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Search, X, Trash2, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -15,11 +16,6 @@ import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { CollectionRecord } from '@/types/store';
 import './Collections.css';
-
-const TYPE_OPTIONS: { label: string; value: VideoType | '' }[] = [
-  { label: '全部', value: '' }, { label: '电影', value: 'movie' },
-  { label: '剧集', value: 'tv' }, { label: '综艺', value: 'variety' }, { label: '动漫', value: 'anime' },
-];
 
 const PAGE_SIZE = 30;
 
@@ -37,22 +33,48 @@ export default function CollectionsPage() {
   const saved = getState('collections');
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
-  const [search, setSearch] = useState(saved?.search || '');
-  const [typeFilter, setTypeFilter] = useState<VideoType | ''>((saved?.filter?.type as VideoType | '') || '');
+  // 搜索词按 tab 隔离（视频/iptv 各自独立，互不串扰）
+  // 持久化到 filter.searchByTab（兼容旧持久化键：把 saved.search 作为 video tab 的初始值）
+  const [searchByTab, setSearchByTab] = useState<{ video: string; iptv: string }>(() => {
+    const fromNew = (saved?.filter as { searchByTab?: { video?: string; iptv?: string } } | undefined)?.searchByTab;
+    if (fromNew) {
+      return { video: fromNew.video || '', iptv: fromNew.iptv || '' };
+    }
+    return { video: saved?.search || '', iptv: '' };
+  });
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchMode, setBatchMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections');
 
-  // 离开时保存状态
+  const search = searchByTab[activeTab];
+  const setSearch = useCallback((v: string) => {
+    setSearchByTab((prev) => ({ ...prev, [activeTab]: v }));
+  }, [activeTab]);
+
+  // 用 ref 追踪最新 search 值，确保 cleanup 始终保存最新值而非闭包捕获的过期值
+  const searchByTabRef = useRef(searchByTab);
+  searchByTabRef.current = searchByTab;
+
+  // 离开时保存状态（cleanup 中读 ref 而非闭包变量，避免保存过期值导致 store 状态抖动）
   useEffect(() => {
-    return () => { saveState('collections', { tab: activeTab, search, filter: { type: typeFilter } }); };
-  }, [activeTab, search, typeFilter, saveState]);
+    return () => {
+      saveState('collections', {
+        tab: activeTab,
+        search: searchByTabRef.current[activeTab] || '',
+        filter: {
+          searchByTab: { ...searchByTabRef.current },
+        },
+      });
+    };
+  }, [activeTab, saveState]);
 
-  useEffect(() => { setSearch(saved?.search || ''); setSelected(new Set()); }, [activeTab, saved?.search]);
+  // 切 tab 时 selected 集合重置（id 域不同）+ 退出批量模式
+  useEffect(() => { setSelected(new Set()); setBatchMode(false); }, [activeTab]);
 
-  // ── 影视收藏 ─────────────────────────────────
+  // ── 影视收藏（仅受影视 tab 搜索词影响） ─────────────
   const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
     let list: CollectionVideoItem[] = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
@@ -73,24 +95,25 @@ export default function CollectionsPage() {
           _rating: c.rating,
         };
       });
-    if (search.trim()) { const kw = search.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
-    if (typeFilter) list = list.filter((v) => v.type === typeFilter);
+    if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     return list;
-  }, [collections, videos, search, typeFilter]);
+  }, [collections, videos, searchByTab.video]);
 
-  // ── IPTV 收藏 ────────────────────────────────
+  // ── IPTV 收藏（仅受 IPTV tab 搜索词影响） ──────────
   const favoriteChannels = useMemo(() => {
     let list = iptvChannels.filter(ch => ch.isFavorite);
-    if (search.trim()) { const kw = search.toLowerCase(); list = list.filter(ch => ch.name?.toLowerCase().includes(kw)); }
+    if (searchByTab.iptv.trim()) { const kw = searchByTab.iptv.toLowerCase(); list = list.filter(ch => ch.name?.toLowerCase().includes(kw)); }
     return list;
-  }, [iptvChannels, search]);
+  }, [iptvChannels, searchByTab.iptv]);
 
   const currentList: CollectionVideoItem[] | IPTVChannel[] = activeTab === 'video' ? collectedVideos : favoriteChannels;
+  const currentListLenRef = useRef(currentList.length);
+  currentListLenRef.current = currentList.length;
 
   // 切 tab / 搜索 / 筛选变化时,重置 visibleCount 到首屏
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeTab, search, typeFilter]);
+  }, [activeTab, searchByTab.video, searchByTab.iptv]);
 
   // ── 懒加载切片 ─────────────────────────────────
   const displayedList = useMemo(
@@ -98,9 +121,9 @@ export default function CollectionsPage() {
     [currentList, visibleCount],
   );
   const hasMore = visibleCount < currentList.length;
-  const loadMore = () => {
-    setVisibleCount((v) => Math.min(v + PAGE_SIZE, currentList.length));
-  };
+  const loadMore = useCallback(() => {
+    setVisibleCount((v) => Math.min(v + PAGE_SIZE, currentListLenRef.current));
+  }, []);
 
   // 哨兵由 useInfiniteScroll 自带;rootMargin 与 IPTV 保持一致
   const { sentinelRef } = useInfiniteScroll({
@@ -129,10 +152,9 @@ export default function CollectionsPage() {
   };
 
   return (
-    <div className="collection-page">
+    <div className={`collection-page ${batchMode ? 'batch-mode' : ''}`}>
       <div className="collection-header">
         <h1>我的收藏</h1>
-        <button className="collection-btn collection-btn--danger" onClick={clearAll}><Trash2 size={16} /> 清除全部</button>
       </div>
 
       {/* Tab 切换 */}
@@ -141,7 +163,7 @@ export default function CollectionsPage() {
         <button className={`category-tab ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV ({favoriteChannels.length})</button>
       </div>
 
-      {/* 搜索 + 筛选 */}
+      {/* 搜索 + 操作按钮 */}
       <div className="collection-toolbar">
         <div className="search-box-wrap search-box-wrap--iptv" role="search">
           <div className="search-box search-box--iptv">
@@ -149,7 +171,7 @@ export default function CollectionsPage() {
             <input
               type="text"
               className="search-box__input"
-              placeholder="搜索…"
+              placeholder="搜索频道..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="搜索"
@@ -167,56 +189,88 @@ export default function CollectionsPage() {
             </button>
           </div>
         </div>
-        {activeTab === 'video' && (
-          <div className="collection-filters">{TYPE_OPTIONS.map(t => (
-            <button key={t.value} className={`collection-chip ${typeFilter === t.value ? 'active' : ''}`} onClick={() => setTypeFilter(t.value)}>{t.label}</button>
-          ))}</div>
-        )}
-        {selected.size > 0 && (
-          <button className="collection-btn collection-btn--danger" onClick={deleteSelected}><Trash2 size={14} /> 删除选中 ({selected.size})</button>
-        )}
+        <div className="toolbar-actions" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+          {batchMode && (
+            <>
+              <button type="button" className="toolbar-btn" onClick={selectAll}>
+                {selected.size === currentList.length && currentList.length > 0
+                  ? <CheckSquare size={14} />
+                  : <Square size={14} />}
+                <span>全选</span>
+              </button>
+              {selected.size > 0 && (
+                <button type="button" className="toolbar-btn toolbar-btn--danger" onClick={deleteSelected}>
+                  <Trash2 size={14} /> 删除选中 ({selected.size})
+                </button>
+              )}
+            </>
+          )}
+          <button
+            type="button"
+            className={`toolbar-btn ${batchMode ? 'toolbar-btn--active' : ''}`}
+            onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+          >
+            <ListChecks size={14} /> {batchMode ? '退出批量' : '批量操作'}
+          </button>
+          <button type="button" className="toolbar-btn toolbar-btn--danger" onClick={clearAll}>
+            <Trash2 size={14} /> 清除全部
+          </button>
+        </div>
       </div>
 
-      {/* 全选 */}
-      {currentList.length > 0 && (
-        <div className="collection-select-all" onClick={selectAll}>
-          {selected.size === currentList.length ? <CheckSquare size={16} /> : <Square size={16} />}<span>全选</span>
-        </div>
-      )}
-
       {/* 内容 */}
-      {currentList.length === 0 ? (
+      <div className="collection-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+        {activeTab === 'video' ? (
+          <div className="video-card-grid">
+            {(displayedList as CollectionVideoItem[]).map((video) => (
+              <div
+                key={video.id}
+                className={`collection-card ${batchMode && selected.has(video.id) ? 'selected' : ''}`}
+                onClick={batchMode ? () => toggleSelect(video.id) : undefined}
+              >
+                {batchMode && (
+                  <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }}>
+                    {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                  </button>
+                )}
+                <button className="collection-card-del" onClick={(e) => { e.stopPropagation(); removeCollection(video.id); }} title="删除"><Trash2 size={14} /></button>
+                <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="iptv-channel-grid">
+            {(displayedList as IPTVChannel[]).map((ch) => (
+              <div
+                key={ch.id}
+                className={`collection-card ${batchMode && selected.has(ch.id) ? 'selected' : ''}`}
+                onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
+              >
+                {batchMode && (
+                  <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }}>
+                    {selected.has(ch.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                  </button>
+                )}
+                <button className="collection-card-del" onClick={(e) => { e.stopPropagation(); toggleFavorite(ch.id); }} title="删除"><Trash2 size={14} /></button>
+                <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {currentList.length === 0 && (
         <Empty title="暂无收藏" description={activeTab === 'video' ? '去首页发现喜欢的影片吧' : '去 IPTV 页面收藏喜欢的频道吧'} />
-      ) : activeTab === 'video' ? (
-        <div className="video-card-grid">
-          {activeTab === 'video' && (displayedList as CollectionVideoItem[]).map((video) => (
-            <div key={video.id} className={`collection-card ${selected.has(video.id) ? 'selected' : ''}`}>
-              <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }}>
-                {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
-              </button>
-              <button className="collection-card-del" onClick={(e) => { e.stopPropagation(); removeCollection(video.id); }} title="删除"><Trash2 size={14} /></button>
-              <VideoCard video={video} rating={video._rating} hideFavorite />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="iptv-channel-grid">
-          {activeTab === 'iptv' && (displayedList as IPTVChannel[]).map((ch) => (
-            <IPTVChannelCard key={ch.id} channel={ch} hideFavorite />
-          ))}
-        </div>
       )}
 
       {/* 懒加载:哨兵 + 文字态(与 IPTV 风格一致) */}
-      {currentList.length > 0 && (
-        <>
-          <div ref={sentinelRef} aria-hidden="true" />
-          <div className="load-more-hint">
-            {hasMore
-              ? `已加载 ${displayedList.length} / ${currentList.length}`
-              : `已加载 ${displayedList.length} / ${currentList.length} · 已显示全部`}
-          </div>
-        </>
+      <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
+      {createPortal(
+        <div className="load-more-hint" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+          {hasMore
+            ? `已加载 ${displayedList.length} / ${currentList.length}`
+            : `已加载 ${displayedList.length} / ${currentList.length} · 已显示全部`}
+        </div>,
+        document.getElementById('load-more-portal')!,
       )}
 
       <BackToTopButton />

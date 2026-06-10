@@ -71,6 +71,7 @@ export default function AppLayout() {
               主动重置首页的场景由 HomeRoute 的 key={homeResetKey} 单独处理。 */}
           <div className="page-transition">
             <Outlet />
+            <div id="load-more-portal" />
           </div>
         </CustomScrollbar>
         {isMobile && <TabBar />}

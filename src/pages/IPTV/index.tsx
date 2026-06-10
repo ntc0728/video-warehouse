@@ -13,6 +13,7 @@
  *   滚到底才加载"的体感,且 IO 缩小后 scroll 事件兜底仍能在 100px 范围内触达。
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useIPTVStore, useNavStore } from '@/stores';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -416,11 +417,14 @@ export default function IPTVPage() {
             </div>
 
             <div ref={sentinelRef} aria-hidden="true" />
-            <div className="load-more-hint">
-              {hasMore
-                ? `已加载 ${displayedChannels.length} / ${filteredChannels.length}`
-                : `已加载 ${displayedChannels.length} / ${filteredChannels.length} · 已显示全部`}
-            </div>
+            {createPortal(
+              <div className="load-more-hint">
+                {hasMore
+                  ? `已加载 ${displayedChannels.length} / ${filteredChannels.length}`
+                  : `已加载 ${displayedChannels.length} / ${filteredChannels.length} · 已显示全部`}
+              </div>,
+              document.getElementById('load-more-portal')!,
+            )}
           </>
         )}
 

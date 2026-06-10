@@ -91,6 +91,7 @@
   --comp-btn-min-height: clamp(36px, 2.061rem + 0.808vw, 64px);  /* 36→64 */
   --comp-btn-min-width:  clamp(44px, 2.615rem + 0.577vw, 64px);  /* 44→64 */
   --comp-input-height:   clamp(36px, 2.115rem + 0.577vw, 56px);  /* 36→56 */
+  --comp-input-min-w:    clamp(200px, 12.5rem + 2.308vw, 320px); /* 200→320 */
   --comp-thumb-size:     clamp(16px, 0.892rem + 0.462vw, 32px);  /* 16→32 */
   --switch-track-height: clamp(20px, 1.196rem + 0.231vw, 28px);  /* 20→28 */
   --switch-track-width:  clamp(36px, 2.142rem + 0.462vw, 52px);  /* 36→52 */
@@ -128,6 +129,13 @@
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
   --layout-loading-min-height: 300px;
   --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px);
+  /* IPTV OSD 控制栏最大宽度：30vw 系数让大屏涨幅更猛
+     - 1024px → ~627px
+     - 1440px → ~752px
+     - 1920px → ~896px
+     - 2560px → ~1088px
+     - 3840px → clamp 1400px（TV 端通过 .up-platform-tv 进一步覆盖到 1600px） */
+  --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
   --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px);
   --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px);
   --layout-hero-height-mobile: 280px;
@@ -216,14 +224,12 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 6 档视口断点梯度 (v4：每行偶数列数)
+   Card Columns — 6 档视口断点梯度 (v5：2K/4K 统一 8 列)
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
    ≥ 768  → 6   (平板)
    ≥ 1024 → 6   (小桌面)
    ≥ 1280 → 8   (PC 默认)
-   ≥ 1920 → 8   (大屏)
-   ≥ 2560 → 10  (TV)
-   ≥ 3840 → 10  (4K TV)
+   ≥ 1920 → 8   (大屏 / 2K / 4K / TV — 不再升级到 10)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   :root {
@@ -250,20 +256,8 @@
   :root {
     --card-cols: 8;
     --row-cols: 8;
-  }
-}
-
-@media (width >= 2560px) {
-  :root {
-    --card-cols: 10;
-    --row-cols: 10;
-  }
-}
-
-@media (width >= 3840px) {
-  :root {
-    --card-cols: 10;
-    --row-cols: 10;
+    /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
+    --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
   }
 }
 

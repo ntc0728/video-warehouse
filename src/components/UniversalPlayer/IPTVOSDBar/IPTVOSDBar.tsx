@@ -180,6 +180,9 @@ export default function IPTVOSDBar({
   }, [nextProgram]);
 
   const hasProgram = !!displayProgram;
+  // 标题非空判断：EPG 加载完成但匹配到空标题时显示空态占位，避免空白 marquee
+  const hasCurrentTitle = !!displayProgram?.title;
+  const hasNextTitle = !!displayNextProgram?.title;
 
   // tick 触发每秒重算当前时间；formatCurrentTime 内部读取 Date.now()，故依赖 tick 是必要的
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -214,9 +217,19 @@ export default function IPTVOSDBar({
 
   const sourceText = totalSources <= 1 ? '线路 1' : `线路 ${currentSourceIndex + 1}/${totalSources}`;
 
-  const OSD_MAX_WIDTH = 860;
+  // OSD 宽度计算：
+  // - 上限 OSD_MAX_WIDTH，宽屏时居中显示不超界
+  // - 下限 OSD_MIN_WIDTH，窄屏时压缩三列但不挤压到崩溃
+  // - 不再硬编码 -48 偏移：边缘留白改由 CSS max-width: calc(100% - 2 * var(--space-md)) 驱动，
+  //   移动/桌面/TV 三档分别用 --space-xs/--space-md/--space-lg，响应式自动适配
+  // - 外层 Math.min(containerWidth, ...) 兜底：极窄屏（<360）下不溢出视口
+  const OSD_MIN_WIDTH = 360;
+  const OSD_MAX_WIDTH = 1600;
+  const maxAllowed = Math.min(containerWidth, OSD_MAX_WIDTH);
+  const minRequired = Math.max(OSD_MIN_WIDTH, Math.floor(containerWidth * 0.6));
+  const innerWidth = Math.max(minRequired, Math.min(maxAllowed, containerWidth));
   const barWidth = containerWidth > 0
-    ? `${Math.min(hasProgram ? containerWidth - 80 : containerWidth * 2 / 3, OSD_MAX_WIDTH)}px`
+    ? `${Math.min(containerWidth, innerWidth)}px`
     : undefined;
 
   return (
@@ -252,17 +265,28 @@ export default function IPTVOSDBar({
             <div className="iptv-osd-program-row">
               <span className="iptv-osd-current-label">
                 <span className="iptv-osd-label-prefix">正在播放：</span>
-                <MarqueeText text={displayProgram.title} className="iptv-osd-program-marquee" />
+                {hasCurrentTitle ? (
+                  <MarqueeText text={displayProgram.title} className="iptv-osd-program-marquee" />
+                ) : (
+                  <span className="iptv-osd-program-empty">暂无节目信息</span>
+                )}
               </span>
             </div>
             <div className="iptv-osd-next-row">
               {displayNextProgram ? (
                 <span className="iptv-osd-next-content">
                   <span className="next-label">下一节目：</span>
-                  <MarqueeText text={`${displayNextProgram.title} ${formatTime(displayNextProgram.start)} - ${formatTime(displayNextProgram.end)}`} className="iptv-osd-next-marquee" />
+                  {hasNextTitle ? (
+                    <MarqueeText
+                      text={`${displayNextProgram.title} ${formatTime(displayNextProgram.start)} - ${formatTime(displayNextProgram.end)}`}
+                      className="iptv-osd-next-marquee"
+                    />
+                  ) : (
+                    <span className="iptv-osd-program-empty">暂无节目信息</span>
+                  )}
                 </span>
               ) : (
-                <span><span className="next-label">下一节目：</span>暂无</span>
+                <span><span className="next-label">下一节目：</span>暂无节目信息</span>
               )}
             </div>
           </>

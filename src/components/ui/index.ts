@@ -9,6 +9,8 @@ export { default as Result } from './Result';
 export { default as Slider } from './Slider';
 export { default as Switch } from './Switch';
 export { TabBar } from './TabBar';
+export { default as Timeline } from './Timeline';
+export type { TimelineItem, TimelineProps, TimelineVariant } from './Timeline';
 export { toast } from './toastBus';
 export { ToastProvider } from './Toast';
 

@@ -15,7 +15,12 @@
  *  - isLoading && hasMore → spinner + "加载中…"
  *  - 加载成功:isLoading 翻 false → spinner 同帧消失
  *  - 加载失败:isLoading 翻 false → spinner 同帧消失,卡片数量保持不变
+ *
+ * 200ms 延迟淡出：
+ *  - 当 isAllLoaded（已显示全部）时，立即 shown=true；200ms 后通过 opacity 淡出
+ *  - 当 isAllLoaded 状态结束（用户重新筛选 / hasMore 变 true）时立即重置 shown
  */
+import { useEffect, useRef, useState } from 'react';
 import './Browse.css';
 
 interface BrowseLoadMoreProps {
@@ -25,16 +30,56 @@ interface BrowseLoadMoreProps {
 }
 
 export default function BrowseLoadMore({ hasMore, isLoading, hasItems }: BrowseLoadMoreProps) {
-  // 没有任何数据 → 不显示
-  if (!hasItems) return null;
+  // ── 200ms 延迟淡出逻辑（hooks 必须无条件在最前调用） ──
+  // 仅在 isAllLoaded 触发：shown=true 立即显示，200ms 后开始淡出
+  const [shown, setShown] = useState(true);
+  const [visible, setVisible] = useState(true);
+  const fadeTimerRef = useRef<number | null>(null);
 
   // ── 3 态分支 ──
   const isLoadingMore = isLoading && hasMore;
   const isAllLoaded = !hasMore && hasItems;
   const canShowMore = hasMore && !isLoading && hasItems;
 
+  useEffect(() => {
+    if (isAllLoaded) {
+      // 立即显示，200ms 后开始淡出
+      setShown(true);
+      setVisible(true);
+      if (fadeTimerRef.current !== null) {
+        clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+      fadeTimerRef.current = window.setTimeout(() => {
+        setVisible(false);
+        fadeTimerRef.current = null;
+      }, 200);
+    } else {
+      // 非 all-loaded 状态：立即重置 shown
+      if (fadeTimerRef.current !== null) {
+        clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+      setShown(true);
+      setVisible(true);
+    }
+    return () => {
+      if (fadeTimerRef.current !== null) {
+        clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+    };
+  }, [isAllLoaded]);
+
+  // 没有任何数据 → 不显示（hooks 必须在 early return 之前调用完）
+  if (!hasItems) return null;
+
   return (
-    <div className="browse-loadmore">
+    <div
+      className="browse-loadmore"
+      style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s ease' }}
+      aria-hidden={!shown}
+    >
       {/* 文字态：3 选 1 */}
       {isLoadingMore ? (
         <div className="browse-loadmore-loading" role="status" aria-live="polite">

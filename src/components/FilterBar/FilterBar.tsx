@@ -7,9 +7,15 @@
  * 类型行：仅在 category=all 时显示（全部/电影/剧集）
  * 地区/评分/分类 label 可点击：点击 = 回到该行「全部」状态，默认即高亮
  * 排序 label 不可选（纯文本）
+ *
+ * 折叠：默认仅展示分类 + 类型 + 折叠按钮；地区/评分/排序 默认折叠，
+ *      点击「更多筛选 ▾」展开 300ms 过渡。
+ *      折叠状态可由 useNavStore('filterBarCollapsed') 跨会话恢复。
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { useNavStore } from '@/stores';
 import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, type FilterBarValue } from './constants';
 import './FilterBar.css';
@@ -38,6 +44,21 @@ export default function FilterBar({
   isUpdating = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
+  // 折叠状态：默认 true（折叠）。useNavStore 持久化（跨页面/跨会话恢复）。
+  const navStore = useNavStore();
+  const navSaved = navStore.getState('filterBarCollapsed');
+  const [collapsed, setCollapsed] = useState<boolean>(
+    typeof (navSaved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed === 'boolean'
+      ? (navSaved as { filter?: { collapsed?: boolean } }).filter!.collapsed!
+      : true,
+  );
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      navStore.saveState('filterBarCollapsed', { filter: { collapsed: next } });
+      return next;
+    });
+  }, [navStore]);
 
   // 过滤掉分类自身默认的 genre（仍在 value.genreIds 中参与 API）
   const visibleGenres = useMemo(
@@ -158,7 +179,14 @@ export default function FilterBar({
         </div>
       )}
 
-      {/* 地区 — 水平滚动（无「全部」chip，由 label 表达） */}
+      {/* 折叠区域：地区 / 评分 / 排序 */}
+      <div
+        id="filter-bar-collapse-body"
+        className={`filter-bar__collapse-body${!collapsed ? ' filter-bar__collapse-body--expanded' : ''}`}
+        aria-hidden={collapsed}
+      >
+
+      {/* 地区 — 水平滚动（无「全部」chip，由 label 表达），默认折叠 */}
       {!hideRegion && (
         <div className="filter-bar__row filter-bar__row--scroll">
           <button
@@ -183,7 +211,7 @@ export default function FilterBar({
         </div>
       )}
 
-      {/* 评分 — 删除了「不限」chip，label 可点击 = 不限 */}
+      {/* 评分 — 删除了「不限」chip，label 可点击 = 不限，默认折叠 */}
       <div className="filter-bar__row">
         <button
           type="button"
@@ -204,7 +232,7 @@ export default function FilterBar({
         ))}
       </div>
 
-      {/* 排序 — label 不可选（纯文本） */}
+      {/* 排序 — label 不可选（纯文本），默认折叠 */}
       <div className="filter-bar__row">
         <span className="filter-bar__label">排序</span>
         {SORT_OPTIONS.map((s, i) => (
@@ -216,6 +244,23 @@ export default function FilterBar({
             {s.label}
           </button>
         ))}
+      </div>
+      </div>
+
+      {/* 折叠按钮：「更多筛选 / 收起筛选」 — 放在所有筛选条件下方 */}
+      <div className="filter-bar__row filter-bar__row--toggle">
+        <button
+          type="button"
+          className={`filter-bar__toggle${!collapsed ? ' filter-bar__toggle--expanded' : ''}`}
+          onClick={toggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-controls="filter-bar-collapse-body"
+        >
+          <span>{collapsed ? '更多筛选' : '收起筛选'}</span>
+          <span className="filter-bar__toggle-icon" aria-hidden="true">
+            <ChevronDown size={14} />
+          </span>
+        </button>
       </div>
     </div>
   );

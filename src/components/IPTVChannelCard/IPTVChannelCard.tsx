@@ -15,9 +15,10 @@ import './IPTVChannelCard.css';
 interface IPTVChannelCardProps {
   channel: IPTVChannel;
   hideFavorite?: boolean;
+  batchMode?: boolean;
 }
 
-const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false }: IPTVChannelCardProps) {
+const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false }: IPTVChannelCardProps) {
   const navigate = useNavigate();
   // 使用 selector 单独订阅需要的字段,避免每张卡片都订阅整个 IPTVStore。
   // 频道列表 N 张卡片同时订阅任一字段变化会触发 N 次重渲染。
@@ -32,6 +33,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
 
   /** 点击播放：记录播放历史，根据代理规则构建播放地址并跳转 */
   const handlePlay = useCallback(() => {
+    if (batchMode) return;
     setSelectedChannel(channel);
     recordPlay(channel.id);
     const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
@@ -39,7 +41,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
       ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
       : channel.url;
     navigate(`/iptv/play?url=${encodeURIComponent(playUrl)}`, { state: { from: '/iptv' } });
-  }, [channel, proxyUrl, proxyPattern, setSelectedChannel, recordPlay, navigate]);
+  }, [batchMode, channel, proxyUrl, proxyPattern, setSelectedChannel, recordPlay, navigate]);
 
   /** 收藏切换，带弹跳动画反馈 */
   const handleFavorite = useCallback((e: React.MouseEvent) => {
@@ -94,12 +96,13 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
             letter={channel.name.charAt(0)}
             loadingVariant="brand"
           />
-          {channel.isAvailable !== undefined && (
+          {/* 批量模式下隐藏封面元素 */}
+          {!batchMode && channel.isAvailable !== undefined && (
             <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
               {channel.isAvailable ? <CheckCircle size={8} /> : <XCircle size={8} />}
             </div>
           )}
-          {channel.group ? (
+          {!batchMode && channel.group ? (
             <span className="iptv-card-group">{channel.group}</span>
           ) : null}
         </div>
@@ -111,7 +114,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           >{channel.name}</h3>
         </div>
       </div>
-      {!hideFavorite && (
+      {/* 批量模式下隐藏收藏按钮 */}
+      {!batchMode && !hideFavorite && (
         <button
           className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
           onClick={handleFavorite}

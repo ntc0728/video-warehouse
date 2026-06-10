@@ -1,8 +1,11 @@
 .iptv-player-page {
+  /* 顶层独立路由下，IPTV 播放页本身就是"全屏应用"。
+     用 position: fixed 占满整个浏览器视口，不依赖任何父级布局。 */
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
   background-color: #000;
   color: var(--color-text);
   overflow: hidden;

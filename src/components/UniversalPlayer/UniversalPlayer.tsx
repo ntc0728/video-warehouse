@@ -514,6 +514,26 @@ export default function UniversalPlayer({
     }
   }, [isPlaying, hasError, isChannelLoading]);
 
+  /**
+   * 错误态下强制显示 OSD 且禁用自动隐藏。
+   * - hasError: false → true：立即唤起 OSD，清空自动隐藏计时器
+   * - hasError: true → false（重试 / 切频道成功）：恢复 3 秒自动隐藏
+   */
+  useEffect(() => {
+    if (hasError) {
+      setControlsVisible(true);
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+        autoHideTimerRef.current = null;
+      }
+    } else if (isPlaying) {
+      // 重试/切频道成功且已在播放：恢复自动隐藏
+      resetAutoHideTimer();
+    }
+    // 仅依赖 hasError / isPlaying 的变化触发，resetAutoHideTimer 是稳定引用
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasError, isPlaying]);
+
   /** IPTV 模式：加载超时（HLS 自动重试不会触发 onError，需主动超时）
    *  用 ref 防抖：只在 URL 变化时重置计时器，忽略 isPlaying 波动 */
   useEffect(() => {
@@ -570,6 +590,7 @@ export default function UniversalPlayer({
         hasError={hasError}
         onRetry={handleRetry}
         onClick={handlePlayerClick}
+        onOpenChannelList={() => setChannelListVisible(true)}
       />
 
       {isChannelLoading && (

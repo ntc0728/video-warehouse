@@ -67,16 +67,17 @@
   /* 永久隐藏横滚条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  cursor: grab;
   user-select: none;
   -webkit-user-drag: none;
   touch-action: pan-y;
-}
-.tmdb-movierow-scroll:active {
-  cursor: grabbing;
+  /* cursor 不再放在 row 容器（避免空白处出现 grab 误导）—— 改放到 card 元素 */
 }
 .tmdb-movierow-scroll--dragging {
   scroll-behavior: auto;
+  /* 拖拽期间关闭邻近 snap，避免 snap 反复拉回导致顿挫 */
+  scroll-snap-type: none;
+  /* 提示浏览器将 scrollLeft 提升为合成层，降低主线程压力 */
+  will-change: scroll-position;
   cursor: grabbing;
 }
 .tmdb-movierow-scroll::-webkit-scrollbar {
@@ -85,7 +86,8 @@
   height: 0;
 }
 
-/* 卡片容器 — 宽度跟随 --card-cols 动态计算，与网格列数完全一致 */
+/* 卡片容器 — 宽度跟随 --card-cols 动态计算，与网格列数完全一致
+   cursor 移到这里：仅在 card 上显示 grab；空白处不响应拖动（pointerdown 直接 return） */
 .tmdb-movierow-card {
   flex: 0 0 calc(
     (100% - (var(--card-cols, 7) - 1) * var(--space-sm))
@@ -93,6 +95,10 @@
   );
   scroll-snap-align: start;
   min-width: 0;
+  cursor: grab;
+}
+.tmdb-movierow-card:active {
+  cursor: grabbing;
 }
 
 /* 骨架屏 */
