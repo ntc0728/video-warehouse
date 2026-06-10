@@ -82,6 +82,10 @@ function TMDBMovieRow({
   const dragLastYRef = useRef<number>(0);
   const dragTotalPathSqRef = useRef<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  // 拖拽源 card 元素：用于在释放前准确 releasePointerCapture / 计算 snap 边界
+  const dragCardElRef = useRef<HTMLElement | null>(null);
+  // rAF 节流：避免同一帧内多次 scrollLeft 赋值
+  const rafIdRef = useRef<number | null>(null);
   /** 全局最小拖拽阈值：6px — 卡片上轻抖不触发 dragMovedRef，避免被误判为点击跳详情 */
   const DRAG_MIN_DISTANCE_SQ = 36; // 6 * 6
 
@@ -157,11 +161,15 @@ function TMDBMovieRow({
   );
 
   // 鼠标拖拽：仅在桌面端非 TV、非触摸设备时启用
+  // 设计：卡片上按下 → 进入 drag 模式；空白处按下 → 忽略
+  // click 事件：通过 onClickCapture 在 pointerup 后精确判断（距离 < 6px 视为点击）
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (isMobile || isTV) return;
-    if (e.pointerType === 'touch') return; // 触摸走 touchstart
+    if (e.pointerType === 'touch') return;
     const el = rowRef.current;
     if (!el) return;
+    const cardEl = (e.target as HTMLElement).closest('.tmdb-movierow-card') as HTMLElement | null;
+    if (!cardEl) return;
     isDraggingRef.current = true;
     dragMovedRef.current = false;
     dragTotalPathSqRef.current = 0;
@@ -170,7 +178,7 @@ function TMDBMovieRow({
     dragLastXRef.current = e.clientX;
     dragLastYRef.current = e.clientY;
     dragScrollLeftRef.current = el.scrollLeft;
-    el.setPointerCapture(e.pointerId);
+    dragCardElRef.current = cardEl;
   }, [isMobile, isTV]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -179,28 +187,70 @@ function TMDBMovieRow({
     if (!el) return;
     const dx = e.clientX - dragStartXRef.current;
     if (Math.abs(dx) > 4) dragMovedRef.current = true;
-    // 累计欧式距离平方（X + Y），用于释放时的二次判定
     const ddx = e.clientX - dragLastXRef.current;
     const ddy = e.clientY - dragLastYRef.current;
     dragTotalPathSqRef.current += ddx * ddx + ddy * ddy;
     dragLastXRef.current = e.clientX;
     dragLastYRef.current = e.clientY;
-    el.scrollLeft = dragScrollLeftRef.current - dx;
+    const targetLeft = dragScrollLeftRef.current - dx;
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      el.scrollLeft = targetLeft;
+    });
   }, []);
 
   const handlePointerUpOrCancel = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     setIsDragging(false);
-    const el = rowRef.current;
-    if (el && el.hasPointerCapture(e.pointerId)) {
-      el.releasePointerCapture(e.pointerId);
+    dragCardElRef.current = null;
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
     }
-    // 释放时若累计位移 < 6px，强制清空 dragMovedRef（视为点击，让卡片 onClick 正常触发）
-    if (dragTotalPathSqRef.current < DRAG_MIN_DISTANCE_SQ) {
+    // 用最终位移（而非累计路径）判定：距起点 < 6px → 视为点击
+    const finalDx = e.clientX - dragStartXRef.current;
+    const finalDy = e.clientY - dragStartYRef.current;
+    const finalDistSq = finalDx * finalDx + finalDy * finalDy;
+    if (finalDistSq < DRAG_MIN_DISTANCE_SQ) {
       dragMovedRef.current = false;
     }
+    // 拖拽结束后 snap 到最近 card 边界
+    if (dragMovedRef.current) {
+      const el = rowRef.current;
+      if (el) {
+        const currentLeft = el.scrollLeft;
+        const firstCard = el.querySelector('.tmdb-movierow-card') as HTMLElement | null;
+        if (firstCard) {
+          const cardWidth = firstCard.getBoundingClientRect().width;
+          const gap = parseFloat(getComputedStyle(el).columnGap || getComputedStyle(el).gap || '0') || 0;
+          const step = cardWidth + gap;
+          if (step > 0) {
+            const idx = Math.round(currentLeft / step);
+            const target = Math.max(0, Math.min(idx * step, el.scrollWidth - el.clientWidth));
+            setTimeout(() => {
+              el.scrollTo({ left: target, behavior: 'smooth' });
+            }, 50);
+          }
+        }
+      }
+    }
   }, []);
+
+  // 全局 pointerup 兜底：鼠标移出行外释放时也能正确结束拖拽
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleGlobalPointerUp = (e: PointerEvent) => {
+      handlePointerUpOrCancel(e as unknown as React.PointerEvent<HTMLDivElement>);
+    };
+    window.addEventListener('pointerup', handleGlobalPointerUp, { once: true });
+    window.addEventListener('pointercancel', handleGlobalPointerUp, { once: true });
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, [isDragging, handlePointerUpOrCancel]);
 
   if (items.length === 0 && !isLoading) {
     // 有错误时显示错误行，否则隐藏
@@ -239,7 +289,10 @@ function TMDBMovieRow({
           </button>
         )}
 
-        {/* 卡片列表 */}
+        {/* 卡片列表 — pointer 事件注册在 row 容器（外层），
+            handlePointerDown 内部用 closest() 判定 e.target 是否是 .tmdb-movierow-card，
+            空白处 mousedown 不进入 drag 模式；同时 setPointerCapture 绑到 card 元素
+            以保证浏览器原生 click 事件正确命中（jump/收藏按钮正常工作）。 */}
         <div
           className={`tmdb-movierow-scroll${isDragging ? ' tmdb-movierow-scroll--dragging' : ''}`}
           ref={rowRef}

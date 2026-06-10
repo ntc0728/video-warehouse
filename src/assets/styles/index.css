@@ -13,8 +13,8 @@ html {
    说明：thumb 默认极淡色，hover/active 渐深以提供可发现性。
    横滚容器通过下方白名单例外永久隐藏。 */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-color) transparent;
+  /* scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-color) transparent; */
 }
 *::-webkit-scrollbar {
   width: var(--space-xs);
@@ -296,6 +296,10 @@ html.theme-transitioning [class*="-bar"] {
 }
 }
 .page-transition {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   animation: pageFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -380,50 +384,73 @@ main {
   color: var(--color-text);
 }
 
+/* ── 页面工具栏按钮（收藏 / 历史页共用） ────────────── */
+.toolbar-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.toolbar-btn:hover {
+  background: color-mix(in srgb, var(--color-hover-bg) 80%, var(--color-border));
+}
+.toolbar-btn--danger {
+  border-color: transparent;
+  background: rgba(255,77,79,0.08);
+  color: var(--color-error);
+}
+.toolbar-btn--danger:hover {
+  background: rgba(255,77,79,0.15);
+}
+.toolbar-btn--active {
+  border-color: transparent;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.toolbar-btn--active:hover {
+  background: var(--color-primary);
+  opacity: 0.9;
+}
+
+/* ── 工具栏操作按钮组（搜索框右侧） ────────────── */
+.toolbar-actions {
+  display: flex;
+  flex-flow: row wrap;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+  align-items: center;
+  margin-left: auto;
+}
+
 /* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
-   列数：3 (≤767px / 768-1023px) → 4 (≥1024px) → 5 (1440-1919) → 6 (≥1920) → 7 (≥2560) → 8 (≥3840)
+   列数：3 (≤767px) → 4 (768-1023px) → 6 (≥1024px)
    暴露为 CSS 变量 --iptv-cols,便于其他网格复用同一列数策略 */
 .iptv-channel-grid {
   display: grid;
-  grid-template-columns: repeat(var(--iptv-cols, 4), 1fr);
-  gap: var(--space-lg);
+  grid-template-columns: repeat(var(--iptv-cols, 6), minmax(0, 1fr));
+  gap: var(--space-md);
   grid-auto-rows: auto;
   align-content: start;
+  width: 100%;
 }
 
 @media (width <= 767px) {
   .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 3), 1fr);
+    grid-template-columns: repeat(var(--iptv-cols, 3), minmax(0, 1fr));
   }
 }
 
 @media (width >= 768px) and (width <= 1023px) {
   .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 3), 1fr);
-  }
-}
-
-@media (width >= 1440px) and (width <= 1919px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 5), 1fr);
-  }
-}
-
-@media (width >= 1920px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 6), 1fr);
-  }
-}
-
-@media (width >= 2560px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 7), 1fr);
-  }
-}
-
-@media (width >= 3840px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 8), 1fr);
+    grid-template-columns: repeat(var(--iptv-cols, 4), minmax(0, 1fr));
   }
 }
 
@@ -431,32 +458,14 @@ main {
   --iptv-cols: 3;
 }
 
-@media (width >= 1024px) {
+@media (width >= 768px) and (width <= 1023px) {
   :root {
     --iptv-cols: 4;
   }
 }
 
-@media (width >= 1440px) and (width <= 1919px) {
-  :root {
-    --iptv-cols: 5;
-  }
-}
-
-@media (width >= 1920px) {
+@media (width >= 1024px) {
   :root {
     --iptv-cols: 6;
-  }
-}
-
-@media (width >= 2560px) {
-  :root {
-    --iptv-cols: 7;
-  }
-}
-
-@media (width >= 3840px) {
-  :root {
-    --iptv-cols: 8;
   }
 }

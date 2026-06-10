@@ -6,8 +6,7 @@
   position: relative;
   width: calc(100% + 2 * var(--space-md));
   aspect-ratio: 21 / 9;                                       /* 21:9 宽银幕 */
-  min-height: var(--layout-hero-height);                      /* 小屏兜底(200-500px) */
-  max-height: clamp(37.5rem, 50vw, 67.5rem);                /* 大屏兜底,避免超高屏(600-1080px) */
+  min-height: max(200px, calc(100% * 9 / 21));                /* 仅在窄屏(<467px)兜底到 200px，其余宽度严格按 21:9 */
   margin-right: calc(-1 * var(--space-md));
   margin-left: calc(-1 * var(--space-md));
   overflow: hidden;

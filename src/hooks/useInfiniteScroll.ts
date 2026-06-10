@@ -66,8 +66,10 @@ export function useInfiniteScroll({
   const isLoadingRef = useRef(isLoading);
   const pageLoadingRef = useRef(false);
   const onLoadMoreRef = useRef(onLoadMore);
+  const hasMoreRef = useRef(hasMore);
   const triggerLoadRef = useRef<() => void>(() => {});
   onLoadMoreRef.current = onLoadMore;
+  hasMoreRef.current = hasMore;
 
   /** 核心触发逻辑：所有去重开关都集中在这里 */
   const triggerLoad = useCallback(() => {
@@ -103,12 +105,14 @@ export function useInfiniteScroll({
   }, [isLoading]);
 
   // ── 1) IntersectionObserver 监听 ──
-  // 注意:此处不再把 isLoading 作为依赖。旧实现会在 isLoading 翻 true 时 disconnect
-  // IO、翻 false 时重建,导致异步场景下 IO 反复重建、配合节流产生"看起来在加载
-  // 但实际被拦下"的体验。改为：IO 持续 observe 哨兵,由 triggerLoad 内部的
-  // isLoadingRef + pageLoadingRef 双重去重,既保留去重语义又消除 IO 重建抖动。
+  // 注意: hasMore 不作为依赖——由 triggerLoadRef 在回调中读取最新值来判断。
+  // 旧实现把 hasMore 放进 deps 导致 IO 频繁 disconnect/reconnect，re-observe 后
+  // 若哨兵仍在视口会立刻 callback，形成"hasMore 变→IO 重建→callback→loadMore→
+  // visibleCount 变→hasMore 变"的渲染循环。现在 IO 仅在 mount / disabled /
+  // rootMargin / scrollContainerRef 变化时创建一次，callback 内通过 ref 读最新
+  // hasMore 值来决定是否触发。
   useEffect(() => {
-    if (disabled || !hasMore) {
+    if (disabled) {
       observerRef.current?.disconnect();
       observerRef.current = null;
       return;
@@ -117,7 +121,8 @@ export function useInfiniteScroll({
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
-    observerRef.current?.disconnect();
+    // 已有 observer → 不重复创建
+    if (observerRef.current) return;
 
     const root = scrollContainerRef?.current || null;
     observerRef.current = new IntersectionObserver(
@@ -134,24 +139,26 @@ export function useInfiniteScroll({
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [disabled, hasMore, rootMargin, scrollContainerRef]);
+  }, [disabled, rootMargin, scrollContainerRef]);
 
   // ── 2) scroll 事件兜底 ──
   // 快速滚动/wheel 惯性下 IO 可能来不及触发；额外监听 scroll，
   // 当"距底部距离 < FALLBACK_THRESHOLD_PX"时强制触发一次。
+  // hasMore / triggerLoad 不作为依赖：通过 ref 读最新值，避免依赖变化时
+  // 重新 addEventListener + 立即 onScroll() 形成触发循环。
   useEffect(() => {
-    if (disabled || !hasMore) return;
+    if (disabled) return;
 
     const el = scrollContainerRef?.current ?? null;
     const target: HTMLElement | Window = el ?? window;
 
     const onScroll = () => {
-      if (!hasMore || !canLoadMore) return;
+      if (!hasMoreRef.current || !canLoadMore) return;
       const dist = el
         ? el.scrollHeight - el.scrollTop - el.clientHeight
         : document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
       if (dist < FALLBACK_THRESHOLD_PX) {
-        triggerLoad();
+        triggerLoadRef.current();
       }
     };
 
@@ -162,7 +169,7 @@ export function useInfiniteScroll({
     return () => {
       target.removeEventListener('scroll', onScroll);
     };
-  }, [disabled, hasMore, canLoadMore, scrollContainerRef, triggerLoad]);
+  }, [disabled, canLoadMore, scrollContainerRef]);
 
   return { sentinelRef, resetLoading };
 }

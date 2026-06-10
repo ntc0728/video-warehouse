@@ -18,6 +18,7 @@ interface VideoCardProps {
   index?: number;
   rating?: number;
   hideFavorite?: boolean;
+  batchMode?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -31,6 +32,7 @@ const VideoCard = memo(function VideoCard({
   video,
   rating,
   hideFavorite = false,
+  batchMode = false,
 }: VideoCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,9 +65,12 @@ const VideoCard = memo(function VideoCard({
     [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating],
   );
 
-  const handleClick = useCallback(() => navigate(`/detail/${video.id}`, {
-    state: { from: location.pathname + location.search },
-  }), [navigate, video.id, location.pathname, location.search]);
+  const handleClick = useCallback(() => {
+    if (batchMode) return;
+    navigate(`/detail/${video.id}`, {
+      state: { from: location.pathname + location.search },
+    });
+  }, [batchMode, navigate, video.id, location.pathname, location.search]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleClick();
@@ -93,16 +98,16 @@ const VideoCard = memo(function VideoCard({
           loadingVariant="brand"
         />
 
-        {/* 评分 — 左上角 */}
-        {rating !== undefined && rating > 0 && (
+        {/* 评分 — 左上角（批量模式下隐藏） */}
+        {!batchMode && rating !== undefined && rating > 0 && (
           <span className="video-card-rating">
             <Star size={10} fill="currentColor" />
             {rating.toFixed(1)}
           </span>
         )}
 
-        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻 */}
-        {!hideFavorite && (
+        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻（批量模式下隐藏） */}
+        {!batchMode && !hideFavorite && (
           <button
             className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
             onClick={handleFavorite}
@@ -117,13 +122,13 @@ const VideoCard = memo(function VideoCard({
           </button>
         )}
 
-        {/* 年份 — 左下角 */}
-        {video.year && (
+        {/* 年份 — 左下角（批量模式下隐藏） */}
+        {!batchMode && video.year && (
           <span className="video-card-year-badge">{video.year}</span>
         )}
 
-        {/* 类型 — 右下角 */}
-        {video.type && (
+        {/* 类型 — 右下角（批量模式下隐藏） */}
+        {!batchMode && video.type && (
           <span className="video-card-type">
             {typeLabels[video.type] || video.type}
           </span>

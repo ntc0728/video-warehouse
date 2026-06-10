@@ -12,7 +12,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-md) var(--space-sm);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -47,21 +47,21 @@
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   white-space: nowrap;
 }
 
 /* 可点击 label：胶囊按钮样式 */
 .filter-bar__label--clickable {
   margin-right: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-2xs) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.5;
   /* 预占位 box-shadow：避免 active 切换时触发 reflow */
   box-shadow: 0 0 0 0 transparent;
   /* 白名单 transition：仅过渡颜色/背景/边框/阴影，禁止 all */
@@ -121,14 +121,14 @@
 /* ── Chip (胶囊样式) ───────────────────────────────── */
 
 .filter-bar__chip {
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-2xs) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.5;
   white-space: nowrap;
   /* 预占位 box-shadow：避免 active 切换时触发 reflow */
   box-shadow: 0 0 0 0 transparent;
@@ -139,13 +139,11 @@
 }
 
 .filter-bar__chip:hover {
-  border-color: var(--color-primary);
   background: var(--color-surface-hover, var(--color-surface));
   color: var(--color-primary);
 }
 
 .filter-bar__chip--active {
-  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
   font-weight: 600;
@@ -250,7 +248,7 @@
 /* ── Desktop (≥ 1024) ─────────────────────────────── */
 @media (width >= 1024px) {
   .filter-bar {
-  padding: var(--space-md) var(--space-xl);
+  padding: var(--space-md) var(--space-sm);
 }
 }
 
@@ -282,4 +280,65 @@
   .filter-bar__updating {
   animation: none;
 }
+  .filter-bar__collapse-body {
+  transition: none;
+}
+}
+
+/* ── Toggle（更多筛选 / 收起筛选） ──────────────── */
+
+.filter-bar__toggle {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* 按钮独立行容器：作为最下方一行，水平居中 */
+.filter-bar__row--toggle {
+  justify-content: center;
+  margin-top: var(--space-2xs);
+}
+
+.filter-bar__toggle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.filter-bar__toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.filter-bar__toggle--expanded .filter-bar__toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* 折叠区域过渡：max-height + opacity 同步 */
+.filter-bar__collapse-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.filter-bar__collapse-body--expanded {
+  max-height: 1000px;
+  opacity: 1;
 }

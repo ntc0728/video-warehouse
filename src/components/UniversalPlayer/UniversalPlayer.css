@@ -12,9 +12,14 @@
   position: relative;
   width: 100%;
   height: 100%;
+  /* 兜底高度锚点：父级未提供具体高度时（如 IPTV 频道失效，videoHeight=0）维持 16:9 比例 */
+  aspect-ratio: 16 / 9;
+  background: #000;
 }
 
 .up-player-video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -36,6 +41,8 @@
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   font-size: var(--text-base);
+  /* 错误/加载层不吞交互：让 OSD / 错误操作条可点击 */
+  pointer-events: none;
   backdrop-filter: blur(12px);
 }
 
@@ -621,20 +628,34 @@
   cursor: pointer;
 }
 
+/* "正在播放"图标（仅 active 态显示） */
+.up-channel-item-playing-icon {
+  flex-shrink: 0;
+  margin-left: var(--space-2xs);
+  color: var(--color-primary);
+  opacity: 0.95;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-primary) 60%, transparent));
+}
+
 .up-channel-item:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
 
-/* 活跃频道 - 右侧播放指示圆点 */
+/* 活跃频道 - 左侧色条 + 加粗 + 25% 背景 + 内部描边 + 右侧播放图标 */
 .up-channel-item-active {
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-primary);
+  position: relative;
+  border-left: 3px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 40%, transparent);
 }
 
 .up-channel-item-active:hover {
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  color: var(--color-primary-hover);
+  border-left-color: var(--color-primary-hover);
+  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  color: #fff;
 }
 
 .up-channel-logo {
@@ -889,7 +910,108 @@
   }
 }
 
-/* Channel loading overlay - centered on screen during channel switching */
+/* ===== Error Actions (IPTV 错误态快捷操作条) ===== */
+.up-error-actions {
+  position: absolute;
+  bottom: var(--space-2xl);
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  gap: var(--space-sm);
+  max-width: calc(100% - var(--space-2xl));
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  background: rgba(20, 20, 20, 0.75);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  backdrop-filter: blur(10px);
+}
+
+.up-error-actions-btn {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+  min-width: var(--comp-btn-min-width);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+  cursor: pointer;
+}
+
+.up-error-actions-btn svg {
+  flex-shrink: 0;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.up-error-actions-btn:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.up-error-actions-btn:active {
+  transform: scale(0.96);
+}
+
+.up-error-actions-btn-primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.up-error-actions-btn-primary:hover {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+}
+
+/* 移动端错误操作条：缩小 padding/字号，按钮只显图标以避免挤压 */
+.up-platform-mobile .up-error-actions {
+  bottom: var(--space-xl);
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+}
+
+.up-platform-mobile .up-error-actions-btn {
+  gap: var(--space-3xs);
+  min-width: auto;
+  padding: var(--space-3xs) var(--space-sm);
+  font-size: var(--text-xs);
+}
+
+/* 极窄屏（< 360）下进一步隐藏按钮文字，仅保留图标 */
+.up-platform-mobile .up-error-actions-btn span {
+  display: none;
+}
+
+/* 电视端错误操作条：放大触控区域，文字字号放大适配远距离观看 */
+.up-platform-tv .up-error-actions {
+  bottom: var(--space-3xl);
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.up-platform-tv .up-error-actions-btn {
+  min-width: var(--comp-btn-min-width);
+  min-height: var(--comp-btn-min-height);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-lg);
+}
+
+.up-platform-tv .up-error-actions-btn svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+/* ===== Channel loading overlay - centered on screen during channel switching ===== */
 .up-channel-loading-overlay {
   position: absolute;
   inset: 0;

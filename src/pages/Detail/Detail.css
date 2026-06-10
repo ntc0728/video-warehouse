@@ -30,7 +30,6 @@
   flex-direction: column;
   justify-content: flex-end;
   min-height: var(--layout-episode-panel-w);
-  margin: var(--space-sm);
   margin-bottom: 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -413,7 +412,7 @@
 /* ── 内容卡片 ──────────────────────────────────── */
 
 .detail-content {
-  margin: var(--space-xs) var(--space-sm) var(--space-sm);
+  margin: var(--space-xs) 0 var(--space-sm) 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -721,7 +720,7 @@
 /* ── 推荐区（首页 TMDBMovieRow 风格） ──────────── */
 
 .detail-recommend {
-  margin: 0 var(--space-sm) var(--space-sm);
+  margin-bottom: var(--space-sm);
   padding: var(--space-md) 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -920,13 +919,6 @@
 
   .detail-hero-content {
   padding: var(--space-2xl) var(--space-2xl);
-}
-
-  .detail-hero-left {
-  /* 大屏不再单独限制 max-width：
-     继承 ≥1024 桌面端的 calc(100% - var(--layout-popover-wide-min-w))，
-     避免 var(--layout-hero-height)（语义为高度，200-500px）误用作宽度，
-     导致标题/简介/按钮组在 1440+ 视口被压缩。 */
 }
 
   .detail-hero-logo {

@@ -12,7 +12,7 @@
      视觉上卡片"远远小于"父容器应有的尺寸。 */
   width: 100%;
   margin: 0;
-  padding: var(--space-md) var(--space-lg) 0;
+  padding: var(--space-md) 0;
   animation: video-card-grid-fade 0.3s ease both;
 }
 
@@ -39,6 +39,10 @@
               box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   box-sizing: border-box;
+  /* 提升为合成层，hover transform 和卡片入场动画走 GPU 加速 */
+  will-change: transform;
+  /* 限制重排范围：卡片内部布局变化不影响兄弟元素 */
+  contain: layout style;
 }
 
 .video-card:hover {

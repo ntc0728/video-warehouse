@@ -55,6 +55,8 @@ rules.md
 # 截图
 shots/
 ScreenShot_*.png
+collections-b-*.png
+timeline-*.png
 
 # 构建和 lint 输出
 build-final.txt

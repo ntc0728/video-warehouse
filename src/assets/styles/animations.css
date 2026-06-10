@@ -241,12 +241,14 @@
 }
 
 /* ── 通用懒加载文字态(全平台使用) ──────────────────────
-   - padding 给哨兵下方留出滚动空间
-   - text-align: center + tertiary 色与"次要信息"语义一致
-   - 所有懒加载页(IPTV / Browse / Collections / History)共用此样式 */
+   - 通过 .page-transition 的 CSS Grid grid-template-rows: 1fr auto
+     实现内容不足时紧贴视口底部，不产生滚动条
+   - 内容充足时随滚动自然上移
+   - 上下间距 var(--space-xl)（24–40px 流体）以拉开与最后一张 card 的视觉距离 */
 .load-more-hint {
-  padding: var(--space-md);
+  padding: var(--space-xl) var(--space-md);
   color: var(--color-text-tertiary);
   font-size: var(--text-base);
   text-align: center;
+  transition: opacity 0.3s ease;
 }

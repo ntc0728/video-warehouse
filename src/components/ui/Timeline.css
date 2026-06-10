@@ -1,0 +1,209 @@
+/* Timeline — 通用时间轴组件（竖向 / 横向）
+ *
+ * 节点布局：[label]  ●  [count]
+ * 圆点（dot）居中,左侧为分组标题,右侧为 card 数量
+ * 轴线(line) 绝对定位在节点左/上 1/2 处贯穿
+ */
+
+.timeline {
+  --timeline-rail-color: var(--color-border);
+  --timeline-dot-size: 0.75rem;
+  --timeline-rail-size: 0.125rem;
+  --timeline-axis-offset: 1rem;            /* 圆点中心在节点内的偏移,给 line 对齐用 */
+  --timeline-min-node-h: 2.75rem;
+  --timeline-min-node-w: 5rem;
+  --timeline-node-color: var(--color-text-tertiary);
+  --timeline-node-active-color: var(--color-primary);
+  --timeline-count-bg: var(--color-primary);
+  --timeline-count-color: var(--color-text-inverse);
+  --timeline-label-color: var(--color-text-secondary);
+  --timeline-label-active-color: var(--color-text);
+  --timeline-count-min-w: 1.25rem;
+  --timeline-count-h: 1.125rem;
+  --timeline-count-font: 0.6875rem;
+}
+
+/* ── 竖向（默认） ─────────────────────────── */
+.timeline--vertical {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-xs) 0;
+}
+
+.timeline--vertical .timeline-node {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: var(--timeline-min-node-h);
+}
+
+/* 竖轴:贯穿节点左半部分中央 */
+.timeline--vertical .timeline-node-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--timeline-axis-offset);
+  z-index: 0;
+  width: var(--timeline-rail-size);
+  background: var(--timeline-rail-color);
+  transform: translateX(-50%);
+}
+
+.timeline--vertical .timeline-node-btn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--timeline-label-color);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.timeline--vertical .timeline-node-btn:hover {
+  background: var(--color-hover-bg);
+  color: var(--timeline-label-active-color);
+}
+
+/* ── 横向 ────────────────────────────────── */
+.timeline--horizontal {
+  display: flex;
+  flex-direction: row;
+  padding: var(--space-sm) var(--space-xs);
+  overflow: auto hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timeline--horizontal::-webkit-scrollbar {
+  display: none;
+}
+
+.timeline--horizontal .timeline-node {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  min-width: var(--timeline-min-node-w);
+  min-height: 2.5rem;
+}
+
+/* 横轴:贯穿节点上 1/2 水平线 */
+.timeline--horizontal .timeline-node-line {
+  position: absolute;
+  top: var(--timeline-axis-offset);
+  right: 0;
+  left: 0;
+  z-index: 0;
+  height: var(--timeline-rail-size);
+  background: var(--timeline-rail-color);
+  transform: translateY(-50%);
+}
+
+.timeline--horizontal .timeline-node-btn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-2xs) var(--space-sm) var(--space-2xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--timeline-label-color);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.timeline--horizontal .timeline-node-btn:hover {
+  background: var(--color-hover-bg);
+  color: var(--timeline-label-active-color);
+}
+
+/* ── 圆点（dot）—— 节点中央,贯穿轴线 ─────── */
+.timeline-node-dot {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: var(--timeline-dot-size);
+  height: var(--timeline-dot-size);
+  margin: 0 var(--timeline-dot-size);
+  border: 0.125rem solid var(--timeline-node-color);
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  box-sizing: border-box;
+}
+
+/* ── 激活态（共用） ─────────────────────────── */
+.timeline-node--active .timeline-node-dot {
+  border-color: var(--timeline-node-active-color);
+  background: var(--timeline-node-active-color);
+}
+
+.timeline-node--active .timeline-node-btn {
+  color: var(--timeline-label-active-color);
+  font-weight: 600;
+}
+
+/* ── 计数徽标（共用）—— 圆点右侧 ────────── */
+.timeline-node-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  min-width: var(--timeline-count-min-w);
+  height: var(--timeline-count-h);
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--timeline-count-font);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.timeline-node--active .timeline-node-count {
+  background: var(--timeline-count-bg);
+  color: var(--timeline-count-color);
+}
+
+/* ── 标签（共用）—— 圆点左侧,文字按自然宽 ── */
+.timeline-node-label {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 图标（共用）—— 紧跟 label ─────────── */
+.timeline-node-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ── 焦点环（TV/键盘） ────────────────────── */
+.timeline-node-btn:focus-visible {
+  outline: 0.125rem solid var(--color-primary);
+  outline-offset: 0.125rem;
+}

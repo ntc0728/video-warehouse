@@ -35,7 +35,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-md);
   align-items: center;
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-sm) var(--space-sm);
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 1px solid var(--color-border-light);
@@ -222,6 +222,7 @@
   display: inline-flex;
   gap: var(--space-sm);
   align-items: center;
+  padding: var(--space-sm) 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
 }
@@ -257,7 +258,7 @@
   .browse-header {
   grid-template-columns: auto 1fr auto;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) var(--space-sm);
 }
 
   /* 移动端只显示分类名，"分类"标签隐藏（节省横向空间） */
@@ -274,7 +275,7 @@
 }
 
   .video-card-grid {
-  padding: var(--space-sm) var(--space-md) 0;
+  padding: var(--space-sm) 0;
 }
 }
 
@@ -287,7 +288,7 @@
 
 /* ── TV (data-device="tv") ────────────────────────── */
 .browse-page--tv .browse-header {
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-lg) var(--space-sm);
 }
 
 .browse-page--tv .browse-header__category {
@@ -305,7 +306,7 @@
 
 [data-device="tv"] .video-card-grid {
   gap: var(--space-lg);
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-lg) 0;
 }
 
 /* ── Reduced motion ──────────────────────────────── */

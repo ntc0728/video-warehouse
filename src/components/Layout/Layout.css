@@ -27,7 +27,20 @@
 .app-shell__scroll {
   /* CustomScrollbar 用 flex: 1 占据剩余高度，min-height: 0 允许内部滚动 */
   flex: 1 1 0;
+  flex-direction: column;
   min-height: 0;
+}
+
+/* ── 页面统一左右内边距 ─────────────────────────────────
+   所有页面继承 var(--space-sm) 水平 padding，
+   Player / IPTVPlayer 因 position:fixed 或 height:100%
+   脱离文档流，不受影响。StickyHeader 在 .app-shell__scroll
+   外部，不受此规则约束。 */
+.page-transition {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 100%;
+  padding-left: var(--space-sm);
 }
 
 .sidebar-header {

@@ -91,14 +91,9 @@ const router = createBrowserRouter([
         element: <LazyHistoryPage />,
       },
       {
-        // IPTV 频道列表页
+        // IPTV 频道列表页（仍走 AppLayout）
         path: 'iptv',
         element: <LazyIPTVPage />,
-      },
-      {
-        // IPTV 播放页
-        path: 'iptv/play',
-        element: <LazyIPTVPlayerPage />,
       },
       {
         path: 'player/:id',
@@ -114,6 +109,15 @@ const router = createBrowserRouter([
         element: <LazyBrowsePage />,
       },
     ],
+  },
+  {
+    // IPTV 播放页（顶层独立路由，不走 AppLayout）
+    // 设计原因：IPTV 播放本质是"独立全屏应用"，需要占据整个浏览器视口。
+    // 走 AppLayout 会被 StickyHeader / CustomScrollbar / TabBar 挤占视口，
+    // 且嵌套 overflow + flex 100% 继承链不稳定。独立路由 + fixed 定位
+    // 可根本性解决滚动条 / 高度坍缩问题。
+    path: '/iptv/play',
+    element: <LazyIPTVPlayerPage />,
   },
 ]);
 
