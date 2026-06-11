@@ -22,4 +22,7 @@
    * "stable" 强制在容器右侧始终保留 gutter,内容宽度不再随滚动条显隐抖动。
    */
   scrollbar-gutter: stable;
+  /* 对称补齐：flex item 默认 min-width: auto 会按内容撑开,
+     显式声明 0 防止内部宽内容把外层滚动容器推到溢出(详见 spec/2026-06-11)。 */
+  min-width: 0;
 }

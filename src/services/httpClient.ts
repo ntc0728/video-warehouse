@@ -41,16 +41,23 @@ export function getCorsProxy(): string {
     const proxy = useSettingsStore.getState().corsProxy;
     if (proxy && proxy.trim()) {
       let url = proxy.trim();
-      if (!url.endsWith('/') && !url.endsWith('=')) url += '/';
+      if (!url.includes('/proxy')) {
+        url += '/proxy?url=';
+      } else if (!url.endsWith('url=') && !url.endsWith('url=%')) {
+        if (url.endsWith('?')) url += 'url=';
+        else if (!url.endsWith('/')) url += '?url=';
+        else url += 'url=';
+      }
       return url;
     }
   } catch { /* ignore */ }
-  // 默认空字符串 — 用户未配置 CORS 代理时，不使用代理
   return '';
 }
 
 export function buildProxyUrl(targetUrl: string): string {
-  return getCorsProxy() + encodeURIComponent(targetUrl);
+  const proxy = getCorsProxy();
+  if (!proxy) return targetUrl;
+  return proxy + encodeURIComponent(targetUrl);
 }
 
 function cacheBustUrl(url: string): string {

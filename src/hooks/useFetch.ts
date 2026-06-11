@@ -23,7 +23,7 @@ export function useFetch<T = unknown>(
   options: UseFetchOptions<T> = {}
 ): UseFetchReturn<T> {
   const {
-    retries = 3,
+    retries = 2,
     retryDelay = 1000,
     onRetry,
     onError,
@@ -55,6 +55,13 @@ export function useFetch<T = unknown>(
         }
 
         const result = await response.json();
+
+        if (result === null || (typeof result === 'object' && !Array.isArray(result) && Object.keys(result).length === 0)) {
+          setData(null);
+          setLoading(false);
+          return null;
+        }
+
         setData(result);
         setLoading(false);
         setRetryCount(attempt);
@@ -103,7 +110,7 @@ export function useRetryFetch<T = unknown>(
   options: UseFetchOptions<T> = {}
 ): UseFetchReturn<T> {
   return useFetch<T>(url, {
-    retries: 3,
+    retries: 2,
     retryDelay: 1000,
     ...options,
   });

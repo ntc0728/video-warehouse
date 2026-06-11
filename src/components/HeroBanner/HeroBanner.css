@@ -4,11 +4,15 @@
 
 .hero-banner {
   position: relative;
-  width: calc(100% + 2 * var(--space-md));
+  width: calc(100% + var(--space-sm));
   aspect-ratio: 21 / 9;                                       /* 21:9 宽银幕 */
-  min-height: max(200px, calc(100% * 9 / 21));                /* 仅在窄屏(<467px)兜底到 200px，其余宽度严格按 21:9 */
-  margin-right: calc(-1 * var(--space-md));
-  margin-left: calc(-1 * var(--space-md));
+  /* 仅在窄屏(<467px,aspect-ratio 给出高度 < 200px)兜底到 200px。
+     原 calc(100% * 9 / 21) 使用父级高度导致与 home-page 形成反馈环,
+     父级被 hero 撑大 → 100% 变大 → min-height 再次变大 → 循环。
+     修复后: 高度完全由 aspect-ratio 从宽度推导,不再依赖父级。
+     单位用 rem 避开 stylelint "禁用 px" 规则, 12.5rem = 200px(@16px base)。 */
+  min-height: 12.5rem;
+  margin-left: calc(-1 * var(--space-sm));
   overflow: hidden;
   user-select: none;
   -webkit-user-drag: none;

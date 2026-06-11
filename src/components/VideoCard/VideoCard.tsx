@@ -19,6 +19,10 @@ interface VideoCardProps {
   rating?: number;
   hideFavorite?: boolean;
   batchMode?: boolean;
+  /** 响应式图片 srcSet */
+  srcSet?: string;
+  /** 响应式图片 sizes */
+  sizes?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -33,6 +37,8 @@ const VideoCard = memo(function VideoCard({
   rating,
   hideFavorite = false,
   batchMode = false,
+  srcSet,
+  sizes,
 }: VideoCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,6 +98,8 @@ const VideoCard = memo(function VideoCard({
       <div className="video-card-cover">
         <LazyImage
           src={video.cover}
+          srcSet={srcSet}
+          sizes={sizes}
           alt={video.title}
           className="video-card-cover-img"
           letter={video.title?.charAt(0)}

@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { usePointerType } from '@/hooks/usePointerType';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
-import { buildImageUrl, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
+import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
 import './HeroBanner.css';
 
 interface HeroItem {
@@ -598,8 +598,17 @@ export default function HeroBanner({
   const year = releaseDate ? new Date(releaseDate).getFullYear() : undefined;
   const rating = itemData.voteAverage ?? itemData.vote_average ?? 0;
   const overview = item.overview || '';
-  const backdropUrl = buildImageUrl(itemData.backdropPath || itemData.backdrop_path || '', 'w1920') || '';
-  const posterUrl = buildImageUrl(itemData.posterPath || itemData.poster_path || '', 'w342') || '';
+
+  // Backdrop 图片：使用 w1920 作为基准尺寸，srcSet 提供多种尺寸供浏览器选择
+  const backdropPath = itemData.backdropPath || itemData.backdrop_path || '';
+  const backdropUrl = buildImageUrl(backdropPath, 'w1920') || '';
+  const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280', 'w1920']);
+
+  // Poster 图片：使用 w342 作为基准尺寸，srcSet 提供多种尺寸
+  const posterPath = itemData.posterPath || itemData.poster_path || '';
+  const posterUrl = buildImageUrl(posterPath, 'w342') || '';
+  const posterSrcSet = buildImageSrcSet(posterPath, ['w185', 'w342', 'w500']);
+
   const mediaType = itemData.mediaType || itemData.media_type;
   const showArrows = pointerType !== 'coarse' || isTV;
   const mask = HERO_MASK_BG;
@@ -639,6 +648,8 @@ export default function HeroBanner({
               isHovered && !hasStills ? 'hero-banner__bg--kenburns' : ''
             }`}
             src={backdropUrl}
+            srcSet={backdropSrcSet || undefined}
+            sizes="100vw"
             alt=""
             aria-hidden="true"
             loading="eager"
@@ -692,12 +703,12 @@ export default function HeroBanner({
         {/* Desktop poster */}
         {!isMobile && posterUrl && (
           <div className="hero-banner__poster">
-            <img key={posterUrl} src={posterUrl} alt={title} loading="eager" />
+            <img key={posterUrl} src={posterUrl} srcSet={posterSrcSet || undefined} sizes="160px" alt={title} loading="eager" />
           </div>
         )}
         {/* Mobile poster */}
         {isMobile && posterUrl && (
-          <img key={posterUrl} className="hero-banner__poster-mobile" src={posterUrl} alt={title} loading="eager" />
+          <img key={posterUrl} className="hero-banner__poster-mobile" src={posterUrl} srcSet={posterSrcSet || undefined} sizes="60px" alt={title} loading="eager" />
         )}
       </div>
 

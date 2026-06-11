@@ -12,8 +12,9 @@
     "lint:fix": "eslint . --fix",
     "lint:all": "npm run lint:css && npm run lint && npm run build",
     "preview": "vite preview",
-    "deploy:pages": "npm run build && wrangler pages deploy dist --project-name video-warehouse",
-    "deploy:worker": "cd worker && wrangler deploy"
+    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name video-warehouse",
+    "deploy:worker": "cd worker && npx wrangler deploy",
+    "deploy:cors": "cd worker && npx wrangler deploy -c wrangler-cors.toml"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

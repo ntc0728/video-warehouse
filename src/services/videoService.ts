@@ -286,6 +286,69 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string): Pr
   return null;
 }
 
+export interface VideoDetailResult {
+  sourceIndex: number;
+  sourceName: string;
+  video: Video | null;
+  error?: string;
+}
+
+export async function searchVideoFromMultipleSources(
+  sourceIndices: number[],
+  title: string,
+  year?: number,
+): Promise<VideoDetailResult[]> {
+  const sources = await getVideoSources();
+  const results: VideoDetailResult[] = [];
+  const searchTerm = title;
+
+  for (const index of sourceIndices) {
+    const source = sources[index];
+    if (!source) {
+      results.push({ sourceIndex: index, sourceName: '未知', video: null, error: '源配置不存在' });
+      continue;
+    }
+
+    try {
+      const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
+      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+      if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
+        results.push({ sourceIndex: index, sourceName: source.name, video: null, error: '未找到匹配资源' });
+        continue;
+      }
+      const match = data.list.find((item: CMSVideoItem) => {
+        const t = item.vod_name || '';
+        return t === title || t.includes(title) || title.includes(t);
+      });
+      if (match) {
+        const { sources: playSources, episodes } = parsePlaySources(
+          match.vod_play_from || '', match.vod_play_url || ''
+        );
+        results.push({
+          sourceIndex: index,
+          sourceName: source.name,
+          video: { ...mapVideoItem(match), sources: playSources, episodes },
+        });
+      } else {
+        const fallback = data.list[0];
+        const { sources: playSources, episodes } = parsePlaySources(
+          fallback.vod_play_from || '', fallback.vod_play_url || ''
+        );
+        results.push({
+          sourceIndex: index,
+          sourceName: source.name,
+          video: { ...mapVideoItem(fallback), sources: playSources, episodes },
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({ sourceIndex: index, sourceName: source.name, video: null, error: message || '请求失败' });
+    }
+  }
+
+  return results;
+}
+
 export async function searchVideoByTitle(title: string, year?: number): Promise<Video | null> {
   const sources = await getVideoSources();
   if (sources.length === 0) return null;
@@ -296,7 +359,7 @@ export async function searchVideoByTitle(title: string, year?: number): Promise<
     if (stored) sourceIndex = JSON.parse(stored)?.state?.videoSourceIndex ?? 0;
   } catch { /* ignore */ }
 
-  const searchTerm = year ? `${title} ${year}` : title;
+  const searchTerm = title;
 
   const trySearch = async (index: number): Promise<Video | null> => {
     const source = sources[index];

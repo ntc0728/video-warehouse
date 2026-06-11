@@ -2,26 +2,25 @@
  * 设置页面
  * 提供主题切换、数据源配置、IPTV 代理设置、翻译 API 配置等功能
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { List, Switch, Button, Modal, toast } from '@/components/ui';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { useSubtitleStore, useIPTVStore, useSettingsStore, useVideoStore, useTMDBStore } from '@/stores';
+import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
+import { useSubtitleStore, useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
 import { getVideoSources, getIPTVSources } from '@/services/sourceService';
-import { fetchVideosBySource, fetchIPTVUrl } from '@/services/videoService';
+import { fetchIPTVUrl } from '@/services/videoService';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 import './Settings.css';
 
 export default function SettingsPage() {
   const { translationAppId, translationApiKey, setAppId, setApiKey, autoTranslate, setAutoTranslate } = useSubtitleStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
-  const { setVideos, clearVideos } = useVideoStore();
   const tmdbStore = useTMDBStore();
   const {
     theme,
     setTheme,
-    videoSourceIndex,
+    videoSourceIndices,
     iptvSourceIndex,
-    setVideoSourceIndex,
+    setVideoSourceIndices,
     setIPTVSourceIndex,
     corsProxy,
     setCorsProxy,
@@ -50,6 +49,18 @@ export default function SettingsPage() {
   const [epgUrlInput, setEpgUrlInput] = useState('');
   const [showTMDBTokenInput, setShowTMDBTokenInput] = useState(false);
   const [tmdbTokenInput, setTMDBTokenInput] = useState('');
+  const [showMultiSelect, setShowMultiSelect] = useState(false);
+  const multiSelectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (multiSelectRef.current && !multiSelectRef.current.contains(e.target as Node)) {
+        setShowMultiSelect(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   /** 初始化时加载视频和 IPTV 数据源配置 */
   useEffect(() => {
@@ -71,13 +82,29 @@ export default function SettingsPage() {
     setShowApiInput(false);
   };
 
-  /** 切换视频数据源并重新加载视频列表 */
-  const handleVideoSourceSelect = async (index: number) => {
-    clearVideos();
-    setVideoSourceIndex(index);
-    const result = await fetchVideosBySource(index);
-    setVideos(result.videos, index);
-    toast.show({ content: `视频数据源已切换为: ${videoSources[index]?.name || '未知'}`, duration: 2000 });
+  /** 多选视频数据源 */
+  const handleVideoSourceToggle = (index: number) => {
+    const current = videoSourceIndices || [0];
+    let newIndices: number[];
+
+    if (current.includes(index)) {
+      newIndices = current.filter(i => i !== index);
+      if (newIndices.length === 0) {
+        newIndices = [0];
+        toast.show({ content: '至少需要保留一个数据源', duration: 2000 });
+      }
+    } else {
+      if (current.length >= 6) {
+        toast.show({ content: '最多选择6个数据源', duration: 2000 });
+        return;
+      }
+      newIndices = [...current, index];
+    }
+
+    setVideoSourceIndices(newIndices);
+    if (newIndices.length > 0) {
+      setVideoSourceIndex(newIndices[0]);
+    }
   };
 
   /** 切换 IPTV 数据源并刷新频道列表 */
@@ -158,16 +185,31 @@ export default function SettingsPage() {
         <List header="视频源">
         <List.Item
           title="视频数据源"
+          description="详情页播放列表将循环查询所选数据源（最多6个）"
           extra={
-            <select
-              className="source-select"
-              value={videoSourceIndex}
-              onChange={(e) => handleVideoSourceSelect(Number(e.target.value))}
-            >
-              {videoSources.map((source, index) => (
-                <option key={index} value={index}>{source.name}</option>
-              ))}
-            </select>
+            <div className="source-multi-dropdown" ref={multiSelectRef}>
+              <button
+                className="source-multi-trigger"
+                onClick={() => setShowMultiSelect(!showMultiSelect)}
+              >
+                <span>已选 {(videoSourceIndices || []).length} 项</span>
+                <ChevronDown size={14} className={showMultiSelect ? 'rotated' : ''} />
+              </button>
+              {showMultiSelect && (
+                <div className="source-multi-options">
+                  {videoSources.map((source, index) => (
+                    <label key={index} className="source-multi-option">
+                      <input
+                        type="checkbox"
+                        checked={(videoSourceIndices || [0]).includes(index)}
+                        onChange={() => handleVideoSourceToggle(index)}
+                      />
+                      <span>{source.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           }
         />
         <List.Item
@@ -426,11 +468,11 @@ export default function SettingsPage() {
             <div className="setting-modal-desc">
               用于代理视频源 API 请求，解决浏览器跨域限制。<br />
               留空则使用默认代理 corsproxy.io。<br />
-              常见格式: https://your-proxy.workers.dev/
+              常见格式: https://your-proxy.workers.dev
             </div>
             <input
               type="text"
-              placeholder="https://corsproxy.io/"
+              placeholder="https://your-worker.workers.dev"
               value={corsProxyInput}
               onChange={(e) => setCorsProxyInput(e.target.value)}
               className="setting-modal-input"

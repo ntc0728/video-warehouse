@@ -123,6 +123,24 @@ export function buildImageUrl(path: string | null, size: string = 'w500'): strin
   return `${IMAGE_BASE_URL}/${size}${path}`;
 }
 
+/**
+ * 生成响应式图片 srcSet
+ * 用途：避免浏览器在高 DPR 屏幕下加载 original 原始大图
+ *
+ * @param path TMDB 图片路径（如 /abc.jpg）
+ * @param sizes 需要的尺寸数组，默认提供常用尺寸
+ * @returns 正确格式的 srcSet 字符串，如 "url1 300w, url2 500w, ..."
+ */
+export function buildImageSrcSet(
+  path: string | null,
+  sizes: string[] = ['w300', 'w500', 'w780', 'w1280', 'w1920'],
+): string | null {
+  if (!path) return null;
+  return sizes
+    .map(size => `${IMAGE_BASE_URL}/${size}${path} ${size.replace('w', '')}w`)
+    .join(', ');
+}
+
 export function buildOriginalImageUrl(path: string | null): string | null {
   if (!path) return null;
   return `${IMAGE_BASE_URL}/original${path}`;
@@ -260,16 +278,16 @@ function getSortByParam(sortBy: string, sortOrder: string, mediaType: 'movie' | 
 // Detail
 // ============================================================
 
-export async function fetchMovieDetail(movieId: number): Promise<TMDBMovieDetail> {
+export async function fetchMovieDetail(movieId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBMovieDetail> {
   return fetchTMDB<TMDBMovieDetail>(`/movie/${movieId}`, {
     append_to_response: 'credits,images,videos,similar,recommendations',
-  });
+  }, options);
 }
 
-export async function fetchTVDetail(tvId: number): Promise<TMDBTVShowDetail> {
+export async function fetchTVDetail(tvId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBTVShowDetail> {
   return fetchTMDB<TMDBTVShowDetail>(`/tv/${tvId}`, {
     append_to_response: 'credits,images,videos,similar,recommendations',
-  });
+  }, options);
 }
 
 export async function fetchMovieRecommendations(movieId: number): Promise<TMDBPaginatedResponse<TMDBMovie>> {
