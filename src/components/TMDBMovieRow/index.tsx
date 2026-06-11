@@ -15,6 +15,7 @@ import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { buildImageSrcSet } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/stores/useTMDBStore';
 import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
@@ -304,22 +305,33 @@ function TMDBMovieRow({
           {isLoading ? (
             <SkeletonCards />
           ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="tmdb-movierow-card"
-                onFocus={(e) => handleCardFocus(e.currentTarget)}
-                onClickCapture={(e) => {
-                  if (dragMovedRef.current) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    dragMovedRef.current = false;
-                  }
-                }}
-              >
-                <VideoCard video={toVideo(item)} rating={item.voteAverage} />
-              </div>
-            ))
+            items.map((item) => {
+              // 为 TMDB poster 图片生成响应式 srcSet
+              // TMDBMovieRow 是横向滚动布局，卡片宽度根据 --card-cols 动态计算
+              // 使用 (100vw / var(--card-cols)) 作为 sizes 参考值，浏览器会自动选择合适尺寸
+              const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500']) : undefined;
+              return (
+                <div
+                  key={item.id}
+                  className="tmdb-movierow-card"
+                  onFocus={(e) => handleCardFocus(e.currentTarget)}
+                  onClickCapture={(e) => {
+                    if (dragMovedRef.current) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      dragMovedRef.current = false;
+                    }
+                  }}
+                >
+                  <VideoCard
+                    video={toVideo(item)}
+                    rating={item.voteAverage}
+                    srcSet={posterSrcSet}
+                    sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
+                  />
+                </div>
+              );
+            })
           )}
         </div>
 

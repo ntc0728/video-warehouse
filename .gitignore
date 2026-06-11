@@ -24,6 +24,8 @@ vite.config.d.ts
 .claude/
 .reasonix/
 .trae-cn/
+.codex/
+AGENTS.md
 
 # Trae 本地生成文档
 .trae/documents/

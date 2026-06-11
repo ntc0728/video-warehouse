@@ -11,6 +11,7 @@
 import type { TMDBVideoItem } from '@/stores/useTMDBStore';
 import type { Video, VideoType } from '@/types/video';
 import { VideoCard } from '@/components/VideoCard';
+import { buildImageSrcSet } from '@/services/tmdbService';
 import './Browse.css';
 
 interface BrowseGridProps {
@@ -38,13 +39,19 @@ export default function BrowseGrid({ items }: BrowseGridProps) {
 
   return (
     <div className="video-card-grid">
-      {items.map((item) => (
-        <VideoCard
-          key={item.id}
-          video={toVideo(item)}
-          rating={item.voteAverage}
-        />
-      ))}
+      {items.map((item) => {
+        // 为 TMDB poster 图片生成响应式 srcSet
+        const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500', 'w780']) : undefined;
+        return (
+          <VideoCard
+            key={item.id}
+            video={toVideo(item)}
+            rating={item.voteAverage}
+            srcSet={posterSrcSet}
+            sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
+          />
+        );
+      })}
     </div>
   );
 }

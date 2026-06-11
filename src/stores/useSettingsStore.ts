@@ -14,6 +14,7 @@ interface SettingsState extends AppSettings {
   tmdbAccessToken: string;
   tmdbLanguage: string;
   setVideoSourceIndex: (index: number) => void;
+  setVideoSourceIndices: (indices: number[]) => void;
   setIPTVSourceIndex: (index: number) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setCorsProxy: (url: string) => void;
@@ -28,6 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       videoSourceIndex: 0,
+      videoSourceIndices: [0],
       iptvSourceIndex: 0,
       theme: 'light' as const,
       corsProxy: '',
@@ -37,6 +39,7 @@ export const useSettingsStore = create<SettingsState>()(
       tmdbLanguage: 'zh-CN',
 
       setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
+      setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
       setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
       setTheme: (theme) => set({ theme }),
       setCorsProxy: (url) => set({ corsProxy: url }),

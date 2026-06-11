@@ -25,6 +25,7 @@ export interface IPTVSourceConfig {
 /** 应用全局设置 */
 export interface AppSettings {
   videoSourceIndex: number;
+  videoSourceIndices: number[];
   iptvSourceIndex: number;
   theme: 'light' | 'dark' | 'system';
 }

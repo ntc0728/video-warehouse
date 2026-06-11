@@ -8,9 +8,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { fetchVideoDetail, findAvailableVideoSource } from '@/services/videoService';
+import { searchVideoFromMultipleSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
-import type { Video, VideoSource } from '@/types/video';
+import type { Video } from '@/types/video';
+import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
 import { VideoCard } from '@/components/VideoCard';
@@ -18,14 +19,13 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar,
   Info, ListVideo, Layers, AlertTriangle, WifiOff,
-  RefreshCw, Server, ChevronRight, ExternalLink,
+  RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
 import './Detail.css';
 
 // ── 常量 ──────────────────────────────────────────────
 
 const CMS_DEBOUNCE_MS = 2000;
-const CMS_TIMEOUT_MS = 15000;
 
 const typeLabels: Record<string, string> = {
   movie: '电影', tv: '剧集', variety: '综艺', anime: '动漫',
@@ -70,7 +70,7 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { videoSourceIndex } = useSettingsStore();
+  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   const { isCollected, addCollection, removeCollection } = useUserStore();
 
   // ── 沉浸式 Header ──────────────────────────
@@ -88,7 +88,7 @@ export default function DetailPage() {
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
 
   // CMS
-  const [cmsSources, setCmsSources] = useState<VideoSource[]>([]);
+  const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
   const [cmsLoaded, setCmsLoaded] = useState(false);
   const [cmsError, setCmsError] = useState<string | null>(null);
@@ -98,8 +98,9 @@ export default function DetailPage() {
   // ── TMDB 加载 ────────────────────────────────
   useEffect(() => {
     if (!id) return;
+    const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null);
-    setCmsLoaded(false); setCmsSources([]); setCmsError(null);
+    setCmsLoaded(false); setCmsResults([]); setCmsError(null);
     setActiveTab('info');
 
     (async () => {
@@ -110,12 +111,18 @@ export default function DetailPage() {
         const tid = parseInt(parts.slice(1).join('-'), 10);
         setTmdbMediaType(mt);
         if (isNaN(tid)) { setTmdbError('无效的 TMDB ID'); return; }
-        const detail = mt === 'tv' ? await fetchTVDetail(tid) : await fetchMovieDetail(tid);
+        const detail = mt === 'tv'
+          ? await fetchTVDetail(tid, { signal: ctrl.signal })
+          : await fetchMovieDetail(tid, { signal: ctrl.signal });
+        if (ctrl.signal.aborted) return;
         setTmdbDetail(detail);
       } catch (err) {
+        if (ctrl.signal.aborted) return;
         setTmdbError(err instanceof Error ? err.message : '加载失败');
-      } finally { setTmdbLoading(false); }
+      } finally { if (!ctrl.signal.aborted) setTmdbLoading(false); }
     })();
+
+    return () => ctrl.abort();
   }, [id]);
 
   // ── CMS 按需加载 ─────────────────────────────
@@ -127,29 +134,28 @@ export default function DetailPage() {
     if (cmsAbortRef.current) cmsAbortRef.current.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
-    setCmsLoading(true); setCmsError(null);
+    setCmsLoading(true); setCmsError(null); setCmsResults([]);
+
+    const indices = videoSourceIndices && videoSourceIndices.length > 0
+      ? videoSourceIndices
+      : [videoSourceIndex];
+
+    const videoTitle = title || '';
+    const videoYear = year;
+
     try {
-      const detail = await Promise.race([
-        fetchVideoDetail(videoSourceIndex, id),
-        new Promise<null>((_, r) => setTimeout(() => r(new Error('请求超时')), CMS_TIMEOUT_MS)),
-      ]);
+      const results = await searchVideoFromMultipleSources(indices, videoTitle, videoYear);
       if (ctrl.signal.aborted) return;
-      if (detail?.sources?.length) setCmsSources(detail.sources);
-      else if (detail?.episodes?.length) setCmsSources(detail.episodes[0]?.sources || []);
-      else {
-        const avail = await findAvailableVideoSource(videoSourceIndex);
-        if (avail && avail.index !== videoSourceIndex) {
-          const fb = await fetchVideoDetail(avail.index, id);
-          if (!ctrl.signal.aborted) setCmsSources(fb?.sources || []);
-        } else setCmsSources([]);
-      }
+
+      setCmsResults(results);
       setCmsLoaded(true);
     } catch (err) {
       if (!ctrl.signal.aborted) setCmsError(err instanceof Error ? err.message : '获取播放源失败');
     } finally {
       if (!ctrl.signal.aborted) setCmsLoading(false);
     }
-  }, [id, tmdbDetail, videoSourceIndex]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, tmdbDetail, videoSourceIndex, videoSourceIndices]);
 
   useEffect(() => {
     if (activeTab === 'sources' && !cmsLoaded && !cmsLoading) fetchCMSSources();
@@ -169,7 +175,6 @@ export default function DetailPage() {
 
   // ── 播放 ──────────────────────────────────────
   const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` } }); };
-  const handlePlaySource = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` } }); };
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -381,18 +386,54 @@ export default function DetailPage() {
                 <span>请检查网络连接或更换 CMS 视频源</span>
                 <button className="detail-retry" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
               </div>
-            ) : cmsSources.length > 0 ? (
-              <div className="detail-sources-list">
-                {cmsSources.map((src, idx) => (
-                  <button key={src.id || idx} className="detail-source-item" onClick={handlePlaySource}>
-                    <Server size={16} /> {src.name || `源 ${idx + 1}`}
-                    <span className="detail-source-right">
-                      {src.quality && <span className="detail-source-quality">{src.quality}</span>}
-                      <ChevronRight size={16} />
-                    </span>
+            ) : cmsResults.length > 0 ? (
+              <div className="detail-sources-grid">
+                <div className="detail-sources-header">
+                  <h3>播放源</h3>
+                  <button className="detail-retry detail-retry--inline" onClick={fetchCMSSources}>
+                    <RefreshCw size={14} /> 重新获取
                   </button>
-                ))}
-                <button className="detail-retry detail-retry--inline" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
+                </div>
+                <div className="detail-source-cards">
+                  {cmsResults.map((result) => (
+                    result.video && (
+                      <div key={result.sourceIndex} className="detail-source-card">
+                        <div className="detail-source-card-cover">
+                          {result.video.cover ? (
+                            <img src={result.video.cover} alt={result.video.title} />
+                          ) : (
+                            <div className="detail-source-card-placeholder">
+                              <Server size={24} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="detail-source-card-info">
+                          <span className="detail-source-card-source">{result.sourceName}</span>
+                          <h4 className="detail-source-card-title">{result.video.title}</h4>
+                          {result.video.year && (
+                            <span className="detail-source-card-year">{result.video.year}</span>
+                          )}
+                          <button
+                            className="detail-source-card-play"
+                            onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } })}
+                          >
+                            <Play size={14} fill="currentColor" /> 播放
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+                {cmsResults.some(r => r.error) && (
+                  <div className="detail-source-errors">
+                    {cmsResults.filter(r => r.error).map(r => (
+                      <div key={r.sourceIndex} className="detail-source-error-item">
+                        <AlertTriangle size={12} />
+                        <span>{r.sourceName}: {r.error}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="detail-state">

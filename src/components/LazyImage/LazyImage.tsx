@@ -107,9 +107,11 @@ export default function LazyImage({
     onError?.(new Error('Failed to load image'));
   };
 
-  const hasValidSrc = src && src && src.trim().length > 0;
+  const hasValidSrc = src && src.trim().length > 0;
   const imageSrc = error || !hasValidSrc ? fallbackSrc : src;
-  const autoSrcSet = srcSet || (src ? `${src} 1x, ${src} 2x` : undefined);
+  // 移除 autoSrcSet：原逻辑 `${src} 1x, ${src} 2x` 错误地为同一 URL 声明两种密度，
+  // 浏览器在高 DPR 屏幕下会加载原始大图（可能 3000px+），导致内存暴增和性能下降。
+  // 若需要响应式图片，应由调用方通过 srcSet prop 传入正确格式的 srcSet。
 
   return (
     <div
@@ -125,7 +127,7 @@ export default function LazyImage({
           onLoad={handleLoad}
           onError={handleError}
           loading="lazy"
-          srcSet={autoSrcSet}
+          srcSet={srcSet}
           sizes={sizes}
         />
       )}

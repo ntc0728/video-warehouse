@@ -38,9 +38,14 @@
    外部，不受此规则约束。 */
 .page-transition {
   display: grid;
+  /* 显式声明单列：minmax(0, 1fr) 阻止 auto 列按子项 max-content 撑开,
+     修复首页 HeroBanner 反馈环导致 9000+px 巨图的 bug(详见 spec/2026-06-11)。
+     同时让所有 <Outlet /> 子页面(IPTV/Browse/Collections/History 等)受益。 */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto;
   min-height: 100%;
   padding-left: var(--space-sm);
+  animation: pageFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .sidebar-header {
