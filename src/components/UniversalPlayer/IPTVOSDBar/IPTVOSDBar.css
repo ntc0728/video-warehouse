@@ -124,9 +124,8 @@
   animation: marquee-scroll 10s linear infinite;
 }
 
-/* Slower marquee for program titles (current + next) */
-.iptv-osd-program-marquee .marquee-track.marquee-scrolling,
-.iptv-osd-next-marquee .marquee-track.marquee-scrolling {
+/* Slower marquee for program titles */
+.iptv-osd-program-marquee .marquee-track.marquee-scrolling {
   animation-duration: 25s;
 }
 
@@ -200,17 +199,11 @@
   opacity: 0.5;
 }
 
-/* Next program row */
-.iptv-osd-next-row {
-  color: #eee;
-}
-
-.iptv-osd-next-row .next-label {
-  flex-shrink: 0;
-  /* 与 .iptv-osd-label-prefix 保持一致：白 + 0.7 透明度，在深色 OSD 上清晰可读 */
+/* 节目加载中占位符 */
+.iptv-osd-program-placeholder {
   color: var(--color-text-inverse);
-  font-weight: 500;
-  opacity: 0.7;
+  font-size: var(--text-sm);
+  opacity: 0.5;
 }
 
 /* Program marquee - auto-scroll long program titles */
@@ -221,26 +214,6 @@
 }
 
 .iptv-osd-program-marquee .marquee-text {
-  color: #eee;
-  font-size: var(--text-sm);
-}
-
-.iptv-osd-next-content {
-  display: flex;
-  gap: 0;
-  align-items: center;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.iptv-osd-next-marquee {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.iptv-osd-next-marquee .marquee-text {
   color: #eee;
   font-size: var(--text-sm);
 }
@@ -480,8 +453,7 @@
   font-size: var(--text-xs);
 }
 
-.up-platform-mobile .iptv-osd-program-marquee .marquee-text,
-.up-platform-mobile .iptv-osd-next-marquee .marquee-text {
+.up-platform-mobile .iptv-osd-program-marquee .marquee-text {
   font-size: var(--text-xs);
 }
 
@@ -537,8 +509,7 @@
   font-size: var(--text-base);
 }
 
-.up-platform-tv .iptv-osd-program-marquee .marquee-text,
-.up-platform-tv .iptv-osd-next-marquee .marquee-text {
+.up-platform-tv .iptv-osd-program-marquee .marquee-text {
   font-size: var(--text-base);
 }
 

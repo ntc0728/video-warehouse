@@ -545,7 +545,7 @@ export default function HistoryPage() {
       )}
 
       <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
-      {createPortal(
+      {document.getElementById('load-more-portal') && createPortal(
         <div className="load-more-hint" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
           {hasMore
             ? `已加载 ${displayedList.length} / ${currentList.length}`

@@ -163,26 +163,7 @@ export default function IPTVOSDBar({
   const barRef = useRef<HTMLDivElement>(null);
   const networkSpeed = useNetworkSpeed();
 
-  /** 开发环境 Mock：用超长标题替换真实数据，验证跑马灯效果 */
-  const MOCK_LONG_TITLE = '这是一个非常长的节目名称用于测试跑马灯滚动效果能否正常工作如果太长就会自动滚动展示';
-  const displayProgram = useMemo<ProgramInfo | undefined>(() => {
-    if (!import.meta.env.DEV) return currentProgram;
-    return currentProgram
-      ? { ...currentProgram, title: MOCK_LONG_TITLE }
-      : { title: MOCK_LONG_TITLE, start: '19:00', end: '21:00' };
-  }, [currentProgram]);
-
-  const displayNextProgram = useMemo<ProgramInfo | undefined>(() => {
-    if (!import.meta.env.DEV) return nextProgram;
-    return nextProgram
-      ? { ...nextProgram, title: MOCK_LONG_TITLE }
-      : { title: MOCK_LONG_TITLE, start: '21:00', end: '22:00' };
-  }, [nextProgram]);
-
-  const hasProgram = !!displayProgram;
-  // 标题非空判断：EPG 加载完成但匹配到空标题时显示空态占位，避免空白 marquee
-  const hasCurrentTitle = !!displayProgram?.title;
-  const hasNextTitle = !!displayNextProgram?.title;
+  const hasCurrentTitle = !!currentProgram?.title;
 
   // tick 触发每秒重算当前时间；formatCurrentTime 内部读取 Date.now()，故依赖 tick 是必要的
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,38 +241,29 @@ export default function IPTVOSDBar({
       </div>
 
       <div className="iptv-osd-center">
-        {hasProgram && (
-          <>
-            <div className="iptv-osd-program-row">
-              <span className="iptv-osd-current-label">
-                <span className="iptv-osd-label-prefix">正在播放：</span>
-                {hasCurrentTitle ? (
-                  <MarqueeText text={displayProgram.title} className="iptv-osd-program-marquee" />
-                ) : (
-                  <span className="iptv-osd-program-empty">暂无节目信息</span>
-                )}
-              </span>
-            </div>
-            <div className="iptv-osd-next-row">
-              {displayNextProgram ? (
-                <span className="iptv-osd-next-content">
-                  <span className="next-label">下一节目：</span>
-                  {hasNextTitle ? (
-                    <MarqueeText
-                      text={`${displayNextProgram.title} ${formatTime(displayNextProgram.start)} - ${formatTime(displayNextProgram.end)}`}
-                      className="iptv-osd-next-marquee"
-                    />
-                  ) : (
-                    <span className="iptv-osd-program-empty">暂无节目信息</span>
-                  )}
-                </span>
-              ) : (
-                <span><span className="next-label">下一节目：</span>暂无节目信息</span>
-              )}
-            </div>
-          </>
-        )}
-
+        <div className="iptv-osd-program-row">
+          <span className="iptv-osd-current-label">
+            <span className="iptv-osd-label-prefix">正在播放：</span>
+            {hasCurrentTitle ? (
+               <MarqueeText text={currentProgram.title} className="iptv-osd-program-marquee" />
+            ) : (
+              <span className="iptv-osd-program-placeholder">--</span>
+            )}
+          </span>
+        </div>
+        <div className="iptv-osd-next-row">
+          <span className="iptv-osd-current-label">
+            <span className="iptv-osd-label-prefix">下一节目：</span>
+            {nextProgram ? (
+              <MarqueeText
+                text={`${nextProgram.title} ${formatTime(nextProgram.start)} - ${formatTime(nextProgram.end)}`}
+                className="iptv-osd-program-marquee"
+              />
+            ) : (
+              <span className="iptv-osd-program-placeholder">--</span>
+            )}
+          </span>
+        </div>
         <div
           className="iptv-osd-controls-row"
           ref={controlsRef}

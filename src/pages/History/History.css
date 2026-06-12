@@ -10,9 +10,9 @@
   margin-right: var(--space-sm);
 }
 .search-box--iptv {
-  border-right: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
   height: var(--comp-input-height);
+  border-radius: var(--radius-full);
+  border-right: 1px solid var(--color-border);
 }
 .search-box__input {
   flex: 1 1 0;
@@ -101,9 +101,9 @@
 
 .history-header {
   display: flex;
+  gap: var(--space-sm);
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-sm);
   /* margin-bottom: var(--space-md); */
 }
 .history-header h1 {
@@ -127,8 +127,8 @@
 /* ── 状态筛选 Tab ───────────────────────────────── */
 .status-tabs {
   display: flex;
-  gap: var(--space-xs);
   flex-wrap: wrap;
+  gap: var(--space-xs);
 }
 
 .status-tab {
@@ -238,16 +238,19 @@
 .history-content .iptv-channel-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
+
 @media (width <= 767px) {
   .history-content .iptv-channel-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
 @media (width >= 768px) and (width <= 1023px) {
   .history-content .iptv-channel-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
 @media (width >= 1920px) {
   .history-content .iptv-channel-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));

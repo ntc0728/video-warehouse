@@ -9,7 +9,8 @@ import type { AppSettings } from '@/types/source';
 
 interface SettingsState extends AppSettings {
   corsProxy: string;
-  epgUrl: string;
+  epgUrls: string[];
+  epgUpdateInterval: number;
   rememberVolume: boolean;
   tmdbAccessToken: string;
   tmdbLanguage: string;
@@ -18,7 +19,8 @@ interface SettingsState extends AppSettings {
   setIPTVSourceIndex: (index: number) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setCorsProxy: (url: string) => void;
-  setEpgUrl: (url: string) => void;
+  setEpgUrls: (urls: string[]) => void;
+  setEpgUpdateInterval: (hours: number) => void;
   setRememberVolume: (value: boolean) => void;
   setTMDBToken: (token: string) => void;
   setTMDBLanguage: (lang: string) => void;
@@ -33,7 +35,8 @@ export const useSettingsStore = create<SettingsState>()(
       iptvSourceIndex: 0,
       theme: 'light' as const,
       corsProxy: '',
-      epgUrl: 'http://epg.51zmt.top:8000/e.xml',
+      epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
+      epgUpdateInterval: 6,
       rememberVolume: false,
       tmdbAccessToken: '',
       tmdbLanguage: 'zh-CN',
@@ -43,7 +46,8 @@ export const useSettingsStore = create<SettingsState>()(
       setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
       setTheme: (theme) => set({ theme }),
       setCorsProxy: (url) => set({ corsProxy: url }),
-      setEpgUrl: (url) => set({ epgUrl: url }),
+      setEpgUrls: (urls) => set({ epgUrls: urls }),
+      setEpgUpdateInterval: (hours) => set({ epgUpdateInterval: Math.min(24, Math.max(1, hours)) }),
       setRememberVolume: (value) => set({ rememberVolume: value }),
       setTMDBToken: (token) => set({ tmdbAccessToken: token }),
       setTMDBLanguage: (lang) => set({ tmdbLanguage: lang }),

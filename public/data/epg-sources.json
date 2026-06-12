@@ -1,0 +1,5 @@
+[
+  { "name": "51zmt", "url": "http://epg.51zmt.top:8000/e.xml" },
+  { "name": "112114", "url": "https://epg.112114.me/pp.xml.gz" },
+  { "name": "zsdc", "url": "https://epg.zsdc.eu.org/t.xml.gz" }
+]

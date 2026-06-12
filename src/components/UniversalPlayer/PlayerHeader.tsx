@@ -26,7 +26,8 @@ export default function PlayerHeader({
       onMouseMove={onActivity}
     >
       <button className="up-header-back" onClick={(e) => { e.stopPropagation(); onBack(); }}>
-        <ArrowLeft size={20} />
+        <ArrowLeft size={18} />
+        <span>返回</span>
       </button>
       <span className="up-header-title">{displayTitle}</span>
     </div>

@@ -320,25 +320,40 @@ export async function searchVideoFromMultipleSources(
         const t = item.vod_name || '';
         return t === title || t.includes(title) || title.includes(t);
       });
-      if (match) {
+      const target = match || data.list[0];
+      if (!target) {
+        results.push({ sourceIndex: index, sourceName: source.name, video: null, error: '未找到匹配资源' });
+        continue;
+      }
+      if (target.vod_play_from && target.vod_play_url) {
         const { sources: playSources, episodes } = parsePlaySources(
-          match.vod_play_from || '', match.vod_play_url || ''
+          target.vod_play_from, target.vod_play_url
         );
         results.push({
           sourceIndex: index,
           sourceName: source.name,
-          video: { ...mapVideoItem(match), sources: playSources, episodes },
+          video: { ...mapVideoItem(target), sources: playSources, episodes },
         });
       } else {
-        const fallback = data.list[0];
-        const { sources: playSources, episodes } = parsePlaySources(
-          fallback.vod_play_from || '', fallback.vod_play_url || ''
-        );
-        results.push({
-          sourceIndex: index,
-          sourceName: source.name,
-          video: { ...mapVideoItem(fallback), sources: playSources, episodes },
-        });
+        const detailUrl = `${source.api}?ac=detail&vod_id=${target.vod_id}`;
+        const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
+        const detailItem = detailData.list?.[0];
+        if (detailItem) {
+          const { sources: playSources, episodes } = parsePlaySources(
+            detailItem.vod_play_from || '', detailItem.vod_play_url || ''
+          );
+          results.push({
+            sourceIndex: index,
+            sourceName: source.name,
+            video: { ...mapVideoItem(detailItem), sources: playSources, episodes },
+          });
+        } else {
+          results.push({
+            sourceIndex: index,
+            sourceName: source.name,
+            video: { ...mapVideoItem(target), sources: [], episodes: undefined },
+          });
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
