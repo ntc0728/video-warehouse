@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { List, Switch, Button, Modal, toast } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useSubtitleStore, useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
-import { getVideoSources, getIPTVSources } from '@/services/sourceService';
+import { getVideoSources, getIPTVSources, getEPGSources, type EPGSourceConfig } from '@/services/sourceService';
 import { fetchIPTVUrl } from '@/services/videoService';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 import './Settings.css';
@@ -24,8 +24,10 @@ export default function SettingsPage() {
     setIPTVSourceIndex,
     corsProxy,
     setCorsProxy,
-    epgUrl,
-    setEpgUrl,
+    epgUrls,
+    setEpgUrls,
+    epgUpdateInterval,
+    setEpgUpdateInterval,
     rememberVolume,
     setRememberVolume,
     tmdbAccessToken,
@@ -36,6 +38,7 @@ export default function SettingsPage() {
 
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
   const [iptvSources, setIptvSources] = useState<IPTVSourceConfig[]>([]);
+  const [epgSources, setEpgSources] = useState<EPGSourceConfig[]>([]);
   const [showApiInput, setShowApiInput] = useState(false);
   const [appIdInput, setAppIdInput] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -45,32 +48,37 @@ export default function SettingsPage() {
   const [patternInput, setPatternInput] = useState('');
   const [showCorsProxyInput, setShowCorsProxyInput] = useState(false);
   const [corsProxyInput, setCorsProxyInput] = useState('');
-  const [showEpgInput, setShowEpgInput] = useState(false);
-  const [epgUrlInput, setEpgUrlInput] = useState('');
+  const [showEpgMultiSelect, setShowEpgMultiSelect] = useState(false);
   const [showTMDBTokenInput, setShowTMDBTokenInput] = useState(false);
   const [tmdbTokenInput, setTMDBTokenInput] = useState('');
   const [showMultiSelect, setShowMultiSelect] = useState(false);
   const multiSelectRef = useRef<HTMLDivElement>(null);
+  const epgMultiSelectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (multiSelectRef.current && !multiSelectRef.current.contains(e.target as Node)) {
         setShowMultiSelect(false);
       }
+      if (epgMultiSelectRef.current && !epgMultiSelectRef.current.contains(e.target as Node)) {
+        setShowEpgMultiSelect(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  /** 初始化时加载视频和 IPTV 数据源配置 */
+  /** 初始化时加载视频、IPTV 和 EPG 数据源配置 */
   useEffect(() => {
     const loadSources = async () => {
-      const [videos, iptvs] = await Promise.all([
+      const [videos, iptvs, epgs] = await Promise.all([
         getVideoSources(),
         getIPTVSources(),
+        getEPGSources(),
       ]);
       setVideoSources(videos);
       setIptvSources(iptvs);
+      setEpgSources(epgs);
     };
     loadSources();
   }, []);
@@ -116,6 +124,34 @@ export default function SettingsPage() {
     useIPTVStore.getState().refreshChannels();
   };
 
+  /** 多选 EPG 数据源（最多3个，停止操作1s后调用接口） */
+  const epgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleEpgToggle = (url: string) => {
+    const current = epgUrls || [];
+    let newUrls: string[];
+
+    if (current.includes(url)) {
+      newUrls = current.filter(u => u !== url);
+    } else {
+      if (current.length >= 3) {
+        toast.show({ content: '最多选择3个节目单源', duration: 2000 });
+        return;
+      }
+      newUrls = [...current, url];
+    }
+
+    setEpgUrls(newUrls);
+
+    if (epgTimerRef.current) clearTimeout(epgTimerRef.current);
+    epgTimerRef.current = setTimeout(async () => {
+      try {
+        const { fetchAndParseEPG } = await import('@/services/epgService');
+        await fetchAndParseEPG();
+        toast.show('节目单数据已更新');
+      } catch { /* ignore */ }
+    }, 1000);
+  };
+
   const handleSaveProxyUrl = () => {
     setIPTVSettings({ proxyUrl: proxyUrlInput.trim() });
     toast.show(proxyUrlInput.trim() ? '代理地址已保存' : '代理地址已清除');
@@ -126,12 +162,6 @@ export default function SettingsPage() {
     setIPTVSettings({ proxyPattern: patternInput.trim() });
     toast.show(patternInput.trim() ? '代理规则已保存' : '代理规则已清除');
     setShowPatternInput(false);
-  };
-
-  const handleSaveEpgUrl = () => {
-    setEpgUrl(epgUrlInput.trim());
-    toast.show(epgUrlInput.trim() ? '节目单源已保存' : '节目单源已恢复默认');
-    setShowEpgInput(false);
   };
 
   const handleSaveTMDBToken = () => {
@@ -279,14 +309,54 @@ export default function SettingsPage() {
         />
         <List.Item
           title="节目单源"
-          description={epgUrl || '默认: epg.51zmt.top'}
+          description="选择节目单数据源（支持多选）"
           extra={
-            <Button size="small" className="settings-btn-mini" onClick={() => {
-              setEpgUrlInput(epgUrl || '');
-              setShowEpgInput(true);
-            }}>
-              配置
-            </Button>
+            <div className="source-multi-dropdown" ref={epgMultiSelectRef}>
+              <button
+                className="source-multi-trigger"
+                onClick={() => setShowEpgMultiSelect(!showEpgMultiSelect)}
+              >
+                <span>已选 {epgUrls.length} 项</span>
+                <ChevronDown size={14} className={showEpgMultiSelect ? 'rotated' : ''} />
+              </button>
+              {showEpgMultiSelect && (
+                <div className="source-multi-options">
+                  {epgSources.map((source) => (
+                    <label key={source.url} className="source-multi-option">
+                      <input
+                        type="checkbox"
+                        checked={epgUrls.includes(source.url)}
+                        onChange={() => handleEpgToggle(source.url)}
+                      />
+                      <span>{source.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          }
+        />
+        <List.Item
+          title="节目单更新间隔"
+          description={`${epgUpdateInterval} 小时`}
+          extra={
+            <div className="settings-counter">
+              <button
+                className="settings-counter-btn"
+                onClick={() => setEpgUpdateInterval(Math.max(1, epgUpdateInterval - 1))}
+                disabled={epgUpdateInterval <= 1}
+              >
+                -
+              </button>
+              <span className="settings-counter-value">{epgUpdateInterval}</span>
+              <button
+                className="settings-counter-btn"
+                onClick={() => setEpgUpdateInterval(Math.min(24, epgUpdateInterval + 1))}
+                disabled={epgUpdateInterval >= 24}
+              >
+                +
+              </button>
+            </div>
           }
         />
         <List.Item
@@ -534,39 +604,6 @@ export default function SettingsPage() {
         onClose={() => setShowTMDBTokenInput(false)}
       />
 
-      <Modal
-        visible={showEpgInput}
-        title="配置节目单源"
-        content={
-          <div className="setting-modal-content">
-            <div className="setting-modal-desc">
-              输入 XMLTV 格式的节目单源地址，用于显示当前频道的节目信息。<br />
-              留空则使用默认地址。
-            </div>
-            <input
-              type="text"
-              placeholder="http://epg.51zmt.top:8000/e.xml"
-              value={epgUrlInput}
-              onChange={(e) => setEpgUrlInput(e.target.value)}
-              className="setting-modal-input"
-            />
-            <div className="setting-modal-actions">
-              {epgUrlInput && (
-                <Button size="small" onClick={() => {
-                  setEpgUrlInput('');
-                  setEpgUrl('');
-                  setShowEpgInput(false);
-                  toast.show('节目单源已恢复默认');
-                }}>恢复默认</Button>
-              )}
-              <Button size="small" onClick={() => setShowEpgInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={handleSaveEpgUrl}>保存</Button>
-            </div>
-          </div>
-        }
-        closeOnAction
-        onClose={() => setShowEpgInput(false)}
-      />
     </div>
   );
 }

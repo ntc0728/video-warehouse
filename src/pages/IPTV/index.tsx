@@ -417,7 +417,7 @@ export default function IPTVPage() {
             </div>
 
             <div ref={sentinelRef} aria-hidden="true" />
-            {createPortal(
+            {document.getElementById('load-more-portal') && createPortal(
               <div className="load-more-hint">
                 {hasMore
                   ? `已加载 ${displayedChannels.length} / ${filteredChannels.length}`

@@ -10,6 +10,7 @@ import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
+import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
@@ -17,7 +18,7 @@ import { AppLoading, BackToTopButton } from '@/components/common';
 import { VideoCard } from '@/components/VideoCard';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
-  Play, Heart, Star, Calendar,
+  Play, Heart, Star, Calendar, ArrowLeft,
   Info, ListVideo, Layers, AlertTriangle, WifiOff,
   RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
@@ -73,8 +74,11 @@ export default function DetailPage() {
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   const { isCollected, addCollection, removeCollection } = useUserStore();
 
-  // ── 沉浸式 Header ──────────────────────────
-  useHeaderContent({ immersive: true });
+  // ── 非沉浸式 Header（hero 不被导航栏覆盖） ──
+  useHeaderContent();
+
+  // ── 智能回退 ──────────────────────────────
+  const handleBack = useSmartBack('/');
 
   // ── 滚动位置保存/恢复（由 useScrollRestore 接管，原内联 useEffect 已删除） ────
   useScrollRestore(`detail:${id}`);
@@ -238,6 +242,12 @@ export default function DetailPage() {
         <div className="detail-hero-gradient detail-hero-gradient-1" />
         <div className="detail-hero-gradient detail-hero-gradient-2" />
 
+        {/* 返回按钮 */}
+        <button className="detail-hero-back" onClick={handleBack} aria-label="返回">
+          <ArrowLeft size={18} />
+          <span>返回</span>
+        </button>
+
         {/* 官网链接 */}
         {homepage && (
           <a href={homepage} target="_blank" rel="noreferrer" className="detail-homepage-btn">
@@ -387,37 +397,49 @@ export default function DetailPage() {
                 <button className="detail-retry" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
               </div>
             ) : cmsResults.length > 0 ? (
-              <div className="detail-sources-grid">
+              <div className="detail-sources-container">
                 <div className="detail-sources-header">
-                  <h3>播放源</h3>
+                  <div className="detail-sources-header-left">
+                    <h3>匹配结果</h3>
+                    <span className="detail-sources-keyword">当前关键词："{title}"</span>
+                  </div>
                   <button className="detail-retry detail-retry--inline" onClick={fetchCMSSources}>
-                    <RefreshCw size={14} /> 重新获取
+                    <RefreshCw size={14} /> 重新匹配
                   </button>
                 </div>
-                <div className="detail-source-cards">
+                <div className="detail-sources-grid">
                   {cmsResults.map((result) => (
                     result.video && (
-                      <div key={result.sourceIndex} className="detail-source-card">
-                        <div className="detail-source-card-cover">
-                          {result.video.cover ? (
-                            <img src={result.video.cover} alt={result.video.title} />
-                          ) : (
-                            <div className="detail-source-card-placeholder">
-                              <Server size={24} />
-                            </div>
-                          )}
+                      <div key={result.sourceIndex} className="detail-source-group">
+                        <div className="detail-source-group-header">
+                          <div className="detail-source-group-title">
+                            <span className="detail-source-name">{result.sourceName}</span>
+                            {result.video.year && (
+                              <span className="detail-source-year">{result.video.year}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="detail-source-card-info">
-                          <span className="detail-source-card-source">{result.sourceName}</span>
-                          <h4 className="detail-source-card-title">{result.video.title}</h4>
-                          {result.video.year && (
-                            <span className="detail-source-card-year">{result.video.year}</span>
-                          )}
+                        <div className="detail-source-group-body">
+                          <div className="detail-source-thumb">
+                            {result.video.cover ? (
+                              <img src={result.video.cover} alt={result.video.title} />
+                            ) : (
+                              <div className="detail-source-thumb-placeholder">
+                                <Server size={20} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="detail-source-info">
+                            <span className="detail-source-title">{result.video.title}</span>
+                            {result.video.year && (
+                              <span className="detail-source-meta">{result.video.year}</span>
+                            )}
+                          </div>
                           <button
-                            className="detail-source-card-play"
+                            className="detail-source-play-btn"
                             onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } })}
                           >
-                            <Play size={14} fill="currentColor" /> 播放
+                            <Play size={12} fill="currentColor" /> 立即播放
                           </button>
                         </div>
                       </div>

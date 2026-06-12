@@ -8,6 +8,7 @@ import { useVideoStore, usePlayerStore, useUserStore, useSettingsStore } from '@
 import { searchVideoFromMultipleSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
+import { VideoCard } from '@/components/VideoCard';
 import type { Video, VideoSource, Episode } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBCastMember } from '@/types/tmdb';
@@ -15,11 +16,41 @@ import { AppLoading } from '@/components/common';
 import { useSmartBack } from '@/lib/navigation';
 import {
   ArrowLeft, VideoOff, AlertTriangle, RefreshCw,
-  ChevronDown, ChevronRight, Play, Server, ListVideo,
+  ChevronDown, Play, Server, ListVideo,
 } from 'lucide-react';
 import './Player.css';
 
 const MAX_RETRIES = 2;
+
+type TMDBResultItem = {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average: number;
+};
+
+function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
+  return {
+    id: `tmdb-${mediaType}-${item.id}`,
+    title: mediaType === 'tv' ? item.name ?? '' : item.title ?? '',
+    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    type: mediaType,
+    year: item.release_date
+      ? new Date(item.release_date).getFullYear()
+      : item.first_air_date
+        ? new Date(item.first_air_date).getFullYear()
+        : undefined,
+    tags: [],
+    description: '',
+    actors: [],
+    sources: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
 
 export default function PlayerPage() {
   const { id, episodeId } = useParams<{ id: string; episodeId?: string }>();
@@ -166,6 +197,9 @@ export default function PlayerPage() {
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
     setCmsLoading(true);
+    setVideo(null);
+    setCurrentSrc(null);
+    setLoadError(null);
 
     const indices = videoSourceIndices && videoSourceIndices.length > 0
       ? videoSourceIndices
@@ -261,11 +295,15 @@ export default function PlayerPage() {
   };
 
   const handlePlayCMSSource = (result: VideoDetailResult) => {
-    if (result.video?.sources?.length) {
-      const src = result.video.sources[0];
-      setCurrentSrc({ url: src.url, type: src.type });
-      setSource(src.url, src.type);
+    if (result.video) {
       setVideo(result.video);
+      if (result.video.sources.length > 0) {
+        const src = result.video.sources.find(s => s.isDefault) || result.video.sources[0];
+        setCurrentSrc({ url: src.url, type: src.type });
+        setSource(src.url, src.type);
+      } else {
+        setCurrentSrc(null);
+      }
     }
   };
 
@@ -315,26 +353,25 @@ export default function PlayerPage() {
   if (loadError || !video || !currentSrc) {
     return (
       <div className="player-page">
-        <div className="player-container">
-          <div className="player-empty-state">
-            <button className="player-empty-back btn-press" onClick={handleBack}>
-              <ArrowLeft />
-            </button>
-            <div className="player-empty-content">
-              {loadError === 'api' ? (
-                <>
-                  <AlertTriangle />
-                  <p className="player-empty-title">某些接口请求失败</p>
-                  <p className="player-empty-sub">请稍后重试</p>
-                </>
-              ) : (
-                <>
-                  <VideoOff />
-                  <p className="player-empty-title">找不到匹配播放源</p>
-                  <p className="player-empty-sub">没有匹配到可播放资源，请返回详情页重新匹配</p>
-                </>
-              )}
-            </div>
+        <div className="player-empty-state">
+          <button className="player-empty-back" onClick={handleBack}>
+            <ArrowLeft size={18} />
+            <span>返回</span>
+          </button>
+          <div className="player-empty-content">
+            {loadError === 'api' ? (
+              <>
+                <AlertTriangle />
+                <p className="player-empty-title">某些接口请求失败</p>
+                <p className="player-empty-sub">请稍后重试</p>
+              </>
+            ) : (
+              <>
+                <VideoOff />
+                <p className="player-empty-title">找不到匹配播放源</p>
+                <p className="player-empty-sub">没有匹配到可播放资源，请返回详情页重新匹配</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -357,6 +394,7 @@ export default function PlayerPage() {
             onProgress={handleProgress}
             onEnded={handleEnded}
             onError={handleError}
+            onBack={handleBack}
           />
           {hasError && (
             <div className="player-error-overlay">
@@ -400,21 +438,19 @@ export default function PlayerPage() {
                     {cmsResults.map((result) => (
                       <button
                         key={result.sourceIndex}
-                        className={`player-cms-item ${result.video ? '' : 'disabled'}`}
+                        className={`player-cms-item ${result.video ? '' : 'disabled'} ${result.video?.sources?.[0]?.url === currentSrc?.url ? 'active' : ''}`}
                         onClick={() => result.video && handlePlayCMSSource(result)}
                         disabled={!result.video}
                       >
                         <span className="player-cms-name">{result.sourceName}</span>
-                        {result.error && <span className="player-cms-error">{result.error}</span>}
-                        {result.video && <ChevronRight size={14} />}
                       </button>
                     ))}
                   </div>
                 ) : (
                   <div className="player-panel-empty">暂无数据源</div>
                 )}
-                <button className="player-panel-refresh" onClick={fetchCMSSources}>
-                  <RefreshCw size={12} /> 刷新源
+                <button className="player-panel-refresh" onClick={fetchCMSSources} disabled={cmsLoading}>
+                  <RefreshCw size={12} className={cmsLoading ? 'spinning' : ''} /> 刷新源
                 </button>
               </div>
             )}
@@ -430,7 +466,9 @@ export default function PlayerPage() {
             </button>
             {expandedPanels.episodes && (
               <div className="player-panel-body">
-                {episodes.length > 0 ? (
+                {cmsLoading ? (
+                  <div className="player-panel-loading"><AppLoading tip="加载中…" showTip={false} /></div>
+                ) : episodes.length > 0 ? (
                   <div className="player-episode-grid">
                     {episodes.map((ep) => (
                       <button
@@ -488,49 +526,29 @@ export default function PlayerPage() {
             </div>
 
             {similarResults.length > 0 && (
-              <div className="player-detail-section-block">
-                <h4 className="player-detail-section-title">相关推荐</h4>
-                <div className="player-detail-grid">
+              <section className="player-recommend">
+                <h4 className="player-recommend-title">相关推荐</h4>
+                <div className="player-recommend-row">
                   {similarResults.map((item) => (
-                    <div key={item.id} className="player-detail-card" onClick={() => navigate(`/detail/tmdb-${tmdbMediaType}-${item.id}`)}>
-                      <div className="player-detail-card-cover">
-                        {item.poster_path ? (
-                          <img src={buildImageUrl(item.poster_path, 'w200') || ''} alt={item.title || item.name} />
-                        ) : (
-                          <div className="player-detail-card-placeholder"><Server size={20} /></div>
-                        )}
-                      </div>
-                      <div className="player-detail-card-info">
-                        <span className="player-detail-card-title">{item.title || item.name}</span>
-                        {item.release_date && <span className="player-detail-card-year">{item.release_date.slice(0, 4)}</span>}
-                      </div>
+                    <div key={item.id} className="player-recommend-card">
+                      <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
             {recommendedResults.length > 0 && (
-              <div className="player-detail-section-block">
-                <h4 className="player-detail-section-title">你可能还喜欢</h4>
-                <div className="player-detail-grid">
+              <section className="player-recommend">
+                <h4 className="player-recommend-title">你可能还喜欢</h4>
+                <div className="player-recommend-row">
                   {recommendedResults.map((item) => (
-                    <div key={item.id} className="player-detail-card" onClick={() => navigate(`/detail/tmdb-${tmdbMediaType}-${item.id}`)}>
-                      <div className="player-detail-card-cover">
-                        {item.poster_path ? (
-                          <img src={buildImageUrl(item.poster_path, 'w200') || ''} alt={item.title || item.name} />
-                        ) : (
-                          <div className="player-detail-card-placeholder"><Server size={20} /></div>
-                        )}
-                      </div>
-                      <div className="player-detail-card-info">
-                        <span className="player-detail-card-title">{item.title || item.name}</span>
-                        {item.release_date && <span className="player-detail-card-year">{item.release_date.slice(0, 4)}</span>}
-                      </div>
+                    <div key={item.id} className="player-recommend-card">
+                      <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
           </div>
         </div>

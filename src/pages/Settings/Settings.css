@@ -188,3 +188,44 @@
     width: var(--layout-select-w-mobile);
   }
 }
+
+/* 计数器组件 */
+.settings-counter {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.settings-counter-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.settings-counter-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.settings-counter-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.settings-counter-value {
+  min-width: var(--space-xl);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 500;
+  text-align: center;
+}

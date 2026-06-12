@@ -133,15 +133,15 @@ export default function UniversalPlayer({
     }
   }, [url, _channels, groups, mode]);
 
-  /** EPG 数据加载：进入 IPTV 播放器时异步获取节目表，匹配所有频道 */
+  /** EPG 数据加载：进入 IPTV 播放器时从缓存获取节目表，匹配所有频道 */
   useEffect(() => {
     if (mode !== 'iptv' || _channels.length === 0) return;
     let cancelled = false;
 
     const loadEPG = async () => {
       try {
-        const { fetchAndParseEPG, matchAllChannels } = await import('@/services/epgService');
-        const epgData = await fetchAndParseEPG();
+        const { getCachedEPGData, matchAllChannels } = await import('@/services/epgService');
+        const epgData = await getCachedEPGData();
         if (cancelled) return;
 
         const programs = matchAllChannels(_channels, epgData);

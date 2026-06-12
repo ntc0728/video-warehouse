@@ -55,7 +55,7 @@ interface IPTVState {
 
 const defaultSettings: IPTVSettings = {
   aggregatorUrl: 'https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u',
-  proxyUrl: 'https://proud-unit-efba.1343810646.workers.dev',
+  proxyUrl: '',
   proxyPattern: '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+',
   priorityKeywords: [],
   autoRefresh: false,

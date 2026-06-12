@@ -1,7 +1,11 @@
 import { useSettingsStore } from '@/stores';
 import { getText } from './httpClient';
+import { getDB } from './database';
 
 const DEFAULT_EPG_URL = 'http://epg.51zmt.top:8000/e.xml';
+const EPG_CACHE_DATA_KEY = 'epg-cache-data';
+const EPG_CACHE_URLS_KEY = 'epg-cache-urls';
+const EPG_CACHE_TIME_KEY = 'epg-cache-time';
 
 export interface EPGProgram {
   title: string;
@@ -14,7 +18,7 @@ interface EPGChannelInfo {
   name: string;
 }
 
-interface ParsedEPGData {
+export interface ParsedEPGData {
   channels: EPGChannelInfo[];
   programmes: Map<string, EPGProgram[]>;
 }
@@ -22,6 +26,11 @@ interface ParsedEPGData {
 export interface ChannelProgramInfo {
   current: { title: string; start: string; end: string } | null;
   next: { title: string; start: string; end: string } | null;
+}
+
+interface SerializedEPGData {
+  channels: EPGChannelInfo[];
+  programmes: Record<string, Array<{ title: string; start: string; end: string }>>;
 }
 
 function parseXmltvTime(timeStr: string): Date {
@@ -73,6 +82,32 @@ function parseXMLTV(xml: string): ParsedEPGData {
   });
 
   return { channels, programmes };
+}
+
+function mergeEPGData(existing: ParsedEPGData, newData: ParsedEPGData): ParsedEPGData {
+  const mergedChannels = new Map(existing.channels.map(c => [c.id, c]));
+
+  for (const channel of newData.channels) {
+    if (!mergedChannels.has(channel.id)) {
+      mergedChannels.set(channel.id, channel);
+    }
+  }
+
+  const mergedProgrammes = new Map(existing.programmes);
+
+  for (const [channelId, newProgs] of newData.programmes) {
+    const existingProgs = mergedProgrammes.get(channelId) || [];
+    const existingStartTimes = new Set(existingProgs.map(p => p.start.getTime()));
+
+    const uniqueNewProgs = newProgs.filter(p => !existingStartTimes.has(p.start.getTime()));
+    const merged = [...existingProgs, ...uniqueNewProgs].sort((a, b) => a.start.getTime() - b.start.getTime());
+    mergedProgrammes.set(channelId, merged);
+  }
+
+  return {
+    channels: Array.from(mergedChannels.values()),
+    programmes: mergedProgrammes,
+  };
 }
 
 function normalizeName(name: string): string {
@@ -135,10 +170,98 @@ function formatHHmm(date: Date): string {
   return `${h}:${m}`;
 }
 
+function serializeEPGData(data: ParsedEPGData): SerializedEPGData {
+  const programmes: SerializedEPGData['programmes'] = {};
+  data.programmes.forEach((progs, channelId) => {
+    programmes[channelId] = progs.map(p => ({
+      title: p.title,
+      start: p.start.toISOString(),
+      end: p.end.toISOString(),
+    }));
+  });
+  return { channels: data.channels, programmes };
+}
+
+function deserializeEPGData(data: SerializedEPGData): ParsedEPGData {
+  const programmes = new Map<string, EPGProgram[]>();
+  Object.entries(data.programmes).forEach(([channelId, progs]) => {
+    programmes.set(channelId, progs.map(p => ({
+      title: p.title,
+      start: new Date(p.start),
+      end: new Date(p.end),
+    })));
+  });
+  return { channels: data.channels, programmes };
+}
+
+async function getCachedEPG(): Promise<{ data: ParsedEPGData; urls: string[]; timestamp: number } | null> {
+  try {
+    const db = await getDB();
+    const data = await db.get('settings', EPG_CACHE_DATA_KEY);
+    const urls = await db.get('settings', EPG_CACHE_URLS_KEY);
+    const time = await db.get('settings', EPG_CACHE_TIME_KEY);
+    if (data && urls && time) {
+      return {
+        data: deserializeEPGData(data.value as SerializedEPGData),
+        urls: urls.value as string[],
+        timestamp: time.value as number,
+      };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+async function setCachedEPG(data: ParsedEPGData, urls: string[]): Promise<void> {
+  try {
+    const db = await getDB();
+    const tx = db.transaction('settings', 'readwrite');
+    await Promise.all([
+      tx.store.put({ key: EPG_CACHE_DATA_KEY, value: serializeEPGData(data) }),
+      tx.store.put({ key: EPG_CACHE_URLS_KEY, value: urls }),
+      tx.store.put({ key: EPG_CACHE_TIME_KEY, value: Date.now() }),
+      tx.done,
+    ]);
+  } catch { /* ignore */ }
+}
+
 export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGData> {
-  const url = customUrl || useSettingsStore.getState().epgUrl || DEFAULT_EPG_URL;
-  const xml = await getText(url, { timeout: 20000 });
-  return parseXMLTV(xml);
+  const epgUrls = useSettingsStore.getState().epgUrls;
+  const updateInterval = useSettingsStore.getState().epgUpdateInterval || 6;
+  const intervalMs = updateInterval * 60 * 60 * 1000;
+
+  const urls = customUrl ? [customUrl] : (epgUrls.length > 0 ? epgUrls : [DEFAULT_EPG_URL]);
+
+  const cached = await getCachedEPG();
+  const urlsChanged = JSON.stringify(cached?.urls || []) !== JSON.stringify(urls);
+  const cacheExpired = !cached || Date.now() - cached.timestamp >= intervalMs;
+
+  if (!urlsChanged && !cacheExpired && cached) {
+    return cached.data;
+  }
+
+  let mergedData: ParsedEPGData = cached?.data || { channels: [], programmes: new Map() };
+
+  for (const url of urls) {
+    try {
+      const xml = await getText(url, { timeout: 20000, useProxy: true });
+      if (xml) {
+        const newData = parseXMLTV(xml);
+        mergedData = mergeEPGData(mergedData, newData);
+      }
+    } catch { /* continue to next URL */ }
+  }
+
+  await setCachedEPG(mergedData, urls);
+  return mergedData;
+}
+
+/**
+ * 仅从缓存获取 EPG 数据，不发起网络请求
+ * 用于 IPTV 播放页面，避免进入播放页时调用接口
+ */
+export async function getCachedEPGData(): Promise<ParsedEPGData> {
+  const cached = await getCachedEPG();
+  return cached?.data || { channels: [], programmes: new Map() };
 }
 
 export function matchAllChannels(

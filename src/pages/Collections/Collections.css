@@ -10,9 +10,9 @@
   margin-right: var(--space-sm);
 }
 .search-box--iptv {
-  border-right: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
   height: var(--comp-input-height);
+  border-radius: var(--radius-full);
+  border-right: 1px solid var(--color-border);
 }
 .search-box__input {
   flex: 1 1 0;
@@ -98,9 +98,9 @@
 
 .collection-header {
   display: flex;
+  gap: var(--space-sm);
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-sm);
   /* margin-bottom: var(--space-md); */
 }
 .collection-header h1 {
@@ -124,8 +124,8 @@
 /* ── 状态筛选 Tab ───────────────────────────────── */
 .status-tabs {
   display: flex;
-  gap: var(--space-xs);
   flex-wrap: wrap;
+  gap: var(--space-xs);
 }
 
 .status-tab {
