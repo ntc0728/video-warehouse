@@ -7,6 +7,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings } from '@/types/iptv';
 import { fetchAndParsePlaylist, checkChannelsAvailability, SourceType } from '@/services/iptvService';
+import { getIPTVSources } from '@/services/sourceService';
+import { useSettingsStore } from './useSettingsStore';
 
 export interface IPTVPlayRecord {
   channelId: string;
@@ -368,3 +370,21 @@ export const useIPTVStore = create<IPTVState>()(
     }
   )
 );
+
+/**
+ * 应用启动时，根据 useSettingsStore 中持久化的 iptvSourceIndex
+ * 初始化 aggregatorUrl，避免 IPTV 页面首次进入时因 aggregatorUrl 为空而无数据。
+ */
+const initAggregatorUrl = async () => {
+  const { aggregatorUrl } = useIPTVStore.getState().settings;
+  if (aggregatorUrl) return;
+
+  const iptvSourceIndex = useSettingsStore.getState().iptvSourceIndex;
+  const sources = await getIPTVSources();
+  const url = sources[iptvSourceIndex]?.url || sources[0]?.url || '';
+  if (url) {
+    useIPTVStore.getState().setSettings({ aggregatorUrl: url });
+  }
+};
+
+void initAggregatorUrl();
