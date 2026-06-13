@@ -296,7 +296,7 @@ export interface VideoDetailResult {
 export async function searchVideoFromMultipleSources(
   sourceIndices: number[],
   title: string,
-  year?: number,
+  _year?: number,
 ): Promise<VideoDetailResult[]> {
   const sources = await getVideoSources();
   const results: VideoDetailResult[] = [];
@@ -364,7 +364,7 @@ export async function searchVideoFromMultipleSources(
   return results;
 }
 
-export async function searchVideoByTitle(title: string, year?: number): Promise<Video | null> {
+export async function searchVideoByTitle(title: string, _year?: number): Promise<Video | null> {
   const sources = await getVideoSources();
   if (sources.length === 0) return null;
 

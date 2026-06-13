@@ -111,7 +111,7 @@ export default function SettingsPage() {
 
     setVideoSourceIndices(newIndices);
     if (newIndices.length > 0) {
-      setVideoSourceIndex(newIndices[0]);
+      setVideoSourceIndices(newIndices);
     }
   };
 

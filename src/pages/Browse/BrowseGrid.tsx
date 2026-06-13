@@ -47,7 +47,7 @@ export default function BrowseGrid({ items }: BrowseGridProps) {
             key={item.id}
             video={toVideo(item)}
             rating={item.voteAverage}
-            srcSet={posterSrcSet}
+            srcSet={posterSrcSet ?? undefined}
             sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
           />
         );

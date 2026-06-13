@@ -70,15 +70,15 @@ export default function HomePage() {
 
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
-  
-  const isInitialLoading =
-    (loading.trending || loading.nowPlaying) &&
-    !hasAnyData;
 
   const hasAnyData =
     trending.length > 0 || nowPlaying.length > 0 || popularMovies.length > 0 ||
     topRatedMovies.length > 0 || upcomingMovies.length > 0 ||
     popularTv.length > 0 || topRatedTv.length > 0 || airingTodayTv.length > 0;
+
+  const isInitialLoading =
+    (loading.trending || loading.nowPlaying) &&
+    !hasAnyData;
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {

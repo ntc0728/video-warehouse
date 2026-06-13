@@ -101,7 +101,7 @@ export default function PlayerPage() {
 
         if (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes) {
           if (!id.startsWith('tmdb-')) {
-            const { default: svc } = await import('@/services/videoService');
+            const svc = await import('@/services/videoService');
             const detailVideo = await svc.fetchVideoDetail(videoSourceIndex, id);
             if (detailVideo) {
               foundVideo = detailVideo;
@@ -110,7 +110,7 @@ export default function PlayerPage() {
         }
 
         if (!foundVideo && !id.startsWith('tmdb-')) {
-          const { default: svc } = await import('@/services/videoService');
+          const svc = await import('@/services/videoService');
           const detailVideo = await svc.fetchVideoDetail(videoSourceIndex, id);
           if (detailVideo) {
             foundVideo = detailVideo;
