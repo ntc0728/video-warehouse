@@ -68,6 +68,8 @@ const Timeline = memo(function Timeline({
       role="list"
       aria-label={ariaLabel || '时间轴导航'}
     >
+      {/* 贯穿线：竖向垂直、横向水平 */}
+      <span className="timeline-rail" aria-hidden="true" />
       {items.map((item, idx) => {
         const isLast = idx === items.length - 1;
         return (
@@ -76,8 +78,8 @@ const Timeline = memo(function Timeline({
             className={`timeline-node ${item.active ? 'timeline-node--active' : ''} ${isLast ? 'timeline-node--last' : ''}`.trim()}
             role="listitem"
           >
-            {/* 轴线：竖向时在最左侧 1/2 处；横向时在最上侧 1/2 处 */}
-            {!isLast && <span className="timeline-node-line" aria-hidden="true" />}
+            {/* 圆点：绝对定位,与轴线对齐 */}
+            <span className="timeline-node-dot" aria-hidden="true" />
             <button
               type="button"
               className="timeline-node-btn"
@@ -89,8 +91,6 @@ const Timeline = memo(function Timeline({
               {/* 左侧：分组标题 */}
               <span className="timeline-node-label">{item.label}</span>
               {item.icon && <span className="timeline-node-icon">{item.icon}</span>}
-              {/* 中间：圆点（轴点） */}
-              <span className="timeline-node-dot" aria-hidden="true" />
               {/* 右侧：card 数量 */}
               {item.count !== undefined && item.count > 0 && (
                 <span className="timeline-node-count">{item.count}</span>

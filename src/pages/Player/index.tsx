@@ -262,8 +262,8 @@ export default function PlayerPage() {
   }, []);
 
   const handleProgress = useCallback((progress: number, duration: number) => {
-    if (id) updateHistoryProgress(id, episodeId, progress, duration);
-  }, [id, episodeId, updateHistoryProgress]);
+    if (id) updateHistoryProgress(id, episodeId, progress, duration, video?.title, video?.cover);
+  }, [id, episodeId, updateHistoryProgress, video?.title, video?.cover]);
 
   const handleEnded = useCallback(() => {
     if (video?.type === 'tv' && video.episodes && episodeId) {

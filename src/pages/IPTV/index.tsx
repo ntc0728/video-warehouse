@@ -267,24 +267,27 @@ export default function IPTVPage() {
   }, [checkAvailability, selectedGroup]);
 
   const hasNoData = !isLoading && channels.length === 0;
+  const isInitialLoadingState = isLoading && channels.length === 0;
 
   return (
     <div className="iptv-page">
-      <div className="iptv-header">
-        <h1 className="page-title">IPTV 直播</h1>
-        <div className="iptv-header-meta">
-          {lastRefresh && (
-            <span className="last-refresh">
-              更新: {new Date(lastRefresh).toLocaleTimeString()}
+      {!isInitialLoadingState && (
+        <div className="iptv-header">
+          <h1 className="page-title">IPTV 直播</h1>
+          <div className="iptv-header-meta">
+            {lastRefresh && (
+              <span className="last-refresh">
+                更新: {new Date(lastRefresh).toLocaleTimeString()}
+              </span>
+            )}
+            <span className="source-url" title={settings.aggregatorUrl}>
+              源: {getDisplayHostname(settings.aggregatorUrl)}
             </span>
-          )}
-          <span className="source-url" title={settings.aggregatorUrl}>
-            源: {getDisplayHostname(settings.aggregatorUrl)}
-          </span>
+          </div>
         </div>
-      </div>
+      )}
 
-      {!hasNoData && (
+      {!hasNoData && !isInitialLoadingState && (
         <div className="iptv-toolbar">
           <div className="search-box-wrap search-box-wrap--iptv" role="search">
             <div className="search-box search-box--iptv">
@@ -347,7 +350,7 @@ export default function IPTVPage() {
         </div>
       )}
 
-      {!hasNoData && (
+      {!hasNoData && !isInitialLoadingState && (
         <>
           <div
             className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}

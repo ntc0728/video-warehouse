@@ -12,6 +12,7 @@ export interface ConfirmDialogProps {
   variant?: 'danger' | 'default';
   onConfirm: () => void;
   onCancel?: () => void;
+  className?: string;
 }
 
 export default function ConfirmDialog({
@@ -24,6 +25,7 @@ export default function ConfirmDialog({
   variant = 'danger',
   onConfirm,
   onCancel,
+  className,
 }: ConfirmDialogProps) {
   const handleCancel = useCallback(() => {
     onCancel?.();
@@ -38,12 +40,9 @@ export default function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="confirm-overlay" />
-        <Dialog.Content className="confirm-content">
-          <div className="confirm-icon">
-            <AlertTriangle size={24} />
-          </div>
-          <Dialog.Title className="confirm-title">{title}</Dialog.Title>
+        <Dialog.Overlay className="modal-overlay" />
+        <Dialog.Content className={`modal-content${className ? ` ${className}` : ''}`}>
+          <Dialog.Title className="modal-title">{title}</Dialog.Title>
           {description && (
             <Dialog.Description className="confirm-description">{description}</Dialog.Description>
           )}
@@ -61,6 +60,13 @@ export default function ConfirmDialog({
               {confirmText}
             </button>
           </div>
+          <Dialog.Close asChild>
+            <button className="modal-close" aria-label="Close">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

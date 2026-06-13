@@ -246,7 +246,7 @@
    - 内容充足时随滚动自然上移
    - 上下间距 var(--space-xl)（24–40px 流体）以拉开与最后一张 card 的视觉距离 */
 .load-more-hint {
-  padding: var(--space-xl) var(--space-md);
+  padding: var(--space-md) 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-base);
   text-align: center;

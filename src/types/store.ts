@@ -28,6 +28,8 @@ export interface HistoryRecord {
   progress: number;
   duration: number;
   updatedAt: number;
+  title?: string;
+  cover?: string;
 }
 
 /** IndexedDB 数据库 Schema 定义 */

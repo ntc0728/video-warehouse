@@ -97,7 +97,6 @@
   align-items: center;
   width: var(--comp-input-height);
   height: var(--comp-input-height);
-  border: 1px solid var(--logo-border-light);
   border-radius: 50%;
   background: var(--color-surface);
   overflow: hidden;

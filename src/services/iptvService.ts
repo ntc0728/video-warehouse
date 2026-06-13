@@ -6,8 +6,6 @@
 import type { IPTVChannel, IPTVSettings } from '@/types/iptv';
 import { getText } from './httpClient';
 
-const DEFAULT_IPTV_URL = 'https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u';
-
 /**
  * IPTV 源类型枚举
  * SINGLE_STREAM: 单流（如单个直播地址）
@@ -92,7 +90,10 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   channels: IPTVChannel[];
   sourceType: SourceType;
 }> {
-  const aggregatorUrl = settings?.aggregatorUrl || DEFAULT_IPTV_URL;
+  const aggregatorUrl = settings?.aggregatorUrl;
+  if (!aggregatorUrl) {
+    throw new Error('IPTV 源未配置，请在设置中选择数据源');
+  }
   const proxyUrl = settings?.proxyUrl;
   const pattern = settings?.proxyPattern;
   const requestUrl = buildRequestUrl(aggregatorUrl, proxyUrl, pattern);
