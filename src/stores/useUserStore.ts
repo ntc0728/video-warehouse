@@ -18,7 +18,7 @@ interface UserState {
   isCollected: (videoId: string) => boolean;
 
   addHistory: (record: Omit<HistoryRecord, 'id' | 'updatedAt'>) => void;
-  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number) => void;
+  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
@@ -91,8 +91,8 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      updateHistoryProgress: (videoId, episodeId, progress, duration) => {
-        get().addHistory({ videoId, episodeId, progress, duration });
+      updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover) => {
+        get().addHistory({ videoId, episodeId, progress, duration, title, cover });
       },
 
       getHistoryByVideo: (videoId) =>

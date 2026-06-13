@@ -9,8 +9,8 @@
 import { useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
-import { useTMDBStore } from '@/stores';
-import { AppLoading, BackToTopButton } from '@/components/common';
+import { useTMDBStore, useSettingsStore } from '@/stores';
+import { BackToTopButton } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -35,6 +35,9 @@ export default function HomePage() {
   useScrollRestore('home');
 
   useHeaderContent({ immersive: true });
+
+  // 从设置 store 获取 TMDB Access Token
+  const tmdbAccessToken = useSettingsStore((s) => s.tmdbAccessToken);
 
   // 使用 useShallow 一次性选多个字段,避免逐字段订阅模板代码膨胀;
   // 同时保证只在所选字段引用变化时才重渲染,降低主线程压力。
@@ -66,11 +69,11 @@ export default function HomePage() {
   };
 
   // ── 状态 ──────────────────────────────────────────
+  const hasToken = tmdbAccessToken.trim().length > 0;
+  
   const isInitialLoading =
-    loading.trending && loading.nowPlaying && loading.popularMovies &&
-    loading.topRatedMovies && loading.upcomingMovies &&
-    loading.popularTv && loading.topRatedTv && loading.airingTodayTv &&
-    trending.length === 0 && nowPlaying.length === 0;
+    (loading.trending || loading.nowPlaying) &&
+    !hasAnyData;
 
   const hasAnyData =
     trending.length > 0 || nowPlaying.length > 0 || popularMovies.length > 0 ||
@@ -92,8 +95,51 @@ export default function HomePage() {
     return msgs.length > 0 ? [...new Set(msgs)][0] : null;
   })();
 
+  if (!hasToken) {
+    return (
+      <div className="home-page">
+        <div className="home-token-required">
+          <AlertCircle size={48} className="home-token-required-icon" />
+          <p className="home-token-required-text">
+            TMDB Access Token 未配置，请在
+            <button
+              className="home-token-required-link"
+              onClick={() => navigate('/settings')}
+            >
+              配置
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (isInitialLoading) {
-    return <div className="home-page"><AppLoading fullScreen /></div>;
+    return (
+      <div className="home-page home-skeleton">
+        <div className="home-skeleton-hero" />
+        <div className="home-skeleton-categories">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="home-skeleton-category" />
+          ))}
+        </div>
+        <div className="home-skeleton-rows">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="home-skeleton-row">
+              <div className="home-skeleton-row-title" />
+              <div className="home-skeleton-row-cards">
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <div key={j} className="home-skeleton-card">
+                    <div className="home-skeleton-card-img" />
+                    <div className="home-skeleton-card-title" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

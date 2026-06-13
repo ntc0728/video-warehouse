@@ -172,8 +172,8 @@ export default function HistoryPage() {
         const sv = videos.find((v) => v.id === h.videoId);
         const base: Video = sv ?? {
           id: h.videoId,
-          title: '未知',
-          cover: '',
+          title: h.title || '未知',
+          cover: h.cover || '',
           type: 'movie',
           tags: [],
           actors: [],
@@ -283,6 +283,8 @@ export default function HistoryPage() {
     else delete groupRefs.current[key];
   }, []);
 
+  const clickScrollingRef = useRef(false);
+
   useEffect(() => {
     if (groupedKeys.length === 0) {
       setActiveGroupKey(null);
@@ -296,6 +298,7 @@ export default function HistoryPage() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        if (clickScrollingRef.current) return;
         let bestKey: GroupKey | null = null;
         let bestTop = -Infinity;
         entries.forEach((entry) => {
@@ -327,8 +330,10 @@ export default function HistoryPage() {
   const handleTimelineClick = useCallback((key: string) => {
     const el = groupRefs.current[key];
     if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    clickScrollingRef.current = true;
     setActiveGroupKey(key as GroupKey);
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => { clickScrollingRef.current = false; }, 500);
   }, []);
 
   const toggleSelect = (id: string) => setSelected((p) => {

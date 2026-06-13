@@ -3,6 +3,13 @@
   overflow-x: hidden;
 }
 
+@media (width >= 768px) {
+  .modal-content--settings {
+    width: 80%;
+    max-width: 40rem;
+  }
+}
+
 .picker-modal-content {
   max-height: 60vh;
   padding: var(--space-sm) var(--space-xs);
@@ -101,7 +108,19 @@
 .setting-modal-actions {
   display: flex;
   gap: var(--space-sm);
-  justify-content: flex-end;
+  justify-content: center;
+}
+
+.setting-modal-actions button {
+  min-height: unset !important;
+  padding: var(--space-xs) var(--space-md) !important;
+  border-radius: var(--radius-full) !important;
+}
+
+@media (width >= 768px) {
+  .setting-modal-actions {
+    justify-content: center;
+  }
 }
 
 .source-multi-dropdown {

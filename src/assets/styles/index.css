@@ -274,50 +274,6 @@ html.theme-transitioning [class*="-bar"] {
 }
 
 /* ── ConfirmDialog 确认弹窗 ────────────────────── */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background-color: rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.confirm-content {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  z-index: 1001;
-  width: min(85vw, 20rem);
-  padding: var(--space-xl);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-card);
-  text-align: center;
-  transform: translate(-50%, -50%);
-  animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-}
-
-.confirm-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto var(--space-md);
-  border-radius: 50%;
-  background: rgba(255, 77, 79, 0.1);
-  color: var(--color-error);
-}
-
-.confirm-title {
-  margin: 0 0 var(--space-sm);
-  color: var(--color-text);
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-
 .confirm-description {
   margin: 0 0 var(--space-lg);
   color: var(--color-text-tertiary);
@@ -332,9 +288,11 @@ html.theme-transitioning [class*="-bar"] {
 }
 
 .confirm-btn {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -343,15 +301,16 @@ html.theme-transitioning [class*="-bar"] {
 }
 
 .confirm-btn--cancel {
-  background: var(--color-hover-bg);
-  color: var(--color-text-secondary);
+  background: #fff;
+  color: #4b5563;
 }
 
 .confirm-btn--cancel:hover {
-  background: color-mix(in srgb, var(--color-hover-bg) 80%, var(--color-border));
+  background: #f9fafb;
 }
 
 .confirm-btn--confirm {
+  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
@@ -361,6 +320,7 @@ html.theme-transitioning [class*="-bar"] {
 }
 
 .confirm-btn--danger {
+  border-color: var(--color-error);
   background: var(--color-error);
   color: #fff;
 }
@@ -473,6 +433,16 @@ main {
 [data-theme="dark"] .modal-close:hover {
   background: var(--color-surface-hover);
   color: var(--color-text);
+}
+
+[data-theme="dark"] .confirm-btn--cancel {
+  border-color: #4b5563;
+  background: #374151;
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .confirm-btn--cancel:hover {
+  background: #4b5563;
 }
 
 /* ── 页面工具栏按钮（收藏 / 历史页共用） ────────────── */

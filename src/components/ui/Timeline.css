@@ -1,15 +1,15 @@
 /* Timeline — 通用时间轴组件（竖向 / 横向）
  *
- * 节点布局：[label]  ●  [count]
- * 圆点（dot）居中,左侧为分组标题,右侧为 card 数量
- * 轴线(line) 绝对定位在节点左/上 1/2 处贯穿
+ * 节点布局：[label] ● [count]
+ * 圆点（dot）绝对定位在节点内固定偏移处,与轴线对齐
+ * 标签和计数在按钮内自然排列,按钮左侧留出 dot 区域
  */
 
 .timeline {
   --timeline-rail-color: var(--color-border);
   --timeline-dot-size: 0.75rem;
   --timeline-rail-size: 0.125rem;
-  --timeline-axis-offset: 1rem;            /* 圆点中心在节点内的偏移,给 line 对齐用 */
+  --timeline-axis-offset: 1rem;
   --timeline-min-node-h: 2.75rem;
   --timeline-min-node-w: 5rem;
   --timeline-node-color: var(--color-text-tertiary);
@@ -25,8 +25,10 @@
 
 /* ── 竖向（默认） ─────────────────────────── */
 .timeline--vertical {
+  position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
   padding: var(--space-xs) 0;
 }
 
@@ -39,10 +41,10 @@
   min-height: var(--timeline-min-node-h);
 }
 
-/* 竖轴:贯穿节点左半部分中央 */
-.timeline--vertical .timeline-node-line {
+/* 竖轴:单根贯穿线,从第一个圆点延伸到容器底部 */
+.timeline-rail {
   position: absolute;
-  top: 0;
+  top: calc(var(--timeline-min-node-h) / 2);
   bottom: 0;
   left: var(--timeline-axis-offset);
   z-index: 0;
@@ -59,7 +61,7 @@
   flex-direction: row;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-sm) var(--space-sm) var(--space-sm) 0;
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) calc(var(--timeline-axis-offset) + var(--timeline-dot-size) + var(--space-xs));
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -101,8 +103,8 @@
   min-height: 2.5rem;
 }
 
-/* 横轴:贯穿节点上 1/2 水平线 */
-.timeline--horizontal .timeline-node-line {
+/* 横轴:单根贯穿线 */
+.timeline--horizontal .timeline-rail {
   position: absolute;
   top: var(--timeline-axis-offset);
   right: 0;
@@ -138,24 +140,23 @@
   color: var(--timeline-label-active-color);
 }
 
-/* ── 圆点（dot）—— 节点中央,贯穿轴线 ─────── */
+/* ── 圆点（dot）—— 绝对定位,与轴线对齐 ─────── */
 .timeline-node-dot {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: var(--timeline-axis-offset);
   z-index: 2;
-  flex-shrink: 0;
   width: var(--timeline-dot-size);
   height: var(--timeline-dot-size);
-  margin: 0 var(--timeline-dot-size);
-  border: 0.125rem solid var(--timeline-node-color);
   border-radius: 50%;
-  background: transparent;
-  transition: background 0.18s ease, border-color 0.18s ease;
-  box-sizing: border-box;
+  background: var(--timeline-node-color);
+  transform: translate(-50%, -50%);
+  transition: background 0.18s ease;
+  pointer-events: none;
 }
 
 /* ── 激活态（共用） ─────────────────────────── */
 .timeline-node--active .timeline-node-dot {
-  border-color: var(--timeline-node-active-color);
   background: var(--timeline-node-active-color);
 }
 

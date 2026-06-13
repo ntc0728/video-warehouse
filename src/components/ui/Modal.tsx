@@ -11,6 +11,7 @@ interface ModalProps {
   onClose?: () => void
   closeOnAction?: boolean
   children?: React.ReactNode
+  className?: string
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -20,6 +21,7 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   closeOnAction = true,
   children,
+  className,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -77,7 +79,7 @@ const Modal: React.FC<ModalProps> = ({
         <Dialog.Overlay className="modal-overlay" />
         <Dialog.Content
           ref={contentRef}
-          className="modal-content"
+          className={`modal-content${className ? ` ${className}` : ''}`}
           onEscapeKeyDown={closeOnAction ? undefined : (e) => e.preventDefault()}
           onPointerDownOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
           onInteractOutside={closeOnAction ? undefined : (e) => e.preventDefault()}

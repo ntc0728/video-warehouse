@@ -434,6 +434,7 @@ export default function SettingsPage() {
       <Modal
         visible={showApiInput}
         title="配置百度翻译 API"
+        className="modal-content--settings"
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
@@ -466,6 +467,7 @@ export default function SettingsPage() {
       <Modal
         visible={showProxyInput}
         title="配置流代理地址"
+        className="modal-content--settings"
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
@@ -499,6 +501,7 @@ export default function SettingsPage() {
       <Modal
         visible={showPatternInput}
         title="配置代理规则"
+        className="modal-content--settings"
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
@@ -533,6 +536,7 @@ export default function SettingsPage() {
       <Modal
         visible={showCorsProxyInput}
         title="配置 CORS 代理地址"
+        className="modal-content--settings"
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
@@ -572,6 +576,7 @@ export default function SettingsPage() {
       <Modal
         visible={showTMDBTokenInput}
         title="配置 TMDB Access Token"
+        className="modal-content--settings"
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
