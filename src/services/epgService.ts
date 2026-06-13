@@ -202,9 +202,9 @@ async function getCachedEPG(): Promise<{ data: ParsedEPGData; urls: string[]; ti
     const time = await db.get('settings', EPG_CACHE_TIME_KEY);
     if (data && urls && time) {
       return {
-        data: deserializeEPGData(data.value as SerializedEPGData),
-        urls: urls.value as string[],
-        timestamp: time.value as number,
+        data: deserializeEPGData((data as { value: SerializedEPGData }).value),
+        urls: (urls as { value: string[] }).value,
+        timestamp: (time as { value: number }).value,
       };
     }
   } catch { /* ignore */ }
