@@ -20,6 +20,8 @@ interface PlayerState {
   decoderMode: 'native' | 'wasm';
   currentLevel: number;
   levels: { width: number; height: number; bitrate: number; name?: string }[];
+  audioTracks: { id: number; name: string; language: string; default: boolean }[];
+  currentAudioTrack: number;
   isPiP: boolean;
   subtitleUrl: string | null;
   mode: PlayerMode;
@@ -28,6 +30,7 @@ interface PlayerState {
   isChannelListVisible: boolean;
   loopMode: LoopMode;
   bandwidthEstimate: number;
+  isBuffering: boolean;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
@@ -39,6 +42,8 @@ interface PlayerState {
   setDecoderMode: (mode: 'native' | 'wasm') => void;
   setCurrentLevel: (level: number) => void;
   setLevels: (levels: { width: number; height: number; bitrate: number; name?: string }[]) => void;
+  setAudioTracks: (tracks: { id: number; name: string; language: string; default: boolean }[]) => void;
+  setCurrentAudioTrack: (trackId: number) => void;
   setIsPiP: (isPiP: boolean) => void;
   setSubtitleUrl: (url: string | null) => void;
   setMode: (mode: PlayerMode) => void;
@@ -47,6 +52,7 @@ interface PlayerState {
   setChannelListVisible: (visible: boolean) => void;
   setLoopMode: (mode: LoopMode) => void;
   setBandwidthEstimate: (bps: number) => void;
+  setBuffering: (isBuffering: boolean) => void;
   reset: () => void;
 }
 
@@ -62,6 +68,8 @@ const initialState = {
   decoderMode: 'native' as const,
   currentLevel: -1,
   levels: [] as { width: number; height: number; bitrate: number; name?: string }[],
+  audioTracks: [] as { id: number; name: string; language: string; default: boolean }[],
+  currentAudioTrack: -1,
   isPiP: false,
   subtitleUrl: null as string | null,
   mode: 'video' as PlayerMode,
@@ -70,6 +78,7 @@ const initialState = {
   isChannelListVisible: false,
   loopMode: 'none' as LoopMode,
   bandwidthEstimate: 0,
+  isBuffering: false,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -87,6 +96,8 @@ export const usePlayerStore = create<PlayerState>()(
       setDecoderMode: (decoderMode) => set({ decoderMode }),
       setCurrentLevel: (currentLevel) => set({ currentLevel }),
       setLevels: (levels) => set({ levels }),
+      setAudioTracks: (audioTracks) => set({ audioTracks }),
+      setCurrentAudioTrack: (currentAudioTrack) => set({ currentAudioTrack }),
       setIsPiP: (isPiP) => set({ isPiP }),
       setSubtitleUrl: (subtitleUrl) => set({ subtitleUrl }),
       setMode: (mode) => set({ mode }),
@@ -95,6 +106,7 @@ export const usePlayerStore = create<PlayerState>()(
       setChannelListVisible: (isChannelListVisible) => set({ isChannelListVisible }),
       setLoopMode: (loopMode) => set({ loopMode }),
       setBandwidthEstimate: (bandwidthEstimate) => set({ bandwidthEstimate }),
+      setBuffering: (isBuffering) => set({ isBuffering }),
       reset: () => set(initialState),
     }),
     {

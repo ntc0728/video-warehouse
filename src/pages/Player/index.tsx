@@ -516,13 +516,13 @@ export default function PlayerPage() {
                 {runtime && <span>{runtime}分钟</span>}
                 {director && <span>导演: {director}</span>}
               </div>
-              {overview && <p className="player-detail-overview">{overview}</p>}
               {cast.length > 0 && (
                 <div className="player-detail-cast">
                   <span className="player-detail-cast-label">演员:</span>
                   {cast.map((c) => c.name).join(' / ')}
                 </div>
               )}
+              {overview && <p className="player-detail-overview">{overview}</p>}
             </div>
 
             {similarResults.length > 0 && (

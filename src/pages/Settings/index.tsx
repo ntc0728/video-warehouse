@@ -7,7 +7,6 @@ import { List, Switch, Button, Modal, toast } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useSubtitleStore, useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
 import { getVideoSources, getIPTVSources, getEPGSources, type EPGSourceConfig } from '@/services/sourceService';
-import { fetchIPTVUrl } from '@/services/videoService';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 import './Settings.css';
 
@@ -19,8 +18,9 @@ export default function SettingsPage() {
     theme,
     setTheme,
     videoSourceIndices,
-    iptvSourceIndex,
+    iptvSourceIndices,
     setVideoSourceIndices,
+    setIPTVSourceIndices,
     setIPTVSourceIndex,
     corsProxy,
     setCorsProxy,
@@ -46,14 +46,17 @@ export default function SettingsPage() {
   const [proxyUrlInput, setProxyUrlInput] = useState('');
   const [showPatternInput, setShowPatternInput] = useState(false);
   const [patternInput, setPatternInput] = useState('');
+  const DEFAULT_PROXY_PATTERN = 'miguvideo\\.com|101\\.35\\.240\\.114';
   const [showCorsProxyInput, setShowCorsProxyInput] = useState(false);
   const [corsProxyInput, setCorsProxyInput] = useState('');
   const [showEpgMultiSelect, setShowEpgMultiSelect] = useState(false);
   const [showTMDBTokenInput, setShowTMDBTokenInput] = useState(false);
   const [tmdbTokenInput, setTMDBTokenInput] = useState('');
   const [showMultiSelect, setShowMultiSelect] = useState(false);
+  const [showIptvMultiSelect, setShowIptvMultiSelect] = useState(false);
   const multiSelectRef = useRef<HTMLDivElement>(null);
   const epgMultiSelectRef = useRef<HTMLDivElement>(null);
+  const iptvMultiSelectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -62,6 +65,9 @@ export default function SettingsPage() {
       }
       if (epgMultiSelectRef.current && !epgMultiSelectRef.current.contains(e.target as Node)) {
         setShowEpgMultiSelect(false);
+      }
+      if (iptvMultiSelectRef.current && !iptvMultiSelectRef.current.contains(e.target as Node)) {
+        setShowIptvMultiSelect(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -115,13 +121,39 @@ export default function SettingsPage() {
     }
   };
 
-  /** 切换 IPTV 数据源并刷新频道列表 */
-  const handleIPTVSourceSelect = async (index: number) => {
-    setIPTVSourceIndex(index);
-    const url = await fetchIPTVUrl(index);
-    setIPTVSettings({ aggregatorUrl: url });
-    toast.show({ content: `IPTV 源已切换为: ${iptvSources[index]?.name || '未知'}`, duration: 2000 });
-    useIPTVStore.getState().refreshChannels();
+  /** 多选 IPTV 数据源（最多3个） */
+  const handleIPTVSourceToggle = (index: number) => {
+    const current = iptvSourceIndices || [0];
+    let newIndices: number[];
+
+    if (current.includes(index)) {
+      newIndices = current.filter(i => i !== index);
+      if (newIndices.length === 0) {
+        newIndices = [0];
+        toast.show({ content: '至少需要保留一个数据源', duration: 2000 });
+      }
+    } else {
+      if (current.length >= 3) {
+        toast.show({ content: '最多选择3个数据源', duration: 2000 });
+        return;
+      }
+      newIndices = [...current, index];
+    }
+
+    setIPTVSourceIndices(newIndices);
+    setIPTVSourceIndex(newIndices[0]);
+
+    // 获取所有选中源的 URL 和名称
+    getIPTVSources().then(sources => {
+      const urls = newIndices.map(i => sources[i]?.url || '').filter(Boolean);
+      const names = newIndices.map(i => sources[i]?.name || `源 ${i + 1}`);
+      setIPTVSettings({
+        aggregatorUrl: urls[0] || '',
+        aggregatorUrls: urls,
+        sourceNames: names,
+      });
+      useIPTVStore.getState().refreshChannels();
+    });
   };
 
   /** 多选 EPG 数据源（最多3个，停止操作1s后调用接口） */
@@ -295,16 +327,31 @@ export default function SettingsPage() {
         <List header="IPTV">
         <List.Item
           title="IPTV 数据源"
+          description="选择IPTV数据源（支持多选，最多3个）"
           extra={
-            <select
-              className="source-select"
-              value={iptvSourceIndex}
-              onChange={(e) => handleIPTVSourceSelect(Number(e.target.value))}
-            >
-              {iptvSources.map((source, index) => (
-                <option key={index} value={index}>{source.name}</option>
-              ))}
-            </select>
+            <div className="source-multi-dropdown" ref={iptvMultiSelectRef}>
+              <button
+                className="source-multi-trigger"
+                onClick={() => setShowIptvMultiSelect(!showIptvMultiSelect)}
+              >
+                <span>已选 {(iptvSourceIndices || []).length} 项</span>
+                <ChevronDown size={14} className={showIptvMultiSelect ? 'rotated' : ''} />
+              </button>
+              {showIptvMultiSelect && (
+                <div className="source-multi-options">
+                  {iptvSources.map((source, index) => (
+                    <label key={index} className="source-multi-option">
+                      <input
+                        type="checkbox"
+                        checked={(iptvSourceIndices || [0]).includes(index)}
+                        onChange={() => handleIPTVSourceToggle(index)}
+                      />
+                      <span>{source.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           }
         />
         <List.Item
@@ -373,10 +420,10 @@ export default function SettingsPage() {
         />
         <List.Item
           title="代理规则"
-          description={iptvSettings.proxyPattern || '未设置（全走代理）'}
+          description={iptvSettings.proxyPattern || '默认: 匹配 miguvideo.com 和 IP 不走代理'}
           extra={
             <Button size="small" className="settings-btn-mini" onClick={() => {
-              setPatternInput(iptvSettings.proxyPattern || '');
+              setPatternInput(iptvSettings.proxyPattern || DEFAULT_PROXY_PATTERN);
               setShowPatternInput(true);
             }}>
               配置
@@ -505,12 +552,12 @@ export default function SettingsPage() {
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
-              只有匹配正则的 URL 才走代理。默认匹配 IP 地址类 URL。<br />
+              匹配正则的 URL 不走代理，其余走代理。<br />
               留空则所有地址都走代理。
             </div>
             <input
               type="text"
-              placeholder="^https?://\\d+\\.\\d+\\.\\d+\\.\\d+"
+              placeholder="miguvideo\\.com|101\\.35\\.240\\.114"
               value={patternInput}
               onChange={(e) => setPatternInput(e.target.value)}
               className="setting-modal-input"
@@ -524,6 +571,9 @@ export default function SettingsPage() {
                   toast.show('代理规则已清除');
                 }}>清除</Button>
               )}
+              <Button size="small" onClick={() => {
+                setPatternInput(DEFAULT_PROXY_PATTERN);
+              }}>恢复默认</Button>
               <Button size="small" onClick={() => setShowPatternInput(false)}>取消</Button>
               <Button size="small" color="primary" onClick={handleSavePattern}>保存</Button>
             </div>

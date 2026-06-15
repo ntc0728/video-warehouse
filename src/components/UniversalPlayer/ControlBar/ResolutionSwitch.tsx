@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Monitor } from 'lucide-react';
 import type { PlayerLevel } from '@/types/player';
 
@@ -24,15 +24,23 @@ interface ResolutionSwitchProps {
   currentLevel: number;
   onChange: (level: number) => void;
   visible: boolean;
+  activePopover: string | null;
+  onPopoverChange: (id: string | null) => void;
 }
 
-export default function ResolutionSwitch({ levels, currentLevel, onChange, visible }: ResolutionSwitchProps) {
-  const [showPopover, setShowPopover] = useState(false);
+const POPOVER_ID = 'resolution';
+
+export default function ResolutionSwitch({ levels, currentLevel, onChange, visible, activePopover, onPopoverChange }: ResolutionSwitchProps) {
+  const isOpen = activePopover === POPOVER_ID;
+
+  const handleToggle = useCallback(() => {
+    onPopoverChange(isOpen ? null : POPOVER_ID);
+  }, [isOpen, onPopoverChange]);
 
   const handleSelect = useCallback((level: number) => {
     onChange(level);
-    setShowPopover(false);
-  }, [onChange]);
+    onPopoverChange(null);
+  }, [onChange, onPopoverChange]);
 
   if (!visible || levels.length === 0) return null;
 
@@ -42,13 +50,13 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
     <div className="up-popover-control">
       <button
         className={`up-control-btn ${currentLevel !== -1 ? 'up-control-btn-active' : ''}`}
-        onClick={() => setShowPopover(!showPopover)}
+        onClick={handleToggle}
         title="画质"
       >
         <Monitor size={20} />
         <span className="up-speed-label">{label}</span>
       </button>
-      {showPopover && (
+      {isOpen && (
         <div className="up-popover up-resolution-popover">
           <button
             className={`up-popover-item ${currentLevel === -1 ? 'up-popover-item-active' : ''}`}

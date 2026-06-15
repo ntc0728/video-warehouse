@@ -9,6 +9,10 @@ interface PlayerCoreProps {
   hasError: boolean;
   onRetry: () => void;
   onClick: (e: React.MouseEvent) => void;
+  onDoubleClick?: () => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
+  onPointerUp?: (e: React.PointerEvent) => void;
+  onPointerLeave?: () => void;
   /** IPTV 错误态快捷入口：唤起频道列表 */
   onOpenChannelList?: () => void;
 }
@@ -20,6 +24,10 @@ export default function PlayerCore({
   hasError,
   onRetry,
   onClick,
+  onDoubleClick,
+  onPointerDown,
+  onPointerUp,
+  onPointerLeave,
   onOpenChannelList,
 }: PlayerCoreProps) {
   const [showLoading, setShowLoading] = useState(true);
@@ -33,12 +41,18 @@ export default function PlayerCore({
   }, [isLoading]);
 
   return (
-    <div className="up-player-core" onClick={onClick}>
+    <div
+      className="up-player-core"
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave}
+    >
       <video
         ref={videoRef}
         className="up-player-video"
         playsInline
-        autoPlay
         {...(mode === 'live' || mode === 'iptv' ? {} : {})}
       />
       {showLoading && (

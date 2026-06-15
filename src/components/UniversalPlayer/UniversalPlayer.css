@@ -364,7 +364,7 @@
 
 .up-popover {
   position: absolute;
-  right: 0;
+  left: 50%;
   bottom: 100%;
   z-index: 30;
   min-width: var(--layout-channel-num-w);
@@ -372,6 +372,7 @@
   padding: var(--space-xs);
   border-radius: var(--radius-md);
   background: rgba(20, 20, 20, 0.96);
+  transform: translateX(-50%);
   backdrop-filter: blur(8px);
 }
 
@@ -396,7 +397,22 @@
 }
 
 .up-popover-item-active {
-  color: var(--color-primary);
+  position: relative;
+  padding-left: calc(var(--space-md) + 3px);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+}
+
+.up-popover-item-active::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 0;
+  width: 3px;
+  height: 60%;
+  border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
+  background: var(--color-primary);
 }
 
 .up-more-popover {
@@ -416,6 +432,7 @@
   margin-left: auto;
   border-radius: 50%;
   background: var(--color-primary);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
 }
 
 /* ===== Live Indicator ===== */
@@ -500,8 +517,8 @@
 /* 分组面板 - 完全隐藏滚动条但保留滚动能力 */
 .up-channel-groups {
   flex-shrink: 0;
-  width: 40%;
-  max-width: 40%;
+  width: 50%;
+  max-width: 50%;
   padding: var(--space-xs) 0;
   overflow-y: auto;
   scrollbar-width: none;
@@ -524,7 +541,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.7);
   font-size: var(--text-base);
   text-align: left;
   overflow: hidden;
@@ -533,15 +550,15 @@
 }
 
 .up-channel-group-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
 /* 活跃分组 - 左侧蓝色竖条指示，强化级联关系 */
 .up-channel-group-active {
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-primary);
-  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
 }
 
 .up-channel-group-active::before {
@@ -557,8 +574,8 @@
 }
 
 .up-channel-group-active:hover {
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  color: var(--color-primary-hover);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 .up-channel-group-name {
@@ -596,7 +613,6 @@
 
 .up-channel-group-active .up-channel-group-count {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: color-mix(in srgb, var(--color-primary) 75%, transparent);
 }
 
 /* 频道面板 - 完全隐藏滚动条 */
@@ -623,7 +639,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.75);
   font-size: var(--text-sm);
   text-align: left;
   transition: background 0.15s, color 0.15s, transform 0.15s;
@@ -631,14 +647,6 @@
 }
 
 /* "正在播放"图标（仅 active 态显示） */
-.up-channel-item-playing-icon {
-  flex-shrink: 0;
-  margin-left: var(--space-2xs);
-  color: var(--color-primary);
-  opacity: 0.95;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-primary) 60%, transparent));
-}
-
 .up-channel-item:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
@@ -648,15 +656,14 @@
 .up-channel-item-active {
   position: relative;
   border-left: 3px solid var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
   font-weight: 500;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 40%, transparent);
 }
 
 .up-channel-item-active:hover {
   border-left-color: var(--color-primary-hover);
-  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
@@ -1042,6 +1049,40 @@
   to { transform: rotate(360deg); }
 }
 
+/* ===== IPTV buffering overlay - shows during stream buffering ===== */
+.up-iptv-buffering-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  align-items: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.up-iptv-buffering-spinner {
+  width: var(--space-xl);
+  height: var(--space-xl);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: up-iptv-buffering-spin 0.8s linear infinite;
+}
+
+.up-iptv-buffering-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes up-iptv-buffering-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ===== Resposive: 3xl (2560) and 4xl (3840) handled by variables.css ===== */
 
 /* ===== Fullscreen ===== */
@@ -1059,4 +1100,44 @@
 
 .up-universal-player:fullscreen .up-player-core {
   aspect-ratio: unset;
+}
+
+/* ===== Seek Indicator ===== */
+.up-seek-indicator {
+  position: absolute;
+  top: 50%;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: 600;
+  pointer-events: none;
+  transform: translateY(-50%);
+  backdrop-filter: blur(8px);
+  animation: up-seek-pulse 0.5s ease-in-out infinite alternate;
+}
+
+.up-seek-indicator-left {
+  left: 15%;
+}
+
+.up-seek-indicator-right {
+  right: 15%;
+}
+
+.up-seek-indicator svg {
+  width: var(--space-xl);
+  height: var(--space-xl);
+  color: #fff;
+}
+
+@keyframes up-seek-pulse {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
 }

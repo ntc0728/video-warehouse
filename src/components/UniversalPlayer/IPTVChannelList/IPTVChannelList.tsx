@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
-import { Radio, X, Play } from 'lucide-react';
+import { Radio, X } from 'lucide-react';
 import { CustomScrollbar } from '@/components/common';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
@@ -220,9 +220,6 @@ export default function IPTVChannelList({
                       </span>
                       {channel.quality && (
                         <span className="up-channel-item-quality">{channel.quality}</span>
-                      )}
-                      {channel.id === currentChannelId && (
-                        <Play size={12} className="up-channel-item-playing-icon" fill="currentColor" />
                       )}
                     </button>
                   ))

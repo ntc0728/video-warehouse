@@ -1,5 +1,12 @@
 import type { PlayerLevel } from '@/types/player';
 
+export interface AudioTrack {
+  id: number;
+  name: string;
+  language: string;
+  default: boolean;
+}
+
 export interface IPlayerAdapter {
   attach(video: HTMLVideoElement): void;
   detach(): void;
@@ -15,6 +22,9 @@ export interface IPlayerAdapter {
   setCurrentLevel(level: number): void;
   getCurrentLevel(): number;
   getBandwidthEstimate(): number;
+  getAudioTracks(): AudioTrack[];
+  setCurrentAudioTrack(trackId: number): void;
+  getCurrentAudioTrack(): number;
   destroy(): void;
 }
 
@@ -71,5 +81,15 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
 
   getBandwidthEstimate(): number {
     return 0;
+  }
+
+  getAudioTracks(): AudioTrack[] {
+    return [];
+  }
+
+  setCurrentAudioTrack(_trackId: number): void {}
+
+  getCurrentAudioTrack(): number {
+    return -1;
   }
 }

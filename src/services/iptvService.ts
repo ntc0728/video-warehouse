@@ -59,56 +59,75 @@ async function fetchContent(url: string): Promise<string> {
 /**
  * 判断 URL 是否需要通过代理访问
  * 根据配置的代理URL和正则模式匹配决定
+ * pattern 正则匹配到的 URL 不走代理（被跳过）
  */
 function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
   if (!proxyUrl) return false;
   if (!pattern) return true;
   try {
-    return new RegExp(pattern).test(url);
+    return !new RegExp(pattern).test(url);
   } catch {
     return true;
   }
-}
-
-/**
- * 构建请求 URL，需要代理时拼接代理地址
- */
-function buildRequestUrl(targetUrl: string, proxyUrl?: string, pattern?: string): string {
-  if (shouldProxy(targetUrl, proxyUrl, pattern)) {
-    return `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(targetUrl)}`;
-  }
-  return targetUrl;
 }
 
 export { shouldProxy };
 
 /**
  * 从远程获取并解析 M3U 播放列表
- * 支持代理转发，返回频道列表和源类型信息
+ * 源地址直接请求（不走代理），频道播放 URL 由前端按需走代理
  */
 export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
   channels: IPTVChannel[];
   sourceType: SourceType;
 }> {
-  const aggregatorUrl = settings?.aggregatorUrl;
-  if (!aggregatorUrl) {
+  const urls = settings?.aggregatorUrls?.length
+    ? settings.aggregatorUrls
+    : settings?.aggregatorUrl
+      ? [settings.aggregatorUrl]
+      : [];
+
+  if (urls.length === 0) {
     throw new Error('IPTV 源未配置，请在设置中选择数据源');
   }
-  const proxyUrl = settings?.proxyUrl;
-  const pattern = settings?.proxyPattern;
-  const requestUrl = buildRequestUrl(aggregatorUrl, proxyUrl, pattern);
 
-  const rawContent = await fetchContent(requestUrl);
+  // 并行获取所有源
+  const results = await Promise.allSettled(
+    urls.map(async (url, index) => {
+      const rawContent = await fetchContent(url);
+      const channels = parseM3U8Content(rawContent, url);
+      return channels.map(ch => ({
+        ...ch,
+        id: `${index}-${ch.id}`,
+        sourceId: `source-${index}`,
+      }));
+    })
+  );
 
+  const allChannels: IPTVChannel[] = [];
+  let sourceType = SourceType.UNKNOWN;
 
-  const channels = parseM3U8Content(rawContent, aggregatorUrl);
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      allChannels.push(...result.value);
+      if (result.value.length > 0 && sourceType === SourceType.UNKNOWN) {
+        sourceType = SourceType.MULTI_CHANNEL;
+      }
+    }
+  }
 
-  const analysis = detectSourceType(rawContent);
-
+  // 去重：同名同组的频道只保留第一个
+  const seen = new Set<string>();
+  const uniqueChannels = allChannels.filter(ch => {
+    const key = `${ch.name}-${ch.group || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   return {
-    channels,
-    sourceType: analysis.type,
+    channels: uniqueChannels,
+    sourceType,
   };
 }
 

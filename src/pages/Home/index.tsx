@@ -101,7 +101,7 @@ export default function HomePage() {
         <div className="home-token-required">
           <AlertCircle size={48} className="home-token-required-icon" />
           <p className="home-token-required-text">
-            TMDB Access Token 未配置，请在
+            TMDB Access Token 未配置，请在设置中
             <button
               className="home-token-required-link"
               onClick={() => navigate('/settings')}

@@ -1,6 +1,7 @@
 import HlsJs from 'hls.js';
 import { BasePlayerAdapter } from './PlayerAdapter';
 import type { PlayerLevel, DecoderMode } from '@/types/player';
+import type { AudioTrack } from './PlayerAdapter';
 
 function getQualityLabel(level: { width: number; height: number; bitrate: number }): string {
   const h = level.height;
@@ -18,6 +19,8 @@ export class HLSAdapter extends BasePlayerAdapter {
   private decoderMode: DecoderMode;
   private currentLevel: number = -1;
   private levels: PlayerLevel[] = [];
+  private audioTracks: AudioTrack[] = [];
+  private currentAudioTrack: number = -1;
   private startLevel: number;
   private onError?: (error: Error) => void;
 
@@ -63,6 +66,16 @@ export class HLSAdapter extends BasePlayerAdapter {
           bitrate: l.bitrate,
           name: getQualityLabel({ width: l.width, height: l.height, bitrate: l.bitrate }),
         }));
+
+        this.audioTracks = this.hls?.audioTracks.map((t, i) => ({
+          id: t.id ?? i,
+          name: t.name || t.lang || `Track ${i + 1}`,
+          language: t.lang || '',
+          default: t.default ?? false,
+        })) ?? [];
+        if (this.audioTracks.length > 0) {
+          this.currentAudioTrack = this.hls?.audioTrack ?? 0;
+        }
       });
 
       this.hls.on(HlsJs.Events.LEVEL_SWITCHED, (_e, data) => {
@@ -134,6 +147,21 @@ export class HLSAdapter extends BasePlayerAdapter {
       startLevel: this.currentLevel,
       onError: this.onError,
     });
+  }
+
+  getAudioTracks(): AudioTrack[] {
+    return this.audioTracks;
+  }
+
+  setCurrentAudioTrack(trackId: number): void {
+    if (this.hls && this.audioTracks.some(t => t.id === trackId)) {
+      this.hls.audioTrack = trackId;
+      this.currentAudioTrack = trackId;
+    }
+  }
+
+  getCurrentAudioTrack(): number {
+    return this.currentAudioTrack;
   }
 
   destroy(): void {

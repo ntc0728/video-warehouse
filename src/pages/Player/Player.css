@@ -473,13 +473,12 @@
 
 .player-detail-overview {
   margin: 0;
-  color: var(--color-text-secondary);
   font-size: var(--text-sm);
   line-height: 1.6;
 }
 
 .player-detail-cast {
-  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }

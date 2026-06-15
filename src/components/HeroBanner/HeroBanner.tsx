@@ -146,6 +146,15 @@ export default function HeroBanner({
     };
   }, [items]);
 
+  // 当前项的海报图立即预加载：requestIdleCallback 可能在首屏渲染后才执行，
+  // 导致移动端海报图比背景图晚出现。立即预加载确保 <img> 渲染时已命中缓存。
+  useEffect(() => {
+    const item = items[current];
+    if (!item) return;
+    const posterPath = item.posterPath || item.poster_path;
+    if (posterPath) preloadImage(buildImageUrl(posterPath, 'w342'));
+  }, [current, items]);
+
   /** 失败冷却时间 */
   const FAILED_COOLDOWN_MS = 5_000;
 
