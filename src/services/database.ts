@@ -5,13 +5,14 @@
  */
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import type { VideoRecord, CollectionRecord, HistoryRecord } from '@/types/store';
+import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 const DB_NAME = 'video-warehouse';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /**
  * 数据库 Schema 定义
- * 包含 videos、collections、history、settings 四个对象仓库
+ * 包含 videos、collections、history、settings、iptvChannels 五个对象仓库
  */
 interface VideoWarehouseDB extends DBSchema {
   videos: {
@@ -42,6 +43,25 @@ interface VideoWarehouseDB extends DBSchema {
     key: string;
     value: unknown;
   };
+  iptvChannels: {
+    key: string;
+    value: {
+      key: string;
+      channels: IPTVChannel[];
+      groups: IPTVGroup[];
+      sourceType: string;
+      timestamp: number;
+      sourceUrls: string[];
+    };
+  };
+}
+
+export interface IPTVCacheData {
+  channels: IPTVChannel[];
+  groups: IPTVGroup[];
+  sourceType: string;
+  timestamp: number;
+  sourceUrls: string[];
 }
 
 let dbInstance: IDBPDatabase<VideoWarehouseDB> | null = null;
@@ -75,6 +95,10 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
 
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+
+      if (!db.objectStoreNames.contains('iptvChannels')) {
+        db.createObjectStore('iptvChannels', { keyPath: 'key' });
       }
     },
   });
@@ -126,4 +150,54 @@ export async function getHistory(): Promise<HistoryRecord[]> {
 export async function clearHistory(): Promise<void> {
   const db = await getDB();
   await db.clear('history');
+}
+
+/**
+ * IPTV 频道缓存操作
+ */
+const IPTV_CACHE_KEY = 'iptv-channels';
+const IPTV_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 小时缓存
+
+export async function getCachedIPTVChannels(sourceUrls: string[]): Promise<IPTVCacheData | null> {
+  try {
+    const db = await getDB();
+    const cached = await db.get('iptvChannels', IPTV_CACHE_KEY);
+    if (!cached) return null;
+
+    // 检查缓存是否过期
+    if (Date.now() - cached.timestamp > IPTV_CACHE_TTL) {
+      return null;
+    }
+
+    // 检查源 URL 是否变化
+    const cachedUrlsStr = JSON.stringify(cached.sourceUrls.sort());
+    const currentUrlsStr = JSON.stringify(sourceUrls.sort());
+    if (cachedUrlsStr !== currentUrlsStr) {
+      return null;
+    }
+
+    return {
+      channels: cached.channels,
+      groups: cached.groups,
+      sourceType: cached.sourceType,
+      timestamp: cached.timestamp,
+      sourceUrls: cached.sourceUrls,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('iptvChannels', {
+      key: IPTV_CACHE_KEY,
+      channels: data.channels,
+      groups: data.groups,
+      sourceType: data.sourceType,
+      timestamp: data.timestamp,
+      sourceUrls: data.sourceUrls,
+    });
+  } catch { /* ignore */ }
 }

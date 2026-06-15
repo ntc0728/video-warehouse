@@ -4,6 +4,7 @@ import { createAdapter } from '../adapters/adapterRegistry';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
 import type { SourceType } from '@/types/video';
+import type { AudioTrack } from '../adapters/PlayerAdapter';
 import { getHistory } from '@/services/database';
 
 interface UsePlayerCoreOptions {
@@ -12,6 +13,7 @@ interface UsePlayerCoreOptions {
   videoId?: string;
   episodeId?: string;
   decoderMode: DecoderMode;
+  retryCount?: number;
   onProgress?: (progress: number, duration: number) => void;
   onEnded?: () => void;
   onPlay?: () => void;
@@ -21,7 +23,7 @@ interface UsePlayerCoreOptions {
 
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, episodeId, decoderMode,
+    url, type, videoId, episodeId, decoderMode, retryCount,
     onProgress, onEnded, onPlay, onPause, onError,
   } = options;
 
@@ -121,8 +123,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.addEventListener('leavepictureinpicture', handleLeavePiP);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
 
-    video.play().catch(() => {});
-
     const bandwidthTimer = setInterval(() => {
       let bps = adapterRef.current?.getBandwidthEstimate() ?? 0;
       if (!Number.isFinite(bps) || bps < 0) bps = 0;
@@ -177,7 +177,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     };
     // 内部用 usePlayerStore.getState() 读取最新 actions 与 props 闭包，避免 effect 频繁重建
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, type, decoderMode]);
+  }, [url, type, decoderMode, retryCount]);
 
   const play = useCallback(async () => {
     await videoRef.current?.play();
@@ -237,6 +237,18 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     return adapterRef.current?.getLevels() ?? [];
   }, []);
 
+  const getAudioTracks = useCallback((): AudioTrack[] => {
+    return adapterRef.current?.getAudioTracks() ?? [];
+  }, []);
+
+  const setCurrentAudioTrack = useCallback((trackId: number) => {
+    adapterRef.current?.setCurrentAudioTrack(trackId);
+  }, []);
+
+  const getCurrentAudioTrack = useCallback((): number => {
+    return adapterRef.current?.getCurrentAudioTrack() ?? -1;
+  }, []);
+
   return {
     videoRef: setVideoRef,
     play,
@@ -248,6 +260,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     togglePiP,
     switchLevel,
     getLevels,
+    getAudioTracks,
+    setCurrentAudioTrack,
+    getCurrentAudioTrack,
     getCurrentTime: () => videoRef.current?.currentTime ?? 0,
     getDuration: () => videoRef.current?.duration ?? 0,
     getIsPlaying: () => !videoRef.current?.paused,

@@ -27,5 +27,6 @@ export interface AppSettings {
   videoSourceIndex: number;
   videoSourceIndices: number[];
   iptvSourceIndex: number;
+  iptvSourceIndices: number[];
   theme: 'light' | 'dark' | 'system';
 }

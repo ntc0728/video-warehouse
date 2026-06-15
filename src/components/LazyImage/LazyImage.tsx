@@ -16,6 +16,21 @@ import CardCoverLoading from '../common/CardCoverLoading';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
 
+const LETTER_COLORS = [
+  '#e57373', '#f06292', '#ba68c8', '#9575cd',
+  '#7986cb', '#64b5f6', '#4fc3f7', '#4dd0e1',
+  '#4db6ac', '#81c784', '#aed581', '#ffed57',
+  '#ffd54f', '#ffb74d', '#ff8a65', '#a1887f',
+];
+
+function stringToColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return LETTER_COLORS[Math.abs(hash) % LETTER_COLORS.length];
+}
+
 interface LazyImageProps {
   src: string;
   alt?: string;
@@ -147,7 +162,7 @@ export default function LazyImage({
       )}
 
       {(error || !hasValidSrc) && letter ? (
-        <div className="lazy-image-letter">{letter}</div>
+        <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
       ) : (error || !hasValidSrc) && (
         <img
           src={fallbackSrc}

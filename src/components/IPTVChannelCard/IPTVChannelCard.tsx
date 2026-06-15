@@ -20,16 +20,18 @@ interface IPTVChannelCardProps {
 
 const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false }: IPTVChannelCardProps) {
   const navigate = useNavigate();
-  // 使用 selector 单独订阅需要的字段,避免每张卡片都订阅整个 IPTVStore。
-  // 频道列表 N 张卡片同时订阅任一字段变化会触发 N 次重渲染。
-  // settings 通常低频变更 (用户去设置页才改),用 shallow 一次取两个引用字段。
   const toggleFavorite = useIPTVStore((s) => s.toggleFavorite);
   const setSelectedChannel = useIPTVStore((s) => s.setSelectedChannel);
   const recordPlay = useIPTVStore((s) => s.recordPlay);
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
+  const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
   const [isAnimating, setIsAnimating] = useState(false);
   const isTV = useIsTV();
+
+  const sourceName = channel.sourceId && sourceNames
+    ? sourceNames[parseInt(channel.sourceId.replace('source-', ''), 10)]
+    : undefined;
 
   /** 点击播放：记录播放历史，根据代理规则构建播放地址并跳转 */
   const handlePlay = useCallback(() => {
@@ -105,6 +107,9 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           {!batchMode && channel.group ? (
             <span className="iptv-card-group">{channel.group}</span>
           ) : null}
+          {!batchMode && sourceName && (
+            <span className="iptv-card-source">{sourceName}</span>
+          )}
         </div>
         <div className="iptv-card-info">
           <h3

@@ -19,6 +19,7 @@ export interface IPTVChannel {
   isAvailable?: boolean;
   lastPlayed?: number;
   tvgId?: string;
+  sourceId?: string;
   noGuide?: boolean;
   currentProgram?: {
     title: string;
@@ -42,6 +43,8 @@ export interface IPTVGroup {
 /** IPTV 设置，包含聚合源地址、代理配置和自动刷新等 */
 export interface IPTVSettings {
   aggregatorUrl: string;
+  aggregatorUrls: string[];
+  sourceNames?: string[];
   proxyUrl: string;
   proxyPattern: string;
   priorityKeywords: string[];
@@ -56,4 +59,5 @@ export interface IPTVFilter {
   region?: string;
   keyword?: string;
   favoritesOnly?: boolean;
+  sourceId?: string;
 }

@@ -17,6 +17,7 @@ interface SettingsState extends AppSettings {
   setVideoSourceIndex: (index: number) => void;
   setVideoSourceIndices: (indices: number[]) => void;
   setIPTVSourceIndex: (index: number) => void;
+  setIPTVSourceIndices: (indices: number[]) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setCorsProxy: (url: string) => void;
   setEpgUrls: (urls: string[]) => void;
@@ -33,6 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
       videoSourceIndex: 0,
       videoSourceIndices: [0],
       iptvSourceIndex: 0,
+      iptvSourceIndices: [0],
       theme: 'light' as const,
       corsProxy: '',
       epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
@@ -44,6 +46,7 @@ export const useSettingsStore = create<SettingsState>()(
       setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
       setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
       setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
+      setIPTVSourceIndices: (indices) => set({ iptvSourceIndices: indices }),
       setTheme: (theme) => set({ theme }),
       setCorsProxy: (url) => set({ corsProxy: url }),
       setEpgUrls: (urls) => set({ epgUrls: urls }),

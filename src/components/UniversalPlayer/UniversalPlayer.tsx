@@ -1,16 +1,17 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { LoaderCircle } from 'lucide-react';
-import { usePlayerStore, useSubtitleStore } from '@/stores';
+import { usePlayerStore, useSubtitleStore, useIPTVStore } from '@/stores';
 import { useNetworkSpeed } from '@/hooks';
 import { usePlayerCore } from './hooks/usePlayerCore';
 import { useTVRemote } from './hooks/useTVRemote';
 import { useSettingsStore } from '@/stores';
+import { shouldProxy } from '@/services/iptvService';
 import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
 import PlayerHeader from './PlayerHeader';
 import { ControlBar } from './ControlBar';
 import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
+import { Rewind, FastForward } from 'lucide-react';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
 import type { ChannelProgramInfo } from '@/services/epgService';
@@ -60,6 +61,7 @@ export default function UniversalPlayer({
   const volumePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const digitTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const iptvTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const lastRetryRef = useRef(0);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [currentChannelId, setCurrentChannelId] = useState<string | undefined>(undefined);
@@ -74,18 +76,26 @@ export default function UniversalPlayer({
   const [epgReady, setEpgReady] = useState(false);
   const epgProgramsRef = useRef<Map<string, ChannelProgramInfo>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
-  const [isChannelLoading, setIsChannelLoading] = useState(false);
+  const [seekIndicator, setSeekIndicator] = useState<'left' | 'right' | null>(null);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seekIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pointerDownTimeRef = useRef(0);
+  const pointerDownXRef = useRef(0);
+  const hasLongPressedRef = useRef(false);
 
   const {
     decoderMode, isControlsVisible, isChannelListVisible,
     setControlsVisible, setChannelListVisible,
     setMode, setPlatform, sources,
     setDecoderMode, setSource, setSubtitleUrl,
-    levels, currentLevel, setLoopMode,
-    isPlaying,
+    levels, currentLevel,
+    isPlaying, audioTracks, currentAudioTrack, isBuffering,
   } = usePlayerStore();
 
   const { autoTranslate, translationAppId, translationApiKey, targetLang } = useSubtitleStore();
+  const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
+  const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const currentChannel = useMemo(() => {
     if (mode !== 'iptv' || !currentChannelId) return undefined;
     return _channels.find(ch => ch.id === currentChannelId);
@@ -133,15 +143,25 @@ export default function UniversalPlayer({
     }
   }, [url, _channels, groups, mode]);
 
-  /** EPG 数据加载：进入 IPTV 播放器时从缓存获取节目表，匹配所有频道 */
+  /** EPG 数据加载：进入 IPTV 播放器时从缓存获取节目表，缓存为空时自动拉取 */
   useEffect(() => {
     if (mode !== 'iptv' || _channels.length === 0) return;
     let cancelled = false;
 
     const loadEPG = async () => {
       try {
-        const { getCachedEPGData, matchAllChannels } = await import('@/services/epgService');
-        const epgData = await getCachedEPGData();
+        const { getCachedEPGData, fetchAndParseEPG, matchAllChannels } = await import('@/services/epgService');
+        let epgData = await getCachedEPGData();
+        if (cancelled) return;
+
+        // 缓存为空时自动拉取
+        if (!epgData || epgData.channels.length === 0) {
+          try {
+            epgData = await fetchAndParseEPG();
+          } catch {
+            // 拉取失败不影响播放
+          }
+        }
         if (cancelled) return;
 
         const programs = matchAllChannels(_channels, epgData);
@@ -158,24 +178,64 @@ export default function UniversalPlayer({
     return () => { cancelled = true; };
   }, [mode, _channels]);
 
+  const currentUrlRef = useRef(currentUrl);
+  currentUrlRef.current = currentUrl;
+
   const playerCore = usePlayerCore({
     url: currentUrl,
     type: currentType,
     videoId,
     episodeId,
     decoderMode,
+    retryCount,
     onProgress,
     onEnded,
     onPlay,
     onPause,
     onError: useCallback((error: Error) => {
+      // 忽略旧流的错误事件
+      if (currentUrlRef.current !== currentUrl) return;
       setHasError(true);
       onError?.(error);
-    }, [onError]),
+    }, [currentUrl, onError]),
   });
+
+  /** 轮询音轨列表：HLS manifest 解析后 audioTracks 会逐步填充 */
+  useEffect(() => {
+    if (mode !== 'iptv' || currentType !== 'm3u8') return;
+    const store = usePlayerStore.getState;
+    const check = setInterval(() => {
+      const tracks = playerCore.getAudioTracks();
+      if (tracks.length > 0 && store().audioTracks.length === 0) {
+        store().setAudioTracks(tracks);
+        store().setCurrentAudioTrack(playerCore.getCurrentAudioTrack());
+      }
+    }, 500);
+    return () => clearInterval(check);
+  }, [mode, currentType, playerCore]);
+
+  /** 缓冲检测：监听 video waiting/playing/canplay 事件，适用于所有模式 */
+  useEffect(() => {
+    const video = document.querySelector('.up-player-video') as HTMLVideoElement | null;
+    if (!video) return;
+    const store = usePlayerStore.getState;
+    const onWaiting = () => store().setBuffering(true);
+    const onPlaying = () => store().setBuffering(false);
+    const onCanPlay = () => store().setBuffering(false);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('canplay', onCanPlay);
+    return () => {
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('canplay', onCanPlay);
+    };
+  }, [currentUrl]);
 
   const resetAutoHideTimer = useCallback(() => {
     if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+    const { isPlaying: playing } = usePlayerStore.getState();
+    if (!playing) return;
     const delay = getAutoHideDelay();
     autoHideTimerRef.current = setTimeout(() => {
       setControlsVisible(false);
@@ -203,6 +263,28 @@ export default function UniversalPlayer({
     }
   }, [setControlsVisible]);
 
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (seekIntervalRef.current) {
+      clearInterval(seekIntervalRef.current);
+      seekIntervalRef.current = null;
+    }
+    setSeekIndicator(null);
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen();
+    }
+  }, []);
+
   const handlePlayerClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('.up-control-bar') || target.closest('.up-player-header') || target.closest('.up-channel-list-overlay') || target.closest('.iptv-osd-bar') || target.closest('.iptv-volume-popup')) {
@@ -220,12 +302,68 @@ export default function UniversalPlayer({
       }
     }
 
-    if (isControlsVisible) {
-      hideControls();
-    } else {
-      showControls();
+    if (hasLongPressedRef.current) {
+      hasLongPressedRef.current = false;
+      return;
     }
-  }, [mode, isControlsVisible, showControls, hideControls, setChannelListVisible]);
+
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      handleToggleFullscreen();
+    } else {
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+        playerCore.togglePlay();
+        showControls();
+      }, 250);
+    }
+  }, [mode, playerCore, showControls, setChannelListVisible, handleToggleFullscreen]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.up-control-bar') || target.closest('.up-player-header') || target.closest('.up-channel-list-overlay') || target.closest('.iptv-osd-bar') || target.closest('.iptv-volume-popup')) {
+      return;
+    }
+
+    pointerDownTimeRef.current = Date.now();
+    pointerDownXRef.current = e.clientX;
+    hasLongPressedRef.current = false;
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    const isLeftSide = relX < rect.width * 0.4;
+    const isRightSide = relX > rect.width * 0.6;
+
+    if (!isLeftSide && !isRightSide) return;
+
+    longPressTimerRef.current = setTimeout(() => {
+      hasLongPressedRef.current = true;
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      const direction = isLeftSide ? 'left' : 'right';
+      setSeekIndicator(direction);
+      const doSeek = () => {
+        const video = document.querySelector('.up-player-video') as HTMLVideoElement | null;
+        if (!video) return;
+        const seekAmount = direction === 'left' ? -6 : 6;
+        video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount));
+      };
+      doSeek();
+      seekIntervalRef.current = setInterval(doSeek, 500);
+    }, 500);
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
+
+  const handlePointerLeave = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
 
   useEffect(() => {
     if (platform !== 'tv' || mode !== 'iptv') return;
@@ -273,6 +411,9 @@ export default function UniversalPlayer({
   }, [platform, mode, isChannelListVisible, isControlsVisible, showControls, hideControls, showVolumePopupWithTimer, playerCore]);
 
   const handleRetry = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRetryRef.current < 1000) return;
+    lastRetryRef.current = now;
     setHasError(false);
     setRetryCount(prev => prev + 1);
   }, []);
@@ -346,15 +487,17 @@ export default function UniversalPlayer({
 
   const handleChannelSelect = useCallback((channel: IPTVChannel) => {
     usePlayerStore.setState({ isPlaying: false });
-    setIsChannelLoading(true);
     setHasError(false);
-    setCurrentUrl(channel.url);
-    setCurrentType('m3u8');
     setCurrentChannelId(channel.id);
     setCurrentChannelName(channel.name);
+    const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
+    const playUrl = useProxy
+      ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
+      : channel.url;
+    setCurrentUrl(playUrl);
     setChannelListVisible(false);
     onChannelChange?.(channel);
-  }, [setChannelListVisible, onChannelChange]);
+  }, [setChannelListVisible, onChannelChange, proxyUrl, proxyPattern]);
 
   const handleChannelUp = useCallback(() => {
     const allChannels = groups.flatMap(g => g.channels);
@@ -369,13 +512,51 @@ export default function UniversalPlayer({
   }, [groups, currentChannelId, handleChannelSelect]);
 
   const handleSourceSwitch = useCallback((index: number) => {
+    // IPTV 模式：多源切换，找同名频道的下一个源
+    if (mode === 'iptv' && currentChannel) {
+      const sameNameChannels = _channels.filter(
+        ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
+      );
+      if (sameNameChannels.length === 0) return;
+      const nextChannel = sameNameChannels[index % sameNameChannels.length];
+      if (nextChannel) {
+        const useProxy = shouldProxy(nextChannel.url, proxyUrl, proxyPattern);
+        const playUrl = useProxy
+          ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(nextChannel.url)}`
+          : nextChannel.url;
+        setCurrentUrl(playUrl);
+        setCurrentChannelId(nextChannel.id);
+        setCurrentChannelName(nextChannel.name);
+        onChannelChange?.(nextChannel);
+      }
+      return;
+    }
+    // 非 IPTV 模式：原有逻辑
     const source = sources[index];
     if (source) {
       setCurrentUrl(source.url);
       setCurrentType(source.type);
       setSource(source.url, source.type);
     }
-  }, [sources, setSource]);
+  }, [mode, currentChannel, _channels, sources, setSource, proxyUrl, proxyPattern, onChannelChange]);
+
+  const handleAudioTrackSelect = useCallback(() => {
+    const tracks = usePlayerStore.getState().audioTracks;
+    const current = usePlayerStore.getState().currentAudioTrack;
+    if (tracks.length <= 1) return;
+    const nextIndex = tracks.findIndex(t => t.id === current) + 1;
+    const nextTrack = tracks[nextIndex % tracks.length];
+    playerCore.setCurrentAudioTrack(nextTrack.id);
+    usePlayerStore.getState().setCurrentAudioTrack(nextTrack.id);
+  }, [playerCore]);
+
+  /** IPTV 多源：当前频道在其他源中的可用线路数 */
+  const iptvSourceCount = useMemo(() => {
+    if (mode !== 'iptv' || !currentChannel) return 0;
+    return _channels.filter(
+      ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
+    ).length;
+  }, [mode, currentChannel, _channels]);
 
   const handleScreenshot = useCallback(() => {
     const video = document.querySelector('.up-player-video') as HTMLVideoElement | null;
@@ -392,10 +573,6 @@ export default function UniversalPlayer({
     link.click();
     canvas.remove();
   }, []);
-
-  const handleLoopModeChange = useCallback((newMode: import('@/types/player').LoopMode) => {
-    setLoopMode(newMode);
-  }, [setLoopMode]);
 
   const handleToggleChannelList = useCallback(() => {
     setChannelListVisible(!isChannelListVisible);
@@ -504,15 +681,17 @@ export default function UniversalPlayer({
       if (volumePopupTimerRef.current) {
         clearTimeout(volumePopupTimerRef.current);
       }
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+      if (seekIntervalRef.current) {
+        clearInterval(seekIntervalRef.current);
+      }
     };
   }, []);
-
-  /** 监听播放状态和错误状态，关闭频道切换加载指示器 */
-  useEffect(() => {
-    if (isChannelLoading && (isPlaying || hasError)) {
-      setIsChannelLoading(false);
-    }
-  }, [isPlaying, hasError, isChannelLoading]);
 
   /**
    * 错误态下强制显示 OSD 且禁用自动隐藏。
@@ -526,11 +705,15 @@ export default function UniversalPlayer({
         clearTimeout(autoHideTimerRef.current);
         autoHideTimerRef.current = null;
       }
-    } else if (isPlaying) {
-      // 重试/切频道成功且已在播放：恢复自动隐藏
+    } else if (!isPlaying) {
+      setControlsVisible(true);
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+        autoHideTimerRef.current = null;
+      }
+    } else {
       resetAutoHideTimer();
     }
-    // 仅依赖 hasError / isPlaying 的变化触发，resetAutoHideTimer 是稳定引用
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasError, isPlaying]);
 
@@ -538,6 +721,9 @@ export default function UniversalPlayer({
    *  用 ref 防抖：只在 URL 变化时重置计时器，忽略 isPlaying 波动 */
   useEffect(() => {
     if (mode !== 'iptv' || !currentUrl) return;
+
+    // URL 变化时清除旧错误状态
+    setHasError(false);
 
     // 清除上一次计时器
     clearTimeout(iptvTimeoutRef.current);
@@ -590,13 +776,24 @@ export default function UniversalPlayer({
         hasError={hasError}
         onRetry={handleRetry}
         onClick={handlePlayerClick}
+        onDoubleClick={handleToggleFullscreen}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
         onOpenChannelList={() => setChannelListVisible(true)}
       />
 
-      {isChannelLoading && (
-        <div className="up-channel-loading-overlay">
-          <LoaderCircle size={24} className="up-channel-loading-icon" />
-          <div className="up-channel-loading-speed">{hasError ? '--' : networkSpeed}</div>
+      {seekIndicator && (
+        <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
+          {seekIndicator === 'left' ? <Rewind size={32} /> : <FastForward size={32} />}
+          <span>6s</span>
+        </div>
+      )}
+
+      {isBuffering && !hasError && (
+        <div className="up-iptv-buffering-overlay">
+          <div className="up-iptv-buffering-spinner" />
+          <span className="up-iptv-buffering-text">{networkSpeed}</span>
         </div>
       )}
 
@@ -620,14 +817,17 @@ export default function UniversalPlayer({
           volume={volume}
           channelNumber={channelNumber}
           currentSourceIndex={0}
-          totalSources={sources.length}
+          totalSources={mode === 'iptv' ? iptvSourceCount : sources.length}
           containerWidth={containerWidth}
+          audioTracks={audioTracks}
+          currentAudioTrack={currentAudioTrack}
           onToggleChannelList={() => setChannelListVisible(true)}
           onSourceSwitch={handleSourceSwitch}
           onChannelUp={handleChannelUp}
           onChannelDown={handleChannelDown}
           onOpenSettings={() => {}}
           onOpenResolution={() => {}}
+          onOpenAudioTrack={handleAudioTrackSelect}
           onHeightChange={() => {}}
         />
       ) : (
@@ -636,9 +836,6 @@ export default function UniversalPlayer({
           platform={platform}
           visible={isControlsVisible}
           containerRef={containerRef as React.RefObject<HTMLElement>}
-          sources={sources}
-          currentSourceIndex={0}
-          onSourceSwitch={handleSourceSwitch}
           onTogglePlay={playerCore.togglePlay}
           onSeek={playerCore.seek}
           onVolumeChange={playerCore.setVolume}
@@ -652,7 +849,6 @@ export default function UniversalPlayer({
           onActivity={resetAutoHideTimer}
           onRefresh={handleRetry}
           onScreenshot={handleScreenshot}
-          onLoopModeChange={handleLoopModeChange}
           levels={levels}
           currentLevel={currentLevel}
           onLevelChange={playerCore.switchLevel}

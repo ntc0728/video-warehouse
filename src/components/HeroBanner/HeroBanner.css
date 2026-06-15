@@ -220,8 +220,8 @@
   flex-shrink: 0;
   align-self: flex-end;
   width: clamp(var(--layout-source-url-max-w), 15vw, var(--layout-popover-wide-min-w));
-  /* 调大：原 --space-lg → --space-xl（与 .hero-banner__text padding-left 同步） */
-  margin-right: var(--space-xl);
+  /* 调大：原 --space-lg → --space-3xl（与 .hero-banner__text padding-left 同步） */
+  margin-right: var(--space-3xl);
   margin-bottom: var(--space-lg);
 }
 

@@ -7,8 +7,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings } from '@/types/iptv';
 import { fetchAndParsePlaylist, checkChannelsAvailability, SourceType } from '@/services/iptvService';
-import { getIPTVSources } from '@/services/sourceService';
-import { useSettingsStore } from './useSettingsStore';
+import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
 
 export interface IPTVPlayRecord {
   channelId: string;
@@ -53,10 +52,12 @@ interface IPTVState {
   clearPlayHistory: () => void;
   removePlayRecord: (channelId: string) => void;
   clearFavorites: () => void;
+  loadFromCache: () => Promise<boolean>;
 }
 
 const defaultSettings: IPTVSettings = {
   aggregatorUrl: '',
+  aggregatorUrls: [],
   proxyUrl: '',
   proxyPattern: '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+',
   priorityKeywords: [],
@@ -134,35 +135,46 @@ export const useIPTVStore = create<IPTVState>()(
             isFavorite: favoriteChannelIds.includes(ch.id)
           }));
 
+          // 按频道 group 字段分组归类
+          const groupsMap = new Map<string, IPTVChannel[]>();
+          channels.forEach((channel) => {
+            const groupName = channel.group || '未分组';
+            if (!groupsMap.has(groupName)) {
+              groupsMap.set(groupName, []);
+            }
+            groupsMap.get(groupName)!.push(channel);
+          });
+
+          const groups: IPTVGroup[] = Array.from(groupsMap.entries()).map(
+            ([name, channelList]) => ({
+              name,
+              count: channelList.length,
+              channels: channelList,
+            })
+          );
+
           set({
             channels,
+            groups,
             sourceType,
             lastRefresh: Date.now(),
             loadedUrl: settings.aggregatorUrl,
             isLoading: false,
           });
 
-          // 按频道 group 字段分组归类
-          if (channels.length > 0) {
-            const groupsMap = new Map<string, IPTVChannel[]>();
-            channels.forEach((channel) => {
-              const groupName = channel.group || '未分组';
-              if (!groupsMap.has(groupName)) {
-                groupsMap.set(groupName, []);
-              }
-              groupsMap.get(groupName)!.push(channel);
-            });
-
-            const groups: IPTVGroup[] = Array.from(groupsMap.entries()).map(
-              ([name, channelList]) => ({
-                name,
-                count: channelList.length,
-                channels: channelList,
-              })
-            );
-
-            set({ groups });
-          }
+          // 保存到 IndexedDB 缓存
+          const sourceUrls = settings.aggregatorUrls?.length
+            ? settings.aggregatorUrls
+            : settings.aggregatorUrl
+              ? [settings.aggregatorUrl]
+              : [];
+          setCachedIPTVChannels({
+            channels,
+            groups,
+            sourceType,
+            timestamp: Date.now(),
+            sourceUrls,
+          }).catch(() => {});
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : 'Failed to refresh channels',
@@ -290,11 +302,17 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       abortAvailabilityCheck: () => {
-        const { _abortController } = get();
+        const { _abortController, channels } = get();
         if (_abortController) {
           _abortController.abort();
         }
+        // 清除所有频道的检测结果
+        const resetChannels = channels.map(ch => ({
+          ...ch,
+          isAvailable: undefined,
+        }));
         set({
+          channels: resetChannels,
           isCheckingAvailability: false,
           availabilityProgress: null,
           _abortController: null,
@@ -340,6 +358,35 @@ export const useIPTVStore = create<IPTVState>()(
           favoriteChannelIds: [],
           channels: state.channels.map((ch) => ({ ...ch, isFavorite: false })),
         })),
+
+      loadFromCache: async () => {
+        const { settings, favoriteChannelIds } = get();
+        const sourceUrls = settings.aggregatorUrls?.length
+          ? settings.aggregatorUrls
+          : settings.aggregatorUrl
+            ? [settings.aggregatorUrl]
+            : [];
+
+        if (sourceUrls.length === 0) return false;
+
+        const cached = await getCachedIPTVChannels(sourceUrls);
+        if (!cached) return false;
+
+        const channels = cached.channels.map(ch => ({
+          ...ch,
+          isFavorite: favoriteChannelIds.includes(ch.id)
+        }));
+
+        set({
+          channels,
+          groups: cached.groups,
+          sourceType: cached.sourceType as SourceType,
+          lastRefresh: cached.timestamp,
+          loadedUrl: settings.aggregatorUrl,
+        });
+
+        return true;
+      },
     }),
     {
       name: 'iptv-store',
@@ -371,20 +418,4 @@ export const useIPTVStore = create<IPTVState>()(
   )
 );
 
-/**
- * 应用启动时，根据 useSettingsStore 中持久化的 iptvSourceIndex
- * 初始化 aggregatorUrl，避免 IPTV 页面首次进入时因 aggregatorUrl 为空而无数据。
- */
-const initAggregatorUrl = async () => {
-  const { aggregatorUrl } = useIPTVStore.getState().settings;
-  if (aggregatorUrl) return;
 
-  const iptvSourceIndex = useSettingsStore.getState().iptvSourceIndex;
-  const sources = await getIPTVSources();
-  const url = sources[iptvSourceIndex]?.url || sources[0]?.url || '';
-  if (url) {
-    useIPTVStore.getState().setSettings({ aggregatorUrl: url });
-  }
-};
-
-void initAggregatorUrl();

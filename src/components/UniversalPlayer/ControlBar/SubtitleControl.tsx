@@ -1,22 +1,31 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Subtitles } from 'lucide-react';
 import { usePlayerStore, useSubtitleStore } from '@/stores';
 
 interface SubtitleControlProps {
   onImportSubtitle: (file: File) => void;
+  activePopover: string | null;
+  onPopoverChange: (id: string | null) => void;
 }
 
-export default function SubtitleControl({ onImportSubtitle }: SubtitleControlProps) {
-  const [showPopover, setShowPopover] = useState(false);
+const POPOVER_ID = 'subtitle';
+
+export default function SubtitleControl({ onImportSubtitle, activePopover, onPopoverChange }: SubtitleControlProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
   const setSubtitleUrl = usePlayerStore(s => s.setSubtitleUrl);
   const { autoTranslate, setAutoTranslate, targetLang, setTargetLang, translationAppId, translationApiKey } = useSubtitleStore();
 
+  const isOpen = activePopover === POPOVER_ID;
+
+  const handleToggle = useCallback(() => {
+    onPopoverChange(isOpen ? null : POPOVER_ID);
+  }, [isOpen, onPopoverChange]);
+
   const handleImport = useCallback(() => {
     fileInputRef.current?.click();
-    setShowPopover(false);
-  }, []);
+    onPopoverChange(null);
+  }, [onPopoverChange]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,19 +37,19 @@ export default function SubtitleControl({ onImportSubtitle }: SubtitleControlPro
     const url = usePlayerStore.getState().subtitleUrl;
     if (url) URL.revokeObjectURL(url);
     setSubtitleUrl(null);
-    setShowPopover(false);
-  }, [setSubtitleUrl]);
+    onPopoverChange(null);
+  }, [setSubtitleUrl, onPopoverChange]);
 
   return (
     <div className="up-popover-control">
       <button
         className={`up-control-btn ${subtitleUrl ? 'up-control-btn-active' : ''}`}
-        onClick={() => setShowPopover(!showPopover)}
+        onClick={handleToggle}
         title="字幕"
       >
         <Subtitles size={20} />
       </button>
-      {showPopover && (
+      {isOpen && (
         <div className="up-popover up-subtitle-popover">
           <button className="up-popover-item" onClick={handleImport}>导入字幕</button>
           {translationAppId && translationApiKey && (

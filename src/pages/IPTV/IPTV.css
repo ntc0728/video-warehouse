@@ -19,6 +19,13 @@
   padding: var(--space-xs) 0 var(--space-sm);
 }
 
+.iptv-header-left {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  min-width: 0;
+}
+
 .iptv-header .page-title {
   margin: 0;
   font-size: var(--text-xl);
@@ -81,6 +88,37 @@
   font-size: var(--text-sm);
 }
 
+.iptv-proxy-warning-inline {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.iptv-proxy-warning-inline svg {
+  flex-shrink: 0;
+  color: var(--color-warning-text, #d48806);
+}
+
+.iptv-proxy-warning-link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.iptv-proxy-warning-link:hover {
+  text-decoration: underline;
+}
+
 .iptv-toolbar {
   display: flex;
   flex-shrink: 0;
@@ -91,7 +129,7 @@
 .refresh-btn {
   padding: var(--space-sm) var(--space-md);
   border: none;
-  border-radius: var(--space-sm);
+  border-radius: var(--radius-full);
   background-color: var(--color-primary);
   color: white;
   font-size: var(--text-base);
@@ -156,6 +194,9 @@
 }
 
 .availability-stats .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
   font-size: var(--text-sm);
   font-weight: 500;
 }
@@ -214,6 +255,36 @@
   color: var(--color-tab-active-text);
   font-weight: 600;
   box-shadow: 0 1px 3px var(--color-primary-shadow);
+}
+
+/* 数据源筛选标签 */
+.iptv-source-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.source-tag {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-tag-bg);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.source-tag:hover {
+  background-color: var(--color-primary-light);
+}
+
+.source-tag.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
 }
 
 .groups-toggle {

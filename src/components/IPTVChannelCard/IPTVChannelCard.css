@@ -90,6 +90,8 @@
 }
 
 .availability-badge.unavailable {
+  top: var(--space-xs);
+  bottom: auto;
   background-color: var(--color-error);
   color: white;
 }
@@ -132,6 +134,24 @@
 .iptv-card-group {
   position: absolute;
   right: var(--space-2xs);
+  bottom: var(--space-2xs);
+  z-index: 2;
+  max-width: 60%;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Source badge ---- */
+.iptv-card-source {
+  position: absolute;
+  left: var(--space-2xs);
   bottom: var(--space-2xs);
   z-index: 2;
   max-width: 60%;
@@ -249,6 +269,14 @@
     font-size: var(--text-xs);
   }
 
+  .iptv-card-source {
+    left: var(--space-xs);
+    bottom: var(--space-xs);
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
   .iptv-card-info {
     gap: var(--space-xs);
     padding: var(--space-sm);
@@ -287,6 +315,15 @@
 
   .iptv-card-group {
     right: var(--space-xs);
+    bottom: var(--space-xs);
+    max-width: 50%;
+    padding: var(--space-3xs) var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
+  .iptv-card-source {
+    left: var(--space-xs);
     bottom: var(--space-xs);
     max-width: 50%;
     padding: var(--space-3xs) var(--space-xs);
@@ -338,6 +375,14 @@
 
 [data-device="tv"] .iptv-card-group {
   right: var(--space-sm);
+  bottom: var(--space-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+[data-device="tv"] .iptv-card-source {
+  left: var(--space-sm);
   bottom: var(--space-sm);
   padding: var(--space-2xs) var(--space-sm);
   border-radius: var(--radius-sm);

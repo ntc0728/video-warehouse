@@ -121,6 +121,20 @@
   filter: grayscale(100%);
 }
 
+.lazy-image-letter {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-size: 2em;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  opacity: 0.85;
+}
+
 .lazy-image-bg-container {
   position: relative;
   transition: background-image 0.3s ease;

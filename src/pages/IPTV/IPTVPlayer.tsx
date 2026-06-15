@@ -1,41 +1,39 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useIPTVStore } from '@/stores';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
 import { useIsMobile, useIsTV } from '@/hooks';
+import { shouldProxy } from '@/services/iptvService';
 import './IPTVPlayer.css';
 
 export default function IPTVPlayerPage() {
   const [searchParams] = useSearchParams();
   const url = searchParams.get('url') || '';
   const navigate = useNavigate();
-  const { selectedChannel, channels, groups, isLoading, refreshChannels } = useIPTVStore();
+  const { channels, groups, isLoading, refreshChannels, settings } = useIPTVStore();
 
-  // Platform 自动检测：TV 优先于 Mobile，TV/Mobile 优先于 Desktop。
-  // 修复 platform 硬编码 desktop 导致 .up-platform-mobile / .up-platform-tv 样式不生效的问题。
   const isTV = useIsTV();
   const isMobile = useIsMobile();
   const platform: 'tv' | 'mobile' | 'desktop' = isTV ? 'tv' : isMobile ? 'mobile' : 'desktop';
 
-  const channelName = selectedChannel?.name || 'IPTV 直播';
   const videoUrl = decodeURIComponent(url);
 
-  /** Store 数据为空时触发加载（页面刷新后恢复数据） */
+  /** 直接从 URL 匹配频道，避免依赖 selectedChannel 导致的延迟 */
+  const matchedChannel = useMemo(() => {
+    if (!videoUrl || channels.length === 0) return null;
+    return channels.find(ch => ch.url === videoUrl) ?? null;
+  }, [videoUrl, channels]);
+
+  const channelName = matchedChannel?.name || 'IPTV 直播';
+
   useEffect(() => {
     if (channels.length === 0 && !isLoading) {
       refreshChannels();
     }
-    // 故意仅在挂载时检查一次：依赖项随 store 状态变化会导致无限循环
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * 锁定 body 滚动：
-   * 顶层独立路由下 IPTV 播放页本身就是 fixed 全屏，理论上不需要此保护。
-   * 但在某些移动 WebView / 旧版 Android Chrome 中，body 仍可能出现 rubber-band
-   * 弹性滚动或键盘弹起时的内容抖动。挂载时锁 body 滚动，卸载时还原原值。
-   */
   useEffect(() => {
     const original = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -46,11 +44,15 @@ export default function IPTVPlayerPage() {
 
   const handleBack = useSmartBack('/iptv');
 
-  /** 频道切换：保留 REPLACE 不累积历史，附加 from 以便首次进入后能跳回 /iptv */
   const handleChannelChange = useCallback((channel: { id: string; url: string }) => {
-    const encodedUrl = encodeURIComponent(channel.url);
+    const { proxyUrl, proxyPattern } = settings;
+    const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
+    const playUrl = useProxy
+      ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
+      : channel.url;
+    const encodedUrl = encodeURIComponent(playUrl);
     navigate(`/iptv/play?url=${encodedUrl}`, { replace: true, state: { from: '/iptv' } });
-  }, [navigate]);
+  }, [navigate, settings]);
 
   if (!url) {
     navigate('/iptv', { replace: true });

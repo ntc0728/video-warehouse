@@ -20,12 +20,15 @@ interface IPTVOSDBarProps {
   currentSourceIndex: number;
   totalSources: number;
   containerWidth: number;
+  audioTracks: { id: number; name: string; language: string; default: boolean }[];
+  currentAudioTrack: number;
   onToggleChannelList: () => void;
   onSourceSwitch?: (index: number) => void;
   onChannelUp?: () => void;
   onChannelDown?: () => void;
   onOpenSettings?: () => void;
   onOpenResolution?: () => void;
+  onOpenAudioTrack?: () => void;
   onHeightChange?: (bottomOffset: number) => void;
 }
 
@@ -137,6 +140,14 @@ function MdiResolutionIcon({ size = 12 }: { size?: number }) {
   );
 }
 
+function MdiAudioTrackIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12,3V13.55C11.41,13.21 10.73,13 10,13C7.79,13 6,14.79 6,17S7.79,21 10,21C12.21,21 14,19.21 14,17V7H18V3H12Z" />
+    </svg>
+  );
+}
+
 export default function IPTVOSDBar({
   visible,
   hasError = false,
@@ -149,12 +160,15 @@ export default function IPTVOSDBar({
   currentSourceIndex = 0,
   totalSources = 1,
   containerWidth,
+  audioTracks = [],
+  currentAudioTrack: _currentAudioTrack = -1,
   onToggleChannelList,
   onSourceSwitch: _onSourceSwitch,
   onChannelUp: _onChannelUp,
   onChannelDown: _onChannelDown,
   onOpenSettings,
   onOpenResolution,
+  onOpenAudioTrack,
   onHeightChange,
 }: IPTVOSDBarProps) {
   const [logoError, setLogoError] = useState(false);
@@ -287,6 +301,12 @@ export default function IPTVOSDBar({
               <MdiResolutionIcon size={12} />
               <span>清晰度</span>
             </button>
+            {audioTracks.length > 1 && (
+              <button className="iptv-osd-control-btn no-border" onClick={onOpenAudioTrack} title="音轨">
+                <MdiAudioTrackIcon size={12} />
+                <span>音轨</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

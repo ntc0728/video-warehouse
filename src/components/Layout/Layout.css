@@ -161,3 +161,9 @@
 [data-theme="dark"] .mobile-tab-bar {
   border-top-color: var(--color-border-light);
 }
+
+@media (width <= 767px) {
+  .app-shell__scroll {
+    padding-top: var(--header-height-compact);
+  }
+}
