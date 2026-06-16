@@ -29,6 +29,7 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  overflow-x: hidden;
 }
 
 /* ── 页面统一左右内边距 ─────────────────────────────────
@@ -37,15 +38,14 @@
    脱离文档流，不受影响。StickyHeader 在 .app-shell__scroll
    外部，不受此规则约束。 */
 .page-transition {
-  display: grid;
-  /* 显式声明单列：minmax(0, 1fr) 阻止 auto 列按子项 max-content 撑开,
-     修复首页 HeroBanner 反馈环导致 9000+px 巨图的 bug(详见 spec/2026-06-11)。
-     同时让所有 <Outlet /> 子页面(IPTV/Browse/Collections/History 等)受益。 */
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
-  min-height: 100%;
-  padding-left: var(--space-sm);
-  animation: pageFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* 网格布局已迁移至 .rt-container */
+}
+
+@media (width <= 767px) {
+  .page-transition {
+    /* 移动端底部 TabBar 遮挡滚动内容，预留底部安全区 */
+    padding-bottom: var(--layout-tabbar-height);
+  }
 }
 
 .sidebar-header {
@@ -160,10 +160,4 @@
 
 [data-theme="dark"] .mobile-tab-bar {
   border-top-color: var(--color-border-light);
-}
-
-@media (width <= 767px) {
-  .app-shell__scroll {
-    padding-top: var(--header-height-compact);
-  }
 }

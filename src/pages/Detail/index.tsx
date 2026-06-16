@@ -85,6 +85,7 @@ export default function DetailPage() {
 
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
+  const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
 
   const [tmdbLoading, setTmdbLoading] = useState(true);
   const [tmdbDetail, setTmdbDetail] = useState<TMDBMovieDetail | TMDBTVShowDetail | null>(null);
@@ -178,7 +179,7 @@ export default function DetailPage() {
   }, [id, collected, addCollection, removeCollection, tmdbDetail]);
 
   // ── 播放 ──────────────────────────────────────
-  const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` } }); };
+  const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` }, viewTransition: true }); };
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -199,6 +200,7 @@ export default function DetailPage() {
   }
   const backdropUrl = d?.backdrop_path ? buildImageUrl(d.backdrop_path, 'w1280') || '' : '';
   const posterUrl = d?.poster_path ? buildImageUrl(d.poster_path, 'w342') || '' : '';
+  const [bgLoaded, setBgLoaded] = useState(false);
   const overview = d?.overview || '';
   const voteAverage: number = d?.vote_average ?? 0;
   const popularity: number = d?.popularity ?? 0;
@@ -234,9 +236,9 @@ export default function DetailPage() {
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}
-      <section className="detail-hero">
+      <section className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
         {backdropUrl && (
-          <img className="detail-hero-bg" src={backdropUrl} alt="" />
+          <img className="detail-hero-bg" src={backdropUrl} alt="" onLoad={() => setBgLoaded(true)} />
         )}
         {/* 双层渐变遮罩 */}
         <div className="detail-hero-gradient detail-hero-gradient-1" />
@@ -250,17 +252,11 @@ export default function DetailPage() {
 
         {/* 官网链接 */}
         {homepage && (
-          <a href={homepage} target="_blank" rel="noreferrer" className="detail-homepage-btn">
+          <a href={homepage} target="_blank" rel="noreferrer" className="detail-official-link">
             <ExternalLink size={16} />
-            <span className="detail-homepage-label">官方页面</span>
+            <span>官方页面</span>
           </a>
         )}
-        {/* Mobile 收藏 */}
-        <button className="detail-collect-mobile" onClick={handleCollect} aria-label="收藏">
-          <Heart size={18} fill={collected ? 'var(--color-favorite-active)' : 'none'}
-            color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
-          <span>收藏</span>
-        </button>
 
         {/* Hero 内容 */}
         <div className="detail-hero-content">
@@ -329,7 +325,10 @@ export default function DetailPage() {
             <button
               key={tab.key}
               className={`detail-tab ${activeTab === tab.key ? 'detail-tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                visitedTabsRef.current.add(tab.key);
+                setActiveTab(tab.key);
+              }}
             >
               <tab.icon size={16} />
               {tab.label}
@@ -437,7 +436,7 @@ export default function DetailPage() {
                           </div>
                           <button
                             className="detail-source-play-btn"
-                            onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } })}
+                            onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex }, viewTransition: true })}
                           >
                             <Play size={12} fill="currentColor" /> 立即播放
                           </button>

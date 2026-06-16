@@ -151,13 +151,14 @@
   background: var(--color-hover-bg);
 }
 
-.status-tab--active {
+.status-tab--active,
+.status-tab--active:hover {
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
 
 .status-tab--active .status-tab__count {
-  background: rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--color-text-inverse) 25%, transparent);
   color: var(--color-text-inverse);
 }
 
@@ -259,11 +260,31 @@
 
 .history-card {
   position: relative;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-card:hover {
+  transform: translateY(-3px);
+}
+
+/* 覆盖 VideoCard 自身的 hover transform，避免叠加 */
+.history-card:hover .video-card {
+  transform: none;
 }
 
 /* IPTV 频道卡包装层（用于叠加 check 框与 time 标签） */
 .history-channel-card-wrap {
   position: relative;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-channel-card-wrap:hover {
+  transform: translateY(-3px);
+}
+
+/* 覆盖 IPTVChannelCard 自身的 hover transform，避免叠加 */
+.history-channel-card-wrap:hover .iptv-channel-card {
+  transform: none;
 }
 
 .history-card-check {
@@ -328,6 +349,7 @@
   white-space: nowrap;
   opacity: 0.85;
   pointer-events: auto;
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .history-card:hover .history-card-time {
@@ -433,9 +455,8 @@
     margin-right: 0;
   }
   .history-toolbar .search-box-wrap {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-width: 0;
-    max-width: none;
     margin-right: var(--space-sm);
   }
   .history-toolbar .toolbar-actions {

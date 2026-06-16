@@ -42,15 +42,15 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
   const currentTheme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
-  const { triggerHomeReset, goHome } = useHeaderContent();
+  const { goHome } = useHeaderContent();
 
   const handleNavClick = useCallback((path: string) => {
-    if (path === '/' && location.pathname === '/') {
-      triggerHomeReset();
+    if (path === '/') {
+      goHome();
     } else {
       navTo(navigate, path, location.pathname + location.search);
     }
-  }, [navigate, location.pathname, location.search, triggerHomeReset]);
+  }, [navigate, location.pathname, location.search, goHome]);
 
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
@@ -59,8 +59,7 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
    *  - /browse* : BrowseHeader 中间已有自己的 SearchBox
    *  - /iptv*   : IPTV 页左侧栏已有搜索入口，避免双搜索框
    */
-  const isSearchHidden = location.pathname.startsWith('/browse')
-    || location.pathname.startsWith('/iptv');
+  const isSearchHidden = location.pathname.startsWith('/browse');
 
   // ── 滚动检测：仅首页监听滚动距离，超过 --header-height 切换为实体背景 ──
   // 滚动容器是 AppLayout 的 CustomScrollbar（不是 window）；用 useScrollContainer 拿 ref
@@ -76,19 +75,13 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const readHeaderHeight = () => {
-      const cs = getComputedStyle(el);
-      const v = cs.getPropertyValue('--header-height').trim();
-      if (v) {
-        const n = parseFloat(v);
-        if (!Number.isNaN(n)) return n;
-      }
-      const headerEl = document.querySelector('.sticky-header') as HTMLElement | null;
-      return headerEl?.offsetHeight ?? 64;
-    };
+    // 缓存头部高度，避免在每个滚动事件中重复计算
+    const cs = getComputedStyle(el);
+    const v = cs.getPropertyValue('--header-height').trim();
+    const headerHeight = v ? parseFloat(v) : ((document.querySelector('.sticky-header') as HTMLElement | null)?.offsetHeight ?? 64);
 
     const onScroll = () => {
-      setIsScrolled(el.scrollTop >= readHeaderHeight());
+      setIsScrolled(el.scrollTop >= headerHeight);
     };
 
     onScroll();

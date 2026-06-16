@@ -150,21 +150,6 @@
   animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* 页面切换过渡：淡入 + 微上移 */
-.page-enter {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  animation: pageFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) both,
-             fadeInUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-@keyframes pageFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
 .animate-slide-in-left {
   animation: slideInLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
@@ -251,4 +236,15 @@
   font-size: var(--text-base);
   text-align: center;
   transition: opacity 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

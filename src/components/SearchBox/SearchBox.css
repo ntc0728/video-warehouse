@@ -22,8 +22,8 @@
 /* ── Variant wrap（外层容器） ───────────────────── */
 
 .search-box-wrap--header {
-  /* 流体宽度：视口越窄搜索框越小，40vw 在 375px→3840px 范围内平滑缩放 */
-  max-width: clamp(180px, 40vw, 480px);
+  /* 流体宽度：视口越窄搜索框越小 */
+  max-width: clamp(280px, 65vw, 700px);
 }
 
 /* 移动端：占据剩余空间 */
@@ -43,7 +43,7 @@
   /* 父级 toolbar 多为 flex-wrap: wrap,加 min-width 防止被 chip
      挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
   min-width: var(--comp-input-min-w);
-  max-width: none;
+  max-width: clamp(14rem, 30vw, 22rem);
 }
 
 /* ── 内部方框（仅 icon + input + clear） ─────────── */
@@ -197,6 +197,9 @@
 /* ── Mobile: 隐藏 submit 文字、显示 submit 图标 ─────── */
 
 @media (width <= 767px) {
+  .search-box-wrap--header .search-box {
+    flex-shrink: 0;
+  }
   .search-box__submit {
     width: var(--comp-input-height);
     padding: 0;

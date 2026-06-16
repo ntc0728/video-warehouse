@@ -209,7 +209,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="settings-page w-full space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+    <div className="settings-page w-full space-y-4 pt-4 pb-8 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:pt-6 lg:pb-12">
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="外观">
           <List.Item
@@ -244,10 +244,44 @@ export default function SettingsPage() {
       </section>
 
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+        <List header="TMDB">
+        <List.Item
+          title="TMDB Access Token"
+          description={tmdbAccessToken ? '已配置' : '未配置（首页 TMDB 发现将不可用）'}
+          extra={
+            <Button size="small" className="settings-btn-mini" onClick={() => {
+              setTMDBTokenInput(tmdbAccessToken || '');
+              setShowTMDBTokenInput(true);
+            }}>
+              配置
+            </Button>
+          }
+        />
+        <List.Item
+          title="TMDB 语言"
+          description="影响影片标题、简介等信息的显示语言"
+          extra={
+            <select
+              className="source-select"
+              value={tmdbLanguage}
+              onChange={(e) => setTMDBLanguage(e.target.value)}
+            >
+              <option value="zh-CN">简体中文</option>
+              <option value="zh-TW">繁體中文</option>
+              <option value="en-US">English</option>
+              <option value="ja-JP">日本語</option>
+              <option value="ko-KR">한국어</option>
+            </select>
+          }
+        />
+        </List>
+      </section>
+
+      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="视频源">
         <List.Item
           title="视频数据源"
-          description="详情页播放列表将循环查询所选数据源（最多6个）"
+          description="选择视频数据源（最多6个）"
           extra={
             <div className="source-multi-dropdown" ref={multiSelectRef}>
               <button
@@ -286,38 +320,37 @@ export default function SettingsPage() {
             </Button>
           }
         />
-        </List>
-      </section>
-
-      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
-        <List header="TMDB">
         <List.Item
-          title="TMDB Access Token"
-          description={tmdbAccessToken ? '已配置' : '未配置（首页 TMDB 发现将不可用）'}
+          title="音量记忆"
+          description="记住上次播放时的音量大小"
           extra={
-            <Button size="small" className="settings-btn-mini" onClick={() => {
-              setTMDBTokenInput(tmdbAccessToken || '');
-              setShowTMDBTokenInput(true);
-            }}>
-              配置
-            </Button>
+            <Switch
+              checked={rememberVolume}
+              onChange={setRememberVolume}
+            />
           }
         />
         <List.Item
-          title="TMDB 语言"
-          description="影响影片标题、简介等信息的显示语言"
+          title="自动翻译字幕"
+          description="开启后自动将字幕翻译成目标语言"
           extra={
-            <select
-              className="source-select"
-              value={tmdbLanguage}
-              onChange={(e) => setTMDBLanguage(e.target.value)}
-            >
-              <option value="zh-CN">简体中文</option>
-              <option value="zh-TW">繁體中文</option>
-              <option value="en-US">English</option>
-              <option value="ja-JP">日本語</option>
-              <option value="ko-KR">한국어</option>
-            </select>
+            <Switch
+              checked={autoTranslate}
+              onChange={setAutoTranslate}
+            />
+          }
+        />
+        <List.Item
+          title="百度翻译 API"
+          description={translationAppId && translationApiKey ? '已配置' : '未配置'}
+          extra={
+            <Button size="small" className="settings-btn-mini" onClick={() => {
+              setAppIdInput(translationAppId || '');
+              setApiKeyInput(translationApiKey || '');
+              setShowApiInput(true);
+            }}>
+              {translationAppId && translationApiKey ? '修改' : '配置'}
+            </Button>
           }
         />
         </List>
@@ -433,48 +466,10 @@ export default function SettingsPage() {
         </List>
       </section>
 
-      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
-        <List header="通用">
-        <List.Item
-          title="音量记忆"
-          description="记住上次播放时的音量大小"
-          extra={
-            <Switch
-              checked={rememberVolume}
-              onChange={setRememberVolume}
-            />
-          }
-        />
-        <List.Item
-          title="自动翻译字幕"
-          description="开启后自动将字幕翻译成目标语言"
-          extra={
-            <Switch
-              checked={autoTranslate}
-              onChange={setAutoTranslate}
-            />
-          }
-        />
-        <List.Item
-          title="百度翻译 API"
-          description={translationAppId && translationApiKey ? '已配置' : '未配置'}
-          extra={
-            <Button size="small" className="settings-btn-mini" onClick={() => {
-              setAppIdInput(translationAppId || '');
-              setApiKeyInput(translationApiKey || '');
-              setShowApiInput(true);
-            }}>
-              {translationAppId && translationApiKey ? '修改' : '配置'}
-            </Button>
-          }
-        />
-        </List>
-      </section>
-
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm lg:col-span-2">
         <List header="关于">
         <List.Item title="版本" extra="1.0.0" />
-        <List.Item title="影视大全" description="聚合网盘和爬虫影视资源" />
+        <List.Item title="影视大全" description="聚合影视剧和IPTV资源" />
         </List>
       </section>
 

@@ -42,22 +42,22 @@ const VideoCard = memo(function VideoCard({
 }: VideoCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { collections, addCollection, removeCollection } = useUserStore();
+  const { addCollection, removeCollection } = useUserStore();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLSpanElement>(null);
   const isTV = useIsTV();
 
-  const isCollected = collections.some((c) => c.videoId === video.id);
+  const isCollected = useUserStore(
+    (s) => s.collections.some((c) => c.videoId === video.id),
+  );
 
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    const check = () => setIsOverflow(el.scrollWidth > el.clientWidth);
-    check();
-    const obs = new ResizeObserver(check);
-    obs.observe(el);
-    return () => obs.disconnect();
+    // 一次性检查标题是否溢出，避免为 ~140 张卡片各创建一个 ResizeObserver
+    const raf = requestAnimationFrame(() => setIsOverflow(el.scrollWidth > el.clientWidth));
+    return () => cancelAnimationFrame(raf);
   }, [video.title]);
 
   const handleFavorite = useCallback(
@@ -75,6 +75,7 @@ const VideoCard = memo(function VideoCard({
     if (batchMode) return;
     navigate(`/detail/${video.id}`, {
       state: { from: location.pathname + location.search },
+      viewTransition: true,
     });
   }, [batchMode, navigate, video.id, location.pathname, location.search]);
 

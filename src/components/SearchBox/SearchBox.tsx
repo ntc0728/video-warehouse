@@ -57,7 +57,6 @@ export default function SearchBox({
   const urlQ = searchParams.get('q') ?? '';
   const [value, setValue] = useState(defaultValue ?? urlQ);
   const inputRef = useRef<HTMLInputElement>(null);
-  // 中文输入法：composition 期间不上抛 Enter
   const isComposingRef = useRef(false);
 
   // 外部 URL q 变化时同步（如切到不带 q 的页面、跨页 history 变化）
@@ -71,7 +70,7 @@ export default function SearchBox({
     if (onSearch) {
       onSearch(q);
     } else {
-      navigate(`/browse?q=${encodeURIComponent(q)}`);
+      navigate(`/browse?q=${encodeURIComponent(q)}`, { viewTransition: true });
     }
   }, [value, onSearch, navigate]);
 
@@ -80,7 +79,7 @@ export default function SearchBox({
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !isComposingRef.current) {
       e.preventDefault();
       handleSearch();
@@ -90,7 +89,7 @@ export default function SearchBox({
       e.preventDefault();
       handleClear();
     }
-  };
+  }, [handleSearch, handleClear]);
 
   return (
     <div

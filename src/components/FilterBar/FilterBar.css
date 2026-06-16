@@ -132,8 +132,8 @@
   white-space: nowrap;
   /* 预占位 box-shadow：避免 active 切换时触发 reflow */
   box-shadow: 0 0 0 0 transparent;
-  /* 白名单 transition：仅过渡颜色/背景/边框/阴影，禁止 all */
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  /* 白名单 transition：仅过渡颜色/背景/边框/阴影/缩放 */
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: pointer;
   user-select: none;
 }
@@ -141,6 +141,10 @@
 .filter-bar__chip:hover {
   background: var(--color-surface-hover, var(--color-surface));
   color: var(--color-primary);
+}
+
+.filter-bar__chip:active {
+  transform: scale(0.95);
 }
 
 .filter-bar__chip--active {

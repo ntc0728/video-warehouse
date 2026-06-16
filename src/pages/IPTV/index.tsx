@@ -13,7 +13,6 @@
  *   滚到底才加载"的体感,且 IO 缩小后 scroll 事件兜底仍能在 100px 范围内触达。
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useIPTVStore, useNavStore, useSettingsStore } from '@/stores';
 import { getIPTVSources } from '@/services/sourceService';
@@ -338,28 +337,28 @@ export default function IPTVPage() {
     <div className="iptv-page">
       {!isInitialLoadingState && (
         <div className="iptv-header">
-          <div className="iptv-header-left">
+          <div className="iptv-header-top">
             <h1 className="page-title">IPTV 直播</h1>
-            {!settings.proxyUrl && (
-              <span className="iptv-proxy-warning-inline">
-                <AlertCircle size={14} />
-                <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-                <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings')}>
-                  配置
-                </button>
+            <div className="iptv-header-meta">
+              {lastRefresh && (
+                <span className="last-refresh">
+                  更新: {new Date(lastRefresh).toLocaleTimeString()}
+                </span>
+              )}
+              <span className="source-url" title={settings.aggregatorUrl}>
+                源: {getDisplayHostname(settings.aggregatorUrl)}
               </span>
-            )}
+            </div>
           </div>
-          <div className="iptv-header-meta">
-            {lastRefresh && (
-              <span className="last-refresh">
-                更新: {new Date(lastRefresh).toLocaleTimeString()}
-              </span>
-            )}
-            <span className="source-url" title={settings.aggregatorUrl}>
-              源: {getDisplayHostname(settings.aggregatorUrl)}
+          {!settings.proxyUrl && (
+            <span className="iptv-proxy-warning-inline">
+              <AlertCircle size={14} />
+              <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
+              <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
+                配置
+              </button>
             </span>
-          </div>
+          )}
         </div>
       )}
 
@@ -516,14 +515,6 @@ export default function IPTVPage() {
             </div>
 
             <div ref={sentinelRef} aria-hidden="true" />
-            {document.getElementById('load-more-portal') && createPortal(
-              <div className="load-more-hint">
-                {hasMore
-                  ? `已加载 ${displayedChannels.length} / ${filteredChannels.length}`
-                  : `已加载 ${displayedChannels.length} / ${filteredChannels.length} · 已显示全部`}
-              </div>,
-              document.getElementById('load-more-portal')!,
-            )}
           </>
         )}
 

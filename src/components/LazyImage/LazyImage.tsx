@@ -76,7 +76,7 @@ export default function LazyImage({
   // 命中 session 缓存：DOM 重建时跳过 0.5s opacity/transform 渐显动画
   const isCached = isImageLoaded(src);
 
-  /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前200px预加载 */
+  /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前50px预加载 */
   useEffect(() => {
     // session 缓存命中：URL 已加载过，无需再监听视口
     if (isImageLoaded(src)) {
@@ -95,7 +95,7 @@ export default function LazyImage({
       },
       {
         root: null,
-        rootMargin: '200px 0px',
+        rootMargin: '50px 0px',
         threshold,
       }
     );
@@ -211,7 +211,7 @@ export function LazyImageBackground({
       },
       {
         root: null,
-        rootMargin: '200px 0px',
+        rootMargin: '50px 0px',
         threshold: 0,
       }
     );

@@ -87,7 +87,7 @@ export default function DailyPicks() {
               <div
                 key={pick.id}
                 className="carousel-slide"
-                onClick={() => navigate(`/detail/${pick.videoId}`)}
+                onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
               >
                 <div className="carousel-slide-cover">
                   <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
@@ -132,7 +132,7 @@ export default function DailyPicks() {
             <div
               key={pick.id}
               className="carousel-slide"
-              onClick={() => navigate(`/detail/${pick.videoId}`)}
+              onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
             >
               <div className="carousel-slide-cover">
                 <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />

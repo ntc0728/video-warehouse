@@ -4,7 +4,6 @@
  * 通用左侧竖向时间轴导航（桌面/平板）+ 顶部横向时间轴（移动）
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
@@ -550,14 +549,6 @@ export default function HistoryPage() {
       )}
 
       <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
-      {document.getElementById('load-more-portal') && createPortal(
-        <div className="load-more-hint" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
-          {hasMore
-            ? `已加载 ${displayedList.length} / ${currentList.length}`
-            : `已加载 ${displayedList.length} / ${currentList.length} · 已显示全部`}
-        </div>,
-        document.getElementById('load-more-portal')!,
-      )}
 
       {/* 批量模式胶囊浮动栏 */}
       {batchMode && (

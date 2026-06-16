@@ -57,7 +57,7 @@
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
 
-  /* ── Typography (375→1440px 固定, 1440→3840px TV端放大) ────────────── */
+  /* ── Typography (375→1920px 固定, 1920→3840px TV端放大) ────────────── */
   --text-xs:   12px;
   --text-sm:   13px;
   --text-base: 14px;
@@ -67,50 +67,50 @@
   --text-3xl:  30px;
 
   /* ── Spacing (积极增长 ~2.0x–2.2x) ──────────────────────────────────── */
-  --space-3xs: clamp(1px,  0.056rem + 0.029vw, 2px);    /* 1→2   (+100%) */
-  --space-2xs: clamp(2px,  0.111rem + 0.058vw, 4px);    /* 2→4   (+100%) */
-  --space-xs:  clamp(4px,  0.223rem + 0.115vw, 8px);    /* 4→8   (+100%) */
-  --space-sm:  clamp(8px,  0.459rem + 0.173vw, 14px);   /* 8→14  (+75%)  */
-  --space-md:  clamp(12px, 0.669rem + 0.346vw, 24px);   /* 12→24 (+100%) */
-  --space-lg:  clamp(18px, 1.003rem + 0.520vw, 36px);   /* 18→36 (+100%) */
-  --space-xl:  clamp(24px, 1.311rem + 0.808vw, 52px);   /* 24→52 (+117%) */
-  --space-2xl: clamp(36px, 2.006rem + 1.039vw, 72px);   /* 36→72 (+100%) */
-  --space-3xl: clamp(48px, 2.648rem + 1.501vw, 100px);  /* 48→100 (+108%) */
+  --space-3xs: clamp(1px,  0.047rem + 0.029vw, 2px);    /* 1→2   */
+  --space-2xs: clamp(1px,  0.047rem + 0.058vw, 3px);    /* 1→3   */
+  --space-xs:  clamp(3px,  0.151rem + 0.087vw, 6px);    /* 3→6   */
+  --space-sm:  clamp(6px,  0.398rem + 0.145vw, 12px);   /* 6→12  */
+  --space-md:  clamp(8px,  0.582rem + 0.261vw, 18px);   /* 8→18  */
+  --space-lg:  clamp(12px, 0.836rem + 0.404vw, 28px);   /* 12→28 */
+  --space-xl:  clamp(16px, 1.081rem + 0.622vw, 40px);   /* 16→40 */
+  --space-2xl: clamp(24px, 1.532rem + 0.808vw, 56px);   /* 24→56 */
+  --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);   /* 32→80 */
 
-  /* ── Icons (375→1440px 固定, 1440→3840px TV端放大) ───────────────── */
+  /* ── Icons (375→1920px 固定, 1920→3840px TV端放大) ───────────────── */
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
   --icon-xl: 28px;
 
   /* ── Pagination Dots (分页圆点 — TV 端不放大,保持小圆点) ────────────── */
-  --dot-size:     clamp(6px,  0.300rem + 0.208vw, 10px);  /* 6→10   圆点 */
-  --dot-active-w: clamp(20px, 1.000rem + 0.417vw, 28px); /* 20→28  激活胶囊宽 */
-  --dot-active-h: clamp(6px,  0.300rem + 0.208vw, 10px);  /* 6→10   激活胶囊高(同 --dot-size) */
-  --dot-gap:      clamp(4px,  0.200rem + 0.167vw, 8px);   /* 4→8    圆点间距 */
+  --dot-size:     clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   圆点 */
+  --dot-active-w: clamp(16px, 0.836rem + 0.348vw, 24px);  /* 16→24 激活胶囊宽 */
+  --dot-active-h: clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   激活胶囊高 */
+  --dot-gap:      clamp(3px,  0.151rem + 0.130vw, 6px);   /* 3→6   圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  --comp-btn-min-height: clamp(36px, 2.061rem + 0.808vw, 64px);  /* 36→64 */
-  --comp-btn-min-width:  clamp(44px, 2.615rem + 0.577vw, 64px);  /* 44→64 */
-  --comp-input-height:   clamp(36px, 2.115rem + 0.577vw, 56px);  /* 36→56 */
-  --comp-input-min-w:    clamp(200px, 12.5rem + 2.308vw, 320px); /* 200→320 */
-  --comp-thumb-size:     clamp(16px, 0.892rem + 0.462vw, 32px);  /* 16→32 */
-  --switch-track-height: clamp(20px, 1.196rem + 0.231vw, 28px);  /* 20→28 */
-  --switch-track-width:  clamp(36px, 2.142rem + 0.462vw, 52px);  /* 36→52 */
-  --switch-thumb-size:   clamp(16px, 0.919rem + 0.346vw, 28px);  /* 16→28 */
-  --switch-thumb-offset: clamp(18px, 1.057rem + 0.289vw, 28px);  /* 18→28 */
-  --radio-size:          clamp(16px, 0.892rem + 0.462vw, 32px);  /* 16→32 */
-  --radio-dot-size:      clamp(8px,  0.432rem + 0.289vw, 18px);  /* 8→18 */
-  --badge-size:          clamp(12px, 0.642rem + 0.462vw, 28px);  /* 12→28 */
+  --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 */
+  --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 */
+  --comp-input-height:   clamp(34px, 1.915rem + 0.522vw, 52px);  /* 34→52 */
+  --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 */
+  --comp-thumb-size:     clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
+  --switch-track-height: clamp(18px, 1.081rem + 0.174vw, 24px);  /* 18→24 */
+  --switch-track-width:  clamp(32px, 1.891rem + 0.391vw, 48px);  /* 32→48 */
+  --switch-thumb-size:   clamp(14px, 0.789rem + 0.261vw, 24px);  /* 14→24 */
+  --switch-thumb-offset: clamp(16px, 0.947rem + 0.217vw, 24px);  /* 16→24 */
+  --radio-size:          clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
+  --radio-dot-size:      clamp(6px,  0.316rem + 0.217vw, 14px);  /* 6→14 */
+  --badge-size:          clamp(10px, 0.526rem + 0.348vw, 22px);  /* 10→22 */
 
   /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
-  --radius-sm: clamp(4px,  0.236rem + 0.058vw, 6px);    /* 4→6   (+50%)  */
-  --radius-md: clamp(8px,  0.473rem + 0.115vw, 12px);   /* 8→12  (+50%)  */
-  --radius-lg: clamp(12px, 0.696rem + 0.231vw, 20px);   /* 12→20 (+67%)  */
+  --radius-sm: clamp(3px,  0.168rem + 0.043vw, 5px);    /* 3→5   */
+  --radius-md: clamp(6px,  0.356rem + 0.087vw, 10px);   /* 6→10  */
+  --radius-lg: clamp(10px, 0.593rem + 0.174vw, 18px);   /* 10→18 */
   --radius-full: 9999px;                                /* 胶囊专用：不缩放，圆弧完美 */
 
   /* ── Layout ──────────────────────────────────────────────────────────── */
-  --grid-gap: clamp(16px, 0.892rem + 0.462vw, 32px);    /* 16→32 (+100%) */
+  --grid-gap: clamp(12px, 0.673rem + 0.348vw, 24px);    /* 12→24 */
 
   /* ── Focus Ring ──────────────────────────────────────────────────────── */
   --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
@@ -202,9 +202,9 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TV / Large Screen — typography & icon scale-up (1440px → 3840px)
+    TV / Large Screen — typography & icon scale-up (1920px → 3840px)
    ═══════════════════════════════════════════════════════════════════════════ */
-@media (width >= 1440px) {
+@media (width >= 1920px) {
   :root {
     --text-xs:   clamp(12px, 0.375rem + 0.417vw, 22px);   /* 12→22 */
     --text-sm:   clamp(13px, 0.325rem + 0.542vw, 26px);   /* 13→26 */

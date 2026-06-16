@@ -6,7 +6,7 @@
  *
  * 7 客户端 · 3 主题感知
  */
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore } from '@/stores';
@@ -63,10 +63,10 @@ export default function HomePage() {
   );
 
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
-  const handleCategorySelect = (cat: CategoryKey) => {
+  const handleCategorySelect = useCallback((cat: CategoryKey) => {
     const cfg = CATEGORY_CONFIG[cat];
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds));
-  };
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { viewTransition: true });
+  }, [navigate]);
 
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
@@ -104,7 +104,7 @@ export default function HomePage() {
             TMDB Access Token 未配置，请在设置中
             <button
               className="home-token-required-link"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/settings', { viewTransition: true })}
             >
               配置
             </button>
@@ -160,6 +160,7 @@ export default function HomePage() {
         items={trending}
         onItemClick={(item) => navigate(`/detail/${item.id}`, {
           state: { from: location.pathname + location.search },
+          viewTransition: true,
         })}
       />
       <CategoryQuickAccess onCategorySelect={handleCategorySelect} />

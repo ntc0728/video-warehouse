@@ -12,9 +12,10 @@ interface TabBarItemProps {
   title: string;
   icon?: React.ReactNode;
   itemKey?: string;
+  onClick?: () => void;
 }
 
-const TabBarItem: React.FC<TabBarItemProps> = ({ title, icon, itemKey }) => {
+const TabBarItem: React.FC<TabBarItemProps> = ({ title, icon, itemKey, onClick }) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -29,6 +30,7 @@ const TabBarItem: React.FC<TabBarItemProps> = ({ title, icon, itemKey }) => {
       ref={triggerRef}
       value={itemKey ?? ''}
       onKeyDown={handleKeyDown}
+      onClick={onClick}
       className={`
         flex flex-1 flex-col items-center justify-center gap-0.5
         outline-none font-semibold

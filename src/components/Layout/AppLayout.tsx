@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import TabBar from './TabBar';
+import RouteTransition from './RouteTransition';
 import StickyHeader from '@/components/StickyHeader';
 import { useHeaderContent } from './useHeaderContent';
 import { CustomScrollbar } from '@/components/common';
@@ -70,7 +71,9 @@ export default function AppLayout() {
               是首页/IPTV 切换卡顿的主要根因。CSS 动画 (.page-transition) 仍生效。
               主动重置首页的场景由 HomeRoute 的 key={homeResetKey} 单独处理。 */}
           <div className="page-transition">
-            <Outlet />
+            <RouteTransition>
+              <Outlet />
+            </RouteTransition>
             <div id="load-more-portal" />
           </div>
         </CustomScrollbar>

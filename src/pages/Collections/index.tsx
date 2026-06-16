@@ -3,7 +3,6 @@
  * 影视 + IPTV 双 Tab，懒加载、搜索、筛选、多选删除、清除全部
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
@@ -346,14 +345,6 @@ export default function CollectionsPage() {
       )}
 
       <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
-      {document.getElementById('load-more-portal') && createPortal(
-        <div className="load-more-hint" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
-          {hasMore
-            ? `已加载 ${displayedList.length} / ${currentList.length}`
-            : `已加载 ${displayedList.length} / ${currentList.length} · 已显示全部`}
-        </div>,
-        document.getElementById('load-more-portal')!,
-      )}
 
       {batchMode && (
         <div className="batch-action-bar">
