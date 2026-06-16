@@ -5,7 +5,7 @@
  *
  * 渲染层级：
  *   BrowseHeader        顶部（返回 + 分类标题 + 结果数）
- *   FilterBar           筛选条（含 isUpdating spinner）
+ *   FilterBar           筛选条
  *   BrowseGrid          视频网格
  *   哨兵 + 文字态       独立 div,与 IPTV 风格一致
  *
@@ -48,7 +48,6 @@ export default function BrowsePage() {
   const {
     filterValue,
     updateFilter,
-    isUpdating,
     isRefreshing,
     loadMore,
     retry,
@@ -119,7 +118,6 @@ export default function BrowsePage() {
         onChange={updateFilter}
         genres={currentGenres}
         excludedGenreIds={excludedGenreIds}
-        isUpdating={isUpdating}
       />
 
       {/* 首次加载：品牌 Loading */}

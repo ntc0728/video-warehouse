@@ -40,6 +40,14 @@ export default function TabBar() {
     }
   };
 
+  const handleClick = (key: string) => {
+    if (key === '/') {
+      goHome();
+    } else {
+      navTo(navigate, key, location.pathname + location.search);
+    }
+  };
+
   return (
     <UTabBar
       activeKey={activeKey}
@@ -52,6 +60,7 @@ export default function TabBar() {
           itemKey={tab.key}
           title={tab.title}
           icon={tab.icon}
+          onClick={() => handleClick(tab.key)}
         />
       ))}
     </UTabBar>

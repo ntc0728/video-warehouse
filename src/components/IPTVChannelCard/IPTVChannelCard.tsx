@@ -42,7 +42,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     const playUrl = useProxy
       ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
       : channel.url;
-    navigate(`/iptv/play?url=${encodeURIComponent(playUrl)}`, { state: { from: '/iptv' } });
+    navigate(`/iptv/play?url=${encodeURIComponent(playUrl)}`, { state: { from: '/iptv' }, viewTransition: true });
   }, [batchMode, channel, proxyUrl, proxyPattern, setSelectedChannel, recordPlay, navigate]);
 
   /** 收藏切换，带弹跳动画反馈 */

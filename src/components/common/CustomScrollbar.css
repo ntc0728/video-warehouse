@@ -20,9 +20,18 @@
    * 滚动条出现/消失的 10px 差异会回传到 page 宽度,
    * 进而引起 toolbar / searchBox 宽度 ±10px 抖动。
    * "stable" 强制在容器右侧始终保留 gutter,内容宽度不再随滚动条显隐抖动。
+   *
+   * 移动端滚动条不可见,不需要预留空间,否则会导致横向溢出。
    */
   scrollbar-gutter: stable;
   /* 对称补齐：flex item 默认 min-width: auto 会按内容撑开,
      显式声明 0 防止内部宽内容把外层滚动容器推到溢出(详见 spec/2026-06-11)。 */
   min-width: 0;
+}
+
+/* 移动端隐藏 scrollbar-gutter 预留空间，避免横向溢出 */
+@media (width <= 767px) {
+  .custom-scrollbar-container {
+    scrollbar-gutter: auto;
+  }
 }

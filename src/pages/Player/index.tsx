@@ -270,7 +270,7 @@ export default function PlayerPage() {
       const currentIndex = video.episodes.findIndex((ep) => ep.id === episodeId);
       if (currentIndex < video.episodes.length - 1) {
         const nextEpisode = video.episodes[currentIndex + 1];
-        navigate(`/play/${id}/${nextEpisode.id}`, { state: { from: `/detail/${id}` } });
+        navigate(`/play/${id}/${nextEpisode.id}`, { state: { from: `/detail/${id}` }, viewTransition: true });
       }
     }
   }, [video, episodeId, id, navigate]);
@@ -291,7 +291,7 @@ export default function PlayerPage() {
   };
 
   const handlePlayEpisode = (ep: Episode) => {
-    navigate(`/play/${id}/${ep.id}`, { state: { from: `/detail/${id}` } });
+    navigate(`/play/${id}/${ep.id}`, { state: { from: `/detail/${id}` }, viewTransition: true });
   };
 
   const handlePlayCMSSource = (result: VideoDetailResult) => {

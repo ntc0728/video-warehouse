@@ -148,13 +148,14 @@
   background: var(--color-hover-bg);
 }
 
-.status-tab--active {
+.status-tab--active,
+.status-tab--active:hover {
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
 
 .status-tab--active .status-tab__count {
-  background: rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--color-text-inverse) 25%, transparent);
   color: var(--color-text-inverse);
 }
 
@@ -302,7 +303,6 @@
   .collection-page > .collection-header,
   .collection-page > .collection-toolbar {
     padding-right: var(--space-md);
-    padding-left: var(--space-md);
   }
   .collection-header {
     flex-wrap: wrap;
@@ -328,9 +328,8 @@
     margin-bottom: var(--space-md);
   }
   .collection-toolbar .search-box-wrap {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-width: 0;
-    max-width: none;
     margin-right: var(--space-sm);
   }
   .collection-toolbar .toolbar-actions {

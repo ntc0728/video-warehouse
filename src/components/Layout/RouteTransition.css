@@ -1,0 +1,51 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   RouteTransition — 路由过渡动画
+
+   优先使用 View Transitions API（浏览器原生），
+   不支持时降级为 CSS animation。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.rt-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-height: 100%;
+  padding-left: var(--space-sm);
+}
+
+@media (width <= 767px) {
+  .rt-container {
+    padding-bottom: var(--layout-tabbar-height);
+  }
+}
+
+/* ── View Transitions API（浏览器原生 cross-fade） ─── */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 0.35s ease-in;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 0.35s ease-out;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 减弱动效 ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms;
+  }
+}

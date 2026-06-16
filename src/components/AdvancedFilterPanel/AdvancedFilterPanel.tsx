@@ -83,6 +83,7 @@ export default function AdvancedFilterPanel({
   const theme = useThemeMode();
   const panelRef = useRef<HTMLDivElement>(null);
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
+  const [closing, setClosing] = useState(false);
 
   // Sync external filters
   useEffect(() => {
@@ -164,16 +165,24 @@ export default function AdvancedFilterPanel({
     onReset();
   }, [onReset]);
 
-  if (!open) return null;
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      onClose();
+    }, 250);
+  }, [onClose]);
+
+  if (!open && !closing) return null;
 
   const isSidePanel = !isMobile || isTV;
   const sideClass = isSidePanel ? 'filter-panel--side' : 'filter-panel--bottom';
 
   return (
-    <div className={`filter-panel-overlay`} onClick={onClose} data-theme={theme}>
+    <div className={`filter-panel-overlay${closing ? ' filter-panel-overlay--closing' : ''}`} onClick={handleClose} data-theme={theme}>
       <div
         ref={panelRef}
-        className={`filter-panel ${sideClass}${isTV ? ' filter-panel--tv' : ''}`}
+        className={`filter-panel ${sideClass}${isTV ? ' filter-panel--tv' : ''}${closing ? ' filter-panel--closing' : ''}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -183,7 +192,7 @@ export default function AdvancedFilterPanel({
         {/* Header */}
         <div className="filter-panel__header">
           <h2 id="filter-title" className="filter-panel__title">高级筛选</h2>
-          <button className="filter-panel__close" onClick={onClose} aria-label="关闭筛选面板">
+          <button className="filter-panel__close" onClick={handleClose} aria-label="关闭筛选面板">
             <X size={20} />
           </button>
         </div>

@@ -12,7 +12,7 @@
  *      点击「更多筛选 ▾」展开 300ms 过渡。
  *      折叠状态可由 useNavStore('filterBarCollapsed') 跨会话恢复。
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useNavStore } from '@/stores';
@@ -47,17 +47,16 @@ export default function FilterBar({
   // 折叠状态：默认 true（折叠）。useNavStore 持久化（跨页面/跨会话恢复）。
   const navStore = useNavStore();
   const navSaved = navStore.getState('filterBarCollapsed');
+  const filterCollapsed = (navSaved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed;
   const [collapsed, setCollapsed] = useState<boolean>(
-    typeof (navSaved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed === 'boolean'
-      ? (navSaved as { filter?: { collapsed?: boolean } }).filter!.collapsed!
-      : true,
+    typeof filterCollapsed === 'boolean' ? filterCollapsed : true,
   );
+  const collapsedRef = useRef(collapsed);
+  collapsedRef.current = collapsed;
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      navStore.saveState('filterBarCollapsed', { filter: { collapsed: next } });
-      return next;
-    });
+    const next = !collapsedRef.current;
+    setCollapsed(next);
+    navStore.saveState('filterBarCollapsed', { filter: { collapsed: next } });
   }, [navStore]);
 
   // 过滤掉分类自身默认的 genre（仍在 value.genreIds 中参与 API）

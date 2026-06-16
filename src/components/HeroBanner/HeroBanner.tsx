@@ -77,7 +77,7 @@ function preloadImage(url: string | null | undefined): void {
 }
 
 /** 预加载的最大 item 数量（前 N 个，避免一次发太多请求） */
-const PRELOAD_AHEAD_COUNT = 20;
+const PRELOAD_AHEAD_COUNT = 5;
 
 export default function HeroBanner({
   items,

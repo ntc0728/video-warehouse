@@ -17,7 +17,6 @@ import type { HeaderConfig, HeaderActionsValue, HeaderStateValue } from './types
 
 const HeaderActionsContext = createContext<HeaderActionsValue>({
   goHome: () => {},
-  triggerHomeReset: () => {},
   setHeaderConfig: () => () => {},
 });
 
@@ -26,22 +25,13 @@ const HeaderStateContext = createContext<HeaderStateValue>({
   showFilter: false,
   onFilterClick: null,
   immersive: false,
-  homeResetKey: 0,
 });
 
 export function HeaderProvider({ children }: { children: ReactNode }) {
-  // 改用单槽存储:HomePage/DetailPage 等页面在同一时刻只有一个会注册 immersive。
-  // 旧实现使用 Map + 随机 id,每次注册都新建 Map,导致 Provider value 引用变化 → 所有 subscriber 重渲染。
-  // 单槽引用稳定,只在 mount/unmount 时变更。
   const [activeConfig, setActiveConfig] = useState<HeaderConfig | null>(null);
-  const [homeResetKey, setHomeResetKey] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const scrollContainerRef = useScrollContainer();
-
-  const triggerHomeReset = useCallback(() => {
-    setHomeResetKey((k) => k + 1);
-  }, []);
 
   const setHeaderConfig = useCallback((config: HeaderConfig) => {
     setActiveConfig(config);
@@ -53,37 +43,30 @@ export function HeaderProvider({ children }: { children: ReactNode }) {
   const goHome = useCallback(() => {
     const isOnHome = location.pathname === '/';
     if (!isOnHome) {
-      navigate('/');
-      // 跨页时 reset,让 React Router 重建 HomeRoute 实例,回到「带封面的首页」。
-      triggerHomeReset();
+      navigate('/', { viewTransition: true });
     }
-    // 已在 / 时,不再 reset(HomeRoute 也不再 remount),仅滚到顶部。
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  }, [location.pathname, navigate, triggerHomeReset, scrollContainerRef]);
+    }, 50);
+  }, [location.pathname, navigate, scrollContainerRef]);
 
-  // Actions value 永远稳定(成员均为 useCallback)
   const actionsValue = useMemo<HeaderActionsValue>(
-    () => ({ goHome, triggerHomeReset, setHeaderConfig }),
-    [goHome, triggerHomeReset, setHeaderConfig],
+    () => ({ goHome, setHeaderConfig }),
+    [goHome, setHeaderConfig],
   );
 
-  // State value 仅在展示态字段变化时变化
   const stateValue = useMemo<HeaderStateValue>(
     () => ({
       immersive: activeConfig?.immersive === true,
       centerContent: activeConfig?.content ?? null,
       showFilter: activeConfig?.showFilter ?? false,
       onFilterClick: activeConfig?.onFilterClick ?? null,
-      homeResetKey,
     }),
     [
       activeConfig?.immersive,
       activeConfig?.content,
       activeConfig?.showFilter,
       activeConfig?.onFilterClick,
-      homeResetKey,
     ],
   );
 
@@ -96,5 +79,4 @@ export function HeaderProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// 从独立文件 re-export 内部 Context（供 useHeaderContent 消费）
 export { HeaderActionsContext, HeaderStateContext };

@@ -68,6 +68,38 @@
   border-left-color: var(--glass-border);
 }
 
+/* ── 关闭动画 ───────────────────────────────────────── */
+.filter-panel-overlay--closing {
+  animation: filterOverlayOut 0.2s ease-in forwards;
+}
+
+.filter-panel--closing {
+  animation: filterPanelOut 0.2s ease-in forwards;
+}
+
+.filter-panel--bottom.filter-panel--closing {
+  animation-name: filterPanelOutBottom;
+}
+
+.filter-panel--side.filter-panel--closing {
+  animation-name: filterPanelOutSide;
+}
+
+@keyframes filterOverlayOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes filterPanelOutBottom {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+@keyframes filterPanelOutSide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
 [data-theme="dark"] .filter-panel--bottom,
 .filter-panel--bottom[data-theme="dark"] {
   background: var(--glass-bg-strong);

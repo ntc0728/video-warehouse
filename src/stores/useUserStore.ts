@@ -75,7 +75,7 @@ export const useUserStore = create<UserState>()(
           set((state) => ({
             history: state.history.map((h, i) =>
               i === existingIndex
-                ? { ...h, progress: record.progress, duration: record.duration, updatedAt: Date.now() }
+                ? { ...h, progress: record.progress, duration: record.duration, title: record.title || h.title, cover: record.cover || h.cover, updatedAt: Date.now() }
                 : h
             ),
           }));

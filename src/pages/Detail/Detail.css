@@ -10,16 +10,6 @@
   flex-direction: column;
   background: var(--color-background);
   color: var(--color-text);
-  animation: detailPageIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-@keyframes detailPageIn {
-  from {
-  opacity: 0;
-}
-  to   {
-  opacity: 1;
-}
 }
 
 /* ── Hero 区 ───────────────────────────────────── */
@@ -29,10 +19,30 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: var(--layout-episode-panel-w);
+  aspect-ratio: 16 / 9;
+  max-height: 70vh;
   margin-bottom: 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+.detail-hero--skeleton {
+  background: linear-gradient(135deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.detail-hero--skeleton .detail-hero-content {
+  visibility: hidden;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .detail-hero-bg {
@@ -41,7 +51,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 20%;
   animation: heroBgReveal 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   will-change: opacity, filter;
 }
@@ -355,12 +364,15 @@
 /* ── 桌面端右侧海报 ────────────────────────────── */
 
 .detail-hero-poster {
+  position: relative;
   display: none;
   flex-shrink: 0;
   align-self: flex-end;
-  width: var(--layout-popover-wide-min-w);
+  width: clamp(100px, 5rem + 1.5vw, 140px);
+  aspect-ratio: 2 / 3;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-lg);
+  background-color: var(--color-placeholder);
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   animation: heroPosterIn 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
@@ -421,17 +433,6 @@
   font-weight: 700;
 }
 
-/* Tab 切换时内容区淡入 */
-@keyframes tabContentIn {
-  from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-  to   {
-  opacity: 1;
-  transform: translateY(0);
-}
-}
 
 /* ── 内容卡片 ──────────────────────────────────── */
 
@@ -471,7 +472,6 @@
 .detail-seasons {
   padding: var(--space-md) var(--space-md);
   color: var(--color-text);
-  animation: tabContentIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .detail-section-title {
@@ -1017,10 +1017,6 @@
    ============================================================ */
 
 @media (width >= 1024px) {
-  .detail-hero {
-  min-height: var(--layout-hero-height);
-}
-
   .detail-hero-content {
   flex-direction: row;
   justify-content: space-between;
@@ -1035,7 +1031,7 @@
      "立即播放" / "加入收藏" 中文被压缩换行（按钮内文字未在同一行显示）。
      改为仅减右侧海报宽度，不再减 --space-lg，保证按钮内文字单行。 */
   min-width: 0;
-  max-width: calc(100% - var(--layout-popover-wide-min-w));
+  max-width: calc(100% - clamp(100px, 5rem + 1.5vw, 140px));
   /* 给一个很小的内边距，避免标题/按钮紧贴 hero 边缘 */
   padding: var(--space-2xs);
 }
@@ -1084,14 +1080,10 @@
 }
 
 /* ============================================================
-   Large Desktop (≥ 1440px)
+   Large Desktop (≥ 1920px)
    ============================================================ */
 
-@media (width >= 1440px) {
-  .detail-hero {
-  min-height: var(--layout-hero-height);
-}
-
+@media (width >= 1920px) {
   .detail-hero-content {
   padding: var(--space-2xl) var(--space-2xl);
 }
@@ -1104,7 +1096,7 @@
 }
 
   .detail-hero-poster {
-  width: var(--layout-source-url-max-w);
+  width: clamp(110px, 5.5rem + 1.5vw, 160px);
 }
 
   .detail-hero-desc {
@@ -1116,10 +1108,6 @@
 /* ============================================================
    TV 端
    ============================================================ */
-
-[data-device="tv"] .detail-hero {
-  min-height: var(--layout-hero-height);
-}
 
 [data-device="tv"] .detail-hero-title {
   font-size: var(--text-4xl);

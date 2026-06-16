@@ -51,11 +51,11 @@ export default function IPTVPlayerPage() {
       ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
       : channel.url;
     const encodedUrl = encodeURIComponent(playUrl);
-    navigate(`/iptv/play?url=${encodedUrl}`, { replace: true, state: { from: '/iptv' } });
+    navigate(`/iptv/play?url=${encodedUrl}`, { replace: true, state: { from: '/iptv' }, viewTransition: true });
   }, [navigate, settings]);
 
   if (!url) {
-    navigate('/iptv', { replace: true });
+    navigate('/iptv', { replace: true, viewTransition: true });
     return null;
   }
 
