@@ -396,27 +396,28 @@ export default function HistoryPage() {
     <div className={`history-page ${batchMode ? 'batch-mode' : ''}`}>
       <div className="history-header">
         <h1>观看历史 <span className="header-count">共 {activeTab === 'video' ? historyVideos.length : iptvHistory.length} 项</span></h1>
-        {activeTab === 'video' && (
-          <div className="status-tabs">
-            {(Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => {
-              const cfg = STATUS_CONFIG[key];
-              const Icon = cfg.icon;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`status-tab ${statusFilter === key ? 'status-tab--active' : ''}`}
-                  onClick={() => setStatusFilter(key)}
-                >
-                  <Icon size={14} style={{ color: statusFilter === key ? cfg.color : undefined }} />
-                  <span>{cfg.label}</span>
-                  <span className="status-tab__count">{statusCounts[key]}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      {activeTab === 'video' && (
+        <div className="status-tabs">
+          {(Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => {
+            const cfg = STATUS_CONFIG[key];
+            const Icon = cfg.icon;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`status-tab ${statusFilter === key ? 'status-tab--active' : ''}`}
+                onClick={() => setStatusFilter(key)}
+              >
+                <Icon size={14} style={{ color: statusFilter === key ? cfg.color : undefined }} />
+                <span>{cfg.label}</span>
+                <span className="status-tab__count">{statusCounts[key]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="history-toolbar">
         <div className="category-tabs category-tabs-mobile">

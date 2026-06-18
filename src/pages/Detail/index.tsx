@@ -217,7 +217,7 @@ export default function DetailPage() {
   const homepage = d?.homepage || '';
 
   // ── Loading ──────────────────────────────────
-  if (tmdbLoading) return <AppLoading fullScreen />;
+  if (tmdbLoading) return <AppLoading />;
 
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {

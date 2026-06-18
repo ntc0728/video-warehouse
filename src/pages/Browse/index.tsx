@@ -49,6 +49,7 @@ export default function BrowsePage() {
     filterValue,
     updateFilter,
     isRefreshing,
+    hadOldData,
     loadMore,
     retry,
     hasMore,
@@ -150,17 +151,14 @@ export default function BrowsePage() {
         />
       )}
 
-      {/* 已有数据:渲染 grid */}
-      {discoverResults.length > 0 && (
-        <BrowseGrid items={discoverResults} />
-      )}
-
-      {/* 切换筛选条件:半透蒙版 + AppLoading(只在已有数据上叠加,首次加载走骨架屏) */}
-      {isRefreshing && discoverResults.length > 0 && (
+      {/* 切换筛选条件:用 loading 替换 grid,新数据到达后再渲染 */}
+      {isRefreshing && hadOldData ? (
         <div className="browse-page__refreshing" aria-busy="true">
           <AppLoading tip="正在应用筛选条件…" />
         </div>
-      )}
+      ) : discoverResults.length > 0 ? (
+        <BrowseGrid items={discoverResults} />
+      ) : null}
 
       {/* 懒加载:哨兵 always 挂载 + LoadMore 文字态(与 IPTV 风格一致)
           哨兵不再被 discoverResults.length > 0 门控：

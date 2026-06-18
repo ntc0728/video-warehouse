@@ -31,8 +31,8 @@ export default function AppLayout() {
       const effective = getEffectiveTheme();
       document.documentElement.classList.add('theme-transitioning');
       document.documentElement.setAttribute('data-theme', effective);
-      // 缩短过渡锁定时长:与 0.25s CSS 过渡一致,避免长 setTimeout 阻塞主线程
-      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
+      // 移除 class 时长略大于 CSS 过渡时长(0.3s),确保过渡完成后再移除
+      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 400);
     };
     applyTheme();
     if (theme === 'system') {

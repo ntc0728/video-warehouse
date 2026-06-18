@@ -123,18 +123,12 @@
 /* ── Refreshing(切换筛选条件时的半透蒙版) ─────────── */
 
 .browse-page__refreshing {
-  position: relative;
-  z-index: 5;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);  /* 360px→640px */
-  margin: var(--space-md) var(--space-lg);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  backdrop-filter: blur(0.5rem);
+  width: 100%;
+  min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);
+  padding: var(--space-3xl) var(--space-md);
 }
 
 /* ── Error ────────────────────────────────────────── */

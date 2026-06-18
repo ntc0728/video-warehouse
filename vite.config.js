@@ -10,6 +10,10 @@ import path from 'path';
  *    → 浏览器可独立缓存 vendor chunk，主代码更新时 vendor 仍命中
  * 3. build.target = 'es2020'：触发 Vite 自动注入 <link rel="modulepreload">
  * 4. cssCodeSplit = true：CSS 按 chunk 拆分，避免单 CSS 文件过大
+ *
+ * Capacitor 适配：
+ * - CAPACITOR=true 时 base 设为 './'，确保 Android WebView 中本地资源路径正确
+ * - Web 端保持 base='/'，部署到 Cloudflare Pages / 任何静态服务器不受影响
  */
 export default defineConfig({
     plugins: [react()],
@@ -18,6 +22,8 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
     },
+    // Capacitor 原生打包使用相对路径，Web 部署使用绝对路径
+    base: process.env.CAPACITOR === 'true' ? './' : '/',
     server: {
         port: 3001,
         host: '127.0.0.1',
@@ -51,9 +57,18 @@ export default defineConfig({
                         id.includes('/scheduler/')) {
                         return 'react-vendor';
                     }
-                    // Radix UI 原子组件（7 个子包 + 共享）
-                    if (id.includes('/@radix-ui/')) {
-                        return 'radix-vendor';
+                    // Radix UI 按功能拆分：Dialog 最常用独立 chunk，其余表单组件合并
+                    if (id.includes('/@radix-ui/react-dialog')) {
+                        return 'radix-dialog';
+                    }
+                    if (id.includes('/@radix-ui/react-radio') ||
+                        id.includes('/@radix-ui/react-slider') ||
+                        id.includes('/@radix-ui/react-switch') ||
+                        id.includes('/@radix-ui/react-progress')) {
+                        return 'radix-form';
+                    }
+                    if (id.includes('/@radix-ui/react-tabs')) {
+                        return 'radix-tabs';
                     }
                     // 状态管理
                     // 注意：必须把 barrel file @/stores/index.ts 也归入 state-vendor，

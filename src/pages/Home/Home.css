@@ -17,7 +17,7 @@
 /* ── Rows container ──────────────────────────────────── */
 
 .home-rows {
-  padding: var(--space-md) 0 var(--space-lg);
+  padding-top: var(--space-md);
 }
 
 /* ── Empty / Error ──────────────────────────────────── */

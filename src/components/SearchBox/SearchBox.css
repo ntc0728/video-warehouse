@@ -23,7 +23,7 @@
 
 .search-box-wrap--header {
   /* 流体宽度：视口越窄搜索框越小 */
-  max-width: clamp(280px, 65vw, 700px);
+  max-width: var(--layout-searchbox-max-w);
 }
 
 /* 移动端：占据剩余空间 */

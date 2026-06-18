@@ -72,6 +72,12 @@
   padding-left: var(--space-sm);
 }
 
+.history-page > .status-tabs {
+  padding-top: var(--space-sm);
+  padding-right: var(--space-lg);
+  padding-left: var(--space-sm);
+}
+
 .category-tabs {
   display: flex;
   gap: var(--space-xs);
@@ -231,13 +237,10 @@
 }
 
 /* 历史页内的 IPTV 频道网格:始终撑满父容器,避免分组下卡片独占一行 */
-.history-content .iptv-channel-grid {
-  width: 100%;
-}
-
 /* 历史页 IPTV 列数:3 (≤767px) → 4 (768-1023px) → 5 (≥1024px) → 6 (≥1920px) */
 .history-content .iptv-channel-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
 }
 
 @media (width <= 767px) {
@@ -427,19 +430,16 @@
   .history-page > .history-header,
   .history-page > .history-toolbar,
   .history-page > .history-group > .history-group-title {
-    padding-right: var(--space-md);
+    padding-right: var(--space-sm);
     padding-left: var(--space-sm);
   }
-  .status-tabs {
-    flex-wrap: wrap;
+  .history-page > .status-tabs {
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
   }
   .history-header {
     flex-wrap: wrap;
     gap: var(--space-xs);
-  }
-  .status-tabs {
-    flex-basis: 100%;
-    justify-content: flex-start;
   }
   .status-tab {
     padding: var(--space-xs) var(--space-sm);

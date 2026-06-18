@@ -364,8 +364,8 @@
 
 .up-popover {
   position: absolute;
-  left: 50%;
   bottom: 100%;
+  left: 50%;
   z-index: 30;
   min-width: var(--layout-channel-num-w);
   margin-bottom: var(--space-sm);
@@ -398,7 +398,7 @@
 
 .up-popover-item-active {
   position: relative;
-  padding-left: calc(var(--space-md) + 3px);
+  padding-left: calc(var(--space-md) + var(--layout-spinner-border));
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   font-weight: 600;
@@ -409,7 +409,7 @@
   position: absolute;
   top: 20%;
   left: 0;
-  width: 3px;
+  width: var(--layout-spinner-border);
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
   background: var(--color-primary);

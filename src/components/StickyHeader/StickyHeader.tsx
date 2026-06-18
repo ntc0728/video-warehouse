@@ -5,7 +5,6 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { navTo } from '@/lib/navigation';
 import { Home, Tv, Star, Clock, Settings, Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV } from '@/hooks/useMediaQuery';
@@ -48,9 +47,9 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
     if (path === '/') {
       goHome();
     } else {
-      navTo(navigate, path, location.pathname + location.search);
+      navigate(path);
     }
-  }, [navigate, location.pathname, location.search, goHome]);
+  }, [navigate, goHome]);
 
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
@@ -114,13 +113,12 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
-          <button className="sticky-header__logo-group" onClick={goHome} aria-label="影视大全 KinoTV — 返回首页">
+          <button className="sticky-header__logo-group" onClick={goHome} aria-label="kinoTv — 返回首页">
             <div className="sticky-header__logo-wrap">
-              <img className="sticky-header__logo" src={KinoTVLogo} alt="KinoTV" draggable={false} />
+              <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
             </div>
             <div className="sticky-header__brand">
-              <span className="sticky-header__brand-name">影视大全</span>
-              <span className="sticky-header__brand-sub">KinoTV</span>
+              <span className="sticky-header__brand-name">kinoTv</span>
             </div>
           </button>
           <nav className="sticky-header__nav" aria-label="主要导航">
@@ -138,7 +136,7 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
           </nav>
           <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
-            <ThemeIcon size={18} />
+            <ThemeIcon size={24} />
           </button>
         </div>
       </div>

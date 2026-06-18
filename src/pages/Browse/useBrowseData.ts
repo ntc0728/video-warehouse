@@ -74,6 +74,8 @@ export function useBrowseData() {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // 记录切换筛选条件前是否有旧数据（用于 loading 遮罩显示判断）
+  const hadOldDataRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -130,7 +132,10 @@ export function useBrowseData() {
     if (filterSig === lastSigRef.current) return;
     lastSigRef.current = filterSig;
 
+    // 记录切换前是否有旧数据（loading 遮罩需要知道）
+    hadOldDataRef.current = discoverResults.length > 0;
     setIsUpdating(true);
+    setIsRefreshing(true);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
     debounceTimerRef.current = setTimeout(async () => {
@@ -140,7 +145,6 @@ export function useBrowseData() {
       // 先同步 store 的 filterOptions，再发起第一页请求
       setFilter(toStoreFilter(filterValue));
 
-      setIsRefreshing(true);
       try {
         if (filterValue.category === 'top') {
           // 排行榜：topUserFilterRef 已在 useBrowseData 内合并为 filterSig 变化即可重置
@@ -150,7 +154,12 @@ export function useBrowseData() {
         }
       } finally {
         if (isMountedRef.current) {
-          setIsRefreshing(false);
+          // 等待新内容渲染完成后再隐藏 loading（至少 150ms 避免闪烁）
+          await new Promise<void>((r) => setTimeout(r, 150));
+          if (isMountedRef.current) {
+            setIsRefreshing(false);
+            hadOldDataRef.current = false;
+          }
         }
       }
     }, FILTER_DEBOUNCE_MS);
@@ -220,6 +229,7 @@ export function useBrowseData() {
     updateFilter,
     isUpdating,
     isRefreshing,
+    hadOldData: hadOldDataRef.current,
     loadMore,
     retry,
     hasMore,

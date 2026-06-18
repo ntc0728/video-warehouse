@@ -233,7 +233,9 @@
 
 /* TMDB Logo */
 .detail-hero-logo {
-  max-width: var(--layout-channel-list-w-md);
+  align-self: flex-start;
+  width: auto;
+  max-width: min(55%, var(--layout-channel-list-w-md));
   max-height: var(--header-height);
   margin-bottom: var(--space-sm);
   object-fit: contain;
@@ -242,6 +244,7 @@
 
 /* 标题（无 logo 时的回落） */
 .detail-hero-title {
+  max-width: min(85%, var(--layout-modal-max-width));
   margin: 0 0 var(--space-sm);
   color: #fff;
   font-size: var(--text-2xl);
@@ -368,7 +371,7 @@
   display: none;
   flex-shrink: 0;
   align-self: flex-end;
-  width: clamp(100px, 5rem + 1.5vw, 140px);
+  width: var(--layout-detail-poster-w);
   aspect-ratio: 2 / 3;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-lg);
@@ -951,7 +954,7 @@
 }
 
   .detail-hero-logo {
-  max-width: var(--layout-popover-wide-min-w);
+  max-width: min(65%, var(--layout-popover-wide-min-w));
   max-height: var(--layout-tabbar-height);
 }
   .detail-hero-title {
@@ -1031,13 +1034,13 @@
      "立即播放" / "加入收藏" 中文被压缩换行（按钮内文字未在同一行显示）。
      改为仅减右侧海报宽度，不再减 --space-lg，保证按钮内文字单行。 */
   min-width: 0;
-  max-width: calc(100% - clamp(100px, 5rem + 1.5vw, 140px));
+  max-width: calc(100% - var(--layout-detail-poster-w));
   /* 给一个很小的内边距，避免标题/按钮紧贴 hero 边缘 */
   padding: var(--space-2xs);
 }
 
   .detail-hero-logo {
-  max-width: var(--layout-episode-panel-w);
+  max-width: min(50%, var(--layout-episode-panel-w));
   max-height: var(--layout-tabbar-height);
 }
 
@@ -1080,39 +1083,24 @@
 }
 
 /* ============================================================
-   Large Desktop (≥ 1920px)
-   ============================================================ */
-
-@media (width >= 1920px) {
-  .detail-hero-content {
-  padding: var(--space-2xl) var(--space-2xl);
-}
-
-  .detail-hero-logo {
-  /* 修复：var(--layout-hero-height) 语义为高度（200-500px），
-     误用作 max-width 会让 logo 渲染过窄。升级到 --layout-episode-panel-w-alt（440px）。 */
-  max-width: var(--layout-episode-panel-w-alt);
-  max-height: var(--layout-channel-num-w);
-}
-
-  .detail-hero-poster {
-  width: clamp(110px, 5.5rem + 1.5vw, 160px);
-}
-
-  .detail-hero-desc {
-  -webkit-line-clamp: 4;
-  font-size: var(--text-base);
-}
-}
-
-/* ============================================================
    TV 端
    ============================================================ */
 
+[data-device="tv"] .detail-hero-content {
+  padding: var(--space-2xl) var(--space-2xl);
+}
+[data-device="tv"] .detail-hero-logo {
+  max-width: min(45%, var(--layout-episode-panel-w-alt));
+  max-height: var(--layout-channel-num-w);
+}
+[data-device="tv"] .detail-hero-poster {
+  width: var(--layout-detail-poster-w-tv);
+}
 [data-device="tv"] .detail-hero-title {
   font-size: var(--text-4xl);
 }
 [data-device="tv"] .detail-hero-desc {
+  -webkit-line-clamp: 4;
   font-size: var(--text-lg);
 }
 

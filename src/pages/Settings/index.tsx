@@ -209,7 +209,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="settings-page w-full space-y-4 pt-4 pb-8 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:pt-6 lg:pb-12">
+    <div className="settings-page w-full space-y-4 pt-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:pt-6">
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="外观">
           <List.Item

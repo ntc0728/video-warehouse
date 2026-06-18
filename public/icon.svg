@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <!-- 蓝色背景 -->
+  <rect width="1024" height="1024" rx="200" fill="#1890ff"/>
+  
+  <!-- 播放按钮三角形 -->
+  <path d="M380 280L720 512L380 744V280Z" fill="white"/>
+  
+  <!-- 装饰条纹 -->
+  <rect x="200" y="180" width="80" height="664" rx="40" fill="white" opacity="0.3"/>
+  <rect x="744" y="180" width="80" height="664" rx="40" fill="white" opacity="0.3"/>
+</svg>

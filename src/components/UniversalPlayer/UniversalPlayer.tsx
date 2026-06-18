@@ -728,18 +728,25 @@ export default function UniversalPlayer({
     // 清除上一次计时器
     clearTimeout(iptvTimeoutRef.current);
 
-    // 启动新计时器：5 秒后若未播放，强制显示错误
+    // 启动新计时器：15 秒后若未播放，强制显示错误
     iptvTimeoutRef.current = setTimeout(() => {
       // 通过 store 读取最新状态，避免闭包过期
       const state = usePlayerStore.getState();
       if (!state.isPlaying) {
         setHasError(true);
       }
-    }, 5000);
+    }, 15000);
 
     return () => clearTimeout(iptvTimeoutRef.current);
   }, [mode, currentUrl]);
   // 仅依赖 mode 和 currentUrl，URL 不变时计时器不重置
+
+  /** 错误恢复清除：播放成功恢复时自动清除错误状态 */
+  useEffect(() => {
+    if (isPlaying && hasError) {
+      setHasError(false);
+    }
+  }, [isPlaying, hasError]);
 
   const volume = usePlayerStore(s => s.volume);
 

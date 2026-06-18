@@ -61,6 +61,22 @@ html {
   appearance: none !important;
 }
 
+/* ── 移动端隐藏所有滚动条 ─────────────────────────────── */
+@media (width <= 767px) {
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  *::-webkit-scrollbar,
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-corner {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+}
+
 /* ── 例外：横滚容器永久隐藏滚动条（按需求 1） ─────────────── */
 .tmdb-movierow-scroll,
 .daily-picks-scroll,
@@ -92,28 +108,15 @@ body {
   touch-action: manipulation;
 }
 
-html.theme-transitioning,
-html.theme-transitioning body,
-html.theme-transitioning header,
-html.theme-transitioning footer,
-html.theme-transitioning main,
-html.theme-transitioning nav,
-html.theme-transitioning aside,
-html.theme-transitioning section,
-html.theme-transitioning article,
-html.theme-transitioning .card,
-html.theme-transitioning .btn,
-html.theme-transitioning button,
-html.theme-transitioning input,
-html.theme-transitioning select,
-html.theme-transitioning textarea,
-html.theme-transitioning [class*="-card"],
-html.theme-transitioning [class*="-btn"],
-html.theme-transitioning [class*="-nav"],
-html.theme-transitioning [class*="-header"],
-html.theme-transitioning [class*="-footer"],
-html.theme-transitioning [class*="-bar"] {
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* ── 全局按钮点击反馈 ────────────────────────────────
@@ -130,8 +133,10 @@ a[role="button"]:active:not(:disabled),
 .filter-bar__chip:active,
 .group-tag:active,
 .detail-btn:active,
-.modal-close:active {
+.modal-close:active,
+.mobile-tab-bar button:active {
   transform: none;
+  box-shadow: none;
 }
 
 .empty-state-wrapper {
