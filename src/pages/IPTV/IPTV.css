@@ -36,9 +36,9 @@
 .iptv-header-meta {
   display: flex;
   flex-wrap: wrap;
+  flex-shrink: 0;
   gap: var(--space-sm);
   align-items: center;
-  flex-shrink: 0;
 }
 
 .last-refresh {
@@ -122,8 +122,8 @@
 
 .iptv-toolbar {
   display: flex;
-  flex-shrink: 0;
   flex-wrap: wrap;
+  flex-shrink: 0;
   gap: var(--space-sm);
   padding: var(--space-sm) 0;
 }
@@ -202,8 +202,8 @@
 
 .availability-stats .stat {
   display: inline-flex;
-  align-items: center;
   gap: var(--space-2xs);
+  align-items: center;
   font-size: var(--text-sm);
   font-weight: 500;
 }
@@ -329,7 +329,6 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding-bottom: calc(var(--space-2xl) + var(--space-md));
 }
 
 @media (width <= 767px) {

@@ -17,6 +17,9 @@ vite.config.d.ts
 # Cloudflare Worker
 .wrangler
 
+# Capacitor / Android
+android/
+
 # 代码图谱
 .codegraph
 
@@ -48,7 +51,11 @@ data/iptv.m3u
 docs/
 
 # 脚本（开发辅助脚本不入版本控制）
-scripts/
+# 注意：构建脚本（build-*.ps1/bat）需要保留，不在此忽略
+scripts/*.sh
+scripts/*.py
+scripts/*.js
+scripts/*.ts
 
 # 旧规则文件
 CLAUDE.md

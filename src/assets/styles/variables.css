@@ -54,8 +54,13 @@
   --color-skeleton-shine: #f5f5f5;
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-focus: 0 0 0 3px var(--color-primary);
 
   /* ── Typography (375→1920px 固定, 1920→3840px TV端放大) ────────────── */
   --text-xs:   12px;
@@ -92,7 +97,7 @@
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
   --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 */
   --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 */
-  --comp-input-height:   clamp(34px, 1.915rem + 0.522vw, 52px);  /* 34→52 */
+  --comp-input-height:   clamp(40px, 2.284rem + 0.522vw, 58px);  /* 40→58 */
   --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 */
   --comp-thumb-size:     clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
   --switch-track-height: clamp(18px, 1.081rem + 0.174vw, 24px);  /* 18→24 */
@@ -173,6 +178,10 @@
   --layout-outline-width:      2px;
   --layout-tabbar-height:      56px;
   --layout-datepicker-width:   340px;
+  --layout-collapse-max-h:     1000px;
+  --layout-detail-poster-w:    clamp(6.25rem, 5rem + 1.5vw, 8.75rem);
+  --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem);
+  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 43.75rem);
 
   /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
   --card-cols: 3;   /* 默认：移动端 (< 768)             */
@@ -201,28 +210,8 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
-    TV / Large Screen — typography & icon scale-up (1920px → 3840px)
-   ═══════════════════════════════════════════════════════════════════════════ */
-@media (width >= 1920px) {
-  :root {
-    --text-xs:   clamp(12px, 0.375rem + 0.417vw, 22px);   /* 12→22 */
-    --text-sm:   clamp(13px, 0.325rem + 0.542vw, 26px);   /* 13→26 */
-    --text-base: clamp(14px, 0.275rem + 0.667vw, 30px);   /* 14→30 */
-    --text-lg:   clamp(16px, 0.250rem + 0.833vw, 36px);   /* 16→36 */
-    --text-xl:   clamp(18px, 0.300rem + 0.917vw, 40px);   /* 18→40 */
-    --text-2xl:  clamp(24px, 0.525rem + 1.083vw, 50px);   /* 24→50 */
-    --text-3xl:  clamp(30px, 0.750rem + 1.250vw, 60px);   /* 30→60 */
-    --icon-sm:   clamp(16px, 0.100rem + 1.000vw, 40px);   /* 16→40 */
-    --icon-md:   clamp(20px, 0.200rem + 1.167vw, 48px);   /* 20→48 */
-    --icon-lg:   clamp(24px, 0.150rem + 1.500vw, 60px);   /* 24→60 */
-    --icon-xl:   clamp(28px, 0.100rem + 1.833vw, 72px);   /* 28→72 */
-    --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
-    --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
-    --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  激活胶囊高 */
-    --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
-  }
-}
+/* Typography & icon tokens use fixed values in :root (see above).
+   TV-only scale-up is handled by [data-device="tv"] at the bottom of this file. */
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -305,8 +294,13 @@
   --color-warning: #d89614;
   --color-skeleton: #2a2a2a;
   --color-skeleton-shine: #3a3a3a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-focus: 0 0 0 3px var(--color-primary);
 
   /* Glass Effect (暗色 — 透明度更弱以覆盖深色页面) */
   --glass-bg-strong:   color-mix(in srgb, var(--color-background) 55%, transparent);
@@ -325,6 +319,24 @@
    TV — discrete overrides (minimum touch targets, focus ring, safe area)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-device="tv"] {
+  /* ── Typography & icon scale-up (1920px → 3840px viewport) ──────────── */
+  --text-xs:   clamp(12px, 0.375rem + 0.417vw, 22px);   /* 12→22 */
+  --text-sm:   clamp(13px, 0.325rem + 0.542vw, 26px);   /* 13→26 */
+  --text-base: clamp(14px, 0.275rem + 0.667vw, 30px);   /* 14→30 */
+  --text-lg:   clamp(16px, 0.250rem + 0.833vw, 36px);   /* 16→36 */
+  --text-xl:   clamp(18px, 0.300rem + 0.917vw, 40px);   /* 18→40 */
+  --text-2xl:  clamp(24px, 0.525rem + 1.083vw, 50px);   /* 24→50 */
+  --text-3xl:  clamp(30px, 0.750rem + 1.250vw, 60px);   /* 30→60 */
+  --icon-sm:   clamp(16px, 0.100rem + 1.000vw, 40px);   /* 16→40 */
+  --icon-md:   clamp(20px, 0.200rem + 1.167vw, 48px);   /* 20→48 */
+  --icon-lg:   clamp(24px, 0.150rem + 1.500vw, 60px);   /* 24→60 */
+  --icon-xl:   clamp(28px, 0.100rem + 1.833vw, 72px);   /* 28→72 */
+  --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
+  --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
+  --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
+  --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
   --safe-area-x: 3vw;
   --safe-area-y: 2vh;
 

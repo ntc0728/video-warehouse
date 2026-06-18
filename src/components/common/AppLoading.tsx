@@ -46,8 +46,7 @@ export default function AppLoading({
       aria-label={tip || '加载中'}
     >
       <div className="app-loading__brand">
-        <h1 className="app-loading__brand-name">影视大全</h1>
-        <h2 className="app-loading__brand-sub">KinoTV</h2>
+        <h1 className="app-loading__brand-name">kinoTv</h1>
       </div>
 
       <div className="app-loading__progress" aria-hidden="true">

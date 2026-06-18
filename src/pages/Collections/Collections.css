@@ -69,6 +69,12 @@
   padding-left: var(--space-sm);
 }
 
+.collection-page > .status-tabs {
+  padding-top: var(--space-sm);
+  padding-right: var(--space-lg);
+  padding-left: var(--space-sm);
+}
+
 .category-tabs {
   display: flex;
   gap: var(--space-xs);
@@ -302,16 +308,14 @@
 @media (width <= 767px) {
   .collection-page > .collection-header,
   .collection-page > .collection-toolbar {
-    padding-right: var(--space-md);
+    padding-right: var(--space-sm);
+  }
+  .collection-page > .status-tabs {
+    padding-right: var(--space-sm);
   }
   .collection-header {
     flex-wrap: wrap;
     gap: var(--space-xs);
-  }
-  .status-tabs {
-    flex-basis: 100%;
-    justify-content: flex-start;
-    padding-left: 0 !important;
   }
   .status-tab {
     padding: var(--space-xs) var(--space-sm);

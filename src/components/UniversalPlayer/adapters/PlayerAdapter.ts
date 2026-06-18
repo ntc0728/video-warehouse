@@ -25,6 +25,7 @@ export interface IPlayerAdapter {
   getAudioTracks(): AudioTrack[];
   setCurrentAudioTrack(trackId: number): void;
   getCurrentAudioTrack(): number;
+  resetErrorCount(): void;
   destroy(): void;
 }
 
@@ -92,4 +93,6 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
   getCurrentAudioTrack(): number {
     return -1;
   }
+
+  resetErrorCount(): void {}
 }

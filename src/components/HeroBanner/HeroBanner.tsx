@@ -74,6 +74,10 @@ function preloadImage(url: string | null | undefined): void {
   if (!url) return;
   const img = new Image();
   img.src = url;
+  // 预解码：fetch 后立即 decode，切换时浏览器直接渲染，消除解码间隙
+  if (typeof img.decode === 'function') {
+    img.decode().catch(() => {});
+  }
 }
 
 /** 预加载的最大 item 数量（前 N 个，避免一次发太多请求） */
@@ -87,6 +91,13 @@ export default function HeroBanner({
 
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [slideDir, setSlideDir] = useState<'next' | 'prev'>('next');
+  const [crossfade, setCrossfade] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const oldImgUrlRef = useRef('');
+  const debounceRef = useRef(false);
+  const crossfadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const isFirstLoadRef = useRef(true);
   const pointerType = usePointerType();
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -164,29 +175,70 @@ export default function HeroBanner({
 
   const effectiveInterval = prefersReducedMotion ? 0 : autoPlayInterval;
 
-  // ── 自动轮播 ─────────────────────────────────
+  const SLIDE_MS = 600;
+
+  // ── 切换：防抖 + 双图层 crossfade ────────
+  const switchSlide = useCallback((dir: 'next' | 'prev') => {
+    if (debounceRef.current || crossfade) return;
+    debounceRef.current = true;
+
+    const item = items[current];
+    const path = item?.backdropPath || item?.backdrop_path || '';
+    oldImgUrlRef.current = path ? buildImageUrl(path, 'w1920') || '' : '';
+
+    setSlideDir(dir);
+    setCurrent((p) => (p + (dir === 'next' ? 1 : -1) + items.length) % items.length);
+    setCrossfade(true);
+  }, [current, items.length, crossfade]);
+
+  // ── 延迟触发过渡：先渲染初始位置，再应用 transition ──
   useEffect(() => {
-    if (!effectiveInterval || items.length <= 1 || isHovered) return;
+    if (!crossfade) {
+      setIsTransitioning(false);
+      return;
+    }
+    // 用 rAF 确保浏览器先绘制初始位置（新图在屏幕外），再触发过渡
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsTransitioning(true);
+      });
+    });
+    return () => cancelAnimationFrame(t);
+  }, [crossfade]);
+
+  // ── 400ms 后清理旧图 + 解除防抖 ──
+  useEffect(() => {
+    if (!crossfade) return;
+    crossfadeTimerRef.current = setTimeout(() => {
+      crossfadeTimerRef.current = undefined;
+      oldImgUrlRef.current = '';
+      debounceRef.current = false;
+      isFirstLoadRef.current = false;
+      setCrossfade(false);
+    }, SLIDE_MS);
+    return () => {
+      if (crossfadeTimerRef.current) { clearTimeout(crossfadeTimerRef.current); crossfadeTimerRef.current = undefined; }
+    };
+  }, [crossfade]);
+
+  // ── 自动轮播：crossfade 期间跳过，结束后继续 ──
+  useEffect(() => {
+    if (!effectiveInterval || items.length <= 1 || isHovered || crossfade) return;
     const timer = setInterval(() => {
-      setCurrent((p) => (p + 1) % items.length);
+      switchSlide('next');
     }, effectiveInterval);
     return () => clearInterval(timer);
-  }, [effectiveInterval, items.length, isHovered]);
+  }, [effectiveInterval, items.length, isHovered, crossfade, switchSlide]);
 
   const handlePrev = useCallback(() => {
-    // 取消 in-flight 的剧照请求：避免旧 current 响应覆盖新 current
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setCurrent((p) => (p - 1 + items.length) % items.length);
-  }, [items.length]);
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    switchSlide('prev');
+  }, [switchSlide]);
 
   const handleNext = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setCurrent((p) => (p + 1) % items.length);
-  }, [items.length]);
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    switchSlide('next');
+  }, [switchSlide]);
 
   // ── 加载剧照（用 ref 转发以解决"startHoverTimer 引用在前"的问题） ───
   // loadStills 函数体定义在文件下方；通过 loadStillsRef 让 startHoverTimer / useEffect 调用
@@ -649,13 +701,26 @@ export default function HeroBanner({
       onPointerCancel={handlePointerUpOrCancel}
       style={{ cursor: onItemClick ? 'pointer' : undefined }}
     >
-      {/* Background */}
+      {/* Background — dual-layer slide crossfade */}
       <div className="hero-banner__bg-wrapper">
+        {oldImgUrlRef.current && (
+          <img
+            className={`hero-banner__bg hero-banner__bg--old${isTransitioning ? (slideDir === 'next' ? ' hero-banner__bg--slide-out-left' : ' hero-banner__bg--slide-out-right') : ''}`}
+            src={oldImgUrlRef.current}
+            sizes="100vw"
+            alt=""
+            aria-hidden="true"
+          />
+        )}
         {backdropUrl && (
           <img
             className={`hero-banner__bg ${
-              isHovered && !hasStills ? 'hero-banner__bg--kenburns' : ''
-            }`}
+              crossfade
+                ? `hero-banner__bg--new${isTransitioning ? (slideDir === 'next' ? ' hero-banner__bg--slide-right' : ' hero-banner__bg--slide-left') : ''}`
+                : isFirstLoadRef.current
+                  ? 'hero-banner__bg--fade-in'
+                  : ''
+            }${isHovered && !hasStills ? ' hero-banner__bg--kenburns' : ''}`}
             src={backdropUrl}
             srcSet={backdropSrcSet || undefined}
             sizes="100vw"

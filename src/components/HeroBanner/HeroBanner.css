@@ -32,17 +32,113 @@
 }
 
 .hero-banner__bg {
+  position: absolute;
+  top: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  animation: heroBgFadeIn 0.4s ease;
   transform-origin: center center;
+}
+
+/* 首次加载淡入 */
+.hero-banner__bg--fade-in {
+  animation: heroBgFadeIn 0.4s ease;
 }
 
 @keyframes heroBgFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* ── Slide: 旧图+新图连接同步滑动 ─────────────── */
+.hero-banner__bg--new {
+  z-index: 2;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+.hero-banner__bg--new.hero-banner__bg--slide-right {
+  animation: heroSlideInFromRight 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.hero-banner__bg--new.hero-banner__bg--slide-left {
+  animation: heroSlideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes heroSlideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes heroSlideInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* kenburns 不干扰 slide */
+.hero-banner__bg--new.hero-banner__bg--kenburns {
+  animation: none !important;
+}
+
+/* ── Slide: 旧图同步滑出 ── */
+.hero-banner__bg--old {
+  z-index: 1;
+  will-change: transform;
+}
+
+.hero-banner__bg--old.hero-banner__bg--slide-out-left {
+  animation: heroSlideOutLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.hero-banner__bg--old.hero-banner__bg--slide-out-right {
+  animation: heroSlideOutRight 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes heroSlideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes heroSlideOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 
 /* 无剧照时：背景图持续缩放动画（kenburns 效果） */
@@ -248,12 +344,12 @@
   align-items: center;
   width: var(--comp-btn-min-width);
   height: var(--comp-btn-min-width);
+  margin-top: calc(var(--comp-btn-min-width) / -2);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.4);
   color: #fff;
   opacity: 0;
-  transform: translateY(-50%);
   transition: opacity 0.2s ease, background 0.2s ease;
   backdrop-filter: blur(4px);
   cursor: pointer;

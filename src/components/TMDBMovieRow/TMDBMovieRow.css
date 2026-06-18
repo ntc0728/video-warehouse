@@ -32,12 +32,10 @@
   }
 }
 
-/* TV / Large */
-@media (width >= 1920px) {
-  .tmdb-movierow-title {
-    font-size: calc(var(--text-xl) + var(--space-2xs));
-    border-left-width: 6px;
-  }
+/* TV only — title enlarged for 3m viewing distance */
+[data-device="tv"] .tmdb-movierow-title {
+  font-size: calc(var(--text-xl) + var(--space-2xs));
+  border-left-width: 6px;
 }
 
 .tmdb-movierow-error {
@@ -194,10 +192,6 @@
 /* ============================================================
    TV 端 — 焦点可见 + 更大触控区 + 无 hover 箭头
    ============================================================ */
-
-[data-device="tv"] .tmdb-movierow-title {
-  font-size: var(--text-xl);
-}
 
 [data-device="tv"] .tmdb-movierow-arrow {
   display: none !important;

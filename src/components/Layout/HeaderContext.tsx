@@ -10,7 +10,7 @@
  * 兼容层 `useHeaderContent(config?)` 保留在独立文件 useHeaderContent.ts
  * （满足 react-refresh/only-export-components 约束）。
  */
-import { createContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useState, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HeaderConfig, HeaderActionsValue, HeaderStateValue } from './types';
@@ -40,12 +40,15 @@ export function HeaderProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const homeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const goHome = useCallback(() => {
     const isOnHome = location.pathname === '/';
     if (!isOnHome) {
-      navigate('/', { viewTransition: true });
+      navigate('/');
     }
-    setTimeout(() => {
+    if (homeTimerRef.current) clearTimeout(homeTimerRef.current);
+    homeTimerRef.current = setTimeout(() => {
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }, [location.pathname, navigate, scrollContainerRef]);

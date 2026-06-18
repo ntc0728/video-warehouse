@@ -23,6 +23,8 @@ export class HLSAdapter extends BasePlayerAdapter {
   private currentAudioTrack: number = -1;
   private startLevel: number;
   private onError?: (error: Error) => void;
+  private errorCount: number = 0;
+  private lastErrorTime: number = 0;
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -84,6 +86,14 @@ export class HLSAdapter extends BasePlayerAdapter {
 
       this.hls.on(HlsJs.Events.ERROR, (_event, data) => {
         if (data.fatal) {
+          const now = Date.now();
+          // 重置计数器：超过 5 秒无错误则重新计数
+          if (now - this.lastErrorTime > 5000) {
+            this.errorCount = 0;
+          }
+          this.lastErrorTime = now;
+          this.errorCount++;
+
           switch (data.type) {
             case HlsJs.ErrorTypes.NETWORK_ERROR:
               // 清单级错误（URL 失效/404）重试无意义，直接报错
@@ -91,12 +101,21 @@ export class HLSAdapter extends BasePlayerAdapter {
                 this.onError?.(new Error('频道源不可用'));
               } else {
                 this.hls?.startLoad();
+                // 连续网络错误超过 3 次才上报
+                if (this.errorCount >= 3) {
+                  this.onError?.(new Error('网络连接失败'));
+                }
               }
               break;
             case HlsJs.ErrorTypes.MEDIA_ERROR:
               this.hls?.recoverMediaError();
+              // 连续媒体错误超过 2 次才上报
+              if (this.errorCount >= 2) {
+                this.onError?.(new Error('媒体解码失败'));
+              }
               break;
             default:
+              // 默认错误直接上报
               this.onError?.(new Error(`HLS error: ${data.details}`));
               break;
           }
@@ -162,6 +181,10 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   getCurrentAudioTrack(): number {
     return this.currentAudioTrack;
+  }
+
+  resetErrorCount(): void {
+    this.errorCount = 0;
   }
 
   destroy(): void {

@@ -241,24 +241,23 @@
 
 .iptv-osd-control-btn {
   display: flex;
-  flex-direction: row;
   gap: var(--space-3xs);
   justify-content: center;
   align-items: center;
-  padding: 2px var(--space-3xs);
+  padding: var(--space-3xs) var(--space-3xs);
   border: none;
   background: transparent;
   color: #aaa;
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--text-xs);
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .iptv-osd-control-btn svg {
   flex-shrink: 0;
-  width: 10px;
-  height: 10px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   fill: currentColor;
 }
 

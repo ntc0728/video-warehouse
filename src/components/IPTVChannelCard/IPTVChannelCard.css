@@ -151,8 +151,8 @@
 /* ---- Source badge ---- */
 .iptv-card-source {
   position: absolute;
-  left: var(--space-2xs);
   bottom: var(--space-2xs);
+  left: var(--space-2xs);
   z-index: 2;
   max-width: 60%;
   padding: 0 var(--space-xs);
@@ -270,8 +270,8 @@
   }
 
   .iptv-card-source {
-    left: var(--space-xs);
     bottom: var(--space-xs);
+    left: var(--space-xs);
     padding: 0 var(--space-xs);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
@@ -323,8 +323,8 @@
   }
 
   .iptv-card-source {
-    left: var(--space-xs);
     bottom: var(--space-xs);
+    left: var(--space-xs);
     max-width: 50%;
     padding: var(--space-3xs) var(--space-xs);
     border-radius: var(--radius-sm);
@@ -382,8 +382,8 @@
 }
 
 [data-device="tv"] .iptv-card-source {
-  left: var(--space-sm);
   bottom: var(--space-sm);
+  left: var(--space-sm);
   padding: var(--space-2xs) var(--space-sm);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);

@@ -1,29 +1,43 @@
 // 路由配置文件，定义应用所有页面路由和布局结构
 // 优化：所有页面级组件使用 React.lazy 按需加载，减小首屏主 bundle
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, createHashRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import App from './App';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { AppLoading } from './components/common';
+import { isNativePlatform } from '@/lib/platform';
 
-// 路由懒加载时的全局 Loading 组件
+// 路由懒加载时的 Loading 组件（inline 模式，不遮挡底部 TabBar）
 function LoadingFallback() {
-  return <AppLoading fullScreen />;
+  return <AppLoading />;
 }
 
 // ===== 路由级代码分割：每个页面独立 chunk =====
 // 切换页面时只下载目标页面 chunk + 首次访问的依赖
 
-const HomeRoute = lazy(() => import('./pages/Home/HomeRoute'));
-const DetailPage = lazy(() => import('./pages/Detail'));
-const PlayerPage = lazy(() => import('./pages/Player'));
-const SettingsPage = lazy(() => import('./pages/Settings'));
-const CollectionsPage = lazy(() => import('./pages/Collections'));
-const HistoryPage = lazy(() => import('./pages/History'));
-const IPTVPage = lazy(() => import('./pages/IPTV'));
-const IPTVPlayerPage = lazy(() => import('./pages/IPTV/IPTVPlayer'));
-const SourceCheckerPage = lazy(() => import('./pages/SourceChecker'));
-const BrowsePage = lazy(() => import('./pages/Browse'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyWithRetry(factory: () => Promise<{ default: React.ComponentType<any> }>) {
+  return lazy(() =>
+    factory().catch((err: Error) => {
+      console.error('[RouteChunk] failed to load, retrying:', err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return new Promise<{ default: React.ComponentType<any> }>((resolve) => {
+        setTimeout(() => resolve(factory()), 800);
+      });
+    }),
+  );
+}
+
+const HomeRoute = lazyWithRetry(() => import('./pages/Home/HomeRoute'));
+const DetailPage = lazyWithRetry(() => import('./pages/Detail'));
+const PlayerPage = lazyWithRetry(() => import('./pages/Player'));
+const SettingsPage = lazyWithRetry(() => import('./pages/Settings'));
+const CollectionsPage = lazyWithRetry(() => import('./pages/Collections'));
+const HistoryPage = lazyWithRetry(() => import('./pages/History'));
+const IPTVPage = lazyWithRetry(() => import('./pages/IPTV'));
+const IPTVPlayerPage = lazyWithRetry(() => import('./pages/IPTV/IPTVPlayer'));
+const SourceCheckerPage = lazyWithRetry(() => import('./pages/SourceChecker'));
+const BrowsePage = lazyWithRetry(() => import('./pages/Browse'));
 
 /** Suspense 包装：统一处理 lazy 组件的加载状态 */
 // React.lazy 返回的 LazyExoticComponent 内部类型是 ComponentType<any>，
@@ -50,7 +64,7 @@ const LazyIPTVPlayerPage = withSuspense(IPTVPlayerPage);
 const LazySourceCheckerPage = withSuspense(SourceCheckerPage);
 const LazyBrowsePage = withSuspense(BrowsePage);
 
-const router = createBrowserRouter([
+const routes = [
   {
     path: '/',
     element: <App />,
@@ -119,7 +133,13 @@ const router = createBrowserRouter([
     path: '/iptv/play',
     element: <LazyIPTVPlayerPage />,
   },
-]);
+];
+
+// Capacitor 原生平台使用 HashRouter（兼容 file:// 协议和本地资源加载）
+// Web 端使用 BrowserRouter（URL 更干净）
+const router = isNativePlatform()
+  ? createHashRouter(routes)
+  : createBrowserRouter(routes);
 
 export default function Routes() {
   return <RouterProvider router={router} />;

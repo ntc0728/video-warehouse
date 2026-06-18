@@ -343,6 +343,6 @@
 }
 
 .filter-bar__collapse-body--expanded {
-  max-height: 1000px;
+  max-height: var(--layout-collapse-max-h);
   opacity: 1;
 }

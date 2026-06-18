@@ -6,6 +6,7 @@
  */
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { useSettingsStore } from '@/stores';
+import { isNativePlatform } from '@/lib/platform';
 
 // ============================================================
 // 类型
@@ -88,8 +89,8 @@ httpClient.interceptors.request.use(
     if (cfg.cacheBust && config.url) {
       config.url = cacheBustUrl(config.url);
     }
-    // CORS 代理
-    if (cfg.useProxy && config.url) {
+    // CORS 代理：原生平台（Android/iOS）不受 CORS 限制，直连即可
+    if (!isNativePlatform() && cfg.useProxy && config.url) {
       config.url = buildProxyUrl(config.url);
     }
     return config;
