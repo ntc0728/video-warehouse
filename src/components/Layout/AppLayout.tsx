@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import TabBar from './TabBar';
 import RouteTransition from './RouteTransition';
 import StickyHeader from '@/components/StickyHeader';
 import { useHeaderContent } from './useHeaderContent';
 import { CustomScrollbar } from '@/components/common';
+import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import './Layout.css';
 import { useSettingsStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
@@ -13,6 +14,8 @@ import { ScrollContainerContext } from '@/hooks/useScrollContext';
 export default function AppLayout() {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
   // 使用 selector 订阅,避免设置 store 任意字段变化都触发 AppLayout 整树重渲染
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
@@ -62,7 +65,7 @@ export default function AppLayout() {
         <StickyHeader immersive={immersive} />
         <CustomScrollbar
           ref={scrollContainerRef}
-          className="app-shell__scroll"
+          className={`app-shell__scroll${isHome ? ' app-shell__scroll--no-gutter' : ''}`}
           style={{ backgroundColor: 'var(--color-background)' }}
           direction="vertical"
         >
@@ -76,6 +79,7 @@ export default function AppLayout() {
             </RouteTransition>
             <div id="load-more-portal" />
           </div>
+          {isHome && <OverlayScrollbar scrollContainer={scrollContainerRef} />}
         </CustomScrollbar>
         {isMobile && <TabBar />}
       </div>

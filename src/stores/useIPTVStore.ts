@@ -383,6 +383,7 @@ export const useIPTVStore = create<IPTVState>()(
           sourceType: cached.sourceType as SourceType,
           lastRefresh: cached.timestamp,
           loadedUrl: settings.aggregatorUrl,
+          error: null,
         });
 
         return true;

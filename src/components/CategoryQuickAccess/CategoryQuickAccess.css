@@ -95,8 +95,9 @@
   .category-quick-access__inner {
     display: flex;
     flex-wrap: nowrap;
-    gap: var(--space-md);
+    gap: var(--space-lg);
     justify-content: center;
+    padding-right: var(--space-md);
     padding-left: var(--space-md);
     overflow-x: auto;
     scroll-snap-type: x mandatory;

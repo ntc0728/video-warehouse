@@ -300,6 +300,8 @@ export default function UniversalPlayer({
         setChannelListVisible(true);
         return;
       }
+      showControls();
+      return;
     }
 
     if (hasLongPressedRef.current) {
@@ -314,11 +316,19 @@ export default function UniversalPlayer({
     } else {
       clickTimerRef.current = setTimeout(() => {
         clickTimerRef.current = null;
-        playerCore.togglePlay();
-        showControls();
+        const { isPlaying: playing } = usePlayerStore.getState();
+        if (!playing) {
+          playerCore.togglePlay();
+          return;
+        }
+        if (isControlsVisible) {
+          playerCore.togglePlay();
+        } else {
+          showControls();
+        }
       }, 250);
     }
-  }, [mode, playerCore, showControls, setChannelListVisible, handleToggleFullscreen]);
+  }, [mode, playerCore, showControls, isControlsVisible, setChannelListVisible, handleToggleFullscreen]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;

@@ -1,7 +1,7 @@
 /**
  * CategoryQuickAccess — 分类快速入口卡片
  * 7 个分类（全部 + 6 类型），彩色渐变背景 + Lucide 图标
- * 移动端只显示 4 个：全部、电影、剧集、动漫
+ * 移动端只显示 6 个：全部、电影、剧集、综艺、动漫、排行榜
  */
 import { LayoutGrid, Film, Tv, Mic2, Sparkles, Trophy, Camera } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
@@ -27,7 +27,7 @@ const CATEGORIES: Category[] = [
 ];
 
 // 移动端只显示的分类
-const MOBILE_CATEGORIES: CategoryKey[] = ['all', 'movie', 'tv', 'anime'];
+const MOBILE_CATEGORIES: CategoryKey[] = ['all', 'movie', 'tv', 'variety', 'anime', 'top'];
 
 interface CategoryQuickAccessProps {
   onCategorySelect: (category: CategoryKey) => void;
@@ -38,7 +38,7 @@ export default function CategoryQuickAccess({ onCategorySelect, activeCategory =
   const isMobile = useIsMobile();
   const isTV = useIsTV();
 
-  // 移动端只显示 4 个分类
+  // 移动端只显示 6 个分类
   const displayCategories = isMobile
     ? CATEGORIES.filter(cat => MOBILE_CATEGORIES.includes(cat.key))
     : CATEGORIES;

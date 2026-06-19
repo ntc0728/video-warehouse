@@ -7,6 +7,7 @@
 
 .home-page {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   width: 100%;
   min-width: 0;

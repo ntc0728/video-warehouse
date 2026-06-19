@@ -1,0 +1,36 @@
+.overlay-scrollbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  width: 0.375rem;
+  pointer-events: none;
+}
+
+.overlay-scrollbar__thumb {
+  position: absolute;
+  right: 0.0625rem;
+  width: 0.25rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: auto;
+  cursor: default;
+  opacity: 0;
+  transition: opacity 0.2s, width 0.15s, background 0.2s;
+}
+
+.overlay-scrollbar--visible .overlay-scrollbar__thumb,
+.overlay-scrollbar__thumb--dragging {
+  opacity: 1;
+}
+
+.overlay-scrollbar__thumb:hover {
+  width: 0.375rem;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.overlay-scrollbar__thumb--dragging {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.6);
+}

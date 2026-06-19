@@ -26,6 +26,7 @@
 
 .app-shell__scroll {
   /* CustomScrollbar 用 flex: 1 占据剩余高度，min-height: 0 允许内部滚动 */
+  display: flex;
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
@@ -38,7 +39,10 @@
    脱离文档流，不受影响。StickyHeader 在 .app-shell__scroll
    外部，不受此规则约束。 */
 .page-transition {
-  /* 网格布局已迁移至 .rt-container */
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 @media (width <= 767px) {

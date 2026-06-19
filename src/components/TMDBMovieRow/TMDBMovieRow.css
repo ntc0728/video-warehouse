@@ -183,6 +183,10 @@
     font-size: var(--text-base);
   }
 
+  .tmdb-movierow-wrapper {
+    padding: 0 var(--space-md);
+  }
+
   .tmdb-movierow-arrow {
     display: none;
   }

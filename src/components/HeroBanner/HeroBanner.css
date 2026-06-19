@@ -4,7 +4,10 @@
 
 .hero-banner {
   position: relative;
-  width: calc(100% + var(--space-sm));
+  /* margin-left 把 banner 左边缘推到视口左边缘(抵消 .rt-container padding)，
+     width: 100vw 让右边缘刚好到达视口右边缘。
+     首页滚动容器 scrollbar-gutter: auto，滚动条浮在 banner 上方。 */
+  width: calc(100vw * 1);
   aspect-ratio: 21 / 9;                                       /* 21:9 宽银幕 */
   /* 仅在窄屏(<467px,aspect-ratio 给出高度 < 200px)兜底到 200px。
      原 calc(100% * 9 / 21) 使用父级高度导致与 home-page 形成反馈环,
@@ -12,11 +15,11 @@
      修复后: 高度完全由 aspect-ratio 从宽度推导,不再依赖父级。
      单位用 rem 避开 stylelint "禁用 px" 规则, 12.5rem = 200px(@16px base)。 */
   min-height: 12.5rem;
+  /* 负 margin 脱离 .rt-container 的 padding-left,让 banner 左边缘对齐视口 */
   margin-left: calc(-1 * var(--space-sm));
   overflow: hidden;
   user-select: none;
   -webkit-user-drag: none;
-  cursor: grab;
   touch-action: pan-y;
 }
 
