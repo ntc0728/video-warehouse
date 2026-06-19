@@ -166,6 +166,25 @@
   text-overflow: ellipsis;
 }
 
+/* Mobile：缩小封面角标 */
+@media (width <= 767px) {
+  .iptv-card-group {
+    right: var(--space-3xs);
+    bottom: var(--space-3xs);
+    padding: 0 var(--space-2xs);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  .iptv-card-source {
+    bottom: var(--space-3xs);
+    left: var(--space-3xs);
+    padding: 0 var(--space-2xs);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+}
+
 /* ---- Favorite button ---- */
 /* 默认未收藏：透明度 0 + 缩小，hover/focus 时显形；已收藏常驻 */
 .iptv-card-favorite {

@@ -232,11 +232,17 @@ export default function IPTVPage() {
 
       // aggregatorUrl 为空时，从源列表初始化
       if (!settings.aggregatorUrl) {
-        const iptvSourceIndex = useSettingsStore.getState().iptvSourceIndex;
+        const iptvSourceIndices = useSettingsStore.getState().iptvSourceIndices || [0];
         getIPTVSources().then((sources) => {
-          const url = sources[iptvSourceIndex]?.url || sources[0]?.url || '';
+          const urls = iptvSourceIndices.map(i => sources[i]?.url || '').filter(Boolean);
+          const names = iptvSourceIndices.map(i => sources[i]?.name || `源 ${i + 1}`);
+          const url = urls[0] || '';
           if (url) {
-            useIPTVStore.getState().setSettings({ aggregatorUrl: url });
+            useIPTVStore.getState().setSettings({
+              aggregatorUrl: url,
+              aggregatorUrls: urls,
+              sourceNames: names,
+            });
           }
           // 先读缓存
           useIPTVStore.getState().loadFromCache().then((hitCache) => {
