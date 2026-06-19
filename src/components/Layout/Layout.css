@@ -46,6 +46,9 @@
     /* 移动端底部 TabBar 遮挡滚动内容，预留底部安全区 */
     padding-bottom: var(--layout-tabbar-height);
   }
+  .app-shell__scroll {
+    overscroll-behavior: none;
+  }
 }
 
 .sidebar-header {

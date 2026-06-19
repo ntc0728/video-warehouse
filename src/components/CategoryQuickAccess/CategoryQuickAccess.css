@@ -96,7 +96,7 @@
     display: flex;
     flex-wrap: nowrap;
     gap: var(--space-md);
-    justify-content: flex-start;
+    justify-content: center;
     padding-left: var(--space-md);
     overflow-x: auto;
     scroll-snap-type: x mandatory;

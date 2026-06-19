@@ -526,9 +526,6 @@ export default function SettingsPage() {
               {proxyUrlInput && (
                 <Button size="small" onClick={() => {
                   setProxyUrlInput('');
-                  setIPTVSettings({ proxyUrl: '' });
-                  setShowProxyInput(false);
-                  toast.show('代理地址已清除');
                 }}>清除</Button>
               )}
               <Button size="small" onClick={() => setShowProxyInput(false)}>取消</Button>
@@ -561,9 +558,6 @@ export default function SettingsPage() {
               {patternInput && (
                 <Button size="small" onClick={() => {
                   setPatternInput('');
-                  setIPTVSettings({ proxyPattern: '' });
-                  setShowPatternInput(false);
-                  toast.show('代理规则已清除');
                 }}>清除</Button>
               )}
               <Button size="small" onClick={() => {
@@ -600,9 +594,6 @@ export default function SettingsPage() {
               {corsProxyInput && (
                 <Button size="small" onClick={() => {
                   setCorsProxyInput('');
-                  setCorsProxy('');
-                  setShowCorsProxyInput(false);
-                  toast.show('CORS 代理已恢复默认');
                 }}>恢复默认</Button>
               )}
               <Button size="small" onClick={() => setShowCorsProxyInput(false)}>取消</Button>
@@ -640,9 +631,6 @@ export default function SettingsPage() {
               {tmdbTokenInput && (
                 <Button size="small" onClick={() => {
                   setTMDBTokenInput('');
-                  setTMDBToken('');
-                  setShowTMDBTokenInput(false);
-                  toast.show('TMDB Token 已清除');
                 }}>清除</Button>
               )}
               <Button size="small" onClick={() => setShowTMDBTokenInput(false)}>取消</Button>
