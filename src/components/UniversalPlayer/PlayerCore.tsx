@@ -43,6 +43,7 @@ export default function PlayerCore({
   return (
     <div
       className="up-player-core"
+      data-mode={mode}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onPointerDown={onPointerDown}

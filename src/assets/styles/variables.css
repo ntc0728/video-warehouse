@@ -62,14 +62,14 @@
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
   --shadow-focus: 0 0 0 3px var(--color-primary);
 
-  /* ── Typography (375→1920px 固定, 1920→3840px TV端放大) ────────────── */
-  --text-xs:   12px;
-  --text-sm:   13px;
-  --text-base: 14px;
-  --text-lg:   16px;
-  --text-xl:   18px;
-  --text-2xl:  24px;
-  --text-3xl:  30px;
+  /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
+  --text-xs:   clamp(0.625rem, 0.508rem + 0.315vw, 0.75rem);   /* 10→12 */
+  --text-sm:   clamp(0.6875rem, 0.566rem + 0.336vw, 0.8125rem); /* 11→13 */
+  --text-base: clamp(0.75rem, 0.623rem + 0.356vw, 0.875rem);   /* 12→14 */
+  --text-lg:   clamp(0.875rem, 0.73rem + 0.445vw, 1rem);       /* 14→16 */
+  --text-xl:   clamp(1rem, 0.846rem + 0.471vw, 1.125rem);      /* 16→18 */
+  --text-2xl:  clamp(1.25rem, 1.03rem + 0.669vw, 1.5rem);      /* 20→24 */
+  --text-3xl:  clamp(1.625rem, 1.366rem + 0.758vw, 1.875rem);  /* 26→30 */
 
   /* ── Spacing (积极增长 ~2.0x–2.2x) ──────────────────────────────────── */
   --space-3xs: clamp(1px,  0.047rem + 0.029vw, 2px);    /* 1→2   */
@@ -320,13 +320,13 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-device="tv"] {
   /* ── Typography & icon scale-up (1920px → 3840px viewport) ──────────── */
-  --text-xs:   clamp(12px, 0.375rem + 0.417vw, 22px);   /* 12→22 */
-  --text-sm:   clamp(13px, 0.325rem + 0.542vw, 26px);   /* 13→26 */
-  --text-base: clamp(14px, 0.275rem + 0.667vw, 30px);   /* 14→30 */
-  --text-lg:   clamp(16px, 0.250rem + 0.833vw, 36px);   /* 16→36 */
-  --text-xl:   clamp(18px, 0.300rem + 0.917vw, 40px);   /* 18→40 */
-  --text-2xl:  clamp(24px, 0.525rem + 1.083vw, 50px);   /* 24→50 */
-  --text-3xl:  clamp(30px, 0.750rem + 1.250vw, 60px);   /* 30→60 */
+  --text-xs:   clamp(0.75rem, 0.692rem + 0.312vw, 1.375rem);   /* 12→22 */
+  --text-sm:   clamp(0.8125rem, 0.742rem + 0.375vw, 1.625rem); /* 13→26 */
+  --text-base: clamp(0.875rem, 0.781rem + 0.469vw, 1.875rem);  /* 14→30 */
+  --text-lg:   clamp(1rem, 0.875rem + 0.625vw, 2.25rem);       /* 16→36 */
+  --text-xl:   clamp(1.125rem, 0.984rem + 0.703vw, 2.5rem);    /* 18→40 */
+  --text-2xl:  clamp(1.5rem, 1.289rem + 1.094vw, 3.125rem);    /* 24→50 */
+  --text-3xl:  clamp(1.875rem, 1.602rem + 1.406vw, 3.75rem);   /* 30→60 */
   --icon-sm:   clamp(16px, 0.100rem + 1.000vw, 40px);   /* 16→40 */
   --icon-md:   clamp(20px, 0.200rem + 1.167vw, 48px);   /* 20→48 */
   --icon-lg:   clamp(24px, 0.150rem + 1.500vw, 60px);   /* 24→60 */

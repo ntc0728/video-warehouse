@@ -70,7 +70,10 @@ export default function IPTVPage() {
     lastRefresh,
     loadedUrl,
     refreshChannels,
-    settings,
+    proxyUrl,
+    aggregatorUrl,
+    aggregatorUrls,
+    sourceNames,
     isCheckingAvailability,
     checkAvailability,
     abortAvailabilityCheck,
@@ -83,7 +86,10 @@ export default function IPTVPage() {
       lastRefresh: s.lastRefresh,
       loadedUrl: s.loadedUrl,
       refreshChannels: s.refreshChannels,
-      settings: s.settings,
+      proxyUrl: s.settings.proxyUrl,
+      aggregatorUrl: s.settings.aggregatorUrl,
+      aggregatorUrls: s.settings.aggregatorUrls,
+      sourceNames: s.settings.sourceNames,
       isCheckingAvailability: s.isCheckingAvailability,
       checkAvailability: s.checkAvailability,
       abortAvailabilityCheck: s.abortAvailabilityCheck,
@@ -225,13 +231,16 @@ export default function IPTVPage() {
   useEffect(() => {
     if (isLoading || error) return;
 
+    // 已有数据且源未变：跳过刷新，避免创建新对象触发卡片重渲染导致图片闪烁
+    if (channels.length > 0 && loadedUrl === aggregatorUrl) return;
+
     // 会话内首次进入：先读缓存，再后台刷新
     if (!sessionStorage.getItem(IPTV_SESSION_KEY)) {
       sessionStorage.setItem(IPTV_SESSION_KEY, '1');
       setIsInitialLoad(true);
 
       // aggregatorUrl 为空时，从源列表初始化
-      if (!settings.aggregatorUrl) {
+      if (!aggregatorUrl) {
         const iptvSourceIndices = useSettingsStore.getState().iptvSourceIndices || [0];
         getIPTVSources().then((sources) => {
           const urls = iptvSourceIndices.map(i => sources[i]?.url || '').filter(Boolean);
@@ -263,16 +272,10 @@ export default function IPTVPage() {
       return;
     }
 
-    // 源未变：早退,沿用缓存
-    if (loadedUrl === settings.aggregatorUrl) return;
-
-    // 边缘场景:loadedUrl 仍为 null 但 channels 非空（理论不应发生,防御性早退）
-    if (loadedUrl === null && channels.length === 0) return;
-
     // 源切换:刷新
     setIsInitialLoad(true);
     refreshChannels();
-  }, [loadedUrl, settings.aggregatorUrl, isLoading, channels.length, refreshChannels, error]);
+  }, [loadedUrl, aggregatorUrl, isLoading, channels.length, refreshChannels, error]);
 
   /** 首次加载完成后标记 */
   useEffect(() => {
@@ -344,27 +347,29 @@ export default function IPTVPage() {
       {!isInitialLoadingState && (
         <div className="iptv-header">
           <div className="iptv-header-top">
-            <h1 className="page-title">IPTV 直播</h1>
+            <div className="iptv-header-left">
+              <h1 className="page-title">IPTV 直播</h1>
+              {!proxyUrl && (
+                <span className="iptv-proxy-warning-inline">
+                  <AlertCircle size={14} />
+                  <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
+                  <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
+                    配置
+                  </button>
+                </span>
+              )}
+            </div>
             <div className="iptv-header-meta">
               {lastRefresh && (
                 <span className="last-refresh">
                   更新: {new Date(lastRefresh).toLocaleTimeString()}
                 </span>
               )}
-              <span className="source-url" title={settings.aggregatorUrl}>
-                源: {getDisplayHostname(settings.aggregatorUrl)}
+              <span className="source-url" title={aggregatorUrl}>
+                源: {getDisplayHostname(aggregatorUrl)}
               </span>
             </div>
           </div>
-          {!settings.proxyUrl && (
-            <span className="iptv-proxy-warning-inline">
-              <AlertCircle size={14} />
-              <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-              <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
-                配置
-              </button>
-            </span>
-          )}
         </div>
       )}
 
@@ -433,7 +438,7 @@ export default function IPTVPage() {
 
       {!hasNoData && !isInitialLoadingState && (
         <>
-          {settings.aggregatorUrls && settings.aggregatorUrls.length > 1 && (
+          {aggregatorUrls && aggregatorUrls.length > 1 && (
             <div className="iptv-source-filter">
               <button
                 className={`source-tag ${selectedSource === null ? 'active' : ''}`}
@@ -441,13 +446,13 @@ export default function IPTVPage() {
               >
                 全部源
               </button>
-              {settings.aggregatorUrls.map((_, index) => (
+              {aggregatorUrls.map((_, index) => (
                 <button
                   key={index}
                   className={`source-tag ${selectedSource === `source-${index}` ? 'active' : ''}`}
                   onClick={() => handleSourceSelect(`source-${index}`)}
                 >
-                  {settings.sourceNames?.[index] || `源 ${index + 1}`}
+                  {sourceNames?.[index] || `源 ${index + 1}`}
                 </button>
               ))}
             </div>

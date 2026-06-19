@@ -7,9 +7,9 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import { AppLoading } from './components/common';
 import { isNativePlatform } from '@/lib/platform';
 
-// 路由懒加载时的 Loading 组件（fixed 模式，垂直居中于可视窗口）
+// 路由懒加载时的 Loading 组件（内联模式，与页面内 loading 位置一致）
 function LoadingFallback() {
-  return <AppLoading fullScreen />;
+  return <AppLoading />;
 }
 
 // ===== 路由级代码分割：每个页面独立 chunk =====

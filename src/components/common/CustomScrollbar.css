@@ -35,3 +35,12 @@
     scrollbar-gutter: auto;
   }
 }
+
+/* 首页：隐藏原生滚动条，由自定义滚动条浮在 banner 上方 */
+.app-shell__scroll--no-gutter {
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+.app-shell__scroll--no-gutter::-webkit-scrollbar {
+  display: none;
+}

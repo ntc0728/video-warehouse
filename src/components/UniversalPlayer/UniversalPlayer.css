@@ -17,6 +17,14 @@
   background: #000;
 }
 
+.up-player-core[data-mode="video"] {
+  cursor: pointer;
+}
+
+.up-player-core[data-mode="iptv"] {
+  cursor: default;
+}
+
 .up-player-video {
   position: absolute;
   inset: 0;

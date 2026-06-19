@@ -171,6 +171,13 @@
   overflow-y: auto;
 }
 
+.source-multi-dropdown--upward .source-multi-options {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: var(--space-xs);
+}
+
 .source-multi-option {
   display: flex;
   gap: var(--space-xs);
@@ -192,12 +199,25 @@
   cursor: pointer;
 }
 
+.source-multi-option input[type="radio"] {
+  width: var(--space-md);
+  height: var(--space-md);
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
 .source-multi-option span {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
 .source-multi-option input[type="checkbox"]:checked + span {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.source-multi-option input[type="radio"]:checked + span {
   color: var(--color-primary);
   font-weight: 500;
 }
