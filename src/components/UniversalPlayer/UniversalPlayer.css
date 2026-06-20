@@ -100,6 +100,7 @@
   left: 0;
   z-index: 20;
   display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: var(--space-md) var(--space-md);
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
@@ -130,6 +131,7 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-sm);
   font-weight: 500;
+  white-space: nowrap;
   transition: color 0.2s;
   cursor: pointer;
 }
@@ -139,6 +141,7 @@
 }
 
 .up-header-title {
+  flex: 1;
   margin-left: var(--space-md);
   color: #fff;
   font-size: var(--text-base);
@@ -146,6 +149,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 全屏按钮在 header 中的样式：白色图标，透明背景 */
+.up-player-header .up-control-btn {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.up-player-header .up-control-btn:hover {
+  color: #fff;
 }
 
 /* ===== Control Bar ===== */
@@ -853,9 +866,15 @@
   min-height: var(--space-2xl);
 }
 
+.up-platform-mobile .up-player-header {
+  gap: var(--space-sm);
+}
+
 .up-platform-mobile .up-header-back {
-  width: var(--space-2xl);
-  height: var(--space-2xl);
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+  padding: var(--space-xs) var(--space-sm);
 }
 
 .up-platform-mobile .up-header-title {

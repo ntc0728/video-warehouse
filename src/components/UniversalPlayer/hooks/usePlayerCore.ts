@@ -105,7 +105,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       }
     };
     const handleEnded = () => { getStore().setPlaying(false); onEnded?.(); };
-    const handleError = () => { onError?.(new Error('Video playback error')); };
     const handleVolumeChange = () => { getStore().setVolume(video.volume); };
     const handleRateChange = () => { getStore().setPlaybackRate(video.playbackRate); };
     const handleEnterPiP = () => { getStore().setIsPiP(true); };
@@ -116,7 +115,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.addEventListener('pause', handlePause);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
-    video.addEventListener('error', handleError);
     video.addEventListener('volumechange', handleVolumeChange);
     video.addEventListener('ratechange', handleRateChange);
     video.addEventListener('enterpictureinpicture', handleEnterPiP);
@@ -158,7 +156,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
-      video.removeEventListener('error', handleError);
       video.removeEventListener('volumechange', handleVolumeChange);
       video.removeEventListener('ratechange', handleRateChange);
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);

@@ -819,6 +819,7 @@ export default function UniversalPlayer({
         title={title}
         channelName={currentChannelName || channelName}
         visible={isControlsVisible}
+        containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}
       />
