@@ -1,11 +1,13 @@
 import { ArrowLeft } from 'lucide-react';
 import type { PlayerMode } from '@/types/player';
+import FullscreenButton from './ControlBar/FullscreenButton';
 
 interface PlayerHeaderProps {
   mode: PlayerMode;
   title: string;
   channelName?: string;
   visible: boolean;
+  containerRef: React.RefObject<HTMLElement | null>;
   onBack: () => void;
   onActivity?: () => void;
 }
@@ -15,6 +17,7 @@ export default function PlayerHeader({
   title,
   channelName,
   visible,
+  containerRef,
   onBack,
   onActivity,
 }: PlayerHeaderProps) {
@@ -30,6 +33,7 @@ export default function PlayerHeader({
         <span>返回</span>
       </button>
       <span className="up-header-title">{displayTitle}</span>
+      <FullscreenButton containerRef={containerRef} />
     </div>
   );
 }

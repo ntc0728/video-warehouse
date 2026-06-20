@@ -409,26 +409,33 @@
 
 /* ===== Mobile 平台适配（与 .up-platform-mobile 配合） ===== */
 .up-platform-mobile .iptv-osd-bar {
+  /* 移动端宽度完全由 CSS 驱动，脱离 JS --osd-bar-width */
   gap: var(--space-2xs);
-  /* 移动端边缘留白缩为 --space-xs */
+  width: calc(100% - 2 * var(--space-xs));
   max-width: calc(100% - 2 * var(--space-xs));
-  padding: var(--space-xs) var(--space-sm);
+  min-height: var(--space-2xl);
+  padding: var(--space-sm) var(--space-sm);
   border-radius: var(--radius-md);
 }
 
 .up-platform-mobile .iptv-osd-left {
+  flex-shrink: 0;
   gap: var(--space-2xs);
   width: auto;
-  min-width: var(--space-2xl);
-}
-
-/* 移动端隐藏大号频道号（避免挤压 center 列） */
-.up-platform-mobile .iptv-osd-channel-number {
-  display: none;
+  min-width: var(--space-3xl);
 }
 
 .up-platform-mobile .iptv-osd-channel-row {
   gap: var(--space-xs);
+  min-width: auto;
+  white-space: nowrap;
+}
+
+/* 移动端频道号：缩小但仍显示 */
+.up-platform-mobile .iptv-osd-channel-number {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
 /* 移动端 logo 缩小 */
@@ -438,12 +445,22 @@
   height: var(--icon-sm);
 }
 
+.up-platform-mobile .iptv-osd-logo-fallback {
+  font-size: var(--text-xs);
+}
+
 .up-platform-mobile .iptv-osd-name-marquee .marquee-text {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+}
+
+.up-platform-mobile .iptv-osd-name-marquee {
+  min-width: auto;
 }
 
 .up-platform-mobile .iptv-osd-center {
+  flex: 0 1 auto;
   gap: var(--space-2xs);
+  margin: 0 auto;
   padding: 0 var(--space-xs);
 }
 
@@ -456,14 +473,10 @@
   font-size: var(--text-xs);
 }
 
-/* 移动端按钮只显图标 */
-.up-platform-mobile .iptv-osd-control-btn span {
-  display: none;
-}
-
+/* 移动端按钮：图标 + 文字都显示，缩小间距 */
 .up-platform-mobile .iptv-osd-control-btn {
-  gap: 0;
-  padding: var(--space-3xs) var(--space-2xs);
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-3xs);
 }
 
 .up-platform-mobile .iptv-osd-controls-row {
@@ -536,28 +549,36 @@
 @media (width <= 639px) {
   .iptv-osd-bar {
     gap: var(--space-2xs);
-    padding: var(--space-xs) var(--space-sm);
+    width: calc(100% - 2 * var(--space-xs));
+    min-height: var(--space-2xl);
+    padding: var(--space-sm) var(--space-sm);
   }
 
   .iptv-osd-channel-number {
-    display: none;
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .iptv-osd-left {
+    flex-shrink: 0;
+    width: auto;
+    min-width: var(--space-3xl);
   }
 
   .iptv-osd-source-text {
     display: none;
   }
 
-  .iptv-osd-control-btn span {
-    display: none;
+  .iptv-osd-name-marquee .marquee-text {
+    font-size: var(--text-xs);
+  }
+
+  .iptv-osd-logo-fallback {
+    font-size: var(--text-xs);
   }
 
   /* 窄屏中间栏压缩：减少水平 padding，让 marquee 有更多空间 */
   .iptv-osd-center {
     padding: 0 var(--space-xs);
-  }
-
-  /* 极窄屏 (< 480px) 下隐藏"下一节目"行，让当前节目与控制按钮有足够空间 */
-  .iptv-osd-next-row {
-    display: none;
   }
 }

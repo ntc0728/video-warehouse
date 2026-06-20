@@ -60,6 +60,7 @@
 .collection-content {
   flex: 0 0 auto;
   min-height: auto;
+  padding: 0 var(--space-sm);
 }
 
 .collection-page > .collection-header,

@@ -4,6 +4,7 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 100%;
+  padding: 0 var(--space-sm);
   background-color: var(--color-background);
   box-sizing: border-box;
 }

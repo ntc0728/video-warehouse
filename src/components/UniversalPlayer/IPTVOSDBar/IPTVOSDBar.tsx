@@ -213,17 +213,15 @@ export default function IPTVOSDBar({
   const sourceText = totalSources <= 1 ? '线路 1' : `线路 ${currentSourceIndex + 1}/${totalSources}`;
 
   // OSD 宽度计算：
-  // - 上限 OSD_MAX_WIDTH，宽屏时居中显示不超界
-  // - 下限 OSD_MIN_WIDTH，窄屏时压缩三列但不挤压到崩溃
-  // - 不再硬编码 -48 偏移：边缘留白改由 CSS max-width: calc(100% - 2 * var(--space-md)) 驱动，
-  //   移动/桌面/TV 三档分别用 --space-xs/--space-md/--space-lg，响应式自动适配
-  // - 外层 Math.min(containerWidth, ...) 兜底：极窄屏（<360）下不溢出视口
+  // - 移动端（<768）由 CSS calc(100% - 2 * var(--space-xs)) 完全驱动，JS 不设置 --osd-bar-width
+  // - 桌面/TV 端：上限 OSD_MAX_WIDTH，下限 OSD_MIN_WIDTH，居中显示
   const OSD_MIN_WIDTH = 360;
   const OSD_MAX_WIDTH = 1600;
+  const isMobileWidth = containerWidth < 768;
   const maxAllowed = Math.min(containerWidth, OSD_MAX_WIDTH);
   const minRequired = Math.max(OSD_MIN_WIDTH, Math.floor(containerWidth * 0.6));
   const innerWidth = Math.max(minRequired, Math.min(maxAllowed, containerWidth));
-  const barWidth = containerWidth > 0
+  const barWidth = !isMobileWidth && containerWidth > 0
     ? `${Math.min(containerWidth, innerWidth)}px`
     : undefined;
 

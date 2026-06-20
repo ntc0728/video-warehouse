@@ -18,12 +18,15 @@
 /* ── Rows container ──────────────────────────────────── */
 
 .home-rows {
+  padding: 0 var(--space-sm);
   padding-top: var(--space-md);
 }
 
 @media (width <= 767px) {
   .home-rows {
+    padding-right: 0;
     padding-bottom: var(--layout-tabbar-height);
+    padding-left: 0;
   }
 }
 

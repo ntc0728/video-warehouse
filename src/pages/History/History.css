@@ -207,7 +207,7 @@
   align-items: flex-start;
   width: 100%;
   min-width: 0;
-  padding: 0 var(--space-sm);
+  padding-right: var(--space-sm);
   box-sizing: border-box;
 }
 
@@ -480,7 +480,7 @@
   /* 移动端：时间轴横置在 body 顶部 */
   .history-body {
     flex-direction: column;
-    padding: 0;
+    padding: 0 var(--space-sm);
   }
   .history-card-time {
     font-size: var(--text-xs);
