@@ -1,6 +1,31 @@
 .settings-page {
-  /* 桌面端居中与间距由 Tailwind 工具类控制（mx-auto max-w-2xl space-y-6 px-4 py-6 md:px-6） */
+  padding-top: var(--space-xs);
+  padding-right: var(--space-sm);
+  padding-left: var(--space-sm);
   overflow-x: hidden;
+}
+
+@media (width >= 768px) {
+  .settings-page {
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
+  }
+}
+
+.settings-page .group {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.settings-page .px-4.py-2 {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+@media (width >= 768px) {
+  .settings-page section {
+    padding: var(--space-sm) var(--space-md);
+  }
 }
 
 @media (width >= 768px) {
@@ -144,11 +169,11 @@
 }
 
 .source-multi-trigger:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-input-border);
 }
 
 .source-multi-trigger svg {
-  transition: transform 0.2s;
+  transition: none;
 }
 
 .source-multi-trigger svg.rotated {
@@ -169,13 +194,6 @@
   background: var(--color-input-bg);
   box-shadow: var(--shadow-card);
   overflow-y: auto;
-}
-
-.source-multi-dropdown--upward .source-multi-options {
-  top: auto;
-  bottom: 100%;
-  margin-top: 0;
-  margin-bottom: var(--space-xs);
 }
 
 .source-multi-option {

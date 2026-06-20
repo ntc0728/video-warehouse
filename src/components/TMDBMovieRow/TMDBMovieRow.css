@@ -67,7 +67,7 @@
   -ms-overflow-style: none;
   user-select: none;
   -webkit-user-drag: none;
-  touch-action: pan-y;
+  touch-action: pan-x;
   /* cursor 不再放在 row 容器（避免空白处出现 grab 误导）—— 改放到 card 元素 */
 }
 .tmdb-movierow-scroll--dragging {

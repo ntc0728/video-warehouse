@@ -33,14 +33,6 @@
   min-width: 0;
 }
 
-@media (width <= 767px) {
-  .iptv-header-left {
-    flex-direction: column;
-    gap: var(--space-2xs);
-    align-items: flex-start;
-  }
-}
-
 .iptv-header .page-title {
   margin: 0;
   font-size: var(--text-xl);
@@ -328,6 +320,12 @@
   box-shadow: 0 1px 3px var(--color-primary-shadow);
 }
 
+.source-tag.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .groups-toggle {
   position: relative;
   z-index: 10;
@@ -362,6 +360,28 @@
 }
 
 @media (width <= 767px) {
+  .iptv-header-top {
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+  }
+
+  .iptv-header-left {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .iptv-header-meta {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    gap: var(--space-xs);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .source-url {
+    max-width: 9.375rem;
+  }
+
   .force-refresh-btn {
     display: none;
   }

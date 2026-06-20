@@ -63,9 +63,9 @@
   --shadow-focus: 0 0 0 3px var(--color-primary);
 
   /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
-  --text-xs:   clamp(0.625rem, 0.508rem + 0.315vw, 0.75rem);   /* 10→12 */
-  --text-sm:   clamp(0.6875rem, 0.566rem + 0.336vw, 0.8125rem); /* 11→13 */
-  --text-base: clamp(0.75rem, 0.623rem + 0.356vw, 0.875rem);   /* 12→14 */
+  --text-xs:   clamp(0.6875rem, 0.628rem + 0.254vw, 0.75rem);    /* 11→12 */
+  --text-sm:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);   /* 12→13 */
+  --text-base: clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem); /* 13→14 */
   --text-lg:   clamp(0.875rem, 0.73rem + 0.445vw, 1rem);       /* 14→16 */
   --text-xl:   clamp(1rem, 0.846rem + 0.471vw, 1.125rem);      /* 16→18 */
   --text-2xl:  clamp(1.25rem, 1.03rem + 0.669vw, 1.5rem);      /* 20→24 */
@@ -82,11 +82,11 @@
   --space-2xl: clamp(24px, 1.532rem + 0.808vw, 56px);   /* 24→56 */
   --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);   /* 32→80 */
 
-  /* ── Icons (375→1920px 固定, 1920→3840px TV端放大) ───────────────── */
-  --icon-sm: 16px;
-  --icon-md: 20px;
-  --icon-lg: 24px;
-  --icon-xl: 28px;
+  /* ── Icons (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ─────── */
+  --icon-sm: clamp(1rem, 0.941rem + 0.509vw, 1.125rem);   /* 16→18 */
+  --icon-md: clamp(1.25rem, 1.191rem + 0.509vw, 1.375rem); /* 20→22 */
+  --icon-lg: clamp(1.5rem, 1.394rem + 0.763vw, 1.688rem);  /* 24→27 */
+  --icon-xl: clamp(1.75rem, 1.613rem + 1.018vw, 2rem);     /* 28→32 */
 
   /* ── Pagination Dots (分页圆点 — TV 端不放大,保持小圆点) ────────────── */
   --dot-size:     clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   圆点 */

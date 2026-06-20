@@ -10,13 +10,6 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   min-height: 100%;
-  padding-left: var(--space-sm);
-}
-
-@media (width <= 767px) {
-  .rt-container {
-    padding-inline: var(--space-sm);
-  }
 }
 
 /* ── View Transitions API（浏览器原生 cross-fade） ─── */
