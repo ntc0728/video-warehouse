@@ -168,6 +168,15 @@ export default function IPTVPage() {
     return Array.from(groupsMap.entries()).map(([name, count]) => ({ name, count, channels: [] }));
   }, [channels, groups, selectedSource]);
 
+  /** 每个数据源是否有频道数据 */
+  const sourceHasChannels = useMemo(() => {
+    if (!aggregatorUrls) return [];
+    return aggregatorUrls.map((_, index) => {
+      const sourceId = `source-${index}`;
+      return channels.some(ch => ch.sourceId === sourceId);
+    });
+  }, [aggregatorUrls, channels]);
+
   /** 实际渲染的子集，由 useInfiniteScroll 滚动哨兵分批追加 */
   const displayedChannels = useMemo(
     () => filteredChannels.slice(0, visibleCount),
@@ -349,15 +358,6 @@ export default function IPTVPage() {
           <div className="iptv-header-top">
             <div className="iptv-header-left">
               <h1 className="page-title">IPTV 直播</h1>
-              {!proxyUrl && (
-                <span className="iptv-proxy-warning-inline">
-                  <AlertCircle size={14} />
-                  <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-                  <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
-                    配置
-                  </button>
-                </span>
-              )}
             </div>
             <div className="iptv-header-meta">
               {lastRefresh && (
@@ -370,6 +370,15 @@ export default function IPTVPage() {
               </span>
             </div>
           </div>
+          {!proxyUrl && (
+            <span className="iptv-proxy-warning-inline">
+              <AlertCircle size={14} />
+              <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
+              <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
+                配置
+              </button>
+            </span>
+          )}
         </div>
       )}
 
@@ -446,15 +455,20 @@ export default function IPTVPage() {
               >
                 全部源
               </button>
-              {aggregatorUrls.map((_, index) => (
-                <button
-                  key={index}
-                  className={`source-tag ${selectedSource === `source-${index}` ? 'active' : ''}`}
-                  onClick={() => handleSourceSelect(`source-${index}`)}
-                >
-                  {sourceNames?.[index] || `源 ${index + 1}`}
-                </button>
-              ))}
+              {aggregatorUrls.map((_, index) => {
+                const hasData = sourceHasChannels[index];
+                return (
+                  <button
+                    key={index}
+                    className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData ? ' disabled' : ''}`}
+                    onClick={() => hasData && handleSourceSelect(`source-${index}`)}
+                    disabled={!hasData}
+                    title={!hasData ? '该源无频道数据或加载失败' : undefined}
+                  >
+                    {sourceNames?.[index] || `源 ${index + 1}`}
+                  </button>
+                );
+              })}
             </div>
           )}
 

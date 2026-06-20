@@ -8,7 +8,6 @@ import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useSubtitleStore, useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
 import { getVideoSources, getIPTVSources, getEPGSources, type EPGSourceConfig } from '@/services/sourceService';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
-import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import './Settings.css';
 
 export default function SettingsPage() {
@@ -58,15 +57,15 @@ export default function SettingsPage() {
   const [showTmdbLangSelect, setShowTmdbLangSelect] = useState(false);
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
-  const videoDropdown = useDropdownPosition();
-  const iptvDropdown = useDropdownPosition();
-  const epgDropdown = useDropdownPosition();
-  const tmdbLangDropdown = useDropdownPosition();
+  const videoDropdownRef = useRef<HTMLDivElement | null>(null);
+  const iptvDropdownRef = useRef<HTMLDivElement | null>(null);
+  const epgDropdownRef = useRef<HTMLDivElement | null>(null);
+  const tmdbLangDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const makeRefCallback = useCallback((key: string, cb: (el: HTMLDivElement | null) => void) => {
+  const makeRefCallback = useCallback((key: string, ref: React.MutableRefObject<HTMLDivElement | null>) => {
     return (el: HTMLDivElement | null) => {
       dropdownRefs.current.set(key, el);
-      cb(el);
+      ref.current = el;
     };
   }, []);
 
@@ -230,7 +229,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="settings-page w-full space-y-4 pt-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:pt-6">
+    <div className="settings-page w-full space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="外观">
           <List.Item
@@ -282,10 +281,10 @@ export default function SettingsPage() {
           title="TMDB 语言"
           description="影响影片标题、简介等信息的显示语言"
           extra={
-            <div className={`source-multi-dropdown${tmdbLangDropdown.openUpward ? ' source-multi-dropdown--upward' : ''}`} ref={makeRefCallback('tmdbLang', tmdbLangDropdown.refCallback)}>
+            <div className="source-multi-dropdown" ref={makeRefCallback('tmdbLang', tmdbLangDropdownRef)}>
               <button
                 className="source-multi-trigger"
-                onClick={() => { tmdbLangDropdown.updatePosition(); setShowTmdbLangSelect(!showTmdbLangSelect); }}
+                onClick={() => setShowTmdbLangSelect(!showTmdbLangSelect)}
               >
                 <span>{({ 'zh-CN': '简体中文', 'zh-TW': '繁體中文', 'en-US': 'English', 'ja-JP': '日本語', 'ko-KR': '한국어' } as Record<string, string>)[tmdbLanguage] || tmdbLanguage}</span>
                 <ChevronDown size={14} className={showTmdbLangSelect ? 'rotated' : ''} />
@@ -323,10 +322,10 @@ export default function SettingsPage() {
           title="视频数据源"
           description="选择视频数据源（最多6个）"
           extra={
-            <div className={`source-multi-dropdown${videoDropdown.openUpward ? ' source-multi-dropdown--upward' : ''}`} ref={makeRefCallback('video', videoDropdown.refCallback)}>
+            <div className="source-multi-dropdown" ref={makeRefCallback('video', videoDropdownRef)}>
               <button
                 className="source-multi-trigger"
-                onClick={() => { videoDropdown.updatePosition(); setShowMultiSelect(!showMultiSelect); }}
+                onClick={() => setShowMultiSelect(!showMultiSelect)}
               >
                 <span>已选 {(videoSourceIndices || []).length} 项</span>
                 <ChevronDown size={14} className={showMultiSelect ? 'rotated' : ''} />
@@ -402,10 +401,10 @@ export default function SettingsPage() {
           title="IPTV 数据源"
           description="选择IPTV数据源（支持多选，最多3个）"
           extra={
-            <div className={`source-multi-dropdown${iptvDropdown.openUpward ? ' source-multi-dropdown--upward' : ''}`} ref={makeRefCallback('iptv', iptvDropdown.refCallback)}>
+            <div className="source-multi-dropdown" ref={makeRefCallback('iptv', iptvDropdownRef)}>
               <button
                 className="source-multi-trigger"
-                onClick={() => { iptvDropdown.updatePosition(); setShowIptvMultiSelect(!showIptvMultiSelect); }}
+                onClick={() => setShowIptvMultiSelect(!showIptvMultiSelect)}
               >
                 <span>已选 {(iptvSourceIndices || []).length} 项</span>
                 <ChevronDown size={14} className={showIptvMultiSelect ? 'rotated' : ''} />
@@ -431,10 +430,10 @@ export default function SettingsPage() {
           title="节目单源"
           description="选择节目单数据源（支持多选）"
           extra={
-            <div className={`source-multi-dropdown${epgDropdown.openUpward ? ' source-multi-dropdown--upward' : ''}`} ref={makeRefCallback('epg', epgDropdown.refCallback)}>
+            <div className="source-multi-dropdown" ref={makeRefCallback('epg', epgDropdownRef)}>
               <button
                 className="source-multi-trigger"
-                onClick={() => { epgDropdown.updatePosition(); setShowEpgMultiSelect(!showEpgMultiSelect); }}
+                onClick={() => setShowEpgMultiSelect(!showEpgMultiSelect)}
               >
                 <span>已选 {epgUrls.length} 项</span>
                 <ChevronDown size={14} className={showEpgMultiSelect ? 'rotated' : ''} />
