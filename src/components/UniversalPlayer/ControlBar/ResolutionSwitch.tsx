@@ -9,7 +9,8 @@ function getResolutionLabel(level: PlayerLevel): string {
   if (level.height >= 720) return '720p';
   if (level.height >= 480) return '480p';
   if (level.height >= 360) return '360p';
-  return `${level.height}p`;
+  if (level.height > 0) return `${level.height}p`;
+  return level.name || '未知';
 }
 
 function getCurrentLabel(levels: PlayerLevel[], currentLevel: number): string {
@@ -33,25 +34,33 @@ const POPOVER_ID = 'resolution';
 export default function ResolutionSwitch({ levels, currentLevel, onChange, visible, activePopover, onPopoverChange }: ResolutionSwitchProps) {
   const isOpen = activePopover === POPOVER_ID;
 
-  const handleToggle = useCallback(() => {
-    onPopoverChange(isOpen ? null : POPOVER_ID);
-  }, [isOpen, onPopoverChange]);
-
   const handleSelect = useCallback((level: number) => {
     onChange(level);
     onPopoverChange(null);
   }, [onChange, onPopoverChange]);
+
+  const handleButtonTouch = useCallback(() => {
+    if (isOpen) {
+      onPopoverChange(null);
+    } else {
+      onPopoverChange(POPOVER_ID);
+    }
+  }, [isOpen, onPopoverChange]);
 
   if (!visible || levels.length === 0) return null;
 
   const label = getCurrentLabel(levels, currentLevel);
 
   return (
-    <div className="up-popover-control">
+    <div
+      className="up-popover-control"
+      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
+      onMouseLeave={() => onPopoverChange(null)}
+    >
       <button
-        className={`up-control-btn ${currentLevel !== -1 ? 'up-control-btn-active' : ''}`}
-        onClick={handleToggle}
+        className="up-control-btn"
         title="画质"
+        onTouchStart={handleButtonTouch}
       >
         <Monitor size={20} />
         <span className="up-speed-label">{label}</span>

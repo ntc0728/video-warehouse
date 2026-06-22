@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { MoreVertical } from 'lucide-react';
 
 interface MoreMenuProps {
@@ -10,30 +10,26 @@ interface MoreMenuProps {
 const POPOVER_ID = 'more';
 
 export default function MoreMenu({ children, activePopover, onPopoverChange }: MoreMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
   const isOpen = activePopover === POPOVER_ID;
 
-  const handleToggle = useCallback(() => {
-    onPopoverChange(isOpen ? null : POPOVER_ID);
-  }, [isOpen, onPopoverChange]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onPopoverChange(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  const handleButtonTouch = useCallback(() => {
+    if (isOpen) {
+      onPopoverChange(null);
+    } else {
+      onPopoverChange(POPOVER_ID);
+    }
   }, [isOpen, onPopoverChange]);
 
   return (
-    <div className="up-popover-control up-more-menu" ref={menuRef}>
+    <div
+      className="up-popover-control up-more-menu"
+      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
+      onMouseLeave={() => onPopoverChange(null)}
+    >
       <button
         className="up-control-btn"
-        onClick={handleToggle}
         title="更多"
+        onTouchStart={handleButtonTouch}
       >
         <MoreVertical size={20} />
       </button>

@@ -7,6 +7,7 @@ interface PlayerHeaderProps {
   title: string;
   channelName?: string;
   visible: boolean;
+  showFullscreenButton?: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   onBack: () => void;
   onActivity?: () => void;
@@ -17,6 +18,7 @@ export default function PlayerHeader({
   title,
   channelName,
   visible,
+  showFullscreenButton = true,
   containerRef,
   onBack,
   onActivity,
@@ -33,7 +35,7 @@ export default function PlayerHeader({
         <span>返回</span>
       </button>
       <span className="up-header-title">{displayTitle}</span>
-      <FullscreenButton containerRef={containerRef} />
+      {showFullscreenButton && <FullscreenButton containerRef={containerRef} />}
     </div>
   );
 }

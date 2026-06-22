@@ -116,7 +116,9 @@
 
 .marquee-track {
   display: flex;
+  flex-shrink: 0;
   width: fit-content;
+  min-width: max-content;
   white-space: nowrap;
 }
 
@@ -333,7 +335,7 @@
   justify-content: space-between;
   align-items: center;
   width: var(--layout-vol-popup-w);
-  height: var(--layout-vol-popup-h);
+  height: var(--layout-vol-popup-w);
   padding: var(--space-md) 0;
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.55);
@@ -441,8 +443,8 @@
 /* 移动端 logo 缩小 */
 .up-platform-mobile .iptv-osd-logo,
 .up-platform-mobile .iptv-osd-logo-fallback {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
 }
 
 .up-platform-mobile .iptv-osd-logo-fallback {

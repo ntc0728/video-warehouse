@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel } from '@/types/player';
 import ProgressBar from './ProgressBar';
@@ -36,6 +36,8 @@ interface ControlBarProps {
   levels: PlayerLevel[];
   currentLevel: number;
   onLevelChange: (level: number) => void;
+  activePopover: string | null;
+  onPopoverChange: (id: string | null) => void;
   slots?: {
     left?: React.ReactNode;
     center?: React.ReactNode;
@@ -63,6 +65,8 @@ export default function ControlBar({
   levels,
   currentLevel,
   onLevelChange,
+  activePopover,
+  onPopoverChange,
   slots,
 }: ControlBarProps) {
   const {
@@ -73,11 +77,6 @@ export default function ControlBar({
   const [videoDuration, setVideoDuration] = useState(0);
   const [buffered] = useState(0);
   const barRef = useRef<HTMLDivElement>(null);
-  const [activePopover, setActivePopover] = useState<string | null>(null);
-
-  const handlePopoverChange = useCallback((id: string | null) => {
-    setActivePopover(id);
-  }, []);
 
   useEffect(() => {
     const updateTimer = setInterval(() => {
@@ -126,20 +125,25 @@ export default function ControlBar({
         )}
 
         <div className="up-control-right">
-          <VolumeControl volume={volume} onChange={onVolumeChange} />
+          <VolumeControl
+            volume={volume}
+            onChange={onVolumeChange}
+            activePopover={activePopover}
+            onPopoverChange={onPopoverChange}
+          />
           <div className="up-control-feature">
             {isVideoMode && (
               <SubtitleControl
                 onImportSubtitle={onImportSubtitle}
                 activePopover={activePopover}
-                onPopoverChange={handlePopoverChange}
+                onPopoverChange={onPopoverChange}
               />
             )}
             <SpeedControl
               currentRate={playbackRate}
               onChange={onPlaybackRateChange}
               activePopover={activePopover}
-              onPopoverChange={handlePopoverChange}
+              onPopoverChange={onPopoverChange}
             />
             {isVideoMode && (
               <ResolutionSwitch
@@ -148,13 +152,13 @@ export default function ControlBar({
                 onChange={onLevelChange}
                 visible={isHls}
                 activePopover={activePopover}
-                onPopoverChange={handlePopoverChange}
+                onPopoverChange={onPopoverChange}
               />
             )}
           </div>
           <MoreMenu
             activePopover={activePopover}
-            onPopoverChange={handlePopoverChange}
+            onPopoverChange={onPopoverChange}
           >
             <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
             {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}

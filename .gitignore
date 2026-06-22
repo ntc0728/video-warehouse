@@ -47,6 +47,9 @@ output/
 epg_test.xml
 data/iptv.m3u
 
+# 测试结果
+test-results/
+
 # 文档
 docs/
 
