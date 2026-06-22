@@ -264,6 +264,17 @@ export async function getCachedEPGData(): Promise<ParsedEPGData> {
   return cached?.data || { channels: [], programmes: new Map() };
 }
 
+export async function getEPGCacheTime(): Promise<number | null> {
+  try {
+    const db = await getDB();
+    const time = await db.get('settings', EPG_CACHE_TIME_KEY);
+    if (time) {
+      return (time as { value: number }).value;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function matchAllChannels(
   m3uChannels: { id: string; name: string; tvgId?: string }[],
   epgData: ParsedEPGData

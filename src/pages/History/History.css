@@ -10,7 +10,7 @@
   margin-right: var(--space-sm);
 }
 .search-box--iptv {
-  height: var(--comp-input-height);
+  height: calc(var(--text-base) + var(--space-sm) * 3);
   border-radius: var(--radius-full);
   border-right: 1px solid var(--color-border);
 }

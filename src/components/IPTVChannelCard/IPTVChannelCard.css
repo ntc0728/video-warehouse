@@ -195,20 +195,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: var(--icon-xl);
-  height: var(--icon-xl);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
   padding: 0;
   border: none;
   border-radius: 50%;
-  background-color: var(--color-favorite-bg);
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.8);
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 0.2s ease,
-              box-shadow 0.2s ease;
+              background 0.2s ease;
   cursor: pointer;
   pointer-events: none;
 }
@@ -233,17 +231,18 @@
 }
 
 .iptv-card-favorite:hover {
-  transform: scale(1.15);
+  background: rgba(0, 0, 0, 0.65);
+  transform: scale(1.1);
 }
 
 .iptv-card-favorite.active {
-  background-color: var(--color-favorite-active-bg);
+  background: rgba(255, 77, 79, 0.15);
   color: var(--color-favorite-active);
-  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
+  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.25);
 }
 
 .iptv-card-favorite.active.visible {
-  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.35);
+  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
 }
 
 /* Mobile：未收藏按钮也常驻以保证可点（触摸设备无 hover 行为） */
@@ -301,11 +300,6 @@
     padding: var(--space-sm);
   }
 
-  .iptv-card-favorite {
-    width: var(--icon-xl);
-    height: var(--icon-xl);
-  }
-
   .iptv-channel-card:hover {
     transform: translateY(-2px);
   }
@@ -353,11 +347,6 @@
   .iptv-card-info {
     gap: var(--space-xs);
     padding: var(--space-sm) var(--space-md);
-  }
-
-  .iptv-card-favorite {
-    width: var(--icon-xl);
-    height: var(--icon-xl);
   }
 
   .iptv-channel-card:hover {

@@ -154,11 +154,11 @@
   --layout-channel-num-w:      120px;
   --layout-quality-badge-min-w: 84px;
   --layout-vol-popup-w:        60px;
-  --layout-vol-popup-h:        300px;
   --layout-vol-slider-w:       180px;
   --layout-player-vol-w:       80px;
   --layout-popover-min-w:      100px;
   --layout-popover-wide-min-w: 140px;
+  --layout-sidebar-width:      clamp(260px, 15rem + 1.5vw, 320px);  /* 260→320px 流体 */
   --layout-episode-panel-w:    420px;
   --layout-episode-panel-w-alt: 440px;
   --layout-time-display-min-w: 90px;
@@ -168,6 +168,7 @@
   --layout-channel-list-w-lg:  300px;
   --layout-channel-list-w-xl: 360px;
   --layout-channel-list-w-2xl: 400px;
+  --layout-iptv-channel-list-w: clamp(20rem, 17.5rem + 0.65vw, 30rem);  /* 320—480px 流体 */
   --layout-source-url-max-w:   160px;
   --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
   --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */

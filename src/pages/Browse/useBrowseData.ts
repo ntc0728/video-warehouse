@@ -93,15 +93,26 @@ export function useBrowseData() {
     // 同步 store 中的 filterOptions（确保与 URL 一致）
     setFilter(toStoreFilter(filterValue));
 
+    // 首次进入页面，无论有无旧数据都显示 loading
+    setIsRefreshing(true);
+    hadOldDataRef.current = false;
+
     // 立即发起 page=1 查询（无 debounce）
-    if (urlQ) {
-      // 有搜索词：走 /search/multi
-      void useTMDBStore.getState().search(urlQ, 1, { reset: true });
-    } else if (filterValue.category === 'top') {
-      void fetchTopRated(1, { reset: true });
-    } else {
-      void fetchDiscover(1, { reset: true });
-    }
+    const fetchPromise = (() => {
+      if (urlQ) {
+        return useTMDBStore.getState().search(urlQ, 1, { reset: true });
+      } else if (filterValue.category === 'top') {
+        return fetchTopRated(1, { reset: true });
+      } else {
+        return fetchDiscover(1, { reset: true });
+      }
+    })();
+
+    void fetchPromise.then(() => {
+      if (isMountedRef.current) {
+        setIsRefreshing(false);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

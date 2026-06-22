@@ -12,10 +12,9 @@
  *      点击「更多筛选 ▾」展开 300ms 过渡。
  *      折叠状态可由 useNavStore('filterBarCollapsed') 跨会话恢复。
  */
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { useNavStore } from '@/stores';
 import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, type FilterBarValue } from './constants';
 import './FilterBar.css';
@@ -31,6 +30,14 @@ interface FilterBarProps {
   excludedGenreIds?: number[];
   /** 父组件在 debounce / fetch 期间置 true：右上角显示 "更新中…" spinner */
   isUpdating?: boolean;
+  /** 外部控制折叠状态 */
+  collapsed?: boolean;
+  /** 外部控制折叠切换 */
+  onToggleCollapse?: () => void;
+  /** 结果总数 */
+  totalResults?: number;
+  /** 当前分类显示名称（替换默认的"分类"label） */
+  categoryLabel?: string;
 }
 
 // ── 组件 ────────────────────────────────────────────
@@ -42,22 +49,12 @@ export default function FilterBar({
   hideRegion = false,
   excludedGenreIds = [],
   isUpdating = false,
+  collapsed = true,
+  onToggleCollapse,
+  totalResults = 0,
+  categoryLabel,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
-  // 折叠状态：默认 true（折叠）。useNavStore 持久化（跨页面/跨会话恢复）。
-  const navStore = useNavStore();
-  const navSaved = navStore.getState('filterBarCollapsed');
-  const filterCollapsed = (navSaved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed;
-  const [collapsed, setCollapsed] = useState<boolean>(
-    typeof filterCollapsed === 'boolean' ? filterCollapsed : true,
-  );
-  const collapsedRef = useRef(collapsed);
-  collapsedRef.current = collapsed;
-  const toggleCollapsed = useCallback(() => {
-    const next = !collapsedRef.current;
-    setCollapsed(next);
-    navStore.saveState('filterBarCollapsed', { filter: { collapsed: next } });
-  }, [navStore]);
 
   // 过滤掉分类自身默认的 genre（仍在 value.genreIds 中参与 API）
   const visibleGenres = useMemo(
@@ -137,7 +134,7 @@ export default function FilterBar({
             onClick={selectAllGenres}
             aria-pressed={isAllGenres}
           >
-            分类
+            {categoryLabel || '分类'}
           </button>
           <div className="filter-bar__chips-wrap">
             {visibleGenres.map((g) => (
@@ -246,12 +243,13 @@ export default function FilterBar({
       </div>
       </div>
 
-      {/* 折叠按钮：「更多筛选 / 收起筛选」 — 放在所有筛选条件下方 */}
-      <div className="filter-bar__row filter-bar__row--toggle">
+      {/* 折叠按钮 + 结果数：居中显示按钮，结果数在最右 */}
+      <div className="filter-bar__footer">
+        <span aria-hidden="true" />
         <button
           type="button"
           className={`filter-bar__toggle${!collapsed ? ' filter-bar__toggle--expanded' : ''}`}
-          onClick={toggleCollapsed}
+          onClick={onToggleCollapse}
           aria-expanded={!collapsed}
           aria-controls="filter-bar-collapse-body"
         >
@@ -260,6 +258,9 @@ export default function FilterBar({
             <ChevronDown size={14} />
           </span>
         </button>
+        <span className="filter-bar__count" aria-live="polite">
+          共 {totalResults.toLocaleString('zh-CN')} 条
+        </span>
       </div>
     </div>
   );

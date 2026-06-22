@@ -115,12 +115,13 @@
   height: calc(var(--space-2xl) * 1.2);
 }
 
-/* ── Mobile: 适配安全区，避开 TabBar ──────────────── */
+/* ── Mobile: 放大按钮，避开 TabBar ──────────────── */
 @media (width <= 767px) {
   .back-to-top-button {
     right: var(--space-md);
-    /* TabBar 高度(56px) + 按钮高度 + 间距 = 56 + 48 + 12 = 116px */
     bottom: calc(var(--layout-tabbar-height) + var(--space-xl));
+    width: calc(var(--space-2xl) * 2);
+    height: calc(var(--space-2xl) * 2);
   }
 }
 

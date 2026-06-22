@@ -38,7 +38,7 @@ export default function BrowseGrid({ items }: BrowseGridProps) {
   if (items.length === 0) return null;
 
   return (
-    <div className="video-card-grid">
+    <div className="video-card-grid browse-card-grid">
       {items.map((item) => {
         // 为 TMDB poster 图片生成响应式 srcSet
         const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500', 'w780']) : undefined;

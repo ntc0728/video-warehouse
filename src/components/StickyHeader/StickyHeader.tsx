@@ -53,13 +53,6 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
 
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
-  /**
-   * 在以下路由下隐藏顶部中央的 SearchBox，避免与页面内的 SearchBox 重复：
-   *  - /browse* : BrowseHeader 中间已有自己的 SearchBox
-   *  - /iptv*   : IPTV 页左侧栏已有搜索入口，避免双搜索框
-   */
-  const isSearchHidden = location.pathname.startsWith('/browse');
-
   // ── 滚动检测：仅首页监听滚动距离，超过 --header-height 切换为实体背景 ──
   // 滚动容器是 AppLayout 的 CustomScrollbar（不是 window）；用 useScrollContainer 拿 ref
   const scrollContainerRef = useScrollContainer();
@@ -127,9 +120,8 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
         </div>
         <div className="sticky-header__center">
           {/* 顶部导航中央：公共搜索框（variant="header"）。
-              URL ?q= 已由 SearchBox 内部 useSearchParams 自动同步 input 值。
-              /browse/* 与 /iptv/* 路由下不渲染（避免与页面内搜索框重复）。 */}
-          {isSearchHidden ? null : <SearchBox variant="header" />}
+              URL ?q= 已由 SearchBox 内部 useSearchParams 自动同步 input 值。 */}
+          <SearchBox variant="header" />
         </div>
         <div className="sticky-header__right">
           <nav className="sticky-header__nav" aria-label="次要导航">

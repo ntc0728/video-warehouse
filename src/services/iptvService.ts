@@ -232,7 +232,8 @@ function parseM3U8Content(content: string, sourceUrl?: string): IPTVChannel[] {
 /**
  * 检测单个频道的可用性
  * 通过创建隐藏的 video 元素尝试加载频道 URL
- * 若能在超时时间内触发 canplay 事件则视为可用
+ * 优先使用 canplay / loadeddata 判定；iOS 上 canplay 可能因自动播放策略不触发，
+ * 因此用 loadeddata 作为备用信号，loadedmetadata 后短暂等待作为最终兜底。
  */
 export async function checkChannelAvailability(url: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -241,14 +242,16 @@ export async function checkChannelAvailability(url: string): Promise<boolean> {
     video.muted = true;
     video.volume = 0;
 
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let metadataTimeoutId: ReturnType<typeof setTimeout>;
     let resolved = false;
 
     const cleanup = () => {
       if (resolved) return;
       resolved = true;
       clearTimeout(timeoutId);
+      clearTimeout(metadataTimeoutId);
       video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('loadeddata', onLoadedData);
       video.removeEventListener('error', onError);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
       video.removeAttribute('src');
@@ -256,19 +259,27 @@ export async function checkChannelAvailability(url: string): Promise<boolean> {
       video.src = '';
     };
 
+    const onSuccess = () => {
+      cleanup();
+      resolve(true);
+    };
+
     const onCanPlay = () => {
       if (video.readyState >= 2) {
-        cleanup();
-        resolve(true);
+        onSuccess();
       }
     };
 
+    const onLoadedData = () => {
+      onSuccess();
+    };
+
     const onLoadedMetadata = () => {
-      video.addEventListener('canplay', onCanPlay, { once: true });
-      timeoutId = setTimeout(() => {
+      // 元数据加载成功说明流可解析，给 3s 让数据到达
+      metadataTimeoutId = setTimeout(() => {
         cleanup();
-        resolve(false);
-      }, 5000);
+        resolve(true);
+      }, 3000);
     };
 
     const onError = () => {
@@ -276,11 +287,13 @@ export async function checkChannelAvailability(url: string): Promise<boolean> {
       resolve(false);
     };
 
+    video.addEventListener('canplay', onCanPlay, { once: true });
+    video.addEventListener('loadeddata', onLoadedData, { once: true });
     video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
     video.addEventListener('error', onError, { once: true });
 
     // 全局超时保护，防止长时间无响应
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       cleanup();
       resolve(false);
     }, 10000);

@@ -50,9 +50,7 @@
   width: 100%;
   height: 100%;
   padding: 0 var(--space-md);
-  /* 补偿 .custom-scrollbar-container 的 scrollbar-gutter: stable，
-     使导航栏内容区宽度与下方滚动内容区一致 */
-  padding-right: calc(var(--space-md) + var(--scrollbar-width));
+  /* 滚动条已隐藏，不需要补偿 */
 }
 
 /* ── Left / Right groups ───────────────────────────── */
@@ -88,9 +86,9 @@
   cursor: pointer;
 }
 
-.sticky-header__logo-group:focus-visible {
-  outline: none;
-  box-shadow: none;
+.sticky-header__logo-group:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .sticky-header__logo-group:hover {

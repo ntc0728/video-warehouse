@@ -24,9 +24,7 @@
 
 @media (width <= 767px) {
   .home-rows {
-    padding-right: 0;
     padding-bottom: var(--layout-tabbar-height);
-    padding-left: 0;
   }
 }
 

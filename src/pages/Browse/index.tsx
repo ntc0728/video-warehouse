@@ -17,20 +17,19 @@
  *  - TV：放大字号
  *  - 所有客户端：筛选 chip 全部 wrap，不被截断
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { useTMDBStore } from '@/stores';
+import { useTMDBStore, useNavStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
-import { CATEGORY_CONFIG } from './constants';
+import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
 import { useBrowseData } from './useBrowseData';
-import BrowseHeader from './BrowseHeader';
 import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
 import './Browse.css';
@@ -49,7 +48,6 @@ export default function BrowsePage() {
     filterValue,
     updateFilter,
     isRefreshing,
-    hadOldData,
     loadMore,
     retry,
     hasMore,
@@ -81,6 +79,19 @@ export default function BrowsePage() {
     }
   }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
+  // ── 筛选栏折叠状态 ──────────────────────────────────
+  const filterBarCollapsed = useNavStore((s) => {
+    const saved = s.states['filterBarCollapsed'];
+    const collapsed = (saved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed;
+    return typeof collapsed === 'boolean' ? collapsed : true;
+  });
+  const [collapsed, setCollapsed] = useState<boolean>(filterBarCollapsed);
+  const toggleCollapse = useCallback(() => {
+    const next = !collapsed;
+    setCollapsed(next);
+    useNavStore.getState().saveState('filterBarCollapsed', { filter: { collapsed: next } });
+  }, [collapsed]);
+
   // ── 当前分类下的可选类型（合并去重）───────────────
   const currentGenres = useMemo<TMDBGenre[]>(() => {
     const cfg = CATEGORY_CONFIG[filterValue.category];
@@ -98,7 +109,7 @@ export default function BrowsePage() {
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
   const isFirstLoad = isLoading && discoverResults.length === 0;
-  const isEmpty = !isLoading && !isFirstLoad && discoverResults.length === 0;
+  const isEmpty = !isLoading && !isRefreshing && discoverResults.length === 0;
 
   return (
     <div
@@ -108,28 +119,26 @@ export default function BrowsePage() {
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
     >
-      <BrowseHeader
-        category={filterValue.category}
-        totalResults={discoverPagination.totalResults}
-        isLoading={isLoading && discoverResults.length === 0}
-      />
-
       <FilterBar
         value={filterValue}
         onChange={updateFilter}
         genres={currentGenres}
         excludedGenreIds={excludedGenreIds}
+        collapsed={collapsed}
+        onToggleCollapse={toggleCollapse}
+        totalResults={discoverPagination.totalResults}
+        categoryLabel={CATEGORY_LABELS[filterValue.category]}
       />
 
-      {/* 首次加载：品牌 Loading */}
-      {isFirstLoad && (
+      {/* 首次加载：品牌 Loading（不显示文字） */}
+      {isFirstLoad && !isRefreshing && (
         <div className="browse-page__loading">
-          <AppLoading tip="正在加载影片…" />
+          <AppLoading showTip={false} />
         </div>
       )}
 
       {/* 错误 + 无数据 */}
-      {error && discoverResults.length === 0 && !isFirstLoad && (
+      {error && discoverResults.length === 0 && (
         <div className="browse-page__error">
           <AlertCircle size={32} className="browse-page__error-icon" />
           <p className="browse-page__error-text">{error}</p>
@@ -152,9 +161,9 @@ export default function BrowsePage() {
       )}
 
       {/* 切换筛选条件:用 loading 替换 grid,新数据到达后再渲染 */}
-      {isRefreshing && hadOldData ? (
+      {isRefreshing ? (
         <div className="browse-page__refreshing" aria-busy="true">
-          <AppLoading tip="正在应用筛选条件…" />
+          <AppLoading showTip={false} />
         </div>
       ) : discoverResults.length > 0 ? (
         <BrowseGrid items={discoverResults} />
@@ -166,12 +175,13 @@ export default function BrowsePage() {
             也无法继续懒加载,用户体感"懒加载失效"。
           - 现在哨兵 always 在 DOM 中,IO 持续 observe;LoadMore 文字态在无数据时
             隐藏(避免显示"下滑加载更多"误导用户)。 */}
-      <div ref={sentinelRef} aria-hidden="true" />
-      {discoverResults.length > 0 && (
+      {!isRefreshing && <div ref={sentinelRef} aria-hidden="true" />}
+      {!isRefreshing && discoverResults.length > 0 && (
         <BrowseLoadMore
           hasMore={hasMore}
           isLoading={isLoadingMore}
           hasItems={discoverResults.length > 0}
+          isRefreshing={isRefreshing}
         />
       )}
 

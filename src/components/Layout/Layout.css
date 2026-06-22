@@ -30,7 +30,13 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
-  overflow-x: hidden;
+  overflow: hidden auto;
+  /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
+  scrollbar-width: none;
+}
+
+.app-shell__scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── 页面统一左右内边距 ─────────────────────────────────

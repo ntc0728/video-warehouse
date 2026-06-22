@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import './OverlayScrollbar.css';
 
 interface OverlayScrollbarProps {
@@ -28,6 +28,12 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     setThumbTop(top);
   }, [scrollContainer]);
 
+  // 立即更新一次（DOM 准备好后）
+  useLayoutEffect(() => {
+    updateThumb();
+  }, [updateThumb]);
+
+  // 监听滚动事件
   useEffect(() => {
     const el = scrollContainer.current;
     if (!el) return;
@@ -40,6 +46,12 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
       ro.disconnect();
     };
   }, [scrollContainer, updateThumb]);
+
+  // 延迟重试：处理 ref 可能延迟绑定的情况
+  useEffect(() => {
+    const timer = setTimeout(() => updateThumb(), 100);
+    return () => clearTimeout(timer);
+  }, [updateThumb]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
