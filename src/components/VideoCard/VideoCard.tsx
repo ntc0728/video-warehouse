@@ -56,8 +56,14 @@ const VideoCard = memo(function VideoCard({
     const el = titleRef.current;
     if (!el) return;
     // 一次性检查标题是否溢出，避免为 ~140 张卡片各创建一个 ResizeObserver
-    const raf = requestAnimationFrame(() => setIsOverflow(el.scrollWidth > el.clientWidth));
-    return () => cancelAnimationFrame(raf);
+    let cancelled = false;
+    const raf = requestAnimationFrame(() => {
+      if (!cancelled) setIsOverflow(el.scrollWidth > el.clientWidth);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
   }, [video.title]);
 
   const handleFavorite = useCallback(

@@ -172,6 +172,20 @@
   border-color: var(--color-input-border);
 }
 
+.source-multi-trigger:focus {
+  outline: none;
+}
+
+.source-multi-trigger:active {
+  box-shadow: none !important;
+  transform: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.source-multi-trigger:focus-visible {
+  outline: none;
+}
+
 .source-multi-trigger svg {
   transition: none;
 }

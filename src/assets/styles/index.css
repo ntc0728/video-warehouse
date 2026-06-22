@@ -63,6 +63,9 @@ html {
 
 /* ── 移动端隐藏所有滚动条 ─────────────────────────────── */
 @media (width <= 767px) {
+  html, body {
+    overscroll-behavior: none;
+  }
   * {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -303,7 +306,7 @@ a[role="button"]:active:not(:disabled),
 .confirm-description {
   margin: 0 0 var(--space-lg);
   color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   line-height: 1.5;
 }
 
@@ -320,7 +323,7 @@ a[role="button"]:active:not(:disabled),
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
@@ -474,7 +477,8 @@ main {
   border-radius: var(--radius-full);
   background: var(--color-hover-bg);
   color: var(--color-text-secondary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+  font-weight: 600;
   white-space: nowrap;
   transition: all 0.15s;
   cursor: pointer;

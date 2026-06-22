@@ -47,7 +47,7 @@
   text-overflow: ellipsis;
 }
 
-/* 滚动容器 — 临时无 padding（待用户检查后再决定是否恢复） */
+/* 滚动容器 — 移动端左右留白，避免卡片贴边；桌面端/TV 由父容器 .home-rows 控制 */
 .tmdb-movierow-wrapper {
   position: relative;
   padding: 0;
@@ -67,7 +67,7 @@
   -ms-overflow-style: none;
   user-select: none;
   -webkit-user-drag: none;
-  touch-action: pan-x;
+  /* 移除 touch-action: pan-x，允许页面垂直滚动 */
   /* cursor 不再放在 row 容器（避免空白处出现 grab 误导）—— 改放到 card 元素 */
 }
 .tmdb-movierow-scroll--dragging {
@@ -172,26 +172,6 @@
 .tmdb-movierow-arrow-right {
   right: var(--space-xs);
 }
-
-/* 移动端适配 */
-@media (width <= 768px) {
-  .tmdb-movierow {
-    margin-bottom: var(--space-md);
-  }
-
-  .tmdb-movierow-title {
-    font-size: var(--text-base);
-  }
-
-  .tmdb-movierow-wrapper {
-    padding: 0 var(--space-md);
-  }
-
-  .tmdb-movierow-arrow {
-    display: none;
-  }
-}
-
 
 /* ============================================================
    TV 端 — 焦点可见 + 更大触控区 + 无 hover 箭头

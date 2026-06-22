@@ -17,7 +17,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         onCheckedChange={onChange}
         disabled={disabled}
         className={[
-          'relative inline-flex h-[var(--switch-track-height)] w-[var(--switch-track-width)] shrink-0 cursor-pointer rounded-full',
+          'relative inline-flex items-center h-[var(--switch-track-height)] w-[var(--switch-track-width)] shrink-0 cursor-pointer rounded-full',
           'transition-colors duration-200 ease-in-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-50',

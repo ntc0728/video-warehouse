@@ -54,17 +54,6 @@
   font-size: var(--text-sm);
 }
 
-.source-url {
-  max-width: var(--layout-source-url-max-w);
-  padding: var(--space-2xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-placeholder);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .force-refresh-btn {
   padding: var(--space-xs) var(--space-sm);
@@ -144,7 +133,7 @@
 
 .iptv-toolbar .search-box-wrap--iptv .search-box {
   height: auto;
-  min-height: calc(var(--text-base) + var(--space-sm) * 2 + var(--space-2xs));
+  min-height: calc(var(--text-base) + var(--space-sm) * 3);
 }
 
 .refresh-btn {
@@ -377,10 +366,6 @@
     gap: var(--space-xs);
     min-width: 0;
     overflow: hidden;
-  }
-
-  .source-url {
-    max-width: 9.375rem;
   }
 
   .force-refresh-btn {

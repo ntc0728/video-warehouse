@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIPTVStore, useNavStore, useSettingsStore } from '@/stores';
 import { getIPTVSources } from '@/services/sourceService';
+import { getEPGCacheTime } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -33,19 +34,6 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(timer);
   }, [value, delay]);
   return debouncedValue;
-}
-
-/** 从 URL 中提取主机名用于显示 */
-function getDisplayHostname(url: string): string {
-  if (url.startsWith('/')) {
-    const match = url.match(/^\/([^/]+)/);
-    return match ? match[1] : url;
-  }
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
 }
 
 /**
@@ -108,6 +96,7 @@ export default function IPTVPage() {
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState(saved?.search || '');
   const [groupsExpanded, setGroupsExpanded] = useState(false);
+  const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
 
   useScrollRestore('iptv');
   const scrollContainerRef = useScrollContainer();
@@ -115,6 +104,11 @@ export default function IPTVPage() {
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
   }, [searchKeyword, selectedGroup, saveState]);
+
+  // 获取节目单缓存时间
+  useEffect(() => {
+    getEPGCacheTime().then(setEpgCacheTime);
+  }, []);
 
   // 页面卸载时中止检测
   useEffect(() => {
@@ -227,6 +221,13 @@ export default function IPTVPage() {
     return () => ro.disconnect();
   }, [checkGroupsOverflow]);
 
+  // 分组列表变化时重新检测溢出（源切换、分组数据更新）
+  useEffect(() => {
+    // 延迟一帧等待 DOM 更新后再检测
+    const raf = requestAnimationFrame(() => checkGroupsOverflow());
+    return () => cancelAnimationFrame(raf);
+  }, [filteredGroups, checkGroupsOverflow]);
+
   /**
    * 数据加载调度（合并原"首次进入"和"源切换"两个 useEffect）
    *
@@ -337,6 +338,8 @@ export default function IPTVPage() {
     setSelectedSource(sourceId);
     setSelectedGroup(null);
     setGroupsExpanded(false);
+    setNeedCollapse(false);
+    setCollapsedHeight(null);
     useIPTVStore.getState().abortAvailabilityCheck();
   }, []);
 
@@ -362,12 +365,14 @@ export default function IPTVPage() {
             <div className="iptv-header-meta">
               {lastRefresh && (
                 <span className="last-refresh">
-                  更新: {new Date(lastRefresh).toLocaleTimeString()}
+                  源: {new Date(lastRefresh).toLocaleTimeString()}
                 </span>
               )}
-              <span className="source-url" title={aggregatorUrl}>
-                源: {getDisplayHostname(aggregatorUrl)}
-              </span>
+              {epgCacheTime && (
+                <span className="last-refresh">
+                  节目单: {new Date(epgCacheTime).toLocaleTimeString()}
+                </span>
+              )}
             </div>
           </div>
           {!proxyUrl && (

@@ -79,7 +79,7 @@ export default function AppLayout() {
             </RouteTransition>
             <div id="load-more-portal" />
           </div>
-          {isHome && <OverlayScrollbar scrollContainer={scrollContainerRef} />}
+          <OverlayScrollbar scrollContainer={scrollContainerRef} />
         </CustomScrollbar>
         {isMobile && <TabBar />}
       </div>

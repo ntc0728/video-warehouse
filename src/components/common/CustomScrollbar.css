@@ -2,10 +2,9 @@
    CustomScrollbar — 原生滚动容器薄包装
 
    关键设计：
-   - 容器 overflow 由 inline style 注入 (auto/scroll)
+   - 容器 overflow 由 CSS 类控制（不在 inline style 中，避免覆盖 scrollbar-width）
    - overscroll-behavior: contain 阻断 macOS/iOS 橡皮筋
-   - 不使用 contain / scrollbar-gutter，让浏览器主线程合成器自由优化滚动
-   - 滚动条外观使用浏览器原生（无 ::-webkit-scrollbar 覆盖）
+   - 完全隐藏原生滚动条，不占据页面宽度
    ═══════════════════════════════════════════════════════════════════════ */
 
 .custom-scrollbar-container {
@@ -13,34 +12,31 @@
   overscroll-behavior: contain;
   /* iOS 惯性滚动 */
   -webkit-overflow-scrolling: touch;
-  /*
-   * 始终预留垂直滚动条空间(scrollbar-gutter: stable)。
-   * 否则当滚动容器内容高度变化(例如 Collections/History 搜索过滤、
-   * IPTV 频道数变化)时,浏览器只在"需要时"才显示滚动条,
-   * 滚动条出现/消失的 10px 差异会回传到 page 宽度,
-   * 进而引起 toolbar / searchBox 宽度 ±10px 抖动。
-   * "stable" 强制在容器右侧始终保留 gutter,内容宽度不再随滚动条显隐抖动。
-   *
-   * 移动端滚动条不可见,不需要预留空间,否则会导致横向溢出。
-   */
-  scrollbar-gutter: stable;
+  /* 不预留滚动条空间，让内容占满宽度 */
+  scrollbar-gutter: auto;
+  /* 完全隐藏滚动条 */
+  scrollbar-width: none;
   /* 对称补齐：flex item 默认 min-width: auto 会按内容撑开,
      显式声明 0 防止内部宽内容把外层滚动容器推到溢出(详见 spec/2026-06-11)。 */
   min-width: 0;
 }
 
-/* 移动端隐藏 scrollbar-gutter 预留空间，避免横向溢出 */
-@media (width <= 767px) {
-  .custom-scrollbar-container {
-    scrollbar-gutter: auto;
-  }
+/* Webkit 浏览器隐藏滚动条 */
+.custom-scrollbar-container::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
-/* 首页：隐藏原生滚动条，由自定义滚动条浮在 banner 上方 */
-.app-shell__scroll--no-gutter {
-  scrollbar-gutter: auto;
-  scrollbar-width: none;
+/* 滚动方向控制（通过 CSS 类，不在 inline style 中设置） */
+.custom-scrollbar-container--vertical {
+  overflow: hidden auto;
 }
-.app-shell__scroll--no-gutter::-webkit-scrollbar {
-  display: none;
+
+.custom-scrollbar-container--horizontal {
+  overflow: auto hidden;
+}
+
+.custom-scrollbar-container--both {
+  overflow: auto;
 }

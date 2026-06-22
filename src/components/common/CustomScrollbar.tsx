@@ -1,8 +1,5 @@
 import {
   forwardRef,
-  useImperativeHandle,
-  useMemo,
-  useRef,
   type CSSProperties,
   type ReactNode,
   type Ref,
@@ -67,34 +64,12 @@ const CustomScrollbar = forwardRef<HTMLDivElement, CustomScrollbarProps>(functio
   },
   ref: Ref<HTMLDivElement>,
 ) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // 暴露容器 DOM（API 向后兼容）
-  useImperativeHandle<HTMLDivElement | null, HTMLDivElement | null>(
-    ref,
-    () => containerRef.current as HTMLDivElement,
-    [],
-  );
-
-  // 根据 direction 决定 overflow
-  const overflowStyle = useMemo<CSSProperties>(() => {
-    switch (direction) {
-      case 'vertical':
-        return { overflowX: 'hidden', overflowY: 'auto' };
-      case 'horizontal':
-        return { overflowX: 'auto', overflowY: 'hidden' };
-      case 'both':
-      default:
-        return { overflow: 'auto' };
-    }
-  }, [direction]);
-
   return (
     <div
-      ref={containerRef}
-      className={`custom-scrollbar-container ${className}`}
+      ref={ref}
+      className={`custom-scrollbar-container custom-scrollbar-container--${direction} ${className}`}
       data-direction={direction}
-      style={{ ...overflowStyle, ...style }}
+      style={style}
     >
       {children}
     </div>

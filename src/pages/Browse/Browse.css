@@ -26,79 +26,6 @@
 /* Sticky 在 StickyHeader 下方（与 Detail-back-bar 行为一致）：
    滚动时"返回 + 标题 + 共 N 条"始终可见，紧贴导航栏。
    z-index 35 < StickyHeader 的 50，避免遮挡。 */
-.browse-header {
-  position: sticky;
-  z-index: 35;
-  display: grid;
-  /* 三列：左=分类（auto 宽）、中=搜索框（弹性 1fr）、右=结果数（auto 宽） */
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--space-md);
-  align-items: center;
-  padding: var(--space-sm) var(--space-sm);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(10px);
-  border-bottom: 1px solid var(--color-border-light);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
-}
-
-/* ── 左：分类（纯显示，复用原 back 胶囊 + 描边样式） ── */
-
-.browse-header__category {
-  display: inline-flex;
-  gap: var(--space-xs);
-  justify-self: start;
-  align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  /* 不可点击：不响应指针 */
-  cursor: default;
-  user-select: none;
-}
-
-.browse-header__category-label {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-
-.browse-header__category-name {
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* ── 中：搜索框容器（居中） ──────────────────────── */
-
-.browse-header__search {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-}
-
-.browse-header__search .search-box-wrap {
-  width: 100%;
-}
-
-/* ── 右：结果数（保留原样式） ────────────────────── */
-
-.browse-header__count {
-  justify-self: end;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-}
-
-.browse-header__count-loading {
-  color: var(--color-primary);
-  font-weight: 500;
-}
 
 /* ── Grid ─────────────────────────────────────────── */
 /* 视觉契约已上提到 @/components/VideoCard/VideoCard.css 的 .video-card-grid,
@@ -117,7 +44,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);  /* 360px→640px */
+  min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);
   padding: var(--space-3xl) var(--space-md);
 }
 
@@ -229,17 +156,14 @@
   animation: browse-spin 0.8s linear infinite;
 }
 
+.browse-card-grid{
+  padding: var(--space-sm);
+}
+
 @keyframes browse-spin {
   to {
   transform: rotate(360deg);
 }
-}
-
-.browse-loadmore-end {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-  opacity: 0.7;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -248,28 +172,16 @@
 
 /* ── Mobile (≤ 639px) ─────────────────────────────── */
 @media (width <= 639px) {
-  .browse-header {
-  grid-template-columns: auto 1fr auto;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-sm);
-}
-
-  /* 移动端只显示分类名，"分类"标签隐藏（节省横向空间） */
-  .browse-header__category-label {
-  display: none;
-}
-
-  .browse-header__category {
-  padding: var(--space-xs) var(--space-sm);
-}
-
-  .browse-header__count {
-  font-size: var(--text-xs);
-}
-
   .video-card-grid {
   padding: var(--space-sm) 0;
 }
+}
+
+/* 移动端：browse-card-grid 覆盖 video-card-grid 的 padding */
+@media (width <= 639px) {
+  .browse-card-grid {
+    padding: var(--space-sm);
+  }
 }
 
 /* ── Large Desktop (≥ 1920) ──────────────────────── */
@@ -280,22 +192,6 @@
 }
 
 /* ── TV (data-device="tv") ────────────────────────── */
-.browse-page--tv .browse-header {
-  padding: var(--space-lg) var(--space-sm);
-}
-
-.browse-page--tv .browse-header__category {
-  padding: var(--space-md) var(--space-lg);
-  font-size: var(--text-base);
-}
-
-.browse-page--tv .browse-header__category-label {
-  font-size: var(--text-sm);
-}
-
-.browse-page--tv .browse-header__count {
-  font-size: var(--text-base);
-}
 
 [data-device="tv"] .video-card-grid {
   gap: var(--space-lg);

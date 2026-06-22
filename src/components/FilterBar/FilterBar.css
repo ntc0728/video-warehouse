@@ -309,14 +309,7 @@
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
-/* 按钮独立行容器：作为最下方一行，水平居中 */
-.filter-bar__row--toggle {
-  justify-content: center;
-  margin-top: var(--space-2xs);
-}
-
 .filter-bar__toggle:hover {
-  border-color: var(--color-primary);
   background: var(--color-surface-hover, var(--color-surface));
   color: var(--color-primary);
 }
@@ -329,6 +322,28 @@
 
 .filter-bar__toggle--expanded .filter-bar__toggle-icon {
   transform: rotate(180deg);
+}
+
+/* ── Footer（折叠按钮居中 + 结果数最右） ──────────── */
+
+.filter-bar__footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: var(--space-2xs) 0;
+}
+
+.filter-bar__footer .filter-bar__toggle {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.filter-bar__count {
+  grid-column: 3;
+  justify-self: end;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
 }
 
 /* 折叠区域过渡：max-height + opacity 同步 */
