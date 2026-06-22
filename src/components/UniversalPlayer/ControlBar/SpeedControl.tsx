@@ -15,21 +15,29 @@ const POPOVER_ID = 'speed';
 export default function SpeedControl({ currentRate, onChange, activePopover, onPopoverChange }: SpeedControlProps) {
   const isOpen = activePopover === POPOVER_ID;
 
-  const handleToggle = useCallback(() => {
-    onPopoverChange(isOpen ? null : POPOVER_ID);
-  }, [isOpen, onPopoverChange]);
-
   const handleSelect = useCallback((rate: number) => {
     onChange(rate);
     onPopoverChange(null);
   }, [onChange, onPopoverChange]);
 
+  const handleButtonTouch = useCallback(() => {
+    if (isOpen) {
+      onPopoverChange(null);
+    } else {
+      onPopoverChange(POPOVER_ID);
+    }
+  }, [isOpen, onPopoverChange]);
+
   return (
-    <div className="up-popover-control">
+    <div
+      className="up-popover-control"
+      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
+      onMouseLeave={() => onPopoverChange(null)}
+    >
       <button
         className="up-control-btn up-speed-btn"
-        onClick={handleToggle}
         title="倍速"
+        onTouchStart={handleButtonTouch}
       >
         <Gauge size={20} />
         <span className="up-speed-label">{currentRate === 1 ? '倍速' : `${currentRate}x`}</span>

@@ -1,5 +1,6 @@
 import { Maximize, Minimize } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
+import { getFullscreenElement, requestFullscreen, exitFullscreen } from '../lib/fullscreen';
 
 interface FullscreenButtonProps {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -10,19 +11,27 @@ export default function FullscreenButton({ containerRef }: FullscreenButtonProps
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!getFullscreenElement());
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
     if (!container) return;
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await container.requestFullscreen();
+    try {
+      if (getFullscreenElement()) {
+        await exitFullscreen();
+      } else {
+        await requestFullscreen(container);
+      }
+    } catch {
+      // 部分平台不支持或需要用户手势，静默失败
     }
   }, [containerRef]);
 

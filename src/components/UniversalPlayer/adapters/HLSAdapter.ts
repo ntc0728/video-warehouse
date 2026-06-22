@@ -49,10 +49,10 @@ export class HLSAdapter extends BasePlayerAdapter {
         maxBufferLength: 30,
         maxMaxBufferLength: 600,
         startLevel: this.startLevel >= 0 ? this.startLevel : -1,
+        preferManagedMediaSource: true,
       };
 
       if (this.decoderMode === 'wasm') {
-        config.preferManagedMediaSource = true;
         config.maxBufferLength = 15;
         config.maxMaxBufferLength = 300;
       }

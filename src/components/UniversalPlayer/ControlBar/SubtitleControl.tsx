@@ -18,10 +18,6 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
 
   const isOpen = activePopover === POPOVER_ID;
 
-  const handleToggle = useCallback(() => {
-    onPopoverChange(isOpen ? null : POPOVER_ID);
-  }, [isOpen, onPopoverChange]);
-
   const handleImport = useCallback(() => {
     fileInputRef.current?.click();
     onPopoverChange(null);
@@ -40,12 +36,24 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
     onPopoverChange(null);
   }, [setSubtitleUrl, onPopoverChange]);
 
+  const handleButtonTouch = useCallback(() => {
+    if (isOpen) {
+      onPopoverChange(null);
+    } else {
+      onPopoverChange(POPOVER_ID);
+    }
+  }, [isOpen, onPopoverChange]);
+
   return (
-    <div className="up-popover-control">
+    <div
+      className="up-popover-control"
+      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
+      onMouseLeave={() => onPopoverChange(null)}
+    >
       <button
         className={`up-control-btn ${subtitleUrl ? 'up-control-btn-active' : ''}`}
-        onClick={handleToggle}
         title="字幕"
+        onTouchStart={handleButtonTouch}
       >
         <Subtitles size={20} />
       </button>

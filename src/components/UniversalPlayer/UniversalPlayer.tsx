@@ -5,6 +5,7 @@ import { usePlayerCore } from './hooks/usePlayerCore';
 import { useTVRemote } from './hooks/useTVRemote';
 import { useSettingsStore } from '@/stores';
 import { shouldProxy } from '@/services/iptvService';
+import { getFullscreenElement, requestFullscreen, exitFullscreen } from './lib/fullscreen';
 import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
 import PlayerHeader from './PlayerHeader';
@@ -18,6 +19,11 @@ import type { ChannelProgramInfo } from '@/services/epgService';
 
 function getAutoHideDelay(): number {
   return 3000;
+}
+
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
 const VOLUME_POPUP_DELAY = 3000;
@@ -77,6 +83,7 @@ export default function UniversalPlayer({
   const epgProgramsRef = useRef<Map<string, ChannelProgramInfo>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
   const [seekIndicator, setSeekIndicator] = useState<'left' | 'right' | null>(null);
+  const [activePopover, setActivePopover] = useState<string | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seekIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -235,12 +242,12 @@ export default function UniversalPlayer({
   const resetAutoHideTimer = useCallback(() => {
     if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
     const { isPlaying: playing } = usePlayerStore.getState();
-    if (!playing) return;
+    if (!playing || activePopover) return;
     const delay = getAutoHideDelay();
     autoHideTimerRef.current = setTimeout(() => {
       setControlsVisible(false);
     }, delay);
-  }, [setControlsVisible]);
+  }, [setControlsVisible, activePopover]);
 
   const showVolumePopupWithTimer = useCallback(() => {
     setShowVolumePopup(true);
@@ -257,6 +264,7 @@ export default function UniversalPlayer({
 
   const hideControls = useCallback(() => {
     setControlsVisible(false);
+    setActivePopover(null);
     if (autoHideTimerRef.current) {
       clearTimeout(autoHideTimerRef.current);
       autoHideTimerRef.current = null;
@@ -278,10 +286,14 @@ export default function UniversalPlayer({
   const handleToggleFullscreen = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      el.requestFullscreen();
+    try {
+      if (getFullscreenElement()) {
+        exitFullscreen();
+      } else {
+        requestFullscreen(el);
+      }
+    } catch {
+      // 部分平台不支持全屏 API，静默失败
     }
   }, []);
 
@@ -738,14 +750,14 @@ export default function UniversalPlayer({
     // 清除上一次计时器
     clearTimeout(iptvTimeoutRef.current);
 
-    // 启动新计时器：15 秒后若未播放，强制显示错误
+    // 启动新计时器：iOS 原生 HLS 启动链路较长，给予 30s；其余平台 15s
     iptvTimeoutRef.current = setTimeout(() => {
       // 通过 store 读取最新状态，避免闭包过期
       const state = usePlayerStore.getState();
       if (!state.isPlaying) {
         setHasError(true);
       }
-    }, 15000);
+    }, isIOS() ? 20000 : 15000);
 
     return () => clearTimeout(iptvTimeoutRef.current);
   }, [mode, currentUrl]);
@@ -819,6 +831,7 @@ export default function UniversalPlayer({
         title={title}
         channelName={currentChannelName || channelName}
         visible={isControlsVisible}
+        showFullscreenButton={mode === 'iptv'}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}
@@ -870,6 +883,8 @@ export default function UniversalPlayer({
           levels={levels}
           currentLevel={currentLevel}
           onLevelChange={playerCore.switchLevel}
+          activePopover={activePopover}
+          onPopoverChange={setActivePopover}
         />
       )}
 
