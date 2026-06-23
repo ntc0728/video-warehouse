@@ -61,3 +61,12 @@ export interface IPTVFilter {
   favoritesOnly?: boolean;
   sourceId?: string;
 }
+
+/** IPTV 播放记录 */
+export interface IPTVPlayRecord {
+  channelId: string;
+  channelName: string;
+  channelLogo?: string;
+  channelGroup?: string;
+  playedAt: number;
+}

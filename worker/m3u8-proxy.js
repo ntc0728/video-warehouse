@@ -130,37 +130,7 @@ async function handleM3U8Proxy(request) {
     }
 
     const m3u8 = await response.text();
-
-    const lines = m3u8.split("\n");
-    const newLines = [];
-
-    lines.forEach((line) => {
-      if (line.startsWith("#")) {
-        if (line.startsWith("#EXT-X-KEY:")) {
-          const regex = /https?:\/\/[^\""\s]+/g;
-          const keyUrl = regex.exec(line)?.[0] ?? "";
-          const newUrl = `/ts-proxy?url=${encodeURIComponent(
-            keyUrl
-          )}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
-          newLines.push(line.replace(keyUrl, newUrl));
-        } else {
-          newLines.push(line);
-        }
-      } else {
-        const uri = new URL(line, targetUrl);
-        const pathname = uri.pathname;
-        const proxyPath = pathname.endsWith('.m3u8') || pathname.endsWith('.m3u')
-          ? 'm3u8-proxy'
-          : 'ts-proxy';
-        newLines.push(
-          `/${proxyPath}?url=${encodeURIComponent(
-            uri.href
-          )}&headers=${encodeURIComponent(JSON.stringify(headers))}`
-        );
-      }
-    });
-
-    const result = newLines.join("\n");
+    const result = rewriteM3U8(m3u8, targetUrl, headers);
     m3u8Cache.set(cacheKey, { body: result, time: Date.now() });
 
     return new Response(result, {
@@ -174,6 +144,52 @@ async function handleM3U8Proxy(request) {
   } catch (error) {
     return new Response(error.message, { status: 500 });
   }
+}
+
+/**
+ * 重写 m3u8 内容中的所有 URL，使其经过代理。
+ * - 相对 URL：基于 baseUrl 解析为绝对 URL，再转为代理 URL
+ * - 绝对 URL：直接转为代理 URL
+ * @param {string} content - m3u8 原始内容
+ * @param {string} baseUrl - 用于解析相对 URL 的基准地址（原始 m3u8 URL）
+ * @param {object} headers - 传递给子请求的自定义请求头
+ * @returns {string} 重写后的 m3u8 内容
+ */
+function rewriteM3U8(content, baseUrl, headers) {
+  const headerStr = encodeURIComponent(JSON.stringify(headers));
+  const lines = content.split("\n");
+  const newLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith("#")) {
+      if (line.startsWith("#EXT-X-KEY:")) {
+        const regex = /https?:\/\/[^\""\s]+/g;
+        const keyUrl = regex.exec(line)?.[0] ?? "";
+        if (keyUrl) {
+          const newUrl = `/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${headerStr}`;
+          newLines.push(line.replace(keyUrl, newUrl));
+        } else {
+          newLines.push(line);
+        }
+      } else {
+        newLines.push(line);
+      }
+    } else if (line.trim()) {
+      const uri = new URL(line.trim(), baseUrl);
+      const pathname = uri.pathname;
+      const proxyPath =
+        pathname.endsWith(".m3u8") || pathname.endsWith(".m3u")
+          ? "m3u8-proxy"
+          : "ts-proxy";
+      newLines.push(
+        `/${proxyPath}?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`
+      );
+    } else {
+      newLines.push(line);
+    }
+  }
+
+  return newLines.join("\n");
 }
 
 async function handleTsProxy(request) {

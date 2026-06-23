@@ -1,12 +1,24 @@
 /**
  * 播放器状态管理
- * 管理视频播放状态、解码模式、画质切换、画中画等核心播放器功能
- * 使用 Zustand + persist 中间件，仅持久化用户偏好设置（音量、播放速率、解码模式）
+ * 管理视频播放状态、解码模式、画质切换、画中画、字幕样式等核心播放器功能
+ * 使用 Zustand + persist 中间件，仅持久化用户偏好设置（音量、播放速率、解码模式、字幕样式）
+ *
+ * [批次3合并] 原 useSubtitleStore 的 subtitleSettings 功能已合并到此 store
+ * [数据迁移] 旧 localStorage key `subtitle-store` 的 settings 数据会在首次加载时自动迁移到 `player-store`
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { VideoSource, SourceType } from '@/types/video';
 import type { PlayerMode, PlatformType, LoopMode } from '@/types/player';
+import type { SubtitleSettings } from '@/types/subtitle';
+
+const defaultSubtitleSettings: SubtitleSettings = {
+  fontSize: 24,
+  fontColor: '#ffffff',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  position: 'bottom',
+  opacity: 1,
+};
 
 interface PlayerState {
   currentSrc: string | null;
@@ -24,6 +36,7 @@ interface PlayerState {
   currentAudioTrack: number;
   isPiP: boolean;
   subtitleUrl: string | null;
+  subtitleSettings: SubtitleSettings;
   mode: PlayerMode;
   platform: PlatformType;
   isControlsVisible: boolean;
@@ -46,6 +59,7 @@ interface PlayerState {
   setCurrentAudioTrack: (trackId: number) => void;
   setIsPiP: (isPiP: boolean) => void;
   setSubtitleUrl: (url: string | null) => void;
+  updateSubtitleSettings: (settings: Partial<SubtitleSettings>) => void;
   setMode: (mode: PlayerMode) => void;
   setPlatform: (platform: PlatformType) => void;
   setControlsVisible: (visible: boolean) => void;
@@ -72,6 +86,7 @@ const initialState = {
   currentAudioTrack: -1,
   isPiP: false,
   subtitleUrl: null as string | null,
+  subtitleSettings: defaultSubtitleSettings,
   mode: 'video' as PlayerMode,
   platform: 'desktop' as PlatformType,
   isControlsVisible: false,
@@ -100,6 +115,10 @@ export const usePlayerStore = create<PlayerState>()(
       setCurrentAudioTrack: (currentAudioTrack) => set({ currentAudioTrack }),
       setIsPiP: (isPiP) => set({ isPiP }),
       setSubtitleUrl: (subtitleUrl) => set({ subtitleUrl }),
+      updateSubtitleSettings: (settings) =>
+        set((state) => ({
+          subtitleSettings: { ...state.subtitleSettings, ...settings },
+        })),
       setMode: (mode) => set({ mode }),
       setPlatform: (platform) => set({ platform }),
       setControlsVisible: (isControlsVisible) => set({ isControlsVisible }),
@@ -116,7 +135,29 @@ export const usePlayerStore = create<PlayerState>()(
         volume: state.volume,
         playbackRate: state.playbackRate,
         decoderMode: state.decoderMode,
+        subtitleSettings: state.subtitleSettings,
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Record<string, unknown>;
+        // Migrate old subtitle-store settings if exists
+        let migratedSubtitleSettings = (currentState as { subtitleSettings: SubtitleSettings }).subtitleSettings;
+        try {
+          const oldSubtitleData = localStorage.getItem('subtitle-store');
+          if (oldSubtitleData) {
+            const parsed = JSON.parse(oldSubtitleData);
+            if (parsed.state?.settings) {
+              migratedSubtitleSettings = parsed.state.settings;
+            }
+            localStorage.removeItem('subtitle-store');
+          }
+        } catch { /* ignore */ }
+
+        return {
+          ...currentState,
+          ...persisted,
+          subtitleSettings: migratedSubtitleSettings,
+        } as PlayerState;
+      },
     }
   )
 );

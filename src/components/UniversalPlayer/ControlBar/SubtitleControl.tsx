@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { Subtitles } from 'lucide-react';
-import { usePlayerStore, useSubtitleStore } from '@/stores';
+import { usePlayerStore, useSettingsStore } from '@/stores';
 
 interface SubtitleControlProps {
   onImportSubtitle: (file: File) => void;
@@ -14,7 +14,7 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
   const setSubtitleUrl = usePlayerStore(s => s.setSubtitleUrl);
-  const { autoTranslate, setAutoTranslate, targetLang, setTargetLang, translationAppId, translationApiKey } = useSubtitleStore();
+  const { autoTranslate, setAutoTranslate, targetLang, setTargetLang, translationAppId, translationApiKey } = useSettingsStore();
 
   const isOpen = activePopover === POPOVER_ID;
 

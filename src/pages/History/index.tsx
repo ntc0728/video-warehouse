@@ -18,7 +18,7 @@ import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
-import type { IPTVPlayRecord } from '@/stores/useIPTVStore';
+import type { IPTVPlayRecord } from '@/types';
 import './History.css';
 
 const PAGE_SIZE = 30;

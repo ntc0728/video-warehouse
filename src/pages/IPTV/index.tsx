@@ -85,6 +85,8 @@ export default function IPTVPage() {
   );
   // availabilityProgress 在检测时每频道回调一次,单独 selector 避免联动
   const availabilityProgress = useIPTVStore((s) => s.availabilityProgress);
+  // 订阅 Settings 中的 IPTV 源索引，变化时同步 aggregatorUrls
+  const iptvSourceIndices = useSettingsStore((s) => s.iptvSourceIndices);
 
   const { getState, saveState } = useNavStore();
   const saved = getState('iptv');
@@ -228,64 +230,68 @@ export default function IPTVPage() {
     return () => cancelAnimationFrame(raf);
   }, [filteredGroups, checkGroupsOverflow]);
 
+  /** Settings 中 IPTV 源索引变化时，同步更新 IPTV store 的 aggregatorUrls */
+  useEffect(() => {
+    if (!iptvSourceIndices || iptvSourceIndices.length === 0) return;
+    getIPTVSources().then((sources) => {
+      const validIndices = iptvSourceIndices.filter(i => sources[i]?.url);
+      const urls = validIndices.map(i => sources[i]!.url);
+      const names = validIndices.map(i => sources[i]!.name || `源 ${i + 1}`);
+      const current = useIPTVStore.getState().settings;
+      // 仅在 URLs 实际变化时更新，避免不必要的刷新
+      if (
+        urls.length !== current.aggregatorUrls?.length ||
+        urls.some((u, i) => u !== current.aggregatorUrls?.[i])
+      ) {
+        useIPTVStore.getState().setSettings({
+          aggregatorUrl: urls[0] || '',
+          aggregatorUrls: urls,
+          sourceNames: names,
+        });
+      }
+    });
+  }, [iptvSourceIndices]);
+
   /**
-   * 数据加载调度（合并原"首次进入"和"源切换"两个 useEffect）
+   * 数据加载调度
    *
-   * 优先级：
-   *   1. isLoading → 早退
-   *   2. 会话内首次进入（!sessionStorage[IPTV_SESSION_KEY]）→ 写标记 + 先读缓存再后台刷新
-   *   3. 源已匹配（loadedUrl === aggregatorUrl） → 早退（命中缓存）
-   *   4. loadedUrl === null && channels.length === 0 → 早退（首装首次由步骤 2 处理）
-   *   5. 源切换 → refreshChannels
+   * aggregatorUrl 由上方 settings sync effect 统一初始化（读取 iptvSourceIndices
+   * → getIPTVSources() → setSettings），本 effect 仅在 aggregatorUrl 就绪后按需触发。
+   *
+   * 网络请求仅在以下场景触发：
+   *   1. IndexedDB 缓存未命中（首次进入 / 缓存过期 / 源 URL 变更）
+   *   2. 设置页切换 IPTV 源（loadedUrl !== aggregatorUrl）
+   *
+   * 不触发：
+   *   - aggregatorUrl 未就绪 → 等待 settings sync effect 完成后重入
+   *   - 缓存命中（页面刷新）→ 直接使用缓存
+   *   - 会话内再次访问且源未变 → 跳过
    */
   useEffect(() => {
     if (isLoading || error) return;
-
-    // 已有数据且源未变：跳过刷新，避免创建新对象触发卡片重渲染导致图片闪烁
     if (channels.length > 0 && loadedUrl === aggregatorUrl) return;
 
-    // 会话内首次进入：先读缓存，再后台刷新
+    // aggregatorUrl 未就绪：等待 settings sync effect 初始化
+    if (!aggregatorUrl) return;
+
     if (!sessionStorage.getItem(IPTV_SESSION_KEY)) {
       sessionStorage.setItem(IPTV_SESSION_KEY, '1');
       setIsInitialLoad(true);
 
-      // aggregatorUrl 为空时，从源列表初始化
-      if (!aggregatorUrl) {
-        const iptvSourceIndices = useSettingsStore.getState().iptvSourceIndices || [0];
-        getIPTVSources().then((sources) => {
-          const urls = iptvSourceIndices.map(i => sources[i]?.url || '').filter(Boolean);
-          const names = iptvSourceIndices.map(i => sources[i]?.name || `源 ${i + 1}`);
-          const url = urls[0] || '';
-          if (url) {
-            useIPTVStore.getState().setSettings({
-              aggregatorUrl: url,
-              aggregatorUrls: urls,
-              sourceNames: names,
-            });
-          }
-          // 先读缓存
-          useIPTVStore.getState().loadFromCache().then((hitCache) => {
-            if (hitCache) setIsInitialLoad(false);
-            // 后台刷新
-            refreshChannels();
-          });
-        });
-        return;
-      }
-
-      // 先读缓存
       useIPTVStore.getState().loadFromCache().then((hitCache) => {
-        if (hitCache) setIsInitialLoad(false);
-        // 后台刷新
-        refreshChannels();
+        if (hitCache) {
+          setIsInitialLoad(false);
+        } else {
+          refreshChannels();
+        }
       });
       return;
     }
 
-    // 源切换:刷新
+    // 源切换
     setIsInitialLoad(true);
     refreshChannels();
-  }, [loadedUrl, aggregatorUrl, isLoading, channels.length, refreshChannels, error]);
+  }, [loadedUrl, aggregatorUrl, aggregatorUrls, iptvSourceIndices, isLoading, channels.length, refreshChannels, error]);
 
   /** 首次加载完成后标记 */
   useEffect(() => {
@@ -492,7 +498,7 @@ export default function IPTVPage() {
               className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
               onClick={() => handleGroupSelect(null)}
             >
-              全部 ({selectedSource ? filteredChannels.length : channels.length})
+              全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
             </button>
             {filteredGroups.map((group) => (
               <button

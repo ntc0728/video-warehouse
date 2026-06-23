@@ -11,6 +11,7 @@ import type {
   TMDBGenre,
   TMDBCountry,
   TMDBFilterOptions,
+  TMDBVideoItem,
 } from '@/types/tmdb';
 import type { VideoType } from '@/types/video';
 import {
@@ -33,31 +34,8 @@ import {
   getLanguage,
 } from '@/services/tmdbService';
 
-// ============================================================
-// 映射后的视频数据（兼容 VideoCard 渲染）
-// ============================================================
-
-export interface TMDBVideoItem {
-  tmdbId: number;
-  id: string;             // "tmdb-movie-12345" 或 "tmdb-tv-12345"
-  title: string;
-  cover: string;
-  type: VideoType;
-  year?: number;
-  tags: string[];
-  description?: string;
-  voteAverage: number;
-  voteCount: number;
-  mediaType: 'movie' | 'tv';
-  releaseDate?: string;
-  backdropPath?: string | null;
-  posterPath?: string | null;
-  logoPath?: string | null;
-  popularity: number;
-  genreIds: number[];
-  originCountry?: string[];
-  originalLanguage?: string;
-}
+// Re-export for backward compatibility
+export type { TMDBVideoItem } from '@/types/tmdb';
 
 // ============================================================
 // Cache TTL（毫秒）

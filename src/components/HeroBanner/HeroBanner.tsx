@@ -189,7 +189,7 @@ export default function HeroBanner({
     setSlideDir(dir);
     setCurrent((p) => (p + (dir === 'next' ? 1 : -1) + items.length) % items.length);
     setCrossfade(true);
-  }, [current, items.length, crossfade]);
+  }, [current, items, crossfade]);
 
   // ── 延迟触发过渡：先渲染初始位置，再应用 transition ──
   useEffect(() => {

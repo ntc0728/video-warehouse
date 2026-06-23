@@ -6,3 +6,8 @@ export * from './video';
 export * from './subtitle';
 export * from './store';
 export * from './iptv';
+export * from './player';
+export * from './tmdb';
+export * from './source';
+export * from './settings';
+export * from './http';

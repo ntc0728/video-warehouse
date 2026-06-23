@@ -5,17 +5,9 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings } from '@/types/iptv';
-import { fetchAndParsePlaylist, checkChannelsAvailability, SourceType } from '@/services/iptvService';
+import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord } from '@/types/iptv';
+import { fetchAndParsePlaylist, checkChannelsAvailability, PlaylistSourceType } from '@/services/iptvService';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
-
-export interface IPTVPlayRecord {
-  channelId: string;
-  channelName: string;
-  channelLogo?: string;
-  channelGroup?: string;
-  playedAt: number;
-}
 
 interface IPTVState {
   channels: IPTVChannel[];
@@ -29,7 +21,7 @@ interface IPTVState {
   loadedUrl: string | null;
   isCheckingAvailability: boolean;
   availabilityProgress: { checked: number; total: number } | null;
-  sourceType: SourceType;
+  sourceType: PlaylistSourceType;
   playHistory: IPTVPlayRecord[];
   favoriteChannelIds: string[];
   _abortController: AbortController | null;
@@ -79,7 +71,7 @@ export const useIPTVStore = create<IPTVState>()(
       loadedUrl: null,
       isCheckingAvailability: false,
       availabilityProgress: null,
-      sourceType: SourceType.UNKNOWN,
+      sourceType: PlaylistSourceType.UNKNOWN,
       playHistory: [],
       favoriteChannelIds: [],
       _abortController: null,
@@ -380,7 +372,7 @@ export const useIPTVStore = create<IPTVState>()(
         set({
           channels,
           groups: cached.groups,
-          sourceType: cached.sourceType as SourceType,
+          sourceType: cached.sourceType as PlaylistSourceType,
           lastRefresh: cached.timestamp,
           loadedUrl: settings.aggregatorUrl,
           error: null,

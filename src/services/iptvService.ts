@@ -2,6 +2,9 @@
  * IPTV 服务
  * 负责 M3U/M3U8 播放列表的获取、解析和频道可用性检测
  * 支持多源类型识别（单流/多频道）、代理转发和频道批量可用性检查
+ *
+ * [批次2重命名] SourceType 已重命名为 PlaylistSourceType
+ * 原因：避免与 types/video.ts 中的 SourceType（'mp4' | 'm3u8' | 'dash' | 'pan'）冲突
  */
 import type { IPTVChannel, IPTVSettings } from '@/types/iptv';
 import { getText } from './httpClient';
@@ -12,14 +15,14 @@ import { getText } from './httpClient';
  * MULTI_CHANNEL: 多频道（M3U 播放列表包含多个频道）
  * UNKNOWN: 未知类型
  */
-export enum SourceType {
+export enum PlaylistSourceType {
   SINGLE_STREAM = 'single',
   MULTI_CHANNEL = 'multi',
   UNKNOWN = 'unknown',
 }
 
 export interface SourceAnalysis {
-  type: SourceType;
+  type: PlaylistSourceType;
   channelCount: number;
   rawContent: string;
 }
@@ -33,23 +36,23 @@ export function detectSourceType(content: string): SourceAnalysis {
   const channelCount = channelMatches.length;
 
   if (channelCount > 1) {
-    return { type: SourceType.MULTI_CHANNEL, channelCount, rawContent: content };
+    return { type: PlaylistSourceType.MULTI_CHANNEL, channelCount, rawContent: content };
   }
 
   if (channelCount === 1) {
-    return { type: SourceType.MULTI_CHANNEL, channelCount, rawContent: content };
+    return { type: PlaylistSourceType.MULTI_CHANNEL, channelCount, rawContent: content };
   }
 
   // 无 #EXTINF 但包含 HLS Master Playlist 特征，视为单流
   if (content.includes('#EXTM3U') && (content.includes('#EXT-X-STREAM-INF') || content.includes('#EXT-X-MEDIA'))) {
-    return { type: SourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
+    return { type: PlaylistSourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
   }
 
   if (content.startsWith('#EXTM3U') || content.startsWith('#EXTINF:')) {
-    return { type: SourceType.MULTI_CHANNEL, channelCount: 1, rawContent: content };
+    return { type: PlaylistSourceType.MULTI_CHANNEL, channelCount: 1, rawContent: content };
   }
 
-  return { type: SourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
+  return { type: PlaylistSourceType.SINGLE_STREAM, channelCount: 1, rawContent: content };
 }
 
 async function fetchContent(url: string): Promise<string> {
@@ -73,13 +76,21 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
 
 export { shouldProxy };
 
+export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'pan' {
+  const lower = url.toLowerCase();
+  if (lower.includes('.mp4')) return 'mp4';
+  if (lower.includes('.mpd') || lower.includes('/dash/')) return 'dash';
+  if (lower.includes('pan.') || lower.includes('/pan/')) return 'pan';
+  return 'm3u8';
+}
+
 /**
  * 从远程获取并解析 M3U 播放列表
  * 源地址直接请求（不走代理），频道播放 URL 由前端按需走代理
  */
 export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
   channels: IPTVChannel[];
-  sourceType: SourceType;
+  sourceType: PlaylistSourceType;
 }> {
   const urls = settings?.aggregatorUrls?.length
     ? settings.aggregatorUrls
@@ -105,13 +116,13 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   );
 
   const allChannels: IPTVChannel[] = [];
-  let sourceType = SourceType.UNKNOWN;
+  let sourceType = PlaylistSourceType.UNKNOWN;
 
   for (const result of results) {
     if (result.status === 'fulfilled') {
       allChannels.push(...result.value);
-      if (result.value.length > 0 && sourceType === SourceType.UNKNOWN) {
-        sourceType = SourceType.MULTI_CHANNEL;
+      if (result.value.length > 0 && sourceType === PlaylistSourceType.UNKNOWN) {
+        sourceType = PlaylistSourceType.MULTI_CHANNEL;
       }
     }
   }

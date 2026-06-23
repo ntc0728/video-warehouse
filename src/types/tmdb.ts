@@ -1,7 +1,12 @@
 /**
  * TMDB (The Movie Database) API 类型定义
  * 基于 TMDB API v3 响应结构
+ *
+ * [批次2修复] TMDBVideoItem.type 使用 VideoType 而非字面量类型 'movie' | 'tv'
+ * 原因：与 useTMDBStore 中的 VideoType 赋值保持兼容
+ * 依赖：import type { VideoType } from '@/types/video'
  */
+import type { VideoType } from './video';
 
 // ============================================================
 // 基础类型
@@ -334,4 +339,30 @@ export interface TMDBAvailableFilters {
   genres: TMDBGenre[];
   countries: TMDBCountry[];
   years: number[];
+}
+
+// ============================================================
+// 映射后的视频数据（兼容 VideoCard 渲染）
+// ============================================================
+
+export interface TMDBVideoItem {
+  tmdbId: number;
+  id: string;             // "tmdb-movie-12345" 或 "tmdb-tv-12345"
+  title: string;
+  cover: string;
+  type: VideoType;
+  year?: number;
+  tags: string[];
+  description?: string;
+  voteAverage: number;
+  voteCount: number;
+  mediaType: 'movie' | 'tv';
+  releaseDate?: string;
+  backdropPath?: string | null;
+  posterPath?: string | null;
+  logoPath?: string | null;
+  popularity: number;
+  genreIds: number[];
+  originCountry?: string[];
+  originalLanguage?: string;
 }

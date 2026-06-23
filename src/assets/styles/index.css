@@ -64,6 +64,7 @@ html {
 /* ── 移动端隐藏所有滚动条 ─────────────────────────────── */
 @media (width <= 767px) {
   html, body {
+    overflow: hidden;
     overscroll-behavior: none;
   }
   * {

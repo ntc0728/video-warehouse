@@ -2,17 +2,15 @@
  * 数据源配置服务
  * 从本地 JSON 配置文件加载视频源、IPTV 源和 EPG 源的定义
  */
-import type { VideoSourceConfig, IPTVSourceConfig, VideoSourcesData } from '@/types/source';
+import type { VideoSourceConfig, IPTVSourceConfig, VideoSourcesData, EPGSourceConfig } from '@/types/source';
 import { getJSON } from './httpClient';
+
+// Re-export for backward compatibility
+export type { EPGSourceConfig } from '@/types/source';
 
 const VIDEO_SOURCES_URL = '/data/video-sources.json';
 const IPTV_SOURCES_URL = '/data/iptv-sources.json';
 const EPG_SOURCES_URL = '/data/epg-sources.json';
-
-export interface EPGSourceConfig {
-  name: string;
-  url: string;
-}
 
 export async function getVideoSources(): Promise<VideoSourceConfig[]> {
   try {

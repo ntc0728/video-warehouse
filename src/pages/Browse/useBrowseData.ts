@@ -178,7 +178,7 @@ export function useBrowseData() {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [filterSig, urlQ, filterValue, setFilter, fetchDiscover, fetchTopRated]);
+  }, [filterSig, urlQ, filterValue, setFilter, fetchDiscover, fetchTopRated, discoverResults.length]);
 
   // ── 4. 写回 URL（由调用方触发）─────────────────────
   const updateFilter = useCallback(

@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { Star } from 'lucide-react';
-import { useRatingStore } from '@/stores';
+import { useUserStore } from '@/stores';
 import './StarRating.css';
 
 interface StarRatingProps {
@@ -14,7 +14,7 @@ interface StarRatingProps {
 }
 
 export default function StarRating({ videoId, size = 18, showLabel = true }: StarRatingProps) {
-  const { getRating, setRating } = useRatingStore();
+  const { getRating, setRating } = useUserStore();
   const currentRating = getRating(videoId);
   const [hoverRating, setHoverRating] = useState(0);
 

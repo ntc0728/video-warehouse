@@ -7,24 +7,10 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { useSettingsStore } from '@/stores';
 import { isNativePlatform } from '@/lib/platform';
+import type { RequestOptions } from '@/types/http';
 
-// ============================================================
-// 类型
-// ============================================================
-
-/** 扩展 Axios 配置，增加自定义选项 */
-export interface CustomRequestConfig {
-  /** 是否通过 CORS 代理发送（默认 false） */
-  useProxy?: boolean;
-  /** 是否添加时间戳参数防缓存（默认 false） */
-  cacheBust?: boolean;
-  /** 重试次数（默认 0），仅对幂等请求生效 */
-  retries?: number;
-  /** 重试间隔基数（ms） */
-  retryDelay?: number;
-}
-
-export type RequestOptions = CustomRequestConfig & AxiosRequestConfig;
+// Re-export for backward compatibility
+export type { CustomRequestConfig, RequestOptions } from '@/types/http';
 
 // ============================================================
 // 配置
@@ -37,6 +23,14 @@ const DEFAULT_RETRY_DELAY = 500;
 // CORS 代理
 // ============================================================
 
+/**
+ * 获取 CORS 代理 URL
+ *
+ * 行为说明：
+ * - 无 `/proxy` 时：追加 `/proxy?url=`
+ * - 有 `/proxy` 但无 `url=` 时：根据尾部字符追加 `url=` 或 `?url=`
+ * - 已有 `url=` 或 `url=%` 时：直接返回
+ */
 export function getCorsProxy(): string {
   try {
     const proxy = useSettingsStore.getState().corsProxy;

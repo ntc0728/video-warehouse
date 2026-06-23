@@ -14,6 +14,18 @@ function getQualityLabel(level: { width: number; height: number; bitrate: number
   return `${h}P`;
 }
 
+/**
+ * 检测是否可通过 hls.js 播放（含 iOS 17+ ManagedMediaSource）。
+ * hls.js 的 isSupported() 只检查 MediaSource，iOS 上返回 false，
+ * 但 iOS 17+ 的 ManagedMediaSource 同样支持 SourceBuffer API。
+ */
+function canUseHlsJs(): boolean {
+  if (HlsJs.isSupported()) return true;
+  // iOS 17+ Safari 支持 ManagedMediaSource
+  return typeof window !== 'undefined' &&
+    'ManagedMediaSource' in window;
+}
+
 export class HLSAdapter extends BasePlayerAdapter {
   private hls: HlsJs | null = null;
   private decoderMode: DecoderMode;
@@ -25,6 +37,7 @@ export class HLSAdapter extends BasePlayerAdapter {
   private onError?: (error: Error) => void;
   private errorCount: number = 0;
   private lastErrorTime: number = 0;
+  private nativeHandlers: Map<string, () => void> = new Map();
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -41,7 +54,7 @@ export class HLSAdapter extends BasePlayerAdapter {
   private initHls(): void {
     if (!this.video) return;
 
-    if (HlsJs.isSupported()) {
+    if (canUseHlsJs()) {
       const config: Record<string, unknown> = {
         enableWorker: true,
         lowLatencyMode: false,
@@ -57,9 +70,19 @@ export class HLSAdapter extends BasePlayerAdapter {
         config.maxMaxBufferLength = 300;
       }
 
-      this.hls = new HlsJs(config);
-      this.hls.loadSource(this.url);
-      this.hls.attachMedia(this.video);
+      try {
+        this.hls = new HlsJs(config);
+        this.hls.loadSource(this.url);
+        this.hls.attachMedia(this.video);
+      } catch {
+        // ManagedMediaSource 不可用时回退到原生 HLS
+        this.hls = null;
+        if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+          this.video.src = this.url;
+          this.attachNativeListeners();
+        }
+        return;
+      }
 
       this.hls.on(HlsJs.Events.MANIFEST_PARSED, (_e, data) => {
         this.levels = data.levels.map(l => ({
@@ -125,11 +148,57 @@ export class HLSAdapter extends BasePlayerAdapter {
       });
     } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
       this.video.src = this.url;
+      this.attachNativeListeners();
     }
   }
 
   async play(): Promise<void> {
     await this.video?.play();
+  }
+
+  private attachNativeListeners(): void {
+    if (!this.video) return;
+
+    const handleError = () => {
+      const mediaError = this.video?.error;
+      if (!mediaError) return;
+      let msg: string;
+      switch (mediaError.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          msg = '播放被中止';
+          break;
+        case MediaError.MEDIA_ERR_NETWORK:
+          msg = '网络错误，无法加载视频';
+          break;
+        case MediaError.MEDIA_ERR_DECODE:
+          msg = '视频解码失败';
+          break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          msg = '频道源不可用';
+          break;
+        default:
+          msg = `播放错误 (${mediaError.code})`;
+      }
+      this.onError?.(new Error(msg));
+    };
+
+    const handleStalled = () => {
+      this.onError?.(new Error('加载超时，请检查网络连接'));
+    };
+
+    this.nativeHandlers.set('error', handleError);
+    this.nativeHandlers.set('stalled', handleStalled);
+
+    this.video.addEventListener('error', handleError);
+    this.video.addEventListener('stalled', handleStalled);
+  }
+
+  private detachNativeListeners(): void {
+    if (!this.video) return;
+    this.nativeHandlers.forEach((handler, event) => {
+      this.video?.removeEventListener(event, handler);
+    });
+    this.nativeHandlers.clear();
   }
 
   pause(): void {
@@ -194,6 +263,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       this.hls.destroy();
       this.hls = null;
     }
+    this.detachNativeListeners();
     this.detach();
   }
 }

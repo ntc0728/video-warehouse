@@ -9,13 +9,14 @@
 }
 
 /* ── App Shell (垂直布局) ──────────────────────────────────
-   桌面：StickyHeader (auto) + CustomScrollbar (flex: 1)
-   移动：StickyHeader (auto) + CustomScrollbar (flex: 1) + TabBar (auto)
+   桌面：StickyHeader (auto) + scroll-wrapper (flex: 1)
+   移动：StickyHeader (auto) + scroll-wrapper (flex: 1) + TabBar (auto)
 
    - StickyHeader 作为第一行常驻视口顶部（不参与滚动）
-   - CustomScrollbar 紧接 StickyHeader 下方，滚动条 thumb 真实起点 = 导航栏底部
+   - scroll-wrapper 包含 CustomScrollbar + OverlayScrollbar，
+     OverlayScrollbar 作为兄弟节点不参与滚动容器的溢出计算
    - 沉浸式页面（首页/详情页）下，StickyHeader 改用 position: fixed，
-     CustomScrollbar 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
+     scroll-wrapper 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
 */
 .app-shell {
   display: flex;
@@ -24,8 +25,17 @@
   overflow: hidden;
 }
 
+/* scroll-wrapper：包含滚动容器和浮动滚动条，自身不滚动 */
+.app-shell__scroll-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .app-shell__scroll {
-  /* CustomScrollbar 用 flex: 1 占据剩余高度，min-height: 0 允许内部滚动 */
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -48,7 +58,6 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  min-height: 100%;
 }
 
 @media (width <= 767px) {
@@ -56,7 +65,7 @@
     /* 移动端底部 TabBar 遮挡滚动内容，预留底部安全区 */
     padding-bottom: var(--layout-tabbar-height);
   }
-  .app-shell__scroll {
+  .app-shell .app-shell__scroll {
     overscroll-behavior: none;
   }
 }
