@@ -5,13 +5,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { List, Switch, Button, Modal, toast } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
-import { useSubtitleStore, useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
-import { getVideoSources, getIPTVSources, getEPGSources, type EPGSourceConfig } from '@/services/sourceService';
+import { useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
+import { getVideoSources, getIPTVSources, getEPGSources } from '@/services/sourceService';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
+import { PortalDropdown } from '@/components/common/PortalDropdown';
+import type { EPGSourceConfig } from '@/types';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 import './Settings.css';
 
 export default function SettingsPage() {
-  const { translationAppId, translationApiKey, setAppId, setApiKey, autoTranslate, setAutoTranslate } = useSubtitleStore();
+  const { translationAppId, translationApiKey, setTranslationAppId, setTranslationApiKey, autoTranslate, setAutoTranslate } = useSettingsStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
   const tmdbStore = useTMDBStore();
   const {
@@ -49,49 +52,23 @@ export default function SettingsPage() {
   const DEFAULT_PROXY_PATTERN = 'miguvideo\\.com|101\\.35\\.240\\.114';
   const [showCorsProxyInput, setShowCorsProxyInput] = useState(false);
   const [corsProxyInput, setCorsProxyInput] = useState('');
-  const [showEpgMultiSelect, setShowEpgMultiSelect] = useState(false);
   const [showTMDBTokenInput, setShowTMDBTokenInput] = useState(false);
   const [tmdbTokenInput, setTMDBTokenInput] = useState('');
   const [showMultiSelect, setShowMultiSelect] = useState(false);
   const [showIptvMultiSelect, setShowIptvMultiSelect] = useState(false);
+  const [showEpgMultiSelect, setShowEpgMultiSelect] = useState(false);
   const [showTmdbLangSelect, setShowTmdbLangSelect] = useState(false);
-  const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
-  const videoDropdownRef = useRef<HTMLDivElement | null>(null);
-  const iptvDropdownRef = useRef<HTMLDivElement | null>(null);
-  const epgDropdownRef = useRef<HTMLDivElement | null>(null);
-  const tmdbLangDropdownRef = useRef<HTMLDivElement | null>(null);
+  const videoDropdown = useDropdownPosition(showMultiSelect);
+  const iptvDropdown = useDropdownPosition(showIptvMultiSelect);
+  const epgDropdown = useDropdownPosition(showEpgMultiSelect);
+  const tmdbLangDropdown = useDropdownPosition(showTmdbLangSelect);
 
-  const makeRefCallback = useCallback((key: string, ref: React.MutableRefObject<HTMLDivElement | null>) => {
-    return (el: HTMLDivElement | null) => {
-      dropdownRefs.current.set(key, el);
-      ref.current = el;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const refs = dropdownRefs.current;
-      for (const [, el] of refs) {
-        if (el && !el.contains(e.target as Node)) {
-          // close all open dropdowns that were clicked outside
-        }
-      }
-      if (refs.get('video') && !refs.get('video')?.contains(e.target as Node)) {
-        setShowMultiSelect(false);
-      }
-      if (refs.get('epg') && !refs.get('epg')?.contains(e.target as Node)) {
-        setShowEpgMultiSelect(false);
-      }
-      if (refs.get('iptv') && !refs.get('iptv')?.contains(e.target as Node)) {
-        setShowIptvMultiSelect(false);
-      }
-      if (refs.get('tmdbLang') && !refs.get('tmdbLang')?.contains(e.target as Node)) {
-        setShowTmdbLangSelect(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  const closeAllDropdowns = useCallback(() => {
+    setShowMultiSelect(false);
+    setShowIptvMultiSelect(false);
+    setShowEpgMultiSelect(false);
+    setShowTmdbLangSelect(false);
   }, []);
 
   /** 初始化时加载视频、IPTV 和 EPG 数据源配置 */
@@ -110,8 +87,8 @@ export default function SettingsPage() {
   }, []);
 
   const handleSaveApiKey = () => {
-    setAppId(appIdInput.trim());
-    setApiKey(apiKeyInput.trim());
+    setTranslationAppId(appIdInput.trim());
+    setTranslationApiKey(apiKeyInput.trim());
     toast.show('翻译 API 配置已保存');
     setShowApiInput(false);
   };
@@ -165,8 +142,9 @@ export default function SettingsPage() {
 
     // 获取所有选中源的 URL 和名称
     getIPTVSources().then(sources => {
-      const urls = newIndices.map(i => sources[i]?.url || '').filter(Boolean);
-      const names = newIndices.map(i => sources[i]?.name || `源 ${i + 1}`);
+      const validIndices = newIndices.filter(i => sources[i]?.url);
+      const urls = validIndices.map(i => sources[i]!.url);
+      const names = validIndices.map(i => sources[i]!.name || `源 ${i + 1}`);
       setIPTVSettings({
         aggregatorUrl: urls[0] || '',
         aggregatorUrls: urls,
@@ -281,35 +259,34 @@ export default function SettingsPage() {
           title="TMDB 语言"
           description="影响影片标题、简介等信息的显示语言"
           extra={
-            <div className="source-multi-dropdown" ref={makeRefCallback('tmdbLang', tmdbLangDropdownRef)}>
+            <div className="source-multi-dropdown">
               <button
+                ref={tmdbLangDropdown.triggerRef}
                 className="source-multi-trigger"
                 onClick={() => setShowTmdbLangSelect(!showTmdbLangSelect)}
               >
                 <span>{({ 'zh-CN': '简体中文', 'zh-TW': '繁體中文', 'en-US': 'English', 'ja-JP': '日本語', 'ko-KR': '한국어' } as Record<string, string>)[tmdbLanguage] || tmdbLanguage}</span>
                 <ChevronDown size={14} className={showTmdbLangSelect ? 'rotated' : ''} />
               </button>
-              {showTmdbLangSelect && (
-                <div className="source-multi-options">
-                  {([
-                    { value: 'zh-CN', label: '简体中文' },
-                    { value: 'zh-TW', label: '繁體中文' },
-                    { value: 'en-US', label: 'English' },
-                    { value: 'ja-JP', label: '日本語' },
-                    { value: 'ko-KR', label: '한국어' },
-                  ]).map((opt) => (
-                    <label key={opt.value} className="source-multi-option">
-                      <input
-                        type="radio"
-                        name="tmdb-lang"
-                        checked={tmdbLanguage === opt.value}
-                        onChange={() => { setTMDBLanguage(opt.value); setShowTmdbLangSelect(false); }}
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <PortalDropdown isOpen={showTmdbLangSelect} position={tmdbLangDropdown.position} onClose={closeAllDropdowns} triggerRef={tmdbLangDropdown.triggerRef}>
+                {([
+                  { value: 'zh-CN', label: '简体中文' },
+                  { value: 'zh-TW', label: '繁體中文' },
+                  { value: 'en-US', label: 'English' },
+                  { value: 'ja-JP', label: '日本語' },
+                  { value: 'ko-KR', label: '한국어' },
+                ]).map((opt) => (
+                  <label key={opt.value} className="source-multi-option">
+                    <input
+                      type="radio"
+                      name="tmdb-lang"
+                      checked={tmdbLanguage === opt.value}
+                      onChange={() => { setTMDBLanguage(opt.value); setShowTmdbLangSelect(false); }}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </PortalDropdown>
             </div>
           }
         />
@@ -322,28 +299,27 @@ export default function SettingsPage() {
           title="视频数据源"
           description="选择视频数据源（最多6个）"
           extra={
-            <div className="source-multi-dropdown" ref={makeRefCallback('video', videoDropdownRef)}>
+            <div className="source-multi-dropdown">
               <button
+                ref={videoDropdown.triggerRef}
                 className="source-multi-trigger"
                 onClick={() => setShowMultiSelect(!showMultiSelect)}
               >
                 <span>已选 {(videoSourceIndices || []).length} 项</span>
                 <ChevronDown size={14} className={showMultiSelect ? 'rotated' : ''} />
               </button>
-              {showMultiSelect && (
-                <div className="source-multi-options">
-                  {videoSources.map((source, index) => (
-                    <label key={index} className="source-multi-option">
-                      <input
-                        type="checkbox"
-                        checked={(videoSourceIndices || [0]).includes(index)}
-                        onChange={() => handleVideoSourceToggle(index)}
-                      />
-                      <span>{source.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <PortalDropdown isOpen={showMultiSelect} position={videoDropdown.position} onClose={closeAllDropdowns} triggerRef={videoDropdown.triggerRef}>
+                {videoSources.map((source, index) => (
+                  <label key={index} className="source-multi-option">
+                    <input
+                      type="checkbox"
+                      checked={(videoSourceIndices || [0]).includes(index)}
+                      onChange={() => handleVideoSourceToggle(index)}
+                    />
+                    <span>{source.name}</span>
+                  </label>
+                ))}
+              </PortalDropdown>
             </div>
           }
         />
@@ -401,28 +377,27 @@ export default function SettingsPage() {
           title="IPTV 数据源"
           description="选择IPTV数据源（支持多选，最多3个）"
           extra={
-            <div className="source-multi-dropdown" ref={makeRefCallback('iptv', iptvDropdownRef)}>
+            <div className="source-multi-dropdown">
               <button
+                ref={iptvDropdown.triggerRef}
                 className="source-multi-trigger"
                 onClick={() => setShowIptvMultiSelect(!showIptvMultiSelect)}
               >
                 <span>已选 {(iptvSourceIndices || []).length} 项</span>
                 <ChevronDown size={14} className={showIptvMultiSelect ? 'rotated' : ''} />
               </button>
-              {showIptvMultiSelect && (
-                <div className="source-multi-options">
-                  {iptvSources.map((source, index) => (
-                    <label key={index} className="source-multi-option">
-                      <input
-                        type="checkbox"
-                        checked={(iptvSourceIndices || [0]).includes(index)}
-                        onChange={() => handleIPTVSourceToggle(index)}
-                      />
-                      <span>{source.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <PortalDropdown isOpen={showIptvMultiSelect} position={iptvDropdown.position} onClose={closeAllDropdowns} triggerRef={iptvDropdown.triggerRef}>
+                {iptvSources.map((source, index) => (
+                  <label key={index} className="source-multi-option">
+                    <input
+                      type="checkbox"
+                      checked={(iptvSourceIndices || [0]).includes(index)}
+                      onChange={() => handleIPTVSourceToggle(index)}
+                    />
+                    <span>{source.name}</span>
+                  </label>
+                ))}
+              </PortalDropdown>
             </div>
           }
         />
@@ -430,28 +405,27 @@ export default function SettingsPage() {
           title="节目单源"
           description="选择节目单数据源（支持多选）"
           extra={
-            <div className="source-multi-dropdown" ref={makeRefCallback('epg', epgDropdownRef)}>
+            <div className="source-multi-dropdown">
               <button
+                ref={epgDropdown.triggerRef}
                 className="source-multi-trigger"
                 onClick={() => setShowEpgMultiSelect(!showEpgMultiSelect)}
               >
                 <span>已选 {epgUrls.length} 项</span>
                 <ChevronDown size={14} className={showEpgMultiSelect ? 'rotated' : ''} />
               </button>
-              {showEpgMultiSelect && (
-                <div className="source-multi-options">
-                  {epgSources.map((source) => (
-                    <label key={source.url} className="source-multi-option">
-                      <input
-                        type="checkbox"
-                        checked={epgUrls.includes(source.url)}
-                        onChange={() => handleEpgToggle(source.url)}
-                      />
-                      <span>{source.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <PortalDropdown isOpen={showEpgMultiSelect} position={epgDropdown.position} onClose={closeAllDropdowns} triggerRef={epgDropdown.triggerRef}>
+                {epgSources.map((source) => (
+                  <label key={source.url} className="source-multi-option">
+                    <input
+                      type="checkbox"
+                      checked={epgUrls.includes(source.url)}
+                      onChange={() => handleEpgToggle(source.url)}
+                    />
+                    <span>{source.name}</span>
+                  </label>
+                ))}
+              </PortalDropdown>
             </div>
           }
         />

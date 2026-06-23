@@ -9,6 +9,7 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
   const [thumbHeight, setThumbHeight] = useState(0);
   const [thumbTop, setThumbTop] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const dragStartY = useRef(0);
   const dragStartScrollTop = useRef(0);
 
@@ -55,6 +56,7 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    isDraggingRef.current = true;
     setIsDragging(true);
     dragStartY.current = e.clientY;
     dragStartScrollTop.current = scrollContainer.current?.scrollTop ?? 0;
@@ -62,7 +64,7 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
   }, [scrollContainer]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || !scrollContainer.current) return;
+    if (!isDraggingRef.current || !scrollContainer.current) return;
     const el = scrollContainer.current;
     const dy = e.clientY - dragStartY.current;
     const scrollRange = el.scrollHeight - el.clientHeight;
@@ -70,9 +72,10 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     if (thumbTrack <= 0) return;
     const scrollDelta = (dy / thumbTrack) * scrollRange;
     el.scrollTop = dragStartScrollTop.current + scrollDelta;
-  }, [isDragging, scrollContainer, thumbHeight]);
+  }, [scrollContainer, thumbHeight]);
 
   const handlePointerUp = useCallback(() => {
+    isDraggingRef.current = false;
     setIsDragging(false);
   }, []);
 

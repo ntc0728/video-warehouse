@@ -42,6 +42,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
 
     if (!videoRef.current) return;
+    if (!type || !url) return;
 
     const adapter = createAdapter(type, url, {
       decoderMode,
@@ -177,8 +178,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type, decoderMode, retryCount]);
 
   const play = useCallback(async () => {
-    await videoRef.current?.play();
-  }, []);
+    try {
+      await videoRef.current?.play();
+    } catch {
+      onError?.(new Error('播放被浏览器拦截，请点击屏幕重试'));
+    }
+  }, [onError]);
 
   const pause = useCallback(() => {
     videoRef.current?.pause();
@@ -186,11 +191,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const togglePlay = useCallback(() => {
     if (videoRef.current?.paused) {
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => {
+        onError?.(new Error('播放被浏览器拦截，请点击屏幕重试'));
+      });
     } else {
       videoRef.current?.pause();
     }
-  }, []);
+  }, [onError]);
 
   const seek = useCallback((time: number) => {
     if (videoRef.current) videoRef.current.currentTime = time;

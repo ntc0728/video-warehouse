@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import TabBar from './TabBar';
 import RouteTransition from './RouteTransition';
 import StickyHeader from '@/components/StickyHeader';
@@ -14,8 +14,6 @@ import { ScrollContainerContext } from '@/hooks/useScrollContext';
 export default function AppLayout() {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  const location = useLocation();
-  const isHome = location.pathname === '/';
   // 使用 selector 订阅,避免设置 store 任意字段变化都触发 AppLayout 整树重渲染
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
@@ -63,24 +61,26 @@ export default function AppLayout() {
         }}
       >
         <StickyHeader immersive={immersive} />
-        <CustomScrollbar
-          ref={scrollContainerRef}
-          className={`app-shell__scroll${isHome ? ' app-shell__scroll--no-gutter' : ''}`}
-          style={{ backgroundColor: 'var(--color-background)' }}
-          direction="vertical"
-        >
-          {/* 注意:此处不再使用 key={location.pathname} 强制 unmount Outlet 子树。
-              旧实现会让每次切页都重 mount HomePage,触发 fetchAllHomeData + 20 张图预加载,
-              是首页/IPTV 切换卡顿的主要根因。CSS 动画 (.page-transition) 仍生效。
-              主动重置首页的场景由 HomeRoute 的 key={homeResetKey} 单独处理。 */}
-          <div className="page-transition">
-            <RouteTransition>
-              <Outlet />
-            </RouteTransition>
-            <div id="load-more-portal" />
-          </div>
+        <div className="app-shell__scroll-wrapper">
+          <CustomScrollbar
+            ref={scrollContainerRef}
+            className="app-shell__scroll"
+            style={{ backgroundColor: 'var(--color-background)' }}
+            direction="vertical"
+          >
+            {/* 注意:此处不再使用 key={location.pathname} 强制 unmount Outlet 子树。
+                旧实现会让每次切页都重 mount HomePage,触发 fetchAllHomeData + 20 张图预加载,
+                是首页/IPTV 切换卡顿的主要根因。CSS 动画 (.page-transition) 仍生效。
+                主动重置首页的场景由 HomeRoute 的 key={homeResetKey} 单独处理。 */}
+            <div className="page-transition">
+              <RouteTransition>
+                <Outlet />
+              </RouteTransition>
+              <div id="load-more-portal" />
+            </div>
+          </CustomScrollbar>
           <OverlayScrollbar scrollContainer={scrollContainerRef} />
-        </CustomScrollbar>
+        </div>
         {isMobile && <TabBar />}
       </div>
     </ScrollContainerContext.Provider>

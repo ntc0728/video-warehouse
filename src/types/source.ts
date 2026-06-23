@@ -22,11 +22,8 @@ export interface IPTVSourceConfig {
   url: string;
 }
 
-/** 应用全局设置 */
-export interface AppSettings {
-  videoSourceIndex: number;
-  videoSourceIndices: number[];
-  iptvSourceIndex: number;
-  iptvSourceIndices: number[];
-  theme: 'light' | 'dark' | 'system';
+/** EPG 源配置 */
+export interface EPGSourceConfig {
+  name: string;
+  url: string;
 }

@@ -8,7 +8,7 @@
  *  - 单一职责:仅渲染真实卡片,加载态由父级控制
  *  - 性能:不需要 useMemo
  */
-import type { TMDBVideoItem } from '@/stores/useTMDBStore';
+import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import { VideoCard } from '@/components/VideoCard';
 import { buildImageSrcSet } from '@/services/tmdbService';

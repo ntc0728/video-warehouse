@@ -16,7 +16,7 @@ import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageSrcSet } from '@/services/tmdbService';
-import type { TMDBVideoItem } from '@/stores/useTMDBStore';
+import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
 

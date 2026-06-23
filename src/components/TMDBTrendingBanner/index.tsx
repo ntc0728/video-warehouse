@@ -13,7 +13,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageUrl } from '@/services/tmdbService';
-import type { TMDBVideoItem } from '@/stores/useTMDBStore';
+import type { TMDBVideoItem } from '@/types';
 import './TMDBTrendingBanner.css';
 
 interface TMDBTrendingBannerProps {
