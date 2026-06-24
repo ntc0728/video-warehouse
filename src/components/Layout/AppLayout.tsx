@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import TabBar from './TabBar';
+import Sidebar from './Sidebar';
 import RouteTransition from './RouteTransition';
 import StickyHeader from '@/components/StickyHeader';
 import { useHeaderContent } from './useHeaderContent';
@@ -9,23 +10,40 @@ import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import './Layout.css';
 import { useSettingsStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 
 export default function AppLayout() {
+  const isNative = isNativePlatform();
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  const isMobileWeb = !isNative && !isTV && isMobile;
   // 使用 selector 订阅,避免设置 store 任意字段变化都触发 AppLayout 整树重渲染
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
   const { immersive } = useHeaderContent();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
+
+  // 侧边栏打开时锁定背景滚动
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
 
   // 滚动容器 ref — 通过 ScrollContainerContext 共享给所有子页面，
   // 替代旧的 `document.querySelector('main')` 死代码。
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-device', isTV ? 'tv' : '');
-  }, [isTV]);
+    const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
+    document.documentElement.setAttribute('data-device', device);
+  }, [isTV, isNative, isMobileWeb]);
 
   useEffect(() => {
     const applyTheme = () => {
@@ -60,7 +78,10 @@ export default function AppLayout() {
           color: 'var(--color-text)',
         }}
       >
-        <StickyHeader immersive={immersive} />
+        {isMobileWeb && (
+          <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
+        )}
+        <StickyHeader immersive={immersive} onMenuToggle={isMobileWeb ? toggleSidebar : undefined} menuOpen={isMobileWeb && sidebarOpen} />
         <div className="app-shell__scroll-wrapper">
           <CustomScrollbar
             ref={scrollContainerRef}
@@ -81,7 +102,7 @@ export default function AppLayout() {
           </CustomScrollbar>
           <OverlayScrollbar scrollContainer={scrollContainerRef} />
         </div>
-        {isMobile && <TabBar />}
+        {isNative && <TabBar />}
       </div>
     </ScrollContainerContext.Provider>
   );

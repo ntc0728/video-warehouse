@@ -347,6 +347,12 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  animation: iptv-content-fade-in 0.2s ease both;
+}
+
+@keyframes iptv-content-fade-in {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
 }
 
 @media (width <= 767px) {
@@ -519,3 +525,7 @@
   background-color: #332b00;
   color: #d89614;
 }
+
+/* ── 网格 div 本身不需要入场动画 ─────────────────────
+ * 卡片级 cardFadeIn 动画由 IPTVChannelCard 内部管理，
+ * 新建的卡片会自动淡入（opacity: 0.4 → 1）。        */

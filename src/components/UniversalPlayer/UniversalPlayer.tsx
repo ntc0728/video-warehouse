@@ -43,6 +43,7 @@ export default function UniversalPlayer({
   onPause,
   onError,
   onBack,
+  onRefresh,
   onChannelChange,
   controlBarSlots,
 }: UniversalPlayerProps) {
@@ -110,11 +111,12 @@ export default function UniversalPlayer({
     handlePointerLeave,
   } = useLongPress({
     onSeek: useCallback((direction: 'left' | 'right') => {
+      if (hasError) return;
       const video = document.querySelector('.up-player-video') as HTMLVideoElement | null;
-      if (!video) return;
+      if (!video || video.error) return;
       const seekAmount = direction === 'left' ? -6 : 6;
       video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount));
-    }, []),
+    }, [hasError]),
   });
 
   // Subtitle import hook
@@ -297,6 +299,7 @@ export default function UniversalPlayer({
   }, [currentUrl]);
 
   const handleToggleFullscreen = useCallback(() => {
+    if (hasError) return;
     const el = containerRef.current;
     if (!el) return;
     try {
@@ -308,7 +311,7 @@ export default function UniversalPlayer({
     } catch {
       // 部分平台不支持全屏 API，静默失败
     }
-  }, []);
+  }, [hasError]);
 
   const handlePlayerClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -361,7 +364,8 @@ export default function UniversalPlayer({
     lastRetryRef.current = now;
     setHasError(false);
     setRetryCount(prev => prev + 1);
-  }, []);
+    onRefresh?.();
+  }, [onRefresh]);
 
   const handleAudioTrackSelect = useCallback(() => {
     const tracks = usePlayerStore.getState().audioTracks;
@@ -427,6 +431,9 @@ export default function UniversalPlayer({
       }
     };
   }, [autoHideTimerRef]);
+
+  // Reset error when URL changes
+  useEffect(() => { setHasError(false); }, [url]);
 
   // Error state management
   useEffect(() => {
@@ -494,7 +501,7 @@ export default function UniversalPlayer({
         mode={mode}
         title={title}
         channelName={currentChannelName || channelName}
-        visible={isControlsVisible}
+        visible={isControlsVisible || hasError}
         showFullscreenButton={mode === 'iptv'}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}

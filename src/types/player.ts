@@ -61,6 +61,7 @@ export interface UniversalPlayerProps {
   onPause?: () => void;
   onError?: (error: Error) => void;
   onBack?: () => void;
+  onRefresh?: () => void;
   onChannelChange?: (channel: IPTVChannel) => void;
   controlBarSlots?: {
     left?: React.ReactNode;

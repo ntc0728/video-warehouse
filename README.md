@@ -62,6 +62,7 @@
 ### 代码质量
 - **ESLint** - 代码规范检查
 - **Stylelint** - CSS 规范检查
+- **Vitest** - 单元测试 / 组件测试
 - **Playwright** - E2E 测试
 
 ## 项目结构
@@ -69,32 +70,37 @@
 ```
 video-warehouse/
 ├── src/
-│   ├── assets/styles/     # 全局样式 + Design Tokens
-│   ├── components/        # 通用组件
-│   │   ├── ui/           # 基础 UI 组件（Radix 封装）
-│   │   ├── common/       # 业务通用组件
-│   │   ├── HeroBanner/   # 首页轮播
-│   │   ├── TMDBMovieRow/ # 影片行卡片
-│   │   └── IPTVChannelCard/ # IPTV 频道卡片
-│   ├── hooks/            # 自定义 Hooks
-│   ├── pages/            # 页面组件
-│   │   ├── Home/         # 首页
-│   │   ├── Browse/       # 筛选页
-│   │   ├── Detail/       # 详情页
-│   │   ├── Player/       # 播放页
-│   │   ├── IPTV/         # IPTV 直播
-│   │   ├── Settings/     # 设置页
-│   │   ├── Collections/  # 收藏页
-│   │   └── History/      # 历史记录
-│   ├── services/         # 服务层（API、数据库）
-│   ├── stores/           # Zustand 状态管理
-│   ├── types/            # TypeScript 类型定义
-│   └── lib/              # 工具函数
-├── worker/               # Cloudflare Workers
-│   ├── m3u8-proxy.js    # M3U8 流代理
-│   └── cors-proxy.js    # CORS 代理
-├── scripts/              # 构建脚本
-└── public/               # 静态资源
+│   ├── assets/styles/       # 全局样式 + Design Tokens
+│   ├── components/          # 通用组件
+│   │   ├── ui/              # 基础 UI 组件（Radix 封装）
+│   │   ├── common/          # 业务通用组件
+│   │   ├── Layout/          # 布局（Sidebar、TabBar、AppLayout）
+│   │   ├── UniversalPlayer/ # 多源视频播放器
+│   │   ├── HeroBanner/      # 首页轮播
+│   │   ├── VideoCard/       # 视频卡片
+│   │   └── ...              # 其他业务组件（20+ 目录）
+│   ├── hooks/               # 自定义 Hooks
+│   ├── pages/               # 页面组件
+│   │   ├── Home/            # 首页
+│   │   ├── Browse/          # 筛选页
+│   │   ├── Detail/          # 详情页
+│   │   ├── Player/          # 播放页
+│   │   ├── IPTV/            # IPTV 直播
+│   │   ├── Settings/        # 设置页
+│   │   ├── Collections/     # 收藏页
+│   │   └── History/         # 历史记录
+│   ├── services/            # 服务层（API、数据库）
+│   ├── stores/              # Zustand 状态管理（8 个 store）
+│   ├── types/               # TypeScript 类型定义
+│   ├── test/                # 测试工具（setup + custom render）
+│   └── lib/                 # 工具函数
+├── worker/                  # Cloudflare Workers
+│   ├── m3u8-proxy.js        # M3U8 流代理
+│   ├── cors-proxy.js        # CORS 代理
+│   ├── wrangler.toml
+│   └── wrangler-cors.toml
+├── scripts/                 # 构建脚本 + Playwright E2E 测试
+└── public/                  # 静态资源
 ```
 
 ## 快速开始
@@ -163,7 +169,7 @@ npm run deploy:worker
 
 #### CORS 代理（用于视频源 API）
 ```bash
-# 部署 CORS 代理 Worker
+# 部署 CORS 代理 Worker（worker/cors-proxy.js + wrangler-cors.toml）
 npm run deploy:cors
 ```
 
@@ -212,13 +218,13 @@ APK 输出位置：
 
 #### 其他 Android 命令
 ```bash
-# 构建并同步到 Android
+# 一键构建（CAPACITOR=true 构建 + 同步到 Android）
 npm run build:android
 
 # 在 Android Studio 中打开项目
 npm run open:android
 
-# 生成应用图标
+# 生成应用图标（需要 sharp）
 npm run icons:android
 ```
 
@@ -236,6 +242,14 @@ npm run lint:css      # Stylelint 检查
 # 自动修复
 npm run lint:fix      # 修复 ESLint 问题
 npm run lint:css:fix  # 修复 CSS 问题
+```
+
+### 测试
+```bash
+npm run test           # Vitest 单元测试（单次运行）
+npm run test:watch     # Vitest 监听模式
+npm run test:coverage  # Vitest + 覆盖率报告
+npx playwright test    # Playwright E2E 测试
 ```
 
 ### 构建与预览

@@ -4,11 +4,12 @@ interface UseLongPressOptions {
   onSeek: (direction: 'left' | 'right') => void;
 }
 
+const LONG_PRESS_DELAY = 500;
+const SEEK_INTERVAL = 500;
+
 export function useLongPress({ onSeek }: UseLongPressOptions) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seekIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pointerDownTimeRef = useRef(0);
-  const pointerDownXRef = useRef(0);
   const hasLongPressedRef = useRef(false);
   const [seekIndicator, setSeekIndicator] = useState<'left' | 'right' | null>(null);
 
@@ -31,8 +32,6 @@ export function useLongPress({ onSeek }: UseLongPressOptions) {
       return;
     }
 
-    pointerDownTimeRef.current = Date.now();
-    pointerDownXRef.current = e.clientX;
     hasLongPressedRef.current = false;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -42,13 +41,15 @@ export function useLongPress({ onSeek }: UseLongPressOptions) {
 
     if (!isLeftSide && !isRightSide) return;
 
+    const direction = isLeftSide ? 'left' : 'right';
+
+    // Delay seek + indicator to distinguish tap from long-press
     longPressTimerRef.current = setTimeout(() => {
-      hasLongPressedRef.current = true;
-      const direction = isLeftSide ? 'left' : 'right';
       setSeekIndicator(direction);
+      hasLongPressedRef.current = true;
       onSeek(direction);
-      seekIntervalRef.current = setInterval(() => onSeek(direction), 500);
-    }, 500);
+      seekIntervalRef.current = setInterval(() => onSeek(direction), SEEK_INTERVAL);
+    }, LONG_PRESS_DELAY);
   }, [onSeek]);
 
   const handlePointerUp = useCallback(() => {

@@ -72,19 +72,21 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
       {isOpen && (
         <div className="up-volume-slider-popup">
           <span className="up-volume-value">{Math.round(volume * 100)}</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            onPointerDown={handleSliderPointerDown}
-            onPointerUp={handleSliderPointerUp}
-            onTouchEnd={handleSliderPointerUp}
-            className="up-volume-slider"
-            style={{ '--vol': `${volume * 100}%` } as React.CSSProperties}
-          />
+          <div className="up-volume-slider-wrapper">
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => onChange(parseFloat(e.target.value))}
+              onPointerDown={handleSliderPointerDown}
+              onPointerUp={handleSliderPointerUp}
+              onTouchEnd={handleSliderPointerUp}
+              className="up-volume-slider"
+              style={{ '--vol': `${volume * 100}%` } as React.CSSProperties}
+            />
+          </div>
         </div>
       )}
     </div>

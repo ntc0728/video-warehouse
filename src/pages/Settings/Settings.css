@@ -59,7 +59,7 @@
   border-color: var(--color-primary);
 }
 
-@media (width <= 767px) {
+@media (width <= 1023px) {
   .source-select {
     width: var(--layout-select-w-mobile);
   }
@@ -72,7 +72,7 @@
 
 /* 滚动条使用全局无感样式 */
 
-@media (width <= 767px) {
+@media (width <= 1023px) {
   .picker-modal-content {
     max-height: 50vh;
   }
@@ -265,7 +265,7 @@
   font-weight: 500;
 }
 
-@media (width < 767px) {
+@media (width < 1024px) {
   .source-multi-dropdown {
     width: var(--layout-select-w-mobile);
   }

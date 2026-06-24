@@ -60,10 +60,12 @@ describe('useMediaQuery', () => {
 })
 
 describe('useIsMobile', () => {
+  const mockMatchMedia = vi.fn()
+
   beforeEach(() => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockReturnValue({
+      value: mockMatchMedia.mockReturnValue({
         matches: false,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
@@ -71,9 +73,58 @@ describe('useIsMobile', () => {
     })
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should return boolean', () => {
     const { result } = renderHook(() => useIsMobile())
     expect(typeof result.current).toBe('boolean')
+  })
+
+  it('should return true when viewport <= 1023px', () => {
+    mockMatchMedia.mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    const { result } = renderHook(() => useIsMobile())
+    expect(result.current).toBe(true)
+  })
+
+  it('should return true regardless of touch capability', () => {
+    Object.defineProperty(navigator, 'maxTouchPoints', { writable: true, value: 0 })
+    mockMatchMedia.mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    const { result } = renderHook(() => useIsMobile())
+    expect(result.current).toBe(true)
+  })
+
+  it('should return true for TV device if viewport <= 1023px', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      writable: true,
+      value: 'Mozilla/5.0 (WebOS; webOS/TV) AppleWebKit/537.36',
+    })
+    mockMatchMedia.mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    const { result } = renderHook(() => useIsMobile())
+    expect(result.current).toBe(true)
+  })
+
+  it('should return false when viewport > 1023px', () => {
+    mockMatchMedia.mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    const { result } = renderHook(() => useIsMobile())
+    expect(result.current).toBe(false)
   })
 })
 

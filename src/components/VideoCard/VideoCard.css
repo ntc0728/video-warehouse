@@ -134,7 +134,7 @@
   z-index: 4;
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-primary) 85%, transparent);
+  background: rgba(0, 0, 0, 0.72);
   color: #fff;
   font-size: var(--text-xs);
   font-weight: 500;
@@ -204,12 +204,14 @@
   box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
 }
 
-/* Mobile：未收藏按钮也常驻以保证可点（触摸设备无 hover 行为） */
+/* Mobile：完全隐藏收藏按钮（用户已可通过收藏页管理） */
 @media (width <= 767px) {
   .video-card-fav-btn.hover-visible {
-    opacity: 0.85;
-    transform: scale(1);
-    pointer-events: auto;
+    display: none;
+  }
+
+  .video-card-fav-btn.visible {
+    display: none;
   }
 }
 

@@ -60,14 +60,12 @@
   flex-direction: column;
 }
 
-@media (width <= 767px) {
-  .page-transition {
-    /* 移动端底部 TabBar 遮挡滚动内容，预留底部安全区 */
-    padding-bottom: var(--layout-tabbar-height);
-  }
-  .app-shell .app-shell__scroll {
-    overscroll-behavior: none;
-  }
+[data-device="app"] .page-transition {
+  /* 原生 App 底部 TabBar 遮挡滚动内容，预留底部安全区 */
+  padding-bottom: var(--layout-tabbar-height);
+}
+[data-device="app"] .app-shell .app-shell__scroll {
+  overscroll-behavior: none;
 }
 
 .sidebar-header {
@@ -182,4 +180,33 @@
 
 [data-theme="dark"] .mobile-tab-bar {
   border-top-color: var(--color-border-light);
+}
+
+/* ── Mobile web: sidebar overlay ───────────────────── */
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgb(0 0 0 / 40%);
+  animation: fadeIn 0.2s ease;
+}
+
+.sidebar-container--mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  height: 100dvh;
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-container--mobile.sidebar-container--open {
+  transform: translateX(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

@@ -19,8 +19,13 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+export function isTouchDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.maxTouchPoints > 0;
+}
+
 export function useIsMobile(): boolean {
-  return useMediaQuery('(max-width: 767px)');
+  return useMediaQuery('(max-width: 1023px)');
 }
 
 export function useIsTablet(): boolean {

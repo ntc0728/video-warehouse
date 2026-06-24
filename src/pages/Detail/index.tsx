@@ -6,7 +6,7 @@
  */
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useUserStore, useSettingsStore } from '@/stores';
+import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
@@ -100,9 +100,17 @@ export default function DetailPage() {
   const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
 
+  // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
+  const restoredRef = useRef(false);
+  const stateRef = useRef<Record<string, unknown>>({});
+
   // ── TMDB 加载 ────────────────────────────────
   useEffect(() => {
     if (!id) return;
+    if (restoredRef.current) {
+      restoredRef.current = false;
+      return;
+    }
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
@@ -168,6 +176,12 @@ export default function DetailPage() {
 
   useEffect(() => () => cmsAbortRef.current?.abort(), []);
 
+  // ── 页面状态保存（离开后返回恢复） ─────────────
+  useEffect(() => {
+    if (!id) return;
+    useNavStore.getState().saveState(`detail:${id}`, { tab: activeTab });
+  }, [activeTab, id]);
+
   // ── 收藏 ──────────────────────────────────────
   const collected = id ? isCollected(id) : false;
   const handleCollect = useCallback(() => {
@@ -215,6 +229,34 @@ export default function DetailPage() {
   const similarResults: TMDBResultItem[] = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults: TMDBResultItem[] = d?.recommendations?.results?.slice(0, 12) || [];
   const homepage = d?.homepage || '';
+
+  // ── 页面状态快照 ──────────────────────────────
+  stateRef.current = { activeTab, cmsResults, cmsLoaded, cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
+
+  useEffect(() => {
+    if (!id) return;
+    const saved = useNavStore.getState().getState(`detail:${id}`);
+    if (saved) {
+      restoredRef.current = true;
+      const data = saved as Record<string, unknown>;
+      if (data.tab) setActiveTab(data.tab as DetailTab);
+      if (data.cmsResults) setCmsResults(data.cmsResults as VideoDetailResult[]);
+      if (data.cmsLoaded !== undefined) setCmsLoaded(data.cmsLoaded as boolean);
+      if (data.cmsError !== undefined) setCmsError(data.cmsError as string | null);
+      if (data.tmdbDetail) setTmdbDetail(data.tmdbDetail as TMDBMovieDetail | TMDBTVShowDetail);
+      if (data.tmdbMediaType) setTmdbMediaType(data.tmdbMediaType as 'movie' | 'tv');
+      if (data.tmdbLoading !== undefined) setTmdbLoading(data.tmdbLoading as boolean);
+      if (data.tmdbError !== undefined) setTmdbError(data.tmdbError as string | null);
+      if (data.bgLoaded !== undefined) setBgLoaded(data.bgLoaded as boolean);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (!id) return;
+      useNavStore.getState().saveState(`detail:${id}`, stateRef.current);
+    };
+  }, [id]);
 
   // ── Loading ──────────────────────────────────
   if (tmdbLoading) return <AppLoading />;
@@ -413,15 +455,17 @@ export default function DetailPage() {
                         <div className="detail-source-group-header">
                           <div className="detail-source-group-title">
                             <span className="detail-source-name">{result.sourceName}</span>
-                            {result.video.year && (
-                              <span className="detail-source-year">{result.video.year}</span>
-                            )}
                           </div>
                         </div>
                         <div className="detail-source-group-body">
                           <div className="detail-source-thumb">
                             {result.video.cover ? (
-                              <img src={result.video.cover} alt={result.video.title} />
+                              <>
+                                <img src={result.video.cover} alt={result.video.title} />
+                                {result.video.year && (
+                                  <span className="detail-source-thumb-year">{result.video.year}</span>
+                                )}
+                              </>
                             ) : (
                               <div className="detail-source-thumb-placeholder">
                                 <Server size={20} />
@@ -430,16 +474,13 @@ export default function DetailPage() {
                           </div>
                           <div className="detail-source-info">
                             <span className="detail-source-title">{result.video.title}</span>
-                            {result.video.year && (
-                              <span className="detail-source-meta">{result.video.year}</span>
-                            )}
+                            <button
+                              className="detail-source-play-btn"
+                              onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex }, viewTransition: true })}
+                            >
+                              <Play size={12} fill="currentColor" /> 立即播放
+                            </button>
                           </div>
-                          <button
-                            className="detail-source-play-btn"
-                            onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex }, viewTransition: true })}
-                          >
-                            <Play size={12} fill="currentColor" /> 立即播放
-                          </button>
                         </div>
                       </div>
                     )
