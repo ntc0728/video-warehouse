@@ -9,6 +9,13 @@ interface ProgressBarProps {
   onSeek: (time: number) => void;
 }
 
+function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent): number {
+  if ('touches' in e) {
+    return e.touches[0]?.clientX ?? (e as TouchEvent).changedTouches[0]?.clientX ?? 0;
+  }
+  return (e as MouseEvent).clientX;
+}
+
 export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -24,17 +31,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     return ratio * duration;
   }, [duration]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (isLive) return;
-    setIsDragging(true);
-    const time = calcTime(e.clientX);
-    onSeek(time);
-  }, [isLive, calcTime, onSeek]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const updateFromEvent = useCallback((clientX: number) => {
     if (!barRef.current || duration <= 0) return;
     const rect = barRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     setHoverTime(ratio * duration);
     setHoverPosition(ratio * 100);
     if (isDragging) {
@@ -42,13 +42,45 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     }
   }, [duration, isDragging, onSeek]);
 
-  const handleMouseUp = useCallback(() => {
+  const beginDrag = useCallback((clientX: number) => {
+    if (isLive) return;
+    setIsDragging(true);
+    const time = calcTime(clientX);
+    onSeek(time);
+  }, [isLive, calcTime, onSeek]);
+
+  const endDrag = useCallback(() => {
     setIsDragging(false);
   }, []);
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    beginDrag(e.clientX);
+  }, [beginDrag]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    updateFromEvent(e.clientX);
+  }, [updateFromEvent]);
+
+  const handleMouseUp = useCallback(() => {
+    endDrag();
+  }, [endDrag]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    beginDrag(getClientX(e));
+  }, [beginDrag]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    updateFromEvent(getClientX(e));
+  }, [updateFromEvent]);
+
+  const handleTouchEnd = useCallback(() => {
+    endDrag();
+  }, [endDrag]);
+
   useEffect(() => {
     if (isDragging) {
-      const handleGlobalMouseUp = () => setIsDragging(false);
+      const handleGlobalMouseUp = () => endDrag();
       const handleGlobalMouseMove = (e: MouseEvent) => {
         if (barRef.current && duration > 0) {
           const rect = barRef.current.getBoundingClientRect();
@@ -56,14 +88,28 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           onSeek(ratio * duration);
         }
       };
+      const handleGlobalTouchMove = (e: TouchEvent) => {
+        if (barRef.current && duration > 0) {
+          e.preventDefault();
+          const rect = barRef.current.getBoundingClientRect();
+          const clientX = getClientX(e);
+          const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+          onSeek(ratio * duration);
+        }
+      };
+      const handleGlobalTouchEnd = () => endDrag();
       window.addEventListener('mouseup', handleGlobalMouseUp);
       window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+      window.addEventListener('touchend', handleGlobalTouchEnd);
       return () => {
         window.removeEventListener('mouseup', handleGlobalMouseUp);
         window.removeEventListener('mousemove', handleGlobalMouseMove);
+        window.removeEventListener('touchmove', handleGlobalTouchMove);
+        window.removeEventListener('touchend', handleGlobalTouchEnd);
       };
     }
-  }, [isDragging, duration, onSeek]);
+  }, [isDragging, duration, onSeek, endDrag]);
 
   const formatTime = (seconds: number): string => {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -89,6 +135,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={() => setHoverTime(null)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div className="up-progress-buffered" style={{ width: `${bufferedPercent}%` }} />
         <div className="up-progress-played" style={{ width: `${progress}%` }} />

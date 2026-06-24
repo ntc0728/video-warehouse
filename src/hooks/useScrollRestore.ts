@@ -38,8 +38,10 @@ export function useScrollRestore(
     saveRef.current(pageKey, { scrollTop: 0 });
   }, [navigationType, pageKey, container]);
 
-  // 返回（POP）→ 恢复滚动位置（容器可能还在挂载中，等下一次 layout 周期）
-  useEffect(() => {
+  // 返回（POP）→ 恢复滚动位置
+  // 使用 useLayoutEffect 确保在 View Transitions API 捕获新页面快照之前
+  // 设置 scrollTop，避免跨页面过渡后出现位置跳变（"向上顶"问题）
+  useLayoutEffect(() => {
     if (navigationType !== 'POP') return;
     if (restoredRef.current) return;
     const target = saved?.scrollTop;

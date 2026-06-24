@@ -16,7 +16,7 @@
 
 @keyframes cardFadeIn {
   from {
-    opacity: 0;
+    opacity: 0.4;
   }
   to {
     opacity: 1;

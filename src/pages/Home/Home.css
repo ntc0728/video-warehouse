@@ -22,11 +22,7 @@
   padding-top: var(--space-md);
 }
 
-@media (width <= 767px) {
-  .home-rows {
-    padding-bottom: var(--layout-tabbar-height);
-  }
-}
+
 
 /* ── Empty / Error ──────────────────────────────────── */
 

@@ -427,3 +427,10 @@
     animation: none;
   }
 }
+
+/* ── Mobile / App: 底部间距，避免与底部导航栏贴边 ─── */
+@media (width <= 1023px) {
+  .hero-banner {
+    margin-bottom: var(--space-md);
+  }
+}

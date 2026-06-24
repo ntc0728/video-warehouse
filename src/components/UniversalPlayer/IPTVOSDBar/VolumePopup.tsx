@@ -48,9 +48,9 @@ export default function VolumePopup({
     <div
       className={`iptv-volume-popup ${localVisible ? 'iptv-volume-visible' : 'iptv-volume-hidden'}`}
     >
-      <div className="iptv-volume-icon">
-        <VolumeIcon size={28} />
-      </div>
+      <span className="iptv-volume-percent">
+        {Math.round(volume * 100)}%
+      </span>
       <div className="iptv-volume-slider-wrapper">
         <input
           type="range"
@@ -62,9 +62,9 @@ export default function VolumePopup({
           className="iptv-volume-slider"
         />
       </div>
-      <span className="iptv-volume-percent">
-        {Math.round(volume * 100)}%
-      </span>
+      <div className="iptv-volume-icon">
+        <VolumeIcon size={28} />
+      </div>
     </div>
   );
 }

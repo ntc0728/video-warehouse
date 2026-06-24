@@ -180,7 +180,7 @@
   --layout-tabbar-height:      56px;
   --layout-datepicker-width:   340px;
   --layout-collapse-max-h:     1000px;
-  --layout-detail-poster-w:    clamp(6.25rem, 5rem + 1.5vw, 8.75rem);
+  --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem);
   --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem);
   --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 43.75rem);
 
@@ -201,6 +201,7 @@
   --glass-blur:        saturate(180%) blur(14px);
   /* 玻璃层下方的细分隔阴影 */
   --glass-shadow:      0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --glass-border:      rgba(0, 0, 0, 0.08);
 
   /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
   --scrollbar-width: 6px;
@@ -274,7 +275,7 @@
   --color-text-tertiary: #666;
   --color-text-inverse: #141414;
   --color-border: #434343;
-  --color-border-light: #303030;
+  --color-border-light: #3a3a3a;
   --color-placeholder: #262626;
   --color-placeholder-shimmer-a: #1f1f1f;
   --color-placeholder-shimmer-b: #303030;
@@ -308,6 +309,7 @@
   --glass-bg:          color-mix(in srgb, var(--color-background) 18%, transparent);
   --glass-blur:        saturate(180%) blur(14px);
   --glass-shadow:      0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --glass-border:      rgba(255, 255, 255, 0.08);
 
   /* Scrollbar — 暗色 (白色极淡) */
   --scrollbar-color: rgba(255, 255, 255, 0.18);

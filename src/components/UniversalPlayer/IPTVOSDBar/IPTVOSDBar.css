@@ -324,7 +324,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ===== Volume Popup (unchanged) ===== */
+/* ===== Volume Popup ===== */
 .iptv-volume-popup {
   position: absolute;
   top: 50%;
@@ -332,11 +332,11 @@
   z-index: 25;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: var(--space-xs);
   align-items: center;
   width: var(--layout-vol-popup-w);
-  height: var(--layout-vol-popup-w);
-  padding: var(--space-md) 0;
+  height: auto;
+  padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.55);
   transform: translateY(-50%);
@@ -364,10 +364,10 @@
 
 .iptv-volume-slider-wrapper {
   display: flex;
-  flex: 1;
   justify-content: center;
   align-items: center;
-  min-height: 0;
+  min-height: calc(var(--layout-vol-slider-w) + var(--space-md));
+  padding: var(--space-2xs) 0;
 }
 
 .iptv-volume-slider {
@@ -405,6 +405,7 @@
   color: #fff;
   font-size: var(--text-2xl);
   font-weight: 600;
+  line-height: 1;
   text-align: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
@@ -413,7 +414,7 @@
 .up-platform-mobile .iptv-osd-bar {
   /* 移动端宽度完全由 CSS 驱动，脱离 JS --osd-bar-width */
   gap: var(--space-2xs);
-  width: calc(100% - 2 * var(--space-xs));
+  width: min(calc(100% - 2 * var(--space-xs)), var(--layout-osd-max-width));
   max-width: calc(100% - 2 * var(--space-xs));
   min-height: var(--space-2xl);
   padding: var(--space-sm) var(--space-sm);
@@ -551,7 +552,7 @@
 @media (width <= 639px) {
   .iptv-osd-bar {
     gap: var(--space-2xs);
-    width: calc(100% - 2 * var(--space-xs));
+    width: min(calc(100% - 2 * var(--space-xs)), var(--layout-osd-max-width));
     min-height: var(--space-2xl);
     padding: var(--space-sm) var(--space-sm);
   }

@@ -1,7 +1,7 @@
-/**
- * ��Ƶ���ݷ���
- * �����Զ����ƵԴ��CMS �ɼ�վ API����ȡ��Ƶ�б�������
- * ͨ������ httpClient��axios��ͳһ�������� / ��ʱ / ����
+﻿/**
+ * 视频数据服务
+ * 负责从多个视频源（CMS 采集站 API）获取视频列表和详情
+ * 通过统一 httpClient（axios）统一处理 缓存 / 超时 / 重试
  */
 import type { Video, VideoType } from '@/types/video';
 import { getVideoSources, getIPTVSources } from './sourceService';
@@ -72,7 +72,7 @@ export async function checkVideoSourceAvailability(
   const source = sources[sourceIndex];
 
   if (!source) {
-    return { index: sourceIndex, name: 'δ֪', available: false, error: '��ƵԴ���ò�����' };
+    return { index: sourceIndex, name: '未知', available: false, error: '视频源配置不存在' };
   }
 
   try {
@@ -80,7 +80,7 @@ export async function checkVideoSourceAvailability(
     if (data && Array.isArray(data.list)) {
       return { index: sourceIndex, name: source.name, available: true };
     }
-    return { index: sourceIndex, name: source.name, available: false, error: '��Ӧ��ʽ�쳣' };
+    return { index: sourceIndex, name: source.name, available: false, error: '响应格式异常' };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return {
@@ -180,7 +180,7 @@ function mapVideoItem(item: CMSVideoItem): Video {
     director: item.vod_director,
     duration: item.vod_duration ? parseInt(item.vod_duration) : undefined,
     sources: item.vod_url ? [{
-      id: 'default', name: 'Ĭ��', url: item.vod_url.split(',')[0], type: 'mp4' as const,
+      id: 'default', name: '默认', url: item.vod_url.split(',')[0], type: 'mp4' as const,
     }] : [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -194,7 +194,7 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
 }> {
   const sources = await getVideoSources();
   const source = sources[sourceIndex];
-  if (!source) return { videos: [], error: 'δ�ҵ����õ���ƵԴ' };
+  if (!source) return { videos: [], error: '未找到配置的视频源' };
 
   try {
     const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000 });
@@ -207,15 +207,15 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
     return {
       videos: [],
       sourceInfo: { index: sourceIndex, name: source.name },
-      error: `����Դ ${source.name} ��Ӧ��ʽ�쳣`,
+      error: `请求源 ${source.name} 响应格式异常`,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const _message = error instanceof Error ? error.message : String(error);
     console.warn(`Failed to fetch videos from ${source.name}:`, error);
     return {
       videos: [],
       sourceInfo: { index: sourceIndex, name: source.name },
-      error: `无法连接到 ${source.name}：${message || '未知错误'}`,
+      error: `无法连接到 ${source.name}：${_message || '未知错误'}`,
     };
   }
 }
@@ -229,7 +229,7 @@ function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: V
   const episodesMap = new Map<string, { title: string; sources: Video['sources'] }>();
 
   for (let i = 0; i < fromList.length; i++) {
-    const sourceName = fromList[i].trim() || `Դ${i + 1}`;
+    const sourceName = fromList[i].trim() || `源${i + 1}`;
     const urlStr = urlList[i] || '';
     const episodes = urlStr.split('#').filter(Boolean);
     if (episodes.length === 0) continue;
@@ -244,7 +244,7 @@ function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: V
     } else {
       for (let j = 0; j < episodes.length; j++) {
         const parts = episodes[j].split('$');
-        const epTitle = parts.length > 1 ? parts[0] : `��${j + 1}��`;
+        const epTitle = parts.length > 1 ? parts[0] : '第' + (j + 1) + '集';
         const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
         if (!url) continue;
         const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;

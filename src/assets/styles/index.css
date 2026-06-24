@@ -63,7 +63,12 @@ html {
 
 /* ── 移动端隐藏所有滚动条 ─────────────────────────────── */
 @media (width <= 767px) {
-  html, body {
+  html {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-x pan-y;
+  }
+  body {
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -80,7 +85,9 @@ html {
     height: 0 !important;
   }
   input, textarea, select {
-    font-size: var(--text-lg);
+    /* iOS Safari zooms into inputs < 16px — must hard-code this value */
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list */
+    font-size: 16px;
   }
 }
 
@@ -141,9 +148,10 @@ a[role="button"]:active:not(:disabled),
 .group-tag:active,
 .detail-btn:active,
 .modal-close:active,
-.mobile-tab-bar button:active {
-  transform: none;
-  box-shadow: none;
+.mobile-tab-bar button:active,
+.player-panel-header:active {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .empty-state-wrapper {
@@ -466,6 +474,13 @@ main {
 
 [data-theme="dark"] .confirm-btn--cancel:hover {
   background: #4b5563;
+}
+
+/* ── 暗色模式卡片边框用半透明色值，消除亚像素渲染的白色细线 ── */
+[data-theme="dark"] .video-card,
+[data-theme="dark"] .iptv-channel-card,
+[data-theme="dark"] .daily-pick-card {
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ── 页面工具栏按钮（收藏 / 历史页共用） ────────────── */

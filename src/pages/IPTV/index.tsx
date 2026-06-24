@@ -224,10 +224,9 @@ export default function IPTVPage() {
   }, [checkGroupsOverflow]);
 
   // 分组列表变化时重新检测溢出（源切换、分组数据更新）
+  // 同步调用而非 rAF，防止"先展开再折叠"的视觉闪烁
   useEffect(() => {
-    // 延迟一帧等待 DOM 更新后再检测
-    const raf = requestAnimationFrame(() => checkGroupsOverflow());
-    return () => cancelAnimationFrame(raf);
+    checkGroupsOverflow();
   }, [filteredGroups, checkGroupsOverflow]);
 
   /** Settings 中 IPTV 源索引变化时，同步更新 IPTV store 的 aggregatorUrls */
@@ -344,8 +343,6 @@ export default function IPTVPage() {
     setSelectedSource(sourceId);
     setSelectedGroup(null);
     setGroupsExpanded(false);
-    setNeedCollapse(false);
-    setCollapsedHeight(null);
     useIPTVStore.getState().abortAvailabilityCheck();
   }, []);
 

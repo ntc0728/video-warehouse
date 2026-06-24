@@ -112,6 +112,29 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleLeavePiP = () => { getStore().setIsPiP(false); };
     const handleLoadedMetadata = () => { loadProgress(); };
 
+    const handleNativeError = () => {
+      const mediaError = video.error;
+      if (!mediaError) return;
+      let msg: string;
+      switch (mediaError.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          msg = '播放被中止';
+          break;
+        case MediaError.MEDIA_ERR_NETWORK:
+          msg = '网络错误，无法加载视频';
+          break;
+        case MediaError.MEDIA_ERR_DECODE:
+          msg = '视频解码失败';
+          break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          msg = '频道源不可用';
+          break;
+        default:
+          msg = `播放错误 (${mediaError.code})`;
+      }
+      onError?.(new Error(msg));
+    };
+
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('timeupdate', handleTimeUpdate);
@@ -121,6 +144,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.addEventListener('enterpictureinpicture', handleEnterPiP);
     video.addEventListener('leavepictureinpicture', handleLeavePiP);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('error', handleNativeError);
 
     const bandwidthTimer = setInterval(() => {
       let bps = adapterRef.current?.getBandwidthEstimate() ?? 0;
@@ -162,6 +186,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('error', handleNativeError);
 
       clearInterval(bandwidthTimer);
 
@@ -200,7 +225,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [onError]);
 
   const seek = useCallback((time: number) => {
-    if (videoRef.current) videoRef.current.currentTime = time;
+    if (videoRef.current && !videoRef.current.error) videoRef.current.currentTime = time;
   }, []);
 
   const setVideoVolume = useCallback((vol: number) => {
@@ -218,6 +243,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
       } else if (document.pictureInPictureEnabled) {
+        if (video.readyState === 0) {
+          await new Promise<void>((resolve) => {
+            const onLoaded = () => { video.removeEventListener('loadedmetadata', onLoaded); resolve(); };
+            video.addEventListener('loadedmetadata', onLoaded);
+          });
+        }
         video.disablePictureInPicture = false;
         await video.requestPictureInPicture();
       }

@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Star, Clock, Settings, Sun, Moon, Monitor } from 'lucide-react';
+import { Home, Tv, Star, Clock, Settings, Sun, Moon, Monitor, Menu, X } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -31,9 +31,9 @@ const RIGHT_NAV_ITEMS: NavItem[] = [
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
 
-interface StickyHeaderProps { immersive?: boolean; }
+interface StickyHeaderProps { immersive?: boolean; onMenuToggle?: () => void; menuOpen?: boolean; }
 
-export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
+export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen }: StickyHeaderProps) {
   const theme = useThemeMode();
   const isTV = useIsTV();
   const navigate = useNavigate();
@@ -106,14 +106,20 @@ export default function StickyHeader({ immersive = false }: StickyHeaderProps) {
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
-          <button className="sticky-header__logo-group" onClick={goHome} aria-label="kinoTv — 返回首页">
-            <div className="sticky-header__logo-wrap">
-              <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
-            </div>
-            <div className="sticky-header__brand">
-              <span className="sticky-header__brand-name">kinoTv</span>
-            </div>
-          </button>
+          {onMenuToggle ? (
+            <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          ) : (
+            <button className="sticky-header__logo-group" onClick={goHome} aria-label="kinoTv — 返回首页">
+              <div className="sticky-header__logo-wrap">
+                <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
+              </div>
+              <div className="sticky-header__brand">
+                <span className="sticky-header__brand-name">kinoTv</span>
+              </div>
+            </button>
+          )}
           <nav className="sticky-header__nav" aria-label="主要导航">
             {LEFT_NAV_ITEMS.map(renderNavItem)}
           </nav>

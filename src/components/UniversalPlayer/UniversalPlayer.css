@@ -80,7 +80,7 @@
   align-items: center;
   padding: var(--space-sm) var(--space-md);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
   font-size: var(--text-base);
@@ -349,11 +349,18 @@
   position: absolute;
   bottom: 100%;
   left: 50%;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-lg);
   padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.85);
   transform: translateX(-50%);
+}
+
+.up-volume-slider-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: var(--layout-player-vol-w);
 }
 
 .up-volume-slider {
@@ -1114,6 +1121,7 @@
 
 /* ===== Fullscreen ===== */
 :fullscreen .up-universal-player {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   border-radius: 0;
 }
 
@@ -1122,6 +1130,7 @@
 }
 
 .up-universal-player:fullscreen {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   border-radius: 0;
 }
 
@@ -1167,4 +1176,30 @@
 @keyframes up-seek-pulse {
   from { opacity: 0.8; }
   to { opacity: 1; }
+}
+
+/* ===== Dark mode progress bar visibility ===== */
+[data-theme="dark"] .up-progress-played {
+  background: #1677ff;
+}
+
+[data-theme="dark"] .up-progress-bar:hover .up-progress-thumb,
+[data-theme="dark"] .up-progress-dragging .up-progress-thumb {
+  background: #1677ff;
+}
+
+/* ===== Volume control fixes ===== */
+.up-volume-value {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Prevent page scroll when interacting with volume slider */
+.up-volume-slider,
+.iptv-volume-slider {
+  touch-action: none;
 }

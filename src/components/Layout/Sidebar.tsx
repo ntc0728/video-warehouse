@@ -1,6 +1,7 @@
 /**
  * 侧边栏导航组件
- * 桌面端左侧导航栏，支持展开/收起切换，移动端不渲染
+ * 桌面端左侧导航栏，支持展开/收起切换
+ * 移动端 overlay 模式，从左侧滑入
  */
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navTo } from '@/lib/navigation';
@@ -12,6 +13,7 @@ import {
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
+  X,
 } from 'lucide-react';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 
@@ -36,17 +38,53 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
 
   const sidebarWidth = isMobile ? 200 : 240;
 
-  if (isMobile) {
-    return null;
-  }
-
   const handleTabClick = (key: string) => {
     if (key === '/') {
       goHome();
     } else {
       navTo(navigate, key, location.pathname + location.search);
     }
+    if (isMobile) onToggle();
   };
+
+  if (isMobile) {
+    return (
+      <>
+        {isOpen && <div className="sidebar-overlay" onClick={onToggle} />}
+        <aside
+          className={`sidebar-container sidebar-container--mobile${isOpen ? ' sidebar-container--open' : ''}`}
+          style={{ width: sidebarWidth }}
+        >
+          <div className="sidebar-header">
+            <span className="sidebar-title animate-slide-in-left">影视大全</span>
+            <button onClick={onToggle} className="sidebar-toggle-btn btn-press">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="sidebar-nav">
+            {tabs.map((tab) => {
+              const isActive = tab.key === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(tab.key);
+              return (
+                <div
+                  key={tab.key}
+                  onClick={() => handleTabClick(tab.key)}
+                  className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                >
+                  {isActive && <div className="sidebar-nav-indicator" />}
+                  <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`}>
+                    {isActive ? tab.activeIcon : tab.icon}
+                  </span>
+                  <span className="sidebar-nav-text">{tab.title}</span>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      </>
+    );
+  }
 
   return (
     <aside

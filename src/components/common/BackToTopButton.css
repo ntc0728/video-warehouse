@@ -120,8 +120,8 @@
   .back-to-top-button {
     right: var(--space-md);
     bottom: calc(var(--layout-tabbar-height) + var(--space-xl));
-    width: calc(var(--space-2xl) * 2);
-    height: calc(var(--space-2xl) * 2);
+    width: calc(var(--space-2xl) * 1.5);
+    height: calc(var(--space-2xl) * 1.5);
   }
 }
 

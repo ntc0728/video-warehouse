@@ -73,8 +73,9 @@
 /* ---- Availability badge ---- */
 .availability-badge {
   position: absolute;
-  bottom: var(--space-xs);
+  top: var(--space-xs);
   left: var(--space-xs);
+  z-index: 1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,8 +91,6 @@
 }
 
 .availability-badge.unavailable {
-  top: var(--space-xs);
-  bottom: auto;
   background-color: var(--color-error);
   color: white;
 }
@@ -245,12 +244,14 @@
   box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
 }
 
-/* Mobile：未收藏按钮也常驻以保证可点（触摸设备无 hover 行为） */
+/* Mobile：完全隐藏收藏按钮 */
 @media (width <= 767px) {
   .iptv-card-favorite.hover-visible {
-    opacity: 0.85;
-    transform: scale(1);
-    pointer-events: auto;
+    display: none;
+  }
+
+  .iptv-card-favorite.visible {
+    display: none;
   }
 }
 

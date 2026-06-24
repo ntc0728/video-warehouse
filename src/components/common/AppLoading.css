@@ -231,9 +231,9 @@
 [data-theme="dark"] .app-loading__brand-name {
   background: linear-gradient(
     180deg,
-    #fff 0%,
-    var(--color-text) 55%,
-    var(--color-text-tertiary) 100%
+    #e0e0e0 0%,
+    #fff 50%,
+    #888 100%
   );
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -246,9 +246,13 @@
   opacity: 0.85;
 }
 
+[data-theme="dark"] .app-loading__progress-bar {
+  background: var(--color-text-secondary);
+}
+
 /* ═══════════════════════════════════════════════════════════════════
-   主题过渡
-   ═══════════════════════════════════════════════════════════════════ */
+    主题过渡
+    ═══════════════════════════════════════════════════════════════════ */
 html.theme-transitioning .app-loading,
 html.theme-transitioning .app-loading *:not(svg):not(path) {
   transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
