@@ -1,5 +1,3 @@
-import { MediaPlayer } from 'dashjs';
-import type { MediaPlayerClass, Representation, MediaInfo } from 'dashjs';
 import { BasePlayerAdapter } from './PlayerAdapter';
 import type { PlayerLevel } from '@/types/player';
 import type { AudioTrack } from './PlayerAdapter';
@@ -9,7 +7,8 @@ interface DashAdapterOptions {
 }
 
 export class DashAdapter extends BasePlayerAdapter {
-  private player: MediaPlayerClass | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private player: any = null;
   private options: DashAdapterOptions;
   private errorCount = 0;
 
@@ -18,28 +17,34 @@ export class DashAdapter extends BasePlayerAdapter {
     this.options = options;
   }
 
-  attach(video: HTMLVideoElement): void {
+  async attach(video: HTMLVideoElement): Promise<void> {
     super.attach(video);
-    this.player = MediaPlayer().create();
-    this.player.initialize(video, this.url, false);
-    this.player.updateSettings({
-      streaming: {
-        abr: {
-          autoSwitchBitrate: { video: true, audio: true },
+
+    try {
+      const dashjs = await import('dashjs');
+      this.player = dashjs.MediaPlayer().create();
+      this.player.initialize(video, this.url, false);
+      this.player.updateSettings({
+        streaming: {
+          abr: {
+            autoSwitchBitrate: { video: true, audio: true },
+          },
+          buffer: {
+            fastSwitchEnabled: true,
+          },
         },
-        buffer: {
-          fastSwitchEnabled: true,
-        },
-      },
-    });
-    this.player.on('error' as string, (e: { error?: { code?: string; message?: string } }) => {
-      if (e.error) {
-        this.errorCount++;
-        if (this.errorCount >= 3) {
-          this.options.onError?.(new Error('DASH 播放错误: ' + (e.error.message || '未知错误')));
+      });
+      this.player.on('error' as string, (e: { error?: { code?: string; message?: string } }) => {
+        if (e.error) {
+          this.errorCount++;
+          if (this.errorCount >= 3) {
+            this.options.onError?.(new Error('DASH 播放错误: ' + (e.error.message || '未知错误')));
+          }
         }
-      }
-    });
+      });
+    } catch {
+      this.options.onError?.(new Error('DASH 库加载失败'));
+    }
   }
 
   detach(): void {
@@ -72,7 +77,8 @@ export class DashAdapter extends BasePlayerAdapter {
 
   getLevels(): PlayerLevel[] {
     if (!this.player) return [];
-    const reps: Representation[] = this.player.getRepresentationsByType('video');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reps: any[] = this.player.getRepresentationsByType('video');
     return reps.map((r) => ({
       width: r.width ?? 0,
       height: r.height ?? 0,
@@ -86,7 +92,8 @@ export class DashAdapter extends BasePlayerAdapter {
 
   getAudioTracks(): AudioTrack[] {
     if (!this.player) return [];
-    const tracks: MediaInfo[] = this.player.getTracksFor('audio');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tracks: any[] = this.player.getTracksFor('audio');
     return tracks.map((t, i) => ({
       id: i,
       name: t.labels?.[0]?.text ?? t.id ?? `Audio ${i}`,

@@ -1,4 +1,3 @@
-import HlsJs from 'hls.js';
 import { BasePlayerAdapter } from './PlayerAdapter';
 import type { PlayerLevel, DecoderMode } from '@/types/player';
 import type { AudioTrack } from './PlayerAdapter';
@@ -15,19 +14,16 @@ function getQualityLabel(level: { width: number; height: number; bitrate: number
 }
 
 /**
- * 检测是否可通过 hls.js 播放（含 iOS 17+ ManagedMediaSource）。
- * hls.js 的 isSupported() 只检查 MediaSource，iOS 上返回 false，
- * 但 iOS 17+ 的 ManagedMediaSource 同样支持 SourceBuffer API。
+ * 检测是否可通过原生 HLS 播放（iOS Safari）。
  */
-function canUseHlsJs(): boolean {
-  if (HlsJs.isSupported()) return true;
-  // iOS 17+ Safari 支持 ManagedMediaSource
+function canUseNativeHls(): boolean {
   return typeof window !== 'undefined' &&
-    'ManagedMediaSource' in window;
+    document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
 }
 
 export class HLSAdapter extends BasePlayerAdapter {
-  private hls: HlsJs | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private hls: any = null;
   private decoderMode: DecoderMode;
   private currentLevel: number = -1;
   private levels: PlayerLevel[] = [];
@@ -48,13 +44,28 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   attach(video: HTMLVideoElement): void {
     super.attach(video);
-    this.initHls();
+    this.initHls().catch(() => {});
   }
 
-  private initHls(): void {
+  private async initHls(): Promise<void> {
     if (!this.video) return;
 
-    if (canUseHlsJs()) {
+    // iOS Safari 原生 HLS
+    if (canUseNativeHls()) {
+      this.video.src = this.url;
+      this.attachNativeListeners();
+      return;
+    }
+
+    // 动态加载 hls.js
+    try {
+      const { default: HlsJs } = await import('hls.js');
+
+      if (!HlsJs.isSupported() && !('ManagedMediaSource' in window)) {
+        this.onError?.(new Error('当前浏览器不支持 HLS 播放'));
+        return;
+      }
+
       const config: Record<string, unknown> = {
         enableWorker: true,
         lowLatencyMode: false,
@@ -75,16 +86,12 @@ export class HLSAdapter extends BasePlayerAdapter {
         this.hls.loadSource(this.url);
         this.hls.attachMedia(this.video);
       } catch {
-        // ManagedMediaSource 不可用时回退到原生 HLS
         this.hls = null;
-        if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
-          this.video.src = this.url;
-          this.attachNativeListeners();
-        }
+        this.onError?.(new Error('HLS 初始化失败'));
         return;
       }
 
-      this.hls.on(HlsJs.Events.MANIFEST_PARSED, (_e, data) => {
+      this.hls.on(HlsJs.Events.MANIFEST_PARSED, (_e: unknown, data: { levels: Array<{ width: number; height: number; bitrate: number }> }) => {
         this.levels = data.levels.map(l => ({
           width: l.width,
           height: l.height,
@@ -92,7 +99,7 @@ export class HLSAdapter extends BasePlayerAdapter {
           name: getQualityLabel({ width: l.width, height: l.height, bitrate: l.bitrate }),
         }));
 
-        this.audioTracks = this.hls?.audioTracks.map((t, i) => ({
+        this.audioTracks = this.hls?.audioTracks.map((t: { id?: number; name?: string; lang?: string; default?: boolean }, i: number) => ({
           id: t.id ?? i,
           name: t.name || t.lang || `Track ${i + 1}`,
           language: t.lang || '',
@@ -105,14 +112,13 @@ export class HLSAdapter extends BasePlayerAdapter {
         this.video?.play().catch(() => {});
       });
 
-      this.hls.on(HlsJs.Events.LEVEL_SWITCHED, (_e, data) => {
+      this.hls.on(HlsJs.Events.LEVEL_SWITCHED, (_e: unknown, data: { level: number }) => {
         this.currentLevel = data.level;
       });
 
-      this.hls.on(HlsJs.Events.ERROR, (_event, data) => {
+      this.hls.on(HlsJs.Events.ERROR, (_event: unknown, data: { fatal: boolean; type: string; details: string }) => {
         if (data.fatal) {
           const now = Date.now();
-          // 重置计数器：超过 5 秒无错误则重新计数
           if (now - this.lastErrorTime > 5000) {
             this.errorCount = 0;
           }
@@ -121,12 +127,10 @@ export class HLSAdapter extends BasePlayerAdapter {
 
           switch (data.type) {
             case HlsJs.ErrorTypes.NETWORK_ERROR:
-              // 清单级错误（URL 失效/404）重试无意义，直接报错
               if (data.details === 'manifestLoadError' || data.details === 'manifestParsingError') {
                 this.onError?.(new Error('频道源不可用'));
               } else {
                 this.hls?.startLoad();
-                // 连续网络错误超过 3 次才上报
                 if (this.errorCount >= 3) {
                   this.onError?.(new Error('网络连接失败'));
                 }
@@ -134,21 +138,18 @@ export class HLSAdapter extends BasePlayerAdapter {
               break;
             case HlsJs.ErrorTypes.MEDIA_ERROR:
               this.hls?.recoverMediaError();
-              // 连续媒体错误超过 2 次才上报
               if (this.errorCount >= 2) {
                 this.onError?.(new Error('媒体解码失败'));
               }
               break;
             default:
-              // 默认错误直接上报
               this.onError?.(new Error(`HLS error: ${data.details}`));
               break;
           }
         }
       });
-    } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
-      this.video.src = this.url;
-      this.attachNativeListeners();
+    } catch {
+      this.onError?.(new Error('HLS 库加载失败'));
     }
   }
 

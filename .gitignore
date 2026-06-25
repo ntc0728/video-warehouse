@@ -6,6 +6,7 @@ dist
 build
 *.tsbuildinfo
 vite.config.d.ts
+vite.config.js
 
 # 环境变量
 .env
@@ -54,11 +55,12 @@ test-results/
 docs/
 
 # 脚本（开发辅助脚本不入版本控制）
-# 注意：构建脚本（build-*.ps1/bat）需要保留，不在此忽略
+# 注意：构建脚本（build-*.ps1/bat）和测试脚本（*.spec.ts）需要保留
 scripts/*.sh
 scripts/*.py
 scripts/*.js
 scripts/*.ts
+!scripts/*.spec.ts
 
 # 旧规则文件
 CLAUDE.md
