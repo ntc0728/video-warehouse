@@ -206,7 +206,17 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   seek(time: number): void {
-    if (this.video) this.video.currentTime = time;
+    if (!this.video) return;
+    // 边界校验：防止 seek 到无效位置（直播流尤其重要）
+    const seekable = this.video.seekable;
+    if (seekable.length > 0) {
+      const start = seekable.start(0);
+      const end = seekable.end(seekable.length - 1);
+      if (time < start || time > end) {
+        time = Math.max(start, Math.min(end, time));
+      }
+    }
+    this.video.currentTime = time;
   }
 
   getLevels(): PlayerLevel[] {
@@ -256,6 +266,53 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   resetErrorCount(): void {
     this.errorCount = 0;
+  }
+
+  isLive(): boolean {
+    if (this.hls) {
+      // Check if current level's details indicate a live stream
+      const currentLevel = this.hls.levels[this.hls.currentLevel];
+      if (currentLevel?.details?.live) return true;
+    }
+    return super.isLive();
+  }
+
+  getLiveLatency(): number {
+    if (this.hls && this.video) {
+      const currentLevel = this.hls.levels[this.hls.currentLevel];
+      if (currentLevel?.details?.live && currentLevel.details.fragments?.length > 0) {
+        const fragments = currentLevel.details.fragments;
+        const lastFragment = fragments[fragments.length - 1];
+        const liveEdge = lastFragment.start + lastFragment.duration;
+        return Math.max(0, liveEdge - this.video.currentTime);
+      }
+    }
+    return super.getLiveLatency();
+  }
+
+  getSeekableStart(): number {
+    if (this.hls && this.video) {
+      const currentLevel = this.hls.levels[this.hls.currentLevel];
+      if (currentLevel?.details?.live && currentLevel.details.fragments?.length > 0) {
+        const fragments = currentLevel.details.fragments;
+        // Edge fragment may be partially evicted; prefer fragment 1 if available
+        const startFragment = fragments.length > 1 ? fragments[1] : fragments[0];
+        return startFragment.start;
+      }
+    }
+    return super.getSeekableStart();
+  }
+
+  getSeekableEnd(): number {
+    if (this.hls) {
+      const currentLevel = this.hls.levels[this.hls.currentLevel];
+      if (currentLevel?.details?.live && currentLevel.details.fragments?.length > 0) {
+        const fragments = currentLevel.details.fragments;
+        const lastFragment = fragments[fragments.length - 1];
+        return lastFragment.start + lastFragment.duration;
+      }
+    }
+    return super.getSeekableEnd();
   }
 
   destroy(): void {

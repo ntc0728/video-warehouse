@@ -17,7 +17,17 @@ export class NativeAdapter extends BasePlayerAdapter {
   }
 
   seek(time: number): void {
-    if (this.video) this.video.currentTime = time;
+    if (!this.video) return;
+    // 边界校验
+    const seekable = this.video.seekable;
+    if (seekable.length > 0) {
+      const start = seekable.start(0);
+      const end = seekable.end(seekable.length - 1);
+      time = Math.max(start, Math.min(end, time));
+    } else if (isFinite(this.video.duration) && this.video.duration > 0) {
+      time = Math.max(0, Math.min(this.video.duration, time));
+    }
+    this.video.currentTime = time;
   }
 
   destroy(): void {

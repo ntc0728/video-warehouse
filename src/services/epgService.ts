@@ -11,6 +11,12 @@ export interface EPGProgram {
   title: string;
   start: Date;
   end: Date;
+  /** 是否已过期（可用于回看） */
+  isPast?: boolean;
+  /** 是否正在播放 */
+  isCurrent?: boolean;
+  /** 是否未来节目 */
+  isFuture?: boolean;
 }
 
 interface EPGChannelInfo {
@@ -112,32 +118,61 @@ function mergeEPGData(existing: ParsedEPGData, newData: ParsedEPGData): ParsedEP
 
 function normalizeName(name: string): string {
   return name
-    .replace(/高清|HD|标清|SD|4K|UHD|超清|极致|极速/g, '')
+    // 去除清晰度/技术标记
+    .replace(/高清|HD|标清|SD|4K|UHD|超清|极致|极速/gi, '')
+    // 去除频道分类/冗余词
+    .replace(/综合|频道|卫视|电视|台|HD|直播|轮播/gi, '')
+    // 去除所有空白和连字符
     .replace(/[-\s]/g, '')
     .trim()
     .toLowerCase();
 }
 
-function matchEPGChannel(
+export function matchEPGChannel(
   channelName: string,
-  _tvgId: string | undefined,
+  tvgId: string | undefined,
   epgChannels: EPGChannelInfo[]
 ): EPGChannelInfo | null {
-  const normalized = normalizeName(channelName);
+  // 优先使用 tvg-id 精确匹配
+  if (tvgId) {
+    const exactMatch = epgChannels.find(ch => ch.id === tvgId);
+    if (exactMatch) return exactMatch;
+  }
 
+  // 规范化名称匹配
+  const normalized = normalizeName(channelName);
   for (const epgCh of epgChannels) {
     if (normalizeName(epgCh.name) === normalized) {
       return epgCh;
     }
   }
 
+  // 精确字符串匹配
   for (const epgCh of epgChannels) {
     if (epgCh.name === channelName) {
       return epgCh;
     }
   }
 
+  // 模糊匹配：名称包含关系
+  for (const epgCh of epgChannels) {
+    const epgNameNormalized = normalizeName(epgCh.name);
+    if (epgNameNormalized.includes(normalized) || normalized.includes(epgNameNormalized)) {
+      return epgCh;
+    }
+  }
+
   return null;
+}
+
+function markProgramStatus(programs: EPGProgram[]): EPGProgram[] {
+  const now = Date.now();
+  return programs.map(prog => ({
+    ...prog,
+    isPast: prog.end.getTime() <= now,
+    isCurrent: prog.start.getTime() <= now && prog.end.getTime() > now,
+    isFuture: prog.start.getTime() > now,
+  }));
 }
 
 function findCurrentAndNext(programmes: EPGProgram[]): {
@@ -240,6 +275,7 @@ export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGDat
   }
 
   let mergedData: ParsedEPGData = cached?.data || { channels: [], programmes: new Map() };
+  const errors: string[] = [];
 
   for (const url of urls) {
     try {
@@ -248,10 +284,19 @@ export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGDat
         const newData = parseXMLTV(xml);
         mergedData = mergeEPGData(mergedData, newData);
       }
-    } catch { /* continue to next URL */ }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : '未知错误';
+      errors.push(`${url}: ${errMsg}`);
+    }
   }
 
   await setCachedEPG(mergedData, urls);
+
+  // 如果所有源都失败且没有缓存数据，抛出错误
+  if (errors.length > 0 && mergedData.channels.length === 0) {
+    throw new Error(`节目单加载失败：${errors.join('; ')}`);
+  }
+
   return mergedData;
 }
 
@@ -299,4 +344,24 @@ export function matchAllChannels(
   }
 
   return result;
+}
+
+/**
+ * 获取指定频道的带状态标记的节目列表
+ * 用于 EPG 节目列表组件展示
+ */
+export function getChannelProgramsWithStatus(
+  channelId: string,
+  epgData: ParsedEPGData
+): EPGProgram[] {
+  const progs = epgData.programmes.get(channelId);
+  if (!progs || progs.length === 0) return [];
+  return markProgramStatus(progs);
+}
+
+/**
+ * 格式化时间为 HH:MM 格式
+ */
+export function formatTimeHHmm(date: Date): string {
+  return formatHHmm(date);
 }

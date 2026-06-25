@@ -2,6 +2,7 @@ import type { SourceType } from '@/types/video';
 import type { IPlayerAdapter } from './PlayerAdapter';
 import { HLSAdapter } from './HLSAdapter';
 import { NativeAdapter } from './NativeAdapter';
+import { DashAdapter } from './DashAdapter';
 
 type AdapterFactory = (url: string, options?: Record<string, unknown>) => IPlayerAdapter;
 
@@ -19,8 +20,10 @@ registry.set('mp4', (url) => {
   return new NativeAdapter(url);
 });
 
-registry.set('dash', (url) => {
-  return new NativeAdapter(url);
+registry.set('dash', (url, options) => {
+  return new DashAdapter(url, {
+    onError: options?.onError as ((error: Error) => void) | undefined,
+  });
 });
 
 registry.set('pan', (url) => {

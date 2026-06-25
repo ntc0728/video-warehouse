@@ -36,6 +36,11 @@ interface SettingsState extends AppSettings {
   setTranslationApiKey: (key: string) => void;
   setAutoTranslate: (auto: boolean) => void;
   setTargetLang: (lang: string) => void;
+  setSkipIntro: (value: boolean) => void;
+  setSkipOutro: (value: boolean) => void;
+  setSkipIntroDuration: (seconds: number) => void;
+  setSkipOutroDuration: (seconds: number) => void;
+  setAutoPlay: (value: boolean) => void;
   getEffectiveTheme: () => 'light' | 'dark';
 }
 
@@ -57,6 +62,11 @@ export const useSettingsStore = create<SettingsState>()(
       translationApiKey: '',
       autoTranslate: true,
       targetLang: 'zh',
+      skipIntro: false,
+      skipOutro: false,
+      skipIntroDuration: 90,
+      skipOutroDuration: 90,
+      autoPlay: true,
 
       setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
       setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
@@ -73,6 +83,11 @@ export const useSettingsStore = create<SettingsState>()(
       setTranslationApiKey: (translationApiKey) => set({ translationApiKey }),
       setAutoTranslate: (autoTranslate) => set({ autoTranslate }),
       setTargetLang: (targetLang) => set({ targetLang }),
+      setSkipIntro: (skipIntro) => set({ skipIntro }),
+      setSkipOutro: (skipOutro) => set({ skipOutro }),
+      setSkipIntroDuration: (skipIntroDuration) => set({ skipIntroDuration: Math.max(10, Math.min(300, skipIntroDuration)) }),
+      setSkipOutroDuration: (skipOutroDuration) => set({ skipOutroDuration: Math.max(10, Math.min(300, skipOutroDuration)) }),
+      setAutoPlay: (autoPlay) => set({ autoPlay }),
 
       getEffectiveTheme: () => {
         const { theme } = get();

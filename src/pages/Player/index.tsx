@@ -3,7 +3,7 @@
  * 左侧播放器 + 右侧折叠面板（CMS源/选集）+ 下方详情信息
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useVideoStore, usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
 import { searchVideoFromMultipleSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
@@ -16,7 +16,7 @@ import { AppLoading } from '@/components/common';
 import { useSmartBack } from '@/lib/navigation';
 import {
   ArrowLeft, VideoOff, AlertTriangle, RefreshCw,
-  ChevronDown, Play, Server, ListVideo,
+  ChevronDown, Play, Server, ListVideo, SkipForward, Timer, X,
 } from 'lucide-react';
 import './Player.css';
 
@@ -55,6 +55,8 @@ const videoCache = new Map<string, Video>();
 export default function PlayerPage() {
   const { id, episodeId } = useParams<{ id: string; episodeId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const skipHistory = (location.state as Record<string, unknown>)?.skipHistory === true;
 
   const { videos, currentSourceIndex } = useVideoStore();
   const { setSource, setSources, reset: resetPlayer } = usePlayerStore();
@@ -79,6 +81,12 @@ export default function PlayerPage() {
     cms: true,
     episodes: true,
   });
+
+  const [skipIndicator, setSkipIndicator] = useState<'intro' | 'outro' | null>(null);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [autoPlayCountdown, setAutoPlayCountdown] = useState<number | null>(null);
+  const autoPlayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoPlayCancelRef = useRef(false);
 
   const EPISODE_PAGE_SIZE = 20;
   const [episodePage, setEpisodePage] = useState(0);
@@ -280,16 +288,100 @@ export default function PlayerPage() {
     if (id) updateHistoryProgress(id, episodeId, progress, duration, video?.title, video?.cover);
   }, [id, episodeId, updateHistoryProgress, video?.title, video?.cover]);
 
+  const handleSkipIntro = useCallback(() => {
+    setSkipIndicator('intro');
+    if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    skipTimerRef.current = setTimeout(() => setSkipIndicator(null), 2000);
+  }, []);
+
+  const handleSkipOutro = useCallback(() => {
+    setSkipIndicator('outro');
+    if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    skipTimerRef.current = setTimeout(() => setSkipIndicator(null), 2000);
+  }, []);
+
+  const nextEpisodeRef = useRef<string | null>(null);
+
+  const startAutoPlayCountdown = useCallback((nextEpId: string) => {
+    nextEpisodeRef.current = nextEpId;
+    autoPlayCancelRef.current = false;
+    setAutoPlayCountdown(3);
+    
+    if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+    autoPlayTimerRef.current = setInterval(() => {
+      setAutoPlayCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+          autoPlayTimerRef.current = null;
+          if (!autoPlayCancelRef.current && nextEpisodeRef.current) {
+            navigate(`/play/${id}/${nextEpisodeRef.current}`, {
+              state: { from: `/detail/${id}` },
+              viewTransition: true,
+            });
+          }
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [id, navigate]);
+
+  const cancelAutoPlay = useCallback(() => {
+    autoPlayCancelRef.current = true;
+    if (autoPlayTimerRef.current) {
+      clearInterval(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    setAutoPlayCountdown(null);
+    nextEpisodeRef.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+      if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+    };
+  }, []);
+
   const handleEnded = useCallback(() => {
+    const loopMode = usePlayerStore.getState().loopMode;
+    const autoPlayEnabled = useSettingsStore.getState().autoPlay;
     const activeEpId = localEpisodeId || episodeId;
+    
+    // 单集循环：seek 到 0 重新播放
+    if (loopMode === 'single') {
+      const videoEl = document.querySelector('video');
+      if (videoEl) {
+        videoEl.currentTime = 0;
+        videoEl.play().catch(() => {});
+      }
+      return;
+    }
+    
+    // 自动连播关闭时，不跳转到下一集
+    if (!autoPlayEnabled && loopMode === 'none') {
+      return;
+    }
+    
     if (video?.type === 'tv' && video.episodes && activeEpId) {
       const currentIndex = video.episodes.findIndex((ep) => ep.id === activeEpId);
+      
+      // 列表循环：最后一集回到第一集
+      if (loopMode === 'list') {
+        const nextIndex = (currentIndex + 1) % video.episodes.length;
+        const nextEpisode = video.episodes[nextIndex];
+        startAutoPlayCountdown(nextEpisode.id);
+        return;
+      }
+      
+      // 默认模式：最后一集不跳转
       if (currentIndex < video.episodes.length - 1) {
         const nextEpisode = video.episodes[currentIndex + 1];
-        navigate(`/play/${id}/${nextEpisode.id}`, { state: { from: `/detail/${id}` }, viewTransition: true });
+        startAutoPlayCountdown(nextEpisode.id);
       }
     }
-  }, [video, localEpisodeId, episodeId, id, navigate]);
+  }, [video, localEpisodeId, episodeId, startAutoPlayCountdown]);
 
   const handleBack = useSmartBack(id ? `/detail/${id}` : undefined);
 
@@ -450,11 +542,38 @@ export default function PlayerPage() {
             title={video.title}
             videoId={video.id}
             episodeId={episodeId}
+            skipHistory={skipHistory}
             onProgress={handleProgress}
             onEnded={handleEnded}
             onBack={handleBack}
             onRefresh={fetchCMSSources}
+            onSkipIntro={handleSkipIntro}
+            onSkipOutro={handleSkipOutro}
           />
+
+          {/* Skip indicator */}
+          {skipIndicator && (
+            <div className="player-skip-indicator">
+              <SkipForward size={18} />
+              <span>{skipIndicator === 'intro' ? '已跳过片头' : '已跳过片尾'}</span>
+            </div>
+          )}
+
+          {/* Auto-play countdown overlay */}
+          {autoPlayCountdown !== null && (
+            <div className="player-autoplay-overlay">
+              <div className="player-autoplay-card">
+                <Timer size={20} className="player-autoplay-icon" />
+                <span className="player-autoplay-text">
+                  {autoPlayCountdown} 秒后播放下一集
+                </span>
+                <button className="player-autoplay-cancel" onClick={cancelAutoPlay}>
+                  <X size={14} />
+                  <span>取消</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="player-sidebar">

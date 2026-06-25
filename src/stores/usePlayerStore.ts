@@ -27,6 +27,7 @@ interface PlayerState {
   progress: number;
   duration: number;
   volume: number;
+  mutedVolume: number;
   playbackRate: number;
   sources: VideoSource[];
   decoderMode: 'native' | 'wasm';
@@ -44,6 +45,8 @@ interface PlayerState {
   loopMode: LoopMode;
   bandwidthEstimate: number;
   isBuffering: boolean;
+  bufferedProgress: number;
+  isFullscreen: boolean;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
@@ -51,6 +54,7 @@ interface PlayerState {
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
+  setMutedVolume: (volume: number) => void;
   setPlaybackRate: (rate: number) => void;
   setDecoderMode: (mode: 'native' | 'wasm') => void;
   setCurrentLevel: (level: number) => void;
@@ -67,6 +71,8 @@ interface PlayerState {
   setLoopMode: (mode: LoopMode) => void;
   setBandwidthEstimate: (bps: number) => void;
   setBuffering: (isBuffering: boolean) => void;
+  setBufferedProgress: (buffered: number) => void;
+  setFullscreen: (isFullscreen: boolean) => void;
   reset: () => void;
 }
 
@@ -77,6 +83,7 @@ const initialState = {
   progress: 0,
   duration: 0,
   volume: 1,
+  mutedVolume: 1,
   playbackRate: 1,
   sources: [],
   decoderMode: 'native' as const,
@@ -94,6 +101,8 @@ const initialState = {
   loopMode: 'none' as LoopMode,
   bandwidthEstimate: 0,
   isBuffering: false,
+  bufferedProgress: 0,
+  isFullscreen: false,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -107,6 +116,7 @@ export const usePlayerStore = create<PlayerState>()(
       setProgress: (progress) => set({ progress }),
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume }),
+      setMutedVolume: (mutedVolume) => set({ mutedVolume }),
       setPlaybackRate: (playbackRate) => set({ playbackRate }),
       setDecoderMode: (decoderMode) => set({ decoderMode }),
       setCurrentLevel: (currentLevel) => set({ currentLevel }),
@@ -126,6 +136,8 @@ export const usePlayerStore = create<PlayerState>()(
       setLoopMode: (loopMode) => set({ loopMode }),
       setBandwidthEstimate: (bandwidthEstimate) => set({ bandwidthEstimate }),
       setBuffering: (isBuffering) => set({ isBuffering }),
+      setBufferedProgress: (bufferedProgress) => set({ bufferedProgress }),
+      setFullscreen: (isFullscreen) => set({ isFullscreen }),
       reset: () => set(initialState),
     }),
     {
@@ -133,9 +145,12 @@ export const usePlayerStore = create<PlayerState>()(
       // 仅持久化用户偏好，播放进度等运行时状态不持久化
       partialize: (state) => ({
         volume: state.volume,
+        mutedVolume: state.mutedVolume,
         playbackRate: state.playbackRate,
         decoderMode: state.decoderMode,
         subtitleSettings: state.subtitleSettings,
+        currentLevel: state.currentLevel,
+        loopMode: state.loopMode,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;

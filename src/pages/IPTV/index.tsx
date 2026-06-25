@@ -6,9 +6,6 @@
  * - 移除所有 SkeletonCard 渲染（v3/v4 引入的灰色占位卡视作视觉噪音,本版本彻底移除）
  * - 触发懒加载 → setVisibleCount(v => v + IPTV_PAGE_SIZE) 立即同步追加真实频道
  * - 无 300ms 同步切片（切片目的就是"让用户先看清骨架",现在无骨架,切片无意义）
- * - hint 文字态：
- *     有更多 → "已加载 X / Y"（继续滚动触发下一批）
- *     全部展示 → "已加载 X / Y · 已显示全部"
  * - 触发距离：100px = 距视口底 100px 时触发。比 200px 更接近底部，符合"几乎
  *   滚到底才加载"的体感,且 IO 缩小后 scroll 事件兜底仍能在 100px 范围内触达。
  */
@@ -20,7 +17,7 @@ import { getEPGCacheTime } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Empty, AppLoading, BackToTopButton } from '@/components/common';
+import { Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { useShallow } from 'zustand/react/shallow';
 import { Search, X, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
@@ -36,14 +33,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-/**
- * 会话内"是否访问过 /iptv 页"标记。
- * useIPTVStore 用 localStorage 跨会话缓存了 channels 和 loadedUrl,
- * 仅靠"channels.length === 0"判断首次进入在有缓存时不会触发 refreshChannels。
- * 用 sessionStorage 显式追踪会话内首次进入,保证按当前 aggregatorUrl 拉一次。
- */
-const IPTV_SESSION_KEY = 'iptv-page-visited-this-session';
-
 /** 单次渲染的频道数；超过则通过哨兵滚动加载下一批 */
 const IPTV_PAGE_SIZE = 60;
 
@@ -56,10 +45,8 @@ export default function IPTVPage() {
     isLoading,
     error,
     lastRefresh,
-    loadedUrl,
     refreshChannels,
     proxyUrl,
-    aggregatorUrl,
     aggregatorUrls,
     sourceNames,
     isCheckingAvailability,
@@ -72,10 +59,8 @@ export default function IPTVPage() {
       isLoading: s.isLoading,
       error: s.error,
       lastRefresh: s.lastRefresh,
-      loadedUrl: s.loadedUrl,
       refreshChannels: s.refreshChannels,
       proxyUrl: s.settings.proxyUrl,
-      aggregatorUrl: s.settings.aggregatorUrl,
       aggregatorUrls: s.settings.aggregatorUrls,
       sourceNames: s.settings.sourceNames,
       isCheckingAvailability: s.isCheckingAvailability,
@@ -129,7 +114,6 @@ export default function IPTVPage() {
   const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
   const [needCollapse, setNeedCollapse] = useState(false);
   const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const groupsRef = useRef<HTMLDivElement>(null);
 
   /** 按分组、数据源和关键词筛选频道 */
@@ -196,7 +180,6 @@ export default function IPTVPage() {
       return;
     }
 
-    // 收集所有标签的 offsetTop，去重后即为实际行数
     const rowTops = new Set<number>();
     tags.forEach(tag => rowTops.add(tag.offsetTop));
     const sortedTops = Array.from(rowTops).sort((a, b) => a - b);
@@ -208,13 +191,10 @@ export default function IPTVPage() {
       return;
     }
 
-    // 超过 2 行：第 3 行的 offsetTop 即为前 2 行的完整高度
     setNeedCollapse(true);
     setCollapsedHeight(sortedTops[2]);
   }, [groups.length]);
 
-  // 用 ResizeObserver 替代 window.resize 监听,只观察分组容器自身尺寸变化,
-  // 减少每次窗口 resize 时对整页的影响,降低主线程压力。
   useEffect(() => {
     const el = groupsRef.current;
     if (!el) return;
@@ -223,8 +203,6 @@ export default function IPTVPage() {
     return () => ro.disconnect();
   }, [checkGroupsOverflow]);
 
-  // 分组列表变化时重新检测溢出（源切换、分组数据更新）
-  // 同步调用而非 rAF，防止"先展开再折叠"的视觉闪烁
   useEffect(() => {
     checkGroupsOverflow();
   }, [filteredGroups, checkGroupsOverflow]);
@@ -237,7 +215,6 @@ export default function IPTVPage() {
       const urls = validIndices.map(i => sources[i]!.url);
       const names = validIndices.map(i => sources[i]!.name || `源 ${i + 1}`);
       const current = useIPTVStore.getState().settings;
-      // 仅在 URLs 实际变化时更新，避免不必要的刷新
       if (
         urls.length !== current.aggregatorUrls?.length ||
         urls.some((u, i) => u !== current.aggregatorUrls?.[i])
@@ -251,83 +228,20 @@ export default function IPTVPage() {
     });
   }, [iptvSourceIndices]);
 
-  /**
-   * 数据加载调度
-   *
-   * aggregatorUrl 由上方 settings sync effect 统一初始化（读取 iptvSourceIndices
-   * → getIPTVSources() → setSettings），本 effect 仅在 aggregatorUrl 就绪后按需触发。
-   *
-   * 网络请求仅在以下场景触发：
-   *   1. IndexedDB 缓存未命中（首次进入 / 缓存过期 / 源 URL 变更）
-   *   2. 设置页切换 IPTV 源（loadedUrl !== aggregatorUrl）
-   *
-   * 不触发：
-   *   - aggregatorUrl 未就绪 → 等待 settings sync effect 完成后重入
-   *   - 缓存命中（页面刷新）→ 直接使用缓存
-   *   - 会话内再次访问且源未变 → 跳过
-   */
-  useEffect(() => {
-    if (isLoading || error) return;
-    if (channels.length > 0 && loadedUrl === aggregatorUrl) return;
-
-    // aggregatorUrl 未就绪：等待 settings sync effect 初始化
-    if (!aggregatorUrl) return;
-
-    if (!sessionStorage.getItem(IPTV_SESSION_KEY)) {
-      sessionStorage.setItem(IPTV_SESSION_KEY, '1');
-      setIsInitialLoad(true);
-
-      useIPTVStore.getState().loadFromCache().then((hitCache) => {
-        if (hitCache) {
-          setIsInitialLoad(false);
-        } else {
-          refreshChannels();
-        }
-      });
-      return;
-    }
-
-    // 源切换
-    setIsInitialLoad(true);
-    refreshChannels();
-  }, [loadedUrl, aggregatorUrl, aggregatorUrls, iptvSourceIndices, isLoading, channels.length, refreshChannels, error]);
-
-  /** 首次加载完成后标记 */
-  useEffect(() => {
-    if (!isLoading && channels.length > 0 && isInitialLoad) {
-      setIsInitialLoad(false);
-    }
-  }, [isLoading, channels.length, isInitialLoad]);
-
-  // 源切换后分组列表变化，若已选分组不再存在则重置为"全部"
-  useEffect(() => {
-    if (selectedGroup && groups.length > 0 && !groups.some(g => g.name === selectedGroup)) {
-      setSelectedGroup(null);
-    }
-  }, [groups, selectedGroup]);
-
-  // 切换分组 / 搜索 / 源刷新时,把已渲染数重置回单批大小,
-  // 避免用户回到筛选结果时还停留在上一次滚动到的位置。
+  // 切换分组 / 搜索 / 源刷新时,把已渲染数重置回单批大小
   useEffect(() => {
     setVisibleCount(IPTV_PAGE_SIZE);
   }, [selectedGroup, debouncedKeyword, channels.length]);
 
   const { sentinelRef, resetLoading } = useInfiniteScroll({
     hasMore,
-    isLoading: false,           // 永远 false（v5: 懒加载追加真实频道是同步的,无 loading 中间态）
+    isLoading: false,
     onLoadMore: () => {
-      // v5: 触发懒加载 → 立即追加真实频道（无 setTimeout 切片,无骨架）
       setVisibleCount((v) => v + IPTV_PAGE_SIZE);
-      // 同步场景:onLoadMore 不经过异步,立刻释放 pageLoadingRef
-      // 让哨兵再次可见时能继续触发下一批
       resetLoading();
     },
     scrollContainerRef,
-    canLoadMore: !isLoading && !isInitialLoad,
-    // 触发距离: 100px = "距视口底 100px 时就触发" 的预加载区
-    // 太大(200px/400px)会让用户觉得"还没滚到就加载了"或"已经滚了一段才加载"。
-    // 100px 接近底部,符合"滚到底前一点点就加载"的体感,scroll 事件兜底
-    // (FALLBACK_THRESHOLD_PX=200) 仍能在 100-200px 范围内触达,不会留白。
+    canLoadMore: !isLoading && channels.length > 0,
     rootMargin: '100px',
   });
 
@@ -354,82 +268,75 @@ export default function IPTVPage() {
     checkAvailability(selectedGroup);
   }, [checkAvailability, selectedGroup]);
 
-  const hasNoData = !isLoading && channels.length === 0;
-  const isInitialLoadingState = isLoading && channels.length === 0;
-
   return (
     <div className="iptv-page">
-      {!isInitialLoadingState && (
-        <div className="iptv-header">
-          <div className="iptv-header-top">
-            <div className="iptv-header-left">
-              <h1 className="page-title">IPTV 直播</h1>
-            </div>
-            <div className="iptv-header-meta">
-              {lastRefresh && (
-                <span className="last-refresh">
-                  源: {new Date(lastRefresh).toLocaleTimeString()}
-                </span>
-              )}
-              {epgCacheTime && (
-                <span className="last-refresh">
-                  节目单: {new Date(epgCacheTime).toLocaleTimeString()}
-                </span>
-              )}
-            </div>
+      <div className="iptv-header">
+        <div className="iptv-header-top">
+          <div className="iptv-header-left">
+            <h1 className="page-title">IPTV 直播</h1>
           </div>
-          {!proxyUrl && (
-            <span className="iptv-proxy-warning-inline">
-              <AlertCircle size={14} />
-              <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-              <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
-                配置
-              </button>
-            </span>
-          )}
+          <div className="iptv-header-meta">
+            {lastRefresh && (
+              <span className="last-refresh">
+                源: {new Date(lastRefresh).toLocaleTimeString()}
+              </span>
+            )}
+            {epgCacheTime && (
+              <span className="last-refresh">
+                节目单: {new Date(epgCacheTime).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
-      )}
+        {!proxyUrl && (
+          <span className="iptv-proxy-warning-inline">
+            <AlertCircle size={14} />
+            <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
+            <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
+              配置
+            </button>
+          </span>
+        )}
+      </div>
 
-      {!hasNoData && !isInitialLoadingState && (
-        <div className="iptv-toolbar">
-          <div className="search-box-wrap search-box-wrap--iptv" role="search">
-            <div className="search-box search-box--iptv">
-              <Search size={16} className="search-box__icon" aria-hidden="true" />
-              <input
-                type="text"
-                className="search-box__input"
-                placeholder="搜索频道..."
-                value={searchKeyword}
-                onChange={(e) => handleSearch(e.target.value)}
-                aria-label="搜索"
-              />
-              <button
-                type="button"
-                className="search-box__clear"
-                onClick={() => handleSearch('')}
-                aria-label="清空搜索"
-                tabIndex={-1}
-                aria-hidden={!searchKeyword}
-                data-empty={searchKeyword ? 'false' : 'true'}
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            </div>
+      <div className="iptv-toolbar">
+        <div className="search-box-wrap search-box-wrap--iptv" role="search">
+          <div className="search-box search-box--iptv">
+            <Search size={16} className="search-box__icon" aria-hidden="true" />
+            <input
+              type="text"
+              className="search-box__input"
+              placeholder="搜索频道..."
+              value={searchKeyword}
+              onChange={(e) => handleSearch(e.target.value)}
+              aria-label="搜索"
+            />
+            <button
+              type="button"
+              className="search-box__clear"
+              onClick={() => handleSearch('')}
+              aria-label="清空搜索"
+              tabIndex={-1}
+              aria-hidden={!searchKeyword}
+              data-empty={searchKeyword ? 'false' : 'true'}
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
           </div>
-          {isCheckingAvailability ? (
-            <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
-              取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
-            </button>
-          ) : (
-            <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0}>
-              检测{selectedGroup || '全部'}
-            </button>
-          )}
-          <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
-            {isLoading ? '刷新中...' : '刷新'}
-          </button>
         </div>
-      )}
+        {isCheckingAvailability ? (
+          <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
+            取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
+          </button>
+        ) : (
+          <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0}>
+            检测{selectedGroup || '全部'}
+          </button>
+        )}
+        <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
+          {isLoading ? '刷新中...' : '刷新'}
+        </button>
+      </div>
 
       {isCheckingAvailability && availabilityProgress && (
         <div className="availability-progress">
@@ -453,91 +360,79 @@ export default function IPTVPage() {
         </div>
       )}
 
-      {!hasNoData && !isInitialLoadingState && (
-        <>
-          {aggregatorUrls && aggregatorUrls.length > 1 && (
-            <div className="iptv-source-filter">
-              <button
-                className={`source-tag ${selectedSource === null ? 'active' : ''}`}
-                onClick={() => handleSourceSelect(null)}
-              >
-                全部源
-              </button>
-              {aggregatorUrls.map((_, index) => {
-                const hasData = sourceHasChannels[index];
-                return (
-                  <button
-                    key={index}
-                    className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData ? ' disabled' : ''}`}
-                    onClick={() => hasData && handleSourceSelect(`source-${index}`)}
-                    disabled={!hasData}
-                    title={!hasData ? '该源无频道数据或加载失败' : undefined}
-                  >
-                    {sourceNames?.[index] || `源 ${index + 1}`}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div
-            className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
-            style={
-              needCollapse && !groupsExpanded && collapsedHeight !== null
-                ? { maxHeight: collapsedHeight }
-                : !needCollapse
-                  ? { marginBottom: 16 }
-                  : undefined
-            }
-            ref={groupsRef}
+      {aggregatorUrls && aggregatorUrls.length > 1 && (
+        <div className="iptv-source-filter">
+          <button
+            className={`source-tag ${selectedSource === null ? 'active' : ''}`}
+            onClick={() => handleSourceSelect(null)}
           >
-            <button
-              className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
-              onClick={() => handleGroupSelect(null)}
-            >
-              全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
-            </button>
-            {filteredGroups.map((group) => (
+            全部源
+          </button>
+          {aggregatorUrls.map((_, index) => {
+            const hasData = sourceHasChannels[index];
+            return (
               <button
-                key={group.name}
-                className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
-                onClick={() => handleGroupSelect(group.name)}
+                key={index}
+                className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData ? ' disabled' : ''}`}
+                onClick={() => hasData && handleSourceSelect(`source-${index}`)}
+                disabled={!hasData}
+                title={!hasData ? '该源无频道数据或加载失败' : undefined}
               >
-                {group.name} ({group.count})
+                {sourceNames?.[index] || `源 ${index + 1}`}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      )}
 
-          {needCollapse && (
-            <button
-              className="groups-toggle"
-              onClick={() => setGroupsExpanded(!groupsExpanded)}
-            >
-              {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
-            </button>
-          )}
-        </>
+      <div
+        className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
+        style={
+          needCollapse && !groupsExpanded && collapsedHeight !== null
+            ? { maxHeight: collapsedHeight }
+            : !needCollapse
+              ? { marginBottom: 16 }
+              : undefined
+        }
+        ref={groupsRef}
+      >
+        <button
+          className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
+          onClick={() => handleGroupSelect(null)}
+        >
+          全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
+        </button>
+        {filteredGroups.map((group) => (
+          <button
+            key={group.name}
+            className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
+            onClick={() => handleGroupSelect(group.name)}
+          >
+            {group.name} ({group.count})
+          </button>
+        ))}
+      </div>
+
+      {needCollapse && (
+        <button
+          className="groups-toggle"
+          onClick={() => setGroupsExpanded(!groupsExpanded)}
+        >
+          {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
+        </button>
       )}
 
       <div className="iptv-content">
-        {isLoading ? (
-          <AppLoading />
-        ) : channels.length === 0 ? (
+        {channels.length === 0 ? (
           <Empty
-            title="无法获取频道列表"
-            description={error || '请检查网络连接或点击刷新按钮重试'}
+            title="暂无频道数据"
+            description={error || '请点击上方刷新按钮加载频道列表'}
             onRetry={() => refreshChannels()}
           />
         ) : filteredChannels.length === 0 ? (
           <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
         ) : (
           <>
-            {/*
-              v5: 无骨架渲染。
-              IPTV 频道数据是本地解析的 M3U8 列表,首次 refreshChannels 后 channels 一次性就位,
-              懒加载只是把已经存在的频道从 visibleCount 切到下批,不存在"等待后端返回"阶段,
-              因此不需要 SkeletonCard 过渡,直接展示真实频道。
-            */}
             <div className="iptv-channel-grid">
               {displayedChannels.map((channel) => (
                 <IPTVChannelCard
@@ -550,7 +445,6 @@ export default function IPTVPage() {
             <div ref={sentinelRef} aria-hidden="true" />
           </>
         )}
-
       </div>
 
       <BackToTopButton />

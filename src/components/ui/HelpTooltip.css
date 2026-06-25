@@ -1,0 +1,75 @@
+/* HelpTooltip 样式 */
+.help-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-xs);
+}
+
+.help-tooltip-trigger {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.help-tooltip-trigger:hover {
+  color: var(--color-text-secondary);
+}
+
+.help-tooltip-content {
+  position: absolute;
+  bottom: calc(100% + var(--space-xs));
+  left: 50%;
+  z-index: 1000;
+  min-width: var(--layout-popover-min-w);
+  max-width: var(--layout-popover-wide-min-w);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  text-align: left;
+  transform: translateX(-50%);
+  animation: helpTooltipFadeIn 0.15s ease;
+}
+
+.help-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: var(--space-xs) solid transparent;
+  border-top-color: var(--color-surface-elevated);
+  transform: translateX(-50%);
+}
+
+@keyframes helpTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(var(--space-2xs));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .help-tooltip-content {
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="dark"] .help-tooltip-content::after {
+  border-top-color: var(--color-surface-elevated);
+}

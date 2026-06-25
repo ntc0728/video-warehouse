@@ -32,6 +32,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "axios": "^1.16.1",
     "clsx": "^2.1.1",
+    "dashjs": "^5.2.0",
     "hls.js": "^1.6.16",
     "idb": "^8.0.2",
     "lucide-react": "^1.16.0",

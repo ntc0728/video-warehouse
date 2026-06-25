@@ -21,6 +21,7 @@ export interface IPTVChannel {
   tvgId?: string;
   sourceId?: string;
   noGuide?: boolean;
+  supportTimeshift?: boolean;
   currentProgram?: {
     title: string;
     start: string;

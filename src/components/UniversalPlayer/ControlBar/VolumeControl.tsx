@@ -70,7 +70,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
         <VolumeIcon size={20} />
       </button>
       {isOpen && (
-        <div className="up-volume-slider-popup">
+        <div className="up-volume-slider-popup" style={{ touchAction: 'none' }}>
           <span className="up-volume-value">{Math.round(volume * 100)}</span>
           <div className="up-volume-slider-wrapper">
             <input

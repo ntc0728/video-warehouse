@@ -1,15 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Loader2, AlertTriangle, RefreshCw, ListVideo } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ListVideo } from 'lucide-react';
 import type { PlayerMode } from '@/types/player';
 
 interface PlayerCoreProps {
   videoRef: (element: HTMLVideoElement | null) => void;
   mode: PlayerMode;
-  isLoading: boolean;
   hasError: boolean;
   onRetry: () => void;
   onClick: (e: React.MouseEvent) => void;
-  onDoubleClick?: () => void;
   onPointerDown?: (e: React.PointerEvent) => void;
   onPointerUp?: (e: React.PointerEvent) => void;
   onPointerLeave?: () => void;
@@ -20,32 +17,19 @@ interface PlayerCoreProps {
 export default function PlayerCore({
   videoRef,
   mode,
-  isLoading,
   hasError,
   onRetry,
   onClick,
-  onDoubleClick,
   onPointerDown,
   onPointerUp,
   onPointerLeave,
   onOpenChannelList,
 }: PlayerCoreProps) {
-  const [showLoading, setShowLoading] = useState(true);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const timer = setTimeout(() => setShowLoading(false), 300);
-      return () => clearTimeout(timer);
-    }
-    setShowLoading(true);
-  }, [isLoading]);
-
   return (
     <div
       className="up-player-core"
       data-mode={mode}
       onClick={onClick}
-      onDoubleClick={onDoubleClick}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}
@@ -54,14 +38,8 @@ export default function PlayerCore({
         ref={videoRef}
         className="up-player-video"
         playsInline
-        {...(mode === 'live' || mode === 'iptv' ? {} : {})}
       />
-      {showLoading && (
-        <div className="up-player-loading">
-          <Loader2 size={40} className="up-loading-spinner" />
-          <span>正在加载...</span>
-        </div>
-      )}
+
       {hasError && (
         <div className="up-player-error">
           <div className="up-player-error-content">
