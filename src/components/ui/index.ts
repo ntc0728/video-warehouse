@@ -3,6 +3,8 @@ export { default as Badge } from './Badge';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 export { default as DatePicker } from './DatePicker';
+export { default as HelpTooltip } from './HelpTooltip';
+export { default as HelpPopover } from './HelpPopover';
 export { default as List } from './List';
 export { default as Modal } from './Modal';
 export { default as ProgressBar } from './ProgressBar';

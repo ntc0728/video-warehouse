@@ -95,6 +95,11 @@ export default defineConfig({
             return 'hls-vendor'
           }
 
+          // DASH.js（DASH 流播放）
+          if (id.includes('/dashjs/')) {
+            return 'dash-vendor'
+          }
+
           // IndexedDB 封装
           if (id.includes('/idb/')) {
             return 'idb-vendor'

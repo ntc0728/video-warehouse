@@ -47,7 +47,7 @@
 
 .iptv-osd-channel-number {
   flex-shrink: 0;
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-xl);
   font-weight: 700;
   line-height: 1.2;
@@ -84,7 +84,7 @@
   width: var(--icon-xl);
   height: var(--icon-xl);
   border-radius: 50%;
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-sm);
   font-weight: 700;
 }
@@ -100,7 +100,7 @@
 }
 
 .iptv-osd-name-marquee .marquee-text {
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-base);
   font-weight: 400;
   line-height: 1.2;
@@ -265,7 +265,7 @@
 
 .iptv-osd-control-btn:hover {
   background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .iptv-osd-control-btn:active {
@@ -293,6 +293,49 @@
   height: var(--icon-sm);
 }
 
+/* ===== Timeshift indicator row ===== */
+.iptv-osd-timeshift-row {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2xs);
+}
+
+.iptv-osd-timeshift-btn {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb, 22, 119, 255), 0.15);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-family: inherit;
+}
+
+.iptv-osd-timeshift-btn:hover {
+  background: rgba(var(--color-primary-rgb, 22, 119, 255), 0.25);
+}
+
+.iptv-osd-timeshift-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: timeshift-pulse 1.5s ease-in-out infinite;
+}
+
+.iptv-osd-timeshift-hint {
+  opacity: 0.7;
+}
+
+@keyframes timeshift-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 /* Right section: network speed + source line + time */
 .iptv-osd-right {
   display: flex;
@@ -317,7 +360,7 @@
 }
 
 .iptv-osd-time {
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
@@ -386,7 +429,7 @@
   height: var(--space-md);
   border: var(--layout-outline-width) solid var(--color-primary);
   border-radius: 50%;
-  background: #fff;
+  background: var(--player-progress-bg);
   appearance: none;
   cursor: pointer;
 }
@@ -396,13 +439,13 @@
   height: var(--space-md);
   border: var(--layout-outline-width) solid var(--color-primary);
   border-radius: 50%;
-  background: #fff;
+  background: var(--player-progress-bg);
   cursor: pointer;
 }
 
 .iptv-volume-percent {
   flex-shrink: 0;
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-2xl);
   font-weight: 600;
   line-height: 1;

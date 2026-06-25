@@ -349,6 +349,17 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 
+.detail-btn-play-from-start {
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.detail-btn-play-from-start:hover {
+  border-color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+}
+
 .detail-btn-collect {
   border: 1px solid rgba(255,255,255,0.35);
   background: rgba(255,255,255,0.12);
@@ -363,6 +374,32 @@
   border-color: rgba(255,77,79,0.5);
   background: rgba(255,77,79,0.15);
   color: var(--color-favorite-active);
+}
+
+/* ── 观看进度 ──────────────────────────────────── */
+
+.detail-progress-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  animation: heroItemIn 0.6s 0.65s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+.detail-progress-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.detail-progress-time {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── 桌面端右侧海报 ────────────────────────────── */

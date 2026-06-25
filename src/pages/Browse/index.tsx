@@ -4,8 +4,8 @@
  * 数据流：URL ↔ useBrowseData ↔ TMDBStore ↔ 后端
  *
  * 渲染层级：
- *   BrowseHeader        顶部（返回 + 分类标题 + 结果数）
  *   FilterBar           筛选条
+ *   BrowseSuggestions   猜你想搜 + 热门搜索（无搜索词时显示）
  *   BrowseGrid          视频网格
  *   哨兵 + 文字态       独立 div,与 IPTV 风格一致
  *
@@ -18,11 +18,13 @@
  *  - 所有客户端：筛选 chip 全部 wrap，不被截断
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useTMDBStore, useNavStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
@@ -34,14 +36,23 @@ import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
 import './Browse.css';
 
+const MAX_SUGGEST_HISTORY = 6;
+const MAX_SUGGEST_HOT = 8;
+
 export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const scrollContainerRef = useScrollContainer();
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse');
+
+  // ── URL 搜索词 ────────────────────────────────────
+  const urlQ = searchParams.get('q')?.trim() ?? '';
+  const hasSearchQuery = urlQ.length > 0;
 
   // ── 数据 ─────────────────────────────────────────
   const {
@@ -59,10 +70,6 @@ export default function BrowsePage() {
   } = useBrowseData();
 
   // ── 懒加载触发（双保险:IO + scroll 兜底）────────────
-  // 哨兵由本页 useInfiniteScroll 自带的 sentinelRef 持有,在 JSX 中以
-  //  `<div ref={sentinelRef} aria-hidden="true" />` 形式渲染,位于
-  //  .browse-grid 外部,与 IPTV 风格完全一致。
-  //  rootMargin 与 IPTV 保持一致:'100px'。
   const { sentinelRef } = useInfiniteScroll({
     hasMore,
     isLoading: isLoadingMore,
@@ -78,6 +85,31 @@ export default function BrowsePage() {
       fetchGenresAndCountries();
     }
   }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
+
+  // ── 猜你想搜 + 热门搜索 ──────────────────────────────
+  const { history } = useSearchHistory();
+  const trending = useTMDBStore((s) => s.trending);
+  const fetchTrending = useTMDBStore((s) => s.fetchTrending);
+
+  useEffect(() => {
+    if (trending.length === 0) {
+      void fetchTrending('day');
+    }
+  }, [trending.length, fetchTrending]);
+
+  const suggestHistory = useMemo(
+    () => history.slice(0, MAX_SUGGEST_HISTORY),
+    [history],
+  );
+  const suggestHot = useMemo(
+    () => trending.filter((item) => item.title).slice(0, MAX_SUGGEST_HOT),
+    [trending],
+  );
+  const showSuggestions = !hasSearchQuery && !isLoading && !isRefreshing;
+
+  const handleSuggestionClick = useCallback((query: string) => {
+    navigate(`/browse?q=${encodeURIComponent(query)}`, { viewTransition: true });
+  }, [navigate]);
 
   // ── 筛选栏折叠状态 ──────────────────────────────────
   const filterBarCollapsed = useNavStore((s) => {
@@ -160,21 +192,69 @@ export default function BrowsePage() {
         />
       )}
 
+      {/* 猜你想搜 + 热门搜索（无搜索词时显示） */}
+      {showSuggestions && (suggestHistory.length > 0 || suggestHot.length > 0) && (
+        <div className="browse-suggestions">
+          {/* 猜你想搜（历史） */}
+          {suggestHistory.length > 0 && (
+            <section className="browse-suggestions__section">
+              <h3 className="browse-suggestions__title">猜你想搜</h3>
+              <div className="browse-suggestions__chips">
+                {suggestHistory.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="browse-suggestions__chip"
+                    onClick={() => handleSuggestionClick(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 分隔线 */}
+          {suggestHistory.length > 0 && suggestHot.length > 0 && (
+            <div className="browse-suggestions__divider" />
+          )}
+
+          {/* 热门搜索 */}
+          {suggestHot.length > 0 && (
+            <section className="browse-suggestions__section">
+              <h3 className="browse-suggestions__title">🔥 热门搜索</h3>
+              <div className="browse-suggestions__chips">
+                {suggestHot.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={[
+                      'browse-suggestions__chip',
+                      'browse-suggestions__chip--hot',
+                      idx < 3 ? 'browse-suggestions__chip--top' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => handleSuggestionClick(item.title)}
+                  >
+                    <span className="browse-suggestions__rank">{idx + 1}</span>
+                    {item.title}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
       {/* 切换筛选条件:用 loading 替换 grid,新数据到达后再渲染 */}
       {isRefreshing ? (
         <div className="browse-page__refreshing" aria-busy="true">
           <AppLoading showTip={false} />
         </div>
       ) : discoverResults.length > 0 ? (
-        <BrowseGrid items={discoverResults} />
+        <BrowseGrid items={discoverResults} query={urlQ} />
       ) : null}
 
-      {/* 懒加载:哨兵 always 挂载 + LoadMore 文字态(与 IPTV 风格一致)
-          哨兵不再被 discoverResults.length > 0 门控：
-          - 旧实现下"加载失败导致 discoverResults 为空"时哨兵永不挂载,错误恢复后
-            也无法继续懒加载,用户体感"懒加载失效"。
-          - 现在哨兵 always 在 DOM 中,IO 持续 observe;LoadMore 文字态在无数据时
-            隐藏(避免显示"下滑加载更多"误导用户)。 */}
+      {/* 懒加载:哨兵 always 挂载 + LoadMore 文字态(与 IPTV 风格一致) */}
       {!isRefreshing && <div ref={sentinelRef} aria-hidden="true" />}
       {!isRefreshing && discoverResults.length > 0 && (
         <BrowseLoadMore

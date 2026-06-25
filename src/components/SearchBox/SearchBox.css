@@ -1,20 +1,19 @@
 /* ═══════════════════════════════════════════════════════════════════════
    SearchBox — 公共搜索框
    结构：<div .search-box-wrap> 外层容器
-         ├ <div .search-box>        内部框（仅含 icon + input + clear）
-         └ <button .search-box__submit>  搜索按钮：独立在方框外，box 紧贴左侧
+         ├ <div .search-box__field>  字段容器（box + submit 水平排列）
+         │   ├ <div .search-box>     内部框（仅含 icon + input + clear）
+         │   └ <button .search-box__submit>  搜索按钮
+         └ <div .search-box-dropdown> 搜索历史 + 热门搜索下拉
    variant="header"：用于顶部 StickyHeader 中央
    variant="browse"：用于 BrowseHeader 中间
    主题感知：边框 / 背景 / 文字 / 占位符色全部使用 CSS 变量
    ═══════════════════════════════════════════════════════════════════════ */
 
 .search-box-wrap {
+  position: relative;
   display: flex;
-  /* 强制单行：父容器宽度不足时也不允许 box 和 submit 换行 */
-  flex-wrap: nowrap;
-  /* box 与 submit 紧贴，视觉上一体化但 DOM 分离 */
-  gap: 0;
-  align-items: stretch;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
 }
@@ -44,6 +43,17 @@
      挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
   min-width: var(--comp-input-min-w);
   max-width: clamp(14rem, 30vw, 22rem);
+}
+
+/* ── 字段容器（box + submit 水平排列） ──────────── */
+
+.search-box__field {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 
 /* ── 内部方框（仅 icon + input + clear） ─────────── */
@@ -194,6 +204,215 @@
   display: none;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Dropdown — 搜索历史 + 热门搜索
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.search-box-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: clamp(20rem, 20rem + 5vh, 28rem);
+  padding: var(--space-xs) 0;
+  border: 1px solid var(--color-border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: search-dropdown-fade-in 0.15s ease both;
+}
+
+/* ── Above placement ──────────────────────────────── */
+
+.search-box-dropdown--above {
+  top: auto;
+  bottom: 100%;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: none;
+  animation-name: search-dropdown-fade-in-above;
+}
+
+@keyframes search-dropdown-fade-in-above {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2xs));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes search-dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-2xs)));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Dropdown Header ──────────────────────────────── */
+
+.search-box-dropdown__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.search-box-dropdown__title {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ── Dropdown List ────────────────────────────────── */
+
+.search-box-dropdown__list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Dropdown Item ────────────────────────────────── */
+
+.search-box-dropdown__item {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.search-box-dropdown__item:hover {
+  background: var(--color-surface-hover);
+}
+
+.search-box-dropdown__item--hot {
+  cursor: pointer;
+}
+
+.search-box-dropdown__text {
+  flex: 1;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── History Remove Button ────────────────────────── */
+
+.search-box-dropdown__remove {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-md);
+  height: var(--space-md);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.search-box-dropdown__item:hover .search-box-dropdown__remove {
+  opacity: 1;
+}
+
+.search-box-dropdown__remove:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-error);
+}
+
+/* ── Hot Rank Badge ───────────────────────────────── */
+
+.search-box-dropdown__rank {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-md);
+  height: var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.search-box-dropdown__rank--top {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* ── Hot Meta (year) ──────────────────────────────── */
+
+.search-box-dropdown__meta {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* ── Clear History Button ─────────────────────────── */
+
+.search-box-dropdown__clear {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  align-self: center;
+  margin-top: var(--space-2xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.search-box-dropdown__clear:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-error);
+}
+
+/* ── Divider ──────────────────────────────────────── */
+
+.search-box-dropdown__divider {
+  height: var(--space-3xs);
+  margin: var(--space-xs) var(--space-sm);
+  background: var(--color-border-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════════ */
+
 /* ── Mobile: 隐藏 submit 文字、显示 submit 图标 ─────── */
 
 @media (width <= 767px) {
@@ -233,13 +452,27 @@
   padding: 0 var(--space-lg);
 }
 
+[data-device="tv"] .search-box-dropdown {
+  max-height: clamp(24rem, 24rem + 5vh, 32rem);
+}
+
+[data-device="tv"] .search-box-dropdown__item {
+  padding: var(--space-sm) var(--space-md);
+}
+
+[data-device="tv"] .search-box-dropdown__text {
+  font-size: var(--text-base);
+}
+
 /* ── Reduced motion ────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .search-box,
   .search-box__clear,
   .search-box__submit,
-  .search-box__icon {
-    transition: none;
+  .search-box__icon,
+  .search-box-dropdown {
+    transition: none !important;
+    animation: none !important;
   }
 }

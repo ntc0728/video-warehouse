@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, Heart } from 'lucide-react';
 import { useUserStore } from '@/stores';
 import { useIsTV } from '@/hooks/useMediaQuery';
+import { useHighlightedText } from '@/lib/highlight';
 import type { Video } from '@/types/video';
 import LazyImage from '../LazyImage/LazyImage';
 import './VideoCard.css';
@@ -23,6 +24,8 @@ interface VideoCardProps {
   srcSet?: string;
   /** 响应式图片 sizes */
   sizes?: string;
+  /** 搜索关键词，用于标题高亮 */
+  highlightQuery?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -39,6 +42,7 @@ const VideoCard = memo(function VideoCard({
   batchMode = false,
   srcSet,
   sizes,
+  highlightQuery,
 }: VideoCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,6 +51,7 @@ const VideoCard = memo(function VideoCard({
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLSpanElement>(null);
   const isTV = useIsTV();
+  const highlightedTitle = useHighlightedText(video.title, highlightQuery ?? '');
 
   const isCollected = useUserStore(
     (s) => s.collections.some((c) => c.videoId === video.id),
@@ -157,7 +162,7 @@ const VideoCard = memo(function VideoCard({
             title={video.title}
           >
             <span ref={titleRef} className="video-card-title-text">
-              {video.title}
+              {highlightQuery ? highlightedTitle : video.title}
             </span>
           </h3>
         </div>

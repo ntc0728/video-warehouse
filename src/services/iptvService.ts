@@ -85,6 +85,39 @@ export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'p
 }
 
 /**
+ * 初步检测频道源是否可能支持时移/DVR 回看。
+ * 
+ * 检测策略：
+ * 1. URL 特征匹配：常见的支持时移的CDN域名
+ * 2. 根据源类型判断：M3U8 直播流更可能支持 DVR
+ * 
+ * 注意：这只是客户端启发式检测，真正的 DVR 能力需要
+ * 在播放器中通过 HLS.js 的 live details 确认。
+ */
+export function detectTimeshiftSupport(url: string, type: string): boolean {
+  if (type !== 'm3u8') return false;
+
+  // 常见支持 DVR 的 CDN 特征
+  const dvrPatterns = [
+    'livepull',
+    'timeshift',
+    'dvr',
+    'tplay',
+    'ott',
+    'livedvr',
+  ];
+
+  const lower = url.toLowerCase();
+  for (const pattern of dvrPatterns) {
+    if (lower.includes(pattern)) return true;
+  }
+
+  // 默认假设 M3U8 直播流可能支持时移
+  // 实际能力由 HLSAdapter 在播放时确认
+  return lower.includes('.m3u8');
+}
+
+/**
  * 从远程获取并解析 M3U 播放列表
  * 源地址直接请求（不走代理），频道播放 URL 由前端按需走代理
  */

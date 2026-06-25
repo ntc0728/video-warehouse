@@ -72,7 +72,7 @@ export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
-  const { isCollected, addCollection, removeCollection } = useUserStore();
+  const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
 
   // ── 非沉浸式 Header（hero 不被导航栏覆盖） ──
   useHeaderContent();
@@ -194,6 +194,7 @@ export default function DetailPage() {
 
   // ── 播放 ──────────────────────────────────────
   const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` }, viewTransition: true }); };
+  const handlePlayFromBeginning = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true }, viewTransition: true }); };
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -229,6 +230,18 @@ export default function DetailPage() {
   const similarResults: TMDBResultItem[] = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults: TMDBResultItem[] = d?.recommendations?.results?.slice(0, 12) || [];
   const homepage = d?.homepage || '';
+
+  // ── 观看历史与进度 ──────────────────────────────
+  const historyRecord = id ? getHistoryByVideo(id) : undefined;
+  const hasWatchingHistory = !!historyRecord && historyRecord.progress > 0;
+  const watchProgressPercent = hasWatchingHistory && historyRecord.duration > 0
+    ? Math.round((historyRecord.progress / historyRecord.duration) * 100)
+    : 0;
+  const lastEpisodeId = historyRecord?.episodeId;
+  // 从 episodeId 中提取集数信息（格式如 "ep-3" 或 "3"）
+  const lastEpisodeNumber = lastEpisodeId
+    ? (lastEpisodeId.match(/(\d+)/)?.[1] || lastEpisodeId)
+    : null;
 
   // ── 页面状态快照 ──────────────────────────────
   stateRef.current = { activeTab, cmsResults, cmsLoaded, cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
@@ -335,14 +348,33 @@ export default function DetailPage() {
             <div className="detail-hero-actions">
               <button className="detail-btn detail-btn-play" onClick={handlePlay}>
                 <Play size={18} fill="currentColor" />
-                立即播放
+                {hasWatchingHistory ? '继续播放' : '立即播放'}
               </button>
+              {hasWatchingHistory && (
+                <button className="detail-btn detail-btn-play-from-start" onClick={handlePlayFromBeginning}>
+                  从头播放
+                </button>
+              )}
               <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect}>
                 <Heart size={18} fill={collected ? 'var(--color-favorite-active)' : 'none'}
                   color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
                 加入收藏
               </button>
             </div>
+
+            {/* 观看进度 */}
+            {hasWatchingHistory && (
+              <div className="detail-progress-row">
+                <span className="detail-progress-label">
+                  {lastEpisodeNumber && tmdbMediaType === 'tv'
+                    ? `已播放：第 ${lastEpisodeNumber} 集`
+                    : '已播放'}
+                </span>
+                <span className="detail-progress-time">
+                  {watchProgressPercent}% · {formatProgressTime(historyRecord.progress)} / {formatProgressTime(historyRecord.duration)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* 桌面端右侧海报 */}
@@ -563,6 +595,20 @@ export default function DetailPage() {
       <BackToTopButton />
     </div>
   );
+}
+
+// ── 辅助函数 ──────────────────────────────────────
+
+/** 格式化进度时间（秒 → mm:ss 或 hh:mm:ss） */
+function formatProgressTime(seconds: number): string {
+  if (!seconds || seconds <= 0) return '00:00';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
 // ── 内联图标组件（避免过多 import） ──────────────

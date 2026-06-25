@@ -1,8 +1,20 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useSettingsStore, usePlayerStore } from '@/stores';
 import { srtToVtt } from '../lib/utils';
 
 export function useSubtitleImport() {
+  const blobUrlRef = useRef<string | null>(null);
+
+  // 清理 blob URL
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const handleImportSubtitle = useCallback(async (file: File) => {
     const { autoTranslate, translationAppId, translationApiKey, targetLang } = useSettingsStore.getState();
     const { setSubtitleUrl } = usePlayerStore.getState();
@@ -67,7 +79,12 @@ export function useSubtitleImport() {
         blob = new Blob([finalText], { type: 'text/vtt' });
       }
 
+      // 撤销旧的 blob URL
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
       const blobUrl = URL.createObjectURL(blob);
+      blobUrlRef.current = blobUrl;
       setSubtitleUrl(blobUrl);
     };
     reader.readAsText(file);

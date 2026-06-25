@@ -52,6 +52,7 @@ export interface UniversalPlayerProps {
   title?: string;
   videoId?: string;
   episodeId?: string;
+  skipHistory?: boolean;
   channelName?: string;
   channels?: IPTVChannel[];
   groups?: IPTVGroup[];
@@ -63,6 +64,8 @@ export interface UniversalPlayerProps {
   onBack?: () => void;
   onRefresh?: () => void;
   onChannelChange?: (channel: IPTVChannel) => void;
+  onSkipIntro?: () => void;
+  onSkipOutro?: () => void;
   controlBarSlots?: {
     left?: React.ReactNode;
     center?: React.ReactNode;

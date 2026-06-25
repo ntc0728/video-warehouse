@@ -47,7 +47,7 @@ export async function requestFullscreen(el: HTMLElement) {
   }
 }
 
-export async function exitFullscreen() {
+export async function exitFullscreen(videoElement?: HTMLVideoElement | null) {
   const d = document as Document & {
     webkitExitFullscreen?: () => Promise<void>;
     mozCancelFullScreen?: () => Promise<void>;
@@ -55,11 +55,10 @@ export async function exitFullscreen() {
   };
 
   // Check if iOS video fullscreen is active
-  const video = document.querySelector('.up-player-video') as HTMLVideoElement & {
-    webkitExitFullscreen?: () => void;
-  };
-  if (video?.webkitExitFullscreen && isIOS()) {
-    video.webkitExitFullscreen();
+  const video = videoElement ?? document.querySelector('.up-player-video');
+  const v = video as (HTMLVideoElement & { webkitExitFullscreen?: () => void }) | null;
+  if (v?.webkitExitFullscreen && isIOS()) {
+    v.webkitExitFullscreen();
     return;
   }
 

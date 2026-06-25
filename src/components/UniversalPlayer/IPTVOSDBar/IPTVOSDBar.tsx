@@ -15,21 +15,24 @@ interface IPTVOSDBarProps {
   channelLogo?: string;
   currentProgram?: ProgramInfo;
   nextProgram?: ProgramInfo;
-  volume: number;
   channelNumber?: number;
   currentSourceIndex: number;
   totalSources: number;
   containerWidth: number;
   audioTracks: { id: number; name: string; language: string; default: boolean }[];
-  currentAudioTrack: number;
   onToggleChannelList: () => void;
   onSourceSwitch?: (index: number) => void;
-  onChannelUp?: () => void;
-  onChannelDown?: () => void;
   onOpenSettings?: () => void;
   onOpenResolution?: () => void;
   onOpenAudioTrack?: () => void;
   onHeightChange?: (bottomOffset: number) => void;
+  epgStatus?: 'idle' | 'loading' | 'success' | 'error';
+  onRefreshEpg?: () => void;
+  onOpenProgramGuide?: () => void;
+  /** Timeshift state */
+  isTimeshifted?: boolean;
+  latencyLabel?: string;
+  onReturnToLive?: () => void;
 }
 
 function getInitials(name: string): string {
@@ -148,6 +151,14 @@ function MdiAudioTrackIcon({ size = 12 }: { size?: number }) {
   );
 }
 
+function MdiTimetableIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M14,12H15.5V14.82L17.94,16.23L17.19,17.53L14,15.69V12M4,2H18A2,2 0 0,1 20,4V10.1C21.24,11.36 22,13.09 22,15A7,7 0 0,1 15,22C13.09,22 11.36,21.24 10.1,20H4A2,2 0 0,1 2,18V4A2,2 0 0,1 4,2M4,15V18H8.67C8.24,17.09 8,16.07 8,15H4M4,8H10V5H4V8M18,8V5H12V8H18M4,13H8.29C8.63,12.15 9.1,11.4 9.67,10.75H4V13Z" />
+    </svg>
+  );
+}
+
 export default function IPTVOSDBar({
   visible,
   hasError = false,
@@ -155,21 +166,23 @@ export default function IPTVOSDBar({
   channelLogo,
   currentProgram,
   nextProgram,
-  volume: _volume,
   channelNumber,
   currentSourceIndex = 0,
   totalSources = 1,
   containerWidth,
   audioTracks = [],
-  currentAudioTrack: _currentAudioTrack = -1,
   onToggleChannelList,
-  onSourceSwitch: _onSourceSwitch,
-  onChannelUp: _onChannelUp,
-  onChannelDown: _onChannelDown,
+  onSourceSwitch,
   onOpenSettings,
   onOpenResolution,
   onOpenAudioTrack,
   onHeightChange,
+  epgStatus = 'idle',
+  onRefreshEpg,
+  onOpenProgramGuide,
+  isTimeshifted = false,
+  latencyLabel = '',
+  onReturnToLive,
 }: IPTVOSDBarProps) {
   const [logoError, setLogoError] = useState(false);
   const [tick, setTick] = useState(0);
@@ -188,9 +201,10 @@ export default function IPTVOSDBar({
   }, [channelLogo]);
 
   useEffect(() => {
+    if (!visible) return;
     const timer = setInterval(() => setTick(n => n + 1), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [visible]);
 
   /** 监听控制栏位置变化，通知父组件频道列表应有的底部偏移量（控制栏顶部到播放器底部的距离） */
   useEffect(() => {
@@ -256,7 +270,9 @@ export default function IPTVOSDBar({
         <div className="iptv-osd-program-row">
           <span className="iptv-osd-current-label">
             <span className="iptv-osd-label-prefix">正在播放：</span>
-            {hasCurrentTitle ? (
+            {epgStatus === 'error' ? (
+              <span className="iptv-osd-program-placeholder">暂无节目单{onRefreshEpg && <button className="iptv-osd-refresh-epg" onClick={onRefreshEpg}>刷新</button>}</span>
+            ) : hasCurrentTitle ? (
                <MarqueeText text={currentProgram.title} className="iptv-osd-program-marquee" />
             ) : (
               <span className="iptv-osd-program-placeholder">--</span>
@@ -266,7 +282,9 @@ export default function IPTVOSDBar({
         <div className="iptv-osd-next-row">
           <span className="iptv-osd-current-label">
             <span className="iptv-osd-label-prefix">下一节目：</span>
-            {nextProgram ? (
+            {epgStatus === 'error' ? (
+              <span className="iptv-osd-program-placeholder">暂无节目单</span>
+            ) : nextProgram ? (
               <MarqueeText
                 text={`${nextProgram.title} ${formatTime(nextProgram.start)} - ${formatTime(nextProgram.end)}`}
                 className="iptv-osd-program-marquee"
@@ -276,6 +294,15 @@ export default function IPTVOSDBar({
             )}
           </span>
         </div>
+        {isTimeshifted && (
+          <div className="iptv-osd-timeshift-row">
+            <button className="iptv-osd-timeshift-btn" onClick={onReturnToLive}>
+              <span className="iptv-osd-timeshift-dot" />
+              <span>{latencyLabel}</span>
+              <span className="iptv-osd-timeshift-hint">· 点击回到直播</span>
+            </button>
+          </div>
+        )}
         <div
           className="iptv-osd-controls-row"
           ref={controlsRef}
@@ -289,9 +316,15 @@ export default function IPTVOSDBar({
               <MdiViewListIcon size={12} />
               <span>列表</span>
             </button>
+            {onOpenProgramGuide && (
+              <button className="iptv-osd-control-btn no-border" onClick={onOpenProgramGuide} title="节目单">
+                <MdiTimetableIcon size={12} />
+                <span>节目单</span>
+              </button>
+            )}
           </div>
           <div className="iptv-osd-btn-group">
-            <button className="iptv-osd-control-btn no-border" onClick={() => _onSourceSwitch?.((currentSourceIndex + 1) % totalSources)} title="换源">
+            <button className="iptv-osd-control-btn no-border" onClick={() => onSourceSwitch?.((currentSourceIndex + 1) % totalSources)} title="换源">
               <MdiSwapHorizontalVariantIcon size={12} />
               <span>换源</span>
             </button>

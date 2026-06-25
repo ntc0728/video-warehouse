@@ -53,6 +53,12 @@
   --color-skeleton: #e8e8e8;
   --color-skeleton-shine: #f5f5f5;
 
+  /* ── Player overlay colors (always dark context) ────────────────────── */
+  --player-bg: #000;
+  --player-text: #fff;
+  --player-progress-bg: #fff;
+  --player-overlay-bg: rgba(0, 0, 0, 0.6);
+
   /* ── Shadows ─────────────────────────────────────────────────────────── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -158,6 +164,7 @@
   --layout-player-vol-w:       80px;
   --layout-popover-min-w:      100px;
   --layout-popover-wide-min-w: 140px;
+  --layout-help-popover-w:     clamp(260px, 30vw, 380px);
   --layout-sidebar-width:      clamp(260px, 15rem + 1.5vw, 320px);  /* 260→320px 流体 */
   --layout-episode-panel-w:    420px;
   --layout-episode-panel-w-alt: 440px;
@@ -296,6 +303,12 @@
   --color-warning: #d89614;
   --color-skeleton: #2a2a2a;
   --color-skeleton-shine: #3a3a3a;
+
+  /* ── Player overlay colors (always dark context) ────────────────────── */
+  --player-bg: #000;
+  --player-text: #fff;
+  --player-progress-bg: #fff;
+  --player-overlay-bg: rgba(0, 0, 0, 0.6);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);

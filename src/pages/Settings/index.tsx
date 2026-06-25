@@ -3,7 +3,7 @@
  * 提供主题切换、数据源配置、IPTV 代理设置、翻译 API 配置等功能
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { List, Switch, Button, Modal, toast } from '@/components/ui';
+import { List, Switch, Button, Modal, toast, HelpPopover } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
 import { getVideoSources, getIPTVSources, getEPGSources } from '@/services/sourceService';
@@ -37,6 +37,16 @@ export default function SettingsPage() {
     setTMDBToken,
     tmdbLanguage,
     setTMDBLanguage,
+    skipIntro,
+    setSkipIntro,
+    skipOutro,
+    setSkipOutro,
+    skipIntroDuration,
+    setSkipIntroDuration,
+    skipOutroDuration,
+    setSkipOutroDuration,
+    autoPlay,
+    setAutoPlay,
   } = useSettingsStore();
 
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
@@ -296,7 +306,12 @@ export default function SettingsPage() {
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="视频源">
         <List.Item
-          title="视频数据源"
+          title={
+            <>
+              视频数据源
+              <HelpPopover title="视频数据源" content="选择视频采集API数据源。支持多选（最多6个），播放时会同时从多个源搜索匹配资源。" />
+            </>
+          }
           description="选择视频数据源（最多6个）"
           extra={
             <div className="source-multi-dropdown">
@@ -324,7 +339,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="视频采集CORS 代理"
+          title={
+            <>
+              视频采集CORS 代理
+              <HelpPopover title="CORS 代理" content="用于代理视频源API请求，解决浏览器跨域限制。如果视频源有CORS问题，请配置代理地址。留空则使用默认代理。" />
+            </>
+          }
           description={corsProxy || '默认: 不使用代理'}
           extra={
             <Button size="small" className="settings-btn-mini" onClick={() => {
@@ -336,7 +356,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="音量记忆"
+          title={
+            <>
+              音量记忆
+              <HelpPopover title="音量记忆" content="开启后会记住上次播放时的音量大小，下次打开播放器时自动恢复。" />
+            </>
+          }
           description="记住上次播放时的音量大小"
           extra={
             <Switch
@@ -346,7 +371,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="自动翻译字幕"
+          title={
+            <>
+              自动翻译字幕
+              <HelpPopover title="自动翻译字幕" content="开启后会自动调用百度翻译API将字幕翻译成目标语言。需要先配置百度翻译API。" />
+            </>
+          }
           description="开启后自动将字幕翻译成目标语言"
           extra={
             <Switch
@@ -356,7 +386,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="百度翻译 API"
+          title={
+            <>
+              百度翻译 API
+              <HelpPopover title="百度翻译 API" content="配置百度翻译开放平台的App ID和密钥，用于自动翻译字幕功能。" />
+            </>
+          }
           description={translationAppId && translationApiKey ? '已配置' : '未配置'}
           extra={
             <Button size="small" className="settings-btn-mini" onClick={() => {
@@ -372,9 +407,110 @@ export default function SettingsPage() {
       </section>
 
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+        <List header="播放设置">
+        <List.Item
+          title={
+            <>
+              跳过片头
+              <HelpPopover title="跳过片头" content="开启后播放视频时自动跳过片头部分。可在下方设置跳过时长。" />
+            </>
+          }
+          description="播放时自动跳过片头"
+          extra={
+            <Switch
+              checked={skipIntro}
+              onChange={setSkipIntro}
+            />
+          }
+        />
+        <List.Item
+          title="片头跳过时长"
+          description={`${skipIntroDuration} 秒`}
+          extra={
+            <div className="settings-counter">
+              <button
+                className="settings-counter-btn"
+                onClick={() => setSkipIntroDuration(Math.max(10, skipIntroDuration - 10))}
+                disabled={skipIntroDuration <= 10}
+              >
+                -
+              </button>
+              <span className="settings-counter-value">{skipIntroDuration}</span>
+              <button
+                className="settings-counter-btn"
+                onClick={() => setSkipIntroDuration(Math.min(300, skipIntroDuration + 10))}
+                disabled={skipIntroDuration >= 300}
+              >
+                +
+              </button>
+            </div>
+          }
+        />
+        <List.Item
+          title={
+            <>
+              跳过片尾
+              <HelpPopover title="跳过片尾" content="开启后播放视频接近结尾时自动跳转到下一集或结束播放。可在下方设置提前多少秒触发。" />
+            </>
+          }
+          description="播放时自动跳过片尾"
+          extra={
+            <Switch
+              checked={skipOutro}
+              onChange={setSkipOutro}
+            />
+          }
+        />
+        <List.Item
+          title="片尾跳过时长"
+          description={`${skipOutroDuration} 秒`}
+          extra={
+            <div className="settings-counter">
+              <button
+                className="settings-counter-btn"
+                onClick={() => setSkipOutroDuration(Math.max(10, skipOutroDuration - 10))}
+                disabled={skipOutroDuration <= 10}
+              >
+                -
+              </button>
+              <span className="settings-counter-value">{skipOutroDuration}</span>
+              <button
+                className="settings-counter-btn"
+                onClick={() => setSkipOutroDuration(Math.min(300, skipOutroDuration + 10))}
+                disabled={skipOutroDuration >= 300}
+              >
+                +
+              </button>
+            </div>
+          }
+        />
+        <List.Item
+          title={
+            <>
+              自动连播
+              <HelpPopover title="自动连播" content="剧集播放结束后自动播放下一集。关闭后需要手动点击播放下一集。" />
+            </>
+          }
+          description="剧集播放结束后自动播放下一集"
+          extra={
+            <Switch
+              checked={autoPlay}
+              onChange={setAutoPlay}
+            />
+          }
+        />
+        </List>
+      </section>
+
+      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="IPTV">
         <List.Item
-          title="IPTV 数据源"
+          title={
+            <>
+              IPTV 数据源
+              <HelpPopover title="IPTV 数据源" content="选择IPTV M3U播放列表数据源。支持多选（最多3个），可同时加载多个源的频道。" />
+            </>
+          }
           description="选择IPTV数据源（支持多选，最多3个）"
           extra={
             <div className="source-multi-dropdown">
@@ -402,7 +538,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="节目单源"
+          title={
+            <>
+              节目单源
+              <HelpPopover title="节目单源" content="选择EPG节目单数据源，用于显示频道当前播放的节目信息。支持多选，可从多个源获取节目数据。" />
+            </>
+          }
           description="选择节目单数据源（支持多选）"
           extra={
             <div className="source-multi-dropdown">
@@ -430,7 +571,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="节目单更新间隔"
+          title={
+            <>
+              节目单更新间隔
+              <HelpPopover title="节目单更新间隔" content="设置节目单数据的自动更新间隔时间。建议6-12小时更新一次，避免频繁请求。" />
+            </>
+          }
           description={`${epgUpdateInterval} 小时`}
           extra={
             <div className="settings-counter">
@@ -453,7 +599,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="流代理地址"
+          title={
+            <>
+              流代理地址
+              <HelpPopover title="流代理地址" content="配置Cloudflare Worker代理地址，用于代理IPTV流媒体请求，解决跨域问题。" />
+            </>
+          }
           description={iptvSettings.proxyUrl || '未配置'}
           extra={
             <Button size="small" className="settings-btn-mini" onClick={() => {
@@ -465,7 +616,12 @@ export default function SettingsPage() {
           }
         />
         <List.Item
-          title="代理规则"
+          title={
+            <>
+              代理规则
+              <HelpPopover title="代理规则" content="设置代理规则正则表达式。匹配正则的URL不走代理，其余走代理。留空则所有地址都走代理。用于区分需要代理和不需要代理的流地址。" />
+            </>
+          }
           description={iptvSettings.proxyPattern || '默认: 匹配 miguvideo.com 和 IP 不走代理'}
           extra={
             <Button size="small" className="settings-btn-mini" onClick={() => {

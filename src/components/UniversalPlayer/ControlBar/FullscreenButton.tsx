@@ -1,5 +1,6 @@
 import { Maximize, Minimize } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { usePlayerStore } from '@/stores';
 import { getFullscreenElement, requestFullscreen, exitFullscreen } from '../lib/fullscreen';
 
 interface FullscreenButtonProps {
@@ -7,11 +8,12 @@ interface FullscreenButtonProps {
 }
 
 export default function FullscreenButton({ containerRef }: FullscreenButtonProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isFullscreen = usePlayerStore(s => s.isFullscreen);
+  const setFullscreen = usePlayerStore(s => s.setFullscreen);
 
   useEffect(() => {
     const handleChange = () => {
-      setIsFullscreen(!!getFullscreenElement());
+      setFullscreen(!!getFullscreenElement());
     };
     document.addEventListener('fullscreenchange', handleChange);
     document.addEventListener('webkitfullscreenchange', handleChange);
@@ -21,7 +23,7 @@ export default function FullscreenButton({ containerRef }: FullscreenButtonProps
       document.removeEventListener('webkitfullscreenchange', handleChange);
       document.removeEventListener('msfullscreenchange', handleChange);
     };
-  }, []);
+  }, [setFullscreen]);
 
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;

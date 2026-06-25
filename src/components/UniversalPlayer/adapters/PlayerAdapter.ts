@@ -26,6 +26,14 @@ export interface IPlayerAdapter {
   setCurrentAudioTrack(trackId: number): void;
   getCurrentAudioTrack(): number;
   resetErrorCount(): void;
+  /** Whether the stream is live (not VoD) */
+  isLive(): boolean;
+  /** Latency behind the live edge in seconds, or 0 if not live */
+  getLiveLatency(): number;
+  /** Earliest seekable time (for DVR/timeshift window) */
+  getSeekableStart(): number;
+  /** Latest seekable time (live edge) */
+  getSeekableEnd(): number;
   destroy(): void;
 }
 
@@ -95,4 +103,35 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
   }
 
   resetErrorCount(): void {}
+
+  isLive(): boolean {
+    // Default: check if video element reports infinite duration
+    if (this.video && this.video.duration && isFinite(this.video.duration) && this.video.duration > 0) {
+      return false;
+    }
+    // If duration is Infinity or NaN, likely live
+    return !this.video?.duration || !isFinite(this.video.duration);
+  }
+
+  getLiveLatency(): number {
+    if (!this.video) return 0;
+    const seekable = this.video.seekable;
+    if (seekable.length > 0) {
+      const liveEdge = seekable.end(seekable.length - 1);
+      return Math.max(0, liveEdge - this.video.currentTime);
+    }
+    return 0;
+  }
+
+  getSeekableStart(): number {
+    if (!this.video) return 0;
+    const seekable = this.video.seekable;
+    return seekable.length > 0 ? seekable.start(0) : 0;
+  }
+
+  getSeekableEnd(): number {
+    if (!this.video) return 0;
+    const seekable = this.video.seekable;
+    return seekable.length > 0 ? seekable.end(seekable.length - 1) : 0;
+  }
 }

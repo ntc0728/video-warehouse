@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { usePlayerStore } from '@/stores';
+import { usePlayerStore, useSettingsStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
@@ -12,6 +12,7 @@ interface UsePlayerCoreOptions {
   type: SourceType;
   videoId?: string;
   episodeId?: string;
+  skipHistory?: boolean;
   decoderMode: DecoderMode;
   retryCount?: number;
   onProgress?: (progress: number, duration: number) => void;
@@ -19,21 +20,23 @@ interface UsePlayerCoreOptions {
   onPlay?: () => void;
   onPause?: () => void;
   onError?: (error: Error) => void;
+  onSkipIntro?: () => void;
+  onSkipOutro?: () => void;
 }
 
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, episodeId, decoderMode, retryCount,
-    onProgress, onEnded, onPlay, onPause, onError,
+    url, type, videoId, episodeId, skipHistory = false, decoderMode, retryCount,
+    onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro,
   } = options;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adapterRef = useRef<IPlayerAdapter | null>(null);
-  const progressSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const {
-    volume, playbackRate, setCurrentLevel, setLevels,
-  } = usePlayerStore();
+  const volume = usePlayerStore(s => s.volume);
+  const playbackRate = usePlayerStore(s => s.playbackRate);
+  const setCurrentLevel = usePlayerStore(s => s.setCurrentLevel);
+  const setLevels = usePlayerStore(s => s.setLevels);
 
   const initAdapter = useCallback(() => {
     if (adapterRef.current) {
@@ -67,7 +70,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type, decoderMode, onError, setLevels]);
 
   const loadProgress = useCallback(async () => {
-    if (!videoId || !videoRef.current) return;
+    if (!videoId || !videoRef.current || skipHistory) return;
     try {
       const history = await getHistory();
       const videoHistory = history.find(
@@ -79,7 +82,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     } catch (err) {
       console.error('Failed to load progress:', err);
     }
-  }, [videoId, episodeId]);
+  }, [videoId, episodeId, skipHistory]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -100,6 +103,23 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       const dur = video.duration;
       if (dur > 0) {
         const s = getStore();
+        
+        // 跳过片头：如果启用且当前时间在片头范围内，跳转到片头结束位置
+        const settings = useSettingsStore.getState();
+        if (settings.skipIntro && ct < settings.skipIntroDuration && ct < settings.skipIntroDuration - 1) {
+          video.currentTime = settings.skipIntroDuration;
+          onSkipIntro?.();
+          return;
+        }
+        
+        // 跳过片尾：如果启用且当前时间接近视频结尾，触发结束
+        if (settings.skipOutro && ct > dur - settings.skipOutroDuration && ct < dur - 1) {
+          video.pause();
+          onSkipOutro?.();
+          onEnded?.();
+          return;
+        }
+        
         s.setProgress(ct);
         s.setDuration(dur);
         onProgress?.(ct, dur);
@@ -111,6 +131,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleEnterPiP = () => { getStore().setIsPiP(true); };
     const handleLeavePiP = () => { getStore().setIsPiP(false); };
     const handleLoadedMetadata = () => { loadProgress(); };
+    const handleProgress = () => {
+      if (video.buffered.length > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        getStore().setBufferedProgress(bufferedEnd);
+      }
+    };
 
     const handleNativeError = () => {
       const mediaError = video.error;
@@ -145,6 +171,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.addEventListener('leavepictureinpicture', handleLeavePiP);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('error', handleNativeError);
+    video.addEventListener('progress', handleProgress);
 
     const bandwidthTimer = setInterval(() => {
       let bps = adapterRef.current?.getBandwidthEstimate() ?? 0;
@@ -173,9 +200,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       getStore().setBandwidthEstimate(bps);
     }, 1000);
 
-    // 在 effect 主体内捕获当前 progressSaveRef 快照，cleanup 时不再读取 ref
-    const progressSaveSnapshot = progressSaveRef.current;
-
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
@@ -187,15 +211,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('error', handleNativeError);
+      video.removeEventListener('progress', handleProgress);
 
       clearInterval(bandwidthTimer);
 
       if (adapterRef.current) {
         adapterRef.current.destroy();
         adapterRef.current = null;
-      }
-      if (progressSaveSnapshot) {
-        clearInterval(progressSaveSnapshot);
       }
     };
     // 内部用 usePlayerStore.getState() 读取最新 actions 与 props 闭包，避免 effect 频繁重建
@@ -301,5 +323,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     getCurrentTime: () => videoRef.current?.currentTime ?? 0,
     getDuration: () => videoRef.current?.duration ?? 0,
     getIsPlaying: () => !videoRef.current?.paused,
+    isLive: () => adapterRef.current?.isLive() ?? false,
+    getLiveLatency: () => adapterRef.current?.getLiveLatency() ?? 0,
+    getSeekableStart: () => adapterRef.current?.getSeekableStart() ?? 0,
+    getSeekableEnd: () => adapterRef.current?.getSeekableEnd() ?? 0,
   };
 }

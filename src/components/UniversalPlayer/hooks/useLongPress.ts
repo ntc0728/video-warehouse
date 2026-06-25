@@ -1,13 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
+import type { PlayerMode } from '@/types/player';
 
 interface UseLongPressOptions {
   onSeek: (direction: 'left' | 'right') => void;
+  mode?: PlayerMode;
 }
 
 const LONG_PRESS_DELAY = 500;
 const SEEK_INTERVAL = 500;
 
-export function useLongPress({ onSeek }: UseLongPressOptions) {
+export function useLongPress({ onSeek, mode = 'video' }: UseLongPressOptions) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seekIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasLongPressedRef = useRef(false);
@@ -26,6 +28,8 @@ export function useLongPress({ onSeek }: UseLongPressOptions) {
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // IPTV 模式不启用长按快进快退
+    if (mode === 'iptv') return;
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.closest('.up-control-bar') || target.closest('.up-player-header') || target.closest('.up-channel-list-overlay') || target.closest('.iptv-osd-bar') || target.closest('.iptv-volume-popup')) {
@@ -50,7 +54,7 @@ export function useLongPress({ onSeek }: UseLongPressOptions) {
       onSeek(direction);
       seekIntervalRef.current = setInterval(() => onSeek(direction), SEEK_INTERVAL);
     }, LONG_PRESS_DELAY);
-  }, [onSeek]);
+  }, [onSeek, mode]);
 
   const handlePointerUp = useCallback(() => {
     clearLongPress();

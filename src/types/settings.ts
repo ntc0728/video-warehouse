@@ -10,4 +10,14 @@ export interface AppSettings {
   iptvSourceIndex: number;
   iptvSourceIndices: number[];
   theme: 'light' | 'dark' | 'system';
+  /** 跳过片头 */
+  skipIntro: boolean;
+  /** 跳过片尾 */
+  skipOutro: boolean;
+  /** 片头跳过时长（秒） */
+  skipIntroDuration: number;
+  /** 片尾跳过时长（秒） */
+  skipOutroDuration: number;
+  /** 自动连播 */
+  autoPlay: boolean;
 }

@@ -1,15 +1,27 @@
 // Cloudflare Worker — M3U8/TS 流代理，解决跨域问题
 // 部署到 Cloudflare Workers 后，将 Worker URL 填入前端 IPTV 设置中的代理地址
 
-const CACHE_TTL = 30000; // 30秒缓存，减少对源站的重复请求
+// M3U8 播放列表缓存：60s（直播节目单更新频率通常为 2-10s，60s 缓存可减少
+// 源站压力同时不会明显增加直播延迟。对于支持 DVR 的流，M3U8 需更频繁刷新；
+// 后续可基于 #EXT-X-TARGETDURATION 动态调整 TTL）
+const M3U8_CACHE_TTL = 60000;
 const m3u8Cache = new Map();
+
+// TS 分片缓存：5s（同一分片可能在短时间内被多次请求，5s 缓存可吸收突发流量）
+const TS_CACHE_TTL = 5000;
+const tsCache = new Map();
 
 // 定期清理过期缓存条目，防止内存泄漏
 function evictCache() {
   const now = Date.now();
   for (const [key, entry] of m3u8Cache) {
-    if (now - entry.time > CACHE_TTL) {
+    if (now - entry.time > M3U8_CACHE_TTL) {
       m3u8Cache.delete(key);
+    }
+  }
+  for (const [key, entry] of tsCache) {
+    if (now - entry.time > TS_CACHE_TTL) {
+      tsCache.delete(key);
     }
   }
 }
@@ -102,7 +114,7 @@ async function handleM3U8Proxy(request) {
   try {
     const cacheKey = targetUrl;
     const cached = m3u8Cache.get(cacheKey);
-    if (cached && Date.now() - cached.time < CACHE_TTL) {
+    if (cached && Date.now() - cached.time < M3U8_CACHE_TTL) {
       return new Response(cached.body, {
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
@@ -209,6 +221,21 @@ async function handleTsProxy(request) {
   }
 
   try {
+    // Check TS segment cache first
+    const tsCacheKey = targetUrl;
+    const tsCached = tsCache.get(tsCacheKey);
+    if (tsCached && Date.now() - tsCached.time < TS_CACHE_TTL) {
+      return new Response(tsCached.body, {
+        status: tsCached.status,
+        headers: {
+          "Content-Type": "video/mp2t",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "*",
+          "Access-Control-Allow-Methods": "*",
+        },
+      });
+    }
+
     const urlObj = new URL(targetUrl);
     const response = await fetch(targetUrl, {
       method: request.method,
@@ -227,7 +254,16 @@ async function handleTsProxy(request) {
       });
     }
 
-    return new Response(response.body, {
+    // Clone and cache the response body for short-duration reuse
+    const clonedResponse = response.clone();
+    const body = await clonedResponse.arrayBuffer();
+    tsCache.set(targetUrl, {
+      body,
+      status: response.status,
+      time: Date.now(),
+    });
+
+    return new Response(body, {
       status: response.status,
       headers: {
         "Content-Type": "video/mp2t",

@@ -6,7 +6,7 @@ interface ListProps {
 }
 
 interface ListItemProps {
-  title?: string
+  title?: string | ReactNode
   extra?: ReactNode
   description?: string | ReactNode
   prefix?: ReactNode

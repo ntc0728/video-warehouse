@@ -47,6 +47,7 @@ export default function VolumePopup({
   return (
     <div
       className={`iptv-volume-popup ${localVisible ? 'iptv-volume-visible' : 'iptv-volume-hidden'}`}
+      style={{ touchAction: 'none' }}
     >
       <span className="iptv-volume-percent">
         {Math.round(volume * 100)}%

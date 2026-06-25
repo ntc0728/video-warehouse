@@ -1,6 +1,7 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { usePlayerStore } from '@/stores';
-import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel } from '@/types/player';
+import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
+import type { VideoSource } from '@/types/video';
 import ProgressBar from './ProgressBar';
 import PlayButton from './PlayButton';
 import VolumeControl from './VolumeControl';
@@ -15,6 +16,8 @@ import ResolutionSwitch from './ResolutionSwitch';
 import TimeDisplay from './TimeDisplay';
 import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
+import SourceSwitch from './SourceSwitch';
+import LoopButton from './LoopButton';
 
 interface ControlBarProps {
   mode: PlayerMode;
@@ -28,8 +31,7 @@ interface ControlBarProps {
   onDecoderModeChange: (mode: DecoderMode) => void;
   onTogglePiP: () => void;
   onImportSubtitle: (file: File) => void;
-  getCurrentTime: () => number;
-  getDuration: () => number;
+  onLoopModeChange?: (mode: LoopMode) => void;
   onActivity?: () => void;
   onRefresh?: () => void;
   onScreenshot?: () => void;
@@ -38,6 +40,9 @@ interface ControlBarProps {
   onLevelChange: (level: number) => void;
   activePopover: string | null;
   onPopoverChange: (id: string | null) => void;
+  sources?: VideoSource[];
+  currentSourceIndex?: number;
+  onSourceSwitch?: (index: number) => void;
   slots?: {
     left?: React.ReactNode;
     center?: React.ReactNode;
@@ -57,8 +62,7 @@ export default function ControlBar({
   onDecoderModeChange,
   onTogglePiP,
   onImportSubtitle,
-  getCurrentTime,
-  getDuration,
+  onLoopModeChange,
   onActivity,
   onRefresh,
   onScreenshot,
@@ -67,24 +71,21 @@ export default function ControlBar({
   onLevelChange,
   activePopover,
   onPopoverChange,
+  sources,
+  currentSourceIndex,
+  onSourceSwitch,
   slots,
 }: ControlBarProps) {
-  const {
-    isPlaying, volume, playbackRate, decoderMode, isPiP,
-  } = usePlayerStore();
-
-  const [currentTime, setCurrentTime] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
-  const [buffered] = useState(0);
+  const isPlaying = usePlayerStore(s => s.isPlaying);
+  const volume = usePlayerStore(s => s.volume);
+  const playbackRate = usePlayerStore(s => s.playbackRate);
+  const decoderMode = usePlayerStore(s => s.decoderMode);
+  const isPiP = usePlayerStore(s => s.isPiP);
+  const currentTime = usePlayerStore(s => s.progress);
+  const videoDuration = usePlayerStore(s => s.duration);
+  const buffered = usePlayerStore(s => s.bufferedProgress);
+  const loopMode = usePlayerStore(s => s.loopMode);
   const barRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const updateTimer = setInterval(() => {
-      setCurrentTime(getCurrentTime());
-      setVideoDuration(getDuration());
-    }, 250);
-    return () => clearInterval(updateTimer);
-  }, [getCurrentTime, getDuration]);
 
   const isHls = usePlayerStore(s => s.currentType) === 'm3u8';
   const isVideoMode = mode === 'video';
@@ -108,6 +109,9 @@ export default function ControlBar({
       <div className="up-control-bar-buttons">
         <div className="up-control-left">
           <PlayButton isPlaying={isPlaying} onClick={onTogglePlay} />
+          {sources && currentSourceIndex !== undefined && onSourceSwitch && (
+            <SourceSwitch sources={sources} currentIndex={currentSourceIndex} onSwitch={onSourceSwitch} />
+          )}
           {isLiveLike && onRefresh && (
             <RefreshButton onClick={onRefresh} />
           )}
@@ -154,6 +158,9 @@ export default function ControlBar({
                 activePopover={activePopover}
                 onPopoverChange={onPopoverChange}
               />
+            )}
+            {isVideoMode && onLoopModeChange && (
+              <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}
           </div>
           <MoreMenu

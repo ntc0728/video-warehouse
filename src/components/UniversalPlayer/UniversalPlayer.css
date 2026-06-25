@@ -3,9 +3,23 @@
   width: 100%;
   height: 100%;
   border-radius: var(--radius-md);
-  background: #000;
+  background: var(--player-bg);
   overflow: hidden;
   user-select: none;
+}
+
+.up-player-error-boundary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.up-player-error-boundary .up-player-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+  color: var(--player-text);
 }
 
 .up-player-core {
@@ -14,7 +28,7 @@
   height: 100%;
   /* 兜底高度锚点：父级未提供具体高度时（如 IPTV 频道失效，videoHeight=0）维持 16:9 比例 */
   aspect-ratio: 16 / 9;
-  background: #000;
+  background: var(--player-bg);
 }
 
 .up-player-core[data-mode="video"] {
@@ -47,7 +61,7 @@
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-base);
   /* 错误/加载层不吞交互：让 OSD / 错误操作条可点击 */
   pointer-events: none;
@@ -55,7 +69,7 @@
 }
 
 .up-loading-spinner {
-  color: #fff;
+  color: var(--player-text);
   animation: up-spin 1s linear infinite;
 }
 
@@ -82,8 +96,9 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-base);
+  pointer-events: auto;
   transition: background 0.2s;
   cursor: pointer;
 }
@@ -137,13 +152,13 @@
 }
 
 .up-header-back:hover {
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-header-title {
   flex: 1;
   margin-left: var(--space-md);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-base);
   white-space: nowrap;
   overflow: hidden;
@@ -158,7 +173,7 @@
 }
 
 .up-player-header .up-control-btn:hover {
-  color: #fff;
+  color: var(--player-text);
 }
 
 /* ===== Control Bar ===== */
@@ -242,7 +257,7 @@
 
 .up-control-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-control-btn-active {
@@ -272,16 +287,23 @@
 .up-progress-bar {
   position: relative;
   flex: 1;
-  height: var(--space-xs);
+  height: var(--space-sm);
   border-radius: var(--space-2xs);
   background: rgba(255, 255, 255, 0.2);
+  touch-action: none;
   transition: height 0.15s;
   cursor: pointer;
 }
 
+.up-progress-bar::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--space-xs) * -1) 0;
+}
+
 .up-progress-bar:hover,
 .up-progress-dragging {
-  height: var(--space-sm);
+  height: var(--space-md);
 }
 
 .up-progress-live {
@@ -312,7 +334,7 @@
   width: var(--icon-sm);
   height: var(--icon-sm);
   border-radius: 50%;
-  background: #fff;
+  background: var(--player-progress-bg);
   opacity: 0;
   transform: translate(-50%, -50%);
   transition: opacity 0.15s;
@@ -324,6 +346,12 @@
   opacity: 1;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .up-progress-thumb {
+    opacity: 0.7;
+  }
+}
+
 .up-progress-tooltip {
   position: absolute;
   bottom: 100%;
@@ -331,7 +359,7 @@
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.8);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-sm);
   white-space: nowrap;
   transform: translateX(-50%);
@@ -378,7 +406,7 @@
   width: var(--icon-sm);
   height: var(--icon-sm);
   border-radius: 50%;
-  background: #fff;
+  background: var(--player-progress-bg);
   appearance: none;
   cursor: pointer;
 }
@@ -421,14 +449,14 @@
 
 .up-popover-item:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-popover-item-active {
   position: relative;
   padding-left: calc(var(--space-md) + var(--layout-spinner-border));
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--player-text);
   font-weight: 600;
 }
 
@@ -530,7 +558,7 @@
   gap: var(--space-sm);
   align-items: center;
   padding: var(--space-sm);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-lg);
   font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -579,13 +607,13 @@
 
 .up-channel-group-item:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--player-text);
 }
 
 /* 活跃分组 - 左侧蓝色竖条指示，强化级联关系 */
 .up-channel-group-active {
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--player-text);
   font-weight: 600;
 }
 
@@ -603,7 +631,7 @@
 
 .up-channel-group-active:hover {
   background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-channel-group-name {
@@ -677,7 +705,7 @@
 /* "正在播放"图标（仅 active 态显示） */
 .up-channel-item:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: var(--player-text);
 }
 
 /* 活跃频道 - 左侧色条 + 加粗 + 25% 背景 + 内部描边 + 右侧播放图标 */
@@ -685,14 +713,14 @@
   position: relative;
   border-left: 3px solid var(--color-primary);
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--player-text);
   font-weight: 500;
 }
 
 .up-channel-item-active:hover {
   border-left-color: var(--color-primary-hover);
   background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-channel-logo {
@@ -738,7 +766,7 @@
   width: var(--space-lg);
   height: var(--space-lg);
   border-radius: var(--radius-sm);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-sm);
   font-weight: 700;
 }
@@ -857,14 +885,14 @@
   outline: var(--layout-outline-width) solid var(--color-primary);
   outline-offset: -2px;
   background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  color: #fff;
+  color: var(--player-text);
 }
 
 .up-channel-item-focused {
   outline: var(--layout-outline-width) solid var(--color-primary);
   outline-offset: -2px;
   background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  color: #fff;
+  color: var(--player-text);
 }
 
 /* ===== Platform: Mobile ===== */
@@ -981,7 +1009,7 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--player-text);
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -1067,7 +1095,7 @@
 }
 
 .up-channel-loading-icon {
-  color: #fff;
+  color: var(--player-text);
   animation: up-channel-spin 1s linear infinite;
 }
 
@@ -1101,7 +1129,7 @@
   width: var(--space-xl);
   height: var(--space-xl);
   border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #fff;
+  border-top-color: var(--player-text);
   border-radius: 50%;
   animation: up-iptv-buffering-spin 0.8s linear infinite;
 }
@@ -1110,6 +1138,40 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+}
+
+.up-iptv-buffering-reason {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.up-iptv-buffering-metrics {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.up-iptv-buffering-metric {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.up-iptv-buffering-retry {
+  pointer-events: auto;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--player-text);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.up-iptv-buffering-retry:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 @keyframes up-iptv-buffering-spin {
@@ -1150,7 +1212,7 @@
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.7);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-base);
   font-weight: 600;
   pointer-events: none;
@@ -1170,7 +1232,7 @@
 .up-seek-indicator svg {
   width: var(--space-xl);
   height: var(--space-xl);
-  color: #fff;
+  color: var(--player-text);
 }
 
 @keyframes up-seek-pulse {
@@ -1192,7 +1254,7 @@
 .up-volume-value {
   display: block;
   margin-bottom: var(--space-xs);
-  color: #fff;
+  color: var(--player-text);
   font-size: var(--text-sm);
   font-weight: 600;
   text-align: center;
@@ -1202,4 +1264,69 @@
 .up-volume-slider,
 .iptv-volume-slider {
   touch-action: none;
+}
+
+/* ===== EPG Program Guide overlay ===== */
+.up-program-guide-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: up-fade-in 0.2s ease;
+}
+
+.up-program-guide-panel {
+  width: min(480px, calc(100% - 2 * var(--space-lg)));
+  max-height: 70vh;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.up-program-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.up-program-guide-title {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.up-program-guide-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.up-program-guide-close:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.up-program-guide-panel .epg-program-list {
+  flex: 1;
+  padding: var(--space-sm);
+}
+
+@keyframes up-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

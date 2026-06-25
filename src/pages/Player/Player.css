@@ -577,3 +577,98 @@
 [data-theme="light"] .player-empty-sub {
   color: var(--color-text-secondary);
 }
+
+/* ===== Skip indicator ===== */
+.player-skip-indicator {
+  position: absolute;
+  top: var(--space-xl);
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--player-text);
+  font-size: var(--text-sm);
+  transform: translateX(-50%);
+  animation: skip-indicator-fade 2s ease forwards;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.player-skip-indicator svg {
+  color: var(--color-primary);
+}
+
+@keyframes skip-indicator-fade {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ===== Auto-play countdown overlay ===== */
+.player-autoplay-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 20%;
+  background: rgba(0, 0, 0, 0.3);
+  animation: autoplay-fade-in 0.3s ease;
+}
+
+.player-autoplay-card {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+.player-autoplay-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  animation: autoplay-pulse 1s ease-in-out infinite;
+}
+
+.player-autoplay-text {
+  color: var(--player-text);
+  font-size: var(--text-base);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.player-autoplay-cancel {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--player-text);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.player-autoplay-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes autoplay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes autoplay-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

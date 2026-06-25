@@ -16,6 +16,8 @@ import './Browse.css';
 
 interface BrowseGridProps {
   items: TMDBVideoItem[];
+  /** 搜索关键词，用于标题高亮 */
+  query?: string;
 }
 
 function toVideo(item: TMDBVideoItem): Video {
@@ -34,7 +36,7 @@ function toVideo(item: TMDBVideoItem): Video {
   };
 }
 
-export default function BrowseGrid({ items }: BrowseGridProps) {
+export default function BrowseGrid({ items, query }: BrowseGridProps) {
   if (items.length === 0) return null;
 
   return (
@@ -49,6 +51,7 @@ export default function BrowseGrid({ items }: BrowseGridProps) {
             rating={item.voteAverage}
             srcSet={posterSrcSet ?? undefined}
             sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
+            highlightQuery={query}
           />
         );
       })}

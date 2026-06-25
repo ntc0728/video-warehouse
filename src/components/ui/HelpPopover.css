@@ -1,0 +1,119 @@
+/* ── HelpPopover ──────────────────────────────────── */
+
+.help-popover-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-xs);
+  vertical-align: middle;
+}
+
+.help-popover-trigger {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.help-popover-trigger:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
+
+.help-popover-content {
+  position: fixed;
+  z-index: 1000;
+  width: var(--layout-help-popover-w);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-elevated);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  animation: helpPopoverFadeIn 0.15s ease-out;
+}
+
+.help-popover-header {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.help-popover-title {
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.help-popover-close {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-lg);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.help-popover-close:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+}
+
+.help-popover-body {
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.help-popover-arrow {
+  position: absolute;
+  bottom: calc(-1 * var(--space-2xs));
+  width: var(--space-md);
+  height: var(--space-md);
+  background: var(--color-surface-elevated);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+@keyframes helpPopoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Below placement ──────────────────────────────── */
+
+.help-popover-content--below .help-popover-arrow {
+  top: calc(-1 * var(--space-2xs));
+  bottom: auto;
+}
+
+/* ── Dark mode ──────────────────────────────────── */
+
+[data-theme="dark"] .help-popover-content {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.48);
+}

@@ -26,6 +26,8 @@ describe('usePlayerStore', () => {
       loopMode: 'none',
       bandwidthEstimate: 0,
       isBuffering: false,
+      bufferedProgress: 0,
+      isFullscreen: false,
     })
   })
 
@@ -40,6 +42,8 @@ describe('usePlayerStore', () => {
     expect(state.mode).toBe('video')
     expect(state.platform).toBe('desktop')
     expect(state.loopMode).toBe('none')
+    expect(state.bufferedProgress).toBe(0)
+    expect(state.isFullscreen).toBe(false)
   })
 
   it('should set source', () => {
@@ -95,10 +99,25 @@ describe('usePlayerStore', () => {
     expect(usePlayerStore.getState().loopMode).toBe('single')
   })
 
+  it('should set buffered progress', () => {
+    usePlayerStore.getState().setBufferedProgress(0.75)
+    expect(usePlayerStore.getState().bufferedProgress).toBe(0.75)
+  })
+
+  it('should set fullscreen', () => {
+    usePlayerStore.getState().setFullscreen(true)
+    expect(usePlayerStore.getState().isFullscreen).toBe(true)
+
+    usePlayerStore.getState().setFullscreen(false)
+    expect(usePlayerStore.getState().isFullscreen).toBe(false)
+  })
+
   it('should reset to initial state', () => {
     usePlayerStore.getState().setPlaying(true)
     usePlayerStore.getState().setProgress(100)
     usePlayerStore.getState().setVolume(0.3)
+    usePlayerStore.getState().setBufferedProgress(0.5)
+    usePlayerStore.getState().setFullscreen(true)
     usePlayerStore.getState().reset()
 
     const state = usePlayerStore.getState()
@@ -106,5 +125,7 @@ describe('usePlayerStore', () => {
     expect(state.progress).toBe(0)
     expect(state.volume).toBe(1)
     expect(state.playbackRate).toBe(1)
+    expect(state.bufferedProgress).toBe(0)
+    expect(state.isFullscreen).toBe(false)
   })
 })
