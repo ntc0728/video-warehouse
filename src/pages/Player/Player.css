@@ -603,10 +603,20 @@
 }
 
 @keyframes skip-indicator-fade {
-  0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  70% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* ===== Auto-play countdown overlay ===== */
@@ -633,8 +643,8 @@
 }
 
 .player-autoplay-icon {
-  color: var(--color-primary);
   flex-shrink: 0;
+  color: var(--color-primary);
   animation: autoplay-pulse 1s ease-in-out infinite;
 }
 

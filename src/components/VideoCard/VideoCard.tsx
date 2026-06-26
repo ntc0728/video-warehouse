@@ -5,7 +5,7 @@
  * 评分左上 / 收藏右上 / 年份左下 / 类型右下 / 标题溢出跑马灯
  */
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Star, Heart } from 'lucide-react';
 import { useUserStore } from '@/stores';
 import { useIsTV } from '@/hooks/useMediaQuery';
@@ -44,7 +44,6 @@ const VideoCard = memo(function VideoCard({
   sizes,
   highlightQuery,
 }: VideoCardProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
   const [isAnimating, setIsAnimating] = useState(false);
@@ -82,17 +81,11 @@ const VideoCard = memo(function VideoCard({
     [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating],
   );
 
-  const handleClick = useCallback(() => {
-    if (batchMode) return;
-    navigate(`/detail/${video.id}`, {
-      state: { from: location.pathname + location.search },
-      viewTransition: true,
-    });
-  }, [batchMode, navigate, video.id, location.pathname, location.search]);
-
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleClick();
-  }, [handleClick]);
+    if (e.key === 'Enter' && batchMode) {
+      e.preventDefault();
+    }
+  }, [batchMode]);
 
   // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
   // 末尾卡片等数百毫秒才淡入"的问题。Browse 页一次性列表更大,累加效应更
@@ -100,12 +93,15 @@ const VideoCard = memo(function VideoCard({
   const stagger = { animationDelay: '0.012s' };
 
   return (
-    <div
-      className="video-card animate-card-enter"
+    <Link
+      to={`/detail/${video.id}`}
+      className={`video-card animate-card-enter ${batchMode ? 'video-card--batch' : ''}`}
       style={stagger}
-      onClick={handleClick}
+      state={{ from: location.pathname + location.search }}
       tabIndex={isTV ? 0 : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
+      aria-label={video.title}
+      onClick={batchMode ? (e) => { e.preventDefault(); } : undefined}
     >
       <div className="video-card-cover">
         <LazyImage
@@ -167,7 +163,7 @@ const VideoCard = memo(function VideoCard({
           </h3>
         </div>
       </div>
-    </div>
+    </Link>
   );
 });
 

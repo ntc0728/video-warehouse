@@ -309,10 +309,10 @@
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb, 22, 119, 255), 0.15);
   color: var(--color-primary);
+  font-family: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
   transition: background 0.2s ease;
-  font-family: inherit;
 }
 
 .iptv-osd-timeshift-btn:hover {
@@ -320,8 +320,8 @@
 }
 
 .iptv-osd-timeshift-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--layout-osd-timeshift-dot);
+  height: var(--layout-osd-timeshift-dot);
   border-radius: 50%;
   background: var(--color-primary);
   animation: timeshift-pulse 1.5s ease-in-out infinite;

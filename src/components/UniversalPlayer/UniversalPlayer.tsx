@@ -96,7 +96,6 @@ export default function UniversalPlayer({
   onPause,
   onError,
   onBack,
-  onRefresh,
   onChannelChange,
   onSkipIntro,
   onSkipOutro,
@@ -129,7 +128,7 @@ export default function UniversalPlayer({
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
 
-  // EPG data hook
+  // EPG 数据 hook
   const { epgReady, epgProgramsRef, epgStatus, epgError } = useEPGData({ mode, channels: _channels });
 
   // EPG 加载失败时显示 toast
@@ -139,7 +138,7 @@ export default function UniversalPlayer({
     }
   }, [epgStatus, epgError, mode]);
 
-  // IPTV navigation hook
+  // IPTV 导航 hook
   const {
     currentChannelId, setCurrentChannelId,
     currentChannelName, setCurrentChannelName,
@@ -159,7 +158,7 @@ export default function UniversalPlayer({
     return _channels.find(ch => ch.id === currentChannelId);
   }, [mode, currentChannelId, _channels]);
 
-  // Player controls hook
+  // 播放器控制 hook
   const {
     autoHideTimerRef,
     resetAutoHideTimer,
@@ -167,7 +166,7 @@ export default function UniversalPlayer({
     hideControls,
   } = usePlayerControls({ setControlsVisible, activePopover });
 
-  // Long press hook
+  // 长按 hook
   const {
     seekIndicator,
     hasLongPressedRef,
@@ -176,22 +175,23 @@ export default function UniversalPlayer({
     handlePointerLeave,
   } = useLongPress({
     onSeek: useCallback((direction: 'left' | 'right') => {
-      if (hasError) return;
+      if (hasError || isBuffering) return;
       const video = videoElementRef.current;
-      if (!video || video.error) return;
+      if (!video || video.error || video.readyState < 2) return;
       const seekAmount = direction === 'left' ? -6 : 6;
       video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount));
-    }, [hasError]),
+    }, [hasError, isBuffering]),
     mode,
+    disabled: isBuffering,
   });
 
-  // Subtitle import hook
+  // 字幕导入 hook
   const { handleImportSubtitle } = useSubtitleImport();
 
-  // Screenshot hook
+  // 截图 hook
   const { handleScreenshot } = useScreenshot({ title });
 
-  // Volume popup
+  // 音量弹窗
   const showVolumePopupWithTimer = useCallback(() => {
     setShowVolumePopup(true);
     if (volumePopupTimerRef.current) clearTimeout(volumePopupTimerRef.current);
@@ -220,7 +220,7 @@ export default function UniversalPlayer({
     }
   }, [hasError]);
 
-  // Keyboard shortcuts hook
+  // 键盘快捷键 hook
   useKeyboardShortcuts({
     platform,
     mode,
@@ -238,10 +238,10 @@ export default function UniversalPlayer({
     toggleFullscreen: handleToggleFullscreen,
   });
 
-  // IPTV timeout hook
+  // IPTV 超时 hook
   useIPTVTimeout({ mode, currentUrl, onTimeout: useCallback(() => setHasError(true), []) });
 
-  // Init effects
+  // 初始化 effect
   useEffect(() => { setMode(mode); }, [mode, setMode]);
   useEffect(() => { setPlatform(platform); }, [platform, setPlatform]);
   useEffect(() => { setSource(url, type); }, [url, type, setSource]);
@@ -253,7 +253,7 @@ export default function UniversalPlayer({
     }
   }, []);
 
-  // ResizeObserver
+  // 容器尺寸监听
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -270,7 +270,7 @@ export default function UniversalPlayer({
 
   const playerCore = usePlayerCore({
     url: mode === 'iptv' ? (currentUrl || url) : url,
-    type: (mode === 'iptv' ? currentType : type) as SourceType,
+    type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
     videoId,
     episodeId,
     skipHistory,
@@ -284,6 +284,12 @@ export default function UniversalPlayer({
     onSkipOutro,
     onError: useCallback((error: Error) => {
       if (currentUrlRef.current !== currentUrl) return;
+      // If video is already playing (e.g. audio works but video decode fails),
+      // show non-blocking toast instead of the full error overlay
+      if (videoElementRef.current && !videoElementRef.current.paused) {
+        toast.show({ content: error.message, duration: 5000 });
+        return;
+      }
       setHasError(true);
       onError?.(error);
     }, [currentUrl, onError]),
@@ -294,15 +300,15 @@ export default function UniversalPlayer({
     playerCore.videoRef(element);
   }, [playerCore]);
 
-  // Timeshift hook
+  // 时移 hook
   const timeshift = useTimeshift({ mode, playerCore });
 
-  // Sync timeshift support state for EPG program guide
+  // 同步时移支持状态，用于 EPG 节目单
   useEffect(() => {
     setTimeshiftSupported(timeshift.supportsTimeshift);
   }, [timeshift.supportsTimeshift]);
 
-  // TV input hook
+  // 电视输入 hook
   const {
     tvFocusGroupIndex, setTvFocusGroupIndex,
     tvFocusChannelIndex, setTvFocusChannelIndex,
@@ -316,7 +322,7 @@ export default function UniversalPlayer({
     onToggleChannelList: () => setChannelListVisible(!isChannelListVisible),
   });
 
-  // Init IPTV channel from URL
+  // 从 URL 初始化 IPTV 频道
   useEffect(() => {
     if (mode !== 'iptv' || !url || _channels.length === 0) return;
 
@@ -362,11 +368,11 @@ export default function UniversalPlayer({
     }
   }, [url, _channels, groups, mode, setCurrentChannelId, setCurrentChannelName, setCurrentType, setCurrentUrl, setTvFocusGroupIndex, setTvFocusChannelIndex]);
 
-  // Audio track polling (event-driven fallback: poll until tracks found, then stop)
+  // 音轨轮询（事件驱动回退：轮询直到找到音轨后停止）
   useEffect(() => {
     if (mode !== 'iptv' || currentType !== 'm3u8') return;
     const store = usePlayerStore.getState;
-    // If tracks already loaded, skip polling
+    // 如果音轨已加载，跳过轮询
     if (store().audioTracks.length > 0) return;
     const check = setInterval(() => {
       const tracks = playerCore.getAudioTracks();
@@ -376,12 +382,12 @@ export default function UniversalPlayer({
         clearInterval(check);
       }
     }, 1000);
-    // Safety timeout: stop polling after 15s
+    // 安全超时：15 秒后停止轮询
     const timeout = setTimeout(() => clearInterval(check), 15000);
     return () => { clearInterval(check); clearTimeout(timeout); };
   }, [mode, currentType, playerCore]);
 
-  // Buffer detection
+  // 缓冲检测
   useEffect(() => {
     const video = videoElementRef.current;
     if (!video) return;
@@ -417,6 +423,15 @@ export default function UniversalPlayer({
       return;
     }
 
+    // 控制栏隐藏时，单击仅显示控制栏，不切换播放/暂停
+    if (!isControlsVisible) {
+      showControls();
+      return;
+    }
+
+    // 缓冲中不响应暂停/播放切换
+    if (isBuffering) return;
+
     // 双击切换全屏
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
@@ -430,7 +445,7 @@ export default function UniversalPlayer({
         showControls();
       }, 250);
     }
-  }, [mode, playerCore, showControls, handleToggleFullscreen, hasLongPressedRef]);
+  }, [mode, isControlsVisible, isBuffering, playerCore, showControls, handleToggleFullscreen, hasLongPressedRef]);
 
   const handleRetry = useCallback(() => {
     const now = Date.now();
@@ -438,8 +453,7 @@ export default function UniversalPlayer({
     lastRetryRef.current = now;
     setHasError(false);
     setRetryCount(prev => prev + 1);
-    onRefresh?.();
-  }, [onRefresh]);
+  }, []);
 
   const handleOpenProgramGuide = useCallback(async () => {
     if (!currentChannelId) return;
@@ -447,7 +461,7 @@ export default function UniversalPlayer({
     const displayName = currentChannelName || channelName || '';
     setProgramGuideChannelName(displayName);
 
-    // Load EPG data for the current channel
+    // 加载当前频道的 EPG 数据
     try {
       const { fetchAndParseEPG, getChannelProgramsWithStatus: getProgs, matchEPGChannel } = await import('@/services/epgService');
       const epgData = await fetchAndParseEPG();
@@ -487,7 +501,7 @@ export default function UniversalPlayer({
         liveEdge = isFinite(video.duration) ? video.duration : 0;
       }
       const seekTarget = Math.max(0, liveEdge - secondsAgo);
-      // Clamp to seekable range
+      // 限制在可 seek 范围内
       if (video.seekable.length > 0) {
         const seekStart = video.seekable.start(0);
         video.currentTime = Math.max(seekStart, Math.min(liveEdge, seekTarget));
@@ -563,7 +577,7 @@ export default function UniversalPlayer({
     return undefined;
   }, [currentChannelId, groups]);
 
-  // Channel list visibility
+  // 频道列表可见性控制
   useEffect(() => {
     if (isChannelListVisible) {
       if (autoHideTimerRef.current) {
@@ -576,7 +590,7 @@ export default function UniversalPlayer({
     }
   }, [isChannelListVisible, hideControls, showControls, autoHideTimerRef]);
 
-  // Cleanup timers
+  // 清理定时器
   useEffect(() => {
     return () => {
       if (autoHideTimerRef.current) {
@@ -591,10 +605,10 @@ export default function UniversalPlayer({
     };
   }, [autoHideTimerRef]);
 
-  // Reset error when URL or channel changes
+  // URL 或频道变化时重置错误状态
   useEffect(() => { setHasError(false); }, [url, currentUrl]);
 
-  // Error state management
+  // 错误状态管理
   useEffect(() => {
     if (hasError) {
       setControlsVisible(true);
@@ -614,13 +628,14 @@ export default function UniversalPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasError, isPlaying]);
 
-  // Error recovery
+  // 错误恢复
   useEffect(() => {
     if (isPlaying && hasError) {
       setHasError(false);
     }
   }, [isPlaying, hasError]);
 
+  // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
     <PlayerErrorBoundary>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
@@ -754,7 +769,7 @@ export default function UniversalPlayer({
               <span className="up-program-guide-title">
                 {programGuideChannelName} · 节目单
               </span>
-              <button className="up-program-guide-close" onClick={handleCloseProgramGuide}>
+              <button className="up-program-guide-close" onClick={handleCloseProgramGuide} aria-label="关闭节目单">
                 <X size={18} />
               </button>
             </div>

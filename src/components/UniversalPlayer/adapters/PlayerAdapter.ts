@@ -26,13 +26,15 @@ export interface IPlayerAdapter {
   setCurrentAudioTrack(trackId: number): void;
   getCurrentAudioTrack(): number;
   resetErrorCount(): void;
-  /** Whether the stream is live (not VoD) */
+  /** 切换播放源（复用现有实例避免 destroy+recreate 导致的黑屏闪烁） */
+  switchSource(url: string, options?: Record<string, unknown>): void;
+  /** 流是否为直播（非点播） */
   isLive(): boolean;
-  /** Latency behind the live edge in seconds, or 0 if not live */
+  /** 落后实时边缘的延迟（秒），非直播返回 0 */
   getLiveLatency(): number;
-  /** Earliest seekable time (for DVR/timeshift window) */
+  /** 最早可 seek 的时间（DVR/时移窗口起点） */
   getSeekableStart(): number;
-  /** Latest seekable time (live edge) */
+  /** 最晚可 seek 的时间（实时边缘） */
   getSeekableEnd(): number;
   destroy(): void;
 }
@@ -51,6 +53,11 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
 
   detach(): void {
     this.video = null;
+  }
+
+  switchSource(url: string, _options?: Record<string, unknown>): void {
+    this.url = url;
+    this.resetErrorCount();
   }
 
   abstract play(): Promise<void>;
@@ -105,11 +112,11 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
   resetErrorCount(): void {}
 
   isLive(): boolean {
-    // Default: check if video element reports infinite duration
+    // 默认：检查 video 元素是否报告无限时长
     if (this.video && this.video.duration && isFinite(this.video.duration) && this.video.duration > 0) {
       return false;
     }
-    // If duration is Infinity or NaN, likely live
+    // 如果时长为 Infinity 或 NaN，则可能是直播
     return !this.video?.duration || !isFinite(this.video.duration);
   }
 

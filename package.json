@@ -20,9 +20,14 @@
     "deploy:cors": "cd worker && npx wrangler deploy -c wrangler-cors.toml",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:changed": "pwsh scripts/run-tests.ps1",
+    "test:smart": "pwsh scripts/run-tests.ps1 -AutoDetect",
+    "test:smoke": "pwsh scripts/run-tests.ps1 -AutoDetect -Group smoke",
+    "test:regression": "pwsh scripts/run-tests.ps1 -AutoDetect -Group regression"
   },
   "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-switch": "^1.2.6",

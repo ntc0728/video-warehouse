@@ -133,6 +133,33 @@
   text-overflow: ellipsis;
 }
 
+.source-error-cell {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+}
+
+.source-error-cell .source-error {
+  flex: 1;
+  min-width: 0;
+}
+
+.source-error-copy {
+  display: flex;
+  flex-shrink: 0;
+  padding: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
+.source-error-copy:hover {
+  background: var(--color-hover, rgba(128, 128, 128, 0.1));
+  color: var(--color-text);
+}
+
 .source-elapsed {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);

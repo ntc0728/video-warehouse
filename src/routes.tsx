@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react';
 import App from './App';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { AppLoading } from './components/common';
+import IPTVPlayerPage from './pages/IPTV/IPTVPlayer';
 import { isNativePlatform } from '@/lib/platform';
 
 // 路由懒加载时的 Loading 组件（全屏模式，防止白屏透出页面背景）
@@ -35,7 +36,6 @@ const SettingsPage = lazyWithRetry(() => import('./pages/Settings'));
 const CollectionsPage = lazyWithRetry(() => import('./pages/Collections'));
 const HistoryPage = lazyWithRetry(() => import('./pages/History'));
 const IPTVPage = lazyWithRetry(() => import('./pages/IPTV'));
-const IPTVPlayerPage = lazyWithRetry(() => import('./pages/IPTV/IPTVPlayer'));
 const SourceCheckerPage = lazyWithRetry(() => import('./pages/SourceChecker'));
 const BrowsePage = lazyWithRetry(() => import('./pages/Browse'));
 
@@ -60,7 +60,6 @@ const LazySettingsPage = withSuspense(SettingsPage);
 const LazyCollectionsPage = withSuspense(CollectionsPage);
 const LazyHistoryPage = withSuspense(HistoryPage);
 const LazyIPTVPage = withSuspense(IPTVPage);
-const LazyIPTVPlayerPage = withSuspense(IPTVPlayerPage);
 const LazySourceCheckerPage = withSuspense(SourceCheckerPage);
 const LazyBrowsePage = withSuspense(BrowsePage);
 
@@ -131,7 +130,7 @@ const routes = [
     // 且嵌套 overflow + flex 100% 继承链不稳定。独立路由 + fixed 定位
     // 可根本性解决滚动条 / 高度坍缩问题。
     path: '/iptv/play',
-    element: <LazyIPTVPlayerPage />,
+    element: <IPTVPlayerPage />,
   },
 ];
 

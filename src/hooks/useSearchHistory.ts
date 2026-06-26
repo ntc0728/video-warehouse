@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 const STORAGE_KEY = 'search-history';
 const MAX_ITEMS = 10;
 
+/** 从 localStorage 加载搜索历史 */
 function loadHistory(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -25,6 +26,7 @@ function loadHistory(): string[] {
   }
 }
 
+/** 将搜索历史保存到 localStorage */
 function saveHistory(history: string[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
@@ -33,6 +35,7 @@ function saveHistory(history: string[]): void {
   }
 }
 
+/** 搜索历史管理 Hook，支持增删清空，最多保留 10 条，跨标签页同步 */
 export function useSearchHistory() {
   const [history, setHistory] = useState<string[]>(loadHistory);
 

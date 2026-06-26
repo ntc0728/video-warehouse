@@ -38,10 +38,11 @@ function getAccessToken(): string | null {
       const parsed = JSON.parse(stored);
       return parsed?.state?.tmdbAccessToken || null;
     }
-  } catch { /* ignore */ }
+  } catch { /* localStorage 读取失败或数据格式异常时返回 null */ }
   return null;
 }
 
+/** 获取用户设置的 TMDB 语言偏好，默认 zh-CN */
 export function getLanguage(): string {
   try {
     const stored = localStorage.getItem('app-settings');
@@ -49,7 +50,7 @@ export function getLanguage(): string {
       const parsed = JSON.parse(stored);
       return parsed?.state?.tmdbLanguage || 'zh-CN';
     }
-  } catch { /* ignore */ }
+  } catch { /* localStorage 读取失败或数据格式异常时返回默认值 */ }
   return 'zh-CN';
 }
 
@@ -63,6 +64,7 @@ const TMDB_REQUEST_OPTIONS: RequestOptions = {
   retryDelay: 500,
 };
 
+/** 通用 TMDB API 请求方法，自动附加 Token 和语言参数 */
 export async function fetchTMDB<T>(
   endpoint: string,
   params: Record<string, string | number | undefined> = {},
@@ -103,11 +105,12 @@ export async function fetchTMDB<T>(
 }
 
 // ============================================================
-// Configuration
+// 配置
 // ============================================================
 
 let _imageConfig: TMDBConfigurationResponse | null = null;
 
+/** 获取 TMDB 图片配置（带缓存），用于构建图片 URL */
 export async function fetchConfiguration(): Promise<TMDBConfigurationResponse> {
   if (_imageConfig) return _imageConfig;
   _imageConfig = await fetchTMDB<TMDBConfigurationResponse>('/configuration');
@@ -118,6 +121,7 @@ export async function fetchConfiguration(): Promise<TMDBConfigurationResponse> {
 // 图片 URL
 // ============================================================
 
+/** 根据 TMDB 图片路径和尺寸构建完整图片 URL */
 export function buildImageUrl(path: string | null, size: string = 'w500'): string | null {
   if (!path) return null;
   return `${IMAGE_BASE_URL}/${size}${path}`;
@@ -141,38 +145,43 @@ export function buildImageSrcSet(
     .join(', ');
 }
 
+/** 构建原始尺寸的图片 URL */
 export function buildOriginalImageUrl(path: string | null): string | null {
   if (!path) return null;
   return `${IMAGE_BASE_URL}/original${path}`;
 }
 
 // ============================================================
-// Genres
+// 类型
 // ============================================================
 
+/** 获取电影类型列表 */
 export async function fetchMovieGenres(language?: string): Promise<TMDBGenre[]> {
   const data = await fetchTMDB<TMDBGenresResponse>('/genre/movie/list', language ? { language } : {});
   return data.genres;
 }
 
+/** 获取电视剧类型列表 */
 export async function fetchTVGenres(language?: string): Promise<TMDBGenre[]> {
   const data = await fetchTMDB<TMDBGenresResponse>('/genre/tv/list', language ? { language } : {});
   return data.genres;
 }
 
 // ============================================================
-// Countries
+// 国家/地区
 // ============================================================
 
+/** 获取所有国家/地区列表 */
 export async function fetchCountries(): Promise<TMDBCountry[]> {
   const data = await fetchTMDB<TMDBCountry[]>('/configuration/countries');
   return data;
 }
 
 // ============================================================
-// Trending
+// 热门趋势
 // ============================================================
 
+/** 获取热门趋势内容列表 */
 export async function fetchTrending(
   mediaType: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
@@ -181,41 +190,49 @@ export async function fetchTrending(
 }
 
 // ============================================================
-// Now Playing / Popular / Top Rated / Upcoming
+// 正在上映 / 热门 / 评分最高 / 即将上映
 // ============================================================
 
+/** 获取正在上映的电影列表 */
 export async function fetchNowPlaying(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/now_playing', { region: 'CN' });
 }
 
+/** 获取热门电影列表 */
 export async function fetchPopularMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/popular', { region: 'CN' });
 }
 
+/** 获取评分最高电影列表 */
 export async function fetchTopRatedMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/top_rated', { region: 'CN' });
 }
 
+/** 获取即将上映电影列表 */
 export async function fetchUpcomingMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/upcoming', { region: 'CN' });
 }
 
+/** 获取热门电视剧列表 */
 export async function fetchPopularTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/popular');
 }
 
+/** 获取评分最高电视剧列表 */
 export async function fetchTopRatedTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/top_rated');
 }
 
+/** 获取今日播出电视剧列表 */
 export async function fetchAiringTodayTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/airing_today');
 }
 
 // ============================================================
-// Search
+// 搜索
 // ============================================================
 
+/** 多类型联合搜索（电影、电视剧、人物等） */
 export async function searchMulti(
   query: string,
   page: number = 1,
@@ -228,9 +245,10 @@ export async function searchMulti(
 }
 
 // ============================================================
-// Discover
+// 发现/筛选
 // ============================================================
 
+/** 按筛选条件发现电影 */
 export async function discoverMovie(
   filters: Partial<TMDBFilterOptions>,
   page: number = 1,
@@ -247,6 +265,7 @@ export async function discoverMovie(
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/discover/movie', params);
 }
 
+/** 按筛选条件发现电视剧 */
 export async function discoverTV(
   filters: Partial<TMDBFilterOptions>,
   page: number = 1,
@@ -275,31 +294,35 @@ function getSortByParam(sortBy: string, sortOrder: string, mediaType: 'movie' | 
 }
 
 // ============================================================
-// Detail
+// 详情
 // ============================================================
 
+/** 获取电影详情（含演员、图片、视频、相似推荐等附加信息） */
 export async function fetchMovieDetail(movieId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBMovieDetail> {
   return fetchTMDB<TMDBMovieDetail>(`/movie/${movieId}`, {
     append_to_response: 'credits,images,videos,similar,recommendations',
   }, options);
 }
 
+/** 获取电视剧详情（含演员、图片、视频、相似推荐等附加信息） */
 export async function fetchTVDetail(tvId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBTVShowDetail> {
   return fetchTMDB<TMDBTVShowDetail>(`/tv/${tvId}`, {
     append_to_response: 'credits,images,videos,similar,recommendations',
   }, options);
 }
 
+/** 获取电影推荐列表 */
 export async function fetchMovieRecommendations(movieId: number): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${movieId}/recommendations`);
 }
 
+/** 获取电视剧推荐列表 */
 export async function fetchTVRecommendations(tvId: number): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>(`/tv/${tvId}/recommendations`);
 }
 
 // ============================================================
-// Images
+// 图片
 // ============================================================
 
 /**

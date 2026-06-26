@@ -68,6 +68,14 @@ export default function HomePage() {
     navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { viewTransition: true });
   }, [navigate]);
 
+  // ── Banner 项点击 → 跳到详情页 ──────────────────────
+  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
+    navigate(`/detail/${item.id}`, {
+      state: { from: location.pathname + location.search },
+      viewTransition: true,
+    });
+  }, [navigate, location.pathname, location.search]);
+
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
 
@@ -152,16 +160,11 @@ export default function HomePage() {
       )}
 
       {/*
-        注：原守卫 trending.length > 0 会在 trending 为空时让 HeroBanner 不挂载，
-        导致 hover 1.5s 后完全无响应。现在改为始终渲染，空数据由 HeroBanner 内部
-        EmptyState 占位处理（仍可响应 hover，提供清晰的视觉反馈）。
+        trending 为空时 HeroBanner 仍渲染，内部用 EmptyState 占位。
       */}
       <HeroBanner
         items={trending}
-        onItemClick={(item) => navigate(`/detail/${item.id}`, {
-          state: { from: location.pathname + location.search },
-          viewTransition: true,
-        })}
+        onItemClick={handleBannerItemClick}
       />
       <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
       <div className="home-rows">

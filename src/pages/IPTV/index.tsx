@@ -17,7 +17,8 @@ import { getEPGCacheTime } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Empty, BackToTopButton } from '@/components/common';
+import { useIPTVAutoRefresh } from '@/hooks/useIPTVAutoRefresh';
+import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { useShallow } from 'zustand/react/shallow';
 import { Search, X, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
@@ -91,6 +92,14 @@ export default function IPTVPage() {
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
   }, [searchKeyword, selectedGroup, saveState]);
+
+  // 优先从 IndexedDB 缓存加载（静默，不显示加载态）
+  useEffect(() => {
+    useIPTVStore.getState().loadFromCache();
+  }, []);
+
+  // 自动刷新频道列表
+  useIPTVAutoRefresh();
 
   // 获取节目单缓存时间
   useEffect(() => {
@@ -333,8 +342,8 @@ export default function IPTVPage() {
             检测{selectedGroup || '全部'}
           </button>
         )}
-        <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
-          {isLoading ? '刷新中...' : '刷新'}
+        <button className="refresh-btn" onClick={() => refreshChannels()}>
+          刷新
         </button>
       </div>
 
@@ -422,8 +431,13 @@ export default function IPTVPage() {
         </button>
       )}
 
+      {isLoading && channels.length === 0 && (
+        <div className="iptv-content-loading">
+          <AppLoading tip="加载频道列表…" showTip />
+        </div>
+      )}
       <div className="iptv-content">
-        {channels.length === 0 ? (
+        {!isLoading && channels.length === 0 ? (
           <Empty
             title="暂无频道数据"
             description={error || '请点击上方刷新按钮加载频道列表'}

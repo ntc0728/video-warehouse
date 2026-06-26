@@ -191,55 +191,6 @@
   margin-left: calc(-1 * var(--space-sm));
 }
 
-.collection-card {
-  position: relative;
-}
-.collection-card-check {
-  position: absolute;
-  top: var(--space-xs);
-  left: var(--space-xs);
-  z-index: 5;
-  display: flex;
-  padding: var(--space-2xs);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  cursor: pointer;
-}
-.collection-card-del {
-  position: absolute;
-  top: var(--space-xs);
-  right: var(--space-xs);
-  z-index: 5;
-  display: flex;
-  padding: var(--space-xs);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.5);
-  color: rgba(255,255,255,0.7);
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: pointer;
-}
-.collection-card:hover .collection-card-del,
-.collection-card-del:hover {
-  opacity: 1;
-}
-.collection-card-del:hover {
-  color: #ff4d4f;
-}
-
-/* 批量模式下删除按钮常驻显示 */
-.collection-page.batch-mode .collection-card-del {
-  opacity: 1;
-}
-
-/* 批量模式下内容区底部留白，避免被固定操作栏遮挡 */
-.collection-page.batch-mode .collection-content {
-  padding-bottom: calc(var(--space-2xl) + var(--space-md));
-}
-
 .collection-sentinel {
   height: var(--comp-thumb-size);
 }
@@ -347,7 +298,7 @@
   .collection-toolbar .toolbar-btn {
     padding: var(--space-sm);
   }
-  .collection-card-del {
+  .record-card__delete {
     opacity: 1;
   }
 }

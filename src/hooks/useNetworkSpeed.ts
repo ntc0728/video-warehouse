@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePlayerStore } from '@/stores';
 
+/** 将比特率转换为可读的速度字符串（B/s、KB/s、MB/s） */
 function formatSpeed(bps: number): string {
   if (bps <= 0) return '-- KB/s';
 
@@ -19,6 +20,11 @@ function formatSpeed(bps: number): string {
   }
 }
 
+/**
+ * 网络速度监测 Hook
+ * 每秒从播放器 store 读取带宽估算值并格式化为速度字符串
+ * @returns 当前网速的可读字符串，如 '1.5 MB/s'
+ */
 export function useNetworkSpeed(): string {
   const [speed, setSpeed] = useState('-- KB/s');
 

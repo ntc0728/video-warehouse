@@ -11,7 +11,7 @@ import { useScrollContainer } from '@/hooks/useScrollContext';
 import { CustomScrollbar } from '@/components/common';
 import './AdvancedFilterPanel.css';
 
-// ── Types ────────────────────────────────────────────
+  // ── 类型定义 ────────────────────────────────────────────
 
 export type MediaType = 'all' | 'movie' | 'tv';
 
@@ -45,7 +45,7 @@ interface AdvancedFilterPanelProps {
   countries: CountryItem[];
 }
 
-// ── Constants ────────────────────────────────────────
+  // ── 常量 ────────────────────────────────────────
 
 const RATING_OPTIONS = [
   { label: '不限', value: 0 },
@@ -66,7 +66,7 @@ const MEDIA_OPTIONS: { label: string; value: MediaType }[] = [
   { label: '剧集', value: 'tv' },
 ];
 
-// ── Component ────────────────────────────────────────
+  // ── 组件 ────────────────────────────────────────
 
 export default function AdvancedFilterPanel({
   open,
@@ -85,12 +85,12 @@ export default function AdvancedFilterPanel({
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
   const [closing, setClosing] = useState(false);
 
-  // Sync external filters
+  // 同步外部筛选条件
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
 
-  // Focus trap
+  // 焦点陷阱
   useEffect(() => {
     if (!open) return;
     const el = panelRef.current;
@@ -127,7 +127,7 @@ export default function AdvancedFilterPanel({
     return () => el.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  // Lock scroll container when open
+  // 打开时锁定滚动容器
   const scrollContainerRef = useScrollContainer();
   useEffect(() => {
     if (!open) return;
@@ -189,7 +189,7 @@ export default function AdvancedFilterPanel({
         aria-labelledby="filter-title"
         data-theme={theme}
       >
-        {/* Header */}
+        {/* 头部 */}
         <div className="filter-panel__header">
           <h2 id="filter-title" className="filter-panel__title">高级筛选</h2>
           <button className="filter-panel__close" onClick={handleClose} aria-label="关闭筛选面板">
@@ -197,9 +197,9 @@ export default function AdvancedFilterPanel({
           </button>
         </div>
 
-        {/* Body */}
+        {/* 内容区 */}
         <CustomScrollbar className="filter-panel__body" direction="vertical" autoHideDelay={600}>
-          {/* Media Type */}
+          {/* 媒体类型 */}
           <div className="filter-panel__section">
             <span className="filter-panel__label">类型</span>
             <div className="filter-panel__chips">
@@ -215,7 +215,7 @@ export default function AdvancedFilterPanel({
             </div>
           </div>
 
-          {/* Rating */}
+          {/* 评分 */}
           <div className="filter-panel__section">
             <span className="filter-panel__label">评分</span>
             <div className="filter-panel__chips">
@@ -231,7 +231,7 @@ export default function AdvancedFilterPanel({
             </div>
           </div>
 
-          {/* Sort */}
+          {/* 排序 */}
           <div className="filter-panel__section">
             <span className="filter-panel__label">排序</span>
             <div className="filter-panel__chips">
@@ -247,7 +247,7 @@ export default function AdvancedFilterPanel({
             </div>
           </div>
 
-          {/* Genres */}
+          {/* 分类 */}
           {genres.length > 0 && (
             <div className="filter-panel__section">
               <span className="filter-panel__label">分类</span>
@@ -265,7 +265,7 @@ export default function AdvancedFilterPanel({
             </div>
           )}
 
-          {/* Countries */}
+          {/* 地区 */}
           {countries.length > 0 && (
             <div className="filter-panel__section">
               <span className="filter-panel__label">地区</span>
@@ -294,7 +294,7 @@ export default function AdvancedFilterPanel({
           )}
         </CustomScrollbar>
 
-        {/* Footer */}
+        {/* 底部操作栏 */}
         <div className="filter-panel__footer">
           <button className="filter-panel__btn filter-panel__btn--reset" onClick={handleReset}>
             <RotateCcw size={16} />

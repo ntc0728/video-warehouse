@@ -9,7 +9,7 @@ import { useSettingsStore } from '@/stores';
 import { isNativePlatform } from '@/lib/platform';
 import type { RequestOptions } from '@/types/http';
 
-// Re-export for backward compatibility
+// 为向后兼容重新导出类型
 export type { CustomRequestConfig, RequestOptions } from '@/types/http';
 
 // ============================================================
@@ -45,16 +45,18 @@ export function getCorsProxy(): string {
       }
       return url;
     }
-  } catch { /* ignore */ }
+  } catch { /* 读取失败时使用空字符串兜底 */ }
   return '';
 }
 
+/** 将目标 URL 包装为完整的代理请求地址 */
 export function buildProxyUrl(targetUrl: string): string {
   const proxy = getCorsProxy();
   if (!proxy) return targetUrl;
   return proxy + encodeURIComponent(targetUrl);
 }
 
+/** 在 URL 末尾追加时间戳参数以防止缓存 */
 function cacheBustUrl(url: string): string {
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}_t=${Date.now()}`;

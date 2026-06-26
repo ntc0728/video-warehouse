@@ -1,14 +1,19 @@
 // 布局计算相关 Hook，提供网格布局的列数、行数动态计算
 import { useState, useEffect } from 'react';
 
+/** 布局模式类型 */
 export type LayoutMode = 'video' | 'iptv';
 
+/** 网格布局配置 */
 export interface LayoutConfig {
   columns: number;
   rows: number;
 }
 
-// 根据窗口宽度和布局模式计算网格列数和行数
+/**
+ * 根据窗口宽度和布局模式计算网格列数和行数
+ * @param mode 布局模式，默认 'video'
+ */
 export function getLayout(mode: LayoutMode = 'video'): LayoutConfig {
   const w = window.innerWidth;
 
@@ -29,7 +34,10 @@ export function getLayout(mode: LayoutMode = 'video'): LayoutConfig {
 const IPTV_CARD_HEIGHT_FALLBACK_DESKTOP = 72;
 const IPTV_CARD_HEIGHT_FALLBACK_MOBILE = 60;
 
-// 通过读取 CSS grid-template-columns 属性动态获取当前网格列数
+/**
+ * 动态读取 CSS grid-template-columns 获取当前网格列数
+ * @param element 网格容器 DOM 元素
+ */
 export function useGridColumns(element: HTMLElement | null): number {
   const [columns, setColumns] = useState(3);
 
@@ -58,7 +66,11 @@ export function useGridColumns(element: HTMLElement | null): number {
   return columns;
 }
 
-// 根据容器高度和卡片高度动态计算可显示的行数
+/**
+ * 根据容器高度和卡片高度动态计算可显示的行数
+ * @param element 网格容器 DOM 元素
+ * @param mode 布局模式，影响卡片高度的兜底值
+ */
 export function useGridRows(element: HTMLElement | null, mode: LayoutMode = 'iptv'): number {
   const [rows, setRows] = useState(4);
 

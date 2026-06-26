@@ -116,11 +116,13 @@ export async function getDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
   return dbInstance;
 }
 
+/** 获取所有视频记录 */
 export async function getAllVideos(): Promise<VideoRecord[]> {
   const db = await getDB();
   return db.getAll('videos');
 }
 
+/** 根据 ID 获取单条视频记录 */
 export async function getVideo(id: string): Promise<VideoRecord | undefined> {
   const db = await getDB();
   return db.get('videos', id);
@@ -147,6 +149,7 @@ export async function getHistory(): Promise<HistoryRecord[]> {
   return all.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+/** 清空所有观看历史记录 */
 export async function clearHistory(): Promise<void> {
   const db = await getDB();
   await db.clear('history');
@@ -158,6 +161,7 @@ export async function clearHistory(): Promise<void> {
 const IPTV_CACHE_KEY = 'iptv-channels';
 const IPTV_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 小时缓存
 
+/** 从缓存获取 IPTV 频道数据，验证过期时间和源 URL 一致性 */
 export async function getCachedIPTVChannels(sourceUrls: string[]): Promise<IPTVCacheData | null> {
   try {
     const db = await getDB();
@@ -183,11 +187,10 @@ export async function getCachedIPTVChannels(sourceUrls: string[]): Promise<IPTVC
       timestamp: cached.timestamp,
       sourceUrls: cached.sourceUrls,
     };
-  } catch {
-    return null;
-  }
+  } catch { /* 缓存读取或数据格式异常时返回 null */ return null; }
 }
 
+/** 将 IPTV 频道数据写入缓存 */
 export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> {
   try {
     const db = await getDB();
@@ -199,5 +202,5 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
       timestamp: data.timestamp,
       sourceUrls: data.sourceUrls,
     });
-  } catch { /* ignore */ }
+  } catch { /* 缓存写入失败不影响主流程 */ }
 }

@@ -14,6 +14,8 @@ export default function PiPButton({ isPiP, onClick }: PiPButtonProps) {
       className={`up-control-btn ${isPiP ? 'up-control-btn-active' : ''}`}
       onClick={onClick}
       title="画中画 (P)"
+      aria-label={isPiP ? '退出画中画' : '画中画'}
+      aria-pressed={isPiP}
     >
       <PictureInPicture2 size={20} />
     </button>

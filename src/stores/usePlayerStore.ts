@@ -154,7 +154,7 @@ export const usePlayerStore = create<PlayerState>()(
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;
-        // Migrate old subtitle-store settings if exists
+        // 如果存在则迁移旧版 subtitle-store 的设置
         let migratedSubtitleSettings = (currentState as { subtitleSettings: SubtitleSettings }).subtitleSettings;
         try {
           const oldSubtitleData = localStorage.getItem('subtitle-store');

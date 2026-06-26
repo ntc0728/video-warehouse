@@ -12,22 +12,22 @@ interface PlayerCoreApi {
 interface UseTimeshiftOptions {
   mode: string;
   playerCore: PlayerCoreApi;
-  /** Update interval in ms (default 2000) */
+  /** 检查间隔（毫秒，默认 2000） */
   checkIntervalMs?: number;
-  /** Threshold in seconds — if latency exceeds this, we consider the user "timeshifted" */
+  /** 延迟阈值（秒）— 超过此值视为用户处于时移状态 */
   latencyThreshold?: number;
 }
 
 interface UseTimeshiftResult {
-  /** Whether the stream supports timeshift (DVR window > 0) */
+  /** 流是否支持时移（DVR 窗口 > 0） */
   supportsTimeshift: boolean;
-  /** Whether the user is currently watching timeshifted content */
+  /** 用户当前是否在观看时移内容 */
   isTimeshifted: boolean;
-  /** Seconds behind the live edge */
+  /** 落后实时边缘的秒数 */
   latencySeconds: number;
-  /** Human-readable latency (e.g. "回看 5分钟") */
+  /** 可读的延迟标签（如 "回看 5分钟"） */
   latencyLabel: string;
-  /** Return to live edge */
+  /** 回到实时边缘 */
   returnToLive: () => void;
 }
 
@@ -48,7 +48,7 @@ export function useTimeshift({
   const [latencySeconds, setLatencySeconds] = useState(0);
   const hasReturnedToLiveRef = useRef(false);
 
-  // Detect timeshift support on mount and when mode changes
+  // 挂载时和模式变化时检测时移支持
   useEffect(() => {
     if (mode !== 'iptv') {
       setSupportsTimeshift(false);
@@ -57,7 +57,7 @@ export function useTimeshift({
       return;
     }
 
-    // Check if stream supports DVR
+    // 检查流是否支持 DVR
     const checkSupport = () => {
       const isLive = playerCore.isLive();
       if (!isLive) {
@@ -69,17 +69,17 @@ export function useTimeshift({
       const seekableEnd = playerCore.getSeekableEnd();
       const seekableWindow = seekableEnd - seekableStart;
 
-      // Consider DVR supported if seekable window > 30 seconds
+      // 可 seek 窗口 > 30 秒则视为支持 DVR
       setSupportsTimeshift(seekableWindow > 30);
     };
 
-    // Delay initial check to let HLS.js finish manifest parsing
+    // 延迟初始检查，等待 HLS.js 完成 manifest 解析
     const initialTimer = setTimeout(checkSupport, 3000);
 
     return () => clearTimeout(initialTimer);
   }, [mode, playerCore]);
 
-  // Poll for latency
+  // 轮询延迟
   useEffect(() => {
     if (mode !== 'iptv' || !supportsTimeshift) return;
 
@@ -103,7 +103,7 @@ export function useTimeshift({
       setIsTimeshifted(false);
       setLatencySeconds(0);
 
-      // Reset the flag after a short delay to re-enable detection
+      // 短暂延迟后重置标志，重新启用检测
       setTimeout(() => {
         hasReturnedToLiveRef.current = false;
       }, 500);

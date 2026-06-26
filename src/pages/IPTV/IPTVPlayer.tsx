@@ -51,28 +51,30 @@ export default function IPTVPlayerPage() {
       ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
       : channel.url;
     const encodedUrl = encodeURIComponent(playUrl);
-    navigate(`/iptv/play?url=${encodedUrl}`, { replace: true, state: { from: '/iptv' }, viewTransition: true });
+    navigate(`/iptv/play?url=${encodedUrl}`, { replace: true, state: { from: '/iptv' } });
   }, [navigate, settings]);
 
   if (!url) {
-    navigate('/iptv', { replace: true, viewTransition: true });
+    navigate('/iptv', { replace: true });
     return null;
   }
 
   return (
     <div className="iptv-player-page">
-      <div className="iptv-player-container">
-        <UniversalPlayer
-          mode="iptv"
-          platform={platform}
-          url={videoUrl}
-          type="m3u8"
-          channelName={channelName}
-          channels={channels}
-          groups={groups}
-          onBack={handleBack}
-          onChannelChange={handleChannelChange}
-        />
+      <div className="iptv-player__layout">
+        <div className="iptv-player-container">
+          <UniversalPlayer
+            mode="iptv"
+            platform={platform}
+            url={videoUrl}
+            type="m3u8"
+            channelName={channelName}
+            channels={channels}
+            groups={groups}
+            onBack={handleBack}
+            onChannelChange={handleChannelChange}
+          />
+        </div>
       </div>
     </div>
   );

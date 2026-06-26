@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+/** 下拉框定位信息 */
 interface DropdownPosition {
   top: number;
   left: number;
