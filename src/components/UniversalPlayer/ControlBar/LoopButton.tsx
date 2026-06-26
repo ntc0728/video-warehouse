@@ -22,6 +22,8 @@ export default function LoopButton({ mode, onChange }: LoopButtonProps) {
       className={`up-control-btn ${mode !== 'none' ? 'up-control-btn-active' : ''}`}
       onClick={handleClick}
       title={`${label} (L)`}
+      aria-label={label}
+      aria-pressed={mode !== 'none'}
     >
       {mode === 'single' ? <Repeat1 size={20} /> : <Repeat size={20} />}
     </button>

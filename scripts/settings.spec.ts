@@ -46,11 +46,38 @@ test.describe('Theme switching', () => {
   });
 });
 
+/* ─── Settings Sections ──────────────────────────────────── */
+test.describe('Settings sections', () => {
+  test('settings page has section groups', async ({ page }) => {
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    const sections = page.locator('.settings-page section');
+    const count = await sections.count();
+    expect(count).toBeGreaterThanOrEqual(5);
+  });
+
+  test('settings sections contain list items', async ({ page }) => {
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    const sections = page.locator('.settings-page section');
+    const count = await sections.count();
+    expect(count).toBeGreaterThan(0);
+  });
+});
+
 /* ─── Toggle Switches ────────────────────────────────────── */
 test.describe('Toggle switches', () => {
   test('settings has switch components', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
+    
+    // First expand the playback settings section which contains switches
+    const playbackSection = page.locator('.settings-accordion__item').filter({ hasText: '播放设置' });
+    if (await playbackSection.isVisible().catch(() => false)) {
+      await playbackSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(300);
+    }
+    
     const switches = page.locator('[role="switch"], .switch');
     const count = await switches.count();
     expect(count).toBeGreaterThan(0);
@@ -59,6 +86,14 @@ test.describe('Toggle switches', () => {
   test('clicking switch toggles state', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
+    
+    // First expand the playback settings section which contains switches
+    const playbackSection = page.locator('.settings-accordion__item').filter({ hasText: '播放设置' });
+    if (await playbackSection.isVisible().catch(() => false)) {
+      await playbackSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(300);
+    }
+    
     const firstSwitch = page.locator('[role="switch"], .switch').first();
     if (await firstSwitch.isVisible().catch(() => false)) {
       const initialState = await firstSwitch.getAttribute('data-state')
@@ -77,6 +112,14 @@ test.describe('Help popovers', () => {
   test('help popover triggers exist', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
+    
+    // First expand the video source section which contains help popovers
+    const videoSection = page.locator('.settings-accordion__item').filter({ hasText: '视频源' });
+    if (await videoSection.isVisible().catch(() => false)) {
+      await videoSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(300);
+    }
+    
     const triggers = page.locator('.help-popover-trigger, [data-help]');
     const count = await triggers.count();
     expect(count).toBeGreaterThan(0);
@@ -85,6 +128,14 @@ test.describe('Help popovers', () => {
   test('clicking help trigger opens popover', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
+    
+    // First expand the video source section which contains help popovers
+    const videoSection = page.locator('.settings-accordion__item').filter({ hasText: '视频源' });
+    if (await videoSection.isVisible().catch(() => false)) {
+      await videoSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(300);
+    }
+    
     const trigger = page.locator('.help-popover-trigger').first();
     if (await trigger.isVisible().catch(() => false)) {
       await trigger.click();
@@ -100,22 +151,40 @@ test.describe('Configuration modals', () => {
   test('TMDB token button opens modal', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    const tmdbBtn = page.locator('button, .btn').filter({ hasText: /TMDB|Token|配置/ }).first();
+    
+    // First expand the TMDB section which contains the token button
+    const tmdbSection = page.locator('.settings-accordion__item').filter({ hasText: 'TMDB' });
+    if (await tmdbSection.isVisible().catch(() => false)) {
+      await tmdbSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(500);
+    }
+    
+    // Look for the TMDB configuration button
+    const tmdbBtn = page.locator('button').filter({ hasText: /配置/ }).first();
     if (await tmdbBtn.isVisible().catch(() => false)) {
       await tmdbBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
       const modal = page.locator('[role="dialog"], .modal, .Modal');
-      await expect(modal.first()).toBeVisible();
+      await expect(modal.first()).toBeVisible({ timeout: 10000 });
     }
   });
 
   test('modal has input field', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    const tmdbBtn = page.locator('button, .btn').filter({ hasText: /TMDB|Token|配置/ }).first();
+    
+    // First expand the TMDB section which contains the token button
+    const tmdbSection = page.locator('.settings-accordion__item').filter({ hasText: 'TMDB' });
+    if (await tmdbSection.isVisible().catch(() => false)) {
+      await tmdbSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(500);
+    }
+    
+    // Look for the TMDB configuration button
+    const tmdbBtn = page.locator('button').filter({ hasText: /配置/ }).first();
     if (await tmdbBtn.isVisible().catch(() => false)) {
       await tmdbBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
       const input = page.locator('[role="dialog"] input, .modal input');
       const count = await input.count();
       expect(count).toBeGreaterThan(0);
@@ -128,6 +197,14 @@ test.describe('Source selection', () => {
   test('source dropdown exists', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
+    
+    // First expand the video source section which contains the dropdowns
+    const videoSection = page.locator('.settings-accordion__item').filter({ hasText: '视频源' });
+    if (await videoSection.isVisible().catch(() => false)) {
+      await videoSection.locator('.settings-accordion__trigger').click();
+      await page.waitForTimeout(300);
+    }
+    
     const dropdowns = page.locator('.source-multi-dropdown, [role="listbox"]');
     const count = await dropdowns.count();
     expect(count).toBeGreaterThan(0);

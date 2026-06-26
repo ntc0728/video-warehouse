@@ -22,7 +22,7 @@ export interface TMDBPaginatedResponse<T> {
 }
 
 // ============================================================
-// Genre
+// 类型
 // ============================================================
 
 export interface TMDBGenre {
@@ -35,7 +35,7 @@ export interface TMDBGenresResponse {
 }
 
 // ============================================================
-// Configuration（图片基础 URL）
+// 配置（图片基础 URL）
 // ============================================================
 
 export interface TMDBImageConfig {
@@ -54,7 +54,7 @@ export interface TMDBConfigurationResponse {
 }
 
 // ============================================================
-// Countries
+// 国家
 // ============================================================
 
 export interface TMDBCountry {
@@ -64,7 +64,7 @@ export interface TMDBCountry {
 }
 
 // ============================================================
-// Movie
+// 电影
 // ============================================================
 
 export interface TMDBMovie {
@@ -105,7 +105,7 @@ export interface TMDBMovieDetail extends TMDBMovie {
 }
 
 // ============================================================
-// TV Show
+// 电视剧
 // ============================================================
 
 export interface TMDBTVShow {
@@ -149,7 +149,7 @@ export interface TMDBTVShowDetail extends TMDBTVShow {
 }
 
 // ============================================================
-// Trending（统一的 movie + tv 混合结果）
+// 热门（统一的 movie + tv 混合结果）
 // ============================================================
 
 /** Trending 统一结果（movie + tv 混合） */
@@ -176,7 +176,7 @@ export interface TMDBTrendingItem {
 }
 
 // ============================================================
-// Search（/search/multi 返回）
+// 搜索（/search/multi 返回）
 // ============================================================
 
 export interface TMDBMultiSearchResult {
@@ -199,14 +199,14 @@ export interface TMDBMultiSearchResult {
   origin_country?: string[];
   original_title?: string;
   original_name?: string;
-  // Person fields (not used)
+  // 人物字段（未使用）
   known_for_department?: string;
   known_for?: unknown[];
   profile_path?: string | null;
 }
 
 // ============================================================
-// Credits
+// 演职员
 // ============================================================
 
 export interface TMDBCastMember {
@@ -231,7 +231,7 @@ export interface TMDBCredits {
 }
 
 // ============================================================
-// Images
+// 图片
 // ============================================================
 
 export interface TMDBImage {
@@ -251,7 +251,7 @@ export interface TMDBImages {
 }
 
 // ============================================================
-// Videos
+// 视频
 // ============================================================
 
 export interface TMDBVideo {

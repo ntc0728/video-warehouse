@@ -169,7 +169,7 @@ export const useIPTVStore = create<IPTVState>()(
           }).catch(() => {});
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to refresh channels',
+            error: error instanceof Error ? error.message : '刷新频道列表失败',
             isLoading: false,
           });
         }

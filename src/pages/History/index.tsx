@@ -23,17 +23,13 @@ import './History.css';
 
 const PAGE_SIZE = 30;
 
-/** 9 段分组（按时间从新到旧） */
+/** 5 段分组（按时间从新到旧） */
 const GROUP_ORDER = [
   '今天',
   '昨天',
-  '近一周',
-  '一周前',
-  '三周前',
-  '一月前',
-  '三月前',
-  '半年前',
-  '一年前',
+  '本周',
+  '本月',
+  '更早',
 ] as const;
 
 type GroupKey = (typeof GROUP_ORDER)[number];
@@ -58,36 +54,62 @@ function getDateGroup(ts: number): GroupKey {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const diff = todayStart - ts;
+  
+  // 今天
   if (diff < 0) return '今天';
+  
+  // 昨天（昨天 00:00 ~ 今天 00:00）
   if (diff < DAY_MS) return '昨天';
-  if (diff < 7 * DAY_MS) return '近一周';
-  if (diff < 14 * DAY_MS) return '一周前';
-  if (diff < 30 * DAY_MS) return '三周前';
-  if (diff < 60 * DAY_MS) return '一月前';
-  if (diff < 180 * DAY_MS) return '三月前';
-  if (diff < 365 * DAY_MS) return '半年前';
-  return '一年前';
+  
+  // 本周（周一 00:00 ~ 昨天 00:00）
+  const dayOfWeek = now.getDay() || 7; // 周日为 7
+  const weekStart = todayStart - (dayOfWeek - 1) * DAY_MS;
+  if (ts >= weekStart) return '本周';
+  
+  // 本月（1号 00:00 ~ 周一 00:00）
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  if (ts >= monthStart) return '本月';
+  
+  // 更早
+  return '更早';
 }
 
-function pad2(n: number): string {
-  return n < 10 ? `0${n}` : String(n);
-}
+const timeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
 
-/** 格式化播放时间：今天→HH:mm, 昨天/近一周→MM-DD HH:mm, 其余→YYYY-MM-DD */
+const shortTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+/** 格式化播放时间：今天→HH:mm, 昨天→昨天 HH:mm, 本周→周X HH:mm, 本月→M月D日, 更早→YYYY年M月D日 */
 function formatPlayTime(ts: number, groupKey: GroupKey): string {
-  const d = new Date(ts);
-  const HH = pad2(d.getHours());
-  const mm = pad2(d.getMinutes());
-  if (groupKey === '今天') return `${HH}:${mm}`;
-  if (groupKey === '昨天' || groupKey === '近一周') {
-    return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${HH}:${mm}`;
+  if (groupKey === '今天') return shortTimeFormatter.format(ts);
+  if (groupKey === '昨天') return `昨天 ${shortTimeFormatter.format(ts)}`;
+  if (groupKey === '本周') {
+    const date = new Date(ts);
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    return `${weekdays[date.getDay()]} ${shortTimeFormatter.format(ts)}`;
   }
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  if (groupKey === '本月') {
+    const date = new Date(ts);
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
+  }
+  // 更早
+  const date = new Date(ts);
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function formatFullTime(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  return timeFormatter.format(ts);
 }
 
 type Tab = 'video' | 'iptv';
@@ -123,7 +145,7 @@ export default function HistoryPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [activeGroupKey, setActiveGroupKey] = useState<GroupKey | null>(null);
 
-  // Confirm dialog state
+  // 确认对话框状态
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<ConfirmType>('single');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -155,7 +177,7 @@ export default function HistoryPage() {
     setVisibleCount(PAGE_SIZE);
   }, [activeTab, searchByTab.video, searchByTab.iptv, statusFilter]);
 
-  /** Determine watch status for a history video */
+  /** 判断历史视频的观看状态 */
   const getVideoWatchStatus = useCallback((videoId: string): VideoStatus => {
     const records = watchHistory.filter(h => h.videoId === videoId);
     if (records.length === 0) return 'unfinished';
@@ -192,7 +214,7 @@ export default function HistoryPage() {
     return list;
   }, [watchHistory, videos, searchByTab.video, statusFilter, getVideoWatchStatus]);
 
-  /** Counts for status tabs (before status filter) */
+  /** 状态标签的计数（在状态筛选之前） */
   const statusCounts = useMemo(() => {
     let list = [...watchHistory].map(h => ({ id: h.videoId, status: getVideoWatchStatus(h.videoId) }));
     if (searchByTab.video.trim()) {
@@ -343,7 +365,7 @@ export default function HistoryPage() {
   });
   const selectAll = () => setSelected(selected.size === currentList.length ? new Set() : new Set(currentList.map((v) => v.id)));
 
-  // Execute delete based on confirm type
+  // 根据确认类型执行删除
   const executeDelete = useCallback(() => {
     if (confirmType === 'single' && pendingDeleteId) {
       if (activeTab === 'video') removeHistory(pendingDeleteId);
@@ -359,7 +381,7 @@ export default function HistoryPage() {
     setPendingDeleteId(null);
   }, [confirmType, pendingDeleteId, selected, activeTab, removeHistory, removePlayRecord, clearHistory, clearPlayHistory]);
 
-  // Open confirm dialogs
+  // 打开确认对话框
   const handleSingleDelete = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPendingDeleteId(id);
@@ -377,7 +399,7 @@ export default function HistoryPage() {
     setConfirmOpen(true);
   }, []);
 
-  // Confirm dialog content
+  // 确认对话框内容
   const confirmTitle = confirmType === 'single'
     ? '确认删除'
     : confirmType === 'batch'
@@ -497,18 +519,18 @@ export default function HistoryPage() {
                   {(grouped[group] as HistoryVideoItem[]).map((video) => (
                     <div
                       key={video.id}
-                      className={`history-card ${batchMode && selected.has(video.id) ? 'selected' : ''}`}
+                      className={`record-card ${batchMode && selected.has(video.id) ? 'record-card--selected' : ''}`}
                       onClick={batchMode ? () => toggleSelect(video.id) : undefined}
                     >
                       {batchMode && (
-                        <button className="history-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }}>
+                        <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
                           {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
                       )}
-                      <button className="history-card-del" onClick={(e) => handleSingleDelete(video._histId, e)} title="删除"><Trash2 size={14} /></button>
+                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(video._histId, e)} aria-label="删除"><Trash2 size={14} /></button>
                       <VideoCard video={video} hideFavorite batchMode={batchMode} />
                       <span
-                        className="history-card-time"
+                        className="record-card__time"
                         title={formatFullTime(video._histTime)}
                       >
                         {formatPlayTime(video._histTime, group as GroupKey)}
@@ -521,18 +543,18 @@ export default function HistoryPage() {
                   {(grouped[group] as HistoryChannelItem[]).map((ch) => (
                     <div
                       key={ch.id}
-                      className={`history-channel-card-wrap ${batchMode && selected.has(ch.id) ? 'selected' : ''}`}
+                      className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
                       onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
                     >
                       {batchMode && (
-                        <button className="history-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }}>
+                        <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
                           {selected.has(ch.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
                       )}
-                      <button className="history-card-del" onClick={(e) => handleSingleDelete(ch.id, e)} title="删除"><Trash2 size={14} /></button>
+                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Trash2 size={14} /></button>
                       <IPTVChannelCard channel={ch as IPTVChannel} hideFavorite batchMode={batchMode} />
                       <span
-                        className="history-card-time"
+                        className="record-card__time"
                         title={formatFullTime(ch._histTime)}
                       >
                         {formatPlayTime(ch._histTime, group as GroupKey)}

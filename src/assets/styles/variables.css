@@ -182,6 +182,11 @@
   --layout-groups-collapsed-h: 76px;
   --layout-select-w:           140px;
   --layout-select-w-mobile:    120px;
+  --layout-epg-max-height:     400px;
+  --layout-epg-empty-min-height: 100px;
+  --layout-epg-time-min-width: 100px;
+  --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg)));
+  --layout-osd-timeshift-dot:  6px;
   --layout-detail-hero-play-icon: 8.571rem;
   --layout-outline-width:      2px;
   --layout-tabbar-height:      56px;

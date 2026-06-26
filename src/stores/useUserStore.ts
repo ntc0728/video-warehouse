@@ -165,7 +165,7 @@ export const useUserStore = create<UserState>()(
       name: 'user-store',
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;
-        // Migrate old rating-store data if exists
+        // 如果存在则迁移旧版 rating-store 的评分数据
         let migratedRatings: RatingRecord[] = [];
         try {
           const oldRatingData = localStorage.getItem('rating-store');

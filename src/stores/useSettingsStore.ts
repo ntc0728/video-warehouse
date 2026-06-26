@@ -5,9 +5,11 @@
  *
  * [批次3合并] 原 useSubtitleStore 的翻译 API 配置（translationAppId/translationApiKey/autoTranslate/targetLang）已合并到此 store
  * [数据迁移] 旧 localStorage key `subtitle-store` 的 translation API 数据会在首次加载时自动迁移到 `app-settings`
+ * [安全] 敏感字段（tmdbAccessToken、translationApiKey）使用 AES-GCM 加密存储
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { encryptText, decryptText } from '@/lib/crypto';
 import type { AppSettings } from '@/types';
 
 interface SettingsState extends AppSettings {
@@ -44,6 +46,8 @@ interface SettingsState extends AppSettings {
   getEffectiveTheme: () => 'light' | 'dark';
 }
 
+const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
@@ -77,10 +81,23 @@ export const useSettingsStore = create<SettingsState>()(
       setEpgUrls: (urls) => set({ epgUrls: urls }),
       setEpgUpdateInterval: (hours) => set({ epgUpdateInterval: Math.min(24, Math.max(1, hours)) }),
       setRememberVolume: (value) => set({ rememberVolume: value }),
-      setTMDBToken: (token) => set({ tmdbAccessToken: token }),
+      setTMDBToken: (token) => {
+        // 明文存储供内存立即使用
+        set({ tmdbAccessToken: token });
+        // 异步加密以供持久化存储
+        encryptText(token).then((encrypted) => {
+          // 更新为加密后的值以便持久化存储
+          useSettingsStore.setState({ tmdbAccessToken: encrypted });
+        });
+      },
       setTMDBLanguage: (lang) => set({ tmdbLanguage: lang }),
       setTranslationAppId: (translationAppId) => set({ translationAppId }),
-      setTranslationApiKey: (translationApiKey) => set({ translationApiKey }),
+      setTranslationApiKey: (translationApiKey) => {
+        set({ translationApiKey });
+        encryptText(translationApiKey).then((encrypted) => {
+          useSettingsStore.setState({ translationApiKey: encrypted });
+        });
+      },
       setAutoTranslate: (autoTranslate) => set({ autoTranslate }),
       setTargetLang: (targetLang) => set({ targetLang }),
       setSkipIntro: (skipIntro) => set({ skipIntro }),
@@ -101,7 +118,7 @@ export const useSettingsStore = create<SettingsState>()(
       name: 'app-settings',
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;
-        // Migrate old subtitle-store translation API config if exists
+        // 如果存在则迁移旧版 subtitle-store 的翻译 API 配置
         let migratedTranslation = {
           translationAppId: '',
           translationApiKey: '',
@@ -132,6 +149,16 @@ export const useSettingsStore = create<SettingsState>()(
           autoTranslate: migratedTranslation.autoTranslate ?? ((persisted?.autoTranslate as boolean) ?? true),
           targetLang: migratedTranslation.targetLang || (persisted?.targetLang as string) || 'zh',
         } as SettingsState;
+      },
+      onRehydrateStorage: () => async (state) => {
+        if (!state) return;
+        for (const key of SENSITIVE_FIELDS) {
+          const value = state[key as keyof typeof state];
+          if (typeof value === 'string' && value) {
+            const decrypted = await decryptText(value);
+            (state as unknown as Record<string, unknown>)[key] = decrypted;
+          }
+        }
       },
     }
   )

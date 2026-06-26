@@ -9,13 +9,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources } from '@/services/videoService';
-import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
+import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
 import { VideoCard } from '@/components/VideoCard';
+import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar, ArrowLeft,
@@ -92,6 +93,14 @@ export default function DetailPage() {
   const [tmdbError, setTmdbError] = useState<string | null>(null);
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
 
+  // 剧照
+  const [stills, setStills] = useState<string[]>([]);
+  const [stillsLoading, setStillsLoading] = useState(false);
+
+  // 剧照灯箱
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   // CMS
   const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
@@ -99,6 +108,36 @@ export default function DetailPage() {
   const [cmsError, setCmsError] = useState<string | null>(null);
   const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
+
+  // 剧照网格：先渲染全部测量列数，再限制 2 行
+  const stillsGridRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(Number.MAX_SAFE_INTEGER);
+  useEffect(() => {
+    const el = stillsGridRef.current;
+    if (!el || stills.length === 0) return;
+    let raf: number;
+    const measure = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const children = el.children;
+        if (children.length === 0) return;
+        const firstTop = (children[0] as HTMLElement).offsetTop;
+        let cols = 1;
+        for (let i = 1; i < children.length; i++) {
+          if ((children[i] as HTMLElement).offsetTop === firstTop) cols++;
+          else break;
+        }
+        setVisibleCount(cols * 2);
+      });
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [stills.length]);
 
   // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
   const restoredRef = useRef(false);
@@ -175,6 +214,38 @@ export default function DetailPage() {
   }, [activeTab, cmsLoaded, cmsLoading, fetchCMSSources]);
 
   useEffect(() => () => cmsAbortRef.current?.abort(), []);
+
+  // ── 剧照加载 ─────────────────────────────────────
+  useEffect(() => {
+    if (!tmdbDetail || !id) return;
+    if (!id.startsWith('tmdb-')) return;
+    const parts = id.replace('tmdb-', '').split('-');
+    const mt = parts[0] as 'movie' | 'tv';
+    const tid = parseInt(parts.slice(1).join('-'), 10);
+    if (isNaN(tid)) return;
+
+    const ctrl = new AbortController();
+    setStillsLoading(true);
+
+    (async () => {
+      try {
+        const images = mt === 'tv'
+          ? await fetchTVImages(tid, { signal: ctrl.signal })
+          : await fetchMovieImages(tid, { signal: ctrl.signal });
+        if (ctrl.signal.aborted) return;
+        const urls = (images.backdrops || [])
+          .map((b) => buildImageUrl(b.file_path, 'w1280'))
+          .filter((u): u is string => Boolean(u));
+        setStills(urls);
+      } catch {
+        if (!ctrl.signal.aborted) setStills([]);
+      } finally {
+        if (!ctrl.signal.aborted) setStillsLoading(false);
+      }
+    })();
+
+    return () => ctrl.abort();
+  }, [tmdbDetail, id]);
 
   // ── 页面状态保存（离开后返回恢复） ─────────────
   useEffect(() => {
@@ -293,7 +364,7 @@ export default function DetailPage() {
           ══════════════════════════════════════════════ */}
       <section className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
         {backdropUrl && (
-          <img className="detail-hero-bg" src={backdropUrl} alt="" onLoad={() => setBgLoaded(true)} />
+          <img className="detail-hero-bg" src={backdropUrl} alt="" width={1920} height={1080} onLoad={() => setBgLoaded(true)} />
         )}
         {/* 双层渐变遮罩 */}
         <div className="detail-hero-gradient detail-hero-gradient-1" />
@@ -318,7 +389,7 @@ export default function DetailPage() {
           <div className="detail-hero-left">
             {/* Logo 或标题 */}
             {logoPath ? (
-              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w500') || ''} alt={title} />
+              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w500') || ''} alt={title} width={400} height={150} />
             ) : (
               <h1 className="detail-hero-title">{title}</h1>
             )}
@@ -355,10 +426,10 @@ export default function DetailPage() {
                   从头播放
                 </button>
               )}
-              <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect}>
+              <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect} aria-pressed={collected}>
                 <Heart size={18} fill={collected ? 'var(--color-favorite-active)' : 'none'}
                   color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
-                加入收藏
+                {collected ? '已收藏' : '加入收藏'}
               </button>
             </div>
 
@@ -380,7 +451,7 @@ export default function DetailPage() {
           {/* 桌面端右侧海报 */}
           {posterUrl && (
             <div className="detail-hero-poster">
-              <img src={posterUrl} alt={title} />
+              <img src={posterUrl} alt={title} width={300} height={450} />
             </div>
           )}
         </div>
@@ -426,8 +497,8 @@ export default function DetailPage() {
               {director && <div className="detail-info-card"><UsersIcon size={16} /><span>导演</span><strong>{director}</strong></div>}
               {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size={16} /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
               {companies.length > 0 && <div className="detail-info-card"><FilmIcon size={16} /><span>发行</span><strong>{companies.join(' / ')}</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>预算</span><strong>${((d as TMDBMovieDetail).budget / 1000000).toFixed(0)}M</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>票房</span><strong>${((d as TMDBMovieDetail).revenue / 1000000).toFixed(0)}M</strong></div>}
+              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
+              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
             </div>
 
             {cast.length > 0 && (
@@ -437,7 +508,7 @@ export default function DetailPage() {
                   {cast.map((c) => (
                     <div key={c.id} className="detail-cast-item">
                       {c.profile_path ? (
-                        <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} />
+                        <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} width={200} height={300} />
                       ) : (
                         <span className="detail-cast-avatar"><UsersIcon size={18} /></span>
                       )}
@@ -455,6 +526,61 @@ export default function DetailPage() {
                 <p className="detail-overview-full">{overview}</p>
               </>
             )}
+
+            {(stills.length > 0 || stillsLoading) && (
+              <>
+                <h3 className="detail-section-subtitle">剧照</h3>
+                {stillsLoading ? (
+                  <div className="detail-stills-grid">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="detail-stills-skeleton" />
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className={`detail-stills-grid${visibleCount < Number.MAX_SAFE_INTEGER ? ' detail-stills-grid--limited' : ''}`}
+                    ref={stillsGridRef}
+                  >
+                    {stills.slice(0, visibleCount < Number.MAX_SAFE_INTEGER ? visibleCount : undefined).map((url, i) => {
+                      const isLast = visibleCount < Number.MAX_SAFE_INTEGER && i === visibleCount - 1 && stills.length > visibleCount;
+                      return (
+                        <div
+                          key={url}
+                          className={`detail-stills-item${isLast ? ' detail-stills-item--more' : ''}`}
+                          onClick={() => {
+                            setLightboxIndex(i);
+                            setLightboxOpen(true);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setLightboxIndex(i);
+                              setLightboxOpen(true);
+                            }
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`剧照 ${i + 1}`}
+                            loading="lazy"
+                            width={1280}
+                            height={720}
+                          />
+                          {isLast && (
+                            <div className="detail-stills-more">
+                              <span className="detail-stills-more__count">+{stills.length - visibleCount}</span>
+                              <span className="detail-stills-more__text">查看更多</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -462,7 +588,11 @@ export default function DetailPage() {
         {activeTab === 'sources' && (
           <div className="detail-sources">
             {cmsLoading ? (
-              <div className="detail-state"><AppLoading /></div>
+              <div className="playlist-skeleton" aria-busy="true" aria-label="加载播放列表中">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="playlist-skeleton-row" />
+                ))}
+              </div>
             ) : cmsError ? (
               <div className="detail-state detail-state--error">
                 <WifiOff size={32} /><p>{cmsError}</p>
@@ -546,7 +676,7 @@ export default function DetailPage() {
               <div key={s.id} className="detail-season-card">
                 <div className="detail-season-poster">
                   {s.poster_path ? (
-                    <img src={buildImageUrl(s.poster_path, 'w300') || ''} alt={s.name} />
+                    <img src={buildImageUrl(s.poster_path, 'w300') || ''} alt={s.name} width={300} height={450} />
                   ) : (
                     <span className="detail-cast-avatar"><Layers size={22} /></span>
                   )}
@@ -593,11 +723,30 @@ export default function DetailPage() {
       )}
 
       <BackToTopButton />
+
+      <StillsLightbox
+        urls={stills}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 }
 
 // ── 辅助函数 ──────────────────────────────────────
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+function formatCurrency(value?: number): string {
+  if (!value) return '-';
+  return currencyFormatter.format(value);
+}
 
 /** 格式化进度时间（秒 → mm:ss 或 hh:mm:ss） */
 function formatProgressTime(seconds: number): string {

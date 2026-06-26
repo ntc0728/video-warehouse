@@ -3,8 +3,7 @@
  * 桌面端左侧导航栏，支持展开/收起切换
  * 移动端 overlay 模式，从左侧滑入
  */
-import { useNavigate, useLocation } from 'react-router-dom';
-import { navTo } from '@/lib/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
   Tv,
@@ -15,7 +14,14 @@ import {
   PanelLeftOpen,
   X,
 } from 'lucide-react';
-import { useHeaderContent } from '@/components/Layout/useHeaderContent';
+
+const ariaLabels: Record<string, string> = {
+  '/': '首页',
+  '/iptv': 'IPTV',
+  '/collections': '收藏',
+  '/history': '历史记录',
+  '/settings': '设置',
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,18 +38,11 @@ const tabs = [
 ];
 
 export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { goHome } = useHeaderContent();
 
   const sidebarWidth = isMobile ? 200 : 240;
 
-  const handleTabClick = (key: string) => {
-    if (key === '/') {
-      goHome();
-    } else {
-      navTo(navigate, key, location.pathname + location.search);
-    }
+  const handleTabClick = () => {
     if (isMobile) onToggle();
   };
 
@@ -57,7 +56,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
         >
           <div className="sidebar-header">
             <span className="sidebar-title animate-slide-in-left">影视大全</span>
-            <button onClick={onToggle} className="sidebar-toggle-btn btn-press">
+            <button onClick={onToggle} className="sidebar-toggle-btn btn-press" aria-label="关闭侧边栏">
               <X size={18} />
             </button>
           </div>
@@ -67,17 +66,20 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
                 ? location.pathname === '/'
                 : location.pathname.startsWith(tab.key);
               return (
-                <div
+                <Link
                   key={tab.key}
-                  onClick={() => handleTabClick(tab.key)}
+                  to={tab.key}
                   className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={ariaLabels[tab.key]}
+                  onClick={handleTabClick}
                 >
                   {isActive && <div className="sidebar-nav-indicator" />}
-                  <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`}>
+                  <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
                     {isActive ? tab.activeIcon : tab.icon}
                   </span>
                   <span className="sidebar-nav-text">{tab.title}</span>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -99,6 +101,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
         <button
           onClick={onToggle}
           className="sidebar-toggle-btn btn-press"
+          aria-label={isOpen ? '收起侧边栏' : '展开侧边栏'}
         >
           {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
@@ -106,22 +109,23 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
 
       <div className="sidebar-nav">
         {tabs.map((tab) => {
-          // 首页精确匹配，其他路由前缀匹配
           const isActive = tab.key === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(tab.key);
           return (
-            <div
+            <Link
               key={tab.key}
-              onClick={() => handleTabClick(tab.key)}
+              to={tab.key}
               className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={ariaLabels[tab.key]}
             >
               {isActive && <div className="sidebar-nav-indicator" />}
-              <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`}>
+              <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
                 {isActive ? tab.activeIcon : tab.icon}
               </span>
               <span className="sidebar-nav-text">{tab.title}</span>
-            </div>
+            </Link>
           );
         })}
       </div>

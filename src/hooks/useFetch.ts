@@ -1,6 +1,7 @@
 // 数据请求 Hook，支持自动重试和指数退避策略
 import { useState, useCallback } from 'react';
 
+/** 数据请求配置选项 */
 interface UseFetchOptions<T = unknown> extends RequestInit {
   retries?: number;
   retryDelay?: number;
@@ -9,6 +10,7 @@ interface UseFetchOptions<T = unknown> extends RequestInit {
   onSuccess?: (data: T) => void;
 }
 
+/** 数据请求返回值 */
 interface UseFetchReturn<T> {
   data: T | null;
   loading: boolean;
@@ -18,6 +20,12 @@ interface UseFetchReturn<T> {
   reset: () => void;
 }
 
+/**
+ * 数据请求 Hook，支持自动重试和指数退避策略
+ * @param url 请求地址
+ * @param options 请求配置（继承 RequestInit + 重试/回调选项）
+ * @returns 包含 data、loading、error、execute、reset 的请求状态对象
+ */
 export function useFetch<T = unknown>(
   url: string,
   options: UseFetchOptions<T> = {}
@@ -104,7 +112,7 @@ export function useFetch<T = unknown>(
   };
 }
 
-// 带默认重试配置的请求 Hook
+/** 带默认重试配置的请求 Hook（重试 2 次，延迟 1 秒起） */
 export function useRetryFetch<T = unknown>(
   url: string,
   options: UseFetchOptions<T> = {}

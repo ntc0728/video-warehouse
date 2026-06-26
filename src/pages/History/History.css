@@ -261,103 +261,15 @@
   }
 }
 
-.history-card {
-  position: relative;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.history-card:hover {
+/* 历史页记录卡片 hover：整体上移，并覆盖内部卡片的 hover transform */
+.history-content .record-card:hover {
   transform: translateY(-3px);
 }
 
-/* 覆盖 VideoCard 自身的 hover transform，避免叠加 */
-.history-card:hover .video-card {
+/* 覆盖 VideoCard / IPTVChannelCard 自身的 hover transform，避免叠加 */
+.history-content .record-card:hover .video-card,
+.history-content .record-card:hover .iptv-channel-card {
   transform: none;
-}
-
-/* IPTV 频道卡包装层（用于叠加 check 框与 time 标签） */
-.history-channel-card-wrap {
-  position: relative;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.history-channel-card-wrap:hover {
-  transform: translateY(-3px);
-}
-
-/* 覆盖 IPTVChannelCard 自身的 hover transform，避免叠加 */
-.history-channel-card-wrap:hover .iptv-channel-card {
-  transform: none;
-}
-
-.history-card-check {
-  position: absolute;
-  top: var(--space-xs);
-  left: var(--space-xs);
-  z-index: 5;
-  display: flex;
-  padding: var(--space-2xs);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  cursor: pointer;
-}
-.history-card-del {
-  position: absolute;
-  top: var(--space-xs);
-  right: var(--space-xs);
-  z-index: 5;
-  display: flex;
-  padding: var(--space-xs);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.5);
-  color: rgba(255,255,255,0.7);
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: pointer;
-}
-.history-card:hover .history-card-del,
-.history-card-del:hover {
-  opacity: 1;
-}
-.history-card-del:hover {
-  color: #ff4d4f;
-}
-
-/* 批量模式下删除按钮常驻显示 */
-.history-page.batch-mode .history-card-del {
-  opacity: 1;
-}
-
-/* 批量模式下内容区底部留白，避免被固定操作栏遮挡 */
-.history-page.batch-mode .history-content {
-  padding-bottom: calc(var(--space-2xl) + var(--space-md));
-}
-
-/* 卡片标题右侧 — 最近播放时间 */
-.history-card-time {
-  position: absolute;
-  right: var(--space-sm);
-  bottom: var(--space-xs);
-  z-index: 3;
-  padding: 0 var(--space-2xs);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  line-height: 1.5;
-  white-space: nowrap;
-  opacity: 0.85;
-  pointer-events: auto;
-  transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.history-card:hover .history-card-time {
-  color: var(--color-text-secondary);
-  opacity: 1;
 }
 
 .history-sentinel {
@@ -468,7 +380,7 @@
   .history-toolbar .toolbar-btn {
     padding: var(--space-sm);
   }
-  .history-card-del {
+  .record-card__delete {
     opacity: 1;
   }
 
@@ -482,7 +394,7 @@
     flex-direction: column;
     padding: 0 var(--space-sm);
   }
-  .history-card-time {
+  .record-card__time {
     font-size: var(--text-xs);
   }
 }

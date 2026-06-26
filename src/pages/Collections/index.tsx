@@ -308,15 +308,15 @@ export default function CollectionsPage() {
             {(displayedList as CollectionVideoItem[]).map((video) => (
               <div
                 key={video.id}
-                className={`collection-card ${batchMode && selected.has(video.id) ? 'selected' : ''}`}
+                className={`record-card ${batchMode && selected.has(video.id) ? 'record-card--selected' : ''}`}
                 onClick={batchMode ? () => toggleSelect(video.id) : undefined}
               >
                 {batchMode && (
-                  <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }}>
+                  <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
                     {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                   </button>
                 )}
-                <button className="collection-card-del" onClick={(e) => handleSingleDelete(video.id, e)} title="删除"><Trash2 size={14} /></button>
+                <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Trash2 size={14} /></button>
                 <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} />
               </div>
             ))}
@@ -326,15 +326,15 @@ export default function CollectionsPage() {
             {(displayedList as IPTVChannel[]).map((ch) => (
               <div
                 key={ch.id}
-                className={`collection-card ${batchMode && selected.has(ch.id) ? 'selected' : ''}`}
+                className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
                 onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
               >
                 {batchMode && (
-                  <button className="collection-card-check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }}>
+                  <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
                     {selected.has(ch.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                   </button>
                 )}
-                <button className="collection-card-del" onClick={(e) => handleSingleDelete(ch.id, e)} title="删除"><Trash2 size={14} /></button>
+                <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Trash2 size={14} /></button>
                 <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} />
               </div>
             ))}

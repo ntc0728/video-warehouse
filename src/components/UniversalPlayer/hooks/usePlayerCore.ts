@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { usePlayerStore, useSettingsStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
+import { toast } from '@/components/ui';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
 import type { SourceType } from '@/types/video';
@@ -84,11 +85,39 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
   }, [videoId, episodeId, skipHistory]);
 
+  const prevTypeRef = useRef<SourceType | null>(null);
+  const pendingHotSwitchRef = useRef(false);
+
+  // useLayoutEffect 在 useEffect cleanup 之前执行，提前标记热切换
+  useLayoutEffect(() => {
+    if (adapterRef.current && prevTypeRef.current === type && url && type) {
+      pendingHotSwitchRef.current = true;
+    }
+  }, [url, type]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    if (!type || !url) return;
 
-    initAdapter();
+    // 切换视频源时重置进度，避免显示上一集的时间
+    const store = usePlayerStore.getState();
+    store.setProgress(0);
+    store.setDuration(0);
+    store.setBufferedProgress(0);
+
+    // 复用已有适配器热切换源（避免 destroy+recreate 导致的黑屏闪烁）
+    if (adapterRef.current && prevTypeRef.current === type) {
+      adapterRef.current.switchSource(url, { decoderMode, onError });
+    } else {
+      initAdapter();
+    }
+    prevTypeRef.current = type;
+
+    // 切换选集后自动播放（native HLS 需要显式调用，hls.js 在 MANIFEST_PARSED 中自行处理）
+    const autoPlayTimer = setTimeout(() => {
+      video.play().catch(() => {});
+    }, 300);
 
     video.volume = volume;
     video.playbackRate = playbackRate;
@@ -141,22 +170,26 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleNativeError = () => {
       const mediaError = video.error;
       if (!mediaError) return;
+      // MEDIA_ERR_ABORTED (code 1) is user-initiated (pause/seek/switch episode) — not a playback failure
+      if (mediaError.code === MediaError.MEDIA_ERR_ABORTED) return;
       let msg: string;
       switch (mediaError.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          msg = '播放被中止';
-          break;
         case MediaError.MEDIA_ERR_NETWORK:
           msg = '网络错误，无法加载视频';
           break;
         case MediaError.MEDIA_ERR_DECODE:
-          msg = '视频解码失败';
+          msg = '视频解码失败，可能仅播放音频';
           break;
         case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          msg = '频道源不可用';
+          msg = '源不可用';
           break;
         default:
           msg = `播放错误 (${mediaError.code})`;
+      }
+      // If video is already playing (e.g. audio works), show non-blocking toast instead of error overlay
+      if (!video.paused) {
+        toast.show({ content: msg, duration: 5000 });
+        return;
       }
       onError?.(new Error(msg));
     };
@@ -182,16 +215,14 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
         if (video && video.readyState >= 2) {
           if (performance.getEntriesByType) {
             const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+            const isVideoResource = (name: string) =>
+              /\.(ts|m3u8|m3u|mp4|m4s|m4v)(\?|$)/i.test(name);
             const recentEntries = entries.filter(
-              (e) =>
-                e.name.includes(url) ||
-                (e.initiatorType === 'xmlhttprequest' && (e.name.includes('m3u8') || e.name.includes('ts')))
+              (e) => isVideoResource(e.name) && e.transferSize > 0 && e.duration > 0
             );
             if (recentEntries.length > 0) {
               const lastEntry = recentEntries[recentEntries.length - 1];
-              if (lastEntry.transferSize > 0 && lastEntry.duration > 0) {
-                bps = (lastEntry.transferSize * 8) / (lastEntry.duration / 1000);
-              }
+              bps = (lastEntry.transferSize * 8) / (lastEntry.duration / 1000);
             }
           }
         }
@@ -213,7 +244,14 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('error', handleNativeError);
       video.removeEventListener('progress', handleProgress);
 
+      clearTimeout(autoPlayTimer);
       clearInterval(bandwidthTimer);
+
+      // 热切换时跳过销毁（useLayoutEffect 已在 cleanup 之前标记）
+      if (pendingHotSwitchRef.current) {
+        pendingHotSwitchRef.current = false;
+        return;
+      }
 
       if (adapterRef.current) {
         adapterRef.current.destroy();
@@ -228,9 +266,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     try {
       await videoRef.current?.play();
     } catch {
-      onError?.(new Error('播放被浏览器拦截，请点击屏幕重试'));
+      toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
     }
-  }, [onError]);
+  }, []);
 
   const pause = useCallback(() => {
     videoRef.current?.pause();
@@ -239,12 +277,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const togglePlay = useCallback(() => {
     if (videoRef.current?.paused) {
       videoRef.current.play().catch(() => {
-        onError?.(new Error('播放被浏览器拦截，请点击屏幕重试'));
+        toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
       });
     } else {
       videoRef.current?.pause();
     }
-  }, [onError]);
+  }, []);
 
   const seek = useCallback((time: number) => {
     if (videoRef.current && !videoRef.current.error) videoRef.current.currentTime = time;

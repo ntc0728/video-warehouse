@@ -149,7 +149,10 @@ a[role="button"]:active:not(:disabled),
 .detail-btn:active,
 .modal-close:active,
 .mobile-tab-bar button:active,
-.player-panel-header:active {
+.player-panel-header:active,
+.hero-banner__dot:active,
+.hero-banner__arrow:active,
+.hero-banner__cta:active {
   transform: none !important;
   box-shadow: none !important;
 }
@@ -568,4 +571,94 @@ main {
   :root {
     --iptv-cols: 6;
   }
+}
+
+/* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
+.record-card {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.record-card--selected {
+  border: var(--border-width-md, 2px) solid var(--color-primary);
+  background: var(--color-primary-soft, rgba(59, 130, 246, 0.1));
+}
+
+.record-card__check {
+  position: absolute;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 5;
+  display: flex;
+  padding: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+}
+
+.record-card__delete {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  z-index: 5;
+  display: flex;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.record-card:hover .record-card__delete,
+.record-card__delete:hover {
+  opacity: 1;
+}
+
+.record-card__delete:hover {
+  color: #ff4d4f;
+}
+
+.record-card__time {
+  position: absolute;
+  right: var(--space-sm);
+  bottom: var(--space-xs);
+  z-index: 3;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0.85;
+  pointer-events: auto;
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.record-card:hover .record-card__time {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .record-card__delete {
+    opacity: 1;
+  }
+}
+
+/* 批量模式下删除按钮常驻显示 */
+.batch-mode .record-card__delete {
+  opacity: 1;
+}
+
+/* 批量模式下内容区底部留白，避免被固定操作栏遮挡 */
+.batch-mode .collection-content,
+.batch-mode .history-content {
+  padding-bottom: calc(var(--space-2xl) + var(--space-md));
 }

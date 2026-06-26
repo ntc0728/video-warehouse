@@ -1,6 +1,7 @@
 // 预加载、交叉观察相关 Hook
 import { useEffect, useRef, useCallback } from 'react';
 
+/** 预加载配置选项 */
 interface UsePreloadOptions {
   enabled?: boolean;
 }
@@ -67,7 +68,13 @@ export function usePreload<T>(
   return { reset };
 }
 
-// 交叉观察器 Hook，封装 IntersectionObserver API
+/**
+ * 交叉观察器 Hook，封装 IntersectionObserver API
+ * 当目标元素接近视口时触发回调，常用于预加载场景
+ * @param callback 元素进入视口时的回调
+ * @param options IntersectionObserver 配置
+ * @returns 绑定到目标元素的 ref
+ */
 export function useIntersectionObserver(
   callback: (entry: IntersectionObserverEntry) => void,
   options: IntersectionObserverInit = {}

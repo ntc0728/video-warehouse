@@ -34,11 +34,11 @@ import {
   getLanguage,
 } from '@/services/tmdbService';
 
-// Re-export for backward compatibility
+// 为向后兼容重新导出
 export type { TMDBVideoItem } from '@/types/tmdb';
 
 // ============================================================
-// Cache TTL（毫秒）
+// 缓存过期时间（毫秒）
 // ============================================================
 
 const CACHE_TTL: Record<string, number> = {
@@ -115,7 +115,7 @@ function persistSection(key: string, data: unknown): void {
 }
 
 // ============================================================
-// Store State
+// Store 状态
 // ============================================================
 
 const DEFAULT_FILTER_OPTIONS: TMDBFilterOptions = {
@@ -129,7 +129,7 @@ const DEFAULT_FILTER_OPTIONS: TMDBFilterOptions = {
 };
 
 interface TMDBStoreState {
-  // ---- Homepage Data ----
+  // ---- 首页数据 ----
   trending: TMDBVideoItem[];
   nowPlaying: TMDBVideoItem[];
   popularMovies: TMDBVideoItem[];
@@ -139,11 +139,11 @@ interface TMDBStoreState {
   topRatedTv: TMDBVideoItem[];
   airingTodayTv: TMDBVideoItem[];
 
-  // ---- Search ----
+  // ---- 搜索 ----
   /** 最近一次搜索词（仅供 store 内部追踪，UI 同步应直接读 URL ?q=） */
   searchQuery: string;
 
-  // ---- Discover ----
+  // ---- 发现 ----
   discoverResults: TMDBVideoItem[];
   discoverPagination: { page: number; totalPages: number; totalResults: number };
   /**
@@ -158,16 +158,16 @@ interface TMDBStoreState {
    */
   discoverLastStatus: 'pending' | 'success' | 'error' | null;
 
-  // ---- Filters ----
+  // ---- 筛选 ----
   filterOptions: TMDBFilterOptions;
 
-  // ---- Genres & Config ----
+  // ---- 分类与配置 ----
   movieGenres: TMDBGenre[];
   tvGenres: TMDBGenre[];
   countries: TMDBCountry[];
   genresLanguage: string | null;
 
-  // ---- Loading ----
+  // ---- 加载状态 ----
   loading: {
     trending: boolean;
     nowPlaying: boolean;
@@ -182,7 +182,7 @@ interface TMDBStoreState {
     genres: boolean;
   };
 
-  // ---- Cache timestamps（per-section 最后获取时间） ----
+  // ---- 缓存时间戳（每个区块最后获取时间） ----
   lastFetchedAt: {
     trending: number | null;
     nowPlaying: number | null;
@@ -195,7 +195,7 @@ interface TMDBStoreState {
     genres: number | null;
   };
 
-  // ---- Errors（per-section 独立错误，避免并行请求竞速覆盖） ----
+  // ---- 错误（每个区块独立错误，避免并行请求竞速覆盖） ----
   errors: {
     trending: string | null;
     nowPlaying: string | null;
@@ -211,7 +211,7 @@ interface TMDBStoreState {
     recommendation: string | null;
   };
 
-  // ---- Actions ----
+  // ---- 操作 ----
   fetchTrending: (timeWindow?: 'day' | 'week') => Promise<void>;
   fetchNowPlaying: () => Promise<void>;
   fetchPopularMovies: () => Promise<void>;
@@ -237,7 +237,7 @@ interface TMDBStoreState {
 }
 
 // ============================================================
-// Mapping helpers
+// 映射辅助函数
 // ============================================================
 
 /**
@@ -364,14 +364,14 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 }
 
 // ============================================================
-// Filter helpers
+// 筛选辅助函数
 // ============================================================
 // applyFilters 已废弃：search() 不再维护 searchResults / filteredResults，
 // FilterBar 改动走 filterSig → fetchDiscover/TopRated 重新拉数据，store 内部
 // 不再需要本地筛选。若以后需要在 search 结果上叠加客户端过滤再恢复。
 
 // ============================================================
-// Store
+// Store 定义
 // ============================================================
 
 export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
@@ -379,7 +379,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   const cached = loadCache();
 
   return {
-  // ---- Initial State ----
+  // ---- 初始状态 ----
   trending: (cached?.data.trending as TMDBVideoItem[]) || [],
   nowPlaying: (cached?.data.nowPlaying as TMDBVideoItem[]) || [],
   popularMovies: (cached?.data.popularMovies as TMDBVideoItem[]) || [],
@@ -443,7 +443,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     genres: null,
   },
 
-  // ---- Actions ----
+  // ---- 操作 ----
 
   fetchTrending: async (timeWindow = 'day') => {
     set((s) => ({ loading: { ...s.loading, trending: true } }));
@@ -471,7 +471,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, trending: false },
-        errors: { ...s.errors, trending: err instanceof Error ? err.message : 'Failed to fetch trending' },
+        errors: { ...s.errors, trending: err instanceof Error ? err.message : '获取热门内容失败' },
       }));
     }
   },
@@ -486,7 +486,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const movieData = await fetchNowPlaying();
       items.push(...movieData.results.map(mapMovieToVideoItem));
     } catch (e) {
-      sectionError = e instanceof Error ? e.message : 'Failed to fetch now playing movies';
+      sectionError = e instanceof Error ? e.message : '获取正在热映电影失败';
     }
 
     try {
@@ -494,7 +494,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       items.push(...tvData.results.map(mapTVToVideoItem));
     } catch (e) {
       if (!sectionError) {
-        sectionError = e instanceof Error ? e.message : 'Failed to fetch now playing TV';
+        sectionError = e instanceof Error ? e.message : '获取正在热播剧集失败';
       }
     }
 
@@ -513,7 +513,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } else {
       set((s) => ({
         loading: { ...s.loading, nowPlaying: false },
-        errors: { ...s.errors, nowPlaying: sectionError || 'No now playing data available' },
+        errors: { ...s.errors, nowPlaying: sectionError || '暂无正在热映的数据' },
       }));
     }
   },
@@ -535,7 +535,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, popularMovies: false },
-        errors: { ...s.errors, popularMovies: err instanceof Error ? err.message : 'Failed to fetch popular movies' },
+        errors: { ...s.errors, popularMovies: err instanceof Error ? err.message : '获取热门电影失败' },
       }));
     }
   },
@@ -557,7 +557,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, topRatedMovies: false },
-        errors: { ...s.errors, topRatedMovies: err instanceof Error ? err.message : 'Failed to fetch top rated movies' },
+        errors: { ...s.errors, topRatedMovies: err instanceof Error ? err.message : '获取高分电影失败' },
       }));
     }
   },
@@ -579,7 +579,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, upcomingMovies: false },
-        errors: { ...s.errors, upcomingMovies: err instanceof Error ? err.message : 'Failed to fetch upcoming movies' },
+        errors: { ...s.errors, upcomingMovies: err instanceof Error ? err.message : '获取即将上映电影失败' },
       }));
     }
   },
@@ -601,7 +601,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, popularTv: false },
-        errors: { ...s.errors, popularTv: err instanceof Error ? err.message : 'Failed to fetch popular TV' },
+        errors: { ...s.errors, popularTv: err instanceof Error ? err.message : '获取热门剧集失败' },
       }));
     }
   },
@@ -623,7 +623,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, topRatedTv: false },
-        errors: { ...s.errors, topRatedTv: err instanceof Error ? err.message : 'Failed to fetch top rated TV' },
+        errors: { ...s.errors, topRatedTv: err instanceof Error ? err.message : '获取高分剧集失败' },
       }));
     }
   },
@@ -645,7 +645,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, airingTodayTv: false },
-        errors: { ...s.errors, airingTodayTv: err instanceof Error ? err.message : 'Failed to fetch airing today TV' },
+        errors: { ...s.errors, airingTodayTv: err instanceof Error ? err.message : '获取今日播出剧集失败' },
       }));
     }
   },
@@ -781,7 +781,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
-        errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Search failed' },
+        errors: { ...s.errors, discover: err instanceof Error ? err.message : '搜索失败' },
         discoverLastStatus: 'error',
       }));
     }
@@ -837,7 +837,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
-        errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Discover failed' },
+        errors: { ...s.errors, discover: err instanceof Error ? err.message : '发现失败' },
         discoverLastStatus: 'error',
       }));
     }
@@ -880,7 +880,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
-        errors: { ...s.errors, discover: err instanceof Error ? err.message : 'Top rated fetch failed' },
+        errors: { ...s.errors, discover: err instanceof Error ? err.message : '排行榜获取失败' },
         discoverLastStatus: 'error',
       }));
     }
@@ -931,7 +931,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, genres: false },
-        errors: { ...s.errors, genres: err instanceof Error ? err.message : 'Failed to fetch genres' },
+        errors: { ...s.errors, genres: err instanceof Error ? err.message : '获取分类失败' },
       }));
     }
   },

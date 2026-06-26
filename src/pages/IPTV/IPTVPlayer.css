@@ -27,6 +27,12 @@
   height: 100%;
 }
 
+.iptv-player__layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .iptv-player-info {
   flex-shrink: 0;
   padding: var(--space-sm) var(--space-md);
@@ -57,3 +63,4 @@
 .info-row .value {
   color: var(--color-text);
 }
+

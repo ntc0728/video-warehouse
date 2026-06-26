@@ -30,11 +30,19 @@ export class NativeAdapter extends BasePlayerAdapter {
     this.video.currentTime = time;
   }
 
+  switchSource(url: string, options?: Record<string, unknown>): void {
+    super.switchSource(url, options);
+    if (this.video) {
+      this.video.src = url;
+      this.video.play().catch(() => {});
+    }
+  }
+
   destroy(): void {
     if (this.video) {
       this.video.pause();
       this.video.removeAttribute('src');
-      this.video.load();
+      // 不调用 load()，保留最后一帧避免切频道时闪黑屏
     }
     this.detach();
   }

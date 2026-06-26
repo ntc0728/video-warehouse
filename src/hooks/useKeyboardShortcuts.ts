@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+/** 快捷键配置 */
 interface ShortcutConfig {
   key: string;
   ctrlKey?: boolean;
@@ -9,6 +10,11 @@ interface ShortcutConfig {
   description?: string;
 }
 
+/**
+ * 全局键盘快捷键 Hook
+ * 当用户按下指定组合键时触发对应回调，自动跳过输入框内的按键
+ * @param shortcuts 快捷键配置数组
+ */
 export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -21,6 +21,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState(0);
+  // 松手后保持目标位置，直到 timeupdate 追上或超时
+  const [pendingTime, setPendingTime] = useState<number | null>(null);
+  const [pendingPosition, setPendingPosition] = useState(0);
 
   const isLive = mode === 'live';
 
@@ -35,19 +38,27 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     if (!barRef.current || duration <= 0) return;
     const rect = barRef.current.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    setHoverTime(ratio * duration);
+    const time = ratio * duration;
+    setHoverTime(time);
     setHoverPosition(ratio * 100);
     if (isDragging) {
-      onSeek(ratio * duration);
+      setPendingTime(time);
+      setPendingPosition(ratio * 100);
+      onSeek(time);
     }
   }, [duration, isDragging, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    if (isLive) return;
+    if (isLive || duration <= 0) return;
     setIsDragging(true);
     const time = calcTime(clientX);
+    const ratio = (time / duration) * 100;
+    setHoverTime(time);
+    setHoverPosition(ratio);
+    setPendingTime(time);
+    setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, calcTime, onSeek]);
+  }, [isLive, duration, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
@@ -85,7 +96,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         if (barRef.current && duration > 0) {
           const rect = barRef.current.getBoundingClientRect();
           const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-          onSeek(ratio * duration);
+          const time = ratio * duration;
+          setPendingTime(time);
+          setPendingPosition(ratio * 100);
+          onSeek(time);
         }
       };
       const handleGlobalTouchMove = (e: TouchEvent) => {
@@ -94,7 +108,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           const rect = barRef.current.getBoundingClientRect();
           const clientX = getClientX(e);
           const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-          onSeek(ratio * duration);
+          const time = ratio * duration;
+          setPendingTime(time);
+          setPendingPosition(ratio * 100);
+          onSeek(time);
         }
       };
       const handleGlobalTouchEnd = () => endDrag();
@@ -111,6 +128,13 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     }
   }, [isDragging, duration, onSeek, endDrag]);
 
+  // pendingTime 追上 currentTime 时清除 pending 状态
+  useEffect(() => {
+    if (pendingTime !== null && !isDragging && Math.abs(currentTime - pendingTime) < 0.5) {
+      setPendingTime(null);
+    }
+  }, [currentTime, pendingTime, isDragging]);
+
   const formatTime = (seconds: number): string => {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
     const h = Math.floor(seconds / 3600);
@@ -122,11 +146,19 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
 
   const progress = duration > 0 && Number.isFinite(duration) ? (currentTime / duration) * 100 : 0;
   const bufferedPercent = duration > 0 && Number.isFinite(duration) ? (buffered / duration) * 100 : 0;
+  // 拖动中或松手后的过渡期内保持显示目标位置，不跳回旧值
+  const showPending = isDragging || pendingTime !== null;
+  const displayTime = showPending
+    ? (hoverTime ?? pendingTime ?? currentTime)
+    : currentTime;
+  const displayPercent = showPending
+    ? (hoverTime !== null ? hoverPosition : (pendingTime !== null ? pendingPosition : progress))
+    : progress;
 
   return (
     <div className="up-progress-container">
       {!isLive && (
-        <span className="up-time-display">{formatTime(currentTime)}</span>
+        <span className="up-time-display">{formatTime(displayTime)}</span>
       )}
       <div
         ref={barRef}
@@ -140,9 +172,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         onTouchEnd={handleTouchEnd}
       >
         <div className="up-progress-buffered" style={{ width: `${bufferedPercent}%` }} />
-        <div className="up-progress-played" style={{ width: `${progress}%` }} />
+        <div className="up-progress-played" style={{ width: `${displayPercent}%` }} />
         {!isLive && (
-          <div className="up-progress-thumb" style={{ left: `${progress}%` }} />
+          <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />
         )}
         {hoverTime !== null && !isLive && (
           <div className="up-progress-tooltip" style={{ left: `${hoverPosition}%` }}>

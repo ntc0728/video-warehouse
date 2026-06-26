@@ -17,6 +17,12 @@ import { useNavigationType } from 'react-router-dom';
 import { useNavStore } from '@/stores/useNavStore';
 import { useScrollContainer, type ScrollContainerRef } from './useScrollContext';
 
+/**
+ * 页面滚动位置恢复 Hook
+ * 前进时重置到顶部，返回时恢复上次滚动位置
+ * @param pageKey 页面唯一标识，用于存储滚动位置
+ * @param containerRef 可选的滚动容器引用，不传则自动获取
+ */
 export function useScrollRestore(
   pageKey: string,
   containerRef?: ScrollContainerRef,

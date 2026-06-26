@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 
 type PointerType = 'coarse' | 'fine' | 'tv';
 
+/** 检测当前输入设备类型，支持触摸、鼠标和电视遥控器 */
 export function usePointerType(): PointerType {
   const [pointerType, setPointerType] = useState<PointerType>(() => {
     if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-device') === 'tv') {

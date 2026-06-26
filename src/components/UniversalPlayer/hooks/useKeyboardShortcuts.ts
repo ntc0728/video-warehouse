@@ -42,7 +42,7 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      // Video 模式快捷键
+      // 视频模式快捷键
       switch (e.key) {
         case ' ':
           e.preventDefault();

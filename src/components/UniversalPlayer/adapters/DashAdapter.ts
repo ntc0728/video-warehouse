@@ -106,6 +106,16 @@ export class DashAdapter extends BasePlayerAdapter {
     this.errorCount = 0;
   }
 
+  switchSource(url: string, options?: Record<string, unknown>): void {
+    super.switchSource(url, options);
+    if (this.player && this.video) {
+      this.player.attachSource(url);
+    } else {
+      // 未初始化时走标准路径
+      if (this.video) this.attach(this.video);
+    }
+  }
+
   destroy(): void {
     this.detach();
   }

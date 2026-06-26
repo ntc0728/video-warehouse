@@ -16,6 +16,7 @@ export type ScrollContainerRef = RefObject<HTMLElement | null>;
 
 export const ScrollContainerContext = createContext<ScrollContainerRef | null>(null);
 
+/** 获取当前的滚动容器引用 */
 export function useScrollContainer(): ScrollContainerRef {
   return useContext(ScrollContainerContext) ?? { current: null };
 }

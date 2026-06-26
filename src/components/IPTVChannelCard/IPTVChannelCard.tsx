@@ -2,8 +2,8 @@
  * IPTV 频道卡片组件
  * 展示单个 IPTV 频道信息，支持点击播放、收藏切换和代理播放
  */
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, CheckCircle, XCircle } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores';
@@ -19,7 +19,6 @@ interface IPTVChannelCardProps {
 }
 
 const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false }: IPTVChannelCardProps) {
-  const navigate = useNavigate();
   const toggleFavorite = useIPTVStore((s) => s.toggleFavorite);
   const setSelectedChannel = useIPTVStore((s) => s.setSelectedChannel);
   const recordPlay = useIPTVStore((s) => s.recordPlay);
@@ -33,17 +32,25 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     ? sourceNames[parseInt(channel.sourceId.replace('source-', ''), 10)]
     : undefined;
 
-  /** 点击播放：记录播放历史，根据代理规则构建播放地址并跳转 */
-  const handlePlay = useCallback(() => {
-    if (batchMode) return;
-    setSelectedChannel(channel);
-    recordPlay(channel.id);
+  /** 构建播放链接：根据代理规则生成最终 URL */
+  const to = useMemo(() => {
+    if (batchMode) return '#';
     const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
     const playUrl = useProxy
       ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
       : channel.url;
-    navigate(`/iptv/play?url=${encodeURIComponent(playUrl)}`, { state: { from: '/iptv' }, viewTransition: true });
-  }, [batchMode, channel, proxyUrl, proxyPattern, setSelectedChannel, recordPlay, navigate]);
+    return `/iptv/play?url=${encodeURIComponent(playUrl)}`;
+  }, [batchMode, channel.url, proxyUrl, proxyPattern]);
+
+  /** 跳转前记录播放历史与当前选中频道 */
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (batchMode) {
+      e.preventDefault();
+      return;
+    }
+    setSelectedChannel(channel);
+    recordPlay(channel.id);
+  }, [batchMode, channel, setSelectedChannel, recordPlay]);
 
   /** 收藏切换，带弹跳动画反馈 */
   const handleFavorite = useCallback((e: React.MouseEvent) => {
@@ -52,12 +59,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     toggleFavorite(channel.id);
     setTimeout(() => setIsAnimating(false), 450);
   }, [toggleFavorite, channel.id]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handlePlay();
-    }
-  }, [handlePlay]);
 
   // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
   // 末尾卡片等数百毫秒才淡入"的问题。首屏 60 张几乎同时淡入,整体节奏仍
@@ -82,49 +83,72 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     return () => ro.disconnect();
   }, [channel.name]);
 
-  return (
-    <div
-      className={`iptv-channel-card ${channel.isAvailable === false ? 'unavailable' : ''} animate-card-enter btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`}
-      style={staggerDelay}
-      onClick={handlePlay}
-      tabIndex={isTV ? 0 : undefined}
-      onKeyDown={isTV ? handleKeyDown : undefined}
-    >
-      <div className="card-body">
-        <div className="iptv-card-cover">
-          <LazyImage
-            src={channel.logo || ''}
-            alt={channel.name}
-            letter={channel.name.charAt(0)}
-            loadingVariant="brand"
-          />
-          {/* 批量模式下隐藏封面元素 */}
-          {!batchMode && channel.isAvailable !== undefined && (
-            <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
-              {channel.isAvailable ? <CheckCircle size={8} /> : <XCircle size={8} />}
-            </div>
-          )}
-          {!batchMode && channel.group ? (
-            <span className="iptv-card-group">{channel.group}</span>
-          ) : null}
-          {!batchMode && sourceName && (
-            <span className="iptv-card-source">{sourceName}</span>
-          )}
-        </div>
-        <div className="iptv-card-info">
-          <h3
-            ref={titleRef}
-            className={`iptv-card-title${isTitleOverflow ? ' marquee' : ''}`}
-            title={channel.name}
-          >{channel.name}</h3>
-        </div>
+  const cardClassName = `iptv-channel-card ${channel.isAvailable === false ? 'unavailable' : ''} animate-card-enter btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
+
+  const cardBody = (
+    <div className="card-body">
+      <div className="iptv-card-cover">
+        <LazyImage
+          src={channel.logo || ''}
+          alt={channel.name}
+          letter={channel.name.charAt(0)}
+          loadingVariant="brand"
+        />
+        {/* 批量模式下隐藏封面元素 */}
+        {!batchMode && channel.isAvailable !== undefined && (
+          <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
+            {channel.isAvailable ? <CheckCircle size={8} /> : <XCircle size={8} />}
+          </div>
+        )}
+        {!batchMode && channel.group ? (
+          <span className="iptv-card-group">{channel.group}</span>
+        ) : null}
+        {!batchMode && sourceName && (
+          <span className="iptv-card-source">{sourceName}</span>
+        )}
       </div>
+      <div className="iptv-card-info">
+        <h3
+          ref={titleRef}
+          className={`iptv-card-title${isTitleOverflow ? ' marquee' : ''}`}
+          title={channel.name}
+        >{channel.name}</h3>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="iptv-channel-card-wrap">
+      {batchMode ? (
+        <div
+          className={cardClassName}
+          style={staggerDelay}
+          aria-label={`播放 ${channel.name}`}
+          tabIndex={isTV ? 0 : undefined}
+        >
+          {cardBody}
+        </div>
+      ) : (
+        <Link
+          to={to}
+          state={{ from: '/iptv' }}
+          className={cardClassName}
+          style={staggerDelay}
+          onClick={handleClick}
+          aria-label={`播放 ${channel.name}`}
+          tabIndex={isTV ? 0 : undefined}
+        >
+          {cardBody}
+        </Link>
+      )}
       {/* 批量模式下隐藏收藏按钮 */}
       {!batchMode && !hideFavorite && (
         <button
+          type="button"
           className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
           onClick={handleFavorite}
           aria-label={channel.isFavorite ? '取消收藏' : '添加收藏'}
+          aria-pressed={channel.isFavorite}
         >
           <Heart
             size={13}

@@ -33,7 +33,6 @@ export class HLSAdapter extends BasePlayerAdapter {
   private onError?: (error: Error) => void;
   private errorCount: number = 0;
   private lastErrorTime: number = 0;
-  private nativeHandlers: Map<string, () => void> = new Map();
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -53,7 +52,6 @@ export class HLSAdapter extends BasePlayerAdapter {
     // iOS Safari 原生 HLS
     if (canUseNativeHls()) {
       this.video.src = this.url;
-      this.attachNativeListeners();
       return;
     }
 
@@ -157,51 +155,6 @@ export class HLSAdapter extends BasePlayerAdapter {
     await this.video?.play();
   }
 
-  private attachNativeListeners(): void {
-    if (!this.video) return;
-
-    const handleError = () => {
-      const mediaError = this.video?.error;
-      if (!mediaError) return;
-      let msg: string;
-      switch (mediaError.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          msg = '播放被中止';
-          break;
-        case MediaError.MEDIA_ERR_NETWORK:
-          msg = '网络错误，无法加载视频';
-          break;
-        case MediaError.MEDIA_ERR_DECODE:
-          msg = '视频解码失败';
-          break;
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          msg = '频道源不可用';
-          break;
-        default:
-          msg = `播放错误 (${mediaError.code})`;
-      }
-      this.onError?.(new Error(msg));
-    };
-
-    const handleStalled = () => {
-      this.onError?.(new Error('加载超时，请检查网络连接'));
-    };
-
-    this.nativeHandlers.set('error', handleError);
-    this.nativeHandlers.set('stalled', handleStalled);
-
-    this.video.addEventListener('error', handleError);
-    this.video.addEventListener('stalled', handleStalled);
-  }
-
-  private detachNativeListeners(): void {
-    if (!this.video) return;
-    this.nativeHandlers.forEach((handler, event) => {
-      this.video?.removeEventListener(event, handler);
-    });
-    this.nativeHandlers.clear();
-  }
-
   pause(): void {
     this.video?.pause();
   }
@@ -271,7 +224,7 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   isLive(): boolean {
     if (this.hls) {
-      // Check if current level's details indicate a live stream
+      // 检查当前 level 的详情是否表明是直播流
       const currentLevel = this.hls.levels[this.hls.currentLevel];
       if (currentLevel?.details?.live) return true;
     }
@@ -296,7 +249,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       const currentLevel = this.hls.levels[this.hls.currentLevel];
       if (currentLevel?.details?.live && currentLevel.details.fragments?.length > 0) {
         const fragments = currentLevel.details.fragments;
-        // Edge fragment may be partially evicted; prefer fragment 1 if available
+        // 边缘分片可能已被部分驱逐；优先使用分片 1（如果可用）
         const startFragment = fragments.length > 1 ? fragments[1] : fragments[0];
         return startFragment.start;
       }
@@ -316,12 +269,25 @@ export class HLSAdapter extends BasePlayerAdapter {
     return super.getSeekableEnd();
   }
 
+  switchSource(url: string, options?: Record<string, unknown>): void {
+    super.switchSource(url, options);
+    if (this.hls) {
+      this.hls.loadSource(url);
+      this.hls.startLoad();
+      return;
+    }
+    // 原生 HLS 路径：直接换 src
+    if (this.video) {
+      this.video.src = url;
+      this.video.play().catch(() => {});
+    }
+  }
+
   destroy(): void {
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
     }
-    this.detachNativeListeners();
     this.detach();
   }
 }

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 视频数据服务
  * 负责从多个视频源（CMS 采集站 API）获取视频列表和详情
  * 通过统一 httpClient（axios）统一处理 缓存 / 超时 / 重试
@@ -52,6 +52,7 @@ const VOD_TYPE_MAP: Record<number, VideoType> = {
   4: 'anime',
 };
 
+/** 将 CMS 类型编码映射为应用内的 VideoType */
 function mapVodType(raw: string | number | undefined | null): VideoType | undefined {
   if (typeof raw === 'number') return VOD_TYPE_MAP[raw];
   if (typeof raw === 'string') {
@@ -64,6 +65,7 @@ function mapVodType(raw: string | number | undefined | null): VideoType | undefi
   return undefined;
 }
 
+/** 检查单个视频源是否可用 */
 export async function checkVideoSourceAvailability(
   sourceIndex: number,
   timeout: number = 8000
@@ -97,6 +99,7 @@ export interface SourceCheckResult extends SourceStatus {
   elapsed: number;
 }
 
+/** 并发检查所有视频源的可用性 */
 export async function checkAllVideoSources(
   concurrency: number = 5,
   timeout: number = 10000
@@ -142,6 +145,7 @@ export async function checkAllVideoSources(
   };
 }
 
+/** 按优先级查找第一个可用的视频源 */
 export async function findAvailableVideoSource(
   preferredIndex?: number,
   timeout: number = 8000
@@ -166,6 +170,7 @@ export async function findAvailableVideoSource(
   return sources.length > 0 ? { index: 0, name: sources[0].name } : null;
 }
 
+/** 将 CMS 原始视频条目映射为应用内部的 Video 类型 */
 function mapVideoItem(item: CMSVideoItem): Video {
   return {
     id: String(item.vod_id),
@@ -187,6 +192,7 @@ function mapVideoItem(item: CMSVideoItem): Video {
   };
 }
 
+/** 从指定视频源获取视频列表 */
 export async function fetchVideosBySource(sourceIndex: number): Promise<{
   videos: Video[];
   sourceInfo?: { index: number; name: string };
@@ -211,7 +217,7 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
     };
   } catch (error) {
     const _message = error instanceof Error ? error.message : String(error);
-    console.warn(`Failed to fetch videos from ${source.name}:`, error);
+    console.warn(`从 ${source.name} 获取视频列表失败:`, error);
     return {
       videos: [],
       sourceInfo: { index: sourceIndex, name: source.name },
@@ -220,6 +226,7 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
   }
 }
 
+/** 解析播放源字符串，提取源列表和分集信息 */
 function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: Video['sources']; episodes: Video['episodes'] } {
   const fromList = vodPlayFrom ? vodPlayFrom.split('$$$').filter(Boolean) : [];
   const urlList = vodPlayUrl ? vodPlayUrl.split('$$$').filter(Boolean) : [];
@@ -265,6 +272,7 @@ function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: V
   return { sources: allSources, episodes };
 }
 
+/** 获取单个视频的详情信息（含播放源和分集） */
 export async function fetchVideoDetail(sourceIndex: number, videoId: string): Promise<Video | null> {
   const sources = await getVideoSources();
   const source = sources[sourceIndex];
@@ -281,7 +289,7 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string): Pr
       return { ...mapVideoItem(item), sources: playSources, episodes };
     }
   } catch (error) {
-    console.warn(`Failed to fetch video detail from ${source.name}:`, error);
+    console.warn(`从 ${source.name} 获取视频详情失败:`, error);
   }
   return null;
 }
@@ -293,6 +301,7 @@ export interface VideoDetailResult {
   error?: string;
 }
 
+/** 从多个视频源搜索并返回匹配结果 */
 export async function searchVideoFromMultipleSources(
   sourceIndices: number[],
   title: string,
@@ -364,6 +373,7 @@ export async function searchVideoFromMultipleSources(
   return results;
 }
 
+/** 按标题在可用视频源中搜索视频 */
 export async function searchVideoByTitle(title: string, _year?: number): Promise<Video | null> {
   const sources = await getVideoSources();
   if (sources.length === 0) return null;
@@ -372,7 +382,7 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
   try {
     const stored = localStorage.getItem('app-settings');
     if (stored) sourceIndex = JSON.parse(stored)?.state?.videoSourceIndex ?? 0;
-  } catch { /* ignore */ }
+  } catch { /* 读取设置失败时使用默认值 0 */ }
 
   const searchTerm = title;
 
@@ -404,6 +414,7 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
   return null;
 }
 
+/** 获取指定 IPTV 源的播放地址 */
 export async function fetchIPTVUrl(sourceIndex: number): Promise<string> {
   const sources = await getIPTVSources();
   const source = sources[sourceIndex];

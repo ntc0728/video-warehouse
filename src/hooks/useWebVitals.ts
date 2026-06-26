@@ -28,6 +28,11 @@ export function reportWebVitals(onPerfEntry?: (metric: Metric) => void) {
   });
 }
 
+/**
+ * Web Vitals 性能指标采集 Hook
+ * 在组件挂载时自动采集 CLS、INP、LCP、FCP、TTFB 指标
+ * @param config 配置项，包含 onPerfEntry 回调
+ */
 export function useWebVitals(config?: WebVitalsConfig) {
   useEffect(() => {
     if (config?.onPerfEntry && typeof window !== 'undefined') {

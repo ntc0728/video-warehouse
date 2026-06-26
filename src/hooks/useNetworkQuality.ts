@@ -7,13 +7,18 @@ interface NetworkQuality {
   rating: 'good' | 'medium' | 'poor' | 'unknown';
 }
 
+/**
+ * 估算当前网络延迟
+ * 取最近 5 个资源请求的平均响应时间
+ */
 function estimateLatency(): number | null {
   try {
     const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
     if (entries.length === 0) return null;
-    // 取最近 5 个网络请求的平均 serverTiming 或 responseStart - requestStart
+    const isVideoResource = (name: string) =>
+      /\.(ts|m3u8|m3u|mp4|m4s|m4v)(\?|$)/i.test(name);
     const recent = entries
-      .filter(e => e.responseStart > 0 && e.requestStart > 0)
+      .filter(e => isVideoResource(e.name) && e.responseStart > 0 && e.requestStart > 0)
       .slice(-5);
     if (recent.length === 0) return null;
     const avg = recent.reduce((sum, e) => sum + (e.responseStart - e.requestStart), 0) / recent.length;
@@ -23,6 +28,10 @@ function estimateLatency(): number | null {
   }
 }
 
+/**
+ * 根据带宽和延迟粗略估算丢包率
+ * 低带宽 + 高延迟可能意味着丢包
+ */
 function estimatePacketLoss(bandwidthBps: number, latencyMs: number | null): number | null {
   if (bandwidthBps <= 0 || latencyMs === null) return null;
   // 粗略估算：低带宽 + 高延迟 → 可能丢包
@@ -33,6 +42,7 @@ function estimatePacketLoss(bandwidthBps: number, latencyMs: number | null): num
   return 0;
 }
 
+/** 综合带宽和延迟评估网络质量等级 */
 function rateQuality(bandwidthBps: number, latencyMs: number | null): NetworkQuality['rating'] {
   const bandwidthKBs = bandwidthBps / 8 / 1000;
   if (bandwidthKBs <= 0) return 'unknown';
@@ -41,18 +51,24 @@ function rateQuality(bandwidthBps: number, latencyMs: number | null): NetworkQua
   return 'poor';
 }
 
+/** 格式化延迟值为可读字符串 */
 function formatLatency(ms: number | null): string {
   if (ms === null) return '--';
   if (ms < 1) return '<1ms';
   return `${Math.round(ms)}ms`;
 }
 
+/** 格式化丢包率为百分比字符串 */
 function formatPacketLoss(loss: number | null): string {
   if (loss === null) return '--';
   if (loss === 0) return '0%';
   return `${Math.round(loss * 100)}%`;
 }
 
+/**
+ * 网络质量监测 Hook
+ * 每 2 秒采样一次带宽估算、延迟和丢包率，返回格式化的质量指标
+ */
 export function useNetworkQuality(): {
   latency: string;
   packetLoss: string;

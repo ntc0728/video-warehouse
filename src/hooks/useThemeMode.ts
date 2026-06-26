@@ -4,6 +4,7 @@
  */
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
+/** 获取当前实际生效的主题模式，支持跟随系统或手动切换 */
 export function useThemeMode(): 'light' | 'dark' {
   return useSettingsStore((s) => {
     const theme = s.theme;

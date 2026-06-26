@@ -40,7 +40,13 @@ export default function FullscreenButton({ containerRef }: FullscreenButtonProps
   }, [containerRef]);
 
   return (
-    <button className="up-control-btn" onClick={toggleFullscreen} title="全屏 (F)">
+    <button
+      className="up-control-btn"
+      onClick={toggleFullscreen}
+      title="全屏 (F)"
+      aria-label={isFullscreen ? '退出全屏' : '全屏'}
+      aria-pressed={isFullscreen}
+    >
       {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
     </button>
   );

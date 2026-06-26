@@ -97,6 +97,9 @@ export default function ControlBar({
       data-visible={String(visible)}
       className={`up-control-bar ${visible ? 'up-control-bar-visible' : 'up-control-bar-hidden'} up-platform-${platform}`}
       onMouseMove={onActivity}
+      role="toolbar"
+      aria-label="播放器控制栏"
+      aria-orientation="horizontal"
     >
       <ProgressBar
         mode={mode}

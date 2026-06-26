@@ -15,6 +15,7 @@
 import { useEffect } from 'react';
 import { useTMDBStore, useIPTVStore } from '@/stores';
 
+/** 应用启动时预取首页和 IPTV 数据，避免首次加载闪白 */
 export function usePrefetch(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;

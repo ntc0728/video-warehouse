@@ -13,6 +13,7 @@ import type { Video, VideoSource, Episode } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading } from '@/components/common';
+import { getHistory } from '@/services/database';
 import { useSmartBack } from '@/lib/navigation';
 import {
   ArrowLeft, VideoOff, AlertTriangle, RefreshCw,
@@ -142,10 +143,26 @@ export default function PlayerPage() {
           let sources = foundVideo.sources;
           let selectedEpisode: Episode | null = null;
 
-          if (episodeId && foundVideo.episodes) {
-            selectedEpisode = foundVideo.episodes.find((ep) => ep.id === episodeId) || null;
+          if (foundVideo.episodes && foundVideo.episodes.length > 0) {
+            if (episodeId) {
+              selectedEpisode = foundVideo.episodes.find((ep) => ep.id === episodeId) || null;
+            } else {
+              // 从历史记录恢复上次播放的选集
+              const history = await getHistory();
+              const lastRecord = history.find(h => h.videoId === id && h.episodeId);
+              if (lastRecord) {
+                selectedEpisode = foundVideo.episodes.find(
+                  (ep) => ep.id === lastRecord.episodeId
+                ) || null;
+              }
+              // 无历史记录则默认播放第一集
+              if (!selectedEpisode) {
+                selectedEpisode = [...foundVideo.episodes].sort((a, b) => a.number - b.number)[0] || null;
+              }
+            }
             if (selectedEpisode) {
               sources = selectedEpisode.sources;
+              setLocalEpisodeId(selectedEpisode.id);
             }
           }
 
@@ -336,7 +353,7 @@ export default function PlayerPage() {
     nextEpisodeRef.current = null;
   }, []);
 
-  // Cleanup on unmount
+  // 卸载时清理
   useEffect(() => {
     return () => {
       if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
@@ -546,7 +563,6 @@ export default function PlayerPage() {
             onProgress={handleProgress}
             onEnded={handleEnded}
             onBack={handleBack}
-            onRefresh={fetchCMSSources}
             onSkipIntro={handleSkipIntro}
             onSkipOutro={handleSkipOutro}
           />
@@ -702,7 +718,7 @@ export default function PlayerPage() {
               <div className="player-detail-info-body">
                 {posterUrl && (
                   <div className="player-detail-poster">
-                    <img src={posterUrl} alt={title} />
+                    <img src={posterUrl} alt={title} width={300} height={450} />
                   </div>
                 )}
                 {overview && <p className="player-detail-overview">{overview}</p>}

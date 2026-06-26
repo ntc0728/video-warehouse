@@ -38,17 +38,22 @@ export default function SpeedControl({ currentRate, onChange, activePopover, onP
         className="up-control-btn up-speed-btn"
         title="倍速"
         onTouchStart={handleButtonTouch}
+        aria-label="播放速度"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
       >
         <Gauge size={20} />
         <span className="up-speed-label">{currentRate === 1 ? '倍速' : `${currentRate}x`}</span>
       </button>
       {isOpen && (
-        <div className="up-popover up-speed-popover">
+        <div className="up-popover up-speed-popover" role="menu" aria-label="选择播放速度">
           {PLAYBACK_RATES.map(rate => (
             <button
               key={rate}
               className={`up-popover-item ${rate === currentRate ? 'up-popover-item-active' : ''}`}
               onClick={() => handleSelect(rate)}
+              role="menuitemradio"
+              aria-checked={rate === currentRate}
             >
               {rate === 1 ? '正常' : `${rate}x`}
             </button>

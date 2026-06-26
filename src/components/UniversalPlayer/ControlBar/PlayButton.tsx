@@ -7,7 +7,13 @@ interface PlayButtonProps {
 
 export default function PlayButton({ isPlaying, onClick }: PlayButtonProps) {
   return (
-    <button className="up-control-btn up-play-btn" onClick={onClick} title="播放/暂停 (Space)">
+    <button
+      className="up-control-btn up-play-btn"
+      onClick={onClick}
+      title="播放/暂停 (Space)"
+      aria-label={isPlaying ? '暂停' : '播放'}
+      aria-pressed={isPlaying}
+    >
       {isPlaying ? <Pause size={22} /> : <Play size={22} />}
     </button>
   );

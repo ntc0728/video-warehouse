@@ -137,6 +137,8 @@
 }
 
 .refresh-btn {
+  min-width: 5em;
+  text-align: center;
   padding: var(--space-xs) var(--space-sm);
   border: none;
   border-radius: var(--radius-full);
@@ -145,12 +147,8 @@
   font-size: var(--text-sm);
   font-weight: 600;
   white-space: nowrap;
-  transition: transform 0.1s, background-color 0.15s;
+  transition: background-color 0.15s;
   cursor: pointer;
-}
-
-.refresh-btn:active:not(:disabled) {
-  transform: scale(0.95);
 }
 
 .force-refresh-btn:disabled {
@@ -529,3 +527,11 @@
 /* ── 网格 div 本身不需要入场动画 ─────────────────────
  * 卡片级 cardFadeIn 动画由 IPTVChannelCard 内部管理，
  * 新建的卡片会自动淡入（opacity: 0.4 → 1）。        */
+
+/* ── 刷新时的内容加载态 ──────────────────────────── */
+.iptv-content-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}

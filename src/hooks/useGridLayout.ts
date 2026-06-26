@@ -16,6 +16,11 @@ interface GridLayoutReturn {
   actualRows: number;
 }
 
+/**
+ * 网格布局计算 Hook
+ * 根据容器宽度动态计算每行列数和页面容量，自动监听容器尺寸变化
+ * @param options 布局配置（容器引用、最小卡片宽度、间距、默认行数、内边距）
+ */
 export function useGridLayout({
   containerRef,
   minCardWidth,
@@ -78,7 +83,14 @@ export function useGridLayout({
   return layout;
 }
 
-// 计算实际需要显示的行数，限制最大行数避免页面过长
+/**
+ * 计算实际需要显示的行数，限制最大行数避免页面过长
+ * @param totalItems 总数据量
+ * @param cardsPerRow 每行列数
+ * @param defaultRows 默认行数
+ * @param maxRows 最大行数上限（默认 6）
+ * @returns 实际应显示的行数
+ */
 export function calculateDisplayRows(
   totalItems: number,
   cardsPerRow: number,

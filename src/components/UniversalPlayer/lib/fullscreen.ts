@@ -21,7 +21,7 @@ export async function requestFullscreen(el: HTMLElement) {
     msRequestFullscreen?: () => Promise<void>;
   };
 
-  // iOS Safari: use video-level fullscreen for proper system integration
+  // iOS Safari：使用视频级全屏以获得正确的系统集成
   if (isIOS()) {
     const video = el.querySelector('video') || el.closest('.up-player-core')?.querySelector('video');
     const v = video as HTMLVideoElement & { webkitEnterFullscreen?: () => void; webkitExitFullscreen?: () => void };
@@ -29,19 +29,19 @@ export async function requestFullscreen(el: HTMLElement) {
       v.webkitEnterFullscreen();
       return;
     }
-    // Fallback: request fullscreen on document element for best compatibility
+    // 回退方案：在 documentElement 上请求全屏以获得最佳兼容性
     if (document.documentElement.requestFullscreen) {
       return document.documentElement.requestFullscreen();
     }
   }
 
-  // Standard + vendor prefixes
+  // 标准 API + 浏览器前缀
   if (r.requestFullscreen) return r.requestFullscreen();
   if (r.webkitRequestFullscreen) return r.webkitRequestFullscreen();
   if (r.mozRequestFullScreen) return r.mozRequestFullScreen();
   if (r.msRequestFullscreen) return r.msRequestFullscreen();
 
-  // Last resort: fullscreen on document root
+  // 最后手段：在 document 根元素上全屏
   if (document.documentElement.requestFullscreen) {
     return document.documentElement.requestFullscreen();
   }
@@ -54,7 +54,7 @@ export async function exitFullscreen(videoElement?: HTMLVideoElement | null) {
     msExitFullscreen?: () => Promise<void>;
   };
 
-  // Check if iOS video fullscreen is active
+  // 检查 iOS 视频全屏是否处于激活状态
   const video = videoElement ?? document.querySelector('.up-player-video');
   const v = video as (HTMLVideoElement & { webkitExitFullscreen?: () => void }) | null;
   if (v?.webkitExitFullscreen && isIOS()) {

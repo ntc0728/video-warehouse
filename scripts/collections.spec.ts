@@ -181,7 +181,7 @@ test.describe('Card interactions', () => {
     if (await batchBtn.isVisible().catch(() => false)) {
       await batchBtn.click();
       await page.waitForTimeout(300);
-      const delBtn = page.locator('.collection-card-del').first();
+      const delBtn = page.locator('.record-card__delete').first();
       if (await delBtn.isVisible().catch(() => false)) {
         await expect(delBtn).toBeVisible();
       }

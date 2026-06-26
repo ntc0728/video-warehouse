@@ -4,6 +4,13 @@
    四设备端独立尺寸
    ======================================== */
 
+/* ---- Wrapper: 定位上下文 + 网格项适配 ---- */
+.iptv-channel-card-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
 /* ---- Base: Mobile (< 768px) ---- */
 .iptv-channel-card {
   position: relative;
@@ -14,6 +21,8 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: var(--shadow-card);
@@ -216,8 +225,8 @@
   pointer-events: none;
 }
 
-.iptv-channel-card:hover .iptv-card-favorite.hover-visible,
-.iptv-channel-card:focus-within .iptv-card-favorite.hover-visible {
+.iptv-channel-card-wrap:hover .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:focus-within .iptv-card-favorite.hover-visible {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
@@ -260,7 +269,7 @@
   opacity: 0;
   transform: scale(0.8);
 }
-[data-device="tv"] .iptv-channel-card:focus-within .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-channel-card-wrap:focus-within .iptv-card-favorite.hover-visible,
 [data-device="tv"] .iptv-card-favorite.hover-visible:focus-visible {
   opacity: 1;
   transform: scale(1);

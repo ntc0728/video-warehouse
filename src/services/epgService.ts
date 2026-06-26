@@ -39,6 +39,7 @@ interface SerializedEPGData {
   programmes: Record<string, Array<{ title: string; start: string; end: string }>>;
 }
 
+/** 解析 XMLTV 格式时间字符串为 Date 对象 */
 function parseXmltvTime(timeStr: string): Date {
   const match = timeStr.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{2})(\d{2})$/);
   if (!match) return new Date(timeStr);
@@ -49,6 +50,7 @@ function parseXmltvTime(timeStr: string): Date {
   return new Date(utcDate - tzOffset * 60000);
 }
 
+/** 解析 XMLTV 格式的节目单 XML 数据 */
 function parseXMLTV(xml: string): ParsedEPGData {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, 'text/xml');
@@ -90,6 +92,7 @@ function parseXMLTV(xml: string): ParsedEPGData {
   return { channels, programmes };
 }
 
+/** 合并两份 EPG 数据，去重并按时间排序 */
 function mergeEPGData(existing: ParsedEPGData, newData: ParsedEPGData): ParsedEPGData {
   const mergedChannels = new Map(existing.channels.map(c => [c.id, c]));
 
@@ -116,6 +119,7 @@ function mergeEPGData(existing: ParsedEPGData, newData: ParsedEPGData): ParsedEP
   };
 }
 
+/** 规范化频道名称，去除清晰度标记和冗余词汇以便匹配 */
 function normalizeName(name: string): string {
   return name
     // 去除清晰度/技术标记
@@ -128,6 +132,7 @@ function normalizeName(name: string): string {
     .toLowerCase();
 }
 
+/** 将 M3U 频道与 EPG 频道进行匹配（支持 tvg-id 精确、规范化、模糊匹配） */
 export function matchEPGChannel(
   channelName: string,
   tvgId: string | undefined,
@@ -165,6 +170,7 @@ export function matchEPGChannel(
   return null;
 }
 
+/** 为节目列表添加过期/播放中/未来状态标记 */
 function markProgramStatus(programs: EPGProgram[]): EPGProgram[] {
   const now = Date.now();
   return programs.map(prog => ({
@@ -175,6 +181,7 @@ function markProgramStatus(programs: EPGProgram[]): EPGProgram[] {
   }));
 }
 
+/** 查找当前正在播放和下一个节目 */
 function findCurrentAndNext(programmes: EPGProgram[]): {
   current: EPGProgram | null;
   next: EPGProgram | null;
@@ -199,12 +206,14 @@ function findCurrentAndNext(programmes: EPGProgram[]): {
   return { current, next };
 }
 
+/** 将 Date 格式化为 HH:MM 格式 */
 function formatHHmm(date: Date): string {
   const h = date.getHours().toString().padStart(2, '0');
   const m = date.getMinutes().toString().padStart(2, '0');
   return `${h}:${m}`;
 }
 
+/** 将解析后的 EPG 数据序列化为可存储的 JSON 格式 */
 function serializeEPGData(data: ParsedEPGData): SerializedEPGData {
   const programmes: SerializedEPGData['programmes'] = {};
   data.programmes.forEach((progs, channelId) => {
@@ -217,6 +226,7 @@ function serializeEPGData(data: ParsedEPGData): SerializedEPGData {
   return { channels: data.channels, programmes };
 }
 
+/** 将序列化的 EPG 数据还原为运行时格式 */
 function deserializeEPGData(data: SerializedEPGData): ParsedEPGData {
   const programmes = new Map<string, EPGProgram[]>();
   Object.entries(data.programmes).forEach(([channelId, progs]) => {
@@ -229,6 +239,7 @@ function deserializeEPGData(data: SerializedEPGData): ParsedEPGData {
   return { channels: data.channels, programmes };
 }
 
+/** 从 IndexedDB 缓存中读取 EPG 数据 */
 async function getCachedEPG(): Promise<{ data: ParsedEPGData; urls: string[]; timestamp: number } | null> {
   try {
     const db = await getDB();
@@ -242,10 +253,11 @@ async function getCachedEPG(): Promise<{ data: ParsedEPGData; urls: string[]; ti
         timestamp: (time as { value: number }).value,
       };
     }
-  } catch { /* ignore */ }
+  } catch { /* 缓存读取失败或数据格式异常时返回 null */ }
   return null;
 }
 
+/** 将 EPG 数据写入 IndexedDB 缓存 */
 async function setCachedEPG(data: ParsedEPGData, urls: string[]): Promise<void> {
   try {
     const db = await getDB();
@@ -256,7 +268,7 @@ async function setCachedEPG(data: ParsedEPGData, urls: string[]): Promise<void> 
       tx.store.put({ key: EPG_CACHE_TIME_KEY, value: Date.now() }),
       tx.done,
     ]);
-  } catch { /* ignore */ }
+  } catch { /* 缓存写入失败不影响主流程 */ }
 }
 
 export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGData> {
@@ -309,6 +321,7 @@ export async function getCachedEPGData(): Promise<ParsedEPGData> {
   return cached?.data || { channels: [], programmes: new Map() };
 }
 
+/** 获取 EPG 缓存的最后更新时间戳 */
 export async function getEPGCacheTime(): Promise<number | null> {
   try {
     const db = await getDB();
@@ -316,10 +329,11 @@ export async function getEPGCacheTime(): Promise<number | null> {
     if (time) {
       return (time as { value: number }).value;
     }
-  } catch { /* ignore */ }
+  } catch { /* 缓存读取失败时返回 null */ }
   return null;
 }
 
+/** 批量匹配 M3U 频道与 EPG 数据，返回各频道当前节目信息 */
 export function matchAllChannels(
   m3uChannels: { id: string; name: string; tvgId?: string }[],
   epgData: ParsedEPGData
