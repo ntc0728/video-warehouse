@@ -332,6 +332,9 @@ export interface TMDBFilterOptions {
   sortBy: TMDBSortOption;
   sortOrder: 'desc' | 'asc';
   releaseYear: number | null;
+  /** 日期范围查询：用于「其他」（pre-2015）等场景，优先级高于 releaseYear */
+  releaseDateGte: string | null;
+  releaseDateLte: string | null;
   originCountry: string | null;
 }
 
