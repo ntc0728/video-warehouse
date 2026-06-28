@@ -34,7 +34,9 @@ function toStoreFilter(value: FilterBarValue) {
     minVoteAverage: value.minRating,
     sortBy: sort.sortBy,
     sortOrder: sort.order,
-    releaseYear: null as number | null,
+    releaseYear: value.olderThan2015 ? null : value.year,
+    releaseDateGte: null as string | null,
+    releaseDateLte: value.olderThan2015 ? '2014-12-31' : null,
     originCountry: value.region,
   };
 }

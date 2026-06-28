@@ -16,7 +16,7 @@
  *  - TV：放大字号
  *  - 所有客户端：筛选 chip 全部 wrap，不被截断
  */
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
@@ -24,7 +24,7 @@ import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { useTMDBStore, useNavStore } from '@/stores';
+import { useTMDBStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -80,19 +80,6 @@ export default function BrowsePage() {
     }
   }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
-  // ── 筛选栏折叠状态 ──────────────────────────────────
-  const filterBarCollapsed = useNavStore((s) => {
-    const saved = s.states['filterBarCollapsed'];
-    const collapsed = (saved as { filter?: { collapsed?: boolean } } | null)?.filter?.collapsed;
-    return typeof collapsed === 'boolean' ? collapsed : true;
-  });
-  const [collapsed, setCollapsed] = useState<boolean>(filterBarCollapsed);
-  const toggleCollapse = useCallback(() => {
-    const next = !collapsed;
-    setCollapsed(next);
-    useNavStore.getState().saveState('filterBarCollapsed', { filter: { collapsed: next } });
-  }, [collapsed]);
-
   // ── 当前分类下的可选类型（合并去重）───────────────
   const currentGenres = useMemo<TMDBGenre[]>(() => {
     const cfg = CATEGORY_CONFIG[filterValue.category];
@@ -125,8 +112,6 @@ export default function BrowsePage() {
         onChange={updateFilter}
         genres={currentGenres}
         excludedGenreIds={excludedGenreIds}
-        collapsed={collapsed}
-        onToggleCollapse={toggleCollapse}
         totalResults={discoverPagination.totalResults}
         categoryLabel={CATEGORY_LABELS[filterValue.category]}
       />
