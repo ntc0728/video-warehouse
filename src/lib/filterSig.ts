@@ -18,5 +18,7 @@ export function buildFilterSig(v: FilterBarValue): string {
     v.region ?? 'none',
     v.minRating,
     v.sortIdx,
+    v.year ?? 'none',
+    v.olderThan2015 ? 'older' : 'none',
   ].join('|');
 }
