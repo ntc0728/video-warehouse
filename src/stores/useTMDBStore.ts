@@ -125,6 +125,8 @@ const DEFAULT_FILTER_OPTIONS: TMDBFilterOptions = {
   sortBy: 'popularity',
   sortOrder: 'desc',
   releaseYear: null,
+  releaseDateGte: null,
+  releaseDateLte: null,
   originCountry: null,
 };
 

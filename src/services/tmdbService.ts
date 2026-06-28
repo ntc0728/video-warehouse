@@ -260,7 +260,9 @@ export async function discoverMovie(
   };
   if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
-  if (filters.releaseYear) params.primary_release_year = filters.releaseYear;
+  if (filters.releaseDateGte) params['primary_release_date.gte'] = filters.releaseDateGte;
+  else if (filters.releaseYear) params.primary_release_year = filters.releaseYear;
+  if (filters.releaseDateLte) params['primary_release_date.lte'] = filters.releaseDateLte;
   if (filters.originCountry) params.with_origin_country = filters.originCountry;
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/discover/movie', params);
 }
@@ -277,7 +279,9 @@ export async function discoverTV(
   };
   if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
-  if (filters.releaseYear) params.first_air_date_year = filters.releaseYear;
+  if (filters.releaseDateGte) params['first_air_date.gte'] = filters.releaseDateGte;
+  else if (filters.releaseYear) params.first_air_date_year = filters.releaseYear;
+  if (filters.releaseDateLte) params['first_air_date.lte'] = filters.releaseDateLte;
   if (filters.originCountry) params.with_origin_country = filters.originCountry;
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/discover/tv', params);
 }
