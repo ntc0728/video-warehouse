@@ -58,6 +58,8 @@ export function getDefaultFilterValue(): FilterBarValue {
     region: null,
     minRating: 0,
     sortIdx: 0,
+    year: null,
+    olderThan2015: false,
   };
 }
 
@@ -84,6 +86,8 @@ export function parseFromUrl(params: URLSearchParams): FilterBarValue {
     region,
     minRating,
     sortIdx: sortToIdx(params.get('sort')),
+    year: Number.parseInt(params.get('year') ?? '0', 10) || null,
+    olderThan2015: params.get('older') === '1',
   };
 }
 
@@ -99,6 +103,8 @@ export function serializeToUrl(value: FilterBarValue): URLSearchParams {
   }
   if (value.region) params.set('region', value.region);
   if (value.minRating > 0) params.set('minRating', String(value.minRating));
+  if (value.year) params.set('year', String(value.year));
+  if (value.olderThan2015) params.set('older', '1');
   if (value.sortIdx !== 0) params.set('sort', sortToUrl(value.sortIdx));
 
   return params;
