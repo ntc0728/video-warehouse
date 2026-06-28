@@ -40,6 +40,27 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
 
 // ── 类型 ────────────────────────────────────────────
 
+// ── 年份选项 ────────────────────────────────────────
+
+export const YEAR_OPTIONS: { label: string; value: number }[] = [
+  { label: '2026', value: 2026 },
+  { label: '2025', value: 2025 },
+  { label: '2024', value: 2024 },
+  { label: '2023', value: 2023 },
+  { label: '2022', value: 2022 },
+  { label: '2021', value: 2021 },
+  { label: '2020', value: 2020 },
+  { label: '2019', value: 2019 },
+  { label: '2018', value: 2018 },
+  { label: '2017', value: 2017 },
+  { label: '2016', value: 2016 },
+  { label: '2015', value: 2015 },
+];
+
+export const YEAR_OLDER_LABEL = '其他';
+
+// ── 类型 ────────────────────────────────────────────
+
 export interface FilterBarValue {
   category: CategoryKey;
   mediaType: 'all' | 'movie' | 'tv';
@@ -47,4 +68,7 @@ export interface FilterBarValue {
   region: string | null;
   minRating: number;
   sortIdx: number;
+  year: number | null;
+  /** 选中「其他」时为 true，查询 2015 年之前的内容 */
+  olderThan2015: boolean;
 }

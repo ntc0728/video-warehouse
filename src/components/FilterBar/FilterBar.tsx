@@ -1,22 +1,17 @@
 /**
  * FilterBar — 公共筛选组件
- * 分类 · 类型 · 地区 · 评分 · 排序 — 横向 chip 筛选，支持 TMDB discover 参数
+ * 分类 · 类型 · 地区 · 排序 — 横向 chip 筛选，支持 TMDB discover 参数
  * 主题感知：Light/Dark 自动适配
  * 点击任意 chip 即触发搜索（无「应用筛选」按钮）
  * 分类行：多行 wrap 展示；单选（点击其他自动替换，不可经 chip 取消）
  * 类型行：仅在 category=all 时显示（全部/电影/剧集）
- * 地区/评分/分类 label 可点击：点击 = 回到该行「全部」状态，默认即高亮
+ * 地区/分类 label 可点击：点击 = 回到该行「全部」状态，默认即高亮
  * 排序 label 不可选（纯文本）
- *
- * 折叠：默认仅展示分类 + 类型 + 折叠按钮；地区/评分/排序 默认折叠，
- *      点击「更多筛选 ▾」展开 300ms 过渡。
- *      折叠状态可由 useNavStore('filterBarCollapsed') 跨会话恢复。
  */
 import { useCallback, useMemo } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
-import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, type FilterBarValue } from './constants';
+import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue } from './constants';
 import './FilterBar.css';
 
 interface FilterBarProps {
@@ -30,10 +25,6 @@ interface FilterBarProps {
   excludedGenreIds?: number[];
   /** 父组件在 debounce / fetch 期间置 true：右上角显示 "更新中…" spinner */
   isUpdating?: boolean;
-  /** 外部控制折叠状态 */
-  collapsed?: boolean;
-  /** 外部控制折叠切换 */
-  onToggleCollapse?: () => void;
   /** 结果总数 */
   totalResults?: number;
   /** 当前分类显示名称（替换默认的"分类"label） */
@@ -49,8 +40,6 @@ export default function FilterBar({
   hideRegion = false,
   excludedGenreIds = [],
   isUpdating = false,
-  collapsed = true,
-  onToggleCollapse,
   totalResults = 0,
   categoryLabel,
 }: FilterBarProps) {
@@ -94,8 +83,8 @@ export default function FilterBar({
   const isAllMediaType = value.mediaType === 'all';
   // 地区：null
   const isAllRegion = value.region === null;
-  // 评分：0
-  const isAllRating = value.minRating === 0;
+  // 年份：null
+  const isAllYear = value.year === null;
 
   // ── label 点击 = 回到「全部」───────────────────────────
   const selectAllGenres = useCallback(
@@ -110,8 +99,8 @@ export default function FilterBar({
     () => onChange({ ...value, region: null }),
     [value, onChange],
   );
-  const selectAllRating = useCallback(
-    () => onChange({ ...value, minRating: 0 }),
+  const selectAllYear = useCallback(
+    () => onChange({ ...value, year: null, olderThan2015: false }),
     [value, onChange],
   );
 
@@ -122,31 +111,6 @@ export default function FilterBar({
         <div className="filter-bar__updating" role="status" aria-live="polite">
           <span className="filter-bar__spinner" aria-hidden="true" />
           <span className="filter-bar__updating-text">更新中…</span>
-        </div>
-      )}
-
-      {/* 分类（细分类型）— 首行，多行 wrap，单选 */}
-      {visibleGenres.length > 0 && (
-        <div className="filter-bar__row filter-bar__row--wrap">
-          <button
-            type="button"
-            className={`filter-bar__label filter-bar__label--clickable${isAllGenres ? ' filter-bar__label--active' : ''}`}
-            onClick={selectAllGenres}
-            aria-pressed={isAllGenres}
-          >
-            {categoryLabel || '分类'}
-          </button>
-          <div className="filter-bar__chips-wrap">
-            {visibleGenres.map((g) => (
-              <button
-                key={g.id}
-                className={`filter-bar__chip${value.genreIds.includes(g.id) ? ' filter-bar__chip--active' : ''}`}
-                onClick={() => selectGenre(g.id)}
-              >
-                {g.name}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
@@ -175,14 +139,32 @@ export default function FilterBar({
         </div>
       )}
 
-      {/* 折叠区域：地区 / 评分 / 排序 */}
-      <div
-        id="filter-bar-collapse-body"
-        className={`filter-bar__collapse-body${!collapsed ? ' filter-bar__collapse-body--expanded' : ''}`}
-        aria-hidden={collapsed}
-      >
+      {/* 分类（细分类型）— 多行 wrap，单选 */}
+      {visibleGenres.length > 0 && (
+        <div className="filter-bar__row filter-bar__row--wrap">
+          <button
+            type="button"
+            className={`filter-bar__label filter-bar__label--clickable${isAllGenres ? ' filter-bar__label--active' : ''}`}
+            onClick={selectAllGenres}
+            aria-pressed={isAllGenres}
+          >
+            {categoryLabel || '分类'}
+          </button>
+          <div className="filter-bar__chips-wrap">
+            {visibleGenres.map((g) => (
+              <button
+                key={g.id}
+                className={`filter-bar__chip${value.genreIds.includes(g.id) ? ' filter-bar__chip--active' : ''}`}
+                onClick={() => selectGenre(g.id)}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* 地区 — 水平滚动（无「全部」chip，由 label 表达），默认折叠 */}
+      {/* 地区 — 水平滚动（无「全部」chip，由 label 表达） */}
       {!hideRegion && (
         <div className="filter-bar__row filter-bar__row--scroll">
           <button
@@ -207,57 +189,50 @@ export default function FilterBar({
         </div>
       )}
 
-      {/* 评分 — 删除了「不限」chip，label 可点击 = 不限，默认折叠 */}
-      <div className="filter-bar__row">
+      {/* 年份 — 水平滚动 */}
+      <div className="filter-bar__row filter-bar__row--scroll">
         <button
           type="button"
-          className={`filter-bar__label filter-bar__label--clickable${isAllRating ? ' filter-bar__label--active' : ''}`}
-          onClick={selectAllRating}
-          aria-pressed={isAllRating}
+          className={`filter-bar__label filter-bar__label--clickable${isAllYear ? ' filter-bar__label--active' : ''}`}
+          onClick={selectAllYear}
+          aria-pressed={isAllYear}
         >
-          评分
+          年份
         </button>
-        {[6, 7, 8].map((r) => (
+        <div className="filter-bar__chips-scroll">
+          {YEAR_OPTIONS.map((y) => (
+            <button
+              key={y.value}
+              className={`filter-bar__chip${value.year === y.value && !value.olderThan2015 ? ' filter-bar__chip--active' : ''}`}
+              onClick={() => update({ year: y.value, olderThan2015: false })}
+            >
+              {y.label}
+            </button>
+          ))}
           <button
-            key={r}
-            className={`filter-bar__chip${value.minRating === r ? ' filter-bar__chip--active' : ''}`}
-            onClick={() => update({ minRating: r })}
+            type="button"
+            className={`filter-bar__chip${value.olderThan2015 ? ' filter-bar__chip--active' : ''}`}
+            onClick={() => update({ year: null, olderThan2015: true })}
           >
-            ≥ {r}.0
+            {YEAR_OLDER_LABEL}
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* 排序 — label 不可选（纯文本），默认折叠 */}
-      <div className="filter-bar__row">
-        <span className="filter-bar__label">排序</span>
-        {SORT_OPTIONS.map((s, i) => (
-          <button
-            key={i}
-            className={`filter-bar__chip${value.sortIdx === i ? ' filter-bar__chip--active' : ''}`}
-            onClick={() => update({ sortIdx: i })}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-      </div>
-
-      {/* 折叠按钮 + 结果数：居中显示按钮，结果数在最右 */}
+      {/* 排序 + 结果数 */}
       <div className="filter-bar__footer">
-        <span aria-hidden="true" />
-        <button
-          type="button"
-          className={`filter-bar__toggle${!collapsed ? ' filter-bar__toggle--expanded' : ''}`}
-          onClick={onToggleCollapse}
-          aria-expanded={!collapsed}
-          aria-controls="filter-bar-collapse-body"
-        >
-          <span>{collapsed ? '更多筛选' : '收起筛选'}</span>
-          <span className="filter-bar__toggle-icon" aria-hidden="true">
-            <ChevronDown size={14} />
-          </span>
-        </button>
+        <div className="filter-bar__sort">
+          {SORT_OPTIONS.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`filter-bar__sort-btn${value.sortIdx === i ? ' filter-bar__sort-btn--active' : ''}`}
+              onClick={() => update({ sortIdx: i })}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
         <span className="filter-bar__count" aria-live="polite">
           共 {totalResults.toLocaleString('zh-CN')} 条
         </span>
