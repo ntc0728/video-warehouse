@@ -152,6 +152,7 @@ a[role="button"]:active:not(:disabled),
 .player-panel-header:active,
 .hero-banner__dot:active,
 .hero-banner__arrow:active,
+.history-node-col:active,
 .hero-banner__cta:active {
   transform: none !important;
   box-shadow: none !important;

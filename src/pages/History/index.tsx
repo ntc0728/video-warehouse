@@ -9,12 +9,11 @@ import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
-import { Timeline, type TimelineItem } from '@/components/ui';
+import { type TimelineItem } from '@/components/ui';
 import { Search, X, Trash2, CheckSquare, Square, ListChecks, LayoutGrid, Eye, CheckCircle2 } from 'lucide-react';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
@@ -129,7 +128,6 @@ export default function HistoryPage() {
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   const saved = getState('history');
-  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
   const [statusFilter, setStatusFilter] = useState<VideoStatus>('all');
@@ -412,7 +410,6 @@ export default function HistoryPage() {
       ? `确定要删除选中的 ${selected.size} 条记录吗？删除后无法恢复。`
       : '确定要清除所有观看记录吗？此操作无法恢复。';
 
-  const showTimeline = timelineItems.length > 0;
 
   return (
     <div className={`history-page ${batchMode ? 'batch-mode' : ''}`}>
@@ -495,25 +492,35 @@ export default function HistoryPage() {
       </div>
 
       <div className="history-body">
-        {showTimeline && (
-          <aside className="history-timeline" aria-label="时间分组导航">
-            <Timeline
-              items={timelineItems}
-              onItemClick={handleTimelineClick}
-              variant={isMobile ? 'horizontal' : 'vertical'}
-            />
-          </aside>
-        )}
-
         <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
-          {groupedKeys.map((group) => (
-            <div
-              key={group}
-              ref={setGroupRef(group)}
-              data-group-key={group}
-              className="history-group"
-            >
-              <h2 className="history-group-title">{group}</h2>
+          {groupedKeys.map((group, idx) => {
+            const ti = timelineItems.find((t) => t.key === group);
+            const isFirst = idx === 0;
+            const isLast = idx === groupedKeys.length - 1;
+            return (
+              <div
+                key={group}
+                ref={setGroupRef(group)}
+                data-group-key={group}
+                className={`history-group${ti?.active ? ' history-group--active' : ''}`}
+              >
+                <div
+                  className="history-node-col"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleTimelineClick(group)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTimelineClick(group); } }}
+                  aria-label={`跳转到${group}`}
+                >
+                  {!isFirst && <span className="history-rail" aria-hidden="true" />}
+                  <div className="history-node">
+                    <span className="history-dot" aria-hidden="true" />
+                    <span className="history-node-label">{group}</span>
+                    {ti && (ti.count ?? 0) > 0 && <span className="history-node-count">{ti.count}</span>}
+                  </div>
+                  {!isLast && <span className="history-rail" aria-hidden="true" />}
+                </div>
+                <div className="history-group-body">
               {activeTab === 'video' ? (
                 <div className="video-card-grid">
                   {(grouped[group] as HistoryVideoItem[]).map((video) => (
@@ -563,8 +570,10 @@ export default function HistoryPage() {
                   ))}
                 </div>
               )}
-            </div>
-          ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
       {currentList.length === 0 && (

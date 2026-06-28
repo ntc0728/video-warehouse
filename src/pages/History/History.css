@@ -58,15 +58,26 @@
 }
 
 .history-content {
+  position: relative;
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
   min-height: auto;
 }
 
+.history-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--space-md);
+  width: var(--timeline-rail-size, 0.125rem);
+  background: var(--color-border);
+  pointer-events: none;
+}
+
 .history-page > .history-header,
-.history-page > .history-toolbar,
-.history-page > .history-group > .history-group-title {
+.history-page > .history-toolbar {
   padding-top: var(--space-md);
   padding-right: var(--space-lg);
   padding-left: var(--space-sm);
@@ -110,7 +121,6 @@
   gap: var(--space-sm);
   justify-content: space-between;
   align-items: center;
-  /* margin-bottom: var(--space-md); */
 }
 .history-header h1 {
   margin: 0;
@@ -199,41 +209,106 @@
   margin-left: calc(-1 * var(--space-sm));
 }
 
-/* ── 时间轴 + 卡片 双栏布局 ────────────────── */
+/* ── 时间轴 + 卡片 布局 ────────────────── */
 .history-body {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-lg);
-  align-items: flex-start;
   width: 100%;
   min-width: 0;
   padding-right: var(--space-sm);
   box-sizing: border-box;
 }
 
-.history-timeline {
-  position: sticky;
-  top: 0;
-  flex: 0 0 auto;
-  min-width: 0;
-  height: 100%;
-  padding: var(--space-sm) 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  box-sizing: border-box;
-}
-
 .history-group {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 var(--space-sm);
   margin-bottom: var(--space-lg);
   scroll-margin-top: var(--space-md);
 }
-.history-group-title {
-  margin: 0 0 var(--space-sm);
-  padding-bottom: var(--space-xs);
+
+.history-node-col {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  padding: 0 var(--space-md);
+  cursor: pointer;
+}
+
+.history-node-col:focus-visible {
+  outline: none;
+}
+
+.history-node-col:active .history-dot {
+  background: var(--color-primary);
+  transform: translate(-50%, -50%) scale(1.4);
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.history-rail {
+  display: none;
+}
+
+.history-node {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  padding-left: calc(var(--timeline-dot-size, 0.75rem) + var(--space-xs));
+}
+
+.history-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 1;
+  width: var(--timeline-dot-size, 0.75rem);
+  height: var(--timeline-dot-size, 0.75rem);
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.18s ease;
+}
+
+.history-group--active .history-dot {
+  background: var(--color-primary);
+}
+
+.history-node-label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.history-group--active .history-node-label {
   color: var(--color-text);
-  font-size: var(--text-base);
   font-weight: 600;
-  border-bottom: 1px solid var(--color-border);
+}
+
+.history-node-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  min-width: var(--timeline-count-min-w, 1.25rem);
+  height: var(--timeline-count-h, 1.125rem);
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--timeline-count-font, 0.6875rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.history-group--active .history-node-count {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.history-group-body {
+  grid-column: 2;
+  min-width: 0;
 }
 
 /* 历史页内的 IPTV 频道网格:始终撑满父容器,避免分组下卡片独占一行 */
@@ -340,8 +415,7 @@
 
 @media (width <= 767px) {
   .history-page > .history-header,
-  .history-page > .history-toolbar,
-  .history-page > .history-group > .history-group-title {
+  .history-page > .history-toolbar {
     padding-right: var(--space-sm);
   }
   .history-page > .status-tabs {
@@ -384,23 +458,10 @@
     opacity: 1;
   }
 
-  /* 移动端隐藏时间轴 */
-  .history-timeline {
-    display: none;
-  }
-
-  /* 移动端：时间轴横置在 body 顶部 */
   .history-body {
-    flex-direction: column;
     padding: 0 var(--space-sm);
   }
   .record-card__time {
     font-size: var(--text-xs);
-  }
-}
-
-@media (width >= 768px) and (width <= 1023px) {
-  .history-timeline {
-    flex: 0 0 auto;
   }
 }
