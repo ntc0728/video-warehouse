@@ -79,8 +79,6 @@ export default function FilterBar({
   // ── 「全部」状态计算 ────────────────────────────────────
   // 分类：可见 genre 中无任何被勾选
   const isAllGenres = !value.genreIds.some((id) => !excludedGenreIds.includes(id));
-  // 类型：all
-  const isAllMediaType = value.mediaType === 'all';
   // 地区：null
   const isAllRegion = value.region === null;
   // 年份：null
@@ -90,10 +88,6 @@ export default function FilterBar({
   const selectAllGenres = useCallback(
     () => onChange({ ...value, genreIds: [...excludedGenreIds] }),
     [value, onChange, excludedGenreIds],
-  );
-  const selectAllMediaType = useCallback(
-    () => selectMediaType('all'),
-    [selectMediaType],
   );
   const selectAllRegion = useCallback(
     () => onChange({ ...value, region: null }),
@@ -117,14 +111,7 @@ export default function FilterBar({
       {/* 类型 — 仅「全部」category 显示（全部/电影/剧集） */}
       {value.category === 'all' && (
         <div className="filter-bar__row filter-bar__row--scroll">
-          <button
-            type="button"
-            className={`filter-bar__label filter-bar__label--clickable${isAllMediaType ? ' filter-bar__label--active' : ''}`}
-            onClick={selectAllMediaType}
-            aria-pressed={isAllMediaType}
-          >
-            类型
-          </button>
+          <span className="filter-bar__label">类型</span>
           <div className="filter-bar__chips-scroll">
             {MEDIA_OPTIONS.map((m) => (
               <button
@@ -142,15 +129,15 @@ export default function FilterBar({
       {/* 分类（细分类型）— 多行 wrap，单选 */}
       {visibleGenres.length > 0 && (
         <div className="filter-bar__row filter-bar__row--wrap">
-          <button
-            type="button"
-            className={`filter-bar__label filter-bar__label--clickable${isAllGenres ? ' filter-bar__label--active' : ''}`}
-            onClick={selectAllGenres}
-            aria-pressed={isAllGenres}
-          >
-            {categoryLabel || '分类'}
-          </button>
+          <span className="filter-bar__label">{categoryLabel || '分类'}</span>
           <div className="filter-bar__chips-wrap">
+            <button
+              type="button"
+              className={`filter-bar__chip${isAllGenres ? ' filter-bar__chip--active' : ''}`}
+              onClick={selectAllGenres}
+            >
+              全部
+            </button>
             {visibleGenres.map((g) => (
               <button
                 key={g.id}
@@ -164,18 +151,18 @@ export default function FilterBar({
         </div>
       )}
 
-      {/* 地区 — 水平滚动（无「全部」chip，由 label 表达） */}
+      {/* 地区 — 水平滚动 */}
       {!hideRegion && (
         <div className="filter-bar__row filter-bar__row--scroll">
-          <button
-            type="button"
-            className={`filter-bar__label filter-bar__label--clickable${isAllRegion ? ' filter-bar__label--active' : ''}`}
-            onClick={selectAllRegion}
-            aria-pressed={isAllRegion}
-          >
-            地区
-          </button>
+          <span className="filter-bar__label">地区</span>
           <div className="filter-bar__chips-scroll">
+            <button
+              type="button"
+              className={`filter-bar__chip${isAllRegion ? ' filter-bar__chip--active' : ''}`}
+              onClick={selectAllRegion}
+            >
+              全部
+            </button>
             {REGION_OPTIONS.map((r) => (
               <button
                 key={r.code ?? 'all'}
@@ -191,15 +178,15 @@ export default function FilterBar({
 
       {/* 年份 — 水平滚动 */}
       <div className="filter-bar__row filter-bar__row--scroll">
-        <button
-          type="button"
-          className={`filter-bar__label filter-bar__label--clickable${isAllYear ? ' filter-bar__label--active' : ''}`}
-          onClick={selectAllYear}
-          aria-pressed={isAllYear}
-        >
-          年份
-        </button>
+        <span className="filter-bar__label">年份</span>
         <div className="filter-bar__chips-scroll">
+          <button
+            type="button"
+            className={`filter-bar__chip${isAllYear ? ' filter-bar__chip--active' : ''}`}
+            onClick={selectAllYear}
+          >
+            全部
+          </button>
           {YEAR_OPTIONS.map((y) => (
             <button
               key={y.value}

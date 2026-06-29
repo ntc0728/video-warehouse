@@ -11,6 +11,7 @@ import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { type TimelineItem } from '@/components/ui';
 import { Search, X, Trash2, CheckSquare, Square, ListChecks, LayoutGrid, Eye, CheckCircle2 } from 'lucide-react';
+import StatusTabs from '@/components/StatusTabs';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -118,7 +119,7 @@ type ConfirmType = 'single' | 'batch' | 'clearAll';
 
 const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGrid; color: string }> = {
   all: { label: '全部', icon: LayoutGrid, color: 'var(--color-text-tertiary)' },
-  unfinished: { label: '未看完', icon: Eye, color: '#f59e0b' },
+  unfinished: { label: '未看完', icon: Eye, color: '#d97706' },
   finished: { label: '已看完', icon: CheckCircle2, color: '#22c55e' },
 };
 
@@ -413,83 +414,81 @@ export default function HistoryPage() {
 
   return (
     <div className={`history-page ${batchMode ? 'batch-mode' : ''}`}>
-      <div className="history-header">
-        <h1>观看历史 <span className="header-count">共 {activeTab === 'video' ? historyVideos.length : iptvHistory.length} 项</span></h1>
-      </div>
-
-      {activeTab === 'video' && (
-        <div className="status-tabs">
-          {(Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => {
-            const cfg = STATUS_CONFIG[key];
-            const Icon = cfg.icon;
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`status-tab ${statusFilter === key ? 'status-tab--active' : ''}`}
-                onClick={() => setStatusFilter(key)}
-              >
-                <Icon size={14} style={{ color: statusFilter === key ? cfg.color : undefined }} />
-                <span>{cfg.label}</span>
-                <span className="status-tab__count">{statusCounts[key]}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="history-toolbar">
-        <div className="category-tabs category-tabs-mobile">
-          <button className={`category-tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>影视 ({historyVideos.length})</button>
-          <button className={`category-tab ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV ({iptvHistory.length})</button>
+      {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
+      <div className="history-filter-bar filter-bar">
+        <div className="filter-bar__left">
+          <h1 className="filter-bar__title">观看历史</h1>
+          <div className="category-segmented">
+            <button className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>影视</button>
+            <button className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV</button>
+          </div>
         </div>
         {hasRawData && (
-          <div className="search-box-wrap search-box-wrap--iptv" role="search">
-            <div className="search-box search-box--iptv">
-              <Search size={16} className="search-box__icon" aria-hidden="true" />
-              <input
-                type="text"
-                className="search-box__input"
-                placeholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="搜索"
-              />
+          <div className="filter-bar__actions">
+            <div className="search-box-wrap search-box-wrap--iptv" role="search">
+              <div className="search-box search-box--iptv">
+                <Search size={16} className="search-box__icon" aria-hidden="true" />
+                <input
+                  type="text"
+                  className="search-box__input"
+                  placeholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="搜索"
+                />
+                <button
+                  type="button"
+                  className="search-box__clear"
+                  onClick={() => setSearch('')}
+                  aria-label="清空搜索"
+                  tabIndex={-1}
+                  aria-hidden={!search}
+                  data-empty={search ? 'false' : 'true'}
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div className="toolbar-actions">
               <button
                 type="button"
-                className="search-box__clear"
-                onClick={() => setSearch('')}
-                aria-label="清空搜索"
-                tabIndex={-1}
-                aria-hidden={!search}
-                data-empty={search ? 'false' : 'true'}
+                className={`toolbar-btn toolbar-btn--icon ${batchMode ? 'toolbar-btn--active' : ''}`}
+                disabled={search.trim() !== '' && currentList.length === 0}
+                onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+                aria-label={batchMode ? '退出批量' : '批量操作'}
               >
-                <X size={14} aria-hidden="true" />
+                <ListChecks size={16} />
+                <span className="toolbar-btn__label">{batchMode ? '退出批量' : '批量操作'}</span>
+              </button>
+              <button
+                type="button"
+                className="toolbar-btn toolbar-btn--danger toolbar-btn--icon"
+                disabled={search.trim() !== '' && currentList.length === 0}
+                onClick={handleClearAll}
+                aria-label="清除全部"
+              >
+                <Trash2 size={16} />
+                <span className="toolbar-btn__label">清除全部</span>
               </button>
             </div>
           </div>
         )}
-        {hasRawData && (
-          <div className="toolbar-actions">
-            <button
-              type="button"
-              className={`toolbar-btn ${batchMode ? 'toolbar-btn--active' : ''}`}
-              disabled={search.trim() !== '' && currentList.length === 0}
-              onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-            >
-              <ListChecks size={14} /> {batchMode ? '退出批量' : '批量操作'}
-            </button>
-            <button
-              type="button"
-              className="toolbar-btn toolbar-btn--danger"
-              disabled={search.trim() !== '' && currentList.length === 0}
-              onClick={handleClearAll}
-            >
-              <Trash2 size={14} /> 清除全部
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Row 2: StatusTabs pill chips（仅 video tab 时显示） */}
+      {activeTab === 'video' && (
+        <StatusTabs
+          tabs={(Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
+            key,
+            label: STATUS_CONFIG[key].label,
+            icon: STATUS_CONFIG[key].icon,
+            color: STATUS_CONFIG[key].color,
+            count: statusCounts[key],
+          }))}
+          activeKey={statusFilter}
+          onChange={(key) => setStatusFilter(key as VideoStatus)}
+        />
+      )}
 
       <div className="history-body">
         <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
@@ -577,7 +576,10 @@ export default function HistoryPage() {
         </div>
       </div>
       {currentList.length === 0 && (
-        <Empty title="暂无观看记录" description="看一部影片，记录从这里开始" />
+        <Empty
+          title={statusFilter === 'all' ? '暂无观看记录' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
+          description="看一部影片，记录从这里开始"
+        />
       )}
 
       <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />

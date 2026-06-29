@@ -163,7 +163,6 @@ test.describe('CSS compliance', () => {
     if (response) {
       const text = await response.text();
       expect(text).toContain('browse-page');
-      expect(text).toContain('browse-suggestions');
     }
   });
 

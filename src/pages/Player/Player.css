@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 100dvh;
   background-color: var(--color-background);
   color: var(--color-text);
 }
@@ -347,6 +348,11 @@
   color: #000;
 }
 
+
+.player-page__container {
+  position: relative;
+  flex: 1;
+}
 
 .player-loading-wrap {
   position: absolute;

@@ -115,13 +115,17 @@
   height: calc(var(--space-2xl) * 1.2);
 }
 
-/* ── Mobile: 放大按钮，避开 TabBar ──────────────── */
+/* ── Mobile: 放大按钮 ────────────────────────────── */
 @media (width <= 767px) {
   .back-to-top-button {
     right: var(--space-md);
-    bottom: calc(var(--layout-tabbar-height) + var(--space-xl));
+    bottom: var(--space-lg);
     width: calc(var(--space-2xl) * 1.5);
     height: calc(var(--space-2xl) * 1.5);
+  }
+  /* App 端有底部 TabBar，需要额外间距 */
+  [data-device="app"] .back-to-top-button {
+    bottom: calc(var(--layout-tabbar-height) + var(--space-lg));
   }
 }
 

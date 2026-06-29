@@ -109,34 +109,21 @@ export default function DetailPage() {
   const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
 
-  // 剧照网格：先渲染全部测量列数，再限制 2 行
-  const stillsGridRef = useRef<HTMLDivElement>(null);
+  // 剧照网格：根据视口宽度估算列数，限制显示 2 行
   const [visibleCount, setVisibleCount] = useState(Number.MAX_SAFE_INTEGER);
   useEffect(() => {
-    const el = stillsGridRef.current;
-    if (!el || stills.length === 0) return;
-    let raf: number;
-    const measure = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const children = el.children;
-        if (children.length === 0) return;
-        const firstTop = (children[0] as HTMLElement).offsetTop;
-        let cols = 1;
-        for (let i = 1; i < children.length; i++) {
-          if ((children[i] as HTMLElement).offsetTop === firstTop) cols++;
-          else break;
-        }
-        setVisibleCount(cols * 2);
-      });
+    if (stills.length === 0) return;
+    const calc = () => {
+      // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
+      // 最小列宽 = clamp(128px, 96px + 8vw, 256px)
+      const vw = window.innerWidth;
+      const minCol = Math.min(256, Math.max(128, 96 + vw * 0.08));
+      const cols = Math.max(1, Math.floor(vw / minCol));
+      setVisibleCount(cols * 2);
     };
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    measure();
-    return () => {
-      ro.disconnect();
-      cancelAnimationFrame(raf);
-    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
   }, [stills.length]);
 
   // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
@@ -146,10 +133,7 @@ export default function DetailPage() {
   // ── TMDB 加载 ────────────────────────────────
   useEffect(() => {
     if (!id) return;
-    if (restoredRef.current) {
-      restoredRef.current = false;
-      return;
-    }
+    restoredRef.current = false;
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
@@ -343,7 +327,7 @@ export default function DetailPage() {
   }, [id]);
 
   // ── Loading ──────────────────────────────────
-  if (tmdbLoading) return <AppLoading />;
+  if (tmdbLoading) return <div className="detail-page detail-page--loading"><AppLoading /></div>;
 
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
@@ -537,9 +521,8 @@ export default function DetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div
+                   <div
                     className={`detail-stills-grid${visibleCount < Number.MAX_SAFE_INTEGER ? ' detail-stills-grid--limited' : ''}`}
-                    ref={stillsGridRef}
                   >
                     {stills.slice(0, visibleCount < Number.MAX_SAFE_INTEGER ? visibleCount : undefined).map((url, i) => {
                       const isLast = visibleCount < Number.MAX_SAFE_INTEGER && i === visibleCount - 1 && stills.length > visibleCount;

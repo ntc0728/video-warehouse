@@ -20,11 +20,15 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useIPTVAutoRefresh } from '@/hooks/useIPTVAutoRefresh';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import GroupPicker from './GroupPicker';
 import { useShallow } from 'zustand/react/shallow';
 import { Search, X, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import './IPTV.css';
 
 /** 防抖 Hook：延迟更新值，避免频繁触发搜索过滤 */
+const MAX_VISIBLE_SOURCES = 6;
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -38,6 +42,7 @@ function useDebounce<T>(value: T, delay: number): T {
 const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   // 高频更新字段 (availabilityProgress) 与低频数据/动作分两组订阅,避免每频道
   // 检测时 progress 变化触发整页重渲染。
   const {
@@ -84,6 +89,7 @@ export default function IPTVPage() {
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState(saved?.search || '');
   const [groupsExpanded, setGroupsExpanded] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
 
   useScrollRestore('iptv');
@@ -377,7 +383,7 @@ export default function IPTVPage() {
           >
             全部源
           </button>
-          {aggregatorUrls.map((_, index) => {
+          {(sourcesExpanded ? aggregatorUrls : aggregatorUrls.slice(0, MAX_VISIBLE_SOURCES)).map((_, index) => {
             const hasData = sourceHasChannels[index];
             return (
               <button
@@ -391,44 +397,68 @@ export default function IPTVPage() {
               </button>
             );
           })}
+          {aggregatorUrls.length > MAX_VISIBLE_SOURCES && (
+            <button
+              type="button"
+              className={`source-tag source-tag--more`}
+              onClick={() => setSourcesExpanded(!sourcesExpanded)}
+            >
+              {sourcesExpanded ? '收起' : `+${aggregatorUrls.length - MAX_VISIBLE_SOURCES}`}
+            </button>
+          )}
         </div>
       )}
 
-      <div
-        className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
-        style={
-          needCollapse && !groupsExpanded && collapsedHeight !== null
-            ? { maxHeight: collapsedHeight }
-            : !needCollapse
-              ? { marginBottom: 16 }
-              : undefined
-        }
-        ref={groupsRef}
-      >
-        <button
-          className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
-          onClick={() => handleGroupSelect(null)}
-        >
-          全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
-        </button>
-        {filteredGroups.map((group) => (
-          <button
-            key={group.name}
-            className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
-            onClick={() => handleGroupSelect(group.name)}
-          >
-            {group.name} ({group.count})
-          </button>
-        ))}
-      </div>
-
-      {needCollapse && (
-        <button
-          className="groups-toggle"
-          onClick={() => setGroupsExpanded(!groupsExpanded)}
-        >
-          {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
-        </button>
+      {filteredGroups.length > 0 && (
+        isMobile ? (
+          <GroupPicker
+            key={selectedSource ?? 'all'}
+            groups={filteredGroups}
+            totalCount={selectedSource
+              ? channels.filter(ch => ch.sourceId === selectedSource).length
+              : channels.length}
+            selectedGroup={selectedGroup}
+            onSelect={handleGroupSelect}
+          />
+        ) : (
+          <>
+            <div
+              className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
+              style={
+                needCollapse && !groupsExpanded && collapsedHeight !== null
+                  ? { maxHeight: collapsedHeight }
+                  : !needCollapse
+                    ? { marginBottom: 16 }
+                    : undefined
+              }
+              ref={groupsRef}
+            >
+              <button
+                className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
+                onClick={() => handleGroupSelect(null)}
+              >
+                全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
+              </button>
+              {filteredGroups.map((group) => (
+                <button
+                  key={group.name}
+                  className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
+                  onClick={() => handleGroupSelect(group.name)}
+                >
+                  {group.name} ({group.count})
+                </button>
+              ))}
+            </div>
+            {needCollapse && (
+              <button
+                className="groups-toggle"
+                onClick={() => setGroupsExpanded(!groupsExpanded)}
+              >
+                {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
+              </button>
+            )}
+          </>
+        )
       )}
 
       {isLoading && channels.length === 0 && (

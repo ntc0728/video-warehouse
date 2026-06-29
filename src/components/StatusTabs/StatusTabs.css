@@ -1,0 +1,67 @@
+/* StatusTabs — pill chip 风格 */
+.status-tabs {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.status-tab {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.status-tab--active {
+  border-color: var(--status-tab-color, var(--color-primary));
+  background: var(--status-tab-color, var(--color-primary));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--status-tab-color, var(--color-primary)) 30%, rgba(0, 0, 0, 0.15));
+}
+
+.status-tab:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.status-tab__count {
+  padding: var(--space-2xs) var(--space-2xs);
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status-tab--active .status-tab__count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+@media (width <= 767px) {
+  .status-tabs {
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .status-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .status-tab {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+}
