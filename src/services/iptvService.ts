@@ -138,7 +138,10 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   // 并行获取所有源
   const results = await Promise.allSettled(
     urls.map(async (url, index) => {
-      const rawContent = await fetchContent(url);
+      const fetchUrl = shouldProxy(url, settings?.proxyUrl, settings?.proxyPattern)
+        ? `${settings!.proxyUrl}/m3u8-proxy?url=${encodeURIComponent(url)}`
+        : url;
+      const rawContent = await fetchContent(fetchUrl);
       const channels = parseM3U8Content(rawContent, url);
       return channels.map(ch => ({
         ...ch,

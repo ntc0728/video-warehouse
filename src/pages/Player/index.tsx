@@ -489,7 +489,7 @@ export default function PlayerPage() {
   if (isLoading || tmdbLoading || cmsSearching) {
     return (
       <div className="player-page">
-        <div className="player-container">
+        <div className="player-page__container">
           <div className="player-loading-wrap">
             <AppLoading tip="加载中…" showTip />
           </div>

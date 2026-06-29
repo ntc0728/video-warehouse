@@ -183,6 +183,7 @@
   --layout-select-w:           140px;
   --layout-select-w-mobile:    120px;
   --layout-epg-max-height:     400px;
+  --layout-bottomsheet-max-h:  500px;
   --layout-epg-empty-min-height: 100px;
   --layout-epg-time-min-width: 100px;
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg)));

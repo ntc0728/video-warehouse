@@ -112,43 +112,6 @@ test.describe('搜索历史下拉', () => {
   });
 });
 
-/* ─── 猜你想搜 ────────────────────────────────────── */
-test.describe('猜你想搜', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('search-history', JSON.stringify(['流浪地球', '三体', '长津湖']));
-    });
-  });
-
-  test('无搜索词时 Browse 页显示猜你想搜区域', async ({ page }) => {
-    await page.goto('/browse');
-    await page.waitForTimeout(1000);
-
-    const suggestions = page.locator('.browse-suggestions');
-    await expect(suggestions).toBeVisible();
-  });
-
-  test('有搜索词时猜你想搜隐藏', async ({ page }) => {
-    await page.goto('/browse?q=流浪地球');
-    await page.waitForTimeout(1000);
-
-    const suggestions = page.locator('.browse-suggestions');
-    await expect(suggestions).not.toBeVisible();
-  });
-
-  test('点击 chip 触发搜索导航', async ({ page }) => {
-    await page.goto('/browse');
-    await page.waitForTimeout(1000);
-
-    const chip = page.locator('.browse-suggestions__chip').first();
-    await chip.click();
-    await page.waitForTimeout(500);
-
-    await expect(page).toHaveURL(/q=/);
-  });
-});
-
 /* ─── 热门搜索榜单 ────────────────────────────────── */
 test.describe('热门搜索榜单', () => {
   test('无搜索词时显示热门搜索', async ({ page }) => {

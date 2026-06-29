@@ -31,9 +31,11 @@
   flex-wrap: wrap;
 }
 
-/* 多行 wrap：分类行专用 — label 顶部对齐，chips 自动换行 */
+/* 多行 wrap：分类行专用 — Grid 布局 */
 .filter-bar__row--wrap {
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
 }
 
 /* ── Label ────────────────────────────────────────── */
@@ -47,7 +49,7 @@
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.5;
   white-space: nowrap;
 }
 

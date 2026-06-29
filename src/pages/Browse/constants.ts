@@ -8,7 +8,7 @@ import type { CategoryKey } from '@/components/CategoryQuickAccess';
 
 // ── 分类显示标签 ────────────────────────────────────────
 export const CATEGORY_LABELS: Record<CategoryKey, string> = {
-  all: '全部',
+  all: '分类',
   movie: '电影',
   tv: '剧集',
   variety: '综艺',

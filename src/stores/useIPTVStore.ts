@@ -171,6 +171,7 @@ export const useIPTVStore = create<IPTVState>()(
           set({
             error: error instanceof Error ? error.message : '刷新频道列表失败',
             isLoading: false,
+            lastRefresh: Date.now(),
           });
         }
       },
