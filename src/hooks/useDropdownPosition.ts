@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useThrottle } from './useThrottle';
 
 /** 下拉框定位信息 */
 interface DropdownPosition {
@@ -53,6 +54,8 @@ export function useDropdownPosition(isOpen: boolean) {
     setPosition({ top, left, width: rect.width, maxHeight });
   }, [isOpen]);
 
+  const throttledUpdate = useThrottle(updatePosition);
+
   useEffect(() => {
     updatePosition();
   }, [updatePosition]);
@@ -60,17 +63,14 @@ export function useDropdownPosition(isOpen: boolean) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleScroll = () => updatePosition();
-    const handleResize = () => updatePosition();
-
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', throttledUpdate, true);
+    window.addEventListener('resize', throttledUpdate);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', throttledUpdate, true);
+      window.removeEventListener('resize', throttledUpdate);
     };
-  }, [isOpen, updatePosition]);
+  }, [isOpen, throttledUpdate]);
 
   return { triggerRef, position };
 }

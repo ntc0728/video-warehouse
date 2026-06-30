@@ -1,5 +1,6 @@
 // 网格布局计算 Hook，根据容器宽度动态计算每行列数和页面容量
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useThrottle } from './useThrottle';
 
 interface GridLayoutOptions {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -60,6 +61,8 @@ export function useGridLayout({
     });
   }, [containerRef, minCardWidth, gap, defaultRows, padding]);
 
+  const throttledCalculateLayout = useThrottle(calculateLayout);
+
   useEffect(() => {
     calculateLayout();
 
@@ -72,13 +75,13 @@ export function useGridLayout({
       ro.observe(containerRef.current);
     }
 
-    window.addEventListener('resize', calculateLayout);
+    window.addEventListener('resize', throttledCalculateLayout);
 
     return () => {
       ro.disconnect();
-      window.removeEventListener('resize', calculateLayout);
+      window.removeEventListener('resize', throttledCalculateLayout);
     };
-  }, [calculateLayout, containerRef]);
+  }, [calculateLayout, throttledCalculateLayout, containerRef]);
 
   return layout;
 }

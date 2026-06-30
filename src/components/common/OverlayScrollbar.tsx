@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useThrottle } from '@/hooks/useThrottle';
 import './OverlayScrollbar.css';
 
 interface OverlayScrollbarProps {
@@ -34,19 +35,21 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     updateThumb();
   }, [updateThumb]);
 
+  const throttledUpdateThumb = useThrottle(updateThumb);
+
   // 监听滚动事件
   useEffect(() => {
     const el = scrollContainer.current;
     if (!el) return;
-    el.addEventListener('scroll', updateThumb, { passive: true });
+    el.addEventListener('scroll', throttledUpdateThumb, { passive: true });
     updateThumb();
-    const ro = new ResizeObserver(updateThumb);
+    const ro = new ResizeObserver(throttledUpdateThumb);
     ro.observe(el);
     return () => {
-      el.removeEventListener('scroll', updateThumb);
+      el.removeEventListener('scroll', throttledUpdateThumb);
       ro.disconnect();
     };
-  }, [scrollContainer, updateThumb]);
+  }, [scrollContainer, throttledUpdateThumb, updateThumb]);
 
   // 延迟重试：处理 ref 可能延迟绑定的情况
   useEffect(() => {

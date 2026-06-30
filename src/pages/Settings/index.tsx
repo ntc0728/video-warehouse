@@ -5,7 +5,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { List, Switch, Button, Modal, toast, HelpPopover } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
-import { useIPTVStore, useSettingsStore, useTMDBStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
+import { useSettingsStore, useTMDBStore } from '@/stores';
 import { getVideoSources, getIPTVSources, getEPGSources } from '@/services/sourceService';
 import { fetchTrending } from '@/services/tmdbService';
 import httpClient from '@/services/httpClient';
@@ -86,7 +87,7 @@ export default function SettingsPage() {
   const [proxyUrlInput, setProxyUrlInput] = useState('');
   const [showPatternInput, setShowPatternInput] = useState(false);
   const [patternInput, setPatternInput] = useState('');
-  const DEFAULT_PROXY_PATTERN = 'miguvideo\\.com|101\\.35\\.240\\.114';
+  const DEFAULT_PROXY_PATTERN = '';
   const [showCorsProxyInput, setShowCorsProxyInput] = useState(false);
   const [corsProxyInput, setCorsProxyInput] = useState('');
   const [showTMDBTokenInput, setShowTMDBTokenInput] = useState(false);
@@ -696,7 +697,7 @@ export default function SettingsPage() {
                 <HelpPopover title="代理规则" content="设置代理规则正则表达式。匹配正则的URL不走代理，其余走代理。留空则所有地址都走代理。用于区分需要代理和不需要代理的流地址。" />
               </>
             }
-            description={iptvSettings.proxyPattern || '默认: 匹配 miguvideo.com 和 IP 不走代理'}
+            description={iptvSettings.proxyPattern || '默认: 全部走代理（留空即全部代理）'}
             extra={
               <Button size="small" className="settings-btn-mini" onClick={() => {
                 setPatternInput(iptvSettings.proxyPattern || DEFAULT_PROXY_PATTERN);

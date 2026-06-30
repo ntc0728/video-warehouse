@@ -66,6 +66,9 @@ async function fetchContent(url: string): Promise<string> {
  */
 function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
   if (!proxyUrl) return false;
+  // 防止双重代理：如果 URL 已经是代理 URL，不再代理
+  // 匹配完整 URL（proxyUrl/m3u8-proxy?url=）和相对路径（/m3u8-proxy?url=）
+  if (url.includes('/m3u8-proxy?url=') || url.includes('/ts-proxy?url=')) return false;
   if (!pattern) return true;
   try {
     return !new RegExp(pattern).test(url);
@@ -74,7 +77,12 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
   }
 }
 
-export { shouldProxy };
+/** 拼接代理后的播放 URL */
+function buildProxyUrl(url: string, proxyUrl: string): string {
+  return `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(url)}`;
+}
+
+export { shouldProxy, buildProxyUrl };
 
 export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'pan' {
   const lower = url.toLowerCase();
@@ -138,8 +146,9 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   // 并行获取所有源
   const results = await Promise.allSettled(
     urls.map(async (url, index) => {
-      const fetchUrl = shouldProxy(url, settings?.proxyUrl, settings?.proxyPattern)
-        ? `${settings!.proxyUrl}/m3u8-proxy?url=${encodeURIComponent(url)}`
+      const proxyUrl = settings?.proxyUrl ?? '';
+      const fetchUrl = shouldProxy(url, proxyUrl, settings?.proxyPattern)
+        ? buildProxyUrl(url, proxyUrl)
         : url;
       const rawContent = await fetchContent(fetchUrl);
       const channels = parseM3U8Content(rawContent, url);

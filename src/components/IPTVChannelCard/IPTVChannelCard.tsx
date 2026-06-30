@@ -6,10 +6,11 @@ import { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, CheckCircle, XCircle } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
-import { useIPTVStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
-import { shouldProxy } from '@/services/iptvService';
+import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
 import LazyImage from '../LazyImage/LazyImage';
+import { isImageLoaded } from '../LazyImage/imageCache';
 import './IPTVChannelCard.css';
 
 interface IPTVChannelCardProps {
@@ -26,6 +27,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
   const isTV = useIsTV();
 
   const sourceName = channel.sourceId && sourceNames
@@ -37,10 +39,13 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     if (batchMode) return '#';
     const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
     const playUrl = useProxy
-      ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
+      ? buildProxyUrl(channel.url, proxyUrl)
       : channel.url;
-    return `/iptv/play?url=${encodeURIComponent(playUrl)}`;
-  }, [batchMode, channel.url, proxyUrl, proxyPattern]);
+    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    params.set('id', channel.id);
+    params.set('name', channel.name);
+    return `/iptv/play?${params.toString()}`;
+  }, [batchMode, channel.url, channel.id, channel.name, proxyUrl, proxyPattern]);
 
   /** 跳转前记录播放历史与当前选中频道 */
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -93,6 +98,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           alt={channel.name}
           letter={channel.name.charAt(0)}
           loadingVariant="brand"
+          onLoad={() => setImageLoaded(true)}
         />
         {/* 批量模式下隐藏封面元素 */}
         {!batchMode && channel.isAvailable !== undefined && (
@@ -142,7 +148,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         </Link>
       )}
       {/* 批量模式下隐藏收藏按钮 */}
-      {!batchMode && !hideFavorite && (
+      {!batchMode && !hideFavorite && imageLoaded && (
         <button
           type="button"
           className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}

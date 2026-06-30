@@ -114,6 +114,18 @@ export class HLSAdapter extends BasePlayerAdapter {
         this.currentLevel = data.level;
       });
 
+      // 分片加载完成：上报分片级字节数，作为高精度带宽估算样本
+      // 比 PerformanceObserver 更准（不依赖 CORS TAO 头）
+      this.hls.on(HlsJs.Events.FRAG_LOADED, (_e: unknown, data: { frag?: { stats?: { total?: number; loading?: { start?: number; end?: number } } } }) => {
+        const stats = data.frag?.stats;
+        const start = stats?.loading?.start;
+        const end = stats?.loading?.end;
+        const total = stats?.total;
+        if (total && start !== undefined && end !== undefined && end > start) {
+          this.estimator.recordFragLoaded(total, (end - start) / 1000);
+        }
+      });
+
       this.hls.on(HlsJs.Events.ERROR, (_event: unknown, data: { fatal: boolean; type: string; details: string }) => {
         if (data.fatal) {
           const now = Date.now();
@@ -189,10 +201,16 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   getBandwidthEstimate(): number {
+    // hls.js 路径：优先用 hls.bandwidthEstimate
     if (this.hls) {
-      return this.hls.bandwidthEstimate;
+      const v = this.hls.bandwidthEstimate;
+      if (v > 0) {
+        this.estimator.setAdapterValue(v);
+        return v;
+      }
     }
-    return 0;
+    // 原生 HLS 路径 / hls.js 未给出值：走 estimator（PO + 解码字节）
+    return this.estimator.estimate();
   }
 
   setDecoderMode(mode: DecoderMode): HLSAdapter {

@@ -87,7 +87,13 @@ export class DashAdapter extends BasePlayerAdapter {
   }
 
   getBandwidthEstimate(): number {
-    return this.player?.getAverageThroughput('video') ?? 0;
+    const v = this.player?.getAverageThroughput('video');
+    if (v && v > 0) {
+      this.estimator.setAdapterValue(v);
+      return v;
+    }
+    // player 为 null（库加载失败/未初始化）时走 estimator
+    return this.estimator.estimate();
   }
 
   getAudioTracks(): AudioTrack[] {

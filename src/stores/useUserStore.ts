@@ -29,7 +29,7 @@ interface UserState {
   isCollected: (videoId: string) => boolean;
 
   addHistory: (record: Omit<HistoryRecord, 'id' | 'updatedAt'>) => void;
-  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string) => void;
+  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, sourceName?: string, cmsSourceName?: string, episodeLabel?: string) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
@@ -84,15 +84,21 @@ export const useUserStore = create<UserState>()(
        * 同一视频+同一剧集的记录会更新进度和时间，而非重复创建
        */
       addHistory: (record) => {
-        const existingIndex = get().history.findIndex(
+        // videoId + episodeId 去重；新 episodeId 回退匹配旧 undefined 记录，避免同一视频出现两条
+        let existingIndex = get().history.findIndex(
           (h) => h.videoId === record.videoId && h.episodeId === record.episodeId
         );
+        if (existingIndex < 0 && record.episodeId != null) {
+          existingIndex = get().history.findIndex(
+            (h) => h.videoId === record.videoId && h.episodeId == null
+          );
+        }
 
         if (existingIndex >= 0) {
           set((state) => ({
             history: state.history.map((h, i) =>
               i === existingIndex
-                ? { ...h, progress: record.progress, duration: record.duration, title: record.title || h.title, cover: record.cover || h.cover, updatedAt: Date.now() }
+                ? { ...h, progress: record.progress, duration: record.duration, title: record.title || h.title, cover: record.cover || h.cover, backdrop: record.backdrop || h.backdrop, sourceName: record.sourceName || h.sourceName, cmsSourceName: record.cmsSourceName || h.cmsSourceName, episodeLabel: record.episodeLabel || h.episodeLabel, episodeId: record.episodeId ?? h.episodeId, updatedAt: Date.now() }
                 : h
             ),
           }));
@@ -108,8 +114,8 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover) => {
-        get().addHistory({ videoId, episodeId, progress, duration, title, cover });
+      updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel) => {
+        get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel });
       },
 
       getHistoryByVideo: (videoId) =>

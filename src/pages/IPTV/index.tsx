@@ -11,7 +11,8 @@
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useIPTVStore, useNavStore, useSettingsStore } from '@/stores';
+import { useNavStore, useSettingsStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { getIPTVSources } from '@/services/sourceService';
 import { getEPGCacheTime } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';

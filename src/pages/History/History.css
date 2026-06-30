@@ -50,10 +50,9 @@
 .history-page {
   position: relative;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   flex-direction: column;
   width: 100%;
-  min-height: 100%;
   padding: 0;
   box-sizing: border-box;
 }
@@ -189,6 +188,35 @@
 .history-group-body {
   grid-column: 2;
   min-width: 0;
+}
+
+/* 历史页 video tab 横版卡片网格列数（比竖版少） */
+.history-content .history-group-body .video-card-grid {
+  --card-cols: 3;
+}
+
+@media (width <= 767px) {
+  .history-content .history-group-body .video-card-grid {
+    --card-cols: 2;
+  }
+}
+
+@media (width >= 1280px) {
+  .history-content .history-group-body .video-card-grid {
+    --card-cols: 4;
+  }
+}
+
+@media (width >= 1920px) {
+  .history-content .history-group-body .video-card-grid {
+    --card-cols: 5;
+  }
+}
+
+@media (width >= 2560px) {
+  .history-content .history-group-body .video-card-grid {
+    --card-cols: 6;
+  }
 }
 
 /* 历史页内的 IPTV 频道网格:始终撑满父容器,避免分组下卡片独占一行 */

@@ -708,7 +708,7 @@
 .detail-cast-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-md);
+  gap: var(--space-xl);
 }
 .detail-cast-item {
   display: flex;

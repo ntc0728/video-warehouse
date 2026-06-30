@@ -41,6 +41,7 @@
 
 .browse-page__loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -52,6 +53,7 @@
 
 .browse-page__refreshing {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;

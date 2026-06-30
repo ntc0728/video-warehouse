@@ -627,8 +627,9 @@ main {
 .record-card__time {
   position: absolute;
   right: var(--space-sm);
-  bottom: var(--space-xs);
+  bottom: var(--space-sm);
   z-index: 3;
+  max-width: 45%;
   padding: 0 var(--space-2xs);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
@@ -637,9 +638,20 @@ main {
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   opacity: 0.85;
   pointer-events: auto;
   transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.record-card .video-card-info {
+  padding-right: calc(var(--space-sm) * 2 + 4em);
+}
+
+/* 横版卡片不应用旧 padding-right hack */
+.record-card .video-card--landscape .video-card-info {
+  padding-right: var(--space-sm);
 }
 
 .record-card:hover .record-card__time {

@@ -30,6 +30,14 @@ export interface HistoryRecord {
   updatedAt: number;
   title?: string;
   cover?: string;
+  /** TMDB 横版背景图（16:9），用于历史页横版卡片展示 */
+  backdrop?: string;
+  /** 当前使用的播放线路名（来自 vod_play_from，如 "ikm3u8"），用于恢复上次播放的线路 */
+  sourceName?: string;
+  /** CMS 源配置名称（如 "量子资源"），用于历史页展示 */
+  cmsSourceName?: string;
+  /** 当前播放的集数标题（如 "第3集"），播放时写入 */
+  episodeLabel?: string;
 }
 
 /** IndexedDB 数据库 Schema 定义 */

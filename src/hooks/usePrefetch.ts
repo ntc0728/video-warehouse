@@ -13,7 +13,8 @@
  * - 失败静默,错误已在 store 中记录,UI 后续自行展示。
  */
 import { useEffect } from 'react';
-import { useTMDBStore, useIPTVStore } from '@/stores';
+import { useTMDBStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 
 /** 应用启动时预取首页和 IPTV 数据，避免首次加载闪白 */
 export function usePrefetch(): void {

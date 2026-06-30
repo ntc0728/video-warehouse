@@ -554,6 +554,7 @@
 /* ── 刷新时的内容加载态 ──────────────────────────── */
 .iptv-content-loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 50vh;

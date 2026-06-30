@@ -92,27 +92,37 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   useEffect(() => {
     if (isDragging) {
       const handleGlobalMouseUp = () => endDrag();
+      let mouseRafId = 0;
       const handleGlobalMouseMove = (e: MouseEvent) => {
-        if (barRef.current && duration > 0) {
-          const rect = barRef.current.getBoundingClientRect();
-          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-          const time = ratio * duration;
-          setPendingTime(time);
-          setPendingPosition(ratio * 100);
-          onSeek(time);
-        }
+        if (mouseRafId) return;
+        mouseRafId = requestAnimationFrame(() => {
+          if (barRef.current && duration > 0) {
+            const rect = barRef.current.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const time = ratio * duration;
+            setPendingTime(time);
+            setPendingPosition(ratio * 100);
+            onSeek(time);
+          }
+          mouseRafId = 0;
+        });
       };
+      let touchRafId = 0;
       const handleGlobalTouchMove = (e: TouchEvent) => {
-        if (barRef.current && duration > 0) {
-          e.preventDefault();
-          const rect = barRef.current.getBoundingClientRect();
-          const clientX = getClientX(e);
-          const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-          const time = ratio * duration;
-          setPendingTime(time);
-          setPendingPosition(ratio * 100);
-          onSeek(time);
-        }
+        if (touchRafId) return;
+        touchRafId = requestAnimationFrame(() => {
+          if (barRef.current && duration > 0) {
+            e.preventDefault();
+            const rect = barRef.current.getBoundingClientRect();
+            const clientX = getClientX(e);
+            const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            const time = ratio * duration;
+            setPendingTime(time);
+            setPendingPosition(ratio * 100);
+            onSeek(time);
+          }
+          touchRafId = 0;
+        });
       };
       const handleGlobalTouchEnd = () => endDrag();
       window.addEventListener('mouseup', handleGlobalMouseUp);
@@ -120,6 +130,8 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
       window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
       window.addEventListener('touchend', handleGlobalTouchEnd);
       return () => {
+        if (mouseRafId) cancelAnimationFrame(mouseRafId);
+        if (touchRafId) cancelAnimationFrame(touchRafId);
         window.removeEventListener('mouseup', handleGlobalMouseUp);
         window.removeEventListener('mousemove', handleGlobalMouseMove);
         window.removeEventListener('touchmove', handleGlobalTouchMove);

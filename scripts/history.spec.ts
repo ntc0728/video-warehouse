@@ -26,7 +26,7 @@ test.describe('Tab system', () => {
   test('has video and IPTV tabs', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const tabs = page.locator('.category-tab');
+    const tabs = page.locator('.category-segmented__item');
     const count = await tabs.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
@@ -34,13 +34,12 @@ test.describe('Tab system', () => {
   test('clicking tab switches content', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const iptvTab = page.locator('.category-tab').filter({ hasText: /IPTV|频道/ });
+    const iptvTab = page.locator('.category-segmented__item').filter({ hasText: /IPTV|频道/ });
     if (await iptvTab.isVisible().catch(() => false)) {
       await iptvTab.click();
       await page.waitForTimeout(500);
       const isActive = await iptvTab.evaluate((el) => {
-        return el.classList.contains('category-tab--active')
-          || el.classList.contains('active')
+        return el.classList.contains('active')
           || el.getAttribute('aria-selected') === 'true';
       });
       expect(isActive).toBe(true);
