@@ -226,6 +226,16 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
   }
 }
 
+/** 从 $ 分隔的 parts 中提取标题：跳过 URL 和空串，取第一个有意义的部分 */
+function pickTitle(parts: string[], fallback: string): string {
+  for (let k = 0; k < parts.length; k++) {
+    const p = parts[k].trim();
+    if (!p || p.startsWith('http') || p.startsWith('//')) continue;
+    return p;
+  }
+  return fallback;
+}
+
 /** 解析播放源字符串，提取源列表和分集信息 */
 function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: Video['sources']; episodes: Video['episodes'] } {
   const fromList = vodPlayFrom ? vodPlayFrom.split('$$$').filter(Boolean) : [];
@@ -246,14 +256,15 @@ function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: V
       const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
       if (url) {
         const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
-        allSources.push({ id: `source-${i}`, name: sourceName, url, type, isDefault: allSources.length === 0 });
+        const name = pickTitle(parts.slice(0, -1), sourceName);
+        allSources.push({ id: `source-${i}`, name, url, type, isDefault: allSources.length === 0 });
       }
     } else {
       for (let j = 0; j < episodes.length; j++) {
         const parts = episodes[j].split('$');
-        const epTitle = parts.length > 1 ? parts[0] : '第' + (j + 1) + '集';
         const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
         if (!url) continue;
+        const epTitle = pickTitle(parts.slice(0, -1), '第' + (j + 1) + '集');
         const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
         const sourceId = `source-${i}-ep-${j}`;
         const epKey = `${epTitle}-${j}`;

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo, Component, type ReactNode } from 'react';
-import { usePlayerStore, useIPTVStore, useSettingsStore } from '@/stores';
+import { usePlayerStore, useSettingsStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { toast } from '@/components/ui';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
 import { usePlayerCore } from './hooks/usePlayerCore';
@@ -26,7 +27,7 @@ import { Rewind, FastForward, X } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
-import { shouldProxy, detectVideoSourceType } from '@/services/iptvService';
+import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { SourceType } from '@/types/video';
 
 const VOLUME_POPUP_DELAY = 3000;
@@ -326,15 +327,48 @@ export default function UniversalPlayer({
   useEffect(() => {
     if (mode !== 'iptv' || !url || _channels.length === 0) return;
 
+    // 从 URL 参数中提取频道 ID、名称和播放 URL
+    let urlId = '';
+    let urlName = '';
     let lookupUrl = url;
     try {
-      const parsed = new URL(url);
-      const urlMatch = parsed.search.match(/[?&]url=([^&]*)/);
-      if (urlMatch) lookupUrl = urlMatch[1];
+      const sp = new URLSearchParams(url);
+      urlId = sp.get('id') || '';
+      urlName = sp.get('name') || '';
+      const rawUrl = sp.get('url');
+      if (rawUrl) lookupUrl = decodeURIComponent(rawUrl);
     } catch {
-      // url 不是标准 URL 格式时直接用原值匹配
+      // url 可能是标准 URL 格式，尝试从 query 中提取
+      try {
+        const parsed = new URL(url);
+        const urlMatch = parsed.search.match(/[?&]url=([^&]*)/);
+        if (urlMatch) lookupUrl = urlMatch[1];
+      } catch { /* use as-is */ }
     }
 
+    // 优先用频道 ID 精确匹配
+    if (urlId) {
+      const matched = _channels.find(ch => ch.id === urlId);
+      if (matched) {
+        setCurrentChannelId(matched.id);
+        setCurrentChannelName(matched.name);
+        const { proxyUrl: pUrl, proxyPattern: pPattern } = useIPTVStore.getState().settings;
+        const useProxy = shouldProxy(matched.url, pUrl, pPattern);
+        setCurrentUrl(useProxy ? buildProxyUrl(matched.url, pUrl) : matched.url);
+        setCurrentType(detectVideoSourceType(matched.url));
+        for (let g = 0; g < groups.length; g++) {
+          const chIndex = groups[g].channels.findIndex(ch => ch.id === matched.id);
+          if (chIndex >= 0) {
+            setTvFocusGroupIndex(g);
+            setTvFocusChannelIndex(chIndex);
+            break;
+          }
+        }
+        return;
+      }
+    }
+
+    // URL 匹配
     const matched = _channels.find(ch => {
       if (ch.url === lookupUrl) return true;
       try { if (decodeURIComponent(ch.url) === lookupUrl) return true; } catch { /* decode failed */ }
@@ -348,7 +382,7 @@ export default function UniversalPlayer({
     const { proxyUrl: pUrl, proxyPattern: pPattern } = useIPTVStore.getState().settings;
     const useProxy = shouldProxy(targetUrl, pUrl, pPattern);
     const playUrl = useProxy
-      ? `${pUrl}/m3u8-proxy?url=${encodeURIComponent(targetUrl)}`
+      ? buildProxyUrl(targetUrl, pUrl)
       : targetUrl;
 
     setCurrentUrl(playUrl);
@@ -365,8 +399,24 @@ export default function UniversalPlayer({
           break;
         }
       }
+    } else if (urlName) {
+      const byName = _channels.find(ch => ch.name === urlName);
+      if (byName) {
+        setCurrentChannelId(byName.id);
+        setCurrentChannelName(byName.name);
+      }
     }
   }, [url, _channels, groups, mode, setCurrentChannelId, setCurrentChannelName, setCurrentType, setCurrentUrl, setTvFocusGroupIndex, setTvFocusChannelIndex]);
+
+  // URL 匹配失败时的兜底：用 channelName prop 反查频道，确保 currentChannelId 被设置
+  useEffect(() => {
+    if (mode !== 'iptv' || currentChannelId || _channels.length === 0 || !channelName) return;
+    const fallback = _channels.find(ch => ch.name === channelName);
+    if (fallback) {
+      setCurrentChannelId(fallback.id);
+      setCurrentChannelName(fallback.name);
+    }
+  }, [mode, currentChannelId, _channels, channelName, setCurrentChannelId, setCurrentChannelName]);
 
   // 音轨轮询（事件驱动回退：轮询直到找到音轨后停止）
   useEffect(() => {

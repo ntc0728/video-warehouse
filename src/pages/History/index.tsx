@@ -4,7 +4,8 @@
  * 通用左侧竖向时间轴导航（桌面/平板）+ 顶部横向时间轴（移动）
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
+import { useVideoStore, useUserStore, useNavStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
@@ -15,6 +16,7 @@ import StatusTabs from '@/components/StatusTabs';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useBackdropLoader } from '@/hooks/useBackdropLoader';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
@@ -37,6 +39,13 @@ type GroupKey = (typeof GROUP_ORDER)[number];
 interface HistoryVideoItem extends Video {
   _histTime: number;
   _histId: string;
+  _histBackdrop?: string;
+  _histProgress?: number;
+  _histDuration?: number;
+  _histEpisodeId?: string;
+  _histSourceName?: string;
+  _histCmsSourceName?: string;
+  _histEpisodeLabel?: string;
 }
 
 interface HistoryChannelItem {
@@ -112,6 +121,16 @@ function formatFullTime(ts: number): string {
   return timeFormatter.format(ts);
 }
 
+/** 构建横版封面左上角标签：CMS 源名称 + 播放线路名 + 集数 */
+function getOverlayLabel(video: HistoryVideoItem): string {
+  const parts: string[] = [];
+  // CMS 源配置名称（如 "量子资源"），优先于播放线路名
+  if (video._histCmsSourceName) parts.push(video._histCmsSourceName);
+  else if (video._histSourceName) parts.push(video._histSourceName);
+  if (video._histEpisodeLabel) parts.push(video._histEpisodeLabel);
+  return parts.length > 0 ? parts.join(' · ') : '';
+}
+
 type Tab = 'video' | 'iptv';
 type VideoStatus = 'all' | 'unfinished' | 'finished';
 
@@ -151,6 +170,9 @@ export default function HistoryPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('history');
+
+  // backdrop 自动补全（仅 video tab）
+  useBackdropLoader(watchHistory, activeTab === 'video');
 
   const search = searchByTab[activeTab];
   const setSearch = useCallback((v: string) => {
@@ -201,7 +223,7 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histId: h.id };
+        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histEpisodeId: h.episodeId, _histSourceName: h.sourceName, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') {
@@ -415,16 +437,16 @@ export default function HistoryPage() {
   return (
     <div className={`history-page ${batchMode ? 'batch-mode' : ''}`}>
       {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
-      <div className="history-filter-bar filter-bar">
-        <div className="filter-bar__left">
-          <h1 className="filter-bar__title">观看历史</h1>
+      <div className="history-filter-bar record-filter-bar">
+        <div className="record-filter-bar__left">
+          <h1 className="record-filter-bar__title">观看历史</h1>
           <div className="category-segmented">
             <button className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>影视</button>
             <button className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV</button>
           </div>
         </div>
         {hasRawData && (
-          <div className="filter-bar__actions">
+          <div className="record-filter-bar__actions">
             <div className="search-box-wrap search-box-wrap--iptv" role="search">
               <div className="search-box search-box--iptv">
                 <Search size={16} className="search-box__icon" aria-hidden="true" />
@@ -534,13 +556,18 @@ export default function HistoryPage() {
                         </button>
                       )}
                       <button className="record-card__delete" onClick={(e) => handleSingleDelete(video._histId, e)} aria-label="删除"><Trash2 size={14} /></button>
-                      <VideoCard video={video} hideFavorite batchMode={batchMode} />
-                      <span
-                        className="record-card__time"
-                        title={formatFullTime(video._histTime)}
-                      >
-                        {formatPlayTime(video._histTime, group as GroupKey)}
-                      </span>
+                      <VideoCard
+                        video={video}
+                        hideFavorite
+                        batchMode={batchMode}
+                        variant="landscape"
+                        backdropSrc={video._histBackdrop}
+                        timeLabel={formatPlayTime(video._histTime, group as GroupKey)}
+                        overlayLabel={getOverlayLabel(video)}
+                        progress={video._histProgress}
+                        duration={video._histDuration}
+                        navigateTo={video._histEpisodeId ? `/play/${video.id}/${video._histEpisodeId}` : `/play/${video.id}`}
+                      />
                     </div>
                   ))}
                 </div>

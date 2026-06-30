@@ -3,7 +3,8 @@
  * 影视 + IPTV 双 Tab，懒加载、搜索、筛选、多选删除、清除全部
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useVideoStore, useUserStore, useIPTVStore, useNavStore } from '@/stores';
+import { useVideoStore, useUserStore, useNavStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
@@ -226,16 +227,16 @@ export default function CollectionsPage() {
   return (
     <div className={`collection-page ${batchMode ? 'batch-mode' : ''}`}>
       {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
-      <div className="collection-filter-bar filter-bar">
-        <div className="filter-bar__left">
-          <h1 className="filter-bar__title">我的收藏</h1>
+      <div className="collection-filter-bar record-filter-bar">
+        <div className="record-filter-bar__left">
+          <h1 className="record-filter-bar__title">我的收藏</h1>
           <div className="category-segmented">
             <button className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>影视</button>
             <button className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV</button>
           </div>
         </div>
         {hasRawData && (
-          <div className="filter-bar__actions">
+          <div className="record-filter-bar__actions">
             <div className="search-box-wrap search-box-wrap--iptv" role="search">
               <div className="search-box search-box--iptv">
                 <Search size={16} className="search-box__icon" aria-hidden="true" />

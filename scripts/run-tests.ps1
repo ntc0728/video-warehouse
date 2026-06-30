@@ -117,7 +117,7 @@ if ($runVitest) {
 
 # 运行 playwright（如果有 UI 层文件变更）
 if ($matchedPlaywrightTests.Count -gt 0) {
-    Write-Host "`nRunning playwright tests (UI layer) with retries=$Retries, workers=$Workers:"
+    Write-Host "`nRunning playwright tests (UI layer) with retries=${Retries}, workers=${Workers}:"
     $matchedPlaywrightTests | ForEach-Object { Write-Host "  - $_" }
     
     $testArgs = @()

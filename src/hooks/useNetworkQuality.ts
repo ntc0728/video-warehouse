@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePlayerStore } from '@/stores';
+import { isVideoResource } from '@/lib/videoResource';
 
 interface NetworkQuality {
   latency: number | null;
@@ -15,8 +16,6 @@ function estimateLatency(): number | null {
   try {
     const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
     if (entries.length === 0) return null;
-    const isVideoResource = (name: string) =>
-      /\.(ts|m3u8|m3u|mp4|m4s|m4v)(\?|$)/i.test(name);
     const recent = entries
       .filter(e => isVideoResource(e.name) && e.responseStart > 0 && e.requestStart > 0)
       .slice(-5);

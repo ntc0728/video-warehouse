@@ -1,4 +1,5 @@
 import type { PlayerLevel } from '@/types/player';
+import { BandwidthEstimator } from './bandwidthEstimator';
 
 export interface AudioTrack {
   id: number;
@@ -36,12 +37,15 @@ export interface IPlayerAdapter {
   getSeekableStart(): number;
   /** 最晚可 seek 的时间（实时边缘） */
   getSeekableEnd(): number;
+  /** 暴露内部带宽估算器供 usePlayerCore 上报解码字节增量 */
+  getEstimator(): BandwidthEstimator;
   destroy(): void;
 }
 
 export abstract class BasePlayerAdapter implements IPlayerAdapter {
   protected video: HTMLVideoElement | null = null;
   protected url: string;
+  protected estimator = new BandwidthEstimator();
 
   constructor(url: string) {
     this.url = url;
@@ -49,15 +53,24 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
 
   attach(video: HTMLVideoElement): void {
     this.video = video;
+    this.estimator.start();
   }
 
   detach(): void {
     this.video = null;
+    this.estimator.stop();
   }
 
   switchSource(url: string, _options?: Record<string, unknown>): void {
     this.url = url;
     this.resetErrorCount();
+    // 热切换时清空旧样本，避免上一个频道的估算值污染新频道
+    this.estimator.reset();
+  }
+
+  /** 暴露 estimator 给 usePlayerCore 上报解码字节增量 */
+  getEstimator(): BandwidthEstimator {
+    return this.estimator;
   }
 
   abstract play(): Promise<void>;
@@ -95,8 +108,9 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
     return -1;
   }
 
+  /** 默认走 estimator 综合估算；子类可覆盖以提供更准确的值 */
   getBandwidthEstimate(): number {
-    return 0;
+    return this.estimator.estimate();
   }
 
   getAudioTracks(): AudioTrack[] {

@@ -69,9 +69,9 @@
   --shadow-focus: 0 0 0 3px var(--color-primary);
 
   /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
-  --text-xs:   clamp(0.6875rem, 0.628rem + 0.254vw, 0.75rem);    /* 11→12 */
-  --text-sm:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);   /* 12→13 */
-  --text-base: clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem); /* 13→14 */
+  --text-xs:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);     /* 12→13 */
+  --text-sm:   clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem);   /* 13→14 */
+  --text-base: clamp(0.875rem, 0.812rem + 0.254vw, 0.9375rem);   /* 14→15 */
   --text-lg:   clamp(0.875rem, 0.73rem + 0.445vw, 1rem);       /* 14→16 */
   --text-xl:   clamp(1rem, 0.846rem + 0.471vw, 1.125rem);      /* 16→18 */
   --text-2xl:  clamp(1.25rem, 1.03rem + 0.669vw, 1.5rem);      /* 20→24 */

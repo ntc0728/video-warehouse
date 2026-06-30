@@ -1,4 +1,4 @@
-/* FilterBar — 收藏页/历史页共用筛选栏样式 */
+/* RecordFilterBar — 收藏页/历史页共用筛选栏样式 */
 
 .category-segmented {
   display: inline-flex;
@@ -30,32 +30,33 @@
 }
 
 /* 筛选操作行 */
-.filter-bar {
+.record-filter-bar {
   display: flex;
   gap: var(--space-sm);
+  justify-content: flex-start;
   align-items: center;
 }
-.filter-bar__left {
+.record-filter-bar__left {
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
   align-items: center;
 }
-.filter-bar__title {
+.record-filter-bar__title {
   margin: 0;
   color: var(--color-text);
   font-size: var(--text-2xl);
   font-weight: 700;
   white-space: nowrap;
 }
-.filter-bar__actions {
+.record-filter-bar__actions {
   display: flex;
-  flex: 1 1 auto;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
+  margin-left: auto;
   align-items: center;
   min-width: 0;
 }
-.filter-bar__actions .toolbar-actions {
+.record-filter-bar__actions .toolbar-actions {
   flex-wrap: nowrap;
   flex-shrink: 0;
   margin-left: var(--space-xs);
@@ -66,13 +67,13 @@
 }
 
 @media (width <= 767px) {
-  .filter-bar__title {
+  .record-filter-bar__title {
     display: none;
   }
-  .filter-bar {
+  .record-filter-bar {
     flex-wrap: wrap;
   }
-  .filter-bar__actions {
+  .record-filter-bar__actions {
     flex: 1 1 auto;
     min-width: 0;
   }

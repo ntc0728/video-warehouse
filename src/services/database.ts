@@ -8,7 +8,7 @@ import type { VideoRecord, CollectionRecord, HistoryRecord } from '@/types/store
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 const DB_NAME = 'video-warehouse';
-const DB_VERSION = 2;
+const DB_VERSION = 5;
 
 /**
  * 数据库 Schema 定义
@@ -100,6 +100,11 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
       if (!db.objectStoreNames.contains('iptvChannels')) {
         db.createObjectStore('iptvChannels', { keyPath: 'key' });
       }
+
+      // v3-v5: 新增可选字段（backdrop, sourceName, episodeLabel），无需 schema 变更
+    },
+    blocked() {
+      console.warn('[DB] database open blocked — closing existing connections');
     },
   });
 
@@ -108,12 +113,18 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
 
 /**
  * 获取数据库实例，未初始化时自动初始化
+ * 包含连接关闭时自动重连
  */
 export async function getDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
-  if (!dbInstance) {
+  try {
+    if (!dbInstance) {
+      return initDB();
+    }
+    return dbInstance;
+  } catch {
+    dbInstance = null;
     return initDB();
   }
-  return dbInstance;
 }
 
 /** 获取所有视频记录 */

@@ -18,6 +18,7 @@ import type {
   TMDBImages,
 } from '@/types/tmdb';
 import { request, type RequestOptions } from './httpClient';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import axios from 'axios';
 
 // ============================================================
@@ -32,26 +33,14 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 // ============================================================
 
 function getAccessToken(): string | null {
-  try {
-    const stored = localStorage.getItem('app-settings');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed?.state?.tmdbAccessToken || null;
-    }
-  } catch { /* localStorage 读取失败或数据格式异常时返回 null */ }
-  return null;
+  const token = useSettingsStore.getState().tmdbAccessToken;
+  if (token) return token;
+  return import.meta.env.VITE_TMDB_ACCESS_TOKEN || null;
 }
 
 /** 获取用户设置的 TMDB 语言偏好，默认 zh-CN */
 export function getLanguage(): string {
-  try {
-    const stored = localStorage.getItem('app-settings');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed?.state?.tmdbLanguage || 'zh-CN';
-    }
-  } catch { /* localStorage 读取失败或数据格式异常时返回默认值 */ }
-  return 'zh-CN';
+  return useSettingsStore.getState().tmdbLanguage || 'zh-CN';
 }
 
 // ============================================================

@@ -12,6 +12,7 @@ import { useIsTV } from '@/hooks/useMediaQuery';
 import { useHighlightedText } from '@/lib/highlight';
 import type { Video } from '@/types/video';
 import LazyImage from '../LazyImage/LazyImage';
+import { isImageLoaded } from '../LazyImage/imageCache';
 import './VideoCard.css';
 
 interface VideoCardProps {
@@ -26,6 +27,20 @@ interface VideoCardProps {
   sizes?: string;
   /** 搜索关键词，用于标题高亮 */
   highlightQuery?: string;
+  /** 卡片变体：'portrait'（竖版 2:3）或 'landscape'（横版 16:9） */
+  variant?: 'portrait' | 'landscape';
+  /** 横版卡片专用的背景图（backdrop），优先级高于 video.cover */
+  backdropSrc?: string;
+  /** 横版卡片信息区内联显示的时间文本 */
+  timeLabel?: string;
+  /** 横版封面左上角标签（如 "源1 · 第3集"） */
+  overlayLabel?: string;
+  /** 播放进度（秒），配合 duration 计算百分比 */
+  progress?: number;
+  /** 总时长（秒） */
+  duration?: number;
+  /** 自定义导航路径，覆盖默认的 /detail/:id */
+  navigateTo?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -43,6 +58,13 @@ const VideoCard = memo(function VideoCard({
   srcSet,
   sizes,
   highlightQuery,
+  variant = 'portrait',
+  backdropSrc,
+  timeLabel,
+  overlayLabel,
+  progress,
+  duration,
+  navigateTo,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -55,6 +77,7 @@ const VideoCard = memo(function VideoCard({
   const isCollected = useUserStore(
     (s) => s.collections.some((c) => c.videoId === video.id),
   );
+  const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(video.cover));
 
   useEffect(() => {
     const el = titleRef.current;
@@ -92,10 +115,13 @@ const VideoCard = memo(function VideoCard({
   // 明显,改为固定后整批几乎同时淡入。
   const stagger = { animationDelay: '0.012s' };
 
+  // 横版卡片使用 backdrop 图，竖版使用 cover
+  const coverSrc = variant === 'landscape' && backdropSrc ? backdropSrc : video.cover;
+
   return (
     <Link
-      to={`/detail/${video.id}`}
-      className={`video-card animate-card-enter ${batchMode ? 'video-card--batch' : ''}`}
+      to={navigateTo || `/detail/${video.id}`}
+      className={`video-card ${variant === 'landscape' ? 'video-card--landscape' : ''} animate-card-enter ${batchMode ? 'video-card--batch' : ''}`}
       style={stagger}
       state={{ from: location.pathname + location.search }}
       tabIndex={isTV ? 0 : undefined}
@@ -105,13 +131,14 @@ const VideoCard = memo(function VideoCard({
     >
       <div className="video-card-cover">
         <LazyImage
-          src={video.cover}
-          srcSet={srcSet}
-          sizes={sizes}
+          src={coverSrc}
+          srcSet={variant === 'portrait' ? srcSet : undefined}
+          sizes={variant === 'portrait' ? sizes : undefined}
           alt={video.title}
-          className="video-card-cover-img"
+          className={`video-card-cover-img ${variant === 'landscape' ? 'video-card-cover-img--landscape' : ''}`}
           letter={video.title?.charAt(0)}
           loadingVariant="brand"
+          onLoad={() => setImageLoaded(true)}
         />
 
         {/* 评分 — 左上角（批量模式下隐藏） */}
@@ -123,7 +150,7 @@ const VideoCard = memo(function VideoCard({
         )}
 
         {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻（批量模式下隐藏） */}
-        {!batchMode && !hideFavorite && (
+        {!batchMode && !hideFavorite && imageLoaded && (
           <button
             className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
             onClick={handleFavorite}
@@ -149,6 +176,40 @@ const VideoCard = memo(function VideoCard({
             {typeLabels[video.type] || video.type}
           </span>
         )}
+
+        {/* 横版封面叠加层：源+集数徽章 + 底部渐变进度 */}
+        {variant === 'landscape' && (
+          <>
+            {/* 左上角：源名称 + 集数 */}
+            {overlayLabel && (
+              <span className="video-card-landscape__source-badge">{overlayLabel}</span>
+            )}
+            {/* 底部进度条 + 右侧时间 */}
+            {progress !== undefined && duration !== undefined && duration > 0 && (() => {
+              const pct = progress / duration;
+              const fmt = (s: number) => {
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                const sec = Math.floor(s % 60);
+                return h > 0
+                  ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+                  : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+              };
+              const label = pct >= 0.9 ? '已看完' : `${fmt(progress)}/${fmt(duration)}`;
+              return (
+                <div className="video-card-landscape__progress-overlay">
+                  <div className="video-card-landscape__progress-bar-wrap">
+                    <div
+                      className="video-card-landscape__progress-bar"
+                      style={{ width: `${Math.min(100, pct * 100)}%` }}
+                    />
+                  </div>
+                  <span className="video-card-landscape__progress-text">{label}</span>
+                </div>
+              );
+            })()}
+          </>
+        )}
       </div>
 
       <div className="video-card-info">
@@ -162,6 +223,9 @@ const VideoCard = memo(function VideoCard({
             </span>
           </h3>
         </div>
+        {variant === 'landscape' && timeLabel && (
+          <span className="video-card__time-inline">{timeLabel}</span>
+        )}
       </div>
     </Link>
   );

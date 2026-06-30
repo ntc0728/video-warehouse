@@ -3,6 +3,7 @@ import { usePlayerStore, useSettingsStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
+import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
 import type { SourceType } from '@/types/video';
 import type { AudioTrack } from '../adapters/PlayerAdapter';
@@ -160,10 +161,32 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleEnterPiP = () => { getStore().setIsPiP(true); };
     const handleLeavePiP = () => { getStore().setIsPiP(false); };
     const handleLoadedMetadata = () => { loadProgress(); };
+
+    // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源
+    // webkitVideoDecodedByteCount 在 Chrome/Safari/Edge/Android WebView 支持；
+    // Firefox 不支持（恒为 undefined），estimator 内部降级到 PerformanceObserver。
+    let lastDecodedBytes = 0;
+    let lastDecodedAt = Date.now();
+
     const handleProgress = () => {
       if (video.buffered.length > 0) {
         const bufferedEnd = video.buffered.end(video.buffered.length - 1);
         getStore().setBufferedProgress(bufferedEnd);
+      }
+
+      // 上报解码字节增量给 estimator（不依赖 bitrate，避免循环论证）
+      const v = video as HTMLVideoElement & { webkitVideoDecodedByteCount?: number };
+      const decoded = v.webkitVideoDecodedByteCount ?? 0;
+      const adapter = adapterRef.current as BasePlayerAdapter | null;
+      if (adapter && decoded > lastDecodedBytes) {
+        const deltaBytes = decoded - lastDecodedBytes;
+        const now = Date.now();
+        const dtSec = (now - lastDecodedAt) / 1000;
+        if (dtSec > 0 && deltaBytes > 0) {
+          adapter.getEstimator().recordBufferedDelta(deltaBytes, dtSec);
+        }
+        lastDecodedBytes = decoded;
+        lastDecodedAt = now;
       }
     };
 
@@ -206,29 +229,10 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.addEventListener('error', handleNativeError);
     video.addEventListener('progress', handleProgress);
 
+    // 每秒读取 adapter 估算值写入 store；adapter 内部已聚合 hls.js/PO/解码字节三路数据源
     const bandwidthTimer = setInterval(() => {
-      let bps = adapterRef.current?.getBandwidthEstimate() ?? 0;
-      if (!Number.isFinite(bps) || bps < 0) bps = 0;
-
-      if (bps === 0) {
-        const video = videoRef.current;
-        if (video && video.readyState >= 2) {
-          if (performance.getEntriesByType) {
-            const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-            const isVideoResource = (name: string) =>
-              /\.(ts|m3u8|m3u|mp4|m4s|m4v)(\?|$)/i.test(name);
-            const recentEntries = entries.filter(
-              (e) => isVideoResource(e.name) && e.transferSize > 0 && e.duration > 0
-            );
-            if (recentEntries.length > 0) {
-              const lastEntry = recentEntries[recentEntries.length - 1];
-              bps = (lastEntry.transferSize * 8) / (lastEntry.duration / 1000);
-            }
-          }
-        }
-      }
-
-      getStore().setBandwidthEstimate(bps);
+      const bps = adapterRef.current?.getBandwidthEstimate() ?? 0;
+      getStore().setBandwidthEstimate(Number.isFinite(bps) && bps > 0 ? bps : 0);
     }, 1000);
 
     return () => {

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { usePlayerStore } from '@/stores';
-import { shouldProxy, detectVideoSourceType } from '@/services/iptvService';
+import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
 
@@ -28,7 +28,7 @@ export function useIPTVNavigation({
     setCurrentChannelName(channel.name);
     const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
     const playUrl = useProxy
-      ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(channel.url)}`
+      ? buildProxyUrl(channel.url, proxyUrl)
       : channel.url;
     setCurrentUrl(playUrl);
     setCurrentType(detectVideoSourceType(channel.url));
@@ -58,7 +58,7 @@ export function useIPTVNavigation({
       if (nextChannel) {
         const useProxy = shouldProxy(nextChannel.url, proxyUrl, proxyPattern);
         const playUrl = useProxy
-          ? `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(nextChannel.url)}`
+          ? buildProxyUrl(nextChannel.url, proxyUrl)
           : nextChannel.url;
         setCurrentUrl(playUrl);
         setCurrentType(detectVideoSourceType(nextChannel.url));

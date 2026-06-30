@@ -51,7 +51,9 @@ const defaultSettings: IPTVSettings = {
   aggregatorUrl: '',
   aggregatorUrls: [],
   proxyUrl: '',
-  proxyPattern: '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+',
+  // 默认空字符串：配置了 proxyUrl 即全部走代理（符合用户预期）
+  // 若需跳过特定域名，可在设置页配置 proxyPattern（匹配的 URL 不走代理）
+  proxyPattern: '',
   priorityKeywords: [],
   autoRefresh: false,
   refreshIntervalHours: 24,
@@ -401,6 +403,12 @@ export const useIPTVStore = create<IPTVState>()(
         // 迁移旧的代理路径到新地址
         if (settings.aggregatorUrl?.startsWith('/')) {
           settings.aggregatorUrl = defaultSettings.aggregatorUrl;
+        }
+        // 迁移旧版默认 proxyPattern（匹配 IP 形式 URL 不走代理）到新版默认空字符串
+        // 仅迁移等于旧默认值的，保留用户自定义值
+        const LEGACY_DEFAULT_PROXY_PATTERN = '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+';
+        if (settings.proxyPattern === LEGACY_DEFAULT_PROXY_PATTERN) {
+          settings.proxyPattern = defaultSettings.proxyPattern;
         }
         return {
           ...current,

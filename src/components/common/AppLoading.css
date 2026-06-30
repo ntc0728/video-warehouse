@@ -19,7 +19,7 @@
 
 /* ── Inline 模式：嵌入到父容器（flex-1 占满可用空间） ───────────── */
 .app-loading--inline {
-  flex: 1;
+  flex: 1 1 0;
   min-height: var(--layout-loading-min-height);
   padding: var(--space-xl) var(--space-md);
 }

@@ -121,6 +121,7 @@ async function handleM3U8Proxy(request) {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Headers": "*",
           "Access-Control-Allow-Methods": "*",
+          "Timing-Allow-Origin": "*",
         },
       });
     }
@@ -151,6 +152,7 @@ async function handleM3U8Proxy(request) {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*",
         "Access-Control-Allow-Methods": "*",
+        "Timing-Allow-Origin": "*",
       },
     });
   } catch (error) {
@@ -171,6 +173,9 @@ function rewriteM3U8(content, baseUrl, headers) {
   const headerStr = encodeURIComponent(JSON.stringify(headers));
   const lines = content.split("\n");
   const newLines = [];
+  // 使用绝对路径，避免相对路径在非 Worker origin 的页面上解析错误
+  // （如 dev 模式下页面 origin 是 localhost:3001，相对路径会解析到 localhost:3001 而非 Worker）
+  const workerOrigin = new URL(baseUrl).origin;
 
   for (const line of lines) {
     if (line.startsWith("#")) {
@@ -178,7 +183,7 @@ function rewriteM3U8(content, baseUrl, headers) {
         const regex = /https?:\/\/[^\""\s]+/g;
         const keyUrl = regex.exec(line)?.[0] ?? "";
         if (keyUrl) {
-          const newUrl = `/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${headerStr}`;
+          const newUrl = `${workerOrigin}/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${headerStr}`;
           newLines.push(line.replace(keyUrl, newUrl));
         } else {
           newLines.push(line);
@@ -194,7 +199,7 @@ function rewriteM3U8(content, baseUrl, headers) {
           ? "m3u8-proxy"
           : "ts-proxy";
       newLines.push(
-        `/${proxyPath}?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`
+        `${workerOrigin}/${proxyPath}?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`
       );
     } else {
       newLines.push(line);
@@ -232,6 +237,7 @@ async function handleTsProxy(request) {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Headers": "*",
           "Access-Control-Allow-Methods": "*",
+          "Timing-Allow-Origin": "*",
         },
       });
     }
@@ -270,6 +276,7 @@ async function handleTsProxy(request) {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*",
         "Access-Control-Allow-Methods": "*",
+        "Timing-Allow-Origin": "*",
       },
     });
   } catch (error) {

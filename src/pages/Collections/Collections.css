@@ -50,10 +50,9 @@
 .collection-page {
   position: relative;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   flex-direction: column;
   width: 100%;
-  min-height: 100%;
   padding: 0;
   box-sizing: border-box;
 }

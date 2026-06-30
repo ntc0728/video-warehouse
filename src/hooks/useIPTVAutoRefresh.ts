@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useIPTVStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 
 /**
  * IPTV 自动刷新 hook
