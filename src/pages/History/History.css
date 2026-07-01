@@ -97,16 +97,15 @@
 }
 
 .history-group {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0 var(--space-sm);
+  display: flex;
+  flex-direction: column;
   margin-bottom: var(--space-lg);
   scroll-margin-top: var(--space-md);
 }
 
 .history-node-col {
-  grid-column: 1;
-  grid-row: 1 / -1;
+  display: flex;
+  align-items: center;
   padding: var(--space-md) var(--space-md);
   cursor: pointer;
 }
@@ -186,7 +185,7 @@
 }
 
 .history-group-body {
-  grid-column: 2;
+  padding-left: calc(var(--timeline-dot-size, 0.75rem) + var(--space-xs) + var(--space-md));
   min-width: 0;
 }
 

@@ -7,7 +7,7 @@ import { useVideoStore, useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { Empty, BackToTopButton } from '@/components/common';
+import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { Search, X, Trash2, CheckSquare, Square, ListChecks, LayoutGrid, PlayCircle, Eye, CheckCircle2 } from 'lucide-react';
 import StatusTabs from '@/components/StatusTabs';
@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGri
 
 export default function CollectionsPage() {
   const { videos } = useVideoStore();
-  const { collections, history, removeCollection } = useUserStore();
+  const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   const saved = getState('collections');
@@ -341,12 +341,16 @@ export default function CollectionsPage() {
           </div>
         )}
       </div>
-      {currentList.length === 0 && (
+      {userLoading ? (
+        <div className="player-loading-wrap">
+          <AppLoading tip="加载中…" showTip />
+        </div>
+      ) : currentList.length === 0 ? (
         <Empty
           title={statusFilter === 'all' ? '暂无收藏' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
           description={activeTab === 'video' ? '去首页发现喜欢的影片吧' : '去 IPTV 页面收藏喜欢的频道吧'}
         />
-      )}
+      ) : null}
 
       <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
 

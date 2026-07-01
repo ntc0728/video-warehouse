@@ -113,7 +113,13 @@ export default function ControlBar({
         <div className="up-control-left">
           <PlayButton isPlaying={isPlaying} onClick={onTogglePlay} />
           {sources && currentSourceIndex !== undefined && onSourceSwitch && (
-            <SourceSwitch sources={sources} currentIndex={currentSourceIndex} onSwitch={onSourceSwitch} />
+            <SourceSwitch
+              sources={sources}
+              currentIndex={currentSourceIndex}
+              onSwitch={onSourceSwitch}
+              activePopover={activePopover}
+              onPopoverChange={onPopoverChange}
+            />
           )}
           {isLiveLike && onRefresh && (
             <RefreshButton onClick={onRefresh} />

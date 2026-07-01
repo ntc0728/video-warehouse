@@ -14,7 +14,7 @@ interface PlayerEpisodesPanelProps {
   compact?: boolean;
 }
 
-const EPISODE_PAGE_SIZE = 20;
+const EPISODE_PAGE_SIZE = 14;
 
 export function PlayerEpisodesPanel({
   episodes,
@@ -37,7 +37,7 @@ export function PlayerEpisodesPanel({
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
       >
         <span className="player-panel-icon"><ListVideo size={16} /></span>
-        <span className="player-panel-title">选集</span>
+        <span className="player-panel-title">{episodes.length > 0 ? '选集' : '线路'}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
             <ChevronDown size={16} />
@@ -94,7 +94,7 @@ export function PlayerEpisodesPanel({
             ))}
           </div>
         ) : (
-          <div className="player-panel-empty">暂无选集</div>
+          <div className="player-panel-empty">{episodes.length > 0 ? '暂无选集' : '暂无线路'}</div>
         )}
       </div>
     </div>

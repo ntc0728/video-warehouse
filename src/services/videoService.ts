@@ -237,40 +237,96 @@ function pickTitle(parts: string[], fallback: string): string {
 }
 
 /** 解析播放源字符串，提取源列表和分集信息 */
-function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): { sources: Video['sources']; episodes: Video['episodes'] } {
-  const fromList = vodPlayFrom ? vodPlayFrom.split('$$$').filter(Boolean) : [];
+function parsePlaySources(cmsSourceName: string, vodPlayUrl: string): { sources: Video['sources']; episodes: Video['episodes'] } {
+  // vod_play_from 是 CMS 源接口返回的完整值，不拆分，仅作为整体标识
+  // vod_play_url 独立拆分，每个 $$$ 分隔的部分是一条播放线路
+  // cmsSourceName 仅用于历史记录匹配，线路名称从 vod_play_url 的 $ 分隔标题中提取
   const urlList = vodPlayUrl ? vodPlayUrl.split('$$$').filter(Boolean) : [];
-  if (fromList.length === 0 || urlList.length === 0) return { sources: [], episodes: undefined };
+  if (urlList.length === 0) return { sources: [], episodes: undefined };
 
   const allSources: Video['sources'] = [];
   const episodesMap = new Map<string, { title: string; sources: Video['sources'] }>();
 
-  for (let i = 0; i < fromList.length; i++) {
-    const sourceName = fromList[i].trim() || `源${i + 1}`;
-    const urlStr = urlList[i] || '';
+  for (let i = 0; i < urlList.length; i++) {
+    const urlStr = urlList[i];
     const episodes = urlStr.split('#').filter(Boolean);
     if (episodes.length === 0) continue;
 
     if (episodes.length === 1) {
       const parts = episodes[0].split('$');
-      const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+        const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
       if (url) {
         const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
-        const name = pickTitle(parts.slice(0, -1), sourceName);
+        const name = pickTitle(parts.slice(0, -1), `源${i + 1}`);
         allSources.push({ id: `source-${i}`, name, url, type, isDefault: allSources.length === 0 });
       }
     } else {
+      // 统计本线路内各标题出现次数
+      const titleCount: Record<string, number> = {};
+      for (const ep of episodes) {
+        const parts = ep.split('$');
+        const title = pickTitle(parts.slice(0, -1), '');
+        if (title) titleCount[title] = (titleCount[title] || 0) + 1;
+      }
+
+      // 区分同名不同 URL 的后缀
+      const titleSeq: Record<string, number> = {};
+      const parsed: { title: string; rawTitle: string; url: string; type: Video['sources'][number]['type'] }[] = [];
       for (let j = 0; j < episodes.length; j++) {
         const parts = episodes[j].split('$');
-        const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
         if (!url) continue;
-        const epTitle = pickTitle(parts.slice(0, -1), '第' + (j + 1) + '集');
+        const rawTitle = pickTitle(parts.slice(0, -1), '第' + (j + 1) + '集');
         const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
-        const sourceId = `source-${i}-ep-${j}`;
-        const epKey = `${epTitle}-${j}`;
-        if (!episodesMap.has(epKey)) episodesMap.set(epKey, { title: epTitle, sources: [] });
-        episodesMap.get(epKey)!.sources.push({ id: sourceId, name: sourceName, url, type, isDefault: i === 0 });
+        let displayTitle = rawTitle;
+        if ((titleCount[rawTitle] ?? 0) > 1) {
+          titleSeq[rawTitle] = (titleSeq[rawTitle] || 0) + 1;
+          displayTitle = `${rawTitle}${String(titleSeq[rawTitle]).padStart(2, '0')}`;
+        }
+        parsed.push({ title: displayTitle, rawTitle, url, type });
       }
+
+
+      // 同线路内所有条目标题相同 → 同一内容的多条播放地址（电影）
+      // 存在不同标题 → 多个选集（剧集/综艺/动漫）
+      const uniqueRawTitles = new Set(parsed.map(e => e.rawTitle));
+      const isMultiUrlSource = uniqueRawTitles.size === 1;
+      if (isMultiUrlSource) {
+        parsed.forEach((entry, idx) => {
+          allSources.push({
+            id: `source-${i}`,
+            name: entry.title,
+            url: entry.url,
+            type: entry.type,
+            isDefault: idx === 0,
+          });
+        });
+      } else {
+        for (const entry of parsed) {
+          const epKey = `${entry.title}-${i}`;
+          if (!episodesMap.has(epKey)) episodesMap.set(epKey, { title: entry.title, sources: [] });
+          episodesMap.get(epKey)!.sources.push({
+            id: `source-${i}-ep-${episodesMap.get(epKey)!.sources.length}`,
+            name: `源${i + 1}`,
+            url: entry.url,
+            type: entry.type,
+            isDefault: i === 0,
+          });
+        }
+      }
+    }
+  }
+
+  // 同名线路加后缀区分
+  const nameCount: Record<string, number> = {};
+  for (const s of allSources) {
+    nameCount[s.name] = (nameCount[s.name] || 0) + 1;
+  }
+  const nameSeq: Record<string, number> = {};
+  for (const s of allSources) {
+    if ((nameCount[s.name] ?? 0) > 1) {
+      nameSeq[s.name] = (nameSeq[s.name] || 0) + 1;
+      s.name = `${s.name}${String(nameSeq[s.name]).padStart(2, '0')}`;
     }
   }
 
@@ -295,7 +351,7 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string): Pr
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
       const item = data.list[0];
       const { sources: playSources, episodes } = parsePlaySources(
-        item.vod_play_from || '', item.vod_play_url || ''
+        source.name, item.vod_play_url || ''
       );
       return { ...mapVideoItem(item), sources: playSources, episodes };
     }
@@ -347,7 +403,7 @@ export async function searchVideoFromMultipleSources(
       }
       if (target.vod_play_from && target.vod_play_url) {
         const { sources: playSources, episodes } = parsePlaySources(
-          target.vod_play_from, target.vod_play_url
+          source.name, target.vod_play_url
         );
         results.push({
           sourceIndex: index,
@@ -360,7 +416,7 @@ export async function searchVideoFromMultipleSources(
         const detailItem = detailData.list?.[0];
         if (detailItem) {
           const { sources: playSources, episodes } = parsePlaySources(
-            detailItem.vod_play_from || '', detailItem.vod_play_url || ''
+            source.name, detailItem.vod_play_url || ''
           );
           results.push({
             sourceIndex: index,

@@ -19,7 +19,8 @@ import { useSmartBack } from '@/lib/navigation';
 import { isNativePlatform } from '@/lib/platform';
 import {
   ArrowLeft, VideoOff, AlertTriangle,
-  SkipForward, Timer, X,
+  SkipBack, SkipForward, Timer, X,
+  ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { PlayerCMSPanel } from './PlayerCMSPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
@@ -65,7 +66,7 @@ export default function PlayerPage() {
   const skipHistory = (location.state as Record<string, unknown>)?.skipHistory === true;
 
   const { videos, currentSourceIndex } = useVideoStore();
-  const { setSource, setSources, reset: resetPlayer } = usePlayerStore();
+  const { setSource, setSources, sources: playerSources, reset: resetPlayer } = usePlayerStore();
   const { updateHistoryProgress } = useUserStore();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
 
@@ -77,7 +78,9 @@ export default function PlayerPage() {
   const [loadError, setLoadError] = useState<'api' | 'empty' | null>(null);
   const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
+  const [cmsLoadTimedOut, setCmsLoadTimedOut] = useState(false);
   const cmsAbortRef = useRef<AbortController | null>(null);
+  const cmsTimeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [tmdbDetail, setTmdbDetail] = useState<TMDBMovieDetail | TMDBTVShowDetail | null>(null);
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
@@ -93,6 +96,8 @@ export default function PlayerPage() {
   const [autoPlayCountdown, setAutoPlayCountdown] = useState<number | null>(null);
   const autoPlayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoPlayCancelRef = useRef(false);
+
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
 
   const [localEpisodeId, setLocalEpisodeId] = useState<string | undefined>();
 
@@ -157,6 +162,17 @@ export default function PlayerPage() {
           foundVideo = videoCache.get(id) ?? null;
         }
 
+        // 有历史记录但 CMS 源不一致时，从正确的源重新拉数据，避免用旧源的缓存数据
+        if (foundVideo && historyRecord?.cmsSourceName
+            && currentSourceIndex !== activeSourceIndex
+            && !id.startsWith('tmdb-')) {
+          const svc = await import('@/services/videoService');
+          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id);
+          if (detailVideo) {
+            foundVideo = detailVideo;
+          }
+        }
+
         if (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes) {
           if (!id.startsWith('tmdb-')) {
             const svc = await import('@/services/videoService');
@@ -213,16 +229,15 @@ export default function PlayerPage() {
           setSources(sources);
 
           if (sources.length > 0) {
-            // 从历史记录恢复上次使用的源
-            let matchedSource = sources[0];
+            // 从历史记录恢复上次使用的源，优先匹配历史记录
+            let matchedSource = sources.find(s => s.isDefault) || sources[0];
             if (historyRecord?.sourceName) {
               const found = sources.find(s => s.name === historyRecord.sourceName);
               if (found) matchedSource = found;
             }
-            const defaultSource = sources.find(s => s.isDefault) || matchedSource;
-            setCurrentSrc({ url: defaultSource.url, type: defaultSource.type });
-            setSource(defaultSource.url, defaultSource.type);
-            currentSourceNameRef.current = defaultSource.name;
+            setCurrentSrc({ url: matchedSource.url, type: matchedSource.type });
+            setSource(matchedSource.url, matchedSource.type);
+            currentSourceNameRef.current = matchedSource.name;
             // CMS 源名称优先从历史记录恢复
             if (!cmsSourceNameRef.current) {
               const { getVideoSources } = await import('@/services/sourceService');
@@ -239,9 +254,8 @@ export default function PlayerPage() {
         if (!foundVideo && historyRecord?.cmsSourceName) {
           cmsSourceNameRef.current = historyRecord.cmsSourceName;
         }
-      } catch (error) {
+      } catch {
         if (controller.signal.aborted) return;
-        console.error('Failed to load video:', error);
         setLoadError('api');
       } finally {
         if (!controller.signal.aborted) {
@@ -289,10 +303,21 @@ export default function PlayerPage() {
   const fetchCMSSources = useCallback(async () => {
     if (!id) return;
     cmsAbortRef.current?.abort();
+    if (cmsTimeoutTimerRef.current) clearTimeout(cmsTimeoutTimerRef.current);
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
     setCmsLoading(true);
+    setCmsLoadTimedOut(false);
     setLoadError(null);
+
+    // 20 秒超时兜底
+    cmsTimeoutTimerRef.current = setTimeout(() => {
+      if (!ctrl.signal.aborted) {
+        ctrl.abort();
+        setCmsLoading(false);
+        setCmsLoadTimedOut(true);
+      }
+    }, 20000);
 
     const indices = videoSourceIndices && videoSourceIndices.length > 0
       ? videoSourceIndices
@@ -326,10 +351,18 @@ export default function PlayerPage() {
         setCmsResults(results);
         // 从历史记录恢复上次的 CMS 源
         let preferredSourceName = cmsSourceNameRef.current;
+        let histSourceName: string | undefined;
         if (!preferredSourceName) {
           try {
             const history = await getHistory();
-            preferredSourceName = history.find(h => h.videoId === id)?.cmsSourceName;
+            const histRecord = history.find(h => h.videoId === id);
+            preferredSourceName = histRecord?.cmsSourceName;
+            histSourceName = histRecord?.sourceName;
+          } catch { /* ignore */ }
+        } else {
+          try {
+            const history = await getHistory();
+            histSourceName = history.find(h => h.videoId === id)?.sourceName;
           } catch { /* ignore */ }
         }
         const validResults = results.filter(r => r.video && (r.video.sources.length > 0 || r.video.episodes?.some(ep => ep.sources.length > 0)));
@@ -339,36 +372,51 @@ export default function PlayerPage() {
         if (firstResult?.video) {
           videoCache.set(id!, firstResult.video);
           setVideo(firstResult.video);
-          const src = firstResult.video.sources.length > 0
-            ? (firstResult.video.sources.find(s => s.isDefault) || firstResult.video.sources[0])
-            : firstResult.video.episodes?.[0]?.sources.find(s => s.isDefault) || firstResult.video.episodes?.[0]?.sources[0];
-          if (src) {
-            setSources(firstResult.video.sources.length > 0 ? firstResult.video.sources : (firstResult.video.episodes?.[0]?.sources ?? []));
-            setCurrentSrc({ url: src.url, type: src.type });
-            setSource(src.url, src.type);
-            currentSourceNameRef.current = src.name;
+          const allSrc = firstResult.video.sources.length > 0
+            ? firstResult.video.sources
+            : (firstResult.video.episodes?.[0]?.sources ?? []);
+          // 从历史记录恢复上次使用的线路
+          let matchedSrc = allSrc.find(s => s.isDefault) || allSrc[0];
+          if (histSourceName) {
+            const found = allSrc.find(s => s.name === histSourceName);
+            if (found) matchedSrc = found;
+          }
+          if (matchedSrc) {
+            setSources(allSrc);
+            setCurrentSrc({ url: matchedSrc.url, type: matchedSrc.type });
+            setSource(matchedSrc.url, matchedSrc.type);
+            currentSourceNameRef.current = matchedSrc.name;
             cmsSourceNameRef.current = firstResult.sourceName;
           } else if (!ctrl.signal.aborted) {
             setLoadError('empty');
           }
-        } else if (!ctrl.signal.aborted) {
-          setLoadError('empty');
+        } else {
+          if (!ctrl.signal.aborted) {
+            setLoadError('empty');
+          }
         }
       }
     } catch {
       if (!ctrl.signal.aborted) setLoadError('api');
     } finally {
+      if (cmsTimeoutTimerRef.current) clearTimeout(cmsTimeoutTimerRef.current);
       if (!ctrl.signal.aborted) setCmsLoading(false);
     }
     // zustand actions 引用稳定
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, videoSourceIndex, videoSourceIndices, tmdbDetail, tmdbMediaType, video]);
 
+  // 首次加载 + 切换 CMS 源时重新搜索
+  const prevIndicesRef = useRef(videoSourceIndices);
   useEffect(() => {
-    if (id?.startsWith('tmdb-') && tmdbDetail && !cmsLoading && cmsResults.length === 0) {
+    if (!id?.startsWith('tmdb-') || !tmdbDetail || cmsLoading) return;
+    const indicesChanged = JSON.stringify(prevIndicesRef.current) !== JSON.stringify(videoSourceIndices);
+    prevIndicesRef.current = videoSourceIndices;
+    if (cmsResults.length === 0 || indicesChanged) {
       fetchCMSSources();
     }
-  }, [id, tmdbDetail, cmsLoading, cmsResults.length, fetchCMSSources]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, tmdbDetail, cmsLoading, cmsResults.length, fetchCMSSources, videoSourceIndices]);
 
   useEffect(() => () => {
     cmsAbortRef.current?.abort();
@@ -440,6 +488,7 @@ export default function PlayerPage() {
     return () => {
       if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
       if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+      if (cmsTimeoutTimerRef.current) clearTimeout(cmsTimeoutTimerRef.current);
     };
   }, []);
 
@@ -463,7 +512,7 @@ export default function PlayerPage() {
       return;
     }
 
-    if (video?.type === 'tv' && video.episodes && activeEpId) {
+    if (video?.episodes && video.episodes.length > 0 && activeEpId) {
       const currentIndex = video.episodes.findIndex((ep) => ep.id === activeEpId);
 
       // 列表循环：最后一集回到第一集
@@ -510,6 +559,7 @@ export default function PlayerPage() {
         }
         if (matchedEp?.sources.length) {
           setLocalEpisodeId(matchedEp.id);
+          setSources(matchedEp.sources);
           const src = matchedEp.sources.find(s => s.isDefault) || matchedEp.sources[0];
           setCurrentSrc({ url: src.url, type: src.type });
           setSource(src.url, src.type);
@@ -519,6 +569,7 @@ export default function PlayerPage() {
       }
 
       if (result.video.sources.length > 0) {
+        setSources(result.video.sources);
         const src = result.video.sources.find(s => s.isDefault) || result.video.sources[0];
         setCurrentSrc({ url: src.url, type: src.type });
         setSource(src.url, src.type);
@@ -527,6 +578,7 @@ export default function PlayerPage() {
         setLocalEpisodeId(result.video.episodes[0].id);
         const firstEp = result.video.episodes[0];
         if (firstEp.sources.length > 0) {
+          setSources(firstEp.sources);
           const src = firstEp.sources.find(s => s.isDefault) || firstEp.sources[0];
           setCurrentSrc({ url: src.url, type: src.type });
           setSource(src.url, src.type);
@@ -551,6 +603,11 @@ export default function PlayerPage() {
   const episodes = video?.episodes
     ? [...video.episodes].sort((a, b) => a.number - b.number)
     : [];
+
+  const activeEpId = localEpisodeId || episodeId;
+  const currentEpisodeIndex = activeEpId ? episodes.findIndex((ep) => ep.id === activeEpId) : -1;
+  const isFirstEpisode = currentEpisodeIndex <= 0;
+  const isLastEpisode = currentEpisodeIndex >= episodes.length - 1;
 
   const d = tmdbDetail;
   let title: string | undefined;
@@ -585,7 +642,14 @@ export default function PlayerPage() {
       <div className="player-page">
         <div className="player-page__container">
           <div className="player-loading-wrap">
-            <AppLoading tip="加载中…" showTip />
+            {cmsLoadTimedOut ? (
+              <>
+                <p className="player-empty-sub">加载时间过长</p>
+                <button className="player-cms-timeout-retry" onClick={fetchCMSSources}>点击重试</button>
+              </>
+            ) : (
+              <AppLoading tip="加载中…" showTip />
+            )}
           </div>
         </div>
       </div>
@@ -673,10 +737,40 @@ export default function PlayerPage() {
           {autoPlayCountdown !== null && (
             <div className="player-autoplay-overlay">
               <div className="player-autoplay-card">
+                {episodes.length > 0 && (
+                  <button
+                    className="player-autoplay-nav-btn"
+                    disabled={isFirstEpisode}
+                    title="上一集"
+                    onClick={() => {
+                      if (currentEpisodeIndex > 0) {
+                        cancelAutoPlay();
+                        handlePlayEpisode(episodes[currentEpisodeIndex - 1]);
+                      }
+                    }}
+                  >
+                    <SkipBack size={16} />
+                  </button>
+                )}
                 <Timer size={20} className="player-autoplay-icon" />
                 <span className="player-autoplay-text">
                   {autoPlayCountdown} 秒后播放下一集
                 </span>
+                {episodes.length > 0 && (
+                  <button
+                    className="player-autoplay-nav-btn"
+                    disabled={isLastEpisode}
+                    title="下一集"
+                    onClick={() => {
+                      if (currentEpisodeIndex < episodes.length - 1) {
+                        cancelAutoPlay();
+                        handlePlayEpisode(episodes[currentEpisodeIndex + 1]);
+                      }
+                    }}
+                  >
+                    <SkipForward size={16} />
+                  </button>
+                )}
                 <button className="player-autoplay-cancel" onClick={cancelAutoPlay}>
                   <X size={14} />
                   <span>取消</span>
@@ -699,7 +793,7 @@ export default function PlayerPage() {
           />
           <PlayerEpisodesPanel
             episodes={episodes}
-            sources={video.sources}
+            sources={playerSources}
             currentSrc={currentSrc}
             activeEpisodeId={localEpisodeId || episodeId}
             onPlayEpisode={handlePlayEpisode}
@@ -736,7 +830,15 @@ export default function PlayerPage() {
                     <img src={posterUrl} alt={title} width={300} height={450} />
                   </div>
                 )}
-                {overview && <p className="player-detail-overview">{overview}</p>}
+                {overview && (
+                  <>
+                    <p className={`player-detail-overview${overviewExpanded ? ' player-detail-overview--expanded' : ''}`}>{overview}</p>
+                    <button className="player-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>
+                      {overviewExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      <span>{overviewExpanded ? '收起' : '展开全文'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

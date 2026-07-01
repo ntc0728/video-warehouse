@@ -71,4 +71,5 @@ export interface UniversalPlayerProps {
     center?: React.ReactNode;
     right?: React.ReactNode;
   };
+  episodeLabel?: string;
 }

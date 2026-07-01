@@ -164,11 +164,17 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   async play(): Promise<void> {
+    if (this.hls) {
+      this.hls.startLoad();
+    }
     await this.video?.play();
   }
 
   pause(): void {
     this.video?.pause();
+    if (this.hls) {
+      this.hls.stopLoad();
+    }
   }
 
   seek(time: number): void {

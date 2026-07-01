@@ -8,11 +8,17 @@ import type { VideoRecord, CollectionRecord, HistoryRecord } from '@/types/store
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 const DB_NAME = 'video-warehouse';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
+
+export interface RatingRecord {
+  videoId: string;
+  rating: number;
+  ratedAt: number;
+}
 
 /**
  * 数据库 Schema 定义
- * 包含 videos、collections、history、settings、iptvChannels 五个对象仓库
+ * 包含 videos、collections、history、ratings、iptvChannels 五个对象仓库
  */
 interface VideoWarehouseDB extends DBSchema {
   videos: {
@@ -37,6 +43,13 @@ interface VideoWarehouseDB extends DBSchema {
     indexes: {
       'by-video': string;
       'by-updated': number;
+    };
+  };
+  ratings: {
+    key: string;
+    value: RatingRecord;
+    indexes: {
+      'by-video': string;
     };
   };
   settings: {
@@ -91,6 +104,11 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
         const historyStore = db.createObjectStore('history', { keyPath: 'id' });
         historyStore.createIndex('by-video', 'videoId');
         historyStore.createIndex('by-updated', 'updatedAt');
+      }
+
+      if (!db.objectStoreNames.contains('ratings')) {
+        const ratingStore = db.createObjectStore('ratings', { keyPath: 'videoId' });
+        ratingStore.createIndex('by-video', 'videoId');
       }
 
       if (!db.objectStoreNames.contains('settings')) {
@@ -214,4 +232,93 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
       sourceUrls: data.sourceUrls,
     });
   } catch { /* 缓存写入失败不影响主流程 */ }
+}
+
+// ── 收藏操作 ──────────────────────────────────────────────
+
+/** 获取所有收藏记录 */
+export async function getCollections(): Promise<CollectionRecord[]> {
+  try {
+    const db = await getDB();
+    return db.getAll('collections');
+  } catch {
+    return [];
+  }
+}
+
+/** 添加收藏记录 */
+export async function addCollectionRecord(record: CollectionRecord): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('collections', record);
+  } catch { /* 写入失败不影响主流程 */ }
+}
+
+/** 删除收藏记录（按 videoId） */
+export async function removeCollectionByVideoId(videoId: string): Promise<void> {
+  try {
+    const db = await getDB();
+    const tx = db.transaction('collections', 'readwrite');
+    const index = tx.store.index('by-video');
+    let cursor = await index.openCursor(videoId);
+    while (cursor) {
+      cursor.delete();
+      cursor = await cursor.continue();
+    }
+    await tx.done;
+  } catch { /* 删除失败不影响主流程 */ }
+}
+
+/** 清空所有收藏记录 */
+export async function clearCollections(): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.clear('collections');
+  } catch { /* 清空失败不影响主流程 */ }
+}
+
+// ── 观看历史操作 ──────────────────────────────────────────
+
+/** 更新或新增观看历史记录 */
+export async function upsertHistoryRecord(record: HistoryRecord): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('history', record);
+  } catch { /* 写入失败不影响主流程 */ }
+}
+
+/** 删除观看历史记录（按 id） */
+export async function removeHistoryRecord(id: string): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.delete('history', id);
+  } catch { /* 删除失败不影响主流程 */ }
+}
+
+// ── 评分操作 ──────────────────────────────────────────────
+
+/** 获取所有评分记录 */
+export async function getRatings(): Promise<RatingRecord[]> {
+  try {
+    const db = await getDB();
+    return db.getAll('ratings');
+  } catch {
+    return [];
+  }
+}
+
+/** 设置评分记录（videoId 为主键，自动覆盖） */
+export async function setRatingRecord(record: RatingRecord): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('ratings', record);
+  } catch { /* 写入失败不影响主流程 */ }
+}
+
+/** 删除评分记录 */
+export async function removeRatingRecord(videoId: string): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.delete('ratings', videoId);
+  } catch { /* 删除失败不影响主流程 */ }
 }

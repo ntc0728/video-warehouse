@@ -34,6 +34,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adapterRef = useRef<IPlayerAdapter | null>(null);
+  const userPausedRef = useRef(false);
+  const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
@@ -116,8 +118,11 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     prevTypeRef.current = type;
 
     // 切换选集后自动播放（native HLS 需要显式调用，hls.js 在 MANIFEST_PARSED 中自行处理）
-    const autoPlayTimer = setTimeout(() => {
-      video.play().catch(() => {});
+    autoPlayTimerRef.current = setTimeout(() => {
+      autoPlayTimerRef.current = null;
+      if (!userPausedRef.current) {
+        video.play().catch(() => {});
+      }
     }, 300);
 
     video.volume = volume;
@@ -248,7 +253,10 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('error', handleNativeError);
       video.removeEventListener('progress', handleProgress);
 
-      clearTimeout(autoPlayTimer);
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
       clearInterval(bandwidthTimer);
 
       // 热切换时跳过销毁（useLayoutEffect 已在 cleanup 之前标记）
@@ -267,24 +275,61 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type, decoderMode, retryCount]);
 
   const play = useCallback(async () => {
+    userPausedRef.current = false;
     try {
-      await videoRef.current?.play();
+      const adapter = adapterRef.current;
+      if (adapter) {
+        await adapter.play();
+      } else {
+        await videoRef.current?.play();
+      }
     } catch {
       toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
     }
   }, []);
 
   const pause = useCallback(() => {
-    videoRef.current?.pause();
+    userPausedRef.current = true;
+    if (autoPlayTimerRef.current) {
+      clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    const adapter = adapterRef.current;
+    if (adapter) {
+      adapter.pause();
+    } else {
+      videoRef.current?.pause();
+    }
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (videoRef.current?.paused) {
-      videoRef.current.play().catch(() => {
-        toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
-      });
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      userPausedRef.current = false;
+      const adapter = adapterRef.current;
+      if (adapter) {
+        adapter.play().catch(() => {
+          toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
+        });
+      } else {
+        video.play().catch(() => {
+          toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
+        });
+      }
     } else {
-      videoRef.current?.pause();
+      userPausedRef.current = true;
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+      const adapter = adapterRef.current;
+      if (adapter) {
+        adapter.pause();
+      } else {
+        video.pause();
+      }
     }
   }, []);
 
