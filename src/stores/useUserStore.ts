@@ -4,24 +4,33 @@
  * 观看历史按视频+剧集维度去重，重复观看会更新进度而非新增记录
  * 评分范围限定为 1-5 的整数
  *
- * [批次3合并] 原 useRatingStore 的 ratings 功能已合并到此 store
- * [数据迁移] 旧 localStorage key `rating-store` 的数据会在首次加载时自动迁移到 `user-store`
+ * [数据存储] 使用 IndexedDB 持久化，Zustand 仅管理内存状态
+ * [数据迁移] 首次加载时从 localStorage `user-store` 迁移到 IndexedDB
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import type { VideoType } from '@/types/video';
-
-interface RatingRecord {
-  videoId: string;
-  rating: number;
-  ratedAt: number;
-}
+import type { RatingRecord } from '@/services/database';
+import {
+  getCollections,
+  addCollectionRecord,
+  removeCollectionByVideoId,
+  clearCollections as clearCollectionsDB,
+  getHistory,
+  upsertHistoryRecord,
+  removeHistoryRecord,
+  clearHistory as clearHistoryDB,
+  getRatings,
+  setRatingRecord,
+  removeRatingRecord,
+} from '@/services/database';
 
 interface UserState {
   collections: CollectionRecord[];
   history: HistoryRecord[];
   ratings: RatingRecord[];
+  _initialized: boolean;
+  _loading: boolean;
 
   addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number }) => void;
   removeCollection: (videoId: string) => void;
@@ -38,160 +47,225 @@ interface UserState {
   getRating: (videoId: string) => number;
   removeRating: (videoId: string) => void;
   getAverageRating: () => number;
+
+  _loadFromDB: () => Promise<void>;
 }
 
-export const useUserStore = create<UserState>()(
-  persist(
-    (set, get) => ({
-      collections: [],
-      history: [],
-      ratings: [],
+/** 从 localStorage 迁移旧数据到 IndexedDB */
+async function migrateFromLocalStorage(): Promise<void> {
+  try {
+    const raw = localStorage.getItem('user-store');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const state = parsed?.state;
+    if (!state) return;
 
-      /**
-       * 添加视频到收藏，已收藏的视频不会重复添加
-       */
-      addCollection: (videoId, meta) => {
-        const existing = get().collections.find((c) => c.videoId === videoId);
-        if (existing) return;
-
-        const newCollection: CollectionRecord = {
-          id: `col-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          videoId,
-          addedAt: Date.now(),
-          title: meta?.title,
-          cover: meta?.cover,
-          type: meta?.type,
-          year: meta?.year,
-          rating: meta?.rating,
-        };
-        set((state) => ({
-          collections: [...state.collections, newCollection],
-        }));
-      },
-
-      removeCollection: (videoId) =>
-        set((state) => ({
-          collections: state.collections.filter((c) => c.videoId !== videoId),
-        })),
-
-      clearCollections: () => set({ collections: [] }),
-
-      isCollected: (videoId) =>
-        get().collections.some((c) => c.videoId === videoId),
-
-      /**
-       * 添加或更新观看历史
-       * 同一视频+同一剧集的记录会更新进度和时间，而非重复创建
-       */
-      addHistory: (record) => {
-        // videoId + episodeId 去重；新 episodeId 回退匹配旧 undefined 记录，避免同一视频出现两条
-        let existingIndex = get().history.findIndex(
-          (h) => h.videoId === record.videoId && h.episodeId === record.episodeId
-        );
-        if (existingIndex < 0 && record.episodeId != null) {
-          existingIndex = get().history.findIndex(
-            (h) => h.videoId === record.videoId && h.episodeId == null
-          );
-        }
-
-        if (existingIndex >= 0) {
-          set((state) => ({
-            history: state.history.map((h, i) =>
-              i === existingIndex
-                ? { ...h, progress: record.progress, duration: record.duration, title: record.title || h.title, cover: record.cover || h.cover, backdrop: record.backdrop || h.backdrop, sourceName: record.sourceName || h.sourceName, cmsSourceName: record.cmsSourceName || h.cmsSourceName, episodeLabel: record.episodeLabel || h.episodeLabel, episodeId: record.episodeId ?? h.episodeId, updatedAt: Date.now() }
-                : h
-            ),
-          }));
-        } else {
-          const newHistory: HistoryRecord = {
-            ...record,
-            id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            updatedAt: Date.now(),
-          };
-          set((state) => ({
-            history: [...state.history, newHistory],
-          }));
-        }
-      },
-
-      updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel) => {
-        get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel });
-      },
-
-      getHistoryByVideo: (videoId) =>
-        get().history.find((h) => h.videoId === videoId),
-
-      removeHistory: (historyId) =>
-        set((state) => ({
-          history: state.history.filter((h) => h.id !== historyId),
-        })),
-
-      clearHistory: () => set({ history: [] }),
-
-      /**
-       * 设置视频评分
-       * 评分值会被限制在 1-5 范围内并四舍五入为整数
-       * 若已有评分则更新，否则新增记录
-       */
-      setRating: (videoId, rating) => {
-        const clamped = Math.min(5, Math.max(1, Math.round(rating)));
-        const existingIndex = get().ratings.findIndex((r) => r.videoId === videoId);
-
-        if (existingIndex >= 0) {
-          set((state) => ({
-            ratings: state.ratings.map((r, i) =>
-              i === existingIndex ? { ...r, rating: clamped, ratedAt: Date.now() } : r
-            ),
-          }));
-        } else {
-          set((state) => ({
-            ratings: [...state.ratings, { videoId, rating: clamped, ratedAt: Date.now() }],
-          }));
-        }
-      },
-
-      getRating: (videoId) => {
-        const record = get().ratings.find((r) => r.videoId === videoId);
-        return record ? record.rating : 0;
-      },
-
-      removeRating: (videoId) =>
-        set((state) => ({
-          ratings: state.ratings.filter((r) => r.videoId !== videoId),
-        })),
-
-      getAverageRating: () => {
-        const { ratings } = get();
-        if (ratings.length === 0) return 0;
-        const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-        return sum / ratings.length;
-      },
-    }),
-    {
-      name: 'user-store',
-      merge: (persistedState, currentState) => {
-        const persisted = persistedState as Record<string, unknown>;
-        // 如果存在则迁移旧版 rating-store 的评分数据
-        let migratedRatings: RatingRecord[] = [];
-        try {
-          const oldRatingData = localStorage.getItem('rating-store');
-          if (oldRatingData) {
-            const parsed = JSON.parse(oldRatingData);
-            if (parsed.state?.ratings) {
-              migratedRatings = parsed.state.ratings;
-            }
-            localStorage.removeItem('rating-store');
-          }
-        } catch { /* ignore */ }
-
-        return {
-          ...currentState,
-          ...persisted,
-          ratings: migratedRatings.length > 0
-            ? migratedRatings
-            : ((persisted?.ratings as RatingRecord[]) || (currentState as { ratings: RatingRecord[] }).ratings),
-        } as UserState;
-      },
+    // 迁移收藏
+    if (Array.isArray(state.collections)) {
+      for (const col of state.collections) {
+        await addCollectionRecord(col);
+      }
     }
-  )
-);
+
+    // 迁移历史
+    if (Array.isArray(state.history)) {
+      for (const hist of state.history) {
+        await upsertHistoryRecord(hist);
+      }
+    }
+
+    // 迁移评分
+    if (Array.isArray(state.ratings)) {
+      for (const rating of state.ratings) {
+        await setRatingRecord(rating);
+      }
+    }
+
+    // 迁移完成后删除旧数据
+    localStorage.removeItem('user-store');
+  } catch {
+    // migration failed, ignore
+  }
+}
+
+export const useUserStore = create<UserState>()((set, get) => ({
+  collections: [],
+  history: [],
+  ratings: [],
+  _initialized: false,
+  _loading: true,
+
+  /** 从 IndexedDB 加载所有数据 */
+  _loadFromDB: async () => {
+    if (get()._initialized) return;
+
+    // 先迁移旧数据
+    await migrateFromLocalStorage();
+
+    // 从 IndexedDB 加载
+    const [collections, history, ratings] = await Promise.all([
+      getCollections(),
+      getHistory(),
+      getRatings(),
+    ]);
+
+    set({ collections, history, ratings, _initialized: true, _loading: false });
+  },
+
+  /**
+   * 添加视频到收藏，已收藏的视频不会重复添加
+   */
+  addCollection: (videoId, meta) => {
+    const existing = get().collections.find((c) => c.videoId === videoId);
+    if (existing) return;
+
+    const newCollection: CollectionRecord = {
+      id: `col-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      videoId,
+      addedAt: Date.now(),
+      title: meta?.title,
+      cover: meta?.cover,
+      type: meta?.type,
+      year: meta?.year,
+      rating: meta?.rating,
+    };
+
+    // 写入内存
+    set((state) => ({
+      collections: [...state.collections, newCollection],
+    }));
+
+    // 异步写入 IndexedDB
+    addCollectionRecord(newCollection).catch(console.error);
+  },
+
+  removeCollection: (videoId) => {
+    set((state) => ({
+      collections: state.collections.filter((c) => c.videoId !== videoId),
+    }));
+    removeCollectionByVideoId(videoId).catch(console.error);
+  },
+
+  clearCollections: () => {
+    set({ collections: [] });
+    clearCollectionsDB().catch(console.error);
+  },
+
+  isCollected: (videoId) =>
+    get().collections.some((c) => c.videoId === videoId),
+
+  /**
+   * 添加或更新观看历史
+   * 同一视频的记录会更新进度和时间，而非重复创建
+   * 去重策略：videoId + episodeId → videoId alone（兜底）
+   */
+  addHistory: (record) => {
+    // 1. 精确匹配：videoId + episodeId
+    let existingIndex = get().history.findIndex(
+      (h) => h.videoId === record.videoId && h.episodeId === record.episodeId
+    );
+
+    // 2. 回退匹配：如果新记录有 episodeId，尝试匹配旧的 null 记录
+    if (existingIndex < 0 && record.episodeId != null) {
+      existingIndex = get().history.findIndex(
+        (h) => h.videoId === record.videoId && h.episodeId == null
+      );
+    }
+
+    // 3. 兜底匹配：仅 videoId（处理切换 CMS 源后 episodeId 变化的情况）
+    if (existingIndex < 0) {
+      existingIndex = get().history.findIndex(
+        (h) => h.videoId === record.videoId
+      );
+    }
+
+    if (existingIndex >= 0) {
+      const updated = { ...get().history[existingIndex] };
+      updated.progress = record.progress;
+      updated.duration = record.duration;
+      updated.title = record.title || updated.title;
+      updated.cover = record.cover || updated.cover;
+      updated.backdrop = record.backdrop || updated.backdrop;
+      updated.sourceName = record.sourceName || updated.sourceName;
+      updated.cmsSourceName = record.cmsSourceName || updated.cmsSourceName;
+      updated.episodeLabel = record.episodeLabel || updated.episodeLabel;
+      updated.episodeId = record.episodeId ?? updated.episodeId;
+      updated.updatedAt = Date.now();
+
+      set((state) => ({
+        history: state.history.map((h, i) => i === existingIndex ? updated : h),
+      }));
+      upsertHistoryRecord(updated).catch(console.error);
+    } else {
+      const newHistory: HistoryRecord = {
+        ...record,
+        id: `hist-${Date.now()}-${Math.random().toString(36).substr(9, 9)}`,
+        updatedAt: Date.now(),
+      };
+      set((state) => ({
+        history: [...state.history, newHistory],
+      }));
+      upsertHistoryRecord(newHistory).catch(console.error);
+    }
+  },
+
+  updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel) => {
+    get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel });
+  },
+
+  getHistoryByVideo: (videoId) =>
+    get().history.find((h) => h.videoId === videoId),
+
+  removeHistory: (historyId) => {
+    set((state) => ({
+      history: state.history.filter((h) => h.id !== historyId),
+    }));
+    removeHistoryRecord(historyId).catch(console.error);
+  },
+
+  clearHistory: () => {
+    set({ history: [] });
+    clearHistoryDB().catch(console.error);
+  },
+
+  /**
+   * 设置视频评分
+   * 评分值会被限制在 1-5 范围内并四舍五入为整数
+   */
+  setRating: (videoId, rating) => {
+    const clamped = Math.min(5, Math.max(1, Math.round(rating)));
+    const existingIndex = get().ratings.findIndex((r) => r.videoId === videoId);
+
+    if (existingIndex >= 0) {
+      set((state) => ({
+        ratings: state.ratings.map((r, i) =>
+          i === existingIndex ? { ...r, rating: clamped, ratedAt: Date.now() } : r
+        ),
+      }));
+    } else {
+      set((state) => ({
+        ratings: [...state.ratings, { videoId, rating: clamped, ratedAt: Date.now() }],
+      }));
+    }
+    setRatingRecord({ videoId, rating: clamped, ratedAt: Date.now() }).catch(console.error);
+  },
+
+  getRating: (videoId) => {
+    const record = get().ratings.find((r) => r.videoId === videoId);
+    return record ? record.rating : 0;
+  },
+
+  removeRating: (videoId) => {
+    set((state) => ({
+      ratings: state.ratings.filter((r) => r.videoId !== videoId),
+    }));
+    removeRatingRecord(videoId).catch(console.error);
+  },
+
+  getAverageRating: () => {
+    const { ratings } = get();
+    if (ratings.length === 0) return 0;
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / ratings.length;
+  },
+}));

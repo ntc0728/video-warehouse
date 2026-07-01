@@ -247,23 +247,29 @@
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
+  overflow: hidden;
+}
+
+.video-card-title-track {
+  display: flex;
+  width: fit-content;
+  white-space: nowrap;
 }
 
 .video-card-title-text {
   display: inline-block;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
 /* 溢出时自动触发跑马灯 */
-.video-card-title--overflow .video-card-title-text {
-  animation: vc-marquee 4s linear infinite;
+.video-card-title--overflow .video-card-title-track {
+  animation: vc-marquee var(--marquee-duration, 12s) linear infinite;
 }
 
 @keyframes vc-marquee {
   0%   { transform: translateX(0); }
-  20%  { transform: translateX(0); }
-  80%  { transform: translateX(calc(-100% + var(--marquee-width))); }
-  100% { transform: translateX(calc(-100% + var(--marquee-width))); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ============================================================
@@ -309,9 +315,9 @@
 
 .video-card--landscape .video-card-info {
   display: flex;
+  gap: var(--space-xs);
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--space-xs);
   padding: var(--space-xs) var(--space-sm) var(--space-sm);
 }
 
@@ -322,9 +328,9 @@
 }
 
 .video-card--landscape .video-card-title {
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* 横版卡片的时间标签：从绝对定位改为正常文档流内联 */

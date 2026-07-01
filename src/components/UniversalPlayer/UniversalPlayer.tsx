@@ -101,6 +101,7 @@ export default function UniversalPlayer({
   onSkipIntro,
   onSkipOutro,
   controlBarSlots,
+  episodeLabel,
 }: UniversalPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -740,6 +741,7 @@ export default function UniversalPlayer({
       <PlayerHeader
         mode={mode}
         title={title}
+        episodeLabel={episodeLabel}
         channelName={currentChannelName || channelName}
         visible={isControlsVisible || hasError}
         showFullscreenButton={mode === 'iptv'}

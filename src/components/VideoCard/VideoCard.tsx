@@ -70,7 +70,7 @@ const VideoCard = memo(function VideoCard({
   const { addCollection, removeCollection } = useUserStore();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isOverflow, setIsOverflow] = useState(false);
-  const titleRef = useRef<HTMLSpanElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const isTV = useIsTV();
   const highlightedTitle = useHighlightedText(video.title, highlightQuery ?? '');
 
@@ -82,19 +82,35 @@ const VideoCard = memo(function VideoCard({
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    // 一次性检查标题是否溢出，避免为 ~140 张卡片各创建一个 ResizeObserver
     let cancelled = false;
-    const raf = requestAnimationFrame(() => {
-      if (!cancelled) setIsOverflow(el.scrollWidth > el.clientWidth);
-    });
+    const check = () => {
+      if (cancelled) return;
+      const textEl = el.querySelector('.video-card-title-text') as HTMLElement | null;
+      if (!textEl) return;
+      const overflow = textEl.scrollWidth > el.clientWidth;
+      setIsOverflow(overflow);
+      // 根据溢出量计算跑马灯速度：每 100px 溢出 1 秒，最少 4 秒，最多 15 秒
+      if (overflow) {
+        const overflowPx = textEl.scrollWidth - el.clientWidth;
+        const duration = Math.max(4, Math.min(15, overflowPx / 100));
+        el.style.setProperty('--marquee-duration', `${duration}s`);
+      }
+    };
+    const rafId = requestAnimationFrame(() => requestAnimationFrame(check));
+
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+
     return () => {
       cancelled = true;
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
     };
   }, [video.title]);
 
   const handleFavorite = useCallback(
     (e: React.MouseEvent) => {
+      e.preventDefault();
       e.stopPropagation();
       setIsAnimating(true);
       if (isCollected) removeCollection(video.id);
@@ -214,14 +230,22 @@ const VideoCard = memo(function VideoCard({
 
       <div className="video-card-info">
         <div className="video-card-title-wrap">
-          <h3
+          <div
+            ref={titleRef}
             className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
             title={video.title}
           >
-            <span ref={titleRef} className="video-card-title-text">
-              {highlightQuery ? highlightedTitle : video.title}
+            <span className="video-card-title-track">
+              <span className="video-card-title-text">
+                {highlightQuery ? highlightedTitle : video.title}
+              </span>
+              {isOverflow && (
+                <span className="video-card-title-text">
+                  {highlightQuery ? highlightedTitle : video.title}
+                </span>
+              )}
             </span>
-          </h3>
+          </div>
         </div>
         {variant === 'landscape' && timeLabel && (
           <span className="video-card__time-inline">{timeLabel}</span>

@@ -29,6 +29,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
   const isTV = useIsTV();
+  // 无 logo 时使用字母占位，也应显示收藏按钮
+  const showFavorite = !batchMode && !hideFavorite && (imageLoaded || !channel.logo);
 
   const sourceName = channel.sourceId && sourceNames
     ? sourceNames[parseInt(channel.sourceId.replace('source-', ''), 10)]
@@ -69,18 +71,17 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   // 末尾卡片等数百毫秒才淡入"的问题。首屏 60 张几乎同时淡入,整体节奏仍
   // 由 cardFadeIn (0.18s) 提供。
   const staggerDelay = { animationDelay: '0.012s' };
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
 
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
     const check = () => {
-      const overflow = el.scrollWidth > el.clientWidth;
+      const textEl = el.querySelector('.iptv-card-title-text') as HTMLElement | null;
+      if (!textEl) return;
+      const overflow = textEl.scrollWidth > el.clientWidth;
       setIsTitleOverflow(overflow);
-      if (overflow) {
-        el.style.setProperty('--marquee-dist', `-${el.scrollWidth - el.clientWidth}px`);
-      }
     };
     check();
     const ro = new ResizeObserver(check);
@@ -114,11 +115,18 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         )}
       </div>
       <div className="iptv-card-info">
-        <h3
+        <div
           ref={titleRef}
           className={`iptv-card-title${isTitleOverflow ? ' marquee' : ''}`}
           title={channel.name}
-        >{channel.name}</h3>
+        >
+          <span className="iptv-card-title-track">
+            <span className="iptv-card-title-text">{channel.name}</span>
+            {isTitleOverflow && (
+              <span className="iptv-card-title-text">{channel.name}</span>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -148,7 +156,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         </Link>
       )}
       {/* 批量模式下隐藏收藏按钮 */}
-      {!batchMode && !hideFavorite && imageLoaded && (
+      {showFavorite && (
         <button
           type="button"
           className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}

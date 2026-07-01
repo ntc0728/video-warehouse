@@ -166,6 +166,20 @@
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
+.up-header-episode-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-left: var(--space-xs);
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--player-text);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
 /* 全屏按钮在 header 中的样式：白色图标，透明背景 */
 .up-player-header .up-control-btn {
   flex-shrink: 0;
@@ -1241,12 +1255,12 @@
 
 /* ===== Dark mode progress bar visibility ===== */
 [data-theme="dark"] .up-progress-played {
-  background: #1677ff;
+  background: var(--color-primary);
 }
 
 [data-theme="dark"] .up-progress-bar:hover .up-progress-thumb,
 [data-theme="dark"] .up-progress-dragging .up-progress-thumb {
-  background: #1677ff;
+  background: var(--color-primary);
 }
 
 /* ===== Volume control fixes ===== */

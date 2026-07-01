@@ -51,6 +51,29 @@ function parseTmdbId(videoId: string): { mediaType: 'movie' | 'tv'; tmdbId: numb
   return { mediaType: mt, tmdbId: tid };
 }
 
+/**
+ * 直接更新 IndexedDB 中指定 videoId 的 backdrop，
+ * 避免通过 Zustand set() 全量序列化导致覆盖其他 Tab 的写入
+ */
+async function updateBackdropInStorage(videoId: string, backdrop: string): Promise<void> {
+  try {
+    // 同步更新 Zustand 内存状态
+    const storeHistory = useUserStore.getState().history;
+    const storeIdx = storeHistory.findIndex((h) => h.videoId === videoId);
+    if (storeIdx >= 0) {
+      const updated = { ...storeHistory[storeIdx], backdrop };
+      useUserStore.setState({
+        history: storeHistory.map((h, i) => i === storeIdx ? updated : h),
+      });
+      // 异步写入 IndexedDB
+      const { upsertHistoryRecord } = await import('@/services/database');
+      await upsertHistoryRecord(updated);
+    }
+  } catch {
+    // 写入失败静默忽略
+  }
+}
+
 /** 并发限制：并发执行 async 任务，返回 Promise.all */
 function asyncPool(
   tasks: (() => Promise<void>)[],
@@ -92,10 +115,7 @@ export function useBackdropLoader(
     const backdropFromStore = findBackdropInStore(videoId);
     if (backdropFromStore) {
       processedRef.current.add(videoId);
-      useUserStore.getState().addHistory({
-        ...record,
-        backdrop: backdropFromStore,
-      });
+      updateBackdropInStorage(videoId, backdropFromStore);
       return;
     }
 
@@ -114,10 +134,7 @@ export function useBackdropLoader(
         : undefined;
 
       if (backdropUrl) {
-        useUserStore.getState().addHistory({
-          ...record,
-          backdrop: backdropUrl,
-        });
+        updateBackdropInStorage(videoId, backdropUrl);
       }
     } catch {
       // API 失败不影响主流程，下次进入页面会重试

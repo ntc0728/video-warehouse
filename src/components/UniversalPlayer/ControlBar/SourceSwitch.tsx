@@ -6,15 +6,19 @@ interface SourceSwitchProps {
   sources: VideoSource[];
   currentIndex: number;
   onSwitch: (index: number) => void;
+  activePopover: string | null;
+  onPopoverChange: (id: string | null) => void;
 }
 
-export default function SourceSwitch({ sources, currentIndex, onSwitch }: SourceSwitchProps) {
-  const [showPopover, setShowPopover] = useState(false);
+const POPOVER_ID = 'source';
+
+export default function SourceSwitch({ sources, currentIndex, onSwitch, activePopover, onPopoverChange }: SourceSwitchProps) {
+  const isOpen = activePopover === POPOVER_ID;
 
   const handleSelect = useCallback((index: number) => {
     onSwitch(index);
-    setShowPopover(false);
-  }, [onSwitch]);
+    onPopoverChange(null);
+  }, [onSwitch, onPopoverChange]);
 
   if (sources.length <= 1) return null;
 
@@ -22,12 +26,12 @@ export default function SourceSwitch({ sources, currentIndex, onSwitch }: Source
     <div className="up-popover-control">
       <button
         className="up-control-btn"
-        onClick={() => setShowPopover(!showPopover)}
+        onClick={() => onPopoverChange(isOpen ? null : POPOVER_ID)}
         title="播放源"
       >
         <List size={20} />
       </button>
-      {showPopover && (
+      {isOpen && (
         <div className="up-popover up-source-popover">
           {sources.map((source, index) => (
             <button
@@ -44,7 +48,7 @@ export default function SourceSwitch({ sources, currentIndex, onSwitch }: Source
   );
 }
 
-export function SourceSwitchMenuItem({ sources, currentIndex, onSwitch }: SourceSwitchProps) {
+export function SourceSwitchMenuItem({ sources, currentIndex, onSwitch }: Omit<SourceSwitchProps, 'activePopover' | 'onPopoverChange'>) {
   const [expanded, setExpanded] = useState(false);
 
   if (sources.length <= 1) return null;

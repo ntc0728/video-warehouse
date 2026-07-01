@@ -59,6 +59,7 @@ docs/
 scripts/*.sh
 scripts/*.py
 scripts/*.js
+scripts/*.mjs
 scripts/*.ts
 !scripts/*.spec.ts
 

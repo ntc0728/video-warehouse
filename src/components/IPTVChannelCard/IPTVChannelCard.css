@@ -127,16 +127,29 @@
   text-overflow: ellipsis;
 }
 
+.iptv-card-title-track {
+  display: flex;
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.iptv-card-title-text {
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .iptv-card-title.marquee {
   text-overflow: clip;
+}
+
+.iptv-card-title.marquee .iptv-card-title-track {
   animation: marquee 8s linear infinite;
 }
 
 @keyframes marquee {
   0%   { transform: translateX(0); }
-  25%  { transform: translateX(0); }
-  75%  { transform: translateX(var(--marquee-dist, -50px)); }
-  100% { transform: translateX(var(--marquee-dist, -50px)); }
+  100% { transform: translateX(-50%); }
 }
 
 .iptv-card-group {

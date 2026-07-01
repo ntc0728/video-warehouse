@@ -43,7 +43,7 @@
       "^[a-z][a-z0-9-]*(__[a-z][a-z0-9-]*)?(--[a-z][a-z0-9-]*)?$",
       {
         "message": "类名应遵循 BEM 风格：block[__element][--modifier]，仅小写字母、数字、连字符",
-        "severity": "warning"
+        "severity": "error"
       }
     ],
     "selector-pseudo-element-no-unknown": [
@@ -91,7 +91,7 @@
         "at-rules"
       ],
       {
-        "severity": "warning"
+        "severity": "error"
       }
     ],
     "order/properties-order": [
@@ -179,7 +179,7 @@
         "animation"
       ],
       {
-        "severity": "warning"
+        "severity": "error"
       }
     ],
 

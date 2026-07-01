@@ -5,6 +5,7 @@ import FullscreenButton from './ControlBar/FullscreenButton';
 interface PlayerHeaderProps {
   mode: PlayerMode;
   title: string;
+  episodeLabel?: string;
   channelName?: string;
   visible: boolean;
   showFullscreenButton?: boolean;
@@ -16,6 +17,7 @@ interface PlayerHeaderProps {
 export default function PlayerHeader({
   mode,
   title,
+  episodeLabel,
   channelName,
   visible,
   showFullscreenButton = true,
@@ -34,7 +36,10 @@ export default function PlayerHeader({
         <ArrowLeft size={18} />
         <span>返回</span>
       </button>
-      <span className="up-header-title">{displayTitle}</span>
+      <span className="up-header-title">
+        {displayTitle}
+        {episodeLabel && <span className="up-header-episode-badge">{episodeLabel}</span>}
+      </span>
       {showFullscreenButton && <FullscreenButton containerRef={containerRef} />}
     </div>
   );
