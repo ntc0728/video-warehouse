@@ -35,7 +35,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adapterRef = useRef<IPlayerAdapter | null>(null);
   const userPausedRef = useRef(false);
-  const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
@@ -77,11 +76,17 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     if (!videoId || !videoRef.current || skipHistory) return;
     try {
       const history = await getHistory();
+      // 匹配优先级：精确匹配 videoId+episodeId → videoId 且 episodeId 为空 → 仅 videoId 取最新
       const videoHistory = history.find(
         (h) => h.videoId === videoId && h.episodeId === episodeId
+      ) || history.find(
+        (h) => h.videoId === videoId && !h.episodeId && !episodeId
+      ) || history.find(
+        (h) => h.videoId === videoId
       );
-      if (videoHistory && videoHistory.progress > 0 && videoRef.current.duration) {
-        videoRef.current.currentTime = Math.min(videoHistory.progress, videoRef.current.duration - 1);
+      const video = videoRef.current;
+      if (videoHistory && videoHistory.progress > 0 && video.duration && isFinite(video.duration)) {
+        video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
       }
     } catch (err) {
       console.error('Failed to load progress:', err);
@@ -103,11 +108,18 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     if (!video) return;
     if (!type || !url) return;
 
+    // 切换视频源时先暂停当前播放，避免声音残留
+    if (!video.paused) {
+      video.pause();
+    }
+
     // 切换视频源时重置进度，避免显示上一集的时间
     const store = usePlayerStore.getState();
     store.setProgress(0);
     store.setDuration(0);
     store.setBufferedProgress(0);
+    store.setPlayerLoading(true);
+    store.setReadyToPlay(false);
 
     // 复用已有适配器热切换源（避免 destroy+recreate 导致的黑屏闪烁）
     if (adapterRef.current && prevTypeRef.current === type) {
@@ -117,17 +129,16 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
     prevTypeRef.current = type;
 
-    // 切换选集后自动播放（native HLS 需要显式调用，hls.js 在 MANIFEST_PARSED 中自行处理）
-    autoPlayTimerRef.current = setTimeout(() => {
-      autoPlayTimerRef.current = null;
-      if (!userPausedRef.current) {
-        video.play().catch(() => {});
-      }
-    }, 300);
-
     video.volume = volume;
     video.playbackRate = playbackRate;
     video.disablePictureInPicture = false;
+
+    // 监听 canplay 事件，加载完成时标记 readyToPlay
+    const handleCanPlay = () => {
+      usePlayerStore.getState().setPlayerLoading(false);
+      usePlayerStore.getState().setReadyToPlay(true);
+    };
+    video.addEventListener('canplay', handleCanPlay);
 
     // 一次性获取最新 store actions，避免 effect 频繁重建
     const getStore = usePlayerStore.getState;
@@ -165,7 +176,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleRateChange = () => { getStore().setPlaybackRate(video.playbackRate); };
     const handleEnterPiP = () => { getStore().setIsPiP(true); };
     const handleLeavePiP = () => { getStore().setIsPiP(false); };
-    const handleLoadedMetadata = () => { loadProgress(); };
+    const handleLoadedMetadata = () => {
+      const dur = video.duration;
+      if (dur > 0 && isFinite(dur)) {
+        getStore().setDuration(dur);
+      }
+      loadProgress();
+    };
 
     // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源
     // webkitVideoDecodedByteCount 在 Chrome/Safari/Edge/Android WebView 支持；
@@ -252,11 +269,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('error', handleNativeError);
       video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('canplay', handleCanPlay);
 
-      if (autoPlayTimerRef.current) {
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
       clearInterval(bandwidthTimer);
 
       // 热切换时跳过销毁（useLayoutEffect 已在 cleanup 之前标记）
@@ -290,10 +304,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const pause = useCallback(() => {
     userPausedRef.current = true;
-    if (autoPlayTimerRef.current) {
-      clearTimeout(autoPlayTimerRef.current);
-      autoPlayTimerRef.current = null;
-    }
     const adapter = adapterRef.current;
     if (adapter) {
       adapter.pause();
@@ -320,10 +330,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       }
     } else {
       userPausedRef.current = true;
-      if (autoPlayTimerRef.current) {
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
       const adapter = adapterRef.current;
       if (adapter) {
         adapter.pause();

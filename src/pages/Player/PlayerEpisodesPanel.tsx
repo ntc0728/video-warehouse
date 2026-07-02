@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { VideoSource, Episode } from '@/types/video';
-import { ListVideo, ChevronDown, Play } from 'lucide-react';
+import { ListVideo, ChevronDown, Play, Loader2, ArrowUpDown } from 'lucide-react';
 
 interface PlayerEpisodesPanelProps {
   episodes: Episode[];
   sources: VideoSource[];
   currentSrc: { url: string; type: VideoSource['type'] } | null;
   activeEpisodeId?: string;
+  loading?: boolean;
   onPlayEpisode: (ep: Episode) => void;
   onPlaySource: (src: VideoSource) => void;
   expanded?: boolean;
@@ -14,30 +15,57 @@ interface PlayerEpisodesPanelProps {
   compact?: boolean;
 }
 
-const EPISODE_PAGE_SIZE = 14;
+const PAGE_SIZE = 12;
 
 export function PlayerEpisodesPanel({
   episodes,
   sources,
   currentSrc,
   activeEpisodeId,
+  loading = false,
   onPlayEpisode,
   onPlaySource,
   expanded = true,
   onToggle,
   compact = false,
 }: PlayerEpisodesPanelProps) {
-  const [episodePage, setEpisodePage] = useState(0);
+  const [sortAsc, setSortAsc] = useState(true);
+  const [page, setPage] = useState(0);
   const HeaderTag = compact ? 'div' : 'button';
 
+  const sorted = useMemo(() => {
+    const copy = [...episodes];
+    copy.sort((a, b) => sortAsc ? a.number - b.number : b.number - a.number);
+    return copy;
+  }, [episodes, sortAsc]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const visible = sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  const pageOptions = useMemo(() => {
+    const opts: { label: string; value: number }[] = [];
+    for (let i = 0; i < totalPages; i++) {
+      const start = i * PAGE_SIZE + 1;
+      const end = Math.min((i + 1) * PAGE_SIZE, sorted.length);
+      opts.push({ label: `${start}-${end}`, value: i });
+    }
+    return opts;
+  }, [sorted.length, totalPages]);
+
+  const infoText = episodes.length > 0
+    ? `第${(activeEpisodeId ? episodes.find(e => e.id === activeEpisodeId)?.number : episodes[0]?.number) || 1}集/共${episodes.length}集`
+    : '第1集/共1集';
+
   return (
-    <div className="player-panel">
+    <div className="player-panel player-panel--episodes">
       <HeaderTag
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
       >
         <span className="player-panel-icon"><ListVideo size={16} /></span>
         <span className="player-panel-title">{episodes.length > 0 ? '选集' : '线路'}</span>
+        <span className="player-panel-info">{infoText}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
             <ChevronDown size={16} />
@@ -45,10 +73,34 @@ export function PlayerEpisodesPanel({
         )}
       </HeaderTag>
       <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
-        {episodes.length > 0 ? (
+        {loading && episodes.length === 0 && sources.length === 0 ? (
+          <div className="player-panel-loading">
+            <Loader2 size={16} className="spinning" />
+            <span>加载中...</span>
+          </div>
+        ) : episodes.length > 0 ? (
           <>
+            <div className="player-episode-controls">
+              <button
+                className="player-episode-sort-btn"
+                onClick={() => { setSortAsc(!sortAsc); setPage(0); }}
+                title={sortAsc ? '升序' : '降序'}
+              >
+                <ArrowUpDown size={14} />
+                <span>{sortAsc ? '升序' : '降序'}</span>
+              </button>
+              <select
+                className="player-episode-select"
+                value={safePage}
+                onChange={(e) => setPage(parseInt(e.target.value, 10))}
+              >
+                {pageOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
             <div className="player-episode-grid">
-              {episodes.slice(episodePage * EPISODE_PAGE_SIZE, (episodePage + 1) * EPISODE_PAGE_SIZE).map((ep) => (
+              {visible.map((ep) => (
                 <button
                   key={ep.id}
                   className={`player-episode-btn ${ep.id === activeEpisodeId ? 'active' : ''}`}
@@ -58,27 +110,6 @@ export function PlayerEpisodesPanel({
                 </button>
               ))}
             </div>
-            {episodes.length > EPISODE_PAGE_SIZE && (
-              <div className="player-episode-pagination">
-                <button
-                  className="player-episode-page-btn"
-                  disabled={episodePage === 0}
-                  onClick={() => setEpisodePage(p => p - 1)}
-                >
-                  上一页
-                </button>
-                <span className="player-episode-page-info">
-                  {episodePage + 1} / {Math.ceil(episodes.length / EPISODE_PAGE_SIZE)}
-                </span>
-                <button
-                  className="player-episode-page-btn"
-                  disabled={(episodePage + 1) * EPISODE_PAGE_SIZE >= episodes.length}
-                  onClick={() => setEpisodePage(p => p + 1)}
-                >
-                  下一页
-                </button>
-              </div>
-            )}
           </>
         ) : sources.length > 0 ? (
           <div className="player-source-list">
@@ -94,7 +125,7 @@ export function PlayerEpisodesPanel({
             ))}
           </div>
         ) : (
-          <div className="player-panel-empty">{episodes.length > 0 ? '暂无选集' : '暂无线路'}</div>
+          <div className="player-panel-empty">暂无数据，请尝试切换其他 CMS 源</div>
         )}
       </div>
     </div>
