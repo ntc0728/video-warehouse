@@ -102,6 +102,10 @@ export default function UniversalPlayer({
   onSkipOutro,
   controlBarSlots,
   episodeLabel,
+  hasPrevEpisode,
+  hasNextEpisode,
+  onPrevEpisode,
+  onNextEpisode,
 }: UniversalPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -125,6 +129,7 @@ export default function UniversalPlayer({
     setDecoderMode, setSource,
     levels, currentLevel,
     isPlaying, audioTracks, isBuffering,
+    isReadyToPlay, isPlayerLoading,
   } = usePlayerStore();
 
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
@@ -580,6 +585,8 @@ export default function UniversalPlayer({
     ).length;
   }, [mode, currentChannel, _channels]);
 
+  const isMobile = containerWidth > 0 && containerWidth < 640;
+
   const volume = usePlayerStore(s => s.volume);
   const networkSpeed = useNetworkSpeed();
   const networkQuality = useNetworkQuality();
@@ -708,6 +715,31 @@ export default function UniversalPlayer({
         onOpenChannelList={() => setChannelListVisible(true)}
       />
 
+      {/* 加载中显示转圈 */}
+      {isPlayerLoading && !isReadyToPlay && !hasError && (
+        <div className="up-player-loading-overlay">
+          <div className="up-player-loading-spinner" />
+        </div>
+      )}
+
+      {/* 预加载完成待播放 / 暂停状态显示播放按钮 */}
+      {isReadyToPlay && !isPlaying && !hasError && !isBuffering && (
+        <div
+          className="up-player-paused-overlay"
+          onClick={(e) => {
+            e.stopPropagation();
+            playerCore.play();
+          }}
+        >
+          <div className="up-player-play-button">
+            <svg viewBox="0 0 80 80" className="up-player-play-icon" aria-hidden="true">
+              <circle cx="40" cy="40" r="38" />
+              <polygon points="28,24 28,56 58,40" />
+            </svg>
+          </div>
+        </div>
+      )}
+
       {seekIndicator && (
         <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
           {seekIndicator === 'left' ? <Rewind size={32} /> : <FastForward size={32} />}
@@ -730,11 +762,9 @@ export default function UniversalPlayer({
           <span className="up-iptv-buffering-reason">
             {getBufferingReason()}
           </span>
-          {mode === 'iptv' && (
-            <button className="up-iptv-buffering-retry" onClick={handleRetry}>
-              换源重试
-            </button>
-          )}
+          <button className="up-iptv-buffering-retry" onClick={handleRetry}>
+            {mode === 'iptv' ? '换源重试' : '重试'}
+          </button>
         </div>
       )}
 
@@ -802,6 +832,11 @@ export default function UniversalPlayer({
           sources={sources}
           currentSourceIndex={sources?.findIndex(s => s.url === (currentUrl || url)) ?? -1}
           onSourceSwitch={(index) => handleSourceSwitch(index, mode, currentChannel, _channels, sources)}
+          hasPrevEpisode={hasPrevEpisode}
+          hasNextEpisode={hasNextEpisode}
+          onPrevEpisode={onPrevEpisode}
+          onNextEpisode={onNextEpisode}
+          isMobile={isMobile}
         />
       )}
 

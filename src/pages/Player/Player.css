@@ -29,6 +29,11 @@
   border-radius: 0;
 }
 
+.player-video-area .player-empty-state {
+  height: 100%;
+  min-height: 0;
+}
+
 .player-video-area .up-universal-player {
   width: 100%;
   height: 100%;
@@ -55,6 +60,11 @@
   background: var(--color-surface);
   overflow: hidden;
 }
+
+/* 三面板高度比 2:3:5 — 通过 flex-grow 比例分配 */
+.player-panel--cms       { flex: 2; }
+.player-panel--season    { flex: 3; }
+.player-panel--episodes  { flex: 5; }
 
 .player-panel-header {
   display: flex;
@@ -88,8 +98,19 @@
 }
 
 .player-panel-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-panel-info {
   flex: 1;
   min-width: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -113,7 +134,6 @@
   min-height: 0;
   border-top: 1px solid var(--color-border-light);
   padding: var(--space-sm);
-  padding-bottom: calc(var(--space-xs) * 2 + 2rem);
   overflow: auto;
   scrollbar-gutter: stable;
 }
@@ -141,39 +161,13 @@
 }
 
 .player-panel-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: var(--space-md);
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   text-align: center;
-}
-
-.player-panel-refresh {
-  position: absolute;
-  bottom: var(--space-xs);
-  left: 50%;
-  display: inline-flex;
-  gap: var(--space-xs);
-  justify-content: center;
-  align-items: center;
-  width: auto;
-  padding: var(--space-xs) var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  transform: translateX(-50%);
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.player-panel-refresh:hover:not(:disabled) {
-  color: var(--color-primary);
-}
-
-.player-panel-refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 @keyframes spin {
@@ -189,6 +183,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
+  justify-content: center;
 }
 
 .player-cms-item {
@@ -206,13 +201,8 @@
   cursor: pointer;
 }
 
-.player-cms-item:hover:not(.disabled):not(.active) {
+.player-cms-item:hover:not(.active) {
   color: var(--color-primary);
-}
-
-.player-cms-item.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .player-cms-item.active {
@@ -229,16 +219,47 @@
   text-overflow: ellipsis;
 }
 
-.player-cms-error {
-  flex-shrink: 0;
-  color: var(--color-error);
+/* ── 选季面板 ──────────────────────────────────── */
+.player-season-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: center;
+}
+
+.player-season-item {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
   font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.player-season-item:hover:not(.active) {
+  color: var(--color-primary);
+}
+
+.player-season-item.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-background);
+}
+
+.player-season-name {
+  white-space: nowrap;
 }
 
 .player-episode-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-xs);
+  justify-items: center;
   min-width: 0;
 }
 
@@ -268,47 +289,51 @@
   color: var(--color-background);
 }
 
-.player-episode-pagination {
+/* ── 选集排序 & 下拉 ────────────────────────────── */
+.player-episode-controls {
   display: flex;
   gap: var(--space-sm);
-  justify-content: center;
   align-items: center;
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-sm);
 }
 
-.player-episode-page-btn {
-  padding: var(--space-2xs) var(--space-sm);
+.player-episode-sort-btn {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  white-space: nowrap;
 }
 
-.player-episode-page-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
+.player-episode-sort-btn:hover {
   color: var(--color-primary);
 }
 
-.player-episode-page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.player-episode-select {
+  max-width: 7rem;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  outline: none;
 }
 
-.player-episode-page-info {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
+
 
 .player-source-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
+  justify-content: center;
   min-width: 0;
 }
 
@@ -352,21 +377,6 @@
   gap: var(--space-md);
   justify-content: center;
   align-items: center;
-}
-
-.player-cms-timeout-retry {
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-primary);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.player-cms-timeout-retry:hover {
-  opacity: 0.8;
 }
 
 .player-empty-state {
@@ -465,8 +475,17 @@
   border-radius: var(--radius-sm);
 }
 
+.player-detail-title-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+  margin-bottom: var(--space-sm);
+}
+
 .player-detail-title {
-  margin: 0 0 var(--space-sm);
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: var(--text-lg);
   font-weight: 700;
 }
@@ -478,6 +497,31 @@
   margin-bottom: var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+.player-detail-fav-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.player-detail-fav-btn:hover {
+  color: var(--color-primary);
+}
+
+.player-detail-fav-btn.collected {
+  border-color: var(--color-favorite-active);
+  background: var(--color-favorite-active);
+  color: #fff;
 }
 
 .player-detail-overview {
@@ -540,9 +584,8 @@
 }
 
 .player-recommend-row {
-  --card-cols: 4;
   display: grid;
-  grid-template-columns: repeat(var(--card-cols), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
   gap: var(--space-sm);
   width: 100%;
   max-width: 100%;
@@ -550,7 +593,7 @@
   padding: 0 var(--space-md);
 }
 
-@media (width < 768px) {
+@media (width < 1280px) {
   .player-main {
     flex-direction: column;
     height: auto;
@@ -569,9 +612,36 @@
     max-height: none;
   }
 
-  .player-panel {
+  /* 移动端/App：CMS、选季面板按内容撑高 */
+  .player-panel--cms,
+  .player-panel--season {
     flex: none;
-    min-width: 0;
+  }
+
+  .player-panel--cms .player-panel-body,
+  .player-panel--season .player-panel-body {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .player-cms-list,
+  .player-season-list,
+  .player-source-list {
+    justify-content: flex-start;
+  }
+
+  .player-episode-grid {
+    justify-items: start;
+  }
+
+  /* 移动端/App：选集面板最高为 12 条（6行×2列）高度 */
+  .player-panel--episodes {
+    flex: none;
+    max-height: none;
+  }
+
+  .player-panel--episodes .player-panel-body {
+    max-height: calc(var(--space-xs) + (var(--comp-btn-min-height) + var(--space-xs)) * 6);
+    padding: var(--space-sm) var(--space-md);
   }
 
   .player-detail-overview {
@@ -579,10 +649,6 @@
     -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .player-recommend-row {
-    --card-cols: 3;
   }
 
   .player-detail-overview--expanded {
@@ -673,7 +739,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   transition: color 0.2s;
 }
