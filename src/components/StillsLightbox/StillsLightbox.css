@@ -210,15 +210,15 @@
 
 /* ── Mobile ────────────────────────────────────── */
 
-@media (max-width: 767px) {
+@media (width < 768px) {
   .stills-lightbox__close {
     top: var(--space-sm);
     right: var(--space-sm);
+    z-index: 100;
     width: 2.75rem;
     height: 2.75rem;
     background: rgba(255, 255, 255, 0.85);
     color: #000;
-    z-index: 100;
   }
 
   .stills-lightbox__counter {

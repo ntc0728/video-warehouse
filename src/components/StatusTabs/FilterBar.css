@@ -52,9 +52,9 @@
 .record-filter-bar__actions {
   display: flex;
   flex-wrap: nowrap;
-  margin-left: auto;
   align-items: center;
   min-width: 0;
+  margin-left: auto;
 }
 .record-filter-bar__actions .toolbar-actions {
   flex-wrap: nowrap;
