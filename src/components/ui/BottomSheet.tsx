@@ -2,6 +2,7 @@
 
 import React, { useRef, useCallback, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import './BottomSheet.css'
 
 interface BottomSheetProps {
@@ -22,6 +23,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const contentRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ y: number; time: number } | null>(null)
   const currentTranslateRef = useRef(0)
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]
@@ -76,6 +78,13 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     [onClose],
   )
 
+  // 移动端禁止弹窗打开时自动聚焦输入框（避免拉起键盘）
+  const handleOpenAutoFocus = useCallback((e: Event) => {
+    if (isMobile) {
+      e.preventDefault()
+    }
+  }, [isMobile])
+
   return (
     <Dialog.Root open={visible} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
@@ -83,6 +92,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         <Dialog.Content
           ref={contentRef}
           className={`bottomsheet-content${className ? ` ${className}` : ''}`}
+          onOpenAutoFocus={handleOpenAutoFocus}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

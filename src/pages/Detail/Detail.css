@@ -1088,7 +1088,7 @@
 /* 多行网格 — 列数由 --card-cols 统一驱动 */
 .detail-recommend-row {
   display: grid;
-  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
   gap: var(--space-sm);
   width: 100%;
   max-width: 100%;

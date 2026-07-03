@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { CustomScrollbar } from '@/components/common'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface ModalProps {
   visible: boolean
@@ -25,6 +26,7 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -34,6 +36,13 @@ const Modal: React.FC<ModalProps> = ({
     },
     [onClose]
   )
+
+  // 移动端禁止弹窗打开时自动聚焦输入框（避免拉起键盘）
+  const handleOpenAutoFocus = useCallback((e: Event) => {
+    if (isMobile) {
+      e.preventDefault()
+    }
+  }, [isMobile])
 
   useEffect(() => {
     if (visible) {
@@ -80,6 +89,7 @@ const Modal: React.FC<ModalProps> = ({
         <Dialog.Content
           ref={contentRef}
           className={`modal-content${className ? ` ${className}` : ''}`}
+          onOpenAutoFocus={handleOpenAutoFocus}
           onEscapeKeyDown={closeOnAction ? undefined : (e) => e.preventDefault()}
           onPointerDownOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
           onInteractOutside={closeOnAction ? undefined : (e) => e.preventDefault()}

@@ -207,3 +207,31 @@
   width: clamp(4rem, 3rem + 2vw, 5.5rem);
   height: clamp(2.5rem, 1.8rem + 1.5vw, 3.5rem);
 }
+
+/* ── Mobile ────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .stills-lightbox__close {
+    top: var(--space-sm);
+    right: var(--space-sm);
+    width: 2.75rem;
+    height: 2.75rem;
+    background: rgba(255, 255, 255, 0.85);
+    color: #000;
+    z-index: 100;
+  }
+
+  .stills-lightbox__counter {
+    top: var(--space-sm);
+  }
+
+  .stills-lightbox__nav {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .stills-lightbox__thumbs {
+    bottom: var(--space-sm);
+    width: 90vw;
+  }
+}

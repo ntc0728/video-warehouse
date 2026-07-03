@@ -72,4 +72,8 @@ export interface UniversalPlayerProps {
     right?: React.ReactNode;
   };
   episodeLabel?: string;
+  hasPrevEpisode?: boolean;
+  hasNextEpisode?: boolean;
+  onPrevEpisode?: () => void;
+  onNextEpisode?: () => void;
 }
