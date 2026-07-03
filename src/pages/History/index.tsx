@@ -17,6 +17,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useBackdropLoader } from '@/hooks/useBackdropLoader';
+import { useDocumentTitle } from '@/hooks';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
@@ -148,6 +149,8 @@ export default function HistoryPage() {
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   const saved = getState('history');
+
+  useDocumentTitle();
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
   const [statusFilter, setStatusFilter] = useState<VideoStatus>('all');

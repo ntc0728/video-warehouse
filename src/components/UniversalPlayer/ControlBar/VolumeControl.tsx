@@ -15,6 +15,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
   const isOpen = activePopover === POPOVER_ID;
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTouchRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -55,11 +56,27 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
     }, HIDE_DELAY);
   }, [onPopoverChange]);
 
+  const handleContainerEnter = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    onPopoverChange(POPOVER_ID);
+  }, [onPopoverChange]);
+
+  const handleContainerLeave = useCallback(() => {
+    hideTimerRef.current = setTimeout(() => {
+      onPopoverChange(null);
+      hideTimerRef.current = null;
+    }, HIDE_DELAY);
+  }, [onPopoverChange]);
+
   return (
     <div
+      ref={containerRef}
       className="up-volume-control"
-      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
-      onMouseLeave={() => onPopoverChange(null)}
+      onMouseEnter={handleContainerEnter}
+      onMouseLeave={handleContainerLeave}
     >
       <button
         className="up-control-btn"

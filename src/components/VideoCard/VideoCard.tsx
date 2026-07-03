@@ -89,10 +89,10 @@ const VideoCard = memo(function VideoCard({
       if (!textEl) return;
       const overflow = textEl.scrollWidth > el.clientWidth;
       setIsOverflow(overflow);
-      // 根据溢出量计算跑马灯速度：每 100px 溢出 1 秒，最少 4 秒，最多 15 秒
+      // 根据溢出量计算跑马灯速度：每 200px 溢出 1 秒，最少 6 秒，最多 30 秒
       if (overflow) {
         const overflowPx = textEl.scrollWidth - el.clientWidth;
-        const duration = Math.max(4, Math.min(15, overflowPx / 100));
+        const duration = Math.max(6, Math.min(30, overflowPx / 200));
         el.style.setProperty('--marquee-duration', `${duration}s`);
       }
     };

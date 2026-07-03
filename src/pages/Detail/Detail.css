@@ -39,7 +39,8 @@
 }
 
 .detail-hero--skeleton .detail-hero-content {
-  visibility: hidden;
+  opacity: 0.4;
+  transition: opacity 0.4s ease;
 }
 
 @keyframes skeletonShimmer {
@@ -555,6 +556,77 @@
   font-weight: 600;
 }
 
+/* ── 类型标签 ──────────────────────────────────── */
+
+.detail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.detail-genre-tag {
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.detail-genre-tag:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* ── 评分人数 ──────────────────────────────────── */
+
+.detail-vote-count {
+  margin-left: var(--space-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+/* ── 制作公司 Logo ──────────────────────────────── */
+
+.detail-companies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.detail-company {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.detail-company-logo {
+  width: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  height: auto;
+  max-height: var(--space-xl);
+  object-fit: contain;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.detail-company-logo:hover {
+  opacity: 1;
+}
+
+[data-theme="dark"] .detail-company-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .detail-company-logo:hover {
+  opacity: 0.9;
+}
+
 /* ── 剧照网格 ──────────────────────────────────── */
 
 .detail-stills-grid {
@@ -565,7 +637,7 @@
 }
 
 .detail-stills-grid--limited {
-  grid-template-rows: repeat(2, 1fr);
+  max-height: calc(var(--layout-tabbar-height) * 2 + var(--space-sm) * 3);
   overflow: hidden;
 }
 
@@ -654,7 +726,7 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
-  padding: var(--space-sm) 0;
+  padding: var(--space-xs) 0;
   color: var(--color-text);
 }
 .detail-info-card svg {
@@ -669,6 +741,33 @@
   white-space: nowrap;
 }
 .detail-info-card strong {
+  margin-left: var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* ── 全宽信息行（发行公司） ───────────────────── */
+
+.detail-info-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-top: var(--space-sm);
+  color: var(--color-text);
+}
+.detail-info-row svg {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  opacity: 0.7;
+}
+.detail-info-row > span:first-of-type {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+.detail-info-row strong {
   margin-left: var(--space-sm);
   color: var(--color-text);
   font-size: var(--text-sm);
@@ -709,6 +808,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xl);
+  width: 100%;
 }
 .detail-cast-item {
   display: flex;
@@ -716,8 +816,18 @@
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  width: var(--header-height);
+  min-width: var(--header-height);
+  color: inherit;
   text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.detail-cast-item:hover {
+  transform: translateY(-2px);
+}
+.detail-cast-item:hover .detail-cast-name {
+  color: var(--color-primary);
 }
 .detail-cast-item img {
   width: var(--layout-tabbar-height);
@@ -739,6 +849,7 @@
 .detail-cast-name {
   font-size: var(--text-xs);
   font-weight: 500;
+  white-space: nowrap;
 }
 .detail-cast-role {
   color: var(--color-text-tertiary);
@@ -1322,6 +1433,14 @@
   padding: var(--space-xs) var(--space-lg);
   font-size: var(--text-sm);
 }
+}
+
+/* ============================================================
+   移动端 / App 端 — 隐藏返回按钮
+   ============================================================ */
+[data-device="mobile-web"] .detail-hero-back,
+[data-device="app"] .detail-hero-back {
+  display: none;
 }
 
 /* ============================================================

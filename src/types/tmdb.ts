@@ -231,6 +231,44 @@ export interface TMDBCredits {
 }
 
 // ============================================================
+// 人物
+// ============================================================
+
+export interface TMDBPerson {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+  known_for?: TMDBVideoItem[];
+}
+
+export interface TMDBPersonDetail {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+  also_known_as: string[];
+  homepage: string | null;
+  imdb_id: string | null;
+}
+
+export interface TMDBPersonMovieCredits {
+  cast: (TMDBMovie & { character: string; order: number })[];
+  crew: (TMDBMovie & { job: string; department: string })[];
+}
+
+export interface TMDBPersonTVCredits {
+  cast: (TMDBTVShow & { character: string; order: number; episode_count: number })[];
+  crew: (TMDBTVShow & { job: string; department: string })[];
+}
+
+// ============================================================
 // 图片
 // ============================================================
 

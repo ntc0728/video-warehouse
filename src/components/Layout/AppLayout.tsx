@@ -9,15 +9,15 @@ import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import './Layout.css';
 import { useSettingsStore } from '@/stores';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsRealMobile } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 
 export default function AppLayout() {
   const isNative = isNativePlatform();
-  const isMobile = useIsMobile();
+  const isRealMobile = useIsRealMobile();
   const isTV = useIsTV();
-  const isMobileWeb = !isNative && !isTV && isMobile;
+  const isMobileWeb = !isNative && !isTV && isRealMobile;
   // 使用 selector 订阅,避免设置 store 任意字段变化都触发 AppLayout 整树重渲染
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);

@@ -243,6 +243,8 @@ export default function UniversalPlayer({
     },
     showVolumePopupWithTimer,
     toggleFullscreen: handleToggleFullscreen,
+    onPrevEpisode,
+    onNextEpisode,
   });
 
   // IPTV 超时 hook
