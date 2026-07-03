@@ -21,6 +21,7 @@ import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
 import './Home.css';
 
@@ -33,6 +34,7 @@ export default function HomePage() {
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('home');
+  useDocumentTitle();
 
   useHeaderContent({ immersive: true });
 

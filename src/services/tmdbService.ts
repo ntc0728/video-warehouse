@@ -16,6 +16,10 @@ import type {
   TMDBMultiSearchResult,
   TMDBFilterOptions,
   TMDBImages,
+  TMDBPerson,
+  TMDBPersonDetail,
+  TMDBPersonMovieCredits,
+  TMDBPersonTVCredits,
 } from '@/types/tmdb';
 import { request, type RequestOptions } from './httpClient';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -231,6 +235,46 @@ export async function searchMulti(
     page,
     include_adult: 'false',
   });
+}
+
+// ============================================================
+// 人物
+// ============================================================
+
+/** 搜索人物（演员、导演等） */
+export async function searchPerson(
+  query: string,
+  page: number = 1,
+): Promise<TMDBPaginatedResponse<TMDBPerson>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBPerson>>('/search/person', {
+    query,
+    page,
+    include_adult: 'false',
+  });
+}
+
+/** 获取人物详情 */
+export async function fetchPersonDetail(
+  personId: number,
+  options: { signal?: AbortSignal } = {},
+): Promise<TMDBPersonDetail> {
+  return fetchTMDB<TMDBPersonDetail>(`/person/${personId}`, {}, options);
+}
+
+/** 获取人物电影作品 */
+export async function fetchPersonMovieCredits(
+  personId: number,
+  options: { signal?: AbortSignal } = {},
+): Promise<TMDBPersonMovieCredits> {
+  return fetchTMDB<TMDBPersonMovieCredits>(`/person/${personId}/movie_credits`, {}, options);
+}
+
+/** 获取人物电视剧作品 */
+export async function fetchPersonTVCredits(
+  personId: number,
+  options: { signal?: AbortSignal } = {},
+): Promise<TMDBPersonTVCredits> {
+  return fetchTMDB<TMDBPersonTVCredits>(`/person/${personId}/tv_credits`, {}, options);
 }
 
 // ============================================================

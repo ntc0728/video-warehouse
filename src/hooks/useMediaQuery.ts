@@ -83,6 +83,22 @@ export function useIsTV(): boolean {
   return isTV;
 }
 
+/**
+ * 通过 User-Agent 检测是否为真正的移动设备（手机/平板）
+ * 不依赖视口宽度，避免桌面浏览器窗口调小时误判
+ */
+export function getIsRealMobile(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return /android|iphone|ipad|ipod|mobile|webos|blackberry|opera mini|iemobile/i.test(ua);
+}
+
+/** 真实移动设备检测 Hook */
+export function useIsRealMobile(): boolean {
+  const [isRealMobile] = useState(getIsRealMobile);
+  return isRealMobile;
+}
+
 /** 屏幕方向类型 */
 export type Orientation = 'portrait' | 'landscape';
 

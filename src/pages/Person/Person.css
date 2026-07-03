@@ -1,0 +1,323 @@
+/* ============================================================
+   Person — 人物详情页
+   ============================================================ */
+
+.person-page {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+/* ── Hero ──────────────────────────────────────── */
+
+.person-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(18rem, 16rem + 10vw, 28rem);
+  background: rgba(0, 0, 0, 0.92);
+  overflow: hidden;
+}
+
+/* 噪声纹理 */
+.person-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+.person-hero-gradient {
+  display: none;
+}
+
+/* ── 返回按钮（与 Detail 页一致） ──────────────── */
+
+.person-hero-back {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  z-index: 20;
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  height: var(--comp-btn-min-height);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.person-hero-back:hover {
+  color: #fff;
+}
+
+.person-hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-top: var(--space-3xl);
+  padding: var(--space-xl);
+  padding-right: clamp(10rem, 14vw + 3rem, 14rem);
+}
+
+.person-info {
+  flex: 1;
+  min-width: 0;
+  padding-right: var(--space-md);
+  text-align: right;
+}
+
+.person-info--no-bio {
+  margin-top: calc(clamp(9rem, 12vw + 3rem, 11rem) - var(--space-lg));
+}
+
+.person-avatar {
+  position: absolute;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  flex-shrink: 0;
+  width: clamp(9rem, 12vw + 3rem, 11rem);
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.person-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-name {
+  margin: 0 0 var(--space-sm);
+  color: #fff;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.person-aka {
+  margin: 0 0 var(--space-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-sm);
+}
+
+.person-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  margin-bottom: var(--space-md);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+}
+
+.person-bio-wrap {
+  position: relative;
+}
+
+.person-bio-wrap:not(.person-bio-wrap--expanded) .person-bio {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+}
+
+.person-bio-wrap--expanded .person-bio {
+  display: block;
+}
+
+.person-bio {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  text-align: left;
+}
+
+.person-bio-toggle {
+  display: inline-flex;
+  gap: 0.125rem;
+  align-items: center;
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.person-bio-toggle:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.person-bio-toggle:focus-visible {
+  outline: none;
+}
+
+/* ── Tab 导航 ──────────────────────────────────── */
+
+.person-tabs {
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  margin: var(--space-sm) 0;
+}
+
+.person-tab {
+  position: relative;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.25s, border-color 0.25s;
+  cursor: pointer;
+}
+
+.person-tab:hover {
+  color: var(--color-text);
+}
+
+.person-tab--active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ── 作品列表 ──────────────────────────────────── */
+
+.person-works {
+  margin: var(--space-xs) 0 var(--space-sm) 0;
+}
+
+.person-work-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
+  gap: var(--space-sm);
+  padding: 0 var(--space-sm);
+}
+
+.person-work-card {
+  min-width: 0;
+}
+
+/* ── Not Found ─────────────────────────────────── */
+
+.person-not-found {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================================
+   Mobile (≤ 767px)
+   ============================================================ */
+
+@media (width <= 767px) {
+  .person-hero-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: auto;
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .person-info {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .person-avatar {
+    position: static;
+    width: 6rem;
+    margin: 0 auto var(--space-md);
+  }
+
+  .person-meta {
+    justify-content: center;
+  }
+
+  .person-bio {
+    text-align: center;
+  }
+
+  .person-work-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================================
+   Tablet (768–1023px)
+   ============================================================ */
+
+@media (width >= 768px) and (width <= 1023px) {
+  .person-work-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* ============================================================
+   Desktop (≥ 1024px)
+   ============================================================ */
+
+@media (width >= 1024px) {
+  .person-work-grid {
+    grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
+  }
+}
+
+/* ============================================================
+   移动端 / App 端 — 隐藏返回按钮
+   ============================================================ */
+[data-device="mobile-web"] .person-hero-back,
+[data-device="app"] .person-hero-back {
+  display: none;
+}
+
+/* ============================================================
+   TV 端
+   ============================================================ */
+
+[data-device="tv"] .person-hero {
+  min-height: clamp(22rem, 20rem + 8vw, 32rem);
+}
+
+[data-device="tv"] .person-avatar {
+  width: clamp(9rem, 10vw + 4rem, 14rem);
+}
+
+[data-device="tv"] .person-name {
+  font-size: var(--text-4xl);
+}
+
+[data-device="tv"] .person-bio {
+  font-size: var(--text-base);
+}

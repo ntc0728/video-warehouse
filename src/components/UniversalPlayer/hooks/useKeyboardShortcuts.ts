@@ -11,6 +11,8 @@ interface UseKeyboardShortcutsOptions {
   playerCore: { togglePlay: () => void; setVolume: (v: number) => void; seek: (time: number) => void; getCurrentTime: () => number; getDuration: () => number };
   showVolumePopupWithTimer: () => void;
   toggleFullscreen?: () => void;
+  onPrevEpisode?: () => void;
+  onNextEpisode?: () => void;
 }
 
 export function useKeyboardShortcuts({
@@ -22,6 +24,8 @@ export function useKeyboardShortcuts({
   playerCore,
   showVolumePopupWithTimer,
   toggleFullscreen,
+  onPrevEpisode,
+  onNextEpisode,
 }: UseKeyboardShortcutsOptions) {
   useEffect(() => {
     // TV 平台由 useTVRemote 统一处理，不注册重复监听
@@ -90,10 +94,18 @@ export function useKeyboardShortcuts({
             hideControls();
           }
           break;
+        case '[':
+          e.preventDefault();
+          onPrevEpisode?.();
+          break;
+        case ']':
+          e.preventDefault();
+          onNextEpisode?.();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [platform, mode, isControlsVisible, showControls, hideControls, showVolumePopupWithTimer, playerCore, toggleFullscreen]);
+  }, [platform, mode, isControlsVisible, showControls, hideControls, showVolumePopupWithTimer, playerCore, toggleFullscreen, onPrevEpisode, onNextEpisode]);
 }

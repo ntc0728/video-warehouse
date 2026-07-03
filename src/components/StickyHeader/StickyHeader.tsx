@@ -93,9 +93,15 @@ export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen
   const renderNavItem = (item: NavItem) => {
     const onClick = item.path === '/' ? goHome : () => handleNavClick(item.path);
     return (
-      <button key={item.key} className={`sticky-header__nav-item${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`} onClick={onClick} title={item.title}>
+      <a
+        key={item.key}
+        href={item.path}
+        className={`sticky-header__nav-item${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
+        onClick={(e) => { e.preventDefault(); onClick(); }}
+        title={item.title}
+      >
         {item.icon}<span className="sticky-header__nav-label">{item.title}</span>
-      </button>
+      </a>
     );
   };
 

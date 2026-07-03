@@ -26,6 +26,7 @@ import { PlayerCMSPanel } from './PlayerCMSPanel';
 import { PlayerSeasonPanel } from './PlayerSeasonPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
+import { useDocumentTitle } from '@/hooks';
 import './Player.css';
 
 type TMDBResultItem = {
@@ -80,6 +81,9 @@ export default function PlayerPage() {
   const [cmsLoading, setCmsLoading] = useState(false);
   const cmsAbortRef = useRef<AbortController | null>(null);
   const activeCmsSourceIndexRef = useRef<number | undefined>(undefined);
+
+  // ── 动态页签标题 ──────────────────────────────
+  useDocumentTitle(video?.title || null, true);
 
   // ── CMS 缓存 helpers ──────────────────────────────────────
   const getCmsCacheKey = useCallback((videoId: string, sourceIndex: number) =>

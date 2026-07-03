@@ -12,6 +12,7 @@ import { fetchTrending } from '@/services/tmdbService';
 import httpClient from '@/services/httpClient';
 import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import { PortalDropdown } from '@/components/common/PortalDropdown';
+import { useDocumentTitle } from '@/hooks';
 import type { EPGSourceConfig } from '@/types';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 import './Settings.css';
@@ -45,6 +46,8 @@ export default function SettingsPage() {
   const { translationAppId, translationApiKey, setTranslationAppId, setTranslationApiKey, autoTranslate, setAutoTranslate } = useSettingsStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
   const tmdbStore = useTMDBStore();
+
+  useDocumentTitle();
   const {
     theme,
     setTheme,

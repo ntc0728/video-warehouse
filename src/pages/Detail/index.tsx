@@ -15,6 +15,7 @@ import type { Video } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
+import { useDocumentTitle } from '@/hooks';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -258,6 +259,10 @@ export default function DetailPage() {
     if ('name' in d) title = d.name;
     else if ('title' in d) title = d.title;
   }
+
+  // ── 动态页签标题 ──────────────────────────────
+  useDocumentTitle(title || null);
+
   const isTV = d ? 'name' in d : false;
   const logoPath = d?.images?.logos?.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en')?.file_path;
   let year: number | undefined;
@@ -271,14 +276,30 @@ export default function DetailPage() {
   const backdropUrl = d?.backdrop_path ? buildImageUrl(d.backdrop_path, 'w1280') || '' : '';
   const posterUrl = d?.poster_path ? buildImageUrl(d.poster_path, 'w342') || '' : '';
   const [bgLoaded, setBgLoaded] = useState(false);
+  // 背景图加载超时：3 秒后强制显示内容，不阻塞用户交互
+  const bgTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (bgLoaded) { if (bgTimeoutRef.current) clearTimeout(bgTimeoutRef.current); return; }
+    bgTimeoutRef.current = setTimeout(() => setBgLoaded(true), 10000);
+    return () => { if (bgTimeoutRef.current) clearTimeout(bgTimeoutRef.current); };
+  }, [bgLoaded]);
   const overview = d?.overview || '';
   const voteAverage: number = d?.vote_average ?? 0;
+  const voteCount: number = d?.vote_count ?? 0;
   const popularity: number = d?.popularity ?? 0;
   const runtime = isTV ? (d as TMDBTVShowDetail | undefined)?.episode_run_time?.[0] : (d as TMDBMovieDetail | undefined)?.runtime;
   const countries = d?.production_countries?.map((c) => c.name) || [];
-  const companies = d?.production_companies?.slice(0, 3).map((c) => c.name) || [];
-  const cast: TMDBCastMember[] = d?.credits?.cast?.slice(0, 8) || [];
+  const companies = d?.production_companies?.slice(0, 3) || [];
+  const cast: TMDBCastMember[] = d?.credits?.cast?.slice(0, 12) || [];
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
+  const genres = d?.genres || [];
+  const status = d?.status || '';
+  const originalLanguage = d?.original_language || '';
+  const spokenLanguages = d?.spoken_languages?.map((l) => l.name || l.english_name) || [];
+  const tvDetail = isTV ? (d as TMDBTVShowDetail) : undefined;
+  const createdBy = tvDetail?.created_by?.map((c) => c.name) || [];
+  const inProduction = tvDetail?.in_production;
+  const lastAirDate = tvDetail?.last_air_date || '';
   const seasons: TMDBSeason[] = isTV ? ((d as TMDBTVShowDetail | undefined)?.seasons || []) : [];
   const totalSeasons = isTV ? ((d as TMDBTVShowDetail | undefined)?.number_of_seasons || 0) : 0;
   const totalEpisodes = isTV ? ((d as TMDBTVShowDetail | undefined)?.number_of_episodes || 0) : 0;
@@ -474,23 +495,66 @@ export default function DetailPage() {
         {activeTab === 'info' && (
           <div className="detail-info">
             <h2 className="detail-section-title">基础信息</h2>
+            {/* 类型标签 */}
+            {genres.length > 0 && (
+              <div className="detail-genres">
+                {genres.map((g) => (
+                  <span key={g.id} className="detail-genre-tag">{g.name}</span>
+                ))}
+              </div>
+            )}
             <div className="detail-info-grid">
               {year && <div className="detail-info-card"><Calendar size={16} /><span>发行年份</span><strong>{year}</strong></div>}
+              {status && <div className="detail-info-card"><Info size={16} /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
               {runtime && <div className="detail-info-card"><ClockIcon size={16} /><span>时长</span><strong>{runtime} 分钟</strong></div>}
-              {voteAverage > 0 && <div className="detail-info-card"><Star size={16} /><span>TMDB 评分</span><strong>{voteAverage.toFixed(1)} / 10</strong></div>}
+              {originalLanguage && <div className="detail-info-card"><GlobeIcon size={16} /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
+              {voteAverage > 0 && (
+                <div className="detail-info-card">
+                  <Star size={16} />
+                  <span>TMDB 评分</span>
+                  <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
+                </div>
+              )}
               {director && <div className="detail-info-card"><UsersIcon size={16} /><span>导演</span><strong>{director}</strong></div>}
+              {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size={16} /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
               {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size={16} /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
-              {companies.length > 0 && <div className="detail-info-card"><FilmIcon size={16} /><span>发行</span><strong>{companies.join(' / ')}</strong></div>}
               {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
               {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
+              {isTV && <div className="detail-info-card"><Layers size={16} /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
+              {isTV && inProduction !== undefined && <div className="detail-info-card"><RefreshCw size={16} /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
+              {isTV && lastAirDate && <div className="detail-info-card"><Calendar size={16} /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
             </div>
+
+            {/* 发行公司 — 独立一行 */}
+            {companies.length > 0 && (
+              <div className="detail-info-row">
+                <FilmIcon size={16} />
+                <span>发行</span>
+                <strong className="detail-companies">
+                  {companies.map((c) => (
+                    <span key={c.id} className="detail-company">
+                      {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
+                      {c.name}
+                    </span>
+                  ))}
+                </strong>
+              </div>
+            )}
 
             {cast.length > 0 && (
               <>
                 <h3 className="detail-section-subtitle">演员</h3>
                 <div className="detail-cast-row">
                   {cast.map((c) => (
-                    <div key={c.id} className="detail-cast-item">
+                    <a
+                      key={c.id}
+                      href={`/person/${c.id}`}
+                      className="detail-cast-item"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/person/${c.id}`, { state: { from: `/detail/${id}` }, viewTransition: true });
+                      }}
+                    >
                       {c.profile_path ? (
                         <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} width={200} height={300} />
                       ) : (
@@ -498,7 +562,7 @@ export default function DetailPage() {
                       )}
                       <span className="detail-cast-name">{c.name}</span>
                       <span className="detail-cast-role">{c.character}</span>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </>
@@ -729,6 +793,28 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 function formatCurrency(value?: number): string {
   if (!value) return '-';
   return currencyFormatter.format(value);
+}
+
+const statusLabels: Record<string, string> = {
+  Rumored: '传闻',
+  Planned: '计划中',
+  'In Production': '制作中',
+  Post: '后期制作',
+  Released: '已上映',
+  Canceled: '已取消',
+  Returning: '连载中',
+  Ended: '已完结',
+  Pilot: '试播集',
+};
+
+function statusLabel(status: string): string {
+  return statusLabels[status] || status;
+}
+
+function formatVoteCount(count: number): string {
+  if (count >= 10000) return `${(count / 10000).toFixed(1)}万`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return String(count);
 }
 
 /** 格式化进度时间（秒 → mm:ss 或 hh:mm:ss） */

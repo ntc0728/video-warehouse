@@ -38,6 +38,7 @@ const HistoryPage = lazyWithRetry(() => import('./pages/History'));
 const IPTVPage = lazyWithRetry(() => import('./pages/IPTV'));
 const SourceCheckerPage = lazyWithRetry(() => import('./pages/SourceChecker'));
 const BrowsePage = lazyWithRetry(() => import('./pages/Browse'));
+const PersonPage = lazyWithRetry(() => import('./pages/Person'));
 
 /** Suspense 包装：统一处理 lazy 组件的加载状态 */
 // React.lazy 返回的 LazyExoticComponent 内部类型是 ComponentType<any>，
@@ -62,6 +63,7 @@ const LazyHistoryPage = withSuspense(HistoryPage);
 const LazyIPTVPage = withSuspense(IPTVPage);
 const LazySourceCheckerPage = withSuspense(SourceCheckerPage);
 const LazyBrowsePage = withSuspense(BrowsePage);
+const LazyPersonPage = withSuspense(PersonPage);
 
 const routes = [
   {
@@ -120,6 +122,11 @@ const routes = [
         // 筛选页（独立路由：从首页分类卡片跳转进入）
         path: 'browse',
         element: <LazyBrowsePage />,
+      },
+      {
+        // 人物详情页
+        path: 'person/:id',
+        element: <LazyPersonPage />,
       },
     ],
   },

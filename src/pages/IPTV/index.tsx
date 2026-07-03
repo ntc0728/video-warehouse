@@ -18,6 +18,7 @@ import { getEPGCacheTime } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useDocumentTitle } from '@/hooks';
 import { useIPTVAutoRefresh } from '@/hooks/useIPTVAutoRefresh';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
@@ -44,6 +45,8 @@ const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  useDocumentTitle();
   // 高频更新字段 (availabilityProgress) 与低频数据/动作分两组订阅,避免每频道
   // 检测时 progress 变化触发整页重渲染。
   const {

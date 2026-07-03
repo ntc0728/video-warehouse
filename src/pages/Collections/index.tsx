@@ -13,6 +13,7 @@ import { Search, X, Trash2, CheckSquare, Square, ListChecks, LayoutGrid, PlayCir
 import StatusTabs from '@/components/StatusTabs';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useDocumentTitle } from '@/hooks';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
@@ -43,6 +44,8 @@ export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
+
+  useDocumentTitle();
   const saved = getState('collections');
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');

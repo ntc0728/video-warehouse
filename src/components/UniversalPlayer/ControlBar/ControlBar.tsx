@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { SkipBack, SkipForward } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
 import type { VideoSource } from '@/types/video';
@@ -18,7 +19,6 @@ import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
 import SourceSwitch from './SourceSwitch';
 import LoopButton from './LoopButton';
-import { EpisodeNav } from './EpisodeNav';
 
 interface ControlBarProps {
   mode: PlayerMode;
@@ -122,7 +122,6 @@ export default function ControlBar({
 
       <div className="up-control-bar-buttons">
         <div className="up-control-left">
-          <PlayButton isPlaying={isPlaying} onClick={onTogglePlay} />
           {sources && currentSourceIndex !== undefined && onSourceSwitch && (
             <SourceSwitch
               sources={sources}
@@ -133,12 +132,25 @@ export default function ControlBar({
             />
           )}
           {hasPrevEpisode !== undefined && (
-            <EpisodeNav
-              hasPrevEpisode={!!hasPrevEpisode}
-              hasNextEpisode={!!hasNextEpisode}
-              onNextEpisode={onNextEpisode!}
-              onPrevEpisode={onPrevEpisode!}
-            />
+            <button
+              className="up-control-btn"
+              disabled={!hasPrevEpisode}
+              onClick={onPrevEpisode}
+              title="上一集 ([)"
+            >
+              <SkipBack size={20} />
+            </button>
+          )}
+          <PlayButton isPlaying={isPlaying} onClick={onTogglePlay} />
+          {hasNextEpisode !== undefined && (
+            <button
+              className="up-control-btn"
+              disabled={!hasNextEpisode}
+              onClick={onNextEpisode}
+              title="下一集 (])"
+            >
+              <SkipForward size={20} />
+            </button>
           )}
           {isLiveLike && onRefresh && (
             <RefreshButton onClick={onRefresh} />
