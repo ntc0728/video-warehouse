@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -26,6 +27,8 @@ export default function ConfirmDialog({
   onCancel,
   className,
 }: ConfirmDialogProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   const handleCancel = useCallback(() => {
     onCancel?.();
     onOpenChange(false);
@@ -36,11 +39,21 @@ export default function ConfirmDialog({
     onOpenChange(false);
   }, [onConfirm, onOpenChange]);
 
+  // 移动端禁止弹窗打开时自动聚焦输入框（避免拉起键盘）
+  const handleOpenAutoFocus = useCallback((e: Event) => {
+    if (isMobile) {
+      e.preventDefault();
+    }
+  }, [isMobile]);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content className={`modal-content${className ? ` ${className}` : ''}`}>
+        <Dialog.Content
+          className={`modal-content${className ? ` ${className}` : ''}`}
+          onOpenAutoFocus={handleOpenAutoFocus}
+        >
           <Dialog.Title className="modal-title">{title}</Dialog.Title>
           {description && (
             <Dialog.Description className="confirm-description">{description}</Dialog.Description>

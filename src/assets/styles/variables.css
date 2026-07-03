@@ -230,38 +230,38 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 6 档视口断点梯度 (v5：2K/4K 统一 8 列)
+   Card Columns — 6 档视口断点梯度 (v5：2K/4K 统一 6 列)
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
-   ≥ 768  → 6   (平板)
-   ≥ 1024 → 6   (小桌面)
-   ≥ 1280 → 8   (PC 默认)
-   ≥ 1920 → 8   (大屏 / 2K / 4K / TV — 不再升级到 10)
+   ≥ 768  → 5   (平板)
+   ≥ 1024 → 5   (小桌面)
+   ≥ 1280 → 6   (PC 默认)
+   ≥ 1920 → 6   (大屏 / 2K / 4K / TV — 不再升级到 10)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   :root {
-    --card-cols: 6;
-    --row-cols: 6;
+    --card-cols: 5;
+    --row-cols: 5;
   }
 }
 
 @media (width >= 1024px) {
   :root {
-    --card-cols: 6;
-    --row-cols: 6;
+    --card-cols: 5;
+    --row-cols: 5;
   }
 }
 
 @media (width >= 1280px) {
   :root {
-    --card-cols: 8;
-    --row-cols: 8;
+    --card-cols: 7;
+    --row-cols: 7;
   }
 }
 
 @media (width >= 1920px) {
   :root {
-    --card-cols: 8;
-    --row-cols: 8;
+    --card-cols: 7;
+    --row-cols: 7;
     /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
     --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
   }

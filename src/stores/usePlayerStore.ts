@@ -47,6 +47,8 @@ interface PlayerState {
   isBuffering: boolean;
   bufferedProgress: number;
   isFullscreen: boolean;
+  isPlayerLoading: boolean;
+  isReadyToPlay: boolean;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
@@ -73,6 +75,8 @@ interface PlayerState {
   setBuffering: (isBuffering: boolean) => void;
   setBufferedProgress: (buffered: number) => void;
   setFullscreen: (isFullscreen: boolean) => void;
+  setPlayerLoading: (loading: boolean) => void;
+  setReadyToPlay: (ready: boolean) => void;
   reset: () => void;
 }
 
@@ -103,6 +107,8 @@ const initialState = {
   isBuffering: false,
   bufferedProgress: 0,
   isFullscreen: false,
+  isPlayerLoading: false,
+  isReadyToPlay: false,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -138,6 +144,8 @@ export const usePlayerStore = create<PlayerState>()(
       setBuffering: (isBuffering) => set({ isBuffering }),
       setBufferedProgress: (bufferedProgress) => set({ bufferedProgress }),
       setFullscreen: (isFullscreen) => set({ isFullscreen }),
+      setPlayerLoading: (isPlayerLoading) => set({ isPlayerLoading }),
+      setReadyToPlay: (isReadyToPlay) => set({ isReadyToPlay }),
       reset: () => set(initialState),
     }),
     {

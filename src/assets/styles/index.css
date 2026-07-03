@@ -539,7 +539,7 @@ main {
    暴露为 CSS 变量 --iptv-cols,便于其他网格复用同一列数策略 */
 .iptv-channel-grid {
   display: grid;
-  grid-template-columns: repeat(var(--iptv-cols, 6), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
   gap: var(--space-md);
   grid-auto-rows: auto;
   align-content: start;
@@ -548,7 +548,7 @@ main {
 
 @media (width <= 767px) {
   .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 3), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
   }
 }
 
@@ -559,18 +559,18 @@ main {
 }
 
 :root {
-  --iptv-cols: 3;
+  --iptv-cols: 2;
 }
 
 @media (width >= 768px) and (width <= 1023px) {
   :root {
-    --iptv-cols: 4;
+    --iptv-cols: 3;
   }
 }
 
 @media (width >= 1024px) {
   :root {
-    --iptv-cols: 6;
+    --iptv-cols: 5;
   }
 }
 

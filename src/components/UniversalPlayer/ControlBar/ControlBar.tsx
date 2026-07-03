@@ -18,6 +18,7 @@ import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
 import SourceSwitch from './SourceSwitch';
 import LoopButton from './LoopButton';
+import { EpisodeNav } from './EpisodeNav';
 
 interface ControlBarProps {
   mode: PlayerMode;
@@ -35,6 +36,7 @@ interface ControlBarProps {
   onActivity?: () => void;
   onRefresh?: () => void;
   onScreenshot?: () => void;
+  isMobile?: boolean;
   levels: PlayerLevel[];
   currentLevel: number;
   onLevelChange: (level: number) => void;
@@ -43,6 +45,10 @@ interface ControlBarProps {
   sources?: VideoSource[];
   currentSourceIndex?: number;
   onSourceSwitch?: (index: number) => void;
+  hasPrevEpisode?: boolean;
+  hasNextEpisode?: boolean;
+  onPrevEpisode?: () => void;
+  onNextEpisode?: () => void;
   slots?: {
     left?: React.ReactNode;
     center?: React.ReactNode;
@@ -66,6 +72,7 @@ export default function ControlBar({
   onActivity,
   onRefresh,
   onScreenshot,
+  isMobile = false,
   levels,
   currentLevel,
   onLevelChange,
@@ -74,6 +81,10 @@ export default function ControlBar({
   sources,
   currentSourceIndex,
   onSourceSwitch,
+  hasPrevEpisode,
+  hasNextEpisode,
+  onPrevEpisode,
+  onNextEpisode,
   slots,
 }: ControlBarProps) {
   const isPlaying = usePlayerStore(s => s.isPlaying);
@@ -121,6 +132,14 @@ export default function ControlBar({
               onPopoverChange={onPopoverChange}
             />
           )}
+          {hasPrevEpisode !== undefined && (
+            <EpisodeNav
+              hasPrevEpisode={!!hasPrevEpisode}
+              hasNextEpisode={!!hasNextEpisode}
+              onNextEpisode={onNextEpisode!}
+              onPrevEpisode={onPrevEpisode!}
+            />
+          )}
           {isLiveLike && onRefresh && (
             <RefreshButton onClick={onRefresh} />
           )}
@@ -145,7 +164,7 @@ export default function ControlBar({
             onPopoverChange={onPopoverChange}
           />
           <div className="up-control-feature">
-            {isVideoMode && (
+            {isVideoMode && !isMobile && (
               <SubtitleControl
                 onImportSubtitle={onImportSubtitle}
                 activePopover={activePopover}
@@ -158,7 +177,7 @@ export default function ControlBar({
               activePopover={activePopover}
               onPopoverChange={onPopoverChange}
             />
-            {isVideoMode && (
+            {isVideoMode && !isMobile && (
               <ResolutionSwitch
                 levels={levels}
                 currentLevel={currentLevel}
@@ -168,7 +187,7 @@ export default function ControlBar({
                 onPopoverChange={onPopoverChange}
               />
             )}
-            {isVideoMode && onLoopModeChange && (
+            {isVideoMode && !isMobile && onLoopModeChange && (
               <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}
           </div>
@@ -176,6 +195,26 @@ export default function ControlBar({
             activePopover={activePopover}
             onPopoverChange={onPopoverChange}
           >
+            {isVideoMode && isMobile && (
+              <SubtitleControl
+                onImportSubtitle={onImportSubtitle}
+                activePopover={activePopover}
+                onPopoverChange={onPopoverChange}
+              />
+            )}
+            {isVideoMode && isMobile && (
+              <ResolutionSwitch
+                levels={levels}
+                currentLevel={currentLevel}
+                onChange={onLevelChange}
+                visible={isHls}
+                activePopover={activePopover}
+                onPopoverChange={onPopoverChange}
+              />
+            )}
+            {isVideoMode && isMobile && onLoopModeChange && (
+              <LoopButton mode={loopMode} onChange={onLoopModeChange} />
+            )}
             <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
             {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}
           </MoreMenu>

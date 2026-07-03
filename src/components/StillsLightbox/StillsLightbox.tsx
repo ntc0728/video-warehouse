@@ -23,6 +23,34 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
   // 拖拽缩略图条
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 });
 
+  // 灯箱打开时阻止背景滚动
+  useEffect(() => {
+    if (!open) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const html = document.documentElement;
+
+    // 锁定背景滚动
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+
+    return () => {
+      // 恢复背景滚动
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      body.style.overflow = '';
+      html.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
   const scrollToIndex = useCallback((idx: number) => {
     const container = scrollRef.current;
     if (!container) return;

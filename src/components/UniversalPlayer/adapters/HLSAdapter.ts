@@ -106,8 +106,6 @@ export class HLSAdapter extends BasePlayerAdapter {
         if (this.audioTracks.length > 0) {
           this.currentAudioTrack = this.hls?.audioTrack ?? 0;
         }
-
-        this.video?.play().catch(() => {});
       });
 
       this.hls.on(HlsJs.Events.LEVEL_SWITCHED, (_e: unknown, data: { level: number }) => {
@@ -303,7 +301,6 @@ export class HLSAdapter extends BasePlayerAdapter {
     // 原生 HLS 路径：直接换 src
     if (this.video) {
       this.video.src = url;
-      this.video.play().catch(() => {});
     }
   }
 
