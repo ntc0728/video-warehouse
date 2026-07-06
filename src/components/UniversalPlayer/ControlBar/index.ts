@@ -7,7 +7,7 @@ export { default as SubtitleControl } from './SubtitleControl';
 export { default as PiPButton } from './PiPButton';
 export { default as FullscreenButton } from './FullscreenButton';
 export { default as SourceSwitch, SourceSwitchMenuItem } from './SourceSwitch';
-export { default as DecoderSwitch } from './DecoderSwitch';
+export { DecoderSwitchMenuItem } from './DecoderSwitch';
 export { default as LiveIndicator } from './LiveIndicator';
 export { default as RefreshButton } from './RefreshButton';
 export { default as ResolutionSwitch } from './ResolutionSwitch';

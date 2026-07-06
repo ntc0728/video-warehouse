@@ -92,3 +92,5 @@ scripts/screenshots/
 
 # AI 工具本地配置
 .mimocode/
+.catpaw/
+.mignore

@@ -49,6 +49,8 @@ interface PlayerState {
   isFullscreen: boolean;
   isPlayerLoading: boolean;
   isReadyToPlay: boolean;
+  mirror: boolean;
+  aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
@@ -77,7 +79,10 @@ interface PlayerState {
   setFullscreen: (isFullscreen: boolean) => void;
   setPlayerLoading: (loading: boolean) => void;
   setReadyToPlay: (ready: boolean) => void;
+  setMirror: (mirror: boolean) => void;
+  setAspectRatio: (ratio: 'default' | '4:3' | '16:9' | 'fill') => void;
   reset: () => void;
+  resetRuntime: () => void;
 }
 
 const initialState = {
@@ -109,6 +114,8 @@ const initialState = {
   isFullscreen: false,
   isPlayerLoading: false,
   isReadyToPlay: false,
+  mirror: false,
+  aspectRatio: 'default' as const,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -146,7 +153,43 @@ export const usePlayerStore = create<PlayerState>()(
       setFullscreen: (isFullscreen) => set({ isFullscreen }),
       setPlayerLoading: (isPlayerLoading) => set({ isPlayerLoading }),
       setReadyToPlay: (isReadyToPlay) => set({ isReadyToPlay }),
+      setMirror: (mirror) => set({ mirror }),
+      setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+      // reset：重置所有状态（包括用户偏好），仅用于全局重置场景
       reset: () => set(initialState),
+      // resetRuntime：仅重置运行时状态，保留用户偏好（音量、倍速、解码模式、字幕样式等）
+      // 用于页面卸载等场景，避免清除用户保存的偏好设置
+      resetRuntime: () => set((state) => ({
+        currentSrc: null,
+        currentType: null,
+        isPlaying: false,
+        progress: 0,
+        duration: 0,
+        sources: [],
+        levels: [],
+        audioTracks: [],
+        currentAudioTrack: -1,
+        isPiP: false,
+        subtitleUrl: null,
+        mode: 'video' as PlayerMode,
+        platform: 'desktop' as PlatformType,
+        isControlsVisible: false,
+        isChannelListVisible: false,
+        bandwidthEstimate: 0,
+        isBuffering: false,
+        bufferedProgress: 0,
+        isFullscreen: false,
+        isPlayerLoading: false,
+        isReadyToPlay: false,
+        // 保留用户偏好
+        volume: state.volume,
+        mutedVolume: state.mutedVolume,
+        playbackRate: state.playbackRate,
+        decoderMode: state.decoderMode,
+        subtitleSettings: state.subtitleSettings,
+        currentLevel: state.currentLevel,
+        loopMode: state.loopMode,
+      })),
     }),
     {
       name: 'player-store',
@@ -159,6 +202,8 @@ export const usePlayerStore = create<PlayerState>()(
         subtitleSettings: state.subtitleSettings,
         currentLevel: state.currentLevel,
         loopMode: state.loopMode,
+        mirror: state.mirror,
+        aspectRatio: state.aspectRatio,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;

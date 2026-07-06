@@ -55,7 +55,9 @@ export function PlayerEpisodesPanel({
 
   const infoText = episodes.length > 0
     ? `第${(activeEpisodeId ? episodes.find(e => e.id === activeEpisodeId)?.number : episodes[0]?.number) || 1}集/共${episodes.length}集`
-    : '第1集/共1集';
+    : sources.length > 0
+      ? `共${sources.length}条线路`
+      : '';
 
   return (
     <div className="player-panel player-panel--episodes">
@@ -80,6 +82,12 @@ export function PlayerEpisodesPanel({
           </div>
         ) : episodes.length > 0 ? (
           <>
+            {loading && (
+              <div className="player-panel-loading player-panel-loading--overlay">
+                <Loader2 size={16} className="spinning" />
+                <span>加载中...</span>
+              </div>
+            )}
             <div className="player-episode-controls">
               <button
                 className="player-episode-sort-btn"
@@ -112,20 +120,28 @@ export function PlayerEpisodesPanel({
             </div>
           </>
         ) : sources.length > 0 ? (
-          <div className="player-source-list">
-            {sources.map((src) => (
-              <button
-                key={src.id}
-                className={`player-source-item ${currentSrc?.url === src.url ? 'active' : ''}`}
-                onClick={() => onPlaySource(src)}
-              >
-                <Play size={12} fill="currentColor" />
-                <span>{src.name}</span>
-              </button>
-            ))}
-          </div>
+          <>
+            {loading && (
+              <div className="player-panel-loading player-panel-loading--overlay">
+                <Loader2 size={16} className="spinning" />
+                <span>加载中...</span>
+              </div>
+            )}
+            <div className="player-source-list">
+              {sources.map((src) => (
+                <button
+                  key={src.id}
+                  className={`player-source-item ${currentSrc?.url === src.url ? 'active' : ''}`}
+                  onClick={() => onPlaySource(src)}
+                >
+                  <Play size={12} fill="currentColor" />
+                  <span>{src.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
         ) : (
-          <div className="player-panel-empty">暂无数据，请尝试切换其他 CMS 源</div>
+          <div className="player-panel-empty">暂无数据</div>
         )}
       </div>
     </div>

@@ -19,7 +19,7 @@ import { useSmartBack } from '@/lib/navigation';
 import { isNativePlatform } from '@/lib/platform';
 import {
   ArrowLeft, VideoOff, AlertTriangle,
-  SkipForward, Timer, X,
+  SkipForward, Timer, X, Play,
   ChevronDown, ChevronUp, Heart,
 } from 'lucide-react';
 import { PlayerCMSPanel } from './PlayerCMSPanel';
@@ -68,7 +68,7 @@ export default function PlayerPage() {
   const routeSourceIndex = (location.state as Record<string, unknown>)?.sourceIndex as number | undefined;
 
   const { videos, currentSourceIndex } = useVideoStore();
-  const { setSource, setSources, sources: playerSources, reset: resetPlayer } = usePlayerStore();
+  const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
   const { updateHistoryProgress, isCollected, addCollection, removeCollection } = useUserStore();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
 
@@ -79,6 +79,7 @@ export default function PlayerPage() {
   const [loadError, setLoadError] = useState<'api' | null>(null);
   const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
+  const [cmsSwitching, setCmsSwitching] = useState(false);
   const cmsAbortRef = useRef<AbortController | null>(null);
   const activeCmsSourceIndexRef = useRef<number | undefined>(undefined);
 
@@ -130,6 +131,7 @@ export default function PlayerPage() {
   });
 
   const [selectedSeason, setSelectedSeason] = useState(1);
+  const seasonChangedRef = useRef(false);
 
   const [skipIndicator, setSkipIndicator] = useState<'intro' | 'outro' | null>(null);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -357,16 +359,17 @@ export default function PlayerPage() {
     cmsAbortRef.current?.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
-    // 切换源时不显示 loading，后台静默获取后直接替换
     const isSwitching = targetSourceIndex !== undefined;
-    if (!isSwitching) setCmsLoading(true);
+    setCmsLoading(true);
+    if (isSwitching) setCmsSwitching(true);
     setLoadError(null);
 
-    // 切换源时不清空旧数据，保留当前视频继续播放，等新数据就绪后直接替换
-    if (isSwitching && !video && !currentSrc) {
-      // 无当前播放内容时仍需清空（首次切换或数据已被清空的边缘场景）
+    // 切换源时清空旧数据，等新数据就绪后替换
+    if (isSwitching) {
+      setVideo(null);
       setSources([]);
       setCurrentSrc(null);
+      setLocalEpisodeId(undefined);
       currentSourceNameRef.current = undefined;
     }
 
@@ -400,6 +403,14 @@ export default function PlayerPage() {
     }
 
     activeCmsSourceIndexRef.current = sourceIdx;
+
+    // 设置活跃 CMS 源名称（用于面板高亮）
+    {
+      const { getVideoSources } = await import('@/services/sourceService');
+      const allSrc = await getVideoSources();
+      const matchedName = allSrc[sourceIdx]?.name;
+      if (matchedName) setActiveSourceName(matchedName);
+    }
 
     let videoTitle = '';
     let videoYear: number | undefined;
@@ -449,49 +460,47 @@ export default function PlayerPage() {
           return [...prev, result];
         });
 
-        let histSourceName: string | undefined;
         let histEpisodeId: string | undefined;
         try {
           const history = await getHistory();
           const histRecord = history.find(h => h.videoId === id);
-          histSourceName = histRecord?.sourceName;
           histEpisodeId = histRecord?.episodeId;
         } catch { /* ignore */ }
 
         if (result.video) {
           videoCache.set(id!, result.video);
           setVideo(result.video);
+          cmsSourceNameRef.current = result.sourceName;
 
-          // 剧集：按历史记录的 episodeId 选集，默认第一集
           if (result.video.episodes?.length) {
-            const episodes = [...result.video.episodes].sort((a, b) => a.number - b.number);
-            let targetEp = episodes.find(ep => ep.id === histEpisodeId);
-            if (!targetEp) targetEp = episodes[0];
-            if (targetEp?.sources.length) {
-              switchToEpisode(targetEp);
-              setActiveSourceName(undefined);
-              return;
+            // 剧集：如果未切换选季，默认选中上次播放的选集；切换选季时不默认选中
+            if (!seasonChangedRef.current) {
+              const episodes = [...result.video.episodes].sort((a, b) => a.number - b.number);
+              let targetEp = episodes.find(ep => ep.id === histEpisodeId);
+              if (!targetEp) targetEp = episodes[0];
+              if (targetEp?.sources.length) {
+                // 先关闭 loading 再切换选集，避免面板 loading 与播放器 buffering 同时出现
+                setCmsLoading(false);
+                setCmsSwitching(false);
+                switchToEpisode(targetEp);
+              }
             }
+            return;
           }
 
-          // 电影：按历史记录的 sourceName 选线路，默认第一线路
-          const allSrc = result.video.sources;
-          let matchedSrc = allSrc.find(s => s.isDefault) || allSrc[0];
-          if (histSourceName) {
-            const found = allSrc.find(s => s.name === histSourceName);
-            if (found) matchedSrc = found;
+          // 电影：设置线路列表并自动选中第一个线路
+          if (result.video.sources.length > 0) {
+            setSources(result.video.sources);
+            const firstSrc = result.video.sources[0];
+            setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
+            setSource(firstSrc.url, firstSrc.type);
+            currentSourceNameRef.current = firstSrc.name;
           }
-          if (matchedSrc) {
-            setSources(allSrc);
-            setCurrentSrc({ url: matchedSrc.url, type: matchedSrc.type });
-            setSource(matchedSrc.url, matchedSrc.type);
-            currentSourceNameRef.current = matchedSrc.name;
-            cmsSourceNameRef.current = result.sourceName;
-            setActiveSourceName(undefined);
-          }
+          // 先关闭 loading 再返回
+          setCmsLoading(false);
+          setCmsSwitching(false);
         } else {
-          // 空结果：清理旧数据，用户可切换其他源
-          setVideo(null);
+          // 空结果：保留当前视频，让用户通过侧边栏切换其他源
           setSources([]);
           setCurrentSrc(null);
           currentSourceNameRef.current = undefined;
@@ -500,7 +509,10 @@ export default function PlayerPage() {
     } catch {
       if (!ctrl.signal.aborted) setLoadError('api');
     } finally {
-      if (!ctrl.signal.aborted) setCmsLoading(false);
+      if (!ctrl.signal.aborted) {
+        setCmsLoading(false);
+        setCmsSwitching(false);
+      }
     }
     // zustand actions 引用稳定
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -572,7 +584,8 @@ export default function PlayerPage() {
           if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
           autoPlayTimerRef.current = null;
           if (!autoPlayCancelRef.current && nextEpisodeRef.current) {
-            const nextEp = video?.episodes?.find(e => e.id === nextEpisodeRef.current);
+            // 使用 videoRef.current 而非闭包中的 video，避免倒计时期间 video 更新导致旧引用
+            const nextEp = videoRef.current?.episodes?.find(e => e.id === nextEpisodeRef.current);
             if (nextEp) switchToEpisode(nextEp);
           }
           return null;
@@ -580,7 +593,7 @@ export default function PlayerPage() {
         return prev - 1;
       });
     }, 1000);
-  }, [video, switchToEpisode]);
+  }, [switchToEpisode]);
 
   const cancelAutoPlay = useCallback(() => {
     autoPlayCancelRef.current = true;
@@ -591,6 +604,21 @@ export default function PlayerPage() {
     setAutoPlayCountdown(null);
     nextEpisodeRef.current = null;
   }, []);
+
+  // 立即播放下一集（跳过倒计时）
+  const playNextNow = useCallback(() => {
+    if (autoPlayTimerRef.current) {
+      clearInterval(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    autoPlayCancelRef.current = true;
+    setAutoPlayCountdown(null);
+    if (nextEpisodeRef.current) {
+      const nextEp = videoRef.current?.episodes?.find(e => e.id === nextEpisodeRef.current);
+      if (nextEp) switchToEpisode(nextEp);
+    }
+    nextEpisodeRef.current = null;
+  }, [switchToEpisode]);
 
   // 卸载时清理
   useEffect(() => {
@@ -606,8 +634,9 @@ export default function PlayerPage() {
     const activeEpId = localEpisodeId || episodeId;
 
     // 单集循环：seek 到 0 重新播放
+    // 使用 .up-player-video 精确匹配播放器内的 video 元素，避免页面有多个 video 时误操作
     if (loopMode === 'single') {
-      const videoEl = document.querySelector('video');
+      const videoEl = document.querySelector<HTMLVideoElement>('.up-player-video');
       if (videoEl) {
         videoEl.currentTime = 0;
         videoEl.play().catch(() => {});
@@ -667,38 +696,42 @@ export default function PlayerPage() {
       videoCache.set(id!, result.video);
       setVideo(result.video);
 
-      const activeEpId = localEpisodeId || episodeId;
-      if (activeEpId && result.video.episodes?.length) {
-        const oldEpisodes = videoRef.current?.episodes ?? [];
-        const currentEp = oldEpisodes.find(ep => ep.id === activeEpId);
-        let matchedEp = result.video.episodes.find(ep => ep.id === activeEpId);
-        if (!matchedEp && currentEp) {
-          matchedEp = result.video.episodes.find(ep => ep.title === currentEp.title);
+      // 剧集：未切换选季时默认选中上次播放的选集；切换选季时不自动选中
+      if (result.video.episodes?.length) {
+        if (!seasonChangedRef.current) {
+          const activeEpId = localEpisodeId || episodeId;
+          if (activeEpId) {
+            const oldEpisodes = videoRef.current?.episodes ?? [];
+            const currentEp = oldEpisodes.find(ep => ep.id === activeEpId);
+            let matchedEp = result.video.episodes.find(ep => ep.id === activeEpId);
+            if (!matchedEp && currentEp) {
+              matchedEp = result.video.episodes.find(ep => ep.title === currentEp.title);
+            }
+            if (!matchedEp && currentEp) {
+              matchedEp = result.video.episodes[Math.min(currentEp.number - 1, result.video.episodes.length - 1)];
+            }
+            if (matchedEp?.sources.length) {
+              switchToEpisode(matchedEp);
+              return;
+            }
+          }
+          // 无历史选集时默认第一集
+          const sorted = [...result.video.episodes].sort((a, b) => a.number - b.number);
+          if (sorted[0]?.sources.length) {
+            switchToEpisode(sorted[0]);
+          }
         }
-        if (!matchedEp && currentEp) {
-          matchedEp = result.video.episodes[Math.min(currentEp.number - 1, result.video.episodes.length - 1)];
-        }
-        if (matchedEp?.sources.length) {
-          switchToEpisode(matchedEp);
-          setActiveSourceName(undefined);
-          return;
-        }
+        // 切换选季时不自动选中选集
+        return;
       }
 
+      // 电影：设置线路列表并自动选中第一个线路
       if (result.video.sources.length > 0) {
         setSources(result.video.sources);
-        const src = result.video.sources.find(s => s.isDefault) || result.video.sources[0];
-        setCurrentSrc({ url: src.url, type: src.type });
-        setSource(src.url, src.type);
-        currentSourceNameRef.current = src.name;
-        setActiveSourceName(undefined);
-      } else if (result.video.episodes?.length) {
-        switchToEpisode(result.video.episodes[0]);
-        setActiveSourceName(undefined);
-      } else {
-        setCurrentSrc(null);
-        currentSourceNameRef.current = undefined;
-        setActiveSourceName(undefined);
+        const firstSrc = result.video.sources[0];
+        setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
+        setSource(firstSrc.url, firstSrc.type);
+        currentSourceNameRef.current = firstSrc.name;
       }
     }
   };
@@ -763,11 +796,6 @@ export default function PlayerPage() {
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
 
-  const isTMDB = id?.startsWith('tmdb-');
-
-  // TMDB 视频：TMDB 详情加载完成后，仍需等待 CMS 搜索，避免误显示"找不到匹配播放源"
-  const cmsStillSearching = isTMDB && !loadError && !video && cmsLoading;
-
   // 仅首次进入时显示页面级 loading，之后不再触发
   const shouldShowPageLoading = !hasLoadedOnce;
 
@@ -783,20 +811,144 @@ export default function PlayerPage() {
     );
   }
 
-  // TMDB 视频：TMDB 详情已加载但 CMS 搜索中，显示轻量 loading（不阻塞整个页面）
-  if (cmsStillSearching) {
-    return (
-      <div className="player-page">
-        <div className="player-page__container">
-          <div className="player-loading-wrap">
-            <AppLoading tip="搜索匹配源中…" showTip />
+  // ── 公共详情区（所有 return 路径共用，保持播放器高度稳定）──
+  const detailSection = d ? (
+    <div className="player-detail-section">
+      <div className="player-detail-content">
+        <div className="player-detail-info">
+          <div className="player-detail-info-header">
+            <div className="player-detail-title-row">
+              <h3 className="player-detail-title">{title}</h3>
+              <button
+                className={`player-detail-fav-btn${isCollected(id!) ? ' collected' : ''}`}
+                onClick={() => {
+                  if (isCollected(id!)) {
+                    removeCollection(id!);
+                  } else {
+                    addCollection(id!, {
+                      title: video?.title,
+                      cover: video?.cover,
+                      type: video?.type,
+                      year: video?.year,
+                    });
+                  }
+                }}
+              >
+                <Heart size={16} fill={isCollected(id!) ? 'currentColor' : 'none'} />
+                <span>{isCollected(id!) ? '已收藏' : '收藏'}</span>
+              </button>
+            </div>
+            <div className="player-detail-meta">
+              {voteAverage > 0 && <span>★ {voteAverage.toFixed(1)}</span>}
+              {year && <span>{year}</span>}
+              {runtime && <span>{runtime}分钟</span>}
+              {director && <span>导演: {director}</span>}
+            </div>
+            {cast.length > 0 && (
+              <div className="player-detail-cast">
+                <span className="player-detail-cast-label">演员:</span>
+                {cast.map((c) => c.name).join(' / ')}
+              </div>
+            )}
+          </div>
+          <div className="player-detail-info-body">
+            {posterUrl && (
+              <div className="player-detail-poster">
+                <img src={posterUrl} alt={title} width={300} height={450} />
+              </div>
+            )}
+            {overview && (
+              <>
+                <p className={`player-detail-overview${overviewExpanded ? ' player-detail-overview--expanded' : ''}`}>{overview}</p>
+                <button className="player-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>
+                  {overviewExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  <span>{overviewExpanded ? '收起' : '展开全文'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {(() => {
+          const seen = new Set<number>();
+          const allRecommendations = [
+            ...similarResults,
+            ...recommendedResults,
+          ].filter((item) => {
+            if (seen.has(item.id)) return false;
+            seen.add(item.id);
+            return true;
+          }).slice(0, 12);
+          return allRecommendations.length > 0 ? (
+            <section className="player-recommend">
+              <h4 className="player-recommend-title">相关推荐</h4>
+              <div className="player-recommend-row">
+                {allRecommendations.map((item) => (
+                  <div key={`rec-${item.id}`} className="player-recommend-card">
+                    <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null;
+        })()}
+      </div>
+    </div>
+  ) : null;
+
+  // CMS 加载中且无视频数据：播放器区域显示加载动画，面板显示局部 loading
+  if (cmsLoading && !video) {
+    return (
+      <div className="player-page">
+        <div className="player-main">
+          <div className="player-video-area">
+            <div className="player-loading-wrap">
+              <div className="player-loading-spinner" />
+            </div>
+          </div>
+          <PlayerSidebar>
+            <PlayerCMSPanel
+              selectedSourceNames={selectedSourceNames}
+              cmsResults={cmsResults}
+              currentSrc={currentSrc}
+              activeSourceName={activeSourceName}
+              onPlaySource={handlePlayCMSSource}
+              onFetchSource={handleFetchCMSSourceByName}
+              expanded={expandedPanels.cms}
+              onToggle={() => togglePanel('cms')}
+              compact={isCompact}
+            />
+            <PlayerSeasonPanel
+              seasons={seasons}
+              activeSeason={selectedSeason}
+              onSelectSeason={(s) => {
+                seasonChangedRef.current = true;
+                setSelectedSeason(s);
+              }}
+              expanded={expandedPanels.season}
+              onToggle={() => togglePanel('season')}
+              compact={isCompact}
+            />
+            <PlayerEpisodesPanel
+              episodes={episodes}
+              sources={playerSources}
+              currentSrc={currentSrc}
+              activeEpisodeId={localEpisodeId || episodeId}
+              loading={cmsLoading}
+              onPlayEpisode={handlePlayEpisode}
+              onPlaySource={handlePlaySource}
+              expanded={expandedPanels.episodes}
+              onToggle={() => togglePanel('episodes')}
+              compact={isCompact}
+            />
+          </PlayerSidebar>
+        </div>
+        {detailSection}
       </div>
     );
   }
 
-  if (!video) {
+  if (!video && !cmsSwitching && !cmsLoading) {
     if (loadError === 'api') {
       return (
         <div className="player-page">
@@ -819,11 +971,15 @@ export default function PlayerPage() {
       <div className="player-page">
         <div className="player-main">
           <div className="player-video-area">
-            <div className="player-empty-state">
+            <div className="player-empty-state player-empty-state--inline">
               <div className="player-empty-content">
                 <VideoOff />
                 <p className="player-empty-title">暂无数据</p>
                 <p className="player-empty-sub">请尝试切换其他 CMS 源</p>
+                <button className="player-empty-back" onClick={handleBack}>
+                  <ArrowLeft size={14} />
+                  <span>返回</span>
+                </button>
               </div>
             </div>
           </div>
@@ -842,7 +998,10 @@ export default function PlayerPage() {
             <PlayerSeasonPanel
               seasons={seasons}
               activeSeason={selectedSeason}
-              onSelectSeason={setSelectedSeason}
+              onSelectSeason={(s) => {
+                seasonChangedRef.current = true;
+                setSelectedSeason(s);
+              }}
               expanded={expandedPanels.season}
               onToggle={() => togglePanel('season')}
               compact={isCompact}
@@ -861,11 +1020,80 @@ export default function PlayerPage() {
             />
           </PlayerSidebar>
         </div>
+        {detailSection}
       </div>
     );
   }
 
-  if (!currentSrc) return null;
+  if (!currentSrc) {
+    // 有 video 但未选中线路/选集时，显示空播放器区域（不提前 return，保留下方详情内容）
+    return (
+      <div className="player-page">
+        <div className="player-main">
+          <div className="player-video-area">
+            <div className="up-universal-player up-mode-video up-player-placeholder">
+              <div className="up-player-core">
+                <video className="up-player-video" playsInline />
+                <div className="up-player-paused-overlay">
+                  <div className="up-player-play-button">
+                    <svg viewBox="0 0 80 80" className="up-player-play-icon" aria-hidden="true">
+                      <circle cx="40" cy="40" r="38" />
+                      <polygon points="28,24 28,56 58,40" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="up-player-header up-player-header-visible">
+                <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
+                  <ArrowLeft size={18} />
+                  <span>返回</span>
+                </button>
+                <span className="up-header-title">{title || video?.title || ''}</span>
+              </div>
+            </div>
+          </div>
+
+          <PlayerSidebar>
+            <PlayerCMSPanel
+              selectedSourceNames={selectedSourceNames}
+              cmsResults={cmsResults}
+              currentSrc={currentSrc}
+              activeSourceName={activeSourceName}
+              onPlaySource={handlePlayCMSSource}
+              onFetchSource={handleFetchCMSSourceByName}
+              expanded={expandedPanels.cms}
+              onToggle={() => togglePanel('cms')}
+              compact={isCompact}
+            />
+            <PlayerSeasonPanel
+              seasons={seasons}
+              activeSeason={selectedSeason}
+              onSelectSeason={(s) => {
+                seasonChangedRef.current = true;
+                setSelectedSeason(s);
+              }}
+              expanded={expandedPanels.season}
+              onToggle={() => togglePanel('season')}
+              compact={isCompact}
+            />
+            <PlayerEpisodesPanel
+              episodes={episodes}
+              sources={playerSources}
+              currentSrc={currentSrc}
+              activeEpisodeId={localEpisodeId || episodeId}
+              loading={cmsLoading}
+              onPlayEpisode={handlePlayEpisode}
+              onPlaySource={handlePlaySource}
+              expanded={expandedPanels.episodes}
+              onToggle={() => togglePanel('episodes')}
+              compact={isCompact}
+            />
+          </PlayerSidebar>
+        </div>
+        {detailSection}
+      </div>
+    );
+  }
 
   return (
     <div className="player-page">
@@ -877,7 +1105,7 @@ export default function PlayerPage() {
             platform="desktop"
             url={currentSrc.url}
             type={currentSrc.type}
-            title={video.title}
+            title={video?.title || ''}
             videoId={id}
             episodeId={episodeId}
             episodeLabel={episodeLabel}
@@ -909,6 +1137,10 @@ export default function PlayerPage() {
                 <span className="player-autoplay-text">
                   {autoPlayCountdown} 秒后播放下一集
                 </span>
+                <button className="player-autoplay-nav-btn" onClick={playNextNow}>
+                  <Play size={18} fill="currentColor" />
+                  <span>立即播放</span>
+                </button>
                 <button className="player-autoplay-cancel" onClick={cancelAutoPlay}>
                   <X size={14} />
                   <span>取消</span>
@@ -933,7 +1165,10 @@ export default function PlayerPage() {
           <PlayerSeasonPanel
             seasons={seasons}
             activeSeason={selectedSeason}
-            onSelectSeason={setSelectedSeason}
+            onSelectSeason={(s) => {
+              seasonChangedRef.current = true;
+              setSelectedSeason(s);
+            }}
             expanded={expandedPanels.season}
             onToggle={() => togglePanel('season')}
             compact={isCompact}
@@ -952,90 +1187,7 @@ export default function PlayerPage() {
           />
         </PlayerSidebar>
       </div>
-
-      {d && (
-        <div className="player-detail-section">
-          <div className="player-detail-content">
-            <div className="player-detail-info">
-              <div className="player-detail-info-header">
-                <div className="player-detail-title-row">
-                  <h3 className="player-detail-title">{title}</h3>
-                  <button
-                    className={`player-detail-fav-btn${isCollected(id!) ? ' collected' : ''}`}
-                    onClick={() => {
-                      if (isCollected(id!)) {
-                        removeCollection(id!);
-                      } else {
-                        addCollection(id!, {
-                          title: video?.title,
-                          cover: video?.cover,
-                          type: video?.type,
-                          year: video?.year,
-                        });
-                      }
-                    }}
-                  >
-                    <Heart size={16} fill={isCollected(id!) ? 'currentColor' : 'none'} />
-                    <span>{isCollected(id!) ? '已收藏' : '收藏'}</span>
-                  </button>
-                </div>
-                <div className="player-detail-meta">
-                  {voteAverage > 0 && <span>★ {voteAverage.toFixed(1)}</span>}
-                  {year && <span>{year}</span>}
-                  {runtime && <span>{runtime}分钟</span>}
-                  {director && <span>导演: {director}</span>}
-                </div>
-                {cast.length > 0 && (
-                  <div className="player-detail-cast">
-                    <span className="player-detail-cast-label">演员:</span>
-                    {cast.map((c) => c.name).join(' / ')}
-                  </div>
-                )}
-              </div>
-              <div className="player-detail-info-body">
-                {posterUrl && (
-                  <div className="player-detail-poster">
-                    <img src={posterUrl} alt={title} width={300} height={450} />
-                  </div>
-                )}
-                {overview && (
-                  <>
-                    <p className={`player-detail-overview${overviewExpanded ? ' player-detail-overview--expanded' : ''}`}>{overview}</p>
-                    <button className="player-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>
-                      {overviewExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      <span>{overviewExpanded ? '收起' : '展开全文'}</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {(() => {
-              const seen = new Set<number>();
-              const allRecommendations = [
-                ...similarResults,
-                ...recommendedResults,
-              ].filter((item) => {
-                if (seen.has(item.id)) return false;
-                seen.add(item.id);
-                return true;
-              }).slice(0, 12);
-              return allRecommendations.length > 0 ? (
-                <section className="player-recommend">
-                  <h4 className="player-recommend-title">相关推荐</h4>
-                  <div className="player-recommend-row">
-                    {allRecommendations.map((item) => (
-                      <div key={`rec-${item.id}`} className="player-recommend-card">
-                        <VideoCard video={toVideoItem(item, tmdbMediaType)} rating={item.vote_average} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null;
-            })()}
-          </div>
-        </div>
-      )}
+      {detailSection}
     </div>
   );
 }

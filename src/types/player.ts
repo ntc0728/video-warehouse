@@ -53,6 +53,7 @@ export interface UniversalPlayerProps {
   videoId?: string;
   episodeId?: string;
   skipHistory?: boolean;
+  autoPlay?: boolean;
   channelName?: string;
   channels?: IPTVChannel[];
   groups?: IPTVGroup[];

@@ -58,7 +58,7 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
         <Subtitles size={20} />
       </button>
       {isOpen && (
-        <div className="up-popover up-subtitle-popover">
+        <div className="up-popover up-subtitle-popover" onMouseEnter={() => onPopoverChange(POPOVER_ID)} onMouseLeave={() => onPopoverChange(null)}>
           <button className="up-popover-item" onClick={handleImport}>导入字幕</button>
           {translationAppId && translationApiKey && (
             <>

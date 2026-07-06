@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { Volume2, Volume1, VolumeX } from 'lucide-react';
 
 interface VolumeControlProps {
@@ -9,19 +9,10 @@ interface VolumeControlProps {
 }
 
 const POPOVER_ID = 'volume';
-const HIDE_DELAY = 300;
 
 export default function VolumeControl({ volume, onChange, activePopover, onPopoverChange }: VolumeControlProps) {
   const isOpen = activePopover === POPOVER_ID;
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTouchRef = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    return () => {
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
-  }, []);
 
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
 
@@ -42,41 +33,11 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
     }
   }, [isOpen, onPopoverChange]);
 
-  const handleSliderPointerDown = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  }, []);
-
-  const handleSliderPointerUp = useCallback(() => {
-    hideTimerRef.current = setTimeout(() => {
-      onPopoverChange(null);
-      hideTimerRef.current = null;
-    }, HIDE_DELAY);
-  }, [onPopoverChange]);
-
-  const handleContainerEnter = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    onPopoverChange(POPOVER_ID);
-  }, [onPopoverChange]);
-
-  const handleContainerLeave = useCallback(() => {
-    hideTimerRef.current = setTimeout(() => {
-      onPopoverChange(null);
-      hideTimerRef.current = null;
-    }, HIDE_DELAY);
-  }, [onPopoverChange]);
-
   return (
     <div
-      ref={containerRef}
       className="up-volume-control"
-      onMouseEnter={handleContainerEnter}
-      onMouseLeave={handleContainerLeave}
+      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
+      onMouseLeave={() => onPopoverChange(null)}
     >
       <button
         className="up-control-btn"
@@ -89,7 +50,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
       {isOpen && (
         <div className="up-volume-slider-popup" style={{ touchAction: 'none' }}>
           <span className="up-volume-value">{Math.round(volume * 100)}</span>
-          <div className="up-volume-slider-wrapper">
+          <div className="up-volume-slider-wrapper" style={{ '--vol-fill': `${volume * 100}%` } as React.CSSProperties}>
             <input
               type="range"
               min={0}
@@ -97,11 +58,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
               step={0.01}
               value={volume}
               onChange={(e) => onChange(parseFloat(e.target.value))}
-              onPointerDown={handleSliderPointerDown}
-              onPointerUp={handleSliderPointerUp}
-              onTouchEnd={handleSliderPointerUp}
               className="up-volume-slider"
-              style={{ '--vol': `${volume * 100}%` } as React.CSSProperties}
             />
           </div>
         </div>

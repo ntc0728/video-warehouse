@@ -57,6 +57,7 @@
   --player-bg: #000;
   --player-text: #fff;
   --player-progress-bg: #fff;
+  --player-accent: #2d8cf0;
   --player-overlay-bg: rgba(0, 0, 0, 0.6);
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
@@ -101,7 +102,8 @@
   --dot-gap:      clamp(3px,  0.151rem + 0.130vw, 6px);   /* 3→6   圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 */
+  --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 封面/海报按钮 */
+  --comp-tab-height:     clamp(28px, 1.6rem + 0.435vw, 44px);    /* 28→44 筛选/标签 tab */
   --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 */
   --comp-input-height:   clamp(40px, 2.284rem + 0.522vw, 58px);  /* 40→58 */
   --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 */
@@ -110,6 +112,8 @@
   --switch-track-width:  clamp(32px, 1.891rem + 0.391vw, 48px);  /* 32→48 */
   --switch-thumb-size:   clamp(14px, 0.789rem + 0.261vw, 24px);  /* 14→24 */
   --switch-thumb-offset: clamp(16px, 0.947rem + 0.217vw, 24px);  /* 16→24 */
+  --vol-track-width:     clamp(3px, 0.158rem + 0.043vw, 4px);    /* 3→4   音量滑块轨道 */
+  --vol-track-radius:    clamp(1px, 0.053rem + 0.022vw, 2px);    /* 1→2   音量滑块圆角 */
   --radio-size:          clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
   --radio-dot-size:      clamp(6px,  0.316rem + 0.217vw, 14px);  /* 6→14 */
   --badge-size:          clamp(10px, 0.526rem + 0.348vw, 22px);  /* 10→22 */
@@ -314,6 +318,7 @@
   --player-bg: #000;
   --player-text: #fff;
   --player-progress-bg: #fff;
+  --player-accent: #2d8cf0;
   --player-overlay-bg: rgba(0, 0, 0, 0.6);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);

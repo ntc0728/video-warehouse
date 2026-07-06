@@ -15,6 +15,7 @@ interface UsePlayerCoreOptions {
   videoId?: string;
   episodeId?: string;
   skipHistory?: boolean;
+  autoPlay?: boolean;
   decoderMode: DecoderMode;
   retryCount?: number;
   onProgress?: (progress: number, duration: number) => void;
@@ -28,13 +29,14 @@ interface UsePlayerCoreOptions {
 
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, episodeId, skipHistory = false, decoderMode, retryCount,
+    url, type, videoId, episodeId, skipHistory = false, autoPlay = false, decoderMode, retryCount,
     onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro,
   } = options;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adapterRef = useRef<IPlayerAdapter | null>(null);
-  const userPausedRef = useRef(false);
+  const hasSkippedIntroRef = useRef(false);
+  const hasSkippedOutroRef = useRef(false);
 
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
@@ -113,6 +115,10 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.pause();
     }
 
+    // 重置跳过标记，避免新视频继承旧视频的跳过状态
+    hasSkippedIntroRef.current = false;
+    hasSkippedOutroRef.current = false;
+
     // 切换视频源时重置进度，避免显示上一集的时间
     const store = usePlayerStore.getState();
     store.setProgress(0);
@@ -137,12 +143,17 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleCanPlay = () => {
       usePlayerStore.getState().setPlayerLoading(false);
       usePlayerStore.getState().setReadyToPlay(true);
+      // autoPlay=false 时，加载完成后保持暂停状态，等待用户点击播放
+      if (!autoPlay) {
+        usePlayerStore.getState().setPlaying(false);
+      }
     };
     video.addEventListener('canplay', handleCanPlay);
 
     // 一次性获取最新 store actions，避免 effect 频繁重建
     const getStore = usePlayerStore.getState;
     const handlePlay = () => { getStore().setPlaying(true); onPlay?.(); };
+    const handlePlaying = () => { getStore().setPlaying(true); };
     const handlePause = () => { getStore().setPlaying(false); onPause?.(); };
     const handleTimeUpdate = () => {
       const ct = video.currentTime;
@@ -151,16 +162,21 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
         const s = getStore();
         
         // 跳过片头：如果启用且当前时间在片头范围内，跳转到片头结束位置
+        // 使用 hasSkippedIntroRef 防止反复触发 seek 导致抖动
         const settings = useSettingsStore.getState();
-        if (settings.skipIntro && ct < settings.skipIntroDuration && ct < settings.skipIntroDuration - 1) {
+        if (settings.skipIntro && !hasSkippedIntroRef.current && ct < settings.skipIntroDuration && ct > 0.5) {
+          hasSkippedIntroRef.current = true;
           video.currentTime = settings.skipIntroDuration;
           onSkipIntro?.();
           return;
         }
         
         // 跳过片尾：如果启用且当前时间接近视频结尾，触发结束
-        if (settings.skipOutro && ct > dur - settings.skipOutroDuration && ct < dur - 1) {
+        // 使用 hasSkippedOutroRef 防止重复触发，并显式同步 isPlaying 状态
+        if (settings.skipOutro && !hasSkippedOutroRef.current && ct > dur - settings.skipOutroDuration && ct < dur - 1) {
+          hasSkippedOutroRef.current = true;
           video.pause();
+          s.setPlaying(false);
           onSkipOutro?.();
           onEnded?.();
           return;
@@ -240,6 +256,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     };
 
     video.addEventListener('play', handlePlay);
+    video.addEventListener('playing', handlePlaying);
     video.addEventListener('pause', handlePause);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
@@ -259,6 +276,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
     return () => {
       video.removeEventListener('play', handlePlay);
+      video.removeEventListener('playing', handlePlaying);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
@@ -289,7 +307,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type, decoderMode, retryCount]);
 
   const play = useCallback(async () => {
-    userPausedRef.current = false;
     try {
       const adapter = adapterRef.current;
       if (adapter) {
@@ -303,7 +320,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, []);
 
   const pause = useCallback(() => {
-    userPausedRef.current = true;
     const adapter = adapterRef.current;
     if (adapter) {
       adapter.pause();
@@ -315,29 +331,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-
     if (video.paused) {
-      userPausedRef.current = false;
-      const adapter = adapterRef.current;
-      if (adapter) {
-        adapter.play().catch(() => {
-          toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
-        });
-      } else {
-        video.play().catch(() => {
-          toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
-        });
-      }
+      play();
     } else {
-      userPausedRef.current = true;
-      const adapter = adapterRef.current;
-      if (adapter) {
-        adapter.pause();
-      } else {
-        video.pause();
-      }
+      pause();
     }
-  }, []);
+  }, [play, pause]);
 
   const seek = useCallback((time: number) => {
     if (videoRef.current && !videoRef.current.error) videoRef.current.currentTime = time;

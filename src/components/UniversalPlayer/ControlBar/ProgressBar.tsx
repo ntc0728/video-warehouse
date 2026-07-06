@@ -6,6 +6,7 @@ interface ProgressBarProps {
   currentTime: number;
   duration: number;
   buffered: number;
+  isBuffering?: boolean;
   onSeek: (time: number) => void;
 }
 
@@ -16,7 +17,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, isBuffering, onSeek }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -49,7 +50,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   }, [duration, isDragging, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    if (isLive || duration <= 0) return;
+    if (isLive || duration <= 0 || isBuffering) return;
     setIsDragging(true);
     const time = calcTime(clientX);
     const ratio = (time / duration) * 100;
@@ -58,7 +59,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, calcTime, onSeek]);
+  }, [isLive, duration, isBuffering, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);

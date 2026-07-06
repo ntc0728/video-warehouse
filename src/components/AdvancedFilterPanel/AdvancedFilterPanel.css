@@ -112,7 +112,7 @@
 }
 
 .filter-panel--tv .filter-panel__chip {
-  min-height: var(--comp-btn-min-height);
+  height: var(--comp-tab-height);
   font-size: var(--text-base);
 }
 

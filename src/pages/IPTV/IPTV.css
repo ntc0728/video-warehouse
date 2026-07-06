@@ -278,6 +278,7 @@
 }
 
 .source-tag {
+  height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
