@@ -13,6 +13,8 @@ import { useEPGData } from './hooks/useEPGData';
 import { useIPTVTimeout } from './hooks/useIPTVTimeout';
 import { useScreenshot } from './hooks/useScreenshot';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { ToastProvider } from './PlayerToast';
+import ToastTrigger from './ToastTrigger';
 import { useTimeshift } from './hooks/useTimeshift';
 import { getFullscreenElement, requestFullscreen, exitFullscreen } from './lib/fullscreen';
 import PlayerCore from './PlayerCore';
@@ -68,9 +70,6 @@ class PlayerErrorBoundary extends Component<PlayerErrorBoundaryProps, PlayerErro
             <span style={{ fontSize: 'var(--text-sm)', opacity: 0.7 }}>
               {this.state.error?.message || '未知错误'}
             </span>
-            <button className="up-retry-btn" onClick={this.handleRetry}>
-              重新加载
-            </button>
           </div>
         </div>
       );
@@ -88,6 +87,7 @@ export default function UniversalPlayer({
   videoId,
   episodeId,
   skipHistory = false,
+  autoPlay = false,
   channelName,
   channels: _channels = [],
   groups = [],
@@ -111,9 +111,7 @@ export default function UniversalPlayer({
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const volumePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastRetryRef = useRef(0);
   const [hasError, setHasError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const [activePopover, setActivePopover] = useState<string | null>(null);
@@ -126,7 +124,7 @@ export default function UniversalPlayer({
     decoderMode, isControlsVisible, isChannelListVisible,
     setControlsVisible, setChannelListVisible,
     setMode, setPlatform, sources,
-    setDecoderMode, setSource,
+    setDecoderMode, setSource, setLoopMode,
     levels, currentLevel,
     isPlaying, audioTracks, isBuffering,
     isReadyToPlay, isPlayerLoading,
@@ -277,14 +275,14 @@ export default function UniversalPlayer({
   const currentUrlRef = useRef(currentUrl);
   currentUrlRef.current = currentUrl;
 
-  const playerCore = usePlayerCore({
-    url: mode === 'iptv' ? (currentUrl || url) : url,
-    type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
-    videoId,
-    episodeId,
-    skipHistory,
-    decoderMode,
-    retryCount,
+const playerCore = usePlayerCore({
+url: mode === 'iptv' ? (currentUrl || url) : url,
+type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
+videoId,
+episodeId,
+skipHistory,
+autoPlay,
+decoderMode,
     onProgress,
     onEnded,
     onPlay,
@@ -505,14 +503,6 @@ export default function UniversalPlayer({
     }
   }, [mode, isControlsVisible, isBuffering, playerCore, showControls, handleToggleFullscreen, hasLongPressedRef]);
 
-  const handleRetry = useCallback(() => {
-    const now = Date.now();
-    if (now - lastRetryRef.current < 1000) return;
-    lastRetryRef.current = now;
-    setHasError(false);
-    setRetryCount(prev => prev + 1);
-  }, []);
-
   const handleOpenProgramGuide = useCallback(async () => {
     if (!currentChannelId) return;
 
@@ -587,8 +577,6 @@ export default function UniversalPlayer({
     ).length;
   }, [mode, currentChannel, _channels]);
 
-  const isMobile = containerWidth > 0 && containerWidth < 640;
-
   const volume = usePlayerStore(s => s.volume);
   const networkSpeed = useNetworkSpeed();
   const networkQuality = useNetworkQuality();
@@ -607,18 +595,25 @@ export default function UniversalPlayer({
   /** 根据网速和缓冲状态判断卡顿原因 */
   const getBufferingReason = useCallback((): string => {
     const speedKBs = parseSpeedKBs(networkSpeed);
-    // 网速阈值：500 KB/s 以下认为网络较差
-    const NETWORK_SLOW_THRESHOLD = 500;
+    // 根据当前画质动态计算网速阈值：bitrate * 1.2 / 8 / 1024 (KB/s)
+    // 无画质信息时回退到默认 500 KB/s
+    let networkSlowThreshold = 500;
+    if (levels.length > 0) {
+      const level = currentLevel >= 0 ? levels[currentLevel] : levels[levels.length - 1];
+      if (level?.bitrate > 0) {
+        networkSlowThreshold = Math.max(200, (level.bitrate * 1.2) / 8 / 1024);
+      }
+    }
 
     if (speedKBs <= 0) {
       return '正在连接...';
     }
-    if (speedKBs < NETWORK_SLOW_THRESHOLD) {
+    if (speedKBs < networkSlowThreshold) {
       return '网络连接不稳定';
     }
     // 网络正常但仍在缓冲，可能是源响应慢
     return '缓冲中，可能是源响应较慢';
-  }, [networkSpeed]);
+  }, [networkSpeed, levels, currentLevel]);
 
   const channelProgram = useMemo(() => {
     if (!epgReady || !currentChannelId) return undefined;
@@ -697,6 +692,8 @@ export default function UniversalPlayer({
 
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
+    <ToastProvider>
+    <ToastTrigger />
     <PlayerErrorBoundary>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
     <div
@@ -705,11 +702,9 @@ export default function UniversalPlayer({
       tabIndex={-1}
     >
       <PlayerCore
-        key={`player-core-${retryCount}`}
         videoRef={storeVideoRef}
         mode={mode}
         hasError={hasError}
-        onRetry={handleRetry}
         onClick={handlePlayerClick}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
@@ -717,10 +712,26 @@ export default function UniversalPlayer({
         onOpenChannelList={() => setChannelListVisible(true)}
       />
 
-      {/* 加载中显示转圈 */}
-      {isPlayerLoading && !isReadyToPlay && !hasError && (
-        <div className="up-player-loading-overlay">
-          <div className="up-player-loading-spinner" />
+      {/* 加载中 / 缓冲中统一显示带文字信息的遮罩 */}
+      {(isPlayerLoading || isBuffering) && !hasError && (
+        <div className="up-iptv-buffering-overlay">
+          <div className="up-iptv-buffering-spinner" />
+          {isBuffering && (
+            <>
+              <span className="up-iptv-buffering-text">{networkSpeed}</span>
+              <div className="up-iptv-buffering-metrics">
+                <span className="up-iptv-buffering-metric">
+                  延迟 {networkQuality.latency}
+                </span>
+                <span className="up-iptv-buffering-metric">
+                  丢包 {networkQuality.packetLoss}
+                </span>
+              </div>
+              <span className="up-iptv-buffering-reason">
+                {getBufferingReason()}
+              </span>
+            </>
+          )}
         </div>
       )}
 
@@ -746,27 +757,6 @@ export default function UniversalPlayer({
         <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
           {seekIndicator === 'left' ? <Rewind size={32} /> : <FastForward size={32} />}
           <span>6s</span>
-        </div>
-      )}
-
-      {isBuffering && !hasError && (
-        <div className="up-iptv-buffering-overlay">
-          <div className="up-iptv-buffering-spinner" />
-          <span className="up-iptv-buffering-text">{networkSpeed}</span>
-          <div className="up-iptv-buffering-metrics">
-            <span className="up-iptv-buffering-metric">
-              延迟 {networkQuality.latency}
-            </span>
-            <span className="up-iptv-buffering-metric">
-              丢包 {networkQuality.packetLoss}
-            </span>
-          </div>
-          <span className="up-iptv-buffering-reason">
-            {getBufferingReason()}
-          </span>
-          <button className="up-iptv-buffering-retry" onClick={handleRetry}>
-            {mode === 'iptv' ? '换源重试' : '重试'}
-          </button>
         </div>
       )}
 
@@ -802,7 +792,7 @@ export default function UniversalPlayer({
           onOpenAudioTrack={handleAudioTrackSelect}
           onHeightChange={() => {}}
           epgStatus={epgStatus}
-          onRefreshEpg={handleRetry}
+          onRefreshEpg={handleOpenProgramGuide}
           onOpenProgramGuide={handleOpenProgramGuide}
           isTimeshifted={timeshift.isTimeshifted}
           latencyLabel={timeshift.latencyLabel}
@@ -821,10 +811,9 @@ export default function UniversalPlayer({
           onDecoderModeChange={setDecoderMode}
           onTogglePiP={playerCore.togglePiP}
           onImportSubtitle={handleImportSubtitle}
-          onLoopModeChange={usePlayerStore.getState().setLoopMode}
+          onLoopModeChange={setLoopMode}
           slots={controlBarSlots}
           onActivity={resetAutoHideTimer}
-          onRefresh={handleRetry}
           onScreenshot={handleScreenshot}
           levels={levels}
           currentLevel={currentLevel}
@@ -838,7 +827,7 @@ export default function UniversalPlayer({
           hasNextEpisode={hasNextEpisode}
           onPrevEpisode={onPrevEpisode}
           onNextEpisode={onNextEpisode}
-          isMobile={isMobile}
+          isBuffering={isBuffering}
         />
       )}
 
@@ -889,5 +878,6 @@ export default function UniversalPlayer({
     </div>
     </PlayerContext.Provider>
     </PlayerErrorBoundary>
+    </ToastProvider>
   );
 }

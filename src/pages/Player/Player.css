@@ -142,8 +142,7 @@
   flex: none;
   height: 0;
   max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding: 0;
   border-top: none;
   overflow: hidden;
 }
@@ -180,16 +179,16 @@
 }
 
 .player-cms-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
 }
 
 .player-cms-item {
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
+  height: var(--comp-tab-height);
   padding: var(--space-2xs) var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
@@ -221,15 +220,16 @@
 
 /* ── 选季面板 ──────────────────────────────────── */
 .player-season-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-sm);
-  justify-content: center;
 }
 
 .player-season-item {
   display: inline-flex;
+  justify-content: center;
   align-items: center;
+  height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
@@ -258,7 +258,7 @@
 .player-episode-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   justify-items: center;
   min-width: 0;
 }
@@ -268,6 +268,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
@@ -332,8 +333,7 @@
 .player-source-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs);
-  justify-content: center;
+  gap: var(--space-sm);
   min-width: 0;
 }
 
@@ -341,6 +341,7 @@
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
+  height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
@@ -379,14 +380,23 @@
   align-items: center;
 }
 
+.player-loading-spinner {
+  width: var(--comp-thumb-size);
+  height: var(--comp-thumb-size);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 .player-empty-state {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: calc(100vh - var(--header-height));
-  min-height: calc(100dvh - var(--header-height));
+  height: 100%;
+  min-height: 0;
 }
 
 .player-empty-back {
@@ -407,7 +417,7 @@
 }
 
 .player-empty-back:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 .player-empty-content {
@@ -428,7 +438,7 @@
 
 .player-empty-title {
   margin: 0;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   font-size: var(--text-lg);
   font-weight: 500;
 }
@@ -629,6 +639,30 @@
     justify-content: flex-start;
   }
 
+  /* 移动端/App：CMS 源一行 6 列 */
+  .player-cms-list {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-sm);
+    justify-content: flex-start;
+  }
+
+  /* 移动端/App：选季一行 5 列 */
+  .player-season-list {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-sm);
+    justify-content: flex-start;
+  }
+
+  /* 移动端/App：选集/线路一行 5 列 */
+  .player-episode-grid,
+  .player-source-list {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-sm);
+  }
+
   .player-episode-grid {
     justify-items: start;
   }
@@ -640,7 +674,7 @@
   }
 
   .player-panel--episodes .player-panel-body {
-    max-height: calc(var(--space-xs) + (var(--comp-btn-min-height) + var(--space-xs)) * 6);
+    max-height: calc(var(--space-xs) + (var(--comp-tab-height) + var(--space-xs)) * 6);
     padding: var(--space-sm) var(--space-md);
   }
 
@@ -792,4 +826,33 @@
 @keyframes autoplay-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* ── 桌面端（≥ 1280px）：面板不可折叠，隐藏箭头，播放器撑满视口 ─── */
+@media (width >= 1280px) {
+  .player-page {
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .player-main {
+    flex: none;
+    height: calc(100dvh - var(--header-height));
+    padding: var(--space-sm);
+  }
+
+  .player-panel-arrow {
+    display: none;
+  }
+
+  .player-panel-body.collapsed {
+    flex: 1;
+    height: auto;
+    max-height: none;
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    border-top: 1px solid var(--color-border-light);
+    overflow: auto;
+  }
 }

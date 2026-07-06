@@ -8,6 +8,7 @@
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
+  height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);

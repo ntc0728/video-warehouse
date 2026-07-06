@@ -2,14 +2,16 @@ import { Play, Pause } from 'lucide-react';
 
 interface PlayButtonProps {
   isPlaying: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
-export default function PlayButton({ isPlaying, onClick }: PlayButtonProps) {
+export default function PlayButton({ isPlaying, disabled, onClick }: PlayButtonProps) {
   return (
     <button
       className="up-control-btn up-play-btn"
       onClick={onClick}
+      disabled={disabled}
       title="播放/暂停 (Space)"
       aria-label={isPlaying ? '暂停' : '播放'}
       aria-pressed={isPlaying}

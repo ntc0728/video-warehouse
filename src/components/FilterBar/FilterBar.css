@@ -123,6 +123,7 @@
 /* ── Chip (胶囊样式) ───────────────────────────────── */
 
 .filter-bar__chip {
+  height: var(--comp-tab-height);
   padding: var(--space-2xs) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);

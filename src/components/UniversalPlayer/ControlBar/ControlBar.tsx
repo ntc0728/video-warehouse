@@ -3,6 +3,8 @@ import { SkipBack, SkipForward } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
 import type { VideoSource } from '@/types/video';
+import MirrorButton from './MirrorButton';
+import RatioButton from './RatioButton';
 import ProgressBar from './ProgressBar';
 import PlayButton from './PlayButton';
 import VolumeControl from './VolumeControl';
@@ -37,6 +39,7 @@ interface ControlBarProps {
   onRefresh?: () => void;
   onScreenshot?: () => void;
   isMobile?: boolean;
+  isBuffering?: boolean;
   levels: PlayerLevel[];
   currentLevel: number;
   onLevelChange: (level: number) => void;
@@ -73,6 +76,7 @@ export default function ControlBar({
   onRefresh,
   onScreenshot,
   isMobile = false,
+  isBuffering = false,
   levels,
   currentLevel,
   onLevelChange,
@@ -117,6 +121,7 @@ export default function ControlBar({
         currentTime={currentTime}
         duration={videoDuration}
         buffered={buffered}
+        isBuffering={isBuffering}
         onSeek={onSeek}
       />
 
@@ -141,7 +146,7 @@ export default function ControlBar({
               <SkipBack size={20} />
             </button>
           )}
-          <PlayButton isPlaying={isPlaying} onClick={onTogglePlay} />
+          <PlayButton isPlaying={isPlaying} disabled={isBuffering} onClick={onTogglePlay} />
           {hasNextEpisode !== undefined && (
             <button
               className="up-control-btn"
@@ -228,6 +233,8 @@ export default function ControlBar({
               <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}
             <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
+            {isVideoMode && <MirrorButton />}
+            {isVideoMode && <RatioButton />}
             {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}
           </MoreMenu>
           <div className="up-control-window">

@@ -177,7 +177,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  max-width: var(--layout-hero-height);
+  max-width: 60%;
   padding-bottom: var(--space-lg);
   padding-left: var(--space-xl);
 }
@@ -253,12 +253,17 @@
 
 /* ── CTA Button ─────────────────────────────────────────────────────── */
 
+.hero-banner__actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
 .hero-banner__cta {
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
   width: fit-content;
-  margin-top: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   border: none;
   border-radius: var(--radius-full);
@@ -272,6 +277,15 @@
 
 .hero-banner__cta:hover {
   background: rgba(255, 255, 255, 0.85);
+}
+
+.hero-banner__cta--continue {
+  background: #e53935;
+  color: #fff;
+}
+
+.hero-banner__cta--continue:hover {
+  background: #c62828;
 }
 
 /* ── Poster (desktop) ────────────────────────────────────────────────── */

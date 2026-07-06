@@ -32,6 +32,8 @@ interface HeroBannerProps {
   items: HeroItem[];
   autoPlayInterval?: number;
   onItemClick?: (item: HeroItem) => void;
+  onContinuePlay?: (item: HeroItem) => void;
+  historyMap?: Map<string, { progress: number; episodeId?: string }>;
 }
 
 /** Hero 蒙版颜色（深色径向渐变） */
@@ -59,6 +61,8 @@ export default function HeroBanner({
   items,
   autoPlayInterval = 5000,
   onItemClick,
+  onContinuePlay,
+  historyMap,
 }: HeroBannerProps) {
 
   const [current, setCurrent] = useState(0);
@@ -386,13 +390,24 @@ export default function HeroBanner({
           )}
 
           {onItemClick && (
-            <button
-              className="hero-banner__cta"
-              onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
-            >
-              <Play size={18} fill="currentColor" />
-              <span>查看详情</span>
-            </button>
+            <div className="hero-banner__actions">
+              {historyMap?.has(String(item.id)) && onContinuePlay && (
+                <button
+                  className="hero-banner__cta hero-banner__cta--continue"
+                  onClick={(e) => { e.stopPropagation(); onContinuePlay(item); }}
+                >
+                  <Play size={18} fill="currentColor" />
+                  <span>继续播放</span>
+                </button>
+              )}
+              <button
+                className="hero-banner__cta"
+                onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
+              >
+                <Play size={18} fill="currentColor" />
+                <span>查看详情</span>
+              </button>
+            </div>
           )}
         </div>
 

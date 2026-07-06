@@ -9,7 +9,7 @@
 import { useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
-import { useTMDBStore, useSettingsStore } from '@/stores';
+import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
 import { BackToTopButton } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
@@ -64,6 +64,14 @@ export default function HomePage() {
     })),
   );
 
+  // 历史记录：用于 Banner 中显示"继续播放"
+  const history = useUserStore((s) => s.history);
+  const historyMap = useRef(new Map<string, typeof history[0]>());
+  historyMap.current.clear();
+  for (const h of history) {
+    if (h.progress > 0) historyMap.current.set(String(h.videoId), h);
+  }
+
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
     const cfg = CATEGORY_CONFIG[cat];
@@ -73,6 +81,14 @@ export default function HomePage() {
   // ── Banner 项点击 → 跳到详情页 ──────────────────────
   const handleBannerItemClick = useCallback((item: { id: string | number }) => {
     navigate(`/detail/${item.id}`, {
+      state: { from: location.pathname + location.search },
+      viewTransition: true,
+    });
+  }, [navigate, location.pathname, location.search]);
+
+  // ── Banner 继续播放 → 直接跳到播放页 ──────────────────
+  const handleContinuePlay = useCallback((item: { id: string | number }) => {
+    navigate(`/play/${item.id}`, {
       state: { from: location.pathname + location.search },
       viewTransition: true,
     });
@@ -167,6 +183,8 @@ export default function HomePage() {
       <HeroBanner
         items={trending}
         onItemClick={handleBannerItemClick}
+        onContinuePlay={handleContinuePlay}
+        historyMap={historyMap.current}
       />
       <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
       <div className="home-rows">
