@@ -12,6 +12,8 @@ interface PlayerCMSPanelProps {
   expanded?: boolean;
   onToggle?: () => void;
   compact?: boolean;
+  /** 只读模式：源默认选中，点击无操作（直链搜索场景） */
+  readOnly?: boolean;
 }
 
 export function PlayerCMSPanel({
@@ -24,6 +26,7 @@ export function PlayerCMSPanel({
   expanded = true,
   onToggle,
   compact = false,
+  readOnly = false,
 }: PlayerCMSPanelProps) {
   const HeaderTag = compact ? 'div' : 'button';
 
@@ -32,6 +35,8 @@ export function PlayerCMSPanel({
 
   // 判断某个源是否正在播放中
   const isActiveSource = (name: string) => {
+    // 只读模式：始终高亮
+    if (readOnly) return true;
     // 有明确的活跃源时，只高亮那个
     if (activeSourceName !== undefined) return activeSourceName === name;
     // 否则按当前播放 URL 匹配
@@ -69,7 +74,7 @@ export function PlayerCMSPanel({
                 <button
                   key={name}
                   className={`player-cms-item ${active ? 'active' : ''}`}
-                  onClick={() => {
+                  onClick={readOnly ? undefined : () => {
                     if (result?.video) {
                       onPlaySource(result);
                     } else {

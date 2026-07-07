@@ -5,7 +5,8 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useVideoStore, usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
-import { searchVideoFromSingleSource } from '@/services/videoService';
+import { searchVideoFromSingleSource, searchVideoSeasonsFromSingleSource, findEpisodeByNumber, buildCmsSeasons } from '@/services/videoService';
+import { extractSeasonNumber } from '@/services/seasonMatcher';
 import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { VideoCard } from '@/components/VideoCard';
@@ -82,6 +83,8 @@ export default function PlayerPage() {
   const [cmsSwitching, setCmsSwitching] = useState(false);
   const cmsAbortRef = useRef<AbortController | null>(null);
   const activeCmsSourceIndexRef = useRef<number | undefined>(undefined);
+  // CMS 源 → 季号 → Video 映射（TV 剧集按季搜索结果）
+  const seasonMapsRef = useRef<Map<number, Map<number, Video>>>(new Map());
 
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(video?.title || null, true);
@@ -132,6 +135,12 @@ export default function PlayerPage() {
 
   const [selectedSeason, setSelectedSeason] = useState(1);
   const seasonChangedRef = useRef(false);
+  // selectedSeason 的 ref，避免 fetchCMSSources 依赖变化
+  const selectedSeasonRef = useRef(selectedSeason);
+  selectedSeasonRef.current = selectedSeason;
+
+  // CMS 搜索到的季列表（替代 TMDB seasons[] 渲染选季面板）
+  const [cmsSeasons, setCmsSeasons] = useState<{ season_number: number; name: string; episode_count: number }[]>([]);
 
   const [skipIndicator, setSkipIndicator] = useState<'intro' | 'outro' | null>(null);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -146,6 +155,7 @@ export default function PlayerPage() {
   // ── ref 绑定（渲染阶段同步，消除闭包陈旧问题）────────────────
   const abortRef = useRef<AbortController | null>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const historyRecordRef = useRef<HistoryRecord | undefined>(undefined);
   const currentSourceNameRef = useRef<string | undefined>(undefined);
   const currentSrcRef = useRef(currentSrc);
   currentSrcRef.current = currentSrc;
@@ -154,7 +164,7 @@ export default function PlayerPage() {
   const backdropRef = useRef<string | undefined>(undefined);
   backdropRef.current = tmdbDetail?.backdrop_path
     ? buildImageUrl(tmdbDetail.backdrop_path, 'w780') || undefined
-    : undefined;
+    : (video?.cover || undefined);
   const localEpisodeIdRef = useRef(localEpisodeId);
   localEpisodeIdRef.current = localEpisodeId;
   // CMS 源配置名称（如 "量子资源"），不同于播放线路名（如 "ikm3u8"）
@@ -184,7 +194,8 @@ export default function PlayerPage() {
 
       // 提前读取历史记录：cmsSourceName 用于恢复 CMS 源，episodeId 用于恢复集数
       // skipHistory（从头播放）时跳过历史记录，使用默认源和第一集
-      let activeSourceIndex = videoSourceIndex;
+      // routeSourceIndex（直链搜索跳转）优先级最高
+      let activeSourceIndex = routeSourceIndex ?? videoSourceIndex;
       let historyRecord: HistoryRecord | undefined;
       if (!skipHistory) {
         try {
@@ -198,6 +209,7 @@ export default function PlayerPage() {
           }
         } catch { /* history read failed, use default */ }
       }
+      historyRecordRef.current = historyRecord;
 
       try {
         let foundVideo: Video | null = null;
@@ -248,6 +260,11 @@ export default function PlayerPage() {
           // 恢复上次的 CMS 源名称
           if (historyRecord?.cmsSourceName) {
             cmsSourceNameRef.current = historyRecord.cmsSourceName;
+          }
+          // 恢复选季高亮
+          if (historyRecord?.currentSeason) {
+            setSelectedSeason(historyRecord.currentSeason);
+            selectedSeasonRef.current = historyRecord.currentSeason;
           }
 
           let sources = foundVideo.sources;
@@ -343,16 +360,23 @@ export default function PlayerPage() {
 
   // 加载设置页中勾选的 CMS 源名称
   useEffect(() => {
-    if (!id?.startsWith('tmdb-')) return;
-    const indices = videoSourceIndices && videoSourceIndices.length > 0
-      ? videoSourceIndices
-      : [videoSourceIndex];
     import('@/services/sourceService').then(mod => {
       mod.getVideoSources().then(sources => {
-        setSelectedSourceNames(indices.map(i => sources[i]?.name).filter(Boolean));
+        if (id?.startsWith('tmdb-')) {
+          // TMDB 视频：显示所有选中的源
+          const indices = videoSourceIndices && videoSourceIndices.length > 0
+            ? videoSourceIndices
+            : [videoSourceIndex];
+          setSelectedSourceNames(indices.map(i => sources[i]?.name).filter(Boolean));
+        } else if (routeSourceIndex !== undefined && sources[routeSourceIndex]) {
+          // 非 TMDB 视频（直链搜索）：只显示当前使用的源，并设为活跃
+          const sourceName = sources[routeSourceIndex].name;
+          setSelectedSourceNames([sourceName]);
+          setActiveSourceName(sourceName);
+        }
       }).catch(() => {});
     }).catch(() => {});
-  }, [id, videoSourceIndex, videoSourceIndices]);
+  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex]);
 
   const fetchCMSSources = useCallback(async (targetSourceIndex?: number) => {
     if (!id) return;
@@ -434,6 +458,143 @@ export default function PlayerPage() {
       return;
     }
 
+    // ── 快速恢复路径：有 vodId 时直接调 CMS 详情接口 ──────────
+    const histRecord = historyRecordRef.current;
+    if (!isSwitching && histRecord?.vodId && histRecord.currentSeason && histRecord.currentEpisode) {
+      try {
+        const svc = await import('@/services/videoService');
+        const detailVideo = await svc.fetchVideoDetail(sourceIdx, histRecord.vodId);
+        if (ctrl.signal.aborted) return;
+
+        if (detailVideo) {
+          const { getVideoSources } = await import('@/services/sourceService');
+          const allSrc = await getVideoSources();
+          cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
+
+          // 恢复选季
+          setSelectedSeason(histRecord.currentSeason);
+          selectedSeasonRef.current = histRecord.currentSeason;
+
+          videoCache.set(id, detailVideo);
+          setVideo(detailVideo);
+
+          // 恢复选集：按集号匹配
+          if (detailVideo.episodes?.length) {
+            const matchedEp = findEpisodeByNumber(detailVideo.episodes, histRecord.currentEpisode);
+            if (matchedEp?.sources.length) {
+              setCmsLoading(false);
+              setCmsSwitching(false);
+              switchToEpisode(matchedEp);
+              // 后台搜索季列表用于选季面板
+              searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear).then(result => {
+                if (!ctrl.signal.aborted) {
+                  seasonMapsRef.current.set(sourceIdx, result.seasons);
+                  setCmsSeasons(buildCmsSeasons(result.seasons));
+                }
+              }).catch(() => {});
+              return;
+            }
+          }
+          // 电影或集不匹配：设置线路
+          if (detailVideo.sources.length > 0) {
+            setSources(detailVideo.sources);
+            const firstSrc = detailVideo.sources[0];
+            setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
+            setSource(firstSrc.url, firstSrc.type);
+            currentSourceNameRef.current = firstSrc.name;
+          }
+          setCmsLoading(false);
+          setCmsSwitching(false);
+          return;
+        }
+      } catch { /* fall through to normal search path */ }
+    }
+
+    // ── TV 剧集按季搜索（CMS 源接口） ──────────────
+    // TMDB ID 的 TV 视频：用 CMS 搜索接口获取季数据，不再依赖 TMDB seasons[]
+    if (id.startsWith('tmdb-') && tmdbMediaType === 'tv') {
+      try {
+        // 内存缓存：已搜索过的源直接复用
+        let seasonMap = seasonMapsRef.current.get(sourceIdx);
+
+        if (!seasonMap) {
+          const seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear);
+          seasonMap = seasonResult.seasons;
+          seasonMapsRef.current.set(sourceIdx, seasonMap);
+
+          // 更新选季面板数据
+          setCmsSeasons(buildCmsSeasons(seasonMap));
+
+          // 存储 VideoDetailResult 供 CMS 面板显示（取第一季的 video 作为代表）
+          const firstSeasonVideo = seasonMap.size > 0 ? seasonMap.values().next().value : null;
+          const cmsResult: VideoDetailResult = {
+            sourceIndex: sourceIdx,
+            sourceName: seasonResult.sourceName,
+            video: firstSeasonVideo ?? null,
+            error: seasonResult.error,
+          };
+          setCmsResults(prev => {
+            const idx = prev.findIndex(r => r.sourceIndex === sourceIdx);
+            if (idx >= 0) { const next = [...prev]; next[idx] = cmsResult; return next; }
+            return [...prev, cmsResult];
+          });
+        } else {
+          // 有缓存时也更新选季面板
+          setCmsSeasons(buildCmsSeasons(seasonMap));
+        }
+
+        if (!ctrl.signal.aborted) {
+          const { getVideoSources } = await import('@/services/sourceService');
+          const allSrc = await getVideoSources();
+          cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
+
+          const seasonVideo = seasonMap.get(selectedSeasonRef.current);
+          if (seasonVideo) {
+            videoCache.set(id!, seasonVideo);
+            setVideo(seasonVideo);
+
+            if (!seasonChangedRef.current && seasonVideo.episodes?.length) {
+              const episodes = [...seasonVideo.episodes].sort((a, b) => a.number - b.number);
+              let histEpId: string | undefined;
+              try {
+                const history = await getHistory();
+                const histRecord = history.find(h => h.videoId === id);
+                histEpId = histRecord?.episodeId;
+              } catch { /* ignore */ }
+              // 按集号匹配历史记录（CMS 源切换后 ID 不同但集号一致）
+              let targetEp = histEpId
+                ? findEpisodeByNumber(episodes, parseInt(histEpId.replace(/\D/g, ''), 10) || -1)
+                : undefined;
+              if (!targetEp) targetEp = episodes[0];
+              if (targetEp?.sources.length) {
+                setCmsLoading(false);
+                setCmsSwitching(false);
+                switchToEpisode(targetEp);
+              }
+            }
+          } else {
+            // 选中的季无数据 — 清空，显示"暂无数据"提示
+            setVideo(null);
+            setSources([]);
+            setCurrentSrc(null);
+            setLocalEpisodeId(undefined);
+            currentSourceNameRef.current = undefined;
+          }
+          setCmsLoading(false);
+          setCmsSwitching(false);
+        }
+      } catch {
+        if (!ctrl.signal.aborted) setLoadError('api');
+      } finally {
+        if (!ctrl.signal.aborted) {
+          setCmsLoading(false);
+          setCmsSwitching(false);
+        }
+      }
+      return;
+    }
+
+    // ── 电影 / 单季剧集：原有逻辑 ──────────────────────
     try {
       // 检查缓存
       const cached = readCmsCache(id, sourceIdx);
@@ -531,6 +692,7 @@ export default function PlayerPage() {
     tmdbAbortRef.current?.abort();
     // 页面销毁时清理 CMS 缓存
     if (id) clearAllCmsCache(id);
+    seasonMapsRef.current.clear();
   }, [id, clearAllCmsCache]);
 
   const handleProgress = useCallback((progress: number, duration: number) => {
@@ -541,7 +703,9 @@ export default function PlayerPage() {
       const currentEp = v?.episodes?.length ? v.episodes.find((e) => e.id === activeEpId) : undefined;
       // 剧集 → "第X集"，电影 → vod_play_url 解析出的名称（如 "正片"）
       const epLabel = currentEp ? `第${currentEp.number}集` : (!v?.episodes?.length && currentSourceNameRef.current ? currentSourceNameRef.current : undefined);
-      updateHistoryProgress(id, activeEpId, progress, duration, v?.title, v?.cover, backdropRef.current, currentSourceNameRef.current, cmsSourceNameRef.current, epLabel);
+      // 快速恢复字段：vodId（CMS 视频的 vod_id）、当前季号、当前集号
+      const vodId = id.startsWith('tmdb-') ? undefined : id;
+      updateHistoryProgress(id, activeEpId, progress, duration, v?.title, v?.cover, backdropRef.current, currentSourceNameRef.current, cmsSourceNameRef.current, epLabel, vodId, selectedSeasonRef.current, currentEp?.number);
     }
   }, [id, episodeId, updateHistoryProgress]);
 
@@ -691,42 +855,76 @@ export default function PlayerPage() {
 
   const handlePlayCMSSource = (result: VideoDetailResult) => {
     setActiveSourceName(result.sourceName);
-    if (result.video) {
-      cmsSourceNameRef.current = result.sourceName;
-      videoCache.set(id!, result.video);
-      setVideo(result.video);
+    activeCmsSourceIndexRef.current = result.sourceIndex;
 
-      // 剧集：未切换选季时默认选中上次播放的选集；切换选季时不自动选中
-      if (result.video.episodes?.length) {
-        if (!seasonChangedRef.current) {
-          const activeEpId = localEpisodeId || episodeId;
-          if (activeEpId) {
-            const oldEpisodes = videoRef.current?.episodes ?? [];
-            const currentEp = oldEpisodes.find(ep => ep.id === activeEpId);
-            let matchedEp = result.video.episodes.find(ep => ep.id === activeEpId);
-            if (!matchedEp && currentEp) {
-              matchedEp = result.video.episodes.find(ep => ep.title === currentEp.title);
-            }
-            if (!matchedEp && currentEp) {
-              matchedEp = result.video.episodes[Math.min(currentEp.number - 1, result.video.episodes.length - 1)];
-            }
-            if (matchedEp?.sources.length) {
-              switchToEpisode(matchedEp);
-              return;
-            }
-          }
-          // 无历史选集时默认第一集
-          const sorted = [...result.video.episodes].sort((a, b) => a.number - b.number);
-          if (sorted[0]?.sources.length) {
-            switchToEpisode(sorted[0]);
+    // 读取当前播放的集号，用于按集号匹配
+    const activeEpId = localEpisodeId || episodeId;
+    const oldEpisodes = videoRef.current?.episodes ?? [];
+    const currentEp = activeEpId ? oldEpisodes.find(ep => ep.id === activeEpId) : undefined;
+    const currentEpNumber = currentEp?.number;
+
+    // TV 剧集：使用按季映射表切换到当前季
+    const seasonMap = seasonMapsRef.current.get(result.sourceIndex);
+    if (seasonMap) {
+      cmsSourceNameRef.current = result.sourceName;
+      // 先清空选中集，面板更新为新源的季列表
+      setLocalEpisodeId(undefined);
+      setSources([]);
+      setCurrentSrc(null);
+
+      const seasonVideo = seasonMap.get(selectedSeason);
+      if (seasonVideo) {
+        // 更新选季面板
+        setCmsSeasons(buildCmsSeasons(seasonMap));
+        if (seasonVideo.episodes?.length) {
+          // 按集号匹配
+          const matchedEp = currentEpNumber
+            ? findEpisodeByNumber(seasonVideo.episodes, currentEpNumber)
+            : undefined;
+          if (matchedEp?.sources.length) {
+            // 有同号集 → 更新视频 + 恢复播放
+            videoCache.set(id!, seasonVideo);
+            setVideo(seasonVideo);
+            switchToEpisode(matchedEp);
+          } else {
+            // 无同号集 → 视频不更新，等用户手动选集
           }
         }
-        // 切换选季时不自动选中选集
+      } else {
+        setVideo(null);
+        currentSourceNameRef.current = undefined;
+      }
+      return;
+    }
+
+    if (result.video) {
+      cmsSourceNameRef.current = result.sourceName;
+      // 先清空选中集
+      setLocalEpisodeId(undefined);
+      setSources([]);
+      setCurrentSrc(null);
+
+      if (result.video.episodes?.length) {
+        if (!seasonChangedRef.current) {
+          // 按集号匹配
+          const matchedEp = currentEpNumber
+            ? findEpisodeByNumber(result.video.episodes, currentEpNumber)
+            : undefined;
+          if (matchedEp?.sources.length) {
+            videoCache.set(id!, result.video);
+            setVideo(result.video);
+            switchToEpisode(matchedEp);
+            return;
+          }
+          // 无匹配集 → 视频不更新，等用户手动选集
+        }
         return;
       }
 
       // 电影：设置线路列表并自动选中第一个线路
       if (result.video.sources.length > 0) {
+        videoCache.set(id!, result.video);
+        setVideo(result.video);
         setSources(result.video.sources);
         const firstSrc = result.video.sources[0];
         setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
@@ -735,6 +933,54 @@ export default function PlayerPage() {
       }
     }
   };
+
+  // 切换选季：从内存中的季映射表查找对应集数
+  const handleSelectSeason = useCallback((seasonNumber: number) => {
+    seasonChangedRef.current = true;
+    setSelectedSeason(seasonNumber);
+
+    const sourceIdx = activeCmsSourceIndexRef.current;
+    if (sourceIdx === undefined) return;
+
+    const seasonMap = seasonMapsRef.current.get(sourceIdx);
+    if (!seasonMap) return;
+
+    // 读取当前播放的集号和历史进度，用于匹配新季
+    const activeEpId = localEpisodeId || episodeId;
+    const oldEpisodes = videoRef.current?.episodes ?? [];
+    const currentEp = activeEpId ? oldEpisodes.find(ep => ep.id === activeEpId) : undefined;
+    const currentEpNumber = currentEp?.number;
+
+    const seasonVideo = seasonMap.get(seasonNumber);
+    if (seasonVideo && seasonVideo.episodes?.length) {
+      // 有集数：先清空选中集，面板更新为新季的集列表
+      setLocalEpisodeId(undefined);
+      setSources([]);
+      setCurrentSrc(null);
+
+      // 按集号匹配：新季中是否有相同集号
+      const matchedEp = currentEpNumber
+        ? findEpisodeByNumber(seasonVideo.episodes, currentEpNumber)
+        : undefined;
+
+      if (matchedEp?.sources.length) {
+        // 有同号集 → 更新视频 + 恢复播放
+        videoCache.set(id!, seasonVideo);
+        setVideo(seasonVideo);
+        switchToEpisode(matchedEp);
+      } else {
+        // 无同号集 → 视频不更新，等用户手动选集
+        // 仅更新面板数据（选季面板已在 setCmsSeasons 中更新）
+      }
+    } else {
+      // 该季无数据 — 清空，显示提示
+      setVideo(null);
+      setSources([]);
+      setCurrentSrc(null);
+      setLocalEpisodeId(undefined);
+      currentSourceNameRef.current = undefined;
+    }
+  }, [id, episodeId, switchToEpisode]);
 
   const handlePlaySource = useCallback((src: VideoSource) => {
     setCurrentSrc({ url: src.url, type: src.type });
@@ -772,13 +1018,28 @@ export default function PlayerPage() {
     : (episodes.length <= 1 && currentSourceNameRef.current) || undefined;
 
   const d = tmdbDetail;
+  const v = video;
   let title: string | undefined;
   if (d) {
     if ('name' in d) title = d.name;
     else if ('title' in d) title = d.title;
+  } else if (v) {
+    title = v.title;
   }
-  const isTV = d ? 'name' in d : false;
-  const seasons = isTV && d ? ((d as TMDBTVShowDetail).seasons ?? []) : [];
+  const isTV = d ? 'name' in d : (v?.type === 'tv');
+  // 优先用 CMS 搜索到的季数据，fallback 到 TMDB
+  const seasons = cmsSeasons.length > 0
+    ? cmsSeasons
+    : (isTV && d ? ((d as TMDBTVShowDetail).seasons ?? []) : []);
+  // 从 video.title 提取当前季名称（如 "第二季"），用于非 TMDB 视频的选季面板展示
+  const currentSeasonName = useMemo(() => {
+    if (seasons.length > 0 || !v?.title) return undefined;
+    const seasonNum = extractSeasonNumber(v.title);
+    if (seasonNum === undefined) return undefined;
+    // 从标题中提取季名称部分
+    const match = v.title.match(/(第[一二三四五六七八九十\d]+季|season\s*\d+|S\d+)/i);
+    return match ? match[1] : `第${seasonNum}季`;
+  }, [seasons.length, v?.title]);
   let year: number | undefined;
   if (d && tmdbMediaType === 'tv') {
     const dateStr = (d as TMDBTVShowDetail).first_air_date;
@@ -786,13 +1047,18 @@ export default function PlayerPage() {
   } else if (d && tmdbMediaType === 'movie') {
     const dateStr = (d as TMDBMovieDetail).release_date;
     year = dateStr ? new Date(dateStr).getFullYear() || undefined : undefined;
+  } else if (v?.year) {
+    year = v.year;
   }
   const voteAverage: number = d?.vote_average ?? 0;
-  const runtime = isTV ? (d as TMDBTVShowDetail | undefined)?.episode_run_time?.[0] : (d as TMDBMovieDetail | undefined)?.runtime;
-  const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
+  const runtime = isTV
+    ? (d as TMDBTVShowDetail | undefined)?.episode_run_time?.[0]
+    : ((d as TMDBMovieDetail | undefined)?.runtime ?? v?.duration);
+  const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name ?? v?.director;
   const cast: TMDBCastMember[] = d?.credits?.cast?.slice(0, 8) || [];
-  const posterUrl = d?.poster_path ? buildImageUrl(d.poster_path, 'w342') || '' : '';
-  const overview = d?.overview || '';
+  const cmsActors = v?.actors || [];
+  const posterUrl = d?.poster_path ? buildImageUrl(d.poster_path, 'w342') || '' : (v?.cover || '');
+  const overview = d?.overview || v?.description || '';
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
 
@@ -812,7 +1078,7 @@ export default function PlayerPage() {
   }
 
   // ── 公共详情区（所有 return 路径共用，保持播放器高度稳定）──
-  const detailSection = d ? (
+  const detailSection = (d || v) ? (
     <div className="player-detail-section">
       <div className="player-detail-content">
         <div className="player-detail-info">
@@ -844,12 +1110,17 @@ export default function PlayerPage() {
               {runtime && <span>{runtime}分钟</span>}
               {director && <span>导演: {director}</span>}
             </div>
-            {cast.length > 0 && (
+            {cast.length > 0 ? (
               <div className="player-detail-cast">
                 <span className="player-detail-cast-label">演员:</span>
                 {cast.map((c) => c.name).join(' / ')}
               </div>
-            )}
+            ) : cmsActors.length > 0 ? (
+              <div className="player-detail-cast">
+                <span className="player-detail-cast-label">演员:</span>
+                {cmsActors.join(' / ')}
+              </div>
+            ) : null}
           </div>
           <div className="player-detail-info-body">
             {posterUrl && (
@@ -869,7 +1140,7 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {(() => {
+        {d && (() => {
           const seen = new Set<number>();
           const allRecommendations = [
             ...similarResults,
@@ -917,17 +1188,16 @@ export default function PlayerPage() {
               expanded={expandedPanels.cms}
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
+              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
             />
             <PlayerSeasonPanel
               seasons={seasons}
               activeSeason={selectedSeason}
-              onSelectSeason={(s) => {
-                seasonChangedRef.current = true;
-                setSelectedSeason(s);
-              }}
+              onSelectSeason={handleSelectSeason}
               expanded={expandedPanels.season}
               onToggle={() => togglePanel('season')}
               compact={isCompact}
+              currentSeasonName={currentSeasonName}
             />
             <PlayerEpisodesPanel
               episodes={episodes}
@@ -994,17 +1264,16 @@ export default function PlayerPage() {
               expanded={expandedPanels.cms}
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
+              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
             />
             <PlayerSeasonPanel
               seasons={seasons}
               activeSeason={selectedSeason}
-              onSelectSeason={(s) => {
-                seasonChangedRef.current = true;
-                setSelectedSeason(s);
-              }}
+              onSelectSeason={handleSelectSeason}
               expanded={expandedPanels.season}
               onToggle={() => togglePanel('season')}
               compact={isCompact}
+              currentSeasonName={currentSeasonName}
             />
             <PlayerEpisodesPanel
               episodes={episodes}
@@ -1064,17 +1333,16 @@ export default function PlayerPage() {
               expanded={expandedPanels.cms}
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
+              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
             />
             <PlayerSeasonPanel
               seasons={seasons}
               activeSeason={selectedSeason}
-              onSelectSeason={(s) => {
-                seasonChangedRef.current = true;
-                setSelectedSeason(s);
-              }}
+              onSelectSeason={handleSelectSeason}
               expanded={expandedPanels.season}
               onToggle={() => togglePanel('season')}
               compact={isCompact}
+              currentSeasonName={currentSeasonName}
             />
             <PlayerEpisodesPanel
               episodes={episodes}

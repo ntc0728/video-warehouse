@@ -457,6 +457,14 @@ export default function DetailPage() {
           {posterUrl && (
             <div className="detail-hero-poster">
               <img src={posterUrl} alt={title} width={300} height={450} />
+              {hasWatchingHistory && (
+                <div className="detail-hero-poster-progress">
+                  <div
+                    className="detail-hero-poster-progress-bar"
+                    style={{ width: `${watchProgressPercent}%` }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

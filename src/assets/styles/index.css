@@ -645,9 +645,6 @@ main {
   transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.record-card .video-card-info {
-  padding-right: calc(var(--space-sm) * 2 + 4em);
-}
 
 /* 横版卡片不应用旧 padding-right hack */
 .record-card .video-card--landscape .video-card-info {

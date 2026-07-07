@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
+  Search,
   Tv,
   Star,
   Clock,
@@ -18,6 +19,7 @@ import {
 
 const ariaLabels: Record<string, string> = {
   '/': '首页',
+  '/browse': '搜索中心',
   '/iptv': 'IPTV',
   '/collections': '收藏',
   '/history': '历史记录',
@@ -32,6 +34,7 @@ interface SidebarProps {
 
 const tabs = [
   { key: '/', title: '首页', icon: <Home size={20} />, activeIcon: <Home size={20} strokeWidth={2.5} /> },
+  { key: '/browse', title: '搜索中心', icon: <Search size={20} />, activeIcon: <Search size={20} strokeWidth={2.5} /> },
   { key: '/iptv', title: 'IPTV', icon: <Tv size={20} />, activeIcon: <Tv size={20} strokeWidth={2.5} /> },
   { key: '/collections', title: '收藏', icon: <Star size={20} />, activeIcon: <Star size={20} strokeWidth={2.5} /> },
   { key: '/history', title: '历史记录', icon: <Clock size={20} />, activeIcon: <Clock size={20} strokeWidth={2.5} /> },

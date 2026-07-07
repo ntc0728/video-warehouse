@@ -41,6 +41,8 @@ interface VideoCardProps {
   duration?: number;
   /** 自定义导航路径，覆盖默认的 /detail/:id */
   navigateTo?: string;
+  /** 自定义导航 state，与 navigateTo 配合使用 */
+  navigateState?: Record<string, unknown>;
 }
 
 const typeLabels: Record<string, string> = {
@@ -65,6 +67,7 @@ const VideoCard = memo(function VideoCard({
   progress,
   duration,
   navigateTo,
+  navigateState,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -139,7 +142,7 @@ const VideoCard = memo(function VideoCard({
       to={navigateTo || `/detail/${video.id}`}
       className={`video-card ${variant === 'landscape' ? 'video-card--landscape' : ''} animate-card-enter ${batchMode ? 'video-card--batch' : ''}`}
       style={stagger}
-      state={{ from: location.pathname + location.search }}
+      state={{ from: location.pathname + location.search, ...navigateState }}
       tabIndex={isTV ? 0 : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
       aria-label={video.title}
@@ -157,8 +160,11 @@ const VideoCard = memo(function VideoCard({
           onLoad={() => setImageLoaded(true)}
         />
 
-        {/* 评分 — 左上角（批量模式下隐藏） */}
-        {!batchMode && rating !== undefined && rating > 0 && (
+        {/* 左上角：评分或源名称标签（批量模式下隐藏） */}
+        {!batchMode && overlayLabel && variant === 'portrait' && (
+          <span className="video-card-source-badge">{overlayLabel}</span>
+        )}
+        {!batchMode && !overlayLabel && rating !== undefined && rating > 0 && (
           <span className="video-card-rating">
             <Star size={10} fill="currentColor" />
             {rating.toFixed(1)}

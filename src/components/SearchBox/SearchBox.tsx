@@ -257,15 +257,13 @@ export default function SearchBox({
             <X size={14} aria-hidden="true" />
           </button>
         </div>
-        {/* 搜索按钮：独立在 search-box 方框外，box 紧贴按钮左侧 */}
+        {/* 搜索按钮 */}
         <button
           type="button"
           className="search-box__submit"
           onClick={() => handleSearch()}
-          aria-label="执行搜索"
           disabled={!value.trim()}
         >
-          <Search size={14} className="search-box__submit-icon" aria-hidden="true" />
           <span className="search-box__submit-text">搜索</span>
         </button>
       </div>

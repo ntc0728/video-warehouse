@@ -1,29 +1,23 @@
 /**
- * 筛选页 — 独立路由
+ * 搜索中心 — 独立路由
  *
- * 数据流：URL ↔ useBrowseData ↔ TMDBStore ↔ 后端
+ * 双模式搜索：
+ *  - 智能检索（TMDB searchMulti）
+ *  - 直链搜索（CMS 源接口批量搜索）
  *
- * 渲染层级：
- *   FilterBar           筛选条
- *   BrowseGrid          视频网格
- *   哨兵 + 文字态       独立 div,与 IPTV 风格一致
- *
- * 懒加载:哨兵 `<div ref={sentinelRef} />` + 文字态 `<BrowseLoadMore>`,
- *  与 IPTV 一样由本页 useInfiniteScroll 管理。rootMargin 100px。
- *
- * 多端适配：
- *  - 移动端：紧凑 padding / 较小字号
- *  - TV：放大字号
- *  - 所有客户端：筛选 chip 全部 wrap，不被截断
+ * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { Search } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
+import SearchBox from '@/components/SearchBox';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
+import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useDocumentTitle } from '@/hooks';
 import { useTMDBStore } from '@/stores';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
@@ -31,16 +25,20 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
 import { useBrowseData } from './useBrowseData';
+import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
 import './Browse.css';
+
+type SearchMode = 'smart' | 'cms';
 
 export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const scrollContainerRef = useScrollContainer();
+  const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse');
@@ -48,12 +46,21 @@ export default function BrowsePage() {
   // ── URL 搜索词 ────────────────────────────────────
   const urlQ = searchParams.get('q')?.trim() ?? '';
 
-  // ── 数据 ─────────────────────────────────────────
+  // ── 浏览器标签标题 ────────────────────────────────
+  // 智能检索模式使用 useDocumentTitle，直链搜索模式手动设置
+  useDocumentTitle(searchMode === 'smart' && urlQ ? null : undefined);
+  useEffect(() => {
+    if (searchMode === 'cms' && urlQ) {
+      document.title = `${urlQ} - 搜索 - kinoTV`;
+    }
+  }, [searchMode, urlQ]);
+
+  // ── TMDB 数据（智能检索）─────────────────────────
   const {
     filterValue,
     updateFilter,
     isRefreshing,
-    loadMore,
+    loadMore: loadMoreTMDB,
     retry,
     hasMore,
     isLoadingMore,
@@ -63,16 +70,57 @@ export default function BrowsePage() {
     error,
   } = useBrowseData();
 
-  // ── 懒加载触发（双保险:IO + scroll 兜底）────────────
+  // ── CMS 数据（直链搜索）─────────────────────────
+  const {
+    results: cmsResults,
+    loading: cmsLoading,
+    error: cmsError,
+    hasMore: cmsHasMore,
+    failedSources,
+    totalSources,
+    completedSources,
+    succeededSources,
+    sourcesDone,
+    search: searchCMS,
+    loadMore: loadMoreCMS,
+  } = useCMSSearch();
+
+  // ── 搜索模式切换 ────────────────────────────────
+  const handleModeChange = useCallback((mode: SearchMode) => {
+    setSearchMode(mode);
+    // 搜索触发由下方 useEffect 根据 lastCmsSearchedRef 统一管理
+  }, []);
+
+  // ── 搜索触发 ────────────────────────────────────
+  // CMS 模式：搜索词变化时触发搜索，切换模式时搜索词不变不重复调用
+  const lastCmsSearchedRef = useRef('');
+  useEffect(() => {
+    if (searchMode === 'cms' && urlQ) {
+      if (urlQ !== lastCmsSearchedRef.current) {
+        lastCmsSearchedRef.current = urlQ;
+        searchCMS(urlQ);
+      }
+    }
+  }, [urlQ, searchMode, searchCMS]);
+
+  // ── 懒加载触发 ──────────────────────────────────
+  const loadMore = useCallback(() => {
+    if (searchMode === 'cms') {
+      loadMoreCMS(urlQ);
+    } else {
+      loadMoreTMDB();
+    }
+  }, [searchMode, urlQ, loadMoreCMS, loadMoreTMDB]);
+
   const { sentinelRef } = useInfiniteScroll({
-    hasMore,
-    isLoading: isLoadingMore,
+    hasMore: searchMode === 'cms' ? cmsHasMore : hasMore,
+    isLoading: searchMode === 'cms' ? cmsLoading : isLoadingMore,
     onLoadMore: loadMore,
     rootMargin: '100px',
     scrollContainerRef,
   });
 
-  // genres & countries 兜底拉取（保证 FilterBar 渲染时有列表）
+  // ── genres & countries 兜底拉取 ──────────────────
   const { movieGenres, tvGenres, fetchGenresAndCountries } = useTMDBStore();
   useEffect(() => {
     if (movieGenres.length === 0 && tvGenres.length === 0) {
@@ -80,7 +128,7 @@ export default function BrowsePage() {
     }
   }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
-  // ── 当前分类下的可选类型（合并去重）───────────────
+  // ── 当前分类下的可选类型 ────────────────────────
   const currentGenres = useMemo<TMDBGenre[]>(() => {
     const cfg = CATEGORY_CONFIG[filterValue.category];
     if (cfg.genresSource === 'movie') return movieGenres;
@@ -96,8 +144,10 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
-  const isFirstLoad = isLoading && discoverResults.length === 0;
-  const isEmpty = !isLoading && !isRefreshing && discoverResults.length === 0;
+  const isSearchLoading = searchMode === 'smart' ? (isLoading || isRefreshing) : cmsLoading;
+  const isFirstLoad = isSearchLoading && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
+  const isEmpty = !isSearchLoading && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
+  const currentError = searchMode === 'smart' ? error : cmsError;
 
   return (
     <div
@@ -107,66 +157,109 @@ export default function BrowsePage() {
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
     >
-      <FilterBar
-        value={filterValue}
-        onChange={updateFilter}
-        genres={currentGenres}
-        excludedGenreIds={excludedGenreIds}
-        totalResults={discoverPagination.totalResults}
-        categoryLabel={CATEGORY_LABELS[filterValue.category]}
-      />
+      {/* 搜索区域 */}
+      <div className="browse-search-area">
+        {/* Tab 切换 */}
+        <div className="browse-search-tabs">
+          <button
+            className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
+            onClick={() => handleModeChange('smart')}
+          >
+            <Search size={14} />
+            智能检索
+          </button>
+          <button
+            className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
+            onClick={() => handleModeChange('cms')}
+          >
+            直链搜索
+          </button>
+        </div>
+        {/* 搜索框 */}
+        <div className="browse-search-input-wrap">
+          <SearchBox
+            variant="browse"
+            onSearch={(q) => {
+              if (searchMode === 'cms') {
+                searchCMS(q);
+              } else {
+                setSearchParams({ q }, { replace: true });
+              }
+            }}
+          />
+        </div>
+      </div>
 
-      {/* 首次加载：自定义loading */}
-      {isFirstLoad && !isRefreshing && (
+      {/* 智能检索模式：FilterBar */}
+      {searchMode === 'smart' && (
+        <FilterBar
+          value={filterValue}
+          onChange={updateFilter}
+          genres={currentGenres}
+          excludedGenreIds={excludedGenreIds}
+          totalResults={discoverPagination.totalResults}
+          categoryLabel={CATEGORY_LABELS[filterValue.category]}
+        />
+      )}
+
+      {/* 源状态指示器（仅直链搜索） */}
+      {searchMode === 'cms' && (
+        <SourceStatusIndicator
+          totalSources={totalSources}
+          completedSources={completedSources}
+          succeededSources={succeededSources}
+          failedSources={failedSources.length}
+          totalResults={cmsResults.length}
+          isLoading={!sourcesDone}
+        />
+      )}
+
+      {/* 搜索加载中 */}
+      {isSearchLoading && (
         <div className="browse-page__loading">
-          <AppLoading tip="加载中…" showTip />
+          <AppLoading tip="搜索中…" showTip />
         </div>
       )}
 
       {/* 错误 + 无数据 */}
-      {error && discoverResults.length === 0 && (
-        <div className="browse-page__error">
-          <AlertCircle size={32} className="browse-page__error-icon" />
-          <p className="browse-page__error-text">{error}</p>
-          <button
-            type="button"
-            className="browse-page__error-retry"
-            onClick={retry}
-          >
-            重试
-          </button>
-        </div>
+      {currentError && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0) && (
+        <Empty title="暂无结果" description="尝试换个关键词搜索" />
       )}
 
       {/* 完全无结果 */}
-      {isEmpty && !error && (
+      {isEmpty && !currentError && (
         <Empty
           title="暂无结果"
-          description="尝试调整筛选条件或更换分类"
+          description={urlQ ? '尝试换个关键词搜索' : '请输入关键词搜索'}
         />
       )}
 
-      {/* 切换筛选条件:用自定义loading替换 grid,新数据到达后再渲染 */}
-      {isRefreshing ? (
-        <div className="browse-page__refreshing" aria-busy="true">
-          <AppLoading tip="加载中…" showTip />
-        </div>
-      ) : discoverResults.length > 0 ? (
-        <BrowseGrid items={discoverResults} query={urlQ} />
-      ) : null}
+      {/* 视频网格 */}
+      {searchMode === 'smart' ? (
+        isRefreshing ? (
+          <div className="browse-page__refreshing" aria-busy="true">
+            <AppLoading tip="加载中…" showTip />
+          </div>
+        ) : discoverResults.length > 0 ? (
+          <BrowseGrid items={discoverResults} query={urlQ} mode="smart" />
+        ) : null
+      ) : (
+        cmsResults.length > 0 && (
+          <BrowseGrid cmsItems={cmsResults} query={urlQ} mode="cms" />
+        )
+      )}
 
-      {/* 懒加载:哨兵 always 挂载 + LoadMore 文字态(与 IPTV 风格一致) */}
+      {/* 懒加载 */}
       {!isRefreshing && <div ref={sentinelRef} aria-hidden="true" />}
-      {!isRefreshing && discoverResults.length > 0 && (
+      {!isRefreshing && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
         <BrowseLoadMore
-          hasMore={hasMore}
-          isLoading={isLoadingMore}
-          hasItems={discoverResults.length > 0}
+          hasMore={searchMode === 'smart' ? hasMore : cmsHasMore}
+          isLoading={searchMode === 'smart' ? isLoadingMore : cmsLoading}
+          hasItems={searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0}
           isRefreshing={isRefreshing}
         />
       )}
 
-      {/* 返回顶部按钮（主题感知：light/dark 阴影/边框自动切换） */}
       <BackToTopButton />
     </div>
   );

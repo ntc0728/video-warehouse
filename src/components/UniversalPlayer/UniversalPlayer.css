@@ -989,8 +989,9 @@
 
 /* ===== Platform: Mobile ===== */
 .up-platform-mobile .up-control-btn {
-  min-width: var(--space-xl);
-  min-height: var(--space-xl);
+  min-width: var(--icon-sm);
+  min-height: var(--icon-sm);
+  padding: var(--space-2xs);
 }
 
 .up-platform-mobile .up-control-bar {

@@ -45,6 +45,19 @@ export default function DailyPicks() {
     };
   }, [dailyPicks.length, startAutoPlay]);
 
+  /** 页面可见性 API：后台暂停 autoplay，回来恢复 */
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (timerRef.current) clearInterval(timerRef.current);
+      } else if (dailyPicks.length > 1) {
+        startAutoPlay();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [dailyPicks.length, startAutoPlay]);
+
   const goTo = useCallback((index: number) => {
     setCurrentSlide(index);
     startAutoPlay();
@@ -71,6 +84,45 @@ export default function DailyPicks() {
 
   if (dailyPicks.length === 0 || videos.length === 0) return null;
 
+  const renderSlides = () => (
+    <div
+      className="carousel-slides"
+      style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+    >
+      {dailyPicks.map((pick, idx) => (
+        <div
+          key={pick.id}
+          className={`carousel-slide${Math.abs(idx - currentSlide) > 1 ? ' carousel-slide--distant' : ''}`}
+          onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
+        >
+          <div className="carousel-slide-cover">
+            <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
+          </div>
+          <div className="carousel-slide-overlay" />
+          <div className="carousel-slide-content">
+            <div className="carousel-slide-badge">
+              <Sparkles size={12} /> 每日推荐
+            </div>
+            <h3 className="carousel-slide-title">{pick.title}</h3>
+            <p className="carousel-slide-reason">{pick.reason}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderDots = () => (
+    <div className="carousel-dots">
+      {dailyPicks.map((_, idx) => (
+        <button
+          key={idx}
+          className={`carousel-dot ${idx === currentSlide ? 'active' : ''}`}
+          onClick={() => goTo(idx)}
+        />
+      ))}
+    </div>
+  );
+
   if (isMobile) {
     return (
       <div className="daily-carousel animate-fade-in">
@@ -79,40 +131,9 @@ export default function DailyPicks() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div
-            className="carousel-slides"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {dailyPicks.map((pick) => (
-              <div
-                key={pick.id}
-                className="carousel-slide"
-                onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
-              >
-                <div className="carousel-slide-cover">
-                  <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
-                </div>
-                <div className="carousel-slide-overlay" />
-                <div className="carousel-slide-content">
-                  <div className="carousel-slide-badge">
-                    <Sparkles size={12} /> 每日推荐
-                  </div>
-                  <h3 className="carousel-slide-title">{pick.title}</h3>
-                  <p className="carousel-slide-reason">{pick.reason}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {renderSlides()}
         </div>
-        <div className="carousel-dots">
-          {dailyPicks.map((_, idx) => (
-            <button
-              key={idx}
-              className={`carousel-dot ${idx === currentSlide ? 'active' : ''}`}
-              onClick={() => goTo(idx)}
-            />
-          ))}
-        </div>
+        {renderDots()}
       </div>
     );
   }
@@ -124,40 +145,9 @@ export default function DailyPicks() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div
-          className="carousel-slides"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {dailyPicks.map((pick) => (
-            <div
-              key={pick.id}
-              className="carousel-slide"
-              onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
-            >
-              <div className="carousel-slide-cover">
-                <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
-              </div>
-              <div className="carousel-slide-overlay" />
-              <div className="carousel-slide-content">
-                <div className="carousel-slide-badge">
-                  <Sparkles size={12} /> 每日推荐
-                </div>
-                <h3 className="carousel-slide-title">{pick.title}</h3>
-                <p className="carousel-slide-reason">{pick.reason}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {renderSlides()}
       </div>
-      <div className="carousel-dots">
-        {dailyPicks.map((_, idx) => (
-          <button
-            key={idx}
-            className={`carousel-dot ${idx === currentSlide ? 'active' : ''}`}
-            onClick={() => goTo(idx)}
-          />
-        ))}
-      </div>
+      {renderDots()}
     </div>
   );
 }
