@@ -83,6 +83,8 @@ export class HLSAdapter extends BasePlayerAdapter {
         this.hls = new HlsJs(config);
         this.hls.loadSource(this.url);
         this.hls.attachMedia(this.video);
+        // 提前开始加载，减少播放首帧延迟
+        this.hls.startLoad(0);
       } catch {
         this.hls = null;
         this.onError?.(new Error('HLS 初始化失败'));

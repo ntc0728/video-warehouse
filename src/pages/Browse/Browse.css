@@ -12,6 +12,72 @@
   animation: browse-fade-in 0.25s ease both;
 }
 
+/* ── 搜索区域 ────────────────────────────────────── */
+
+.browse-search-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-md);
+}
+
+.browse-search-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.browse-search-tab {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.browse-search-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.browse-search-input-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+}
+
+.browse-search-spinner {
+  position: absolute;
+  right: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.browse-search-warning {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-warning-bg, rgba(255, 193, 7, 0.1));
+  color: var(--color-warning, #ffc107);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
 @keyframes browse-fade-in {
   from {
   opacity: 0;

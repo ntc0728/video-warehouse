@@ -1,23 +1,28 @@
 /**
  * 筛选页视频网格
  *
- * 接收 TMDBVideoItem 列表，映射为 VideoCard 需要的 Video 形状。
- * 网格使用 CSS Grid + auto-fill，自适应 2 → 7 列。
+ * 支持两种数据源：
+ *  - TMDBVideoItem[]（智能检索）
+ *  - CMSResultItem[]（直链搜索，带 cmsSourceName）
  *
- * 设计:
- *  - 单一职责:仅渲染真实卡片,加载态由父级控制
- *  - 性能:不需要 useMemo
+ * 网格使用 CSS Grid + auto-fill，自适应 2 → 7 列。
  */
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import { VideoCard } from '@/components/VideoCard';
 import { buildImageSrcSet } from '@/services/tmdbService';
+import type { CMSResultItem } from './useCMSSearch';
 import './Browse.css';
 
 interface BrowseGridProps {
-  items: TMDBVideoItem[];
+  /** TMDB 搜索结果（智能检索） */
+  items?: TMDBVideoItem[];
+  /** CMS 搜索结果（直链搜索） */
+  cmsItems?: CMSResultItem[];
   /** 搜索关键词，用于标题高亮 */
   query?: string;
+  /** 搜索模式 */
+  mode?: 'smart' | 'cms';
 }
 
 function toVideo(item: TMDBVideoItem): Video {
@@ -36,25 +41,45 @@ function toVideo(item: TMDBVideoItem): Video {
   };
 }
 
-export default function BrowseGrid({ items, query }: BrowseGridProps) {
-  if (items.length === 0) return null;
+export default function BrowseGrid({ items, cmsItems, query, mode = 'smart' }: BrowseGridProps) {
+  // 智能检索模式
+  if (mode === 'smart' && items && items.length > 0) {
+    return (
+      <div className="video-card-grid browse-card-grid">
+        {items.map((item) => {
+          const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500', 'w780']) : undefined;
+          return (
+            <VideoCard
+              key={item.id}
+              video={toVideo(item)}
+              rating={item.voteAverage}
+              srcSet={posterSrcSet ?? undefined}
+              sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
+              highlightQuery={query}
+            />
+          );
+        })}
+      </div>
+    );
+  }
 
-  return (
-    <div className="video-card-grid browse-card-grid">
-      {items.map((item) => {
-        // 为 TMDB poster 图片生成响应式 srcSet
-        const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500', 'w780']) : undefined;
-        return (
+  // 直链搜索模式
+  if (mode === 'cms' && cmsItems && cmsItems.length > 0) {
+    return (
+      <div className="video-card-grid browse-card-grid">
+        {cmsItems.map((item, idx) => (
           <VideoCard
-            key={item.id}
-            video={toVideo(item)}
-            rating={item.voteAverage}
-            srcSet={posterSrcSet ?? undefined}
-            sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
+            key={`${item.cmsSourceName}-${item.id}-${idx}`}
+            video={item}
+            overlayLabel={item.cmsSourceName}
             highlightQuery={query}
+            navigateTo={`/play/${item.id}`}
+            navigateState={{ sourceIndex: item.sourceIndex }}
           />
-        );
-      })}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  }
+
+  return null;
 }

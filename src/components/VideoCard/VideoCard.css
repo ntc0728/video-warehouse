@@ -111,6 +111,21 @@
   backdrop-filter: blur(6px);
 }
 
+.video-card-source-badge {
+  position: absolute;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 4;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  backdrop-filter: blur(6px);
+}
+
 /* ── 年份 — 左下角 ────────────────────────────── */
 
 .video-card-year-badge {

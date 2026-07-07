@@ -6,6 +6,7 @@
 import type { Video, VideoType } from '@/types/video';
 import { getVideoSources, getIPTVSources } from './sourceService';
 import { getJSON } from './httpClient';
+import { extractSeasonNumber } from './seasonMatcher';
 
 export { getVideoSources };
 
@@ -360,7 +361,7 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string): Pr
   if (!source) return null;
 
   try {
-    const detailUrl = `${source.api}?ac=detail&vod_id=${videoId}`;
+    const detailUrl = `${source.api}?ac=videolist&ids=${videoId}`;
     const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
       const item = data.list[0];
@@ -421,7 +422,7 @@ export async function searchVideoFromMultipleSources(
           video: { ...mapVideoItem(target), sources: playSources, episodes },
         });
       } else {
-        const detailUrl = `${source.api}?ac=detail&vod_id=${target.vod_id}`;
+        const detailUrl = `${source.api}?ac=videolist&ids=${target.vod_id}`;
         const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
         const detailItem = detailData.list?.[0];
         if (detailItem) {
@@ -482,7 +483,7 @@ export async function searchVideoFromSingleSource(
         video: { ...mapVideoItem(target), sources: playSources, episodes },
       };
     }
-    const detailUrl = `${source.api}?ac=detail&vod_id=${target.vod_id}`;
+    const detailUrl = `${source.api}?ac=videolist&ids=${target.vod_id}`;
     const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
     const detailItem = detailData.list?.[0];
     if (detailItem) {
@@ -501,6 +502,50 @@ export async function searchVideoFromSingleSource(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { sourceIndex, sourceName: source.name, video: null, error: message || '请求失败' };
+  }
+}
+
+/** CMS 单源搜索结果（多条） */
+export interface CMSSearchAllResult {
+  sourceIndex: number;
+  sourceName: string;
+  items: Video[];
+  page: number;
+  total: number;
+  error?: string;
+}
+
+/**
+ * 搜索 CMS 源并返回所有匹配结果（不分页，返回第一页全部）。
+ * 用于 Browse 页直链搜索模式。
+ */
+export async function searchAllFromCMSSource(
+  sourceIndex: number,
+  title: string,
+  page = 1,
+): Promise<CMSSearchAllResult> {
+  const sources = await getVideoSources();
+  const source = sources[sourceIndex];
+  if (!source) {
+    return { sourceIndex, sourceName: '未知', items: [], page: 1, total: 0, error: '源配置不存在' };
+  }
+
+  try {
+    const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}&pg=${page}`;
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+    if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
+      return { sourceIndex, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源' };
+    }
+
+    const items: Video[] = data.list.map(item => {
+      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '');
+      return { ...mapVideoItem(item), sources: playSources, episodes };
+    });
+
+    return { sourceIndex, sourceName: source.name, items, page, total: data.total ?? 0 };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { sourceIndex, sourceName: source.name, items: [], page, total: 0, error: message || '请求失败' };
   }
 }
 
@@ -550,4 +595,78 @@ export async function fetchIPTVUrl(sourceIndex: number): Promise<string> {
   const sources = await getIPTVSources();
   const source = sources[sourceIndex];
   return source?.url || sources[0]?.url || '';
+}
+
+/** 按季搜索 CMS 源的结果：季号 → Video 映射 */
+export interface SeasonSearchResult {
+  sourceIndex: number;
+  sourceName: string;
+  /** 季号 → Video 映射（无季号的条目不包含在内） */
+  seasons: Map<number, Video>;
+  error?: string;
+}
+
+/**
+ * 搜索 CMS 源并返回按季分组的结果。
+ * CMS 采集站把每季存为独立 vod 条目（如"超人前传第二季"），
+ * 本函数搜索标题后将结果按季号映射，切换选季时无需重新调用 API。
+ */
+export async function searchVideoSeasonsFromSingleSource(
+  sourceIndex: number,
+  title: string,
+  _year?: number,
+): Promise<SeasonSearchResult> {
+  const sources = await getVideoSources();
+  const source = sources[sourceIndex];
+  if (!source) {
+    return { sourceIndex, sourceName: '未知', seasons: new Map(), error: '源配置不存在' };
+  }
+
+  try {
+    const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+    if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
+      return { sourceIndex, sourceName: source.name, seasons: new Map(), error: '未找到匹配资源' };
+    }
+
+    const seasons = new Map<number, Video>();
+    for (const item of data.list) {
+      const vodName = item.vod_name ?? '';
+      const seasonNumber = extractSeasonNumber(vodName);
+      if (seasonNumber === undefined) continue;
+      if (seasons.has(seasonNumber)) continue;
+
+      // 解析播放源
+      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '');
+      seasons.set(seasonNumber, { ...mapVideoItem(item), sources: playSources, episodes });
+    }
+
+    return { sourceIndex, sourceName: source.name, seasons };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { sourceIndex, sourceName: source.name, seasons: new Map(), error: message || '请求失败' };
+  }
+}
+
+/**
+ * 按集号在剧集列表中查找匹配的集。
+ * CMS 源切换后集 ID 不同，但集号（number）一致即可匹配。
+ */
+export function findEpisodeByNumber(episodes: { number: number }[], targetNumber: number) {
+  return episodes.find(ep => ep.number === targetNumber);
+}
+
+/**
+ * 将 CMS 搜索到的 seasonMap 转换为 PlayerSeasonPanel 所需的格式。
+ */
+export function buildCmsSeasons(
+  seasonMap: Map<number, { episodes?: { number: number }[] }>,
+): { season_number: number; name: string; episode_count: number }[] {
+  return Array.from(seasonMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([num, video]) => ({
+      season_number: num,
+      name: `第${num}季`,
+      episode_count: video.episodes?.length ?? 0,
+    }));
 }

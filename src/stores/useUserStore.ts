@@ -38,7 +38,7 @@ interface UserState {
   isCollected: (videoId: string) => boolean;
 
   addHistory: (record: Omit<HistoryRecord, 'id' | 'updatedAt'>) => void;
-  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, sourceName?: string, cmsSourceName?: string, episodeLabel?: string) => void;
+  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, sourceName?: string, cmsSourceName?: string, episodeLabel?: string, vodId?: string, currentSeason?: number, currentEpisode?: number) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
@@ -190,6 +190,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
       updated.cmsSourceName = record.cmsSourceName || updated.cmsSourceName;
       updated.episodeLabel = record.episodeLabel || updated.episodeLabel;
       updated.episodeId = record.episodeId ?? updated.episodeId;
+      updated.vodId = record.vodId || updated.vodId;
+      updated.currentSeason = record.currentSeason ?? updated.currentSeason;
+      updated.currentEpisode = record.currentEpisode ?? updated.currentEpisode;
       updated.updatedAt = Date.now();
 
       set((state) => ({
@@ -209,8 +212,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }
   },
 
-  updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel) => {
-    get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel });
+  updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel, vodId, currentSeason, currentEpisode) => {
+    get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel, vodId, currentSeason, currentEpisode });
   },
 
   getHistoryByVideo: (videoId) =>

@@ -432,6 +432,23 @@
   object-fit: cover;
 }
 
+.detail-hero-poster-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.detail-hero-poster-progress-bar {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
 /* ── Tab 导航 ──────────────────────────────────── */
 
 .detail-tabs {

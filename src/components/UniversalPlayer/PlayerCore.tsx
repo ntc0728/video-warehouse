@@ -52,6 +52,7 @@ export default function PlayerCore({
         className="up-player-video"
         style={videoStyle}
         playsInline
+        preload="auto"
       />
 
       {hasError && (

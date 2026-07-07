@@ -419,16 +419,6 @@
   .search-box-wrap--header .search-box {
     flex-shrink: 0;
   }
-  .search-box__submit {
-    width: var(--comp-input-height);
-    padding: 0;
-  }
-  .search-box__submit-text {
-    display: none;
-  }
-  .search-box__submit-icon {
-    display: block;
-  }
 }
 
 /* ── TV: 放大字号与图标 ────────────────────────────── */

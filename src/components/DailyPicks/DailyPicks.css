@@ -137,6 +137,7 @@
 
 .carousel-slides {
   display: flex;
+  will-change: transform;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -144,8 +145,14 @@
   position: relative;
   min-width: 100%;
   overflow: hidden;
+  contain: layout style;
   aspect-ratio: 16 / 9;
   cursor: pointer;
+}
+
+.carousel-slide--distant {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56.25%;
 }
 
 .carousel-slide-cover {

@@ -105,6 +105,8 @@ export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen
     );
   };
 
+  const isBrowse = location.pathname === '/browse';
+
   return (
     <header
       className={`sticky-header${immersive ? ' sticky-header--immersive' : ''}${isTV ? ' sticky-header--tv' : ''}${isScrolled ? ' sticky-header--scrolled' : ''}`}
@@ -122,7 +124,7 @@ export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen
                 <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
               </div>
               <div className="sticky-header__brand">
-                <span className="sticky-header__brand-name">kinoTv</span>
+                <span className="sticky-header__brand-name">kinoTV</span>
               </div>
             </button>
           )}
@@ -130,11 +132,13 @@ export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen
             {LEFT_NAV_ITEMS.map(renderNavItem)}
           </nav>
         </div>
-        <div className="sticky-header__center">
-          {/* 顶部导航中央：公共搜索框（variant="header"）。
-              URL ?q= 已由 SearchBox 内部 useSearchParams 自动同步 input 值。 */}
-          <SearchBox variant="header" />
-        </div>
+        {!isBrowse && (
+          <div className="sticky-header__center">
+            {/* 顶部导航中央：公共搜索框（variant="header"）。
+                URL ?q= 已由 SearchBox 内部 useSearchParams 自动同步 input 值。 */}
+            <SearchBox variant="header" />
+          </div>
+        )}
         <div className="sticky-header__right">
           <nav className="sticky-header__nav" aria-label="次要导航">
             {RIGHT_NAV_ITEMS.map(renderNavItem)}

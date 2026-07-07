@@ -38,6 +38,12 @@ export interface HistoryRecord {
   cmsSourceName?: string;
   /** 当前播放的集数标题（如 "第3集"），播放时写入 */
   episodeLabel?: string;
+  /** CMS 源的 vod_id，用于快速恢复时直接调详情接口 */
+  vodId?: string;
+  /** 当前播放的季号，用于选季面板高亮 */
+  currentSeason?: number;
+  /** 当前播放的集号，用于选集面板高亮 + 快速恢复 */
+  currentEpisode?: number;
 }
 
 /** IndexedDB 数据库 Schema 定义 */
