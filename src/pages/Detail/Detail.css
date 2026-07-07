@@ -391,7 +391,6 @@
   margin-top: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
   animation: heroItemIn 0.6s 0.65s cubic-bezier(0.22,0.61,0.36,1) both;
 }
