@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import viteCompression from 'vite-plugin-compression'
 
 /**
  * Vite 构建配置
@@ -17,7 +18,13 @@ import path from 'path'
  * - Web 端保持 base='/'，部署到 Cloudflare Pages / 任何静态服务器不受影响
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Brotli 预压缩（Cloudflare Pages 优先使用 .br 文件）
+    viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
+    // Gzip 预压缩（兜底）
+    viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -33,6 +40,30 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // 使用 terser 替代 esbuild，支持更激进的混淆压缩
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        passes: 3,
+        pure_getters: true,
+        unsafe_arrows: true,
+        unsafe_methods: true,
+        toplevel: true,
+        drop_console: true,
+        drop_debugger: true,
+        ecma: 2020,
+      },
+      mangle: {
+        toplevel: true,
+        module: true,
+        properties: false,
+      },
+      format: {
+        comments: false,
+        ecma: 2020,
+      },
+      ecma: 2020,
+    },
     // 启用 CSS 代码分割（按页面 chunk 自动拆分 CSS）
     cssCodeSplit: true,
     // 输出目标：es2020 触发 Vite 自动注入 modulepreload + 减小 JS 体积

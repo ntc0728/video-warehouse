@@ -86,11 +86,6 @@ const routes = [
         element: <LazyPlayerPage />,
       },
       {
-        // 视频播放页（指定集数）
-        path: 'play/:id/:episodeId',
-        element: <LazyPlayerPage />,
-      },
-      {
         // 设置页
         path: 'settings',
         element: <LazySettingsPage />,

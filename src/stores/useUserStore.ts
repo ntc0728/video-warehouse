@@ -38,7 +38,7 @@ interface UserState {
   isCollected: (videoId: string) => boolean;
 
   addHistory: (record: Omit<HistoryRecord, 'id' | 'updatedAt'>) => void;
-  updateHistoryProgress: (videoId: string, episodeId: string | undefined, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, sourceName?: string, cmsSourceName?: string, episodeLabel?: string, vodId?: string, currentSeason?: number, currentEpisode?: number) => void;
+  updateHistoryProgress: (videoId: string, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, cmsSourceId?: string, cmsSourceName?: string, episodeLabel?: string, vodId?: string, episodeUrl?: string) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
@@ -157,22 +157,15 @@ export const useUserStore = create<UserState>()((set, get) => ({
   /**
    * 添加或更新观看历史
    * 同一视频的记录会更新进度和时间，而非重复创建
-   * 去重策略：videoId + episodeId → videoId alone（兜底）
+   * 去重策略：vodId → videoId（兜底）
    */
   addHistory: (record) => {
-    // 1. 精确匹配：videoId + episodeId
-    let existingIndex = get().history.findIndex(
-      (h) => h.videoId === record.videoId && h.episodeId === record.episodeId
-    );
+    // 1. 优先匹配：vodId
+    let existingIndex = record.vodId
+      ? get().history.findIndex((h) => h.vodId === record.vodId)
+      : -1;
 
-    // 2. 回退匹配：如果新记录有 episodeId，尝试匹配旧的 null 记录
-    if (existingIndex < 0 && record.episodeId != null) {
-      existingIndex = get().history.findIndex(
-        (h) => h.videoId === record.videoId && h.episodeId == null
-      );
-    }
-
-    // 3. 兜底匹配：仅 videoId（处理切换 CMS 源后 episodeId 变化的情况）
+    // 2. 兜底匹配：仅 videoId
     if (existingIndex < 0) {
       existingIndex = get().history.findIndex(
         (h) => h.videoId === record.videoId
@@ -186,13 +179,11 @@ export const useUserStore = create<UserState>()((set, get) => ({
       updated.title = record.title || updated.title;
       updated.cover = record.cover || updated.cover;
       updated.backdrop = record.backdrop || updated.backdrop;
-      updated.sourceName = record.sourceName || updated.sourceName;
+      updated.cmsSourceId = record.cmsSourceId || updated.cmsSourceId;
       updated.cmsSourceName = record.cmsSourceName || updated.cmsSourceName;
       updated.episodeLabel = record.episodeLabel || updated.episodeLabel;
-      updated.episodeId = record.episodeId ?? updated.episodeId;
       updated.vodId = record.vodId || updated.vodId;
-      updated.currentSeason = record.currentSeason ?? updated.currentSeason;
-      updated.currentEpisode = record.currentEpisode ?? updated.currentEpisode;
+      updated.episodeUrl = record.episodeUrl || updated.episodeUrl;
       updated.updatedAt = Date.now();
 
       set((state) => ({
@@ -212,8 +203,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }
   },
 
-  updateHistoryProgress: (videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel, vodId, currentSeason, currentEpisode) => {
-    get().addHistory({ videoId, episodeId, progress, duration, title, cover, backdrop, sourceName, cmsSourceName, episodeLabel, vodId, currentSeason, currentEpisode });
+  updateHistoryProgress: (videoId, progress, duration, title, cover, backdrop, cmsSourceId, cmsSourceName, episodeLabel, vodId, episodeUrl) => {
+    get().addHistory({ videoId, progress, duration, title, cover, backdrop, cmsSourceId, cmsSourceName, episodeLabel, vodId, episodeUrl });
   },
 
   getHistoryByVideo: (videoId) =>

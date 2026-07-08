@@ -43,8 +43,6 @@ interface HistoryVideoItem extends Video {
   _histBackdrop?: string;
   _histProgress?: number;
   _histDuration?: number;
-  _histEpisodeId?: string;
-  _histSourceName?: string;
   _histCmsSourceName?: string;
   _histEpisodeLabel?: string;
 }
@@ -122,12 +120,10 @@ function formatFullTime(ts: number): string {
   return timeFormatter.format(ts);
 }
 
-/** 构建横版封面左上角标签：CMS 源名称 + 播放线路名 + 集数 */
+/** 构建横版封面左上角标签：CMS 源名称 + 集数 */
 function getOverlayLabel(video: HistoryVideoItem): string {
   const parts: string[] = [];
-  // CMS 源配置名称（如 "量子资源"），优先于播放线路名
   if (video._histCmsSourceName) parts.push(video._histCmsSourceName);
-  else if (video._histSourceName) parts.push(video._histSourceName);
   if (video._histEpisodeLabel) parts.push(video._histEpisodeLabel);
   return parts.length > 0 ? parts.join(' · ') : '';
 }
@@ -226,7 +222,7 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histEpisodeId: h.episodeId, _histSourceName: h.sourceName, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel };
+        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') {
@@ -569,7 +565,7 @@ export default function HistoryPage() {
                         overlayLabel={getOverlayLabel(video)}
                         progress={video._histProgress}
                         duration={video._histDuration}
-                        navigateTo={video._histEpisodeId ? `/play/${video.id}/${video._histEpisodeId}` : `/play/${video.id}`}
+                        navigateTo={`/play/${video.id}`}
                       />
                     </div>
                   ))}

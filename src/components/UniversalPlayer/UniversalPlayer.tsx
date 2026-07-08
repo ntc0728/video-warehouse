@@ -85,7 +85,8 @@ export default function UniversalPlayer({
   platform = 'desktop',
   title = '',
   videoId,
-  episodeId,
+  vodId,
+  episodeUrl,
   skipHistory = false,
   autoPlay = false,
   channelName,
@@ -119,6 +120,7 @@ export default function UniversalPlayer({
   const [programGuideData, setProgramGuideData] = useState<EPGProgram[]>([]);
   const [programGuideChannelName, setProgramGuideChannelName] = useState('');
   const [timeshiftSupported, setTimeshiftSupported] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const {
     decoderMode, isControlsVisible, isChannelListVisible,
@@ -279,10 +281,12 @@ const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
 type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
 videoId,
-episodeId,
+vodId,
+episodeUrl,
 skipHistory,
 autoPlay,
 decoderMode,
+retryCount,
     onProgress,
     onEnded,
     onPlay,
@@ -710,6 +714,7 @@ decoderMode,
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
         onOpenChannelList={() => setChannelListVisible(true)}
+        onRetry={() => { setHasError(false); setRetryCount(c => c + 1); }}
       />
 
       {/* 加载中 / 缓冲中统一显示带文字信息的遮罩 */}

@@ -13,7 +13,8 @@ interface UsePlayerCoreOptions {
   url: string;
   type: SourceType;
   videoId?: string;
-  episodeId?: string;
+  vodId?: string;
+  episodeUrl?: string;
   skipHistory?: boolean;
   autoPlay?: boolean;
   decoderMode: DecoderMode;
@@ -29,7 +30,7 @@ interface UsePlayerCoreOptions {
 
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, episodeId, skipHistory = false, autoPlay = false, decoderMode, retryCount,
+    url, type, videoId, vodId, episodeUrl, skipHistory = false, autoPlay = false, decoderMode, retryCount,
     onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro,
   } = options;
 
@@ -37,6 +38,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const adapterRef = useRef<IPlayerAdapter | null>(null);
   const hasSkippedIntroRef = useRef(false);
   const hasSkippedOutroRef = useRef(false);
+  const togglePlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
@@ -78,14 +80,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     if (!videoId || !videoRef.current || skipHistory) return;
     try {
       const history = await getHistory();
-      // 匹配优先级：精确匹配 videoId+episodeId → videoId 且 episodeId 为空 → 仅 videoId 取最新
-      const videoHistory = history.find(
-        (h) => h.videoId === videoId && h.episodeId === episodeId
-      ) || history.find(
-        (h) => h.videoId === videoId && !h.episodeId && !episodeId
-      ) || history.find(
-        (h) => h.videoId === videoId
-      );
+      // 优先按 episodeUrl 精确匹配，回退到 vodId，最后回退到 videoId
+      const videoHistory = episodeUrl
+        ? history.find((h) => h.episodeUrl === episodeUrl)
+        : vodId
+          ? history.find((h) => h.vodId === vodId)
+          : history.find((h) => h.videoId === videoId);
       const video = videoRef.current;
       if (videoHistory && videoHistory.progress > 0 && video.duration && isFinite(video.duration)) {
         video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
@@ -93,7 +93,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     } catch (err) {
       console.error('Failed to load progress:', err);
     }
-  }, [videoId, episodeId, skipHistory]);
+  }, [videoId, vodId, episodeUrl, skipHistory]);
 
   const prevTypeRef = useRef<SourceType | null>(null);
   const pendingHotSwitchRef = useRef(false);
@@ -130,6 +130,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     // 复用已有适配器热切换源（避免 destroy+recreate 导致的黑屏闪烁）
     if (adapterRef.current && prevTypeRef.current === type) {
       adapterRef.current.switchSource(url, { decoderMode, onError });
+      // 热切换后重置清晰度为自动选择
+      usePlayerStore.getState().setCurrentLevel(-1);
     } else {
       initAdapter();
     }
@@ -329,6 +331,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, []);
 
   const togglePlay = useCallback(() => {
+    if (togglePlayTimerRef.current) return;
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
@@ -336,6 +339,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     } else {
       pause();
     }
+    togglePlayTimerRef.current = setTimeout(() => {
+      togglePlayTimerRef.current = null;
+    }, 200);
   }, [play, pause]);
 
   const seek = useCallback((time: number) => {

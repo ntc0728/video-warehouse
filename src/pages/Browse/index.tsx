@@ -61,7 +61,6 @@ export default function BrowsePage() {
     updateFilter,
     isRefreshing,
     loadMore: loadMoreTMDB,
-    retry,
     hasMore,
     isLoadingMore,
     discoverResults,
@@ -145,7 +144,7 @@ export default function BrowsePage() {
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
   const isSearchLoading = searchMode === 'smart' ? (isLoading || isRefreshing) : cmsLoading;
-  const isFirstLoad = isSearchLoading && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
+
   const isEmpty = !isSearchLoading && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 

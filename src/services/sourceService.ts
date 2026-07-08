@@ -16,7 +16,7 @@ const EPG_SOURCES_URL = '/data/epg-sources.json';
 export async function getVideoSources(): Promise<VideoSourceConfig[]> {
   try {
     const data = await getJSON<VideoSourcesData>(VIDEO_SOURCES_URL, { cacheBust: true });
-    return Object.values(data.api_site);
+    return Object.entries(data.api_site).map(([id, site]) => ({ ...site, id }));
   } catch (error) {
     console.error('加载视频源失败:', error);
     return [];

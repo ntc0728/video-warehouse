@@ -313,11 +313,7 @@ export default function DetailPage() {
   const watchProgressPercent = hasWatchingHistory && historyRecord.duration > 0
     ? Math.round((historyRecord.progress / historyRecord.duration) * 100)
     : 0;
-  const lastEpisodeId = historyRecord?.episodeId;
-  // 从 episodeId 中提取集数信息（格式如 "ep-3" 或 "3"）
-  const lastEpisodeNumber = lastEpisodeId
-    ? (lastEpisodeId.match(/(\d+)/)?.[1] || lastEpisodeId)
-    : null;
+  const lastEpisodeLabel = historyRecord?.episodeLabel;
 
   // ── 页面状态快照 ──────────────────────────────
   stateRef.current = { activeTab, cmsResults, cmsLoaded, cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
@@ -442,8 +438,8 @@ export default function DetailPage() {
             {hasWatchingHistory && (
               <div className="detail-progress-row">
                 <span className="detail-progress-label">
-                  {lastEpisodeNumber && tmdbMediaType === 'tv'
-                    ? `已播放：第 ${lastEpisodeNumber} 集`
+                  {lastEpisodeLabel && tmdbMediaType === 'tv'
+                    ? `已播放：${lastEpisodeLabel}`
                     : '已播放'}
                 </span>
                 <span className="detail-progress-time">

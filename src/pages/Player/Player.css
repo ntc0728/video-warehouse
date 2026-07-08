@@ -534,6 +534,10 @@
   color: #fff;
 }
 
+.player-detail-overview-wrap {
+  position: relative;
+}
+
 .player-detail-overview {
   flex: 1;
   min-width: 0;
@@ -546,11 +550,13 @@
   display: none;
   gap: var(--space-2xs);
   align-items: center;
-  margin-top: var(--space-xs);
-  padding: 0;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-2xs) var(--space-xs);
   border: none;
   border-radius: 0;
-  background: transparent;
+  background: linear-gradient(to left, var(--color-bg-primary) 60%, transparent);
   color: var(--color-primary);
   font-size: var(--text-sm);
   cursor: pointer;
