@@ -1,4 +1,4 @@
-import { AlertTriangle, ListVideo } from 'lucide-react';
+import { AlertTriangle, ListVideo, RefreshCw } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode } from '@/types/player';
 
@@ -12,6 +12,8 @@ interface PlayerCoreProps {
   onPointerLeave?: () => void;
   /** IPTV 错误态快捷入口：唤起频道列表 */
   onOpenChannelList?: () => void;
+  /** 重试播放 */
+  onRetry?: () => void;
 }
 
 const RATIO_STYLES: Record<string, React.CSSProperties> = {
@@ -29,6 +31,7 @@ export default function PlayerCore({
   onPointerUp,
   onPointerLeave,
   onOpenChannelList,
+  onRetry,
 }: PlayerCoreProps) {
   const mirror = usePlayerStore(s => s.mirror);
   const aspectRatio = usePlayerStore(s => s.aspectRatio);
@@ -63,16 +66,28 @@ export default function PlayerCore({
           </div>
         </div>
       )}
-      {hasError && mode === 'iptv' && onOpenChannelList && (
+      {hasError && (
         <div className="up-error-actions" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className="up-error-actions-btn"
-            onClick={(e) => { e.stopPropagation(); onOpenChannelList(); }}
-          >
-            <ListVideo size={14} />
-            <span>切换频道</span>
-          </button>
+          {mode === 'iptv' && onOpenChannelList && (
+            <button
+              type="button"
+              className="up-error-actions-btn"
+              onClick={(e) => { e.stopPropagation(); onOpenChannelList(); }}
+            >
+              <ListVideo size={14} />
+              <span>切换频道</span>
+            </button>
+          )}
+          {mode !== 'iptv' && onRetry && (
+            <button
+              type="button"
+              className="up-error-actions-btn"
+              onClick={(e) => { e.stopPropagation(); onRetry(); }}
+            >
+              <RefreshCw size={14} />
+              <span>重试</span>
+            </button>
+          )}
         </div>
       )}
     </div>

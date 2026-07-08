@@ -51,7 +51,8 @@ export interface UniversalPlayerProps {
   platform?: PlatformType;
   title?: string;
   videoId?: string;
-  episodeId?: string;
+  vodId?: string;
+  episodeUrl?: string;
   skipHistory?: boolean;
   autoPlay?: boolean;
   channelName?: string;

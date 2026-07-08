@@ -22,6 +22,10 @@ export interface VideoSource {
 /** 剧集信息，每集可包含多个播放源 */
 export interface Episode {
   id: string;
+  /** 唯一标识：电影为线路的 vod_id，剧集为 CMS 返回的 vod_id */
+  vodId: string;
+  /** 播放链接 URL */
+  url: string;
   title: string;
   number: number;
   cover?: string;

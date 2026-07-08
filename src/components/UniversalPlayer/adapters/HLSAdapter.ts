@@ -139,16 +139,16 @@ export class HLSAdapter extends BasePlayerAdapter {
             case HlsJs.ErrorTypes.NETWORK_ERROR:
               if (data.details === 'manifestLoadError' || data.details === 'manifestParsingError') {
                 this.onError?.(new Error('频道源不可用'));
-              } else {
+              } else if (this.errorCount < 3) {
                 this.hls?.startLoad();
-                if (this.errorCount >= 3) {
-                  this.onError?.(new Error('网络连接失败'));
-                }
+              } else {
+                this.onError?.(new Error('网络连接失败'));
               }
               break;
             case HlsJs.ErrorTypes.MEDIA_ERROR:
-              this.hls?.recoverMediaError();
-              if (this.errorCount >= 2) {
+              if (this.errorCount < 2) {
+                this.hls?.recoverMediaError();
+              } else {
                 this.onError?.(new Error('媒体解码失败'));
               }
               break;
@@ -295,6 +295,7 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   switchSource(url: string, options?: Record<string, unknown>): void {
     super.switchSource(url, options);
+    this.currentLevel = -1;
     if (this.hls) {
       this.hls.loadSource(url);
       this.hls.startLoad();

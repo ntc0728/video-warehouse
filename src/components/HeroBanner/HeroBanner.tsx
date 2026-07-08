@@ -33,7 +33,8 @@ interface HeroBannerProps {
   autoPlayInterval?: number;
   onItemClick?: (item: HeroItem) => void;
   onContinuePlay?: (item: HeroItem) => void;
-  historyMap?: Map<string, { progress: number; episodeId?: string }>;
+  historyMap?: Map<string, { progress: number }>;
+
 }
 
 /** Hero 蒙版颜色（深色径向渐变） */
@@ -73,6 +74,7 @@ export default function HeroBanner({
   const debounceRef = useRef(false);
   const crossfadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const isFirstLoadRef = useRef(true);
+  const crossfadeRef = useRef(false);
   const pointerType = usePointerType();
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -130,7 +132,7 @@ export default function HeroBanner({
 
   // ── 切换：防抖 + 双图层 crossfade ────────
   const switchSlide = useCallback((dir: 'next' | 'prev') => {
-    if (debounceRef.current || crossfade) return;
+    if (debounceRef.current || crossfadeRef.current) return;
     debounceRef.current = true;
 
     const item = items[current];
@@ -140,7 +142,8 @@ export default function HeroBanner({
     setSlideDir(dir);
     setCurrent((p) => (p + (dir === 'next' ? 1 : -1) + items.length) % items.length);
     setCrossfade(true);
-  }, [current, items, crossfade]);
+    crossfadeRef.current = true;
+  }, [current, items]);
 
   // ── 延迟触发过渡：先渲染初始位置，再应用 transition ──
   useEffect(() => {
@@ -156,7 +159,7 @@ export default function HeroBanner({
     return () => cancelAnimationFrame(t);
   }, [crossfade]);
 
-  // ── 400ms 后清理旧图 + 解除防抖 ──
+  // ── SLIDE_MS 后清理旧图 + 解除防抖 ──
   useEffect(() => {
     if (!crossfade) return;
     crossfadeTimerRef.current = setTimeout(() => {
@@ -164,6 +167,7 @@ export default function HeroBanner({
       oldImgUrlRef.current = '';
       debounceRef.current = false;
       isFirstLoadRef.current = false;
+      crossfadeRef.current = false;
       setCrossfade(false);
     }, SLIDE_MS);
     return () => {
@@ -173,12 +177,12 @@ export default function HeroBanner({
 
   // ── 自动轮播 ──
   useEffect(() => {
-    if (!effectiveInterval || items.length <= 1 || crossfade) return;
+    if (!effectiveInterval || items.length <= 1) return;
     const timer = setInterval(() => {
       switchSlide('next');
     }, effectiveInterval);
     return () => clearInterval(timer);
-  }, [effectiveInterval, items.length, crossfade, switchSlide]);
+  }, [effectiveInterval, items.length, switchSlide]);
 
   const handlePrev = useCallback(() => {
     switchSlide('prev');
@@ -414,12 +418,12 @@ export default function HeroBanner({
         {/* 桌面端海报 */}
         {!isMobile && posterUrl && (
           <div className="hero-banner__poster">
-            <img key={posterUrl} src={posterUrl} srcSet={posterSrcSet || undefined} sizes="160px" alt={title} loading="eager" width={300} height={450} />
+            <img src={posterUrl} srcSet={posterSrcSet || undefined} sizes="160px" alt={title} loading="eager" width={300} height={450} />
           </div>
         )}
         {/* 移动端海报 */}
         {isMobile && posterUrl && (
-          <img key={posterUrl} className="hero-banner__poster-mobile" src={posterUrl} srcSet={posterSrcSet || undefined} sizes="60px" alt={title} loading="eager" width={300} height={450} />
+          <img className="hero-banner__poster-mobile" src={posterUrl} srcSet={posterSrcSet || undefined} sizes="60px" alt={title} loading="eager" width={300} height={450} />
         )}
       </div>
 

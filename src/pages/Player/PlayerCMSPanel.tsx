@@ -3,12 +3,13 @@ import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
 
 interface PlayerCMSPanelProps {
-  selectedSourceNames: string[];
+  selectedSourceIds: string[];
+  sourceNameMap: Map<string, string>;
   cmsResults: VideoDetailResult[];
   currentSrc: { url: string; type: VideoSource['type'] } | null;
-  activeSourceName?: string;
+  activeSourceId?: string;
   onPlaySource: (result: VideoDetailResult) => void;
-  onFetchSource: (sourceName: string) => void;
+  onFetchSource: (sourceId: string) => void;
   expanded?: boolean;
   onToggle?: () => void;
   compact?: boolean;
@@ -17,10 +18,11 @@ interface PlayerCMSPanelProps {
 }
 
 export function PlayerCMSPanel({
-  selectedSourceNames,
+  selectedSourceIds,
+  sourceNameMap = new Map(),
   cmsResults,
   currentSrc,
-  activeSourceName,
+  activeSourceId,
   onPlaySource,
   onFetchSource,
   expanded = true,
@@ -30,18 +32,15 @@ export function PlayerCMSPanel({
 }: PlayerCMSPanelProps) {
   const HeaderTag = compact ? 'div' : 'button';
 
-  // sourceName → VideoDetailResult 映射
-  const resultMap = new Map(cmsResults.map(r => [r.sourceName, r]));
+  // sourceId → VideoDetailResult 映射
+  const resultMap = new Map(cmsResults.map(r => [r.sourceId, r]));
 
   // 判断某个源是否正在播放中
-  const isActiveSource = (name: string) => {
-    // 只读模式：始终高亮
+  const isActiveSource = (sourceId: string) => {
     if (readOnly) return true;
-    // 有明确的活跃源时，只高亮那个
-    if (activeSourceName !== undefined) return activeSourceName === name;
-    // 否则按当前播放 URL 匹配
+    if (activeSourceId !== undefined) return activeSourceId === sourceId;
     if (!currentSrc) return false;
-    const result = resultMap.get(name);
+    const result = resultMap.get(sourceId);
     if (!result?.video) return false;
     return (
       result.video.sources?.some(s => s.url === currentSrc.url) ||
@@ -57,7 +56,7 @@ export function PlayerCMSPanel({
       >
         <span className="player-panel-icon"><Server size={16} /></span>
         <span className="player-panel-title">CMS源</span>
-        <span className="player-panel-info">{selectedSourceNames.length}个源</span>
+        <span className="player-panel-info">{selectedSourceIds.length}个源</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
             <ChevronDown size={16} />
@@ -65,24 +64,25 @@ export function PlayerCMSPanel({
         )}
       </HeaderTag>
       <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
-        {selectedSourceNames.length > 0 ? (
+        {selectedSourceIds.length > 0 ? (
           <div className="player-cms-list">
-            {selectedSourceNames.map((name) => {
-              const result = resultMap.get(name);
-              const active = isActiveSource(name);
+            {selectedSourceIds.map((sourceId) => {
+              const result = resultMap.get(sourceId);
+              const displayName = sourceNameMap.get(sourceId) ?? sourceId;
+              const active = isActiveSource(sourceId);
               return (
                 <button
-                  key={name}
+                  key={sourceId}
                   className={`player-cms-item ${active ? 'active' : ''}`}
                   onClick={readOnly ? undefined : () => {
                     if (result?.video) {
                       onPlaySource(result);
                     } else {
-                      onFetchSource(name);
+                      onFetchSource(sourceId);
                     }
                   }}
                 >
-                  <span className="player-cms-name">{name}</span>
+                  <span className="player-cms-name">{displayName}</span>
                 </button>
               );
             })}

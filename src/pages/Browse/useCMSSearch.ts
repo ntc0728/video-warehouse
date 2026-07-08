@@ -3,7 +3,8 @@
  * 管理多源并行搜索、逐源加载、滚动分页、源状态追踪
  */
 import { useState, useCallback, useRef } from 'react';
-import { searchAllFromCMSSource, type Video } from '@/services/videoService';
+import { searchAllFromCMSSource } from '@/services/videoService';
+import type { Video } from '@/types/video';
 import { useSettingsStore } from '@/stores';
 
 export interface CMSResultItem extends Video {

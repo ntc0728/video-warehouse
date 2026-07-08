@@ -119,7 +119,7 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
         db.createObjectStore('iptvChannels', { keyPath: 'key' });
       }
 
-      // v3-v5: 新增可选字段（backdrop, sourceName, episodeLabel），无需 schema 变更
+      // v3-v5: 新增可选字段（backdrop, episodeLabel），无需 schema 变更
     },
     blocked() {
       console.warn('[DB] database open blocked — closing existing connections');

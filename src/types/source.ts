@@ -5,6 +5,8 @@
 
 /** 视频采集站 API 配置 */
 export interface VideoSourceConfig {
+  /** 唯一标识，取自 video-sources.json 的 api_site key（如 "iqiyizyapi.com"） */
+  id: string;
   name: string;
   api: string;
   detail: string;
