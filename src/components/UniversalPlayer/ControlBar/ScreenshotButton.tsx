@@ -5,10 +5,15 @@ interface ScreenshotButtonProps {
 }
 
 export default function ScreenshotButton({ onClick }: ScreenshotButtonProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick();
+  };
+
   return (
     <button
       className="up-popover-item"
-      onClick={onClick}
+      onClick={handleClick}
       title="截图 (S)"
     >
       <Camera size={16} />

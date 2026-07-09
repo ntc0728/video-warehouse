@@ -17,16 +17,16 @@
 .browse-search-area {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-lg);
-  padding: var(--space-lg) var(--space-md);
+  align-items: center;
+  padding: var(--space-lg) 0;
 }
 
 .browse-search-tabs {
   display: flex;
   gap: 0;
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   overflow: hidden;
 }
@@ -53,15 +53,15 @@
 .browse-search-input-wrap {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: var(--layout-searchbox-browse-max-w);
 }
 
 .browse-search-spinner {
   position: absolute;
-  right: var(--space-sm);
   top: 50%;
-  transform: translateY(-50%);
+  right: var(--space-sm);
   color: var(--color-primary);
+  transform: translateY(-50%);
   animation: spin 1s linear infinite;
 }
 
@@ -100,7 +100,7 @@
 /* ── Skeleton（首次加载占位） ──────────────────────── */
 
 .browse-page__skeleton {
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-md) 0;
 }
 
 /* ── Loading（首次加载占位） ──────────────────────── */
@@ -112,7 +112,7 @@
   align-items: center;
   width: 100%;
   min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);
-  padding: var(--space-3xl) var(--space-md);
+  padding: var(--space-3xl) 0;
 }
 
 /* ── Refreshing(切换筛选条件时的半透蒙版) ─────────── */
@@ -124,7 +124,7 @@
   align-items: center;
   width: 100%;
   min-height: clamp(22.5rem, 25rem + 12.5vh, 40rem);
-  padding: var(--space-3xl) var(--space-md);
+  padding: var(--space-3xl) 0;
 }
 
 /* ── Error ────────────────────────────────────────── */
@@ -135,7 +135,7 @@
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
-  padding: var(--space-3xl) var(--space-md);
+  padding: var(--space-3xl) 0;
   color: var(--color-text-tertiary);
   text-align: center;
 }
@@ -201,11 +201,6 @@
   }
 }
 
-/* 加载中骨架占位:v4 已移除独立 .browse-loadmore-skeleton 容器,
-   骨架由 .browse-grid 内联渲染(紧跟真实卡片,实现接龙)。
-   旧的 .browse-loadmore-skeleton / .browse-loadmore-skeleton .skeleton-grid
-   样式已废弃,本文件不再持有。 */
-
 .browse-loadmore-loading {
   display: inline-flex;
   gap: var(--space-sm);
@@ -225,7 +220,7 @@
 }
 
 .browse-card-grid{
-  padding: var(--space-sm);
+  padding: var(--space-sm) 0;
 }
 
 @keyframes browse-spin {
@@ -248,7 +243,7 @@
 /* 移动端：browse-card-grid 覆盖 video-card-grid 的 padding */
 @media (width <= 639px) {
   .browse-card-grid {
-    padding: var(--space-sm);
+    padding: var(--space-sm) 0;
   }
 }
 

@@ -39,10 +39,7 @@
 |------|------|
 | `backup-target-files.mjs` | 文件备份 |
 | `split-single-line-decls.mjs` | 代码格式化 |
-| `mock-inject-movierow.js` | Mock 数据注入 |
 | `check-dev-server.ps1` | 开发服务器检查 |
-| `analyze-px.ps1` | CSS px 分析 |
-| `verify-ui.ps1` | UI 验证 |
 | `close.ps1` | 工具脚本 |
 
 ## 增量测试规则
