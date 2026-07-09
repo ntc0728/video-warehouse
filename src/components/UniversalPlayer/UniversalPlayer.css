@@ -121,6 +121,16 @@
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+/* header 内按钮：白色图标，无背景 */
+.up-player-header button {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.up-player-header button:hover {
+  color: var(--player-text);
+}
+
 .up-player-header-visible {
   opacity: 1;
   transform: translateY(0);
@@ -179,14 +189,6 @@
 }
 
 /* 全屏按钮在 header 中的样式：白色图标，透明背景 */
-.up-player-header .up-control-btn {
-  flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.up-player-header .up-control-btn:hover {
-  color: var(--player-text);
-}
 
 /* ===== Control Bar ===== */
 .up-control-bar {
@@ -198,6 +200,36 @@
   padding: var(--space-sm) var(--space-md) var(--space-md);
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
   transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* 控制栏内所有按钮的基础样式 */
+.up-control-bar button {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+  min-width: var(--icon-xl);
+  min-height: var(--icon-xl);
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-base);
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.up-control-bar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--player-text);
+}
+
+.up-control-bar button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .up-control-bar-visible {
@@ -247,39 +279,6 @@
   font-size: var(--text-sm);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-
-.up-control-btn {
-  display: flex;
-  gap: var(--space-xs);
-  justify-content: center;
-  align-items: center;
-  min-width: var(--icon-xl);
-  min-height: var(--icon-xl);
-  padding: var(--space-xs);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: var(--text-base);
-  white-space: nowrap;
-  transition: color 0.2s, background 0.2s;
-  cursor: pointer;
-}
-
-.up-control-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--player-text);
-}
-
-.up-control-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.up-control-btn-active {
-  color: var(--color-favorite-active);
 }
 
 .up-speed-label {
@@ -334,7 +333,7 @@
   left: 0;
   height: 100%;
   border-radius: var(--space-2xs);
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.65);
 }
 
 .up-progress-played {
@@ -547,8 +546,8 @@
 .up-popover-item-active {
   position: relative;
   padding-left: calc(var(--space-md) + var(--layout-spinner-border));
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--player-text);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -560,17 +559,20 @@
   width: var(--layout-spinner-border);
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
-  background: var(--color-primary);
+  background: #fff;
 }
 
 .up-more-popover {
-  min-width: var(--layout-popover-wide-min-w);
+  min-width: clamp(6.25rem, 8vw, 7.5rem);
+  padding: var(--space-sm);
 }
 
 .up-more-popover .up-popover-item {
   display: flex;
   gap: var(--space-sm);
+  justify-content: flex-start;
   align-items: center;
+  text-align: left;
 }
 
 .up-popover-item-check {
@@ -917,7 +919,7 @@
 }
 
 /* ===== Platform: TV ===== */
-.up-platform-tv .up-control-btn {
+.up-platform-tv .up-control-bar button {
   min-width: var(--space-3xl);
   min-height: var(--space-3xl);
   padding: var(--space-sm);
@@ -943,7 +945,7 @@
   font-size: var(--text-lg);
 }
 
-.up-platform-tv .up-control-btn:focus,
+.up-platform-tv .up-control-bar button:focus,
 .up-platform-tv .up-popover-item:focus,
 .up-platform-tv .up-channel-item:focus,
 .up-platform-tv .up-channel-group-item:focus {
@@ -988,7 +990,7 @@
 }
 
 /* ===== Platform: Mobile ===== */
-.up-platform-mobile .up-control-btn {
+.up-platform-mobile .up-control-bar button {
   min-width: var(--icon-sm);
   min-height: var(--icon-sm);
   padding: var(--space-2xs);
@@ -1038,13 +1040,9 @@
 }
 
 /* ===== Platform: Desktop ===== */
-.up-platform-desktop .up-control-btn {
+.up-platform-desktop .up-control-bar button {
   min-width: var(--space-2xl);
   min-height: var(--space-2xl);
-}
-
-.up-platform-desktop .up-control-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ===== Resposive: sm (640) ===== */
@@ -1088,20 +1086,10 @@
 
 /* ===== Error Actions (IPTV 错误态快捷操作条) ===== */
 .up-error-actions {
-  position: absolute;
-  bottom: var(--space-2xl);
-  left: 50%;
-  z-index: 6;
   display: flex;
   gap: var(--space-sm);
-  max-width: calc(100% - var(--space-2xl));
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-lg);
-  background: rgba(20, 20, 20, 0.75);
-  transform: translateX(-50%);
+  justify-content: center;
   pointer-events: auto;
-  backdrop-filter: blur(10px);
 }
 
 .up-error-actions-btn {
@@ -1110,9 +1098,9 @@
   justify-content: center;
   align-items: center;
   min-width: var(--comp-btn-min-width);
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-xs) var(--space-lg);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.08);
   color: var(--player-text);
   font-family: inherit;
@@ -1150,10 +1138,7 @@
 
 /* 移动端错误操作条：缩小 padding/字号，按钮只显图标以避免挤压 */
 .up-platform-mobile .up-error-actions {
-  bottom: var(--space-xl);
   gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-md);
 }
 
 .up-platform-mobile .up-error-actions-btn {
@@ -1170,9 +1155,7 @@
 
 /* 电视端错误操作条：放大触控区域，文字字号放大适配远距离观看 */
 .up-platform-tv .up-error-actions {
-  bottom: var(--space-3xl);
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
 }
 
 .up-platform-tv .up-error-actions-btn {
@@ -1232,13 +1215,32 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: var(--space-3xl);
-  height: var(--space-3xl);
+  width: clamp(3rem, 3rem + 1.5vw, 6rem);
+  height: clamp(3rem, 3rem + 1.5vw, 6rem);
   border: none;
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
   transition: transform 0.2s;
+}
+
+.up-player-play-button--click {
+  animation: up-play-click 0.3s ease-out forwards;
+}
+
+@keyframes up-play-click {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
 }
 
 .up-player-play-button:hover {

@@ -20,6 +20,11 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
     }
   }, [isOpen, onPopoverChange]);
 
+  const handlePopoverClick = useCallback((e: React.MouseEvent) => {
+    // 点击弹出菜单内部时不关闭菜单
+    e.stopPropagation();
+  }, []);
+
   return (
     <div
       className="up-popover-control up-more-menu"
@@ -27,14 +32,13 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
       onMouseLeave={() => onPopoverChange(null)}
     >
       <button
-        className="up-control-btn"
         title="更多"
         onTouchStart={handleButtonTouch}
       >
         <MoreVertical size={20} />
       </button>
       {isOpen && (
-        <div className="up-popover up-more-popover">
+        <div className="up-popover up-more-popover" onClick={handlePopoverClick}>
           {children}
         </div>
       )}
