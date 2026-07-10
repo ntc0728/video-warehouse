@@ -6,7 +6,7 @@
  *
  * 7 客户端 · 3 主题感知
  */
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
@@ -66,11 +66,13 @@ export default function HomePage() {
 
   // 历史记录：用于 Banner 中显示"继续播放"
   const history = useUserStore((s) => s.history);
-  const historyMap = useRef(new Map<string, typeof history[0]>());
-  historyMap.current.clear();
-  for (const h of history) {
-    if (h.progress > 0) historyMap.current.set(String(h.videoId), h);
-  }
+  const historyMap = useMemo(() => {
+    const map = new Map<string, (typeof history)[0]>();
+    for (const h of history) {
+      if (h.progress > 0) map.set(String(h.videoId), h);
+    }
+    return map;
+  }, [history]);
 
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
@@ -184,7 +186,7 @@ export default function HomePage() {
         items={trending}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
-        historyMap={historyMap.current}
+        historyMap={historyMap}
       />
       <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
       <div className="home-rows page-padding">
