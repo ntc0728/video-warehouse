@@ -50,7 +50,7 @@
 }
 
 /* ── 页面统一左右内边距 ─────────────────────────────────
-   所有页面继承 var(--space-sm) 水平 padding，
+   所有页面通过 .page-padding 继承 var(--space-sm) 水平 padding，
    Player / IPTVPlayer 因 position:fixed 或 height:100%
    脱离文档流，不受影响。StickyHeader 在 .app-shell__scroll
    外部，不受此规则约束。 */

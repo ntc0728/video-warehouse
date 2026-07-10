@@ -344,12 +344,12 @@ export default function DetailPage() {
   }, [id]);
 
   // ── Loading ──────────────────────────────────
-  if (tmdbLoading) return <div className="detail-page detail-page--loading"><AppLoading /></div>;
+  if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading"><AppLoading /></div>;
 
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
     return (
-      <div className="detail-page">
+      <div className="page-padding detail-page">
         <div className="detail-not-found">
           <AlertTriangle size={48} />
           <span>{tmdbError || '影片不存在'}</span>
@@ -359,7 +359,7 @@ export default function DetailPage() {
   }
 
   return (
-    <div className="detail-page" key={id}>
+    <div className="page-padding detail-page" key={id}>
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}
@@ -478,7 +478,7 @@ export default function DetailPage() {
           ]).map((tab) => (
             <button
               key={tab.key}
-              className={`detail-tab ${activeTab === tab.key ? 'detail-tab--active' : ''}`}
+              className={`tab-underline detail-tab ${activeTab === tab.key ? 'tab-underline--active detail-tab--active' : ''}`}
               onClick={() => {
                 visitedTabsRef.current.add(tab.key);
                 setActiveTab(tab.key);

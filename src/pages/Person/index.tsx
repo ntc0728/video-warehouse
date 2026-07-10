@@ -49,6 +49,7 @@ export default function PersonPage() {
   const [activeTab, setActiveTab] = useState<Tab>('movies');
   const [bioExpanded, setBioExpanded] = useState(false);
   const [bioClamped, setBioClamped] = useState(false);
+  const [hasExpanded, setHasExpanded] = useState(false);
   const bioRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -97,10 +98,10 @@ export default function PersonPage() {
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);
 
-  if (loading) return <div className="person-page"><AppLoading /></div>;
+  if (loading) return <div className="page-padding person-page"><AppLoading /></div>;
   if (error || !person) {
     return (
-      <div className="person-page">
+      <div className="page-padding person-page">
         <div className="person-not-found">
           <AlertTriangle size={48} />
           <span>{error || '人物不存在'}</span>
@@ -118,7 +119,7 @@ export default function PersonPage() {
     : null;
 
   return (
-    <div className="person-page">
+    <div className="page-padding person-page">
       {/* Hero */}
       <section className="person-hero">
         <div className="person-hero-gradient" />
@@ -146,8 +147,8 @@ export default function PersonPage() {
             {person.biography && (
               <div className={`person-bio-wrap${bioExpanded ? ' person-bio-wrap--expanded' : ''}`}>
                 <p ref={bioRef} className="person-bio">{person.biography}</p>
-                {(bioClamped || bioExpanded) && (
-                  <button className="person-bio-toggle" onClick={() => setBioExpanded(!bioExpanded)}>
+                {(bioClamped || bioExpanded || hasExpanded) && (
+                  <button className="person-bio-toggle" onClick={() => { setHasExpanded(true); setBioExpanded(!bioExpanded); }}>
                     {bioExpanded ? <><ChevronUp size={14} /> 收起</> : <><ChevronDown size={14} /> 展开</>}
                   </button>
                 )}
@@ -160,12 +161,12 @@ export default function PersonPage() {
       {/* Tab 导航 */}
       <div className="person-tabs">
         {movies.length > 0 && (
-          <button className={`person-tab ${activeTab === 'movies' ? 'person-tab--active' : ''}`} onClick={() => setActiveTab('movies')}>
+          <button className={`tab-underline person-tab ${activeTab === 'movies' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => setActiveTab('movies')}>
             电影（{movies.length}）
           </button>
         )}
         {tvShows.length > 0 && (
-          <button className={`person-tab ${activeTab === 'tv' ? 'person-tab--active' : ''}`} onClick={() => setActiveTab('tv')}>
+          <button className={`tab-underline person-tab ${activeTab === 'tv' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => setActiveTab('tv')}>
             剧集（{tvShows.length}）
           </button>
         )}

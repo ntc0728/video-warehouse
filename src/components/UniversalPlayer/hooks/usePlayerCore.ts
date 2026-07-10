@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { usePlayerStore, useSettingsStore } from '@/stores';
+import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
@@ -7,7 +7,8 @@ import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
 import type { SourceType } from '@/types/video';
 import type { AudioTrack } from '../adapters/PlayerAdapter';
-import { getHistory } from '@/services/database';
+import { useSkipLogic } from './useSkipLogic';
+import { useProgressRestore } from './useProgressRestore';
 
 interface UsePlayerCoreOptions {
   url: string;
@@ -36,14 +37,15 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adapterRef = useRef<IPlayerAdapter | null>(null);
-  const hasSkippedIntroRef = useRef(false);
-  const hasSkippedOutroRef = useRef(false);
   const togglePlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
   const setCurrentLevel = usePlayerStore(s => s.setCurrentLevel);
   const setLevels = usePlayerStore(s => s.setLevels);
+
+  const { checkSkipIntro, checkSkipOutro, reset: resetSkip } = useSkipLogic({ onSkipIntro, onSkipOutro, onEnded });
+  const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, skipHistory });
 
   const initAdapter = useCallback(() => {
     if (adapterRef.current) {
@@ -76,25 +78,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
   }, [url, type, decoderMode, onError, setLevels]);
 
-  const loadProgress = useCallback(async () => {
-    if (!videoId || !videoRef.current || skipHistory) return;
-    try {
-      const history = await getHistory();
-      // 优先按 episodeUrl 精确匹配，回退到 vodId，最后回退到 videoId
-      const videoHistory = episodeUrl
-        ? history.find((h) => h.episodeUrl === episodeUrl)
-        : vodId
-          ? history.find((h) => h.vodId === vodId)
-          : history.find((h) => h.videoId === videoId);
-      const video = videoRef.current;
-      if (videoHistory && videoHistory.progress > 0 && video.duration && isFinite(video.duration)) {
-        video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
-      }
-    } catch (err) {
-      console.error('Failed to load progress:', err);
-    }
-  }, [videoId, vodId, episodeUrl, skipHistory]);
-
   const prevTypeRef = useRef<SourceType | null>(null);
   const pendingHotSwitchRef = useRef(false);
 
@@ -115,9 +98,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       video.pause();
     }
 
-    // 重置跳过标记，避免新视频继承旧视频的跳过状态
-    hasSkippedIntroRef.current = false;
-    hasSkippedOutroRef.current = false;
+    // 重置跳过标记
+    resetSkip();
 
     // 切换视频源时重置进度，避免显示上一集的时间
     const store = usePlayerStore.getState();
@@ -162,28 +144,11 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       const dur = video.duration;
       if (dur > 0) {
         const s = getStore();
-        
-        // 跳过片头：如果启用且当前时间在片头范围内，跳转到片头结束位置
-        // 使用 hasSkippedIntroRef 防止反复触发 seek 导致抖动
-        const settings = useSettingsStore.getState();
-        if (settings.skipIntro && !hasSkippedIntroRef.current && ct < settings.skipIntroDuration && ct > 0.5) {
-          hasSkippedIntroRef.current = true;
-          video.currentTime = settings.skipIntroDuration;
-          onSkipIntro?.();
-          return;
-        }
-        
-        // 跳过片尾：如果启用且当前时间接近视频结尾，触发结束
-        // 使用 hasSkippedOutroRef 防止重复触发，并显式同步 isPlaying 状态
-        if (settings.skipOutro && !hasSkippedOutroRef.current && ct > dur - settings.skipOutroDuration && ct < dur - 1) {
-          hasSkippedOutroRef.current = true;
-          video.pause();
-          s.setPlaying(false);
-          onSkipOutro?.();
-          onEnded?.();
-          return;
-        }
-        
+
+        // 跳过片头/片尾
+        if (checkSkipIntro(video)) return;
+        if (checkSkipOutro(video)) return;
+
         s.setProgress(ct);
         s.setDuration(dur);
         onProgress?.(ct, dur);
@@ -199,7 +164,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (dur > 0 && isFinite(dur)) {
         getStore().setDuration(dur);
       }
-      loadProgress();
+      loadProgress(videoRef);
     };
 
     // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源

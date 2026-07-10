@@ -28,12 +28,16 @@ describe('searchVideoSeasonsFromSingleSource', () => {
         {
           vod_id: 10740,
           vod_name: '超人前传第一季',
+          type_id: 16,
+          type_id_1: 2,
           vod_play_from: 'dytt$$$dyttm3u8',
           vod_play_url: '第01集$https://example.com/s1e1.mp4#第02集$https://example.com/s1e2.mp4',
         },
         {
           vod_id: 10741,
           vod_name: '超人前传第二季',
+          type_id: 16,
+          type_id_1: 2,
           vod_play_from: 'dytt$$$dyttm3u8',
           vod_play_url: '第01集$https://example.com/s2e1.mp4#第02集$https://example.com/s2e2.mp4',
         },
@@ -59,6 +63,8 @@ describe('searchVideoSeasonsFromSingleSource', () => {
         {
           vod_id: 100,
           vod_name: '超人前传',
+          type_id: 16,
+          type_id_1: 2,
           vod_play_from: 'dytt',
           vod_play_url: '第01集$https://example.com/e1.mp4',
         },

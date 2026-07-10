@@ -11,7 +11,6 @@ export default function PiPButton({ isPiP, onClick }: PiPButtonProps) {
 
   return (
     <button
-      className={`up-control-btn ${isPiP ? 'up-control-btn-active' : ''}`}
       onClick={onClick}
       title="画中画 (P)"
       aria-label={isPiP ? '退出画中画' : '画中画'}

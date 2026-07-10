@@ -17,6 +17,7 @@
   display: flex;
   flex-direction: column;
   min-height: clamp(18rem, 16rem + 10vw, 28rem);
+  margin: 0 calc(-1 * var(--space-sm));
   background: rgba(0, 0, 0, 0.92);
   overflow: hidden;
 }
@@ -130,6 +131,8 @@
 
 .person-bio-wrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .person-bio-wrap:not(.person-bio-wrap--expanded) .person-bio {
@@ -184,27 +187,15 @@
 }
 
 .person-tab {
-  position: relative;
-  padding: var(--space-sm) var(--space-lg);
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  transition: color 0.25s, border-color 0.25s;
-  cursor: pointer;
+  /* 基类 .tab-underline 已定义通用样式，此处仅保留 Person 页特有差异（如有） */
 }
 
 .person-tab:hover {
-  color: var(--color-text);
+  /* 基类已定义 */
 }
 
 .person-tab--active {
-  color: var(--color-text);
-  border-bottom-color: var(--color-primary);
-  font-weight: 700;
+  /* 基类已定义 */
 }
 
 /* ── 作品列表 ──────────────────────────────────── */
@@ -217,7 +208,6 @@
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
   gap: var(--space-sm);
-  padding: 0 var(--space-sm);
 }
 
 .person-work-card {
@@ -244,10 +234,12 @@
   .person-hero-content {
     display: flex;
     flex-direction: column;
+    gap: var(--space-sm);
     justify-content: center;
     align-items: center;
     min-height: auto;
-    padding: var(--space-lg) var(--space-md);
+    margin-top: var(--space-sm);
+    padding: 0 var(--space-md) var(--space-lg) var(--space-md);
   }
 
   .person-info {
@@ -266,7 +258,11 @@
   }
 
   .person-bio {
-    text-align: center;
+    text-align: left;
+  }
+
+  .person-bio-toggle {
+    align-self: flex-end;
   }
 
   .person-work-grid {

@@ -35,7 +35,7 @@ export default function SpeedControl({ currentRate, onChange, activePopover, onP
       onMouseLeave={() => onPopoverChange(null)}
     >
       <button
-        className="up-control-btn up-speed-btn"
+        className="up-speed-btn"
         title="倍速"
         onTouchStart={handleButtonTouch}
         aria-label="播放速度"

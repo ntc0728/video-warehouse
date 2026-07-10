@@ -77,7 +77,7 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .search-box-wrap--iptv {
+  .record-search-box {
     flex: 1 1 auto;
     min-width: 0;
     max-width: none;

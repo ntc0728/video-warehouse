@@ -12,6 +12,8 @@ const makeVideo = (title: string, episodeCount: number): Video => ({
   sources: [],
   episodes: Array.from({ length: episodeCount }, (_, i) => ({
     id: `ep-${i + 1}`,
+    vodId: `vod-${i + 1}`,
+    url: `https://example.com/e${i + 1}.m3u8`,
     title: `第${i + 1}集`,
     number: i + 1,
     sources: [],

@@ -1,15 +1,6 @@
 .settings-page {
   padding-top: var(--space-xs);
-  padding-right: var(--space-sm);
-  padding-left: var(--space-sm);
   overflow-x: hidden;
-}
-
-@media (width >= 768px) {
-  .settings-page {
-    padding-right: var(--space-sm);
-    padding-left: var(--space-sm);
-  }
 }
 
 .settings-page .group {
@@ -52,7 +43,6 @@
   font-size: var(--text-base);
   cursor: pointer;
   outline: none;
-  box-sizing: border-box;
 }
 
 .source-select:focus {
@@ -127,7 +117,6 @@
   border-radius: var(--radius-sm);
   background: var(--color-input-bg);
   color: var(--color-text);
-  box-sizing: border-box;
 }
 
 .setting-modal-actions {

@@ -27,9 +27,9 @@ import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
 import type { EPGProgram } from '@/services/epgService';
 import { Rewind, FastForward, X } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
+import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
-import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { SourceType } from '@/types/video';
 
 const VOLUME_POPUP_DELAY = 3000;
@@ -111,7 +111,6 @@ export default function UniversalPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const volumePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasError, setHasError] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -121,6 +120,7 @@ export default function UniversalPlayer({
   const [programGuideChannelName, setProgramGuideChannelName] = useState('');
   const [timeshiftSupported, setTimeshiftSupported] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [playClickAnim, setPlayClickAnim] = useState(false);
 
   const {
     decoderMode, isControlsVisible, isChannelListVisible,
@@ -333,92 +333,15 @@ retryCount,
     onToggleChannelList: () => setChannelListVisible(!isChannelListVisible),
   });
 
-  // 从 URL 初始化 IPTV 频道
-  useEffect(() => {
-    if (mode !== 'iptv' || !url || _channels.length === 0) return;
+  // IPTV 频道初始化
+  useIPTVChannelInit({
+    mode, url, channels: _channels, groups, channelName,
+    setCurrentChannelId, setCurrentChannelName,
+    setCurrentUrl, setCurrentType,
+    setTvFocusGroupIndex, setTvFocusChannelIndex,
+  });
 
-    // 从 URL 参数中提取频道 ID、名称和播放 URL
-    let urlId = '';
-    let urlName = '';
-    let lookupUrl = url;
-    try {
-      const sp = new URLSearchParams(url);
-      urlId = sp.get('id') || '';
-      urlName = sp.get('name') || '';
-      const rawUrl = sp.get('url');
-      if (rawUrl) lookupUrl = decodeURIComponent(rawUrl);
-    } catch {
-      // url 可能是标准 URL 格式，尝试从 query 中提取
-      try {
-        const parsed = new URL(url);
-        const urlMatch = parsed.search.match(/[?&]url=([^&]*)/);
-        if (urlMatch) lookupUrl = urlMatch[1];
-      } catch { /* use as-is */ }
-    }
-
-    // 优先用频道 ID 精确匹配
-    if (urlId) {
-      const matched = _channels.find(ch => ch.id === urlId);
-      if (matched) {
-        setCurrentChannelId(matched.id);
-        setCurrentChannelName(matched.name);
-        const { proxyUrl: pUrl, proxyPattern: pPattern } = useIPTVStore.getState().settings;
-        const useProxy = shouldProxy(matched.url, pUrl, pPattern);
-        setCurrentUrl(useProxy ? buildProxyUrl(matched.url, pUrl) : matched.url);
-        setCurrentType(detectVideoSourceType(matched.url));
-        for (let g = 0; g < groups.length; g++) {
-          const chIndex = groups[g].channels.findIndex(ch => ch.id === matched.id);
-          if (chIndex >= 0) {
-            setTvFocusGroupIndex(g);
-            setTvFocusChannelIndex(chIndex);
-            break;
-          }
-        }
-        return;
-      }
-    }
-
-    // URL 匹配
-    const matched = _channels.find(ch => {
-      if (ch.url === lookupUrl) return true;
-      try { if (decodeURIComponent(ch.url) === lookupUrl) return true; } catch { /* decode failed */ }
-      try { if (ch.url === decodeURIComponent(lookupUrl)) return true; } catch { /* decode failed */ }
-      try { if (encodeURIComponent(ch.url) === lookupUrl) return true; } catch { /* encode failed */ }
-      try { if (ch.url === encodeURIComponent(lookupUrl)) return true; } catch { /* encode failed */ }
-      return false;
-    });
-    const targetUrl = matched ? matched.url : lookupUrl;
-
-    const { proxyUrl: pUrl, proxyPattern: pPattern } = useIPTVStore.getState().settings;
-    const useProxy = shouldProxy(targetUrl, pUrl, pPattern);
-    const playUrl = useProxy
-      ? buildProxyUrl(targetUrl, pUrl)
-      : targetUrl;
-
-    setCurrentUrl(playUrl);
-    setCurrentType(detectVideoSourceType(targetUrl));
-
-    if (matched) {
-      setCurrentChannelId(matched.id);
-      setCurrentChannelName(matched.name);
-      for (let g = 0; g < groups.length; g++) {
-        const chIndex = groups[g].channels.findIndex(ch => ch.id === matched.id);
-        if (chIndex >= 0) {
-          setTvFocusGroupIndex(g);
-          setTvFocusChannelIndex(chIndex);
-          break;
-        }
-      }
-    } else if (urlName) {
-      const byName = _channels.find(ch => ch.name === urlName);
-      if (byName) {
-        setCurrentChannelId(byName.id);
-        setCurrentChannelName(byName.name);
-      }
-    }
-  }, [url, _channels, groups, mode, setCurrentChannelId, setCurrentChannelName, setCurrentType, setCurrentUrl, setTvFocusGroupIndex, setTvFocusChannelIndex]);
-
-  // URL 匹配失败时的兜底：用 channelName prop 反查频道，确保 currentChannelId 被设置
+  // URL 匹配失败时的兜底：用 channelName prop 反查频道
   useEffect(() => {
     if (mode !== 'iptv' || currentChannelId || _channels.length === 0 || !channelName) return;
     const fallback = _channels.find(ch => ch.name === channelName);
@@ -448,64 +371,14 @@ retryCount,
   }, [mode, currentType, playerCore]);
 
   // 缓冲检测
-  useEffect(() => {
-    const video = videoElementRef.current;
-    if (!video) return;
-    const store = usePlayerStore.getState;
-    const onWaiting = () => store().setBuffering(true);
-    const onPlaying = () => store().setBuffering(false);
-    const onCanPlay = () => store().setBuffering(false);
-    video.addEventListener('waiting', onWaiting);
-    video.addEventListener('playing', onPlaying);
-    video.addEventListener('canplay', onCanPlay);
-    return () => {
-      video.removeEventListener('waiting', onWaiting);
-      video.removeEventListener('playing', onPlaying);
-      video.removeEventListener('canplay', onCanPlay);
-    };
-  }, [currentUrl]);
+  useBufferMonitor(videoElementRef, currentUrl);
 
-  const handlePlayerClick = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('.up-control-bar') || target.closest('.up-player-header') || target.closest('.up-channel-list-overlay') || target.closest('.iptv-osd-bar') || target.closest('.iptv-volume-popup')) {
-      return;
-    }
-
-    // IPTV 模式：单击显示 OSD 控制栏，频道列表通过按钮触发
-    if (mode === 'iptv') {
-      showControls();
-      return;
-    }
-
-    // 长按快进快退后不触发单击
-    if (hasLongPressedRef.current) {
-      hasLongPressedRef.current = false;
-      return;
-    }
-
-    // 控制栏隐藏时，单击仅显示控制栏，不切换播放/暂停
-    if (!isControlsVisible) {
-      showControls();
-      return;
-    }
-
-    // 缓冲中不响应暂停/播放切换
-    if (isBuffering) return;
-
-    // 双击切换全屏
-    if (clickTimerRef.current) {
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      handleToggleFullscreen();
-    } else {
-      // 单击：切换播放/暂停 + 显示控制栏
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null;
-        playerCore.togglePlay();
-        showControls();
-      }, 250);
-    }
-  }, [mode, isControlsVisible, isBuffering, playerCore, showControls, handleToggleFullscreen, hasLongPressedRef]);
+  // 点击处理
+  const { handlePlayerClick, clickTimerRef } = usePlayerClickHandler({
+    mode, hasError, isControlsVisible,
+    hasLongPressedRef, videoElementRef, containerRef,
+    showControls, togglePlay: () => playerCore.togglePlay(),
+  });
 
   const handleOpenProgramGuide = useCallback(async () => {
     if (!currentChannelId) return;
@@ -651,6 +524,7 @@ retryCount,
 
   // 清理定时器
   useEffect(() => {
+    const clickTimer = clickTimerRef.current;
     return () => {
       if (autoHideTimerRef.current) {
         clearTimeout(autoHideTimerRef.current);
@@ -658,10 +532,12 @@ retryCount,
       if (volumePopupTimerRef.current) {
         clearTimeout(volumePopupTimerRef.current);
       }
-      if (clickTimerRef.current) {
-        clearTimeout(clickTimerRef.current);
+      if (clickTimer) {
+        clearTimeout(clickTimer);
       }
     };
+    // clickTimerRef 是 ref，引用稳定
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoHideTimerRef]);
 
   // URL 或频道变化时重置错误状态
@@ -746,10 +622,14 @@ retryCount,
           className="up-player-paused-overlay"
           onClick={(e) => {
             e.stopPropagation();
-            playerCore.play();
+            setPlayClickAnim(true);
+            setTimeout(() => {
+              setPlayClickAnim(false);
+              playerCore.play();
+            }, 300);
           }}
         >
-          <div className="up-player-play-button">
+          <div className={`up-player-play-button${playClickAnim ? ' up-player-play-button--click' : ''}`}>
             <svg viewBox="0 0 80 80" className="up-player-play-icon" aria-hidden="true">
               <circle cx="40" cy="40" r="38" />
               <polygon points="28,24 28,56 58,40" />
@@ -825,9 +705,6 @@ retryCount,
           onLevelChange={playerCore.switchLevel}
           activePopover={activePopover}
           onPopoverChange={setActivePopover}
-          sources={sources}
-          currentSourceIndex={sources?.findIndex(s => s.url === (currentUrl || url)) ?? -1}
-          onSourceSwitch={(index) => handleSourceSwitch(index, mode, currentChannel, _channels, sources)}
           hasPrevEpisode={hasPrevEpisode}
           hasNextEpisode={hasNextEpisode}
           onPrevEpisode={onPrevEpisode}

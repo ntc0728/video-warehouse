@@ -32,13 +32,25 @@ interface UserState {
   _initialized: boolean;
   _loading: boolean;
 
-  addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number }) => void;
+  addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number; sourceIndex?: number }) => void;
   removeCollection: (videoId: string) => void;
   clearCollections: () => void;
   isCollected: (videoId: string) => boolean;
 
   addHistory: (record: Omit<HistoryRecord, 'id' | 'updatedAt'>) => void;
-  updateHistoryProgress: (videoId: string, progress: number, duration: number, title?: string, cover?: string, backdrop?: string, cmsSourceId?: string, cmsSourceName?: string, episodeLabel?: string, vodId?: string, episodeUrl?: string) => void;
+  updateHistoryProgress: (params: {
+    videoId: string;
+    progress: number;
+    duration: number;
+    title?: string;
+    cover?: string;
+    backdrop?: string;
+    cmsSourceId?: string;
+    cmsSourceName?: string;
+    episodeLabel?: string;
+    vodId?: string;
+    episodeUrl?: string;
+  }) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
@@ -99,17 +111,21 @@ export const useUserStore = create<UserState>()((set, get) => ({
   _loadFromDB: async () => {
     if (get()._initialized) return;
 
-    // 先迁移旧数据
-    await migrateFromLocalStorage();
+    try {
+      await migrateFromLocalStorage();
 
-    // 从 IndexedDB 加载
-    const [collections, history, ratings] = await Promise.all([
-      getCollections(),
-      getHistory(),
-      getRatings(),
-    ]);
+      const [collections, history, ratings] = await Promise.all([
+        getCollections(),
+        getHistory(),
+        getRatings(),
+      ]);
 
-    set({ collections, history, ratings, _initialized: true, _loading: false });
+      set({ collections, history, ratings, _initialized: true, _loading: false });
+    } catch (err) {
+      console.error('Failed to load user data from IndexedDB:', err);
+      // 允许重试：不清除 _initialized 标记
+      set({ _loading: false });
+    }
   },
 
   /**
@@ -128,6 +144,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       type: meta?.type,
       year: meta?.year,
       rating: meta?.rating,
+      sourceIndex: meta?.sourceIndex,
     };
 
     // 写入内存
@@ -203,8 +220,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }
   },
 
-  updateHistoryProgress: (videoId, progress, duration, title, cover, backdrop, cmsSourceId, cmsSourceName, episodeLabel, vodId, episodeUrl) => {
-    get().addHistory({ videoId, progress, duration, title, cover, backdrop, cmsSourceId, cmsSourceName, episodeLabel, vodId, episodeUrl });
+  updateHistoryProgress: (params) => {
+    get().addHistory(params);
   },
 
   getHistoryByVideo: (videoId) =>

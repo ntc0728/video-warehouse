@@ -31,7 +31,6 @@ export default function LoopButton({ mode, onChange }: LoopButtonProps) {
 
   return (
     <button
-      className={`up-control-btn ${mode !== 'none' ? 'up-control-btn-active' : ''}`}
       onClick={handleClick}
       title={`${label} (L)`}
       aria-label={label}

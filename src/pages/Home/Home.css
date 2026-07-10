@@ -12,14 +12,19 @@
   width: 100%;
   min-width: 0;
   background-color: var(--color-background);
-  box-sizing: border-box;
 }
 
 /* ── Rows container ──────────────────────────────────── */
 
+/* 首页特殊处理：不需要 page-padding 的 padding，
+   hero 全宽 + rows 自管间距 */
+.page-padding.home-page {
+  padding: 0;
+}
+
 .home-rows {
-  padding: 0 var(--space-sm);
   padding-top: var(--space-md);
+  padding-bottom: 0;
 }
 
 

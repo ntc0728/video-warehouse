@@ -60,6 +60,7 @@
   flex-shrink: 0;
   gap: var(--space-sm);
   align-items: center;
+  margin-right: auto;
 }
 
 .sticky-header__right {
@@ -67,6 +68,7 @@
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
+  margin-left: auto;
 }
 
 /* ── Logo ──────────────────────────────────────────── */
@@ -278,9 +280,6 @@
 }
   .sticky-header__center .search-box-wrap--header {
   max-width: 94%;
-}
-  .sticky-header__right {
-  margin-left: auto;
 }
   .sticky-header__inner {
   gap: var(--space-2xs);

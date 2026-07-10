@@ -203,6 +203,29 @@ describe('BandwidthEstimator', () => {
     estimator.reset();
     expect(estimator.estimate()).toBe(0);
   });
+
+  it('U2.18 getConfidence() 初始为 none', () => {
+    expect(estimator.getConfidence()).toBe('none');
+  });
+
+  it('U2.19 getConfidence() adapter 值有效时为 high', () => {
+    estimator.setAdapterValue(5_000_000);
+    expect(estimator.getConfidence()).toBe('high');
+  });
+
+  it('U2.20 getConfidence() adapter 陈旧时降级为 medium（有 PO 样本）', () => {
+    estimator.setAdapterValue(5_000_000);
+    nowMs += 4000;
+    estimator.recordBufferedDelta(1_000_000, 1);
+    expect(estimator.getConfidence()).toBe('medium');
+  });
+
+  it('U2.21 getConfidence() reset 后为 none', () => {
+    estimator.setAdapterValue(5_000_000);
+    estimator.recordBufferedDelta(1_000_000, 1);
+    estimator.reset();
+    expect(estimator.getConfidence()).toBe('none');
+  });
 });
 
 /* ─── PerformanceObserver 集成测试 ──────────────────────────── */

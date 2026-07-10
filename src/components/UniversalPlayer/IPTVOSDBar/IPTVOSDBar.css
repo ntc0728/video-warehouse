@@ -19,7 +19,6 @@
   transform: translateX(-50%);
   transition: opacity 200ms ease, transform 200ms ease;
   backdrop-filter: blur(12px);
-  box-sizing: border-box;
 }
 
 .iptv-osd-visible {

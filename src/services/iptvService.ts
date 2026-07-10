@@ -7,19 +7,10 @@
  * 原因：避免与 types/video.ts 中的 SourceType（'mp4' | 'm3u8' | 'dash' | 'pan'）冲突
  */
 import type { IPTVChannel, IPTVSettings } from '@/types/iptv';
+import { PlaylistSourceType } from '@/types/iptv';
 import { getText } from './httpClient';
 
-/**
- * IPTV 源类型枚举
- * SINGLE_STREAM: 单流（如单个直播地址）
- * MULTI_CHANNEL: 多频道（M3U 播放列表包含多个频道）
- * UNKNOWN: 未知类型
- */
-export enum PlaylistSourceType {
-  SINGLE_STREAM = 'single',
-  MULTI_CHANNEL = 'multi',
-  UNKNOWN = 'unknown',
-}
+export { PlaylistSourceType } from '@/types/iptv';
 
 export interface SourceAnalysis {
   type: PlaylistSourceType;
@@ -132,6 +123,7 @@ export function detectTimeshiftSupport(url: string, type: string): boolean {
 export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
   channels: IPTVChannel[];
   sourceType: PlaylistSourceType;
+  sourceErrors: Array<{ index: number; url: string; error: string }>;
 }> {
   const urls = settings?.aggregatorUrls?.length
     ? settings.aggregatorUrls
@@ -161,14 +153,22 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   );
 
   const allChannels: IPTVChannel[] = [];
+  const sourceErrors: Array<{ index: number; url: string; error: string }> = [];
   let sourceType = PlaylistSourceType.UNKNOWN;
 
-  for (const result of results) {
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
     if (result.status === 'fulfilled') {
       allChannels.push(...result.value);
       if (result.value.length > 0 && sourceType === PlaylistSourceType.UNKNOWN) {
         sourceType = PlaylistSourceType.MULTI_CHANNEL;
       }
+    } else {
+      sourceErrors.push({
+        index: i,
+        url: urls[i],
+        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      });
     }
   }
 
@@ -184,6 +184,7 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   return {
     channels: uniqueChannels,
     sourceType,
+    sourceErrors,
   };
 }
 

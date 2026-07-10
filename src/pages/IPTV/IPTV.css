@@ -4,9 +4,7 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 100%;
-  padding: 0 var(--space-sm);
   background-color: var(--color-background);
-  box-sizing: border-box;
 }
 
 /* IPTV 页 load-more-hint 改回绝对定位，贴 .iptv-page 底部 */
@@ -277,12 +275,17 @@
   gap: var(--space-xs);
 }
 
+.iptv-source-filter.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .source-tag {
   height: var(--comp-tab-height);
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background-color: var(--color-tag-bg);
+  background-color: var(--color-tag-bg, #f5f5f5);
   box-shadow: 0 0 0 0 transparent;
   color: var(--color-text);
   font-size: var(--text-sm);
@@ -555,8 +558,9 @@
 /* ── 刷新时的内容加载态 ──────────────────────────── */
 .iptv-content-loading {
   display: flex;
+  flex: 1;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 50vh;
+  min-height: var(--layout-loading-min-height);
 }

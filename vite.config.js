@@ -1,6 +1,16 @@
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import viteCompression from 'vite-plugin-compression';
 /**
  * Vite 构建配置
  *
@@ -16,7 +26,12 @@ import path from 'path';
  * - Web 端保持 base='/'，部署到 Cloudflare Pages / 任何静态服务器不受影响
  */
 export default defineConfig({
-    plugins: [react()],
+    plugins: __spreadArray([
+        react()
+    ], (process.env.CAPACITOR === 'true' ? [] : [
+        viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
+        viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+    ]), true),
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -32,6 +47,30 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: false,
+        // 使用 terser 替代 esbuild，支持更激进的混淆压缩
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                passes: 3,
+                pure_getters: true,
+                unsafe_arrows: true,
+                unsafe_methods: true,
+                toplevel: true,
+                drop_console: true,
+                drop_debugger: true,
+                ecma: 2020,
+            },
+            mangle: {
+                toplevel: true,
+                module: true,
+                properties: false,
+            },
+            format: {
+                comments: false,
+                ecma: 2020,
+            },
+            ecma: 2020,
+        },
         // 启用 CSS 代码分割（按页面 chunk 自动拆分 CSS）
         cssCodeSplit: true,
         // 输出目标：es2020 触发 Vite 自动注入 modulepreload + 减小 JS 体积

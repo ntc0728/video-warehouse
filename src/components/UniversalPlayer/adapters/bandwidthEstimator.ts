@@ -146,6 +146,20 @@ export class BandwidthEstimator {
     return 0;
   }
 
+  /** 返回当前带宽估算的置信度等级 */
+  getConfidence(): 'high' | 'medium' | 'low' | 'none' {
+    if (this.adapterValue > 0 && Date.now() - this.adapterValueAt <= ADAPTER_VALUE_TTL_MS) {
+      return 'high';
+    }
+    const now = Date.now();
+    this.evict(this.poSamples, now);
+    this.evict(this.bufferedSamples, now);
+    if (this.poSamples.length > 0 || this.bufferedSamples.length > 0) {
+      return 'medium';
+    }
+    return 'none';
+  }
+
   /* ─── 内部方法 ─────────────────────────────────────────── */
 
   private processResourceEntry(e: PerformanceResourceTiming): void {

@@ -6,7 +6,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord } from '@/types/iptv';
-import { fetchAndParsePlaylist, checkChannelsAvailability, PlaylistSourceType } from '@/services/iptvService';
+import { fetchAndParsePlaylist, checkChannelsAvailability } from '@/services/iptvService';
+import { PlaylistSourceType } from '@/types/iptv';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
 
 interface IPTVState {
@@ -22,6 +23,7 @@ interface IPTVState {
   isCheckingAvailability: boolean;
   availabilityProgress: { checked: number; total: number } | null;
   sourceType: PlaylistSourceType;
+  sourceErrors: Array<{ index: number; url: string; error: string }>;
   playHistory: IPTVPlayRecord[];
   favoriteChannelIds: string[];
   _abortController: AbortController | null;
@@ -74,6 +76,7 @@ export const useIPTVStore = create<IPTVState>()(
       isCheckingAvailability: false,
       availabilityProgress: null,
       sourceType: PlaylistSourceType.UNKNOWN,
+      sourceErrors: [],
       playHistory: [],
       favoriteChannelIds: [],
       _abortController: null,
@@ -122,7 +125,7 @@ export const useIPTVStore = create<IPTVState>()(
 
         try {
           const result = await fetchAndParsePlaylist(settings);
-          const { channels: rawChannels, sourceType } = result;
+          const { channels: rawChannels, sourceType, sourceErrors } = result;
 
           const channels = rawChannels.map(ch => ({
             ...ch,
@@ -151,9 +154,13 @@ export const useIPTVStore = create<IPTVState>()(
             channels,
             groups,
             sourceType,
+            sourceErrors,
             lastRefresh: Date.now(),
             loadedUrl: settings.aggregatorUrl,
             isLoading: false,
+            error: sourceErrors.length > 0
+              ? `${sourceErrors.length} 个源加载失败`
+              : null,
           });
 
           // 保存到 IndexedDB 缓存

@@ -70,8 +70,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
   }, [beginDrag]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isBuffering) return;
     updateFromEvent(e.clientX);
-  }, [updateFromEvent]);
+  }, [isBuffering, updateFromEvent]);
 
   const handleMouseUp = useCallback(() => {
     endDrag();
@@ -82,9 +83,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
   }, [beginDrag]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isBuffering) return;
     e.preventDefault();
     updateFromEvent(getClientX(e));
-  }, [updateFromEvent]);
+  }, [isBuffering, updateFromEvent]);
 
   const handleTouchEnd = useCallback(() => {
     endDrag();

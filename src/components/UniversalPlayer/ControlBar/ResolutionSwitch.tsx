@@ -58,7 +58,6 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
       onMouseLeave={() => onPopoverChange(null)}
     >
       <button
-        className="up-control-btn"
         title="画质"
         onTouchStart={handleButtonTouch}
       >

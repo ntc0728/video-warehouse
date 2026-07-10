@@ -117,10 +117,10 @@ const VideoCard = memo(function VideoCard({
       e.stopPropagation();
       setIsAnimating(true);
       if (isCollected) removeCollection(video.id);
-      else addCollection(video.id, { title: video.title, cover: video.cover, type: video.type, year: video.year, rating });
+      else addCollection(video.id, { title: video.title, cover: video.cover, type: video.type, year: video.year, rating, sourceIndex: navigateState?.sourceIndex as number | undefined });
       setTimeout(() => setIsAnimating(false), 450);
     },
-    [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating],
+    [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating, navigateState],
   );
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
