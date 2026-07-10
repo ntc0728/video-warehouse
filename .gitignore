@@ -94,3 +94,7 @@ scripts/screenshots/
 .mimocode/
 .catpaw/
 .mignore
+
+# Build outputs
+kinoTv-debug.apk
+*.apk
