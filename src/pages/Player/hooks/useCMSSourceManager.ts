@@ -357,6 +357,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           setSources([]);
           setCurrentSrc(null);
           currentSourceNameRef.current = undefined;
+          finishLoading();
         }
       }
     } catch {
@@ -473,7 +474,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         const mt = parts[0] as 'movie' | 'tv';
         const tid = parseInt(parts.slice(1).join('-'), 10);
         setTmdbMediaType(mt);
-        if (isNaN(tid)) return;
+        if (isNaN(tid)) {
+          if (!ctrl.signal.aborted) onTmdbReady?.();
+          return;
+        }
         const { fetchMovieDetail, fetchTVDetail } = await import('@/services/tmdbService');
         const detail = mt === 'tv'
           ? await fetchTVDetail(tid, { signal: ctrl.signal })
@@ -482,7 +486,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           setTmdbDetail(detail);
           onTmdbReady?.();
         }
-      } catch { /* ignore */ }
+      } catch {
+        // TMDB 请求失败时也标记就绪，避免页面永久 loading
+        if (!ctrl.signal.aborted) onTmdbReady?.();
+      }
     };
 
     loadTMDB();
