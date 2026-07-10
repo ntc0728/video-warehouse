@@ -180,7 +180,11 @@ export function useBrowseData() {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [filterSig, urlQ, filterValue, setFilter, fetchDiscover, fetchTopRated, discoverResults.length]);
+  // 注意：discoverResults.length 不作为依赖——防止加载更多后 length 变化
+  // 导致 effect 重跑、触发 reset 重拉第一页覆盖已有数据。
+  // hadOldDataRef.current 通过下方 guard 前读取最新值即可。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSig, urlQ, filterValue, setFilter, fetchDiscover, fetchTopRated]);
 
   // ── 4. 写回 URL（由调用方触发）─────────────────────
   const updateFilter = useCallback(

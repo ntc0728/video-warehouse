@@ -682,6 +682,23 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   fetchAllHomeData: async () => {
     const state = get();
+
+    // 清除上一轮遗留的错误状态，避免首页同时展示旧错误 + 新 loading
+    set((s) => ({
+      errors: {
+        ...s.errors,
+        trending: null,
+        nowPlaying: null,
+        popularMovies: null,
+        topRatedMovies: null,
+        upcomingMovies: null,
+        popularTv: null,
+        topRatedTv: null,
+        airingTodayTv: null,
+        genres: null,
+      },
+    }));
+
     // Token 预检：无效则设置全局错误并跳过所有请求（透传具体原因）
     const tokenCheck = await get().checkToken();
     if (!tokenCheck.ok) {
