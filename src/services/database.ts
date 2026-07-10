@@ -236,11 +236,12 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
 
 // ── 收藏操作 ──────────────────────────────────────────────
 
-/** 获取所有收藏记录 */
+/** 获取所有收藏记录，按添加时间倒序排列 */
 export async function getCollections(): Promise<CollectionRecord[]> {
   try {
     const db = await getDB();
-    return db.getAll('collections');
+    const all = await db.getAll('collections');
+    return all.sort((a, b) => b.addedAt - a.addedAt);
   } catch {
     return [];
   }

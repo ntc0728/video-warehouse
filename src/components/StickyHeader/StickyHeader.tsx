@@ -31,9 +31,12 @@ const RIGHT_NAV_ITEMS: NavItem[] = [
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
 
-interface StickyHeaderProps { immersive?: boolean; onMenuToggle?: () => void; menuOpen?: boolean; }
+interface StickyHeaderProps { onMenuToggle?: () => void; menuOpen?: boolean; }
 
-export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen }: StickyHeaderProps) {
+/** 沉浸式页面路由前缀：首页、详情页、播放页 */
+const IMMERSIVE_ROUTES = ['/', '/detail', '/play', '/player'];
+
+export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const theme = useThemeMode();
   const isTV = useIsTV();
   const navigate = useNavigate();
@@ -42,6 +45,12 @@ export default function StickyHeader({ immersive = false, onMenuToggle, menuOpen
   const currentTheme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const { goHome } = useHeaderContent();
+
+  // 沉浸式模式：基于当前路由判断（不再依赖页面组件通过 setHeaderConfig 设置，
+  // 因为 Keep-Alive 模式下多个页面同时挂载会互相覆盖 immersive 值）
+  const immersive = IMMERSIVE_ROUTES.some(
+    (route) => route === '/' ? location.pathname === '/' : location.pathname.startsWith(route),
+  );
 
   const handleNavClick = useCallback((path: string) => {
     if (path === '/') {

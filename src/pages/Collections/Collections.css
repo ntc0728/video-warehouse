@@ -4,18 +4,33 @@
 
 @import '@/components/StatusTabs/FilterBar.css';
 
-/* 搜索框防抖动:直接引入关键规则,避免 @import 兼容性问题 */
-.search-box-wrap--iptv {
-  flex: 0 1 auto;
-  min-width: 10rem;
-  max-width: 16rem;
+/* ── 收藏页独立搜索框 ───────────────────────────────── */
+.record-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: var(--comp-input-min-w);
+  max-width: clamp(14rem, 30vw, 22rem);
 }
-.search-box--iptv {
-  min-height: calc(var(--text-lg) + var(--space-md) * 2);
+.record-search__field {
+  display: flex;
+  align-items: center;
+  height: var(--comp-tab-height);
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.15s ease;
 }
-.search-box__input {
+.record-search__field:focus-within {
+  border-color: var(--color-primary);
+}
+.record-search__icon {
+  flex-shrink: 0;
+  margin-right: var(--space-xs);
+  color: var(--color-text-tertiary);
+}
+.record-search__input {
   flex: 1 1 0;
   width: 0;
   min-width: 0;
@@ -26,13 +41,18 @@
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
-  font-size: inherit;
+  font-size: var(--text-sm);
   white-space: nowrap;
   overflow: hidden;
   outline: none;
   text-overflow: ellipsis;
 }
-.search-box__clear {
+.record-search__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+.record-search__clear {
+  position: absolute;
+  right: var(--space-sm);
   display: flex;
   flex-shrink: 0;
   justify-content: center;
@@ -45,6 +65,21 @@
   background: transparent;
   color: var(--color-text-tertiary);
   cursor: pointer;
+  transition: color 0.15s ease;
+}
+.record-search__clear:hover {
+  color: var(--color-text);
+}
+
+@media (width <= 767px) {
+  .record-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: clamp(10rem, 40vw, 16rem);
+  }
+  .record-filter-bar__actions {
+    justify-content: flex-end;
+  }
 }
 
 .collection-page {
@@ -53,14 +88,11 @@
   flex: 1 1 0;
   flex-direction: column;
   width: 100%;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 .collection-content {
   flex: 0 0 auto;
   min-height: auto;
-  padding: 0 var(--space-sm);
 }
 
 .collection-filter-bar {

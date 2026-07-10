@@ -434,7 +434,7 @@ export default function HistoryPage() {
 
 
   return (
-    <div className={`history-page ${batchMode ? 'batch-mode' : ''}`}>
+    <div className={`page-padding history-page ${batchMode ? 'batch-mode' : ''}`}>
       {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
       <div className="history-filter-bar record-filter-bar">
         <div className="record-filter-bar__left">
@@ -446,12 +446,12 @@ export default function HistoryPage() {
         </div>
         {hasRawData && (
           <div className="record-filter-bar__actions">
-            <div className="search-box-wrap search-box-wrap--iptv" role="search">
-              <div className="search-box search-box--iptv">
-                <Search size={16} className="search-box__icon" aria-hidden="true" />
+            <div className="record-search" role="search">
+              <div className="record-search__field">
+                <Search size={16} className="record-search__icon" aria-hidden="true" />
                 <input
                   type="text"
-                  className="search-box__input"
+                  className="record-search__input"
                   placeholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -459,7 +459,7 @@ export default function HistoryPage() {
                 />
                 <button
                   type="button"
-                  className="search-box__clear"
+                  className="record-search__clear"
                   onClick={() => setSearch('')}
                   aria-label="清空搜索"
                   tabIndex={-1}

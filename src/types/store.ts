@@ -18,6 +18,8 @@ export interface CollectionRecord {
   type?: string;
   year?: number;
   rating?: number;
+  /** CMS 直链搜索来源的源索引，存在时收藏页点击跳转到 /play/:id 而非 /detail/:id */
+  sourceIndex?: number;
 }
 
 /** 观看历史记录，按视频+剧集维度记录播放进度 */

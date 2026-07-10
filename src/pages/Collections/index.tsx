@@ -28,6 +28,7 @@ type VideoStatus = 'all' | 'unwatched' | 'watching' | 'watched';
 interface CollectionVideoItem extends Video {
   _rating?: number;
   _status?: VideoStatus;
+  _sourceIndex?: number;
 }
 
 type ConfirmType = 'single' | 'batch' | 'clearAll';
@@ -101,12 +102,16 @@ export default function CollectionsPage() {
   }, [history]);
 
   const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
-    let list: CollectionVideoItem[] = collections
+    // 按收藏时间倒序排列（最新的在前），先排再 map 以确保用 addedAt 排序
+    const sortedCollections = [...collections]
       .filter((c: CollectionRecord) => c.type !== 'iptv')
+      .sort((a, b) => b.addedAt - a.addedAt);
+
+    let list: CollectionVideoItem[] = sortedCollections
       .map((c: CollectionRecord): CollectionVideoItem => {
         const sv = videos.find((v) => v.id === c.videoId);
         const status = getVideoStatus(c.videoId);
-        if (sv) return { ...sv, _rating: c.rating, _status: status };
+        if (sv) return { ...sv, _rating: c.rating, _status: status, _sourceIndex: c.sourceIndex };
         return {
           id: c.videoId,
           title: c.title || '',
@@ -120,6 +125,7 @@ export default function CollectionsPage() {
           updatedAt: c.addedAt,
           _rating: c.rating,
           _status: status,
+          _sourceIndex: c.sourceIndex,
         };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
@@ -147,6 +153,8 @@ export default function CollectionsPage() {
   const favoriteChannels = useMemo(() => {
     let list = iptvChannels.filter(ch => ch.isFavorite);
     if (searchByTab.iptv.trim()) { const kw = searchByTab.iptv.toLowerCase(); list = list.filter(ch => ch.name?.toLowerCase().includes(kw)); }
+    // 按最后播放时间倒序排列（最新的在前）
+    list.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
     return list;
   }, [iptvChannels, searchByTab.iptv]);
 
@@ -228,7 +236,7 @@ export default function CollectionsPage() {
       : '确定要清除所有收藏吗？此操作无法恢复。';
 
   return (
-    <div className={`collection-page ${batchMode ? 'batch-mode' : ''}`}>
+    <div className={`page-padding collection-page ${batchMode ? 'batch-mode' : ''}`}>
       {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
       <div className="collection-filter-bar record-filter-bar">
         <div className="record-filter-bar__left">
@@ -240,12 +248,12 @@ export default function CollectionsPage() {
         </div>
         {hasRawData && (
           <div className="record-filter-bar__actions">
-            <div className="search-box-wrap search-box-wrap--iptv" role="search">
-              <div className="search-box search-box--iptv">
-                <Search size={16} className="search-box__icon" aria-hidden="true" />
+            <div className="record-search" role="search">
+              <div className="record-search__field">
+                <Search size={16} className="record-search__icon" aria-hidden="true" />
                 <input
                   type="text"
-                  className="search-box__input"
+                  className="record-search__input"
                   placeholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -253,7 +261,7 @@ export default function CollectionsPage() {
                 />
                 <button
                   type="button"
-                  className="search-box__clear"
+                  className="record-search__clear"
                   onClick={() => setSearch('')}
                   aria-label="清空搜索"
                   tabIndex={-1}
@@ -320,7 +328,7 @@ export default function CollectionsPage() {
                   </button>
                 )}
                 <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Trash2 size={14} /></button>
-                <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} />
+                <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} />
               </div>
             ))}
           </div>

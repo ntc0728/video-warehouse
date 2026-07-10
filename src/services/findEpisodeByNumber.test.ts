@@ -4,6 +4,8 @@ import type { Episode } from '@/types/video';
 
 const makeEp = (number: number, title?: string): Episode => ({
   id: `ep-${number}`,
+  vodId: `vod-${number}`,
+  url: `https://example.com/e${number}.m3u8`,
   title: title ?? `第${number}集`,
   number,
   sources: [{ id: 's1', name: '默认', url: `https://example.com/e${number}.m3u8`, type: 'm3u8' }],

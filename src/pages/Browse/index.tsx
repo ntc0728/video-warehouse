@@ -151,6 +151,7 @@ export default function BrowsePage() {
   return (
     <div
       className={[
+        'page-padding',
         'browse-page',
         isMobile ? 'browse-page--mobile' : '',
         isTV ? 'browse-page--tv' : '',

@@ -40,7 +40,6 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
       onMouseLeave={() => onPopoverChange(null)}
     >
       <button
-        className="up-control-btn"
         onClick={handleToggleMute}
         onTouchStart={handleButtonTouch}
         title="静音 (M)"

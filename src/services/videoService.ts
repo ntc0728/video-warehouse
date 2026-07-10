@@ -7,8 +7,10 @@ import type { Video, VideoType, Episode } from '@/types/video';
 import { getVideoSources, getIPTVSources } from './sourceService';
 import { getJSON } from './httpClient';
 import { extractSeasonNumber } from './seasonMatcher';
+import { parsePlaySources } from './vodParser';
 
 export { getVideoSources };
+export { parsePlaySources } from './vodParser';
 
 interface SourceStatus {
   index: number;
@@ -25,6 +27,8 @@ interface CMSVideoItem {
   vod_name?: string;
   vod_pic?: string;
   vod_type?: string | number;
+  type_id?: number | string;
+  type_id_1?: number | string;
   vod_year?: string;
   vod_area?: string;
   vod_content?: string;
@@ -64,6 +68,14 @@ function mapVodType(raw: string | number | undefined | null): VideoType | undefi
     }
   }
   return undefined;
+}
+
+/**
+ * 从 CMS item 中解析 VideoType，优先使用 vod_type，
+ * 缺失时回退到 type_id_1（父分类）→ type_id（子分类）。
+ */
+function getCmsVodType(item: CMSVideoItem): VideoType | undefined {
+  return mapVodType(item.vod_type) ?? mapVodType(item.type_id_1) ?? mapVodType(item.type_id);
 }
 
 /** 检查单个视频源是否可用 */
@@ -177,7 +189,7 @@ function mapVideoItem(item: CMSVideoItem): Video {
     id: String(item.vod_id),
     title: item.vod_name ?? '',
     cover: item.vod_pic ?? '',
-    type: mapVodType(item.vod_type) ?? 'movie',
+    type: getCmsVodType(item) ?? 'movie',
     year: item.vod_year ? parseInt(item.vod_year) : undefined,
     region: item.vod_area,
     description: item.vod_content,
@@ -191,6 +203,35 @@ function mapVideoItem(item: CMSVideoItem): Video {
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
+}
+
+/**
+ * 从 CMS item 解析播放源；若 vod_play_url 为空或解析结果为空，
+ * 通过详情接口（ac=videolist&ids=）回退获取完整数据。
+ * 返回解析出的 sources / episodes 以及最终使用的 CMS item（可能是详情接口返回的）。
+ */
+async function resolvePlaySources(
+  api: string,
+  item: CMSVideoItem,
+): Promise<{ sources: Video['sources']; episodes: Video['episodes'] | undefined; item: CMSVideoItem }> {
+  // 1) 先尝试直接解析搜索结果中的 vod_play_url
+  if (item.vod_play_url) {
+    const parsed = parsePlaySources(item.vod_play_url, getCmsVodType(item));
+    if (parsed.sources.length > 0 || (parsed.episodes?.length ?? 0) > 0) {
+      return { ...parsed, item };
+    }
+  }
+  // 2) 解析为空时，通过详情接口获取完整 vod_play_url
+  try {
+    const detailUrl = `${api}?ac=videolist&ids=${item.vod_id}`;
+    const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
+    const detailItem = detailData.list?.[0];
+    if (detailItem) {
+      const parsed = parsePlaySources(detailItem.vod_play_url || '', getCmsVodType(detailItem));
+      return { ...parsed, item: detailItem };
+    }
+  } catch { /* fall through to empty result */ }
+  return { sources: [], episodes: undefined, item };
 }
 
 /** 从指定视频源获取视频列表 */
@@ -227,134 +268,6 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
   }
 }
 
-/** 从 $ 分隔的 parts 中提取标题：跳过 URL 和空串，取第一个有意义的部分 */
-function pickTitle(parts: string[], fallback: string): string {
-  for (let k = 0; k < parts.length; k++) {
-    const p = parts[k].trim();
-    if (!p || p.startsWith('http') || p.startsWith('//')) continue;
-    return p;
-  }
-  return fallback;
-}
-
-const VALID_VIDEO_EXTENSIONS = /\.(m3u8|mp4|mpd|flv|ts|mkv|avi|wmv|rmvb|rm|3gp|mov|m4s|aac)(\?.*)?$/i;
-
-/** 检查 URL 是否有有效视频后缀，无后缀说明链接被设置了访问权限 */
-function isValidVideoUrl(url: string): boolean {
-  return VALID_VIDEO_EXTENSIONS.test(url);
-}
-
-/** 解析播放源字符串，提取源列表和分集信息 */
-function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sources: Video['sources']; episodes: Video['episodes'] } {
-  const isMovie = vodType === 'movie';
-  // vod_play_from 是 CMS 源接口返回的完整值，不拆分，仅作为整体标识
-  // vod_play_url 独立拆分，每个 $$$ 分隔的部分是一条播放线路
-  const urlList = vodPlayUrl ? vodPlayUrl.split('$$$').filter(Boolean) : [];
-  if (urlList.length === 0) return { sources: [], episodes: undefined };
-
-  const allSources: Video['sources'] = [];
-  const episodesMap = new Map<string, { title: string; url: string; sources: Video['sources'] }>();
-
-  for (let i = 0; i < urlList.length; i++) {
-    const urlStr = urlList[i];
-    const episodes = urlStr.split('#').filter(Boolean);
-    if (episodes.length === 0) continue;
-
-    // 移除 URL 无文件扩展名的条目（没有 "." 的链接通常是无效数据）
-    const validEpisodes = episodes.filter(ep => {
-      const parts = ep.split('$');
-      const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-      return url && url.includes('.');
-    });
-    if (validEpisodes.length === 0) continue;
-
-    if (validEpisodes.length === 1) {
-      const parts = validEpisodes[0].split('$');
-        const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-      if (url && isValidVideoUrl(url)) {
-        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
-        const name = pickTitle(parts.slice(0, -1), `源${i + 1}`);
-        if (isMovie) {
-          allSources.push({ id: `source-${i}`, name, url, type, isDefault: allSources.length === 0 });
-        } else {
-          episodesMap.set(url, { title: name, url, sources: [{ id: `source-${i}-ep-0`, name: `源${i + 1}`, url, type, isDefault: i === 0 }] });
-        }
-      }
-    } else {
-      // 统计本线路内各标题出现次数
-      const titleCount: Record<string, number> = {};
-      for (const ep of validEpisodes) {
-        const parts = ep.split('$');
-        const title = pickTitle(parts.slice(0, -1), '');
-        if (title) titleCount[title] = (titleCount[title] || 0) + 1;
-      }
-
-      // 区分同名不同 URL 的后缀
-      const titleSeq: Record<string, number> = {};
-      const parsed: { title: string; rawTitle: string; url: string; type: Video['sources'][number]['type'] }[] = [];
-      for (let j = 0; j < validEpisodes.length; j++) {
-        const parts = validEpisodes[j].split('$');
-      const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-        if (!url || !isValidVideoUrl(url)) continue;
-        const rawTitle = pickTitle(parts.slice(0, -1), '第' + (j + 1) + '集');
-        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
-        let displayTitle = rawTitle;
-        if ((titleCount[rawTitle] ?? 0) > 1) {
-          titleSeq[rawTitle] = (titleSeq[rawTitle] || 0) + 1;
-          displayTitle = `${rawTitle}${String(titleSeq[rawTitle]).padStart(2, '0')}`;
-        }
-        parsed.push({ title: displayTitle, rawTitle, url, type });
-      }
-
-      if (isMovie) {
-        // 电影：同线路内所有条目作为多条播放地址
-        parsed.forEach((entry, idx) => {
-          allSources.push({
-            id: `source-${i}`,
-            name: entry.title,
-            url: entry.url,
-            type: entry.type,
-            isDefault: idx === 0,
-          });
-        });
-      } else {
-        // 剧集/综艺/动漫：每个条目作为一个选集，播放链接作为 vodId
-        for (const entry of parsed) {
-          if (!episodesMap.has(entry.url)) episodesMap.set(entry.url, { title: entry.title, url: entry.url, sources: [] });
-          episodesMap.get(entry.url)!.sources.push({
-            id: `source-${i}-ep-${episodesMap.get(entry.url)!.sources.length}`,
-            name: `源${i + 1}`,
-            url: entry.url,
-            type: entry.type,
-            isDefault: i === 0,
-          });
-        }
-      }
-    }
-  }
-
-  // 同名线路加后缀区分
-  const nameCount: Record<string, number> = {};
-  for (const s of allSources) {
-    nameCount[s.name] = (nameCount[s.name] || 0) + 1;
-  }
-  const nameSeq: Record<string, number> = {};
-  for (const s of allSources) {
-    if ((nameCount[s.name] ?? 0) > 1) {
-      nameSeq[s.name] = (nameSeq[s.name] || 0) + 1;
-      s.name = `${s.name}${String(nameSeq[s.name]).padStart(2, '0')}`;
-    }
-  }
-
-  let episodes: Video['episodes'] | undefined;
-  if (episodesMap.size > 0) {
-    episodes = Array.from(episodesMap.entries()).map(([key, ep], index) => ({
-      id: key, vodId: '', url: ep.url, title: ep.title, number: index + 1, sources: ep.sources,
-    }));
-  }
-  return { sources: allSources, episodes };
-}
-
 /** 获取单个视频的详情信息（含播放源和分集） */
 export async function fetchVideoDetail(sourceIndex: number, videoId: string): Promise<Video | null> {
   const sources = await getVideoSources();
@@ -366,7 +279,7 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string): Pr
     const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
       const item = data.list[0];
-      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', mapVodType(item.vod_type));
+      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', getCmsVodType(item));
       return { ...mapVideoItem(item), sources: playSources, episodes };
     }
   } catch (error) {
@@ -416,32 +329,13 @@ export async function searchVideoFromMultipleSources(
         results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' });
         continue;
       }
-      if (target.vod_play_from && target.vod_play_url) {
-        const { sources: playSources, episodes } = parsePlaySources(target.vod_play_url, mapVodType(target.vod_type));
-        results.push({
-          sourceIndex: index,
-          sourceName: source.name,
-          video: { ...mapVideoItem(target), sources: playSources, episodes },
-        });
-      } else {
-        const detailUrl = `${source.api}?ac=videolist&ids=${target.vod_id}`;
-        const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
-        const detailItem = detailData.list?.[0];
-        if (detailItem) {
-          const { sources: playSources, episodes } = parsePlaySources(detailItem.vod_play_url || '', mapVodType(detailItem.vod_type));
-          results.push({
-            sourceIndex: index,
-            sourceName: source.name,
-            video: { ...mapVideoItem(detailItem), sources: playSources, episodes },
-          });
-        } else {
-          results.push({
-            sourceIndex: index,
-            sourceName: source.name,
-            video: { ...mapVideoItem(target), sources: [], episodes: undefined },
-          });
-        }
-      }
+      const resolved = await resolvePlaySources(source.api, target);
+      results.push({
+        sourceIndex: index,
+        sourceId: source.id,
+        sourceName: source.name,
+        video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' });
@@ -477,29 +371,12 @@ export async function searchVideoFromSingleSource(
     if (!target) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
-    if (target.vod_play_from && target.vod_play_url) {
-      const { sources: playSources, episodes } = parsePlaySources(target.vod_play_url, mapVodType(target.vod_type));
-      return {
-        sourceIndex,
-        sourceName: source.name,
-        video: { ...mapVideoItem(target), sources: playSources, episodes },
-      };
-    }
-    const detailUrl = `${source.api}?ac=videolist&ids=${target.vod_id}`;
-    const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
-    const detailItem = detailData.list?.[0];
-    if (detailItem) {
-      const { sources: playSources, episodes } = parsePlaySources(detailItem.vod_play_url || '', mapVodType(detailItem.vod_type));
-      return {
-        sourceIndex,
-        sourceName: source.name,
-        video: { ...mapVideoItem(detailItem), sources: playSources, episodes },
-      };
-    }
+    const resolved = await resolvePlaySources(source.api, target);
     return {
       sourceIndex,
+      sourceId: source.id,
       sourceName: source.name,
-      video: { ...mapVideoItem(target), sources: [], episodes: undefined },
+      video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -541,7 +418,7 @@ export async function searchAllFromCMSSource(
     }
 
     const items: Video[] = data.list.map(item => {
-      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', mapVodType(item.vod_type));
+      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', getCmsVodType(item));
       return { ...mapVideoItem(item), sources: playSources, episodes };
     });
 
@@ -640,9 +517,9 @@ export async function searchVideoSeasonsFromSingleSource(
       if (seasonNumber === undefined) continue;
       if (seasons.has(seasonNumber)) continue;
 
-      // 解析播放源
-      const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', mapVodType(item.vod_type));
-      seasons.set(seasonNumber, { ...mapVideoItem(item), sources: playSources, episodes });
+      // 先尝试解析搜索结果，若为空再通过详情接口回退
+      const resolved = await resolvePlaySources(source.api, item);
+      seasons.set(seasonNumber, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
     }
 
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };

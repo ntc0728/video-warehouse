@@ -3,6 +3,13 @@
  * 定义直播频道、频道分组、IPTV 设置和筛选条件等数据结构
  */
 
+/** IPTV 源类型枚举 */
+export enum PlaylistSourceType {
+  SINGLE_STREAM = 'single',
+  MULTI_CHANNEL = 'multi',
+  UNKNOWN = 'unknown',
+}
+
 /** IPTV 直播频道 */
 export interface IPTVChannel {
   id: string;

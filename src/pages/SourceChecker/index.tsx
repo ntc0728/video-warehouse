@@ -39,7 +39,7 @@ export default function SourceCheckerPage() {
   const unavailableCount = sources.filter((s) => !s.available).length;
 
   return (
-    <div className="source-checker-page">
+    <div className="page-padding source-checker-page">
       <div className="source-checker-header">
         <h1>视频源检测</h1>
         <p>检测所有配置的视频数据源，查看哪些源可用</p>

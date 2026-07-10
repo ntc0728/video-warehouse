@@ -27,7 +27,6 @@
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: var(--shadow-card);
   cursor: pointer;
-  box-sizing: border-box;
 }
 
 .iptv-channel-card:hover {

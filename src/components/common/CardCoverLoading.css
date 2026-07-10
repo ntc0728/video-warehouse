@@ -28,7 +28,6 @@
   background-size: 200% 200%;
   overflow: hidden;
   animation: card-cover-loading-bg 4s ease-in-out infinite;
-  box-sizing: border-box;
 }
 
 @keyframes card-cover-loading-bg {

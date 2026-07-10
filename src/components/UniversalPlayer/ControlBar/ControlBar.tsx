@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { SkipBack, SkipForward } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
-import type { VideoSource } from '@/types/video';
 import MirrorButton from './MirrorButton';
 import RatioButton from './RatioButton';
 import ProgressBar from './ProgressBar';
@@ -19,7 +18,6 @@ import ResolutionSwitch from './ResolutionSwitch';
 import TimeDisplay from './TimeDisplay';
 import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
-import SourceSwitch from './SourceSwitch';
 import LoopButton from './LoopButton';
 
 interface ControlBarProps {
@@ -45,9 +43,6 @@ interface ControlBarProps {
   onLevelChange: (level: number) => void;
   activePopover: string | null;
   onPopoverChange: (id: string | null) => void;
-  sources?: VideoSource[];
-  currentSourceIndex?: number;
-  onSourceSwitch?: (index: number) => void;
   hasPrevEpisode?: boolean;
   hasNextEpisode?: boolean;
   onPrevEpisode?: () => void;
@@ -82,9 +77,6 @@ export default function ControlBar({
   onLevelChange,
   activePopover,
   onPopoverChange,
-  sources,
-  currentSourceIndex,
-  onSourceSwitch,
   hasPrevEpisode,
   hasNextEpisode,
   onPrevEpisode,
@@ -127,18 +119,8 @@ export default function ControlBar({
 
       <div className="up-control-bar-buttons">
         <div className="up-control-left">
-          {sources && currentSourceIndex !== undefined && onSourceSwitch && (
-            <SourceSwitch
-              sources={sources}
-              currentIndex={currentSourceIndex}
-              onSwitch={onSourceSwitch}
-              activePopover={activePopover}
-              onPopoverChange={onPopoverChange}
-            />
-          )}
           {hasPrevEpisode !== undefined && (
             <button
-              className="up-control-btn"
               disabled={!hasPrevEpisode}
               onClick={onPrevEpisode}
               title="上一集 ([)"
@@ -149,7 +131,6 @@ export default function ControlBar({
           <PlayButton isPlaying={isPlaying} disabled={isBuffering} onClick={onTogglePlay} />
           {hasNextEpisode !== undefined && (
             <button
-              className="up-control-btn"
               disabled={!hasNextEpisode}
               onClick={onNextEpisode}
               title="下一集 (])"

@@ -82,12 +82,6 @@ export function PlayerEpisodesPanel({
           </div>
         ) : episodes.length > 0 ? (
           <>
-            {loading && (
-              <div className="player-panel-loading player-panel-loading--overlay">
-                <Loader2 size={16} className="spinning" />
-                <span>加载中...</span>
-              </div>
-            )}
             <div className="player-episode-controls">
               <button
                 className="player-episode-sort-btn"
@@ -121,12 +115,6 @@ export function PlayerEpisodesPanel({
           </>
         ) : sources.length > 0 ? (
           <>
-            {loading && (
-              <div className="player-panel-loading player-panel-loading--overlay">
-                <Loader2 size={16} className="spinning" />
-                <span>加载中...</span>
-              </div>
-            )}
             <div className="player-source-list">
               {sources.map((src) => (
                 <button

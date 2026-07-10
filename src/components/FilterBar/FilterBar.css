@@ -12,7 +12,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-sm);
   border-bottom: 1px solid var(--color-border-light);
 }
 
@@ -123,7 +122,7 @@
 
 .filter-bar__chip {
   height: var(--comp-tab-height);
-  padding: var(--space-2xs) var(--space-md);
+  padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
@@ -218,7 +217,6 @@
 
 .filter-bar--mobile {
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
 }
 
 /* 每行强制单行，超出横向滚动 */

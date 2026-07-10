@@ -45,7 +45,7 @@ export default function PlayerCore({
   const mirrorTransform = mirror ? 'scaleX(-1)' : '';
 
   // PiP 模式下强制 16:9 比例，避免画中画窗口比例过方
-  const ratioStyle = isPiP ? { aspectRatio: '16/9', objectFit: 'contain' } : RATIO_VIDEO_STYLES[aspectRatio];
+  const ratioStyle = isPiP ? { aspectRatio: '16/9', objectFit: 'contain' as const, transform: '' } : RATIO_VIDEO_STYLES[aspectRatio];
   const ratioTransform = ratioStyle?.transform || '';
   const videoStyle: React.CSSProperties = {
     ...ratioStyle,

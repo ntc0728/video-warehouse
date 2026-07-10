@@ -123,7 +123,7 @@ export default function HomePage() {
 
   if (!hasToken) {
     return (
-      <div className="home-page">
+      <div className="page-padding home-page">
         <div className="home-token-required">
           <AlertCircle size={48} className="home-token-required-icon" />
           <p className="home-token-required-text">
@@ -142,7 +142,7 @@ export default function HomePage() {
 
   if (isInitialLoading) {
     return (
-      <div className="home-page home-skeleton">
+      <div className="page-padding home-page home-skeleton">
         <div className="home-skeleton-hero" />
         <div className="home-skeleton-categories">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -169,7 +169,7 @@ export default function HomePage() {
   }
 
   return (
-    <div ref={pageRef} className={`home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+    <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
       {!hasAnyData && allFailed && (
         <div className="home-empty" role="alert">
           <AlertCircle size={32} className="home-empty-icon" />
@@ -187,7 +187,7 @@ export default function HomePage() {
         historyMap={historyMap.current}
       />
       <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
-      <div className="home-rows">
+      <div className="home-rows page-padding">
         <TMDBMovieRow title="正在热映" items={nowPlaying} isLoading={loading.nowPlaying} error={errors.nowPlaying} />
         <TMDBMovieRow title="热门电影" items={popularMovies} isLoading={loading.popularMovies} error={errors.popularMovies} />
         <TMDBMovieRow title="高分电影" items={topRatedMovies} isLoading={loading.topRatedMovies} error={errors.topRatedMovies} />

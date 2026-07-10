@@ -7,7 +7,6 @@ interface RefreshButtonProps {
 export default function RefreshButton({ onClick }: RefreshButtonProps) {
   return (
     <button
-      className="up-control-btn"
       onClick={onClick}
       title="刷新"
     >

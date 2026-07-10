@@ -51,7 +51,6 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
       onMouseLeave={() => onPopoverChange(null)}
     >
       <button
-        className={`up-control-btn ${subtitleUrl ? 'up-control-btn-active' : ''}`}
         title="字幕"
         onTouchStart={handleButtonTouch}
       >

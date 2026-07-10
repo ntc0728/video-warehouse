@@ -1,8 +1,8 @@
 /**
- * usePrefetch — 应用启动时预取首页 + IPTV 数据
+ * usePrefetch — 应用启动时预取首页数据
  *
  * 解决的问题:
- * 1. 用户首次打开应用时,HomePage 与 IPTVPage 内的"无数据 → 拉取 → 有数据"渲染序列
+ * 1. 用户首次打开应用时,HomePage 内的"无数据 → 拉取 → 有数据"渲染序列
  *    会让用户感知到"页面闪一下"。
  * 2. HomePage 之前在 mount 时无条件调 fetchAllHomeData(包含 checkToken + 8 个 TMDB 请求),
  *    即便 store 已有缓存,checkToken 这一步仍会跑。
@@ -11,12 +11,13 @@
  * - 仅在「数据为空」时触发,避免重复拉取;
  * - 用 requestIdleCallback 调度,不阻塞首屏;
  * - 失败静默,错误已在 store 中记录,UI 后续自行展示。
+ *
+ * 注意: IPTV 数据不再在此预取,改由 IPTVPage 进入时自行加载(loadFromCache + useIPTVAutoRefresh)。
  */
 import { useEffect } from 'react';
 import { useTMDBStore } from '@/stores';
-import { useIPTVStore } from '@/stores/useIPTVStore';
 
-/** 应用启动时预取首页和 IPTV 数据，避免首次加载闪白 */
+/** 应用启动时预取首页数据，避免首次加载闪白 */
 export function usePrefetch(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -34,15 +35,6 @@ export function usePrefetch(): void {
     if (!hasHomeData && typeof tmdb.fetchAllHomeData === 'function') {
       tasks.push(() => {
         void tmdb.fetchAllHomeData();
-      });
-    }
-
-    // IPTV 频道数据
-    const iptv = useIPTVStore.getState();
-    const hasIptvData = iptv.channels.length > 0;
-    if (!hasIptvData && !iptv.isLoading && typeof iptv.refreshChannels === 'function') {
-      tasks.push(() => {
-        void iptv.refreshChannels();
       });
     }
 

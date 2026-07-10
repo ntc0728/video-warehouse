@@ -59,11 +59,12 @@ describe('useUserStore - addHistory with new fields', () => {
   });
 
   it('updateHistoryProgress 转发 vodId', () => {
-    useUserStore.getState().updateHistoryProgress(
-      '123', 50, 100,
-      undefined, undefined, undefined, undefined, undefined, undefined,
-      '456',
-    );
+    useUserStore.getState().updateHistoryProgress({
+      videoId: '123',
+      progress: 50,
+      duration: 100,
+      vodId: '456',
+    });
 
     const history = useUserStore.getState().history;
     expect(history).toHaveLength(1);

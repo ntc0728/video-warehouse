@@ -9,7 +9,7 @@ interface PlayButtonProps {
 export default function PlayButton({ isPlaying, disabled, onClick }: PlayButtonProps) {
   return (
     <button
-      className="up-control-btn up-play-btn"
+      className="up-play-btn"
       onClick={onClick}
       disabled={disabled}
       title="播放/暂停 (Space)"

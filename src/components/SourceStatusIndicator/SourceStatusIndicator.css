@@ -13,19 +13,19 @@
 .source-status-badge {
   position: relative;
   display: flex;
-  align-items: center;
   gap: var(--space-xs);
+  align-items: center;
   padding: var(--space-2xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  cursor: default;
   transition: border-color 0.2s;
+  cursor: default;
 }
 
 .source-status-dot {
-  width: 8px;
-  height: 8px;
+  width: var(--space-sm);
+  height: var(--space-sm);
   border-radius: 50%;
   transition: background-color 0.3s;
 }
@@ -61,10 +61,10 @@
 /* Tooltip */
 .source-status-tooltip {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--space-xs));
   right: 0;
   z-index: 100;
-  min-width: 160px;
+  min-width: var(--layout-popover-wide-min-w);
   padding: var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -91,7 +91,7 @@
 }
 
 .source-status-tooltip-divider {
-  height: 1px;
+  height: var(--space-3xs);
   margin: var(--space-2xs) 0;
   background: var(--color-border);
 }

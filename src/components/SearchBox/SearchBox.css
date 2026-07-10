@@ -85,6 +85,7 @@
 
 /* iptv variant：独立使用 box（无 submit），完整圆角 + 保留右边框 */
 .search-box--iptv {
+  height: var(--comp-btn-min-height);
   border-right: 1px solid var(--color-border);
   border-radius: var(--radius-full);
 }

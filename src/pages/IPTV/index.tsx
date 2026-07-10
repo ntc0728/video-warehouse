@@ -103,9 +103,12 @@ export default function IPTVPage() {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
   }, [searchKeyword, selectedGroup, saveState]);
 
-  // 优先从 IndexedDB 缓存加载（静默，不显示加载态）
+  // 优先从 IndexedDB 缓存加载（静默，不显示加载态）；缓存未命中时走网络请求
   useEffect(() => {
-    useIPTVStore.getState().loadFromCache();
+    useIPTVStore.getState().loadFromCache().then((loaded) => {
+      if (!loaded) refreshChannels();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 自动刷新频道列表
@@ -288,7 +291,7 @@ export default function IPTVPage() {
   }, [checkAvailability, selectedGroup]);
 
   return (
-    <div className="iptv-page">
+    <div className="page-padding iptv-page">
       <div className="iptv-header">
         <div className="iptv-header-top">
           <div className="iptv-header-left">
@@ -380,22 +383,24 @@ export default function IPTVPage() {
       )}
 
       {aggregatorUrls && aggregatorUrls.length > 1 && (
-        <div className="iptv-source-filter">
+        <div className={`iptv-source-filter${channels.length === 0 ? ' disabled' : ''}`}>
           <button
-            className={`source-tag ${selectedSource === null ? 'active' : ''}`}
+            className={`source-tag ${selectedSource === null ? 'active' : ''}${channels.length === 0 ? ' disabled' : ''}`}
             onClick={() => handleSourceSelect(null)}
+            disabled={channels.length === 0}
           >
             全部源
           </button>
           {(sourcesExpanded ? aggregatorUrls : aggregatorUrls.slice(0, MAX_VISIBLE_SOURCES)).map((_, index) => {
             const hasData = sourceHasChannels[index];
+            const noChannels = channels.length === 0;
             return (
               <button
                 key={index}
-                className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData ? ' disabled' : ''}`}
-                onClick={() => hasData && handleSourceSelect(`source-${index}`)}
-                disabled={!hasData}
-                title={!hasData ? '该源无频道数据或加载失败' : undefined}
+                className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData || noChannels ? ' disabled' : ''}`}
+                onClick={() => hasData && !noChannels && handleSourceSelect(`source-${index}`)}
+                disabled={!hasData || noChannels}
+                title={!hasData ? '该源无频道数据或加载失败' : noChannels ? '暂无频道数据' : undefined}
               >
                 {sourceNames?.[index] || `源 ${index + 1}`}
               </button>
@@ -404,8 +409,9 @@ export default function IPTVPage() {
           {aggregatorUrls.length > MAX_VISIBLE_SOURCES && (
             <button
               type="button"
-              className={`source-tag source-tag--more`}
+              className={`source-tag source-tag--more${channels.length === 0 ? ' disabled' : ''}`}
               onClick={() => setSourcesExpanded(!sourcesExpanded)}
+              disabled={channels.length === 0}
             >
               {sourcesExpanded ? '收起' : `+${aggregatorUrls.length - MAX_VISIBLE_SOURCES}`}
             </button>
@@ -413,7 +419,7 @@ export default function IPTVPage() {
         </div>
       )}
 
-      {filteredGroups.length > 0 && (
+      {channels.length > 0 && filteredGroups.length > 0 && (
         isMobile ? (
           <GroupPicker
             key={selectedSource ?? 'all'}
@@ -465,17 +471,17 @@ export default function IPTVPage() {
         )
       )}
 
-      {isLoading && channels.length === 0 && (
+      {isLoading && (
         <div className="iptv-content-loading">
           <AppLoading tip="加载频道列表…" showTip />
         </div>
       )}
+      {!isLoading && (
       <div className="iptv-content">
-        {!isLoading && channels.length === 0 ? (
+        {channels.length === 0 ? (
           <Empty
             title="暂无频道数据"
             description={error || '请点击上方刷新按钮加载频道列表'}
-            onRetry={() => refreshChannels()}
           />
         ) : filteredChannels.length === 0 ? (
           <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
@@ -494,6 +500,7 @@ export default function IPTVPage() {
           </>
         )}
       </div>
+      )}
 
       <BackToTopButton />
     </div>

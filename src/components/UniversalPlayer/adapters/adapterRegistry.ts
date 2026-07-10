@@ -45,3 +45,13 @@ export function createAdapter(type: SourceType, url: string, options?: Record<st
 export function hasAdapter(type: SourceType): boolean {
   return registry.has(type);
 }
+
+/** 覆盖已注册的适配器（测试用：注入 mock 适配器） */
+export function overrideAdapter(type: SourceType, factory: AdapterFactory): void {
+  registry.set(type, factory);
+}
+
+/** 列出所有已注册的适配器类型 */
+export function listAdapters(): SourceType[] {
+  return Array.from(registry.keys());
+}

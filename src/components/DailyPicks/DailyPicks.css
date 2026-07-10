@@ -152,7 +152,7 @@
 
 .carousel-slide--distant {
   content-visibility: auto;
-  contain-intrinsic-size: auto 56.25%;
+  contain-intrinsic-size: auto none;
 }
 
 .carousel-slide-cover {

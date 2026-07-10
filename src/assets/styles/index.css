@@ -5,6 +5,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 全局 border-box：padding/border 包含在 width/height 内 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   font-size: var(--text-base);
 }
@@ -156,6 +163,38 @@ a[role="button"]:active:not(:disabled),
 .hero-banner__cta:active {
   transform: none !important;
   box-shadow: none !important;
+}
+
+/* ── Tab 通用基类（下划线式） ─────────────────────────────
+   Detail / Person 页共用，避免重复定义 */
+.tab-underline {
+  position: relative;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.25s, border-color 0.25s;
+  cursor: pointer;
+}
+.tab-underline:hover {
+  color: var(--color-text);
+}
+.tab-underline--active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ── 页面级统一左右下内边距 ─────────────────────────────
+   所有页面根容器统一使用，确保水平/底部间距一致。
+   top padding 不设（由子元素或沉浸式 Header 决定）。
+   Player / IPTVPlayer 因全屏定位脱离文档流，不使用此类。 */
+.page-padding {
+  padding: 0 var(--space-sm) var(--space-sm);
 }
 
 .empty-state-wrapper {
@@ -443,22 +482,6 @@ main {
   background-color: rgba(0, 0, 0, 0.7);
 }
 
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   VideoCard 统一网格 — 全局通用工具类
-   - 列数由 --card-cols 驱动（375px → 3840px 共 6 档）
-   - minmax(0, 1fr) 防止子项被长标题撑爆
-   - gap 使用 --grid-gap（项目通用网格间距）
-   ═══════════════════════════════════════════════════════════════════════════ */
-.video-card-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  gap: var(--grid-gap);
-  width: max-content;
-  max-width: 100%;
-  /* 不足一行时不再居中,沿父容器左侧排列 */
-  margin: 0;
-}
 
 [data-theme="dark"] .modal-content {
   background: var(--color-surface);

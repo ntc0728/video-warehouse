@@ -20,10 +20,11 @@ import viteCompression from 'vite-plugin-compression'
 export default defineConfig({
   plugins: [
     react(),
-    // Brotli 预压缩（Cloudflare Pages 优先使用 .br 文件）
-    viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
-    // Gzip 预压缩（兜底）
-    viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+    // Capacitor 构建不需要预压缩（Android WebView 直接读本地文件）
+    ...(process.env.CAPACITOR === 'true' ? [] : [
+      viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
+      viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+    ]),
   ],
   resolve: {
     alias: {
