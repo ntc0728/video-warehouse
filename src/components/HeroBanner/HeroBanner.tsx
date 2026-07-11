@@ -1,18 +1,15 @@
 /**
  * HeroBanner — 首页 Hero 横幅
  * 基于 TMDB trending 数据，自动轮播 + 主题感知渐变蒙版 + CTA 按钮
- * 使用 Swiper 实现高性能轮播
+ * 使用 Embla Carousel 实现高性能轮播
  */
-import { useState, useEffect, useRef } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Keyboard } from 'swiper/modules';
-import type { SwiperRef } from 'swiper/react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { usePointerType } from '@/hooks/usePointerType';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
-import 'swiper/css';
-import 'swiper/css/autoplay';
 import './HeroBanner.css';
 
 interface HeroItem {
@@ -61,7 +58,16 @@ export default function HeroBanner({
   onContinuePlay,
   historyMap,
 }: HeroBannerProps) {
-  const swiperRef = useRef<SwiperRef>(null);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: items.length > 1 },
+    [
+      Autoplay({
+        delay: autoPlayInterval,
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+      }),
+    ],
+  );
   const pointerType = usePointerType();
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -90,22 +96,28 @@ export default function HeroBanner({
     };
   }, [items]);
 
+  // reduced motion: stop autoplay
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const effectiveInterval = prefersReducedMotion ? 0 : autoPlayInterval;
+  useEffect(() => {
+    if (!emblaApi) return;
+    if (prefersReducedMotion) {
+      emblaApi.plugins().autoplay?.stop();
+    }
+  }, [emblaApi, prefersReducedMotion]);
 
-  const handlePrev = () => swiperRef.current?.swiper.slidePrev();
-  const handleNext = () => swiperRef.current?.swiper.slideNext();
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    handlePrev();
+    scrollPrev();
   };
 
   const handleNextClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    handleNext();
+    scrollNext();
   };
 
   // 空状态
@@ -135,57 +147,42 @@ export default function HeroBanner({
       aria-roledescription="carousel"
       aria-label="热门推荐"
     >
-      <Swiper
-        ref={swiperRef}
-        modules={[Autoplay, Keyboard]}
-        slidesPerView={1}
-        spaceBetween={0}
-        loop={items.length > 1}
-        speed={800}
-        allowTouchMove={true}
-        keyboard={{ enabled: true }}
-        observer={true}
-        observeParents={true}
-        autoplay={effectiveInterval ? {
-          delay: effectiveInterval,
-          disableOnInteraction: false,
-          reverseDirection: false,
-        } : false}
-        className="hero-banner__swiper"
-      >
-        {items.map((item, index) => {
-          const itemData = item as HeroItem & { name?: string };
-          const backdropPath = itemData.backdropPath || itemData.backdrop_path || '';
-          const backdropUrl = buildImageUrl(backdropPath, 'w1920') || '';
-          const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280', 'w1920']);
+      <div className="embla" ref={emblaRef}>
+        <div className="embla__container">
+          {items.map((item, index) => {
+            const itemData = item as HeroItem & { name?: string };
+            const backdropPath = itemData.backdropPath || itemData.backdrop_path || '';
+            const backdropUrl = buildImageUrl(backdropPath, 'w1920') || '';
+            const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280', 'w1920']);
 
-          return (
-            <SwiperSlide key={item.id || index}>
-              <div className="hero-banner__slide">
-                {backdropUrl && (
-                  <img
-                    className="hero-banner__bg"
-                    src={backdropUrl}
-                    srcSet={backdropSrcSet || undefined}
-                    sizes="100vw"
-                    alt=""
-                    aria-hidden="true"
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    width={1920}
-                    height={1080}
-                  />
-                )}
-                <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
+            return (
+              <div className="embla__slide" key={item.id || index}>
+                <div className="hero-banner__slide">
+                  {backdropUrl && (
+                    <img
+                      className="hero-banner__bg"
+                      src={backdropUrl}
+                      srcSet={backdropSrcSet || undefined}
+                      sizes="100vw"
+                      alt=""
+                      aria-hidden="true"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      width={1920}
+                      height={1080}
+                    />
+                  )}
+                  <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
+                </div>
               </div>
-            </SwiperSlide>
-          );
-        })}
-      </Swiper>
+            );
+          })}
+        </div>
+      </div>
 
       {/* 内容 — 始终显示当前活跃 slide 的内容 */}
       <HeroContent
         items={items}
-        swiperRef={swiperRef}
+        emblaApi={emblaApi}
         onItemClick={onItemClick}
         onContinuePlay={onContinuePlay}
         historyMap={historyMap}
@@ -206,23 +203,22 @@ export default function HeroBanner({
 
       {/* 指示点 */}
       {items.length > 1 && (
-        <PaginationDots items={items} swiperRef={swiperRef} />
+        <PaginationDots items={items} emblaApi={emblaApi} />
       )}
     </section>
   );
 }
 
-/** 内容层：监听 swiper activeIndex 变化，显示对应 slide 的标题/按钮 */
 function HeroContent({
   items,
-  swiperRef,
+  emblaApi,
   onItemClick,
   onContinuePlay,
   historyMap,
   isMobile,
 }: {
   items: HeroItem[];
-  swiperRef: React.RefObject<SwiperRef>;
+  emblaApi: ReturnType<typeof useEmblaCarousel>[1];
   onItemClick?: (item: HeroItem) => void;
   onContinuePlay?: (item: HeroItem) => void;
   historyMap?: Map<string, { progress: number }>;
@@ -231,12 +227,12 @@ function HeroContent({
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const swiper = swiperRef.current?.swiper;
-    if (!swiper) return;
-    const onSlideChange = () => setActiveIndex(swiper.realIndex);
-    swiper.on('slideChange', onSlideChange);
-    return () => { swiper.off('slideChange', onSlideChange); };
-  }, [swiperRef]);
+    if (!emblaApi) return;
+    const onSelect = () => setActiveIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi]);
 
   const item = items[activeIndex] || items[0];
   if (!item) return null;
@@ -322,26 +318,25 @@ function HeroPosterMobile({ item }: { item: HeroItem }) {
   );
 }
 
-/** 分页指示点：监听 swiper activeIndex */
 function PaginationDots({
   items,
-  swiperRef,
+  emblaApi,
 }: {
   items: HeroItem[];
-  swiperRef: React.RefObject<SwiperRef>;
+  emblaApi: ReturnType<typeof useEmblaCarousel>[1];
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const swiper = swiperRef.current?.swiper;
-    if (!swiper) return;
-    const onSlideChange = () => setActiveIndex(swiper.realIndex);
-    swiper.on('slideChange', onSlideChange);
-    return () => { swiper.off('slideChange', onSlideChange); };
-  }, [swiperRef]);
+    if (!emblaApi) return;
+    const onSelect = () => setActiveIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi]);
 
   const handleClick = (index: number) => {
-    swiperRef.current?.swiper.slideToLoop(index);
+    emblaApi?.scrollTo(index);
   };
 
   return (
