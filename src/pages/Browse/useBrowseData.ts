@@ -41,7 +41,7 @@ function toStoreFilter(value: FilterBarValue) {
   };
 }
 
-export function useBrowseData() {
+export function useBrowseData(query?: string) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ── 1. URL → FilterBarValue ─────────────────────────
@@ -51,10 +51,10 @@ export function useBrowseData() {
   );
   const filterSig = useMemo(() => buildFilterSig(filterValue), [filterValue]);
 
-  // ── 1b. URL ?q= 搜索词（独立于 FilterBar） ───────────
+  // ── 1b. 搜索词（从参数传入，不再从 URL 读取） ───────────
   // TMDB discover 端点不支持 query 文本搜索；q 不为空时调 /search/multi，
   // 走 store.search() 把结果写入 discoverResults。
-  const urlQ = searchParams.get('q')?.trim() ?? '';
+  const urlQ = query?.trim() ?? '';
 
   // ── 2. store 状态 ───────────────────────────────────
   const {
@@ -87,7 +87,8 @@ export function useBrowseData() {
   }, []);
 
   // 首次 mount：立即发起一次查询，让"从首页进入"也能直接看到数据
-  // （不依赖筛选条件变化；与下方 filterSig 变化的 effect 完全独立）
+  // 搜索模式（urlQ 非空）由父组件 Browse/index.tsx 统一触发 search()，
+  // 此处仅处理 discover / top-rated 场景。
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
     initialFetchDoneRef.current = true;
@@ -95,15 +96,16 @@ export function useBrowseData() {
     // 同步 store 中的 filterOptions（确保与 URL 一致）
     setFilter(toStoreFilter(filterValue));
 
+    // 有搜索词时跳过：由父组件 search() 处理
+    if (urlQ) return;
+
     // 首次进入页面，无论有无旧数据都显示 loading
     setIsRefreshing(true);
     hadOldDataRef.current = false;
 
     // 立即发起 page=1 查询（无 debounce）
     const fetchPromise = (() => {
-      if (urlQ) {
-        return useTMDBStore.getState().search(urlQ, 1, { reset: true });
-      } else if (filterValue.category === 'top') {
+      if (filterValue.category === 'top') {
         return fetchTopRated(1, { reset: true });
       } else {
         return fetchDiscover(1, { reset: true });
@@ -118,24 +120,13 @@ export function useBrowseData() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── 3b. 搜索词变化（独立 effect） ──────────────────
-  // q 变化 → 调 search()。debounce 防止快速输入。
-  // 注意：q 清空（undefined → ''）时，filterSig effect 也会被触发（因为 setFilter
-  // 也在 filterSig 链路上），所以此处 q 清空不主动 fetchDiscover，让 filterSig 接管。
-  useEffect(() => {
-    if (!initialFetchDoneRef.current) return;
-    if (!urlQ) return; // q 为空：不主动 discover，由 filterSig effect 接管
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    setIsUpdating(true);
-    debounceTimerRef.current = setTimeout(() => {
-      if (!isMountedRef.current) return;
-      setIsUpdating(false);
-      void useTMDBStore.getState().search(urlQ, 1, { reset: true });
-    }, FILTER_DEBOUNCE_MS);
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    };
-  }, [urlQ]);
+  // ── 3b. 搜索词变化 ──────────────────────────────
+  // q 变化时由父组件 Browse/index.tsx 的 useEffect 统一调用 search()，
+  // 此处不再重复调用（避免两处独立 search 互相覆盖导致数据丢失）。
+  // q 清空（undefined → ''）时由 filterSig effect 接管 discover。
+
+
+
 
   // 筛选签名变化：debounce → 强制重置 fetch（首次 mount 由上方独立 effect 处理）
   // 有搜索词时（urlQ 不为空）跳过本 effect，由 3b 的 q effect 接管（避免重复请求）。
@@ -210,36 +201,35 @@ export function useBrowseData() {
   const isLoadingMore =
     loading.discover && discoverResults.length > 0 && discoverLastStatus !== 'success';
 
-  const loadMore = useCallback(() => {
+  const loadMore = useCallback((searchQuery?: string) => {
     if (loading.discover) return;
     if (!hasMore) return;
 
     const nextPage = discoverPagination.page + 1;
-    if (urlQ) {
-      // 有搜索词：调 /search/multi nextPage
-      useTMDBStore.getState().search(urlQ, nextPage);
+    if (searchQuery) {
+      useTMDBStore.getState().search(searchQuery, nextPage);
     } else if (filterValue.category === 'top') {
       fetchTopRated(nextPage);
     } else {
       fetchDiscover(nextPage);
     }
-  }, [loading.discover, hasMore, discoverPagination.page, urlQ, filterValue.category, fetchDiscover, fetchTopRated]);
+  }, [loading.discover, hasMore, discoverPagination.page, filterValue.category, fetchDiscover, fetchTopRated]);
 
   /**
    * 重试当前筛选条件下的首次加载（清空错误、强制 reset 拉 page=1）
    * 用于错误页"重试"按钮。无副作用,可在任意时刻调用,内部走 store 异步流程。
    */
-  const retry = useCallback(() => {
+  const retry = useCallback((searchQuery?: string) => {
     if (loading.discover) return;
     setFilter(toStoreFilter(filterValue));
-    if (urlQ) {
-      void useTMDBStore.getState().search(urlQ, 1, { reset: true });
+    if (searchQuery) {
+      void useTMDBStore.getState().search(searchQuery, 1, { reset: true });
     } else if (filterValue.category === 'top') {
       void fetchTopRated(1, { reset: true });
     } else {
       void fetchDiscover(1, { reset: true });
     }
-  }, [loading.discover, filterValue, urlQ, setFilter, fetchDiscover, fetchTopRated]);
+  }, [loading.discover, filterValue, setFilter, fetchDiscover, fetchTopRated]);
 
   return {
     filterValue,

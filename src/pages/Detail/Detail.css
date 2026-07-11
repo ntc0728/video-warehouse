@@ -636,8 +636,7 @@
 }
 
 .detail-stills-grid--limited {
-  max-height: calc(var(--layout-tabbar-height) * 2 + var(--space-sm) * 3);
-  overflow: hidden;
+  /* 行数由 JS visibleCount 控制，CSS 不再截断 */
 }
 
 .detail-stills-item {
@@ -1183,8 +1182,8 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
 }
-.detail-recommend:last-child {
-  margin-bottom: var(--space-lg);
+.detail-recommend + .detail-recommend {
+  margin-top: var(--space-sm);
 }
 
 .detail-recommend-title {

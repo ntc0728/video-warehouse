@@ -38,7 +38,7 @@ function ToastContainer({ item, onDone }: { item: ToastItem; onDone: (id: number
         whitespace-pre-line break-words
         transition-all duration-300 ease-out
         ${visible ? 'opacity-100' : 'opacity-0'}
-        bottom-[env(safe-area-inset-bottom,16px)+2rem] md:bottom-auto md:top-6
+        bottom-6 md:bottom-auto md:top-6
         ${visible ? 'translate-y-0' : 'translate-y-4 md:-translate-y-4'}
       `}
       style={{

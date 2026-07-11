@@ -23,6 +23,7 @@ function formatSpeed(bps: number): string {
 /**
  * 网络速度监测 Hook
  * 每秒从播放器 store 读取带宽估算值并格式化为速度字符串
+ * 缓冲期间保持上次已知速度，避免显示 "-- KB/s"
  * @returns 当前网速的可读字符串，如 '1.5 MB/s'
  */
 export function useNetworkSpeed(): string {
@@ -31,11 +32,16 @@ export function useNetworkSpeed(): string {
   useEffect(() => {
     const timer = setInterval(() => {
       const currentBps = usePlayerStore.getState().bandwidthEstimate;
-      setSpeed(formatSpeed(currentBps));
+      if (currentBps > 0) {
+        setSpeed(formatSpeed(currentBps));
+      }
+      // currentBps === 0 时保持上次已知速度，不回退到 "-- KB/s"
     }, 1000);
 
     const initialBps = usePlayerStore.getState().bandwidthEstimate;
-    setSpeed(formatSpeed(initialBps));
+    if (initialBps > 0) {
+      setSpeed(formatSpeed(initialBps));
+    }
 
     return () => clearInterval(timer);
   }, []);

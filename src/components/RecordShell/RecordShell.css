@@ -1,0 +1,313 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RecordShell — 收藏页 / 历史页共用外壳
+   桌面（≥768px）：方案 C — 左侧固定筛选侧栏 + 右侧卡片主区
+   移动（≤767px）：方案 M6 — 顶部吸顶精简栏，滚动折叠状态芯片行
+   依赖已有全局类：.category-segmented / .status-tabs / .toolbar-btn / .toolbar-actions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 提供 .category-segmented 基础样式，保证组件自持（Vite 会对重复 import 去重） */
+@import '@/components/StatusTabs/FilterBar.css';
+
+.record-page {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  width: 100%;
+}
+
+.record-shell {
+  --record-aside-w: clamp(200px, 15vw, 260px);
+
+  display: flex;
+  flex: 1 1 0;
+  gap: var(--space-lg);
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+  padding-top: var(--space-md);
+}
+
+/* ── 左侧筛选侧栏（桌面 sticky，卡片化 + 主题自适应背景） ─────────────────── */
+.record-aside {
+  position: sticky;
+  top: var(--space-md);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-md);
+  align-self: stretch;
+  width: var(--record-aside-w);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.record-aside__title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 分段控件在侧栏中撑满宽度、两段等分 */
+.record-segmented {
+  display: flex;
+  width: 100%;
+}
+.record-segmented .category-segmented__item {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+/* ── 搜索框（组件自持样式，页面不再重复定义） ───────────────────────────── */
+.record-search {
+  position: relative;
+  width: 100%;
+}
+.record-search__field {
+  display: flex;
+  align-items: center;
+  height: var(--comp-tab-height);
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.15s ease;
+}
+.record-search__field:focus-within {
+  border-color: var(--color-primary);
+}
+.record-search__icon {
+  flex-shrink: 0;
+  margin-right: var(--space-xs);
+  color: var(--color-text-tertiary);
+}
+.record-search__input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  padding-right: var(--comp-thumb-size);
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  outline: none;
+  text-overflow: ellipsis;
+}
+.record-search__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+.record-search__clear {
+  position: absolute;
+  right: var(--space-sm);
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-thumb-size);
+  height: var(--comp-thumb-size);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.record-search__clear:hover {
+  color: var(--color-text);
+}
+.record-search__clear[data-empty='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── 状态芯片：桌面竖排、宽度面板 2/3、居中排列、间距加大 ─────────────────── */
+.record-status {
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+}
+.record-status .status-tab {
+  justify-content: center;
+  width: 100%;
+  height: calc(var(--comp-tab-height) * 0.88);
+}
+.record-status .status-tab__count {
+  margin-left: 0;
+}
+
+/* ── 折叠态筛选按钮（仅移动折叠时显示） ─────────────────────────────────── */
+.record-filter-toggle {
+  display: none;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-tab-height);
+  height: var(--comp-tab-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.record-filter-toggle:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text);
+}
+.record-filter-toggle--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* ── 工具栏操作（桌面竖排、宽度面板 3/4、居中） ─────────────────────────── */
+.record-toolbar {
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+  margin-left: 0;
+}
+.record-toolbar .toolbar-btn {
+  justify-content: center;
+  width: 100%;
+}
+
+/* ── 右侧卡片主区 ───────────────────────────────────────────────────────── */
+.record-main {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   移动端 M6 — 吸顶精简栏 + 滚动折叠
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (width <= 767px) {
+  .record-shell {
+    flex-direction: column;
+    gap: 0;
+    padding-top: 0;
+  }
+
+  /* 侧栏 → 吸顶横向精简栏（去卡片化，恢复扁平吸顶栏） */
+  .record-aside {
+    top: 0;
+    z-index: 20;
+    flex-flow: row wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    width: 100%;
+    padding: var(--space-sm) 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-background);
+    box-shadow: 0 var(--space-sm) 0 0 var(--color-background);
+    transition: box-shadow 0.2s ease;
+  }
+
+  /* 标题在移动端显示：独占顶行 */
+  .record-aside__title {
+    order: 0;
+    width: 100%;
+    padding-bottom: var(--space-xs);
+    font-size: var(--text-xl);
+  }
+
+  /* 行内元素顺序：分段 → 搜索 → 折叠按钮 → 工具栏 → 状态芯片（独占一行） */
+  .record-segmented {
+    order: 1;
+    width: auto;
+  }
+  .record-search {
+    flex: 1 1 auto;
+    order: 2;
+    width: auto; /* 复位桌面侧栏的 width:100%，避免 flex-basis=100% 撑满整行导致换行 */
+    min-width: 0;
+  }
+  .record-filter-toggle {
+    order: 3;
+  }
+  .record-toolbar {
+    display: none; /* 初始态隐藏，折叠态才显示 */
+    flex-direction: row;
+    gap: var(--space-xs);
+    order: 4;
+    width: auto;
+    margin-left: 0;
+  }
+  .record-toolbar .toolbar-btn {
+    width: auto;
+    padding: var(--space-xs);
+  }
+  .record-toolbar .toolbar-btn__label {
+    display: none;
+  }
+
+  /* 状态芯片：横向滚动，独占整行；纵向 max-height 折叠动画 */
+  .record-status {
+    align-items: center;
+    order: 5;
+    width: 100%;
+    max-height: var(--comp-tab-height);
+    overflow: auto hidden;
+    opacity: 1;
+    transition: max-height 0.22s ease, opacity 0.18s ease, margin 0.22s ease;
+    flex-flow: row nowrap;
+  }
+  .record-status .status-tab {
+    justify-content: center;
+    width: auto;
+  }
+  .record-status .status-tab__count {
+    margin-left: 0;
+  }
+
+  /* 展开态（未折叠）：折叠按钮隐藏，状态芯片常显 */
+  .record-shell:not([data-collapsed]) .record-filter-toggle {
+    display: none;
+  }
+
+  /* 折叠态：折叠按钮出现，状态芯片行收起 */
+  .record-shell[data-collapsed] .record-filter-toggle {
+    display: inline-flex;
+  }
+  .record-shell[data-collapsed] .record-aside {
+    box-shadow: 0 1px 0 0 var(--color-border-light), 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+  /* 折叠态：工具栏按钮出现 */
+  .record-shell[data-collapsed] .record-toolbar {
+    display: flex;
+  }
+  .record-shell[data-collapsed] .record-status {
+    max-height: 0;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 折叠态但用户点开筛选：临时展开状态芯片 */
+  .record-shell[data-collapsed][data-chips-open] .record-status {
+    max-height: var(--comp-tab-height);
+    margin-top: var(--space-xs);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .record-main {
+    padding-top: var(--space-sm);
+  }
+}

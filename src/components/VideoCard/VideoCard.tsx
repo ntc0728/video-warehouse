@@ -75,7 +75,8 @@ const VideoCard = memo(function VideoCard({
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const isTV = useIsTV();
-  const highlightedTitle = useHighlightedText(video.title, highlightQuery ?? '');
+  const displayTitle = video.title.length > 20 ? video.title.slice(0, 20) + '…' : video.title;
+  const highlightedTitle = useHighlightedText(displayTitle, highlightQuery ?? '');
 
   const isCollected = useUserStore(
     (s) => s.collections.some((c) => c.videoId === video.id),
@@ -86,26 +87,68 @@ const VideoCard = memo(function VideoCard({
     const el = titleRef.current;
     if (!el) return;
     let cancelled = false;
+    let rafId = 0;
+
     const check = () => {
       if (cancelled) return;
       const textEl = el.querySelector('.video-card-title-text') as HTMLElement | null;
-      if (!textEl) return;
+      const trackEl = el.querySelector('.video-card-title-track') as HTMLElement | null;
+      if (!textEl || !trackEl) return;
+
       const overflow = textEl.scrollWidth > el.clientWidth;
       setIsOverflow(overflow);
-      // 根据溢出量计算跑马灯速度：每 200px 溢出 1 秒，最少 6 秒，最多 30 秒
-      if (overflow) {
-        const overflowPx = textEl.scrollWidth - el.clientWidth;
-        const duration = Math.max(6, Math.min(30, overflowPx / 200));
-        el.style.setProperty('--marquee-duration', `${duration}s`);
-      }
-    };
-    const rafId = requestAnimationFrame(() => requestAnimationFrame(check));
 
+      // 停止之前的动画
+      cancelAnimationFrame(rafId);
+      trackEl.style.transform = '';
+
+      if (!overflow) return;
+
+      const distance = textEl.scrollWidth;
+      const speed = 20; // px/s
+      const pauseMs = 1500;
+
+      let startTime = 0;
+      let phase: 'scroll' | 'pause-end' | 'pause-start' = 'scroll';
+
+      const animate = (now: DOMHighResTimeStamp) => {
+        if (cancelled) return;
+        if (!startTime) startTime = now;
+        const elapsed = now - startTime;
+
+        if (phase === 'scroll') {
+          const d = Math.min(elapsed / 1000 * speed, distance);
+          trackEl.style.transform = `translateX(${-d}px)`;
+          if (d >= distance) {
+            phase = 'pause-end';
+            startTime = now;
+          }
+        } else if (phase === 'pause-end') {
+          if (elapsed >= pauseMs) {
+            trackEl.style.transform = '';
+            phase = 'pause-start';
+            startTime = now;
+          }
+        } else if (phase === 'pause-start') {
+          if (elapsed >= pauseMs) {
+            phase = 'scroll';
+            startTime = now;
+          }
+        }
+
+        rafId = requestAnimationFrame(animate);
+      };
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    const initRaf = requestAnimationFrame(() => requestAnimationFrame(check));
     const ro = new ResizeObserver(check);
     ro.observe(el);
 
     return () => {
       cancelled = true;
+      cancelAnimationFrame(initRaf);
       cancelAnimationFrame(rafId);
       ro.disconnect();
     };
@@ -243,11 +286,11 @@ const VideoCard = memo(function VideoCard({
           >
             <span className="video-card-title-track">
               <span className="video-card-title-text">
-                {highlightQuery ? highlightedTitle : video.title}
+                {highlightQuery ? highlightedTitle : displayTitle}
               </span>
               {isOverflow && (
-                <span className="video-card-title-text">
-                  {highlightQuery ? highlightedTitle : video.title}
+                <span className="video-card-title-text" aria-hidden>
+                  {highlightQuery ? highlightedTitle : displayTitle}
                 </span>
               )}
             </span>

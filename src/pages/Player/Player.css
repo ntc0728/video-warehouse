@@ -423,7 +423,8 @@
 }
 
 .player-empty-back:hover {
-  color: var(--color-primary-hover);
+  color: #fff;
+  border-color: #fff;
 }
 
 .player-empty-content {
@@ -619,7 +620,7 @@
 
   .player-video-area {
     height: auto;
-    aspect-ratio: 16/9;
+    aspect-ratio: 16/10;
   }
 
   .player-sidebar {
@@ -853,6 +854,7 @@
   .player-page {
     height: 100dvh;
     min-height: 0;
+    padding-top: var(--header-height);
     overflow-y: auto;
   }
 
@@ -880,3 +882,4 @@
     overflow: auto;
   }
 }
+

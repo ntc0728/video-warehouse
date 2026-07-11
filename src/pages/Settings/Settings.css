@@ -109,6 +109,19 @@
   font-size: var(--text-sm);
 }
 
+.settings-link {
+  display: inline-block;
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.settings-link:hover {
+  color: #60a5fa;
+}
+
 .setting-modal-input {
   width: 100%;
   margin-bottom: var(--space-md);
@@ -120,16 +133,54 @@
   font-size: var(--text-base);
 }
 
+.setting-modal-input--has-clear {
+  margin-bottom: 0;
+  padding-right: var(--space-2xl);
+}
+
+.settings-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.settings-input-clear {
+  position: absolute;
+  right: var(--space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.settings-input-clear:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .setting-modal-actions {
   display: flex;
   gap: var(--space-sm);
   justify-content: center;
 }
 
-.setting-modal-actions button {
+.setting-modal-actions button,
+.settings-test-row button {
   min-height: unset !important;
-  padding: var(--space-xs) var(--space-md) !important;
+  padding: var(--space-sm) var(--space-lg) !important;
   border-radius: var(--radius-full) !important;
+  font-size: var(--text-sm) !important;
 }
 
 @media (width >= 768px) {
@@ -323,6 +374,15 @@
   color: var(--color-text);
   font-size: var(--text-lg);
   font-weight: 600;
+}
+
+/* 版本号点击排除全局按钮动画和背景色 */
+.version-item button:active,
+.version-item button:focus,
+.version-item button:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
 }
 
 /* 表单输入组 */

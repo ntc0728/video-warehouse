@@ -1,100 +1,105 @@
-# 依赖
+# ── 依赖 ──────────────────────────────────────
 node_modules
 
-# 构建产物
+# ── 构建产物 ──────────────────────────────────
 dist
+dist_verify
 build
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js
 
-# 环境变量
+# ── 环境变量（含密钥，禁止提交）─────────────────
 .env
 .env.local
+.env.*.local
 
-# 日志
+# ── 日志 ──────────────────────────────────────
 *.log
+npm-debug.log*
 
-# Cloudflare Worker
+# ── Cloudflare Worker ────────────────────────
 .wrangler
 
-# Capacitor / Android
+# ── Capacitor / Android ──────────────────────
 android/
+*.apk
 
-# 代码图谱
-.codegraph
-
-# AI 工具本地配置
+# ── AI 工具本地配置（不入版本控制）──────────────
 .claude/
 .reasonix/
 .trae-cn/
 .codex/
-AGENTS.md
+.mimocode/
+.mimocode-project-id
+.catpaw/
+.opencode/
+.mignore
+.workbuddy/
 
-# Trae 本地生成文档
+# ── AI 工具本地规则 / 文档 ────────────────────
 .trae/documents/
 .trae/specs/
-
-# Trae 本地规则（含 agent 测试要求参考，不纳入版本控制）
 .trae/rules/
 
-# 备份
+# ── 备份 ──────────────────────────────────────
 backups/
+*.bak
 
-# 脚本产物
+# ── 脚本产物 ──────────────────────────────────
 output/
 
-# 测试数据
+# ── 测试数据 / 结果 ───────────────────────────
 epg_test.xml
 data/iptv.m3u
-
-# 测试结果
 test-results/
 
-# 文档
-docs/
-
-# 脚本（开发辅助脚本不入版本控制）
-# 注意：构建脚本（build-*.ps1/bat）和测试脚本（*.spec.ts）需要保留
-scripts/*.sh
-scripts/*.py
-scripts/*.js
-scripts/*.mjs
-scripts/*.ts
-!scripts/*.spec.ts
-
-# 旧规则文件
-CLAUDE.md
-rules.md
-
-# 截图
+# ── 截图 ──────────────────────────────────────
 shots/
 ScreenShot_*.png
 collections-b-*.png
 timeline-*.png
 
-# 构建和 lint 输出
+# ── 构建和 lint 输出 ──────────────────────────
 build-final.txt
 lint-final.txt
 lint-output.txt
 lintcss-final.txt
 
-# agent-browser 工具临时产物 / 本地配置
+# ── agent-browser 工具临时产物 ─────────────────
 b64.tmp
 agent-browser.json
 
-# 调试工具
+# ── 调试工具（本地开发用）──────────────────────
 public/db-inspector.html
 public/debug-source.html
 
-# 脚本截图目录
+# ── 脚本截图目录 ──────────────────────────────
 scripts/screenshots/
 
-# AI 工具本地配置
-.mimocode/
-.catpaw/
-.mignore
+# ── 文档（仅提交 page-diagrams，其余忽略）─────
+docs/*
+!docs/page-diagrams/
 
-# Build outputs
-kinoTv-debug.apk
-*.apk
+# ── 旧规则文件 ────────────────────────────────
+rules.md
+
+# ── 开发辅助脚本（非构建/测试脚本不入版本控制）──
+# 保留：.ps1/.bat 构建脚本、.spec.ts E2E 测试、.md 文档、.mjs 工具脚本
+scripts/*.sh
+scripts/*.py
+scripts/*.js
+scripts/*.ts
+!scripts/*.spec.ts
+
+# ── OS 临时文件 ───────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ── IDE / 编辑器 ──────────────────────────────
+.idea/
+*.swp
+*.swo
+*~

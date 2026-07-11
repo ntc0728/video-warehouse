@@ -87,7 +87,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 40%;
+  width: 100%;
   height: 100%;
   border-radius: var(--radius-full);
   background: var(--color-text-tertiary);
@@ -102,8 +102,9 @@
     transparent
   );
   background-size: 20px 20px;
+  transform-origin: left;
   animation:
-    app-loading-slide 1.5s ease-in-out infinite,
+    app-loading-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards,
     app-loading-stripes 0.75s linear infinite;
 }
 
@@ -120,33 +121,20 @@
    动画
    ═══════════════════════════════════════════════════════════════════ */
 
-@keyframes app-loading-slide {
-  0%   {
-  transform: translateX(-100%);
-}
-  100% {
-  transform: translateX(350%);
-}
+@keyframes app-loading-fill {
+  0%   { transform: scaleX(0); }
+  60%  { transform: scaleX(0.7); }
+  100% { transform: scaleX(1); }
 }
 
 @keyframes app-loading-stripes {
-  0%   {
-  background-position: 0 0;
-}
-  100% {
-  background-position: 20px 0;
-}
+  0%   { background-position: 0 0; }
+  100% { background-position: 20px 0; }
 }
 
 @keyframes app-loading-fade-in {
-  from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-  to   {
-  opacity: 1;
-  transform: translateY(0);
-}
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -264,7 +252,6 @@ html.theme-transitioning .app-loading *:not(svg):not(path) {
    可访问性：减少动画
    ═══════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
-  .app-loading__progress-bar,
   .app-loading__brand-name,
   .app-loading__brand-sub,
   .app-loading__tip {

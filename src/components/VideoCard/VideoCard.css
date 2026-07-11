@@ -276,16 +276,6 @@
   white-space: nowrap;
 }
 
-/* 溢出时自动触发跑马灯 */
-.video-card-title--overflow .video-card-title-track {
-  animation: vc-marquee var(--marquee-duration, 12s) linear infinite;
-}
-
-@keyframes vc-marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 /* ============================================================
    Mobile
    ============================================================ */

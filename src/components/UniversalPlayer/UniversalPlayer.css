@@ -216,6 +216,7 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--text-base);
+  font-weight: 600;
   white-space: nowrap;
   transition: color 0.2s, background 0.2s;
   cursor: pointer;
@@ -277,12 +278,14 @@
   margin-left: var(--space-xs);
   color: rgba(255, 255, 255, 0.7);
   font-size: var(--text-sm);
+  font-weight: 600;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
 .up-speed-label {
   font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 /* ===== Progress Bar ===== */
@@ -304,7 +307,7 @@
 .up-progress-bar {
   position: relative;
   flex: 1;
-  height: var(--space-sm);
+  height: var(--space-xs);
   border-radius: var(--space-2xs);
   background: rgba(255, 255, 255, 0.2);
   touch-action: none;
@@ -320,7 +323,7 @@
 
 .up-progress-bar:hover,
 .up-progress-dragging {
-  height: var(--space-md);
+  height: var(--space-xs-plus);
 }
 
 .up-progress-live {
@@ -1084,6 +1087,21 @@
   }
 }
 
+/* ===== 大屏：缩减控制栏右侧图标间距 ===== */
+@media (width >= 1920px) {
+  .up-control-right {
+    gap: var(--space-xs);
+  }
+
+  .up-control-feature {
+    gap: var(--space-xs);
+  }
+
+  .up-control-window {
+    gap: var(--space-xs);
+  }
+}
+
 /* ===== Error Actions (IPTV 错误态快捷操作条) ===== */
 .up-error-actions {
   display: flex;
@@ -1283,20 +1301,22 @@
   width: var(--space-xl);
   height: var(--space-xl);
   border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--player-text);
+  border-top-color: #fff;
   border-radius: 50%;
   animation: up-iptv-buffering-spin 0.8s linear infinite;
 }
 
 .up-iptv-buffering-text {
-  color: rgba(255, 255, 255, 0.8);
+  color: #fff;
   font-size: var(--text-sm);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .up-iptv-buffering-reason {
-  color: rgba(255, 255, 255, 0.6);
+  color: #fff;
   font-size: var(--text-xs);
+  font-weight: 600;
   text-align: center;
 }
 
@@ -1307,8 +1327,9 @@
 }
 
 .up-iptv-buffering-metric {
-  color: rgba(255, 255, 255, 0.5);
+  color: #fff;
   font-size: var(--text-xs);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1466,10 +1487,7 @@
   .up-popover,
   .up-error-actions,
   .up-seek-indicator,
-  .up-program-guide-overlay,
-  .up-player-loading-spinner,
-  .up-iptv-buffering-spinner,
-  .up-channel-loading-icon {
+  .up-program-guide-overlay {
     backdrop-filter: none !important;
     animation: none !important;
   }

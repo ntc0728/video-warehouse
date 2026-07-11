@@ -39,6 +39,19 @@ function enqueue(options: ToastOptions) {
   emitChange();
 }
 
+/** 替换当前队列：清空已有项后入队新 toast，适用于快速连续提示场景 */
+function replaceCurrent(options: ToastOptions) {
+  queue.length = 0;
+  const item: ToastItem = {
+    id: ++toastId,
+    content: options.content,
+    duration: options.duration ?? 2000,
+    visible: false,
+  };
+  queue.push(item);
+  emitChange();
+}
+
 function dequeue(id: number) {
   const idx = queue.findIndex((t) => t.id === id);
   if (idx !== -1) {
@@ -61,6 +74,12 @@ export const toast = {
       typeof options === 'string' ? { content: options } : options;
     enqueue(opts);
   },
+  /** 替换当前 toast（清空队列后立即显示新内容，不等旧 toast 超时） */
+  replace(options: string | ToastOptions) {
+    const opts: ToastOptions =
+      typeof options === 'string' ? { content: options } : options;
+    replaceCurrent(opts);
+  },
 };
 
 export function useToastQueue(): ToastItem[] {
@@ -77,4 +96,4 @@ export function useToastQueue(): ToastItem[] {
   return queue;
 }
 
-export { dequeue, enqueue, markVisible };
+export { dequeue, enqueue, replaceCurrent, markVisible };

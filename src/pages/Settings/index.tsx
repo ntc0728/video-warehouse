@@ -3,6 +3,7 @@
  * 提供主题切换、数据源配置、IPTV 代理设置、翻译 API 配置等功能
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { List, Switch, Button, Modal, toast, HelpPopover } from '@/components/ui';
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useIPTVStore } from '@/stores/useIPTVStore';
@@ -43,9 +44,14 @@ const validators = {
 };
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { translationAppId, translationApiKey, setTranslationAppId, setTranslationApiKey, autoTranslate, setAutoTranslate } = useSettingsStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
   const tmdbStore = useTMDBStore();
+
+  // 源检测入口（连续点击3次版本号）
+  const versionClickCount = useRef(0);
+  const versionClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useDocumentTitle();
   const {
@@ -110,6 +116,8 @@ export default function SettingsPage() {
   const [testTmdbResult, setTestTmdbResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [isTestingProxy, setIsTestingProxy] = useState(false);
   const [testProxyResult, setTestProxyResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [isTestingCorsProxy, setIsTestingCorsProxy] = useState(false);
+  const [testCorsProxyResult, setTestCorsProxyResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const videoDropdown = useDropdownPosition(showMultiSelect);
   const iptvDropdown = useDropdownPosition(showIptvMultiSelect);
@@ -122,6 +130,26 @@ export default function SettingsPage() {
     setShowEpgMultiSelect(false);
     setShowTmdbLangSelect(false);
   }, []);
+
+  /** 版本号点击进入源检测（连续点击3次） */
+  const handleVersionClick = useCallback(() => {
+    versionClickCount.current += 1;
+
+    if (versionClickTimer.current) {
+      clearTimeout(versionClickTimer.current);
+    }
+
+    const remaining = 3 - versionClickCount.current;
+    if (remaining > 0) {
+      toast.replace({ content: `再点击 ${remaining} 次进入源检测页`, duration: 3000 });
+      versionClickTimer.current = setTimeout(() => {
+        versionClickCount.current = 0;
+      }, 3000);
+    } else {
+      versionClickCount.current = 0;
+      navigate('/source-checker');
+    }
+  }, [navigate]);
 
   /** 初始化时加载视频、IPTV 和 EPG 数据源配置 */
   useEffect(() => {
@@ -290,6 +318,36 @@ export default function SettingsPage() {
       setTestProxyResult({ ok: false, message: `连接失败：${err instanceof Error ? err.message : '未知错误'}` });
     } finally {
       setIsTestingProxy(false);
+    }
+  };
+
+  const testCorsProxyConnection = async (proxyUrl: string) => {
+    setIsTestingCorsProxy(true);
+    setTestCorsProxyResult(null);
+    try {
+      const testTarget = 'https://httpbin.org/get';
+      const proxy = proxyUrl.trim();
+      let fullUrl = proxy;
+      if (!proxy.includes('/proxy')) {
+        fullUrl = proxy.replace(/\/$/, '') + '/proxy?url=' + encodeURIComponent(testTarget);
+      } else if (!proxy.endsWith('url=') && !proxy.endsWith('url=%')) {
+        fullUrl = proxy.endsWith('?')
+          ? proxy + 'url=' + encodeURIComponent(testTarget)
+          : proxy.endsWith('/')
+            ? proxy + 'url=' + encodeURIComponent(testTarget)
+            : proxy + '?url=' + encodeURIComponent(testTarget);
+      } else {
+        fullUrl = proxy + encodeURIComponent(testTarget);
+      }
+      const resp = await fetch(fullUrl, { method: 'GET', signal: AbortSignal.timeout(8000) });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      if (!text || text.length < 10) throw new Error('响应内容异常');
+      setTestCorsProxyResult({ ok: true, message: 'CORS 代理连接正常' });
+    } catch (err) {
+      setTestCorsProxyResult({ ok: false, message: `连接失败：${err instanceof Error ? err.message : '未知错误'}` });
+    } finally {
+      setIsTestingCorsProxy(false);
     }
   };
 
@@ -756,9 +814,11 @@ export default function SettingsPage() {
         </List>
       </section>
 
-      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm lg:col-span-2">
+      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="关于">
-          <List.Item title="版本" extra="1.0.0" />
+          <div className="version-item">
+            <List.Item title="版本" extra="1.0.0" onClick={handleVersionClick} clickable />
+          </div>
           <List.Item title="影视大全" description="聚合影视剧和IPTV资源" />
         </List>
       </section>
@@ -776,33 +836,53 @@ export default function SettingsPage() {
               <label htmlFor="baidu-translate-app-id" className="settings-label">
                 App ID
               </label>
-              <input
-                id="baidu-translate-app-id"
-                type="text"
-                name="baiduTranslateAppId"
-                autoComplete="off"
-                placeholder="请输入 App ID"
-                value={appIdInput}
-                onChange={(e) => setAppIdInput(e.target.value)}
-                className="setting-modal-input"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="baidu-translate-app-id"
+                  type="text"
+                  name="baiduTranslateAppId"
+                  autoComplete="off"
+                  placeholder="请输入 App ID"
+                  value={appIdInput}
+                  onChange={(e) => setAppIdInput(e.target.value)}
+                  className={`setting-modal-input ${appIdInput ? 'setting-modal-input--has-clear' : ''}`}
+                />
+                {appIdInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => setAppIdInput('')}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
             </div>
             <div className="settings-input-group">
               <label htmlFor="baidu-translate-secret-key" className="settings-label">
                 Secret Key <span className="settings-required">*</span>
               </label>
-              <input
-                id="baidu-translate-secret-key"
-                type="password"
-                name="baiduTranslateSecretKey"
-                autoComplete="off"
-                placeholder="请输入 Secret Key"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                className="setting-modal-input"
-                aria-describedby="baidu-translate-secret-key-help"
-                aria-required="true"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="baidu-translate-secret-key"
+                  type="password"
+                  name="baiduTranslateSecretKey"
+                  autoComplete="off"
+                  placeholder="请输入 Secret Key"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  className={`setting-modal-input ${apiKeyInput ? 'setting-modal-input--has-clear' : ''}`}
+                  aria-describedby="baidu-translate-secret-key-help"
+                  aria-required="true"
+                />
+                {apiKeyInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => setApiKeyInput('')}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
               <p id="baidu-translate-secret-key-help" className="settings-help">
                 在百度翻译开放平台的"开发者信息"中获取
               </p>
@@ -824,26 +904,39 @@ export default function SettingsPage() {
         content={
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
-              部署 worker/m3u8-proxy.js 到 Cloudflare Workers 后，将 Worker URL 填入此处
+              部署 worker/m3u8-proxy.js 到 Cloudflare Workers 后，将 Worker URL 填入此处。<br />
+              <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener noreferrer" className="settings-link">
+                前往 Cloudflare Workers 控制台
+              </a>
             </div>
             <div className="settings-input-group">
               <label htmlFor="stream-proxy-url" className="settings-label">
                 代理服务器地址
               </label>
-              <input
-                id="stream-proxy-url"
-                type="url"
-                name="streamProxyUrl"
-                autoComplete="off"
-                placeholder="https://your-worker.workers.dev"
-                value={proxyUrlInput}
-                onChange={(e) => {
-                  setProxyUrlInput(e.target.value);
-                  setProxyUrlError(null);
-                }}
-                className={`setting-modal-input ${proxyUrlError ? 'settings-input--error' : ''}`}
-                aria-describedby="stream-proxy-url-help stream-proxy-url-error"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="stream-proxy-url"
+                  type="url"
+                  name="streamProxyUrl"
+                  autoComplete="off"
+                  placeholder="https://your-worker.workers.dev"
+                  value={proxyUrlInput}
+                  onChange={(e) => {
+                    setProxyUrlInput(e.target.value);
+                    setProxyUrlError(null);
+                  }}
+                  className={`setting-modal-input ${proxyUrlInput ? 'setting-modal-input--has-clear' : ''} ${proxyUrlError ? 'settings-input--error' : ''}`}
+                  aria-describedby="stream-proxy-url-help stream-proxy-url-error"
+                />
+                {proxyUrlInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => { setProxyUrlInput(''); setProxyUrlError(null); }}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
               <p id="stream-proxy-url-help" className="settings-help">
                 格式：https://your-worker.workers.dev
               </p>
@@ -868,12 +961,6 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="setting-modal-actions">
-              {proxyUrlInput && (
-                <Button size="small" onClick={() => {
-                  setProxyUrlInput('');
-                  setProxyUrlError(null);
-                }}>清除</Button>
-              )}
               <Button size="small" onClick={() => setShowProxyInput(false)}>取消</Button>
               <Button size="small" color="primary" onClick={handleSaveProxyUrl}>保存</Button>
             </div>
@@ -897,27 +984,32 @@ export default function SettingsPage() {
               <label htmlFor="proxy-pattern" className="settings-label">
                 正则表达式
               </label>
-              <input
-                id="proxy-pattern"
-                type="text"
-                name="proxyPattern"
-                autoComplete="off"
-                placeholder="miguvideo\\.com|101\\.35\\.240\\.114"
-                value={patternInput}
-                onChange={(e) => setPatternInput(e.target.value)}
-                className="setting-modal-input"
-                aria-describedby="proxy-pattern-help"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="proxy-pattern"
+                  type="text"
+                  name="proxyPattern"
+                  autoComplete="off"
+                  placeholder="miguvideo\\.com|101\\.35\\.240\\.114"
+                  value={patternInput}
+                  onChange={(e) => setPatternInput(e.target.value)}
+                  className={`setting-modal-input ${patternInput ? 'setting-modal-input--has-clear' : ''}`}
+                  aria-describedby="proxy-pattern-help"
+                />
+                {patternInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => setPatternInput('')}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
               <p id="proxy-pattern-help" className="settings-help">
                 匹配的 URL 不走代理，其余走代理
               </p>
             </div>
             <div className="setting-modal-actions">
-              {patternInput && (
-                <Button size="small" onClick={() => {
-                  setPatternInput('');
-                }}>清除</Button>
-              )}
               <Button size="small" onClick={() => {
                 setPatternInput(DEFAULT_PROXY_PATTERN);
               }}>恢复默认</Button>
@@ -939,26 +1031,39 @@ export default function SettingsPage() {
             <div className="setting-modal-desc">
               CORS（跨域资源共享）代理用于绕过浏览器的跨域限制，让应用能访问其他服务器的视频数据。<br />
               留空则使用默认代理 corsproxy.io。<br />
-              常见格式: https://your-proxy.workers.dev
+              常见格式: https://your-proxy.workers.dev<br />
+              <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener noreferrer" className="settings-link">
+                前往 Cloudflare Workers 控制台
+              </a>
             </div>
             <div className="settings-input-group">
               <label htmlFor="cors-proxy-url" className="settings-label">
                 代理服务器地址（可选）
               </label>
-              <input
-                id="cors-proxy-url"
-                type="url"
-                name="corsProxyUrl"
-                autoComplete="off"
-                placeholder="https://your-worker.workers.dev"
-                value={corsProxyInput}
-                onChange={(e) => {
-                  setCorsProxyInput(e.target.value);
-                  setCorsProxyError(null);
-                }}
-                className={`setting-modal-input ${corsProxyError ? 'settings-input--error' : ''}`}
-                aria-describedby="cors-proxy-url-help cors-proxy-url-error"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="cors-proxy-url"
+                  type="url"
+                  name="corsProxyUrl"
+                  autoComplete="off"
+                  placeholder="https://your-worker.workers.dev"
+                  value={corsProxyInput}
+                  onChange={(e) => {
+                    setCorsProxyInput(e.target.value);
+                    setCorsProxyError(null);
+                  }}
+                  className={`setting-modal-input ${corsProxyInput ? 'setting-modal-input--has-clear' : ''} ${corsProxyError ? 'settings-input--error' : ''}`}
+                  aria-describedby="cors-proxy-url-help cors-proxy-url-error"
+                />
+                {corsProxyInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => { setCorsProxyInput(''); setCorsProxyError(null); }}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
               <p id="cors-proxy-url-help" className="settings-help">
                 格式：https://your-worker.workers.dev（可选，留空使用默认代理）
               </p>
@@ -968,13 +1073,21 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
-            <div className="setting-modal-actions">
-              {corsProxyInput && (
-                <Button size="small" onClick={() => {
-                  setCorsProxyInput('');
-                  setCorsProxyError(null);
-                }}>恢复默认</Button>
+            <div className="settings-test-row">
+              <Button
+                size="small"
+                onClick={() => testCorsProxyConnection(corsProxyInput.trim())}
+                disabled={isTestingCorsProxy || !corsProxyInput.trim()}
+              >
+                {isTestingCorsProxy ? '测试中...' : '测试连接'}
+              </Button>
+              {testCorsProxyResult && (
+                <span className={testCorsProxyResult.ok ? 'text-success' : 'text-error'}>
+                  {testCorsProxyResult.message}
+                </span>
               )}
+            </div>
+            <div className="setting-modal-actions">
               <Button size="small" onClick={() => setShowCorsProxyInput(false)}>取消</Button>
               <Button size="small" color="primary" onClick={() => {
                 const error = validators.url(corsProxyInput.trim());
@@ -999,28 +1112,38 @@ export default function SettingsPage() {
           <div className="setting-modal-content">
             <div className="setting-modal-desc">
               TMDB（The Movie Database）是一个免费的电影数据库，提供影片信息、海报、评分等。配置 Token 后可获取更丰富的影片详情。<br />
-              请前往 <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)' }}>themoviedb.org/settings/api</a> 申请 API 密钥（免费），<br />
+              请前往 <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="settings-link">themoviedb.org/settings/api</a> 申请 API 密钥（免费），<br />
               在 API 密钥页面获取 "API 读访问令牌 (v4 auth)" 或 "Bearer Token"。
             </div>
             <div className="settings-input-group">
               <label htmlFor="tmdb-access-token" className="settings-label">
                 Access Token <span className="settings-required">*</span>
               </label>
-              <input
-                id="tmdb-access-token"
-                type="password"
-                name="tmdbAccessToken"
-                autoComplete="off"
-                placeholder="输入 TMDB Access Token（Bearer Token）"
-                value={tmdbTokenInput}
-                onChange={(e) => {
-                  setTMDBTokenInput(e.target.value);
-                  setTmdbTokenError(null);
-                }}
-                className={`setting-modal-input ${tmdbTokenError ? 'settings-input--error' : ''}`}
-                aria-describedby="tmdb-access-token-help tmdb-access-token-error"
-                aria-required="true"
-              />
+              <div className="settings-input-wrapper">
+                <input
+                  id="tmdb-access-token"
+                  type="password"
+                  name="tmdbAccessToken"
+                  autoComplete="off"
+                  placeholder="输入 TMDB Access Token（Bearer Token）"
+                  value={tmdbTokenInput}
+                  onChange={(e) => {
+                    setTMDBTokenInput(e.target.value);
+                    setTmdbTokenError(null);
+                  }}
+                  className={`setting-modal-input ${tmdbTokenInput ? 'setting-modal-input--has-clear' : ''} ${tmdbTokenError ? 'settings-input--error' : ''}`}
+                  aria-describedby="tmdb-access-token-help tmdb-access-token-error"
+                  aria-required="true"
+                />
+                {tmdbTokenInput && (
+                  <button
+                    type="button"
+                    className="settings-input-clear"
+                    onClick={() => { setTMDBTokenInput(''); setTmdbTokenError(null); }}
+                    aria-label="清除"
+                  >&#x2715;</button>
+                )}
+              </div>
               <p id="tmdb-access-token-help" className="settings-help">
                 格式：eyJhbGciOi...（在 TMDB 网站获取）
               </p>
@@ -1045,12 +1168,6 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="setting-modal-actions">
-              {tmdbTokenInput && (
-                <Button size="small" onClick={() => {
-                  setTMDBTokenInput('');
-                  setTmdbTokenError(null);
-                }}>清除</Button>
-              )}
               <Button size="small" onClick={() => setShowTMDBTokenInput(false)}>取消</Button>
               <Button size="small" color="primary" onClick={handleSaveTMDBToken}>保存</Button>
             </div>

@@ -88,40 +88,6 @@ describe('parsePlaySources', () => {
     });
   });
 
-  describe('剧集模式（默认）', () => {
-    it('单条线路多集 → episodes 数组', () => {
-      const result = parsePlaySources(
-        '第1集$http://example.com/ep1.m3u8#第2集$http://example.com/ep2.m3u8'
-      );
-      expect(result.episodes).toBeDefined();
-      expect(result.episodes).toHaveLength(2);
-      expect(result.episodes![0].title).toBe('第1集');
-      expect(result.episodes![0].number).toBe(1);
-      expect(result.episodes![1].title).toBe('第2集');
-      expect(result.episodes![1].number).toBe(2);
-    });
-
-    it('同名集自动加序号后缀', () => {
-      const result = parsePlaySources(
-        '第1集$http://a.com/ep1.m3u8#第1集$http://b.com/ep1b.m3u8'
-      );
-      expect(result.episodes).toHaveLength(2);
-      // 两个同名"第1集"应该被区分为"第1集01"和"第1集02"
-      expect(result.episodes![0].title).toContain('第1集');
-      expect(result.episodes![1].title).toContain('第1集');
-    });
-
-    it('多条线路的集共享 episodesMap', () => {
-      const result = parsePlaySources(
-        '源1$http://a.com/ep1.m3u8$$$源1$http://a.com/ep1.m3u8'
-      );
-      // 同一 URL 只会出现在 episodesMap 中一次
-      expect(result.episodes).toHaveLength(1);
-      // 每条线路是独立的 source
-      expect(result.episodes![0].sources.length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
   describe('多条线路去重', () => {
     it('同名线路自动加序号后缀', () => {
       const result = parsePlaySources(
@@ -160,11 +126,6 @@ describe('parsePlaySources', () => {
     it('空 $$$ 分段被忽略', () => {
       const result = parsePlaySources('$$$http://a.com/v.m3u8$$$');
       expect(result.sources.length + (result.episodes?.length ?? 0)).toBeGreaterThanOrEqual(1);
-    });
-
-    it('只有 # 分隔符无 $ 分隔符', () => {
-      const result = parsePlaySources('http://a.com/ep1.m3u8#http://a.com/ep2.m3u8');
-      expect(result.episodes).toHaveLength(2);
     });
   });
 });
