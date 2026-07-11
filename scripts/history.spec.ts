@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+/*
+ * RecordShell: Collections & History share the RecordShell component.
+ * Desktop: left sidebar (timeline/tabs) + right cards panel.
+ * Mobile: sticky header that collapses on scroll.
+ */
+
 /* ─── Page Load ──────────────────────────────────────────── */
 test.describe('History page load', () => {
   test('history page loads without JS errors', async ({ page }) => {
@@ -77,7 +83,7 @@ test.describe('Search', () => {
   test('search input exists', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const searchInput = page.locator('.search-box__input').first();
+    const searchInput = page.locator('.record-search__input').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await expect(searchInput).toBeVisible();
     }
@@ -86,7 +92,7 @@ test.describe('Search', () => {
   test('typing filters items', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const searchInput = page.locator('.search-box__input').first();
+    const searchInput = page.locator('.record-search__input').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('test');
       await page.waitForTimeout(300);
@@ -101,7 +107,7 @@ test.describe('Timeline navigation', () => {
   test('timeline exists', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const timeline = page.locator('.history-timeline');
+    const timeline = page.locator('.history-node-col');
     if (await timeline.isVisible().catch(() => false)) {
       await expect(timeline).toBeVisible();
     }
@@ -119,7 +125,7 @@ test.describe('Timeline navigation', () => {
   test('clicking timeline group scrolls to section', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const timelineItem = page.locator('.history-timeline-item, .timeline-item').first();
+    const timelineItem = page.locator('.history-node-col').first();
     if (await timelineItem.isVisible().catch(() => false)) {
       const scrollTopBefore = await page.evaluate(() => window.scrollY);
       await timelineItem.click();
@@ -160,7 +166,7 @@ test.describe('Delete actions', () => {
   test('clear all button exists', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn, button').filter({ hasText: /清空|Clear|删除/ });
+    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn, button').filter({ hasText: /清除|清空|Clear/ });
     const count = await clearBtn.count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
@@ -168,7 +174,7 @@ test.describe('Delete actions', () => {
   test('clear all shows confirmation dialog', async ({ page }) => {
     await page.goto('/history');
     await page.waitForLoadState('networkidle');
-    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn').filter({ hasText: /清空|Clear/ }).first();
+    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn').filter({ hasText: /清除|清空|Clear/ }).first();
     if (await clearBtn.isVisible().catch(() => false)) {
       await clearBtn.click();
       await page.waitForTimeout(300);

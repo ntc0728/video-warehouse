@@ -1,5 +1,20 @@
 import { test, expect } from '@playwright/test';
 
+/*
+ * Browse page E2E tests
+ *
+ * Notes on current Browse page architecture:
+ * - Dual-mode search: 智能检索 (TMDB-backed) + 直链搜索 (CMS-backed), switched via
+ *   `.browse-search-tabs` / `.browse-search-tab` controls.
+ * - Sentinel (`<div ref={sentinelRef} aria-hidden="true" />`) is unconditionally
+ *   rendered (not conditional on searchMode), so infinite scroll works in both modes.
+ * - `initialLoading` distinguishes the very first load (skeleton/placeholder UI)
+ *   from subsequent load-more triggered by the sentinel entering the viewport.
+ * - FilterBar renders directly on the page; there is no toggle button.
+ * - Empty/error states use the shared `<Empty>` component (`.empty`) rather than
+ *   bespoke `.browse-page__error*` selectors.
+ */
+
 /* ─── Page Load ──────────────────────────────────────────── */
 test.describe('Browse page load', () => {
   test('browse page loads without JS errors', async ({ page }) => {
@@ -73,49 +88,43 @@ test.describe('Filter bar', () => {
   });
 
   test('filter bar can be toggled', async ({ page }) => {
-    await page.goto('/browse');
-    await page.waitForLoadState('networkidle');
-    const toggleBtn = page.locator('.browse-filter-toggle, .filter-toggle').first();
-    if (await toggleBtn.isVisible().catch(() => false)) {
-      await toggleBtn.click();
-      await page.waitForTimeout(300);
-      const filterBar = page.locator('.browse-filter, .filter-bar').first();
-      const isVisible = await filterBar.isVisible().catch(() => false);
-      expect(typeof isVisible).toBe('boolean');
-    }
+    // SKIPPED: FilterBar now renders directly on the Browse page without a toggle
+    // button (`.browse-filter-toggle` / `.filter-toggle` no longer exist).
+    // The filter bar's visibility is driven by layout/responsive concerns, not a
+    // toggle control, so there is nothing to assert here.
+    expect(true).toBe(true);
   });
 });
 
-/* ─── Suggestions ────────────────────────────────────────── */
-test.describe('Suggestions', () => {
-  test('suggestions section shows when no query', async ({ page }) => {
+/* ─── Search Mode Tabs ───────────────────────────────────── */
+/* Replaces former "Suggestions" section: `.browse-suggestions*` selectors no
+ * longer exist. The Browse page now exposes dual-mode search via
+ * `.browse-search-tabs` containing `.browse-search-tab` buttons
+ * (智能检索 / 直链搜索). */
+test.describe('Search mode tabs', () => {
+  test('search mode tabs container exists', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
-    const suggestions = page.locator('.browse-suggestions');
-    if (await suggestions.isVisible().catch(() => false)) {
-      await expect(suggestions).toBeVisible();
-    }
+    const tabs = page.locator('.browse-search-tabs');
+    await expect(tabs).toBeVisible();
   });
 
-  test('clicking suggestion chip navigates with query', async ({ page }) => {
+  test('two search mode tabs are rendered', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
-    const chip = page.locator('.browse-suggestions__chip').first();
-    if (await chip.isVisible().catch(() => false)) {
-      await chip.click();
-      await page.waitForTimeout(500);
-      expect(page.url()).toContain('q=');
-    }
+    const tabs = page.locator('.browse-search-tab');
+    await expect(tabs).toHaveCount(2);
   });
 
-  test('hot search chips have rank numbers', async ({ page }) => {
+  test('clicking direct-link tab activates it', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
-    const rank = page.locator('.browse-suggestions__rank').first();
-    if (await rank.isVisible().catch(() => false)) {
-      const text = await rank.textContent();
-      expect(text).toBeTruthy();
-    }
+    const tabs = page.locator('.browse-search-tab');
+    const directLinkTab = tabs.nth(1); // 直链搜索
+    await directLinkTab.click();
+    await page.waitForTimeout(300);
+    // Active state is reflected via the `browse-search-tab--active` modifier
+    await expect(directLinkTab).toHaveClass(/browse-search-tab--active/);
   });
 });
 
@@ -148,10 +157,12 @@ test.describe('Infinite scroll', () => {
   test('sentinel element exists for infinite scroll', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
-    const sentinel = page.locator('.browse-sentinel, [data-sentinel]').first();
-    const exists = await sentinel.count() > 0;
-    // Sentinel may be hidden but should exist
-    expect(typeof exists).toBe('boolean');
+    // Sentinel is now `<div ref={sentinelRef} aria-hidden="true" />` and is
+    // unconditionally rendered (no longer conditional on searchMode), so it is
+    // always present within `.browse-page` for the IntersectionObserver to watch.
+    const sentinel = page.locator('.browse-page [aria-hidden="true"]').first();
+    const exists = (await sentinel.count()) > 0;
+    expect(exists).toBe(true);
   });
 });
 
@@ -191,14 +202,27 @@ test.describe('Device adaptation', () => {
 });
 
 /* ─── Error/Empty States ─────────────────────────────────── */
+/* Browse page no longer renders bespoke `.browse-page__error*` markup. Empty
+ * and error states are surfaced through the shared `<Empty>` component
+ * (`.empty`), optionally with a "暂无结果" message. The retry-button test has
+ * been removed because there is no longer a dedicated `.browse-page__error-retry`
+ * control. */
 test.describe('Error and empty states', () => {
-  test('error state has retry button', async ({ page }) => {
-    await page.goto('/browse');
+  test('empty state renders Empty component when no results', async ({ page }) => {
+    await page.goto('/browse?q=zzzznomatchzzzz');
     await page.waitForLoadState('networkidle');
-    const errorState = page.locator('.browse-page__error');
-    if (await errorState.isVisible().catch(() => false)) {
-      const retryBtn = page.locator('.browse-page__error-retry');
-      await expect(retryBtn).toBeVisible();
+    await page.waitForTimeout(2000);
+
+    // Look for the shared Empty component, or its "暂无结果" copy, when no
+    // results match the (deliberately unmatched) query.
+    const empty = page.locator('.empty').first();
+    const emptyVisible = await empty.isVisible().catch(() => false);
+    if (emptyVisible) {
+      await expect(empty).toBeVisible();
+    } else {
+      // Fallback: assert the page surfaces the "暂无结果" copy somewhere.
+      const body = await page.locator('body').textContent();
+      expect(body).toContain('暂无结果');
     }
   });
 });

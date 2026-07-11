@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+/*
+ * RecordShell: Collections & History share the RecordShell component.
+ * Desktop: left sidebar (tabs/filters) + right cards panel.
+ * Mobile: sticky header that collapses on scroll.
+ */
+
 /* ─── Page Load ──────────────────────────────────────────── */
 test.describe('Collections page load', () => {
   test('collections page loads without JS errors', async ({ page }) => {
@@ -77,7 +83,7 @@ test.describe('Search', () => {
   test('search input exists', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const searchInput = page.locator('.search-box__input').first();
+    const searchInput = page.locator('.record-search__input').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await expect(searchInput).toBeVisible();
     }
@@ -86,7 +92,7 @@ test.describe('Search', () => {
   test('typing filters items', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const searchInput = page.locator('.search-box__input').first();
+    const searchInput = page.locator('.record-search__input').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('test');
       await page.waitForTimeout(300);
@@ -98,11 +104,11 @@ test.describe('Search', () => {
   test('clear button works', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const searchInput = page.locator('.search-box__input').first();
+    const searchInput = page.locator('.record-search__input').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('test');
       await page.waitForTimeout(300);
-      const clearBtn = page.locator('.search-box__clear').first();
+      const clearBtn = page.locator('.record-search__clear').first();
       if (await clearBtn.isVisible().catch(() => false)) {
         await clearBtn.click();
         await page.waitForTimeout(300);
@@ -143,7 +149,7 @@ test.describe('Delete actions', () => {
   test('clear all button exists', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn, button').filter({ hasText: /清空|Clear|删除/ });
+    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn, button').filter({ hasText: /清除|清空|Clear/ });
     const count = await clearBtn.count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
@@ -151,7 +157,7 @@ test.describe('Delete actions', () => {
   test('clear all shows confirmation dialog', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn').filter({ hasText: /清空|Clear/ }).first();
+    const clearBtn = page.locator('.toolbar-btn--danger, .toolbar-btn').filter({ hasText: /清除|清空|Clear/ }).first();
     if (await clearBtn.isVisible().catch(() => false)) {
       await clearBtn.click();
       await page.waitForTimeout(300);
@@ -227,7 +233,7 @@ test.describe('Infinite scroll', () => {
   test('sentinel exists for infinite scroll', async ({ page }) => {
     await page.goto('/collections');
     await page.waitForLoadState('networkidle');
-    const sentinel = page.locator('.collection-sentinel, [data-sentinel]').first();
+    const sentinel = page.locator('[aria-hidden="true"]').first();
     const exists = await sentinel.count() > 0;
     expect(typeof exists).toBe('boolean');
   });
