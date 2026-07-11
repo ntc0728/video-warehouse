@@ -12,3 +12,4 @@ Key facts:
 - IPTV Proxy (M3U8): https://iptv.nmz996.cc.cd/m3u8-proxy?url=
 - Keep-Alive routing: AppLayout keeps pages mounted, uses CSS display to switch
 - Dev: npm run dev (127.0.0.1:3001) | Lint: npm run lint:all | Test: npm run test
+- After code changes: check AGENTS.md "文档同步协议" for required doc/test/memory updates

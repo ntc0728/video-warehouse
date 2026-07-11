@@ -26,3 +26,8 @@ React 18 + TypeScript + Vite 6 + Zustand 影视聚合平台。
 - CMS vod_play_url parsing: `$$$` splits lines, `#` splits episodes, `$` splits title/url
 - Adapter pattern: `.m3u8` → HLSAdapter, `.mpd` → DashAdapter, other → NativeAdapter
 - Sensitive settings (TMDB token, API keys) stored with AES-GCM encryption in localStorage
+
+## Doc sync protocol
+
+After code changes, check AGENTS.md "文档同步协议" section for required updates to:
+tests (same commit) / memory (after session) / knowledge base (if architecture changed) / page diagrams (if layout changed) / flowchart (if navigation changed)

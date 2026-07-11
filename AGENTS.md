@@ -167,3 +167,99 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - `scripts/*.ts` + `!scripts/*.spec.ts` — 仅保留 E2E 测试脚本
 - AI 工具本地配置（.workbuddy/ .claude/ .opencode/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
+
+## 文档同步协议（AI Agent 必读）
+
+> 完成代码变更后，逐项检查以下规则。满足条件的必须同步更新，不得跳过。
+
+### 规则 1：测试脚本 — 与代码同提交
+
+```
+IF 你修改了 CSS 类名 / DOM 结构 / 选择器
+THEN 同一次 commit 中更新 scripts/*.spec.ts 对应的选择器
+
+IF 你新增了用户交互流程（新按钮、新 Tab、新模式）
+THEN 新增对应的 E2E 测试用例
+
+IF 你删除了某个 UI 区块（如 suggestions）
+THEN 删除或重写依赖该区块的测试用例
+```
+
+**位置**: `scripts/*.spec.ts`
+**时机**: 必须与代码变更在同一个 commit 中
+
+### 规则 2：记忆库 — 做完就写
+
+```
+IF 你完成了实质性工作（修 bug、加功能、重构、技术选型）
+THEN 在 .workbuddy/memory/YYYY-MM-DD.md 追加一条记录
+
+IF 你确立了项目级约定或可复用模式
+THEN 追加到 .workbuddy/memory/MEMORY.md
+```
+
+**位置**: `.workbuddy/memory/YYYY-MM-DD.md`（日志）+ `.workbuddy/memory/MEMORY.md`（长期）
+**时机**: 每次工作会话结束时
+**内容**: 做了什么 + 为什么这么做 + 踩了什么坑（不要写"搜索了XX文件"这种过程噪音）
+
+### 规则 3：知识库 — 架构变了才动
+
+```
+IF 新增了 Store / Service / 核心组件 / 页面路由 / 代理配置
+THEN 更新 AGENTS.md 对应章节 + CONTEXT.md（如涉及新术语）
+
+IF .gitignore 策略变化
+THEN 更新 AGENTS.md ".gitignore 策略"章节
+```
+
+**位置**: `AGENTS.md`（综合）+ `CONTEXT.md`（术语）
+**时机**: 架构变更时
+**不更新**: Store 内部逻辑修改、组件 props 调整、CSS 微调
+
+### 规则 4：页面原理图 — 布局结构变了才动
+
+```
+IF 页面布局结构变化（新增/删除区域、核心组件替换）
+THEN 更新 docs/page-diagrams/<page>.html
+
+IF 新增交互模式（如 toast.replace、懒加载策略变化）
+THEN 在对应原理图的"交互"或"数据流"区追加说明
+
+IF 新增页面
+THEN 创建 docs/page-diagrams/<page>.html + 更新 index.html 索引
+```
+
+**位置**: `docs/page-diagrams/*.html`
+**时机**: 页面结构变更时
+**不更新**: 颜色、间距、内部逻辑优化
+
+### 规则 5：流程图 — 导航/架构变了才动
+
+```
+IF 新增/删除页面（导航地图变）
+THEN 更新 flowchart.html 的"页面导航地图"SVG
+
+IF Store/Service 层新增/删除
+THEN 更新 flowchart.html 的"数据流架构"SVG
+
+IF 代理配置变化
+THEN 更新 flowchart.html + AGENTS.md 代理表
+```
+
+**位置**: `docs/page-diagrams/flowchart.html`
+**时机**: 导航或架构变更时
+**不更新**: 页面内部变化、内部重构
+
+### 快速判断表
+
+| 变更类型 | 测试 | 记忆 | 知识库 | 原理图 | 流程图 |
+|---------|------|------|--------|--------|--------|
+| CSS bug 修复 | — | 日志 | — | — | — |
+| 类名/选择器变更 | ✅ 同提交 | 日志 | — | — | — |
+| 新增页面 | ✅ | 日志+长期 | ✅ | ✅ 新建 | ✅ |
+| 新增核心组件 | ✅ | 日志+长期 | ✅ | ✅ 受影响页 | — |
+| 架构分层变化 | ✅ | 日志+长期 | ✅ | ✅ | ✅ |
+| 代理配置变化 | — | 长期 | ✅ | ✅ | ✅ |
+| .gitignore 策略 | — | 长期 | ✅ | — | — |
+| 新增领域术语 | — | — | ✅ | — | — |
+| 内部重构（不改外部接口） | ✅ | 日志 | — | — | — |
