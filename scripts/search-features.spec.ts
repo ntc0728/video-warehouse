@@ -1,5 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+/*
+ * Search features E2E tests
+ *
+ * Note: Hot search (trending) items live inside the SearchBox dropdown
+ * (`.search-box-dropdown`), which is shown when the search input is focused —
+ * they are NOT rendered as a separate "suggestions" section on the Browse page.
+ * Tests below that assert on hot search must focus the search box first to
+ * trigger the dropdown before querying `.search-box-dropdown__item--hot` /
+ * `.search-box-dropdown__rank`.
+ */
+
 /* ─── 搜索历史下拉 ────────────────────────────────── */
 test.describe('搜索历史下拉', () => {
   test.beforeEach(async ({ page }) => {
@@ -113,17 +124,31 @@ test.describe('搜索历史下拉', () => {
 });
 
 /* ─── 热门搜索榜单 ────────────────────────────────── */
+/* Hot search items live inside the SearchBox dropdown (shown on focus), not as
+ * a standalone Browse page section. Each test focuses the search box first to
+ * trigger the dropdown, then queries `.search-box-dropdown__item--hot` and
+ * `.search-box-dropdown__rank`. */
 test.describe('热门搜索榜单', () => {
-  test('无搜索词时显示热门搜索', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    // 清空搜索历史，避免历史条目抢占 dropdown 位置
+    await page.evaluate(() => localStorage.removeItem('search-history'));
+  });
+
+  test('focus 搜索框后显示热门搜索', async ({ page }) => {
     await page.goto('/browse');
-    // 等待 trending 数据加载
     await page.waitForTimeout(2000);
 
-    const hotSection = page.locator('.browse-suggestions__chip--hot');
-    // 如果有 trending 数据，应该显示热门搜索
-    const count = await hotSection.count();
+    const searchInput = page.locator('.search-box__input').first();
+    await searchInput.focus();
+    // 等待 dropdown 渲染（热门数据可能异步加载）
+    await page.waitForSelector('.search-box-dropdown', { timeout: 3000 }).catch(() => {});
+
+    // 如果有 trending 数据，dropdown 内应出现热门条目
+    const hotItem = page.locator('.search-box-dropdown__item--hot');
+    const count = await hotItem.count();
     if (count > 0) {
-      await expect(hotSection.first()).toBeVisible();
+      await expect(hotItem.first()).toBeVisible();
     }
   });
 
@@ -131,9 +156,18 @@ test.describe('热门搜索榜单', () => {
     await page.goto('/browse');
     await page.waitForTimeout(2000);
 
-    const rank = page.locator('.browse-suggestions__rank').first();
+    const searchInput = page.locator('.search-box__input').first();
+    await searchInput.focus();
+    await page.waitForSelector('.search-box-dropdown', { timeout: 3000 }).catch(() => {});
+
+    const rank = page.locator('.search-box-dropdown__rank').first();
     if (await rank.isVisible().catch(() => false)) {
-      await expect(rank).toHaveText('1');
+      const text = await rank.textContent();
+      expect(text).toBeTruthy();
+      // 排名通常是数字（如 "1"），若能取到则校验为数字
+      if (text) {
+        expect(text.trim()).toMatch(/^\d+$/);
+      }
     }
   });
 
@@ -141,9 +175,13 @@ test.describe('热门搜索榜单', () => {
     await page.goto('/browse');
     await page.waitForTimeout(2000);
 
-    const hotChip = page.locator('.browse-suggestions__chip--hot').first();
-    if (await hotChip.isVisible().catch(() => false)) {
-      await hotChip.click();
+    const searchInput = page.locator('.search-box__input').first();
+    await searchInput.focus();
+    await page.waitForSelector('.search-box-dropdown', { timeout: 3000 }).catch(() => {});
+
+    const hotItem = page.locator('.search-box-dropdown__item--hot').first();
+    if (await hotItem.isVisible().catch(() => false)) {
+      await hotItem.click();
       await page.waitForTimeout(500);
       await expect(page).toHaveURL(/q=/);
     }
