@@ -77,9 +77,10 @@ public/debug-source.html
 # ── 脚本截图目录 ──────────────────────────────
 scripts/screenshots/
 
-# ── 文档（仅提交 page-diagrams，其余忽略）─────
+# ── 文档（仅提交 page-diagrams 和 KNOWLEDGE.md）──
 docs/*
 !docs/page-diagrams/
+!docs/KNOWLEDGE.md
 
 # ── 旧规则文件 ────────────────────────────────
 rules.md

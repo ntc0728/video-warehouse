@@ -352,7 +352,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-padding settings-page w-full space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+    <div className="page-padding settings-page w-full space-y-4 lg:grid lg:grid-cols-2 lg:gap-[var(--space-sm)] lg:space-y-0">
       <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
         <List header="外观">
           <List.Item
