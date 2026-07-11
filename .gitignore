@@ -82,6 +82,9 @@ docs/*
 !docs/page-diagrams/
 !docs/KNOWLEDGE.md
 
+# ── 研究文档（本地用，不入版本控制）────────────
+research/
+
 # ── 旧规则文件 ────────────────────────────────
 rules.md
 
