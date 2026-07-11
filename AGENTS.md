@@ -168,6 +168,74 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - AI 工具本地配置（.workbuddy/ .claude/ .opencode/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
+## 测试依赖映射（精准跑测试，不要全量跑）
+
+> 修改源文件后，只跑对应列的测试文件。共享组件变更才会影响多个测试文件。
+
+### 页面代码 → 测试文件（1:1）
+
+| 修改的源文件 | 跑这个测试 | test 数 |
+|-------------|-----------|---------|
+| `src/pages/Home/` | `scripts/home.spec.ts` | 15 |
+| `src/pages/Browse/` | `scripts/browse.spec.ts` | 18 |
+| `src/pages/Detail/` | `scripts/detail.spec.ts` | 15 |
+| `src/pages/Player/` | `scripts/player.spec.ts` | 35 |
+| `src/pages/IPTV/` | `scripts/iptv.spec.ts` | 20 |
+| `src/pages/Settings/` | `scripts/settings.spec.ts` | 21 |
+| `src/pages/Collections/` | `scripts/collections.spec.ts` | 20 |
+| `src/pages/History/` | `scripts/history.spec.ts` | 19 |
+| `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 21 |
+
+### 共享组件 → 测试文件（1:N）
+
+| 修改的源文件 | 影响的测试文件 | 合计 test 数 |
+|-------------|--------------|-------------|
+| `src/components/UniversalPlayer/` | player + iptv-player | 49 |
+| `src/components/VideoCard/` | home + browse + detail + collections + history | 87 |
+| `src/components/SearchBox/` | browse + search-features | 34 |
+| `src/components/RecordShell/` | collections + history | 39 |
+| `src/components/StatusTabs/` | collections + history | 39 |
+| `src/components/FilterBar/` | browse | 18 |
+| `src/components/HeroBanner/` | home | 15 |
+| `src/components/Layout/` | mobile-web-sidebar + 全部页面加载测试 | ~100+ |
+| `src/components/StickyHeader/` | 全部页面加载测试 | ~100+ |
+| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 21 |
+| `src/services/tmdbService.ts` | home + browse + detail + person | ~63 |
+| `src/services/videoService.ts` | browse + player + source-checker | 74 |
+| `src/services/iptvService.ts` | iptv + iptv-player | 34 |
+| `src/stores/useTMDBStore.ts` | home + browse + detail | ~48 |
+| `src/stores/useSettingsStore.ts` | settings + source-checker | 42 |
+| `src/stores/useUserStore.ts` | collections + history | 39 |
+
+### 快速跑法
+
+```bash
+# 单个页面（最常见）
+npx playwright test scripts/player.spec.ts
+
+# 共享组件（如 VideoCard）
+npx playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/detail.spec.ts scripts/collections.spec.ts scripts/history.spec.ts
+
+# 全量（仅 CI 或发版前）
+npx playwright test
+```
+
+### 判断规则
+
+```
+IF 只改了 src/pages/Xxx/ 目录下的文件
+THEN 只跑该页面对应的 1 个 spec 文件
+
+IF 改了 src/components/ 下的共享组件
+THEN 按上表跑所有受影响的 spec 文件
+
+IF 改了 src/services/ 或 src/stores/ 下的文件
+THEN 按上表跑所有受影响的 spec 文件
+
+IF 改了多个目录
+THEN 取所有受影响 spec 文件的并集（去重）
+```
+
 ## 文档同步协议（AI Agent 必读）
 
 > 完成代码变更后，逐项检查以下规则。满足条件的必须同步更新，不得跳过。
