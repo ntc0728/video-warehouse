@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
+import { ToastProvider } from './components/ui/Toast';
 import { usePrefetch } from './hooks/usePrefetch';
 import { useUserStore } from './stores';
 
@@ -18,9 +19,11 @@ function App() {
   if (!dbReady) return null;
 
   return (
-    <HeaderProvider>
-      <AppLayout />
-    </HeaderProvider>
+    <ToastProvider>
+      <HeaderProvider>
+        <AppLayout />
+      </HeaderProvider>
+    </ToastProvider>
   );
 }
 

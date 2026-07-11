@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 人物页 原理图</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .person-hero { display:flex; gap:var(--space-lg); padding:var(--space-xl); background:linear-gradient(135deg,#1a1a2e,#0f3460); border-radius:var(--radius-lg); color:#fff; margin-bottom:var(--space-lg); }
+    .person-hero .avatar { width:160px; aspect-ratio:2/3; border-radius:var(--radius-md); object-fit:cover; flex-shrink:0; box-shadow:var(--shadow-lg); }
+    .person-hero .ph { width:160px; aspect-ratio:2/3; border-radius:var(--radius-md); background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:48px; color:rgba(255,255,255,0.3); flex-shrink:0; }
+    .person-hero .info { flex:1; min-width:0; }
+    .person-hero h2 { font-size:var(--text-2xl); margin-bottom:var(--space-sm); }
+    .person-hero .meta { display:flex; gap:var(--space-md); flex-wrap:wrap; font-size:var(--text-sm); color:rgba(255,255,255,0.8); margin-bottom:var(--space-sm); }
+    .person-hero .bio { font-size:var(--text-sm); color:rgba(255,255,255,0.7); line-height:1.6; }
+    .credits-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:var(--space-md); }
+    .credit-card { background:var(--color-surface); border:1px solid var(--color-border-light); border-radius:var(--radius-md); overflow:hidden; }
+    .credit-card img { width:100%; aspect-ratio:2/3; object-fit:cover; }
+    .credit-card .ph { width:100%; aspect-ratio:2/3; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; color:#fff; font-size:var(--text-xs); }
+    .credit-card .body { padding:var(--space-sm); }
+    .credit-card .title { font-size:var(--text-sm); font-weight:600; }
+    .credit-card .char { font-size:var(--text-xs); color:var(--color-text-tertiary); }
+    .data-flow .component { color:#52c41a; font-weight:500; } .data-flow .service { color:#1890ff; font-weight:500; } .data-flow .tmdb { color:#01b4e4; } .data-flow .arrow { color:var(--color-text-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="diagram-page">
+    <div class="page-nav">
+      <a href="index.html">← 索引</a>
+      <a href="home.html">首页</a>
+      <a href="detail.html">详情</a>
+    <a href="flowchart.html?from=person">📊 流程图</a>
+    </div>
+
+    <div class="diagram-header">
+      <h1>👤 人物页</h1>
+      <div class="route">/person/:id</div>
+      <div class="desc">PersonHeader 个人资料 + MovieCredits 电影作品 + TVCredits 剧集作品 — 数据来自 TMDB API 直连</div>
+    </div>
+
+    <div id="proxy-bar"></div>
+    <div id="tmdb-notice"></div>
+
+    <!-- 组件树 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">结构</span> 组件树</div>
+      <div class="data-flow">
+        <span class="component">Person</span><br>
+        ├── <span class="component">PersonHeader</span> — profile + info (姓名/生日/出生地/知名领域/简介)<br>
+        ├── <span class="component">MovieCredits</span> — 电影作品 (poster + title + year + character)<br>
+        └── <span class="component">TVCredits</span> — 剧集作品
+      </div>
+    </div>
+
+    <!-- 人物详情 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">TMDB</span> PersonHeader — 人物详情</div>
+      <div id="person-detail"></div>
+    </div>
+
+    <!-- 电影作品 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">TMDB</span> MovieCredits — 电影作品</div>
+      <div id="movie-credits" class="credits-grid"></div>
+    </div>
+
+    <!-- 数据流 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">数据流</span> tmdbService → TMDB API</div>
+      <div class="data-flow">
+        <span class="component">Person</span> <span class="arrow">→</span>
+        <span class="service">tmdbService.fetchPersonDetail(id)</span> <span class="arrow">→</span>
+        <span class="tmdb">TMDB API</span> (直连，CORS 允许) <span class="arrow">→</span> profile + biography<br>
+        <span class="component">Person</span> <span class="arrow">→</span>
+        <span class="service">tmdbService.fetchPersonMovieCredits(id)</span> <span class="arrow">→</span>
+        <span class="tmdb">TMDB API</span> <span class="arrow">→</span> movie credits<br>
+        <span class="component">Person</span> <span class="arrow">→</span>
+        <span class="service">tmdbService.fetchPersonTVCredits(id)</span> <span class="arrow">→</span>
+        <span class="tmdb">TMDB API</span> <span class="arrow">→</span> TV credits
+      </div>
+    </div>
+  </div>
+
+  <script src="diagram-common.js"></script>
+  <script>
+    async function init() {
+      const data = await DiagramCommon.loadData();
+      const esc = DiagramCommon.esc;
+      document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+      const person = data.tmdb && data.tmdb.personSample;
+      const detailEl = document.getElementById('person-detail');
+      const creditsEl = document.getElementById('movie-credits');
+
+      if (!person) {
+        document.getElementById('tmdb-notice').innerHTML = DiagramCommon.renderTmdbNotice();
+        detailEl.innerHTML = '<div class="person-hero"><div class="ph">👤</div>' +
+          '<div class="info"><h2>（人物名称占位）</h2>' +
+          '<div class="meta"><span>生日：—</span><span>出生地：—</span><span>知名领域：—</span></div>' +
+          '<div class="bio">配置 TMDB Token 后，此处将展示真实人物资料（姓名、生日、出生地、知名领域、传记）。</div></div></div>';
+        creditsEl.innerHTML = '<div class="component-box" style="grid-column:1/-1;"><div class="desc">配置 TMDB Token 后展示电影作品列表（海报 + 标题 + 年份 + 角色）。</div></div>';
+        return;
+      }
+
+      // 真实人物详情
+      const avatar = person.profile
+        ? '<img class="avatar" src="' + esc(person.profile) + '" alt="' + esc(person.name) + '">'
+        : '<div class="ph">👤</div>';
+      let hero = '<div class="person-hero">' + avatar + '<div class="info"><h2>' + esc(person.name) + '</h2><div class="meta">';
+      if (person.birthday) hero += '<span>生日：' + esc(person.birthday) + '</span>';
+      if (person.placeOfBirth) hero += '<span>出生地：' + esc(person.placeOfBirth) + '</span>';
+      if (person.knownForDepartment) hero += '<span>知名领域：' + esc(person.knownForDepartment) + '</span>';
+      hero += '</div>';
+      if (person.biography) hero += '<div class="bio">' + esc(person.biography) + '</div>';
+      hero += '</div></div>';
+      detailEl.innerHTML = hero;
+
+      // 电影作品
+      const credits = person.movieCredits || [];
+      let grid = '';
+      credits.forEach(function (c) {
+        const poster = c.poster
+          ? '<img src="' + esc(c.poster) + '" alt="' + esc(c.title) + '" loading="lazy">'
+          : '<div class="ph">无图</div>';
+        grid += '<div class="credit-card">' + poster +
+          '<div class="body"><div class="title">' + esc(c.title) + (c.year ? ' (' + esc(c.year) + ')' : '') + '</div>' +
+          '<div class="char">饰 ' + esc(c.character || '—') + '</div></div></div>';
+      });
+      creditsEl.innerHTML = grid || '<div class="component-box" style="grid-column:1/-1;"><div class="desc">暂无电影作品数据</div></div>';
+    }
+    init();
+  </script>
+</body>
+</html>

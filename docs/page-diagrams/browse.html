@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 浏览/搜索页 原理图</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .search-box { display:flex; gap:var(--space-sm); align-items:center; }
+    .search-input { flex:1; display:flex; align-items:center; gap:var(--space-sm); padding:var(--space-sm) var(--space-md); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); }
+    .search-input input { flex:1; border:none; outline:none; background:transparent; font-size:var(--text-base); color:var(--color-text); }
+    .search-input input::placeholder { color:var(--color-text-tertiary); }
+    .mode-tabs { display:flex; gap:2px; background:var(--color-hover-bg); border-radius:var(--radius-md); padding:2px; width:fit-content; margin-bottom:var(--space-md); }
+    .mode-tab { padding:var(--space-xs) var(--space-lg); border-radius:var(--radius-sm); font-size:var(--text-sm); font-weight:500; cursor:pointer; color:var(--color-text-secondary); }
+    .mode-tab.active { background:var(--color-surface); color:var(--color-text); box-shadow:var(--shadow-sm); }
+    .mode-panel { border:1px solid var(--color-border-light); border-radius:var(--radius-md); padding:var(--space-md); margin-bottom:var(--space-md); }
+    .filter-bar { display:flex; flex-wrap:wrap; gap:var(--space-sm); align-items:center; margin-bottom:var(--space-md); }
+    .filter-dd { position:relative; display:inline-flex; }
+    .filter-trigger { display:flex; align-items:center; gap:var(--space-xs); padding:var(--space-xs) var(--space-md); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); font-size:var(--text-sm); cursor:pointer; white-space:nowrap; }
+    .filter-trigger .arrow { font-size:10px; color:var(--color-text-tertiary); }
+    .filter-menu { position:absolute; top:calc(100% + 4px); left:0; min-width:120px; max-height:240px; overflow-y:auto; background:var(--color-surface); border:1px solid var(--color-border-light); border-radius:var(--radius-md); box-shadow:var(--shadow-md); z-index:10; }
+    .filter-menu .mi { padding:var(--space-xs) var(--space-md); font-size:var(--text-sm); cursor:pointer; color:var(--color-text); }
+    .filter-menu .mi:hover { background:var(--color-hover-bg); }
+    .filter-menu .mi.sel { background:var(--color-primary); color:var(--color-text-inverse); }
+    .url-bar { display:flex; align-items:center; gap:var(--space-sm); padding:var(--space-xs) var(--space-md); background:var(--color-hover-bg); border-radius:var(--radius-md); font-size:var(--text-xs); font-family:monospace; word-break:break-all; }
+    .url-bar .label { font-weight:600; color:var(--color-text); flex-shrink:0; }
+    .cms-source-block { margin-bottom:var(--space-md); }
+    .cms-source-header { display:flex; align-items:center; gap:var(--space-sm); margin-bottom:var(--space-sm); }
+    .cms-source-header .source-name { font-weight:600; font-size:var(--text-sm); }
+    .empty-hint { font-size:var(--text-sm); color:var(--color-text-tertiary); padding:var(--space-sm); }
+    .data-flow .tmdb { color:#01b4e4; }
+    .data-flow .cms { color:#fa8c16; }
+    .data-flow .store { color:#722ed1; font-weight:500; }
+    .data-flow .component { color:#52c41a; font-weight:500; }
+    .data-flow .service { color:#1890ff; font-weight:500; }
+    .data-flow .router { color:#eb2f96; }
+    .data-flow .arrow { color:var(--color-text-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="diagram-page">
+    <div class="page-nav">
+      <a href="index.html">← 索引</a>
+      <a href="home.html">首页</a>
+      <a href="browse.html" class="active">浏览/搜索</a>
+      <a href="detail.html">详情</a>
+    <a href="flowchart.html?from=browse">📊 流程图</a>
+    </div>
+
+    <div class="diagram-header">
+      <h1>🔍 浏览/搜索页</h1>
+      <div class="route">/browse</div>
+      <div class="desc">SearchBox 搜索框 + 智能检索(TMDB Discover)/直链搜索(CMS 多源并发) 双模式 + FilterBar 多维筛选 + URL 状态同步</div>
+    </div>
+
+    <div id="proxy-bar"></div>
+    <div id="tmdb-notice"></div>
+
+    <!-- 搜索框 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">组件</span> SearchBox — 顶部搜索输入</div>
+      <div class="component-box">
+        <div class="label">SearchBox</div>
+        <div class="desc">浏览页顶部搜索输入框，回车触发搜索。关键词同步至 URL 参数 <code>q</code>，模式同步至 <code>mode=smart|direct</code>。</div>
+      </div>
+      <div class="search-box">
+        <div class="search-input">
+          <span>🔍</span>
+          <input type="text" placeholder="输入影片名称、演员、导演..." id="search-input">
+          <span style="font-size:var(--text-xs); color:var(--color-text-tertiary);">回车搜索</span>
+        </div>
+        <button class="mock-btn primary">搜索</button>
+      </div>
+    </div>
+
+    <!-- 双模式搜索 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">组件</span> SearchModeTabs — 双模式搜索</div>
+      <div class="mode-tabs">
+        <div class="mode-tab active">智能检索 (TMDB)</div>
+        <div class="mode-tab">直链搜索 (CMS)</div>
+      </div>
+
+      <!-- 智能检索 (TMDB) -->
+      <div class="mode-panel">
+        <div style="font-weight:600; margin-bottom:var(--space-sm);">智能检索 (TMDB) — Discover 样例结果</div>
+        <div id="tmdb-grid"></div>
+      </div>
+
+      <!-- 直链搜索 (CMS) -->
+      <div class="mode-panel">
+        <div style="font-weight:600; margin-bottom:var(--space-sm);">直链搜索 (CMS) — 关键词: <code id="cms-keyword"></code></div>
+        <div id="cms-results"></div>
+      </div>
+    </div>
+
+    <!-- FilterBar -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">组件</span> FilterBar — TMDB 多维筛选</div>
+      <div class="component-box">
+        <div class="label">FilterBar</div>
+        <div class="desc">分类(电影/剧集) + 类型(真实 TMDB genres) + 地区 + 评分 + 排序，各下拉联动，状态同步至 URL。</div>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-dd">
+          <div class="filter-trigger">分类 <span class="badge primary" style="font-size:9px;">电影</span> <span class="arrow">▼</span></div>
+          <div class="filter-menu"><div class="mi">全部</div><div class="mi sel">电影</div><div class="mi">剧集</div></div>
+        </div>
+        <div class="filter-dd">
+          <div class="filter-trigger">类型 <span class="arrow">▼</span></div>
+          <div class="filter-menu" id="genre-menu"></div>
+        </div>
+        <div class="filter-dd">
+          <div class="filter-trigger">地区 <span class="arrow">▼</span></div>
+          <div class="filter-menu"><div class="mi">全部</div><div class="mi">中国大陆</div><div class="mi">美国</div><div class="mi">日本</div><div class="mi">韩国</div><div class="mi">英国</div></div>
+        </div>
+        <div class="filter-dd">
+          <div class="filter-trigger">评分 <span class="arrow">▼</span></div>
+          <div class="filter-menu"><div class="mi">全部</div><div class="mi">9 分以上</div><div class="mi">8 分以上</div><div class="mi sel">7 分以上</div></div>
+        </div>
+        <div class="filter-dd">
+          <div class="filter-trigger">排序 <span class="badge default" style="font-size:9px;">评分</span> <span class="arrow">▼</span></div>
+          <div class="filter-menu"><div class="mi">热度</div><div class="mi sel">评分</div><div class="mi">时间</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- URL 状态 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">状态</span> URL 参数同步</div>
+      <div class="url-bar">
+        <span class="label">URL:</span>
+        /browse?category=movie&amp;genre=28,12&amp;region=US&amp;minRating=7&amp;sort=vote_average.desc
+      </div>
+      <div class="data-flow" style="margin-top:var(--space-sm);">
+        <span class="router">category</span> — movie | tv &nbsp;|&nbsp;
+        <span class="router">genre</span> — TMDB 类型 ID(逗号分隔) &nbsp;|&nbsp;
+        <span class="router">region</span> — 地区代码 &nbsp;|&nbsp;
+        <span class="router">minRating</span> — 最低评分 &nbsp;|&nbsp;
+        <span class="router">sort</span> — vote_average.desc | popularity.desc
+      </div>
+    </div>
+
+    <!-- 数据流 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">数据流</span> 搜索流程对比</div>
+      <div class="data-flow">
+        <strong>模式一：智能检索 (mode=smart) — TMDB 直连，支持 CORS</strong><br>
+        <span class="component">SearchBox</span> <span class="arrow">→</span>
+        <span class="store">useTMDBStore</span> <span class="arrow">→</span>
+        <span class="service">tmdbService.discover()</span> <span class="arrow">→</span>
+        <span class="tmdb">TMDB Discover API</span> (直连，CORS 允许)<br>
+        <span class="component">FilterBar</span> <span class="arrow">→</span> genre/region/rating/sort 参数 <span class="arrow">→</span>
+        <span class="store">useTMDBStore</span><br><br>
+        <strong>模式二：直链搜索 (mode=direct) — CMS 经 video proxy 代理</strong><br>
+        <span class="component">SearchBox</span> <span class="arrow">→</span>
+        <span class="store">useCMSSearch</span> <span class="arrow">→</span>
+        <span class="service">cmsService.search()</span> <span class="arrow">→</span>
+        <span class="cms">Video Proxy</span> (CORS 代理) <span class="arrow">→</span> 多 CMS 源并发<br>
+        各源结果聚合至 <span class="store">useCMSSearch.cmsResults</span>，按源分组展示<br><br>
+        <strong>懒加载模式：</strong><br>
+        · 哨兵节点无条件渲染（不因 searchMode 条件包裹），跨状态持久<br>
+        · 整页 loading 仅在首屏无数据时显示（initialLoading 区分 loading 布尔），避免加载更多时卸载网格导致滚动跳顶
+      </div>
+    </div>
+
+    <!-- 组件树 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">结构</span> 组件树</div>
+      <div class="data-flow">
+        <span class="component">Browse</span><br>
+        ├── <span class="component">SearchBox</span> — 搜索输入 + 模式 Tab<br>
+        ├── <span class="component">SearchModeTabs</span> — 智能检索 / 直链搜索<br>
+        ├── <span class="component">FilterBar</span> — 分类/类型/地区/评分/排序下拉<br>
+        ├── <span class="component">BrowseGrid</span><br>
+        │   ├── TMDB 模式 → <span class="component">PosterCard</span> × N (renderPosterCard)<br>
+        │   └── CMS 模式 → <span class="component">CMSCard</span> × N (renderCMSCard，按源分组)<br>
+        ├── <span class="component">SourceStatusIndicator</span> — CMS 多源搜索进度(仅直链模式)<br>
+        ├── <span class="component">BrowseLoadMore</span> — IntersectionObserver 触底加载<br>
+        └── <span class="component">BackToTopButton</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="diagram-common.js"></script>
+  <script>
+    async function init() {
+      const data = await DiagramCommon.loadData();
+      const esc = DiagramCommon.esc;
+
+      // 代理栏 + TMDB 未配置提示
+      document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+      const tmdb = data.tmdb;
+      const hasTmdb = tmdb && tmdb.discoverSample && tmdb.discoverSample.length > 0;
+
+      if (!hasTmdb) {
+        document.getElementById('tmdb-notice').innerHTML = DiagramCommon.renderTmdbNotice();
+      }
+
+      // 智能检索 — TMDB discoverSample 海报网格
+      if (hasTmdb) {
+        const grid = tmdb.discoverSample.map(DiagramCommon.renderPosterCard).join('');
+        document.getElementById('tmdb-grid').innerHTML = '<div class="mock-grid">' + grid + '</div>';
+      } else {
+        document.getElementById('tmdb-grid').innerHTML =
+          '<div class="component-box"><div class="desc">TMDB 未配置，无 discover 样例数据。配置 Token 后运行脚本即可生成真实样例。</div></div>';
+      }
+
+      // FilterBar 类型下拉 — 真实 TMDB movieGenres
+      const genres = (tmdb && tmdb.movieGenres) || [];
+      const genreMenu = document.getElementById('genre-menu');
+      if (genres.length > 0) {
+        genreMenu.innerHTML = '<div class="mi">全部</div>' +
+          genres.slice(0, 12).map((g, i) =>
+            '<div class="mi' + (i < 2 ? ' sel' : '') + '">' + esc(g.name) + '</div>'
+          ).join('');
+      } else {
+        genreMenu.innerHTML = '<div class="mi">全部</div><div class="mi">动作</div><div class="mi">喜剧</div><div class="mi">科幻</div><div class="mi">剧情</div>';
+      }
+
+      // 直链搜索 — CMS 真实搜索结果
+      const cms = data.cms;
+      const cmsEl = document.getElementById('cms-results');
+      if (cms && cms.searchResults) {
+        document.getElementById('cms-keyword').textContent = cms.searchKeyword || '';
+        const html = cms.searchResults.map(function (r) {
+          const cards = r.items.map(DiagramCommon.renderCMSCard).join('');
+          return '<div class="cms-source-block">' +
+            '<div class="cms-source-header">' +
+            '<span class="source-name">' + esc(r.sourceName) + '</span>' +
+            '<span class="badge default">' + r.count + ' 条结果</span>' +
+            '</div>' +
+            (r.items.length > 0
+              ? '<div class="mock-grid">' + cards + '</div>'
+              : '<div class="empty-hint">该源无匹配结果</div>') +
+            '</div>';
+        }).join('');
+        cmsEl.innerHTML = html || '<div class="empty-hint">暂无 CMS 搜索结果</div>';
+      } else {
+        cmsEl.innerHTML = '<div class="empty-hint">暂无 CMS 数据</div>';
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

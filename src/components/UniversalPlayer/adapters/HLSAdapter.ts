@@ -21,13 +21,13 @@ function canUseNativeHls(): boolean {
     document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
 }
 
-/** 移动端 + 蜂窝网络 → 60s，其他 → 120s */
+/** 移动端 + 蜂窝网络 → 120s，其他 → 300s */
 function getBufferLength(): number {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const conn = (navigator as any).connection;
   const isCellular = conn && /cellular|2g|3g|4g|5g/i.test(conn.effectiveType || conn.type || '');
   const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
-  return (isMobile && isCellular) ? 60 : 120;
+  return (isMobile && isCellular) ? 120 : 300;
 }
 
 export class HLSAdapter extends BasePlayerAdapter {
@@ -43,6 +43,7 @@ export class HLSAdapter extends BasePlayerAdapter {
   private errorCount: number = 0;
   private lastErrorTime: number = 0;
   private preloadTimer: ReturnType<typeof setInterval> | null = null;
+  private baseBufferLength: number = 0;
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -75,12 +76,13 @@ export class HLSAdapter extends BasePlayerAdapter {
       }
 
       const bufferLen = this.decoderMode === 'wasm' ? 60 : getBufferLength();
+      this.baseBufferLength = bufferLen;
       const config: Record<string, unknown> = {
         enableWorker: true,
         lowLatencyMode: false,
         backBufferLength: 90,
         maxBufferLength: bufferLen,
-        maxMaxBufferLength: bufferLen * 5,
+        maxMaxBufferLength: bufferLen * 10,
         maxBufferSize: bufferLen * 1024 * 1024,
         startLevel: this.startLevel >= 0 ? this.startLevel : -1,
         preferManagedMediaSource: true,
@@ -97,6 +99,14 @@ export class HLSAdapter extends BasePlayerAdapter {
         this.onError?.(new Error('HLS 初始化失败'));
         return;
       }
+
+      // 待播放状态预加载：canplay 触发时若仍暂停，立即启动预加载
+      const onCanPlay = () => {
+        if (this.video?.paused && !this.preloadTimer) {
+          this.startPreload();
+        }
+      };
+      this.video?.addEventListener('canplay', onCanPlay, { once: true });
 
       this.hls.on(HlsJs.Events.MANIFEST_PARSED, (_e: unknown, data: { levels: Array<{ width: number; height: number; bitrate: number }> }) => {
         this.levels = data.levels.map(l => ({
@@ -171,11 +181,7 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   async play(): Promise<void> {
-    // 恢复播放时停止预加载定时器
-    if (this.preloadTimer) {
-      clearInterval(this.preloadTimer);
-      this.preloadTimer = null;
-    }
+    this.stopPreload();
     if (this.hls) {
       this.hls.startLoad();
     }
@@ -184,15 +190,30 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   pause(): void {
     this.video?.pause();
-    // 暂停后继续预加载：hls.js 内部在 pause 时停止调度下载，
-    // 需要定期调用 startLoad() 绕过暂停状态下的下载限制
+    this.startPreload();
+  }
+
+  /** 启动预加载：提升 buffer 上限 + 定时 startLoad 绕过暂停态下载限制 */
+  private startPreload(): void {
     if (this.hls && !this.preloadTimer) {
+      this.hls.maxBufferLength = 600;
       this.hls.startLoad();
       this.preloadTimer = setInterval(() => {
         if (this.hls && this.video?.paused) {
           this.hls.startLoad();
         }
       }, 2000);
+    }
+  }
+
+  /** 停止预加载：清除定时器 + 恢复原始 buffer 上限 */
+  private stopPreload(): void {
+    if (this.preloadTimer) {
+      clearInterval(this.preloadTimer);
+      this.preloadTimer = null;
+    }
+    if (this.hls && this.baseBufferLength > 0) {
+      this.hls.maxBufferLength = this.baseBufferLength;
     }
   }
 
@@ -327,10 +348,7 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   destroy(): void {
-    if (this.preloadTimer) {
-      clearInterval(this.preloadTimer);
-      this.preloadTimer = null;
-    }
+    this.stopPreload();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;

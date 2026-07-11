@@ -101,9 +101,63 @@ video-warehouse/
 │   ├── cors-proxy.js        # CORS 代理
 │   ├── wrangler.toml
 │   └── wrangler-cors.toml
-├── scripts/                 # 构建脚本 + Playwright E2E 测试
-└── public/                  # 静态资源
+├── docs/page-diagrams/      # 页面原理图 + 交互式流程图（真实数据）
+├── scripts/                 # 构建脚本 + Playwright E2E 测试 + 数据获取脚本
+├── public/                  # 静态资源
+├── AGENTS.md                # AI Agent 综合指南（架构/代理/数据源/术语）
+├── CLAUDE.md                # Claude Code 指南
+├── CONTEXT.md               # 领域术语 + 架构概览
+└── .cursorrules             # Cursor IDE 指南
 ```
+
+## 文档与架构图
+
+### 页面原理图
+
+`docs/page-diagrams/` 目录包含 10 个页面的布局原理图，基于真实 API 数据渲染：
+
+| 文件 | 页面 | 说明 |
+|------|------|------|
+| `index.html` | 索引 | 导航到所有原理图和流程图 |
+| `flowchart.html` | 流程图 | 页面导航地图 + 数据流架构 + 核心播放流程（交互式，节点可点击跳转） |
+| `home.html` | 首页 | HeroBanner + 分类入口 + TMDB 视频行 |
+| `browse.html` | 浏览/搜索 | 双模式搜索 + FilterBar + 无限滚动 |
+| `detail.html` | 详情 | TMDB 详情 + CMS 播放源 |
+| `player.html` | 播放 | UniversalPlayer + 播放线路 + 适配器选择 |
+| `iptv.html` | IPTV | 频道列表 + EPG + 代理播放 |
+| `settings.html` | 设置 | TMDB 配置 + CMS 源管理 + 代理配置 |
+| `collections.html` | 收藏 | 影视/IPTV 收藏 + 批量操作 |
+| `history.html` | 历史 | 观看时间线 + 进度条 |
+| `source-checker.html` | 源检测 | CMS 源可用性检测 |
+| `person.html` | 人物 | 演员/导演详情 + 作品列表 |
+
+### 数据获取脚本
+
+```bash
+# 获取 CMS + IPTV 真实数据（生成 diagram-data.json）
+node scripts/fetch-diagram-data.mjs
+
+# 同时获取 TMDB 数据（需配置 token）
+TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs
+```
+
+### 代理配置
+
+| 代理 | URL | 用途 |
+|------|-----|------|
+| Video Proxy (CORS) | `https://video-warehouse.nmziptv.top/proxy?url=` | CMS API、M3U 文件、EPG |
+| IPTV Proxy (M3U8) | `https://iptv.nmz996.cc.cd/m3u8-proxy?url=` | 直播流代理 |
+| TS Proxy | `https://iptv.nmz996.cc.cd/ts-proxy?url=` | TS 分片代理 |
+
+### AI Agent 指南文件
+
+| 文件 | 目标 AI Agent | 说明 |
+|------|--------------|------|
+| `AGENTS.md` | Cursor / Aider / Windsurf 等 | 综合指南（架构/代理/数据源/页面/术语） |
+| `CLAUDE.md` | Claude Code | 项目快速参考 |
+| `.cursorrules` | Cursor IDE | 项目上下文 |
+| `.github/copilot-instructions.md` | GitHub Copilot | 代码补全上下文 |
+| `CONTEXT.md` | 全部 | 领域术语 + 架构概览 |
 
 ## 快速开始
 

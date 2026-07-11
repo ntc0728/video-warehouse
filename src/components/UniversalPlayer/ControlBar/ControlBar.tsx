@@ -113,7 +113,6 @@ export default function ControlBar({
         currentTime={currentTime}
         duration={videoDuration}
         buffered={buffered}
-        isBuffering={isBuffering}
         onSeek={onSeek}
       />
 

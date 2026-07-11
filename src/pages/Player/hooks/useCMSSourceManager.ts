@@ -524,13 +524,19 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
   }, [id, tmdbDetail, cmsLoading, cmsResults.length, fetchCMSSources, routeSourceIndex]);
 
-  // 清理
+  // 清理：id 变化时重置所有 CMS 状态，避免旧视频数据残留
   useEffect(() => () => {
     cmsAbortRef.current?.abort();
     tmdbAbortRef.current?.abort();
     if (id) clearAllCmsCache(id);
     seasonMapsRef.current.clear();
     fetchInitiatedRef.current = false;
+    setCmsResults([]);
+    setCmsSeasons([]);
+    setSelectedSourceIds([]);
+    setActiveSourceId(undefined);
+    setCmsLoading(false);
+    setCmsSwitching(false);
   }, [id, clearAllCmsCache]);
 
   return {

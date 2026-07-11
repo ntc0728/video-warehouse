@@ -103,6 +103,7 @@
   align-items: flex-end;
   height: 100%;
   padding: var(--space-xl) var(--space-md);
+  pointer-events: none;
 }
 
 .hero-banner__text {
@@ -188,6 +189,7 @@
   display: flex;
   gap: var(--space-sm);
   margin-top: var(--space-sm);
+  pointer-events: auto;
 }
 
 .hero-banner__cta {

@@ -6,7 +6,6 @@ interface ProgressBarProps {
   currentTime: number;
   duration: number;
   buffered: number;
-  isBuffering?: boolean;
   onSeek: (time: number) => void;
 }
 
@@ -17,7 +16,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, isBuffering, onSeek }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -50,7 +49,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
   }, [duration, isDragging, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    if (isLive || duration <= 0 || isBuffering) return;
+    if (isLive || duration <= 0) return;
     setIsDragging(true);
     const time = calcTime(clientX);
     const ratio = (time / duration) * 100;
@@ -59,7 +58,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, isBuffering, calcTime, onSeek]);
+  }, [isLive, duration, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
@@ -70,9 +69,8 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
   }, [beginDrag]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isBuffering) return;
     updateFromEvent(e.clientX);
-  }, [isBuffering, updateFromEvent]);
+  }, [updateFromEvent]);
 
   const handleMouseUp = useCallback(() => {
     endDrag();
@@ -83,10 +81,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, isB
   }, [beginDrag]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isBuffering) return;
     e.preventDefault();
     updateFromEvent(getClientX(e));
-  }, [isBuffering, updateFromEvent]);
+  }, [updateFromEvent]);
 
   const handleTouchEnd = useCallback(() => {
     endDrag();

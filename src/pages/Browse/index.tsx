@@ -8,7 +8,7 @@
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
 import SearchBox from '@/components/SearchBox';
@@ -36,24 +36,35 @@ export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse');
 
-  // ── URL 搜索词 ────────────────────────────────────
-  const urlQ = searchParams.get('q')?.trim() ?? '';
+  // ── 搜索词（从 location state 读取）──
+  const [query, setQuery] = useState(() => {
+    const state = location.state as { q?: string } | null;
+    return state?.q?.trim() ?? '';
+  });
+
+  // Keep-Alive 下二次从顶部导航搜索进入时，location.state 变化但组件未重挂载，
+  // 需主动同步搜索词到 query → 进而带入 Browse 页搜索框（defaultValue）
+  const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
+  useEffect(() => {
+    if (stateQ) {
+      setQuery(stateQ);
+    }
+  }, [stateQ]);
 
   // ── 浏览器标签标题 ────────────────────────────────
-  // 智能检索模式使用 useDocumentTitle，直链搜索模式手动设置
-  useDocumentTitle(searchMode === 'smart' && urlQ ? null : undefined);
+  useDocumentTitle(searchMode === 'smart' && query ? null : undefined);
   useEffect(() => {
-    if (searchMode === 'cms' && urlQ) {
-      document.title = `${urlQ} - 搜索 - kinoTV`;
+    if (searchMode === 'cms' && query) {
+      document.title = `${query} - 搜索 - kinoTV`;
     }
-  }, [searchMode, urlQ]);
+  }, [searchMode, query]);
 
   // ── TMDB 数据（智能检索）─────────────────────────
   const {
@@ -67,7 +78,7 @@ export default function BrowsePage() {
     discoverPagination,
     isLoading,
     error,
-  } = useBrowseData();
+  } = useBrowseData(query);
 
   // ── CMS 数据（直链搜索）─────────────────────────
   const {
@@ -82,34 +93,67 @@ export default function BrowsePage() {
     sourcesDone,
     search: searchCMS,
     loadMore: loadMoreCMS,
+    reset: resetCMS,
   } = useCMSSearch();
 
   // ── 搜索模式切换 ────────────────────────────────
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
-    // 搜索触发由下方 useEffect 根据 lastCmsSearchedRef 统一管理
-  }, []);
-
-  // ── 搜索触发 ────────────────────────────────────
-  // CMS 模式：搜索词变化时触发搜索，切换模式时搜索词不变不重复调用
-  const lastCmsSearchedRef = useRef('');
-  useEffect(() => {
-    if (searchMode === 'cms' && urlQ) {
-      if (urlQ !== lastCmsSearchedRef.current) {
-        lastCmsSearchedRef.current = urlQ;
-        searchCMS(urlQ);
+    // 切换模式时，若该模式尚未搜过当前 query 则触发搜索
+    if (query) {
+      if (mode === 'smart' && query !== lastSmartSearchedRef.current) {
+        lastSmartSearchedRef.current = query;
+        void useTMDBStore.getState().search(query, 1, { reset: true });
+      } else if (mode === 'cms' && query !== lastCmsSearchedRef.current) {
+        lastCmsSearchedRef.current = query;
+        searchCMS(query);
       }
     }
-  }, [urlQ, searchMode, searchCMS]);
+  }, [query, searchCMS]);
+
+  // ── 搜索触发 ────────────────────────────────────
+  const lastCmsSearchedRef = useRef('');
+  const lastSmartSearchedRef = useRef('');
+
+  // 首次进入：根据初始 query 触发搜索
+  const initialDoneRef = useRef(false);
+  useEffect(() => {
+    if (initialDoneRef.current) return;
+    initialDoneRef.current = true;
+    if (query) {
+      if (searchMode === 'smart') {
+        void useTMDBStore.getState().search(query, 1, { reset: true });
+      } else {
+        searchCMS(query);
+      }
+    }
+  }, [query, searchMode, searchCMS]);
+
+  // query 变化时触发搜索
+  useEffect(() => {
+    if (!initialDoneRef.current) return;
+    if (!query) return;
+    if (searchMode === 'cms') {
+      if (query !== lastCmsSearchedRef.current) {
+        lastCmsSearchedRef.current = query;
+        searchCMS(query);
+      }
+    } else {
+      if (query !== lastSmartSearchedRef.current) {
+        lastSmartSearchedRef.current = query;
+        void useTMDBStore.getState().search(query, 1, { reset: true });
+      }
+    }
+  }, [query, searchMode, searchCMS]);
 
   // ── 懒加载触发 ──────────────────────────────────
   const loadMore = useCallback(() => {
     if (searchMode === 'cms') {
-      loadMoreCMS(urlQ);
+      loadMoreCMS(query);
     } else {
-      loadMoreTMDB();
+      loadMoreTMDB(query || undefined);
     }
-  }, [searchMode, urlQ, loadMoreCMS, loadMoreTMDB]);
+  }, [searchMode, query, loadMoreCMS, loadMoreTMDB]);
 
   const { sentinelRef } = useInfiniteScroll({
     hasMore: searchMode === 'cms' ? cmsHasMore : hasMore,
@@ -143,9 +187,17 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
-  const isSearchLoading = searchMode === 'smart' ? (isLoading || isRefreshing) : cmsLoading;
+  const isSmartLoading = isRefreshing || isLoading;
+  const isCmsLoading = cmsLoading;
 
-  const isEmpty = !isSearchLoading && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
+  // 「首屏/刷新」loading：仅在无数据可展示时才用整页 loading 覆盖内容。
+  // 懒加载更多（已有数据在列）不再走整页 loading —— 否则网格会被卸载、内容高度骤减、
+  // 滚动位置被浏览器夹回顶部，视觉上像是"新数据覆盖了旧数据/回到开头"。
+  const smartInitialLoading = isRefreshing || (isLoading && discoverResults.length === 0);
+  const cmsInitialLoading = isCmsLoading && cmsResults.length === 0;
+  const showFullLoading = searchMode === 'smart' ? smartInitialLoading : cmsInitialLoading;
+
+  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
   return (
@@ -179,11 +231,19 @@ export default function BrowsePage() {
         <div className="browse-search-input-wrap">
           <SearchBox
             variant="browse"
+            defaultValue={query}
             onSearch={(q) => {
-              if (searchMode === 'cms') {
-                searchCMS(q);
-              } else {
-                setSearchParams({ q }, { replace: true });
+              setQuery(q);
+              if (!q) {
+                if (searchMode === 'smart') {
+                  if (filterValue.category === 'top') {
+                    void useTMDBStore.getState().fetchTopRated(1, { reset: true });
+                  } else {
+                    void useTMDBStore.getState().fetchDiscover(1, { reset: true });
+                  }
+                } else {
+                  resetCMS();
+                }
               }
             }}
           />
@@ -214,8 +274,8 @@ export default function BrowsePage() {
         />
       )}
 
-      {/* 搜索加载中 */}
-      {isSearchLoading && (
+      {/* 搜索加载中（仅首屏/刷新且无数据时；懒加载更多不覆盖已有网格） */}
+      {showFullLoading && (
         <div className="browse-page__loading">
           <AppLoading tip="搜索中…" showTip />
         </div>
@@ -230,28 +290,23 @@ export default function BrowsePage() {
       {isEmpty && !currentError && (
         <Empty
           title="暂无结果"
-          description={urlQ ? '尝试换个关键词搜索' : '请输入关键词搜索'}
+          description={query ? '尝试换个关键词搜索' : '请输入关键词搜索'}
         />
       )}
 
-      {/* 视频网格 */}
+      {/* 视频网格（懒加载更多时保持挂载，新数据追加到末尾，滚动位置不跳变） */}
       {searchMode === 'smart' ? (
-        isRefreshing ? (
-          <div className="browse-page__refreshing" aria-busy="true">
-            <AppLoading tip="加载中…" showTip />
-          </div>
-        ) : discoverResults.length > 0 ? (
-          <BrowseGrid items={discoverResults} query={urlQ} mode="smart" />
+        discoverResults.length > 0 && !smartInitialLoading ? (
+          <BrowseGrid items={discoverResults} query={query} mode="smart" />
         ) : null
       ) : (
         cmsResults.length > 0 && (
-          <BrowseGrid cmsItems={cmsResults} query={urlQ} mode="cms" />
+          <BrowseGrid cmsItems={cmsResults} query={query} mode="cms" />
         )
       )}
 
-      {/* 懒加载 */}
-      {!isRefreshing && <div ref={sentinelRef} aria-hidden="true" />}
-      {!isRefreshing && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
+      {/* 懒加载状态文案 */}
+      {!(searchMode === 'smart' ? smartInitialLoading : false) && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
         <BrowseLoadMore
           hasMore={searchMode === 'smart' ? hasMore : cmsHasMore}
           isLoading={searchMode === 'smart' ? isLoadingMore : cmsLoading}
@@ -259,6 +314,10 @@ export default function BrowsePage() {
           isRefreshing={isRefreshing}
         />
       )}
+
+      {/* 懒加载哨兵：两种模式共用同一节点，置于内容末尾 —— 避免随模式切换卸载/重建
+          导致 IntersectionObserver 观察到失效节点，同时让 CMS 直链搜索也走 IO 懒加载 */}
+      <div ref={sentinelRef} aria-hidden="true" />
 
       <BackToTopButton />
     </div>

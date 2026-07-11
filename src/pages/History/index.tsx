@@ -11,8 +11,8 @@ import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { type TimelineItem } from '@/components/ui';
-import { Search, X, Trash2, CheckSquare, Square, ListChecks, LayoutGrid, Eye, CheckCircle2 } from 'lucide-react';
-import StatusTabs from '@/components/StatusTabs';
+import { Trash2, CheckSquare, Square, LayoutGrid, Eye, CheckCircle2 } from 'lucide-react';
+import RecordShell from '@/components/RecordShell';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -434,83 +434,31 @@ export default function HistoryPage() {
 
 
   return (
-    <div className={`page-padding history-page ${batchMode ? 'batch-mode' : ''}`}>
-      {/* Row 1: 标题 + 分类 segmented + 搜索 + 操作按钮 */}
-      <div className="history-filter-bar record-filter-bar">
-        <div className="record-filter-bar__left">
-          <h1 className="record-filter-bar__title">观看历史</h1>
-          <div className="category-segmented">
-            <button className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>影视</button>
-            <button className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`} onClick={() => setActiveTab('iptv')}>IPTV</button>
-          </div>
-        </div>
-        {hasRawData && (
-          <div className="record-filter-bar__actions">
-            <div className="record-search" role="search">
-              <div className="record-search__field">
-                <Search size={16} className="record-search__icon" aria-hidden="true" />
-                <input
-                  type="text"
-                  className="record-search__input"
-                  placeholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  aria-label="搜索"
-                />
-                <button
-                  type="button"
-                  className="record-search__clear"
-                  onClick={() => setSearch('')}
-                  aria-label="清空搜索"
-                  tabIndex={-1}
-                  aria-hidden={!search}
-                  data-empty={search ? 'false' : 'true'}
-                >
-                  <X size={14} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <div className="toolbar-actions">
-              <button
-                type="button"
-                className={`toolbar-btn toolbar-btn--icon ${batchMode ? 'toolbar-btn--active' : ''}`}
-                disabled={search.trim() !== '' && currentList.length === 0}
-                onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-                aria-label={batchMode ? '退出批量' : '批量操作'}
-              >
-                <ListChecks size={16} />
-                <span className="toolbar-btn__label">{batchMode ? '退出批量' : '批量操作'}</span>
-              </button>
-              <button
-                type="button"
-                className="toolbar-btn toolbar-btn--danger toolbar-btn--icon"
-                disabled={search.trim() !== '' && currentList.length === 0}
-                onClick={handleClearAll}
-                aria-label="清除全部"
-              >
-                <Trash2 size={16} />
-                <span className="toolbar-btn__label">清除全部</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Row 2: StatusTabs pill chips（仅 video tab 时显示） */}
-      {activeTab === 'video' && (
-        <StatusTabs
-          tabs={(Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
+    <RecordShell
+      pageClassName="history-page"
+      title="观看历史"
+      activeTab={activeTab}
+      onTabChange={(tab) => setActiveTab(tab)}
+      showActions={hasRawData}
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
+      batchMode={batchMode}
+      onToggleBatch={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+      onClearAll={handleClearAll}
+      actionsDisabled={search.trim() !== '' && currentList.length === 0}
+      statusTabs={activeTab === 'video'
+        ? (Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
             key,
             label: STATUS_CONFIG[key].label,
             icon: STATUS_CONFIG[key].icon,
             color: STATUS_CONFIG[key].color,
             count: statusCounts[key],
-          }))}
-          activeKey={statusFilter}
-          onChange={(key) => setStatusFilter(key as VideoStatus)}
-        />
-      )}
-
+          }))
+        : undefined}
+      activeStatus={statusFilter}
+      onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
+    >
       <div className="history-body">
         <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
           {groupedKeys.map((group, idx) => {
@@ -641,6 +589,6 @@ export default function HistoryPage() {
         variant="danger"
         onConfirm={executeDelete}
       />
-    </div>
+    </RecordShell>
   );
 }

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 页面原理图索引</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-lg); }
+    .index-card { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; }
+    .index-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .index-card h3 { font-size: var(--text-xl); margin-bottom: var(--space-xs); }
+    .index-card .route { font-family: monospace; font-size: var(--text-sm); color: #1890ff; margin-bottom: var(--space-sm); }
+    .index-card .desc { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-md); }
+    .index-card .tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+    .stats { display: flex; gap: var(--space-xl); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--color-border-light); }
+    .stat { text-align: center; }
+    .stat .num { font-size: var(--text-3xl); font-weight: 700; color: var(--color-primary); }
+    .stat .label { font-size: var(--text-sm); color: var(--color-text-secondary); }
+    .data-status { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin: var(--space-lg) 0; }
+    .data-status-item { padding: var(--space-md); background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); text-align: center; }
+    .data-status-item .status-icon { font-size: 24px; margin-bottom: var(--space-xs); }
+    .data-status-item .status-label { font-size: var(--text-sm); font-weight: 600; }
+    .data-status-item .status-detail { font-size: var(--text-xs); color: var(--color-text-secondary); }
+  </style>
+</head>
+<body>
+  <div class="diagram-page">
+    <div class="diagram-header">
+      <h1>Video Warehouse 页面原理图</h1>
+      <div class="route">docs/page-diagrams/</div>
+      <div class="desc">所有页面的布局结构、组件层级、交互说明和数据流 — 基于真实 API 数据和项目架构</div>
+    </div>
+
+    <!-- 代理配置栏 -->
+    <div id="proxy-bar"></div>
+
+    <!-- 数据状态 -->
+    <div class="data-status" id="data-status">
+      <div class="data-status-item"><div class="status-icon">⏳</div><div class="status-label">加载中...</div></div>
+      <div class="data-status-item"><div class="status-icon">⏳</div><div class="status-label">加载中...</div></div>
+      <div class="data-status-item"><div class="status-icon">⏳</div><div class="status-label">加载中...</div></div>
+    </div>
+
+    <div class="stats" id="stats" style="display:none;">
+      <div class="stat"><div class="num" id="stat-pages">11</div><div class="label">页面</div></div>
+      <div class="stat"><div class="num" id="stat-sources">—</div><div class="label">CMS 源</div></div>
+      <div class="stat"><div class="num" id="stat-channels">—</div><div class="label">IPTV 频道</div></div>
+      <div class="stat"><div class="num" id="stat-movies">—</div><div class="label">影片数据</div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="index-grid">
+      <a href="home.html" class="index-card">
+        <h3>🏠 首页</h3>
+        <div class="route">/</div>
+        <div class="desc">HeroBanner 轮播 + 分类快捷入口 + 7 个 TMDB 视频行（正在热映、热门电影、高分电影等）</div>
+        <div class="tags"><span class="badge primary">TMDB API</span><span class="badge default">Embla Carousel</span></div>
+      </a>
+      <a href="detail.html" class="index-card">
+        <h3>🎬 详情页</h3>
+        <div class="route">/detail/:id</div>
+        <div class="desc">视频详情（海报 + 元信息 + 简介）+ Tab 切换 + 剧照灯箱 + 相关推荐 + CMS 播放源</div>
+        <div class="tags"><span class="badge primary">TMDB + CMS</span><span class="badge default">Tab 切换</span></div>
+      </a>
+      <a href="player.html" class="index-card">
+        <h3>▶️ 播放页</h3>
+        <div class="route">/play/:id</div>
+        <div class="desc">UniversalPlayer + 侧边栏（CMS 源 / 选季 / 选集面板）+ 自动连播 + 跳过片头片尾</div>
+        <div class="tags"><span class="badge primary">HLS/DASH</span><span class="badge default">多线路</span></div>
+      </a>
+      <a href="browse.html" class="index-card">
+        <h3>🔍 浏览/搜索页</h3>
+        <div class="route">/browse</div>
+        <div class="desc">智能检索 + 直链搜索 + TMDB 筛选栏（分类/类型/地区/评分/排序）+ 无限滚动</div>
+        <div class="tags"><span class="badge primary">TMDB Discover</span><span class="badge default">CMS 搜索</span></div>
+      </a>
+      <a href="iptv.html" class="index-card">
+        <h3>📺 IPTV 页</h3>
+        <div class="route">/iptv</div>
+        <div class="desc">直播频道列表 + 分组筛选 + 源筛选 + EPG 节目信息 + IPTV 代理播放</div>
+        <div class="tags"><span class="badge primary">M3U 解析</span><span class="badge default">EPG</span></div>
+      </a>
+      <a href="settings.html" class="index-card">
+        <h3>⚙️ 设置页</h3>
+        <div class="route">/settings</div>
+        <div class="desc">主题切换 + TMDB 配置 + CMS 源管理 + 播放器设置 + IPTV 配置 + 代理配置</div>
+        <div class="tags"><span class="badge default">表单</span><span class="badge default">弹窗</span></div>
+      </a>
+      <a href="collections.html" class="index-card">
+        <h3>⭐ 收藏页</h3>
+        <div class="route">/collections</div>
+        <div class="desc">影视/IPTV 收藏列表 + 状态筛选 + 搜索 + 批量操作 + 单个删除</div>
+        <div class="tags"><span class="badge default">Tab 切换</span><span class="badge default">批量操作</span></div>
+      </a>
+      <a href="history.html" class="index-card">
+        <h3>🕐 历史页</h3>
+        <div class="route">/history</div>
+        <div class="desc">观看历史时间线 + 影视/IPTV 切换 + 状态筛选 + 进度条 + 批量操作</div>
+        <div class="tags"><span class="badge default">时间线</span><span class="badge default">进度条</span></div>
+      </a>
+      <a href="source-checker.html" class="index-card">
+        <h3>✅ 源检测页</h3>
+        <div class="route">/source-checker</div>
+        <div class="desc">批量检测所有 CMS 源可用性 + 响应时间 + 视频数量 + 错误信息</div>
+        <div class="tags"><span class="badge default">检测</span><span class="badge default">表格</span></div>
+      </a>
+      <a href="person.html" class="index-card">
+        <h3>👤 人物页</h3>
+        <div class="route">/person/:id</div>
+        <div class="desc">演员/导演详情（头像 + 简介）+ 电影/剧集作品列表</div>
+        <div class="tags"><span class="badge primary">TMDB Person</span></div>
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">流程</span>项目流程图</div>
+      <a href="flowchart.html" class="index-card" style="background:linear-gradient(135deg,#E6F1FB,#EEEDFE);border-color:#85B7EB;">
+        <h3>📊 项目流程图</h3>
+        <div class="route">flowchart.html</div>
+        <div class="desc">页面导航地图 + 数据流架构 + 核心播放流程 — 点击图中节点可跳转到对应页面原理图</div>
+        <div class="tags"><span class="badge primary">交互式</span><span class="badge default">双向联动</span></div>
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">架构</span>数据流与代理架构</div>
+      <div class="data-flow">
+        <strong>代理配置：</strong><br>
+        <span class="service">Video Proxy (CORS)</span> — <code>https://video-warehouse.nmziptv.top/proxy?url=</code> — 用于 CMS API 请求和 M3U 文件获取<br>
+        <span class="service">IPTV Proxy (M3U8)</span> — <code>https://iptv.nmz996.cc.cd/m3u8-proxy?url=</code> — 用于 IPTV 直播流代理<br>
+        <span class="service">TS Proxy</span> — <code>https://iptv.nmz996.cc.cd/ts-proxy?url=</code> — 用于 TS 分片代理<br>
+        <br>
+        <strong>数据流：</strong><br>
+        <span class="component">页面组件</span> <span class="arrow">→</span>
+        <span class="store">Zustand Store</span> <span class="arrow">→</span>
+        <span class="service">Service 层</span> <span class="arrow">→</span>
+        外部 API / 本地存储<br>
+        <br>
+        <strong>Store 列表：</strong><br>
+        <span class="store">useTMDBStore</span> — TMDB 数据 + 缓存 &nbsp;|&nbsp;
+        <span class="store">useSettingsStore</span> — 全部设置 (localStorage) &nbsp;|&nbsp;
+        <span class="store">useIPTVStore</span> — IPTV 频道<br>
+        <span class="store">useUserStore</span> — 收藏 + 历史 (IndexedDB) &nbsp;|&nbsp;
+        <span class="store">usePlayerStore</span> — 播放器状态<br>
+        <br>
+        <strong>Service 层：</strong><br>
+        <span class="service">tmdbService</span> — TMDB API v3 &nbsp;|&nbsp;
+        <span class="service">videoService</span> — CMS 采集站 API &nbsp;|&nbsp;
+        <span class="service">iptvService</span> — M3U 解析<br>
+        <span class="service">epgService</span> — EPG 电子节目单 &nbsp;|&nbsp;
+        <span class="service">sourceService</span> — 源配置加载
+      </div>
+    </div>
+
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">脚本</span>数据获取脚本</div>
+      <div class="component-box">
+        <div class="label">scripts/fetch-diagram-data.mjs</div>
+        <div class="desc">
+          通用数据获取脚本，从真实 API 获取 TMDB / CMS / IPTV 数据，输出 diagram-data.json。<br>
+          用法：<code>node scripts/fetch-diagram-data.mjs</code>（默认获取 CMS + IPTV）<br>
+          带 TMDB：<code>TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="diagram-common.js"></script>
+  <script>
+    async function init() {
+      const data = await DiagramCommon.loadData();
+
+      // 代理栏
+      document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+      // 数据状态
+      const tmdbOk = data.tmdb && data.tmdb.trending && data.tmdb.trending.length > 0;
+      const cmsOk = data.cms && data.cms.sourceList && data.cms.sourceList.length > 0;
+      const iptvOk = data.iptv && data.iptv.channels && data.iptv.channels.length > 0;
+
+      document.getElementById('data-status').innerHTML = [
+        '<div class="data-status-item"><div class="status-icon">' + (tmdbOk ? '✅' : '⚠️') + '</div>' +
+        '<div class="status-label">TMDB</div><div class="status-detail">' + (tmdbOk ? data.tmdb.trending.length + ' trending' : 'Token 未配置') + '</div></div>',
+        '<div class="data-status-item"><div class="status-icon">' + (cmsOk ? '✅' : '❌') + '</div>' +
+        '<div class="status-label">CMS</div><div class="status-detail">' + (cmsOk ? data.cms.sourceList.length + ' 源，' + data.cms.sourceStatus.filter(s=>s.status==='available').length + ' 可用' : '无数据') + '</div></div>',
+        '<div class="data-status-item"><div class="status-icon">' + (iptvOk ? '✅' : '❌') + '</div>' +
+        '<div class="status-label">IPTV</div><div class="status-detail">' + (iptvOk ? data.iptv.channels.length + ' 频道' : '无数据') + '</div></div>',
+      ].join('');
+
+      // 统计
+      document.getElementById('stats').style.display = 'flex';
+      document.getElementById('stat-sources').textContent = cmsOk ? data.cms.sourceList.length : '—';
+      document.getElementById('stat-channels').textContent = iptvOk ? data.iptv.channels.length : '—';
+      const movieCount = (tmdbOk ? data.tmdb.trending.length : 0) + (cmsOk ? data.cms.searchResults.reduce((a,r)=>a+r.items.length,0) : 0);
+      document.getElementById('stat-movies').textContent = movieCount || '—';
+    }
+    init();
+  </script>
+</body>
+</html>

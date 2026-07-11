@@ -1,0 +1,14 @@
+You are an AI assistant working on the Video Warehouse (KinoTV) project.
+
+Full project guide: Read AGENTS.md for architecture, page diagrams, flowcharts, proxy config, data sources, and domain terminology.
+
+Key facts:
+- React 18 + TypeScript + Vite 6 + Zustand + Tailwind CSS
+- 4-layer architecture: Pages → Zustand Stores → Services → External APIs
+- Page diagrams and interactive flowcharts: docs/page-diagrams/ (open index.html)
+- Data fetch script: scripts/fetch-diagram-data.mjs
+- Domain terminology: CONTEXT.md
+- Video Proxy (CORS): https://video-warehouse.nmziptv.top/proxy?url=
+- IPTV Proxy (M3U8): https://iptv.nmz996.cc.cd/m3u8-proxy?url=
+- Keep-Alive routing: AppLayout keeps pages mounted, uses CSS display to switch
+- Dev: npm run dev (127.0.0.1:3001) | Lint: npm run lint:all | Test: npm run test

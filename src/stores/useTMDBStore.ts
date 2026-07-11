@@ -872,8 +872,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }));
     try {
       const [movieData, tvData] = await Promise.all([
-        fetchTopRatedMovies(),
-        fetchTopRatedTV(),
+        fetchTopRatedMovies(page),
+        fetchTopRatedTV(page),
       ]);
       const results = dedupeById([
         ...movieData.results.map(mapMovieToVideoItem),

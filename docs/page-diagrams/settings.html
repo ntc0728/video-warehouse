@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 设置页原理图</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .settings-list { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); overflow: hidden; }
+    .settings-item { display: flex; align-items: center; justify-content: space-between; padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--color-border-light); gap: var(--space-md); }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item.col { flex-direction: column; align-items: stretch; }
+    .item-label { font-size: var(--text-base); font-weight: 500; }
+    .item-desc { font-size: var(--text-sm); color: var(--color-text-secondary); margin-top: 2px; }
+    .item-value { font-size: var(--text-sm); color: var(--color-text-secondary); font-family: monospace; word-break: break-all; max-width: 60%; text-align: right; }
+    .switch { position: relative; width: 44px; height: 24px; background: var(--color-border); border-radius: 12px; cursor: pointer; transition: background 0.3s; flex-shrink: 0; }
+    .switch.active { background: var(--color-primary); }
+    .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
+    .switch.active::after { transform: translateX(20px); }
+    .btn-group { display: inline-flex; gap: 2px; background: var(--color-hover-bg); border-radius: var(--radius-md); padding: 2px; }
+    .btn-group button { padding: var(--space-xs) var(--space-md); border: none; background: transparent; color: var(--color-text-secondary); font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; }
+    .btn-group button.active { background: var(--color-primary); color: var(--color-text-inverse); }
+    .input-field { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-size: var(--text-sm); outline: none; font-family: monospace; }
+    .input-field:focus { border-color: var(--color-primary); }
+    .source-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; font-size: var(--text-sm); }
+    .source-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .source-row .name { font-weight: 500; min-width: 100px; }
+    .source-row .api { font-family: monospace; font-size: var(--text-xs); color: var(--color-text-tertiary); word-break: break-all; flex: 1; }
+    .status-badge { display: inline-block; padding: 1px 8px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; }
+    .status-badge.ok { background: #f6ffed; color: var(--color-success); border: 1px solid #b7eb8f; }
+    .status-badge.fail { background: #fff2f0; color: var(--color-error); border: 1px solid #ffccc7; }
+    .save-result { font-size: var(--text-sm); margin-top: var(--space-xs); min-height: 20px; }
+    .save-result.ok { color: var(--color-success); }
+    .save-result.err { color: var(--color-error); }
+    .data-flow .component { color: #52c41a; font-weight: 500; }
+    .data-flow .store { color: #722ed1; font-weight: 500; }
+    .data-flow .service { color: #1890ff; font-weight: 500; }
+    .data-flow .arrow { color: var(--color-text-tertiary); }
+    .data-flow code { background: var(--color-hover-bg); padding: 1px 4px; border-radius: var(--radius-sm); font-size: var(--text-xs); }
+  </style>
+</head>
+<body>
+<div class="diagram-page">
+  <div class="page-nav">
+    <a href="index.html">← 返回索引</a>
+    <a href="source-checker.html">✅ 源检测</a>
+  <a href="flowchart.html?from=settings">📊 流程图</a>
+    </div>
+  <div class="diagram-header">
+    <h1>⚙️ 设置页</h1>
+    <div class="route">/settings</div>
+    <div class="desc">展示真实配置数据：TMDB Token、CMS 源列表、IPTV/EPG 源、代理端点、播放器与主题 — 通过 useSettingsStore 持久化到 localStorage（敏感字段 AES-GCM 加密）</div>
+  </div>
+  <div id="proxy-bar"></div>
+
+  <!-- TMDB 配置 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">TMDB</span> TMDB API 配置</div>
+    <div class="component-box"><div class="label">TMDBSettings</div><div class="desc">Token 通过 DiagramCommon.setTmdbToken() 持久化到 localStorage（tmdb_token），刷新后仍生效。</div></div>
+    <div class="settings-list">
+      <div class="settings-item col">
+        <div><div class="item-label">Access Token</div><div class="item-desc">TMDB API v3 Bearer Token，用于首页/详情/搜索的元数据获取</div></div>
+        <div style="display:flex; gap:var(--space-sm); margin-top: var(--space-sm);">
+          <input type="password" class="input-field" id="tmdb-token-input" placeholder="请输入 TMDB Access Token">
+          <button class="mock-btn primary" onclick="saveTmdbToken()">保存</button>
+          <button class="mock-btn outline" onclick="toggleTokenVisibility()">显示</button>
+        </div>
+        <div class="save-result" id="tmdb-save-result"></div>
+      </div>
+      <div class="settings-item"><div><div class="item-label">语言</div><div class="item-desc">TMDB 返回内容语言偏好</div></div><div class="item-value">zh-CN</div></div>
+      <div class="settings-item"><div><div class="item-label">图片基址</div><div class="item-desc">TMDB 海报/背景图 CDN 地址</div></div><div class="item-value">https://image.tmdb.org/t/p</div></div>
+      <div class="settings-item"><div><div class="item-label">API 基址</div><div class="item-desc">TMDB v3 API 根端点</div></div><div class="item-value">https://api.tmdb.org/3</div></div>
+    </div>
+  </div>
+
+  <!-- CMS 源管理 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">CMS</span> CMS 视频源管理（真实数据）</div>
+    <div class="component-box"><div class="label">VideoSourceSettings</div><div class="desc">数据来自 data.cms.sourceList，勾选状态写入 useSettingsStore.selectedSources。</div></div>
+    <div class="settings-list"><div class="settings-item col" id="cms-source-list"></div></div>
+  </div>
+
+  <!-- IPTV 配置 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">IPTV</span> IPTV / EPG 源配置（真实数据）</div>
+    <div class="component-box"><div class="label">IPTVSettings</div><div class="desc">M3U 源来自 data.iptv.sourceStatus，EPG 源来自 data.iptv.epgSources。M3U 播放地址会经 IPTV 代理转发。</div></div>
+    <div class="settings-list">
+      <div class="settings-item col" id="iptv-source-list"></div>
+      <div class="settings-item col" id="epg-source-list"></div>
+    </div>
+  </div>
+
+  <!-- 代理配置 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">代理</span> 网络代理配置（真实端点）</div>
+    <div class="component-box"><div class="label">ProxySettings</div><div class="desc">代理 URL 来自 data.meta.proxies，运行时由 DiagramCommon.PROXIES 提供构建器。</div></div>
+    <div class="settings-list" id="proxy-list"></div>
+  </div>
+
+  <!-- 播放器设置 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">播放器</span> 播放器行为</div>
+    <div class="settings-list">
+      <div class="settings-item"><div><div class="item-label">默认解码器</div><div class="item-desc">首选解码引擎</div></div><div class="btn-group"><button class="active">hls.js</button><button>mpegts</button><button>原生</button></div></div>
+      <div class="settings-item"><div><div class="item-label">自动播放</div><div class="item-desc">加载完成后自动起播</div></div><div class="switch active" onclick="this.classList.toggle('active')"></div></div>
+      <div class="settings-item"><div><div class="item-label">跳过片头</div><div class="item-desc">自动跳过片头片段</div></div><div style="display:flex; align-items:center; gap:var(--space-sm);"><div class="switch active" onclick="this.classList.toggle('active')"></div><span class="item-value">90 秒</span></div></div>
+      <div class="settings-item"><div><div class="item-label">跳过片尾</div><div class="item-desc">自动跳过片尾片段</div></div><div style="display:flex; align-items:center; gap:var(--space-sm);"><div class="switch" onclick="this.classList.toggle('active')"></div><span class="item-value">30 秒</span></div></div>
+    </div>
+  </div>
+
+  <!-- 主题 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">主题</span> 外观模式</div>
+    <div class="settings-list">
+      <div class="settings-item"><div><div class="item-label">主题模式</div><div class="item-desc">light / dark / system，写入 localStorage.theme</div></div>
+        <div class="btn-group" id="theme-group">
+          <button class="active" onclick="setTheme(this,'light')">亮色</button>
+          <button onclick="setTheme(this,'dark')">暗色</button>
+          <button onclick="setTheme(this,'system')">跟随系统</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 交互 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">交互</span> 版本号点击 → Toast</div>
+    <div class="data-flow">
+      <strong>版本号点击：</strong> 调用 <code>toast.replace()</code> 清空队列立即显示（不等旧 toast 超时）<br>
+      <strong>Toast 队列：</strong> 常规提示用 <code>toast.show()</code> 入队排队，依次显示
+    </div>
+  </div>
+
+  <!-- 数据流 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">数据流</span> 设置存储与加密流程</div>
+    <div class="data-flow">
+      <span class="component">Settings 页面</span> <span class="arrow">→</span> <span class="store">useSettingsStore</span> <span class="arrow">→</span> <span class="service">cryptoStore.encrypt</span> (AES-GCM) <span class="arrow">→</span> localStorage<br><br>
+      <strong>加密字段：</strong> <code>tmdbToken</code> · <code>baiduSecretKey</code> · <code>corsProxy</code><br>
+      <strong>明文字段：</strong> <code>theme</code> · <code>tmdbLanguage</code> · <code>selectedSources</code> · <code>player</code> · <code>iptvSources</code><br><br>
+      <strong>加载流程：</strong><br>
+      启动 <span class="arrow">→</span> 读取 localStorage <span class="arrow">→</span> <span class="service">cryptoStore.decrypt</span> <span class="arrow">→</span> <span class="store">useSettingsStore.hydrate</span> <span class="arrow">→</span> <span class="component">Settings 组件</span> 渲染真实值<br><br>
+      <strong>TMDB Token 流程：</strong><br>
+      输入框 <span class="arrow">→</span> <code>DiagramCommon.setTmdbToken(v)</code> <span class="arrow">→</span> localStorage.setItem('tmdb_token') <span class="arrow">→</span> 后续 <code>fetchTMDB()</code> 请求自动携带 Authorization: Bearer 头<br><br>
+      <strong>Toast 系统：</strong> <code>toast.show()</code> 入队排队, <code>toast.replace()</code> 清空队列立即显示
+    </div>
+  </div>
+
+  <!-- 组件树 -->
+  <div class="diagram-section">
+    <div class="diagram-section-title"><span class="tag">结构</span> 组件树</div>
+    <div class="data-flow">
+      <span class="component">Settings</span> (useSettingsStore)<br>
+      ├── <span class="component">TMDBSettings</span> — Token 输入 + 语言 + 图片基址<br>
+      ├── <span class="component">VideoSourceSettings</span> — CMS 源复选框列表 × N<br>
+      ├── <span class="component">IPTVSettings</span> — M3U 源 + EPG 源<br>
+      ├── <span class="component">ProxySettings</span> — Video/IPTV/CORS/M3U8/TS 端点展示<br>
+      ├── <span class="component">PlayerSettings</span> — 解码器 + 自动播放 + 跳过片头/片尾<br>
+      └── <span class="component">AppearanceSettings</span> — 主题切换按钮组<br><br>
+      <strong>辅助：</strong> <span class="component">Switch</span> · <span class="component">ButtonGroup</span> · <span class="component">InputField</span>
+    </div>
+  </div>
+</div>
+
+<script src="diagram-common.js"></script>
+<script>
+  const esc = DiagramCommon.esc;
+
+  function saveTmdbToken() {
+    const v = document.getElementById('tmdb-token-input').value.trim();
+    const out = document.getElementById('tmdb-save-result');
+    if (!v) { out.className = 'save-result err'; out.textContent = '× Token 不能为空'; return; }
+    DiagramCommon.setTmdbToken(v);
+    out.className = 'save-result ok';
+    out.textContent = '✓ 已保存到 localStorage（tmdb_token），后续 TMDB 请求将自动使用';
+  }
+  function toggleTokenVisibility() {
+    const inp = document.getElementById('tmdb-token-input');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+  function setTheme(btn, mode) {
+    document.querySelectorAll('#theme-group button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    localStorage.setItem('theme', mode);
+  }
+
+  async function init() {
+    const data = await DiagramCommon.loadData();
+    document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+    // TMDB token 回填
+    const existing = DiagramCommon.getTmdbToken();
+    if (existing) {
+      document.getElementById('tmdb-token-input').value = existing;
+      const r = document.getElementById('tmdb-save-result');
+      r.className = 'save-result ok';
+      r.textContent = '✓ 已加载已保存的 Token（' + existing.length + ' 字符）';
+    }
+
+    // CMS 源列表
+    const cmsSources = (data.cms && data.cms.sourceList) || [];
+    const checked = new Set(JSON.parse(localStorage.getItem('selectedSources') || '[]'));
+    const cmsHtml = cmsSources.slice(0, 12).map(s => {
+      const isOn = checked.size === 0 || checked.has(s.id);
+      return '<div class="source-row"><input type="checkbox" ' + (isOn ? 'checked' : '') + ' data-id="' + esc(s.id) + '">' +
+        '<span class="name">' + esc(s.name) + '</span><span class="api">' + esc(s.api) + '</span></div>';
+    }).join('');
+    document.getElementById('cms-source-list').innerHTML =
+      '<div class="item-label">已配置 ' + cmsSources.length + ' 个源（展示前 12 个）</div><div style="margin-top: var(--space-sm);">' + cmsHtml + '</div>';
+
+    // IPTV M3U 源
+    const iptvSources = (data.iptv && data.iptv.sourceStatus) || [];
+    const iptvHtml = iptvSources.map(s => {
+      const ok = s.status === 'ok';
+      return '<div class="source-row"><span class="status-badge ' + (ok ? 'ok' : 'fail') + '">' + (ok ? '正常' : '异常') + '</span>' +
+        '<span class="name">' + esc(s.name) + '</span><span class="api">' + esc(s.url) + '</span>' +
+        '<span class="item-value">' + (s.channelCount || 0) + ' 频道</span></div>';
+    }).join('');
+    document.getElementById('iptv-source-list').innerHTML =
+      '<div class="item-label">M3U 源（' + iptvSources.length + ' 个）</div><div style="margin-top: var(--space-sm);">' + iptvHtml + '</div>';
+
+    // EPG 源
+    const epgSources = (data.iptv && data.iptv.epgSources) || [];
+    const epgHtml = epgSources.map(s => '<div class="source-row"><span class="name">' + esc(s.name) + '</span><span class="api">' + esc(s.url) + '</span></div>').join('');
+    document.getElementById('epg-source-list').innerHTML =
+      '<div class="item-label">EPG 源（' + epgSources.length + ' 个）</div><div style="margin-top: var(--space-sm);">' + epgHtml + '</div>';
+
+    // 代理端点
+    const p = (data.meta && data.meta.proxies) || {};
+    const proxyItems = [
+      ['Video Proxy', p.videoProxy, '视频/CORS 总代理'],
+      ['IPTV Proxy', p.iptvProxy, 'IPTV M3U8/TS 代理'],
+      ['CORS 端点', p.corsProxyEndpoint, '匹配模式：{corsProxy}?url={encoded}'],
+      ['M3U8 端点', p.m3u8ProxyEndpoint, '匹配模式：{m3u8Proxy}?url={encoded}'],
+      ['TS 端点', p.tsProxyEndpoint, 'TS 切片代理'],
+    ].map(([k, v, d]) => '<div class="settings-item"><div><div class="item-label">' + esc(k) + '</div><div class="item-desc">' + esc(d) + '</div></div><div class="item-value">' + esc(v) + '</div></div>').join('');
+    document.getElementById('proxy-list').innerHTML = proxyItems;
+
+    // 主题回填
+    const theme = localStorage.getItem('theme') || 'light';
+    const themeMap = { light: '亮色', dark: '暗色', system: '跟随系统' };
+    document.querySelectorAll('#theme-group button').forEach(b => b.classList.toggle('active', b.textContent === themeMap[theme]));
+  }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 详情页 原理图</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .hero { position: relative; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-lg); background: linear-gradient(135deg,#1a1a2e,#0f3460); }
+    .hero .backdrop { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); transform: scale(1.1); }
+    .hero .content { position: relative; display: flex; gap: var(--space-xl); padding: var(--space-xl); color: #fff; }
+    .hero .poster { width: 180px; aspect-ratio: 2/3; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0; box-shadow: var(--shadow-lg); }
+    .hero .info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .hero h2 { font-size: 28px; font-weight: 700; margin-bottom: var(--space-sm); }
+    .hero .meta { display: flex; gap: var(--space-md); flex-wrap: wrap; font-size: var(--text-sm); color: rgba(255,255,255,0.8); margin-bottom: var(--space-sm); }
+    .hero .meta .rating { color: #faad14; font-weight: 600; }
+    .hero .overview { font-size: var(--text-sm); color: rgba(255,255,255,0.7); line-height: 1.6; max-height: 4.8em; overflow: hidden; margin-bottom: var(--space-md); }
+    .cast-row { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: var(--space-lg); }
+    .cast-card { width: 90px; text-align: center; }
+    .cast-card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; margin-bottom: 4px; }
+    .cast-card .name { font-size: var(--text-xs); font-weight: 500; }
+    .cast-card .char { font-size: 10px; color: var(--color-text-tertiary); }
+    .stills-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-sm); }
+    .stills-grid img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-sm); }
+    .tab-demo { display: flex; border-bottom: 2px solid var(--color-border-light); margin-bottom: var(--space-lg); }
+    .tab-demo .tab-item { padding: var(--space-sm) var(--space-lg); font-size: var(--text-sm); font-weight: 600; color: var(--color-text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab-demo .tab-item.active { color: var(--color-text); border-bottom-color: #000; }
+    .ep-url { font-family: monospace; font-size: var(--text-xs); color: var(--color-text-secondary); word-break: break-all; margin-top: 4px; }
+    .proxy-pattern { background: var(--color-hover-bg); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-family: monospace; font-size: var(--text-xs); margin-top: var(--space-sm); }
+    .data-flow .tmdb { color:#01b4e4; } .data-flow .cms { color:#fa8c16; } .data-flow .store { color:#722ed1; font-weight:500; } .data-flow .component { color:#52c41a; font-weight:500; } .data-flow .service { color:#1890ff; font-weight:500; } .data-flow .arrow { color:var(--color-text-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="diagram-page">
+    <div class="page-nav">
+      <a href="index.html">← 索引</a>
+      <a href="home.html">首页</a>
+      <a href="detail.html" class="active">详情</a>
+      <a href="player.html">播放</a>
+      <a href="browse.html">浏览</a>
+    <a href="flowchart.html?from=detail">📊 流程图</a>
+    </div>
+
+    <div class="diagram-header">
+      <h1>🎬 详情页 (Detail)</h1>
+      <div class="route">/detail/:id</div>
+      <div class="desc">DetailHeader 英雄区 + TabBar (概览/播放列表/剧照) + CastList + Recommendations + StillsLightbox</div>
+    </div>
+
+    <div id="proxy-bar"></div>
+    <div id="tmdb-notice"></div>
+
+    <!-- 组件树 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">结构</span> 组件树</div>
+      <div class="data-flow">
+        <span class="component">Detail</span><br>
+        ├── <span class="component">DetailHeader</span> (backdrop + poster + 标题/评分/年份/类型/简介)<br>
+        ├── <span class="component">TabBar</span> — 概览 / 播放列表 / 剧照<br>
+        │   ├── 概览 → <span class="component">CastList</span> + <span class="component">Recommendations</span><br>
+        │   ├── 播放列表 → <span class="component">PlayLineList</span> (CMS playLines × episodes)<br>
+        │   └── 剧照 → <span class="component">StillsGallery</span> → <span class="component">StillsLightbox</span><br>
+        └── <span class="component">BackToTopButton</span>
+      </div>
+    </div>
+
+    <!-- TMDB 详情 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">TMDB</span> DetailHeader — TMDB 详情</div>
+      <div id="tmdb-detail"></div>
+    </div>
+
+    <!-- TabBar -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">组件</span> TabBar</div>
+      <div class="tab-demo">
+        <div class="tab-item active">概览</div>
+        <div class="tab-item">播放列表</div>
+        <div class="tab-item">剧照</div>
+      </div>
+    </div>
+
+    <!-- CMS 详情 + 播放列表 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">CMS</span> 播放列表 — CMS videoDetail</div>
+      <div id="cms-detail"></div>
+    </div>
+
+    <!-- 数据流 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">数据流</span> TMDB + CMS 合并</div>
+      <div class="data-flow">
+        <strong>TMDB 详情（直连 CORS）：</strong><br>
+        <span class="component">Detail</span> <span class="arrow">→</span>
+        <span class="service">tmdbService.getDetail(id)</span> <span class="arrow">→</span>
+        <span class="tmdb">TMDB API</span> (直连，CORS 允许) <span class="arrow">→</span>
+        backdrop / poster / cast / recommendations / images<br><br>
+        <strong>CMS 详情（经 video proxy 代理）：</strong><br>
+        <span class="component">Detail</span> <span class="arrow">→</span>
+        <span class="service">cmsService.getDetail(vodId)</span> <span class="arrow">→</span>
+        <span class="cms">Video Proxy</span> (<code>https://video-warehouse.nmziptv.top/proxy?url=</code>) <span class="arrow">→</span>
+        playLines[] / episodes[]<br><br>
+        <strong>合并策略：</strong> TMDB 提供元信息(评分/简介/演员/剧照/推荐)，CMS 提供播放线路与集数 URL。
+        .m3u8 URL 经 CORS 代理播放，.mp4 直连播放。
+      </div>
+    </div>
+  </div>
+
+  <script src="diagram-common.js"></script>
+  <script>
+    async function init() {
+      const data = await DiagramCommon.loadData();
+      const esc = DiagramCommon.esc;
+      const P = DiagramCommon.PROXIES;
+
+      document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+      const tmdb = data.tmdb;
+      const tmdbDetail = tmdb && tmdb.detailSample;
+      const cmsDetail = data.cms && data.cms.videoDetail;
+
+      // ── TMDB 详情 ──────────────────────
+      const tmdbEl = document.getElementById('tmdb-detail');
+      if (!tmdbDetail) {
+        document.getElementById('tmdb-notice').innerHTML = DiagramCommon.renderTmdbNotice();
+        tmdbEl.innerHTML = '<div class="component-box"><div class="desc">TMDB 未配置或无 detailSample，下方展示 CMS 真实数据。</div></div>';
+      } else {
+        // 英雄区
+        let hero = '<div class="hero">';
+        hero += '<div class="backdrop" style="background-image:url(\'' + esc(tmdbDetail.backdrop || '') + '\');"></div>';
+        hero += '<div class="content">';
+        hero += tmdbDetail.poster ? '<img class="poster" src="' + esc(tmdbDetail.poster) + '" alt="' + esc(tmdbDetail.title) + '">' : '';
+        hero += '<div class="info"><h2>' + esc(tmdbDetail.title) + '</h2><div class="meta">';
+        if (tmdbDetail.rating) hero += '<span class="rating">★ ' + esc(tmdbDetail.rating) + '</span>';
+        if (tmdbDetail.year) hero += '<span>' + esc(tmdbDetail.year) + '</span>';
+        if (tmdbDetail.runtime) hero += '<span>' + esc(tmdbDetail.runtime) + ' 分钟</span>';
+        if (tmdbDetail.genres && tmdbDetail.genres.length) hero += '<span>' + tmdbDetail.genres.map(esc).join(' / ') + '</span>';
+        hero += '</div>';
+        if (tmdbDetail.overview) hero += '<div class="overview">' + esc(tmdbDetail.overview) + '</div>';
+        hero += '</div></div></div>';
+        tmdbEl.innerHTML = hero;
+
+        // 演员表
+        if (tmdbDetail.cast && tmdbDetail.cast.length) {
+          let cast = '<div style="margin-bottom:var(--space-lg);"><div style="font-weight:600;margin-bottom:var(--space-sm);">演员</div><div class="cast-row">';
+          tmdbDetail.cast.slice(0, 8).forEach(function (c) {
+            cast += '<div class="cast-card">';
+            cast += c.profile ? '<img src="' + esc(c.profile) + '" alt="' + esc(c.name) + '">' : '<div style="width:90px;height:90px;border-radius:50%;background:var(--color-hover-bg);"></div>';
+            cast += '<div class="name">' + esc(c.name) + '</div>';
+            if (c.character) cast += '<div class="char">' + esc(c.character) + '</div>';
+            cast += '</div>';
+          });
+          cast += '</div></div>';
+          tmdbEl.innerHTML += cast;
+        }
+
+        // 相关推荐
+        if (tmdbDetail.recommendations && tmdbDetail.recommendations.length) {
+          tmdbEl.innerHTML += DiagramCommon.renderMovieRow('相关推荐', tmdbDetail.recommendations, '🎯');
+        }
+
+        // 剧照画廊
+        const backdrops = tmdbDetail.images && tmdbDetail.images.backdrops;
+        if (backdrops && backdrops.length) {
+          let stills = '<div style="margin-top:var(--space-lg);"><div style="font-weight:600;margin-bottom:var(--space-sm);">剧照 / Backdrops</div><div class="stills-grid">';
+          backdrops.slice(0, 8).forEach(function (b) {
+            stills += '<img src="' + esc(typeof b === 'string' ? b : b.url || b.file_path) + '" loading="lazy">';
+          });
+          stills += '</div></div>';
+          tmdbEl.innerHTML += stills;
+        }
+      }
+
+      // ── CMS 详情 + 播放列表 ──────────────────────
+      const cmsEl = document.getElementById('cms-detail');
+      if (!cmsDetail) {
+        cmsEl.innerHTML = '<div class="component-box"><div class="desc">暂无 CMS videoDetail 数据。</div></div>';
+        return;
+      }
+
+      let html = '<div class="cms-detail-card">';
+      html += '<div class="cms-detail-poster">' + (cmsDetail.poster ? '<img src="' + esc(cmsDetail.poster) + '" alt="' + esc(cmsDetail.title) + '" onerror="this.style.display=\'none\'">' : '') + '</div>';
+      html += '<div class="cms-detail-info"><h3>' + esc(cmsDetail.title) + '</h3>';
+      html += '<div class="cms-detail-meta">';
+      if (cmsDetail.year) html += esc(cmsDetail.year) + ' · ';
+      if (cmsDetail.type) html += esc(cmsDetail.type) + ' · ';
+      if (cmsDetail.area) html += esc(cmsDetail.area);
+      html += '</div>';
+      if (cmsDetail.director) html += '<div class="cms-detail-meta">导演：' + esc(cmsDetail.director) + '</div>';
+      if (cmsDetail.actor) html += '<div class="cms-detail-meta">演员：' + esc(cmsDetail.actor) + '</div>';
+      if (cmsDetail.duration) html += '<div class="cms-detail-meta">时长：' + esc(cmsDetail.duration) + ' 分钟</div>';
+      html += '<div class="cms-detail-desc">' + esc(cmsDetail.content) + '</div>';
+      html += '</div></div>';
+
+      // 播放线路
+      if (cmsDetail.playLines && cmsDetail.playLines.length) {
+        html += '<div class="play-line-list">';
+        cmsDetail.playLines.forEach(function (line) {
+          html += '<div class="play-line-item"><div class="play-line-name">📺 线路：' + esc(line.lineName) + '</div>';
+          html += '<div class="play-episodes">';
+          line.episodes.forEach(function (ep, idx) {
+            const isM3u8 = /\.m3u8(\?|$)/i.test(ep.url);
+            const isMp4 = /\.mp4(\?|$)/i.test(ep.url);
+            const isMpd = /\.mpd(\?|$)/i.test(ep.url);
+            const typeLabel = isM3u8 ? 'HLS' : isMp4 ? 'MP4' : isMpd ? 'DASH' : '其他';
+            const typeColor = isM3u8 ? '#1890ff' : isMp4 ? '#52c41a' : isMpd ? '#722ed1' : '#999';
+            html += '<div style="margin-bottom:var(--space-sm);">';
+            html += '<button class="play-ep">' + esc(ep.title || ('第' + (idx + 1) + '集')) + '</button>';
+            html += ' <span class="badge" style="background:' + typeColor + ';color:#fff;font-size:10px;">' + typeLabel + '</span>';
+            html += '<div class="ep-url">原始：' + esc(ep.url) + '</div>';
+            if (isM3u8) {
+              const proxied = P.corsProxy + encodeURIComponent(ep.url);
+              html += '<div class="ep-url" style="color:#1890ff;">代理：' + esc(proxied) + '</div>';
+            }
+            html += '</div>';
+          });
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // 代理模式说明
+      html += '<div class="proxy-pattern">';
+      html += '<strong>代理规则：</strong> .m3u8 URL → <code>' + esc(P.corsProxy) + '{encoded}</code> (解决 CORS) &nbsp;|&nbsp; .mp4 URL → 直连播放';
+      html += '</div>';
+
+      cmsEl.innerHTML = html;
+    }
+    init();
+  </script>
+</body>
+</html>

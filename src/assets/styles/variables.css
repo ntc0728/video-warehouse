@@ -82,6 +82,7 @@
   --space-3xs: clamp(1px,  0.047rem + 0.029vw, 2px);    /* 1→2   */
   --space-2xs: clamp(1px,  0.047rem + 0.058vw, 3px);    /* 1→3   */
   --space-xs:  clamp(3px,  0.151rem + 0.087vw, 6px);    /* 3→6   */
+  --space-xs-plus: clamp(4px, 0.225rem + 0.116vw, 8px); /* 4→8   */
   --space-sm:  clamp(6px,  0.398rem + 0.145vw, 12px);   /* 6→12  */
   --space-md:  clamp(8px,  0.582rem + 0.261vw, 18px);   /* 8→18  */
   --space-lg:  clamp(12px, 0.836rem + 0.404vw, 28px);   /* 12→28 */
@@ -181,6 +182,7 @@
   --layout-channel-list-w-2xl: 400px;
   --layout-iptv-channel-list-w: clamp(20rem, 17.5rem + 0.65vw, 30rem);  /* 320—480px 流体 */
   --layout-source-url-max-w:   160px;
+  --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
   --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
   --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */
   --layout-groups-collapsed-h: 76px;
@@ -199,7 +201,7 @@
   --layout-collapse-max-h:     1000px;
   --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem);
   --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem);
-  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 43.75rem);
+  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 50rem);
 
   /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
   --card-cols: 3;   /* 默认：移动端 (< 768)             */
@@ -264,10 +266,11 @@
 
 @media (width >= 1920px) {
   :root {
-    --card-cols: 7;
+    --card-cols: 10;
     --row-cols: 7;
     /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
     --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
+    --layout-searchbox-max-w: clamp(17.5rem, 50vw, 110rem);
   }
 }
 

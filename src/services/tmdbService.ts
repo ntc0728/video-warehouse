@@ -197,8 +197,8 @@ export async function fetchPopularMovies(): Promise<TMDBPaginatedResponse<TMDBMo
 }
 
 /** 获取评分最高电影列表 */
-export async function fetchTopRatedMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/top_rated', { region: 'CN' });
+export async function fetchTopRatedMovies(page: number = 1): Promise<TMDBPaginatedResponse<TMDBMovie>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/top_rated', { region: 'CN', page });
 }
 
 /** 获取即将上映电影列表 */
@@ -212,8 +212,8 @@ export async function fetchPopularTV(): Promise<TMDBPaginatedResponse<TMDBTVShow
 }
 
 /** 获取评分最高电视剧列表 */
-export async function fetchTopRatedTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/top_rated');
+export async function fetchTopRatedTV(page: number = 1): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/top_rated', { page });
 }
 
 /** 获取今日播出电视剧列表 */

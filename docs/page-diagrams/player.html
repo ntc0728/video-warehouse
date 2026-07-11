@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Warehouse — 播放页原理图</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .player-layout { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); }
+    .player-video-area { flex: 1; min-width: 0; }
+    .player-sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--space-md); }
+    .player-shell { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); background: #111; }
+    .player-viewport { aspect-ratio: 16/9; position: relative; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#1a1a2e,#0f3460); color: #fff; }
+    .player-viewport .play-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .player-viewport .watermark { position: absolute; bottom: var(--space-lg); right: var(--space-lg); color: rgba(255,255,255,0.3); font-size: var(--text-xs); }
+    .player-viewport .skip-hint { position: absolute; bottom: 80px; right: var(--space-lg); background: rgba(0,0,0,0.7); color: #fff; padding: var(--space-xs) var(--space-md); border-radius: var(--radius-md); font-size: var(--text-sm); cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+    .control-bar { padding: var(--space-sm) var(--space-md); background: #111; color: #fff; }
+    .progress-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs); }
+    .progress-row .time { font-family: monospace; font-size: var(--text-xs); flex-shrink: 0; }
+    .progress-track { flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; position: relative; }
+    .progress-track .fill { height: 100%; background: #1890ff; border-radius: 2px; width: 35%; }
+    .controls-row { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+    .ctrl-btn { color: #fff; font-size: var(--text-sm); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.15); }
+    .ctrl-spacer { flex: 1; }
+    .sidebar-panel { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); overflow: hidden; }
+    .sidebar-panel .panel-header { padding: var(--space-sm) var(--space-md); font-weight: 600; font-size: var(--text-sm); border-bottom: 1px solid var(--color-border-light); background: var(--color-hover-bg); }
+    .line-item { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border-light); cursor: pointer; display: flex; align-items: center; gap: var(--space-sm); font-size: var(--text-sm); }
+    .line-item:last-child { border: none; }
+    .line-item.active { color: #1890ff; font-weight: 600; }
+    .line-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; }
+    .line-item.active .dot { background: #1890ff; }
+    .ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: var(--space-xs); padding: var(--space-sm) var(--space-md); }
+    .ep-btn { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: 1px solid var(--color-border-light); background: var(--color-surface); font-size: var(--text-sm); cursor: pointer; }
+    .ep-btn.active { background: #1890ff; color: #fff; border-color: #1890ff; }
+    .ep-btn:hover:not(.active) { border-color: #1890ff; color: #1890ff; }
+    .ep-detail { padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--color-border-light); font-size: var(--text-xs); }
+    .ep-url { font-family: monospace; color: var(--color-text-secondary); word-break: break-all; }
+    .proxy-config { background: var(--color-hover-bg); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-md); }
+    .proxy-config-row { display: flex; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-xs); font-size: var(--text-sm); }
+    .proxy-config-row code { background: var(--color-surface); padding: 2px 6px; border-radius: var(--radius-sm); font-size: var(--text-xs); }
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
+    .feature-card { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: var(--space-md); }
+    .feature-card .label { font-weight: 600; font-size: var(--text-sm); margin-bottom: var(--space-xs); }
+    .feature-card .desc { font-size: var(--text-xs); color: var(--color-text-secondary); }
+    .data-flow .tmdb { color:#01b4e4; } .data-flow .cms { color:#fa8c16; } .data-flow .store { color:#722ed1; font-weight:500; } .data-flow .component { color:#52c41a; font-weight:500; } .data-flow .service { color:#1890ff; font-weight:500; } .data-flow .arrow { color:var(--color-text-tertiary); }
+    @media (max-width: 768px) { .player-layout { flex-direction: column; } .player-sidebar { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="diagram-page">
+    <div class="page-nav">
+      <a href="index.html">← 索引</a>
+      <a href="detail.html">详情</a>
+      <a href="player.html" class="active">播放</a>
+    <a href="flowchart.html?from=player">📊 流程图</a>
+    </div>
+
+    <div class="diagram-header">
+      <h1>▶ 播放页 (Player)</h1>
+      <div class="route">/play/:id</div>
+      <div class="desc">UniversalPlayer (视频区 + ControlBar) + Sidebar (PlayLineList + EpisodeList) + 代理配置 + 自动连播/跳过/解码切换</div>
+    </div>
+
+    <div id="proxy-bar"></div>
+
+    <!-- 组件树 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">结构</span> 组件树</div>
+      <div class="data-flow">
+        <span class="component">Player</span><br>
+        ├── <span class="component">UniversalPlayer</span> (video + ControlBar + SkipHint + AutoPlayOverlay)<br>
+        │   ├── <span class="component">PlayerCore</span> — video 元素 + adapter 生命周期<br>
+        │   └── <span class="component">ControlBar</span> — 播放/进度/音量/倍速/分辨率/全屏/截图<br>
+        └── <span class="component">Sidebar</span><br>
+        &nbsp;&nbsp;&nbsp;├── <span class="component">PlayLineList</span> — CMS 播放线路选择<br>
+        &nbsp;&nbsp;&nbsp;└── <span class="component">EpisodeList</span> — 集数网格 + 排序/分页
+      </div>
+    </div>
+
+    <!-- 播放器布局 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">布局</span> 播放器 + 侧边栏</div>
+      <div class="player-layout">
+        <div class="player-video-area">
+          <div class="player-shell">
+            <div class="player-viewport">
+              <div class="play-icon">▶</div>
+              <div class="skip-hint">⏩ 跳过片头</div>
+              <div class="watermark">Video Warehouse</div>
+            </div>
+            <div class="control-bar">
+              <div class="progress-row">
+                <span class="time">05:23</span>
+                <div class="progress-track"><div class="fill"></div></div>
+                <span class="time">24:10</span>
+              </div>
+              <div class="controls-row">
+                <button class="ctrl-btn">⏸ 播放</button>
+                <button class="ctrl-btn">⏮ 上集</button>
+                <button class="ctrl-btn">⏭ 下集</button>
+                <div class="ctrl-spacer"></div>
+                <button class="ctrl-btn">🔊 音量</button>
+                <button class="ctrl-btn">1.0x</button>
+                <button class="ctrl-btn">1080P</button>
+                <button class="ctrl-btn">⛶ 全屏</button>
+                <button class="ctrl-btn">📸 截图</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="player-sidebar" id="sidebar"></div>
+      </div>
+    </div>
+
+    <!-- 代理配置 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">代理</span> IPTV / Video 代理配置</div>
+      <div class="proxy-config">
+        <div class="proxy-config-row"><strong>Video CORS 代理：</strong><code>https://video-warehouse.nmziptv.top/proxy?url=</code> — .m3u8 / 跨域资源</div>
+        <div class="proxy-config-row"><strong>IPTV M3U8 代理：</strong><code>https://iptv.nmz996.cc.cd/m3u8-proxy?url=</code> — M3U8 直播流</div>
+        <div class="proxy-config-row"><strong>IPTV TS 代理：</strong><code>https://iptv.nmz996.cc.cd/ts-proxy?url=</code> — TS 分片</div>
+      </div>
+    </div>
+
+    <!-- 播放器特性 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">特性</span> 播放器功能</div>
+      <div class="feature-grid">
+        <div class="feature-card"><div class="label">🔁 自动连播</div><div class="desc">播放结束倒计时 5 秒自动播放下一集，可取消</div></div>
+        <div class="feature-card"><div class="label">⏩ 跳过片头/片尾</div><div class="desc">根据 intro/outro 时间区间自动提示跳过</div></div>
+        <div class="feature-card"><div class="label">🔀 解码器切换</div><div class="desc">native (原生) ↔ wasm (WebAssembly，buffer 更小)</div></div>
+        <div class="feature-card"><div class="label">📊 带宽估算</div><div class="desc">hls.js estimate + PerformanceObserver + webkitVideoDecodedByteCount 三路估算</div></div>
+      </div>
+    </div>
+
+    <!-- 数据流 -->
+    <div class="diagram-section">
+      <div class="diagram-section-title"><span class="tag">数据流</span> 解析 → 适配器 → video</div>
+      <div class="data-flow">
+        <span class="component">Player</span> <span class="arrow">→</span>
+        <span class="store">usePlayerStore</span> <span class="arrow">→</span>
+        <span class="service">cmsService.getDetail(vodId)</span> <span class="arrow">→</span>
+        <span class="cms">CMS videoDetail</span> <span class="arrow">→</span>
+        解析 playLines[].episodes[].url<br><br>
+        <strong>适配器选择：</strong><br>
+        URL 后缀 <code>.m3u8</code> <span class="arrow">→</span> <span class="service">HLSAdapter</span> (hls.js) <span class="arrow">→</span>
+        经 <span class="cms">Video Proxy</span> 代理(若需 CORS) <span class="arrow">→</span> video 元素<br>
+        URL 后缀 <code>.mp4</code> <span class="arrow">→</span> <span class="service">NativeAdapter</span> (原生 video) <span class="arrow">→</span> 直连播放<br>
+        URL 后缀 <code>.mpd</code> <span class="arrow">→</span> <span class="service">DashAdapter</span> (dash.js / Shaka) <span class="arrow">→</span> video 元素<br><br>
+        <strong>热切换</strong>：同类型适配器复用实例，仅 switchSource()<br>
+        <strong>冷切换</strong>：类型不同 → destroy 旧 → create 新 → 重新 attach
+      </div>
+    </div>
+  </div>
+
+  <script src="diagram-common.js"></script>
+  <script>
+    async function init() {
+      const data = await DiagramCommon.loadData();
+      const esc = DiagramCommon.esc;
+      const P = DiagramCommon.PROXIES;
+
+      document.getElementById('proxy-bar').innerHTML = DiagramCommon.renderProxyBar();
+
+      const cmsDetail = data.cms && data.cms.videoDetail;
+      const sidebar = document.getElementById('sidebar');
+
+      if (!cmsDetail || !cmsDetail.playLines || !cmsDetail.playLines.length) {
+        sidebar.innerHTML = '<div class="component-box"><div class="desc">暂无 CMS videoDetail 播放线路数据。</div></div>';
+        return;
+      }
+
+      // ── 播放线路列表 ──────────────────────
+      let html = '<div class="sidebar-panel"><div class="panel-header">📺 播放线路</div>';
+      cmsDetail.playLines.forEach(function (line, idx) {
+        const epCount = (line.episodes || []).length;
+        html += '<div class="line-item' + (idx === 0 ? ' active' : '') + '">';
+        html += '<span class="dot"></span>';
+        html += '<span>' + esc(line.lineName) + ' (' + epCount + '集)</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // ── 集数列表 ──────────────────────
+      const firstLine = cmsDetail.playLines[0];
+      html += '<div class="sidebar-panel"><div class="panel-header">🎬 选集</div>';
+      html += '<div class="ep-grid">';
+      firstLine.episodes.forEach(function (ep, idx) {
+        html += '<button class="ep-btn' + (idx === 0 ? ' active' : '') + '">' + (idx + 1) + '</button>';
+      });
+      html += '</div></div>';
+
+      // ── 集数 URL 详情 ──────────────────────
+      html += '<div class="sidebar-panel"><div class="panel-header">🔗 URL 解析</div>';
+      firstLine.episodes.forEach(function (ep, idx) {
+        const isM3u8 = /\.m3u8(\?|$)/i.test(ep.url);
+        const isMp4 = /\.mp4(\?|$)/i.test(ep.url);
+        const isMpd = /\.mpd(\?|$)/i.test(ep.url);
+        const typeLabel = isM3u8 ? 'HLS' : isMp4 ? 'MP4' : isMpd ? 'DASH' : '其他';
+        const typeColor = isM3u8 ? '#1890ff' : isMp4 ? '#52c41a' : isMpd ? '#722ed1' : '#999';
+        const adapter = isM3u8 ? 'HLSAdapter' : isMp4 ? 'NativeAdapter' : isMpd ? 'DashAdapter' : 'NativeAdapter';
+        const proxied = isM3u8 ? P.corsProxy + encodeURIComponent(ep.url) : null;
+
+        html += '<div class="ep-detail">';
+        html += '<div style="margin-bottom:4px;"><strong>' + esc(ep.title || ('第' + (idx + 1) + '集')) + '</strong> ';
+        html += '<span class="badge" style="background:' + typeColor + ';color:#fff;font-size:10px;">' + typeLabel + '</span>';
+        html += ' → <span style="color:' + typeColor + ';font-weight:500;">' + adapter + '</span></div>';
+        html += '<div class="ep-url">原始：' + esc(ep.url) + '</div>';
+        if (proxied) {
+          html += '<div class="ep-url" style="color:#1890ff;">代理：' + esc(proxied) + '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+
+      sidebar.innerHTML = html;
+    }
+    init();
+  </script>
+</body>
+</html>

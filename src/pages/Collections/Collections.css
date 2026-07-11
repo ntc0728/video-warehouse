@@ -2,109 +2,69 @@
 /* 页面级 padding 已去除(让 .video-card-grid 水平边距 100% 自管),
    改由 filter-bar / title-row / status-tabs 等子元素自管水平 padding。 */
 
-@import '@/components/StatusTabs/FilterBar.css';
-
-/* ── 收藏页独立搜索框 ───────────────────────────────── */
-.record-search {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: var(--comp-input-min-w);
-  max-width: clamp(14rem, 30vw, 22rem);
-}
-.record-search__field {
-  display: flex;
-  align-items: center;
-  height: var(--comp-tab-height);
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-text);
-  transition: border-color 0.15s ease;
-}
-.record-search__field:focus-within {
-  border-color: var(--color-primary);
-}
-.record-search__icon {
-  flex-shrink: 0;
-  margin-right: var(--space-xs);
-  color: var(--color-text-tertiary);
-}
-.record-search__input {
-  flex: 1 1 0;
-  width: 0;
-  min-width: 0;
-  height: 100%;
-  padding: 0;
-  padding-right: var(--comp-thumb-size);
-  border: none;
-  background: transparent;
-  color: var(--color-text);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  overflow: hidden;
-  outline: none;
-  text-overflow: ellipsis;
-}
-.record-search__input::placeholder {
-  color: var(--color-text-tertiary);
-}
-.record-search__clear {
-  position: absolute;
-  right: var(--space-sm);
-  display: flex;
-  flex-shrink: 0;
-  justify-content: center;
-  align-items: center;
-  width: var(--comp-thumb-size);
-  height: var(--comp-thumb-size);
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-.record-search__clear:hover {
-  color: var(--color-text);
-}
-
-@media (width <= 767px) {
-  .record-search {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: clamp(10rem, 40vw, 16rem);
-  }
-  .record-filter-bar__actions {
-    justify-content: flex-end;
-  }
-}
-
-.collection-page {
-  position: relative;
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  width: 100%;
-}
+/* 布局外壳（左侧筛选栏 + 右侧卡片区）由 RecordShell 组件提供，
+   .record-search / .category-segmented / .record-shell 等样式见 RecordShell.css。 */
 
 .collection-content {
   flex: 0 0 auto;
   min-height: auto;
 }
 
-.collection-filter-bar {
-  padding: var(--space-md) var(--space-lg) var(--space-sm) var(--space-sm);
-}
-
-.collection-page > .status-tabs {
-  padding: var(--space-xs) var(--space-sm);
-}
-
-.collection-page > .empty-state-wrapper {
+/* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ─────────────────────────── */
+.collection-page > .empty-state-wrapper,
+.collection-page .record-main > .empty-state-wrapper {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
+/* ── 方案 C：右侧卡片区较窄，适当减少列数（竖版海报） ───────────────── */
+.collection-page .record-main .video-card-grid {
+  --card-cols: 3;
+}
+
+@media (width >= 768px) {
+  .collection-page .record-main .video-card-grid {
+    --card-cols: 4;
+  }
+}
+
+@media (width >= 1280px) {
+  .collection-page .record-main .video-card-grid {
+    --card-cols: 5;
+  }
+}
+
+@media (width >= 1920px) {
+  .collection-page .record-main .video-card-grid {
+    --card-cols: 7;
+  }
+}
+
+/* IPTV 频道网格：随卡片区收窄相应减少列数 */
+.collection-page .record-main .iptv-channel-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (width >= 768px) {
+  .collection-page .record-main .iptv-channel-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (width >= 1280px) {
+  .collection-page .record-main .iptv-channel-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (width >= 1920px) {
+  .collection-page .record-main .iptv-channel-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .collection-sentinel {
@@ -174,12 +134,6 @@
 }
 
 @media (width <= 767px) {
-  .collection-filter-bar {
-    padding-right: var(--space-sm);
-  }
-  .collection-page > .status-tabs {
-    padding-right: var(--space-sm);
-  }
   .record-card__delete {
     opacity: 1;
   }

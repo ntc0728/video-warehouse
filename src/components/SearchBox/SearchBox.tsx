@@ -45,6 +45,8 @@ export interface SearchBoxProps {
    * 已 trim 空白的 query 作为参数。
    */
   onSearch?: (query: string) => void;
+  /** 输入值变化回调（含 trim 前的原始值） */
+  onValueChange?: (value: string) => void;
 }
 
 const MAX_HISTORY_IN_DROPDOWN = 5;
@@ -58,6 +60,7 @@ export default function SearchBox({
   autoFocus = false,
   className = '',
   onSearch,
+  onValueChange,
 }: SearchBoxProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +97,9 @@ export default function SearchBox({
 
   // 外部 URL q 变化时同步（如切到不带 q 的页面、跨页 history 变化）
   useEffect(() => {
-    setValue(defaultValue ?? urlQ);
+    const next = defaultValue ?? urlQ;
+    setValue(next);
+    onValueChange?.(next);
   }, [defaultValue, urlQ]);
 
   // ── 防止浏览器回退恢复焦点：路由变化时 blur 搜索框 ──
@@ -109,22 +114,37 @@ export default function SearchBox({
   }, [autoFocus, location.pathname, location.search]);
 
   // ── 搜索逻辑 ──────────────────────────────────────
+  const lastSearchedRef = useRef('');
+
+  // 路由变化时重置 lastSearchedRef：
+  // 顶部导航栏 SearchBox 常驻挂载，搜索 "test" 后 lastSearchedRef 锁定为 "test"，
+  // 若不重置，返回首页再次搜索相同词会被 handleSearch 的去重判断拦截，导致无法导航。
+  useEffect(() => {
+    lastSearchedRef.current = '';
+  }, [location.pathname]);
+
   const handleSearch = useCallback((query?: string) => {
     const q = (query ?? value).trim();
     if (!q) return;
+    if (q === lastSearchedRef.current) return;
+    lastSearchedRef.current = q;
     addHistory(q);
     setIsDropdownOpen(false);
     if (onSearch) {
       onSearch(q);
     } else {
-      navigate(`/browse?q=${encodeURIComponent(q)}`, { viewTransition: true });
+      navigate('/browse', { state: { q }, viewTransition: true });
     }
   }, [value, onSearch, navigate, addHistory]);
 
   const handleClear = useCallback(() => {
     setValue('');
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }, []);
+    lastSearchedRef.current = '';
+    setIsDropdownOpen(false);
+    if (onSearch) {
+      onSearch('');
+    }
+  }, [onSearch]);
 
   // ── Dropdown 交互 ──────────────────────────────────
   const handleFocus = useCallback(() => {
@@ -230,7 +250,7 @@ export default function SearchBox({
             type="search"
             className="search-box__input"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => { setValue(e.target.value); onValueChange?.(e.target.value); }}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}

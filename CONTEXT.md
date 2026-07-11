@@ -37,3 +37,44 @@ _Avoid_: hardSwitch, recreate
 **vodId**: 视频条目的 vod_id，用于匹配选季高亮和历史记录去重。存入 `HistoryRecord.vodId`。
 
 **cmsSourceId**: CMS 源配置的域名 key，用于匹配历史记录中的 CMS 源。存入 `HistoryRecord.cmsSourceId`。
+
+**RecordShell**: 收藏页/历史页共用布局外壳组件。桌面方案 C（左侧 sticky 筛选栏 + 右侧卡片主区），移动方案 M6（滚动折叠双态）。
+_Avoid_: CollectionLayout, HistoryLayout
+
+**Toast Queue**: 全局 toast 队列系统。`toast.show()` 入队排队，`toast.replace()` 清空队列立即显示。ToastProvider 仅渲染 `items[0]`。
+
+**Initial Loading vs Load More**: 无限滚动中首屏加载（无数据，显示整页 loading）与加载更多（有数据，保持网格挂载）的区分。`initialLoading = isLoading && results.length === 0`。
+
+---
+
+## 架构概览
+
+四层分层架构：页面组件 (React) → Zustand Store (状态管理) → Service 层 (API 封装) → 外部数据源。
+
+### 代理配置
+
+| 代理 | URL | 用途 |
+|------|-----|------|
+| Video Proxy (CORS) | `https://video-warehouse.nmziptv.top/proxy?url={encoded}` | CMS API、M3U 文件、EPG XML |
+| IPTV Proxy (M3U8) | `https://iptv.nmz996.cc.cd/m3u8-proxy?url={encoded}` | 直播流代理 |
+| TS Proxy | `https://iptv.nmz996.cc.cd/ts-proxy?url={encoded}` | TS 分片代理 |
+
+TMDB API 原生支持 CORS 直连。CMS 和 IPTV 请求必须通过 Video Proxy 代理。
+
+### 数据源
+
+- **TMDB API v3** — `api.tmdb.org/3`，Bearer Token 认证，`language=zh-CN`
+- **CMS 采集站** — 28 个源，苹果 CMS V10 API 格式，`{api}?ac=videolist&wd={keyword}` 搜索
+- **IPTV M3U** — 24 个源，`#EXTINF` 格式解析频道列表
+- **EPG XMLTV** — 3 个源，`<programme>` 标签解析节目单
+- **IndexedDB** — 收藏、历史、EPG 缓存（AES-GCM 加密敏感字段）
+
+### 页面原理图与流程图
+
+位置 `docs/page-diagrams/`，包含 10 个页面原理图 + 1 个交互式流程图（`flowchart.html`）。
+流程图页面节点可点击跳转到对应原理图，原理图可跳回流程图（高亮当前节点）。
+数据由 `scripts/fetch-diagram-data.mjs` 从真实 API 获取，输出 `diagram-data.json`。
+
+### AI Agent 指南
+
+详见 `AGENTS.md`（项目根目录）。领域术语见本文件上方。
