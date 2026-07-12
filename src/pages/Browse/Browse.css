@@ -113,7 +113,8 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  padding: var(--space-3xl) 0;
+  /* 原为 0 横向内边距，改为 space-sm，使内部 AppLoading 卡片左右缩进 */
+  padding: var(--space-3xl) var(--space-sm);
 }
 
 /* ── Refreshing(切换筛选条件时的半透蒙版) ─────────── */

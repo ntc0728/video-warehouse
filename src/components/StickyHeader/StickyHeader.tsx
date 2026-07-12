@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Star, Clock, Settings, Sun, Moon, Monitor, Menu, X } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -16,11 +16,6 @@ import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './StickyHeader.css';
 
 interface NavItem { key: string; title: string; icon: React.ReactNode; path: string; }
-
-const LEFT_NAV_ITEMS: NavItem[] = [
-  { key: 'home', title: '首页', icon: <Home size={18} />, path: '/' },
-  { key: 'iptv', title: 'IPTV', icon: <Tv size={18} />, path: '/iptv' },
-];
 
 const RIGHT_NAV_ITEMS: NavItem[] = [
   { key: 'collections', title: '收藏', icon: <Star size={18} />, path: '/collections' },
@@ -33,8 +28,10 @@ const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'syste
 
 interface StickyHeaderProps { onMenuToggle?: () => void; menuOpen?: boolean; }
 
-/** 沉浸式页面路由前缀：首页、详情页、播放页 */
-const IMMERSIVE_ROUTES = ['/', '/detail', '/play', '/player'];
+/** 沉浸式页面路由前缀：播放页（hero 透明叠加）
+ *  首页 / 详情页已改为非沉浸式：header 静态常驻，banner / hero 不再被覆盖
+ *  导出供 AppLayout 同步判断（决定侧边栏/顶栏是否应用卡片化，避免破坏全屏播放页） */
+export const IMMERSIVE_ROUTES = ['/play', '/player'];
 
 export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const theme = useThemeMode();
@@ -137,9 +134,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               </div>
             </button>
           )}
-          <nav className="sticky-header__nav" aria-label="主要导航">
-            {LEFT_NAV_ITEMS.map(renderNavItem)}
-          </nav>
         </div>
         {!isBrowse && (
           <div className="sticky-header__center">

@@ -25,7 +25,7 @@
   align-items: center;
   background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 @keyframes shimmer {
@@ -145,7 +145,7 @@
   inset: 0;
   background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 @media (width <= 767px) {

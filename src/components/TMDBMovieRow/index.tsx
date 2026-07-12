@@ -47,7 +47,7 @@ function toVideo(item: TMDBVideoItem): Video {
 }
 
 /** 骨架卡片 */
-function SkeletonCards({ count = 7 }: { count?: number }) {
+function SkeletonCards({ count = 12 }: { count?: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
@@ -69,6 +69,7 @@ function TMDBMovieRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [hasOverflow, setHasOverflow] = useState(false);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
 
@@ -110,10 +111,12 @@ function TMDBMovieRow({
     [isTV],
   );
 
-  /** 箭头可见性 */
+  /** 箭头可见性 + 溢出判定 */
   const updateArrows = useCallback(() => {
     const el = rowRef.current;
     if (!el) return;
+    // 仅当内容真实溢出视口（数据量超过当前视口可展示数量）时才需要箭头
+    setHasOverflow(el.scrollWidth > el.clientWidth + 1);
     setShowLeftArrow(el.scrollLeft > 0);
     setShowRightArrow(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
@@ -122,29 +125,36 @@ function TMDBMovieRow({
     const el = rowRef.current;
     if (!el) return;
     el.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
     updateArrows();
-    return () => el.removeEventListener('scroll', updateArrows);
+    return () => {
+      el.removeEventListener('scroll', updateArrows);
+      window.removeEventListener('resize', updateArrows);
+    };
   }, [items, updateArrows]);
 
-  /** 视口步进：点击箭头滚动一屏，剩余不足一屏则直接到末尾 */
-  const scrollByViewport = useCallback((direction: 'left' | 'right') => {
-    const el = rowRef.current;
-    if (!el) return;
-    const viewport = el.clientWidth;
-    if (direction === 'left') {
-      const target = Math.max(0, el.scrollLeft - viewport);
-      el.scrollTo({ left: target, behavior: 'smooth' });
-    } else {
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      const remaining = maxScroll - el.scrollLeft;
-      // 剩余不足一屏（含 4px 容差）→ 直接滚到末尾
-      if (remaining <= viewport + 4) {
-        el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+  /** 视口步进：点击箭头滚动一屏，剩余不足一屏则直接到末尾（浏览器原生平滑滚动） */
+  const scrollByViewport = useCallback(
+    (direction: 'left' | 'right') => {
+      const el = rowRef.current;
+      if (!el) return;
+      const viewport = el.clientWidth;
+      if (direction === 'left') {
+        const target = Math.max(0, el.scrollLeft - viewport);
+        el.scrollTo({ left: target, behavior: 'smooth' });
       } else {
-        el.scrollBy({ left: viewport, behavior: 'smooth' });
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        const remaining = maxScroll - el.scrollLeft;
+        // 剩余不足一屏（含 4px 容差）→ 直接滚到末尾
+        if (remaining <= viewport + 4) {
+          el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+        } else {
+          el.scrollBy({ left: viewport, behavior: 'smooth' });
+        }
       }
-    }
-  }, []);
+    },
+    [],
+  );
 
   /** TV 端键盘导航：左右方向键滚动行 */
   const handleKeyDown = useCallback(
@@ -279,11 +289,17 @@ function TMDBMovieRow({
       </div>
 
       <div className="tmdb-movierow-wrapper">
-        {/* 左箭头（TV 端隐藏，用方向键代替） */}
-        {!isMobile && !isTV && showLeftArrow && (
+        {/* 左箭头（TV 端隐藏）。仅当内容溢出视口「且可向左滚动（未到头）」时渲染 */}
+        {!isMobile && !isTV && hasOverflow && items.length > 0 && showLeftArrow && (
           <button
+            type="button"
             className="tmdb-movierow-arrow tmdb-movierow-arrow-left"
-            onClick={() => scrollByViewport('left')}
+            onClick={(e) => {
+              // 阻止默认行为 + 冒泡，确保点击箭头绝不会触发卡片导航或任何祖先跳转
+              e.preventDefault();
+              e.stopPropagation();
+              scrollByViewport('left');
+            }}
             aria-label="向左滚动"
           >
             <ChevronLeft size={22} />
@@ -335,11 +351,17 @@ function TMDBMovieRow({
           )}
         </div>
 
-        {/* 右箭头（TV 端隐藏） */}
-        {!isMobile && !isTV && showRightArrow && (
+        {/* 右箭头（TV 端隐藏）。仅当内容溢出视口「且可向右滚动（未到尾）」时渲染 */}
+        {!isMobile && !isTV && hasOverflow && items.length > 0 && showRightArrow && (
           <button
+            type="button"
             className="tmdb-movierow-arrow tmdb-movierow-arrow-right"
-            onClick={() => scrollByViewport('right')}
+            onClick={(e) => {
+              // 阻止默认行为 + 冒泡，确保点击箭头绝不会触发卡片导航或任何祖先跳转
+              e.preventDefault();
+              e.stopPropagation();
+              scrollByViewport('right');
+            }}
             aria-label="向右滚动"
           >
             <ChevronRight size={22} />

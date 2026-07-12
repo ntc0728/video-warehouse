@@ -6,17 +6,19 @@
  *
  * 7 客户端 · 3 主题感知
  */
-import { useRef, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
-import { BackToTopButton } from '@/components/common';
+import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
+import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import CategoryQuickAccess from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
-import { CATEGORY_CONFIG } from '@/pages/Browse/constants';
+import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
+import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
@@ -34,7 +36,24 @@ export default function HomePage() {
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('home');
-  useDocumentTitle();
+
+  // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────
+  const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
+  const loadCategory = useHomeCategoryStore((s) => s.loadCategory);
+  const categoryData = useHomeCategoryStore((s) => s.data[activeCategory]);
+  const isCategoryView = activeCategory !== 'home';
+
+  // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
+  useEffect(() => {
+    if (isCategoryView) loadCategory(activeCategory);
+  }, [isCategoryView, activeCategory, loadCategory]);
+
+  // 文档标题随类目变化（home 用默认标题）
+  useDocumentTitle(
+    isCategoryView
+      ? CATEGORY_CONFIG[activeCategory as Exclude<HomeCategoryKey, 'home'>].label
+      : undefined,
+  );
 
   useHeaderContent({ immersive: true });
 
@@ -76,7 +95,7 @@ export default function HomePage() {
 
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
-    const cfg = CATEGORY_CONFIG[cat];
+    const cfg = BROWSE_CATEGORY_CONFIG[cat];
     navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { viewTransition: true });
   }, [navigate]);
 
@@ -123,6 +142,35 @@ export default function HomePage() {
     return msgs.length > 0 ? [...new Set(msgs)][0] : null;
   })();
 
+  // ── 首页自定义整页 loading（显示在骨架图之前） ──────────────
+  // 目的：避免只靠骨架图占位——因数据常来自缓存/预取而瞬间就绪，骨架往往一闪而过甚至不出现。
+  // 行为：进入首页（含 keep-alive 切回 '/'）时显示自定义 loading；
+  //       数据就绪（或失败）后仍需停留最短时间 MIN_MS，避免缓存秒回时 loading 只闪一下/不出现；
+  //       最长 MAX_MS 强制关闭，避免异常时卡死。
+  const [pageLoading, setPageLoading] = useState(true);
+  const dataReadyRef = useRef(false);
+  dataReadyRef.current = hasAnyData || !!allFailed;
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    setPageLoading(true);
+    const MIN_MS = 500;
+    const MAX_MS = 10000;
+    const start = performance.now();
+    let timer: number | undefined;
+    const check = () => {
+      const elapsed = performance.now() - start;
+      const ready = dataReadyRef.current;
+      if ((ready && elapsed >= MIN_MS) || elapsed >= MAX_MS) {
+        setPageLoading(false);
+        return;
+      }
+      timer = window.setTimeout(check, 100);
+    };
+    check();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [location.pathname]);
+
   if (!hasToken) {
     return (
       <div className="page-padding home-page">
@@ -142,37 +190,70 @@ export default function HomePage() {
     );
   }
 
-  if (isInitialLoading) {
+  // 首页自定义 loading：内联居中于 home-page 容器内，显示在骨架图「之前」。
+  // pageLoading 进入 '/' 即触发（含 keep-alive 切回），且至少停留 MIN_MS，
+  // 故不会因缓存/预取秒回而只闪一次或不出现。
+  if (pageLoading) {
     return (
-      <div className="page-padding home-page home-skeleton">
-        <div className="home-skeleton-hero" />
-        <div className="home-skeleton-categories">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="home-skeleton-category" />
-          ))}
-        </div>
-        <div className="home-skeleton-rows">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="home-skeleton-row">
-              <div className="home-skeleton-row-title" />
-              <div className="home-skeleton-row-cards">
-                {Array.from({ length: 7 }).map((_, j) => (
-                  <div key={j} className="home-skeleton-card">
-                    <div className="home-skeleton-card-img" />
-                    <div className="home-skeleton-card-title" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="page-padding home-page">
+        <AppLoading tip="精彩内容加载中…" />
       </div>
     );
   }
 
+  // 首屏骨架（home 初始加载 或 类目首次加载共用，结构一致）
+  const homeSkeleton = (
+    <div className="page-padding home-page home-skeleton">
+      <div className="home-skeleton-hero" />
+      <div className="home-skeleton-categories">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="home-skeleton-category" />
+        ))}
+      </div>
+      <div className="home-skeleton-rows">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="home-skeleton-row">
+            <div className="home-skeleton-row-title" />
+            <div className="home-skeleton-row-cards">
+              {Array.from({ length: 7 }).map((_, j) => (
+                <div key={j} className="home-skeleton-card">
+                  <div className="home-skeleton-card-img" />
+                  <div className="home-skeleton-card-title" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (isInitialLoading && !isCategoryView) return homeSkeleton;
+  if (isCategoryView && !categoryData) return homeSkeleton;
+
+  // ── 根据 activeCategory 计算 Hero + 7 行（结构固定，内容切换） ──
+  const heroItems = isCategoryView ? (categoryData!.hero ?? []) : trending;
+
+  const rowDefs = isCategoryView
+    ? CATEGORY_CONFIG[activeCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
+        title: r.title,
+        items: categoryData!.rows[i]?.items ?? [],
+        isLoading: categoryData!.rows[i]?.loading ?? true,
+        error: categoryData!.rows[i]?.error ?? null,
+      }))
+    : [
+        { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
+        { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
+        { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
+        { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
+        { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
+        { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
+        { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
+      ];
+
   return (
     <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-      {!hasAnyData && allFailed && (
+      {!isCategoryView && !hasAnyData && allFailed && (
         <div className="home-empty" role="alert">
           <AlertCircle size={32} className="home-empty-icon" />
           <p className="home-empty-text">{allFailed}</p>
@@ -180,23 +261,29 @@ export default function HomePage() {
       )}
 
       {/*
-        trending 为空时 HeroBanner 仍渲染，内部用 EmptyState 占位。
+        trending / hero 为空时 HeroBanner 仍渲染；loading 期间显示骨架而非"暂无推荐"误导文字。
       */}
       <HeroBanner
-        items={trending}
+        items={heroItems}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
+        loading={isCategoryView ? (categoryData?.heroLoading ?? true) : loading.trending}
       />
-      <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
+      <CategoryQuickAccess
+        onCategorySelect={handleCategorySelect}
+        activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
+      />
       <div className="home-rows page-padding">
-        <TMDBMovieRow title="正在热映" items={nowPlaying} isLoading={loading.nowPlaying} error={errors.nowPlaying} />
-        <TMDBMovieRow title="热门电影" items={popularMovies} isLoading={loading.popularMovies} error={errors.popularMovies} />
-        <TMDBMovieRow title="高分电影" items={topRatedMovies} isLoading={loading.topRatedMovies} error={errors.topRatedMovies} />
-        <TMDBMovieRow title="即将上映" items={upcomingMovies} isLoading={loading.upcomingMovies} error={errors.upcomingMovies} />
-        <TMDBMovieRow title="热门剧集" items={popularTv} isLoading={loading.popularTv} error={errors.popularTv} />
-        <TMDBMovieRow title="高分剧集" items={topRatedTv} isLoading={loading.topRatedTv} error={errors.topRatedTv} />
-        <TMDBMovieRow title="今日播出" items={airingTodayTv} isLoading={loading.airingTodayTv} error={errors.airingTodayTv} />
+        {rowDefs.map((row) => (
+          <TMDBMovieRow
+            key={row.title}
+            title={row.title}
+            items={row.items}
+            isLoading={row.isLoading}
+            error={row.error}
+          />
+        ))}
       </div>
 
       <BackToTopButton />

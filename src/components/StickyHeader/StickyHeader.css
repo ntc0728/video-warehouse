@@ -300,6 +300,14 @@
   }
 }
 
+/* ── Desktop web (>=1024px): logo 已移至 HomeSidebar，header 左侧隐藏 ──
+   TV / 原生 App 保留 header logo（无侧边栏） */
+@media (width >= 1024px) {
+  :root:not([data-device="tv"]):not([data-device="app"]) .sticky-header__left {
+    display: none;
+  }
+}
+
 /* ── Mobile web: hide nav items (sidebar handles navigation) ── */
 
 [data-device="mobile-web"] .sticky-header__left .sticky-header__nav,

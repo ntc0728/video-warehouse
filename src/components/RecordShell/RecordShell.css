@@ -311,3 +311,75 @@
     padding-top: var(--space-sm);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   桌面端（>=768px）内部筛选栏：改为「横向卡片栏」
+   覆盖上方默认（竖向）布局，移动端（<=767px）保持原吸顶折叠，未改动。
+   第 1 行：标题 + 影视/IPTV 分段 + 搜索 + 工具栏（靠右）
+   第 2 行：状态筛选芯片（横向、可换行，独占整行）
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width >= 768px) {
+  .record-shell {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
+  .record-aside {
+    flex-flow: row wrap;
+    align-items: center;
+    gap: var(--space-md);
+    align-self: auto;
+    flex-shrink: 1;
+    width: 100%;
+  }
+
+  .record-aside__title {
+    order: 0;
+  }
+
+  /* 分段控件：横向栏中两段紧凑并排 */
+  .record-segmented {
+    order: 1;
+    width: auto;
+  }
+  .record-segmented .category-segmented__item {
+    flex: 0 0 auto;
+    padding: 0 var(--space-md);
+  }
+
+  .record-search {
+    order: 2;
+    flex: 1 1 240px;
+    min-width: 160px;
+    width: auto;
+  }
+
+  /* 状态芯片：横向单行（可换行），独占第二行 */
+  .record-status {
+    order: 4;
+    flex: 1 1 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .record-status .status-tab {
+    width: auto;
+  }
+  .record-status .status-tab__count {
+    margin-left: var(--space-xs);
+  }
+
+  /* 工具栏：与分段/搜索同一行，靠右 */
+  .record-toolbar {
+    order: 3;
+    flex-direction: row;
+    gap: var(--space-sm);
+    margin-left: auto;
+  }
+  .record-toolbar .toolbar-btn {
+    width: auto;
+  }
+}
