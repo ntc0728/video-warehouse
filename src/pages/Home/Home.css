@@ -23,11 +23,52 @@
 }
 
 .home-rows {
+  /* 移动端：hero 与首行之间保留原始间距（桌面端在下方媒体块内归零） */
   padding-top: var(--space-md);
   padding-bottom: 0;
 }
 
+/* ── 首页模块卡片化（仅桌面端 >=1024px，移动端保持原样） ───────
+   每个区域作为独立卡片模块，样式镜像设置页 section：
+     surface 背景 + 1px border(--color-border-light) + radius-lg + shadow-sm
+   模块之间间距统一为 var(--space-sm)。
+   仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
+@media (width >= 1024px) {
+  /* 桌面端 hero 自带底部 space-sm 间距，首行不再额外留白 */
+  .home-rows {
+    padding-top: 0;
+  }
 
+  .home-page .hero-banner {
+    /* 保留原有圆角；增加 surface 背景框 + 阴影 + 模块间距 */
+    margin: 0 var(--space-sm) var(--space-sm);
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 分类快捷入口 → 卡片模块（桌面端被 HomeSidebar 接管而隐藏，移动/平板可见） */
+  .home-page .category-quick-access {
+    margin: 0 var(--space-sm) var(--space-sm);
+    padding: var(--space-sm) 0;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
+  .home-page .tmdb-movierow {
+    margin-bottom: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+}
 
 /* ── Empty / Error ──────────────────────────────────── */
 
@@ -97,6 +138,8 @@
 
 .home-skeleton {
   gap: var(--space-md);
+  /* 骨架扫光速度：默认偏慢、更柔和，避免快速闪烁感（首页卡片骨架统一引用） */
+  --skeleton-duration: 2.8s;
 }
 
 .home-skeleton-hero {
@@ -110,7 +153,7 @@
     var(--color-skeleton) 100%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine 1.5s ease-in-out infinite;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
 .home-skeleton-categories {
@@ -130,7 +173,7 @@
     var(--color-skeleton) 100%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine 1.5s ease-in-out infinite;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
 .home-skeleton-rows {
@@ -157,7 +200,7 @@
     var(--color-skeleton) 100%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine 1.5s ease-in-out infinite;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
 .home-skeleton-row-cards {
@@ -185,7 +228,7 @@
     var(--color-skeleton) 100%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine 1.5s ease-in-out infinite;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
 .home-skeleton-card-title {
@@ -199,7 +242,7 @@
     var(--color-skeleton) 100%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine 1.5s ease-in-out infinite;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
 @keyframes skeleton-shine {

@@ -1,73 +1,60 @@
 /* ═══════════════════════════════════════════════════════════════════════
    HeroBanner — 首页 Hero 横幅
-   主题感知 · 自动轮播
-   使用 Embla Carousel 实现高性能轮播
+   布局：左侧主背景图（crossfade）+ 右侧竖排缩略图列（海报+标题）
+   桌面端：主图区 flex:1 + 缩略图列 240px；移动端：仅主图区
    ═══════════════════════════════════════════════════════════════════════ */
 
 .hero-banner {
   position: relative;
-  width: 100dvw;
-  aspect-ratio: 21 / 9;
-  min-height: 12.5rem;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-drag: none;
-  touch-action: pan-y;
-}
-
-.hero-banner:active {
-  cursor: grabbing;
-}
-
-/* ── Embla Carousel 容器 ────────────────────────────────────────────── */
-
-.embla {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.embla__container {
   display: flex;
   width: 100%;
-  height: 100%;
+  min-height: 20rem;
+  max-height: 70vh;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.embla__slide {
+/* ── 主图区 ──────────────────────────────────────────────────────────── */
+
+.hero-banner__main {
   position: relative;
-  flex: 0 0 100%;
+  flex: 1 1 auto;
   min-width: 0;
-  width: 100%;
-  height: 100%;
   overflow: hidden;
 }
 
-/* ── Background ──────────────────────────────────────────────────────── */
-
-.hero-banner__slide {
+.hero-banner__bg-wrapper {
   position: absolute;
   inset: 0;
-  contain: layout style paint;
 }
 
-.hero-banner__bg {
+/* 背景层堆叠：旧层常驻 opacity:1 留在底层，仅新层（is-active，叠在上层）淡入 0→1，
+   形成"无凹陷"的真·crossfade（避免两层同时 1→0 / 0→1 中途露出页面底色导致发暗/闪） */
+.hero-banner__bg-layer {
   position: absolute;
-  top: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center center;
+  opacity: 1;
+  will-change: opacity;
 }
 
-.hero-banner__mask {
-  position: absolute;
-  inset: 0;
+.hero-banner__bg-layer.is-active {
+  /* animation 在挂载/class 变化时都会播放，保证新层淡入（transition 仅在属性变化时触发，挂载时无法淡入） */
+  animation: heroBgFadeIn 0.8s ease-in-out;
 }
 
-/* ── Empty state ────────────────────────────────────────────────────── */
-.hero-banner--empty .hero-banner__bg-placeholder {
+@keyframes heroBgFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hero-banner__bg-placeholder {
   position: absolute;
   inset: 0;
   background:
@@ -83,26 +70,20 @@
   50%      { transform: scale(1.04); }
 }
 
-.hero-banner__title--placeholder {
-  font-weight: 600;
-  opacity: 0.85;
+.hero-banner__mask {
+  position: absolute;
+  inset: 0;
 }
 
-.hero-banner__desc--placeholder {
-  max-width: 32rem;
-  opacity: 0.7;
-}
-
-/* ── Content ─────────────────────────────────────────────────────────── */
+/* ── Content 叠加（左下） ────────────────────────────────────────────── */
 
 .hero-banner__content {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  height: 100%;
-  padding: var(--space-xl) var(--space-md);
+  padding: var(--space-xl);
   pointer-events: none;
 }
 
@@ -111,26 +92,6 @@
   flex-direction: column;
   gap: var(--space-sm);
   max-width: 60%;
-  padding-bottom: var(--space-lg);
-  padding-left: var(--space-xl);
-}
-
-/* ── Poster (mobile) ─────────────────────────────────────────────────── */
-
-.hero-banner__poster-mobile {
-  flex-shrink: 0;
-  align-self: flex-end;
-  width: var(--header-height);
-  height: auto;
-  margin-bottom: var(--space-lg);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-@media (width >= 768px) {
-  .hero-banner__poster-mobile {
-    display: none;
-  }
 }
 
 /* ── Title & Meta ────────────────────────────────────────────────────── */
@@ -138,11 +99,16 @@
 .hero-banner__title {
   margin: 0;
   color: #fff;
-  font-size: clamp(var(--text-3xl), 4vw + 0.5rem, var(--text-3xl));
+  font-size: clamp(var(--text-2xl), 3.2vw + 0.5rem, var(--text-3xl));
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.03em;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7), 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.hero-banner__title--placeholder {
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 .hero-banner__meta {
@@ -221,101 +187,169 @@
   background: #c62828;
 }
 
-/* ── Poster (desktop) ────────────────────────────────────────────────── */
+/* ── 右侧缩略图列（桌面端） ──
+   宽度比左侧 HomeSidebar 略大，且随视口流式伸缩（clamp 的 vw 项）：
+   小屏 220px 起步、约 15vw 跟随放大、超大屏封顶 380px（明显宽于侧边栏的 260px 封顶）。
+   保留水平内边距让缩略图有呼吸感；显式 width + flex-shrink:0 保证稳定不塌缩。 */
 
-.hero-banner__poster {
-  display: none;
+.hero-banner__thumbs {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  align-self: flex-end;
-  width: var(--layout-hero-poster-w);
-  margin-right: var(--space-3xl);
-  margin-bottom: var(--space-lg);
+  gap: var(--space-xs);
+  justify-content: center;
+  width: clamp(13.75rem, 15vw, 23.75rem);
+  /* margin-left:auto 保证缩略图列始终固定在右侧：
+     常规态由 .hero-banner__main(flex:1) 推到右侧；
+     空状态（无 .hero-banner__main，且其余子项均 absolute 脱离文档流）
+     时，thumbs 是唯一在文档流的 flex 子项，auto 吸收全部左侧剩余空间 → 仍居右，
+     避免骨架列被排到最左侧（"靠左"问题）。 */
+  margin-left: auto;
+  padding: 0 var(--space-sm);
+  overflow: hidden;
 }
 
-.hero-banner__poster img {
+/* 骨架态：去掉水平内边距，让骨架块真正铺满整列，避免视觉上"靠左" */
+.hero-banner__thumbs--skeleton {
+  padding: 0;
+}
+
+/* 缩略图：等分容器高度（5 个完整填满）+ 黑色遮罩（未选中）+ 标题悬浮叠加 */
+.hero-banner__thumb {
+  position: relative;
+  display: block;
+  flex: 1 1 0;
   width: 100%;
+  min-height: 0;
+  border: none;
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: opacity 0.3s ease;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+  /* 窗口切换时新进入的缩略图淡入（key=idx 触发挂载） */
+  animation: heroThumbFadeIn 0.4s ease-in-out;
 }
 
-@media (width >= 768px) {
-  .hero-banner__poster {
-    display: block;
+@keyframes heroThumbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* ── Arrows ──────────────────────────────────────────────────────────── */
-
-.hero-banner__arrow {
+.hero-banner__thumb-img {
   position: absolute;
-  top: 50%;
-  z-index: 3;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: var(--comp-btn-min-width);
-  height: var(--comp-btn-min-width);
-  margin-top: calc(var(--comp-btn-min-width) / -2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease;
-  backdrop-filter: blur(4px);
-  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.4s ease;
 }
 
-.hero-banner:hover .hero-banner__arrow,
-.hero-banner--tv .hero-banner__arrow {
+/* 图片加载完成后淡入（is-loaded 由组件按 onLoad/complete 设置） */
+.hero-banner__thumb.is-loaded .hero-banner__thumb-img {
   opacity: 1;
 }
 
-.hero-banner__arrow:hover {
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.hero-banner__arrow--left {
-  left: var(--space-md);
-}
-
-.hero-banner__arrow--right {
-  right: var(--space-md);
-}
-
-/* ── Dots ────────────────────────────────────────────────────────────── */
-
-.hero-banner__dots {
+/* 骨架占位（shimmer）：覆盖整张缩略图，加载完成后随 is-loaded 移除。
+   使用主题 surface/text 色构建，避免浅色主题下白透渐变看不见的问题。 */
+.hero-banner__thumb-skeleton {
   position: absolute;
-  bottom: var(--space-md);
-  left: 50%;
+  inset: 0;
   z-index: 3;
-  display: flex;
-  gap: var(--space-2xs);
-  transform: translateX(-50%);
+  /* 占位底色用明显的边框灰（比 surface-hover 更可见），确保加载态骨架清晰可辨 */
+  background: var(--color-border-light, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.hero-banner__dot {
-  width: var(--dot-size);
-  height: var(--dot-size);
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition: background 0.2s ease, width 0.2s ease, border-radius 0.2s ease;
+.hero-banner__thumb-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--color-text) 18%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: heroThumbShimmer 1.4s ease-in-out infinite;
 }
 
-.hero-banner__dot:hover {
-  background: rgba(255, 255, 255, 0.7);
+@keyframes heroThumbShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
 }
 
-.hero-banner__dot--active {
-  width: var(--dot-active-w);
-  height: var(--dot-active-h);
-  border-radius: var(--radius-full);
-  background: #fff;
+/* banner 未就绪时整列骨架：去掉黑色遮罩，仅保留 shimmer */
+.hero-banner__thumb--skeleton::before {
+  content: none;
+}
+
+.hero-banner__thumb:hover .hero-banner__thumb-img {
+  transform: scale(1.04);
+}
+
+/* 未选中缩略图：黑色透明遮罩（选中/悬停时移除） */
+.hero-banner__thumb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.hero-banner__thumb.is-active::before,
+.hero-banner__thumb:hover::before {
+  opacity: 0;
+}
+
+.hero-banner__thumb.is-active {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+/* 标题悬浮叠加在图片底部（渐变蒙版保证可读） */
+.hero-banner__thumb-title {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: -webkit-box;
+  padding: var(--space-lg) var(--space-xs) var(--space-2xs);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 65%, transparent 100%);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* 图片加载完成后标题淡入 */
+.hero-banner__thumb.is-loaded .hero-banner__thumb-title {
+  opacity: 1;
+}
+
+.hero-banner__thumb.is-active .hero-banner__thumb-title {
+  color: #fff;
+  font-weight: 700;
 }
 
 /* ── TV ──────────────────────────────────────────────────────────────── */
@@ -324,32 +358,50 @@
   font-size: clamp(var(--text-3xl), 3vw + 1rem, 2.5rem);
 }
 
-.hero-banner--tv .hero-banner__arrow {
-  opacity: 1;
-}
-
-.hero-banner--tv .hero-banner__dot {
-  width: var(--dot-size);
-  height: var(--dot-size);
-}
-
-.hero-banner--tv .hero-banner__dot--active {
-  width: var(--dot-active-w);
-  height: var(--dot-active-h);
-}
-
 /* ── Reduced motion ──────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-banner__bg {
-    animation: none !important;
+  .hero-banner__bg-layer {
     transition: none !important;
+    animation: none !important;
+  }
+
+  .hero-banner__thumb {
+    animation: none !important;
+  }
+
+  .hero-banner__thumb-skeleton {
+    animation: none !important;
+  }
+
+  .hero-banner__bg-placeholder {
+    animation: none !important;
   }
 }
 
-/* ── Mobile / App: 底部间距 ─── */
+/* ── Mobile / 平板：隐藏右侧缩略图列，仅主图 ─── */
 @media (width <= 1023px) {
+  .hero-banner__thumbs {
+    display: none;
+  }
+
   .hero-banner {
     margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (width <= 767px) {
+  .hero-banner {
+    aspect-ratio: 16 / 9;
+    min-height: 14rem;
+  }
+
+  .hero-banner__content {
+    padding: var(--space-md);
+  }
+
+  .hero-banner__text {
+    max-width: 100%;
   }
 }
