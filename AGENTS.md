@@ -138,9 +138,24 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 ### RecordShell（收藏页/历史页共用外壳）
 
 `src/components/RecordShell/` — 收藏页和历史页的共用布局组件：
-- **桌面（≥768px）方案 C**：左侧 sticky 筛选栏（标题 + 搜索 + 影视/IPTV 分段 + 状态芯片竖排 + 批量/清除按钮）+ 右侧卡片主区
-- **移动（≤767px）方案 M6**：顶部 sticky 精简栏，滚动时自动折叠状态芯片行，仅留分段+搜索+筛选按钮
-- CSS 在 `RecordShell.css`，两页共享；桌面侧栏 `width:100%` 的元素在移动横向 flex 行必须显式 `width:auto` 复位
+- **桌面（≥768px）：顶部横向卡片筛选栏** — `.record-aside` 由竖向侧栏改为横向（`flex-flow: row wrap`、宽度 100%），顶部常驻 sticky 卡片：第 1 行 = 标题 + 影视/IPTV 分段 + 搜索框（弹性撑开）+ 批量/清除工具栏（靠右），第 2 行 = 状态筛选芯片（横向、可换行、独占整行）；主区 `.record-main` 在其下方
+- **移动（≤767px）方案 M6**：顶部 sticky 精简栏，滚动时自动折叠状态芯片行，仅留分段+搜索+筛选按钮（**保持不变**）
+- CSS 在 `RecordShell.css`，两页共享；实现方式为「末尾追加 `@media (width >= 768px)` 块覆盖默认竖向布局」，原移动端规则逐字节未动，确保移动端零影响；桌面侧栏 `width:100%` 的元素在移动横向 flex 行必须显式 `width:auto` 复位
+
+### 卡片模块 (Card Module) UI 约定
+
+项目级统一视觉风格：每个功能区块作为独立「卡片模块」，样式镜像设置页 section：
+- 背景 `var(--color-surface)` + `1px solid var(--color-border-light)` 边框 + `var(--radius-lg)` 圆角 + `var(--shadow-sm)` 阴影
+- 模块（卡片）之间间距统一 `var(--space-sm)`
+- **仅桌面端（≥1024px）启用**；移动端（<1024px，含平板 768–1023）保持原始全宽布局、不被卡片化波及（约定：新增同类卡片样式默认放进 `@media (width >= 1024px)`，不要写在媒体块之外）
+
+应用位置：
+- 左侧栏 `HomeSidebar`（桌面浮动卡片）+ 顶部导航 `StickyHeader`（非沉浸式页面卡片）— `Layout.css` 内 `@media (width >= 1024px)`
+- 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css` 内 `@media (width >= 1024px)`（`.home-page` 作用域）
+- 页面级 `AppLoading` 内联模式 — `AppLoading.css` 内 `@media (width >= 1024px)`
+- 收藏/历史 `RecordShell` 内部筛选栏 — 横向卡片栏（见上）
+
+骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
 
 ### Toast 系统
 

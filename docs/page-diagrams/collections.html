@@ -61,9 +61,9 @@
         │   └── CollectionCard (poster + title + year + status badge + remove)<br>
         └── <span class="component">BatchOps</span> — 全选 / 删除 / 导出<br><br>
         <strong>布局方案：</strong><br>
-        · 桌面方案 C：左侧 sticky 筛选栏（标题+搜索+分段+状态芯片竖排+批量按钮）+ 右侧卡片主区<br>
-        · 移动方案 M6：顶部 sticky 精简栏，滚动自动折叠状态芯片行<br>
-        · 与历史页共享 RecordShell.css
+        · 桌面（≥768px）：顶部横向卡片筛选栏（标题 + 影视/IPTV 分段 + 搜索框 + 批量/清除工具栏一行，状态芯片换行独占一行），主区 `.record-main` 在其下方<br>
+        · 移动（≤767px）方案 M6：顶部 sticky 精简栏，滚动自动折叠状态芯片行<br>
+        · 与历史页共享 RecordShell.css；筛选栏本身为卡片模块（surface 背景 + 圆角 + 边框 + 阴影，间距 space-sm），仅桌面端启用
       </div>
     </div>
 
