@@ -3,13 +3,15 @@
  *
  * 展示人物基本信息 + 参演电影 + 参演剧集
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchPersonDetail, fetchPersonMovieCredits, fetchPersonTVCredits, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { TMDBPersonDetail, TMDBMovie, TMDBTVShow } from '@/types/tmdb';
 import { AppLoading } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
+import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { VideoCard } from '@/components/VideoCard';
 import { ArrowLeft, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import './Person.css';
@@ -52,6 +54,49 @@ export default function PersonPage() {
   const [hasExpanded, setHasExpanded] = useState(false);
   const bioRef = useRef<HTMLDivElement>(null);
 
+  // ── 懒加载 ──
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const scrollContainerRef = useScrollContainer();
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const moviesRef = useRef(movies);
+  moviesRef.current = movies;
+  const tvShowsRef = useRef(tvShows);
+  tvShowsRef.current = tvShows;
+
+  const currentList = useMemo(
+    () => (activeTab === 'movies' ? movies : tvShows),
+    [activeTab, movies, tvShows],
+  );
+  const displayedList = useMemo(
+    () => currentList.slice(0, visibleCount),
+    [currentList, visibleCount],
+  );
+  const hasMore = visibleCount < currentList.length;
+
+  // 切换 tab 时同步重置可见数量（避免 useEffect 异步导致旧 hasMore 触发加载）
+  const handleTabChange = useCallback((tab: Tab) => {
+    setActiveTab(tab);
+    setVisibleCount(PAGE_SIZE);
+  }, []);
+
+  const loadMoreRef = useRef<() => void>(() => {});
+  const { sentinelRef, resetLoading } = useInfiniteScroll({
+    hasMore,
+    isLoading: false,
+    onLoadMore: () => loadMoreRef.current?.(),
+    scrollContainerRef,
+    canLoadMore: hasMore,
+    rootMargin: '200px',
+  });
+  loadMoreRef.current = () => {
+    const currentTab = activeTabRef.current;
+    const list = currentTab === 'movies' ? moviesRef.current : tvShowsRef.current;
+    setVisibleCount((v) => (v < list.length ? v + PAGE_SIZE : v));
+    resetLoading();
+  };
+
   useEffect(() => {
     if (bioRef.current) {
       const el = bioRef.current;
@@ -78,12 +123,11 @@ export default function PersonPage() {
         ]);
         if (ctrl.signal.aborted) return;
         setPerson(detail);
-        // 按人气排序，取前 50
-        setMovies(movieCredits.cast.sort((a, b) => b.popularity - a.popularity).slice(0, 50));
-        setTVShows(tvCredits.cast.sort((a, b) => b.popularity - a.popularity).slice(0, 50));
+        setMovies(Array.from(new Map(movieCredits.cast.sort((a, b) => b.popularity - a.popularity).map(m => [m.id, m])).values()));
+        setTVShows(Array.from(new Map(tvCredits.cast.sort((a, b) => b.popularity - a.popularity).map(t => [t.id, t])).values()));
         // 如果没有电影但有剧集，默认切到剧集 tab
         if (movieCredits.cast.length === 0 && tvCredits.cast.length > 0) {
-          setActiveTab('tv');
+          handleTabChange('tv');
         }
       } catch (err) {
         if (!ctrl.signal.aborted) setError(err instanceof Error ? err.message : '加载失败');
@@ -158,40 +202,37 @@ export default function PersonPage() {
         </div>
       </section>
 
-      {/* Tab 导航 */}
-      <div className="person-tabs">
-        {movies.length > 0 && (
-          <button className={`tab-underline person-tab ${activeTab === 'movies' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => setActiveTab('movies')}>
-            电影（{movies.length}）
-          </button>
-        )}
-        {tvShows.length > 0 && (
-          <button className={`tab-underline person-tab ${activeTab === 'tv' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => setActiveTab('tv')}>
-            剧集（{tvShows.length}）
-          </button>
-        )}
-      </div>
+      {/* Tab 导航 + 作品列表（合并为一个卡片） */}
+      <div className="person-grid-card">
+        <div className="person-tabs">
+          {movies.length > 0 && (
+            <button className={`tab-underline person-tab ${activeTab === 'movies' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => handleTabChange('movies')}>
+              电影（{movies.length}）
+            </button>
+          )}
+          {tvShows.length > 0 && (
+            <button className={`tab-underline person-tab ${activeTab === 'tv' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => handleTabChange('tv')}>
+              剧集（{tvShows.length}）
+            </button>
+          )}
+        </div>
 
-      {/* 作品列表 */}
-      <div className="person-works">
-        {activeTab === 'movies' && movies.length > 0 && (
-          <div className="person-work-grid">
-            {movies.map((m) => (
-              <div key={m.id} className="person-work-card">
-                <VideoCard video={toVideo(m, 'movie')} rating={m.vote_average} />
-              </div>
-            ))}
-          </div>
-        )}
-        {activeTab === 'tv' && tvShows.length > 0 && (
-          <div className="person-work-grid">
-            {tvShows.map((t) => (
-              <div key={t.id} className="person-work-card">
-                <VideoCard video={toVideo(t, 'tv')} rating={t.vote_average} />
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="person-works">
+          {displayedList.length > 0 && (
+            <div className="person-work-grid">
+              {displayedList.map((item) => {
+                const isTV = 'name' in item && !('title' in item);
+                const mediaType = isTV ? 'tv' : 'movie';
+                return (
+                  <div key={`${mediaType}-${item.id}`} className="person-work-card">
+                    <VideoCard video={toVideo(item, mediaType)} rating={item.vote_average} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div ref={sentinelRef} aria-hidden="true" />
+        </div>
       </div>
     </div>
   );

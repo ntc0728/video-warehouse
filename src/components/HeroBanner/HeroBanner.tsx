@@ -43,7 +43,7 @@ interface HeroBannerProps {
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
 /** 骨架占位数量（加载中/无数据时立即渲染，避免缩略图列出现太慢） */
-const SKELETON_COUNT = 5;
+const SKELETON_COUNT = 4;
 /** banner 最多展示的 item 数量（控制背景层与缩略图数量，避免过多图片请求） */
 /** 预加载图片 */
 function preloadImage(url: string | null | undefined): void {
@@ -79,9 +79,9 @@ export default function HeroBanner({
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
   const [bannerReady, setBannerReady] = useState(false);
-  // 固定 5 个缩略图（等分容器高度，完整显示）；不足时取实际数量并保证奇数（居中）
-  const rawCount = Math.min(5, displayItems.length);
-  const visibleCount = rawCount > 1 && rawCount % 2 === 0 ? rawCount - 1 : rawCount;
+  // 最多 4 个缩略图（等分容器高度，完整显示）；不足时取实际数量
+  const rawCount = Math.min(4, displayItems.length);
+  const visibleCount = rawCount;
 
   // items 变化时重置 activeIndex、预览态与背景层
   // 同时启动一个超时兜底：无论背景图加载成功/失败，最多 3s 后强制揭示缩略图列，
@@ -185,8 +185,10 @@ export default function HeroBanner({
   const thumbSlots: number[] = [];
   if (displayItems.length > 0) {
     const total = displayItems.length;
-    const half = Math.floor(Math.min(visibleCount, total) / 2);
-    for (let offset = -half; offset <= half; offset++) {
+    const n = Math.min(visibleCount, total);
+    const start = -(n % 2 === 0 ? n / 2 - 1 : Math.floor(n / 2));
+    const end = n % 2 === 0 ? n / 2 : Math.floor(n / 2);
+    for (let offset = start; offset <= end; offset++) {
       thumbSlots.push(((activeIndex + offset) % total + total) % total);
     }
   }
@@ -198,7 +200,7 @@ export default function HeroBanner({
       aria-label="热门推荐"
     >
       {/* ── 主图区 ── */}
-      <div className="hero-banner__main">
+      <div className="hero-banner__main" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
         {bgIndices.map((idx) => {
           const item = displayItems[idx];

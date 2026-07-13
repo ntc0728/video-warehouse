@@ -23,13 +23,13 @@
 .app-loading--inline {
   flex: 1 1 0;
   min-height: var(--layout-loading-min-height);
-  padding: var(--space-xl) var(--space-md);
+  padding: var(--space-sm);
 }
 
 /* 桌面端（>=1024px）：卡片模块，与首页模块风格一致 */
 @media (width >= 1024px) {
   .app-loading--inline {
-    margin-top: var(--space-sm);
+    margin: 0 var(--space-sm);
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);

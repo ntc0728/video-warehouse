@@ -14,7 +14,6 @@
 }
 
 .detail-page--loading {
-  justify-content: center;
   min-height: 50vh;
 }
 
@@ -27,7 +26,6 @@
   justify-content: flex-end;
   aspect-ratio: 16 / 9;
   max-height: 70vh;
-  margin: 0 calc(-1 * var(--space-sm));
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -801,25 +799,24 @@
   font-weight: 600;
 }
 
-/* 演员 — 横向多行排列 */
+/* 演员 — CSS Grid 自适应排列 */
 .detail-cast-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xl);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: var(--space-md);
   width: 100%;
 }
 .detail-cast-item {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  min-width: var(--header-height);
   color: inherit;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.2s;
+  min-width: 0;
 }
 .detail-cast-item:hover {
   transform: translateY(-2px);
@@ -847,11 +844,55 @@
 .detail-cast-name {
   font-size: var(--text-xs);
   font-weight: 500;
-  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 .detail-cast-role {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* 移动端折叠：限制 2 行高度 */
+.detail-cast-row--collapsed {
+  max-height: 14rem;
+  overflow: hidden;
+}
+
+.detail-cast-toggle {
+  display: block;
+  width: fit-content;
+  margin: var(--space-sm) 0 0 auto;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.detail-cast-toggle:hover {
+  color: var(--color-primary);
+}
+
+/* 桌面端隐藏折叠按钮（始终展开） */
+@media (width >= 1024px) {
+  .detail-cast-toggle {
+    display: none;
+  }
+  .detail-cast-row--collapsed {
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 /* ── 播放列表（匹配结果布局） ──────────────────── */
@@ -1258,7 +1299,7 @@
 }
 
   .detail-hero-content {
-  padding: var(--space-md) var(--space-sm);
+  padding: var(--space-xl) var(--space-md);
 }
 
   .detail-hero-logo {

@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useScrollContainer, type ScrollContainerRef } from '@/hooks/useScrollContext';
 import './BackToTopButton.css';
 
 interface BackToTopButtonProps {
@@ -24,6 +24,8 @@ interface BackToTopButtonProps {
   className?: string;
   /** 可见性变化回调（可选） */
   onVisibilityChange?: (visible: boolean) => void;
+  /** 自定义滚动容器（不传则使用 ScrollContainerContext） */
+  scrollContainerRef?: ScrollContainerRef;
 }
 
 const EXIT_DURATION_MS = 250;
@@ -32,9 +34,11 @@ export default function BackToTopButton({
   threshold = 280,
   className = '',
   onVisibilityChange,
+  scrollContainerRef: customScrollRef,
 }: BackToTopButtonProps) {
   const location = useLocation();
-  const scrollContainerRef = useScrollContainer();
+  const defaultScrollRef = useScrollContainer();
+  const scrollContainerRef = customScrollRef ?? defaultScrollRef;
 
   /** 用户意图：是否应该可见（基于滚动 + 路径切换） */
   const [shouldShow, setShouldShow] = useState(false);

@@ -158,6 +158,7 @@
   display: inline-flex;
   gap: 0.125rem;
   align-items: center;
+  align-self: flex-end;
   margin: var(--space-xs) 0 0;
   padding: 0;
   border: none;
@@ -288,6 +289,27 @@
   .person-work-grid {
     grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
   }
+
+  /* Hero 卡片 */
+  .person-hero {
+    margin: 0 0 var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Tab + 作品网格 卡片 */
+  .person-grid-card {
+    padding: 0 var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .person-tabs {
+    margin-top: 0;
+}
 }
 
 /* ============================================================

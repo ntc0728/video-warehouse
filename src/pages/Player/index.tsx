@@ -95,7 +95,14 @@ export default function PlayerPage() {
 
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [overviewTruncated, setOverviewTruncated] = useState(false);
-  const overviewRef = useRef<HTMLParagraphElement>(null);
+  const overviewRef = useCallback((node: HTMLParagraphElement | null) => {
+    if (!node) return;
+    // 回调 ref：元素挂载后立即检测
+    requestAnimationFrame(() => {
+      const truncated = node.scrollHeight > node.clientHeight + 1;
+      setOverviewTruncated(truncated);
+    });
+  }, []);
   const [localEpisodeId, setLocalEpisodeId] = useState<string | undefined>();
   const [tmdbReady, setTmdbReady] = useState(false);
 
@@ -409,15 +416,6 @@ export default function PlayerPage() {
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
 
-  // 检测简介文本是否被截断
-  useEffect(() => {
-    const el = overviewRef.current;
-    if (!el || overviewExpanded) { setOverviewTruncated(false); return; }
-    const raf = requestAnimationFrame(() => {
-      setOverviewTruncated(el.scrollHeight > el.clientHeight);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [overview, overviewExpanded, video, tmdbDetail]);
 
   // 仅首次进入时显示页面级 loading，之后不再触发
   const shouldShowPageLoading = !hasLoadedOnce;

@@ -96,8 +96,8 @@ export default function IPTVPage() {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
 
-  useScrollRestore('iptv');
   const scrollContainerRef = useScrollContainer();
+  useScrollRestore('iptv');
 
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
@@ -292,215 +292,219 @@ export default function IPTVPage() {
 
   return (
     <div className="page-padding iptv-page">
-      <div className="iptv-header">
-        <div className="iptv-header-top">
-          <div className="iptv-header-left">
-            <h1 className="page-title">IPTV 直播</h1>
+      <div className="iptv-top-card">
+        <div className="iptv-header">
+          <div className="iptv-header-top">
+            <div className="iptv-header-left">
+              <h1 className="page-title">IPTV 直播</h1>
+            </div>
+            <div className="iptv-header-meta">
+              {lastRefresh && (
+                <span className="last-refresh">
+                  源: {new Date(lastRefresh).toLocaleTimeString()}
+                </span>
+              )}
+              {epgCacheTime && (
+                <span className="last-refresh">
+                  节目单: {new Date(epgCacheTime).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="iptv-header-meta">
-            {lastRefresh && (
-              <span className="last-refresh">
-                源: {new Date(lastRefresh).toLocaleTimeString()}
-              </span>
-            )}
-            {epgCacheTime && (
-              <span className="last-refresh">
-                节目单: {new Date(epgCacheTime).toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-        </div>
-        {!proxyUrl && (
-          <span className="iptv-proxy-warning-inline">
-            <AlertCircle size={14} />
-            <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-            <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
-              配置
-            </button>
-          </span>
-        )}
-      </div>
-
-      <div className="iptv-toolbar">
-        <div className="search-box-wrap search-box-wrap--iptv" role="search">
-          <div className="search-box search-box--iptv">
-            <Search size={16} className="search-box__icon" aria-hidden="true" />
-            <input
-              type="text"
-              className="search-box__input"
-              placeholder="搜索频道..."
-              value={searchKeyword}
-              onChange={(e) => handleSearch(e.target.value)}
-              aria-label="搜索"
-            />
-            <button
-              type="button"
-              className="search-box__clear"
-              onClick={() => handleSearch('')}
-              aria-label="清空搜索"
-              tabIndex={-1}
-              aria-hidden={!searchKeyword}
-              data-empty={searchKeyword ? 'false' : 'true'}
-            >
-              <X size={14} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        {isCheckingAvailability ? (
-          <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
-            取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
-          </button>
-        ) : (
-          <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0}>
-            检测{selectedGroup || '全部'}
-          </button>
-        )}
-        <button className="refresh-btn" onClick={() => refreshChannels()}>
-          刷新
-        </button>
-      </div>
-
-      {isCheckingAvailability && availabilityProgress && (
-        <div className="availability-progress">
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${(availabilityProgress.checked / availabilityProgress.total) * 100}%` }}
-            />
-          </div>
-          <span className="progress-text">
-            检测中: {availabilityProgress.checked}/{availabilityProgress.total}
-          </span>
-        </div>
-      )}
-
-      {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
-        <div className="availability-stats">
-          <span className="stat available"><CheckCircle2 size={12} /><span>{availableCount}</span></span>
-          <span className="stat unavailable"><XCircle size={12} /><span>{filteredChannels.length - availableCount}</span></span>
-          <span className="stat total">共 {filteredChannels.length} 个</span>
-        </div>
-      )}
-
-      {aggregatorUrls && aggregatorUrls.length > 1 && (
-        <div className={`iptv-source-filter${channels.length === 0 ? ' disabled' : ''}`}>
-          <button
-            className={`source-tag ${selectedSource === null ? 'active' : ''}${channels.length === 0 ? ' disabled' : ''}`}
-            onClick={() => handleSourceSelect(null)}
-            disabled={channels.length === 0}
-          >
-            全部源
-          </button>
-          {(sourcesExpanded ? aggregatorUrls : aggregatorUrls.slice(0, MAX_VISIBLE_SOURCES)).map((_, index) => {
-            const hasData = sourceHasChannels[index];
-            const noChannels = channels.length === 0;
-            return (
-              <button
-                key={index}
-                className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData || noChannels ? ' disabled' : ''}`}
-                onClick={() => hasData && !noChannels && handleSourceSelect(`source-${index}`)}
-                disabled={!hasData || noChannels}
-                title={!hasData ? '该源无频道数据或加载失败' : noChannels ? '暂无频道数据' : undefined}
-              >
-                {sourceNames?.[index] || `源 ${index + 1}`}
+          {!proxyUrl && (
+            <span className="iptv-proxy-warning-inline">
+              <AlertCircle size={14} />
+              <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
+              <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings', { viewTransition: true })}>
+                配置
               </button>
-            );
-          })}
-          {aggregatorUrls.length > MAX_VISIBLE_SOURCES && (
-            <button
-              type="button"
-              className={`source-tag source-tag--more${channels.length === 0 ? ' disabled' : ''}`}
-              onClick={() => setSourcesExpanded(!sourcesExpanded)}
-              disabled={channels.length === 0}
-            >
-              {sourcesExpanded ? '收起' : `+${aggregatorUrls.length - MAX_VISIBLE_SOURCES}`}
-            </button>
+            </span>
           )}
         </div>
-      )}
 
-      {channels.length > 0 && filteredGroups.length > 0 && (
-        isMobile ? (
-          <GroupPicker
-            key={selectedSource ?? 'all'}
-            groups={filteredGroups}
-            totalCount={selectedSource
-              ? channels.filter(ch => ch.sourceId === selectedSource).length
-              : channels.length}
-            selectedGroup={selectedGroup}
-            onSelect={handleGroupSelect}
-          />
-        ) : (
-          <>
-            <div
-              className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
-              style={
-                needCollapse && !groupsExpanded && collapsedHeight !== null
-                  ? { maxHeight: collapsedHeight }
-                  : !needCollapse
-                    ? { marginBottom: 16 }
-                    : undefined
-              }
-              ref={groupsRef}
-            >
+        <div className="iptv-toolbar">
+          <div className="search-box-wrap search-box-wrap--iptv" role="search">
+            <div className="search-box search-box--iptv">
+              <Search size={16} className="search-box__icon" aria-hidden="true" />
+              <input
+                type="text"
+                className="search-box__input"
+                placeholder="搜索频道..."
+                value={searchKeyword}
+                onChange={(e) => handleSearch(e.target.value)}
+                aria-label="搜索"
+              />
               <button
-                className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
-                onClick={() => handleGroupSelect(null)}
+                type="button"
+                className="search-box__clear"
+                onClick={() => handleSearch('')}
+                aria-label="清空搜索"
+                tabIndex={-1}
+                aria-hidden={!searchKeyword}
+                data-empty={searchKeyword ? 'false' : 'true'}
               >
-                全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
+                <X size={14} aria-hidden="true" />
               </button>
-              {filteredGroups.map((group) => (
-                <button
-                  key={group.name}
-                  className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
-                  onClick={() => handleGroupSelect(group.name)}
-                >
-                  {group.name} ({group.count})
-                </button>
-              ))}
             </div>
-            {needCollapse && (
+          </div>
+          {isCheckingAvailability ? (
+            <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
+              取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
+            </button>
+          ) : (
+            <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0}>
+              检测{selectedGroup || '全部'}
+            </button>
+          )}
+          <button className="refresh-btn" onClick={() => refreshChannels()}>
+            刷新
+          </button>
+        </div>
+
+        {isCheckingAvailability && availabilityProgress && (
+          <div className="availability-progress">
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${(availabilityProgress.checked / availabilityProgress.total) * 100}%` }}
+              />
+            </div>
+            <span className="progress-text">
+              检测中: {availabilityProgress.checked}/{availabilityProgress.total}
+            </span>
+          </div>
+        )}
+
+        {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
+          <div className="availability-stats">
+            <span className="stat available"><CheckCircle2 size={12} /><span>{availableCount}</span></span>
+            <span className="stat unavailable"><XCircle size={12} /><span>{filteredChannels.length - availableCount}</span></span>
+            <span className="stat total">共 {filteredChannels.length} 个</span>
+          </div>
+        )}
+
+        {aggregatorUrls && aggregatorUrls.length > 1 && (
+          <div className={`iptv-source-filter${channels.length === 0 ? ' disabled' : ''}`}>
+            <button
+              className={`source-tag ${selectedSource === null ? 'active' : ''}${channels.length === 0 ? ' disabled' : ''}`}
+              onClick={() => handleSourceSelect(null)}
+              disabled={channels.length === 0}
+            >
+              全部源
+            </button>
+            {(sourcesExpanded ? aggregatorUrls : aggregatorUrls.slice(0, MAX_VISIBLE_SOURCES)).map((_, index) => {
+              const hasData = sourceHasChannels[index];
+              const noChannels = channels.length === 0;
+              return (
+                <button
+                  key={index}
+                  className={`source-tag${selectedSource === `source-${index}` ? ' active' : ''}${!hasData || noChannels ? ' disabled' : ''}`}
+                  onClick={() => hasData && !noChannels && handleSourceSelect(`source-${index}`)}
+                  disabled={!hasData || noChannels}
+                  title={!hasData ? '该源无频道数据或加载失败' : noChannels ? '暂无频道数据' : undefined}
+                >
+                  {sourceNames?.[index] || `源 ${index + 1}`}
+                </button>
+              );
+            })}
+            {aggregatorUrls.length > MAX_VISIBLE_SOURCES && (
               <button
-                className="groups-toggle"
-                onClick={() => setGroupsExpanded(!groupsExpanded)}
+                type="button"
+                className={`source-tag source-tag--more${channels.length === 0 ? ' disabled' : ''}`}
+                onClick={() => setSourcesExpanded(!sourcesExpanded)}
+                disabled={channels.length === 0}
               >
-                {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
+                {sourcesExpanded ? '收起' : `+${aggregatorUrls.length - MAX_VISIBLE_SOURCES}`}
               </button>
             )}
-          </>
-        )
-      )}
+          </div>
+        )}
 
-      {isLoading && (
-        <div className="iptv-content-loading">
-          <AppLoading tip="加载频道列表…" showTip />
-        </div>
-      )}
-      {!isLoading && (
-      <div className="iptv-content">
-        {channels.length === 0 ? (
-          <Empty
-            title="暂无频道数据"
-            description={error || '请点击上方刷新按钮加载频道列表'}
-          />
-        ) : filteredChannels.length === 0 ? (
-          <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
-        ) : (
-          <>
-            <div className="iptv-channel-grid">
-              {displayedChannels.map((channel) => (
-                <IPTVChannelCard
-                  key={channel.id}
-                  channel={channel}
-                />
-              ))}
-            </div>
-
-            <div ref={sentinelRef} aria-hidden="true" />
-          </>
+        {channels.length > 0 && filteredGroups.length > 0 && (
+          isMobile ? (
+            <GroupPicker
+              key={selectedSource ?? 'all'}
+              groups={filteredGroups}
+              totalCount={selectedSource
+                ? channels.filter(ch => ch.sourceId === selectedSource).length
+                : channels.length}
+              selectedGroup={selectedGroup}
+              onSelect={handleGroupSelect}
+            />
+          ) : (
+            <>
+              <div
+                className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
+                style={
+                  needCollapse && !groupsExpanded && collapsedHeight !== null
+                    ? { maxHeight: collapsedHeight }
+                    : !needCollapse
+                      ? { marginBottom: 16 }
+                      : undefined
+                }
+                ref={groupsRef}
+              >
+                <button
+                  className={`group-tag ${selectedGroup === null ? 'active' : ''}`}
+                  onClick={() => handleGroupSelect(null)}
+                >
+                  全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
+                </button>
+                {filteredGroups.map((group) => (
+                  <button
+                    key={group.name}
+                    className={`group-tag ${selectedGroup === group.name ? 'active' : ''}`}
+                    onClick={() => handleGroupSelect(group.name)}
+                  >
+                    {group.name} ({group.count})
+                  </button>
+                ))}
+              </div>
+              {needCollapse && (
+                <button
+                  className="groups-toggle"
+                  onClick={() => setGroupsExpanded(!groupsExpanded)}
+                >
+                  {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
+                </button>
+              )}
+            </>
+          )
         )}
       </div>
-      )}
+
+      <div className="iptv-grid-card">
+        {isLoading && (
+          <div className="iptv-content-loading">
+            <AppLoading tip="加载频道列表…" showTip />
+          </div>
+        )}
+        {!isLoading && (
+          <div className="iptv-content">
+            {channels.length === 0 ? (
+              <Empty
+                title="暂无频道数据"
+                description={error || '请点击上方刷新按钮加载频道列表'}
+              />
+            ) : filteredChannels.length === 0 ? (
+              <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
+            ) : (
+              <>
+                <div className="iptv-channel-grid">
+                  {displayedChannels.map((channel) => (
+                    <IPTVChannelCard
+                      key={channel.id}
+                      channel={channel}
+                    />
+                  ))}
+                </div>
+
+                <div ref={sentinelRef} aria-hidden="true" />
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       <BackToTopButton />
     </div>

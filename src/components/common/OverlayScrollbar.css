@@ -13,7 +13,7 @@
   right: 0.125rem;
   width: 0.25rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--scrollbar-color);
   pointer-events: auto;
   cursor: default;
   opacity: 0;
@@ -27,10 +27,10 @@
 
 .overlay-scrollbar__thumb:hover {
   width: 0.375rem;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--scrollbar-color-hover);
 }
 
 .overlay-scrollbar__thumb--dragging {
   cursor: default;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--scrollbar-color-active);
 }
