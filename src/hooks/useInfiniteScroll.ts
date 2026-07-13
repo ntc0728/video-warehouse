@@ -121,9 +121,6 @@ export function useInfiniteScroll({
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
-    // 已有 observer → 不重复创建
-    if (observerRef.current) return;
-
     const root = scrollContainerRef?.current || null;
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -135,11 +132,25 @@ export function useInfiniteScroll({
     );
     observerRef.current.observe(sentinel);
 
+    // sentinel 已在视口内时立即触发（observer 首次 observe 不会 callback）
+    requestAnimationFrame(() => {
+      if (!sentinel.isConnected) return;
+      const rect = sentinel.getBoundingClientRect();
+      const rootEl = root || document.documentElement;
+      const rootBottom = rootEl === document.documentElement
+        ? window.innerHeight
+        : rootEl.clientHeight;
+      const margin = parseInt(rootMargin, 10) || 0;
+      if (rect.top < rootBottom + margin) {
+        triggerLoadRef.current();
+      }
+    });
+
     return () => {
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [disabled, rootMargin, scrollContainerRef]);
+  }, [disabled, hasMore, rootMargin, scrollContainerRef]);
 
   // ── 2) scroll 事件兜底 ──
   // 快速滚动/wheel 惯性下 IO 可能来不及触发；额外监听 scroll，

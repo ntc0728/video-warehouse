@@ -63,11 +63,17 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   // 滚动容器是 AppLayout 的 CustomScrollbar（不是 window）；用 useScrollContainer 拿 ref
   const scrollContainerRef = useScrollContainer();
   const isHome = location.pathname === '/';
+  const isPlayer = location.pathname.startsWith('/play');
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    if (!isHome) {
+    if (!isHome && !isPlayer) {
       setIsScrolled(false);
+      return;
+    }
+    // Player 页有自己的滚动容器，导航栏始终实体背景
+    if (isPlayer) {
+      setIsScrolled(true);
       return;
     }
     const el = scrollContainerRef.current;
@@ -87,7 +93,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     return () => {
       el.removeEventListener('scroll', onScroll);
     };
-  }, [isHome, scrollContainerRef]);
+  }, [isHome, isPlayer, scrollContainerRef]);
 
   const handleThemeToggle = useCallback(() => {
     const idx = THEME_CYCLE.indexOf(currentTheme);

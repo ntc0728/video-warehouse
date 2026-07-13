@@ -102,6 +102,9 @@ export default function DetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // 演员折叠（移动端默认折叠，桌面端始终展开）
+  const [castExpanded, setCastExpanded] = useState(false);
+
   // CMS
   const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
@@ -110,21 +113,28 @@ export default function DetailPage() {
   const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
 
-  // 剧照网格：根据视口宽度估算列数，限制显示 2 行
+  // 剧照网格：根据容器实际宽度计算列数，限制显示 2 行
+  const stillsGridRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(Number.MAX_SAFE_INTEGER);
   useEffect(() => {
     if (stills.length === 0) return;
+    const container = stillsGridRef.current;
+    if (!container) return;
+
     const calc = () => {
-      // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
-      // 最小列宽 = clamp(128px, 96px + 8vw, 256px)
-      const vw = window.innerWidth;
-      const minCol = Math.min(256, Math.max(128, 96 + vw * 0.08));
-      const cols = Math.max(1, Math.floor(vw / minCol));
-      setVisibleCount(cols * 2);
+      const w = container.clientWidth;
+      if (w <= 0) return;
+      // 直接读取 CSS grid 实际列数（auto-fill + minmax 的列数由浏览器计算，JS 估算不可靠）
+      const computed = getComputedStyle(container);
+      const templateCols = computed.gridTemplateColumns;
+      const actualCols = templateCols ? templateCols.split(' ').length : 1;
+      setVisibleCount(actualCols * 2);
     };
+
     calc();
-    window.addEventListener('resize', calc);
-    return () => window.removeEventListener('resize', calc);
+    const ro = new ResizeObserver(calc);
+    ro.observe(container);
+    return () => ro.disconnect();
   }, [stills.length]);
 
   // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
@@ -290,7 +300,7 @@ export default function DetailPage() {
   const runtime = isTV ? (d as TMDBTVShowDetail | undefined)?.episode_run_time?.[0] : (d as TMDBMovieDetail | undefined)?.runtime;
   const countries = d?.production_countries?.map((c) => c.name) || [];
   const companies = d?.production_companies?.slice(0, 3) || [];
-  const cast: TMDBCastMember[] = d?.credits?.cast?.slice(0, 12) || [];
+  const cast: TMDBCastMember[] = d?.credits?.cast || [];
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const genres = d?.genres || [];
   const status = d?.status || '';
@@ -548,7 +558,7 @@ export default function DetailPage() {
             {cast.length > 0 && (
               <>
                 <h3 className="detail-section-subtitle">演员</h3>
-                <div className="detail-cast-row">
+                <div className={`detail-cast-row${!castExpanded ? ' detail-cast-row--collapsed' : ''}`}>
                   {cast.map((c) => (
                     <a
                       key={c.id}
@@ -569,6 +579,11 @@ export default function DetailPage() {
                     </a>
                   ))}
                 </div>
+                {cast.length > 8 && (
+                  <button className="detail-cast-toggle" onClick={() => setCastExpanded(!castExpanded)}>
+                    {castExpanded ? '收起' : `展开全部 ${cast.length} 位演员`}
+                  </button>
+                )}
               </>
             )}
 
@@ -590,6 +605,7 @@ export default function DetailPage() {
                   </div>
                 ) : (
                    <div
+                    ref={stillsGridRef}
                     className={`detail-stills-grid${visibleCount < Number.MAX_SAFE_INTEGER ? ' detail-stills-grid--limited' : ''}`}
                   >
                     {stills.slice(0, visibleCount < Number.MAX_SAFE_INTEGER ? visibleCount : undefined).map((url, i) => {

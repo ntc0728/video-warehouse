@@ -47,6 +47,8 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    /* 覆盖基础 width:100%，让 banner 自然填充 card padding 区域，右侧 padding 可见 */
+    width: auto;
   }
 
   /* 分类快捷入口 → 卡片模块（桌面端被 HomeSidebar 接管而隐藏，移动/平板可见） */
@@ -62,7 +64,7 @@
   /* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
   .home-page .tmdb-movierow {
     margin-bottom: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-sm);
     background-color: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);

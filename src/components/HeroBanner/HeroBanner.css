@@ -205,7 +205,7 @@
      时，thumbs 是唯一在文档流的 flex 子项，auto 吸收全部左侧剩余空间 → 仍居右，
      避免骨架列被排到最左侧（"靠左"问题）。 */
   margin-left: auto;
-  padding: 0 var(--space-sm);
+  padding-left: var(--space-sm);
   overflow: hidden;
 }
 
@@ -214,7 +214,7 @@
   padding: 0;
 }
 
-/* 缩略图：等分容器高度（5 个完整填满）+ 黑色遮罩（未选中）+ 标题悬浮叠加 */
+/* 缩略图：等分容器高度 + 黑色遮罩（未选中）+ 标题悬浮叠加 */
 .hero-banner__thumb {
   position: relative;
   display: block;
@@ -315,8 +315,7 @@
   opacity: 0;
 }
 
-.hero-banner__thumb.is-active {
-  box-shadow: inset 0 0 0 2px var(--color-primary);
+.hero-banner__thumb.is-active.is-loaded {
 }
 
 /* 标题悬浮叠加在图片底部（渐变蒙版保证可读） */

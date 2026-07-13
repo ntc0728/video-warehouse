@@ -154,6 +154,10 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css` 内 `@media (width >= 1024px)`（`.home-page` 作用域）
 - 页面级 `AppLoading` 内联模式 — `AppLoading.css` 内 `@media (width >= 1024px)`
 - 收藏/历史 `RecordShell` 内部筛选栏 — 横向卡片栏（见上）
+- 收藏/历史 `RecordShell` `.record-main` — 右侧内容区卡片（`RecordShell.css` 内 `@media (width >= 768px)`）
+- IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css` 内 `@media (width >= 1024px)`
+- 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css` 内 `@media (width >= 1024px)`
+- 详情页 `detail-hero` — 去掉负 margin，受 page-padding 约束（`Detail.css`）
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
 

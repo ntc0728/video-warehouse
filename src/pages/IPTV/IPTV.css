@@ -14,7 +14,7 @@
   flex-direction: column;
   flex-shrink: 0;
   gap: var(--space-xs);
-  padding: var(--space-xs) 0 var(--space-sm);
+  padding: var(--space-xs);
 }
 
 .iptv-header-top {
@@ -227,8 +227,7 @@
   flex-wrap: wrap;
   flex-shrink: 0;
   gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
-  padding: var(--space-md) 0 var(--space-sm);
+  padding: var(--space-sm) 0;
   overflow: visible;
   transition: max-height 0.3s ease;
 }
@@ -558,11 +557,37 @@
 /* ── 刷新时的内容加载态 ──────────────────────────── */
 .iptv-content-loading {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: var(--layout-loading-min-height);
-  /* 补横向 space-sm 缩进，使内部 AppLoading 卡片左右不贴边 */
+  min-height: 0;
   padding: 0 var(--space-sm);
+}
+
+/* ── IPTV 页卡片模块（仅桌面端 >=1024px）─────────────
+   两个卡片：top-card 固定在顶部包裹筛选/控制，grid-card 包裹频道网格随内容增长。
+   滚动条在外层主页面，不在卡片内部。移动端保持原样。 */
+@media (width >= 1024px) {
+  .iptv-top-card {
+    flex-shrink: 0;
+    margin-bottom: var(--space-sm);
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .iptv-groups {
+    margin-bottom: 0 !important;
+  }
+
+  .iptv-grid-card {
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
 }

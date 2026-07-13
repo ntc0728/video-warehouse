@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 100dvh;
-  padding: 0 var(--space-sm) 0;
+  padding: var(--space-sm);
   background-color: var(--color-background);
   color: var(--color-text);
 }
@@ -377,13 +377,13 @@
 
 .player-loading-wrap {
   position: absolute;
-  inset: 0;
+  top: var(--space-sm);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  justify-content: center;
-  align-items: center;
 }
 
 .player-loading-spinner {
@@ -459,7 +459,6 @@
 
 .player-detail-section {
   margin-bottom: var(--space-sm);
-  border-top: 1px solid var(--color-border-light);
 }
 
 .player-detail-info {
@@ -481,7 +480,7 @@
 
 .player-detail-poster {
   flex-shrink: 0;
-  width: clamp(5rem, 2rem + 4vw, 14rem);
+  width: clamp(8rem, 5rem + 6vw, 22rem);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -542,32 +541,38 @@
 }
 
 .player-detail-overview-wrap {
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .player-detail-overview {
-  flex: 1;
-  min-width: 0;
   margin: 0;
   font-size: var(--text-sm);
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.player-detail-overview--expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
 }
 
 .player-overview-toggle {
-  position: absolute;
-  right: 0;
-  bottom: 0;
   display: none;
-  gap: var(--space-2xs);
   align-items: center;
-  padding: var(--space-2xs) var(--space-xs);
+  gap: var(--space-2xs);
+  margin-top: var(--space-xs);
+  padding: 0;
   border: none;
-  border-radius: 0;
-  background: linear-gradient(to left, var(--color-bg-primary) 60%, transparent);
+  background: none;
   color: var(--color-primary);
   font-size: var(--text-sm);
-  transition: opacity 0.2s;
   cursor: pointer;
+  margin-left: auto;
 }
 
 .player-overview-toggle:hover {
@@ -699,27 +704,18 @@
     padding: 0;
   }
 
-  .player-detail-overview {
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .player-detail-overview--expanded {
-    display: block;
-    -webkit-line-clamp: unset;
-    overflow: visible;
-  }
-
   .player-overview-toggle {
-    display: inline-flex;
+    display: flex;
   }
 }
 
 @media (width >= 768px) {
   .player-detail-overview {
     font-size: var(--text-lg);
+  }
+
+  .player-overview-toggle {
+    display: flex;
   }
 }
 
@@ -849,17 +845,24 @@
   50% { opacity: 0.5; }
 }
 
+/* ── 桌面端（≥ 1024px）：顶部留出导航栏高度 ─── */
+@media (width >= 1024px) {
+  .player-page {
+    padding-top: var(--header-height);
+  }
+}
+
 /* ── 桌面端（≥ 1280px）：面板不可折叠，隐藏箭头，播放器撑满视口 ─── */
 @media (width >= 1280px) {
   .player-page {
     height: 100dvh;
     min-height: 0;
-    padding-top: var(--header-height);
     overflow-y: auto;
   }
 
   .player-main {
     flex: none;
+    padding: var(--space-sm) var(--space-sm) 0;
     height: calc(100dvh - var(--header-height));
   }
 

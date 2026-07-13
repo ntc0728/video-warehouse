@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    RecordShell — 收藏页 / 历史页共用外壳
-   桌面（≥768px）：方案 C — 左侧固定筛选侧栏 + 右侧卡片主区
+   桌面（≥768px）：顶部横向卡片筛选栏 + 右侧卡片主区
    移动（≤767px）：方案 M6 — 顶部吸顶精简栏，滚动折叠状态芯片行
    依赖已有全局类：.category-segmented / .status-tabs / .toolbar-btn / .toolbar-actions
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -18,17 +18,14 @@
 
 .record-shell {
   --record-aside-w: clamp(200px, 15vw, 260px);
-
   display: flex;
   flex: 1 1 0;
-  gap: var(--space-lg);
   align-items: stretch;
   width: 100%;
   min-height: 0;
-  padding-top: var(--space-md);
 }
 
-/* ── 左侧筛选侧栏（桌面 sticky，卡片化 + 主题自适应背景） ─────────────────── */
+/* ── 筛选栏（桌面 sticky 横向卡片栏，移动端竖向侧栏） ─────────────────── */
 .record-aside {
   position: sticky;
   top: var(--space-md);
@@ -321,17 +318,27 @@
 @media (width >= 768px) {
   .record-shell {
     flex-direction: column;
-    gap: var(--space-md);
   }
 
   /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
   .record-aside {
+    top: 0;
     flex-flow: row wrap;
     align-items: center;
     gap: var(--space-md);
     align-self: auto;
     flex-shrink: 1;
     width: 100%;
+  }
+
+  /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
+  .record-main {
+    padding: var(--space-md);
+    margin-top: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
   }
 
   .record-aside__title {
