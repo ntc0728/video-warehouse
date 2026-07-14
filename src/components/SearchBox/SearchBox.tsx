@@ -126,7 +126,9 @@ export default function SearchBox({
   const handleSearch = useCallback((query?: string) => {
     const q = (query ?? value).trim();
     if (!q) return;
-    if (q === lastSearchedRef.current) return;
+    // 有 onSearch 回调时（如 Browse 页）不做去重 —— 允许重复搜索同一关键词；
+    // 无 onSearch 时（如顶部导航栏）保留去重，避免重复 navigate。
+    if (!onSearch && q === lastSearchedRef.current) return;
     lastSearchedRef.current = q;
     addHistory(q);
     setIsDropdownOpen(false);
@@ -192,6 +194,9 @@ export default function SearchBox({
   const handleHistoryClick = useCallback((item: string) => {
     setValue(item);
     handleSearch(item);
+    // 选中后 blur input：dropdown 的 onMouseDown 阻止了默认失焦行为，
+    // 若不手动 blur，下次点击搜索框不会触发 onFocus → 下拉框无法再次弹出。
+    inputRef.current?.blur();
   }, [handleSearch]);
 
   const handleHistoryRemove = useCallback((e: React.MouseEvent, item: string) => {

@@ -10,10 +10,11 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import FilterBar from '@/components/FilterBar';
+import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
 import SearchBox from '@/components/SearchBox';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
+import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -96,55 +97,56 @@ export default function BrowsePage() {
     reset: resetCMS,
   } = useCMSSearch();
 
-  // ── 搜索模式切换 ────────────────────────────────
-  const handleModeChange = useCallback((mode: SearchMode) => {
-    setSearchMode(mode);
-    // 切换模式时，若该模式尚未搜过当前 query 则触发搜索
-    if (query) {
-      if (mode === 'smart' && query !== lastSmartSearchedRef.current) {
-        lastSmartSearchedRef.current = query;
-        void useTMDBStore.getState().search(query, 1, { reset: true });
-      } else if (mode === 'cms' && query !== lastCmsSearchedRef.current) {
-        lastCmsSearchedRef.current = query;
-        searchCMS(query);
-      }
-    }
-  }, [query, searchCMS]);
-
   // ── 搜索触发 ────────────────────────────────────
   const lastCmsSearchedRef = useRef('');
   const lastSmartSearchedRef = useRef('');
 
-  // 首次进入：根据初始 query 触发搜索
-  const initialDoneRef = useRef(false);
-  useEffect(() => {
-    if (initialDoneRef.current) return;
-    initialDoneRef.current = true;
-    if (query) {
-      if (searchMode === 'smart') {
-        void useTMDBStore.getState().search(query, 1, { reset: true });
-      } else {
-        searchCMS(query);
-      }
-    }
-  }, [query, searchMode, searchCMS]);
-
-  // query 变化时触发搜索
-  useEffect(() => {
-    if (!initialDoneRef.current) return;
-    if (!query) return;
-    if (searchMode === 'cms') {
-      if (query !== lastCmsSearchedRef.current) {
-        lastCmsSearchedRef.current = query;
-        searchCMS(query);
-      }
+  const triggerSearch = useCallback((q: string, mode: SearchMode) => {
+    if (!q) return;
+    if (mode === 'cms') {
+      lastCmsSearchedRef.current = q;
+      searchCMS(q);
     } else {
-      if (query !== lastSmartSearchedRef.current) {
-        lastSmartSearchedRef.current = query;
-        void useTMDBStore.getState().search(query, 1, { reset: true });
+      lastSmartSearchedRef.current = q;
+      void useTMDBStore.getState().search(q, 1, { reset: true });
+    }
+  }, [searchCMS]);
+
+  // ── 搜索模式切换 ────────────────────────────────
+  const handleModeChange = useCallback((mode: SearchMode) => {
+    setSearchMode(mode);
+    if (query) {
+      triggerSearch(query, mode);
+    }
+  }, [query, triggerSearch]);
+
+  // ── 筛选条件变更：若当前有搜索词，先清空搜索词再更新筛选 ──────────
+  // useBrowseData 的 filterSig effect 在有 urlQ 时会跳过 fetch，
+  // 所以切换筛选/排序时必须清空 query，让 discover 接管。
+  const handleFilterChange = useCallback((next: FilterBarValue) => {
+    if (query) {
+      setQuery('');
+      lastSmartSearchedRef.current = '';
+    }
+    updateFilter(next);
+  }, [query, updateFilter]);
+
+  // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 中的最新搜索词触发搜索
+  // 注意：必须读 stateQ（同步变量）而非 query（异步 state）——
+  // location.key 变化时 setQuery 尚未生效，query 仍是上一次的旧值。
+  useEffect(() => {
+    const q = stateQ;
+    if (q) {
+      if (searchMode === 'smart') {
+        void useTMDBStore.getState().search(q, 1, { reset: true });
+        lastSmartSearchedRef.current = q;
+      } else {
+        searchCMS(q);
+        lastCmsSearchedRef.current = q;
       }
     }
-  }, [query, searchMode, searchCMS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   // ── 懒加载触发 ──────────────────────────────────
   const loadMore = useCallback(() => {
@@ -190,12 +192,12 @@ export default function BrowsePage() {
   const isSmartLoading = isRefreshing || isLoading;
   const isCmsLoading = cmsLoading;
 
-  // 「首屏/刷新」loading：仅在无数据可展示时才用整页 loading 覆盖内容。
-  // 懒加载更多（已有数据在列）不再走整页 loading —— 否则网格会被卸载、内容高度骤减、
-  // 滚动位置被浏览器夹回顶部，视觉上像是"新数据覆盖了旧数据/回到开头"。
-  const smartInitialLoading = isRefreshing || (isLoading && discoverResults.length === 0);
-  const cmsInitialLoading = isCmsLoading && cmsResults.length === 0;
-  const showFullLoading = searchMode === 'smart' ? smartInitialLoading : cmsInitialLoading;
+  // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
+  const smartHasData = discoverResults.length > 0;
+  const cmsHasData = cmsResults.length > 0;
+  const showResultsLoading = searchMode === 'smart'
+    ? (isLoading && !smartHasData)
+    : (isCmsLoading && !cmsHasData);
 
   const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
@@ -209,8 +211,8 @@ export default function BrowsePage() {
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
     >
-      {/* 搜索区域 */}
-      <div className="browse-search-area">
+      {/* Card 1：搜索区域 */}
+      <div className="browse-card--search">
         {/* Tab 切换 */}
         <div className="browse-search-tabs">
           <button
@@ -234,90 +236,113 @@ export default function BrowsePage() {
             defaultValue={query}
             onSearch={(q) => {
               setQuery(q);
-              if (!q) {
+              if (q) {
+                triggerSearch(q, searchMode);
+              } else {
+                // 清除按钮：重置为默认结果
                 if (searchMode === 'smart') {
+                  lastSmartSearchedRef.current = '';
                   if (filterValue.category === 'top') {
                     void useTMDBStore.getState().fetchTopRated(1, { reset: true });
                   } else {
                     void useTMDBStore.getState().fetchDiscover(1, { reset: true });
                   }
                 } else {
+                  lastCmsSearchedRef.current = '';
                   resetCMS();
                 }
               }
             }}
           />
         </div>
+        {/* 智能检索模式：FilterBar（仅筛选行，footer 移到 Card 2） */}
+        {searchMode === 'smart' && (
+          <FilterBar
+            value={filterValue}
+            onChange={handleFilterChange}
+            genres={currentGenres}
+            excludedGenreIds={excludedGenreIds}
+            totalResults={discoverPagination.totalResults}
+            categoryLabel={CATEGORY_LABELS[filterValue.category]}
+            hideFooter
+          />
+        )}
       </div>
 
-      {/* 智能检索模式：FilterBar */}
-      {searchMode === 'smart' && (
-        <FilterBar
-          value={filterValue}
-          onChange={updateFilter}
-          genres={currentGenres}
-          excludedGenreIds={excludedGenreIds}
-          totalResults={discoverPagination.totalResults}
-          categoryLabel={CATEGORY_LABELS[filterValue.category]}
-        />
-      )}
+      {/* Card 2：结果区域 */}
+      <div className="browse-card--results">
+        {/* 智能检索模式：排序 + 结果数 */}
+        {searchMode === 'smart' && (
+          <div className="browse-sort-bar">
+            <div className="browse-sort-bar__tabs">
+              {SORT_OPTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`browse-sort-bar__tab${filterValue.sortIdx === i ? ' browse-sort-bar__tab--active' : ''}`}
+                  onClick={() => handleFilterChange({ ...filterValue, sortIdx: i })}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <span className="browse-sort-bar__count">
+              共 {discoverPagination.totalResults.toLocaleString('zh-CN')} 条
+            </span>
+          </div>
+        )}
 
-      {/* 源状态指示器（仅直链搜索） */}
-      {searchMode === 'cms' && (
-        <SourceStatusIndicator
-          totalSources={totalSources}
-          completedSources={completedSources}
-          succeededSources={succeededSources}
-          failedSources={failedSources.length}
-          totalResults={cmsResults.length}
-          isLoading={!sourcesDone}
-        />
-      )}
+        {/* 源状态指示器（仅直链搜索） */}
+        {searchMode === 'cms' && (
+          <SourceStatusIndicator
+            totalSources={totalSources}
+            completedSources={completedSources}
+            succeededSources={succeededSources}
+            failedSources={failedSources.length}
+            totalResults={cmsResults.length}
+            isLoading={!sourcesDone}
+          />
+        )}
 
-      {/* 搜索加载中（仅首屏/刷新且无数据时；懒加载更多不覆盖已有网格） */}
-      {showFullLoading && (
-        <div className="browse-page__loading">
-          <AppLoading tip="搜索中…" showTip />
+        {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}
+        <div className="browse-results-body">
+          {showResultsLoading && (
+            <AppLoading tip="搜索中…" showTip />
+          )}
+
+          {!showResultsLoading && currentError && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0) && (
+            <Empty title="暂无结果" description="尝试换个关键词搜索" />
+          )}
+
+          {!showResultsLoading && isEmpty && !currentError && (
+            <Empty
+              title="暂无结果"
+              description={query ? '尝试换个关键词搜索' : '请输入关键词搜索'}
+            />
+          )}
+
+          {!showResultsLoading && (searchMode === 'smart' ? (
+            discoverResults.length > 0 ? (
+              <BrowseGrid items={discoverResults} query={query} mode="smart" />
+            ) : null
+          ) : (
+            cmsResults.length > 0 ? (
+              <BrowseGrid cmsItems={cmsResults} query={query} mode="cms" />
+            ) : null
+          ))}
+
+          {!showResultsLoading && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
+            <BrowseLoadMore
+              hasMore={searchMode === 'smart' ? hasMore : cmsHasMore}
+              isLoading={searchMode === 'smart' ? isLoadingMore : cmsLoading}
+              hasItems={searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0}
+              isRefreshing={isRefreshing}
+            />
+          )}
+
+          <div ref={sentinelRef} aria-hidden="true" />
         </div>
-      )}
-
-      {/* 错误 + 无数据 */}
-      {currentError && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0) && (
-        <Empty title="暂无结果" description="尝试换个关键词搜索" />
-      )}
-
-      {/* 完全无结果 */}
-      {isEmpty && !currentError && (
-        <Empty
-          title="暂无结果"
-          description={query ? '尝试换个关键词搜索' : '请输入关键词搜索'}
-        />
-      )}
-
-      {/* 视频网格（懒加载更多时保持挂载，新数据追加到末尾，滚动位置不跳变） */}
-      {searchMode === 'smart' ? (
-        discoverResults.length > 0 && !smartInitialLoading ? (
-          <BrowseGrid items={discoverResults} query={query} mode="smart" />
-        ) : null
-      ) : (
-        cmsResults.length > 0 && (
-          <BrowseGrid cmsItems={cmsResults} query={query} mode="cms" />
-        )
-      )}
-
-      {/* 懒加载状态文案 */}
-      {!(searchMode === 'smart' ? smartInitialLoading : false) && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
-        <BrowseLoadMore
-          hasMore={searchMode === 'smart' ? hasMore : cmsHasMore}
-          isLoading={searchMode === 'smart' ? isLoadingMore : cmsLoading}
-          hasItems={searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0}
-          isRefreshing={isRefreshing}
-        />
-      )}
-
-      {/* 懒加载哨兵：两种模式共用同一节点，置于内容末尾 —— 避免随模式切换卸载/重建
-          导致 IntersectionObserver 观察到失效节点，同时让 CMS 直链搜索也走 IO 懒加载 */}
-      <div ref={sentinelRef} aria-hidden="true" />
+      </div>
 
       <BackToTopButton />
     </div>

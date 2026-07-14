@@ -7,7 +7,7 @@
  * - 右侧缩略图自动轮播（5s），鼠标悬停切换主图并暂停轮播
  * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
@@ -128,7 +128,7 @@ export default function HeroBanner({
     return () => window.clearInterval(timer);
   }, [paused, displayItems.length, autoPlayInterval]);
 
-  // 悬停缩略图：预览主图（不改 activeIndex，缩略图窗口不移动）+ 暂停轮播 + 预加载背景图
+  // 悬停缩略图：预览主图 + 暂停轮播 + 预加载背景图
   const handleThumbEnter = useCallback((idx: number) => {
     setHoveredIndex(idx);
     setPaused(true);
@@ -137,11 +137,28 @@ export default function HeroBanner({
     if (p) preloadImage(buildImageUrl(p, 'w1280'));
   }, [displayItems]);
 
-  // 移出缩略图区：取消预览（主图回到 activeIndex）+ 恢复轮播
-  const handleThumbLeave = useCallback(() => {
-    setHoveredIndex(null);
+  // 移出整个 hero-banner：将 activeIndex 同步到当前预览项，再取消预览 + 恢复轮播
+  const handleBannerLeave = useCallback(() => {
+    setHoveredIndex((h) => {
+      if (h !== null) setActiveIndex(h);
+      return null;
+    });
     setPaused(false);
   }, []);
+
+  // 拖拽/滑动切换图片：桌面端鼠标拖拽 + 移动端触摸滑动
+  const dragStartX = useRef(0);
+  const handleDragStart = useCallback((x: number) => {
+    dragStartX.current = x;
+  }, []);
+  const handleDragEnd = useCallback((x: number) => {
+    const dx = x - dragStartX.current;
+    if (Math.abs(dx) < 50) return;
+    const total = displayItems.length;
+    if (total <= 1) return;
+    setActiveIndex((i) => (i - Math.sign(dx) + total) % total);
+    setHoveredIndex(null);
+  }, [displayItems.length]);
 
   // 空状态：加载中只显示骨架（无文字），加载完成且无数据才显示"暂无推荐"。
   // 注意：即使 items 为空，也立即渲染右侧缩略图骨架列，避免骨架"出现太慢"。
@@ -186,9 +203,8 @@ export default function HeroBanner({
   if (displayItems.length > 0) {
     const total = displayItems.length;
     const n = Math.min(visibleCount, total);
-    const start = -(n % 2 === 0 ? n / 2 - 1 : Math.floor(n / 2));
-    const end = n % 2 === 0 ? n / 2 : Math.floor(n / 2);
-    for (let offset = start; offset <= end; offset++) {
+    const half = Math.floor(n / 2);
+    for (let offset = -half; offset < n - half; offset++) {
       thumbSlots.push(((activeIndex + offset) % total + total) % total);
     }
   }
@@ -198,9 +214,15 @@ export default function HeroBanner({
       className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
       aria-roledescription="carousel"
       aria-label="热门推荐"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={handleBannerLeave}
+      onMouseDown={(e) => handleDragStart(e.clientX)}
+      onMouseUp={(e) => handleDragEnd(e.clientX)}
+      onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+      onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
     >
       {/* ── 主图区 ── */}
-      <div className="hero-banner__main" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div className="hero-banner__main">
         {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
         {bgIndices.map((idx) => {
           const item = displayItems[idx];
@@ -268,7 +290,7 @@ export default function HeroBanner({
           banner 未就绪时显示固定数量骨架占位（立即出现），
           banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架） */}
       {!isMobile && (
-        <div className={`hero-banner__thumbs${!bannerReady ? ' hero-banner__thumbs--skeleton' : ''}`} onMouseLeave={handleThumbLeave}>
+        <div className={`hero-banner__thumbs${!bannerReady ? ' hero-banner__thumbs--skeleton' : ''}`}>
           {!bannerReady ? (
             Array.from({ length: SKELETON_COUNT }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton" aria-hidden="true">
@@ -282,7 +304,6 @@ export default function HeroBanner({
                 item={displayItems[idx]}
                 active={idx === displayIndex}
                 onEnter={() => handleThumbEnter(idx)}
-                onLeave={handleThumbLeave}
                 onClick={() => { setActiveIndex(idx); setHoveredIndex(null); }}
               />
             ))
@@ -302,13 +323,11 @@ function HeroThumb({
   item,
   active,
   onEnter,
-  onLeave,
   onClick,
 }: {
   item: HeroItem;
   active: boolean;
   onEnter: () => void;
-  onLeave: () => void;
   onClick: () => void;
 }) {
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -320,8 +339,6 @@ function HeroThumb({
       type="button"
       className={`hero-banner__thumb${active ? ' is-active' : ''}${imgLoaded ? ' is-loaded' : ''}`}
       onMouseEnter={onEnter}
-      onFocus={onEnter}
-      onBlur={onLeave}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       aria-label={title}
       aria-current={active ? 'true' : undefined}

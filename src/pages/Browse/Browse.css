@@ -7,19 +7,96 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
+  gap: var(--space-sm);
   width: 100%;
   background-color: var(--color-background);
   animation: browse-fade-in 0.25s ease both;
 }
 
-/* ── 搜索区域 ────────────────────────────────────── */
-
-.browse-search-area {
+/* ── Card 1：搜索区域 ──────────────────────────────── */
+.browse-card--search {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: var(--space-lg);
   align-items: center;
-  padding: var(--space-lg) 0;
+  padding: var(--space-lg);
+}
+
+/* ── Card 2：结果区域 ──────────────────────────────── */
+.browse-card--results {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  padding: var(--space-sm);
+}
+
+/* ── 卡片模块视觉（桌面端 >=1024px） ───────────────── */
+@media (width >= 1024px) {
+  .browse-card--search,
+  .browse-card--results {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .browse-card--search {
+    padding: var(--space-sm);
+  }
+}
+
+/* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */
+.browse-results-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+}
+
+.browse-results-body .app-loading--inline {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* ── 排序栏（Card 2 顶部） ────────────────────────── */
+.browse-sort-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 var(--space-sm) 0;
+}
+
+.browse-sort-bar__tabs {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.browse-sort-bar__tab {
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.browse-sort-bar__tab:hover {
+  color: var(--color-text);
+}
+
+.browse-sort-bar__tab--active {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.browse-sort-bar__count {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 }
 
 .browse-search-tabs {
@@ -101,20 +178,6 @@
 
 .browse-page__skeleton {
   padding: var(--space-md) 0;
-}
-
-/* ── Loading（首次加载占位） ──────────────────────── */
-
-.browse-page__loading {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-  /* 原为 0 横向内边距，改为 space-sm，使内部 AppLoading 卡片左右缩进 */
-  padding: var(--space-3xl) var(--space-sm);
 }
 
 /* ── Refreshing(切换筛选条件时的半透蒙版) ─────────── */

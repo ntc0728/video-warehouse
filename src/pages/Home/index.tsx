@@ -274,7 +274,7 @@ export default function HomePage() {
         onCategorySelect={handleCategorySelect}
         activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
       />
-      <div className="home-rows page-padding">
+      <div className="home-rows">
         {rowDefs.map((row) => (
           <TMDBMovieRow
             key={row.title}

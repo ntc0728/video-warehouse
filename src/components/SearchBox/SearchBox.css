@@ -166,6 +166,11 @@
   color: var(--color-text);
 }
 
+.search-box__clear[data-empty='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── Submit（独立在方框外） ───────────────────────── */
 
 .search-box__submit {
@@ -197,8 +202,9 @@
 }
 
 .search-box__submit:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
+  filter: grayscale(100%);
 }
 
 .search-box__submit-icon {

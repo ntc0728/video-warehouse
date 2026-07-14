@@ -196,6 +196,13 @@
   --layout-epg-time-min-width: 100px;
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg)));
   --layout-osd-timeshift-dot:  6px;
+  /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
+  --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
+  --layout-logo-size-sm:       clamp(40px, 2.222rem + 0.73vw, 52px);  /* 40→52px 流体 */
+  --layout-logo-size-lg:       clamp(56px, 3.111rem + 1.02vw, 72px);  /* 56→72px 流体 */
+  --layout-brand-font-size:    clamp(1.25rem, 0.833rem + 0.87vw, 1.5rem);  /* 20→24px 流体 */
+  --layout-brand-font-size-sm: clamp(1rem, 0.667rem + 0.69vw, 1.25rem);  /* 16→20px 流体 */
+  --layout-brand-font-size-lg: clamp(1.5rem, 1rem + 1.04vw, 1.75rem);  /* 24→28px 流体 */
   --layout-detail-hero-play-icon: 8.571rem;
   --layout-outline-width:      2px;
   --layout-tabbar-height:      56px;
