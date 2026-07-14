@@ -70,7 +70,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | 页面 | 路由 | 核心组件 | 数据源 |
 |------|------|---------|--------|
 | 首页 | `/` | HeroBanner + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
-| 浏览/搜索 | `/browse` | SearchBox + FilterBar + BrowseGrid | TMDB discover/search + CMS searchAll |
+| 浏览/搜索 | `/browse` | SearchBox + FilterBar + SortBar + BrowseGrid（双卡片布局） | TMDB discover/search + CMS searchAll |
 | 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
 | 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
 | IPTV | `/iptv` | IPTVChannelList + EPGProgramList | M3U 解析 + EPG XMLTV 匹配 |
@@ -150,8 +150,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **仅桌面端（≥1024px）启用**；移动端（<1024px，含平板 768–1023）保持原始全宽布局、不被卡片化波及（约定：新增同类卡片样式默认放进 `@media (width >= 1024px)`，不要写在媒体块之外）
 
 应用位置：
-- 左侧栏 `HomeSidebar`（桌面浮动卡片）+ 顶部导航 `StickyHeader`（非沉浸式页面卡片）— `Layout.css` 内 `@media (width >= 1024px)`
+- 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css` 内 `@media (width >= 1024px)`（`.home-page` 作用域）
+- 浏览页双卡片结构 — `Browse.css` 内 `@media (width >= 1024px)`：
+  - Card 1（搜索区）：搜索 tabs + SearchBox + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压
+  - Card 2（结果区）：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵，`flex: 1 1 0` 填充剩余空间
 - 页面级 `AppLoading` 内联模式 — `AppLoading.css` 内 `@media (width >= 1024px)`
 - 收藏/历史 `RecordShell` 内部筛选栏 — 横向卡片栏（见上）
 - 收藏/历史 `RecordShell` `.record-main` — 右侧内容区卡片（`RecordShell.css` 内 `@media (width >= 768px)`）
@@ -173,6 +176,10 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - 哨兵节点 `<div ref={sentinelRef}>` **无条件渲染**（不用 searchMode 条件包裹），跨状态持久
 - 整页 loading 仅在首屏无数据时显示：`initialLoading = isLoading && results.length === 0`，与 `loading` 布尔区分
 - 避免加载更多时卸载网格导致滚动跳顶
+- **双卡片结构**：Card 1（搜索区：SearchBox + FilterBar，`hideFooter` 隐藏排序 footer）+ Card 2（结果区：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵）
+- **筛选切换清空搜索词**：切换 FilterBar 筛选/排序时清空 `query`，让 discover 接管（`useBrowseData` 的 `filterSig` effect 在有 `urlQ` 时跳过 fetch）
+- **TMDB search reset**：`search()` 和 `fetchDiscover()` 在 `forceReset=true` 时立即清空旧结果，UI 才能显示 loading 而非停留在旧数据上
+- **合并结果排序**：`mediaType=all` 合并 movie + tv 后按用户选择的 `sortBy`/`sortOrder` 重排（评分相同时按投票数降序兜底）
 
 ### 搜索词传递（Keep-Alive 兼容）
 
@@ -180,11 +187,17 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - Browse 页: `useState` 初始化读 `location.state.q` + `useEffect` 监听 `location.state.q` 变化同步 query（Keep-Alive 二次进入）
 - SearchBox: `lastSaredRef` 在 `location.pathname` 变化时重置（解除相同搜索词的导航阻止）
 
+### 工具类与 Tokens
+
+- **`.no-interaction-visual`**：移除 hover/active/focus 视觉反馈的工具类，用于 logo、品牌名等不需要交互反馈的元素（`index.css`）
+- **Logo tokens**：流式尺寸变量（`variables.css`）—— `--layout-logo-size`（48→64px）、`--layout-logo-size-sm`（40→52px）、`--layout-logo-size-lg`（56→72px）；`--layout-brand-font-size`（20→24px）、`--layout-brand-font-size-sm`（16→20px）、`--layout-brand-font-size-lg`（24→28px）。Sidebar 和 StickyHeader 的 logo 统一使用这些 token
+
 ### .gitignore 策略
 
 - `docs/*` + `!docs/page-diagrams/` — 仅提交原理图目录，docs/ 其余忽略
 - `scripts/*.ts` + `!scripts/*.spec.ts` — 仅保留 E2E 测试脚本
-- AI 工具本地配置（.workbuddy/ .claude/ .opencode/ 等）全部忽略
+- `scripts/*.mjs` + `!scripts/fetch-diagram-data.mjs` — 仅保留数据获取脚本，工具脚本不提交
+- AI 工具本地配置（.workbuddy/ .claude/ .opencode/ .codegraph/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
 ## 测试依赖映射（精准跑测试，不要全量跑）

@@ -131,7 +131,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           ) : (
-            <button className="sticky-header__logo-group" onClick={goHome} aria-label="kinoTv — 返回首页">
+            <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
               <div className="sticky-header__logo-wrap">
                 <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
               </div>

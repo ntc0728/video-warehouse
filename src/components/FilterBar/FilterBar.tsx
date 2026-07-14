@@ -29,6 +29,8 @@ interface FilterBarProps {
   totalResults?: number;
   /** 当前分类显示名称（替换默认的"分类"label） */
   categoryLabel?: string;
+  /** 隐藏排序+结果数 footer（用于将 footer 移到父组件其他位置） */
+  hideFooter?: boolean;
 }
 
 // ── 组件 ────────────────────────────────────────────
@@ -42,6 +44,7 @@ export default function FilterBar({
   isUpdating = false,
   totalResults = 0,
   categoryLabel,
+  hideFooter = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
 
@@ -207,23 +210,25 @@ export default function FilterBar({
       </div>
 
       {/* 排序 + 结果数 */}
-      <div className="filter-bar__footer">
-        <div className="filter-bar__sort">
-          {SORT_OPTIONS.map((s, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`filter-bar__sort-btn${value.sortIdx === i ? ' filter-bar__sort-btn--active' : ''}`}
-              onClick={() => update({ sortIdx: i })}
-            >
-              {s.label}
-            </button>
-          ))}
+      {!hideFooter && (
+        <div className="filter-bar__footer">
+          <div className="filter-bar__sort">
+            {SORT_OPTIONS.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`filter-bar__sort-btn${value.sortIdx === i ? ' filter-bar__sort-btn--active' : ''}`}
+                onClick={() => update({ sortIdx: i })}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <span className="filter-bar__count" aria-live="polite">
+            共 {totalResults.toLocaleString('zh-CN')} 条
+          </span>
         </div>
-        <span className="filter-bar__count" aria-live="polite">
-          共 {totalResults.toLocaleString('zh-CN')} 条
-        </span>
-      </div>
+      )}
     </div>
   );
 }

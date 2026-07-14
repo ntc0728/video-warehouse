@@ -165,6 +165,24 @@ a[role="button"]:active:not(:disabled),
   box-shadow: none !important;
 }
 
+/* ── 无交互视觉反馈工具类 ──────────────────────────────
+   通过类名引入，移除 hover / active / focus 的视觉变化。
+   用于 logo、品牌名等不需要交互反馈的元素。
+   !important 确保覆盖组件级样式及全局按钮点击反馈。 */
+.no-interaction-visual:hover,
+.no-interaction-visual:active {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.no-interaction-visual:focus,
+.no-interaction-visual:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ── Tab 通用基类（下划线式） ─────────────────────────────
    Detail / Person 页共用，避免重复定义 */
 .tab-underline {
@@ -190,11 +208,10 @@ a[role="button"]:active:not(:disabled),
 }
 
 /* ── 页面级统一左右下内边距 ─────────────────────────────
-   所有页面根容器统一使用，确保水平/底部间距一致。
-   top padding 不设（由子元素或沉浸式 Header 决定）。
+   所有页面根容器统一使用，确保水平/顶部间距一致。
    Player / IPTVPlayer 因全屏定位脱离文档流，不使用此类。 */
 .page-padding {
-  padding: 0 var(--space-sm) var(--space-sm);
+  padding: var(--space-sm) var(--space-sm) 0 var(--space-sm);
 }
 
 .empty-state-wrapper {

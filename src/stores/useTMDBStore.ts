@@ -776,6 +776,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       errors: { ...s.errors, discover: null },
       // 进入 pending:UI 侧用此位阻止在 API 响应前移除骨架
       discoverLastStatus: 'pending',
+      // reset 时立即清空旧结果，让 UI 能显示 loading（而非停留在旧数据上）
+      ...(forceReset ? {
+        discoverResults: [],
+        discoverPagination: { page: 0, totalPages: 0, totalResults: 0 },
+      } : {}),
     }));
     try {
       const data = await searchMulti(query, page);
@@ -814,6 +819,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       loading: { ...s.loading, discover: true },
       errors: { ...s.errors, discover: null },
       discoverLastStatus: 'pending',
+      // reset 时立即清空旧结果，让 UI 能显示 loading
+      ...(forceReset ? {
+        discoverResults: [],
+        discoverPagination: { page: 0, totalPages: 0, totalResults: 0 },
+      } : {}),
     }));
     try {
       let results: TMDBVideoItem[] = [];
@@ -828,7 +838,25 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         results = dedupeById([
           ...movieData.results.map(mapMovieToVideoItem),
           ...tvData.results.map(mapTVToVideoItem),
-        ]).sort((a, b) => b.popularity - a.popularity);
+        ]);
+        // 合并 movie + tv 后需按用户选择的排序方式重新排序（API 各端点已排序但合并后需重排）
+        const sortBy = filterOptions.sortBy || 'popularity';
+        const sortOrder = filterOptions.sortOrder || 'desc';
+        const dir = sortOrder === 'asc' ? 1 : -1;
+        results.sort((a, b) => {
+          if (sortBy === 'vote_average') {
+            // 评分相同时按投票数降序兜底
+            if (b.voteAverage !== a.voteAverage) return (a.voteAverage - b.voteAverage) * dir;
+            return b.voteCount - a.voteCount;
+          }
+          if (sortBy === 'release_date') {
+            const da = a.releaseDate ?? '';
+            const db = b.releaseDate ?? '';
+            return da.localeCompare(db) * dir;
+          }
+          // popularity（默认）
+          return (a.popularity - b.popularity) * dir;
+        });
         totalPages = Math.max(movieData.total_pages, tvData.total_pages);
         totalResults = movieData.total_results + tvData.total_results;
       } else if (filterOptions.mediaType === 'tv') {
@@ -869,6 +897,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       loading: { ...s.loading, discover: true },
       errors: { ...s.errors, discover: null },
       discoverLastStatus: 'pending',
+      // reset 时立即清空旧结果，让 UI 能显示 loading
+      ...(forceReset ? {
+        discoverResults: [],
+        discoverPagination: { page: 0, totalPages: 0, totalResults: 0 },
+      } : {}),
     }));
     try {
       const [movieData, tvData] = await Promise.all([

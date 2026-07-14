@@ -34,8 +34,10 @@ android/
 .mimocode-project-id
 .catpaw/
 .opencode/
+.codegraph/
 .mignore
 .workbuddy/
+.codegraph/
 
 # ── AI 工具本地规则 / 文档 ────────────────────
 .trae/documents/
@@ -89,12 +91,14 @@ research/
 rules.md
 
 # ── 开发辅助脚本（非构建/测试脚本不入版本控制）──
-# 保留：.ps1/.bat 构建脚本、.spec.ts E2E 测试、.md 文档、.mjs 工具脚本
+# 保留：.ps1/.bat 构建脚本、.spec.ts E2E 测试、.md 文档
 scripts/*.sh
 scripts/*.py
 scripts/*.js
 scripts/*.ts
+scripts/*.mjs
 !scripts/*.spec.ts
+!scripts/fetch-diagram-data.mjs
 
 # ── OS 临时文件 ───────────────────────────────
 .DS_Store

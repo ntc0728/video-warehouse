@@ -96,7 +96,7 @@ export default function HomeSidebar() {
       {/* 左上角 logo（取代顶部导航栏 logo，高度对齐 StickyHeader） */}
       <button
         type="button"
-        className="home-sidebar__logo"
+        className="home-sidebar__logo no-interaction-visual"
         onClick={handleLogoClick}
         aria-label="kinoTv — 返回首页"
       >
