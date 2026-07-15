@@ -173,14 +173,14 @@ export const useUserStore = create<UserState>()((set, get) => ({
 
   /**
    * 添加或更新观看历史
-   * 同一视频的记录会更新进度和时间，而非重复创建
-   * 去重策略：vodId → videoId（兜底）
+   * 同一集的记录会更新进度和时间，而非重复创建
+   * 去重策略：episodeUrl（精确到集）→ videoId（兜底，无 episodeUrl 时）
    */
   addHistory: (record) => {
-    // 统一按 videoId 去重（同一 TMDB 视频在不同 CMS 源不应创建多条记录）
-    const existingIndex = get().history.findIndex(
-      (h) => h.videoId === record.videoId
-    );
+    // 按 episodeUrl 去重（精确到集），无 episodeUrl 时按 videoId 去重
+    const existingIndex = record.episodeUrl
+      ? get().history.findIndex((h) => h.episodeUrl === record.episodeUrl)
+      : get().history.findIndex((h) => h.videoId === record.videoId && !h.episodeUrl);
 
     if (existingIndex >= 0) {
       const updated = { ...get().history[existingIndex] };

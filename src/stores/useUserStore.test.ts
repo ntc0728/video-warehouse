@@ -89,4 +89,66 @@ describe('useUserStore - addHistory with new fields', () => {
     const history = useUserStore.getState().history;
     expect(history[0].vodId).toBe('456');
   });
+
+  it('按 episodeUrl 去重：同一集更新进度', () => {
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 50,
+      duration: 100,
+      episodeUrl: 'http://example.com/ep1.m3u8',
+    });
+
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 80,
+      duration: 100,
+      episodeUrl: 'http://example.com/ep1.m3u8',
+    });
+
+    const history = useUserStore.getState().history;
+    expect(history).toHaveLength(1);
+    expect(history[0].progress).toBe(80);
+  });
+
+  it('不同 episodeUrl 创建不同记录', () => {
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 50,
+      duration: 100,
+      episodeUrl: 'http://example.com/ep1.m3u8',
+    });
+
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 30,
+      duration: 100,
+      episodeUrl: 'http://example.com/ep2.m3u8',
+    });
+
+    const history = useUserStore.getState().history;
+    expect(history).toHaveLength(2);
+  });
+
+  it('有 episodeUrl 的记录不会被无 episodeUrl 的记录覆盖', () => {
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 50,
+      duration: 100,
+      episodeUrl: 'http://example.com/ep1.m3u8',
+    });
+
+    // 无 episodeUrl 的记录应该创建新记录，不覆盖已有记录
+    useUserStore.getState().addHistory({
+      videoId: '123',
+      progress: 90,
+      duration: 100,
+    });
+
+    const history = useUserStore.getState().history;
+    expect(history).toHaveLength(2);
+    // 有 episodeUrl 的记录仍在
+    expect(history.find(h => h.episodeUrl === 'http://example.com/ep1.m3u8')).toBeTruthy();
+    // 无 episodeUrl 的记录也创建了
+    expect(history.find(h => !h.episodeUrl)).toBeTruthy();
+  });
 });

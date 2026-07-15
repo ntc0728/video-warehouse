@@ -180,27 +180,36 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     // ── 快速恢复路径：有 vodId 时直接调 CMS 详情接口 ──────────
     const histRecord = historyRecordRef.current;
+    /**
+     * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
+     * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情
+     */
     if (!isSwitching && histRecord?.vodId) {
       try {
         const svc = await import('@/services/videoService');
-        const detailVideo = await svc.fetchVideoDetail(sourceIdx, histRecord.vodId);
+        /** 通过 vodId 获取视频详情（传递 signal 支持取消） */
+        const detailVideo = await svc.fetchVideoDetail(sourceIdx, histRecord.vodId, ctrl.signal);
         if (ctrl.signal.aborted) return;
 
         if (detailVideo) {
+          // 设置 CMS 源信息
           const { getVideoSources } = await import('@/services/sourceService');
           const allSrc = await getVideoSources();
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
+          // 缓存并设置视频数据
           videoCache.set(id, detailVideo);
           setVideo(detailVideo);
 
+          // 剧集类型：选中第一集并异步加载季信息
           if (detailVideo.episodes?.length) {
             const firstEp = [...detailVideo.episodes].sort((a, b) => a.number - b.number)[0];
             if (firstEp?.sources.length) {
               finishLoading();
               onSwitchEpisode(firstEp);
-              searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear).then(result => {
+              // 异步加载季信息（传递 signal 支持取消）
+              searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal).then(result => {
                 if (!ctrl.signal.aborted) {
                   seasonMapsRef.current.set(sourceIdx, result.seasons);
                   setCmsSeasons(buildCmsSeasons(result.seasons));
@@ -230,13 +239,18 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       } catch { /* fall through */ }
     }
 
-    // ── TV 剧集按季搜索 ──────────────
+    /**
+     * TV 剧集按季搜索
+     * 场景：TMDB 剧集类型，需要按季分组搜索 CMS 源
+     */
     if (id.startsWith('tmdb-') && tmdbMediaType === 'tv') {
       try {
+        /** 当前源的季映射（缓存，避免重复搜索） */
         let seasonMap = seasonMapsRef.current.get(sourceIdx);
 
         if (!seasonMap) {
-          const seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear);
+          /** 按季搜索 CMS 源（传递 signal 支持取消） */
+          const seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
           seasonMap = seasonResult.seasons;
           seasonMapsRef.current.set(sourceIdx, seasonMap);
           setCmsSeasons(buildCmsSeasons(seasonMap));
@@ -294,25 +308,32 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       return;
     }
 
-    // ── 电影 / 单季剧集 ──
+    /**
+     * 电影 / 单季剧集
+     * 场景：非 TV 类型或单季剧集，直接搜索或获取详情
+     */
     try {
+      /** 尝试从缓存获取视频数据 */
       const cached = readCmsCache(id, sourceIdx);
       let result: VideoDetailResult;
       if (cached) {
+        // 缓存命中，直接使用
         const { getVideoSources } = await import('@/services/sourceService');
         const allSrc = await getVideoSources();
         const sourceName = allSrc[sourceIdx]?.name ?? '未知';
         result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: cached };
       } else if (!id?.startsWith('tmdb-')) {
+        // CMS 源视频：通过 vod_id 获取详情（传递 signal 支持取消）
         const { fetchVideoDetail } = await import('@/services/videoService');
-        const detailVideo = await fetchVideoDetail(sourceIdx, id);
+        const detailVideo = await fetchVideoDetail(sourceIdx, id, ctrl.signal);
         const { getVideoSources } = await import('@/services/sourceService');
         const allSrc = await getVideoSources();
         const sourceName = allSrc[sourceIdx]?.name ?? '未知';
         result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
         if (result.video) writeCmsCache(id, sourceIdx, result.video);
       } else {
-        result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear);
+        // TMDB 视频：通过标题搜索（传递 signal 支持取消）
+        result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
         if (result.video) writeCmsCache(id, sourceIdx, result.video);
       }
 

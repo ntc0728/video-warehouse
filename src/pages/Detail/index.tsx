@@ -191,7 +191,7 @@ export default function DetailPage() {
     const videoYear = year;
 
     try {
-      const results = await searchVideoFromMultipleSources(indices, videoTitle, videoYear);
+      const results = await searchVideoFromMultipleSources(indices, videoTitle, videoYear, ctrl.signal);
       if (ctrl.signal.aborted) return;
 
       setCmsResults(results);

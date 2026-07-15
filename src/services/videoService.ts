@@ -78,12 +78,23 @@ function getCmsVodType(item: CMSVideoItem): VideoType | undefined {
   return mapVodType(item.vod_type) ?? mapVodType(item.type_id_1) ?? mapVodType(item.type_id);
 }
 
-/** 检查单个视频源是否可用 */
+/**
+ * 检查单个视频源是否可用
+ *
+ * 通过调用 CMS API 的列表接口，验证视频源是否可访问且返回格式正确。
+ * 用于源检测页面和视频源选择逻辑。
+ *
+ * @param sourceIndex - 视频源配置索引（在 video-sources.json 中的位置）
+ * @param timeout - 请求超时时间（毫秒），默认 8000ms
+ * @returns 源状态（是否可用 + 错误信息）
+ */
 export async function checkVideoSourceAvailability(
   sourceIndex: number,
   timeout: number = 8000
 ): Promise<SourceStatus> {
+  /** 获取所有视频源配置 */
   const sources = await getVideoSources();
+  /** 获取指定索引的视频源 */
   const source = sources[sourceIndex];
 
   if (!source) {
@@ -91,6 +102,7 @@ export async function checkVideoSourceAvailability(
   }
 
   try {
+    /** 请求 CMS 列表接口（通过 CORS 代理） */
     const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout });
     if (data && Array.isArray(data.list)) {
       return { index: sourceIndex, name: source.name, available: true };
@@ -213,6 +225,7 @@ function mapVideoItem(item: CMSVideoItem): Video {
 async function resolvePlaySources(
   api: string,
   item: CMSVideoItem,
+  signal?: AbortSignal,
 ): Promise<{ sources: Video['sources']; episodes: Video['episodes'] | undefined; item: CMSVideoItem }> {
   // 1) 先尝试直接解析搜索结果中的 vod_play_url
   if (item.vod_play_url) {
@@ -224,7 +237,7 @@ async function resolvePlaySources(
   // 2) 解析为空时，通过详情接口获取完整 vod_play_url
   try {
     const detailUrl = `${api}?ac=videolist&ids=${item.vod_id}`;
-    const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
+    const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal });
     const detailItem = detailData.list?.[0];
     if (detailItem) {
       const parsed = parsePlaySources(detailItem.vod_play_url || '', getCmsVodType(detailItem));
@@ -234,17 +247,31 @@ async function resolvePlaySources(
   return { sources: [], episodes: undefined, item };
 }
 
-/** 从指定视频源获取视频列表 */
+/**
+ * 从指定视频源获取视频列表
+ *
+ * 调用 CMS API 的列表接口，获取视频源的第一页视频列表。
+ * 用于设置页的视频源预览和源检测。
+ *
+ * @param sourceIndex - 视频源配置索引
+ * @returns 视频列表和源信息，或错误信息
+ */
 export async function fetchVideosBySource(sourceIndex: number): Promise<{
+  /** 视频列表 */
   videos: Video[];
+  /** 源信息（索引和名称） */
   sourceInfo?: { index: number; name: string };
+  /** 错误信息（请求失败时） */
   error?: string;
 }> {
+  /** 获取所有视频源配置 */
   const sources = await getVideoSources();
+  /** 获取指定索引的视频源 */
   const source = sources[sourceIndex];
   if (!source) return { videos: [], error: '未找到配置的视频源' };
 
   try {
+    /** 请求 CMS 列表接口（15 秒超时） */
     const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000 });
     if (data.list && Array.isArray(data.list)) {
       return {
@@ -269,20 +296,40 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
 }
 
 /** 获取单个视频的详情信息（含播放源和分集） */
-export async function fetchVideoDetail(sourceIndex: number, videoId: string): Promise<Video | null> {
+/**
+ * 从指定 CMS 源获取视频详情
+ *
+ * 通过 CMS API 的 ac=videolist&ids= 接口获取视频详情，
+ * 包括播放源（sources）和集数列表（episodes）。
+ *
+ * @param sourceIndex - CMS 源配置索引（在 video-sources.json 中的位置）
+ * @param videoId - CMS 源的视频 ID（vod_id）
+ * @param signal - AbortSignal，用于取消请求（离开页面时调用）
+ * @returns 视频数据，包含 sources 和 episodes；请求失败或被取消时返回 null
+ */
+export async function fetchVideoDetail(sourceIndex: number, videoId: string, signal?: AbortSignal): Promise<Video | null> {
+  /** 获取所有 CMS 源配置 */
   const sources = await getVideoSources();
+  /** 获取指定索引的 CMS 源 */
   const source = sources[sourceIndex];
   if (!source) return null;
 
   try {
+    /** CMS 详情接口 URL */
     const detailUrl = `${source.api}?ac=videolist&ids=${videoId}`;
-    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true });
+    /** 请求 CMS 详情接口（传递 signal 支持取消） */
+    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal });
+    // 请求完成后检查是否已取消
+    if (signal?.aborted) return null;
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
       const item = data.list[0];
+      /** 解析播放源和集数 */
       const { sources: playSources, episodes } = parsePlaySources(item.vod_play_url || '', getCmsVodType(item));
       return { ...mapVideoItem(item), sources: playSources, episodes };
     }
   } catch (error) {
+    // 请求被取消时静默返回 null，不打印错误日志
+    if (signal?.aborted) return null;
     console.warn(`从 ${source.name} 获取视频详情失败:`, error);
   }
   return null;
@@ -301,12 +348,16 @@ export async function searchVideoFromMultipleSources(
   sourceIndices: number[],
   title: string,
   _year?: number,
+  signal?: AbortSignal,
 ): Promise<VideoDetailResult[]> {
   const sources = await getVideoSources();
   const results: VideoDetailResult[] = [];
   const searchTerm = title;
 
   for (const index of sourceIndices) {
+    // 检查是否已取消
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
     const source = sources[index];
     if (!source) {
       results.push({ sourceIndex: index, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' });
@@ -315,7 +366,7 @@ export async function searchVideoFromMultipleSources(
 
     try {
       const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
       if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
         results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' });
         continue;
@@ -329,7 +380,7 @@ export async function searchVideoFromMultipleSources(
         results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' });
         continue;
       }
-      const resolved = await resolvePlaySources(source.api, target);
+      const resolved = await resolvePlaySources(source.api, target, signal);
       results.push({
         sourceIndex: index,
         sourceId: source.id,
@@ -337,6 +388,7 @@ export async function searchVideoFromMultipleSources(
         video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
       });
     } catch (error) {
+      if (signal?.aborted) throw error;
       const message = error instanceof Error ? error.message : String(error);
       results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' });
     }
@@ -345,33 +397,54 @@ export async function searchVideoFromMultipleSources(
   return results;
 }
 
-/** 在指定的单个视频源中搜索视频 */
+/**
+ * 在指定的单个 CMS 源中搜索视频
+ *
+ * 通过 CMS API 的 ac=videolist&wd= 接口搜索视频，
+ * 支持模糊匹配标题，返回最匹配的视频结果。
+ *
+ * @param sourceIndex - CMS 源配置索引
+ * @param title - 搜索标题（视频名称）
+ * @param _year - 年份（当前未使用，预留）
+ * @param signal - AbortSignal，用于取消请求
+ * @returns 搜索结果，包含视频数据或错误信息
+ */
 export async function searchVideoFromSingleSource(
   sourceIndex: number,
   title: string,
   _year?: number,
+  signal?: AbortSignal,
 ): Promise<VideoDetailResult> {
+  /** 获取所有 CMS 源配置 */
   const sources = await getVideoSources();
+  /** 获取指定索引的 CMS 源 */
   const source = sources[sourceIndex];
   if (!source) {
     return { sourceIndex, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' };
   }
 
   try {
+    /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+    /** 请求 CMS 搜索接口（传递 signal 支持取消） */
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+    // 请求完成后检查是否已取消
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
+    // 模糊匹配标题：完全匹配 > 包含关系
     const match = data.list.find((item: CMSVideoItem) => {
       const t = item.vod_name || '';
       return t === title || t.includes(title) || title.includes(t);
     });
+    /** 匹配到的视频（优先精确匹配，否则取第一条） */
     const target = match || data.list[0];
     if (!target) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
-    const resolved = await resolvePlaySources(source.api, target);
+    /** 解析播放源和集数（传递 signal 支持取消） */
+    const resolved = await resolvePlaySources(source.api, target, signal);
     return {
       sourceIndex,
       sourceId: source.id,
@@ -379,6 +452,7 @@ export async function searchVideoFromSingleSource(
       video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
     };
   } catch (error) {
+    if (signal?.aborted) throw error;
     const message = error instanceof Error ? error.message : String(error);
     return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' };
   }
@@ -488,42 +562,59 @@ export interface SeasonSearchResult {
 }
 
 /**
- * 搜索 CMS 源并返回按季分组的结果。
+ * 搜索 CMS 源并返回按季分组的结果
+ *
  * CMS 采集站把每季存为独立 vod 条目（如"超人前传第二季"），
  * 本函数搜索标题后将结果按季号映射，切换选季时无需重新调用 API。
+ *
+ * @param sourceIndex - CMS 源配置索引
+ * @param title - 搜索标题（剧集名称，不含季号）
+ * @param _year - 年份（当前未使用，预留）
+ * @param signal - AbortSignal，用于取消请求
+ * @returns 按季分组的搜索结果
  */
 export async function searchVideoSeasonsFromSingleSource(
   sourceIndex: number,
   title: string,
   _year?: number,
+  signal?: AbortSignal,
 ): Promise<SeasonSearchResult> {
+  /** 获取所有 CMS 源配置 */
   const sources = await getVideoSources();
+  /** 获取指定索引的 CMS 源 */
   const source = sources[sourceIndex];
   if (!source) {
     return { sourceIndex, sourceId: '', sourceName: '未知', seasons: new Map(), error: '源配置不存在' };
   }
 
   try {
+    /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+    /** 请求 CMS 搜索接口（传递 signal 支持取消） */
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+    // 请求完成后检查是否已取消
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: '未找到匹配资源' };
     }
 
+    /** 季号 → Video 映射（用于切换选季时快速查找） */
     const seasons = new Map<number, Video>();
     for (const item of data.list) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const vodName = item.vod_name ?? '';
       const seasonNumber = extractSeasonNumber(vodName);
       if (seasonNumber === undefined) continue;
       if (seasons.has(seasonNumber)) continue;
 
       // 先尝试解析搜索结果，若为空再通过详情接口回退
-      const resolved = await resolvePlaySources(source.api, item);
+      const resolved = await resolvePlaySources(source.api, item, signal);
       seasons.set(seasonNumber, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
     }
 
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };
   } catch (error) {
+    if (signal?.aborted) throw error;
     const message = error instanceof Error ? error.message : String(error);
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: message || '请求失败' };
   }

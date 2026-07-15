@@ -10,42 +10,95 @@ import type { AudioTrack } from '../adapters/PlayerAdapter';
 import { useSkipLogic } from './useSkipLogic';
 import { useProgressRestore } from './useProgressRestore';
 
+/**
+ * 播放器核心 Hook
+ *
+ * 管理播放器的核心功能：
+ * - 视频源适配器的创建和销毁
+ * - 播放/暂停/音量/倍速控制
+ * - 播放进度上报
+ * - 片头/片尾跳过
+ * - 播放进度恢复
+ * - 清晰度切换
+ *
+ * @param url - 视频源 URL
+ * @param type - 视频源类型（m3u8/mp4/mpd 等）
+ * @param videoId - TMDB 视频 ID
+ * @param vodId - CMS 源的 vod_id
+ * @param episodeUrl - 当前播放集的 URL（用于历史记录匹配）
+ * @param cmsSourceId - CMS 源配置 ID（用于历史记录匹配）
+ * @param skipHistory - 是否跳过历史记录恢复
+ * @param autoPlay - 是否自动播放
+ * @param decoderMode - 解码模式（硬件/软件）
+ * @param retryCount - 重试次数（用于错误恢复）
+ */
 interface UsePlayerCoreOptions {
+  /** 视频源 URL */
   url: string;
+  /** 视频源类型（m3u8/mp4/mpd 等） */
   type: SourceType;
+  /** TMDB 视频 ID */
   videoId?: string;
+  /** CMS 源的 vod_id */
   vodId?: string;
+  /** 当前播放集的 URL（用于历史记录匹配） */
   episodeUrl?: string;
+  /** CMS 源配置 ID（用于历史记录匹配） */
+  cmsSourceId?: string;
+  /** 是否跳过历史记录恢复（用于"从头播放"场景） */
   skipHistory?: boolean;
+  /** 是否自动播放 */
   autoPlay?: boolean;
+  /** 解码模式（硬件/软件） */
   decoderMode: DecoderMode;
+  /** 重试次数（用于错误恢复） */
   retryCount?: number;
+  /** 播放进度回调（ currentTime, duration ） */
   onProgress?: (progress: number, duration: number) => void;
+  /** 播放结束回调 */
   onEnded?: () => void;
+  /** 开始播放回调 */
   onPlay?: () => void;
+  /** 暂停播放回调 */
   onPause?: () => void;
+  /** 播放错误回调 */
   onError?: (error: Error) => void;
+  /** 跳过片头回调 */
   onSkipIntro?: () => void;
+  /** 跳过片尾回调 */
   onSkipOutro?: () => void;
 }
 
+/**
+ * 播放器核心 Hook
+ * 管理视频播放器的核心功能：适配器、控制、进度、跳过、恢复
+ */
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, vodId, episodeUrl, skipHistory = false, autoPlay = false, decoderMode, retryCount,
+    url, type, videoId, vodId, episodeUrl, cmsSourceId, skipHistory = false, autoPlay = false, decoderMode, retryCount,
     onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro,
   } = options;
 
+  /** video 元素的 ref */
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  /** 播放器适配器的 ref（HLS/DASH/Native） */
   const adapterRef = useRef<IPlayerAdapter | null>(null);
+  /** 切换播放/暂停的防抖定时器 */
   const togglePlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** 当前音量（从 Zustand store 获取） */
   const volume = usePlayerStore(s => s.volume);
+  /** 当前播放倍速（从 Zustand store 获取） */
   const playbackRate = usePlayerStore(s => s.playbackRate);
+  /** 设置当前清晰度级别 */
   const setCurrentLevel = usePlayerStore(s => s.setCurrentLevel);
+  /** 设置清晰度级别列表 */
   const setLevels = usePlayerStore(s => s.setLevels);
 
+  /** 片头/片尾跳过逻辑 */
   const { checkSkipIntro, checkSkipOutro, reset: resetSkip } = useSkipLogic({ onSkipIntro, onSkipOutro, onEnded });
-  const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, skipHistory });
+  /** 播放进度恢复逻辑 */
+  const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, cmsSourceId, skipHistory });
 
   const initAdapter = useCallback(() => {
     if (adapterRef.current) {
@@ -272,6 +325,21 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     // 内部用 usePlayerStore.getState() 读取最新 actions 与 props 闭包，避免 effect 频繁重建
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, type, decoderMode, retryCount]);
+
+  /**
+   * episodeUrl 变化时重新恢复进度
+   *
+   * 场景：首次加载时 currentSrc 初始为 null，episodeUrl 也为 null，
+   * 当 loadVideo 设置 currentSrc 后，episodeUrl 才有值。
+   * 此 effect 监听 episodeUrl 变化，确保在 video 元素就绪后恢复进度。
+   *
+   * 条件：episodeUrl 有值 + video 元素存在 + 元数据已加载（readyState >= 1）
+   */
+  useEffect(() => {
+    if (episodeUrl && videoRef.current && videoRef.current.readyState >= 1) {
+      loadProgress(videoRef);
+    }
+  }, [episodeUrl, loadProgress]);
 
   const play = useCallback(async () => {
     try {

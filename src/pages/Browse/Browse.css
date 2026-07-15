@@ -31,18 +31,16 @@
   padding: var(--space-sm);
 }
 
-/* ── 卡片模块视觉（桌面端 >=1024px） ───────────────── */
-@media (width >= 1024px) {
-  .browse-card--search,
-  .browse-card--results {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-  }
-  .browse-card--search {
-    padding: var(--space-sm);
-  }
+/* ── 卡片模块视觉 ───────────────── */
+.browse-card--search,
+.browse-card--results {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.browse-card--search {
+  padding: var(--space-sm);
 }
 
 /* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */

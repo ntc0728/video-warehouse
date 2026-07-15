@@ -26,6 +26,7 @@
   }
 }
 
+/* 批量操作按钮 */
 .batch-action-btn {
   display: inline-flex;
   gap: var(--space-xs);
@@ -51,6 +52,7 @@
   cursor: not-allowed;
 }
 
+/* 批量操作危险按钮（删除/清除） */
 .batch-action-btn--danger {
   background: rgba(255, 77, 79, 0.1);
   color: var(--color-error);
@@ -58,4 +60,12 @@
 
 .batch-action-btn--danger:hover:not(:disabled) {
   background: rgba(255, 77, 79, 0.18);
+}
+
+/* ── 移动端适配 ──────────────────────────────────────── */
+@media (width <= 767px) {
+  .batch-action-btn {
+    padding: 4px 10px;
+    font-size: var(--text-xs);
+  }
 }

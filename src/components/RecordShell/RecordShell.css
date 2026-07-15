@@ -103,15 +103,16 @@
   border-color: var(--color-border);
 }
 
+/* 编辑按钮激活态（批量管理模式） */
 .record-edit-btn--active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 
 .record-edit-btn--active:hover {
-  background: color-mix(in srgb, var(--color-primary) 90%, black);
-  color: #fff;
+  background: var(--color-primary-hover);
+  color: var(--color-text-inverse);
 }
 
 /* ── 折叠态筛选按钮（仅移动折叠时显示） ─────────────────────────────────── */
