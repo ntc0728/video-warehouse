@@ -29,43 +29,42 @@
      surface 背景 + 1px border(--color-border-light) + radius-lg + shadow-sm
    模块之间间距统一为 var(--space-sm)。
    仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
-@media (width >= 1024px) {
-  /* 桌面端 hero 自带底部 space-sm 间距，首行不再额外留白 */
-  .home-rows {
-    padding-top: 0;
-  }
 
-  .home-page .hero-banner {
-    /* 保留原有圆角；增加 surface 背景框 + 阴影 + 模块间距 */
-    margin-bottom: var(--space-sm);
-    padding: var(--space-sm);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    /* 覆盖基础 width:100%，让 banner 自然填充 card padding 区域，右侧 padding 可见 */
-    width: auto;
-  }
+/* hero 自带底部 space-sm 间距，首行不再额外留白 */
+.home-rows {
+  padding-top: 0;
+}
 
-  /* 分类快捷入口 → 卡片模块（桌面端被 HomeSidebar 接管而隐藏，移动/平板可见） */
-  .home-page .category-quick-access {
-    margin: 0 var(--space-sm) var(--space-sm);
-    padding: var(--space-sm) 0;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-  }
+.home-page .hero-banner {
+  /* 保留原有圆角；增加 surface 背景框 + 阴影 + 模块间距 */
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  /* 覆盖基础 width:100%，让 banner 自然填充 card padding 区域，右侧 padding 可见 */
+  width: auto;
+}
 
-  /* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
-  .home-page .tmdb-movierow {
-    margin-bottom: var(--space-sm);
-    padding: var(--space-sm);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-  }
+/* 分类快捷入口 → 卡片模块 */
+.home-page .category-quick-access {
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
+.home-page .tmdb-movierow {
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Empty / Error ──────────────────────────────────── */

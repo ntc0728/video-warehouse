@@ -169,33 +169,62 @@ export default function PlayerPage() {
 
 
   // ── 初始加载：读取视频数据 ──────────────────────────────
+  /** 上一次的视频 ID，用于检测 id 变化 */
   const prevIdRef = useRef(id);
   useEffect(() => {
+    // 取消上一次的请求
     abortRef.current?.abort();
+    /** 本次请求的 AbortController，用于取消请求 */
     const controller = new AbortController();
     abortRef.current = controller;
+
     // 仅 id 变化时重置加载状态，HMR 重挂载时不重置
     if (prevIdRef.current !== id) {
+      // 重置加载状态
       setHasLoadedOnce(false);
       setTmdbReady(false);
+      // 重置视频相关状态，避免 Keep-Alive 下残留上一个视频的数据
+      setVideo(null);
+      setCurrentSrc(null);
+      setLoadError(null);
+      setLocalEpisodeId(undefined);
+      setTmdbDetail(null);
+      setTmdbMediaType('movie');
+      setSelectedSeason(1);
+      // 重置 ref，避免残留上一个视频的 CMS 源信息
+      cmsSourceIdRef.current = undefined;
+      cmsSourceNameRef.current = undefined;
+      currentSourceNameRef.current = undefined;
+      historyRecordRef.current = undefined;
       prevIdRef.current = id;
     }
 
+    /**
+     * 加载视频数据
+     * 1. 从历史记录恢复 CMS 源
+     * 2. 从缓存或 API 获取视频数据
+     * 3. 设置播放源和选集
+     */
     const loadVideo = async () => {
       if (!id) return;
       videoCache.delete(id);
       setLoadError(null);
 
+      /** 当前使用的 CMS 源索引（优先级：routeSourceIndex > videoSourceIndex） */
       let activeSourceIndex = routeSourceIndex ?? videoSourceIndex;
+      /** 历史记录（用于恢复 CMS 源和选集） */
       let historyRecord: HistoryRecord | undefined;
       if (!skipHistory) {
         try {
           const { getHistory } = await import('@/services/database');
           const history = await getHistory();
+          // 按 videoId 查找历史记录（getHistory 返回按 updatedAt 倒序，所以找到的是最新的）
           historyRecord = history.find(h => h.videoId === id);
-          if (historyRecord?.cmsSourceId || historyRecord?.cmsSourceName) {
+          // 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的源
+          if (routeSourceIndex === undefined && (historyRecord?.cmsSourceId || historyRecord?.cmsSourceName)) {
             const { getVideoSources } = await import('@/services/sourceService');
             const allSrc = await getVideoSources();
+            // 查找历史记录中 CMS 源的索引
             const matchedIdx = historyRecord!.cmsSourceId
               ? allSrc.findIndex(s => s.id === historyRecord!.cmsSourceId)
               : allSrc.findIndex(s => s.name === historyRecord!.cmsSourceName);
@@ -206,42 +235,57 @@ export default function PlayerPage() {
       historyRecordRef.current = historyRecord;
 
       try {
+        /** 从缓存获取视频数据 */
         let foundVideo: Video | null = videoCache.get(id) ?? null;
 
         if (foundVideo && currentSourceIndex !== activeSourceIndex && !id.startsWith('tmdb-')) {
           const svc = await import('@/services/videoService');
-          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id);
+          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
           if (detailVideo) foundVideo = detailVideo;
         }
 
         if (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes) {
           if (!id.startsWith('tmdb-')) {
             const svc = await import('@/services/videoService');
-            const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id);
+            const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
             if (detailVideo) foundVideo = detailVideo;
           }
         }
 
         if (!foundVideo && !id.startsWith('tmdb-')) {
           const svc = await import('@/services/videoService');
-          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id);
+          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
           if (detailVideo) foundVideo = detailVideo;
         }
 
         if (controller.signal.aborted) return;
 
         if (foundVideo) {
+          // 缓存视频数据并更新状态
           videoCache.set(id, foundVideo);
           setVideo(foundVideo);
 
-          if (historyRecord?.cmsSourceId) cmsSourceIdRef.current = historyRecord.cmsSourceId;
-          if (historyRecord?.cmsSourceName) cmsSourceNameRef.current = historyRecord.cmsSourceName;
+          /**
+           * cmsSourceIdRef 保护逻辑
+           *
+           * 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的 CMS 源信息。
+           * 原因：用户从详情页点击具体 CMS 源播放时，routeSourceIndex 已指定，
+           * 不应被历史记录中的源覆盖。
+           */
+          if (routeSourceIndex === undefined) {
+            if (historyRecord?.cmsSourceId) cmsSourceIdRef.current = historyRecord.cmsSourceId;
+            if (historyRecord?.cmsSourceName) cmsSourceNameRef.current = historyRecord.cmsSourceName;
+          }
 
+          /** 当前可用的播放源列表 */
           let sources = foundVideo.sources;
+          /** 选中的集（从历史记录恢复） */
           let selectedEpisode: Episode | null = null;
 
+          // 剧集类型：从历史记录恢复选集
           if (foundVideo.episodes && foundVideo.episodes.length > 0) {
             if (historyRecord?.episodeUrl) {
+              // 按 episodeUrl 查找对应的集
               selectedEpisode = foundVideo.episodes.find(ep =>
                 ep.url === historyRecord.episodeUrl ||
                 ep.sources.some(s => s.url === historyRecord.episodeUrl)
@@ -293,7 +337,7 @@ export default function PlayerPage() {
       resetPlayer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, videoSourceIndex, currentSourceIndex]);
+  }, [id, routeSourceIndex, videoSourceIndex, currentSourceIndex]);
 
   // TMDB 就绪后设置 hasLoadedOnce，取消全屏 loading
   useEffect(() => {
@@ -601,14 +645,17 @@ export default function PlayerPage() {
         <div className="player-main">
           <div className="player-video-area">
             <div className="player-empty-state player-empty-state--inline">
+              <div className="up-player-header up-player-header-visible">
+                <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
+                  <ArrowLeft size={18} />
+                  <span>返回</span>
+                </button>
+                <span className="up-header-title">{title || v?.title || ''}</span>
+              </div>
               <div className="player-empty-content">
                 <VideoOff />
                 <p className="player-empty-title">暂无数据</p>
                 <p className="player-empty-sub">请尝试切换其他 CMS 源</p>
-                <button className="player-empty-back" onClick={handleBack}>
-                  <ArrowLeft size={14} />
-                  <span>返回</span>
-                </button>
               </div>
             </div>
           </div>
@@ -738,6 +785,7 @@ export default function PlayerPage() {
             videoId={id}
             vodId={id?.startsWith('tmdb-') ? undefined : id}
             episodeUrl={currentSrc.url}
+            cmsSourceId={cmsSourceIdRef.current}
             episodeLabel={episodeLabel}
             skipHistory={skipHistory}
             onProgress={handleProgress}

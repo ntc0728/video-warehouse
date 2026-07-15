@@ -147,19 +147,16 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 项目级统一视觉风格：每个功能区块作为独立「卡片模块」，样式镜像设置页 section：
 - 背景 `var(--color-surface)` + `1px solid var(--color-border-light)` 边框 + `var(--radius-lg)` 圆角 + `var(--shadow-sm)` 阴影
 - 模块（卡片）之间间距统一 `var(--space-sm)`
-- **仅桌面端（≥1024px）启用**；移动端（<1024px，含平板 768–1023）保持原始全宽布局、不被卡片化波及（约定：新增同类卡片样式默认放进 `@media (width >= 1024px)`，不要写在媒体块之外）
+- **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
 
 应用位置：
 - 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
-- 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css` 内 `@media (width >= 1024px)`（`.home-page` 作用域）
-- 浏览页双卡片结构 — `Browse.css` 内 `@media (width >= 1024px)`：
+- 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
+- 浏览页双卡片结构 — `Browse.css`：
   - Card 1（搜索区）：搜索 tabs + SearchBox + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压
   - Card 2（结果区）：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵，`flex: 1 1 0` 填充剩余空间
-- 页面级 `AppLoading` 内联模式 — `AppLoading.css` 内 `@media (width >= 1024px)`
-- 收藏/历史 `RecordShell` 内部筛选栏 — 横向卡片栏（见上）
-- 收藏/历史 `RecordShell` `.record-main` — 右侧内容区卡片（`RecordShell.css` 内 `@media (width >= 768px)`）
-- IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css` 内 `@media (width >= 1024px)`
-- 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css` 内 `@media (width >= 1024px)`
+- IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css`
+- 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css`
 - 详情页 `detail-hero` — 去掉负 margin，受 page-padding 约束（`Detail.css`）
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
