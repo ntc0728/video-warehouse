@@ -27,7 +27,7 @@
   background-size: cover;
   background-position: center top;
   opacity: 1;
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.5s var(--ease-standard);
   cursor: pointer;
 }
 
@@ -40,7 +40,7 @@
 .tmdb-trending-slide--entering {
   z-index: 2;
   opacity: 1;
-  animation: slideFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideFadeIn 0.5s var(--ease-standard);
 }
 
 @keyframes slideFadeIn {

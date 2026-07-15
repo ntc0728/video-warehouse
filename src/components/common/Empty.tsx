@@ -33,7 +33,7 @@ export default function Empty({
       />
       {onRetry && (
         <button
-          className="empty-retry-btn"
+          className="retry-btn"
           onClick={onRetry}
           disabled={isRetrying}
         >

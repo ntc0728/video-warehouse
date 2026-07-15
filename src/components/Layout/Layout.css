@@ -9,7 +9,7 @@
   height: 100%;
   background-color: var(--color-surface);
   overflow: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.3s var(--ease-standard), min-width 0.3s var(--ease-standard), background-color 0.4s var(--ease-standard), border-color 0.4s var(--ease-standard);
   border-right: 1px solid var(--color-border-light);
 }
 
@@ -108,7 +108,7 @@
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-secondary);
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s var(--ease-standard), transform 0.15s var(--ease-standard);
   cursor: pointer;
 }
 
@@ -128,7 +128,7 @@
   padding: var(--space-md) var(--space-lg);
   color: var(--color-text-secondary);
   text-decoration: none;
-  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.25s var(--ease-standard), color 0.25s var(--ease-standard);
   cursor: pointer;
 }
 
@@ -184,7 +184,7 @@
   left: 0;
   z-index: 50;
   background-color: var(--color-surface);
-  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.4s var(--ease-standard);
   border-top: 1px solid var(--color-border-light);
 }
 
@@ -214,16 +214,11 @@
   z-index: 100;
   height: 100dvh;
   transform: translateX(-100%);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s var(--ease-standard);
 }
 
 .sidebar-container--mobile.sidebar-container--open {
   transform: translateX(0);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* ── Desktop (>=1024px): 主内容区让出固定左侧栏空间 ───────────── */

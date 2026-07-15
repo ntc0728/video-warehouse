@@ -41,15 +41,6 @@
   height: var(--space-md);
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 .skeleton-grid {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 3), minmax(0, 1fr));

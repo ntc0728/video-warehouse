@@ -14,7 +14,8 @@
 }
 
 .detail-page--loading {
-  min-height: 50vh;
+  justify-content: center;
+  align-items: center;
 }
 
 /* ── Hero 区 ───────────────────────────────────── */
@@ -1098,56 +1099,6 @@
 }
 .detail-state span {
   font-size: var(--text-xs);
-}
-
-.detail-retry {
-  display: inline-flex;
-  gap: var(--space-xs);
-  align-items: center;
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-primary);
-  font-size: var(--text-sm);
-  transition: all 0.15s;
-  cursor: pointer;
-}
-
-.detail-retry:hover {
-  background: var(--color-primary-light);
-}
-
-.detail-retry--inline {
-  align-self: center;
-  margin-top: 0;
-}
-
-.detail-retry-btn {
-  display: inline-flex;
-  gap: var(--space-xs);
-  align-items: center;
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-primary);
-  font-size: var(--text-sm);
-  transition: all 0.15s;
-  cursor: pointer;
-}
-.detail-retry-btn:hover {
-  background: var(--color-primary-light);
-}
-.detail-retry-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.detail-retry-btn--inline {
-  align-self: center;
-  margin-top: 0;
 }
 
 /* ── 季信息 ────────────────────────────────────── */

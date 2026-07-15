@@ -132,12 +132,12 @@ body {
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: background-color 0.3s var(--ease-standard),
+              color 0.3s var(--ease-standard),
+              border-color 0.3s var(--ease-standard),
+              box-shadow 0.3s var(--ease-standard),
+              fill 0.3s var(--ease-standard),
+              stroke 0.3s var(--ease-standard) !important;
 }
 
 /* ── 全局按钮点击反馈 ────────────────────────────────
@@ -229,29 +229,41 @@ a[role="button"]:active:not(:disabled),
   opacity: 0.6;
 }
 
-.empty-retry-btn {
+/* ── 通用重试按钮（Empty/Detail/NetworkError 共用） ────────────── */
+.retry-btn {
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  margin-top: var(--space-md);
+  margin-top: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   border: none;
   border-radius: var(--radius-full);
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: background-color 0.2s, opacity 0.2s;
   cursor: pointer;
 }
 
-.empty-retry-btn:hover:not(:disabled) {
+.retry-btn:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
 }
 
-.empty-retry-btn:disabled {
+.retry-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* 描边变体（Detail 页 CMS 源获取） */
+.retry-btn--outlined {
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.retry-btn--outlined:hover:not(:disabled) {
+  background: var(--color-primary-light);
 }
 
 .empty-retry-spin {
@@ -278,7 +290,7 @@ a[role="button"]:active:not(:disabled),
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-text);
-  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.25s var(--ease-standard), transform 0.2s var(--ease-standard);
   cursor: pointer;
 }
 
@@ -319,7 +331,7 @@ a[role="button"]:active:not(:disabled),
   inset: 0;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.2s var(--ease-standard);
 }
 
 .modal-content {
@@ -468,7 +480,7 @@ main {
   max-height: 100dvh;
   padding: var(--space-lg) var(--space-md) var(--space-lg);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modalSlideUp 0.3s var(--ease-standard);
 }
 
   .modal-close {
@@ -486,7 +498,7 @@ main {
   padding: var(--space-lg);
   border-radius: var(--radius-lg);
   transform: translate(-50%, -50%);
-  animation: modalFadeScale 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modalFadeScale 0.25s var(--ease-standard);
 }
 
   .modal-close {
@@ -617,12 +629,20 @@ main {
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
 .record-card {
   position: relative;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s var(--ease-standard);
 }
 
 .record-card--selected {
   border: var(--border-width-md, 2px) solid var(--color-primary);
-  background: var(--color-primary-soft, rgba(59, 130, 246, 0.1));
+}
+
+.record-card--selected::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .record-card__check {
@@ -682,7 +702,7 @@ main {
   text-overflow: ellipsis;
   opacity: 0.85;
   pointer-events: auto;
-  transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.25s var(--ease-standard);
 }
 
 

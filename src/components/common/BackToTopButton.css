@@ -30,7 +30,7 @@
   opacity: 0;
   transform: translateY(20px) scale(0.95);
   transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s var(--ease-standard),
     box-shadow 0.2s ease,
     background 0.2s ease,
     opacity 0.25s ease;
@@ -47,7 +47,7 @@
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
-  animation: back-to-top-button-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: back-to-top-button-slide-in 0.25s var(--ease-standard) both;
 }
 
 .back-to-top-button--exiting {
@@ -164,5 +164,107 @@
   100% {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EditModeButton — 编辑按钮（常驻显示，位于返回顶部按钮上方）
+   ═══════════════════════════════════════════════════════════════ */
+
+.edit-mode-button {
+  position: fixed;
+  right: var(--space-lg);
+  bottom: calc(var(--space-2xl) + var(--space-2xl) + var(--space-sm));
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 90%);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px) saturate(180%);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 18%),
+    0 1px 3px rgb(0 0 0 / 12%);
+}
+
+.edit-mode-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 20px rgb(0 0 0 / 26%),
+    0 2px 6px rgb(0 0 0 / 18%);
+}
+
+.edit-mode-button:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.edit-mode-button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--focus-ring),
+    0 4px 12px rgb(0 0 0 / 18%);
+}
+
+.edit-mode-button--active {
+  background: var(--color-primary);
+  color: #000;
+  border-color: var(--color-primary);
+}
+
+.edit-mode-button--active:hover {
+  background: color-mix(in srgb, var(--color-primary) 90%, black);
+}
+
+.edit-mode-button--active:active {
+  background: var(--color-primary);
+}
+
+/* Dark theme */
+[data-theme="dark"] .edit-mode-button {
+  border-color: var(--color-border);
+  background: rgb(20 20 20 / 80%);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 50%),
+    0 1px 3px rgb(0 0 0 / 40%);
+}
+
+[data-theme="dark"] .edit-mode-button:hover {
+  box-shadow:
+    0 8px 20px rgb(0 0 0 / 60%),
+    0 2px 6px rgb(0 0 0 / 50%);
+}
+
+[data-theme="dark"] .edit-mode-button--active {
+  background: var(--color-primary);
+}
+
+/* Mobile */
+@media (width <= 767px) {
+  .edit-mode-button {
+    right: var(--space-md);
+    bottom: calc(var(--space-lg) + calc(var(--space-2xl) * 1.5) + var(--space-sm));
+    width: calc(var(--space-2xl) * 1.5);
+    height: calc(var(--space-2xl) * 1.5);
+  }
+  [data-device="app"] .edit-mode-button {
+    bottom: calc(var(--layout-tabbar-height) + var(--space-lg) + calc(var(--space-2xl) * 1.5) + var(--space-sm));
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .edit-mode-button {
+    transition: none;
+  }
+  .edit-mode-button:hover,
+    .edit-mode-button:active {
+    transform: none;
   }
 }

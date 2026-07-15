@@ -177,17 +177,10 @@ export const useUserStore = create<UserState>()((set, get) => ({
    * 去重策略：vodId → videoId（兜底）
    */
   addHistory: (record) => {
-    // 1. 优先匹配：vodId
-    let existingIndex = record.vodId
-      ? get().history.findIndex((h) => h.vodId === record.vodId)
-      : -1;
-
-    // 2. 兜底匹配：仅 videoId
-    if (existingIndex < 0) {
-      existingIndex = get().history.findIndex(
-        (h) => h.videoId === record.videoId
-      );
-    }
+    // 统一按 videoId 去重（同一 TMDB 视频在不同 CMS 源不应创建多条记录）
+    const existingIndex = get().history.findIndex(
+      (h) => h.videoId === record.videoId
+    );
 
     if (existingIndex >= 0) {
       const updated = { ...get().history[existingIndex] };

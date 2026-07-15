@@ -67,7 +67,7 @@ export default function NetworkError({
 
       {onRetry && (
         <button
-          className="network-error-retry-btn"
+          className="retry-btn"
           onClick={onRetry}
           disabled={isLoading}
         >

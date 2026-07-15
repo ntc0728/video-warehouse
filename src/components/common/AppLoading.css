@@ -121,7 +121,7 @@
   background-size: 20px 20px;
   transform-origin: left;
   animation:
-    app-loading-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    app-loading-fill 1.5s var(--ease-standard) forwards,
     app-loading-stripes 0.75s linear infinite;
 }
 
@@ -260,9 +260,9 @@
     ═══════════════════════════════════════════════════════════════════ */
 html.theme-transitioning .app-loading,
 html.theme-transitioning .app-loading *:not(svg):not(path) {
-  transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: background-color 0.6s var(--ease-standard),
+              color 0.6s var(--ease-standard),
+              border-color 0.6s var(--ease-standard) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

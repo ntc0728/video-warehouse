@@ -15,61 +15,74 @@
 
 :root {
   /* ── Colors ─────────────────────────────────────────────────────────── */
+  /* 主色 — 按钮/链接/激活态/焦点环/进度条，暗色下反转为白 */
   --color-primary: #000;
-  --color-primary-hover: #333;
-  --color-primary-light: rgba(0, 0, 0, 0.05);
-  --color-primary-bg: rgba(0, 0, 0, 0.08);
-  --color-primary-shadow: rgba(0, 0, 0, 0.15);
-  --color-progress-stripe: rgba(255, 255, 255, 0.15);
-  --color-background: #f5f5f5;
-  --color-surface: #fff;
-  --color-surface-hover: rgba(0, 0, 0, 0.05);
-  --color-hover-bg: rgba(0, 0, 0, 0.05);
-  --color-surface-elevated: #fff;
-  --color-text: #000;
-  --color-text-secondary: #666;
-  --color-text-tertiary: #999;
-  --color-text-inverse: #fff;
-  --color-border: #d9d9d9;
-  --color-border-light: #e8e8e8;
-  --color-placeholder: #f5f5f5;
-  --color-placeholder-shimmer-a: #f0f0f0;
-  --color-placeholder-shimmer-b: #e6e6e6;
-  --color-tag-bg: #f5f5f5;
-  --color-favorite-bg: #f5f5f5;
-  --color-favorite-active-bg: #fff2e8;
-  --color-favorite-active: #fa8c16;
-  --color-page-btn-bg: #f5f5f5;
-  --color-page-btn-hover-bg: rgba(0, 0, 0, 0.05);
-  --color-page-info: #666;
-  --color-input-bg: #fff;
-  --color-input-border: #d9d9d9;
-  --color-tab-active-bg: #000;
-  --color-tab-active-text: #fff;
-  --color-tab-inactive-text: #a0a0a0;
-  --color-success: #52c41a;
-  --color-error: #ff4d4f;
-  --color-warning: #fa8c16;
-  --color-skeleton: #e8e8e8;
-  --color-skeleton-shine: #f5f5f5;
+  --color-primary-hover: #333;              /* primary hover 态 */
+  --color-primary-light: rgba(0, 0, 0, 0.05); /* 悬浮/选中背景色（tag hover、tooltip 背景） */
+  --color-primary-bg: rgba(0, 0, 0, 0.08);  /* 更深一级的 primary 背景（较少使用） */
+  --color-primary-shadow: rgba(0, 0, 0, 0.15); /* 激活 tag/chip 的投影色 */
+  --color-progress-stripe: rgba(255, 255, 255, 0.15); /* 进度条条纹高光 */
+  /* 页面/卡片/文字 — 三级灰阶体系 */
+  --color-background: #f5f5f5;             /* 页面底色 */
+  --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
+  --color-surface-hover: rgba(0, 0, 0, 0.05); /* 按钮/卡片 hover */
+  --color-hover-bg: rgba(0, 0, 0, 0.05);   /* 通用悬浮背景（与 surface-hover 同值） */
+  --color-surface-elevated: #fff;           /* 浮层背景（HelpTooltip/Popover） */
+  --color-text: #000;                      /* 主文字 */
+  --color-text-secondary: #666;            /* 次要文字 */
+  --color-text-tertiary: #999;             /* 辅助/占位文字 */
+  --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
+  --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
+  --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
+  /* 骨架屏 / 占位 — 两色交替扫光 */
+  --color-placeholder: #f5f5f5;            /* 骨架底色 */
+  --color-placeholder-shimmer-a: #f0f0f0;  /* 扫光起始色 */
+  --color-placeholder-shimmer-b: #e6e6e6;  /* 扫光终止色 */
+  /* 标签 / 收藏 / 分页 / 输入框 / Tab */
+  --color-tag-bg: #f5f5f5;                 /* 筛选 tag 背景 */
+  --color-favorite-bg: #f5f5f5;            /* 收藏按钮底色 */
+  --color-favorite-active-bg: #fff2e8;     /* 已收藏状态背景 */
+  --color-favorite-active: #fa8c16;        /* 已收藏图标色（橙色） */
+  --color-page-btn-bg: #f5f5f5;            /* 分页按钮背景 */
+  --color-page-btn-hover-bg: rgba(0, 0, 0, 0.05); /* 分页按钮 hover */
+  --color-page-info: #666;                 /* 分页"共N条"文字 */
+  --color-input-bg: #fff;                  /* 输入框背景 */
+  --color-input-border: #d9d9d9;           /* 输入框边框 */
+  --color-tab-active-bg: #000;             /* Tab 激活背景 */
+  --color-tab-active-text: #fff;           /* Tab 激活文字 */
+  --color-tab-inactive-text: #a0a0a0;      /* Tab 未激活文字 */
+  /* 语义色 — 状态反馈 */
+  --color-success: #52c41a;                /* 成功/可用 */
+  --color-error: #ff4d4f;                  /* 错误/不可用 */
+  --color-warning: #fa8c16;                /* 警告 */
+  --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
+  --color-info-hover: #4096ff;             /* 链接 hover 态 */
+  --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
+  /* 骨架屏动画 */
+  --color-skeleton: #e8e8e8;               /* 骨架底色（深于 placeholder） */
+  --color-skeleton-shine: #f5f5f5;         /* 骨架扫光高光 */
   /* 卡片级骨架/占位扫光时长：统一调慢，避免首页卡片闪烁过快（默认 3s，原 1.5s） */
   --card-shimmer-duration: 3s;
 
   /* ── Player overlay colors (always dark context) ────────────────────── */
-  --player-bg: #000;
-  --player-text: #fff;
-  --player-progress-bg: #fff;
-  --player-accent: #2d8cf0;
-  --player-overlay-bg: rgba(0, 0, 0, 0.6);
+  --player-bg: #000;                      /* 播放器底色 */
+  --player-text: #fff;                    /* 播放器文字 */
+  --player-progress-bg: #fff;             /* 进度条轨道（始终白色） */
+  --player-accent: #2d8cf0;               /* 进度条/控制按钮高亮色（蓝色） */
+  --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏/弹层半透明遮罩 */
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --shadow-focus: 0 0 0 3px var(--color-primary);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);    /* 卡片默认投影 */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);   /* 中等投影（弹窗） */
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);    /* 大投影（modal） */
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);   /* 超大投影（toast） */
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);  /* 轻量卡片投影（VideoCard/IPTV 等） */
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12); /* 卡片 hover 投影 */
+  --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（键盘导航） */
+
+  /* ── Easing ─────────────────────────────────────────────────────────── */
+  /* Material Design 标准缓动曲线，全项目 transition/animation 统一引用 */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
   --text-xs:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);     /* 12→13 */
@@ -107,19 +120,23 @@
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
   --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 封面/海报按钮 */
   --comp-tab-height:     clamp(28px, 1.6rem + 0.435vw, 44px);    /* 28→44 筛选/标签 tab */
-  --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 */
-  --comp-input-height:   clamp(40px, 2.284rem + 0.522vw, 58px);  /* 40→58 */
-  --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 */
-  --comp-thumb-size:     clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
-  --switch-track-height: clamp(18px, 1.081rem + 0.174vw, 24px);  /* 18→24 */
-  --switch-track-width:  clamp(32px, 1.891rem + 0.391vw, 48px);  /* 32→48 */
-  --switch-thumb-size:   clamp(14px, 0.789rem + 0.261vw, 24px);  /* 14→24 */
-  --switch-thumb-offset: clamp(16px, 0.947rem + 0.217vw, 24px);  /* 16→24 */
+  --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 圆形按钮（返回/收藏） */
+  --comp-input-height:   clamp(40px, 2.284rem + 0.522vw, 58px);  /* 40→58 输入框高度 */
+  --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 输入框最小宽度 */
+  --comp-thumb-size:     clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 滑块拖拽手柄 */
+  /* Switch 开关 */
+  --switch-track-height: clamp(18px, 1.081rem + 0.174vw, 24px);  /* 18→24 轨道高度 */
+  --switch-track-width:  clamp(32px, 1.891rem + 0.391vw, 48px);  /* 32→48 轨道宽度 */
+  --switch-thumb-size:   clamp(14px, 0.789rem + 0.261vw, 24px);  /* 14→24 滑块尺寸 */
+  --switch-thumb-offset: clamp(16px, 0.947rem + 0.217vw, 24px);  /* 16→24 滑块偏移量 */
+  /* 音量滑块 */
   --vol-track-width:     clamp(3px, 0.158rem + 0.043vw, 4px);    /* 3→4   音量滑块轨道 */
   --vol-track-radius:    clamp(1px, 0.053rem + 0.022vw, 2px);    /* 1→2   音量滑块圆角 */
-  --radio-size:          clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 */
-  --radio-dot-size:      clamp(6px,  0.316rem + 0.217vw, 14px);  /* 6→14 */
-  --badge-size:          clamp(10px, 0.526rem + 0.348vw, 22px);  /* 10→22 */
+  /* 单选按钮 */
+  --radio-size:          clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 外圈尺寸 */
+  --radio-dot-size:      clamp(6px,  0.316rem + 0.217vw, 14px);  /* 6→14 内圈尺寸 */
+  /* 徽章 */
+  --badge-size:          clamp(10px, 0.526rem + 0.348vw, 22px);  /* 10→22 频道可用性徽章 */
 
   /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
   --radius-sm: clamp(3px,  0.168rem + 0.043vw, 5px);    /* 3→5   */
@@ -131,24 +148,26 @@
   --grid-gap: clamp(12px, 0.673rem + 0.348vw, 24px);    /* 12→24 */
 
   /* ── Focus Ring ──────────────────────────────────────────────────────── */
+  /* 双层焦点环：内层底色隔离，外层 primary 色 */
   --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
 
   /* ── Safe Area ───────────────────────────────────────────────────────── */
+  /* TV 端安全边距（防止过扫） */
   --safe-area-x: 0px;
   --safe-area-y: 0px;
 
   /* ── Breakpoints (for JS reference, not used in @media) ──────────────── */
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1920px;
-  --breakpoint-3xl: 2560px;
-  --breakpoint-4xl: 3840px;
+  --breakpoint-sm: 640px;     /* 小屏 */
+  --breakpoint-md: 768px;     /* 平板 */
+  --breakpoint-lg: 1024px;    /* 桌面 */
+  --breakpoint-xl: 1280px;    /* 大桌面 */
+  --breakpoint-2xl: 1920px;   /* 2K */
+  --breakpoint-3xl: 2560px;   /* 3K/TV */
+  --breakpoint-4xl: 3840px;   /* 4K */
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
-  --layout-loading-min-height: 300px;
-  --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px);
+  --layout-loading-min-height: 300px;     /* 加载态最小高度（AppLoading/empty-state） */
+  --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px); /* 弹窗最大宽度 */
   /* IPTV OSD 控制栏最大宽度：30vw 系数让大屏涨幅更猛
      - 1024px → ~627px
      - 1440px → ~752px
@@ -156,46 +175,47 @@
      - 2560px → ~1088px
      - 3840px → clamp 1400px（TV 端通过 .up-platform-tv 进一步覆盖到 1600px） */
   --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
-  --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px);
-  --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px);
-  --layout-hero-height-mobile: 280px;
-  --layout-card-daily-width:   200px;
-  --layout-grid-min-col:       220px;
-  --layout-error-detail-height: 200px;
-  --layout-spinner-border:     3px;
-  --layout-perf-panel-min-w:   280px;
-  --layout-channel-num-w:      120px;
-  --layout-quality-badge-min-w: 84px;
-  --layout-vol-popup-w:        60px;
-  --layout-vol-slider-w:       180px;
-  --layout-player-vol-w:       80px;
-  --layout-popover-min-w:      100px;
-  --layout-popover-wide-min-w: 140px;
-  --layout-help-popover-w:     clamp(260px, 30vw, 380px);
+  --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px); /* 内容区最大宽度 */
+  --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px); /* 首页 Hero 高度 */
+  --layout-hero-height-mobile: 280px;     /* 移动端 Hero 高度 */
+  --layout-card-daily-width:   200px;     /* 每日推荐卡片宽度 */
+  --layout-grid-min-col:       220px;     /* 自适应网格最小列宽（SkeletonIPTVCard） */
+  --layout-error-detail-height: 200px;    /* 错误详情区最大高度（NetworkError） */
+  --layout-spinner-border:     3px;       /* 加载旋转环边框粗细 */
+  --layout-perf-panel-min-w:   280px;     /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度 */
+  --layout-channel-num-w:      120px;     /* 频道编号/时间显示最小宽度 */
+  --layout-quality-badge-min-w: 84px;     /* 画质徽章最小宽度（IPTV OSD） */
+  --layout-vol-popup-w:        60px;      /* 音量弹出框宽度 */
+  --layout-vol-slider-w:       180px;     /* 音量滑块宽度 */
+  --layout-player-vol-w:       80px;      /* 播放器音量控制区宽度 */
+  --layout-popover-min-w:      100px;     /* 气泡提示最小宽度（HelpTooltip） */
+  --layout-popover-wide-min-w: 140px;     /* 宽气泡最小宽度（HelpTooltip/SourceStatus） */
+  --layout-help-popover-w:     clamp(260px, 30vw, 380px); /* 帮助气泡宽度（HelpPopover） */
   --layout-sidebar-width:      clamp(260px, 15rem + 1.5vw, 320px);  /* 260→320px 流体 */
-  --layout-episode-panel-w:    420px;
-  --layout-episode-panel-w-alt: 440px;
-  --layout-time-display-min-w: 90px;
-  --layout-channel-list-w:     300px;
-  --layout-channel-list-w-sm:  260px;
-  --layout-channel-list-w-md:  320px;
-  --layout-channel-list-w-lg:  300px;
-  --layout-channel-list-w-xl: 360px;
-  --layout-channel-list-w-2xl: 400px;
+  --layout-episode-panel-w:    420px;     /* 剧集面板宽度（播放器侧边栏） */
+  --layout-episode-panel-w-alt: 440px;    /* 剧集面板备选宽度 */
+  --layout-time-display-min-w: 90px;      /* 时间显示最小宽度（播放器 OSD） */
+  /* IPTV 频道列表宽度 — 按视口分档 */
+  --layout-channel-list-w:     300px;     /* 默认频道列表宽度 */
+  --layout-channel-list-w-sm:  260px;     /* 小屏 */
+  --layout-channel-list-w-md:  320px;     /* 中屏 */
+  --layout-channel-list-w-lg:  300px;     /* 大屏 */
+  --layout-channel-list-w-xl: 360px;      /* 超大屏 */
+  --layout-channel-list-w-2xl: 400px;     /* 2K/4K */
   --layout-iptv-channel-list-w: clamp(20rem, 17.5rem + 0.65vw, 30rem);  /* 320—480px 流体 */
-  --layout-source-url-max-w:   160px;
+  --layout-source-url-max-w:   160px;     /* 源地址最大宽度（SourceChecker） */
   --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
   --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
   --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */
-  --layout-groups-collapsed-h: 76px;
-  --layout-select-w:           140px;
-  --layout-select-w-mobile:    120px;
-  --layout-epg-max-height:     400px;
-  --layout-bottomsheet-max-h:  500px;
-  --layout-epg-empty-min-height: 100px;
-  --layout-epg-time-min-width: 100px;
-  --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg)));
-  --layout-osd-timeshift-dot:  6px;
+  --layout-groups-collapsed-h: 76px;      /* IPTV 分组折叠高度 */
+  --layout-select-w:           140px;     /* 下拉选择框宽度 */
+  --layout-select-w-mobile:    120px;     /* 移动端下拉宽度 */
+  --layout-epg-max-height:     400px;     /* EPG 节目列表最大高度 */
+  --layout-bottomsheet-max-h:  500px;     /* 底部弹出面板最大高度 */
+  --layout-epg-empty-min-height: 100px;   /* EPG 空态最小高度 */
+  --layout-epg-time-min-width: 100px;     /* EPG 时间列最小宽度 */
+  --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
+  --layout-osd-timeshift-dot:  6px;        /* 时移进度条圆点尺寸 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
   --layout-logo-size-sm:       clamp(40px, 2.222rem + 0.73vw, 52px);  /* 40→52px 流体 */
@@ -203,22 +223,22 @@
   --layout-brand-font-size:    clamp(1.25rem, 0.833rem + 0.87vw, 1.5rem);  /* 20→24px 流体 */
   --layout-brand-font-size-sm: clamp(1rem, 0.667rem + 0.69vw, 1.25rem);  /* 16→20px 流体 */
   --layout-brand-font-size-lg: clamp(1.5rem, 1rem + 1.04vw, 1.75rem);  /* 24→28px 流体 */
-  --layout-detail-hero-play-icon: 8.571rem;
-  --layout-outline-width:      2px;
-  --layout-tabbar-height:      56px;
-  --layout-datepicker-width:   340px;
-  --layout-collapse-max-h:     1000px;
-  --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem);
-  --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem);
-  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 50rem);
+  --layout-detail-hero-play-icon: 8.571rem; /* 详情页 Hero 播放按钮尺寸 */
+  --layout-outline-width:      2px;        /* 聚焦轮廓线粗细 */
+  --layout-tabbar-height:      56px;       /* 移动端底部 TabBar 高度 */
+  --layout-datepicker-width:   340px;      /* 日期选择器宽度 */
+  --layout-collapse-max-h:     1000px;     /* 折叠面板最大高度 */
+  --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem); /* 详情页海报宽度 */
+  --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem); /* TV 端海报宽度 */
+  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 50rem); /* SearchBox 最大宽度（通用） */
 
   /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
   --card-cols: 3;   /* 默认：移动端 (< 768)             */
   --row-cols:  var(--card-cols);
 
   /* ── Sticky Header ───────────────────────────────────────────────────── */
-  --header-height: clamp(60px, 3.375rem + 1vw, 76px);
-  --header-height-compact: 48px;
+  --header-height: clamp(60px, 3.375rem + 1vw, 76px); /* 顶部导航栏高度 */
+  --header-height-compact: 48px;           /* 紧凑模式（滚动后折叠） */
 
   /* ── Glass Effect (玻璃态背景) ───────────────────────────────────────── */
   /* 普通页面导航栏背景（65% 玻璃,透出页面背景 35% — 解决"导航栏不透明"问题） */
@@ -229,14 +249,15 @@
   --glass-blur:        saturate(180%) blur(14px);
   /* 玻璃层下方的细分隔阴影 */
   --glass-shadow:      0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  /* 玻璃层边框（微弱分隔线） */
   --glass-border:      rgba(0, 0, 0, 0.08);
 
   /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
-  --scrollbar-width: 6px;
-  --scrollbar-width-thin: 4px;
-  --scrollbar-color: rgba(0, 0, 0, 0.15);
-  --scrollbar-color-hover: rgba(0, 0, 0, 0.3);
-  --scrollbar-color-active: rgba(0, 0, 0, 0.45);
+  --scrollbar-width: 6px;                  /* 滚动条宽度 */
+  --scrollbar-width-thin: 4px;             /* 极细滚动条（横向） */
+  --scrollbar-color: rgba(0, 0, 0, 0.15); /* 滚动条默认色（极淡） */
+  --scrollbar-color-hover: rgba(0, 0, 0, 0.3);   /* hover 态加深 */
+  --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
 }
 
 
@@ -288,6 +309,7 @@
    Dark Theme — colors & shadows only (dimension tokens from :root)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
+  /* 暗色主题 — primary 反转为白色，背景/表面整体加深 */
   --color-primary: #fff;
   --color-primary-hover: #e5e5e5;
   --color-primary-light: rgba(255, 255, 255, 0.08);
@@ -311,34 +333,38 @@
   --color-tag-bg: #262626;
   --color-favorite-bg: #303030;
   --color-favorite-active-bg: #3a2000;
-  --color-favorite-active: #d89614;
+  --color-favorite-active: #d89614;        /* 暗色下收藏图标偏暗橙 */
   --color-page-btn-bg: #262626;
   --color-page-btn-hover-bg: rgba(255, 255, 255, 0.08);
   --color-page-info: #a0a0a0;
   --color-input-bg: #1f1f1f;
   --color-input-border: #434343;
-  --color-tab-active-bg: #fff;
+  --color-tab-active-bg: #fff;             /* 暗色下 Tab 激活背景反转为白 */
   --color-tab-active-text: #000;
   --color-tab-inactive-text: #a0a0a0;
   --color-success: #49aa19;
   --color-error: #d32029;
   --color-warning: #d89614;
+  --color-info: #177ddc;                  /* 暗色主题链接蓝 */
+  --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */
+  --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
   --color-skeleton: #2a2a2a;
   --color-skeleton-shine: #3a3a3a;
 
   /* ── Player overlay colors (always dark context) ────────────────────── */
-  --player-bg: #000;
-  --player-text: #fff;
-  --player-progress-bg: #fff;
-  --player-accent: #2d8cf0;
-  --player-overlay-bg: rgba(0, 0, 0, 0.6);
+  --player-bg: #000;                      /* 播放器底色（始终黑色） */
+  --player-text: #fff;                    /* 播放器文字 */
+  --player-progress-bg: #fff;             /* 进度条轨道 */
+  --player-accent: #2d8cf0;               /* 进度条/高亮色（蓝） */
+  --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏遮罩 */
+  /* 暗色投影 — 加深阴影以匹配深色背景 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-focus: 0 0 0 3px var(--color-primary);
+  --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（暗色下 primary = 白） */
 
   /* Glass Effect (暗色 — 透明度更弱以覆盖深色页面) */
   --glass-bg-strong:   color-mix(in srgb, var(--color-background) 55%, transparent);

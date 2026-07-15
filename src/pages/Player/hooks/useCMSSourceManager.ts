@@ -338,10 +338,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               const episodes = [...result.video.episodes].sort((a, b) => a.number - b.number);
               const targetEp = episodes[0];
               if (targetEp?.sources.length) {
-                finishLoading();
                 onSwitchEpisode(targetEp);
               }
             }
+            finishLoading();
             return;
           }
 

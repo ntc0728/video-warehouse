@@ -3,7 +3,7 @@
  * 半透明背景 + 阴影，Logo + 左右导航 + 主题切换 + 中央搜索框。
  * 首页滚动距离 >= --header-height 时切换为实体背景（仅首页生效）。
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
@@ -11,6 +11,7 @@ import { useIsTV } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import SearchBox from '@/components/SearchBox';
 import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './StickyHeader.css';
@@ -118,6 +119,17 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   };
 
   const isBrowse = location.pathname === '/browse';
+  const pageSearch = usePageSearchStore();
+
+  // 路由切换时同步清空搜索状态（useLayoutEffect 确保在浏览器绘制前完成）
+  // 各页面的 useEffect 会在新路由下重新注册自己的回调和搜索词
+  const prevPathnameRef = useRef(location.pathname);
+  useLayoutEffect(() => {
+    if (prevPathnameRef.current !== location.pathname) {
+      prevPathnameRef.current = location.pathname;
+      usePageSearchStore.getState().clearPageSearch();
+    }
+  }, [location.pathname]);
 
   return (
     <header
@@ -144,8 +156,14 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         {!isBrowse && (
           <div className="sticky-header__center">
             {/* 顶部导航中央：公共搜索框（variant="header"）。
-                URL ?q= 已由 SearchBox 内部 useSearchParams 自动同步 input 值。 */}
-            <SearchBox variant="header" />
+                页面通过 PageSearchContext 注册搜索回调，实现页面内过滤。 */}
+            <SearchBox
+              key={location.pathname}
+              variant="header"
+              defaultValue={pageSearch.search || undefined}
+              onSearch={pageSearch.onSearch ?? undefined}
+              placeholder={pageSearch.placeholder}
+            />
           </div>
         )}
         <div className="sticky-header__right">

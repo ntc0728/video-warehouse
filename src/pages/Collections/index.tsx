@@ -3,6 +3,7 @@
  * 影视 + IPTV 双 Tab，懒加载、搜索、筛选、多选删除、清除全部
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useVideoStore, useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
@@ -15,6 +16,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { CollectionRecord } from '@/types/store';
@@ -48,16 +50,11 @@ export default function CollectionsPage() {
 
   useDocumentTitle();
   const saved = getState('collections');
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
   const [statusFilter, setStatusFilter] = useState<VideoStatus>('all');
-  const [searchByTab, setSearchByTab] = useState<{ video: string; iptv: string }>(() => {
-    const fromNew = (saved?.filter as { searchByTab?: { video?: string; iptv?: string } } | undefined)?.searchByTab;
-    if (fromNew) {
-      return { video: fromNew.video || '', iptv: fromNew.iptv || '' };
-    }
-    return { video: saved?.search || '', iptv: '' };
-  });
+  const [searchByTab, setSearchByTab] = useState<{ video: string; iptv: string }>({ video: '', iptv: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -68,6 +65,20 @@ export default function CollectionsPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections');
+
+  // 离开页面时清空筛选状态
+  const prevPathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = location.pathname;
+    if (prev === '/collections' && location.pathname !== '/collections') {
+      setActiveTab('video');
+      setStatusFilter('all');
+      setSearchByTab({ video: '', iptv: '' });
+      setBatchMode(false);
+      setSelected(new Set());
+    }
+  }, [location.pathname]);
 
   const search = searchByTab[activeTab];
   const setSearch = useCallback((v: string) => {
@@ -90,6 +101,22 @@ export default function CollectionsPage() {
   }, [activeTab, saveState]);
 
   useEffect(() => { setSelected(new Set()); setBatchMode(false); }, [activeTab]);
+
+  // 注册顶部导航栏搜索回调（仅当前路由匹配时注册，防止 Keep-Alive 下离开页面后重注册）
+  useEffect(() => {
+    if (location.pathname !== '/collections') return;
+    const store = usePageSearchStore.getState();
+    const placeholder = activeTab === 'video' ? '搜索影视剧...' : '搜索频道...';
+    store.setPageSearch(search, setSearch, placeholder);
+    return () => { store.clearPageSearch(); };
+  }, [search, setSearch, activeTab, location.pathname]);
+
+  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）
+  useEffect(() => {
+    if (activeTab === 'iptv') {
+      useIPTVStore.getState().loadFromCache();
+    }
+  }, [activeTab]);
 
   /** Determine watch status for a video based on history records */
   const getVideoStatus = useCallback((videoId: string): VideoStatus => {
@@ -157,11 +184,6 @@ export default function CollectionsPage() {
     list.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
     return list;
   }, [iptvChannels, searchByTab.iptv]);
-
-  /** 原始数据量（进入页面时获取，不受搜索/状态筛选影响） */
-  const rawVideoCount = useMemo(() => collections.filter((c: CollectionRecord) => c.type !== 'iptv').length, [collections]);
-  const rawIptvCount = useMemo(() => iptvChannels.filter(ch => ch.isFavorite).length, [iptvChannels]);
-  const hasRawData = activeTab === 'video' ? rawVideoCount > 0 : rawIptvCount > 0;
 
   const currentList: CollectionVideoItem[] | IPTVChannel[] = activeTab === 'video' ? collectedVideos : favoriteChannels;
   const currentListLenRef = useRef(currentList.length);
@@ -235,20 +257,22 @@ export default function CollectionsPage() {
       ? `确定要删除选中的 ${selected.size} 个项目吗？删除后无法恢复。`
       : '确定要清除所有收藏吗？此操作无法恢复。';
 
+  const editButton = (
+    <button
+      type="button"
+      className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
+      onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+    >
+      {batchMode ? '退出管理' : '批量管理'}
+    </button>
+  );
+
   return (
     <RecordShell
       pageClassName="collection-page"
-      title="我的收藏"
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab)}
-      showActions={hasRawData}
-      search={search}
-      onSearchChange={setSearch}
-      searchPlaceholder={activeTab === 'video' ? '搜索影视剧...' : '搜索频道...'}
-      batchMode={batchMode}
-      onToggleBatch={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-      onClearAll={handleClearAll}
-      actionsDisabled={search.trim() !== '' && currentList.length === 0}
+      editButton={editButton}
       statusTabs={activeTab === 'video'
         ? (Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
             key,
@@ -328,6 +352,13 @@ export default function CollectionsPage() {
             onClick={handleBatchDelete}
           >
             <Trash2 size={16} /> 删除{selected.size > 0 ? ` (${selected.size})` : ''}
+          </button>
+          <button
+            type="button"
+            className="batch-action-btn batch-action-btn--danger"
+            onClick={handleClearAll}
+          >
+            <Trash2 size={16} /> 清除全部
           </button>
         </div>
       )}

@@ -326,7 +326,7 @@ export default function DetailPage() {
   const lastEpisodeLabel = historyRecord?.episodeLabel;
 
   // ── 页面状态快照 ──────────────────────────────
-  stateRef.current = { activeTab, cmsResults, cmsLoaded, cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
+  stateRef.current = { cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
 
   useEffect(() => {
     if (!id) return;
@@ -334,9 +334,7 @@ export default function DetailPage() {
     if (saved) {
       restoredRef.current = true;
       const data = saved as Record<string, unknown>;
-      if (data.tab) setActiveTab(data.tab as DetailTab);
-      if (data.cmsResults) setCmsResults(data.cmsResults as VideoDetailResult[]);
-      if (data.cmsLoaded !== undefined) setCmsLoaded(data.cmsLoaded as boolean);
+      // tab 不恢复，确保切换电影时重置到概览
       if (data.cmsError !== undefined) setCmsError(data.cmsError as string | null);
       if (data.tmdbDetail) setTmdbDetail(data.tmdbDetail as TMDBMovieDetail | TMDBTVShowDetail);
       if (data.tmdbMediaType) setTmdbMediaType(data.tmdbMediaType as 'movie' | 'tv');
@@ -664,7 +662,7 @@ export default function DetailPage() {
               <div className="detail-state detail-state--error">
                 <WifiOff size={32} /><p>{cmsError}</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="detail-retry" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
               </div>
             ) : cmsResults.length > 0 ? (
               <div className="detail-sources-container">
@@ -673,7 +671,7 @@ export default function DetailPage() {
                     <h3>匹配结果</h3>
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
-                  <button className="detail-retry detail-retry--inline" onClick={fetchCMSSources}>
+                  <button className="retry-btn retry-btn--outlined" style={{ alignSelf: 'center', marginTop: 0 }} onClick={fetchCMSSources}>
                     <RefreshCw size={14} /> 重新匹配
                   </button>
                 </div>
@@ -730,7 +728,7 @@ export default function DetailPage() {
               <div className="detail-state">
                 <Server size={32} /><p>暂无匹配的播放资源</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="detail-retry" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
               </div>
             )}
           </div>
