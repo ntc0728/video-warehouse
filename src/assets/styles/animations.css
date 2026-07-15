@@ -139,31 +139,31 @@
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: fadeInUp 0.5s var(--ease-standard) both;
 }
 
 .animate-card-enter {
-  animation: cardFadeIn 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: cardFadeIn 0.18s var(--ease-standard) both;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: fadeIn 0.35s var(--ease-standard) both;
 }
 
 .animate-slide-in-left {
-  animation: slideInLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: slideInLeft 0.35s var(--ease-standard) both;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: slideInRight 0.35s var(--ease-standard) both;
 }
 
 .animate-pop-in {
-  animation: popIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: popIn 0.4s var(--ease-standard) both;
 }
 
 .animate-pop-bounce {
-  animation: popBounce 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: popBounce 0.5s var(--ease-standard) both;
 }
 
 .animate-heart-beat {
@@ -200,7 +200,7 @@
 .stagger-12 { animation-delay: 0.36s; }
 
 .btn-press {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s var(--ease-standard), box-shadow 0.2s var(--ease-standard), background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard);
 }
 
 .btn-press:active:not(:disabled) {

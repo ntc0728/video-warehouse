@@ -113,7 +113,7 @@
   background-size: var(--space-sm) var(--space-sm);
   transform-origin: left;
   animation:
-    card-cover-loading-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    card-cover-loading-fill 1.5s var(--ease-standard) forwards,
     card-cover-loading-stripes 0.7s linear infinite;
 }
 

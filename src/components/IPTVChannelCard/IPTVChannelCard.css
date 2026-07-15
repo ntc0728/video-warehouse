@@ -224,8 +224,8 @@
   color: rgba(255, 255, 255, 0.8);
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+  transition: opacity 0.25s var(--ease-standard),
+              transform 0.25s var(--ease-standard),
               background 0.2s ease;
   cursor: pointer;
   pointer-events: none;

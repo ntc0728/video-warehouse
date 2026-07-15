@@ -1,6 +1,6 @@
 # AGENTS.md — AI Agent 项目指南
 
-> 本文件是 AI Agent 的工作指南。Cursor / Aider / Windsurf / Claude / Copilot 等工具应优先阅读此文件。
+> 本文件是 AI Agent 的工作指南。Cursor / Aider / Windsurf / Claude / Copilot 等工具应优先阅读此文件。推理过程禁止使用英文，一律使用中文。
 
 ## 项目概述
 

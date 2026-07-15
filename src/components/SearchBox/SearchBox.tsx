@@ -95,12 +95,13 @@ export default function SearchBox({
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
 
-  // 外部 URL q 变化时同步（如切到不带 q 的页面、跨页 history 变化）
+  // 外部 defaultValue 变化时同步（PageSearch 切页场景 + URL ?q= 场景）
+  // 路由变化时也触发同步，确保切换页面时搜索词正确重置
   useEffect(() => {
     const next = defaultValue ?? urlQ;
     setValue(next);
     onValueChange?.(next);
-  }, [defaultValue, urlQ]);
+  }, [defaultValue, urlQ, location.pathname]);
 
   // ── 防止浏览器回退恢复焦点：路由变化时 blur 搜索框 ──
   useEffect(() => {
@@ -147,6 +148,17 @@ export default function SearchBox({
       onSearch('');
     }
   }, [onSearch]);
+
+  // 输入值变化时实时触发搜索（支持 backspace/select+delete 场景）
+  // 仅在有 onSearch 回调时生效（页面内过滤场景），导航场景保持 Enter 触发
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    onValueChange?.(newValue);
+    if (onSearch) {
+      onSearch(newValue.trim());
+    }
+  }, [onSearch, onValueChange]);
 
   // ── Dropdown 交互 ──────────────────────────────────
   const handleFocus = useCallback(() => {
@@ -255,7 +267,7 @@ export default function SearchBox({
             type="search"
             className="search-box__input"
             value={value}
-            onChange={(e) => { setValue(e.target.value); onValueChange?.(e.target.value); }}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}

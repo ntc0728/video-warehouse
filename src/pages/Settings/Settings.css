@@ -110,7 +110,7 @@
 
 .settings-link {
   display: inline-block;
-  color: #3b82f6;
+  color: var(--color-info);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -118,7 +118,7 @@
 }
 
 .settings-link:hover {
-  color: #60a5fa;
+  color: var(--color-info-hover);
 }
 
 .setting-modal-input {
@@ -196,12 +196,12 @@
 }
 
 .text-success {
-  color: #22c55e;
+  color: var(--color-success);
   font-size: var(--text-sm);
 }
 
 .text-error {
-  color: #ef4444;
+  color: var(--color-error);
   font-size: var(--text-sm);
 }
 

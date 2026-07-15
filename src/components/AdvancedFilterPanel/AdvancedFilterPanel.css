@@ -26,7 +26,7 @@
   flex-direction: column;
   background: var(--color-surface);
   overflow: hidden;
-  animation: filterPanelIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: filterPanelIn 0.25s var(--ease-standard);
 }
 
 /* Bottom drawer (mobile) */

@@ -79,30 +79,6 @@
   word-break: break-all;
 }
 
-.network-error-retry-btn {
-  display: inline-flex;
-  gap: var(--space-xs);
-  align-items: center;
-  padding: var(--space-sm) var(--space-lg);
-  border: none;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  font-size: var(--text-base);
-  font-weight: 500;
-  transition: background-color 0.2s, opacity 0.2s;
-  cursor: pointer;
-}
-
-.network-error-retry-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-}
-
-.network-error-retry-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .network-error-spin-icon {
   animation: network-error-spin 1s linear infinite;
 }
@@ -131,11 +107,6 @@
   border-top: var(--layout-spinner-border) solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* Inline variant */
@@ -177,7 +148,7 @@
 
 /* Mobile */
 @media (width <= 1023px) {
-  .network-error-retry-btn {
+  .network-error-container .retry-btn {
     width: 100%;
   }
 }

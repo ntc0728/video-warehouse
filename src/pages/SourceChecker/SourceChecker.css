@@ -248,10 +248,6 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .checking-text {
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
@@ -495,7 +491,7 @@
 }
 
 /* 响应式 */
-@media (max-width: 767px) {
+@media (width <= 767px) {
   .source-checker-stats {
     grid-template-columns: 1fr;
   }
@@ -514,13 +510,13 @@
   }
 }
 
-@media (min-width: 768px) and (max-width: 1279px) {
+@media (768px <= width <= 1279px) {
   .source-checker-stats {
     grid-template-columns: repeat(5, 1fr);
   }
 }
 
-@media (min-width: 1280px) {
+@media (width >= 1280px) {
   .source-checker-stats {
     grid-template-columns: repeat(5, 1fr);
   }

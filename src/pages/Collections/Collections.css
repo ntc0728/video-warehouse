@@ -10,6 +10,18 @@
   min-height: auto;
 }
 
+/* ── 加载态：player-loading-wrap 在 Player 页为 absolute 叠加层，
+    收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ──────── */
+.collection-page .record-main > .player-loading-wrap {
+  position: static;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
 /* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ─────────────────────────── */
 .collection-page > .empty-state-wrapper,
 .collection-page .record-main > .empty-state-wrapper {
@@ -21,116 +33,10 @@
   min-height: 0;
 }
 
-/* ── 方案 C：右侧卡片区较窄，适当减少列数（竖版海报） ───────────────── */
-.collection-page .record-main .video-card-grid {
-  --card-cols: 3;
-}
-
-@media (width >= 768px) {
-  .collection-page .record-main .video-card-grid {
-    --card-cols: 4;
-  }
-}
-
-@media (width >= 1280px) {
-  .collection-page .record-main .video-card-grid {
-    --card-cols: 5;
-  }
-}
-
-@media (width >= 1920px) {
-  .collection-page .record-main .video-card-grid {
-    --card-cols: 7;
-  }
-}
-
-/* IPTV 频道网格：随卡片区收窄相应减少列数 */
-.collection-page .record-main .iptv-channel-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (width >= 768px) {
-  .collection-page .record-main .iptv-channel-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (width >= 1280px) {
-  .collection-page .record-main .iptv-channel-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (width >= 1920px) {
-  .collection-page .record-main .iptv-channel-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
+/* Video Card Grid 和 IPTV Channel Grid 使用全局默认列数（与 Browse / IPTV 页一致） */
 
 .collection-sentinel {
   height: var(--comp-thumb-size);
-}
-
-/* ── 批量模式胶囊浮动栏 ────────────────────────── */
-.batch-action-bar {
-  position: fixed;
-  right: 50%;
-  bottom: var(--space-xl);
-  z-index: 50;
-  display: flex;
-  gap: var(--space-xs);
-  align-items: center;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
-  transform: translateX(50%);
-  animation: slideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(50%) translateY(var(--space-md));
-  }
-  to {
-    opacity: 1;
-    transform: translateX(50%) translateY(0);
-  }
-}
-
-.batch-action-btn {
-  display: inline-flex;
-  gap: var(--space-xs);
-  align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  background: var(--color-hover-bg);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.batch-action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-hover-bg) 80%, var(--color-border));
-}
-
-.batch-action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.batch-action-btn--danger {
-  background: rgba(255, 77, 79, 0.1);
-  color: var(--color-error);
-}
-
-.batch-action-btn--danger:hover:not(:disabled) {
-  background: rgba(255, 77, 79, 0.18);
 }
 
 @media (width <= 767px) {

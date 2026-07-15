@@ -66,7 +66,7 @@
 }
 
 .force-refresh-btn:hover {
-  background-color: #ff7875;
+  background-color: var(--color-error-light);
 }
 
 .force-refresh-btn:active:not(:disabled) {
@@ -121,6 +121,14 @@
   flex-shrink: 0;
   gap: var(--space-sm);
   padding: var(--space-sm) 0;
+}
+
+/* ── 频道网格容器（基础 flex，桌面端卡片视觉在 @media 块内追加） ── */
+.iptv-grid-card {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .iptv-toolbar .search-box-wrap--iptv {
@@ -237,7 +245,8 @@
   overflow: hidden;
 }
 
-.group-tag {
+/* ── 筛选标签公共基类（分组 + 数据源共用） ─────────────────────── */
+.iptv-filter-tag {
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
@@ -250,21 +259,25 @@
   cursor: pointer;
 }
 
-.group-tag:active {
+.iptv-filter-tag:active {
   transform: scale(0.95);
 }
 
-.group-tag:hover {
+.iptv-filter-tag:hover {
   background-color: var(--color-primary-light);
   font-weight: 600;
 }
 
-.group-tag.active {
+.iptv-filter-tag.active {
   border-color: var(--color-primary);
   background-color: var(--color-tab-active-bg);
   color: var(--color-tab-active-text);
   font-weight: 600;
   box-shadow: 0 1px 3px var(--color-primary-shadow);
+}
+
+.group-tag {
+  /* 继承 .iptv-filter-tag，无额外覆盖 */
 }
 
 /* 数据源筛选标签 */
@@ -281,34 +294,7 @@
 
 .source-tag {
   height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background-color: var(--color-tag-bg, #f5f5f5);
-  box-shadow: 0 0 0 0 transparent;
   color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-  cursor: pointer;
-}
-
-.source-tag:active {
-  transform: scale(0.95);
-}
-
-.source-tag:hover {
-  background-color: var(--color-primary-light);
-  font-weight: 600;
-}
-
-.source-tag.active {
-  border-color: var(--color-primary);
-  background-color: var(--color-tab-active-bg);
-  color: var(--color-tab-active-text);
-  font-weight: 600;
-  box-shadow: 0 1px 3px var(--color-primary-shadow);
 }
 
 .source-tag.disabled {
@@ -470,7 +456,7 @@
   color: var(--color-text);
   font-size: var(--text-sm);
   white-space: nowrap;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s var(--ease-standard);
   cursor: pointer;
 }
 
@@ -528,22 +514,6 @@
   font-size: var(--text-base);
 }
 
-.retry-btn {
-  margin-top: var(--space-md);
-  padding: var(--space-sm) var(--space-lg);
-  border: none;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  transition: transform 0.1s, background-color 0.15s;
-  cursor: pointer;
-}
-
-.retry-btn:active {
-  transform: scale(0.95);
-}
-
-
 [data-theme="dark"] .local-fallback-notice {
   border-color: #594214;
   background-color: #332b00;
@@ -584,10 +554,6 @@
   }
 
   .iptv-grid-card {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    min-height: 0;
     padding: var(--space-sm);
     background-color: var(--color-surface);
     border: 1px solid var(--color-border-light);
