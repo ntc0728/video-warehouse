@@ -350,7 +350,7 @@ export default function HeroBanner({
                   item={displayItems[idx]}
                   active={idx === displayIndex}
                   onEnter={() => handleThumbEnter(idx)}
-                  onClick={() => { setActiveIndex(idx); setHoveredIndex(null); }}
+                  onClick={() => onItemClick?.(displayItems[idx])}
                 />
               ))}
             </>
@@ -402,9 +402,6 @@ function HeroThumb({
         />
       ) : null}
       {!imgLoaded && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
-      <span className="hero-banner__play-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19" /></svg>
-      </span>
       <span className="hero-banner__thumb-title">{title}</span>
     </button>
   );

@@ -129,13 +129,31 @@ test.describe('1.2 HeroBanner 交互', () => {
     if (await ctaBtn.isVisible().catch(() => false)) {
       await ctaBtn.click();
       await page.waitForTimeout(1000);
-      // 预期结果: 跳转到 /detail/{id} 或 /play/{id}
+      // 预期结果: 跳转到 /detail/{id}
       const url = page.url();
-      const navigated = url.includes('/detail/') || url.includes('/play/');
-      expect(navigated).toBe(true);
-      console.log(`✅ HOME-011 通过: Banner CTA 点击正确跳转 (URL = ${url})`);
+      expect(url).toContain('/detail/');
+      console.log(`✅ HOME-011 通过: Banner CTA 点击正确跳转详情页 (URL = ${url})`);
     } else {
       console.log('⚠️ HOME-011: HeroBanner CTA 按钮不可见');
+    }
+  });
+
+  test('HOME-012: 缩略图点击跳转详情页', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    // 操作: 点击右侧缩略图
+    const thumb = page.locator('.hero-banner__thumb').first();
+    if (await thumb.isVisible().catch(() => false)) {
+      await thumb.click();
+      await page.waitForTimeout(1000);
+      // 预期结果: 跳转到 /detail/{id}
+      const url = page.url();
+      expect(url).toContain('/detail/');
+      console.log(`✅ HOME-012 通过: 缩略图点击正确跳转详情页 (URL = ${url})`);
+    } else {
+      console.log('⚠️ HOME-012: HeroBanner 缩略图不可见（可能无数据或移动端）');
     }
   });
 });

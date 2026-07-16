@@ -63,35 +63,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   const cmsSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchInitiatedRef = useRef(false);
 
-  // ── CMS 缓存 helpers ──────────────────────────────
-  const getCmsCacheKey = useCallback((videoId: string, sourceIndex: number) =>
-    `cms-cache-${videoId}-${sourceIndex}`, []);
-
-  const readCmsCache = useCallback((videoId: string, sourceIndex: number): Video | null => {
-    try {
-      const raw = localStorage.getItem(getCmsCacheKey(videoId, sourceIndex));
-      if (!raw) return null;
-      const entry = JSON.parse(raw) as { video: Video; timestamp: number };
-      return entry.video ?? null;
-    } catch { return null; }
-  }, [getCmsCacheKey]);
-
-  const writeCmsCache = useCallback((videoId: string, sourceIndex: number, v: Video) => {
-    try {
-      localStorage.setItem(getCmsCacheKey(videoId, sourceIndex),
-        JSON.stringify({ video: v, timestamp: Date.now() }));
-    } catch { /* quota exceeded */ }
-  }, [getCmsCacheKey]);
-
-  const clearAllCmsCache = useCallback((videoId: string) => {
-    const keys: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(`cms-cache-${videoId}-`)) keys.push(k);
-    }
-    keys.forEach(k => localStorage.removeItem(k));
-  }, []);
-
   // ── fetchCMSSources ──────────────────────────────
   const fetchCMSSources = useCallback(async (targetSourceIndex?: number) => {
     if (!id) return;
@@ -313,16 +284,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
      * 场景：非 TV 类型或单季剧集，直接搜索或获取详情
      */
     try {
-      /** 尝试从缓存获取视频数据 */
-      const cached = readCmsCache(id, sourceIdx);
       let result: VideoDetailResult;
-      if (cached) {
-        // 缓存命中，直接使用
-        const { getVideoSources } = await import('@/services/sourceService');
-        const allSrc = await getVideoSources();
-        const sourceName = allSrc[sourceIdx]?.name ?? '未知';
-        result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: cached };
-      } else if (!id?.startsWith('tmdb-')) {
+      if (!id?.startsWith('tmdb-')) {
         // CMS 源视频：通过 vod_id 获取详情（传递 signal 支持取消）
         const { fetchVideoDetail } = await import('@/services/videoService');
         const detailVideo = await fetchVideoDetail(sourceIdx, id, ctrl.signal);
@@ -330,11 +293,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         const allSrc = await getVideoSources();
         const sourceName = allSrc[sourceIdx]?.name ?? '未知';
         result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
-        if (result.video) writeCmsCache(id, sourceIdx, result.video);
       } else {
         // TMDB 视频：通过标题搜索（传递 signal 支持取消）
         result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
-        if (result.video) writeCmsCache(id, sourceIdx, result.video);
       }
 
       if (!ctrl.signal.aborted) {
@@ -387,7 +348,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, readCmsCache, writeCmsCache]);
+  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video]);
 
   // ── handleFetchCMSSourceById ──────────────────────
   const handleFetchCMSSourceById = useCallback(async (sourceId: string) => {
@@ -549,7 +510,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   useEffect(() => () => {
     cmsAbortRef.current?.abort();
     tmdbAbortRef.current?.abort();
-    if (id) clearAllCmsCache(id);
     seasonMapsRef.current.clear();
     fetchInitiatedRef.current = false;
     setCmsResults([]);
@@ -558,7 +518,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     setActiveSourceId(undefined);
     setCmsLoading(false);
     setCmsSwitching(false);
-  }, [id, clearAllCmsCache]);
+  }, [id]);
 
   return {
     cmsResults,

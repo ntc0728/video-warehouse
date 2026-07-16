@@ -174,12 +174,16 @@ export const useUserStore = create<UserState>()((set, get) => ({
   /**
    * 添加或更新观看历史
    * 同一集的记录会更新进度和时间，而非重复创建
-   * 去重策略：episodeUrl（精确到集）→ videoId（兜底，无 episodeUrl 时）
+   * 去重策略：
+   *   - 电影：按 videoId 去重
+   *   - 剧集：按 videoId + episodeUrl 去重（同一集换源才替换，不同集新增）
    */
   addHistory: (record) => {
-    // 按 episodeUrl 去重（精确到集），无 episodeUrl 时按 videoId 去重
+    // 按 videoId + episodeUrl 去重
+    // 电影无 episodeUrl，只按 videoId 匹配
+    // 剧集有 episodeUrl，需要同时匹配 videoId 和 episodeUrl
     const existingIndex = record.episodeUrl
-      ? get().history.findIndex((h) => h.episodeUrl === record.episodeUrl)
+      ? get().history.findIndex((h) => h.videoId === record.videoId && h.episodeUrl === record.episodeUrl)
       : get().history.findIndex((h) => h.videoId === record.videoId && !h.episodeUrl);
 
     if (existingIndex >= 0) {
@@ -194,6 +198,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       updated.episodeLabel = record.episodeLabel || updated.episodeLabel;
       updated.vodId = record.vodId || updated.vodId;
       updated.episodeUrl = record.episodeUrl || updated.episodeUrl;
+      updated.currentSeasonId = record.currentSeasonId || updated.currentSeasonId;
       updated.updatedAt = Date.now();
 
       set((state) => ({

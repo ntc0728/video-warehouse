@@ -38,83 +38,6 @@ import {
 export type { TMDBVideoItem } from '@/types/tmdb';
 
 // ============================================================
-// 缓存过期时间（毫秒）
-// ============================================================
-
-const CACHE_TTL: Record<string, number> = {
-  trending: 30 * 60 * 1000,       // 30 分钟
-  nowPlaying: 2 * 60 * 60 * 1000, // 2 小时
-  popularMovies: 6 * 60 * 60 * 1000,
-  topRatedMovies: 12 * 60 * 60 * 1000,
-  upcomingMovies: 12 * 60 * 60 * 1000,
-  popularTv: 6 * 60 * 60 * 1000,
-  topRatedTv: 12 * 60 * 60 * 1000,
-  airingTodayTv: 3 * 60 * 60 * 1000,
-  genres: 24 * 60 * 60 * 1000,
-  search: 10 * 60 * 1000,         // 搜索结果 10 分钟
-};
-
-const CACHE_STORAGE_KEY = 'tmdb-cache';
-
-interface TMDBStoreCache {
-  data: Record<string, unknown>;
-  timestamps: Record<string, number>;
-  version: number;
-}
-
-/** 从 localStorage 读取缓存，并重建图片 URL（适配代理变更） */
-function loadCache(): TMDBStoreCache | null {
-  try {
-    const raw = localStorage.getItem(CACHE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as TMDBStoreCache;
-    if (parsed.version !== 1) return null;
-    // 重建图片 URL：缓存中的 cover 可能引用旧代理地址，用 posterPath 重新计算
-    rebuildCachedImageUrls(parsed.data);
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-/** 遍历缓存数据，用 posterPath 重建 cover URL（适配代理变更） */
-function rebuildCachedImageUrls(data: Record<string, unknown>): void {
-  const itemKeys = [
-    'trending', 'nowPlaying', 'popularMovies', 'topRatedMovies',
-    'upcomingMovies', 'popularTv', 'topRatedTv', 'airingTodayTv',
-  ];
-  for (const key of itemKeys) {
-    const arr = data[key] as TMDBVideoItem[] | undefined;
-    if (!arr) continue;
-    for (const item of arr) {
-      if (item.posterPath) {
-        item.cover = buildImageUrl(item.posterPath, 'w500') || '';
-      }
-    }
-  }
-}
-
-/** 检查缓存是否有效 */
-function isCacheValid(key: string, timestamp: number | undefined): boolean {
-  if (!timestamp) return false;
-  const ttl = CACHE_TTL[key] ?? 10 * 60 * 1000;
-  return Date.now() - timestamp < ttl;
-}
-
-/** 保存指定区块的缓存数据 */
-function persistSection(key: string, data: unknown): void {
-  try {
-    const existing = localStorage.getItem(CACHE_STORAGE_KEY);
-    const cache: TMDBStoreCache = existing
-      ? JSON.parse(existing)
-      : { data: {}, timestamps: {}, version: 1 };
-    cache.data[key] = data;
-    cache.timestamps[key] = Date.now();
-    localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(cache));
-  } catch { /* ignore */ }
-}
-
-// ============================================================
 // Store 状态
 // ============================================================
 
@@ -377,19 +300,16 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // ============================================================
 
 export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
-  // ---- 从 localStorage 恢复缓存 ----
-  const cached = loadCache();
-
   return {
   // ---- 初始状态 ----
-  trending: (cached?.data.trending as TMDBVideoItem[]) || [],
-  nowPlaying: (cached?.data.nowPlaying as TMDBVideoItem[]) || [],
-  popularMovies: (cached?.data.popularMovies as TMDBVideoItem[]) || [],
-  topRatedMovies: (cached?.data.topRatedMovies as TMDBVideoItem[]) || [],
-  upcomingMovies: (cached?.data.upcomingMovies as TMDBVideoItem[]) || [],
-  popularTv: (cached?.data.popularTv as TMDBVideoItem[]) || [],
-  topRatedTv: (cached?.data.topRatedTv as TMDBVideoItem[]) || [],
-  airingTodayTv: (cached?.data.airingTodayTv as TMDBVideoItem[]) || [],
+  trending: [],
+  nowPlaying: [],
+  popularMovies: [],
+  topRatedMovies: [],
+  upcomingMovies: [],
+  popularTv: [],
+  topRatedTv: [],
+  airingTodayTv: [],
 
   searchQuery: '',
 
@@ -399,10 +319,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   filterOptions: { ...DEFAULT_FILTER_OPTIONS },
 
-  movieGenres: (cached?.data.movieGenres as TMDBGenre[]) || [],
-  tvGenres: (cached?.data.tvGenres as TMDBGenre[]) || [],
-  countries: (cached?.data.countries as TMDBCountry[]) || [],
-  genresLanguage: (cached?.data.genresLanguage as string) || null,
+  movieGenres: [],
+  tvGenres: [],
+  countries: [],
+  genresLanguage: null,
 
   loading: {
     trending: false,
@@ -433,7 +353,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     recommendation: null,
   },
 
-  lastFetchedAt: (cached?.timestamps as TMDBStoreState['lastFetchedAt']) || {
+  lastFetchedAt: {
     trending: null,
     nowPlaying: null,
     popularMovies: null,
@@ -461,15 +381,12 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       //    logoPath 字段保留（TMDBVideoItem 类型不变），未补全时为 null，
       //    依赖它的组件（TMDBTrendingBanner）已用 fallback 标题展示。
 
-      set((s) => {
-        persistSection('trending', items);
-        return {
+      set((s) => ({
           trending: items,
           loading: { ...s.loading, trending: false },
           errors: { ...s.errors, trending: null },
           lastFetchedAt: { ...s.lastFetchedAt, trending: Date.now() },
-        };
-      });
+        }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, trending: false },
@@ -504,7 +421,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     if (items.length > 0) {
       set((s) => {
-        persistSection('nowPlaying', items);
+
         return {
           nowPlaying: items,
           loading: { ...s.loading, nowPlaying: false },
@@ -526,7 +443,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchPopularMovies();
       set((s) => {
         const items = data.results.map(mapMovieToVideoItem);
-        persistSection('popularMovies', items);
+
         return {
           popularMovies: items,
           loading: { ...s.loading, popularMovies: false },
@@ -548,7 +465,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchTopRatedMovies();
       set((s) => {
         const items = data.results.map(mapMovieToVideoItem);
-        persistSection('topRatedMovies', items);
+
         return {
           topRatedMovies: items,
           loading: { ...s.loading, topRatedMovies: false },
@@ -570,7 +487,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchUpcomingMovies();
       set((s) => {
         const items = data.results.map(mapMovieToVideoItem);
-        persistSection('upcomingMovies', items);
+
         return {
           upcomingMovies: items,
           loading: { ...s.loading, upcomingMovies: false },
@@ -592,7 +509,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchPopularTV();
       set((s) => {
         const items = data.results.map(mapTVToVideoItem);
-        persistSection('popularTv', items);
+
         return {
           popularTv: items,
           loading: { ...s.loading, popularTv: false },
@@ -614,7 +531,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchTopRatedTV();
       set((s) => {
         const items = data.results.map(mapTVToVideoItem);
-        persistSection('topRatedTv', items);
+
         return {
           topRatedTv: items,
           loading: { ...s.loading, topRatedTv: false },
@@ -636,7 +553,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       const data = await fetchAiringTodayTV();
       set((s) => {
         const items = data.results.map(mapTVToVideoItem);
-        persistSection('airingTodayTv', items);
+
         return {
           airingTodayTv: items,
           loading: { ...s.loading, airingTodayTv: false },
@@ -675,10 +592,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     await get().fetchAllHomeData();
   },
 
-  /** 清除 localStorage 缓存 */
-  clearCache: () => {
-    try { localStorage.removeItem(CACHE_STORAGE_KEY); } catch { /* ignore */ }
-  },
+  /** 清除内存缓存（数据重置为初始值） */
+  clearCache: () => {},
 
   fetchAllHomeData: async () => {
     const state = get();
@@ -732,15 +647,14 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       return;
     }
 
-    // 判断每个区块是否需要刷新（缓存过期 或 首次加载）
-    const shouldFetch = (key: string, arr: unknown[]): boolean =>
-      arr.length === 0 || !isCacheValid(key, state.lastFetchedAt[key as keyof typeof state.lastFetchedAt] ?? undefined);
+    // 判断每个区块是否需要刷新（数据为空时获取）
+    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0;
 
     // ---- 第一层：首屏可见内容（trending + nowPlaying + genres） ----
     const tier1 = [
-      shouldFetch('trending', state.trending) ? state.fetchTrending() : Promise.resolve(),
-      shouldFetch('nowPlaying', state.nowPlaying) ? state.fetchNowPlaying() : Promise.resolve(),
-      shouldFetch('genres', state.movieGenres) ? state.fetchGenresAndCountries() : Promise.resolve(),
+      shouldFetch(state.trending) ? state.fetchTrending() : Promise.resolve(),
+      shouldFetch(state.nowPlaying) ? state.fetchNowPlaying() : Promise.resolve(),
+      shouldFetch(state.movieGenres) ? state.fetchGenresAndCountries() : Promise.resolve(),
     ];
     await Promise.all(tier1);
 
@@ -753,12 +667,12 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         : (cb: () => void) => setTimeout(cb, 0);
     await new Promise<void>((r) => idle(() => r()));
     const tier2 = [
-      shouldFetch('popularMovies', state.popularMovies) ? state.fetchPopularMovies() : Promise.resolve(),
-      shouldFetch('topRatedMovies', state.topRatedMovies) ? state.fetchTopRatedMovies() : Promise.resolve(),
-      shouldFetch('upcomingMovies', state.upcomingMovies) ? state.fetchUpcomingMovies() : Promise.resolve(),
-      shouldFetch('popularTv', state.popularTv) ? state.fetchPopularTv() : Promise.resolve(),
-      shouldFetch('topRatedTv', state.topRatedTv) ? state.fetchTopRatedTv() : Promise.resolve(),
-      shouldFetch('airingTodayTv', state.airingTodayTv) ? state.fetchAiringTodayTv() : Promise.resolve(),
+      shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : Promise.resolve(),
+      shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : Promise.resolve(),
+      shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : Promise.resolve(),
+      shouldFetch(state.popularTv) ? state.fetchPopularTv() : Promise.resolve(),
+      shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : Promise.resolve(),
+      shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : Promise.resolve(),
     ];
     await Promise.all(tier2);
   },
@@ -967,10 +881,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         fetchCountries(),
       ]);
       set((s) => {
-        persistSection('movieGenres', mGenres);
-        persistSection('tvGenres', tGenres);
-        persistSection('countries', ctries);
-        persistSection('genresLanguage', currentLang);
+
         return {
           movieGenres: mGenres,
           tvGenres: tGenres,
