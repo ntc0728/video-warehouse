@@ -251,15 +251,21 @@ export default function HomePage() {
         { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
       ];
 
-  return (
-    <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-      {!isCategoryView && !hasAnyData && allFailed && (
+  // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
+  if (!isCategoryView && !hasAnyData && allFailed) {
+    return (
+      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
         <div className="home-empty" role="alert">
           <AlertCircle size={32} className="home-empty-icon" />
           <p className="home-empty-text">{allFailed}</p>
         </div>
-      )}
+        <BackToTopButton />
+      </div>
+    );
+  }
 
+  return (
+    <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
       {/*
         trending / hero 为空时 HeroBanner 仍渲染；loading 期间显示骨架而非"暂无推荐"误导文字。
       */}

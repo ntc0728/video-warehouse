@@ -75,6 +75,7 @@
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
+  min-height: 60vh;
   padding: var(--space-3xl) var(--space-md);
   color: var(--color-text-tertiary);
   text-align: center;

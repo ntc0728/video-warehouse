@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Play } from 'lucide-react';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
 import './HeroBanner.css';
 
@@ -65,6 +65,7 @@ export default function HeroBanner({
 }: HeroBannerProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  const isWide = useMediaQuery('(min-width: 1440px)');
   // 不截取接口数据：使用全部 items 驱动轮播；主图仅渲染当前+上一张（见 bgIndices）避免加载全部背景图
   const displayItems = items;
 
@@ -76,23 +77,41 @@ export default function HeroBanner({
   const displayIndex = hoveredIndex !== null ? hoveredIndex : activeIndex;
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
+  // 移动端滑动方向：'left' = 新图从右滑入，'right' = 新图从左滑入
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
   const [bannerReady, setBannerReady] = useState(false);
-  // 最多 4 个缩略图（等分容器高度，完整显示）；不足时取实际数量
-  const rawCount = Math.min(4, displayItems.length);
-  const visibleCount = rawCount;
+  // 缩略图数量自适应：大屏 5 个，普通桌面 4 个
+  const maxCount = isWide ? 5 : 4;
+  const visibleCount = Math.min(maxCount, displayItems.length);
 
   // items 变化时重置 activeIndex、预览态与背景层
-  // 同时启动一个超时兜底：无论背景图加载成功/失败，最多 3s 后强制揭示缩略图列，
-  // 避免 TMDB 图（走代理）加载失败时 bannerReady 永远为 false 而整列卡在骨架。
+  // 仅在 items 从空变为有时重置 bannerReady（骨架→真实），
+  // 已有数据时保持 bannerReady 不变，避免骨架图闪烁。
+  const prevItemsLenRef = useRef(displayItems.length);
   useEffect(() => {
     setActiveIndex(0);
     setHoveredIndex(null);
     setBgIndices([0]);
-    setBannerReady(false);
-    const t = window.setTimeout(() => setBannerReady(true), 3000);
-    return () => window.clearTimeout(t);
+
+    const prevLen = prevItemsLenRef.current;
+    const curLen = displayItems.length;
+
+    if (curLen > 0 && prevLen === 0) {
+      // 从空变为有数据：重置 bannerReady，等待背景图加载
+      setBannerReady(false);
+      const t = window.setTimeout(() => setBannerReady(true), 3000);
+      prevItemsLenRef.current = curLen;
+      return () => window.clearTimeout(t);
+    } else if (curLen > 0) {
+      // 已有数据，items 变化（如轮播数据更新）：保持 bannerReady 不变
+      prevItemsLenRef.current = curLen;
+    } else {
+      // 变为空：重置
+      setBannerReady(false);
+      prevItemsLenRef.current = curLen;
+    }
   }, [displayItems]);
 
   // 当前主图无背景图时（无图可等），直接视为已就绪，避免缩略图列一直卡在骨架
@@ -102,7 +121,7 @@ export default function HeroBanner({
     if (!hasBackdrop) setBannerReady(true);
   }, [displayIndex, displayItems]);
 
-  // displayIndex 变化时（含悬停预览），背景层保留上一张用于 crossfade
+  // displayIndex 变化时（含悬停预览），背景层保留上一张用于 crossfade / slide
   useEffect(() => {
     setBgIndices((prev) => {
       const last = prev[prev.length - 1];
@@ -111,18 +130,35 @@ export default function HeroBanner({
     });
   }, [displayIndex]);
 
-  // 预加载下一张背景图，保证轮播切换时图片已就绪
+  // 滑动冷却期：滑动后 1000ms 内暂停自动轮播，避免动画冲突
+  const swipeCooldownRef = useRef(0);
+
+  // 预加载下一张背景图 + 即将出现的缩略图，保证轮播切换时图片已就绪
   useEffect(() => {
     if (displayItems.length <= 1) return;
-    const nextIdx = (activeIndex + 1) % displayItems.length;
+    const total = displayItems.length;
+
+    // 预加载下一张背景图
+    const nextIdx = (activeIndex + 1) % total;
     const nextBackdrop = displayItems[nextIdx]?.backdropPath || displayItems[nextIdx]?.backdrop_path;
     if (nextBackdrop) preloadImage(buildImageUrl(nextBackdrop, 'w1280'));
+
+    // 预加载即将出现在缩略图窗口中的图片（窗口大小 4，提前预加载前后各 2 张）
+    const n = Math.min(4, total);
+    const half = Math.floor(n / 2);
+    for (let offset = -half; offset < n - half; offset++) {
+      const idx = ((activeIndex + offset + 1) % total + total) % total;
+      const thumbPath = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
+      if (thumbPath) preloadImage(buildImageUrl(thumbPath, 'w500'));
+    }
   }, [activeIndex, displayItems]);
 
-  // 自动轮播（悬停暂停 / 仅 1 项不轮播）
+  // 自动轮播（悬停暂停 / 仅 1 项不轮播 / 滑动冷却期内暂停）
   useEffect(() => {
     if (paused || displayItems.length <= 1) return;
     const timer = window.setInterval(() => {
+      // 滑动后 1000ms 内不轮播，避免与滑动动画冲突
+      if (Date.now() - swipeCooldownRef.current < 1000) return;
       setActiveIndex((i) => (i + 1) % displayItems.length);
     }, autoPlayInterval);
     return () => window.clearInterval(timer);
@@ -156,6 +192,10 @@ export default function HeroBanner({
     if (Math.abs(dx) < 50) return;
     const total = displayItems.length;
     if (total <= 1) return;
+    // 标记为用户手动滑动，触发动画
+    setSlideDir(Math.sign(dx) > 0 ? 'right' : 'left');
+    // 记录滑动时间，冷却期内（1000ms）暂停自动轮播
+    swipeCooldownRef.current = Date.now();
     setActiveIndex((i) => (i - Math.sign(dx) + total) % total);
     setHoveredIndex(null);
   }, [displayItems.length]);
@@ -222,7 +262,10 @@ export default function HeroBanner({
       onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
     >
       {/* ── 主图区 ── */}
-      <div className="hero-banner__main">
+      <div
+        className={`hero-banner__main${slideDir ? ` slide-${slideDir}` : ''}`}
+        onAnimationEnd={() => setSlideDir(null)}
+      >
         {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
         {bgIndices.map((idx) => {
           const item = displayItems[idx];
@@ -290,7 +333,9 @@ export default function HeroBanner({
           banner 未就绪时显示固定数量骨架占位（立即出现），
           banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架） */}
       {!isMobile && (
-        <div className={`hero-banner__thumbs${!bannerReady ? ' hero-banner__thumbs--skeleton' : ''}`}>
+        <div
+          className={`hero-banner__thumbs${!bannerReady ? ' hero-banner__thumbs--skeleton' : ''}`}
+        >
           {!bannerReady ? (
             Array.from({ length: SKELETON_COUNT }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton" aria-hidden="true">
@@ -298,15 +343,17 @@ export default function HeroBanner({
               </div>
             ))
           ) : (
-            thumbSlots.map((idx) => (
-              <HeroThumb
-                key={idx}
-                item={displayItems[idx]}
-                active={idx === displayIndex}
-                onEnter={() => handleThumbEnter(idx)}
-                onClick={() => { setActiveIndex(idx); setHoveredIndex(null); }}
-              />
-            ))
+            <>
+              {thumbSlots.map((idx) => (
+                <HeroThumb
+                  key={displayItems[idx]?.id ?? idx}
+                  item={displayItems[idx]}
+                  active={idx === displayIndex}
+                  onEnter={() => handleThumbEnter(idx)}
+                  onClick={() => { setActiveIndex(idx); setHoveredIndex(null); }}
+                />
+              ))}
+            </>
           )}
         </div>
       )}
@@ -355,6 +402,9 @@ function HeroThumb({
         />
       ) : null}
       {!imgLoaded && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
+      <span className="hero-banner__play-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19" /></svg>
+      </span>
       <span className="hero-banner__thumb-title">{title}</span>
     </button>
   );

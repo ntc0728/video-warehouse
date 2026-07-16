@@ -55,6 +55,8 @@ output/
 epg_test.xml
 data/iptv.m3u
 test-results/
+test-storage-state.json
+playwright-report/
 
 # ── 截图 ──────────────────────────────────────
 shots/
@@ -79,10 +81,10 @@ public/debug-source.html
 # ── 脚本截图目录 ──────────────────────────────
 scripts/screenshots/
 
-# ── 文档（仅提交 page-diagrams 和 KNOWLEDGE.md）──
+# ── 文档（仅提交 KNOWLEDGE.md 和 TEST-CASES.md）──
 docs/*
-!docs/page-diagrams/
 !docs/KNOWLEDGE.md
+!docs/TEST-CASES.md
 
 # ── 研究文档（本地用，不入版本控制）────────────
 research/
@@ -99,6 +101,9 @@ scripts/*.ts
 scripts/*.mjs
 !scripts/*.spec.ts
 !scripts/fetch-diagram-data.mjs
+!scripts/global-setup.ts
+scripts/fixtures/
+scripts/backup-specs/
 
 # ── OS 临时文件 ───────────────────────────────
 .DS_Store

@@ -9,7 +9,7 @@
   display: flex;
   width: 100%;
   min-height: 20rem;
-  max-height: 70vh;
+  max-height: 35rem;
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
@@ -146,7 +146,7 @@
   overflow: hidden;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  border-left: 3px solid var(--color-primary);
+  border-left: var(--space-2xs) solid var(--color-primary);
 }
 
 /* ── CTA Button ─────────────────────────────────────────────────────── */
@@ -193,25 +193,24 @@
    保留水平内边距让缩略图有呼吸感；显式 width + flex-shrink:0 保证稳定不塌缩。 */
 
 .hero-banner__thumbs {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-  gap: var(--space-xs);
+  gap: var(--space-2xs);
   justify-content: center;
   width: clamp(13.75rem, 15vw, 23.75rem);
-  /* margin-left:auto 保证缩略图列始终固定在右侧：
-     常规态由 .hero-banner__main(flex:1) 推到右侧；
-     空状态（无 .hero-banner__main，且其余子项均 absolute 脱离文档流）
-     时，thumbs 是唯一在文档流的 flex 子项，auto 吸收全部左侧剩余空间 → 仍居右，
-     避免骨架列被排到最左侧（"靠左"问题）。 */
-  margin-left: auto;
-  padding-left: var(--space-sm);
+  z-index: 10;
+  padding: var(--space-sm);
+  padding-left: var(--space-lg);
   overflow: hidden;
 }
 
-/* 骨架态：去掉水平内边距，让骨架块真正铺满整列，避免视觉上"靠左" */
+/* 骨架态 */
 .hero-banner__thumbs--skeleton {
-  padding: 0;
+  padding-left: var(--space-lg);
 }
 
 /* 缩略图：等分容器高度 + 黑色遮罩（未选中）+ 标题悬浮叠加 */
@@ -221,26 +220,51 @@
   flex: 1 1 0;
   width: 100%;
   min-height: 0;
-  border: none;
+  border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  transition: box-shadow 0.2s ease;
   cursor: pointer;
-  /* 窗口切换时新进入的缩略图淡入（key=idx 触发挂载） */
-  animation: heroThumbFadeIn 0.4s ease-in-out;
+  /* 平滑过渡 */
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
 }
 
-@keyframes heroThumbFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
+/* 激活态：品牌主色边框 + 阴影 */
+.hero-banner__thumb.is-active {
+  transform: scale(1.02);
+  border: var(--space-3xs) solid var(--color-primary);
+  box-shadow: 0 0 12px var(--color-primary-shadow);
+}
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* 悬停态：播放图标 */
+.hero-banner__thumb .hero-banner__play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 4;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.hero-banner__thumb:hover .hero-banner__play-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.hero-banner__play-icon svg {
+  width: var(--space-md);
+  height: var(--space-md);
+  fill: #fff;
+  margin-left: var(--space-3xs);
 }
 
 .hero-banner__thumb-img {
@@ -299,13 +323,17 @@
   transform: scale(1.04);
 }
 
+.hero-banner__thumb.is-active .hero-banner__thumb-img {
+  transform: scale(1.03);
+}
+
 /* 未选中缩略图：黑色透明遮罩（选中/悬停时移除） */
 .hero-banner__thumb::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.65);
   transition: opacity 0.25s ease;
   pointer-events: none;
 }
@@ -318,7 +346,7 @@
 .hero-banner__thumb.is-active.is-loaded {
 }
 
-/* 标题悬浮叠加在图片底部（渐变蒙版保证可读） */
+/* 标题悬浮叠加在图片底部（渐变蒙版保证可读）— 仅激活态显示 */
 .hero-banner__thumb-title {
   position: absolute;
   right: 0;
@@ -338,16 +366,12 @@
   -webkit-box-orient: vertical;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.3s ease;
 }
 
-/* 图片加载完成后标题淡入 */
-.hero-banner__thumb.is-loaded .hero-banner__thumb-title {
-  opacity: 1;
-}
-
+/* 激活态显示标题 */
 .hero-banner__thumb.is-active .hero-banner__thumb-title {
-  color: #fff;
+  opacity: 1;
   font-weight: 700;
 }
 
@@ -365,6 +389,11 @@
     animation: none !important;
   }
 
+  .hero-banner__main.slide-left,
+  .hero-banner__main.slide-right {
+    animation: none !important;
+  }
+
   .hero-banner__thumb {
     animation: none !important;
   }
@@ -375,6 +404,20 @@
 
   .hero-banner__bg-placeholder {
     animation: none !important;
+  }
+}
+
+/* ── 大屏（≥1440px）：缩略图稍宽，适配 5 个 ─── */
+@media (width >= 1440px) {
+  .hero-banner__thumbs {
+    width: clamp(15rem, 16vw, 26rem);
+  }
+}
+
+/* ── 超大屏 / TV 端（≥1920px）：放宽高度上限 ─── */
+@media (width >= 1920px) {
+  .hero-banner {
+    max-height: 56rem;
   }
 }
 
@@ -402,5 +445,40 @@
 
   .hero-banner__text {
     max-width: 100%;
+  }
+
+  /* 移动端：背景图左右滑动切换（替代桌面端的 crossfade） */
+  .hero-banner__bg-layer.is-active {
+    animation: none;
+  }
+
+  .hero-banner__main.slide-left .hero-banner__bg-layer.is-active {
+    animation: heroBgSlideLeft 0.4s ease-out;
+  }
+
+  .hero-banner__main.slide-right .hero-banner__bg-layer.is-active {
+    animation: heroBgSlideRight 0.4s ease-out;
+  }
+
+  @keyframes heroBgSlideLeft {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes heroBgSlideRight {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 }

@@ -129,6 +129,7 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .iptv-toolbar .search-box-wrap--iptv {
@@ -532,6 +533,7 @@
   justify-content: center;
   align-items: center;
   min-height: 0;
+  height: 100%;
   padding: 0 var(--space-sm);
 }
 
