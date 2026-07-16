@@ -69,7 +69,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 
 | 页面 | 路由 | 核心组件 | 数据源 |
 |------|------|---------|--------|
-| 首页 | `/` | HeroBanner + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
+| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
 | 浏览/搜索 | `/browse` | SearchBox + FilterBar + SortBar + BrowseGrid（双卡片布局） | TMDB discover/search + CMS searchAll |
 | 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
 | 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
@@ -108,8 +108,20 @@ npm run dev          # 开发服务器 (127.0.0.1:3001)
 npm run build        # 生产构建
 npm run lint:all     # ESLint + Stylelint
 npm run test         # Vitest 单元测试
-npx playwright test  # E2E 测试
+npx playwright test  # E2E 测试（TMDB Mock 默认启用，-RealApi 关闭）
 ```
+
+## TMDB Mock 策略
+
+测试通过 `scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求，返回本地 mock 数据。
+
+| 模式 | 命令 | Token 风险 |
+|------|------|-----------|
+| Mock 模式（默认） | `npx playwright test` | 无 |
+| 真实 API 模式 | `TMDB_MOCK=false npx playwright test` | 有 |
+| 增量测试 | `.\scripts\run-tests.ps1`（mock）/ `-RealApi`（真实） | 按模式 |
+
+Mock 覆盖：trending / search / discover / movie detail / tv detail / person / genres / images。
 
 ## 关键目录
 
@@ -150,7 +162,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
 
 应用位置：
-- 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
+- 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、宽度 `clamp(160px, 12vw, 240px)`、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
 - 浏览页双卡片结构 — `Browse.css`：
   - Card 1（搜索区）：搜索 tabs + SearchBox + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压
@@ -160,6 +172,17 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - 详情页 `detail-hero` — 去掉负 margin，受 page-padding 约束（`Detail.css`）
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
+
+### HeroBanner 组件
+
+`src/components/HeroBanner/` — 首页 Hero 横幅轮播：
+- **布局**：左侧主背景图（crossfade / 移动端 slide）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
+- **缩略图**：`position: absolute; z-index: 10`，`overflow: hidden` 不影响 banner 圆角；激活态使用 `var(--color-primary)` 边框；悬停显示播放图标；标题仅激活态显示
+- **移动端滑动动画**：仅用户手动滑动触发 `slide-left` / `slide-right`，自动轮播使用 crossfade；滑动后 1000ms 冷却期内暂停自动轮播
+- **高度**：`aspect-ratio: 16/9` + `max-height: 35rem`（≥1920px 放宽到 `56rem`），无 `vh` 依赖
+- **预加载**：自动轮播时预加载下一张背景图（w1280）+ 缩略图窗口前后各 2 张（w500）
+- **bannerReady**：仅 items 从空变为有时重置，已有数据时保持不变，避免骨架闪烁
+- **无障碍**：`prefers-reduced-motion: reduce` 时禁用所有动画
 
 ### Toast 系统
 
@@ -225,7 +248,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/components/RecordShell/` | collections + history | 39 |
 | `src/components/StatusTabs/` | collections + history | 39 |
 | `src/components/FilterBar/` | browse | 18 |
-| `src/components/HeroBanner/` | home | 15 |
+| `src/components/HeroBanner/` | home + cross-page | ~25 |
 | `src/components/Layout/` | mobile-web-sidebar + 全部页面加载测试 | ~100+ |
 | `src/components/StickyHeader/` | 全部页面加载测试 | ~100+ |
 | `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 21 |

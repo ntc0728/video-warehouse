@@ -1,6 +1,6 @@
 /* 全局侧边栏宽度令牌（定义在 :root，确保任意位置——含 HeroBanner——都能解析） */
 :root {
-  --sidebar-width: clamp(200px, 14vw, 260px);
+  --sidebar-width: clamp(160px, 12vw, 240px);
 }
 
 .sidebar-container {

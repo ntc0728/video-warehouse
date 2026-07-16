@@ -25,7 +25,9 @@
     "test:smart": "pwsh scripts/run-tests.ps1 -AutoDetect",
     "test:smoke": "pwsh scripts/run-tests.ps1 -AutoDetect -Group smoke",
     "test:regression": "pwsh scripts/run-tests.ps1 -AutoDetect -Group regression",
-    "test:loading-screenshots": "npx playwright test scripts/loading-screenshots.spec.ts"
+    "test:loading-screenshots": "npx playwright test scripts/loading-screenshots.spec.ts",
+    "test:e2e": "npx playwright test && node scripts/localize-report.mjs",
+    "test:e2e:report": "npx playwright show-report"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.14",

@@ -3,8 +3,23 @@ param(
     [string]$Group = "all",        # smoke, regression, all
     [int]$Retries = 2,             # 失败重试次数
     [int]$Workers = 2,             # 并行 worker 数
-    [switch]$AutoDetect            # 自动检测 git diff
+    [switch]$AutoDetect,           # 自动检测 git diff
+    [switch]$RealApi               # 关闭 mock，使用真实 TMDB API（发版前回归）
 )
+
+# ── TMDB Mock 策略 ──────────────────────────────────────────
+# 日常开发：启用 mock（默认），保护 Token 不被封禁
+# 发版回归：-RealApi 开关，验证真实 API 兼容性
+if ($RealApi) {
+    $env:TMDB_MOCK = "false"
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host "  ⚠️  真实 API 模式（TMDB Mock 已关闭）" -ForegroundColor Yellow
+    Write-Host "  Token 将被真实调用，请确认网络正常" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Yellow
+} else {
+    $env:TMDB_MOCK = ""
+    Write-Host "✓ TMDB Mock 已启用（默认，保护 Token）" -ForegroundColor Green
+}
 
 # UI 层：使用 playwright 测试（粗粒度）
 $uiTestMap = @{
@@ -14,12 +29,13 @@ $uiTestMap = @{
     "src/pages/Browse/**" = @("scripts/browse.spec.ts")
     "src/pages/Collections/**" = @("scripts/collections.spec.ts")
     "src/pages/History/**" = @("scripts/history.spec.ts")
-    "src/pages/IPTV/**" = @("scripts/iptv.spec.ts")
+    "src/pages/IPTV/**" = @("scripts/iptv.spec.ts", "scripts/iptv-player.spec.ts")
     "src/pages/Player/**" = @("scripts/player.spec.ts")
     "src/pages/SourceChecker/**" = @("scripts/source-checker.spec.ts")
+    "src/pages/Person/**" = @("scripts/person.spec.ts")
     "src/components/UniversalPlayer/**" = @("scripts/player.spec.ts", "scripts/iptv-player.spec.ts")
-    "src/components/SearchBox/**" = @("scripts/search-features.spec.ts")
-    "src/components/Sidebar/**" = @("scripts/mobile-web-sidebar.spec.ts")
+    "src/components/SearchBox/**" = @("scripts/browse.spec.ts")
+    "src/components/RecordShell/**" = @("scripts/collections.spec.ts", "scripts/history.spec.ts")
 }
 
 # 逻辑层：使用 vitest 单元测试
@@ -46,14 +62,14 @@ $testGroups = @{
         "scripts/player.spec.ts",
         "scripts/source-checker.spec.ts",
         "scripts/iptv-player.spec.ts",
-        "scripts/search-features.spec.ts",
-        "scripts/mobile-web-sidebar.spec.ts"
+        "scripts/person.spec.ts",
+        "scripts/cross-page.spec.ts"
     )
 }
 
 # 自动检测 git diff 变更文件
 if ($AutoDetect -or $Files.Count -eq 0) {
-    Write-Host "Auto-detecting changed files via git diff..."
+    Write-Host "`nAuto-detecting changed files via git diff..."
     $gitDiff = git diff --name-only HEAD~1 2>$null
     if (-not $gitDiff) {
         $gitDiff = git diff --name-only 2>$null
@@ -62,7 +78,7 @@ if ($AutoDetect -or $Files.Count -eq 0) {
         $gitDiff = git status --porcelain | ForEach-Object { $_.Substring(3) }
     }
     $Files = $gitDiff | Where-Object { $_ -like "src/*" }
-    
+
     if ($Files.Count -eq 0) {
         Write-Host "No changed files detected."
         exit 0
@@ -76,7 +92,7 @@ $runVitest = $false
 
 foreach ($file in $Files) {
     $normalizedFile = $file.Replace('\', '/')
-    
+
     # 匹配 UI 层
     foreach ($pattern in $uiTestMap.Keys) {
         $regexPattern = "^" + ($pattern -replace '\*', '.*') + "$"
@@ -86,7 +102,7 @@ foreach ($file in $Files) {
             }
         }
     }
-    
+
     # 匹配逻辑层
     foreach ($pattern in $logicTestMap.Keys) {
         $regexPattern = "^" + ($pattern -replace '\*', '.*') + "$"
@@ -119,12 +135,12 @@ if ($runVitest) {
 if ($matchedPlaywrightTests.Count -gt 0) {
     Write-Host "`nRunning playwright tests (UI layer) with retries=${Retries}, workers=${Workers}:"
     $matchedPlaywrightTests | ForEach-Object { Write-Host "  - $_" }
-    
+
     $testArgs = @()
     $testArgs += "--retries=$Retries"
     $testArgs += "--workers=$Workers"
     $testArgs += $matchedPlaywrightTests
-    
+
     & npx playwright test @testArgs
 }
 
