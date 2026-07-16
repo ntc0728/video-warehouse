@@ -82,9 +82,13 @@ export default function AppLayout() {
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
 
-  // 已访问过的路由集合（一旦访问，永不移除）
+  // 不使用 Keep-Alive 的路由（静态 Set，避免每次渲染创建）
+  const noKeepAliveRef = useRef(new Set(['/play']));
+  const noKeepAlive = noKeepAliveRef.current;
+
+  // 已访问过的路由集合（排除 noKeepAlive 路由）
   const [visitedRoutes] = useState(() => new Set<string>());
-  if (activeRouteKey && !visitedRoutes.has(activeRouteKey)) {
+  if (activeRouteKey && !noKeepAlive.has(activeRouteKey) && !visitedRoutes.has(activeRouteKey)) {
     visitedRoutes.add(activeRouteKey);
   }
 
@@ -133,6 +137,18 @@ export default function AppLayout() {
                     </div>
                   );
                 })}
+                {/* noKeepAlive 路由：直接渲染，不缓存 */}
+                {activeRouteKey && noKeepAlive.has(activeRouteKey) && (() => {
+                  const Component = getRouteComponent(activeRouteKey);
+                  if (!Component) return null;
+                  return (
+                    <div key={activePath} data-route={activeRouteKey}>
+                      <Suspense fallback={<LoadingFallback />}>
+                        <Component />
+                      </Suspense>
+                    </div>
+                  );
+                })()}
                 <div id="load-more-portal" />
               </div>
             </CustomScrollbar>

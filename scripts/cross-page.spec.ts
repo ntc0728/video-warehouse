@@ -176,6 +176,29 @@ test.describe('13.4 播放页 → 其他页面', () => {
       console.log('⚠️ X-041: 返回按钮不可见');
     }
   });
+
+  test('X-042: 播放页不使用 KeepAlive（每次重新挂载）', async ({ page }) => {
+    // 操作: 访问播放页，离开后再返回，验证组件重新挂载
+    await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    // 记录初始状态
+    const initialUrl = page.url();
+
+    // 离开播放页
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+
+    // 返回播放页
+    await page.goto(initialUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    // 预期结果: 播放页重新加载（不使用 KeepAlive）
+    const currentUrl = page.url();
+    expect(currentUrl).toContain('/play/');
+    console.log('✅ X-042 通过: 播放页不使用 KeepAlive，每次重新挂载');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

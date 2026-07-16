@@ -219,10 +219,12 @@ interface IPlayerAdapter {
 │  - 设置状态 (useSettingsStore)          │
 │  - 视频数据 (useVideoStore)             │
 ├─────────────────────────────────────────┤
-│  持久化状态 (Zustand persist)           │
-│  - 历史记录 → localStorage              │
-│  - 收藏 → localStorage                  │
+│  持久化状态                             │
+│  - 历史记录 → IndexedDB                 │
+│  - 收藏 → IndexedDB                     │
 │  - IPTV 缓存 → IndexedDB                │
+│  - 用户设置 → localStorage              │
+│  - 搜索历史 → localStorage              │
 └─────────────────────────────────────────┘
 ```
 

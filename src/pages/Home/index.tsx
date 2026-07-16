@@ -144,16 +144,13 @@ export default function HomePage() {
 
   // ── 首页自定义整页 loading（显示在骨架图之前） ──────────────
   // 目的：避免只靠骨架图占位——因数据常来自缓存/预取而瞬间就绪，骨架往往一闪而过甚至不出现。
-  // 行为：进入首页（含 keep-alive 切回 '/'）时显示自定义 loading；
-  //       数据就绪（或失败）后仍需停留最短时间 MIN_MS，避免缓存秒回时 loading 只闪一下/不出现；
-  //       最长 MAX_MS 强制关闭，避免异常时卡死。
+  // 行为：首次进入首页时显示 loading；keep-alive 切回时不再显示（组件未卸载，状态保持）。
   const [pageLoading, setPageLoading] = useState(true);
   const dataReadyRef = useRef(false);
   dataReadyRef.current = hasAnyData || !!allFailed;
 
   useEffect(() => {
     if (location.pathname !== '/') return;
-    setPageLoading(true);
     const MIN_MS = 500;
     const MAX_MS = 10000;
     const start = performance.now();
@@ -169,7 +166,7 @@ export default function HomePage() {
     };
     check();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [location.pathname]);
+  }, []);
 
   if (!hasToken) {
     return (

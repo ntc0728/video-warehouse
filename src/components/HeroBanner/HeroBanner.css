@@ -8,8 +8,8 @@
   position: relative;
   display: flex;
   width: 100%;
-  min-height: 20rem;
-  max-height: 35rem;
+  min-height: var(--layout-hero-banner-min-h);
+  max-height: var(--layout-hero-banner-max-h);
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
@@ -229,44 +229,14 @@
   transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
 }
 
-/* 激活态：品牌主色边框 + 阴影 */
+/* 激活态：品牌主色边框 + 阴影（深色背景下需要更粗边框和更亮颜色） */
 .hero-banner__thumb.is-active {
   transform: scale(1.02);
-  border: var(--space-3xs) solid var(--color-primary);
-  box-shadow: 0 0 12px var(--color-primary-shadow);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 16px var(--color-primary-shadow);
 }
 
 /* 悬停态：播放图标 */
-.hero-banner__thumb .hero-banner__play-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
-  z-index: 4;
-  width: var(--space-lg);
-  height: var(--space-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  pointer-events: none;
-}
-
-.hero-banner__thumb:hover .hero-banner__play-icon {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.hero-banner__play-icon svg {
-  width: var(--space-md);
-  height: var(--space-md);
-  fill: #fff;
-  margin-left: var(--space-3xs);
-}
-
 .hero-banner__thumb-img {
   position: absolute;
   inset: 0;
@@ -411,13 +381,6 @@
 @media (width >= 1440px) {
   .hero-banner__thumbs {
     width: clamp(15rem, 16vw, 26rem);
-  }
-}
-
-/* ── 超大屏 / TV 端（≥1920px）：放宽高度上限 ─── */
-@media (width >= 1920px) {
-  .hero-banner {
-    max-height: 56rem;
   }
 }
 
