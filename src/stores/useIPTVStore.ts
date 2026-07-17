@@ -21,6 +21,7 @@ interface IPTVState {
   lastRefresh: number | null;
   loadedUrl: string | null;
   isCheckingAvailability: boolean;
+  checkingGroupId: string | null;
   availabilityProgress: { checked: number; total: number } | null;
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
@@ -74,6 +75,7 @@ export const useIPTVStore = create<IPTVState>()(
       lastRefresh: null,
       loadedUrl: null,
       isCheckingAvailability: false,
+      checkingGroupId: null,
       availabilityProgress: null,
       sourceType: PlaylistSourceType.UNKNOWN,
       sourceErrors: [],
@@ -158,6 +160,9 @@ export const useIPTVStore = create<IPTVState>()(
             lastRefresh: Date.now(),
             loadedUrl: settings.aggregatorUrl,
             isLoading: false,
+            isCheckingAvailability: false,
+            checkingGroupId: null,
+            availabilityProgress: null,
             error: sourceErrors.length > 0
               ? `${sourceErrors.length} 个源加载失败`
               : null,
@@ -264,8 +269,13 @@ export const useIPTVStore = create<IPTVState>()(
         if (targetChannels.length === 0) return;
 
         const newController = new AbortController();
+        const activeController = newController;
+        // 每次检测开始时清除所有频道的检测状态
+        const clearedChannels = channels.map(ch => ({ ...ch, isAvailable: undefined }));
         set({
+          channels: clearedChannels,
           isCheckingAvailability: true,
+          checkingGroupId: groupName || '__all__',
           availabilityProgress: { checked: 0, total: targetChannels.length },
           _abortController: newController,
         });
@@ -277,26 +287,47 @@ export const useIPTVStore = create<IPTVState>()(
           (checked, total) => {
             set({ availabilityProgress: { checked, total } });
           },
-          newController.signal
+          activeController.signal
         ).then((results) => {
-          // 若 controller 已被替换，说明有新的检测任务启动，忽略本次结果
-          if (get()._abortController !== newController) return;
+          // controller 已被替换 → 丢弃结果
+          if (get()._abortController !== activeController) return;
           const resultIds = new Set(results.keys());
-          const updatedChannels = channels.map(ch =>
-            resultIds.has(ch.id)
-              ? { ...ch, isAvailable: results.get(ch.id) }
-              : ch
+          // 从当前 store 构建 checkedIds，不依赖闭包中的旧 channelsToCheck
+          const currentChannels = get().channels;
+          const targetGroup = groupName || null;
+          const checkedIds = new Set(
+            currentChannels
+              .filter(ch => targetGroup ? ch.group === targetGroup : true)
+              .map(ch => ch.id)
           );
+          const updatedChannels = currentChannels.map(ch => {
+            if (!checkedIds.has(ch.id)) return ch;
+            const available = resultIds.has(ch.id) ? results.get(ch.id) : false;
+            return { ...ch, isAvailable: available };
+          });
           set({
             channels: updatedChannels,
             isCheckingAvailability: false,
+            checkingGroupId: null,
             availabilityProgress: null,
             _abortController: null,
           });
         }).catch(() => {
-          if (get()._abortController !== newController) return;
+          if (get()._abortController !== activeController) return;
+          const currentChannels = get().channels;
+          const targetGroup = groupName || null;
+          const checkedIds = new Set(
+            currentChannels
+              .filter(ch => targetGroup ? ch.group === targetGroup : true)
+              .map(ch => ch.id)
+          );
+          const resetChannels = currentChannels.map(ch =>
+            checkedIds.has(ch.id) ? { ...ch, isAvailable: false } : ch
+          );
           set({
+            channels: resetChannels,
             isCheckingAvailability: false,
+            checkingGroupId: null,
             availabilityProgress: null,
             _abortController: null,
           });
@@ -304,18 +335,20 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       abortAvailabilityCheck: () => {
-        const { _abortController, channels } = get();
+        const { _abortController, channels, checkingGroupId } = get();
         if (_abortController) {
           _abortController.abort();
         }
-        // 清除所有频道的检测结果
-        const resetChannels = channels.map(ch => ({
-          ...ch,
-          isAvailable: undefined,
-        }));
+        // 清除当前检测分组的频道检测结果
+        const resetChannels = channels.map(ch =>
+          (checkingGroupId === '__all__' || ch.group === checkingGroupId)
+            ? { ...ch, isAvailable: undefined }
+            : ch
+        );
         set({
           channels: resetChannels,
           isCheckingAvailability: false,
+          checkingGroupId: null,
           availabilityProgress: null,
           _abortController: null,
         });

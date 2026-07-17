@@ -65,7 +65,7 @@ test.describe('5.2 频道分组筛选', () => {
 
     // 预期结果: 分组标签存在
     const hasGroups = await page.evaluate(() => {
-      return !!document.querySelector('.iptv-groups, [class*="group-tag"]');
+      return !!document.querySelector('.grouppicker__hot-tag, .grouppicker__hot-tags');
     });
     console.log(`✅ IPTV-010 检查完成: 分组标签存在 = ${hasGroups}`);
   });

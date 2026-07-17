@@ -104,7 +104,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         {/* 批量模式下隐藏封面元素 */}
         {!batchMode && channel.isAvailable !== undefined && (
           <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
-            {channel.isAvailable ? <CheckCircle size={8} /> : <XCircle size={8} />}
+            {channel.isAvailable ? <CheckCircle size={12} /> : <XCircle size={12} />}
+            <span className="availability-badge__label">{channel.isAvailable ? '可用' : '不可用'}</span>
           </div>
         )}
         {!batchMode && channel.group ? (

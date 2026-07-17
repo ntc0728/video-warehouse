@@ -83,14 +83,16 @@
   position: absolute;
   top: var(--space-xs);
   left: var(--space-xs);
-  z-index: 1;
+  z-index: 3;
   display: flex;
-  justify-content: center;
   align-items: center;
-  width: var(--badge-size);
-  height: var(--badge-size);
-  border: 2px solid var(--color-surface);
-  border-radius: 50%;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .availability-badge.available {
@@ -101,6 +103,10 @@
 .availability-badge.unavailable {
   background-color: var(--color-error);
   color: white;
+}
+
+.availability-badge__label {
+  white-space: nowrap;
 }
 
 /* ---- Info area ---- */

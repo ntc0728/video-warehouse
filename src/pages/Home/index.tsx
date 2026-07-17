@@ -192,7 +192,7 @@ export default function HomePage() {
   // 故不会因缓存/预取秒回而只闪一次或不出现。
   if (pageLoading) {
     return (
-      <div className="page-padding home-page">
+      <div className="page-padding home-page home-page--loading">
         <AppLoading tip="精彩内容加载中…" />
       </div>
     );

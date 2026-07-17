@@ -14,6 +14,10 @@
   background-color: var(--color-background);
 }
 
+.home-page--loading {
+  min-height: 100%;
+}
+
 /* ── Rows container ──────────────────────────────────── */
 
 /* 首页：hero 全宽 + rows 自管间距 */

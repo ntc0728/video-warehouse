@@ -337,7 +337,7 @@ a[role="button"]:active:not(:disabled),
 .modal-content {
   position: fixed;
   z-index: 1001;
-  max-height: var(--layout-modal-max-h);
+  max-height: min(60vh, var(--layout-modal-max-h));
   background: var(--color-surface);
   color: var(--color-text);
   overflow-y: auto;

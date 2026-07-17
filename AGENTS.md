@@ -179,7 +179,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **布局**：左侧主背景图（crossfade / 移动端 slide）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
 - **缩略图**：`position: absolute; z-index: 10`，`overflow: hidden` 不影响 banner 圆角；激活态使用 `2px solid var(--color-primary)` 边框 + `var(--color-primary-shadow)` 阴影；点击跳转 detail 页；标题仅激活态显示
 - **移动端滑动动画**：仅用户手动滑动触发 `slide-left` / `slide-right`，自动轮播使用 crossfade；滑动后 1000ms 冷却期内暂停自动轮播
-- **高度**：`min-height: var(--layout-hero-banner-min-h)` + `max-height: var(--layout-hero-banner-max-h)`，TV 端（≥1920px）覆盖为 1280px
+- **高度**：`min-height: var(--layout-hero-banner-min-h)` + `max-height: min(70vh, var(--layout-hero-banner-max-h))`（vh + vw 双上限，防止超宽屏溢出）
 - **预加载**：自动轮播时预加载下一张背景图（w1280）+ 缩略图窗口前后各 2 张（w500）
 - **bannerReady**：仅 items 从空变为有时重置，已有数据时保持不变，避免骨架闪烁
 - **无障碍**：`prefers-reduced-motion: reduce` 时禁用所有动画
