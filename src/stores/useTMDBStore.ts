@@ -107,19 +107,6 @@ interface TMDBStoreState {
     genres: boolean;
   };
 
-  // ---- 缓存时间戳（每个区块最后获取时间） ----
-  lastFetchedAt: {
-    trending: number | null;
-    nowPlaying: number | null;
-    popularMovies: number | null;
-    topRatedMovies: number | null;
-    upcomingMovies: number | null;
-    popularTv: number | null;
-    topRatedTv: number | null;
-    airingTodayTv: number | null;
-    genres: number | null;
-  };
-
   // ---- 错误（每个区块独立错误，避免并行请求竞速覆盖） ----
   errors: {
     trending: string | null;
@@ -158,7 +145,6 @@ interface TMDBStoreState {
   fetchGenresAndCountries: () => Promise<void>;
   checkToken: () => Promise<{ ok: boolean; error?: string }>;
   refreshAll: () => Promise<void>;
-  clearCache: () => void;
 }
 
 // ============================================================
@@ -353,18 +339,6 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     recommendation: null,
   },
 
-  lastFetchedAt: {
-    trending: null,
-    nowPlaying: null,
-    popularMovies: null,
-    topRatedMovies: null,
-    upcomingMovies: null,
-    popularTv: null,
-    topRatedTv: null,
-    airingTodayTv: null,
-    genres: null,
-  },
-
   // ---- 操作 ----
 
   fetchTrending: async (timeWindow = 'day') => {
@@ -385,7 +359,6 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           trending: items,
           loading: { ...s.loading, trending: false },
           errors: { ...s.errors, trending: null },
-          lastFetchedAt: { ...s.lastFetchedAt, trending: Date.now() },
         }));
     } catch (err) {
       set((s) => ({
@@ -420,15 +393,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     items.sort((a, b) => b.popularity - a.popularity);
 
     if (items.length > 0) {
-      set((s) => {
-
-        return {
+      set((s) => ({
           nowPlaying: items,
           loading: { ...s.loading, nowPlaying: false },
           errors: { ...s.errors, nowPlaying: null },
-          lastFetchedAt: { ...s.lastFetchedAt, nowPlaying: Date.now() },
-        };
-      });
+      }));
     } else {
       set((s) => ({
         loading: { ...s.loading, nowPlaying: false },
@@ -441,16 +410,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, popularMovies: true } }));
     try {
       const data = await fetchPopularMovies();
-      set((s) => {
-        const items = data.results.map(mapMovieToVideoItem);
-
-        return {
-          popularMovies: items,
+      set((s) => ({
+          popularMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, popularMovies: false },
           errors: { ...s.errors, popularMovies: null },
-          lastFetchedAt: { ...s.lastFetchedAt, popularMovies: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, popularMovies: false },
@@ -463,16 +427,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, topRatedMovies: true } }));
     try {
       const data = await fetchTopRatedMovies();
-      set((s) => {
-        const items = data.results.map(mapMovieToVideoItem);
-
-        return {
-          topRatedMovies: items,
+      set((s) => ({
+          topRatedMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, topRatedMovies: false },
           errors: { ...s.errors, topRatedMovies: null },
-          lastFetchedAt: { ...s.lastFetchedAt, topRatedMovies: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, topRatedMovies: false },
@@ -485,16 +444,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, upcomingMovies: true } }));
     try {
       const data = await fetchUpcomingMovies();
-      set((s) => {
-        const items = data.results.map(mapMovieToVideoItem);
-
-        return {
-          upcomingMovies: items,
+      set((s) => ({
+          upcomingMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, upcomingMovies: false },
           errors: { ...s.errors, upcomingMovies: null },
-          lastFetchedAt: { ...s.lastFetchedAt, upcomingMovies: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, upcomingMovies: false },
@@ -507,16 +461,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, popularTv: true } }));
     try {
       const data = await fetchPopularTV();
-      set((s) => {
-        const items = data.results.map(mapTVToVideoItem);
-
-        return {
-          popularTv: items,
+      set((s) => ({
+          popularTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, popularTv: false },
           errors: { ...s.errors, popularTv: null },
-          lastFetchedAt: { ...s.lastFetchedAt, popularTv: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, popularTv: false },
@@ -529,16 +478,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, topRatedTv: true } }));
     try {
       const data = await fetchTopRatedTV();
-      set((s) => {
-        const items = data.results.map(mapTVToVideoItem);
-
-        return {
-          topRatedTv: items,
+      set((s) => ({
+          topRatedTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, topRatedTv: false },
           errors: { ...s.errors, topRatedTv: null },
-          lastFetchedAt: { ...s.lastFetchedAt, topRatedTv: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, topRatedTv: false },
@@ -551,16 +495,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, airingTodayTv: true } }));
     try {
       const data = await fetchAiringTodayTV();
-      set((s) => {
-        const items = data.results.map(mapTVToVideoItem);
-
-        return {
-          airingTodayTv: items,
+      set((s) => ({
+          airingTodayTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, airingTodayTv: false },
           errors: { ...s.errors, airingTodayTv: null },
-          lastFetchedAt: { ...s.lastFetchedAt, airingTodayTv: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, airingTodayTv: false },
@@ -580,20 +519,24 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  /** 强制刷新所有数据（忽略缓存 TTL） */
+  /** 强制刷新所有数据（清空现有数据后重新获取） */
   refreshAll: async () => {
     set(() => ({
-      lastFetchedAt: {
-        trending: null, nowPlaying: null, popularMovies: null,
-        topRatedMovies: null, upcomingMovies: null, popularTv: null,
-        topRatedTv: null, airingTodayTv: null, genres: null,
-      },
+      trending: [],
+      nowPlaying: [],
+      popularMovies: [],
+      topRatedMovies: [],
+      upcomingMovies: [],
+      popularTv: [],
+      topRatedTv: [],
+      airingTodayTv: [],
+      movieGenres: [],
+      tvGenres: [],
+      countries: [],
+      genresLanguage: null,
     }));
     await get().fetchAllHomeData();
   },
-
-  /** 清除内存缓存（数据重置为初始值） */
-  clearCache: () => {},
 
   fetchAllHomeData: async () => {
     const state = get();
@@ -880,17 +823,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         fetchTVGenres(currentLang),
         fetchCountries(),
       ]);
-      set((s) => {
-
-        return {
+      set((s) => ({
           movieGenres: mGenres,
           tvGenres: tGenres,
           countries: ctries,
           genresLanguage: currentLang,
           loading: { ...s.loading, genres: false },
-          lastFetchedAt: { ...s.lastFetchedAt, genres: Date.now() },
-        };
-      });
+      }));
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, genres: false },

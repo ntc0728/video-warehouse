@@ -9,7 +9,7 @@
   display: flex;
   width: 100%;
   min-height: var(--layout-hero-banner-min-h);
-  max-height: var(--layout-hero-banner-max-h);
+  max-height: min(70vh, var(--layout-hero-banner-max-h));
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
@@ -236,7 +236,7 @@
   box-shadow: 0 0 16px var(--color-primary-shadow);
 }
 
-/* 悬停态：播放图标 */
+/* 缩略图图片 */
 .hero-banner__thumb-img {
   position: absolute;
   inset: 0;

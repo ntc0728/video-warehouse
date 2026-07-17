@@ -10,6 +10,10 @@
   color: var(--color-text);
 }
 
+.person-page--loading {
+  min-height: 100%;
+}
+
 /* ── Hero ──────────────────────────────────────── */
 
 .person-hero {
@@ -17,6 +21,7 @@
   display: flex;
   flex-direction: column;
   min-height: clamp(18rem, 16rem + 10vw, 28rem);
+  max-height: min(50vh, clamp(28rem, 26rem + 10vw, 40rem));
   margin: 0 calc(-1 * var(--space-sm));
   background: rgba(0, 0, 0, 0.92);
   overflow: hidden;
@@ -324,6 +329,7 @@
 
 [data-device="tv"] .person-hero {
   min-height: clamp(22rem, 20rem + 8vw, 32rem);
+  max-height: min(55vh, clamp(32rem, 30rem + 8vw, 48rem));
 }
 
 [data-device="tv"] .person-avatar {

@@ -16,7 +16,7 @@ import { matchRoute, getRouteComponent } from './routeConfig';
 
 function LoadingFallback() {
   return (
-    <div className="page-padding">
+    <div className="page-padding page-loading">
       <AppLoading />
     </div>
   );

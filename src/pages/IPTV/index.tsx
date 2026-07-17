@@ -61,6 +61,7 @@ export default function IPTVPage() {
     aggregatorUrls,
     sourceNames,
     isCheckingAvailability,
+    checkingGroupId,
     checkAvailability,
     abortAvailabilityCheck,
   } = useIPTVStore(
@@ -75,6 +76,7 @@ export default function IPTVPage() {
       aggregatorUrls: s.settings.aggregatorUrls,
       sourceNames: s.settings.sourceNames,
       isCheckingAvailability: s.isCheckingAvailability,
+      checkingGroupId: s.checkingGroupId,
       checkAvailability: s.checkAvailability,
       abortAvailabilityCheck: s.abortAvailabilityCheck,
     })),
@@ -94,7 +96,6 @@ export default function IPTVPage() {
   );
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [groupsExpanded, setGroupsExpanded] = useState(false);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
 
@@ -148,9 +149,6 @@ export default function IPTVPage() {
   }, [selectedGroup, debouncedKeyword, scrollContainerRef]);
 
   const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
-  const [needCollapse, setNeedCollapse] = useState(false);
-  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
-  const groupsRef = useRef<HTMLDivElement>(null);
 
   /** 按分组、数据源和关键词筛选频道 */
   const filteredChannels = useMemo(() => {
@@ -199,49 +197,6 @@ export default function IPTVPage() {
     [filteredChannels, visibleCount]
   );
   const hasMore = visibleCount < filteredChannels.length;
-
-  /** 检测分组标签区域是否溢出，需要折叠（通过 offsetTop 实测行数） */
-  const checkGroupsOverflow = useCallback(() => {
-    const el = groupsRef.current;
-    if (!el || groups.length === 0) {
-      setNeedCollapse(false);
-      setCollapsedHeight(null);
-      return;
-    }
-
-    const tags = el.querySelectorAll<HTMLElement>('.group-tag');
-    if (tags.length === 0) {
-      setNeedCollapse(false);
-      setCollapsedHeight(null);
-      return;
-    }
-
-    const rowTops = new Set<number>();
-    tags.forEach(tag => rowTops.add(tag.offsetTop));
-    const sortedTops = Array.from(rowTops).sort((a, b) => a - b);
-    const rowCount = sortedTops.length;
-
-    if (rowCount <= 2) {
-      setNeedCollapse(false);
-      setCollapsedHeight(null);
-      return;
-    }
-
-    setNeedCollapse(true);
-    setCollapsedHeight(sortedTops[2]);
-  }, [groups.length]);
-
-  useEffect(() => {
-    const el = groupsRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => checkGroupsOverflow());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [checkGroupsOverflow]);
-
-  useEffect(() => {
-    checkGroupsOverflow();
-  }, [filteredGroups, checkGroupsOverflow]);
 
   /** Settings 中 IPTV 源索引变化时，同步更新 IPTV store 的 aggregatorUrls */
   useEffect(() => {
@@ -300,7 +255,6 @@ export default function IPTVPage() {
   const handleSourceSelect = useCallback((sourceId: string | null) => {
     setSelectedSource(sourceId);
     setSelectedGroup(null);
-    setGroupsExpanded(false);
     useIPTVStore.getState().abortAvailabilityCheck();
   }, []);
 
@@ -316,20 +270,6 @@ export default function IPTVPage() {
     <div className="page-padding iptv-page">
         <div className="iptv-top-card">
           <div className="iptv-header">
-            <div className="iptv-header-top">
-              <div className="iptv-header-meta">
-                {lastRefresh && (
-                  <span className="last-refresh">
-                    源: {new Date(lastRefresh).toLocaleTimeString()}
-                  </span>
-                )}
-                {epgCacheTime && (
-                  <span className="last-refresh">
-                    节目单: {new Date(epgCacheTime).toLocaleTimeString()}
-                  </span>
-                )}
-              </div>
-            </div>
             {!proxyUrl && (
               <span className="iptv-proxy-warning-inline">
                 <AlertCircle size={14} />
@@ -340,43 +280,6 @@ export default function IPTVPage() {
               </span>
             )}
           </div>
-
-          <div className="iptv-toolbar">
-            {isCheckingAvailability ? (
-            <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
-              取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
-            </button>
-          ) : (
-            <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0}>
-              检测{selectedGroup || '全部'}
-            </button>
-          )}
-          <button className="refresh-btn" onClick={() => refreshChannels()}>
-            刷新
-          </button>
-        </div>
-
-        {isCheckingAvailability && availabilityProgress && (
-          <div className="availability-progress">
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${(availabilityProgress.checked / availabilityProgress.total) * 100}%` }}
-              />
-            </div>
-            <span className="progress-text">
-              检测中: {availabilityProgress.checked}/{availabilityProgress.total}
-            </span>
-          </div>
-        )}
-
-        {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
-          <div className="availability-stats">
-            <span className="stat available"><CheckCircle2 size={12} /><span>{availableCount}</span></span>
-            <span className="stat unavailable"><XCircle size={12} /><span>{filteredChannels.length - availableCount}</span></span>
-            <span className="stat total">共 {filteredChannels.length} 个</span>
-          </div>
-        )}
 
         {aggregatorUrls && aggregatorUrls.length > 1 && (
           <div className={`iptv-source-filter${channels.length === 0 ? ' disabled' : ''}`}>
@@ -416,55 +319,57 @@ export default function IPTVPage() {
         )}
 
         {channels.length > 0 && filteredGroups.length > 0 && (
-          isMobile ? (
-            <GroupPicker
-              key={selectedSource ?? 'all'}
-              groups={filteredGroups}
-              totalCount={selectedSource
-                ? channels.filter(ch => ch.sourceId === selectedSource).length
-                : channels.length}
-              selectedGroup={selectedGroup}
-              onSelect={handleGroupSelect}
-            />
-          ) : (
-            <>
+          <GroupPicker
+            key={selectedSource ?? 'all'}
+            groups={filteredGroups}
+            totalCount={selectedSource
+              ? channels.filter(ch => ch.sourceId === selectedSource).length
+              : channels.length}
+            selectedGroup={selectedGroup}
+            onSelect={handleGroupSelect}
+            mode={isMobile ? 'bottom-sheet' : 'popup'}
+          />
+        )}
+
+        {/* ── 操作行：按钮（居中）+ 时间信息（右对齐） ── */}
+        <div className="iptv-actions-row">
+          <div className="iptv-actions-buttons">
+            {(isCheckingAvailability && checkingGroupId === (selectedGroup || '__all__')) ? (
+              <button className="refresh-btn checking" onClick={abortAvailabilityCheck}>
+                取消 ({availabilityProgress?.checked}/{availabilityProgress?.total})
+              </button>
+            ) : (
+              <button className="refresh-btn" onClick={handleCheckAvailability} disabled={channels.length === 0 || isLoading || isCheckingAvailability}>
+                检测{selectedGroup || '全部'}
+              </button>
+            )}
+            <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
+              刷新
+            </button>
+          </div>
+        </div>
+
+        {/* ── 检测信息（仅当前分组） ── */}
+        {isCheckingAvailability && checkingGroupId === (selectedGroup || '__all__') && availabilityProgress && (
+          <div className="availability-progress">
+            <div className="progress-bar">
               <div
-                className={`iptv-groups${needCollapse && !groupsExpanded ? ' collapsed' : ''}`}
-                style={
-                  needCollapse && !groupsExpanded && collapsedHeight !== null
-                    ? { maxHeight: collapsedHeight }
-                    : !needCollapse
-                      ? { marginBottom: 16 }
-                      : undefined
-                }
-                ref={groupsRef}
-              >
-                <button
-                  className={`iptv-filter-tag group-tag ${selectedGroup === null ? 'active' : ''}`}
-                  onClick={() => handleGroupSelect(null)}
-                >
-                  全部 ({selectedSource ? channels.filter(ch => ch.sourceId === selectedSource).length : channels.length})
-                </button>
-                {filteredGroups.map((group) => (
-                  <button
-                    key={group.name}
-                    className={`iptv-filter-tag group-tag ${selectedGroup === group.name ? 'active' : ''}`}
-                    onClick={() => handleGroupSelect(group.name)}
-                  >
-                    {group.name} ({group.count})
-                  </button>
-                ))}
-              </div>
-              {needCollapse && (
-                <button
-                  className="groups-toggle"
-                  onClick={() => setGroupsExpanded(!groupsExpanded)}
-                >
-                  {groupsExpanded ? '收起分类 ▲' : `展开全部分类 (${filteredGroups.length}) ▼`}
-                </button>
-              )}
-            </>
-          )
+                className="progress-fill"
+                style={{ width: `${(availabilityProgress.checked / availabilityProgress.total) * 100}%` }}
+              />
+            </div>
+            <span className="progress-text">
+              检测中: {availabilityProgress.checked}/{availabilityProgress.total}
+            </span>
+          </div>
+        )}
+
+        {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
+          <div className="availability-stats">
+            <span className="stat available"><CheckCircle2 size={12} /><span>{availableCount}</span></span>
+            <span className="stat unavailable"><XCircle size={12} /><span>{filteredChannels.length - availableCount}</span></span>
+            <span className="stat total">共 {filteredChannels.length} 个</span>
+          </div>
         )}
       </div>
 
@@ -476,6 +381,20 @@ export default function IPTVPage() {
         )}
         {!isLoading && (
           <div className="iptv-content">
+            {(lastRefresh || epgCacheTime) && (
+              <div className="iptv-content-meta">
+                {lastRefresh && (
+                  <span className="last-refresh">
+                    源: {new Date(lastRefresh).toLocaleTimeString()}
+                  </span>
+                )}
+                {epgCacheTime && (
+                  <span className="last-refresh">
+                    节目单: {new Date(epgCacheTime).toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            )}
             {channels.length === 0 ? (
               <Empty
                 title="暂无频道数据"

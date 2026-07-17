@@ -5,7 +5,7 @@
 .tmdb-trending-banner {
   position: relative;
   width: 100%;
-  max-height: var(--layout-hero-height);
+  max-height: min(55vh, var(--layout-hero-height));
   margin-bottom: var(--space-lg);
   border-radius: var(--radius-lg);
   overflow: hidden;

@@ -12,6 +12,12 @@
                COEFF    = (MAX - MIN) / range
                minVw=375, maxVw=3840, range=3465
 
+   Banner 高度采用双约束策略（防止超宽屏溢出）：
+   max-height: min(VH_CAP, vw流体值)
+     VH_CAP    : 占屏幕高度的上限百分比（HeroBanner 70vh / DetailHero 65vh）
+     vw流体值  : 基于视口宽度的流体 clamp（即下方 --layout-hero-banner-max-h 等）
+   aspect-ratio: 16/9 作为最小保证（窄屏不至于太扁）
+
    高度类值使用 vh 流体:
    clamp(MINvh, PREFERRED + COEFF * 100vh, MAXvh)
          其中 PREFERRED = MINvh - COEFF * minVh
@@ -218,14 +224,14 @@
   --layout-groups-collapsed-h: 76px;      /* IPTV 分组折叠高度 */
   --layout-select-w:           140px;     /* 下拉选择框宽度 */
   --layout-select-w-mobile:    120px;     /* 移动端下拉宽度 */
-  --layout-epg-max-height:     400px;     /* EPG 节目列表最大高度 */
+  --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
   --layout-bottomsheet-max-h:  500px;     /* 底部弹出面板最大高度 */
   --layout-epg-empty-min-height: 100px;   /* EPG 空态最小高度 */
   --layout-epg-time-min-width: 100px;     /* EPG 时间列最小宽度 */
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
-  --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度 */
-  --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度 */
-  --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度 */
+  --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
+  --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
+  --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
   --layout-osd-timeshift-dot:  6px;        /* 时移进度条圆点尺寸 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
@@ -430,7 +436,7 @@
     --layout-detail-hero-max-h: 50.875rem; /* 814px（比首页 banner ~784px 大，但 base 值小） */
     --layout-modal-max-h: 68.75rem;        /* 1100px */
     --layout-program-guide-max-h: 62.5rem; /* 1000px */
-    --layout-epg-max-height: 700px;        /* EPG 节目列表 */
+    --layout-epg-max-height: clamp(300px, 30rem + 5vw, 60vh);        /* EPG 节目列表 */
     --layout-bottomsheet-max-h: 800px;     /* 底部弹出面板 */
   }
 }

@@ -14,6 +14,7 @@
 }
 
 .detail-page--loading {
+  min-height: 100%;
   justify-content: center;
   align-items: center;
 }
@@ -26,7 +27,7 @@
   flex-direction: column;
   justify-content: flex-end;
   aspect-ratio: 16 / 9;
-  max-height: var(--layout-detail-hero-max-h);
+  max-height: min(65vh, var(--layout-detail-hero-max-h));
   border-radius: var(--radius-lg);
   overflow: hidden;
 }

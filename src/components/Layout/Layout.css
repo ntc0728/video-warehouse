@@ -74,6 +74,13 @@
   flex-direction: column;
 }
 
+/* 路由懒加载 fallback：flex 容器 + 占满剩余空间，避免 AppLoading 闪烁 */
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 [data-device="app"] .page-transition {
   /* 原生 App 底部 TabBar 遮挡滚动内容，预留底部安全区 */
   padding-bottom: var(--layout-tabbar-height);

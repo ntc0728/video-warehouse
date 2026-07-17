@@ -142,7 +142,7 @@ export default function PersonPage() {
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);
 
-  if (loading) return <div className="page-padding person-page"><AppLoading /></div>;
+  if (loading) return <div className="page-padding person-page person-page--loading"><AppLoading /></div>;
   if (error || !person) {
     return (
       <div className="page-padding person-page">

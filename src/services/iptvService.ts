@@ -374,24 +374,20 @@ export async function checkChannelsAvailability(
   const total = channels.length;
   let checked = 0;
 
-  const checkWithAbort = async (url: string): Promise<boolean> => {
-    if (signal?.aborted) {
-      return false;
-    }
-    return checkChannelAvailability(url);
-  };
-
   for (const channel of channels) {
     if (signal?.aborted) break;
 
-    const available = await checkWithAbort(channel.url);
+    const available = signal?.aborted ? false : await checkChannelAvailability(channel.url);
     results.set(channel.id, available);
     checked++;
     onProgress?.(checked, total);
 
     // 检测间隔，避免过度并发占用带宽
     if (checked < total && !signal?.aborted) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 100);
+        signal?.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      });
     }
   }
 
