@@ -234,8 +234,15 @@ export default function HistoryPage() {
   }, [watchHistory]);
 
   const historyVideos = useMemo<HistoryVideoItem[]>(() => {
+    // 按 videoId 去重：同一剧集（不同集）只保留最新一条，避免历史列表重复
+    const seenVideo = new Set<string>();
     let list: HistoryVideoItem[] = [...watchHistory]
       .sort((a, b) => b.updatedAt - a.updatedAt)
+      .filter((h) => {
+        if (seenVideo.has(h.videoId)) return false;
+        seenVideo.add(h.videoId);
+        return true;
+      })
       .map((h: HistoryRecord): HistoryVideoItem => {
         const sv = videos.find((v) => v.id === h.videoId);
         const base: Video = sv ?? {
@@ -263,7 +270,16 @@ export default function HistoryPage() {
 
   /** 状态标签的计数（在状态筛选之前） */
   const statusCounts = useMemo(() => {
-    let list = [...watchHistory].map(h => ({ id: h.videoId, status: getVideoWatchStatus(h.videoId) }));
+    // 按 videoId 去重，与 historyVideos 保持一致
+    const seenVideo = new Set<string>();
+    let list = [...watchHistory]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .filter((h) => {
+        if (seenVideo.has(h.videoId)) return false;
+        seenVideo.add(h.videoId);
+        return true;
+      })
+      .map(h => ({ id: h.videoId, status: getVideoWatchStatus(h.videoId) }));
     if (searchByTab.video.trim()) {
       const kw = searchByTab.video.toLowerCase();
       list = list.filter((h) => {
@@ -277,8 +293,15 @@ export default function HistoryPage() {
   }, [watchHistory, videos, searchByTab.video, getVideoWatchStatus]);
 
   const iptvHistory = useMemo<HistoryChannelItem[]>(() => {
+    // 按 channelId 去重：同一频道只保留最新一条
+    const seenChannel = new Set<string>();
     let list: HistoryChannelItem[] = [...playHistory]
       .sort((a, b) => b.playedAt - a.playedAt)
+      .filter((r) => {
+        if (seenChannel.has(r.channelId)) return false;
+        seenChannel.add(r.channelId);
+        return true;
+      })
       .map((r: IPTVPlayRecord): HistoryChannelItem => {
         const ch = iptvChannels.find((c) => c.id === r.channelId);
         return {

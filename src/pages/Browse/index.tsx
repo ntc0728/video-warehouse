@@ -8,10 +8,9 @@
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
-import SearchBox from '@/components/SearchBox';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
@@ -20,6 +19,7 @@ import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
 import { useTMDBStore } from '@/stores';
+import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -38,6 +38,9 @@ export default function BrowsePage() {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
   const location = useLocation();
+  const navigationType = useNavigationType();
+  /** POP 导航（刷新/直接访问/后退）：清空搜索词，避免 history.state 残留 */
+  const isPop = navigationType === 'POP';
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
@@ -45,7 +48,11 @@ export default function BrowsePage() {
   useScrollRestore('browse');
 
   // ── 搜索词（从 location state 读取）──
+  // createBrowserRouter 下 window.history.state 在刷新后被浏览器保留，
+  // 导致 location.state.q 残留 → 顶部 SearchBox 显示上次的搜索词。
+  // 仅在 PUSH 导航（从顶部 SearchBox 搜索进入）时读取搜索词；POP 时直接清空。
   const [query, setQuery] = useState(() => {
+    if (isPop) return '';
     const state = location.state as { q?: string } | null;
     return state?.q?.trim() ?? '';
   });
@@ -54,10 +61,12 @@ export default function BrowsePage() {
   // 需主动同步搜索词到 query → 进而带入 Browse 页搜索框（defaultValue）
   const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
   useEffect(() => {
+    // POP 导航（刷新/后退）不从 location.state 恢复搜索词
+    if (isPop) return;
     if (stateQ) {
       setQuery(stateQ);
     }
-  }, [stateQ]);
+  }, [stateQ, isPop]);
 
   // ── 浏览器标签标题 ────────────────────────────────
   useDocumentTitle(searchMode === 'smart' && query ? null : undefined);
@@ -131,10 +140,39 @@ export default function BrowsePage() {
     updateFilter(next);
   }, [query, updateFilter]);
 
+  // ── 注册顶部导航栏搜索回调 ──────────────────────
+  const handlePageSearch = useCallback((q: string) => {
+    setQuery(q);
+    if (q) {
+      triggerSearch(q, searchMode);
+    } else {
+      if (searchMode === 'smart') {
+        lastSmartSearchedRef.current = '';
+        if (filterValue.category === 'top') {
+          void useTMDBStore.getState().fetchTopRated(1, { reset: true });
+        } else {
+          void useTMDBStore.getState().fetchDiscover(1, { reset: true });
+        }
+      } else {
+        lastCmsSearchedRef.current = '';
+        resetCMS();
+      }
+    }
+  }, [searchMode, triggerSearch, filterValue.category, resetCMS]);
+
+  useEffect(() => {
+    if (location.pathname !== '/browse') return;
+    const store = usePageSearchStore.getState();
+    store.setPageSearch(query, handlePageSearch, '搜索影片、剧集…');
+    return () => { store.clearPageSearch(); };
+  }, [query, handlePageSearch, location.pathname]);
+
   // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 中的最新搜索词触发搜索
   // 注意：必须读 stateQ（同步变量）而非 query（异步 state）——
   // location.key 变化时 setQuery 尚未生效，query 仍是上一次的旧值。
   useEffect(() => {
+    // POP 导航（刷新/后退）不触发搜索
+    if (isPop) return;
     const q = stateQ;
     if (q) {
       if (searchMode === 'smart') {
@@ -146,7 +184,7 @@ export default function BrowsePage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
+  }, [location.key, isPop]);
 
   // ── 懒加载触发 ──────────────────────────────────
   const loadMore = useCallback(() => {
@@ -228,32 +266,6 @@ export default function BrowsePage() {
           >
             直链搜索
           </button>
-        </div>
-        {/* 搜索框 */}
-        <div className="browse-search-input-wrap">
-          <SearchBox
-            variant="browse"
-            defaultValue={query}
-            onSearch={(q) => {
-              setQuery(q);
-              if (q) {
-                triggerSearch(q, searchMode);
-              } else {
-                // 清除按钮：重置为默认结果
-                if (searchMode === 'smart') {
-                  lastSmartSearchedRef.current = '';
-                  if (filterValue.category === 'top') {
-                    void useTMDBStore.getState().fetchTopRated(1, { reset: true });
-                  } else {
-                    void useTMDBStore.getState().fetchDiscover(1, { reset: true });
-                  }
-                } else {
-                  lastCmsSearchedRef.current = '';
-                  resetCMS();
-                }
-              }
-            }}
-          />
         </div>
         {/* 智能检索模式：FilterBar（仅筛选行，footer 移到 Card 2） */}
         {searchMode === 'smart' && (

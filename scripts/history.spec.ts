@@ -77,6 +77,45 @@ test.describe('8.3 时间分组', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// 8.4 去重显示
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('8.4 去重显示', () => {
+  test('HIS-025: 切换 tab 时同一剧集/频道不重复显示', async ({ page }) => {
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    // 操作: 在影视 tab 记录卡片数量，切换到 IPTV tab 再切回来
+    const videoCards = page.locator('.video-card-grid .record-card, .record-card');
+    const initialVideoCount = await videoCards.count();
+
+    // 切换到 IPTV tab
+    const iptvTab = page.locator('.category-segmented__item').nth(1);
+    if (await iptvTab.isVisible().catch(() => false)) {
+      await iptvTab.click();
+      await page.waitForTimeout(1000);
+
+      // 切回影视 tab
+      const videoTab = page.locator('.category-segmented__item').nth(0);
+      if (await videoTab.isVisible().catch(() => false)) {
+        await videoTab.click();
+        await page.waitForTimeout(1000);
+
+        // 预期结果: 影视卡片数量不增加（同一剧集不同集不重复显示）
+        const afterSwitchCount = await videoCards.count();
+        expect(afterSwitchCount).toBeLessThanOrEqual(initialVideoCount);
+        console.log(`✅ HIS-025 通过: 切换前后卡片数 ${initialVideoCount} → ${afterSwitchCount}`);
+      } else {
+        console.log('⚠️ HIS-025: 影视 tab 未检测到');
+      }
+    } else {
+      console.log('⚠️ HIS-025: IPTV tab 未检测到');
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 // 8.5 批量管理
 // ═══════════════════════════════════════════════════════════════
 

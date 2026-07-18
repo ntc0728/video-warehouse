@@ -29,11 +29,35 @@
   flex-wrap: wrap;
 }
 
-/* 多行 wrap：分类行专用 — Grid 布局 */
+/* 多行 wrap：分类行专用 — Flex 布局，label 固定左侧，chips 容器内部换行 */
 .filter-bar__row--wrap {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+
+/* label 伪装为 chip：共享尺寸和对齐基线，但不显示边框/背景/交互 */
+.filter-bar__label--as-chip {
+  flex-shrink: 0;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0% !important;
+  cursor: default !important;
+  pointer-events: none;
+  color: var(--color-text-tertiary) !important;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* chips 容器：label 保持在左侧，chips 在右侧内部换行 */
+.filter-bar__chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Label ────────────────────────────────────────── */
@@ -90,11 +114,6 @@
   font-weight: 600;
 }
 
-/* 多行 wrap 时 label 顶部对齐 */
-.filter-bar__row--wrap .filter-bar__label--clickable {
-  align-self: flex-start;
-}
-
 /* ── Wrap chip 容器（所有行统一行为） ──────────────── */
 
 .filter-bar__chips-scroll {
@@ -106,16 +125,6 @@
   min-width: 0;
   padding: var(--space-2xs) 0;
   /* 移除 overflow-x: auto（不再需要横向滚动） */;
-}
-
-/* 多行 wrap chip 容器 — 分类行专用 */
-.filter-bar__chips-wrap {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  min-width: 0;
-  padding: var(--space-2xs) 0;
 }
 
 /* ── Chip (胶囊样式) ───────────────────────────────── */
@@ -237,7 +246,18 @@
   scrollbar-width: none;
 }
 
+/* 移动端 chips 容器单行滚动 */
+.filter-bar--mobile .filter-bar__chips-wrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
 .filter-bar--mobile .filter-bar__row--wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-bar--mobile .filter-bar__chips-wrap::-webkit-scrollbar {
   display: none;
 }
 
@@ -379,4 +399,194 @@
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   限高筛选行（超过 maxRows 行时显示箭头滚动）
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.filter-bar__row--limited {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.filter-bar__row--limited .filter-bar__label {
+  align-self: center;
+  min-width: 2.5em;
+}
+
+/* ── 限高内容容器 ──────────────────────────────────── */
+
+.filter-bar__chips-limited {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: var(--space-xs) 0;
+}
+
+/* 折叠模式：限制为 1 行高度，超出隐藏 */
+.filter-bar__chips-limited--collapsed {
+  max-height: calc(var(--comp-tab-height) + var(--space-xs) * 2);
+  overflow: hidden;
+}
+
+/* 超出 maxRows 时切换为单行水平滚动 */
+.filter-bar__chips-limited--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filter-bar__chips-limited--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 滚动模式下 chip 不压缩 */
+.filter-bar__chips-limited--scroll .filter-bar__chip {
+  flex-shrink: 0;
+}
+
+/* ── 箭头容器（右侧两个箭头） ─────────────────────── */
+
+.filter-bar__scroll-arrows {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  align-items: center;
+  align-self: center;
+}
+
+/* ── 箭头按钮 ──────────────────────────────────────── */
+
+.filter-bar__scroll-arrow {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-tab-height);
+  height: var(--comp-tab-height);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-bar__scroll-arrow:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.filter-bar__scroll-arrow:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.filter-bar__scroll-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Mobile 适配 ───────────────────────────────────── */
+
+.filter-bar--mobile .filter-bar__row--limited {
+  grid-template-columns: auto 1fr auto;
+}
+
+.filter-bar--mobile .filter-bar__chips-limited {
+  flex-wrap: wrap;
+}
+
+/* 滚动模式优先级必须高于 .filter-bar--mobile .filter-bar__chips-limited */
+.filter-bar--mobile .filter-bar__chips-limited--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filter-bar--mobile .filter-bar__chips-limited--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── 更多按钮（移动端） ─────────────────────────────── */
+
+.filter-bar__more-btn {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  height: var(--comp-tab-height);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-bar__more-btn:hover {
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.filter-bar__more-btn:active {
+  transform: scale(0.95);
+}
+
+/* ── 底部弹窗内容 ──────────────────────────────────── */
+
+.filter-bar__sheet-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0 var(--space-lg);
+}
+
+.filter-bar__sheet-content .filter-bar__chip {
+  flex-shrink: 0;
+  height: var(--comp-tab-height);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-bar__sheet-content .filter-bar__chip:hover {
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.filter-bar__sheet-content .filter-bar__chip--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* ── Reduced motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar__scroll-arrow,
+  .filter-bar__more-btn {
+    transition: none;
+  }
 }

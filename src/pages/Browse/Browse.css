@@ -16,11 +16,11 @@
 /* ── Card 1：搜索区域 ──────────────────────────────── */
 .browse-card--search {
   display: flex;
-  flex-shrink: 0;
   flex-direction: column;
+  flex-shrink: 0;
   gap: var(--space-lg);
   align-items: center;
-  padding: var(--space-lg);
+  padding: var(--space-sm);
 }
 
 /* ── Card 2：结果区域 ──────────────────────────────── */
@@ -34,13 +34,10 @@
 /* ── 卡片模块视觉 ───────────────── */
 .browse-card--search,
 .browse-card--results {
-  background-color: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
-}
-.browse-card--search {
-  padding: var(--space-sm);
 }
 
 /* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */
@@ -123,34 +120,6 @@
 .browse-search-tab.active {
   background: var(--color-primary);
   color: #fff;
-}
-
-.browse-search-input-wrap {
-  position: relative;
-  width: 100%;
-  max-width: var(--layout-searchbox-browse-max-w);
-}
-
-.browse-search-spinner {
-  position: absolute;
-  top: 50%;
-  right: var(--space-sm);
-  color: var(--color-primary);
-  transform: translateY(-50%);
-  animation: spinCentered 1s linear infinite;
-}
-
-@keyframes spinCentered {
-  from { transform: translateY(-50%) rotate(0deg); }
-  to { transform: translateY(-50%) rotate(360deg); }
-}
-
-.browse-search-warning {
-  padding: var(--space-xs) var(--space-md);
-  background: var(--color-warning-bg, rgba(255, 193, 7, 0.1));
-  color: var(--color-warning, #ffc107);
-  font-size: var(--text-sm);
-  text-align: center;
 }
 
 @keyframes browse-fade-in {
