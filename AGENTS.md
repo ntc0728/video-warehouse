@@ -70,7 +70,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | 页面 | 路由 | 核心组件 | 数据源 |
 |------|------|---------|--------|
 | 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
-| 浏览/搜索 | `/browse` | SearchBox + FilterBar + SortBar + BrowseGrid（双卡片布局） | TMDB discover/search + CMS searchAll |
+| 浏览/搜索 | `/browse` | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供） | TMDB discover/search + CMS searchAll |
 | 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
 | 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
 | IPTV | `/iptv` | IPTVChannelList + EPGProgramList | M3U 解析 + EPG XMLTV 匹配 |
@@ -165,7 +165,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、宽度 `clamp(160px, 12vw, 240px)`、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
 - 浏览页双卡片结构 — `Browse.css`：
-  - Card 1（搜索区）：搜索 tabs + SearchBox + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压
+  - Card 1（搜索区）：搜索 tabs + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压（SearchBox 已移至顶部导航，通过 `usePageSearchStore` 注册回调）
   - Card 2（结果区）：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵，`flex: 1 1 0` 填充剩余空间
 - IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css`
 - 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css`
@@ -196,7 +196,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - 哨兵节点 `<div ref={sentinelRef}>` **无条件渲染**（不用 searchMode 条件包裹），跨状态持久
 - 整页 loading 仅在首屏无数据时显示：`initialLoading = isLoading && results.length === 0`，与 `loading` 布尔区分
 - 避免加载更多时卸载网格导致滚动跳顶
-- **双卡片结构**：Card 1（搜索区：SearchBox + FilterBar，`hideFooter` 隐藏排序 footer）+ Card 2（结果区：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵）
+- **双卡片结构**：Card 1（搜索区：搜索 tabs + FilterBar，`hideFooter` 隐藏排序 footer）+ Card 2（结果区：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵）
 - **筛选切换清空搜索词**：切换 FilterBar 筛选/排序时清空 `query`，让 discover 接管（`useBrowseData` 的 `filterSig` effect 在有 `urlQ` 时跳过 fetch）
 - **TMDB search reset**：`search()` 和 `fetchDiscover()` 在 `forceReset=true` 时立即清空旧结果，UI 才能显示 loading 而非停留在旧数据上
 - **合并结果排序**：`mediaType=all` 合并 movie + tv 后按用户选择的 `sortBy`/`sortOrder` 重排（评分相同时按投票数降序兜底）
@@ -205,7 +205,8 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 - 顶部导航 SearchBox: `navigate('/browse', { state: { q } })`
 - Browse 页: `useState` 初始化读 `location.state.q` + `useEffect` 监听 `location.state.q` 变化同步 query（Keep-Alive 二次进入）
-- SearchBox: `lastSaredRef` 在 `location.pathname` 变化时重置（解除相同搜索词的导航阻止）
+- **POP 导航清空**：刷新/直接访问/后退时（`navigationType === 'POP'`）不读 `location.state.q`、不触发搜索 — `createBrowserRouter` 下 `window.history.state` 在刷新后被浏览器保留，会导致顶部 SearchBox 残留上次搜索词
+- SearchBox: `lastSearchedRef` 在 `location.pathname` 变化时重置（解除相同搜索词的导航阻止）
 
 ### 工具类与 Tokens
 
@@ -229,13 +230,13 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
 | `src/pages/Home/` | `scripts/home.spec.ts` | 15 |
-| `src/pages/Browse/` | `scripts/browse.spec.ts` | 18 |
+| `src/pages/Browse/` | `scripts/browse.spec.ts` | 19 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 15 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 35 |
 | `src/pages/IPTV/` | `scripts/iptv.spec.ts` | 20 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 21 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 20 |
-| `src/pages/History/` | `scripts/history.spec.ts` | 19 |
+| `src/pages/History/` | `scripts/history.spec.ts` | 20 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 21 |
 
 ### 共享组件 → 测试文件（1:N）

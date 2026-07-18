@@ -60,8 +60,8 @@ test.describe('2.2 搜索功能', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 操作: 在搜索框输入关键词并回车
-    const searchInput = page.locator('.browse-search-input-wrap input, .search-box input');
+    // 操作: 在顶部导航栏搜索框输入关键词并回车
+    const searchInput = page.locator('.sticky-header .search-box__input');
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('复仇者联盟');
       await searchInput.press('Enter');
@@ -83,14 +83,14 @@ test.describe('2.2 搜索功能', () => {
     await page.waitForTimeout(2000);
 
     // 操作: 先搜索，再清空
-    const searchInput = page.locator('.browse-search-input-wrap input, .search-box input');
+    const searchInput = page.locator('.sticky-header .search-box__input');
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('复仇者');
       await searchInput.press('Enter');
       await page.waitForTimeout(2000);
 
       // 清空搜索词
-      const clearBtn = page.locator('.search-box__clear, [class*="clear"]').first();
+      const clearBtn = page.locator('.sticky-header .search-box__clear');
       if (await clearBtn.isVisible().catch(() => false)) {
         await clearBtn.click();
         await page.waitForTimeout(2000);
@@ -107,7 +107,7 @@ test.describe('2.2 搜索功能', () => {
     await page.waitForTimeout(1000);
 
     // 操作: 输入不存在的关键词
-    const searchInput = page.locator('.browse-search-input-wrap input, .search-box input');
+    const searchInput = page.locator('.sticky-header .search-box__input');
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('zzzxxxnotexist12345');
       await searchInput.press('Enter');
@@ -120,6 +120,32 @@ test.describe('2.2 搜索功能', () => {
       console.log(`✅ BROWSE-013 检查完成: 空状态显示 = ${isEmpty}`);
     } else {
       console.log('⚠️ BROWSE-013: 搜索框未检测到');
+    }
+  });
+
+  test('BROWSE-014: 刷新页面后顶部搜索框清空（POP 导航）', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 操作: 先搜索，再刷新页面
+    const searchInput = page.locator('.sticky-header .search-box__input');
+    if (await searchInput.isVisible().catch(() => false)) {
+      await searchInput.fill('复仇者联盟');
+      await searchInput.press('Enter');
+      await page.waitForTimeout(2000);
+
+      // 刷新页面（POP 导航）
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(1000);
+
+      // 预期结果: 顶部搜索框为空（不残留上次搜索词）
+      const inputValue = await searchInput.inputValue();
+      expect(inputValue).toBe('');
+      console.log('✅ BROWSE-014 通过: 刷新后搜索框已清空');
+    } else {
+      console.log('⚠️ BROWSE-014: 搜索框未检测到');
     }
   });
 });
@@ -184,7 +210,7 @@ test.describe('2.4 CMS 直链搜索', () => {
       await page.waitForTimeout(500);
 
       // 输入关键词搜索
-      const searchInput = page.locator('.browse-search-input-wrap input, .search-box input');
+      const searchInput = page.locator('.sticky-header .search-box__input');
       if (await searchInput.isVisible().catch(() => false)) {
         await searchInput.fill('复仇者');
         await searchInput.press('Enter');
@@ -243,7 +269,7 @@ test.describe('2.6 页面状态', () => {
       await cmsTab.click();
       await page.waitForTimeout(500);
 
-      const searchInput = page.locator('.browse-search-input-wrap input, .search-box input');
+      const searchInput = page.locator('.sticky-header .search-box__input');
       if (await searchInput.isVisible().catch(() => false)) {
         await searchInput.fill('复仇者');
         await searchInput.press('Enter');

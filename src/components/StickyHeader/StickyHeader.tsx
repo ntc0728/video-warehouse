@@ -153,8 +153,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             </button>
           )}
         </div>
-        {!isBrowse && (
-          <div className="sticky-header__center">
+        <div className="sticky-header__center">
             {/* 顶部导航中央：公共搜索框（variant="header"）。
                 页面通过 PageSearchContext 注册搜索回调，实现页面内过滤。 */}
             <SearchBox
@@ -164,8 +163,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               onSearch={pageSearch.onSearch ?? undefined}
               placeholder={pageSearch.placeholder}
             />
-          </div>
-        )}
+        </div>
         <div className="sticky-header__right">
           <nav className="sticky-header__nav" aria-label="次要导航">
             {RIGHT_NAV_ITEMS.map(renderNavItem)}

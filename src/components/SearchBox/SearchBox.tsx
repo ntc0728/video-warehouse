@@ -71,6 +71,7 @@ export default function SearchBox({
   const isComposingRef = useRef(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rightClickRef = useRef(false);
 
   // ── 搜索历史 ─────────────────────────────────────
   const { history, addHistory, removeHistory, clearHistory } = useSearchHistory();
@@ -166,7 +167,17 @@ export default function SearchBox({
       clearTimeout(blurTimerRef.current);
       blurTimerRef.current = null;
     }
-    setIsDropdownOpen(true);
+    if (!rightClickRef.current) {
+      setIsDropdownOpen(true);
+    }
+  }, []);
+
+  // pointerdown 在 focus 之前触发，可拦截右键（button=2）阻止 dropdown 弹出
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button === 2) {
+      rightClickRef.current = true;
+      setTimeout(() => { rightClickRef.current = false; }, 100);
+    }
   }, []);
 
   // 计算 dropdown 位置，防止超出视口
@@ -271,6 +282,7 @@ export default function SearchBox({
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onPointerDown={handlePointerDown}
             onCompositionStart={() => { isComposingRef.current = true; }}
             onCompositionEnd={() => { isComposingRef.current = false; }}
             placeholder={placeholder}
@@ -280,7 +292,7 @@ export default function SearchBox({
             autoFocus={autoFocus}
             maxLength={100}
             enterKeyHint="search"
-            autoComplete="off"
+            autoComplete="new-password"
             spellCheck={false}
           />
           <button
