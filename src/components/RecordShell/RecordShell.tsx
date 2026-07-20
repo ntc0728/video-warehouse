@@ -26,8 +26,6 @@ interface RecordShellProps {
   statusTabs?: RecordStatusTab[];
   activeStatus?: string;
   onStatusChange?: (key: string) => void;
-  /** 编辑按钮（放置在状态标签页左侧） */
-  editButton?: ReactNode;
   /** 页面类名（collection-page / history-page），承接页面级布局样式 */
   pageClassName?: string;
   children: ReactNode;
@@ -39,7 +37,6 @@ export default function RecordShell({
   statusTabs,
   activeStatus,
   onStatusChange,
-  editButton,
   pageClassName = '',
   children,
 }: RecordShellProps) {
@@ -49,35 +46,35 @@ export default function RecordShell({
     <div className={`page-padding record-page ${pageClassName}`}>
       <div className="record-shell">
         <aside className="record-aside">
-          <div className="category-segmented record-segmented">
-            <button
-              type="button"
-              className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`}
-              onClick={() => onTabChange('video')}
-            >
-              影视
-            </button>
-            <button
-              type="button"
-              className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`}
-              onClick={() => onTabChange('iptv')}
-            >
-              IPTV
-            </button>
-          </div>
-
-          {hasStatus && (
-            <div className="record-status-group">
-              {editButton}
-              <span className="record-status-group__divider" />
-              <StatusTabs
-                className="record-status"
-                tabs={statusTabs!}
-                activeKey={activeStatus!}
-                onChange={onStatusChange!}
-              />
+          <div className="record-filter-row">
+            <div className="category-segmented record-segmented">
+              <button
+                type="button"
+                className={`category-segmented__item ${activeTab === 'video' ? 'active' : ''}`}
+                onClick={() => onTabChange('video')}
+              >
+                影视
+              </button>
+              <button
+                type="button"
+                className={`category-segmented__item ${activeTab === 'iptv' ? 'active' : ''}`}
+                onClick={() => onTabChange('iptv')}
+              >
+                IPTV
+              </button>
             </div>
-          )}
+
+            {hasStatus && (
+              <div className="record-status-group">
+                <StatusTabs
+                  className="record-status"
+                  tabs={statusTabs!}
+                  activeKey={activeStatus!}
+                  onChange={onStatusChange!}
+                />
+              </div>
+            )}
+          </div>
         </aside>
 
         <div className="record-main">{children}</div>

@@ -84,10 +84,11 @@
 .record-edit-btn {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2xs);
   height: 32px;
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -101,6 +102,13 @@
 .record-edit-btn:hover {
   color: var(--color-text);
   border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* hover 时只改变下边框和左边框颜色，上边框和右边框不变 */
+.record-edit-row .record-edit-btn:hover {
+  border-top-color: var(--color-border-light);
+  border-right-color: var(--color-border-light);
 }
 
 /* 编辑按钮激活态（批量管理模式） */
@@ -173,15 +181,16 @@
   /* 侧栏 → 横向精简栏 */
   .record-aside {
     z-index: 5;
-    flex-flow: row wrap;
-    gap: var(--space-sm);
-    align-items: center;
+    display: flex;
+    flex-flow: column;
+    gap: var(--space-xs);
+    align-items: stretch;
     width: 100%;
-    padding: var(--space-sm) 0;
-    border: 0;
-    border-radius: 0;
-    background: var(--color-background);
-    box-shadow: 0 var(--space-sm) 0 0 var(--color-background);
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
   }
 
   /* 标题在移动端显示：独占顶行 */
@@ -192,7 +201,15 @@
     font-size: var(--text-xl);
   }
 
-  /* 行内元素顺序：分段 → 状态标签页（两端对齐） */
+  /* 第一行：分段控件 + 状态标签页，同一行两端对齐 */
+  .record-filter-row {
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  /* 分段控件：左对齐 */
   .record-segmented {
     order: 1;
     width: auto;
@@ -204,7 +221,7 @@
     display: none;
   }
 
-  /* 状态标签页组：与分段同行，右对齐 */
+  /* 状态标签页组：右对齐 */
   .record-status-group {
     order: 2;
     flex: 1;
@@ -218,9 +235,49 @@
     margin-left: 0;
   }
 
+  /* 第二行：编辑按钮，右对齐 */
+  .record-edit-btn {
+    order: 3;
+    align-self: flex-end;
+    flex-shrink: 0;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  /* 编辑按钮分隔线在移动端隐藏 */
+  .record-status-group__divider {
+    display: none;
+  }
+
   /* 折叠态：不再需要特殊处理 */
   .record-shell[data-collapsed] .record-aside {
     box-shadow: 0 1px 0 0 var(--color-border-light), 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  /* 移动端卡片式布局 */
+  .record-main {
+    padding: var(--space-sm);
+    margin-top: var(--space-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 编辑按钮行：移动端 */
+  .record-edit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: calc(-1 * var(--space-sm)) calc(-1 * var(--space-sm)) 0;
+    background-color: var(--color-surface);
+  }
+
+  .record-edit-row .record-edit-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+    border-top-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 0;
   }
 }
 
@@ -244,6 +301,30 @@
     align-self: auto;
     flex-shrink: 1;
     width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 过滤行在桌面端不需要特殊处理 */
+  .record-filter-row {
+    display: contents;
+  }
+
+  /* 编辑按钮行：桌面端 */
+  .record-edit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 calc(-1 * var(--space-md)) 0;
+    background-color: var(--color-surface);
+  }
+
+  .record-edit-row .record-edit-btn {
+    border-top-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 0;
   }
 
   /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */

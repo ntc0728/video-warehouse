@@ -40,6 +40,8 @@ export interface SearchBoxProps {
   autoFocus?: boolean;
   /** 附加 className */
   className?: string;
+  /** 是否显示热门搜索 */
+  showHotSearch?: boolean;
   /**
    * 搜索回调。不传则默认跳转到 /browse?q=<query>。
    * 已 trim 空白的 query 作为参数。
@@ -59,6 +61,7 @@ export default function SearchBox({
   placeholder = '搜索影片、剧集…',
   autoFocus = false,
   className = '',
+  showHotSearch = true,
   onSearch,
   onValueChange,
 }: SearchBoxProps) {
@@ -92,7 +95,8 @@ export default function SearchBox({
 
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const showDropdown = isDropdownOpen && (history.length > 0 || hotItems.length > 0);
+  const visibleHotItems = showHotSearch ? hotItems : [];
+  const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
 
@@ -370,12 +374,12 @@ export default function SearchBox({
           )}
 
           {/* 分隔线：历史和热门都存在时显示 */}
-          {history.length > 0 && hotItems.length > 0 && (
+          {history.length > 0 && visibleHotItems.length > 0 && (
             <div className="search-box-dropdown__divider" />
           )}
 
           {/* 热门搜索 */}
-          {hotItems.length > 0 && (
+          {visibleHotItems.length > 0 && (
             <>
               <div className="search-box-dropdown__header">
                 <span className="search-box-dropdown__title">
@@ -383,7 +387,7 @@ export default function SearchBox({
                 </span>
               </div>
               <ul className="search-box-dropdown__list">
-                {hotItems.map((item, idx) => (
+                {visibleHotItems.map((item, idx) => (
                   <li
                     key={item.id}
                     className="search-box-dropdown__item search-box-dropdown__item--hot"

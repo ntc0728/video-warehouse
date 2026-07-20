@@ -10,7 +10,7 @@ import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
-import { Trash2, CheckSquare, Square, LayoutGrid, PlayCircle, Eye, CheckCircle2 } from 'lucide-react';
+import { Trash2, CheckSquare, Square, LayoutGrid, PlayCircle, Eye, CheckCircle2, ListChecks } from 'lucide-react';
 import RecordShell from '@/components/RecordShell';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -257,22 +257,11 @@ export default function CollectionsPage() {
       ? `确定要删除选中的 ${selected.size} 个项目吗？删除后无法恢复。`
       : '确定要清除所有收藏吗？此操作无法恢复。';
 
-  const editButton = (
-    <button
-      type="button"
-      className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
-      onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-    >
-      {batchMode ? '退出管理' : '批量管理'}
-    </button>
-  );
-
   return (
     <RecordShell
       pageClassName="collection-page"
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab)}
-      editButton={editButton}
       statusTabs={activeTab === 'video'
         ? (Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
             key,
@@ -286,6 +275,16 @@ export default function CollectionsPage() {
       onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
     >
       <div className="collection-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+        <div className="record-edit-row">
+          <button
+            type="button"
+            className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
+            onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+          >
+            <ListChecks size={14} />
+            {batchMode ? '退出管理' : '批量管理'}
+          </button>
+        </div>
         {activeTab === 'video' ? (
           <div className="video-card-grid">
             {(displayedList as CollectionVideoItem[]).map((video) => (

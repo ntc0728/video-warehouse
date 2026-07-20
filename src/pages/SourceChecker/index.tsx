@@ -3,7 +3,7 @@
  * 检测5个维度：网速、IPTV源、视频源、IPTV代理、视频代理
  * 每个维度独立检测，支持多个同时进行
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { BackToTopButton } from '@/components/common';
 import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
@@ -46,10 +46,55 @@ interface ProxyCheckResult {
   error?: string;
 }
 
+interface CacheData {
+  network: NetworkResult | null;
+  iptv: SourceCheckItem[];
+  video: SourceCheckItem[];
+  iptvProxy: ProxyCheckResult | null;
+  videoProxy: ProxyCheckResult | null;
+  timestamp: number;
+}
+
 const SPEED_TEST_URLS = [
   { name: '阿里云 CDN', url: 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js' },
   { name: 'Cloudflare', url: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js' },
 ];
+
+const CACHE_KEY = 'source-checker-cache';
+const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30分钟过期
+
+/** 格式化相对时间 */
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}小时前`;
+  const days = Math.floor(hours / 24);
+  return `${days}天前`;
+}
+
+/** 从 localStorage 读取缓存 */
+function loadCache(): CacheData | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CacheData;
+  } catch {
+    return null;
+  }
+}
+
+/** 保存缓存到 localStorage */
+function saveCache(data: Omit<CacheData, 'timestamp'>): void {
+  const cache: CacheData = { ...data, timestamp: Date.now() };
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // 存储失败静默忽略
+  }
+}
 
 export default function SourceCheckerPage() {
   const { corsProxy, videoSourceIndices, iptvSourceIndices } = useSettingsStore();
@@ -70,8 +115,46 @@ export default function SourceCheckerPage() {
   const [videoResults, setVideoResults] = useState<SourceCheckItem[]>([]);
   const [iptvProxyResult, setIptvProxyResult] = useState<ProxyCheckResult | null>(null);
   const [videoProxyResult, setVideoProxyResult] = useState<ProxyCheckResult | null>(null);
-
+  const [lastCheckTime, setLastCheckTime] = useState<number | null>(null);
   const [iptvProgress, setIptvProgress] = useState({ current: 0, total: 0 });
+  const [videoProgress, setVideoProgress] = useState({ current: 0, total: 0 });
+  const [isBatchChecking, setIsBatchChecking] = useState(false);
+
+  // 使用 useRef 跟踪最新状态，用于缓存保存
+  const stateRef = useRef({
+    network: networkResult,
+    iptv: iptvResults,
+    video: videoResults,
+    iptvProxy: iptvProxyResult,
+    videoProxy: videoProxyResult,
+  });
+
+  // 同步状态到 ref
+  useEffect(() => {
+    stateRef.current = {
+      network: networkResult,
+      iptv: iptvResults,
+      video: videoResults,
+      iptvProxy: iptvProxyResult,
+      videoProxy: videoProxyResult,
+    };
+  }, [networkResult, iptvResults, videoResults, iptvProxyResult, videoProxyResult]);
+
+  // 页面加载时从缓存恢复
+  useEffect(() => {
+    const cache = loadCache();
+    if (cache) {
+      setNetworkResult(cache.network);
+      setIptvResults(cache.iptv);
+      setVideoResults(cache.video);
+      setIptvProxyResult(cache.iptvProxy);
+      setVideoProxyResult(cache.videoProxy);
+      setLastCheckTime(cache.timestamp);
+    }
+  }, []);
+
+  // 检查缓存是否过期
+  const isCacheExpired = lastCheckTime ? (Date.now() - lastCheckTime) > CACHE_EXPIRY_MS : true;
 
   const isChecking = (tab: TabKey) => checkingTabs.has(tab);
 
@@ -129,8 +212,6 @@ export default function SourceCheckerPage() {
     }
     return results;
   }, [iptvSources]);
-
-  const [videoProgress, setVideoProgress] = useState({ current: 0, total: 0 });
 
   const checkVideoSources = useCallback(async (): Promise<SourceCheckItem[]> => {
     const sources = videoSources;
@@ -192,6 +273,61 @@ export default function SourceCheckerPage() {
     }
   }, [corsProxy]);
 
+  // 保存当前所有状态到缓存
+  const saveCurrentStateToCache = useCallback(() => {
+    const cache: Omit<CacheData, 'timestamp'> = {
+      network: stateRef.current.network,
+      iptv: stateRef.current.iptv,
+      video: stateRef.current.video,
+      iptvProxy: stateRef.current.iptvProxy,
+      videoProxy: stateRef.current.videoProxy,
+    };
+    saveCache(cache);
+    setLastCheckTime(Date.now());
+  }, []);
+
+  // 一键检测所有项
+  const handleCheckAll = useCallback(async () => {
+    if (isBatchChecking) return;
+    setIsBatchChecking(true);
+    setCheckingTabs(new Set<TabKey>(['network', 'iptv', 'video', 'iptvProxy', 'videoProxy']));
+    setIptvProgress({ current: 0, total: 0 });
+    setVideoProgress({ current: 0, total: 0 });
+
+    try {
+      // 并行检测网速和代理（耗时短）
+      const [networkRes, iptvProxyRes, videoProxyRes] = await Promise.all([
+        checkNetwork(),
+        checkIPTVProxy(),
+        checkVideoProxy(),
+      ]);
+      setNetworkResult(networkRes);
+      setIptvProxyResult(iptvProxyRes);
+      setVideoProxyResult(videoProxyRes);
+
+      // 顺序检测源（耗时长，需要进度）
+      const iptvRes = await checkIPTVSources();
+      setIptvResults(iptvRes);
+
+      const videoRes = await checkVideoSources();
+      setVideoResults(videoRes);
+
+      // 保存缓存
+      const cache: Omit<CacheData, 'timestamp'> = {
+        network: networkRes,
+        iptv: iptvRes,
+        video: videoRes,
+        iptvProxy: iptvProxyRes,
+        videoProxy: videoProxyRes,
+      };
+      saveCache(cache);
+      setLastCheckTime(Date.now());
+    } finally {
+      setCheckingTabs(new Set<TabKey>());
+      setIsBatchChecking(false);
+    }
+  }, [isBatchChecking, checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy]);
+
   const handleCheck = useCallback(async (tab: TabKey) => {
     setCheckingTabs((prev) => new Set(prev).add(tab));
     setIptvProgress({ current: 0, total: 0 });
@@ -224,6 +360,9 @@ export default function SourceCheckerPage() {
           break;
         }
       }
+      // 检测完成后保存当前所有状态到缓存
+      // 使用 setTimeout 确保状态更新后再保存
+      setTimeout(() => saveCurrentStateToCache(), 100);
     } finally {
       setCheckingTabs((prev) => {
         const next = new Set(prev);
@@ -231,7 +370,7 @@ export default function SourceCheckerPage() {
         return next;
       });
     }
-  }, [checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy]);
+  }, [checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy, saveCurrentStateToCache]);
 
   const stats = {
     iptv: { total: iptvResults.length, available: iptvResults.filter((r) => r.available).length },
@@ -253,8 +392,24 @@ export default function SourceCheckerPage() {
   return (
     <div className="page-padding source-checker-page">
       <div className="source-checker-header">
-        <h1>源检测</h1>
-        <p>检测网络连接和数据源的可用性状态</p>
+        <div className="header-left">
+          <h1>源检测</h1>
+          <p>检测网络连接和数据源的可用性状态</p>
+        </div>
+        <div className="header-right">
+          <button
+            className="check-all-btn"
+            onClick={handleCheckAll}
+            disabled={isBatchChecking}
+          >
+            {isBatchChecking ? '检测中...' : '一键检测'}
+          </button>
+          {lastCheckTime && (
+            <span className={`last-check-time ${isCacheExpired ? 'expired' : ''}`}>
+              上次检测: {formatRelativeTime(lastCheckTime)}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="source-checker-stats">

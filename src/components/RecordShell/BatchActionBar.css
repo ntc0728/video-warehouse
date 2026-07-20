@@ -64,8 +64,19 @@
 
 /* ── 移动端适配 ──────────────────────────────────────── */
 @media (width <= 767px) {
+  .batch-action-bar {
+    padding: var(--space-2xs) var(--space-xs);
+    gap: var(--space-2xs);
+  }
+
   .batch-action-btn {
-    padding: 4px 10px;
-    font-size: var(--text-xs);
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .batch-action-btn svg {
+    width: 14px;
+    height: 14px;
   }
 }
