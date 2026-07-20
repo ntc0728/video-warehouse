@@ -118,7 +118,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     );
   };
 
-  const isBrowse = location.pathname === '/browse';
   const pageSearch = usePageSearchStore();
 
   // 路由切换时同步清空搜索状态（useLayoutEffect 确保在浏览器绘制前完成）
