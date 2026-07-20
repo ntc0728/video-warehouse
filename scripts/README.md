@@ -105,9 +105,9 @@ npm run dev  # 端口 3001
 
 | 配置项 | 值 |
 |--------|---|
-| TMDB Access Token | `REDACTED_TOKEN` |
-| CORS 代理 | `https://video-warehouse.your-video-proxy.example.com` |
-| IPTV 代理 | `https://iptv.your-iptv-proxy.example.com` |
+| TMDB Access Token | `your_tmdb_token_here` |
+| CORS 代理 | `https://your-video-proxy.example.com` |
+| IPTV 代理 | `https://your-iptv-proxy.example.com` |
 | 视频源 | 索引 0, 1, 6, 11, 21（5 个） |
 | IPTV 源 | 索引 0, 2, 7（3 个） |
 

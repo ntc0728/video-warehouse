@@ -12,14 +12,21 @@
 import { chromium, type FullConfig } from '@playwright/test';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// 加载项目根目录的 .env.local 文件
+config({ path: resolve(__dirname, '..', '.env.local') });
+
 const STORAGE_STATE_PATH = resolve(__dirname, '..', 'test-storage-state.json');
 
 // ─── 测试环境配置 ────────────────────────────────────────────
-const TMDB_TOKEN = process.env.TMDB_TOKEN || 'REDACTED_TMDB_TOKENREDACTED_TMDB_TOKEN';
-const CORS_PROXY = 'https://video-warehouse.your-video-proxy.example.com';
-const IPTV_PROXY = 'https://iptv.your-iptv-proxy.example.com';
+// 使用环境变量传入私人配置，本地开发时在 .env.local 中设置
+// 示例值仅供参考，实际部署时通过 CI/CD 或环境变量注入
+const TMDB_TOKEN = process.env.TMDB_TOKEN || 'your_tmdb_token_here';
+const CORS_PROXY = process.env.CORS_PROXY || 'https://your-cors-proxy.example.com';
+const IPTV_PROXY = process.env.IPTV_PROXY || 'https://your-iptv-proxy.example.com';
 
 // ─── 视频数据源（5 个，覆盖不同类型） ───────────────────────
 // video-sources.json 索引：
