@@ -33,9 +33,9 @@ Layer 4: 外部数据源               → TMDB API / CMS 采集站 / IPTV M3U /
 
 | 代理 | URL 模式 | 用途 |
 |------|---------|------|
-| Video Proxy (CORS) | `https://video-warehouse.nmziptv.top/proxy?url={encoded}` | CMS API 请求、M3U 文件获取、EPG XML 获取 |
-| IPTV Proxy (M3U8) | `https://iptv.nmz996.cc.cd/m3u8-proxy?url={encoded}` | IPTV 直播流代理（重写内部 URL） |
-| TS Proxy | `https://iptv.nmz996.cc.cd/ts-proxy?url={encoded}` | TS 分片代理 |
+| Video Proxy (CORS) | `https://your-video-proxy.example.com/proxy?url={encoded}` | CMS API 请求、M3U 文件获取、EPG XML 获取 |
+| IPTV Proxy (M3U8) | `https://your-iptv-proxy.example.com/m3u8-proxy?url={encoded}` | IPTV 直播流代理（重写内部 URL） |
+| TS Proxy | `https://your-iptv-proxy.example.com/ts-proxy?url={encoded}` | TS 分片代理 |
 
 CMS API 和 IPTV M3U 请求必须通过 Video Proxy 代理（浏览器跨域限制）。TMDB API 原生支持 CORS，直连即可。
 

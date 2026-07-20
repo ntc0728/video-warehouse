@@ -12,14 +12,21 @@
 import { chromium, type FullConfig } from '@playwright/test';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// 加载项目根目录的 .env.local 文件
+config({ path: resolve(__dirname, '..', '.env.local') });
+
 const STORAGE_STATE_PATH = resolve(__dirname, '..', 'test-storage-state.json');
 
 // ─── 测试环境配置 ────────────────────────────────────────────
-const TMDB_TOKEN = process.env.TMDB_TOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE';
-const CORS_PROXY = 'https://video-warehouse.nmziptv.top';
-const IPTV_PROXY = 'https://iptv.nmz996.cc.cd';
+// 使用环境变量传入私人配置，本地开发时在 .env.local 中设置
+// 示例值仅供参考，实际部署时通过 CI/CD 或环境变量注入
+const TMDB_TOKEN = process.env.TMDB_TOKEN || 'your_tmdb_token_here';
+const CORS_PROXY = process.env.CORS_PROXY || 'https://your-cors-proxy.example.com';
+const IPTV_PROXY = process.env.IPTV_PROXY || 'https://your-iptv-proxy.example.com';
 
 // ─── 视频数据源（5 个，覆盖不同类型） ───────────────────────
 // video-sources.json 索引：

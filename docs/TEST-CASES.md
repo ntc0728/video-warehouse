@@ -15,9 +15,9 @@
 
 | 配置项 | 位置 | 配置值 | 用途 | 影响范围 |
 |--------|------|--------|------|---------|
-| **TMDB Access Token** | 设置 → TMDB → 配置 | `eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE` | TMDB API 鉴权 | 首页 trending/nowPlaying/popular 等 8 个数据行、详情页 TMDB 信息、人物页、推荐数据 |
-| **视频采集 CORS 代理** | 设置 → 视频源 → 配置 | `https://video-warehouse.nmziptv.top` | CMS API 跨域代理 | 浏览页 CMS 搜索、详情页播放列表、播放页 CMS 源加载、源检测页 |
-| **IPTV 流代理服务器地址** | 设置 → IPTV → 配置 | `https://iptv.nmz996.cc.cd` | IPTV M3U8/TSS 流代理 | IPTV 页频道播放、IPTV 播放页、历史页 IPTV 记录 |
+| **TMDB Access Token** | 设置 → TMDB → 配置 | `your_tmdb_token_here` | TMDB API 鉴权 | 首页 trending/nowPlaying/popular 等 8 个数据行、详情页 TMDB 信息、人物页、推荐数据 |
+| **视频采集 CORS 代理** | 设置 → 视频源 → 配置 | `https://your-video-proxy.example.com` | CMS API 跨域代理 | 浏览页 CMS 搜索、详情页播放列表、播放页 CMS 源加载、源检测页 |
+| **IPTV 流代理服务器地址** | 设置 → IPTV → 配置 | `https://your-iptv-proxy.example.com` | IPTV M3U8/TSS 流代理 | IPTV 页频道播放、IPTV 播放页、历史页 IPTV 记录 |
 
 ### 可选配置
 
@@ -56,15 +56,15 @@
 
 ```
 [ ] TMDB Access Token 已配置：
-    eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE
+    your_tmdb_token_here
     （可在设置页"测试连接"验证 → 应返回"TMDB 连接正常"）
 
 [ ] 视频采集 CORS 代理已配置：
-    https://video-warehouse.nmziptv.top
+    https://your-video-proxy.example.com
     （可在设置页"测试连接"验证 → 应返回"CORS 代理连接正常"）
 
 [ ] IPTV 流代理服务器地址已配置：
-    https://iptv.nmz996.cc.cd
+    https://your-iptv-proxy.example.com
     （可在设置页"测试连接"验证 → 应返回"代理连接正常"）
 
 [ ] 视频数据源至少选中 1 个（默认索引 0：爱奇艺资源）
@@ -78,9 +78,9 @@
 
 | 代理类型 | 配置值（设置页填入） | 实际请求格式 | 示例 |
 |---------|-------------------|-------------|------|
-| CORS 代理（视频采集） | `https://video-warehouse.nmziptv.top` | `{配置值}/proxy?url={encoded}` | `https://video-warehouse.nmziptv.top/proxy?url=https%3A%2F%2Fapi.example.com%2Fvideo` |
-| IPTV 流代理（M3U8） | `https://iptv.nmz996.cc.cd` | `{配置值}/m3u8-proxy?url={encoded}` | `https://iptv.nmz996.cc.cd/m3u8-proxy?url=http%3A%2F%2F101.35.240.114%3A88%2Flive.php%3Fid%3DCCTV1` |
-| TS 分片代理 | （由 m3u8-proxy 内部自动处理） | `{配置值}/ts-proxy?url={encoded}` | `https://iptv.nmz996.cc.cd/ts-proxy?url=http%3A%2F%2F...` |
+| CORS 代理（视频采集） | `https://your-video-proxy.example.com` | `{配置值}/proxy?url={encoded}` | `https://your-video-proxy.example.com/proxy?url=https%3A%2F%2Fapi.example.com%2Fvideo` |
+| IPTV 流代理（M3U8） | `https://your-iptv-proxy.example.com` | `{配置值}/m3u8-proxy?url={encoded}` | `https://your-iptv-proxy.example.com/m3u8-proxy?url=http%3A%2F%2F101.35.240.114%3A88%2Flive.php%3Fid%3DCCTV1` |
+| TS 分片代理 | （由 m3u8-proxy 内部自动处理） | `{配置值}/ts-proxy?url={encoded}` | `https://your-iptv-proxy.example.com/ts-proxy?url=http%3A%2F%2F...` |
 
 > **注意**：CORS 代理和 IPTV 代理是两个独立的 Cloudflare Worker，部署在不同域名。代理不可用时，CMS 搜索和 IPTV 播放将失败，但 TMDB 数据（首页/详情/人物）不受影响。
 
@@ -115,7 +115,7 @@
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
 | HOME-001 | 无 Token 时显示配置提示 | TMDB Access Token 未配置（为空） | 访问首页 `/` | 显示"TMDB Access Token 未配置"提示，包含"配置"按钮 |
-| HOME-002 | 点击配置按钮跳转设置页 | 无 Token 状态 | 点击"配置"按钮 | 跳转到 `/settings` 页面，使用 viewTransition 动画；用户可输入 `eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE` |
+| HOME-002 | 点击配置按钮跳转设置页 | 无 Token 状态 | 点击"配置"按钮 | 跳转到 `/settings` 页面，使用 viewTransition 动画；用户可输入 `your_tmdb_token_here` |
 | HOME-003 | 有 Token 但数据加载中 | Token 已配置，数据未加载完成 | 进入首页 | 显示"精彩内容加载中…" loading 动画，最短停留 500ms |
 | HOME-004 | 有 Token 且数据就绪 | Token 已配置，数据已加载 | 进入首页 | 显示 HeroBanner + 分类快捷入口（数量与 CATEGORY_CONFIG 一致）+ 7 行横滚数据 |
 | HOME-005 | 首页 loading 最大超时 | 网络异常导致数据无法加载 | 等待 10 秒 | loading 自动关闭，显示骨架图或错误状态 |
@@ -462,7 +462,7 @@
 | IPTV-002 | 加载中状态 | 正在加载频道数据 | 查看页面 | 显示"加载频道列表…" loading |
 | IPTV-003 | 无频道数据 | IPTV 源未配置或全部失败 | 查看页面 | 显示"暂无频道数据"空状态 |
 | IPTV-004 | 代理未配置警告 | IPTV 流代理未配置（proxyUrl 为空） | 查看页面顶部 | 显示警告："IPTV流代理未配置，频道可能无法正常播放" |
-| IPTV-005 | 代理配置跳转 | 看到代理未配置警告 | 点击"配置"按钮 | 跳转到 `/settings` 页面，用户可输入 `https://iptv.nmz996.cc.cd` |
+| IPTV-005 | 代理配置跳转 | 看到代理未配置警告 | 点击"配置"按钮 | 跳转到 `/settings` 页面，用户可输入 `https://your-iptv-proxy.example.com` |
 
 ### 5.2 频道分组筛选
 
@@ -557,11 +557,11 @@
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
 | SET-010 | 配置 TMDB Token | 设置页已加载 | 点击 TMDB Token "配置"按钮 | 打开配置弹窗 |
-| SET-011 | 输入有效 Token | 弹窗已打开 | 输入 `eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE` 并点击保存 | Toast 显示"TMDB Token 已保存,正在加载数据…"，自动加载首页数据 |
+| SET-011 | 输入有效 Token | 弹窗已打开 | 输入 `your_tmdb_token_here` 并点击保存 | Toast 显示"TMDB Token 已保存,正在加载数据…"，自动加载首页数据 |
 | SET-012 | 清空 Token | 弹窗已打开 | 清空输入框并保存 | Toast 显示"TMDB Token 已清除" |
 | SET-013 | 测试 TMDB 连接 | 弹窗已打开，已输入 Token | 点击"测试连接" | 显示"测试中..."，完成后显示成功/失败结果 |
 | SET-014 | TMDB 语言切换 | 设置页已加载 | 点击语言下拉，选择语言 | 语言切换生效，影响影片标题/简介显示语言 |
-| SET-015 | Token 状态显示 | 已配置 Token（`eyJhbGciOiJIUzI1NiJ9...`） | 查看 TMDB 列表项 | 描述显示"已配置" |
+| SET-015 | Token 状态显示 | 已配置 Token（`your_tmdb_token_here`） | 查看 TMDB 列表项 | 描述显示"已配置" |
 | SET-016 | Token 未配置状态 | 未配置 Token（空） | 查看 TMDB 列表项 | 描述显示"未配置（首页 TMDB 发现将不可用）" |
 
 ### 6.3 视频源配置
@@ -572,9 +572,9 @@
 | SET-021 | 选择视频源 | 下拉已展开 | 勾选/取消勾选源 | 更新 videoSourceIndices |
 | SET-022 | 至少保留一个源 | 取消所有源 | 尝试取消最后一个 | Toast 显示"至少需要保留一个数据源"，自动保留索引 0 |
 | SET-023 | 最多 6 个源 | 已选 6 个 | 尝试选择第 7 个 | Toast 显示"最多选择6个数据源"，不允许选择 |
-| SET-024 | CORS 代理配置 | 设置页已加载 | 点击 CORS 代理"配置"按钮 | 打开配置弹窗，输入框预填当前值（如 `https://video-warehouse.nmziptv.top`） |
+| SET-024 | CORS 代理配置 | 设置页已加载 | 点击 CORS 代理"配置"按钮 | 打开配置弹窗，输入框预填当前值（如 `https://your-video-proxy.example.com`） |
 | SET-025 | CORS 代理 URL 校验 | 弹窗已打开 | 输入无效 URL（如 `abc`） | 显示错误"请输入有效的 URL 格式" |
-| SET-026 | CORS 代理测试连接 | 弹窗已打开，输入 `https://video-warehouse.nmziptv.top` | 点击"测试连接" | 显示"CORS 代理连接正常"（成功）或"连接失败"（失败） |
+| SET-026 | CORS 代理测试连接 | 弹窗已打开，输入 `https://your-video-proxy.example.com` | 点击"测试连接" | 显示"CORS 代理连接正常"（成功）或"连接失败"（失败） |
 | SET-027 | CORS 代理留空 | 弹窗已打开 | 清空 URL 并保存 | Toast 显示"CORS 代理已清空"，使用默认代理 |
 | SET-028 | 音量记忆开关 | 设置页已加载 | 切换"音量记忆"开关 | 开关状态切换，设置持久化 |
 | SET-029 | 自动翻译字幕开关 | 设置页已加载 | 切换"自动翻译字幕"开关 | 开关状态切换 |
@@ -603,9 +603,9 @@
 | SET-053 | EPG 源多选 | 设置页已加载 | 点击节目单源下拉 | 显示所有 EPG 源（复选框） |
 | SET-054 | EPG 源最多 3 个 | 已选 3 个 | 尝试选择第 4 个 | Toast 显示"最多选择3个节目单源" |
 | SET-055 | EPG 更新间隔调整 | 设置页已加载 | 点击"+"或"-"按钮 | 间隔以 1 小时为步长，范围 1-24 |
-| SET-056 | IPTV 流代理配置 | 设置页已加载 | 点击"配置"按钮 | 打开配置弹窗，输入框预填当前值（如 `https://iptv.nmz996.cc.cd`） |
+| SET-056 | IPTV 流代理配置 | 设置页已加载 | 点击"配置"按钮 | 打开配置弹窗，输入框预填当前值（如 `https://your-iptv-proxy.example.com`） |
 | SET-057 | IPTV 代理 URL 校验 | 弹窗已打开 | 输入无效 URL（如 `abc`） | 显示错误"请输入有效的 URL 格式" |
-| SET-058 | IPTV 代理测试连接 | 弹窗已打开，输入 `https://iptv.nmz996.cc.cd` | 点击"测试连接" | 显示"代理连接正常"（成功）或"连接失败"（失败） |
+| SET-058 | IPTV 代理测试连接 | 弹窗已打开，输入 `https://your-iptv-proxy.example.com` | 点击"测试连接" | 显示"代理连接正常"（成功）或"连接失败"（失败） |
 | SET-059 | 代理规则配置 | 设置页已加载 | 点击"配置"按钮 | 打开配置弹窗，显示正则输入框 |
 | SET-060 | 代理规则正则校验 | 弹窗已打开 | 输入无效正则（如 `[`） | 显示错误"请输入有效的正则表达式" |
 | SET-061 | 代理规则恢复默认 | 弹窗已打开 | 点击"恢复默认" | 输入框清空 |
@@ -808,7 +808,7 @@
 
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
-| CHK-030 | 代理正常 | IPTV 代理已配置为 `https://iptv.nmz996.cc.cd` 且正常 | 点击"检测"按钮 | 显示"代理正常" + 延迟 |
+| CHK-030 | 代理正常 | IPTV 代理已配置为 `https://your-iptv-proxy.example.com` 且正常 | 点击"检测"按钮 | 显示"代理正常" + 延迟 |
 | CHK-031 | 代理异常 | IPTV 代理已配置但不可达 | 点击"检测"按钮 | 显示"代理异常" + 错误信息 |
 | CHK-032 | 代理未配置 | IPTV 代理未配置（空） | 点击"检测"按钮 | 显示"未配置"，提示在设置中配置 |
 | CHK-033 | 代理地址显示 | 代理已配置 | 查看面板 | 显示代理 URL |
@@ -817,7 +817,7 @@
 
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
-| CHK-040 | 代理正常 | CORS 代理已配置为 `https://video-warehouse.nmziptv.top` 且正常 | 点击"检测"按钮 | 显示"代理正常" + 延迟 |
+| CHK-040 | 代理正常 | CORS 代理已配置为 `https://your-video-proxy.example.com` 且正常 | 点击"检测"按钮 | 显示"代理正常" + 延迟 |
 | CHK-041 | 代理异常 | CORS 代理已配置但不可达 | 点击"检测"按钮 | 显示"代理异常" + 错误信息 |
 | CHK-042 | 代理未配置 | CORS 代理未配置（空） | 点击"检测"按钮 | 显示"未配置"，提示在设置中配置 |
 

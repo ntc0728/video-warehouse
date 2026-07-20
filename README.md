@@ -145,9 +145,9 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs
 
 | 代理 | URL | 用途 |
 |------|-----|------|
-| Video Proxy (CORS) | `https://video-warehouse.nmziptv.top/proxy?url=` | CMS API、M3U 文件、EPG |
-| IPTV Proxy (M3U8) | `https://iptv.nmz996.cc.cd/m3u8-proxy?url=` | 直播流代理 |
-| TS Proxy | `https://iptv.nmz996.cc.cd/ts-proxy?url=` | TS 分片代理 |
+| Video Proxy (CORS) | `https://your-video-proxy.example.com/proxy?url=` | CMS API、M3U 文件、EPG |
+| IPTV Proxy (M3U8) | `https://your-iptv-proxy.example.com/m3u8-proxy?url=` | 直播流代理 |
+| TS Proxy | `https://your-iptv-proxy.example.com/ts-proxy?url=` | TS 分片代理 |
 
 ### AI Agent 指南文件
 

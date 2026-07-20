@@ -10,8 +10,8 @@ React 18 + TypeScript + Vite 6 + Zustand 影视聚合平台。
 
 4-layer: Pages (React) → Zustand Stores → Services → External APIs
 - TMDB API: direct (CORS supported)
-- CMS API: via Video Proxy `https://video-warehouse.nmziptv.top/proxy?url=`
-- IPTV M3U: via Video Proxy for fetch, IPTV Proxy `https://iptv.nmz996.cc.cd/m3u8-proxy?url=` for streaming
+- CMS API: via Video Proxy `https://your-video-proxy.example.com/proxy?url=`
+- IPTV M3U: via Video Proxy for fetch, IPTV Proxy `https://your-iptv-proxy.example.com/m3u8-proxy?url=` for streaming
 
 ## Documentation
 

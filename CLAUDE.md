@@ -12,7 +12,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 - **Flowchart**: `docs/page-diagrams/flowchart.html` — interactive SVG, click nodes to navigate
 - **Data fetch script**: `scripts/fetch-diagram-data.mjs` — generates real API data for diagrams
 - **Domain terms**: `CONTEXT.md`
-- **Proxies**: Video Proxy `https://video-warehouse.nmziptv.top/proxy?url=` (CORS), IPTV Proxy `https://iptv.nmz996.cc.cd/m3u8-proxy?url=` (M3U8 stream)
+- **Proxies**: Video Proxy `https://your-video-proxy.example.com/proxy?url=` (CORS), IPTV Proxy `https://your-iptv-proxy.example.com/m3u8-proxy?url=` (M3U8 stream)
 - **Keep-Alive**: AppLayout keeps all visited pages mounted, switches visibility via CSS `display`
 - **Dev server**: `npm run dev` → http://127.0.0.1:3001
 - **Lint**: `npm run lint:all`

@@ -9,22 +9,26 @@
  *   node scripts/fetch-diagram-data.mjs --tmdb-token=xxx     # 同上
  *
  * 代理配置：
- *   VIDEO_PROXY  = https://video-warehouse.nmziptv.top  (CORS 代理，用于 CMS API / M3U 文件获取)
- *   IPTV_PROXY   = https://iptv.nmz996.cc.cd            (M3U8 流代理，用于播放链接)
+ *   VIDEO_PROXY  = https://your-video-proxy.example.com  (CORS 代理，用于 CMS API / M3U 文件获取)
+ *   IPTV_PROXY   = https://your-iptv-proxy.example.com   (M3U8 流代理，用于播放链接)
  *
  * 输出：docs/page-diagrams/diagram-data.json
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '..');
 
+// 加载项目根目录的 .env.local 文件
+config({ path: resolve(ROOT, '.env.local') });
+
 // ── 配置 ──────────────────────────────────────────
-const VIDEO_PROXY = process.env.VIDEO_PROXY || 'https://video-warehouse.nmziptv.top';
-const IPTV_PROXY = process.env.IPTV_PROXY || 'https://iptv.nmz996.cc.cd';
+const VIDEO_PROXY = process.env.VIDEO_PROXY || 'https://your-video-proxy.example.com';
+const IPTV_PROXY = process.env.IPTV_PROXY || 'https://your-iptv-proxy.example.com';
 const TMDB_BASE = 'https://api.tmdb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 

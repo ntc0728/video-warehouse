@@ -55,9 +55,9 @@ _Avoid_: CollectionLayout, HistoryLayout
 
 | 代理 | URL | 用途 |
 |------|-----|------|
-| Video Proxy (CORS) | `https://video-warehouse.nmziptv.top/proxy?url={encoded}` | CMS API、M3U 文件、EPG XML |
-| IPTV Proxy (M3U8) | `https://iptv.nmz996.cc.cd/m3u8-proxy?url={encoded}` | 直播流代理 |
-| TS Proxy | `https://iptv.nmz996.cc.cd/ts-proxy?url={encoded}` | TS 分片代理 |
+| Video Proxy (CORS) | `https://your-video-proxy.example.com/proxy?url={encoded}` | CMS API、M3U 文件、EPG XML |
+| IPTV Proxy (M3U8) | `https://your-iptv-proxy.example.com/m3u8-proxy?url={encoded}` | 直播流代理 |
+| TS Proxy | `https://your-iptv-proxy.example.com/ts-proxy?url={encoded}` | TS 分片代理 |
 
 TMDB API 原生支持 CORS 直连。CMS 和 IPTV 请求必须通过 Video Proxy 代理。
 
