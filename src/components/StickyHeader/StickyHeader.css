@@ -143,6 +143,26 @@
   background: var(--color-surface-hover);
 }
 
+/* ── Home Button (mobile/app) ────────────────────── */
+
+.sticky-header__home-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.sticky-header__home-btn:hover {
+  background: var(--color-surface-hover);
+}
+
 /* ── Center ────────────────────────────────────────── */
 
 .sticky-header__center {
@@ -247,37 +267,82 @@
 
 @media (width <= 767px) {
   .sticky-header {
-  height: var(--header-height-compact);
-}
+    height: var(--header-height-compact);
+  }
 
   .sticky-header__left .sticky-header__nav,
   .sticky-header__right .sticky-header__nav {
-  display: none;
-}
+    display: none;
+  }
 
+  /* 移动端显示 logo */
   .sticky-header__brand {
-  display: none;
-}
+    display: block;
+  }
+
   .sticky-header__logo-wrap {
-  width: var(--comp-input-height);
-  height: var(--comp-input-height);
-}
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .sticky-header__brand-name {
+    font-size: 18px;
+  }
+
+  /* 隐藏默认搜索框（不包括搜索模式下的） */
+  .sticky-header__center > .search-box-wrap--header {
+    display: none;
+  }
+
   .sticky-header__center {
-  flex: 1;
-  justify-content: center;
-}
-  .sticky-header__center .search-box-wrap--header {
-  max-width: 94%;
-}
+    flex: 1;
+    justify-content: flex-start;
+  }
+
   .sticky-header__inner {
-  gap: var(--space-2xs);
-  padding: 0 var(--space-sm);
-}
+    gap: var(--space-2xs);
+    padding: 0 var(--space-sm);
+  }
 
   .sticky-header__theme-btn {
-  width: var(--comp-btn-min-height);
-  height: var(--comp-btn-min-height);
-}
+    width: var(--comp-btn-min-height);
+    height: var(--comp-btn-min-height);
+  }
+
+  /* 搜索按钮 */
+  .sticky-header__search-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: var(--comp-btn-min-height);
+    height: var(--comp-btn-min-height);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .sticky-header__search-btn:hover {
+    background: var(--color-surface-hover);
+  }
+
+  /* 移动端搜索模式 */
+  .sticky-header__mobile-search {
+    display: flex;
+    flex: 1;
+    width: 100%;
+  }
+
+  .sticky-header__mobile-search .search-box-wrap--header {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* 非搜索模式时隐藏 logo-group 的品牌文字 */
+  .sticky-header__logo-group .sticky-header__brand {
+    display: none;
+  }
 }
 
 /* ── Tablet / narrow desktop: immersive header keeps normal flow ── */
@@ -303,8 +368,11 @@
   display: none;
 }
 
-[data-device="mobile-web"] .sticky-header__brand {
-  display: none;
+/* 移动端显示品牌文字 */
+@media (width <= 767px) {
+  [data-device="mobile-web"] .sticky-header__brand {
+    display: block;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -43,6 +43,19 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   const currentTheme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const { goHome } = useHeaderContent();
+
+  // 移动端搜索模式
+  const [isSearchMode, setIsSearchMode] = useState(false);
+
+  const handleSearchModeToggle = useCallback(() => {
+    setIsSearchMode(true);
+  }, []);
+
+  const handleSearchModeExit = useCallback(() => {
+    setIsSearchMode(false);
+    // 清空搜索词
+    usePageSearchStore.getState().clearPageSearch();
+  }, []);
 
   // 沉浸式模式：基于当前路由判断（不再依赖页面组件通过 setHeaderConfig 设置，
   // 因为 Keep-Alive 模式下多个页面同时挂载会互相覆盖 immersive 值）
@@ -120,6 +133,15 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
 
   const pageSearch = usePageSearchStore();
 
+  const handleMobileSearch = useCallback((query: string) => {
+    if (pageSearch.onSearch) {
+      pageSearch.onSearch(query);
+    } else {
+      navigate(`/browse?q=${encodeURIComponent(query)}`);
+    }
+    setIsSearchMode(false);
+  }, [pageSearch.onSearch, navigate]);
+
   // 路由切换时同步清空搜索状态（useLayoutEffect 确保在浏览器绘制前完成）
   // 各页面的 useEffect 会在新路由下重新注册自己的回调和搜索词
   const prevPathnameRef = useRef(location.pathname);
@@ -130,6 +152,9 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     }
   }, [location.pathname]);
 
+  // 收藏/历史页不显示热门搜索
+  const isRecordPage = location.pathname === '/collections' || location.pathname === '/history';
+
   return (
     <header
       className={`sticky-header${immersive ? ' sticky-header--immersive' : ''}${isTV ? ' sticky-header--tv' : ''}${isScrolled ? ' sticky-header--scrolled' : ''}`}
@@ -138,9 +163,25 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
           {onMenuToggle ? (
-            <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            isSearchMode ? (
+              <button className="sticky-header__menu-btn" onClick={handleSearchModeExit} aria-label="退出搜索">
+                <ArrowLeft size={22} />
+              </button>
+            ) : (
+              <>
+                <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
+                  {menuOpen ? <X size={22} /> : <Menu size={22} />}
+                </button>
+                <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
+                  <div className="sticky-header__logo-wrap">
+                    <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
+                  </div>
+                  <div className="sticky-header__brand">
+                    <span className="sticky-header__brand-name">kinoTV</span>
+                  </div>
+                </button>
+              </>
+            )
           ) : (
             <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
               <div className="sticky-header__logo-wrap">
@@ -153,20 +194,37 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           )}
         </div>
         <div className="sticky-header__center">
-            {/* 顶部导航中央：公共搜索框（variant="header"）。
-                页面通过 PageSearchContext 注册搜索回调，实现页面内过滤。 */}
+          {onMenuToggle && isSearchMode ? (
+            <div className="sticky-header__mobile-search">
+              <SearchBox
+                variant="header"
+                autoFocus
+                defaultValue={pageSearch.search || undefined}
+                onSearch={handleMobileSearch}
+                placeholder={pageSearch.placeholder || '搜索'}
+                showHotSearch={!isRecordPage}
+              />
+            </div>
+          ) : (
             <SearchBox
               key={location.pathname}
               variant="header"
               defaultValue={pageSearch.search || undefined}
               onSearch={pageSearch.onSearch ?? undefined}
               placeholder={pageSearch.placeholder}
+              showHotSearch={!isRecordPage}
             />
+          )}
         </div>
         <div className="sticky-header__right">
           <nav className="sticky-header__nav" aria-label="次要导航">
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
           </nav>
+          {onMenuToggle && !isSearchMode ? (
+            <button className="sticky-header__search-btn" onClick={handleSearchModeToggle} aria-label="打开搜索">
+              <Search size={22} />
+            </button>
+          ) : null}
           <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
             <ThemeIcon size={24} />
           </button>

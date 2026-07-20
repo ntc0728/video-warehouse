@@ -12,7 +12,7 @@ import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { type TimelineItem } from '@/components/ui';
-import { Trash2, CheckSquare, Square, LayoutGrid, Eye, CheckCircle2 } from 'lucide-react';
+import { Trash2, CheckSquare, Square, LayoutGrid, Eye, CheckCircle2, ListChecks } from 'lucide-react';
 import RecordShell from '@/components/RecordShell';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -478,22 +478,11 @@ export default function HistoryPage() {
       : '确定要清除所有观看记录吗？此操作无法恢复。';
 
 
-  const editButton = (
-    <button
-      type="button"
-      className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
-      onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-    >
-      {batchMode ? '退出管理' : '批量管理'}
-    </button>
-  );
-
   return (
     <RecordShell
       pageClassName="history-page"
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab)}
-      editButton={editButton}
       statusTabs={activeTab === 'video'
         ? (Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
             key,
@@ -507,6 +496,16 @@ export default function HistoryPage() {
       onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
     >
       <div className="history-body">
+        <div className="record-edit-row">
+          <button
+            type="button"
+            className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
+            onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+          >
+            <ListChecks size={14} />
+            {batchMode ? '退出管理' : '批量管理'}
+          </button>
+        </div>
         <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
           {groupedKeys.map((group, idx) => {
             const ti = timelineItems.find((t) => t.key === group);
