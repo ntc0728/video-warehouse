@@ -624,41 +624,82 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
    * 文本搜索：调 /search/multi 端点，结果写入 discoverResults + discoverPagination
    * 使 BrowseGrid 可直接消费（与 fetchDiscover / fetchTopRated 走同一渲染路径）。
    * 同时 loading.discover / errors.discover 共享（UI 骨架与错误显示复用）。
+   *
+   * 客户端过滤：根据当前 filterOptions（category/mediaType/genreIds/originCountry/minVoteAverage）
+   * 对搜索结果进行过滤，确保从首页带过来的分类参数在搜索时生效。
+   *
+   * 懒加载判断：如果 API 未到最后一页，即使过滤后数据不足也允许继续懒加载。
    */
   search: async (query: string, page = 1, opts?: { reset?: boolean }) => {
     const forceReset = opts?.reset === true;
+    const { filterOptions } = get();
+
+    /** 客户端过滤单批结果 */
+    const applyFilter = (raw: TMDBVideoItem[]): TMDBVideoItem[] => {
+      let result = raw;
+      if (filterOptions.mediaType && filterOptions.mediaType !== 'all') {
+        result = result.filter((item) => item.mediaType === filterOptions.mediaType);
+      }
+      if (filterOptions.genreIds && filterOptions.genreIds.length > 0) {
+        result = result.filter((item) => {
+          if (!item.genreIds || item.genreIds.length === 0) return false;
+          return filterOptions.genreIds.some((id) => item.genreIds!.includes(id));
+        });
+      }
+      if (filterOptions.originCountry) {
+        result = result.filter((item) => {
+          if (!item.originCountry) return false;
+          if (Array.isArray(item.originCountry)) {
+            return item.originCountry.includes(filterOptions.originCountry!);
+          }
+          return item.originCountry === filterOptions.originCountry;
+        });
+      }
+      if (filterOptions.minVoteAverage && filterOptions.minVoteAverage > 0) {
+        result = result.filter((item) => (item.voteAverage ?? 0) >= filterOptions.minVoteAverage!);
+      }
+      return result;
+    };
+
     set((s) => ({
       searchQuery: query,
       loading: { ...s.loading, discover: true },
       errors: { ...s.errors, discover: null },
-      // 进入 pending:UI 侧用此位阻止在 API 响应前移除骨架
       discoverLastStatus: 'pending',
-      // reset 时立即清空旧结果，让 UI 能显示 loading（而非停留在旧数据上）
       ...(forceReset ? {
         discoverResults: [],
         discoverPagination: { page: 0, totalPages: 0, totalResults: 0 },
       } : {}),
     }));
+
     try {
       const data = await searchMulti(query, page);
-      const items = data.results
+      let items = data.results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .map(mapSearchToVideoItem);
 
-      set((s) => ({
-        // page > 1 且未要求重置 → 追加并去重；其他情况（page=1 或 reset=true）→ 整体覆盖
-        discoverResults:
-          page > 1 && !forceReset
-            ? dedupeById([...s.discoverResults, ...items])
-            : items,
-        discoverPagination: {
-          page: data.page,
-          totalPages: data.total_pages,
-          totalResults: data.total_results,
-        },
-        loading: { ...s.loading, discover: false },
-        discoverLastStatus: 'success',
-      }));
+      // 客户端过滤
+      items = applyFilter(items);
+
+      // hasMore 判断：API 未到最后一页就允许懒加载
+      const hasMore = page < data.total_pages;
+
+      set((s) => {
+        const mergedResults = page > 1 && !forceReset
+          ? dedupeById([...s.discoverResults, ...items])
+          : items;
+
+        return {
+          discoverResults: mergedResults,
+          discoverPagination: {
+            page: data.page,
+            totalPages: hasMore ? data.total_pages : data.page,
+            totalResults: mergedResults.length,
+          },
+          loading: { ...s.loading, discover: false },
+          discoverLastStatus: 'success',
+        };
+      });
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },
@@ -714,8 +755,15 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           // popularity（默认）
           return (a.popularity - b.popularity) * dir;
         });
+        // mediaType=all 时合并 movie+tv，去重后实际数量可能少于两者之和
+        // totalPages 取两者较大值，但若去重后本页不足 2×PAGE_SIZE 则可能已到最后一页
+        const TMDB_PAGE_SIZE = 20;
         totalPages = Math.max(movieData.total_pages, tvData.total_pages);
         totalResults = movieData.total_results + tvData.total_results;
+        // 去重后如果本页结果少于预期（2×PAGE_SIZE），说明可能已到最后一页
+        if (results.length < TMDB_PAGE_SIZE * 2 && page >= totalPages) {
+          totalPages = page;
+        }
       } else if (filterOptions.mediaType === 'tv') {
         const data = await discoverTV(filterOptions, page);
         results = data.results.map(mapTVToVideoItem);
@@ -728,16 +776,24 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         totalResults = data.total_results;
       }
 
-      set((s) => ({
-        // page > 1 且未要求重置 → 追加并去重；其他情况（page=1 或 reset=true）→ 整体覆盖
-        discoverResults:
-          page > 1 && !forceReset
-            ? dedupeById([...s.discoverResults, ...results])
-            : results,
-        discoverPagination: { page, totalPages, totalResults },
-        loading: { ...s.loading, discover: false },
-        discoverLastStatus: 'success',
-      }));
+      set((s) => {
+        // 合并结果并去重
+        const mergedResults = page > 1 && !forceReset
+          ? dedupeById([...s.discoverResults, ...results])
+          : results;
+
+        return {
+          discoverResults: mergedResults,
+          discoverPagination: {
+            page,
+            totalPages,
+            // 使用合并后的实际数据量
+            totalResults: mergedResults.length,
+          },
+          loading: { ...s.loading, discover: false },
+          discoverLastStatus: 'success',
+        };
+      });
     } catch (err) {
       set((s) => ({
         loading: { ...s.loading, discover: false },

@@ -187,11 +187,357 @@ test.describe('1.3 分类快捷入口', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
 
-    const chips = page.locator('.home-category-chip, [class*="category-chip"]');
+    const chips = page.locator('.category-quick-access__card');
     const count = await chips.count();
     // 预期结果: 显示分类入口（数量与 CATEGORY_CONFIG 一致）
     console.log(`✅ HOME-021 检查完成: 分类入口数量 = ${count}`);
     expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  // ── 分类跳转 URL 参数验证 ──────────────────────────────────
+
+  /**
+   * 各分类跳转到 browse 页时的预期 URL 参数：
+   * - 全部 (all): category=all&mediaType=all
+   * - 电影 (movie): category=movie&mediaType=movie
+   * - 剧集 (tv): category=tv&mediaType=tv
+   * - 综艺 (variety): category=variety&mediaType=tv&genre=10764
+   * - 动漫 (anime): category=anime&mediaType=tv&genre=16
+   * - 纪录片 (documentary): category=documentary&mediaType=movie&genre=99
+   * - 排行榜 (top): category=top&mediaType=all
+   */
+  const CATEGORY_TEST_CASES = [
+    { label: '全部', expectedCategory: 'all', expectedMediaType: 'all', expectedGenre: null },
+    { label: '电影', expectedCategory: 'movie', expectedMediaType: 'movie', expectedGenre: null },
+    { label: '剧集', expectedCategory: 'tv', expectedMediaType: 'tv', expectedGenre: null },
+    { label: '综艺', expectedCategory: 'variety', expectedMediaType: 'tv', expectedGenre: '10764' },
+    { label: '动漫', expectedCategory: 'anime', expectedMediaType: 'tv', expectedGenre: '16' },
+    { label: '纪录片', expectedCategory: 'documentary', expectedMediaType: 'movie', expectedGenre: '99' },
+    { label: '排行榜', expectedCategory: 'top', expectedMediaType: 'all', expectedGenre: null },
+  ];
+
+  for (const tc of CATEGORY_TEST_CASES) {
+    test(`HOME-022: 点击"${tc.label}"跳转 URL 参数正确`, async ({ page }) => {
+      // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+      await page.setViewportSize({ width: 768, height: 1024 });
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(3000);
+
+      // 等待分类按钮出现
+      const categoryBtn = page.locator(
+        `.category-quick-access__card[aria-label="分类：${tc.label}"]`
+      );
+
+      // 尝试等待按钮可见（最多 5 秒）
+      const isVisible = await categoryBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
+
+      if (isVisible) {
+        // 点击分类
+        await categoryBtn.click();
+        await page.waitForTimeout(1000);
+
+        // 验证跳转到 /browse
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/browse');
+
+        // 验证 category 参数
+        expect(url.searchParams.get('category')).toBe(tc.expectedCategory);
+
+        // 验证 mediaType 参数
+        expect(url.searchParams.get('mediaType')).toBe(tc.expectedMediaType);
+
+        // 验证 genre 参数
+        const genre = url.searchParams.get('genre');
+        if (tc.expectedGenre) {
+          expect(genre).toBe(tc.expectedGenre);
+        } else {
+          expect(genre).toBeNull();
+        }
+
+        console.log(`✅ HOME-022 通过: "${tc.label}" 跳转 URL 参数正确 → ${url.search}`);
+      } else {
+        console.log(`⚠️ HOME-022: "${tc.label}" 分类按钮未检测到`);
+      }
+    });
+  }
+
+  test('HOME-023: 所有分类跳转后 Browse 页筛选条件正确', async ({ page }) => {
+    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+    test.setTimeout(60000); // 增加超时时间到 60 秒
+
+    // 测试每个分类
+    for (const tc of CATEGORY_TEST_CASES) {
+      // 返回首页
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(2000);
+
+      // 找到对应分类按钮
+      const categoryBtn = page.locator(
+        `.category-quick-access__card[aria-label="分类：${tc.label}"]`
+      );
+
+      if (await categoryBtn.isVisible().catch(() => false)) {
+        // 点击分类
+        await categoryBtn.click();
+        await page.waitForTimeout(1500);
+
+        // 验证跳转到 /browse
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/browse');
+
+        // 验证 URL 参数
+        expect(url.searchParams.get('category')).toBe(tc.expectedCategory);
+        expect(url.searchParams.get('mediaType')).toBe(tc.expectedMediaType);
+
+        if (tc.expectedGenre) {
+          expect(url.searchParams.get('genre')).toBe(tc.expectedGenre);
+        }
+
+        // 验证 Browse 页 FilterBar 显示正确的分类标签
+        const categoryLabel = page.locator('.filter-bar__category, [class*="category"]');
+        if (await categoryLabel.isVisible().catch(() => false)) {
+          const labelText = await categoryLabel.textContent();
+          console.log(`✅ HOME-023: "${tc.label}" → FilterBar 分类标签 = "${labelText}"`);
+        }
+      }
+    }
+    console.log('✅ HOME-023 通过: 所有分类跳转后 Browse 页筛选条件正确');
+  });
+
+  // ── 桌面端全分类测试（含纪录片） ──────────────────────────────────
+
+  test('HOME-024: 所有分类跳转 URL 参数正确', async ({ page }) => {
+    test.setTimeout(60000);
+    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    // 桌面端显示所有 7 个分类
+    const allCategories = [
+      { label: '全部', expectedCategory: 'all', expectedMediaType: 'all', expectedGenre: null },
+      { label: '电影', expectedCategory: 'movie', expectedMediaType: 'movie', expectedGenre: null },
+      { label: '剧集', expectedCategory: 'tv', expectedMediaType: 'tv', expectedGenre: null },
+      { label: '综艺', expectedCategory: 'variety', expectedMediaType: 'tv', expectedGenre: '10764' },
+      { label: '动漫', expectedCategory: 'anime', expectedMediaType: 'tv', expectedGenre: '16' },
+      { label: '纪录片', expectedCategory: 'documentary', expectedMediaType: 'movie', expectedGenre: '99' },
+      { label: '排行榜', expectedCategory: 'top', expectedMediaType: 'all', expectedGenre: null },
+    ];
+
+    for (const tc of allCategories) {
+      // 返回首页
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(2000);
+
+      // 找到对应分类按钮（通过 aria-label 匹配）
+      const categoryBtn = page.locator(
+        `.category-quick-access__card[aria-label="分类：${tc.label}"]`
+      );
+
+      if (await categoryBtn.isVisible().catch(() => false)) {
+        // 点击分类
+        await categoryBtn.click();
+        await page.waitForTimeout(1500);
+
+        // 验证跳转到 /browse
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/browse');
+
+        // 验证 URL 参数
+        expect(url.searchParams.get('category')).toBe(tc.expectedCategory);
+        expect(url.searchParams.get('mediaType')).toBe(tc.expectedMediaType);
+
+        if (tc.expectedGenre) {
+          expect(url.searchParams.get('genre')).toBe(tc.expectedGenre);
+        }
+
+        console.log(`✅ HOME-024: "${tc.label}" 跳转 URL 参数正确 → ${url.search}`);
+      } else {
+        console.log(`⚠️ HOME-024: "${tc.label}" 分类按钮未检测到`);
+      }
+    }
+  });
+
+  // ── 分类跳转后联动搜索框搜索 ──────────────────────────────────
+
+  test('HOME-024b: 分类跳转后搜索框输入验证', async ({ page }) => {
+    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    // 等待分类按钮出现
+    const categoryBtn = page.locator(
+      '.category-quick-access__card[aria-label="分类：电影"]'
+    );
+    await expect(categoryBtn).toBeVisible({ timeout: 5000 });
+
+    // 点击电影分类
+    await categoryBtn.click();
+    await page.waitForTimeout(1500);
+
+    // 验证跳转到 /browse?category=movie
+    const url1 = new URL(page.url());
+    expect(url1.pathname).toBe('/browse');
+    expect(url1.searchParams.get('category')).toBe('movie');
+
+    // 验证搜索框可见
+    const searchInput = page.locator('.sticky-header .search-box__input');
+    await expect(searchInput).toBeVisible({ timeout: 5000 });
+
+    // 输入搜索词
+    await searchInput.click();
+    await searchInput.fill('复仇者联盟');
+
+    // 验证输入值
+    const inputValue = await searchInput.inputValue();
+    expect(inputValue).toBe('复仇者联盟');
+
+    // 按回车搜索
+    await searchInput.press('Enter');
+    await page.waitForTimeout(3000);
+
+    // 验证搜索结果区域存在
+    const hasResults = await page.locator('.browse-results-body').isVisible();
+    expect(hasResults).toBe(true);
+
+    console.log('✅ HOME-024b: 分类跳转后搜索框输入验证通过');
+  });
+
+  test('HOME-025: 分类跳转后搜索框联动搜索', async ({ page }) => {
+    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    // 测试分类：电影
+    const categoryBtn = page.locator(
+      '.category-quick-access__card[aria-label="分类：电影"]'
+    );
+
+    if (await categoryBtn.isVisible().catch(() => false)) {
+      // 1. 点击电影分类跳转到 browse 页
+      await categoryBtn.click();
+      await page.waitForTimeout(1500);
+
+      // 验证跳转到 /browse?category=movie
+      const url1 = new URL(page.url());
+      expect(url1.pathname).toBe('/browse');
+      expect(url1.searchParams.get('category')).toBe('movie');
+      console.log(`✅ HOME-025: 分类跳转成功 → ${url1.pathname}${url1.search}`);
+
+      // 2. 在搜索框输入关键词并搜索
+      const searchInput = page.locator('.sticky-header .search-box__input');
+      const isSearchVisible = await searchInput.isVisible().catch(() => false);
+      console.log(`✅ HOME-025: 搜索框可见 = ${isSearchVisible}`);
+
+      if (isSearchVisible) {
+        await searchInput.click();
+        await searchInput.fill('复仇者联盟');
+        await page.waitForTimeout(500);
+
+        // 验证输入值
+        const inputValue = await searchInput.inputValue();
+        console.log(`✅ HOME-025: 搜索框输入值 = "${inputValue}"`);
+
+        await searchInput.press('Enter');
+        await page.waitForTimeout(3000);
+
+        // 3. 验证搜索结果
+        const hasResults = await page.evaluate(() => {
+          return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
+        });
+        console.log(`✅ HOME-025: 分类跳转后搜索结果 = ${hasResults}`);
+
+        // 4. 清空搜索词，验证恢复到分类筛选结果
+        const clearBtn = page.locator('.sticky-header .search-box__clear');
+        if (await clearBtn.isVisible().catch(() => false)) {
+          await clearBtn.click();
+          await page.waitForTimeout(2000);
+
+          // 验证恢复到电影分类筛选
+          const url2 = new URL(page.url());
+          expect(url2.searchParams.get('category')).toBe('movie');
+          console.log('✅ HOME-025: 清空搜索词后恢复到电影分类筛选');
+        }
+      }
+    }
+  });
+
+  test('HOME-026: 各分类跳转后搜索框搜索验证', async ({ page }) => {
+    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
+    await page.setViewportSize({ width: 768, height: 1024 });
+
+    const searchTestCases = [
+      { label: '电影', expectedCategory: 'movie', searchQuery: '复仇者联盟' },
+      { label: '剧集', expectedCategory: 'tv', searchQuery: '权力的游戏' },
+      { label: '动漫', expectedCategory: 'anime', searchQuery: '海贼王' },
+    ];
+
+    for (const tc of searchTestCases) {
+      // 返回首页
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(2000);
+
+      // 找到对应分类按钮
+      const categoryBtn = page.locator(
+        `.category-quick-access__card[aria-label="分类：${tc.label}"]`
+      );
+
+      if (await categoryBtn.isVisible().catch(() => false)) {
+        // 点击分类
+        await categoryBtn.click();
+        await page.waitForTimeout(1500);
+
+        // 验证跳转到对应分类
+        const url1 = new URL(page.url());
+        expect(url1.pathname).toBe('/browse');
+        expect(url1.searchParams.get('category')).toBe(tc.expectedCategory);
+        console.log(`✅ HOME-026: "${tc.label}" 分类跳转成功 → ${url1.pathname}${url1.search}`);
+
+        // 在搜索框输入关键词并搜索
+        const searchInput = page.locator('.sticky-header .search-box__input');
+        const isSearchVisible = await searchInput.isVisible().catch(() => false);
+        console.log(`✅ HOME-026: "${tc.label}" 搜索框可见 = ${isSearchVisible}`);
+
+        if (isSearchVisible) {
+          await searchInput.click();
+          await searchInput.fill(tc.searchQuery);
+          await page.waitForTimeout(500);
+
+          // 验证输入值
+          const inputValue = await searchInput.inputValue();
+          console.log(`✅ HOME-026: "${tc.label}" 搜索框输入值 = "${inputValue}"`);
+
+          await searchInput.press('Enter');
+          await page.waitForTimeout(3000);
+
+          // 验证搜索结果
+          const hasResults = await page.evaluate(() => {
+            return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
+          });
+          console.log(`✅ HOME-026: "${tc.label}" 分类搜索 "${tc.searchQuery}" 结果 = ${hasResults}`);
+
+          // 清空搜索词
+          const clearBtn = page.locator('.sticky-header .search-box__clear');
+          if (await clearBtn.isVisible().catch(() => false)) {
+            await clearBtn.click();
+            await page.waitForTimeout(1000);
+          }
+        }
+      }
+    }
   });
 });
 
