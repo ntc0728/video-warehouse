@@ -154,16 +154,13 @@ export default function SearchBox({
     }
   }, [onSearch]);
 
-  // 输入值变化时实时触发搜索（支持 backspace/select+delete 场景）
-  // 仅在有 onSearch 回调时生效（页面内过滤场景），导航场景保持 Enter 触发
+  // 输入值变化时仅更新 state，不触发搜索
+  // 搜索仅在以下场景触发：点击搜索按钮 / 按回车 / 清空搜索框
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
     onValueChange?.(newValue);
-    if (onSearch) {
-      onSearch(newValue.trim());
-    }
-  }, [onSearch, onValueChange]);
+  }, [onValueChange]);
 
   // ── Dropdown 交互 ──────────────────────────────────
   const handleFocus = useCallback(() => {
