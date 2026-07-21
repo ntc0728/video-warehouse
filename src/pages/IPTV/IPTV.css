@@ -126,16 +126,16 @@
 .iptv-actions-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   padding: var(--space-xs) 0;
 }
 
 .iptv-actions-buttons {
   display: flex;
   flex: 1 1 0;
-  justify-content: center;
   gap: var(--space-sm);
+  justify-content: center;
 }
 
 /* ── 频道网格容器（基础 flex，桌面端卡片视觉在 @media 块内追加） ── */
@@ -311,8 +311,8 @@
 .iptv-content-meta {
   display: flex;
   flex-shrink: 0;
-  justify-content: flex-end;
   gap: var(--space-sm);
+  justify-content: flex-end;
   padding: var(--space-xs) 0;
 }
 
@@ -490,8 +490,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 0;
   height: 100%;
+  min-height: 0;
   padding: 0 var(--space-sm);
 }
 
@@ -503,16 +503,16 @@
   flex-shrink: 0;
   margin-bottom: var(--space-sm);
   padding: var(--space-sm);
-  background-color: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
 .iptv-grid-card {
   padding: var(--space-sm);
-  background-color: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }

@@ -16,6 +16,23 @@
   animation: video-card-grid-fade 0.3s ease both;
 }
 
+/* 子项 stagger 入场动画 */
+.video-card-grid > * {
+  animation: fadeInUp 0.4s var(--ease-standard) both;
+}
+.video-card-grid > *:nth-child(1) { animation-delay: 0.03s; }
+.video-card-grid > *:nth-child(2) { animation-delay: 0.06s; }
+.video-card-grid > *:nth-child(3) { animation-delay: 0.09s; }
+.video-card-grid > *:nth-child(4) { animation-delay: 0.12s; }
+.video-card-grid > *:nth-child(5) { animation-delay: 0.15s; }
+.video-card-grid > *:nth-child(6) { animation-delay: 0.18s; }
+.video-card-grid > *:nth-child(7) { animation-delay: 0.21s; }
+.video-card-grid > *:nth-child(8) { animation-delay: 0.24s; }
+.video-card-grid > *:nth-child(9) { animation-delay: 0.27s; }
+.video-card-grid > *:nth-child(10) { animation-delay: 0.30s; }
+.video-card-grid > *:nth-child(11) { animation-delay: 0.33s; }
+.video-card-grid > *:nth-child(12) { animation-delay: 0.36s; }
+
 @keyframes video-card-grid-fade {
   from { opacity: 0.4; }
   to   { opacity: 1; }
@@ -57,6 +74,37 @@
   outline: none;
   box-shadow: 0 0 0 3px var(--color-primary);
   border-radius: var(--radius-md);
+}
+
+/* VideoCard 光泽扫光层 */
+.video-card-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.video-card-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  opacity: 0;
+  transform: translateX(-150%) skewX(-20deg);
+}
+
+.video-card:hover .video-card-glow::after {
+  animation: glowSweep var(--dur-slow) var(--ease-out-expo) forwards;
 }
 
 /* ── 封面 ──────────────────────────────────────── */

@@ -16,6 +16,7 @@ vite.config.js
 
 # ── 日志 ──────────────────────────────────────
 *.log
+*.err
 npm-debug.log*
 
 # ── Cloudflare Worker ────────────────────────

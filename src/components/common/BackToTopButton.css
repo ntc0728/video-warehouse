@@ -47,7 +47,7 @@
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
-  animation: back-to-top-button-slide-in 0.25s var(--ease-standard) both;
+  animation: back-to-top-button-slide-in 0.25s var(--ease-spring) both;
 }
 
 .back-to-top-button--exiting {
@@ -213,9 +213,9 @@
 }
 
 .edit-mode-button--active {
+  border-color: var(--color-primary);
   background: var(--color-primary);
   color: #000;
-  border-color: var(--color-primary);
 }
 
 .edit-mode-button--active:hover {

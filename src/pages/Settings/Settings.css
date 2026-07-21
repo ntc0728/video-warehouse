@@ -15,11 +15,11 @@
 /* 移动端卡片式布局 */
 @media (width <= 767px) {
   .settings-page section {
-    padding: var(--space-sm);
     margin-bottom: var(--space-sm);
-    background-color: var(--color-surface);
+    padding: var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
   }
 }
@@ -110,6 +110,65 @@
   font-weight: 700;
 }
 
+/* ── 皮肤切换器 ── */
+.skin-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: flex-end;
+}
+
+.skin-btn {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  transition: color var(--dur-base) var(--ease-spring);
+  cursor: pointer;
+}
+
+.skin-btn:hover {
+  color: var(--skin-accent, var(--color-primary));
+}
+
+.skin-btn.active {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.skin-btn__swatch {
+  width: var(--space-xl);
+  height: var(--space-xl);
+  border-radius: 50%;
+  background-color: var(--color-background);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: width var(--dur-base) var(--ease-spring), height var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-spring);
+}
+
+.skin-btn:hover .skin-btn__swatch {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.skin-btn.active .skin-btn__swatch {
+  width: calc(var(--space-xl) + var(--space-xs));
+  height: calc(var(--space-xl) + var(--space-xs));
+}
+
+/* 皮肤切换过渡动画 */
+html.skin-transitioning,
+html.skin-transitioning *,
+html.skin-transitioning *::before,
+html.skin-transitioning *::after {
+  transition: background-color var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard) !important;
+}
+
 .setting-modal-content {
   padding: var(--space-sm);
 }
@@ -160,8 +219,8 @@
   position: absolute;
   right: var(--space-xs);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: var(--space-lg);
   height: var(--space-lg);
   padding: 0;
@@ -171,13 +230,13 @@
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   line-height: 1;
-  cursor: pointer;
   transition: color 0.2s, background 0.2s;
+  cursor: pointer;
 }
 
 .settings-input-clear:hover {
-  color: var(--color-text);
   background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text);
 }
 
 .setting-modal-actions {
@@ -391,9 +450,9 @@
 .version-item button:active,
 .version-item button:focus,
 .version-item button:hover {
+  background-color: transparent !important;
   transform: none !important;
   box-shadow: none !important;
-  background-color: transparent !important;
 }
 
 /* 表单输入组 */

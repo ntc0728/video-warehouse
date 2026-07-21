@@ -74,7 +74,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-sm);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-spring), background var(--dur-fast) var(--ease-spring);
 }
 
 /* header variant 玻璃态：仅作用于 box（不含 submit） */

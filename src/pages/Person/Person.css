@@ -305,9 +305,9 @@
 /* Tab + 作品网格 卡片 */
 .person-grid-card {
   padding: 0 var(--space-sm);
-  background-color: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 

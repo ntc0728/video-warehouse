@@ -32,39 +32,21 @@ const TabBarItem: React.FC<TabBarItemProps> = ({ title, icon, activeIcon, itemKe
       value={itemKey ?? ''}
       onKeyDown={handleKeyDown}
       onClick={onClick}
-      className={`
-        flex flex-1 flex-col items-center justify-center gap-0.5
-        outline-none font-semibold
-        transition-colors duration-200
-        data-[state=active]:text-[var(--color-primary)]
-        data-[state=inactive]:text-[var(--color-text-secondary)]
-      `}
+      className="flex flex-1 flex-col items-center justify-center gap-0.5 outline-none font-semibold transition-colors duration-200 data-[state=active]:text-[var(--color-primary)] data-[state=active]:tab-pop-active data-[state=inactive]:text-[var(--color-text-secondary)]"
     >
-      <span className="inline-flex items-center justify-center" style={{ width: 24, height: 24 }}>
+      <span className="inline-flex items-center justify-center w-6 h-6">
         <span className="hidden data-[state=active]:inline-flex">{activeIcon || icon}</span>
         <span className="inline-flex data-[state=active]:hidden">{icon}</span>
       </span>
-      <span style={{ fontSize: 10, lineHeight: 1 }}>{title}</span>
+      <span className="text-[10px] leading-none">{title}</span>
     </Tabs.Trigger>
   );
 };
 
 const TabBarRoot: React.FC<TabBarProps> = ({ activeKey, onChange, className, children }) => {
   return (
-    <Tabs.Root
-      value={activeKey}
-      onValueChange={onChange}
-      className={className}
-    >
-      <Tabs.List
-        className={`
-          fixed bottom-0 left-0 right-0 z-50 flex
-          h-[var(--layout-tabbar-height)] w-full items-center justify-around
-          border-t border-[var(--color-border-light)]
-          bg-[var(--color-surface)]
-          px-1
-        `}
-      >
+    <Tabs.Root value={activeKey} onValueChange={onChange} className={className}>
+      <Tabs.List className="fixed bottom-0 left-0 right-0 z-50 flex h-[var(--layout-tabbar-height)] w-full items-center justify-around border-t border-[var(--color-border-light)] bg-[var(--color-surface)] px-1">
         {children}
       </Tabs.List>
     </Tabs.Root>

@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
 import Sidebar from './Sidebar';
 import HomeSidebar from './HomeSidebar';
@@ -42,6 +43,7 @@ export default function AppLayout() {
   const isDesktopWeb = !isMobileWeb && !isNative && !isTV;
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
+  const skin = useSettingsStore((s) => s.skin);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
@@ -82,6 +84,31 @@ export default function AppLayout() {
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
 
+  // ── 美术资源皮肤：应用 data-skin 到 <html>（支持 ?skin= 覆盖，便于截图验收） ──
+  const prevSkinRef = useRef(skin);
+  useEffect(() => {
+    const urlSkin = new URLSearchParams(location.search).get('skin');
+    const valid = ['default', 'cartoon', 'mechanical', 'retro'] as const;
+    const effective = (urlSkin && (valid as readonly string[]).includes(urlSkin) ? urlSkin : skin) as string;
+
+    // 始终设置/移除 data-skin 属性
+    if (effective && effective !== 'default') {
+      document.documentElement.setAttribute('data-skin', effective);
+    } else {
+      document.documentElement.removeAttribute('data-skin');
+    }
+
+    // 皮肤切换时添加过渡动画类（仅用户手动切换时触发）
+    if (prevSkinRef.current !== skin) {
+      document.documentElement.classList.add('skin-transitioning');
+      const timer = setTimeout(() => {
+        document.documentElement.classList.remove('skin-transitioning');
+      }, 500);
+      prevSkinRef.current = skin;
+      return () => clearTimeout(timer);
+    }
+  }, [skin, location.search]);
+
   // 不使用 Keep-Alive 的路由（静态 Set，避免每次渲染创建）
   const noKeepAliveRef = useRef(new Set(['/play']));
   const noKeepAlive = noKeepAliveRef.current;
@@ -98,8 +125,9 @@ export default function AppLayout() {
   );
 
   return (
-    <ScrollContainerContext.Provider value={scrollContainerRef}>
-      <div
+    <Tooltip.Provider delayDuration={200}>
+      <ScrollContainerContext.Provider value={scrollContainerRef}>
+        <div
         className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}`}
         style={{
           backgroundColor: 'var(--color-background)',
@@ -158,5 +186,6 @@ export default function AppLayout() {
         </div>
       </div>
     </ScrollContainerContext.Provider>
+    </Tooltip.Provider>
   );
 }

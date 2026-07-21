@@ -1,0 +1,430 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   美术资源皮肤系统（主题换肤）
+   - 已落地：cartoon（卡通 · 手绘）、mechanical（机械）、retro（复古）
+   - 换肤方式：覆盖设计 token（--color-* / --radius-* / --shadow-*）整体重着色，
+     叠加纹理背景 + 特色字体，作用在真实组件上，不遮挡内容、不用孤立贴纸。
+   - 应用机制：AppLayout 将 data-skin 挂到 <html>（设置页切换，支持 ?skin= 覆盖便于验收）。
+   - 纹理素材：public/art-skins/<skin>/*.png（真实可平铺纹理，非纯 CSS 绘制）。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 皮肤字体：通过 font-display: swap + 条件选择器按需加载 ── */
+@font-face {
+  font-family: 'Fredoka';
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/fredoka/v14/X7nP4b87HvSqjb_WIi2yDCRwoQ_k7367.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/orbitron/v31/yMJMMIlzdpvBhQQL_SC3X9yhF25-T1nyGy6BoWgz.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Press Start 2P';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
+}
+
+/* 字体加载优化：仅在对应皮肤激活时声明 font-family，浏览器会在匹配时才下载 */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   卡通 · 手绘（cartoon）
+   暖色纸纹 + 珊瑚红/松石绿 + 大圆角 + 柔和暖色阴影 + 圆体字。无黑色描边。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── token 覆盖 ── */
+html[data-skin="cartoon"] {
+  --color-primary: #ff6b6b;
+  --color-primary-hover: #ff5252;
+  --color-background: #fbe7ce;
+  --color-surface: #fffdfa;
+  --color-surface-hover: rgba(255, 107, 107, 0.08);
+  --color-text: #2d2a32;
+  --color-text-secondary: #6a6570;
+  --color-text-tertiary: #9a94a0;
+  --color-border: #ecd9bf;
+  --color-border-light: #f0e3ce;
+  --color-tab-active-bg: #ff6b6b;
+  --color-favorite-active: #ff6b6b;
+  --shadow-sm: 0 2px 6px rgba(45, 42, 50, 0.08);
+  --shadow-card: 0 6px 16px rgba(224, 122, 95, 0.16);
+  --shadow-md: 0 10px 24px rgba(45, 42, 50, 0.14);
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --skin-accent: #ff6b6b;
+  --skin-accent-soft: rgba(255, 107, 107, 0.15);
+}
+
+/* 纸纹背景 */
+html[data-skin="cartoon"] body {
+  background-color: #fbe7ce;
+  background-image: url("../../public/art-skins/cartoon/paper.png");
+  background-size: 220px 220px;
+  background-repeat: repeat;
+}
+
+/* 圆润手绘字体 */
+html[data-skin="cartoon"] body,
+html[data-skin="cartoon"] button,
+html[data-skin="cartoon"] input {
+  font-family: 'Fredoka', 'Baloo 2', 'Noto Sans SC', system-ui, sans-serif;
+}
+html[data-skin="cartoon"] h1,
+html[data-skin="cartoon"] h2,
+html[data-skin="cartoon"] h3,
+html[data-skin="cartoon"] .brand-name,
+html[data-skin="cartoon"] [class*="title"] {
+  font-family: 'Fredoka', 'Baloo 2', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* 卡片模块：大圆角 + 柔和暖色阴影 */
+html[data-skin="cartoon"] .video-card,
+html[data-skin="cartoon"] .iptv-channel-card,
+html[data-skin="cartoon"] .daily-pick-card,
+html[data-skin="cartoon"] .record-card,
+html[data-skin="cartoon"] .iptv-top-card,
+html[data-skin="cartoon"] .iptv-grid-card,
+html[data-skin="cartoon"] .settings-section,
+html[data-skin="cartoon"] .person-hero,
+html[data-skin="cartoon"] .source-table,
+html[data-skin="cartoon"] .hero-banner {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+html[data-skin="cartoon"] .hero-banner__main,
+html[data-skin="cartoon"] .hero-banner__bg-wrapper {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* 顶栏：奶油底 + 暖色分隔线 */
+html[data-skin="cartoon"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+html[data-skin="cartoon"] .skin-decorations {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   机械（mechanical）
+   深色金属 + 青光描边 + 等宽科技字（Orbitron），碳纤/拉丝纹理。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── token 覆盖 ── */
+html[data-skin="mechanical"] {
+  --color-primary: #00e5ff;
+  --color-primary-hover: #00b8d4;
+  --color-background: #0a0e14;
+  --color-surface: #121820;
+  --color-surface-hover: rgba(0, 229, 255, 0.08);
+  --color-text: #e0e6ed;
+  --color-text-secondary: #8892a0;
+  --color-text-tertiary: #5a6370;
+  --color-border: #1e2a36;
+  --color-border-light: #253040;
+  --color-tab-active-bg: #00e5ff;
+  --color-favorite-active: #00e5ff;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 229, 255, 0.3);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --skin-accent: #00e5ff;
+  --skin-accent-soft: rgba(0, 229, 255, 0.12);
+}
+
+/* 碳纤纹理背景 */
+html[data-skin="mechanical"] body {
+  background-color: #0a0e14;
+  background-image:
+    linear-gradient(0deg, transparent 24%, rgba(0, 229, 255, 0.02) 25%, rgba(0, 229, 255, 0.02) 26%, transparent 27%, transparent 74%, rgba(0, 229, 255, 0.02) 75%, rgba(0, 229, 255, 0.02) 76%, transparent 77%),
+    linear-gradient(90deg, transparent 24%, rgba(0, 229, 255, 0.02) 25%, rgba(0, 229, 255, 0.02) 26%, transparent 27%, transparent 74%, rgba(0, 229, 255, 0.02) 75%, rgba(0, 229, 255, 0.02) 76%, transparent 77%);
+  background-size: 50px 50px;
+}
+
+/* 等宽科技字体 */
+html[data-skin="mechanical"] body,
+html[data-skin="mechanical"] button,
+html[data-skin="mechanical"] input {
+  font-family: 'Orbitron', 'JetBrains Mono', 'Fira Code', 'Noto Sans SC', monospace;
+}
+html[data-skin="mechanical"] h1,
+html[data-skin="mechanical"] h2,
+html[data-skin="mechanical"] h3,
+html[data-skin="mechanical"] .brand-name,
+html[data-skin="mechanical"] [class*="title"] {
+  font-family: 'Orbitron', 'Noto Sans SC', monospace;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* 卡片模块：直角 + 金属边框 + 青光描边 */
+html[data-skin="mechanical"] .video-card,
+html[data-skin="mechanical"] .iptv-channel-card,
+html[data-skin="mechanical"] .daily-pick-card,
+html[data-skin="mechanical"] .record-card,
+html[data-skin="mechanical"] .iptv-top-card,
+html[data-skin="mechanical"] .iptv-grid-card,
+html[data-skin="mechanical"] .settings-section,
+html[data-skin="mechanical"] .person-hero,
+html[data-skin="mechanical"] .source-table,
+html[data-skin="mechanical"] .hero-banner {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* 顶栏：深色金属底 + 青光底边 */
+html[data-skin="mechanical"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-primary);
+  box-shadow: 0 2px 12px rgba(0, 229, 255, 0.2);
+}
+
+/* 表单元素：深色背景 + 青光文字 */
+html[data-skin="mechanical"] select,
+html[data-skin="mechanical"] input,
+html[data-skin="mechanical"] textarea {
+  border-color: var(--color-border-light);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+html[data-skin="mechanical"] select {
+  padding-right: var(--space-lg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300e5ff' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right var(--space-xs) center;
+  background-repeat: no-repeat;
+}
+
+html[data-skin="mechanical"] option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* 按钮：深色底 + 青光边框 */
+html[data-skin="mechanical"] button,
+html[data-skin="mechanical"] .btn,
+html[data-skin="mechanical"] [role="button"] {
+  border-color: var(--color-border-light);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+html[data-skin="mechanical"] button:hover,
+html[data-skin="mechanical"] .btn:hover,
+html[data-skin="mechanical"] [role="button"]:hover {
+  background-color: var(--color-surface-hover);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+/* 聚焦环：青光 */
+html[data-skin="mechanical"] button:focus-visible,
+html[data-skin="mechanical"] input:focus-visible,
+html[data-skin="mechanical"] select:focus-visible,
+html[data-skin="mechanical"] a:focus-visible,
+html[data-skin="mechanical"] [role="button"]:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary), 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+html[data-skin="mechanical"] .skin-decorations {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   复古（retro）
+   暗底霓虹（品红/青） + 像素点阵纹理 + 像素字（Press Start 2P）。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── token 覆盖 ── */
+html[data-skin="retro"] {
+  --color-primary: #f0f;
+  --color-primary-hover: #c0c;
+  --color-background: #0d0221;
+  --color-surface: #150533;
+  --color-surface-hover: rgba(255, 0, 255, 0.1);
+  --color-text: #f0e6ff;
+  --color-text-secondary: #b388ff;
+  --color-text-tertiary: #7c4dff;
+  --color-border: #2a1050;
+  --color-border-light: #3d1a6e;
+  --color-tab-active-bg: #f0f;
+  --color-favorite-active: #f0f;
+  --shadow-sm: 0 2px 8px rgba(255, 0, 255, 0.15);
+  --shadow-card: 0 4px 20px rgba(255, 0, 255, 0.2), 0 0 2px rgba(0, 255, 255, 0.3);
+  --shadow-md: 0 8px 32px rgba(255, 0, 255, 0.25);
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --skin-accent: #f0f;
+  --skin-accent-soft: rgba(255, 0, 255, 0.15);
+}
+
+/* 像素点阵背景 */
+html[data-skin="retro"] body {
+  background-color: #0d0221;
+  background-image:
+    radial-gradient(circle, rgba(255, 0, 255, 0.03) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* 像素字 */
+html[data-skin="retro"] body,
+html[data-skin="retro"] button,
+html[data-skin="retro"] input {
+  font-family: 'Press Start 2P', 'Noto Sans SC', monospace;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+html[data-skin="retro"] h1,
+html[data-skin="retro"] h2,
+html[data-skin="retro"] h3,
+html[data-skin="retro"] .brand-name,
+html[data-skin="retro"] [class*="title"] {
+  font-family: 'Press Start 2P', 'Noto Sans SC', monospace;
+  font-weight: 400;
+  letter-spacing: 0.0625rem;
+}
+
+/* 卡片模块：像素边框 + 霓虹光晕 */
+html[data-skin="retro"] .video-card,
+html[data-skin="retro"] .iptv-channel-card,
+html[data-skin="retro"] .daily-pick-card,
+html[data-skin="retro"] .record-card,
+html[data-skin="retro"] .iptv-top-card,
+html[data-skin="retro"] .iptv-grid-card,
+html[data-skin="retro"] .settings-section,
+html[data-skin="retro"] .person-hero,
+html[data-skin="retro"] .source-table,
+html[data-skin="retro"] .hero-banner {
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card), inset 0 0 20px rgba(255, 0, 255, 0.05);
+  overflow: hidden;
+}
+
+/* 顶栏：暗底 + 霓虹品红底边 */
+html[data-skin="retro"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-primary);
+  box-shadow: 0 2px 16px rgba(255, 0, 255, 0.3);
+}
+
+/* 表单元素：深色背景 + 霓虹文字 */
+html[data-skin="retro"] select,
+html[data-skin="retro"] input,
+html[data-skin="retro"] textarea {
+  border-color: var(--color-border-light);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+html[data-skin="retro"] select {
+  padding-right: var(--space-lg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff00ff' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right var(--space-xs) center;
+  background-repeat: no-repeat;
+}
+
+html[data-skin="retro"] option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* 按钮：深色底 + 霓虹品红边框 */
+html[data-skin="retro"] button,
+html[data-skin="retro"] .btn,
+html[data-skin="retro"] [role="button"] {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+html[data-skin="retro"] button:hover,
+html[data-skin="retro"] .btn:hover,
+html[data-skin="retro"] [role="button"]:hover {
+  background-color: var(--color-surface-hover);
+  box-shadow: 0 0 12px rgba(255, 0, 255, 0.5), inset 0 0 8px rgba(255, 0, 255, 0.1);
+}
+
+/* 霓虹文字效果 */
+html[data-skin="retro"] .brand-name,
+html[data-skin="retro"] h1,
+html[data-skin="retro"] h2 {
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.6), 0 0 16px rgba(255, 0, 255, 0.3);
+}
+
+/* 聚焦环：霓虹青 */
+html[data-skin="retro"] button:focus-visible,
+html[data-skin="retro"] input:focus-visible,
+html[data-skin="retro"] select:focus-visible,
+html[data-skin="retro"] a:focus-visible,
+html[data-skin="retro"] [role="button"]:focus-visible {
+  box-shadow: 0 0 0 2px #0ff, 0 0 12px rgba(0, 255, 255, 0.5);
+}
+
+/* 链接：霓虹青 */
+html[data-skin="retro"] a {
+  color: #0ff;
+  text-shadow: 0 0 4px rgba(0, 255, 255, 0.4);
+}
+
+html[data-skin="retro"] .skin-decorations {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   公共：尊重减弱动效偏好
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  /* 复古霓虹效果：减少阴影层数，降低性能开销 */
+  html[data-skin="retro"] .brand-name,
+  html[data-skin="retro"] h1,
+  html[data-skin="retro"] h2 {
+    text-shadow: none;
+  }
+  html[data-skin="retro"] button,
+  html[data-skin="retro"] .btn {
+    text-shadow: none;
+  }
+  html[data-skin="retro"] button:hover,
+  html[data-skin="retro"] .btn:hover {
+    box-shadow: none;
+  }
+  html[data-skin="retro"] .video-card,
+  html[data-skin="retro"] .iptv-channel-card,
+  html[data-skin="retro"] .daily-pick-card,
+  html[data-skin="retro"] .record-card,
+  html[data-skin="retro"] .settings-section,
+  html[data-skin="retro"] .hero-banner {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   皮肤切换过渡动画
+   切换皮肤时添加 skin-transitioning 类，500ms 内所有颜色/阴影属性平滑过渡
+   ═══════════════════════════════════════════════════════════════════════════ */
+html.skin-transitioning,
+html.skin-transitioning *,
+html.skin-transitioning *::before,
+html.skin-transitioning *::after {
+  transition:
+    background-color var(--dur-slow) var(--ease-standard),
+    color var(--dur-slow) var(--ease-standard),
+    border-color var(--dur-slow) var(--ease-standard),
+    box-shadow var(--dur-slow) var(--ease-standard) !important;
+}

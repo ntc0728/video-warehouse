@@ -60,16 +60,16 @@
 /* ── 状态标签页组（编辑按钮 + 标签页） ────────────────────────────────── */
 .record-status-group {
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   margin-left: auto;
 }
 
 .record-status-group__divider {
+  flex-shrink: 0;
   width: 1px;
   height: 20px;
   background: var(--color-border);
-  flex-shrink: 0;
 }
 
 /* ── 状态标签页 ──────────────────────────────────────────────────────── */
@@ -83,8 +83,9 @@
 /* ── 编辑按钮（文字按钮） ────────────────────────────────────────────── */
 .record-edit-btn {
   display: inline-flex;
-  align-items: center;
+  flex-shrink: 0;
   gap: var(--space-2xs);
+  align-items: center;
   height: 32px;
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -94,14 +95,13 @@
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  cursor: pointer;
   transition: all 0.15s ease;
-  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .record-edit-btn:hover {
-  color: var(--color-text);
   border-color: var(--color-border);
+  color: var(--color-text);
   box-shadow: var(--shadow-sm);
 }
 
@@ -113,9 +113,9 @@
 
 /* 编辑按钮激活态（批量管理模式） */
 .record-edit-btn--active {
+  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  border-color: var(--color-primary);
 }
 
 .record-edit-btn--active:hover {
@@ -182,14 +182,14 @@
   .record-aside {
     z-index: 5;
     display: flex;
-    flex-flow: column;
     gap: var(--space-xs);
     align-items: stretch;
     width: 100%;
     padding: var(--space-sm);
-    background-color: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    flex-flow: column;
     box-shadow: var(--shadow-sm);
   }
 
@@ -223,9 +223,9 @@
 
   /* 状态标签页组：右对齐 */
   .record-status-group {
-    order: 2;
     flex: 1;
     justify-content: flex-end;
+    order: 2;
     padding-right: var(--space-xs);
   }
   .record-status .status-tab {
@@ -237,9 +237,9 @@
 
   /* 第二行：编辑按钮，右对齐 */
   .record-edit-btn {
-    order: 3;
-    align-self: flex-end;
     flex-shrink: 0;
+    align-self: flex-end;
+    order: 3;
     padding: var(--space-xs) var(--space-sm);
     font-size: var(--text-xs);
   }
@@ -256,11 +256,11 @@
 
   /* 移动端卡片式布局 */
   .record-main {
-    padding: var(--space-sm);
     margin-top: var(--space-sm);
-    background-color: var(--color-surface);
+    padding: var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
   }
 
@@ -273,11 +273,11 @@
   }
 
   .record-edit-row .record-edit-btn {
+    margin-right: 0;
     padding: var(--space-xs) var(--space-sm);
     font-size: var(--text-xs);
     border-top-left-radius: 0;
     border-bottom-right-radius: 0;
-    margin-right: 0;
   }
 }
 
@@ -295,16 +295,16 @@
   /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
   .record-aside {
     top: 0;
-    flex-flow: row wrap;
-    align-items: center;
-    gap: var(--space-md);
-    align-self: auto;
     flex-shrink: 1;
+    gap: var(--space-md);
+    align-items: center;
+    align-self: auto;
     width: 100%;
     padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    flex-flow: row wrap;
     box-shadow: var(--shadow-sm);
   }
 
@@ -317,7 +317,7 @@
   .record-edit-row {
     display: flex;
     justify-content: flex-end;
-    margin: 0 calc(-1 * var(--space-md)) 0;
+    margin: 0 calc(-1 * var(--space-md));
     background-color: var(--color-surface);
   }
 
@@ -329,11 +329,11 @@
 
   /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
   .record-main {
-    padding: 0 var(--space-md) var(--space-md);
     margin-top: var(--space-sm);
-    background-color: var(--color-surface);
+    padding: 0 var(--space-md) var(--space-md);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
   }
 
@@ -365,9 +365,9 @@
 
   /* 工具栏：与分段/搜索同一行，靠右 */
   .record-toolbar {
-    order: 3;
     flex-direction: row;
     gap: var(--space-sm);
+    order: 3;
     margin-left: auto;
   }
   .record-toolbar .toolbar-btn {

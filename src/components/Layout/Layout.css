@@ -258,19 +258,19 @@
     top: 0;
     bottom: 0;
     left: 0;
+    background-color: var(--color-surface);
     overflow: hidden;
     border-right: none;
-    background-color: var(--color-surface);
   }
 
   /* 顶部导航栏 → 与左侧侧边栏无缝连接（无边框，直接连接） */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
     width: auto;
     margin: 0;
-    background-color: var(--color-surface);
     border: none;
     border-radius: 0;
-    box-shadow: none;
+    background-color: var(--color-surface);
     transition: background-color 0.2s ease;
+    box-shadow: none;
   }
 }

@@ -46,7 +46,7 @@
 
 .hero-banner__bg-layer.is-active {
   /* animation 在挂载/class 变化时都会播放，保证新层淡入（transition 仅在属性变化时触发，挂载时无法淡入） */
-  animation: heroBgFadeIn 0.8s ease-in-out;
+  animation: heroBgFadeIn 0.8s var(--ease-out-expo);
 }
 
 @keyframes heroBgFadeIn {
@@ -194,15 +194,15 @@
 
 .hero-banner__thumbs {
   position: absolute;
-  right: 0;
   top: 0;
+  right: 0;
   bottom: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
   justify-content: center;
   width: clamp(13.75rem, 15vw, 23.75rem);
-  z-index: 10;
   padding: var(--space-sm);
   padding-left: var(--space-lg);
   overflow: hidden;
@@ -231,8 +231,9 @@
 
 /* 激活态：品牌主色边框 + 阴影（深色背景下需要更粗边框和更亮颜色） */
 .hero-banner__thumb.is-active {
-  transform: scale(1.02);
   border: 2px solid var(--color-primary);
+  transform: scale(1.02);
+  transition: transform 0.3s var(--ease-spring), border 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
   box-shadow: 0 0 16px var(--color-primary-shadow);
 }
 
@@ -341,8 +342,8 @@
 
 /* 激活态显示标题 */
 .hero-banner__thumb.is-active .hero-banner__thumb-title {
-  opacity: 1;
   font-weight: 700;
+  opacity: 1;
 }
 
 /* ── TV ──────────────────────────────────────────────────────────────── */

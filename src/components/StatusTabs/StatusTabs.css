@@ -10,17 +10,17 @@
   gap: var(--space-xs);
   align-items: center;
   height: var(--comp-tab-height);
+  margin-bottom: -1px;
   padding: var(--space-xs) 0;
   border: none;
-  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
-  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
 }
 
 .status-tab:hover {
@@ -40,14 +40,15 @@
 
 /* 彩色圆点 */
 .status-tab__dot {
+  flex-shrink: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: var(--status-tab-color, var(--color-text-tertiary));
-  flex-shrink: 0;
 }
 
 .status-tab__count {
+  min-width: 18px;
   padding: 1px var(--space-2xs);
   border-radius: var(--radius-full);
   background: var(--color-hover-bg);
@@ -55,7 +56,6 @@
   font-size: var(--text-xs);
   font-weight: 600;
   line-height: 1.2;
-  min-width: 18px;
   text-align: center;
 }
 

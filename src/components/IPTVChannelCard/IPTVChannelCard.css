@@ -85,8 +85,8 @@
   left: var(--space-xs);
   z-index: 3;
   display: flex;
-  align-items: center;
   gap: 3px;
+  align-items: center;
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: 10px;

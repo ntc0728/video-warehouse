@@ -1,4 +1,4 @@
-export { AccordionItem, AccordionTrigger, AccordionContent } from './Accordion';
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './Accordion';
 export { default as Button } from './Button';
 export { default as Badge } from './Badge';
 export { default as BottomSheet } from './BottomSheet';
@@ -15,5 +15,4 @@ export { TabBar } from './TabBar';
 export { default as Timeline } from './Timeline';
 export type { TimelineItem, TimelineProps, TimelineVariant } from './Timeline';
 export { toast } from './toastBus';
-export { ToastProvider } from './Toast';
 

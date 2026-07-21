@@ -21,7 +21,7 @@
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   /* 滚动后切换为实体背景时背景色平滑过渡 */
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-base) var(--ease-standard);
 }
 
 /* ── Immersive: 首页 + 详情页，fixed 叠加在 Hero 上 ── */

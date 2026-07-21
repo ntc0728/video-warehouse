@@ -28,7 +28,7 @@
     var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 
 .skeleton-title {

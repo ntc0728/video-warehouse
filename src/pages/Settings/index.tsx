@@ -84,6 +84,8 @@ export default function SettingsPage() {
     setSkipOutroDuration,
     autoPlay,
     setAutoPlay,
+    skin,
+    setSkin,
   } = useSettingsStore();
 
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
@@ -383,6 +385,34 @@ export default function SettingsPage() {
               </div>
             }
           />
+          <List.Item
+            title="皮肤"
+            description="为页面叠加美术资源"
+            extra={
+              <div className="skin-switcher">
+                {([
+                  { value: 'default', label: '默认', bg: '' },
+                  { value: 'cartoon', label: '卡通', bg: '/art-skins/cartoon/bg.svg' },
+                  { value: 'mechanical', label: '机械', bg: '/art-skins/mechanical/bg.svg' },
+                  { value: 'retro', label: '复古', bg: '/art-skins/retro/bg.svg' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`skin-btn ${skin === opt.value ? 'active' : ''}`}
+                    onClick={() => setSkin(opt.value)}
+                    aria-label={opt.label}
+                  >
+                    <span
+                      className="skin-btn__swatch"
+                      style={opt.bg ? { backgroundImage: `url(${opt.bg})` } : undefined}
+                    />
+                    <span className="skin-btn__label">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            }
+          />
         </List>
       </section>
 
@@ -392,7 +422,7 @@ export default function SettingsPage() {
             title="TMDB Access Token"
             description={tmdbAccessToken ? '已配置' : '未配置（首页 TMDB 发现将不可用）'}
             extra={
-              <Button size="small" className="settings-btn-mini" onClick={() => {
+              <Button size="sm" className="settings-btn-mini" onClick={() => {
                 setTMDBTokenInput(tmdbAccessToken || '');
                 setShowTMDBTokenInput(true);
               }}>
@@ -482,7 +512,7 @@ export default function SettingsPage() {
             }
             description={corsProxy || '默认: 不使用代理'}
             extra={
-              <Button size="small" className="settings-btn-mini" onClick={() => {
+              <Button size="sm" className="settings-btn-mini" onClick={() => {
                 setCorsProxyInput(corsProxy || '');
                 setShowCorsProxyInput(true);
               }}>
@@ -529,7 +559,7 @@ export default function SettingsPage() {
             }
             description={translationAppId && translationApiKey ? '已配置' : '未配置'}
             extra={
-              <Button size="small" className="settings-btn-mini" onClick={() => {
+              <Button size="sm" className="settings-btn-mini" onClick={() => {
                 setAppIdInput(translationAppId || '');
                 setApiKeyInput(translationApiKey || '');
                 setShowApiInput(true);
@@ -742,7 +772,7 @@ export default function SettingsPage() {
             }
             description={iptvSettings.proxyUrl || '未配置'}
             extra={
-              <Button size="small" className="settings-btn-mini" onClick={() => {
+              <Button size="sm" className="settings-btn-mini" onClick={() => {
                 setProxyUrlInput(iptvSettings.proxyUrl || '');
                 setProxyUrlError(null);
                 setShowProxyInput(true);
@@ -760,7 +790,7 @@ export default function SettingsPage() {
             }
             description={iptvSettings.proxyPattern || '默认: 全部走代理（留空即全部代理）'}
             extra={
-              <Button size="small" className="settings-btn-mini" onClick={() => {
+              <Button size="sm" className="settings-btn-mini" onClick={() => {
                 setPatternInput(iptvSettings.proxyPattern || DEFAULT_PROXY_PATTERN);
                 setShowPatternInput(true);
               }}>
@@ -888,8 +918,8 @@ export default function SettingsPage() {
               </p>
             </div>
             <div className="setting-modal-actions">
-              <Button size="small" onClick={() => setShowApiInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={handleSaveApiKey}>保存</Button>
+              <Button size="sm" onClick={() => setShowApiInput(false)}>取消</Button>
+              <Button size="sm" variant="default" onClick={handleSaveApiKey}>保存</Button>
             </div>
           </div>
         }
@@ -948,7 +978,7 @@ export default function SettingsPage() {
             </div>
             <div className="settings-test-row">
               <Button
-                size="small"
+                size="sm"
                 onClick={() => testProxyConnection(proxyUrlInput.trim())}
                 disabled={isTestingProxy || !proxyUrlInput.trim()}
               >
@@ -961,8 +991,8 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="setting-modal-actions">
-              <Button size="small" onClick={() => setShowProxyInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={handleSaveProxyUrl}>保存</Button>
+              <Button size="sm" onClick={() => setShowProxyInput(false)}>取消</Button>
+              <Button size="sm" variant="default" onClick={handleSaveProxyUrl}>保存</Button>
             </div>
           </div>
         }
@@ -1010,11 +1040,11 @@ export default function SettingsPage() {
               </p>
             </div>
             <div className="setting-modal-actions">
-              <Button size="small" onClick={() => {
+              <Button size="sm" onClick={() => {
                 setPatternInput(DEFAULT_PROXY_PATTERN);
               }}>恢复默认</Button>
-              <Button size="small" onClick={() => setShowPatternInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={handleSavePattern}>保存</Button>
+              <Button size="sm" onClick={() => setShowPatternInput(false)}>取消</Button>
+              <Button size="sm" variant="default" onClick={handleSavePattern}>保存</Button>
             </div>
           </div>
         }
@@ -1075,7 +1105,7 @@ export default function SettingsPage() {
             </div>
             <div className="settings-test-row">
               <Button
-                size="small"
+                size="sm"
                 onClick={() => testCorsProxyConnection(corsProxyInput.trim())}
                 disabled={isTestingCorsProxy || !corsProxyInput.trim()}
               >
@@ -1088,8 +1118,8 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="setting-modal-actions">
-              <Button size="small" onClick={() => setShowCorsProxyInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={() => {
+              <Button size="sm" onClick={() => setShowCorsProxyInput(false)}>取消</Button>
+              <Button size="sm" variant="default" onClick={() => {
                 const error = validators.url(corsProxyInput.trim());
                 setCorsProxyError(error);
                 if (error) return;
@@ -1155,7 +1185,7 @@ export default function SettingsPage() {
             </div>
             <div className="settings-test-row">
               <Button
-                size="small"
+                size="sm"
                 onClick={() => testTmdbConnection()}
                 disabled={isTestingTmdb || !tmdbTokenInput.trim()}
               >
@@ -1168,8 +1198,8 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="setting-modal-actions">
-              <Button size="small" onClick={() => setShowTMDBTokenInput(false)}>取消</Button>
-              <Button size="small" color="primary" onClick={handleSaveTMDBToken}>保存</Button>
+              <Button size="sm" onClick={() => setShowTMDBTokenInput(false)}>取消</Button>
+              <Button size="sm" variant="default" onClick={handleSaveTMDBToken}>保存</Button>
             </div>
           </div>
         }
