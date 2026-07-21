@@ -1,8 +1,11 @@
 /**
  * 每日推荐轮播组件
  * 展示基于推荐算法生成的每日精选视频，支持自动轮播和触摸滑动切换
+ * 基于 embla-carousel（shadcn/ui Carousel 模式）
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { useRecommendStore, useVideoStore } from '@/stores';
@@ -14,140 +17,96 @@ export default function DailyPicks() {
   const navigate = useNavigate();
   const { videos } = useVideoStore();
   const { dailyPicks, generateDailyPicks } = useRecommendStore();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const isMobile = useIsMobile();
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const touchStartRef = useRef(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 40 },
+    [Autoplay({ delay: 4000, stopOnInteraction: false })]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   /** 首次加载时，若推荐列表为空则根据视频数据生成推荐 */
   useEffect(() => {
     if (dailyPicks.length === 0 && videos.length > 0) {
       generateDailyPicks(videos);
     }
-    // videos 通过 useVideoStore selector 读取，本身变化不频繁
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyPicks.length, videos.length, generateDailyPicks]);
 
-  /** 启动自动轮播，每4秒切换一张 */
-  const startAutoPlay = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % dailyPicks.length);
-    }, 4000);
-  }, [dailyPicks.length]);
+  /** 监听 embla 选中项变化 */
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
 
   useEffect(() => {
-    if (dailyPicks.length > 1) {
-      startAutoPlay();
-    }
+    if (!emblaApi) return;
+    emblaApi.on('select', onSelect);
+    onSelect();
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      emblaApi.off('select', onSelect);
     };
-  }, [dailyPicks.length, startAutoPlay]);
+  }, [emblaApi, onSelect]);
 
   /** 页面可见性 API：后台暂停 autoplay，回来恢复 */
   useEffect(() => {
+    if (!emblaApi) return;
+    const plugins = emblaApi.plugins();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const autoplay = (plugins as any).autoplay as { stop: () => void; play: () => void } | undefined;
+    if (!autoplay) return;
+
     const handleVisibility = () => {
       if (document.hidden) {
-        if (timerRef.current) clearInterval(timerRef.current);
-      } else if (dailyPicks.length > 1) {
-        startAutoPlay();
+        autoplay.stop();
+      } else {
+        autoplay.play();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [dailyPicks.length, startAutoPlay]);
+  }, [emblaApi]);
 
-  const goTo = useCallback((index: number) => {
-    setCurrentSlide(index);
-    startAutoPlay();
-  }, [startAutoPlay]);
-
-  /** 触摸开始时记录起始位置并暂停自动轮播 */
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartRef.current = e.touches[0].clientX;
-    if (timerRef.current) clearInterval(timerRef.current);
-  }, []);
-
-  /** 触摸结束时根据滑动距离判断方向，超过50px则切换幻灯片 */
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const diff = touchStartRef.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        goTo((currentSlide + 1) % dailyPicks.length);
-      } else {
-        goTo((currentSlide - 1 + dailyPicks.length) % dailyPicks.length);
-      }
-    }
-    startAutoPlay();
-  }, [currentSlide, dailyPicks.length, goTo, startAutoPlay]);
+  const scrollTo = useCallback((index: number) => {
+    if (!emblaApi) return;
+    emblaApi.scrollTo(index);
+  }, [emblaApi]);
 
   if (dailyPicks.length === 0 || videos.length === 0) return null;
 
-  const renderSlides = () => (
-    <div
-      className="carousel-slides"
-      style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-    >
-      {dailyPicks.map((pick, idx) => (
-        <div
-          key={pick.id}
-          className={`carousel-slide${Math.abs(idx - currentSlide) > 1 ? ' carousel-slide--distant' : ''}`}
-          onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
-        >
-          <div className="carousel-slide-cover">
-            <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
-          </div>
-          <div className="carousel-slide-overlay" />
-          <div className="carousel-slide-content">
-            <div className="carousel-slide-badge">
-              <Sparkles size={12} /> 每日推荐
-            </div>
-            <h3 className="carousel-slide-title">{pick.title}</h3>
-            <p className="carousel-slide-reason">{pick.reason}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderDots = () => (
-    <div className="carousel-dots">
-      {dailyPicks.map((_, idx) => (
-        <button
-          key={idx}
-          className={`carousel-dot ${idx === currentSlide ? 'active' : ''}`}
-          onClick={() => goTo(idx)}
-        />
-      ))}
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <div className="daily-carousel animate-fade-in">
-        <div
-          className="carousel-track"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {renderSlides()}
-        </div>
-        {renderDots()}
-      </div>
-    );
-  }
-
   return (
-    <div className="daily-carousel daily-carousel-pc animate-fade-in">
-      <div
-        className="carousel-track"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {renderSlides()}
+    <div className={`daily-carousel animate-fade-in ${isMobile ? '' : 'daily-carousel-pc'}`}>
+      <div className="carousel-track" ref={emblaRef}>
+        <div className="carousel-slides">
+          {dailyPicks.map((pick) => (
+            <div
+              key={pick.id}
+              className="carousel-slide"
+              onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
+            >
+              <div className="carousel-slide-cover">
+                <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
+              </div>
+              <div className="carousel-slide-overlay" />
+              <div className="carousel-slide-content">
+                <div className="carousel-slide-badge">
+                  <Sparkles size={12} /> 每日推荐
+                </div>
+                <h3 className="carousel-slide-title">{pick.title}</h3>
+                <p className="carousel-slide-reason">{pick.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      {renderDots()}
+      <div className="carousel-dots">
+        {dailyPicks.map((_, idx) => (
+          <button
+            key={idx}
+            className={`carousel-dot ${idx === selectedIndex ? 'active' : ''}`}
+            onClick={() => scrollTo(idx)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

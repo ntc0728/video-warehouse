@@ -248,3 +248,105 @@
     transform: translateY(0);
   }
 }
+
+/* Accordion animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Progress bar animations */
+@keyframes progress-bar-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+@keyframes progress-bar-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}
+
+.progress-bar-indicator {
+  background: var(--color-primary);
+  background-image: linear-gradient(
+    -45deg,
+    var(--color-progress-stripe) 25%,
+    transparent 25%,
+    transparent 50%,
+    var(--color-progress-stripe) 50%,
+    var(--color-progress-stripe) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 20px 20px;
+  animation: progress-bar-slide 1.5s var(--ease-out-expo) infinite, progress-bar-stripes 0.75s linear infinite;
+}
+
+/* ── 新增 keyframes ──────────────────────────────────────────────────── */
+
+@keyframes blurUp {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes glowSweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(150%) skewX(-20deg);
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── 无障碍：减少动画偏好 ── */
+@media (prefers-reduced-motion: reduce) {
+  /* 禁用装饰性动画，保留功能性动画（loading spinner 等） */
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* 恢复功能性动画（显式设置时长，避免 inherit 继承 0.01ms） */
+  .spinning,
+  [class*="spinner"],
+  [class*="loading"] {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

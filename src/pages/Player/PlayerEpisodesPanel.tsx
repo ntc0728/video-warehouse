@@ -13,6 +13,8 @@ interface PlayerEpisodesPanelProps {
   expanded?: boolean;
   onToggle?: () => void;
   compact?: boolean;
+  /** 是否为剧集类型视频（tv/anime），用于决定标题显示"选集"还是"线路" */
+  isTV?: boolean;
 }
 
 const PAGE_SIZE = 12;
@@ -28,6 +30,7 @@ export function PlayerEpisodesPanel({
   expanded = true,
   onToggle,
   compact = false,
+  isTV = false,
 }: PlayerEpisodesPanelProps) {
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(0);
@@ -66,7 +69,7 @@ export function PlayerEpisodesPanel({
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
       >
         <span className="player-panel-icon"><ListVideo size={16} /></span>
-        <span className="player-panel-title">{episodes.length > 0 ? '选集' : '线路'}</span>
+        <span className="player-panel-title">{isTV || episodes.length > 0 ? '选集' : '线路'}</span>
         <span className="player-panel-info">{infoText}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>

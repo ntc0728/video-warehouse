@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 机械皮肤：深色金属 + 青光描边 + 等宽科技感 -->
+  <defs>
+    <linearGradient id="mech-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e14"/>
+      <stop offset="100%" style="stop-color:#121820"/>
+    </linearGradient>
+    <filter id="mech-glow">
+      <feGaussianBlur stdDeviation="1" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="3" fill="url(#mech-bg)"/>
+  <!-- 金属面板 -->
+  <rect x="4" y="6" width="24" height="16" rx="2" fill="#121820" stroke="#253040" stroke-width="1"/>
+  <!-- 青光电路线 -->
+  <line x1="8" y1="14" x2="24" y2="14" stroke="#00e5ff" stroke-width="1.5" opacity="0.6" filter="url(#mech-glow)"/>
+  <circle cx="12" cy="14" r="2" fill="#00e5ff" filter="url(#mech-glow)"/>
+  <circle cx="20" cy="14" r="2" fill="#00e5ff" filter="url(#mech-glow)"/>
+  <!-- 青光指示灯 -->
+  <circle cx="16" cy="26" r="2" fill="#00e5ff" filter="url(#mech-glow)" opacity="0.8"/>
+</svg>

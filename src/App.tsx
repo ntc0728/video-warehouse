@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Toaster } from 'sonner';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
-import { ToastProvider } from './components/ui/Toast';
 import { usePrefetch } from './hooks/usePrefetch';
 import { useUserStore } from './stores';
 
@@ -19,11 +19,21 @@ function App() {
   if (!dbReady) return null;
 
   return (
-    <ToastProvider>
+    <>
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          style: {
+            background: 'var(--color-surface)',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border-light)',
+          },
+        }}
+      />
       <HeaderProvider>
         <AppLayout />
       </HeaderProvider>
-    </ToastProvider>
+    </>
   );
 }
 

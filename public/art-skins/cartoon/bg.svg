@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 卡通皮肤：暖色纸纹 + 圆润形状 + 珊瑚红 -->
+  <defs>
+    <linearGradient id="cartoon-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbe7ce"/>
+      <stop offset="100%" style="stop-color:#f5d4b0"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="6" fill="url(#cartoon-bg)"/>
+  <!-- 圆润的卡片形状 -->
+  <rect x="4" y="6" width="24" height="16" rx="4" fill="#fffdfa" stroke="#ecd9bf" stroke-width="1"/>
+  <!-- 珊瑚红装饰点 -->
+  <circle cx="10" cy="14" r="3" fill="#ff6b6b"/>
+  <circle cx="22" cy="14" r="3" fill="#4ecdc4"/>
+  <!-- 小星星 -->
+  <path d="M16 22l1.5 3 3.5.5-2.5 2.5.5 3.5-3-1.5-3 1.5.5-3.5-2.5-2.5 3.5-.5z" fill="#ffd93d" opacity="0.8"/>
+</svg>

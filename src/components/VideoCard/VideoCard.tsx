@@ -203,6 +203,9 @@ const VideoCard = memo(function VideoCard({
           onLoad={() => setImageLoaded(true)}
         />
 
+        {/* 光泽扫光层（hover 时触发 glowSweep 动画） */}
+        <span className="video-card-glow" aria-hidden="true" />
+
         {/* 左上角：评分或源名称标签（批量模式下隐藏） */}
         {!batchMode && overlayLabel && variant === 'portrait' && (
           <span className="video-card-source-badge">{overlayLabel}</span>

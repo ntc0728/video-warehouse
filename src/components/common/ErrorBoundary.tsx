@@ -53,7 +53,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                     {this.state.errorInfo.componentStack}
                   </details>
                 )}
-                <Button color="primary" className="mt-4" onClick={this.handleReload}>
+                <Button variant="default" className="mt-4" onClick={this.handleReload}>
                   重新加载
                 </Button>
               </div>

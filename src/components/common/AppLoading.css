@@ -35,9 +35,9 @@
 /* 桌面端（>=1024px）：卡片模块，与首页模块风格一致 */
 @media (width >= 1024px) {
   .app-loading--inline {
-    background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background: var(--color-surface);
     box-shadow: var(--shadow-sm);
   }
 }

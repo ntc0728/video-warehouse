@@ -3,7 +3,6 @@
 import React, { useRef, useCallback, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
-import './BottomSheet.css'
 
 interface BottomSheetProps {
   visible: boolean
@@ -88,20 +87,21 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   return (
     <Dialog.Root open={visible} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bottomsheet-overlay" />
+        <Dialog.Overlay className="modal-overlay-animate" />
         <Dialog.Content
           ref={contentRef}
-          className={`bottomsheet-content${className ? ` ${className}` : ''}`}
+          className={`bottomsheet-content-animate ${className ?? ''}`}
+          style={{ padding: 'var(--space-sm) var(--space-md) var(--space-lg)' }}
           onOpenAutoFocus={handleOpenAutoFocus}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           aria-describedby={undefined}
         >
-          <Dialog.Title className="bottomsheet__sr-title">
+          <Dialog.Title className="absolute w-[1px] h-[1px] m-[-1px] p-0 border-0 overflow-hidden clip-path-[inset(50%)]">
             {title || '面板'}
           </Dialog.Title>
-          <div className="bottomsheet__handle" aria-hidden="true" />
+          <div className="w-[var(--space-xl)] h-[var(--space-2xs)] mx-auto mt-[var(--space-xs)] mb-[var(--space-sm)] rounded-[var(--space-3xs)] bg-[var(--color-border)]" aria-hidden="true" />
           {children}
         </Dialog.Content>
       </Dialog.Portal>

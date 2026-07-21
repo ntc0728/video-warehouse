@@ -39,24 +39,24 @@
 /* label 伪装为 chip：共享尺寸和对齐基线，但不显示边框/背景/交互 */
 .filter-bar__label--as-chip {
   flex-shrink: 0;
+  padding-right: 0% !important;
+  padding-left: 0 !important;
   border-color: transparent !important;
   background: transparent !important;
-  box-shadow: none !important;
-  padding-left: 0 !important;
-  padding-right: 0% !important;
-  cursor: default !important;
-  pointer-events: none;
   color: var(--color-text-tertiary) !important;
   font-weight: 600;
   text-align: left;
+  box-shadow: none !important;
+  cursor: default !important;
+  pointer-events: none;
 }
 
 /* chips 容器：label 保持在左侧，chips 在右侧内部换行 */
 .filter-bar__chips-wrap {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  flex: 1;
   min-width: 0;
 }
 
@@ -89,7 +89,7 @@
   /* 预占位 box-shadow：避免 active 切换时触发 reflow */
   box-shadow: 0 0 0 0 transparent;
   /* 白名单 transition：仅过渡颜色/背景/边框/阴影，禁止 all */
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-spring), background-color var(--dur-fast) var(--ease-spring), border-color var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-spring);
   cursor: pointer;
   user-select: none;
 }

@@ -612,6 +612,7 @@ export default function PlayerPage() {
               expanded={expandedPanels.episodes}
               onToggle={() => togglePanel('episodes')}
               compact={isCompact}
+              isTV={isTV}
             />
           </PlayerSidebar>
         </div>
@@ -693,6 +694,7 @@ export default function PlayerPage() {
               expanded={expandedPanels.episodes}
               onToggle={() => togglePanel('episodes')}
               compact={isCompact}
+              isTV={isTV}
             />
           </PlayerSidebar>
         </div>
@@ -763,6 +765,7 @@ export default function PlayerPage() {
               expanded={expandedPanels.episodes}
               onToggle={() => togglePanel('episodes')}
               compact={isCompact}
+              isTV={isTV}
             />
           </PlayerSidebar>
         </div>
@@ -863,6 +866,7 @@ export default function PlayerPage() {
             expanded={expandedPanels.episodes}
             onToggle={() => togglePanel('episodes')}
             compact={isCompact}
+            isTV={isTV}
           />
         </PlayerSidebar>
       </div>

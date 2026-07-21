@@ -104,9 +104,10 @@ export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sou
     }
   }
 
-  // 后置检测：若 allSources 为空但 episodesMap 有数据，且非显式 tv/anime，
-  // 说明 CMS 未返回正确 vod_type，按电影处理（线路列表而非选集）
-  if (allSources.length === 0 && episodesMap.size > 0 && vodType !== 'tv' && vodType !== 'anime') {
+  // 后置检测：若 allSources 为空但 episodesMap 有数据，且显式标记为 movie，
+  // 按电影处理（线路列表而非选集）。注意：vodType 为 undefined 时不应触发此转换，
+  // 否则 CMS 未返回类型信息的剧集视频会被错误地转为线路。
+  if (allSources.length === 0 && episodesMap.size > 0 && vodType === 'movie') {
     for (const [, ep] of episodesMap) {
       for (const src of ep.sources) {
         allSources.push({ id: src.id, name: ep.title || src.name, url: src.url, type: src.type, isDefault: allSources.length === 0 });

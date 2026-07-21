@@ -15,7 +15,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile, useIsRealMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue } from './constants';
-import BottomSheet from '@/components/ui/BottomSheet';
+import { BottomSheet } from '@/components/ui';
 import './FilterBar.css';
 
 // ── 限高滚动 Hook ─────────────────────────────────────

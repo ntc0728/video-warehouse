@@ -1,26 +1,19 @@
-/* ── HelpPopover ──────────────────────────────────── */
-
-.help-popover-container {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  margin-left: var(--space-xs);
-  vertical-align: middle;
-}
+/* ── HelpPopover — 基于 @radix-ui/react-popover ────── */
 
 .help-popover-trigger {
-  display: flex;
+  display: inline-flex;
   justify-content: center;
   align-items: center;
   width: var(--icon-sm);
   height: var(--icon-sm);
+  margin-left: var(--space-xs);
   padding: 0;
   border: none;
   border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-text-tertiary);
-  cursor: pointer;
   transition: color 0.2s, background 0.2s;
+  cursor: pointer;
 }
 
 .help-popover-trigger:hover {
@@ -29,13 +22,17 @@
 }
 
 .help-popover-content {
-  position: fixed;
   z-index: 1000;
   width: var(--layout-help-popover-w);
   border-radius: var(--radius-md);
   background: var(--color-surface-elevated);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
-  animation: helpPopoverFadeIn 0.15s ease-out;
+  animation: helpPopoverFadeIn 0.2s var(--ease-spring);
+  outline: none;
+}
+
+[data-state="closed"] .help-popover-content {
+  animation: helpPopoverFadeOut 0.1s ease-out;
 }
 
 .help-popover-header {
@@ -85,13 +82,7 @@
 }
 
 .help-popover-arrow {
-  position: absolute;
-  bottom: calc(-1 * var(--space-2xs));
-  width: var(--space-md);
-  height: var(--space-md);
-  background: var(--color-surface-elevated);
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08);
-  transform: translateX(-50%) rotate(45deg);
+  fill: var(--color-surface-elevated);
 }
 
 @keyframes helpPopoverFadeIn {
@@ -105,11 +96,15 @@
   }
 }
 
-/* ── Below placement ──────────────────────────────── */
-
-.help-popover-content--below .help-popover-arrow {
-  top: calc(-1 * var(--space-2xs));
-  bottom: auto;
+@keyframes helpPopoverFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 /* ── Dark mode ──────────────────────────────────── */

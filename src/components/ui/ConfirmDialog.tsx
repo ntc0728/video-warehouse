@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export interface ConfirmDialogProps {
@@ -47,40 +47,57 @@ export default function ConfirmDialog({
   }, [isMobile]);
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content
-          className={`modal-content${className ? ` ${className}` : ''}`}
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className="modal-overlay-animate" />
+        <AlertDialog.Content
+          className={`confirm-dialog-content ${className ?? ''}`}
           onOpenAutoFocus={handleOpenAutoFocus}
         >
-          <Dialog.Title className="modal-title">{title}</Dialog.Title>
+          <AlertDialog.Title className="text-[var(--text-lg)] font-semibold text-[var(--color-text)] mb-[var(--space-md)]">
+            {title}
+          </AlertDialog.Title>
           {description && (
-            <Dialog.Description className="confirm-description">{description}</Dialog.Description>
+            <AlertDialog.Description className="text-[var(--text-base)] text-[var(--color-text-secondary)] leading-relaxed mb-[var(--space-lg)]">
+              {description}
+            </AlertDialog.Description>
           )}
-          <div className="confirm-actions">
-            <Dialog.Close asChild>
-              <button type="button" className="confirm-btn confirm-btn--cancel" onClick={handleCancel}>
+          <div className="flex justify-center gap-[var(--space-sm)]">
+            <AlertDialog.Cancel asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-[var(--comp-btn-min-height)] px-[var(--space-md)] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                onClick={handleCancel}
+              >
                 {cancelText}
               </button>
-            </Dialog.Close>
-            <button
-              type="button"
-              className={`confirm-btn confirm-btn--confirm ${variant === 'danger' ? 'confirm-btn--danger' : ''}`}
-              onClick={handleConfirm}
-            >
-              {confirmText}
-            </button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action asChild>
+              <button
+                type="button"
+                className={`inline-flex items-center justify-center h-[var(--comp-btn-min-height)] px-[var(--space-md)] rounded-[var(--radius-md)] text-white transition-colors ${
+                  variant === 'danger'
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-[var(--color-primary)] hover:opacity-90'
+                }`}
+                onClick={handleConfirm}
+              >
+                {confirmText}
+              </button>
+            </AlertDialog.Action>
           </div>
-          <Dialog.Close asChild>
-            <button className="modal-close" aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          {/* 关闭按钮：仅关闭对话框，不触发 onCancel */}
+          <button
+            className="absolute top-[var(--space-sm)] right-[var(--space-sm)] flex items-center justify-center w-[28px] h-[28px] rounded-[var(--radius-sm)] bg-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors"
+            aria-label="关闭"
+            onClick={() => onOpenChange(false)}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }

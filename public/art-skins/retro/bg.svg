@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 复古皮肤：暗底霓虹 + 像素风格 + 品红/青 -->
+  <defs>
+    <linearGradient id="retro-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0221"/>
+      <stop offset="100%" style="stop-color:#150533"/>
+    </linearGradient>
+    <filter id="retro-glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="2" fill="url(#retro-bg)"/>
+  <!-- 像素点阵背景 -->
+  <g opacity="0.15">
+    <circle cx="4" cy="4" r="0.5" fill="#ff00ff"/>
+    <circle cx="12" cy="4" r="0.5" fill="#ff00ff"/>
+    <circle cx="20" cy="4" r="0.5" fill="#ff00ff"/>
+    <circle cx="28" cy="4" r="0.5" fill="#ff00ff"/>
+    <circle cx="4" cy="12" r="0.5" fill="#ff00ff"/>
+    <circle cx="12" cy="12" r="0.5" fill="#ff00ff"/>
+    <circle cx="20" cy="12" r="0.5" fill="#ff00ff"/>
+    <circle cx="28" cy="12" r="0.5" fill="#ff00ff"/>
+    <circle cx="4" cy="20" r="0.5" fill="#ff00ff"/>
+    <circle cx="12" cy="20" r="0.5" fill="#ff00ff"/>
+    <circle cx="20" cy="20" r="0.5" fill="#ff00ff"/>
+    <circle cx="28" cy="20" r="0.5" fill="#ff00ff"/>
+    <circle cx="4" cy="28" r="0.5" fill="#ff00ff"/>
+    <circle cx="12" cy="28" r="0.5" fill="#ff00ff"/>
+    <circle cx="20" cy="28" r="0.5" fill="#ff00ff"/>
+    <circle cx="28" cy="28" r="0.5" fill="#ff00ff"/>
+  </g>
+  <!-- 霓虹品红边框 -->
+  <rect x="4" y="6" width="24" height="16" rx="1" fill="none" stroke="#ff00ff" stroke-width="1.5" filter="url(#retro-glow)"/>
+  <!-- 霓虹青装饰 -->
+  <line x1="8" y1="14" x2="24" y2="14" stroke="#00ffff" stroke-width="1" filter="url(#retro-glow)" opacity="0.7"/>
+  <!-- 像素化星星 -->
+  <rect x="14" y="22" width="4" height="4" fill="#ff00ff" filter="url(#retro-glow)" opacity="0.8"/>
+</svg>

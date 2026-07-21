@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
-import { BottomSheet } from '@/components/ui'
+import { BottomSheet, Modal } from '@/components/ui'
 import { useScrollContainer } from '@/hooks/useScrollContext'
 import { resolveHotGroups } from './hotGroups'
 import './GroupPicker.css'
@@ -181,23 +180,9 @@ export default function GroupPicker({
       <>
         {hotTags}
 
-        <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="grouppicker-popup__overlay" />
-            <Dialog.Content className="grouppicker-popup" aria-describedby="grouppicker-popup-desc">
-              <Dialog.Title className="grouppicker-popup__title">选择分组</Dialog.Title>
-              <span id="grouppicker-popup-desc" className="sr-only">从列表中选择一个频道分组</span>
-              {pickerContent}
-              <Dialog.Close asChild>
-                <button className="grouppicker-popup__close" aria-label="关闭">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </Dialog.Close>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+        <Modal visible={isOpen} onClose={handleClose} title="选择分组" className="grouppicker-popup">
+          {pickerContent}
+        </Modal>
       </>
     )
   }

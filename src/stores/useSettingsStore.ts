@@ -28,6 +28,7 @@ interface SettingsState extends AppSettings {
   setIPTVSourceIndex: (index: number) => void;
   setIPTVSourceIndices: (indices: number[]) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setSkin: (skin: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
   setCorsProxy: (url: string) => void;
   setEpgUrls: (urls: string[]) => void;
   setEpgUpdateInterval: (hours: number) => void;
@@ -56,6 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
       iptvSourceIndex: 0,
       iptvSourceIndices: [0],
       theme: 'light' as const,
+      skin: 'default' as const,
       corsProxy: '',
       epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
       epgUpdateInterval: 6,
@@ -77,6 +79,7 @@ export const useSettingsStore = create<SettingsState>()(
       setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
       setIPTVSourceIndices: (indices) => set({ iptvSourceIndices: indices }),
       setTheme: (theme) => set({ theme }),
+      setSkin: (skin) => set({ skin }),
       setCorsProxy: (url) => set({ corsProxy: url }),
       setEpgUrls: (urls) => set({ epgUrls: urls }),
       setEpgUpdateInterval: (hours) => set({ epgUpdateInterval: Math.min(24, Math.max(1, hours)) }),

@@ -85,37 +85,29 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <Dialog.Root open={visible} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="modal-overlay" />
+        <Dialog.Overlay className="modal-overlay-animate" />
         <Dialog.Content
           ref={contentRef}
-          className={`modal-content${className ? ` ${className}` : ''}`}
+          className={`modal-content-animate ${className ?? ''}`}
           onOpenAutoFocus={handleOpenAutoFocus}
           onEscapeKeyDown={closeOnAction ? undefined : (e) => e.preventDefault()}
           onPointerDownOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
           onInteractOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
         >
-          {title && <Dialog.Title className="modal-title">{title}</Dialog.Title>}
+          {title && (
+            <Dialog.Title className="text-[var(--text-lg)] font-semibold text-[var(--color-text)] mb-[var(--space-md)]">
+              {title}
+            </Dialog.Title>
+          )}
           {body && (
-            <CustomScrollbar className="modal-body" direction="vertical" autoHideDelay={800}>
+            <CustomScrollbar className="text-[var(--color-text-secondary)] leading-relaxed" direction="vertical" autoHideDelay={800}>
               {body}
             </CustomScrollbar>
           )}
           <Dialog.Close asChild>
-            <button className="modal-close" aria-label="Close">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 5L5 15M5 5l10 10"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+            <button className="absolute top-[var(--space-sm)] right-[var(--space-sm)] flex items-center justify-center w-[var(--icon-xl)] h-[var(--icon-xl)] rounded-full bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors" aria-label="Close">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           </Dialog.Close>

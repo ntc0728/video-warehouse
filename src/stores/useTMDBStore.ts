@@ -726,7 +726,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     try {
       let results: TMDBVideoItem[] = [];
       let totalPages = 0;
-      let totalResults = 0;
+      let _totalResults = 0;
 
       if (filterOptions.mediaType === 'all') {
         const [movieData, tvData] = await Promise.all([
@@ -759,7 +759,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         // totalPages 取两者较大值，但若去重后本页不足 2×PAGE_SIZE 则可能已到最后一页
         const TMDB_PAGE_SIZE = 20;
         totalPages = Math.max(movieData.total_pages, tvData.total_pages);
-        totalResults = movieData.total_results + tvData.total_results;
+        _totalResults = movieData.total_results + tvData.total_results;
         // 去重后如果本页结果少于预期（2×PAGE_SIZE），说明可能已到最后一页
         if (results.length < TMDB_PAGE_SIZE * 2 && page >= totalPages) {
           totalPages = page;
@@ -768,12 +768,12 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         const data = await discoverTV(filterOptions, page);
         results = data.results.map(mapTVToVideoItem);
         totalPages = data.total_pages;
-        totalResults = data.total_results;
+        _totalResults = data.total_results;
       } else {
         const data = await discoverMovie(filterOptions, page);
         results = data.results.map(mapMovieToVideoItem);
         totalPages = data.total_pages;
-        totalResults = data.total_results;
+        _totalResults = data.total_results;
       }
 
       set((s) => {

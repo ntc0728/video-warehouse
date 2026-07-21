@@ -10,6 +10,8 @@ export interface AppSettings {
   iptvSourceIndex: number;
   iptvSourceIndices: number[];
   theme: 'light' | 'dark' | 'system';
+  /** 美术资源皮肤画风：default(无) / cartoon(卡通) / mechanical(机械) / retro(复古) */
+  skin: 'default' | 'cartoon' | 'mechanical' | 'retro';
   /** 跳过片头 */
   skipIntro: boolean;
   /** 跳过片尾 */
