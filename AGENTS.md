@@ -105,11 +105,15 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 
 ```bash
 npm run dev          # 开发服务器 (127.0.0.1:3001)
-npm run build        # 生产构建
+npm run build        # 生产构建（tsc -b && vite build）
 npm run lint:all     # ESLint + Stylelint
 npm run test         # Vitest 单元测试
 npx playwright test  # E2E 测试（TMDB Mock 默认启用，-RealApi 关闭）
 ```
+
+> **⚠️ 代码修改后必须执行 `npm run build`**
+> 禁止用 `npx tsc --noEmit --skipLibCheck` 替代——`--skipLibCheck` 会跳过 `noUnusedLocals` 检查，导致未使用变量提交后 CI 构建失败。
+> 正确流程：修改代码 → `npm run build` 验证通过 → `git commit` → `git push`。
 
 ## TMDB Mock 策略
 
