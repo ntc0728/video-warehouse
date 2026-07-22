@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:fast": "tsc -b && cross-env VITE_COMPRESS=false vite build",
     "build:android": "cross-env CAPACITOR=true tsc -b && vite build && node scripts/clean-compressed.js && npx cap sync android",
     "icons:android": "npm install --no-save sharp && node scripts/generate-icons.mjs && npm uninstall sharp",
     "open:android": "npx cap open android",

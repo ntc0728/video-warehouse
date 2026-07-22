@@ -2,11 +2,6 @@ name = "video-warehouse-proxy"
 main = "m3u8-proxy.js"
 compatibility_date = "2025-01-01"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "video-warehouse-db"
-database_id = ""
-
 [observability]
 enabled = true
 head_sampling_rate = 1

@@ -4,6 +4,7 @@
  * 通过统一 httpClient（axios）统一处理 缓存 / 超时 / 重试
  */
 import type { Video, VideoType, Episode } from '@/types/video';
+import type { VideoSourceConfig } from '@/types/source';
 import { getVideoSources, getIPTVSources } from './sourceService';
 import { getJSON } from './httpClient';
 import { extractSeasonNumber } from './seasonMatcher';
@@ -90,12 +91,13 @@ function getCmsVodType(item: CMSVideoItem): VideoType | undefined {
  */
 export async function checkVideoSourceAvailability(
   sourceIndex: number,
-  timeout: number = 8000
+  timeout: number = 8000,
+  sources?: VideoSourceConfig[],
 ): Promise<SourceStatus> {
-  /** 获取所有视频源配置 */
-  const sources = await getVideoSources();
+  /** 获取所有视频源配置（外部已有时跳过） */
+  const allSources = sources ?? await getVideoSources();
   /** 获取指定索引的视频源 */
-  const source = sources[sourceIndex];
+  const source = allSources[sourceIndex];
 
   if (!source) {
     return { index: sourceIndex, name: '未知', available: false, error: '视频源配置不存在' };
@@ -143,13 +145,13 @@ export async function checkAllVideoSources(
     while (index < sources.length) {
       const i = index++;
       const start = Date.now();
-      const status = await checkVideoSourceAvailability(i, timeout);
+      const status = await checkVideoSourceAvailability(i, timeout, sources);
       const elapsed = Date.now() - start;
 
       let videoCount: number | undefined;
       if (status.available) {
         try {
-          const result = await fetchVideosBySource(i);
+          const result = await fetchVideosBySource(i, sources);
           if (!result.error) videoCount = result.videos.length;
         } catch {
           // 单个数据源失败不影响其他源的统计
@@ -179,13 +181,13 @@ export async function findAvailableVideoSource(
   if (sources.length === 0) return null;
 
   if (preferredIndex !== undefined && preferredIndex >= 0 && preferredIndex < sources.length) {
-    const status = await checkVideoSourceAvailability(preferredIndex, timeout);
+    const status = await checkVideoSourceAvailability(preferredIndex, timeout, sources);
     if (status.available) return { index: preferredIndex, name: sources[preferredIndex].name };
   }
 
   for (let i = 0; i < sources.length; i++) {
     if (i === preferredIndex) continue;
-    const status = await checkVideoSourceAvailability(i, timeout);
+    const status = await checkVideoSourceAvailability(i, timeout, sources);
     if (status.available) return { index: i, name: sources[i].name };
   }
 
@@ -256,7 +258,10 @@ async function resolvePlaySources(
  * @param sourceIndex - 视频源配置索引
  * @returns 视频列表和源信息，或错误信息
  */
-export async function fetchVideosBySource(sourceIndex: number): Promise<{
+export async function fetchVideosBySource(
+  sourceIndex: number,
+  sources?: VideoSourceConfig[],
+): Promise<{
   /** 视频列表 */
   videos: Video[];
   /** 源信息（索引和名称） */
@@ -264,10 +269,10 @@ export async function fetchVideosBySource(sourceIndex: number): Promise<{
   /** 错误信息（请求失败时） */
   error?: string;
 }> {
-  /** 获取所有视频源配置 */
-  const sources = await getVideoSources();
+  /** 获取所有视频源配置（外部已有时跳过） */
+  const allSources = sources ?? await getVideoSources();
   /** 获取指定索引的视频源 */
-  const source = sources[sourceIndex];
+  const source = allSources[sourceIndex];
   if (!source) return { videos: [], error: '未找到配置的视频源' };
 
   try {
@@ -343,7 +348,7 @@ export interface VideoDetailResult {
   error?: string;
 }
 
-/** 从多个视频源搜索并返回匹配结果 */
+/** 从多个视频源搜索并返回匹配结果（并行搜索） */
 export async function searchVideoFromMultipleSources(
   sourceIndices: number[],
   title: string,
@@ -351,50 +356,56 @@ export async function searchVideoFromMultipleSources(
   signal?: AbortSignal,
 ): Promise<VideoDetailResult[]> {
   const sources = await getVideoSources();
-  const results: VideoDetailResult[] = [];
   const searchTerm = title;
 
-  for (const index of sourceIndices) {
-    // 检查是否已取消
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  // 并行搜索所有源
+  const settled = await Promise.allSettled(
+    sourceIndices.map(async (index) => {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-    const source = sources[index];
-    if (!source) {
-      results.push({ sourceIndex: index, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' });
-      continue;
-    }
-
-    try {
-      const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
-      if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
-        results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' });
-        continue;
+      const source = sources[index];
+      if (!source) {
+        return { sourceIndex: index, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' } as VideoDetailResult;
       }
-      const match = data.list.find((item: CMSVideoItem) => {
-        const t = item.vod_name || '';
-        return t === title || t.includes(title) || title.includes(t);
-      });
-      const target = match || data.list[0];
-      if (!target) {
-        results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' });
-        continue;
-      }
-      const resolved = await resolvePlaySources(source.api, target, signal);
-      results.push({
-        sourceIndex: index,
-        sourceId: source.id,
-        sourceName: source.name,
-        video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
-      });
-    } catch (error) {
-      if (signal?.aborted) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      results.push({ sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' });
-    }
-  }
 
-  return results;
+      try {
+        const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
+        const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+        if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
+        }
+        const match = data.list.find((item: CMSVideoItem) => {
+          const t = item.vod_name || '';
+          return t === title || t.includes(title) || title.includes(t);
+        });
+        const target = match || data.list[0];
+        if (!target) {
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
+        }
+        const resolved = await resolvePlaySources(source.api, target, signal);
+        return {
+          sourceIndex: index,
+          sourceId: source.id,
+          sourceName: source.name,
+          video: { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes },
+        } as VideoDetailResult;
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' } as VideoDetailResult;
+      }
+    })
+  );
+
+  return settled.map((r, i) =>
+    r.status === 'fulfilled' ? r.value : {
+      sourceIndex: sourceIndices[i],
+      sourceId: '',
+      sourceName: '未知',
+      video: null,
+      error: r.reason instanceof Error ? r.reason.message : '请求失败',
+    }
+  );
 }
 
 /**
@@ -477,6 +488,7 @@ export async function searchAllFromCMSSource(
   sourceIndex: number,
   title: string,
   page = 1,
+  opts?: { signal?: AbortSignal },
 ): Promise<CMSSearchAllResult> {
   const sources = await getVideoSources();
   const source = sources[sourceIndex];
@@ -486,7 +498,7 @@ export async function searchAllFromCMSSource(
 
   try {
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}&pg=${page}`;
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal: opts?.signal });
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源' };
     }

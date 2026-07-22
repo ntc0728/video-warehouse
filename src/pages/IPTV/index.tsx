@@ -254,9 +254,18 @@ export default function IPTVPage() {
 
   const handleSourceSelect = useCallback((sourceId: string | null) => {
     setSelectedSource(sourceId);
-    setSelectedGroup(null);
+    // 如果当前选中的分组属于新源，则保留；否则清空
+    setSelectedGroup((prev) => {
+      if (prev === null) return null;
+      const sourceGroups = new Set(
+        channels
+          .filter(ch => sourceId === null || ch.sourceId === sourceId)
+          .map(ch => ch.group || '未分组')
+      );
+      return sourceGroups.has(prev) ? prev : null;
+    });
     useIPTVStore.getState().abortAvailabilityCheck();
-  }, []);
+  }, [channels]);
 
   const availableCount = useMemo(() => {
     return filteredChannels.filter(ch => ch.isAvailable === true).length;
@@ -320,7 +329,6 @@ export default function IPTVPage() {
 
         {channels.length > 0 && filteredGroups.length > 0 && (
           <GroupPicker
-            key={selectedSource ?? 'all'}
             groups={filteredGroups}
             totalCount={selectedSource
               ? channels.filter(ch => ch.sourceId === selectedSource).length

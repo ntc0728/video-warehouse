@@ -1,8 +1,8 @@
 .iptv-page {
   position: relative;
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
+  min-height: 100%;
   background-color: var(--color-background);
 }
 
@@ -490,7 +490,6 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%;
   min-height: 0;
   padding: 0 var(--space-sm);
 }

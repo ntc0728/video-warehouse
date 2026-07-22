@@ -328,6 +328,7 @@ retryCount,
     tvFocusSection, setTvFocusSection,
   } = useTVInput({
     platform,
+    mode,
     isChannelListVisible,
     playerCore: { togglePlay: () => playerCore.togglePlay(), setVolume: (v) => playerCore.setVolume(v) },
     groups,
@@ -575,7 +576,7 @@ retryCount,
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
     <ToastProvider>
-    <ToastTrigger />
+    <ToastTrigger mode={mode} />
     <PlayerErrorBoundary>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
     <div
@@ -618,8 +619,8 @@ retryCount,
         </div>
       )}
 
-      {/* 预加载完成待播放 / 暂停状态显示播放按钮 */}
-      {isReadyToPlay && !isPlaying && !hasError && !isBuffering && (
+      {/* 预加载完成待播放 / 暂停状态显示播放按钮（IPTV 直播加载即播，不显示中间播放按钮） */}
+      {isReadyToPlay && !isPlaying && !hasError && !isBuffering && mode !== 'iptv' && (
         <div
           className="up-player-paused-overlay"
           onClick={(e) => {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { BottomSheet, Modal } from '@/components/ui'
 import { useScrollContainer } from '@/hooks/useScrollContext'
 import { resolveHotGroups } from './hotGroups'
@@ -24,23 +24,95 @@ export default function GroupPicker({
   const [searchKeyword, setSearchKeyword] = useState('')
   const scrollContainer = useScrollContainer()
 
+  // 追踪上次从弹窗选中的非热门分组（用于保持 tab 显示）
+  const [lastNonHotGroup, setLastNonHotGroup] = useState<string | null>(null)
+
+  // tab 折叠状态
+  const [expanded, setExpanded] = useState(false)
+  const [needsFolding, setNeedsFolding] = useState(false)
+  const [twoRowHeight, setTwoRowHeight] = useState(0)
+  const tagsRef = useRef<HTMLDivElement>(null)
+
   const hotGroupNames = useMemo(() => resolveHotGroups(groups), [groups])
 
   const showDynamicTag = useMemo(() => {
-    if (selectedGroup === null) return false
-    return !hotGroupNames.includes(selectedGroup)
-  }, [selectedGroup, hotGroupNames])
+    if (lastNonHotGroup === null) return false
+    return !hotGroupNames.includes(lastNonHotGroup)
+  }, [lastNonHotGroup, hotGroupNames])
 
   const dynamicGroup = useMemo(() => {
     if (!showDynamicTag) return null
-    return groups.find((g) => g.name === selectedGroup) ?? null
-  }, [showDynamicTag, selectedGroup, groups])
+    return groups.find((g) => g.name === lastNonHotGroup) ?? null
+  }, [showDynamicTag, lastNonHotGroup, groups])
 
   const filteredBySearch = useMemo(() => {
     if (!searchKeyword.trim()) return groups
     const kw = searchKeyword.toLowerCase()
     return groups.filter((g) => g.name.toLowerCase().includes(kw))
   }, [groups, searchKeyword])
+
+  // 检测 hot-tags 是否超过 2 行，超过则需要折叠
+  useLayoutEffect(() => {
+    const el = tagsRef.current
+    if (!el || el.children.length === 0) {
+      setNeedsFolding(false)
+      return
+    }
+    // 先移除折叠限制以测量完整布局
+    el.style.maxHeight = ''
+    el.style.overflow = ''
+
+    const children = Array.from(el.children) as HTMLElement[]
+    if (children.length === 0) {
+      setNeedsFolding(false)
+      return
+    }
+
+    const firstTop = children[0].offsetTop
+
+    // 找到第二行的第一个元素
+    let secondRowFirst: HTMLElement | null = null
+    for (const child of children) {
+      if (child.offsetTop > firstTop) {
+        secondRowFirst = child
+        break
+      }
+    }
+
+    if (!secondRowFirst) {
+      // 全部在一行内，无需折叠
+      setNeedsFolding(false)
+      setTwoRowHeight(0)
+      return
+    }
+
+    const secondRowTop = secondRowFirst.offsetTop
+
+    // 检查是否超过 2 行
+    const hasMoreThan2Rows = children.some(c => c.offsetTop > secondRowTop)
+
+    if (!hasMoreThan2Rows) {
+      setNeedsFolding(false)
+      setTwoRowHeight(0)
+      return
+    }
+
+    // 计算 2 行的精确高度：第二行最底元素的 bottom - 第一行首元素的 top
+    const secondRowItems = children.filter(c => c.offsetTop === secondRowTop)
+    const lastInSecondRow = secondRowItems[secondRowItems.length - 1]
+    // offsetTop 相对 padding box，maxHeight 包含 padding，需加上容器的上下 padding
+    const paddingTop = parseFloat(getComputedStyle(el).paddingTop) || 0
+    const paddingBottom = parseFloat(getComputedStyle(el).paddingBottom) || 0
+    const twoRowH = lastInSecondRow.offsetTop + lastInSecondRow.offsetHeight - firstTop + paddingTop + paddingBottom
+
+    setTwoRowHeight(twoRowH)
+    setNeedsFolding(true)
+  }, [groups, hotGroupNames, lastNonHotGroup])
+
+  // 是否显示所有分组为内联 tab（桌面端且 ≤50 个分组）
+  const showAllInline = groups.length <= 50 && mode !== 'bottom-sheet'
+  // 是否显示"更多分类"按钮（>50 个分组 或 移动端）
+  const showMoreBtn = groups.length > 50 || mode === 'bottom-sheet'
 
   // BottomSheet 模式：锁定背景滚动
   useEffect(() => {
@@ -59,11 +131,15 @@ export default function GroupPicker({
 
   const handleSelect = useCallback(
     (group: string | null) => {
+      // 仅从弹窗选中非热门分组时更新 lastNonHotGroup
+      if (group !== null && !hotGroupNames.includes(group)) {
+        setLastNonHotGroup(group)
+      }
       onSelect(group)
       setIsOpen(false)
       setSearchKeyword('')
     },
-    [onSelect],
+    [onSelect, hotGroupNames],
   )
 
   const handleClose = useCallback(() => {
@@ -98,43 +174,77 @@ export default function GroupPicker({
     )
   }
 
-  // ── 热门分组 tags（含"更多分类"按钮） ──
+  // ── 热门分组 tags（含展开/收起 + 更多分类按钮） ──
   const hotTags = (
-    <div className="grouppicker__hot-tags">
-      <button
-        className={`grouppicker__hot-tag${selectedGroup === null ? ' active' : ''}`}
-        onClick={() => onSelect(null)}
+    <>
+      <div
+        ref={tagsRef}
+        className="grouppicker__hot-tags"
+        style={needsFolding && !expanded ? { maxHeight: twoRowHeight, overflow: 'hidden' } : undefined}
       >
-        全部 ({totalCount})
-      </button>
-      {hotGroupNames.map((name) => {
-        const g = groups.find((gr) => gr.name === name)
-        if (!g) return null
-        return (
-          <button
-            key={g.name}
-            className={`grouppicker__hot-tag${selectedGroup === g.name ? ' active' : ''}`}
-            onClick={() => onSelect(g.name)}
-          >
-            {g.name} ({g.count})
-          </button>
-        )
-      })}
-      <button
-        className="grouppicker__more-btn"
-        onClick={() => setIsOpen(true)}
-      >
-        更多分类
-      </button>
-      {dynamicGroup && (
         <button
-          className="grouppicker__hot-tag active"
-          onClick={() => onSelect(dynamicGroup.name)}
+          className={`grouppicker__hot-tag${selectedGroup === null ? ' active' : ''}`}
+          onClick={() => onSelect(null)}
         >
-          {dynamicGroup.name} ({dynamicGroup.count})
+          全部 ({totalCount})
         </button>
+        {showAllInline ? (
+          groups.map((g) => (
+            <button
+              key={g.name}
+              className={`grouppicker__hot-tag${selectedGroup === g.name ? ' active' : ''}`}
+              onClick={() => onSelect(g.name)}
+            >
+              {g.name} ({g.count})
+            </button>
+          ))
+        ) : (
+          <>
+            {hotGroupNames.map((name) => {
+              const g = groups.find((gr) => gr.name === name)
+              if (!g) return null
+              return (
+                <button
+                  key={g.name}
+                  className={`grouppicker__hot-tag${selectedGroup === g.name ? ' active' : ''}`}
+                  onClick={() => onSelect(g.name)}
+                >
+                  {g.name} ({g.count})
+                </button>
+              )
+            })}
+            {dynamicGroup && (
+              <button
+                className={`grouppicker__hot-tag${selectedGroup === dynamicGroup.name ? ' active' : ''}`}
+                onClick={() => onSelect(dynamicGroup.name)}
+              >
+                {dynamicGroup.name} ({dynamicGroup.count})
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      {(needsFolding || showMoreBtn) && (
+        <div className="grouppicker__tags-footer">
+          {needsFolding && (
+            <button
+              className="grouppicker__expand-btn"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? '收起' : '展开更多'}
+            </button>
+          )}
+          {showMoreBtn && (
+            <button
+              className="grouppicker__more-btn"
+              onClick={() => setIsOpen(true)}
+            >
+              更多分类
+            </button>
+          )}
+        </div>
       )}
-    </div>
+    </>
   )
 
   // ── 弹窗内容 ──

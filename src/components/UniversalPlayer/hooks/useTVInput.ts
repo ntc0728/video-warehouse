@@ -5,6 +5,7 @@ import type { IPTVChannel } from '@/types/iptv';
 
 interface UseTVInputOptions {
   platform: string;
+  mode: string;
   isChannelListVisible: boolean;
   playerCore: { togglePlay: () => void; setVolume: (v: number) => void };
   groups: { channels: IPTVChannel[] }[];
@@ -14,6 +15,7 @@ interface UseTVInputOptions {
 
 export function useTVInput({
   platform,
+  mode,
   isChannelListVisible,
   playerCore,
   groups,
@@ -93,7 +95,11 @@ export function useTVInput({
   useTVRemote({
     platform,
     isChannelListVisible,
-    onTogglePlay: () => playerCore.togglePlay(),
+    // IPTV 直播无“暂停”语义：遥控器 播放/暂停键 不触发 togglePlay；VOD 仍可用
+    onTogglePlay: () => {
+      if (mode === 'iptv') return;
+      playerCore.togglePlay();
+    },
     onBack: () => {},
     onVolumeUp: () => {
       playerCore.setVolume(Math.min(1, (usePlayerStore.getState().volume + 0.1)));

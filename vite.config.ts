@@ -21,7 +21,8 @@ export default defineConfig({
   plugins: [
     react(),
     // Capacitor 构建不需要预压缩（Android WebView 直接读本地文件）
-    ...(process.env.CAPACITOR === 'true' ? [] : [
+    // VITE_COMPRESS=false 可跳过压缩（本地开发/CI 加速）
+    ...(process.env.CAPACITOR === 'true' || process.env.VITE_COMPRESS === 'false' ? [] : [
       viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
       viteCompression({ algorithm: 'gzip', ext: '.gz' }),
     ]),

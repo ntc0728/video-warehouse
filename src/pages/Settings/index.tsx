@@ -47,7 +47,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { translationAppId, translationApiKey, setTranslationAppId, setTranslationApiKey, autoTranslate, setAutoTranslate } = useSettingsStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
-  const tmdbStore = useTMDBStore();
+  const fetchAllHomeData = useTMDBStore(s => s.fetchAllHomeData);
 
   // 源检测入口（连续点击3次版本号）
   const versionClickCount = useRef(0);
@@ -195,12 +195,10 @@ export default function SettingsPage() {
     }
 
     setVideoSourceIndices(newIndices);
-    if (newIndices.length > 0) {
-      setVideoSourceIndices(newIndices);
-    }
   };
 
-  /** 多选 IPTV 数据源（最多3个） */
+  /** 多选 IPTV 数据源（最多3个，停止操作1s后调用接口） */
+  const iptvRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleIPTVSourceToggle = (index: number) => {
     const current = iptvSourceIndices || [0];
     let newIndices: number[];
@@ -232,7 +230,11 @@ export default function SettingsPage() {
         aggregatorUrls: urls,
         sourceNames: names,
       });
-      useIPTVStore.getState().refreshChannels();
+      // 防抖：快速切换多个源时只触发一次刷新
+      if (iptvRefreshTimerRef.current) clearTimeout(iptvRefreshTimerRef.current);
+      iptvRefreshTimerRef.current = setTimeout(() => {
+        useIPTVStore.getState().refreshChannels();
+      }, 1000);
     });
   };
 
@@ -291,7 +293,7 @@ export default function SettingsPage() {
     setShowTMDBTokenInput(false);
     if (token) {
       toast.show('TMDB Token 已保存,正在加载数据…');
-      void tmdbStore.fetchAllHomeData();
+      void fetchAllHomeData();
     } else {
       toast.show('TMDB Token 已清除');
     }

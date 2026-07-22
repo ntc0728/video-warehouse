@@ -141,14 +141,6 @@ async function discoverBoth(
 }
 
 /** 电影 + 剧集 top_rated 合并按评分排序（排行榜 hero 用） */
-async function topRatedBoth(): Promise<TMDBVideoItem[]> {
-  const [m, t] = await Promise.all([fetchTopRatedMovies(), fetchTopRatedTV()]);
-  return dedupeById([
-    ...m.results.map(mapMovie),
-    ...t.results.map(mapTV),
-  ]).sort((a, b) => (b.voteAverage ?? 0) - (a.voteAverage ?? 0));
-}
-
 const YEAR = new Date().getFullYear();
 
 export interface CategoryRowDef {
@@ -163,15 +155,21 @@ export interface HomeCategoryDef {
   rows: CategoryRowDef[];
 }
 
+// ── 共享 fetch 函数（hero 与首行复用同一引用，dedupFetch 通过函数引用去重） ──
+const popularMoviesMapped = async () => (await fetchPopularMovies()).results.map(mapMovie);
+const popularTVMapped = async () => (await fetchPopularTV()).results.map(mapTV);
+const topRatedMoviesMapped = async () => (await fetchTopRatedMovies()).results.map(mapMovie);
+const topRatedTVMapped = async () => (await fetchTopRatedTV()).results.map(mapTV);
+
 /** 内容类目配置（不含 'home'，home 由 useTMDBStore 提供） */
 export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCategoryDef> = {
   movie: {
     key: 'movie',
     label: '电影',
-    hero: async () => (await fetchPopularMovies()).results.map(mapMovie),
+    hero: popularMoviesMapped,
     rows: [
       { title: '正在热映', fetch: async () => (await fetchNowPlaying()).results.map(mapMovie) },
-      { title: '热门电影', fetch: async () => (await fetchPopularMovies()).results.map(mapMovie) },
+      { title: '热门电影', fetch: popularMoviesMapped },
       { title: '高分电影', fetch: async () => (await fetchTopRatedMovies()).results.map(mapMovie) },
       { title: '即将上映', fetch: async () => (await fetchUpcomingMovies()).results.map(mapMovie) },
       { title: '动作大片', fetch: async () => (await discoverMovie({ genreIds: [28] })).results.map(mapMovie) },
@@ -183,9 +181,9 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
   tv: {
     key: 'tv',
     label: '电视剧',
-    hero: async () => (await fetchPopularTV()).results.map(mapTV),
+    hero: popularTVMapped,
     rows: [
-      { title: '热门剧集', fetch: async () => (await fetchPopularTV()).results.map(mapTV) },
+      { title: '热门剧集', fetch: popularTVMapped },
       { title: '高分剧集', fetch: async () => (await fetchTopRatedTV()).results.map(mapTV) },
       { title: '今日播出', fetch: async () => (await fetchAiringTodayTV()).results.map(mapTV) },
       { title: '美剧推荐', fetch: async () => (await discoverTV({ originCountry: 'US' })).results.map(mapTV) },
@@ -243,15 +241,19 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
   top: {
     key: 'top',
     label: '排行榜',
-    hero: topRatedBoth,
+    hero: async () => {
+      // 复用共享函数，dedupFetch 会自动去重
+      const [movies, tv] = await Promise.all([topRatedMoviesMapped(), topRatedTVMapped()]);
+      return dedupeById([...movies, ...tv]).sort((a, b) => (b.voteAverage ?? 0) - (a.voteAverage ?? 0));
+    },
     rows: [
-      { title: '电影口碑榜', fetch: async () => (await fetchTopRatedMovies()).results.map(mapMovie) },
-      { title: '剧集口碑榜', fetch: async () => (await fetchTopRatedTV()).results.map(mapTV) },
+      { title: '电影口碑榜', fetch: topRatedMoviesMapped },
+      { title: '剧集口碑榜', fetch: topRatedTVMapped },
       { title: '本周最热', fetch: async () => (await fetchTrending('all', 'week')).results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .map(mapTrending) },
-      { title: '热门电影榜', fetch: async () => (await fetchPopularMovies()).results.map(mapMovie) },
-      { title: '热门剧集榜', fetch: async () => (await fetchPopularTV()).results.map(mapTV) },
+      { title: '热门电影榜', fetch: popularMoviesMapped },
+      { title: '热门剧集榜', fetch: popularTVMapped },
       { title: '华语高分榜', fetch: async () => discoverBoth({ originCountry: 'CN', sortBy: 'vote_average' }) },
       { title: '年度必看', fetch: async () => discoverBoth({ sortBy: 'vote_average', releaseYear: YEAR }) },
     ],

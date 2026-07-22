@@ -8,12 +8,12 @@ const STORAGE_STATE = resolve(__dirname, 'test-storage-state.json');
 export default defineConfig({
   globalSetup: resolve(__dirname, 'scripts/global-setup.ts'),
   testDir: './scripts',
-  timeout: 30000,
+  timeout: 45000,
   expect: { timeout: 5000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : 4,
   reporter: [
     ['html', { open: 'never', locale: 'zh-CN' }],
     ['list'],

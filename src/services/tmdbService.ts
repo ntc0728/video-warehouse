@@ -348,6 +348,16 @@ export async function fetchTVDetail(tvId: number, options: { signal?: AbortSigna
   }, options);
 }
 
+/** 轻量级电影详情（仅基础字段，不含 credits/images/videos 等附加数据） */
+export async function fetchMovieBasic(movieId: number, options: { signal?: AbortSignal } = {}): Promise<{ backdrop_path: string | null }> {
+  return fetchTMDB<{ backdrop_path: string | null }>(`/movie/${movieId}`, {}, options);
+}
+
+/** 轻量级电视剧详情（仅基础字段，不含 credits/images/videos 等附加数据） */
+export async function fetchTVBasic(tvId: number, options: { signal?: AbortSignal } = {}): Promise<{ backdrop_path: string | null }> {
+  return fetchTMDB<{ backdrop_path: string | null }>(`/tv/${tvId}`, {}, options);
+}
+
 /** 获取电影推荐列表 */
 export async function fetchMovieRecommendations(movieId: number): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${movieId}/recommendations`);

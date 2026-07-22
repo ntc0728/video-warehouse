@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores';
+import type { PlayerMode } from '@/types/player';
 import { usePlayerToast } from './PlayerToast';
 
 const LOOP_LABELS: Record<string, string> = {
@@ -15,7 +16,7 @@ const RATIO_LABELS: Record<string, string> = {
   fill: '铺满画面',
 };
 
-export default function ToastTrigger() {
+export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
   const { show } = usePlayerToast();
   const prevVolume = useRef(usePlayerStore.getState().volume);
   const prevSource = useRef(usePlayerStore.getState().currentSrc);
@@ -28,6 +29,10 @@ export default function ToastTrigger() {
   const prevDecoderMode = useRef(usePlayerStore.getState().decoderMode);
 
   useEffect(() => {
+    // IPTV 直播有独立逻辑，右上角不显示任何点播类操作提示
+    if (mode === 'iptv') {
+      return;
+    }
     const unsub = usePlayerStore.subscribe((state) => {
       const vol = state.volume;
       const src = state.currentSrc;
@@ -65,8 +70,8 @@ export default function ToastTrigger() {
         show(rate === 1 ? '正常倍速' : `倍速 ${rate}x`);
       }
 
-      // 循环模式变化
-      if (loop !== prevLoopMode.current) {
+      // 循环模式变化（直播无“集”概念，不提示）
+      if (loop !== prevLoopMode.current && mode !== 'live') {
         prevLoopMode.current = loop;
         show(LOOP_LABELS[loop] ?? '循环关闭');
       }
@@ -77,8 +82,8 @@ export default function ToastTrigger() {
         show(pip ? '已开启画中画' : '已关闭画中画');
       }
 
-      // 镜像变化
-      if (mirror !== prevMirror.current) {
+      // 镜像变化（直播镜像无意义，不提示）
+      if (mirror !== prevMirror.current && mode !== 'live') {
         prevMirror.current = mirror;
         show(mirror ? '镜像已开启' : '镜像已关闭');
       }
@@ -96,7 +101,7 @@ export default function ToastTrigger() {
       }
     });
     return unsub;
-  }, [show]);
+  }, [show, mode]);
 
   return null;
 }

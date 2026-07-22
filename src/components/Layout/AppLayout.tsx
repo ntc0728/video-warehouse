@@ -10,7 +10,7 @@ import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
 import './Layout.css';
 import { useSettingsStore } from '@/stores';
-import { useIsTV, useIsRealMobile } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsRealMobile, useIsMobile } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, getRouteComponent } from './routeConfig';
@@ -39,8 +39,7 @@ export default function AppLayout() {
   const isRealMobile = useIsRealMobile();
   const isTV = useIsTV();
   const isMobileWeb = !isNative && !isTV && isRealMobile;
-  // 桌面端（非移动 web / 非原生 App / 非 TV）：显示全局常驻左侧栏
-  const isDesktopWeb = !isMobileWeb && !isNative && !isTV;
+  const isMobileViewport = useIsMobile();
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
   const skin = useSettingsStore((s) => s.skin);
@@ -134,12 +133,12 @@ export default function AppLayout() {
           color: 'var(--color-text)',
         }}
       >
-        {isMobileWeb && (
+        {isMobileViewport && (
           <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
         )}
-        {isDesktopWeb && <HomeSidebar />}
+        {!isMobileViewport && !isNative && !isTV && <HomeSidebar />}
         <div className="app-shell__main">
-          <StickyHeader onMenuToggle={isMobileWeb ? toggleSidebar : undefined} menuOpen={isMobileWeb && sidebarOpen} />
+          <StickyHeader onMenuToggle={isMobileViewport ? toggleSidebar : undefined} menuOpen={isMobileViewport && sidebarOpen} />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar
               ref={scrollContainerRef}

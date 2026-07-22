@@ -173,12 +173,23 @@ export function useInfiniteScroll({
       }
     };
 
-    target.addEventListener('scroll', onScroll, { passive: true });
+    // requestAnimationFrame 节流：滚动帧高频触发时只在每帧执行一次
+    let ticking = false;
+    const throttledScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        onScroll();
+      });
+    };
+
+    target.addEventListener('scroll', throttledScroll, { passive: true });
     // 初始检查（首次进入时若内容不足一屏也要触发）
     onScroll();
 
     return () => {
-      target.removeEventListener('scroll', onScroll);
+      target.removeEventListener('scroll', throttledScroll);
     };
   }, [disabled, canLoadMore, scrollContainerRef]);
 
