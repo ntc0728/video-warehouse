@@ -363,14 +363,16 @@
 
 /* ── Mobile web: hide nav items (sidebar handles navigation) ── */
 
-[data-device="mobile-web"] .sticky-header__left .sticky-header__nav,
-[data-device="mobile-web"] .sticky-header__right .sticky-header__nav {
-  display: none;
+@media (width <= 1023px) {
+  .sticky-header__left .sticky-header__nav,
+  .sticky-header__right .sticky-header__nav {
+    display: none;
+  }
 }
 
 /* 移动端显示品牌文字 */
 @media (width <= 767px) {
-  [data-device="mobile-web"] .sticky-header__brand {
+  .sticky-header__brand {
     display: block;
   }
 }

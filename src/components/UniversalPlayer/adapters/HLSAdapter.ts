@@ -101,12 +101,24 @@ export class HLSAdapter extends BasePlayerAdapter {
       }
 
       // 待播放状态预加载：canplay 触发时若仍暂停，立即启动预加载
+      // 直播流（IPTV）不做暂停预加载——直播没有“暂停”语义，暂停预加载只会持续拉流浪费流量
       const onCanPlay = () => {
-        if (this.video?.paused && !this.preloadTimer) {
+        if (this.video?.paused && !this.preloadTimer && !this.isLive()) {
           this.startPreload();
         }
       };
       this.video?.addEventListener('canplay', onCanPlay, { once: true });
+
+      // 直播流（IPTV）manifest 加载后：收敛缓冲上限，避免无谓囤积分片（即“不预加载”）
+      // 直播不需要像点播那样预留大缓冲，hls.js 按 live edge 持续拉取即可
+      this.hls.on(HlsJs.Events.LEVEL_LOADED, (_e: unknown, data: { details?: { live?: boolean } }) => {
+        if (data.details?.live && this.hls) {
+          const liveMax = 60;
+          this.hls.maxBufferLength = Math.min(this.hls.maxBufferLength, liveMax);
+          this.hls.maxMaxBufferLength = Math.min(this.hls.maxMaxBufferLength, liveMax * 2);
+          this.hls.backBufferLength = Math.min(this.hls.backBufferLength, 20);
+        }
+      });
 
       this.hls.on(HlsJs.Events.MANIFEST_PARSED, (_e: unknown, data: { levels: Array<{ width: number; height: number; bitrate: number }> }) => {
         this.levels = data.levels.map(l => ({
@@ -190,11 +202,16 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   pause(): void {
     this.video?.pause();
-    this.startPreload();
+    // 直播流（IPTV）不做暂停预加载：直播无“暂停”语义，预加载只会持续拉流浪费流量
+    if (!this.isLive()) {
+      this.startPreload();
+    }
   }
 
   /** 启动预加载：提升 buffer 上限 + 定时 startLoad 绕过暂停态下载限制 */
   private startPreload(): void {
+    // 直播流（IPTV）不做预加载：直播无“暂停”/“预看”语义，预加载只会持续拉流浪费流量
+    if (this.isLive()) return;
     if (this.hls && !this.preloadTimer) {
       this.hls.maxBufferLength = 600;
       this.hls.startLoad();

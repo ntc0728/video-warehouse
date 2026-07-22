@@ -79,13 +79,22 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => ({
     }));
 
     try {
-      const heroP = def
-        .hero()
+      // 用 Map 对相同 fetch 函数去重，避免 hero 和首行调同一端点时重复请求
+      const promiseCache = new Map<Function, Promise<TMDBVideoItem[]>>();
+
+      const dedupFetch = (fn: () => Promise<TMDBVideoItem[]>): Promise<TMDBVideoItem[]> => {
+        if (!promiseCache.has(fn)) {
+          promiseCache.set(fn, fn().catch(() => [] as TMDBVideoItem[]));
+        }
+        return promiseCache.get(fn)!;
+      };
+
+      const heroP = dedupFetch(def.hero)
         .then((items) => ({ items, error: null }))
         .catch((e) => ({ items: [] as TMDBVideoItem[], error: errMsg(e) }));
 
       const rowPs = def.rows.map((r) =>
-        r.fetch()
+        dedupFetch(r.fetch)
           .then((items) => ({ items, error: null }))
           .catch((e) => ({ items: [] as TMDBVideoItem[], error: errMsg(e) })),
       );

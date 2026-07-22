@@ -285,6 +285,9 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // Store 定义
 // ============================================================
 
+// 首页数据批量获取的 AbortController：重复调用时自动取消上一轮
+let _homeFetchAbort: AbortController | null = null;
+
 export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   return {
   // ---- 初始状态 ----
@@ -372,21 +375,26 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     set((s) => ({ loading: { ...s.loading, nowPlaying: true } }));
     const items: TMDBVideoItem[] = [];
     let sectionError: string | null = null;
+    let tvItems: TMDBVideoItem[] = [];
 
-    // 电影和 TV 独立请求，互不影响
-    try {
-      const movieData = await fetchNowPlaying();
-      items.push(...movieData.results.map(mapMovieToVideoItem));
-    } catch (e) {
-      sectionError = e instanceof Error ? e.message : '获取正在热映电影失败';
+    // 电影和 TV 并行请求，互不影响
+    const [movieResult, tvResult] = await Promise.allSettled([
+      fetchNowPlaying(),
+      fetchPopularTV(),
+    ]);
+
+    if (movieResult.status === 'fulfilled') {
+      items.push(...movieResult.value.results.map(mapMovieToVideoItem));
+    } else {
+      sectionError = movieResult.reason instanceof Error ? movieResult.reason.message : '获取正在热映电影失败';
     }
 
-    try {
-      const tvData = await fetchPopularTV();
-      items.push(...tvData.results.map(mapTVToVideoItem));
-    } catch (e) {
+    if (tvResult.status === 'fulfilled') {
+      tvItems = tvResult.value.results.map(mapTVToVideoItem);
+      items.push(...tvItems);
+    } else {
       if (!sectionError) {
-        sectionError = e instanceof Error ? e.message : '获取正在热播剧集失败';
+        sectionError = tvResult.reason instanceof Error ? tvResult.reason.message : '获取正在热播剧集失败';
       }
     }
 
@@ -395,6 +403,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     if (items.length > 0) {
       set((s) => ({
           nowPlaying: items,
+          // 同时写入 popularTv，避免 tier2 重复请求 /tv/popular
+          popularTv: s.popularTv.length === 0 && tvItems.length > 0 ? tvItems : s.popularTv,
           loading: { ...s.loading, nowPlaying: false },
           errors: { ...s.errors, nowPlaying: null },
       }));
@@ -541,6 +551,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   fetchAllHomeData: async () => {
     const state = get();
 
+    // 取消上一轮未完成的批量获取，避免重复请求叠加
+    _homeFetchAbort?.abort();
+    const ctrl = new AbortController();
+    _homeFetchAbort = ctrl;
+
     // 清除上一轮遗留的错误状态，避免首页同时展示旧错误 + 新 loading
     set((s) => ({
       errors: {
@@ -559,7 +574,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     // Token 预检：无效则设置全局错误并跳过所有请求（透传具体原因）
     const tokenCheck = await get().checkToken();
-    if (!tokenCheck.ok) {
+    if (!tokenCheck.ok || ctrl.signal.aborted) {
       const tokenError = tokenCheck.error || 'TMDB Token 无效或 API 不可达';
       set((s) => ({
         loading: {
@@ -601,14 +616,19 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     ];
     await Promise.all(tier1);
 
+    // 被取消则直接返回，不再发起第二层请求
+    if (ctrl.signal.aborted) return;
+
     // ---- 第二层：下方滚动内容 — 改用 requestIdleCallback 调度,避免阻塞主线程 ----
-    // 旧实现 setTimeout 200ms 在移动端/弱网客户端累计要等很久;requestIdleCallback
-    // 让浏览器在空闲时再发起请求,既保证首屏渲染不被延迟,也不阻塞交互。
     const idle =
       typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
         ? (cb: () => void) => window.requestIdleCallback(cb)
         : (cb: () => void) => setTimeout(cb, 0);
     await new Promise<void>((r) => idle(() => r()));
+
+    // 再次检查，idle 等待期间可能已被取消
+    if (ctrl.signal.aborted) return;
+
     const tier2 = [
       shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : Promise.resolve(),
       shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : Promise.resolve(),

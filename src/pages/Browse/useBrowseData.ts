@@ -26,7 +26,7 @@ import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
 /** 把 FilterBarValue 转成 store 需要的 TMDBFilterOptions */
-function toStoreFilter(value: FilterBarValue) {
+export function toStoreFilter(value: FilterBarValue) {
   const sort = SORT_OPTIONS[value.sortIdx] ?? SORT_OPTIONS[0];
   return {
     mediaType: value.mediaType,
@@ -56,17 +56,15 @@ export function useBrowseData(query?: string) {
   // 走 store.search() 把结果写入 discoverResults。
   const urlQ = query?.trim() ?? '';
 
-  // ── 2. store 状态 ───────────────────────────────────
-  const {
-    discoverResults,
-    discoverPagination,
-    discoverLastStatus,
-    loading,
-    errors,
-    setFilter,
-    fetchDiscover,
-    fetchTopRated,
-  } = useTMDBStore();
+  // ── 2. store 状态（精确选择器，避免首页轮播更新触发无关重渲染） ──
+  const discoverResults = useTMDBStore(s => s.discoverResults);
+  const discoverPagination = useTMDBStore(s => s.discoverPagination);
+  const discoverLastStatus = useTMDBStore(s => s.discoverLastStatus);
+  const loading = useTMDBStore(s => s.loading);
+  const errors = useTMDBStore(s => s.errors);
+  const setFilter = useTMDBStore(s => s.setFilter);
+  const fetchDiscover = useTMDBStore(s => s.fetchDiscover);
+  const fetchTopRated = useTMDBStore(s => s.fetchTopRated);
 
   // ── 3. debounce + 重置 fetch ────────────────────────
   const lastSigRef = useRef<string>(filterSig);

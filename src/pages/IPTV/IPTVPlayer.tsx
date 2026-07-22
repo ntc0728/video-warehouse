@@ -108,6 +108,7 @@ export default function IPTVPlayerPage() {
             platform={platform}
             url={rawQuery}
             type="m3u8"
+            autoPlay
             channelName={channelName}
             channels={channels}
             groups={groups}

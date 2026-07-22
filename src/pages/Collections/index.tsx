@@ -304,7 +304,7 @@ export default function CollectionsPage() {
             ))}
           </div>
         ) : (
-          <div className="iptv-channel-grid">
+          <div className="iptv-channel-grid iptv-channel-grid--batch">
             {(displayedList as IPTVChannel[]).map((ch) => (
               <div
                 key={ch.id}

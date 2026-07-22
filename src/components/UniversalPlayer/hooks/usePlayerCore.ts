@@ -180,8 +180,18 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleCanPlay = () => {
       usePlayerStore.getState().setPlayerLoading(false);
       usePlayerStore.getState().setReadyToPlay(true);
-      // autoPlay=false 时，加载完成后保持暂停状态，等待用户点击播放
-      if (!autoPlay) {
+      if (autoPlay) {
+        // IPTV 直播等场景：接口加载成功后直接播放，无需点击中间播放按钮
+        const p = video.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {
+            // 自动播放被浏览器拦截（多因带声音且无用户手势），静音兜底重试一次，避免黑屏与播放按钮
+            video.muted = true;
+            const p2 = video.play();
+            if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+          });
+        }
+      } else {
         usePlayerStore.getState().setPlaying(false);
       }
     };

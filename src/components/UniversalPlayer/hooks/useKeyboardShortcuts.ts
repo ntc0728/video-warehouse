@@ -53,12 +53,8 @@ export function useKeyboardShortcuts({
       const volume = usePlayerStore.getState().volume;
 
       if (mode === 'iptv') {
-        // IPTV 模式：支持播放/暂停、音量、全屏、Escape
+        // IPTV 直播：无“暂停”语义，不响应空格播放/暂停；仅支持音量、全屏、静音、Escape
         switch (e.key) {
-          case ' ':
-            e.preventDefault();
-            playerCore.togglePlay();
-            break;
           case 'ArrowUp':
             e.preventDefault();
             playerCore.setVolume(Math.min(1, volume + 0.1));

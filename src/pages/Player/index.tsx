@@ -238,21 +238,14 @@ export default function PlayerPage() {
         /** 从缓存获取视频数据 */
         let foundVideo: Video | null = videoCache.get(id) ?? null;
 
-        if (foundVideo && currentSourceIndex !== activeSourceIndex && !id.startsWith('tmdb-')) {
-          const svc = await import('@/services/videoService');
-          const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
-          if (detailVideo) foundVideo = detailVideo;
-        }
+        // 统一判断是否需要请求详情：无缓存 / 源不匹配 / 缺少播放源
+        const needFetch = !id.startsWith('tmdb-') && (
+          !foundVideo ||
+          (foundVideo && currentSourceIndex !== activeSourceIndex) ||
+          (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes)
+        );
 
-        if (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes) {
-          if (!id.startsWith('tmdb-')) {
-            const svc = await import('@/services/videoService');
-            const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
-            if (detailVideo) foundVideo = detailVideo;
-          }
-        }
-
-        if (!foundVideo && !id.startsWith('tmdb-')) {
+        if (needFetch) {
           const svc = await import('@/services/videoService');
           const detailVideo = await svc.fetchVideoDetail(activeSourceIndex, id, controller.signal);
           if (detailVideo) foundVideo = detailVideo;

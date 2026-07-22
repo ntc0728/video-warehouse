@@ -79,7 +79,7 @@ export function useCMSSearch() {
 
     const searchSource = async (sourceIdx: number) => {
       try {
-        const result = await searchAllFromCMSSource(sourceIdx, query, 1);
+        const result = await searchAllFromCMSSource(sourceIdx, query, 1, { signal: ctrl.signal });
         if (ctrl.signal.aborted) return;
         if (result.error) {
           failed.push(result.sourceName);
@@ -141,6 +141,11 @@ export function useCMSSearch() {
   const loadMore = useCallback(async (query: string) => {
     if (!query.trim() || state.loading) return;
 
+    // 取消之前的 loadMore 请求
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
     const sourceIndices = getSourceIndices();
     const loadingSources = sourceIndices.filter(idx => {
       const currentPage = sourcePagesRef.current.get(idx) ?? 1;
@@ -160,34 +165,38 @@ export function useCMSSearch() {
     const firstIdx = loadingSources[0];
     const firstPage = (sourcePagesRef.current.get(firstIdx) ?? 1) + 1;
     try {
-      const result = await searchAllFromCMSSource(firstIdx, query, firstPage);
-      if (result.items.length > 0) {
+      const result = await searchAllFromCMSSource(firstIdx, query, firstPage, { signal: ctrl.signal });
+      if (!ctrl.signal.aborted && result.items.length > 0) {
         sourcePagesRef.current.set(firstIdx, firstPage);
         newResults.push(...result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex })));
       }
     } catch { /* ignore */ }
+
+    if (ctrl.signal.aborted) return;
 
     // 其余源在后台加载
     const restIndices = loadingSources.slice(1);
     await Promise.allSettled(restIndices.map(async idx => {
       const nextPage = (sourcePagesRef.current.get(idx) ?? 1) + 1;
       try {
-        const result = await searchAllFromCMSSource(idx, query, nextPage);
-        if (result.items.length > 0) {
+        const result = await searchAllFromCMSSource(idx, query, nextPage, { signal: ctrl.signal });
+        if (!ctrl.signal.aborted && result.items.length > 0) {
           sourcePagesRef.current.set(idx, nextPage);
           newResults.push(...result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex })));
         }
       } catch { /* ignore */ }
     }));
 
-    if (newResults.length > 0) {
-      setState(prev => ({
-        ...prev,
-        results: [...prev.results, ...newResults],
-        loading: false,
-      }));
-    } else {
-      setState(prev => ({ ...prev, loading: false, hasMore: false }));
+    if (!ctrl.signal.aborted) {
+      if (newResults.length > 0) {
+        setState(prev => ({
+          ...prev,
+          results: [...prev.results, ...newResults],
+          loading: false,
+        }));
+      } else {
+        setState(prev => ({ ...prev, loading: false, hasMore: false }));
+      }
     }
   }, [state.loading, getSourceIndices]);
 

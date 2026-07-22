@@ -58,6 +58,8 @@ data/iptv.m3u
 test-results/
 test-storage-state.json
 playwright-report/
+.playwright-cli/
+iptv-verify/
 
 # ── 截图 ──────────────────────────────────────
 shots/

@@ -81,17 +81,18 @@ export default function SearchBox({
 
   // ── 热门搜索（从 trending 数据取标题） ──────────────
   const trending = useTMDBStore((s) => s.trending);
+  const trendingLoading = useTMDBStore((s) => s.loading.trending);
   const fetchTrending = useTMDBStore((s) => s.fetchTrending);
   const hotItems = trending
     .filter((item) => item.title)
     .slice(0, MAX_HOT_IN_DROPDOWN);
 
-  // 首次挂载时确保 trending 数据已加载
+  // 首次挂载时确保 trending 数据已加载（跳过正在进行的请求，避免重复）
   useEffect(() => {
-    if (trending.length === 0) {
+    if (trending.length === 0 && !trendingLoading) {
       void fetchTrending('day');
     }
-  }, [trending.length, fetchTrending]);
+  }, [trending.length, trendingLoading, fetchTrending]);
 
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

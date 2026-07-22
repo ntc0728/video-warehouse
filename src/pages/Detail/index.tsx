@@ -9,7 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources } from '@/services/videoService';
-import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
+import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
@@ -210,36 +210,17 @@ export default function DetailPage() {
 
   useEffect(() => () => cmsAbortRef.current?.abort(), []);
 
-  // ── 剧照加载 ─────────────────────────────────────
+  // ── 剧照加载（从 detail 响应中提取，无需额外请求） ─────────
   useEffect(() => {
     if (!tmdbDetail || !id) return;
     if (!id.startsWith('tmdb-')) return;
-    const parts = id.replace('tmdb-', '').split('-');
-    const mt = parts[0] as 'movie' | 'tv';
-    const tid = parseInt(parts.slice(1).join('-'), 10);
-    if (isNaN(tid)) return;
 
-    const ctrl = new AbortController();
-    setStillsLoading(true);
-
-    (async () => {
-      try {
-        const images = mt === 'tv'
-          ? await fetchTVImages(tid, { signal: ctrl.signal })
-          : await fetchMovieImages(tid, { signal: ctrl.signal });
-        if (ctrl.signal.aborted) return;
-        const urls = (images.backdrops || [])
-          .map((b) => buildImageUrl(b.file_path, 'w1280'))
-          .filter((u): u is string => Boolean(u));
-        setStills(urls);
-      } catch {
-        if (!ctrl.signal.aborted) setStills([]);
-      } finally {
-        if (!ctrl.signal.aborted) setStillsLoading(false);
-      }
-    })();
-
-    return () => ctrl.abort();
+    const images = (tmdbDetail as { images?: { backdrops?: Array<{ file_path: string }> } }).images;
+    const urls = (images?.backdrops || [])
+      .map((b) => buildImageUrl(b.file_path, 'w1280'))
+      .filter((u): u is string => Boolean(u));
+    setStills(urls);
+    setStillsLoading(false);
   }, [tmdbDetail, id]);
 
   // ── 页面状态保存（离开后返回恢复） ─────────────

@@ -35,6 +35,11 @@
 
 /* Video Card Grid 和 IPTV Channel Grid 使用全局默认列数（与 Browse / IPTV 页一致） */
 
+/* 批量管理模式下给底部浮动栏预留空间 */
+.collection-page .iptv-channel-grid--batch {
+  margin-top: var(--space-md);
+}
+
 .collection-sentinel {
   height: var(--comp-thumb-size);
 }

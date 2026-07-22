@@ -28,7 +28,7 @@ import viteCompression from 'vite-plugin-compression';
 export default defineConfig({
     plugins: __spreadArray([
         react()
-    ], (process.env.CAPACITOR === 'true' ? [] : [
+    ], (process.env.CAPACITOR === 'true' || process.env.VITE_COMPRESS === 'false' ? [] : [
         viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
         viteCompression({ algorithm: 'gzip', ext: '.gz' }),
     ]), true),

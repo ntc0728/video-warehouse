@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { useIsTV } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -37,6 +37,8 @@ export const IMMERSIVE_ROUTES = ['/play', '/player'];
 export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const theme = useThemeMode();
   const isTV = useIsTV();
+  const isMobile = useIsMobile();
+  const isCompact = useMediaQuery('(max-width: 767px)');
   const navigate = useNavigate();
   const location = useLocation();
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
@@ -44,7 +46,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   const setTheme = useSettingsStore((s) => s.setTheme);
   const { goHome } = useHeaderContent();
 
-  // 移动端搜索模式
+  // 移动端搜索模式（基于视口宽度）
   const [isSearchMode, setIsSearchMode] = useState(false);
 
   const handleSearchModeToggle = useCallback(() => {
@@ -139,7 +141,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     } else {
       navigate(`/browse?q=${encodeURIComponent(query)}`);
     }
-    setIsSearchMode(false);
   }, [pageSearch.onSearch, navigate]);
 
   // 路由切换时同步清空搜索状态（useLayoutEffect 确保在浏览器绘制前完成）
@@ -162,7 +163,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
-          {onMenuToggle ? (
+          {isMobile ? (
             isSearchMode ? (
               <button className="sticky-header__menu-btn" onClick={handleSearchModeExit} aria-label="退出搜索">
                 <ArrowLeft size={22} />
@@ -194,7 +195,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           )}
         </div>
         <div className="sticky-header__center">
-          {onMenuToggle && isSearchMode ? (
+          {isMobile && isSearchMode ? (
             <div className="sticky-header__mobile-search">
               <SearchBox
                 variant="header"
@@ -220,7 +221,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           <nav className="sticky-header__nav" aria-label="次要导航">
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
           </nav>
-          {onMenuToggle && !isSearchMode ? (
+          {isCompact && !isSearchMode ? (
             <button className="sticky-header__search-btn" onClick={handleSearchModeToggle} aria-label="打开搜索">
               <Search size={22} />
             </button>

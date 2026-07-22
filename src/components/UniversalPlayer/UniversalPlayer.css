@@ -351,8 +351,8 @@
 .up-progress-thumb {
   position: absolute;
   top: 50%;
-  width: var(--icon-sm);
-  height: var(--icon-sm);
+  width: var(--text-xs);
+  height: var(--text-xs);
   border-radius: 50%;
   background: var(--player-progress-bg);
   opacity: 0;
@@ -575,6 +575,8 @@
   gap: var(--space-sm);
   justify-content: flex-start;
   align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 500;
   text-align: left;
 }
 

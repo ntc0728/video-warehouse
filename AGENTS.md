@@ -195,6 +195,15 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - `toast.replace(opts)` — 清空队列立即显示新 toast（快速连续提示场景，如版本号连续点击）
 - ToastProvider 只渲染 `items[0]`（队列首项），`ToastContainer` 因 `item.id` 变化触发 useEffect 重跑
 
+### IPTV 直播播放独立逻辑
+
+`UniversalPlayer`（`src/components/UniversalPlayer/`）在 `mode === 'iptv'`（`IPTVPlayer` 调用）下走**独立播放逻辑**，与点播（`mode === 'video'`）区分，**不要复用点播的播放/提示交互**：
+- **自动播放**：`usePlayerCore.handleCanPlay` 在 `autoPlay=true` 且流可播放时直接 `video.play()`，加载即播；被浏览器拦截（多因带声音且无用户手势）时静音兜底重试一次，避免黑屏与中间播放按钮。
+- **无中间播放按钮**：中间暂停遮罩 `.up-player-paused-overlay` 仅在 `mode !== 'iptv'` 时渲染，IPTV 直播不显示大播放按钮（点播保留，供用户点击开始）。
+- **右上角无点播提示**：`ToastTrigger`（`.up-player-toast`）在 `mode === 'iptv'` 时直接跳过 store 订阅，右上角**不显示任何**点播类操作提示（音量 / 切换线路 / 播放暂停 / 倍速 / 循环 / 画中画 / 镜像 / 比例 / 解码）。IPTV 的提示由其自身独立逻辑负责。
+- **键盘快捷键跳过**：`useKeyboardShortcuts` 在 `mode === 'iptv'` 时移除空格键的播放/暂停（直播无暂停语义），仅保留音量/全屏/静音/Escape。
+- **遥控器跳过**：`useTVInput` 在 `mode === 'iptv'` 时遥控器播放/暂停键不触发 `togglePlay`。
+
 ### Browse 懒加载
 
 - 哨兵节点 `<div ref={sentinelRef}>` **无条件渲染**（不用 searchMode 条件包裹），跨状态持久

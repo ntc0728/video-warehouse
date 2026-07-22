@@ -25,7 +25,7 @@ import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
-import { useBrowseData } from './useBrowseData';
+import { useBrowseData, toStoreFilter } from './useBrowseData';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
@@ -109,6 +109,7 @@ export default function BrowsePage() {
   // ── 搜索触发 ────────────────────────────────────
   const lastCmsSearchedRef = useRef('');
   const lastSmartSearchedRef = useRef('');
+  const filterSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerSearch = useCallback((q: string, mode: SearchMode) => {
     if (!q) return;
@@ -129,16 +130,19 @@ export default function BrowsePage() {
     }
   }, [query, triggerSearch]);
 
-  // ── 筛选条件变更：若当前有搜索词，先清空搜索词再更新筛选 ──────────
-  // useBrowseData 的 filterSig effect 在有 urlQ 时会跳过 fetch，
-  // 所以切换筛选/排序时必须清空 query，让 discover 接管。
+  // ── 筛选条件变更：保留搜索词，重新触发搜索 ──────────
   const handleFilterChange = useCallback((next: FilterBarValue) => {
-    if (query) {
-      setQuery('');
-      lastSmartSearchedRef.current = '';
-    }
     updateFilter(next);
-  }, [query, updateFilter]);
+    // 同步更新 store 的 filterOptions，确保搜索结果按新筛选条件过滤
+    useTMDBStore.getState().setFilter(toStoreFilter(next));
+    // 有搜索词时防抖触发搜索，快速切换筛选时避免请求抖动
+    if (query) {
+      if (filterSearchTimerRef.current) clearTimeout(filterSearchTimerRef.current);
+      filterSearchTimerRef.current = setTimeout(() => {
+        triggerSearch(query, searchMode);
+      }, 300);
+    }
+  }, [query, updateFilter, triggerSearch, searchMode]);
 
   // ── 注册顶部导航栏搜索回调 ──────────────────────
   const handlePageSearch = useCallback((q: string) => {
@@ -203,8 +207,10 @@ export default function BrowsePage() {
     scrollContainerRef,
   });
 
-  // ── genres & countries 兜底拉取 ──────────────────
-  const { movieGenres, tvGenres, fetchGenresAndCountries } = useTMDBStore();
+  // ── genres & countries 兜底拉取（精确选择器） ──────────
+  const movieGenres = useTMDBStore(s => s.movieGenres);
+  const tvGenres = useTMDBStore(s => s.tvGenres);
+  const fetchGenresAndCountries = useTMDBStore(s => s.fetchGenresAndCountries);
   useEffect(() => {
     if (movieGenres.length === 0 && tvGenres.length === 0) {
       fetchGenresAndCountries();

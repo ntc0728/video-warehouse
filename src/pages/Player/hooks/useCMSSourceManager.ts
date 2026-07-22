@@ -87,6 +87,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       currentSourceNameRef.current = undefined;
     }
 
+    // 一次性获取视频源配置，后续所有位置复用
+    const { getVideoSources } = await import('@/services/sourceService');
+    const allSrc = await getVideoSources();
+
     let sourceIdx = targetSourceIndex;
 
     // 1) 历史记录优先
@@ -96,8 +100,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         const history = await getHistory();
         const histRecord = history.find(h => h.videoId === id);
         if (histRecord?.cmsSourceId || histRecord?.cmsSourceName) {
-          const { getVideoSources } = await import('@/services/sourceService');
-          const allSrc = await getVideoSources();
           const matchedIdx = histRecord.cmsSourceId
             ? allSrc.findIndex(s => s.id === histRecord.cmsSourceId)
             : allSrc.findIndex(s => s.name === histRecord!.cmsSourceName);
@@ -121,8 +123,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     activeCmsSourceIndexRef.current = sourceIdx;
 
     {
-      const { getVideoSources } = await import('@/services/sourceService');
-      const allSrc = await getVideoSources();
       const matchedId = allSrc[sourceIdx]?.id;
       if (matchedId) setActiveSourceId(matchedId);
     }
@@ -164,8 +164,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
         if (detailVideo) {
           // 设置 CMS 源信息
-          const { getVideoSources } = await import('@/services/sourceService');
-          const allSrc = await getVideoSources();
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
@@ -244,8 +242,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         }
 
         if (!ctrl.signal.aborted) {
-          const { getVideoSources } = await import('@/services/sourceService');
-          const allSrc = await getVideoSources();
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
@@ -289,8 +285,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         // CMS 源视频：通过 vod_id 获取详情（传递 signal 支持取消）
         const { fetchVideoDetail } = await import('@/services/videoService');
         const detailVideo = await fetchVideoDetail(sourceIdx, id, ctrl.signal);
-        const { getVideoSources } = await import('@/services/sourceService');
-        const allSrc = await getVideoSources();
         const sourceName = allSrc[sourceIdx]?.name ?? '未知';
         result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
       } else {
@@ -309,8 +303,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           videoCache.set(id!, result.video);
           setVideo(result.video);
           {
-            const { getVideoSources } = await import('@/services/sourceService');
-            const src = (await getVideoSources())[result.sourceIndex];
+            const src = allSrc[result.sourceIndex];
             if (src) cmsSourceIdRef.current = src.id;
           }
           cmsSourceNameRef.current = result.sourceName;

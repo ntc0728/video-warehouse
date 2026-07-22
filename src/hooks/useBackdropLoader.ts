@@ -10,7 +10,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useUserStore } from '@/stores';
 import { useTMDBStore } from '@/stores/useTMDBStore';
-import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
+import { fetchMovieBasic, fetchTVBasic, buildImageUrl } from '@/services/tmdbService';
 import type { HistoryRecord } from '@/types/store';
 
 /** TMDB store 中所有 TMDBVideoItem 的 section key */
@@ -126,8 +126,8 @@ export function useBackdropLoader(
     processedRef.current.add(videoId);
     try {
       const detail = parsed.mediaType === 'tv'
-        ? await fetchTVDetail(parsed.tmdbId)
-        : await fetchMovieDetail(parsed.tmdbId);
+        ? await fetchTVBasic(parsed.tmdbId)
+        : await fetchMovieBasic(parsed.tmdbId);
 
       const backdropUrl = detail.backdrop_path
         ? buildImageUrl(detail.backdrop_path, 'w780') || undefined

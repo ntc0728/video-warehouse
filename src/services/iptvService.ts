@@ -55,22 +55,130 @@ async function fetchContent(url: string): Promise<string> {
  * 根据配置的代理URL和正则模式匹配决定
  * pattern 正则匹配到的 URL 不走代理（被跳过）
  */
-function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
+/**
+ * 判断 URL 是否已经是“当前配置的代理”代理过的地址。
+ * 仅当 URL 的 origin 与配置 proxyUrl 一致、且路径为某 *-proxy?url= 时才视为“自己的代理”，
+ * 避免把其他代理（如 gh-proxy.com）预先代理过的频道地址误判为本代理而漏代理。
+ */
+function isOwnProxy(url: string, proxyUrl?: string): boolean {
   if (!proxyUrl) return false;
-  // 防止双重代理：如果 URL 已经是代理 URL，不再代理
-  // 匹配完整 URL（proxyUrl/m3u8-proxy?url=）和相对路径（/m3u8-proxy?url=）
-  if (url.includes('/m3u8-proxy?url=') || url.includes('/ts-proxy?url=')) return false;
-  if (!pattern) return true;
   try {
-    return !new RegExp(pattern).test(url);
+    const u = new URL(url);
+    const p = new URL(proxyUrl);
+    if (u.origin !== p.origin) return false;
+    return /\/(m3u8|ts|dash|file)-proxy\?url=/.test(u.pathname + u.search);
   } catch {
+    return false;
+  }
+}
+
+/** 代理路径匹配：形如 /m3u8-proxy、/ts-proxy、/dash-proxy、/file-proxy 且带 ?url= 参数 */
+const PROXY_PATH_RE = /^\/(?:m3u8|ts|dash|file)-proxy\/?$/i;
+
+/** 安全取 origin，解析失败返回空串 */
+function safeOrigin(u?: string): string {
+  if (!u) return '';
+  try {
+    return new URL(u).origin;
+  } catch {
+    return '';
+  }
+}
+
+/** 对代理参数做（最多 3 次）解码，处理源站双重/多重编码的情况 */
+function decodeProxyParam(raw: string): string {
+  let out = raw;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const decoded = decodeURIComponent(out);
+      if (decoded === out) break;
+      out = decoded;
+    } catch {
+      break;
+    }
+  }
+  return out;
+}
+
+/**
+ * 解包“第三方代理前缀”，提取真实地址。
+ * 许多 IPTV 源会把频道地址预先包一层代理（如 gh-proxy.com/m3u8-proxy?url=<内层>），
+ * 直接拿去播放往往因为那个中间代理失效/被墙而失败。这里把内层真实地址抽出来，
+ * 改走我们配置的代理（nmz996 等），绕开失效的中间代理。
+ *
+ * - 仅当包装者 origin 与 ownProxyUrl 不同（即不是本代理）才解包，保留“防双重代理”语义；
+ * - 递归解包多层包装（a-proxy?url=<b-proxy?url=<源站>>），直到拿到非代理包装的真实地址；
+ * - 不是 *-proxy?url= 形态的地址原样返回，避免误伤正常 URL。
+ */
+export function unwrapProxy(url: string, ownProxyUrl?: string): string {
+  let current = url;
+  const ownOrigin = safeOrigin(ownProxyUrl);
+  for (let i = 0; i < 5; i++) {
+    let parsed: URL;
+    try {
+      parsed = new URL(current);
+    } catch {
+      return current;
+    }
+    if (ownOrigin && parsed.origin === ownOrigin) return current; // 本代理，保持不动
+    if (!PROXY_PATH_RE.test(parsed.pathname)) return current; // 不是代理包装
+    const raw = parsed.searchParams.get('url');
+    if (!raw) return current;
+    const inner = decodeProxyParam(raw);
+    if (!inner || inner === current) return current;
+    current = inner;
+  }
+  return current;
+}
+
+function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
+  // 解包第三方代理前缀（如 gh-proxy.com/m3u8-proxy?url=<内层>）：
+  // 抽出真实地址改走我们配置的代理，绕开失效/被墙的中间代理。
+  const target = unwrapProxy(url, proxyUrl);
+  if (target !== url && import.meta.env.DEV) {
+    console.debug('[IPTV 代理调试] 解包第三方代理前缀', { 原地址: url, 解包后真实地址: target });
+  }
+  url = target;
+  if (!proxyUrl) {
+    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 不走代理：proxyUrl 为空（未配置流代理地址）', { url });
+    return false;
+  }
+  // 防止双重代理：仅当 URL 已经是“当前配置的代理”地址时才跳过；
+  // 若是其他代理（如 gh-proxy.com）预先代理过的地址，仍走我们的代理重走，确保自定义代理生效
+  if (isOwnProxy(url, proxyUrl)) {
+    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 跳过：已是本代理地址（防双重代理）', { url });
+    return false;
+  }
+  if (!pattern) {
+    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 走代理（无匹配规则）', { url, 生效代理地址: proxyUrl });
+    return true;
+  }
+  try {
+    const matched = new RegExp(pattern).test(url);
+    if (import.meta.env.DEV) console.debug(matched ? '[IPTV 代理调试] 跳过：命中匹配规则' : '[IPTV 代理调试] 走代理（未命中匹配规则）', { url, pattern, 生效代理地址: proxyUrl });
+    return !matched;
+  } catch {
+    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 走代理（匹配规则非法，回退放行）', { url, pattern });
     return true;
   }
 }
 
-/** 拼接代理后的播放 URL */
+/** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传） */
 function buildProxyUrl(url: string, proxyUrl: string): string {
-  return `${proxyUrl}/m3u8-proxy?url=${encodeURIComponent(url)}`;
+  url = unwrapProxy(url, proxyUrl);
+  const type = detectVideoSourceType(url);
+  const path = type === 'm3u8' ? 'm3u8-proxy' : type === 'dash' ? 'dash-proxy' : 'file-proxy';
+  const result = `${proxyUrl}/${path}?url=${encodeURIComponent(url)}`;
+  if (import.meta.env.DEV) {
+    console.debug('[IPTV 代理调试] 构造播放地址', {
+      生效代理地址: proxyUrl,
+      资源类型: type,
+      代理端点: path,
+      原始地址: url,
+      最终地址: result,
+    });
+  }
+  return result;
 }
 
 export { shouldProxy, buildProxyUrl };

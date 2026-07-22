@@ -65,7 +65,7 @@ html[data-skin="cartoon"] {
 /* 纸纹背景 */
 html[data-skin="cartoon"] body {
   background-color: #fbe7ce;
-  background-image: url("../../public/art-skins/cartoon/paper.png");
+  background-image: url("/art-skins/cartoon/paper.png");
   background-size: 220px 220px;
   background-repeat: repeat;
 }

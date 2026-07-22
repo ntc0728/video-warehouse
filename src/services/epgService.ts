@@ -289,16 +289,21 @@ export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGDat
   let mergedData: ParsedEPGData = cached?.data || { channels: [], programmes: new Map() };
   const errors: string[] = [];
 
-  for (const url of urls) {
-    try {
+  // 并行获取所有 EPG 源，而非串行
+  const results = await Promise.allSettled(
+    urls.map(async (url) => {
       const xml = await getText(url, { timeout: 20000, useProxy: true });
-      if (xml) {
-        const newData = parseXMLTV(xml);
-        mergedData = mergeEPGData(mergedData, newData);
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : '未知错误';
-      errors.push(`${url}: ${errMsg}`);
+      return xml ? parseXMLTV(xml) : null;
+    })
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === 'fulfilled' && result.value) {
+      mergedData = mergeEPGData(mergedData, result.value);
+    } else if (result.status === 'rejected') {
+      const errMsg = result.reason instanceof Error ? result.reason.message : '未知错误';
+      errors.push(`${urls[i]}: ${errMsg}`);
     }
   }
 
