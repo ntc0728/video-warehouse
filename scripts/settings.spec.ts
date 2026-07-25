@@ -119,7 +119,7 @@ test.describe('6.3 视频源配置', () => {
     await page.waitForTimeout(1000);
 
     // 预期结果: 视频源下拉存在
-    const sourceDropdown = page.locator('.source-multi-dropdown').first();
+    const sourceDropdown = page.locator('.source-multi-dropdown').nth(1);
     if (await sourceDropdown.isVisible().catch(() => false)) {
       const trigger = sourceDropdown.locator('.source-multi-trigger');
       if (await trigger.isVisible().catch(() => false)) {
@@ -163,7 +163,7 @@ test.describe('6.5 IPTV 配置', () => {
     await page.waitForTimeout(1000);
 
     // 预期结果: IPTV 源下拉存在
-    const iptvDropdown = page.locator('.source-multi-dropdown').nth(1);
+    const iptvDropdown = page.locator('.source-multi-dropdown').nth(2);
     if (await iptvDropdown.isVisible().catch(() => false)) {
       console.log('✅ SET-050 通过: IPTV 源下拉存在');
     } else {
@@ -181,6 +181,13 @@ test.describe('6.6 关于与彩蛋', () => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
+
+    // 版本号在「关于」tab，先切换过去再校验
+    const aboutTab = page.getByRole('tab', { name: '关于' });
+    if (await aboutTab.isVisible().catch(() => false)) {
+      await aboutTab.click();
+      await page.waitForTimeout(400);
+    }
 
     // 预期结果: 显示版本号
     const hasVersion = await page.evaluate(() => {
@@ -235,5 +242,235 @@ test.describe('6.6 关于与彩蛋', () => {
     } else {
       console.log('⚠️ SET-073: 版本号未检测到');
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6.7 个人资料（头像与昵称）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('6.7 个人资料（头像与昵称）', () => {
+  test('SET-080: 个人资料设置项可见（头像 + 用户名）', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 桌面端个人资料为 banner（.settings-profile），移动端为列表行（.settings-row）
+    const personalTab = page.getByRole('tab', { name: '个人设置' });
+    if (await personalTab.isVisible().catch(() => false)) {
+      await personalTab.click();
+      await page.waitForTimeout(400);
+    }
+
+    const profileBanner = page.locator('.settings-profile').first();
+    const avatarRow = page.locator('.settings-row', { hasText: '头像' }).first();
+    const nameRow = page.locator('.settings-row', { hasText: '用户名' }).first();
+    const visible = (await profileBanner.isVisible().catch(() => false))
+      ? await profileBanner.locator('.settings-profile__name').isVisible().catch(() => false)
+      : (await avatarRow.isVisible().catch(() => false) && await nameRow.isVisible().catch(() => false));
+    if (visible) {
+      console.log('✅ SET-080 通过: 个人资料设置项可见（头像 + 用户名）');
+    } else {
+      console.log('⚠️ SET-080: 个人资料设置项未检测到');
+    }
+  });
+
+  test('SET-081: 点击头像设置项打开编辑弹窗', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const personalTab = page.getByRole('tab', { name: '个人设置' });
+    if (await personalTab.isVisible().catch(() => false)) {
+      await personalTab.click();
+      await page.waitForTimeout(400);
+    }
+
+    // 桌面端点击 banner，移动端点击头像行
+    const trigger = (await page.locator('.settings-profile').first().isVisible().catch(() => false))
+      ? page.locator('.settings-profile').first()
+      : page.locator('.settings-row', { hasText: '头像' }).first();
+    if (await trigger.isVisible().catch(() => false)) {
+      await trigger.click();
+      await page.waitForTimeout(500);
+      const modal = page.locator('.modal-content-animate.settings-modal');
+      if (await modal.isVisible().catch(() => false)) {
+        console.log('✅ SET-081 通过: 编辑个人资料弹窗已打开');
+      } else {
+        console.log('⚠️ SET-081: 编辑弹窗未检测到');
+      }
+    } else {
+      console.log('⚠️ SET-081: 头像设置项未检测到');
+    }
+  });
+
+  test('SET-082: 编辑昵称并保存', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const personalTab = page.getByRole('tab', { name: '个人设置' });
+    if (await personalTab.isVisible().catch(() => false)) {
+      await personalTab.click();
+      await page.waitForTimeout(400);
+    }
+
+    // 桌面端点击 banner，移动端点击用户名行
+    const isDesktopProfile = await page.locator('.settings-profile').first().isVisible().catch(() => false);
+    const trigger = isDesktopProfile
+      ? page.locator('.settings-profile').first()
+      : page.locator('.settings-row', { hasText: '用户名' }).first();
+    if (await trigger.isVisible().catch(() => false)) {
+      await trigger.click();
+      await page.waitForTimeout(500);
+      const input = page.locator('#profile-username');
+      if (await input.isVisible().catch(() => false)) {
+        await input.fill('测试昵称');
+        await page.getByRole('button', { name: '保存' }).click();
+        await page.waitForTimeout(500);
+        const valEl = isDesktopProfile
+          ? page.locator('.settings-profile__name').first()
+          : page.locator('.settings-row__value').first();
+        const val = await valEl.innerText();
+        expect(val).toContain('测试昵称');
+        console.log('✅ SET-082 通过: 昵称已保存并显示');
+      } else {
+        console.log('⚠️ SET-082: 昵称输入框未检测到');
+      }
+    } else {
+      console.log('⚠️ SET-082: 用户名设置项未检测到');
+    }
+  });
+
+  test('SET-083: 配置管理与恢复默认配置设置项可见且可打开确认弹窗', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const personalTab = page.getByRole('tab', { name: '个人设置' });
+    if (await personalTab.isVisible().catch(() => false)) {
+      await personalTab.click();
+      await page.waitForTimeout(400);
+    }
+
+    const exportRow = page.locator('.settings-row', { hasText: '导出设置与数据' }).first();
+    const importRow = page.locator('.settings-row', { hasText: '导入设置与数据' }).first();
+    const restoreBtn = page.getByRole('button', { name: '一键导入恢复数据' }).first();
+    const resetBtn = page.getByRole('button', { name: '一键全部恢复默认' }).first();
+
+    if (
+      (await exportRow.isVisible().catch(() => false)) &&
+      (await importRow.isVisible().catch(() => false)) &&
+      (await restoreBtn.isVisible().catch(() => false)) &&
+      (await resetBtn.isVisible().catch(() => false))
+    ) {
+      console.log('✅ SET-083 通过: 配置管理 / 恢复默认配置设置项可见');
+    } else {
+      console.log('⚠️ SET-083: 部分设置项未检测到');
+    }
+
+    const resetRow = page.locator('.settings-row', { hasText: '恢复设置默认' }).first();
+    if (await resetRow.isVisible().catch(() => false)) {
+      await resetRow.click();
+      await page.waitForTimeout(400);
+      const confirmBtn = page.getByRole('button', { name: '确认' }).first();
+      if (await confirmBtn.isVisible().catch(() => false)) {
+        console.log('✅ SET-083 通过: 恢复设置默认确认弹窗已打开');
+        await confirmBtn.click();
+        await page.waitForTimeout(300);
+      } else {
+        console.log('⚠️ SET-083: 确认弹窗未检测到');
+      }
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6.8 移动端设置主页菜单项（含原理图关联信息副标题）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('6.8 移动端设置主页菜单项', () => {
+  test('SET-090: 移动端设置主页每个菜单项显示标题与关联副标题', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    const cases = [
+      { label: '外观', desc: '主题模式、皮肤' },
+      { label: '视频设置', desc: 'TMDB、视频源、字幕翻译' },
+      { label: '播放设置', desc: '跳过片头片尾、自动连播' },
+      { label: 'IPTV设置', desc: '数据源、节目单、代理' },
+      { label: '个人设置', desc: '个人资料与管理' },
+      { label: '关于', desc: '版本号、KinoTV' },
+    ];
+
+    for (const c of cases) {
+      const item = page.locator('.settings-menu-item', { hasText: c.label }).first();
+      await expect(item).toBeVisible({ timeout: 5000 });
+      const descEl = item.locator('.settings-menu-item__desc').first();
+      await expect(descEl).toBeVisible({ timeout: 5000 });
+      await expect(descEl).toHaveText(c.desc);
+      console.log(`✅ SET-090 通过: 菜单项「${c.label}」副标题 = "${c.desc}"`);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6.9 顶部搜索框（设置项搜索 / 无热门搜索 / 历史独立）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('6.9 顶部搜索框', () => {
+  test('SET-085: 顶部搜索框下拉不显示热门搜索', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const searchInput = page.locator('.sticky-header__search input');
+    await searchInput.click();
+    await page.waitForTimeout(300);
+
+    // 预期结果: 下拉框不应出现「热门搜索」
+    const hotSearch = page.locator('.sticky-header').getByText('热门搜索', { exact: false });
+    await expect(hotSearch).toHaveCount(0);
+    console.log('✅ SET-085 通过: 设置页顶部搜索框不显示热门搜索');
+  });
+
+  test('SET-086: 顶部搜索框搜索设置项（过滤菜单）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const searchInput = page.locator('.sticky-header__search input');
+    await searchInput.click();
+    await searchInput.fill('IPTV');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(600);
+
+    // 预期结果: 仅匹配的设置项保留，其余被过滤
+    const iptvTab = page.locator('.settings-tab', { hasText: 'IPTV设置' });
+    await expect(iptvTab).toBeVisible({ timeout: 5000 });
+    const appearanceTab = page.locator('.settings-tab', { hasText: '外观' });
+    await expect(appearanceTab).toHaveCount(0);
+    console.log('✅ SET-086 通过: 设置页搜索过滤设置项');
+  });
+
+  test('SET-087: 设置页搜索历史与全局独立', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const searchInput = page.locator('.sticky-header__search input');
+    await searchInput.click();
+    await searchInput.fill('独立历史测试');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(400);
+
+    const settingsHistory = await page.evaluate(() => localStorage.getItem('search-history-settings'));
+    const globalHistory = await page.evaluate(() => localStorage.getItem('search-history'));
+    expect(settingsHistory).toContain('独立历史测试');
+    expect(globalHistory ?? '').not.toContain('独立历史测试');
+    console.log('✅ SET-087 通过: 设置页搜索历史独立存储');
   });
 });

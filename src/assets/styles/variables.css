@@ -109,6 +109,7 @@
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
 
   /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
+  --text-2xs: clamp(9px, 0.54rem + 0.35vw, 11px);       /* 9→11 超小标注 */
   --text-xs:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);     /* 12→13 */
   --text-sm:   clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem);   /* 13→14 */
   --text-base: clamp(0.875rem, 0.812rem + 0.254vw, 0.9375rem);   /* 14→15 */
@@ -130,6 +131,7 @@
   --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);   /* 32→80 */
 
   /* ── Icons (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ─────── */
+  --icon-xs: clamp(12px, 0.7rem + 0.5vw, 16px);          /* 12→16 小图标 */
   --icon-sm: clamp(1rem, 0.941rem + 0.509vw, 1.125rem);   /* 16→18 */
   --icon-md: clamp(1.25rem, 1.191rem + 0.509vw, 1.375rem); /* 20→22 */
   --icon-lg: clamp(1.5rem, 1.394rem + 0.763vw, 1.688rem);  /* 24→27 */
@@ -254,6 +256,16 @@
   --layout-brand-font-size-lg: clamp(1.5rem, 1rem + 1.04vw, 1.75rem);  /* 24→28px 流体 */
   --layout-detail-hero-play-icon: 8.571rem; /* 详情页 Hero 播放按钮尺寸 */
   --layout-outline-width:      2px;        /* 聚焦轮廓线粗细 */
+
+  /* ── Avatar Sizes ───────────────────────────────────────────────────────── */
+  --avatar-xs: 30px;   /* 行内小头像（设置行） */
+  --avatar-sm: 56px;   /* 资料卡头像 */
+  --avatar-lg: 72px;   /* 头像预览 / 移动端资料头像 */
+
+    /* ── Misc Sizes ─────────────────────────────────────────────────────────── */
+    --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
+  --source-meta-min-width: 120px;  /* 源详情最小宽度 */
+  --error-msg-max-width: 100px;    /* 错误文案最大宽度 */
   --layout-tabbar-height:      56px;       /* 移动端底部 TabBar 高度 */
   --layout-datepicker-width:   340px;      /* 日期选择器宽度 */
   --layout-collapse-max-h:     1000px;     /* 折叠面板最大高度 */

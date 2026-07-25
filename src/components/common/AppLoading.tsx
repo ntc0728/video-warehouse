@@ -2,7 +2,7 @@
  * AppLoading — 项目品牌定制 Loading 组件
  *
  * 设计要点：
- * - 文字从 KinoTV 图片中"抠"出，纯文字双行排版（影视大全 + KinoTV）
+ * - 文字从 KinoTV 图片中"抠"出，纯文字排版（KinoTV）
  * - 下方进度条颜色与全局滚动条悬停色一致（--color-text-tertiary）
  * - 多端适配：Mobile / Desktop / TV 三套尺寸（基于 Design Token）
  * - 全屏 / 内联两种模式，可拓展 className / showTip

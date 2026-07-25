@@ -70,13 +70,13 @@
   }
 
   .batch-action-btn {
-    gap: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
+    gap: var(--space-xs-plus);
+    padding: var(--space-xs-plus) var(--space-md);
+    font-size: var(--text-xs);
   }
 
   .batch-action-btn svg {
-    width: 14px;
-    height: 14px;
+    width: var(--icon-xs);
+    height: var(--icon-xs);
   }
 }

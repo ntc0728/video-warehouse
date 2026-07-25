@@ -1,4 +1,4 @@
-# KinoTV - 影视大全
+# KinoTV
 
 一个现代化的影视聚合平台，支持多数据源视频浏览、IPTV 直播、收藏管理和智能搜索。基于 React 18 + TypeScript 构建，支持 Web、Android 和 TV 多端适配。
 

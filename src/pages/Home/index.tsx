@@ -48,6 +48,23 @@ export default function HomePage() {
     if (isCategoryView) loadCategory(activeCategory);
   }, [isCategoryView, activeCategory, loadCategory]);
 
+  // Keep-Alive 切回时检查缓存是否过期，过期则重新加载
+  // 覆盖场景：切换浏览器 Tab 返回时（visibilitychange）
+  useEffect(() => {
+    if (!isCategoryView) return;
+    const CACHE_TTL = 10 * 60 * 1000;
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const data = useHomeCategoryStore.getState().data[activeCategory];
+        if (data?.fetchedAt && Date.now() - data.fetchedAt > CACHE_TTL) {
+          loadCategory(activeCategory);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isCategoryView, activeCategory, loadCategory]);
+
   // 文档标题随类目变化（home 用默认标题）
   useDocumentTitle(
     isCategoryView
@@ -144,28 +161,16 @@ export default function HomePage() {
 
   // ── 首页自定义整页 loading（显示在骨架图之前） ──────────────
   // 目的：避免只靠骨架图占位——因数据常来自缓存/预取而瞬间就绪，骨架往往一闪而过甚至不出现。
-  // 行为：首次进入首页时显示 loading；keep-alive 切回时不再显示（组件未卸载，状态保持）。
+  // 行为：首次进入首页时固定显示 MIN_MS 后放行——数据已就绪则直接显示内容，
+  //       未就绪则交给后续可滚动的骨架屏分支接管。
+  // 注意：不能等待接口返回才放行——无缓存时整页会被 AppLoading 阻塞
+  //       （内容矮、无滚动条、下方行不渲染），详见问题修复记录。
   const [pageLoading, setPageLoading] = useState(true);
-  const dataReadyRef = useRef(false);
-  dataReadyRef.current = hasAnyData || !!allFailed;
 
   useEffect(() => {
-    if (location.pathname !== '/') return;
     const MIN_MS = 500;
-    const MAX_MS = 10000;
-    const start = performance.now();
-    let timer: number | undefined;
-    const check = () => {
-      const elapsed = performance.now() - start;
-      const ready = dataReadyRef.current;
-      if ((ready && elapsed >= MIN_MS) || elapsed >= MAX_MS) {
-        setPageLoading(false);
-        return;
-      }
-      timer = window.setTimeout(check, 100);
-    };
-    check();
-    return () => { if (timer) window.clearTimeout(timer); };
+    const timer = window.setTimeout(() => setPageLoading(false), MIN_MS);
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!hasToken) {

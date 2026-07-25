@@ -22,9 +22,12 @@ export function usePrefetch(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // timeout: 300ms —— 保证即使主线程繁忙，fetchAllHomeData 也能在首页
+    // pageLoading（500ms）结束前启动并置位各区块 loading 标志，
+    // 否则首页会出现「无数据且不在加载中」的空窗，所有行整体不渲染。
     const idle =
       typeof window.requestIdleCallback === 'function'
-        ? (cb: () => void) => window.requestIdleCallback(cb)
+        ? (cb: () => void) => window.requestIdleCallback(cb, { timeout: 300 })
         : (cb: () => void) => setTimeout(cb, 0);
 
     const tasks: Array<() => void> = [];

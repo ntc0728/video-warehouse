@@ -556,8 +556,25 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     const ctrl = new AbortController();
     _homeFetchAbort = ctrl;
 
-    // 清除上一轮遗留的错误状态，避免首页同时展示旧错误 + 新 loading
+    // 判断每个区块是否需要刷新（数据为空时获取）
+    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0;
+
+    // 清除上一轮遗留的错误状态，避免首页同时展示旧错误 + 新 loading。
+    // 同时提前为待拉取区块置位 loading —— checkToken() 是一次完整网络往返，
+    // 若等它返回后才置位，这段窗口内所有区块「无数据且不在加载中」，
+    // TMDBMovieRow 会整体 return null（下方行不渲染）且首页骨架不出现。
     set((s) => ({
+      loading: {
+        ...s.loading,
+        trending: shouldFetch(state.trending) || s.loading.trending,
+        nowPlaying: shouldFetch(state.nowPlaying) || s.loading.nowPlaying,
+        popularMovies: shouldFetch(state.popularMovies) || s.loading.popularMovies,
+        topRatedMovies: shouldFetch(state.topRatedMovies) || s.loading.topRatedMovies,
+        upcomingMovies: shouldFetch(state.upcomingMovies) || s.loading.upcomingMovies,
+        popularTv: shouldFetch(state.popularTv) || s.loading.popularTv,
+        topRatedTv: shouldFetch(state.topRatedTv) || s.loading.topRatedTv,
+        airingTodayTv: shouldFetch(state.airingTodayTv) || s.loading.airingTodayTv,
+      },
       errors: {
         ...s.errors,
         trending: null,
@@ -605,31 +622,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       return;
     }
 
-    // 判断每个区块是否需要刷新（数据为空时获取）
-    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0;
-
-    // ---- 第一层：首屏可见内容（trending + nowPlaying + genres） ----
-    const tier1 = [
+    // ---- 所有区块并发请求 ----
+    const fetches = [
       shouldFetch(state.trending) ? state.fetchTrending() : Promise.resolve(),
       shouldFetch(state.nowPlaying) ? state.fetchNowPlaying() : Promise.resolve(),
-      shouldFetch(state.movieGenres) ? state.fetchGenresAndCountries() : Promise.resolve(),
-    ];
-    await Promise.all(tier1);
-
-    // 被取消则直接返回，不再发起第二层请求
-    if (ctrl.signal.aborted) return;
-
-    // ---- 第二层：下方滚动内容 — 改用 requestIdleCallback 调度,避免阻塞主线程 ----
-    const idle =
-      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
-        ? (cb: () => void) => window.requestIdleCallback(cb)
-        : (cb: () => void) => setTimeout(cb, 0);
-    await new Promise<void>((r) => idle(() => r()));
-
-    // 再次检查，idle 等待期间可能已被取消
-    if (ctrl.signal.aborted) return;
-
-    const tier2 = [
       shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : Promise.resolve(),
       shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : Promise.resolve(),
       shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : Promise.resolve(),
@@ -637,7 +633,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : Promise.resolve(),
       shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : Promise.resolve(),
     ];
-    await Promise.all(tier2);
+    await Promise.all(fetches);
   },
 
   /**

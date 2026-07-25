@@ -42,11 +42,20 @@
   inset: 0;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.modal-overlay-animate[data-state="closed"] {
+  animation: overlayFadeOut 0.15s ease-in forwards;
 }
 
 [data-theme="dark"] .modal-overlay-animate {
   background-color: rgba(0, 0, 0, 0.7);
+}
+
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .modal-content-animate {
@@ -55,6 +64,7 @@
   left: 50%;
   z-index: 1001;
   max-height: min(60vh, var(--layout-modal-max-h));
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
   color: var(--color-text);
   transform: translate(-50%, -50%);
@@ -76,6 +86,44 @@
   to {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+/* 移动端：弹窗从底部滑出（bottom-sheet） */
+@media (width <= 767px) {
+  .modal-content-animate {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(100%);
+    animation: modalSlideUp 0.25s ease-out both;
+  }
+  .modal-content-animate[data-state="closed"] {
+    animation: modalSlideDown 0.2s ease-in forwards;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
   }
 }
 
@@ -398,13 +446,13 @@ a[role="button"]:active:not(:disabled),
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
+  margin-top: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
   border: none;
   border-radius: var(--radius-full);
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: 500;
   transition: background-color 0.2s, opacity 0.2s;
   cursor: pointer;
@@ -428,6 +476,19 @@ a[role="button"]:active:not(:disabled),
 
 .retry-btn--outlined:hover:not(:disabled) {
   background: var(--color-primary-light);
+}
+
+/* 胶囊变体（Detail 页“重新匹配”按钮）— 全圆角胶囊样式，hover 时仅背景/文字过渡，边框颜色保持不变 */
+.retry-btn--tab {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.retry-btn--tab:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .empty-retry-spin {

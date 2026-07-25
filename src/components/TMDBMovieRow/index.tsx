@@ -46,12 +46,16 @@ function toVideo(item: TMDBVideoItem): Video {
   };
 }
 
-/** 骨架卡片 */
+/** 骨架卡片（错开动画延迟，避免同步闪烁） */
 function SkeletonCards({ count = 12 }: { count?: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="tmdb-movierow-card tmdb-movierow-skeleton">
+        <div
+          key={i}
+          className="tmdb-movierow-card tmdb-movierow-skeleton"
+          style={{ animationDelay: `${(i % 4) * 0.2}s` }}
+        >
           <div className="tmdb-movierow-skeleton-img" />
           <div className="tmdb-movierow-skeleton-title" />
         </div>

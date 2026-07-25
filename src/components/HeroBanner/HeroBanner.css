@@ -188,9 +188,7 @@
 }
 
 /* ── 右侧缩略图列（桌面端） ──
-   宽度比左侧 HomeSidebar 略大，且随视口流式伸缩（clamp 的 vw 项）：
-   小屏 220px 起步、约 15vw 跟随放大、超大屏封顶 380px（明显宽于侧边栏的 260px 封顶）。
-   保留水平内边距让缩略图有呼吸感；显式 width + flex-shrink:0 保证稳定不塌缩。 */
+    宽度由缩略图 16:9 比例自适应，容器 position:absolute 右对齐。 */
 
 .hero-banner__thumbs {
   position: absolute;
@@ -200,41 +198,32 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2xs);
-  justify-content: center;
-  width: clamp(13.75rem, 15vw, 23.75rem);
-  padding: var(--space-sm);
-  padding-left: var(--space-lg);
-  overflow: hidden;
+  gap: var(--space-3xs);
+  justify-content: flex-start;
+  padding: 0 0 0 var(--space-sm);
 }
 
-/* 骨架态 */
-.hero-banner__thumbs--skeleton {
-  padding-left: var(--space-lg);
-}
-
-/* 缩略图：等分容器高度 + 黑色遮罩（未选中）+ 标题悬浮叠加 */
+/* 缩略图：flex 均分容器高度 + aspect-ratio 推算宽度，保持严格 16:9 */
 .hero-banner__thumb {
   position: relative;
   display: block;
   flex: 1 1 0;
-  width: 100%;
+  align-self: flex-end;
   min-height: 0;
   border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  cursor: pointer;
-  /* 平滑过渡 */
   transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
 }
 
-/* 激活态：品牌主色边框 + 阴影（深色背景下需要更粗边框和更亮颜色） */
+/* 激活态：仅发光 + 缩放，无边框 */
 .hero-banner__thumb.is-active {
-  border: 2px solid var(--color-primary);
   transform: scale(1.02);
-  transition: transform 0.3s var(--ease-spring), border 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
-  box-shadow: 0 0 16px var(--color-primary-shadow);
+  transition: transform 0.3s var(--ease-spring);
+  box-shadow: 0 0 18px var(--color-primary-shadow);
 }
 
 /* 缩略图图片 */
@@ -255,13 +244,13 @@
 }
 
 /* 骨架占位（shimmer）：覆盖整张缩略图，加载完成后随 is-loaded 移除。
-   使用主题 surface/text 色构建，避免浅色主题下白透渐变看不见的问题。 */
+   底色与扫光统一复用项目级占位色（--color-placeholder / --color-placeholder-shimmer-*），
+   与 VideoCard 估计图、LazyImage 占位、SkeletonCard 保持一致，避免两套骨架底色/扫光不一致。 */
 .hero-banner__thumb-skeleton {
   position: absolute;
   inset: 0;
   z-index: 3;
-  /* 占位底色用明显的边框灰（比 surface-hover 更可见），确保加载态骨架清晰可辨 */
-  background: var(--color-border-light, rgba(0, 0, 0, 0.08));
+  background: var(--color-placeholder);
   overflow: hidden;
   pointer-events: none;
 }
@@ -271,18 +260,13 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    100deg,
-    transparent 30%,
-    color-mix(in srgb, var(--color-text) 18%, transparent) 50%,
-    transparent 70%
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: heroThumbShimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes heroThumbShimmer {
-  from { background-position: 200% 0; }
-  to   { background-position: -200% 0; }
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 /* banner 未就绪时整列骨架：去掉黑色遮罩，仅保留 shimmer */
@@ -312,9 +296,6 @@
 .hero-banner__thumb.is-active::before,
 .hero-banner__thumb:hover::before {
   opacity: 0;
-}
-
-.hero-banner__thumb.is-active.is-loaded {
 }
 
 /* 标题悬浮叠加在图片底部（渐变蒙版保证可读）— 仅激活态显示 */
@@ -375,13 +356,6 @@
 
   .hero-banner__bg-placeholder {
     animation: none !important;
-  }
-}
-
-/* ── 大屏（≥1440px）：缩略图稍宽，适配 5 个 ─── */
-@media (width >= 1440px) {
-  .hero-banner__thumbs {
-    width: clamp(15rem, 16vw, 26rem);
   }
 }
 

@@ -7,7 +7,7 @@ setlocal
 set PROJECT_ROOT=%~dp0..
 
 echo ========================================
-echo   影视大全 - Android 构建脚本
+echo   KinoTV - Android 构建脚本
 echo ========================================
 echo.
 

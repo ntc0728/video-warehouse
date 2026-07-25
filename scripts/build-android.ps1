@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  影视大全 - Android 构建脚本" -ForegroundColor Cyan
+Write-Host "  KinoTV - Android 构建脚本" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

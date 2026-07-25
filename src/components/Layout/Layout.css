@@ -1,6 +1,7 @@
 /* 全局侧边栏宽度令牌（定义在 :root，确保任意位置——含 HeroBanner——都能解析） */
 :root {
   --sidebar-width: clamp(160px, 12vw, 240px);
+  --sidebar-width-collapsed: 64px;
 }
 
 .sidebar-container {
@@ -55,6 +56,7 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden auto;
+  overflow-anchor: none;
   /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
   scrollbar-width: none;
 }
@@ -95,6 +97,30 @@
   align-items: center;
   padding: var(--space-md);
   border-bottom: 1px solid var(--color-border-light);
+}
+
+.sidebar-header__brand {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  min-width: 0;
+}
+
+.sidebar-logo-wrap {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sidebar-title {
@@ -228,34 +254,31 @@
   transform: translateX(0);
 }
 
-/* ── Desktop (>=1024px): 主内容区让出固定左侧栏空间 ───────────── */
-@media (width >= 1024px) {
+/* ── 平板端 + 桌面端 (>=768px)：统一显示侧边栏，主内容区让出空间 ── */
+@media (width >= 768px) {
   .app-shell__main {
     margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s var(--ease-standard);
   }
-
-  /* 沉浸式页头（fixed 叠加 Hero）起点右移到侧边栏右侧，避免压住侧边栏；
-     width:auto 让 left+right 共同决定宽度，避免基础规则 width:100% 使右侧元素溢出视口 */
-  .sticky-header--immersive {
-    left: var(--sidebar-width);
-    width: auto;
+  .app-shell__main--sidebar-collapsed {
+    margin-left: var(--sidebar-width-collapsed);
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    侧边栏 + 顶部导航栏 连接式布局（作用于所有「非沉浸式」页面）
    顶部导航栏与左侧侧边栏在视觉上连接，形成统一的导航区域。
-   仅桌面端（>=1024px）应用；移动端（<1024px）保持原始布局，不受影响。
+   仅桌面端/平板端（>=768px）应用；移动端（<768px）保持原始布局，不受影响。
    沉浸式全屏播放页（/play、/player，带 app-shell--immersive）不应用，
    以保持视频铺满、顶栏叠加 hero 的原始布局。
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* 桌面端（>=1024px）侧边栏 + 顶栏 连接式布局
-   移动端（<1024px）不应用这些规则，保持原始布局不变。 */
-@media (width >= 1024px) {
+/* 桌面端/平板端（>=768px）侧边栏 + 顶栏 连接式布局
+   移动端（<768px）不应用这些规则，保持原始布局不变。 */
+@media (width >= 768px) {
   /* 常驻左侧栏 → 连接式布局（顶部与导航栏对齐，无右边框） */
   .app-shell:not(.app-shell--immersive) .home-sidebar {
-    top: 0;
+    top: var(--header-height);
     bottom: 0;
     left: 0;
     background-color: var(--color-surface);
@@ -263,14 +286,28 @@
     border-right: none;
   }
 
-  /* 顶部导航栏 → 与左侧侧边栏无缝连接（无边框，直接连接） */
+  /* 顶部导航栏 → 固定在视口顶部，不受 margin-left 影响，全宽显示 */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
-    width: auto;
-    margin: 0;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 55;
     border: none;
     border-radius: 0;
     background-color: var(--color-surface);
     transition: background-color 0.2s ease;
     box-shadow: none;
+  }
+
+  /* 固定 header 占据空间，scroll wrapper 需要 padding-top */
+    .app-shell__scroll-wrapper {
+    padding-top: var(--header-height);
+  }
+
+  /* 沉浸式页头（fixed 叠加 Hero）全宽覆盖视口 */
+  .sticky-header--immersive {
+    left: 0;
+    width: 100%;
   }
 }

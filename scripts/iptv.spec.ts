@@ -132,3 +132,42 @@ test.describe('5.8 页面状态', () => {
     expect(title).toBeTruthy();
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 5.9 顶部搜索框（无热门搜索 / 历史独立）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('5.9 顶部搜索框', () => {
+  test('IPTV-076: 顶部搜索框下拉不显示热门搜索', async ({ page }) => {
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    const searchInput = page.locator('.sticky-header__search input');
+    await searchInput.click();
+    await page.waitForTimeout(300);
+
+    // 预期结果: 下拉框不应出现「热门搜索」
+    const hotSearch = page.locator('.sticky-header').getByText('热门搜索', { exact: false });
+    await expect(hotSearch).toHaveCount(0);
+    console.log('✅ IPTV-076 通过: IPTV 页顶部搜索框不显示热门搜索');
+  });
+
+  test('IPTV-077: IPTV 页搜索历史与全局独立', async ({ page }) => {
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    const searchInput = page.locator('.sticky-header__search input');
+    await searchInput.click();
+    await searchInput.fill('iptv独立历史');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(400);
+
+    const iptvHistory = await page.evaluate(() => localStorage.getItem('search-history-iptv'));
+    const globalHistory = await page.evaluate(() => localStorage.getItem('search-history'));
+    expect(iptvHistory).toContain('iptv独立历史');
+    expect(globalHistory ?? '').not.toContain('iptv独立历史');
+    console.log('✅ IPTV-077 通过: IPTV 页搜索历史独立存储');
+  });
+});

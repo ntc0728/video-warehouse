@@ -49,6 +49,11 @@ export interface SearchBoxProps {
   onSearch?: (query: string) => void;
   /** 输入值变化回调（含 trim 前的原始值） */
   onValueChange?: (value: string) => void;
+  /**
+   * 搜索历史作用域：不同页面的顶部搜索框历史互不影响
+   * （如 'global' / 'iptv' / 'settings' / 'browse' / 'collections' / 'history'）
+   */
+  scope?: string;
 }
 
 const MAX_HISTORY_IN_DROPDOWN = 5;
@@ -64,6 +69,7 @@ export default function SearchBox({
   showHotSearch = true,
   onSearch,
   onValueChange,
+  scope = 'global',
 }: SearchBoxProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,7 +83,7 @@ export default function SearchBox({
   const rightClickRef = useRef(false);
 
   // ── 搜索历史 ─────────────────────────────────────
-  const { history, addHistory, removeHistory, clearHistory } = useSearchHistory();
+  const { history, addHistory, removeHistory, clearHistory } = useSearchHistory(scope);
 
   // ── 热门搜索（从 trending 数据取标题） ──────────────
   const trending = useTMDBStore((s) => s.trending);

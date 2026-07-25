@@ -1,8 +1,9 @@
 /**
- * HomeSidebar — 桌面端全局常驻左侧导航栏
+ * HomeSidebar — 桌面端/平板端全局常驻左侧导航栏
  *
- * 只在桌面端（!isMobileWeb && !isNative && !isTV）渲染，每个页面都显示。
- * 8 个图标+文本项：首页 / IPTV / 电影 / 电视剧 / 综艺 / 动漫 / 纪录片 / 排行榜。
+ * 支持展开/收起：
+ * - 展开态：显示图标 + 文字（~220px）
+ * - 收起态：仅显示图标（~64px），文字隐藏
  *
  * 交互：
  * - 点击「首页」→ 回首页并重置为默认发现页（activeCategory='home'）
@@ -16,7 +17,6 @@ import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy } from 'lu
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HomeCategoryKey } from '@/pages/Home/categoryConfig';
-import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './HomeSidebar.css';
 
 type IconType = typeof Home;
@@ -25,9 +25,7 @@ interface SidebarItem {
   key: string;
   label: string;
   icon: IconType;
-  /** 内容类目（点击切换首页右侧内容） */
   category?: HomeCategoryKey;
-  /** 独立路由（点击直接跳转） */
   route?: string;
 }
 
@@ -42,7 +40,11 @@ const ITEMS: SidebarItem[] = [
   { key: 'top', label: '排行榜', icon: Trophy, category: 'top' },
 ];
 
-export default function HomeSidebar() {
+interface HomeSidebarProps {
+  collapsed?: boolean;
+}
+
+export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
@@ -50,31 +52,15 @@ export default function HomeSidebar() {
   const scrollContainerRef = useScrollContainer();
 
   const handleClick = (item: SidebarItem) => {
-    // 独立路由（IPTV）
     if (item.route) {
       navigate(item.route);
       return;
     }
-
     const cat = item.category as HomeCategoryKey;
-    // 当前不在首页 → 先回首页（Keep-Alive 不重建，仅切可见性）
     if (location.pathname !== '/') {
       navigate('/');
     }
-    // 切换首页右侧内容（不跳页）
     setActiveCategory(cat);
-
-    // 切类目时滚动回顶部，体验更顺
-    requestAnimationFrame(() => {
-      const el = scrollContainerRef.current;
-      if (el) el.scrollTo({ top: 0, behavior: 'auto' });
-    });
-  };
-
-  /** 点击左上角 logo → 回首页 + 重置为默认发现页 */
-  const handleLogoClick = () => {
-    if (location.pathname !== '/') navigate('/');
-    setActiveCategory('home');
     requestAnimationFrame(() => {
       const el = scrollContainerRef.current;
       if (el) el.scrollTo({ top: 0, behavior: 'auto' });
@@ -92,19 +78,7 @@ export default function HomeSidebar() {
   };
 
   return (
-    <aside className="home-sidebar" aria-label="主导航">
-      {/* 左上角 logo（取代顶部导航栏 logo，高度对齐 StickyHeader） */}
-      <button
-        type="button"
-        className="home-sidebar__logo no-interaction-visual"
-        onClick={handleLogoClick}
-        aria-label="kinoTv — 返回首页"
-      >
-        <div className="home-sidebar__logo-wrap">
-          <img className="home-sidebar__logo-img" src={KinoTVLogo} alt="kinoTv" draggable={false} />
-        </div>
-        <span className="home-sidebar__brand-name">kinoTV</span>
-      </button>
+    <aside className={`home-sidebar${collapsed ? ' home-sidebar--collapsed' : ''}`} aria-label="主导航">
       <nav className="home-sidebar__nav">
         {ITEMS.map((item) => {
           const Icon = item.icon;
@@ -120,7 +94,7 @@ export default function HomeSidebar() {
             >
               {active && <span className="home-sidebar__indicator" />}
               <Icon size={20} className="home-sidebar__icon" aria-hidden="true" />
-              <span className="home-sidebar__label">{item.label}</span>
+              {!collapsed && <span className="home-sidebar__label">{item.label}</span>}
             </button>
           );
         })}

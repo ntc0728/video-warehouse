@@ -22,4 +22,8 @@ export interface AppSettings {
   skipOutroDuration: number;
   /** 自动连播 */
   autoPlay: boolean;
+  /** 用户昵称（个人资料） */
+  username: string;
+  /** 用户头像（data URL，留空则使用默认图标） */
+  avatar: string;
 }

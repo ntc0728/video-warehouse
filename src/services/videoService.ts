@@ -228,10 +228,14 @@ async function resolvePlaySources(
   api: string,
   item: CMSVideoItem,
   signal?: AbortSignal,
+  /** 强制按剧集解析：跳过「多集误判为电影线路」的后置转换，确保集数保留 */
+  forceSeries = false,
 ): Promise<{ sources: Video['sources']; episodes: Video['episodes'] | undefined; item: CMSVideoItem }> {
+  // 剧集搜索时 item 已按季号识别，强制以非 movie 类型解析，避免集数被转成线路
+  const vodType = forceSeries ? undefined : getCmsVodType(item);
   // 1) 先尝试直接解析搜索结果中的 vod_play_url
   if (item.vod_play_url) {
-    const parsed = parsePlaySources(item.vod_play_url, getCmsVodType(item));
+    const parsed = parsePlaySources(item.vod_play_url, vodType);
     if (parsed.sources.length > 0 || (parsed.episodes?.length ?? 0) > 0) {
       return { ...parsed, item };
     }
@@ -242,7 +246,7 @@ async function resolvePlaySources(
     const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal });
     const detailItem = detailData.list?.[0];
     if (detailItem) {
-      const parsed = parsePlaySources(detailItem.vod_play_url || '', getCmsVodType(detailItem));
+      const parsed = parsePlaySources(detailItem.vod_play_url || '', vodType);
       return { ...parsed, item: detailItem };
     }
   } catch { /* fall through to empty result */ }
@@ -352,7 +356,7 @@ export interface VideoDetailResult {
 export async function searchVideoFromMultipleSources(
   sourceIndices: number[],
   title: string,
-  _year?: number,
+  year?: number,
   signal?: AbortSignal,
 ): Promise<VideoDetailResult[]> {
   const sources = await getVideoSources();
@@ -369,7 +373,7 @@ export async function searchVideoFromMultipleSources(
       }
 
       try {
-        const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
+        const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}${year ? `&year=${year}` : ''}`;
         const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
@@ -619,8 +623,8 @@ export async function searchVideoSeasonsFromSingleSource(
       if (seasonNumber === undefined) continue;
       if (seasons.has(seasonNumber)) continue;
 
-      // 先尝试解析搜索结果，若为空再通过详情接口回退
-      const resolved = await resolvePlaySources(source.api, item, signal);
+      // 先尝试解析搜索结果，若为空再通过详情接口回退（forceSeries：季条目按剧集解析，保留集数）
+      const resolved = await resolvePlaySources(source.api, item, signal, true);
       seasons.set(seasonNumber, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
     }
 

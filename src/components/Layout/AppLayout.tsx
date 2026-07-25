@@ -10,7 +10,7 @@ import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
 import './Layout.css';
 import { useSettingsStore } from '@/stores';
-import { useIsTV, useIsRealMobile, useIsMobile } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, getRouteComponent } from './routeConfig';
@@ -39,13 +39,28 @@ export default function AppLayout() {
   const isRealMobile = useIsRealMobile();
   const isTV = useIsTV();
   const isMobileWeb = !isNative && !isTV && isRealMobile;
-  const isMobileViewport = useIsMobile();
+  // 平板端以下（< 768px）使用移动端 overlay sidebar，≥ 768px 使用桌面端常驻侧边栏
+  const isCompactViewport = useMediaQuery('(max-width: 767px)');
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
   const skin = useSettingsStore((s) => s.skin);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
+
+  // ── HomeSidebar 展开/收起状态（持久化到 localStorage） ──
+  const SIDEBAR_STORAGE_KEY = 'sidebar-collapsed';
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'; }
+    catch { return false; }
+  });
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -133,12 +148,19 @@ export default function AppLayout() {
           color: 'var(--color-text)',
         }}
       >
-        {isMobileViewport && (
+        {isCompactViewport && (
           <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
         )}
-        {!isMobileViewport && !isNative && !isTV && <HomeSidebar />}
-        <div className="app-shell__main">
-          <StickyHeader onMenuToggle={isMobileViewport ? toggleSidebar : undefined} menuOpen={isMobileViewport && sidebarOpen} />
+        {!isCompactViewport && !isNative && !isTV && (
+          <HomeSidebar collapsed={sidebarCollapsed} />
+        )}
+        <div className={`app-shell__main${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell__main--sidebar-collapsed' : ''}`}>
+          <StickyHeader
+            onMenuToggle={isCompactViewport ? toggleSidebar : undefined}
+            menuOpen={isCompactViewport && sidebarOpen}
+            onSidebarToggle={!isCompactViewport && !isNative && !isTV ? toggleSidebarCollapsed : undefined}
+            sidebarCollapsed={sidebarCollapsed}
+          />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar
               ref={scrollContainerRef}
