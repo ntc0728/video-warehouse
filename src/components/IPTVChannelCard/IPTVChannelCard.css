@@ -85,11 +85,11 @@
   left: var(--space-xs);
   z-index: 3;
   display: flex;
-  gap: 3px;
+  gap: var(--space-2xs);
   align-items: center;
-  padding: 2px 6px;
+  padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   line-height: 1;
   pointer-events: none;

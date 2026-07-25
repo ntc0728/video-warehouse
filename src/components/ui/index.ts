@@ -15,4 +15,6 @@ export { TabBar } from './TabBar';
 export { default as Timeline } from './Timeline';
 export type { TimelineItem, TimelineProps, TimelineVariant } from './Timeline';
 export { toast } from './toastBus';
+export { default as Select } from './Select';
+export type { SelectOption, SelectProps } from './Select';
 

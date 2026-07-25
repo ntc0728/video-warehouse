@@ -218,8 +218,8 @@ test.describe('1.3 分类快捷入口', () => {
 
   for (const tc of CATEGORY_TEST_CASES) {
     test(`HOME-022: 点击"${tc.label}"跳转 URL 参数正确`, async ({ page }) => {
-      // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-      await page.setViewportSize({ width: 768, height: 1024 });
+      // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+      await page.setViewportSize({ width: 767, height: 1024 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.app-shell', { timeout: 15000 });
       await page.waitForTimeout(3000);
@@ -263,8 +263,8 @@ test.describe('1.3 分类快捷入口', () => {
   }
 
   test('HOME-023: 所有分类跳转后 Browse 页筛选条件正确', async ({ page }) => {
-    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
@@ -314,8 +314,8 @@ test.describe('1.3 分类快捷入口', () => {
 
   test('HOME-024: 所有分类跳转 URL 参数正确', async ({ page }) => {
     test.setTimeout(60000);
-    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
@@ -369,8 +369,8 @@ test.describe('1.3 分类快捷入口', () => {
   // ── 分类跳转后联动搜索框搜索 ──────────────────────────────────
 
   test('HOME-024b: 分类跳转后搜索框输入验证', async ({ page }) => {
-    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // 使用移动端视口（< 768px），平板/桌面端（>=768px）分类快速入口已由 HomeSidebar 接管并隐藏
+    await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
@@ -389,6 +389,13 @@ test.describe('1.3 分类快捷入口', () => {
     const url1 = new URL(page.url());
     expect(url1.pathname).toBe('/browse');
     expect(url1.searchParams.get('category')).toBe('movie');
+
+    // 移动端默认隐藏搜索框，需点击"打开搜索"进入搜索模式
+    const searchToggle = page.locator('.sticky-header__search-btn');
+    if (await searchToggle.isVisible().catch(() => false)) {
+      await searchToggle.click();
+      await page.waitForTimeout(500);
+    }
 
     // 验证搜索框可见
     const searchInput = page.locator('.sticky-header .search-box__input');
@@ -414,8 +421,8 @@ test.describe('1.3 分类快捷入口', () => {
   });
 
   test('HOME-025: 分类跳转后搜索框联动搜索', async ({ page }) => {
-    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
@@ -435,6 +442,13 @@ test.describe('1.3 分类快捷入口', () => {
       expect(url1.pathname).toBe('/browse');
       expect(url1.searchParams.get('category')).toBe('movie');
       console.log(`✅ HOME-025: 分类跳转成功 → ${url1.pathname}${url1.search}`);
+
+      // 移动端默认隐藏搜索框，需点击"打开搜索"进入搜索模式
+      const searchToggle25 = page.locator('.sticky-header__search-btn');
+      if (await searchToggle25.isVisible().catch(() => false)) {
+        await searchToggle25.click();
+        await page.waitForTimeout(500);
+      }
 
       // 2. 在搜索框输入关键词并搜索
       const searchInput = page.locator('.sticky-header .search-box__input');
@@ -475,8 +489,8 @@ test.describe('1.3 分类快捷入口', () => {
   });
 
   test('HOME-026: 各分类跳转后搜索框搜索验证', async ({ page }) => {
-    // 使用平板端视口（< 1024px），因为桌面端隐藏了分类快速入口
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    await page.setViewportSize({ width: 767, height: 1024 });
 
     const searchTestCases = [
       { label: '电影', expectedCategory: 'movie', searchQuery: '复仇者联盟' },
@@ -505,6 +519,13 @@ test.describe('1.3 分类快捷入口', () => {
         expect(url1.pathname).toBe('/browse');
         expect(url1.searchParams.get('category')).toBe(tc.expectedCategory);
         console.log(`✅ HOME-026: "${tc.label}" 分类跳转成功 → ${url1.pathname}${url1.search}`);
+
+        // 移动端默认隐藏搜索框，需点击"打开搜索"进入搜索模式
+        const searchToggle26 = page.locator('.sticky-header__search-btn');
+        if (await searchToggle26.isVisible().catch(() => false)) {
+          await searchToggle26.click();
+          await page.waitForTimeout(500);
+        }
 
         // 在搜索框输入关键词并搜索
         const searchInput = page.locator('.sticky-header .search-box__input');
@@ -655,5 +676,53 @@ test.describe('1.5 全局交互', () => {
     const title = await page.title();
     console.log(`✅ HOME-044 检查完成: 文档标题 = "${title}"`);
     expect(title).toBeTruthy();
+  });
+
+  test('HOME-045: 移动端 logo 右侧不显示 kinoTV 且进入指定页面时中央显示标题', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+
+    // 首页：logo 右侧不显示 kinoTV 品牌字，中央不应显示页面标题
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await expect(page.locator('.sticky-header__logo-group .sticky-header__brand')).toBeHidden({ timeout: 5000 });
+    await expect(page.locator('.sticky-header__page-title')).toHaveCount(0);
+
+    // 进入指定页面：中央应显示对应标题
+    const cases = [
+      { path: '/browse', title: '搜索中心' },
+      { path: '/iptv', title: 'IPTV' },
+      { path: '/collections', title: '收藏' },
+      { path: '/history', title: '历史记录' },
+      { path: '/settings', title: '设置' },
+    ];
+    for (const c of cases) {
+      await page.goto(c.path, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForTimeout(1500);
+      const titleEl = page.locator('.sticky-header__page-title');
+      await expect(titleEl).toBeVisible({ timeout: 5000 });
+      await expect(titleEl).toHaveText(c.title);
+      console.log(`✅ HOME-045 通过: ${c.path} 顶部中央标题 = "${c.title}"`);
+    }
+  });
+
+  test('HOME-046: 移动端打开侧边栏后头部显示 logo 与品牌字', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 点击汉堡菜单打开侧边栏
+    const menuBtn = page.locator('.sticky-header__menu-btn').first();
+    await expect(menuBtn).toBeVisible({ timeout: 5000 });
+    await menuBtn.click();
+    await page.waitForTimeout(800);
+
+    // 侧边栏头部应显示 logo 与 KinoTV 品牌字
+    const logo = page.locator('.sidebar-header__brand .sidebar-logo').first();
+    await expect(logo).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.sidebar-header__brand .sidebar-title')).toHaveText('KinoTV');
+    console.log('✅ HOME-046 通过: 移动端侧边栏头部显示 logo + KinoTV');
   });
 });

@@ -16,6 +16,7 @@ import {
   PanelLeftOpen,
   X,
 } from 'lucide-react';
+import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 
 const ariaLabels: Record<string, string> = {
   '/': '首页',
@@ -95,7 +96,12 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
           style={{ width: sidebarWidth }}
         >
           <div className="sidebar-header">
-            <span className="sidebar-title animate-slide-in-left">影视大全</span>
+            <span className="sidebar-header__brand">
+              <span className="sidebar-logo-wrap">
+                <img className="sidebar-logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
+              </span>
+              <span className="sidebar-title animate-slide-in-left">KinoTV</span>
+            </span>
             <button onClick={onToggle} className="sidebar-toggle-btn btn-press" aria-label="关闭侧边栏">
               <X size={18} />
             </button>
@@ -137,7 +143,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
       }}
     >
       <div className="sidebar-header">
-        <span className="sidebar-title animate-slide-in-left">影视大全</span>
+        <span className="sidebar-title animate-slide-in-left">KinoTV</span>
         <button
           onClick={onToggle}
           className="sidebar-toggle-btn btn-press"

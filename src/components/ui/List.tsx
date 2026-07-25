@@ -39,7 +39,7 @@ const ListItem: FC<ListItemProps> = ({
       {prefix && <span className="flex-shrink-0">{prefix}</span>}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {title && (
-          <span className="text-sm" style={{ color: 'var(--color-text)' }}>
+          <span className="inline-flex flex-wrap items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
             {title}
           </span>
         )}

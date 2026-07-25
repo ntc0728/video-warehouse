@@ -10,13 +10,20 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'search-history';
+/**
+ * 每个页面顶部搜索框使用独立的 scope，搜索历史互不影响。
+ * scope 为空时回退到全局 key（兼容历史调用）。
+ */
+function buildStorageKey(scope: string): string {
+  return scope ? `search-history-${scope}` : 'search-history';
+}
+
 const MAX_ITEMS = 10;
 
 /** 从 localStorage 加载搜索历史 */
-function loadHistory(): string[] {
+function loadHistory(storageKey: string): string[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -27,28 +34,29 @@ function loadHistory(): string[] {
 }
 
 /** 将搜索历史保存到 localStorage */
-function saveHistory(history: string[]): void {
+function saveHistory(storageKey: string, history: string[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    localStorage.setItem(storageKey, JSON.stringify(history));
   } catch {
     // localStorage 被禁用或满，静默失败
   }
 }
 
 /** 搜索历史管理 Hook，支持增删清空，最多保留 10 条，跨标签页同步 */
-export function useSearchHistory() {
-  const [history, setHistory] = useState<string[]>(loadHistory);
+export function useSearchHistory(scope: string = 'global') {
+  const storageKey = buildStorageKey(scope);
+  const [history, setHistory] = useState<string[]>(() => loadHistory(storageKey));
 
   // 跨标签页同步
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setHistory(loadHistory());
+      if (e.key === storageKey) {
+        setHistory(loadHistory(storageKey));
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [storageKey]);
 
   const addHistory = useCallback((query: string) => {
     const trimmed = query.trim();
@@ -59,23 +67,23 @@ export function useSearchHistory() {
       const filtered = prev.filter((item) => item !== trimmed);
       // 新项插入到最前面，最多保留 MAX_ITEMS 条
       const next = [trimmed, ...filtered].slice(0, MAX_ITEMS);
-      saveHistory(next);
+      saveHistory(storageKey, next);
       return next;
     });
-  }, []);
+  }, [storageKey]);
 
   const removeHistory = useCallback((query: string) => {
     setHistory((prev) => {
       const next = prev.filter((item) => item !== query);
-      saveHistory(next);
+      saveHistory(storageKey, next);
       return next;
     });
-  }, []);
+  }, [storageKey]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
-    saveHistory([]);
-  }, []);
+    saveHistory(storageKey, []);
+  }, [storageKey]);
 
   return {
     history,

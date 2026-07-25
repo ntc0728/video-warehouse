@@ -47,6 +47,7 @@ interface HistoryVideoItem extends Video {
   _histDuration?: number;
   _histCmsSourceName?: string;
   _histEpisodeLabel?: string;
+  _histSeasonNumber?: number;
 }
 
 interface HistoryChannelItem {
@@ -126,7 +127,11 @@ function formatFullTime(ts: number): string {
 function getOverlayLabel(video: HistoryVideoItem): string {
   const parts: string[] = [];
   if (video._histCmsSourceName) parts.push(video._histCmsSourceName);
-  if (video._histEpisodeLabel) parts.push(video._histEpisodeLabel);
+  if (video._histSeasonNumber && video._histEpisodeLabel) {
+    parts.push(`第${video._histSeasonNumber}季 ${video._histEpisodeLabel}`);
+  } else if (video._histEpisodeLabel) {
+    parts.push(video._histEpisodeLabel);
+  }
   return parts.length > 0 ? parts.join(' · ') : '';
 }
 
@@ -256,7 +261,7 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel };
+        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') {
@@ -495,17 +500,17 @@ export default function HistoryPage() {
       activeStatus={statusFilter}
       onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
     >
+      <div className="record-edit-row">
+        <button
+          type="button"
+          className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
+          onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+        >
+          <ListChecks size={14} />
+          {batchMode ? '退出管理' : '批量管理'}
+        </button>
+      </div>
       <div className="history-body">
-        <div className="record-edit-row">
-          <button
-            type="button"
-            className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
-            onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-          >
-            <ListChecks size={14} />
-            {batchMode ? '退出管理' : '批量管理'}
-          </button>
-        </div>
         <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
           {groupedKeys.map((group, idx) => {
             const ti = timelineItems.find((t) => t.key === group);

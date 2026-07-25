@@ -57,10 +57,10 @@
 }
 
 .grouppicker__tags-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-sm);
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: flex-end;
+    align-items: center;
   padding: var(--space-xs) 0;
 }
 
@@ -151,7 +151,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 .grouppicker-popup {
-  width: min(640px, 92vw);
+  width: min(92vw, var(--layout-modal-max-width));
   padding: var(--space-lg);
 }
 

@@ -136,9 +136,9 @@
   }
 }
 
-/* ── 桌面 web (>=1024px)：分类导航由全局 HomeSidebar 接管，隐藏快速入口 ──
+/* ── 平板/桌面 web (>=768px)：分类导航由全局 HomeSidebar 接管，隐藏快速入口 ──
    TV / 原生 App 保留（无侧边栏） */
-@media (width >= 1024px) {
+@media (width >= 768px) {
   :root:not([data-device="tv"]):not([data-device="app"]) .category-quick-access {
     display: none;
   }

@@ -137,9 +137,26 @@ export function request<T = unknown>(url: string, options?: RequestOptions): Pro
   return httpClient.request({ ...options, url } as AxiosRequestConfig);
 }
 
+/** 给请求信号合并一个超时（默认 10s），避免慢源请求无限挂起 */
+function withTimeout(signal?: AbortSignal, ms = 10000): AbortSignal {
+  const timeoutSignal =
+    typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+      ? AbortSignal.timeout(ms)
+      : new AbortController().signal;
+  if (signal && typeof AbortSignal !== 'undefined' && 'any' in AbortSignal) {
+    return AbortSignal.any([signal, timeoutSignal]);
+  }
+  return signal ?? timeoutSignal;
+}
+
 /** GET JSON 数据 */
 export async function getJSON<T = unknown>(url: string, options?: RequestOptions): Promise<T> {
-  const response = await httpClient.get<T>(url, options as AxiosRequestConfig);
+  const opts = (options ?? {}) as AxiosRequestConfig;
+  const response = await httpClient.get<T>(url, {
+    timeout: 10000,
+    ...opts,
+    signal: withTimeout(opts.signal as AbortSignal | undefined),
+  });
   return response.data as T;
 }
 

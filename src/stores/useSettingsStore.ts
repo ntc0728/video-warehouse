@@ -44,10 +44,40 @@ interface SettingsState extends AppSettings {
   setSkipIntroDuration: (seconds: number) => void;
   setSkipOutroDuration: (seconds: number) => void;
   setAutoPlay: (value: boolean) => void;
+  setUsername: (username: string) => void;
+  setAvatar: (avatar: string) => void;
+  resetToDefaults: () => void;
   getEffectiveTheme: () => 'light' | 'dark';
 }
 
 const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
+
+/** 设置项默认值（用于"恢复默认配置"） */
+export const DEFAULT_SETTINGS = {
+  videoSourceIndex: 0,
+  videoSourceIndices: [0] as number[],
+  iptvSourceIndex: 0,
+  iptvSourceIndices: [0] as number[],
+  theme: 'light' as const,
+  skin: 'default' as const,
+  corsProxy: '',
+  epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
+  epgUpdateInterval: 6,
+  rememberVolume: false,
+  tmdbAccessToken: '',
+  tmdbLanguage: 'zh-CN',
+  translationAppId: '',
+  translationApiKey: '',
+  autoTranslate: true,
+  targetLang: 'zh',
+  skipIntro: false,
+  skipOutro: false,
+  skipIntroDuration: 90,
+  skipOutroDuration: 90,
+  autoPlay: true,
+  username: '',
+  avatar: '',
+};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -73,6 +103,8 @@ export const useSettingsStore = create<SettingsState>()(
       skipIntroDuration: 90,
       skipOutroDuration: 90,
       autoPlay: true,
+      username: '',
+      avatar: '',
 
       setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
       setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
@@ -108,6 +140,9 @@ export const useSettingsStore = create<SettingsState>()(
       setSkipIntroDuration: (skipIntroDuration) => set({ skipIntroDuration: Math.max(10, Math.min(300, skipIntroDuration)) }),
       setSkipOutroDuration: (skipOutroDuration) => set({ skipOutroDuration: Math.max(10, Math.min(300, skipOutroDuration)) }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
+      setUsername: (username) => set({ username }),
+      setAvatar: (avatar) => set({ avatar }),
+      resetToDefaults: () => set({ ...DEFAULT_SETTINGS }),
 
       getEffectiveTheme: () => {
         const { theme } = get();

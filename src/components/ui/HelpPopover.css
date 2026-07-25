@@ -6,7 +6,6 @@
   align-items: center;
   width: var(--icon-sm);
   height: var(--icon-sm);
-  margin-left: var(--space-xs);
   padding: 0;
   border: none;
   border-radius: var(--radius-full);

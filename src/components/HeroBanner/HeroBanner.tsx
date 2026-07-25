@@ -9,7 +9,8 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Play } from 'lucide-react';
-import { useIsMobile, useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useScreenTier } from '@/hooks/useScreenTier';
 import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
 import './HeroBanner.css';
 
@@ -65,7 +66,8 @@ export default function HeroBanner({
 }: HeroBannerProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  const isWide = useMediaQuery('(min-width: 1440px)');
+  const { tier } = useScreenTier();
+  const isWide = tier === 'large' || tier === 'xlarge';
   // 不截取接口数据：使用全部 items 驱动轮播；主图仅渲染当前+上一张（见 bgIndices）避免加载全部背景图
   const displayItems = items;
 
@@ -82,8 +84,8 @@ export default function HeroBanner({
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
   const [bannerReady, setBannerReady] = useState(false);
-  // 缩略图数量自适应：大屏 5 个，普通桌面 4 个
-  const maxCount = isWide ? 5 : 4;
+  // 缩略图数量自适应：大屏 4 个，普通桌面 3 个
+  const maxCount = isWide ? 4 : 3;
   const visibleCount = Math.min(maxCount, displayItems.length);
 
   // items 变化时重置 activeIndex、预览态与背景层
@@ -217,7 +219,7 @@ export default function HeroBanner({
           </div>
         )}
         {!isMobile && (
-          <div className="hero-banner__thumbs hero-banner__thumbs--skeleton" aria-hidden="true">
+          <div className="hero-banner__thumbs" aria-hidden="true">
             {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
                 <span className="hero-banner__thumb-skeleton" />
@@ -334,7 +336,7 @@ export default function HeroBanner({
           banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架） */}
       {!isMobile && (
         <div
-          className={`hero-banner__thumbs${!bannerReady ? ' hero-banner__thumbs--skeleton' : ''}`}
+          className="hero-banner__thumbs"
         >
           {!bannerReady ? (
             Array.from({ length: SKELETON_COUNT }).map((_, i) => (

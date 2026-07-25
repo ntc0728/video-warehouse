@@ -274,17 +274,17 @@ export default function CollectionsPage() {
       activeStatus={statusFilter}
       onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
     >
+      <div className="record-edit-row">
+        <button
+          type="button"
+          className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
+          onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+        >
+          <ListChecks size={14} />
+          {batchMode ? '退出管理' : '批量管理'}
+        </button>
+      </div>
       <div className="collection-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
-        <div className="record-edit-row">
-          <button
-            type="button"
-            className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
-            onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-          >
-            <ListChecks size={14} />
-            {batchMode ? '退出管理' : '批量管理'}
-          </button>
-        </div>
         {activeTab === 'video' ? (
           <div className="video-card-grid">
             {(displayedList as CollectionVideoItem[]).map((video) => (

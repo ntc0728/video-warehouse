@@ -73,6 +73,8 @@ export interface HistoryRecord {
   vodId?: string;
   /** 当前播放的集的 URL（如 http://example.com/ep1.m3u8），用于精确恢复选集 */
   episodeUrl?: string;
+  /** 当前播放的季号（如 2），播放剧集时一并写入，用于详情页进度展示「第X季 第Y集」 */
+  seasonNumber?: number;
   /** 当前季的 vod_id，用于选季面板高亮 */
   currentSeasonId?: string;
 }

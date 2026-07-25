@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    RecordShell — 收藏页 / 历史页共用外壳
-   桌面（≥768px）：顶部横向卡片筛选栏 + 右侧卡片主区
+   桌面（≥768px）：顶部横向卡片筛选栏 + 下方卡片主区
    移动（≤767px）：方案 M6 — 顶部吸顶精简栏，滚动折叠状态芯片行
+   状态标签页始终保留 DOM 占位（visibility:hidden），防止 tab 切换时 edit-row 飘移
    依赖已有全局类：.category-segmented / .status-tabs / .toolbar-btn / .toolbar-actions
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -29,14 +30,12 @@
 .record-aside {
   display: flex;
   flex-shrink: 0;
+  flex-flow: row wrap;
   gap: var(--space-md);
-  align-self: stretch;
-  width: var(--record-aside-w);
-  padding: var(--space-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  align-items: center;
+  width: 100%;
+  margin-top: var(--space-sm);
+  padding: 0;
 }
 
 .record-aside__title {
@@ -57,19 +56,23 @@
   padding: 0 var(--space-md);
 }
 
-/* ── 状态标签页组（编辑按钮 + 标签页） ────────────────────────────────── */
+/* ── 状态标签页组 ──────────────────────────────────────────────────────── */
+/* 隐藏态（IPTV tab 无状态标签页）仍占位，保持 aside 高度稳定不飘移 */
 .record-status-group {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
   margin-left: auto;
 }
+.record-status-group--hidden {
+  min-height: calc(var(--comp-tab-height) * 0.88);
+  visibility: hidden;
+}
 
 .record-status-group__divider {
   flex-shrink: 0;
-  width: 1px;
-  height: 20px;
-  background: var(--color-border);
+  border-left: 1px solid var(--color-border);
+  height: var(--space-xl);
 }
 
 /* ── 状态标签页 ──────────────────────────────────────────────────────── */
@@ -86,40 +89,32 @@
   flex-shrink: 0;
   gap: var(--space-2xs);
   align-items: center;
-  height: 32px;
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 600;
   white-space: nowrap;
   transition: all 0.15s ease;
   cursor: pointer;
 }
-
 .record-edit-btn:hover {
-  border-color: var(--color-border);
-  color: var(--color-text);
-  box-shadow: var(--shadow-sm);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-primary);
 }
 
-/* hover 时只改变下边框和左边框颜色，上边框和右边框不变 */
-.record-edit-row .record-edit-btn:hover {
-  border-top-color: var(--color-border-light);
-  border-right-color: var(--color-border-light);
+.record-edit-btn:active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 /* 编辑按钮激活态（批量管理模式） */
 .record-edit-btn--active {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.record-edit-btn--active:hover {
-  background: var(--color-primary-hover);
   color: var(--color-text-inverse);
 }
 
@@ -235,49 +230,24 @@
     margin-left: 0;
   }
 
-  /* 第二行：编辑按钮，右对齐 */
-  .record-edit-btn {
-    flex-shrink: 0;
-    align-self: flex-end;
-    order: 3;
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--text-xs);
-  }
-
   /* 编辑按钮分隔线在移动端隐藏 */
   .record-status-group__divider {
     display: none;
-  }
-
-  /* 折叠态：不再需要特殊处理 */
-  .record-shell[data-collapsed] .record-aside {
-    box-shadow: 0 1px 0 0 var(--color-border-light), 0 4px 12px rgba(0, 0, 0, 0.04);
-  }
-
-  /* 移动端卡片式布局 */
-  .record-main {
-    margin-top: var(--space-sm);
-    padding: var(--space-sm);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
   }
 
   /* 编辑按钮行：移动端 */
   .record-edit-row {
     display: flex;
     justify-content: flex-end;
-    margin: calc(-1 * var(--space-sm)) calc(-1 * var(--space-sm)) 0;
-    background-color: var(--color-surface);
   }
 
-  .record-edit-row .record-edit-btn {
-    margin-right: 0;
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--text-xs);
-    border-top-left-radius: 0;
-    border-bottom-right-radius: 0;
+  /* 移动端卡片式布局 */
+  .record-main {
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
   }
 }
 
@@ -294,18 +264,11 @@
 
   /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
   .record-aside {
-    top: 0;
     flex-shrink: 1;
     gap: var(--space-md);
     align-items: center;
-    align-self: auto;
     width: 100%;
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
     flex-flow: row wrap;
-    box-shadow: var(--shadow-sm);
   }
 
   /* 过滤行在桌面端不需要特殊处理 */
@@ -317,19 +280,11 @@
   .record-edit-row {
     display: flex;
     justify-content: flex-end;
-    margin: 0 calc(-1 * var(--space-md));
-    background-color: var(--color-surface);
-  }
-
-  .record-edit-row .record-edit-btn {
-    border-top-left-radius: 0;
-    border-bottom-right-radius: 0;
-    margin-right: 0;
   }
 
   /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
   .record-main {
-    margin-top: var(--space-sm);
+    gap: var(--space-sm);
     padding: 0 var(--space-md) var(--space-md);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);

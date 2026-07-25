@@ -10,7 +10,7 @@
   gap: var(--space-xs);
   align-items: center;
   height: var(--comp-tab-height);
-  margin-bottom: -1px;
+  margin-bottom: var(--tab-underline-overlap);
   padding: var(--space-xs) 0;
   border: none;
   background: transparent;
@@ -41,15 +41,15 @@
 /* 彩色圆点 */
 .status-tab__dot {
   flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+  width: var(--dot-size);
+  height: var(--dot-size);
   border-radius: 50%;
   background-color: var(--status-tab-color, var(--color-text-tertiary));
 }
 
 .status-tab__count {
-  min-width: 18px;
-  padding: 1px var(--space-2xs);
+  min-width: var(--badge-size);
+  padding: var(--space-3xs) var(--space-2xs);
   border-radius: var(--radius-full);
   background: var(--color-hover-bg);
   color: var(--color-text-tertiary);

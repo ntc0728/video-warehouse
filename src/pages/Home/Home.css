@@ -23,8 +23,8 @@
 /* 首页：hero 全宽 + rows 自管间距 */
 
 .home-rows {
-  /* 移动端：hero 与首行之间保留原始间距（桌面端在下方媒体块内归零） */
-  padding-top: var(--space-md);
+  /* 首行顶部间距由 hero 自带 space-sm 提供，此处不再额外留白 */
+  padding-top: 0;
   padding-bottom: 0;
 }
 
@@ -34,17 +34,11 @@
    模块之间间距统一为 var(--space-sm)。
    仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
 
-/* hero 自带底部 space-sm 间距，首行不再额外留白 */
-.home-rows {
-  padding-top: 0;
-}
-
 .home-page .hero-banner {
   /* 覆盖基础 width:100%，让 banner 自然填充 card padding 区域，右侧 padding 可见 */
   width: auto;
   /* 保留原有圆角；增加 surface 背景框 + 阴影 + 模块间距 */
   margin-bottom: var(--space-sm);
-  padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);

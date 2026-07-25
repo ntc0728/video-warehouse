@@ -8,7 +8,7 @@
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
@@ -39,6 +39,7 @@ export default function BrowsePage() {
   const isTV = useIsTV();
   const location = useLocation();
   const navigationType = useNavigationType();
+  const [searchParams] = useSearchParams();
   /** POP 导航（刷新/直接访问/后退）：清空搜索词，避免 history.state 残留 */
   const isPop = navigationType === 'POP';
   const scrollContainerRef = useScrollContainer();
@@ -47,26 +48,27 @@ export default function BrowsePage() {
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse');
 
-  // ── 搜索词（从 location state 读取）──
+  // ── 搜索词（优先从 location.state 读取，兜底兼容 ?q= 查询参数）──
   // createBrowserRouter 下 window.history.state 在刷新后被浏览器保留，
   // 导致 location.state.q 残留 → 顶部 SearchBox 显示上次的搜索词。
   // 仅在 PUSH 导航（从顶部 SearchBox 搜索进入）时读取搜索词；POP 时直接清空。
+  const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
+  const urlQ = searchParams.get('q')?.trim() ?? '';
   const [query, setQuery] = useState(() => {
     if (isPop) return '';
-    const state = location.state as { q?: string } | null;
-    return state?.q?.trim() ?? '';
+    return stateQ || urlQ || '';
   });
 
   // Keep-Alive 下二次从顶部导航搜索进入时，location.state 变化但组件未重挂载，
   // 需主动同步搜索词到 query → 进而带入 Browse 页搜索框（defaultValue）
-  const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
   useEffect(() => {
-    // POP 导航（刷新/后退）不从 location.state 恢复搜索词
+    // POP 导航（刷新/后退）不从 location.state / ?q= 恢复搜索词
     if (isPop) return;
-    if (stateQ) {
-      setQuery(stateQ);
+    const q = stateQ || urlQ;
+    if (q) {
+      setQuery(q);
     }
-  }, [stateQ, isPop]);
+  }, [stateQ, urlQ, isPop]);
 
   // ── 浏览器标签标题 ────────────────────────────────
   useDocumentTitle(searchMode === 'smart' && query ? null : undefined);
@@ -171,13 +173,13 @@ export default function BrowsePage() {
     return () => { store.clearPageSearch(); };
   }, [query, handlePageSearch, location.pathname]);
 
-  // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 中的最新搜索词触发搜索
-  // 注意：必须读 stateQ（同步变量）而非 query（异步 state）——
+  // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 或 ?q= 中的最新搜索词触发搜索
+  // 注意：必须读 stateQ/urlQ（同步变量）而非 query（异步 state）——
   // location.key 变化时 setQuery 尚未生效，query 仍是上一次的旧值。
   useEffect(() => {
     // POP 导航（刷新/后退）不触发搜索
     if (isPop) return;
-    const q = stateQ;
+    const q = stateQ || urlQ;
     if (q) {
       if (searchMode === 'smart') {
         void useTMDBStore.getState().search(q, 1, { reset: true });

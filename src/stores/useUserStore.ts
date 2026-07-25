@@ -50,6 +50,7 @@ interface UserState {
     episodeLabel?: string;
     vodId?: string;
     episodeUrl?: string;
+    seasonNumber?: number;
   }) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
@@ -198,6 +199,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       updated.episodeLabel = record.episodeLabel || updated.episodeLabel;
       updated.vodId = record.vodId || updated.vodId;
       updated.episodeUrl = record.episodeUrl || updated.episodeUrl;
+      updated.seasonNumber = record.seasonNumber ?? updated.seasonNumber;
       updated.currentSeasonId = record.currentSeasonId || updated.currentSeasonId;
       updated.updatedAt = Date.now();
 

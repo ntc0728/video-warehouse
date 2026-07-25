@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { CustomScrollbar } from '@/components/common'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface ModalProps {
   visible: boolean
@@ -26,7 +25,6 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
-  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -37,12 +35,13 @@ const Modal: React.FC<ModalProps> = ({
     [onClose]
   )
 
-  // 移动端禁止弹窗打开时自动聚焦输入框（避免拉起键盘）
+  // 弹窗包含输入框（input/textarea/select）时不自动聚焦，避免自动拉起键盘或聚焦跳动
   const handleOpenAutoFocus = useCallback((e: Event) => {
-    if (isMobile) {
+    const container = contentRef.current
+    if (container && container.querySelector('input, textarea, select')) {
       e.preventDefault()
     }
-  }, [isMobile])
+  }, [])
 
   useEffect(() => {
     if (visible) {
@@ -95,7 +94,7 @@ const Modal: React.FC<ModalProps> = ({
           onInteractOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
         >
           {title && (
-            <Dialog.Title className="text-[var(--text-lg)] font-semibold text-[var(--color-text)] mb-[var(--space-md)]">
+            <Dialog.Title className="text-[var(--text-lg)] font-semibold text-[var(--color-text)] mb-[var(--space-md)] pr-[calc(var(--icon-xl)+var(--space-xl))]">
               {title}
             </Dialog.Title>
           )}

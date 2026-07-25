@@ -334,18 +334,40 @@ function getSortByParam(sortBy: string, sortOrder: string, mediaType: 'movie' | 
 // 详情
 // ============================================================
 
-/** 获取电影详情（含演员、图片、视频、相似推荐等附加信息） */
+/** 获取电影详情（含演员、图片、视频等附加信息） */
 export async function fetchMovieDetail(movieId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBMovieDetail> {
-  return fetchTMDB<TMDBMovieDetail>(`/movie/${movieId}`, {
-    append_to_response: 'credits,images,videos,similar,recommendations',
-  }, options);
+  // 主详情只请求 credits/images/videos。
+  // similar / recommendations 不放入 append_to_response —— TMDB 对 append_to_response 的
+  // 组合响应有体积/超时限制，排在最末的子资源常被静默丢弃，导致详情页“相关推荐”栏目消失。
+  // 改为独立并行请求，数据稳定返回（子请求失败也不影响主详情）。
+  const [detail, similar, recommendations] = await Promise.all([
+    fetchTMDB<TMDBMovieDetail>(`/movie/${movieId}`, {
+      append_to_response: 'credits,images,videos',
+    }, options),
+    fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${movieId}/similar`, {}, options).catch(() => null),
+    fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${movieId}/recommendations`, {}, options).catch(() => null),
+  ]);
+  return {
+    ...detail,
+    similar: similar ?? detail.similar,
+    recommendations: recommendations ?? detail.recommendations,
+  };
 }
 
-/** 获取电视剧详情（含演员、图片、视频、相似推荐等附加信息） */
+/** 获取电视剧详情（含演员、图片、视频等附加信息） */
 export async function fetchTVDetail(tvId: number, options: { signal?: AbortSignal } = {}): Promise<TMDBTVShowDetail> {
-  return fetchTMDB<TMDBTVShowDetail>(`/tv/${tvId}`, {
-    append_to_response: 'credits,images,videos,similar,recommendations',
-  }, options);
+  const [detail, similar, recommendations] = await Promise.all([
+    fetchTMDB<TMDBTVShowDetail>(`/tv/${tvId}`, {
+      append_to_response: 'credits,images,videos',
+    }, options),
+    fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>(`/tv/${tvId}/similar`, {}, options).catch(() => null),
+    fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>(`/tv/${tvId}/recommendations`, {}, options).catch(() => null),
+  ]);
+  return {
+    ...detail,
+    similar: similar ?? detail.similar,
+    recommendations: recommendations ?? detail.recommendations,
+  };
 }
 
 /** 轻量级电影详情（仅基础字段，不含 credits/images/videos 等附加数据） */

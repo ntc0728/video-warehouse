@@ -632,6 +632,7 @@
   .player-main {
     flex-direction: column;
     height: auto;
+    margin: 0;
   }
 
   .player-video-area {
@@ -721,6 +722,10 @@
 }
 
 @media (width >= 768px) {
+  .player-page {
+    min-height: calc(100dvh - var(--header-height));
+  }
+
   .player-detail-overview {
     font-size: var(--text-lg);
   }
@@ -856,18 +861,12 @@
   50% { opacity: 0.5; }
 }
 
-/* ── 桌面端（≥ 1024px）：顶部留出导航栏高度 ─── */
-@media (width >= 1024px) {
-  .player-page {
-    padding-top: var(--header-height);
-  }
-}
-
 /* ── 桌面端（≥ 1280px）：面板不可折叠，隐藏箭头，播放器撑满视口 ─── */
 @media (width >= 1280px) {
   .player-page {
     height: 100dvh;
     min-height: 0;
+    padding-top: 0;
     overflow-y: auto;
   }
 

@@ -64,6 +64,11 @@ export default function PlayerPage() {
   const location = useLocation();
   const skipHistory = (location.state as Record<string, unknown>)?.skipHistory === true;
   const routeSourceIndex = (location.state as Record<string, unknown>)?.sourceIndex as number | undefined;
+  // 来自详情页“全部”弹框：直接跳转到指定线路/选集（按精确播放地址匹配）
+  const routePlayUrl = (location.state as Record<string, unknown>)?.playUrl as string | undefined;
+  // 来自详情页“全部”弹框：剧集跳转时携带的季号，用于正确回显选季面板
+  const routeSeasonNumber = (location.state as Record<string, unknown>)?.seasonNumber as number | undefined;
+  const appliedRoutePlayRef = useRef(false);
 
   const { currentSourceIndex } = useVideoStore();
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
@@ -143,6 +148,8 @@ export default function PlayerPage() {
     setCurrentSrc, currentSourceNameRef,
   });
 
+  // 应用详情页“全部”弹框指定的线路/选集：在 handleSelectSeason 定义之后处理（见下方 effect）
+
   // ── Hook: Auto Play ──────────────────────────────
   const {
     autoPlayCountdown, skipIndicator,
@@ -196,6 +203,8 @@ export default function PlayerPage() {
       cmsSourceNameRef.current = undefined;
       currentSourceNameRef.current = undefined;
       historyRecordRef.current = undefined;
+      // 重置“全部”弹框指定线路/选集的生效标记
+      appliedRoutePlayRef.current = false;
       prevIdRef.current = id;
     }
 
@@ -346,7 +355,7 @@ export default function PlayerPage() {
       const currentEp = v?.episodes?.length ? v.episodes.find((e) => e.id === activeEpId) : undefined;
       const epLabel = currentEp ? `第${currentEp.number}集` : (!v?.episodes?.length ? currentSourceNameRef.current : undefined);
       const vodId = id.startsWith('tmdb-') ? undefined : id;
-      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url });
+      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: v?.episodes?.length ? selectedSeasonRef.current : undefined });
     }
   }, [id, updateHistoryProgress]);
 
@@ -397,6 +406,58 @@ export default function PlayerPage() {
     // zustand actions 和 refs 引用稳定，不会导致重新执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, switchToEpisode]);
+
+  // 应用详情页“全部”弹框指定的线路/选集：video 就绪后按精确地址匹配一次。
+  // 必须放在 handleSelectSeason 之后定义，以便直接调用它切换季。
+  useEffect(() => {
+    if (appliedRoutePlayRef.current || !routePlayUrl || !video) return;
+    const sourceIdx = routeSourceIndex ?? activeCmsSourceIndexRef.current;
+    const seasonMap = sourceIdx !== undefined ? seasonMapsRef.current.get(sourceIdx) : undefined;
+
+    // 选集所在季可能尚未加载（video.episodes 仅含当前季）。先定位正确季并切换，
+    // video 更新后本 effect 会再次执行并完成匹配，从而保证选季/选集面板回显正确。
+    const findSeasonOfUrl = (url: string): number | undefined => {
+      if (!seasonMap) return undefined;
+      for (const [seasonNum, seasonVideo] of seasonMap.entries()) {
+        if (seasonVideo.episodes?.some((e) => e.sources?.some((s) => s.url === url))) {
+          return seasonNum;
+        }
+      }
+      return undefined;
+    };
+
+    const targetSeason = routeSeasonNumber ?? findSeasonOfUrl(routePlayUrl);
+    if (targetSeason != null && targetSeason !== selectedSeason && seasonMap?.has(targetSeason)) {
+      handleSelectSeason(targetSeason);
+      return; // 等待该季 video 就绪后再次匹配
+    }
+
+    const ep = video.episodes?.find((e) => e.sources.some((s) => s.url === routePlayUrl));
+    if (ep) {
+      switchToEpisode(ep);
+      const src = ep.sources.find((s) => s.url === routePlayUrl);
+      if (src) handlePlaySource(src);
+      appliedRoutePlayRef.current = true;
+      return;
+    }
+
+    // 电影 / 单线路：直接按线路 URL 在当前 video.sources 中匹配
+    const lineSrc = video.sources.find((s) => s.url === routePlayUrl);
+    if (lineSrc) {
+      handlePlaySource(lineSrc);
+      appliedRoutePlayRef.current = true;
+      return;
+    }
+
+    // video 仍是默认季但 seasonMap 已有数据：反查季后切换，再等待匹配
+    if (seasonMap) {
+      const seasonOfUrl = findSeasonOfUrl(routePlayUrl);
+      if (seasonOfUrl != null && seasonOfUrl !== selectedSeason) {
+        handleSelectSeason(seasonOfUrl);
+        return;
+      }
+    }
+  }, [video, routePlayUrl, switchToEpisode, handlePlaySource, handleSelectSeason, selectedSeason, routeSourceIndex, routeSeasonNumber]);
 
   const activeEpId = localEpisodeId;
 
