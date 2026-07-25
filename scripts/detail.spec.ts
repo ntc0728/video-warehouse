@@ -245,16 +245,100 @@ test.describe('3.5 概览 Tab', () => {
     console.log(`✅ DETAIL-042 检查完成: 演员列表存在 = ${hasCast}`);
   });
 
-  test('DETAIL-046: 剧照网格', async ({ page }) => {
+  test('DETAIL-046: 剧照网格（专用 /images 接口，全语言 backdrops）', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(5000);
 
-    // 预期结果: 剧照区域存在
-    const hasStills = await page.evaluate(() => {
-      return !!document.querySelector('.detail-stills-grid, [class*="stills"]');
+    // 剧照走独立的 /images 接口异步加载（带 include_image_language），需等待渲染
+    await page.waitForSelector('.detail-stills-grid', { timeout: 15000 });
+
+    // 预期结果: 概览 Tab 下存在剧照栏目且至少渲染出一张剧照
+    const stillCount = await page.evaluate(() => {
+      const grid = document.querySelector('.detail-stills-grid');
+      return grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
     });
-    console.log(`✅ DETAIL-046 检查完成: 剧照网格存在 = ${hasStills}`);
+    expect(stillCount).toBeGreaterThan(0);
+    console.log(`✅ DETAIL-046 通过: 剧照网格已渲染，数量 = ${stillCount}`);
+  });
+
+  test('DETAIL-047: 剧照多于 2 行时截断为有限行并显示「查看全部」', async ({ page }) => {
+    // 注入 25 张剧照（超过 2 行），验证截断逻辑：渲染数 < 总数 + --limited + 查看全部按钮
+    await page.route('**/api.tmdb.org/**', async (route) => {
+      const url = route.request().url();
+      if (url.includes('/images')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            backdrops: Array.from({ length: 25 }, (_, i) => ({ file_path: `/b${i}.jpg` })),
+            posters: [],
+          }),
+        });
+      }
+      return route.fallback();
+    });
+
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.detail-stills-grid', { timeout: 15000 });
+    await page.waitForTimeout(500);
+
+    const info = await page.evaluate(() => {
+      const grid = document.querySelector('.detail-stills-grid');
+      const items = grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
+      const limited = grid ? grid.classList.contains('detail-stills-grid--limited') : false;
+      const more = !!document.querySelector('.detail-stills-more');
+      return { items, limited, more };
+    });
+    expect(info.limited).toBe(true);
+    expect(info.more).toBe(true);
+    expect(info.items).toBeGreaterThan(0);
+    expect(info.items).toBeLessThan(25);
+    console.log(`✅ DETAIL-047 通过: 剧照截断 items=${info.items}, limited=${info.limited}, more=${info.more}`);
+  });
+
+  test('DETAIL-048: Keep-Alive 隐藏期间加载剧照后，仍保持 2 行截断（不全部平铺）', async ({ page }) => {
+    // 复现隐藏加载场景：进详情 → 后退（detail 被 display:none 隐藏）→ 剧照在隐藏期间加载完 → 再前进
+    await page.route('**/api.tmdb.org/**', async (route) => {
+      const url = route.request().url();
+      if (url.includes('/images')) {
+        await new Promise((r) => setTimeout(r, 2000)); // 延迟确保加载发生在隐藏期
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            backdrops: Array.from({ length: 25 }, (_, i) => ({ file_path: `/b${i}.jpg` })),
+            posters: [],
+          }),
+        });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    // 后退隐藏 detail（keep-alive 用 display:none），等待剧照在隐藏期加载完
+    await page.goBack();
+    await page.waitForTimeout(3500);
+    // 再前进，detail 重新可见；等待真实网格（带「查看全部」按钮，仅截断后渲染）出现
+    await page.goForward();
+    await page.waitForSelector('.detail-stills-more', { timeout: 15000 });
+    await page.waitForTimeout(300);
+
+    const info = await page.evaluate(() => {
+      const grid = document.querySelector('.detail-stills-grid');
+      const items = grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
+      const limited = grid ? grid.classList.contains('detail-stills-grid--limited') : false;
+      const more = !!document.querySelector('.detail-stills-more');
+      return { items, limited, more };
+    });
+    // 即便隐藏期加载，visibleCount 也必须是有限值（视口兜底），不能全部平铺
+    expect(info.limited).toBe(true);
+    expect(info.more).toBe(true);
+    expect(info.items).toBeLessThan(25);
+    console.log(`✅ DETAIL-048 通过: 隐藏加载后仍截断 items=${info.items}, limited=${info.limited}`);
   });
 });
 
@@ -281,6 +365,68 @@ test.describe('3.6 播放列表 Tab', () => {
       console.log(`✅ DETAIL-060 检查完成: 播放列表 Tab 内容 = ${hasSourceContent}`);
     } else {
       console.log('⚠️ DETAIL-060: 播放列表 Tab 未检测到');
+    }
+  });
+
+  test('DETAIL-062: 播放源“全部”弹框显示线路列表', async ({ page }) => {
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    // 沙箱无真实 CMS 源，请求（corsProxy 为空时直连真实 CMS 主机）会长时间挂起；
+    // 拦截所有外部请求、仅放行 TMDB mock 与本地 dev server，使搜索快速失败走「全部失败→统一提示」分支
+    await page.route('**/*', (route) => {
+      const url = route.request().url();
+      if (url.includes('api.tmdb.org') || url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1') || url.startsWith('https://127.0.0.1')) {
+        return route.continue();
+      }
+      return route.abort();
+    });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
+    if (!(await sourcesTab.isVisible().catch(() => false))) {
+      console.log('⚠️ DETAIL-062: 播放列表 Tab 未检测到');
+      return;
+    }
+    await sourcesTab.click();
+    // 等待 CMS 搜索加载完成（结果网格或出现源提示），避免固定等待时间不足导致仍停留在 loading 状态
+    await page
+      .waitForSelector('.detail-sources-grid, .detail-state', { timeout: 30000 })
+      .catch(() => {});
+    await page.waitForTimeout(500);
+
+    // mock 下 CMS 搜索全部失败 → 不渲染任何源错误卡片，改为统一提示（位于 grid 内的 .detail-sources-empty）
+    const unifiedMsgVisible = await page
+      .locator('.detail-sources-empty:has-text("所有视频源均未找到匹配资源")')
+      .isVisible()
+      .catch(() => false);
+    const errStatusCount = await page.locator('.detail-source-status--err').count();
+    console.log(`✅ DETAIL-062 检查完成: 统一提示可见 = ${unifiedMsgVisible}, 内联错误卡片数 = ${errStatusCount}`);
+
+    // 仅当存在可用源时，卡片才出现“全部”按钮（mock 下 CMS 全部失败 → 不出现）
+    const allBtn = page.locator('.detail-source-all-btn').first();
+    const hasAllBtn = await allBtn.isVisible().catch(() => false);
+    console.log(`✅ DETAIL-062 检查完成: 全部按钮存在 = ${hasAllBtn}`);
+    if (!hasAllBtn) {
+      if (!unifiedMsgVisible) {
+        throw new Error('DETAIL-062: 全部源不可用时未显示统一提示');
+      }
+      return;
+    }
+
+    await allBtn.click();
+    await page.waitForTimeout(800);
+
+    const modalVisible = await page.locator('.source-all-modal').isVisible().catch(() => false);
+    const rowCount = await page.locator('.source-all-modal__row').count();
+    const playBtnCount = await page.locator('.source-all-modal__play-btn').count();
+    console.log(`✅ DETAIL-062 检查完成: 弹框可见 = ${modalVisible}, 线路行数 = ${rowCount}, 播放按钮数 = ${playBtnCount}`);
+
+    // 点击第一条线路的播放按钮应跳转到播放页
+    if (playBtnCount > 0) {
+      await page.locator('.source-all-modal__play-btn').first().click();
+      await page.waitForTimeout(1500);
+      const onPlayer = page.url().includes('/play/');
+      console.log(`✅ DETAIL-062 检查完成: 点击播放跳转播放页 = ${onPlayer}`);
     }
   });
 });

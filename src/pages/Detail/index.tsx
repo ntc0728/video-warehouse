@@ -4,20 +4,20 @@
  * Hero：全屏 backdrop + 双层渐变 + logo/标签/简介 + 毛玻璃按钮 + 桌面端右侧海报
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { searchVideoFromMultipleSources } from '@/services/videoService';
-import { fetchMovieDetail, fetchTVDetail, buildImageUrl } from '@/services/tmdbService';
+import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources } from '@/services/videoService';
+import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
-import type { VideoDetailResult } from '@/services/videoService';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
+import Modal from '@/components/ui/Modal';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar, ArrowLeft,
@@ -35,6 +35,22 @@ const typeLabels: Record<string, string> = {
 };
 
 type DetailTab = 'info' | 'sources' | 'seasons';
+
+interface DetailSourceResult {
+  sourceIndex: number;
+  sourceId: string;
+  sourceName: string;
+  video: Video | null;
+  seasons: Video[];
+  seasonNumbers: number[];
+  isSeries: boolean;
+  error?: string;
+}
+
+/** 去掉标题中的「第一季 / 第1季 / 第12季」等季号字眼，仅保留剧集原名 */
+function stripSeasonLabel(name: string): string {
+  return name.replace(/第[一二三四五六七八九十百零0-9]+季/g, '').trim();
+}
 
 // ── 映射 TMDB → VideoCard 兼容格式 ────────────────────
 
@@ -106,28 +122,74 @@ export default function DetailPage() {
   const [castExpanded, setCastExpanded] = useState(false);
 
   // CMS
-  const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
+  const [cmsResults, setCmsResults] = useState<DetailSourceResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
   const [cmsLoaded, setCmsLoaded] = useState(false);
   const [cmsError, setCmsError] = useState<string | null>(null);
+  // 查询动画轮播的源名称（加载开始后填充真实 CMS 源名）
+  const [querySourceNames, setQuerySourceNames] = useState<string[]>([]);
+  const [queryMsgIndex, setQueryMsgIndex] = useState(0);
   const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
 
-  // 剧照网格：根据容器实际宽度计算列数，限制显示 2 行
+  // 播放列表「全部」弹框状态
+  const [playModal, setPlayModal] = useState<{
+    sourceIndex: number;
+    sourceName: string;
+    video: Video;
+    seasons: Video[];
+    seasonNumbers: number[];
+    isSeries: boolean;
+  } | null>(null);
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(0);
+
+  /** 是否有可播放线路（剧集：任一选集含线路；单集/电影：sources 非空） */
+  const isPlayable = useCallback((v: Video | undefined) => {
+    if (!v) return false;
+    if (v.episodes && v.episodes.length > 0) {
+      return v.episodes.some((ep) => ep.sources.length > 0);
+    }
+    return v.sources.length > 0;
+  }, []);
+
+  // 仅展示有匹配结果的源（不可用源不单独提示）
+  const availableResults = useMemo(
+    () => cmsResults.filter((r) => r.video),
+    [cmsResults],
+  );
+
+  // 剧照网格：根据容器实际列数限制显示 2 行
   const stillsGridRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(Number.MAX_SAFE_INTEGER);
+  const [visibleCount, setVisibleCount] = useState<number | null>(null);
   useEffect(() => {
     if (stills.length === 0) return;
     const container = stillsGridRef.current;
     if (!container) return;
 
     const calc = () => {
+      let actualCols = 0;
       const w = container.clientWidth;
-      if (w <= 0) return;
-      // 直接读取 CSS grid 实际列数（auto-fill + minmax 的列数由浏览器计算，JS 估算不可靠）
       const computed = getComputedStyle(container);
-      const templateCols = computed.gridTemplateColumns;
-      const actualCols = templateCols ? templateCols.split(' ').length : 1;
+      const tpl = computed.gridTemplateColumns;
+      if (w > 0 && tpl && tpl !== 'none' && tpl.trim() !== '') {
+        // 容器可见：浏览器已解析出真实列数（最精确）
+        actualCols = tpl.split(' ').filter(Boolean).length;
+      } else {
+        // 容器不可见（keep-alive 隐藏为 display:none 时 clientWidth=0）时无法测量，
+        // 用视口宽度估算兜底，避免 visibleCount 永远停在初始值导致剧照全部平铺；
+        // 页面显示后 ResizeObserver 会用上面的精确值纠正。
+        const vw = w > 0 ? w : window.innerWidth;
+        if (vw <= 0) return;
+        let colMin: number;
+        if (vw <= 768) {
+          colMin = vw / 2; // 移动端固定 2 列
+        } else {
+          // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
+          colMin = Math.min(256, Math.max(128, 96 + 0.08 * vw));
+        }
+        const gap = 12; // 与 Detail.css --space-sm 对齐
+        actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
+      }
       setVisibleCount(actualCols * 2);
     };
 
@@ -187,11 +249,63 @@ export default function DetailPage() {
       ? videoSourceIndices
       : [videoSourceIndex];
 
+    // 填充查询动画轮播用的真实源名称
+    try {
+      const allSources = await getVideoSources();
+      const names = indices
+        .map((i) => allSources[i]?.name)
+        .filter((n): n is string => Boolean(n));
+      setQuerySourceNames(names.length > 0 ? names : ['视频源']);
+      setQueryMsgIndex(0);
+    } catch {
+      setQuerySourceNames(['视频源']);
+    }
+
     const videoTitle = title || '';
     const videoYear = year;
 
     try {
-      const results = await searchVideoFromMultipleSources(indices, videoTitle, videoYear, ctrl.signal);
+      let results: DetailSourceResult[];
+      if (tmdbMediaType === 'tv') {
+        // 剧集：获取 CMS 查到的所有季（所有结果）
+        const settled = await Promise.allSettled(
+          indices.map(async (index) => {
+            if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+            const res = await searchVideoSeasonsFromSingleSource(index, videoTitle, videoYear, ctrl.signal);
+            const entries = Array.from(res.seasons.entries()).sort((a, b) => a[0] - b[0]);
+            let seasonVideos = entries.map(([, v]) => v);
+            let seasonNums = entries.map(([n]) => n);
+            // 降级：CMS 未按季拆分时，整剧作为单季
+            if (seasonVideos.length === 0) {
+              const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
+              const v0 = single[0]?.video;
+              if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
+            }
+            return {
+              sourceIndex: res.sourceIndex,
+              sourceId: res.sourceId,
+              sourceName: res.sourceName,
+              video: seasonVideos[0] ?? null,
+              seasons: seasonVideos,
+              seasonNumbers: seasonNums,
+              isSeries: seasonVideos.length > 0,
+              error: seasonVideos.length > 0 ? undefined : (res.error ?? '未找到匹配资源'),
+            } as DetailSourceResult;
+          }),
+        );
+        results = settled.map((r, i) => {
+          if (r.status === 'fulfilled') return r.value;
+          return {
+            sourceIndex: indices[i], sourceId: '', sourceName: '未知',
+            video: null, seasons: [], seasonNumbers: [], isSeries: false,
+            error: r.reason instanceof Error ? r.reason.message : '请求失败',
+          } as DetailSourceResult;
+        });
+      } else {
+        // 电影：带年份限制搜索，取最佳匹配
+        const rs = await searchVideoFromMultipleSources(indices, videoTitle, videoYear, ctrl.signal);
+        results = rs.map((r) => ({ ...r, seasons: [], seasonNumbers: [], isSeries: false }) as DetailSourceResult);
+      }
       if (ctrl.signal.aborted) return;
 
       setCmsResults(results);
@@ -208,20 +322,53 @@ export default function DetailPage() {
     if (activeTab === 'sources' && !cmsLoaded && !cmsLoading) fetchCMSSources();
   }, [activeTab, cmsLoaded, cmsLoading, fetchCMSSources]);
 
+  // 查询动画：加载期间逐条轮播源名称文案
+  useEffect(() => {
+    if (!cmsLoading) return;
+    setQueryMsgIndex(0);
+    const t = setInterval(() => setQueryMsgIndex((i) => i + 1), 1600);
+    return () => clearInterval(t);
+  }, [cmsLoading]);
+
   useEffect(() => () => cmsAbortRef.current?.abort(), []);
 
-  // ── 剧照加载（从 detail 响应中提取，无需额外请求） ─────────
+  // ── 剧照加载（专用 /images 接口，带 include_image_language 取全语言 backdrops） ─────────
+  // 注意：detail 主请求带 language=zh-CN 时，append_to_response=images 会按语言过滤
+  // backdrops（仅保留 zh/空语言），导致大量英文影视剧照被丢弃而“消失”。因此剧照
+  // 必须走专用 /images 端点（已显式传 include_image_language: 'zh,en,null'），
+  // 而非从 tmdbDetail.images 提取。
   useEffect(() => {
-    if (!tmdbDetail || !id) return;
-    if (!id.startsWith('tmdb-')) return;
+    if (!id || !id.startsWith('tmdb-')) return;
+    const parts = id.replace('tmdb-', '').split('-');
+    const mt = parts[0] as 'movie' | 'tv';
+    const tid = parseInt(parts.slice(1).join('-'), 10);
+    if (isNaN(tid)) return;
 
-    const images = (tmdbDetail as { images?: { backdrops?: Array<{ file_path: string }> } }).images;
-    const urls = (images?.backdrops || [])
-      .map((b) => buildImageUrl(b.file_path, 'w1280'))
-      .filter((u): u is string => Boolean(u));
-    setStills(urls);
-    setStillsLoading(false);
-  }, [tmdbDetail, id]);
+    const ctrl = new AbortController();
+    setStillsLoading(true);
+    const req = mt === 'tv'
+      ? fetchTVImages(tid, { signal: ctrl.signal })
+      : fetchMovieImages(tid, { signal: ctrl.signal });
+
+    req
+      .then((data) => {
+        if (ctrl.signal.aborted) return;
+        const urls = (data.backdrops || [])
+          .map((b) => buildImageUrl(b.file_path, 'w1280'))
+          .filter((u): u is string => Boolean(u));
+        setStills(urls);
+      })
+      .catch((err) => {
+        if (ctrl.signal.aborted) return;
+        // 剧照加载失败时静默降级，不阻塞概览页其余内容
+        console.warn('[Detail] 剧照加载失败:', err);
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setStillsLoading(false);
+      });
+
+    return () => ctrl.abort();
+  }, [id]);
 
   // ── 页面状态保存（离开后返回恢复） ─────────────
   useEffect(() => {
@@ -304,7 +451,11 @@ export default function DetailPage() {
   const watchProgressPercent = hasWatchingHistory && historyRecord.duration > 0
     ? Math.round((historyRecord.progress / historyRecord.duration) * 100)
     : 0;
-  const lastEpisodeLabel = historyRecord?.episodeLabel;
+  // 直接读取历史记录中从源头写入的季号：季号 + 选集标签 → 「第X季 第Y集」
+  // 旧数据无 seasonNumber 时回退到 episodeLabel（第Y集），不会退化
+  const lastEpisodeLabel = historyRecord?.seasonNumber && historyRecord?.episodeLabel
+    ? `第${historyRecord.seasonNumber}季 ${historyRecord.episodeLabel}`
+    : historyRecord?.episodeLabel;
 
   // ── 页面状态快照 ──────────────────────────────
   stateRef.current = { cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
@@ -585,10 +736,10 @@ export default function DetailPage() {
                 ) : (
                    <div
                     ref={stillsGridRef}
-                    className={`detail-stills-grid${visibleCount < Number.MAX_SAFE_INTEGER ? ' detail-stills-grid--limited' : ''}`}
+                    className={`detail-stills-grid${visibleCount != null ? ' detail-stills-grid--limited' : ''}`}
                   >
-                    {stills.slice(0, visibleCount < Number.MAX_SAFE_INTEGER ? visibleCount : undefined).map((url, i) => {
-                      const isLast = visibleCount < Number.MAX_SAFE_INTEGER && i === visibleCount - 1 && stills.length > visibleCount;
+                    {stills.slice(0, visibleCount != null ? visibleCount : undefined).map((url, i) => {
+                      const isLast = visibleCount != null && i === visibleCount - 1 && stills.length > visibleCount;
                       return (
                         <div
                           key={url}
@@ -616,7 +767,7 @@ export default function DetailPage() {
                           />
                           {isLast && (
                             <div className="detail-stills-more">
-                              <span className="detail-stills-more__count">+{stills.length - visibleCount}</span>
+                              <span className="detail-stills-more__count">+{stills.length - (visibleCount as number)}</span>
                               <span className="detail-stills-more__text">查看更多</span>
                             </div>
                           )}
@@ -634,10 +785,23 @@ export default function DetailPage() {
         {activeTab === 'sources' && (
           <div className="detail-sources">
             {cmsLoading ? (
-              <div className="playlist-skeleton" aria-busy="true" aria-label="加载播放列表中">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="playlist-skeleton-row" />
-                ))}
+              <div className="detail-sources-container">
+                <div className="detail-sources-header">
+                  <div className="detail-sources-header-left">
+                    <h3>匹配结果</h3>
+                    <span className="detail-sources-keyword">当前关键词："{title}"</span>
+                  </div>
+                </div>
+                <div className="detail-sources-grid">
+                  <div className="playlist-query" aria-busy="true" aria-label="正在匹配播放源">
+                    <div className="playlist-query-spinner" aria-hidden="true" />
+                    <p className="playlist-query-text">
+                      {querySourceNames.length > 0
+                        ? `正在查询${querySourceNames[queryMsgIndex % querySourceNames.length]}资源…`
+                        : '正在匹配播放源…'}
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : cmsError ? (
               <div className="detail-state detail-state--error">
@@ -646,65 +810,217 @@ export default function DetailPage() {
                 <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
               </div>
             ) : cmsResults.length > 0 ? (
+              availableResults.length > 0 ? (
               <div className="detail-sources-container">
                 <div className="detail-sources-header">
                   <div className="detail-sources-header-left">
                     <h3>匹配结果</h3>
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
-                  <button className="retry-btn retry-btn--outlined" style={{ alignSelf: 'center', marginTop: 0 }} onClick={fetchCMSSources}>
-                    <RefreshCw size={14} /> 重新匹配
-                  </button>
+                  <div className="detail-sources-toolbar">
+                    <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
+                      <RefreshCw size={14} /> 重新匹配
+                    </button>
+                  </div>
                 </div>
                 <div className="detail-sources-grid">
-                  {cmsResults.map((result) => (
-                    result.video && (
+                  {availableResults.map((result) => {
+                    const v = result.video!;
+                    const playable = isPlayable(v);
+                    const lineCount = v.sources.length;
+                    const isSeries = result.isSeries;
+                    const tvThumb = tmdbMediaType === 'tv' && !!posterUrl;
+                    const groupTitle = tmdbMediaType === 'tv' ? stripSeasonLabel(v.title) : v.title;
+                    const thumbYear = tvThumb ? year : v.year;
+                    return (
                       <div key={result.sourceIndex} className="detail-source-group">
                         <div className="detail-source-group-header">
-                          <div className="detail-source-group-title">
-                            <span className="detail-source-name">{result.sourceName}</span>
-                          </div>
+                          <span className="detail-source-name">{result.sourceName}</span>
+                          <span className="detail-source-status detail-source-status--ok">可播放</span>
                         </div>
                         <div className="detail-source-group-body">
                           <div className="detail-source-thumb">
-                            {result.video.cover ? (
-                              <>
-                                <img src={result.video.cover} alt={result.video.title} />
-                                {result.video.year && (
-                                  <span className="detail-source-thumb-year">{result.video.year}</span>
-                                )}
-                              </>
+                            {tvThumb ? (
+                              <img src={posterUrl} alt={title} />
+                            ) : v.cover ? (
+                              <img src={v.cover} alt={v.title} />
                             ) : (
                               <div className="detail-source-thumb-placeholder">
                                 <Server size={20} />
                               </div>
                             )}
+                            {thumbYear && (
+                              <span className="detail-source-thumb-year">{thumbYear}</span>
+                            )}
                           </div>
                           <div className="detail-source-info">
-                            <span className="detail-source-title">{result.video.title}</span>
+                            <div className="detail-source-title-row">
+                              <span className="detail-source-title" title={groupTitle}>{groupTitle}</span>
+                            </div>
+                            <span className="detail-source-meta">
+                              {isSeries
+                                ? `共 ${result.seasons.length} 季`
+                                : lineCount === 1
+                                  ? (v.sources[0]?.name || '线路 1')
+                                  : `${lineCount} 条线路`}
+                            </span>
+                          </div>
+                          <div className="detail-source-actions">
+                            {(isSeries || lineCount > 1) && (
+                              <button
+                                type="button"
+                                className="detail-source-all-btn"
+                                onClick={() => { setPlayModal({ sourceIndex: result.sourceIndex, sourceName: result.sourceName, video: v, seasons: result.seasons, seasonNumbers: result.seasonNumbers, isSeries: result.isSeries }); setActiveSeasonIndex(0); }}
+                              >
+                                <ListVideo size={12} /> 全部
+                              </button>
+                            )}
                             <button
                               className="detail-source-play-btn"
+                              disabled={!playable}
                               onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex }, viewTransition: true })}
                             >
-                              <Play size={12} fill="currentColor" /> 立即播放
+                              <Play size={12} fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
                             </button>
                           </div>
                         </div>
                       </div>
-                    )
-                  ))}
+                    );
+                  })}
                 </div>
-                {cmsResults.some(r => r.error) && (
-                  <div className="detail-source-errors">
-                    {cmsResults.filter(r => r.error).map(r => (
-                      <div key={r.sourceIndex} className="detail-source-error-item">
-                        <AlertTriangle size={12} />
-                        <span>{r.sourceName}: {r.error}</span>
+                <Modal
+                  visible={!!playModal}
+                  title={
+                    playModal
+                      ? (playModal.isSeries && playModal.seasons.length > 0
+                          ? `${title} 第${playModal.seasonNumbers[Math.min(activeSeasonIndex, playModal.seasons.length - 1)] ?? Math.min(activeSeasonIndex, playModal.seasons.length - 1) + 1}季`
+                          : (playModal.video?.title ?? '全部播放源'))
+                      : '全部播放源'
+                  }
+                  onClose={() => setPlayModal(null)}
+                  className="source-all-modal"
+                >
+                  {playModal && (() => {
+                    const seasons = playModal.seasons;
+                    const isSeries = playModal.isSeries && seasons.length > 0;
+                    // 季 tab 按季号从小到大排列（显示顺序与数组索引分离，点击时再映射回原始索引）
+                    const seasonOrder = isSeries
+                      ? seasons.map((_, i) => i).sort((a, b) => (playModal.seasonNumbers[a] ?? a + 1) - (playModal.seasonNumbers[b] ?? b + 1))
+                      : [];
+                    const activeIdx = isSeries ? Math.min(activeSeasonIndex, seasons.length - 1) : 0;
+                    const activeVideo = isSeries ? seasons[activeIdx] : playModal.video;
+                    const sortedEps = activeVideo.episodes && activeVideo.episodes.length > 0
+                      ? [...activeVideo.episodes].sort((a, b) => a.number - b.number)
+                      : [];
+                    const hasEps = sortedEps.length > 0;
+                    return (
+                      <div className="source-all-modal__body">
+                        <div className="source-all-modal__head">
+                          {activeVideo.cover ? (
+                            <img className="source-all-modal__poster" src={activeVideo.cover} alt={activeVideo.title} />
+                          ) : posterUrl ? (
+                            <img className="source-all-modal__poster" src={posterUrl} alt={activeVideo.title} />
+                          ) : (
+                            <div className="source-all-modal__poster source-all-modal__poster--placeholder" />
+                          )}
+                          <div className="source-all-modal__meta">
+                            <span className="source-all-modal__source">{playModal.sourceName}</span>
+                            {!isSeries && (activeVideo.description || tmdbDetail?.overview) && (
+                              <p className="source-all-modal__desc">{activeVideo.description || tmdbDetail?.overview}</p>
+                            )}
+                            {isSeries && (
+                              <div className="source-all-modal__tabs">
+                                {seasonOrder.map((origIdx) => (
+                                  <button
+                                    key={origIdx}
+                                    type="button"
+                                    className={`source-all-modal__tab${origIdx === activeIdx ? ' is-active' : ''}`}
+                                    onClick={() => setActiveSeasonIndex(origIdx)}
+                                  >
+                                    {`第${playModal.seasonNumbers[origIdx] ?? origIdx + 1}季`}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="source-all-modal__list">
+                          <div className="source-all-modal__list-title">
+                            {isSeries ? `选集（${sortedEps.length}）` : (hasEps ? `选集（${sortedEps.length}）` : `线路（${activeVideo.sources.length}）`)}
+                          </div>
+                          {isSeries && sortedEps.length === 0 ? (
+                            <div className="source-all-modal__empty">该季暂无集数信息</div>
+                          ) : hasEps ? (
+                            sortedEps.map((ep) => (
+                              <div key={ep.id} className="source-all-modal__row">
+                                <div className="source-all-modal__row-info">
+                                  <span className="source-all-modal__row-title">第 {ep.number} 集</span>
+                                </div>
+                                <button
+                                  className="source-all-modal__play-btn"
+                                  disabled={ep.sources.length === 0}
+                                  onClick={() => {
+                                    navigate(`/play/${id}`, {
+                                      state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, seasonNumber: playModal.seasonNumbers[activeIdx], playUrl: ep.sources[0]?.url, playType: ep.sources[0]?.type },
+                                      viewTransition: true,
+                                    });
+                                    setPlayModal(null);
+                                  }}
+                                >
+                                  <Play size={12} fill="currentColor" /> 播放
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            activeVideo.sources.map((src, i) => (
+                              <div key={src.url} className="source-all-modal__row">
+                                <div className="source-all-modal__row-info">
+                                  <span className="source-all-modal__row-title">{src.name || `线路 ${i + 1}`}</span>
+                                  <span className="source-all-modal__row-sub">{src.type?.toUpperCase()}</span>
+                                </div>
+                                <button
+                                  className="source-all-modal__play-btn"
+                                  onClick={() => {
+                                    navigate(`/play/${id}`, {
+                                      state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, playUrl: src.url, playType: src.type },
+                                      viewTransition: true,
+                                    });
+                                    setPlayModal(null);
+                                  }}
+                                >
+                                  <Play size={12} fill="currentColor" /> 播放
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })()}
+                </Modal>
               </div>
+              ) : (
+                <div className="detail-sources-container">
+                  <div className="detail-sources-header">
+                    <div className="detail-sources-header-left">
+                      <h3>匹配结果</h3>
+                      <span className="detail-sources-keyword">当前关键词："{title}"</span>
+                    </div>
+                    <div className="detail-sources-toolbar">
+                      <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
+                        <RefreshCw size={14} /> 重新匹配
+                      </button>
+                    </div>
+                  </div>
+                  <div className="detail-sources-grid">
+                    <div className="detail-sources-empty">
+                      <Server size={32} />
+                      <p>所有视频源均未找到匹配资源</p>
+                      <span>请尝试更换关键词或稍后再试</span>
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               <div className="detail-state">
                 <Server size={32} /><p>暂无匹配的播放资源</p>
