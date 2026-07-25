@@ -115,6 +115,18 @@ npx playwright test  # E2E 测试（TMDB Mock 默认启用，-RealApi 关闭）
 > 禁止用 `npx tsc --noEmit --skipLibCheck` 替代——`--skipLibCheck` 会跳过 `noUnusedLocals` 检查，导致未使用变量提交后 CI 构建失败。
 > 正确流程：修改代码 → `npm run build` 验证通过 → `git commit` → `git push`。
 
+> **⚠️ 改动必须及时 commit，不要堆积在工作区**
+> 所有改动若不 commit，子代理或其他操作可以一键覆盖全部。每完成一个独立功能就立即 commit。
+
+> **⚠️ 子代理操作前必须 commit 保护现有改动**
+> 子代理可能重写非指定文件。使用子代理前，先 `git stash` 或 commit 保护当前状态。
+
+> **⚠️ CSS 检查必须 grep 所有 display:none 规则**
+> 恢复代码后必须用 `grep` 搜索所有 `display: none` / `visibility: hidden` 确认无遗漏，不能只看 git diff 标记。
+
+> **⚠️ 不要在未逐行确认时声称"恢复完成"**
+> 只说"已验证的改动"，不说"全部恢复"。除非逐文件逐行确认过，否则用"大部分已恢复，待验证"。
+
 ## TMDB Mock 策略
 
 测试通过 `scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求，返回本地 mock 数据。
@@ -148,6 +160,10 @@ public/data/             # 数据源配置 JSON
 
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
 路由切换不触发 unmount/remount，修改页面状态时需考虑组件已挂载的二次进入场景。
+
+**⚠️ 异步数据 + 布局测量的隐形雷区**
+隐藏页（`display:none`，`clientWidth=0`）期间完成的异步加载（如剧照 `/images`、推荐、CMS 源）会让任何「依赖容器尺寸」的逻辑（`useEffect` 里 `if (clientWidth<=0) return`、用 `getComputedStyle` 读 `gridTemplateColumns` 算列数等）永久失效，且 `display:none` 的元素 `ResizeObserver` 不触发、显示后也无法纠正。受影响的 UI：详情页剧照 2 行截断、任何分页/虚拟滚动/自适应列数。
+**正确做法**：测量逻辑在容器不可见（`clientWidth<=0`）时改用「视口宽度估算兜底」（按 CSS 列宽公式 `clamp(8rem, 6rem+8vw, 16rem)` 推算列数），保证状态一定是有限值；页面显示后 `ResizeObserver` 用真实列数纠正。复现手法：`page.route` 给目标接口加 `setTimeout` 延迟 → 导航进页 → `page.goBack()` 隐藏 → 等延迟过 → `page.goForward()` 显示 → 断言（详见 `scripts/detail.spec.ts` DETAIL-048）。
 
 ## 关键模式与约定
 
