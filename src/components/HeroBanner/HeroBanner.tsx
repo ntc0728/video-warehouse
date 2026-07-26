@@ -170,6 +170,8 @@ export default function HeroBanner({
 
   // 悬停缩略图：预览主图 + 暂停轮播 + 预加载背景图
   const handleThumbEnter = useCallback((idx: number) => {
+    // 清除滑动方向类，让预览主图回退为 crossfade（桌面端悬停预览的淡入过渡）
+    setSlideDir(null);
     setHoveredIndex(idx);
     setPaused(true);
     const item = displayItems[idx];
@@ -266,9 +268,10 @@ export default function HeroBanner({
       onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
     >
       {/* ── 主图区 ── */}
+      {/* slideDir 切换后保持（不重置），避免动画结束后 is-active 层回退到 crossfade
+          重新播放导致"闪一下/出现上一张"；悬停预览时由 handleThumbEnter 显式置 null 恢复 crossfade */}
       <div
         className={`hero-banner__main${slideDir ? ` slide-${slideDir}` : ''}`}
-        onAnimationEnd={() => setSlideDir(null)}
       >
         {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
         {bgIndices.map((idx) => {
