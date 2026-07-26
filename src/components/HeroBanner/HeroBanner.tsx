@@ -351,9 +351,9 @@ export default function HeroBanner({
             ))
           ) : (
             <>
-              {thumbSlots.map((idx) => (
+              {thumbSlots.map((idx, pos) => (
                 <HeroThumb
-                  key={displayItems[idx]?.id ?? idx}
+                  key={pos}
                   item={displayItems[idx]}
                   active={idx === displayIndex}
                   onEnter={() => handleThumbEnter(idx)}
@@ -385,9 +385,23 @@ function HeroThumb({
   onClick: () => void;
 }) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const thumbPath = item.backdropPath || item.backdrop_path || '';
   const thumbUrl = thumbPath ? buildImageUrl(thumbPath, 'w500') : '';
   const title = item.name || item.title || '';
+
+  // 缩略图 src 变化时（窗口平移导致同一槽位复用节点、item 改变）：
+  // 若新图已在缓存中（complete 为真）则立即保持已加载，避免重建时闪一帧骨架；
+  // 否则回到未加载态，等新图 onLoad 后淡入。
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) {
+      setImgLoaded(true);
+    } else {
+      setImgLoaded(false);
+    }
+  }, [thumbUrl]);
+
   return (
     <button
       type="button"
@@ -405,7 +419,7 @@ function HeroThumb({
           loading="eager"
           draggable={false}
           onLoad={() => setImgLoaded(true)}
-          ref={(el) => { if (el && el.complete && el.naturalWidth > 0) setImgLoaded(true); }}
+          ref={imgRef}
         />
       ) : null}
       {!imgLoaded && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
