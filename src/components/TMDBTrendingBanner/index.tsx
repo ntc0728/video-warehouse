@@ -135,7 +135,6 @@ export default function TMDBTrendingBanner({
         const item = items[current];
         if (item) navigate(`/detail/${item.id}`, {
           state: { from: location.pathname + location.search },
-          viewTransition: true,
         });
       }
     },
@@ -145,7 +144,6 @@ export default function TMDBTrendingBanner({
   const handleClick = (item: TMDBVideoItem) => {
     navigate(`/detail/${item.id}`, {
       state: { from: location.pathname + location.search },
-      viewTransition: true,
     });
   };
 

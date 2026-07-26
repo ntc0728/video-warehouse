@@ -119,14 +119,13 @@ export default function HomePage() {
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
     const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { viewTransition: true });
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds));
   }, [navigate]);
 
   // ── Banner 项点击 → 跳到详情页 ──────────────────────
   const handleBannerItemClick = useCallback((item: { id: string | number }) => {
     navigate(`/detail/${item.id}`, {
       state: { from: location.pathname + location.search },
-      viewTransition: true,
     });
   }, [navigate, location.pathname, location.search]);
 
@@ -134,7 +133,6 @@ export default function HomePage() {
   const handleContinuePlay = useCallback((item: { id: string | number }) => {
     navigate(`/play/${item.id}`, {
       state: { from: location.pathname + location.search },
-      viewTransition: true,
     });
   }, [navigate, location.pathname, location.search]);
 
@@ -210,7 +208,7 @@ export default function HomePage() {
             TMDB Access Token 未配置，请在设置中
             <button
               className="home-token-required-link"
-              onClick={() => navigate('/settings', { viewTransition: true })}
+              onClick={() => navigate('/settings')}
             >
               配置
             </button>

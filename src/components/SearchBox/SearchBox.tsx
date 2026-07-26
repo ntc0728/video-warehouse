@@ -150,7 +150,7 @@ export default function SearchBox({
     if (onSearch) {
       onSearch(q);
     } else {
-      navigate('/browse', { state: { q }, viewTransition: true });
+      navigate('/browse', { state: { q } });
     }
   }, [value, onSearch, navigate, addHistory]);
 

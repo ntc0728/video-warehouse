@@ -58,17 +58,17 @@ export function useSmartBack(fallback?: string): () => void {
     const state = (location.state ?? {}) as NavState;
 
     if (state.from) {
-      navigate(state.from, { replace: true, viewTransition: true });
+      navigate(state.from, { replace: true });
       return;
     }
 
     if (state.fallback) {
-      navigate(state.fallback, { replace: true, viewTransition: true });
+      navigate(state.fallback, { replace: true });
       return;
     }
 
     if (fallback) {
-      navigate(fallback, { replace: true, viewTransition: true });
+      navigate(fallback, { replace: true });
       return;
     }
 
@@ -77,7 +77,7 @@ export function useSmartBack(fallback?: string): () => void {
       return;
     }
 
-    navigate(NAV_FALLBACK_HOME, { replace: true, viewTransition: true });
+    navigate(NAV_FALLBACK_HOME, { replace: true });
   }, [navigate, location.state, navigationType, fallback]);
 }
 
@@ -96,9 +96,9 @@ export function navTo(
   extra?: Partial<NavState>
 ): void {
   if (from || extra) {
-    navigate(to, { state: { from, ...extra }, viewTransition: true });
+    navigate(to, { state: { from, ...extra } });
   } else {
-    navigate(to, { viewTransition: true });
+    navigate(to);
   }
 }
 

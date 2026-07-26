@@ -176,7 +176,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     } else {
       // 与 SearchBox 默认行为一致：用 location.state 传搜索词，
       // 避免仅用 ?q= 查询参数导致 BrowsePage（只读 state.q）丢失搜索词
-      navigate('/browse', { state: { q: query }, viewTransition: true });
+      navigate('/browse', { state: { q: query } });
     }
   }, [pageSearch.onSearch, navigate]);
 

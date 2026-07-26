@@ -34,7 +34,7 @@ export default function TabBar() {
     if (key === '/') {
       goHome();
     } else if (key !== location.pathname) {
-      navigate(key, { viewTransition: true });
+      navigate(key);
     }
   };
 
