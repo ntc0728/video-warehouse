@@ -354,39 +354,52 @@ html.theme-transitioning *::after {
 }
 
 /* ── 全局按钮点击反馈（方案6：弹性回弹）────────────────────────────
-   采用「独立 scale 属性」做按下缩放，松手时用 spring 缓动回弹过冲，
-   形成 Q 弹按压手感。独立属性不会顶掉 translateY(-50%) 等 transform 居中，
-   旧版「异常下沉」的 transform 冲突不再发生。
-   不希望出现弹性按压的元素，加 .no-press 或归入下方排除名单（见整改清单）。 */
+   采用「独立 scale 属性」做按下缩放，松手时用 spring 缓动回弹过冲，形成 Q 弹手感。
+   独立属性不会顶掉 translateY(-50%) 等 transform 居中，根除旧版「异常下沉」。
+   - scale 应用于所有可点击元素（含无边框导航 .sidebar-nav-item / .sticky-header__nav-item）；
+   - box-shadow(内凹) 仅应用于「有边框/成框」的按钮与 tab；无边框元素只缩放、不出现阴影框；
+   - 不希望出现弹性按压的元素，加 .no-press 或归入下方排除名单（见整改清单）。 */
 button,
 a[role="button"],
-[role="button"] {
+[role="button"],
+.sidebar-nav-item,
+.sticky-header__nav-item {
   transition: scale 0.32s var(--ease-spring);
 }
 
 button:active:not(:disabled),
 a[role="button"]:active:not(:disabled),
-[role="button"]:active:not(:disabled) {
+[role="button"]:active:not(:disabled),
+.sidebar-nav-item:active,
+.sticky-header__nav-item:active {
   scale: 0.92;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
   /* 过渡放在 :active 态：松手（回到 base）时由本态 transition 驱动，
-     保证「弹性回弹」在 release 阶段对【所有】按钮生效，
-     不被组件自身的 transition 覆盖。 */
+     保证「弹性回弹」在 release 阶段对所有元素生效，不被组件自身 transition 覆盖。 */
   transition: scale 0.32s var(--ease-spring);
+}
+
+/* box-shadow 内凹阴影仅给「有边框/成框」的按钮与 tab；
+   无边框导航（.sidebar-nav-item / .sticky-header__nav-item）只缩放，不出现阴影框 */
+button:active:not(:disabled),
+a[role="button"]:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 @media (prefers-reduced-motion: reduce) {
   button:active:not(:disabled),
   a[role="button"]:active:not(:disabled),
-  [role="button"]:active:not(:disabled) {
+  [role="button"]:active:not(:disabled),
+  .sidebar-nav-item:active,
+  .sticky-header__nav-item:active {
     scale: none;
   }
 }
 
 /* 不应用弹性按压的元素（整改清单）：
-   ① 已有自身 transform:scale 反馈 → 避免叠加成双重缩放；
+   ① 已有自身 transform:scale 反馈 → 避免与全局 scale 叠加成双重缩放；
    ② 装饰/靠 transform 定位的元素；
-   ③ 已是按压反馈封装的组件（.btn-press / .ripple-container）。 */
+   ③ 设置页独占一行的全宽按钮/行（自身已有 :active 背景反馈，缩放整行观感差）。 */
 .no-press,
 .filter-bar__chip,
 .group-tag,
@@ -406,10 +419,10 @@ a[role="button"]:active:not(:disabled),
 .grouppicker__expand-btn,
 .grouppicker__grid-tag,
 .up-error-actions-btn,
-.back-btn,
 .up-player-play-button,
-.btn-press,
-.ripple-container {
+.iptv-osd-control-btn,
+.settings-menu-item,
+.settings-row {
   scale: none !important;
   box-shadow: none !important;
 }
@@ -423,6 +436,7 @@ a[role="button"]:active:not(:disabled),
   background: transparent !important;
   opacity: 1 !important;
   transform: none !important;
+  scale: none !important; /* 清除方案6 独立 scale，避免 logo 等无交互元素被按下缩小 */
   box-shadow: none !important;
 }
 
@@ -559,10 +573,6 @@ a[role="button"]:active:not(:disabled),
 .back-btn:hover {
   background: var(--color-surface-hover);
   transform: scale(1.05);
-}
-
-.back-btn:active {
-  transform: scale(0.95);
 }
 
 .back-btn svg {

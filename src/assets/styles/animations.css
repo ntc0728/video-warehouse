@@ -199,13 +199,9 @@
 .stagger-11 { animation-delay: 0.33s; }
 .stagger-12 { animation-delay: 0.36s; }
 
-.btn-press {
-  transition: transform 0.15s var(--ease-standard), box-shadow 0.2s var(--ease-standard), background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard);
-}
-
-.btn-press:active:not(:disabled) {
-  transform: scale(0.95);
-}
+/* 注：.btn-press 不再自带 :active 缩放。RippleButton 根节点是 <button>，
+   统一由全局方案6（scale:0.92 spring 回弹）+ 水波纹提供按压反馈；
+   .btn-press / .ripple-container 已从全局排除名单移除，交由全局规则接管。 */
 
 .ripple-container {
   position: relative;
