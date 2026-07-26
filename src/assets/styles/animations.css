@@ -14,6 +14,36 @@
   to { opacity: 1; }
 }
 
+/* ============================================================
+   页面进入统一过渡（淡入 + 轻微上移）
+   供 Home / Detail / Person / SourceChecker / RecordShell(收藏·历史) 复用，
+   与 Browse(.browse-page) / IPTV(.iptv-content) / Settings(.settings-page) 的进入动画保持一致，
+   消除「进入首页/分类页僵硬、无过渡」的观感。
+   注意：Keep-Alive 用 CSS display 切换可见性，根容器的 CSS animation 不会在二次进入时重放，
+        二次进入的过渡由导航的 viewTransition 跨页 cross-fade 负责（见 AppLayout / HomeSidebar / TabBar）。
+   ============================================================ */
+@keyframes page-enter-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition-enter {
+  animation: page-enter-fade 0.28s var(--ease-out-expo) both;
+}
+
+/* 尊重系统「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-enter {
+    animation: none;
+  }
+}
+
 @keyframes cardFadeIn {
   from {
     opacity: 0.4;

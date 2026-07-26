@@ -46,7 +46,7 @@ export default function RecordShell({
   const hasStatus = !!(statusTabs && statusTabs.length > 0 && activeStatus !== undefined && onStatusChange);
 
   return (
-    <div className={`page-padding record-page ${pageClassName}`}>
+    <div className={`page-padding record-page page-transition-enter ${pageClassName}`}>
       <div className="record-shell">
         <div className="record-main">
           <aside className="record-aside">

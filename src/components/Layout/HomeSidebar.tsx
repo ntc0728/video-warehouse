@@ -53,12 +53,12 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
 
   const handleClick = (item: SidebarItem) => {
     if (item.route) {
-      navigate(item.route);
+      navigate(item.route, { viewTransition: true });
       return;
     }
     const cat = item.category as HomeCategoryKey;
     if (location.pathname !== '/') {
-      navigate('/');
+      navigate('/', { viewTransition: true });
     }
     setActiveCategory(cat);
     requestAnimationFrame(() => {
