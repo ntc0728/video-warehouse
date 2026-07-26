@@ -75,8 +75,18 @@ export default function HeroBanner({
   const [paused, setPaused] = useState(false);
   // 悬停预览态：鼠标悬停缩略图时主图预览该项，但不改变 activeIndex（缩略图窗口不移动）
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  // 主图实际显示项：悬停时预览 hoveredIndex，否则显示 activeIndex
-  const displayIndex = hoveredIndex !== null ? hoveredIndex : activeIndex;
+  // 主图实际显示项：悬停时预览 hoveredIndex，否则显示 activeIndex。
+  // ⚠️ 越界保护：items 变化（切换分类）时 activeIndex 仅在下方 useEffect 中重置，
+  // 其间的渲染会用「旧 activeIndex + 新 items」——若新 items 更短则越界，
+  // displayItems[displayIndex] 为 undefined，后续读取 .name 等抛错导致整页白屏。
+  // 故 displayIndex / activeIndex 一律钳制到当前 items 长度范围内。
+  const safeActiveIndex = displayItems.length > 0
+    ? Math.min(activeIndex, displayItems.length - 1)
+    : 0;
+  const safeHoveredIndex = hoveredIndex !== null && hoveredIndex < displayItems.length
+    ? hoveredIndex
+    : null;
+  const displayIndex = safeHoveredIndex !== null ? safeHoveredIndex : safeActiveIndex;
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
   // 滑动方向（所有客户端）：'left' = 新图从右滑入（前进），'right' = 新图从左滑入（后退）
@@ -107,8 +117,13 @@ export default function HeroBanner({
       prevItemsLenRef.current = curLen;
       return () => window.clearTimeout(t);
     } else if (curLen > 0) {
-      // 已有数据，items 变化（如轮播数据更新）：保持 bannerReady 不变
+      // 已有数据且 items 变化（如切换分类）：重置 bannerReady，缩略图回到骨架占位，
+      // 待新背景图加载完成再揭示真实缩略图——避免切换瞬间仍显示上一个分类的缩略图，
+      // 同时作为切换 loading 反馈（不再长时间停留在旧分类 banner）。
+      setBannerReady(false);
+      const t = window.setTimeout(() => setBannerReady(true), 3000);
       prevItemsLenRef.current = curLen;
+      return () => window.clearTimeout(t);
     } else {
       // 变为空：重置
       setBannerReady(false);
@@ -236,6 +251,8 @@ export default function HeroBanner({
   }
 
   const activeItem = displayItems[displayIndex];
+  // 防御性判空：极端情况下（items 切换竞态）displayIndex 仍可能越界，直接返回避免白屏
+  if (!activeItem) return null;
   const itemData = activeItem as HeroItem;
   const title = itemData.name || itemData.title || '';
   const releaseDate = itemData.releaseDate || itemData.release_date || itemData.first_air_date;
@@ -251,7 +268,7 @@ export default function HeroBanner({
     const n = Math.min(visibleCount, total);
     const half = Math.floor(n / 2);
     for (let offset = -half; offset < n - half; offset++) {
-      thumbSlots.push(((activeIndex + offset) % total + total) % total);
+      thumbSlots.push(((safeActiveIndex + offset) % total + total) % total);
     }
   }
 
