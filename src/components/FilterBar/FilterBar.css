@@ -486,10 +486,6 @@
   color: var(--color-primary);
 }
 
-.filter-bar__scroll-arrow:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
 .filter-bar__scroll-arrow:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -541,10 +537,6 @@
 .filter-bar__more-btn:hover {
   background: var(--color-surface-hover, var(--color-surface));
   color: var(--color-primary);
-}
-
-.filter-bar__more-btn:active {
-  transform: scale(0.95);
 }
 
 /* ── 底部弹窗内容 ──────────────────────────────────── */

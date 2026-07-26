@@ -197,10 +197,6 @@
   transform: scale(1.02);
 }
 
-.search-box__submit:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
 .search-box__submit:disabled {
   opacity: 0.35;
   cursor: not-allowed;

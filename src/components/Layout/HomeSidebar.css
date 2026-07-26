@@ -54,7 +54,8 @@
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard),
-              padding 0.3s var(--ease-standard), gap 0.3s var(--ease-standard);
+              padding 0.3s var(--ease-standard), gap 0.3s var(--ease-standard),
+              scale 0.32s var(--ease-spring);
 }
 
 /* 收起态：仅图标，通过 padding 计算居中（padding 可过渡，避免 justify-content 瞬间跳变）

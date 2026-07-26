@@ -387,7 +387,7 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, scale 0.32s var(--ease-spring);
   scroll-snap-align: start;
   cursor: pointer;
 }
