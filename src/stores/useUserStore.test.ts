@@ -11,9 +11,6 @@ vi.mock('@/services/database', () => ({
   addCollectionRecord: vi.fn().mockResolvedValue(undefined),
   removeCollectionByVideoId: vi.fn().mockResolvedValue(undefined),
   clearCollections: vi.fn().mockResolvedValue(undefined),
-  getRatings: vi.fn().mockResolvedValue([]),
-  setRatingRecord: vi.fn().mockResolvedValue(undefined),
-  removeRatingRecord: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('useUserStore - addHistory with new fields', () => {

@@ -1,8 +1,7 @@
 /**
  * 用户数据状态管理
- * 管理视频收藏、观看历史记录和评分记录
+ * 管理视频收藏、观看历史记录
  * 观看历史按视频+剧集维度去重，重复观看会更新进度而非新增记录
- * 评分范围限定为 1-5 的整数
  *
  * [数据存储] 使用 IndexedDB 持久化，Zustand 仅管理内存状态
  * [数据迁移] 首次加载时从 localStorage `user-store` 迁移到 IndexedDB
@@ -10,7 +9,6 @@
 import { create } from 'zustand';
 import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import type { VideoType } from '@/types/video';
-import type { RatingRecord } from '@/services/database';
 import {
   getCollections,
   addCollectionRecord,
@@ -20,15 +18,11 @@ import {
   upsertHistoryRecord,
   removeHistoryRecord,
   clearHistory as clearHistoryDB,
-  getRatings,
-  setRatingRecord,
-  removeRatingRecord,
 } from '@/services/database';
 
 interface UserState {
   collections: CollectionRecord[];
   history: HistoryRecord[];
-  ratings: RatingRecord[];
   _initialized: boolean;
   _loading: boolean;
 
@@ -56,11 +50,6 @@ interface UserState {
   removeHistory: (historyId: string) => void;
   clearHistory: () => void;
 
-  setRating: (videoId: string, rating: number) => void;
-  getRating: (videoId: string) => number;
-  removeRating: (videoId: string) => void;
-  getAverageRating: () => number;
-
   _loadFromDB: () => Promise<void>;
 }
 
@@ -87,13 +76,6 @@ async function migrateFromLocalStorage(): Promise<void> {
       }
     }
 
-    // 迁移评分
-    if (Array.isArray(state.ratings)) {
-      for (const rating of state.ratings) {
-        await setRatingRecord(rating);
-      }
-    }
-
     // 迁移完成后删除旧数据
     localStorage.removeItem('user-store');
   } catch {
@@ -104,7 +86,6 @@ async function migrateFromLocalStorage(): Promise<void> {
 export const useUserStore = create<UserState>()((set, get) => ({
   collections: [],
   history: [],
-  ratings: [],
   _initialized: false,
   _loading: true,
 
@@ -115,13 +96,12 @@ export const useUserStore = create<UserState>()((set, get) => ({
     try {
       await migrateFromLocalStorage();
 
-      const [collections, history, ratings] = await Promise.all([
+      const [collections, history] = await Promise.all([
         getCollections(),
         getHistory(),
-        getRatings(),
       ]);
 
-      set({ collections, history, ratings, _initialized: true, _loading: false });
+      set({ collections, history, _initialized: true, _loading: false });
     } catch (err) {
       console.error('Failed to load user data from IndexedDB:', err);
       // 允许重试：不清除 _initialized 标记
@@ -237,46 +217,5 @@ export const useUserStore = create<UserState>()((set, get) => ({
   clearHistory: () => {
     set({ history: [] });
     clearHistoryDB().catch(console.error);
-  },
-
-  /**
-   * 设置视频评分
-   * 评分值会被限制在 1-5 范围内并四舍五入为整数
-   */
-  setRating: (videoId, rating) => {
-    const clamped = Math.min(5, Math.max(1, Math.round(rating)));
-    const existingIndex = get().ratings.findIndex((r) => r.videoId === videoId);
-
-    if (existingIndex >= 0) {
-      set((state) => ({
-        ratings: state.ratings.map((r, i) =>
-          i === existingIndex ? { ...r, rating: clamped, ratedAt: Date.now() } : r
-        ),
-      }));
-    } else {
-      set((state) => ({
-        ratings: [...state.ratings, { videoId, rating: clamped, ratedAt: Date.now() }],
-      }));
-    }
-    setRatingRecord({ videoId, rating: clamped, ratedAt: Date.now() }).catch(console.error);
-  },
-
-  getRating: (videoId) => {
-    const record = get().ratings.find((r) => r.videoId === videoId);
-    return record ? record.rating : 0;
-  },
-
-  removeRating: (videoId) => {
-    set((state) => ({
-      ratings: state.ratings.filter((r) => r.videoId !== videoId),
-    }));
-    removeRatingRecord(videoId).catch(console.error);
-  },
-
-  getAverageRating: () => {
-    const { ratings } = get();
-    if (ratings.length === 0) return 0;
-    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-    return sum / ratings.length;
   },
 }));

@@ -10,15 +10,9 @@ import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 const DB_NAME = 'video-warehouse';
 const DB_VERSION = 6;
 
-export interface RatingRecord {
-  videoId: string;
-  rating: number;
-  ratedAt: number;
-}
-
 /**
  * 数据库 Schema 定义
- * 包含 videos、collections、history、ratings、iptvChannels 五个对象仓库
+ * 包含 videos、collections、history、iptvChannels 四个对象仓库
  */
 interface VideoWarehouseDB extends DBSchema {
   videos: {
@@ -43,13 +37,6 @@ interface VideoWarehouseDB extends DBSchema {
     indexes: {
       'by-video': string;
       'by-updated': number;
-    };
-  };
-  ratings: {
-    key: string;
-    value: RatingRecord;
-    indexes: {
-      'by-video': string;
     };
   };
   settings: {
@@ -104,11 +91,6 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
         const historyStore = db.createObjectStore('history', { keyPath: 'id' });
         historyStore.createIndex('by-video', 'videoId');
         historyStore.createIndex('by-updated', 'updatedAt');
-      }
-
-      if (!db.objectStoreNames.contains('ratings')) {
-        const ratingStore = db.createObjectStore('ratings', { keyPath: 'videoId' });
-        ratingStore.createIndex('by-video', 'videoId');
       }
 
       if (!db.objectStoreNames.contains('settings')) {
@@ -293,33 +275,5 @@ export async function removeHistoryRecord(id: string): Promise<void> {
   try {
     const db = await getDB();
     await db.delete('history', id);
-  } catch { /* 删除失败不影响主流程 */ }
-}
-
-// ── 评分操作 ──────────────────────────────────────────────
-
-/** 获取所有评分记录 */
-export async function getRatings(): Promise<RatingRecord[]> {
-  try {
-    const db = await getDB();
-    return db.getAll('ratings');
-  } catch {
-    return [];
-  }
-}
-
-/** 设置评分记录（videoId 为主键，自动覆盖） */
-export async function setRatingRecord(record: RatingRecord): Promise<void> {
-  try {
-    const db = await getDB();
-    await db.put('ratings', record);
-  } catch { /* 写入失败不影响主流程 */ }
-}
-
-/** 删除评分记录 */
-export async function removeRatingRecord(videoId: string): Promise<void> {
-  try {
-    const db = await getDB();
-    await db.delete('ratings', videoId);
   } catch { /* 删除失败不影响主流程 */ }
 }
