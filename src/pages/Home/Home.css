@@ -139,9 +139,18 @@
 }
 
 .home-skeleton-hero {
+  position: relative;
   width: 100%;
   height: 50vh;
   min-height: clamp(18.75rem, 16.667rem + 3.333vw, 31.25rem);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.home-skeleton-hero__banner {
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     90deg,
     var(--color-skeleton) 0%,
@@ -150,6 +159,40 @@
   );
   background-size: 200% 100%;
   animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+}
+
+/* 右侧缩略图列骨架：与 HeroBanner 的 hero-banner__thumbs 同构（绝对定位覆盖在 banner 右侧） */
+.home-skeleton-hero__thumbs {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(6rem, 4rem + 8vw, 12rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-surface);
+}
+
+.home-skeleton-hero__thumb {
+  flex: 1 1 0;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-skeleton) 0%,
+    var(--color-skeleton-shine) 50%,
+    var(--color-skeleton) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+}
+
+/* 移动端隐藏右侧缩略图列骨架，与 HeroBanner 行为一致 */
+@media (max-width: 767px) {
+  .home-skeleton-hero__thumbs {
+    display: none;
+  }
 }
 
 .home-skeleton-categories {
