@@ -6,7 +6,7 @@
  *
  * 7 客户端 · 3 主题感知
  */
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
@@ -38,20 +38,26 @@ export default function HomePage() {
   useScrollRestore('home');
 
   // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────
+  // activeCategory：源值，驱动「数据预取 / 文档标题 / 侧边栏高亮」等紧急更新（不希望有延迟）。
+  // deferredCategory：降优先级镜像，仅用于「页面内容渲染」。
+  //   切换类目时源值立即提交（侧边栏高亮秒切），而 Hero + 7 行（≈50 卡片）的重新渲染被放入
+  //   后台 transition 非阻塞执行，避免阻塞主线程导致高亮与交互出现卡顿/延迟。
   const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
   const loadCategory = useHomeCategoryStore((s) => s.loadCategory);
-  const categoryData = useHomeCategoryStore((s) => s.data[activeCategory]);
-  const isCategoryView = activeCategory !== 'home';
+  const deferredCategory = useDeferredValue(activeCategory);
+  const categoryData = useHomeCategoryStore((s) => s.data[deferredCategory]);
+  const isCategoryView = deferredCategory !== 'home';
 
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
+  // 用源值 activeCategory，确保点击类目即刻开始请求，不被 deferred 拖慢。
   useEffect(() => {
-    if (isCategoryView) loadCategory(activeCategory);
-  }, [isCategoryView, activeCategory, loadCategory]);
+    if (activeCategory !== 'home') loadCategory(activeCategory);
+  }, [activeCategory, loadCategory]);
 
   // Keep-Alive 切回时检查缓存是否过期，过期则重新加载
   // 覆盖场景：切换浏览器 Tab 返回时（visibilitychange）
   useEffect(() => {
-    if (!isCategoryView) return;
+    if (activeCategory === 'home') return;
     const CACHE_TTL = 10 * 60 * 1000;
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
@@ -63,11 +69,11 @@ export default function HomePage() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [isCategoryView, activeCategory, loadCategory]);
+  }, [activeCategory, loadCategory]);
 
   // 文档标题随类目变化（home 用默认标题）
   useDocumentTitle(
-    isCategoryView
+    activeCategory !== 'home'
       ? CATEGORY_CONFIG[activeCategory as Exclude<HomeCategoryKey, 'home'>].label
       : undefined,
   );
@@ -268,7 +274,7 @@ export default function HomePage() {
   const heroItems = isCategoryView ? (categoryData!.hero ?? []) : trending;
 
   const rowDefs = isCategoryView
-    ? CATEGORY_CONFIG[activeCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
+    ? CATEGORY_CONFIG[deferredCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
         title: r.title,
         items: categoryData!.rows[i]?.items ?? [],
         isLoading: categoryData!.rows[i]?.loading ?? true,
