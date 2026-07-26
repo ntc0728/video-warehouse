@@ -505,7 +505,7 @@ export default function DetailPage() {
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
     return (
-      <div className="page-padding detail-page">
+      <div className="page-padding detail-page page-transition-enter">
         <div className="detail-not-found">
           <AlertTriangle size={48} />
           <span>{tmdbError || '影片不存在'}</span>
@@ -515,7 +515,7 @@ export default function DetailPage() {
   }
 
   return (
-    <div className="page-padding detail-page" key={id}>
+    <div className="page-padding detail-page page-transition-enter" key={id}>
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}

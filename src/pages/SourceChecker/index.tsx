@@ -390,7 +390,7 @@ export default function SourceCheckerPage() {
   const videoProxyUrl = corsProxy || '未配置';
 
   return (
-    <div className="page-padding source-checker-page">
+    <div className="page-padding source-checker-page page-transition-enter">
       <div className="source-checker-header">
         <div className="header-left">
           <h1>源检测</h1>

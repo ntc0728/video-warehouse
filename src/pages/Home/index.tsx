@@ -197,7 +197,7 @@ export default function HomePage() {
 
   if (!hasToken) {
     return (
-      <div className="page-padding home-page">
+      <div className="page-padding home-page page-transition-enter">
         <div className="home-token-required">
           <AlertCircle size={48} className="home-token-required-icon" />
           <p className="home-token-required-text">

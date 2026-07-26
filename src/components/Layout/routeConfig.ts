@@ -91,4 +91,18 @@ export function preloadAllRoutes(): void {
   }
 }
 
+/**
+ * 预加载「当前 URL 对应」的路由 chunk（应在应用启动时、首屏渲染前调用一次）。
+ *
+ * 与 preloadAllRoutes 互补：preloadAllRoutes 负责在空闲时预拉「其他」页面 chunk；
+ * 本函数在首屏渲染前就先把「当前正在进入」的页面 chunk 拉起来，
+ * 让首屏的 Suspense 往往能同步解析（warm 命中 HTTP/内存缓存），
+ * 避免首屏出现「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading。
+ * 注意：import() 只加载并求值模块，不挂载、不触发数据请求，无副作用。
+ */
+export function preloadInitialRoute(): void {
+  const key = matchRoute(window.location.pathname);
+  if (key) routeComponentMap[key]?.preload?.().catch(() => { /* ignore */ });
+}
+
 export { routeComponentMap };

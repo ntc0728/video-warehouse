@@ -17,7 +17,7 @@ import { matchRoute, getRouteComponent, preloadAllRoutes } from './routeConfig';
 
 function LoadingFallback() {
   return (
-    <div className="page-padding page-loading">
+    <div className="page-padding page-loading page-transition-enter">
       <AppLoading />
     </div>
   );
@@ -73,19 +73,12 @@ export default function AppLayout() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // 应用空闲后预加载所有路由 chunk：切换到未访问页面时不再出现
+  // 空闲（首屏渲染后）立即预加载所有路由 chunk：切换到未访问页面时不再出现
   // 「Suspense chunk 加载 → 页面自身 loading」的双重 AppLoading 闪烁。
+  // 不再等待 requestIdleCallback（最长 3s）/ setTimeout(1500ms)，避免用户在首屏后
+  // 的窗口期内点击分类页仍命中未缓存 chunk 而触发两次 AppLoading。
   useEffect(() => {
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    if (typeof w.requestIdleCallback === 'function') {
-      const id = w.requestIdleCallback(() => preloadAllRoutes(), { timeout: 3000 });
-      return () => w.cancelIdleCallback?.(id);
-    }
-    const t = window.setTimeout(() => preloadAllRoutes(), 1500);
-    return () => window.clearTimeout(t);
+    preloadAllRoutes();
   }, []);
 
   useEffect(() => {
