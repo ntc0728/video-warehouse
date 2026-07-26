@@ -13,7 +13,9 @@ function App() {
   const [dbReady, setDbReady] = useState(false);
   const loadFromDB = useUserStore((s) => s._loadFromDB);
   useEffect(() => {
-    loadFromDB().then(() => setDbReady(true));
+    // 用 finally 保证无论 DB 加载成功/失败，dbReady 都会置 true，
+    // 避免数据库异常（如升级被旧连接阻塞）导致整页永久卡在 loading
+    loadFromDB().finally(() => setDbReady(true));
   }, [loadFromDB]);
 
   if (!dbReady) return null;
