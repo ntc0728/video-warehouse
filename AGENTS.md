@@ -161,7 +161,7 @@ public/data/             # 数据源配置 JSON
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
 路由切换不触发 unmount/remount，修改页面状态时需考虑组件已挂载的二次进入场景。
 
-**路由 chunk 空闲预加载**：`routeConfig.ts` 的 `lazyWithRetry` 暴露 `preload()`，`preloadAllRoutes()` 在 `AppLayout` 挂载后经 `requestIdleCallback`（兜底 `setTimeout`）预拉所有页面 chunk。目的：切换到「未访问过」页面时 Suspense 立即解析（chunk 已缓存），消除「Suspense fallback（chunk 加载）→ 页面自身 loading」的双重 AppLoading 闪烁。`import()` 只求值模块、不挂载、不触发数据请求，无副作用。
+**路由 chunk 预加载（消除双重 AppLoading）**：`routeConfig.ts` 的 `lazyWithRetry` 暴露 `preload()`。`preloadInitialRoute()` 在 `main.tsx` 首屏渲染**前**调用，预拉「当前 URL 对应」的路由 chunk（warm 命中缓存时 Suspense 同步解析，避免首屏「Suspense fallback → 页面自身 loading」双重 AppLoading）。`preloadAllRoutes()` 在 `AppLayout` 挂载后**立即**执行（不再等待 `requestIdleCallback`/setTimeout），缩短首屏后的窗口期，导航场景基本不再触发两次 AppLoading。`import()` 只求值模块、不挂载、不触发数据请求，无副作用。
 
 **SearchBox 懒加载热门搜索**：SearchBox 常驻顶栏，`trending`（`/trending/all/day`）改为「下拉打开且 `showHotSearch` 为真」时才拉取，避免「非首页刷新即请求 trending」；首页数据仍由 `fetchAllHomeData` 负责。
 
@@ -246,6 +246,12 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 - **`.no-interaction-visual`**：移除 hover/active/focus 视觉反馈的工具类，用于 logo、品牌名等不需要交互反馈的元素（`index.css`）
 - **Logo tokens**：流式尺寸变量（`variables.css`）—— `--layout-logo-size`（48→64px）、`--layout-logo-size-sm`（40→52px）、`--layout-logo-size-lg`（56→72px）；`--layout-brand-font-size`（20→24px）、`--layout-brand-font-size-sm`（16→20px）、`--layout-brand-font-size-lg`（24→28px）。Sidebar 和 StickyHeader 的 logo 统一使用这些 token
+
+### 页面进入过渡统一约定
+
+- **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Home / Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。
+- **Keep-Alive 二次进入过渡**：AppLayout 用 CSS `display` 切换可见性，根容器的 CSS animation 在二次进入**不会重放**。二次进入的 cross-fade 由导航的 `viewTransition: true` 负责——`HomeSidebar`、`TabBar` 的主导航已启用。新增导航入口时也应用 `viewTransition: true`，保持一致。
+- **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
 
 ### .gitignore 策略
 
