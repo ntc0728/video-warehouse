@@ -8,7 +8,7 @@ import type { VideoRecord, CollectionRecord, HistoryRecord } from '@/types/store
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 const DB_NAME = 'video-warehouse';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 /**
  * 数据库 Schema 定义
@@ -99,6 +99,11 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
 
       if (!db.objectStoreNames.contains('iptvChannels')) {
         db.createObjectStore('iptvChannels', { keyPath: 'key' });
+      }
+
+      // v7: 移除已废弃的 ratings 对象仓库（评分功能已下线）
+      if ((db as IDBPDatabase).objectStoreNames.contains('ratings')) {
+        (db as IDBPDatabase).deleteObjectStore('ratings');
       }
 
       // v3-v5: 新增可选字段（backdrop, episodeLabel），无需 schema 变更
