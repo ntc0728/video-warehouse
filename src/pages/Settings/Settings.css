@@ -10,6 +10,27 @@
   flex-direction: column;
   min-height: 0;
   overflow-x: hidden;
+  /* 进入动画：与其他页面（Browse .browse-page / IPTV .iptv-content）保持一致，
+     消除「进入设置页很僵硬、无过渡」的观感。淡入 + 轻微上移，柔和落地。 */
+  animation: settings-page-fade-in 0.28s var(--ease-out-expo, ease-out) both;
+}
+
+@keyframes settings-page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 减弱动效：尊重系统「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .settings-page {
+    animation: none;
+  }
 }
 
 .settings-page .group {
