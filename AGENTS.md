@@ -161,6 +161,10 @@ public/data/             # 数据源配置 JSON
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
 路由切换不触发 unmount/remount，修改页面状态时需考虑组件已挂载的二次进入场景。
 
+**路由 chunk 空闲预加载**：`routeConfig.ts` 的 `lazyWithRetry` 暴露 `preload()`，`preloadAllRoutes()` 在 `AppLayout` 挂载后经 `requestIdleCallback`（兜底 `setTimeout`）预拉所有页面 chunk。目的：切换到「未访问过」页面时 Suspense 立即解析（chunk 已缓存），消除「Suspense fallback（chunk 加载）→ 页面自身 loading」的双重 AppLoading 闪烁。`import()` 只求值模块、不挂载、不触发数据请求，无副作用。
+
+**SearchBox 懒加载热门搜索**：SearchBox 常驻顶栏，`trending`（`/trending/all/day`）改为「下拉打开且 `showHotSearch` 为真」时才拉取，避免「非首页刷新即请求 trending」；首页数据仍由 `fetchAllHomeData` 负责。
+
 **⚠️ 异步数据 + 布局测量的隐形雷区**
 隐藏页（`display:none`，`clientWidth=0`）期间完成的异步加载（如剧照 `/images`、推荐、CMS 源）会让任何「依赖容器尺寸」的逻辑（`useEffect` 里 `if (clientWidth<=0) return`、用 `getComputedStyle` 读 `gridTemplateColumns` 算列数等）永久失效，且 `display:none` 的元素 `ResizeObserver` 不触发、显示后也无法纠正。受影响的 UI：详情页剧照 2 行截断、任何分页/虚拟滚动/自适应列数。
 **正确做法**：测量逻辑在容器不可见（`clientWidth<=0`）时改用「视口宽度估算兜底」（按 CSS 列宽公式 `clamp(8rem, 6rem+8vw, 16rem)` 推算列数），保证状态一定是有限值；页面显示后 `ResizeObserver` 用真实列数纠正。复现手法：`page.route` 给目标接口加 `setTimeout` 延迟 → 导航进页 → `page.goBack()` 隐藏 → 等延迟过 → `page.goForward()` 显示 → 断言（详见 `scripts/detail.spec.ts` DETAIL-048）。
@@ -197,9 +201,9 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 ### HeroBanner 组件
 
 `src/components/HeroBanner/` — 首页 Hero 横幅轮播：
-- **布局**：左侧主背景图（crossfade / 移动端 slide）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
+- **布局**：左侧主背景图（左右滑动切换）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
 - **缩略图**：`position: absolute; z-index: 10`，`overflow: hidden` 不影响 banner 圆角；激活态使用 `2px solid var(--color-primary)` 边框 + `var(--color-primary-shadow)` 阴影；点击跳转 detail 页；标题仅激活态显示
-- **移动端滑动动画**：仅用户手动滑动触发 `slide-left` / `slide-right`，自动轮播使用 crossfade；滑动后 1000ms 冷却期内暂停自动轮播
+- **滑动切换动画（所有客户端）**：`activeIndex` 切换统一走 `slide-left`（前进，新图从右滑入）/ `slide-right`（后退，新图从左滑入）；自动轮播（5s）也设置 `slideDir='left'` 走滑动切换；滑动后 1000ms 冷却期内暂停自动轮播。`.slide-*` 规则定义在 `HeroBanner.css` 全局作用域（非移动端媒体查询内），选择器特异性高于 `.is-active` crossfade。**桌面端悬停缩略图预览**仅改 `displayIndex`、不设 `slideDir` → 回退为 crossfade（`heroBgFadeIn`）
 - **高度**：`min-height: var(--layout-hero-banner-min-h)` + `max-height: min(70vh, var(--layout-hero-banner-max-h))`（vh + vw 双上限，防止超宽屏溢出）
 - **预加载**：自动轮播时预加载下一张背景图（w1280）+ 缩略图窗口前后各 2 张（w500）
 - **bannerReady**：仅 items 从空变为有时重置，已有数据时保持不变，避免骨架闪烁

@@ -93,16 +93,18 @@ export default function SearchBox({
     .filter((item) => item.title)
     .slice(0, MAX_HOT_IN_DROPDOWN);
 
-  // 首次挂载时确保 trending 数据已加载（跳过正在进行的请求，避免重复）
-  useEffect(() => {
-    if (trending.length === 0 && !trendingLoading) {
-      void fetchTrending('day');
-    }
-  }, [trending.length, trendingLoading, fetchTrending]);
-
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const visibleHotItems = showHotSearch ? hotItems : [];
+
+  // 懒加载热门搜索：仅当下拉打开且需要展示热门搜索时才拉取 trending。
+  // SearchBox 常驻顶栏，若在挂载时无条件拉取，会导致「非首页刷新即请求
+  // /trending/all/day」；改为按需触发，首页数据仍由 fetchAllHomeData 负责。
+  useEffect(() => {
+    if (isDropdownOpen && showHotSearch && trending.length === 0 && !trendingLoading) {
+      void fetchTrending('day');
+    }
+  }, [isDropdownOpen, showHotSearch, trending.length, trendingLoading, fetchTrending]);
   const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
