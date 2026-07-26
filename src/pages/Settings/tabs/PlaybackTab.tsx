@@ -20,7 +20,7 @@ export default function PlaybackTab({
   autoPlay, setAutoPlay,
 }: PlaybackTabProps) {
   return (
-    <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+    <section>
       <List header={<span className="settings-section-header"><PlayCircle size={20} /> 播放设置</span>}>
         <List.Item
           title={<>跳过片头<HelpPopover title="跳过片头" content="开启后播放视频时自动跳过片头部分。可在下方设置跳过时长。" /></>}

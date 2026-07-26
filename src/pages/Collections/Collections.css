@@ -44,6 +44,16 @@
   height: var(--comp-thumb-size);
 }
 
+/* 排序下拉：位于批量管理同一行最左侧（record-edit-row 默认 flex-end，
+   用 margin-right: auto 将其推到最左，批量管理按钮保持靠右） */
+.collection-page .record-edit-row {
+  gap: var(--space-sm);
+  align-items: center;
+}
+.collection-page .record-sort {
+  margin-right: auto;
+}
+
 @media (width <= 767px) {
   .record-card__delete {
     opacity: 1;

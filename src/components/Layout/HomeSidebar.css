@@ -54,14 +54,14 @@
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard),
-              padding 0.3s var(--ease-standard), justify-content 0.3s var(--ease-standard);
+              padding 0.3s var(--ease-standard), gap 0.3s var(--ease-standard);
 }
 
-/* 收起态：导航项居中，仅图标 */
+/* 收起态：仅图标，通过 padding 计算居中（padding 可过渡，避免 justify-content 瞬间跳变）
+   1.25rem = 图标尺寸 20px（Icon size={20}） */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
-  justify-content: center;
-  padding: var(--space-md);
+  padding: var(--space-md) calc((var(--sidebar-width-collapsed) - var(--space-sm) * 2 - 1.25rem) / 2);
 }
 
 .home-sidebar__item:hover:not(.active) {
@@ -99,10 +99,19 @@
 }
 
 .home-sidebar__label {
+  max-width: 10rem;
   font-size: var(--text-base);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
+  opacity: 1;
+  transition: max-width 0.3s var(--ease-standard), opacity 0.15s var(--ease-standard);
+}
+
+/* 收起态：文字通过 max-width + opacity 平滑隐藏（常驻 DOM，避免瞬间移除导致图标跳变） */
+.home-sidebar--collapsed .home-sidebar__label {
+  max-width: 0;
+  opacity: 0;
 }
 
 .home-sidebar__item.active .home-sidebar__label {
@@ -130,7 +139,8 @@
 @media (prefers-reduced-motion: reduce) {
   .home-sidebar,
   .home-sidebar__item,
-  .home-sidebar__icon {
+  .home-sidebar__icon,
+  .home-sidebar__label {
     transition: none;
   }
 }

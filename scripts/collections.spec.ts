@@ -82,6 +82,31 @@ test.describe('7.4 批量管理', () => {
       console.log('⚠️ COL-030: 批量管理按钮未检测到');
     }
   });
+
+  test('COL-031: 排序下拉（批量管理同一行最左侧）', async ({ page }) => {
+    await page.goto('/collections', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 预期结果: 影视 Tab 下排序下拉可见，默认"最近收藏"
+    const sortTrigger = page.locator('.record-edit-row .record-sort button');
+    await expect(sortTrigger).toBeVisible({ timeout: 5000 });
+    await expect(sortTrigger).toContainText('最近收藏');
+
+    // 打开下拉，检查 6 个排序选项
+    await sortTrigger.click();
+    await page.waitForTimeout(300);
+    const dropdown = page.locator('.portal-dropdown');
+    for (const label of ['最近收藏', '最早收藏', '名称A-Z', '名称Z-A', '评分从高到低', '评分从低到高']) {
+      await expect(dropdown.getByText(label, { exact: true })).toBeVisible();
+    }
+
+    // 选择"最早收藏"后触发器文本更新
+    await dropdown.getByText('最早收藏', { exact: true }).click();
+    await page.waitForTimeout(300);
+    await expect(sortTrigger).toContainText('最早收藏');
+    console.log('✅ COL-031 通过: 排序下拉选项完整且可切换');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

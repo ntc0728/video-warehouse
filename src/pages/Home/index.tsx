@@ -79,8 +79,8 @@ export default function HomePage() {
 
   // 使用 useShallow 一次性选多个字段,避免逐字段订阅模板代码膨胀;
   // 同时保证只在所选字段引用变化时才重渲染,降低主线程压力。
-  // 注:故意不订阅 fetchAllHomeData —— 数据拉取由 App 启动时的 usePrefetch 统一负责,
-  // 避免 HomePage mount 时无条件再跑一遍 checkToken() + 8 个 TMDB 请求。
+  // 注:故意不订阅 fetchAllHomeData —— 拉取由下方「按需兜底」effect 负责,
+  // 仅在无数据且不在加载中时触发,避免有缓存时重复跑 checkToken() + 8 个 TMDB 请求。
   const {
     trending, nowPlaying, popularMovies, topRatedMovies,
     upcomingMovies, popularTv, topRatedTv, airingTodayTv,
@@ -143,6 +143,16 @@ export default function HomePage() {
   const isInitialLoading =
     (loading.trending || loading.nowPlaying) &&
     !hasAnyData;
+
+  // 按需兜底拉取首页数据：仅当处于 home 视图、无任何数据且不在加载中时触发。
+  // 原先由 App 层 usePrefetch 无条件预取，导致非首页刷新时也调用首页 TMDB 接口，
+  // 现改为 HomePage 挂载/切回 home 类目时按需拉取（fetchAllHomeData 内部只拉空区块）。
+  useEffect(() => {
+    if (!hasToken || isCategoryView || hasAnyData) return;
+    const s = useTMDBStore.getState();
+    if (s.loading.trending || s.loading.nowPlaying) return;
+    void s.fetchAllHomeData();
+  }, [hasToken, isCategoryView, hasAnyData]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {

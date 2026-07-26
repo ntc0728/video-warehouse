@@ -118,8 +118,10 @@ export default function DetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  // 演员折叠（移动端默认折叠，桌面端始终展开）
+  // 演员折叠（全视口统一：超过 2 行即折叠，展开按钮按实际溢出检测显示）
   const [castExpanded, setCastExpanded] = useState(false);
+  const [castOverflow, setCastOverflow] = useState(false);
+  const castRowRef = useRef<HTMLDivElement>(null);
 
   // CMS
   const [cmsResults, setCmsResults] = useState<DetailSourceResult[]>([]);
@@ -429,6 +431,18 @@ export default function DetailPage() {
   const countries = d?.production_countries?.map((c) => c.name) || [];
   const companies = d?.production_companies?.slice(0, 3) || [];
   const cast: TMDBCastMember[] = d?.credits?.cast || [];
+
+  // 演员行溢出检测：折叠态下 scrollHeight > clientHeight 即超过 2 行，显示展开按钮。
+  // ResizeObserver 覆盖窗口缩放与 Keep-Alive 隐藏页（尺寸 0）显示后的纠正场景。
+  useEffect(() => {
+    const el = castRowRef.current;
+    if (!el) return;
+    const measure = () => setCastOverflow(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [cast.length]);
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const genres = d?.genres || [];
   const status = d?.status || '';
@@ -688,7 +702,7 @@ export default function DetailPage() {
             {cast.length > 0 && (
               <>
                 <h3 className="detail-section-subtitle">演员</h3>
-                <div className={`detail-cast-row${!castExpanded ? ' detail-cast-row--collapsed' : ''}`}>
+                <div ref={castRowRef} className={`detail-cast-row${!castExpanded ? ' detail-cast-row--collapsed' : ''}`}>
                   {cast.map((c) => (
                     <a
                       key={c.id}
@@ -709,7 +723,7 @@ export default function DetailPage() {
                     </a>
                   ))}
                 </div>
-                {cast.length > 8 && (
+                {(castOverflow || castExpanded) && (
                   <button className="detail-cast-toggle" onClick={() => setCastExpanded(!castExpanded)}>
                     {castExpanded ? '收起' : `展开全部 ${cast.length} 位演员`}
                   </button>

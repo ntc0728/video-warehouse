@@ -41,7 +41,7 @@ export default function VideoTab({
 }: VideoTabProps) {
   return (
     <>
-      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+      <section>
         <List header={<span className="settings-section-header"><Film size={20} /> TMDB</span>}>
           <List.Item
             title="TMDB Access Token"
@@ -66,7 +66,7 @@ export default function VideoTab({
         </List>
       </section>
 
-      <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+      <section>
         <List header={<span className="settings-section-header"><RadioTower size={20} /> 视频源</span>}>
           <List.Item
             title={

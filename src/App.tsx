@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
-import { usePrefetch } from './hooks/usePrefetch';
 import { useUserStore } from './stores';
 
 function App() {
-  // 启动时预取首页 + IPTV 数据(仅在数据为空时,requestIdleCallback 调度,不阻塞首屏)
-  usePrefetch();
+  // 首页 TMDB 数据不再在 App 层无条件预取（避免非首页刷新时也调用首页接口），
+  // 改由 HomePage 挂载/显示时按需拉取（store 内有空数据判断 + in-flight 去重）。
 
   // 初始化用户数据（从 IndexedDB 加载），加载完成前显示 loading
   const [dbReady, setDbReady] = useState(false);
