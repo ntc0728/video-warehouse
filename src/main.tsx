@@ -16,12 +16,6 @@ preventPinchZoom();
 // 避免首屏出现「Suspense fallback → 页面自身 loading」的双重 AppLoading。
 preloadInitialRoute();
 
-window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason instanceof DOMException && e.reason.name === 'AbortError' && e.reason.message.includes('Transition')) return;
-  console.error('[unhandledrejection]', e.reason);
-  e.preventDefault();
-});
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <Routes />

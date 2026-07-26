@@ -250,7 +250,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 ### 页面进入过渡统一约定
 
 - **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Home / Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。
-- **Keep-Alive 二次进入过渡**：AppLayout 用 CSS `display` 切换可见性，根容器的 CSS animation 在二次进入**不会重放**。二次进入的 cross-fade 由导航的 `viewTransition: true` 负责——`HomeSidebar`、`TabBar` 的主导航已启用。新增导航入口时也应用 `viewTransition: true`，保持一致。
+- **Keep-Alive 二次进入过渡**：AppLayout 用 CSS `display` 切换可见性，根容器的 CSS animation 在二次进入**不会重放**。二次进入靠 Keep-Alive 的瞬时 display 切换（≈1ms），**不再使用 View Transitions API**——整页快照在常驻多页 DOM 下开销过大（移动端尤其明显），与 Keep-Alive 的瞬时切换目标冲突，已彻底移除（`RouteTransition.css` / `RouteTransition.tsx` 删除，所有 `navigate(..., { viewTransition: true })` 改为 `navigate(...)`）。新增导航入口时**不要**再加 `viewTransition: true`。
 - **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
 
 ### .gitignore 策略

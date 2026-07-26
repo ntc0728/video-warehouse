@@ -70,7 +70,7 @@
 [ ] 视频数据源至少选中 1 个（默认索引 0：爱奇艺资源）
 [ ] IPTV 数据源至少选中 1 个（默认索引 0：IPTV）
 [ ] EPG 节目单源已选中（默认 http://epg.51zmt.top:8000/e.xml）
-[ ] 浏览器为 Chrome 110+ 或 Edge 110+（支持 viewTransition API）
+[ ] 浏览器为 Chrome / Edge / Safari 任意现代版本（不再依赖 viewTransition API，已移除）
 [ ] 网络连接正常（可访问 TMDB API 和 CMS 源）
 ```
 
@@ -115,7 +115,7 @@
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
 | HOME-001 | 无 Token 时显示配置提示 | TMDB Access Token 未配置（为空） | 访问首页 `/` | 显示"TMDB Access Token 未配置"提示，包含"配置"按钮 |
-| HOME-002 | 点击配置按钮跳转设置页 | 无 Token 状态 | 点击"配置"按钮 | 跳转到 `/settings` 页面，使用 viewTransition 动画；用户可输入 `your_tmdb_token_here` |
+| HOME-002 | 点击配置按钮跳转设置页 | 无 Token 状态 | 点击"配置"按钮 | 跳转到 `/settings` 页面（Keep-Alive 瞬时切换）；用户可输入 `your_tmdb_token_here` |
 | HOME-003 | 有 Token 但数据加载中 | Token 已配置，数据未加载完成 | 进入首页 | 显示"精彩内容加载中…" loading 动画，最短停留 500ms |
 | HOME-004 | 有 Token 且数据就绪 | Token 已配置，数据已加载 | 进入首页 | 显示 HeroBanner + 分类快捷入口（数量与 CATEGORY_CONFIG 一致）+ 7 行横滚数据 |
 | HOME-005 | 首页 loading 最大超时 | 网络异常导致数据无法加载 | 等待 10 秒 | loading 自动关闭，显示骨架图或错误状态 |
@@ -135,7 +135,7 @@
 
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
-| HOME-020 | 点击分类跳转浏览页 | 首页已加载 | 点击"电影"分类 | 跳转到 `/browse?category=movie&...`，带 viewTransition |
+| HOME-020 | 点击分类跳转浏览页 | 首页已加载 | 点击"电影"分类 | 跳转到 `/browse?category=movie&...`（Keep-Alive 瞬时切换） |
 | HOME-021 | 分类入口数量 | 首页已加载 | 查看分类区域 | 显示 8 个分类入口图标 |
 | HOME-022 | 首页类目视图切换 | 首页已加载 | 通过侧边栏切换类目 | 首页内容切换为对应类目的 hero + 行数据，不跳页 |
 | HOME-023 | 类目视图 loading | 切换到新类目 | 查看加载状态 | 显示骨架图，数据就绪后切换为真实内容 |
@@ -926,7 +926,7 @@
 |------|---------|---------|---------|---------|
 | GBL-001 | 桌面端 L 型导航 | 桌面端（≥1024px） | 查看布局 | Sidebar 左对齐，StickyHeader 与 Sidebar 无缝对接，形成 L 型区域 |
 | GBL-002 | 移动端底部 TabBar | 移动端 | 查看布局 | 底部显示 TabBar 导航 |
-| GBL-003 | 页面切换 viewTransition | 任意页面 | 点击导航链接 | 页面切换带 viewTransition 动画 |
+| GBL-003 | 页面切换即时性 | 任意页面 | 点击导航链接 | Keep-Alive 模式下 display 切换 ≈1ms，无 cross-fade 动画 |
 | GBL-004 | Keep-Alive 页面保持 | 从首页导航到浏览页 | 切回首页 | 首页组件未卸载，状态保持 |
 | GBL-005 | 懒加载 chunk 重试 | chunk 加载失败 | 观察加载 | 800ms 后自动重试加载 |
 | GBL-006 | ErrorBoundary 兜底 | 组件渲染崩溃 | 触发错误 | 显示错误页面，不白屏 |
@@ -1008,7 +1008,7 @@
 | X-002 | 首页 Banner → 播放页 | 有观看历史（progress > 0） | 点击 Banner "继续播放" | 跳转到 `/play/{id}`，state 含 `from: '/'`；播放页返回时回到详情页(`/detail/{id}`) |
 | X-003 | 首页分类 → 浏览页 | 首页已加载 | 点击"电影"分类 | 跳转到 `/browse?category=movie&...`；浏览页 FilterBar 自动选中对应分类 |
 | X-004 | 首页卡片 → 详情页 | 首页已加载，行数据非空 | 点击 TMDBMovieRow 中的卡片 | 跳转到 `/detail/{id}`，state 含 `from: '/'` |
-| X-005 | 首页 → 设置页（无 Token） | TMDB Token 未配置 | 进入首页，点击"配置" | 跳转到 `/settings`，使用 viewTransition |
+| X-005 | 首页 → 设置页（无 Token） | TMDB Token 未配置 | 进入首页，点击"配置" | 跳转到 `/settings`（Keep-Alive 瞬时切换） |
 | X-006 | 顶部搜索 → 浏览页 | 顶部导航栏 | 在 Header SearchBox 输入关键词回车 | 跳转到 `/browse`，state 含 `{ q: '关键词' }`；浏览页搜索框自动填充并触发搜索 |
 | X-007 | 侧边栏 → IPTV | 桌面端 | 点击 Sidebar "IPTV" | 跳转到 `/iptv`，IPTV 页加载频道数据 |
 | X-008 | 侧边栏 → 收藏 | 桌面端 | 点击 Sidebar "收藏" | 跳转到 `/collections` |
@@ -1115,16 +1115,19 @@
 | X-108 | 收藏页删除 → 播放页同步 | 在收藏页删除收藏 | 进入播放页 | 播放页收藏按钮变为"加入收藏" |
 | X-109 | 历史页删除 → 详情页同步 | 在历史页删除记录 | 进入详情页 | 详情页不再显示播放进度条 |
 
-### 13.11 viewTransition 动画验证
+### 13.11 路由切换即时性验证（Keep-Alive 模式，无 View Transitions）
+
+> 历史背景：原使用 View Transitions API 做 cross-fade，但 Keep-Alive 模式下 DOM 切换本就 ≈1ms，
+> 整页快照反而成为开销主因（移动端尤其明显），已彻底移除。下列用例验证切换即时性 + 状态保持。
 
 | 编号 | 跳转路径 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|
-| X-110 | 首页 → 详情页 | 点击 Banner | 页面切换带 viewTransition 动画 |
-| X-111 | 首页 → 浏览页 | 点击分类 | 页面切换带 viewTransition 动画 |
-| X-112 | 详情页 → 播放页 | 点击播放按钮 | 页面切换带 viewTransition 动画 |
-| X-113 | 详情页 → 人物页 | 点击演员 | 页面切换带 viewTransition 动画 |
-| X-114 | IPTV → 设置页 | 点击代理配置链接 | 页面切换带 viewTransition 动画 |
-| X-115 | 播放页 → 详情页（返回） | 点击返回 | 页面切换带 viewTransition 动画（replace: true） |
+| X-110 | 首页 → 详情页 | 点击 Banner | 切换即时（<100ms 感知），无 cross-fade 闪烁 |
+| X-111 | 首页 → 浏览页 | 点击分类 | 切换即时，筛选条件正确生效 |
+| X-112 | 详情页 → 播放页 | 点击播放按钮 | 切换即时，from 字段正确 |
+| X-113 | 详情页 → 人物页 | 点击演员 | 切换即时 |
+| X-114 | IPTV → 设置页 | 点击代理配置链接 | 切换即时 |
+| X-115 | 播放页 → 详情页（返回） | 点击返回 | 切换即时（replace: true），无白屏 |
 
 ### 13.12 Keep-Alive 下的跳转状态保持
 

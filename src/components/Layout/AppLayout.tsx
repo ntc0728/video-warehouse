@@ -13,7 +13,7 @@ import { useSettingsStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
-import { matchRoute, getRouteComponent, preloadAllRoutes } from './routeConfig';
+import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 
 function LoadingFallback() {
   return (
@@ -136,10 +136,21 @@ export default function AppLayout() {
   const noKeepAlive = noKeepAliveRef.current;
 
   // 已访问过的路由集合（排除 noKeepAlive 路由）
+  // 直接 mutate Set 不触发重渲染——首次访问时父级 useLocation 已触发渲染,
+  // 此次渲染即可读到新加的 key;后续切回该路由时 location 变化同样会触发渲染
   const [visitedRoutes] = useState(() => new Set<string>());
   if (activeRouteKey && !noKeepAlive.has(activeRouteKey) && !visitedRoutes.has(activeRouteKey)) {
     visitedRoutes.add(activeRouteKey);
   }
+
+  // 缓存 visitedRoutes 数组：仅在 Set 内容变化时重建，避免每次渲染都 Array.from
+  // size 作为依赖：新增路由时 size 变化触发重算
+  const visitedSize = visitedRoutes.size;
+  const visitedRouteKeys = useMemo(
+    () => Array.from(visitedRoutes),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visitedRoutes, visitedSize],
+  );
 
   // 沉浸式（全屏播放）页面：侧边栏/顶栏不应用卡片化，保持原全屏布局
   const isImmersive = IMMERSIVE_ROUTES.some(
@@ -178,8 +189,9 @@ export default function AppLayout() {
             >
               {/* Keep-Alive 容器：所有已访问的页面组件保持挂载，仅切换 CSS 可见性 */}
               <div className="page-transition">
-                {Array.from(visitedRoutes).map((routeKey) => {
-                  const Component = getRouteComponent(routeKey);
+                {visitedRouteKeys.map((routeKey) => {
+                  // 直接查 routeComponentMap（routeKey 已是合法 key），避免每次都走 matchRoute 遍历
+                  const Component = routeComponentMap[routeKey];
                   if (!Component) return null;
                   const isActive = routeKey === activeRouteKey;
                   return (
@@ -196,7 +208,7 @@ export default function AppLayout() {
                 })}
                 {/* noKeepAlive 路由：直接渲染，不缓存 */}
                 {activeRouteKey && noKeepAlive.has(activeRouteKey) && (() => {
-                  const Component = getRouteComponent(activeRouteKey);
+                  const Component = routeComponentMap[activeRouteKey];
                   if (!Component) return null;
                   return (
                     <div key={activePath} data-route={activeRouteKey}>

@@ -391,8 +391,8 @@ export default function DetailPage() {
   }, [id, collected, addCollection, removeCollection, tmdbDetail]);
 
   // ── 播放 ──────────────────────────────────────
-  const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` }, viewTransition: true }); };
-  const handlePlayFromBeginning = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true }, viewTransition: true }); };
+  const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` } }); };
+  const handlePlayFromBeginning = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true } }); };
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -712,7 +712,7 @@ export default function DetailPage() {
                       className="detail-cast-item"
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(`/person/${c.id}`, { state: { from: `/detail/${id}` }, viewTransition: true });
+                        navigate(`/person/${c.id}`, { state: { from: `/detail/${id}` } });
                       }}
                     >
                       {c.profile_path ? (
@@ -894,7 +894,7 @@ export default function DetailPage() {
                             <button
                               className="detail-source-play-btn"
                               disabled={!playable}
-                              onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex }, viewTransition: true })}
+                              onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } })}
                             >
                               <Play size={12} fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
                             </button>
@@ -978,7 +978,6 @@ export default function DetailPage() {
                                   onClick={() => {
                                     navigate(`/play/${id}`, {
                                       state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, seasonNumber: playModal.seasonNumbers[activeIdx], playUrl: ep.sources[0]?.url, playType: ep.sources[0]?.type },
-                                      viewTransition: true,
                                     });
                                     setPlayModal(null);
                                   }}
@@ -999,7 +998,6 @@ export default function DetailPage() {
                                   onClick={() => {
                                     navigate(`/play/${id}`, {
                                       state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, playUrl: src.url, playType: src.type },
-                                      viewTransition: true,
                                     });
                                     setPlayModal(null);
                                   }}

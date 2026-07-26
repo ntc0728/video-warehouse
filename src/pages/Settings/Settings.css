@@ -555,7 +555,7 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  /* 进入动画：与全局页面切换过渡（RouteTransition 新页面淡入）保持一致 */
+  /* 进入动画：子页面 opacity 0→1 淡入 */
   animation: settings-subpage-fade-in 500ms ease-out both;
 }
 
