@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Button 按压反馈方案对比 Demo</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #1a1d24;
+    --border: #2a2e37;
+    --primary: #4f8cff;
+    --primary-shadow: rgba(79, 140, 255, 0.35);
+    --text: #e8eaed;
+    --text-dim: #9aa0aa;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    padding: 32px 20px 80px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; max-width: 1100px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; display:flex; align-items:center; gap:8px;}
+  .card .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(79,140,255,.15); color: var(--primary); font-weight:600;}
+  .card p { font-size: 12px; color: var(--text-dim); margin: 0 0 16px; line-height: 1.6; }
+  .stage { min-height: 96px; display: flex; align-items: center; justify-content: center; gap: 16px; position: relative; }
+
+  /* ---------- 按钮基础外观 ---------- */
+  .btn {
+    appearance: none; border: 1px solid var(--border); background: #232733; color: var(--text);
+    padding: 10px 18px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 500;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: transparent; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ====== 方案0：当前全局（有 bug）====== */
+  /* 模拟全局 button:active{transform:scale(.97)} —— 顶掉居中 translateY(-50%) 导致"掉下去" */
+  .cur-global:active:not(:disabled) { transform: scale(0.97); box-shadow: inset 0 2px 4px rgba(0,0,0,.15); }
+  .cur-arrow {
+    position: absolute; right: 16px; top: 50%;
+    transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(15,15,15,.55); color:#fff; border: none; cursor: pointer;
+  }
+  /* 按下时全局 scale 顶掉 translateY(-50%) → 箭头瞬间下移（异常下沉） */
+  .cur-arrow:active { transform: scale(0.97); }
+
+  /* ====== 方案1：独立 scale/translate 属性（修复冲突）====== */
+  .s1-arrow {
+    position: absolute; right: 16px; top: 50%;
+    translate: 0 -50%; width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(15,15,15,.55); color:#fff; border:none; cursor:pointer;
+    transition: scale .15s var(--ease), box-shadow .2s var(--ease);
+  }
+  .s1-arrow:active:not(:disabled) { scale: .92; box-shadow: inset 0 2px 4px rgba(0,0,0,.15); }
+  .s1-btn:active:not(:disabled) { scale: .97; box-shadow: inset 0 2px 4px rgba(0,0,0,.15); transition: scale .15s var(--ease); }
+
+  /* ====== 方案2：opt-in .pressable（白名单）====== */
+  .pressable { transition: transform .15s var(--ease), box-shadow .2s var(--ease); }
+  .pressable:active:not(:disabled) { transform: scale(0.97); box-shadow: inset 0 2px 4px rgba(0,0,0,.15); }
+  @media (prefers-reduced-motion: reduce) { .pressable:active:not(:disabled){ transform:none; } }
+
+  /* ====== 方案3：纯阴影/亮度（零位移）====== */
+  .s3:active:not(:disabled) {
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.22);
+    filter: brightness(0.92);
+    transition: filter .12s ease, box-shadow .12s ease;
+  }
+
+  /* ====== 方案4：水波纹 ripple ===== */
+  .ripple { position: relative; overflow: hidden; transition: background-color .18s var(--ease); }
+  .ripple:active:not(:disabled) { background-color: color-mix(in srgb, var(--primary) 14%, #232733); }
+  .ripple .rfx {
+    position: absolute; border-radius: 50%; transform: scale(0);
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
+    animation: rplash .5s ease-out; pointer-events: none;
+  }
+  @keyframes rplash { to { transform: scale(2.4); opacity: 0; } }
+
+  /* ====== 方案5：拟物 3D 按下（外壳下沉+厚度收起）====== */
+  .s5 {
+    background: var(--primary); color:#fff; border:none;
+    box-shadow: 0 4px 0 #1b3a6b, 0 6px 12px rgba(0,0,0,.35);
+    transition: transform .08s var(--ease), box-shadow .08s var(--ease);
+  }
+  .s5:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #1b3a6b, 0 2px 5px rgba(0,0,0,.35); }
+
+  /* ====== 方案6：弹性回弹（spring 缓动，松手回弹过冲）====== */
+  .s6 { transition: transform .3s cubic-bezier(0.34,1.56,0.64,1); }
+  .s6:active:not(:disabled) { transform: scale(0.9); }
+
+  /* ====== 方案7：键盘式内陷（外壳不动，仅内容下移+内阴影）====== */
+  .s7 { position:relative; overflow:hidden; background:#2a2f3a; border:1px solid var(--border); transition: box-shadow .08s ease; }
+  .s7 .lbl { display:inline-block; transition: transform .06s ease; }
+  .s7:active:not(:disabled) { box-shadow: inset 0 3px 7px rgba(0,0,0,.35); }
+  .s7:active:not(:disabled) .lbl { transform: translateY(2px); }
+
+  /* ====== 方案8：描边脉冲（按下时外圈扩散环，自身不缩放）====== */
+  .s8 { position:relative; background:transparent; border:1px solid var(--primary); color:var(--primary); }
+  .s8::after { content:''; position:absolute; inset:-2px; border-radius:12px; border:2px solid var(--primary); opacity:0; pointer-events:none; }
+  .s8:active:not(:disabled)::after { animation: ringpulse .45s ease-out; }
+  @keyframes ringpulse { from { opacity:.7; transform:scale(1);} to { opacity:0; transform:scale(1.18);} }
+
+  /* ====== 方案9：亮起闪（颜色+亮度变化，零位移零缩放）====== */
+  .s9 { transition: background-color .15s ease, filter .15s ease, color .15s ease; }
+  .s9:active:not(:disabled) { background: var(--primary); color:#fff; filter: brightness(1.18); }
+
+  .hint { position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:var(--text-dim);}
+  .foot { max-width:1100px; margin-top:28px; font-size:12px; color:var(--text-dim); line-height:1.7;}
+  code { background:#000; padding:1px 6px; border-radius:5px; font-size:12px; color:#9fd0ff;}
+</style>
+</head>
+<body>
+  <h1>Button 按压反馈方案对比</h1>
+  <div class="sub">鼠标按住（或键盘聚焦后空格）每个按钮即可看到效果 · 重点对比右侧居中箭头的"下沉/掉下去"问题</div>
+
+  <div class="grid">
+
+    <!-- 当前全局（bug） -->
+    <div class="card">
+      <h2>方案0：当前全局 <span class="tag">有 bug</span></h2>
+      <p><code>button:active{transform:scale(.97)}</code> 无差别覆盖。右侧箭头靠 translateY(-50%) 居中，按下时 scale 顶掉居中 → 箭头瞬间<strong>掉下去</strong>（异常下沉）。</p>
+      <div class="stage">
+        <button class="btn btn-primary cur-global">普通按钮</button>
+        <button class="cur-arrow" aria-label="箭头">›</button>
+        <div class="hint">按住右侧箭头看它"掉下去"</div>
+      </div>
+    </div>
+
+    <!-- 方案1 -->
+    <div class="card">
+      <h2>方案1：独立 scale/translate <span class="tag">修复冲突</span></h2>
+      <p>居中用 <code>translate:0 -50%</code>、按压用 <code>scale:.92</code>，二者独立互不覆盖。箭头不再掉下去，仍可保留按压手感。</p>
+      <div class="stage">
+        <button class="btn btn-primary s1-btn">普通按钮</button>
+        <button class="s1-arrow" aria-label="箭头">›</button>
+        <div class="hint">按住右侧箭头：居中稳定 + 轻微下沉</div>
+      </div>
+    </div>
+
+    <!-- 方案2 -->
+    <div class="card">
+      <h2>方案2：opt-in .pressable <span class="tag">白名单</span></h2>
+      <p>撤销全局规则，仅给需要的按钮加 <code>.pressable</code> 才生效，且带 <code>prefers-reduced-motion</code> 降级。不该触发的地方不触发。</p>
+      <div class="stage">
+        <button class="btn btn-primary pressable">会动</button>
+        <button class="btn">不会动（无 class）</button>
+      </div>
+    </div>
+
+    <!-- 方案3 -->
+    <div class="card">
+      <h2>方案3：纯阴影/亮度 <span class="tag">零位移</span></h2>
+      <p>只动 <code>box-shadow:inset</code> + <code>filter:brightness</code>，不缩放不位移，<strong>绝不与任何 transform 冲突</strong>，天然适配 reduce-motion。</p>
+      <div class="stage">
+        <button class="btn btn-primary s3">按压变暗凹入</button>
+      </div>
+    </div>
+
+    <!-- 方案4 -->
+    <div class="card">
+      <h2>方案4：水波纹 ripple <span class="tag">品牌感</span></h2>
+      <p>点击处扩散水波纹 + 轻微背景压暗，替换 scale，更有辨识度。基于现有 RippleButton 模式。</p>
+      <div class="stage">
+        <button class="btn btn-primary ripple" id="rip">点我扩散</button>
+      </div>
+    </div>
+
+    <!-- 方案5 -->
+    <div class="card">
+      <h2>方案5：拟物 3D 按下 <span class="tag">立体键</span></h2>
+      <p>静止有底部"厚度"阴影，按下时整体下沉 3px 且厚度收起，像真实物理按键。比纯 scale 更有按压实感。</p>
+      <div class="stage">
+        <button class="btn s5">按下我</button>
+      </div>
+    </div>
+
+    <!-- 方案6 -->
+    <div class="card">
+      <h2>方案6：弹性回弹 <span class="tag">spring</span></h2>
+      <p>松手时用弹性缓动 <code>cubic-bezier(.34,1.56,.64,1)</code> 回弹过冲，按钮会"Q 弹"一下，适合年轻化/娱乐向产品。</p>
+      <div class="stage">
+        <button class="btn btn-primary s6">按压回弹</button>
+      </div>
+    </div>
+
+    <!-- 方案7 -->
+    <div class="card">
+      <h2>方案7：键盘式内陷 <span class="tag">内容位移</span></h2>
+      <p>外壳不动，仅<strong>内部文字下移 2px</strong> + 内阴影，模拟机械键盘帽被按下的感觉。完全不影响外部布局。</p>
+      <div class="stage">
+        <button class="btn s7"><span class="lbl">Key Press</span></button>
+      </div>
+    </div>
+
+    <!-- 方案8 -->
+    <div class="card">
+      <h2>方案8：描边脉冲 <span class="tag">外圈扩散</span></h2>
+      <p>按下时从按钮边缘<strong>扩散一圈光环</strong>，自身不缩放不位移，醒目且零定位冲突。适合图标/主操作。</p>
+      <div class="stage">
+        <button class="btn s8">扩散环</button>
+      </div>
+    </div>
+
+    <!-- 方案9 -->
+    <div class="card">
+      <h2>方案9：亮起闪 <span class="tag">零位移</span></h2>
+      <p>按下时背景变主色 + <code>brightness(1.18)</code> 亮一下，无缩放无位移，最克制也最稳，适合需要低调反馈处。</p>
+      <div class="stage">
+        <button class="btn s9">亮起</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    对比要点：① 方案0 的箭头按下会"掉下去"（bug），方案1 修复了它；② 方案2 只有显式加类的按钮才动；③ 方案3 完全不动位置最稳；④ 方案4 用波纹替代缩放更有特性。可按 <code>F12 → 渲染 → 模拟 prefers-reduced-motion</code> 验证方案2降级。
+  </div>
+
+<script>
+  // 方案4 水波纹注入
+  document.getElementById('rip').addEventListener('pointerdown', function (e) {
+    const b = e.currentTarget, r = b.getBoundingClientRect();
+    const size = Math.max(r.width, r.height);
+    const s = document.createElement('span');
+    s.className = 'rfx';
+    s.style.width = s.style.height = size + 'px';
+    s.style.left = (e.clientX - r.left - size / 2) + 'px';
+    s.style.top = (e.clientY - r.top - size / 2) + 'px';
+    b.appendChild(s);
+    setTimeout(() => s.remove(), 500);
+  });
+</script>
+</body>
+</html>
