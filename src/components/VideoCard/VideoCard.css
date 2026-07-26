@@ -279,6 +279,16 @@
   }
 }
 
+/* 触屏设备（含宽屏平板/折叠屏 App）：收藏按钮常显可点，
+   避免「无 hover 也无 TV focus」时收藏入口不可达 */
+@media (hover: none) and (pointer: coarse) {
+  .video-card-fav-btn.hover-visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+}
+
 /* TV 端：聚焦时按钮显形（遥控可达） */
 [data-device="tv"] .video-card-fav-btn.hover-visible {
   opacity: 0;

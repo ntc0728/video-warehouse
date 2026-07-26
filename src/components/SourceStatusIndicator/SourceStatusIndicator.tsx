@@ -26,6 +26,14 @@ export function SourceStatusIndicator({
 
   const handleMouseEnter = useCallback(() => setShowTooltip(true), []);
   const handleMouseLeave = useCallback(() => setShowTooltip(false), []);
+  // 移动端点击切换 tooltip（触摸设备无 hover）
+  const handleToggle = useCallback(() => setShowTooltip((v) => !v), []);
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setShowTooltip((v) => !v);
+    }
+  }, []);
 
   // 圆点颜色状态
   const dotClass = (() => {
@@ -40,11 +48,17 @@ export function SourceStatusIndicator({
   return (
     <div className="source-status">
       <span className="source-status-results">共找到 {totalResults} 个结果</span>
-      <div
-        className="source-status-badge"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
+            <div
+              className="source-status-badge"
+              role="button"
+              tabIndex={0}
+              aria-label={`源状态：${completedSources}/${totalSources}，成功 ${succeededSources}，失败 ${failedSources}${failedSources > 0 ? '，点击查看详情' : ''}`}
+              aria-expanded={showTooltip}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onClick={handleToggle}
+              onKeyDown={handleKeyDown}
+            >
         <span className={`source-status-dot ${dotClass}`} />
         <span className="source-status-count">
           {completedSources}/{totalSources} 源

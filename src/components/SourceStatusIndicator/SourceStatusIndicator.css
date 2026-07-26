@@ -19,8 +19,17 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  transition: border-color 0.2s;
-  cursor: default;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.source-status-badge:hover {
+  border-color: var(--color-primary);
+}
+
+.source-status-badge:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .source-status-dot {

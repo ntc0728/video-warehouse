@@ -1,6 +1,7 @@
 /**
  * StillsLightbox — 剧照全屏灯箱
  * 深色背景 + 键盘导航 + 缩略图滑动 + 计数器
+ * 增强：主图触摸滑动切换、键盘 Home/End、图片加载淡入
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,6 +20,8 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
   const thumbsRef = useRef<HTMLDivElement>(null);
   const urlsRef = useRef(urls);
   urlsRef.current = urls;
+  const [loadedMap, setLoadedMap] = useState<Record<number, boolean>>({});
+  const touchStart = useRef({ x: 0, y: 0 });
 
   // 拖拽缩略图条
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 });
@@ -79,6 +82,25 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
     setCurrentIndex((p) => Math.min(urlsRef.current.length - 1, p + 1));
   }, []);
 
+  // 主图触摸滑动切换（移动端）
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStart.current.x;
+      const dy = t.clientY - touchStart.current.y;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) goNext();
+        else goPrev();
+      }
+    },
+    [goNext, goPrev],
+  );
+
   useEffect(() => {
     if (open) {
       setCurrentIndex(initialIndex);
@@ -91,6 +113,8 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Home') { setCurrentIndex(0); return; }
+      if (e.key === 'End') { setCurrentIndex(urlsRef.current.length - 1); return; }
       setCurrentIndex((p) => {
         const next = e.key === 'ArrowLeft'
           ? Math.max(0, p - 1)
@@ -173,7 +197,12 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
       )}
 
       {/* 主图区域 */}
-      <div ref={scrollRef} className="stills-lightbox__scroll">
+      <div
+        ref={scrollRef}
+        className="stills-lightbox__scroll"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {urls.map((url, i) => (
           <div key={url} className="stills-lightbox__slide">
             <img
@@ -181,6 +210,9 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
               alt={`剧照 ${i + 1}`}
               loading={Math.abs(i - currentIndex) <= 2 ? 'eager' : 'lazy'}
               draggable={false}
+              className={loadedMap[i] ? 'is-loaded' : ''}
+              onLoad={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
+              onError={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
             />
           </div>
         ))}
