@@ -144,15 +144,27 @@ export default function HomePage() {
     (loading.trending || loading.nowPlaying) &&
     !hasAnyData;
 
-  // 按需兜底拉取首页数据：仅当处于 home 视图、无任何数据且不在加载中时触发。
-  // 原先由 App 层 usePrefetch 无条件预取，导致非首页刷新时也调用首页 TMDB 接口，
-  // 现改为 HomePage 挂载/切回 home 类目时按需拉取（fetchAllHomeData 内部只拉空区块）。
+  // 按需兜底拉取首页数据：处于 home 视图、且任一区块为空时触发。
+  // 注意：不能用 hasAnyData（含 trending）作为门槛——SearchBox 会独立拉取 trending
+  // 并使其先加载，若据此跳过则其余 7 个「行区块」永远拿不到数据（banner 在、行不在）。
+  // fetchAllHomeData 内部用 shouldFetch 只拉空区块，因此重复触发是安全的；
+  // 仅当任一区块正在加载时跳过，避免叠加请求。
   useEffect(() => {
-    if (!hasToken || isCategoryView || hasAnyData) return;
+    if (!hasToken || isCategoryView) return;
     const s = useTMDBStore.getState();
-    if (s.loading.trending || s.loading.nowPlaying) return;
+    const anyEmpty =
+      s.trending.length === 0 || s.nowPlaying.length === 0 ||
+      s.popularMovies.length === 0 || s.topRatedMovies.length === 0 ||
+      s.upcomingMovies.length === 0 || s.popularTv.length === 0 ||
+      s.topRatedTv.length === 0 || s.airingTodayTv.length === 0;
+    if (!anyEmpty) return;
+    const anyLoading =
+      s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
+      s.loading.topRatedMovies || s.loading.upcomingMovies ||
+      s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
+    if (anyLoading) return;
     void s.fetchAllHomeData();
-  }, [hasToken, isCategoryView, hasAnyData]);
+  }, [hasToken, isCategoryView, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {
@@ -214,9 +226,18 @@ export default function HomePage() {
   }
 
   // 首屏骨架（home 初始加载 或 类目首次加载共用，结构一致）
+  // home-skeleton-hero 刻意与 HeroBanner 同构：左侧主图 + 右侧缩略图列，
+  // 保证加载期缩略图骨架与 banner 同时出现（修复「缩略图骨架不和 banner 一起出现」）。
   const homeSkeleton = (
     <div className="page-padding home-page home-skeleton">
-      <div className="home-skeleton-hero" />
+      <div className="home-skeleton-hero">
+        <div className="home-skeleton-hero__banner" />
+        <div className="home-skeleton-hero__thumbs">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="home-skeleton-hero__thumb" />
+          ))}
+        </div>
+      </div>
       <div className="home-skeleton-categories">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="home-skeleton-category" />
