@@ -353,27 +353,64 @@ html.theme-transitioning *::after {
               stroke 0.3s var(--ease-standard) !important;
 }
 
-/* ── 全局按钮点击反馈 ────────────────────────────────
-   不覆盖已有 transition，仅通过 box-shadow + transform
-   提供按下时的视觉反馈。 */
+/* ── 全局按钮点击反馈（方案6：弹性回弹）────────────────────────────
+   采用「独立 scale 属性」做按下缩放，松手时用 spring 缓动回弹过冲，
+   形成 Q 弹按压手感。独立属性不会顶掉 translateY(-50%) 等 transform 居中，
+   旧版「异常下沉」的 transform 冲突不再发生。
+   不希望出现弹性按压的元素，加 .no-press 或归入下方排除名单（见整改清单）。 */
+button,
+a[role="button"],
+[role="button"] {
+  transition: scale 0.32s var(--ease-spring);
+}
+
 button:active:not(:disabled),
 a[role="button"]:active:not(:disabled),
 [role="button"]:active:not(:disabled) {
+  scale: 0.92;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
-  transform: scale(0.97);
+  /* 过渡放在 :active 态：松手（回到 base）时由本态 transition 驱动，
+     保证「弹性回弹」在 release 阶段对【所有】按钮生效，
+     不被组件自身的 transition 覆盖。 */
+  transition: scale 0.32s var(--ease-spring);
 }
 
-/* 排除已有 transform 的元素 */
-.filter-bar__chip:active,
-.group-tag:active,
-.detail-btn:active,
-.mobile-tab-bar button:active,
-.player-panel-header:active,
-.hero-banner__dot:active,
-.hero-banner__arrow:active,
-.history-node-col:active,
-.hero-banner__cta:active {
-  transform: none !important;
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled),
+  a[role="button"]:active:not(:disabled),
+  [role="button"]:active:not(:disabled) {
+    scale: none;
+  }
+}
+
+/* 不应用弹性按压的元素（整改清单）：
+   ① 已有自身 transform:scale 反馈 → 避免叠加成双重缩放；
+   ② 装饰/靠 transform 定位的元素；
+   ③ 已是按压反馈封装的组件（.btn-press / .ripple-container）。 */
+.no-press,
+.filter-bar__chip,
+.group-tag,
+.detail-btn,
+.mobile-tab-bar button,
+.player-panel-header,
+.hero-banner__dot,
+.hero-banner__arrow,
+.hero-banner__cta,
+.history-node-col,
+.tmdb-movierow-arrow,
+.video-card-fav-btn,
+.force-refresh-btn,
+.iptv-filter-tag,
+.grouppicker__hot-tag,
+.grouppicker__more-btn,
+.grouppicker__expand-btn,
+.grouppicker__grid-tag,
+.up-error-actions-btn,
+.back-btn,
+.up-player-play-button,
+.btn-press,
+.ripple-container {
+  scale: none !important;
   box-shadow: none !important;
 }
 

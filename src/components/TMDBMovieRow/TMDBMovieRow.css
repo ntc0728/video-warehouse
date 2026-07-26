@@ -159,9 +159,9 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-/* 点击反馈：用更高特异性覆盖全局 `button:active{transform:scale(0.97)}`
-   否则全局规则会顶掉本组件的 translateY(-50%)，导致按钮下移（"下沉"）。
-   这里保留 translateY(-50%) 居中 + 轻微 scale 做按下回弹，既修复下沉又恢复切换过渡动画。 */
+/* 点击反馈：保留 translateY(-50%) 居中 + 轻微 scale(0.92) 做按下回弹。
+   该箭头已被列入全局排除名单（index.css .tmdb-movierow-arrow{scale:none!important}），
+   因此全局弹性按压不会叠加到这里，也不会顶掉 translateY(-50%) 导致按钮下移。 */
 .tmdb-movierow-wrapper .tmdb-movierow-arrow:active {
   background: rgba(15, 15, 15, 0.85);
   transform: translateY(-50%) scale(0.92);
