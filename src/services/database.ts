@@ -67,13 +67,20 @@ export interface IPTVCacheData {
 let dbInstance: IDBPDatabase<VideoWarehouseDB> | null = null;
 
 /**
+ * openDB 超时保护：版本升级（如 6→7）时若旧页面/其它标签页仍握着同一 IndexedDB
+ * 连接，openDB 会触发 blocked 并永久挂起，导致整页卡在 loading。
+ * 超时后主动 reject，让上层回退为空数据，保证应用可继续渲染。
+ */
+const DB_OPEN_TIMEOUT = 6000;
+
+/**
  * 初始化数据库，创建对象仓库和索引
  * 使用单例模式确保全局只有一个数据库实例
  */
 export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
   if (dbInstance) return dbInstance;
 
-  dbInstance = await openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
+  const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('videos')) {
         const videoStore = db.createObjectStore('videos', { keyPath: 'id' });
@@ -109,10 +116,22 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
       // v3-v5: 新增可选字段（backdrop, episodeLabel），无需 schema 变更
     },
     blocked() {
-      console.warn('[DB] database open blocked — closing existing connections');
+      console.warn('[DB] database open blocked — 升级被旧连接阻塞，请关闭其它标签页后刷新');
+    },
+    terminated() {
+      // 连接被意外终止（如浏览器隐私模式），允许下次重新初始化
+      dbInstance = null;
     },
   });
 
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error('[DB] openDB 超时：可能被旧页面连接阻塞，请刷新页面')),
+      DB_OPEN_TIMEOUT,
+    ),
+  );
+
+  dbInstance = await Promise.race([openPromise, timeoutPromise]);
   return dbInstance;
 }
 
