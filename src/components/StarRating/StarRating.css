@@ -24,6 +24,10 @@
   transform: scale(1.15);
 }
 
+.star-btn:active {
+  transform: scale(0.9);
+}
+
 .star-btn.filled {
   color: var(--color-favorite-active);
 }

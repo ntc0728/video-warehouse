@@ -58,7 +58,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={[
           'inline-flex items-center justify-center rounded-md font-medium',
           'min-h-[var(--comp-btn-min-width)]',
-          'transition-colors duration-150 ease-in-out',
+          'transition-[color,transform] duration-150 ease-in-out active:scale-[0.97]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-50',
           variantClasses[variant],

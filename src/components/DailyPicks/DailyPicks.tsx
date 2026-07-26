@@ -81,7 +81,16 @@ export default function DailyPicks() {
             <div
               key={pick.id}
               className="carousel-slide"
+              role="button"
+              tabIndex={0}
+              aria-label={`查看详情：${pick.title}`}
               onClick={() => navigate(`/detail/${pick.videoId}`, { viewTransition: true })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/detail/${pick.videoId}`, { viewTransition: true });
+                }
+              }}
             >
               <div className="carousel-slide-cover">
                 <LazyImage src={pick.cover} alt={pick.title} letter={pick.title?.charAt(0)} />
