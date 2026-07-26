@@ -929,6 +929,19 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-xl);
   line-height: 1;
 }
+
+/* 个人资料 / 导入 / 导出 / 恢复默认：仅【文字】缩放扩展，不缩放按钮本体、不出现阴影框。
+   .settings-profile 与 .settings-row 本体已在全局排除名单（scale:none），
+   此处只缩放内部文字容器（.settings-profile__meta / .settings-row__label 均为 flex，可缩放）。 */
+.settings-profile__meta,
+.settings-row__label {
+  transition: scale 0.32s var(--ease-spring);
+}
+
+.settings-profile:active .settings-profile__meta,
+.settings-row:active .settings-row__label {
+  scale: 0.95;
+}
 .settings-action-btn {
   width: 100%;
   margin-top: var(--space-lg);

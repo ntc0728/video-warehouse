@@ -356,8 +356,10 @@ html.theme-transitioning *::after {
 /* ── 全局按钮点击反馈（方案6：弹性回弹）────────────────────────────
    采用「独立 scale 属性」做按下缩放，松手时用 spring 缓动回弹过冲，形成 Q 弹手感。
    独立属性不会顶掉 translateY(-50%) 等 transform 居中，根除旧版「异常下沉」。
+   ⚠️ 缩放反馈【一律不叠加 box-shadow】：任何元素在按下缩放时都不出现阴影框——
+   侧边栏/顶栏导航、收藏·历史 status-tabs、设置页 tabbar、profile/导入/导出/恢复默认
+   等行按钮均「只缩放、不出现阴影框」。
    - scale 应用于所有可点击元素（含无边框导航 .sidebar-nav-item / .sticky-header__nav-item）；
-   - box-shadow(内凹) 仅应用于「有边框/成框」的按钮与 tab；无边框元素只缩放、不出现阴影框；
    - 不希望出现弹性按压的元素，加 .no-press 或归入下方排除名单（见整改清单）。 */
 button,
 a[role="button"],
@@ -376,14 +378,6 @@ a[role="button"]:active:not(:disabled),
   /* 过渡放在 :active 态：松手（回到 base）时由本态 transition 驱动，
      保证「弹性回弹」在 release 阶段对所有元素生效，不被组件自身 transition 覆盖。 */
   transition: scale 0.32s var(--ease-spring);
-}
-
-/* box-shadow 内凹阴影仅给「有边框/成框」的按钮与 tab；
-   无边框导航（.sidebar-nav-item / .sticky-header__nav-item）只缩放，不出现阴影框 */
-button:active:not(:disabled),
-a[role="button"]:active:not(:disabled),
-[role="button"]:active:not(:disabled) {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -422,6 +416,7 @@ a[role="button"]:active:not(:disabled),
 .up-player-play-button,
 .iptv-osd-control-btn,
 .settings-menu-item,
+.settings-profile,
 .settings-row {
   scale: none !important;
   box-shadow: none !important;
