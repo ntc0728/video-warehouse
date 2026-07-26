@@ -384,45 +384,66 @@ function HeroThumb({
   onEnter: () => void;
   onClick: () => void;
 }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
   const thumbPath = item.backdropPath || item.backdrop_path || '';
   const thumbUrl = thumbPath ? buildImageUrl(thumbPath, 'w500') : '';
   const title = item.name || item.title || '';
 
-  // 缩略图 src 变化时（窗口平移导致同一槽位复用节点、item 改变）：
-  // 若新图已在缓存中（complete 为真）则立即保持已加载，避免重建时闪一帧骨架；
-  // 否则回到未加载态，等新图 onLoad 后淡入。
+  // 单层 + 预加载就绪再换图：切换目标 url 时先用 new Image() 预加载，
+  // 加载完成（已进缓存）才更新 img.src；加载期间保持显示旧图，从根上避免露白闪烁。
+  const [currentSrc, setCurrentSrc] = useState(thumbUrl);
+  const [ready, setReady] = useState(false);
+  const currentSrcRef = useRef(thumbUrl);
+  currentSrcRef.current = currentSrc;
+  const loadingRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const el = imgRef.current;
-    if (el && el.complete && el.naturalWidth > 0) {
-      setImgLoaded(true);
-    } else {
-      setImgLoaded(false);
+    if (!thumbUrl) {
+      currentSrcRef.current = '';
+      setCurrentSrc('');
+      setReady(false);
+      loadingRef.current = null;
+      return;
     }
+    // 已是当前显示图：无需切换
+    if (thumbUrl === currentSrcRef.current) {
+      loadingRef.current = null;
+      return;
+    }
+    // 预加载新图，完成后（缓存就绪）再替换 src，期间旧图持续显示
+    const img = new Image();
+    loadingRef.current = thumbUrl;
+    const apply = () => {
+      if (loadingRef.current === thumbUrl) {
+        setCurrentSrc(thumbUrl);
+        setReady(true);
+        loadingRef.current = null;
+      }
+    };
+    img.onload = apply;
+    img.onerror = apply;
+    img.src = thumbUrl;
   }, [thumbUrl]);
 
   return (
     <button
       type="button"
-      className={`hero-banner__thumb${active ? ' is-active' : ''}${imgLoaded ? ' is-loaded' : ''}`}
+      className={`hero-banner__thumb${active ? ' is-active' : ''}`}
       onMouseEnter={onEnter}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       aria-label={title}
       aria-current={active ? 'true' : undefined}
     >
-      {thumbUrl ? (
+      {currentSrc ? (
         <img
           className="hero-banner__thumb-img"
-          src={thumbUrl}
+          src={currentSrc}
           alt=""
           loading="eager"
           draggable={false}
-          onLoad={() => setImgLoaded(true)}
-          ref={imgRef}
+          onLoad={() => setReady(true)}
         />
       ) : null}
-      {!imgLoaded && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
+      {!ready && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
       <span className="hero-banner__thumb-title">{title}</span>
     </button>
   );
