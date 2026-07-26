@@ -182,15 +182,17 @@ export default function DetailPage() {
         // 页面显示后 ResizeObserver 会用上面的精确值纠正。
         const vw = w > 0 ? w : window.innerWidth;
         if (vw <= 0) return;
-        let colMin: number;
-        if (vw <= 768) {
-          colMin = vw / 2; // 移动端固定 2 列
+        if (vw <= 767) {
+          // 移动端 CSS 固定 2 列（@media (width <= 767px): repeat(2, 1fr)）。
+          // 此前用 colMin=vw/2 反推会得出 1 列，导致隐藏容器/慢网兜底时剧照
+          // 只显示 2 张而非 2 行 4 张——直接取 2 列修正。
+          actualCols = 2;
         } else {
           // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
-          colMin = Math.min(256, Math.max(128, 96 + 0.08 * vw));
+          const colMin = Math.min(256, Math.max(128, 96 + 0.08 * vw));
+          const gap = 12; // 与 Detail.css --space-sm 对齐
+          actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
         }
-        const gap = 12; // 与 Detail.css --space-sm 对齐
-        actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
       }
       setVisibleCount(actualCols * 2);
     };

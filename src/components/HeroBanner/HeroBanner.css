@@ -54,6 +54,41 @@
   to { opacity: 1; }
 }
 
+/* ── 主图左右滑动切换（所有客户端）──
+   slideDir 由「自动轮播 + 手动拖拽」设置：
+   'left' = 新图从右滑入（前进），'right' = 新图从左滑入（后退）。
+   悬停预览无 slideDir → 回退为上方的 crossfade（.is-active 默认 heroBgFadeIn）。
+   .slide-* 选择器特异性更高，设置方向时覆盖 crossfade。 */
+.hero-banner__main.slide-left .hero-banner__bg-layer.is-active {
+  animation: heroBgSlideLeft 0.5s var(--ease-out-expo);
+}
+
+.hero-banner__main.slide-right .hero-banner__bg-layer.is-active {
+  animation: heroBgSlideRight 0.5s var(--ease-out-expo);
+}
+
+@keyframes heroBgSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes heroBgSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .hero-banner__bg-placeholder {
   position: absolute;
   inset: 0;
@@ -383,40 +418,5 @@
 
   .hero-banner__text {
     max-width: 100%;
-  }
-
-  /* 移动端：背景图左右滑动切换（替代桌面端的 crossfade） */
-  .hero-banner__bg-layer.is-active {
-    animation: none;
-  }
-
-  .hero-banner__main.slide-left .hero-banner__bg-layer.is-active {
-    animation: heroBgSlideLeft 0.4s ease-out;
-  }
-
-  .hero-banner__main.slide-right .hero-banner__bg-layer.is-active {
-    animation: heroBgSlideRight 0.4s ease-out;
-  }
-
-  @keyframes heroBgSlideLeft {
-    from {
-      opacity: 0;
-      transform: translateX(40px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes heroBgSlideRight {
-    from {
-      opacity: 0;
-      transform: translateX(-40px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
   }
 }

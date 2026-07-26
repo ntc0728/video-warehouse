@@ -11,21 +11,26 @@ import { lazy } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LazyComponent = React.LazyExoticComponent<React.ComponentType<any>>;
 
+/** 带 preload 能力的懒加载组件：可在空闲时提前拉取 chunk */
+type PreloadableLazy = LazyComponent & { preload: () => Promise<unknown> };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function lazyWithRetry(factory: () => Promise<{ default: React.ComponentType<any> }>) {
-  return lazy(() =>
+function lazyWithRetry(factory: () => Promise<{ default: React.ComponentType<any> }>): PreloadableLazy {
+  const load = () =>
     factory().catch((err: Error) => {
       console.error('[RouteChunk] failed to load, retrying:', err);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return new Promise<{ default: React.ComponentType<any> }>((resolve) => {
         setTimeout(() => resolve(factory()), 800);
       });
-    }),
-  );
+    });
+  const Component = lazy(load) as PreloadableLazy;
+  Component.preload = load;
+  return Component;
 }
 
 /** 路径模式 → 懒加载组件 */
-const routeComponentMap: Record<string, LazyComponent> = {
+const routeComponentMap: Record<string, PreloadableLazy> = {
   '/': lazyWithRetry(() => import('@/pages/Home/HomeRoute')),
   '/iptv': lazyWithRetry(() => import('@/pages/IPTV')),
   '/browse': lazyWithRetry(() => import('@/pages/Browse')),
@@ -64,6 +69,26 @@ export function matchRoute(pathname: string): string | null {
 export function getRouteComponent(pathname: string): LazyComponent | null {
   const routeKey = matchRoute(pathname);
   return routeKey ? routeComponentMap[routeKey] ?? null : null;
+}
+
+/**
+ * 预加载所有路由 chunk（应在应用空闲时调用一次）。
+ *
+ * 目的：提前把各页面的 JS chunk 拉入缓存。这样路由切换到「未访问过」的页面时，
+ * Suspense 能立即解析（chunk 已缓存），不再出现
+ * 「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading 闪烁。
+ *
+ * 注意：import() 只加载并求值模块（定义组件），不会挂载/渲染，也不触发数据请求，
+ * 因此没有副作用；真正的数据拉取仍发生在页面被导航挂载时。
+ */
+let preloadStarted = false;
+export function preloadAllRoutes(): void {
+  if (preloadStarted) return;
+  preloadStarted = true;
+  for (const comp of Object.values(routeComponentMap)) {
+    // 预加载失败静默处理：真正导航到该页面时 lazyWithRetry 会自动重试
+    comp.preload().catch(() => { /* ignore */ });
+  }
 }
 
 export { routeComponentMap };

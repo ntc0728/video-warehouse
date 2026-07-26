@@ -635,6 +635,25 @@ body.skin-transitioning .skin-btn.active {
     padding-right: 0;
     padding-left: 0;
   }
+
+  /* 个人资料面板去卡片化：桌面端已收归 .settings-desktop-card 整卡，
+     个人资料不再单独成卡，仅保留内边距，与下方 section 用分割线分隔。 */
+  .settings-content > .settings-profile {
+    padding: var(--space-lg);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .settings-content > .settings-profile:hover {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .settings-content > .settings-profile + section {
+    border-top: 1px solid var(--color-border-light);
+  }
 }
 
 /* ===== 设置弹窗统一卡片样式（修复样式错乱，与详情页一致） =====

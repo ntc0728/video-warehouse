@@ -1,9 +1,9 @@
 /**
  * HeroBanner — 首页 Hero 横幅
  *
- * 布局：左侧主背景图（active item，crossfade）+ 右侧竖排缩略图列（海报+标题）。
- * - 不再左右滑动（已移除 Embla 横向轮播）
- * - 主图随 activeIndex 切换，淡入淡出
+ * 布局：左侧主背景图（active item）+ 右侧竖排缩略图列（海报+标题）。
+ * - 主图随 activeIndex 切换，采用左右滑动动画（所有客户端一致）；自动轮播也走滑动切换
+ * - 桌面端悬停缩略图时预览主图（crossfade），不改变 activeIndex，不触发滑动
  * - 右侧缩略图自动轮播（5s），鼠标悬停切换主图并暂停轮播
  * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
  */
@@ -79,7 +79,7 @@ export default function HeroBanner({
   const displayIndex = hoveredIndex !== null ? hoveredIndex : activeIndex;
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
-  // 移动端滑动方向：'left' = 新图从右滑入，'right' = 新图从左滑入
+  // 滑动方向（所有客户端）：'left' = 新图从右滑入（前进），'right' = 新图从左滑入（后退）
   const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
@@ -161,6 +161,8 @@ export default function HeroBanner({
     const timer = window.setInterval(() => {
       // 滑动后 1000ms 内不轮播，避免与滑动动画冲突
       if (Date.now() - swipeCooldownRef.current < 1000) return;
+      // 自动轮播前进：新图从右滑入（slideDir='left'），所有客户端统一走滑动切换
+      setSlideDir('left');
       setActiveIndex((i) => (i + 1) % displayItems.length);
     }, autoPlayInterval);
     return () => window.clearInterval(timer);
