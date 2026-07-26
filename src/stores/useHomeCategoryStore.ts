@@ -6,7 +6,7 @@
  * - data：每个内容类目的缓存数据（hero + 7 行），带 10 分钟 TTL，避免反复请求
  *
  * 与 useTMDBStore 的关系：
- * - 'home'（默认发现页）数据由 useTMDBStore + usePrefetch 负责（启动预取 + 长缓存）
+ * - 'home'（默认发现页）数据由 useTMDBStore 负责（HomePage 挂载时按需拉取 + store 长缓存）
  * - 其余 6 个内容类目的数据在此 store 内按需拉取（首次点击类目时 fetch，之后走缓存）
  *
  * Keep-Alive 兼容：Home 页常驻挂载，activeCategory 变化即触发 Home 重新渲染对应内容，不跳页。

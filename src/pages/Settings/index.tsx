@@ -138,7 +138,7 @@ export default function SettingsPage() {
           {renderContent()}
         </SettingsSubPage>
       ) : isDesktop ? (
-        <>
+        <div className="settings-desktop-card">
           <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
           <div className="settings-content">
             {filteredItems.length === 0 ? (
@@ -147,7 +147,7 @@ export default function SettingsPage() {
               renderContent()
             )}
           </div>
-        </>
+        </div>
       ) : (
         <>
           <SettingsMobileProfile />

@@ -9,7 +9,7 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
-import { ConfirmDialog } from '@/components/ui';
+import { ConfirmDialog, Select } from '@/components/ui';
 import { Trash2, CheckSquare, Square, LayoutGrid, PlayCircle, Eye, CheckCircle2, ListChecks } from 'lucide-react';
 import RecordShell from '@/components/RecordShell';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -26,11 +26,23 @@ const PAGE_SIZE = 30;
 
 type Tab = 'video' | 'iptv';
 type VideoStatus = 'all' | 'unwatched' | 'watching' | 'watched';
+type SortKey = 'recent' | 'oldest' | 'title-asc' | 'title-desc' | 'rating-desc' | 'rating-asc';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'recent', label: '最近收藏' },
+  { value: 'oldest', label: '最早收藏' },
+  { value: 'title-asc', label: '名称A-Z' },
+  { value: 'title-desc', label: '名称Z-A' },
+  { value: 'rating-desc', label: '评分从高到低' },
+  { value: 'rating-asc', label: '评分从低到高' },
+];
 
 interface CollectionVideoItem extends Video {
   _rating?: number;
   _status?: VideoStatus;
   _sourceIndex?: number;
+  /** 收藏时间（用于排序） */
+  _addedAt?: number;
 }
 
 type ConfirmType = 'single' | 'batch' | 'clearAll';
@@ -54,6 +66,7 @@ export default function CollectionsPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
   const [statusFilter, setStatusFilter] = useState<VideoStatus>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('recent');
   const [searchByTab, setSearchByTab] = useState<{ video: string; iptv: string }>({ video: '', iptv: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
@@ -74,6 +87,7 @@ export default function CollectionsPage() {
     if (prev === '/collections' && location.pathname !== '/collections') {
       setActiveTab('video');
       setStatusFilter('all');
+      setSortBy('recent');
       setSearchByTab({ video: '', iptv: '' });
       setBatchMode(false);
       setSelected(new Set());
@@ -129,16 +143,12 @@ export default function CollectionsPage() {
   }, [history]);
 
   const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
-    // 按收藏时间倒序排列（最新的在前），先排再 map 以确保用 addedAt 排序
-    const sortedCollections = [...collections]
+    let list: CollectionVideoItem[] = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
-      .sort((a, b) => b.addedAt - a.addedAt);
-
-    let list: CollectionVideoItem[] = sortedCollections
       .map((c: CollectionRecord): CollectionVideoItem => {
         const sv = videos.find((v) => v.id === c.videoId);
         const status = getVideoStatus(c.videoId);
-        if (sv) return { ...sv, _rating: c.rating, _status: status, _sourceIndex: c.sourceIndex };
+        if (sv) return { ...sv, _rating: c.rating, _status: status, _sourceIndex: c.sourceIndex, _addedAt: c.addedAt };
         return {
           id: c.videoId,
           title: c.title || '',
@@ -153,12 +163,35 @@ export default function CollectionsPage() {
           _rating: c.rating,
           _status: status,
           _sourceIndex: c.sourceIndex,
+          _addedAt: c.addedAt,
         };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') { list = list.filter((v) => v._status === statusFilter); }
+
+    // 排序：默认最近收藏；名称按中文拼音序；评分缺失按 0 处理，同值时按收藏时间倒序兜底
+    const byAddedDesc = (a: CollectionVideoItem, b: CollectionVideoItem) => (b._addedAt ?? 0) - (a._addedAt ?? 0);
+    switch (sortBy) {
+      case 'oldest':
+        list.sort((a, b) => (a._addedAt ?? 0) - (b._addedAt ?? 0));
+        break;
+      case 'title-asc':
+        list.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-Hans-CN') || byAddedDesc(a, b));
+        break;
+      case 'title-desc':
+        list.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'zh-Hans-CN') || byAddedDesc(a, b));
+        break;
+      case 'rating-desc':
+        list.sort((a, b) => ((b._rating ?? 0) - (a._rating ?? 0)) || byAddedDesc(a, b));
+        break;
+      case 'rating-asc':
+        list.sort((a, b) => ((a._rating ?? 0) - (b._rating ?? 0)) || byAddedDesc(a, b));
+        break;
+      default:
+        list.sort(byAddedDesc);
+    }
     return list;
-  }, [collections, videos, searchByTab.video, statusFilter, getVideoStatus]);
+  }, [collections, videos, searchByTab.video, statusFilter, getVideoStatus, sortBy]);
 
   /** Counts for status tabs (before status filter, only search filter applied) */
   const statusCounts = useMemo(() => {
@@ -191,7 +224,7 @@ export default function CollectionsPage() {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeTab, searchByTab.video, searchByTab.iptv, statusFilter]);
+  }, [activeTab, searchByTab.video, searchByTab.iptv, statusFilter, sortBy]);
 
   const displayedList = useMemo(
     () => (currentList as (CollectionVideoItem | IPTVChannel)[]).slice(0, visibleCount),
@@ -275,6 +308,15 @@ export default function CollectionsPage() {
       onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
     >
       <div className="record-edit-row">
+        {activeTab === 'video' && (
+          <div className="record-sort">
+            <Select
+              options={SORT_OPTIONS}
+              value={sortBy}
+              onChange={(v) => setSortBy(v as SortKey)}
+            />
+          </div>
+        )}
         <button
           type="button"
           className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}

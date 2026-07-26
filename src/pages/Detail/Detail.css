@@ -888,7 +888,7 @@
   text-overflow: ellipsis;
 }
 
-/* 移动端折叠：限制 2 行高度 */
+/* 折叠（全视口统一）：限制 2 行高度，超出隐藏 */
 .detail-cast-row--collapsed {
   max-height: 14rem;
   overflow: hidden;
@@ -910,17 +910,6 @@
 
 .detail-cast-toggle:hover {
   color: var(--color-primary);
-}
-
-/* 桌面端隐藏折叠按钮（始终展开） */
-@media (width >= 1024px) {
-  .detail-cast-toggle {
-    display: none;
-  }
-  .detail-cast-row--collapsed {
-    max-height: none;
-    overflow: visible;
-  }
 }
 
 /* ── 播放列表（匹配结果布局） ──────────────────── */

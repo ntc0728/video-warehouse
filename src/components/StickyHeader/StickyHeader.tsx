@@ -265,8 +265,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
                 scope={searchScope}
               />
             </div>
-          ) : isMobile && pageTitle ? (
-            <div className="sticky-header__page-title">{pageTitle}</div>
+          ) : isMobile && (pageTitle || isHome) ? (
+            // 首页无 pageTitle 时中央显示品牌名 kinoTV（移动端左侧品牌文字已隐藏）
+            <div className={`sticky-header__page-title${pageTitle ? '' : ' sticky-header__page-title--brand'}`}>
+              {pageTitle ?? 'kinoTV'}
+            </div>
           ) : (
             <SearchBox
               key={location.pathname}

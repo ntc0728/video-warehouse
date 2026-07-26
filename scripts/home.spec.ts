@@ -681,12 +681,14 @@ test.describe('1.5 全局交互', () => {
   test('HOME-045: 移动端 logo 右侧不显示 kinoTV 且进入指定页面时中央显示标题', async ({ page }) => {
     await page.setViewportSize({ width: 767, height: 1024 });
 
-    // 首页：logo 右侧不显示 kinoTV 品牌字，中央不应显示页面标题
+    // 首页：logo 右侧不显示 kinoTV 品牌字，中央显示品牌名 kinoTV
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1500);
     await expect(page.locator('.sticky-header__logo-group .sticky-header__brand')).toBeHidden({ timeout: 5000 });
-    await expect(page.locator('.sticky-header__page-title')).toHaveCount(0);
+    const brandTitle = page.locator('.sticky-header__page-title--brand');
+    await expect(brandTitle).toBeVisible({ timeout: 5000 });
+    await expect(brandTitle).toHaveText('kinoTV');
 
     // 进入指定页面：中央应显示对应标题
     const cases = [

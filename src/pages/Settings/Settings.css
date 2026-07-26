@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Settings — 设置页
-   桌面（≥768px）：TabBar 切换，内容区直接 inline 渲染
+   桌面（≥768px）：整体大卡片（TabBar + 内容区同卡），section 去卡片化、用分割线分隔
    移动（≤767px）：MenuList → SubPage 两级导航
    所有编辑操作以 Modal 弹窗完成
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -339,7 +339,19 @@ body.skin-transitioning .skin-btn.active {
    设置页重构组件样式（TabBar / MenuList / SubPage）
    ════════════════════════════════════════ */
 
-/* Tab 栏容器 — 桌面/平板（卡片式：统一 card-module 规范） */
+/* 桌面端整体大卡片：TabBar + 内容区放入同一张卡（仅桌面分支渲染） */
+.settings-desktop-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Tab 栏容器 — 大卡片顶部一行，与内容区用分割线分隔（不再独立成卡） */
 .settings-tabbar {
   position: sticky;
   top: 0;
@@ -348,16 +360,14 @@ body.skin-transitioning .skin-btn.active {
   flex-wrap: wrap;
   gap: var(--space-2xs);
   justify-content: flex-end;
-  margin-bottom: var(--space-md);
-  padding: var(--space-2xs);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface);
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
-  box-shadow: var(--shadow-sm);
 }
 
 .settings-tabbar::-webkit-scrollbar {
@@ -420,12 +430,11 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text-tertiary);
 }
 
-/* 桌面端内容区（Tab 下方） */
+/* 桌面端内容区（Tab 下方，section 间距由分割线 + section 内边距提供） */
 .settings-content {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-md);
   min-height: 0;
 }
 
@@ -606,19 +615,19 @@ body.skin-transitioning .skin-btn.active {
   font-weight: 600;
 }
 
-/* ===== 区块卡片化 + 内边距（桌面端，统一 card-module 规范） =====
-   原 sections 仅靠 Tab 内联 md: 工具类成卡，且无内边距；
-   现统一在桌面端为 section 注入卡片样式与内边距，List 横向内边距收归到 section，
-   避免双重内缩、hover 行背景顶到圆角。 */
+/* ===== 区块去卡片化（桌面端）=====
+   section 不再各自成卡（卡片样式收归 .settings-desktop-card 整卡），
+   仅保留内边距，section 之间用分割线分隔。 */
 @media (width >= 768px) {
   .settings-content > section,
   .settings-subpage__body > section {
-    margin-bottom: var(--space-md);
     padding: var(--space-lg);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+  }
+
+  /* section 之间的分割线 */
+  .settings-content > section + section,
+  .settings-subpage__body > section + section {
+    border-top: 1px solid var(--color-border-light);
   }
 
   .settings-content > section [class~="px-4"],

@@ -176,7 +176,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 卡片模块 (Card Module) UI 约定
 
-项目级统一视觉风格：每个功能区块作为独立「卡片模块」，样式镜像设置页 section：
+项目级统一视觉风格：每个功能区块作为独立「卡片模块」：
 - 背景 `var(--color-surface)` + `1px solid var(--color-border-light)` 边框 + `var(--radius-lg)` 圆角 + `var(--shadow-sm)` 阴影
 - 模块（卡片）之间间距统一 `var(--space-sm)`
 - **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
@@ -190,6 +190,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css`
 - 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css`
 - 详情页 `detail-hero` — 去掉负 margin，受 page-padding 约束（`Detail.css`）
+- 设置页桌面端 `.settings-desktop-card` — TabBar + 内容区放入**同一张大卡片**，section 去卡片化、之间用分割线（`border-top`）分隔（`Settings.css`）；移动端子页布局不变
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
 

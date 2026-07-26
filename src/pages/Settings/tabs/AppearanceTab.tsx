@@ -10,7 +10,7 @@ interface AppearanceTabProps {
 
 export default function AppearanceTab({ theme, setTheme, skin, setSkin }: AppearanceTabProps) {
   return (
-    <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+    <section>
       <List header={<span className="settings-section-header"><Palette size={20} /> 外观</span>}>
         <List.Item
           title="主题模式"

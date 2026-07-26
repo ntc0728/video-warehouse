@@ -30,7 +30,7 @@ export default function IptvTab({
   onEditIptvProxy, onEditIptvPattern,
 }: IptvTabProps) {
   return (
-    <section className="md:rounded-lg md:border md:border-[var(--color-border-light)] md:bg-[var(--color-surface)] md:shadow-sm">
+    <section>
       <List header={<span className="settings-section-header"><Tv size={20} /> IPTV</span>}>
         <List.Item
           title={<>IPTV 数据源<HelpPopover title="IPTV 数据源" content="选择IPTV M3U播放列表数据源。支持多选（最多3个），可同时加载多个源的频道。" /></>}

@@ -94,7 +94,7 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
             >
               {active && <span className="home-sidebar__indicator" />}
               <Icon size={20} className="home-sidebar__icon" aria-hidden="true" />
-              {!collapsed && <span className="home-sidebar__label">{item.label}</span>}
+              <span className="home-sidebar__label">{item.label}</span>
             </button>
           );
         })}
