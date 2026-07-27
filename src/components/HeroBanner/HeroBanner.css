@@ -270,10 +270,10 @@
   cursor: pointer;
 }
 
-/* 激活态：仅发光 + 缩放，无边框 */
+/* 激活态：仅发光，不缩放盒子宽度（避免与骨架/非激活缩略图宽度不一致）；
+   图片内层仍由 .hero-banner__thumb.is-active .hero-banner__thumb-img 的
+   scale(1.03) 提供放大手感，不影响布局宽度 */
 .hero-banner__thumb.is-active {
-  transform: scale(1.02);
-  transition: transform 0.3s var(--ease-spring);
   box-shadow: 0 0 18px var(--color-primary-shadow);
 }
 

@@ -4,7 +4,7 @@
  * Hero：全屏 backdrop + 双层渐变 + logo/标签/简介 + 毛玻璃按钮 + 桌面端右侧海报
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
@@ -177,29 +177,29 @@ export default function DetailPage() {
   // 剧照网格：根据容器实际列数限制显示 2 行
   const stillsGridRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState<number | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (stills.length === 0) return;
     const container = stillsGridRef.current;
     if (!container) return;
 
     const calc = () => {
-      let actualCols = 0;
       const w = container.clientWidth;
       const computed = getComputedStyle(container);
       const tpl = computed.gridTemplateColumns;
       if (w > 0 && tpl && tpl !== 'none' && tpl.trim() !== '') {
-        // 容器可见：浏览器已解析出真实列数（最精确）
-        actualCols = tpl.split(' ').filter(Boolean).length;
-      } else {
+        // 容器可见且网格样式已生效：浏览器已解析出真实列数（最精确）
+        setVisibleCount(tpl.split(' ').filter(Boolean).length * 2);
+        return;
+      }
+      if (w === 0) {
         // 容器不可见（keep-alive 隐藏为 display:none 时 clientWidth=0）时无法测量，
         // 用视口宽度估算兜底，避免 visibleCount 永远停在初始值导致剧照全部平铺；
         // 页面显示后 ResizeObserver 会用上面的精确值纠正。
-        const vw = w > 0 ? w : window.innerWidth;
+        const vw = window.innerWidth;
         if (vw <= 0) return;
+        let actualCols: number;
         if (vw <= 767) {
-          // 移动端 CSS 固定 2 列（@media (width <= 767px): repeat(2, 1fr)）。
-          // 此前用 colMin=vw/2 反推会得出 1 列，导致隐藏容器/慢网兜底时剧照
-          // 只显示 2 张而非 2 行 4 张——直接取 2 列修正。
+          // 移动端 CSS 固定 2 列（@media (width <= 767px): repeat(2, 1fr)）
           actualCols = 2;
         } else {
           // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
@@ -207,14 +207,36 @@ export default function DetailPage() {
           const gap = 12; // 与 Detail.css --space-sm 对齐
           actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
         }
+        setVisibleCount(actualCols * 2);
       }
-      setVisibleCount(actualCols * 2);
+      // 其余情况：容器可见（w>0）但网格样式尚未生效（gridTemplateColumns 仍为 none，
+      // 常见于冷加载 CSS 晚于 JS 渲染）。此时不提交基于视口的估算值（会高估列数、
+      // 导致截断行数偏多），交由下方 requestAnimationFrame 重试，待 display:grid
+      // 就绪后取到真实列数再提交，避免「未截断 / 截断过多」的闪烁。
     };
 
+    // useLayoutEffect：在浏览器绘制前完成测量，消除「全部剧照先出现再塌陷」的闪烁
     calc();
+    // CSS 可能晚于 JS 生效：连续若干帧重算，确保 display:grid 就绪后取到真实列数。
+    // 即便网格由 block 变为 grid 时宽度不变，其高度变化也会触发 ResizeObserver，
+    // 这里再用 rAF 兜底，双保险。
+    let raf = 0;
+    let tries = 0;
+    const schedule = () => {
+      if (tries++ < 6) {
+        raf = requestAnimationFrame(() => {
+          calc();
+          schedule();
+        });
+      }
+    };
+    schedule();
     const ro = new ResizeObserver(calc);
     ro.observe(container);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [stills.length]);
 
   // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
