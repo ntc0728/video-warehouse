@@ -33,3 +33,4 @@
 | `demos/button-press-demo.html` | 按钮按压反馈方案对比 | 早期会话（归档留存） |
 | `demos/demo-thumb-switch.html` | HeroBanner 缩略图切换 旧↔新 逻辑对比 | 2026-07-27 |
 | `demos/demo-sidebar-collapse.html` | 侧边栏展开「弹一下」根因复现（结构等价）：OLD=`.main` 带 overflow:clip（复现弹跳）/ NEW=去 clip（连续滑入） | 2026-07-27 |
+| `demos/demo-sidebar-perf-2026-07-27.html` | 侧边栏折叠性能方案 A/B/C 对比（width transition / transform 补偿 / 主内容 transform 平移），最终采用方案 B | 2026-07-27 |
