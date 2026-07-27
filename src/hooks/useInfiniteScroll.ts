@@ -68,6 +68,8 @@ export function useInfiniteScroll({
   const onLoadMoreRef = useRef(onLoadMore);
   const hasMoreRef = useRef(hasMore);
   const triggerLoadRef = useRef<() => void>(() => {});
+  /** 边沿触发记忆：上一次 scroll 时是否已在底部阈值内，避免停在底部时每帧连发 */
+  const wasNearBottomRef = useRef(false);
   onLoadMoreRef.current = onLoadMore;
   hasMoreRef.current = hasMore;
 
@@ -135,6 +137,8 @@ export function useInfiniteScroll({
     // sentinel 已在视口内时立即触发（observer 首次 observe 不会 callback）
     requestAnimationFrame(() => {
       if (!sentinel.isConnected) return;
+      // 隐藏期守卫：容器不可见（clientHeight===0）时 sentinel 的 rect 全 0 无意义，跳过
+      if (root && root.clientHeight === 0) return;
       const rect = sentinel.getBoundingClientRect();
       const rootEl = root || document.documentElement;
       const rootBottom = rootEl === document.documentElement
@@ -165,12 +169,20 @@ export function useInfiniteScroll({
 
     const onScroll = () => {
       if (!hasMoreRef.current || !canLoadMore) return;
+      // 隐藏期守卫：Keep-Alive 隐藏态（display:none）容器 clientHeight===0，
+      // 此时 dist 恒为 0 < 阈值会无限连发把 visibleCount 推满，直接跳过。
+      if (el && el.clientHeight === 0) return;
       const dist = el
         ? el.scrollHeight - el.scrollTop - el.clientHeight
         : document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
-      if (dist < FALLBACK_THRESHOLD_PX) {
+      // 边沿触发：仅当 dist 从 ≥阈值 穿越到 <阈值 的瞬间触发一次，
+      // 避免用户停在底部时 scroll 事件每帧都触发、把列表一次性连发到全量
+      // （IPTV 同步切片 + resetLoading 立即释放锁时尤为致命）。
+      const near = dist < FALLBACK_THRESHOLD_PX;
+      if (near && !wasNearBottomRef.current) {
         triggerLoadRef.current();
       }
+      wasNearBottomRef.current = near;
     };
 
     // requestAnimationFrame 节流：滚动帧高频触发时只在每帧执行一次

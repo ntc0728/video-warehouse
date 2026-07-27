@@ -4,7 +4,9 @@
  * 增强：主图触摸滑动切换、键盘 Home/End、图片加载淡入
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useScrollContainer } from '../../hooks/useScrollContext';
 import './StillsLightbox.css';
 
 interface StillsLightboxProps {
@@ -22,37 +24,42 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
   urlsRef.current = urls;
   const [loadedMap, setLoadedMap] = useState<Record<number, boolean>>({});
   const touchStart = useRef({ x: 0, y: 0 });
+  const scrollContainerRef = useScrollContainer();
 
   // 拖拽缩略图条
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 });
 
-  // 灯箱打开时阻止背景滚动
+  // 灯箱打开时锁定背景滚动
   useEffect(() => {
     if (!open) return;
 
     const scrollY = window.scrollY;
     const body = document.body;
     const html = document.documentElement;
+    const scroller = scrollContainerRef.current;
 
-    // 锁定背景滚动
+    // 兜底：锁定 window/body（部分场景滚动在 window 上）
     body.style.position = 'fixed';
     body.style.top = `-${scrollY}px`;
     body.style.left = '0';
     body.style.right = '0';
     body.style.overflow = 'hidden';
     html.style.overflow = 'hidden';
+    // 关键：本项目滚动发生在自定义滚动容器（CustomScrollbar / ScrollContainerContext），
+    // 仅锁 body/window 无效，必须锁住真实滚动容器才能阻止背景滚轮 / 触摸滚动。
+    if (scroller) scroller.style.overflow = 'hidden';
 
     return () => {
-      // 恢复背景滚动
       body.style.position = '';
       body.style.top = '';
       body.style.left = '';
       body.style.right = '';
       body.style.overflow = '';
       html.style.overflow = '';
+      if (scroller) scroller.style.overflow = '';
       window.scrollTo(0, scrollY);
     };
-  }, [open]);
+  }, [open, scrollContainerRef]);
 
   const scrollToIndex = useCallback((idx: number) => {
     const container = scrollRef.current;
@@ -172,7 +179,7 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="stills-lightbox" role="dialog" aria-modal="true" aria-label="剧照查看">
       <div className="stills-lightbox__backdrop" onClick={onClose} />
 
@@ -237,6 +244,7 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
