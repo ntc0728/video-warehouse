@@ -4,7 +4,7 @@
  * Hero：全屏 backdrop + 双层渐变 + logo/标签/简介 + 毛玻璃按钮 + 桌面端右侧海报
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
-import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
@@ -175,69 +175,73 @@ export default function DetailPage() {
   );
 
   // 剧照网格：根据容器实际列数限制显示 2 行
-  const stillsGridRef = useRef<HTMLDivElement>(null);
+  const stillsGridRef = useRef<HTMLDivElement | null>(null);
+  const stillsRORef = useRef<ResizeObserver | null>(null);
+  const stillsRafRef = useRef(0);
   const [visibleCount, setVisibleCount] = useState<number | null>(null);
-  useLayoutEffect(() => {
-    if (stills.length === 0) return;
+
+  const measureStills = useCallback(() => {
     const container = stillsGridRef.current;
     if (!container) return;
-
-    const calc = () => {
-      const w = container.clientWidth;
-      const computed = getComputedStyle(container);
-      const tpl = computed.gridTemplateColumns;
-      if (w > 0 && tpl && tpl !== 'none' && tpl.trim() !== '') {
-        // 容器可见且网格样式已生效：浏览器已解析出真实列数（最精确）
-        setVisibleCount(tpl.split(' ').filter(Boolean).length * 2);
-        return;
+    const w = container.clientWidth;
+    const tpl = getComputedStyle(container).gridTemplateColumns;
+    if (w > 0 && tpl && tpl !== 'none' && tpl.trim() !== '') {
+      // 容器可见且网格样式已生效：浏览器已解析出真实列数（最精确）
+      setVisibleCount(tpl.split(' ').filter(Boolean).length * 2);
+      return;
+    }
+    if (w === 0) {
+      // 容器不可见（keep-alive 隐藏为 display:none 时 clientWidth=0）时无法测量，
+      // 用视口宽度估算兜底，避免 visibleCount 永远停在 null 导致剧照全部平铺；
+      // 页面显示后 ResizeObserver 会用上面的精确值纠正。
+      const vw = window.innerWidth;
+      if (vw <= 0) return;
+      let actualCols: number;
+      if (vw <= 767) {
+        // 移动端 CSS 固定 2 列（@media (width <= 767px): repeat(2, 1fr)）
+        actualCols = 2;
+      } else {
+        // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
+        const colMin = Math.min(256, Math.max(128, 96 + 0.08 * vw));
+        const gap = 12; // 与 Detail.css --space-sm 对齐
+        actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
       }
-      if (w === 0) {
-        // 容器不可见（keep-alive 隐藏为 display:none 时 clientWidth=0）时无法测量，
-        // 用视口宽度估算兜底，避免 visibleCount 永远停在初始值导致剧照全部平铺；
-        // 页面显示后 ResizeObserver 会用上面的精确值纠正。
-        const vw = window.innerWidth;
-        if (vw <= 0) return;
-        let actualCols: number;
-        if (vw <= 767) {
-          // 移动端 CSS 固定 2 列（@media (width <= 767px): repeat(2, 1fr)）
-          actualCols = 2;
-        } else {
-          // CSS: minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr)
-          const colMin = Math.min(256, Math.max(128, 96 + 0.08 * vw));
-          const gap = 12; // 与 Detail.css --space-sm 对齐
-          actualCols = Math.max(1, Math.floor((vw + gap) / (colMin + gap)));
-        }
-        setVisibleCount(actualCols * 2);
-      }
-      // 其余情况：容器可见（w>0）但网格样式尚未生效（gridTemplateColumns 仍为 none，
-      // 常见于冷加载 CSS 晚于 JS 渲染）。此时不提交基于视口的估算值（会高估列数、
-      // 导致截断行数偏多），交由下方 requestAnimationFrame 重试，待 display:grid
-      // 就绪后取到真实列数再提交，避免「未截断 / 截断过多」的闪烁。
-    };
+      setVisibleCount(actualCols * 2);
+    }
+    // 其余情况：容器可见（w>0）但网格样式尚未生效（gridTemplateColumns 仍为 none，
+    // 常见于冷加载 CSS 晚于 JS 渲染）。此时不提交基于视口的估算值（会高估列数、
+    // 导致截断行数偏多），交由挂载时的 requestAnimationFrame 重试，待 display:grid
+    // 就绪后取到真实列数再提交，避免「未截断 / 截断过多」的闪烁。
+  }, []);
 
-    // useLayoutEffect：在浏览器绘制前完成测量，消除「全部剧照先出现再塌陷」的闪烁
-    calc();
-    // CSS 可能晚于 JS 生效：连续若干帧重算，确保 display:grid 就绪后取到真实列数。
-    // 即便网格由 block 变为 grid 时宽度不变，其高度变化也会触发 ResizeObserver，
-    // 这里再用 rAF 兜底，双保险。
-    let raf = 0;
+  // 回调 ref：真实剧照网格挂载的那一次 commit（浏览器绘制前）同步测量。
+  // 之所以不用 useLayoutEffect + 依赖数组：setStills 在 .then()、setStillsLoading(false)
+  // 在 .finally()，分属不同微任务，React 可能拆成两次 flush，effect 的执行时机与
+  // 「真实 grid（带 ref）替换骨架 div」的那次渲染极易错拍——一旦错过，visibleCount
+  // 永远为 null，剧照全部平铺（“首次进入未按预期截断”的根因）。回调 ref 由 React
+  // 在节点 attach/detach 时精确调用，天然与 DOM 就绪同步，无时序竞态。
+  const setStillsGridRef = useCallback((node: HTMLDivElement | null) => {
+    stillsRORef.current?.disconnect();
+    stillsRORef.current = null;
+    cancelAnimationFrame(stillsRafRef.current);
+    stillsGridRef.current = node;
+    if (!node) return;
+    // commit 阶段、绘制前完成首次测量，消除「全部剧照先出现再塌陷」的闪烁
+    measureStills();
+    // CSS 可能晚于 JS 生效：连续若干帧重算，确保 display:grid 就绪后取到真实列数
     let tries = 0;
     const schedule = () => {
-      if (tries++ < 6) {
-        raf = requestAnimationFrame(() => {
-          calc();
-          schedule();
-        });
-      }
+      if (tries++ >= 6) return;
+      stillsRafRef.current = requestAnimationFrame(() => {
+        measureStills();
+        schedule();
+      });
     };
     schedule();
-    const ro = new ResizeObserver(calc);
-    ro.observe(container);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [stills.length]);
+    const ro = new ResizeObserver(measureStills);
+    ro.observe(node);
+    stillsRORef.current = ro;
+  }, [measureStills]);
 
   // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
   const restoredRef = useRef(false);
@@ -791,7 +795,7 @@ export default function DetailPage() {
                   </div>
                 ) : (
                    <div
-                    ref={stillsGridRef}
+                    ref={setStillsGridRef}
                     className={`detail-stills-grid${visibleCount != null ? ' detail-stills-grid--limited' : ''}`}
                   >
                     {stills.slice(0, visibleCount != null ? visibleCount : undefined).map((url, i) => {

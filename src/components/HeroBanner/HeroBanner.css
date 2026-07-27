@@ -240,11 +240,14 @@
   justify-content: flex-start;
   padding: 0 0 0 var(--space-sm);
   /* 列宽精确 = (banner高 / 张数) × 16/9：
-     每张宽=列宽、高=列宽×9/16，N 张+gaps 总高恰好 = banner 高（100cqh），
+     每张宽=列宽、高=列宽×9/16，N 张+gaps 总高恰好 = banner 高，
      实现「严格 16:9 + 整列撑满 banner」且不依赖子项 shrink-to-fit（不再塌缩）。
-     张数 N = JS 注入的 --hero-thumb-count（宽屏 4 / 普通 3）。 */
+     张数 N = JS 注入的 --hero-thumb-count（宽屏 4 / 普通 3）。
+     banner 高优先取 JS 实测注入的 --hero-banner-h（含 max-height 截断后的真实高度），
+     彻底避免依赖 container-type:size 的 100cqh 在首帧/硬重载（CSS 容器查询上下文尚未
+     建立）时回退到视口高度导致列宽异常跳变；未注入时回退 100cqh 保持原行为。 */
   width: calc(
-    (100cqh - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
+    (var(--hero-banner-h, 100cqh) - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
     / var(--hero-thumb-count, 3) * 16 / 9
   );
   overflow: hidden;
