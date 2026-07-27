@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>侧边栏折叠性能对比 - Video Warehouse</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f12; color: #e5e5e5; overflow: hidden; }
+
+  /* 顶部说明栏 */
+  .demo-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    height: 60px; display: flex; align-items: center; gap: 12px;
+    padding: 0 20px; background: #1a1a20; border-bottom: 1px solid #2a2a30;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .demo-header h1 { font-size: 14px; font-weight: 600; color: #fff; margin-right: 20px; }
+  .demo-header .scheme-switcher { display: flex; gap: 4px; background: #0f0f12; padding: 4px; border-radius: 8px; }
+  .demo-header .scheme-btn {
+    padding: 6px 14px; font-size: 12px; background: transparent; color: #888;
+    border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .demo-header .scheme-btn.active { background: #3b82f6; color: #fff; font-weight: 600; }
+  .demo-header .scheme-btn:hover:not(.active) { color: #ccc; background: #1f1f26; }
+
+  .demo-header .metrics { margin-left: auto; display: flex; gap: 16px; align-items: center; font-size: 11px; }
+  .metric { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .metric-label { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-family: 'SF Mono', Consolas, monospace; font-size: 14px; font-weight: 700; }
+  .metric-value.good { color: #22c55e; }
+  .metric-value.bad { color: #ef4444; }
+  .metric-value.warn { color: #f59e0b; }
+
+  /* 折叠按钮 */
+  .collapse-btn {
+    padding: 6px 12px; font-size: 12px; background: #3b82f6; color: #fff;
+    border: none; border-radius: 6px; cursor: pointer; font-weight: 600;
+  }
+  .collapse-btn:hover { background: #2563eb; }
+
+  /* demo 容器 */
+  .demo-root {
+    padding-top: 60px; height: 100vh; display: flex; flex-direction: column;
+  }
+
+  /* app-shell 三方案共用骨架 */
+  .app-shell {
+    display: flex; flex: 1; height: 100%; overflow: hidden;
+    --sidebar-width: 220px;
+    --sidebar-width-collapsed: 64px;
+    --sidebar-offset: var(--sidebar-width);
+    --collapse-delta: 156px; /* 220 - 64 */
+  }
+  .app-shell.collapsed { --sidebar-offset: var(--sidebar-width-collapsed); }
+
+  .sidebar {
+    flex-shrink: 0; width: var(--sidebar-offset); background: #1a1a20;
+    border-right: 1px solid #2a2a30; padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 4px; overflow: hidden;
+  }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    border-radius: 8px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s; font-size: 13px; color: #aaa;
+  }
+  .sidebar-item:hover { background: #25252b; color: #fff; }
+  .sidebar-item.active { background: #3b82f6; color: #fff; font-weight: 600; }
+  .sidebar-icon { width: 20px; height: 20px; flex-shrink: 0; background: currentColor; border-radius: 4px; opacity: 0.7; }
+  .sidebar-label { transition: opacity 0.15s; }
+  .collapsed .sidebar-label { opacity: 0; }
+  .collapsed .sidebar-item { padding: 10px 22px; }
+
+  .main { flex: 1; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .scroll-area { flex: 1; overflow-y: auto; padding: 16px; }
+  .scroll-area::-webkit-scrollbar { width: 8px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+  /* 卡片网格 - 模拟首页 7 行 × N 列 */
+  .movie-row { margin-bottom: 24px; }
+  .movie-row-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #ccc; }
+  .movie-grid {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
+  }
+  .movie-card {
+    aspect-ratio: 2/3; border-radius: 6px; overflow: hidden;
+    background: linear-gradient(135deg, #2a2a30, #1a1a20);
+    position: relative;
+  }
+  /* 用 CSS 渐变 + 伪元素模拟图片，避免网络加载干扰 */
+  .movie-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, hsl(var(--h, 200) 50% 30%), hsl(var(--h, 200) 60% 15%));
+  }
+  .movie-card::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.7));
+  }
+
+  /* ───────────────────────────────────────────────
+     方案 A: width transition (当前项目实现)
+     ─────────────────────────────────────────────── */
+  .scheme-a .sidebar { transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* ───────────────────────────────────────────────
+     方案 B: transform 补偿 (主内容区也用 transform)
+     动画期间不改变实际 width,只用 transform 模拟
+     ─────────────────────────────────────────────── */
+  .scheme-b .sidebar {
+    width: var(--sidebar-width);
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+    will-change: transform;
+  }
+  .scheme-b.collapsed .sidebar {
+    transform: translateX(calc(-1 * var(--collapse-delta)));
+    width: var(--sidebar-width); /* 保持原宽度,只是平移出去 */
+  }
+  .scheme-b .main-wrap {
+    flex: 1; min-width: 0; overflow: hidden;
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+    will-change: transform;
+  }
+  .scheme-b.collapsed .main-wrap {
+    transform: translateX(calc(-1 * var(--collapse-delta)));
+  }
+  /* 动画结束后切换实际宽度,清除 transform(由 JS 控制 .anim-done 类) */
+  .scheme-b.collapsed.anim-done .main-wrap {
+    transform: translateX(0);
+    margin-left: calc(-1 * var(--collapse-delta));
+  }
+  .scheme-b.collapsed.anim-done .sidebar {
+    transform: translateX(0);
+    width: var(--sidebar-width-collapsed);
+  }
+
+  /* ───────────────────────────────────────────────
+     方案 C: transform-only (最纯净,主内容宽度始终不变)
+     侧栏用 translateX 滑出,主内容用 translateX 左移
+     动画结束不切换 width,只在 main 上加 margin-left
+     ─────────────────────────────────────────────── */
+  .scheme-c .sidebar {
+    flex-shrink: 0; width: var(--sidebar-width);
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s;
+    transform: translateX(0); will-change: transform;
+  }
+  .scheme-c.collapsed .sidebar {
+    transform: translateX(calc(-1 * var(--collapse-delta)));
+  }
+  .scheme-c .main-wrap {
+    flex: 1; min-width: 0; overflow: hidden;
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0s 0.24s;
+    will-change: transform;
+  }
+  .scheme-c.collapsed .main-wrap {
+    transform: translateX(calc(-1 * var(--collapse-delta)));
+    margin-left: calc(-1 * var(--collapse-delta));
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0s 0s;
+  }
+  /* 关键:动画结束后清除 transform,让 margin-left 接管,内容真正变宽 */
+  .scheme-c.collapsed.anim-done .main-wrap {
+    transform: translateX(0);
+  }
+
+  /* 隐藏的 main-wrap 用于 B/C 方案,A 方案直接用 .main */
+  .scheme-b .main, .scheme-c .main { display: none; }
+  .scheme-b .main-wrap, .scheme-c .main-wrap { display: flex; flex-direction: column; }
+  .scheme-a .main-wrap { display: none; }
+
+  .fps-overlay {
+    position: fixed; bottom: 12px; left: 12px; z-index: 2000;
+    background: rgba(0,0,0,0.85); color: #22c55e; font-family: 'SF Mono', monospace;
+    font-size: 11px; padding: 8px 12px; border-radius: 6px; border: 1px solid #333;
+    pointer-events: none; line-height: 1.6;
+  }
+  .fps-overlay .label { color: #666; }
+  .fps-overlay .value { color: #fff; font-weight: 700; }
+
+  .scheme-desc {
+    position: fixed; bottom: 12px; right: 12px; z-index: 2000;
+    max-width: 340px; background: rgba(26,26,32,0.95); padding: 12px 14px;
+    border-radius: 8px; border: 1px solid #2a2a30; font-size: 11px; line-height: 1.6;
+    color: #aaa;
+  }
+  .scheme-desc h3 { font-size: 12px; color: #fff; margin-bottom: 6px; }
+  .scheme-desc .pros { color: #22c55e; }
+  .scheme-desc .cons { color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<div class="demo-header">
+  <h1>侧边栏折叠性能对比</h1>
+  <div class="scheme-switcher">
+    <button class="scheme-btn active" data-scheme="a">方案A: width transition<br><small>(当前项目)</small></button>
+    <button class="scheme-btn" data-scheme="b">方案B: transform 补偿<br><small>(推荐)</small></button>
+    <button class="scheme-btn" data-scheme="c">方案C: transform + margin<br><small>(最纯净)</small></button>
+  </div>
+  <button class="collapse-btn" id="collapseBtn">折叠/展开</button>
+  <div class="metrics">
+    <div class="metric">
+      <span class="metric-label">FPS</span>
+      <span class="metric-value good" id="fpsValue">60</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Layout 次数</span>
+      <span class="metric-value good" id="layoutValue">0</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">帧耗时</span>
+      <span class="metric-value good" id="frameValue">0ms</span>
+    </div>
+  </div>
+</div>
+
+<div class="demo-root">
+  <div class="app-shell scheme-a" id="appShell">
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-item active"><div class="sidebar-icon"></div><span class="sidebar-label">首页</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">IPTV</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">电影</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">电视剧</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">综艺</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">动漫</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">纪录片</span></div>
+      <div class="sidebar-item"><div class="sidebar-icon"></div><span class="sidebar-label">排行榜</span></div>
+    </aside>
+
+    <!-- 主内容(B/C 方案用 main-wrap 包裹) -->
+    <div class="main-wrap">
+      <main class="main">
+        <div class="scroll-area" id="scrollArea">
+          <!-- JS 生成 7 行 × 7 列 = 49 张卡片 -->
+        </main>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fps-overlay">
+  <div><span class="label">渲染管线:</span> <span class="value" id="pipelineInfo">Layout → Paint → Composite</span></div>
+  <div><span class="label">动画属性:</span> <span class="value" id="propInfo">width (触发 reflow)</span></div>
+</div>
+
+<div class="scheme-desc" id="schemeDesc">
+  <h3>方案A:width transition(当前项目实现)</h3>
+  <p>每一帧 width 变化 → flex 重排 → grid 1fr 重算 → 49 张卡片宽度变化 → 重绘。</p>
+  <p class="pros">✓ 实现简单,视觉自然</p>
+  <p class="cons">✗ 每帧触发 layout,移动端卡顿明显</p>
+</div>
+
+<script>
+  // 生成卡片
+  const scrollArea = document.getElementById('scrollArea');
+  const ROW_TITLES = ['正在热映', '热门电影', '高分电影', '即将上映', '热门剧集', '高分剧集', '今日播出'];
+  for (let r = 0; r < 7; r++) {
+    const row = document.createElement('div');
+    row.className = 'movie-row';
+    row.innerHTML = `<div class="movie-row-title">${ROW_TITLES[r]}</div><div class="movie-grid"></div>`;
+    const grid = row.querySelector('.movie-grid');
+    for (let c = 0; c < 7; c++) {
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      card.style.setProperty('--h', (r * 50 + c * 30) % 360);
+      grid.appendChild(card);
+    }
+    scrollArea.appendChild(row);
+  }
+
+  // 折叠切换
+  const appShell = document.getElementById('appShell');
+  const collapseBtn = document.getElementById('collapseBtn');
+  let collapsed = false;
+  let animTimer = null;
+
+  collapseBtn.addEventListener('click', () => {
+    collapsed = !collapsed;
+    appShell.classList.remove('anim-done');
+    appShell.classList.toggle('collapsed', collapsed);
+
+    // B/C 方案:动画结束后切换实际宽度
+    clearTimeout(animTimer);
+    animTimer = setTimeout(() => {
+      appShell.classList.add('anim-done');
+    }, 260);
+  });
+
+  // 方案切换
+  const schemeBtns = document.querySelectorAll('.scheme-btn');
+  const schemeDesc = document.getElementById('schemeDesc');
+  const pipelineInfo = document.getElementById('pipelineInfo');
+  const propInfo = document.getElementById('propInfo');
+
+  const schemeInfo = {
+    a: {
+      title: '方案A:width transition(当前项目实现)',
+      desc: '每一帧 width 变化 → flex 重排 → grid 1fr 重算 → 49 张卡片宽度变化 → 重绘。',
+      pros: '✓ 实现简单,视觉自然',
+      cons: '✗ 每帧触发 layout,移动端卡顿明显',
+      pipeline: 'Layout → Paint → Composite',
+      prop: 'width (触发 reflow)',
+    },
+    b: {
+      title: '方案B:transform 补偿(推荐)',
+      desc: '动画期间侧栏和主内容都用 translateX 平移,0 layout。动画结束后才一次性切换实际 width(1 次 reflow)。',
+      pros: '✓ 动画期间 0 reflow,60fps 流畅\n✓ 动画结束仅 1 次重排',
+      cons: '✗ 实现稍复杂,需 JS 配合切换 width',
+      pipeline: 'Composite only (GPU)',
+      prop: 'transform (合成层)',
+    },
+    c: {
+      title: '方案C:transform + margin(最纯净)',
+      desc: '侧栏 translateX 滑出,主内容 translateX 左移 + margin-left 接管。动画期间 0 layout,结束后 margin 自然过渡。',
+      pros: '✓ 全程 transform,纯合成层\n✓ 无 JS 干预,纯 CSS',
+      cons: '✗ 动画结束瞬间有 1 次 reflow(margin 切换)',
+      pipeline: 'Composite only (GPU)',
+      prop: 'transform + margin-left',
+    },
+  };
+
+  schemeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const scheme = btn.dataset.scheme;
+      schemeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      appShell.className = `app-shell scheme-${scheme}${collapsed ? ' collapsed' : ''}${collapsed ? ' anim-done' : ''}`;
+      const info = schemeInfo[scheme];
+      schemeDesc.innerHTML = `<h3>${info.title}</h3><p>${info.desc}</p><p class="pros">${info.pros.replace(/\n/g, '<br>')}</p><p class="cons">${info.cons}</p>`;
+      pipelineInfo.textContent = info.pipeline;
+      propInfo.textContent = info.prop;
+      resetMetrics();
+    });
+  });
+
+  // FPS / 性能监控
+  const fpsValue = document.getElementById('fpsValue');
+  const layoutValue = document.getElementById('layoutValue');
+  const frameValue = document.getElementById('frameValue');
+  let layoutCount = 0;
+  let lastTime = performance.now();
+  let frames = 0;
+  let maxFrameTime = 0;
+
+  function resetMetrics() {
+    layoutCount = 0;
+    maxFrameTime = 0;
+    layoutValue.textContent = '0';
+    layoutValue.className = 'metric-value good';
+    frameValue.textContent = '0ms';
+  }
+
+  // 监听 layout(ResizeObserver 间接反映)
+  const ro = new ResizeObserver(() => {
+    layoutCount++;
+    layoutValue.textContent = layoutCount;
+    if (layoutCount > 5) {
+      layoutValue.className = 'metric-value bad';
+    } else if (layoutCount > 2) {
+      layoutValue.className = 'metric-value warn';
+    }
+  });
+  // 观察卡片网格,宽度变化说明触发了 layout
+  ro.observe(document.querySelector('.movie-grid'));
+
+  function loop() {
+    const now = performance.now();
+    const delta = now - lastTime;
+    frames++;
+
+    if (delta > maxFrameTime) {
+      maxFrameTime = delta;
+      frameValue.textContent = maxFrameTime.toFixed(1) + 'ms';
+      if (maxFrameTime > 25) {
+        frameValue.className = 'metric-value bad';
+      } else if (maxFrameTime > 17) {
+        frameValue.className = 'metric-value warn';
+      } else {
+        frameValue.className = 'metric-value good';
+      }
+    }
+
+    if (delta >= 500) {
+      const fps = Math.round((frames * 1000) / delta);
+      fpsValue.textContent = fps;
+      if (fps >= 55) fpsValue.className = 'metric-value good';
+      else if (fps >= 30) fpsValue.className = 'metric-value warn';
+      else fpsValue.className = 'metric-value bad';
+      frames = 0;
+      lastTime = now;
+      maxFrameTime = 0;
+    }
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  resetMetrics();
+</script>
+
+</body>
+</html>
