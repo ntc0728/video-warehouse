@@ -7,11 +7,11 @@
  * - 右侧缩略图自动轮播（5s），鼠标悬停切换主图并暂停轮播
  * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
-import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
+import { buildImageUrl, buildImageSrcSet, HERO_THUMB_SIZE } from '@/services/tmdbService';
 import './HeroBanner.css';
 
 interface HeroItem {
@@ -40,12 +40,14 @@ interface HeroBannerProps {
   historyMap?: Map<string, { progress: number }>;
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
+  /** 分类标识：变化时（首页⇄分类切换）让右侧缩略图列整体重挂载，
+   *  立即进入各自加载骨架、加载完再显示新分类，避免「同分类交叉淡入」机制
+   *  把上一个分类的海报滞留显示（旧分类残留 + 切换延迟感）。
+   *  同分类内 activeIndex 变化不改变此值，故不重挂载、平滑交叉淡入得以保留。 */
+  categoryId?: string;
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
-/** 骨架占位数量（加载中/无数据时立即渲染，避免缩略图列出现太慢） */
-const SKELETON_COUNT = 4;
-/** banner 最多展示的 item 数量（控制背景层与缩略图数量，避免过多图片请求） */
 /** 预加载图片 */
 function preloadImage(url: string | null | undefined): void {
   if (!url) return;
@@ -58,6 +60,7 @@ function preloadImage(url: string | null | undefined): void {
 
 export default function HeroBanner({
   items,
+  categoryId,
   autoPlayInterval = 5000,
   onItemClick,
   onContinuePlay,
@@ -102,7 +105,14 @@ export default function HeroBanner({
   // 仅在 items 从空变为有时重置 bannerReady（骨架→真实），
   // 已有数据时保持 bannerReady 不变，避免骨架图闪烁。
   const prevItemsLenRef = useRef(displayItems.length);
-  useEffect(() => {
+  // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：bannerReady 重置必须在「浏览器 paint 之前」
+  // 同步完成，否则会出现以下闪烁序列——React 先按旧的 bannerReady=true 渲染出「新分类的真实
+  // 缩略图」并绘制一帧，useEffect（paint 之后）才把它重渲染成骨架，再等背景图加载后又变回真实
+  // 缩略图，表现为「右侧缩略图闪一下」。useLayoutEffect 会在那一帧被绘制前就重渲染为骨架，
+  // 用户只看到干净的「骨架 → 真实」过渡，从根本上消除切换分类/进入首页时的缩略图闪烁。
+  // 注意：仅该重置逻辑用 useLayoutEffect；正向下「背景图加载完成 → bannerReady=true」的揭示
+  // 仍留在下方普通 useEffect，避免任何时序回归，缩略图骨架→真实的 loading 反馈保持不变。
+  useLayoutEffect(() => {
     setActiveIndex(0);
     setHoveredIndex(null);
     setBgIndices([0]);
@@ -117,13 +127,14 @@ export default function HeroBanner({
       prevItemsLenRef.current = curLen;
       return () => window.clearTimeout(t);
     } else if (curLen > 0) {
-      // 已有数据且 items 变化（如切换分类）：重置 bannerReady，缩略图回到骨架占位，
-      // 待新背景图加载完成再揭示真实缩略图——避免切换瞬间仍显示上一个分类的缩略图，
-      // 同时作为切换 loading 反馈（不再长时间停留在旧分类 banner）。
-      setBannerReady(false);
-      const t = window.setTimeout(() => setBannerReady(true), 3000);
+      // 已有数据且 items 变化（如切换分类）：
+      // ⚠️ 不再重置 bannerReady 为骨架占位（此前这行是「缩略图闪一下」的根因：
+      //   切换瞬间真实图→骨架→真实图的硬切换）。改为保持 true，交由各 HeroThumb 自身的
+      //   「预加载完成再换图」机制在新/旧海报间做平滑交叉淡入（旧图持续显示直到新图就绪），
+      //   实现图片参与动画、无延迟无闪烁。主图背景层 key=item.id（见下方渲染）：新类目首项
+      //   id 不同 → 新建 <img>、旧图随旧层卸载，也不会出现「仍显示上一个类目图片」的滞留。
+      //   整页切换过渡由 Home 页级 .home-cat-fade 统一负责（见 Home/index.tsx）。
       prevItemsLenRef.current = curLen;
-      return () => window.clearTimeout(t);
     } else {
       // 变为空：重置
       setBannerReady(false);
@@ -166,7 +177,7 @@ export default function HeroBanner({
     for (let offset = -half; offset < n - half; offset++) {
       const idx = ((activeIndex + offset + 1) % total + total) % total;
       const thumbPath = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
-      if (thumbPath) preloadImage(buildImageUrl(thumbPath, 'w500'));
+      if (thumbPath) preloadImage(buildImageUrl(thumbPath, HERO_THUMB_SIZE));
     }
   }, [activeIndex, displayItems]);
 
@@ -238,8 +249,8 @@ export default function HeroBanner({
           </div>
         )}
         {!isMobile && (
-          <div className="hero-banner__thumbs" aria-hidden="true">
-            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+          <div className="hero-banner__thumbs" aria-hidden="true" style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}>
+            {Array.from({ length: maxCount }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
                 <span className="hero-banner__thumb-skeleton" />
               </div>
@@ -299,8 +310,14 @@ export default function HeroBanner({
           const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
           const isActive = idx === displayIndex;
           return (
+            // ⚠️ key 必须用 item.id（而非下标 idx）：
+            // 切换分类时新分类首项也是下标 0，若用 idx 作 key，React 会复用同一个 <img>
+            // DOM 元素仅改 src——浏览器在新图解码完成前会持续显示「上一分类/页面的旧图」，
+            // 表现为「banner 还在显示上一个页面的图片，过一会才更新」。改用 item.id 后，
+            // 不同条目 key 不同 → 创建全新 <img>、旧层卸载，彻底消除旧图滞留；
+            // 自动轮播/悬停预览仍由 bgIndices 双层层叠 crossfade，表现不变（同 id 元素还可复用缓存）。
             <img
-              key={idx}
+              key={item.id}
               className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}`}
               src={backdropUrl}
               srcSet={backdropSrcSet || undefined}
@@ -358,10 +375,12 @@ export default function HeroBanner({
           banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架） */}
       {!isMobile && (
         <div
+          key={categoryId}
           className="hero-banner__thumbs"
+          style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}
         >
           {!bannerReady ? (
-            Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+            Array.from({ length: maxCount }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton" aria-hidden="true">
                 <span className="hero-banner__thumb-skeleton" />
               </div>
@@ -402,7 +421,9 @@ function HeroThumb({
   onClick: () => void;
 }) {
   const thumbPath = item.backdropPath || item.backdrop_path || '';
-  const thumbUrl = thumbPath ? buildImageUrl(thumbPath, 'w500') : '';
+  // 右侧缩略图（backdrop 横图）压缩：w500 → w300，显示宽度仅 ~180–220px，体积更小、解码更快。
+  // Hero 主图（buildImageUrl(..., 'w1280')）保持原画质不参与压缩。
+  const thumbUrl = thumbPath ? buildImageUrl(thumbPath, HERO_THUMB_SIZE) : '';
   const title = item.name || item.title || '';
 
   // 单层 + 预加载就绪再换图：切换目标 url 时先用 new Image() 预加载，

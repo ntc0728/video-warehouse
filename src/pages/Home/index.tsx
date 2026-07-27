@@ -7,7 +7,8 @@
  * 7 客户端 · 3 主题感知
  */
 import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
@@ -28,7 +29,7 @@ import { useShallow } from 'zustand/react/shallow';
 import './Home.css';
 
 export default function HomePage() {
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -79,6 +80,12 @@ export default function HomePage() {
   );
 
   useHeaderContent({ immersive: true });
+
+  // ── 类目切换过渡：让整页图片（行海报、快捷分类）参与淡入 ─────────
+  // 注：类目切换不再对整页内容做 opacity 淡入（home-cat-fade）。
+  // 此前该淡入会让所有 .tmdb-movierow 容器（卡片盒）一起从 opacity:0 淡入，
+  // 表现为「容器整体闪烁」。容器盒保持常驻不透明，图片由 LazyImage 的
+  // blur-up / 会话缓存命中做平滑过渡，类目切换不再有容器闪跳。
 
   // 从设置 store 获取 TMDB Access Token
   const tmdbAccessToken = useSettingsStore((s) => s.tmdbAccessToken);
@@ -242,11 +249,6 @@ export default function HomePage() {
           ))}
         </div>
       </div>
-      <div className="home-skeleton-categories">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="home-skeleton-category" />
-        ))}
-      </div>
       <div className="home-skeleton-rows">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="home-skeleton-row">
@@ -291,7 +293,7 @@ export default function HomePage() {
   // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
   if (!isCategoryView && !hasAnyData && allFailed) {
     return (
-      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+      <div ref={pageRef} className={`page-padding home-page page-transition-enter${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
         <div className="home-empty" role="alert">
           <AlertCircle size={32} className="home-empty-icon" />
           <p className="home-empty-text">{allFailed}</p>
@@ -308,28 +310,39 @@ export default function HomePage() {
       */}
       <HeroBanner
         items={heroItems}
+        categoryId={isCategoryView ? String(deferredCategory) : 'home'}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
         loading={isCategoryView ? (categoryData?.heroLoading ?? true) : loading.trending}
       />
-      <CategoryQuickAccess
-        onCategorySelect={handleCategorySelect}
-        activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
-      />
-      <div className="home-rows">
-        {rowDefs.map((row) => (
-          <TMDBMovieRow
-            key={row.title}
-            title={row.title}
-            items={row.items}
-            isLoading={row.isLoading}
-            error={row.error}
-          />
-        ))}
-      </div>
+      {/*
+        页面进入动画（page-transition-enter）只作用于「非 Hero 内容」包装层：
+        HeroBanner 自身有 background crossfade 与缩略图揭示等动画，其缩略图/背景层是
+        GPU 合成层；若祖先带 transform 动画会触发合成层重绘闪烁（"闪一下"）。
+        让 HeroBanner 作为本包装层的兄弟节点、祖先不再有 transform 动画，即可消除闪烁，
+        同时下方内容仍保有进入淡入上移动画；Keep-Alive 二次进入由 AppLayout 回放机制
+        递归命中本层 .page-transition-enter 重放，HeroBanner 不受影响、保持静止。
+      */}
+      <div className="home-page__content page-transition-enter">
+        <CategoryQuickAccess
+          onCategorySelect={handleCategorySelect}
+          activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
+        />
+        <div className="home-rows">
+          {rowDefs.map((row) => (
+            <TMDBMovieRow
+              key={row.title}
+              title={row.title}
+              items={row.items}
+              isLoading={row.isLoading}
+              error={row.error}
+            />
+          ))}
+        </div>
 
-      <BackToTopButton />
+        <BackToTopButton />
+      </div>
     </div>
   );
 }

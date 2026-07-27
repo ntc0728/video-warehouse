@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>侧边栏展开「弹一下」根因复现 — 结构等价 Demo</title>
+<style>
+  :root {
+    --sidebar-width: 220px;
+    --sidebar-width-collapsed: 64px;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1); /* = --ease-standard */
+    --surface: #1e2230;
+    --surface-2: #262b3d;
+    --bg: #15171f;
+    --primary: #5b8cff;
+    --text: #e6e8ef;
+    --muted: #8b91a7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    background: #0c0e14; color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 16px; max-width: 920px; }
+  .hint b { color: #ffcf6b; }
+  .controls { margin: 0 0 16px; }
+  button {
+    font: inherit; padding: 8px 16px; border-radius: 8px; border: 1px solid #333a52;
+    background: var(--surface-2); color: var(--text); cursor: pointer;
+  }
+  button:hover { background: #313850; }
+
+  .panels { display: flex; gap: 16px; flex-wrap: wrap; }
+  .panel { flex: 1 1 380px; }
+  .panel h2 { font-size: 14px; margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+  .tag.bug { background: #4a1d22; color: #ff9aa2; }
+  .tag.fix { background: #16331f; color: #8ef0a8; }
+
+  /* ── 结构等价真机：stage ≈ .app-shell（overflow:hidden 兜底横向）
+        side ≈ .home-sidebar（position:fixed 覆盖左侧, width 过渡）
+        main ≈ .app-shell__main（margin-left 给侧栏让位）
+        scroll ≈ .app-shell__scroll（内部内容容器, transform 滑入） ── */
+  .stage {
+    position: relative; overflow: hidden;
+    height: 360px; border-radius: 12px; border: 1px solid #2a3043;
+    background: var(--bg);
+  }
+  .side {
+    position: absolute; left: 0; top: 0; bottom: 0; z-index: 60;
+    width: var(--sidebar-width);
+    background: var(--surface);
+    border-right: 1px solid #2a3043;
+    transition: width 0.24s var(--ease);
+    overflow: hidden;
+    display: flex; flex-direction: column; gap: 10px; padding: 14px 10px;
+  }
+  .side .sb-logo {
+    height: 36px; border-radius: 8px; background: var(--primary);
+    opacity: 0.85; flex-shrink: 0;
+  }
+  .side .sb-item {
+    height: 28px; border-radius: 6px; background: var(--surface-2);
+    flex-shrink: 0; white-space: nowrap; overflow: hidden;
+  }
+  .main {
+    margin-left: var(--sidebar-width);
+    height: 100%;
+    /* 关键对照点：OLD 加 overflow:clip（复现弹跳），NEW 用 overflow:visible */
+  }
+  .old .main { overflow: clip; }       /* ← 制造"弹一下"的元凶 */
+  .new .main { overflow: visible; }
+
+  .scroll { height: 100%; transform: none; }
+  .sb-anim-expand  { animation: slideExp 0.24s var(--ease); }
+  .sb-anim-collapse{ animation: slideCol 0.24s var(--ease); }
+  @keyframes slideExp { from { transform: translateX(-156px); } to { transform: translateX(0); } }
+  @keyframes slideCol { from { transform: translateX(156px);  } to { transform: translateX(0); } }
+
+  /* 收起态 */
+  .stage:not(.expanded) .side { width: var(--sidebar-width-collapsed); }
+  .stage:not(.expanded) .main { margin-left: var(--sidebar-width-collapsed); }
+
+  /* 模拟首页内容（左对齐，便于观察滑入） */
+  .hero {
+    height: 120px; border-radius: 10px; margin: 14px;
+    background: linear-gradient(120deg, #34507f, #5b8cff);
+  }
+  .row { display: flex; gap: 10px; margin: 0 14px 12px; }
+  .card { flex: 1; height: 70px; border-radius: 8px; background: var(--surface-2); }
+</style>
+</head>
+<body>
+  <h1>侧边栏展开「弹一下」根因复现</h1>
+  <p class="hint">
+    真实结构：<code>.home-sidebar</code> 是 <b>position:fixed</b> 覆盖左侧、<code>width</code> 做 0.24s 过渡；
+    主内容 <code>.app-shell__main</code> 用 <code>margin-left</code> 给侧栏让位（瞬时，不重排）；
+    内部 <code>.app-shell__scroll</code> 叠加 <code>transform: translateX(-156px→0)</code> 滑入，与侧栏增宽同步。<br>
+    点「切换展开/收起」观察：<b class="bug">OLD</b> 面板 <code>.main</code> 带 <code>overflow:clip</code>，
+    滑入起始帧超出 main 左边界的 156px 被剪掉 → 内容「弹一下、延迟跟着出来」；
+    <b class="fix">NEW</b> 面板去掉 clip，内容从折叠位连续滑到展开位，与侧栏右边缘始终贴合，顺滑。
+  </p>
+
+  <div class="controls">
+    <button id="toggle">切换 展开 / 收起</button>
+    <span id="state" style="margin-left:12px;color:var(--muted);font-size:13px;"></span>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>OLD — 带 overflow:clip（复现弹跳）<span class="tag bug">BUG</span></h2>
+      <div class="stage old expanded" id="stageOld">
+        <div class="side"><div class="sb-logo"></div><div class="sb-item"></div><div class="sb-item"></div><div class="sb-item"></div></div>
+        <div class="main"><div class="scroll">
+          <div class="hero"></div>
+          <div class="row"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
+          <div class="row"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>NEW — 去掉 clip（修复后）<span class="tag fix">FIX</span></h2>
+      <div class="stage new expanded" id="stageNew">
+        <div class="side"><div class="sb-logo"></div><div class="sb-item"></div><div class="sb-item"></div><div class="sb-item"></div></div>
+        <div class="main"><div class="scroll">
+          <div class="hero"></div>
+          <div class="row"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
+          <div class="row"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const stages = [document.getElementById('stageOld'), document.getElementById('stageNew')];
+  const stateEl = document.getElementById('state');
+  let expanded = true;
+
+  function toggle() {
+    expanded = !expanded;
+    stages.forEach((st) => {
+      st.classList.toggle('expanded', expanded);
+      const sc = st.querySelector('.scroll');
+      sc.classList.remove('sb-anim-expand', 'sb-anim-collapse');
+      void sc.offsetWidth; // 重启动画
+      sc.classList.add(expanded ? 'sb-anim-expand' : 'sb-anim-collapse');
+      setTimeout(() => sc.classList.remove('sb-anim-expand', 'sb-anim-collapse'), 320);
+    });
+    stateEl.textContent = expanded ? '当前：展开' : '当前：收起';
+  }
+  document.getElementById('toggle').addEventListener('click', toggle);
+  stateEl.textContent = '当前：展开';
+</script>
+</body>
+</html>

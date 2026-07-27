@@ -9,7 +9,8 @@
  * - TV 端：方向键左右切换 + Enter 确认 + 聚焦时暂停自动播放
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageUrl } from '@/services/tmdbService';
@@ -36,7 +37,7 @@ function SlideContent({
         {item.logoPath && (
           <img
             className="tmdb-trending-logo"
-            src={buildImageUrl(item.logoPath, 'w500') || ''}
+            src={buildImageUrl(item.logoPath, 'w342') || ''}
             alt={item.title}
           />
         )}
@@ -81,7 +82,7 @@ export default function TMDBTrendingBanner({
   const containerRef = useRef<HTMLDivElement>(null);
   const isTV = useIsTV();
 
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   const count = items.length;
 

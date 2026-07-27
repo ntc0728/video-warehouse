@@ -23,7 +23,7 @@ function toVideo(item: TMDBMovie | TMDBTVShow, mediaType: 'movie' | 'tv') {
   return {
     id: `tmdb-${mediaType}-${item.id}`,
     title: isTV ? (item as TMDBTVShow).name : (item as TMDBMovie).title,
-    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    cover: buildImageUrl(item.poster_path, 'w342') || '',
     type: mediaType,
     year: (item as TMDBMovie).release_date
       ? new Date((item as TMDBMovie).release_date).getFullYear()
@@ -154,7 +154,7 @@ export default function PersonPage() {
     );
   }
 
-  const avatarUrl = person.profile_path ? buildImageUrl(person.profile_path, 'w500') || '' : '';
+  const avatarUrl = person.profile_path ? buildImageUrl(person.profile_path, 'w185') || '' : '';
 
   const age = person.birthday
     ? person.deathday

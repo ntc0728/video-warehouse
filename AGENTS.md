@@ -206,7 +206,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **滑动切换动画（所有客户端）**：`activeIndex` 切换统一走 `slide-left`（前进，新图从右滑入）/ `slide-right`（后退，新图从左滑入）；自动轮播（5s）也设置 `slideDir='left'` 走滑动切换；滑动后 1000ms 冷却期内暂停自动轮播。`.slide-*` 规则定义在 `HeroBanner.css` 全局作用域（非移动端媒体查询内），选择器特异性高于 `.is-active` crossfade。**桌面端悬停缩略图预览**由 `handleThumbEnter` 显式清除 `slideDir`（设 null）→ 回退为 crossfade（`heroBgFadeIn`）。**注意**：slide 动画结束后**不**重置 `slideDir`（保持方向类），否则 `.is-active` 层会回退匹配默认 crossfade 规则、因 `animation-name` 改变重新播放淡入，导致「闪一下、短暂出现上一张图片」。
 - **高度**：`min-height: var(--layout-hero-banner-min-h)` + `max-height: min(70vh, var(--layout-hero-banner-max-h))`（vh + vw 双上限，防止超宽屏溢出）
 - **预加载**：自动轮播时预加载下一张背景图（w1280）+ 缩略图窗口前后各 2 张（w500）
-- **bannerReady**：仅 items 从空变为有时重置，已有数据时保持不变，避免骨架闪烁
+- **bannerReady**：仅 items 从空变为有时重置，**切换分类（items 已有数据再变化）时务必保持 `true`、绝不可重置为骨架**——否则缩略图会走「真实图→骨架→真实图」硬切换 = "闪一下"（这是历史回归点，已修复）。切换时由 `HeroThumb` 自带的「预加载完成再换图」机制在新/旧海报间平滑交叉淡入（旧图持续显示直到新图就绪）；主图背景层 `key={item.id}`（非下标），新类目首项 id 不同 → 新建 `<img>`、旧图随旧层卸载，不滞留旧图。
 - **无障碍**：`prefers-reduced-motion: reduce` 时禁用所有动画
 
 ### Toast 系统
@@ -249,8 +249,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面进入过渡统一约定
 
-- **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Home / Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。
-- **Keep-Alive 二次进入过渡**：AppLayout 用 CSS `display` 切换可见性，根容器的 CSS animation 在二次进入**不会重放**。二次进入靠 Keep-Alive 的瞬时 display 切换（≈1ms），**不再使用 View Transitions API**——整页快照在常驻多页 DOM 下开销过大（移动端尤其明显），与 Keep-Alive 的瞬时切换目标冲突，已彻底移除（`RouteTransition.css` / `RouteTransition.tsx` 删除，所有 `navigate(..., { viewTransition: true })` 改为 `navigate(...)`）。新增导航入口时**不要**再加 `viewTransition: true`。
+- **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。**特例 — 首页**：`.home-page` 内嵌的 HeroBanner 自带 background crossfade + 缩略图揭示，且其缩略图/背景层是 `will-change`/`z-index` 的 **GPU 合成层**；若祖先（`.home-page` 根）带 `page-enter-fade` 的 `transform` 动画，会触发这些合成层重绘**闪烁（"闪一下"）**。因此首页的 `.page-transition-enter` **刻意落在仅包裹非 Hero 内容的 `.home-page__content` 包装层**（HeroBanner 作为其兄弟节点，祖先不再有 transform 动画），既保留进入淡入上移动画，又消除缩略图闪烁；HeroBanner 在 Keep-Alive 二次进入时保持静止（顺带规避其"上一张图闪现"的已知问题）。
+- **Keep-Alive 二次进入过渡（已支持重放）**：AppLayout 用 CSS `display` 切换可见性。由于元素本身保持挂载、仅祖先容器在 `display:none ↔ contents` 间切换、元素自身的 `display` 从未变化，浏览器**不会自动重放**根容器 CSS animation。为此 AppLayout 内置 `useLayoutEffect`：每当 `activeRouteKey` 变化（含二次进入），对激活路由内**带 `.page-transition-enter`** 的根容器执行「移除类 → 强制同步 reflow → 重新添加类」，可靠地重放进入动画。该机制为 **opt-in**：仅作用于显式带 `.page-transition-enter` 的页面根（如首页 `.home-page`），其余页面（Browse/IPTV/Settings 用各自进入动画）不受影响；`prefers-reduced-motion` 下 `page-transition-enter` 已禁用动画，重放无可见效果。二次进入**不再使用 View Transitions API**——整页快照在常驻多页 DOM 下开销过大（移动端尤其明显），与 Keep-Alive 的瞬时切换目标冲突，已彻底移除（`RouteTransition.css` / `RouteTransition.tsx` 删除，所有 `navigate(..., { viewTransition: true })` 改为 `navigate(...)`）。新增导航入口时**不要**再加 `viewTransition: true`。
+- **首页「类目切换」过渡（图片参与、无闪跳）**：切换首页/其他分类时，整页内容（`.home-page__content` 内的行海报 + 快捷分类）由 `Home/index.tsx` 在 `deferredCategory` 变化时重放 **`.home-cat-fade`**（`opacity 0→1`，`0.28s`，与 `page-transition-enter` 对齐，动画结束移除类、首挂载跳过以免与路由进入动画叠加）。**关键约束：该过渡只用 `opacity`、绝不含 `transform`**——对 HeroBanner 的 GPU 合成缩略图层用 `transform` 会触发重绘闪烁（即"闪一下"），故刻意避开；HeroBanner 自身的缩略图交叉淡入（`HeroThumb`）与主图 `key=item.id` 已让其图片参与过渡，无需外部 transform。不要给 `.home-page` 或任何 HeroBanner 祖先加 `transform` 类动画。
+
+**导航 API 强约束**：所有业务导航一律使用 `src/lib/navigation.ts` 的 `useCustomNavigate()`，禁止直接 `import { useNavigate } from 'react-router-dom'`（已由 ESLint `no-restricted-imports` 封死，仅 `src/lib/navigation.ts` 豁免）。`useCustomNavigate` 的 options 类型 `CustomNavigateOptions` 已从 `NavigateOptions` 剔除 `viewTransition`，从类型层面彻底杜绝重新启用 View Transitions 导致的移动端切换卡顿。
 - **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
 
 ### .gitignore 策略
@@ -461,3 +464,53 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 
 - 人类协作流程与提交规范：`CONTRIBUTING.md`
 - 架构决策留痕（ADR 模板与示例）：`docs/KNOWLEDGE.md` → 「架构决策记录（ADR）」
+
+---
+
+## 人机协作约定（UI / 观感类任务必读）
+
+> 历史教训：多次对话陷入「纯文字诊断 → 猜意图 → 改 CSS → 不符合预期」的循环。
+> 用户看不到代码，只能看到我的文字描述，导致反复返工。以下约定旨在把「猜疑」环节
+> 前置、压缩到最低成本，让每次改动可验证、可对照。
+
+### 1. 观感类问题 → 先做可预览的视觉 Demo，再落代码
+- 动画 / 过渡 / 布局 / 折叠展开等**纯观感**问题，不要只写文字描述。
+- 优先产出一个**可运行的 HTML 对比 Demo**（A = 当前逻辑 / B = 新逻辑），用浏览器
+  `preview_url` 预览给用户看，由其判断「对味不对味」，再落到项目代码。
+- 适合资源：本仓库 `docs/page-diagrams/` 同级可放临时 demo；或直接用 `image_gen` /
+  截图对照。
+
+### 2. 每次逻辑改动 → 必附「旧逻辑 ↔ 新逻辑」对照块
+固定格式，用户一眼核对是否对齐预期：
+```
+【问题】一句话描述现象
+【旧逻辑】当前实现 + 为什么会有问题（引用具体代码/文件:行）
+【新逻辑】改成什么 + 解决点
+【预览】preview_url(...) 或 截图
+```
+不为描述而描述；对照块是强制产出，不是可选说明。
+
+### 3. 需求有歧义 → 先给 2 个候选 Demo，而非直接改
+- 接到 UI 诉求时，若实现方向不唯一，**先反问**「你想要的效果更接近 A 还是 B？」，
+  并立刻做一个最小 Demo 让用户选，确认后再改真代码。
+- 避免凭猜测直接改、改完才发现方向错、白改 n 次。
+
+### 4. 参照物优先
+- 用户描述 UI 诉求时，**优先提供参照**：截图 / 录屏 / 某个网站链接 / 手绘。
+- 若用户给了参照，以参照为唯一验收标准，不自行发挥。
+- 若用户没给参照且描述模糊，按第 3 条先出候选 Demo。
+
+### 5. 意图复述 + 快速 Mock 确认
+- 收到需求后，先用一句话**区分「表面诉求」与「实际目的」**复述意图；
+- 给一个 30 秒能看的 Mock，用户确认「对，就是这个」后再实现，把猜疑成本压到最低。
+
+### 适用边界
+- 纯逻辑 / 数据 / 性能类改动（无视觉效果）仍以代码 + 对照块为主，不强制 Demo。
+- 紧急修复可先改后补 Demo，但需在回复中说明「已先修、Demo 待补」。
+
+### 6. 改动留痕：写入 `changelogs/`（每次改动必更新）
+- 详细机制见 `changelogs/README.md`。核心：
+  - **每日一文件** `changelogs/YYYY-MM-DD.md`，同日多次改动追加到同一文件。
+  - **每次改动（无论大小）完成即追加一条记录**：问题 / 旧逻辑 / 新逻辑 / 涉及文件 / 关联 Demo / 构建结果。
+  - **Demo 永久留存**，统一放在 `changelogs/demos/`，**不得删除**；观感类改动必须有可预览 Demo。
+  - 新增 Demo 时同步登记到 `changelogs/README.md` 的「Demo 索引」表。

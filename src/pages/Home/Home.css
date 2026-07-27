@@ -18,6 +18,15 @@
   min-height: 100%;
 }
 
+/* 仅包裹「非 Hero 内容」的进入动画层（见 index.tsx）：
+   HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。 */
+.home-page__content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
 /* ── Rows container ──────────────────────────────────── */
 
 /* 首页：hero 全宽 + rows 自管间距 */
@@ -138,14 +147,23 @@
   gap: var(--space-md);
 }
 
+/* 与 .hero-banner 完全同高的占位（消除骨架→真实 banner 的高度跳动）：
+   复用同一套 height 模型（aspect-ratio 16/9 + min/max）+ 同一张卡片框，
+   保证首屏骨架与真实 banner 尺寸/外框逐像素一致。
+   .hero-banner 的子元素均为绝对定位、无内容高度，故其高度纯由该模型决定，
+   骨架须严格镜像才能避免切换时的布局位移。 */
 .home-skeleton-hero {
   position: relative;
   width: 100%;
-  height: 50vh;
-  min-height: clamp(18.75rem, 16.667rem + 3.333vw, 31.25rem);
+  aspect-ratio: 16 / 9;
+  min-height: var(--layout-hero-banner-min-h);
+  max-height: min(70vh, var(--layout-hero-banner-max-h));
+  margin-bottom: var(--space-sm);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  overflow: hidden;
   background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .home-skeleton-hero__banner {
@@ -167,11 +185,11 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: clamp(6rem, 4rem + 8vw, 12rem);
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 2px;
+  gap: var(--space-3xs);
+  width: clamp(6rem, 4rem + 8vw, 12rem);
+  padding: var(--space-3xs);
   background: var(--color-surface);
 }
 
@@ -188,31 +206,23 @@
   animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
 }
 
-/* 移动端隐藏右侧缩略图列骨架，与 HeroBanner 行为一致 */
-@media (max-width: 767px) {
-  .home-skeleton-hero__thumbs {
-    display: none;
+/* 平板及以下：边框/圆角/下边距与 .hero-banner 的断点行为对齐，避免卡片框/间距跳动 */
+@media (width <= 1023px) {
+  .home-skeleton-hero {
+    margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
   }
 }
 
-.home-skeleton-categories {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-md);
-  padding: 0 var(--space-md);
-}
+/* 移动端隐藏右侧缩略图列骨架，与 HeroBanner 行为一致；min-height 与 .hero-banner 对齐 */
+@media (width <= 767px) {
+  .home-skeleton-hero {
+    min-height: 14rem;
+  }
 
-.home-skeleton-category {
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-md);
-  background: linear-gradient(
-    90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+  .home-skeleton-hero__thumbs {
+    display: none;
+  }
 }
 
 .home-skeleton-rows {

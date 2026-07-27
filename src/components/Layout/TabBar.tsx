@@ -2,7 +2,8 @@
  * 移动端底部标签栏组件
  * 基于自建 TabBar 实现，仅在移动端显示
  */
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { TabBar as UTabBar } from '@/components/ui';
 import {
   Home,
@@ -23,7 +24,7 @@ const tabs = [
 
 export default function TabBar() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const { goHome } = useHeaderContent();
 
   const activeKey = tabs.find(tab =>

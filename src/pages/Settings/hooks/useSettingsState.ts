@@ -5,7 +5,7 @@
  * 各 tab 组件通过解构获取自身需要的 state 和回调。
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { toast } from '@/components/ui';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useSettingsStore } from '@/stores';
@@ -33,7 +33,7 @@ const validators = {
 const DEFAULT_PROXY_PATTERN = '';
 
 export function useSettingsState() {
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const { translationAppId, translationApiKey, setTranslationAppId, setTranslationApiKey, autoTranslate, setAutoTranslate } = useSettingsStore();
   const { settings: iptvSettings, setSettings: setIPTVSettings } = useIPTVStore();
   const fetchAllHomeData = useTMDBStore(s => s.fetchAllHomeData);

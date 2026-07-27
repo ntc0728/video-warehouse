@@ -142,6 +142,7 @@ export default function LazyImage({
           onLoad={handleLoad}
           onError={handleError}
           loading="lazy"
+          decoding="async"
           srcSet={srcSet}
           sizes={sizes}
         />
@@ -168,6 +169,7 @@ export default function LazyImage({
           src={fallbackSrc}
           alt={alt}
           className="lazy-image lazy-image-fallback"
+          decoding="async"
           onError={() => {}}
         />
       )}

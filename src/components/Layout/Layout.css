@@ -29,9 +29,31 @@
   flex-direction: row;
   height: 100dvh;
   overflow: hidden;
+  /* 桌面侧栏偏移量：spacer 占位与可见侧栏宽度共用此变量，折叠时切换变量值。
+     main 不依赖此变量、无任何 margin-left——偏移完全由 HomeSidebar 渲染的 .sidebar-spacer
+     承担（flex 自动分配），满足「无 margin-left、偏移归布局/组件内部」的初始诉求。 */
+  --sidebar-offset: var(--sidebar-width);
 }
 
-/* ── Main column: 包裹 header + scroll + tabbar（让出左侧桌面侧边栏空间） ── */
+/* 折叠只切换 --sidebar-offset 变量：.sidebar-spacer 用 width transition 平滑过渡，main 跟随
+   flex 自动重排（内容右缘始终贴浏览器右缘、左缘随侧栏平滑内移），可见侧栏（.home-sidebar, fixed）
+   亦用 width transition 平滑收窄，二者同变量同缓动、交界同步。
+   满足「无 margin-left + 流畅 + 侧栏平滑 + 无右侧空隙/回弹」。顶栏为 fixed 全宽、靠侧栏
+   z-index 覆盖其左部，折叠/展开保持静止（无 transform）即无跳动。 */
+.app-shell.app-shell--sidebar-collapsed {
+  --sidebar-offset: var(--sidebar-width-collapsed);
+}
+.sidebar-spacer {
+  flex-shrink: 0;
+  width: var(--sidebar-offset);
+  /* 宽度随 --sidebar-offset 平滑过渡（0.24s）：main 跟随 flex 自动重排，内容右缘始终贴浏览器
+     右缘、左缘随侧栏平滑内移——无 transform 造假、无右侧空隙、无回弹。优于「spacer 瞬跳 +
+     transform 补偿」：后者在展开（main 变窄）时因 transform 无法模拟宽度变化，必然在内容右侧
+     留下空隙再滑回（即用户报告的跳动现象）。 */
+  transition: width 0.24s var(--ease-standard);
+}
+
+/* ── Main column: 包裹 header + scroll + tabbar（纯 flex:1，左侧偏移由 spacer 承担，无 margin-left） ── */
 .app-shell__main {
   display: flex;
   flex: 1 1 0;
@@ -55,6 +77,9 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  /* 局部隔离折叠/展开时 grid 列宽变化引发的逐帧重排（poster 网格等重内容），
+     避免重排逃逸到全页，降低卡顿。 */
+  contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
   /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
@@ -254,15 +279,13 @@
   transform: translateX(0);
 }
 
-/* ── 平板端 + 桌面端 (>=768px)：统一显示侧边栏，主内容区让出空间 ── */
-@media (width >= 768px) {
-  .app-shell__main {
-    margin-left: var(--sidebar-width);
-    transition: margin-left 0.3s var(--ease-standard);
-  }
-  .app-shell__main--sidebar-collapsed {
-    margin-left: var(--sidebar-width-collapsed);
-  }
+/* 折叠/展开过渡由 .sidebar-spacer / .home-sidebar 的 width transition 承担（见上方规则），
+   内容随 main flex 重排平滑内移、顶栏 fixed 全宽静止，无 transform、无空隙、无回弹。 */
+
+@media (prefers-reduced-motion: reduce) {
+  /* 无障碍：折叠/展开时禁用 spacer 与侧栏的 width 过渡，偏移瞬时切换（无可见动画）。 */
+  .sidebar-spacer { transition: none; }
+  .home-sidebar { transition: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -286,7 +309,7 @@
     border-right: none;
   }
 
-  /* 顶部导航栏 → 固定在视口顶部，不受 margin-left 影响，全宽显示 */
+  /* 顶部导航栏 → 固定在视口顶部，全宽显示（main 偏移现由 grid 列宽承担，与顶栏无关） */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
     position: fixed;
     top: 0;

@@ -11,7 +11,8 @@
  * （满足 react-refresh/only-export-components 约束）。
  */
 import { createContext, useState, useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HeaderConfig, HeaderActionsValue, HeaderStateValue } from './types';
 
@@ -29,7 +30,7 @@ const HeaderStateContext = createContext<HeaderStateValue>({
 
 export function HeaderProvider({ children }: { children: ReactNode }) {
   const [activeConfig, setActiveConfig] = useState<HeaderConfig | null>(null);
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   const scrollContainerRef = useScrollContainer();
 

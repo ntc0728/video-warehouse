@@ -12,12 +12,15 @@ adjustFontSizeForNative();
 // 移动端阻止双指缩放
 preventPinchZoom();
 
-// 首屏渲染前预拉「当前路由」chunk：warm 命中缓存时 Suspense 同步解析，
-// 避免首屏出现「Suspense fallback → 页面自身 loading」的双重 AppLoading。
-preloadInitialRoute();
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <ErrorBoundary>
-    <Routes />
-  </ErrorBoundary>
-);
+// 预拉并 await「当前路由」chunk 再首屏渲染：lazyWithRetry 缓存了 load Promise
+// （preload 与 React.lazy 共用同一实例），await 后该 Promise 已 resolved，
+// 首屏 Suspense 直接同步渲染、绝不闪 fallback，从而彻底消除
+// 「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading
+// （冷刷新 chunk 需重新 fetch/eval，与 SPA 二次进入 warm 均成立）。
+preloadInitialRoute().finally(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <ErrorBoundary>
+      <Routes />
+    </ErrorBoundary>
+  );
+});

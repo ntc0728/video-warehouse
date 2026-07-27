@@ -171,7 +171,7 @@ function mapMovieToVideoItem(movie: TMDBMovie): TMDBVideoItem {
     tmdbId: movie.id,
     id: `tmdb-movie-${movie.id}`,
     title: movie.title,
-    cover: buildImageUrl(movie.poster_path, 'w500') || '',
+    cover: buildImageUrl(movie.poster_path, 'w342') || '',
     type: 'movie' as VideoType,
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
     tags: [],
@@ -195,7 +195,7 @@ function mapTVToVideoItem(tv: TMDBTVShow): TMDBVideoItem {
     tmdbId: tv.id,
     id: `tmdb-tv-${tv.id}`,
     title: tv.name,
-    cover: buildImageUrl(tv.poster_path, 'w500') || '',
+    cover: buildImageUrl(tv.poster_path, 'w342') || '',
     type: 'tv' as VideoType,
     year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : undefined,
     tags: [],
@@ -221,7 +221,7 @@ function mapTrendingToVideoItem(item: TMDBTrendingItem): TMDBVideoItem {
     tmdbId: item.id,
     id: `tmdb-${mediaType}-${item.id}`,
     title: (isMovie ? item.title || '' : item.name || item.title || ''),
-    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    cover: buildImageUrl(item.poster_path, 'w342') || '',
     type: mediaType,
     year: item.release_date
       ? new Date(item.release_date).getFullYear()
@@ -251,7 +251,7 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
     tmdbId: item.id,
     id: `tmdb-${mediaType}-${item.id}`,
     title: isMovie ? (item.title || '') : (item.name || ''),
-    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    cover: buildImageUrl(item.poster_path, 'w342') || '',
     type: mediaType,
     year: item.release_date
       ? new Date(item.release_date).getFullYear()

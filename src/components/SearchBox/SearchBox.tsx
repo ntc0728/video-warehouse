@@ -21,7 +21,8 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { Search, X, Clock, Trash2 } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useTMDBStore } from '@/stores';
@@ -71,7 +72,7 @@ export default function SearchBox({
   onValueChange,
   scope = 'global',
 }: SearchBoxProps) {
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const urlQ = searchParams.get('q') ?? '';

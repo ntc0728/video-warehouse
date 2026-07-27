@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HeroBanner 缩略图切换：旧逻辑 vs 新逻辑</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f1115; color: #e6e6e6;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #9aa0a6; font-size: 13px; margin-bottom: 20px; }
+  .wrap { display: flex; gap: 28px; flex-wrap: wrap; }
+  .col { flex: 1 1 360px; }
+  .col h2 { font-size: 15px; margin: 0 0 10px; }
+  .col.before h2 { color: #ff7a7a; }
+  .col.after h2 { color: #6ee7a8; }
+
+  /* 模拟 banner：左主图 + 右缩略图列 */
+  .banner {
+    display: flex; gap: 10px; height: 240px;
+    background: #161a21; border: 1px solid #2a2f38; border-radius: 12px; padding: 10px;
+  }
+  .main {
+    flex: 1; border-radius: 8px;
+    background: linear-gradient(135deg, #3a3f4b, #23272f);
+    display: flex; align-items: flex-end; padding: 10px; color: #cfd3da; font-size: 12px;
+  }
+  .thumbs { width: 110px; display: flex; flex-direction: column; gap: 8px; }
+  .thumb {
+    height: 46px; border-radius: 6px; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff;
+  }
+  .thumb.active { outline: 2px solid #f5c518; outline-offset: -2px; }
+  /* 骨架扫光 */
+  .thumb.skeleton {
+    background: #2a2f38; color: transparent;
+  }
+  .thumb.skeleton::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, #2a2f38 0%, #3a4150 50%, #2a2f38 100%);
+    background-size: 200% 100%; animation: shine 1.1s ease-in-out infinite;
+  }
+  @keyframes shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  .status { margin-top: 10px; font-size: 12px; min-height: 18px; }
+  .before .status { color: #ffb4b4; }
+  .after .status { color: #9ff0c2; }
+  .controls { margin: 18px 0 6px; }
+  button {
+    background: #2563eb; color: #fff; border: 0; border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .legend { font-size: 12px; color: #9aa0a6; margin-top: 14px; line-height: 1.6; }
+  .legend b.old { color: #ff7a7a; }
+  .legend b.new { color: #6ee7a8; }
+</style>
+</head>
+<body>
+  <h1>HeroBanner 缩略图切换行为对照</h1>
+  <div class="sub">点击「切换分类」：模拟从「分类 A」切到「分类 B」。重点看右侧缩略图列。</div>
+
+  <div class="controls">
+    <button id="switch">切换分类（A ⇄ B）</button>
+  </div>
+
+  <div class="wrap">
+    <div class="col before">
+      <h2>旧逻辑（修复前）</h2>
+      <div class="banner">
+        <div class="main" id="before-main">主图 · 分类A</div>
+        <div class="thumbs" id="before-thumbs"></div>
+      </div>
+      <div class="status" id="before-status"></div>
+    </div>
+
+    <div class="col after">
+      <h2>新逻辑（修复后）</h2>
+      <div class="banner">
+        <div class="main" id="after-main">主图 · 分类A</div>
+        <div class="thumbs" id="after-thumbs"></div>
+      </div>
+      <div class="status" id="after-status"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <p><b class="old">旧逻辑</b>：切换瞬间，缩略图<span>继续显示上一个分类 A 的海报</span>，直到新图加载完成才替换 → 你看到「旧分类残留 + 延迟感」。</p>
+    <p><b class="new">新逻辑</b>：切换瞬间，缩略图列整体重挂载 → 立刻进入<span>各自骨架（灰色扫光）</span>，新分类 B 加载完成后才显示 → 不再残留旧分类。</p>
+    <p>说明：本 Demo 用 900ms 模拟「新图网络加载」耗时；真实项目里该时长取决于图片是否命中缓存。两种逻辑在主图（左侧）行为一致，差异仅在右侧缩略图列。</p>
+  </div>
+
+<script>
+  const CATS = {
+    A: ['A1','A2','A3','A4'],
+    B: ['B1','B2','B3','B4'],
+  };
+  const COLORS = {
+    A: ['#5b6cff','#7c4dff','#0097a7','#00897b'],
+    B: ['#e53935','#fb8c00','#43a047','#8e24aa'],
+  };
+  let cur = 'A';
+
+  function render(container, cat, { skeleton = false, active = 0 } = {}) {
+    container.innerHTML = '';
+    CATS[cat].forEach((label, i) => {
+      const d = document.createElement('div');
+      d.className = 'thumb' + (skeleton ? ' skeleton' : '') + (i === active ? ' active' : '');
+      if (!skeleton) {
+        d.style.background = COLORS[cat][i];
+        d.textContent = label;
+      }
+      container.appendChild(d);
+    });
+  }
+
+  function init() {
+    render(document.getElementById('before-thumbs'), 'A', { active: 0 });
+    render(document.getElementById('after-thumbs'), 'A', { active: 0 });
+    document.getElementById('before-status').textContent = '当前：分类 A';
+    document.getElementById('after-status').textContent = '当前：分类 A';
+  }
+
+  document.getElementById('switch').addEventListener('click', () => {
+    const next = cur === 'A' ? 'B' : 'A';
+    const btn = document.getElementById('switch');
+    btn.disabled = true;
+
+    // —— 旧逻辑：保留旧分类缩略图，延迟后替换 ——
+    document.getElementById('before-main').textContent = '主图 · 分类' + next;
+    document.getElementById('before-status').textContent = '正在显示：分类 ' + cur + '（旧，残留中…）';
+    // 注意：before-thumbs 仍渲染的是 cur（旧分类）
+
+    // —— 新逻辑：立即进入骨架，延迟后显示新分类 ——
+    document.getElementById('after-main').textContent = '主图 · 分类' + next;
+    render(document.getElementById('after-thumbs'), next, { skeleton: true });
+    document.getElementById('after-status').textContent = '骨架加载中…';
+
+    setTimeout(() => {
+      // 旧逻辑：此时才换成新分类
+      render(document.getElementById('before-thumbs'), next, { active: 0 });
+      document.getElementById('before-status').textContent = '已切换到：分类 ' + next;
+      // 新逻辑：骨架完成 → 显示新分类
+      render(document.getElementById('after-thumbs'), next, { active: 0 });
+      document.getElementById('after-status').textContent = '已切换到：分类 ' + next;
+      cur = next;
+      btn.disabled = false;
+    }, 900);
+  });
+
+  init();
+</script>
+</body>
+</html>

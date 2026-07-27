@@ -16,14 +16,27 @@ type PreloadableLazy = LazyComponent & { preload: () => Promise<unknown> };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyWithRetry(factory: () => Promise<{ default: React.ComponentType<any> }>): PreloadableLazy {
-  const load = () =>
-    factory().catch((err: Error) => {
-      console.error('[RouteChunk] failed to load, retrying:', err);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return new Promise<{ default: React.ComponentType<any> }>((resolve) => {
-        setTimeout(() => resolve(factory()), 800);
+  // 缓存 load 返回的 Promise：preload（main.tsx 首屏前预拉）与 React.lazy（渲染时）共用
+  // 同一个 Promise。这样 main.tsx 在 render 前 await 该 Promise 后，React.lazy 拿到的是
+  // 已 resolved 的同一实例 → Suspense 直接同步渲染，绝不闪 fallback（消除首屏双重 AppLoading）。
+  // 若不缓存，React.lazy 会另起一个全新 pending Promise，await 也救不了首屏 fallback。
+  let loadPromise: Promise<{ default: React.ComponentType<any> }> | null = null;
+  const load = () => {
+    if (!loadPromise) {
+      loadPromise = factory().catch((err: Error) => {
+        console.error('[RouteChunk] failed to load, retrying:', err);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new Promise<{ default: React.ComponentType<any> }>((resolve) => {
+          setTimeout(() => {
+            // 重试时重置缓存，让后续 load() 复用重试后的 Promise
+            loadPromise = factory();
+            resolve(loadPromise);
+          }, 800);
+        });
       });
-    });
+    }
+    return loadPromise;
+  };
   const Component = lazy(load) as PreloadableLazy;
   Component.preload = load;
   return Component;
@@ -64,14 +77,6 @@ export function matchRoute(pathname: string): string | null {
 }
 
 /**
- * 根据路径获取对应的懒加载组件
- */
-export function getRouteComponent(pathname: string): LazyComponent | null {
-  const routeKey = matchRoute(pathname);
-  return routeKey ? routeComponentMap[routeKey] ?? null : null;
-}
-
-/**
  * 预加载所有路由 chunk（应在应用空闲时调用一次）。
  *
  * 目的：提前把各页面的 JS chunk 拉入缓存。这样路由切换到「未访问过」的页面时，
@@ -92,17 +97,20 @@ export function preloadAllRoutes(): void {
 }
 
 /**
- * 预加载「当前 URL 对应」的路由 chunk（应在应用启动时、首屏渲染前调用一次）。
+ * 预加载「当前 URL 对应」的路由 chunk，并返回该 Promise。
  *
  * 与 preloadAllRoutes 互补：preloadAllRoutes 负责在空闲时预拉「其他」页面 chunk；
  * 本函数在首屏渲染前就先把「当前正在进入」的页面 chunk 拉起来，
- * 让首屏的 Suspense 往往能同步解析（warm 命中 HTTP/内存缓存），
- * 避免首屏出现「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading。
+ * 并让 main.tsx 在 render 前 await 它——由于 lazyWithRetry 缓存了 load Promise、
+ * preload 与 React.lazy 共用同一实例，await 后该 Promise 已 resolved，
+ * 首屏 Suspense 直接同步渲染，**彻底消除**「Suspense fallback → 页面自身 loading」的双重 AppLoading
+ * （无论是 SPA 二次进入的 warm，还是硬刷新的 cold 场景都成立）。
  * 注意：import() 只加载并求值模块，不挂载、不触发数据请求，无副作用。
  */
-export function preloadInitialRoute(): void {
+export function preloadInitialRoute(): Promise<void> {
   const key = matchRoute(window.location.pathname);
-  if (key) routeComponentMap[key]?.preload?.().catch(() => { /* ignore */ });
+  const p = key ? routeComponentMap[key]?.preload?.() : undefined;
+  return (p ?? Promise.resolve()) as Promise<void>;
 }
 
 export { routeComponentMap };

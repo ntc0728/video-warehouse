@@ -13,6 +13,9 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
+  /* 建立尺寸容器，供右侧缩略图列用 100cqh 精确取得 banner 真实高度，
+     从而算出「严格 16:9 且整列撑满 banner」的列宽（见 .hero-banner__thumbs）。 */
+  container-type: size;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -236,21 +239,34 @@
   gap: var(--space-3xs);
   justify-content: flex-start;
   padding: 0 0 0 var(--space-sm);
+  /* 列宽精确 = (banner高 / 张数) × 16/9：
+     每张宽=列宽、高=列宽×9/16，N 张+gaps 总高恰好 = banner 高（100cqh），
+     实现「严格 16:9 + 整列撑满 banner」且不依赖子项 shrink-to-fit（不再塌缩）。
+     张数 N = JS 注入的 --hero-thumb-count（宽屏 4 / 普通 3）。 */
+  width: calc(
+    (100cqh - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
+    / var(--hero-thumb-count, 3) * 16 / 9
+  );
+  overflow: hidden;
 }
 
-/* 缩略图：flex 均分容器高度 + aspect-ratio 推算宽度，保持严格 16:9 */
+/* 缩略图：flex:1 1 0 始终拉伸填满列高（无论真实渲染几张都撑满 banner，
+   数量不足时仅单张略变高、绝不底部留空）；width:100% 铺满列宽（恒定）→ 宽=列宽；
+   aspect-ratio:16/9 在「数量==maxCount（常态）」时让单张严格 16:9，
+   列宽由容器统一给出（calc 基于 --hero-thumb-count=maxCount），骨架/真实图宽度恒等。
+   min-height:0 允许 flex 列内压缩，避免溢出。 */
 .hero-banner__thumb {
   position: relative;
   display: block;
   flex: 1 1 0;
-  align-self: flex-end;
   min-height: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.25);
   overflow: hidden;
   transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
-  aspect-ratio: 16 / 9;
   cursor: pointer;
 }
 

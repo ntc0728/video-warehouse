@@ -15,7 +15,7 @@ import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
-import { buildImageSrcSet } from '@/services/tmdbService';
+import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
@@ -329,7 +329,9 @@ function TMDBMovieRow({
               // 为 TMDB poster 图片生成响应式 srcSet
               // TMDBMovieRow 是横向滚动布局，卡片宽度根据 --card-cols 动态计算
               // 使用 (100vw / var(--card-cols)) 作为 sizes 参考值，浏览器会自动选择合适尺寸
-              const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500']) : undefined;
+              // 海报封面压缩：上限 w342（卡片显示仅 ~230px，2x DPR 下也足够清晰），
+              // 体积约为 w500 的一半，减少首页多行海报的下载/解码开销，缓解侧栏折叠卡顿。
+              const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, POSTER_CARD_SIZES) : undefined;
                return (
                  <div
                    key={item.id}
