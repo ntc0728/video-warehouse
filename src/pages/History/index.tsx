@@ -170,7 +170,7 @@ export default function HistoryPage() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('history');
+  useScrollRestore('history', undefined, location.pathname === '/history');
 
   // backdrop 自动补全（仅 video tab）
   useBackdropLoader(watchHistory, activeTab === 'video');

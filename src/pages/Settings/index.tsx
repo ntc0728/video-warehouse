@@ -26,6 +26,11 @@ import AboutTab from './tabs/AboutTab';
 import type { SettingsTabKey } from './SettingsTabBar';
 import './Settings.css';
 
+// 合法设置 tab（用于 ?tab= 深链校验）
+const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
+  'appearance', 'video', 'playback', 'iptv', 'personal', 'about',
+];
+
 export default function SettingsPage() {
   useDocumentTitle();
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -79,6 +84,16 @@ export default function SettingsPage() {
       setActiveTab(keys[0]);
     }
   }, [searchQuery, filteredItems, activeTab]);
+
+  // ── 深链：/settings?tab=xxx 一键直达具体设置项 ─────
+  // 进入设置页时若 URL 带合法 tab 参数，直接激活对应 tab（移动端同时打开 SubPage）。
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab && (SETTINGS_TAB_KEYS as string[]).includes(tab)) {
+      setActiveTab(tab as SettingsTabKey);
+      if (!isDesktop) setMobileSubPage(tab as SettingsTabKey);
+    }
+  }, [location.search, isDesktop]);
 
   const renderContent = () => {
     switch (activeTab) {

@@ -13,7 +13,7 @@ const APP_NAME = 'kinoTV';
 
 const routeTitles: Record<string, string> = {
   '/': '首页',
-  '/browse': '搜索中心',
+  '/browse': '搜索',
   '/iptv': 'IPTV',
   '/collections': '收藏',
   '/history': '历史记录',

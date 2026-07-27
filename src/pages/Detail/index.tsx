@@ -5,7 +5,7 @@
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -16,6 +16,7 @@ import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
+import { useScrollContainer } from '@/hooks/useScrollContext';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import Modal from '@/components/ui/Modal';
@@ -89,6 +90,7 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 // ============================================================
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useCustomNavigate();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
@@ -100,7 +102,18 @@ export default function DetailPage() {
   const handleBack = useSmartBack('/');
 
   // ── 滚动位置保存/恢复（由 useScrollRestore 接管，原内联 useEffect 已删除） ────
-  useScrollRestore(`detail:${id}`);
+  // 传入 isActive：仅当本页确为当前可见路由（pathname 仍是 /detail/*）时才参与恢复，
+  // 避免 Keep-Alive 隐藏态下的 detail 组件篡改共享容器滚动位置。
+  useScrollRestore(`detail:${id}`, undefined, location.pathname.startsWith('/detail'));
+
+  // 前进（PUSH/REPLACE）进入新的详情页时归顶；返回（POP）由 useScrollRestore 恢复，不覆盖。
+  const scrollContainerRef = useScrollContainer();
+  const navigationType = useNavigationType();
+  useEffect(() => {
+    if (navigationType === 'POP') return;
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = 0;
+  }, [id, navigationType, scrollContainerRef]);
 
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
@@ -404,7 +417,11 @@ export default function DetailPage() {
   }
 
   // ── 动态页签标题 ──────────────────────────────
-  useDocumentTitle(title || null);
+  // 守卫：仅当当前确实处于详情路由时才写入标题。
+  // 详情页是 Keep-Alive 常驻挂载，离开（pathname 变为 '/' 等）后组件不卸载，
+  // 若仍用旧 contentTitle 写 document.title 会覆盖新页面的标题，造成"返回首页后
+  // 页签仍显示详情标题"的概率性残留。离开后传 null → 由当前路由标题接管。
+  useDocumentTitle(location.pathname.startsWith('/detail') ? (title || null) : null);
 
   const isTV = d ? 'name' in d : false;
   const logoPath = d?.images?.logos?.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en')?.file_path;

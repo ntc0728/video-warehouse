@@ -36,7 +36,7 @@ export default function HomePage() {
   const isTV = useIsTV();
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
-  useScrollRestore('home');
+  useScrollRestore('home', undefined, location.pathname === '/');
 
   // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────
   // activeCategory：源值，驱动「数据预取 / 文档标题 / 侧边栏高亮」等紧急更新（不希望有延迟）。
@@ -215,7 +215,7 @@ export default function HomePage() {
             TMDB Access Token 未配置，请在设置中
             <button
               className="home-token-required-link"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/settings?tab=video')}
             >
               配置
             </button>
