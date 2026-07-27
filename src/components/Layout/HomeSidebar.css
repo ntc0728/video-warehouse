@@ -5,11 +5,9 @@
  * logo 和折叠按钮在 StickyHeader 中，不在侧边栏内。
  */
 
-/* 桌面常驻侧栏：position:fixed 脱离文档流（见 AppLayout：.sidebar-spacer 承担 main 偏移，
-   故 main 无 margin-left，满足「偏移归布局内部」的初始诉求）。侧栏 width 读 --sidebar-offset
-   变量（由 app-shell--sidebar-collapsed 切换），width transition 平滑收窄；与 .sidebar-spacer
-   的 width transition 共用变量与缓动，折叠/展开时两侧宽度同步平滑变化、交界连贯、不卡顿、
-   无跳动（spacer 平滑过渡方案，不再用 transform 造假，根除展开时右侧空隙回弹）。 */
+/* 方案 B（transform 补偿）：width 由 --sidebar-offset 变量驱动（AppLayout 切
+   .app-shell--sidebar-collapsed 类时一次性切换），动画期间由 JS WAAPI 控制
+   transform 平移（0 reflow），动画结束后才切 width（1 次 reflow，此时动画已结束）。 */
 .home-sidebar {
   position: fixed;
   top: var(--header-height);
@@ -18,15 +16,12 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
-  width: var(--sidebar-offset); /* 变量驱动：app-shell--sidebar-collapsed 切换；width transition 平滑收窄 */
+  width: var(--sidebar-offset);
   background-color: var(--color-surface);
   overflow: hidden;
   border-right: 1px solid var(--color-border-light);
-  transition: width 0.24s var(--ease-standard);
+  /* width 不做 transition（避免逐帧 reflow）；transform 由 JS WAAPI 控制 */
 }
-
-/* .home-sidebar--collapsed 类仍保留，仅用于切换图标/文字显示（见 HomeSidebar.tsx 其余规则）。
-   宽度统一由 --sidebar-offset 变量驱动，不再单独写 width。 */
 
 .home-sidebar__nav {
   display: flex;
@@ -60,8 +55,6 @@
               padding 0.24s var(--ease-standard), gap 0.24s var(--ease-standard);
 }
 
-/* 收起态：仅图标，通过 padding 计算居中（padding 可过渡，避免 justify-content 瞬间跳变）
-   1.25rem = 图标尺寸 20px（Icon size={20}） */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
   padding: var(--space-md) calc((var(--sidebar-width-collapsed) - var(--space-sm) * 2 - 1.25rem) / 2);
@@ -102,10 +95,6 @@
 }
 
 .home-sidebar__label {
-  /* 标题不做宽度裁切动画：此前 max-width 过渡会让文字被裁切、展开时“显示不全/省略号闪现”。
-     改为常驻自然宽度，由 .home-sidebar 的 overflow:hidden 在收起态裁掉、随侧栏展开自然揭示，
-     仅做透明度淡入。图标居中由 item 收起态 padding 负责；标题以绝对定位置于图标右侧，
-     不占布局流，故不影响收起态图标居中。 */
   position: absolute;
   left: calc(var(--space-lg) + 1.25rem + var(--space-md));
   top: 50%;
@@ -137,7 +126,6 @@
   }
 }
 
-/* ── 移动端：隐藏侧边栏 ── */
 @media (width < 768px) {
   .home-sidebar {
     display: none;
