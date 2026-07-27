@@ -351,7 +351,7 @@ export default function AppLayout() {
           />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar
-n              ref={scrollContainerRef}
+              ref={scrollContainerRef}
               className="app-shell__scroll"
               style={{ backgroundColor: 'var(--color-background)' }}
               direction="vertical"
