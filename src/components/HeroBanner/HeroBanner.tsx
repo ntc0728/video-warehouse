@@ -105,6 +105,9 @@ export default function HeroBanner({
   // 仅在 items 从空变为有时重置 bannerReady（骨架→真实），
   // 已有数据时保持 bannerReady 不变，避免骨架图闪烁。
   const prevItemsLenRef = useRef(displayItems.length);
+  // banner 根元素 ref：用于实测其实际高度（含 max-height 截断）注入 --hero-banner-h，
+  // 供右侧缩略图列宽计算，避免 100cqh 首帧回退（详见下方 useLayoutEffect）。
+  const bannerRef = useRef<HTMLElement>(null);
   // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：bannerReady 重置必须在「浏览器 paint 之前」
   // 同步完成，否则会出现以下闪烁序列——React 先按旧的 bannerReady=true 渲染出「新分类的真实
   // 缩略图」并绘制一帧，useEffect（paint 之后）才把它重渲染成骨架，再等背景图加载后又变回真实
@@ -141,6 +144,25 @@ export default function HeroBanner({
       prevItemsLenRef.current = curLen;
     }
   }, [displayItems]);
+
+  // 用 JS 实测 banner 实际高度注入 --hero-banner-h，供右侧缩略图列宽计算。
+  // 彻底摆脱对 container-type:size + 100cqh 的依赖：硬重载/首帧 CSS 容器查询
+  // 上下文尚未建立时，100cqh 会回退到视口高度（如 100vh），使缩略图列宽异常变宽，
+  // 与样式就绪后的真实列宽不一致（清缓存硬重载时「宽度不一致」的根因）。
+  // 直接读取渲染后 banner 实际高度最可靠；ResizeObserver 兜底 CSS 注入 / 窗口变化 /
+  // 分类切换导致的高度变化，自动纠正。
+  useLayoutEffect(() => {
+    const el = bannerRef.current;
+    if (!el) return;
+    const update = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) el.style.setProperty('--hero-banner-h', `${h}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // 当前主图无背景图时（无图可等），直接视为已就绪，避免缩略图列一直卡在骨架
   useEffect(() => {
@@ -236,7 +258,7 @@ export default function HeroBanner({
   // 注意：即使 items 为空，也立即渲染右侧缩略图骨架列，避免骨架"出现太慢"。
   if (!displayItems.length) {
     return (
-      <section className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
+      <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
         <div className="hero-banner__bg-wrapper">
           <div className="hero-banner__bg-placeholder" />
           <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
@@ -285,6 +307,7 @@ export default function HeroBanner({
 
   return (
     <section
+      ref={bannerRef}
       className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
       aria-roledescription="carousel"
       aria-label="热门推荐"
