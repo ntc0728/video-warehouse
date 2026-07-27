@@ -12,7 +12,8 @@
  *
  * 高亮：根据当前路由 + activeCategory 判断（IPTV 由路由判定，类目由 store 判定）。
  */
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy } from 'lucide-react';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -45,7 +46,7 @@ interface HomeSidebarProps {
 }
 
 export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
   const setActiveCategory = useHomeCategoryStore((s) => s.setActiveCategory);
@@ -78,7 +79,12 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
   };
 
   return (
-    <aside className={`home-sidebar${collapsed ? ' home-sidebar--collapsed' : ''}`} aria-label="主导航">
+    <>
+      {/* 布局占位：作为 app-shell flex 首列承担侧栏偏移，使 main 无需 margin-left。
+          宽度由 --sidebar-offset 变量驱动（瞬时跳变、仅一次重排），与 .home-sidebar 的
+          width transition 平滑收窄配合，并由主内容 transform 滑入（WAAPI 补偿动画）掩盖。 */}
+      <div className="sidebar-spacer" aria-hidden="true" />
+      <aside className={`home-sidebar${collapsed ? ' home-sidebar--collapsed' : ''}`} aria-label="主导航">
       <nav className="home-sidebar__nav">
         {ITEMS.map((item) => {
           const Icon = item.icon;
@@ -100,5 +106,6 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
         })}
       </nav>
     </aside>
+    </>
   );
 }

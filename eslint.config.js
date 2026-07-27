@@ -46,6 +46,22 @@ export default tseslint.config(
           destructuredArrayIgnorePattern: '^_',
         },
       ],
+      // 导航 API 强约束：禁止业务层直接引入 react-router-dom 的 useNavigate，
+      // 必须从 @/lib/navigation 使用 useCustomNavigate（其 options 类型已剔除 viewTransition）。
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: 'react-router-dom',
+          importNames: ['useNavigate'],
+          message: '请使用 @/lib/navigation 的 useCustomNavigate，禁止直接引入 react-router-dom 的 useNavigate（防止重新启用 viewTransition 导致移动端切换卡顿）。',
+        }],
+      }],
+    },
+  },
+  {
+    // 封装层自身需要原生 useNavigate，豁免此规则
+    files: ['src/lib/navigation.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   }
 );

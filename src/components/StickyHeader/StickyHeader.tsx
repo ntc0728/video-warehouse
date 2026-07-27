@@ -4,7 +4,8 @@
  * 首页滚动距离 >= --header-height 时切换为实体背景（仅首页生效）。
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
@@ -74,7 +75,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   // 移动端断点与 AppLayout 一致：< 768px 使用 hamburger 菜单，≥ 768px 使用侧边栏折叠按钮
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isCompact = useMediaQuery('(max-width: 767px)');
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
   const currentTheme = useSettingsStore((s) => s.theme);
@@ -194,6 +195,15 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   const searchScope = getSearchScope(location.pathname);
   const showHotSearch = !isHotSearchDisabled(location.pathname);
 
+  // 侧边栏展开/收起按钮防抖：忽略 300ms 内的连续点击，避免快速连点导致状态抖动
+  const lastSidebarToggleRef = useRef(0);
+  const handleSidebarToggle = useCallback(() => {
+    const now = Date.now();
+    if (now - lastSidebarToggleRef.current < 300) return;
+    lastSidebarToggleRef.current = now;
+    onSidebarToggle?.();
+  }, [onSidebarToggle]);
+
   // 移动端：根据当前路由派生顶部中央要显示的页面标题（仅列出的页面）
   const pageTitle = useMemo(() => {
     const base = location.pathname.split('?')[0];
@@ -234,7 +244,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
               {onSidebarToggle && (
                 <button
                   className="sticky-header__sidebar-toggle"
-                  onClick={onSidebarToggle}
+                  onClick={handleSidebarToggle}
                   aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
                   title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
                 >

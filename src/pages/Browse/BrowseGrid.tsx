@@ -47,7 +47,9 @@ export default function BrowseGrid({ items, cmsItems, query, mode = 'smart' }: B
     return (
       <div className="video-card-grid browse-card-grid">
         {items.map((item) => {
-          const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342', 'w500', 'w780']) : undefined;
+          // 封面全局最大压缩：srcSet 上限 w342（与 store 的 cover=w342 一致），
+          // 1x 设备走 w185、2x 走 w342，体积显著小于原 w500/w780。
+          const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, ['w185', 'w342']) : undefined;
           return (
             <VideoCard
               key={item.id}

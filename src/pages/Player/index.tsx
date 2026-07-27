@@ -43,7 +43,7 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
   return {
     id: `tmdb-${mediaType}-${item.id}`,
     title: mediaType === 'tv' ? item.name ?? '' : item.title ?? '',
-    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    cover: buildImageUrl(item.poster_path, 'w342') || '',
     type: mediaType,
     year: item.release_date
       ? new Date(item.release_date).getFullYear()

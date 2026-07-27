@@ -5,6 +5,11 @@
  * logo 和折叠按钮在 StickyHeader 中，不在侧边栏内。
  */
 
+/* 桌面常驻侧栏：position:fixed 脱离文档流（见 AppLayout：.sidebar-spacer 承担 main 偏移，
+   故 main 无 margin-left，满足「偏移归布局内部」的初始诉求）。侧栏 width 读 --sidebar-offset
+   变量（由 app-shell--sidebar-collapsed 切换），width transition 平滑收窄；与 .sidebar-spacer
+   的 width transition 共用变量与缓动，折叠/展开时两侧宽度同步平滑变化、交界连贯、不卡顿、
+   无跳动（spacer 平滑过渡方案，不再用 transform 造假，根除展开时右侧空隙回弹）。 */
 .home-sidebar {
   position: fixed;
   top: var(--header-height);
@@ -13,17 +18,15 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
-  width: var(--sidebar-width);
+  width: var(--sidebar-offset); /* 变量驱动：app-shell--sidebar-collapsed 切换；width transition 平滑收窄 */
   background-color: var(--color-surface);
   overflow: hidden;
   border-right: 1px solid var(--color-border-light);
-  transition: width 0.3s var(--ease-standard);
+  transition: width 0.24s var(--ease-standard);
 }
 
-/* 收起态 */
-.home-sidebar--collapsed {
-  width: var(--sidebar-width-collapsed);
-}
+/* .home-sidebar--collapsed 类仍保留，仅用于切换图标/文字显示（见 HomeSidebar.tsx 其余规则）。
+   宽度统一由 --sidebar-offset 变量驱动，不再单独写 width。 */
 
 .home-sidebar__nav {
   display: flex;
@@ -54,8 +57,7 @@
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard),
-              padding 0.3s var(--ease-standard), gap 0.3s var(--ease-standard),
-              scale 0.32s var(--ease-spring);
+              padding 0.24s var(--ease-standard), gap 0.24s var(--ease-standard);
 }
 
 /* 收起态：仅图标，通过 padding 计算居中（padding 可过渡，避免 justify-content 瞬间跳变）
@@ -100,18 +102,23 @@
 }
 
 .home-sidebar__label {
-  max-width: 10rem;
+  /* 标题不做宽度裁切动画：此前 max-width 过渡会让文字被裁切、展开时“显示不全/省略号闪现”。
+     改为常驻自然宽度，由 .home-sidebar 的 overflow:hidden 在收起态裁掉、随侧栏展开自然揭示，
+     仅做透明度淡入。图标居中由 item 收起态 padding 负责；标题以绝对定位置于图标右侧，
+     不占布局流，故不影响收起态图标居中。 */
+  position: absolute;
+  left: calc(var(--space-lg) + 1.25rem + var(--space-md));
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
   font-size: var(--text-base);
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
   opacity: 1;
-  transition: max-width 0.3s var(--ease-standard), opacity 0.15s var(--ease-standard);
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-standard);
 }
 
-/* 收起态：文字通过 max-width + opacity 平滑隐藏（常驻 DOM，避免瞬间移除导致图标跳变） */
 .home-sidebar--collapsed .home-sidebar__label {
-  max-width: 0;
   opacity: 0;
 }
 

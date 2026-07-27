@@ -5,7 +5,8 @@
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources } from '@/services/videoService';
@@ -69,7 +70,7 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
   return {
     id: `tmdb-${mediaType}-${item.id}`,
     title: mediaType === 'tv' ? item.name ?? '' : item.title ?? '',
-    cover: buildImageUrl(item.poster_path, 'w500') || '',
+    cover: buildImageUrl(item.poster_path, 'w342') || '',
     type: mediaType,
     year: item.release_date
       ? new Date(item.release_date).getFullYear()
@@ -88,7 +89,7 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 // ============================================================
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
 
@@ -546,7 +547,7 @@ export default function DetailPage() {
           <div className="detail-hero-left">
             {/* Logo 或标题 */}
             {logoPath ? (
-              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w500') || ''} alt={title} width={400} height={150} />
+              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w342') || ''} alt={title} width={400} height={150} />
             ) : (
               <h1 className="detail-hero-title">{title}</h1>
             )}

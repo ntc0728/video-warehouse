@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
@@ -11,7 +12,7 @@ export default function IPTVPlayerPage() {
   const [searchParams] = useSearchParams();
   const rawQuery = searchParams.toString();
   const url = searchParams.get('url') || '';
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const { channels, groups, isLoading, refreshChannels, settings } = useIPTVStore();
 
   const isTV = useIsTV();

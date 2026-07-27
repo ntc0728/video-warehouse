@@ -130,13 +130,29 @@ export function buildImageUrl(path: string | null, size: string = 'w500'): strin
  */
 export function buildImageSrcSet(
   path: string | null,
-  sizes: string[] = ['w300', 'w500', 'w780', 'w1280', 'w1920'],
+  sizes: readonly string[] = ['w300', 'w500', 'w780', 'w1280', 'w1920'],
 ): string | null {
   if (!path) return null;
   return sizes
     .map(size => `${IMAGE_BASE_URL}/${size}${path} ${size.replace('w', '')}w`)
     .join(', ');
 }
+
+/**
+ * 视频卡片海报（竖版 2:3）封面压缩预设。
+ * 卡片显示宽度通常 ≤ 230px（桌面 12vw），2x DPR 下也只需 ~460px；
+ * 用 w342 已足够清晰，文件体积约为 w500 的一半，可显著减少首页多行海报的
+ * 下载/解码开销，缓解侧栏折叠/展开时图片仍在加载导致的卡顿。
+ * 后续推广到所有 VideoCard 时统一引用此预设（替换各处写死的 w500）。
+ */
+export const POSTER_CARD_SIZES: readonly string[] = ['w185', 'w342'];
+
+/**
+ * HeroBanner 右侧缩略图（backdrop 横图）压缩尺寸。
+ * 缩略图显示宽度约 180–220px，从 w500 降为 w300（backdrop 有效尺寸），
+ * 体积更小、解码更快；Hero 主图保持 w1280 原画质不参与压缩。
+ */
+export const HERO_THUMB_SIZE = 'w300';
 
 /** 构建原始尺寸的图片 URL */
 export function buildOriginalImageUrl(path: string | null): string | null {

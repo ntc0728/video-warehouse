@@ -10,7 +10,8 @@
  *   滚到底才加载"的体感,且 IO 缩小后 scroll 事件兜底仍能在 100px 范围内触达。
  */
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import { useNavStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { getIPTVSources } from '@/services/sourceService';
@@ -88,7 +89,7 @@ export default function IPTVPage() {
 
   const { getState, saveState } = useNavStore();
   const saved = getState('iptv');
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
   const location = useLocation();
 
   const [selectedGroup, setSelectedGroup] = useState<string | null>(

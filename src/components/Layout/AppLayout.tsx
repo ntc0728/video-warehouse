@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { useLocation } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
@@ -34,6 +34,13 @@ function LoadingFallback() {
  * - 旧：每次路由切换 unmount 旧页 + mount 新页（含 lazy chunk 加载 + 全量初始化）
  * - 新：首次访问时 mount + 后续切换仅 CSS display 切换（~1ms）
  */
+// 记忆化路由渲染器：Component 引用在 routeComponentMap 中稳定，
+// 用 memo 包裹后，AppLayout 因侧边栏折叠/展开等状态变化而重渲染时，
+// 已挂载的 Keep-Alive 页面（首页等重型页面）不会被牵连重渲染，避免切换卡顿。
+const RouteRenderer = memo(function RouteRenderer({ Component }: { Component: ComponentType }) {
+  return <Component />;
+});
+
 export default function AppLayout() {
   const isNative = isNativePlatform();
   const isRealMobile = useIsRealMobile();
@@ -55,15 +62,13 @@ export default function AppLayout() {
     catch { return false; }
   });
   const toggleSidebarCollapsed = useCallback(() => {
-    setSidebarCollapsed((prev) => {
-      const next = !prev;
-      try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
+  }, [sidebarCollapsed]);
 
-  useEffect(() => {
-    if (sidebarOpen) {
+    useEffect(() => {
+      if (sidebarOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -72,6 +77,11 @@ export default function AppLayout() {
   }, [sidebarOpen]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // 折叠/展开不再用 JS 动画：.sidebar-spacer 与 .home-sidebar 各自 width transition 平滑过渡
+  // （见 Layout.css / HomeSidebar.css），main 跟随 flex 自动重排。内容右缘始终贴浏览器右缘、
+  // 左缘随侧栏平滑内移，无 transform 造假 → 无右侧空隙、无回弹、无跳动。
+  // Keep-Alive 二次进入动画重放所需的容器引用（见下方 useLayoutEffect）
+  const pageTransitionRef = useRef<HTMLDivElement>(null);
 
   // 空闲（首屏渲染后）立即预加载所有路由 chunk：切换到未访问页面时不再出现
   // 「Suspense chunk 加载 → 页面自身 loading」的双重 AppLoading 闪烁。
@@ -105,6 +115,35 @@ export default function AppLayout() {
   const location = useLocation();
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
+
+  // ── Keep-Alive 二次进入：重放页面进入动画 ──
+  // 根容器的 CSS animation 在 Keep-Alive 的 display 切换下不会自动重放——元素本身保持
+  // 挂载，仅祖先容器在 display:none ↔ contents 间切换，元素自身的 display 从未变过，
+  // 故浏览器不会重启其 animation。每当 activeRouteKey 变化（含二次进入）手动重放。
+  // 覆盖所有页面根容器（不仅 .page-transition-enter）：Browse(.browse-page) /
+  // IPTV(.iptv-content) / Settings(.settings-page) 各有独立进入动画，此前二次进入
+  // 不会重放，本次一并纳入。
+  // 重放手法：对命中的元素执行「animation:none → 强制同步 reflow → 还原」，
+  // 可重启任意 CSS animation（含 page-enter-fade / browse-fade-in /
+  // iptv-content-fade-in / settings-page-fade-in），且不依赖具体类名。
+  // 尊重无障碍：相关动画已在各自 CSS 内对 prefers-reduced-motion 禁用，还原后无可见效果。
+  useLayoutEffect(() => {
+    if (!activeRouteKey) return;
+    const container = pageTransitionRef.current;
+    if (!container) return;
+    const wrapper = container.querySelector<HTMLElement>(
+      `[data-route="${activeRouteKey}"]`,
+    );
+    if (!wrapper) return;
+    const targets = wrapper.querySelectorAll<HTMLElement>(
+      '.page-transition-enter, .browse-page, .iptv-content, .settings-page',
+    );
+    targets.forEach((target) => {
+      target.style.animation = 'none';
+      void target.offsetWidth; // 强制 reflow 以重放动画
+      target.style.animation = '';
+    });
+  }, [activeRouteKey]);
 
   // ── 美术资源皮肤：应用 data-skin 到 <html>（支持 ?skin= 覆盖，便于截图验收） ──
   const prevSkinRef = useRef(skin);
@@ -161,7 +200,7 @@ export default function AppLayout() {
     <Tooltip.Provider delayDuration={200}>
       <ScrollContainerContext.Provider value={scrollContainerRef}>
         <div
-        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}`}
+        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell--sidebar-collapsed' : ''}`}
         style={{
           backgroundColor: 'var(--color-background)',
           color: 'var(--color-text)',
@@ -173,7 +212,7 @@ export default function AppLayout() {
         {!isCompactViewport && !isNative && !isTV && (
           <HomeSidebar collapsed={sidebarCollapsed} />
         )}
-        <div className={`app-shell__main${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell__main--sidebar-collapsed' : ''}`}>
+        <div className="app-shell__main">
           <StickyHeader
             onMenuToggle={isCompactViewport ? toggleSidebar : undefined}
             menuOpen={isCompactViewport && sidebarOpen}
@@ -188,7 +227,7 @@ export default function AppLayout() {
               direction="vertical"
             >
               {/* Keep-Alive 容器：所有已访问的页面组件保持挂载，仅切换 CSS 可见性 */}
-              <div className="page-transition">
+              <div className="page-transition" ref={pageTransitionRef}>
                 {visitedRouteKeys.map((routeKey) => {
                   // 直接查 routeComponentMap（routeKey 已是合法 key），避免每次都走 matchRoute 遍历
                   const Component = routeComponentMap[routeKey];
@@ -201,7 +240,7 @@ export default function AppLayout() {
                       data-route={routeKey}
                     >
                       <Suspense fallback={<LoadingFallback />}>
-                        <Component />
+                        <RouteRenderer Component={Component} />
                       </Suspense>
                     </div>
                   );
@@ -213,7 +252,7 @@ export default function AppLayout() {
                   return (
                     <div key={activePath} data-route={activeRouteKey}>
                       <Suspense fallback={<LoadingFallback />}>
-                        <Component />
+                        <RouteRenderer Component={Component} />
                       </Suspense>
                     </div>
                   );

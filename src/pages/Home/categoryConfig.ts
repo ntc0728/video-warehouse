@@ -43,7 +43,7 @@ function mapMovie(m: TMDBMovie): TMDBVideoItem {
     tmdbId: m.id,
     id: `tmdb-movie-${m.id}`,
     title: m.title,
-    cover: buildImageUrl(m.poster_path, 'w500') || '',
+    cover: buildImageUrl(m.poster_path, 'w342') || '',
     type: 'movie',
     year: m.release_date ? new Date(m.release_date).getFullYear() : undefined,
     tags: [],
@@ -67,7 +67,7 @@ function mapTV(t: TMDBTVShow): TMDBVideoItem {
     tmdbId: t.id,
     id: `tmdb-tv-${t.id}`,
     title: t.name,
-    cover: buildImageUrl(t.poster_path, 'w500') || '',
+    cover: buildImageUrl(t.poster_path, 'w342') || '',
     type: 'tv',
     year: t.first_air_date ? new Date(t.first_air_date).getFullYear() : undefined,
     tags: [],
@@ -93,7 +93,7 @@ function mapTrending(i: TMDBTrendingItem): TMDBVideoItem {
     tmdbId: i.id,
     id: `tmdb-${mediaType}-${i.id}`,
     title: isMovie ? (i.title || '') : (i.name || i.title || ''),
-    cover: buildImageUrl(i.poster_path, 'w500') || '',
+    cover: buildImageUrl(i.poster_path, 'w342') || '',
     type: mediaType,
     year: i.release_date
       ? new Date(i.release_date).getFullYear()
