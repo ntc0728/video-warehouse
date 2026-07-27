@@ -77,7 +77,7 @@ export default function CollectionsPage() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('collections');
+  useScrollRestore('collections', undefined, location.pathname === '/collections');
 
   // 离开页面时清空筛选状态
   const prevPathnameRef = useRef(location.pathname);

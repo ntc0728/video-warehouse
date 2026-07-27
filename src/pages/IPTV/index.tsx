@@ -101,7 +101,7 @@ export default function IPTVPage() {
   const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('iptv');
+  useScrollRestore('iptv', undefined, location.pathname === '/iptv');
 
   // 离开页面时清空筛选状态
   const prevPathnameRef = useRef(location.pathname);
@@ -284,7 +284,7 @@ export default function IPTVPage() {
               <span className="iptv-proxy-warning-inline">
                 <AlertCircle size={14} />
                 <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
-                <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings')}>
+                <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings?tab=iptv')}>
                   配置
                 </button>
               </span>

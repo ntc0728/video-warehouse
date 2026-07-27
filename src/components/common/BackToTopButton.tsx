@@ -12,6 +12,7 @@
  * "先播 exit 动画，再从 DOM 移除" 的进出场过渡。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowUp } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useScrollContainer, type ScrollContainerRef } from '@/hooks/useScrollContext';
@@ -102,7 +103,10 @@ export default function BackToTopButton({
 
   if (!shouldRender) return null;
 
-  return (
+  // 通过 Portal 挂到 document.body 顶层：
+  // 滚动容器 .app-shell__scroll 带 `contain: layout`，会作为 fixed 后代的包含块，
+  // 导致按钮相对滚动容器定位、随内容滚动而"飘走/消失"。挂到 body 后 fixed 真正相对视口。
+  return createPortal(
     <button
       type="button"
       className={[
@@ -115,6 +119,7 @@ export default function BackToTopButton({
       title="返回顶部"
     >
       <ArrowUp className="back-to-top-button__icon" aria-hidden="true" />
-    </button>
+    </button>,
+    document.body,
   );
 }

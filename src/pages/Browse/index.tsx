@@ -46,7 +46,7 @@ export default function BrowsePage() {
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
-  useScrollRestore('browse');
+  useScrollRestore('browse', undefined, location.pathname === '/browse');
 
   // ── 搜索词（优先从 location.state 读取，兜底兼容 ?q= 查询参数）──
   // createBrowserRouter 下 window.history.state 在刷新后被浏览器保留，
