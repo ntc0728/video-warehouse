@@ -14,6 +14,16 @@
   border-right: 1px solid var(--color-border-light);
 }
 
+/* ── App Shell (垂直布局) ──────────────────────────────────
+   桌面：StickyHeader (auto) + scroll-wrapper (flex: 1)
+   移动：StickyHeader (auto) + scroll-wrapper (flex: 1) + TabBar (auto)
+
+   - StickyHeader 作为第一行常驻视口顶部（不参与滚动）
+   - scroll-wrapper 包含 CustomScrollbar + OverlayScrollbar，
+     OverlayScrollbar 作为兄弟节点不参与滚动容器的溢出计算
+   - 沉浸式页面（首页/详情页）下，StickyHeader 改用 position: fixed，
+     scroll-wrapper 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
+*/
 .app-shell {
   display: flex;
   flex-direction: row;
@@ -62,9 +72,12 @@
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
+  /* 局部隔离折叠/展开时 grid 列宽变化引发的逐帧重排（poster 网格等重内容），
+     避免重排逃逸到全页，降低卡顿。 */
   contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
+  /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
   scrollbar-width: none;
 }
 
@@ -72,12 +85,18 @@
   display: none;
 }
 
+/* ── 页面统一左右内边距 ─────────────────────────────────
+   所有页面通过 .page-padding 继承 var(--space-sm) 水平 padding，
+   Player / IPTVPlayer 因 position:fixed 或 height:100%
+   脱离文档流，不受此规则约束。StickyHeader 在 .app-shell__scroll
+   外部，不受此规则约束。 */
 .page-transition {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
 }
 
+/* 路由懒加载 fallback：flex 容器 + 占满剩余空间，避免 AppLoading 闪烁 */
 .page-loading {
   display: flex;
   flex-direction: column;
@@ -85,6 +104,7 @@
 }
 
 [data-device="app"] .page-transition {
+  /* 原生 App 底部 TabBar 遮挡滚动内容，预留底部安全区 */
   padding-bottom: var(--layout-tabbar-height);
 }
 [data-device="app"] .app-shell .app-shell__scroll {
@@ -222,12 +242,15 @@
 }
 
 .mobile-tab-bar [data-state="active"] {
+  /* 移除 tabPop 动画：避免 transform: scale 引起的整页抖动 */
   color: var(--color-primary);
 }
 
 [data-theme="dark"] .mobile-tab-bar {
   border-top-color: var(--color-border-light);
 }
+
+/* ── Mobile web: sidebar overlay ───────────────────── */
 
 .sidebar-overlay {
   position: fixed;
@@ -251,14 +274,29 @@
   transform: translateX(0);
 }
 
-/* 折叠/展开动画由 JS WAAPI 控制（见 AppLayout.tsx） */
+/* 折叠/展开动画由 JS WAAPI 控制（见 AppLayout.tsx）：
+   - 动画期间：sidebar-spacer / home-sidebar / app-shell__main 三者 transform 平移，
+     width 保持不变（0 reflow），app-shell 加 .app-shell--animating 类冻结 width transition。
+   - 动画结束：移除 .app-shell--animating，一次性切 width（1 次 reflow，此时动画已结束不可见）。 */
 
 @media (prefers-reduced-motion: reduce) {
+  /* 无障碍：折叠/展开时禁用 JS 动画，width 瞬时切换（无可见动画）。 */
   .sidebar-spacer { transition: none; }
   .home-sidebar { transition: none; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   侧边栏 + 顶部导航栏 连接式布局（作用于所有「非沉浸式」页面）
+   顶部导航栏与左侧侧边栏在视觉上连接，形成统一的导航区域。
+   仅桌面端/平板端（>=768px）应用；移动端（<768px）保持原始布局，不受影响。
+   沉浸式全屏播放页（/play、/player，带 app-shell--immersive）不应用，
+   以保持视频铺满、顶栏叠加 hero 的原始布局。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 桌面端/平板端（>=768px）侧边栏 + 顶栏 连接式布局
+   移动端（<768px）不应用这些规则，保持原始布局不变。 */
 @media (width >= 768px) {
+  /* 常驻左侧栏 → 连接式布局（顶部与导航栏对齐，无右边框） */
   .app-shell:not(.app-shell--immersive) .home-sidebar {
     top: var(--header-height);
     bottom: 0;
@@ -268,6 +306,7 @@
     border-right: none;
   }
 
+  /* 顶部导航栏 → 固定在视口顶部，全宽显示（main 偏移现由 grid 列宽承担，与顶栏无关） */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
     position: fixed;
     top: 0;
@@ -281,10 +320,12 @@
     box-shadow: none;
   }
 
+  /* 固定 header 占据空间，scroll wrapper 需要 padding-top */
     .app-shell__scroll-wrapper {
     padding-top: var(--header-height);
   }
 
+  /* 沉浸式页头（fixed 叠加 Hero）全宽覆盖视口 */
   .sticky-header--immersive {
     left: 0;
     width: 100%;
