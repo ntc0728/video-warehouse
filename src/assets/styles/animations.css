@@ -15,18 +15,28 @@
 }
 
 /* ============================================================
+   页面进入统一过渡（淡入 + 轻微上移）
+   供 Home / Detail / Person / SourceChecker / RecordShell(收藏·历史) 复用，
+   与 Browse(.browse-page) / IPTV(.iptv-content) / Settings(.settings-page) 的进入动画保持一致，
+   消除「进入首页/分类页僵硬、无过渡」的观感。
+   注意：Keep-Alive 用 CSS display 切换可见性，根容器的 CSS animation 不会在二次进入时重放，
+        二次进入靠 Keep-Alive 的瞬时 display 切换（≈1ms），不再依赖 View Transitions API
+        （整页快照在常驻多页 DOM 下开销过大，已移除）。
+   ============================================================ */
+/* ============================================================
    页面进入过渡动画（统一三套变体）
    ------------------------------------------------------------
    设计目标（解决 4 个痛点）：
    1. 不卡顿：只动画 transform/opacity（GPU 合成层，不 reflow）
-   2. 不闪烁：--fade/--stagger 容器层纯 opacity，不触发常驻页 GPU 合成层重绘
+   2. 不闪烁：方案--fade/--stagger 容器层纯 opacity，不触发常驻页
+      GPU 合成层重绘（Home HeroBanner 等不闪一下）
    3. 不太快/不跳动：时长 0.3s 左右，配合内容错峰，避免「冒出/跳动」
-   4. 大量图片优雅展开：--stagger 内容块错峰渐入（每块 40ms）
+   4. 大量图片优雅展开：方案--stagger 内容块错峰渐入（每块 40ms）
    ------------------------------------------------------------
    Keep-Alive 二次进入重放：AppLayout useLayoutEffect 对激活路由内
-   匹配 .page-transition-enter* 的元素执行「animation:none → reflow → 还原」
-   三步重启。重放只作用于激活路由，常驻页保持 display:none 不被惊动，
-   故 session 缓存的图片立即显示、无闪烁。
+   匹配 .page-transition-enter* 的元素执行「animation:none → reflow
+   → 还原」三步重启。重放只作用于激活路由，常驻页保持 display:none
+   不被惊动，故 session 缓存的图片立即显示、无闪烁。
    ============================================================ */
 
 /* 变体 1：淡入上移（默认）—— Detail / Settings
@@ -46,8 +56,8 @@
   animation: page-enter-fade 0.32s var(--ease-out-expo) both;
 }
 
-/* 变体 2：纯 opacity 淡入 —— IPTV
-   工作台立即就位，仅淡入不位移，避免「滑入」的违和感 */
+/* 变体 2：纯 opacity 淡入 —— IPTV / Player
+   工作台/播放器立即就位，仅淡入不位移，避免「滑入」的违和感 */
 @keyframes page-enter-pure-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
