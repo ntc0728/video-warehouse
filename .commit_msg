@@ -1,7 +1,0 @@
-fix: HeroBanner 缩略图 active 盒子缩放导致宽度不一致 + Detail 首次进入剧照截断/闪烁
-
-- HeroBanner.css: 移除 .hero-banner__thumb.is-active 的盒子级 transform:scale(1.02)，
-  使 active 缩略图宽度与骨架/非active 一致(实测 322px)；保留内层图片 scale(1.03) 与发光
-- Detail/index.tsx: 剧照截断改用 useLayoutEffect 消除"全部剧照先出现再塌陷"闪烁；
-  网格样式未就绪(gridTemplateColumns 为 none, 冷加载 CSS 晚于 JS)时不提交错误视口估算值，
-  改用 requestAnimationFrame 重试由 RO 在样式就绪后纠正；保留隐藏期 window.innerWidth 兜底
