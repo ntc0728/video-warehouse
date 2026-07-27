@@ -43,7 +43,12 @@
 
 .skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(var(--card-cols, 3), minmax(0, 1fr));
+  /* 必须与真实网格 .video-card-grid (VideoCard.css) 的 fallback 保持一致：
+     两者都用 var(--card-cols)，而 :root 在 variables.css 中才定义 --card-cols。
+     清缓存硬重载首屏 CSS 注入时序/FOUC 期间 --card-cols 尚未就绪，若骨架与真实的
+     fallback 不同（3 vs 6），骨架卡片会比真实卡片宽近一倍，造成"骨架宽度与真实宽度
+     不一致"的可见跳变。统一为 6 后，即便 --card-cols 暂未就绪，两者列数也相同。 */
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
   gap: var(--grid-gap);
   padding: var(--space-sm) 0;
 }
