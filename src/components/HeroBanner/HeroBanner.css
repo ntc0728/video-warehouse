@@ -13,9 +13,9 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
-  /* 建立尺寸容器，供右侧缩略图列用 100cqh 精确取得 banner 真实高度，
-     从而算出「严格 16:9 且整列撑满 banner」的列宽（见 .hero-banner__thumbs）。 */
-  container-type: size;
+  /* 缩略图列宽现由「自身拉伸高度经 aspect-ratio 反推」（见 .hero-banner__thumbs），
+     不再依赖 container-type:size + 100cqh，故移除尺寸容器；
+     从首帧起骨架与真实缩略图列宽即恒等，消除硬重载首帧 100cqh 回退视口高度导致的列宽跳变。 */
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -239,13 +239,13 @@
   gap: var(--space-3xs);
   justify-content: flex-start;
   padding: 0 0 0 var(--space-sm);
-  /* 列宽精确 = (banner高 / 张数) × 16/9：
-     每张宽=列宽、高=列宽×9/16，N 张+gaps 总高恰好 = banner 高，
-     实现「严格 16:9 + 整列撑满 banner」且不依赖子项 shrink-to-fit（不再塌缩）。
-     张数 N = JS 注入的 --hero-thumb-count（宽屏 4 / 普通 3）。
-     banner 高优先取 JS 实测注入的 --hero-banner-h（含 max-height 截断后的真实高度），
-     彻底避免依赖 container-type:size 的 100cqh 在首帧/硬重载（CSS 容器查询上下文尚未
-     建立）时回退到视口高度导致列宽异常跳变；未注入时回退 100cqh 保持原行为。 */
+  /* 列宽 = (列高 / 张数) × 16/9：本列自身即容器（container-type:size），
+     其 100cqh 解析为列自身高度（由 position:absolute; top:0; bottom:0 撑满 banner，
+     纯布局确定、与 CSS/JS 时序无关），故从第 0 帧起列宽即正确，
+     彻底摆脱对 JS 注入 --hero-banner-h 的依赖，且不再有「初始骨架宽、后续窄」的跳变。
+     张数 N = 内联 style 注入的 --hero-thumb-count（宽屏 4 / 普通 3，首帧即就绪）。
+     当 --hero-banner-h 未注入时回退 100cqh（= 列自身高度，等同正确值）。 */
+  container-type: size;
   width: calc(
     (var(--hero-banner-h, 100cqh) - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
     / var(--hero-thumb-count, 3) * 16 / 9
@@ -254,10 +254,8 @@
 }
 
 /* 缩略图：flex:1 1 0 始终拉伸填满列高（无论真实渲染几张都撑满 banner，
-   数量不足时仅单张略变高、绝不底部留空）；width:100% 铺满列宽（恒定）→ 宽=列宽；
-   aspect-ratio:16/9 在「数量==maxCount（常态）」时让单张严格 16:9，
-   列宽由容器统一给出（calc 基于 --hero-thumb-count=maxCount），骨架/真实图宽度恒等。
-   min-height:0 允许 flex 列内压缩，避免溢出。 */
+   数量不足时仅单张略变高、绝不底部留空）；width:100% 铺满列宽（列宽由上方
+   calc 基于列自身高度给出，骨架/真实图宽度恒等）；min-height:0 允许 flex 列内压缩。 */
 .hero-banner__thumb {
   position: relative;
   display: block;
