@@ -116,6 +116,8 @@ export default function BrowsePage() {
   const triggerSearch = useCallback((q: string, mode: SearchMode) => {
     if (!q) return;
     if (mode === 'cms') {
+      // 搜索词未变化时不重复调用 CMS 查询接口（如切换"直链搜索"tab）
+      if (lastCmsSearchedRef.current === q) return;
       lastCmsSearchedRef.current = q;
       searchCMS(q);
     } else {
@@ -327,6 +329,13 @@ export default function BrowsePage() {
 
         {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}
         <div className="browse-results-body">
+          {/* 切换筛选/排序 tab 时旧数据仍在，叠加"搜索中"遮罩 */}
+          {searchMode === 'smart' && isRefreshing && smartHasData && (
+            <div className="browse-refresh-mask">
+              <AppLoading tip="搜索中…" showTip />
+            </div>
+          )}
+
           {showResultsLoading && (
             <AppLoading tip="搜索中…" showTip />
           )}
