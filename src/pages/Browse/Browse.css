@@ -7,12 +7,13 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 0; /* 搜索卡片与结果卡片相连，合成一张大卡片 */
   width: 100%;
   background-color: var(--color-background);
   /* 进入动画统一由 .page-transition-enter--stagger 提供（根容器 className 加该类）*/
 }
 
+/* 双卡片相连：search 为上半部、results 为下半部，合成一张大卡片 */
 .browse-card--search {
   display: flex;
   flex-direction: column;
@@ -20,6 +21,11 @@
   gap: var(--space-lg);
   align-items: center;
   padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .browse-card--results {
@@ -27,12 +33,9 @@
   flex: 1 1 0;
   flex-direction: column;
   padding: var(--space-sm);
-}
-
-.browse-card--search,
-.browse-card--results {
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -42,6 +45,19 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
+  position: relative; /* 供"搜索中"遮罩绝对定位覆盖 */
+}
+
+/* 切换筛选/排序 tab 时，旧数据仍在，叠加"搜索中"遮罩 */
+.browse-refresh-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .browse-results-body .app-loading--inline {
