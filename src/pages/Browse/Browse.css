@@ -36,3 +36,172 @@
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
+
+/* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */
+.browse-results-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+}
+
+.browse-results-body .app-loading--inline {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* ── 排序栏（Card 2 顶部） ────────────────────────── */
+.browse-sort-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 var(--space-sm) 0;
+}
+
+.browse-sort-bar__tabs {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.browse-sort-bar__tab {
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.browse-sort-bar__tab:hover {
+  color: var(--color-text);
+}
+
+.browse-sort-bar__tab--active {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.browse-sort-bar__count {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* ── 搜索模式切换 Tab（Card 1 顶部） ──────────────── */
+.browse-search-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.browse-search-tab {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.browse-search-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ── 网格容器（BrowseGrid 内 video-card-grid 的 padding 覆盖） ── */
+.browse-card-grid {
+  padding: var(--space-sm) 0;
+}
+
+/* ── LoadMore（BrowseLoadMore） ───────────────────── */
+.browse-loadmore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+/* "下滑加载更多" — 静态文字态，2.4s 呼吸动画（0.55↔0.85） */
+.browse-loadmore-hint {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  animation: browse-loadmore-hint-pulse 2.4s ease-in-out infinite;
+  user-select: none;
+}
+
+@keyframes browse-loadmore-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.browse-loadmore-loading {
+  display: inline-flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.browse-loadmore-spinner {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: browse-spin 0.8s linear infinite;
+}
+
+@keyframes browse-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 搜索词高亮（highlight.tsx） ──────────────────── */
+.search-highlight {
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+}
+
+/* ── 移动端：browse-card-grid 覆盖 video-card-grid 的 padding ── */
+@media (width <= 639px) {
+  .browse-card-grid {
+    padding: var(--space-sm) 0;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .browse-loadmore-spinner,
+  .browse-loadmore-hint {
+    animation: none !important;
+  }
+}
