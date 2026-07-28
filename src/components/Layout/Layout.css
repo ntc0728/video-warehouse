@@ -276,8 +276,9 @@
 
 /* 折叠/展开动画由 JS WAAPI 控制（见 AppLayout.tsx）：
    - 动画期间：sidebar-spacer / home-sidebar / app-shell__main 三者 transform 平移，
-     width 保持不变（0 reflow），app-shell 加 .app-shell--animating 类冻结 width transition。
-   - 动画结束：移除 .app-shell--animating，一次性切 width（1 次 reflow，此时动画已结束不可见）。 */
+     width 由 --sidebar-collapsed 类（CSS 变量驱动、无 transition）保持冻结，0 reflow。
+   - 折叠：onfinish 切 --sidebar-collapsed 类一次性收窄 width（1 次 reflow，动画已结束不可见）；
+     展开：flushSync 先切 --sidebar-collapsed 类立即变宽，再 transform 滑入 0。 */
 
 @media (prefers-reduced-motion: reduce) {
   /* 无障碍：折叠/展开时禁用 JS 动画，width 瞬时切换（无可见动画）。 */
