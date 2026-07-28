@@ -147,7 +147,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-padding settings-page">
+    <div className="page-padding settings-page page-transition-enter">
       {mobileSubPage ? (
         <SettingsSubPage key={mobileSubPage} tab={mobileSubPage} onBack={handleSubPageBack}>
           {renderContent()}
