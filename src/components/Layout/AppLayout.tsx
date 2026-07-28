@@ -13,7 +13,7 @@ import './Layout.css';
 import { useSettingsStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
-import { ScrollContainerContext } from '@/hooks/useScrollContainer';
+import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 
 function LoadingFallback() {
@@ -200,10 +200,10 @@ export default function AppLayout() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   // 方案 B（transform 补偿）：折叠/展开动画由 JS WAAPI 控制，避免 width transition
   // 每帧触发 reflow（首页 49 张卡片 grid 重排导致卡顿）。
-  // - 动画期间：sidebar-spacer / home-sidebar / app-shell__main 三者 transform 平移，
-  //   width 保持不变（0 reflow），app-shell 加 .app-shell--animating 类冻结 width。
-  // - 动画结束：移除 .app-shell--animating，切 .app-shell--sidebar-collapsed 类
-  //   一次性切 width（1 次 reflow，此时动画已结束、不可见）。
+  // - 动画期间：sidebar-spacer / home-sidebar / app-shell__main 三者由 WAAPI transform 平移，
+  //   width 由 --sidebar-collapsed 类（CSS 变量驱动、无 transition）保持冻结，0 reflow。
+  // - 折叠：onfinish 时切 --sidebar-collapsed 类一次性收窄 width（1 次 reflow，动画已结束不可见）；
+  //   展开：flushSync 先切 --sidebar-collapsed 类立即变宽，再 WAAPI transform 从 -delta 滑入 0。
   const appShellRef = useRef<HTMLDivElement>(null);
   const sidebarAnimRef = useRef<Animation[] | null>(null);
   // Keep-Alive 二次进入动画重放所需的容器引用（见下方 useLayoutEffect）

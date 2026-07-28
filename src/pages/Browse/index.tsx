@@ -253,6 +253,7 @@ export default function BrowsePage() {
       className={[
         'page-padding',
         'browse-page',
+        'page-transition-enter--stagger',
         isMobile ? 'browse-page--mobile' : '',
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}

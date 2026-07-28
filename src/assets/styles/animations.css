@@ -56,16 +56,6 @@
   animation: page-enter-fade 0.32s var(--ease-out-expo) both;
 }
 
-/* 变体 2：纯 opacity 淡入 —— IPTV / Player
-   工作台/播放器立即就位，仅淡入不位移，避免「滑入」的违和感 */
-@keyframes page-enter-pure-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.page-transition-enter--fade {
-  animation: page-enter-pure-fade 0.25s var(--ease-out-expo) both;
-}
 
 /* 变体 3：分层错峰 —— Home / Browse / Collections / History / SourceChecker / Person
    容器纯 opacity 淡入（不触发常驻页合成层重绘），内部直接子元素错峰上移。
@@ -99,7 +89,6 @@
 /* 尊重系统「减少动态效果」偏好 */
 @media (prefers-reduced-motion: reduce) {
   .page-transition-enter,
-  .page-transition-enter--fade,
   .page-transition-enter--stagger,
   .page-transition-enter--stagger > * {
     animation: none;
@@ -278,18 +267,6 @@
   animation: iconBounce 0.35s ease-out both;
 }
 
-.stagger-1 { animation-delay: 0.03s; }
-.stagger-2 { animation-delay: 0.06s; }
-.stagger-3 { animation-delay: 0.09s; }
-.stagger-4 { animation-delay: 0.12s; }
-.stagger-5 { animation-delay: 0.15s; }
-.stagger-6 { animation-delay: 0.18s; }
-.stagger-7 { animation-delay: 0.21s; }
-.stagger-8 { animation-delay: 0.24s; }
-.stagger-9 { animation-delay: 0.27s; }
-.stagger-10 { animation-delay: 0.30s; }
-.stagger-11 { animation-delay: 0.33s; }
-.stagger-12 { animation-delay: 0.36s; }
 
 /* 注：.btn-press 不再自带 :active 缩放。RippleButton 根节点是 <button>，
    统一由全局方案6（scale:0.92 spring 回弹）+ 水波纹提供按压反馈；
