@@ -44,10 +44,6 @@ export default function BrowsePage() {
   const isPop = navigationType === 'POP';
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
-  // 切换筛选/排序时是否显示「搜索中」遮罩（仅当切换前已有旧数据时，覆盖旧网格而非整页清空）
-  const [refreshMask, setRefreshMask] = useState(false);
-  // 发起变更前快照：reset 会同步清空 discoverResults，故需提前记录"切换前是否有数据"
-  const hadDataRef = useRef(false);
 
   useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse', undefined, location.pathname === '/browse');
@@ -117,7 +113,7 @@ export default function BrowsePage() {
   const lastSmartSearchedRef = useRef('');
   const filterSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const triggerSearch = useCallback(async (q: string, mode: SearchMode) => {
+  const triggerSearch = useCallback((q: string, mode: SearchMode) => {
     if (!q) return;
     if (mode === 'cms') {
       // 搜索词未变化时不重复调用 CMS 查询接口（如切换"直链搜索"tab）
@@ -126,23 +122,13 @@ export default function BrowsePage() {
       searchCMS(q);
     } else {
       lastSmartSearchedRef.current = q;
-      setRefreshMask(true);
-      try {
-        await useTMDBStore.getState().search(q, 1, { reset: true });
-      } finally {
-        setRefreshMask(false);
-      }
+      void useTMDBStore.getState().search(q, 1, { reset: true });
     }
   }, [searchCMS]);
 
   // ── 搜索模式切换 ────────────────────────────────
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
-    if (mode === 'smart' && query) {
-      // 快照切换前是否已有数据，供遮罩判断（避免整页清空）
-      hadDataRef.current = useTMDBStore.getState().discoverResults.length > 0;
-      setRefreshMask(true);
-    }
     if (query) {
       triggerSearch(query, mode);
     }
@@ -150,15 +136,11 @@ export default function BrowsePage() {
 
   // ── 筛选条件变更：保留搜索词，重新触发搜索 ──────────
   const handleFilterChange = useCallback((next: FilterBarValue) => {
-    // 发起变更前快照：reset 会同步清空 discoverResults，需提前记录"切换前是否有数据"
-    hadDataRef.current = useTMDBStore.getState().discoverResults.length > 0;
     updateFilter(next);
     // 同步更新 store 的 filterOptions，确保搜索结果按新筛选条件过滤
     useTMDBStore.getState().setFilter(toStoreFilter(next));
     // 有搜索词时防抖触发搜索，快速切换筛选时避免请求抖动
     if (query) {
-      // 立即给反馈：旧数据尚在，遮罩覆盖（而非整页清空）
-      setRefreshMask(true);
       if (filterSearchTimerRef.current) clearTimeout(filterSearchTimerRef.current);
       filterSearchTimerRef.current = setTimeout(() => {
         triggerSearch(query, searchMode);
@@ -259,13 +241,12 @@ export default function BrowsePage() {
   const isCmsLoading = cmsLoading;
 
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
+  // 切换筛选/排序 tab 时，store 的 reset 会同步清空 discoverResults，
+  // 于是 isLoading=true 且 smartHasData=false → 直接显示「搜索中…」loading（无需额外遮罩）
   const smartHasData = discoverResults.length > 0;
   const cmsHasData = cmsResults.length > 0;
-  // 切换筛选/排序遮罩：仅当「切换前已有旧数据」且「正在刷新（hook 的 isRefreshing 或本次 search 的 refreshMask）」
-  // 注意：reset 会同步清空 discoverResults，故用 hadDataRef 快照判断，而非当前的 smartHasData
-  const maskActive = searchMode === 'smart' && hadDataRef.current && (isRefreshing || refreshMask);
   const showResultsLoading = searchMode === 'smart'
-    ? (isLoading && !smartHasData && !maskActive)
+    ? (isLoading && !smartHasData)
     : (isCmsLoading && !cmsHasData);
 
   const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
@@ -350,13 +331,6 @@ export default function BrowsePage() {
 
         {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}
         <div className="browse-results-body">
-          {/* 切换筛选/排序 tab 时旧数据仍在，叠加"搜索中"遮罩 */}
-          {maskActive && (
-            <div className="browse-refresh-mask">
-              <AppLoading tip="搜索中…" showTip />
-            </div>
-          )}
-
           {showResultsLoading && (
             <AppLoading tip="搜索中…" showTip />
           )}
