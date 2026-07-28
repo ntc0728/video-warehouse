@@ -17,7 +17,7 @@ import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { useDocumentTitle } from '@/hooks';
+import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext';
 import { useTMDBStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
@@ -70,13 +70,14 @@ export default function BrowsePage() {
     }
   }, [stateQ, urlQ, isPop]);
 
-  // ── 浏览器标签标题 ────────────────────────────────
-  useDocumentTitle(searchMode === 'smart' && query ? null : undefined);
+  // ── 浏览器标签标题（Keep-Alive：仅激活页写，避免已切走页面覆盖） ──
+  const activeRouteKeyB = useContext(ActiveRouteContext);
+  const selfRouteKeyB = useContext(SelfRouteContext);
   useEffect(() => {
-    if (searchMode === 'cms' && query) {
-      document.title = `${query} - 搜索 - kinoTV`;
-    }
-  }, [searchMode, query]);
+    if (selfRouteKeyB != null && selfRouteKeyB !== activeRouteKeyB) return;
+    document.title =
+      searchMode === 'cms' && query ? `${query} - 搜索 - kinoTV` : '搜索 - kinoTV';
+  }, [searchMode, query, activeRouteKeyB, selfRouteKeyB]);
 
   // ── TMDB 数据（智能检索）─────────────────────────
   const {
