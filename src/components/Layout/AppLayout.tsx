@@ -15,6 +15,7 @@ import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
+import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext';
 
 function LoadingFallback() {
   return (
@@ -357,38 +358,44 @@ export default function AppLayout() {
               direction="vertical"
             >
               {/* Keep-Alive 容器：所有已访问的页面组件保持挂载，仅切换 CSS 可见性 */}
-              <div className="page-transition" ref={pageTransitionRef}>
-                {visitedRouteKeys.map((routeKey) => {
-                  // 直接查 routeComponentMap（routeKey 已是合法 key），避免每次都走 matchRoute 遍历
-                  const Component = routeComponentMap[routeKey];
-                  if (!Component) return null;
-                  const isActive = routeKey === activeRouteKey;
-                  return (
-                    <div
-                      key={routeKey}
-                      style={{ display: isActive ? 'contents' : 'none' }}
-                      data-route={routeKey}
-                    >
-                      <Suspense fallback={<LoadingFallback />}>
-                        <RouteRenderer Component={Component} />
-                      </Suspense>
-                    </div>
-                  );
-                })}
-                {/* noKeepAlive 路由：直接渲染，不缓存 */}
-                {activeRouteKey && noKeepAlive.has(activeRouteKey) && (() => {
-                  const Component = routeComponentMap[activeRouteKey];
-                  if (!Component) return null;
-                  return (
-                    <div key={activePath} data-route={activeRouteKey}>
-                      <Suspense fallback={<LoadingFallback />}>
-                        <RouteRenderer Component={Component} />
-                      </Suspense>
-                    </div>
-                  );
-                })()}
-                <div id="load-more-portal" />
-              </div>
+              <ActiveRouteContext.Provider value={activeRouteKey}>
+                <div className="page-transition" ref={pageTransitionRef}>
+                  {visitedRouteKeys.map((routeKey) => {
+                    // 直接查 routeComponentMap（routeKey 已是合法 key），避免每次都走 matchRoute 遍历
+                    const Component = routeComponentMap[routeKey];
+                    if (!Component) return null;
+                    const isActive = routeKey === activeRouteKey;
+                    return (
+                      <div
+                        key={routeKey}
+                        style={{ display: isActive ? 'contents' : 'none' }}
+                        data-route={routeKey}
+                      >
+                        <SelfRouteContext.Provider value={routeKey}>
+                          <Suspense fallback={<LoadingFallback />}>
+                            <RouteRenderer Component={Component} />
+                          </Suspense>
+                        </SelfRouteContext.Provider>
+                      </div>
+                    );
+                  })}
+                  {/* noKeepAlive 路由：直接渲染，不缓存 */}
+                  {activeRouteKey && noKeepAlive.has(activeRouteKey) && (() => {
+                    const Component = routeComponentMap[activeRouteKey];
+                    if (!Component) return null;
+                    return (
+                      <div key={activePath} data-route={activeRouteKey}>
+                        <SelfRouteContext.Provider value={activeRouteKey}>
+                          <Suspense fallback={<LoadingFallback />}>
+                            <RouteRenderer Component={Component} />
+                          </Suspense>
+                        </SelfRouteContext.Provider>
+                      </div>
+                    );
+                  })()}
+                  <div id="load-more-portal" />
+                </div>
+              </ActiveRouteContext.Provider>
             </CustomScrollbar>
             <OverlayScrollbar scrollContainer={scrollContainerRef} />
           </div>
