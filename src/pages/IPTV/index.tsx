@@ -277,7 +277,7 @@ export default function IPTVPage() {
   }, [checkAvailability, selectedGroup]);
 
   return (
-    <div className="page-padding iptv-page">
+    <div className="page-padding iptv-page page-transition-enter">
         <div className="iptv-top-card">
           <div className="iptv-header">
             {!proxyUrl && (

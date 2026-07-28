@@ -304,12 +304,6 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  animation: iptv-content-fade-in 0.2s ease both;
-}
-
-@keyframes iptv-content-fade-in {
-  from { opacity: 0.6; }
-  to   { opacity: 1; }
 }
 
 /* 频道列表顶部时间信息：右对齐 */

@@ -208,18 +208,20 @@ export default function HomePage() {
 
   if (!hasToken) {
     return (
-      <div className="page-padding home-page page-transition-enter">
-        <div className="home-token-required">
-          <AlertCircle size={48} className="home-token-required-icon" />
-          <p className="home-token-required-text">
-            TMDB Access Token 未配置，请在设置中
-            <button
-              className="home-token-required-link"
-              onClick={() => navigate('/settings?tab=video')}
-            >
-              配置
-            </button>
-          </p>
+      <div className="page-padding home-page">
+        <div className="home-page__content page-transition-enter">
+          <div className="home-token-required">
+            <AlertCircle size={48} className="home-token-required-icon" />
+            <p className="home-token-required-text">
+              TMDB Access Token 未配置，请在设置中
+              <button
+                className="home-token-required-link"
+                onClick={() => navigate('/settings?tab=video')}
+              >
+                配置
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -293,10 +295,12 @@ export default function HomePage() {
   // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
   if (!isCategoryView && !hasAnyData && allFailed) {
     return (
-      <div ref={pageRef} className={`page-padding home-page page-transition-enter${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-        <div className="home-empty" role="alert">
-          <AlertCircle size={32} className="home-empty-icon" />
-          <p className="home-empty-text">{allFailed}</p>
+      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+        <div className="home-page__content page-transition-enter">
+          <div className="home-empty" role="alert">
+            <AlertCircle size={32} className="home-empty-icon" />
+            <p className="home-empty-text">{allFailed}</p>
+          </div>
         </div>
         <BackToTopButton />
       </div>
