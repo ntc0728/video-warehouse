@@ -16,9 +16,15 @@
   animation: video-card-grid-fade 0.3s ease both;
 }
 
-/* 子项 stagger 入场动画 */
+/* 子项 stagger 入场动画。
+   兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
+   还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、
+   不跟队"——收藏页 7 列 ×2 行=14 张可视卡片时第 13/14 张即复现。
+   基础规则先给所有子项压轴延迟（0.36s+0.03s），再由下方枚举覆盖前 12 个为递增小延迟：
+   超出枚举的子项自动作为最后一批跟队入场，任意列数（--card-cols 最大 10）都不会抢跑。 */
 .video-card-grid > * {
   animation: fadeInUp 0.4s var(--ease-standard) both;
+  animation-delay: 0.39s;
 }
 .video-card-grid > *:nth-child(1) { animation-delay: 0.03s; }
 .video-card-grid > *:nth-child(2) { animation-delay: 0.06s; }

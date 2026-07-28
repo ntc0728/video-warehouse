@@ -326,7 +326,8 @@ export default function CollectionsPage() {
           {batchMode ? '退出管理' : '批量管理'}
         </button>
       </div>
-      <div className="collection-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+      {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画 */}
+      <div key={activeTab} className="collection-content animate-fade-in" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
         {activeTab === 'video' ? (
           <div className="video-card-grid">
             {(displayedList as CollectionVideoItem[]).map((video) => (

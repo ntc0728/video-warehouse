@@ -29,11 +29,11 @@
   flex-direction: row;
   height: 100dvh;
   overflow: hidden;
-  /* 方案 B（transform 补偿）：--sidebar-offset 仅在非动画状态切换，
-     动画期间由 JS（AppLayout.tsx 的 toggleSidebarCollapsed）用 WAAPI 控制
-     sidebar-spacer / home-sidebar / app-shell__main 三者的 transform 平移，
-     width 保持不变（0 reflow）；动画结束后才一次性切 width（1 次 reflow，
-     此时动画已结束、不可见）。 */
+  /* 折叠/展开动画由 JS（AppLayout.tsx 的 toggleSidebarCollapsed）用 WAAPI 控制：
+     sidebar / sidebar-spacer 直接对 width 做动画（真实收缩/展开，可见过渡），
+     app-shell__main 不做 transform（避免创建 containing block 使内部 fixed 顶栏位移），
+     由 flex 自然填充侧栏腾出的空间。--sidebar-offset 仅在非动画（CSS 基线）状态切换，
+     动画期间由 inline width 接管。 */
   --sidebar-offset: var(--sidebar-width);
 }
 
@@ -44,7 +44,8 @@
 .sidebar-spacer {
   flex-shrink: 0;
   width: var(--sidebar-offset);
-  /* width 不做 transition（避免逐帧 reflow）；transform 由 JS WAAPI 控制 */
+  /* 动画期间 width 由 JS WAAPI 控制（inline），结束后切 --sidebar-collapsed 类，
+     CSS（var(--sidebar-offset)）接管；main 走独立 transform，不依赖此 width 过渡。 */
 }
 
 /* ── Main column: 包裹 header + scroll + tabbar（纯 flex:1，左侧偏移由 spacer 承担，无 margin-left） ── */
@@ -54,7 +55,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  /* transform 由 JS WAAPI 控制（折叠/展开动画期间向左平移 delta，填满 spacer 平移后的空间） */
+  /* 折叠/展开动画期间不施加 transform（避免内部 fixed 顶栏位移），由 flex 自然填充 */
 }
 
 /* scroll-wrapper：包含滚动容器和浮动滚动条，自身不滚动 */
@@ -275,10 +276,11 @@
 }
 
 /* 折叠/展开动画由 JS WAAPI 控制（见 AppLayout.tsx）：
-   - 动画期间：sidebar-spacer / home-sidebar / app-shell__main 三者 transform 平移，
-     width 由 --sidebar-collapsed 类（CSS 变量驱动、无 transition）保持冻结，0 reflow。
-   - 折叠：onfinish 切 --sidebar-collapsed 类一次性收窄 width（1 次 reflow，动画已结束不可见）；
-     展开：flushSync 先切 --sidebar-collapsed 类立即变宽，再 transform 滑入 0。 */
+   - 动画期间：sidebar-spacer / home-sidebar 直接对 width 做动画（真实收缩/展开，可见过渡），
+     app-shell__main 不施加 transform（避免其内部 fixed 顶栏被位移），由 flex 自然填充。
+   - 折叠/展开统一流程：inline width 钉在当前真实宽度（支持动画中途反向续接）→
+     flushSync 立即翻转状态（collapsed 类即时切换：折叠时标题瞬时消失、展开时立即恢复）→
+     下一帧 width 起点 → 终点动画，onfinish 清 inline 交还 CSS。 */
 
 @media (prefers-reduced-motion: reduce) {
   /* 无障碍：折叠/展开时禁用 JS 动画，width 瞬时切换（无可见动画）。 */

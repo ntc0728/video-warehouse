@@ -72,6 +72,13 @@
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  /* 离屏行跳过布局与绘制：侧边栏折叠/展开时 .app-shell__main 每帧 reflow，
+     LazyImage 命中后 <img> 常驻 DOM（首页约 13 行 × 12 张 ≈ 150 张），
+     若全部参与重排会卡顿。content-visibility:auto 让不在视口内的整行
+     直接跳过 layout+paint，仅可见的 2~3 行参与重排；auto 关键字记住上次
+     真实高度，避免滚动条跳动。行内横滚不受影响（行在视口内时正常渲染）。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px;
 }
 
 /* ── Empty / Error ──────────────────────────────────── */
@@ -142,26 +149,30 @@
 /* ── Skeleton ────────────────────────────────────────── */
 
 .home-skeleton {
-  /* 骨架扫光速度：默认偏慢、更柔和，避免快速闪烁感（首页卡片骨架统一引用） */
-  --skeleton-duration: 2.8s;
   gap: var(--space-md);
 }
 
-/* 与 .hero-banner 完全同高的占位（消除骨架→真实 banner 的高度跳动）：
-   复用同一套 height 模型（aspect-ratio 16/9 + min/max）+ 同一张卡片框，
-   保证首屏骨架与真实 banner 尺寸/外框逐像素一致。
+/* 与 .hero-banner 完全同高、同外包盒的占位（消除骨架→真实 banner 的高度/外框跳动）：
+   复用同一套 height 模型（aspect-ratio 16/9 + min/max）+ 同款「无边框盒子」（圆角 + 阴影），
+   真实 .hero-banner 无 border / 无 surface 底色，骨架严格镜像才能避免切换时外框不一致。
    .hero-banner 的子元素均为绝对定位、无内容高度，故其高度纯由该模型决定，
    骨架须严格镜像才能避免切换时的布局位移。 */
 .home-skeleton-hero {
   position: relative;
   width: 100%;
+  /* 尺寸容器放在【父级】而非缩略图列自身：列宽用 100cqh 解析为「本 banner 框高度」，
+     由 aspect-ratio + min/max 稳定确定（不依赖子内容），避免「列自身既当容器又用 cqh 算自己宽」的自引用循环，
+     否则 100cqh 会退化成视口高度导致列宽被算大。真实 .hero-banner 用 JS 注入的 --hero-banner-h（同高度），故两者恒等。 */
+  container-type: size;
   aspect-ratio: 16 / 9;
   min-height: var(--layout-hero-banner-min-h);
   max-height: min(70vh, var(--layout-hero-banner-max-h));
   margin-bottom: var(--space-sm);
-  border: 1px solid var(--color-border-light);
+  /* 与真实 .hero-banner 同款「无边框盒子」：仅圆角 + 阴影，不要 border / surface 底色。
+     真实 hero-banner 经 .home-page .hero-banner 只设 width/margin/shadow，base 规则也无 border/surface，
+     故骨架也不能加——否则会比真实 banner 多出 1px 边框与表面底色，视觉像「内嵌的小卡片/拼接块」，
+     banner 主体可见宽度也比真实窄，切换时一眼看出两套 banner 不一致。 */
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
@@ -171,15 +182,19 @@
   inset: 0;
   background: linear-gradient(
     90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
-/* 右侧缩略图列骨架：与 HeroBanner 的 hero-banner__thumbs 同构（绝对定位覆盖在 banner 右侧） */
+/* 右侧缩略图列骨架：逐字节镜像 .hero-banner__thumbs 的几何模型 —
+   列宽 = (列高 / 张数) × 16/9；列高 = 100cqh 解析为【父级 .home-skeleton-hero 的高度】
+   （父级是尺寸容器，高度由 aspect-ratio + min/max 稳定确定，纯布局、非自引用），
+   与真实缩略图列公式恒等（真实用 JS 注入的 --hero-banner-h = 同一高度），消除骨架→真实的列宽跳变。
+   张数 N 默认 3，大屏（与 useScreenTier 的 large/xlarge 对齐）为 4，见下方媒体查询。 */
 .home-skeleton-hero__thumbs {
   position: absolute;
   top: 0;
@@ -188,40 +203,72 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3xs);
-  width: clamp(6rem, 4rem + 8vw, 12rem);
-  padding: var(--space-3xs);
-  background: var(--color-surface);
+  justify-content: flex-start;
+  padding: 0 0 0 var(--space-sm);
+  width: calc(
+    (100cqh - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
+    / var(--hero-thumb-count, 3) * 16 / 9
+  );
+  /* 不要列背景：真实 .hero-banner__thumbs 无 background（透明），
+     其左 padding 与缩略图缝隙里透出的是 banner 背后的图。
+     若这里加 surface 底色（亮色主题为亮白），会在 banner 右缘形成一条亮白「边框」，
+     与真实不一致。保持透明，让缝隙透出底层 shimmer banner。 */
+  overflow: hidden;
 }
 
+/* 单张骨架：镜像 .hero-banner__thumb 的盒模型（flex 拉伸 + 16/9 + 同宽边框同圆角） */
 .home-skeleton-hero__thumb {
   flex: 1 1 0;
-  border-radius: var(--radius-sm);
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
   background: linear-gradient(
     90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
-/* 平板及以下：边框/圆角/下边距与 .hero-banner 的断点行为对齐，避免卡片框/间距跳动 */
+/* 第 4 张默认隐藏（普通桌面 3 张）；大屏显示（4 张）。
+   断点与 useScreenTier 的 large（≥1440px 宽 且 ≥900px 高）一致，
+   xlarge（≥1920/≥1000）为其子集自动覆盖，与 HeroBanner 的 maxCount 对齐 */
+.home-skeleton-hero__thumb:nth-child(4) {
+  display: none;
+}
+
+@media (width >= 1440px) and (height >= 900px) {
+  .home-skeleton-hero__thumbs {
+    --hero-thumb-count: 4;
+  }
+
+  .home-skeleton-hero__thumb:nth-child(4) {
+    display: block;
+  }
+}
+
+/* 平板及以下：边框/圆角/下边距与 .hero-banner 的断点行为对齐，避免卡片框/间距跳动；
+   缩略图列骨架隐藏断点与真实列一致（.hero-banner__thumbs 在 ≤1023px 隐藏，
+   原骨架到 ≤767px 才隐藏，导致平板区间骨架多显示一列） */
 @media (width <= 1023px) {
   .home-skeleton-hero {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
-}
-
-/* 移动端隐藏右侧缩略图列骨架，与 HeroBanner 行为一致；min-height 与 .hero-banner 对齐 */
-@media (width <= 767px) {
-  .home-skeleton-hero {
-    min-height: 14rem;
-  }
 
   .home-skeleton-hero__thumbs {
     display: none;
+  }
+}
+
+/* 移动端：min-height 与 .hero-banner 对齐 */
+@media (width <= 767px) {
+  .home-skeleton-hero {
+    min-height: 14rem;
   }
 }
 
@@ -248,12 +295,12 @@
   border-radius: var(--radius-sm);
   background: linear-gradient(
     90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 .home-skeleton-row-cards {
@@ -285,12 +332,12 @@
   border-radius: var(--radius-md);
   background: linear-gradient(
     90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 .home-skeleton-card-title {
@@ -299,21 +346,12 @@
   border-radius: var(--radius-sm);
   background: linear-gradient(
     90deg,
-    var(--color-skeleton) 0%,
-    var(--color-skeleton-shine) 50%,
-    var(--color-skeleton) 100%
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shine var(--skeleton-duration) ease-in-out infinite;
-}
-
-@keyframes skeleton-shine {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 /* ── Mobile ──────────────────────────────────────────── */

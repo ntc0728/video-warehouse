@@ -21,7 +21,7 @@
 }
 
 .help-popover-content {
-  z-index: 1000;
+  z-index: var(--z-popover);
   width: var(--layout-help-popover-w);
   border-radius: var(--radius-md);
   background: var(--color-surface-elevated);

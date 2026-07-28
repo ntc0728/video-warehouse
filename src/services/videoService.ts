@@ -616,16 +616,37 @@ export async function searchVideoSeasonsFromSingleSource(
 
     /** 季号 → Video 映射（用于切换选季时快速查找） */
     const seasons = new Map<number, Video>();
+    /** 无季号条目候选：CMS 常见「单条目收录全集」或「第一季直接以裸剧名收录」 */
+    let fallbackItem: CMSVideoItem | undefined;
+    let fallbackExact = false;
     for (const item of data.list) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const vodName = item.vod_name ?? '';
       const seasonNumber = extractSeasonNumber(vodName);
-      if (seasonNumber === undefined) continue;
+      if (seasonNumber === undefined) {
+        // 记录无季号条目作为第 1 季回退候选；名称与搜索标题完全一致的优先
+        const exact = vodName.trim() === title.trim();
+        if (!fallbackItem || (exact && !fallbackExact)) {
+          fallbackItem = item;
+          fallbackExact = exact;
+        }
+        continue;
+      }
       if (seasons.has(seasonNumber)) continue;
 
       // 先尝试解析搜索结果，若为空再通过详情接口回退（forceSeries：季条目按剧集解析，保留集数）
       const resolved = await resolvePlaySources(source.api, item, signal, true);
       seasons.set(seasonNumber, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
+    }
+
+    // 第 1 季缺失时用无季号条目补位，避免整个映射为空（单条目多集）
+    // 或第一季永远缺失（第一季裸剧名、后续季带"第X季"的收录习惯）
+    if (fallbackItem && !seasons.has(1)) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      const resolved = await resolvePlaySources(source.api, fallbackItem, signal, true);
+      if ((resolved.episodes?.length ?? 0) > 0 || resolved.sources.length > 0) {
+        seasons.set(1, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
+      }
     }
 
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };

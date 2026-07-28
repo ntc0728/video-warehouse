@@ -4,10 +4,10 @@
  * Hero：全屏 backdrop + 双层渐变 + logo/标签/简介 + 毛玻璃按钮 + 桌面端右侧海报
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { useUserStore, useSettingsStore, useNavStore } from '@/stores';
+import { useUserStore, useSettingsStore, useKeepAliveStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
@@ -243,16 +243,13 @@ export default function DetailPage() {
     stillsRORef.current = ro;
   }, [measureStills]);
 
-  // ── 页面状态持久化（返回时不重载 / tab 不重置） ──
-  const restoredRef = useRef(false);
-  const stateRef = useRef<Record<string, unknown>>({});
-
   // ── TMDB 加载 ────────────────────────────────
-  useEffect(() => {
+  // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 Keep-Alive 复用
+  // 同一实例时，hero 先以「上一个 detail 的 tmdbDetail」绘制一帧（封面/名称闪旧内容）。
+  useLayoutEffect(() => {
     if (!id) return;
-    restoredRef.current = false;
     const ctrl = new AbortController();
-    setTmdbLoading(true); setTmdbError(null);
+    setTmdbLoading(true); setTmdbError(null); setTmdbDetail(null); setBgLoaded(false);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
     setActiveTab('info');
 
@@ -414,12 +411,6 @@ export default function DetailPage() {
     return () => ctrl.abort();
   }, [id]);
 
-  // ── 页面状态保存（离开后返回恢复） ─────────────
-  useEffect(() => {
-    if (!id) return;
-    useNavStore.getState().saveState(`detail:${id}`, { tab: activeTab });
-  }, [activeTab, id]);
-
   // ── 收藏 ──────────────────────────────────────
   const collected = id ? isCollected(id) : false;
   const handleCollect = useCallback(() => {
@@ -431,8 +422,18 @@ export default function DetailPage() {
   }, [id, collected, addCollection, removeCollection, tmdbDetail]);
 
   // ── 播放 ──────────────────────────────────────
-  const handlePlay = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}` } }); };
-  const handlePlayFromBeginning = () => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true } }); };
+  // 进入 /play 前 pin 当前 detail，使其被 AppLayout 挂起缓存；从 /play 返回时瞬时恢复。
+  // 其他进入 detail 的路径（首页/Browse/推荐/前进后退）不 pin，detail 重新挂载并重新加载。
+  const handlePlay = () => {
+    if (!id) return;
+    useKeepAliveStore.getState().pinDetail(id);
+    navigate(`/play/${id}`, { state: { from: `/detail/${id}` } });
+  };
+  const handlePlayFromBeginning = () => {
+    if (!id) return;
+    useKeepAliveStore.getState().pinDetail(id);
+    navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true } });
+  };
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -517,29 +518,14 @@ export default function DetailPage() {
     ? `第${historyRecord.seasonNumber}季 ${historyRecord.episodeLabel}`
     : historyRecord?.episodeLabel;
 
-  // ── 页面状态快照 ──────────────────────────────
-  stateRef.current = { cmsError, tmdbDetail, tmdbMediaType, tmdbLoading, tmdbError, bgLoaded };
-
-  useEffect(() => {
-    if (!id) return;
-    const saved = useNavStore.getState().getState(`detail:${id}`);
-    if (saved) {
-      restoredRef.current = true;
-      const data = saved as Record<string, unknown>;
-      // tab 不恢复，确保切换电影时重置到概览
-      if (data.cmsError !== undefined) setCmsError(data.cmsError as string | null);
-      if (data.tmdbDetail) setTmdbDetail(data.tmdbDetail as TMDBMovieDetail | TMDBTVShowDetail);
-      if (data.tmdbMediaType) setTmdbMediaType(data.tmdbMediaType as 'movie' | 'tv');
-      if (data.tmdbLoading !== undefined) setTmdbLoading(data.tmdbLoading as boolean);
-      if (data.tmdbError !== undefined) setTmdbError(data.tmdbError as string | null);
-      if (data.bgLoaded !== undefined) setBgLoaded(data.bgLoaded as boolean);
-    }
-  }, [id]);
-
+  // 有限 Keep-Alive 下，detail 不做 navStore 状态恢复：
+  // - pin 的 play→detail 路径组件不重挂载，state 自然保留；
+  // - 其他路径 detail 重新挂载，应重新加载（而非恢复旧内容）。
+  // 组件卸载（离开 detail）时解除 pin，使 detail 不再常驻。
   useEffect(() => {
     return () => {
       if (!id) return;
-      useNavStore.getState().saveState(`detail:${id}`, stateRef.current);
+      useKeepAliveStore.getState().unpinDetail();
     };
   }, [id]);
 
@@ -938,7 +924,7 @@ export default function DetailPage() {
                             <button
                               className="detail-source-play-btn"
                               disabled={!playable}
-                              onClick={() => navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } })}
+                              onClick={() => { if (id) { useKeepAliveStore.getState().pinDetail(id); navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } }); } }}
                             >
                               <Play size={12} fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
                             </button>

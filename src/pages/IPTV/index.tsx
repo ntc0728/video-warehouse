@@ -144,10 +144,13 @@ export default function IPTVPage() {
 
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
-  // 筛选变化时重置滚动到顶部
+  // 筛选变化时重置滚动到顶部（仅在本页为活动路由时执行；
+  // 离开 IPTV 页时“清空筛选”会把 selectedGroup 置空并触发本 effect，
+  // 若此时对共享滚动容器做平滑滚回顶部，会出现“先滑回顶部再跳转”的观感，故加守卫）
   useEffect(() => {
+    if (location.pathname !== '/iptv') return;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedGroup, debouncedKeyword, scrollContainerRef]);
+  }, [selectedGroup, debouncedKeyword, scrollContainerRef, location.pathname]);
 
   const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
 

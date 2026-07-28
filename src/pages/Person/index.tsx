@@ -3,7 +3,7 @@
  *
  * 展示人物基本信息 + 参演电影 + 参演剧集
  */
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchPersonDetail, fetchPersonMovieCredits, fetchPersonTVCredits, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
@@ -106,13 +106,15 @@ export default function PersonPage() {
     }
   }, [person?.biography]);
 
-  useEffect(() => {
+  // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 Keep-Alive 复用
+  // 同一实例时人物 hero 先以「上一个人物」内容绘制一帧（头像/姓名闪旧内容）。
+  useLayoutEffect(() => {
     if (!id) return;
     const personId = parseInt(id, 10);
     if (isNaN(personId)) { setError('无效的人物 ID'); setLoading(false); return; }
 
     const ctrl = new AbortController();
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setPerson(null);
 
     (async () => {
       try {

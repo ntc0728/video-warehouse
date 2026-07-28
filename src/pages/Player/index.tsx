@@ -162,13 +162,13 @@ export default function PlayerPage() {
   const {
     cmsResults, cmsLoading, cmsSwitching,
     selectedSourceIds, sourceNameMap, activeSourceId, cmsSeasons,
-    fetchCMSSources: _fetchCMSSources, handleFetchCMSSourceById, handlePlayCMSSource,
+    fetchCMSSources: _fetchCMSSources, handleFetchCMSSourceById, handlePlayCMSSource, loadSeason,
     seasonMapsRef, activeCmsSourceIndexRef,
   } = useCMSSourceManager({
     id, video, setVideo, tmdbDetail, tmdbMediaType,
     setTmdbDetail, setTmdbMediaType,
     onTmdbReady: handleTmdbReady,
-    selectedSeason, selectedSeasonRef, seasonChangedRef,
+    selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     historyRecordRef, cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode,
@@ -374,15 +374,14 @@ export default function PlayerPage() {
     if (sourceIdx === undefined) return;
 
     const seasonMap = seasonMapsRef.current.get(sourceIdx);
-    if (!seasonMap) return;
-
     const activeEpId = localEpisodeId;
     const oldEpisodes = videoRef.current?.episodes ?? [];
     const currentEp = activeEpId ? oldEpisodes.find(ep => ep.id === activeEpId) : undefined;
     const currentEpNumber = currentEp?.number;
 
-    const seasonVideo = seasonMap.get(seasonNumber);
-    if (seasonVideo && seasonVideo.episodes?.length) {
+    const seasonVideo = seasonMap?.get(seasonNumber);
+    // 缓存命中且集数有效：直接切换（保留当前集号）
+    if (seasonMap && seasonVideo && seasonVideo.episodes?.length) {
       setLocalEpisodeId(undefined);
       setSources([]);
       setCurrentSrc(null);
@@ -397,15 +396,12 @@ export default function PlayerPage() {
         switchToEpisode(matchedEp);
       }
     } else {
-      setVideo(null);
-      setSources([]);
-      setCurrentSrc(null);
-      setLocalEpisodeId(undefined);
-      currentSourceNameRef.current = undefined;
+      // 缓存缺失或该季无集数：懒加载兜底——按需重建该源季映射，而非静默置空
+      loadSeason(sourceIdx, seasonNumber, currentEpNumber);
     }
     // zustand actions 和 refs 引用稳定，不会导致重新执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, switchToEpisode]);
+  }, [id, switchToEpisode, loadSeason]);
 
   // 应用详情页“全部”弹框指定的线路/选集：video 就绪后按精确地址匹配一次。
   // 必须放在 handleSelectSeason 之后定义，以便直接调用它切换季。

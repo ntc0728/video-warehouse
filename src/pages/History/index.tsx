@@ -511,7 +511,8 @@ export default function HistoryPage() {
         </button>
       </div>
       <div className="history-body">
-        <div className="history-content" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+        {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画 */}
+        <div key={activeTab} className="history-content animate-fade-in" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
           {groupedKeys.map((group, idx) => {
             const ti = timelineItems.find((t) => t.key === group);
             const isFirst = idx === 0;

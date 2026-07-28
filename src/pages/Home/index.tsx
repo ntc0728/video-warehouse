@@ -246,7 +246,9 @@ export default function HomePage() {
       <div className="home-skeleton-hero">
         <div className="home-skeleton-hero__banner" />
         <div className="home-skeleton-hero__thumbs">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
+              与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="home-skeleton-hero__thumb" />
           ))}
         </div>

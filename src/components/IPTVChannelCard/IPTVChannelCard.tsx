@@ -3,7 +3,7 @@
  * 展示单个 IPTV 频道信息，支持点击播放、收藏切换和代理播放
  */
 import { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Heart, CheckCircle, XCircle } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores/useIPTVStore';
@@ -35,6 +35,10 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const sourceName = channel.sourceId && sourceNames
     ? sourceNames[parseInt(channel.sourceId.replace('source-', ''), 10)]
     : undefined;
+  // 当前所在页（收藏/历史/列表等），用作深链兜底返回来源。
+  // 正常应用内导航由 useSmartBack 走浏览器原生后退（navigate(-1)）回退到本页，
+  // 此 from 仅在深链直达 /iptv/play 时作为兜底。
+  const location = useLocation();
 
   /** 构建播放链接：根据代理规则生成最终 URL */
   const to = useMemo(() => {
@@ -146,7 +150,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
       ) : (
         <Link
           to={to}
-          state={{ from: '/iptv' }}
+          state={{ from: location.pathname }}
           className={cardClassName}
           style={staggerDelay}
           onClick={handleClick}

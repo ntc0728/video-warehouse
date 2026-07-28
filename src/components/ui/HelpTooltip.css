@@ -20,7 +20,7 @@
 }
 
 .help-tooltip-content {
-  z-index: 1000;
+  z-index: var(--z-popover);
   min-width: var(--layout-popover-min-w);
   max-width: var(--layout-popover-wide-min-w);
   padding: var(--space-sm) var(--space-md);

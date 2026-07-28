@@ -5,9 +5,8 @@
  * logo 和折叠按钮在 StickyHeader 中，不在侧边栏内。
  */
 
-/* 方案 B（transform 补偿）：width 由 --sidebar-offset 变量驱动（AppLayout 切
-   .app-shell--sidebar-collapsed 类时一次性切换），动画期间由 JS WAAPI 控制
-   transform 平移（0 reflow），动画结束后才切 width（1 次 reflow，此时动画已结束）。 */
+/* 折叠/展开动画由 JS WAAPI 直接对 width 做动画（真实收缩/展开，可见过渡），
+   动画期间 sidebar 的 width 由 inline 控制，结束后切 --sidebar-offset 变量接管。 */
 .home-sidebar {
   position: fixed;
   top: var(--header-height);
@@ -20,11 +19,12 @@
   background-color: var(--color-surface);
   overflow: hidden;
   border-right: 1px solid var(--color-border-light);
-  /* width 不做 transition（避免逐帧 reflow）；transform 由 JS WAAPI 控制 */
+  /* width 由 JS WAAPI 控制（动画期间 inline width，结束后 CSS 变量接管）；
+     transform/layout 不受此处影响，右侧 main 走独立 WAAPI transform（0 reflow）。 */
 }
 
-/* .home-sidebar--collapsed 类仅用于切换图标/文字显示（见 HomeSidebar.tsx 其余规则）。
-   宽度统一由 --sidebar-offset 变量驱动，不再单独写 width。 */
+/* .home-sidebar--collapsed 类仅用于切换图标/文字显示（见下方 .home-sidebar__item
+   等规则）。宽度统一由 --sidebar-offset 变量驱动，不再单独写 width。 */
 
 .home-sidebar__nav {
   display: flex;
@@ -55,14 +55,15 @@
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard),
-              padding 0.24s var(--ease-standard), gap 0.24s var(--ease-standard);
+              padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), gap 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 收起态：仅图标，通过 padding 计算居中（padding 可过渡，避免 justify-content 瞬间跳变）
-   1.25rem = 图标尺寸 20px（Icon size={20}） */
+/* 收起态：仅图标。padding-left 与展开态完全一致（space-lg），使图标视口坐标
+   与展开态相同 → onfinish 切类后图标零位移、纹丝不动；图标在 64px 栏内因
+   padding 对称而基本居中。右侧多余空间由 overflow:hidden 处理，label 已被隐藏。 */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
-  padding: var(--space-md) calc((var(--sidebar-width-collapsed) - var(--space-sm) * 2 - 1.25rem) / 2);
+  padding: var(--space-md) var(--space-lg);
 }
 
 .home-sidebar__item:hover:not(.active) {
@@ -76,6 +77,9 @@
   font-weight: 700;
 }
 
+/* 选中指示条：常驻渲染，仅由 .active 切换显隐（CSS transition，非挂载即播的关键帧）。
+   两种状态都保留 translateY(-50%)，修正旧版 indicatorSlideIn 关键帧在导航重渲染/
+   reduced-motion 下终态不稳定导致指示条下移错位、并被反复重放的"闪几下"问题。 */
 .home-sidebar__indicator {
   position: absolute;
   top: 50%;
@@ -84,8 +88,15 @@
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
   background-color: var(--color-text-inverse);
-  transform: translateY(-50%);
-  animation: indicatorSlideIn 0.3s ease-out both;
+  opacity: 0;
+  transform: translateY(-50%) scaleY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.home-sidebar__item.active .home-sidebar__indicator {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
 }
 
 .home-sidebar__icon {
@@ -113,7 +124,8 @@
   font-weight: 500;
   opacity: 1;
   pointer-events: none;
-  transition: opacity 0.2s var(--ease-standard);
+  /* 文本无过渡：收起时由 collapsed 类直接 opacity:0 隐藏（瞬时，无淡出），
+     展开时随栏宽展开由 overflow:hidden 自然揭示 */
 }
 
 .home-sidebar--collapsed .home-sidebar__label {
@@ -122,17 +134,6 @@
 
 .home-sidebar__item.active .home-sidebar__label {
   font-weight: 600;
-}
-
-@keyframes indicatorSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) scaleY(0.4);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) scaleY(1);
-  }
 }
 
 /* ── 移动端：隐藏侧边栏 ── */
