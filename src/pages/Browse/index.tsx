@@ -129,10 +129,18 @@ export default function BrowsePage() {
   // ── 搜索模式切换 ────────────────────────────────
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
-    if (query) {
-      triggerSearch(query, mode);
+    if (mode === 'cms') {
+      if (query) {
+        triggerSearch(query, 'cms');
+      } else {
+        // 搜索词已清空时切到「直链搜索」：无关键词可搜，清空残留的 CMS 结果
+        lastCmsSearchedRef.current = '';
+        resetCMS();
+      }
+    } else if (query) {
+      triggerSearch(query, 'smart');
     }
-  }, [query, triggerSearch]);
+  }, [query, triggerSearch, resetCMS]);
 
   // ── 筛选条件变更：保留搜索词，重新触发搜索 ──────────
   const handleFilterChange = useCallback((next: FilterBarValue) => {
