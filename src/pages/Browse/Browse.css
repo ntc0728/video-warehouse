@@ -45,19 +45,6 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  position: relative; /* 供"搜索中"遮罩绝对定位覆盖 */
-}
-
-/* 切换筛选/排序 tab 时，旧数据仍在，叠加"搜索中"遮罩 */
-.browse-refresh-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .browse-results-body .app-loading--inline {
