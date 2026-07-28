@@ -440,6 +440,13 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
+/* tab 切换过渡：key=activeTab 重挂载时整体纯淡入（仅 opacity，无位移、零跳动），
+   复用 animations.css 的 fadeIn 关键帧。0.35s 避免过短产生闪烁感，仍保持克制、贴合设置页工具型界面；
+   prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
+.settings-content--animate {
+  animation: fadeIn 0.35s var(--ease-standard) both;
+}
+
 /* 移动端子页面内 section 间距 */
 .settings-subpage__body section + section {
   margin-top: var(--space-md);

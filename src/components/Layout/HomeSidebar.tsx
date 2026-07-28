@@ -98,7 +98,9 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
               title={item.label}
               onClick={() => handleClick(item)}
             >
-              {active && <span className="home-sidebar__indicator" />}
+              {/* 指示器常驻渲染：仅用 .active 类切换显隐（CSS transition），
+                 不再随 active 挂载/卸载，避免导航重渲染期间关键帧被反复重放导致"闪几下" */}
+              <span className="home-sidebar__indicator" aria-hidden="true" />
               <Icon size={20} className="home-sidebar__icon" aria-hidden="true" />
               <span className="home-sidebar__label">{item.label}</span>
             </button>

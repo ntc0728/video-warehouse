@@ -9,6 +9,14 @@
   position: relative;
   width: 100%;
   min-width: 0;
+  /* 离屏卡片跳过布局与绘制：Keep-Alive 下 IPTV 组件常驻挂载，
+     visibleCount 滚到多少就常驻多少张卡（可达数百），从 display:none
+     切回 display:contents 时全部卡片同帧 layout+paint 导致切换卡顿。
+     content-visibility:auto 让不在视口的卡片跳过布局/绘制，仅可见的
+     几十张参与重排；auto 关键字记住上次真实高度，避免滚动条跳动。
+     同时首屏/二次进入的入场 cardFadeIn 也只作用于可见卡片，避免批量重绘。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
 }
 
 /* ---- Base: Mobile (< 768px) ---- */

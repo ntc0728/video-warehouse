@@ -13,3 +13,4 @@ export { useIPTVStore } from './useIPTVStore';
 export { useSettingsStore } from './useSettingsStore';
 export { useTMDBStore } from './useTMDBStore';
 export { useNavStore } from './useNavStore';
+export { useKeepAliveStore } from './useKeepAliveStore';

@@ -155,7 +155,8 @@ export default function SettingsPage() {
       ) : isDesktop ? (
         <div className="settings-desktop-card">
           <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
-          <div className="settings-content">
+          {/* key=activeTab：切换 tab 时整体重挂载，触发进入动画；section 仍是 .settings-content 直接子级，桌面布局选择器不受影响 */}
+          <div key={activeTab} className="settings-content settings-content--animate">
             {filteredItems.length === 0 ? (
               <div className="settings-search-empty">未找到匹配的设置项</div>
             ) : (

@@ -4,11 +4,13 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
-import { useIsMobile, useIsTV } from '@/hooks';
+import { useIsMobile, useIsTV, useRouteTitleImmediate } from '@/hooks';
 import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
 import './IPTVPlayer.css';
 
 export default function IPTVPlayerPage() {
+  // 进入 IPTV 播放页立即更新页签标题（该路由独立于 AppLayout，需自带兜底）
+  useRouteTitleImmediate();
   const [searchParams] = useSearchParams();
   const rawQuery = searchParams.toString();
   const url = searchParams.get('url') || '';

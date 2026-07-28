@@ -10,11 +10,43 @@ export function pickTitle(parts: string[], fallback: string): string {
   return fallback;
 }
 
-const VALID_VIDEO_EXTENSIONS = /\.(m3u8|mp4|mpd|flv|ts|mkv|avi|wmv|rmvb|rm|3gp|mov|m4s|aac)(\?.*)?$/i;
+// 常见视频扩展名（直链结尾，含 query/fragment）。覆盖：
+// - 流媒体协议：m3u8(HLS) / mpd(DASH)
+// - 浏览器原生可播：mp4 / m4v / mov / webm / ogg / ogv
+// - 其余常见封装（mkv / flv / avi / wmv / rmvb / rm / ts / m2ts / 3gp / asf / f4v / m4s / aac），
+//   无转码能力下只能交由原生 <video> 尝试解码（见 detectSourceType）
+const VALID_VIDEO_EXTENSIONS = /\.(m3u8|mp4|m4v|mpd|webm|ogg|ogv|flv|ts|m2ts|mkv|avi|wmv|rmvb|rm|3gp|mov|m4s|aac|asf|f4v)(\?.*)?$/i;
 
-/** 检查 URL 是否有有效视频后缀，无后缀说明链接被设置了访问权限 */
+// URL 任意位置（路径中段或 query 参数值内）出现的视频扩展名特征，如 /proxy?url=xx.mkv&t=1
+const EMBEDDED_VIDEO_EXT = /\.(m3u8|mp4|m4v|mpd|webm|ogg|ogv|flv|ts|m2ts|mkv|avi|wmv|rmvb|rm|3gp|mov|asf|f4v)([?&#/;]|$)/i;
+
+// 播放中转脚本：动态脚本 + 携带目标地址/资源 ID 参数（如 m3u8.php?url=aHR0... / play.php?id=123）
+const PROXY_SCRIPT_WITH_PARAM = /\.(php|do|action|aspx?|jsp|cgi)\?(?:[^#]*&)?(?:url|u|v|vid|video|link|src|target|id|sign)=[^&#]+/i;
+
+// 脚本文件名本身含播放特征（如 /m3u8.php?... / /jiexi.php?...），参数名不限
+const PLAY_SCRIPT_NAME = /\/[^/?#]*(?:m3u8|jiexi|parse|player|play)[^/?#]*\.(?:php|do|action|aspx?|jsp|cgi)\?/i;
+
+/**
+ * 检查 URL 是否为有效播放链接。
+ * 依次放行：标准视频后缀结尾 → URL 任意位置含视频扩展特征（中转/代理链接）→
+ * 播放中转脚本（动态脚本带 url/id 等参数，CMS 常见的加密/解析链接）。
+ * 均不命中（如纯 html 页面、无任何特征的裸路径）才判为无效。
+ */
 export function isValidVideoUrl(url: string): boolean {
-  return VALID_VIDEO_EXTENSIONS.test(url);
+  return VALID_VIDEO_EXTENSIONS.test(url)
+    || EMBEDDED_VIDEO_EXT.test(url)
+    || PROXY_SCRIPT_WITH_PARAM.test(url)
+    || PLAY_SCRIPT_NAME.test(url);
+}
+
+/**
+ * 根据 URL 推断播放源类型：
+ * 含 m3u8 特征（扩展名或中转脚本名如 m3u8.php）→ hls；.mpd → dash；其余走原生播放。
+ */
+export function detectSourceType(url: string): 'm3u8' | 'dash' | 'mp4' {
+  if (/m3u8/i.test(url)) return 'm3u8';
+  if (/\.mpd([?&#/;]|$)/i.test(url)) return 'dash';
+  return 'mp4';
 }
 
 /** 解析播放源字符串，提取源列表和分集信息 */
@@ -42,7 +74,7 @@ export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sou
       const parts = validEpisodes[0].split('$');
       const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
       if (url && isValidVideoUrl(url)) {
-        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
+        const type = detectSourceType(url);
         const name = pickTitle(parts.slice(0, -1), `源${i + 1}`);
         if (isMovie) {
           allSources.push({ id: `source-${i}`, name, url, type, isDefault: allSources.length === 0 });
@@ -65,7 +97,7 @@ export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sou
         const url = parts.length > 1 ? parts[parts.length - 1] : parts[0];
         if (!url || !isValidVideoUrl(url)) continue;
         const rawTitle = pickTitle(parts.slice(0, -1), '第' + (j + 1) + '集');
-        const type = url.includes('.m3u8') ? 'm3u8' as const : url.includes('.mpd') ? 'dash' as const : 'mp4' as const;
+        const type = detectSourceType(url);
         let displayTitle = rawTitle;
         if ((titleCount[rawTitle] ?? 0) > 1) {
           titleSeq[rawTitle] = (titleSeq[rawTitle] || 0) + 1;

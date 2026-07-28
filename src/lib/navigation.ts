@@ -75,12 +75,17 @@ export function useCustomNavigate(): CustomNavigateFunction {
 /**
  * 智能回退 Hook
  *
- * 优先级：
- * 1. location.state.from → navigate(from, { replace: true })
- * 2. location.state.fallback → navigate(fallback, { replace: true })
- * 3. fallback（参数）→ navigate(fallback, { replace: true })
- * 4. navigationType === 'POP' → navigate(-1)
- * 5. 兜底 → navigate(NAV_FALLBACK_HOME, { replace: true })
+ * 回退策略分两类：
+ *
+ * A. 应用内导航进入的页面（location.state 存在，即由 VideoCard / Banner /
+ *    <Link state={{from}}> 等带 state 的入口进入；或 navigationType 为
+ *    PUSH / REPLACE）：优先用浏览器原生 `navigate(-1)`。
+ *    - 这样多级跳转链（详情→详情→详情、收藏/历史→/iptv/play）能逐级正确回退，
+ *      而不是被显式 `from` 一次性跳走、并在 `replace` 时丢失中间页线索
+ *      （旧实现会在二次返回时直接跳首页）。
+ *    - 由于全程不依赖 `from`，`from` 字段不会被 `replace` 抹掉。
+ * B. 深链 / 首屏直达（navigationType === 'POP' 且 location.state 为空）：
+ *    没有真实历史可回，回落到 state.from / state.fallback / 参数 fallback / 首页。
  *
  * @example
  *   const smartBack = useSmartBack(`/detail/${id}`);
@@ -94,6 +99,13 @@ export function useSmartBack(fallback?: string): () => void {
   return useCallback(() => {
     const state = (location.state ?? {}) as NavState;
 
+    // 应用内导航（带 state 的入口，或 PUSH/REPLACE 进入）且存在真实历史 →
+    // 直接用浏览器原生后退，逐级回退。
+    if (window.history.length > 1 && (location.state || navigationType !== 'POP')) {
+      navigate(-1);
+      return;
+    }
+
     if (state.from) {
       navigate(state.from, { replace: true });
       return;
@@ -106,11 +118,6 @@ export function useSmartBack(fallback?: string): () => void {
 
     if (fallback) {
       navigate(fallback, { replace: true });
-      return;
-    }
-
-    if (navigationType === 'POP' && window.history.length > 1) {
-      navigate(-1);
       return;
     }
 

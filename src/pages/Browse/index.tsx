@@ -7,7 +7,7 @@
  *
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
-import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
+import { useEffect, useMemo, useRef, useCallback, useState, useContext } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue } from '@/components/FilterBar';

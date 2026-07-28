@@ -11,6 +11,12 @@ import type { Video, Episode } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 import type { HistoryRecord } from '@/types/store';
 
+// 取 Map 第一个 key（用于跨源季号对齐时回退到新源第一季）
+function firstKeyOf<T>(map: Map<number, T>, fallback: number): number {
+  const it = map.keys().next();
+  return it.done ? fallback : it.value;
+}
+
 interface UseCMSSourceManagerOptions {
   id: string | undefined;
   video: Video | null;
@@ -21,6 +27,7 @@ interface UseCMSSourceManagerOptions {
   setTmdbMediaType: (mt: 'movie' | 'tv') => void;
   onTmdbReady?: () => void;
   selectedSeason: number;
+  setSelectedSeason: (n: number) => void;
   selectedSeasonRef: React.MutableRefObject<number>;
   seasonChangedRef: React.MutableRefObject<boolean>;
   historyRecordRef: React.MutableRefObject<HistoryRecord | undefined>;
@@ -39,7 +46,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   const {
     id, video, setVideo, tmdbDetail, tmdbMediaType,
     setTmdbDetail, setTmdbMediaType, onTmdbReady,
-    selectedSeason, selectedSeasonRef, seasonChangedRef,
+    selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     historyRecordRef, cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, skipHistory, onSwitchEpisode,
@@ -62,6 +69,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   const seasonMapsRef = useRef<Map<number, Map<number, Video>>>(new Map());
   const cmsSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchInitiatedRef = useRef(false);
+  // 缓存剧名/年份，供"按需重建季映射"复用（切源/切季懒加载兜底时无需重新计算）
+  const videoTitleRef = useRef<string>('');
+  const videoYearRef = useRef<number | undefined>(undefined);
 
   // ── fetchCMSSources ──────────────────────────────
   const fetchCMSSources = useCallback(async (targetSourceIndex?: number) => {
@@ -143,6 +153,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       videoTitle = video.title || '';
       videoYear = video.year;
     }
+    // 缓存剧名/年份，供按需重建季映射复用
+    videoTitleRef.current = videoTitle;
+    videoYearRef.current = videoYear;
 
     if (!videoTitle) {
       if (!ctrl.signal.aborted) finishLoading();
@@ -245,7 +258,15 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
-          const seasonVideo = seasonMap.get(selectedSeasonRef.current);
+          // 跨源对齐：新源季号体系可能与旧 selectedSeason 不同，回退到新源第一季
+          const alignedSeason = seasonMap.has(selectedSeasonRef.current)
+            ? selectedSeasonRef.current
+            : firstKeyOf(seasonMap, selectedSeasonRef.current);
+          if (alignedSeason !== selectedSeasonRef.current) {
+            selectedSeasonRef.current = alignedSeason;
+            setSelectedSeason(alignedSeason);
+          }
+          const seasonVideo = seasonMap.get(alignedSeason);
           if (seasonVideo) {
             videoCache.set(id!, seasonVideo);
             setVideo(seasonVideo);
@@ -341,7 +362,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video]);
+  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason]);
 
   // ── handleFetchCMSSourceById ──────────────────────
   const handleFetchCMSSourceById = useCallback(async (sourceId: string) => {
@@ -356,7 +377,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   }, [id, fetchCMSSources]);
 
   // ── handlePlayCMSSource ──────────────────────
-  const handlePlayCMSSource = useCallback((result: VideoDetailResult) => {
+  const handlePlayCMSSource = useCallback(async (result: VideoDetailResult) => {
     if (cmsSwitchTimerRef.current) clearTimeout(cmsSwitchTimerRef.current);
     cmsSwitchTimerRef.current = setTimeout(() => { cmsSwitchTimerRef.current = null; }, 300);
 
@@ -375,29 +396,64 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       setCmsSwitching(false);
     };
 
-    // TV 剧集：使用按季映射表切换到当前季
+    // TV 剧集：优先用已缓存且对齐的该源季映射；缺失则重建该源季映射并按语义对齐
     const seasonMap = seasonMapsRef.current.get(result.sourceIndex);
-    if (seasonMap) {
+    const cachedVideo = seasonMap?.get(selectedSeason);
+    if (seasonMap && cachedVideo) {
       cmsSourceNameRef.current = result.sourceName;
-
-      const seasonVideo = seasonMap.get(selectedSeason);
-      if (seasonVideo) {
-        setCmsSeasons(buildCmsSeasons(seasonMap));
-        if (seasonVideo.episodes?.length) {
-          const matchedEp = currentEpNumber
-            ? findEpisodeByNumber(seasonVideo.episodes, currentEpNumber)
-            : undefined;
-          if (matchedEp?.sources.length) {
-            videoCache.set(id!, seasonVideo);
-            setVideo(seasonVideo);
-            onSwitchEpisode(matchedEp);
-          }
+      setCmsSeasons(buildCmsSeasons(seasonMap));
+      if (cachedVideo.episodes?.length) {
+        const matchedEp = currentEpNumber
+          ? findEpisodeByNumber(cachedVideo.episodes, currentEpNumber)
+          : undefined;
+        if (matchedEp?.sources.length) {
+          videoCache.set(id!, cachedVideo);
+          setVideo(cachedVideo);
+          onSwitchEpisode(matchedEp);
         }
-      } else {
-        setVideo(null);
-        currentSourceNameRef.current = undefined;
       }
       cleanup();
+      return;
+    }
+
+    // 该源季映射缺失或当前季不在该源：重建该源季映射并语义对齐（保留当前集号）
+    if (videoTitleRef.current) {
+      cmsAbortRef.current?.abort();
+      const ctrl = new AbortController();
+      cmsAbortRef.current = ctrl;
+      setCmsLoading(true);
+      try {
+        const seasonResult = await searchVideoSeasonsFromSingleSource(
+          result.sourceIndex, videoTitleRef.current, videoYearRef.current, ctrl.signal,
+        );
+        if (ctrl.signal.aborted) { cleanup(); return; }
+        const sm = seasonResult.seasons;
+        seasonMapsRef.current.set(result.sourceIndex, sm);
+        setCmsSeasons(buildCmsSeasons(sm));
+        const aligned = sm.has(selectedSeason) ? selectedSeason : firstKeyOf(sm, selectedSeason);
+        const seasonVideo = sm.get(aligned);
+        selectedSeasonRef.current = aligned;
+        setSelectedSeason(aligned);
+        if (seasonVideo) {
+          videoCache.set(id!, seasonVideo);
+          setVideo(seasonVideo);
+          if (seasonVideo.episodes?.length) {
+            const matchedEp = currentEpNumber
+              ? findEpisodeByNumber(seasonVideo.episodes, currentEpNumber)
+              : undefined;
+            const ep = matchedEp?.sources.length
+              ? matchedEp
+              : [...seasonVideo.episodes].sort((a, b) => a.number - b.number)[0];
+            if (ep?.sources.length) onSwitchEpisode(ep);
+          }
+        } else {
+          setVideo(null);
+        }
+      } catch {
+        // 重建失败：保留当前状态，不静默清空
+      } finally {
+        if (!ctrl.signal.aborted) cleanup();
+      }
       return;
     }
 
@@ -432,7 +488,54 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
     }
     cleanup();
-  }, [id, video, selectedSeason, videoCache, setVideo, setSources, setSource, setCurrentSrc, currentSourceNameRef, cmsSourceNameRef, seasonChangedRef, onSwitchEpisode]);
+  }, [id, video, selectedSeason, videoCache, setVideo, setSources, setSource, setCurrentSrc, currentSourceNameRef, cmsSourceNameRef, seasonChangedRef, onSwitchEpisode, setSelectedSeason]);
+
+  // ── loadSeason：切季/切源缓存缺失时的懒加载兜底 ──────────
+  const loadSeason = useCallback(async (sourceIdx: number, seasonNumber: number, currentEpNumber?: number) => {
+    if (!id || !videoTitleRef.current) return;
+    cmsAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    cmsAbortRef.current = ctrl;
+    setCmsLoading(true);
+    try {
+      const seasonResult = await searchVideoSeasonsFromSingleSource(
+        sourceIdx, videoTitleRef.current, videoYearRef.current, ctrl.signal,
+      );
+      if (ctrl.signal.aborted) return;
+      const sm = seasonResult.seasons;
+      seasonMapsRef.current.set(sourceIdx, sm);
+      setCmsSeasons(buildCmsSeasons(sm));
+      // 对齐季号：优先请求季，否则回退到该源第一季
+      const aligned = sm.has(seasonNumber) ? seasonNumber : firstKeyOf(sm, seasonNumber);
+      const seasonVideo = sm.get(aligned);
+      selectedSeasonRef.current = aligned;
+      setSelectedSeason(aligned);
+      if (seasonVideo) {
+        setLocalEpisodeId(undefined);
+        setSources([]);
+        setCurrentSrc(null);
+        videoCache.set(id, seasonVideo);
+        setVideo(seasonVideo);
+        const matchedEp = currentEpNumber
+          ? findEpisodeByNumber(seasonVideo.episodes ?? [], currentEpNumber)
+          : undefined;
+        const ep = matchedEp?.sources.length
+          ? matchedEp
+          : [...(seasonVideo.episodes ?? [])].sort((a, b) => a.number - b.number)[0];
+        if (ep?.sources.length) onSwitchEpisode(ep);
+      } else {
+        setVideo(null);
+        setSources([]);
+        setCurrentSrc(null);
+        setLocalEpisodeId(undefined);
+        currentSourceNameRef.current = undefined;
+      }
+    } catch {
+      // 加载失败：保留当前状态，不静默清空
+    } finally {
+      if (!ctrl.signal.aborted) setCmsLoading(false);
+    }
+  }, [id, videoCache, setVideo, setSources, setCurrentSrc, setLocalEpisodeId, onSwitchEpisode, setSelectedSeason]);
 
   // ── Effects ──────────────────────────────
 
@@ -524,6 +627,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     fetchCMSSources,
     handleFetchCMSSourceById,
     handlePlayCMSSource,
+    loadSeason,
     seasonMapsRef,
     activeCmsSourceIndexRef,
   };

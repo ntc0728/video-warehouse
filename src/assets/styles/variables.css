@@ -34,6 +34,17 @@
   --color-primary-bg: rgba(0, 0, 0, 0.08);  /* 更深一级的 primary 背景（较少使用） */
   --color-primary-shadow: rgba(0, 0, 0, 0.15); /* 激活 tag/chip 的投影色 */
   --color-progress-stripe: rgba(255, 255, 255, 0.15); /* 进度条条纹高光 */
+
+  /* ── Z-index 层级体系 ─────────────────────────────────────────────────
+     浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
+       固定导航  sticky header 55 / sidebar-overlay 90 / sidebar 100
+       局部浮层  --z-popover (200)   ← Select / Popover / Tooltip 等页面级浮层
+       弹窗遮罩  --z-modal-overlay 1000 / --z-modal 1001
+     局部浮层落在 200 档：高于固定导航（不被侧边栏遮挡），
+     且低于 Modal（弹窗打开时浮层被正常压住，不冲突）。 */
+  --z-popover: 200;
+  --z-modal-overlay: 1000;
+  --z-modal: 1001;
   /* 页面/卡片/文字 — 三级灰阶体系 */
   --color-background: #f5f5f5;             /* 页面底色 */
   --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
