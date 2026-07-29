@@ -9,7 +9,8 @@ import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useKeepAliveStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources } from '@/services/videoService';
+import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, checkSelectedVideoSources } from '@/services/videoService';
+import type { SelectedSourceCheckResult } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
@@ -19,7 +20,8 @@ import { useDocumentTitle } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
-import Modal from '@/components/ui/Modal';
+import PlaylistModal from './components/PlaylistModal';
+import SourceDetectPill, { type SourceDetectStatus } from './components/SourceDetectPill';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar, ArrowLeft,
@@ -142,6 +144,39 @@ export default function DetailPage() {
   const [cmsLoading, setCmsLoading] = useState(false);
   const [cmsLoaded, setCmsLoaded] = useState(false);
   const [cmsError, setCmsError] = useState<string | null>(null);
+
+  // 源检测（V4 pill）：检测设置页选中的 CMS 源可用性
+  const [srcDetect, setSrcDetect] = useState<{
+    status: SourceDetectStatus;
+    done: number;
+    total: number;
+    ok: number;
+    fail: number;
+    results: SelectedSourceCheckResult[];
+  }>({ status: 'idle', done: 0, total: 0, ok: 0, fail: 0, results: [] });
+
+  const runSourceDetection = useCallback(async () => {
+    const indices =
+      videoSourceIndices && videoSourceIndices.length > 0 ? videoSourceIndices : [videoSourceIndex];
+    if (indices.length === 0) return;
+    setSrcDetect({ status: 'running', done: 0, total: indices.length, ok: 0, fail: 0, results: [] });
+    try {
+      const res = await checkSelectedVideoSources(indices, (done, total) => {
+        setSrcDetect((s) => ({ ...s, done, total }));
+      });
+      setSrcDetect((s) => ({
+        ...s,
+        status: 'done',
+        done: res.total,
+        total: res.total,
+        ok: res.ok,
+        fail: res.fail,
+        results: res.results,
+      }));
+    } catch {
+      setSrcDetect((s) => ({ ...s, status: 'idle' }));
+    }
+  }, [videoSourceIndices, videoSourceIndex]);
   // 查询动画轮播的源名称（加载开始后填充真实 CMS 源名）
   const [querySourceNames, setQuerySourceNames] = useState<string[]>([]);
   const [queryMsgIndex, setQueryMsgIndex] = useState(0);
@@ -157,7 +192,7 @@ export default function DetailPage() {
     seasonNumbers: number[];
     isSeries: boolean;
   } | null>(null);
-  const [activeSeasonIndex, setActiveSeasonIndex] = useState(0);
+  const [, setActiveSeasonIndex] = useState(0);
 
   /** 是否有可播放线路（剧集：任一选集含线路；单集/电影：sources 非空） */
   const isPlayable = useCallback((v: Video | undefined) => {
@@ -512,6 +547,22 @@ export default function DetailPage() {
   const watchProgressPercent = hasWatchingHistory && historyRecord.duration > 0
     ? Math.round((historyRecord.progress / historyRecord.duration) * 100)
     : 0;
+  // 进度地图：供 PlaylistModal 显示每条线路/选集的观看进度
+  const historyList = useUserStore((s) => s.history);
+  const progressMap = useMemo(() => {
+    const map: Record<string, { progress: number; duration: number; completed: boolean }> = {};
+    if (!id) return map;
+    for (const h of historyList) {
+      if (h.videoId === id && h.episodeUrl) {
+        map[h.episodeUrl] = {
+          progress: h.progress,
+          duration: h.duration,
+          completed: h.duration > 0 && h.progress >= h.duration,
+        };
+      }
+    }
+    return map;
+  }, [historyList, id]);
   // 直接读取历史记录中从源头写入的季号：季号 + 选集标签 → 「第X季 第Y集」
   // 旧数据无 seasonNumber 时回退到 episodeLabel（第Y集），不会退化
   const lastEpisodeLabel = historyRecord?.seasonNumber && historyRecord?.episodeLabel
@@ -837,6 +888,18 @@ export default function DetailPage() {
                     <h3>匹配结果</h3>
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
+                  <div className="detail-sources-toolbar">
+                    <SourceDetectPill
+                      status={srcDetect.status}
+                      done={srcDetect.done}
+                      total={srcDetect.total}
+                      ok={srcDetect.ok}
+                      fail={srcDetect.fail}
+                      resultCount={cmsResults.length}
+                      results={srcDetect.results}
+                      onRun={runSourceDetection}
+                    />
+                  </div>
                 </div>
                 <div className="detail-sources-grid">
                   <div className="playlist-query" aria-busy="true" aria-label="正在匹配播放源">
@@ -867,6 +930,16 @@ export default function DetailPage() {
                     <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
                       <RefreshCw size={14} /> 重新匹配
                     </button>
+                    <SourceDetectPill
+                      status={srcDetect.status}
+                      done={srcDetect.done}
+                      total={srcDetect.total}
+                      ok={srcDetect.ok}
+                      fail={srcDetect.fail}
+                      resultCount={cmsResults.length}
+                      results={srcDetect.results}
+                      onRun={runSourceDetection}
+                    />
                   </div>
                 </div>
                 <div className="detail-sources-grid">
@@ -934,114 +1007,45 @@ export default function DetailPage() {
                     );
                   })}
                 </div>
-                <Modal
-                  visible={!!playModal}
-                  title={
-                    playModal
-                      ? (playModal.isSeries && playModal.seasons.length > 0
-                          ? `${title} 第${playModal.seasonNumbers[Math.min(activeSeasonIndex, playModal.seasons.length - 1)] ?? Math.min(activeSeasonIndex, playModal.seasons.length - 1) + 1}季`
-                          : (playModal.video?.title ?? '全部播放源'))
-                      : '全部播放源'
-                  }
-                  onClose={() => setPlayModal(null)}
-                  className="source-all-modal"
-                >
-                  {playModal && (() => {
-                    const seasons = playModal.seasons;
-                    const isSeries = playModal.isSeries && seasons.length > 0;
-                    // 季 tab 按季号从小到大排列（显示顺序与数组索引分离，点击时再映射回原始索引）
-                    const seasonOrder = isSeries
-                      ? seasons.map((_, i) => i).sort((a, b) => (playModal.seasonNumbers[a] ?? a + 1) - (playModal.seasonNumbers[b] ?? b + 1))
-                      : [];
-                    const activeIdx = isSeries ? Math.min(activeSeasonIndex, seasons.length - 1) : 0;
-                    const activeVideo = isSeries ? seasons[activeIdx] : playModal.video;
-                    const sortedEps = activeVideo.episodes && activeVideo.episodes.length > 0
-                      ? [...activeVideo.episodes].sort((a, b) => a.number - b.number)
-                      : [];
-                    const hasEps = sortedEps.length > 0;
-                    return (
-                      <div className="source-all-modal__body">
-                        <div className="source-all-modal__head">
-                          {activeVideo.cover ? (
-                            <img className="source-all-modal__poster" src={activeVideo.cover} alt={activeVideo.title} />
-                          ) : posterUrl ? (
-                            <img className="source-all-modal__poster" src={posterUrl} alt={activeVideo.title} />
-                          ) : (
-                            <div className="source-all-modal__poster source-all-modal__poster--placeholder" />
-                          )}
-                          <div className="source-all-modal__meta">
-                            <span className="source-all-modal__source">{playModal.sourceName}</span>
-                            {!isSeries && (activeVideo.description || tmdbDetail?.overview) && (
-                              <p className="source-all-modal__desc">{activeVideo.description || tmdbDetail?.overview}</p>
-                            )}
-                            {isSeries && (
-                              <div className="source-all-modal__tabs">
-                                {seasonOrder.map((origIdx) => (
-                                  <button
-                                    key={origIdx}
-                                    type="button"
-                                    className={`source-all-modal__tab${origIdx === activeIdx ? ' is-active' : ''}`}
-                                    onClick={() => setActiveSeasonIndex(origIdx)}
-                                  >
-                                    {`第${playModal.seasonNumbers[origIdx] ?? origIdx + 1}季`}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="source-all-modal__list">
-                          <div className="source-all-modal__list-title">
-                            {isSeries ? `选集（${sortedEps.length}）` : (hasEps ? `选集（${sortedEps.length}）` : `线路（${activeVideo.sources.length}）`)}
-                          </div>
-                          {isSeries && sortedEps.length === 0 ? (
-                            <div className="source-all-modal__empty">该季暂无集数信息</div>
-                          ) : hasEps ? (
-                            sortedEps.map((ep) => (
-                              <div key={ep.id} className="source-all-modal__row">
-                                <div className="source-all-modal__row-info">
-                                  <span className="source-all-modal__row-title">第 {ep.number} 集</span>
-                                </div>
-                                <button
-                                  className="source-all-modal__play-btn"
-                                  disabled={ep.sources.length === 0}
-                                  onClick={() => {
-                                    navigate(`/play/${id}`, {
-                                      state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, seasonNumber: playModal.seasonNumbers[activeIdx], playUrl: ep.sources[0]?.url, playType: ep.sources[0]?.type },
-                                    });
-                                    setPlayModal(null);
-                                  }}
-                                >
-                                  <Play size={12} fill="currentColor" /> 播放
-                                </button>
-                              </div>
-                            ))
-                          ) : (
-                            activeVideo.sources.map((src, i) => (
-                              <div key={src.url} className="source-all-modal__row">
-                                <div className="source-all-modal__row-info">
-                                  <span className="source-all-modal__row-title">{src.name || `线路 ${i + 1}`}</span>
-                                  <span className="source-all-modal__row-sub">{src.type?.toUpperCase()}</span>
-                                </div>
-                                <button
-                                  className="source-all-modal__play-btn"
-                                  onClick={() => {
-                                    navigate(`/play/${id}`, {
-                                      state: { from: `/detail/${id}`, sourceIndex: playModal.sourceIndex, playUrl: src.url, playType: src.type },
-                                    });
-                                    setPlayModal(null);
-                                  }}
-                                >
-                                  <Play size={12} fill="currentColor" /> 播放
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </Modal>
+                {playModal && (
+                  <PlaylistModal
+                    data={playModal}
+                    videoId={id}
+                    activeSourceIndex={playModal.sourceIndex}
+                    posterUrl={posterUrl}
+                    historyRecord={historyRecord ?? null}
+                    progressMap={progressMap}
+                    onClose={() => setPlayModal(null)}
+                    onPlayEpisode={(ep) => {
+                      if (id) useKeepAliveStore.getState().pinDetail(id);
+                      navigate(`/play/${id}`, {
+                        state: {
+                          from: `/detail/${id}`,
+                          sourceIndex: playModal.sourceIndex,
+                          seasonNumber: ep.seasonNumber,
+                          playUrl: ep.episode.sources[0]?.url,
+                          playType: ep.episode.sources[0]?.type,
+                        },
+                      });
+                      setPlayModal(null);
+                    }}
+                    onPlayLine={(_lineIndex, seasonNumber, playUrl, playType) => {
+                      // _lineIndex 是线路在 video.sources 中的下标；Player 的 state.sourceIndex
+                      // 语义是 CMS 采集源索引，故取 playModal.sourceIndex，线路由 playUrl 精确匹配。
+                      if (id) useKeepAliveStore.getState().pinDetail(id);
+                      navigate(`/play/${id}`, {
+                        state: {
+                          from: `/detail/${id}`,
+                          sourceIndex: playModal.sourceIndex,
+                          seasonNumber: seasonNumber ?? undefined,
+                          playUrl,
+                          playType,
+                        },
+                      });
+                      setPlayModal(null);
+                    }}
+                  />
+                )}
               </div>
               ) : (
                 <div className="detail-sources-container">
