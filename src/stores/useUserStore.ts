@@ -204,8 +204,13 @@ export const useUserStore = create<UserState>()((set, get) => ({
     get().addHistory(params);
   },
 
-  getHistoryByVideo: (videoId) =>
-    get().history.find((h) => h.videoId === videoId),
+  getHistoryByVideo: (videoId) => {
+    // 内存态 history 不保证按 updatedAt 排序（新记录 append、更新原地修改），
+    // 这里按 updatedAt 倒序取「最近一次播放」的记录，确保选集/线路回显最新进度。
+    const records = get().history.filter((h) => h.videoId === videoId);
+    if (records.length === 0) return undefined;
+    return records.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+  },
 
   removeHistory: (historyId) => {
     set((state) => ({
