@@ -229,10 +229,8 @@ export default function PlayerPage() {
           const history = await getHistory();
           // 按 videoId 查找历史记录（getHistory 返回按 updatedAt 倒序，所以找到的是最新的）
           historyRecord = history.find(h => h.videoId === id);
-          // 「立即播放 / 直接打开」(未指定具体选集线路，即无 routePlayUrl) 时，
-          // 优先回退历史源以回显最新播放的选集/线路；指定了具体 playUrl 的点击由下方
-          // routePlay effect 精确匹配，不应被历史覆盖。
-          if (!routePlayUrl && (historyRecord?.cmsSourceId || historyRecord?.cmsSourceName)) {
+          // 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的源
+          if (routeSourceIndex === undefined && (historyRecord?.cmsSourceId || historyRecord?.cmsSourceName)) {
             const { getVideoSources } = await import('@/services/sourceService');
             const allSrc = await getVideoSources();
             // 查找历史记录中 CMS 源的索引
@@ -272,11 +270,11 @@ export default function PlayerPage() {
           /**
            * cmsSourceIdRef 保护逻辑
            *
-           * 「立即播放 / 直接打开」(无 routePlayUrl) 时，使用历史记录的 CMS 源信息，
-           * 保证进度回写与「回显最新选集/线路」一致；指定了具体 playUrl 的点击由
-           * routePlay effect 精确处理，这里不覆盖。
+           * 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的 CMS 源信息。
+           * 原因：用户从详情页点击具体 CMS 源播放时，routeSourceIndex 已指定，
+           * 不应被历史记录中的源覆盖。
            */
-          if (!routePlayUrl) {
+          if (routeSourceIndex === undefined) {
             if (historyRecord?.cmsSourceId) cmsSourceIdRef.current = historyRecord.cmsSourceId;
             if (historyRecord?.cmsSourceName) cmsSourceNameRef.current = historyRecord.cmsSourceName;
           }
