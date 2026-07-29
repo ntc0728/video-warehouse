@@ -169,9 +169,9 @@ export default function PlayerPage() {
     setTmdbDetail, setTmdbMediaType,
     onTmdbReady: handleTmdbReady,
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
-    historyRecordRef, cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
+    cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
-    routeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode,
+    routeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
   });
 
 

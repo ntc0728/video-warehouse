@@ -7,7 +7,7 @@ import {
   buildCmsSeasons,
 } from '@/services/videoService';
 import type { VideoDetailResult } from '@/services/videoService';
-import type { Video, Episode } from '@/types/video';
+import type { Video, Episode, VideoSource } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 import type { HistoryRecord } from '@/types/store';
 
@@ -30,7 +30,6 @@ interface UseCMSSourceManagerOptions {
   setSelectedSeason: (n: number) => void;
   selectedSeasonRef: React.MutableRefObject<number>;
   seasonChangedRef: React.MutableRefObject<boolean>;
-  historyRecordRef: React.MutableRefObject<HistoryRecord | undefined>;
   cmsSourceIdRef: React.MutableRefObject<string | undefined>;
   cmsSourceNameRef: React.MutableRefObject<string | undefined>;
   currentSourceNameRef: React.MutableRefObject<string | undefined>;
@@ -40,6 +39,7 @@ interface UseCMSSourceManagerOptions {
   routeSourceIndex: number | undefined;
   skipHistory: boolean;
   onSwitchEpisode: (ep: Episode) => void;
+  handlePlaySource: (src: VideoSource) => void;
 }
 
 export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
@@ -47,9 +47,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     id, video, setVideo, tmdbDetail, tmdbMediaType,
     setTmdbDetail, setTmdbMediaType, onTmdbReady,
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
-    historyRecordRef, cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
+    cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
-    routeSourceIndex, skipHistory, onSwitchEpisode,
+    routeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
   } = opts;
 
   const { setSource, setSources } = usePlayerStore();
@@ -103,6 +103,17 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     let sourceIdx = targetSourceIndex;
 
+    // 统一读取历史记录：既用于「未指定源时回退最近播放源」，也用于
+    // 「指定了源时按 episodeUrl 精确恢复选集/线路进度」。
+    let histRecord: HistoryRecord | undefined;
+    if (!skipHistory) {
+      try {
+        const { getHistory } = await import('@/services/database');
+        const history = await getHistory();
+        histRecord = history.find(h => h.videoId === id);
+      } catch { /* ignore */ }
+    }
+
     // 1) 路由传入的 sourceIndex 最优先：用户在详情页点了具体源的「立即播放」，
     //    必须播放用户点的那个源，绝不能被历史记录的源覆盖。
     if (sourceIdx === undefined && routeSourceIndex !== undefined) {
@@ -110,18 +121,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     // 2) 历史记录：仅在未指定具体源（直接打开/继续播放）时，回退最近播放的源
-    if (sourceIdx === undefined && !skipHistory) {
-      try {
-        const { getHistory } = await import('@/services/database');
-        const history = await getHistory();
-        const histRecord = history.find(h => h.videoId === id);
-        if (histRecord?.cmsSourceId || histRecord?.cmsSourceName) {
-          const matchedIdx = histRecord.cmsSourceId
-            ? allSrc.findIndex(s => s.id === histRecord.cmsSourceId)
-            : allSrc.findIndex(s => s.name === histRecord!.cmsSourceName);
-          if (matchedIdx >= 0) sourceIdx = matchedIdx;
-        }
-      } catch { /* ignore */ }
+    if (sourceIdx === undefined && (histRecord?.cmsSourceId || histRecord?.cmsSourceName)) {
+      const matchedIdx = histRecord.cmsSourceId
+        ? allSrc.findIndex(s => s.id === histRecord.cmsSourceId)
+        : allSrc.findIndex(s => s.name === histRecord!.cmsSourceName);
+      if (matchedIdx >= 0) sourceIdx = matchedIdx;
     }
 
     // 3) 默认使用设置页中第一个被选中的 CMS 源
@@ -132,6 +136,34 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     activeCmsSourceIndexRef.current = sourceIdx;
+
+    // 仅当「点击的源 == 历史记录所属的源」时，才按历史进度恢复选集/线路，
+    // 避免跨源错配（历史在某源看到第5集，点另一源的立即播放应从头开始）。
+    const sameSourceAsHistory =
+      !!histRecord?.episodeUrl &&
+      (allSrc[sourceIdx]?.id === histRecord.cmsSourceId ||
+       allSrc[sourceIdx]?.name === histRecord.cmsSourceName);
+
+    // 选集恢复：默认第一集；同源且历史有精确 episodeUrl 时回显到对应集。
+    const pickInitialEpisode = (eps?: Episode[]): Episode | undefined => {
+      if (!eps?.length) return undefined;
+      const sorted = [...eps].sort((a, b) => a.number - b.number);
+      if (sameSourceAsHistory && histRecord!.episodeUrl) {
+        const matched = sorted.find(ep =>
+          ep.url === histRecord!.episodeUrl ||
+          ep.sources.some(s => s.url === histRecord!.episodeUrl));
+        if (matched) return matched;
+      }
+      return sorted[0];
+    };
+
+    // 线路恢复：同源时按历史 episodeUrl 精确回显到对应线路，否则保持默认第一条。
+    const restoreLineIfNeeded = (ep: Episode | undefined) => {
+      if (sameSourceAsHistory && histRecord!.episodeUrl && ep?.sources.length) {
+        const line = ep.sources.find(s => s.url === histRecord!.episodeUrl);
+        if (line) handlePlaySource(line);
+      }
+    };
 
     {
       const matchedId = allSrc[sourceIdx]?.id;
@@ -164,7 +196,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     // ── 快速恢复路径：有 vodId 时直接调 CMS 详情接口 ──────────
-    const histRecord = historyRecordRef.current;
     /**
      * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
      * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情。
@@ -189,16 +220,17 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           // 剧集类型：选中第一集并异步加载季信息
           if (detailVideo.episodes?.length) {
-            const firstEp = [...detailVideo.episodes].sort((a, b) => a.number - b.number)[0];
+            const firstEp = pickInitialEpisode(detailVideo.episodes);
             if (firstEp?.sources.length) {
               finishLoading();
               onSwitchEpisode(firstEp);
+              restoreLineIfNeeded(firstEp);
               // 异步加载季信息（传递 signal 支持取消）
               searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal).then(result => {
                 if (!ctrl.signal.aborted) {
                   seasonMapsRef.current.set(sourceIdx, result.seasons);
                   setCmsSeasons(buildCmsSeasons(result.seasons));
-                  if (histRecord.vodId) {
+                  if (histRecord?.vodId) {
                     for (const [seasonNum, seasonVid] of result.seasons) {
                       if (seasonVid.id === histRecord.vodId) {
                         selectedSeasonRef.current = seasonNum;
@@ -213,7 +245,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           if (detailVideo.sources.length > 0) {
             setSources(detailVideo.sources);
-            const firstSrc = detailVideo.sources[0];
+            const firstSrc = (sameSourceAsHistory && histRecord!.episodeUrl)
+              ? detailVideo.sources.find(s => s.url === histRecord!.episodeUrl) ?? detailVideo.sources[0]
+              : detailVideo.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
             setSource(firstSrc.url, firstSrc.type);
             currentSourceNameRef.current = firstSrc.name;
@@ -275,11 +309,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
             setVideo(seasonVideo);
 
             if (!seasonChangedRef.current && seasonVideo.episodes?.length) {
-              const episodes = [...seasonVideo.episodes].sort((a, b) => a.number - b.number);
-              const targetEp = episodes[0];
+              const targetEp = pickInitialEpisode(seasonVideo.episodes);
               if (targetEp?.sources.length) {
                 finishLoading();
                 onSwitchEpisode(targetEp);
+                restoreLineIfNeeded(targetEp);
               }
             }
           } else {
@@ -334,10 +368,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           if (result.video.episodes?.length) {
             if (!seasonChangedRef.current) {
-              const episodes = [...result.video.episodes].sort((a, b) => a.number - b.number);
-              const targetEp = episodes[0];
+              const targetEp = pickInitialEpisode(result.video.episodes);
               if (targetEp?.sources.length) {
                 onSwitchEpisode(targetEp);
+                restoreLineIfNeeded(targetEp);
               }
             }
             finishLoading();
@@ -346,7 +380,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           if (result.video.sources.length > 0) {
             setSources(result.video.sources);
-            const firstSrc = result.video.sources[0];
+            const firstSrc = (sameSourceAsHistory && histRecord!.episodeUrl)
+              ? result.video.sources.find(s => s.url === histRecord!.episodeUrl) ?? result.video.sources[0]
+              : result.video.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
             setSource(firstSrc.url, firstSrc.type);
             currentSourceNameRef.current = firstSrc.name;
