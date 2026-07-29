@@ -53,7 +53,15 @@ interface PlaylistModalProps {
 }
 
 type Item =
-  | { kind: 'ep'; origIndex: number; episode: Episode; number: number; title: string }
+  | {
+      kind: 'ep';
+      origIndex: number;
+      episode: Episode;
+      number: number;
+      title: string;
+      seasonNumber: number;
+      sources: VideoSource[];
+    }
   | { kind: 'line'; origIndex: number; line: VideoSource; number: number; title: string };
 
 function stripHtml(s?: string): string {
@@ -126,6 +134,7 @@ export default function PlaylistModal({
   const progressMap = videoId ? liveProgressMap : progressMapProp;
   const historyRecord = (videoId ? liveHistoryRecord : historyRecordProp) ?? null;
 
+  const [showAll, setShowAll] = useState(false);
   const [seasonIdx, setSeasonIdx] = useState(0);
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -145,27 +154,46 @@ export default function PlaylistModal({
     return 'sheet';
   });
 
-  const activeVideo = isSeries ? seasons[seasonIdx] : video;
-  const currentSeasonNumber = isSeries ? seasonNumbers[seasonIdx] : 0;
+  const activeVideo = isSeries && !showAll ? seasons[seasonIdx] : undefined;
+  const currentSeasonNumber = isSeries && !showAll ? seasonNumbers[seasonIdx] : 0;
 
-  // 当前季对应的「最后播放选集」集号（仅当历史记录正好属于当前季时才有值）。
-  // 用于把「播放中」标记限定在历史记录所属的那一季，避免串到其他季。
-  const currentSeasonHistEp = useMemo(() => {
-    if (!isSeries || !historyRecord) return null;
-    if (historyRecord.seasonNumber !== currentSeasonNumber) return null;
+  // 最后播放选集的「集号」（仅作数字解析，季归属在 isPlaying 中判定，
+  // 以便「全部」聚合视图与单季视图都能正确高亮历史那一集）。
+  const histEpNumber = useMemo(() => {
+    if (!historyRecord) return null;
     const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
     const y = m ? parseInt(m[1], 10) : NaN;
     return Number.isNaN(y) ? null : y;
-  }, [isSeries, historyRecord, currentSeasonNumber]);
+  }, [historyRecord]);
 
   const allItems = useMemo<Item[]>(() => {
     if (isSeries) {
+      if (showAll) {
+        const items: Item[] = [];
+        seasons.forEach((seasonVideo, si) => {
+          const sn = seasonNumbers[si];
+          sortByNumber(seasonVideo?.episodes ?? []).forEach((ep, i) => {
+            items.push({
+              kind: 'ep',
+              origIndex: i,
+              episode: ep,
+              number: ep.number,
+              title: ep.title,
+              seasonNumber: sn,
+              sources: seasonVideo?.sources ?? [],
+            });
+          });
+        });
+        return items;
+      }
       return sortByNumber(activeVideo?.episodes ?? []).map((ep, i) => ({
         kind: 'ep' as const,
         origIndex: i,
         episode: ep,
         number: ep.number,
         title: ep.title,
+        seasonNumber: currentSeasonNumber,
+        sources: activeVideo?.sources ?? [],
       }));
     }
     return (video.sources ?? []).map((s, i) => ({
@@ -175,7 +203,7 @@ export default function PlaylistModal({
       number: i + 1,
       title: s.name,
     }));
-  }, [isSeries, activeVideo, video.sources]);
+  }, [isSeries, showAll, activeVideo, seasons, seasonNumbers, currentSeasonNumber, video.sources]);
 
   const filtered = useMemo<Item[]>(() => {
     const q = query.trim().toLowerCase();
@@ -190,26 +218,32 @@ export default function PlaylistModal({
     [filtered, visibleCount],
   );
 
-  // 切季 / 切类型时：重置搜索、可见数量，并根据历史推断"已看"与初始选中
+  // 切季 / 切类型 / 切"全部"时：重置搜索、可见数量，并根据历史推断"已看"与初始选中
   useEffect(() => {
     setQuery('');
     setVisibleCount(40);
     const w = new Set<number>();
     let init = 0;
-    if (isSeries && historyRecord && historyRecord.seasonNumber === currentSeasonNumber) {
+    if (isSeries && historyRecord) {
       const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
       const y = m ? parseInt(m[1], 10) : NaN;
       if (!Number.isNaN(y)) {
+        const histSeason = historyRecord.seasonNumber;
+        // 以"季号*1000+集号"为键，保证"全部"聚合视图下只高亮历史所属季的已看集
         allItems.forEach((it) => {
-          if (it.kind === 'ep' && it.number <= y) w.add(it.number);
+          if (it.kind === 'ep' && it.seasonNumber === histSeason && it.number <= y) {
+            w.add(it.seasonNumber * 1000 + it.number);
+          }
         });
-        const idx = allItems.findIndex((it) => it.kind === 'ep' && it.number === y);
+        const idx = allItems.findIndex(
+          (it) => it.kind === 'ep' && it.seasonNumber === histSeason && it.number === y,
+        );
         if (idx >= 0) init = idx;
       }
     }
     setWatched(w);
     setSelectedIdx(init);
-  }, [seasonIdx, isSeries, historyRecord, currentSeasonNumber, allItems]);
+  }, [seasonIdx, showAll, isSeries, historyRecord, currentSeasonNumber, allItems]);
 
   // 测量网格列数，供键盘上下导航
   useLayoutEffect(() => {
@@ -251,17 +285,17 @@ export default function PlaylistModal({
     (item: Item) => {
       if (item.kind === 'ep') {
         onPlayEpisode({
-          seasonNumber: currentSeasonNumber,
+          seasonNumber: item.seasonNumber,
           episodeId: item.episode.id,
           episode: item.episode,
-          sources: activeVideo?.sources ?? [],
+          sources: item.sources,
           sourceIndex: activeSourceIndex,
         });
       } else {
         onPlayLine(item.origIndex, null, item.line.url, item.line.type);
       }
     },
-    [onPlayEpisode, onPlayLine, currentSeasonNumber, activeVideo, activeSourceIndex],
+    [onPlayEpisode, onPlayLine, activeSourceIndex],
   );
 
   const playSelected = useCallback(() => {
@@ -339,6 +373,205 @@ export default function PlaylistModal({
     ? `共 ${allItems.length} 集`
     : `共 ${allItems.length} 条线路`;
 
+  const renderSeasonNav = () => {
+    if (!isSeries || seasons.length <= 1) return null;
+    if (isMobile) {
+      return (
+        <div className="playlist-seasons" role="tablist" aria-label="选择季">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={showAll}
+            className={`playlist-season-tab${showAll ? ' is-active' : ''}`}
+            onClick={() => {
+              setShowAll(true);
+              setVisibleCount(40);
+            }}
+          >
+            全部
+          </button>
+          {seasonNumbers.map((sn, i) => (
+            <button
+              key={sn}
+              type="button"
+              role="tab"
+              aria-selected={!showAll && i === seasonIdx}
+              className={`playlist-season-tab${!showAll && i === seasonIdx ? ' is-active' : ''}`}
+              onClick={() => {
+                setShowAll(false);
+                setSeasonIdx(i);
+                setVisibleCount(40);
+              }}
+            >
+              {sn === 0 ? '正片' : `第${sn}季`}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <aside className="playlist-season-nav" aria-label="分季">
+        <div className="playlist-season-nav-title">分季</div>
+        <button
+          type="button"
+          className={`playlist-season-item${showAll ? ' is-active' : ''}`}
+          onClick={() => {
+            setShowAll(true);
+            setVisibleCount(40);
+          }}
+        >
+          <span>全部</span>
+        </button>
+        {seasonNumbers.map((sn, i) => (
+          <button
+            key={sn}
+            type="button"
+            className={`playlist-season-item${!showAll && i === seasonIdx ? ' is-active' : ''}`}
+            onClick={() => {
+              setShowAll(false);
+              setSeasonIdx(i);
+              setVisibleCount(40);
+            }}
+          >
+            <span>{sn === 0 ? '正片' : `第${sn}季`}</span>
+            <span className="playlist-season-count">{seasons[i]?.episodes?.length ?? 0}</span>
+          </button>
+        ))}
+      </aside>
+    );
+  };
+
+  const renderBody = () => (
+    <>
+      <div className="playlist-toolbar">
+        <div className="playlist-search">
+          <span className="playlist-search-icon">🔍</span>
+          <input
+            className="playlist-search-input"
+            type="text"
+            placeholder={isSeries ? '搜索剧集…' : '搜索播放线路…'}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setVisibleCount(40);
+            }}
+          />
+        </div>
+        <div className="playlist-count">{countLabel}</div>
+      </div>
+
+      <div className="playlist-body" ref={bodyRef}>
+        <div
+          className={isSeries ? 'playlist-grid' : 'playlist-line-grid'}
+          ref={gridRef}
+          key={`${seasonIdx}-${showAll}`}
+        >
+          {visibleItems.map((it, flatIdx) => {
+            const isSel = flatIdx === selectedIdx;
+            const isWatched =
+              it.kind === 'ep' && watched.has(it.seasonNumber * 1000 + it.number);
+            // 「播放中」仅限历史记录所属季、且集号命中的那一个 cell，
+            // 避免非历史季默认选中的第一集也显示「播放中」而串季。
+            const isPlaying =
+              isSel &&
+              it.kind === 'ep' &&
+              historyRecord?.seasonNumber === it.seasonNumber &&
+              histEpNumber != null &&
+              it.number === histEpNumber;
+            const isBad =
+              it.kind === 'ep'
+                ? !it.episode.sources || it.episode.sources.length === 0
+                : !it.line.url;
+            const prog = cellProgress(it, progressMap);
+            const pct =
+              prog && prog.duration > 0
+                ? Math.min(100, Math.round((prog.progress / prog.duration) * 100))
+                : 0;
+            const cls = [
+              'playlist-cell',
+              it.kind === 'ep' ? 'playlist-cell--ep' : 'playlist-cell--line',
+              isSel ? 'is-selected' : '',
+              isWatched ? 'is-watched' : '',
+              isBad ? 'is-bad' : '',
+              flatIdx === flashIdx ? 'is-flash' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <button
+                key={it.kind === 'ep' ? it.episode.id : `line-${it.origIndex}`}
+                type="button"
+                className={cls}
+                title={it.title}
+                data-cell={flatIdx}
+                onClick={() => {
+                  setSelectedIdx(flatIdx);
+                  playItem(it);
+                }}
+              >
+                {it.kind === 'ep' ? (
+                  <>
+                    {showAll && (
+                      <span className="playlist-cell-season">S{it.seasonNumber}</span>
+                    )}
+                    <span className="playlist-cell-num">{it.number}</span>
+                    {isWatched && <span className="playlist-cell-check">✓</span>}
+                    {isPlaying && (
+                      <span className="playlist-cell-playing">播放中</span>
+                    )}
+                    {isBad && <span className="playlist-cell-na">无源</span>}
+                    {prog && (
+                      <>
+                        <span
+                          className={`playlist-cell-pct${prog.completed ? ' is-complete' : ''}`}
+                        >
+                          {prog.completed ? '看完' : `${pct}%`}
+                        </span>
+                        <span className="playlist-cell-progress" aria-hidden="true">
+                          <span
+                            className={`playlist-cell-progress-bar${prog.completed ? ' is-complete' : ''}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="playlist-cell-name">{it.title}</span>
+                    <span className="playlist-cell-type">{it.line.type.toUpperCase()}</span>
+                    {isBad && <span className="playlist-cell-na">失效</span>}
+                    {prog && (
+                      <>
+                        <span
+                          className={`playlist-cell-pct${prog.completed ? ' is-complete' : ''}`}
+                        >
+                          {prog.completed ? '看完' : `${pct}%`}
+                        </span>
+                        <span className="playlist-cell-progress" aria-hidden="true">
+                          <span
+                            className={`playlist-cell-progress-bar${prog.completed ? ' is-complete' : ''}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {visibleCount < filtered.length && (
+          <div className="playlist-sentinel" ref={sentinelRef}>
+            加载更多…
+          </div>
+        )}
+        {filtered.length === 0 && <div className="playlist-empty">没有匹配的结果</div>}
+      </div>
+    </>
+  );
+
   const content = (
     <div className="playlist-inner" onKeyDown={onKeyDown}>
       {variant === 'drawer' && (
@@ -363,7 +596,9 @@ export default function PlaylistModal({
         <div className="playlist-meta">
           <Dialog.Title className="playlist-title">
             {isSeries
-              ? `${video.title} · 第${currentSeasonNumber === 0 ? '正片' : currentSeasonNumber}季`
+              ? showAll
+                ? `${video.title} · 全部`
+                : `${video.title} · 第${currentSeasonNumber === 0 ? '正片' : currentSeasonNumber}季`
               : video.title}
           </Dialog.Title>
           <div className="playlist-sub">
@@ -377,110 +612,23 @@ export default function PlaylistModal({
         </button>
       </div>
 
-      <div className="playlist-main">
-        {isSeries && seasons.length > 1 && (
-          <div className="playlist-seasons" role="tablist" aria-label="选择季">
-            {seasonNumbers.map((sn, i) => (
-              <button
-                key={sn}
-                role="tab"
-                aria-selected={i === seasonIdx}
-                className={`playlist-season-tab${i === seasonIdx ? ' is-active' : ''}`}
-                onClick={() => setSeasonIdx(i)}
-              >
-                {sn === 0 ? '正片' : `第${sn}季`}
-              </button>
-            ))}
+      {isSeries ? (
+        isMobile ? (
+          <div className="playlist-main">
+            {renderSeasonNav()}
+            <div className="playlist-content">{renderBody()}</div>
           </div>
-        )}
-
-        <div className="playlist-content">
-          <div className="playlist-toolbar">
-            <div className="playlist-search">
-              <span className="playlist-search-icon">🔍</span>
-              <input
-                className="playlist-search-input"
-                type="text"
-                placeholder={isSeries ? '搜索本季剧集…' : '搜索播放线路…'}
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setVisibleCount(40);
-                }}
-              />
-            </div>
-            <div className="playlist-count">{countLabel}</div>
+        ) : (
+          <div className="playlist-split">
+            {renderSeasonNav()}
+            <div className="playlist-content">{renderBody()}</div>
           </div>
-
-          <div className="playlist-body" ref={bodyRef}>
-            <div className="playlist-grid" ref={gridRef} key={seasonIdx}>
-              {visibleItems.map((it, flatIdx) => {
-                const isSel = flatIdx === selectedIdx;
-                const isWatched = it.kind === 'ep' && watched.has(it.number);
-                // 「播放中」仅限历史记录所属季、且集号命中的那一个 cell，
-                // 避免非历史季默认选中的第一集也显示「播放中」而串季。
-                const isPlaying = isSel && it.kind === 'ep' && currentSeasonHistEp != null && it.number === currentSeasonHistEp;
-                const prog = cellProgress(it, progressMap);
-                const pct =
-                  prog && prog.duration > 0
-                    ? Math.min(100, Math.round((prog.progress / prog.duration) * 100))
-                    : 0;
-                const cls = [
-                  'playlist-cell',
-                  isSel ? 'is-selected' : '',
-                  isWatched ? 'is-watched' : '',
-                  flatIdx === flashIdx ? 'is-flash' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ');
-                return (
-                  <button
-                    key={it.kind === 'ep' ? it.episode.id : `line-${it.origIndex}`}
-                    type="button"
-                    className={cls}
-                    data-cell={flatIdx}
-                    onClick={() => {
-                      setSelectedIdx(flatIdx);
-                      playItem(it);
-                    }}
-                  >
-                    <span className="playlist-cell-num">{it.number}</span>
-                    <span className="playlist-cell-title">{it.title}</span>
-                    {it.kind === 'ep' && isWatched && (
-                      <span className="playlist-cell-check">✓</span>
-                    )}
-                    {isPlaying && <span className="playlist-cell-playing">播放中</span>}
-                    {it.kind === 'line' && (
-                      <span className="playlist-cell-type">{it.line.type.toUpperCase()}</span>
-                    )}
-                    {prog && (
-                      <>
-                        <span
-                          className={`playlist-cell-pct${prog.completed ? ' is-complete' : ''}`}
-                        >
-                          {prog.completed ? '看完' : `${pct}%`}
-                        </span>
-                        <span className="playlist-cell-progress" aria-hidden="true">
-                          <span
-                            className={`playlist-cell-progress-bar${prog.completed ? ' is-complete' : ''}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {visibleCount < filtered.length && (
-              <div className="playlist-sentinel" ref={sentinelRef}>
-                加载更多…
-              </div>
-            )}
-            {filtered.length === 0 && <div className="playlist-empty">没有匹配的结果</div>}
-          </div>
+        )
+      ) : (
+        <div className="playlist-main">
+          <div className="playlist-content">{renderBody()}</div>
         </div>
-      </div>
+      )}
     </div>
   );
 
