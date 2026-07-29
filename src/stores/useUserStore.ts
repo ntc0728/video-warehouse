@@ -154,18 +154,29 @@ export const useUserStore = create<UserState>()((set, get) => ({
 
   /**
    * 添加或更新观看历史
-   * 同一集的记录会更新进度和时间，而非重复创建
-   * 去重策略：
-   *   - 电影：按 videoId 去重
-   *   - 剧集：按 videoId + episodeUrl 去重（同一集换源才替换，不同集新增）
+   * 同一内容身份的记录会更新进度和时间，而非重复创建；「最后播放」覆盖旧进度。
+   * 去重（内容身份）策略：
+   *   - 电影：按 videoId 去重 —— 不同 CMS 源共享同一条进度
+   *   - 剧集：按 videoId + 季号 + 集标题 去重 —— 不同 CMS 源下相同选季/选集共享同一条进度
+   * 源相关字段（cmsSourceId / episodeUrl / vodId）仍记录「最后播放的那次」，仅用于续播定位。
    */
   addHistory: (record) => {
-    // 按 videoId + episodeUrl 去重
-    // 电影无 episodeUrl，只按 videoId 匹配
-    // 剧集有 episodeUrl，需要同时匹配 videoId 和 episodeUrl
-    const existingIndex = record.episodeUrl
-      ? get().history.findIndex((h) => h.videoId === record.videoId && h.episodeUrl === record.episodeUrl)
-      : get().history.findIndex((h) => h.videoId === record.videoId && !h.episodeUrl);
+    // 去重键（同时作为持久化 id）：
+    //   电影：按 videoId —— 相同电影在不同 CMS 源/线路之间共享同一条进度记录
+    //   剧集：按 videoId + 季号 + 集标题 —— 相同选季/选集在不同 CMS 源之间共享同一条进度记录
+    // 区分电影/剧集的依据是 seasonNumber：电影无剧集概念（undefined），剧集必有季号。
+    // （注意：电影写入时 episodeLabel 实际被置为源名称，不能用作区分判据。）
+    // 这样「最后播放的进度」始终覆盖同一条记录，满足全局规则：
+    //   - 相同电影不同源进度保持一致
+    //   - 相同剧集/相同选季/相同选集，不同源进度保持一致
+    // 注意：cmsSourceId / episodeUrl / vodId 等「源相关」字段仍会被最后播放的那次覆盖，
+    // 仅用于在该源上续播，不改变进度归属的内容身份。
+    const isEpisodic = record.seasonNumber != null && !!record.episodeLabel;
+    const dedupId = isEpisodic
+      ? `hist-${record.videoId}-s${record.seasonNumber}-${record.episodeLabel}`
+      : `hist-${record.videoId}`;
+
+    const existingIndex = get().history.findIndex((h) => h.id === dedupId);
 
     if (existingIndex >= 0) {
       const updated = { ...get().history[existingIndex] };
@@ -190,7 +201,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
     } else {
       const newHistory: HistoryRecord = {
         ...record,
-        id: `hist-${Date.now()}-${Math.random().toString(36).substr(9, 9)}`,
+        id: dedupId,
         updatedAt: Date.now(),
       };
       set((state) => ({

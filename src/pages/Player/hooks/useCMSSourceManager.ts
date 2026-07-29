@@ -104,7 +104,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     let sourceIdx = targetSourceIndex;
 
     // 统一读取历史记录：既用于「未指定源时回退最近播放源」，也用于
-    // 「指定了源时按 episodeUrl 精确恢复选集/线路进度」。
+    // 「按内容身份（季号+集号）恢复选集/线路进度」，保证不同源进度一致。
     let histRecord: HistoryRecord | undefined;
     if (!skipHistory) {
       try {
@@ -137,29 +137,32 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     activeCmsSourceIndexRef.current = sourceIdx;
 
-    // 仅当「点击的源 == 历史记录所属的源」时，才按历史进度恢复选集/线路，
-    // 避免跨源错配（历史在某源看到第5集，点另一源的立即播放应从头开始）。
-    const sameSourceAsHistory =
-      !!histRecord?.episodeUrl &&
-      (allSrc[sourceIdx]?.id === histRecord.cmsSourceId ||
-       allSrc[sourceIdx]?.name === histRecord.cmsSourceName);
+    // 选集/线路恢复遵循全局规则：相同内容（电影=videoId；剧集=videoId+季+集）的播放进度
+    // 以「最后播放」为准，且在不同 CMS 源之间保持一致。因此恢复不限定源，而是按内容身份
+    // （季号 + 集号）匹配：跨源时 episodeUrl 不同无法精确匹配线路，回退默认线路，但选集与
+    // 播放进度（时间）仍按历史回显。
+    const parseEpisodeNumber = (label?: string): number | undefined => {
+      if (!label) return undefined;
+      const m = label.match(/\d+/);
+      return m ? Number(m[0]) : undefined;
+    };
+    const histEpNum = parseEpisodeNumber(histRecord?.episodeLabel);
+    const histSeason = histRecord?.seasonNumber;
 
-    // 选集恢复：默认第一集；同源且历史有精确 episodeUrl 时回显到对应集。
+    // 选集恢复：默认第一集；历史有集标识时按集号精确回显到对应集（跨源同样生效）。
     const pickInitialEpisode = (eps?: Episode[]): Episode | undefined => {
       if (!eps?.length) return undefined;
       const sorted = [...eps].sort((a, b) => a.number - b.number);
-      if (sameSourceAsHistory && histRecord!.episodeUrl) {
-        const matched = sorted.find(ep =>
-          ep.url === histRecord!.episodeUrl ||
-          ep.sources.some(s => s.url === histRecord!.episodeUrl));
+      if (histEpNum != null) {
+        const matched = sorted.find(ep => ep.number === histEpNum);
         if (matched) return matched;
       }
       return sorted[0];
     };
 
-    // 线路恢复：同源时按历史 episodeUrl 精确回显到对应线路，否则保持默认第一条。
+    // 线路恢复：历史 episodeUrl 命中当前源线路时精确回显；跨源未命中则保持默认第一条。
     const restoreLineIfNeeded = (ep: Episode | undefined) => {
-      if (sameSourceAsHistory && histRecord!.episodeUrl && ep?.sources.length) {
+      if (histRecord?.episodeUrl && ep?.sources.length) {
         const line = ep.sources.find(s => s.url === histRecord!.episodeUrl);
         if (line) handlePlaySource(line);
       }
@@ -245,7 +248,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           if (detailVideo.sources.length > 0) {
             setSources(detailVideo.sources);
-            const firstSrc = (sameSourceAsHistory && histRecord!.episodeUrl)
+            const firstSrc = (histRecord?.episodeUrl)
               ? detailVideo.sources.find(s => s.url === histRecord!.episodeUrl) ?? detailVideo.sources[0]
               : detailVideo.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
@@ -294,6 +297,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         if (!ctrl.signal.aborted) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
+
+          // 历史「最后播放的季」优先回显（跨源同样适用：相同选季进度保持一致）。
+          // 仅当目标源确实存在该季号时才覆盖，避免源间季号体系不同导致的错配。
+          if (histSeason != null && seasonMap.has(histSeason) && histSeason !== selectedSeasonRef.current) {
+            selectedSeasonRef.current = histSeason;
+            setSelectedSeason(histSeason);
+          }
 
           // 跨源对齐：新源季号体系可能与旧 selectedSeason 不同，回退到新源第一季
           const alignedSeason = seasonMap.has(selectedSeasonRef.current)
@@ -380,7 +390,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           if (result.video.sources.length > 0) {
             setSources(result.video.sources);
-            const firstSrc = (sameSourceAsHistory && histRecord!.episodeUrl)
+            const firstSrc = (histRecord?.episodeUrl)
               ? result.video.sources.find(s => s.url === histRecord!.episodeUrl) ?? result.video.sources[0]
               : result.video.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
