@@ -305,14 +305,7 @@ export default function PlayerPage() {
           setSources(sources);
 
           if (sources.length > 0) {
-            // 优先从历史记录恢复「最新播放的线路」，与上方选集恢复逻辑保持一致；
-            // 仅当 historyRecord.episodeUrl 能命中当前源（同源）的某条线路时才采用，
-            // 跨 CMS 源时 url 不匹配会自然回退到默认/首条线路，避免错配
-            const histLine =
-              historyRecord?.episodeUrl
-                ? sources.find((s) => s.url === historyRecord.episodeUrl)
-                : undefined;
-            const matchedSource = histLine || sources.find((s) => s.isDefault) || sources[0];
+            const matchedSource = sources.find(s => s.isDefault) || sources[0];
             setCurrentSrc({ url: matchedSource.url, type: matchedSource.type });
             setSource(matchedSource.url, matchedSource.type);
             currentSourceNameRef.current = matchedSource.name;
