@@ -1,0 +1,165 @@
+/* V4 风格：detail-sources 工具栏内的源检测 pill */
+.sdp {
+  position: relative;
+  /* 建立独立堆叠上下文，确保悬浮弹窗稳定盖在下方「匹配结果」网格之上，
+     不被 DOM 中位于其后的兄弟元素（结果卡片背景）遮挡 */
+  z-index: 50;
+  display: inline-block;
+}
+
+.sdp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.sdp-pill:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+.sdp-pill.running,
+.sdp-pill.idle {
+  cursor: default;
+}
+.sdp-pill.done {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border-light));
+}
+
+.sdp-label {
+  white-space: nowrap;
+}
+
+.sdp-mini {
+  position: relative;
+  width: 46px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+.sdp-mini > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--color-primary);
+  transition: width 0.25s var(--ease-out-expo);
+}
+.sdp.done .sdp-mini > i {
+  background: var(--color-success, #2bbf6a);
+}
+
+.sdp-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
+}
+
+/* 状态点 / 旋转器 */
+.sdp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  flex: 0 0 auto;
+}
+.sdp-dot.is-ok {
+  background: var(--color-success, #2bbf6a);
+}
+.sdp-spin {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
+  animation: sdp-spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+@keyframes sdp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sdp-spin {
+    animation-duration: 1.4s;
+  }
+}
+
+/* 悬浮 / 钉住 的弹出层（Portal 渲染到 body，fixed 定位由内联样式控制，
+   可见性由 .is-open 控制，避免被 .detail-content 的 overflow:hidden 裁剪） */
+.sdp-pop {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-fast), visibility var(--dur-fast);
+}
+.sdp-pop.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sdp-pop-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  padding-bottom: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.sdp-pop-summary b {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.sdp-pop-summary .ok b {
+  color: var(--color-success, #2bbf6a);
+}
+.sdp-pop-summary .fail b {
+  color: var(--color-error, #e5534b);
+}
+
+
+.sdp-pop-grid {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  max-height: 220px;
+  overflow: auto;
+}
+.sdp-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-2xs);
+  padding: 4px 7px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+.sdp-cell-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--color-error, #e5534b);
+}
+.sdp-cell.is-ok .sdp-cell-dot {
+  background: var(--color-success, #2bbf6a);
+}
+.sdp-cell-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

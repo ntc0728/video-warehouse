@@ -1,90 +1,101 @@
-/**
- * 源状态指示器
- * 显示搜索结果数和源状态（加载中闪烁 / 成功绿色 / 部分失败黄色 / 全部失败红色）
- */
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import './SourceStatusIndicator.css';
+// 复用详情页 SourceDetectPill 弹窗的逐源网格样式，保证两处弹层视觉一致
+import '@/pages/Detail/components/SourceDetectPill.css';
 
-interface SourceStatusProps {
+export interface SourceStatusIndicatorProps {
+  /** 总源数 */
   totalSources: number;
-  completedSources: number;
-  succeededSources: number;
-  failedSources: number;
-  totalResults: number;
-  isLoading: boolean;
+  /** 已检测完成的源数 */
+  totalCompleted: number;
+  /** 可用（成功）的源数 */
+  totalAvailable: number;
+  /** 检测错误（如全部源失败）；存在时 pill 显示错误态 */
+  error?: string | null;
+  /** 逐源状态列表（用于弹层展示，与详情页源检测弹窗一致的逐源网格） */
+  sources?: Array<{ name: string; available: boolean }>;
+  className?: string;
 }
 
+/**
+ * V4 风格源状态指示：折叠 pill + 悬浮/钉住弹出层，
+ * 显示 总源数 / 成功 / 失败 / 结果数。
+ */
 export function SourceStatusIndicator({
   totalSources,
-  completedSources,
-  succeededSources,
-  failedSources,
-  totalResults,
-  isLoading,
-}: SourceStatusProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  const handleMouseEnter = useCallback(() => setShowTooltip(true), []);
-  const handleMouseLeave = useCallback(() => setShowTooltip(false), []);
-  // 移动端点击切换 tooltip（触摸设备无 hover）
-  const handleToggle = useCallback(() => setShowTooltip((v) => !v), []);
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setShowTooltip((v) => !v);
-    }
-  }, []);
-
-  // 圆点颜色状态
-  const dotClass = (() => {
-    if (isLoading) return 'source-status-dot--loading';
-    if (failedSources === 0) return 'source-status-dot--success';
-    if (failedSources === totalSources) return 'source-status-dot--error';
-    return 'source-status-dot--warning';
-  })();
-
-  if (totalSources === 0) return null;
+  totalCompleted,
+  totalAvailable,
+  error = null,
+  sources,
+  className = '',
+}: SourceStatusIndicatorProps) {
+  const [pinned, setPinned] = useState(false);
+  const completed = Math.min(totalCompleted, totalSources);
+  const pct = totalSources > 0 ? Math.round((completed / totalSources) * 100) : 0;
+  const fail = Math.max(totalSources - totalAvailable, 0);
+  const scanning = completed < totalSources;
+  const dotClass = totalAvailable > 0 ? 'is-ok' : 'is-fail';
+  const hasError = !scanning && !!error;
 
   return (
-    <div className="source-status">
-      <span className="source-status-results">共找到 {totalResults} 个结果</span>
-            <div
-              className="source-status-badge"
-              role="button"
-              tabIndex={0}
-              aria-label={`源状态：${completedSources}/${totalSources}，成功 ${succeededSources}，失败 ${failedSources}${failedSources > 0 ? '，点击查看详情' : ''}`}
-              aria-expanded={showTooltip}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onClick={handleToggle}
-              onKeyDown={handleKeyDown}
-            >
-        <span className={`source-status-dot ${dotClass}`} />
-        <span className="source-status-count">
-          {completedSources}/{totalSources} 源
-        </span>
-        {showTooltip && (
-          <div className="source-status-tooltip">
-            <div className="source-status-tooltip-row">
-              <span>总源数</span>
-              <span>{totalSources}</span>
-            </div>
-            <div className="source-status-tooltip-row">
-              <span>成功</span>
-              <span className="source-status-tooltip-success">{succeededSources}</span>
-            </div>
-            <div className="source-status-tooltip-row">
-              <span>失败</span>
-              <span className="source-status-tooltip-error">{failedSources}</span>
-            </div>
-            <div className="source-status-tooltip-divider" />
-            <div className="source-status-tooltip-row">
-              <span>结果数</span>
-              <span>{totalResults}</span>
-            </div>
+    <div
+      className={`source-status-badge ${scanning ? 'is-scanning' : ''} ${hasError ? 'is-error' : ''} ${pinned ? 'is-pinned' : ''} ${className}`}
+    >
+      <button
+        type="button"
+        className="ssb-pill"
+        onClick={() => setPinned((v) => !v)}
+        aria-label="源状态"
+      >
+        {scanning && <span className="ssb-spin" />}
+        {!scanning && <span className={`ssb-dot ${dotClass}`} />}
+        <span className="ssb-label">源状态</span>
+        {totalSources > 0 && (
+          <>
+            <span className="ssb-mini" aria-hidden>
+              <i style={{ width: `${pct}%` }} />
+            </span>
+            <span className="ssb-count">
+              {completed}/{totalSources}
+            </span>
+          </>
+        )}
+      </button>
+
+      <div className="ssb-pop" role="tooltip">
+        <div className="ssb-pop-summary">
+          <span>
+            总源数 <b>{totalSources}</b>
+          </span>
+          <span className="ok">
+            成功 <b>{totalAvailable}</b>
+          </span>
+          <span className="fail">
+            失败 <b>{fail}</b>
+          </span>
+          {hasError && (
+            <span className="err">
+              错误 <b>{error}</b>
+            </span>
+          )}
+        </div>
+        {sources && sources.length > 0 && !scanning && (
+          <div className="sdp-pop-grid">
+            {sources.map((s, i) => (
+              <div
+                key={i}
+                className={`sdp-cell ${s.available ? 'is-ok' : 'is-fail'}`}
+                title={s.available ? '可用' : '不可用'}
+              >
+                <span className="sdp-cell-dot" />
+                <span className="sdp-cell-name">{s.name}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
     </div>
   );
 }
+
+export default SourceStatusIndicator;

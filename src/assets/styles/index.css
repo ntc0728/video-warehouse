@@ -342,15 +342,29 @@ body {
   touch-action: manipulation;
 }
 
+/* 主题切换过渡：background/color/border-color（含 SVG fill/stroke）同步淡变。
+   刻意不过渡 box-shadow：逐元素逐帧重绘最昂贵，是切换卡顿的主因。
+   - border-color 与 background-color 必须「同 duration + 同缓动」一起过渡，
+     否则边框会瞬时变到目标色而背景还在淡变 → 暗→亮时浅色边先出现 = "闪一下白边"。
+   - 暗色下 --color-border-light 已调暗（见 variables.css），稳态不再"发白"。
+   缓动与页面进入动画统一为 --ease-out-expo。 */
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition: background-color 0.3s var(--ease-standard),
-              color 0.3s var(--ease-standard),
-              border-color 0.3s var(--ease-standard),
-              box-shadow 0.3s var(--ease-standard),
-              fill 0.3s var(--ease-standard),
-              stroke 0.3s var(--ease-standard) !important;
+  transition: background-color 0.22s var(--ease-out-expo),
+              color 0.22s var(--ease-out-expo),
+              border-color 0.22s var(--ease-out-expo),
+              fill 0.22s var(--ease-out-expo),
+              stroke 0.22s var(--ease-out-expo) !important;
+}
+
+/* 尊重用户的减少动态偏好：主题切换瞬时完成 */
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
 }
 
 /* ── 全局按钮点击反馈（方案6：弹性回弹）────────────────────────────
@@ -524,10 +538,15 @@ a[role="button"]:active:not(:disabled),
   background: var(--color-primary-light);
 }
 
-/* 胶囊变体（Detail 页“重新匹配”按钮）— 全圆角胶囊样式，hover 时仅背景/文字过渡，边框颜色保持不变 */
+/* 胶囊变体（Detail 页“重新匹配”按钮）— 全圆角胶囊样式，hover 时仅背景/文字过渡，边框颜色保持不变。
+   尺寸/圆角与 .sdp-pill(idle) 对齐：相同 padding(5px 11px)、font-size(text-xs)、1px 边框、999px 圆角，
+   并清除 .retry-btn 基类自带的 margin-top，使其在工具栏内与源检测 pill 垂直居中对齐、高度一致。 */
 .retry-btn--tab {
+  margin-top: 0;
+  padding: 5px 11px;
+  gap: 6px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
+  border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text-secondary);
 }

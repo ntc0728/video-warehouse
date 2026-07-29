@@ -26,6 +26,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  color-scheme: light;
   /* ── Colors ─────────────────────────────────────────────────────────── */
   /* 主色 — 按钮/链接/激活态/焦点环/进度条，暗色下反转为白 */
   --color-primary: #000;
@@ -361,6 +362,7 @@
    Dark Theme — colors & shadows only (dimension tokens from :root)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
+  color-scheme: dark;
   /* 暗色主题 — primary 反转为白色，背景/表面整体加深 */
   --color-primary: #fff;
   --color-primary-hover: #e5e5e5;
@@ -377,8 +379,8 @@
   --color-text-secondary: #a0a0a0;
   --color-text-tertiary: #666;
   --color-text-inverse: #141414;
-  --color-border: #434343;
-  --color-border-light: #3a3a3a;
+  --color-border: #363636;
+  --color-border-light: #2b2b2b;
   --color-placeholder: #262626;
   --color-placeholder-shimmer-a: #1f1f1f;
   --color-placeholder-shimmer-b: #303030;

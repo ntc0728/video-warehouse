@@ -1,106 +1,142 @@
-.source-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-xs) var(--space-md);
-}
-
-.source-status-results {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
+/* V4 风格源状态：折叠 pill + 悬浮/钉住弹出层 */
 .source-status-badge {
   position: relative;
-  display: flex;
-  gap: var(--space-xs);
+  display: inline-block;
+}
+
+.ssb-pill {
+  display: inline-flex;
   align-items: center;
-  padding: var(--space-2xs) var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  transition: border-color 0.2s, background 0.2s;
+  gap: 6px;
   cursor: pointer;
-}
-
-.source-status-badge:hover {
-  border-color: var(--color-primary);
-}
-
-.source-status-badge:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.source-status-dot {
-  width: var(--space-sm);
-  height: var(--space-sm);
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.source-status-dot--loading {
-  background: var(--color-border);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.source-status-dot--success {
-  background: var(--color-success, #52c41a);
-}
-
-.source-status-dot--warning {
-  background: var(--color-warning, #faad14);
-}
-
-.source-status-dot--error {
-  background: var(--color-error, #ff4d4f);
-}
-
-.source-status-count {
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 500;
-}
-
-@keyframes source-dot-blink {
-  0%, 100% { background: var(--color-border); }
-  50% { background: var(--color-text-tertiary); }
-}
-
-/* Tooltip */
-.source-status-tooltip {
-  position: absolute;
-  top: calc(100% + var(--space-xs));
-  right: 0;
-  z-index: 100;
-  min-width: var(--layout-popover-wide-min-w);
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-light);
   background: var(--color-surface);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.source-status-tooltip-row {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2xs) 0;
   color: var(--color-text);
-  font-size: var(--text-sm);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.ssb-pill:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+.source-status-badge:not(.is-scanning) .ssb-pill {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border-light));
+}
+/* 错误态（如全部源失败）：红色边框警示 */
+.source-status-badge.is-error .ssb-pill {
+  border-color: var(--color-error, #e5534b);
+  color: var(--color-error, #e5534b);
 }
 
-.source-status-tooltip-success {
-  color: var(--color-success, #52c41a);
-  font-weight: 600;
+.ssb-label {
+  white-space: nowrap;
 }
 
-.source-status-tooltip-error {
-  color: var(--color-error, #ff4d4f);
-  font-weight: 600;
+.ssb-mini {
+  position: relative;
+  width: 46px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+.ssb-mini > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--color-primary);
+  transition: width 0.25s var(--ease-out-expo);
+}
+.source-status-badge:not(.is-scanning) .ssb-mini > i {
+  background: var(--color-success, #2bbf6a);
 }
 
-.source-status-tooltip-divider {
-  height: var(--space-3xs);
-  margin: var(--space-2xs) 0;
-  background: var(--color-border);
+.ssb-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
+}
+
+.ssb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--color-text-tertiary);
+}
+.ssb-dot.is-ok {
+  background: var(--color-success, #2bbf6a);
+}
+.ssb-dot.is-fail {
+  background: var(--color-error, #e5534b);
+}
+.ssb-spin {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
+  animation: ssb-spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+@keyframes ssb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ssb-spin {
+    animation-duration: 1.4s;
+  }
+}
+
+/* 悬浮 / 钉住 弹出层 */
+.ssb-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 280px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--dur-fast), transform var(--dur-fast), visibility var(--dur-fast);
+  white-space: nowrap;
+}
+.source-status-badge:hover .ssb-pop,
+.source-status-badge.is-pinned .ssb-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ssb-pop-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  padding-bottom: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.ssb-pop-summary b {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.ssb-pop-summary .ok b {
+  color: var(--color-success, #2bbf6a);
+}
+.ssb-pop-summary .fail b {
+  color: var(--color-error, #e5534b);
+}
+.ssb-pop-summary .err b {
+  color: var(--color-error, #e5534b);
 }

@@ -81,9 +81,16 @@ export function useCMSSearch() {
       try {
         const result = await searchAllFromCMSSource(sourceIdx, query, 1, { signal: ctrl.signal });
         if (ctrl.signal.aborted) return;
-        if (result.error) {
-          failed.push(result.sourceName);
-        } else if (result.items.length > 0) {
+      if (result.error) {
+        failed.push(result.sourceName);
+        // 关键：返回错误结果的源也视为「已完成」，否则 completedSources 永远到不了 totalSources，
+        // 导致检测已结束但 pill 仍停留在 loading/scanning 状态
+        setState(prev => ({
+          ...prev,
+          completedSources: prev.completedSources + 1,
+        }));
+        return;
+      } else if (result.items.length > 0) {
           const items = result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex }));
           // 第一个源响应后关闭 loading
           if (!firstSourceResponded) {
@@ -132,6 +139,8 @@ export function useCMSSearch() {
         loading: false,
         failedSources: failed,
         sourcesDone: true,
+        // 兜底：全部 settled 后 completedSources 与总数一致，避免个别异常路径漏计数
+        completedSources: sourceIndices.length,
         error: failed.length === sourceIndices.length ? '所有源搜索失败' : null,
       }));
     }

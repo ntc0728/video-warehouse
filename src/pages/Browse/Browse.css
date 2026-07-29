@@ -40,6 +40,27 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 源状态行：左侧结果数（左对齐）+ 右侧源状态 badge */
+.browse-source-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  position: relative;
+  z-index: 2;
+  margin-bottom: var(--space-xs);
+}
+.browse-results-count {
+  text-align: left;
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+.browse-results-count b {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */
 .browse-results-body {
   display: flex;
