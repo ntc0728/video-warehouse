@@ -103,7 +103,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     let sourceIdx = targetSourceIndex;
 
-    // 1) 历史记录优先
+    // 1) 路由传入的 sourceIndex 最优先：用户在详情页点了具体源的「立即播放」，
+    //    必须播放用户点的那个源，绝不能被历史记录的源覆盖。
+    if (sourceIdx === undefined && routeSourceIndex !== undefined) {
+      sourceIdx = routeSourceIndex;
+    }
+
+    // 2) 历史记录：仅在未指定具体源（直接打开/继续播放）时，回退最近播放的源
     if (sourceIdx === undefined && !skipHistory) {
       try {
         const { getHistory } = await import('@/services/database');
@@ -116,11 +122,6 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           if (matchedIdx >= 0) sourceIdx = matchedIdx;
         }
       } catch { /* ignore */ }
-    }
-
-    // 2) 路由传入的 sourceIndex
-    if (sourceIdx === undefined && routeSourceIndex !== undefined) {
-      sourceIdx = routeSourceIndex;
     }
 
     // 3) 默认使用设置页中第一个被选中的 CMS 源
@@ -166,9 +167,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     const histRecord = historyRecordRef.current;
     /**
      * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
-     * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情
+     * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情。
+     * 注意：routeSourceIndex 指定了具体源时不可走此路径——历史 vodId 属于
+     * 历史记录的那个源，跨源 vodId 不通用，会在用户点的源上拉错视频。
      */
-    if (!isSwitching && histRecord?.vodId) {
+    if (!isSwitching && routeSourceIndex === undefined && histRecord?.vodId) {
       try {
         const svc = await import('@/services/videoService');
         /** 通过 vodId 获取视频详情（传递 signal 支持取消） */
