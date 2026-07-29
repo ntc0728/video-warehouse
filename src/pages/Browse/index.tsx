@@ -18,8 +18,9 @@ import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext';
-import { useTMDBStore } from '@/stores';
+import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
+import { getVideoSources } from '@/services/sourceService';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -99,11 +100,10 @@ export default function BrowsePage() {
     loading: cmsLoading,
     error: cmsError,
     hasMore: cmsHasMore,
-    failedSources,
     totalSources,
     completedSources,
     succeededSources,
-    sourcesDone,
+    failedSources,
     search: searchCMS,
     loadMore: loadMoreCMS,
     reset: resetCMS,
@@ -261,6 +261,27 @@ export default function BrowsePage() {
   const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
+  // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
+  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
+  const [videoSources, setVideoSources] = useState<{ name: string }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    getVideoSources().then((list) => {
+      if (alive) setVideoSources(list);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const cmsSourceList = useMemo(() => {
+    const indices =
+      videoSourceIndices && videoSourceIndices.length > 0 ? videoSourceIndices : [videoSourceIndex];
+    return indices.map((idx) => {
+      const name = videoSources[idx]?.name ?? `源${idx}`;
+      return { name, available: !failedSources.includes(name) };
+    });
+  }, [videoSourceIndices, videoSourceIndex, videoSources, failedSources]);
+
   return (
     <div
       className={[
@@ -326,16 +347,20 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* 源状态指示器（仅直链搜索） */}
+        {/* 源状态指示器（仅直链搜索）：左侧结果数 + 右侧源状态 badge */}
         {searchMode === 'cms' && (
-          <SourceStatusIndicator
-            totalSources={totalSources}
-            completedSources={completedSources}
-            succeededSources={succeededSources}
-            failedSources={failedSources.length}
-            totalResults={cmsResults.length}
-            isLoading={!sourcesDone}
-          />
+          <div className="browse-source-status-row">
+            <span className="browse-results-count">
+              结果数 <b>{cmsResults.length}</b>
+            </span>
+            <SourceStatusIndicator
+              totalSources={totalSources}
+              totalCompleted={completedSources}
+              totalAvailable={succeededSources}
+              error={cmsError}
+              sources={cmsSourceList}
+            />
+          </div>
         )}
 
         {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}

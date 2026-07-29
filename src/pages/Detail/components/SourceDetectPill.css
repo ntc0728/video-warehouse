@@ -1,10 +1,13 @@
-/* V4 风格源状态：折叠 pill + 悬浮/钉住弹出层 */
-.source-status-badge {
+/* V4 风格：detail-sources 工具栏内的源检测 pill */
+.sdp {
   position: relative;
+  /* 建立独立堆叠上下文，确保悬浮弹窗稳定盖在下方「匹配结果」网格之上，
+     不被 DOM 中位于其后的兄弟元素（结果卡片背景）遮挡 */
+  z-index: 50;
   display: inline-block;
 }
 
-.ssb-pill {
+.sdp-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -17,24 +20,23 @@
   color: var(--color-text);
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
-.ssb-pill:hover {
+.sdp-pill:hover {
   background: var(--color-surface-2);
   border-color: var(--color-border);
 }
-.source-status-badge:not(.is-scanning) .ssb-pill {
+.sdp-pill.running,
+.sdp-pill.idle {
+  cursor: default;
+}
+.sdp-pill.done {
   border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border-light));
 }
-/* 错误态（如全部源失败）：红色边框警示 */
-.source-status-badge.is-error .ssb-pill {
-  border-color: var(--color-error, #e5534b);
-  color: var(--color-error, #e5534b);
-}
 
-.ssb-label {
+.sdp-label {
   white-space: nowrap;
 }
 
-.ssb-mini {
+.sdp-mini {
   position: relative;
   width: 46px;
   height: 5px;
@@ -42,63 +44,57 @@
   background: var(--color-border-light);
   overflow: hidden;
 }
-.ssb-mini > i {
+.sdp-mini > i {
   position: absolute;
   inset: 0 auto 0 0;
   width: 0;
   background: var(--color-primary);
   transition: width 0.25s var(--ease-out-expo);
 }
-.source-status-badge:not(.is-scanning) .ssb-mini > i {
+.sdp.done .sdp-mini > i {
   background: var(--color-success, #2bbf6a);
 }
 
-.ssb-count {
+.sdp-count {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-tertiary);
   font-size: var(--text-2xs);
 }
 
-.ssb-dot {
+/* 状态点 / 旋转器 */
+.sdp-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  flex: 0 0 auto;
   background: var(--color-text-tertiary);
+  flex: 0 0 auto;
 }
-.ssb-dot.is-ok {
+.sdp-dot.is-ok {
   background: var(--color-success, #2bbf6a);
 }
-.ssb-dot.is-fail {
-  background: var(--color-error, #e5534b);
-}
-.ssb-spin {
+.sdp-spin {
   width: 11px;
   height: 11px;
   border-radius: 50%;
   border: 2px solid var(--color-border-light);
   border-top-color: var(--color-primary);
-  animation: ssb-spin 0.7s linear infinite;
+  animation: sdp-spin 0.7s linear infinite;
   flex: 0 0 auto;
 }
-@keyframes ssb-spin {
+@keyframes sdp-spin {
   to {
     transform: rotate(360deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ssb-spin {
+  .sdp-spin {
     animation-duration: 1.4s;
   }
 }
 
-/* 悬浮 / 钉住 弹出层 */
-.ssb-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 30;
-  width: 280px;
+/* 悬浮 / 钉住 的弹出层（Portal 渲染到 body，fixed 定位由内联样式控制，
+   可见性由 .is-open 控制，避免被 .detail-content 的 overflow:hidden 裁剪） */
+.sdp-pop {
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -106,18 +102,14 @@
   box-shadow: var(--shadow-lg);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity var(--dur-fast), transform var(--dur-fast), visibility var(--dur-fast);
-  white-space: nowrap;
+  transition: opacity var(--dur-fast), visibility var(--dur-fast);
 }
-.source-status-badge:hover .ssb-pop,
-.source-status-badge.is-pinned .ssb-pop {
+.sdp-pop.is-open {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
 }
 
-.ssb-pop-summary {
+.sdp-pop-summary {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
@@ -127,16 +119,47 @@
   margin-bottom: var(--space-xs);
   border-bottom: 1px solid var(--color-border-light);
 }
-.ssb-pop-summary b {
+.sdp-pop-summary b {
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
-.ssb-pop-summary .ok b {
+.sdp-pop-summary .ok b {
   color: var(--color-success, #2bbf6a);
 }
-.ssb-pop-summary .fail b {
+.sdp-pop-summary .fail b {
   color: var(--color-error, #e5534b);
 }
-.ssb-pop-summary .err b {
-  color: var(--color-error, #e5534b);
+
+
+.sdp-pop-grid {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  max-height: 220px;
+  overflow: auto;
+}
+.sdp-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-2xs);
+  padding: 4px 7px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+.sdp-cell-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--color-error, #e5534b);
+}
+.sdp-cell.is-ok .sdp-cell-dot {
+  background: var(--color-success, #2bbf6a);
+}
+.sdp-cell-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

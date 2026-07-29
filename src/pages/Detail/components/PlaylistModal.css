@@ -387,24 +387,38 @@
   font-weight: 700;
 }
 
-/* 当前播放集：金边 + 播放中标签 */
+/* 已看集：用比弹窗表面更深的步骤色（surface-hover）与「历史已看」做标记，
+   既区别于弹窗底色(surface)，也区别于选中态的主色弱染底 */
+.playlist-cell.is-watched {
+  background: var(--color-surface-hover);
+}
+
+/* 选中集：主色弱染底 + 数字主色，与「历史已看」的浅色底明显区分
+   （两层都命中时 is-selected 在后面，背景色以选中态为准） */
 .playlist-cell.is-selected {
-  border-width: 2px;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-shadow, rgba(255, 181, 71, 0.25));
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface));
 }
 
 .playlist-cell.is-selected .playlist-cell-num {
   color: var(--color-primary);
 }
 
-/* 已看集：淡色底 + 打勾 */
-.playlist-cell.is-watched {
-  background: var(--color-surface);
+/* 金边框高亮框：仅 TV 端用于遥控器焦点指示；非 TV 端不出现高亮框 */
+.playlist-modal--tv .playlist-cell.is-selected {
+  border-width: 2px;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-shadow, rgba(255, 181, 71, 0.25));
 }
 
 .playlist-cell.is-watched .playlist-cell-check {
   color: var(--color-primary);
+}
+
+/* 勾号完成态（已看完）：绿色，与百分比「看完」配色一致；
+   嵌套 .is-watched 提升特异性，确保带已看背景的 cell 完成态仍显示绿色（不被下方 primary 色覆盖） */
+.playlist-cell-check.is-complete,
+.playlist-cell.is-watched .playlist-cell-check.is-complete {
+  color: var(--color-success, #3ecf8e);
 }
 
 /* 失效 / 无源 */
@@ -546,6 +560,16 @@
 
   .playlist-cell--ep .playlist-cell-num {
     font-size: var(--text-base);
+  }
+
+  /* 从右侧弹出的全屏抽屉：全屏空间充足，cell 间距放宽以免拥挤 */
+  .playlist-drawer .playlist-grid {
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  .playlist-drawer .playlist-line-grid {
+    gap: var(--space-sm);
   }
 }
 

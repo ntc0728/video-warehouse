@@ -172,6 +172,60 @@ export async function checkAllVideoSources(
   };
 }
 
+export interface SelectedSourceCheckResult {
+  index: number;
+  name: string;
+  available: boolean;
+  error?: string;
+}
+
+/**
+ * 仅检测设置页中选中的 CMS 视频源可用性（不拉取视频列表，轻量）。
+ * 通过 onProgress 回调实时上报进度（done / total）。
+ */
+export async function checkSelectedVideoSources(
+  sourceIndices: number[],
+  onProgress?: (done: number, total: number) => void,
+  timeout: number = 10000,
+): Promise<{
+  results: SelectedSourceCheckResult[];
+  total: number;
+  ok: number;
+  fail: number;
+}> {
+  const allSources = await getVideoSources();
+  const targets = sourceIndices
+    .map((i) => ({ index: i, source: allSources[i] }))
+    .filter((t) => t.source);
+  const total = targets.length;
+  if (total === 0) return { results: [], total: 0, ok: 0, fail: 0 };
+
+  const results: SelectedSourceCheckResult[] = [];
+  let cursor = 0;
+  let done = 0;
+  const concurrency = 5;
+
+  const worker = async (): Promise<void> => {
+    while (cursor < total) {
+      const { index, source } = targets[cursor++];
+      const status = await checkVideoSourceAvailability(index, timeout, allSources);
+      results.push({ index, name: source.name, available: status.available, error: status.error });
+      done += 1;
+      onProgress?.(done, total);
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, total) }, () => worker()));
+  results.sort((a, b) => a.index - b.index);
+
+  return {
+    results,
+    total,
+    ok: results.filter((r) => r.available).length,
+    fail: results.filter((r) => !r.available).length,
+  };
+}
+
 /** 按优先级查找第一个可用的视频源 */
 export async function findAvailableVideoSource(
   preferredIndex?: number,

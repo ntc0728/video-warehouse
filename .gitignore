@@ -28,6 +28,7 @@ android/
 
 # ── AI 工具本地配置（不入版本控制）──────────────
 .claude/
+.codebuddy/
 .reasonix/
 .trae-cn/
 .codex/

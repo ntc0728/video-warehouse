@@ -717,8 +717,12 @@ export default function DetailPage() {
               key={tab.key}
               className={`tab-underline detail-tab ${activeTab === tab.key ? 'tab-underline--active detail-tab--active' : ''}`}
               onClick={() => {
+                const firstPlaylist =
+                  tab.key === 'sources' && !visitedTabsRef.current.has('sources');
                 visitedTabsRef.current.add(tab.key);
                 setActiveTab(tab.key);
+                // 第一次进入详情页并点击播放列表 tab 时，自动触发源检测
+                if (firstPlaylist) runSourceDetection();
               }}
             >
               <tab.icon size={16} />
@@ -895,9 +899,7 @@ export default function DetailPage() {
                       total={srcDetect.total}
                       ok={srcDetect.ok}
                       fail={srcDetect.fail}
-                      resultCount={cmsResults.length}
                       results={srcDetect.results}
-                      onRun={runSourceDetection}
                     />
                   </div>
                 </div>
@@ -927,7 +929,14 @@ export default function DetailPage() {
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
                   <div className="detail-sources-toolbar">
-                    <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
+                    <button
+                      className="retry-btn retry-btn--tab"
+                      onClick={() => {
+                        fetchCMSSources();
+                        // 点击「重新匹配」同时触发源检测（idle pill 转为 running→done）
+                        runSourceDetection();
+                      }}
+                    >
                       <RefreshCw size={14} /> 重新匹配
                     </button>
                     <SourceDetectPill
@@ -936,9 +945,7 @@ export default function DetailPage() {
                       total={srcDetect.total}
                       ok={srcDetect.ok}
                       fail={srcDetect.fail}
-                      resultCount={cmsResults.length}
                       results={srcDetect.results}
-                      onRun={runSourceDetection}
                     />
                   </div>
                 </div>

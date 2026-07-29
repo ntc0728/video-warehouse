@@ -9,7 +9,7 @@ import {
 import * as Dialog from '@radix-ui/react-dialog';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMediaQuery, useIsTV } from '@/hooks/useMediaQuery';
 import { useUserStore } from '@/stores';
 import type { Episode, Video, VideoSource } from '@/types/video';
 import './PlaylistModal.css';
@@ -73,18 +73,18 @@ function sortByNumber(eps: Episode[]): Episode[] {
   return [...eps].sort((a, b) => (a.number || 0) - (b.number || 0));
 }
 
-// 根据 cell 取到对应的进度记录（按线路 url 命中历史 episodeUrl）
+// 根据 cell 取到对应的进度记录。进度以「内容身份」为准（与 store.addHistory
+// 的去重键一致）：
+//   - 电影（line）：按 videoId 统一，所有线路/源共享同一进度
+//   - 剧集（ep）：按 季号+集号 统一，相同选集在不同源之间共享同一进度
+// 因此「最后播放的进度」始终覆盖、跨源/跨线路保持一致。
 function cellProgress(
   item: Item,
   map?: Record<string, PlaylistProgressEntry>,
 ): PlaylistProgressEntry | null {
   if (!map) return null;
-  if (item.kind === 'line') return map[item.line.url] ?? null;
-  const urls = [item.episode.url, ...item.episode.sources.map((s) => s.url)];
-  for (const u of urls) {
-    if (map[u]) return map[u];
-  }
-  return null;
+  const key = item.kind === 'line' ? '__movie__' : `s${item.seasonNumber}-第${item.number}集`;
+  return map[key] ?? null;
 }
 
 export default function PlaylistModal({
@@ -99,6 +99,7 @@ export default function PlaylistModal({
   onPlayLine,
 }: PlaylistModalProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const isTV = useIsTV();
   const { isSeries, seasons, seasonNumbers, video, sourceName } = data;
 
   // 直接订阅观看历史 store：播放页在 timeupdate 时持续写入进度，
@@ -106,18 +107,25 @@ export default function PlaylistModal({
   // （详情页在 Keep-Alive 下可能因 memo 跳过重渲染而拿到过期 props）。
   const liveHistory = useUserStore((s) => s.history);
 
-  // 实时重建 progressMap（按 episodeUrl 命中），供线路/选集进度条与百分比显示。
+  // 实时重建 progressMap，按「内容身份」聚合（与 store.addHistory 去重键一致）：
+  //   - 电影：单条记录（seasonNumber 为空）→ 键 '__movie__'，所有线路共用
+  //   - 剧集：键 's{季号}-{episodeLabel}'，相同选集跨源共用
+  // 因此「最后播放的进度」始终生效，相同电影不同线路 / 相同选集不同源进度保持一致。
   const liveProgressMap = useMemo<Record<string, PlaylistProgressEntry>>(() => {
     const map: Record<string, PlaylistProgressEntry> = {};
     if (!videoId) return map;
     for (const h of liveHistory) {
-      if (h.videoId === videoId && h.episodeUrl) {
-        map[h.episodeUrl] = {
-          progress: h.progress,
-          duration: h.duration,
-          completed: h.duration > 0 && h.progress >= h.duration,
-        };
-      }
+      if (h.videoId !== videoId) continue;
+      // 与 addHistory 的 dedupId 对齐：电影按 videoId，剧集按 季号+episodeLabel
+      const key =
+        h.seasonNumber != null && h.episodeLabel
+          ? `s${h.seasonNumber}-${h.episodeLabel}`
+          : '__movie__';
+      map[key] = {
+        progress: h.progress,
+        duration: h.duration,
+        completed: h.duration > 0 && h.progress >= h.duration,
+      };
     }
     return map;
   }, [liveHistory, videoId]);
@@ -153,6 +161,10 @@ export default function PlaylistModal({
     if (isSeries && (seasons[0]?.episodes?.length ?? 0) > 10) return 'drawer';
     return 'sheet';
   });
+
+  // 抽屉(drawer)变体为全屏，季导航复用桌面左侧竖向布局，与桌面端保持一致；
+  // 仅移动端底部 sheet（≤10 集）保留顶部 chips 布局
+  const isVerticalNav = !isMobile || variant === 'drawer';
 
   const activeVideo = isSeries && !showAll ? seasons[seasonIdx] : undefined;
   const currentSeasonNumber = isSeries && !showAll ? seasonNumbers[seasonIdx] : 0;
@@ -375,7 +387,8 @@ export default function PlaylistModal({
 
   const renderSeasonNav = () => {
     if (!isSeries || seasons.length <= 1) return null;
-    if (isMobile) {
+    // 移动端 sheet（≤10 集）用顶部 chips；桌面 / 抽屉(drawer) 用左侧竖向分季导航
+    if (!isVerticalNav) {
       return (
         <div className="playlist-seasons" role="tablist" aria-label="选择季">
           <button
@@ -468,8 +481,13 @@ export default function PlaylistModal({
         >
           {visibleItems.map((it, flatIdx) => {
             const isSel = flatIdx === selectedIdx;
+            const prog = cellProgress(it, progressMap);
             const isWatched =
               it.kind === 'ep' && watched.has(it.seasonNumber * 1000 + it.number);
+            // 有播放进度的 cell（与下方进度条/百分比同源，按「内容身份」跨季/跨源查找）：
+            // 不论是否落在「连续已看到集」范围内，只要历史上播过就与未观看 cell 区分背景色
+            const hasProgress = prog != null;
+            const isPlayed = isWatched || hasProgress;
             // 「播放中」仅限历史记录所属季、且集号命中的那一个 cell，
             // 避免非历史季默认选中的第一集也显示「播放中」而串季。
             const isPlaying =
@@ -482,7 +500,6 @@ export default function PlaylistModal({
               it.kind === 'ep'
                 ? !it.episode.sources || it.episode.sources.length === 0
                 : !it.line.url;
-            const prog = cellProgress(it, progressMap);
             const pct =
               prog && prog.duration > 0
                 ? Math.min(100, Math.round((prog.progress / prog.duration) * 100))
@@ -490,8 +507,11 @@ export default function PlaylistModal({
             const cls = [
               'playlist-cell',
               it.kind === 'ep' ? 'playlist-cell--ep' : 'playlist-cell--line',
+              // 选中态（is-selected）两端都加：用于背景着色与数字主色，
+              // 与「历史已看」(is-watched) 的浅色底做区分；金边框高亮框
+              // 仅 TV 端通过 .playlist-modal--tv 限定显示（非 TV 端不出现高亮框）
               isSel ? 'is-selected' : '',
-              isWatched ? 'is-watched' : '',
+              isPlayed ? 'is-watched' : '',
               isBad ? 'is-bad' : '',
               flatIdx === flashIdx ? 'is-flash' : '',
             ]
@@ -515,7 +535,16 @@ export default function PlaylistModal({
                       <span className="playlist-cell-season">S{it.seasonNumber}</span>
                     )}
                     <span className="playlist-cell-num">{it.number}</span>
-                    {isWatched && <span className="playlist-cell-check">✓</span>}
+                    {/* 勾号与「已看」或「有播放进度」联动：跨季/聚合视图里带进度的 cell 也显示右上角 ✓ */}
+                    {isPlayed && (
+                      <span
+                        className={`playlist-cell-check${
+                          prog?.completed ? ' is-complete' : ''
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    )}
                     {isPlaying && (
                       <span className="playlist-cell-playing">播放中</span>
                     )}
@@ -539,6 +568,16 @@ export default function PlaylistModal({
                 ) : (
                   <>
                     <span className="playlist-cell-name">{it.title}</span>
+                    {/* 线路（电影）有播放进度时，也显示右上角 ✓ 与剧集一致 */}
+                    {prog && (
+                      <span
+                        className={`playlist-cell-check${
+                          prog.completed ? ' is-complete' : ''
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    )}
                     <span className="playlist-cell-type">{it.line.type.toUpperCase()}</span>
                     {isBad && <span className="playlist-cell-na">失效</span>}
                     {prog && (
@@ -613,13 +652,13 @@ export default function PlaylistModal({
       </div>
 
       {isSeries ? (
-        isMobile ? (
-          <div className="playlist-main">
+        isVerticalNav ? (
+          <div className="playlist-split">
             {renderSeasonNav()}
             <div className="playlist-content">{renderBody()}</div>
           </div>
         ) : (
-          <div className="playlist-split">
+          <div className="playlist-main">
             {renderSeasonNav()}
             <div className="playlist-content">{renderBody()}</div>
           </div>
@@ -633,6 +672,8 @@ export default function PlaylistModal({
   );
 
   const baseClass = `playlist-modal playlist-modal--${variant} ${
+    isTV ? 'playlist-modal--tv' : ''
+  } ${
     variant === 'drawer' ? 'playlist-drawer' : 'modal-content-animate'
   }`;
 
