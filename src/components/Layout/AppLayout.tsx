@@ -362,6 +362,15 @@ export default function AppLayout() {
         nodes.push({ key: routeKey, routeKey, cacheable: true });
       }
     }
+    // 有限 Keep-Alive 兜底：被 pin 的 detail 在「detail → /play」切换瞬间可能尚未进入
+    // visitedRoutes —— visitedRoutes 仅在「激活且可缓存」时写入，而 pinDetail 与离开路由
+    // 几乎同时发生、那一帧 activeRouteKey 已变为 /play，导致 detail 节点被整体移除、detail
+    // 组件卸载、其 cleanup 触发 unpinDetail，最终从 /play 返回时 detail 重挂载并重置 tab / 重拉数据。
+    // 因此只要 pinnedDetailId 非空，强制保留 detail 节点（挂起态），保证实例不被卸载。
+    if (pinnedDetailId !== null && !nodes.some((n) => n.routeKey === '/detail')) {
+      const id = detailIdFromPath(activePath) ?? pinnedDetailId;
+      nodes.push({ key: `detail:${id}`, routeKey: '/detail', cacheable: true });
+    }
     // 当前激活但非常驻的路由：直接渲染（key 含 path/id，确保不同实例重新挂载）
     if (activeRouteKey && !isCacheable(activeRouteKey)) {
       const key = activeRouteKey === '/detail'
