@@ -10,6 +10,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useUserStore } from '@/stores';
 import type { Episode, Video, VideoSource } from '@/types/video';
 import './PlaylistModal.css';
 
@@ -30,6 +31,7 @@ interface PlaylistProgressEntry {
 
 interface PlaylistModalProps {
   data: PlaylistModalData;
+  videoId?: string;
   activeSourceIndex: number;
   posterUrl?: string;
   progressMap?: Record<string, PlaylistProgressEntry>;
@@ -79,16 +81,50 @@ function cellProgress(
 
 export default function PlaylistModal({
   data,
+  videoId,
   activeSourceIndex,
   posterUrl,
-  progressMap,
-  historyRecord,
+  progressMap: progressMapProp,
+  historyRecord: historyRecordProp,
   onClose,
   onPlayEpisode,
   onPlayLine,
 }: PlaylistModalProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const { isSeries, seasons, seasonNumbers, video, sourceName } = data;
+
+  // 直接订阅观看历史 store：播放页在 timeupdate 时持续写入进度，
+  // 返回并重新打开弹窗时，必须显示「最新」进度与百分比，不能依赖父页是否重渲染
+  // （详情页在 Keep-Alive 下可能因 memo 跳过重渲染而拿到过期 props）。
+  const liveHistory = useUserStore((s) => s.history);
+
+  // 实时重建 progressMap（按 episodeUrl 命中），供线路/选集进度条与百分比显示。
+  const liveProgressMap = useMemo<Record<string, PlaylistProgressEntry>>(() => {
+    const map: Record<string, PlaylistProgressEntry> = {};
+    if (!videoId) return map;
+    for (const h of liveHistory) {
+      if (h.videoId === videoId && h.episodeUrl) {
+        map[h.episodeUrl] = {
+          progress: h.progress,
+          duration: h.duration,
+          completed: h.duration > 0 && h.progress >= h.duration,
+        };
+      }
+    }
+    return map;
+  }, [liveHistory, videoId]);
+
+  // 实时读取「最后播放」记录（按 updatedAt 倒序），用于「播放中」标记与初始选中。
+  const liveHistoryRecord = useMemo(() => {
+    if (!videoId) return undefined;
+    const records = liveHistory.filter((h) => h.videoId === videoId);
+    if (records.length === 0) return undefined;
+    return records.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+  }, [liveHistory, videoId]);
+
+  // 优先使用 store 实时数据，保证进度/百分比始终最新；videoId 缺失时回退到父页 props。
+  const progressMap = videoId ? liveProgressMap : progressMapProp;
+  const historyRecord = (videoId ? liveHistoryRecord : historyRecordProp) ?? null;
 
   const [seasonIdx, setSeasonIdx] = useState(0);
   const [query, setQuery] = useState('');
