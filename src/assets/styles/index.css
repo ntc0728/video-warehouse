@@ -389,8 +389,6 @@ a[role="button"]:active:not(:disabled),
 .sidebar-nav-item:active,
 .sticky-header__nav-item:active {
   scale: 0.92;
-  /* 过渡放在 :active 态：松手（回到 base）时由本态 transition 驱动，
-     保证「弹性回弹」在 release 阶段对所有元素生效，不被组件自身 transition 覆盖。 */
   transition: scale 0.32s var(--ease-spring);
 }
 
