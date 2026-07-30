@@ -535,4 +535,56 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
 
     console.log(`✅ BROWSE-075 通过: 移动端双卡片相连（命令栏/结果区均带 surface 边框圆角阴影），根容器 overflow=${overflow} 不裁切滚动`);
   });
+
+  test('BROWSE-076: 移动端全局 AppLoading 带卡片式布局（border/radius/surface，与桌面端一致）', async ({ page }) => {
+    // 拦截 TMDB 详情接口并延迟，维持详情页 loading 态以渲染独立 AppLoading
+    await page.route('**/api.tmdb.org/3/movie/27205', async (route) => {
+      await new Promise((r) => setTimeout(r, 3000));
+      await route.continue();
+    });
+    await page.goto('/detail/27205', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+
+    const loading = page.locator('.app-loading--inline').first();
+    await expect(loading).toBeVisible({ timeout: 5000 });
+
+    const style = await loading.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        br: cs.borderTopLeftRadius,
+        bg: cs.backgroundColor,
+        border: cs.borderTopWidth,
+      };
+    });
+    // 回归点：早期实现把卡片视觉限制在 >=1024px，移动端 AppLoading 裸奔；
+    // 现应全视口带卡（border≠0、radius≠0、background=surface），与桌面端一致。
+    expect(style.border).not.toBe('0px');
+    expect(style.br).not.toBe('0px');
+    expect(style.bg).not.toBe('rgba(0, 0, 0, 0)');
+    console.log(`✅ BROWSE-076 通过: 移动端全局 AppLoading 带卡片（border=${style.border} radius=${style.br} bg=${style.bg}）`);
+  });
+
+  test('BROWSE-077: 移动端结果区 AppLoading 被去壳（不卡片套卡片，与桌面端一致）', async ({ page }) => {
+    // 拦截 TMDB 搜索并延迟，维持结果区 loading 态
+    await page.route('**/api.tmdb.org/3/search/**', async (route) => {
+      await new Promise((r) => setTimeout(r, 3000));
+      await route.continue();
+    });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(500);
+
+    // 通过顶部 SearchBox 触发智能检索
+    const box = page.locator('input[placeholder*="搜索"]').first();
+    await box.fill('batman');
+    await box.press('Enter');
+
+    const loading = page.locator('.browse-results-body .app-loading--inline').first();
+    await expect(loading).toBeVisible({ timeout: 5000 });
+
+    // 结果区已落在 .browse-card--results 卡内，AppLoading 自身卡片应被剥去（border-top=0）
+    const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
+    expect(border).toBe('0px');
+    console.log(`✅ BROWSE-077 通过: 移动端结果区 AppLoading 被去壳（border-top-width=${border}），不卡片套卡片`);
+  });
 });
