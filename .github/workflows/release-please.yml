@@ -14,5 +14,9 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
+          # 默认用 GITHUB_TOKEN；若该仓库未开启「Allow GitHub Actions to create and approve
+          # pull requests」（私有库/组织策略常禁用），请创建带 repo 权限的 PAT 存入
+          # 仓库 Secrets 的 RELEASE_PLEASE_TOKEN，即可绕过该限制自动开版 PR。
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json

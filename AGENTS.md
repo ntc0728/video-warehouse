@@ -536,7 +536,10 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 - 工作流：`.github/workflows/release-please.yml`（监听 `master` 推送，已声明 `permissions: { contents: write, pull-requests: write }`）→ 自动开版 PR、更新 `package.json`/`CHANGELOG.md`、打 `vX.Y.Z` tag、生成 GitHub Release。
 - 提交信息遵循 Conventional Commits：`feat:` 升 MINOR/PATCH、`fix:` 升 PATCH、`BREAKING CHANGE`/`feat!` 升 MINOR（0.x 阶段）。
 - **首次发布实测为 `1.0.0`**（release-please 对首个 release 默认产出 `1.0.0`，而非 `0.1.0`）；后续按 SemVer 规则递增。
-- ⚠️ **前置条件（仓库级 GitHub 设置）**：release-please 需要创建 PR，因此必须在仓库 **Settings → Actions → General** 中开启 **「Allow GitHub Actions to create and approve pull requests」**，并将「Workflow permissions」设为 **Read and write permissions**。否则 Action 会在开版 PR 步骤报 `GitHub Actions is not permitted to create or approve pull requests` 而失败（此时版本号已算好、CHANGELOG 已生成，仅缺 PR/tag/Release）。
+- ⚠️ **前置条件（二选一，用于让 release-please 能创建 PR）**：
+  1. **推荐（不受仓库类型限制）**：在仓库 **Settings → Secrets and variables → Actions → Repository secrets** 新增 `RELEASE_PLEASE_TOKEN`，值为一个带 `repo`（含 `public_repo`/`repo:status`/`read:org` 等足够权限）范围的 Personal Access Token；工作流已配置 `token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}` 自动优先使用它。该复选框只限制默认 `GITHUB_TOKEN`，用 PAT 可绕过。
+  2. **或（仅公开库 / 企业版可见）**：仓库 **Settings → Actions → General** 勾选 **「Allow GitHub Actions to create and approve pull requests」**，并将「Workflow permissions」设为 **Read and write permissions**。
+  - 若两者都未满足，Action 会在开版 PR 步骤报 `GitHub Actions is not permitted to create or approve pull requests` 而失败（此时版本号已算好、CHANGELOG 已生成，仅缺 PR/tag/Release）。
 
 ### 3. 双端版本同步（Capacitor Android）
 
