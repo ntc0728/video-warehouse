@@ -422,10 +422,16 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     const cmsOn = await segs.nth(1).evaluate((el) => el.classList.contains('on'));
     expect(cmsOn).toBe(true);
 
+    // 直链搜索模式：排序 / 筛选入口不应展示（无 FilterBar / SortBar）
+    expect(await page.locator('.bmb-sort-btn').count()).toBe(0);
+    expect(await page.locator('.bmb-filter-trigger').count()).toBe(0);
+    // 预设横滚无内容，不应展示
+    expect(await page.locator('.bmb-presets').count()).toBe(0);
+
     // 结果区仍在
     await expect(page.locator('.browse-card--results').first()).toBeVisible();
 
-    console.log('✅ BROWSE-072 通过: 移动端模式切换生效');
+    console.log('✅ BROWSE-072 通过: 移动端模式切换生效，且直链模式隐藏排序/筛选入口');
   });
 
   test('BROWSE-073: 暗色主题下激活态文字使用反向色 token（非硬编码 #fff）', async ({ page }) => {
