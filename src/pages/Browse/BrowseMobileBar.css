@@ -7,28 +7,28 @@
 /* 命令栏：模式段 + 排序 + 筛选 */
 .bmb-cmdbar {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
   flex-wrap: wrap;
-  margin-bottom: var(--space-sm);
+  gap: var(--space-sm);
+  align-items: center;
+  margin-bottom: 0;
 }
 .bmb-mode-seg {
   display: inline-flex;
   border: 1px solid var(--color-border-light);
-  border-radius: 999px;
-  overflow: hidden;
+  border-radius: var(--radius-full);
   background: var(--color-surface-hover);
+  overflow: hidden;
 }
 .bmb-seg {
-  font: inherit;
-  font-size: var(--text-sm);
-  padding: 6px 12px;
+  min-height: var(--comp-tab-height);
+  padding: var(--space-xs) var(--space-sm);
   border: none;
   background: transparent;
   color: var(--color-text-tertiary);
-  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
   transition: background 0.14s, color 0.14s;
-  min-height: 34px;
+  cursor: pointer;
 }
 .bmb-seg.on {
   background: var(--color-primary);
@@ -39,42 +39,48 @@
 }
 .bmb-sort-btn,
 .bmb-filter-trigger {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  min-height: var(--comp-tab-height);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
   font: inherit;
   font-size: var(--text-sm);
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--color-surface-hover);
-  border: 1px solid var(--color-border-light);
-  color: var(--color-text);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
   transition: border-color 0.14s, background 0.14s, color 0.14s;
+  cursor: pointer;
 }
 .bmb-sort-btn:active,
 .bmb-filter-trigger:active {
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 .bmb-caret {
+  font-size: var(--text-2xs);
   opacity: 0.6;
-  font-size: 10px;
+}
+.bmb-filter-ico {
+  flex-shrink: 0;
+  width: var(--icon-xs);
+  height: var(--icon-xs);
 }
 .bmb-filter-trigger {
   position: relative;
+  padding-right: var(--space-lg);
 }
 .bmb-badge {
   display: inline-flex;
-  align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
+  align-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-full);
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  font-size: 11px;
+  font-size: var(--text-2xs);
   line-height: 1;
 }
 .bmb-badge.zero {
@@ -85,8 +91,9 @@
 .bmb-presets {
   display: flex;
   gap: var(--space-sm);
+  margin: var(--space-sm) 0;
+  padding-bottom: var(--space-xs-plus);
   overflow-x: auto;
-  padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -94,20 +101,20 @@
   display: none;
 }
 .bmb-preset {
-  flex: 0 0 auto;
   display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--space-xs);
   align-items: center;
-  gap: 6px;
-  font: inherit;
-  font-size: var(--text-sm);
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: var(--color-surface-hover);
+  min-height: var(--comp-tab-height);
+  padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
   color: var(--color-text);
-  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-xs);
   transition: border-color 0.14s, background 0.14s, color 0.14s;
-  min-height: 36px;
+  cursor: pointer;
 }
 .bmb-preset:active {
   border-color: var(--color-primary);
@@ -119,19 +126,12 @@
   font-weight: 600;
 }
 .bmb-pi {
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .bmb-preset.aux {
-  background: transparent;
   border-style: dashed;
+  background: transparent;
   color: var(--color-text-tertiary);
-}
-
-/* 预设说明 */
-.bmb-cap {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  margin: 6px 2px var(--space-sm);
 }
 
 /* 已选轨 */
@@ -143,28 +143,28 @@
 }
 .bmb-chip {
   display: inline-flex;
+  gap: var(--space-xs);
   align-items: center;
-  gap: 6px;
-  font-size: var(--text-sm);
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
+  font-size: var(--text-sm);
 }
 .bmb-chip .bmb-x {
-  font-size: 14px;
-  line-height: 1;
-  opacity: 0.8;
+  padding: 0;
   border: none;
   background: transparent;
   color: inherit;
+  font-size: var(--text-base);
+  line-height: 1;
+  opacity: 0.8;
   cursor: pointer;
-  padding: 0;
 }
 .bmb-chip.clear {
-  background: transparent;
   border-color: var(--color-border-light);
+  background: transparent;
   color: var(--color-text-tertiary);
 }
 
@@ -172,29 +172,24 @@
 .bmb-rec {
   margin-bottom: var(--space-md);
 }
-.bmb-rec-head {
-  font-weight: 600;
-  font-size: var(--text-sm);
-  margin-bottom: 10px;
-}
 .bmb-rec-cards {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
 }
 .bmb-rec-card {
-  flex: 1 1 140px;
-  min-width: 140px;
   display: flex;
+  flex: 1 1 6rem;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px;
+  gap: var(--space-xs);
+  min-width: 6rem;
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg, 0.875rem);
   background: var(--color-surface-hover);
-  border: 1px solid var(--color-border-light);
-  cursor: pointer;
   text-align: left;
   transition: border-color 0.14s, background 0.14s;
+  cursor: pointer;
 }
 .bmb-rec-card:active {
   border-color: var(--color-primary);
@@ -204,15 +199,15 @@
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 .bmb-pc-ico {
-  font-size: 18px;
+  font-size: var(--icon-sm);
 }
 .bmb-pc-label {
-  font-weight: 600;
   font-size: var(--text-base);
+  font-weight: 600;
 }
 .bmb-pc-desc {
-  font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
   line-height: 1.4;
 }
 
@@ -222,30 +217,30 @@
   bottom: 0;
   display: flex;
   gap: var(--space-sm);
-  padding-top: var(--space-sm);
-  margin-top: var(--space-sm);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border-light);
 }
 .bmb-pf-reset,
 .bmb-pf-apply {
   flex: 1;
+  min-height: var(--comp-btn-min-height);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
   font: inherit;
   font-size: var(--text-sm);
-  padding: 10px 16px;
-  border-radius: 999px;
   cursor: pointer;
-  border: 1px solid var(--color-border-light);
-  min-height: 40px;
 }
 .bmb-pf-reset {
   background: transparent;
   color: var(--color-text);
 }
 .bmb-pf-apply {
+  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  border-color: var(--color-primary);
   font-weight: 600;
 }
 

@@ -213,13 +213,6 @@ export default function BrowseMobileBar({
     })
   }
 
-  const caption =
-    searchMode === 'cms'
-      ? '根据 TMDB 趋势动态生成'
-      : memo && !isDefault(memo, excludedGenreIds)
-        ? '根据 TMDB 趋势 + 你上次的浏览生成'
-        : '根据 TMDB 趋势动态生成'
-
   const sortLabel = SORT_OPTIONS[value.sortIdx]?.label ?? SORT_OPTIONS[0].label
 
   return (
@@ -243,16 +236,22 @@ export default function BrowseMobileBar({
           >
             直链搜索
           </button>
-        </div>
-        <div className="bmb-spacer" />
-        <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
-          <span className="bmb-sort-label">{sortLabel}</span>
-          <span className="bmb-caret">▼</span>
-        </button>
-        <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
-          筛选
-          <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
-        </button>
+      </div>
+      <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
+        <span className="bmb-sort-label">{sortLabel}</span>
+        <span className="bmb-caret">▼</span>
+      </button>
+      <div className="bmb-spacer" />
+      <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
+        <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M3 5h18a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.4.9l-2-1A1 1 0 0 1 10 18v-4.5L2.2 6.6A1 1 0 0 1 3 5Z"
+          />
+        </svg>
+        筛选
+        <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
+      </button>
       </div>
 
       {/* 动态预设横滚 */}
@@ -277,9 +276,6 @@ export default function BrowseMobileBar({
         )}
       </div>
 
-      {/* 预设说明 */}
-      <div className="bmb-cap">{caption}</div>
-
       {/* 已选轨 */}
       {chips.length > 0 && (
         <div className="bmb-rail">
@@ -300,7 +296,6 @@ export default function BrowseMobileBar({
       {/* 右滑全屏筛选面板 */}
       <Drawer open={open} onClose={() => setOpen(false)} title="筛选">
         <div className="bmb-rec">
-          <div className="bmb-rec-head">✨ 为你推荐</div>
           <div className="bmb-rec-cards">
             {presets.map((p) => (
               <button
@@ -317,7 +312,7 @@ export default function BrowseMobileBar({
             ))}
           </div>
         </div>
-        <FilterBar {...filterBarProps} hideFooter={false} />
+        <FilterBar {...filterBarProps} hideFooter />
         <div className="bmb-foot">
           <button type="button" className="bmb-pf-reset" onClick={resetValue}>
             重置
