@@ -3,6 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.videowarehouse.app',
   appName: 'kinoTv',
+  version: '0.0.0',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
@@ -23,6 +24,7 @@ const config: CapacitorConfig = {
     },
   },
   android: {
+    versionCode: 3,
     buildOptions: {
       keystorePath: undefined,
       keystoreAlias: undefined,

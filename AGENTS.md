@@ -514,3 +514,37 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
   - **每次改动（无论大小）完成即追加一条记录**：问题 / 旧逻辑 / 新逻辑 / 涉及文件 / 关联 Demo / 构建结果。
   - **Demo 永久留存**，统一放在 `changelogs/demos/`，**不得删除**；观感类改动必须有可预览 Demo。
   - 新增 Demo 时同步登记到 `changelogs/README.md` 的「Demo 索引」表。
+
+---
+
+## 版本号管理（Versioning）
+
+> 版本号唯一可信源 = `package.json` 的 `version` 字段，由 release-please 依据 Conventional Commits 自动维护，**禁止手工乱改**。
+
+### 1. 版本号规则（SemVer + 通道）
+
+- 格式：`MAJOR.MINOR.PATCH[-预发布通道]`，例如 `0.1.0`、`1.2.3-beta.1`。
+- **MAJOR（X）**：破坏性变更 / 里程碑。
+- **MINOR（Y）**：新增可见功能（0.x 阶段破坏性变更也升 MINOR，因 API 尚未稳定）。
+- **PATCH（Z）**：修复 / 样式 / 重构（无行为变化）。
+- 预发布通道：`-alpha.N` / `-beta.N` / `-rc.N`；正式发布时去掉通道。
+- 当前阶段为 `0.x`（未稳定）；首个稳定版定为 `1.0.0`（功能闭环、移动端方案落地、E2E 稳定时再升）。
+
+### 2. 自动版本（release-please）
+
+- 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `0.0.0`）。
+- 工作流：`.github/workflows/release-please.yml`（监听 `master` 推送）→ 自动开版 PR、更新 `package.json`/`CHANGELOG.md`、打 `vX.Y.Z` tag、生成 GitHub Release。
+- 提交信息遵循 Conventional Commits：`feat:` 升 MINOR/PATCH、`fix:` 升 PATCH、`BREAKING CHANGE`/`feat!` 升 MINOR（0.x 阶段）。
+- 首次合并开版 PR 后版本从 `0.0.0` → `0.1.0`。
+
+### 3. 双端版本同步（Capacitor Android）
+
+- 脚本 `scripts/sync-capacitor-version.mjs` 在 `build:android` 时从 `package.json` 读 SemVer，写入 `capacitor.config.ts` 的 `version`（含通道）并派生 `android.versionCode`。
+- **versionCode 公式**：`major*100000 + minor*1000 + patch*10 + 通道序`（release=3 / rc=2 / beta=1 / alpha=0），保证 `rc < 正式`、跨版本严格递增，且要求 `patch < 100`。
+- 独立命令：`npm run sync:capacitor-version`。
+
+### 4. 应用内展示
+
+- 设置页「关于」标签（`src/pages/Settings/tabs/AboutTab.tsx`）从 `package.json` 动态读取版本号，并显示 `平台 · 通道`（Web/Android × 正式版/开发版，靠 `import.meta.env.CAPACITOR` / `DEV` 判断）。
+- 「更新日志」入口（`ChangelogContent.tsx`）渲染仓库根 `CHANGELOG.md`（release-please 自动维护）。
+- 架构决策见 `docs/KNOWLEDGE.md` ADR-004；改动留痕见 `changelogs/`。
