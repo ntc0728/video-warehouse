@@ -173,11 +173,12 @@
     padding-top: 0;
   }
 
-  /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条） */
+  /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条；
+     gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
   .record-aside {
     z-index: 5;
     display: flex;
-    gap: var(--space-xs);
+    gap: var(--space-md);
     align-items: stretch;
     width: 100%;
     padding: 0;
