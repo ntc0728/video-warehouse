@@ -10,7 +10,7 @@
   gap: 0; /* 搜索卡片与结果卡片相连，合成一张大卡片 */
   width: 100%;
   background-color: var(--color-background);
-  /* 进入动画统一由 .page-transition-enter--stagger 提供（根容器 className 加该类）*/
+  /* 进入动画统一由 .page-transition-enter--stagger 提供（根容器 className 加该类） */
 }
 
 /* 双卡片相连：search 为上半部、results 为下半部，合成一张大卡片 */
@@ -40,10 +40,27 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ── 移动端（仅真实手机 web + App）：结果区去卡片外壳，全宽网格 ── */
-.browse-page--mobile .browse-card--results {
+/* ── 移动端（isPhone，含视口 < 768px）：整页用卡片式布局包裹 ──
+   命令栏（.bmb）+ 结果区合成一张大卡片（surface + 1px 边框 + 圆角 + 阴影），
+   与桌面端「双卡片相连」语义一致；内部子卡去壳，避免双重边框。 */
+.browse-page.browse-page--mobile {
+  gap: var(--space-sm);
+  margin: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+/* 命令栏与结果区之间的分隔线 */
+.browse-page.browse-page--mobile .bmb {
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.browse-page.browse-page--mobile .browse-card--results {
   flex: 1 1 0;
-  padding: var(--space-sm) 0 0;
+  padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -52,18 +69,18 @@
 
 /* 源状态行：左侧结果数（左对齐）+ 右侧源状态 badge */
 .browse-source-status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
   position: relative;
   z-index: 2;
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--space-xs);
 }
 .browse-results-count {
-  text-align: left;
-  font-size: var(--text-2xs);
   color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
+  text-align: left;
   white-space: nowrap;
 }
 .browse-results-count b {

@@ -937,6 +937,10 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - 删除「✨ 为你推荐」标题（bmb-rec-head）与 TMDB 趋势提示（bmb-cap）
   - 抽屉内 FilterBar 隐藏 footer（hideFooter）；面板底部与上方间距加大（margin-top space-xl、padding-top space-lg）
   - 移动端命令栏回归测试由 browse-mobile.spec.ts 并入 browse.spec.ts（BROWSE-070~074），原文件删除
+- **v1.6.1** - 移动端整页卡片式包裹（2026-07-30）：
+  - `isPhone`（含视口 < 768px）时 `.browse-page--mobile` 整页以卡片布局包裹：surface + 1px 边框 + radius-lg + shadow-sm + margin/padding space-sm
+  - 内部 `.browse-card--results` 去壳，`.bmb` 底部加分隔线与结果区相连，与桌面端「双卡片相连」语义一致
+  - 回归测试新增 BROWSE-075（断言整页卡片 radius/shadow/border 已加载）
 
 ---
 
