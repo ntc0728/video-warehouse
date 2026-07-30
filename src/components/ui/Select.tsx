@@ -41,7 +41,7 @@ interface MultipleSelectProps extends BaseSelectProps {
 export type SelectProps = SingleSelectProps | MultipleSelectProps;
 
 const triggerBase =
-  'group inline-flex items-center gap-1 min-h-[34px] px-[14px] py-1 border border-[var(--color-border)] rounded-full bg-[var(--color-surface)] text-[var(--color-text)] text-sm whitespace-nowrap cursor-pointer outline-none transition-colors hover:bg-[var(--color-surface-hover)] data-[state=open]:border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed source-multi-trigger';
+  'group inline-flex items-center gap-1 min-h-[var(--comp-tab-height)] px-[14px] py-1 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text)] text-sm whitespace-nowrap cursor-pointer outline-none transition-colors hover:bg-[var(--color-surface-hover)] data-[state=open]:border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed source-multi-trigger';
 
 /* 层级体系（见 variables.css --z-*）：
    固定导航 sticky header 55 / sidebar-overlay 90 / sidebar 100

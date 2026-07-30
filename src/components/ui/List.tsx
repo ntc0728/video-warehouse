@@ -30,7 +30,7 @@ const ListItem: FC<ListItemProps> = ({
     <Component
       className={`group flex w-full items-center gap-3 px-4 py-3 text-left${
         clickable
-          ? ' cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-hover)] focus:bg-[var(--color-surface-hover)] focus:outline-none'
+          ? ' list-item--clickable cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-hover)] focus:bg-[var(--color-surface-hover)] focus:outline-none'
           : ''
       }`}
       onClick={clickable ? onClick : undefined}
@@ -39,12 +39,12 @@ const ListItem: FC<ListItemProps> = ({
       {prefix && <span className="flex-shrink-0">{prefix}</span>}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {title && (
-          <span className="inline-flex flex-wrap items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
+          <span className="list-item__title inline-flex flex-wrap items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
             {title}
           </span>
         )}
         {description && (
-          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+          <span className="list-item__desc text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
             {description}
           </span>
         )}

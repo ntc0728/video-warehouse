@@ -348,14 +348,15 @@ body {
      否则边框会瞬时变到目标色而背景还在淡变 → 暗→亮时浅色边先出现 = "闪一下白边"。
    - 暗色下 --color-border-light 已调暗（见 variables.css），稳态不再"发白"。
    缓动与页面进入动画统一为 --ease-out-expo。 */
+html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition: background-color 0.22s var(--ease-out-expo),
-              color 0.22s var(--ease-out-expo),
-              border-color 0.22s var(--ease-out-expo),
-              fill 0.22s var(--ease-out-expo),
-              stroke 0.22s var(--ease-out-expo) !important;
+  transition:
+    background-color var(--dur-slow) var(--ease-standard),
+    color var(--dur-slow) var(--ease-standard),
+    border-color var(--dur-slow) var(--ease-standard),
+    box-shadow var(--dur-slow) var(--ease-standard) !important;
 }
 
 /* 尊重用户的减少动态偏好：主题切换瞬时完成 */

@@ -91,11 +91,11 @@ export default function PersonalTab() {
         </div>
         <p className="settings-card__desc">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>
         <button type="button" className="settings-row" onClick={handleExport}>
-          <span className="settings-row__label">导出设置与数据<small>含收藏、观看历史</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">导出设置与数据</span><small>含收藏、观看历史</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
         <button type="button" className="settings-row" onClick={() => fileRef.current?.click()}>
-          <span className="settings-row__label">导入设置与数据<small>从备份文件恢复</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">导入设置与数据</span><small>从备份文件恢复</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
@@ -111,15 +111,15 @@ export default function PersonalTab() {
         </div>
         <p className="settings-card__desc">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>
         <button type="button" className="settings-row" onClick={() => setConfirm('reset')}>
-          <span className="settings-row__label">恢复设置默认<small>仅重置设置项</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">恢复设置默认</span><small>仅重置设置项</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
         <button type="button" className="settings-row" onClick={() => setConfirm('collections')}>
-          <span className="settings-row__label">清空我的收藏<small>共 {collectionsCount} 条 · 不可恢复</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">清空我的收藏</span><small>共 {collectionsCount} 条 · 不可恢复</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
         <button type="button" className="settings-row" onClick={() => setConfirm('history')}>
-          <span className="settings-row__label">清空观看历史<small>共 {historyCount} 条 · 不可恢复</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">清空观看历史</span><small>共 {historyCount} 条 · 不可恢复</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
       </section>

@@ -58,12 +58,19 @@
               padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), gap 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 收起态：仅图标。padding-left 与展开态完全一致（space-lg），使图标视口坐标
-   与展开态相同 → onfinish 切类后图标零位移、纹丝不动；图标在 64px 栏内因
-   padding 对称而基本居中。右侧多余空间由 overflow:hidden 处理，label 已被隐藏。 */
+/* 收起态：仅图标。居中用 flex 的 justify-content:center 锁死图标在栏内绝对居中
+   （与栏宽/图标尺寸/nav 内边距无关，最可靠，已验证 OK）。label 已隐藏，右侧多余
+   空间由 overflow:hidden 处理。无滑入动画——收起即居中（避免位移抖动/回弹）。 */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
   padding: var(--space-md) var(--space-lg);
+  justify-content: center;
+}
+
+/* 收起态图标：flex 居中后直接显示，无滑入动画。hover/选中缩放用独立 `scale`
+   属性，与居中互不干扰。 */
+.home-sidebar--collapsed .home-sidebar__icon {
+  transition: scale 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
 }
 
 .home-sidebar__item:hover:not(.active) {
@@ -75,6 +82,32 @@
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
   font-weight: 700;
+}
+
+/* 收起态选中：整项铺满黑色背景（var(--color-primary)）。
+   整项背景以平滑缓动出现，避免硬切；左侧指示条在收起态隐藏（避免与铺黑并存显乱）。 */
+.home-sidebar--collapsed .home-sidebar__item.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  transition: background-color 0.28s var(--ease-standard), color 0.28s var(--ease-standard);
+}
+
+.home-sidebar--collapsed .home-sidebar__item.active .home-sidebar__indicator {
+  opacity: 0;
+}
+
+/* 收起态 hover（未选中）：整项铺满 surface-hover；背景平滑过渡。 */
+.home-sidebar--collapsed .home-sidebar__item:hover:not(.active) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+  transition: background-color 0.28s var(--ease-standard), color 0.28s var(--ease-standard);
+}
+
+/* 收起态：hover/选中时图标轻微放大（独立 `scale` 属性，无延迟），与居中 transform 分离，
+   hover 反馈即时。 */
+.home-sidebar--collapsed .home-sidebar__item:hover .home-sidebar__icon,
+.home-sidebar--collapsed .home-sidebar__item.active .home-sidebar__icon {
+  scale: 1.12;
 }
 
 /* 选中指示条：常驻渲染，仅由 .active 切换显隐（CSS transition，非挂载即播的关键帧）。
@@ -103,7 +136,8 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  transition: transform 0.2s;
+  /* transform 过渡同步为 0.32s，使收起→展开反向切换时图标也从栏中心平滑滑回左侧（对称）。 */
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
 }
 
 .home-sidebar__item:hover .home-sidebar__icon {
