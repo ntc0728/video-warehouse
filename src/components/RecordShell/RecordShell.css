@@ -173,19 +173,15 @@
     padding-top: 0;
   }
 
-  /* 侧栏 → 横向精简栏 */
+  /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条） */
   .record-aside {
     z-index: 5;
     display: flex;
     gap: var(--space-xs);
     align-items: stretch;
     width: 100%;
-    padding: var(--space-sm);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
+    padding: 0;
     flex-flow: column;
-    box-shadow: var(--shadow-sm);
   }
 
   /* 标题在移动端显示：独占顶行 */
