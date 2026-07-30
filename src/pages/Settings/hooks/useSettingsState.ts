@@ -75,6 +75,10 @@ export function useSettingsState() {
   const [proxyUrlError, setProxyUrlError] = useState<string | null>(null);
   const [tmdbTokenError, setTmdbTokenError] = useState<string | null>(null);
 
+  const [showChangelog, setShowChangelog] = useState(false);
+  const openChangelog = useCallback(() => setShowChangelog(true), []);
+  const closeChangelog = useCallback(() => setShowChangelog(false), []);
+
 
   const iptvRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const epgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,7 +266,12 @@ export function useSettingsState() {
       handleIptvSourcesChange, handleEpgChange,
       iptvRefreshTimerRef, epgTimerRef,
     },
-    about: { handleVersionClick },
+    about: {
+      handleVersionClick,
+      showChangelog,
+      openChangelog,
+      closeChangelog,
+    },
     sources: { videoSources, iptvSources, epgSources },
     modals: {
       showTMDBTokenInput, setShowTMDBTokenInput,

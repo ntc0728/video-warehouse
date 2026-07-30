@@ -23,6 +23,8 @@ import PlaybackTab from './tabs/PlaybackTab';
 import IptvTab from './tabs/IptvTab';
 import PersonalTab from './tabs/PersonalTab';
 import AboutTab from './tabs/AboutTab';
+import ChangelogContent from './components/ChangelogContent';
+import changelog from '../../../CHANGELOG.md?raw';
 import type { SettingsTabKey } from './SettingsTabBar';
 import './Settings.css';
 
@@ -142,7 +144,7 @@ export default function SettingsPage() {
       case 'personal':
         return <PersonalTab />;
       case 'about':
-        return <AboutTab onVersionClick={about.handleVersionClick} />;
+        return <AboutTab onVersionClick={about.handleVersionClick} onChangelogClick={about.openChangelog} />;
     }
   };
 
@@ -413,6 +415,16 @@ export default function SettingsPage() {
             <Button size="sm" variant="default" onClick={modals.handleSaveTMDBToken}>保存</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Changelog Modal */}
+      <Modal
+        visible={about.showChangelog}
+        title="更新日志"
+        onClose={about.closeChangelog}
+        className="settings-modal changelog-modal"
+      >
+        <ChangelogContent raw={changelog} />
       </Modal>
     </div>
   );
