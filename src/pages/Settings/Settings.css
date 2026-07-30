@@ -853,6 +853,13 @@ body.skin-transitioning .skin-btn.active {
   scale: none !important;
   transform: none !important;
 }
+/* 按压反馈：仅用 opacity 表达「按下去」，不缩放、不改背景色 */
+.settings-page button {
+  transition: opacity 0.15s ease-out;
+}
+.settings-page button:active:not(:disabled) {
+  opacity: 0.6;
+}
 
 /* ===== 移动端设置页顶部居中资料区 ===== */
 .settings-mobile-profile {
