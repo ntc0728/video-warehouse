@@ -24,7 +24,7 @@
   padding: var(--space-xs) var(--space-sm);
   border: none;
   background: transparent;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font: inherit;
   font-size: var(--text-sm);
   transition: background 0.14s, color 0.14s;
