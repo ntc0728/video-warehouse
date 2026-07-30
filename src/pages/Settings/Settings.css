@@ -124,8 +124,8 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: var(--comp-btn-min-height);
-  height: var(--comp-btn-min-height);
+  width: var(--comp-tab-height);
+  height: var(--comp-tab-height);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -143,7 +143,7 @@ body.skin-transitioning .skin-btn.active {
   cursor: not-allowed;
 }
 .settings-counter-value {
-  min-width: var(--comp-btn-min-height);
+  min-width: var(--comp-tab-height);
   color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -180,7 +180,6 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  margin-bottom: var(--space-md);
 }
 
 .settings-label {
@@ -248,7 +247,6 @@ body.skin-transitioning .skin-btn.active {
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: var(--space-md);
 }
 
 .settings-input-clear {
@@ -328,6 +326,7 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   gap: var(--space-sm);
   justify-content: center;
+  margin-top: var(--space-md);
 }
 
 .setting-modal-actions button {
@@ -671,7 +670,7 @@ body.skin-transitioning .skin-btn.active {
 .modal-content-animate.settings-modal {
   display: flex;
   flex-direction: column;
-  width: min(92vw, var(--layout-modal-max-width));
+  width: min(94vw, calc(var(--layout-modal-max-width) + 120px));
   max-height: min(80vh, var(--layout-modal-max-h));
   padding: var(--space-lg);
   box-sizing: border-box;
@@ -825,9 +824,9 @@ body.skin-transitioning .skin-btn.active {
 
 /* 设置列表「配置」迷你按钮：更小 + 胶囊 + 无 focus/active 动画 */
 .settings-btn-mini {
-  min-height: unset !important;
-  padding: var(--space-3xs) var(--space-lg) !important;
-  border-radius: var(--radius-full) !important;
+  min-height: var(--comp-tab-height) !important;
+  padding: 0 var(--space-md) !important;
+  border-radius: var(--radius-md) !important;
   font-size: var(--text-xs) !important;
   line-height: 1.6 !important;
 }
@@ -836,6 +835,22 @@ body.skin-transitioning .skin-btn.active {
 .settings-btn-mini:active {
   outline: none !important;
   box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 设置页下拉框触发按钮：内容自适应太窄，限定适中最小宽度（仅作用于设置页，不影响全局 Select） */
+.settings-page .source-multi-trigger {
+  min-width: 9rem;
+}
+
+/* 设置页内【所有 button】统一拦截整体缩放：覆盖 List clickable / Select trigger / Switch /
+   Button 等任意变体的 <button>，避免命中全局 button:active scale:.92 的整体缩放。
+   按钮框本身绝不缩放，按住时保持静止。用 .settings-page 作用域限定，
+   不影响收藏/历史等其它页面的 List 按压反馈。 */
+.settings-page button,
+.settings-page button:active,
+.settings-page button:active:not(:disabled) {
+  scale: none !important;
   transform: none !important;
 }
 
@@ -939,17 +954,15 @@ body.skin-transitioning .skin-btn.active {
   line-height: 1;
 }
 
-/* 个人资料 / 导入 / 导出 / 恢复默认：仅【文字】缩放扩展，不缩放按钮本体、不出现阴影框。
-   .settings-profile 与 .settings-row 本体已在全局排除名单（scale:none），
-   此处只缩放内部文字容器（.settings-profile__meta / .settings-row__label 均为 flex，可缩放）。 */
-.settings-profile__meta,
-.settings-row__label {
-  transition: scale 0.32s var(--ease-spring);
-}
-
-.settings-profile:active .settings-profile__meta,
-.settings-row:active .settings-row__label {
-  scale: 0.95;
+/* 设置项行（.settings-row）：点击时【仅文字】缩放，按钮框（行本体）不缩放。
+   行本体由全局排除名单 + 下方 scale:none !important 双重保证不被全局 button:active scale 命中；
+   文字缩放只作用于内部文本节点（标题 .settings-row__title 与副标题 small），
+   不缩放 .settings-row__label 盒子本身，按钮框与箭头保持不动。 */
+.settings-row,
+.settings-row:active,
+.settings-row:active:not(:disabled) {
+  scale: none !important;
+  transform: none !important;
 }
 .settings-action-btn {
   width: 100%;
@@ -1044,5 +1057,85 @@ body.skin-transitioning .skin-btn.active {
     animation-duration: 0.01ms;
   }
 }
+
+/* ===== 关于页：版本号 + 平台/通道 ===== */
+.version-extra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  align-items: flex-end;
+  text-align: right;
+}
+.version-number {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.version-meta {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+.settings-item-icon {
+  color: var(--color-text-tertiary);
+}
+
+/* ===== 更新日志弹窗（内容由 CustomScrollbar 负责滚动） ===== */
+.changelog-content {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  word-break: break-word;
+}
+.cl-gap { height: var(--space-sm); }
+.cl-title {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+.cl-version {
+  margin: var(--space-md) 0 var(--space-xs);
+  padding-bottom: var(--space-2xs);
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+.cl-version:first-of-type { margin-top: 0; }
+.cl-sub {
+  margin: var(--space-sm) 0 var(--space-2xs);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cl-item {
+  position: relative;
+  padding-left: var(--space-lg);
+  margin-bottom: var(--space-2xs);
+}
+.cl-item::before {
+  content: "•";
+  position: absolute;
+  left: var(--space-xs);
+  color: var(--color-text-tertiary);
+}
+.cl-item a { color: var(--color-primary); }
+.cl-item code {
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  font-size: 0.9em;
+}
+.cl-note {
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--color-border-light);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+.cl-p { margin: var(--space-xs) 0; }
 
 
