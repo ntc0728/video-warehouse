@@ -418,6 +418,128 @@ html[data-skin="retro"] .skin-decorations {
    皮肤切换过渡动画
    切换皮肤时添加 skin-transitioning 类，500ms 内所有颜色/阴影属性平滑过渡
    ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   主题感知变体（方案 A）
+   每个皮肤默认块（html[data-skin="x"]）写死了一套固定明暗的 token，会盖过
+   data-theme 的主题变量，导致「暗色模式下选则皮肤被拉回亮色 / 亮色模式下暗色皮肤锁死暗色」。
+   此处为各皮肤补 [data-theme] 变体：双属性选择器特异性 (0,2,1) 高于单皮肤 (0,1,1)
+   与单主题 (0,1,0)，稳赢不打架。切换主题时走 theme-transitioning 平滑过渡，无需额外动画。
+   - cartoon 默认是亮色皮肤 → 补 [data-theme="dark"] 深色变体
+   - mechanical / retro 默认是暗色皮肤 → 补 [data-theme="light"] 亮色变体
+   其余不随主题变化的选择器（字体 / 圆角 / 卡片边框风格 / sticky-header 规则等）均引用
+   上述 token 的 var()，自动跟随本块变体，无需重复声明。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── cartoon · 暗色变体：深可可纸纹 + 奶油浅字，珊瑚红主色略提亮 ── */
+html[data-skin="cartoon"][data-theme="dark"] {
+  --color-primary: #ff8a8a;
+  --color-primary-hover: #ff6f6f;
+  --color-background: #241c16;
+  --color-surface: #2e241c;
+  --color-surface-hover: rgba(255, 138, 138, 0.12);
+  --color-text: #f3e9d8;
+  --color-text-secondary: #c9bda8;
+  --color-text-tertiary: #968a76;
+  --color-border: #4a3b2e;
+  --color-border-light: #3a2e24;
+  --color-tab-active-bg: #ff8a8a;
+  --color-tab-active-text: #000;
+  --color-favorite-active: #ff8a8a;
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.45);
+  --skin-accent: #ff8a8a;
+  --skin-accent-soft: rgba(255, 138, 138, 0.18);
+}
+/* 顶栏：显式接管背景，确保暗色变体下彻底覆盖（盖过 StickyHeader.css 的 color-mix 半透明基础规则） */
+html[data-skin="cartoon"][data-theme="dark"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+}
+html[data-skin="cartoon"][data-theme="dark"] body {
+  background-color: #241c16;
+  /* 复用现有 paper.png，叠深色遮罩压暗，免去新增暗色纹理素材 */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url("/art-skins/cartoon/paper.png");
+  background-size: 220px 220px;
+  background-repeat: repeat;
+}
+
+/* ── mechanical · 亮色变体：浅金属底 + 深字，保留青光强调 ── */
+html[data-skin="mechanical"][data-theme="light"] {
+  --color-primary: #0091a7;
+  --color-primary-hover: #007688;
+  --color-background: #e8edf1;
+  --color-surface: #ffffff;
+  --color-surface-hover: rgba(0, 145, 167, 0.08);
+  --color-text: #0f1923;
+  --color-text-secondary: #41505f;
+  --color-text-tertiary: #6b7886;
+  --color-border: #cdd6df;
+  --color-border-light: #dde4ea;
+  --color-tab-active-bg: #0091a7;
+  --color-tab-active-text: #fff;
+  --color-favorite-active: #0091a7;
+  --shadow-sm: 0 2px 8px rgba(15, 25, 35, 0.12);
+  --shadow-card: 0 4px 16px rgba(15, 25, 35, 0.14), 0 0 1px rgba(0, 145, 167, 0.4);
+  --shadow-md: 0 8px 32px rgba(15, 25, 35, 0.16);
+  --skin-accent: #0091a7;
+  --skin-accent-soft: rgba(0, 145, 167, 0.12);
+}
+/* 顶栏：显式接管背景，确保亮色变体下彻底覆盖 */
+html[data-skin="mechanical"][data-theme="light"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-primary);
+  box-shadow: 0 2px 12px var(--skin-accent-soft);
+}
+html[data-skin="mechanical"][data-theme="light"] body {
+  background-color: #e8edf1;
+  background-image:
+    linear-gradient(0deg, transparent 24%, rgba(0, 145, 167, 0.04) 25%, rgba(0, 145, 167, 0.04) 26%, transparent 27%, transparent 74%, rgba(0, 145, 167, 0.04) 75%, rgba(0, 145, 167, 0.04) 76%, transparent 77%),
+    linear-gradient(90deg, transparent 24%, rgba(0, 145, 167, 0.04) 25%, rgba(0, 145, 167, 0.04) 26%, transparent 27%, transparent 74%, rgba(0, 145, 167, 0.04) 75%, rgba(0, 145, 167, 0.04) 76%, transparent 77%);
+  background-size: 50px 50px;
+}
+/* 亮底上原写死的青光箭头对比不足，改用暗青 */
+html[data-skin="mechanical"][data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230091a7' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+}
+
+/* ── retro · 亮色变体：浅紫底 + 深字，保留品红/青霓虹 ── */
+html[data-skin="retro"][data-theme="light"] {
+  --color-primary: #c000c0;
+  --color-primary-hover: #a000a0;
+  --color-background: #f3e9ff;
+  --color-surface: #ffffff;
+  --color-surface-hover: rgba(192, 0, 192, 0.1);
+  --color-text: #2a0033;
+  --color-text-secondary: #6a1b8a;
+  --color-text-tertiary: #9b4dca;
+  --color-border: #e0c0f0;
+  --color-border-light: #ecd9f5;
+  --color-tab-active-bg: #c000c0;
+  --color-tab-active-text: #fff;
+  --color-favorite-active: #c000c0;
+  --shadow-sm: 0 2px 8px rgba(192, 0, 192, 0.15);
+  --shadow-card: 0 4px 20px rgba(192, 0, 192, 0.2), 0 0 2px rgba(0, 145, 167, 0.3);
+  --shadow-md: 0 8px 32px rgba(192, 0, 192, 0.25);
+  --skin-accent: #c000c0;
+  --skin-accent-soft: rgba(192, 0, 192, 0.15);
+}
+/* 顶栏：显式接管背景，确保亮色变体下彻底覆盖 */
+html[data-skin="retro"][data-theme="light"] .sticky-header {
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-primary);
+  box-shadow: 0 2px 16px var(--skin-accent-soft);
+}
+html[data-skin="retro"][data-theme="light"] body {
+  background-color: #f3e9ff;
+  background-image: radial-gradient(circle, rgba(192, 0, 192, 0.06) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+/* 亮底上原写死的品红箭头对比不足，改用暗品红 */
+html[data-skin="retro"][data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23c000c0' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+}
+
 html.skin-transitioning,
 html.skin-transitioning *,
 html.skin-transitioning *::before,

@@ -240,7 +240,7 @@ export default function AppLayout() {
       const effective = getEffectiveTheme();
       document.documentElement.classList.add('theme-transitioning');
       document.documentElement.setAttribute('data-theme', effective);
-      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 400);
+      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 500);
     };
     applyTheme();
     if (theme === 'system') {

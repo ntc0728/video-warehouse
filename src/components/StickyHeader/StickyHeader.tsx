@@ -7,7 +7,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useThemeMode } from '@/hooks/useThemeMode';
 import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -70,7 +69,6 @@ function isHotSearchDisabled(pathname: string): boolean {
 }
 
 export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, sidebarCollapsed }: StickyHeaderProps) {
-  const theme = useThemeMode();
   const isTV = useIsTV();
   // 移动端断点与 AppLayout 一致：< 768px 使用 hamburger 菜单，≥ 768px 使用侧边栏折叠按钮
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -215,7 +213,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   return (
     <header
       className={`sticky-header${immersive ? ' sticky-header--immersive' : ''}${isTV ? ' sticky-header--tv' : ''}${isScrolled ? ' sticky-header--scrolled' : ''}`}
-      data-theme={theme}
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">

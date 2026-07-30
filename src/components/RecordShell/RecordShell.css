@@ -241,7 +241,7 @@
   /* 移动端卡片式布局（gap 与桌面端一致用 space-sm，内部子元素间距对齐） */
   .record-main {
     gap: var(--space-sm);
-    padding: var(--space-sm);
+    padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);

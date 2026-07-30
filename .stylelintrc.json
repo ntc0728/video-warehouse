@@ -235,6 +235,30 @@
         "inset-inline": ["px"]
       },
       { "severity": "error" }
+    ],
+
+    "declaration-property-value-disallowed-list": [
+      {
+        "line-height": ["/\\d+(\\.\\d+)?px/"],
+        "letter-spacing": ["/\\d+(\\.\\d+)?px/"],
+        "word-spacing": ["/\\d+(\\.\\d+)?px/"],
+        "text-indent": ["/\\d+(\\.\\d+)?px/"],
+        "inset-block-start": ["/\\d+(\\.\\d+)?px/"],
+        "inset-block-end": ["/\\d+(\\.\\d+)?px/"],
+        "inset-inline-start": ["/\\d+(\\.\\d+)?px/"],
+        "inset-inline-end": ["/\\d+(\\.\\d+)?px/"],
+        "border-top-left-radius": ["/\\d+(\\.\\d+)?px/"],
+        "border-top-right-radius": ["/\\d+(\\.\\d+)?px/"],
+        "border-bottom-left-radius": ["/\\d+(\\.\\d+)?px/"],
+        "border-bottom-right-radius": ["/\\d+(\\.\\d+)?px/"],
+        "flex-basis": ["/\\d+(\\.\\d+)?px/"],
+        "column-width": ["/\\d+(\\.\\d+)?px/"],
+        "border-spacing": ["/\\d+(\\.\\d+)?px/"]
+      },
+      {
+        "severity": "error",
+        "message": "禁止使用裸 px 单位，请改用项目 fluid token（如 var(--space-*) / var(--comp-tab-height) / var(--text-*)）；边框(border*) 与描边(outline* / box-shadow) 的 1px / 2px 为白名单例外"
+      }
     ]
   },
   "ignoreFiles": [
