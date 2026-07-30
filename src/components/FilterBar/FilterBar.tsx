@@ -16,6 +16,8 @@ import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue } from './constants';
 import './FilterBar.css';
 
+export type { FilterBarValue } from './constants';
+
 // ── FilterBar Props ───────────────────────────────────
 
 export interface FilterBarProps {

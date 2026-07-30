@@ -1,51 +1,14 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { SlidersHorizontal, ArrowDownUp } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
 import type { TMDBGenre } from '@/types/tmdb'
-import { fetchTrending } from '@/services/tmdbService'
-import {
-  SORT_OPTIONS,
-  REGION_OPTIONS,
-  type FilterBarValue,
-} from '@/components/FilterBar/constants'
-import FilterBar, { type FilterBarProps } from '@/components/FilterBar/FilterBar'
+import { useTMDBStore } from '@/stores/useTMDBStore'
+import { SORT_OPTIONS, REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
+import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
-import './BrowseMobileBar.css'
 
-const LS_KEY = 'bw_last_filter_v1'
+const MEMO_KEY = '__vw_browse-filter-memo'
 
-/** 判断当前筛选是否为「全部」（排除 excludedGenreIds 后） */
-function isDefaultValue(v: FilterBarValue, excluded: number[]): boolean {
-  const visibleGenres = v.genreIds.filter((id) => !excluded.includes(id))
-  return (
-    v.mediaType === 'all' &&
-    visibleGenres.length === 0 &&
-    v.region === null &&
-    v.year === null &&
-    !v.olderThan2015 &&
-    v.sortIdx === 0
-  )
-}
-
-function genreName(id: number, allGenres: TMDBGenre[]): string {
-  const g = allGenres.find((x) => x.id === id)
-  return g ? g.name : `类型${id}`
-}
-
-function regionLabel(code: string | null): string {
-  const r = REGION_OPTIONS.find((x) => x.code === code)
-  return r ? r.label : code ?? ''
-}
-
-function eqArr(a: number[], b: number[]): boolean {
-  return a.length === b.length && a.every((x, i) => x === b[i])
-}
-
-interface BrowseMobileBarProps {
-  filterBarProps: FilterBarProps
-  allGenres: TMDBGenre[]
-}
+type SearchMode = 'smart' | 'cms'
 
 interface PresetItem {
   key: string
@@ -55,103 +18,120 @@ interface PresetItem {
   apply: Partial<FilterBarValue>
 }
 
-/**
- * 移动端 Browse 命令栏（方案②）
- * - 动态预设行：TMDB trending 热门类型 + 用户「记忆上次选择」（localStorage）
- * - 已选轨：可逐项移除当前筛选
- * - 排序 / 筛选入口：筛选打开右滑全屏面板（内含 FilterBar，全展开）
- */
-export default function BrowseMobileBar({ filterBarProps, allGenres }: BrowseMobileBarProps) {
+interface BrowseMobileBarProps {
+  searchMode: SearchMode
+  onModeChange: (mode: SearchMode) => void
+  filterBarProps: FilterBarProps
+  allGenres: TMDBGenre[]
+}
+
+function genreName(id: number, all: TMDBGenre[]): string {
+  return all.find((g) => g.id === id)?.name ?? ''
+}
+function regionLabel(code: string): string {
+  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? code
+}
+function eqArr(a: number[], b: number[]): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i])
+}
+
+/** 判断某筛选值是否为「未做任何选择」的默认态（排除分类自身默认 genre） */
+function isDefault(v: FilterBarValue, excluded: number[]): boolean {
+  return (
+    v.mediaType === 'all' &&
+    eqArr(v.genreIds, excluded) &&
+    v.region === null &&
+    v.year === null &&
+    !v.olderThan2015
+  )
+}
+
+export default function BrowseMobileBar({
+  searchMode,
+  onModeChange,
+  filterBarProps,
+  allGenres,
+}: BrowseMobileBarProps) {
   const { value, onChange, excludedGenreIds = [] } = filterBarProps
+  const trending = useTMDBStore((s) => s.trending)
   const [open, setOpen] = useState(false)
-  const [trendingGenres, setTrendingGenres] = useState<number[]>([])
-  const [memo, setMemo] = useState<FilterBarValue | null>(null)
-
-  // 读取记忆（上次筛选）
-  useEffect(() => {
+  const [memo, setMemo] = useState<FilterBarValue | null>(() => {
     try {
-      const raw = localStorage.getItem(LS_KEY)
-      if (raw) setMemo(JSON.parse(raw) as FilterBarValue)
+      const raw = localStorage.getItem(MEMO_KEY)
+      return raw ? (JSON.parse(raw) as FilterBarValue) : null
     } catch {
-      /* ignore */
+      return null
     }
-  }, [])
+  })
 
-  // 懒加载 trending 热门类型（取原始 genre_ids 频次 Top2，与 SearchBox 同源但独立拉取）
+  // trending 未加载时按需拉取（支撑「热门」预设；与 SearchBox 同源）
   useEffect(() => {
-    let cancelled = false
-    fetchTrending('all', 'day')
-      .then((data) => {
-        if (cancelled) return
-        const counts: Record<number, number> = {}
-        data.results.forEach((t) => {
-          ;(t.genre_ids ?? []).forEach((g) => {
-            counts[g] = (counts[g] ?? 0) + 1
-          })
-        })
-        const top = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 2)
-          .map(([g]) => Number(g))
-        setTrendingGenres(top)
-      })
-      .catch(() => {
-        /* ignore */
-      })
-    return () => {
-      cancelled = true
+    if (trending.length === 0) {
+      useTMDBStore.getState().fetchTrending('day').catch(() => {})
     }
-  }, [])
+  }, [trending.length])
 
-  // 记忆：非默认筛选时写入（下次进入可直接「继续上次」）
+  // 写入「上次选择」记忆（仅非默认时）；默认态不清除，保证「继续上次」跨会话保留
   useEffect(() => {
-    if (!isDefaultValue(value, excludedGenreIds)) {
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(value))
-      } catch {
-        /* ignore */
-      }
-      setMemo(value)
-    }
+    if (isDefault(value, excludedGenreIds)) return
+    const snap = JSON.parse(JSON.stringify(value)) as FilterBarValue
+    setMemo(snap)
+    localStorage.setItem(MEMO_KEY, JSON.stringify(snap))
   }, [value, excludedGenreIds])
 
-  const presets: PresetItem[] = []
-  if (memo && !isDefaultValue(memo, excludedGenreIds)) {
-    presets.push({
-      key: 'last',
-      icon: '↩',
-      label: '继续上次',
-      desc: [
-        memo.mediaType !== 'all' ? (memo.mediaType === 'movie' ? '电影' : '剧集') : '',
-        ...memo.genreIds
-          .filter((id) => !excludedGenreIds.includes(id))
-          .map((id) => genreName(id, allGenres)),
-        memo.region ? regionLabel(memo.region) : '',
-        memo.year ? String(memo.year) : '',
-      ]
-        .filter(Boolean)
-        .join(' · '),
-      // 记忆存的是完整筛选值（含 excludedGenreIds），这里仅保留可见部分，
-      // 应用时由 applyPreset 统一与 excludedGenreIds 合并，避免重复/丢失
-      apply: { ...memo, genreIds: memo.genreIds.filter((id) => !excludedGenreIds.includes(id)) },
-    })
-  }
-  trendingGenres.forEach((gid) => {
-    presets.push({
-      key: 'tr' + gid,
-      icon: '🔥',
-      label: '热门·' + genreName(gid, allGenres),
-      desc: '本周趋势',
-      apply: {
-        mediaType: 'all',
-        genreIds: [gid],
-        region: null,
-        year: null,
-        olderThan2015: false,
-        sortIdx: 0,
-      },
-    })
-  })
+  const visibleGenres = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
+
+  // 动态预设：trending 热门类型（Top2）+ 记忆（继续上次）
+  const presets = useMemo<PresetItem[]>(() => {
+    const list: PresetItem[] = []
+    if (searchMode === 'smart' && trending.length) {
+      const freq: Record<number, number> = {}
+      trending.forEach((it) => (it.genreIds ?? []).forEach((g) => (freq[g] = (freq[g] ?? 0) + 1)))
+      const top = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([g]) => Number(g))
+      if (top.length) {
+        const names = top.map((g) => genreName(g, allGenres)).filter(Boolean)
+        list.push({
+          key: 'hot',
+          icon: '🔥',
+          label: names.length ? `热门·${names.join('·')}` : '热门类型',
+          desc: names.length ? `TMDB 趋势 ${names.join(' / ')} 热播中` : 'TMDB 趋势热播中',
+          apply: { genreIds: top, region: null, year: null, olderThan2015: false },
+        })
+      }
+    }
+    if (memo && !isDefault(memo, excludedGenreIds)) {
+      list.push({
+        key: 'last',
+        icon: '↩',
+        label: '继续上次',
+        desc: [
+          memo.mediaType !== 'all' ? (memo.mediaType === 'movie' ? '电影' : '剧集') : '',
+          ...memo.genreIds
+            .filter((id) => !excludedGenreIds.includes(id))
+            .map((id) => genreName(id, allGenres)),
+          memo.region ? regionLabel(memo.region) : '',
+          memo.year ? String(memo.year) : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        // 记忆存的是完整筛选值（含 excludedGenreIds），这里仅保留可见部分，
+        // 应用时由 applyPreset 统一与 excludedGenreIds 合并，避免重复/丢失
+        apply: { ...memo, genreIds: memo.genreIds.filter((id) => !excludedGenreIds.includes(id)) },
+      })
+    }
+    return list
+  }, [searchMode, trending, memo, excludedGenreIds, allGenres])
+
+  const matchPreset = (p: PresetItem): boolean =>
+    value.mediaType === 'all' &&
+    eqArr(visibleGenres, p.apply.genreIds ?? []) &&
+    value.region === (p.apply.region ?? null) &&
+    value.year === (p.apply.year ?? null) &&
+    value.olderThan2015 === (p.apply.olderThan2015 ?? false) &&
+    value.sortIdx === (p.apply.sortIdx ?? 0)
 
   const applyPreset = (p: PresetItem) => {
     // 合并 excludedGenreIds（分类自身默认 genre 需常驻于筛选值/API），去重
@@ -167,50 +147,14 @@ export default function BrowseMobileBar({ filterBarProps, allGenres }: BrowseMob
     })
   }
 
-  const clearMemo = () => {
-    try {
-      localStorage.removeItem(LS_KEY)
-    } catch {
-      /* ignore */
-    }
-    setMemo(null)
+  const cycleSort = () => {
+    onChange({ ...value, sortIdx: (value.sortIdx + 1) % SORT_OPTIONS.length })
   }
 
-  // 已选轨
-  const chips: { key: string; label: string; onRemove: () => void }[] = []
-  const visibleGenres = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
-  visibleGenres.forEach((id) => {
-    chips.push({
-      key: 'g' + id,
-      label: '分类·' + genreName(id, allGenres),
-      onRemove: () => onChange({ ...value, genreIds: value.genreIds.filter((x) => x !== id) }),
-    })
-  })
-  if (value.region) {
-    chips.push({
-      key: 'r',
-      label: '地区·' + regionLabel(value.region),
-      onRemove: () => onChange({ ...value, region: null }),
-    })
-  }
-  if (value.year) {
-    chips.push({
-      key: 'y',
-      label: '年份·' + value.year,
-      onRemove: () => onChange({ ...value, year: null, olderThan2015: false }),
-    })
-  }
-  if (value.olderThan2015) {
-    chips.push({
-      key: 'yo',
-      label: '年份·其他',
-      onRemove: () => onChange({ ...value, olderThan2015: false }),
-    })
-  }
-
-  const handleReset = () => {
+  const resetValue = () => {
     onChange({
       ...value,
+      mediaType: 'all',
       genreIds: [...excludedGenreIds],
       region: null,
       year: null,
@@ -219,95 +163,165 @@ export default function BrowseMobileBar({ filterBarProps, allGenres }: BrowseMob
     })
   }
 
-  const cycleSort = () => {
-    onChange({ ...value, sortIdx: (value.sortIdx + 1) % SORT_OPTIONS.length })
+  const clearMemo = () => {
+    setMemo(null)
+    localStorage.removeItem(MEMO_KEY)
   }
+
+  const activeCount =
+    (value.mediaType !== 'all' ? 1 : 0) +
+    visibleGenres.length +
+    (value.region ? 1 : 0) +
+    (value.year || value.olderThan2015 ? 1 : 0)
+
+  // 已选轨
+  const chips: { key: string; label: string; onRemove: () => void }[] = []
+  if (value.mediaType !== 'all') {
+    chips.push({
+      key: 'mt',
+      label: value.mediaType === 'movie' ? '电影' : '剧集',
+      onRemove: () => onChange({ ...value, mediaType: 'all' }),
+    })
+  }
+  visibleGenres.forEach((id) => {
+    chips.push({
+      key: `g-${id}`,
+      label: genreName(id, allGenres),
+      onRemove: () => onChange({ ...value, genreIds: value.genreIds.filter((g) => g !== id) }),
+    })
+  })
+  if (value.region) {
+    chips.push({
+      key: 'region',
+      label: regionLabel(value.region),
+      onRemove: () => onChange({ ...value, region: null }),
+    })
+  }
+  if (value.year) {
+    chips.push({
+      key: 'year',
+      label: `年份 · ${value.year}`,
+      onRemove: () => onChange({ ...value, year: null }),
+    })
+  }
+  if (value.olderThan2015) {
+    chips.push({
+      key: 'older',
+      label: YEAR_OLDER_LABEL,
+      onRemove: () => onChange({ ...value, olderThan2015: false }),
+    })
+  }
+
+  const caption =
+    searchMode === 'cms'
+      ? '根据 TMDB 趋势动态生成'
+      : memo && !isDefault(memo, excludedGenreIds)
+        ? '根据 TMDB 趋势 + 你上次的浏览生成'
+        : '根据 TMDB 趋势动态生成'
+
+  const sortLabel = SORT_OPTIONS[value.sortIdx]?.label ?? SORT_OPTIONS[0].label
 
   return (
     <div className="bmb">
-      <div className="bmb-presets">
-        <div className="bmb-presets-scroll">
-          {presets.length === 0 && (
-            <span className="bmb-presets-empty">根据 TMDB 趋势动态生成</span>
-          )}
-          {presets.map((p) => {
-            const visVal = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
-            const on =
-              value.mediaType === 'all' &&
-              eqArr(visVal, p.apply.genreIds ?? []) &&
-              value.region === (p.apply.region ?? null) &&
-              value.year === (p.apply.year ?? null) &&
-              value.olderThan2015 === (p.apply.olderThan2015 ?? false) &&
-              value.sortIdx === (p.apply.sortIdx ?? 0)
-            return (
-              <button
-                key={p.key}
-                type="button"
-                className={`bmb-preset${on ? ' active' : ''}`}
-                aria-pressed={on}
-                title={p.desc}
-                onClick={() => applyPreset(p)}
-              >
-                <span className="bmb-preset-icon">{p.icon}</span>
-                {p.label}
-              </button>
-            )
-          })}
+      {/* 命令栏：模式切换 + 排序 + 筛选入口 */}
+      <div className="bmb-cmdbar">
+        <div className="bmb-mode-seg">
+          <button
+            type="button"
+            className={`bmb-seg${searchMode === 'smart' ? ' on' : ''}`}
+            aria-pressed={searchMode === 'smart'}
+            onClick={() => onModeChange('smart')}
+          >
+            智能检索
+          </button>
+          <button
+            type="button"
+            className={`bmb-seg${searchMode === 'cms' ? ' on' : ''}`}
+            aria-pressed={searchMode === 'cms'}
+            onClick={() => onModeChange('cms')}
+          >
+            直链搜索
+          </button>
         </div>
+        <div className="bmb-spacer" />
+        <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
+          <span className="bmb-sort-label">{sortLabel}</span>
+          <span className="bmb-caret">▼</span>
+        </button>
+        <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
+          筛选
+          <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
+        </button>
+      </div>
+
+      {/* 动态预设横滚 */}
+      <div className="bmb-presets">
+        {presets.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            className={`bmb-preset${matchPreset(p) ? ' on' : ''}`}
+            aria-pressed={matchPreset(p)}
+            title={p.desc}
+            onClick={() => applyPreset(p)}
+          >
+            <span className="bmb-pi">{p.icon}</span>
+            {p.label}
+          </button>
+        ))}
         {memo && (
-          <button type="button" className="bmb-clear-memo" onClick={clearMemo}>
+          <button type="button" className="bmb-preset aux" onClick={clearMemo}>
             清除记忆
           </button>
         )}
       </div>
 
+      {/* 预设说明 */}
+      <div className="bmb-cap">{caption}</div>
+
+      {/* 已选轨 */}
       {chips.length > 0 && (
         <div className="bmb-rail">
           {chips.map((c) => (
             <span key={c.key} className="bmb-chip">
-              <span className="bmb-chip-label">{c.label}</span>
-              <button
-                type="button"
-                className="bmb-chip-x"
-                aria-label={`移除 ${c.label}`}
-                onClick={c.onRemove}
-              >
+              <span>{c.label}</span>
+              <button type="button" className="bmb-x" aria-label="移除" onClick={c.onRemove}>
                 ×
               </button>
             </span>
           ))}
-          <button type="button" className="bmb-rail-reset" onClick={handleReset}>
-            重置
+          <button type="button" className="bmb-chip clear" onClick={resetValue}>
+            清除全部
           </button>
         </div>
       )}
 
-      <div className="bmb-actions">
-        <button type="button" className="bmb-btn" onClick={cycleSort}>
-          <ArrowDownUp size={16} />
-          {SORT_OPTIONS[value.sortIdx]?.label ?? '排序'}
-        </button>
-        <button
-          type="button"
-          className="bmb-btn bmb-btn--primary"
-          onClick={() => setOpen(true)}
-        >
-          <SlidersHorizontal size={16} />
-          筛选{chips.length > 0 ? `（${chips.length}）` : ''}
-        </button>
-      </div>
-
+      {/* 右滑全屏筛选面板 */}
       <Drawer open={open} onClose={() => setOpen(false)} title="筛选">
+        <div className="bmb-rec">
+          <div className="bmb-rec-head">✨ 为你推荐</div>
+          <div className="bmb-rec-cards">
+            {presets.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`bmb-rec-card${matchPreset(p) ? ' on' : ''}`}
+                aria-pressed={matchPreset(p)}
+                onClick={() => applyPreset(p)}
+              >
+                <span className="bmb-pc-ico">{p.icon}</span>
+                <span className="bmb-pc-label">{p.label}</span>
+                <span className="bmb-pc-desc">{p.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <FilterBar {...filterBarProps} hideFooter={false} />
-        <div className="bmb-drawer-foot">
-          <button type="button" className="bmb-foot-btn" onClick={handleReset}>
+        <div className="bmb-foot">
+          <button type="button" className="bmb-pf-reset" onClick={resetValue}>
             重置
           </button>
-          <button
-            type="button"
-            className="bmb-foot-btn bmb-foot-btn--primary"
-            onClick={() => setOpen(false)}
-          >
+          <button type="button" className="bmb-pf-apply" onClick={() => setOpen(false)}>
             完成
           </button>
         </div>
