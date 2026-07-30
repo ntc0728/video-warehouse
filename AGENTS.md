@@ -532,10 +532,11 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 
 ### 2. 自动版本（release-please）
 
-- 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `0.0.0`）。
-- 工作流：`.github/workflows/release-please.yml`（监听 `master` 推送）→ 自动开版 PR、更新 `package.json`/`CHANGELOG.md`、打 `vX.Y.Z` tag、生成 GitHub Release。
+- 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `1.0.0`）。
+- 工作流：`.github/workflows/release-please.yml`（监听 `master` 推送，已声明 `permissions: { contents: write, pull-requests: write }`）→ 自动开版 PR、更新 `package.json`/`CHANGELOG.md`、打 `vX.Y.Z` tag、生成 GitHub Release。
 - 提交信息遵循 Conventional Commits：`feat:` 升 MINOR/PATCH、`fix:` 升 PATCH、`BREAKING CHANGE`/`feat!` 升 MINOR（0.x 阶段）。
-- 首次合并开版 PR 后版本从 `0.0.0` → `0.1.0`。
+- **首次发布实测为 `1.0.0`**（release-please 对首个 release 默认产出 `1.0.0`，而非 `0.1.0`）；后续按 SemVer 规则递增。
+- ⚠️ **前置条件（仓库级 GitHub 设置）**：release-please 需要创建 PR，因此必须在仓库 **Settings → Actions → General** 中开启 **「Allow GitHub Actions to create and approve pull requests」**，并将「Workflow permissions」设为 **Read and write permissions**。否则 Action 会在开版 PR 步骤报 `GitHub Actions is not permitted to create or approve pull requests` 而失败（此时版本号已算好、CHANGELOG 已生成，仅缺 PR/tag/Release）。
 
 ### 3. 双端版本同步（Capacitor Android）
 
