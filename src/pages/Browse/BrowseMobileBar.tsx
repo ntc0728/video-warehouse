@@ -273,8 +273,8 @@ export default function BrowseMobileBar({
         </div>
       )}
 
-      {/* 已选轨 */}
-      {chips.length > 0 && (
+      {/* 已选轨（仅智能检索模式展示：直链搜索无 FilterBar，不渲染已选轨） */}
+      {searchMode === 'smart' && chips.length > 0 && (
         <div className="bmb-rail">
           {chips.map((c) => (
             <span key={c.key} className="bmb-chip">
