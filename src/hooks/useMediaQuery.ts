@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isNativePlatform } from '@/lib/platform';
 
 /**
  * 监听 CSS 媒体查询的 Hook
@@ -41,6 +42,21 @@ export function useIsMobile(): boolean {
 /** 检测是否为平板端（视口宽度 768px ~ 1023px） */
 export function useIsTablet(): boolean {
   return useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+}
+
+/**
+ * 仅在「真实手机 web 端」或「App 端（Capacitor 原生）」返回 true。
+ *
+ * 与 useIsMobile（视口 < 1024px，含桌面浏览器窄窗 / 平板）区分：
+ *  - 桌面浏览器把窗口调窄、平板竖屏不应触发手机命令栏；
+ *  - 真实手机（UA 命中移动端且视口 ≤ 1023px）或 Capacitor 原生环境才渲染手机布局。
+ *
+ * 注意：isNativePlatform 是普通函数（读取缓存），useIsMobile 是 Hook，二者都无条件调用以保证 Hook 顺序稳定。
+ */
+export function useIsPhone(): boolean {
+  const isNative = isNativePlatform();
+  const isMobile = useIsMobile();
+  return isNative || isMobile;
 }
 
 /** 检测是否为桌面端（视口宽度 >= 1024px） */

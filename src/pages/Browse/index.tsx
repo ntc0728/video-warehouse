@@ -21,7 +21,7 @@ import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext'
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsPhone, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
@@ -37,7 +37,7 @@ type SearchMode = 'smart' | 'cms';
 
 export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
+  const isPhone = useIsPhone();
   const isTV = useIsTV();
   const location = useLocation();
   const navigationType = useNavigationType();
@@ -289,44 +289,49 @@ export default function BrowsePage() {
         'page-padding',
         'browse-page',
         'page-transition-enter--stagger',
-        isMobile ? 'browse-page--mobile' : '',
+        isPhone ? 'browse-page--mobile' : '',
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
     >
-      {/* Card 1：搜索区域 */}
-      <div className="browse-card--search">
-        {/* Tab 切换 */}
-        <div className="browse-search-tabs">
-          <button
-            className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
-            onClick={() => handleModeChange('smart')}
-          >
-            <Search size={14} />
-            智能检索
-          </button>
-          <button
-            className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
-            onClick={() => handleModeChange('cms')}
-          >
-            直链搜索
-          </button>
-        </div>
-        {/* 智能检索模式：移动端用命令栏+右滑面板，桌面用 FilterBar（footer 移到 Card 2） */}
-        {searchMode === 'smart' && (
-          isMobile ? (
-            <BrowseMobileBar
-              filterBarProps={{
-                value: filterValue,
-                onChange: handleFilterChange,
-                genres: currentGenres,
-                excludedGenreIds,
-                totalResults: discoverPagination.totalResults,
-                categoryLabel: CATEGORY_LABELS[filterValue.category],
-                hideFooter: true,
-              }}
-              allGenres={[...movieGenres, ...tvGenres]}
-            />
-          ) : (
+      {/* 移动端命令栏（方案②）：仅真实手机 web / App 端，含模式切换段 */}
+      {isPhone && (
+        <BrowseMobileBar
+          searchMode={searchMode}
+          onModeChange={handleModeChange}
+          filterBarProps={{
+            value: filterValue,
+            onChange: handleFilterChange,
+            genres: currentGenres,
+            excludedGenreIds,
+            totalResults: discoverPagination.totalResults,
+            categoryLabel: CATEGORY_LABELS[filterValue.category],
+            hideFooter: true,
+          }}
+          allGenres={[...movieGenres, ...tvGenres]}
+        />
+      )}
+
+      {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
+      {!isPhone && (
+        <div className="browse-card--search">
+          {/* Tab 切换 */}
+          <div className="browse-search-tabs">
+            <button
+              className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
+              onClick={() => handleModeChange('smart')}
+            >
+              <Search size={14} />
+              智能检索
+            </button>
+            <button
+              className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
+              onClick={() => handleModeChange('cms')}
+            >
+              直链搜索
+            </button>
+          </div>
+          {/* 智能检索模式：FilterBar（footer 移到 Card 2） */}
+          {searchMode === 'smart' && (
             <FilterBar
               value={filterValue}
               onChange={handleFilterChange}
@@ -336,9 +341,9 @@ export default function BrowsePage() {
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter
             />
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Card 2：结果区域 */}
       <div className="browse-card--results">
