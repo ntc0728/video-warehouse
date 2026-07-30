@@ -40,6 +40,16 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ── 移动端（仅真实手机 web + App）：结果区去卡片外壳，全宽网格 ── */
+.browse-page--mobile .browse-card--results {
+  flex: 1 1 0;
+  padding: var(--space-sm) 0 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* 源状态行：左侧结果数（左对齐）+ 右侧源状态 badge */
 .browse-source-status-row {
   display: flex;

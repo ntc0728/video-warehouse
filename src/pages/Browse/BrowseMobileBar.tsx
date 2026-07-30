@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import './BrowseMobileBar.css'
 import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
 import type { TMDBGenre } from '@/types/tmdb'
 import { useTMDBStore } from '@/stores/useTMDBStore'

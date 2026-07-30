@@ -45,18 +45,48 @@ export function useIsTablet(): boolean {
 }
 
 /**
+ * 通过 User-Agent 检测是否为「真实手机」（排除平板 / 桌面）。
+ *
+ * 用于移动端布局：仅真实手机 web + App(Capacitor) 渲染手机 UI，
+ * 桌面浏览器把窗口调窄、平板（iPad / Android 平板）不触发。
+ *
+ * 判定规则：
+ *  - 平板：显式 tablet 关键字，或 Android 设备但不带 Mobile（Android 平板特征）；
+ *  - 手机：iPhone / iPod / Android+Mobile / 其它移动 UA。
+ */
+export function getIsRealPhone(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  const isTablet =
+    /ipad|tablet|kindle|playbook|silk|nexus (?:7|9|10)|galaxy tab|sm-t|gt-[p5]|sch-i|mi pad|redmi pad/i.test(
+      ua,
+    ) || (/android/i.test(ua) && !/mobile/i.test(ua));
+  const isPhoneUA =
+    /iphone|ipod|android.*mobile|mobile|blackberry|bb10|opera mini|webos|windows phone|iemobile/i.test(
+      ua,
+    );
+  return isPhoneUA && !isTablet;
+}
+
+/** 真实手机检测 Hook（基于 getIsRealPhone 的状态化封装） */
+export function useIsRealPhone(): boolean {
+  const [isRealPhone] = useState(getIsRealPhone);
+  return isRealPhone;
+}
+
+/**
  * 仅在「真实手机 web 端」或「App 端（Capacitor 原生）」返回 true。
  *
  * 与 useIsMobile（视口 < 1024px，含桌面浏览器窄窗 / 平板）区分：
  *  - 桌面浏览器把窗口调窄、平板竖屏不应触发手机命令栏；
- *  - 真实手机（UA 命中移动端且视口 ≤ 1023px）或 Capacitor 原生环境才渲染手机布局。
+ *  - 真实手机（UA 命中手机）或 Capacitor 原生环境才渲染手机布局。
  *
- * 注意：isNativePlatform 是普通函数（读取缓存），useIsMobile 是 Hook，二者都无条件调用以保证 Hook 顺序稳定。
+ * 注意：isNativePlatform 是普通函数（读缓存），useIsRealPhone 是 Hook，二者都无条件调用以保证 Hook 顺序稳定。
  */
 export function useIsPhone(): boolean {
   const isNative = isNativePlatform();
-  const isMobile = useIsMobile();
-  return isNative || isMobile;
+  const isRealPhone = useIsRealPhone();
+  return isNative || isRealPhone;
 }
 
 /** 检测是否为桌面端（视口宽度 >= 1024px） */
