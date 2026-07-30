@@ -371,10 +371,9 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     const desktopTabs = page.locator('.browse-search-tab');
     expect(await desktopTabs.count()).toBe(0);
 
-    // 命令栏核心控件齐全
+    // 命令栏核心控件齐全（排序入口已移至筛选抽屉，故不再渲染 .bmb-sort-btn）
     await expect(page.locator('.bmb-mode-seg .bmb-seg').first()).toBeVisible();
     await expect(page.locator('.bmb-filter-trigger')).toBeVisible();
-    await expect(page.locator('.bmb-sort-btn')).toBeVisible();
 
     console.log('✅ BROWSE-070 通过: 移动端命令栏渲染且 CSS 已加载（display=flex）');
   });
@@ -422,8 +421,7 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     const cmsOn = await segs.nth(1).evaluate((el) => el.classList.contains('on'));
     expect(cmsOn).toBe(true);
 
-    // 直链搜索模式：排序 / 筛选入口不应展示（无 FilterBar / SortBar）
-    expect(await page.locator('.bmb-sort-btn').count()).toBe(0);
+    // 直链搜索模式：筛选入口不应展示（无 FilterBar / SortBar；排序入口已移至抽屉）
     expect(await page.locator('.bmb-filter-trigger').count()).toBe(0);
     // 预设横滚无内容，不应展示
     expect(await page.locator('.bmb-presets').count()).toBe(0);
@@ -434,39 +432,20 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     console.log('✅ BROWSE-072 通过: 移动端模式切换生效，且直链模式隐藏排序/筛选入口');
   });
 
-  test('BROWSE-073: 暗色主题下激活态文字使用反向色 token（非硬编码 #fff）', async ({ page }) => {
+  test('BROWSE-073: 暗色主题下激活态文字为纯白 #fff（与桌面端 browse-search-tab.active 一致）', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(800);
 
-    // 读取反向色 token 的计算值
-    const inverse = await page.evaluate(() => {
-      const v = getComputedStyle(document.documentElement).getPropertyValue('--color-text-inverse').trim();
-      if (!v) return null;
-      const probe = document.createElement('span');
-      probe.style.color = v;
-      probe.style.display = 'none';
-      document.body.appendChild(probe);
-      const rgb = getComputedStyle(probe).color;
-      probe.remove();
-      return rgb;
-    });
     // 取激活态段文字计算色
     const activeColor = await page
       .locator('.bmb-mode-seg .bmb-seg.on')
       .first()
       .evaluate((el) => getComputedStyle(el).color);
 
-    // 若 CSS 仍是硬编码 #fff，则 activeColor === 'rgb(255, 255, 255)'，
-    // 而 inverse token 在暗色下通常不同 → 二者不一致即说明已用 token 修复。
-    if (inverse) {
-      expect(activeColor.toLowerCase()).toBe(inverse.toLowerCase());
-      console.log(`✅ BROWSE-073 通过: 激活态文字色 = ${activeColor}（= --color-text-inverse）`);
-    } else {
-      // token 取不到时退化为「断言不是纯白」（硬编码 #fff 的典型特征）
-      expect(activeColor.toLowerCase()).not.toBe('rgb(255, 255, 255)');
-      console.log(`⚠️ BROWSE-073: 未取到 --color-text-inverse，但激活态非纯白 (${activeColor})`);
-    }
+    // 移动端激活模式 tab 文本色已统一为硬编码 #fff，与桌面端 .browse-search-tab.active 一致
+    expect(activeColor.toLowerCase()).toBe('rgb(255, 255, 255)');
+    console.log(`✅ BROWSE-073 通过: 激活态文字色 = ${activeColor}（= #fff，与桌面端一致）`);
   });
 });
 

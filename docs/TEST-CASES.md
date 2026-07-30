@@ -237,10 +237,10 @@
 
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|
-| BROWSE-070 | 移动端命令栏渲染且 CSS 已加载 | 窄视口（390×844）进入 /browse | 查看 `.bmb` / `.bmb-cmdbar` | 命令栏可见，`display=flex`（抓出「样式全失效」回归）；桌面搜索 Tab 不渲染 |
+| BROWSE-070 | 移动端命令栏渲染且 CSS 已加载 | 窄视口（390×844）进入 /browse | 查看 `.bmb` / `.bmb-cmdbar` | 命令栏可见，`display=flex`（抓出「样式全失效」回归）；桌面搜索 Tab 不渲染；排序入口已移至抽屉（不渲染 `.bmb-sort-btn`） |
 | BROWSE-071 | 筛选面板可打开/关闭 | 窄视口进入 /browse | 点击 `.bmb-filter-trigger` 打开、`.drawer-close` 关闭 | 右滑全屏面板（role=dialog）含 FilterBar 与底部操作区（完成/重置），可关闭 |
-| BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在；直链模式隐藏 `.bmb-sort-btn` / `.bmb-filter-trigger` / `.bmb-presets` |
-| BROWSE-073 | 激活态文字用反向色 token | 窄视口进入 /browse（暗色） | 读取 `.bmb-seg.on` 计算色 | 等于 `--color-text-inverse`（非硬编码 #fff） |
+| BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在；直链模式隐藏 `.bmb-filter-trigger` / `.bmb-presets`（排序入口已移除，无 `.bmb-sort-btn`） |
+| BROWSE-073 | 激活态文字为纯白 | 窄视口进入 /browse（暗色） | 读取 `.bmb-seg.on` 计算色 | 等于 `rgb(255,255,255)`（硬编码 #fff，与桌面端 `.browse-search-tab.active` 一致） |
 | BROWSE-074 | 桌面宽视口不渲染命令栏 | 桌面宽视口进入 /browse | 查看 `.bmb` | 命令栏不渲染，桌面搜索 Tab 正常 |
 | BROWSE-075 | 移动端双卡片相连（镜像桌面端） | 窄视口（390×844）进入 /browse | 读取 `.bmb` 与 `.browse-card--results` 计算样式 | 两张卡各自圆角≠0、阴影≠none、边框宽度≠0（命令栏 .bmb 当 Card1 上半部、结果区当 Card2 下半部，gap:0 相连成一张大卡，与桌面端 `.browse-card--search`+`.browse-card--results` 一致）；另断言根容器 `.browse-page--mobile` 的 `overflow≠hidden`、结果区 `overflow-y≠auto`（整页由 `.app-shell__scroll` 滚动，不裁切、不自创内部滚动陷阱） |
 | BROWSE-076 | 移动端全局 AppLoading 带卡片式布局 | 窄视口（390×844）进入 /detail/:id（TMDB 详情接口延迟） | 读取 `.app-loading--inline` 计算样式 | 圆角≠0、边框宽度≠0、背景≠透明（全视口带卡，与桌面端 ≥1024px 卡片模块一致，移动端不再裸奔） |

@@ -32,18 +32,18 @@
 }
 .bmb-seg.on {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: #fff;
 }
 .bmb-spacer {
   flex: 1;
 }
-.bmb-sort-btn,
 .bmb-filter-trigger {
+  position: relative;
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
   min-height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-xs) var(--space-lg) var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: var(--color-surface-hover);
@@ -53,7 +53,6 @@
   transition: border-color 0.14s, background 0.14s, color 0.14s;
   cursor: pointer;
 }
-.bmb-sort-btn:active,
 .bmb-filter-trigger:active {
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
@@ -65,10 +64,6 @@
   flex-shrink: 0;
   width: var(--icon-xs);
   height: var(--icon-xs);
-}
-.bmb-filter-trigger {
-  position: relative;
-  padding-right: var(--space-lg);
 }
 .bmb-badge {
   display: inline-flex;
@@ -244,9 +239,20 @@
   font-weight: 600;
 }
 
+/* ── 亮色模式：移除不必要的背景填充，与桌面端视觉一致 ──
+   预设芯片 / 筛选入口在亮色下用边框区分，无需 surface-hover 填充；
+   选中筛选轨（.bmb-chip）亮色下用实色 primary 背景。暗色模式保留 surface-hover 以区分层次。 */
+[data-theme="light"] .bmb-preset,
+[data-theme="light"] .bmb-filter-trigger {
+  background: transparent;
+}
+[data-theme="light"] .bmb-chip:not(.clear) {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
 /* 选中态聚焦可见性（无障碍） */
 .bmb-seg:focus-visible,
-.bmb-sort-btn:focus-visible,
 .bmb-filter-trigger:focus-visible,
 .bmb-preset:focus-visible,
 .bmb-rec-card:focus-visible,
