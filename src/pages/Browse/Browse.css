@@ -40,40 +40,35 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ── 移动端（isPhone，含视口 < 768px）：整页用卡片式布局包裹 ──
-   命令栏（.bmb）+ 结果区合成一张大卡片（surface + 1px 边框 + 圆角 + 阴影），
-   与桌面端「双卡片相连」语义一致；内部子卡去壳，避免双重边框。
-   卡片被约束为视口高（min-height:0），命令栏固定、结果区在卡片内独立滚动，
-   避免整页卡片被 overflow:hidden 裁切后无法滚动 / 结果溢出卡片。 */
+/* ── 移动端（isPhone，含视口 < 768px）：与桌面端「双卡片相连」语义一致 ──
+   命令栏 .bmb 当作 Card 1（上半部），结果区 .browse-card--results 当作 Card 2（下半部），
+   中间 gap:0 相连合成一张大卡；卡片本身不施加 overflow，整页由 .app-shell__scroll 自然滚动，
+   不自定义内部滚动（否则会像早期实现那样把整页卡片裁切、无法滚动、结果溢出卡片外）。
+   左右内缩由根容器的 .page-padding（space-sm）提供，与桌面端一致。 */
 .browse-page.browse-page--mobile {
-  gap: var(--space-sm);
-  min-height: 0;
-  margin: var(--space-sm);
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  gap: 0; /* 双卡片相连，与桌面端 .browse-card--search + .browse-card--results 一致 */
 }
-/* 命令栏：固定不随结果滚动，并加右侧无溢出的兜底 */
+
+/* Card 1（命令栏 .bmb）：上半部，顶部圆角，底边与结果卡相连 */
 .browse-page.browse-page--mobile .bmb {
   flex-shrink: 0;
-  min-width: 0;
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
-/* 结果区：在卡片内独立滚动（关键），避免整页卡片被裁切无法滚动 */
+
+/* Card 2（结果区）：下半部，底部圆角，连到命令栏 */
 .browse-page.browse-page--mobile .browse-card--results {
   flex: 1 1 0;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  overflow: hidden auto;
-  box-shadow: none;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 /* 源状态行：左侧结果数（左对齐）+ 右侧源状态 badge */

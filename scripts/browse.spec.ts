@@ -490,7 +490,7 @@ test.describe('2.8 移动端命令栏 — 桌面回归守卫', () => {
 test.describe('2.8 移动端命令栏 — 整页卡片', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('BROWSE-075: 移动端整页以卡片式布局包裹（surface + 边框 + 圆角 + 阴影）', async ({ page }) => {
+  test('BROWSE-075: 移动端双卡片相连（命令栏 .bmb + 结果区 .browse-card--results 各带 surface 边框圆角阴影，整页随 .app-shell__scroll 滚动）', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(800);
@@ -498,26 +498,41 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     const pageEl = page.locator('.browse-page--mobile').first();
     await expect(pageEl).toBeVisible();
 
-    const style = await pageEl.evaluate((el) => {
-      const cs = getComputedStyle(el);
+    // Card 1（命令栏）与 Card 2（结果区）各自带卡片外壳，相连成一张大卡（镜像桌面端双卡片）
+    const cardStyle = await page.evaluate(() => {
+      const pick = (sel: string) => {
+        const el = document.querySelector(sel) as HTMLElement | null;
+        if (!el) return null;
+        const cs = getComputedStyle(el);
+        return {
+          br: cs.borderTopLeftRadius,
+          shadow: cs.boxShadow,
+          border: cs.borderTopWidth,
+        };
+      };
       return {
-        br: cs.borderTopLeftRadius,
-        shadow: cs.boxShadow,
-        border: cs.borderTopWidth,
+        cmd: pick('.browse-page--mobile .bmb'),
+        res: pick('.browse-page--mobile .browse-card--results'),
       };
     });
     // 回归点：若移动端未包裹卡片，radius=0、shadow=none、border=0px
-    expect(style.br).not.toBe('0px');
-    expect(style.shadow).not.toBe('none');
-    expect(style.border).not.toBe('0px');
+    expect(cardStyle.cmd?.br).not.toBe('0px');
+    expect(cardStyle.cmd?.shadow).not.toBe('none');
+    expect(cardStyle.cmd?.border).not.toBe('0px');
+    expect(cardStyle.res?.br).not.toBe('0px');
+    expect(cardStyle.res?.shadow).not.toBe('none');
+    expect(cardStyle.res?.border).not.toBe('0px');
 
-    // 回归点：结果区必须在卡片内独立滚动（overflow-y:auto），
-    // 否则整页卡片被 overflow:hidden 裁切后无法滚动、结果溢出卡片外。
-    const resultsOverflow = await page
+    // 回归点：整页卡片不得用 overflow:hidden 把内容裁切、导致无法滚动；
+    // 整页滚动交给 .app-shell__scroll，结果区也不自创内部滚动陷阱（overflow-y ≠ auto）。
+    const overflow = await pageEl.evaluate((el) => getComputedStyle(el).overflow);
+    expect(overflow).not.toBe('hidden');
+    const resultsOverflowY = await page
       .locator('.browse-page--mobile .browse-card--results')
       .first()
       .evaluate((el) => getComputedStyle(el).overflowY);
-    expect(resultsOverflow).toBe('auto');
-    console.log(`✅ BROWSE-075 通过: 移动端整页卡片 radius=${style.br} 阴影已加载，结果区 overflow-y=${resultsOverflow}`);
+    expect(resultsOverflowY).not.toBe('auto');
+
+    console.log(`✅ BROWSE-075 通过: 移动端双卡片相连（命令栏/结果区均带 surface 边框圆角阴影），根容器 overflow=${overflow} 不裁切滚动`);
   });
 });
