@@ -853,22 +853,26 @@ body.skin-transitioning .skin-btn.active {
   scale: none !important;
   transform: none !important;
 }
-/* 按压反馈：仅缩放按钮内【文字】，按钮框保持静止。
-   用无过冲的 ease-out + 居中缩放，避免早期 --ease-spring 造成的「下沉」观感。 */
+/* 按压反馈：仅缩放按钮内【文本自身宽度】的标题/副标题，按钮框与整行保持静止。
+   桌面端设置项标题在 flex-column 容器中默认 align-items:stretch 撑满整行，
+   直接缩放会整行变动过大；故让标题/描述收缩到文本自身宽度
+   （align-self:flex-start + width:fit-content），缩放仅作用于文本宽度，变动量大幅减小。
+   不改背景色 / 不变暗 / 不缩放按钮框。 */
 .settings-page .settings-row__title,
 .settings-page .settings-row__label small,
-.settings-page .settings-profile__meta,
 .settings-page .list-item__title,
-.settings-page .list-item__desc {
-  display: inline-block;
+.settings-page .list-item__desc,
+.settings-page .settings-profile__meta {
+  width: fit-content;
+  align-self: flex-start;
   transform-origin: center;
   transition: scale 0.18s var(--ease-out-expo, ease-out);
 }
-.settings-page .settings-row:active .settings-row__title,
-.settings-page .settings-row:active .settings-row__label small,
-.settings-page .settings-profile:active .settings-profile__meta,
-.settings-page .list-item--clickable:active .list-item__title,
-.settings-page .list-item--clickable:active .list-item__desc {
+.settings-page .settings-row:active:not(:disabled) .settings-row__title,
+.settings-page .settings-row:active:not(:disabled) .settings-row__label small,
+.settings-page .settings-profile:active:not(:disabled) .settings-profile__meta,
+.settings-page .list-item--clickable:active:not(:disabled) .list-item__title,
+.settings-page .list-item--clickable:active:not(:disabled) .list-item__desc {
   scale: 0.96;
 }
 
