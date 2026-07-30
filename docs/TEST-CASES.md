@@ -239,7 +239,7 @@
 |------|---------|---------|---------|---------|
 | BROWSE-070 | 移动端命令栏渲染且 CSS 已加载 | 窄视口（390×844）进入 /browse | 查看 `.bmb` / `.bmb-cmdbar` | 命令栏可见，`display=flex`（抓出「样式全失效」回归）；桌面搜索 Tab 不渲染 |
 | BROWSE-071 | 筛选面板可打开/关闭 | 窄视口进入 /browse | 点击 `.bmb-filter-trigger` 打开、`.drawer-close` 关闭 | 右滑全屏面板（role=dialog）含 FilterBar 与底部操作区（完成/重置），可关闭 |
-| BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在 |
+| BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在；直链模式隐藏 `.bmb-sort-btn` / `.bmb-filter-trigger` / `.bmb-presets` |
 | BROWSE-073 | 激活态文字用反向色 token | 窄视口进入 /browse（暗色） | 读取 `.bmb-seg.on` 计算色 | 等于 `--color-text-inverse`（非硬编码 #fff） |
 | BROWSE-074 | 桌面宽视口不渲染命令栏 | 桌面宽视口进入 /browse | 查看 `.bmb` | 命令栏不渲染，桌面搜索 Tab 正常 |
 

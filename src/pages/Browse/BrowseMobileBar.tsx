@@ -237,44 +237,51 @@ export default function BrowseMobileBar({
             直链搜索
           </button>
       </div>
-      <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
-        <span className="bmb-sort-label">{sortLabel}</span>
-        <span className="bmb-caret">▼</span>
-      </button>
-      <div className="bmb-spacer" />
-      <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
-        <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M3 5h18a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.4.9l-2-1A1 1 0 0 1 10 18v-4.5L2.2 6.6A1 1 0 0 1 3 5Z"
-          />
-        </svg>
-        筛选
-        <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
-      </button>
+      {/* 排序 / 筛选入口仅「智能检索」模式展示：直链搜索无 FilterBar / SortBar */}
+      {searchMode === 'smart' && (
+        <>
+          <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
+            <span className="bmb-sort-label">{sortLabel}</span>
+            <span className="bmb-caret">▼</span>
+          </button>
+          <div className="bmb-spacer" />
+          <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
+            <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M3 5h18a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.4.9l-2-1A1 1 0 0 1 10 18v-4.5L2.2 6.6A1 1 0 0 1 3 5Z"
+              />
+            </svg>
+            筛选
+            <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
+          </button>
+        </>
+      )}
       </div>
 
-      {/* 动态预设横滚 */}
-      <div className="bmb-presets">
-        {presets.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            className={`bmb-preset${matchPreset(p) ? ' on' : ''}`}
-            aria-pressed={matchPreset(p)}
-            title={p.desc}
-            onClick={() => applyPreset(p)}
-          >
-            <span className="bmb-pi">{p.icon}</span>
-            {p.label}
-          </button>
-        ))}
-        {memo && (
-          <button type="button" className="bmb-preset aux" onClick={clearMemo}>
-            清除记忆
-          </button>
-        )}
-      </div>
+      {/* 动态预设横滚（仅智能检索且有预设时展示） */}
+      {presets.length > 0 && (
+        <div className="bmb-presets">
+          {presets.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              className={`bmb-preset${matchPreset(p) ? ' on' : ''}`}
+              aria-pressed={matchPreset(p)}
+              title={p.desc}
+              onClick={() => applyPreset(p)}
+            >
+              <span className="bmb-pi">{p.icon}</span>
+              {p.label}
+            </button>
+          ))}
+          {memo && (
+            <button type="button" className="bmb-preset aux" onClick={clearMemo}>
+              清除记忆
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 已选轨 */}
       {chips.length > 0 && (
