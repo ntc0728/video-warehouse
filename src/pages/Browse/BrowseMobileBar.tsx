@@ -259,8 +259,8 @@ export default function BrowseMobileBar({
       )}
       </div>
 
-      {/* 动态预设横滚（仅智能检索且有预设时展示） */}
-      {presets.length > 0 && (
+      {/* 动态预设横滚（仅智能检索模式展示；直链搜索无预设，不渲染） */}
+      {searchMode === 'smart' && presets.length > 0 && (
         <div className="bmb-presets">
           {presets.map((p) => (
             <button
