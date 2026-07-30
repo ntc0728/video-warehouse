@@ -541,6 +541,17 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
   2. **或（仅公开库 / 企业版可见）**：仓库 **Settings → Actions → General** 勾选 **「Allow GitHub Actions to create and approve pull requests」**，并将「Workflow permissions」设为 **Read and write permissions**。
   - 若两者都未满足，Action 会在开版 PR 步骤报 `GitHub Actions is not permitted to create or approve pull requests` 而失败（此时版本号已算好、CHANGELOG 已生成，仅缺 PR/tag/Release）。
 
+- **本地兜底（无 admin / 无法配置 Secrets 时）**：用自己账号的 PAT（GitHub 账号 Settings → Developer settings → PAT，勾 `repo`）在本地跑，不依赖仓库 Secrets，也不受「禁止 Actions 创建 PR」限制。PAT 是**个人账号**创建（任何成员都能建），与仓库 admin 无关：
+  ```powershell
+  $env:GITHUB_TOKEN = "ghp_你的PAT"
+  # 开版 PR（走 PAT，绕过仓库权限限制）
+  npx release-please release-pr --repo-url ntc0728/video-warehouse
+  # 在 GitHub 合并该 PR 后，生成本对应的 GitHub Release + tag
+  npx release-please github-release --repo-url ntc0728/video-warehouse
+  ```
+  - 注意：因 `package.json`/CHANGELOG/manifest 已是某一版本，release-please 不会重复算版，而是把这次当作「完成该版本发布」；若它判定已发布而未生成 GitHub Release，可直接基于现有 `vX.Y.Z` tag 在 GitHub 手动建 Release，内容用 `CHANGELOG.md` 对应段落即可。
+  - 陈旧分支 `release-please--branches--master` 若残留，先 `git push origin --delete release-please--branches--master` 再重跑，避免重开过期 PR。
+
 ### 3. 双端版本同步（Capacitor Android）
 
 - 脚本 `scripts/sync-capacitor-version.mjs` 在 `build:android` 时从 `package.json` 读 SemVer，写入 `capacitor.config.ts` 的 `version`（含通道）并派生 `android.versionCode`。
