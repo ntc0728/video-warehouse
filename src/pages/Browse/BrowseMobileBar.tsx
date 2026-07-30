@@ -3,7 +3,7 @@ import './BrowseMobileBar.css'
 import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
 import type { TMDBGenre } from '@/types/tmdb'
 import { useTMDBStore } from '@/stores/useTMDBStore'
-import { SORT_OPTIONS, REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
+import { REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
 import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
 
@@ -148,10 +148,6 @@ export default function BrowseMobileBar({
     })
   }
 
-  const cycleSort = () => {
-    onChange({ ...value, sortIdx: (value.sortIdx + 1) % SORT_OPTIONS.length })
-  }
-
   const resetValue = () => {
     onChange({
       ...value,
@@ -213,8 +209,6 @@ export default function BrowseMobileBar({
     })
   }
 
-  const sortLabel = SORT_OPTIONS[value.sortIdx]?.label ?? SORT_OPTIONS[0].label
-
   return (
     <div className="bmb">
       {/* 命令栏：模式切换 + 排序 + 筛选入口 */}
@@ -237,13 +231,9 @@ export default function BrowseMobileBar({
             直链搜索
           </button>
       </div>
-      {/* 排序 / 筛选入口仅「智能检索」模式展示：直链搜索无 FilterBar / SortBar */}
+      {/* 排序入口已移至筛选抽屉；筛选入口仅「智能检索」模式展示：直链搜索无 FilterBar / SortBar */}
       {searchMode === 'smart' && (
         <>
-          <button type="button" className="bmb-sort-btn" onClick={cycleSort}>
-            <span className="bmb-sort-label">{sortLabel}</span>
-            <span className="bmb-caret">▼</span>
-          </button>
           <div className="bmb-spacer" />
           <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
             <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
