@@ -853,12 +853,23 @@ body.skin-transitioning .skin-btn.active {
   scale: none !important;
   transform: none !important;
 }
-/* 按压反馈：仅用 opacity 表达「按下去」，不缩放、不改背景色 */
-.settings-page button {
-  transition: opacity 0.15s ease-out;
+/* 按压反馈：仅缩放按钮内【文字】，按钮框保持静止。
+   用无过冲的 ease-out + 居中缩放，避免早期 --ease-spring 造成的「下沉」观感。 */
+.settings-page .settings-row__title,
+.settings-page .settings-row__label small,
+.settings-page .settings-profile__meta,
+.settings-page .list-item__title,
+.settings-page .list-item__desc {
+  display: inline-block;
+  transform-origin: center;
+  transition: scale 0.18s var(--ease-out-expo, ease-out);
 }
-.settings-page button:active:not(:disabled) {
-  opacity: 0.6;
+.settings-page .settings-row:active .settings-row__title,
+.settings-page .settings-row:active .settings-row__label small,
+.settings-page .settings-profile:active .settings-profile__meta,
+.settings-page .list-item--clickable:active .list-item__title,
+.settings-page .list-item--clickable:active .list-item__desc {
+  scale: 0.96;
 }
 
 /* ===== 移动端设置页顶部居中资料区 ===== */
