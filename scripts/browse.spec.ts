@@ -486,3 +486,30 @@ test.describe('2.8 移动端命令栏 — 桌面回归守卫', () => {
     console.log('✅ BROWSE-074 通过: 桌面宽视口不渲染移动端命令栏');
   });
 });
+
+test.describe('2.8 移动端命令栏 — 整页卡片', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('BROWSE-075: 移动端整页以卡片式布局包裹（surface + 边框 + 圆角 + 阴影）', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    const pageEl = page.locator('.browse-page--mobile').first();
+    await expect(pageEl).toBeVisible();
+
+    const style = await pageEl.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        br: cs.borderTopLeftRadius,
+        shadow: cs.boxShadow,
+        border: cs.borderTopWidth,
+      };
+    });
+    // 回归点：若移动端未包裹卡片，radius=0、shadow=none、border=0px
+    expect(style.br).not.toBe('0px');
+    expect(style.shadow).not.toBe('none');
+    expect(style.border).not.toBe('0px');
+    console.log(`✅ BROWSE-075 通过: 移动端整页卡片 radius=${style.br} 阴影已加载`);
+  });
+});
