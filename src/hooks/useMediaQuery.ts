@@ -75,18 +75,21 @@ export function useIsRealPhone(): boolean {
 }
 
 /**
- * 仅在「真实手机 web 端」或「App 端（Capacitor 原生）」返回 true。
+ * 是否应展示「移动端 UI 布局」。
  *
- * 与 useIsMobile（视口 < 1024px，含桌面浏览器窄窗 / 平板）区分：
- *  - 桌面浏览器把窗口调窄、平板竖屏不应触发手机命令栏；
- *  - 真实手机（UA 命中手机）或 Capacitor 原生环境才渲染手机布局。
+ * 命中任一即展示移动端布局：
+ *  - App 端（Capacitor 原生）；
+ *  - 真实手机 web 端（UA 命中手机，排除平板 / 桌面）；
+ *  - 视口宽度 < 768px（窄窗 / 平板竖屏 / 桌面窄窗统一走移动端布局）。
  *
- * 注意：isNativePlatform 是普通函数（读缓存），useIsRealPhone 是 Hook，二者都无条件调用以保证 Hook 顺序稳定。
+ * 注意：isNativePlatform 是普通函数（读缓存），useIsRealPhone / useMediaQuery 是 Hook，
+ * 三者都无条件调用以保证 Hook 顺序稳定。
  */
-export function useIsPhone(): boolean {
+export function useIsMobileLayout(): boolean {
   const isNative = isNativePlatform();
   const isRealPhone = useIsRealPhone();
-  return isNative || isRealPhone;
+  const isNarrow = useMediaQuery('(max-width: 767px)');
+  return isNative || isRealPhone || isNarrow;
 }
 
 /** 检测是否为桌面端（视口宽度 >= 1024px） */

@@ -21,7 +21,7 @@ import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext'
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
-import { useIsPhone, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
@@ -37,7 +37,7 @@ type SearchMode = 'smart' | 'cms';
 
 export default function BrowsePage() {
   const pageRef = useRef<HTMLDivElement>(null);
-  const isPhone = useIsPhone();
+  const isPhone = useIsMobileLayout();
   const isTV = useIsTV();
   const location = useLocation();
   const navigationType = useNavigationType();
