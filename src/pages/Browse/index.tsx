@@ -30,6 +30,7 @@ import { useBrowseData, toStoreFilter } from './useBrowseData';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
+import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
 
 type SearchMode = 'smart' | 'cms';
@@ -310,17 +311,32 @@ export default function BrowsePage() {
             直链搜索
           </button>
         </div>
-        {/* 智能检索模式：FilterBar（仅筛选行，footer 移到 Card 2） */}
+        {/* 智能检索模式：移动端用命令栏+右滑面板，桌面用 FilterBar（footer 移到 Card 2） */}
         {searchMode === 'smart' && (
-          <FilterBar
-            value={filterValue}
-            onChange={handleFilterChange}
-            genres={currentGenres}
-            excludedGenreIds={excludedGenreIds}
-            totalResults={discoverPagination.totalResults}
-            categoryLabel={CATEGORY_LABELS[filterValue.category]}
-            hideFooter
-          />
+          isMobile ? (
+            <BrowseMobileBar
+              filterBarProps={{
+                value: filterValue,
+                onChange: handleFilterChange,
+                genres: currentGenres,
+                excludedGenreIds,
+                totalResults: discoverPagination.totalResults,
+                categoryLabel: CATEGORY_LABELS[filterValue.category],
+                hideFooter: true,
+              }}
+              allGenres={[...movieGenres, ...tvGenres]}
+            />
+          ) : (
+            <FilterBar
+              value={filterValue}
+              onChange={handleFilterChange}
+              genres={currentGenres}
+              excludedGenreIds={excludedGenreIds}
+              totalResults={discoverPagination.totalResults}
+              categoryLabel={CATEGORY_LABELS[filterValue.category]}
+              hideFooter
+            />
+          )
         )}
       </div>
 

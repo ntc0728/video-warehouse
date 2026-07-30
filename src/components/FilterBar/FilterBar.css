@@ -4,11 +4,11 @@
    分类行：多行 wrap 展示
    所有 row 的 label 可点击胶囊，默认高亮表示「全部」状态
    所有 chip 自动换行，多端均不截断/遮挡
+   所有筛选 tab 均全展开（不限行、无折叠 / 「更多」按钮）
    ═══════════════════════════════════════════════════════════════════════ */
 
 .filter-bar {
   position: relative;
-  /* 供 .filter-bar__updating 绝对定位 */
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -120,7 +120,7 @@
   display: flex;
   flex: 1;
   flex-wrap: wrap;
-  /* 改：自动换行，避免移动端横向滚动 */
+  /* 自动换行，避免移动端横向滚动 */
   gap: var(--space-sm);
   min-width: 0;
   padding: var(--space-2xs) 0;
@@ -170,98 +170,73 @@
   font-weight: 600;
 }
 
-/* ── Updating 指示器（debounce / fetch 期间） ──────── */
+/* ── Footer（排序 + 结果数）────────────────────────── */
 
-.filter-bar__updating {
-  position: absolute;
-  top: var(--space-sm);
-  right: var(--space-lg);
-  z-index: 1;
-  display: inline-flex;
-  gap: var(--space-2xs);
+.filter-bar__footer {
+  display: flex;
   align-items: center;
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: var(--space-xs);
+}
+
+.filter-bar__sort {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.filter-bar__sort-btn {
+  position: relative;
+  padding-bottom: var(--space-2xs);
+  font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  animation: filter-bar-fade-in 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  pointer-events: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.filter-bar__spinner {
-  width: var(--icon-md);
-  height: var(--icon-md);
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: filter-bar-spin 0.8s linear infinite;
+.filter-bar__sort-btn:hover {
+  color: var(--color-text);
 }
 
-.filter-bar__updating-text {
-  letter-spacing: 0.02em;
+.filter-bar__sort-btn--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
-@keyframes filter-bar-spin {
-  to {
-  transform: rotate(360deg);
-}
-}
-
-@keyframes filter-bar-fade-in {
-  from {
-  opacity: 0;
-  transform: translateY(-2px);
-}
-  to   {
-  opacity: 1;
-  transform: translateY(0);
-}
+.filter-bar__count {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
 }
 
-/* ── Mobile (更紧凑 — 每行单行滚动) ────────────────── */
+/* ── Mobile（全展开，多行 wrap，无折叠 / 横滑）──────── */
 
 .filter-bar--mobile {
   gap: var(--space-sm);
 }
 
-/* 每行强制单行，超出横向滚动 */
+/* 所有行多行 wrap 全展开，取消单行横向滚动 */
 .filter-bar--mobile .filter-bar__row {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
-.filter-bar--mobile .filter-bar__row::-webkit-scrollbar {
-  display: none;
-}
-
-/* wrap 行也改为单行滚动 */
 .filter-bar--mobile .filter-bar__row--wrap {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
-/* 移动端 chips 容器单行滚动 */
-.filter-bar--mobile .filter-bar__chips-wrap {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+.filter-bar--mobile .filter-bar__chips-wrap,
+.filter-bar--mobile .filter-bar__chips-scroll {
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
-.filter-bar--mobile .filter-bar__row--wrap::-webkit-scrollbar {
-  display: none;
-}
-
-.filter-bar--mobile .filter-bar__chips-wrap::-webkit-scrollbar {
-  display: none;
-}
-
-/* label 不滚动，固定在行首 */
+/* label 固定在行首 */
 .filter-bar--mobile .filter-bar__label {
   flex-shrink: 0;
   min-width: 2em;
@@ -274,19 +249,7 @@
   font-size: var(--text-xs);
 }
 
-/* chips 容器单行滚动 */
-.filter-bar--mobile .filter-bar__chips-scroll,
-.filter-bar--mobile .filter-bar__chips-wrap {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.filter-bar--mobile .filter-bar__chips-scroll::-webkit-scrollbar,
-.filter-bar--mobile .filter-bar__chips-wrap::-webkit-scrollbar {
-  display: none;
-}
-
+/* chips 不压缩，wrap 时换行 */
 .filter-bar--mobile .filter-bar__chip {
   flex-shrink: 0;
   padding: var(--space-xs) var(--space-md);
@@ -303,25 +266,18 @@
   font-size: var(--text-xs);
 }
 
-/* 移动端：updating 指示器移到左下角（避免与右上的滚动条/状态冲突） */
-.filter-bar--mobile .filter-bar__updating {
-  top: auto;
-  right: var(--space-md);
-  bottom: var(--space-2xs);
-}
-
 /* ── Tablet (640-1023) ────────────────────────────── */
 @media (width >= 640px) and (width <= 1023px) {
   .filter-bar__chip {
-  padding: var(--space-xs) var(--space-md);
-}
+    padding: var(--space-xs) var(--space-md);
+  }
 }
 
 /* ── Desktop (≥ 1024) ─────────────────────────────── */
 @media (width >= 1024px) {
   .filter-bar {
-  padding: var(--space-md) var(--space-sm);
-}
+    padding: var(--space-md) var(--space-sm);
+  }
 }
 
 /* ── TV ───────────────────────────────────────────── */
@@ -339,246 +295,6 @@
   font-size: var(--text-base);
 }
 
-.filter-bar--tv .filter-bar__updating {
-  padding: var(--space-xs) var(--space-md);
+.filter-bar--tv .filter-bar__sort-btn {
   font-size: var(--text-base);
-}
-
-/* ── Reduced motion ───────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .filter-bar__spinner {
-  animation: none;
-}
-  .filter-bar__updating {
-  animation: none;
-}
-}
-
-
-
-/* ── Footer（结果数 + 排序） ──────────────────────── */
-
-.filter-bar__footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-sm) 0 0;
-}
-
-.filter-bar__sort {
-  display: flex;
-  gap: var(--space-md);
-  padding-left: calc(var(--space-2xs) + var(--space-md));
-}
-
-.filter-bar__sort-btn {
-  position: relative;
-  padding: 0 0 var(--space-2xs);
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  line-height: 1.5;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.filter-bar__sort-btn:hover {
-  color: var(--color-primary);
-}
-
-.filter-bar__sort-btn--active {
-  color: var(--color-primary);
-  font-weight: 600;
-  border-bottom-color: var(--color-primary);
-}
-
-.filter-bar__count {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   限高筛选行（超过 maxRows 行时显示箭头滚动）
-   ═══════════════════════════════════════════════════════════════════════ */
-
-.filter-bar__row--limited {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: var(--space-sm);
-  align-items: center;
-}
-
-.filter-bar__row--limited .filter-bar__label {
-  align-self: center;
-  min-width: 2.5em;
-}
-
-/* ── 限高内容容器 ──────────────────────────────────── */
-
-.filter-bar__chips-limited {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  min-width: 0;
-  padding: var(--space-xs) 0;
-}
-
-/* 折叠模式：限制为 1 行高度，超出隐藏 */
-.filter-bar__chips-limited--collapsed {
-  max-height: calc(var(--comp-tab-height) + var(--space-xs) * 2);
-  overflow: hidden;
-}
-
-/* 超出 maxRows 时切换为单行水平滚动 */
-.filter-bar__chips-limited--scroll {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.filter-bar__chips-limited--scroll::-webkit-scrollbar {
-  display: none;
-}
-
-/* 滚动模式下 chip 不压缩 */
-.filter-bar__chips-limited--scroll .filter-bar__chip {
-  flex-shrink: 0;
-}
-
-/* ── 箭头容器（右侧两个箭头） ─────────────────────── */
-
-.filter-bar__scroll-arrows {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-2xs);
-  align-items: center;
-  align-self: center;
-}
-
-/* ── 箭头按钮 ──────────────────────────────────────── */
-
-.filter-bar__scroll-arrow {
-  display: flex;
-  flex-shrink: 0;
-  justify-content: center;
-  align-items: center;
-  width: var(--comp-tab-height);
-  height: var(--comp-tab-height);
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.filter-bar__scroll-arrow:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  background: var(--color-surface-hover, var(--color-surface));
-  color: var(--color-primary);
-}
-
-.filter-bar__scroll-arrow:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-/* ── Mobile 适配 ───────────────────────────────────── */
-
-.filter-bar--mobile .filter-bar__row--limited {
-  grid-template-columns: auto 1fr auto;
-}
-
-.filter-bar--mobile .filter-bar__chips-limited {
-  flex-wrap: wrap;
-}
-
-/* 滚动模式优先级必须高于 .filter-bar--mobile .filter-bar__chips-limited */
-.filter-bar--mobile .filter-bar__chips-limited--scroll {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.filter-bar--mobile .filter-bar__chips-limited--scroll::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── 更多按钮（移动端） ─────────────────────────────── */
-
-.filter-bar__more-btn {
-  display: flex;
-  flex-shrink: 0;
-  justify-content: center;
-  align-items: center;
-  height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1.5;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.filter-bar__more-btn:hover {
-  background: var(--color-surface-hover, var(--color-surface));
-  color: var(--color-primary);
-}
-
-/* ── 底部弹窗内容 ──────────────────────────────────── */
-
-.filter-bar__sheet-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  padding: var(--space-sm) 0 var(--space-lg);
-}
-
-.filter-bar__sheet-content .filter-bar__chip {
-  flex-shrink: 0;
-  height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1.5;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.filter-bar__sheet-content .filter-bar__chip:hover {
-  background: var(--color-surface-hover, var(--color-surface));
-  color: var(--color-primary);
-}
-
-.filter-bar__sheet-content .filter-bar__chip--active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-/* ── Reduced motion ────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .filter-bar__scroll-arrow,
-  .filter-bar__more-btn {
-    transition: none;
-  }
 }

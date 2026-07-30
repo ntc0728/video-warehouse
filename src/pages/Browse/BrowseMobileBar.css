@@ -1,0 +1,227 @@
+/* BrowseMobileBar — 移动端命令栏（方案②） */
+
+.bmb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+/* ── 动态预设行 ──────────────────────────────────── */
+.bmb-presets {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-sm);
+}
+
+.bmb-presets-scroll {
+  display: flex;
+  gap: var(--space-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+
+.bmb-presets-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.bmb-presets-empty {
+  font-size: var(--text-xs);
+  color: var(--color-text-mute, var(--color-text-tertiary));
+  white-space: nowrap;
+}
+
+.bmb-preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bmb-preset:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.bmb-preset.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--color-primary-shadow);
+}
+
+.bmb-preset-icon {
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.bmb-clear-memo {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-mute, var(--color-text-tertiary));
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.bmb-clear-memo:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* ── 已选轨 ──────────────────────────────────────── */
+.bmb-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  padding: 0 var(--space-sm);
+  align-items: center;
+}
+
+.bmb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-border-light);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.bmb-chip-label {
+  white-space: nowrap;
+}
+
+.bmb-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bmb-chip-x:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.bmb-rail-reset {
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-mute, var(--color-text-tertiary));
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.bmb-rail-reset:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* ── 操作行（排序 / 筛选）────────────────────────── */
+.bmb-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding: 0 var(--space-sm);
+}
+
+.bmb-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.bmb-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bmb-btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.bmb-btn--primary:hover {
+  background: var(--color-primary-hover);
+  color: #fff;
+}
+
+/* ── 面板底部（重置 / 完成）──────────────────────── */
+.bmb-drawer-foot {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md) 0 0;
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.bmb-foot-btn {
+  flex: 1;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.bmb-foot-btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bmb-preset,
+  .bmb-chip-x,
+  .bmb-btn,
+  .bmb-rail-reset,
+  .bmb-clear-memo {
+    transition: none;
+  }
+}
