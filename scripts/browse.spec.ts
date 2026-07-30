@@ -510,6 +510,14 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     expect(style.br).not.toBe('0px');
     expect(style.shadow).not.toBe('none');
     expect(style.border).not.toBe('0px');
-    console.log(`✅ BROWSE-075 通过: 移动端整页卡片 radius=${style.br} 阴影已加载`);
+
+    // 回归点：结果区必须在卡片内独立滚动（overflow-y:auto），
+    // 否则整页卡片被 overflow:hidden 裁切后无法滚动、结果溢出卡片外。
+    const resultsOverflow = await page
+      .locator('.browse-page--mobile .browse-card--results')
+      .first()
+      .evaluate((el) => getComputedStyle(el).overflowY);
+    expect(resultsOverflow).toBe('auto');
+    console.log(`✅ BROWSE-075 通过: 移动端整页卡片 radius=${style.br} 阴影已加载，结果区 overflow-y=${resultsOverflow}`);
   });
 });

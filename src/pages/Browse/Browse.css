@@ -42,9 +42,12 @@
 
 /* ── 移动端（isPhone，含视口 < 768px）：整页用卡片式布局包裹 ──
    命令栏（.bmb）+ 结果区合成一张大卡片（surface + 1px 边框 + 圆角 + 阴影），
-   与桌面端「双卡片相连」语义一致；内部子卡去壳，避免双重边框。 */
+   与桌面端「双卡片相连」语义一致；内部子卡去壳，避免双重边框。
+   卡片被约束为视口高（min-height:0），命令栏固定、结果区在卡片内独立滚动，
+   避免整页卡片被 overflow:hidden 裁切后无法滚动 / 结果溢出卡片。 */
 .browse-page.browse-page--mobile {
   gap: var(--space-sm);
+  min-height: 0;
   margin: var(--space-sm);
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -53,17 +56,23 @@
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
-/* 命令栏与结果区之间的分隔线 */
+/* 命令栏：固定不随结果滚动，并加右侧无溢出的兜底 */
 .browse-page.browse-page--mobile .bmb {
+  flex-shrink: 0;
+  min-width: 0;
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--color-border-light);
 }
+/* 结果区：在卡片内独立滚动（关键），避免整页卡片被裁切无法滚动 */
 .browse-page.browse-page--mobile .browse-card--results {
   flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
+  overflow: hidden auto;
   box-shadow: none;
 }
 

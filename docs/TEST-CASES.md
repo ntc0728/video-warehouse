@@ -242,7 +242,7 @@
 | BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在；直链模式隐藏 `.bmb-sort-btn` / `.bmb-filter-trigger` / `.bmb-presets` |
 | BROWSE-073 | 激活态文字用反向色 token | 窄视口进入 /browse（暗色） | 读取 `.bmb-seg.on` 计算色 | 等于 `--color-text-inverse`（非硬编码 #fff） |
 | BROWSE-074 | 桌面宽视口不渲染命令栏 | 桌面宽视口进入 /browse | 查看 `.bmb` | 命令栏不渲染，桌面搜索 Tab 正常 |
-| BROWSE-075 | 移动端整页卡片式包裹 | 窄视口（390×844）进入 /browse | 读取 `.browse-page--mobile` 计算样式 | 圆角≠0、阴影≠none、边框宽度≠0（整页 surface 卡片，命令栏与结果区以分隔线相连） |
+| BROWSE-075 | 移动端整页卡片式包裹 | 窄视口（390×844）进入 /browse | 读取 `.browse-page--mobile` 计算样式 | 圆角≠0、阴影≠none、边框宽度≠0（整页 surface 卡片，命令栏与结果区以分隔线相连）；另断言 `.browse-card--results` 的 `overflow-y=auto`（结果区在卡片内独立滚动，避免整页卡片被裁切无法滚动） |
 
 ---
 
