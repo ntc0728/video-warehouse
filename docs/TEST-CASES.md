@@ -231,6 +231,18 @@
 | BROWSE-052 | 浏览器标题（智能搜索） | 智能检索模式，有搜索词 | 查看浏览器标签 | 使用全局默认标题（useDocumentTitle(null)） |
 | BROWSE-053 | 浏览器标题（CMS 搜索） | 直链搜索模式，搜索词"复仇者" | 查看浏览器标签 | 显示"复仇者 - 搜索 - kinoTV" |
 
+### 2.7 移动端命令栏 (BrowseMobileBar)
+
+> 移动端命令栏回归测试原在 `scripts/browse-mobile.spec.ts`，2026-07-30 并入 `scripts/browse.spec.ts`（2.8 移动端命令栏）。触发条件为视口 < 768px。面板内「✨ 为你推荐」标题 (bmb-rec-head) 已于同日删除，故用例断言改用稳定的底部操作区 / FilterBar。
+
+| 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
+|------|---------|---------|---------|---------|
+| BROWSE-070 | 移动端命令栏渲染且 CSS 已加载 | 窄视口（390×844）进入 /browse | 查看 `.bmb` / `.bmb-cmdbar` | 命令栏可见，`display=flex`（抓出「样式全失效」回归）；桌面搜索 Tab 不渲染 |
+| BROWSE-071 | 筛选面板可打开/关闭 | 窄视口进入 /browse | 点击 `.bmb-filter-trigger` 打开、`.drawer-close` 关闭 | 右滑全屏面板（role=dialog）含 FilterBar 与底部操作区（完成/重置），可关闭 |
+| BROWSE-072 | 移动端模式切换 | 窄视口进入 /browse | 点击 `.bmb-mode-seg` 两个 seg | 智能↔直链高亮切换，结果区仍在 |
+| BROWSE-073 | 激活态文字用反向色 token | 窄视口进入 /browse（暗色） | 读取 `.bmb-seg.on` 计算色 | 等于 `--color-text-inverse`（非硬编码 #fff） |
+| BROWSE-074 | 桌面宽视口不渲染命令栏 | 桌面宽视口进入 /browse | 查看 `.bmb` | 命令栏不渲染，桌面搜索 Tab 正常 |
+
 ---
 
 ## 3. 详情页 (Detail)

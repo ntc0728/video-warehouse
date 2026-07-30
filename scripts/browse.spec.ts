@@ -334,3 +334,149 @@ test.describe('2.7 移动端搜索', () => {
     console.log(`✅ BROWSE-060 更换搜索词后再次调用接口 (请求数=${searchReqs.length})`);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 2.8 移动端命令栏 (BrowseMobileBar)
+// 注：原 scripts/browse-mobile.spec.ts 已并入本块（2026-07-30）。
+// 触发条件: useIsMobileLayout() = isNative || isRealPhone(手机UA) || 视口<768px
+//          本块用「视口<768px」触发，无需伪造手机 UA。
+//          面板内「✨ 为你推荐」标题 (bmb-rec-head) 已于 2026-07-30 删除，
+//          故断言改为稳定的 .bmb-pf-apply / FilterBar。
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('BROWSE-070: 窄视口进入 /browse 渲染移动端命令栏，且样式已加载', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 移动端命令栏根节点渲染
+    const bmb = page.locator('.bmb').first();
+    await expect(bmb).toBeVisible({ timeout: 5000 });
+
+    // 关键回归点：若 BrowseMobileBar.css 漏引，.bmb / .bmb-cmdbar 会是默认 block，
+    // 而非 CSS 定义的 flex。这里直接断言 computed display，能抓出「样式全失效」。
+    const bmbDisplay = await bmb.evaluate((el) => getComputedStyle(el).display);
+    expect(bmbDisplay).toBe('flex');
+
+    const cmdbarDisplay = await page
+      .locator('.bmb-cmdbar')
+      .first()
+      .evaluate((el) => getComputedStyle(el).display);
+    expect(cmdbarDisplay).toBe('flex');
+
+    // 移动端由命令栏接管：桌面搜索 Tab 不应渲染
+    const desktopTabs = page.locator('.browse-search-tab');
+    expect(await desktopTabs.count()).toBe(0);
+
+    // 命令栏核心控件齐全
+    await expect(page.locator('.bmb-mode-seg .bmb-seg').first()).toBeVisible();
+    await expect(page.locator('.bmb-filter-trigger')).toBeVisible();
+    await expect(page.locator('.bmb-sort-btn')).toBeVisible();
+
+    console.log('✅ BROWSE-070 通过: 移动端命令栏渲染且 CSS 已加载（display=flex）');
+  });
+
+  test('BROWSE-071: 点击「筛选」打开右滑全屏面板，可关闭', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 关闭态：面板未挂载
+    expect(await page.locator('.drawer-content').count()).toBe(0);
+
+    // 打开
+    await page.locator('.bmb-filter-trigger').click();
+    const drawer = page.locator('.drawer-content').first();
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+    // radix Dialog 自带 role=dialog，确认是真正的对话框而非裸 div
+    await expect(drawer).toHaveRole('dialog', { timeout: 5000 });
+    // 面板内含 FilterBar 与底部操作区（完成/重置）
+    await expect(page.locator('.drawer-body .filter-bar, .drawer-body [class*="filter"]').first()).toBeVisible();
+    await expect(page.locator('.bmb-pf-apply')).toBeVisible();
+
+    // 关闭
+    await page.locator('.drawer-close').click();
+    await expect(page.locator('.drawer-content').first()).toBeHidden({ timeout: 5000 });
+
+    console.log('✅ BROWSE-071 通过: 筛选面板可打开/关闭');
+  });
+
+  test('BROWSE-072: 移动端模式切换（智能↔直链）生效', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    const segs = page.locator('.bmb-mode-seg .bmb-seg');
+    await expect(segs).toHaveCount(2);
+
+    // 默认智能检索高亮
+    const smartOn = await segs.nth(0).evaluate((el) => el.classList.contains('on'));
+    expect(smartOn).toBe(true);
+
+    // 切到直链搜索
+    await segs.nth(1).click();
+    await page.waitForTimeout(300);
+    const cmsOn = await segs.nth(1).evaluate((el) => el.classList.contains('on'));
+    expect(cmsOn).toBe(true);
+
+    // 结果区仍在
+    await expect(page.locator('.browse-card--results').first()).toBeVisible();
+
+    console.log('✅ BROWSE-072 通过: 移动端模式切换生效');
+  });
+
+  test('BROWSE-073: 暗色主题下激活态文字使用反向色 token（非硬编码 #fff）', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 读取反向色 token 的计算值
+    const inverse = await page.evaluate(() => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--color-text-inverse').trim();
+      if (!v) return null;
+      const probe = document.createElement('span');
+      probe.style.color = v;
+      probe.style.display = 'none';
+      document.body.appendChild(probe);
+      const rgb = getComputedStyle(probe).color;
+      probe.remove();
+      return rgb;
+    });
+    // 取激活态段文字计算色
+    const activeColor = await page
+      .locator('.bmb-mode-seg .bmb-seg.on')
+      .first()
+      .evaluate((el) => getComputedStyle(el).color);
+
+    // 若 CSS 仍是硬编码 #fff，则 activeColor === 'rgb(255, 255, 255)'，
+    // 而 inverse token 在暗色下通常不同 → 二者不一致即说明已用 token 修复。
+    if (inverse) {
+      expect(activeColor.toLowerCase()).toBe(inverse.toLowerCase());
+      console.log(`✅ BROWSE-073 通过: 激活态文字色 = ${activeColor}（= --color-text-inverse）`);
+    } else {
+      // token 取不到时退化为「断言不是纯白」（硬编码 #fff 的典型特征）
+      expect(activeColor.toLowerCase()).not.toBe('rgb(255, 255, 255)');
+      console.log(`⚠️ BROWSE-073: 未取到 --color-text-inverse，但激活态非纯白 (${activeColor})`);
+    }
+  });
+});
+
+test.describe('2.8 移动端命令栏 — 桌面回归守卫', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('BROWSE-074: 桌面宽视口不渲染移动端命令栏', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 桌面 UA + 宽视口 → isPhone=false → 移动端命令栏不渲染
+    expect(await page.locator('.bmb').count()).toBe(0);
+    // 桌面搜索 Tab 正常渲染
+    await expect(page.locator('.browse-search-tab').first()).toBeVisible();
+
+    console.log('✅ BROWSE-074 通过: 桌面宽视口不渲染移动端命令栏');
+  });
+});

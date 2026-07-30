@@ -931,6 +931,12 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - 画中画比例修复（PiP 模式下移除自定义宽高比样式）
   - 播放页折叠面板文字加粗、选季面板移动端 3 列布局
   - Browse 页移除子元素冗余左右 padding
+- **v1.6.0** - 移动端命令栏 (BrowseMobileBar) 样式细化（2026-07-30）：
+  - 预设/推荐卡压缩（预设按钮 text-xs + space-xs padding；推荐卡 min-width 6rem、padding space-xs、gap space-xs）
+  - 排序键移到模式切换右侧、筛选按钮新增漏斗 SVG 图标并加大右 padding（space-lg）
+  - 删除「✨ 为你推荐」标题（bmb-rec-head）与 TMDB 趋势提示（bmb-cap）
+  - 抽屉内 FilterBar 隐藏 footer（hideFooter）；面板底部与上方间距加大（margin-top space-xl、padding-top space-lg）
+  - 移动端命令栏回归测试由 browse-mobile.spec.ts 并入 browse.spec.ts（BROWSE-070~074），原文件删除
 
 ---
 
