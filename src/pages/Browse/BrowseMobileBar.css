@@ -14,9 +14,9 @@
 }
 .bmb-mode-seg {
   display: inline-flex;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: var(--color-surface-hover);
+  background: var(--color-surface);
   overflow: hidden;
 }
 .bmb-seg {
