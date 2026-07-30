@@ -876,6 +876,15 @@ body.skin-transitioning .skin-btn.active {
   scale: 0.96;
 }
 
+/* 关于页（AboutTab）可点击项：移除 hover / focus 背景变色，
+   与设置页整体「不使用背景色作为反馈」的约定一致；仅保留文字缩放按压反馈。
+   用 .about-tab 作用域限定，不影响设置页其它 tab 的 List 项。 */
+.about-tab .list-item--clickable:hover,
+.about-tab .list-item--clickable:focus,
+.about-tab .list-item--clickable:focus-visible {
+  background-color: transparent;
+}
+
 /* ===== 移动端设置页顶部居中资料区 ===== */
 .settings-mobile-profile {
   display: flex;
