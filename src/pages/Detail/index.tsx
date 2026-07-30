@@ -726,7 +726,7 @@ export default function DetailPage() {
               }}
             >
               <tab.icon size={16} />
-              {tab.label}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>

@@ -45,7 +45,7 @@ export default function SettingsTabBar({ activeTab, onChange, tabs = SETTINGS_TA
           onClick={() => onChange(tab.key)}
         >
           <span className="settings-tab__icon">{TAB_ICONS[tab.key]}</span>
-          {tab.label}
+          <span className="settings-tab__label">{tab.label}</span>
         </button>
       ))}
     </div>
