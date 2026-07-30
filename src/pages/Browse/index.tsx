@@ -321,13 +321,13 @@ export default function BrowsePage() {
               onClick={() => handleModeChange('smart')}
             >
               <Search size={14} />
-              智能检索
+              <span>智能检索</span>
             </button>
             <button
               className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
               onClick={() => handleModeChange('cms')}
             >
-              直链搜索
+              <span>直链搜索</span>
             </button>
           </div>
           {/* 智能检索模式：FilterBar（footer 移到 Card 2） */}

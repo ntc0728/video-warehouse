@@ -209,12 +209,12 @@ export default function PersonPage() {
         <div className="person-tabs">
           {movies.length > 0 && (
             <button className={`tab-underline person-tab ${activeTab === 'movies' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => handleTabChange('movies')}>
-              电影（{movies.length}）
+              <span>电影（{movies.length}）</span>
             </button>
           )}
           {tvShows.length > 0 && (
             <button className={`tab-underline person-tab ${activeTab === 'tv' ? 'tab-underline--active person-tab--active' : ''}`} onClick={() => handleTabChange('tv')}>
-              剧集（{tvShows.length}）
+              <span>剧集（{tvShows.length}）</span>
             </button>
           )}
         </div>
