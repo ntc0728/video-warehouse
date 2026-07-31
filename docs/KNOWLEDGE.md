@@ -945,6 +945,7 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - 响应式卡片网格列数收敛为统一的 2/3/5（移动 / 平板 / 桌面及大屏），IPTV 骨架网格改为跟随 `--iptv-cols` 全局 token，不再走 `auto-fill`
   - TV 模式顶部导航栏新增 IPTV 直达入口（仅 `isTV` 时渲染，置于右侧导航项之前）
   - 工程清理：删除未挂载的 `PerformanceMonitor` 开发组件及其唯一依赖 `web-vitals`（npm uninstall 同步锁文件）；删除 9 个零引用自定义 hooks（`layout` / `useFetch` / `useFocusable` / `useGridLayout` / `useMinLoadingTime` / `usePointerType` / `usePreload` / `useThemeMode` / `useWebVitals`）并清理对应 barrel 死出口、CSS 死类/重复块与多处过时注释
+  - 硬编码像素去化（Design Token 收口）：把散落在组件里的像素硬编码统一收口为 Design Token——`SearchBox`（下拉高度 `Math.min(…,448)` → 注入 `--dropdown-avail-h`、由 `--layout-dropdown-max-h` 驱动）、`Select`（下拉 `max-h-[320px]`/`px-[14px]` → `--layout-dropdown-max-h`/`--space-md`）、`IPTVOSDBar`（OSD 宽度 `OSD_MIN_WIDTH=360`/`OSD_MAX_WIDTH=1600` 的 JS 计算整段删除、纯 CSS `width: min(var(--layout-osd-max-width), 100%)`；TV 端 `--layout-osd-max-width` 由死值 `1600px` 改为标准 `clamp(100rem, 83.333vw, 200rem)`）、`Sidebar`（`isMobile ? 200 : 240` / 折叠 `:64` → `--sidebar-width-mobile`/`--sidebar-width`/`--sidebar-width-collapsed`）、`TabBar`（`text-[10px]` → `text-[var(--text-2xs)]`）、`ConfirmDialog`/`Modal`（内联 `<svg width="N">` 与 `w-[28px]` → `--icon-*`）；`variables.css` 的 `--layout-osd-max-width` 维持桌面原曲线 `clamp(320px, 20rem + 30vw, 1400px)`（旧 JS 的 360/1600 在最终 `min()` 中恒被 token 吞掉、对实际宽度零影响）；`UniversalPlayer` 移除仅为 OSD 宽度服务的 `containerWidth` state 与 `ResizeObserver`
 
 ---
 
@@ -995,3 +996,8 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   全仓扫描发现大量零引用 hooks、未挂载组件、CSS 死类/重复 `@keyframes`、过时注释，长期累积增加维护负担与回归风险。
   我们决定：① 删除任何模块前先用 grep/子代理全仓核实引用（含动态 `import()`、barrel 导出、CSS class 拼接、测试脚本）；② 删除未挂载功能组件时，若其独占某 npm 依赖，一并 `npm uninstall` 并同步 lock 文件；③ 对「可能将来使用」的动画/工具类（如 `animate-*` 工具类、`spin`/`pulse` 同名重复 `@keyframes`）保留、不激进删除；④ 注释须与实际代码逐行对齐，删除死变量/死分支须同步清理引用与注释。
   后果：仓库更小、构建更干净；需防止将来误重新引入已删模块（见记忆库「死代码清理记录」）。
+
+- **ADR-006 禁止源码硬编码像素尺寸，视觉尺寸一律走 Design Token（2026-07-31）**
+  项目视觉尺寸曾散落大量「源码字面量像素」：下拉高度 `Math.min(…,448)`、OSD 宽度 `OSD_MIN_WIDTH=360`/`OSD_MAX_WIDTH=1600`、`Sidebar` 的 `isMobile ? 200 : 240`、图标 `<svg width="16">`、Tailwind 任意值 `text-[10px]`/`w-[28px]`/`px-[14px]` 等。这些字面量不随 `--text-*`/`--space-*`/`--layout-*` 的流体曲线缩放，在 2K/4K/TV 下比例失真，且 TV 端无法统一放大。
+  我们决定：① 组件视觉尺寸一律走 Design Token——图标经 `Icon` 组件（`size` 为档名）或 `--icon-*`、布局/间距/字号经 `--space-*`/`--text-*`/`--layout-*`；② 去硬编码统一用 `scripts/css-px-to-token.mjs` 自动替换，再人工核对 token 语义边界（严禁把跨语义尺寸硬压进同一档，如把 32/36/40/48 全压 `icon-xl`）；③ 例外（允许保留字面量，因为它们是逻辑阈值而非视觉尺寸）：`useMediaQuery` 断点值、`IntersectionObserver` 的 `rootMargin`、`<img sizes>` 响应式提示、`BottomSheet` 的 `1px` sr-only hack、`window.innerWidth` 列数兜底。
+  后果：所有视觉尺寸跟随同一条 vw 缩放曲线，任意视口比例恒定；TV 端改 `[data-device="tv"]` 覆盖 `--text-*` 后图标/布局自动跟随放大。权衡：需警惕「为 token 单独写独立 clamp/slope」会破坏与文字的比例锁定（图标 token 必须 `calc(var(--text-<档>) * 系数)` 派生，见记忆库「图标 token 派生自文字 token」）。
