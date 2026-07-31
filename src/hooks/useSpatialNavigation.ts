@@ -8,11 +8,11 @@ export function useSpatialNavigation(options: {
   const { containerRef, selector = '[tabindex="0"], button, a, input, select', isTV = false } = options;
 
   useEffect(() => {
-    if (!isTV || !containerRef.current) return;
-
-    const container = containerRef.current;
+    if (!isTV) return;
 
     const getFocusableElements = (): HTMLElement[] => {
+      const container = containerRef.current;
+      if (!container) return [];
       return Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
         (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
       );
@@ -82,7 +82,13 @@ export function useSpatialNavigation(options: {
       return bestCandidate;
     };
 
+    // 在 window 上监听（而非 container），确保无论焦点在导航栏还是页面内都能捕获方向键。
+    // Keep-Alive 下多个页面同时挂载，通过 offsetParent 可见性检查只让活动页处理。
     const handleKeyDown = (e: KeyboardEvent) => {
+      const container = containerRef.current;
+      // 容器不存在或不可见（Keep-Alive 隐藏页 display:none → offsetParent===null）→ 跳过
+      if (!container || container.offsetParent === null) return;
+
       const directionMap: Record<string, 'up' | 'down' | 'left' | 'right'> = {
         ArrowUp: 'up',
         ArrowDown: 'down',
@@ -93,15 +99,16 @@ export function useSpatialNavigation(options: {
       const direction = directionMap[e.key];
       if (!direction) return;
 
+      const elements = getFocusableElements();
+      // 容器内没有可聚焦元素 → 放行，让浏览器默认滚动行为生效
+      if (elements.length === 0) return;
+
       e.preventDefault();
 
-      const elements = getFocusableElements();
       const activeElement = document.activeElement as HTMLElement;
-
-      if (!activeElement || !container.contains(activeElement)) {
-        if (elements.length > 0) {
-          elements[0].focus();
-        }
+      if (!container.contains(activeElement)) {
+        // 焦点不在容器内（如顶部导航栏）→ 聚焦第一个元素
+        elements[0].focus();
         return;
       }
 
@@ -111,7 +118,7 @@ export function useSpatialNavigation(options: {
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [containerRef, selector, isTV]);
 }
