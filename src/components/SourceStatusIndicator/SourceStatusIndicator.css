@@ -36,7 +36,7 @@
 
 .ssb-mini {
   position: relative;
-  width: 46px;
+  width: var(--src-det-progress-w);
   height: 5px;
   border-radius: 999px;
   background: var(--color-border-light);

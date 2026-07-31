@@ -115,7 +115,7 @@
     transparent 75%,
     transparent
   );
-  background-size: 20px 20px;
+  background-size: var(--loading-stripe-size) var(--loading-stripe-size);
   transform-origin: left;
   animation:
     app-loading-fill 1.5s var(--ease-standard) forwards,
@@ -143,7 +143,7 @@
 
 @keyframes app-loading-stripes {
   0%   { background-position: 0 0; }
-  100% { background-position: 20px 0; }
+  100% { background-position: var(--loading-stripe-size) 0; }
 }
 
 @keyframes app-loading-fade-in {
