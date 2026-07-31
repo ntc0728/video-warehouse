@@ -465,9 +465,16 @@
   --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
   --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
 
-  /* ── Layout ──────────────────────────────────────────────────────────── */
+  /* ── Layout（TV 视口放大：导航栏整体尺度跟随视口，而非沿用桌面值）────────── */
   --safe-area-x: 3vw;
   --safe-area-y: 2vh;
+
+  /* A. 导航栏高度：桌面 clamp(60→76) 在 1920+ 大屏显矮，TV 整体加高 */
+  --header-height: clamp(84px, 4.5vw, 120px);
+  /* B. Logo：纠正「错用 --layout-tabbar-height(底部 TabBar 语义)」错位，并 TV 放大 */
+  --layout-logo-size: clamp(72px, 4vw, 120px);
+  /* C. 品牌文字：升到 lg 档，大屏不再偏小 */
+  --layout-brand-font-size: var(--layout-brand-font-size-lg);
 
   /* Minimum 48dp touch target for TV remote navigation */
   --comp-btn-min-height: var(--space-3xl);

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -17,12 +18,12 @@ import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './StickyHeader.css';
 import { Icon } from "@/components/ui/Icon";
 
-interface NavItem { key: string; title: string; icon: React.ReactNode; path: string; }
+interface NavItem { key: string; title: string; icon: LucideIcon; path: string; }
 
 const RIGHT_NAV_ITEMS: NavItem[] = [
-  { key: 'collections', title: '收藏', icon: <Icon icon={Star} size="sm" />, path: '/collections' },
-  { key: 'history', title: '历史', icon: <Icon icon={Clock} size="sm" />, path: '/history' },
-  { key: 'settings', title: '设置', icon: <Icon icon={Settings} size="sm" />, path: '/settings' },
+  { key: 'collections', title: '收藏', icon: Star, path: '/collections' },
+  { key: 'history', title: '历史', icon: Clock, path: '/history' },
+  { key: 'settings', title: '设置', icon: Settings, path: '/settings' },
 ];
 
 /** 移动端进入这些页面时，顶部导航栏中央显示对应标题（非搜索模式） */
@@ -163,7 +164,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
         onClick={(e) => { e.preventDefault(); onClick(); }}
         title={item.title}
       >
-        {item.icon}<span className="sticky-header__nav-label">{item.title}</span>
+        <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
       </a>
     );
   };

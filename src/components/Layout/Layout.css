@@ -58,6 +58,15 @@
   /* 折叠/展开动画期间不施加 transform（避免内部 fixed 顶栏位移），由 flex 自然填充 */
 }
 
+/* E. TV overscan 对称化：安全区下沉为内容主列的四边 inset，使所有页面内容
+   （.page-padding 等）与固定顶栏对齐获得安全边距。原设计只在 .sticky-header--tv
+   设左右 safe-area-x，内容区域未处理，且 --safe-area-y 从未使用。
+   固定顶栏脱离 main 文档流，其安全边距仍由 .sticky-header--tv 自身 padding 承担，
+   二者用同一组 --safe-area-* 变量，四边对称。 */
+[data-device="tv"] .app-shell__main {
+  padding: var(--safe-area-y) var(--safe-area-x);
+}
+
 /* scroll-wrapper：包含滚动容器和浮动滚动条，自身不滚动 */
 .app-shell__scroll-wrapper {
   position: relative;
