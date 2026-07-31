@@ -278,6 +278,11 @@
     --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
   --source-meta-min-width: clamp(120px, 7.5rem + 0.5vw, 180px);  /* 源详情最小宽度：120→180px 流体 */
   --error-msg-max-width: clamp(100px, 6.25rem + 0.3vw, 140px);  /* 错误文案最大宽度：100→140px 流体 */
+  /* ── 源检测组件微尺寸（SourceDetectPill / SourceStatusIndicator 同源，组件 CSS 内不再写死真实 px）── */
+  --src-det-progress-w: 46px;                                  /* 内联进度条宽度（微元素，固定） */
+  --src-det-popup-max-h: clamp(220px, 13.75rem + 1vw, 320px);  /* 检测弹层最大高度：220→320px 流体 */
+  --src-det-grid-min: clamp(150px, 9.375rem + 0.5vw, 220px);   /* 弹层网格单元最小宽：150→220px 流体 */
+  --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
   --layout-tabbar-height:      clamp(56px, 3.5rem + 0.3vw, 72px);  /* 移动端底部 TabBar 高度：56→72px 流体 */
   --layout-datepicker-width:   clamp(340px, 21.25rem + 1vw, 460px); /* 日期选择器宽度：340→460px 流体 */
   --layout-collapse-max-h:     clamp(1000px, 62.5rem + 4vw, 1400px);  /* 折叠面板最大高度：1000→1400px 流体 */

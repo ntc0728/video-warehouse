@@ -38,7 +38,7 @@
 
 .sdp-mini {
   position: relative;
-  width: 46px;
+  width: var(--src-det-progress-w);
   height: 5px;
   border-radius: 999px;
   background: var(--color-border-light);
@@ -134,8 +134,8 @@
 .sdp-pop-grid {
   display: grid;
   gap: 4px;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  max-height: 220px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--src-det-grid-min), 1fr));
+  max-height: var(--src-det-popup-max-h);
   overflow: auto;
 }
 .sdp-cell {
