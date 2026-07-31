@@ -5,7 +5,7 @@ export function useSpatialNavigation(options: {
   selector?: string;
   isTV?: boolean;
 }): void {
-  const { containerRef, selector = '[tabindex="0"], button, a, input, select', isTV = false } = options;
+  const { containerRef, selector = '[tabindex="0"], button, a, input, select, [role="tab"], [role="button"], [role="combobox"]', isTV = false } = options;
 
   useEffect(() => {
     if (!isTV) return;

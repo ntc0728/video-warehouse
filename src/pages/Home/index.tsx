@@ -22,7 +22,6 @@ import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/consta
 import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
@@ -35,7 +34,6 @@ export default function HomePage() {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
 
-  useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('home', undefined, location.pathname === '/');
 
   // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────

@@ -10,8 +10,7 @@ import { useSmartBack } from '@/lib/navigation';
 import type { TMDBPersonDetail, TMDBMovie, TMDBTVShow } from '@/types/tmdb';
 import { AppLoading } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
-import { useIsTV } from '@/hooks/useMediaQuery';
+
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { VideoCard } from '@/components/VideoCard';
@@ -46,8 +45,6 @@ export default function PersonPage() {
   const handleBack = useSmartBack();
 
   const pageRef = useRef<HTMLDivElement>(null);
-  const isTV = useIsTV();
-  useSpatialNavigation({ containerRef: pageRef, isTV });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

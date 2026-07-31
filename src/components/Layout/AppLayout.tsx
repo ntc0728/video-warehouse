@@ -12,6 +12,7 @@ import { AppLoading } from '@/components/common';
 import './Layout.css';
 import { useSettingsStore, useKeepAliveStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
@@ -234,6 +235,9 @@ export default function AppLayout() {
     const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
     document.documentElement.setAttribute('data-device', device);
   }, [isTV, isNative, isMobileWeb]);
+
+  // TV 方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）
+  useSpatialNavigation({ containerRef: appShellRef, isTV });
 
   useEffect(() => {
     const applyTheme = () => {

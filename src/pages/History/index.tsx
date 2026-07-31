@@ -19,8 +19,7 @@ import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useBackdropLoader } from '@/hooks/useBackdropLoader';
 import { useDocumentTitle } from '@/hooks';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
-import { useIsTV } from '@/hooks/useMediaQuery';
+
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
@@ -157,8 +156,6 @@ export default function HistoryPage() {
 
   useDocumentTitle();
   const pageRef = useRef<HTMLDivElement>(null);
-  const isTV = useIsTV();
-  useSpatialNavigation({ containerRef: pageRef, isTV });
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
