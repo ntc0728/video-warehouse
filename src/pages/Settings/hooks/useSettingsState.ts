@@ -53,6 +53,7 @@ export function useSettingsState() {
     skipIntroDuration, setSkipIntroDuration,
     skipOutroDuration, setSkipOutroDuration,
     autoPlay, setAutoPlay, skin, setSkin,
+    tvMode, setTvMode,
   } = useSettingsStore();
 
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
@@ -257,6 +258,7 @@ export function useSettingsState() {
       skipIntro, setSkipIntro, skipIntroDuration, setSkipIntroDuration,
       skipOutro, setSkipOutro, skipOutroDuration, setSkipOutroDuration,
       autoPlay, setAutoPlay,
+      tvMode, setTvMode,
     },
     iptv: {
       iptvSettings, setIPTVSettings,

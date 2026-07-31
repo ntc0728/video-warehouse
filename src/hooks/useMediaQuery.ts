@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { isNativePlatform } from '@/lib/platform';
+import { useSettingsStore } from '@/stores';
 
 /**
  * 监听 CSS 媒体查询的 Hook
@@ -126,10 +127,14 @@ export function getIsTV(): boolean {
   );
 }
 
-/** 电视设备检测 Hook，基于 getIsTV 的状态化封装 */
+/**
+ * 电视设备检测 Hook
+ * 优先读取用户在设置页的「TV 模式」强制开关；关闭时回退到 User-Agent 自动检测。
+ * 订阅 store，开关切换后即时响应（无需重新挂载组件）。
+ */
 export function useIsTV(): boolean {
-  const [isTV] = useState(getIsTV);
-  return isTV;
+  const forceTV = useSettingsStore((s) => s.tvMode);
+  return forceTV || getIsTV();
 }
 
 /**
