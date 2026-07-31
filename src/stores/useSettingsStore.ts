@@ -80,7 +80,7 @@ export const DEFAULT_SETTINGS = {
   skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
-  tvOverscan: 3,
+  tvOverscan: 5,
   username: '',
   avatar: '',
 };
@@ -110,7 +110,7 @@ export const useSettingsStore = create<SettingsState>()(
       skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
-  tvOverscan: 3,
+  tvOverscan: 5,
   username: '',
   avatar: '',
 

@@ -238,15 +238,18 @@ export default function AppLayout() {
     document.documentElement.setAttribute('data-device', device);
   }, [isTV, isNative, isMobileWeb]);
 
-  // TV 过扫描（overscan）安全区：滑块数值（0–10，单位 vw/vh）写入 CSS 变量。
-  // 0 = 铺满到裁切边；兼容旧版本持久化的布尔值（true→3，false→0）。
+  // TV 过扫描（overscan）安全区：预设滑块（0/5/10/15/20，单位 vw/vh）写入 CSS 变量。
+  // 0 = 铺满到裁切边；兼容旧版本持久化的布尔值（true→5，false→0）及任意旧数值（吸附到最近预设）。
   useEffect(() => {
-    const v =
-      typeof tvOverscan === 'number'
-        ? tvOverscan
-        : tvOverscan
-          ? 3
-          : 0;
+    const PRESETS = [0, 5, 10, 15, 20];
+    let v: number;
+    if (typeof tvOverscan !== 'number' || Number.isNaN(tvOverscan)) {
+      v = tvOverscan ? 5 : 0;
+    } else {
+      v = PRESETS.reduce((a, b) =>
+        Math.abs(b - tvOverscan) < Math.abs(a - tvOverscan) ? b : a,
+      );
+    }
     const root = document.documentElement;
     root.style.setProperty('--safe-area-x', `${v}vw`);
     root.style.setProperty('--safe-area-y', `${v}vh`);

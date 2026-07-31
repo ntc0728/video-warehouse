@@ -150,8 +150,14 @@ body.skin-transitioning .skin-btn.active {
   text-align: center;
 }
 
-/* TV 过扫描安全区滑块数值标签 */
-.settings-slider-value {
+/* TV 过扫描安全区：滑块与数值内联于 extra，宽度收窄，不独占整行 */
+.overscan-control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.overscan-value {
   min-width: 3rem;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
@@ -160,10 +166,8 @@ body.skin-transitioning .skin-btn.active {
   white-space: nowrap;
 }
 
-/* 让滑块在列表项内占满整行（标题/描述下方） */
-.settings-slider-value + .ui-slider,
-.list-item__title ~ .ui-slider {
-  margin-top: var(--space-xs);
+.overscan-slider {
+  width: clamp(7rem, 30vw, 11rem);
 }
 
 /* 设置区块标题（含图标）：inline-flex 水平居中，桌面端放大至 text-xl */
