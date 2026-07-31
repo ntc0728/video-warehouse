@@ -728,3 +728,78 @@ test.describe('1.5 全局交互', () => {
     console.log('✅ HOME-046 通过: 移动端侧边栏头部显示 logo + KinoTV');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 1.6 UI 微调回归（2026-07-31：非 TV 零焦点框 / TMDB 箭头 hover / 侧边栏留白 / 分类快选间距）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('1.6 UI 微调回归', () => {
+  test('HOME-050: 桌面端 TMDBMovieRow 箭头默认隐藏，悬停行才显示', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2500);
+
+    const arrow = page.locator('.tmdb-movierow-arrow').first();
+    const wrapper = page.locator('.tmdb-movierow-wrapper').first();
+    if ((await arrow.count()) === 0 || (await wrapper.count()) === 0) {
+      console.log('⚠️ HOME-050: 未检测到 TMDB 行/箭头，跳过');
+      return;
+    }
+    // 桌面端默认 opacity=0（隐藏），悬停整行后淡入 opacity=1
+    await expect(arrow).toHaveCSS('opacity', '0');
+    await wrapper.hover();
+    await expect(arrow).toHaveCSS('opacity', '1');
+    console.log('✅ HOME-050 通过: 桌面端 TMDB 行箭头默认隐藏、悬停显示');
+  });
+
+  test('HOME-051: 桌面端键盘焦点不显示焦点框', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    // 键盘 Tab 触发 :focus-visible；非 TV 全局规则应清除 outline/box-shadow 焦点环
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+    const fv = page.locator(':focus').first();
+    if ((await fv.count()) === 0) {
+      console.log('⚠️ HOME-051: 未捕获键盘焦点元素，跳过');
+      return;
+    }
+    await expect(fv).toHaveCSS('outline-style', 'none');
+    console.log('✅ HOME-051 通过: 桌面端键盘焦点 outline-style=none（非 TV 零焦点框）');
+  });
+
+  test('HOME-052: 移动端分类快选横向间距收紧为 --space-lg', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    const inner = page.locator('.category-quick-access__inner').first();
+    if ((await inner.count()) === 0) {
+      console.log('⚠️ HOME-052: 未检测到分类快选容器，跳过');
+      return;
+    }
+    const gap = await inner.evaluate((el) => getComputedStyle(el).gap);
+    const px = parseFloat(gap);
+    // 旧值为 --space-2xl（下限 24px，对 40px 圆形卡片偏松）；现为 --space-lg（更小、更紧凑）
+    expect(px).toBeGreaterThan(0);
+    expect(px).toBeLessThan(24);
+    console.log(`✅ HOME-052 通过: 移动端分类快选 gap=${gap}（< 24px）`);
+  });
+
+  test('HOME-053: 桌面端侧边栏导航项横向留白加大（--space-xl）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    const item = page.locator('.home-sidebar__item').first();
+    if ((await item.count()) === 0) {
+      console.log('⚠️ HOME-053: 未检测到侧边栏项，跳过');
+      return;
+    }
+    const padLeft = await item.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
+    // 横向 padding 由 --space-lg（下限 12px）提到 --space-xl（下限 16px），元素不再贴左
+    expect(padLeft).toBeGreaterThanOrEqual(16);
+    console.log(`✅ HOME-053 通过: 侧边栏项横向 padding-left=${padLeft}px（≥16px）`);
+  });
+});
