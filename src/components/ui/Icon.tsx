@@ -2,7 +2,7 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
-const SIZE_VAR: Record<IconSize, string> = {
+export const SIZE_VAR: Record<IconSize, string> = {
   xs: 'var(--icon-xs)',
   sm: 'var(--icon-sm)',
   md: 'var(--icon-md)',

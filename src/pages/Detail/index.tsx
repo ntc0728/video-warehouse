@@ -30,7 +30,7 @@ import {
   RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
 import './Detail.css';
-import { Icon } from "@/components/ui/Icon";
+import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
 
 // ── 常量 ──────────────────────────────────────────────
 
@@ -755,8 +755,8 @@ export default function DetailPage() {
             <div className="detail-info-grid">
               {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
               {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
-              {runtime && <div className="detail-info-card"><ClockIcon size={16} /><span>时长</span><strong>{runtime} 分钟</strong></div>}
-              {originalLanguage && <div className="detail-info-card"><GlobeIcon size={16} /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
+              {runtime && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
+              {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
               {voteAverage > 0 && (
                 <div className="detail-info-card">
                   <Icon icon={Star} size="sm" />
@@ -764,11 +764,11 @@ export default function DetailPage() {
                   <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
                 </div>
               )}
-              {director && <div className="detail-info-card"><UsersIcon size={16} /><span>导演</span><strong>{director}</strong></div>}
-              {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size={16} /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
-              {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size={16} /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
+              {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
+              {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
+              {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size="sm" /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
+              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
+              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size="sm" /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
               {isTV && <div className="detail-info-card"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
               {isTV && inProduction !== undefined && <div className="detail-info-card"><Icon icon={RefreshCw} size="sm" /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
               {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
@@ -777,7 +777,7 @@ export default function DetailPage() {
             {/* 发行公司 — 独立一行 */}
             {companies.length > 0 && (
               <div className="detail-info-row">
-                <FilmIcon size={16} />
+                <FilmIcon size="sm" />
                 <span>发行</span>
                 <strong className="detail-companies">
                   {companies.map((c) => (
@@ -807,7 +807,7 @@ export default function DetailPage() {
                       {c.profile_path ? (
                         <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} width={200} height={300} />
                       ) : (
-                        <span className="detail-cast-avatar"><UsersIcon size={18} /></span>
+                        <span className="detail-cast-avatar"><UsersIcon size="sm" /></span>
                       )}
                       <span className="detail-cast-name">{c.name}</span>
                       <span className="detail-cast-role">{c.character}</span>
@@ -1205,18 +1205,18 @@ function formatProgressTime(seconds: number): string {
 
 // ── 内联图标组件（避免过多 import） ──────────────
 
-function ClockIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+function ClockIcon({ size = 'sm' }: { size?: IconSize }) {
+  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 }
-function UsersIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+function UsersIcon({ size = 'sm' }: { size?: IconSize }) {
+  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 }
-function GlobeIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>;
+function GlobeIcon({ size = 'sm' }: { size?: IconSize }) {
+  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>;
 }
-function FilmIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></svg>;
+function FilmIcon({ size = 'sm' }: { size?: IconSize }) {
+  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></svg>;
 }
-function DollarIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+function DollarIcon({ size = 'sm' }: { size?: IconSize }) {
+  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
 }
