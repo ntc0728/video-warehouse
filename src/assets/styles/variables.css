@@ -448,14 +448,18 @@
      所有文字/图标元素停在接近 1080p 的大小、相对 4K 屏显小；间距 token 更从未缩放。
      改后比例化：1920px = 原 1080p-TV 尺寸(A)，3840px(4K) = 2×A，中间线性。
      因图标派生自文字 token，所有消费文本/图标 token 的组件（导航/卡片/分类按钮/
-     下拉等）一并正确放大，无需逐组件 patch。1080p-TV(1920) 取值与旧版完全一致。 */
-  --text-xs:   clamp(0.75rem, 0.888vw, 2.13rem);   /* 17→34 (1920→3840) */
-  --text-sm:   clamp(0.8125rem, 0.993vw, 2.38rem); /* 19→38 */
-  --text-base: clamp(0.875rem, 1.12vw, 2.6875rem); /* 21.5→43 */
-  --text-lg:   clamp(1rem, 1.354vw, 3.25rem);      /* 26→52 */
-  --text-xl:   clamp(1.125rem, 1.523vw, 3.66rem);  /* 29→58 */
-  --text-2xl:  clamp(1.5rem, 2.167vw, 5.2rem);     /* 42→83 */
-  --text-3xl:  clamp(1.875rem, 2.74vw, 6.58rem);   /* 53→105 */
+     下拉等）一并正确放大，无需逐组件 patch。1080p-TV(1920) 取值与旧版完全一致。
+     ★强制约定（防回归）：本块内任意尺寸 clamp 一律写成 clamp(A, (A/19.2)vw, 2A)，
+     即 min=A(1080p 基线)、max=2A(4K)、斜率=A/1920——保证 max 字面=2×min 且所有
+     token 共享同一条 vw 曲线，任意分辨率下比例恒定。圆点/间距/下拉等旧值凡不满足
+     此形式者均已改写。新增 TV 尺寸 token 必须遵循，否则会出现"部分放大部分没放大"错乱。 */
+  --text-xs:   clamp(1.0625rem, 0.885vw, 2.125rem);   /* 17→34 (1080p 基线=min, 4K=2×min) */
+  --text-sm:   clamp(1.1875rem, 0.99vw, 2.375rem);    /* 19→38 */
+  --text-base: clamp(1.34375rem, 1.12vw, 2.6875rem);  /* 21.5→43 */
+  --text-lg:   clamp(1.625rem, 1.354vw, 3.25rem);     /* 26→52 */
+  --text-xl:   clamp(1.8125rem, 1.51vw, 3.625rem);    /* 29→58 */
+  --text-2xl:  clamp(2.625rem, 2.188vw, 5.25rem);     /* 42→84 */
+  --text-3xl:  clamp(3.3125rem, 2.76vw, 6.625rem);    /* 53→106 */
   /* 图标派生自 TV 文字 token × 固定系数 → 随文字比例化曲线同步放大，比例恒定。 */
   --icon-xs:  calc(var(--text-xs)  * 1.40);
   --icon-sm:  calc(var(--text-sm)  * 1.30);
@@ -464,19 +468,18 @@
   --icon-xl:  calc(var(--text-2xl) * 1.33);
   --icon-2xl: calc(var(--text-3xl) * 1.30);
   --icon-3xl: calc(var(--text-3xl) * 1.70);
-  --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
-  --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
-  --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
-  --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
+  --dot-size:     clamp(6px,  0.3125vw, 12px);  /* 6→12  圆点（1080p 基线=min, 4K=2×min） */
+  --dot-active-w: clamp(20px, 1.0417vw, 40px);  /* 20→40 激活胶囊宽 */
+  --dot-active-h: clamp(6px,  0.3125vw, 12px);  /* 6→12  圆点 */
+  --dot-gap:      clamp(4px,  0.2083vw, 8px);   /* 4→8   圆点间距 */
 
-  /* 间距 token：TV 下原本未缩放(沿用桌面值)，4K 文字放大而 gap 不变会拥挤。
-     此处比例化：1920 = 桌面同值，3840 = 2×。 */
-  --space-sm:  clamp(0.5rem, 0.476vw, 1.144rem);   /* 9→18  */
-  --space-md:  clamp(0.625rem, 0.746vw, 1.79rem);  /* 14→28 */
-  --space-lg:  clamp(0.875rem, 1.101vw, 2.641rem); /* 21→42 */
-  --space-xl:  clamp(1.125rem, 1.523vw, 3.655rem); /* 29→58 */
-  --space-2xl: clamp(1.625rem, 2.085vw, 5.004rem); /* 40→80 */
-  --space-3xl: clamp(2.25rem, 2.752vw, 6.604rem);  /* 53→106 */
+  /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A(min)、4K=2A(max)。 */
+  --space-sm:  clamp(0.5625rem, 0.469vw, 1.125rem);   /* 9→18  */
+  --space-md:  clamp(0.875rem, 0.729vw, 1.75rem);     /* 14→28 */
+  --space-lg:  clamp(1.3125rem, 1.094vw, 2.625rem);   /* 21→42 */
+  --space-xl:  clamp(1.8125rem, 1.51vw, 3.625rem);    /* 29→58 */
+  --space-2xl: clamp(2.5rem, 2.083vw, 5rem);          /* 40→80 */
+  --space-3xl: clamp(3.3125rem, 2.76vw, 6.625rem);    /* 53→106 */
 
   /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 0–10，单位 vw/vh）写入
@@ -497,8 +500,8 @@
      与 header 同步 2×。 */
   --comp-input-height-tv: clamp(4.0625rem, 3.385vw, 8.125rem);
 
-  /* 下拉/弹层高度：比例化 432→876，避免固定 rem+5vh 锚定导致 4K 显小。 */
-  --layout-dropdown-max-h: clamp(27rem, 22.8vw, 54.75rem);
+  /* 下拉/弹层高度：比例化 432→864（1080p 基线=min, 4K=2×min），避免固定 rem+5vh 锚定导致 4K 显小。 */
+  --layout-dropdown-max-h: clamp(27rem, 22.5vw, 54rem);
 
   /* Minimum 48dp touch target for TV remote navigation */
   --comp-btn-min-height: var(--space-3xl);
