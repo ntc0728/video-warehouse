@@ -119,7 +119,7 @@ export default function BackToTopButton({
       aria-label="返回顶部"
       title="返回顶部"
     >
-      <Icon icon={ArrowUp} size="lg" className="back-to-top-button__icon" aria-hidden="true" />
+      <Icon icon={ArrowUp} size="md" className="back-to-top-button__icon" aria-hidden="true" />
     </button>,
     document.body,
   );
