@@ -471,8 +471,9 @@
   --safe-area-x: 3vw;
   --safe-area-y: 3vh;
 
-  /* A. 导航栏高度：桌面 clamp(60→76) 在 1920+ 大屏显矮，TV 整体加高 */
-  --header-height: clamp(84px, 4.5vw, 120px);
+  /* A. 导航栏高度：TV 需容纳放大后的搜索框(1.4×)与 Logo，且内容区高度
+     保持恒定（顶部过扫描改用 margin-top 外边距，不挤压内容区），故加高。 */
+  --header-height: clamp(96px, 5.2vw, 132px);
   /* B. Logo：纠正「错用 --layout-tabbar-height(底部 TabBar 语义)」错位，并 TV 放大 */
   --layout-logo-size: clamp(72px, 4vw, 120px);
   /* C. 品牌文字：升到 lg 档，大屏不再偏小 */

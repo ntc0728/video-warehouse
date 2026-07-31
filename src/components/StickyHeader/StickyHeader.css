@@ -252,10 +252,19 @@
 
 /* ── TV ────────────────────────────────────────────── */
 
-/* E. overscan 对称化：导航栏补四边安全区（原只左右 x，漏了顶部 y；
-   --safe-area-y 此前定义却从未使用）。固定顶栏 top:0，padding 内缩内容防裁切。 */
+/* E. overscan 对称化：TV 下 .app-shell__main 已通过 padding 给「常驻（in-flow）导航栏」
+   提供四边安全边距，故导航栏自身不再加垂直内边距——否则会挤占内容区高度，使放大后的
+   搜索框 / Logo 溢出上下边缘（安全区默认 5vh 时内容区仅剩约 32px，远小于 1.4× 搜索框）。
+   仅沉浸式（position:fixed，脱离 main 文档流）导航栏需自行用 margin-top（外边距，
+   不挤压内容区）+ 左右 padding 实现过扫描安全边距。内容区高度始终 = --header-height，
+   搜索框垂直居中后上下留白恒定，与桌面端观感一致。 */
 .sticky-header--tv {
-  padding: var(--safe-area-y) var(--safe-area-x);
+  padding: 0;
+}
+
+.sticky-header--tv.sticky-header--immersive {
+  margin-top: var(--safe-area-y);
+  padding: 0 var(--safe-area-x);
 }
 
 .sticky-header--tv .sticky-header__logo-wrap {
