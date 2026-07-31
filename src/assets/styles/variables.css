@@ -467,6 +467,37 @@
   --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
 }
 
+/* ── TV 端 lucide 图标放大（硬编码 size prop 不响应 token，用 CSS 按 width 分档覆盖） ── */
+[data-device="tv"] .lucide[width="10"],
+[data-device="tv"] .lucide[width="12"],
+[data-device="tv"] .lucide[width="13"],
+[data-device="tv"] .lucide[width="14"] {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+[data-device="tv"] .lucide[width="16"],
+[data-device="tv"] .lucide[width="18"],
+[data-device="tv"] .lucide[width="20"] {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+[data-device="tv"] .lucide[width="22"],
+[data-device="tv"] .lucide[width="24"],
+[data-device="tv"] .lucide[width="28"] {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+
+[data-device="tv"] .lucide[width="32"],
+[data-device="tv"] .lucide[width="36"],
+[data-device="tv"] .lucide[width="40"],
+[data-device="tv"] .lucide[width="48"] {
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+}
+
 /* ── TV 端覆盖 (≥1920px) ─────────────────────────────────────────────── */
 @media (width >= 1920px) {
   :root {
