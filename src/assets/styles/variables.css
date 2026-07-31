@@ -1,16 +1,25 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Design Tokens — 流体缩放体系 (375px → 3840px)
-   
-   四组 Token，每组独立的缩放节奏：
-   - Typography (--text-*)    : 1.4x~1.9x  字号温和增长
-   - Spacing    (--space-*)   : 2.0x~2.2x  间距积极增长
-   - Icon       (--icon-*)    : 2.2x~2.3x  图标激进增长 (TV 需辨识)
-   - Component  (--comp-*)    : 1.5x~1.8x  控件尺寸增长
+   Design Tokens — 流体缩放体系
 
-   公式: clamp(MINpx, PREFERRED + COEFF * 100vw, MAXpx)
-         其中 PREFERRED = MIN - COEFF * minVw  (保证 MIN 时刚好触发)
-               COEFF    = (MAX - MIN) / range
-               minVw=375, maxVw=3840, range=3465
+   ★两套缩放 regime（互不混淆，勿混用）：
+   ① 基准流体 token（--text-*/--space-*/--comp-*/--icon-*/--radius-*/--grid-gap）
+      — 375px(移动) → 768px(桌面) 流体，768px+ 固定取 MAX（坐近看屏，内容更密，
+        不随 4K 继续放大；2× 放大是 TV 模式专属，见 [data-device="tv"] / @media≥1920）。
+      — 实测缩放比（MAX/MIN，由各 token 行内注释佐证）：
+          · Typography : ≈ 1.07×~1.22×   字号温和、基本稳定，保证各档可读
+          · Spacing    : ≈ 2.0×~2.5×    间距积极增长，让布局呼吸
+          · Component  : ≈ 1.3×~2.33×   控件尺寸中等增长
+          · Icon       : 派生自 --text-*(≤1.22×)，随文字曲线；非 2.2× 独立缩放
+          · Radius     : ≈ 1.67×~1.8×
+      — 公式: clamp(MINpx, PREF + COEFF·100vw, MAXpx)
+            PREF  = MIN - COEFF·375
+            COEFF = (MAX - MIN) / 393        （393 = 768 - 375，非 3840 跨度）
+   ② 布局流体 token（--layout-*/--avatar-*/宽度与高度类）
+      — 跨更宽视口（典型 320→1920 或 320→3840）持续流体，不固定在 768。
+      — 见各 token 行内注释（如 OSD 30vw、hero 5vw、弹窗 4vw 等）。
+
+   TV 模式（另见 [data-device="tv"] 与 @media≥1920 块）：统一 2× 缩放，
+   强制 clamp(A, (A/19.2)vw, 2A)，max 字面=2×min、斜率共享同一条 vw 曲线。
 
    Banner 高度采用双约束策略（防止超宽屏溢出）：
    max-height: min(VH_CAP, vw流体值)
@@ -120,7 +129,13 @@
   --dur-slow: 500ms;     /* 页面级：route transition */
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
 
-  /* ── Typography (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ── */
+  /* ── Typography ───────────────────────────────────────────────────────────
+     小号(text-2xs~base)：375→768px 流体，768px+ 固定（坐近看屏，文字稳定保可读）。
+     大号(text-lg~3xl)：原系数略缓，max 在 948~1124px 才触顶（非严格 768 固定，
+        属轻微契约漂移，见审计；如需严格 768 固定可重算 coeff）。
+     图标/间距/控件/圆角：实际 375→~3900px 流体(≈2×)，4K 桌面端间距/控件随屏放大、
+        文字不放大——TV 模式下文字经 [data-device="tv"] 一并 2× 故无失衡；
+        非 TV 的 4K 显示器属边缘场景。1920→3840px 的 2× 放大由 TV 块单独负责。 */
   --text-2xs: clamp(9px, 0.54rem + 0.35vw, 11px);       /* 9→11 超小标注 */
   --text-xs:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);     /* 12→13 */
   --text-sm:   clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem);   /* 13→14 */
