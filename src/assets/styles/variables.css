@@ -204,7 +204,7 @@
   --breakpoint-4xl: 3840px;   /* 4K */
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
-  --layout-loading-min-height: 300px;     /* 加载态最小高度（AppLoading/empty-state） */
+  --layout-loading-min-height: clamp(300px, 18.75rem + 3vw, 480px);  /* 加载态最小高度：300→480px 流体 */
   --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px); /* 弹窗最大宽度 */
   /* IPTV OSD 控制栏最大宽度：30vw 系数让大屏涨幅更猛
      - 1024px → ~627px
@@ -215,26 +215,26 @@
   --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
   --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px); /* 内容区最大宽度 */
   --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px); /* 首页 Hero 高度 */
-  --layout-hero-banner-min-h:  20rem;                              /* HeroBanner 最小高度 */
+  --layout-hero-banner-min-h:  clamp(20rem, 15rem + 2vw, 28rem);  /* HeroBanner 最小高度：20→28rem 流体 */
   --layout-hero-banner-max-h:  clamp(35rem, 25rem + 20vw, 100rem);  /* HeroBanner 最大高度 */
-  --layout-hero-height-mobile: 280px;     /* 移动端 Hero 高度 */
+  --layout-hero-height-mobile: clamp(280px, 17.5rem + 0.5vw, 340px);  /* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width:   clamp(200px, 12.5rem + 3vw, 320px);  /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
-  --layout-grid-min-col:       220px;     /* 自适应网格最小列宽（SkeletonIPTVCard） */
-  --layout-error-detail-height: 200px;    /* 错误详情区最大高度（NetworkError） */
-  --layout-spinner-border:     3px;       /* 加载旋转环边框粗细 */
+  --layout-grid-min-col:       clamp(220px, 13.75rem + 1.5vw, 320px);  /* 自适应网格最小列宽：220→320px 流体 */
+  --layout-error-detail-height: clamp(200px, 12.5rem + 2vw, 320px);  /* 错误详情区高度：200→320px 流体 */
+  --layout-spinner-border:     clamp(3px, 0.1875rem + 0.1vw, 5px);  /* 加载旋转环边框粗细：3→5px 流体 */
   --layout-perf-panel-min-w:   clamp(280px, 17.5rem + 1.5vw, 420px); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
   --layout-channel-num-w:      clamp(120px, 7.5rem + 0.5vw, 180px); /* 频道编号/时间显示最小宽度：120→180px 流体 */
-  --layout-quality-badge-min-w: 84px;     /* 画质徽章最小宽度（IPTV OSD） */
-  --layout-vol-popup-w:        60px;      /* 音量弹出框宽度 */
+  --layout-quality-badge-min-w: clamp(84px, 5.25rem + 0.5vw, 120px);  /* 画质徽章最小宽度：84→120px 流体 */
+  --layout-vol-popup-w:        clamp(60px, 3.75rem + 0.5vw, 96px);  /* 音量弹出框宽度：60→96px 流体 */
   --layout-vol-slider-w:       clamp(180px, 11.25rem + 1vw, 280px); /* 音量滑块宽度：180→280px 流体 */
-  --layout-player-vol-w:       80px;      /* 播放器音量控制区宽度 */
-  --layout-popover-min-w:      100px;     /* 气泡提示最小宽度（HelpTooltip） */
-  --layout-popover-wide-min-w: 140px;     /* 宽气泡最小宽度（HelpTooltip/SourceStatus） */
+  --layout-player-vol-w:       clamp(80px, 5rem + 0.5vw, 120px);  /* 播放器音量控制区宽度：80→120px 流体 */
+  --layout-popover-min-w:      clamp(100px, 6.25rem + 0.5vw, 150px);  /* 气泡提示最小宽度：100→150px 流体 */
+  --layout-popover-wide-min-w: clamp(140px, 8.75rem + 0.5vw, 200px);  /* 宽气泡最小宽度：140→200px 流体 */
   --layout-help-popover-w:     clamp(260px, 30vw, 380px); /* 帮助气泡宽度（HelpPopover） */
   --layout-sidebar-width:      clamp(260px, 15.84rem + 1.73vw, 320px);  /* 260→320px 流体 */
   --layout-episode-panel-w:    clamp(420px, 26.25rem + 4vw, 560px); /* 剧集面板宽度（播放器侧边栏）：420→560px 流体（宽屏占比增大） */
   --layout-episode-panel-w-alt: clamp(440px, 27.5rem + 4vw, 600px); /* 剧集面板备选宽度：440→600px 流体 */
-  --layout-time-display-min-w: 90px;      /* 时间显示最小宽度（播放器 OSD） */
+  --layout-time-display-min-w: clamp(90px, 5.625rem + 0.5vw, 140px);  /* 时间显示最小宽度：90→140px 流体 */
   /* IPTV 频道列表宽度 — 按视口分档 */
   --layout-channel-list-w:     300px;     /* 默认频道列表宽度 */
   --layout-channel-list-w-sm:  260px;     /* 小屏 */
@@ -243,22 +243,22 @@
   --layout-channel-list-w-xl: 360px;      /* 超大屏 */
   --layout-channel-list-w-2xl: 400px;     /* 2K/4K */
   --layout-iptv-channel-list-w: clamp(20rem, 18.92rem + 4.62vw, 30rem);  /* 320—480px 流体 */
-  --layout-source-url-max-w:   160px;     /* 源地址最大宽度（SourceChecker） */
+  --layout-source-url-max-w:   clamp(160px, 10rem + 0.5vw, 240px);  /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
-  --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
-  --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */
-  --layout-groups-collapsed-h: 76px;      /* IPTV 分组折叠高度 */
+  --layout-searchbox-header-max-w: clamp(480px, 30rem + 2vw, 680px);  /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
+  --layout-searchbox-browse-max-w: clamp(560px, 35rem + 2vw, 760px);  /* Browse 页 SearchBox 最大宽度：560→760px 流体 */
+  --layout-groups-collapsed-h: clamp(76px, 4.75rem + 0.5vw, 110px);  /* IPTV 分组折叠高度：76→110px 流体 */
   --layout-select-w:           clamp(140px, 8.75rem + 4vw, 260px);   /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
   --layout-select-w-mobile:    clamp(120px, 7.5rem + 0.5vw, 180px);  /* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
-  --layout-bottomsheet-max-h:  500px;     /* 底部弹出面板最大高度 */
-  --layout-epg-empty-min-height: 100px;   /* EPG 空态最小高度 */
-  --layout-epg-time-min-width: 100px;     /* EPG 时间列最小宽度 */
+  --layout-bottomsheet-max-h:  clamp(500px, 31.25rem + 3vw, 720px);  /* 底部弹出面板最大高度：500→720px 流体 */
+  --layout-epg-empty-min-height: clamp(100px, 6.25rem + 0.5vw, 150px);  /* EPG 空态最小高度：100→150px 流体 */
+  --layout-epg-time-min-width: clamp(100px, 6.25rem + 0.5vw, 150px);  /* EPG 时间列最小宽度：100→150px 流体 */
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
   --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
   --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
   --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
-  --layout-osd-timeshift-dot:  6px;        /* 时移进度条圆点尺寸 */
+  --layout-osd-timeshift-dot:  clamp(6px, 0.375rem + 0.1vw, 10px);  /* 时移进度条圆点尺寸：6→10px 流体 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
   --layout-logo-size-sm:       clamp(40px, 2.222rem + 0.73vw, 52px);  /* 40→52px 流体 */
@@ -266,8 +266,8 @@
   --layout-brand-font-size:    clamp(1.25rem, 0.833rem + 0.87vw, 1.5rem);  /* 20→24px 流体 */
   --layout-brand-font-size-sm: clamp(1rem, 0.667rem + 0.69vw, 1.25rem);  /* 16→20px 流体 */
   --layout-brand-font-size-lg: clamp(1.5rem, 1rem + 1.04vw, 1.75rem);  /* 24→28px 流体 */
-  --layout-detail-hero-play-icon: 8.571rem; /* 详情页 Hero 播放按钮尺寸 */
-  --layout-outline-width:      2px;        /* 聚焦轮廓线粗细 */
+  --layout-detail-hero-play-icon: clamp(8.571rem, 6rem + 1vw, 12rem);  /* 详情页 Hero 播放按钮尺寸：8.571→12rem 流体 */
+  --layout-outline-width:      clamp(2px, 0.125rem + 0.05vw, 3px);  /* 聚焦轮廓线粗细：2→3px 流体 */
 
   /* ── Avatar Sizes ───────────────────────────────────────────────────────── */
   --avatar-xs: clamp(30px, 1.875rem + 0.5vw, 52px);   /* 行内小头像（设置行）：30→52px 流体（TV 放大） */
@@ -276,11 +276,11 @@
 
     /* ── Misc Sizes ─────────────────────────────────────────────────────────── */
     --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
-  --source-meta-min-width: 120px;  /* 源详情最小宽度 */
-  --error-msg-max-width: 100px;    /* 错误文案最大宽度 */
-  --layout-tabbar-height:      56px;       /* 移动端底部 TabBar 高度 */
+  --source-meta-min-width: clamp(120px, 7.5rem + 0.5vw, 180px);  /* 源详情最小宽度：120→180px 流体 */
+  --error-msg-max-width: clamp(100px, 6.25rem + 0.3vw, 140px);  /* 错误文案最大宽度：100→140px 流体 */
+  --layout-tabbar-height:      clamp(56px, 3.5rem + 0.3vw, 72px);  /* 移动端底部 TabBar 高度：56→72px 流体 */
   --layout-datepicker-width:   clamp(340px, 21.25rem + 1vw, 460px); /* 日期选择器宽度：340→460px 流体 */
-  --layout-collapse-max-h:     1000px;     /* 折叠面板最大高度 */
+  --layout-collapse-max-h:     clamp(1000px, 62.5rem + 4vw, 1400px);  /* 折叠面板最大高度：1000→1400px 流体 */
   --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem); /* 详情页海报宽度 */
   --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem); /* TV 端海报宽度 */
   --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 50rem); /* SearchBox 最大宽度（通用） */
@@ -291,7 +291,7 @@
 
   /* ── Sticky Header ───────────────────────────────────────────────────── */
   --header-height: clamp(60px, 3.375rem + 1vw, 76px); /* 顶部导航栏高度 */
-  --header-height-compact: 48px;           /* 紧凑模式（滚动后折叠） */
+  --header-height-compact: clamp(48px, 3rem + 0.3vw, 64px);  /* 紧凑模式（滚动后折叠）：48→64px 流体 */
 
   /* ── Glass Effect (玻璃态背景) ───────────────────────────────────────── */
   /* 普通页面导航栏背景（65% 玻璃,透出页面背景 35% — 解决"导航栏不透明"问题） */
@@ -306,8 +306,8 @@
   --glass-border:      rgba(0, 0, 0, 0.08);
 
   /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
-  --scrollbar-width: 6px;                  /* 滚动条宽度 */
-  --scrollbar-width-thin: 4px;             /* 极细滚动条（横向） */
+  --scrollbar-width: clamp(6px, 0.375rem + 0.1vw, 10px);          /* 滚动条宽度：6→10px 流体 */
+  --scrollbar-width-thin: clamp(4px, 0.25rem + 0.1vw, 8px);        /* 极细滚动条（横向）：4→8px 流体 */
   --scrollbar-color: rgba(0, 0, 0, 0.15); /* 滚动条默认色（极淡） */
   --scrollbar-color-hover: rgba(0, 0, 0, 0.3);   /* hover 态加深 */
   --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
