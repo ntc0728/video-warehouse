@@ -72,8 +72,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: clamp(var(--comp-btn-min-width), 1.5vw + var(--comp-thumb-size), var(--comp-btn-min-width));
-  height: clamp(var(--comp-btn-min-width), 1.5vw + var(--comp-thumb-size), var(--comp-btn-min-width));
+  /* 圆形底盘直径 = 圆形按钮 token（原写法 clamp(A, x, A) 上下界相同、中间值恒被夹掉，
+     等价于 A，此处直接写明以免误读为「流体尺寸」）。 */
+  width: var(--comp-btn-min-width);
+  height: var(--comp-btn-min-width);
   border-radius: 50%;
   color: #fff;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
@@ -119,9 +121,14 @@
 
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
+/* 圆形底盘直径派生自「内部图标档」（TV 下 Icon size=2xl），系数 1.9 与桌面端
+   (60px 底盘 / ≈31.9px --icon-xl ≈ 1.88) 对齐：任意视口下「底盘 : 图标」比例恒定，
+   且随 TV 文字/图标曲线同步放大。1920 屏 ≈ 130px（桌面 60px 的 2.1×，符合 TV 放大预期）。
+   ★禁止回归：不得再用 --layout-card-daily-width（语义是「每日推荐卡片宽度」，
+   1920 屏 ≈ 258px = 桌面 4.3×），会让整个分类按钮撑成巨大方块。 */
 .category-quick-access--tv .category-quick-access__icon-wrap {
-  width: var(--layout-card-daily-width);
-  height: var(--layout-card-daily-width);
+  width: calc(var(--icon-2xl) * 1.9);
+  height: calc(var(--icon-2xl) * 1.9);
 }
 
 .category-quick-access--tv .category-quick-access__label {
