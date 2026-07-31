@@ -53,7 +53,7 @@ export function useSettingsState() {
     skipIntroDuration, setSkipIntroDuration,
     skipOutroDuration, setSkipOutroDuration,
     autoPlay, setAutoPlay, skin, setSkin,
-    tvMode, setTvMode,
+    tvMode, setTvMode, tvOverscan, setTvOverscan,
   } = useSettingsStore();
 
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
@@ -242,7 +242,7 @@ export function useSettingsState() {
 
   return {
     navigate,
-    appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode },
+    appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan },
     video: {
       tmdbAccessToken, setTMDBToken,
       tmdbLanguage, setTMDBLanguage,

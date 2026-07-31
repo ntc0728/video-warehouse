@@ -231,10 +231,17 @@ export default function AppLayout() {
     preloadAllRoutes();
   }, []);
 
+  const tvOverscan = useSettingsStore((s) => s.tvOverscan);
+
   useEffect(() => {
     const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
     document.documentElement.setAttribute('data-device', device);
   }, [isTV, isNative, isMobileWeb]);
+
+  // TV 过扫描（overscan）安全区开关：默认 on；关闭时由 CSS 把 --safe-area-* 归零
+  useEffect(() => {
+    document.documentElement.setAttribute('data-tv-overscan', tvOverscan ? 'on' : 'off');
+  }, [tvOverscan]);
 
   // TV 方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）
   useSpatialNavigation({ containerRef: appShellRef, isTV });
