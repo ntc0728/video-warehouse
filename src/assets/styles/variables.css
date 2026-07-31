@@ -490,6 +490,12 @@
   --layout-logo-size: clamp(4.8rem, 4vw, 9.6rem);
   /* C. 品牌文字：比例化 24→48，1080p 基线=旧版 24px（零回归）。 */
   --layout-brand-font-size: clamp(1.5rem, 1.25vw, 3rem);
+  /* D. 搜索框/提交按钮高度：比例化 65→130（1080p 基线=旧 calc(*1.4)=65px，零回归）。
+     关键修复：SearchBox TV 原用 calc(var(--comp-input-height) * 1.4)，而基础
+     --comp-input-height 自身几乎不随 vw 放大（40→58px），导致大屏导航栏已 200px 高、
+     搜索框却仍 ~81px → 导航栏显空旷、“高度大出一截”。改为同一条 vw 曲线比例化，
+     与 header 同步 2×。 */
+  --comp-input-height-tv: clamp(4.0625rem, 3.385vw, 8.125rem);
 
   /* 下拉/弹层高度：比例化 432→876，避免固定 rem+5vh 锚定导致 4K 显小。 */
   --layout-dropdown-max-h: clamp(27rem, 22.8vw, 54.75rem);
