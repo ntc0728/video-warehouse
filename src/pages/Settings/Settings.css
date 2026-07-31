@@ -688,6 +688,11 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
+/* 更新日志弹窗：加宽以便阅读长条目（覆盖 .settings-modal 默认宽度，不影响其它设置弹窗） */
+.modal-content-animate.changelog-modal {
+  width: min(94vw, calc(var(--layout-modal-max-width) + 280px));
+}
+
 /* 复用详情页 source-all-modal 的滚动隔离策略，保证弹窗内容可滚动且不溢出裁剪 */
 .settings-modal > .custom-scrollbar-container {
   flex: 1 1 auto;
@@ -838,9 +843,12 @@ body.skin-transitioning .skin-btn.active {
   transform: none !important;
 }
 
-/* 设置页下拉框触发按钮：内容自适应太窄，限定适中最小宽度（仅作用于设置页，不影响全局 Select） */
+/* 设置页下拉框触发按钮：内容自适应太窄，限定适中最小宽度（仅作用于设置页，不影响全局 Select）；
+   补充左右内边距，避免文字/箭头贴边 */
 .settings-page .source-multi-trigger {
   min-width: 9rem;
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
 }
 
 /* 设置页内【所有 button】统一拦截整体缩放：覆盖 List clickable / Select trigger / Switch /
