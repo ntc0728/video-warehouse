@@ -6,9 +6,10 @@
  *   移动（≤767px）：MenuList 首层菜单 → 选中的 tab 以 SubPage 形式滑动进入
  *   所有编辑操作通过 Modal 弹窗完成
  */
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMediaQuery, useIsTV } from '@/hooks/useMediaQuery';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useDocumentTitle } from '@/hooks';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
@@ -36,6 +37,9 @@ const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
 export default function SettingsPage() {
   useDocumentTitle();
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isTV = useIsTV();
+  const pageRef = useRef<HTMLDivElement>(null);
+  useSpatialNavigation({ containerRef: pageRef, isTV });
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
 
@@ -149,7 +153,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-padding settings-page page-transition-enter">
+    <div ref={pageRef} className="page-padding settings-page page-transition-enter">
       {mobileSubPage ? (
         <SettingsSubPage key={mobileSubPage} tab={mobileSubPage} onBack={handleSubPageBack}>
           {renderContent()}

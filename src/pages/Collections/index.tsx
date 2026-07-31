@@ -15,6 +15,8 @@ import RecordShell from '@/components/RecordShell';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
+import { useIsTV } from '@/hooks/useMediaQuery';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import type { Video, VideoType } from '@/types/video';
@@ -61,6 +63,9 @@ export default function CollectionsPage() {
   const { getState, saveState } = useNavStore();
 
   useDocumentTitle();
+  const pageRef = useRef<HTMLDivElement>(null);
+  const isTV = useIsTV();
+  useSpatialNavigation({ containerRef: pageRef, isTV });
   const saved = getState('collections');
   const location = useLocation();
 
@@ -292,6 +297,7 @@ export default function CollectionsPage() {
 
   return (
     <RecordShell
+      containerRef={pageRef}
       pageClassName="collection-page"
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab)}

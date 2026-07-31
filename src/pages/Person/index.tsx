@@ -10,6 +10,8 @@ import { useSmartBack } from '@/lib/navigation';
 import type { TMDBPersonDetail, TMDBMovie, TMDBTVShow } from '@/types/tmdb';
 import { AppLoading } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
+import { useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { VideoCard } from '@/components/VideoCard';
@@ -42,6 +44,10 @@ function toVideo(item: TMDBMovie | TMDBTVShow, mediaType: 'movie' | 'tv') {
 export default function PersonPage() {
   const { id } = useParams<{ id: string }>();
   const handleBack = useSmartBack();
+
+  const pageRef = useRef<HTMLDivElement>(null);
+  const isTV = useIsTV();
+  useSpatialNavigation({ containerRef: pageRef, isTV });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +171,7 @@ export default function PersonPage() {
     : null;
 
   return (
-    <div className="page-padding person-page">
+    <div ref={pageRef} className="page-padding person-page">
       {/* Hero */}
       <section className="person-hero">
         <div className="person-hero-gradient" />
