@@ -5,6 +5,7 @@
  */
 import * as Popover from '@radix-ui/react-popover';
 import { HelpCircle } from 'lucide-react';
+import './HelpPopover.css';
 
 interface HelpPopoverProps {
   title: string;

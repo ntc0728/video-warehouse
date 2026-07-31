@@ -47,7 +47,7 @@
   min-width: 0;
   flex: 1 1 auto;
   word-break: break-word;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.4;
