@@ -44,6 +44,9 @@
 }
 
 .help-popover-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  word-break: break-word;
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   font-weight: 600;
