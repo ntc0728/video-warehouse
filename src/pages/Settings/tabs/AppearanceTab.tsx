@@ -1,4 +1,4 @@
-import { List } from '@/components/ui';
+import { List, Switch } from '@/components/ui';
 import { Sun, Moon, Monitor, Palette } from 'lucide-react';
 
 interface AppearanceTabProps {
@@ -6,9 +6,11 @@ interface AppearanceTabProps {
   setTheme: (t: 'light' | 'dark' | 'system') => void;
   skin: string;
   setSkin: (s: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
+  tvMode: boolean;
+  setTvMode: (v: boolean) => void;
 }
 
-export default function AppearanceTab({ theme, setTheme, skin, setSkin }: AppearanceTabProps) {
+export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode }: AppearanceTabProps) {
   return (
     <section>
       <List header={<span className="settings-section-header"><Palette size={20} /> 外观</span>}>
@@ -54,6 +56,11 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin }: Appear
               ))}
             </div>
           }
+        />
+        <List.Item
+          title="TV 模式"
+          description="启用方向键/数字键遥控器导航"
+          extra={<Switch checked={tvMode} onChange={setTvMode} />}
         />
       </List>
     </section>
