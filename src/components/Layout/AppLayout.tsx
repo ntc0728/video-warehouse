@@ -238,9 +238,18 @@ export default function AppLayout() {
     document.documentElement.setAttribute('data-device', device);
   }, [isTV, isNative, isMobileWeb]);
 
-  // TV 过扫描（overscan）安全区开关：默认 on；关闭时由 CSS 把 --safe-area-* 归零
+  // TV 过扫描（overscan）安全区：滑块数值（0–10，单位 vw/vh）写入 CSS 变量。
+  // 0 = 铺满到裁切边；兼容旧版本持久化的布尔值（true→3，false→0）。
   useEffect(() => {
-    document.documentElement.setAttribute('data-tv-overscan', tvOverscan ? 'on' : 'off');
+    const v =
+      typeof tvOverscan === 'number'
+        ? tvOverscan
+        : tvOverscan
+          ? 3
+          : 0;
+    const root = document.documentElement;
+    root.style.setProperty('--safe-area-x', `${v}vw`);
+    root.style.setProperty('--safe-area-y', `${v}vh`);
   }, [tvOverscan]);
 
   // TV 方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）

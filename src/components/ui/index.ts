@@ -17,4 +17,5 @@ export type { TimelineItem, TimelineProps, TimelineVariant } from './Timeline';
 export { toast } from './toastBus';
 export { default as Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
+export { default as Slider } from './Slider';
 

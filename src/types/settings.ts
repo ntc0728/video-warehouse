@@ -24,8 +24,8 @@ export interface AppSettings {
   autoPlay: boolean;
   /** 强制 TV 模式（用于在非 TV 设备上体验遥控器交互） */
   tvMode: boolean;
-  /** TV 过扫描（overscan）安全区：为电视边缘裁切预留安全边距；可由设置页开关关闭 */
-  tvOverscan: boolean;
+  /** TV 过扫描（overscan）安全区大小：0–10，单位 vw（左右）/ vh（上下）；0 = 铺满到裁切边 */
+  tvOverscan: number;
   /** 用户昵称（个人资料） */
   username: string;
   /** 用户头像（data URL，留空则使用默认图标） */

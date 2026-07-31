@@ -1,0 +1,70 @@
+.ui-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--switch-thumb-size, 20px);
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.ui-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── WebKit track ─────────────────────────────────────────────── */
+.ui-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-primary) var(--slider-pct),
+    var(--color-border) var(--slider-pct)
+  );
+}
+
+/* ── Firefox track ───────────────────────────────────────────── */
+.ui-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.ui-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+/* ── Thumb（共享 WebKit / Firefox）───────────────────────────── */
+.ui-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -7px; /* (track 6 - thumb 20) / 2 */
+  width: var(--switch-thumb-size, 20px);
+  height: var(--switch-thumb-size, 20px);
+  border-radius: 999px;
+  background: var(--color-text-inverse);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s ease-out;
+}
+
+.ui-slider::-moz-range-thumb {
+  width: var(--switch-thumb-size, 20px);
+  height: var(--switch-thumb-size, 20px);
+  border-radius: 999px;
+  background: var(--color-text-inverse);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s ease-out;
+}
+
+.ui-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
+}
+
+.ui-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
+}
