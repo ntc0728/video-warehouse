@@ -1036,7 +1036,7 @@
   min-width: var(--layout-time-display-min-w);
 }
 
-.up-platform-mobile .up-channel-list {
+.up-channel-list {
   width: var(--layout-channel-list-w);
 }
 
@@ -1054,38 +1054,6 @@
 @media (width <= 639px) {
   .up-universal-player {
     border-radius: 0;
-  }
-
-  .up-channel-list {
-    width: var(--layout-channel-list-w-sm);
-  }
-}
-
-/* ===== Resposive: md (768) ===== */
-@media (width >= 640px) and (width <= 767px) {
-  .up-channel-list {
-    width: var(--layout-channel-list-w-md);
-  }
-}
-
-/* ===== Resposive: lg (1024) ===== */
-@media (width >= 768px) and (width <= 1023px) {
-  .up-channel-list {
-    width: var(--layout-channel-list-w);
-  }
-}
-
-/* ===== Resposive: xl (1280) ===== */
-@media (width >= 1280px) and (width <= 1919px) {
-  .up-channel-list {
-    width: var(--layout-channel-list-w-xl);
-  }
-}
-
-/* ===== Resposive: 2xl (1920) ===== */
-@media (width >= 1920px) and (width <= 2559px) {
-  .up-channel-list {
-    width: var(--layout-channel-list-w-2xl);
   }
 }
 
