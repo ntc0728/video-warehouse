@@ -242,7 +242,7 @@ export function useSettingsState() {
 
   return {
     navigate,
-    appearance: { theme, setTheme, skin, setSkin },
+    appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode },
     video: {
       tmdbAccessToken, setTMDBToken,
       tmdbLanguage, setTMDBLanguage,
@@ -258,7 +258,6 @@ export function useSettingsState() {
       skipIntro, setSkipIntro, skipIntroDuration, setSkipIntroDuration,
       skipOutro, setSkipOutro, skipOutroDuration, setSkipOutroDuration,
       autoPlay, setAutoPlay,
-      tvMode, setTvMode,
     },
     iptv: {
       iptvSettings, setIPTVSettings,

@@ -12,15 +12,12 @@ interface PlaybackTabProps {
   setSkipOutroDuration: (v: number) => void;
   autoPlay: boolean;
   setAutoPlay: (v: boolean) => void;
-  tvMode: boolean;
-  setTvMode: (v: boolean) => void;
 }
 
 export default function PlaybackTab({
   skipIntro, setSkipIntro, skipIntroDuration, setSkipIntroDuration,
   skipOutro, setSkipOutro, skipOutroDuration, setSkipOutroDuration,
   autoPlay, setAutoPlay,
-  tvMode, setTvMode,
 }: PlaybackTabProps) {
   return (
     <section>
@@ -61,11 +58,6 @@ export default function PlaybackTab({
           title={<>自动连播<HelpPopover title="自动连播" content="剧集播放结束后自动播放下一集。关闭后需要手动点击播放下一集。" /></>}
           description="剧集播放结束后自动播放下一集"
           extra={<Switch checked={autoPlay} onChange={setAutoPlay} />}
-        />
-        <List.Item
-          title={<>TV 模式<HelpPopover title="TV 模式" content="强制启用电视端遥控器交互：方向键空间导航、数字键选集、Menu 键打开列表等。适用于在笔记本/桌面浏览器上体验 TV 端，或在真实电视设备上未自动识别时手动开启。关闭时按 User-Agent 自动检测。" /></>}
-          description="强制启用遥控器交互（方向键/数字键导航）"
-          extra={<Switch checked={tvMode} onChange={setTvMode} />}
         />
       </List>
     </section>
