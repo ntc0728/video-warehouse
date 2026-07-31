@@ -252,14 +252,15 @@
 
 /* ── TV ────────────────────────────────────────────── */
 
+/* E. overscan 对称化：导航栏补四边安全区（原只左右 x，漏了顶部 y；
+   --safe-area-y 此前定义却从未使用）。固定顶栏 top:0，padding 内缩内容防裁切。 */
 .sticky-header--tv {
-  padding-right: var(--safe-area-x);
-  padding-left: var(--safe-area-x);
+  padding: var(--safe-area-y) var(--safe-area-x);
 }
 
 .sticky-header--tv .sticky-header__logo-wrap {
-  width: var(--layout-tabbar-height);
-  height: var(--layout-tabbar-height);
+  width: var(--layout-logo-size);
+  height: var(--layout-logo-size);
 }
 .sticky-header--tv .sticky-header__nav-item {
   padding: var(--space-sm) var(--space-md);
