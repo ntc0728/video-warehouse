@@ -224,7 +224,7 @@
 }
 
 .app-loading--tv .app-loading__progress {
-  width: var(--layout-channel-list-w);
+  width: var(--layout-panel-medium-w);
   height: var(--space-sm);
 }
 

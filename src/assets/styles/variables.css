@@ -236,7 +236,7 @@
   --layout-episode-panel-w-alt: clamp(440px, 27.5rem + 4vw, 600px); /* 剧集面板备选宽度：440→600px 流体 */
   --layout-time-display-min-w: clamp(90px, 5.625rem + 0.5vw, 140px);  /* 时间显示最小宽度：90→140px 流体 */
   /* 频道列表 / 播放器内侧面板宽度 — 连续流体（替代原 6 档离散 + 未接线的 iptv 变体） */
-  --layout-channel-list-w: clamp(280px, 17.5rem + 3.5vw, 480px);  /* 280→480px 流体：播放器侧面板 / 通用中等宽封顶 */
+  --layout-panel-medium-w: clamp(280px, 17.5rem + 3.5vw, 480px);  /* 280→480px 流体：面板/中等宽封顶通用值（播放器侧面板、logo、错误文案、进度条复用） */
 
   --layout-source-url-max-w:   clamp(160px, 10rem + 0.5vw, 240px);  /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
