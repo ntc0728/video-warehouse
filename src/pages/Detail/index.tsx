@@ -17,6 +17,8 @@ import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { AppLoading, BackToTopButton } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
+import { useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
@@ -102,6 +104,10 @@ export default function DetailPage() {
 
   // ── 智能回退 ──────────────────────────────
   const handleBack = useSmartBack('/');
+
+  const pageRef = useRef<HTMLDivElement>(null);
+  const isTVDevice = useIsTV();
+  useSpatialNavigation({ containerRef: pageRef, isTV: isTVDevice });
 
   // ── 滚动位置保存/恢复（由 useScrollRestore 接管，原内联 useEffect 已删除） ────
   // 传入 isActive：仅当本页确为当前可见路由（pathname 仍是 /detail/*）时才参与恢复，
@@ -596,7 +602,7 @@ export default function DetailPage() {
   }
 
   return (
-    <div className="page-padding detail-page page-transition-enter" key={id}>
+    <div ref={pageRef} className="page-padding detail-page page-transition-enter" key={id}>
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}

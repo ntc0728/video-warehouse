@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
 import StatusTabs from '@/components/StatusTabs';
 import type { LucideIcon } from 'lucide-react';
 import './RecordShell.css';
@@ -22,6 +22,8 @@ interface RecordShellProps {
   onStatusChange?: (key: string) => void;
   /** 页面类名（collection-page / history-page），承接页面级布局样式 */
   pageClassName?: string;
+  /** 外部传入的容器 ref（用于 TV 空间导航） */
+  containerRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 }
 
@@ -32,12 +34,13 @@ export default function RecordShell({
   activeStatus,
   onStatusChange,
   pageClassName = '',
+  containerRef,
   children,
 }: RecordShellProps) {
   const hasStatus = !!(statusTabs && statusTabs.length > 0 && activeStatus !== undefined && onStatusChange);
 
   return (
-    <div className={`page-padding record-page page-transition-enter--stagger ${pageClassName}`}>
+    <div ref={containerRef} className={`page-padding record-page page-transition-enter--stagger ${pageClassName}`}>
       <div className="record-shell" style={{ '--stagger': 0 } as CSSProperties}>
         <div className="record-main">
           <aside className="record-aside">

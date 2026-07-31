@@ -23,7 +23,8 @@ import { useDocumentTitle } from '@/hooks';
 import { useIPTVAutoRefresh } from '@/hooks/useIPTVAutoRefresh';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMediaQuery, useIsTV } from '@/hooks/useMediaQuery';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import GroupPicker from './GroupPicker';
 import { useShallow } from 'zustand/react/shallow';
@@ -47,6 +48,9 @@ const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const isTV = useIsTV();
+  const pageRef = useRef<HTMLDivElement>(null);
+  useSpatialNavigation({ containerRef: pageRef, isTV });
 
   useDocumentTitle();
   // 高频更新字段 (availabilityProgress) 与低频数据/动作分两组订阅,避免每频道
@@ -280,7 +284,7 @@ export default function IPTVPage() {
   }, [checkAvailability, selectedGroup]);
 
   return (
-    <div className="page-padding iptv-page page-transition-enter">
+    <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
         <div className="iptv-top-card">
           <div className="iptv-header">
             {!proxyUrl && (

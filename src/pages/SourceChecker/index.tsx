@@ -9,6 +9,8 @@ import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
 import { useSettingsStore, useIPTVStore } from '@/stores';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
+import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
+import { useIsTV } from '@/hooks/useMediaQuery';
 import './SourceChecker.css';
 
 type TabKey = 'network' | 'iptv' | 'video' | 'iptvProxy' | 'videoProxy';
@@ -99,6 +101,10 @@ function saveCache(data: Omit<CacheData, 'timestamp'>): void {
 export default function SourceCheckerPage() {
   const { corsProxy, videoSourceIndices, iptvSourceIndices } = useSettingsStore();
   const { settings: iptvSettings } = useIPTVStore();
+
+  const pageRef = useRef<HTMLDivElement>(null);
+  const isTV = useIsTV();
+  useSpatialNavigation({ containerRef: pageRef, isTV });
 
   const [activeTab, setActiveTab] = useState<TabKey>('network');
   const [checkingTabs, setCheckingTabs] = useState<Set<TabKey>>(new Set());
@@ -390,7 +396,7 @@ export default function SourceCheckerPage() {
   const videoProxyUrl = corsProxy || '未配置';
 
   return (
-    <div className="page-padding source-checker-page page-transition-enter">
+    <div ref={pageRef} className="page-padding source-checker-page page-transition-enter">
       <div className="source-checker-header">
         <div className="header-left">
           <h1>源检测</h1>
