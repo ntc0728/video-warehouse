@@ -1,4 +1,4 @@
-import { List, Switch } from '@/components/ui';
+import { List, Switch, Slider } from '@/components/ui';
 import { Sun, Moon, Monitor, Palette } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
 
@@ -9,8 +9,8 @@ interface AppearanceTabProps {
   setSkin: (s: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
   tvMode: boolean;
   setTvMode: (v: boolean) => void;
-  tvOverscan: boolean;
-  setTvOverscan: (v: boolean) => void;
+  tvOverscan: number;
+  setTvOverscan: (v: number) => void;
 }
 
 export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan }: AppearanceTabProps) {
@@ -67,9 +67,18 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
         />
         <List.Item
           title="TV 过扫描安全区"
-          description="为电视边缘裁切预留安全边距（仅 TV 模式生效）"
-          extra={<Switch checked={tvOverscan} onChange={setTvOverscan} />}
-        />
+          description="为电视边缘裁切预留安全边距（仅 TV 模式生效，0 = 铺满）"
+          extra={<span className="settings-slider-value">{tvOverscan === 0 ? '铺满' : `${tvOverscan}%`}</span>}
+        >
+          <Slider
+            value={tvOverscan}
+            min={0}
+            max={10}
+            step={1}
+            onChange={setTvOverscan}
+            aria-label="TV 过扫描安全区大小"
+          />
+        </List.Item>
       </List>
     </section>
   );
