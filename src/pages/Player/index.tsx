@@ -25,7 +25,7 @@ import { PlayerCMSPanel } from './PlayerCMSPanel';
 import { PlayerSeasonPanel } from './PlayerSeasonPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
-import { useDocumentTitle } from '@/hooks';
+import { useDocumentTitle, useIsTV } from '@/hooks';
 import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager } from './hooks';
 import './Player.css';
 
@@ -76,6 +76,8 @@ export default function PlayerPage() {
   const { videoSourceIndex } = useSettingsStore();
 
   const isCompact = useMemo(() => isNativePlatform(), []);
+  // TV 模式：用户在设置页强制开启，或 UA 自动检测为 TV 设备时启用遥控器交互
+  const isTVDevice = useIsTV();
 
   const [video, setVideo] = useState<Video | null>(null);
   const [currentSrc, setCurrentSrc] = useState<{ url: string; type: VideoSource['type'] } | null>(null);
@@ -831,7 +833,7 @@ export default function PlayerPage() {
           <UniversalPlayer
             key={`video-player-${id}`}
             mode="video"
-            platform="desktop"
+            platform={isTVDevice ? 'tv' : 'desktop'}
             url={currentSrc.url}
             type={currentSrc.type}
             title={video?.title || ''}

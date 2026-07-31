@@ -44,6 +44,8 @@ interface SettingsState extends AppSettings {
   setSkipIntroDuration: (seconds: number) => void;
   setSkipOutroDuration: (seconds: number) => void;
   setAutoPlay: (value: boolean) => void;
+  /** 强制 TV 模式（用于在非 TV 设备上体验遥控器交互） */
+  setTvMode: (value: boolean) => void;
   setUsername: (username: string) => void;
   setAvatar: (avatar: string) => void;
   resetToDefaults: () => void;
@@ -75,6 +77,7 @@ export const DEFAULT_SETTINGS = {
   skipIntroDuration: 90,
   skipOutroDuration: 90,
   autoPlay: true,
+  tvMode: false,
   username: '',
   avatar: '',
 };
@@ -102,11 +105,12 @@ export const useSettingsStore = create<SettingsState>()(
       skipOutro: false,
       skipIntroDuration: 90,
       skipOutroDuration: 90,
-      autoPlay: true,
-      username: '',
-      avatar: '',
+  autoPlay: true,
+  tvMode: false,
+  username: '',
+  avatar: '',
 
-      setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
+  setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
       setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
       setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
       setIPTVSourceIndices: (indices) => set({ iptvSourceIndices: indices }),
@@ -140,6 +144,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSkipIntroDuration: (skipIntroDuration) => set({ skipIntroDuration: Math.max(10, Math.min(300, skipIntroDuration)) }),
       setSkipOutroDuration: (skipOutroDuration) => set({ skipOutroDuration: Math.max(10, Math.min(300, skipOutroDuration)) }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
+      setTvMode: (tvMode) => set({ tvMode }),
       setUsername: (username) => set({ username }),
       setAvatar: (avatar) => set({ avatar }),
       resetToDefaults: () => set({ ...DEFAULT_SETTINGS }),
