@@ -22,7 +22,6 @@ import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
@@ -36,7 +35,6 @@ import './Browse.css';
 type SearchMode = 'smart' | 'cms';
 
 export default function BrowsePage() {
-  const pageRef = useRef<HTMLDivElement>(null);
   const isPhone = useIsMobileLayout();
   const isTV = useIsTV();
   const location = useLocation();
@@ -47,7 +45,6 @@ export default function BrowsePage() {
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
-  useSpatialNavigation({ containerRef: pageRef, isTV });
   useScrollRestore('browse', undefined, location.pathname === '/browse');
 
   // ── 搜索词（优先从 location.state 读取，兜底兼容 ?q= 查询参数）──

@@ -8,8 +8,7 @@
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useMediaQuery, useIsTV } from '@/hooks/useMediaQuery';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
@@ -37,9 +36,7 @@ const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
 export default function SettingsPage() {
   useDocumentTitle();
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const isTV = useIsTV();
   const pageRef = useRef<HTMLDivElement>(null);
-  useSpatialNavigation({ containerRef: pageRef, isTV });
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
 

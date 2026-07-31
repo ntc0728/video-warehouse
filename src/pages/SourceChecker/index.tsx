@@ -9,8 +9,7 @@ import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
 import { useSettingsStore, useIPTVStore } from '@/stores';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
-import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
-import { useIsTV } from '@/hooks/useMediaQuery';
+
 import './SourceChecker.css';
 
 type TabKey = 'network' | 'iptv' | 'video' | 'iptvProxy' | 'videoProxy';
@@ -103,8 +102,6 @@ export default function SourceCheckerPage() {
   const { settings: iptvSettings } = useIPTVStore();
 
   const pageRef = useRef<HTMLDivElement>(null);
-  const isTV = useIsTV();
-  useSpatialNavigation({ containerRef: pageRef, isTV });
 
   const [activeTab, setActiveTab] = useState<TabKey>('network');
   const [checkingTabs, setCheckingTabs] = useState<Set<TabKey>>(new Set());
