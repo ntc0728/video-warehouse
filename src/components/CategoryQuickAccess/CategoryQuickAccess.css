@@ -121,18 +121,28 @@
 
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
-/* 圆形底盘直径派生自「内部图标档」（TV 下 Icon size=2xl），系数 1.9 与桌面端
-   (60px 底盘 / ≈31.9px --icon-xl ≈ 1.88) 对齐：任意视口下「底盘 : 图标」比例恒定，
-   且随 TV 文字/图标曲线同步放大。1920 屏 ≈ 130px（桌面 60px 的 2.1×，符合 TV 放大预期）。
+/* 圆形底盘直径派生自「内部图标档」（TV 下 Icon size=2xl = --icon-2xl，1920 屏 ≈78px）。
+   系数 1.6：底盘 ≈125px（图标 78px 的 1.6×，留约 19px 圆环边距，按钮更紧凑不空旷），
+   相比上版 1.9（≈148px）明显缩小，仍随 TV 文字/图标曲线同步放大、比例恒定。
    ★禁止回归：不得再用 --layout-card-daily-width（语义是「每日推荐卡片宽度」，
    1920 屏 ≈ 258px = 桌面 4.3×），会让整个分类按钮撑成巨大方块。 */
 .category-quick-access--tv .category-quick-access__icon-wrap {
-  width: calc(var(--icon-2xl) * 1.9);
-  height: calc(var(--icon-2xl) * 1.9);
+  width: calc(var(--icon-2xl) * 1.6);
+  height: calc(var(--icon-2xl) * 1.6);
 }
 
 .category-quick-access--tv .category-quick-access__label {
   font-size: var(--text-base);
+}
+
+/* TV 整行布局：去掉桌面 content-max-width 的钳制（1920 屏仅 ≈896px，会把 7 个卡片裁掉），
+   改为满宽居中 + 固定 gap，确保 7 个分类完整可见、不再被裁切。 */
+.category-quick-access--tv .category-quick-access__inner {
+  max-width: none;
+  justify-content: center;
+  gap: var(--space-xl);
+  padding-right: var(--space-lg);
+  padding-left: var(--space-lg);
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */
