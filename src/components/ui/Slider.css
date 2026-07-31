@@ -15,7 +15,7 @@
 
 /* ── WebKit track ─────────────────────────────────────────────── */
 .ui-slider::-webkit-slider-runnable-track {
-  height: 6px;
+  height: var(--slider-track-h, 6px);
   border-radius: 999px;
   background: linear-gradient(
     to right,
@@ -26,13 +26,13 @@
 
 /* ── Firefox track ───────────────────────────────────────────── */
 .ui-slider::-moz-range-track {
-  height: 6px;
+  height: var(--slider-track-h, 6px);
   border-radius: 999px;
   background: var(--color-border);
 }
 
 .ui-slider::-moz-range-progress {
-  height: 6px;
+  height: var(--slider-track-h, 6px);
   border-radius: 999px;
   background: var(--color-primary);
 }
@@ -41,7 +41,10 @@
 .ui-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  margin-top: -7px; /* (track 6 - thumb 20) / 2 */
+  /* 垂直居中：margin-top = (轨道高 - 拇指尺寸) / 2。
+     不能写死 -7px——--switch-thumb-size 为 clamp(14→24px，TV 24→48px)，
+     写死会在较大拇指时让圆点偏上（"过扫描安全区圆点位置偏高"的根因）。 */
+  margin-top: calc((var(--slider-track-h, 6px) - var(--switch-thumb-size, 20px)) / 2);
   width: var(--switch-thumb-size, 20px);
   height: var(--switch-thumb-size, 20px);
   border-radius: 999px;

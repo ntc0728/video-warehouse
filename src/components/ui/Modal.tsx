@@ -105,7 +105,7 @@ const Modal: React.FC<ModalProps> = ({
           )}
           <Dialog.Close asChild>
             <button className="absolute top-[var(--space-sm)] right-[var(--space-sm)] flex items-center justify-center w-[var(--icon-xl)] h-[var(--icon-xl)] rounded-full bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors" aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>

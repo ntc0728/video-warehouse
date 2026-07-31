@@ -30,20 +30,12 @@ registry.set('pan', (url) => {
   return new NativeAdapter(url);
 });
 
-export function registerAdapter(type: SourceType, factory: AdapterFactory): void {
-  registry.set(type, factory);
-}
-
 export function createAdapter(type: SourceType, url: string, options?: Record<string, unknown>): IPlayerAdapter {
   const factory = registry.get(type);
   if (!factory) {
     throw new Error(`No adapter registered for source type: ${type}`);
   }
   return factory(url, options);
-}
-
-export function hasAdapter(type: SourceType): boolean {
-  return registry.has(type);
 }
 
 /** 覆盖已注册的适配器（测试用：注入 mock 适配器） */

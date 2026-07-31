@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen, Tv } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -25,6 +25,9 @@ const RIGHT_NAV_ITEMS: NavItem[] = [
   { key: 'history', title: '历史', icon: Clock, path: '/history' },
   { key: 'settings', title: '设置', icon: Settings, path: '/settings' },
 ];
+
+/** TV 模式下在顶部导航栏补充 IPTV 入口（侧边栏在 TV 模式下隐藏，需经顶栏可达） */
+const TV_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
 
 /** 移动端进入这些页面时，顶部导航栏中央显示对应标题（非搜索模式） */
 const PAGE_TITLES: Record<string, string> = {
@@ -293,9 +296,10 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           )}
         </div>
         <div className="sticky-header__right">
-          <nav className="sticky-header__nav" aria-label="次要导航">
-            {RIGHT_NAV_ITEMS.map(renderNavItem)}
-          </nav>
+        <nav className="sticky-header__nav" aria-label="次要导航">
+          {isTV && TV_NAV_ITEMS.map(renderNavItem)}
+          {RIGHT_NAV_ITEMS.map(renderNavItem)}
+        </nav>
           {isCompact && !isSearchMode ? (
             <button className="sticky-header__search-btn" onClick={handleSearchModeToggle} aria-label="打开搜索">
               <Icon icon={Search} size="md" />

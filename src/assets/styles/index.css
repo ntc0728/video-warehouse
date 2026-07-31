@@ -484,6 +484,53 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   box-shadow: none !important;
 }
 
+/* ── TV 模式焦点方框（方向键 / 遥控器导航）─────────────────────────────
+   此前为「鼠标用户」在大量组件上做了 outline:none 屏蔽，导致 TV 模式下
+   用方向键聚焦按钮 / tab / 卡片时没有任何聚焦框。TV 模式统一重新点亮：
+   · 用 outline 画在边框【外侧】，不被元素自身 overflow:hidden /
+     border-radius 裁切（box-shadow 会被 overflow:hidden 祖先裁掉，
+     表现为「方框被裁 / 只剩一个小圆点」）；
+   · !important + 较高特异性覆盖各组件的 outline:none 屏蔽；
+   · box-shadow:none 清掉组件自带焦点环，避免与 outline 叠成双框；
+   · 例外：.no-interaction-visual（logo / 品牌名）保持无聚焦框。 */
+[data-device="tv"] :focus-visible:not(.no-interaction-visual) {
+  outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
+  outline-offset: var(--tv-focus-offset, 2px) !important;
+  box-shadow: none !important;
+}
+
+/* 分段控件（收藏/历史 category-segmented、browse search-tabs）：容器 overflow:hidden
+   会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。覆盖上面的
+   全局外侧 outline，确保这些控件的焦点框清晰可见且不被裁切。 */
+[data-device="tv"] .category-segmented__item:focus-visible,
+[data-device="tv"] .browse-search-tab:focus-visible {
+  outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
+  outline-offset: calc(-1 * var(--tv-focus-width, 3px) - 2px) !important;
+  box-shadow: none !important;
+}
+[data-device="tv"] .category-segmented__item.active:focus-visible,
+[data-device="tv"] .browse-search-tab.active:focus-visible {
+  outline-color: var(--color-text-inverse) !important;
+}
+
+/* TV：导航栏 logo（.no-interaction-visual）是可聚焦的首页入口，遥控器导航下需显示
+   焦点框——覆盖 .no-interaction-visual:focus-visible 的 outline:none 屏蔽。
+   用外侧 outline（与全局 TV 规则一致）；logo 位于导航栏左侧、通常带左内边距，不会被裁切。 */
+[data-device="tv"] .no-interaction-visual:focus-visible {
+  outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
+  outline-offset: var(--tv-focus-offset, 2px) !important;
+  box-shadow: none !important;
+}
+
+/* 非 TV：严格零焦点框（TV 焦点框由上面的 [data-device="tv"] 规则提供）。
+   data-device 为 ''（桌面）/ 'mobile-web' / 'app' 时均无 TV 大纲框；此处清掉浏览器默认的
+   :focus-visible outline 及组件自带的 box-shadow 焦点环，确保键盘导航下任何非 TV 设备
+   都不显示焦点边框。.no-interaction-visual 自身已 !important 无框，此处不冲突。 */
+:root:not([data-device="tv"]) :focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ── Tab 通用基类（下划线式） ─────────────────────────────
    Detail / Person 页共用，避免重复定义 */
 .tab-underline {
@@ -641,17 +688,6 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   background: var(--color-surface-hover);
 }
 
-@keyframes modalSlideUp {
-  from {
-  opacity: 0;
-  transform: translateY(100%);
-}
-  to {
-  opacity: 1;
-  transform: translateY(0);
-}
-}
-
 /* 防止滚动条出现/消失导致的页面抖动（移动端不需要） */
 main {
   scrollbar-gutter: stable;
@@ -718,8 +754,8 @@ main {
 }
 
 /* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
-   列数：3 (≤767px) → 4 (768-1023px) → 6 (≥1024px)
-   暴露为 CSS 变量 --iptv-cols,便于其他网格复用同一列数策略 */
+   列数：2 (≤767px) → 3 (768-1023px) → 5 (≥1024px)
+   由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略 */
 .iptv-channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
@@ -727,18 +763,6 @@ main {
   grid-auto-rows: auto;
   align-content: start;
   width: 100%;
-}
-
-@media (width <= 767px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
-  }
-}
-
-@media (width >= 768px) and (width <= 1023px) {
-  .iptv-channel-grid {
-    grid-template-columns: repeat(var(--iptv-cols, 4), minmax(0, 1fr));
-  }
 }
 
 :root {

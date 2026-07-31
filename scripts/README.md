@@ -78,6 +78,7 @@
 | `src/components/RecordShell/**` | `npx playwright test scripts/collections.spec.ts scripts/history.spec.ts` |
 | `src/stores/**` | `npm test`（vitest 单元测试） |
 | `src/hooks/**` | `npm test`（vitest 单元测试） |
+| `src/components/Layout/**` | `npx playwright test scripts/cross-page.spec.ts scripts/home.spec.ts scripts/browse.spec.ts` |
 
 ### 全量测试（提交代码前）
 

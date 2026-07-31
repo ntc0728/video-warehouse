@@ -2,6 +2,7 @@
 :root {
   --sidebar-width: clamp(160px, 12vw, 240px);
   --sidebar-width-collapsed: 64px;
+  --sidebar-width-mobile: 200px;           /* 移动端 overlay 侧边栏宽（固定 px，移动端不随视口缩放） */
 }
 
 .sidebar-container {
@@ -87,6 +88,11 @@
   contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
+  /* 允许焦点方框（outline）向外溢出最多 8px 仍被绘制，避免聚焦元素贴边时
+     方框被 overflow 裁切（表现为「方框被裁 / 只剩一个小圆点」，
+     在非 TV 模式无过扫描安全区缓冲时尤为明显、方框贴顶显得「位置偏高」）。
+     用 --space-xs-plus（桌面冻结 8px / TV 16px）替代写死 8px，遵循零像素硬编码约定。 */
+  overflow-clip-margin: var(--space-xs-plus);
   /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
   scrollbar-width: none;
 }

@@ -38,7 +38,7 @@ const TabBarItem: React.FC<TabBarItemProps> = ({ title, icon, activeIcon, itemKe
         <span className="hidden data-[state=active]:inline-flex">{activeIcon || icon}</span>
         <span className="inline-flex data-[state=active]:hidden">{icon}</span>
       </span>
-      <span className="text-[10px] leading-none">{title}</span>
+      <span className="text-[var(--text-2xs)] leading-none">{title}</span>
     </Tabs.Trigger>
   );
 };

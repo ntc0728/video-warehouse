@@ -219,7 +219,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-height: var(--layout-dropdown-max-h, clamp(20rem, 20rem + 5vh, 28rem));
+  max-height: min(var(--layout-dropdown-max-h), var(--dropdown-avail-h, 100vh));
   padding: var(--space-xs) 0;
   border: 1px solid var(--color-border-light);
   border-top: none;
@@ -445,7 +445,9 @@
   padding: 0 var(--space-lg);
 }
 
-/* TV 下拉高度由 --layout-dropdown-max-h（比例化 432→876）控制，见 variables.css */
+/* 下拉最大高度由 CSS min(--layout-dropdown-max-h, --dropdown-avail-h) 控制：
+   --layout-dropdown-max-h 在 TV 块=标准 clamp(A,(A/19.2)vw,2A) 即 374→748（随 vw 缩放），
+   --dropdown-avail-h 由 SearchBox.tsx 按可用视口空间注入，保证不溢出屏幕。两者取小。 */
 
 
 [data-device="tv"] .search-box-dropdown__item {

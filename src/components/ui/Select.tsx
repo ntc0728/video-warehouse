@@ -42,7 +42,7 @@ interface MultipleSelectProps extends BaseSelectProps {
 export type SelectProps = SingleSelectProps | MultipleSelectProps;
 
 const triggerBase =
-  'group inline-flex items-center gap-1 min-h-[var(--comp-tab-height)] min-w-[var(--layout-select-w)] px-[14px] py-1 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text)] text-sm whitespace-nowrap cursor-pointer outline-none transition-colors hover:bg-[var(--color-surface-hover)] data-[state=open]:border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed source-multi-trigger';
+  'group inline-flex items-center gap-1 min-h-[var(--comp-tab-height)] min-w-[var(--layout-select-w)] px-[var(--space-md)] py-1 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text)] text-sm whitespace-nowrap cursor-pointer outline-none transition-colors hover:bg-[var(--color-surface-hover)] data-[state=open]:border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed source-multi-trigger';
 
 /* 层级体系（见 variables.css --z-*）：
    固定导航 sticky header 55 / sidebar-overlay 90 / sidebar 100
@@ -51,7 +51,7 @@ const triggerBase =
    —— 下拉经 Radix Portal 挂 body，z-index 必须高于固定层才会显示，但绝不可抬到与弹窗同档。
    注意：portal-dropdown / source-multi-* 是 E2E 选择器钩子（collections.spec.ts / settings.spec.ts），勿删。 */
 const contentBase =
-  'z-[var(--z-popover)] mt-1 p-1 min-w-[var(--layout-select-w)] max-h-[320px] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-md shadow-[var(--shadow-card)] portal-dropdown';
+  'z-[var(--z-popover)] mt-1 p-1 min-w-[var(--layout-select-w)] max-h-[var(--layout-dropdown-max-h)] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-md shadow-[var(--shadow-card)] portal-dropdown';
 
 const itemBase =
   'relative flex items-center gap-2 pl-8 pr-3 py-2 text-sm text-[var(--color-text)] rounded-sm cursor-pointer outline-none select-none hover:bg-[var(--color-surface-hover)] data-[state=checked]:bg-[var(--color-surface-hover)] source-multi-option';

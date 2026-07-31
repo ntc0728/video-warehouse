@@ -134,7 +134,7 @@
   padding-left: calc(var(--timeline-dot-size, 0.75rem) + var(--space-xs) + var(--space-md));
 }
 
-/* 历史页 video tab 横版卡片网格列数（比竖版少） */
+/* 历史页 video tab 横版卡片网格列数：2 (≤767) → 3 (768-1279) → 4 (≥1280) → 5 (≥1920) */
 .history-content .history-group-body .video-card-grid {
   --card-cols: 3;
 }
@@ -157,36 +157,7 @@
   }
 }
 
-@media (width >= 2560px) {
-  .history-content .history-group-body .video-card-grid {
-    --card-cols: 6;
-  }
-}
-
-/* 历史页内的 IPTV 频道网格:始终撑满父容器,避免分组下卡片独占一行 */
-/* 历史页 IPTV 列数:3 (≤767px) → 4 (768-1023px) → 5 (≥1024px) → 6 (≥1920px) */
-.history-content .iptv-channel-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  width: 100%;
-}
-
-@media (width <= 767px) {
-  .history-content .iptv-channel-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (width >= 768px) and (width <= 1023px) {
-  .history-content .iptv-channel-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (width >= 1920px) {
-  .history-content .iptv-channel-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
+/* 历史页 IPTV 频道网格沿用全局 .iptv-channel-grid 默认列数(2/3/5),不单独覆盖 */
 
 /* 历史页记录卡片 hover：整体上移，并覆盖内部卡片的 hover transform */
 .history-content .record-card:hover {

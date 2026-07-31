@@ -65,17 +65,10 @@
 
 .skeleton-iptv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--layout-grid-min-col), 1fr));
+  /* 对齐真实 .iptv-channel-grid 列数(2/3/5)，由全局 --iptv-cols 驱动，不使用 auto-fill */
+  grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
   gap: var(--space-sm);
   padding: 0 var(--space-xs);
-}
-
-/* Responsive */
-@media (width <= 1024px) {
-  .skeleton-iptv-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-md);
-  }
 }
 
 @media (width <= 767px) {
@@ -120,26 +113,7 @@
   }
 
   .skeleton-iptv-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
     gap: var(--space-xs);
-  }
-}
-
-@media (width >= 1920px) {
-  .skeleton-iptv-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: var(--space-md);
-  }
-}
-
-@media (width >= 2560px) {
-  .skeleton-iptv-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-@media (width >= 3840px) {
-  .skeleton-iptv-grid {
-    grid-template-columns: repeat(7, 1fr);
   }
 }

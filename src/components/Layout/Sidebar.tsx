@@ -82,7 +82,6 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
     };
   }, [isMobile, isOpen, onToggle]);
 
-  const sidebarWidth = isMobile ? 200 : 240;
 
   const handleTabClick = () => {
     if (isMobile) onToggle();
@@ -94,7 +93,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
         {isOpen && <div className="sidebar-overlay" onClick={onToggle} />}
         <aside
           className={`sidebar-container sidebar-container--mobile${isOpen ? ' sidebar-container--open' : ''}`}
-          style={{ width: sidebarWidth }}
+          style={{ width: 'var(--sidebar-width-mobile)' }}
         >
           <div className="sidebar-header">
             <span className="sidebar-header__brand">
@@ -139,8 +138,8 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
     <aside
       className="sidebar-container"
       style={{
-        width: isOpen ? sidebarWidth : 64,
-        minWidth: isOpen ? sidebarWidth : 64,
+        width: isOpen ? 'var(--sidebar-width)' : 'var(--sidebar-width-collapsed)',
+        minWidth: isOpen ? 'var(--sidebar-width)' : 'var(--sidebar-width-collapsed)',
       }}
     >
       <div className="sidebar-header">

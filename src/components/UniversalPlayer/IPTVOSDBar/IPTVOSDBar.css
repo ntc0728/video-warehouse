@@ -7,7 +7,7 @@
   display: flex;
   gap: 0;
   align-items: center;
-  width: min(var(--osd-bar-width, calc(100% - var(--header-height))), var(--layout-osd-max-width));
+  width: min(var(--layout-osd-max-width), 100%);
   /* 边缘留白：左右各留 --space-md，避免 OSD 贴视口边缘（TV 端放大为 --space-lg） */
   max-width: calc(100% - 2 * var(--space-md));
 
@@ -549,8 +549,8 @@
 
 /* ===== TV 平台适配（与 .up-platform-tv 配合） ===== */
 .up-platform-tv .iptv-osd-bar {
-  /* TV 端大幅放宽 OSD 封顶到 1600px：4K 视口下 OSD 占比合理、可读性强 */
-  --layout-osd-max-width: 1600px;
+  /* TV 端 OSD 封顶：标准 clamp(A,(A/19.2)vw,2A)，A=1600 → 1080p=1600px、4K=3200px（原硬编码 1600px 不随分辨率缩放，已改） */
+  --layout-osd-max-width: clamp(100rem, 83.333vw, 200rem);
   gap: var(--space-md);
   /* TV 端边缘留白放大为 --space-lg，适配远距离观看 */
   max-width: calc(100% - 2 * var(--space-lg));
