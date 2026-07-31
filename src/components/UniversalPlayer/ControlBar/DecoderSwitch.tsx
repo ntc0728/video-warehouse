@@ -1,5 +1,6 @@
 import { Cpu } from 'lucide-react';
 import type { DecoderMode } from '@/types/player';
+import { Icon } from "@/components/ui/Icon";
 
 interface DecoderSwitchProps {
   currentMode: DecoderMode;
@@ -18,7 +19,7 @@ export function DecoderSwitchMenuItem({ currentMode, onChange, visible }: Decode
       className="up-popover-item"
       onClick={() => onChange(nextMode)}
     >
-      <Cpu size={16} />
+      <Icon icon={Cpu} size="sm" />
       <span>{label}</span>
     </button>
   );

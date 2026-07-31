@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { Subtitles } from 'lucide-react';
 import { usePlayerStore, useSettingsStore } from '@/stores';
+import { Icon } from "@/components/ui/Icon";
 
 interface SubtitleControlProps {
   onImportSubtitle: (file: File) => void;
@@ -54,7 +55,7 @@ export default function SubtitleControl({ onImportSubtitle, activePopover, onPop
         title="字幕"
         onTouchStart={handleButtonTouch}
       >
-        <Subtitles size={20} />
+        <Icon icon={Subtitles} size="md" />
       </button>
       {isOpen && (
         <div className="up-popover up-subtitle-popover" onMouseEnter={() => onPopoverChange(POPOVER_ID)} onMouseLeave={() => onPopoverChange(null)}>

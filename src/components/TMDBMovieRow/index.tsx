@@ -19,6 +19,7 @@ import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface TMDBMovieRowProps {
   title: string;
@@ -306,7 +307,7 @@ function TMDBMovieRow({
             }}
             aria-label="向左滚动"
           >
-            <ChevronLeft size={22} />
+            <Icon icon={ChevronLeft} size="md" />
           </button>
         )}
 
@@ -370,7 +371,7 @@ function TMDBMovieRow({
             }}
             aria-label="向右滚动"
           >
-            <ChevronRight size={22} />
+            <Icon icon={ChevronRight} size="md" />
           </button>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { List, Switch, Button, HelpPopover, Select, toast } from '@/components/ui';
 import { Film, RadioTower } from 'lucide-react';
 import type { VideoSourceConfig } from '@/types/source';
+import { Icon } from "@/components/ui/Icon";
 
 interface VideoTabProps {
   tmdbAccessToken: string;
@@ -42,7 +43,7 @@ export default function VideoTab({
   return (
     <>
       <section>
-        <List header={<span className="settings-section-header"><Film size={20} /> TMDB</span>}>
+        <List header={<span className="settings-section-header"><Icon icon={Film} size="md" /> TMDB</span>}>
           <List.Item
             title="TMDB Access Token"
             description={tmdbAccessToken ? '已配置' : '未配置（首页 TMDB 发现将不可用）'}
@@ -67,7 +68,7 @@ export default function VideoTab({
       </section>
 
       <section>
-        <List header={<span className="settings-section-header"><RadioTower size={20} /> 视频源</span>}>
+        <List header={<span className="settings-section-header"><Icon icon={RadioTower} size="md" /> 视频源</span>}>
           <List.Item
             title={
               <>

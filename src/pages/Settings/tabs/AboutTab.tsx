@@ -1,6 +1,7 @@
 import { List } from '@/components/ui';
 import { Info, ScrollText } from 'lucide-react';
 import pkg from '../../../../package.json';
+import { Icon } from "@/components/ui/Icon";
 
 interface AboutTabProps {
   onVersionClick: () => void;
@@ -18,7 +19,7 @@ export default function AboutTab({ onVersionClick, onChangelogClick }: AboutTabP
 
   return (
     <section className="about-tab">
-      <List header={<span className="settings-section-header"><Info size={20} /> 关于</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={Info} size="md" /> 关于</span>}>
         <List.Item
           title="版本"
           extra={
@@ -32,7 +33,7 @@ export default function AboutTab({ onVersionClick, onChangelogClick }: AboutTabP
         />
         <List.Item
           title="更新日志"
-          extra={<ScrollText size={16} className="settings-item-icon" />}
+          extra={<Icon icon={ScrollText} size="sm" className="settings-item-icon" />}
           onClick={onChangelogClick}
           clickable
         />

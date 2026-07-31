@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import './StatusTabs.css';
 
 interface StatusTab {
@@ -22,7 +23,7 @@ export default function StatusTabs({ tabs, activeKey, onChange, className, showI
   return (
     <div className={`status-tabs${className ? ` ${className}` : ''}`} role="tablist">
       {tabs.map((tab) => {
-        const Icon = tab.icon;
+        const TabIcon = tab.icon;
         const isActive = tab.key === activeKey;
         return (
           <button
@@ -34,7 +35,7 @@ export default function StatusTabs({ tabs, activeKey, onChange, className, showI
             style={{ '--status-tab-color': tab.color } as React.CSSProperties}
             onClick={() => onChange(tab.key)}
           >
-            {showIcon ? <Icon size={16} /> : <span className="status-tab__dot" />}
+            {showIcon ? <Icon icon={TabIcon} size="sm" /> : <span className="status-tab__dot" />}
             <span>{tab.label}</span>
             {tab.count > 0 && <span className="status-tab__count">{tab.count}</span>}
           </button>

@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScrollContainer } from '../../hooks/useScrollContext';
 import './StillsLightbox.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface StillsLightboxProps {
   urls: string[];
@@ -184,7 +185,7 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
       <div className="stills-lightbox__backdrop" onClick={onClose} />
 
       <button className="stills-lightbox__close" onClick={onClose} aria-label="关闭">
-        <X size={24} />
+        <Icon icon={X} size="lg" />
       </button>
 
       <div className="stills-lightbox__counter">
@@ -193,13 +194,13 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
 
       {currentIndex > 0 && (
         <button className="stills-lightbox__nav stills-lightbox__nav--prev" onClick={goPrev} aria-label="上一张">
-          <ChevronLeft size={32} />
+          <Icon icon={ChevronLeft} size="2xl" />
         </button>
       )}
 
       {currentIndex < urls.length - 1 && (
         <button className="stills-lightbox__nav stills-lightbox__nav--next" onClick={goNext} aria-label="下一张">
-          <ChevronRight size={32} />
+          <Icon icon={ChevronRight} size="2xl" />
         </button>
       )}
 

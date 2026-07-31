@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { MoreVertical } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface MoreMenuProps {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
         title="更多"
         onTouchStart={handleButtonTouch}
       >
-        <MoreVertical size={20} />
+        <Icon icon={MoreVertical} size="md" />
       </button>
       {isOpen && (
         <div className="up-popover up-more-popover" onClick={handlePopoverClick}>

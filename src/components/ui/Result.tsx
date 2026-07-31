@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { CheckCircle2, XCircle, AlertTriangle, Clock, Info } from 'lucide-react'
+import { Icon } from '@/components/ui/Icon'
 
 type ResultStatus = 'success' | 'error' | 'warning' | 'waiting' | 'info'
 
@@ -18,11 +19,11 @@ const statusConfig: Record<ResultStatus, { icon: typeof CheckCircle2; colorVar: 
 }
 
 function Result({ status, title, description }: ResultProps) {
-  const { icon: Icon, colorVar } = statusConfig[status]
+  const { icon: StatusIcon, colorVar } = statusConfig[status]
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-8">
-      <Icon size={48} style={{ color: colorVar }} />
+      <Icon icon={StatusIcon} size="3xl" style={{ color: colorVar }} />
       {title && (
         <div className="text-base font-medium" style={{ color: 'var(--color-text)' }}>
           {title}

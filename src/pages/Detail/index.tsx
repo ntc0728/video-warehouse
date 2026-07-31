@@ -30,6 +30,7 @@ import {
   RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
 import './Detail.css';
+import { Icon } from "@/components/ui/Icon";
 
 // ── 常量 ──────────────────────────────────────────────
 
@@ -591,7 +592,7 @@ export default function DetailPage() {
     return (
       <div className="page-padding detail-page page-transition-enter">
         <div className="detail-not-found">
-          <AlertTriangle size={48} />
+          <Icon icon={AlertTriangle} size="3xl" />
           <span>{tmdbError || '影片不存在'}</span>
         </div>
       </div>
@@ -613,14 +614,14 @@ export default function DetailPage() {
 
         {/* 返回按钮 */}
         <button className="detail-hero-back" onClick={handleBack} aria-label="返回">
-          <ArrowLeft size={18} />
+          <Icon icon={ArrowLeft} size="sm" />
           <span>返回</span>
         </button>
 
         {/* 官网链接 */}
         {homepage && (
           <a href={homepage} target="_blank" rel="noreferrer" className="detail-official-link">
-            <ExternalLink size={16} />
+            <Icon icon={ExternalLink} size="sm" />
             <span>官方页面</span>
           </a>
         )}
@@ -659,7 +660,7 @@ export default function DetailPage() {
             {/* 操作按钮 */}
             <div className="detail-hero-actions">
               <button className="detail-btn detail-btn-play" onClick={handlePlay}>
-                <Play size={18} fill="currentColor" />
+                <Icon icon={Play} size="sm" fill="currentColor" />
                 {hasWatchingHistory ? '继续播放' : '立即播放'}
               </button>
               {hasWatchingHistory && (
@@ -668,8 +669,8 @@ export default function DetailPage() {
                 </button>
               )}
               <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect} aria-pressed={collected}>
-                <Heart size={18} fill={collected ? 'var(--color-favorite-active)' : 'none'}
-                  color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
+                <Icon icon={Heart} size="sm" fill={collected ? 'var(--color-favorite-active)' : 'none'}
+                                                color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
                 {collected ? '已收藏' : '加入收藏'}
               </button>
             </div>
@@ -728,7 +729,7 @@ export default function DetailPage() {
                 if (firstPlaylist) runSourceDetection();
               }}
             >
-              <tab.icon size={16} />
+              <Icon icon={tab.icon} size="sm" />
               <span>{tab.label}</span>
             </button>
           ))}
@@ -752,13 +753,13 @@ export default function DetailPage() {
               </div>
             )}
             <div className="detail-info-grid">
-              {year && <div className="detail-info-card"><Calendar size={16} /><span>发行年份</span><strong>{year}</strong></div>}
-              {status && <div className="detail-info-card"><Info size={16} /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
+              {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
+              {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
               {runtime && <div className="detail-info-card"><ClockIcon size={16} /><span>时长</span><strong>{runtime} 分钟</strong></div>}
               {originalLanguage && <div className="detail-info-card"><GlobeIcon size={16} /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
               {voteAverage > 0 && (
                 <div className="detail-info-card">
-                  <Star size={16} />
+                  <Icon icon={Star} size="sm" />
                   <span>TMDB 评分</span>
                   <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
                 </div>
@@ -768,9 +769,9 @@ export default function DetailPage() {
               {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size={16} /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
               {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
               {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size={16} /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
-              {isTV && <div className="detail-info-card"><Layers size={16} /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
-              {isTV && inProduction !== undefined && <div className="detail-info-card"><RefreshCw size={16} /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
-              {isTV && lastAirDate && <div className="detail-info-card"><Calendar size={16} /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
+              {isTV && <div className="detail-info-card"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
+              {isTV && inProduction !== undefined && <div className="detail-info-card"><Icon icon={RefreshCw} size="sm" /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
+              {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
             </div>
 
             {/* 发行公司 — 独立一行 */}
@@ -919,9 +920,9 @@ export default function DetailPage() {
               </div>
             ) : cmsError ? (
               <div className="detail-state detail-state--error">
-                <WifiOff size={32} /><p>{cmsError}</p>
+                <Icon icon={WifiOff} size="2xl" /><p>{cmsError}</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
               </div>
             ) : cmsResults.length > 0 ? (
               availableResults.length > 0 ? (
@@ -940,7 +941,7 @@ export default function DetailPage() {
                         runSourceDetection();
                       }}
                     >
-                      <RefreshCw size={14} /> 重新匹配
+                      <Icon icon={RefreshCw} size="xs" /> 重新匹配
                     </button>
                     <SourceDetectPill
                       status={srcDetect.status}
@@ -975,7 +976,7 @@ export default function DetailPage() {
                               <img src={v.cover} alt={v.title} />
                             ) : (
                               <div className="detail-source-thumb-placeholder">
-                                <Server size={20} />
+                                <Icon icon={Server} size="md" />
                               </div>
                             )}
                             {thumbYear && (
@@ -1001,7 +1002,7 @@ export default function DetailPage() {
                                 className="detail-source-all-btn"
                                 onClick={() => { setPlayModal({ sourceIndex: result.sourceIndex, sourceName: result.sourceName, video: v, seasons: result.seasons, seasonNumbers: result.seasonNumbers, isSeries: result.isSeries }); setActiveSeasonIndex(0); }}
                               >
-                                <ListVideo size={12} /> 全部
+                                <Icon icon={ListVideo} size="xs" /> 全部
                               </button>
                             )}
                             <button
@@ -1009,7 +1010,7 @@ export default function DetailPage() {
                               disabled={!playable}
                               onClick={() => { if (id) { useKeepAliveStore.getState().pinDetail(id); navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } }); } }}
                             >
-                              <Play size={12} fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
+                              <Icon icon={Play} size="xs" fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
                             </button>
                           </div>
                         </div>
@@ -1066,13 +1067,13 @@ export default function DetailPage() {
                     </div>
                     <div className="detail-sources-toolbar">
                       <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
-                        <RefreshCw size={14} /> 重新匹配
+                        <Icon icon={RefreshCw} size="xs" /> 重新匹配
                       </button>
                     </div>
                   </div>
                   <div className="detail-sources-grid">
                     <div className="detail-sources-empty">
-                      <Server size={32} />
+                      <Icon icon={Server} size="2xl" />
                       <p>所有视频源均未找到匹配资源</p>
                       <span>请尝试更换关键词或稍后再试</span>
                     </div>
@@ -1081,9 +1082,9 @@ export default function DetailPage() {
               )
             ) : (
               <div className="detail-state">
-                <Server size={32} /><p>暂无匹配的播放资源</p>
+                <Icon icon={Server} size="2xl" /><p>暂无匹配的播放资源</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><RefreshCw size={14} /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
               </div>
             )}
           </div>
@@ -1098,7 +1099,7 @@ export default function DetailPage() {
                   {s.poster_path ? (
                     <img src={buildImageUrl(s.poster_path, 'w300') || ''} alt={s.name} width={300} height={450} />
                   ) : (
-                    <span className="detail-cast-avatar"><Layers size={22} /></span>
+                    <span className="detail-cast-avatar"><Icon icon={Layers} size="md" /></span>
                   )}
                 </div>
                 <div className="detail-season-info">

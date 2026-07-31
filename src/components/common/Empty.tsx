@@ -5,6 +5,7 @@
 import { ReactNode } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Result } from '@/components/ui';
+import { Icon } from "@/components/ui/Icon";
 
 interface EmptyProps {
   title?: string;
@@ -38,9 +39,9 @@ export default function Empty({
           disabled={isRetrying}
         >
           {isRetrying ? (
-            <RefreshCw size={16} className="empty-retry-spin" />
+            <Icon icon={RefreshCw} size="sm" className="empty-retry-spin" />
           ) : (
-            <RefreshCw size={16} />
+            <Icon icon={RefreshCw} size="sm" />
           )}
           <span>{isRetrying ? '刷新中...' : retryText}</span>
         </button>

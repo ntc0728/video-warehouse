@@ -1,6 +1,7 @@
 import { type VideoSource } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlayerCMSPanelProps {
   selectedSourceIds: string[];
@@ -54,12 +55,12 @@ export function PlayerCMSPanel({
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
       >
-        <span className="player-panel-icon"><Server size={16} /></span>
+        <span className="player-panel-icon"><Icon icon={Server} size="sm" /></span>
         <span className="player-panel-title">CMS源</span>
         <span className="player-panel-info">{selectedSourceIds.length}个源</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
-            <ChevronDown size={16} />
+            <Icon icon={ChevronDown} size="sm" />
           </span>
         )}
       </HeaderTag>

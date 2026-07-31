@@ -1,4 +1,5 @@
 import { PictureInPicture2 } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface PiPButtonProps {
   isPiP: boolean;
@@ -16,7 +17,7 @@ export default function PiPButton({ isPiP, onClick }: PiPButtonProps) {
       aria-label={isPiP ? '退出画中画' : '画中画'}
       aria-pressed={isPiP}
     >
-      <PictureInPicture2 size={20} />
+      <Icon icon={PictureInPicture2} size="md" />
     </button>
   );
 }

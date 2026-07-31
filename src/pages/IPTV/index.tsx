@@ -29,6 +29,7 @@ import GroupPicker from './GroupPicker';
 import { useShallow } from 'zustand/react/shallow';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import './IPTV.css';
+import { Icon } from "@/components/ui/Icon";
 
 /** 防抖 Hook：延迟更新值，避免频繁触发搜索过滤 */
 const MAX_VISIBLE_SOURCES = 6;
@@ -286,7 +287,7 @@ export default function IPTVPage() {
           <div className="iptv-header">
             {!proxyUrl && (
               <span className="iptv-proxy-warning-inline">
-                <AlertCircle size={14} />
+                <Icon icon={AlertCircle} size="xs" />
                 <span>IPTV流代理未配置，频道可能无法正常播放，请在设置中</span>
                 <button className="iptv-proxy-warning-link" onClick={() => navigate('/settings?tab=iptv')}>
                   配置
@@ -379,8 +380,8 @@ export default function IPTVPage() {
 
         {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
           <div className="availability-stats">
-            <span className="stat available"><CheckCircle2 size={12} /><span>{availableCount}</span></span>
-            <span className="stat unavailable"><XCircle size={12} /><span>{filteredChannels.length - availableCount}</span></span>
+            <span className="stat available"><Icon icon={CheckCircle2} size="xs" /><span>{availableCount}</span></span>
+            <span className="stat unavailable"><Icon icon={XCircle} size="xs" /><span>{filteredChannels.length - availableCount}</span></span>
             <span className="stat total">共 {filteredChannels.length} 个</span>
           </div>
         )}

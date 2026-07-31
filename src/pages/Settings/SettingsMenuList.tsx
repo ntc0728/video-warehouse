@@ -5,6 +5,7 @@
  */
 import { ChevronRight, Palette, Video, Play, Tv, User, Info } from 'lucide-react';
 import type { SettingsTabKey } from './SettingsTabBar';
+import { Icon } from "@/components/ui/Icon";
 
 const ICON_COLORS: Record<SettingsTabKey, string> = {
   appearance: '#8b5cf6',
@@ -16,12 +17,12 @@ const ICON_COLORS: Record<SettingsTabKey, string> = {
 };
 
 export const MENU_ITEMS: { key: SettingsTabKey; label: string; icon: React.ReactNode; desc: string }[] = [
-  { key: 'appearance', label: '外观', icon: <Palette size={20} />, desc: '主题模式、皮肤' },
-  { key: 'video', label: '视频设置', icon: <Video size={20} />, desc: 'TMDB、视频源、字幕翻译' },
-  { key: 'playback', label: '播放设置', icon: <Play size={20} />, desc: '跳过片头片尾、自动连播' },
-  { key: 'iptv', label: 'IPTV设置', icon: <Tv size={20} />, desc: '数据源、节目单、代理' },
-  { key: 'personal', label: '个人设置', icon: <User size={20} />, desc: '个人资料与管理' },
-  { key: 'about', label: '关于', icon: <Info size={20} />, desc: '版本号、KinoTV' },
+  { key: 'appearance', label: '外观', icon: <Icon icon={Palette} size="md" />, desc: '主题模式、皮肤' },
+  { key: 'video', label: '视频设置', icon: <Icon icon={Video} size="md" />, desc: 'TMDB、视频源、字幕翻译' },
+  { key: 'playback', label: '播放设置', icon: <Icon icon={Play} size="md" />, desc: '跳过片头片尾、自动连播' },
+  { key: 'iptv', label: 'IPTV设置', icon: <Icon icon={Tv} size="md" />, desc: '数据源、节目单、代理' },
+  { key: 'personal', label: '个人设置', icon: <Icon icon={User} size="md" />, desc: '个人资料与管理' },
+  { key: 'about', label: '关于', icon: <Icon icon={Info} size="md" />, desc: '版本号、KinoTV' },
 ];
 
 /** 按关键字（标题或副标题）过滤设置项 */
@@ -63,7 +64,7 @@ export default function SettingsMenuList({ onSelect, query = '' }: SettingsMenuL
               <span className="settings-menu-item__label">{item.label}</span>
               <span className="settings-menu-item__desc">{item.desc}</span>
             </span>
-            <ChevronRight size={18} className="settings-menu-item__arrow" />
+            <Icon icon={ChevronRight} size="sm" className="settings-menu-item__arrow" />
           </button>
         ))
       )}

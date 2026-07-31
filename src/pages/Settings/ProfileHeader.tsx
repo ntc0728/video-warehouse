@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { User } from 'lucide-react'
 import { useSettingsStore } from '@/stores'
 import ProfileEditModal from './ProfileEditModal'
+import { Icon } from "@/components/ui/Icon";
 
 export default function ProfileHeader() {
   const username = useSettingsStore((s) => s.username)
@@ -17,7 +18,7 @@ export default function ProfileHeader() {
         aria-label="编辑个人资料"
       >
         <span className="settings-profile__avatar">
-          {avatar ? <img src={avatar} alt="" /> : <User size={28} />}
+          {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="xl" />}
         </span>
         <span className="settings-profile__meta">
           <span className="settings-profile__name">{username.trim() || '未设置昵称'}</span>

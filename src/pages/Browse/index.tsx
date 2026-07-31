@@ -31,6 +31,7 @@ import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
 import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
+import { Icon } from "@/components/ui/Icon";
 
 type SearchMode = 'smart' | 'cms';
 
@@ -317,7 +318,7 @@ export default function BrowsePage() {
               className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
               onClick={() => handleModeChange('smart')}
             >
-              <Search size={14} />
+              <Icon icon={Search} size="xs" />
               <span>智能检索</span>
             </button>
             <button

@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import KinoTVLogo from '@/assets/icon/KinoTV.webp';
+import { Icon } from "@/components/ui/Icon";
 
 const ariaLabels: Record<string, string> = {
   '/': '首页',
@@ -34,12 +35,12 @@ interface SidebarProps {
 }
 
 const tabs = [
-  { key: '/', title: '首页', icon: <Home size={20} />, activeIcon: <Home size={20} strokeWidth={2.5} /> },
-  { key: '/browse', title: '搜索中心', icon: <Search size={20} />, activeIcon: <Search size={20} strokeWidth={2.5} /> },
-  { key: '/iptv', title: 'IPTV', icon: <Tv size={20} />, activeIcon: <Tv size={20} strokeWidth={2.5} /> },
-  { key: '/collections', title: '收藏', icon: <Star size={20} />, activeIcon: <Star size={20} strokeWidth={2.5} /> },
-  { key: '/history', title: '历史记录', icon: <Clock size={20} />, activeIcon: <Clock size={20} strokeWidth={2.5} /> },
-  { key: '/settings', title: '设置', icon: <Settings size={20} />, activeIcon: <Settings size={20} strokeWidth={2.5} /> },
+  { key: '/', title: '首页', icon: <Icon icon={Home} size="md" />, activeIcon: <Icon icon={Home} size="md" strokeWidth={2.5} /> },
+  { key: '/browse', title: '搜索中心', icon: <Icon icon={Search} size="md" />, activeIcon: <Icon icon={Search} size="md" strokeWidth={2.5} /> },
+  { key: '/iptv', title: 'IPTV', icon: <Icon icon={Tv} size="md" />, activeIcon: <Icon icon={Tv} size="md" strokeWidth={2.5} /> },
+  { key: '/collections', title: '收藏', icon: <Icon icon={Star} size="md" />, activeIcon: <Icon icon={Star} size="md" strokeWidth={2.5} /> },
+  { key: '/history', title: '历史记录', icon: <Icon icon={Clock} size="md" />, activeIcon: <Icon icon={Clock} size="md" strokeWidth={2.5} /> },
+  { key: '/settings', title: '设置', icon: <Icon icon={Settings} size="md" />, activeIcon: <Icon icon={Settings} size="md" strokeWidth={2.5} /> },
 ];
 
 export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
@@ -103,7 +104,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
               <span className="sidebar-title animate-slide-in-left">KinoTV</span>
             </span>
             <button onClick={onToggle} className="sidebar-toggle-btn btn-press" aria-label="关闭侧边栏">
-              <X size={18} />
+              <Icon icon={X} size="sm" />
             </button>
           </div>
           <div className="sidebar-nav">
@@ -149,7 +150,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
           className="sidebar-toggle-btn btn-press"
           aria-label={isOpen ? '收起侧边栏' : '展开侧边栏'}
         >
-          {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+          {isOpen ? <Icon icon={PanelLeftClose} size="sm" /> : <Icon icon={PanelLeftOpen} size="sm" />}
         </button>
       </div>
 

@@ -8,6 +8,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { SETTINGS_TABS } from './SettingsTabBar';
 import type { SettingsTabKey } from './SettingsTabBar';
+import { Icon } from "@/components/ui/Icon";
 
 interface SettingsSubPageProps {
   tab: SettingsTabKey;
@@ -55,7 +56,7 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
           onClick={onBack}
           aria-label="返回"
         >
-          <ArrowLeft />
+          <Icon icon={ArrowLeft} size="lg" />
         </button>
         <h2 className="settings-subpage__title">{label}</h2>
       </div>

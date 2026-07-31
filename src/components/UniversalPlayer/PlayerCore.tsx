@@ -1,6 +1,7 @@
 import { AlertTriangle, ListVideo, RefreshCw } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode } from '@/types/player';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlayerCoreProps {
   videoRef: (element: HTMLVideoElement | null) => void;
@@ -73,7 +74,7 @@ export default function PlayerCore({
       {hasError && (
         <div className="up-player-error">
           <div className="up-player-error-content">
-            <AlertTriangle size={48} />
+            <Icon icon={AlertTriangle} size="3xl" />
             {mode === 'iptv' ? (<p>频道加载失败，请更换其他频道</p>) : (<p>播放失败，请检查网络连接</p>)}
           </div>
           <div className="up-error-actions" onClick={(e) => e.stopPropagation()}>
@@ -83,7 +84,7 @@ export default function PlayerCore({
                 className="up-error-actions-btn"
                 onClick={(e) => { e.stopPropagation(); onOpenChannelList(); }}
               >
-                <ListVideo size={14} />
+                <Icon icon={ListVideo} size="xs" />
                 <span>切换频道</span>
               </button>
             )}
@@ -93,7 +94,7 @@ export default function PlayerCore({
                 className="up-error-actions-btn"
                 onClick={(e) => { e.stopPropagation(); onRetry(); }}
               >
-                <RefreshCw size={14} />
+                <Icon icon={RefreshCw} size="xs" />
                 <span>重试</span>
               </button>
             )}

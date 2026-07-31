@@ -13,6 +13,7 @@ import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
 import { buildImageUrl, buildImageSrcSet, HERO_THUMB_SIZE } from '@/services/tmdbService';
 import './HeroBanner.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface HeroItem {
   id: number | string;
@@ -379,12 +380,12 @@ export default function HeroBanner({
               <div className="hero-banner__actions">
                 {historyMap?.has(String(activeItem.id)) && onContinuePlay && (
                   <button className="hero-banner__cta hero-banner__cta--continue" onClick={(e) => { e.stopPropagation(); onContinuePlay(activeItem); }}>
-                    <Play size={18} fill="currentColor" />
+                    <Icon icon={Play} size="sm" fill="currentColor" />
                     <span>继续播放</span>
                   </button>
                 )}
                 <button className="hero-banner__cta" onClick={(e) => { e.stopPropagation(); onItemClick(activeItem); }}>
-                  <Play size={18} fill="currentColor" />
+                  <Icon icon={Play} size="sm" fill="currentColor" />
                   <span>查看详情</span>
                 </button>
               </div>

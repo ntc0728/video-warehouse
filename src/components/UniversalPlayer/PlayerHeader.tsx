@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import type { PlayerMode } from '@/types/player';
 import FullscreenButton from './ControlBar/FullscreenButton';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlayerHeaderProps {
   mode: PlayerMode;
@@ -33,7 +34,7 @@ export default function PlayerHeader({
       onMouseMove={onActivity}
     >
       <button className="up-header-back" onClick={(e) => { e.stopPropagation(); onBack(); }}>
-        <ArrowLeft size={18} />
+        <Icon icon={ArrowLeft} size="sm" />
         <span>返回</span>
       </button>
       <span className="up-header-title">

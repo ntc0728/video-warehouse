@@ -470,51 +470,14 @@
   --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
 }
 
-/* ── TV 端 lucide 图标放大 ────────────────────────────────────────────────
-   lucide 的 size prop 渲染为硬编码 width 属性，不响应 --icon-* token。
-   按「原始 size → 大于等于它的最小语义刻度」映射：小尺寸对齐 xs/sm，
-   并为原始 size 越界区段（32/36/40/48）新增 2xl/3xl 档位，使放大后
-   的比例层次与项目预设的 xs/sm/md/lg/xl 刻度体系保持一致、无歧义。 */
-[data-device="tv"] .lucide[width="10"],
-[data-device="tv"] .lucide[width="12"],
-[data-device="tv"] .lucide[width="13"],
-[data-device="tv"] .lucide[width="14"] {
-  width: var(--icon-xs);
-  height: var(--icon-xs);
-}
-
-[data-device="tv"] .lucide[width="16"],
-[data-device="tv"] .lucide[width="18"] {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-}
-
-[data-device="tv"] .lucide[width="20"],
-[data-device="tv"] .lucide[width="22"] {
-  width: var(--icon-md);
-  height: var(--icon-md);
-}
-
-[data-device="tv"] .lucide[width="24"] {
+/* ── lucide 图标尺寸由 --icon-* token 驱动 ───────────────────────────────
+   语义档 xs/sm/md/lg/xl/2xl/3xl 由 --icon-* 提供（响应式，TV 模式经
+   [data-device="tv"] 覆盖自动放大）。源码不再出现像素硬编码：
+   - 经 <Icon icon={X} size="档" /> 调用时由组件注入对应 var（优先级最高）；
+   - 直接 <X /> 调用（lucide 默认 24）由此处默认 lg 接管。 */
+.lucide {
   width: var(--icon-lg);
   height: var(--icon-lg);
-}
-
-[data-device="tv"] .lucide[width="28"] {
-  width: var(--icon-xl);
-  height: var(--icon-xl);
-}
-
-[data-device="tv"] .lucide[width="32"],
-[data-device="tv"] .lucide[width="36"] {
-  width: var(--icon-2xl);
-  height: var(--icon-2xl);
-}
-
-[data-device="tv"] .lucide[width="40"],
-[data-device="tv"] .lucide[width="48"] {
-  width: var(--icon-3xl);
-  height: var(--icon-3xl);
 }
 
 /* ── TV 端覆盖 (≥1920px) ─────────────────────────────────────────────── */

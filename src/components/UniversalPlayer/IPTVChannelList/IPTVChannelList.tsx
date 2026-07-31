@@ -2,6 +2,7 @@ import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Radio, X } from 'lucide-react';
 import { CustomScrollbar } from '@/components/common';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
+import { Icon } from "@/components/ui/Icon";
 
 interface TVFocus {
   groupIndex: number;
@@ -178,10 +179,10 @@ export default function IPTVChannelList({
     <div className="up-channel-list-overlay" onClick={onClose}>
       <div className="up-channel-list" onClick={e => e.stopPropagation()}>
         <div className="up-channel-list-header">
-          <Radio size={16} />
+          <Icon icon={Radio} size="sm" />
           <span>频道列表</span>
           <button className="up-channel-list-close" onClick={onClose}>
-            <X size={16} />
+            <Icon icon={X} size="sm" />
           </button>
         </div>
         <div className="up-channel-list-body">

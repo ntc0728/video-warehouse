@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import './NetworkError.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface NetworkErrorProps {
   error?: Error | null;
@@ -28,7 +29,7 @@ export default function NetworkError({
   return (
     <div className="network-error-container">
       <div className="network-error-icon">
-        <AlertTriangle size={32} />
+        <Icon icon={AlertTriangle} size="2xl" />
       </div>
 
       <div className="network-error-content">
@@ -72,9 +73,9 @@ export default function NetworkError({
           disabled={isLoading}
         >
           {isLoading ? (
-            <RefreshCw size={16} className="network-error-spin-icon" />
+            <Icon icon={RefreshCw} size="sm" className="network-error-spin-icon" />
           ) : (
-            <RefreshCw size={16} />
+            <Icon icon={RefreshCw} size="sm" />
           )}
           <span>{isLoading ? '刷新中...' : '刷新'}</span>
         </button>
@@ -100,7 +101,7 @@ export function NetworkErrorInline({
   return (
     <div className="network-error-inline">
       <span className="network-error-inline-icon">
-        <AlertTriangle size={16} />
+        <Icon icon={AlertTriangle} size="sm" />
       </span>
       <span className="network-error-inline-text">
         {message || error?.message || '网络错误'}

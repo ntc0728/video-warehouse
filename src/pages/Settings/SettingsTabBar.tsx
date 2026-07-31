@@ -4,14 +4,15 @@
  * 6 个 tab 各带 Lucide 图标；active tab 文字 + 图标 + 底部边框映射 --color-primary
  */
 import { Palette, Film, PlayCircle, Tv, User, Info } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
-  appearance: <Palette size={16} />,
-  video: <Film size={16} />,
-  playback: <PlayCircle size={16} />,
-  iptv: <Tv size={16} />,
-  personal: <User size={16} />,
-  about: <Info size={16} />,
+  appearance: <Icon icon={Palette} size="sm" />,
+  video: <Icon icon={Film} size="sm" />,
+  playback: <Icon icon={PlayCircle} size="sm" />,
+  iptv: <Icon icon={Tv} size="sm" />,
+  personal: <Icon icon={User} size="sm" />,
+  about: <Icon icon={Info} size="sm" />,
 };
 
 export const SETTINGS_TABS = [

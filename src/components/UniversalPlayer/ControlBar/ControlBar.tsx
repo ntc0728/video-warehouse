@@ -19,6 +19,7 @@ import TimeDisplay from './TimeDisplay';
 import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
 import LoopButton from './LoopButton';
+import { Icon } from "@/components/ui/Icon";
 
 interface ControlBarProps {
   mode: PlayerMode;
@@ -124,7 +125,7 @@ export default function ControlBar({
               onClick={onPrevEpisode}
               title="上一集 ([)"
             >
-              <SkipBack size={20} />
+              <Icon icon={SkipBack} size="md" />
             </button>
           )}
           <PlayButton isPlaying={isPlaying} disabled={isBuffering} onClick={onTogglePlay} />
@@ -134,7 +135,7 @@ export default function ControlBar({
               onClick={onNextEpisode}
               title="下一集 (])"
             >
-              <SkipForward size={20} />
+              <Icon icon={SkipForward} size="md" />
             </button>
           )}
           {isLiveLike && onRefresh && (
