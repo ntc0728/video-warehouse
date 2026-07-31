@@ -242,7 +242,7 @@
 .detail-hero-logo {
   align-self: flex-start;
   width: auto;
-  max-width: min(55%, var(--layout-channel-list-w));
+  max-width: min(55%, var(--layout-panel-medium-w));
   max-height: var(--header-height);
   margin-bottom: var(--space-sm);
   object-fit: contain;

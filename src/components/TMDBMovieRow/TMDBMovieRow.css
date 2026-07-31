@@ -40,7 +40,7 @@
 }
 
 .tmdb-movierow-error {
-  max-width: var(--layout-channel-list-w);
+  max-width: var(--layout-panel-medium-w);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   white-space: nowrap;

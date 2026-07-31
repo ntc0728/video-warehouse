@@ -1037,7 +1037,7 @@
 }
 
 .up-channel-list {
-  width: var(--layout-channel-list-w);
+  width: var(--layout-panel-medium-w);
 }
 
 .up-platform-mobile .up-universal-player {
