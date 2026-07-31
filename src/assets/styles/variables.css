@@ -484,6 +484,13 @@
   --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
 }
 
+/* overscan 安全区开关：设置页关闭时归零，让内容铺满到电视裁切边。
+   data-tv-overscan 由 AppLayout 写入 <html>（默认 on）。 */
+[data-device="tv"][data-tv-overscan="off"] {
+  --safe-area-x: 0px;
+  --safe-area-y: 0px;
+}
+
 /* ── lucide 图标尺寸由 --icon-* token 驱动 ───────────────────────────────
    语义档 xs/sm/md/lg/xl/2xl/3xl 由 --icon-* 提供（响应式，TV 模式经
    [data-device="tv"] 覆盖自动放大）。源码不再出现像素硬编码：

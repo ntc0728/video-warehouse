@@ -46,6 +46,8 @@ interface SettingsState extends AppSettings {
   setAutoPlay: (value: boolean) => void;
   /** 强制 TV 模式（用于在非 TV 设备上体验遥控器交互） */
   setTvMode: (value: boolean) => void;
+  /** TV 过扫描安全区开关 */
+  setTvOverscan: (value: boolean) => void;
   setUsername: (username: string) => void;
   setAvatar: (avatar: string) => void;
   resetToDefaults: () => void;
@@ -78,6 +80,7 @@ export const DEFAULT_SETTINGS = {
   skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
+  tvOverscan: true,
   username: '',
   avatar: '',
 };
@@ -107,6 +110,7 @@ export const useSettingsStore = create<SettingsState>()(
       skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
+  tvOverscan: true,
   username: '',
   avatar: '',
 
@@ -145,6 +149,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSkipOutroDuration: (skipOutroDuration) => set({ skipOutroDuration: Math.max(10, Math.min(300, skipOutroDuration)) }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
       setTvMode: (tvMode) => set({ tvMode }),
+      setTvOverscan: (tvOverscan) => set({ tvOverscan }),
       setUsername: (username) => set({ username }),
       setAvatar: (avatar) => set({ avatar }),
       resetToDefaults: () => set({ ...DEFAULT_SETTINGS }),

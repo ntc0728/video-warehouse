@@ -9,9 +9,11 @@ interface AppearanceTabProps {
   setSkin: (s: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
   tvMode: boolean;
   setTvMode: (v: boolean) => void;
+  tvOverscan: boolean;
+  setTvOverscan: (v: boolean) => void;
 }
 
-export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode }: AppearanceTabProps) {
+export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan }: AppearanceTabProps) {
   return (
     <section>
       <List header={<span className="settings-section-header"><Icon icon={Palette} size="md" /> 外观</span>}>
@@ -62,6 +64,11 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
           title="TV 模式"
           description="启用方向键/数字键遥控器导航"
           extra={<Switch checked={tvMode} onChange={setTvMode} />}
+        />
+        <List.Item
+          title="TV 过扫描安全区"
+          description="为电视边缘裁切预留安全边距（仅 TV 模式生效）"
+          extra={<Switch checked={tvOverscan} onChange={setTvOverscan} />}
         />
       </List>
     </section>
