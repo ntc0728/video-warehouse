@@ -15,13 +15,14 @@ import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import SearchBox from '@/components/SearchBox';
 import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './StickyHeader.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface NavItem { key: string; title: string; icon: React.ReactNode; path: string; }
 
 const RIGHT_NAV_ITEMS: NavItem[] = [
-  { key: 'collections', title: '收藏', icon: <Star size={18} />, path: '/collections' },
-  { key: 'history', title: '历史', icon: <Clock size={18} />, path: '/history' },
-  { key: 'settings', title: '设置', icon: <Settings size={18} />, path: '/settings' },
+  { key: 'collections', title: '收藏', icon: <Icon icon={Star} size="sm" />, path: '/collections' },
+  { key: 'history', title: '历史', icon: <Icon icon={Clock} size="sm" />, path: '/history' },
+  { key: 'settings', title: '设置', icon: <Icon icon={Settings} size="sm" />, path: '/settings' },
 ];
 
 /** 移动端进入这些页面时，顶部导航栏中央显示对应标题（非搜索模式） */
@@ -219,12 +220,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           {isMobile ? (
             isSearchMode ? (
               <button className="sticky-header__menu-btn" onClick={handleSearchModeExit} aria-label="退出搜索">
-                <ArrowLeft size={22} />
+                <Icon icon={ArrowLeft} size="md" />
               </button>
             ) : (
               <>
                 <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
-                  {menuOpen ? <X size={22} /> : <Menu size={22} />}
+                  {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
                 </button>
                 <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
                   <div className="sticky-header__logo-wrap">
@@ -245,7 +246,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
                   aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
                   title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
                 >
-                  {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+                  {sidebarCollapsed ? <Icon icon={PanelLeftOpen} size="md" /> : <Icon icon={PanelLeftClose} size="md" />}
                 </button>
               )}
               <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
@@ -296,11 +297,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           </nav>
           {isCompact && !isSearchMode ? (
             <button className="sticky-header__search-btn" onClick={handleSearchModeToggle} aria-label="打开搜索">
-              <Search size={22} />
+              <Icon icon={Search} size="md" />
             </button>
           ) : null}
           <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
-            <ThemeIcon size={24} />
+            <Icon icon={ThemeIcon} size="lg" />
           </button>
         </div>
       </div>

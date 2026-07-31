@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { Volume2, Volume1, VolumeX } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 
 interface VolumeControlProps {
   volume: number;
@@ -44,7 +45,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
         onTouchStart={handleButtonTouch}
         title="静音 (M)"
       >
-        <VolumeIcon size={20} />
+        <Icon icon={VolumeIcon} size="md" />
       </button>
       {isOpen && (
         <div className="up-volume-slider-popup" style={{ touchAction: 'none' }}>

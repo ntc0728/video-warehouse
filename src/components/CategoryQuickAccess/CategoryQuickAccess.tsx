@@ -4,6 +4,7 @@
  * 移动端只显示 6 个：全部、电影、剧集、综艺、动漫、排行榜
  */
 import { LayoutGrid, Film, Tv, Mic2, Sparkles, Trophy, Camera } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import './CategoryQuickAccess.css';
 
@@ -47,7 +48,7 @@ export default function CategoryQuickAccess({ onCategorySelect, activeCategory =
     <section className={`category-quick-access${isTV ? ' category-quick-access--tv' : ''}`}>
       <div className="category-quick-access__inner">
         {displayCategories.map((cat) => {
-          const Icon = cat.icon;
+          const CatIcon = cat.icon;
           const isActive = activeCategory === cat.key;
           return (
             <button
@@ -57,7 +58,7 @@ export default function CategoryQuickAccess({ onCategorySelect, activeCategory =
               aria-label={`分类：${cat.label}`}
             >
               <div className="category-quick-access__icon-wrap" style={{ background: cat.color }}>
-                <Icon size={isMobile ? 22 : isTV ? 32 : 28} />
+                <Icon icon={CatIcon} size={isMobile ? 'md' : isTV ? '2xl' : 'xl'} />
               </div>
               <span className="category-quick-access__label">{cat.label}</span>
             </button>

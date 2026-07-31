@@ -12,6 +12,7 @@ import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './IPTVChannelCard.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface IPTVChannelCardProps {
   channel: IPTVChannel;
@@ -108,7 +109,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         {/* 批量模式下隐藏封面元素 */}
         {!batchMode && channel.isAvailable !== undefined && (
           <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
-            {channel.isAvailable ? <CheckCircle size={12} /> : <XCircle size={12} />}
+            {channel.isAvailable ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
             <span className="availability-badge__label">{channel.isAvailable ? '可用' : '不可用'}</span>
           </div>
         )}
@@ -169,11 +170,10 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           aria-label={channel.isFavorite ? '取消收藏' : '添加收藏'}
           aria-pressed={channel.isFavorite}
         >
-          <Heart
-            size={13}
-            fill={channel.isFavorite ? 'var(--color-favorite-active)' : 'none'}
-            color={channel.isFavorite ? 'var(--color-favorite-active)' : 'currentColor'}
-          />
+          <Icon icon={Heart} size="xs"
+                              fill={channel.isFavorite ? 'var(--color-favorite-active)' : 'none'}
+                              color={channel.isFavorite ? 'var(--color-favorite-active)' : 'currentColor'}
+                            />
         </button>
       )}
     </div>

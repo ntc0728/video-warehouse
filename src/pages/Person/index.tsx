@@ -16,6 +16,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { VideoCard } from '@/components/VideoCard';
 import { ArrowLeft, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import './Person.css';
+import { Icon } from "@/components/ui/Icon";
 
 type Tab = 'movies' | 'tv';
 
@@ -152,7 +153,7 @@ export default function PersonPage() {
     return (
       <div className="page-padding person-page page-transition-enter">
         <div className="person-not-found">
-          <AlertTriangle size={48} />
+          <Icon icon={AlertTriangle} size="3xl" />
           <span>{error || '人物不存在'}</span>
         </div>
       </div>
@@ -174,7 +175,7 @@ export default function PersonPage() {
         <div className="person-hero-gradient" />
 
         <button className="person-hero-back" onClick={handleBack} aria-label="返回">
-          <ArrowLeft size={18} />
+          <Icon icon={ArrowLeft} size="sm" />
           <span>返回</span>
         </button>
 
@@ -198,7 +199,7 @@ export default function PersonPage() {
                 <p ref={bioRef} className="person-bio">{person.biography}</p>
                 {(bioClamped || bioExpanded || hasExpanded) && (
                   <button className="person-bio-toggle" onClick={() => { setHasExpanded(true); setBioExpanded(!bioExpanded); }}>
-                    {bioExpanded ? <><ChevronUp size={14} /> 收起</> : <><ChevronDown size={14} /> 展开</>}
+                    {bioExpanded ? <><Icon icon={ChevronUp} size="xs" /> 收起</> : <><Icon icon={ChevronDown} size="xs" /> 展开</>}
                   </button>
                 )}
               </div>

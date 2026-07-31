@@ -9,6 +9,7 @@
  */
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronDown } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 export interface SelectOption {
   value: string;
@@ -67,7 +68,7 @@ export function Select(props: SelectProps) {
           <DropdownMenu.Trigger asChild disabled={disabled}>
             <button className={`${triggerBase} ${className ?? ''}`} type="button">
               <span className="flex-1 truncate text-left">{triggerLabel}</span>
-              <ChevronDown size={14} className="shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+              <Icon icon={ChevronDown} size="xs" className="shrink-0 transition-transform group-data-[state=open]:rotate-180" />
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
@@ -101,7 +102,7 @@ export function Select(props: SelectProps) {
                       onSelect={(event) => event.preventDefault()}
                     >
                       <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex">
-                        <Check size={14} />
+                        <Icon icon={Check} size="xs" />
                       </DropdownMenu.ItemIndicator>
                       <span className="flex-1 truncate">{opt.label}</span>
                     </DropdownMenu.CheckboxItem>
@@ -123,7 +124,7 @@ export function Select(props: SelectProps) {
         <DropdownMenu.Trigger asChild disabled={disabled}>
           <button className={`${triggerBase} ${className ?? ''}`} type="button">
             <span className="flex-1 truncate text-left">{triggerLabel}</span>
-            <ChevronDown size={14} className="shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+            <Icon icon={ChevronDown} size="xs" className="shrink-0 transition-transform group-data-[state=open]:rotate-180" />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -140,7 +141,7 @@ export function Select(props: SelectProps) {
                 {options.map((opt) => (
                   <DropdownMenu.RadioItem key={opt.value} value={opt.value} className={itemBase}>
                     <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex">
-                      <Check size={14} />
+                      <Icon icon={Check} size="xs" />
                     </DropdownMenu.ItemIndicator>
                     <span className="flex-1 truncate">{opt.label}</span>
                   </DropdownMenu.RadioItem>

@@ -1,4 +1,5 @@
 import { Layers, ChevronDown } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface SeasonInfo {
   season_number: number;
@@ -37,12 +38,12 @@ export function PlayerSeasonPanel({
           className="player-panel-header"
           {...(!compact && onToggle ? { onClick: onToggle } : {})}
         >
-          <span className="player-panel-icon"><Layers size={16} /></span>
+          <span className="player-panel-icon"><Icon icon={Layers} size="sm" /></span>
           <span className="player-panel-title">选季</span>
           <span className="player-panel-info">{filtered.length}季</span>
           {!compact && (
             <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
-              <ChevronDown size={16} />
+              <Icon icon={ChevronDown} size="sm" />
             </span>
           )}
         </HeaderTag>
@@ -68,7 +69,7 @@ export function PlayerSeasonPanel({
     return (
       <div className="player-panel player-panel--season">
         <div className="player-panel-header">
-          <span className="player-panel-icon"><Layers size={16} /></span>
+          <span className="player-panel-icon"><Icon icon={Layers} size="sm" /></span>
           <span className="player-panel-title">选季</span>
           <span className="player-panel-info">{currentSeasonName}</span>
         </div>

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Monitor } from 'lucide-react';
 import type { PlayerLevel } from '@/types/player';
+import { Icon } from "@/components/ui/Icon";
 
 function getResolutionLabel(level: PlayerLevel): string {
   if (level.height >= 2160) return '4K';
@@ -61,7 +62,7 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
         title="画质"
         onTouchStart={handleButtonTouch}
       >
-        <Monitor size={20} />
+        <Icon icon={Monitor} size="md" />
         <span className="up-speed-label">{label}</span>
       </button>
       {isOpen && (

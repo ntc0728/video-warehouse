@@ -1,6 +1,7 @@
 import { List, Switch, Button, HelpPopover, Select, toast } from '@/components/ui';
 import { Tv } from 'lucide-react';
 import type { IPTVSourceConfig, EPGSourceConfig } from '@/types';
+import { Icon } from "@/components/ui/Icon";
 
 interface IptvTabProps {
   iptvSettings: {
@@ -31,7 +32,7 @@ export default function IptvTab({
 }: IptvTabProps) {
   return (
     <section>
-      <List header={<span className="settings-section-header"><Tv size={20} /> IPTV</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={Tv} size="md" /> IPTV</span>}>
         <List.Item
           title={<>IPTV 数据源<HelpPopover title="IPTV 数据源" content="选择IPTV M3U播放列表数据源。支持多选（最多3个），可同时加载多个源的频道。" /></>}
           description="选择IPTV数据源（支持多选，最多3个）"

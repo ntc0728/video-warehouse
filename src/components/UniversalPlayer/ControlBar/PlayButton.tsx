@@ -1,4 +1,5 @@
 import { Play, Pause } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlayButtonProps {
   isPlaying: boolean;
@@ -16,7 +17,7 @@ export default function PlayButton({ isPlaying, disabled, onClick }: PlayButtonP
       aria-label={isPlaying ? '暂停' : '播放'}
       aria-pressed={isPlaying}
     >
-      {isPlaying ? <Pause size={22} /> : <Play size={22} />}
+      {isPlaying ? <Icon icon={Pause} size="md" /> : <Icon icon={Play} size="md" />}
     </button>
   );
 }

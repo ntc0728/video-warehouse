@@ -17,6 +17,7 @@ import { ArrowUp } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useScrollContainer, type ScrollContainerRef } from '@/hooks/useScrollContext';
 import './BackToTopButton.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface BackToTopButtonProps {
   /** 自定义阈值（默认 280px） */
@@ -118,7 +119,7 @@ export default function BackToTopButton({
       aria-label="返回顶部"
       title="返回顶部"
     >
-      <ArrowUp className="back-to-top-button__icon" aria-hidden="true" />
+      <Icon icon={ArrowUp} size="lg" className="back-to-top-button__icon" aria-hidden="true" />
     </button>,
     document.body,
   );

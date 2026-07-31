@@ -16,6 +16,7 @@ import { useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageUrl } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import './TMDBTrendingBanner.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface TMDBTrendingBannerProps {
   items: TMDBVideoItem[];
@@ -206,10 +207,10 @@ export default function TMDBTrendingBanner({
       {count > 1 && !isTV && (
         <>
           <button className="tmdb-trending-arrow tmdb-trending-arrow-left" onClick={goPrev} aria-label="上一张">
-            <ChevronLeft size={24} />
+            <Icon icon={ChevronLeft} size="lg" />
           </button>
           <button className="tmdb-trending-arrow tmdb-trending-arrow-right" onClick={goNext} aria-label="下一张">
-            <ChevronRight size={24} />
+            <Icon icon={ChevronRight} size="lg" />
           </button>
         </>
       )}

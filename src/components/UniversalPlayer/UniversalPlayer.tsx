@@ -31,6 +31,7 @@ import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './m
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
+import { Icon } from "@/components/ui/Icon";
 
 const VOLUME_POPUP_DELAY = 3000;
 
@@ -643,7 +644,7 @@ retryCount,
 
       {seekIndicator && (
         <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
-          {seekIndicator === 'left' ? <Rewind size={32} /> : <FastForward size={32} />}
+          {seekIndicator === 'left' ? <Icon icon={Rewind} size="2xl" /> : <Icon icon={FastForward} size="2xl" />}
           <span>6s</span>
         </div>
       )}
@@ -733,7 +734,7 @@ retryCount,
                 {programGuideChannelName} · 节目单
               </span>
               <button className="up-program-guide-close" onClick={handleCloseProgramGuide} aria-label="关闭节目单">
-                <X size={18} />
+                <Icon icon={X} size="sm" />
               </button>
             </div>
             <EPGProgramList

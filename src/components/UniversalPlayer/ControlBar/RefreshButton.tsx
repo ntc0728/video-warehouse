@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface RefreshButtonProps {
   onClick: () => void;
@@ -10,7 +11,7 @@ export default function RefreshButton({ onClick }: RefreshButtonProps) {
       onClick={onClick}
       title="刷新"
     >
-      <RefreshCw size={20} />
+      <Icon icon={RefreshCw} size="md" />
     </button>
   );
 }

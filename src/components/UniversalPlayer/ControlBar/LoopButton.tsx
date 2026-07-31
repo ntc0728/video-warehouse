@@ -1,5 +1,6 @@
 import { Repeat, Repeat1 } from 'lucide-react';
 import type { LoopMode } from '@/types/player';
+import { Icon } from "@/components/ui/Icon";
 
 interface LoopButtonProps {
   mode: LoopMode;
@@ -14,7 +15,7 @@ export function LoopButtonMenuItem({ mode, onChange }: LoopButtonProps) {
   const nextLabel = nextMode === 'none' ? '不循环' : nextMode === 'single' ? '单集循环' : '列表循环';
   return (
     <button className="up-popover-item" onClick={() => onChange(nextMode)}>
-      <Repeat size={16} />
+      <Icon icon={Repeat} size="sm" />
       <span>{label} → {nextLabel}</span>
     </button>
   );
@@ -36,7 +37,7 @@ export default function LoopButton({ mode, onChange }: LoopButtonProps) {
       aria-label={label}
       aria-pressed={mode !== 'none'}
     >
-      {mode === 'single' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+      {mode === 'single' ? <Icon icon={Repeat1} size="md" /> : <Icon icon={Repeat} size="md" />}
     </button>
   );
 }

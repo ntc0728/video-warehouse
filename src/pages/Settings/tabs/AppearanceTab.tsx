@@ -1,5 +1,6 @@
 import { List, Switch } from '@/components/ui';
 import { Sun, Moon, Monitor, Palette } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface AppearanceTabProps {
   theme: string;
@@ -13,19 +14,19 @@ interface AppearanceTabProps {
 export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode }: AppearanceTabProps) {
   return (
     <section>
-      <List header={<span className="settings-section-header"><Palette size={20} /> 外观</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={Palette} size="md" /> 外观</span>}>
         <List.Item
           title="主题模式"
           extra={
             <div className="theme-switcher">
               <button className={`theme-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} aria-label="浅色模式">
-                <Sun size={18} />
+                <Icon icon={Sun} size="sm" />
               </button>
               <button className={`theme-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')} aria-label="深色模式">
-                <Moon size={18} />
+                <Icon icon={Moon} size="sm" />
               </button>
               <button className={`theme-btn ${theme === 'system' ? 'active' : ''}`} onClick={() => setTheme('system')} aria-label="跟随系统">
-                <Monitor size={18} />
+                <Icon icon={Monitor} size="sm" />
               </button>
             </div>
           }

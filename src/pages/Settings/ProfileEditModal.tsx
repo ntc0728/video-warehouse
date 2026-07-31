@@ -2,6 +2,7 @@ import { useState, useRef, ChangeEvent } from 'react'
 import { User } from 'lucide-react'
 import { Modal, Button, toast } from '@/components/ui'
 import { useSettingsStore } from '@/stores'
+import { Icon } from "@/components/ui/Icon";
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
 
@@ -53,7 +54,7 @@ export default function ProfileEditModal({
     <Modal visible title="编辑个人资料" onClose={onClose} className="settings-modal">
       <div className="profile-edit__avatar-row">
         <span className="profile-edit__avatar-preview">
-          {avatar ? <img src={avatar} alt="" /> : <User size={36} />}
+          {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="2xl" />}
         </span>
         <div className="profile-edit__avatar-actions">
           <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>

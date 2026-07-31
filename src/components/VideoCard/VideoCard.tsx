@@ -14,6 +14,7 @@ import type { Video } from '@/types/video';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './VideoCard.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface VideoCardProps {
   video: Video;
@@ -212,7 +213,7 @@ const VideoCard = memo(function VideoCard({
         )}
         {!batchMode && !overlayLabel && rating !== undefined && rating > 0 && (
           <span className="video-card-rating">
-            <Star size={10} fill="currentColor" />
+            <Icon icon={Star} size="xs" fill="currentColor" />
             {rating.toFixed(1)}
           </span>
         )}
@@ -225,11 +226,10 @@ const VideoCard = memo(function VideoCard({
             title={isCollected ? '取消收藏' : '添加收藏'}
             aria-label={isCollected ? '取消收藏' : '添加收藏'}
           >
-            <Heart
-              size={12}
-              fill={isCollected ? 'var(--color-favorite-active)' : 'none'}
-              color={isCollected ? 'var(--color-favorite-active)' : 'currentColor'}
-            />
+            <Icon icon={Heart} size="xs"
+                                    fill={isCollected ? 'var(--color-favorite-active)' : 'none'}
+                                    color={isCollected ? 'var(--color-favorite-active)' : 'currentColor'}
+                                  />
           </button>
         )}
 

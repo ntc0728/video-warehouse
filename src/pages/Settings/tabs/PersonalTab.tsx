@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/stores';
 import { useUserStore } from '@/stores';
 import ProfileHeader from '../ProfileHeader';
 import { exportBackup, parseBackup, applyBackup } from '../settingsBackup';
+import { Icon } from "@/components/ui/Icon";
 
 type ConfirmKind = null | 'reset' | 'collections' | 'history' | 'all';
 
@@ -86,7 +87,7 @@ export default function PersonalTab() {
         <div className="settings-card__header">
           <h3 className="settings-card__title">配置管理</h3>
           <Button variant="ghost" size="sm" className="settings-action-btn settings-action-btn--inline" onClick={() => fileRef.current?.click()}>
-            <Upload size={16} /> 一键导入恢复数据
+            <Icon icon={Upload} size="sm" /> 一键导入恢复数据
           </Button>
         </div>
         <p className="settings-card__desc">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>
@@ -106,7 +107,7 @@ export default function PersonalTab() {
         <div className="settings-card__header">
           <h3 className="settings-card__title">恢复默认配置</h3>
           <Button variant="ghost" size="sm" className="settings-action-btn settings-action-btn--inline settings-action-btn--danger" onClick={() => setConfirm('all')}>
-            <AlertTriangle size={16} /> 一键全部恢复默认
+            <Icon icon={AlertTriangle} size="sm" /> 一键全部恢复默认
           </Button>
         </div>
         <p className="settings-card__desc">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>

@@ -22,6 +22,7 @@ import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { CollectionRecord } from '@/types/store';
 import './Collections.css';
+import { Icon } from "@/components/ui/Icon";
 
 const PAGE_SIZE = 30;
 
@@ -325,7 +326,7 @@ export default function CollectionsPage() {
           className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
           onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
         >
-          <ListChecks size={14} />
+          <Icon icon={ListChecks} size="xs" />
           {batchMode ? '退出管理' : '批量管理'}
         </button>
       </div>
@@ -341,10 +342,10 @@ export default function CollectionsPage() {
               >
                 {batchMode && (
                   <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
-                    {selected.has(video.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    {selected.has(video.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
                   </button>
                 )}
-                <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Trash2 size={14} /></button>
+                <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
                 <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} />
               </div>
             ))}
@@ -359,10 +360,10 @@ export default function CollectionsPage() {
               >
                 {batchMode && (
                   <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
-                    {selected.has(ch.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    {selected.has(ch.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
                   </button>
                 )}
-                <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Trash2 size={14} /></button>
+                <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
                 <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} />
               </div>
             ))}
@@ -386,8 +387,8 @@ export default function CollectionsPage() {
         <div className="batch-action-bar">
           <button type="button" className="batch-action-btn" onClick={selectAll}>
             {selected.size === currentList.length && currentList.length > 0
-              ? <CheckSquare size={16} />
-              : <Square size={16} />}
+              ? <Icon icon={CheckSquare} size="sm" />
+              : <Icon icon={Square} size="sm" />}
             <span>全选</span>
           </button>
           <button
@@ -396,14 +397,14 @@ export default function CollectionsPage() {
             disabled={selected.size === 0}
             onClick={handleBatchDelete}
           >
-            <Trash2 size={16} /> 删除{selected.size > 0 ? ` (${selected.size})` : ''}
+            <Icon icon={Trash2} size="sm" /> 删除{selected.size > 0 ? ` (${selected.size})` : ''}
           </button>
           <button
             type="button"
             className="batch-action-btn batch-action-btn--danger"
             onClick={handleClearAll}
           >
-            <Trash2 size={16} /> 清除全部
+            <Icon icon={Trash2} size="sm" /> 清除全部
           </button>
         </div>
       )}

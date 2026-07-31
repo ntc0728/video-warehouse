@@ -4,6 +4,7 @@ import React, { useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import './Drawer.css'
+import { Icon } from "@/components/ui/Icon";
 
 interface DrawerProps {
   open: boolean
@@ -28,7 +29,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children }) => {
           <div className="drawer-header">
             <Dialog.Title className="drawer-title">{title || '筛选'}</Dialog.Title>
             <button type="button" className="drawer-close" onClick={onClose} aria-label="关闭">
-              <X size={20} />
+              <Icon icon={X} size="md" />
             </button>
           </div>
           <div className="drawer-body">{children}</div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { VideoSource, Episode } from '@/types/video';
 import { ListVideo, ChevronDown, Play, Loader2, ArrowUpDown } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlayerEpisodesPanelProps {
   episodes: Episode[];
@@ -68,19 +69,19 @@ export function PlayerEpisodesPanel({
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
       >
-        <span className="player-panel-icon"><ListVideo size={16} /></span>
+        <span className="player-panel-icon"><Icon icon={ListVideo} size="sm" /></span>
         <span className="player-panel-title">{isTV || episodes.length > 0 ? '选集' : '线路'}</span>
         <span className="player-panel-info">{infoText}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
-            <ChevronDown size={16} />
+            <Icon icon={ChevronDown} size="sm" />
           </span>
         )}
       </HeaderTag>
       <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
         {loading && episodes.length === 0 && sources.length === 0 ? (
           <div className="player-panel-loading">
-            <Loader2 size={16} className="spinning" />
+            <Icon icon={Loader2} size="sm" className="spinning" />
             <span>加载中...</span>
           </div>
         ) : episodes.length > 0 ? (
@@ -91,7 +92,7 @@ export function PlayerEpisodesPanel({
                 onClick={() => { setSortAsc(!sortAsc); setPage(0); }}
                 title={sortAsc ? '升序' : '降序'}
               >
-                <ArrowUpDown size={14} />
+                <Icon icon={ArrowUpDown} size="xs" />
                 <span>{sortAsc ? '升序' : '降序'}</span>
               </button>
               <select
@@ -125,7 +126,7 @@ export function PlayerEpisodesPanel({
                   className={`player-source-item ${currentSrc?.url === src.url ? 'active' : ''}`}
                   onClick={() => onPlaySource(src)}
                 >
-                  <Play size={12} fill="currentColor" />
+                  <Icon icon={Play} size="xs" fill="currentColor" />
                   <span>{src.name}</span>
                 </button>
               ))}

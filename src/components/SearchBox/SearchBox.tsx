@@ -27,6 +27,7 @@ import { Search, X, Clock, Trash2 } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useTMDBStore } from '@/stores';
 import './SearchBox.css';
+import { Icon } from "@/components/ui/Icon";
 
 export type SearchBoxVariant = 'header' | 'browse';
 
@@ -283,7 +284,7 @@ export default function SearchBox({
             `search-box--${variant}`,
           ].join(' ')}
         >
-          <Search size={16} className="search-box__icon" aria-hidden="true" />
+          <Icon icon={Search} size="sm" className="search-box__icon" aria-hidden="true" />
           <input
             ref={inputRef}
             type="search"
@@ -314,7 +315,7 @@ export default function SearchBox({
             tabIndex={-1}
             data-empty={value ? 'false' : 'true'}
           >
-            <X size={14} aria-hidden="true" />
+            <Icon icon={X} size="xs" aria-hidden="true" />
           </button>
         </div>
         {/* 搜索按钮 */}
@@ -345,7 +346,7 @@ export default function SearchBox({
             <>
               <div className="search-box-dropdown__header">
                 <span className="search-box-dropdown__title">
-                  <Clock size={12} aria-hidden="true" />
+                  <Icon icon={Clock} size="xs" aria-hidden="true" />
                   搜索历史
                 </span>
               </div>
@@ -364,7 +365,7 @@ export default function SearchBox({
                       onClick={(e) => handleHistoryRemove(e, item)}
                       aria-label={`删除 ${item}`}
                     >
-                      <X size={12} aria-hidden="true" />
+                      <Icon icon={X} size="xs" aria-hidden="true" />
                     </button>
                   </li>
                 ))}
@@ -374,7 +375,7 @@ export default function SearchBox({
                 className="search-box-dropdown__clear"
                 onClick={handleClearHistory}
               >
-                <Trash2 size={12} aria-hidden="true" />
+                <Icon icon={Trash2} size="xs" aria-hidden="true" />
                 清空搜索历史
               </button>
             </>

@@ -1,5 +1,6 @@
 import { List, Switch, HelpPopover } from '@/components/ui';
 import { PlayCircle } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface PlaybackTabProps {
   skipIntro: boolean;
@@ -21,7 +22,7 @@ export default function PlaybackTab({
 }: PlaybackTabProps) {
   return (
     <section>
-      <List header={<span className="settings-section-header"><PlayCircle size={20} /> 播放设置</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={PlayCircle} size="md" /> 播放设置</span>}>
         <List.Item
           title={<>跳过片头<HelpPopover title="跳过片头" content="开启后播放视频时自动跳过片头部分。可在下方设置跳过时长。" /></>}
           description="播放时自动跳过片头"

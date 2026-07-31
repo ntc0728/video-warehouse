@@ -8,6 +8,7 @@ import { HelpCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import './HelpPopover.css';
+import { Icon } from "@/components/ui/Icon";
 
 interface HelpPopoverProps {
   title: string;
@@ -52,7 +53,7 @@ export default function HelpPopover({ title, content, className = '' }: HelpPopo
             if (hoverable) setOpen(false);
           }}
         >
-          <HelpCircle size={14} />
+          <Icon icon={HelpCircle} size="xs" />
         </button>
       </Popover.Trigger>
       <Popover.Portal>

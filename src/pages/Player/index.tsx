@@ -28,6 +28,7 @@ import { PlayerSidebar } from './PlayerSidebar';
 import { useDocumentTitle, useIsTV } from '@/hooks';
 import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager } from './hooks';
 import './Player.css';
+import { Icon } from "@/components/ui/Icon";
 
 type TMDBResultItem = {
   id: number;
@@ -551,7 +552,7 @@ export default function PlayerPage() {
                   }
                 }}
               >
-                <Heart size={16} fill={isCollected(id!) ? 'currentColor' : 'none'} />
+                <Icon icon={Heart} size="sm" fill={isCollected(id!) ? 'currentColor' : 'none'} />
                 <span>{isCollected(id!) ? '已收藏' : '收藏'}</span>
               </button>
             </div>
@@ -584,7 +585,7 @@ export default function PlayerPage() {
                 <p ref={overviewRef} className={`player-detail-overview${overviewExpanded ? ' player-detail-overview--expanded' : ''}`}>{overview}</p>
                 {overviewTruncated && (
                   <button className="player-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>
-                    {overviewExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    {overviewExpanded ? <Icon icon={ChevronUp} size="xs" /> : <Icon icon={ChevronDown} size="xs" />}
                     <span>{overviewExpanded ? '收起' : '展开全文'}</span>
                   </button>
                 )}
@@ -680,11 +681,11 @@ export default function PlayerPage() {
         <div className="page-padding player-page">
           <div className="player-empty-state">
             <div className="player-empty-content">
-              <AlertTriangle />
+              <Icon icon={AlertTriangle} size="lg" />
               <p className="player-empty-title">某些接口请求失败</p>
               <p className="player-empty-sub">请稍后重试</p>
               <button className="player-empty-back" onClick={handleBack}>
-                <ArrowLeft size={14} />
+                <Icon icon={ArrowLeft} size="xs" />
                 <span>返回</span>
               </button>
             </div>
@@ -700,13 +701,13 @@ export default function PlayerPage() {
             <div className="player-empty-state player-empty-state--inline">
               <div className="up-player-header up-player-header-visible">
                 <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
-                  <ArrowLeft size={18} />
+                  <Icon icon={ArrowLeft} size="sm" />
                   <span>返回</span>
                 </button>
                 <span className="up-header-title">{title || v?.title || ''}</span>
               </div>
               <div className="player-empty-content">
-                <VideoOff />
+                <Icon icon={VideoOff} size="lg" />
                 <p className="player-empty-title">暂无数据</p>
                 <p className="player-empty-sub">请尝试切换其他 CMS 源</p>
               </div>
@@ -775,7 +776,7 @@ export default function PlayerPage() {
               </div>
               <div className="up-player-header up-player-header-visible">
                 <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
-                  <ArrowLeft size={18} />
+                  <Icon icon={ArrowLeft} size="sm" />
                   <span>返回</span>
                 </button>
                 <span className="up-header-title">{title || video?.title || ''}</span>
@@ -857,7 +858,7 @@ export default function PlayerPage() {
           {/* Skip indicator */}
           {skipIndicator && (
             <div className="player-skip-indicator">
-              <SkipForward size={18} />
+              <Icon icon={SkipForward} size="sm" />
               <span>{skipIndicator === 'intro' ? '已跳过片头' : '已跳过片尾'}</span>
             </div>
           )}
@@ -866,16 +867,16 @@ export default function PlayerPage() {
           {autoPlayCountdown !== null && (
             <div className="player-autoplay-overlay">
               <div className="player-autoplay-card">
-                <Timer size={20} className="player-autoplay-icon" />
+                <Icon icon={Timer} size="md" className="player-autoplay-icon" />
                 <span className="player-autoplay-text">
                   {autoPlayCountdown} 秒后播放下一集
                 </span>
                 <button className="player-autoplay-nav-btn" onClick={playNextNow}>
-                  <Play size={18} fill="currentColor" />
+                  <Icon icon={Play} size="sm" fill="currentColor" />
                   <span>立即播放</span>
                 </button>
                 <button className="player-autoplay-cancel" onClick={cancelAutoPlay}>
-                  <X size={14} />
+                  <Icon icon={X} size="xs" />
                   <span>取消</span>
                 </button>
               </div>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, Volume1, VolumeX } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import './IPTVOSDBar.css';
 
 interface VolumePopupProps {
@@ -64,7 +65,7 @@ export default function VolumePopup({
         />
       </div>
       <div className="iptv-volume-icon">
-        <VolumeIcon size={28} />
+        <Icon icon={VolumeIcon} size="xl" />
       </div>
     </div>
   );

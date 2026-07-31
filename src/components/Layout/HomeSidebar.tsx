@@ -15,6 +15,7 @@
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HomeCategoryKey } from '@/pages/Home/categoryConfig';
@@ -87,7 +88,7 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
       <aside className={`home-sidebar${collapsed ? ' home-sidebar--collapsed' : ''}`} aria-label="主导航">
       <nav className="home-sidebar__nav">
         {ITEMS.map((item) => {
-          const Icon = item.icon;
+          const ItemIcon = item.icon;
           const active = isActive(item);
           return (
             <button
@@ -101,7 +102,7 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
               {/* 指示器常驻渲染：仅用 .active 类切换显隐（CSS transition），
                  不再随 active 挂载/卸载，避免导航重渲染期间关键帧被反复重放导致"闪几下" */}
               <span className="home-sidebar__indicator" aria-hidden="true" />
-              <Icon size={20} className="home-sidebar__icon" aria-hidden="true" />
+              <Icon icon={ItemIcon} size="md" className="home-sidebar__icon" aria-hidden="true" />
               <span className="home-sidebar__label">{item.label}</span>
             </button>
           );

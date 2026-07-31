@@ -26,6 +26,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
 import './Home.css';
+import { Icon } from "@/components/ui/Icon";
 
 export default function HomePage() {
   const navigate = useCustomNavigate();
@@ -209,7 +210,7 @@ export default function HomePage() {
       <div className="page-padding home-page">
         <div className="home-page__content page-transition-enter">
           <div className="home-token-required">
-            <AlertCircle size={48} className="home-token-required-icon" />
+            <Icon icon={AlertCircle} size="3xl" className="home-token-required-icon" />
             <p className="home-token-required-text">
               TMDB Access Token 未配置，请在设置中
               <button
@@ -298,7 +299,7 @@ export default function HomePage() {
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
         <div className="home-page__content page-transition-enter">
           <div className="home-empty" role="alert">
-            <AlertCircle size={32} className="home-empty-icon" />
+            <Icon icon={AlertCircle} size="2xl" className="home-empty-icon" />
             <p className="home-empty-text">{allFailed}</p>
           </div>
         </div>

@@ -5,6 +5,7 @@
  */
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { HelpCircle } from 'lucide-react';
+import { Icon } from "@/components/ui/Icon";
 
 interface HelpTooltipProps {
   content: string;
@@ -20,7 +21,7 @@ export default function HelpTooltip({ content, className = '' }: HelpTooltipProp
           type="button"
           aria-label="帮助"
         >
-          <HelpCircle size={14} />
+          <Icon icon={HelpCircle} size="xs" />
         </button>
       </Tooltip.Trigger>
       <Tooltip.Portal>
