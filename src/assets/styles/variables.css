@@ -142,12 +142,17 @@
   --space-2xl: clamp(24px, 1.532rem + 0.808vw, 56px);   /* 24→56 */
   --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);   /* 32→80 */
 
-  /* ── Icons (375→768px fluid, 768px+ 固定, 1920→3840px TV端放大) ─────── */
-  --icon-xs: clamp(12px, 0.7rem + 0.5vw, 16px);          /* 12→16 小图标 */
-  --icon-sm: clamp(1rem, 0.941rem + 0.509vw, 1.125rem);   /* 16→18 */
-  --icon-md: clamp(1.25rem, 1.191rem + 0.509vw, 1.375rem); /* 20→22 */
-  --icon-lg: clamp(1.5rem, 1.394rem + 0.763vw, 1.688rem);  /* 24→27 */
-  --icon-xl: clamp(1.75rem, 1.613rem + 1.018vw, 2rem);     /* 28→32 */
+  /* ── Icons（派生自文字 token × 固定系数，与文字共享同一条 vw 曲线）──────
+     任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
+     系数使各档 ≈ 原值并保留层次；:root 补齐 --icon-2xl/--icon-3xl
+     （原仅 TV 定义，桌面引用 size="2xl/3xl" 会 undefined）。 */
+  --icon-xs:  calc(var(--text-2xs)  * 1.40);   /* 9→11 ×1.40 = 12.6→15.4 */
+  --icon-sm:  calc(var(--text-sm)   * 1.30);   /* 13→14 ×1.30 = 16.9→18.2 */
+  --icon-md:  calc(var(--text-base) * 1.43);   /* 14→15 ×1.43 = 20.0→21.5 */
+  --icon-lg:  calc(var(--text-xl)   * 1.50);   /* 16→18 ×1.50 = 24.0→27.0 */
+  --icon-xl:  calc(var(--text-2xl)  * 1.33);   /* 20→24 ×1.33 = 26.7→31.9 */
+  --icon-2xl: calc(var(--text-3xl)  * 1.30);   /* 26→30 ×1.30 = 33.8→39.0 */
+  --icon-3xl: calc(var(--text-3xl)  * 1.70);   /* 26→30 ×1.70 = 44.2→51.0 */
 
   /* ── Pagination Dots (分页圆点 — TV 端不放大,保持小圆点) ────────────── */
   --dot-size:     clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   圆点 */
@@ -446,13 +451,15 @@
   --text-xl:   clamp(1.125rem, 0.984rem + 0.703vw, 2.5rem);    /* 18→40 */
   --text-2xl:  clamp(1.5rem, 1.289rem + 1.094vw, 3.125rem);    /* 24→50 */
   --text-3xl:  clamp(1.875rem, 1.602rem + 1.406vw, 3.75rem);   /* 30→60 */
-  --icon-xs:   clamp(12px, 0.100rem + 0.700vw, 30px);   /* 12→30 */
-  --icon-sm:   clamp(16px, 0.100rem + 1.000vw, 40px);   /* 16→40 */
-  --icon-md:   clamp(20px, 0.200rem + 1.167vw, 48px);   /* 20→48 */
-  --icon-lg:   clamp(24px, 0.150rem + 1.500vw, 60px);   /* 24→60 */
-  --icon-xl:   clamp(28px, 0.100rem + 1.833vw, 72px);   /* 28→72 */
-  --icon-2xl:  clamp(32px, 0.200rem + 2.000vw, 84px);   /* 32→84 */
-  --icon-3xl:  clamp(40px, 0.200rem + 2.500vw, 100px);  /* 40→100 */
+  /* 图标派生自 TV 文字 token × 固定系数 → 与 TV 文字共享同一条 vw 曲线，
+     比例恒定；导航栏 icon-sm vs text-base ≈ 1.2×，图标恒≥文字。 */
+  --icon-xs:  calc(var(--text-xs)  * 1.40);   /* 12→22 ×1.40 = 16.8→30.8 */
+  --icon-sm:  calc(var(--text-sm)  * 1.30);   /* 13→26 ×1.30 = 16.9→33.8 */
+  --icon-md:  calc(var(--text-base) * 1.43);  /* 14→30 ×1.43 = 20.0→42.9 */
+  --icon-lg:  calc(var(--text-xl)  * 1.50);   /* 18→40 ×1.50 = 27.0→60.0 */
+  --icon-xl:  calc(var(--text-2xl) * 1.33);   /* 24→50 ×1.33 = 31.9→66.5 */
+  --icon-2xl: calc(var(--text-3xl) * 1.30);   /* 30→60 ×1.30 = 39.0→78.0 */
+  --icon-3xl: calc(var(--text-3xl) * 1.70);   /* 30→60 ×1.70 = 51.0→102.0 */
   --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
   --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
   --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
