@@ -19,6 +19,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
 } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
@@ -201,10 +202,10 @@ export default function SearchBox({
       const spaceBelow = window.innerHeight - rect.bottom - 16;
       const spaceAbove = rect.top - 16;
       if (spaceBelow >= 200) {
-        setDropdownMaxHeight(Math.min(spaceBelow, 448));
+        setDropdownMaxHeight(spaceBelow);
         setDropdownAbove(false);
       } else if (spaceAbove >= 200) {
-        setDropdownMaxHeight(Math.min(spaceAbove, 448));
+        setDropdownMaxHeight(spaceAbove);
         setDropdownAbove(true);
       } else {
         setDropdownMaxHeight(Math.max(spaceBelow, spaceAbove));
@@ -339,7 +340,7 @@ export default function SearchBox({
           ].filter(Boolean).join(' ')}
           role="listbox"
           onMouseDown={handleDropdownMouseDown}
-          style={{ maxHeight: dropdownMaxHeight }}
+          style={{ '--dropdown-avail-h': dropdownMaxHeight != null ? `${dropdownMaxHeight}px` : undefined } as CSSProperties}
         >
           {/* 搜索历史 */}
           {history.length > 0 && (

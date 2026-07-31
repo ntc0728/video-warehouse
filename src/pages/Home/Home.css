@@ -1,8 +1,7 @@
 /* ============================================================
    Home — 首页样式 v2
-   单页布局：Hero + Categories + 8 行横滚数据
+   单页布局：Hero + Categories + 7 行横滚数据
    筛选相关样式已迁出至 /browse 独立页面（src/pages/Browse/Browse.css）
-   7 客户端 · 3 主题感知
    ============================================================ */
 
 .home-page {
@@ -73,7 +72,7 @@
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
   /* 离屏行跳过布局与绘制：侧边栏折叠/展开时 .app-shell__main 每帧 reflow，
-     LazyImage 命中后 <img> 常驻 DOM（首页约 13 行 × 12 张 ≈ 150 张），
+     LazyImage 命中后 <img> 常驻 DOM（首页约 7 行 × 十余张 ≈ 近百张），
      若全部参与重排会卡顿。content-visibility:auto 让不在视口内的整行
      直接跳过 layout+paint，仅可见的 2~3 行参与重排；auto 关键字记住上次
      真实高度，避免滚动条跳动。行内横滚不受影响（行在视口内时正常渲染）。 */

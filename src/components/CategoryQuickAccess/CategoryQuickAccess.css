@@ -97,7 +97,10 @@
   .category-quick-access__inner {
     display: flex;
     flex-wrap: nowrap;
-    gap: var(--space-2xl);
+    /* 移动端 --space-2xl 钉在下限 24px，对 40px 圆形卡片偏大（间隙≈卡片 0.6×），
+       视觉松散；改用 --space-lg（移动端钉 12px，比例≈0.3）更紧凑协调，
+       且与桌面端 --space-md 的间距梯度一致。 */
+    gap: var(--space-lg);
     justify-content: center;
     padding-right: var(--space-md);
     padding-left: var(--space-md);

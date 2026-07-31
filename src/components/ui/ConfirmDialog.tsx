@@ -88,11 +88,11 @@ export default function ConfirmDialog({
           </div>
           {/* 关闭按钮：仅关闭对话框，不触发 onCancel */}
           <button
-            className="absolute top-[var(--space-sm)] right-[var(--space-sm)] flex items-center justify-center w-[28px] h-[28px] rounded-[var(--radius-sm)] bg-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors"
+            className="absolute top-[var(--space-sm)] right-[var(--space-sm)] flex items-center justify-center w-[var(--icon-lg)] h-[var(--icon-lg)] rounded-[var(--radius-sm)] bg-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors"
             aria-label="关闭"
             onClick={() => onOpenChange(false)}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)' }} viewBox="0 0 16 16" fill="none">
               <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>

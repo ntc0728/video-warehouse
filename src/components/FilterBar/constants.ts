@@ -38,8 +38,6 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
   { label: '最高分', sortBy: 'vote_average', order: 'desc' },
 ];
 
-// ── 类型 ────────────────────────────────────────────
-
 // ── 年份选项 ────────────────────────────────────────
 
 export const YEAR_OPTIONS: { label: string; value: number }[] = [

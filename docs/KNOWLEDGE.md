@@ -941,6 +941,10 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - `isPhone`（含视口 < 768px）时 `.browse-page--mobile` 整页以卡片布局包裹：surface + 1px 边框 + radius-lg + shadow-sm + margin/padding space-sm
   - 内部 `.browse-card--results` 去壳，`.bmb` 底部加分隔线与结果区相连，与桌面端「双卡片相连」语义一致
   - 回归测试新增 BROWSE-075（断言整页卡片 radius/shadow/border 已加载）
+- **v1.7.0** - 布局统一与工程清理（2026-07-31）：
+  - 响应式卡片网格列数收敛为统一的 2/3/5（移动 / 平板 / 桌面及大屏），IPTV 骨架网格改为跟随 `--iptv-cols` 全局 token，不再走 `auto-fill`
+  - TV 模式顶部导航栏新增 IPTV 直达入口（仅 `isTV` 时渲染，置于右侧导航项之前）
+  - 工程清理：删除未挂载的 `PerformanceMonitor` 开发组件及其唯一依赖 `web-vitals`（npm uninstall 同步锁文件）；删除 9 个零引用自定义 hooks（`layout` / `useFetch` / `useFocusable` / `useGridLayout` / `useMinLoadingTime` / `usePointerType` / `usePreload` / `useThemeMode` / `useWebVitals`）并清理对应 barrel 死出口、CSS 死类/重复块与多处过时注释
 
 ---
 
@@ -986,3 +990,8 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
 
 - **ADR-004 版本号：SemVer + release-please 自动维护 + Capacitor 双端派生**（2026-07-30）
   版本号唯一可信源 = `package.json.version`；由 release-please 依据 Conventional Commits 自动算版并打 `vX.Y.Z` tag、维护 `CHANGELOG.md`。Capacitor Android 端 `android.versionCode` 由版本号派生（公式 `major*100000+minor*1000+patch*10+通道序`，release=3/rc=2/beta=1/alpha=0），在 `build:android` 时经 `scripts/sync-capacitor-version.mjs` 写入 `capacitor.config.ts`。理由：避免手工改版本导致 Web/Android 版本漂移、CHANGELOG 与 tag 不同步。后果：提交信息须遵循 Conventional Commits 才能正确算版；0.x 阶段破坏性变更升 MINOR，首个稳定版定为 `1.0.0`。
+
+- **ADR-005 死代码与依赖收敛约定**（2026-07-31）
+  全仓扫描发现大量零引用 hooks、未挂载组件、CSS 死类/重复 `@keyframes`、过时注释，长期累积增加维护负担与回归风险。
+  我们决定：① 删除任何模块前先用 grep/子代理全仓核实引用（含动态 `import()`、barrel 导出、CSS class 拼接、测试脚本）；② 删除未挂载功能组件时，若其独占某 npm 依赖，一并 `npm uninstall` 并同步 lock 文件；③ 对「可能将来使用」的动画/工具类（如 `animate-*` 工具类、`spin`/`pulse` 同名重复 `@keyframes`）保留、不激进删除；④ 注释须与实际代码逐行对齐，删除死变量/死分支须同步清理引用与注释。
+  后果：仓库更小、构建更干净；需防止将来误重新引入已删模块（见记忆库「死代码清理记录」）。

@@ -115,7 +115,6 @@ export default function UniversalPlayer({
   const volumePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasError, setHasError] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [showProgramGuide, setShowProgramGuide] = useState(false);
   const [programGuideData, setProgramGuideData] = useState<EPGProgram[]>([]);
@@ -262,18 +261,6 @@ export default function UniversalPlayer({
     if (!rememberVolume) {
       usePlayerStore.getState().setVolume(1);
     }
-  }, []);
-
-  // 容器尺寸监听
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const w = entry.contentBoxSize?.[0]?.inlineSize ?? (entry.target as HTMLElement).clientWidth;
-      setContainerWidth(w);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
   }, []);
 
   const currentUrlRef = useRef(currentUrl);
@@ -672,7 +659,6 @@ retryCount,
           channelNumber={channelNumber}
           currentSourceIndex={0}
           totalSources={mode === 'iptv' ? iptvSourceCount : sources.length}
-          containerWidth={containerWidth}
           audioTracks={audioTracks}
           onToggleChannelList={() => setChannelListVisible(true)}
           onSourceSwitch={(index) => handleSourceSwitch(index, mode, currentChannel, _channels, sources)}

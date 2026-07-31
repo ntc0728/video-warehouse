@@ -2,19 +2,19 @@
    Design Tokens — 流体缩放体系
 
    ★两套缩放 regime（互不混淆，勿混用）：
-   ① 基准流体 token（--text-*/--space-*/--comp-*/--icon-*/--radius-*/--grid-gap）
+   ① 基准流体 token（--text-*、--space-*、--comp-*、--icon-*、--radius-*、--grid-gap）
       — 375px(移动) → 768px(桌面) 流体，768px+ 固定取 MAX（坐近看屏，内容更密，
         不随 4K 继续放大；2× 放大是 TV 模式专属，见 [data-device="tv"] / @media≥1920）。
       — 实测缩放比（MAX/MIN，由各 token 行内注释佐证）：
           · Typography : ≈ 1.07×~1.22×   字号温和、基本稳定，保证各档可读
-          · Spacing    : ≈ 2.0×~2.5×    间距积极增长，让布局呼吸
+          · Spacing    : ≈ 2.0×~3.0×    间距积极增长，让布局呼吸
           · Component  : ≈ 1.3×~2.33×   控件尺寸中等增长
           · Icon       : 派生自 --text-*(≤1.22×)，随文字曲线；非 2.2× 独立缩放
           · Radius     : ≈ 1.67×~1.8×
       — 公式: clamp(MINpx, PREF + COEFF·100vw, MAXpx)
             PREF  = MIN - COEFF·375
             COEFF = (MAX - MIN) / 393        （393 = 768 - 375，非 3840 跨度）
-   ② 布局流体 token（--layout-*/--avatar-*/宽度与高度类）
+   ② 布局流体 token（--layout-*、--avatar-*、宽度与高度类）
       — 跨更宽视口（典型 320→1920 或 320→3840）持续流体，不固定在 768。
       — 见各 token 行内注释（如 OSD 30vw、hero 5vw、弹窗 4vw 等）。
 
@@ -130,32 +130,33 @@
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
 
   /* ── Typography ───────────────────────────────────────────────────────────
-     小号(text-2xs~base)：375→768px 流体，768px+ 固定（坐近看屏，文字稳定保可读）。
-     大号(text-lg~3xl)：原系数略缓，max 在 948~1124px 才触顶（非严格 768 固定，
-        属轻微契约漂移，见审计；如需严格 768 固定可重算 coeff）。
-     图标/间距/控件/圆角：实际 375→~3900px 流体(≈2×)，4K 桌面端间距/控件随屏放大、
-        文字不放大——TV 模式下文字经 [data-device="tv"] 一并 2× 故无失衡；
-        非 TV 的 4K 显示器属边缘场景。1920→3840px 的 2× 放大由 TV 块单独负责。 */
-  --text-2xs: clamp(9px, 0.54rem + 0.35vw, 11px);       /* 9→11 超小标注 */
-  --text-xs:   clamp(0.75rem, 0.69rem + 0.254vw, 0.8125rem);     /* 12→13 */
-  --text-sm:   clamp(0.8125rem, 0.752rem + 0.254vw, 0.875rem);   /* 13→14 */
-  --text-base: clamp(0.875rem, 0.812rem + 0.254vw, 0.9375rem);   /* 14→15 */
-  --text-lg:   clamp(0.875rem, 0.73rem + 0.445vw, 1rem);       /* 14→16 */
-  --text-xl:   clamp(1rem, 0.846rem + 0.471vw, 1.125rem);      /* 16→18 */
-  --text-2xl:  clamp(1.25rem, 1.03rem + 0.669vw, 1.5rem);      /* 20→24 */
-  --text-3xl:  clamp(1.625rem, 1.366rem + 0.758vw, 1.875rem);  /* 26→30 */
+     三 regime 统一契约：移动端(≤375)=MIN，桌面端(≥768)=MAX 且冻结，TV=[data-device="tv"] 2×。
+     小号(text-2xs~base) 与大号(text-lg~3xl) 现均严格 375→768px 流体、768px+ 固定：
+        · 坐近看屏，文字稳定保可读，桌面不再随 4K 继续放大；
+        · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 触顶）；
+        · 任意基础 token 的 preferred 在 768px 精确触顶，1920/3840 取值=MAX(冻结)。
+     非 TV 的 4K 桌面：基础 token 复用 768 桌面值（更密），仅布局 token(--layout-*) 继续
+        流体填满屏幕；TV 模式经 [data-device="tv"] 把整条曲线 2×，无失衡。 */
+  --text-2xs: clamp(9px, 0.4432rem + 0.0051vw, 11px);       /* 9→11 超小标注 */
+  --text-xs:   clamp(12px, 0.6904rem + 0.0025vw, 13px);     /* 12→13 */
+  --text-sm:   clamp(13px, 0.7529rem + 0.0025vw, 14px);   /* 13→14 */
+  --text-base: clamp(14px, 0.8154rem + 0.0025vw, 15px);   /* 14→15 */
+  --text-lg:   clamp(14px, 0.7557rem + 0.0051vw, 16px);       /* 14→16 */
+  --text-xl:   clamp(16px, 0.8807rem + 0.0051vw, 18px);      /* 16→18 */
+  --text-2xl:  clamp(20px, 1.0115rem + 0.0102vw, 24px);      /* 20→24 */
+  --text-3xl:  clamp(26px, 1.3865rem + 0.0102vw, 30px);  /* 26→30 */
 
-  /* ── Spacing (积极增长 ~2.0x–2.2x) ──────────────────────────────────── */
-  --space-3xs: clamp(1px,  0.047rem + 0.029vw, 2px);    /* 1→2   */
-  --space-2xs: clamp(1px,  0.047rem + 0.058vw, 3px);    /* 1→3   */
-  --space-xs:  clamp(3px,  0.151rem + 0.087vw, 6px);    /* 3→6   */
-  --space-xs-plus: clamp(4px, 0.225rem + 0.116vw, 8px); /* 4→8   */
-  --space-sm:  clamp(6px,  0.398rem + 0.145vw, 12px);   /* 6→12  */
-  --space-md:  clamp(8px,  0.582rem + 0.261vw, 18px);   /* 8→18  */
-  --space-lg:  clamp(12px, 0.836rem + 0.404vw, 28px);   /* 12→28 */
-  --space-xl:  clamp(16px, 1.081rem + 0.622vw, 40px);   /* 16→40 */
-  --space-2xl: clamp(24px, 1.532rem + 0.808vw, 56px);   /* 24→56 */
-  --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);   /* 32→80 */
+  /* ── Spacing (积极增长 ~2.0x–3.0x；统一 375→768 流体、768+ 冻结) ───── */
+  --space-3xs: clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   */
+  --space-2xs: clamp(1px, -0.0568rem + 0.0051vw, 3px);    /* 1→3   */
+  --space-xs:  clamp(3px, 0.0086rem + 0.0076vw, 6px);    /* 3→6   */
+  --space-xs-plus: clamp(4px, 0.0115rem + 0.0102vw, 8px); /* 4→8   */
+  --space-sm:  clamp(6px, 0.0172rem + 0.0153vw, 12px);   /* 6→12  */
+  --space-md:  clamp(8px, -0.0964rem + 0.0254vw, 18px);   /* 8→18  */
+  --space-lg:  clamp(12px, -0.2042rem + 0.0407vw, 28px);   /* 12→28 */
+  --space-xl:  clamp(16px, -0.4313rem + 0.0611vw, 40px);   /* 16→40 */
+  --space-2xl: clamp(24px, -0.4084rem + 0.0814vw, 56px);   /* 24→56 */
+  --space-3xl: clamp(32px, -0.8626rem + 0.1221vw, 80px);   /* 32→80 */
 
   /* ── Icons（派生自文字 token × 固定系数，与文字共享同一条 vw 曲线）──────
      任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
@@ -169,41 +170,43 @@
   --icon-2xl: calc(var(--text-3xl)  * 1.30);   /* 26→30 ×1.30 = 33.8→39.0 */
   --icon-3xl: calc(var(--text-3xl)  * 1.70);   /* 26→30 ×1.70 = 44.2→51.0 */
 
-  /* ── Pagination Dots (分页圆点 — TV 端不放大,保持小圆点) ────────────── */
-  --dot-size:     clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   圆点 */
-  --dot-active-w: clamp(16px, 0.836rem + 0.348vw, 24px);  /* 16→24 激活胶囊宽 */
-  --dot-active-h: clamp(5px,  0.263rem + 0.174vw, 8px);   /* 5→8   激活胶囊高 */
-  --dot-gap:      clamp(3px,  0.151rem + 0.130vw, 6px);   /* 3→6   圆点间距 */
+  /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
+  --dot-size:     clamp(5px, 0.1336rem + 0.0076vw, 8px);   /* 5→8   圆点 */
+  --dot-active-w: clamp(16px, 0.5229rem + 0.0204vw, 24px);  /* 16→24 激活胶囊宽 */
+  --dot-active-h: clamp(5px, 0.1336rem + 0.0076vw, 8px);   /* 5→8   激活胶囊高 */
+  --dot-gap:      clamp(3px, 0.0086rem + 0.0076vw, 6px);   /* 3→6   圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  --comp-btn-min-height: clamp(34px, 1.915rem + 0.696vw, 60px);  /* 34→60 封面/海报按钮 */
-  --comp-tab-height:     clamp(28px, 1.6rem + 0.435vw, 44px);    /* 28→44 筛选/标签 tab */
-  --comp-btn-min-width:  clamp(40px, 2.384rem + 0.522vw, 60px);  /* 40→60 圆形按钮（返回/收藏） */
-  --comp-input-height:   clamp(40px, 2.284rem + 0.522vw, 58px);  /* 40→58 输入框高度 */
-  --comp-input-min-w:    clamp(180px, 11.384rem + 2.087vw, 300px); /* 180→300 输入框最小宽度 */
-  --comp-thumb-size:     clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 滑块拖拽手柄 */
+  --comp-btn-min-height: clamp(34px, 0.5744rem + 0.0662vw, 60px);  /* 34→60 封面/海报按钮 */
+  --comp-tab-height:     clamp(28px, 0.7958rem + 0.0407vw, 44px);    /* 28→44 筛选/标签 tab */
+  --comp-btn-min-width:  clamp(40px, 1.3073rem + 0.0509vw, 60px);  /* 40→60 圆形按钮（返回/收藏） */
+  --comp-input-height:   clamp(40px, 1.4265rem + 0.0458vw, 58px);  /* 40→58 输入框高度 */
+  --comp-input-min-w:    clamp(180px, 4.0935rem + 0.3053vw, 300px); /* 180→300 输入框最小宽度 */
+  --comp-thumb-size:     clamp(14px, 0.0401rem + 0.0356vw, 28px);  /* 14→28 滑块拖拽手柄 */
   /* Switch 开关 */
-  --switch-track-height: clamp(18px, 1.081rem + 0.174vw, 24px);  /* 18→24 轨道高度 */
-  --switch-track-width:  clamp(32px, 1.891rem + 0.391vw, 48px);  /* 32→48 轨道宽度 */
-  --switch-thumb-size:   clamp(14px, 0.789rem + 0.261vw, 24px);  /* 14→24 滑块尺寸 */
-  --switch-thumb-offset: clamp(16px, 0.947rem + 0.217vw, 24px);  /* 16→24 滑块偏移量 */
+  --switch-track-height: clamp(18px, 0.7672rem + 0.0153vw, 24px);  /* 18→24 轨道高度 */
+  --switch-track-width:  clamp(32px, 1.0458rem + 0.0407vw, 48px);  /* 32→48 轨道宽度 */
+  --switch-thumb-size:   clamp(14px, 0.2786rem + 0.0254vw, 24px);  /* 14→24 滑块尺寸 */
+  --switch-thumb-offset: clamp(16px, 0.5229rem + 0.0204vw, 24px);  /* 16→24 滑块偏移量 */
+  /* 滑块轨道高度（与 Slider.css 共用，供拇指垂直居中 calc 使用） */
+  --slider-track-h:      6px;
   /* 音量滑块 */
-  --vol-track-width:     clamp(3px, 0.158rem + 0.043vw, 4px);    /* 3→4   音量滑块轨道 */
-  --vol-track-radius:    clamp(1px, 0.053rem + 0.022vw, 2px);    /* 1→2   音量滑块圆角 */
+  --vol-track-width:     clamp(3px, 0.1279rem + 0.0025vw, 4px);    /* 3→4   音量滑块轨道 */
+  --vol-track-radius:    clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   音量滑块圆角 */
   /* 单选按钮 */
-  --radio-size:          clamp(14px, 0.789rem + 0.391vw, 28px);  /* 14→28 外圈尺寸 */
-  --radio-dot-size:      clamp(6px,  0.316rem + 0.217vw, 14px);  /* 6→14 内圈尺寸 */
+  --radio-size:          clamp(14px, 0.0401rem + 0.0356vw, 28px);  /* 14→28 外圈尺寸 */
+  --radio-dot-size:      clamp(6px, -0.1021rem + 0.0204vw, 14px);  /* 6→14 内圈尺寸 */
   /* 徽章 */
-  --badge-size:          clamp(10px, 0.526rem + 0.348vw, 22px);  /* 10→22 频道可用性徽章 */
+  --badge-size:          clamp(10px, -0.0906rem + 0.0305vw, 22px);  /* 10→22 频道可用性徽章 */
 
   /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
-  --radius-sm: clamp(3px,  0.168rem + 0.043vw, 5px);    /* 3→5   */
-  --radius-md: clamp(6px,  0.356rem + 0.087vw, 10px);   /* 6→10  */
-  --radius-lg: clamp(10px, 0.593rem + 0.174vw, 18px);   /* 10→18 */
+  --radius-sm: clamp(3px, 0.0682rem + 0.0051vw, 5px);    /* 3→5   */
+  --radius-md: clamp(6px, 0.1365rem + 0.0102vw, 10px);   /* 6→10  */
+  --radius-lg: clamp(10px, 0.1479rem + 0.0204vw, 18px);   /* 10→18 */
   --radius-full: 9999px;                                /* 胶囊专用：不缩放，圆弧完美 */
 
   /* ── Layout ──────────────────────────────────────────────────────────── */
-  --grid-gap: clamp(12px, 0.673rem + 0.348vw, 24px);    /* 12→24 */
+  --grid-gap: clamp(12px, 0.0344rem + 0.0305vw, 24px);    /* 12→24 */
 
   /* ── Focus Ring ──────────────────────────────────────────────────────── */
   /* 双层焦点环：内层底色隔离，外层 primary 色 */
@@ -226,12 +229,9 @@
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
   --layout-loading-min-height: clamp(300px, 18.75rem + 3vw, 480px);  /* 加载态最小高度：300→480px 流体 */
   --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px); /* 弹窗最大宽度 */
-  /* IPTV OSD 控制栏最大宽度：30vw 系数让大屏涨幅更猛
-     - 1024px → ~627px
-     - 1440px → ~752px
-     - 1920px → ~896px
-     - 2560px → ~1088px
-     - 3840px → clamp 1400px（TV 端通过 .up-platform-tv 进一步覆盖到 1600px） */
+  /* IPTV OSD 控制栏最大宽度（桌面基线，保持原流式曲线不变）：1024→~627px / 1920→~896px / 2560→~1088px，封顶 1400px。
+     原 JS 内 OSD_MIN_WIDTH=360 / OSD_MAX_WIDTH=1600 硬编码已移除（实测对最终宽度无影响），宽度改由本 token 纯驱动。
+     TV 端在 .up-platform-tv 内以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=1600 → 1080p=1600、4K=3200）。 */
   --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
   --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px); /* 内容区最大宽度 */
   --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px); /* 首页 Hero 高度 */
@@ -239,7 +239,6 @@
   --layout-hero-banner-max-h:  clamp(35rem, 25rem + 20vw, 100rem);  /* HeroBanner 最大高度 */
   --layout-hero-height-mobile: clamp(280px, 17.5rem + 0.5vw, 340px);  /* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width:   clamp(200px, 12.5rem + 3vw, 320px);  /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
-  --layout-grid-min-col:       clamp(220px, 13.75rem + 1.5vw, 320px);  /* 自适应网格最小列宽：220→320px 流体 */
   --layout-error-detail-height: clamp(200px, 12.5rem + 2vw, 320px);  /* 错误详情区高度：200→320px 流体 */
   --layout-spinner-border:     clamp(3px, 0.1875rem + 0.1vw, 5px);  /* 加载旋转环边框粗细：3→5px 流体 */
   --layout-perf-panel-min-w:   clamp(280px, 17.5rem + 1.5vw, 420px); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
@@ -273,6 +272,7 @@
   --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
   --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
   --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
+  --layout-dropdown-max-h:      clamp(20rem, 20rem + 5vh, 28rem);           /* 顶部搜索下拉最大高度（桌面默认/非 TV 非大屏）：320→448px（vh 基、封顶 448，不随 4K 翻倍）。TV 与桌面大屏(≥1920)由各自块以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=374→748），1080p 下两者均=374px。 */
   --layout-osd-timeshift-dot:  clamp(6px, 0.375rem + 0.1vw, 10px);  /* 时移进度条圆点尺寸：6→10px 流体 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
@@ -339,21 +339,13 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 6 档视口断点梯度 (v5：2K/4K 统一 6 列)
+   Card Columns — 视口断点梯度 (v5)
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
-   ≥ 768  → 5   (平板)
-   ≥ 1024 → 5   (小桌面)
-   ≥ 1280 → 6   (PC 默认)
-   ≥ 1920 → 6   (大屏 / 2K / 4K / TV — 不再升级到 10)
+   ≥ 768  → 5   (平板 / 小桌面)
+   ≥ 1280 → 7   (PC 默认)
+   ≥ 1920 → 7   (大屏/2K/4K/TV；与 row-cols 一致,防止单行过宽)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
-  :root {
-    --card-cols: 5;
-    --row-cols: 5;
-  }
-}
-
-@media (width >= 1024px) {
   :root {
     --card-cols: 5;
     --row-cols: 5;
@@ -369,7 +361,7 @@
 
 @media (width >= 1920px) {
   :root {
-    --card-cols: 10;
+    --card-cols: 7;
     --row-cols: 7;
     /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
     --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
@@ -461,20 +453,21 @@
   /* ── Typography & icon scale-up（比例化 1920px → 3840px 视口）────────────
      旧版 slope 过缓 + clamp 上限在视口宽 ≈3730px 即触顶(仅 ≈1.4×)，导致 4K 下
      所有文字/图标元素停在接近 1080p 的大小、相对 4K 屏显小；间距 token 更从未缩放。
-     改后比例化：1920px = 原 1080p-TV 尺寸(A)，3840px(4K) = 2×A，中间线性。
+     比例化：1920px = 桌面冻结值(A)（1080p-TV 与桌面等大），3840px(4K) = 2×A，中间线性。
      因图标派生自文字 token，所有消费文本/图标 token 的组件（导航/卡片/分类按钮/
-     下拉等）一并正确放大，无需逐组件 patch。1080p-TV(1920) 取值与旧版完全一致。
+     下拉等）一并正确放大，无需逐组件 patch。
      ★强制约定（防回归）：本块内任意尺寸 clamp 一律写成 clamp(A, (A/19.2)vw, 2A)，
-     即 min=A(1080p 基线)、max=2A(4K)、斜率=A/1920——保证 max 字面=2×min 且所有
-     token 共享同一条 vw 曲线，任意分辨率下比例恒定。圆点/间距/下拉等旧值凡不满足
-     此形式者均已改写。新增 TV 尺寸 token 必须遵循，否则会出现"部分放大部分没放大"错乱。 */
-  --text-xs:   clamp(1.0625rem, 0.885vw, 2.125rem);   /* 17→34 (1080p 基线=min, 4K=2×min) */
-  --text-sm:   clamp(1.1875rem, 0.99vw, 2.375rem);    /* 19→38 */
-  --text-base: clamp(1.34375rem, 1.12vw, 2.6875rem);  /* 21.5→43 */
-  --text-lg:   clamp(1.625rem, 1.354vw, 3.25rem);     /* 26→52 */
-  --text-xl:   clamp(1.8125rem, 1.51vw, 3.625rem);    /* 29→58 */
-  --text-2xl:  clamp(2.625rem, 2.188vw, 5.25rem);     /* 42→84 */
-  --text-3xl:  clamp(3.3125rem, 2.76vw, 6.625rem);    /* 53→106 */
+     即 min=A(1080p 基线=桌面冻结值)、max=2A(4K)、斜率=A/1920——保证 max 字面=2×min
+     且所有 token 共享同一条 vw 曲线，任意分辨率下比例恒定。圆点/间距/下拉等旧值凡
+     不满足此形式者均已改写。新增 TV 尺寸 token 必须遵循，否则会出现"部分放大部分没放大"错乱。 */
+  --text-2xs:  clamp(0.6875rem, 0.5729vw, 1.375rem);   /* 11→22  (桌面, 4K=2×) */
+  --text-xs:   clamp(0.8125rem, 0.6771vw, 1.625rem);   /* 13→26  (桌面, 4K=2×) */
+  --text-sm:   clamp(0.875rem, 0.7292vw, 1.75rem);     /* 14→28  (桌面, 4K=2×) */
+  --text-base: clamp(0.9375rem, 0.78125vw, 1.875rem);  /* 15→30  (桌面, 4K=2×) */
+  --text-lg:   clamp(1rem, 0.8333vw, 2rem);            /* 16→32  (桌面, 4K=2×) */
+  --text-xl:   clamp(1.125rem, 0.9375vw, 2.25rem);     /* 18→36  (桌面, 4K=2×) */
+  --text-2xl:  clamp(1.5rem, 1.25vw, 3rem);            /* 24→48  (桌面, 4K=2×) */
+  --text-3xl:  clamp(1.875rem, 1.5625vw, 3.75rem);     /* 30→60  (桌面, 4K=2×) */
   /* 图标派生自 TV 文字 token × 固定系数 → 随文字比例化曲线同步放大，比例恒定。 */
   --icon-xs:  calc(var(--text-xs)  * 1.40);
   --icon-sm:  calc(var(--text-sm)  * 1.30);
@@ -483,47 +476,87 @@
   --icon-xl:  calc(var(--text-2xl) * 1.33);
   --icon-2xl: calc(var(--text-3xl) * 1.30);
   --icon-3xl: calc(var(--text-3xl) * 1.70);
-  --dot-size:     clamp(6px,  0.3125vw, 12px);  /* 6→12  圆点（1080p 基线=min, 4K=2×min） */
-  --dot-active-w: clamp(20px, 1.0417vw, 40px);  /* 20→40 激活胶囊宽 */
-  --dot-active-h: clamp(6px,  0.3125vw, 12px);  /* 6→12  圆点 */
-  --dot-gap:      clamp(4px,  0.2083vw, 8px);   /* 4→8   圆点间距 */
+  --dot-size:     clamp(5px, 0.2604vw, 10px);   /* 5→10  圆点（=桌面 5→10，4K=2×） */
+  --dot-active-w: clamp(16px, 0.8333vw, 24px);  /* 16→24 激活胶囊宽（=桌面 16→24，4K=2×） */
+  --dot-active-h: clamp(5px, 0.2604vw, 10px);   /* 5→10  圆点（=桌面 5→10，4K=2×） */
+  --dot-gap:      clamp(3px, 0.1563vw, 6px);    /* 3→6   圆点间距（=桌面 3→6，4K=2×） */
 
-  /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A(min)、4K=2A(max)。 */
-  --space-sm:  clamp(0.5625rem, 0.469vw, 1.125rem);   /* 9→18  */
-  --space-md:  clamp(0.875rem, 0.729vw, 1.75rem);     /* 14→28 */
-  --space-lg:  clamp(1.3125rem, 1.094vw, 2.625rem);   /* 21→42 */
-  --space-xl:  clamp(1.8125rem, 1.51vw, 3.625rem);    /* 29→58 */
-  --space-2xl: clamp(2.5rem, 2.083vw, 5rem);          /* 40→80 */
-  --space-3xl: clamp(3.3125rem, 2.76vw, 6.625rem);    /* 53→106 */
+  /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A=桌面冻结值、4K=2A。 */
+  --space-sm:  clamp(0.75rem, 0.625vw, 1.5rem);   /* 12→24  */
+  --space-md:  clamp(1.125rem, 0.9375vw, 2.25rem);     /* 18→36 */
+  --space-lg:  clamp(1.75rem, 1.4583vw, 3.5rem);   /* 28→56 */
+  --space-xl:  clamp(2.5rem, 2.0833vw, 5rem);    /* 40→80 */
+  --space-2xl: clamp(3.5rem, 2.9167vw, 7rem);          /* 56→112 */
+  --space-3xl: clamp(5rem, 4.1667vw, 10rem);    /* 80→160 */
 
   /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 0–10，单位 vw/vh）写入
      <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值（与滑块默认 3 对齐）。 */
+  /* 间距补全（小档，TV 基数=桌面冻结值，4K=2×） */
+  --space-3xs:     clamp(0.125rem, 0.1042vw, 0.25rem);   /* 2→4     (桌面 2, 4K=4) */
+  --space-2xs:     clamp(0.1875rem, 0.1563vw, 0.375rem); /* 3→6     (桌面 3, 4K=6) */
+  --space-xs:      clamp(0.375rem, 0.3125vw, 0.75rem);   /* 6→12    (桌面 6, 4K=12) */
+  --space-xs-plus: clamp(0.5rem, 0.4167vw, 1rem);        /* 8→16    (桌面 8, 4K=16) */
+
+  /* ── Component Sizes（TV 基数=桌面冻结值，4K=2×，统一 clamp(A, (A/19.2)vw, 2A)）── */
+  --comp-btn-min-height: clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
+  --comp-tab-height:     clamp(2.75rem, 2.2917vw, 5.5rem);     /* 44→88   (桌面44, 4K=88) */
+  --comp-btn-min-width:  clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
+  --comp-input-height:   clamp(3.625rem, 3.0208vw, 7.25rem);   /* 58→116  (桌面58, 4K=116) */
+  --comp-input-min-w:    clamp(18.75rem, 15.625vw, 37.5rem);   /* 300→600 (桌面300, 4K=600) */
+  --comp-thumb-size:     clamp(1.75rem, 1.4583vw, 3.5rem);     /* 28→56   (桌面28, 4K=56) */
+  --switch-track-height: clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
+  --switch-track-width:  clamp(3rem, 2.5vw, 6rem);             /* 48→96   (桌面48, 4K=96) */
+  --switch-thumb-size:   clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
+  --switch-thumb-offset: clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
+  --vol-track-width:     clamp(0.25rem, 0.2083vw, 0.5rem);     /* 4→8     (桌面4, 4K=8) */
+  --vol-track-radius:    clamp(0.125rem, 0.1042vw, 0.25rem);   /* 2→4     (桌面2, 4K=4) */
+  --radio-size:          clamp(1.75rem, 1.4583vw, 3.5rem);     /* 28→56   (桌面28, 4K=56) */
+  --radio-dot-size:      clamp(0.875rem, 0.7292vw, 1.75rem);   /* 14→28   (桌面14, 4K=28) */
+  --badge-size:          clamp(1.375rem, 1.1458vw, 2.75rem);   /* 22→44   (桌面22, 4K=44) */
+
+  /* ── Border Radius（TV 基数=桌面冻结值，4K=2×）─────────────────────────────── */
+  --radius-sm: clamp(0.3125rem, 0.2604vw, 0.625rem);  /* 5→10   (桌面5, 4K=10) */
+  --radius-md: clamp(0.625rem, 0.5208vw, 1.25rem);    /* 10→20  (桌面10, 4K=20) */
+  --radius-lg: clamp(1.125rem, 0.9375vw, 2.25rem);    /* 18→36  (桌面18, 4K=36) */
+
+  /* ── Grid Gap（TV 基数=桌面冻结值，4K=2×）────────────────────────────────────── */
+  --grid-gap: clamp(1.5rem, 1.25vw, 3rem);  /* 24→48 (桌面24, 4K=48) */
+
   --safe-area-x: 3vw;
   --safe-area-y: 3vh;
 
-  /* A. 导航栏高度：比例化 100→200(1920→3840)，1080p 基线=旧版 100px（零回归）。 */
-  --header-height: clamp(6.25rem, 5.21vw, 12.5rem);
-  /* B. Logo：比例化 76.8→153.6，1080p 基线=旧版 76.8px（零回归）。 */
-  --layout-logo-size: clamp(4.8rem, 4vw, 9.6rem);
+  /* A. 导航栏高度：TV 基线=桌面 76px（1.00× 桌面），4K=2×=152px，统一 clamp(A,(A/19.2)vw,2A)。 */
+  --header-height: clamp(4.75rem, 0.2474vw, 9.5rem);   /* 76→152 (桌面76, 4K=152) */
+  /* B. Logo：TV 基线=桌面 64px（1.00× 桌面），4K=2×=128px，统一 clamp(A,(A/19.2)vw,2A)。 */
+  --layout-logo-size: clamp(4rem, 0.2083vw, 8rem);     /* 64→128 (桌面64, 4K=128) */
   /* C. 品牌文字：比例化 24→48，1080p 基线=旧版 24px（零回归）。 */
   --layout-brand-font-size: clamp(1.5rem, 1.25vw, 3rem);
-  /* D. 搜索框/提交按钮高度：比例化 65→130（1080p 基线=旧 calc(*1.4)=65px，零回归）。
+  /* D. 搜索框/提交按钮高度：TV 直接采用桌面 --comp-input-height 的同一条比例化曲线
+     （1080p=桌面值 58px、4K=2×=116px），统一 clamp(A,(A/19.2)vw,2A)。
      关键修复：SearchBox TV 原用 calc(var(--comp-input-height) * 1.4)，而基础
      --comp-input-height 自身几乎不随 vw 放大（40→58px），导致大屏导航栏已 200px 高、
-     搜索框却仍 ~81px → 导航栏显空旷、“高度大出一截”。改为同一条 vw 曲线比例化，
-     与 header 同步 2×。 */
-  --comp-input-height-tv: clamp(4.0625rem, 3.385vw, 8.125rem);
+     搜索框却仍 ~81px → 导航栏显空旷、"高度大出一截"。改为跟随同一比例化曲线修复该错乱。 */
+  --comp-input-height-tv: clamp(3.625rem, 3.0208vw, 7.25rem);  /* 58→116 (桌面58, 4K=116，与 comp-input-height 一致) */
 
-  /* 下拉/弹层高度：比例化 432→864（1080p 基线=min, 4K=2×min），避免固定 rem+5vh 锚定导致 4K 显小。 */
-  --layout-dropdown-max-h: clamp(27rem, 22.5vw, 54rem);
+  /* E. 搜索下拉最大高度：TV 比例化标准契约 clamp(A,(A/19.2)vw,2A)，
+     1080p 基线=A=桌面 374px（与桌面 1080p 下拉等高）、4K=2×=748px。
+     历史反例：旧版 TV 用 432→876（A≠桌面 1080p、且 2A=864≠876，不满足契约），现修正为标准形态。 */
+  --layout-dropdown-max-h: clamp(23.375rem, 19.5vw, 46.75rem);  /* 374→748 (桌面374, 4K=748) */
 
-  /* Minimum 48dp touch target for TV remote navigation */
-  --comp-btn-min-height: var(--space-3xl);
-  --comp-btn-min-width:  var(--space-3xl);
+
+
+  /* Minimum 48dp touch target for TV remote navigation（由上方 --comp-btn-min-* = 桌面冻结值、4K=2× 统一提供） */
 
   /* Thicker focus ring for visibility at 3m viewing distance */
   --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
+
+  /* TV 焦点方框：方向键/遥控器导航下统一用 outline 绘制在边框【外侧】，
+     不被元素自身 overflow:hidden / border-radius 裁切（box-shadow 会被 overflow:hidden
+     祖先裁掉，表现为「方框被裁 / 只剩一个小圆点」）。
+     --tv-focus-* 驱动方框粗细与间距，集中在此便于统一调参。 */
+  --tv-focus-width: 3px;
+  --tv-focus-offset: 2px;
 }
 
 /* ── lucide 图标尺寸由 --icon-* token 驱动 ───────────────────────────────
@@ -550,8 +583,7 @@
     --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */
     --layout-epg-max-height:      clamp(36rem,     30vw,     72rem);     /* 576→1152px（配合 60vh 上限） */
     --layout-bottomsheet-max-h:   clamp(50rem,     41.67vw,  100rem);    /* 800→1600px */
-    /* 桌面大屏（非 TV）下拉：比例化 374→748px（2K/4K 线性）。
-       TV 模式由 [data-device="tv"] 的同名 token（432→876）覆盖，此处仅补全桌面大屏路径。 */
-    --layout-dropdown-max-h:      clamp(23.375rem, 19.5vw,   46.75rem);  /* 374→748px */
+    --layout-dropdown-max-h:      clamp(23.375rem, 19.5vw,  46.75rem);   /* 374→748 (桌面374, 4K=748) */
+
   }
 }

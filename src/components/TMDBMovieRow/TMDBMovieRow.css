@@ -59,7 +59,14 @@
 .tmdb-movierow-scroll {
   display: flex;
   gap: var(--space-sm);
-  padding: 0;
+  /* 上下留白：TV 聚焦时卡片 scale 放大 + 焦点方框向外延伸，
+     若此处为 0 会被 overflow:auto hidden 纵向裁掉（表现为「方框被裁 / 只剩小圆点」）。
+     padding-block 用 --space-md（桌面 18px / TV 36px）给放大与方框留足空间，
+     且不影响横向卡片宽度的 100% 公式。
+     padding-inline + scroll-padding-inline：行首尾卡片的焦点方框在横滚尽头也有缓冲，
+     不被 overflow-x 裁掉。 */
+  padding: var(--space-md) var(--space-xs);
+  scroll-padding-inline: var(--space-xs);
   overflow: auto hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;     /* 倾向 snap 到 card 边界，但不强制 */
@@ -142,7 +149,9 @@
   border-radius: 50%;
   background: rgba(15, 15, 15, 0.55);
   color: #fff;
-  opacity: 0.9;
+  /* 桌面端默认隐藏，悬停到 .tmdb-movierow-wrapper 才淡入（见下方规则）。
+     移动端箭头本就不渲染（!isMobile），TV 端 display:none 覆盖，二者均不受影响。 */
+  opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   backdrop-filter: blur(8px);
@@ -150,7 +159,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.tmdb-movierow-wrapper:hover .tmdb-movierow-arrow {
+/* 桌面端：悬停到该行（wrapper）才显示左右箭头；键盘聚焦箭头（:focus-within）也显示，
+   保证键盘可达性（非 TV 已无焦点框，必须用可见性提示焦点所在）。 */
+.tmdb-movierow-wrapper:hover .tmdb-movierow-arrow,
+.tmdb-movierow-wrapper:focus-within .tmdb-movierow-arrow {
   opacity: 1;
 }
 
@@ -183,14 +195,14 @@
   display: none !important;
 }
 
-/* TV 端卡片聚焦时放大 */
+/* TV 端卡片聚焦时放大（焦点方框由全局 [data-device="tv"] :focus-visible 的
+   outline 统一提供，绘制在卡片外侧、不被滚动容器裁切；此处不再叠 box-shadow） */
 [data-device="tv"] .tmdb-movierow-card:focus,
 [data-device="tv"] .tmdb-movierow-card:focus-within {
   outline: none;
 }
 
 [data-device="tv"] .tmdb-movierow-card:focus-within .video-card {
-  box-shadow: var(--focus-ring);
-  transform: scale(1.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
 }

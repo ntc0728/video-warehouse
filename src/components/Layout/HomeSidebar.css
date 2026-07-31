@@ -42,9 +42,12 @@
 .home-sidebar__item {
   position: relative;
   display: flex;
-  gap: var(--space-md);
+  gap: var(--space-lg);
   align-items: center;
-  padding: var(--space-md) var(--space-lg);
+  /* 上下 padding = --space-lg（12→28，桌面落 12px）：每行更高、点击区更大；
+     横向由 --space-lg 提到 --space-xl（16→40，桌面落 16px）：图标/文字不再贴左，
+     在有限侧栏宽度下 label 仍有充足空间。 */
+  padding: var(--space-lg) var(--space-xl);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -63,7 +66,8 @@
    空间由 overflow:hidden 处理。无滑入动画——收起即居中（避免位移抖动/回弹）。 */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
-  padding: var(--space-md) var(--space-lg);
+  /* 收起态行高与展开态保持一致（上下 --space-lg），仅图标居中。 */
+  padding: var(--space-lg) var(--space-lg);
   justify-content: center;
 }
 
@@ -111,8 +115,8 @@
 }
 
 /* 选中指示条：常驻渲染，仅由 .active 切换显隐（CSS transition，非挂载即播的关键帧）。
-   两种状态都保留 translateY(-50%)，修正旧版 indicatorSlideIn 关键帧在导航重渲染/
-   reduced-motion 下终态不稳定导致指示条下移错位、并被反复重放的"闪几下"问题。 */
+   两种状态都保留 translateY(-50%)，避免导航重渲染/reduced-motion 下终态不稳定
+   导致指示条下移错位、并被反复重放的"闪几下"问题。 */
 .home-sidebar__indicator {
   position: absolute;
   top: 50%;
@@ -148,9 +152,13 @@
   /* 标题不做宽度裁切动画：此前 max-width 过渡会让文字被裁切、展开时“显示不全/省略号闪现”。
      改为常驻自然宽度，由 .home-sidebar 的 overflow:hidden 在收起态裁掉、随侧栏展开自然揭示，
      仅做透明度淡入。图标居中由 item 收起态 padding 负责；标题以绝对定位置于图标右侧，
-     不占布局流，故不影响收起态图标居中。 */
+     不占布局流，故不影响收起态图标居中。
+     ★ 图标↔标题间距由本 left 控制（label 是 absolute，不吃父级 flex gap）——第一项取 item 横向
+     padding（--space-xl，与 .home-sidebar__item 的 padding 同步），第二项取图标宽（--icon-md，
+     替换原先硬编码 1.25rem，TV 下图标放大时标题自动右移保持间距），第三项即图标↔标题间距
+     （--space-xl = 16→40px，桌面落 16px）。 */
   position: absolute;
-  left: calc(var(--space-lg) + 1.25rem + var(--space-md));
+  left: calc(var(--space-xl) + var(--icon-md) + var(--space-xl));
   top: 50%;
   transform: translateY(-50%);
   white-space: nowrap;

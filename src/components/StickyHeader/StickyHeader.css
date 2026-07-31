@@ -143,26 +143,6 @@
   background: var(--color-surface-hover);
 }
 
-/* ── Home Button (mobile/app) ────────────────────── */
-
-.sticky-header__home-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: var(--comp-btn-min-height);
-  height: var(--comp-btn-min-height);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text);
-  transition: background 0.15s ease;
-  cursor: pointer;
-}
-
-.sticky-header__home-btn:hover {
-  background: var(--color-surface-hover);
-}
-
 /* ── Center ────────────────────────────────────────── */
 
 .sticky-header__center {
@@ -267,10 +247,6 @@
   padding: 0 var(--safe-area-x);
 }
 
-.sticky-header--tv .sticky-header__logo-wrap {
-  width: var(--layout-logo-size);
-  height: var(--layout-logo-size);
-}
 .sticky-header--tv .sticky-header__nav-item {
   padding: var(--space-sm) var(--space-md);
   font-size: var(--text-base);
@@ -412,24 +388,8 @@
   }
 }
 
-/* ── Mobile web (< 768px): hide nav items ── */
-
-@media (width < 768px) {
-  .sticky-header__left .sticky-header__nav,
-  .sticky-header__right .sticky-header__nav {
-    display: none;
-  }
-}
-
 /* ── Desktop/Tablet web (>=768px)：保留 logo + 折叠按钮 ──
    TV / 原生 App 保留 header logo（无侧边栏） */
-
-/* 移动端显示品牌文字 */
-@media (width <= 767px) {
-  .sticky-header__brand {
-    display: block;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .sticky-header,

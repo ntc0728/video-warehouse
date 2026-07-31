@@ -175,6 +175,12 @@
   color: #fff;
 }
 
+/* 非 TV：严格零焦点框（TV 内嵌方框由 index.css 的 [data-device="tv"] 规则提供）。
+   注：原先写在这里的内嵌方框已上移到 index.css 的 TV 专属规则，避免泄漏到非 TV。 */
+.browse-search-tab:focus-visible {
+  outline: none;
+}
+
 /* ── 网格容器（BrowseGrid 内 video-card-grid 的 padding 覆盖） ── */
 .browse-card-grid {
   padding: var(--space-sm) 0;

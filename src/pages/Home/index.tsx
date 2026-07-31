@@ -1,10 +1,8 @@
 /**
- * 首页 — HeroBanner + CategoryQuickAccess + 8 行横滚数据
+ * 首页 — HeroBanner + CategoryQuickAccess + 7 行横滚数据
  *
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
- *
- * 7 客户端 · 3 主题感知
  */
 import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import { useLocation } from 'react-router-dom';

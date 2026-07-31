@@ -446,7 +446,17 @@
   font-size: var(--text-xl);
 }
 
+/* 卡片本身被 .iptv-channel-card-wrap 的 content-visibility:auto（paint 包含）
+   裁切，焦点方框若画在卡片上会被裁成「只剩一个小圆点」。
+   改为画在 wrap 自身（绘制在 wrap 边界外侧，不被自身 paint 包含裁切）。
+   全局 [data-device="tv"] :focus-visible 已把卡片自带 box-shadow 清空，
+   此处仅负责在 wrap 上画可见方框。 */
+[data-device="tv"] .iptv-channel-card-wrap:focus-within {
+  outline: var(--tv-focus-width, 3px) solid var(--color-primary);
+  outline-offset: var(--tv-focus-offset, 3px);
+}
+
 [data-device="tv"] .iptv-channel-card:focus-visible {
-  box-shadow: 0 0 0 4px var(--color-primary);
+  box-shadow: none;
   outline: none;
 }
