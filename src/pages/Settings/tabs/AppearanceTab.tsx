@@ -68,17 +68,21 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
         <List.Item
           title="TV 过扫描安全区"
           description="为电视边缘裁切预留安全边距（仅 TV 模式生效，0 = 铺满）"
-          extra={<span className="settings-slider-value">{tvOverscan === 0 ? '铺满' : `${tvOverscan}%`}</span>}
-        >
-          <Slider
-            value={tvOverscan}
-            min={0}
-            max={10}
-            step={1}
-            onChange={setTvOverscan}
-            aria-label="TV 过扫描安全区大小"
-          />
-        </List.Item>
+          extra={
+            <div className="overscan-control">
+              <span className="overscan-value">{tvOverscan === 0 ? '铺满' : `${tvOverscan}%`}</span>
+              <Slider
+                value={tvOverscan}
+                min={0}
+                max={20}
+                step={5}
+                onChange={setTvOverscan}
+                aria-label="TV 过扫描安全区大小"
+                className="overscan-slider"
+              />
+            </div>
+          }
+        />
       </List>
     </section>
   );
