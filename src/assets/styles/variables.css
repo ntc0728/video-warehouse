@@ -512,13 +512,19 @@
   height: var(--icon-lg);
 }
 
-/* ── TV 端覆盖 (≥1920px) ─────────────────────────────────────────────── */
+/* ── 大屏覆盖 (≥1920px，含 TV / 桌面 2K / 4K) ────────────────────────────
+   旧版为固定 px/rem 值（如 modal 1100px、bottomsheet 800px）：2K(2560) 与
+   4K(3840) 命中同一固定值 → 2K 未比 1080p 放大、4K 相对屏高显小，且所有中间
+   分辨率（3K 等）一律同值。改比例化 clamp：1920=A（=原固定值，1080p-TV/2K 起点
+   零回归），3840=2A，中间线性 → 2K 自动 1.33A、3K 1.5A、4K 2A，全分辨率覆盖。
+   （这些 token 多配合 min(vh,…) 使用，vh 项本就随屏高 2×，此处只修正漏网的
+   固定 px/rem 上限段。） */
 @media (width >= 1920px) {
   :root {
-    --layout-detail-hero-max-h: 50.875rem; /* 814px（比首页 banner ~784px 大，但 base 值小） */
-    --layout-modal-max-h: 68.75rem;        /* 1100px */
-    --layout-program-guide-max-h: 62.5rem; /* 1000px */
-    --layout-epg-max-height: clamp(300px, 30rem + 5vw, 60vh);        /* EPG 节目列表 */
-    --layout-bottomsheet-max-h: 800px;     /* 底部弹出面板 */
+    --layout-detail-hero-max-h:   clamp(50.875rem, 42.4vw,   101.75rem); /* 814→1628px */
+    --layout-modal-max-h:         clamp(68.75rem,  57.29vw,  137.5rem);  /* 1100→2200px */
+    --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */
+    --layout-epg-max-height:      clamp(36rem,     30vw,     72rem);     /* 576→1152px（配合 60vh 上限） */
+    --layout-bottomsheet-max-h:   clamp(50rem,     41.67vw,  100rem);    /* 800→1600px */
   }
 }
