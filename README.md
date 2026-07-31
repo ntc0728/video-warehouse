@@ -74,6 +74,7 @@
 - 布局 / 间距 / 字号经 `--space-*` / `--text-*` / `--layout-*` token
 - **例外（允许保留字面量，属逻辑阈值而非视觉尺寸）**：媒体查询断点、`IntersectionObserver` 的 `rootMargin`、`<img sizes>` 响应式提示、`sr-only` 的 `1px` hack、`window.innerWidth` 列数兜底
 - 去硬编码统一用 `scripts/css-px-to-token.mjs` 自动替换，再人工核对 token 语义边界（严禁把跨语义尺寸硬压进同一档）
+- **焦点框与设备交互**：非 TV 设备（桌面 / 移动端 Web / App，`data-device` 非 `"tv"`）全局清零键盘焦点框（`:focus-visible { outline:none; box-shadow:none }`），焦点可见性交由 hover / 可见性提示；TV 端（`[data-device="tv"]`）保留显式焦点框供遥控器导航。交互元素（如 TMDB 行左右箭头）的显隐、留白、图标↔标题间距等视觉细节一律走对应 token，禁止硬编码。
 
 ## 项目结构
 

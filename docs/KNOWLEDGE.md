@@ -323,6 +323,15 @@ type Theme = 'light' | 'dark' | 'system';
 <html data-device="">           <!-- 桌面端 -->
 ```
 
+**焦点框与键盘可见性**：
+- 非 TV（`data-device` 非 `"tv"`，含桌面 `''` / `mobile-web` / `app`）：全局 `:root:not([data-device="tv"]) :focus-visible { outline:none !important; box-shadow:none !important }` 清零焦点框，键盘导航下不显示任何 outline / box-shadow 焦点环；焦点可见性由 hover、可见性（如箭头 `:focus-within` 显示）等提示承担。
+- TV（`[data-device="tv"]`）：保留显式焦点框（`outline` + `outline-offset`）供遥控器方向键导航，独立于上述清零规则。`logo / 品牌名` 等无交互反馈元素用 `.no-interaction-visual` 类强制无框。
+
+**交互元素视觉细节（均走 Design Token，禁止硬编码）**：
+- 首页 TMDB 行左右箭头：桌面端默认 `opacity:0`，悬停 `.tmdb-movierow-wrapper` 或 `:focus-within` 时 `opacity:1` 淡入；移动端不渲染、TV 端 `display:none`。
+- 左侧侧边栏 `.home-sidebar__item`：横向 `padding` = `--space-xl`、上下 `padding` + 图标↔标题 `gap`（备用）= `--space-lg`；**坑：`.home-sidebar__label` 是 `position:absolute`，不吃父级 flex `gap`，图标↔标题间距由 `label.left: calc(--space-xl + --icon-md + --space-xl)` 控制**。
+- 移动端分类快选 `.category-quick-access__inner`：`gap` = `--space-lg`（旧 `--space-2xl` 对 40px 圆形卡片偏松）。
+
 ---
 
 ## API 文档
@@ -1001,3 +1010,11 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   项目视觉尺寸曾散落大量「源码字面量像素」：下拉高度 `Math.min(…,448)`、OSD 宽度 `OSD_MIN_WIDTH=360`/`OSD_MAX_WIDTH=1600`、`Sidebar` 的 `isMobile ? 200 : 240`、图标 `<svg width="16">`、Tailwind 任意值 `text-[10px]`/`w-[28px]`/`px-[14px]` 等。这些字面量不随 `--text-*`/`--space-*`/`--layout-*` 的流体曲线缩放，在 2K/4K/TV 下比例失真，且 TV 端无法统一放大。
   我们决定：① 组件视觉尺寸一律走 Design Token——图标经 `Icon` 组件（`size` 为档名）或 `--icon-*`、布局/间距/字号经 `--space-*`/`--text-*`/`--layout-*`；② 去硬编码统一用 `scripts/css-px-to-token.mjs` 自动替换，再人工核对 token 语义边界（严禁把跨语义尺寸硬压进同一档，如把 32/36/40/48 全压 `icon-xl`）；③ 例外（允许保留字面量，因为它们是逻辑阈值而非视觉尺寸）：`useMediaQuery` 断点值、`IntersectionObserver` 的 `rootMargin`、`<img sizes>` 响应式提示、`BottomSheet` 的 `1px` sr-only hack、`window.innerWidth` 列数兜底。
   后果：所有视觉尺寸跟随同一条 vw 缩放曲线，任意视口比例恒定；TV 端改 `[data-device="tv"]` 覆盖 `--text-*` 后图标/布局自动跟随放大。权衡：需警惕「为 token 单独写独立 clamp/slope」会破坏与文字的比例锁定（图标 token 必须 `calc(var(--text-<档>) * 系数)` 派生，见记忆库「图标 token 派生自文字 token」）。
+
+- **ADR-007 非 TV 零焦点框与交互元素视觉细节约定（2026-07-31）**
+  今日在首页 / 侧边栏做了一批 UI 微调，部分属「坑」级约定，需固化以免回归：
+  ① **非 TV 全局零焦点框**：在 `src/assets/styles/index.css` 新增 `:root:not([data-device="tv"]) :focus-visible { outline:none !important; box-shadow:none !important }`，覆盖桌面 / `mobile-web` / `app` 三种 `data-device`（TV 才设 `"tv"`），清掉浏览器默认 `:focus-visible` outline 与组件自带 box-shadow 焦点环；TV 焦点框由既有 `[data-device="tv"]` 规则独立提供，互不干扰。`.no-interaction-visual` 自身仍 `!important` 无框。
+  ② **首页 TMDB 行箭头显隐**：桌面端默认 `opacity:0`，悬停 `.tmdb-movierow-wrapper` 或键盘 `:focus-within` 才 `opacity:1` 淡入（键盘可见性提示）；移动端箭头不渲染、TV 端 `display:none`。
+  ③ **侧边栏留白与图标↔标题间距**：`.home-sidebar__item` 横向 `padding` 由 `--space-lg` 提到 `--space-xl`（元素不贴左），上下 `padding` + `gap` = `--space-lg`；**坑：`.home-sidebar__label` 是 `position:absolute`，不吃父级 flex `gap`，图标↔标题间距只能由其 `left: calc(--space-xl + --icon-md + --space-xl)` 控制**（改 item `gap` 对标题间距无效）。
+  ④ **移动端分类快选间距**：`.category-quick-access__inner` 的 `gap` 由 `--space-2xl`（下限 24px，对 40px 圆形卡片偏松）改为 `--space-lg`（更紧凑协调）。
+  后果：键盘导航下非 TV 设备视觉更干净、焦点可见性交由 hover/可见性承担；上述细节在 TV 下由各自规则独立处理、互不干扰。回归测试见 `scripts/home.spec.ts` 1.6 段（HOME-050~053）。
