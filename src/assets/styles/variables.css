@@ -526,5 +526,8 @@
     --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */
     --layout-epg-max-height:      clamp(36rem,     30vw,     72rem);     /* 576→1152px（配合 60vh 上限） */
     --layout-bottomsheet-max-h:   clamp(50rem,     41.67vw,  100rem);    /* 800→1600px */
+    /* 桌面大屏（非 TV）下拉：比例化 374→748px（2K/4K 线性）。
+       TV 模式由 [data-device="tv"] 的同名 token（432→876）覆盖，此处仅补全桌面大屏路径。 */
+    --layout-dropdown-max-h:      clamp(23.375rem, 19.5vw,   46.75rem);  /* 374→748px */
   }
 }
