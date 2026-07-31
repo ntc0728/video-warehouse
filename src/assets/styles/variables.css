@@ -235,14 +235,9 @@
   --layout-episode-panel-w:    clamp(420px, 26.25rem + 4vw, 560px); /* 剧集面板宽度（播放器侧边栏）：420→560px 流体（宽屏占比增大） */
   --layout-episode-panel-w-alt: clamp(440px, 27.5rem + 4vw, 600px); /* 剧集面板备选宽度：440→600px 流体 */
   --layout-time-display-min-w: clamp(90px, 5.625rem + 0.5vw, 140px);  /* 时间显示最小宽度：90→140px 流体 */
-  /* IPTV 频道列表宽度 — 按视口分档 */
-  --layout-channel-list-w:     300px;     /* 默认频道列表宽度 */
-  --layout-channel-list-w-sm:  260px;     /* 小屏 */
-  --layout-channel-list-w-md:  320px;     /* 中屏 */
-  --layout-channel-list-w-lg:  300px;     /* 大屏 */
-  --layout-channel-list-w-xl: 360px;      /* 超大屏 */
-  --layout-channel-list-w-2xl: 400px;     /* 2K/4K */
-  --layout-iptv-channel-list-w: clamp(20rem, 18.92rem + 4.62vw, 30rem);  /* 320—480px 流体 */
+  /* 频道列表 / 播放器内侧面板宽度 — 连续流体（替代原 6 档离散 + 未接线的 iptv 变体） */
+  --layout-channel-list-w: clamp(280px, 17.5rem + 3.5vw, 480px);  /* 280→480px 流体：播放器侧面板 / 通用中等宽封顶 */
+
   --layout-source-url-max-w:   clamp(160px, 10rem + 0.5vw, 240px);  /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
   --layout-searchbox-header-max-w: clamp(480px, 30rem + 2vw, 680px);  /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
