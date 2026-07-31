@@ -40,7 +40,7 @@
 | `build-android.ps1` | Android 构建（PowerShell） |
 | `generate-icons.mjs` | Android 图标生成（sharp 库） |
 | `generate-icons.ps1` | Android 图标生成（PowerShell） |
-| `css-px-to-token.mjs` | CSS 硬编码 px → Design Token 自动替换 |
+| `css-px-to-token.mjs` | CSS 硬编码 px → Design Token 自动替换（项目约定：组件视觉尺寸一律走 token，仅逻辑阈值可保留字面量；用法见 `docs/KNOWLEDGE.md` ADR-006） |
 | `clean-compressed.js` | 清理 dist 中 .gz/.br 预压缩文件 |
 
 ### 开发工具

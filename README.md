@@ -68,6 +68,13 @@
 - **Vitest** - 单元测试 / 组件测试
 - **Playwright** - E2E 测试
 
+### Design Token 约定
+本项目视觉尺寸**一律走 CSS 变量（Design Token）**，禁止在源码硬编码 `px` 字面量：
+- 图标经 `Icon` 组件（`size` 为档名 xs/sm/md/lg/xl/2xl/3xl）或 `--icon-*` token，且 `--icon-*` 必须 `calc(var(--text-<档>) * 系数)` 派生自文字 token，与 `--text-*` 共享同一条 vw 缩放曲线（TV 端改 `[data-device="tv"]` 覆盖 `--text-*` 后图标/布局自动跟随放大）
+- 布局 / 间距 / 字号经 `--space-*` / `--text-*` / `--layout-*` token
+- **例外（允许保留字面量，属逻辑阈值而非视觉尺寸）**：媒体查询断点、`IntersectionObserver` 的 `rootMargin`、`<img sizes>` 响应式提示、`sr-only` 的 `1px` hack、`window.innerWidth` 列数兜底
+- 去硬编码统一用 `scripts/css-px-to-token.mjs` 自动替换，再人工核对 token 语义边界（严禁把跨语义尺寸硬压进同一档）
+
 ## 项目结构
 
 ```
