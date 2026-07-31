@@ -478,18 +478,18 @@
   --space-2xl: clamp(1.625rem, 2.085vw, 5.004rem); /* 40→80 */
   --space-3xl: clamp(2.25rem, 2.752vw, 6.604rem);  /* 53→106 */
 
-  /* ── Layout（TV 视口放大：导航栏整体尺度跟随视口，而非沿用桌面值）────────── */
+  /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 0–10，单位 vw/vh）写入
      <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值（与滑块默认 3 对齐）。 */
   --safe-area-x: 3vw;
   --safe-area-y: 3vh;
 
-  /* A. 导航栏高度：比例化 132→264(1920→3840)。 */
-  --header-height: clamp(8rem, 6.875vw, 16.5rem);
-  /* B. Logo：比例化 120→240。 */
-  --layout-logo-size: clamp(4.5rem, 6.25vw, 15rem);
-  /* C. 品牌文字：升到 lg 档，大屏不再偏小 */
-  --layout-brand-font-size: var(--layout-brand-font-size-lg);
+  /* A. 导航栏高度：比例化 100→200(1920→3840)，1080p 基线=旧版 100px（零回归）。 */
+  --header-height: clamp(6.25rem, 5.21vw, 12.5rem);
+  /* B. Logo：比例化 76.8→153.6，1080p 基线=旧版 76.8px（零回归）。 */
+  --layout-logo-size: clamp(4.8rem, 4vw, 9.6rem);
+  /* C. 品牌文字：比例化 24→48，1080p 基线=旧版 24px（零回归）。 */
+  --layout-brand-font-size: clamp(1.5rem, 1.25vw, 3rem);
 
   /* 下拉/弹层高度：比例化 432→876，避免固定 rem+5vh 锚定导致 4K 显小。 */
   --layout-dropdown-max-h: clamp(27rem, 22.8vw, 54.75rem);
