@@ -443,27 +443,40 @@
    TV — discrete overrides (minimum touch targets, focus ring, safe area)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-device="tv"] {
-  /* ── Typography & icon scale-up (1920px → 3840px viewport) ──────────── */
-  --text-xs:   clamp(0.75rem, 0.692rem + 0.312vw, 1.375rem);   /* 12→22 */
-  --text-sm:   clamp(0.8125rem, 0.742rem + 0.375vw, 1.625rem); /* 13→26 */
-  --text-base: clamp(0.875rem, 0.781rem + 0.469vw, 1.875rem);  /* 14→30 */
-  --text-lg:   clamp(1rem, 0.875rem + 0.625vw, 2.25rem);       /* 16→36 */
-  --text-xl:   clamp(1.125rem, 0.984rem + 0.703vw, 2.5rem);    /* 18→40 */
-  --text-2xl:  clamp(1.5rem, 1.289rem + 1.094vw, 3.125rem);    /* 24→50 */
-  --text-3xl:  clamp(1.875rem, 1.602rem + 1.406vw, 3.75rem);   /* 30→60 */
-  /* 图标派生自 TV 文字 token × 固定系数 → 与 TV 文字共享同一条 vw 曲线，
-     比例恒定；导航栏 icon-sm vs text-base ≈ 1.2×，图标恒≥文字。 */
-  --icon-xs:  calc(var(--text-xs)  * 1.40);   /* 12→22 ×1.40 = 16.8→30.8 */
-  --icon-sm:  calc(var(--text-sm)  * 1.30);   /* 13→26 ×1.30 = 16.9→33.8 */
-  --icon-md:  calc(var(--text-base) * 1.43);  /* 14→30 ×1.43 = 20.0→42.9 */
-  --icon-lg:  calc(var(--text-xl)  * 1.50);   /* 18→40 ×1.50 = 27.0→60.0 */
-  --icon-xl:  calc(var(--text-2xl) * 1.33);   /* 24→50 ×1.33 = 31.9→66.5 */
-  --icon-2xl: calc(var(--text-3xl) * 1.30);   /* 30→60 ×1.30 = 39.0→78.0 */
-  --icon-3xl: calc(var(--text-3xl) * 1.70);   /* 30→60 ×1.70 = 51.0→102.0 */
+  /* ── Typography & icon scale-up（比例化 1920px → 3840px 视口）────────────
+     旧版 slope 过缓 + clamp 上限在视口宽 ≈3730px 即触顶(仅 ≈1.4×)，导致 4K 下
+     所有文字/图标元素停在接近 1080p 的大小、相对 4K 屏显小；间距 token 更从未缩放。
+     改后比例化：1920px = 原 1080p-TV 尺寸(A)，3840px(4K) = 2×A，中间线性。
+     因图标派生自文字 token，所有消费文本/图标 token 的组件（导航/卡片/分类按钮/
+     下拉等）一并正确放大，无需逐组件 patch。1080p-TV(1920) 取值与旧版完全一致。 */
+  --text-xs:   clamp(0.75rem, 0.888vw, 2.13rem);   /* 17→34 (1920→3840) */
+  --text-sm:   clamp(0.8125rem, 0.993vw, 2.38rem); /* 19→38 */
+  --text-base: clamp(0.875rem, 1.12vw, 2.6875rem); /* 21.5→43 */
+  --text-lg:   clamp(1rem, 1.354vw, 3.25rem);      /* 26→52 */
+  --text-xl:   clamp(1.125rem, 1.523vw, 3.66rem);  /* 29→58 */
+  --text-2xl:  clamp(1.5rem, 2.167vw, 5.2rem);     /* 42→83 */
+  --text-3xl:  clamp(1.875rem, 2.74vw, 6.58rem);   /* 53→105 */
+  /* 图标派生自 TV 文字 token × 固定系数 → 随文字比例化曲线同步放大，比例恒定。 */
+  --icon-xs:  calc(var(--text-xs)  * 1.40);
+  --icon-sm:  calc(var(--text-sm)  * 1.30);
+  --icon-md:  calc(var(--text-base) * 1.43);
+  --icon-lg:  calc(var(--text-xl)  * 1.50);
+  --icon-xl:  calc(var(--text-2xl) * 1.33);
+  --icon-2xl: calc(var(--text-3xl) * 1.30);
+  --icon-3xl: calc(var(--text-3xl) * 1.70);
   --dot-size:     clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
   --dot-active-w: clamp(20px, 0.500rem + 0.833vw, 32px); /* 20→32 激活胶囊宽 */
   --dot-active-h: clamp(6px,  0.150rem + 0.278vw, 10px);  /* 6→10  圆点 */
   --dot-gap:      clamp(4px,  0.100rem + 0.222vw, 8px);   /* 4→8   圆点间距 */
+
+  /* 间距 token：TV 下原本未缩放(沿用桌面值)，4K 文字放大而 gap 不变会拥挤。
+     此处比例化：1920 = 桌面同值，3840 = 2×。 */
+  --space-sm:  clamp(0.5rem, 0.476vw, 1.144rem);   /* 9→18  */
+  --space-md:  clamp(0.625rem, 0.746vw, 1.79rem);  /* 14→28 */
+  --space-lg:  clamp(0.875rem, 1.101vw, 2.641rem); /* 21→42 */
+  --space-xl:  clamp(1.125rem, 1.523vw, 3.655rem); /* 29→58 */
+  --space-2xl: clamp(1.625rem, 2.085vw, 5.004rem); /* 40→80 */
+  --space-3xl: clamp(2.25rem, 2.752vw, 6.604rem);  /* 53→106 */
 
   /* ── Layout（TV 视口放大：导航栏整体尺度跟随视口，而非沿用桌面值）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 0–10，单位 vw/vh）写入
@@ -471,13 +484,15 @@
   --safe-area-x: 3vw;
   --safe-area-y: 3vh;
 
-  /* A. 导航栏高度：TV 需容纳放大后的搜索框(1.4×)与 Logo，且内容区高度
-     保持恒定（顶部过扫描改用 margin-top 外边距，不挤压内容区），故加高。 */
-  --header-height: clamp(96px, 5.2vw, 132px);
-  /* B. Logo：纠正「错用 --layout-tabbar-height(底部 TabBar 语义)」错位，并 TV 放大 */
-  --layout-logo-size: clamp(72px, 4vw, 120px);
+  /* A. 导航栏高度：比例化 132→264(1920→3840)。 */
+  --header-height: clamp(8rem, 6.875vw, 16.5rem);
+  /* B. Logo：比例化 120→240。 */
+  --layout-logo-size: clamp(4.5rem, 6.25vw, 15rem);
   /* C. 品牌文字：升到 lg 档，大屏不再偏小 */
   --layout-brand-font-size: var(--layout-brand-font-size-lg);
+
+  /* 下拉/弹层高度：比例化 432→876，避免固定 rem+5vh 锚定导致 4K 显小。 */
+  --layout-dropdown-max-h: clamp(27rem, 22.8vw, 54.75rem);
 
   /* Minimum 48dp touch target for TV remote navigation */
   --comp-btn-min-height: var(--space-3xl);
