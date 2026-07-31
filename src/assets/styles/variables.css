@@ -218,22 +218,22 @@
   --layout-hero-banner-min-h:  20rem;                              /* HeroBanner 最小高度 */
   --layout-hero-banner-max-h:  clamp(35rem, 25rem + 20vw, 100rem);  /* HeroBanner 最大高度 */
   --layout-hero-height-mobile: 280px;     /* 移动端 Hero 高度 */
-  --layout-card-daily-width:   200px;     /* 每日推荐卡片宽度 */
+  --layout-card-daily-width:   clamp(200px, 12.5rem + 3vw, 320px);  /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
   --layout-grid-min-col:       220px;     /* 自适应网格最小列宽（SkeletonIPTVCard） */
   --layout-error-detail-height: 200px;    /* 错误详情区最大高度（NetworkError） */
   --layout-spinner-border:     3px;       /* 加载旋转环边框粗细 */
-  --layout-perf-panel-min-w:   280px;     /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度 */
-  --layout-channel-num-w:      120px;     /* 频道编号/时间显示最小宽度 */
+  --layout-perf-panel-min-w:   clamp(280px, 17.5rem + 1.5vw, 420px); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
+  --layout-channel-num-w:      clamp(120px, 7.5rem + 0.5vw, 180px); /* 频道编号/时间显示最小宽度：120→180px 流体 */
   --layout-quality-badge-min-w: 84px;     /* 画质徽章最小宽度（IPTV OSD） */
   --layout-vol-popup-w:        60px;      /* 音量弹出框宽度 */
-  --layout-vol-slider-w:       180px;     /* 音量滑块宽度 */
+  --layout-vol-slider-w:       clamp(180px, 11.25rem + 1vw, 280px); /* 音量滑块宽度：180→280px 流体 */
   --layout-player-vol-w:       80px;      /* 播放器音量控制区宽度 */
   --layout-popover-min-w:      100px;     /* 气泡提示最小宽度（HelpTooltip） */
   --layout-popover-wide-min-w: 140px;     /* 宽气泡最小宽度（HelpTooltip/SourceStatus） */
   --layout-help-popover-w:     clamp(260px, 30vw, 380px); /* 帮助气泡宽度（HelpPopover） */
   --layout-sidebar-width:      clamp(260px, 15.84rem + 1.73vw, 320px);  /* 260→320px 流体 */
-  --layout-episode-panel-w:    420px;     /* 剧集面板宽度（播放器侧边栏） */
-  --layout-episode-panel-w-alt: 440px;    /* 剧集面板备选宽度 */
+  --layout-episode-panel-w:    clamp(420px, 26.25rem + 4vw, 560px); /* 剧集面板宽度（播放器侧边栏）：420→560px 流体（宽屏占比增大） */
+  --layout-episode-panel-w-alt: clamp(440px, 27.5rem + 4vw, 600px); /* 剧集面板备选宽度：440→600px 流体 */
   --layout-time-display-min-w: 90px;      /* 时间显示最小宽度（播放器 OSD） */
   /* IPTV 频道列表宽度 — 按视口分档 */
   --layout-channel-list-w:     300px;     /* 默认频道列表宽度 */
@@ -248,8 +248,8 @@
   --layout-searchbox-header-max-w: 480px;   /* 顶部导航 SearchBox 最大宽度 */
   --layout-searchbox-browse-max-w: 560px;   /* Browse 页 SearchBox 最大宽度 */
   --layout-groups-collapsed-h: 76px;      /* IPTV 分组折叠高度 */
-  --layout-select-w:           140px;     /* 下拉选择框宽度 */
-  --layout-select-w-mobile:    120px;     /* 移动端下拉宽度 */
+  --layout-select-w:           clamp(140px, 8.75rem + 4vw, 260px);   /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
+  --layout-select-w-mobile:    clamp(120px, 7.5rem + 0.5vw, 180px);  /* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
   --layout-bottomsheet-max-h:  500px;     /* 底部弹出面板最大高度 */
   --layout-epg-empty-min-height: 100px;   /* EPG 空态最小高度 */
@@ -270,16 +270,16 @@
   --layout-outline-width:      2px;        /* 聚焦轮廓线粗细 */
 
   /* ── Avatar Sizes ───────────────────────────────────────────────────────── */
-  --avatar-xs: 30px;   /* 行内小头像（设置行） */
-  --avatar-sm: 56px;   /* 资料卡头像 */
-  --avatar-lg: 72px;   /* 头像预览 / 移动端资料头像 */
+  --avatar-xs: clamp(30px, 1.875rem + 0.5vw, 52px);   /* 行内小头像（设置行）：30→52px 流体（TV 放大） */
+  --avatar-sm: clamp(56px, 3.5rem + 1vw, 96px);       /* 资料卡头像：56→96px 流体（TV 放大） */
+  --avatar-lg: clamp(72px, 4.5rem + 1.5vw, 128px);    /* 头像预览 / 移动端资料头像：72→128px 流体（TV 放大） */
 
     /* ── Misc Sizes ─────────────────────────────────────────────────────────── */
     --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
   --source-meta-min-width: 120px;  /* 源详情最小宽度 */
   --error-msg-max-width: 100px;    /* 错误文案最大宽度 */
   --layout-tabbar-height:      56px;       /* 移动端底部 TabBar 高度 */
-  --layout-datepicker-width:   340px;      /* 日期选择器宽度 */
+  --layout-datepicker-width:   clamp(340px, 21.25rem + 1vw, 460px); /* 日期选择器宽度：340→460px 流体 */
   --layout-collapse-max-h:     1000px;     /* 折叠面板最大高度 */
   --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem); /* 详情页海报宽度 */
   --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem); /* TV 端海报宽度 */
