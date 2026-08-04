@@ -959,9 +959,9 @@ export default function DetailPage() {
                     const playable = isPlayable(v);
                     const lineCount = v.sources.length;
                     const isSeries = result.isSeries;
-                    const tvThumb = tmdbMediaType === 'tv' && !!posterUrl;
                     const groupTitle = tmdbMediaType === 'tv' ? stripSeasonLabel(v.title) : v.title;
-                    const thumbYear = tvThumb ? year : v.year;
+                    // 年份角标跟随 CMS（v.year），缺失时兜底 TMDB 年份（与海报「CMS 优先、TMDB 兜底」一致）
+                    const thumbYear = v.year ?? year;
                     return (
                       <div key={result.sourceIndex} className="detail-source-group">
                         <div className="detail-source-group-header">
@@ -970,15 +970,8 @@ export default function DetailPage() {
                         </div>
                         <div className="detail-source-group-body">
                           <div className="detail-source-thumb">
-                            {tvThumb ? (
-                              <img src={posterUrl} alt={title} />
-                            ) : v.cover ? (
-                              <img src={v.cover} alt={v.title} />
-                            ) : (
-                              <div className="detail-source-thumb-placeholder">
-                                <Icon icon={Server} size="md" />
-                              </div>
-                            )}
+                            {/* 海报：CMS 原图优先，缺失或加载失败用 TMDB 兜底，两者都不可用显示占位 */}
+                            <SourceThumb cmsCover={v.cover} tmdbCover={posterUrl} alt={groupTitle} />
                             {thumbYear && (
                               <span className="detail-source-thumb-year">{thumbYear}</span>
                             )}
@@ -1022,7 +1015,6 @@ export default function DetailPage() {
                   <PlaylistModal
                     data={playModal}
                     videoId={id}
-                    activeSourceIndex={playModal.sourceIndex}
                     posterUrl={posterUrl}
                     historyRecord={historyRecord ?? null}
                     progressMap={progressMap}
@@ -1201,6 +1193,39 @@ function formatProgressTime(seconds: number): string {
     return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// ── 播放源缩略图（CMS 原图优先，缺失/加载失败用 TMDB 兜底） ──
+
+function SourceThumb({
+  cmsCover,
+  tmdbCover,
+  alt,
+}: {
+  cmsCover?: string;
+  tmdbCover?: string;
+  alt?: string;
+}) {
+  // 三级降级：cms → tmdb → 占位（'none'）
+  const [stage, setStage] = useState<'cms' | 'tmdb' | 'none'>('cms');
+  const src = stage === 'cms' ? cmsCover : stage === 'tmdb' ? tmdbCover : undefined;
+  if (!src) {
+    return (
+      <div className="detail-source-thumb-placeholder">
+        <Icon icon={Server} size="md" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => {
+        if (stage === 'cms' && tmdbCover) setStage('tmdb');
+        else if (stage === 'cms' || stage === 'tmdb') setStage('none');
+      }}
+    />
+  );
 }
 
 // ── 内联图标组件（避免过多 import） ──────────────

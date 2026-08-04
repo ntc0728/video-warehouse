@@ -48,9 +48,49 @@ interface UserState {
   }) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
+  /** 删除指定视频的全部历史记录（含电影多线路 / 剧集多季多集的所有记录） */
+  removeHistoryByVideo: (videoId: string) => void;
   clearHistory: () => void;
 
   _loadFromDB: () => Promise<void>;
+}
+
+/**
+ * 一次性清理历史遗留记录（电影线路独立去重键 + D4 剧集误写电影键的脏记录）：
+ *   - id === `hist-{videoId}`（无线路后缀的电影形态）且 seasonNumber != null
+ *     → 历史 bug 产生的污染记录（剧集进度误写入电影键），无内容身份，删除
+ *   - id === `hist-{videoId}`（老电影记录）且同 videoId 已存在 `hist-{videoId}-` 前缀的新记录
+ *     → 老记录已被新的线路独立记录取代，删除
+ * 仅当同 videoId 存在新形态记录时才删老电影记录，避免误删仍在使用（从未播放新线路）的老数据。
+ */
+async function cleanupLegacyHistoryRecords(): Promise<void> {
+  try {
+    const records = await getHistory();
+    if (records.length === 0) return;
+
+    const newIds = new Set<string>();
+    for (const r of records) {
+      if (r.id && r.videoId && r.id.startsWith(`hist-${r.videoId}-`)) newIds.add(r.videoId);
+    }
+
+    const toRemove = records.filter((r) => {
+      if (!r.id || !r.videoId) return false;
+      if (r.id !== `hist-${r.videoId}`) return false; // 仅无线路后缀的电影形态
+      if (r.seasonNumber != null) return true;        // D4 脏记录（剧集误写电影键）
+      return newIds.has(r.videoId);                    // 老电影记录，已被新线路记录取代
+    });
+
+    if (toRemove.length === 0) return;
+
+    for (const r of toRemove) {
+      await removeHistoryRecord(r.id!);
+    }
+    // 同步清理内存态，避免当前会话仍展示脏记录
+    const ids = new Set(toRemove.map((r) => r.id!));
+    useUserStore.setState((state) => ({ history: state.history.filter((h) => !ids.has(h.id)) }));
+  } catch {
+    // 清理失败不影响主流程
+  }
 }
 
 /** 从 localStorage 迁移旧数据到 IndexedDB */
@@ -102,6 +142,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
       ]);
 
       set({ collections, history, _initialized: true, _loading: false });
+
+      // 后台异步清理历史遗留记录（不阻塞初始化）
+      cleanupLegacyHistoryRecords();
     } catch (err) {
       console.error('Failed to load user data from IndexedDB:', err);
       // 允许重试：不清除 _initialized 标记
@@ -156,25 +199,25 @@ export const useUserStore = create<UserState>()((set, get) => ({
    * 添加或更新观看历史
    * 同一内容身份的记录会更新进度和时间，而非重复创建；「最后播放」覆盖旧进度。
    * 去重（内容身份）策略：
-   *   - 电影：按 videoId 去重 —— 不同 CMS 源共享同一条进度
+   *   - 电影：按 videoId + 线路 URL 去重 —— 每条线路各自独立维护进度
    *   - 剧集：按 videoId + 季号 + 集标题 去重 —— 不同 CMS 源下相同选季/选集共享同一条进度
    * 源相关字段（cmsSourceId / episodeUrl / vodId）仍记录「最后播放的那次」，仅用于续播定位。
    */
   addHistory: (record) => {
     // 去重键（同时作为持久化 id）：
-    //   电影：按 videoId —— 相同电影在不同 CMS 源/线路之间共享同一条进度记录
+    //   电影：按 videoId + 线路 URL —— 每条线路独立进度记录，互不覆盖
     //   剧集：按 videoId + 季号 + 集标题 —— 相同选季/选集在不同 CMS 源之间共享同一条进度记录
     // 区分电影/剧集的依据是 seasonNumber：电影无剧集概念（undefined），剧集必有季号。
-    // （注意：电影写入时 episodeLabel 实际被置为源名称，不能用作区分判据。）
+    // （注意：电影写入时 episodeLabel 实际被置为线路名称，不能用作区分判据。）
     // 这样「最后播放的进度」始终覆盖同一条记录，满足全局规则：
-    //   - 相同电影不同源进度保持一致
+    //   - 相同电影的不同线路各自独立进度
     //   - 相同剧集/相同选季/相同选集，不同源进度保持一致
-    // 注意：cmsSourceId / episodeUrl / vodId 等「源相关」字段仍会被最后播放的那次覆盖，
+    // 注意：cmsSourceId / vodId 等「源相关」字段仍会被最后播放的那次覆盖，
     // 仅用于在该源上续播，不改变进度归属的内容身份。
     const isEpisodic = record.seasonNumber != null && !!record.episodeLabel;
     const dedupId = isEpisodic
       ? `hist-${record.videoId}-s${record.seasonNumber}-${record.episodeLabel}`
-      : `hist-${record.videoId}`;
+      : `hist-${record.videoId}-${record.episodeUrl ?? ''}`;
 
     const existingIndex = get().history.findIndex((h) => h.id === dedupId);
 
@@ -228,6 +271,14 @@ export const useUserStore = create<UserState>()((set, get) => ({
       history: state.history.filter((h) => h.id !== historyId),
     }));
     removeHistoryRecord(historyId).catch(console.error);
+  },
+
+  removeHistoryByVideo: (videoId) => {
+    const removed = get().history.filter((h) => h.videoId === videoId);
+    set((state) => ({
+      history: state.history.filter((h) => h.videoId !== videoId),
+    }));
+    removed.forEach((h) => removeHistoryRecord(h.id).catch(console.error));
   },
 
   clearHistory: () => {

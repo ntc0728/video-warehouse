@@ -32,17 +32,13 @@ interface PlaylistProgressEntry {
 interface PlaylistModalProps {
   data: PlaylistModalData;
   videoId?: string;
-  activeSourceIndex: number;
   posterUrl?: string;
   progressMap?: Record<string, PlaylistProgressEntry>;
   historyRecord?: { seasonNumber?: number; episodeLabel?: string } | null;
   onClose: () => void;
   onPlayEpisode: (ep: {
     seasonNumber: number;
-    episodeId: string;
     episode: Episode;
-    sources: VideoSource[];
-    sourceIndex: number;
   }) => void;
   onPlayLine: (
     sourceIndex: number,
@@ -60,7 +56,6 @@ type Item =
       number: number;
       title: string;
       seasonNumber: number;
-      sources: VideoSource[];
     }
   | { kind: 'line'; origIndex: number; line: VideoSource; number: number; title: string };
 
@@ -75,22 +70,21 @@ function sortByNumber(eps: Episode[]): Episode[] {
 
 // 根据 cell 取到对应的进度记录。进度以「内容身份」为准（与 store.addHistory
 // 的去重键一致）：
-//   - 电影（line）：按 videoId 统一，所有线路/源共享同一进度
+//   - 电影（line）：按线路 URL（line.url）独立，每条线路各自维护进度
 //   - 剧集（ep）：按 季号+集号 统一，相同选集在不同源之间共享同一进度
-// 因此「最后播放的进度」始终覆盖、跨源/跨线路保持一致。
+// 因此「最后播放的进度」始终覆盖、相同选集跨源保持一致。
 function cellProgress(
   item: Item,
   map?: Record<string, PlaylistProgressEntry>,
 ): PlaylistProgressEntry | null {
   if (!map) return null;
-  const key = item.kind === 'line' ? '__movie__' : `s${item.seasonNumber}-第${item.number}集`;
+  const key = item.kind === 'line' ? item.line.url : `s${item.seasonNumber}-第${item.number}集`;
   return map[key] ?? null;
 }
 
 export default function PlaylistModal({
   data,
   videoId,
-  activeSourceIndex,
   posterUrl,
   progressMap: progressMapProp,
   historyRecord: historyRecordProp,
@@ -108,19 +102,20 @@ export default function PlaylistModal({
   const liveHistory = useUserStore((s) => s.history);
 
   // 实时重建 progressMap，按「内容身份」聚合（与 store.addHistory 去重键一致）：
-  //   - 电影：单条记录（seasonNumber 为空）→ 键 '__movie__'，所有线路共用
+  //   - 电影：按线路 URL（episodeUrl）独立，每条线路各自维护进度
   //   - 剧集：键 's{季号}-{episodeLabel}'，相同选集跨源共用
-  // 因此「最后播放的进度」始终生效，相同电影不同线路 / 相同选集不同源进度保持一致。
+  // 因此「最后播放的进度」始终生效，相同选集不同源进度保持一致。
   const liveProgressMap = useMemo<Record<string, PlaylistProgressEntry>>(() => {
     const map: Record<string, PlaylistProgressEntry> = {};
     if (!videoId) return map;
     for (const h of liveHistory) {
       if (h.videoId !== videoId) continue;
-      // 与 addHistory 的 dedupId 对齐：电影按 videoId，剧集按 季号+episodeLabel
+      // 与 addHistory 的 dedupId 对齐：剧集按 季号+episodeLabel，电影按线路 URL
       const key =
         h.seasonNumber != null && h.episodeLabel
           ? `s${h.seasonNumber}-${h.episodeLabel}`
-          : '__movie__';
+          : h.episodeUrl;
+      if (!key) continue;
       map[key] = {
         progress: h.progress,
         duration: h.duration,
@@ -145,8 +140,7 @@ export default function PlaylistModal({
   const [showAll, setShowAll] = useState(false);
   const [seasonIdx, setSeasonIdx] = useState(0);
   const [query, setQuery] = useState('');
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [watched, setWatched] = useState<Set<number>>(new Set());
+  const [selectedIdx, setSelectedIdx] = useState(-1);
   const [visibleCount, setVisibleCount] = useState(40);
 
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -192,7 +186,6 @@ export default function PlaylistModal({
               number: ep.number,
               title: ep.title,
               seasonNumber: sn,
-              sources: seasonVideo?.sources ?? [],
             });
           });
         });
@@ -205,7 +198,6 @@ export default function PlaylistModal({
         number: ep.number,
         title: ep.title,
         seasonNumber: currentSeasonNumber,
-        sources: activeVideo?.sources ?? [],
       }));
     }
     return (video.sources ?? []).map((s, i) => ({
@@ -230,30 +222,24 @@ export default function PlaylistModal({
     [filtered, visibleCount],
   );
 
-  // 切季 / 切类型 / 切"全部"时：重置搜索、可见数量，并根据历史推断"已看"与初始选中
+  // 切季 / 切类型 / 切"全部"时：重置搜索、可见数量，并根据历史推断初始选中。
+  // 初始选中采用「零选中」策略：仅当历史记录命中的那一集（季+集号精确匹配）才选中，
+  // 未看过的一律不渲染任何选中框。
   useEffect(() => {
     setQuery('');
     setVisibleCount(40);
-    const w = new Set<number>();
-    let init = 0;
+    let init = -1;
     if (isSeries && historyRecord) {
       const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
       const y = m ? parseInt(m[1], 10) : NaN;
       if (!Number.isNaN(y)) {
         const histSeason = historyRecord.seasonNumber;
-        // 以"季号*1000+集号"为键，保证"全部"聚合视图下只高亮历史所属季的已看集
-        allItems.forEach((it) => {
-          if (it.kind === 'ep' && it.seasonNumber === histSeason && it.number <= y) {
-            w.add(it.seasonNumber * 1000 + it.number);
-          }
-        });
         const idx = allItems.findIndex(
           (it) => it.kind === 'ep' && it.seasonNumber === histSeason && it.number === y,
         );
         if (idx >= 0) init = idx;
       }
     }
-    setWatched(w);
     setSelectedIdx(init);
   }, [seasonIdx, showAll, isSeries, historyRecord, currentSeasonNumber, allItems]);
 
@@ -298,16 +284,13 @@ export default function PlaylistModal({
       if (item.kind === 'ep') {
         onPlayEpisode({
           seasonNumber: item.seasonNumber,
-          episodeId: item.episode.id,
           episode: item.episode,
-          sources: item.sources,
-          sourceIndex: activeSourceIndex,
         });
       } else {
         onPlayLine(item.origIndex, null, item.line.url, item.line.type);
       }
     },
-    [onPlayEpisode, onPlayLine, activeSourceIndex],
+    [onPlayEpisode, onPlayLine],
   );
 
   const playSelected = useCallback(() => {
@@ -343,11 +326,12 @@ export default function PlaylistModal({
       }
       const n = filtered.length;
       if (n === 0) return;
-      let next = selectedIdx;
-      if (e.key === 'ArrowRight') next = Math.min(n - 1, selectedIdx + 1);
-      else if (e.key === 'ArrowLeft') next = Math.max(0, selectedIdx - 1);
-      else if (e.key === 'ArrowDown') next = Math.min(n - 1, selectedIdx + cols);
-      else if (e.key === 'ArrowUp') next = Math.max(0, selectedIdx - cols);
+      // 零选中（-1）时首次按方向键统一落到第一格
+      let next = selectedIdx < 0 ? 0 : selectedIdx;
+      if (e.key === 'ArrowRight') next = Math.min(n - 1, next + 1);
+      else if (e.key === 'ArrowLeft') next = Math.max(0, next - 1);
+      else if (e.key === 'ArrowDown') next = Math.min(n - 1, next + cols);
+      else if (e.key === 'ArrowUp') next = Math.max(0, next - cols);
       else if (e.key === 'Home') next = 0;
       else if (e.key === 'End') next = n - 1;
       else if (e.key === 'Enter') {
@@ -482,12 +466,9 @@ export default function PlaylistModal({
           {visibleItems.map((it, flatIdx) => {
             const isSel = flatIdx === selectedIdx;
             const prog = cellProgress(it, progressMap);
-            const isWatched =
-              it.kind === 'ep' && watched.has(it.seasonNumber * 1000 + it.number);
-            // 有播放进度的 cell（与下方进度条/百分比同源，按「内容身份」跨季/跨源查找）：
-            // 不论是否落在「连续已看到集」范围内，只要历史上播过就与未观看 cell 区分背景色
-            const hasProgress = prog != null;
-            const isPlayed = isWatched || hasProgress;
+            // 已看判定：仅「真有进度记录」的 cell 显示已看标记（✓ + 已看底色），
+            // 未看过/无进度记录的一律不标记。
+            const isPlayed = prog != null;
             // 「播放中」仅限历史记录所属季、且集号命中的那一个 cell，
             // 避免非历史季默认选中的第一集也显示「播放中」而串季。
             const isPlaying =
@@ -629,7 +610,8 @@ export default function PlaylistModal({
           <LazyImage
             src={video.cover || posterUrl || ''}
             alt={video.title}
-            letter={video.title?.[0]}
+            // CMS 封面缺失或加载失败时回退到 TMDB 海报（LazyImage 的 error/空值统一走 fallbackSrc）
+            fallbackSrc={posterUrl || '/placeholder.png'}
           />
         </div>
         <div className="playlist-meta">
