@@ -27,6 +27,8 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { Search, X, Clock, Trash2 } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useTMDBStore } from '@/stores';
+import { searchMulti } from '@/services/tmdbService';
+import type { TMDBMultiSearchResult } from '@/types/tmdb';
 import './SearchBox.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -91,6 +93,7 @@ export default function SearchBox({
   // ── 热门搜索（从 trending 数据取标题） ──────────────
   const trending = useTMDBStore((s) => s.trending);
   const trendingLoading = useTMDBStore((s) => s.loading.trending);
+  const trendingError = useTMDBStore((s) => s.errors.trending);
   const fetchTrending = useTMDBStore((s) => s.fetchTrending);
   const hotItems = trending
     .filter((item) => item.title)
@@ -108,7 +111,65 @@ export default function SearchBox({
       void fetchTrending('day');
     }
   }, [isDropdownOpen, showHotSearch, trending.length, trendingLoading, fetchTrending]);
-  const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0);
+  // 热门搜索加载中 / 加载失败占位（11.2）：无历史 + 热门加载中时下拉也要渲染，
+  // 否则用户点开搜索框看到「空白」——加载失败时展示失败提示，下次打开下拉自动重试。
+  const hotLoading = showHotSearch && trending.length === 0 && trendingLoading;
+  const hotError = showHotSearch && trending.length === 0 && !trendingLoading && !!trendingError;
+
+  // ── 实时搜索建议（输入词后防抖调 /search/multi） ──────────
+  // 输入非空词时，下拉切换为「实时搜索结果」：请求前显示「搜索中」、成功展示结果
+  // （左侧搜索图标 + 名称，右侧电影/剧集/人物类型标签）、失败或无数据显示提示。
+  // 不写入 TMDB store（避免污染 Browse 的 discoverResults），独立本地 state。
+  const [suggestions, setSuggestions] = useState<TMDBMultiSearchResult[]>([]);
+  const [suggestStatus, setSuggestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const suggestSeqRef = useRef(0);       // 竞态：仅最新一次搜索可写结果
+  const suggestDebounceRef = useRef<number | null>(null); // 300ms 防抖
+  const hasQuery = value.trim().length > 0;
+
+  useEffect(() => {
+    const q = value.trim();
+    if (suggestDebounceRef.current) window.clearTimeout(suggestDebounceRef.current);
+    if (!q) {
+      setSuggestStatus('idle');
+      setSuggestions([]);
+      return;
+    }
+    setSuggestStatus('loading');
+    suggestDebounceRef.current = window.setTimeout(async () => {
+      const seq = ++suggestSeqRef.current;
+      try {
+        const data = await searchMulti(q);
+        if (seq !== suggestSeqRef.current) return; // 过期响应丢弃（快速连续输入）
+        setSuggestions(data.results);
+        setSuggestStatus('success');
+      } catch {
+        if (seq !== suggestSeqRef.current) return;
+        setSuggestStatus('error');
+      }
+    }, 300);
+  }, [value]);
+
+  // 卸载清理防抖定时器
+  useEffect(() => {
+    return () => {
+      if (suggestDebounceRef.current) window.clearTimeout(suggestDebounceRef.current);
+    };
+  }, []);
+
+  const suggestionTypeLabel = (t: TMDBMultiSearchResult['media_type']): string =>
+    t === 'tv' ? '剧集' : t === 'person' ? '人物' : '电影';
+
+  const handleSuggestionClick = useCallback((item: TMDBMultiSearchResult) => {
+    // 点击建议 → 直达详情页（电影/剧集）或人物页
+    const target = item.media_type === 'person'
+      ? `/person/${item.id}`
+      : `/detail/tmdb-${item.media_type}-${item.id}`;
+    navigate(target);
+    inputRef.current?.blur();
+    setIsDropdownOpen(false);
+  }, [navigate]);
+
+  const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0 || hotLoading || hotError || hasQuery);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
 
@@ -342,6 +403,39 @@ export default function SearchBox({
           onMouseDown={handleDropdownMouseDown}
           style={{ '--dropdown-avail-h': dropdownMaxHeight != null ? `${dropdownMaxHeight}px` : undefined } as CSSProperties}
         >
+          {hasQuery ? (
+            /* ── 实时搜索建议（输入词时优先展示，历史/热门让位） ── */
+            <>
+              {suggestStatus === 'loading' && (
+                <div className="search-box-dropdown__hint">搜索中…</div>
+              )}
+              {suggestStatus === 'error' && (
+                <div className="search-box-dropdown__hint">搜索失败，请重试</div>
+              )}
+              {suggestStatus === 'success' && suggestions.length === 0 && (
+                <div className="search-box-dropdown__hint">未找到相关结果</div>
+              )}
+              {suggestStatus === 'success' && suggestions.length > 0 && (
+                <ul className="search-box-dropdown__list">
+                  {suggestions.map((item) => (
+                    <li
+                      key={`${item.media_type}-${item.id}`}
+                      className="search-box-dropdown__item search-box-dropdown__item--suggestion"
+                      role="option"
+                      onClick={() => handleSuggestionClick(item)}
+                    >
+                      <Icon icon={Search} size="xs" className="search-box-dropdown__suggestion-icon" aria-hidden="true" />
+                      <span className="search-box-dropdown__text">
+                        {item.name || item.title || item.original_name || item.original_title || ''}
+                      </span>
+                      <span className="search-box-dropdown__type">{suggestionTypeLabel(item.media_type)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
           {/* 搜索历史 */}
           {history.length > 0 && (
             <>
@@ -382,42 +476,50 @@ export default function SearchBox({
             </>
           )}
 
-          {/* 分隔线：历史和热门都存在时显示 */}
-          {history.length > 0 && visibleHotItems.length > 0 && (
+          {/* 分隔线：历史和热门（含加载中/失败占位）都存在时显示 */}
+          {history.length > 0 && (visibleHotItems.length > 0 || hotLoading || hotError) && (
             <div className="search-box-dropdown__divider" />
           )}
 
-          {/* 热门搜索 */}
-          {visibleHotItems.length > 0 && (
+          {/* 热门搜索：加载中/失败占位（11.2）——点开即有反馈，不再「空白无反应」 */}
+          {(visibleHotItems.length > 0 || hotLoading || hotError) && (
             <>
               <div className="search-box-dropdown__header">
                 <span className="search-box-dropdown__title">
                   🔥 热门搜索
                 </span>
               </div>
-              <ul className="search-box-dropdown__list">
-                {visibleHotItems.map((item, idx) => (
-                  <li
-                    key={item.id}
-                    className="search-box-dropdown__item search-box-dropdown__item--hot"
-                    role="option"
-                    onClick={() => handleHistoryClick(item.title)}
-                  >
-                    <span
-                      className={[
-                        'search-box-dropdown__rank',
-                        idx < 3 ? 'search-box-dropdown__rank--top' : '',
-                      ].filter(Boolean).join(' ')}
+              {hotLoading ? (
+                <div className="search-box-dropdown__hint">热门搜索加载中…</div>
+              ) : hotError ? (
+                <div className="search-box-dropdown__hint">热门搜索加载失败，重新打开重试</div>
+              ) : (
+                <ul className="search-box-dropdown__list">
+                  {visibleHotItems.map((item, idx) => (
+                    <li
+                      key={item.id}
+                      className="search-box-dropdown__item search-box-dropdown__item--hot"
+                      role="option"
+                      onClick={() => handleHistoryClick(item.title)}
                     >
-                      {idx + 1}
-                    </span>
-                    <span className="search-box-dropdown__text">{item.title}</span>
-                    {item.year && (
-                      <span className="search-box-dropdown__meta">{item.year}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      <span
+                        className={[
+                          'search-box-dropdown__rank',
+                          idx < 3 ? 'search-box-dropdown__rank--top' : '',
+                        ].filter(Boolean).join(' ')}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span className="search-box-dropdown__text">{item.title}</span>
+                      {item.year && (
+                        <span className="search-box-dropdown__meta">{item.year}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
             </>
           )}
         </div>
