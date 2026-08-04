@@ -342,30 +342,18 @@ body {
   touch-action: manipulation;
 }
 
-/* 主题切换过渡：background/color/border-color（含 SVG fill/stroke）同步淡变。
-   刻意不过渡 box-shadow：逐元素逐帧重绘最昂贵，是切换卡顿的主因。
-   - border-color 与 background-color 必须「同 duration + 同缓动」一起过渡，
-     否则边框会瞬时变到目标色而背景还在淡变 → 暗→亮时浅色边先出现 = "闪一下白边"。
-   - 暗色下 --color-border-light 已调暗（见 variables.css），稳态不再"发白"。
-   缓动与页面进入动画统一为 --ease-out-expo。 */
+/* 主题切换（2026-08-04 终修）：完全瞬切——transition:none。
+   根因：此前 theme-transitioning 对 `*` 全量元素做颜色过渡（即使仅 3 属性、200ms），
+   Keep-Alive 常驻可见页数百上千元素同时逐帧动画 → 主线程动画压力 → 仍卡顿。
+   CSS 变量（data-theme）更新本身是一次「样式重算 + 一次 repaint」（几十 ms 内完成，
+   无逐帧压力）；去掉过渡即瞬时切换、彻底不卡。
+   body 自身的 0.25s 背景/文字过渡（index.css 全局规则）保留：单元素动画，提供轻微过渡感。
+   注：颜色瞬变不会出现「闪白边」——那是过渡中途的中间色态，瞬切无中间态。 */
 html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition:
-    background-color var(--dur-slow) var(--ease-standard),
-    color var(--dur-slow) var(--ease-standard),
-    border-color var(--dur-slow) var(--ease-standard),
-    box-shadow var(--dur-slow) var(--ease-standard) !important;
-}
-
-/* 尊重用户的减少动态偏好：主题切换瞬时完成 */
-@media (prefers-reduced-motion: reduce) {
-  html.theme-transitioning *,
-  html.theme-transitioning *::before,
-  html.theme-transitioning *::after {
-    transition: none !important;
-  }
+  transition: none !important;
 }
 
 /* ── 全局按钮 / 可点击项 / tab 点击反馈（统一内容缩放）──────────

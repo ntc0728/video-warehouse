@@ -128,6 +128,7 @@
   --dur-base: 250ms;     /* 常规：fade/slide */
   --dur-slow: 500ms;     /* 页面级：route transition */
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
+  --dur-theme: 200ms;    /* 主题/皮肤切换过渡（11.6：500ms→200ms，配合去 box-shadow 消除卡顿） */
 
   /* ── Typography ───────────────────────────────────────────────────────────
      三 regime 统一契约：移动端(≤375)=MIN，桌面端(≥768)=MAX 且冻结，TV=[data-device="tv"] 2×。
@@ -299,6 +300,7 @@
   --src-det-grid-min: clamp(150px, 9.375rem + 0.5vw, 220px);   /* 弹层网格单元最小宽：150→220px 流体 */
   --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
   --layout-tabbar-height:      clamp(56px, 3.5rem + 0.3vw, 72px);  /* 移动端底部 TabBar 高度：56→72px 流体 */
+  --layout-cast-avatar:        clamp(64px, 4rem + 0.5vw, 88px);    /* Detail 演员头像：64→88px 流体（11.4） */
   --layout-datepicker-width:   clamp(340px, 21.25rem + 1vw, 460px); /* 日期选择器宽度：340→460px 流体 */
   --layout-collapse-max-h:     clamp(1000px, 62.5rem + 4vw, 1400px);  /* 折叠面板最大高度：1000→1400px 流体 */
   --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem); /* 详情页海报宽度 */

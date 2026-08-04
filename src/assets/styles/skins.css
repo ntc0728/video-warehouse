@@ -540,13 +540,11 @@ html[data-skin="retro"][data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23c000c0' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
 }
 
+/* 皮肤切换（2026-08-04 终修）：与主题一致，完全瞬切（transition:none）。
+   全量 `*` 颜色过渡即使 3 属性也因 Keep-Alive 常驻多页 DOM 数百元素逐帧动画而卡顿。 */
 html.skin-transitioning,
 html.skin-transitioning *,
 html.skin-transitioning *::before,
 html.skin-transitioning *::after {
-  transition:
-    background-color var(--dur-slow) var(--ease-standard),
-    color var(--dur-slow) var(--ease-standard),
-    border-color var(--dur-slow) var(--ease-standard),
-    box-shadow var(--dur-slow) var(--ease-standard) !important;
+  transition: none !important;
 }
