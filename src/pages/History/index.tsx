@@ -43,7 +43,6 @@ type GroupKey = (typeof GROUP_ORDER)[number];
 
 interface HistoryVideoItem extends Video {
   _histTime: number;
-  _histId: string;
   _histBackdrop?: string;
   _histProgress?: number;
   _histDuration?: number;
@@ -150,7 +149,7 @@ const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGri
 
 export default function HistoryPage() {
   const { videos } = useVideoStore();
-  const { history: watchHistory, removeHistory, clearHistory } = useUserStore();
+  const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   const saved = getState('history');
@@ -264,7 +263,7 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histId: h.id, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber };
+        return { ...base, _histTime: h.updatedAt, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber };
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') {
@@ -439,12 +438,14 @@ export default function HistoryPage() {
   const selectAll = () => setSelected(selected.size === currentList.length ? new Set() : new Set(currentList.map((v) => v.id)));
 
   // 根据确认类型执行删除
+  // 视频历史：single/batch 均按 videoId 删除该视频全部记录（电影多线路 / 剧集多季多集），
+  // 否则只删单条记录会导致「已删除的视频仍显示在历史页」或批量删除完全失效。
   const executeDelete = useCallback(() => {
     if (confirmType === 'single' && pendingDeleteId) {
-      if (activeTab === 'video') removeHistory(pendingDeleteId);
+      if (activeTab === 'video') removeHistoryByVideo(pendingDeleteId);
       else removePlayRecord(pendingDeleteId);
     } else if (confirmType === 'batch') {
-      if (activeTab === 'video') selected.forEach(id => removeHistory(id));
+      if (activeTab === 'video') selected.forEach(id => removeHistoryByVideo(id));
       else selected.forEach(id => removePlayRecord(id));
       setSelected(new Set());
     } else if (confirmType === 'clearAll') {
@@ -452,7 +453,7 @@ export default function HistoryPage() {
       else clearPlayHistory();
     }
     setPendingDeleteId(null);
-  }, [confirmType, pendingDeleteId, selected, activeTab, removeHistory, removePlayRecord, clearHistory, clearPlayHistory]);
+  }, [confirmType, pendingDeleteId, selected, activeTab, removeHistoryByVideo, removePlayRecord, clearHistory, clearPlayHistory]);
 
   // 打开确认对话框
   const handleSingleDelete = useCallback((id: string, e: React.MouseEvent) => {
@@ -558,7 +559,7 @@ export default function HistoryPage() {
                           {selected.has(video.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
                         </button>
                       )}
-                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(video._histId, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
+                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
                       <VideoCard
                         video={video}
                         hideFavorite

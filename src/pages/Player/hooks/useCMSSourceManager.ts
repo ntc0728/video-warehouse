@@ -40,6 +40,10 @@ interface UseCMSSourceManagerOptions {
   skipHistory: boolean;
   onSwitchEpisode: (ep: Episode) => void;
   handlePlaySource: (src: VideoSource) => void;
+  /** 详情页「全部」弹窗直达：目标选集播放地址（精确匹配初始集） */
+  routePlayUrl?: string;
+  /** 详情页「全部」弹窗直达：目标季号（优先对齐初始季，避免首播季号竞态） */
+  routeSeasonNumber?: number;
 }
 
 export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
@@ -50,6 +54,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
+    routePlayUrl, routeSeasonNumber,
   } = opts;
 
   const { setSource, setSources } = usePlayerStore();
@@ -149,10 +154,16 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     const histEpNum = parseEpisodeNumber(histRecord?.episodeLabel);
     const histSeason = histRecord?.seasonNumber;
 
-    // 选集恢复：默认第一集；历史有集标识时按集号精确回显到对应集（跨源同样生效）。
+    // 选集恢复：弹窗直达的 routePlayUrl 精确匹配 > 历史集号 > 默认第一集。
+    // routePlayUrl 优先保证「全部」弹窗点的集在首帧就位，杜绝先播其它集导致的
+    // 首播季号/集号竞态写入。
     const pickInitialEpisode = (eps?: Episode[]): Episode | undefined => {
       if (!eps?.length) return undefined;
       const sorted = [...eps].sort((a, b) => a.number - b.number);
+      if (routePlayUrl) {
+        const byUrl = sorted.find(ep => ep.sources?.some(s => s.url === routePlayUrl));
+        if (byUrl) return byUrl;
+      }
       if (histEpNum != null) {
         const matched = sorted.find(ep => ep.number === histEpNum);
         if (matched) return matched;
@@ -298,11 +309,17 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
-          // 历史「最后播放的季」优先回显（跨源同样适用：相同选季进度保持一致）。
+          // 初始季优先级：弹窗直达的 routeSeasonNumber > 历史「最后播放的季」> 默认。
           // 仅当目标源确实存在该季号时才覆盖，避免源间季号体系不同导致的错配。
-          if (histSeason != null && seasonMap.has(histSeason) && histSeason !== selectedSeasonRef.current) {
-            selectedSeasonRef.current = histSeason;
-            setSelectedSeason(histSeason);
+          let initialSeason = selectedSeasonRef.current;
+          if (routeSeasonNumber != null && seasonMap.has(routeSeasonNumber)) {
+            initialSeason = routeSeasonNumber;
+          } else if (histSeason != null && seasonMap.has(histSeason)) {
+            initialSeason = histSeason;
+          }
+          if (initialSeason !== selectedSeasonRef.current) {
+            selectedSeasonRef.current = initialSeason;
+            setSelectedSeason(initialSeason);
           }
 
           // 跨源对齐：新源季号体系可能与旧 selectedSeason 不同，回退到新源第一季
@@ -411,7 +428,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason]);
+  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason, routePlayUrl, routeSeasonNumber]);
 
   // ── handleFetchCMSSourceById ──────────────────────
   const handleFetchCMSSourceById = useCallback(async (sourceId: string) => {

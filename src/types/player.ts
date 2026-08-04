@@ -161,6 +161,8 @@ export interface UniversalPlayerProps {
   };
   /** 当前集的标签（如 "第3集"） */
   episodeLabel?: string;
+  /** 当前季号（剧集播放时有值），用于进度恢复按「内容身份」精确匹配 */
+  seasonNumber?: number;
   /** 是否有上一集（显示上一集按钮） */
   hasPrevEpisode?: boolean;
   /** 是否有下一集（显示下一集按钮） */
