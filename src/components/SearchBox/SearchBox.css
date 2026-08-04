@@ -358,8 +358,10 @@
   flex-shrink: 0;
   justify-content: center;
   align-items: center;
-  width: var(--space-md);
-  height: var(--space-md);
+  /* 11.3：徽标从 --space-md（桌面 8px）放大到 --space-xl（桌面 16px）——
+     原 8px 装不下 --text-sm（13px）数字导致 1/2/3 被裁切。 */
+  width: var(--space-xl);
+  height: var(--space-xl);
   border-radius: var(--radius-sm);
   background: var(--color-surface-hover);
   color: var(--color-text-tertiary);
@@ -371,6 +373,36 @@
 .search-box-dropdown__rank--top {
   background: var(--color-primary);
   color: var(--color-text-inverse);
+}
+
+/* ── Hot loading / error hint（11.2）────────────── */
+
+.search-box-dropdown__hint {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* ── 实时搜索建议（输入词后）：图标 + 名称 + 类型标签 ── */
+
+.search-box-dropdown__suggestion-icon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.search-box-dropdown__item--suggestion .search-box-dropdown__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-box-dropdown__type {
+  flex-shrink: 0;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
 }
 
 /* ── Hot Meta (year) ──────────────────────────────── */
