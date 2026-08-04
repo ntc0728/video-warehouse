@@ -148,6 +148,8 @@ export default function PlaylistModal({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(6);
   const [flashIdx, setFlashIdx] = useState(-1);
+  // 首次挂载时按历史记录对齐「最后播放的季」，锁定避免 historyRecord 持续更新导致重复切季
+  const initialSeasonSetRef = useRef(false);
 
   // 变体在挂载时锁定：桌面居中 / 移动≤10集底部 / 移动>10集右侧整页抽屉
   const [variant] = useState<'center' | 'sheet' | 'drawer'>(() => {
@@ -228,6 +230,21 @@ export default function PlaylistModal({
   useEffect(() => {
     setQuery('');
     setVisibleCount(40);
+    // 弹窗打开时：若存在历史「最后播放的季」，先在单季视图下对齐到该季，
+    // 使有播放记录的剧集默认落在历史所属季，并选中历史那一集。
+    // historyRecord 未就绪时不锁定（等就绪后本 effect 会随 deps 重跑再对齐）；
+    // 对齐完成或无需对齐（历史季不在当前源 / 已在默认季）后锁定一次。
+    if (!initialSeasonSetRef.current && isSeries && !showAll && historyRecord) {
+      const histSeason = historyRecord.seasonNumber;
+      if (histSeason != null) {
+        const idx = seasonNumbers.indexOf(histSeason);
+        if (idx > 0 && idx !== seasonIdx) {
+          setSeasonIdx(idx);
+          return; // 切季后本 effect 重跑，再完成选中初始化
+        }
+      }
+      initialSeasonSetRef.current = true;
+    }
     let init = -1;
     if (isSeries && historyRecord) {
       const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
@@ -241,7 +258,7 @@ export default function PlaylistModal({
       }
     }
     setSelectedIdx(init);
-  }, [seasonIdx, showAll, isSeries, historyRecord, currentSeasonNumber, allItems]);
+  }, [seasonIdx, showAll, isSeries, historyRecord, currentSeasonNumber, allItems, seasonNumbers]);
 
   // 测量网格列数，供键盘上下导航
   useLayoutEffect(() => {
@@ -258,21 +275,59 @@ export default function PlaylistModal({
     return () => ro.disconnect();
   }, [seasonIdx, visibleItems.length]);
 
-  // 无限滚动哨兵
+  // 加载更多：滚动事件 + 兜底检查双保险。
+  // 不用 IntersectionObserver —— 其绑定依赖 sentinelRef/bodyRef 在 effect 运行时的
+  // 就绪状态，弹窗挂载初期数据未就绪时会被 `if (!el) return` 跳过且后续不重建，
+  // 导致懒加载永久失效（大量选集无法显示）。改为：
+  //   1. 兜底：visibleCount/filtered 变化时检查哨兵是否在容器可视区内（内容不足
+  //      一屏时无需滚动自动补齐，每次 +40 直至填满或全部加载）；
+  //   2. 滚动：body（滚动容器）的 scroll 事件触发时同款检查（超一屏时滚动加载）。
+  // 加载更多：滚动事件 + 兜底检查双保险。
+  // 关键约束：本组件内容经 Radix Dialog.Portal 渲染，bodyRef/sentinelRef 在组件
+  // useEffect 首次运行时可能尚未挂载（Portal 时序），若此时按 ref 直接 return，
+  // 且 deps（visibleCount/filtered.length）保持稳定导致 effect 不再重跑，懒加载
+  // 监听将「从未绑定」，大量选集无法显示。因此：
+  //   1. 用 requestAnimationFrame 等待 body 挂载后再绑定；
+  //   2. 滚动监听挂在 document（capture）上捕获 .playlist-body 的滚动（scroll 不冒泡）；
+  //   3. 每次 visibleCount/filtered 变化后做一次兜底检查（内容不足一屏时自动补齐）。
   useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((c) => Math.min(filtered.length, c + 40));
-        }
-      },
-      { root: bodyRef.current },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [filtered.length, seasonIdx]);
+    let raf = 0;
+    let unbind: (() => void) | null = null;
+    // I2（2026-08-04）：rAF 自递归加最大尝试上限——若 Portal 异常/弹窗生命周期边缘
+    // 导致 bodyRef 始终取不到，约 1s（60 帧）后放弃，避免无限空转（无网络但有 CPU 空转）。
+    let tries = 0;
+    const tryBind = () => {
+      if (++tries > 60) return;
+      const body = bodyRef.current;
+      if (!body) {
+        raf = requestAnimationFrame(tryBind);
+        return;
+      }
+      const maybeLoadMore = () => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+        setVisibleCount((c) => {
+          if (c >= filtered.length) return c;
+          const bodyRect = body.getBoundingClientRect();
+          const sentinelRect = sentinel.getBoundingClientRect();
+          if (sentinelRect.top < bodyRect.bottom) {
+            return Math.min(filtered.length, c + 40);
+          }
+          return c;
+        });
+      };
+      // 兜底：内容不足一屏时无需滚动自动补齐（直至填满或全部加载）
+      maybeLoadMore();
+      // 滚动触发：scroll 事件不冒泡，用 capture 监听 document 捕获任意滚动容器
+      document.addEventListener('scroll', maybeLoadMore, { passive: true, capture: true });
+      unbind = () => document.removeEventListener('scroll', maybeLoadMore, true);
+    };
+    raf = requestAnimationFrame(tryBind);
+    return () => {
+      cancelAnimationFrame(raf);
+      unbind?.();
+    };
+  }, [visibleCount, filtered.length]);
 
   const scrollCellIntoView = useCallback((idx: number) => {
     const el = gridRef.current?.querySelector<HTMLElement>(`[data-cell="${idx}"]`);

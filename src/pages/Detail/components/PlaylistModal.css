@@ -224,6 +224,9 @@
 .playlist-search {
   display: flex;
   flex: 1 1 auto;
+  /* C2-1（2026-08-04）：搜索框不再无约束撑满整行（原来 flex:1 占满 toolbar 全部
+     剩余宽度显得过长）。上限 16rem（256px），窄屏时仍可收缩；右侧计数/留白平衡。 */
+  max-width: 16rem;
   gap: var(--space-2xs);
   align-items: center;
   padding: var(--space-2xs) var(--space-sm);
@@ -544,9 +547,11 @@
     width: 4rem;
   }
 
+  /* 移动端选集网格：sheet（≤10集底部弹窗）cell 间距放宽到与桌面/drawer 一致的
+     space-sm，避免选集按钮过于拥挤难点选 */
   .playlist-grid {
     grid-template-columns: repeat(auto-fill, minmax(3.375rem, 1fr));
-    gap: var(--space-2xs);
+    gap: var(--space-sm);
     padding: var(--space-sm);
   }
 

@@ -82,8 +82,8 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
   return (
     <>
       {/* 布局占位：作为 app-shell flex 首列承担侧栏偏移，使 main 无需 margin-left。
-          方案 B：width 由 --sidebar-offset 变量驱动（动画结束一次性切换），
-          动画期间由 AppLayout 的 WAAPI 控制 transform 平移（0 reflow）。 */}
+          width 由 --sidebar-offset 变量驱动（app-shell--sidebar-collapsed 类瞬切，
+          与 sidebar 同帧到位，仅 1 次 reflow）。 */}
       <div className="sidebar-spacer" aria-hidden="true" />
       <aside className={`home-sidebar${collapsed ? ' home-sidebar--collapsed' : ''}`} aria-label="主导航">
       <nav className="home-sidebar__nav">
