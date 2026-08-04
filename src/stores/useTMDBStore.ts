@@ -288,6 +288,11 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // 首页数据批量获取的 AbortController：重复调用时自动取消上一轮
 let _homeFetchAbort: AbortController | null = null;
 
+// discover 流（search / fetchDiscover / fetchTopRated）的请求序号：
+// 快速连续换词/换筛选时，仅「最新一次」请求允许写结果，过期响应（慢返回的旧请求）
+// 直接丢弃——否则旧词/旧筛选的结果会覆盖新结果（搜索结果错乱的历史根因）。
+let _discoverSeq = 0;
+
 export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   return {
   // ---- 初始状态 ----
@@ -647,6 +652,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
    * 懒加载判断：如果 API 未到最后一页，即使过滤后数据不足也允许继续懒加载。
    */
   search: async (query: string, page = 1, opts?: { reset?: boolean }) => {
+    const seq = ++_discoverSeq; // 竞态保护：仅最新一次搜索可写结果
     const forceReset = opts?.reset === true;
     const { filterOptions } = get();
 
@@ -690,6 +696,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     try {
       const data = await searchMulti(query, page);
+      if (seq !== _discoverSeq) return; // 过期响应（更新的搜索已发起）丢弃
       let items = data.results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .map(mapSearchToVideoItem);
@@ -717,6 +724,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         };
       });
     } catch (err) {
+      if (seq !== _discoverSeq) return; // 过期失败不写错误态
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : '搜索失败' },
@@ -727,6 +735,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   fetchDiscover: async (page = 1, opts?: { reset?: boolean }) => {
     // 排行榜（top）分类请使用 fetchTopRated（专用 top_rated 端点）
+    const seq = ++_discoverSeq; // 竞态保护：仅最新一次 discover 可写结果
     const { filterOptions } = get();
     const forceReset = opts?.reset === true;
     set((s) => ({
@@ -788,6 +797,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         totalPages = data.total_pages;
       }
 
+      if (seq !== _discoverSeq) return; // 过期响应（更新的筛选/搜索已发起）丢弃
       set((s) => {
         // 合并结果并去重
         const mergedResults = page > 1 && !forceReset
@@ -807,6 +817,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         };
       });
     } catch (err) {
+      if (seq !== _discoverSeq) return; // 过期失败不写错误态
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : '发现失败' },
@@ -817,6 +828,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   /** 排行榜分类：直接调 top_rated 端点，合并 movie + tv，按 vote_average.desc 排序 */
   fetchTopRated: async (page = 1, opts?: { reset?: boolean }) => {
+    const seq = ++_discoverSeq; // 竞态保护：仅最新一次排行可写结果
     const forceReset = opts?.reset === true;
     set((s) => ({
       loading: { ...s.loading, discover: true },
@@ -841,6 +853,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         if (b.voteAverage !== a.voteAverage) return b.voteAverage - a.voteAverage;
         return b.voteCount - a.voteCount;
       });
+      if (seq !== _discoverSeq) return; // 过期响应（更新的请求已发起）丢弃
       set((s) => ({
         discoverResults:
           page > 1 && !forceReset
@@ -855,6 +868,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         discoverLastStatus: 'success',
       }));
     } catch (err) {
+      if (seq !== _discoverSeq) return; // 过期失败不写错误态
       set((s) => ({
         loading: { ...s.loading, discover: false },
         errors: { ...s.errors, discover: err instanceof Error ? err.message : '排行榜获取失败' },
