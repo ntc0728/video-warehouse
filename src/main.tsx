@@ -5,7 +5,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import './assets/styles/index.css';
 import { adjustFontSizeForNative } from './lib/platform';
 import { preventPinchZoom } from './lib/preventZoom';
-import { preloadInitialRoute } from './components/Layout/routeConfig';
+import { preloadInitialRoute, preloadAllRoutes } from './components/Layout/routeConfig';
 
 // Android 原生平台：缩小字体和图标以适配 dp 单位
 adjustFontSizeForNative();
@@ -17,6 +17,13 @@ preventPinchZoom();
 // 首屏 Suspense 直接同步渲染、绝不闪 fallback，从而彻底消除
 // 「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading
 // （冷刷新 chunk 需重新 fetch/eval，与 SPA 二次进入 warm 均成立）。
+//
+// 8.3A（2026-08-04）：在此同时启动 preloadAllRoutes() 预加载全部路由 chunk，
+// 让「冷启动后立即导航到未访问页面」也能命中 chunk 缓存（原逻辑等 AppLayout
+// 挂载后才预加载，存在「立即导航 → Suspense fallback + 页面 loading」两次
+// AppLoading 的窗口期）。preloadStarted 幂等，AppLayout 挂载后的重复调用会跳过。
+// 注意：import() 仅加载并求值模块，不挂载、不触发数据请求，无副作用。
+preloadAllRoutes();
 preloadInitialRoute().finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>

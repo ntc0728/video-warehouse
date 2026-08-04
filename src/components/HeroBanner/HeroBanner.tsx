@@ -120,6 +120,10 @@ export default function HeroBanner({
     setActiveIndex(0);
     setHoveredIndex(null);
     setBgIndices([0]);
+    // C1-4（2026-08-04）：分类切换时清空滑动方向类——否则新分类首项挂载时若残留
+    // slideDir（如切分类前最后一次是自动轮播/拖拽的 slide-left），会误播 slide 动画
+    // 而非本应出现的 crossfade，导致「切分类后首次切换方向异常」。
+    setSlideDir(null);
 
     const prevLen = prevItemsLenRef.current;
     const curLen = displayItems.length;
@@ -189,10 +193,15 @@ export default function HeroBanner({
     if (displayItems.length <= 1) return;
     const total = displayItems.length;
 
-    // 预加载下一张背景图
+    // 预加载前后各一张背景图（C1-2，2026-08-04）：
+    // 自动轮播前进（+1）与手动拖拽后退（-1）的目标索引都覆盖，避免切换时目标图
+    // 未预加载 → 动画期间新层空白（滑动「失效」感）+ w1280 解码主线程卡顿。
     const nextIdx = (activeIndex + 1) % total;
-    const nextBackdrop = displayItems[nextIdx]?.backdropPath || displayItems[nextIdx]?.backdrop_path;
-    if (nextBackdrop) preloadImage(buildImageUrl(nextBackdrop, 'w1280'));
+    const prevIdx = (activeIndex - 1 + total) % total;
+    for (const idx of [nextIdx, prevIdx]) {
+      const p = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
+      if (p) preloadImage(buildImageUrl(p, 'w1280'));
+    }
 
     // 预加载即将出现在缩略图窗口中的图片（窗口大小 4，提前预加载前后各 2 张）
     const n = Math.min(4, total);

@@ -1,5 +1,4 @@
 import { Suspense, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { flushSync } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
@@ -20,9 +19,17 @@ import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext'
 import { getRouteTitle, APP_NAME } from '@/hooks/useDocumentTitle';
 
 function LoadingFallback() {
+  // 8.3B：chunk fallback 不显示进度条——进度条只由「页面自身 loading」播放一次，
+  // 避免 fallback 与页面 loading 两个 AppLoading 实例各播一遍进度条（进度条重放 = 「加载两次」感知）。
+  // 8.3C：记录 fallback 发生时刻（时间戳），供首页判断「刚经历过 chunk fallback」，
+  // 从而跳过其固定 500ms 整页 loading（避免叠加第二次 AppLoading）。
+  // 用时间戳而非布尔值：fallback 后若 1s 内未消费则视为过期（残留不影响后续页面）。
+  useEffect(() => {
+    window.__kinoSuspenseFallback = Date.now();
+  }, []);
   return (
     <div className="page-padding page-loading page-transition-enter">
-      <AppLoading />
+      <AppLoading showProgress={false} />
     </div>
   );
 }
@@ -67,136 +74,13 @@ export default function AppLayout() {
   });
   const toggleSidebarCollapsed = useCallback(() => {
     const next = !sidebarCollapsed;
-
-    // 统一对称流程（折叠/展开共用同一段代码）：
-    // 1. 读取侧栏当前真实宽度（含动画中间态）作为新动画起点 → 支持「动画中途反向」平滑续接
-    // 2. 摘除旧动画回调后再 cancel——WAAPI 的 cancel/finish 事件是异步派发的，
-    //    若不摘除，旧回调会在新动画启动后才触发 finishCleanup，把新动画连带 cancel 掉，
-    //    表现为「刚收起立即点展开 → 侧栏无过渡瞬间弹出」（历史 bug 根因）
-    // 3. inline width 钉在起点 → flushSync 立即翻转状态（collapsed 类即时切换：
-    //    折叠时标题瞬时消失「干脆感」；展开时标题立即恢复、随宽度展开被 overflow 揭示）
-    // 4. 下一帧 WAAPI width 起点 → 终点，onfinish 清理交还 CSS
-    // 注意：绝不对 app-shell__main 施加 transform——transform 会创建 containing block，
-    //   导致其内部 position:fixed 的顶栏（.sticky-header）随 main 一起位移。
-    const appShell = appShellRef.current;
-    if (!appShell) {
-      // 容器未挂载（如移动端不渲染 HomeSidebar），直接切状态
-      setSidebarCollapsed(next);
-      try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-      return;
-    }
-
-    const spacer = appShell.querySelector<HTMLElement>('.sidebar-spacer');
-    const sidebar = appShell.querySelector<HTMLElement>('.home-sidebar');
-    if (!spacer || !sidebar) {
-      setSidebarCollapsed(next);
-      try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-      return;
-    }
-
-    // 清理 inline 残留样式（中断与收尾共用）
-    const clearInline = () => {
-      appShell
-        .querySelectorAll<HTMLElement>(
-          '.sidebar-spacer, .home-sidebar, .app-shell__main, .home-sidebar__nav, .home-sidebar__label',
-        )
-        .forEach((el) => {
-          el.style.transform = '';
-          el.style.opacity = '';
-          el.style.width = '';
-        });
-    };
-
-    // 必须在 cancel 之前读取：动画进行中读到的是 WAAPI 中间宽度（反向续接起点），
-    // 静止时读到的就是当前状态的 CSS 宽度。
-    const currentWidth = sidebar.getBoundingClientRect().width;
-
-    // 中断上一轮：摘回调 → cancel → 清 inline；并取消尚未执行的启动 rAF，
-    // 防止旧 rAF 在新一轮之后触发、用过期起点重启动画。
-    if (sidebarRafRef.current !== null) {
-      cancelAnimationFrame(sidebarRafRef.current);
-      sidebarRafRef.current = null;
-    }
-    if (sidebarAnimRef.current) {
-      sidebarAnimRef.current.forEach((a) => {
-        a.onfinish = null;
-        a.oncancel = null;
-        a.cancel();
-      });
-      sidebarAnimRef.current = null;
-      clearInline();
-    }
-
-    // 读取两个状态的真实像素宽度。注意：--sidebar-width 是 clamp(...) 表达式，
-    // getPropertyValue 返回的是声明字符串而非计算 px，parseFloat 会得到 NaN，会触发
-    // 下方提前 return、导致动画被完全跳过（侧栏仍瞬切、但无任何过渡）。
-    // 因此用临时探测元素测量 var() 的实际计算宽度，与当前折叠状态无关、且响应式准确。
-    const measureWidthVar = (name: string): number => {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;width:var(' + name + ');';
-      appShell.appendChild(probe);
-      const w = probe.getBoundingClientRect().width;
-      appShell.removeChild(probe);
-      return w;
-    };
-    const widthExpanded = measureWidthVar('--sidebar-width');
-    const widthCollapsed = measureWidthVar('--sidebar-width-collapsed');
-    if (!isFinite(widthExpanded) || !isFinite(widthCollapsed) || widthExpanded <= 0 || widthCollapsed <= 0) {
-      // 变量读取失败，回退到直接切状态
-      setSidebarCollapsed(next);
-      try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-      return;
-    }
-
-    const from = isFinite(currentWidth) && currentWidth > 0
-      ? currentWidth
-      : (next ? widthExpanded : widthCollapsed);
-    const to = next ? widthCollapsed : widthExpanded;
-
-    const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
-    const duration = 480;
-    const animOpts = { duration, easing, fill: 'forwards' as const };
-
-    // 收尾：释放 WAAPI fill（否则持续覆盖 CSS）+ 清除 inline，让 collapsed/expanded
-    // 类的 CSS 完整接管。图标视觉坐标因 sidebar 固定 left:0、仅右缘收拢而全程恒定，
-    // onfinish 无可见跳变。cancel 前摘回调，避免异步 cancel 事件二次进入。
-    const finishCleanup = () => {
-      if (sidebarAnimRef.current) {
-        sidebarAnimRef.current.forEach((a) => {
-          a.onfinish = null;
-          a.oncancel = null;
-          a.cancel();
-        });
-        sidebarAnimRef.current = null;
-      }
-      clearInline();
-    };
-
-    // 步骤1：inline width 钉在起点（静止=当前状态宽 / 中断=动画中间宽），视觉无跳变。
-    spacer.style.width = `${from}px`;
-    sidebar.style.width = `${from}px`;
-    // 步骤2：flushSync 立即翻转 React 状态 → collapsed 类即时切换：
-    //   折叠：标题瞬时 opacity:0（「一按折叠、文字立刻消失」的干脆感）；
-    //   展开：标题立即恢复可见，被 inline 起点宽 overflow 裁切、随展开逐步揭示。
-    //   目标态 CSS width 被 inline width 覆盖，视觉仍停在起点位（无跳变）。
-    //   状态即时翻转还保证连点时 next 方向永远正确（不再依赖 onfinish 才翻转）。
-    flushSync(() => {
-      setSidebarCollapsed(next);
-    });
+    // 2026-08-04 侧边栏折叠重构（方案 A''）：不再做宽度动画。
+    // 折叠/展开 = 一次状态翻转（app-shell--sidebar-collapsed 类切换 --sidebar-offset），
+    // spacer 与 sidebar 宽度同帧到位（仅 1 次 reflow）——右侧不卡不抖、左右缘恒定、
+    // 无中间态遮挡/空白。过渡动画由非布局属性承担：图标 left 位移（收起态 absolute
+    // 居中）+ label 淡出（见 HomeSidebar.css），均不触发 reflow。
+    setSidebarCollapsed(next);
     try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-    // 步骤3：下一帧 width 起点 → 终点（真实收缩/展开），main 由 flex 自然填充（无 transform）。
-    sidebarRafRef.current = requestAnimationFrame(() => {
-      sidebarRafRef.current = null;
-      const animations = [
-        spacer.animate([{ width: `${from}px` }, { width: `${to}px` }], animOpts),
-        sidebar.animate([{ width: `${from}px` }, { width: `${to}px` }], animOpts),
-      ];
-      sidebarAnimRef.current = animations;
-      // 动画结束：释放 fill + 清 inline（CSS 目标态 width:var(--sidebar-offset) 接管，无跳变）
-      animations[0].onfinish = () => {
-        finishCleanup();
-      };
-    });
   }, [sidebarCollapsed]);
 
     useEffect(() => {
@@ -209,17 +93,11 @@ export default function AppLayout() {
   }, [sidebarOpen]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // 折叠/展开动画由 JS WAAPI 控制：
-  // - sidebar / spacer：直接对 width 做 WAAPI 动画（真实收缩/展开，可见的过渡），
-  //   因侧栏仅有少量导航项、spacer 为空占位，reflow 代价极小。
-  // - app-shell__main：不施加 transform（避免其内部 fixed 顶栏位移），由 flex 自然填充。
-  // - 图标天然不动：sidebar 固定 left:0，width 变化只动右缘，左缘与图标坐标恒定。
-  // - 状态（collapsed 类）在动画开始前即翻转（文字瞬时显隐），动画结束后释放 fill + 清 inline，
-  //   CSS（width:var(--sidebar-offset)）接管。
+  // appShellRef 供 useSpatialNavigation（TV 方向键空间导航）与折叠状态类绑定使用。
+  // 折叠/展开不再有宽度动画：宽度由 --sidebar-offset 变量 + app-shell--sidebar-collapsed
+  // 类一次性切换（瞬切，仅 1 次 reflow），过渡动画由 HomeSidebar.css 的图标 left /
+  // label opacity 承担。
   const appShellRef = useRef<HTMLDivElement>(null);
-  const sidebarAnimRef = useRef<Animation[] | null>(null);
-  // 步骤3 启动动画的 rAF id：连点中断时需 cancel，防止旧 rAF 用过期起点重启动画
-  const sidebarRafRef = useRef<number | null>(null);
   // Keep-Alive 二次进入动画重放所需的容器引用（见下方 useLayoutEffect）
   const pageTransitionRef = useRef<HTMLDivElement>(null);
 
@@ -263,7 +141,8 @@ export default function AppLayout() {
       const effective = getEffectiveTheme();
       document.documentElement.classList.add('theme-transitioning');
       document.documentElement.setAttribute('data-theme', effective);
-      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 500);
+      // 11.6：清理定时器与过渡时长（--dur-theme=200ms）对齐，避免类残留窗口过长
+      setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 200);
     };
     applyTheme();
     if (theme === 'system') {
@@ -335,12 +214,12 @@ export default function AppLayout() {
       document.documentElement.removeAttribute('data-skin');
     }
 
-    // 皮肤切换时添加过渡动画类（仅用户手动切换时触发）
+    // 皮肤切换时添加过渡动画类（仅用户手动切换时触发）；11.6：定时器与 --dur-theme(200ms) 对齐
     if (prevSkinRef.current !== skin) {
       document.documentElement.classList.add('skin-transitioning');
       const timer = setTimeout(() => {
         document.documentElement.classList.remove('skin-transitioning');
-      }, 500);
+      }, 200);
       prevSkinRef.current = skin;
       return () => clearTimeout(timer);
     }

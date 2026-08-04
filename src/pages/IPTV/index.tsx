@@ -281,6 +281,19 @@ export default function IPTVPage() {
     checkAvailability(selectedGroup);
   }, [checkAvailability, selectedGroup]);
 
+  // F3（2026-08-04）：首次进入且无频道数据时显示「整页全局 loading」——
+  // 不渲染 .iptv-top-card（避免空数据筛选卡）也不显示网格区局部 AppLoading，
+  // 与 Home/Detail 首屏 loading 风格一致（内联居中于页面容器内）。
+  // 仅「首次加载且无数据」走此分支；已有数据后的刷新（isLoading 且 channels 非空）
+  // 保持下方 .iptv-grid-card 内局部 loading 语义不变。
+  if (isLoading && channels.length === 0) {
+    return (
+      <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
+        <AppLoading tip="加载频道列表…" showTip />
+      </div>
+    );
+  }
+
   return (
     <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
         <div className="iptv-top-card">

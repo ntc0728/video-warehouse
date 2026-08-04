@@ -129,8 +129,8 @@ export default function PersonPage() {
         ]);
         if (ctrl.signal.aborted) return;
         setPerson(detail);
-        setMovies(Array.from(new Map(movieCredits.cast.sort((a, b) => b.popularity - a.popularity).map(m => [m.id, m])).values()));
-        setTVShows(Array.from(new Map(tvCredits.cast.sort((a, b) => b.popularity - a.popularity).map(t => [t.id, t])).values()));
+        setMovies(Array.from(new Map(movieCredits.cast.sort(sortByYearDesc).map(m => [m.id, m])).values()));
+        setTVShows(Array.from(new Map(tvCredits.cast.sort(sortByYearDesc).map(t => [t.id, t])).values()));
         // 如果没有电影但有剧集，默认切到剧集 tab
         if (movieCredits.cast.length === 0 && tvCredits.cast.length > 0) {
           handleTabChange('tv');
@@ -144,6 +144,29 @@ export default function PersonPage() {
 
     return () => ctrl.abort();
   }, [id]);
+
+  // 年份倒序排序：电影用 release_date、剧集用 first_air_date；
+  // 无年份的排最后，同年份按 popularity 降序兜底。
+  const sortByYearDesc = (
+    a: { release_date?: string; first_air_date?: string; popularity?: number },
+    b: { release_date?: string; first_air_date?: string; popularity?: number },
+  ): number => {
+    const yearOf = (x: { release_date?: string; first_air_date?: string }): number => {
+      const d = x.release_date || x.first_air_date;
+      if (!d) return NaN;
+      const y = new Date(d).getFullYear();
+      return Number.isFinite(y) ? y : NaN;
+    };
+    const ay = yearOf(a);
+    const by = yearOf(b);
+    const pa = a.popularity ?? 0;
+    const pb = b.popularity ?? 0;
+    if (Number.isNaN(ay) && Number.isNaN(by)) return pb - pa;
+    if (Number.isNaN(ay)) return 1;
+    if (Number.isNaN(by)) return -1;
+    if (ay !== by) return by - ay;
+    return pb - pa;
+  };
 
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);

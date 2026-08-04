@@ -23,6 +23,11 @@ const LETTER_COLORS = [
   '#ffd54f', '#ffb74d', '#ff8a65', '#a1887f',
 ];
 
+/** C2-2（2026-08-04）：图片请求挂起兜底——默认超时 8s（可经 timeoutMs prop 覆盖）。
+ *  请求既不 onLoad 也不 onError（防盗链/连接挂起）时，超时视为失败 → 走 fallbackSrc，
+ *  避免 spinner 无限转（「海报一直处于加载中」）。 */
+export const DEFAULT_IMAGE_LOAD_TIMEOUT = 8000;
+
 function stringToColor(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -50,6 +55,11 @@ interface LazyImageProps {
    * - brand：KinoTV 抠图 + 进度条（用于 card 封面）
    */
   loadingVariant?: 'default' | 'brand';
+  /**
+   * 加载超时（毫秒）：图片请求挂起（既不 onLoad 也不 onError，如防盗链 pending）时
+   * 超时视为加载失败 → 走 fallbackSrc。默认 8s；0 表示禁用超时。
+   */
+  timeoutMs?: number;
 }
 
 export default function LazyImage({
@@ -66,6 +76,7 @@ export default function LazyImage({
   srcSet,
   sizes,
   loadingVariant = 'default',
+  timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
 }: LazyImageProps) {
   // 命中 session 缓存时直接进入 loaded + inView 态，跳过 IntersectionObserver 等待
   const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
@@ -123,6 +134,15 @@ export default function LazyImage({
   };
 
   const hasValidSrc = src && src.trim().length > 0;
+
+  // C2-2（2026-08-04）：加载超时兜底——img 挂载（进入视口）后 timeoutMs 内未 onLoad
+  // 也未 onError（请求挂起），视为失败走 fallbackSrc，避免 spinner 无限转。
+  // onLoad/onError 改变 isLoaded/error 后本 effect 清理计时器，不误触发。
+  useEffect(() => {
+    if (!isInView || isLoaded || error || !hasValidSrc || timeoutMs <= 0) return;
+    const timer = window.setTimeout(() => setError(true), timeoutMs);
+    return () => window.clearTimeout(timer);
+  }, [isInView, isLoaded, error, hasValidSrc, timeoutMs]);
   const imageSrc = error || !hasValidSrc ? fallbackSrc : src;
   // 移除 autoSrcSet：原逻辑 `${src} 1x, ${src} 2x` 错误地为同一 URL 声明两种密度，
   // 浏览器在高 DPR 屏幕下会加载原始大图（可能 3000px+），导致内存暴增和性能下降。
@@ -148,7 +168,11 @@ export default function LazyImage({
         />
       )}
 
-      {!isLoaded && !error && (
+      {/* 占位层仅在「有有效 src 且正在加载」时渲染。
+          收紧原因（2026-08-04）：error / 空源时走下方 fallback 图分支，
+          该分支无 onLoad → isLoaded 恒为 false → 若此时仍渲染占位层，
+          白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。 */}
+      {!isLoaded && !error && hasValidSrc && (
         <div className="lazy-image-placeholder">
           {loadingVariant === 'brand' ? (
             <CardCoverLoading />

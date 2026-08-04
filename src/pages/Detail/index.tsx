@@ -433,9 +433,13 @@ export default function DetailPage() {
     req
       .then((data) => {
         if (ctrl.signal.aborted) return;
-        const urls = (data.backdrops || [])
-          .map((b) => buildImageUrl(b.file_path, 'w1280'))
-          .filter((u): u is string => Boolean(u));
+        // 11.5：TMDB /images 的 backdrops 同一 file_path 可能有多条（不同语言/分辨率
+        // 条目），直接用会渲染出重复剧照。按 URL 去重（Set），同时消除 React key 重复告警。
+        const urls = Array.from(new Set(
+          (data.backdrops || [])
+            .map((b) => buildImageUrl(b.file_path, 'w1280'))
+            .filter((u): u is string => Boolean(u)),
+        ));
         setStills(urls);
       })
       .catch((err) => {

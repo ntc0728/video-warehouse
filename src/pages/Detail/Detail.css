@@ -827,10 +827,10 @@
   font-weight: 600;
 }
 
-/* 演员 — CSS Grid 自适应排列 */
+/* 演员 — CSS Grid 自适应排列（11.4：头像/姓名/角色整体放大） */
 .detail-cast-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
   gap: var(--space-md);
   width: 100%;
 }
@@ -853,8 +853,8 @@
   color: var(--color-primary);
 }
 .detail-cast-item img {
-  width: var(--layout-tabbar-height);
-  height: var(--layout-tabbar-height);
+  width: var(--layout-cast-avatar);
+  height: var(--layout-cast-avatar);
   border: 2px solid var(--color-border);
   border-radius: 50%;
   object-fit: cover;
@@ -863,15 +863,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: var(--layout-tabbar-height);
-  height: var(--layout-tabbar-height);
+  width: var(--layout-cast-avatar);
+  height: var(--layout-cast-avatar);
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-text-tertiary);
 }
 .detail-cast-name {
   display: -webkit-box;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -882,15 +882,15 @@
 .detail-cast-role {
   max-width: 100%;
   color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 折叠（全视口统一）：限制 2 行高度，超出隐藏 */
+/* 折叠（全视口统一）：限制 2 行高度，超出隐藏（11.4 放大后 2 行高度 ≈ 16rem） */
 .detail-cast-row--collapsed {
-  max-height: 14rem;
+  max-height: 16rem;
   overflow: hidden;
 }
 

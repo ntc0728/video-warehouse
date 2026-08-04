@@ -5,8 +5,9 @@
  * logo 和折叠按钮在 StickyHeader 中，不在侧边栏内。
  */
 
-/* 折叠/展开动画由 JS WAAPI 直接对 width 做动画（真实收缩/展开，可见过渡），
-   动画期间 sidebar 的 width 由 inline 控制，结束后切 --sidebar-offset 变量接管。 */
+/* 折叠/展开（2026-08-04 重构）：宽度不再动画——由 app-shell--sidebar-collapsed 类
+   一次性切换 --sidebar-offset（spacer 与 sidebar 同帧到位，仅 1 次 reflow）。
+   过渡动画由图标 left（收起态绝对居中）与 label opacity 承担（见下方规则）。 */
 .home-sidebar {
   position: fixed;
   top: var(--header-height);
@@ -15,12 +16,22 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
-  width: var(--sidebar-offset); /* 变量驱动：app-shell--sidebar-collapsed 切换 */
+  width: var(--sidebar-offset); /* 变量驱动：app-shell--sidebar-collapsed 切换（瞬切） */
   background-color: var(--color-surface);
   overflow: hidden;
   border-right: 1px solid var(--color-border-light);
-  /* width 由 JS WAAPI 控制（动画期间 inline width，结束后 CSS 变量接管）；
-     transform/layout 不受此处影响，右侧 main 走独立 WAAPI transform（0 reflow）。 */
+  /* 图标左缘：展开态 = item 横向 padding（--space-xl）；收起态覆盖为精确居中
+     （见 .home-sidebar--collapsed）。left 为固定像素，不随栏宽漂移，可平滑过渡。 */
+  --icon-left: var(--space-xl);
+}
+
+/* 收起态：图标绝对居中（固定像素公式，非相对宽度居中——不随宽度变化漂移）。
+   图标定位基准是 .home-sidebar__item，其宽度 = sidebar 宽 − .home-sidebar__nav 横向
+   padding（--space-sm × 2），故居中公式必须减去该 padding，否则图标偏右。
+   --sidebar-width-collapsed = 64px、nav padding 2×6=12px、--icon-md≈20px
+   → left = (64 − 12 − 20)/2 = 16px（item 中心 = (64−12)/2 = 26px，图标中心 = 16+10 = 26 ✓）。 */
+.home-sidebar--collapsed {
+  --icon-left: calc((var(--sidebar-width-collapsed) - 2 * var(--space-sm) - var(--icon-md)) / 2);
 }
 
 /* .home-sidebar--collapsed 类仅用于切换图标/文字显示（见下方 .home-sidebar__item
@@ -48,6 +59,10 @@
      横向由 --space-lg 提到 --space-xl（16→40，桌面落 16px）：图标/文字不再贴左，
      在有限侧栏宽度下 label 仍有充足空间。 */
   padding: var(--space-lg) var(--space-xl);
+  /* 图标 absolute 后不再占 flex 流（item 流内无内容），若不加显式高度，按钮会从
+     「2×上下padding + 图标高」塌缩为「仅 2×上下padding」（桌面 44px → 24px）。
+     min-height 取图标高 + 上下 padding，恢复改动前一致的行高，TV 下随 token 放大。 */
+  min-height: calc(var(--icon-md) + var(--space-lg) * 2);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -61,20 +76,13 @@
               padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), gap 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 收起态：仅图标。居中用 flex 的 justify-content:center 锁死图标在栏内绝对居中
-   （与栏宽/图标尺寸/nav 内边距无关，最可靠，已验证 OK）。label 已隐藏，右侧多余
-   空间由 overflow:hidden 处理。无滑入动画——收起即居中（避免位移抖动/回弹）。 */
+/* 收起态：仅图标。图标居中不再用 justify-content（其瞬切 + 宽度动画期间锚点漂移
+   = 图标偏移/抖动的历史根因），改由图标 absolute + left 固定像素公式承担
+   （见 .home-sidebar--collapsed 的 --icon-left），left 可过渡、不随栏宽漂移。 */
 .home-sidebar--collapsed .home-sidebar__item {
   gap: 0;
-  /* 收起态行高与展开态保持一致（上下 --space-lg），仅图标居中。 */
+  /* 收起态行高与展开态保持一致（上下 --space-lg）。 */
   padding: var(--space-lg) var(--space-lg);
-  justify-content: center;
-}
-
-/* 收起态图标：flex 居中后直接显示，无滑入动画。hover/选中缩放用独立 `scale`
-   属性，与居中互不干扰。 */
-.home-sidebar--collapsed .home-sidebar__icon {
-  transition: scale 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
 }
 
 .home-sidebar__item:hover:not(.active) {
@@ -137,15 +145,23 @@
 }
 
 .home-sidebar__icon {
+  /* 绝对定位：左缘由 --icon-left 固定像素决定（展开 space-xl / 收起居中），
+     垂直由 top:50% + translateY(-50%) 居中。不再参与 item flex 流，故栏宽
+     （宽度）变化不影响其位置——收起/展开只有 left 平滑小位移，无偏移抖动。 */
+  position: absolute;
+  top: 50%;
+  left: var(--icon-left);
+  transform: translateY(-50%);
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  /* transform 过渡同步为 0.32s，使收起→展开反向切换时图标也从栏中心平滑滑回左侧（对称）。 */
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
+  /* left 过渡 = 收起/展开时图标平滑位移；scale 为 hover/选中放大（独立属性，
+     与 translateY 并存不冲突）。 */
+  transition: left 0.32s cubic-bezier(0.22, 1, 0.36, 1), scale 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
 }
 
 .home-sidebar__item:hover .home-sidebar__icon {
-  transform: scale(1.08);
+  scale: 1.08;
 }
 
 .home-sidebar__label {
@@ -166,8 +182,9 @@
   font-weight: 500;
   opacity: 1;
   pointer-events: none;
-  /* 文本无过渡：收起时由 collapsed 类直接 opacity:0 隐藏（瞬时，无淡出），
-     展开时随栏宽展开由 overflow:hidden 自然揭示 */
+  /* 淡出/淡入 0.2s：收起时平滑淡出、展开时平滑淡入（与图标 left 位移同步），
+     提供「折叠有过渡动画」的主体感知；宽度本身瞬切。 */
+  transition: opacity 0.2s ease;
 }
 
 .home-sidebar--collapsed .home-sidebar__label {

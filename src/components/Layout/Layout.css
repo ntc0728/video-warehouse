@@ -30,11 +30,11 @@
   flex-direction: row;
   height: 100dvh;
   overflow: hidden;
-  /* 折叠/展开动画由 JS（AppLayout.tsx 的 toggleSidebarCollapsed）用 WAAPI 控制：
-     sidebar / sidebar-spacer 直接对 width 做动画（真实收缩/展开，可见过渡），
-     app-shell__main 不做 transform（避免创建 containing block 使内部 fixed 顶栏位移），
-     由 flex 自然填充侧栏腾出的空间。--sidebar-offset 仅在非动画（CSS 基线）状态切换，
-     动画期间由 inline width 接管。 */
+  /* 折叠/展开（2026-08-04 重构）：宽度一次性切换（--sidebar-offset 变量随
+     app-shell--sidebar-collapsed 类瞬切），spacer 与 sidebar 同帧到位——仅 1 次
+     reflow，右侧不卡不抖、左右缘恒定。过渡动画由图标 left / label opacity 承担
+     （HomeSidebar.css），不触发 reflow。app-shell__main 不施加 transform（避免
+     creating block 使内部 fixed 顶栏位移）。 */
   --sidebar-offset: var(--sidebar-width);
 }
 
@@ -290,15 +290,13 @@
   transform: translateX(0);
 }
 
-/* 折叠/展开动画由 JS WAAPI 控制（见 AppLayout.tsx）：
-   - 动画期间：sidebar-spacer / home-sidebar 直接对 width 做动画（真实收缩/展开，可见过渡），
-     app-shell__main 不施加 transform（避免其内部 fixed 顶栏被位移），由 flex 自然填充。
-   - 折叠/展开统一流程：inline width 钉在当前真实宽度（支持动画中途反向续接）→
-     flushSync 立即翻转状态（collapsed 类即时切换：折叠时标题瞬时消失、展开时立即恢复）→
-     下一帧 width 起点 → 终点动画，onfinish 清 inline 交还 CSS。 */
+/* 折叠/展开（2026-08-04 重构）：宽度由 --sidebar-offset 变量一次性切换（瞬切 1 次
+   reflow，无逐帧动画）。过渡动画由 HomeSidebar.css 的图标 left（收起态 absolute
+   居中）与 label opacity 承担，均不触发 reflow。app-shell__main 不施加 transform。 */
 
 @media (prefers-reduced-motion: reduce) {
-  /* 无障碍：折叠/展开时禁用 JS 动画，width 瞬时切换（无可见动画）。 */
+  /* 无障碍：折叠/展开本身已瞬切（无宽度动画）；此处禁用图标 left / label 过渡，
+     HomeSidebar.css 内已对图标/label 单独禁过渡，保持双保险。 */
   .sidebar-spacer { transition: none; }
   .home-sidebar { transition: none; }
 }

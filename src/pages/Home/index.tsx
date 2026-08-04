@@ -26,6 +26,18 @@ import { useShallow } from 'zustand/react/shallow';
 import './Home.css';
 import { Icon } from "@/components/ui/Icon";
 
+// I1（2026-08-04）：首页兜底拉取的「失败区块会话级冷却」——任一区块持续失败时，
+// 只要其它区块数据变化（如 SearchBox 拉回 trending）就会重跑兜底 effect 并重新拉取
+// 全部空区块，导致失败区块在单次会话内被反复无意义重试（Token 失效/整网不可达时尤其明显）。
+// 方案：模块级 Map 记录各区块「上次失败时间」，冷却期（10min）内该区块不再被自动拉取；
+// 区块恢复有数据后清除冷却（手动重试入口不受影响）。
+const HOME_BLOCKS = [
+  'trending', 'nowPlaying', 'popularMovies', 'topRatedMovies',
+  'upcomingMovies', 'popularTv', 'topRatedTv', 'airingTodayTv',
+] as const;
+const HOME_RETRY_COOLDOWN_MS = 10 * 60 * 1000;
+const homeRetryCooldown = new Map<string, number>();
+
 export default function HomePage() {
   const navigate = useCustomNavigate();
   const location = useLocation();
@@ -163,14 +175,22 @@ export default function HomePage() {
   // 并使其先加载，若据此跳过则其余 7 个「行区块」永远拿不到数据（banner 在、行不在）。
   // fetchAllHomeData 内部用 shouldFetch 只拉空区块，因此重复触发是安全的；
   // 仅当任一区块正在加载时跳过，避免叠加请求。
+  // I1（2026-08-04）：追加「失败冷却」——刚失败的区块 10min 内不计入 anyEmpty，
+  // 避免其它区块数据变化时把失败区块反复重拉（见模块顶部 HOME_RETRY_COOLDOWN_MS）。
   useEffect(() => {
     if (!hasToken || isCategoryView) return;
     const s = useTMDBStore.getState();
-    const anyEmpty =
-      s.trending.length === 0 || s.nowPlaying.length === 0 ||
-      s.popularMovies.length === 0 || s.topRatedMovies.length === 0 ||
-      s.upcomingMovies.length === 0 || s.popularTv.length === 0 ||
-      s.topRatedTv.length === 0 || s.airingTodayTv.length === 0;
+    // 更新冷却表：区块有数据 = 恢复成功，清除冷却；有错误且无记录 = 写入冷却起始时间
+    for (const k of HOME_BLOCKS) {
+      if (s[k].length > 0) homeRetryCooldown.delete(k);
+      else if (s.errors[k] && !homeRetryCooldown.has(k)) homeRetryCooldown.set(k, Date.now());
+    }
+    const inCooldown = (k: (typeof HOME_BLOCKS)[number]) => {
+      const t = homeRetryCooldown.get(k);
+      return t != null && Date.now() - t < HOME_RETRY_COOLDOWN_MS;
+    };
+    // 任一「空且不在冷却中」的区块需要拉取
+    const anyEmpty = HOME_BLOCKS.some((k) => s[k].length === 0 && !inCooldown(k));
     if (!anyEmpty) return;
     const anyLoading =
       s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
@@ -201,7 +221,17 @@ export default function HomePage() {
   //       未就绪则交给后续可滚动的骨架屏分支接管。
   // 注意：不能等待接口返回才放行——无缓存时整页会被 AppLoading 阻塞
   //       （内容矮、无滚动条、下方行不渲染），详见问题修复记录。
-  const [pageLoading, setPageLoading] = useState(true);
+  // 8.3C：若「刚经历过 Suspense chunk fallback」（LoadingFallback 记录的时间戳，
+  // 1s 内有效），则跳过固定 500ms 整页 loading——fallback 已提供过 loading，
+  // 再叠加一次整页 AppLoading 即「加载两次」。无 fallback 时保持原 500ms 保证
+  // loading 出现（避免骨架一闪而过）。时间戳超 1s 视为过期（不误跳过），
+  // 消费后即清除，不影响后续进入。
+  const [pageLoading, setPageLoading] = useState(() => {
+    const marked = window.__kinoSuspenseFallback;
+    window.__kinoSuspenseFallback = 0;
+    const recentlyFellBack = typeof marked === 'number' && marked > 0 && Date.now() - marked < 1000;
+    return !recentlyFellBack;
+  });
 
   useEffect(() => {
     const MIN_MS = 500;
