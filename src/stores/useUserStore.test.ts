@@ -149,3 +149,28 @@ describe('useUserStore - addHistory with new fields', () => {
     expect(history.find(h => !h.episodeUrl)).toBeTruthy();
   });
 });
+
+describe('useUserStore - removeHistoryByVideo', () => {
+  beforeEach(() => {
+    useUserStore.setState({ history: [], _initialized: true });
+  });
+
+  it('删除指定视频的全部记录（含多线路/多集），不影响其他视频', () => {
+    const add = useUserStore.getState().addHistory;
+    // 电影两条线路记录
+    add({ videoId: 'movie-1', progress: 30, duration: 100, episodeUrl: 'http://x.com/l1.m3u8' });
+    add({ videoId: 'movie-1', progress: 60, duration: 100, episodeUrl: 'http://x.com/l2.m3u8' });
+    // 剧集一集记录
+    add({ videoId: 'tv-1', progress: 20, duration: 100, episodeUrl: 'http://x.com/ep.m3u8', seasonNumber: 1, episodeLabel: '第1集' });
+    // 其他视频
+    add({ videoId: 'movie-2', progress: 10, duration: 100, episodeUrl: 'http://x.com/l3.m3u8' });
+
+    useUserStore.getState().removeHistoryByVideo('movie-1');
+
+    const history = useUserStore.getState().history;
+    expect(history).toHaveLength(2);
+    expect(history.every(h => h.videoId !== 'movie-1')).toBe(true);
+    expect(history.some(h => h.videoId === 'tv-1')).toBe(true);
+    expect(history.some(h => h.videoId === 'movie-2')).toBe(true);
+  });
+});
