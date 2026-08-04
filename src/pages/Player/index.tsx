@@ -175,6 +175,8 @@ export default function PlayerPage() {
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
+    // 弹窗直达：初始选集/季优先按 routePlayUrl / routeSeasonNumber 对齐，避免首播季号竞态
+    routePlayUrl, routeSeasonNumber,
   });
 
 
@@ -355,10 +357,14 @@ export default function PlayerPage() {
     if (id) {
       const v = videoRef.current;
       const activeEpId = localEpisodeIdRef.current;
-      const currentEp = v?.episodes?.length ? v.episodes.find((e) => e.id === activeEpId) : undefined;
-      const epLabel = currentEp ? `第${currentEp.number}集` : (!v?.episodes?.length ? currentSourceNameRef.current : undefined);
+      const hasEpisodes = !!v?.episodes?.length;
+      const currentEp = hasEpisodes ? v?.episodes?.find((e) => e.id === activeEpId) : undefined;
+      // 身份守卫：剧集播放但当前选集身份缺失（切季/换源/连播切换的中间态）时跳过写入，
+      // 避免把剧集进度写成电影级记录（hist-{videoId}），污染内容身份键。
+      if (hasEpisodes && !currentEp) return;
+      const epLabel = currentEp ? `第${currentEp.number}集` : (!hasEpisodes ? currentSourceNameRef.current : undefined);
       const vodId = id.startsWith('tmdb-') ? undefined : id;
-      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: v?.episodes?.length ? selectedSeasonRef.current : undefined });
+      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: hasEpisodes ? selectedSeasonRef.current : undefined });
     }
   }, [id, updateHistoryProgress]);
 
@@ -843,6 +849,8 @@ export default function PlayerPage() {
             episodeUrl={currentSrc.url}
             cmsSourceId={cmsSourceIdRef.current}
             episodeLabel={episodeLabel}
+            // 当前季号：供进度恢复按「内容身份」（季号+集标签）精确匹配，避免跨集恢复错位
+            seasonNumber={episodes.length > 0 ? selectedSeason : undefined}
             skipHistory={skipHistory}
             onProgress={handleProgress}
             onEnded={handleEnded}

@@ -57,9 +57,19 @@ function parseTmdbId(videoId: string): { mediaType: 'movie' | 'tv'; tmdbId: numb
  */
 async function updateBackdropInStorage(videoId: string, backdrop: string): Promise<void> {
   try {
-    // 同步更新 Zustand 内存状态
+    // 同步更新 Zustand 内存状态。
+    // 同一 videoId 可能有多条记录（电影多线路 / 剧集多集），历史页展示的是
+    // updatedAt 最新的那条，因此补全目标必须是「最新」记录而非数组第一条。
     const storeHistory = useUserStore.getState().history;
-    const storeIdx = storeHistory.findIndex((h) => h.videoId === videoId);
+    let storeIdx = -1;
+    let latestAt = -1;
+    storeHistory.forEach((h, i) => {
+      if (h.videoId !== videoId) return;
+      if ((h.updatedAt ?? 0) > latestAt) {
+        latestAt = h.updatedAt ?? 0;
+        storeIdx = i;
+      }
+    });
     if (storeIdx >= 0) {
       const updated = { ...storeHistory[storeIdx], backdrop };
       useUserStore.setState({

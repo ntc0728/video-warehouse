@@ -111,11 +111,17 @@ export default function HomePage() {
   );
 
   // 历史记录：用于 Banner 中显示"继续播放"
+  // 内存态 history 不保证按 updatedAt 排序（新记录 append、更新原地修改），
+  // 电影线路独立后同一 videoId 可能存在多条记录，必须按 updatedAt 取最新，
+  // 避免数组顺序覆盖导致取到旧线路/旧集的记录。
   const history = useUserStore((s) => s.history);
   const historyMap = useMemo(() => {
     const map = new Map<string, (typeof history)[0]>();
     for (const h of history) {
-      if (h.progress > 0) map.set(String(h.videoId), h);
+      if (h.progress <= 0) continue;
+      const key = String(h.videoId);
+      const prev = map.get(key);
+      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
     }
     return map;
   }, [history]);
