@@ -1,23 +1,22 @@
-// 类型声明：Cloudflare Worker 入口（m3u8/ts/dash/file 流代理）
-// 与 m3u8-proxy.js 同目录，供前端单测通过 ESM 导入其命名导出时使用。
+/** rewriteM3U8 的类型声明（供 src 下的测试 import 时获得正确签名） */
+export interface RewriteM3U8Options {
+  /** 源站响应带 CORS 头时，分片保持源站直连（worker 仅代理清单，省请求量） */
+  directSegments?: boolean;
+}
 
-export function rewriteM3U8(
+export declare function rewriteM3U8(
   content: string,
   baseUrl: string,
   headers: object,
-  workerUrl: string
+  workerUrl: string,
+  options?: RewriteM3U8Options,
 ): string;
 
-export function rewriteMPD(
+export declare function rewriteMPD(
   content: string,
-  mpdUrl: string,
+  baseUrl: string,
   headers: object,
-  workerUrl: string
+  workerUrl: string,
 ): string;
 
-export function extractUrlParam(rawQuery: string): string | null;
-
-declare const _default: {
-  fetch(request: Request): Promise<Response>;
-};
-export default _default;
+export declare function extractUrlParam(query: string): string;

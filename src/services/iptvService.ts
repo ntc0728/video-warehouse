@@ -183,11 +183,18 @@ function buildProxyUrl(url: string, proxyUrl: string): string {
 
 export { shouldProxy, buildProxyUrl };
 
-export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'pan' {
+export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'pan' | 'flv' {
   const lower = url.toLowerCase();
   if (lower.includes('.mp4')) return 'mp4';
-  if (lower.includes('.mpd') || lower.includes('/dash/')) return 'dash';
+  if (
+    lower.includes('.mpd') ||
+    lower.includes('/dash/') ||
+    // ?type=dash / ?format=dash / ?playType=dash 等参数形式（部分源不以 .mpd 结尾）
+    /[?&](type|format|playType|playtype)=dash/i.test(lower)
+  ) return 'dash';
   if (lower.includes('pan.') || lower.includes('/pan/')) return 'pan';
+  // C3 兜底：FLV 流 / 裸 TS 流（非 HLS 分片）→ mpegts.js 播放
+  if (lower.includes('.flv') || /[?&](type|format|playType)=flv/i.test(lower)) return 'flv';
   return 'm3u8';
 }
 
