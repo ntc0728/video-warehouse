@@ -258,7 +258,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### .gitignore 策略
 
-- `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` — 仅提交知识库 / 测试案例 / 已知问题文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略
+- `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` + `!docs/PRODUCTION-REVIEW-*.md` — 仅提交知识库 / 测试案例 / 已知问题 / 生产级对标报告文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略
 - `scripts/*.ts` + `!scripts/*.spec.ts` + `!scripts/global-setup.ts` — 仅保留 E2E 测试脚本与全局初始化
 - `scripts/*.mjs` + `!scripts/fetch-diagram-data.mjs` — 仅保留数据获取脚本，工具脚本不提交
 - `scripts/fixtures/`、`scripts/backup-specs/` — 本地测试夹具与旧测试备份，一律忽略（不参与 E2E，见「测试基建修复」）

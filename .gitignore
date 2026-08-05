@@ -85,11 +85,12 @@ public/debug-source.html
 # ── 脚本截图目录 ──────────────────────────────
 scripts/screenshots/
 
-# ── 文档（仅提交 KNOWLEDGE.md / TEST-CASES.md / KNOWN-ISSUES.md）──
+# ── 文档（仅提交 KNOWLEDGE.md / TEST-CASES.md / KNOWN-ISSUES.md / PRODUCTION-REVIEW）──
 docs/*
 !docs/KNOWLEDGE.md
 !docs/TEST-CASES.md
 !docs/KNOWN-ISSUES.md
+!docs/PRODUCTION-REVIEW-*.md
 
 # ── 研究文档（本地用，不入版本控制）────────────
 research/
