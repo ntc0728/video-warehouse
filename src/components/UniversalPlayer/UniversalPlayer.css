@@ -333,7 +333,8 @@
   display: inline-block;
 }
 .up-control-bar button:hover .up-speed-label {
-  transform: scale(0.82);
+  /* 倍速文本随图标放大（图标 secondary scale 0.55→1，文本同步放大更协调） */
+  transform: scale(1.12);
 }
 
 /* ===== Progress Bar ===== */
@@ -346,18 +347,7 @@
   padding: 0 var(--space-sm);
 }
 
-.up-time-display {
-  min-width: var(--icon-xl);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: var(--text-sm);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-/* 亮色主题下深底改浅底，时间文字用语义色防「白字消失」 */
-[data-theme="light"] .up-time-display,
-[data-theme="light"] .up-time-display-inline {
-  color: var(--color-text-secondary);
-}
+/* up-time-display 已删除（进度条不再显示两侧时间文字），保留 tooltip 悬浮时间 */
 
 .up-progress-bar {
   position: relative;
@@ -621,7 +611,7 @@
 }
 
 .up-more-popover {
-  min-width: clamp(6.25rem, 8vw, 7.5rem);
+  min-width: clamp(7.5rem, 10vw, 9rem);
   padding: var(--space-sm);
 }
 
@@ -996,10 +986,6 @@
 
 .up-platform-tv .up-header-title {
   font-size: var(--text-2xl);
-}
-
-.up-platform-tv .up-time-display {
-  font-size: var(--text-lg);
 }
 
 .up-platform-tv .up-popover-item {
@@ -1409,11 +1395,11 @@
 }
 
 .up-seek-indicator-left {
-  left: 15%;
+  left: 24%;
 }
 
 .up-seek-indicator-right {
-  right: 15%;
+  right: 24%;
 }
 
 .up-seek-indicator svg {
