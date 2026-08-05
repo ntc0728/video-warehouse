@@ -54,9 +54,13 @@ const defaultSettings: IPTVSettings = {
   aggregatorUrl: '',
   aggregatorUrls: [],
   proxyUrl: '',
-  // 默认空字符串：配置了 proxyUrl 即全部走代理（符合用户预期）
-  // 若需跳过特定域名，可在设置页配置 proxyPattern（匹配的 URL 不走代理）
-  proxyPattern: '',
+  // 默认直连白名单：命中这些域名特征的 URL 不走代理（浏览器原生放行 CORS），
+  // 可显著降低 worker 代理请求量（见 docs/IPTV-PLAYBACK-FIX-PLAN）。
+  // 常见可直连直播 CDN：咪咕/移动 liveplay、腾讯云 myqcloud、阿里 livecdn/OSS、
+  // 七牛/又拍/百度 CDN、GitHub 静态托管（raw/github.io/jsdelivr）及常见免费源。
+  // 用户可在设置页「代理规则」中自定义覆盖；留空则全部走代理。
+  proxyPattern:
+    'liveplay\\.(miguvideo|myqcloud)|miguvideo|livecdn\\.aliyun|oss-cn-.*aliyuncs|qiniucdn|upaiyun|bdstatic|raw\\.githubusercontent|github\\.io|jsdelivr|gitee\\.(com|io)|freetv\\.fun|tv1288|4666888',
   priorityKeywords: [],
   autoRefresh: false,
   refreshIntervalHours: 24,
@@ -444,10 +448,15 @@ export const useIPTVStore = create<IPTVState>()(
         if (settings.aggregatorUrl?.startsWith('/')) {
           settings.aggregatorUrl = defaultSettings.aggregatorUrl;
         }
-        // 迁移旧版默认 proxyPattern（匹配 IP 形式 URL 不走代理）到新版默认空字符串
-        // 仅迁移等于旧默认值的，保留用户自定义值
+        // 迁移旧版 proxyPattern 到新版内置直连白名单：
+        // ① 旧默认「IP 形式 URL 不走代理」→ 新内置白名单（更全面的 CDN 直连）
+        // ② 空字符串（旧数据未配置/用户留空）→ 新内置白名单（降低 worker 请求量，
+        //    用户仍可在设置页自定义；显式清空后再保存会持久化空值并重新生效）
         const LEGACY_DEFAULT_PROXY_PATTERN = '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+';
-        if (settings.proxyPattern === LEGACY_DEFAULT_PROXY_PATTERN) {
+        if (
+          settings.proxyPattern === LEGACY_DEFAULT_PROXY_PATTERN ||
+          settings.proxyPattern === ''
+        ) {
           settings.proxyPattern = defaultSettings.proxyPattern;
         }
         return {

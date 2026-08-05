@@ -304,7 +304,7 @@ export default function SettingsPage() {
                 type="text"
                 name="proxyPattern"
                 autoComplete="off"
-                placeholder="miguvideo\\.com|101\\.35\\.240\\.114"
+                placeholder="liveplay\\.(miguvideo|myqcloud)|livecdn\\.aliyun|oss-cn-.*aliyuncs|raw\\.githubusercontent|jsdelivr"
                 value={modals.patternInput}
                 onChange={(e) => modals.setPatternInput(e.target.value)}
                 className={`setting-modal-input ${modals.patternInput ? 'setting-modal-input--has-clear' : ''}`}

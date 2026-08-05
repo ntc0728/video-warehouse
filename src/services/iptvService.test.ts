@@ -81,6 +81,54 @@ describe('shouldProxy', () => {
   });
 });
 
+describe('shouldProxy 内置直连白名单（useIPTVStore 默认 proxyPattern）', () => {
+  // 与 useIPTVStore 默认值保持一致的直连白名单（保持同步，勿单方修改）
+  const DEFAULT_PATTERN =
+    'liveplay\\.(miguvideo|myqcloud)|miguvideo|livecdn\\.aliyun|oss-cn-.*aliyuncs|qiniucdn|upaiyun|bdstatic|raw\\.githubusercontent|github\\.io|jsdelivr|gitee\\.(com|io)|freetv\\.fun|tv1288|4666888';
+  const PROXY = 'https://iptv.my-custom-domain.com';
+
+  const directUrls = [
+    'https://liveplay.miguvideo.com/live/stream.m3u8', // 咪咕移动直播
+    'http://hls-live.miguvideo.com/live/1.m3u8',
+    'https://liveplay.myqcloud.com/live/1.m3u8', // 腾讯云直播
+    'https://livecdn.aliyun.com/live/1.m3u8', // 阿里直播
+    'https://bucket.oss-cn-hangzhou.aliyuncs.com/live/1.m3u8', // 阿里 OSS
+    'https://cdn.qiniucdn.com/live/1.m3u8', // 七牛
+    'https://cdn.upaiyun.com/live/1.m3u8', // 又拍
+    'https://live.bdstatic.com/live/1.m3u8', // 百度
+    'https://raw.githubusercontent.com/x/y/master/z.m3u8', // GitHub raw
+    'https://mirror.ghproxy.com/raw.githubusercontent.com/x/y.m3u8', // gh 镜像内含 raw
+    'https://cdn.jsdelivr.net/gh/x/y@main/z.m3u8', // jsdelivr
+    'https://gitee.com/x/y/raw/master/z.m3u8', // gitee.com raw（源列表实际域名）
+    'https://pages.gitee.io/x/y/z.m3u8', // gitee pages
+    'http://t.freetv.fun/m3u/hk.m3u8', // 免费源
+    'https://2026.tv1288.xyz/', // 项目内置源
+    'http://iptv.4666888.xyz/FYTV.txt', // 项目内置源
+  ];
+  const proxyUrls = [
+    'http://47.97.20.1/live/1.m3u8', // 纯 IP 无白名单（需代理）
+    'http://example.com/video.m3u8', // 普通域名
+    'http://rihou.cc:555/x.m3u8', // 项目内置源（未在白名单）
+    'http://ge.html-5.me/ii/y.txt', // 项目内置源（未在白名单）
+  ];
+
+  directUrls.forEach((url) => {
+    it(`直连白名单命中（不走代理）: ${url.replace(/^https?:\/\//, '')}`, () => {
+      expect(shouldProxy(url, PROXY, DEFAULT_PATTERN)).toBe(false);
+    });
+  });
+
+  proxyUrls.forEach((url) => {
+    it(`白名单未命中（走代理）: ${url.replace(/^https?:\/\//, '')}`, () => {
+      expect(shouldProxy(url, PROXY, DEFAULT_PATTERN)).toBe(true);
+    });
+  });
+
+  it('默认正则本身合法（可编译）', () => {
+    expect(() => new RegExp(DEFAULT_PATTERN)).not.toThrow();
+  });
+});
+
 describe('buildProxyUrl', () => {
   it('m3u8 走 /m3u8-proxy', () => {
     const result = buildProxyUrl('http://example.com/video.m3u8', 'http://proxy.com');
