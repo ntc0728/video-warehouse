@@ -121,6 +121,12 @@ export class HLSAdapter extends BasePlayerAdapter {
           this.hls.maxBufferLength = Math.min(this.hls.maxBufferLength, liveMax);
           this.hls.maxMaxBufferLength = Math.min(this.hls.maxMaxBufferLength, liveMax * 2);
           this.hls.backBufferLength = Math.min(this.hls.backBufferLength, 20);
+        } else if (this.hls) {
+          // 预加载①：点播首分片预取——manifest 解析后立即拉首个分片（不等 play），
+          // 缩短「点击播放 → 首帧」延迟。hls.js 在 shouldDelayFragmentLoading 时
+          // 实时读取 config.startFragPrefetch，运行中设置即时生效。
+          // 直播保持 startFragPrefetch=false（按 live edge 持续拉取，不额外预取）。
+          this.hls.config.startFragPrefetch = true;
         }
       });
 
