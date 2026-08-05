@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores';
+import { playerToast } from '../PlayerToast';
 import type { PlatformType, PlayerMode, LoopMode } from '@/types/player';
 
 interface UseKeyboardShortcutsOptions {
@@ -59,11 +60,13 @@ export function useKeyboardShortcuts({
             e.preventDefault();
             playerCore.setVolume(Math.min(1, volume + 0.1));
             showVolumePopupWithTimer();
+            playerToast(`音量 ${Math.round(Math.min(1, volume + 0.1) * 100)}%`);
             break;
           case 'ArrowDown':
             e.preventDefault();
             playerCore.setVolume(Math.max(0, volume - 0.1));
             showVolumePopupWithTimer();
+            playerToast(`音量 ${Math.round(Math.max(0, volume - 0.1) * 100)}%`);
             break;
           case 'f':
           case 'F':

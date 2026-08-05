@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
 import { useIsMobile, useIsTV, useRouteTitleImmediate } from '@/hooks';
+import { requestFullscreen, getFullscreenElement } from '@/components/UniversalPlayer/lib/fullscreen';
 import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
 import './IPTVPlayer.css';
 
@@ -16,6 +17,7 @@ export default function IPTVPlayerPage() {
   const url = searchParams.get('url') || '';
   const navigate = useCustomNavigate();
   const { channels, groups, isLoading, refreshChannels, settings } = useIPTVStore();
+  const pageRef = useRef<HTMLDivElement>(null);
 
   const isTV = useIsTV();
   const isMobile = useIsMobile();
@@ -82,6 +84,15 @@ export default function IPTVPlayerPage() {
     };
   }, []);
 
+  // TV 端进入 IPTV 播放页默认全屏（无用户手势可能被拦截，静默失败；退出后不再次强制）
+  useEffect(() => {
+    if (!isTV) return;
+    const el = pageRef.current;
+    if (!el || getFullscreenElement()) return;
+    requestFullscreen(el).catch(() => { /* 平台不支持/无手势时静默 */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTV]);
+
   const handleBack = useSmartBack('/iptv');
 
   const handleChannelChange = useCallback((channel: { id: string; url: string; name: string }) => {
@@ -103,7 +114,7 @@ export default function IPTVPlayerPage() {
   }
 
   return (
-    <div className="iptv-player-page">
+    <div className="iptv-player-page" ref={pageRef}>
       <div className="iptv-player__layout">
         <div className="iptv-player-container">
           <UniversalPlayer

@@ -33,6 +33,26 @@
   min-height: 0;
 }
 
+/* 非 TV 端 IPTV 播放页：右上角放大图标移到右下角（TV 端默认全屏，图标不显示） */
+.iptv-player-page .up-header-fullscreen-btn {
+  position: fixed;
+  right: var(--space-lg);
+  bottom: var(--space-lg);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.9);
+}
+.iptv-player-page .up-header-fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--player-text);
+}
+
 .iptv-player-info {
   flex-shrink: 0;
   padding: var(--space-sm) var(--space-md);

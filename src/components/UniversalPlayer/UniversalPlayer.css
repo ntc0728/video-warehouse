@@ -328,6 +328,12 @@
 .up-speed-label {
   font-size: var(--text-sm);
   font-weight: 600;
+  /* 倍速文本随 hover 图标缩放联动（与 .up-icon-duo 过渡同速，GPU 合成不卡顿） */
+  transition: transform 0.18s ease;
+  display: inline-block;
+}
+.up-control-bar button:hover .up-speed-label {
+  transform: scale(0.82);
 }
 
 /* ===== Progress Bar ===== */
@@ -336,6 +342,8 @@
   gap: var(--space-sm);
   align-items: center;
   margin-bottom: var(--space-sm);
+  /* 进度条两端留白，避免贴住控制栏左右边缘（适度即可） */
+  padding: 0 var(--space-sm);
 }
 
 .up-time-display {
@@ -344,6 +352,11 @@
   font-size: var(--text-sm);
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+/* 亮色主题下深底改浅底，时间文字用语义色防「白字消失」 */
+[data-theme="light"] .up-time-display,
+[data-theme="light"] .up-time-display-inline {
+  color: var(--color-text-secondary);
 }
 
 .up-progress-bar {
@@ -614,12 +627,15 @@
 
 .up-more-popover .up-popover-item {
   display: flex;
-  gap: var(--space-sm);
+  gap: var(--space-md);
   justify-content: flex-start;
   align-items: center;
   font-size: var(--text-xs);
   font-weight: 500;
   text-align: left;
+  /* 更多弹窗内文本间距：图标↔文字 gap 与垂直 padding 适度加大 */
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-md);
 }
 
 .up-popover-item-check {
@@ -1505,12 +1521,16 @@
   }
 }
 
-/* ── Player Toast ──────────────────────────────────────────────────── */
+/* ── Player Toast（播放器右上角操作提示，独立于全局 sonner） ───────── */
 .up-player-toast {
   position: absolute;
   top: var(--space-lg);
   right: var(--space-lg);
   z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: min(18rem, calc(100% - 2 * var(--space-lg)));
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.7);
@@ -1518,6 +1538,19 @@
   font-size: var(--text-sm);
   pointer-events: none;
   animation: toast-fade-in 0.2s ease;
+}
+.up-player-toast__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.up-player-toast__text {
+  flex: 1;
+  text-align: center;
+}
+[data-theme="light"] .up-player-toast {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 @keyframes toast-fade-in {
