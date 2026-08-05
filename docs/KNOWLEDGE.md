@@ -1065,3 +1065,6 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
 
 - **ADR-013 设置敏感字段「内存明文 + 持久化层加密」（H1 修复，2026-08-05）**
   旧 `setTMDBToken` 异步 `encryptText` 完成后 setState 密文覆盖内存 → 同一会话所有 TMDB 请求 401（`tmdbService.getAccessToken()` 同步读内存当 Bearer）。我们决定：**内存 state 恒为明文，AES-GCM 加密收敛到 persist 自定义异步 storage**——setItem 写 localStorage 前加密，rehydrate 读入时解密。setter 退化为纯 set，`getAccessToken()` 无需改动。`applyBackup` 导入对明文直接 setState（不再双重加密）。配套：`useSettingsStore.test.ts` 4 用例防回归；`docs/KNOWN-ISSUES.md` #1 登记。
+
+- **ADR-014 D1 裸流降级识别（fail-and-retry，2026-08-05）**
+  裸流（无扩展名 / 裸 TS / FLV，`detectVideoSourceType` 误判为 m3u8）识别采用**「失败降级重试」而非「预先 Content-Type 嗅探」**：HLSAdapter 拆分 `manifestParsingError`（拿到内容但解析失败 → 上报 `code='BARE_STREAM'`）与 `manifestLoadError`（网络层失败 → 维持「频道源不可用」走 A3）。UniversalPlayer 收到 BARE_STREAM 后在 IPTV 模式用 `degradedType` state 临时覆盖播放器类型为 `flv`（URL 变化复位），重建 `MPEGTSAdapter` 重试**同一 URL**（每 URL 仅 1 次）。worker `m3u8-proxy` 对非 `#EXTM3U` 内容（`isM3U8Content`，兼容 UTF-8 BOM）直接透传源站二进制（不重写、不缓存）——代理 URL 无需改写即可被 mpegts.js 拉流。**零额外请求**（复用必然失败的 manifest 请求）。对比预先嗅探省掉 Range/abort/CORS 三个坑；缺点为首帧多一次解析失败延迟。测试：`HLSAdapter.test.ts` 2 用例（错误拆分）、`m3u8Proxy.test.ts` isM3U8Content 4 用例；配套 `worker/m3u8-proxy.d.ts` 同步 `isM3U8Content` 声明。

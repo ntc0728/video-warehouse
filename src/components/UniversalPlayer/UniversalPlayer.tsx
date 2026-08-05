@@ -32,6 +32,7 @@ import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './m
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
+import { ERROR_CODE_BARE_STREAM } from './adapters/HLSAdapter';
 import { Icon } from "@/components/ui/Icon";
 
 const VOLUME_POPUP_DELAY = 3000;
@@ -124,6 +125,9 @@ export default function UniversalPlayer({
   const [timeshiftSupported, setTimeshiftSupported] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [playClickAnim, setPlayClickAnim] = useState(false);
+  // D1 裸流降级：HLS 解析失败（非 HLS 清单）时临时覆盖播放器类型为 flv，
+  // 复用同一 URL 重建 mpegts.js 重试（URL 变化时复位）
+  const [degradedType, setDegradedType] = useState<SourceType | null>(null);
 
   const {
     decoderMode, isControlsVisible, isChannelListVisible,
@@ -281,9 +285,12 @@ export default function UniversalPlayer({
   const handleSourceSwitchRef = useRef(handleSourceSwitch);
   handleSourceSwitchRef.current = handleSourceSwitch;
 
+  // D1 裸流降级标记：每 URL 仅降级 1 次（mpegts.js 也失败则走 C1 切线路 / A3 切代理）
+  const bareStreamRetriedRef = useRef<Set<string>>(new Set());
+
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
-type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
+type: (mode === 'iptv' ? (degradedType ?? currentType ?? type) : type) as SourceType,
 videoId,
 vodId,
 episodeUrl,
@@ -322,6 +329,18 @@ retryCount,
         toast.show({ content: error.message, duration: 6000 });
         onError?.(error);
         return;
+      }
+      // D1 裸流降级：HLS 解析失败（manifestParsingError → BARE_STREAM）说明内容非 HLS 清单，
+      // 极可能是裸 TS/FLV 流。降级到 mpegts.js 重试同一 URL（每 URL 仅 1 次防循环，
+      // 再次失败则走下方 C1 切线路 / A3 切代理）。worker 端 m3u8-proxy 已支持裸流透传，
+      // 因此代理 URL 无需改写即可被 mpegts.js 拉流。
+      if ((error as Error & { code?: string }).code === ERROR_CODE_BARE_STREAM && mode === 'iptv') {
+        if (!bareStreamRetriedRef.current.has(currentUrl)) {
+          bareStreamRetriedRef.current.add(currentUrl);
+          setDegradedType('flv');
+          toast.show({ content: '检测到裸流，切换解码方式重试…', duration: 3000 });
+          return;
+        }
       }
       // A3 播放中失败自动切代理：直连播放时网络类错误（CORS 分片失败/源站不可达）
       // → 若当前 URL 不是代理地址且有可用代理，自动切换重试（每 URL 仅 1 次，防循环）
@@ -584,6 +603,8 @@ retryCount,
   useEffect(() => {
     setHasError(false);
     proxyRetriedRef.current = false;
+    // D1：切换频道/URL 时复位裸流降级状态（新 URL 是全新 key，天然独立计数）
+    setDegradedType(null);
   }, [url, currentUrl]);
 
   // 错误状态管理

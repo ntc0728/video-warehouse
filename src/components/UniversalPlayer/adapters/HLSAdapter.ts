@@ -2,6 +2,10 @@ import { BasePlayerAdapter } from './PlayerAdapter';
 import type { PlayerLevel, DecoderMode } from '@/types/player';
 import type { AudioTrack } from './PlayerAdapter';
 
+/** D1 裸流识别错误码：HLSAdapter 在 manifestParsingError（内容非 HLS 清单）时上报，
+ *  上层据此降级到 mpegts.js 重试同一 URL（零额外请求识别裸流）。 */
+export const ERROR_CODE_BARE_STREAM = 'BARE_STREAM';
+
 function getQualityLabel(level: { width: number; height: number; bitrate: number }): string {
   const h = level.height;
   if (h >= 2160) return '4K';
@@ -173,7 +177,15 @@ export class HLSAdapter extends BasePlayerAdapter {
 
           switch (data.type) {
             case HlsJs.ErrorTypes.NETWORK_ERROR:
-              if (data.details === 'manifestLoadError' || data.details === 'manifestParsingError') {
+              // D1 裸流识别：manifestParsingError 表示「拿到了内容但解析失败」——
+              // 源站返回的极可能是裸 TS/FLV 流（非 HLS 清单），上报带 BARE_STREAM
+              // 标记的错误，由上层降级到 mpegts.js 重试（复用必然发生的失败，零额外请求）。
+              if (data.details === 'manifestParsingError') {
+                const err = new Error('裸流：非 HLS 清单');
+                (err as Error & { code?: string }).code = ERROR_CODE_BARE_STREAM;
+                this.onError?.(err);
+              } else if (data.details === 'manifestLoadError') {
+                // 网络层失败（403/404/超时/源不可达），维持「频道源不可用」走 A3 兜底
                 this.onError?.(new Error('频道源不可用'));
               } else if (this.errorCount < 3) {
                 this.hls?.startLoad();

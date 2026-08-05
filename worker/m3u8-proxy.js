@@ -69,6 +69,15 @@ const isOriginAllowed = (origin, options) => {
 };
 
 /**
+ * D1 裸流识别：判断内容是否为 HLS 清单（#EXTM3U 开头）。
+ * 供 handleM3U8Proxy 透传裸流 + 单元测试复用。兼容 UTF-8 BOM。
+ */
+function isM3U8Content(content) {
+  if (typeof content !== "string") return false;
+  return content.replace(/^\uFEFF/, "").startsWith("#EXTM3U");
+}
+
+/**
  * 从原始查询字符串中提取 url 参数的完整值。
  * 当 url 参数未编码时，searchParams.get("url") 会在第一个 & 处截断。
  * 本函数从原始字符串中定位 "url=" 后，取到下一个顶层 & 之间的全部内容。
@@ -139,7 +148,23 @@ async function handleM3U8Proxy(request) {
       });
     }
 
-    const m3u8 = await response.text();
+    // D1 裸流透传：先用 clone 探测内容，避免 text() 消费掉原始 body。
+    // 源站内容非 HLS 清单（非 #EXTM3U 开头）→ 极可能是裸 TS/FLV 流，
+    // 原样透传源站二进制（不重写、不缓存），使客户端降级到 mpegts.js 后能直接拉流。
+    const probe = await response.clone().text();
+    if (!isM3U8Content(probe)) {
+      return new Response(response.body, {
+        headers: {
+          "Content-Type": response.headers.get("Content-Type") || "video/mp2t",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "*",
+          "Access-Control-Allow-Methods": "*",
+          "Timing-Allow-Origin": "*",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+    const m3u8 = probe;
     // B1 智能路由：源站响应带 CORS 头 → 浏览器可直连分片，worker 只代理清单（分片保持源站地址，省 99% 请求）
     // 源站无 CORS 头 → 分片走 ts-proxy（现状）
     const sourceAllowsCors = Boolean(
@@ -503,4 +528,4 @@ async function handleFileProxy(request) {
 }
 
 // 导出供单元测试（vitest）使用，不影响 Cloudflare Worker 部署（部署仅依赖 default.fetch）
-export { rewriteM3U8, rewriteMPD, extractUrlParam };
+export { rewriteM3U8, rewriteMPD, extractUrlParam, isM3U8Content };

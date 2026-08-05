@@ -224,6 +224,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **右上角无点播提示**：`ToastTrigger`（`.up-player-toast`）在 `mode === 'iptv'` 时直接跳过 store 订阅，右上角**不显示任何**点播类操作提示（音量 / 切换线路 / 播放暂停 / 倍速 / 循环 / 画中画 / 镜像 / 比例 / 解码）。IPTV 的提示由其自身独立逻辑负责。
 - **键盘快捷键跳过**：`useKeyboardShortcuts` 在 `mode === 'iptv'` 时移除空格键的播放/暂停（直播无暂停语义），仅保留音量/全屏/静音/Escape。
 - **遥控器跳过**：`useTVInput` 在 `mode === 'iptv'` 时遥控器播放/暂停键不触发 `togglePlay`。
+- **裸流降级识别（D1）**：`HLSAdapter` 对 `manifestParsingError`（拿到内容但解析失败）上报带 `code='BARE_STREAM'` 的错误，与 `manifestLoadError`（网络层失败，维持「频道源不可用」走 A3）区分。`UniversalPlayer` 在 `mode==='iptv'` 且未对当前 URL 降级过时，用 `degradedType` state 临时将播放器类型覆盖为 `flv`，重建 `MPEGTSAdapter` 重试**同一 URL**（每 URL 仅 1 次，URL 变化时复位）。worker `m3u8-proxy` 对非 `#EXTM3U` 内容（`isM3U8Content` 判断）直接透传源站二进制（不重写、不缓存），使 mpegts.js 能拉裸 TS/FLV 流——**零额外请求识别裸流**。
 
 ### Browse 懒加载
 
