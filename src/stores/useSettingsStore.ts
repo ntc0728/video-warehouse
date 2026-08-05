@@ -6,9 +6,16 @@
  * [批次3合并] 原 useSubtitleStore 的翻译 API 配置（translationAppId/translationApiKey/autoTranslate/targetLang）已合并到此 store
  * [数据迁移] 旧 localStorage key `subtitle-store` 的 translation API 数据会在首次加载时自动迁移到 `app-settings`
  * [安全] 敏感字段（tmdbAccessToken、translationApiKey）使用 AES-GCM 加密存储
+ *
+ * [H1 修复 2026-08-05] 内存始终为明文、持久化层才加密：
+ *   - setter 只写内存明文，不再异步加密后 setState 覆盖内存（旧实现导致保存 Token 后同一会话
+ *     内所有 TMDB 请求携带密文 → 401）。
+ *   - 加密收敛到自定义异步 storage：setItem 写 localStorage 前对敏感字段 AES-GCM 加密；
+ *     getItem 原样返回密文；onRehydrateStorage 读入时解密为内存明文。
+ *   - 兼容旧密文数据：rehydrate 对「疑似密文」解密，对明文原样返回（decryptText 内兼容）。
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { encryptText, decryptText } from '@/lib/crypto';
 import type { AppSettings } from '@/types';
 
@@ -85,6 +92,79 @@ export const DEFAULT_SETTINGS = {
   avatar: '',
 };
 
+/**
+ * 自定义持久化 storage：写 localStorage 前对敏感字段 AES-GCM 加密，读时原样返回密文
+ * （由 onRehydrateStorage 解密为内存明文）。
+ *
+ * H1 修复：旧实现是 setter 内「先 set 明文 → 异步 encryptText 完成后 setState 密文」，
+ * 导致内存值被密文覆盖、同一会话 TMDB 请求 401。现在内存恒为明文，加密只发生在持久化层。
+ *
+ * 说明：
+ * - persist.setItem 接收 `{ state, version }`，此处异步加密后写盘；即使 persist 不 await
+ *   返回的 Promise，也不影响内存值（内存始终是明文）。
+ * - 解密失败（兼容旧明文数据）时按明文原样写回，行为与 decryptText 兜底一致。
+ */
+const encryptedStorage = createJSONStorage<SettingsState>(() => {
+  const storage: {
+    getItem: (name: string) => string | null;
+    setItem: (name: string, value: string) => void;
+    removeItem: (name: string) => void;
+  } = {
+    getItem: (name) => {
+      try {
+        return localStorage.getItem(name);
+      } catch {
+        return null;
+      }
+    },
+    setItem: (name, value) => {
+      try {
+        const parsed = JSON.parse(value) as { state?: Record<string, unknown>; version?: number };
+        if (parsed?.state) {
+          const state = { ...parsed.state };
+          const next = { ...parsed, state };
+          // 异步加密后写盘（不阻塞 persist 调用方）
+          void (async () => {
+            const tasks: Promise<void>[] = [];
+            for (const key of SENSITIVE_FIELDS) {
+              const raw = state[key as keyof typeof state];
+              if (typeof raw === 'string' && raw) {
+                tasks.push(
+                  encryptText(raw).then((enc) => {
+                    next.state![key as string] = enc;
+                  }),
+                );
+              }
+            }
+            await Promise.all(tasks);
+            try {
+              localStorage.setItem(name, JSON.stringify(next));
+            } catch {
+              /* 写盘失败时保持内存值，不抛出 */
+            }
+          })();
+        } else {
+          localStorage.setItem(name, value);
+        }
+      } catch {
+        try {
+          localStorage.setItem(name, value);
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    removeItem: (name) => {
+      try {
+        localStorage.removeItem(name);
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+  return storage;
+});
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
@@ -125,21 +205,14 @@ export const useSettingsStore = create<SettingsState>()(
       setEpgUpdateInterval: (hours) => set({ epgUpdateInterval: Math.min(24, Math.max(1, hours)) }),
       setRememberVolume: (value) => set({ rememberVolume: value }),
       setTMDBToken: (token) => {
-        // 明文存储供内存立即使用
+        // 内存始终明文；加密在自定义 storage.setItem 层完成（H1 修复，不再异步覆盖内存）
         set({ tmdbAccessToken: token });
-        // 异步加密以供持久化存储
-        encryptText(token).then((encrypted) => {
-          // 更新为加密后的值以便持久化存储
-          useSettingsStore.setState({ tmdbAccessToken: encrypted });
-        });
       },
       setTMDBLanguage: (lang) => set({ tmdbLanguage: lang }),
       setTranslationAppId: (translationAppId) => set({ translationAppId }),
       setTranslationApiKey: (translationApiKey) => {
+        // 内存始终明文；加密在自定义 storage.setItem 层完成（H1 修复）
         set({ translationApiKey });
-        encryptText(translationApiKey).then((encrypted) => {
-          useSettingsStore.setState({ translationApiKey: encrypted });
-        });
       },
       setAutoTranslate: (autoTranslate) => set({ autoTranslate }),
       setTargetLang: (targetLang) => set({ targetLang }),
@@ -164,6 +237,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'app-settings',
+      storage: encryptedStorage,
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;
         // 如果存在则迁移旧版 subtitle-store 的翻译 API 配置
