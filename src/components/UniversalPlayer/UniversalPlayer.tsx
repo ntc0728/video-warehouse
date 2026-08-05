@@ -271,6 +271,16 @@ export default function UniversalPlayer({
   // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
   const proxyRetriedRef = useRef(false);
 
+  // C1 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
+  // /iptv/play 为独立全屏路由，离开页面即卸载组件，标记随之失效，无需手动清理。
+  const audioOnlyLineSwitchedRef = useRef<Set<string>>(new Set());
+  const currentChannelRef = useRef(currentChannel);
+  currentChannelRef.current = currentChannel;
+  const channelsRef = useRef(_channels);
+  channelsRef.current = _channels;
+  const handleSourceSwitchRef = useRef(handleSourceSwitch);
+  handleSourceSwitchRef.current = handleSourceSwitch;
+
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
 type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
@@ -293,8 +303,22 @@ retryCount,
     onError: useCallback((error: Error) => {
       if (currentUrlRef.current !== currentUrl) return;
       // C1 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，
-      // 无论播放状态都走 toast（不触发全屏错误），并通知上层可自动切线路
+      // 无论播放状态都走 toast（不触发全屏错误）。
+      // IPTV 模式自动切线路：存在同名其它线路（sourceId 不同）时自动切到第一条其它线路，
+      // 每频道名仅自动切 1 次防线路间死循环；无其它线路或已切过则仅 toast 提示
       if (error.message.includes('仅含音频')) {
+        const channel = currentChannelRef.current;
+        if (mode === 'iptv' && channel) {
+          const sameNameChannels = channelsRef.current.filter(
+            ch => ch.name === channel.name && ch.sourceId !== channel.sourceId
+          );
+          if (sameNameChannels.length > 0 && !audioOnlyLineSwitchedRef.current.has(channel.name)) {
+            audioOnlyLineSwitchedRef.current.add(channel.name);
+            handleSourceSwitchRef.current(0, mode, channel, channelsRef.current, usePlayerStore.getState().sources);
+            toast.show({ content: '该源仅含音频，已自动切换线路…', duration: 4000 });
+            return;
+          }
+        }
         toast.show({ content: error.message, duration: 6000 });
         onError?.(error);
         return;

@@ -44,7 +44,11 @@ const ListItem: FC<ListItemProps> = ({
           </span>
         )}
         {description && (
-          <span className="list-item__desc text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+          <span
+            className="list-item__desc text-xs truncate max-w-full"
+            style={{ color: 'var(--color-text-tertiary)' }}
+            title={typeof description === 'string' ? description : undefined}
+          >
             {description}
           </span>
         )}
