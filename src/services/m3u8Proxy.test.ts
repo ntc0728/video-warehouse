@@ -8,7 +8,7 @@
  * 4. #EXT-X-KEY 密钥重写
  */
 import { describe, it, expect } from 'vitest';
-import { rewriteM3U8 } from '../../worker/m3u8-proxy.js';
+import { rewriteM3U8, isM3U8Content } from '../../worker/m3u8-proxy.js';
 
 const WORKER = 'https://iptv.example.com/';
 const BASE = 'http://cdn.example.com/live/index.m3u8';
@@ -44,6 +44,27 @@ describe('rewriteM3U8 默认模式（分片走代理，行为不变）', () => {
     const result = rewriteM3U8(SAMPLE, BASE, {}, WORKER);
     expect(result).toContain('/ts-proxy?url=');
     expect(result).not.toContain('https://key.example.com/key.bin"');
+  });
+});
+
+describe('isM3U8Content（D1 裸流识别）', () => {
+  it('#EXTM3U 开头返回 true', () => {
+    expect(isM3U8Content('#EXTM3U\n#EXT-X-TARGETDURATION:4\nseg.ts')).toBe(true);
+  });
+
+  it('UTF-8 BOM + #EXTM3U 返回 true（兼容 BOM 清单）', () => {
+    expect(isM3U8Content('\uFEFF#EXTM3U\n#EXTINF:4.0,\nseg.ts')).toBe(true);
+  });
+
+  it('裸 TS/FLV 二进制文本（非 #EXTM3U）返回 false', () => {
+    // 0x47 = 'G'，MPEG-TS 同步字节；FLV 魔数 'FLV' 开头
+    expect(isM3U8Content('G@\u0000\u0010\u0002\u0001\u0000')).toBe(false);
+    expect(isM3U8Content('FLV\u0001\u0005\u0000\u0000\u0000\u0009')).toBe(false);
+  });
+
+  it('空字符串 / 非字符串返回 false', () => {
+    expect(isM3U8Content('')).toBe(false);
+    expect(isM3U8Content(null as unknown as string)).toBe(false);
   });
 });
 

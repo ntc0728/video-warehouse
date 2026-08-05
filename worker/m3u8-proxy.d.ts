@@ -20,3 +20,6 @@ export declare function rewriteMPD(
 ): string;
 
 export declare function extractUrlParam(query: string): string;
+
+/** D1 裸流识别：判断内容是否为 HLS 清单（#EXTM3U 开头，兼容 UTF-8 BOM） */
+export declare function isM3U8Content(content: string): boolean;
