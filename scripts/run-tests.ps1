@@ -24,7 +24,7 @@ if ($RealApi) {
 # UI 层：使用 playwright 测试（粗粒度）
 $uiTestMap = @{
     "src/pages/Home/**" = @("scripts/home.spec.ts")
-    "src/pages/Detail/**" = @("scripts/detail.spec.ts")
+    "src/pages/Detail/**" = @("scripts/detail.spec.ts", "scripts/regression-detail.spec.ts")
     "src/pages/Settings/**" = @("scripts/settings.spec.ts")
     "src/pages/Browse/**" = @("scripts/browse.spec.ts")
     "src/pages/Collections/**" = @("scripts/collections.spec.ts")
@@ -54,6 +54,7 @@ $testGroups = @{
     "regression" = @(
         "scripts/home.spec.ts",
         "scripts/detail.spec.ts",
+        "scripts/regression-detail.spec.ts",
         "scripts/settings.spec.ts",
         "scripts/browse.spec.ts",
         "scripts/collections.spec.ts",
