@@ -82,6 +82,7 @@ export function useEpisodeSwitcher({
     handlePrevEpisode,
     handleNextEpisode,
     episodes,
+    currentEpisodeIndex,
     isFirstEpisode: currentEpisodeIndex <= 0,
     isLastEpisode: currentEpisodeIndex >= episodes.length - 1,
   };

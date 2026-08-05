@@ -26,7 +26,7 @@ import { PlayerSeasonPanel } from './PlayerSeasonPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
 import { useDocumentTitle, useIsTV } from '@/hooks';
-import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager } from './hooks';
+import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager, useNextEpisodePreload } from './hooks';
 import './Player.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -145,11 +145,21 @@ export default function PlayerPage() {
   const {
     switchToEpisode, handlePlayEpisode, handlePlaySource,
     handlePrevEpisode, handleNextEpisode,
-    episodes, isFirstEpisode, isLastEpisode,
+    episodes, currentEpisodeIndex, isFirstEpisode, isLastEpisode,
   } = useEpisodeSwitcher({
     video, localEpisodeId, setLocalEpisodeId,
     setCurrentSrc, currentSourceNameRef,
   });
+
+  // ── 预加载②：下一集 manifest + 首分片预拉（仅 Wi-Fi，playing 后触发）──
+  const nextEpisode =
+    currentEpisodeIndex >= 0 && !isLastEpisode
+      ? episodes[currentEpisodeIndex + 1]
+      : undefined;
+  const nextEpisodeUrl = nextEpisode?.sources
+    ? (nextEpisode.sources.find(s => s.isDefault) || nextEpisode.sources[0])?.url
+    : undefined;
+  useNextEpisodePreload({ enabled: !!nextEpisodeUrl, nextEpisodeUrl });
 
   // 应用详情页“全部”弹框指定的线路/选集：在 handleSelectSeason 定义之后处理（见下方 effect）
 
