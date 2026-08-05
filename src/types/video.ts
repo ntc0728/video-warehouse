@@ -6,8 +6,8 @@
 /** 视频类型：电影、剧集、综艺、动漫 */
 export type VideoType = 'movie' | 'tv' | 'variety' | 'anime';
 
-/** 播放源类型：MP4直链、HLS流、DASH流、网盘 */
-export type SourceType = 'mp4' | 'm3u8' | 'dash' | 'pan';
+/** 播放源类型：MP4直链、HLS流、DASH流、网盘、FLV/裸TS流（mpegts.js 兜底） */
+export type SourceType = 'mp4' | 'm3u8' | 'dash' | 'pan' | 'flv';
 
 /** 视频播放源，表示一个可播放的视频地址 */
 export interface VideoSource {

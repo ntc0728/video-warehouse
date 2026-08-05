@@ -3,6 +3,7 @@ import type { IPlayerAdapter } from './PlayerAdapter';
 import { HLSAdapter } from './HLSAdapter';
 import { NativeAdapter } from './NativeAdapter';
 import { DashAdapter } from './DashAdapter';
+import { MPEGTSAdapter } from './MPEGTSAdapter';
 
 type AdapterFactory = (url: string, options?: Record<string, unknown>) => IPlayerAdapter;
 
@@ -28,6 +29,13 @@ registry.set('dash', (url, options) => {
 
 registry.set('pan', (url) => {
   return new NativeAdapter(url);
+});
+
+// C3 兜底：FLV / 裸 TS 流 → mpegts.js 播放
+registry.set('flv', (url, options) => {
+  return new MPEGTSAdapter(url, {
+    onError: options?.onError as ((error: Error) => void) | undefined,
+  });
 });
 
 export function createAdapter(type: SourceType, url: string, options?: Record<string, unknown>): IPlayerAdapter {
