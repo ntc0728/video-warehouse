@@ -1,5 +1,5 @@
-import { PictureInPicture2 } from 'lucide-react';
-import { Icon } from "@/components/ui/Icon";
+import { PictureInPicture2, PictureInPicture } from 'lucide-react';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface PiPButtonProps {
   isPiP: boolean;
@@ -17,7 +17,7 @@ export default function PiPButton({ isPiP, onClick }: PiPButtonProps) {
       aria-label={isPiP ? '退出画中画' : '画中画'}
       aria-pressed={isPiP}
     >
-      <Icon icon={PictureInPicture2} size="md" />
+      <DuoIcon primary={PictureInPicture2} secondary={PictureInPicture} size="md" />
     </button>
   );
 }

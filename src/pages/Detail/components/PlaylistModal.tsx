@@ -355,7 +355,7 @@ export default function PlaylistModal({
 
   const jumpToFirstMatch = useCallback(() => {
     if (filtered.length === 0) {
-      toast.show('没有匹配的剧集');
+      toast.warning('没有匹配的剧集');
       return;
     }
     const first = filtered[0];

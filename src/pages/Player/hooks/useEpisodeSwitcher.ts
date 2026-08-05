@@ -1,5 +1,6 @@
 import { useCallback, useRef, useMemo } from 'react';
 import { usePlayerStore } from '@/stores';
+import { toast } from '@/components/ui/toastBus';
 import type { Video, VideoSource, Episode } from '@/types/video';
 
 interface UseEpisodeSwitcherOptions {
@@ -37,6 +38,8 @@ export function useEpisodeSwitcher({
     if (episodeSwitchTimerRef.current) return;
     const matchedEp = video?.episodes?.find(e => e.id === ep.id) ?? ep;
     switchToEpisode(matchedEp);
+    // 集数切换提示（replace 覆盖 ToastTrigger 可能误报的「已切换到线路名」）
+    toast.replace(`已切换到${matchedEp.title}`);
     episodeSwitchTimerRef.current = setTimeout(() => {
       episodeSwitchTimerRef.current = null;
     }, 300);

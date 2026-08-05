@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { Volume2, Volume1, VolumeX } from 'lucide-react';
-import { Icon } from '@/components/ui/Icon';
+import { Volume, Volume2, Volume1, VolumeX } from 'lucide-react';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface VolumeControlProps {
   volume: number;
@@ -16,6 +16,8 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
   const isTouchRef = useRef(false);
 
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  // hover 近似变体：静音→Volume、低→Volume2、高→Volume1（相邻级别图标微跳）
+  const VolumeIconAlt = volume === 0 ? Volume : volume < 0.5 ? Volume2 : Volume1;
 
   const handleToggleMute = useCallback(() => {
     if (isTouchRef.current) {
@@ -45,7 +47,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
         onTouchStart={handleButtonTouch}
         title="静音 (M)"
       >
-        <Icon icon={VolumeIcon} size="md" />
+        <DuoIcon primary={VolumeIcon} secondary={VolumeIconAlt} size="md" />
       </button>
       {isOpen && (
         <div className="up-volume-slider-popup" style={{ touchAction: 'none' }}>

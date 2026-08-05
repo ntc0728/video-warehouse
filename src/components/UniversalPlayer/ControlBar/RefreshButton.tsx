@@ -1,5 +1,5 @@
-import { RefreshCw } from 'lucide-react';
-import { Icon } from "@/components/ui/Icon";
+import { RefreshCw, RefreshCcw } from 'lucide-react';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface RefreshButtonProps {
   onClick: () => void;
@@ -11,7 +11,7 @@ export default function RefreshButton({ onClick }: RefreshButtonProps) {
       onClick={onClick}
       title="刷新"
     >
-      <Icon icon={RefreshCw} size="md" />
+      <DuoIcon primary={RefreshCw} secondary={RefreshCcw} size="md" />
     </button>
   );
 }

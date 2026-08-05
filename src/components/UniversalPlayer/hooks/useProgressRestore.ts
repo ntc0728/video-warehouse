@@ -20,6 +20,7 @@
  */
 import { useCallback } from 'react';
 import { getHistory } from '@/services/database';
+import { toast } from '@/components/ui/toastBus';
 
 /** Hook 配置选项 */
 interface UseProgressRestoreOptions {
@@ -80,6 +81,8 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
       if (videoHistory && videoHistory.progress > 0 && video.duration && isFinite(video.duration)) {
         // 避免跳转到视频末尾（duration - 1 秒）
         video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
+        // 提示已自动恢复播放位置（replace 防 canplay/切集双触发叠加）
+        toast.replace('已自动跳转到上次观看的位置');
       }
     } catch (err) {
       console.error('Failed to load progress:', err);

@@ -22,9 +22,9 @@ export default function PersonalTab() {
   const handleExport = () => {
     try {
       exportBackup();
-      toast.show('已导出设置与数据');
+      toast.success('已导出设置与数据');
     } catch {
-      toast.show('导出失败，请重试');
+      toast.error('导出失败，请重试');
     }
   };
 
@@ -35,9 +35,9 @@ export default function PersonalTab() {
     try {
       const text = await file.text();
       applyBackup(parseBackup(text));
-      toast.show('已导入并恢复数据');
+      toast.success('已导入并恢复数据');
     } catch (err) {
-      toast.show((err as Error).message || '导入失败');
+      toast.error((err as Error).message || '导入失败');
     }
   };
 
@@ -45,21 +45,21 @@ export default function PersonalTab() {
     switch (confirm) {
       case 'reset':
         resetToDefaults();
-        toast.show('设置已恢复默认');
+        toast.success('设置已恢复默认');
         break;
       case 'collections':
         clearCollections();
-        toast.show('收藏已清空');
+        toast.success('收藏已清空');
         break;
       case 'history':
         clearHistory();
-        toast.show('观看历史已清空');
+        toast.success('观看历史已清空');
         break;
       case 'all':
         resetToDefaults();
         clearCollections();
         clearHistory();
-        toast.show('已恢复默认并清空收藏、历史');
+        toast.success('已恢复默认并清空收藏、历史');
         break;
     }
     setConfirm(null);

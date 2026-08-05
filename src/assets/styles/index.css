@@ -869,3 +869,46 @@ main {
 .batch-mode .history-content {
   padding-bottom: calc(var(--space-2xl) + var(--space-md));
 }
+
+/* ══ Toast 全局样式（Sonner） ═══════════════════════════════════════
+   位置：
+   · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方
+   · 播放器页面（body[data-player-toast="active"]）→ 播放器中间靠上（top 42%），
+     不贴边框，播放器内提示与操作提示统一在此展示
+   宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
+.sonner-toaster[data-placement="top-center"] {
+  top: calc(var(--header-height) + var(--space-lg)) !important;
+  align-items: center;
+}
+
+body[data-player-toast="active"] .sonner-toaster[data-placement="top-center"] {
+  top: 42% !important;
+}
+
+.sonner-toaster .app-toast {
+  width: fit-content;
+  min-width: 10rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: var(--space-sm) var(--space-lg);
+  align-items: center;
+  justify-content: center;
+}
+
+.sonner-toaster .app-toast [data-content] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sonner-toaster .app-toast [data-title] {
+  text-align: center;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.sonner-toaster .app-toast [data-icon] {
+  width: auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+}

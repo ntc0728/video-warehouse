@@ -103,7 +103,7 @@ export function useSettingsState() {
     if (versionClickTimer.current) clearTimeout(versionClickTimer.current);
     const remaining = 3 - versionClickCount.current;
     if (remaining > 0) {
-      toast.replace({ content: `再点击${remaining} 次进入源检测页`, duration: 3000 });
+      toast.replace({ content: `再点击${remaining} 次进入源检测页` });
       versionClickTimer.current = setTimeout(() => { versionClickCount.current = 0; }, 3000);
     } else {
       versionClickCount.current = 0;
@@ -114,7 +114,7 @@ export function useSettingsState() {
   const handleSaveApiKey = () => {
     setTranslationAppId(appIdInput.trim());
     setTranslationApiKey(apiKeyInput.trim());
-    toast.show('翻译 API 配置已保存');
+    toast.success('翻译 API 配置已保存');
     setShowApiInput(false);
   };
 
@@ -123,14 +123,14 @@ export function useSettingsState() {
     setCorsProxyError(error);
     if (error) return;
     setCorsProxy(corsProxyInput.trim());
-    toast.show(corsProxyInput.trim() ? 'CORS 代理地址已保存' : 'CORS 代理地址已清除');
+    toast.success(corsProxyInput.trim() ? 'CORS 代理地址已保存' : 'CORS 代理地址已清除');
     setShowCorsProxyInput(false);
   };
 
   const handleVideoSourcesChange = (values: string[]) => {
     const newIndices = values.map(Number);
     if (newIndices.length === 0) {
-      toast.show({ content: '至少需要保留一个数据源', duration: 2000 });
+      toast.show({ content: '至少需要保留一个数据源', type: 'warning' });
       setVideoSourceIndices([0]);
       return;
     }
@@ -140,7 +140,7 @@ export function useSettingsState() {
   const handleIptvSourcesChange = (values: string[]) => {
     let newIndices = values.map(Number);
     if (newIndices.length === 0) {
-      toast.show({ content: '至少需要保留一个数据源', duration: 2000 });
+      toast.show({ content: '至少需要保留一个数据源', type: 'warning' });
       newIndices = [0];
     }
     setIPTVSourceIndices(newIndices);
@@ -165,7 +165,7 @@ export function useSettingsState() {
       try {
         const { fetchAndParseEPG } = await import('@/services/epgService');
         await fetchAndParseEPG();
-        toast.show('节目单数据已更新');
+        toast.success('节目单数据已更新');
       } catch { /* ignore */ }
     }, 1000);
   };
@@ -175,18 +175,18 @@ export function useSettingsState() {
     setProxyUrlError(error);
     if (error) return;
     setIPTVSettings({ proxyUrl: proxyUrlInput.trim() });
-    toast.show(proxyUrlInput.trim() ? '代理地址已保存' : '代理地址已清除');
+    toast.success(proxyUrlInput.trim() ? '代理地址已保存' : '代理地址已清除');
     setShowProxyInput(false);
   };
 
   const handleSavePattern = () => {
     const error = validators.regex(patternInput.trim());
     if (error) {
-      toast.show({ content: error, duration: 3000 });
+      toast.show({ content: error, type: 'error' });
       return;
     }
     setIPTVSettings({ proxyPattern: patternInput.trim() });
-    toast.show(patternInput.trim() ? '代理规则已保存' : '代理规则已清除');
+    toast.success(patternInput.trim() ? '代理规则已保存' : '代理规则已清除');
     setShowPatternInput(false);
   };
 
@@ -196,10 +196,10 @@ export function useSettingsState() {
     setTMDBToken(token);
     setShowTMDBTokenInput(false);
     if (token) {
-      toast.show('TMDB Token 已保存，正在加载数据...');
+      toast.success('TMDB Token 已保存，正在加载数据...');
       void fetchAllHomeData();
     } else {
-      toast.show('TMDB Token 已清除');
+      toast.success('TMDB Token 已清除');
     }
   };
 

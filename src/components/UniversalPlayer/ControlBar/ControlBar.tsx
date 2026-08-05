@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { SkipBack, SkipForward } from 'lucide-react';
+import { SkipBack, SkipForward, StepBack, StepForward } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
 import MirrorButton from './MirrorButton';
@@ -19,7 +19,7 @@ import TimeDisplay from './TimeDisplay';
 import MoreMenu from './MoreMenu';
 import ScreenshotButton from './ScreenshotButton';
 import LoopButton from './LoopButton';
-import { Icon } from "@/components/ui/Icon";
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface ControlBarProps {
   mode: PlayerMode;
@@ -115,6 +115,7 @@ export default function ControlBar({
         duration={videoDuration}
         buffered={buffered}
         onSeek={onSeek}
+        buffering={isBuffering}
       />
 
       <div className="up-control-bar-buttons">
@@ -125,17 +126,18 @@ export default function ControlBar({
               onClick={onPrevEpisode}
               title="上一集 ([)"
             >
-              <Icon icon={SkipBack} size="md" />
+              <DuoIcon primary={SkipBack} secondary={StepBack} size="md" />
             </button>
           )}
-          <PlayButton isPlaying={isPlaying} disabled={isBuffering} onClick={onTogglePlay} />
+          {/* 缓冲中仍可点击暂停（仅缓冲且未播放时禁用：此时点播放无意义） */}
+          <PlayButton isPlaying={isPlaying} disabled={isBuffering && !isPlaying} onClick={onTogglePlay} />
           {hasNextEpisode !== undefined && (
             <button
               disabled={!hasNextEpisode}
               onClick={onNextEpisode}
               title="下一集 (])"
             >
-              <Icon icon={SkipForward} size="md" />
+              <DuoIcon primary={SkipForward} secondary={StepForward} size="md" />
             </button>
           )}
           {isLiveLike && onRefresh && (

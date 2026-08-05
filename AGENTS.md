@@ -221,7 +221,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 `UniversalPlayer`（`src/components/UniversalPlayer/`）在 `mode === 'iptv'`（`IPTVPlayer` 调用）下走**独立播放逻辑**，与点播（`mode === 'video'`）区分，**不要复用点播的播放/提示交互**：
 - **自动播放**：`usePlayerCore.handleCanPlay` 在 `autoPlay=true` 且流可播放时直接 `video.play()`，加载即播；被浏览器拦截（多因带声音且无用户手势）时静音兜底重试一次，避免黑屏与中间播放按钮。
 - **无中间播放按钮**：中间暂停遮罩 `.up-player-paused-overlay` 仅在 `mode !== 'iptv'` 时渲染，IPTV 直播不显示大播放按钮（点播保留，供用户点击开始）。
-- **右上角无点播提示**：`ToastTrigger`（`.up-player-toast`）在 `mode === 'iptv'` 时直接跳过 store 订阅，右上角**不显示任何**点播类操作提示（音量 / 切换线路 / 播放暂停 / 倍速 / 循环 / 画中画 / 镜像 / 比例 / 解码）。IPTV 的提示由其自身独立逻辑负责。
+- **提示体系（统一 sonner toast）**：`toastBus`（sonner）为全局唯一提示系统——普通页面顶部居中（导航栏下方），播放器页面（`body[data-player-toast="active"]`）中间靠上（top 42%）；`toast.success/warning/error` 带语义色图标，统一 3s。`ToastTrigger` 在 `mode === 'iptv'` 仍跳过 store 订阅（不显示点播类操作提示），但 IPTV 切线路由 `handleSourceSwitch` 统一提示「已切换到线路 X/Y」（C1 自动切换传专用文案）；`PlayerToast` 为兼容层（转发 sonner，保留 context API），`.up-player-toast` 样式已废弃。
 - **键盘快捷键跳过**：`useKeyboardShortcuts` 在 `mode === 'iptv'` 时移除空格键的播放/暂停（直播无暂停语义），仅保留音量/全屏/静音/Escape。
 - **遥控器跳过**：`useTVInput` 在 `mode === 'iptv'` 时遥控器播放/暂停键不触发 `togglePlay`。
 - **裸流降级识别（D1）**：`HLSAdapter` 对 `manifestParsingError`（拿到内容但解析失败）上报带 `code='BARE_STREAM'` 的错误，与 `manifestLoadError`（网络层失败，维持「频道源不可用」走 A3）区分。`UniversalPlayer` 在 `mode==='iptv'` 且未对当前 URL 降级过时，用 `degradedType` state 临时将播放器类型覆盖为 `flv`，重建 `MPEGTSAdapter` 重试**同一 URL**（每 URL 仅 1 次，URL 变化时复位）。worker `m3u8-proxy` 对非 `#EXTM3U` 内容（`isM3U8Content` 判断）直接透传源站二进制（不重写、不缓存），使 mpegts.js 能拉裸 TS/FLV 流——**零额外请求识别裸流**。
