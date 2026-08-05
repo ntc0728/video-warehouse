@@ -81,7 +81,7 @@ export default function IptvTab({
         />
         <List.Item
           title={<>代理规则<HelpPopover title="代理规则" content="设置代理规则正则表达式。匹配正则的URL不走代理，其余走代理。留空则所有地址都走代理。用于区分需要代理和不需要代理的流地址。" /></>}
-          description={iptvSettings.proxyPattern || '默认: 全部走代理（留空即全部代理）'}
+          description={iptvSettings.proxyPattern || '默认: 内置直连白名单（咪咕/腾讯云/阿里 CDN 等直连，其余走代理）'}
           extra={
             <Button size="sm" className="settings-btn-mini" onClick={onEditIptvPattern}>配置</Button>
           }
