@@ -271,7 +271,24 @@ async function setCachedEPG(data: ParsedEPGData, urls: string[]): Promise<void> 
   } catch { /* 缓存写入失败不影响主流程 */ }
 }
 
-export async function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGData> {
+// ── EPG 请求合并（防「节目单无限调用接口」）─────────────────────────
+// 同一 key（customUrl）在途请求共享一次网络拉取：重复点击节目单 / 多处同时
+// 拉取 EPG（播放页 + 设置页）不会再各自发全量请求。完成后自动清空。
+const pendingEPGFetch = new Map<string, Promise<ParsedEPGData>>();
+
+export function fetchAndParseEPG(customUrl?: string): Promise<ParsedEPGData> {
+  const key = customUrl ?? '';
+  let pending = pendingEPGFetch.get(key);
+  if (!pending) {
+    pending = doFetchAndParseEPG(customUrl).finally(() => {
+      pendingEPGFetch.delete(key);
+    });
+    pendingEPGFetch.set(key, pending);
+  }
+  return pending;
+}
+
+async function doFetchAndParseEPG(customUrl?: string): Promise<ParsedEPGData> {
   const epgUrls = useSettingsStore.getState().epgUrls;
   const updateInterval = useSettingsStore.getState().epgUpdateInterval || 6;
   const intervalMs = updateInterval * 60 * 60 * 1000;

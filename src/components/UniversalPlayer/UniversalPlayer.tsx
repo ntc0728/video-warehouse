@@ -25,7 +25,7 @@ import { ControlBar } from './ControlBar';
 import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
-import type { EPGProgram } from '@/services/epgService';
+import type { EPGProgram, ParsedEPGData } from '@/services/epgService';
 import { Rewind, FastForward, X } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
@@ -322,6 +322,8 @@ retryCount,
       // IPTV 模式自动切线路：存在同名其它线路（sourceId 不同）时自动切到第一条其它线路，
       // 每频道名仅自动切 1 次防线路间死循环；无其它线路或已切过则仅 toast 提示
       if (error.message.includes('仅含音频')) {
+        // 已确认源可播放音频（无视频轨）：停止加载动画，避免 spinner 一直转
+        usePlayerStore.getState().setPlayerLoading(false);
         const channel = currentChannelRef.current;
         if (mode === 'iptv' && channel) {
           const sameNameChannels = channelsRef.current.filter(
@@ -345,6 +347,8 @@ retryCount,
       // 再次失败则走下方 C1 切线路 / A3 切代理）。worker 端 m3u8-proxy 已支持裸流透传，
       // 因此代理 URL 无需改写即可被 mpegts.js 拉流。
       if ((error as Error & { code?: string }).code === ERROR_CODE_BARE_STREAM && mode === 'iptv') {
+        // 已确认内容是裸流（将降级 mpegts.js）：停止加载动画，避免 spinner 一直转
+        usePlayerStore.getState().setPlayerLoading(false);
         if (!bareStreamRetriedRef.current.has(currentUrl)) {
           bareStreamRetriedRef.current.add(currentUrl);
           setDegradedType('flv');
@@ -457,27 +461,34 @@ retryCount,
     const displayName = currentChannelName || channelName || '';
     setProgramGuideChannelName(displayName);
 
-    // 加载当前频道的 EPG 数据
-    try {
-      const { fetchAndParseEPG, getChannelProgramsWithStatus: getProgs, matchEPGChannel } = await import('@/services/epgService');
-      const epgData = await fetchAndParseEPG();
-      const currentCh = _channels.find(c => c.id === currentChannelId);
-
-      const matchedChannel = currentCh
-        ? matchEPGChannel(currentCh.name, currentCh.tvgId, epgData.channels)
-        : null;
-
-      const matchedId = matchedChannel?.id || currentChannelId;
-      if (matchedId) {
-        const progs = getProgs(matchedId, epgData);
-        setProgramGuideData(progs);
-      }
-    } catch {
-      setProgramGuideData([]);
-    }
-
+    // 先弹窗（内容区加载中），避免阻塞等待 EPG 网络请求导致"弹窗显示很慢"
     setShowProgramGuide(true);
     showControls();
+
+    try {
+      const {
+        getCachedEPGData, fetchAndParseEPG,
+        getChannelProgramsWithStatus: getProgs, matchEPGChannel,
+      } = await import('@/services/epgService');
+      const currentCh = _channels.find(c => c.id === currentChannelId);
+
+      const applyEPG = (epgData: ParsedEPGData) => {
+        const matchedChannel = currentCh
+          ? matchEPGChannel(currentCh.name, currentCh.tvgId, epgData.channels)
+          : null;
+        const matchedId = matchedChannel?.id || currentChannelId;
+        if (matchedId) setProgramGuideData(getProgs(matchedId, epgData));
+      };
+
+      // 1) 缓存优先：先渲染已有节目单（无网络请求，弹窗立即可见）
+      const cached = await getCachedEPGData();
+      if (cached.channels.length > 0) applyEPG(cached);
+      // 2) 后台刷新：请求合并（重复点击共享一次网络拉取）；失败静默保留缓存
+      const fresh = await fetchAndParseEPG();
+      applyEPG(fresh);
+    } catch {
+      // 保留缓存结果；无缓存则节目单为空
+    }
   }, [currentChannelId, currentChannelName, channelName, _channels, showControls]);
 
   const handleCloseProgramGuide = useCallback(() => {
