@@ -164,18 +164,12 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   const bufferedPercent = duration > 0 && Number.isFinite(duration) ? (buffered / duration) * 100 : 0;
   // 拖动中或松手后的过渡期内保持显示目标位置，不跳回旧值
   const showPending = isDragging || pendingTime !== null;
-  const displayTime = showPending
-    ? (hoverTime ?? pendingTime ?? currentTime)
-    : currentTime;
   const displayPercent = showPending
     ? (hoverTime !== null ? hoverPosition : (pendingTime !== null ? pendingPosition : progress))
     : progress;
 
   return (
     <div className="up-progress-container">
-      {!isLive && (
-        <span className="up-time-display">{formatTime(displayTime)}</span>
-      )}
       <div
         ref={barRef}
         className={`up-progress-bar ${isLive ? 'up-progress-live' : ''} ${isDragging ? 'up-progress-dragging' : ''}`}
@@ -198,9 +192,6 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           </div>
         )}
       </div>
-      {!isLive && (
-        <span className="up-time-display">{formatTime(duration)}</span>
-      )}
     </div>
   );
 }
