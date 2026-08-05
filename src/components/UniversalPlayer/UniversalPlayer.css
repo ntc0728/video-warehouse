@@ -250,6 +250,48 @@
   align-items: center;
 }
 
+/* ── 双图标 hover「跳动」（DuoIcon） ────────────────────────────
+   两套相似图标层叠：hover 时主图标淡出上移、副图标淡入归位，
+   纯 opacity/transform 过渡（GPU 合成不卡顿，不触发 layout）。 */
+.up-icon-duo {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.up-icon-duo > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s ease, transform 0.18s var(--ease-standard);
+}
+.up-icon-duo__secondary {
+  opacity: 0;
+  transform: scale(0.55) translateY(4px);
+}
+.up-control-bar button:hover .up-icon-duo__primary,
+.iptv-osd-bar button:hover .up-icon-duo__primary {
+  opacity: 0;
+  transform: scale(0.55) translateY(-4px);
+}
+.up-control-bar button:hover .up-icon-duo__secondary,
+.iptv-osd-bar button:hover .up-icon-duo__secondary {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+/* 焦点/键盘导航态同样触发（无障碍） */
+.up-control-bar button:focus-visible .up-icon-duo__primary,
+.iptv-osd-bar button:focus-visible .up-icon-duo__primary {
+  opacity: 0;
+  transform: scale(0.55) translateY(-4px);
+}
+.up-control-bar button:focus-visible .up-icon-duo__secondary,
+.iptv-osd-bar button:focus-visible .up-icon-duo__secondary {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
 .up-control-left {
   display: flex;
   gap: var(--space-xs);

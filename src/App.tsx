@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
+import { TOAST_DURATION } from './components/ui/toastBus';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
 import { useUserStore } from './stores';
@@ -22,12 +23,21 @@ function App() {
   return (
     <>
       <Toaster
-        position="bottom-center"
+        position="top-center"
+        offset={0}
         toastOptions={{
+          duration: TOAST_DURATION,
+          classNames: {
+            toast: 'app-toast',
+          },
           style: {
             background: 'var(--color-surface)',
             color: 'var(--color-text)',
             border: '1px solid var(--color-border-light)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-md)',
+            maxWidth: 'min(22rem, calc(100vw - 2rem))',
+            textAlign: 'center',
           },
         }}
       />

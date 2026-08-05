@@ -145,10 +145,18 @@ export default function UniversalPlayer({
   // EPG 数据 hook
   const { epgReady, epgProgramsRef, epgStatus, epgError } = useEPGData({ mode, channels: _channels });
 
+  // toast 位置：播放器页面 → 中间靠上（body 标记驱动全局 CSS 重定位 sonner）
+  useEffect(() => {
+    document.body.dataset.playerToast = 'active';
+    return () => {
+      delete document.body.dataset.playerToast;
+    };
+  }, []);
+
   // EPG 加载失败时显示 toast
   useEffect(() => {
     if (epgStatus === 'error' && epgError && mode === 'iptv') {
-      toast.show({ content: `EPG: ${epgError}`, duration: 4000 });
+      toast.show({ content: `EPG: ${epgError}`, type: 'error' });
     }
   }, [epgStatus, epgError, mode]);
 
@@ -321,12 +329,14 @@ retryCount,
           );
           if (sameNameChannels.length > 0 && !audioOnlyLineSwitchedRef.current.has(channel.name)) {
             audioOnlyLineSwitchedRef.current.add(channel.name);
-            handleSourceSwitchRef.current(0, mode, channel, channelsRef.current, usePlayerStore.getState().sources);
-            toast.show({ content: '该源仅含音频，已自动切换线路…', duration: 4000 });
+            handleSourceSwitchRef.current(0, mode, channel, channelsRef.current, usePlayerStore.getState().sources, {
+              content: '该源仅含音频，已自动切换线路…',
+              type: 'warning',
+            });
             return;
           }
         }
-        toast.show({ content: error.message, duration: 6000 });
+        toast.show({ content: error.message, type: 'error' });
         onError?.(error);
         return;
       }
@@ -338,7 +348,7 @@ retryCount,
         if (!bareStreamRetriedRef.current.has(currentUrl)) {
           bareStreamRetriedRef.current.add(currentUrl);
           setDegradedType('flv');
-          toast.show({ content: '检测到裸流，切换解码方式重试…', duration: 3000 });
+          toast.show({ content: '检测到裸流，切换解码方式重试…', type: 'warning' });
           return;
         }
       }
@@ -348,7 +358,7 @@ retryCount,
         if (!proxyRetriedRef.current) {
           proxyRetriedRef.current = true;
           const proxied = buildProxyUrl(currentUrl, proxyUrl);
-          toast.show({ content: '直连失败，自动切换代理播放…', duration: 3000 });
+          toast.show({ content: '直连失败，自动切换代理播放…', type: 'warning' });
           setCurrentUrl(proxied);
           return;
         }
@@ -356,7 +366,7 @@ retryCount,
       // If video is already playing (e.g. audio works but video decode fails),
       // show non-blocking toast instead of the full error overlay
       if (videoElementRef.current && !videoElementRef.current.paused) {
-        toast.show({ content: error.message, duration: 5000 });
+        toast.show({ content: error.message, type: 'error' });
         return;
       }
       setHasError(true);
@@ -680,8 +690,9 @@ retryCount,
         </div>
       )}
 
-      {/* 预加载完成待播放 / 暂停状态显示播放按钮（IPTV 直播加载即播，不显示中间播放按钮） */}
-      {isReadyToPlay && !isPlaying && !hasError && !isBuffering && mode !== 'iptv' && (
+      {/* 预加载完成待播放 / 暂停状态显示播放按钮（IPTV 直播加载即播，不显示中间播放按钮）。
+          !isPlayerLoading：切源/加载失败前 isReadyToPlay 残留 true 时禁止闪现播放图标 */}
+      {isReadyToPlay && !isPlaying && !hasError && !isBuffering && !isPlayerLoading && mode !== 'iptv' && (
         <div
           className="up-player-paused-overlay"
           onClick={(e) => {

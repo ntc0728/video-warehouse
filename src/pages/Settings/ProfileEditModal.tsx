@@ -46,7 +46,7 @@ export default function ProfileEditModal({
   const handleSave = () => {
     setUsername(name.trim())
     setAvatar(avatar)
-    toast.show('个人资料已保存')
+    toast.success('个人资料已保存')
     onClose()
   }
 

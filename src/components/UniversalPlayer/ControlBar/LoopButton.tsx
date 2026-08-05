@@ -1,6 +1,7 @@
 import { Repeat, Repeat1 } from 'lucide-react';
 import type { LoopMode } from '@/types/player';
-import { Icon } from "@/components/ui/Icon";
+import { Icon } from '@/components/ui/Icon';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface LoopButtonProps {
   mode: LoopMode;
@@ -37,7 +38,9 @@ export default function LoopButton({ mode, onChange }: LoopButtonProps) {
       aria-label={label}
       aria-pressed={mode !== 'none'}
     >
-      {mode === 'single' ? <Icon icon={Repeat1} size="md" /> : <Icon icon={Repeat} size="md" />}
+      {mode === 'single'
+        ? <DuoIcon primary={Repeat1} secondary={Repeat} size="md" />
+        : <DuoIcon primary={Repeat} secondary={Repeat1} size="md" />}
     </button>
   );
 }

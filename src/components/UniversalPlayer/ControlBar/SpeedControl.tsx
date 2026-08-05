@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Gauge } from 'lucide-react';
-import { Icon } from "@/components/ui/Icon";
+import { Gauge, GaugeCircle } from 'lucide-react';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -43,7 +43,7 @@ export default function SpeedControl({ currentRate, onChange, activePopover, onP
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        <Icon icon={Gauge} size="md" />
+        <DuoIcon primary={Gauge} secondary={GaugeCircle} size="md" />
         <span className="up-speed-label">{currentRate === 1 ? '倍速' : `${currentRate}x`}</span>
       </button>
       {isOpen && (

@@ -283,7 +283,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       }
       // If video is already playing (e.g. audio works), show non-blocking toast instead of error overlay
       if (!video.paused) {
-        toast.show({ content: msg, duration: 5000 });
+        toast.show({ content: msg, type: 'error' });
         return;
       }
       onError?.(new Error(msg));
@@ -364,7 +364,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
         await videoRef.current?.play();
       }
     } catch {
-      toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', duration: 3000 });
+      toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', type: 'warning' });
     }
   }, []);
 

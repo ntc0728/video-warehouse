@@ -1,8 +1,8 @@
-import { Maximize, Minimize } from 'lucide-react';
+import { Maximize, Minimize, Maximize2, Minimize2 } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { usePlayerStore } from '@/stores';
 import { getFullscreenElement, requestFullscreen, exitFullscreen } from '../lib/fullscreen';
-import { Icon } from "@/components/ui/Icon";
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface FullscreenButtonProps {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -47,7 +47,11 @@ export default function FullscreenButton({ containerRef }: FullscreenButtonProps
       aria-label={isFullscreen ? '退出全屏' : '全屏'}
       aria-pressed={isFullscreen}
     >
-      {isFullscreen ? <Icon icon={Minimize} size="md" /> : <Icon icon={Maximize} size="md" />}
+      <DuoIcon
+        primary={isFullscreen ? Minimize : Maximize}
+        secondary={isFullscreen ? Minimize2 : Maximize2}
+        size="md"
+      />
     </button>
   );
 }

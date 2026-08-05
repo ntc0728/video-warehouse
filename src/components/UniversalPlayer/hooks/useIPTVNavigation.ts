@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { usePlayerStore } from '@/stores';
+import { toast } from '@/components/ui/toastBus';
+import type { ToastType } from '@/components/ui/toastBus';
 import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
@@ -48,13 +50,14 @@ export function useIPTVNavigation({
     if (idx < allChannels.length - 1) handleChannelSelect(allChannels[idx + 1]);
   }, [currentChannelId, handleChannelSelect]);
 
-  const handleSourceSwitch = useCallback((index: number, mode: string, currentChannel: IPTVChannel | undefined, _channels: IPTVChannel[], sources: { url: string; type: string }[]) => {
+  const handleSourceSwitch = useCallback((index: number, mode: string, currentChannel: IPTVChannel | undefined, _channels: IPTVChannel[], sources: { url: string; type: string }[], toastOpts?: { content?: string; type?: ToastType }) => {
     if (mode === 'iptv' && currentChannel) {
       const sameNameChannels = _channels.filter(
         ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
       );
       if (sameNameChannels.length === 0) return;
-      const nextChannel = sameNameChannels[index % sameNameChannels.length];
+      const targetIndex = index % sameNameChannels.length;
+      const nextChannel = sameNameChannels[targetIndex];
       if (nextChannel) {
         const useProxy = shouldProxy(nextChannel.url, proxyUrl, proxyPattern);
         const playUrl = useProxy
@@ -65,6 +68,11 @@ export function useIPTVNavigation({
         setCurrentChannelId(nextChannel.id);
         setCurrentChannelName(nextChannel.name);
         onChannelChange?.(nextChannel);
+        // 切线路提示：C1 自动切换传入专用文案；手动切换默认「已切换到线路 X/Y」
+        toast.show({
+          content: toastOpts?.content ?? `已切换到线路 ${targetIndex + 1}/${sameNameChannels.length}`,
+          type: toastOpts?.type ?? 'default',
+        });
       }
       return;
     }

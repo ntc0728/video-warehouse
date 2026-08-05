@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { MoreVertical } from 'lucide-react';
-import { Icon } from "@/components/ui/Icon";
+import { MoreVertical, MoreHorizontal } from 'lucide-react';
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface MoreMenuProps {
   children: React.ReactNode;
@@ -36,7 +36,7 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
         title="更多"
         onTouchStart={handleButtonTouch}
       >
-        <Icon icon={MoreVertical} size="md" />
+        <DuoIcon primary={MoreVertical} secondary={MoreHorizontal} size="md" />
       </button>
       {isOpen && (
         <div className="up-popover up-more-popover" onClick={handlePopoverClick}>

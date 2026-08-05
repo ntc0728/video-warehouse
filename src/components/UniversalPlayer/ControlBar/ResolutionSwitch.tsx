@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { Monitor } from 'lucide-react';
+import { Monitor, MonitorPlay } from 'lucide-react';
 import type { PlayerLevel } from '@/types/player';
-import { Icon } from "@/components/ui/Icon";
+import { DuoIcon } from '@/components/ui/DuoIcon';
 
 function getResolutionLabel(level: PlayerLevel): string {
   if (level.height >= 2160) return '4K';
@@ -62,7 +62,7 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
         title="画质"
         onTouchStart={handleButtonTouch}
       >
-        <Icon icon={Monitor} size="md" />
+        <DuoIcon primary={Monitor} secondary={MonitorPlay} size="md" />
         <span className="up-speed-label">{label}</span>
       </button>
       {isOpen && (

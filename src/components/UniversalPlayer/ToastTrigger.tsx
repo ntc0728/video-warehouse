@@ -50,8 +50,8 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
         show(`音量 ${Math.round(vol * 100)}%`);
       }
 
-      // 切换线路
-      if (src !== prevSource.current && src) {
+      // 切换线路（首帧 src 从 null 初始化为实际值不算「切换」，不提示）
+      if (src && prevSource.current !== null && src !== prevSource.current) {
         prevSource.current = src;
         const sources = state.sources;
         const matched = sources.find(s => s.url === src);

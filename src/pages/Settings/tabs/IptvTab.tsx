@@ -43,7 +43,7 @@ export default function IptvTab({
               value={(iptvSourceIndices || [0]).map(String)}
               onChange={handleIptvSourcesChange}
               maxSelected={3}
-              onMaxReached={() => toast.show({ content: '最多选择3个数据源', duration: 2000 })}
+              onMaxReached={() => toast.show({ content: '最多选择3个数据源', type: 'warning' })}
             />
           }
         />
@@ -57,7 +57,7 @@ export default function IptvTab({
               value={epgUrls}
               onChange={handleEpgChange}
               maxSelected={3}
-              onMaxReached={() => toast.show({ content: '最多选择3个节目单源', duration: 2000 })}
+              onMaxReached={() => toast.show({ content: '最多选择3个节目单源', type: 'warning' })}
             />
           }
         />

@@ -84,7 +84,7 @@ export default function VideoTab({
                 value={(videoSourceIndices || [0]).map(String)}
                 onChange={handleVideoSourcesChange}
                 maxSelected={6}
-                onMaxReached={() => toast.show({ content: '最多选择6个数据源', duration: 2000 })}
+                onMaxReached={() => toast.show({ content: '最多选择6个数据源', type: 'warning' })}
               />
             }
           />

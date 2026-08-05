@@ -7,6 +7,8 @@ interface ProgressBarProps {
   duration: number;
   buffered: number;
   onSeek: (time: number) => void;
+  /** 缓冲中禁止拖拽进度条（缓冲时 seek 无效，且避免误操作） */
+  buffering?: boolean;
 }
 
 function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent): number {
@@ -16,7 +18,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, buffering = false }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -39,6 +41,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     const rect = barRef.current.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const time = ratio * duration;
+    // hover 预览始终更新（tooltip），但非拖拽不触发 seek（thumb 不跟随鼠标）
     setHoverTime(time);
     setHoverPosition(ratio * 100);
     if (isDragging) {
@@ -49,7 +52,8 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   }, [duration, isDragging, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    if (isLive || duration <= 0) return;
+    // 直播 / 无时长 / 缓冲中 均禁止拖拽（缓冲中 seek 无效且误触会打断缓冲）
+    if (isLive || duration <= 0 || buffering) return;
     setIsDragging(true);
     const time = calcTime(clientX);
     const ratio = (time / duration) * 100;
@@ -58,7 +62,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, calcTime, onSeek]);
+  }, [isLive, duration, calcTime, onSeek, buffering]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
