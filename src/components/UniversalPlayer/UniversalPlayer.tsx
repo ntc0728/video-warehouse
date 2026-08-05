@@ -665,10 +665,7 @@ retryCount,
           audioTracks={audioTracks}
           onToggleChannelList={() => setChannelListVisible(true)}
           onSourceSwitch={(index) => handleSourceSwitch(index, mode, currentChannel, _channels, sources)}
-          onOpenSettings={() => {}}
-          onOpenResolution={() => {}}
           onOpenAudioTrack={handleAudioTrackSelect}
-          onHeightChange={() => {}}
           epgStatus={epgStatus}
           onRefreshEpg={handleOpenProgramGuide}
           onOpenProgramGuide={handleOpenProgramGuide}

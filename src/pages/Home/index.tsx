@@ -19,6 +19,7 @@ import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
+import { buildContinueItems } from './continueItems';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDocumentTitle } from '@/hooks';
@@ -137,6 +138,10 @@ export default function HomePage() {
     }
     return map;
   }, [history]);
+
+  // 「继续观看」横排数据：取自历史中「有进度且未看完（<90%）」的最新记录，按 updatedAt 倒序。
+  // 与 HeroBanner 的 historyMap 共用一份数据源，但排除已看完项并补全卡片所需字段。
+  const continueItems = useMemo(() => buildContinueItems(history), [history]);
 
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
@@ -368,6 +373,14 @@ export default function HomePage() {
           onCategorySelect={handleCategorySelect}
           activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
         />
+        {!isCategoryView && continueItems.length > 0 && (
+          <TMDBMovieRow
+            title="继续观看"
+            items={[]}
+            continueMode
+            continueItems={continueItems}
+          />
+        )}
         <div className="home-rows">
           {rowDefs.map((row) => (
             <TMDBMovieRow
