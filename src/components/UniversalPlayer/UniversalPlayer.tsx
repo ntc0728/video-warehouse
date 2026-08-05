@@ -400,6 +400,8 @@ retryCount,
     groups,
     onChannelSelect: handleChannelSelect,
     onToggleChannelList: () => setChannelListVisible(!isChannelListVisible),
+    // TV 遥控器音量调节弹音量柱
+    showVolumePopup: showVolumePopupWithTimer,
   });
 
   // IPTV 频道初始化
@@ -726,7 +728,8 @@ retryCount,
         episodeLabel={episodeLabel}
         channelName={currentChannelName || channelName}
         visible={isControlsVisible || hasError}
-        showFullscreenButton={mode === 'iptv'}
+        /* TV 端 IPTV 播放页默认全屏，不显示放大图标；非 TV 端放大图标移至右下角（CSS） */
+        showFullscreenButton={mode === 'iptv' && platform !== 'tv'}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}

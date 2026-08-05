@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useMemo } from 'react';
 import { usePlayerStore } from '@/stores';
 import { useTVRemote } from './useTVRemote';
+import { playerToast } from '../PlayerToast';
 import type { IPTVChannel } from '@/types/iptv';
 
 interface UseTVInputOptions {
@@ -11,6 +12,8 @@ interface UseTVInputOptions {
   groups: { channels: IPTVChannel[] }[];
   onChannelSelect: (channel: IPTVChannel) => void;
   onToggleChannelList: () => void;
+  /** 遥控器音量调节时展示音量柱（VolumePopup） */
+  showVolumePopup: () => void;
 }
 
 export function useTVInput({
@@ -21,6 +24,7 @@ export function useTVInput({
   groups,
   onChannelSelect,
   onToggleChannelList,
+  showVolumePopup,
 }: UseTVInputOptions) {
   const digitTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [digitBuffer, setDigitBuffer] = useState('');
@@ -62,7 +66,10 @@ export function useTVInput({
 
   const handleTvFocusConfirm = useCallback(() => {
     if (tvFocusSection === 'channels' && activeChannels[tvFocusChannelIndex]) {
-      onChannelSelect(activeChannels[tvFocusChannelIndex]);
+      const channel = activeChannels[tvFocusChannelIndex];
+      onChannelSelect(channel);
+      // TV 端换频道右上角提示
+      playerToast(`已切换到${channel.name}`);
     }
   }, [tvFocusSection, activeChannels, tvFocusChannelIndex, onChannelSelect]);
 
@@ -82,6 +89,8 @@ export function useTVInput({
           setTvFocusChannelIndex(channelIndex);
           setTvFocusSection('channels');
           onChannelSelect(channel);
+          // TV 端遥控器频道号输入切换右上角提示
+          playerToast(`已切换到${channel.name}（${newBuffer}）`);
         }
         break;
       }
@@ -102,10 +111,16 @@ export function useTVInput({
     },
     onBack: () => {},
     onVolumeUp: () => {
-      playerCore.setVolume(Math.min(1, (usePlayerStore.getState().volume + 0.1)));
+      const next = Math.min(1, usePlayerStore.getState().volume + 0.1);
+      playerCore.setVolume(next);
+      showVolumePopup();
+      playerToast(`音量 ${Math.round(next * 100)}%`);
     },
     onVolumeDown: () => {
-      playerCore.setVolume(Math.max(0, (usePlayerStore.getState().volume - 0.1)));
+      const next = Math.max(0, usePlayerStore.getState().volume - 0.1);
+      playerCore.setVolume(next);
+      showVolumePopup();
+      playerToast(`音量 ${Math.round(next * 100)}%`);
     },
     onToggleChannelList,
     onFocusMove: handleTvFocusMove,
