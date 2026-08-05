@@ -206,3 +206,14 @@
   transform: scale(1.03);
   transition: transform 0.2s ease;
 }
+
+/* ============================================================
+   「继续观看」行（continueMode）—— 横版 16:9 卡片
+   横版卡片比竖版更宽（列数更少），保证 16:9 下可读性与观感
+   ============================================================ */
+.tmdb-movierow.tmdb-movierow--continue .tmdb-movierow-card {
+  flex-basis: calc(
+    (100% - (var(--continue-cols, 5) - 1) * var(--space-sm))
+    / var(--continue-cols, 5)
+  );
+}

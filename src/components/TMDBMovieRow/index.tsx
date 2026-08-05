@@ -21,25 +21,58 @@ import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
 import { Icon } from "@/components/ui/Icon";
 
+export interface ContinueWatchingItem {
+  /** 视频 id（tmdb-xxx），用于跳转 /play/:id */
+  id: string;
+  /** 封面图（竖版 cover） */
+  cover: string;
+  /** 横版背景图（landscape 卡片用），无则回退 cover */
+  backdrop?: string;
+  title: string;
+  type: 'movie' | 'tv';
+  /** 横版封面左上角标签（如 "源1 · 第3集"） */
+  overlayLabel?: string;
+  /** 播放进度（秒） */
+  progress: number;
+  /** 总时长（秒） */
+  duration: number;
+  /** 最后更新时间（毫秒时间戳），用于排序 */
+  updatedAt?: number;
+}
+
 interface TMDBMovieRowProps {
   title: string;
   items: TMDBVideoItem[];
   isLoading?: boolean;
   error?: string | null;
+  /**
+   * 继续观看模式：卡片用横版 landscape 样式、显示进度条、
+   * 点击直达 /play/:id。items 传 ContinueWatchingItem[]（类型兼容 TMDBVideoItem 的 id/cover/title/type 字段）。
+   */
+  continueMode?: boolean;
+  /** continueMode 时使用的继续观看数据（带 progress/duration/backdrop/overlayLabel） */
+  continueItems?: ContinueWatchingItem[];
 }
 
 /**
  * 将 TMDBVideoItem 转换为 VideoCard 兼容的 Video 类型
+ * （input 放宽为 TMDBVideoItem 或 ContinueWatchingItem 的结构子集，仅消费 id/title/cover/type/tags）
  */
-function toVideo(item: TMDBVideoItem): Video {
+function toVideo(item: {
+  id: string;
+  title: string;
+  cover: string;
+  type: VideoType;
+  tags?: string[];
+}): Video {
   return {
     id: item.id,
     title: item.title,
     cover: item.cover,
-    type: item.type as VideoType,
-    year: item.year,
-    tags: item.tags,
-    description: item.description,
+    type: item.type,
+    year: undefined,
+    tags: item.tags ?? [],
+    description: undefined,
     actors: [],
     sources: [],
     createdAt: Date.now(),
@@ -70,6 +103,8 @@ function TMDBMovieRow({
   items,
   isLoading = false,
   error = null,
+  continueMode = false,
+  continueItems,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -268,7 +303,8 @@ function TMDBMovieRow({
     };
   }, [isDragging, handlePointerUpOrCancel]);
 
-  if (items.length === 0 && !isLoading) {
+  // continueMode 时以 continueItems 为准（items 为空属正常）；普通模式以 items 为准
+  if (continueMode ? (continueItems?.length ?? 0) === 0 : items.length === 0 && !isLoading) {
     // 有错误时显示错误行，否则隐藏
     if (error) {
       return (
@@ -285,7 +321,7 @@ function TMDBMovieRow({
 
   return (
     <div
-      className="tmdb-movierow"
+      className={`tmdb-movierow${continueMode ? ' tmdb-movierow--continue' : ''}`}
       data-device-row={isTV ? 'tv' : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
     >
@@ -325,6 +361,32 @@ function TMDBMovieRow({
         >
           {isLoading ? (
             <SkeletonCards />
+          ) : continueMode ? (
+            (continueItems ?? []).map((item) => (
+              <div
+                key={item.id}
+                className="tmdb-movierow-card"
+                onFocus={(e) => handleCardFocus(e.currentTarget)}
+                onClickCapture={(e) => {
+                  if (dragMovedRef.current) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    dragMovedRef.current = false;
+                  }
+                }}
+              >
+                <VideoCard
+                  video={toVideo(item)}
+                  hideFavorite
+                  variant="landscape"
+                  backdropSrc={item.backdrop || item.cover}
+                  overlayLabel={item.overlayLabel}
+                  progress={item.progress}
+                  duration={item.duration}
+                  navigateTo={`/play/${item.id}`}
+                />
+              </div>
+            ))
           ) : (
             items.map((item) => {
               // 为 TMDB poster 图片生成响应式 srcSet
@@ -351,7 +413,7 @@ function TMDBMovieRow({
                      rating={item.voteAverage}
                      srcSet={posterSrcSet ?? undefined}
                     sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
-                  />
+                 />
                 </div>
               );
             })
@@ -383,5 +445,7 @@ export default memo(TMDBMovieRow, (prev, next) =>
   prev.title === next.title &&
   prev.isLoading === next.isLoading &&
   prev.error === next.error &&
-  prev.items === next.items,
+  prev.items === next.items &&
+  prev.continueMode === next.continueMode &&
+  prev.continueItems === next.continueItems,
 );
