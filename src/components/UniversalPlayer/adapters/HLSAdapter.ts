@@ -128,6 +128,13 @@ export class HLSAdapter extends BasePlayerAdapter {
           name: getQualityLabel({ width: l.width, height: l.height, bitrate: l.bitrate }),
         }));
 
+        // C1 视频轨检测：所有 level 的宽高均为 0 → manifest 不含视频轨（纯音频源/音频-only 分片）
+        // 直接 onError 上报，由上层（UniversalPlayer）决定 toast 提示或切线路
+        const hasVideoTrack = this.levels.some(l => l.width > 0 && l.height > 0);
+        if (!hasVideoTrack) {
+          this.onError?.(new Error('该源仅含音频，无视频画面'));
+        }
+
         this.audioTracks = this.hls?.audioTracks.map((t: { id?: number; name?: string; lang?: string; default?: boolean }, i: number) => ({
           id: t.id ?? i,
           name: t.name || t.lang || `Track ${i + 1}`,

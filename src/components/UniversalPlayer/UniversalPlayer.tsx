@@ -3,6 +3,7 @@ import { usePlayerStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { toast } from '@/components/ui';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
+import { buildProxyUrl } from '@/services/iptvService';
 import { usePlayerCore } from './hooks/usePlayerCore';
 import { usePlayerControls } from './hooks/usePlayerControls';
 import { useIPTVNavigation } from './hooks/useIPTVNavigation';
@@ -267,6 +268,9 @@ export default function UniversalPlayer({
   const currentUrlRef = useRef(currentUrl);
   currentUrlRef.current = currentUrl;
 
+  // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
+  const proxyRetriedRef = useRef(false);
+
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
 type: (mode === 'iptv' ? (currentType || type) : type) as SourceType,
@@ -288,6 +292,24 @@ retryCount,
     onSkipOutro,
     onError: useCallback((error: Error) => {
       if (currentUrlRef.current !== currentUrl) return;
+      // C1 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，
+      // 无论播放状态都走 toast（不触发全屏错误），并通知上层可自动切线路
+      if (error.message.includes('仅含音频')) {
+        toast.show({ content: error.message, duration: 6000 });
+        onError?.(error);
+        return;
+      }
+      // A3 播放中失败自动切代理：直连播放时网络类错误（CORS 分片失败/源站不可达）
+      // → 若当前 URL 不是代理地址且有可用代理，自动切换重试（每 URL 仅 1 次，防循环）
+      if (mode === 'iptv' && proxyUrl && !currentUrl.includes('/m3u8-proxy') && !currentUrl.includes('/ts-proxy')) {
+        if (!proxyRetriedRef.current) {
+          proxyRetriedRef.current = true;
+          const proxied = buildProxyUrl(currentUrl, proxyUrl);
+          toast.show({ content: '直连失败，自动切换代理播放…', duration: 3000 });
+          setCurrentUrl(proxied);
+          return;
+        }
+      }
       // If video is already playing (e.g. audio works but video decode fails),
       // show non-blocking toast instead of the full error overlay
       if (videoElementRef.current && !videoElementRef.current.paused) {
@@ -296,7 +318,7 @@ retryCount,
       }
       setHasError(true);
       onError?.(error);
-    }, [currentUrl, onError]),
+    }, [currentUrl, onError, mode, proxyUrl, buildProxyUrl, setCurrentUrl]),
   });
 
   const storeVideoRef = useCallback((element: HTMLVideoElement | null) => {
@@ -534,8 +556,11 @@ retryCount,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoHideTimerRef]);
 
-  // URL 或频道变化时重置错误状态
-  useEffect(() => { setHasError(false); }, [url, currentUrl]);
+  // URL 或频道变化时重置错误状态与代理重试标记
+  useEffect(() => {
+    setHasError(false);
+    proxyRetriedRef.current = false;
+  }, [url, currentUrl]);
 
   // 错误状态管理
   useEffect(() => {
