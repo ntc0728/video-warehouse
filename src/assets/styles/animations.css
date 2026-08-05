@@ -126,20 +126,6 @@
   }
 }
 
-@keyframes popIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  50% {
-    transform: scale(1.15);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes popBounce {
   0% {
     transform: scale(1);
@@ -155,23 +141,6 @@
   }
   100% {
     transform: scale(1);
-  }
-}
-
-@keyframes heartBeat {
-  0% { transform: scale(1); }
-  15% { transform: scale(1.25); }
-  30% { transform: scale(1); }
-  45% { transform: scale(1.15); }
-  60% { transform: scale(1); }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
   }
 }
 
@@ -195,13 +164,6 @@
   }
 }
 
-@keyframes ripple {
-  to {
-    opacity: 0;
-    transform: scale(2.5);
-  }
-}
-
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -217,10 +179,6 @@
   0%, 100% { transform: translateY(0); }
   40% { transform: translateY(-3px); }
   60% { transform: translateY(-1px); }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s var(--ease-standard) both;
 }
 
 .animate-card-enter {
@@ -239,28 +197,8 @@
   animation: slideInRight 0.35s var(--ease-standard) both;
 }
 
-.animate-pop-in {
-  animation: popIn 0.4s var(--ease-standard) both;
-}
-
 .animate-pop-bounce {
   animation: popBounce 0.5s var(--ease-standard) both;
-}
-
-.animate-heart-beat {
-  animation: heartBeat 0.65s ease-in-out both;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-.animate-tab-pop {
-  animation: tabPop 0.25s ease-out both;
 }
 
 .animate-icon-bounce {
@@ -268,27 +206,9 @@
 }
 
 
-/* 注：.btn-press 不再自带 :active 缩放。RippleButton 根节点是 <button>，
-   统一由全局方案6（scale:0.92 spring 回弹）+ 水波纹提供按压反馈；
-   .btn-press / .ripple-container 已从全局排除名单移除，交由全局规则接管。 */
-
-.ripple-container {
-  position: relative;
-  overflow: hidden;
-}
-
-.ripple-container .ripple-effect {
-  position: absolute;
-  border-radius: 50%;
-  background-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
-  transform: scale(0);
-  animation: ripple 0.5s ease-out;
-  pointer-events: none;
-}
-
-[data-theme="dark"] .ripple-container .ripple-effect {
-  background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
-}
+/* 注：.btn-press 不再自带 :active 缩放，统一由全局方案6（scale:0.92 spring 回弹）+
+   水波纹提供按压反馈；.btn-press / .ripple-container 已从全局排除名单移除，
+   交由全局规则接管。（2026-08-05 RippleButton.tsx 已删除，ripple-container 死链随之清除） */
 
 /* ── 通用懒加载文字态(全平台使用) ──────────────────────
    - 通过 .page-transition 的 CSS Grid grid-template-rows: 1fr auto
@@ -311,25 +231,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* Accordion animations */
-@keyframes accordion-down {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--radix-accordion-content-height);
-  }
-}
-
-@keyframes accordion-up {
-  from {
-    height: var(--radix-accordion-content-height);
-  }
-  to {
-    height: 0;
   }
 }
 
@@ -391,11 +292,6 @@
     opacity: 0;
     transform: translateY(8px);
   }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 }
 
 /* ── 无障碍：减少动画偏好 ── */

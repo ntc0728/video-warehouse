@@ -411,29 +411,6 @@
   min-height: 0;
 }
 
-/* 播放器空状态返回按钮（已废弃，保留兼容） */
-.player-empty-back {
-  display: inline-flex;
-  gap: var(--space-xs);
-  align-items: center;
-  height: var(--comp-btn-min-height);
-  margin-top: var(--space-md);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  transition: color 0.2s;
-  cursor: pointer;
-}
-
-.player-empty-back:hover {
-  border-color: #fff;
-  color: #fff;
-}
-
 /* 播放器空状态内容容器（图标 + 标题 + 副标题） */
 .player-empty-content {
   display: flex;
