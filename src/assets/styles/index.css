@@ -19,12 +19,6 @@
   .slide-in-from-bottom {
     animation: slide-in-from-bottom 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .animate-accordion-down {
-    animation: accordion-down 0.2s ease-out;
-  }
-  .animate-accordion-up {
-    animation: accordion-up 0.2s ease-out;
-  }
   .badge-animate-pop {
     animation: popBounce 0.5s var(--ease-spring);
   }
