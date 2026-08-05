@@ -11,18 +11,21 @@
 
 | 文件 | 测试页面 | 覆盖内容 | 用例数 |
 |------|----------|----------|--------|
-| `home.spec.ts` | 首页 | Token 校验、HeroBanner、分类入口、行数据、骨架屏、回到顶部 | 21 |
-| `browse.spec.ts` | 浏览/搜索页 | 搜索模式切换、搜索功能、筛选排序、CMS 搜索、懒加载 | 10 |
-| `detail.spec.ts` | 详情页 | Hero 区域、操作按钮、Tab 导航、概览/播放列表/季信息 Tab、推荐 | 18 |
-| `player.spec.ts` | 播放页 | 页面加载、CMS 源管理、面板折叠、收藏与详情 | 8 |
-| `iptv.spec.ts` | IPTV 直播页 | 页面加载、分组筛选、频道检测、懒加载、返回顶部 | 7 |
-| `iptv-player.spec.ts` | IPTV 播放页 | 频道匹配、返回按钮、平台适配 | 4 |
-| `settings.spec.ts` | 设置页 | 主题切换、TMDB/视频源/IPTV 配置、播放设置、版本号彩蛋 | 12 |
-| `collections.spec.ts` | 收藏页 | Tab 切换、影视/IPTV 收藏、批量管理 | 4 |
+| `home.spec.ts` | 首页 | Token 校验、HeroBanner、分类入口、行数据、骨架屏、回到顶部 | 35 |
+| `browse.spec.ts` | 浏览/搜索页 | 搜索模式切换、搜索功能、筛选排序、CMS 搜索、懒加载、移动端命令栏 | 21 |
+| `detail.spec.ts` | 详情页 | Hero 区域、操作按钮、Tab 导航、概览/播放列表/季信息 Tab、推荐 | 21 |
+| `player.spec.ts` | 播放页 | 页面加载、CMS 源管理、面板折叠、收藏与详情 | 7 |
+| `iptv.spec.ts` | IPTV 直播页 | 页面加载、分组筛选、频道检测、懒加载、返回顶部 | 9 |
+| `iptv-player.spec.ts` | IPTV 播放页 | 频道匹配、返回按钮、平台适配 | 6 |
+| `settings.spec.ts` | 设置页 | 主题切换、TMDB/视频源/IPTV 配置、播放设置、版本号彩蛋 | 19 |
+| `collections.spec.ts` | 收藏页 | Tab 切换、影视/IPTV 收藏、批量管理 | 6 |
 | `history.spec.ts` | 历史记录页 | Tab 切换、时间分组、时间轴导航、批量管理 | 6 |
 | `source-checker.spec.ts` | 源检测页 | 网速检测、Tab 切换、统计卡片 | 5 |
-| `person.spec.ts` | 人物页 | 页面加载、Hero 区域、作品列表 Tab、懒加载 | 7 |
-| `cross-page.spec.ts` | 页面交叉跳转 | 首页→详情/浏览、详情→播放/人物、深链返回、Keep-Alive 状态保持 | 14 |
+| `person.spec.ts` | 人物页 | 页面加载、Hero 区域、作品列表 Tab、懒加载 | 8 |
+| `cross-page.spec.ts` | 页面交叉跳转 | 首页→详情/浏览、详情→播放/人物、深链返回、Keep-Alive 状态保持 | 16 |
+| `regression-detail.spec.ts` | 详情页回归 | 详情页历史回归用例（DETAIL-REG 段，Keep-Alive 尺寸兜底等） | 22 |
+
+> 用例数来自 `npx playwright test --list` 实际枚举（2026-08-05 校准），合计 181 个用例（不含 `backup-specs/`）。
 
 ### 测试辅助工具
 
@@ -56,7 +59,7 @@
 
 | 目录 | 说明 |
 |------|------|
-| `backup-specs/` | 旧版测试脚本备份（15 个文件） |
+| `backup-specs/` | 旧版测试脚本备份（308 个用例，已 gitignore，**不参与 E2E**；`playwright.config.ts` 需配置 `testIgnore` 排除，见「测试基建修复」） |
 
 ## 增量测试规则
 
@@ -65,7 +68,7 @@
 | 修改路径 | 运行测试 |
 |----------|----------|
 | `src/pages/Home/**` | `npx playwright test scripts/home.spec.ts` |
-| `src/pages/Detail/**` | `npx playwright test scripts/detail.spec.ts` |
+| `src/pages/Detail/**` | `npx playwright test scripts/detail.spec.ts scripts/regression-detail.spec.ts` |
 | `src/pages/Settings/**` | `npx playwright test scripts/settings.spec.ts` |
 | `src/pages/Browse/**` | `npx playwright test scripts/browse.spec.ts` |
 | `src/pages/Collections/**` | `npx playwright test scripts/collections.spec.ts` |

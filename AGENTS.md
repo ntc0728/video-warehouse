@@ -258,9 +258,10 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### .gitignore 策略
 
-- `docs/*` + `!docs/page-diagrams/` — 仅提交原理图目录，docs/ 其余忽略
-- `scripts/*.ts` + `!scripts/*.spec.ts` — 仅保留 E2E 测试脚本
+- `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` — 仅提交知识库 / 测试案例 / 已知问题文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略
+- `scripts/*.ts` + `!scripts/*.spec.ts` + `!scripts/global-setup.ts` — 仅保留 E2E 测试脚本与全局初始化
 - `scripts/*.mjs` + `!scripts/fetch-diagram-data.mjs` — 仅保留数据获取脚本，工具脚本不提交
+- `scripts/fixtures/`、`scripts/backup-specs/` — 本地测试夹具与旧测试备份，一律忽略（不参与 E2E，见「测试基建修复」）
 - AI 工具本地配置（.workbuddy/ .claude/ .opencode/ .codegraph/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
@@ -270,38 +271,45 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
+> test 数为 `npx playwright test --list` 实际枚举数（2026-08-05 校准）。
+
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 15 |
-| `src/pages/Browse/` | `scripts/browse.spec.ts` | 19 |
-| `src/pages/Detail/` | `scripts/detail.spec.ts` | 15 |
-| `src/pages/Player/` | `scripts/player.spec.ts` | 35 |
-| `src/pages/IPTV/` | `scripts/iptv.spec.ts` | 20 |
-| `src/pages/Settings/` | `scripts/settings.spec.ts` | 21 |
-| `src/pages/Collections/` | `scripts/collections.spec.ts` | 20 |
-| `src/pages/History/` | `scripts/history.spec.ts` | 20 |
-| `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 21 |
+| `src/pages/Home/` | `scripts/home.spec.ts` | 35 |
+| `src/pages/Browse/` | `scripts/browse.spec.ts` | 21 |
+| `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
+| `src/pages/Player/` | `scripts/player.spec.ts` | 7 |
+| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 9 + 6 |
+| `src/pages/Settings/` | `scripts/settings.spec.ts` | 19 |
+| `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
+| `src/pages/History/` | `scripts/history.spec.ts` | 6 |
+| `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
+| `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
+| 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
+| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 22 |
 
 ### 共享组件 → 测试文件（1:N）
 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
-| `src/components/UniversalPlayer/` | player + iptv-player | 49 |
-| `src/components/VideoCard/` | home + browse + detail + collections + history | 87 |
-| `src/components/SearchBox/` | browse + search-features | 34 |
-| `src/components/RecordShell/` | collections + history | 39 |
-| `src/components/StatusTabs/` | collections + history | 39 |
-| `src/components/FilterBar/` | browse | 18 |
-| `src/components/HeroBanner/` | home + cross-page | ~25 |
-| `src/components/Layout/` | mobile-web-sidebar + 全部页面加载测试 | ~100+ |
-| `src/components/StickyHeader/` | 全部页面加载测试 | ~100+ |
-| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 21 |
-| `src/services/tmdbService.ts` | home + browse + detail + person | ~63 |
-| `src/services/videoService.ts` | browse + player + source-checker | 74 |
-| `src/services/iptvService.ts` | iptv + iptv-player | 34 |
-| `src/stores/useTMDBStore.ts` | home + browse + detail | ~48 |
-| `src/stores/useSettingsStore.ts` | settings + source-checker | 42 |
-| `src/stores/useUserStore.ts` | collections + history | 39 |
+| `src/components/UniversalPlayer/` | player + iptv-player | 7 + 6 |
+| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 97 |
+| `src/components/SearchBox/` | browse + cross-page | 37 |
+| `src/components/RecordShell/` | collections + history | 12 |
+| `src/components/StatusTabs/` | collections + history | 12 |
+| `src/components/FilterBar/` | browse | 21 |
+| `src/components/HeroBanner/` | home + cross-page | 51 |
+| `src/components/Layout/` | 全部页面加载测试（home/browse/detail/...各首屏用例） | 逐个 spec 首屏用例 |
+| `src/components/StickyHeader/` | 全部页面加载测试 | 逐个 spec 首屏用例 |
+| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 19 |
+| `src/services/tmdbService.ts` | home + browse + detail + person | 85 |
+| `src/services/videoService.ts` | browse + player + source-checker | 33 |
+| `src/services/iptvService.ts` | iptv + iptv-player | 15 |
+| `src/stores/useTMDBStore.ts` | home + browse + detail | 77 |
+| `src/stores/useSettingsStore.ts` | settings + source-checker | 24 |
+| `src/stores/useUserStore.ts` | collections + history | 12 |
+
+> 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已归档到 `scripts/backup-specs/`（gitignore 忽略，不参与测试），映射表中不再引用。`scripts/backup-specs/` 中的 308 个用例不进入 `npx playwright test` 的默认执行（见「测试基建修复」）。
 
 ### 快速跑法
 
@@ -528,11 +536,11 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 - **MINOR（Y）**：新增可见功能（0.x 阶段破坏性变更也升 MINOR，因 API 尚未稳定）。
 - **PATCH（Z）**：修复 / 样式 / 重构（无行为变化）。
 - 预发布通道：`-alpha.N` / `-beta.N` / `-rc.N`；正式发布时去掉通道。
-- 当前阶段为 `0.x`（未稳定）；首个稳定版定为 `1.0.0`（功能闭环、移动端方案落地、E2E 稳定时再升）。
+- 项目已发布：首次发布实测产出 `1.0.0`（2026-07），当前版本 `1.1.0`（见 `package.json` / `.release-please-manifest.json` / `CHANGELOG.md`，三者是唯一可信源）。
 
 ### 2. 自动版本（release-please）
 
-- 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `1.0.0`）。
+- 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `1.1.0`）。
 - 工作流：`.github/workflows/release-please.yml`（监听 `master` 推送，已声明 `permissions: { contents: write, pull-requests: write }`）→ 自动开版 PR、更新 `package.json`/`CHANGELOG.md`、打 `vX.Y.Z` tag、生成 GitHub Release。
 - 提交信息遵循 Conventional Commits：`feat:` 升 MINOR/PATCH、`fix:` 升 PATCH、`BREAKING CHANGE`/`feat!` 升 MINOR（0.x 阶段）。
 - **首次发布实测为 `1.0.0`**（release-please 对首个 release 默认产出 `1.0.0`，而非 `0.1.0`）；后续按 SemVer 规则递增。

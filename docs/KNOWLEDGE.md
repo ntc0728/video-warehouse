@@ -86,14 +86,19 @@ video-warehouse/
 │   │   ├── epgService.ts        # EPG 电子节目单服务
 │   │   └── sourceService.ts     # 视频源配置服务
 │   │
-│   ├── stores/                  # Zustand 状态管理
+│   ├── stores/                  # Zustand 状态管理（index.ts 导出 8 个 store）
 │   │   ├── useVideoStore.ts     # 视频数据状态
 │   │   ├── usePlayerStore.ts    # 播放器状态
-│   │   ├── useSettingsStore.ts  # 设置状态
+│   │   ├── useSettingsStore.ts  # 设置状态（含 AES-GCM 加密敏感字段）
 │   │   ├── useIPTVStore.ts      # IPTV 状态
-│   │   ├── useCollectionStore.ts# 收藏状态
-│   │   ├── useHistoryStore.ts   # 历史记录状态
-│   │   └── index.ts             # Store 导出
+│   │   ├── useUserStore.ts      # 用户数据（收藏 + 历史，IndexedDB）
+│   │   ├── useTMDBStore.ts      # TMDB 数据状态
+│   │   ├── useNavStore.ts       # 页面导航状态
+│   │   ├── useKeepAliveStore.ts # Keep-Alive 缓存状态
+│   │   └── index.ts             # Store 统一导出（8 个；useHomeCategoryStore/usePageSearchStore 为内部 store，不在此 barrel）
+│   │
+│   │   # 注：useRatingStore 合并入 useUserStore；useRecommendStore 随 DailyPicks 删除移除；
+│   │   #     useSubtitleStore 拆分合并；useHomeCategoryStore/usePageSearchStore 按需直接引用
 │   │
 │   ├── types/                   # TypeScript 类型定义
 │   │   ├── video.ts             # 视频相关类型
@@ -280,11 +285,11 @@ Store 更新 → 组件重渲染
 --space-3xl: clamp(32px, 1.915rem + 1.156vw, 80px);
 ```
 
-**响应式断点**：
+**响应式断点**（v1.7.0 起收敛为 2/3/5）：
 | 断点 | 宽度 | 卡片列数 |
 |------|------|----------|
-| Mobile | < 768px | 3 列 |
-| Tablet | 768px - 1023px | 5 列 |
+| Mobile | < 768px | 2 列 |
+| Tablet | 768px - 1023px | 3 列 |
 | Desktop | ≥ 1024px | 5 列 |
 | Large | ≥ 1280px | 7 列 |
 | 2K/4K | ≥ 1920px | 7 列 |
@@ -411,17 +416,27 @@ Response: {
 
 #### 2.1 视频源配置
 
-视频源配置存储在 `public/data/video-sources.json`：
+视频源配置存储在 `public/data/video-sources.json`（**嵌套对象结构**，`api_site` 以域名/ID 为 key；`sourceService.getVideoSources()` 用 `Object.entries(data.api_site)` 展开为 `{ id, name, api, detail }` 数组）：
 
 ```json
-[
-  {
-    "name": "量子资源",
-    "api": "https://api.example.com/api.php/provide/vod/",
-    "detail": "https://api.example.com/api.php/provide/vod/detail/"
+{
+  "cache_time": 7200,
+  "api_site": {
+    "iqiyizyapi.com": {
+      "name": "爱奇艺资源",
+      "api": "https://iqiyizyapi.com/api.php/provide/vod",
+      "detail": "https://iqiyizyapi.com"
+    },
+    "dbzy.tv": {
+      "name": "豆瓣资源",
+      "api": "https://caiji.dbzy5.com/api.php/provide/vod",
+      "detail": "https://dbzy.tv"
+    }
   }
-]
+}
 ```
+
+> 增删源：在 `api_site` 下增删键即可（key 即源 id，须唯一）。设置页「视频源」多选索引即按此对象展开后的数组下标。
 
 #### 2.2 获取视频列表
 
@@ -587,9 +602,21 @@ npm run test           # 单次运行
 npm run test:watch     # 监听模式
 npm run test:coverage  # 覆盖率报告
 
-# E2E 测试
+# E2E 测试（mock 模式，默认）
 npx playwright test    # 运行所有测试
+
+# E2E 增量测试（按 git diff 自动匹配 spec）
+npm run test:smart     # run-tests.ps1 -AutoDetect
+npm run test:smoke     # 冒烟组（home/browse/player）
+npm run test:regression # 回归组（全量 spec 集合）
 ```
+
+**测试策略要点**（详见 `scripts/README.md` 与 `AGENTS.md`「测试依赖映射」）：
+
+- **TMDB Mock 策略**：`scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求返回本地 mock 数据；默认模式无 Token 风险。真实 API 模式：`TMDB_MOCK=false npx playwright test`（发版前回归用）。
+- **增量映射**：改 `src/pages/Xxx/` 只跑对应 spec；改共享组件（VideoCard/HeroBanner/Layout/StickyHeader/UniversalPlayer/RecordShell/StatusTabs/SearchBox/FilterBar/Toast 等）按 AGENTS.md 映射表跑所有受影响 spec；改 `src/stores/**` / `src/hooks/**` 跑 vitest。**详情页改动需同时跑 `detail.spec.ts` + `regression-detail.spec.ts`**。
+- **测试基建约定**：`playwright.config.ts` 配置 `testIgnore: '**/backup-specs/**'` 排除 gitignore 的旧测试备份（308 用例不参与 E2E）；主目录 13 个 spec 共 181 用例应零失败。
+- **跑前须知**：需要 dev server（`npm run dev`，端口 3001）；Playwright 配置 `reuseExistingServer: true`。
 
 #### 2.4 构建
 
@@ -926,6 +953,8 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
 
 ### C. 更新日志
 
+> **版本口径说明**：下方 `v1.0.0~v1.7.0` 为项目早期**内部功能里程碑**（2026-07-30 前手工标注，未打 git tag）；自 2026-07-30 起版本号由 release-please 接管（见 ADR-004），官方 tag 与 `CHANGELOG.md` 以 `package.json`/`.release-please-manifest.json` 为准（首次发布 `1.0.0`，当前 `1.1.0`）。此处保留里程碑记录仅作功能演进参考，**版本号口径以 release-please 为准**。
+
 - **v1.0.0** - 初始版本，支持基本视频浏览和播放
 - **v1.1.0** - 添加 IPTV 直播功能
 - **v1.2.0** - 添加收藏和历史记录功能
@@ -1018,3 +1047,21 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   ③ **侧边栏留白与图标↔标题间距**：`.home-sidebar__item` 横向 `padding` 由 `--space-lg` 提到 `--space-xl`（元素不贴左），上下 `padding` + `gap` = `--space-lg`；**坑：`.home-sidebar__label` 是 `position:absolute`，不吃父级 flex `gap`，图标↔标题间距只能由其 `left: calc(--space-xl + --icon-md + --space-xl)` 控制**（改 item `gap` 对标题间距无效）。
   ④ **移动端分类快选间距**：`.category-quick-access__inner` 的 `gap` 由 `--space-2xl`（下限 24px，对 40px 圆形卡片偏松）改为 `--space-lg`（更紧凑协调）。
   后果：键盘导航下非 TV 设备视觉更干净、焦点可见性交由 hover/可见性承担；上述细节在 TV 下由各自规则独立处理、互不干扰。回归测试见 `scripts/home.spec.ts` 1.6 段（HOME-050~053）。
+
+- **ADR-008 HeroBanner 缩略图覆盖式布局 + 滑动切换动画（2026-08-05 补录）**
+  首页 Hero 横幅采用「左侧主背景图 + 右侧缩略图列（absolute 覆盖 banner 右缘）」布局；缩略图激活态 2px 主色边框 + 阴影，点击跳详情。**滑动切换**：activeIndex 切换统一走 slide-left/right（新图滑入），自动轮播（5s）也走 slide；滑动后 1000ms 冷却暂停轮播。桌面悬停缩略图显式清除 slideDir → 回退 crossfade。**关键坑**：slide 动画结束后不重置 slideDir（否则 `.is-active` 层回退默认 crossfade 规则因 animation-name 改变重播淡入 → "闪一下、短暂出现上一张图"）。**预加载**：轮播预加载下一张 w1280 + 缩略图窗口 ±2 张 w500。**bannerReady 仅 items 空→有时重置**，切换分类保持 true（否则缩略图「真实→骨架→真实」硬切换 = 闪一下）。无障碍：`prefers-reduced-motion` 禁用动画。详见 AGENTS.md「HeroBanner 组件」。
+
+- **ADR-009 双卡片布局规范（Browse/IPTV/Person/Detail/Settings 统一）（2026-08-05 补录）**
+  每个功能区块作为独立「卡片模块」：`--color-surface` 背景 + 1px `--color-border-light` 边框 + `--radius-lg` + `--shadow-sm`，模块间距 `--space-sm`，**所有设备启用**。应用：Browse 双卡片（搜索区 Card1 `flex-shrink:0` + 结果区 Card2 `flex:1`）、IPTV `.iptv-top-card`+`.iptv-grid-card`、Person `.person-hero`+`.person-grid-card`、Detail `.detail-hero`、Settings 桌面端单卡（section 去卡片化、border-top 分隔）。移动端 Browse 整页以「命令栏 Card1 + 结果区 Card2」gap:0 相连成一张大卡（镜像桌面端）。详见 AGENTS.md「卡片模块 (Card Module) UI 约定」。
+
+- **ADR-010 RecordShell 桌面横向筛选栏 vs 移动 M6（2026-08-05 补录）**
+  收藏页/历史页共用 RecordShell 外壳：**桌面（≥768px）**顶部横向 sticky 卡片（第 1 行 = 标题+影视/IPTV 分段+搜索框+批量工具栏，第 2 行 = 状态筛选芯片横向可换行），主区在下方；**移动（≤767px）**顶部 sticky 精简栏滚动时折叠筛选芯片行。实现：末尾追加 `@media (width >= 768px)` 覆盖块，原移动端规则逐字节未动（零影响）；桌面横向 flex 中 `width:100%` 元素须显式 `width:auto` 复位。详见 AGENTS.md「RecordShell」。
+
+- **ADR-011 首页分类切换 deferredCategory 解耦 + 纯 opacity 过渡（2026-08-05 补录）**
+  首页「类目切换」将 `activeCategory`（点击立即响应）与 `deferredCategory`（驱动数据/内容渲染）解耦，切换时整页 `.home-page__content` 重放 `.home-cat-fade`（opacity 0→1，0.28s，动画结束移除类、首挂载跳过）。**关键约束：过渡只用 opacity、绝不含 transform**——HeroBanner 的 GPU 合成缩略图层遇 transform 会重绘闪烁（"闪一下"）。详见 AGENTS.md「首页类目切换过渡」。
+
+- **ADR-012 侧边栏折叠重构：瞬切 + 图标绝对居中 + label 淡出（2026-08-04）**
+  侧边栏折叠从「宽度动画（0.24s transition）」改为**瞬切**：spacer 与 sidebar 同帧到位、无宽度动画（避免折叠时主内容区逐帧重排 reflow 卡顿）；图标收起态**绝对定位居中**（`left` 固定像素、可过渡平滑位移），label 淡出。实现细节：图标 absolute 化后不占 flex 流，item 显式 min-height 恢复行高；按钮 300ms 防抖。回归测试 `scripts/regression-detail.spec.ts` REG-013/014。
+
+- **ADR-013 设置敏感字段「内存明文 + 持久化层加密」（H1 修复，2026-08-05）**
+  旧 `setTMDBToken` 异步 `encryptText` 完成后 setState 密文覆盖内存 → 同一会话所有 TMDB 请求 401（`tmdbService.getAccessToken()` 同步读内存当 Bearer）。我们决定：**内存 state 恒为明文，AES-GCM 加密收敛到 persist 自定义异步 storage**——setItem 写 localStorage 前加密，rehydrate 读入时解密。setter 退化为纯 set，`getAccessToken()` 无需改动。`applyBackup` 导入对明文直接 setState（不再双重加密）。配套：`useSettingsStore.test.ts` 4 用例防回归；`docs/KNOWN-ISSUES.md` #1 登记。
