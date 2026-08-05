@@ -140,7 +140,14 @@ async function handleM3U8Proxy(request) {
     }
 
     const m3u8 = await response.text();
-    const result = rewriteM3U8(m3u8, targetUrl, headers, request.url);
+    // B1 智能路由：源站响应带 CORS 头 → 浏览器可直连分片，worker 只代理清单（分片保持源站地址，省 99% 请求）
+    // 源站无 CORS 头 → 分片走 ts-proxy（现状）
+    const sourceAllowsCors = Boolean(
+      response.headers.get("Access-Control-Allow-Origin")
+    );
+    const result = rewriteM3U8(m3u8, targetUrl, headers, request.url, {
+      directSegments: sourceAllowsCors,
+    });
     m3u8Cache.set(cacheKey, { body: result, time: Date.now() });
 
     return new Response(result, {
@@ -303,15 +310,27 @@ function rewriteMPD(content, mpdUrl, headers, workerUrl) {
 }
 
 /**
- * 重写 m3u8 内容中的所有 URL，使其经过代理。
- * - 相对 URL：基于 baseUrl 解析为绝对 URL，再转为代理 URL
- * - 绝对 URL：直接转为代理 URL
+ * 重写 m3u8 内容中的所有 URL。
+ * - 相对 URL：基于 baseUrl 解析为绝对 URL
+ * - 绝对 URL：直接使用
+ *
+ * 路由策略（B1 智能路由）：
+ * - 子播放列表（.m3u8/.m3u）与密钥（#EXT-X-KEY）始终走代理（保证源站请求头/CORS）
+ * - options.directSegments=true（源站带 CORS 头，浏览器可直连）→ 分片保持源站绝对地址直连，
+ *   worker 仅代理清单，省 99% 分片请求（大幅降低 Cloudflare Workers 免费额度消耗）
+ * - options.directSegments=false → 分片走 ts-proxy（源站无 CORS 头，需代理中转）
+ * - 修复 #EXT-X-MEDIA（分离音轨）：URI="..." 中的音轨地址也按上述策略重写，
+ *   避免音轨指向源站直连（CORS 拦截）或畸形地址导致「只出音频/异常」
+ *
  * @param {string} content - m3u8 原始内容
  * @param {string} baseUrl - 用于解析相对 URL 的基准地址（原始 m3u8 URL）
  * @param {object} headers - 传递给子请求的自定义请求头
+ * @param {string} workerUrl - Worker 自身 URL（用于构造代理绝对地址）
+ * @param {object} [options] - { directSegments?: boolean }
  * @returns {string} 重写后的 m3u8 内容
  */
-function rewriteM3U8(content, baseUrl, headers, workerUrl) {
+function rewriteM3U8(content, baseUrl, headers, workerUrl, options = {}) {
+  const { directSegments = false } = options;
   const headerStr = encodeURIComponent(JSON.stringify(headers));
   const lines = content.split("\n");
   const newLines = [];
@@ -322,14 +341,39 @@ function rewriteM3U8(content, baseUrl, headers, workerUrl) {
   // 否则重写地址会指向源站，导致整棵流树请求到源站的非存在路由而全部失败。
   const workerOrigin = new URL(workerUrl).origin;
 
+  /** 统一重写单个 URL（按 directSegments 决定直连 or 代理） */
+  const rewriteUrl = (href, isPlaylistOrKey) => {
+    const uri = new URL(href, baseUrl);
+    const pathname = uri.pathname;
+    const isPlaylist = pathname.endsWith(".m3u8") || pathname.endsWith(".m3u");
+    // 播放列表/密钥/需自定义头的资源：始终走代理
+    if (isPlaylistOrKey || isPlaylist) {
+      const proxyPath = isPlaylist ? "m3u8-proxy" : "ts-proxy";
+      return `${workerOrigin}/${proxyPath}?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`;
+    }
+    // 分片：源站带 CORS → 直连源站；否则走 ts-proxy
+    if (directSegments) {
+      return uri.href;
+    }
+    return `${workerOrigin}/ts-proxy?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`;
+  };
+
   for (const line of lines) {
     if (line.startsWith("#")) {
       if (line.startsWith("#EXT-X-KEY:")) {
         const regex = /https?:\/\/[^\""\s]+/g;
         const keyUrl = regex.exec(line)?.[0] ?? "";
         if (keyUrl) {
-          const newUrl = `${workerOrigin}/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${headerStr}`;
-          newLines.push(line.replace(keyUrl, newUrl));
+          newLines.push(line.replace(keyUrl, rewriteUrl(keyUrl, true)));
+        } else {
+          newLines.push(line);
+        }
+      } else if (line.startsWith("#EXT-X-MEDIA:")) {
+        // 分离音轨/字幕（#EXT-X-MEDIA:TYPE=AUDIO... URI="..."）：重写 URI 内的资源地址
+        const uriMatch = /URI\s*=\s*["']([^"']+)["']/i.exec(line);
+        if (uriMatch && uriMatch[1]) {
+          const rewritten = rewriteUrl(uriMatch[1], true);
+          newLines.push(line.replace(uriMatch[1], rewritten));
         } else {
           newLines.push(line);
         }
@@ -337,15 +381,7 @@ function rewriteM3U8(content, baseUrl, headers, workerUrl) {
         newLines.push(line);
       }
     } else if (line.trim()) {
-      const uri = new URL(line.trim(), baseUrl);
-      const pathname = uri.pathname;
-      const proxyPath =
-        pathname.endsWith(".m3u8") || pathname.endsWith(".m3u")
-          ? "m3u8-proxy"
-          : "ts-proxy";
-      newLines.push(
-        `${workerOrigin}/${proxyPath}?url=${encodeURIComponent(uri.href)}&headers=${headerStr}`
-      );
+      newLines.push(rewriteUrl(line.trim(), false));
     } else {
       newLines.push(line);
     }

@@ -232,6 +232,24 @@ describe('detectVideoSourceType', () => {
     expect(detectVideoSourceType('http://pan.example.com/video')).toBe('pan');
   });
 
+  it('?type=dash 参数返回 dash', () => {
+    expect(detectVideoSourceType('http://example.com/live?type=dash')).toBe('dash');
+    expect(detectVideoSourceType('http://example.com/live?format=dash&token=1')).toBe('dash');
+  });
+
+  it('?playType=dash 参数返回 dash', () => {
+    expect(detectVideoSourceType('http://example.com/stream?playType=dash')).toBe('dash');
+  });
+
+  it('.flv URL 返回 flv（mpegts.js 兜底）', () => {
+    expect(detectVideoSourceType('http://example.com/live.flv')).toBe('flv');
+    expect(detectVideoSourceType('http://example.com/live?type=flv')).toBe('flv');
+  });
+
+  it('裸 .ts 流（非分片）返回 m3u8 兼容', () => {
+    expect(detectVideoSourceType('http://example.com/live.ts')).toBe('m3u8');
+  });
+
   it('未知类型返回 m3u8', () => {
     expect(detectVideoSourceType('http://example.com/live')).toBe('m3u8');
   });
