@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.2.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.1.0...kinotv-v1.2.0) (2026-08-06)
+
+
+### Features
+
+* CMS按钮6列均分 + 拖拽进度条提示 + Hero骨架位置修正 + 免责声明 ([978c243](https://github.com/ntc0728/video-warehouse/commit/978c243085bd20dae9809a289b94270c9755e62c))
+* **detail:** 海报图 CMS 优先并支持 TMDB 失败兜底 ([b88f9e9](https://github.com/ntc0728/video-warehouse/commit/b88f9e90d9fd6804712ca527bfac64fb4798fbc2))
+* **iptv:** C1 仅含音频时自动切线路（每频道名仅切 1 次防循环） ([f8d2885](https://github.com/ntc0728/video-warehouse/commit/f8d2885bf1a126e7acd8483219e424c9430fd07f))
+* **iptv:** D1 裸流降级识别（fail-and-retry，零额外请求） ([3fcaafb](https://github.com/ntc0728/video-warehouse/commit/3fcaafb77509bfb04e997e12a24b3d79d19c8e26))
+* **iptv:** 代理规则内置直连白名单默认值（降低 worker 请求量） ([cbe4a9a](https://github.com/ntc0728/video-warehouse/commit/cbe4a9aa61565d286c7cdd587f8ac9f9fa4d830a))
+* **iptv:** 播放器操作提示独立右上角 + TV 端 IPTV 交互 ([79f276f](https://github.com/ntc0728/video-warehouse/commit/79f276ff963cec111ef905e20801ffcb2aa4bd75))
+* **iptv:** 类型探测增强 + worker CORS 智能路由（分片直连省请求量） ([ac8bd21](https://github.com/ntc0728/video-warehouse/commit/ac8bd2189ed66a03e810cb7a0e79a00a5e89ff6d))
+* **player:** IPTV 播放链路增强 - 视频轨检测 + FLV/TS 兜底 + 自动切代理 ([38f1c7a](https://github.com/ntc0728/video-warehouse/commit/38f1c7a0fd80a45ca6680a436381cd4f93f57bfb))
+* **player:** toast 全局系统整改 + 播放器交互修复 ([aad7911](https://github.com/ntc0728/video-warehouse/commit/aad79119e395a3ac0a72a9360c355c09f617f644))
+* **player:** 提示统一右上角 + 预加载①点播首分片预取 ([12b9db4](https://github.com/ntc0728/video-warehouse/commit/12b9db49883b72193ac3ff0bb619c0dfbd3bacbb))
+* **player:** 预加载②剧集连播预加载（方案C，仅Wi-Fi） ([468bdc4](https://github.com/ntc0728/video-warehouse/commit/468bdc4ec3c079738e1461e8de7d21d04ea54182))
+* **searchbox:** 搜索框输入词实时搜索建议 ([ad35f9c](https://github.com/ntc0728/video-warehouse/commit/ad35f9cc012e4f7e2b870501f3e31f60e8287baf))
+* **ui:** 页面体验修复与侧边栏折叠重构 ([ea97ca9](https://github.com/ntc0728/video-warehouse/commit/ea97ca963696d3c62335ac9863a43bd2df8ca21a))
+* 免责声明样式优化 + 移动端头像进入个人设置 ([c0d8876](https://github.com/ntc0728/video-warehouse/commit/c0d887676f45e9f77fdaf68b950385a0d36774a6))
+* 播放页交互优化 + 首页继续观看行 2/3/5 + 测试 fixtures 纳入版本控制 ([a4a3732](https://github.com/ntc0728/video-warehouse/commit/a4a37326342d76cdebc430926a8ec1448704e42a))
+* 继续观看行骨架与响应式 + 非手机web小视口箭头 + 骨架占位精细化 ([38df989](https://github.com/ntc0728/video-warehouse/commit/38df98904c34e9a3472b059a0839220a5a363277))
+* 设置/首页 UI 优化 7 项 ([76796c2](https://github.com/ntc0728/video-warehouse/commit/76796c2c6752e28d5ed4db2460072dd85b117efa))
+
+
+### Bug Fixes
+
+* **browse:** 修复移动端断言与 loading 捕获（BROWSE-075/076/077） ([6ba10f6](https://github.com/ntc0728/video-warehouse/commit/6ba10f6e8d3c7aeb4fc537f0599c9db864e41659))
+* **home,iptv:** 首页新增「继续观看」区块 + IPTV OSD 空回调按钮清除 ([efb85e2](https://github.com/ntc0728/video-warehouse/commit/efb85e29c27f7e674fa1c9598034b6dd6468031b))
+* **home:** token 提示区高度链逐层撑满，主提示真居中、免责声明贴底 ([7231dec](https://github.com/ntc0728/video-warehouse/commit/7231decd657b3bfa54de654ec0493fa56991d3a5))
+* **home:** 移动端 token 提示上移 + 骨架缩略图叠加暗底镜像真实加载态 ([7f252c6](https://github.com/ntc0728/video-warehouse/commit/7f252c6a67d0a6d44047180e2c7ce5a684ea1da4))
+* **iptv:** EPG 请求合并 + 节目单缓存优先 + 仅含音频停止加载动画 ([48ac9c9](https://github.com/ntc0728/video-warehouse/commit/48ac9c9526fddb66294194466f357613328bc6de))
+* **perf:** 主题/皮肤切换瞬切根治卡顿 + discover 流搜索竞态保护 ([a7dba22](https://github.com/ntc0728/video-warehouse/commit/a7dba2223cf06c485cb2865135d571ef306025d1))
+* **player:** 播放器 UI 细节修正 ([b078e92](https://github.com/ntc0728/video-warehouse/commit/b078e92d376399295eb5ab42ece6cded6f8dd84b))
+* **player:** 播放进度身份错位与历史记录展示修复 ([469a383](https://github.com/ntc0728/video-warehouse/commit/469a38363b961f2203c5fd9fe715fb940f8406ea))
+* **settings:** TMDB Token 加密覆盖内存致 401 修复 + E2E 排除 backup-specs ([672d0c5](https://github.com/ntc0728/video-warehouse/commit/672d0c5ef3f99b63a2cc0e49cf88a3724d4d2ba4))
+* sonner toast 宽度改为内容撑开（fit-content） ([4d62a43](https://github.com/ntc0728/video-warehouse/commit/4d62a43184244eba2cfe7e37b04d6913a5e958af))
+* sonner 选择器失效致 toast 压顶不居中 + 播放页中间按钮播放无提示 + 免责声明标题居中 ([87e7cd4](https://github.com/ntc0728/video-warehouse/commit/87e7cd4e88bc58c3c949a18cb7e685be4c054a6d))
+* Toast 系统统一 — 操作类右上角、警告/错误/成功类播放器内部中间靠上 ([87bcf12](https://github.com/ntc0728/video-warehouse/commit/87bcf12412ea06d2d6e93d7ae02a4a8acc7f5e6f))
+* 播放器 Toast 位置改回右上角 + 浏览器拦截提示统一到播放器内部 ([3f20164](https://github.com/ntc0728/video-warehouse/commit/3f2016446ffdcf327c485e2270cf2413a5b7cd62))
+
+
+### Performance Improvements
+
+* 接口滥用治理与播放页缓存优化 ([3729f78](https://github.com/ntc0728/video-warehouse/commit/3729f78c6529ff4c711208974d8331c521b6d065))
+
 ## [1.1.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.0.0...kinotv-v1.1.0) (2026-07-30)
 
 
