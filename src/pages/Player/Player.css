@@ -649,8 +649,10 @@
     justify-content: flex-start;
   }
 
-  /* 移动端/App：CMS 源 flex-wrap 自动换行——按钮按内容撑开，
-     一行放不下自然分行，而非固定 6 列硬挤（避免文字截断） */
+  /* 移动端/App（<1280px）：CMS 源列表一行最多 6 个按钮——
+     每项 flex-basis 为「(100% - 5×gap) / 6」→ 每行恰好 6 个均分宽度；
+     空间不足（不足 6 个宽度）时自动换行，分行按钮与上方按钮同宽（flex:1 平均分配）。
+     与固定 6 列 grid 的区别：按钮文字不截断，且少于 6 个时也均分整行。 */
   .player-cms-list {
     display: flex;
     flex-wrap: wrap;
@@ -659,9 +661,10 @@
   }
 
   .player-cms-list .player-cms-item {
-    flex: 0 0 auto;
-    min-width: fit-content;
-    max-width: 100%;
+    flex: 1 1 calc((100% - 5 * var(--space-sm)) / 6);
+    max-width: calc((100% - 5 * var(--space-sm)) / 6);
+    min-width: 0;
+    text-align: center;
   }
 
   /* 移动端/App：选季一行 3 列（按钮文字较长） */

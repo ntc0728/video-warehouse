@@ -55,11 +55,16 @@ interface PlayerState {
    * 用于 ToastTrigger 区分「用户手动播放」（显示『播放』提示）与
    * 「自动缓冲播放」（切集/恢复时 canplay 自动播，不重复提示）。 */
   userPlayRequested: boolean;
+  /** 最近一次「由用户手动发起」的暂停标记（点击暂停按钮）。
+   * 用于 ToastTrigger 区分「用户手动暂停」（显示『暂停』提示）与
+   * 「拖拽进度条触发的自动 pause」（不提示『暂停』，改显示最新进度）。 */
+  userPauseRequested: boolean;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
   setPlaying: (isPlaying: boolean) => void;
   setUserPlayRequested: (requested: boolean) => void;
+  setUserPauseRequested: (requested: boolean) => void;
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
@@ -122,6 +127,7 @@ const initialState = {
   mirror: false,
   aspectRatio: 'default' as const,
   userPlayRequested: false,
+  userPauseRequested: false,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -133,6 +139,7 @@ export const usePlayerStore = create<PlayerState>()(
       setSources: (sources) => set({ sources }),
       setPlaying: (isPlaying) => set({ isPlaying }),
       setUserPlayRequested: (userPlayRequested) => set({ userPlayRequested }),
+      setUserPauseRequested: (userPauseRequested) => set({ userPauseRequested }),
       setProgress: (progress) => set({ progress }),
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume }),
@@ -189,6 +196,7 @@ export const usePlayerStore = create<PlayerState>()(
         isPlayerLoading: false,
         isReadyToPlay: false,
         userPlayRequested: false,
+        userPauseRequested: false,
         // 保留用户偏好
         volume: state.volume,
         mutedVolume: state.mutedVolume,

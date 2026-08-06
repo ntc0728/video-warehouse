@@ -77,7 +77,14 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
             show('播放');
           }
         } else {
-          show('暂停');
+          // 仅「用户手动点击暂停」显示『暂停』提示；
+          // 拖拽进度条触发的自动 pause（未标记 userPauseRequested）不提示『暂停』，
+          // 由 seek 的『已跳转 mm:ss』进度提示代替。
+          const userPause = state.userPauseRequested;
+          if (userPause) {
+            show('暂停');
+            usePlayerStore.getState().setUserPauseRequested(false);
+          }
         }
       }
 
