@@ -40,6 +40,8 @@ interface IPTVState {
   refreshChannels: () => Promise<void>;
   toggleFavorite: (channelId: string) => void;
   getFilteredChannels: () => IPTVChannel[];
+  /** 仅清空频道/分组（保留设置、播放历史、收藏频道），用于「清除全部缓存」 */
+  clearChannelsCache: () => void;
   clearCache: () => void;
   checkAvailability: (groupName?: string | null) => void;
   abortAvailabilityCheck: () => void;
@@ -228,6 +230,24 @@ export const useIPTVStore = create<IPTVState>()(
           }
           if (filter.favoritesOnly && !channel.isFavorite) return false;
           return true;
+        });
+      },
+
+      /**
+       * 仅清空频道列表与分组（不清设置/播放历史/收藏频道）
+       * 用于「清除全部缓存」：页面挂载时会因缓存未命中自动重新拉取
+       */
+      clearChannelsCache: () => {
+        set({
+          channels: [],
+          groups: [],
+          selectedChannel: null,
+          lastRefresh: null,
+          loadedUrl: null,
+          isLoading: false,
+          error: null,
+          isCheckingAvailability: false,
+          availabilityProgress: null,
         });
       },
 

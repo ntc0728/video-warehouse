@@ -56,12 +56,6 @@ export function buildProxyUrl(targetUrl: string): string {
   return proxy + encodeURIComponent(targetUrl);
 }
 
-/** 在 URL 末尾追加时间戳参数以防止缓存 */
-function cacheBustUrl(url: string): string {
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}_t=${Date.now()}`;
-}
-
 // ============================================================
 // Axios 实例
 // ============================================================
@@ -81,10 +75,6 @@ const httpClient: AxiosInstance = axios.create({
 httpClient.interceptors.request.use(
   (config) => {
     const cfg = config as RequestOptions;
-    // 缓存破坏
-    if (cfg.cacheBust && config.url) {
-      config.url = cacheBustUrl(config.url);
-    }
     // CORS 代理：原生平台（Android/iOS）不受 CORS 限制，直连即可
     if (!isNativePlatform() && cfg.useProxy && config.url) {
       config.url = buildProxyUrl(config.url);

@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useVideoStore, useUserStore, useNavStore } from '@/stores';
+import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
@@ -148,7 +148,6 @@ const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGri
 };
 
 export default function HistoryPage() {
-  const { videos } = useVideoStore();
   const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const { getState, saveState } = useNavStore();
@@ -251,8 +250,7 @@ export default function HistoryPage() {
         return true;
       })
       .map((h: HistoryRecord): HistoryVideoItem => {
-        const sv = videos.find((v) => v.id === h.videoId);
-        const base: Video = sv ?? {
+        const base: Video = {
           id: h.videoId,
           title: h.title || '未知',
           cover: h.cover || '',
@@ -273,7 +271,7 @@ export default function HistoryPage() {
       });
     }
     return list;
-  }, [watchHistory, videos, searchByTab.video, statusFilter, getVideoWatchStatus]);
+  }, [watchHistory, searchByTab.video, statusFilter, getVideoWatchStatus]);
 
   /** 状态标签的计数（在状态筛选之前） */
   const statusCounts = useMemo(() => {
@@ -286,18 +284,15 @@ export default function HistoryPage() {
         seenVideo.add(h.videoId);
         return true;
       })
-      .map(h => ({ id: h.videoId, status: getVideoWatchStatus(h.videoId) }));
+      .map(h => ({ id: h.videoId, title: h.title, status: getVideoWatchStatus(h.videoId) }));
     if (searchByTab.video.trim()) {
       const kw = searchByTab.video.toLowerCase();
-      list = list.filter((h) => {
-        const sv = videos.find(v => v.id === h.id);
-        return sv?.title?.toLowerCase().includes(kw);
-      });
+      list = list.filter((h) => h.title?.toLowerCase().includes(kw));
     }
     const counts: Record<VideoStatus, number> = { all: list.length, unfinished: 0, finished: 0 };
     list.forEach(h => { counts[h.status]++; });
     return counts;
-  }, [watchHistory, videos, searchByTab.video, getVideoWatchStatus]);
+  }, [watchHistory, searchByTab.video, getVideoWatchStatus]);
 
   const iptvHistory = useMemo<HistoryChannelItem[]>(() => {
     // 按 channelId 去重：同一频道只保留最新一条

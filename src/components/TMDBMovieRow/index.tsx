@@ -359,7 +359,7 @@ function TMDBMovieRow({
           onPointerUp={handlePointerUpOrCancel}
           onPointerCancel={handlePointerUpOrCancel}
         >
-          {isLoading ? (
+          {isLoading && items.length === 0 ? (
             <SkeletonCards />
           ) : continueMode ? (
             (continueItems ?? []).map((item) => (

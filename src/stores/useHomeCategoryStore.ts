@@ -109,6 +109,8 @@ interface HomeCategoryState {
   data: Partial<Record<HomeCategoryKey, CategoryData>>;
   setActiveCategory: (c: HomeCategoryKey) => void;
   loadCategory: (c: HomeCategoryKey) => Promise<void>;
+  /** 清空内存数据与 localStorage 缓存（保留 activeCategory），用于「清除全部缓存」 */
+  clearCache: () => void;
 }
 
 function errMsg(e: unknown): string {
@@ -148,6 +150,13 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
       }
     } catch { /* ignore */ }
     set({ activeCategory: c });
+  },
+
+  clearCache: () => {
+    for (const key of Object.keys(CATEGORY_CONFIG)) {
+      try { localStorage.removeItem(lsKey(key)); } catch { /* ignore */ }
+    }
+    set({ data: {} });
   },
 
   loadCategory: async (c) => {

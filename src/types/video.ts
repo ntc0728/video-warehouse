@@ -51,17 +51,4 @@ export interface Video {
   updatedAt: number;
 }
 
-/** 视频导入数据格式，支持字段映射 */
-export interface VideoImportData {
-  videos: Video[];
-  mapping?: Record<string, string>;
-}
 
-/** 视频筛选条件，支持按类型、年份、地区、标签和关键词过滤 */
-export interface VideoFilter {
-  type?: VideoType;
-  year?: number;
-  region?: string;
-  tags?: string[];
-  keyword?: string;
-}

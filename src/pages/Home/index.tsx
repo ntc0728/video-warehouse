@@ -9,6 +9,7 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
+import { HOME_TTL_MS } from '@/stores/useTMDBStore';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
@@ -67,11 +68,23 @@ export default function HomePage() {
 
   // Keep-Alive 切回时检查缓存是否过期，过期则重新加载
   // 覆盖场景：切换浏览器 Tab 返回时（visibilitychange）
+  // 类目：检查 useHomeCategoryStore 10min TTL；首页（activeCategory==='home'）：检查
+  // useTMDBStore 首页 8 区块 60min TTL（数据全满时静默刷新，避免长会话内数据陈旧）。
   useEffect(() => {
-    if (activeCategory === 'home') return;
     const CACHE_TTL = 10 * 60 * 1000;
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState !== 'visible') return;
+      if (activeCategory === 'home') {
+        const s = useTMDBStore.getState();
+        if (s.homeFetchedAt <= 0) return; // 从未拉取：交给「按需兜底」effect
+        if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
+        const anyLoading =
+          s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
+          s.loading.topRatedMovies || s.loading.upcomingMovies ||
+          s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
+        if (anyLoading) return;
+        void s.fetchAllHomeData();
+      } else {
         const data = useHomeCategoryStore.getState().data[activeCategory];
         if (data?.fetchedAt && Date.now() - data.fetchedAt > CACHE_TTL) {
           loadCategory(activeCategory);
@@ -122,6 +135,9 @@ export default function HomePage() {
       errors: s.errors,
     })),
   );
+  // I2：首页数据 TTL 过期信号（订阅 homeFetchedAt，每次拉取完成后变化；
+  // 定时器 effect 用它在「停留 60min 后」触发兜底刷新）
+  const homeFetchedAt = useTMDBStore((s) => s.homeFetchedAt);
 
   // 历史记录：用于 Banner 中显示"继续播放"
   // 内存态 history 不保证按 updatedAt 排序（新记录 append、更新原地修改），
@@ -182,6 +198,8 @@ export default function HomePage() {
   // 仅当任一区块正在加载时跳过，避免叠加请求。
   // I1（2026-08-04）：追加「失败冷却」——刚失败的区块 10min 内不计入 anyEmpty，
   // 避免其它区块数据变化时把失败区块反复重拉（见模块顶部 HOME_RETRY_COOLDOWN_MS）。
+  // I2（2026-08-06）：追加 TTL——数据全满但距上次拉取 > 60min 时也触发 fetchAllHomeData
+  // （内部 shouldFetch 会对过期区块重新拉取；loading 仅空区块置位，不会闪骨架）。
   useEffect(() => {
     if (!hasToken || isCategoryView) return;
     const s = useTMDBStore.getState();
@@ -196,14 +214,36 @@ export default function HomePage() {
     };
     // 任一「空且不在冷却中」的区块需要拉取
     const anyEmpty = HOME_BLOCKS.some((k) => s[k].length === 0 && !inCooldown(k));
-    if (!anyEmpty) return;
+    // 数据全满但 TTL 过期（homeFetchedAt>0 表示已成功拉取过）
+    const ttlExpired = s.homeFetchedAt > 0 && Date.now() - s.homeFetchedAt > HOME_TTL_MS;
+    if (!anyEmpty && !ttlExpired) return;
     const anyLoading =
       s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
       s.loading.topRatedMovies || s.loading.upcomingMovies ||
       s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
     if (anyLoading) return;
     void s.fetchAllHomeData();
-  }, [hasToken, isCategoryView, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv]);
+  }, [hasToken, isCategoryView, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv, homeFetchedAt]);
+
+  // I2：TTL 过期定时检查——Keep-Alive 下 Home 常驻挂载，若用户停留在首页超过 60min，
+  // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
+  // 依赖 s 由组件订阅的 ttlExpiredSig 驱动；使用 store 模块级定时器避免每次渲染重建。
+  useEffect(() => {
+    if (!hasToken || isCategoryView) return;
+    const check = () => {
+      const s = useTMDBStore.getState();
+      if (s.homeFetchedAt <= 0) return;
+      if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
+      const anyLoading =
+        s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
+        s.loading.topRatedMovies || s.loading.upcomingMovies ||
+        s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
+      if (anyLoading) return;
+      void s.fetchAllHomeData();
+    };
+    const timer = setInterval(check, 60 * 1000);
+    return () => clearInterval(timer);
+  }, [hasToken, isCategoryView]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {
