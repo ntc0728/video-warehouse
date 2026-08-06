@@ -292,17 +292,20 @@ export default function HomePage() {
       <div className="page-padding home-page">
         <div className="home-page__content page-transition-enter">
           <div className="home-token-required">
-            <Icon icon={AlertCircle} size="3xl" className="home-token-required-icon" />
-            <p className="home-token-required-text">
-              TMDB Access Token 未配置，请在设置中
-              <button
-                className="home-token-required-link"
-                onClick={() => navigate('/settings?tab=video')}
-              >
-                配置
-              </button>
-            </p>
-            {/* 免责声明：未配置 token 时在提示区下方展示（避免常驻占用首页空间） */}
+            {/* 主提示：居中展示 */}
+            <div className="home-token-required__main">
+              <Icon icon={AlertCircle} size="3xl" className="home-token-required-icon" />
+              <p className="home-token-required-text">
+                TMDB Access Token 未配置，请在设置中
+                <button
+                  className="home-token-required-link"
+                  onClick={() => navigate('/settings?tab=video')}
+                >
+                  配置
+                </button>
+              </p>
+            </div>
+            {/* 免责声明：靠页面底部展示（不占主提示空间） */}
             <p className="home-disclaimer">
               免责声明：本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。
             </p>
