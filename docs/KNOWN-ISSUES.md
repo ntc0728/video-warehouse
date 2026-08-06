@@ -79,4 +79,29 @@
 
 ---
 
+## 8. [待整改 · 2026-08-06] 测试回归精粒度：文件级 → 多层映射
+
+**状态**：⚠️ 部分完成（4 个高频改动区已精粒度化，其余为文件级粗粒度）。
+
+**现象**：修改单个文件的某处（如 `TMDBMovieRow/index.tsx` 的箭头逻辑），旧 `run-tests.ps1 -AutoDetect` 按**文件级**匹配整个 spec（如 home.spec.ts 33 个测试），回归成本高（"每次测试脚本 50 个起步"）。
+
+**根因**：`uiTestMap` 为「文件 → 整个 spec 文件」的粗粒度映射，无按功能点（测试编号前缀）过滤。
+
+**已整改**：
+- `run-tests.ps1` 新增 `-Grep <编号前缀>` 参数：透传 `npx playwright test --grep`，手动精准回归（如 `-Grep "HOME-054"` 只跑 1 个测试，`-Grep "HOME-05"` 跑 9 个）。
+- 新增 `uiPrecisionMap`（精粒度映射）：文件 → 测试编号前缀正则。当前覆盖 4 个高频改动区：
+  - `src/pages/Home/index.tsx` / `Home.css` / `continueItems.ts`
+  - `src/components/TMDBMovieRow/**`
+  - `src/components/UniversalPlayer/**`（含 ControlBar/ToastTrigger/usePlayerCore）
+  - `src/pages/Browse/**`（index/useBrowseData/BrowseMobileBar/FilterBar/SortBar）
+- 精粒度优先，未命中才走文件级粗粒度兜底；`-Grep` 手动模式跳过 AutoDetect。
+
+**待整改（后续）**：
+- 将 `uiPrecisionMap` 扩展为**文件级 → 多层映射**：为每个 spec 的每个测试编号段维护「精确到测试编号」的映射（如 `src/pages/Detail/**` 拆到 DETAIL-001/002/…），使改任意文件都只跑最相关测试。
+- 各 spec 测试编号段与功能点的对应关系需维护一份索引（可放 `scripts/README` 或 `TEST-CASES.md`）。
+
+**规避/验证**：改高频区文件时 `.\scripts\run-tests.ps1 -AutoDetect` 或 `-Grep "<编号前缀>"` 即可精准回归；全量回归仍用 `npx playwright test`。
+
+---
+
 *维护约定：新增问题按上述模板追加；已修复条目标记日期后保留作教训。此文件与 KNOWLEDGE.md 的 ADR、AGENTS.md 约定互为补充。*
