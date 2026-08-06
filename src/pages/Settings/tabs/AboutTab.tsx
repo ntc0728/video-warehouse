@@ -39,9 +39,12 @@ export default function AboutTab({ onVersionClick, onChangelogClick }: AboutTabP
         />
         <List.Item title="KinoTV" description="聚合影视剧和IPTV资源" />
       </List>
-      {/* 免责声明：关于页常驻展示 */}
+      {/* 免责声明：关于页常驻展示，带标题、占整行、超宽换行 */}
       <div className="about-tab__disclaimer">
-        免责声明：本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。
+        <h3 className="about-tab__disclaimer-title">免责声明</h3>
+        <p className="about-tab__disclaimer-text">
+          本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。
+        </p>
       </div>
     </section>
   );

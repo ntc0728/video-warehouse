@@ -414,6 +414,29 @@ test.describe('6.8 移动端设置主页菜单项', () => {
       console.log(`✅ SET-090 通过: 菜单项「${c.label}」副标题 = "${c.desc}"`);
     }
   });
+
+  test('SET-091: 移动端点击顶部资料区头像进入个人设置页', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    // 顶部资料区（头像 + 昵称）应可见
+    const profile = page.locator('.settings-mobile-profile');
+    await expect(profile).toBeVisible({ timeout: 5000 });
+
+    // 点击资料区 → 进入个人设置子页
+    await profile.click();
+    await page.waitForTimeout(1000);
+
+    // 个人设置子页应打开（含「配置管理」区块）
+    const subPage = page.locator('.settings-subpage');
+    await expect(subPage).toBeVisible({ timeout: 5000 });
+    const hasConfigSection = await subPage.getByText('配置管理', { exact: false }).count();
+    console.log(`✅ SET-091 检查: 个人设置子页已打开（配置管理区块=${hasConfigSection}）`);
+    expect(hasConfigSection).toBeGreaterThan(0);
+    console.log('✅ SET-091 通过: 移动端点击头像进入个人设置页');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
