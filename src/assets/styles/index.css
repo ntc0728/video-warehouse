@@ -871,44 +871,52 @@ main {
 }
 
 /* ══ Toast 全局样式（Sonner） ═══════════════════════════════════════
+   选择器说明（sonner 实际 DOM 结构，勿回退到 data-placement/.sonner-toaster——不存在）：
+   · toaster 容器 = <ol data-sonner-toaster data-x-position data-y-position>
+   · toast 项     = <li data-sonner-toast class="app-toast" data-styled>
    位置：
    · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方（不遮挡导航栏内搜索框）
    · 播放器页面（body[data-player-toast="active"]）→ 播放器内部「中间靠上」——
      水平居中 + 垂直约 18%（贴近播放器上部、不在 42% 垂直居中），
      既不遮挡顶部搜索框/控制栏，又处于播放器内部可视区域
+   居中：toast 项 absolute + left/right:0 + margin:0 auto（不碰 transform，保留 sonner 滑入/滑出动画）
    样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（与播放器内提示一致）
    宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
-.sonner-toaster[data-placement="top-center"] {
+[data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: calc(var(--header-height) + var(--space-lg)) !important;
-  align-items: center;
 }
 
-body[data-player-toast="active"] .sonner-toaster[data-placement="top-center"] {
+body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: 18% !important;
 }
 
-.sonner-toaster .app-toast {
+[data-sonner-toaster] [data-sonner-toast] {
   width: fit-content;
   min-width: 10rem;
   max-width: min(22rem, calc(100vw - 2rem));
+  /* 水平居中：absolute + left/right:0 + margin:0 auto；
+     覆盖 sonner 默认 left:0 + width:var(--width)，不动 transform 以保留滑入动画 */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   /* padding 由 App.tsx inline style 统一（space-sm space-md），此处不重复设置 */
   align-items: center;
   justify-content: center;
 }
 
-.sonner-toaster .app-toast [data-content] {
+[data-sonner-toaster] [data-sonner-toast] [data-content] {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.sonner-toaster .app-toast [data-title] {
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
   text-align: center;
   font-size: var(--text-sm);
   line-height: 1.5;
 }
 
-.sonner-toaster .app-toast [data-icon] {
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
   width: auto;
   height: auto;
   display: flex;

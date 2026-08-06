@@ -713,7 +713,10 @@ retryCount,
             setPlayClickAnim(true);
             setTimeout(() => {
               setPlayClickAnim(false);
-              playerCore.play();
+              // 用 togglePlay（而非 play）：togglePlay 会设置 userPlayRequested 标记，
+              // ToastTrigger 据此显示「播放」提示；直接 play() 不设标记、
+              // 且 autoPlayToastShownRef 已被首次自动播放置真 → 手动续播无提示（历史回归点）
+              playerCore.togglePlay();
             }, 300);
           }}
         >
