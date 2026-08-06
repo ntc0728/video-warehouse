@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
+import { playerToast } from '../PlayerToast';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
@@ -388,6 +389,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
+      // 用户手动点击暂停 → 标记来源，ToastTrigger 据此显示「暂停」提示
+      // （拖拽进度条触发的自动 pause 不设此标记 → 不提示『暂停』，改显示进度）
+      usePlayerStore.getState().setUserPauseRequested(true);
       pause();
     }
     togglePlayTimerRef.current = setTimeout(() => {
@@ -395,8 +399,22 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }, 200);
   }, [play, pause]);
 
+  /** 秒 → mm:ss / h:mm:ss */
+  const formatSeekTime = (seconds: number): string => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
   const seek = useCallback((time: number) => {
-    if (videoRef.current && !videoRef.current.error) videoRef.current.currentTime = time;
+    if (videoRef.current && !videoRef.current.error) {
+      videoRef.current.currentTime = time;
+      // 右上角提示最新播放进度（拖拽进度条 / 键盘快捷键 / 长按快进均触发）
+      playerToast(`已跳转 ${formatSeekTime(time)}`);
+    }
   }, []);
 
   const setVideoVolume = useCallback((vol: number) => {

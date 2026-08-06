@@ -913,6 +913,17 @@ body.skin-transitioning .skin-btn.active {
   background-color: transparent;
 }
 
+/* 关于页免责声明：次级色小字、限宽、居中，与卡片内容区有间距 */
+.about-tab__disclaimer {
+  margin: var(--space-xl) auto;
+  max-width: 34rem;
+  padding: 0 var(--space-md);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  text-align: center;
+}
+
 /* 设置页 tabbar（SettingsTabBar）：内容缩放、框静止，与全站统一 0.96。
    全局方案已排除 .settings-page，此处单独补充，避免与设置页专属「内容缩放」规则双重缩放。 */
 .settings-page .settings-tab__icon,

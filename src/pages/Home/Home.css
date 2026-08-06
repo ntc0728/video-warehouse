@@ -145,6 +145,15 @@
   text-decoration: underline;
 }
 
+/* 免责声明：token 提示区下方，小字次级色、限宽居中，不抢主提示视觉 */
+.home-disclaimer {
+  margin: var(--space-lg) auto 0;
+  max-width: 34rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+}
+
 /* ── Skeleton ────────────────────────────────────────── */
 
 .home-skeleton {
@@ -189,19 +198,19 @@
   animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
-/* Hero 内容占位 — 镜像 .hero-banner__text（标题 / meta / 简介），
-   让骨架不再是一张「空白图」，而是与真实 banner 左侧文字区同构 */
+/* Hero 内容占位 — 严格镜像 .hero-banner__content / .hero-banner__text：
+   左对齐 + 底部对齐（align-items:flex-end 等效 justify-content:flex-end 的 column 排列）、
+   padding 对齐 space-xl（移动端 space-md），让骨架文字占位与真实 banner 文字区位置一致 */
 .home-skeleton-hero__content {
   position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--space-sm);
-  width: clamp(16rem, 40vw, 34rem);
-  padding: clamp(1rem, 4vw, 3rem);
+  width: 100%;
+  max-width: 60%;
+  padding: var(--space-xl);
   pointer-events: none;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent);
 }
@@ -242,10 +251,15 @@
   width: 62%;
 }
 
-/* 移动端 hero 内容占位隐藏简介，仅保留标题（对齐真实 .hero-banner__desc 的 !isMobile 条件） */
+/* 移动端 hero 内容占位隐藏简介，仅保留标题（对齐真实 .hero-banner__desc 的 !isMobile 条件）；
+   padding 对齐真实 .hero-banner__content 的移动端 space-md */
 @media (width <= 767px) {
   .home-skeleton-hero__desc {
     display: none;
+  }
+
+  .home-skeleton-hero__content {
+    padding: var(--space-md);
   }
 }
 
