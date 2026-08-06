@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Upload, AlertTriangle, Eraser } from 'lucide-react';
+import { Upload, AlertTriangle } from 'lucide-react';
 import { Button, ConfirmDialog, toast } from '@/components/ui';
 import { useSettingsStore } from '@/stores';
 import { useUserStore } from '@/stores';
@@ -134,7 +134,7 @@ export default function PersonalTab() {
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
         <button type="button" className="settings-row" onClick={() => setConfirm('cache')}>
-          <span className="settings-row__label"><span className="settings-row__title"><Icon icon={Eraser} size="sm" /> 清除全部缓存</span><small>频道、节目单、首页数据等 · 下次访问自动重载</small></span>
+          <span className="settings-row__label"><span className="settings-row__title">清除全部缓存</span><small>频道、节目单、首页数据等 · 下次访问自动重载</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
       </section>

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import Button from './Button';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -64,26 +65,14 @@ export default function ConfirmDialog({
           )}
           <div className="flex justify-center gap-[var(--space-sm)]">
             <AlertDialog.Cancel asChild>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center h-[var(--comp-btn-min-height)] px-[var(--space-md)] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                onClick={handleCancel}
-              >
+              <Button size="sm" variant="outline" onClick={handleCancel}>
                 {cancelText}
-              </button>
+              </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <button
-                type="button"
-                className={`inline-flex items-center justify-center h-[var(--comp-btn-min-height)] px-[var(--space-md)] rounded-[var(--radius-md)] text-white transition-colors ${
-                  variant === 'danger'
-                    ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-[var(--color-primary)] hover:opacity-90'
-                }`}
-                onClick={handleConfirm}
-              >
+              <Button size="sm" variant={variant === 'danger' ? 'destructive' : 'default'} onClick={handleConfirm}>
                 {confirmText}
-              </button>
+              </Button>
             </AlertDialog.Action>
           </div>
           {/* 关闭按钮：仅关闭对话框，不触发 onCancel */}

@@ -382,7 +382,6 @@ body.skin-transitioning .skin-btn.active {
   gap: var(--space-2xs);
   justify-content: flex-end;
   padding: var(--space-xs) var(--space-sm);
-  border-bottom: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface);
   overflow-x: auto;
@@ -913,12 +912,20 @@ body.skin-transitioning .skin-btn.active {
   background-color: transparent;
 }
 
-/* 关于页免责声明：带标题，占整行宽度、一行显示不全自动换行 */
+/* 关于 Tab：flex 纵向撑满，让免责声明可贴底 */
+.about-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 关于页免责声明：靠页面底部（flex 容器内 margin-top:auto 推到底）、
+   无分割线、占整行宽度、一行显示不全自动换行 */
 .about-tab__disclaimer {
   width: 100%;
-  margin: var(--space-xl) 0;
-  padding: var(--space-lg) var(--space-md);
-  border-top: 1px solid var(--color-border-light);
+  margin: var(--space-xl) 0 0;
+  margin-top: auto; /* 贴底 */
+  padding: var(--space-lg) var(--space-md) var(--space-2xl);
 }
 
 .about-tab__disclaimer-title {
@@ -1184,13 +1191,115 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text-tertiary);
 }
 
-/* ===== 更新日志弹窗（内容由 CustomScrollbar 负责滚动） ===== */
+/* ===== 更新日志弹窗（左时间轴 + 右内容，双栏布局） ===== */
 .changelog-content {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   line-height: 1.7;
   word-break: break-word;
 }
+
+/* 版本行：左列时间轴 + 右列内容 */
+.cl-row {
+  display: flex;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+
+/* 左列：时间轴（轴点版本号 + 连接竖线） */
+.cl-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 5rem;
+}
+
+.cl-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) 0;
+}
+
+.cl-node-version {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 最新版本：主色高亮 */
+.cl-node--latest .cl-node-version {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.cl-node-date {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+}
+
+/* 连接竖线：贯穿两版本之间 */
+.cl-line {
+  flex: 1;
+  width: 1px;
+  min-height: var(--space-lg);
+  background: var(--color-border-light);
+}
+
+/* 右列：日志内容 */
+.cl-body {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: var(--space-xl);
+}
+
+.cl-group {
+  margin-bottom: var(--space-md);
+}
+
+.cl-sub {
+  margin: 0 0 var(--space-2xs);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cl-item {
+  position: relative;
+  padding-left: var(--space-lg);
+  margin-bottom: var(--space-2xs);
+}
+
+.cl-item::before {
+  content: "•";
+  position: absolute;
+  left: var(--space-xs);
+  color: var(--color-text-tertiary);
+}
+
+.cl-item a { color: var(--color-primary); }
+.cl-item code {
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  font-size: 0.9em;
+}
+
 .cl-gap { height: var(--space-sm); }
 .cl-title {
   margin: 0 0 var(--space-sm);
@@ -1198,40 +1307,8 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-base);
   font-weight: 700;
 }
-.cl-version {
-  margin: var(--space-md) 0 var(--space-xs);
-  padding-bottom: var(--space-2xs);
-  border-bottom: 1px solid var(--color-border-light);
-  color: var(--color-text);
-  font-size: var(--text-base);
-  font-weight: 700;
-}
-.cl-version:first-of-type { margin-top: 0; }
-.cl-sub {
-  margin: var(--space-sm) 0 var(--space-2xs);
-  color: var(--color-primary);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.cl-item {
-  position: relative;
-  padding-left: var(--space-lg);
-  margin-bottom: var(--space-2xs);
-}
-.cl-item::before {
-  content: "•";
-  position: absolute;
-  left: var(--space-xs);
-  color: var(--color-text-tertiary);
-}
-.cl-item a { color: var(--color-primary); }
-.cl-item code {
-  padding: 0 var(--space-2xs);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-hover);
-  font-size: 0.9em;
+.cl-p {
+  margin: var(--space-2xs) 0;
 }
 .cl-note {
   margin: var(--space-xs) 0;

@@ -112,6 +112,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     }
   }, [navigate, goHome]);
 
+  /** 右键 logo/kinoTV：阻止默认右键菜单，新开页签打开首页 */
+  const handleLogoContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open('/', '_blank', 'noopener');
+  }, []);
+
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   // ── 滚动检测：仅首页监听滚动距离，超过 --header-height 切换为实体背景 ──
@@ -231,7 +237,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
                 <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
                   {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
                 </button>
-                <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
+                <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
                   <div className="sticky-header__logo-wrap">
                     <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
                   </div>
@@ -253,7 +259,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
                   {sidebarCollapsed ? <Icon icon={PanelLeftOpen} size="md" /> : <Icon icon={PanelLeftClose} size="md" />}
                 </button>
               )}
-              <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} aria-label="kinoTv — 返回首页">
+              <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
                 <div className="sticky-header__logo-wrap">
                   <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
                 </div>

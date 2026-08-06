@@ -108,12 +108,20 @@
 .home-token-required {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   min-height: 60vh;
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
+}
+
+/* 主提示（图标+文字）：容器内居中 */
+.home-token-required__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  margin: auto 0; /* 垂直方向上下均 auto → 主提示在容器中央 */
 }
 
 .home-token-required-icon {
@@ -145,12 +153,12 @@
   text-decoration: underline;
 }
 
-/* 免责声明：token 提示区下方，加宽、靠容器底部（margin-top:auto 推到底），
-   小字次级色，不抢主提示视觉 */
+/* 免责声明：token 提示区下方，靠页面底部（margin-top:auto 推到底），
+   加宽、小字次级色，不抢主提示视觉 */
 .home-disclaimer {
   width: 100%;
   max-width: min(48rem, 100%);
-  margin: auto auto 0; /* 垂直方向：上自动、下贴底 */
+  margin: auto auto 0; /* 上自动（推到底部） */
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: 1.7;
