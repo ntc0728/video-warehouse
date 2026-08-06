@@ -37,8 +37,16 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
         let epgData = await getCachedEPGData();
         if (cancelled) return;
 
-        // 如果缓存为空或无频道数据，尝试从网络获取
-        if (!epgData || epgData.channels.length === 0) {
+        // 缓存优先：有缓存先展示；同时后台校验/刷新过期缓存。
+        // fetchAndParseEPG 内部有 TTL（epgUpdateInterval）与 URL 变化判断，
+        // 未过期/未变更时直接返回缓存零请求，不会产生多余网络消耗。
+        if (epgData && epgData.channels.length > 0) {
+          const programs = matchAllChannels(channels, epgData);
+          epgProgramsRef.current = programs;
+          setEpgStatus('success');
+          setEpgReady(true);
+        } else {
+          // 缓存为空或无频道数据：直接走网络获取
           try {
             epgData = await fetchAndParseEPG();
           } catch (err) {
@@ -50,19 +58,21 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
               setEpgStatus('error');
             }
           }
-        }
-        if (cancelled) return;
+          if (cancelled) return;
 
-        if (epgData && epgData.channels.length > 0) {
-          const programs = matchAllChannels(channels, epgData);
-          epgProgramsRef.current = programs;
-          setEpgStatus('success');
-        } else if (!epgErrorRef.current) {
-          // 有缓存但无匹配数据
-          setEpgStatus('success');
+          if (epgData && epgData.channels.length > 0) {
+            const programs = matchAllChannels(channels, epgData);
+            epgProgramsRef.current = programs;
+            setEpgStatus('success');
+          } else if (!epgErrorRef.current) {
+            // 有缓存但无匹配数据
+            setEpgStatus('success');
+          }
+          setEpgReady(true);
         }
 
-        setEpgReady(true);
+        // 后台静默刷新过期缓存（不阻塞展示，失败不覆盖已展示数据）
+        fetchAndParseEPG().catch(() => {});
       } catch {
         if (!cancelled) {
           setEpgReady(true);

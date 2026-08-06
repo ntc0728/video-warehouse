@@ -30,6 +30,24 @@ import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager, useNextEpisodePre
 import './Player.css';
 import { Icon } from "@/components/ui/Icon";
 
+// ── 模块级视频缓存（方案 2：会话内短暂缓存）──────────────
+// Player 是 noKeepAlive 路由（每次进入 /play 重新挂载组件），若缓存放组件内，
+// 每次进入都是空缓存、等于每次重拉。放模块级则「会话内」跨挂载存活。
+// 缓存项记录 sourceIndex + fetchedAt：命中需「同一源 && 5 分钟内」，
+// 既避免 5 分钟内反复进入同一视频（同源）重复请求，也保证：
+//   - 超过 5 分钟重拉 → 播放地址保鲜（CMS 源 URL 可能带时效签名）；
+//   - 不同源（详情页指定 A vs 历史恢复 B）→ 缓存不命中，播对源。
+const VIDEO_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export interface CachedVideoEntry {
+  video: Video;
+  sourceIndex: number;
+  fetchedAt: number;
+}
+
+/** 模块级缓存 Map：跨 Player 挂载存活 */
+const globalVideoCache = new Map<string, CachedVideoEntry>();
+
 type TMDBResultItem = {
   id: number;
   title?: string;
@@ -138,7 +156,12 @@ export default function PlayerPage() {
   }
 
   // ── 视频缓存 ──────────────────────────────
-  const videoCache = useMemo(() => new Map<string, Video>(), []);
+  // 模块级缓存：Player 是 noKeepAlive 路由，每次进入 /play 都会重新挂载组件，
+  // 若用组件级 Map 则每次进入都是空缓存。模块级 Map 可在「会话内」跨挂载存活，
+  // 实现 5 分钟内同一视频同源不重复拉取详情（方案 2：短暂缓存 + 过期重拉保鲜）。
+  // 缓存项带 sourceIndex 与 fetchedAt：命中需满足「同一源 && 5 分钟内」，
+  // 避免不同入口（详情页指定源 A vs 历史恢复源 B）播错源。
+  const videoCache = useMemo(() => globalVideoCache, []);
 
   // ── Hook: Episode Switcher ──────────────────────────────
   const {
@@ -230,7 +253,6 @@ export default function PlayerPage() {
      */
     const loadVideo = async () => {
       if (!id) return;
-      videoCache.delete(id);
       setLoadError(null);
 
       /** 当前使用的 CMS 源索引（优先级：routeSourceIndex > videoSourceIndex） */
@@ -258,12 +280,18 @@ export default function PlayerPage() {
       historyRecordRef.current = historyRecord;
 
       try {
-        /** 从缓存获取视频数据 */
-        let foundVideo: Video | null = videoCache.get(id) ?? null;
+        /**
+         * 从缓存获取视频数据（方案 2：5 分钟短暂缓存 + 源校验）
+         * 命中条件：同源 && 5 分钟内 && 非 tmdb- id（tmdb- 走 fetchCMSSources，不走这里）
+         * 不满足任一 → 视为无缓存，重新拉取（过期重拉可拿到最新播放地址）
+         */
+        const cachedEntry = id.startsWith('tmdb-') ? undefined : videoCache.get(id);
+        const cacheHit = cachedEntry
+          && cachedEntry.sourceIndex === activeSourceIndex
+          && Date.now() - cachedEntry.fetchedAt < VIDEO_CACHE_TTL_MS;
+        let foundVideo: Video | null = cacheHit ? cachedEntry!.video : null;
 
         // 统一判断是否需要请求详情：无缓存 / 缺少播放源
-        // （注：videoCache 在 loadVideo 开头已 delete 本 id，故此处恒为 null，
-        //   needFetch 实际恒 true —— 每次进入都重新拉取详情，保持原行为不变）
         const needFetch = !id.startsWith('tmdb-') && (
           !foundVideo ||
           (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes)
@@ -278,8 +306,10 @@ export default function PlayerPage() {
         if (controller.signal.aborted) return;
 
         if (foundVideo) {
-          // 缓存视频数据并更新状态
-          videoCache.set(id, foundVideo);
+          // 缓存视频数据（带源与时间戳，供 5 分钟短暂缓存命中判断）并更新状态
+          if (!id.startsWith('tmdb-')) {
+            videoCache.set(id, { video: foundVideo, sourceIndex: activeSourceIndex, fetchedAt: Date.now() });
+          }
           setVideo(foundVideo);
 
           /**
@@ -410,7 +440,7 @@ export default function PlayerPage() {
         : undefined;
 
       if (matchedEp?.sources.length) {
-        videoCache.set(id!, seasonVideo);
+        videoCache.set(id!, { video: seasonVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
         setVideo(seasonVideo);
         switchToEpisode(matchedEp);
       }
