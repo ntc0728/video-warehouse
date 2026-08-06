@@ -38,7 +38,10 @@ function App() {
             borderRadius: 'var(--radius-lg)',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
             maxWidth: 'min(22rem, calc(100vw - 2rem))',
-            width: 'auto',
+            // 宽度必须用 fit-content：auto 在绝对定位 + left/right 双边界下会被拉伸到
+            // 容器宽度（最长 22rem），短文本 toast 也会撑满固定宽度；
+            // fit-content 让宽高都由文本内容撑开 + 下方 padding
+            width: 'fit-content',
             height: 'auto',
             textAlign: 'center',
             padding: 'var(--space-sm) var(--space-md)',
