@@ -107,7 +107,7 @@
   cursor: grabbing;
 }
 
-/* 骨架屏 */
+/* 骨架屏 — 与真实卡片结构同构（封面 + 四角标 + 标题） */
 .tmdb-movierow-skeleton {
   display: flex;
   flex-direction: column;
@@ -115,11 +115,59 @@
 }
 
 .tmdb-movierow-skeleton-img {
+  position: relative;
   width: 100%;
   border-radius: var(--radius-md);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.06));
-  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
+  /* 与 .video-card__poster 一致的 shimmer 封面 */
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer var(--card-shimmer-duration) infinite;
   aspect-ratio: 2 / 3;
+  overflow: hidden;
+}
+
+/* 角标占位：对齐 .video-card-rating（左上）/ .video-card-fav-btn（右上）/
+   .video-card-year-badge（左下）/ .video-card-type（右下）位置 */
+.tmdb-movierow-skeleton-badge {
+  position: absolute;
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
+}
+
+.tmdb-movierow-skeleton-badge--tl {
+  top: var(--space-3xs);
+  left: var(--space-3xs);
+  width: var(--space-2xl);
+  height: var(--icon-xs);
+}
+
+.tmdb-movierow-skeleton-badge--tr {
+  top: var(--space-3xs);
+  right: var(--space-3xs);
+  width: var(--icon-md);
+  height: var(--icon-md);
+  border-radius: 50%;
+}
+
+.tmdb-movierow-skeleton-badge--bl {
+  bottom: var(--space-3xs);
+  left: var(--space-3xs);
+  width: var(--space-lg);
+  height: var(--icon-2xs, 10px);
+}
+
+.tmdb-movierow-skeleton-badge--br {
+  bottom: var(--space-3xs);
+  right: var(--space-3xs);
+  width: var(--space-xl);
+  height: var(--icon-2xs, 10px);
 }
 
 .tmdb-movierow-skeleton-title {
@@ -128,6 +176,15 @@
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.06));
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
+}
+
+/* 横版骨架（继续观看行）：16:9 封面 + 仅左上源徽章 */
+.tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-img {
+  aspect-ratio: 16 / 9;
+}
+
+.tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-badge--tl {
+  width: clamp(2.5rem, 6vw, 5rem);
 }
 
 @keyframes tmdb-skeleton-pulse {

@@ -310,6 +310,9 @@
   /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
   --card-cols: 3;   /* 默认：移动端 (< 768)             */
   --row-cols:  var(--card-cols);
+  /* 继续观看行（横版 16:9 卡）：与 --card-cols 同一断点曲线（3/5/7），
+     保证任意视口下 continue 行卡片数与下方竖版行一致（同屏同列数视觉对齐） */
+  --continue-cols: var(--card-cols);
 
   /* ── Sticky Header ───────────────────────────────────────────────────── */
   --header-height: clamp(60px, 3.375rem + 1vw, 76px); /* 顶部导航栏高度 */

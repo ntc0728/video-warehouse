@@ -144,6 +144,9 @@ export default function HomePage() {
   // 电影线路独立后同一 videoId 可能存在多条记录，必须按 updatedAt 取最新，
   // 避免数组顺序覆盖导致取到旧线路/旧集的记录。
   const history = useUserStore((s) => s.history);
+  // 首次 IndexedDB 加载中标志：加载中且有历史播放记录时，继续观看行显示骨架；
+  // 加载完成仍无记录则整行隐藏（由下方 continueItems.length > 0 条件控制）。
+  const userDataLoading = useUserStore((s) => s._loading);
   const historyMap = useMemo(() => {
     const map = new Map<string, (typeof history)[0]>();
     for (const h of history) {
@@ -322,7 +325,19 @@ export default function HomePage() {
   const homeSkeleton = (
     <div className="page-padding home-page home-skeleton">
       <div className="home-skeleton-hero">
-        <div className="home-skeleton-hero__banner" />
+        <div className="home-skeleton-hero__banner">
+          {/* 内容占位：镜像 hero-banner__text — 标题 / 评分·年份·类型 / 简介（桌面端） */}
+          <div className="home-skeleton-hero__content">
+            <div className="home-skeleton-hero__title" />
+            <div className="home-skeleton-hero__meta">
+              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--xs" />
+            </div>
+            <div className="home-skeleton-hero__desc" />
+            <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
+          </div>
+        </div>
         <div className="home-skeleton-hero__thumbs">
           {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
               与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
@@ -338,7 +353,13 @@ export default function HomePage() {
             <div className="home-skeleton-row-cards">
               {Array.from({ length: 7 }).map((_, j) => (
                 <div key={j} className="home-skeleton-card">
-                  <div className="home-skeleton-card-img" />
+                  <div className="home-skeleton-card-img">
+                    {/* 四角标占位：镜像 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
+                    <span className="home-skeleton-card-badge home-skeleton-card-badge--tl" />
+                    <span className="home-skeleton-card-badge home-skeleton-card-badge--tr" />
+                    <span className="home-skeleton-card-badge home-skeleton-card-badge--bl" />
+                    <span className="home-skeleton-card-badge home-skeleton-card-badge--br" />
+                  </div>
                   <div className="home-skeleton-card-title" />
                 </div>
               ))}
@@ -413,12 +434,13 @@ export default function HomePage() {
           onCategorySelect={handleCategorySelect}
           activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
         />
-        {!isCategoryView && continueItems.length > 0 && (
+        {!isCategoryView && (userDataLoading || continueItems.length > 0) && (
           <TMDBMovieRow
             title="继续观看"
             items={[]}
             continueMode
             continueItems={continueItems}
+            isLoading={userDataLoading}
           />
         )}
         <div className="home-rows">

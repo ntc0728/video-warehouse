@@ -14,7 +14,7 @@
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
@@ -80,17 +80,33 @@ function toVideo(item: {
   };
 }
 
-/** 骨架卡片（错开动画延迟，避免同步闪烁） */
-function SkeletonCards({ count = 12 }: { count?: number }) {
+/** 骨架卡片（错开动画延迟，避免同步闪烁）
+ *  - 默认竖版（2:3）：镜像 .video-card portrait 结构 — 封面 + 左上评分角标 + 右上收藏点 + 左下年份 + 右下类型 + 底部标题
+ *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + 底部标题
+ */
+function SkeletonCards({ count = 12, landscape = false }: { count?: number; landscape?: boolean }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="tmdb-movierow-card tmdb-movierow-skeleton"
+          className={`tmdb-movierow-card tmdb-movierow-skeleton${landscape ? ' tmdb-movierow-skeleton--landscape' : ''}`}
           style={{ animationDelay: `${(i % 4) * 0.2}s` }}
         >
-          <div className="tmdb-movierow-skeleton-img" />
+          <div className="tmdb-movierow-skeleton-img">
+            {landscape ? (
+              /* 横版：左上源徽章占位（对齐继续观看卡 overlayLabel） */
+              <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
+            ) : (
+              /* 竖版四角标：左上评分 / 右上收藏 / 左下年份 / 右下类型 */
+              <>
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tr" />
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--bl" />
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--br" />
+              </>
+            )}
+          </div>
           <div className="tmdb-movierow-skeleton-title" />
         </div>
       ))}
@@ -110,7 +126,10 @@ function TMDBMovieRow({
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [hasOverflow, setHasOverflow] = useState(false);
-  const isMobile = useIsMobile();
+  // 用 useIsMobileLayout（native || 真实手机UA || 视口<768px）而非 useIsMobile（<1024px）：
+  // 非手机 web 小视口（768–1023px 桌面窄窗 / 平板横竖屏）仍走桌面 UI，应显示左右箭头；
+  // 只有真实手机 / App / <768px 窄窗（触摸布局）才隐藏箭头。
+  const isMobile = useIsMobileLayout();
   const isTV = useIsTV();
 
   // 拖拽状态
@@ -359,8 +378,8 @@ function TMDBMovieRow({
           onPointerUp={handlePointerUpOrCancel}
           onPointerCancel={handlePointerUpOrCancel}
         >
-          {isLoading && items.length === 0 ? (
-            <SkeletonCards />
+          {isLoading && (continueMode ? (continueItems?.length ?? 0) === 0 : items.length === 0) ? (
+            <SkeletonCards landscape={continueMode} />
           ) : continueMode ? (
             (continueItems ?? []).map((item) => (
               <div
