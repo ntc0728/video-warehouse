@@ -4,7 +4,7 @@
  */
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { useVideoStore, usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
+import { usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
 import { extractSeasonNumber } from '@/services/seasonMatcher';
 import { findEpisodeByNumber } from '@/services/videoService';
 import { buildImageUrl } from '@/services/tmdbService';
@@ -71,7 +71,6 @@ export default function PlayerPage() {
   const routeSeasonNumber = (location.state as Record<string, unknown>)?.seasonNumber as number | undefined;
   const appliedRoutePlayRef = useRef(false);
 
-  const { currentSourceIndex } = useVideoStore();
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
   const { updateHistoryProgress, isCollected, addCollection, removeCollection } = useUserStore();
   const { videoSourceIndex } = useSettingsStore();
@@ -262,10 +261,11 @@ export default function PlayerPage() {
         /** 从缓存获取视频数据 */
         let foundVideo: Video | null = videoCache.get(id) ?? null;
 
-        // 统一判断是否需要请求详情：无缓存 / 源不匹配 / 缺少播放源
+        // 统一判断是否需要请求详情：无缓存 / 缺少播放源
+        // （注：videoCache 在 loadVideo 开头已 delete 本 id，故此处恒为 null，
+        //   needFetch 实际恒 true —— 每次进入都重新拉取详情，保持原行为不变）
         const needFetch = !id.startsWith('tmdb-') && (
           !foundVideo ||
-          (foundVideo && currentSourceIndex !== activeSourceIndex) ||
           (foundVideo && foundVideo.sources.length === 0 && !foundVideo.episodes)
         );
 
@@ -354,7 +354,7 @@ export default function PlayerPage() {
       resetPlayer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, routeSourceIndex, videoSourceIndex, currentSourceIndex]);
+  }, [id, routeSourceIndex, videoSourceIndex]);
 
   // TMDB 就绪后设置 hasLoadedOnce，取消全屏 loading
   useEffect(() => {

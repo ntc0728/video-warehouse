@@ -1,14 +1,9 @@
 /**
  * 数据存储相关类型定义
  *
- * 定义 IndexedDB 中视频记录、收藏记录、观看历史等数据结构，
+ * 定义 IndexedDB 中收藏记录、观看历史等数据结构，
  * 用于本地持久化存储用户数据。
  */
-import type { Video } from './video';
-
-/** 视频记录，与 Video 类型一致，用于 IndexedDB 存储 */
-export type VideoRecord = Video;
-
 /**
  * 收藏记录
  *
@@ -77,61 +72,4 @@ export interface HistoryRecord {
   seasonNumber?: number;
   /** 当前季的 vod_id，用于选季面板高亮 */
   currentSeasonId?: string;
-}
-
-/**
- * IndexedDB 数据库 Schema 定义
- *
- * 定义数据库的对象仓库和索引结构，使用 idb 库的类型安全 API。
- */
-export interface VideoWarehouseDB {
-  /** 视频记录仓库 */
-  videos: {
-    /** 主键：视频 ID */
-    key: string;
-    /** 值类型：视频记录 */
-    value: VideoRecord;
-    /** 索引定义 */
-    indexes: {
-      /** 按视频类型索引（movie/tv） */
-      'by-type': string;
-      /** 按年份索引 */
-      'by-year': number;
-      /** 按创建时间索引 */
-      'by-created': number;
-    };
-  };
-  /** 收藏记录仓库 */
-  collections: {
-    /** 主键：收藏记录 ID */
-    key: string;
-    /** 值类型：收藏记录 */
-    value: CollectionRecord;
-    /** 索引定义 */
-    indexes: {
-      /** 按视频 ID 索引 */
-      'by-video': string;
-    };
-  };
-  /** 观看历史记录仓库 */
-  history: {
-    /** 主键：历史记录 ID */
-    key: string;
-    /** 值类型：历史记录 */
-    value: HistoryRecord;
-    /** 索引定义 */
-    indexes: {
-      /** 按视频 ID 索引 */
-      'by-video': string;
-      /** 按更新时间索引（用于排序） */
-      'by-updated': number;
-    };
-  };
-  /** 设置仓库 */
-  settings: {
-    /** 主键：设置项 key */
-    key: string;
-    /** 值类型：任意 */
-    value: unknown;
-  };
 }

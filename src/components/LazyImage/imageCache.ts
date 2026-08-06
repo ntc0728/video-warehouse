@@ -23,3 +23,8 @@ export function isImageLoaded(url: string): boolean {
 export function markImageLoaded(url: string): void {
   loadedImageCache.add(url);
 }
+
+/** 清空本会话的图片加载缓存（用于「清除全部缓存」入口） */
+export function clearImageCache(): void {
+  loadedImageCache.clear();
+}

@@ -63,6 +63,8 @@ interface TMDBStoreState {
   popularTv: TMDBVideoItem[];
   topRatedTv: TMDBVideoItem[];
   airingTodayTv: TMDBVideoItem[];
+  /** 最近一次 fetchAllHomeData 完成的时间戳（0 = 从未拉取）；TTL 过期后自动刷新 */
+  homeFetchedAt: number;
 
   // ---- 搜索 ----
   /** 最近一次搜索词（仅供 store 内部追踪，UI 同步应直接读 URL ?q=） */
@@ -145,6 +147,8 @@ interface TMDBStoreState {
   fetchGenresAndCountries: () => Promise<void>;
   checkToken: () => Promise<{ ok: boolean; error?: string }>;
   refreshAll: () => Promise<void>;
+  /** 仅清空首页 8 区块（不触发重新请求），用于「清除全部缓存」 */
+  clearHomeData: () => void;
 }
 
 // ============================================================
@@ -285,6 +289,9 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // Store 定义
 // ============================================================
 
+// 首页 8 区块内存缓存 TTL：60 分钟（数据全满时仍会过期静默刷新）
+export const HOME_TTL_MS = 60 * 60 * 1000;
+
 // 首页数据批量获取的 AbortController：重复调用时自动取消上一轮
 let _homeFetchAbort: AbortController | null = null;
 
@@ -304,6 +311,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   popularTv: [],
   topRatedTv: [],
   airingTodayTv: [],
+  homeFetchedAt: 0,
 
   searchQuery: '',
 
@@ -536,6 +544,12 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   /** 强制刷新所有数据（清空现有数据后重新获取） */
   refreshAll: async () => {
+    get().clearHomeData();
+    await get().fetchAllHomeData();
+  },
+
+  /** 仅清空首页 8 区块（保留 genres/countries 分类配置），不触发重新请求 */
+  clearHomeData: () => {
     set(() => ({
       trending: [],
       nowPlaying: [],
@@ -545,12 +559,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       popularTv: [],
       topRatedTv: [],
       airingTodayTv: [],
-      movieGenres: [],
-      tvGenres: [],
-      countries: [],
-      genresLanguage: null,
+      homeFetchedAt: 0,
     }));
-    await get().fetchAllHomeData();
   },
 
   fetchAllHomeData: async () => {
@@ -561,24 +571,30 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     const ctrl = new AbortController();
     _homeFetchAbort = ctrl;
 
-    // 判断每个区块是否需要刷新（数据为空时获取）
-    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0;
+    // TTL 过期：距离上次 fetchAllHomeData 完成超过 60min（homeFetchedAt=0 视为从未拉取，不属于过期）
+    const ttlExpired = state.homeFetchedAt > 0 && Date.now() - state.homeFetchedAt > HOME_TTL_MS;
+    // 判断每个区块是否需要刷新（数据为空 或 全局 TTL 过期）
+    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0 || ttlExpired;
+    // loading 置位仅针对空区块：TTL 过期时区块已有数据，保持旧数据展示（静默刷新），避免整页闪骨架
+    const isEmpty = (arr: unknown[]): boolean => arr.length === 0;
 
     // 清除上一轮遗留的错误状态，避免首页同时展示旧错误 + 新 loading。
     // 同时提前为待拉取区块置位 loading —— checkToken() 是一次完整网络往返，
     // 若等它返回后才置位，这段窗口内所有区块「无数据且不在加载中」，
     // TMDBMovieRow 会整体 return null（下方行不渲染）且首页骨架不出现。
+    // 注意：仅「空区块」置位 loading；TTL 过期刷新（数据已满）不清 loading，
+    // 否则 TMDBMovieRow 会因 isLoading 切到 SkeletonCards，导致旧数据闪没。
     set((s) => ({
       loading: {
         ...s.loading,
-        trending: shouldFetch(state.trending) || s.loading.trending,
-        nowPlaying: shouldFetch(state.nowPlaying) || s.loading.nowPlaying,
-        popularMovies: shouldFetch(state.popularMovies) || s.loading.popularMovies,
-        topRatedMovies: shouldFetch(state.topRatedMovies) || s.loading.topRatedMovies,
-        upcomingMovies: shouldFetch(state.upcomingMovies) || s.loading.upcomingMovies,
-        popularTv: shouldFetch(state.popularTv) || s.loading.popularTv,
-        topRatedTv: shouldFetch(state.topRatedTv) || s.loading.topRatedTv,
-        airingTodayTv: shouldFetch(state.airingTodayTv) || s.loading.airingTodayTv,
+        trending: isEmpty(state.trending) || s.loading.trending,
+        nowPlaying: isEmpty(state.nowPlaying) || s.loading.nowPlaying,
+        popularMovies: isEmpty(state.popularMovies) || s.loading.popularMovies,
+        topRatedMovies: isEmpty(state.topRatedMovies) || s.loading.topRatedMovies,
+        upcomingMovies: isEmpty(state.upcomingMovies) || s.loading.upcomingMovies,
+        popularTv: isEmpty(state.popularTv) || s.loading.popularTv,
+        topRatedTv: isEmpty(state.topRatedTv) || s.loading.topRatedTv,
+        airingTodayTv: isEmpty(state.airingTodayTv) || s.loading.airingTodayTv,
       },
       errors: {
         ...s.errors,
@@ -629,16 +645,18 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     // ---- 所有区块并发请求 ----
     const fetches = [
-      shouldFetch(state.trending) ? state.fetchTrending() : Promise.resolve(),
-      shouldFetch(state.nowPlaying) ? state.fetchNowPlaying() : Promise.resolve(),
-      shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : Promise.resolve(),
-      shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : Promise.resolve(),
-      shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : Promise.resolve(),
-      shouldFetch(state.popularTv) ? state.fetchPopularTv() : Promise.resolve(),
-      shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : Promise.resolve(),
-      shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : Promise.resolve(),
+      shouldFetch(state.trending) ? state.fetchTrending() : null,
+      shouldFetch(state.nowPlaying) ? state.fetchNowPlaying() : null,
+      shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : null,
+      shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : null,
+      shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : null,
+      shouldFetch(state.popularTv) ? state.fetchPopularTv() : null,
+      shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : null,
+      shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : null,
     ];
-    await Promise.all(fetches);
+    await Promise.all(fetches.filter((p): p is Promise<void> => p !== null));
+    // 记录本次批量拉取的完成时间：TTL 刷新窗口从此刻重新计时
+    set({ homeFetchedAt: Date.now() });
   },
 
   /**

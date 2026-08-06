@@ -4,26 +4,17 @@
  * 使用 idb 库封装 IndexedDB 操作，支持事务和索引查询
  */
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { VideoRecord, CollectionRecord, HistoryRecord } from '@/types/store';
+import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 const DB_NAME = 'video-warehouse';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 /**
  * 数据库 Schema 定义
  * 包含 videos、collections、history、iptvChannels 四个对象仓库
  */
 interface VideoWarehouseDB extends DBSchema {
-  videos: {
-    key: string;
-    value: VideoRecord;
-    indexes: {
-      'by-type': string;
-      'by-year': number;
-      'by-created': number;
-    };
-  };
   collections: {
     key: string;
     value: CollectionRecord;
@@ -73,6 +64,28 @@ let dbInstance: IDBPDatabase<VideoWarehouseDB> | null = null;
  */
 const DB_OPEN_TIMEOUT = 6000;
 
+/** EPG 缓存清除：删除 settings 仓库中的三个 EPG 缓存 key */
+export async function clearEPGCache(): Promise<void> {
+  try {
+    const db = await getDB();
+    const tx = db.transaction('settings', 'readwrite');
+    await Promise.all([
+      tx.store.delete('epg-cache-data'),
+      tx.store.delete('epg-cache-urls'),
+      tx.store.delete('epg-cache-time'),
+      tx.done,
+    ]);
+  } catch { /* 缓存清除失败不影响主流程 */ }
+}
+
+/** IPTV 频道缓存清除：清空 iptvChannels 对象仓库 */
+export async function clearIPTVChannelCache(): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.clear('iptvChannels');
+  } catch { /* 缓存清除失败不影响主流程 */ }
+}
+
 /**
  * 初始化数据库，创建对象仓库和索引
  * 使用单例模式确保全局只有一个数据库实例
@@ -82,13 +95,6 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
 
   const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
     upgrade(db) {
-      if (!db.objectStoreNames.contains('videos')) {
-        const videoStore = db.createObjectStore('videos', { keyPath: 'id' });
-        videoStore.createIndex('by-type', 'type');
-        videoStore.createIndex('by-year', 'year');
-        videoStore.createIndex('by-created', 'createdAt');
-      }
-
       if (!db.objectStoreNames.contains('collections')) {
         const collectionStore = db.createObjectStore('collections', { keyPath: 'id' });
         collectionStore.createIndex('by-video', 'videoId');
@@ -111,6 +117,11 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
       // v7: 移除已废弃的 ratings 对象仓库（评分功能已下线）
       if ((db as IDBPDatabase).objectStoreNames.contains('ratings')) {
         (db as IDBPDatabase).deleteObjectStore('ratings');
+      }
+
+      // v8: 移除已废弃的 videos 对象仓库（importVideos 从未被调用，无任何数据）
+      if ((db as IDBPDatabase).objectStoreNames.contains('videos')) {
+        (db as IDBPDatabase).deleteObjectStore('videos');
       }
 
       // v3-v5: 新增可选字段（backdrop, episodeLabel），无需 schema 变更
@@ -149,30 +160,6 @@ export async function getDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
     dbInstance = null;
     return initDB();
   }
-}
-
-/** 获取所有视频记录 */
-export async function getAllVideos(): Promise<VideoRecord[]> {
-  const db = await getDB();
-  return db.getAll('videos');
-}
-
-/** 根据 ID 获取单条视频记录 */
-export async function getVideo(id: string): Promise<VideoRecord | undefined> {
-  const db = await getDB();
-  return db.get('videos', id);
-}
-
-/**
- * 批量导入视频记录，使用事务确保原子性
- */
-export async function importVideos(videos: VideoRecord[]): Promise<void> {
-  const db = await getDB();
-  const tx = db.transaction('videos', 'readwrite');
-  await Promise.all([
-    ...videos.map((video) => tx.store.put(video)),
-    tx.done,
-  ]);
 }
 
 /**

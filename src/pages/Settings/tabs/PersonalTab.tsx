@@ -1,13 +1,14 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Upload, AlertTriangle } from 'lucide-react';
+import { Upload, AlertTriangle, Eraser } from 'lucide-react';
 import { Button, ConfirmDialog, toast } from '@/components/ui';
 import { useSettingsStore } from '@/stores';
 import { useUserStore } from '@/stores';
 import ProfileHeader from '../ProfileHeader';
 import { exportBackup, parseBackup, applyBackup } from '../settingsBackup';
+import { clearAllCaches } from '@/lib/clearCaches';
 import { Icon } from "@/components/ui/Icon";
 
-type ConfirmKind = null | 'reset' | 'collections' | 'history' | 'all';
+type ConfirmKind = null | 'reset' | 'collections' | 'history' | 'all' | 'cache';
 
 export default function PersonalTab() {
   const resetToDefaults = useSettingsStore((s) => s.resetToDefaults);
@@ -61,21 +62,30 @@ export default function PersonalTab() {
         clearHistory();
         toast.success('已恢复默认并清空收藏、历史');
         break;
+      case 'cache':
+        void clearAllCaches().then(() => {
+          toast.success('已清除全部缓存');
+        }).catch(() => {
+          toast.error('清除缓存失败，请重试');
+        });
+        break;
     }
     setConfirm(null);
   };
 
   const confirmTitle =
     confirm === 'all' ? '恢复默认并清空数据'
-      : confirm === 'reset' ? '恢复设置默认'
-        : confirm === 'collections' ? '清空我的收藏'
-          : '清空观看历史';
+      : confirm === 'cache' ? '清除全部缓存'
+        : confirm === 'reset' ? '恢复设置默认'
+          : confirm === 'collections' ? '清空我的收藏'
+            : '清空观看历史';
 
   const confirmDesc =
     confirm === 'all' ? '将设置页内容全部恢复默认，并清空收藏与观看历史，此操作不可恢复。'
-      : confirm === 'reset' ? '仅重置设置项，收藏与观看历史不受影响。'
-        : confirm === 'collections' ? `将清空全部 ${collectionsCount} 条收藏，此操作不可恢复。`
-          : `将清空全部 ${historyCount} 条观看历史，此操作不可恢复。`;
+      : confirm === 'cache' ? '将清除频道列表、节目单、首页与类目数据、源检测结果等缓存，清除后将在下次访问时自动重新加载。不影响设置、收藏、历史等个人数据。'
+        : confirm === 'reset' ? '仅重置设置项，收藏与观看历史不受影响。'
+          : confirm === 'collections' ? `将清空全部 ${collectionsCount} 条收藏，此操作不可恢复。`
+            : `将清空全部 ${historyCount} 条观看历史，此操作不可恢复。`;
 
   return (
     <>
@@ -121,6 +131,10 @@ export default function PersonalTab() {
         </button>
         <button type="button" className="settings-row" onClick={() => setConfirm('history')}>
           <span className="settings-row__label"><span className="settings-row__title">清空观看历史</span><small>共 {historyCount} 条 · 不可恢复</small></span>
+          <span className="settings-row__chev" aria-hidden>›</span>
+        </button>
+        <button type="button" className="settings-row" onClick={() => setConfirm('cache')}>
+          <span className="settings-row__label"><span className="settings-row__title"><Icon icon={Eraser} size="sm" /> 清除全部缓存</span><small>频道、节目单、首页数据等 · 下次访问自动重载</small></span>
           <span className="settings-row__chev" aria-hidden>›</span>
         </button>
       </section>

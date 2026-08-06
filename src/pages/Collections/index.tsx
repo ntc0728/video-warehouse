@@ -4,7 +4,7 @@
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useVideoStore, useUserStore, useNavStore } from '@/stores';
+import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
@@ -57,7 +57,6 @@ const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGri
 };
 
 export default function CollectionsPage() {
-  const { videos } = useVideoStore();
   const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
@@ -149,9 +148,7 @@ export default function CollectionsPage() {
     let list: CollectionVideoItem[] = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
       .map((c: CollectionRecord): CollectionVideoItem => {
-        const sv = videos.find((v) => v.id === c.videoId);
         const status = getVideoStatus(c.videoId);
-        if (sv) return { ...sv, _rating: c.rating, _status: status, _sourceIndex: c.sourceIndex, _addedAt: c.addedAt };
         return {
           id: c.videoId,
           title: c.title || '',
@@ -194,24 +191,21 @@ export default function CollectionsPage() {
         list.sort(byAddedDesc);
     }
     return list;
-  }, [collections, videos, searchByTab.video, statusFilter, getVideoStatus, sortBy]);
+  }, [collections, searchByTab.video, statusFilter, getVideoStatus, sortBy]);
 
   /** Counts for status tabs (before status filter, only search filter applied) */
   const statusCounts = useMemo(() => {
     let list = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
-      .map((c) => ({ id: c.videoId, status: getVideoStatus(c.videoId) }));
+      .map((c) => ({ id: c.videoId, title: c.title, status: getVideoStatus(c.videoId) }));
     if (searchByTab.video.trim()) {
       const kw = searchByTab.video.toLowerCase();
-      list = list.filter((c) => {
-        const sv = videos.find(v => v.id === c.id);
-        return sv?.title?.toLowerCase().includes(kw);
-      });
+      list = list.filter((c) => c.title?.toLowerCase().includes(kw));
     }
     const counts: Record<VideoStatus, number> = { all: list.length, unwatched: 0, watching: 0, watched: 0 };
     list.forEach(c => { counts[c.status]++; });
     return counts;
-  }, [collections, videos, searchByTab.video, getVideoStatus]);
+  }, [collections, searchByTab.video, getVideoStatus]);
 
   const favoriteChannels = useMemo(() => {
     let list = iptvChannels.filter(ch => ch.isFavorite);

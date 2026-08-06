@@ -15,7 +15,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { useNavStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { getIPTVSources } from '@/services/sourceService';
-import { getEPGCacheTime } from '@/services/epgService';
+import { getEPGCacheTime, fetchAndParseEPG } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -132,9 +132,14 @@ export default function IPTVPage() {
   // 自动刷新频道列表
   useIPTVAutoRefresh();
 
-  // 获取节目单缓存时间
+  // 获取节目单缓存时间；同时后台校验 EPG 是否过期（fetchAndParseEPG 内部带
+  // epgUpdateInterval TTL 判断：未过期直接返回缓存、零网络请求；过期才重新拉取），
+  // 使「只逛列表页」的用户也能让节目单数据保持新鲜。
   useEffect(() => {
     getEPGCacheTime().then(setEpgCacheTime);
+    fetchAndParseEPG()
+      .then(() => getEPGCacheTime().then(setEpgCacheTime))
+      .catch(() => { /* 刷新失败保持原缓存时间显示 */ });
   }, []);
 
   // 页面卸载时中止检测
