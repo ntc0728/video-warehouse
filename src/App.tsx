@@ -31,13 +31,17 @@ function App() {
             toast: 'app-toast',
           },
           style: {
-            background: 'var(--color-surface)',
-            color: 'var(--color-text)',
-            border: '1px solid var(--color-border-light)',
+            // 全局 sonner 统一黑色透明 + 圆角 + 文本撑开，与播放器内提示视觉一致
+            background: 'rgba(0, 0, 0, 0.72)',
+            color: '#fff',
+            border: 'none',
             borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-md)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
             maxWidth: 'min(22rem, calc(100vw - 2rem))',
+            width: 'auto',
+            height: 'auto',
             textAlign: 'center',
+            padding: 'var(--space-sm) var(--space-md)',
           },
         }}
       />
