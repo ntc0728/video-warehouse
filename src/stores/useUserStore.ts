@@ -48,6 +48,8 @@ interface UserState {
   }) => void;
   getHistoryByVideo: (videoId: string) => HistoryRecord | undefined;
   removeHistory: (historyId: string) => void;
+  /** 立即落库所有待写入的历史记录（节流 flush 的即时版） */
+  flushHistoryNow: () => void;
   /** 删除指定视频的全部历史记录（含电影多线路 / 剧集多季多集的所有记录） */
   removeHistoryByVideo: (videoId: string) => void;
   clearHistory: () => void;
@@ -91,6 +93,47 @@ async function cleanupLegacyHistoryRecords(): Promise<void> {
   } catch {
     // 清理失败不影响主流程
   }
+}
+
+// ── 历史记录节流落库（P4 优化）──────────────────────────────
+// 播放进度 timeupdate 事件高频触发（约 250ms~1s 一次），若每次都写 IndexedDB
+// 会产生大量事务。改为「内存更新 + 节流批量落库」：
+//   - addHistory 只更新内存态，并把该记录标记为「脏」，调度 3s 节流定时器；
+//   - 定时器触发（或页面退场/隐藏）时，把脏记录一次性批量 upsert；
+//   - 退场兜底：pagehide / visibilitychange(hidden) 时立即 flush，避免丢失。
+const HISTORY_FLUSH_MS = 3000;
+/** 脏记录集合：dedupId → HistoryRecord（upsert 幂等，可安全覆盖旧值） */
+let historyDirtyRecords = new Map<string, HistoryRecord>();
+let historyFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 批量落库：把脏记录一次性写入 IndexedDB（独立于 store，供 flush 调用） */
+function flushHistoryRecords(): void {
+  if (historyFlushTimer) {
+    clearTimeout(historyFlushTimer);
+    historyFlushTimer = null;
+  }
+  if (historyDirtyRecords.size === 0) return;
+  const records = Array.from(historyDirtyRecords.values());
+  historyDirtyRecords = new Map();
+  // 批量写入，任一条失败不阻塞其余记录；失败静默（下次进度更新会再次标记脏）
+  records.forEach((r) => { upsertHistoryRecord(r).catch(() => { historyDirtyRecords.set(r.id!, r); }); });
+}
+
+function scheduleHistoryFlush(): void {
+  if (historyFlushTimer) return;
+  historyFlushTimer = setTimeout(flushHistoryRecords, HISTORY_FLUSH_MS);
+}
+
+/** 立即落库（供 Player 退场 / 页面隐藏兜底调用） */
+function flushHistoryNow(): void {
+  flushHistoryRecords();
+}
+
+if (typeof window !== 'undefined') {
+  const onPageHide = () => flushHistoryNow();
+  const onVisibilityHidden = () => { if (document.visibilityState === 'hidden') flushHistoryNow(); };
+  window.addEventListener('pagehide', onPageHide);
+  document.addEventListener('visibilitychange', onVisibilityHidden);
 }
 
 /** 从 localStorage 迁移旧数据到 IndexedDB */
@@ -240,7 +283,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
       set((state) => ({
         history: state.history.map((h, i) => i === existingIndex ? updated : h),
       }));
-      upsertHistoryRecord(updated).catch(console.error);
+      // P4 节流落库：标记脏并调度批量写入（替代每次直接 upsert）
+      historyDirtyRecords.set(dedupId, updated);
+      scheduleHistoryFlush();
     } else {
       const newHistory: HistoryRecord = {
         ...record,
@@ -250,7 +295,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
       set((state) => ({
         history: [...state.history, newHistory],
       }));
-      upsertHistoryRecord(newHistory).catch(console.error);
+      historyDirtyRecords.set(dedupId, newHistory);
+      scheduleHistoryFlush();
     }
   },
 
@@ -270,6 +316,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
     set((state) => ({
       history: state.history.filter((h) => h.id !== historyId),
     }));
+    // 同步清除节流脏记录，避免 flush 把已删除记录重新写回
+    historyDirtyRecords.delete(historyId);
     removeHistoryRecord(historyId).catch(console.error);
   },
 
@@ -278,11 +326,21 @@ export const useUserStore = create<UserState>()((set, get) => ({
     set((state) => ({
       history: state.history.filter((h) => h.videoId !== videoId),
     }));
-    removed.forEach((h) => removeHistoryRecord(h.id).catch(console.error));
+    removed.forEach((h) => {
+      historyDirtyRecords.delete(h.id!);
+      removeHistoryRecord(h.id).catch(console.error);
+    });
   },
 
   clearHistory: () => {
     set({ history: [] });
+    // 清空脏记录集合，避免 flush 重新写回
+    historyDirtyRecords = new Map();
     clearHistoryDB().catch(console.error);
+  },
+
+  /** 立即落库所有待写入的历史记录（Player 退场 / 页面隐藏已由全局监听兜底） */
+  flushHistoryNow: () => {
+    flushHistoryNow();
   },
 }));

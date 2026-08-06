@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePlayerStore, useSettingsStore } from '@/stores';
+import type { CachedVideoEntry } from '@/pages/Player';
 import {
   searchVideoFromSingleSource,
   searchVideoSeasonsFromSingleSource,
@@ -35,7 +36,7 @@ interface UseCMSSourceManagerOptions {
   currentSourceNameRef: React.MutableRefObject<string | undefined>;
   setCurrentSrc: (src: { url: string; type: Video['sources'][0]['type'] } | null) => void;
   setLocalEpisodeId: (id: string | undefined) => void;
-  videoCache: Map<string, Video>;
+  videoCache: Map<string, CachedVideoEntry>;
   routeSourceIndex: number | undefined;
   skipHistory: boolean;
   onSwitchEpisode: (ep: Episode) => void;
@@ -228,8 +229,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
-          // 缓存并设置视频数据
-          videoCache.set(id, detailVideo);
+          // 缓存并设置视频数据（带源与时间戳）
+          videoCache.set(id, { video: detailVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
           setVideo(detailVideo);
 
           // 剧集类型：选中第一集并异步加载季信息
@@ -332,7 +333,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           const seasonVideo = seasonMap.get(alignedSeason);
           if (seasonVideo) {
-            videoCache.set(id!, seasonVideo);
+            videoCache.set(id!, { video: seasonVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
             setVideo(seasonVideo);
 
             if (!seasonChangedRef.current && seasonVideo.episodes?.length) {
@@ -385,7 +386,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         });
 
         if (result.video) {
-          videoCache.set(id!, result.video);
+          videoCache.set(id!, { video: result.video, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
           setVideo(result.video);
           {
             const src = allSrc[result.sourceIndex];
@@ -473,7 +474,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           ? findEpisodeByNumber(cachedVideo.episodes, currentEpNumber)
           : undefined;
         if (matchedEp?.sources.length) {
-          videoCache.set(id!, cachedVideo);
+          videoCache.set(id!, { video: cachedVideo, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
           setVideo(cachedVideo);
           onSwitchEpisode(matchedEp);
         }
@@ -501,7 +502,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         selectedSeasonRef.current = aligned;
         setSelectedSeason(aligned);
         if (seasonVideo) {
-          videoCache.set(id!, seasonVideo);
+          videoCache.set(id!, { video: seasonVideo, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
           setVideo(seasonVideo);
           if (seasonVideo.episodes?.length) {
             const matchedEp = currentEpNumber
@@ -532,7 +533,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
             ? findEpisodeByNumber(result.video.episodes, currentEpNumber)
             : undefined;
           if (matchedEp?.sources.length) {
-            videoCache.set(id!, result.video);
+            videoCache.set(id!, { video: result.video, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
             setVideo(result.video);
             onSwitchEpisode(matchedEp);
             cleanup();
@@ -544,7 +545,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
 
       if (result.video.sources.length > 0) {
-        videoCache.set(id!, result.video);
+        videoCache.set(id!, { video: result.video, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
         setVideo(result.video);
         setSources(result.video.sources);
         const firstSrc = result.video.sources[0];
@@ -580,7 +581,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         setLocalEpisodeId(undefined);
         setSources([]);
         setCurrentSrc(null);
-        videoCache.set(id, seasonVideo);
+        videoCache.set(id, { video: seasonVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
         setVideo(seasonVideo);
         const matchedEp = currentEpNumber
           ? findEpisodeByNumber(seasonVideo.episodes ?? [], currentEpNumber)

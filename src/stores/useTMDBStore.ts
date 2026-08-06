@@ -65,6 +65,8 @@ interface TMDBStoreState {
   airingTodayTv: TMDBVideoItem[];
   /** 最近一次 fetchAllHomeData 完成的时间戳（0 = 从未拉取）；TTL 过期后自动刷新 */
   homeFetchedAt: number;
+  /** 启动时是否已从 localStorage 恢复首页数据（供「清除缓存」判定内存是否需要重置） */
+  homeLSLoaded: boolean;
 
   // ---- 搜索 ----
   /** 最近一次搜索词（仅供 store 内部追踪，UI 同步应直接读 URL ?q=） */
@@ -292,6 +294,60 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // 首页 8 区块内存缓存 TTL：60 分钟（数据全满时仍会过期静默刷新）
 export const HOME_TTL_MS = 60 * 60 * 1000;
 
+// ── 首页 8 区块 localStorage 持久化（对齐 useHomeCategoryStore 的 24h 策略）────────
+// 冷启动（刷新页面）时先读 LS 立即展示旧数据（stale-while-revalidate），
+// 再按内存 TTL（60min）决定何时静默刷新。LS 本身带 24h 新鲜度校验，
+// 超过 24h 的缓存视为失效直接丢弃（避免展示过旧数据）。
+const HOME_LS_KEY = 'home-tmdb-data';
+const HOME_LS_TTL = 24 * 60 * 60 * 1000;
+
+interface HomeLSData {
+  trending: TMDBVideoItem[];
+  nowPlaying: TMDBVideoItem[];
+  popularMovies: TMDBVideoItem[];
+  topRatedMovies: TMDBVideoItem[];
+  upcomingMovies: TMDBVideoItem[];
+  popularTv: TMDBVideoItem[];
+  topRatedTv: TMDBVideoItem[];
+  airingTodayTv: TMDBVideoItem[];
+}
+
+function readHomeLS(): HomeLSData | null {
+  try {
+    const raw = localStorage.getItem(HOME_LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as HomeLSData & { savedAt: number };
+    // 24h 过期校验：超期视为无缓存（内存 TTL 照常驱动刷新，避免展示过旧数据）
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > HOME_LS_TTL) {
+      localStorage.removeItem(HOME_LS_KEY);
+      return null;
+    }
+    return {
+      trending: parsed.trending ?? [],
+      nowPlaying: parsed.nowPlaying ?? [],
+      popularMovies: parsed.popularMovies ?? [],
+      topRatedMovies: parsed.topRatedMovies ?? [],
+      upcomingMovies: parsed.upcomingMovies ?? [],
+      popularTv: parsed.popularTv ?? [],
+      topRatedTv: parsed.topRatedTv ?? [],
+      airingTodayTv: parsed.airingTodayTv ?? [],
+    };
+  } catch { return null; }
+}
+
+function writeHomeLS(data: HomeLSData): void {
+  try {
+    localStorage.setItem(HOME_LS_KEY, JSON.stringify({ ...data, savedAt: Date.now() }));
+  } catch { /* 存储满或不可用时忽略 */ }
+}
+
+function clearHomeLS(): void {
+  try { localStorage.removeItem(HOME_LS_KEY); } catch { /* ignore */ }
+}
+
+/** 模块级初始缓存：store 创建时读取一次（供初始状态 spread 使用） */
+const _homeLSData = readHomeLS();
+
 // 首页数据批量获取的 AbortController：重复调用时自动取消上一轮
 let _homeFetchAbort: AbortController | null = null;
 
@@ -303,15 +359,21 @@ let _discoverSeq = 0;
 export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   return {
   // ---- 初始状态 ----
-  trending: [],
-  nowPlaying: [],
-  popularMovies: [],
-  topRatedMovies: [],
-  upcomingMovies: [],
-  popularTv: [],
-  topRatedTv: [],
-  airingTodayTv: [],
+  // 冷启动：从 localStorage 恢复首页 8 区块（24h 内有效），秒开旧数据后再按 TTL 静默刷新。
+  // homeFetchedAt 保持 0（LS 恢复不重置内存 TTL），保证页面挂载后仍会按 60min TTL 刷新。
+  ...(_homeLSData ?? {
+    trending: [],
+    nowPlaying: [],
+    popularMovies: [],
+    topRatedMovies: [],
+    upcomingMovies: [],
+    popularTv: [],
+    topRatedTv: [],
+    airingTodayTv: [],
+  }),
   homeFetchedAt: 0,
+  /** 启动时是否已从 localStorage 恢复首页数据（供「清除缓存」判定内存是否需要重置） */
+  homeLSLoaded: _homeLSData !== null,
 
   searchQuery: '',
 
@@ -550,6 +612,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   /** 仅清空首页 8 区块（保留 genres/countries 分类配置），不触发重新请求 */
   clearHomeData: () => {
+    clearHomeLS();
     set(() => ({
       trending: [],
       nowPlaying: [],
@@ -560,6 +623,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       topRatedTv: [],
       airingTodayTv: [],
       homeFetchedAt: 0,
+      homeLSLoaded: false,
     }));
   },
 
@@ -644,19 +708,35 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
 
     // ---- 所有区块并发请求 ----
+    // 注意：fetchNowPlaying 内部已并行拉取 /tv/popular 并写入 popularTv（见其实现），
+    // 故此处不再单独 fetchPopularTv，避免「两区块同时空」时 /tv/popular 被请求两次。
+    // 触发条件改为「nowPlaying 或 popularTv 任一为空」：保证 nowPlaying 已满但
+    // popularTv 单独为空（如单独失败过）时，popularTv 仍能通过 fetchNowPlaying 补齐
+    // （其内部有 s.popularTv.length === 0 写入保护，不会覆盖已有数据）。
     const fetches = [
       shouldFetch(state.trending) ? state.fetchTrending() : null,
-      shouldFetch(state.nowPlaying) ? state.fetchNowPlaying() : null,
+      (shouldFetch(state.nowPlaying) || shouldFetch(state.popularTv)) ? state.fetchNowPlaying() : null,
       shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : null,
       shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : null,
       shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : null,
-      shouldFetch(state.popularTv) ? state.fetchPopularTv() : null,
       shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : null,
       shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : null,
     ];
     await Promise.all(fetches.filter((p): p is Promise<void> => p !== null));
     // 记录本次批量拉取的完成时间：TTL 刷新窗口从此刻重新计时
+    const next = get();
     set({ homeFetchedAt: Date.now() });
+    // 持久化到 localStorage（24h 新鲜度校验）：冷启动可秒开旧数据
+    writeHomeLS({
+      trending: next.trending,
+      nowPlaying: next.nowPlaying,
+      popularMovies: next.popularMovies,
+      topRatedMovies: next.topRatedMovies,
+      upcomingMovies: next.upcomingMovies,
+      popularTv: next.popularTv,
+      topRatedTv: next.topRatedTv,
+      airingTodayTv: next.airingTodayTv,
+    });
   },
 
   /**
