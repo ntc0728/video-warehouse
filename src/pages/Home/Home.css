@@ -305,22 +305,32 @@
   overflow: hidden;
 }
 
-/* 单张骨架：镜像 .hero-banner__thumb 的盒模型（flex 拉伸 + 16/9 + 同宽边框同圆角） */
+/* 单张骨架：镜像 .hero-banner__thumb 的盒模型（flex 拉伸 + 16/9 + 同宽边框同圆角）。
+   背景叠加「暗底 rgba(0,0,0,0.25) + shimmer 渐变」—— 严格镜像真实 thumb 加载态
+   （.hero-banner__thumb 固定 rgba(0,0,0,0.25) 暗底 + .hero-banner__thumb-skeleton 上覆盖
+   var(--color-placeholder shimmer）），避免骨架阶段整列偏亮白与真实加载态视觉对不上。
+   background-size / background-blend-mode 让两层各司其职：暗底铺满、shimmer 走 200% 宽扫光。 */
 .home-skeleton-hero__thumb {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
   aspect-ratio: 16 / 9;
   border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    ),
+    rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
+  /* skeleton 自身 shimmer 动画；duration 走项目级 token 保持一致 */
   animation: shimmer var(--card-shimmer-duration) infinite;
+  overflow: hidden;
 }
 
 /* 第 4 张默认隐藏（普通桌面 3 张）；大屏显示（4 张）。
@@ -484,6 +494,16 @@
 }
 
 /* ── Mobile ──────────────────────────────────────────── */
+
+/* 移动端：token 提示区不撑满整页，主提示 + 免责声明整体上移一点
+   （桌面端 flex:1 撑满 + justify-content:center 让主提示居中、免责声明贴底，
+   移动端屏小视感偏散，改为 token 区固定 50vh 紧凑显示，主提示在视口约 1/4 处、免责声明在约 1/2 处） */
+@media (width <= 767px) {
+  .home-token-required {
+    flex: none;
+    min-height: 50vh;
+  }
+}
 
 /* ── TV ──────────────────────────────────────────────── */
 
