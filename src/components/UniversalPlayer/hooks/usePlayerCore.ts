@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
+import { playerToast } from '../PlayerToast';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
@@ -364,7 +365,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
         await videoRef.current?.play();
       }
     } catch {
-      toast.show({ content: '播放被浏览器拦截，请点击屏幕重试', type: 'warning' });
+      // 播放器内部右上角提示（与其它播放器操作提示统一，黑色透明 + 圆角 + 文本撑开）
+      playerToast('播放被浏览器拦截，请点击屏幕重试', 3000, 'warning');
     }
   }, []);
 
