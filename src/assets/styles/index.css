@@ -872,9 +872,11 @@ main {
 
 /* ══ Toast 全局样式（Sonner） ═══════════════════════════════════════
    位置：
-   · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方
-   · 播放器页面（body[data-player-toast="active"]）→ 播放器中间靠上（top 42%），
-     不贴边框，播放器内提示与操作提示统一在此展示
+   · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方（不遮挡导航栏内搜索框）
+   · 播放器页面（body[data-player-toast="active"]）→ 播放器内部「中间靠上」——
+     水平居中 + 垂直约 18%（贴近播放器上部、不在 42% 垂直居中），
+     既不遮挡顶部搜索框/控制栏，又处于播放器内部可视区域
+   样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（与播放器内提示一致）
    宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
 .sonner-toaster[data-placement="top-center"] {
   top: calc(var(--header-height) + var(--space-lg)) !important;
@@ -882,14 +884,14 @@ main {
 }
 
 body[data-player-toast="active"] .sonner-toaster[data-placement="top-center"] {
-  top: 42% !important;
+  top: 18% !important;
 }
 
 .sonner-toaster .app-toast {
   width: fit-content;
   min-width: 10rem;
   max-width: min(22rem, calc(100vw - 2rem));
-  padding: var(--space-sm) var(--space-lg);
+  /* padding 由 App.tsx inline style 统一（space-sm space-md），此处不重复设置 */
   align-items: center;
   justify-content: center;
 }
