@@ -145,10 +145,12 @@
   text-decoration: underline;
 }
 
-/* 免责声明：token 提示区下方，小字次级色、限宽居中，不抢主提示视觉 */
+/* 免责声明：token 提示区下方，加宽、靠容器底部（margin-top:auto 推到底），
+   小字次级色，不抢主提示视觉 */
 .home-disclaimer {
-  margin: var(--space-lg) auto 0;
-  max-width: 34rem;
+  width: 100%;
+  max-width: min(48rem, 100%);
+  margin: auto auto 0; /* 垂直方向：上自动、下贴底 */
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: 1.7;

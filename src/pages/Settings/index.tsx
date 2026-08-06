@@ -169,7 +169,7 @@ export default function SettingsPage() {
         </div>
       ) : (
         <>
-          <SettingsMobileProfile />
+          <SettingsMobileProfile onProfileClick={() => handleSelectMenu('personal')} />
           <SettingsMenuList onSelect={handleSelectMenu} query={searchQuery} />
         </>
       )}
