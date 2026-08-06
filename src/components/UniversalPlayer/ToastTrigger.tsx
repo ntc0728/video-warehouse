@@ -27,6 +27,8 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
   const prevMirror = useRef(usePlayerStore.getState().mirror);
   const prevAspectRatio = useRef(usePlayerStore.getState().aspectRatio);
   const prevDecoderMode = useRef(usePlayerStore.getState().decoderMode);
+  /** 「自动播放」的『播放』提示是否已展示过（首次进入显示，后续缓冲/切集自动播不重复提示） */
+  const autoPlayToastShownRef = useRef(false);
 
   useEffect(() => {
     // IPTV 直播有独立逻辑，右上角不显示任何点播类操作提示
@@ -61,7 +63,22 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
       // 播放/暂停
       if (playing !== prevPlaying.current) {
         prevPlaying.current = playing;
-        show(playing ? '播放' : '暂停');
+        if (playing) {
+          // 区分「播放」提示来源：
+          //  - userPlayRequested（用户手动点击播放）→ 始终提示『播放』
+          //  - 自动播放（首次进入）→ 提示『播放』一次；后续缓冲/切集自动播 → 不提示
+          const userPlay = state.userPlayRequested;
+          if (userPlay) {
+            show('播放');
+            // 手动播放后清除标记，避免下一次自动缓冲播放误判为手动
+            usePlayerStore.getState().setUserPlayRequested(false);
+          } else if (!autoPlayToastShownRef.current) {
+            autoPlayToastShownRef.current = true;
+            show('播放');
+          }
+        } else {
+          show('暂停');
+        }
       }
 
       // 倍速变化

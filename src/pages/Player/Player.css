@@ -649,12 +649,19 @@
     justify-content: flex-start;
   }
 
-  /* 移动端/App：CMS 源一行 6 列 */
+  /* 移动端/App：CMS 源 flex-wrap 自动换行——按钮按内容撑开，
+     一行放不下自然分行，而非固定 6 列硬挤（避免文字截断） */
   .player-cms-list {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--space-sm);
     justify-content: flex-start;
+  }
+
+  .player-cms-list .player-cms-item {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    max-width: 100%;
   }
 
   /* 移动端/App：选季一行 3 列（按钮文字较长） */

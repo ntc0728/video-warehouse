@@ -109,7 +109,10 @@ scripts/*.mjs
 !scripts/*.spec.ts
 !scripts/fetch-diagram-data.mjs
 !scripts/global-setup.ts
-scripts/fixtures/
+# 测试 fixtures（mock 数据）纳入版本控制，保证 CI / 他人 clone 后
+# 首页 8 区块等 mock 覆盖一致，箭头/骨架等测试可稳定断言
+scripts/fixtures/*
+!scripts/fixtures/*.ts
 scripts/backup-specs/
 
 # ── OS 临时文件 ───────────────────────────────

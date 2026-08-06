@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { VideoSource, Episode } from '@/types/video';
 import { ListVideo, ChevronDown, Play, Loader2, ArrowUpDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
@@ -56,6 +56,20 @@ export function PlayerEpisodesPanel({
     }
     return opts;
   }, [sorted.length, totalPages]);
+
+  // 播放有历史记录的剧集时：自动将分页定位到当前播放集所在页，
+  // 保证 player-episode-select 展示的是包含当前集的页码 option（而非固定第 1 页）。
+  useEffect(() => {
+    if (!activeEpisodeId || episodes.length === 0) return;
+    const idx = sorted.findIndex((e) => e.id === activeEpisodeId);
+    if (idx < 0) return;
+    const targetPage = Math.floor(idx / PAGE_SIZE);
+    if (targetPage !== safePage) {
+      setPage(targetPage);
+    }
+    // 依赖 sorted（含 sortAsc）与 episodes：排序变化时也要重新定位
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEpisodeId, sorted, safePage]);
 
   const infoText = episodes.length > 0
     ? `第${(activeEpisodeId ? episodes.find(e => e.id === activeEpisodeId)?.number : episodes[0]?.number) || 1}集/共${episodes.length}集`
