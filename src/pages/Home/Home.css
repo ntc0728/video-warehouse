@@ -18,10 +18,13 @@
 }
 
 /* 仅包裹「非 Hero 内容」的进入动画层（见 index.tsx）：
-   HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。 */
+   HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。
+   flex:1 撑满 .home-page 剩余高度——无 token / allFailed 分支的「主提示居中 + 免责声明贴底」
+   依赖 .home-page > .home-page__content > .home-token-required 每层都撑满（高度链）。 */
 .home-page__content {
   display: flex;
   flex-direction: column;
+  flex: 1 1 0;
   width: 100%;
   min-width: 0;
 }
@@ -104,24 +107,26 @@
 }
 
 /* ── Token Required ──────────────────────────────────── */
-
+/* 高度链：.home-page (flex:1) > .home-page__content (flex:1) > .home-token-required (flex:1)，
+   每层都撑满容器剩余高度，主提示经 justify-content:center 真居中；
+   免责声明（本容器兄弟节点）位于其下方自然贴底。 */
 .home-token-required {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  flex: 1 1 0;
   min-height: 60vh;
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
 }
 
-/* 主提示（图标+文字）：容器内居中 */
+/* 主提示（图标+文字）：容器内垂直居中（justify-content:center） */
 .home-token-required__main {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-lg);
-  margin: auto 0; /* 垂直方向上下均 auto → 主提示在容器中央 */
 }
 
 .home-token-required-icon {
@@ -153,15 +158,16 @@
   text-decoration: underline;
 }
 
-/* 免责声明：token 提示区下方，靠页面底部（margin-top:auto 推到底），
-   加宽、小字次级色，不抢主提示视觉 */
+/* 免责声明：位于 .home-token-required 之后（.home-page__content 兄弟节点），
+   token 区 flex:1 撑满后本元素自然贴容器底部；
+   占满整行宽（不设 max-width 限宽），居中小字次级色，不抢主提示视觉 */
 .home-disclaimer {
   width: 100%;
-  max-width: min(48rem, 100%);
-  margin: auto auto 0; /* 上自动（推到底部） */
+  padding: 0 0 var(--space-lg);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: 1.7;
+  text-align: center;
 }
 
 /* ── Skeleton ────────────────────────────────────────── */
