@@ -1507,45 +1507,54 @@
   }
 }
 
-/* ── Player Toast（播放器右上角操作提示，独立于全局 sonner） ───────── */
+/* ── Player Toast（播放器内部操作提示，独立于全局 sonner） ──────────────
+   位置：播放器内部中间靠上（水平居中，距顶约 38% 避开顶部控制栏）；
+   样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（不固定宽高，仅 padding 约束） */
 .up-player-toast {
   position: absolute;
-  top: var(--space-lg);
-  right: var(--space-lg);
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 40;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
-  max-width: min(18rem, calc(100% - 2 * var(--space-lg)));
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.7);
+  max-width: min(80vw, 20rem);
+  /* 文本撑开：不设固定宽高，由内容 + padding 决定 */
+  width: auto;
+  height: auto;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.72);
   color: #fff;
   font-size: var(--text-sm);
+  line-height: 1.4;
+  white-space: nowrap;
   pointer-events: none;
   animation: toast-fade-in 0.2s ease;
+  /* 亮色主题也保持黑色透明背景（统一播放器内 toast 视觉） */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 .up-player-toast__icon {
   display: inline-flex;
   flex-shrink: 0;
 }
 .up-player-toast__text {
-  flex: 1;
   text-align: center;
 }
 [data-theme="light"] .up-player-toast {
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes toast-fade-in {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translate(-50%, -50%) translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, -50%) translateY(0);
   }
 }

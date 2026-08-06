@@ -382,6 +382,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      // 用户手动点击播放 → 标记来源，ToastTrigger 据此显示「播放」提示
+      // （自动缓冲播放由 handleCanPlay 直接 video.play()，不设此标记）
+      usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
       pause();

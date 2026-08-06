@@ -51,10 +51,15 @@ interface PlayerState {
   isReadyToPlay: boolean;
   mirror: boolean;
   aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
+  /** 最近一次「由用户手动发起」的播放标记（点击播放按钮/切集后手动播放）。
+   * 用于 ToastTrigger 区分「用户手动播放」（显示『播放』提示）与
+   * 「自动缓冲播放」（切集/恢复时 canplay 自动播，不重复提示）。 */
+  userPlayRequested: boolean;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
   setPlaying: (isPlaying: boolean) => void;
+  setUserPlayRequested: (requested: boolean) => void;
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
@@ -116,6 +121,7 @@ const initialState = {
   isReadyToPlay: false,
   mirror: false,
   aspectRatio: 'default' as const,
+  userPlayRequested: false,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -126,6 +132,7 @@ export const usePlayerStore = create<PlayerState>()(
       setSource: (src, type) => set({ currentSrc: src, currentType: type }),
       setSources: (sources) => set({ sources }),
       setPlaying: (isPlaying) => set({ isPlaying }),
+      setUserPlayRequested: (userPlayRequested) => set({ userPlayRequested }),
       setProgress: (progress) => set({ progress }),
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume }),
@@ -181,6 +188,7 @@ export const usePlayerStore = create<PlayerState>()(
         isFullscreen: false,
         isPlayerLoading: false,
         isReadyToPlay: false,
+        userPlayRequested: false,
         // 保留用户偏好
         volume: state.volume,
         mutedVolume: state.mutedVolume,

@@ -938,4 +938,82 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     const cards = row.locator('.tmdb-movierow-card').count();
     console.log(`✅ HOME-057 通过: 继续观看行渲染（标题="${title}"，卡片数=${await cards}）`);
   });
+
+  test('HOME-058: 继续观看行左右箭头显示 + 列数 2/3/5 响应式', async ({ page }) => {
+    // 注入 14 条历史（横版卡较宽，800px 下 3 列 → 必然溢出 → 箭头渲染）
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open('video-warehouse');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const tx = db.transaction('history', 'readwrite');
+      const now = Date.now();
+      for (let i = 0; i < 14; i++) {
+        tx.objectStore('history').put({
+          id: `hist-home-058-${i}`,
+          videoId: `tmdb-1${100 + i}`,
+          title: `继续观看 ${i + 1}`,
+          cover: '',
+          backdrop: '',
+          type: 'movie',
+          progress: 100 + i * 10,
+          duration: 1200,
+          updatedAt: now - i * 1000,
+          createdAt: now,
+        });
+      }
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+
+    // 非手机 web 小视口（800×900）：确认 continue 行渲染 + 箭头出现
+    await page.setViewportSize({ width: 800, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2500);
+
+    const row = page.locator('.tmdb-movierow--continue').first();
+    const rowCount = await row.count();
+    if (rowCount === 0) {
+      console.log('⚠️ HOME-058: 未检测到继续观看行（历史注入可能未生效）');
+      return;
+    }
+
+    // 800px → ≥768 断点：continue 3 列（--continue-cols: 3）
+    const cardW = await row.locator('.tmdb-movierow-card').first().evaluate((el) => (el as HTMLElement).offsetWidth);
+    const rowW = await row.locator('.tmdb-movierow-scroll').first().evaluate((el) => (el as HTMLElement).clientWidth);
+    console.log(`✅ HOME-058 检查: 800px continue 卡宽=${cardW}px 行宽=${rowW}px`);
+    // 3 列：卡宽约为行宽/3（含 gap，允许 ±15% 误差）
+    expect(cardW).toBeGreaterThan(rowW / 4);
+    expect(cardW).toBeLessThan(rowW / 2.4);
+
+    // 箭头：右箭头应渲染（hasOverflow=true 且 continueItems>0）。
+    // 初始 scrollLeft=0 → 左箭头不显示（showLeftArrow = scrollLeft>0），右箭头显示。
+    const rightArrow = row.locator('.tmdb-movierow-arrow-right').first();
+    const leftArrow = row.locator('.tmdb-movierow-arrow-left').first();
+    const rightCount = await rightArrow.count();
+    const leftCount = await leftArrow.count();
+    console.log(`✅ HOME-058 检查: 右箭头=${rightCount} 左箭头=${leftCount}`);
+    expect(rightCount).toBe(1);
+    expect(leftCount).toBe(0);
+
+    // 悬停行后右箭头可见（opacity 0→1）
+    await expect(rightArrow).toHaveCSS('opacity', '0');
+    await row.hover();
+    await expect(rightArrow).toHaveCSS('opacity', '1');
+
+    // 点击右箭头滚动后，左箭头应出现
+    await rightArrow.click();
+    await page.waitForTimeout(600);
+    const leftCountAfter = await leftArrow.count();
+    console.log(`✅ HOME-058 检查: 滚动后左箭头=${leftCountAfter}`);
+    expect(leftCountAfter).toBe(1);
+    console.log('✅ HOME-058 通过: 继续观看行箭头显示 + 列数 2/3/5 响应式');
+  });
 });

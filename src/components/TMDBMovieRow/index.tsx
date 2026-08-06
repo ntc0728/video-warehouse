@@ -190,7 +190,9 @@ function TMDBMovieRow({
       el.removeEventListener('scroll', updateArrows);
       window.removeEventListener('resize', updateArrows);
     };
-  }, [items, updateArrows]);
+    // continueMode 下 items 恒为空数组（引用不变），continueItems 变化时
+    // 必须重新计算 hasOverflow，否则箭头在数据到达后不显示
+  }, [items, continueItems, updateArrows]);
 
   /** 视口步进：点击箭头滚动一屏，剩余不足一屏则直接到末尾（浏览器原生平滑滚动） */
   const scrollByViewport = useCallback(
@@ -350,7 +352,7 @@ function TMDBMovieRow({
 
       <div className="tmdb-movierow-wrapper">
         {/* 左箭头（TV 端隐藏）。仅当内容溢出视口「且可向左滚动（未到头）」时渲染 */}
-        {!isMobile && !isTV && hasOverflow && items.length > 0 && showLeftArrow && (
+        {!isMobile && !isTV && hasOverflow && (continueMode ? (continueItems?.length ?? 0) > 0 : items.length > 0) && showLeftArrow && (
           <button
             type="button"
             className="tmdb-movierow-arrow tmdb-movierow-arrow-left"
@@ -440,7 +442,7 @@ function TMDBMovieRow({
         </div>
 
         {/* 右箭头（TV 端隐藏）。仅当内容溢出视口「且可向右滚动（未到尾）」时渲染 */}
-        {!isMobile && !isTV && hasOverflow && items.length > 0 && showRightArrow && (
+        {!isMobile && !isTV && hasOverflow && (continueMode ? (continueItems?.length ?? 0) > 0 : items.length > 0) && showRightArrow && (
           <button
             type="button"
             className="tmdb-movierow-arrow tmdb-movierow-arrow-right"
