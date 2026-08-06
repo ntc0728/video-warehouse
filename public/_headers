@@ -1,5 +1,18 @@
+# Cloudflare Pages 响应头
+# 注意：规则从上到下「第一个匹配生效」。
+# index.html 必须不缓存（每次重新验证）——否则浏览器/边缘缓存旧 index.html 引用的旧
+# hash assets 已不存在 → 404 → _redirects 的 SPA fallback 返回 HTML → 模块加载
+# "MIME type text/html" 报错。
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# assets 带内容 hash，可长期缓存（immutable）
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# 数据源 JSON：短缓存
 /data/*
   Cache-Control: public, max-age=3600
