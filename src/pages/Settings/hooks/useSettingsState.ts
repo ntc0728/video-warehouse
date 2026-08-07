@@ -4,15 +4,12 @@
  * 集中管理所有 Modal 的 open/close/handler，以及文本输入验证逻辑，
  * 各 tab 组件通过解构获取自身需要的 state 和回调。
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useCustomNavigate } from '@/lib/navigation';
 import { toast } from '@/components/ui';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useSettingsStore } from '@/stores';
 import { useTMDBStore } from '@/stores/useTMDBStore';
-import { getVideoSources, getIPTVSources, getEPGSources } from '@/services/sourceService';
-import type { EPGSourceConfig } from '@/types';
-import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 
 const validators = {
   url: (value: string): string | null => {
@@ -43,8 +40,8 @@ export function useSettingsState() {
 
   const {
     theme, setTheme, videoSourceIndices, iptvSourceIndices,
-    setVideoSourceIndices, setIPTVSourceIndices, setIPTVSourceIndex,
-    corsProxy, setCorsProxy, epgUrls, setEpgUrls,
+    setVideoSourceIndices, setIPTVSourceIndices,
+    corsProxy, setCorsProxy, epgUrls,
     epgUpdateInterval, setEpgUpdateInterval,
     rememberVolume, setRememberVolume,
     tmdbAccessToken, setTMDBToken,
@@ -55,10 +52,6 @@ export function useSettingsState() {
     autoPlay, setAutoPlay, skin, setSkin,
     tvMode, setTvMode, tvOverscan, setTvOverscan,
   } = useSettingsStore();
-
-  const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
-  const [iptvSources, setIptvSources] = useState<IPTVSourceConfig[]>([]);
-  const [epgSources, setEpgSources] = useState<EPGSourceConfig[]>([]);
 
   const [showApiInput, setShowApiInput] = useState(false);
   const [appIdInput, setAppIdInput] = useState('');
@@ -79,24 +72,6 @@ export function useSettingsState() {
   const [showChangelog, setShowChangelog] = useState(false);
   const openChangelog = useCallback(() => setShowChangelog(true), []);
   const closeChangelog = useCallback(() => setShowChangelog(false), []);
-
-
-  const iptvRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const epgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const loadSources = async () => {
-      const [videos, iptvs, epgs] = await Promise.all([
-        getVideoSources(),
-        getIPTVSources(),
-        getEPGSources(),
-      ]);
-      setVideoSources(videos);
-      setIptvSources(iptvs);
-      setEpgSources(epgs);
-    };
-    loadSources();
-  }, []);
 
   const handleVersionClick = useCallback(() => {
     versionClickCount.current += 1;
@@ -125,49 +100,6 @@ export function useSettingsState() {
     setCorsProxy(corsProxyInput.trim());
     toast.success(corsProxyInput.trim() ? 'CORS 代理地址已保存' : 'CORS 代理地址已清除');
     setShowCorsProxyInput(false);
-  };
-
-  const handleVideoSourcesChange = (values: string[]) => {
-    const newIndices = values.map(Number);
-    if (newIndices.length === 0) {
-      toast.show({ content: '至少需要保留一个数据源', type: 'warning' });
-      setVideoSourceIndices([0]);
-      return;
-    }
-    setVideoSourceIndices(newIndices);
-  };
-
-  const handleIptvSourcesChange = (values: string[]) => {
-    let newIndices = values.map(Number);
-    if (newIndices.length === 0) {
-      toast.show({ content: '至少需要保留一个数据源', type: 'warning' });
-      newIndices = [0];
-    }
-    setIPTVSourceIndices(newIndices);
-    setIPTVSourceIndex(newIndices[0]);
-    getIPTVSources().then(sources => {
-      const validIndices = newIndices.filter(i => sources[i]?.url);
-      const urls = validIndices.map(i => sources[i]!.url);
-      const names = validIndices.map(i => sources[i]!.name || `源${i + 1}`);
-      setIPTVSettings({ aggregatorUrl: urls[0] || '', aggregatorUrls: urls, sourceNames: names });
-      if (iptvRefreshTimerRef.current) clearTimeout(iptvRefreshTimerRef.current);
-      iptvRefreshTimerRef.current = setTimeout(() => {
-        useIPTVStore.getState().refreshChannels();
-      }, 1000);
-    });
-  };
-
-  const handleEpgChange = (values: string[]) => {
-    const newUrls = values;
-    setEpgUrls(newUrls);
-    if (epgTimerRef.current) clearTimeout(epgTimerRef.current);
-    epgTimerRef.current = setTimeout(async () => {
-      try {
-        const { fetchAndParseEPG } = await import('@/services/epgService');
-        await fetchAndParseEPG();
-        toast.success('节目单数据已更新');
-      } catch { /* ignore */ }
-    }, 1000);
   };
 
   const handleSaveProxyUrl = () => {
@@ -241,7 +173,6 @@ export function useSettingsState() {
   }, []);
 
   return {
-    navigate,
     appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan },
     video: {
       tmdbAccessToken, setTMDBToken,
@@ -251,8 +182,6 @@ export function useSettingsState() {
       rememberVolume, setRememberVolume,
       autoTranslate, setAutoTranslate,
       translationAppId, translationApiKey,
-      videoSources, setVideoSources,
-      handleVideoSourcesChange,
     },
     playback: {
       skipIntro, setSkipIntro, skipIntroDuration, setSkipIntroDuration,
@@ -263,9 +192,6 @@ export function useSettingsState() {
       iptvSettings, setIPTVSettings,
       iptvSourceIndices, setIPTVSourceIndices,
       epgUrls, epgUpdateInterval, setEpgUpdateInterval,
-      iptvSources, epgSources,
-      handleIptvSourcesChange, handleEpgChange,
-      iptvRefreshTimerRef, epgTimerRef,
     },
     about: {
       handleVersionClick,
@@ -273,7 +199,6 @@ export function useSettingsState() {
       openChangelog,
       closeChangelog,
     },
-    sources: { videoSources, iptvSources, epgSources },
     modals: {
       showTMDBTokenInput, setShowTMDBTokenInput,
       tmdbTokenInput, setTMDBTokenInput,

@@ -9,7 +9,6 @@ const makeChannel = (id: string, name: string, group: string, sourceId = 'source
   logo: '',
   group,
   sourceId,
-  isAvailable: undefined,
   isFavorite: false,
 });
 

@@ -12,9 +12,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { useNavStore, useSettingsStore } from '@/stores';
+import { useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { getIPTVSources } from '@/services/sourceService';
 import { getEPGCacheTime, fetchAndParseEPG } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -67,6 +66,7 @@ export default function IPTVPage() {
     checkingGroupId,
     checkAvailability,
     abortAvailabilityCheck,
+    availabilityResults,
   } = useIPTVStore(
     useShallow((s) => ({
       channels: s.channels,
@@ -82,12 +82,11 @@ export default function IPTVPage() {
       checkingGroupId: s.checkingGroupId,
       checkAvailability: s.checkAvailability,
       abortAvailabilityCheck: s.abortAvailabilityCheck,
+      availabilityResults: s.availabilityResults,
     })),
   );
   // availabilityProgress 在检测时每频道回调一次,单独 selector 避免联动
   const availabilityProgress = useIPTVStore((s) => s.availabilityProgress);
-  // 订阅 Settings 中的 IPTV 源索引，变化时同步 aggregatorUrls
-  const iptvSourceIndices = useSettingsStore((s) => s.iptvSourceIndices);
 
   const { getState, saveState } = useNavStore();
   const saved = getState('iptv');
@@ -209,27 +208,6 @@ export default function IPTVPage() {
   );
   const hasMore = visibleCount < filteredChannels.length;
 
-  /** Settings 中 IPTV 源索引变化时，同步更新 IPTV store 的 aggregatorUrls */
-  useEffect(() => {
-    if (!iptvSourceIndices || iptvSourceIndices.length === 0) return;
-    getIPTVSources().then((sources) => {
-      const validIndices = iptvSourceIndices.filter(i => sources[i]?.url);
-      const urls = validIndices.map(i => sources[i]!.url);
-      const names = validIndices.map(i => sources[i]!.name || `源 ${i + 1}`);
-      const current = useIPTVStore.getState().settings;
-      if (
-        urls.length !== current.aggregatorUrls?.length ||
-        urls.some((u, i) => u !== current.aggregatorUrls?.[i])
-      ) {
-        useIPTVStore.getState().setSettings({
-          aggregatorUrl: urls[0] || '',
-          aggregatorUrls: urls,
-          sourceNames: names,
-        });
-      }
-    });
-  }, [iptvSourceIndices]);
-
   // 切换分组 / 搜索 / 源刷新时,把已渲染数重置回单批大小
   useEffect(() => {
     setVisibleCount(IPTV_PAGE_SIZE);
@@ -278,9 +256,16 @@ export default function IPTVPage() {
     useIPTVStore.getState().abortAvailabilityCheck();
   }, [channels]);
 
+  // 当前 tab（分组）的检测结果：key = selectedGroup（'__all__' 表示全部）。
+  // 每个 tab 的检测结果独立存储于 availabilityResults，切换 tab 互不干扰。
+  const currentGroupResults = useMemo(() => {
+    const key = selectedGroup || '__all__';
+    return availabilityResults[key] ?? {};
+  }, [availabilityResults, selectedGroup]);
+
   const availableCount = useMemo(() => {
-    return filteredChannels.filter(ch => ch.isAvailable === true).length;
-  }, [filteredChannels]);
+    return filteredChannels.filter(ch => currentGroupResults[ch.id] === true).length;
+  }, [filteredChannels, currentGroupResults]);
 
   const handleCheckAvailability = useCallback(() => {
     checkAvailability(selectedGroup);
@@ -396,7 +381,7 @@ export default function IPTVPage() {
           </div>
         )}
 
-        {filteredChannels.length > 0 && filteredChannels.some(ch => ch.isAvailable !== undefined) && (
+        {filteredChannels.length > 0 && Object.keys(currentGroupResults).length > 0 && (
           <div className="availability-stats">
             <span className="stat available"><Icon icon={CheckCircle2} size="xs" /><span>{availableCount}</span></span>
             <span className="stat unavailable"><Icon icon={XCircle} size="xs" /><span>{filteredChannels.length - availableCount}</span></span>
@@ -441,6 +426,8 @@ export default function IPTVPage() {
                     <IPTVChannelCard
                       key={channel.id}
                       channel={channel}
+                      // 传入当前组该频道的检测结果（独立于其他 tab）
+                      availability={currentGroupResults[channel.id]}
                     />
                   ))}
                 </div>

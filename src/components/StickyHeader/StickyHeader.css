@@ -154,24 +154,33 @@
   padding-inline: var(--space-xs);
 }
 
-/* 移动端首页：中央显示品牌名 kinoTV（与品牌字重/字距一致） */
-.sticky-header__page-title--brand {
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+/* Logo 右键菜单 */
+.sticky-header__logo-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 12rem;
+  padding: var(--space-2xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md, 0 6px 20px rgba(0, 0, 0, 0.15));
 }
-
-/* 移动端：进入指定页面时，中央显示页面标题（如 搜索中心 / IPTV / 收藏 / 历史记录 / 设置） */
-.sticky-header__page-title {
-  flex: 1;
-  min-width: 0;
+.sticky-header__logo-context-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: transparent;
   color: var(--color-text);
-  font-size: var(--text-lg);
-  font-weight: 700;
-  text-align: center;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.sticky-header__logo-context-item:hover {
+  background: var(--color-surface-hover);
 }
 
 /* ── Nav ───────────────────────────────────────────── */
@@ -295,54 +304,38 @@
     font-size: var(--text-xl);
   }
 
-  /* 隐藏默认搜索框（不包括搜索模式下的） */
+  /* 移动端中央常驻搜索框：弹性占据剩余空间（两端间距由 .sticky-header__inner 的
+     gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
   .sticky-header__center > .search-box-wrap--header {
-    display: none;
-  }
-
-  .sticky-header__center {
     flex: 1;
-    justify-content: flex-start;
+    max-width: none;
+    min-width: 0;
   }
 
   .sticky-header__inner {
-    gap: var(--space-2xs);
+    gap: var(--space-sm);
     padding: 0 var(--space-sm);
+  }
+
+  /* 方案A：left/right 固定等宽（= 菜单/主题按钮 + 移动端 logo + 内间距，约 76px），
+     center 弹性居中 → 搜索框严格居中于屏幕（两端距屏边缘等距）；
+     app 端无 menu-btn 时 left 宽度不变，与 web 端一致。 */
+  .sticky-header__left,
+  .sticky-header__right {
+    flex: 0 0 calc(var(--comp-btn-min-height) * 2 + var(--space-sm) + var(--space-2xs) * 2);
+  }
+
+  .sticky-header__left {
+    justify-content: flex-start;
+  }
+
+  .sticky-header__right {
+    justify-content: flex-end;
   }
 
   .sticky-header__theme-btn {
     width: var(--comp-btn-min-height);
     height: var(--comp-btn-min-height);
-  }
-
-  /* 搜索按钮 */
-  .sticky-header__search-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: var(--comp-btn-min-height);
-    height: var(--comp-btn-min-height);
-    border: none;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text);
-    cursor: pointer;
-  }
-
-  .sticky-header__search-btn:hover {
-    background: var(--color-surface-hover);
-  }
-
-  /* 移动端搜索模式 */
-  .sticky-header__mobile-search {
-    display: flex;
-    flex: 1;
-    width: 100%;
-  }
-
-  .sticky-header__mobile-search .search-box-wrap--header {
-    width: 100%;
-    max-width: none;
   }
 
   /* 移动端隐藏 logo-group 的品牌文字 kinoTV */

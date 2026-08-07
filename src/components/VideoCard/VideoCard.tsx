@@ -7,10 +7,11 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Star, Heart } from 'lucide-react';
-import { useUserStore } from '@/stores';
+import { useUserStore, useSettingsStore } from '@/stores';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { useHighlightedText } from '@/lib/highlight';
 import type { Video } from '@/types/video';
+import { searchMulti, buildImageUrl } from '@/services/tmdbService';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './VideoCard.css';
@@ -53,6 +54,13 @@ const typeLabels: Record<string, string> = {
   anime: '动漫',
 };
 
+/**
+ * 封面 TMDB 搜索兜底缓存：title -> 海报 URL（'' 表示已搜索过但无结果/失败）。
+ * CMS 源 vod_pic 常缺失，封面为空的卡片用标题向 TMDB 搜海报兜底（避免首字母占位）。
+ * 缓存避免同一标题（多卡片）重复请求。
+ */
+const POSTER_FALLBACK_CACHE = new Map<string, string>();
+
 const VideoCard = memo(function VideoCard({
   video,
   rating,
@@ -83,6 +91,38 @@ const VideoCard = memo(function VideoCard({
     (s) => s.collections.some((c) => c.videoId === video.id),
   );
   const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(video.cover));
+
+  // ── 封面 TMDB 搜索兜底（CMS 源 vod_pic 缺失时） ──
+  // 仅竖版卡片、video.cover 为空且已配置 token 时启用；横版用 backdrop，不参与。
+  const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
+  const [fallbackPoster, setFallbackPoster] = useState(() =>
+    video.cover ? '' : (POSTER_FALLBACK_CACHE.get(video.title) ?? ''),
+  );
+
+  useEffect(() => {
+    if (video.cover || fallbackPoster || !hasToken) return;
+    const cached = POSTER_FALLBACK_CACHE.get(video.title);
+    if (cached !== undefined) {
+      setFallbackPoster(cached);
+      return;
+    }
+    let cancelled = false;
+    searchMulti(video.title)
+      .then((res) => {
+        const hit = res.results.find(
+          (r) => (r.media_type === 'movie' || r.media_type === 'tv') && Boolean(r.poster_path),
+        );
+        const url = hit?.poster_path ? (buildImageUrl(hit.poster_path, 'w342') || '') : '';
+        POSTER_FALLBACK_CACHE.set(video.title, url);
+        if (!cancelled) setFallbackPoster(url);
+      })
+      .catch(() => {
+        POSTER_FALLBACK_CACHE.set(video.title, '');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [video.title, video.cover, fallbackPoster, hasToken]);
 
   useEffect(() => {
     const el = titleRef.current;
@@ -178,8 +218,8 @@ const VideoCard = memo(function VideoCard({
   // 明显,改为固定后整批几乎同时淡入。
   const stagger = { animationDelay: '0.012s' };
 
-  // 横版卡片使用 backdrop 图，竖版使用 cover
-  const coverSrc = variant === 'landscape' && backdropSrc ? backdropSrc : video.cover;
+  // 横版卡片使用 backdrop 图，竖版使用 cover；cover 为空时用 TMDB 搜索兜底海报
+  const coverSrc = variant === 'landscape' && backdropSrc ? backdropSrc : (video.cover || fallbackPoster);
 
   return (
     <Link

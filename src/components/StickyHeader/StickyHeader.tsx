@@ -3,10 +3,10 @@
  * 半透明背景 + 阴影，Logo + 左右导航 + 主题切换 + 中央搜索框。
  * 首页滚动距离 >= --header-height 时切换为实体背景（仅首页生效）。
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Search, ArrowLeft, PanelLeftClose, PanelLeftOpen, Tv } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, PanelLeftClose, PanelLeftOpen, Tv } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -28,15 +28,6 @@ const RIGHT_NAV_ITEMS: NavItem[] = [
 
 /** TV 模式下在顶部导航栏补充 IPTV 入口（侧边栏在 TV 模式下隐藏，需经顶栏可达） */
 const TV_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
-
-/** 移动端进入这些页面时，顶部导航栏中央显示对应标题（非搜索模式） */
-const PAGE_TITLES: Record<string, string> = {
-  '/browse': '搜索中心',
-  '/iptv': 'IPTV',
-  '/collections': '收藏',
-  '/history': '历史记录',
-  '/settings': '设置',
-};
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
@@ -77,26 +68,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   const isTV = useIsTV();
   // 移动端断点与 AppLayout 一致：< 768px 使用 hamburger 菜单，≥ 768px 使用侧边栏折叠按钮
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const isCompact = useMediaQuery('(max-width: 767px)');
   const navigate = useCustomNavigate();
   const location = useLocation();
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
   const currentTheme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const { goHome } = useHeaderContent();
-
-  // 移动端搜索模式（基于视口宽度）
-  const [isSearchMode, setIsSearchMode] = useState(false);
-
-  const handleSearchModeToggle = useCallback(() => {
-    setIsSearchMode(true);
-  }, []);
-
-  const handleSearchModeExit = useCallback(() => {
-    setIsSearchMode(false);
-    // 清空搜索词
-    usePageSearchStore.getState().clearPageSearch();
-  }, []);
 
   // 沉浸式模式：基于当前路由判断（不再依赖页面组件通过 setHeaderConfig 设置，
   // 因为 Keep-Alive 模式下多个页面同时挂载会互相覆盖 immersive 值）
@@ -112,11 +89,47 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     }
   }, [navigate, goHome]);
 
-  /** 右键 logo/kinoTV：阻止默认右键菜单，新开页签打开首页 */
-  const handleLogoContextMenu = useCallback((e: React.MouseEvent) => {
+  // ── 统一右键菜单（logo 与右侧导航项共用，含"在新标签页中打开链接"） ──
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
+  // 打开右键菜单：e.clientX/clientY 定位，targetPath 为新标签页要打开的地址
+  const openContextMenu = useCallback((e: React.MouseEvent, targetPath: string) => {
     e.preventDefault();
-    window.open('/', '_blank', 'noopener');
+    setContextMenu({ x: e.clientX, y: e.clientY, path: targetPath });
   }, []);
+  // logo 右键 → 打开首页
+  const handleLogoContextMenu = useCallback((e: React.MouseEvent) => {
+    openContextMenu(e, '/');
+  }, [openContextMenu]);
+  // 导航项右键 → 打开该项路径
+  const handleNavContextMenu = useCallback((e: React.MouseEvent, path: string) => {
+    openContextMenu(e, path);
+  }, [openContextMenu]);
+
+  // 点击菜单项：新开页签打开对应链接
+  const openInNewTab = useCallback(() => {
+    if (!contextMenu) return;
+    window.open(contextMenu.path, '_blank', 'noopener');
+    setContextMenu(null);
+  }, [contextMenu]);
+
+  // 点击其他区域 / 按 Esc 时关闭菜单
+  useEffect(() => {
+    if (!contextMenu) return;
+    const onDocDown = (e: MouseEvent) => {
+      const el = e.target as Node;
+      if (el instanceof HTMLElement && el.closest('.sticky-header__logo-context-menu')) return;
+      setContextMenu(null);
+    };
+    const onDocKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('keydown', onDocKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('keydown', onDocKey);
+    };
+  }, [contextMenu]);
 
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
@@ -171,6 +184,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
         href={item.path}
         className={`sticky-header__nav-item${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
         onClick={(e) => { e.preventDefault(); onClick(); }}
+        onContextMenu={(e) => handleNavContextMenu(e, item.path)}
         title={item.title}
       >
         <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
@@ -179,16 +193,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   };
 
   const pageSearch = usePageSearchStore();
-
-  const handleMobileSearch = useCallback((query: string) => {
-    if (pageSearch.onSearch) {
-      pageSearch.onSearch(query);
-    } else {
-      // 与 SearchBox 默认行为一致：用 location.state 传搜索词，
-      // 避免仅用 ?q= 查询参数导致 BrowsePage（只读 state.q）丢失搜索词
-      navigate('/browse', { state: { q: query } });
-    }
-  }, [pageSearch.onSearch, navigate]);
 
   // 路由切换时同步清空搜索状态（useLayoutEffect 确保在浏览器绘制前完成）
   // 各页面的 useEffect 会在新路由下重新注册自己的回调和搜索词
@@ -213,14 +217,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     onSidebarToggle?.();
   }, [onSidebarToggle]);
 
-  // 移动端：根据当前路由派生顶部中央要显示的页面标题（仅列出的页面）
-  const pageTitle = useMemo(() => {
-    const base = location.pathname.split('?')[0];
-    if (PAGE_TITLES[base]) return PAGE_TITLES[base];
-    const key = Object.keys(PAGE_TITLES).find((k) => base.startsWith(`${k}/`));
-    return key ? PAGE_TITLES[key] : undefined;
-  }, [location.pathname]);
-
   return (
     <header
       className={`sticky-header${immersive ? ' sticky-header--immersive' : ''}${isTV ? ' sticky-header--tv' : ''}${isScrolled ? ' sticky-header--scrolled' : ''}`}
@@ -228,94 +224,66 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
           {isMobile ? (
-            isSearchMode ? (
-              <button className="sticky-header__menu-btn" onClick={handleSearchModeExit} aria-label="退出搜索">
-                <Icon icon={ArrowLeft} size="md" />
-              </button>
-            ) : (
-              <>
-                <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
-                  {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
-                </button>
-                <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
-                  <div className="sticky-header__logo-wrap">
-                    <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
-                  </div>
-                  <div className="sticky-header__brand">
-                    <span className="sticky-header__brand-name">kinoTV</span>
-                  </div>
-                </button>
-              </>
-            )
+            <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
+              {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
+            </button>
           ) : (
-            <>
-              {onSidebarToggle && (
-                <button
-                  className="sticky-header__sidebar-toggle"
-                  onClick={handleSidebarToggle}
-                  aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-                  title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-                >
-                  {sidebarCollapsed ? <Icon icon={PanelLeftOpen} size="md" /> : <Icon icon={PanelLeftClose} size="md" />}
-                </button>
-              )}
-              <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
-                <div className="sticky-header__logo-wrap">
-                  <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
-                </div>
-                <div className="sticky-header__brand">
-                  <span className="sticky-header__brand-name">kinoTV</span>
-                </div>
+            onSidebarToggle && (
+              <button
+                className="sticky-header__sidebar-toggle"
+                onClick={handleSidebarToggle}
+                aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+                title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+              >
+                {sidebarCollapsed ? <Icon icon={PanelLeftOpen} size="md" /> : <Icon icon={PanelLeftClose} size="md" />}
               </button>
-            </>
+            )
           )}
+          <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
+            <div className="sticky-header__logo-wrap">
+              <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
+            </div>
+            <div className="sticky-header__brand">
+              <span className="sticky-header__brand-name">kinoTV</span>
+            </div>
+          </button>
         </div>
         <div className="sticky-header__center">
-          {isMobile && isSearchMode ? (
-            <div className="sticky-header__mobile-search">
-              <SearchBox
-                variant="header"
-                autoFocus
-                defaultValue={pageSearch.search || undefined}
-                onSearch={handleMobileSearch}
-                placeholder={pageSearch.placeholder || '搜索'}
-                showHotSearch={showHotSearch}
-                scope={searchScope}
-              />
-            </div>
-          ) : isMobile && (pageTitle || isHome) ? (
-            // 首页无 pageTitle 时中央显示品牌名 kinoTV（移动端左侧品牌文字已隐藏）
-            <div className={`sticky-header__page-title${pageTitle ? '' : ' sticky-header__page-title--brand'}`}>
-              {pageTitle ?? 'kinoTV'}
-            </div>
-          ) : (
-            <SearchBox
-              key={location.pathname}
-              variant="header"
-              className="sticky-header__search"
-              defaultValue={pageSearch.search || undefined}
-              onSearch={pageSearch.onSearch ?? undefined}
-              placeholder={pageSearch.placeholder}
-              showHotSearch={showHotSearch}
-              scope={searchScope}
-            />
-          )}
+          {/* 移动端/桌面端统一：中央常驻搜索框（不再有"点击搜索按钮展开"的临时搜索模式） */}
+          <SearchBox
+            key={location.pathname}
+            variant="header"
+            className="sticky-header__search"
+            defaultValue={pageSearch.search || undefined}
+            onSearch={pageSearch.onSearch ?? undefined}
+            placeholder={pageSearch.placeholder}
+            showHotSearch={showHotSearch}
+            scope={searchScope}
+          />
         </div>
         <div className="sticky-header__right">
-        <nav className="sticky-header__nav" aria-label="次要导航">
-          {isTV && TV_NAV_ITEMS.map(renderNavItem)}
-          {RIGHT_NAV_ITEMS.map(renderNavItem)}
-        </nav>
-          {isCompact && !isSearchMode ? (
-            <button className="sticky-header__search-btn" onClick={handleSearchModeToggle} aria-label="打开搜索">
-              <Icon icon={Search} size="md" />
-            </button>
-          ) : null}
+          <nav className="sticky-header__nav" aria-label="次要导航">
+            {isTV && TV_NAV_ITEMS.map(renderNavItem)}
+            {RIGHT_NAV_ITEMS.map(renderNavItem)}
+          </nav>
           <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
             <Icon icon={ThemeIcon} size="lg" />
           </button>
         </div>
       </div>
+
+      {/* 统一右键菜单（logo / 右侧导航项共用）：在新标签页中打开链接 */}
+      {contextMenu && (
+        <div
+          className="sticky-header__logo-context-menu"
+          role="menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button type="button" role="menuitem" className="sticky-header__logo-context-item" onClick={openInNewTab}>
+            在新标签页中打开链接
+          </button>
+        </div>
+      )}
     </header>
   );
 }

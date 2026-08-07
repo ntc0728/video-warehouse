@@ -18,9 +18,11 @@ interface IPTVChannelCardProps {
   channel: IPTVChannel;
   hideFavorite?: boolean;
   batchMode?: boolean;
+  /** 当前 tab 该频道的检测结果（由 IPTV 页按组传入，独立于其他 tab）；undefined 表示未检测 */
+  availability?: boolean;
 }
 
-const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false }: IPTVChannelCardProps) {
+const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false, availability }: IPTVChannelCardProps) {
   const toggleFavorite = useIPTVStore((s) => s.toggleFavorite);
   const setSelectedChannel = useIPTVStore((s) => s.setSelectedChannel);
   const recordPlay = useIPTVStore((s) => s.recordPlay);
@@ -94,7 +96,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     return () => ro.disconnect();
   }, [channel.name]);
 
-  const cardClassName = `iptv-channel-card ${channel.isAvailable === false ? 'unavailable' : ''} animate-card-enter btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
+  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} animate-card-enter btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
 
   const cardBody = (
     <div className="card-body">
@@ -106,11 +108,11 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           loadingVariant="brand"
           onLoad={() => setImageLoaded(true)}
         />
-        {/* 批量模式下隐藏封面元素 */}
-        {!batchMode && channel.isAvailable !== undefined && (
-          <div className={`availability-badge ${channel.isAvailable ? 'available' : 'unavailable'}`}>
-            {channel.isAvailable ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
-            <span className="availability-badge__label">{channel.isAvailable ? '可用' : '不可用'}</span>
+        {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab */}
+        {!batchMode && availability !== undefined && (
+          <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
+            {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
+            <span className="availability-badge__label">{availability ? '可用' : '不可用'}</span>
           </div>
         )}
         {!batchMode && channel.group ? (

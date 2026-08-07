@@ -86,8 +86,7 @@ video-warehouse/
 │   │   ├── epgService.ts        # EPG 电子节目单服务
 │   │   └── sourceService.ts     # 视频源配置服务
 │   │
-│   ├── stores/                  # Zustand 状态管理（index.ts 导出 8 个 store）
-│   │   ├── useVideoStore.ts     # 视频数据状态
+│   ├── stores/                  # Zustand 状态管理（index.ts 导出 7 个 store）
 │   │   ├── usePlayerStore.ts    # 播放器状态
 │   │   ├── useSettingsStore.ts  # 设置状态（含 AES-GCM 加密敏感字段）
 │   │   ├── useIPTVStore.ts      # IPTV 状态
@@ -95,10 +94,10 @@ video-warehouse/
 │   │   ├── useTMDBStore.ts      # TMDB 数据状态
 │   │   ├── useNavStore.ts       # 页面导航状态
 │   │   ├── useKeepAliveStore.ts # Keep-Alive 缓存状态
-│   │   └── index.ts             # Store 统一导出（8 个；useHomeCategoryStore/usePageSearchStore 为内部 store，不在此 barrel）
+│   │   └── index.ts             # Store 统一导出（7 个；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接导入，不在此 barrel）
 │   │
 │   │   # 注：useRatingStore 合并入 useUserStore；useRecommendStore 随 DailyPicks 删除移除；
-│   │   #     useSubtitleStore 拆分合并；useHomeCategoryStore/usePageSearchStore 按需直接引用
+│   │   #     useSubtitleStore 拆分合并；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接引用
 │   │
 │   ├── types/                   # TypeScript 类型定义
 │   │   ├── video.ts             # 视频相关类型
@@ -222,7 +221,8 @@ interface IPlayerAdapter {
 │  跨组件状态 (Zustand)                   │
 │  - 播放器状态 (usePlayerStore)          │
 │  - 设置状态 (useSettingsStore)          │
-│  - 视频数据 (useVideoStore)             │
+│  - IPTV 状态 (useIPTVStore)             │
+│  - 源管理状态 (useSourceManagerStore)   │
 ├─────────────────────────────────────────┤
 │  持久化状态                             │
 │  - 历史记录 → IndexedDB                 │
@@ -706,11 +706,11 @@ export default function VideoCard({ video, onClick }: VideoCardProps) {
 - 避免全量订阅
 
 ```typescript
-// ✅ 推荐
-const videos = useVideoStore((s) => s.videos);
+// ✅ 推荐（仅订阅需要的切片，避免全量订阅导致无关渲染）
+const channels = useIPTVStore((s) => s.channels);
 
-// ❌ 避免
-const { videos } = useVideoStore();
+// ❌ 避免（全量解构，任何状态变化都会触发重渲染）
+const { channels, groups, filter } = useIPTVStore();
 ```
 
 ### 4. 项目配置
@@ -1081,3 +1081,10 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
 
 - **ADR-014 D1 裸流降级识别（fail-and-retry，2026-08-05）**
   裸流（无扩展名 / 裸 TS / FLV，`detectVideoSourceType` 误判为 m3u8）识别采用**「失败降级重试」而非「预先 Content-Type 嗅探」**：HLSAdapter 拆分 `manifestParsingError`（拿到内容但解析失败 → 上报 `code='BARE_STREAM'`）与 `manifestLoadError`（网络层失败 → 维持「频道源不可用」走 A3）。UniversalPlayer 收到 BARE_STREAM 后在 IPTV 模式用 `degradedType` state 临时覆盖播放器类型为 `flv`（URL 变化复位），重建 `MPEGTSAdapter` 重试**同一 URL**（每 URL 仅 1 次）。worker `m3u8-proxy` 对非 `#EXTM3U` 内容（`isM3U8Content`，兼容 UTF-8 BOM）直接透传源站二进制（不重写、不缓存）——代理 URL 无需改写即可被 mpegts.js 拉流。**零额外请求**（复用必然失败的 manifest 请求）。对比预先嗅探省掉 Range/abort/CORS 三个坑；缺点为首帧多一次解析失败延迟。测试：`HLSAdapter.test.ts` 2 用例（错误拆分）、`m3u8Proxy.test.ts` isM3U8Content 4 用例；配套 `worker/m3u8-proxy.d.ts` 同步 `isM3U8Content` 声明。
+
+- **ADR-019 三源统一管理 + IPTV 检测按组隔离 + 构建告警收敛（2026-08-07）**
+  1) **源管理收敛**：`useSourceManagerStore` 成为视频/IP/EPG 三源**单一来源**，`bootstrap()` 仅在持久化列表为空时注入默认源（保证设置页启用状态回显，避免每次覆盖用户配置）；`syncConsumers(scene)` 统一回写各 consumer（IPTV 的 `aggregatorUrls`/`sourceNames`、各 indices），删除页面侧重复的 aggregatorUrls 同步 effect；`setEnabled`/`setAllEnabled` 对 IPTV/EPG 加「**至少一个源**」兜底（停用最后一个被拒绝）；缓存校验从 `sort()` 改为**严格顺序比较**（`JSON.stringify(sourceUrls)`），保证「顺序 = 启用顺序」。入口：`main.tsx` 启动时 `useSourceManagerStore.getState().bootstrap()`。
+  2) **IPTV 检测按组隔离**：`channel.isAvailable`（全局共享，跨 tab 残留）改为 `useIPTVStore.availabilityResults: Record<groupId, Record<channelId, boolean>>`（key = `selectedGroup ?? '__all__'`），`checkAvailability`/`abortAvailabilityCheck` 只读写当前组，卡片显示改用 `availability` prop。`channel.isAvailable` 类型字段已删除。
+  3) **按钮按压机制对齐**：全局按压走 CSS `scale` 属性（非 transform）+ `:has(> *)`，排除 `.settings-page *`/`.no-press`；proxy-setup 不在 settings-page 内故需手动对齐 `.settings-row`（框 `scale:none` + 内部内容 `scale:0.96`），避免图标/文本位移。ConfirmDialog 确认/取消按钮胶囊化（`rounded-full`）。删除确认框按钮与设置页导出按钮按压效果统一。
+  4) **构建告警收敛**：4 个 non-functional warning 只处理 2 个——① `SourceChecker` 改直接导入 `useIPTVStore`（消除 reexport 循环）、④ `chunkSizeWarningLimit 800→900`（dash-vendor 804KB，lazy 加载不阻塞首屏）；② `state-vendor→react-vendor` 循环、③ `epgService` 动态/静态混用**刻意不动**（非 bug，改动手动 chunks 需全站回归、收益仅整洁）。完整分析见 `docs/warning-review.md`。
+  5) **GroupPicker 折叠修复**：折叠测量原用 `child.offsetTop` 依赖 offsetParent（`.grouppicker__hot-tags` 未设 position → offsetTop 混入页面绝对位置 → twoRowHeight 巨大、折叠失效露出第 3 行）。改用 `getBoundingClientRect()` 相对容器顶部计算行位置与折叠高度，精确「超 2 行折叠成完整 2 行 + 展开按钮」。

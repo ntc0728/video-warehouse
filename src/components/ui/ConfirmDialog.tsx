@@ -65,12 +65,12 @@ export default function ConfirmDialog({
           )}
           <div className="flex justify-center gap-[var(--space-sm)]">
             <AlertDialog.Cancel asChild>
-              <Button size="sm" variant="outline" onClick={handleCancel}>
+              <Button size="sm" variant="outline" className="rounded-full px-[var(--space-lg)]" onClick={handleCancel}>
                 {cancelText}
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <Button size="sm" variant={variant === 'danger' ? 'destructive' : 'default'} onClick={handleConfirm}>
+              <Button size="sm" variant={variant === 'danger' ? 'destructive' : 'default'} className="rounded-full px-[var(--space-lg)]" onClick={handleConfirm}>
                 {confirmText}
               </Button>
             </AlertDialog.Action>

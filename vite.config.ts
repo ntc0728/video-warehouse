@@ -70,9 +70,10 @@ export default defineConfig({
     cssCodeSplit: true,
     // 输出目标：es2020 触发 Vite 自动注入 modulepreload + 减小 JS 体积
     target: 'es2020',
-    // Chunk 大小警告阈值（kB）：从默认 500 提升到 800，
-    // 因为我们采用 vendor 拆分后，vendor 体积可能略大于默认阈值
-    chunkSizeWarningLimit: 800,
+    // Chunk 大小警告阈值（kB）：vendor 拆分后个别 vendor（如 dashjs）略大于默认阈值。
+    // dashjs 独立成 dash-vendor 且为 lazy 加载（播放 DASH 流才拉取），不阻塞首屏，
+    // 故阈值提到 900 以消除「dash-vendor 804KB > 800KB」的非功能性告警。
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         /**

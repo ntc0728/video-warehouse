@@ -21,6 +21,7 @@ import { useDocumentTitle } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
+import TokenRequired from '@/components/TokenRequired';
 import PlaylistModal from './components/PlaylistModal';
 import SourceDetectPill, { type SourceDetectStatus } from './components/SourceDetectPill';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -97,6 +98,8 @@ export default function DetailPage() {
   const location = useLocation();
   const navigate = useCustomNavigate();
   const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
+  // 是否已配置 TMDB Access Token（play/detail 的 tmdb- 数据依赖）
+  const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
   const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
 
   // ── 非沉浸式 Header（hero 不被导航栏覆盖） ──
@@ -589,6 +592,17 @@ export default function DetailPage() {
   }, [id]);
 
   // ── Loading ──────────────────────────────────
+  // ── TMDB Access Token 未配置：整页提示（与首页一致，设置可点击跳转） ──
+  // 仅 tmdb- 前缀 id 依赖 token；纯数字 CMS id 本就走「暂仅支持 TMDB 影片」，
+  // 不在此拦截，避免误判场景。
+  if (id?.startsWith('tmdb-') && !hasToken) {
+    return (
+      <div className="page-padding detail-page">
+        <TokenRequired />
+      </div>
+    );
+  }
+
   if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading"><AppLoading /></div>;
 
   // ── Error ────────────────────────────────────

@@ -23,6 +23,11 @@ interface IPTVState {
   isCheckingAvailability: boolean;
   checkingGroupId: string | null;
   availabilityProgress: { checked: number; total: number } | null;
+  /**
+   * 检测结果（按 tab/分组隔离）：key = groupId（'__all__' 表示全部），
+   * value = channelId → 是否可用。每个 tab 的检测结果独立存储、互不干扰。
+   */
+  availabilityResults: Record<string, Record<string, boolean>>;
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
   playHistory: IPTVPlayRecord[];
@@ -83,6 +88,7 @@ export const useIPTVStore = create<IPTVState>()(
       isCheckingAvailability: false,
       checkingGroupId: null,
       availabilityProgress: null,
+      availabilityResults: {},
       sourceType: PlaylistSourceType.UNKNOWN,
       sourceErrors: [],
       playHistory: [],
@@ -278,7 +284,7 @@ export const useIPTVStore = create<IPTVState>()(
        * 可指定分组仅检测该分组下的频道，支持通过 AbortController 中断检测
        */
       checkAvailability: (groupName) => {
-        const { channels, isCheckingAvailability, _abortController } = get();
+        const { channels, isCheckingAvailability, _abortController, availabilityResults } = get();
         if (isCheckingAvailability || channels.length === 0) return;
 
         // 中断上一次未完成的检测
@@ -286,6 +292,7 @@ export const useIPTVStore = create<IPTVState>()(
           _abortController.abort();
         }
 
+        const groupKey = groupName || '__all__';
         const targetChannels = groupName
           ? channels.filter(ch => ch.group === groupName)
           : channels;
@@ -294,12 +301,11 @@ export const useIPTVStore = create<IPTVState>()(
 
         const newController = new AbortController();
         const activeController = newController;
-        // 每次检测开始时清除所有频道的检测状态
-        const clearedChannels = channels.map(ch => ({ ...ch, isAvailable: undefined }));
+        // 只清空「当前组」的旧检测结果，其他组的结果保留（每个 tab 独立、互不干扰）
         set({
-          channels: clearedChannels,
+          availabilityResults: { ...availabilityResults, [groupKey]: {} },
           isCheckingAvailability: true,
-          checkingGroupId: groupName || '__all__',
+          checkingGroupId: groupKey,
           availabilityProgress: { checked: 0, total: targetChannels.length },
           _abortController: newController,
         });
@@ -315,22 +321,17 @@ export const useIPTVStore = create<IPTVState>()(
         ).then((results) => {
           // controller 已被替换 → 丢弃结果
           if (get()._abortController !== activeController) return;
-          const resultIds = new Set(results.keys());
-          // 从当前 store 构建 checkedIds，不依赖闭包中的旧 channelsToCheck
-          const currentChannels = get().channels;
-          const targetGroup = groupName || null;
-          const checkedIds = new Set(
-            currentChannels
-              .filter(ch => targetGroup ? ch.group === targetGroup : true)
-              .map(ch => ch.id)
-          );
-          const updatedChannels = currentChannels.map(ch => {
-            if (!checkedIds.has(ch.id)) return ch;
-            const available = resultIds.has(ch.id) ? results.get(ch.id) : false;
-            return { ...ch, isAvailable: available };
+          // 将结果写入「当前组」的 availabilityResults（按 channelId），不写入频道自身、按组隔离
+          const groupResult: Record<string, boolean> = {};
+          results.forEach((available, channelId) => {
+            groupResult[channelId] = available;
           });
+          const cur = get();
           set({
-            channels: updatedChannels,
+            availabilityResults: {
+              ...cur.availabilityResults,
+              [groupKey]: groupResult,
+            },
             isCheckingAvailability: false,
             checkingGroupId: null,
             availabilityProgress: null,
@@ -338,18 +339,15 @@ export const useIPTVStore = create<IPTVState>()(
           });
         }).catch(() => {
           if (get()._abortController !== activeController) return;
-          const currentChannels = get().channels;
-          const targetGroup = groupName || null;
-          const checkedIds = new Set(
-            currentChannels
-              .filter(ch => targetGroup ? ch.group === targetGroup : true)
-              .map(ch => ch.id)
-          );
-          const resetChannels = currentChannels.map(ch =>
-            checkedIds.has(ch.id) ? { ...ch, isAvailable: false } : ch
-          );
+          // 检测失败：当前组所有频道标记为不可用
+          const cur = get();
+          const groupResult: Record<string, boolean> = {};
+          targetChannels.forEach(ch => { groupResult[ch.id] = false; });
           set({
-            channels: resetChannels,
+            availabilityResults: {
+              ...cur.availabilityResults,
+              [groupKey]: groupResult,
+            },
             isCheckingAvailability: false,
             checkingGroupId: null,
             availabilityProgress: null,
@@ -359,18 +357,17 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       abortAvailabilityCheck: () => {
-        const { _abortController, channels, checkingGroupId } = get();
+        const { _abortController, checkingGroupId, availabilityResults } = get();
         if (_abortController) {
           _abortController.abort();
         }
-        // 清除当前检测分组的频道检测结果
-        const resetChannels = channels.map(ch =>
-          (checkingGroupId === '__all__' || ch.group === checkingGroupId)
-            ? { ...ch, isAvailable: undefined }
-            : ch
-        );
+        // 清除「当前检测分组」的 availabilityResults（其他组结果保留，互不干扰）
+        const nextResults = { ...availabilityResults };
+        if (checkingGroupId) {
+          delete nextResults[checkingGroupId];
+        }
         set({
-          channels: resetChannels,
+          availabilityResults: nextResults,
           isCheckingAvailability: false,
           checkingGroupId: null,
           availabilityProgress: null,

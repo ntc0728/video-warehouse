@@ -23,7 +23,6 @@ export interface IPTVChannel {
   codec?: string;
   bitrate?: number;
   isFavorite?: boolean;
-  isAvailable?: boolean;
   lastPlayed?: number;
   tvgId?: string;
   sourceId?: string;

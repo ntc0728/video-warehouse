@@ -24,10 +24,9 @@ Layer 4: 外部数据源               → TMDB API / CMS 采集站 / IPTV M3U /
 | useSettingsStore | sourceService | video-sources.json / iptv-sources.json | 本地文件 |
 | useUserStore | database (idb) | IndexedDB | 本地存储 |
 | useIPTVStore | iptvService + epgService | M3U 播放列表 + XMLTV EPG | Video Proxy |
-| usePlayerStore | videoService | CMS 采集站 API (28 源) | Video Proxy |
-| useVideoStore | videoService | CMS 采集站 API | Video Proxy |
+| usePlayerStore | videoService | CMS 采集站 API | Video Proxy |
+| useSourceManagerStore | sourceService | 视频/IP/EPG 三源统一管理（启用+顺序+聚合 URL 回写） | 本地文件 |
 | useNavStore | — | 页面导航状态 | 内存 |
-| useRecommendStore | tmdbService | TMDB trending | 直连 |
 
 ## 代理配置
 
