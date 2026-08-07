@@ -51,11 +51,15 @@ export default function GroupPicker({
     return groups.filter((g) => g.name.toLowerCase().includes(kw))
   }, [groups, searchKeyword])
 
-  // 检测 hot-tags 是否超过 2 行，超过则需要折叠
+  // 检测 hot-tags 是否超过 2 行，超过则需要折叠。
+  // ★用 getBoundingClientRect 相对容器自身的偏移计算行位置，避免 offsetTop 依赖 offsetParent
+  // （.grouppicker__hot-tags 未设 position，offsetParent 可能是外层定位元素或 body，offsetTop 会
+  //  混入容器在页面中的绝对位置，导致 twoRowHeight 被算成巨大值、折叠失效露出第 3 行+）。
   useLayoutEffect(() => {
     const el = tagsRef.current
     if (!el || el.children.length === 0) {
       setNeedsFolding(false)
+      setTwoRowHeight(0)
       return
     }
     // 先移除折叠限制以测量完整布局
@@ -65,15 +69,20 @@ export default function GroupPicker({
     const children = Array.from(el.children) as HTMLElement[]
     if (children.length === 0) {
       setNeedsFolding(false)
+      setTwoRowHeight(0)
       return
     }
 
-    const firstTop = children[0].offsetTop
+    const elTop = el.getBoundingClientRect().top
+    // 子元素相对容器顶部（padding 边）的偏移，与 offsetParent 无关
+    const relTop = (c: HTMLElement) => c.getBoundingClientRect().top - elTop
 
-    // 找到第二行的第一个元素
+    const firstTop = relTop(children[0])
+
+    // 找到第二行的第一个元素（偏移 > 第一行偏移）
     let secondRowFirst: HTMLElement | null = null
     for (const child of children) {
-      if (child.offsetTop > firstTop) {
+      if (relTop(child) > firstTop) {
         secondRowFirst = child
         break
       }
@@ -86,10 +95,10 @@ export default function GroupPicker({
       return
     }
 
-    const secondRowTop = secondRowFirst.offsetTop
+    const secondRowTop = relTop(secondRowFirst)
 
     // 检查是否超过 2 行
-    const hasMoreThan2Rows = children.some(c => c.offsetTop > secondRowTop)
+    const hasMoreThan2Rows = children.some((c) => relTop(c) > secondRowTop)
 
     if (!hasMoreThan2Rows) {
       setNeedsFolding(false)
@@ -97,13 +106,11 @@ export default function GroupPicker({
       return
     }
 
-    // 计算 2 行的精确高度：第二行最底元素的 bottom - 第一行首元素的 top
-    const secondRowItems = children.filter(c => c.offsetTop === secondRowTop)
-    const lastInSecondRow = secondRowItems[secondRowItems.length - 1]
-    // offsetTop 相对 padding box，maxHeight 包含 padding，需加上容器的上下 padding
-    const paddingTop = parseFloat(getComputedStyle(el).paddingTop) || 0
-    const paddingBottom = parseFloat(getComputedStyle(el).paddingBottom) || 0
-    const twoRowH = lastInSecondRow.offsetTop + lastInSecondRow.offsetHeight - firstTop + paddingTop + paddingBottom
+    // 折叠高度 = 第三行首元素相对容器顶部的偏移（含 paddingTop + 前两行高 + 行间 gap）。
+    // 容器为 border-box，maxHeight 含 padding；该值恰是第三行内容起点，
+    // 设 maxHeight = 该值即完整显示前两行且第三行完全被 overflow:hidden 裁剪。
+    const thirdRowFirst = children.find((c) => relTop(c) > secondRowTop) ?? null
+    const twoRowH = thirdRowFirst ? Math.max(1, relTop(thirdRowFirst)) : 1
 
     setTwoRowHeight(twoRowH)
     setNeedsFolding(true)
