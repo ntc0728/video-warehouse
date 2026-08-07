@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.2.0...kinotv-v1.3.0) (2026-08-07)
+
+
+### Features
+
+* 三源统一管理收敛 + IPTV 检测按组隔离 + proxy-setup ([0b1e20a](https://github.com/ntc0728/video-warehouse/commit/0b1e20a932a7c574725282b1db1e5c2e1c590689))
+
+
+### Bug Fixes
+
+* **IPTV:** GroupPicker 折叠高度改用相对容器偏移计算 ([ba5cad4](https://github.com/ntc0728/video-warehouse/commit/ba5cad46ed827494b06c6a516529f67a7a5d9dd3))
+
+
+### Reverts
+
+* **ci:** 删除多余的 Pages 部署 workflow（GitHub 集成已自动部署） ([24e567d](https://github.com/ntc0728/video-warehouse/commit/24e567d321d7b64398e00c5631b68a6ba0e05622))
+
 ## [1.2.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.1.0...kinotv-v1.2.0) (2026-08-06)
 
 
