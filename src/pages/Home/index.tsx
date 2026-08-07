@@ -350,7 +350,7 @@ export default function HomePage() {
           {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
               与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="home-skeleton-hero__thumb" />
+            <div key={i} className="home-skeleton-hero__thumb thumbnail-skeleton-bg" />
           ))}
         </div>
       </div>

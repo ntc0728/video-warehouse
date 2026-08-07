@@ -7,7 +7,7 @@
  * - 右侧缩略图自动轮播（5s），鼠标悬停切换主图并暂停轮播
  * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
  */
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 'react';
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
@@ -49,14 +49,23 @@ interface HeroBannerProps {
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
-/** 预加载图片 */
+/** 已请求预加载的 URL 集合：快速左右滑动时避免对同一 URL 重复 new Image + 解码（卡顿主因之一） */
+const preloadedSet = new Set<string>();
+/** 预加载图片（按视口选择解码尺寸：宽屏 w1280，窄屏/移动端 w780 足够且解码更快） */
 function preloadImage(url: string | null | undefined): void {
-  if (!url) return;
+  if (!url || preloadedSet.has(url)) return;
+  preloadedSet.add(url);
   const img = new Image();
+  img.decoding = 'async';
   img.src = url;
   if (typeof img.decode === 'function') {
     img.decode().catch(() => {});
   }
+}
+
+/** 背景图预加载尺寸：移动端/窄视口用 w780（banner 实际渲染宽度即为视口宽），宽屏才用 w1280 */
+function bgPreloadSize(): string {
+  return window.innerWidth >= 1100 ? 'w1280' : 'w780';
 }
 
 export default function HeroBanner({
@@ -195,12 +204,14 @@ export default function HeroBanner({
 
     // 预加载前后各一张背景图（C1-2，2026-08-04）：
     // 自动轮播前进（+1）与手动拖拽后退（-1）的目标索引都覆盖，避免切换时目标图
-    // 未预加载 → 动画期间新层空白（滑动「失效」感）+ w1280 解码主线程卡顿。
+    // 未预加载 → 动画期间新层空白（滑动「失效」感）+ 大图解码主线程卡顿。
+    // 尺寸按视口选择（w780/w1280），preloadImage 内部按 URL 去重，快速滑动不重复解码。
+    const bgSize = bgPreloadSize();
     const nextIdx = (activeIndex + 1) % total;
     const prevIdx = (activeIndex - 1 + total) % total;
     for (const idx of [nextIdx, prevIdx]) {
       const p = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
-      if (p) preloadImage(buildImageUrl(p, 'w1280'));
+      if (p) preloadImage(buildImageUrl(p, bgSize));
     }
 
     // 预加载即将出现在缩略图窗口中的图片（窗口大小 4，提前预加载前后各 2 张）
@@ -284,7 +295,7 @@ export default function HeroBanner({
           <div className="hero-banner__thumbs" aria-hidden="true" style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}>
             {Array.from({ length: maxCount }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
-                <span className="hero-banner__thumb-skeleton" />
+                <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
               </div>
             ))}
           </div>
@@ -358,6 +369,7 @@ export default function HeroBanner({
               alt=""
               aria-hidden="true"
               loading="eager"
+              decoding="async"
               draggable={false}
               onLoad={() => { if (isActive) setBannerReady(true); }}
               onError={() => { if (isActive) setBannerReady(true); }}
@@ -415,7 +427,7 @@ export default function HeroBanner({
           {!bannerReady ? (
             Array.from({ length: maxCount }).map((_, i) => (
               <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton" aria-hidden="true">
-                <span className="hero-banner__thumb-skeleton" />
+                <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
               </div>
             ))
           ) : (
@@ -441,18 +453,21 @@ export default function HeroBanner({
  * HeroThumb — 单个右侧缩略图（自包含）
  * - 图片加载完成前显示骨架占位（shimmer），加载完成后淡入图片与标题
  * - 用 ref 检查 img.complete 兜底，避免已缓存图片不触发 onLoad 而永久卡在骨架
+ * - memo 化：窗口滑动一格时仅「新进入窗口」的缩略图重渲染，其余（item 引用 + active 未变）
+ *   跳过渲染，减少快速滑动时的无谓重渲染与换图预加载
  */
-function HeroThumb({
-  item,
-  active,
-  onEnter,
-  onClick,
-}: {
-  item: HeroItem;
-  active: boolean;
-  onEnter: () => void;
-  onClick: () => void;
-}) {
+const HeroThumb = memo(
+  function HeroThumb({
+    item,
+    active,
+    onEnter,
+    onClick,
+  }: {
+    item: HeroItem;
+    active: boolean;
+    onEnter: () => void;
+    onClick: () => void;
+  }) {
   const thumbPath = item.backdropPath || item.backdrop_path || '';
   // 右侧缩略图（backdrop 横图）压缩：w500 → w300，显示宽度仅 ~180–220px，体积更小、解码更快。
   // Hero 主图（buildImageUrl(..., 'w1280')）保持原画质不参与压缩。
@@ -514,8 +529,18 @@ function HeroThumb({
           onLoad={() => setReady(true)}
         />
       ) : null}
-      {!ready && <span className="hero-banner__thumb-skeleton" aria-hidden="true" />}
+      {!ready && <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" aria-hidden="true" />}
       <span className="hero-banner__thumb-title">{title}</span>
     </button>
   );
+},
+heroThumbPropsEqual,
+);
+
+/** memo 比较：仅 item 引用与激活态变化才重渲染（onEnter/onClick 为稳定闭包捕获 idx，item 不变时 idx 不变） */
+function heroThumbPropsEqual(
+  prev: { item: HeroItem; active: boolean },
+  next: { item: HeroItem; active: boolean },
+): boolean {
+  return prev.item === next.item && prev.active === next.active;
 }

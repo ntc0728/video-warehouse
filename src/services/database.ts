@@ -195,9 +195,12 @@ export async function getCachedIPTVChannels(sourceUrls: string[]): Promise<IPTVC
       return null;
     }
 
-    // 检查源 URL 是否变化
-    const cachedUrlsStr = JSON.stringify(cached.sourceUrls.sort());
-    const currentUrlsStr = JSON.stringify(sourceUrls.sort());
+    // 检查源 URL 是否变化（保持顺序严格比较）。
+    // 此前用 sort() 排序后比较只比对 URL 集合、忽略顺序，导致「源顺序调整但集合相同」
+    // 时缓存误命中，而频道 sourceId 依赖刷新时刻的 URL 下标 → sourceId 与顺序错位。
+    // 改为保持顺序比较：源顺序一变即视为缓存失效，触发网络刷新，保证 sourceId 与新顺序一致。
+    const cachedUrlsStr = JSON.stringify(cached.sourceUrls);
+    const currentUrlsStr = JSON.stringify([...sourceUrls]);
     if (cachedUrlsStr !== currentUrlsStr) {
       return null;
     }

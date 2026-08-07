@@ -23,6 +23,7 @@ const routes = [
       { path: 'source-checker', element: <div /> },
       { path: 'browse', element: <div /> },
       { path: 'person/:id', element: <div /> },
+      { path: 'proxy-setup', element: <div /> },
     ],
   },
   {

@@ -9,7 +9,7 @@ import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
 import './Layout.css';
-import { useSettingsStore, useKeepAliveStore } from '@/stores';
+import { useSettingsStore, useKeepAliveStore, useNavStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
@@ -45,6 +45,21 @@ function LoadingFallback() {
  * - 旧：每次路由切换 unmount 旧页 + mount 新页（含 lazy chunk 加载 + 全量初始化）
  * - 新：首次访问时 mount + 后续切换仅 CSS display 切换（~1ms）
  */
+/**
+ * routeKey（路径模式）→ useScrollRestore 的 pageKey 映射。
+ * 有滚动位置管理的页面：home / browse / iptv / collections / history / detail:<id>；
+ * 其余（settings / person / play / source-checker / iptv-play 等）无保存位置，
+ * 由全局滚动兜底统一回顶。
+ */
+function routeKeyToPageKey(routeKey: string, activePath: string): string {
+  if (routeKey === '/') return 'home';
+  if (routeKey === '/detail') {
+    const m = activePath.match(/^\/detail\/(.+?)(?:\?|$)/);
+    return `detail:${m ? m[1] : ''}`;
+  }
+  return routeKey.replace(/^\//, '');
+}
+
 // 记忆化路由渲染器：Component 引用在 routeComponentMap 中稳定，
 // 用 memo 包裹后，AppLayout 因侧边栏折叠/展开等状态变化而重渲染时，
 // 已挂载的 Keep-Alive 页面（首页等重型页面）不会被牵连重渲染，避免切换卡顿。
@@ -199,6 +214,25 @@ export default function AppLayout() {
       target.style.animation = '';
     });
   }, [activeRouteKey]);
+
+  // ── 全局滚动兜底：进入「无保存滚动位置」的页面时回顶 ──
+  // Keep-Alive 下所有页面共享同一个滚动容器（CustomScrollbar）。若进入的页面没有
+  // 保存过的滚动位置（首次进入 / Settings / Person / Play 等未接入 useScrollRestore
+  // 的页面），容器的 scrollTop 会残留上一页的深度 → 「进入页面滚动条不在初始位置」。
+  // 兜底规则：目标页有保存位置 → 交由页面 useScrollRestore 恢复（不干预，避免破坏
+  // 「返回时恢复上次位置」）；无保存位置 → 立即回顶。
+  // 时序安全：React layout effect 子先父后，页面的 useScrollRestore 先恢复保存值，
+  // 本 effect 后执行，此时读取到的 saved 已是非空，不会覆盖恢复结果。
+  useLayoutEffect(() => {
+    if (!activeRouteKey) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const pageKey = routeKeyToPageKey(activeRouteKey, activePath);
+    const saved = useNavStore.getState().getState(pageKey)?.scrollTop;
+    if (saved == null || saved <= 0) {
+      el.scrollTop = 0;
+    }
+  }, [activeRouteKey, activePath]);
 
   // ── 美术资源皮肤：应用 data-skin 到 <html>（支持 ?skin= 覆盖，便于截图验收） ──
   const prevSkinRef = useRef(skin);

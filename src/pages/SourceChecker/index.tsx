@@ -7,7 +7,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { BackToTopButton } from '@/components/common';
 import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
-import { useSettingsStore, useIPTVStore } from '@/stores';
+import { useSettingsStore } from '@/stores';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 
 import './SourceChecker.css';

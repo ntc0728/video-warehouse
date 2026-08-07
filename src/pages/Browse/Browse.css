@@ -172,7 +172,7 @@
 
 .browse-search-tab.active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* 非 TV：严格零焦点框（TV 内嵌方框由 index.css 的 [data-device="tv"] 规则提供）。

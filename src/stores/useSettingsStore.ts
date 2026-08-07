@@ -30,9 +30,7 @@ interface SettingsState extends AppSettings {
   translationApiKey: string;
   autoTranslate: boolean;
   targetLang: string;
-  setVideoSourceIndex: (index: number) => void;
   setVideoSourceIndices: (indices: number[]) => void;
-  setIPTVSourceIndex: (index: number) => void;
   setIPTVSourceIndices: (indices: number[]) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setSkin: (skin: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
@@ -194,9 +192,7 @@ export const useSettingsStore = create<SettingsState>()(
   username: '',
   avatar: '',
 
-  setVideoSourceIndex: (index) => set({ videoSourceIndex: index }),
-      setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
-      setIPTVSourceIndex: (index) => set({ iptvSourceIndex: index }),
+  setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
       setIPTVSourceIndices: (indices) => set({ iptvSourceIndices: indices }),
       setTheme: (theme) => set({ theme }),
       setSkin: (skin) => set({ skin }),

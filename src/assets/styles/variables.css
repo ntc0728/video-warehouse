@@ -155,6 +155,7 @@
   --space-sm:  clamp(6px, 0.0172rem + 0.0153vw, 12px);   /* 6→12  */
   --space-md:  clamp(8px, -0.0964rem + 0.0254vw, 18px);   /* 8→18  */
   --space-lg:  clamp(12px, -0.2042rem + 0.0407vw, 28px);   /* 12→28 */
+  --space-lg-xl: clamp(14px, -0.3181rem + 0.0509vw, 34px);  /* 14→34 lg↔xl 过渡档（分类快选 gap 等） */
   --space-xl:  clamp(16px, -0.4313rem + 0.0611vw, 40px);   /* 16→40 */
   --space-2xl: clamp(24px, -0.4084rem + 0.0814vw, 56px);   /* 24→56 */
   --space-3xl: clamp(32px, -0.8626rem + 0.1221vw, 80px);   /* 32→80 */

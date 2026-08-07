@@ -55,6 +55,7 @@ const routeComponentMap: Record<string, PreloadableLazy> = {
   '/play': lazyWithRetry(() => import('@/pages/Player')),
   '/player': lazyWithRetry(() => import('@/pages/Player')),
   '/person': lazyWithRetry(() => import('@/pages/Person')),
+  '/proxy-setup': lazyWithRetry(() => import('@/pages/ProxySetup/ProxySetup')),
 };
 
 /** 路径前缀列表（按长度降序排列，确保最长前缀优先匹配） */

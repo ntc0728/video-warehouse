@@ -37,9 +37,10 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 // ============================================================
 
 function getAccessToken(): string | null {
-  const token = useSettingsStore.getState().tmdbAccessToken;
-  if (token) return token;
-  return import.meta.env.VITE_TMDB_ACCESS_TOKEN || null;
+  // 仅使用设置页配置的 Token；不再回退到 VITE_TMDB_ACCESS_TOKEN 环境变量。
+  // 此前 env 兜底导致「删除设置 Token 后仍能调用 TMDB」（收藏/历史点卡片进详情
+  // 依旧请求成功），与用户预期相悖。删除 Token 后 TMDB 请求将按未配置处理。
+  return useSettingsStore.getState().tmdbAccessToken || null;
 }
 
 /** 获取用户设置的 TMDB 语言偏好，默认 zh-CN */

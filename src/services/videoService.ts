@@ -9,6 +9,7 @@ import { getVideoSources, getIPTVSources } from './sourceService';
 import { getJSON } from './httpClient';
 import { extractSeasonNumber } from './seasonMatcher';
 import { parsePlaySources } from './vodParser';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export { getVideoSources };
 export { parsePlaySources } from './vodParser';
@@ -104,8 +105,8 @@ export async function checkVideoSourceAvailability(
   }
 
   try {
-    /** 请求 CMS 列表接口（通过 CORS 代理） */
-    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout });
+    /** 请求 CMS 列表接口（通过 CORS 代理；重试次数取自源配置） */
+    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout, retries: source.retries });
     if (data && Array.isArray(data.list)) {
       return { index: sourceIndex, name: source.name, available: true };
     }
@@ -334,8 +335,8 @@ export async function fetchVideosBySource(
   if (!source) return { videos: [], error: '未找到配置的视频源' };
 
   try {
-    /** 请求 CMS 列表接口（15 秒超时） */
-    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000 });
+    /** 请求 CMS 列表接口（15 秒超时；重试次数取自源配置） */
+    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000, retries: source.retries });
     if (data.list && Array.isArray(data.list)) {
       return {
         videos: data.list.map(mapVideoItem),
@@ -380,8 +381,8 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string, sig
   try {
     /** CMS 详情接口 URL */
     const detailUrl = `${source.api}?ac=videolist&ids=${videoId}`;
-    /** 请求 CMS 详情接口（传递 signal 支持取消） */
-    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal });
+    /** 请求 CMS 详情接口（传递 signal 支持取消；超时/重试取自源配置） */
+    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) return null;
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
@@ -428,7 +429,7 @@ export async function searchVideoFromMultipleSources(
 
       try {
         const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}${year ? `&year=${year}` : ''}`;
-        const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+        const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
@@ -495,8 +496,8 @@ export async function searchVideoFromSingleSource(
   try {
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
-    /** 请求 CMS 搜索接口（传递 signal 支持取消） */
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+    /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
@@ -556,7 +557,7 @@ export async function searchAllFromCMSSource(
 
   try {
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}&pg=${page}`;
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal: opts?.signal });
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal: opts?.signal, timeout: source.timeoutMs, retries: source.retries });
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源' };
     }
@@ -578,11 +579,10 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
   const sources = await getVideoSources();
   if (sources.length === 0) return null;
 
-  let sourceIndex = 0;
-  try {
-    const stored = localStorage.getItem('app-settings');
-    if (stored) sourceIndex = JSON.parse(stored)?.state?.videoSourceIndex ?? 0;
-  } catch { /* 读取设置失败时使用默认值 0 */ }
+  // 用新源管理链路的主源（videoSourceIndices[0]，指向 getVideoSources 合成数组）
+  // 替代旧的直读 localStorage 'app-settings' 单数 videoSourceIndex 逻辑
+  const configuredIndices = useSettingsStore.getState().videoSourceIndices;
+  let sourceIndex = (Array.isArray(configuredIndices) && configuredIndices.length > 0) ? configuredIndices[0] : 0;
 
   const searchTerm = title;
 
@@ -591,7 +591,7 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
     if (!source) return null;
     try {
       const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true });
+      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, timeout: source.timeoutMs, retries: source.retries });
       if (!data.list || !Array.isArray(data.list) || data.list.length === 0) return null;
       const match = data.list.find((item: CMSVideoItem) => {
         const t = item.vod_name || '';
@@ -660,8 +660,8 @@ export async function searchVideoSeasonsFromSingleSource(
   try {
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
-    /** 请求 CMS 搜索接口（传递 signal 支持取消） */
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal });
+    /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
+    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {

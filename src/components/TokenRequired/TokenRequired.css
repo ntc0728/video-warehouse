@@ -1,0 +1,60 @@
+/* ── TokenRequired ───────────────────────────────────
+   复刻 Home 页 .home-token-required 的视觉（图标 + 文案 + 跳转按钮），
+   供 detail / play 页在未配置 TMDB Access Token 时整页展示（其余内容隐藏）。
+   布局：flex:1 撑满宿主容器剩余高度（宿主需为 flex 容器或给 min-height），
+   主提示经 justify-content:center 垂直居中。 */
+.token-required {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 0;
+  min-height: 60vh;
+  padding: var(--space-3xl) var(--space-md);
+  text-align: center;
+}
+
+/* 主提示（图标 + 文字）：容器内垂直居中 */
+.token-required__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.token-required-icon {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+.token-required-text {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xl);
+  line-height: 1.6;
+}
+
+.token-required-link {
+  margin: 0 var(--space-xs);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.token-required-link:hover {
+  text-decoration: underline;
+}
+
+/* 移动端：与首页一致，不撑满整页，50vh 紧凑显示 */
+@media (width <= 767px) {
+  .token-required {
+    flex: none;
+    min-height: 50vh;
+  }
+}

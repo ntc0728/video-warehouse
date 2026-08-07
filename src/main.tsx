@@ -6,6 +6,7 @@ import './assets/styles/index.css';
 import { adjustFontSizeForNative } from './lib/platform';
 import { preventPinchZoom } from './lib/preventZoom';
 import { preloadInitialRoute, preloadAllRoutes } from './components/Layout/routeConfig';
+import { useSourceManagerStore } from './stores/useSourceManagerStore';
 
 // Android 原生平台：缩小字体和图标以适配 dp 单位
 adjustFontSizeForNative();
@@ -24,6 +25,10 @@ preventPinchZoom();
 // AppLoading 的窗口期）。preloadStarted 幂等，AppLayout 挂载后的重复调用会跳过。
 // 注意：import() 仅加载并求值模块，不挂载、不触发数据请求，无副作用。
 preloadAllRoutes();
+// 应用启动即初始化源管理（注入默认源 + 同步消费 indices/aggregatorUrls）。
+// 不阻塞首屏（异步 + 模块级 guard 幂等）；保证「直接进入 IPTV 页」时
+// aggregatorUrls 与源管理真实启用状态一致，而非只依赖设置页 tab 挂载。
+useSourceManagerStore.getState().bootstrap();
 preloadInitialRoute().finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>

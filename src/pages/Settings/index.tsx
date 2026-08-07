@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
 
   const state = useSettingsState();
-  const { appearance, video, playback, iptv, about, sources, modals } = state;
+  const { appearance, video, playback, iptv, about, modals } = state;
 
   const handleSelectTab = useCallback((tab: SettingsTabKey) => {
     setActiveTab(tab);
@@ -108,7 +108,6 @@ export default function SettingsPage() {
             tmdbAccessToken={video.tmdbAccessToken}
             tmdbLanguage={video.tmdbLanguage}
             setTMDBLanguage={video.setTMDBLanguage}
-            videoSourceIndices={video.videoSourceIndices}
             corsProxy={video.corsProxy}
             rememberVolume={video.rememberVolume}
             setRememberVolume={video.setRememberVolume}
@@ -116,8 +115,6 @@ export default function SettingsPage() {
             setAutoTranslate={video.setAutoTranslate}
             translationAppId={video.translationAppId}
             translationApiKey={video.translationApiKey}
-            videoSources={video.videoSources}
-            handleVideoSourcesChange={video.handleVideoSourcesChange}
             onEditTMDBToken={modals.openTMDBTokenModal}
             onEditCorsProxy={modals.openCorsProxyModal}
             onEditBaiduApi={modals.openBaiduApiModal}
@@ -130,14 +127,8 @@ export default function SettingsPage() {
           <IptvTab
             iptvSettings={iptv.iptvSettings}
             setIPTVSettings={iptv.setIPTVSettings}
-            iptvSourceIndices={iptv.iptvSourceIndices}
-            epgUrls={iptv.epgUrls}
             epgUpdateInterval={iptv.epgUpdateInterval}
             setEpgUpdateInterval={iptv.setEpgUpdateInterval}
-            iptvSources={sources.iptvSources}
-            epgSources={sources.epgSources}
-            handleIptvSourcesChange={iptv.handleIptvSourcesChange}
-            handleEpgChange={iptv.handleEpgChange}
             onEditIptvProxy={modals.openIptvProxyModal}
             onEditIptvPattern={modals.openIptvPatternModal}
           />
@@ -331,7 +322,7 @@ export default function SettingsPage() {
         <div className="setting-modal-content">
           <div className="setting-modal-desc">
             CORS（跨域资源共享）代理用于绕过浏览器的跨域限制，让应用能访问其他服务器的视频数据。<br />
-            留空则使用默认代理 corsproxy.io。<br />
+            留空则直连（浏览器跨域限制下视频源可能不可用，请配置代理）。<br />
             常见格式: https://your-proxy.workers.dev<br />
             <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener noreferrer" className="settings-link">
               前往 Cloudflare Workers 控制台
@@ -358,7 +349,7 @@ export default function SettingsPage() {
               )}
             </div>
             <p id="cors-proxy-url-help" className="settings-help">
-              格式：https://your-worker.workers.dev（可选，留空使用默认代理）
+              格式：https://your-worker.workers.dev（可选，留空则直连）
             </p>
             {modals.corsProxyError && (
               <p id="cors-proxy-url-error" className="settings-error" role="alert">

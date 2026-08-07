@@ -8,6 +8,7 @@ import { usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
 import { extractSeasonNumber } from '@/services/seasonMatcher';
 import { findEpisodeByNumber } from '@/services/videoService';
 import { buildImageUrl } from '@/services/tmdbService';
+import TokenRequired from '@/components/TokenRequired';
 import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { VideoCard } from '@/components/VideoCard';
 import type { Video, VideoSource, Episode } from '@/types/video';
@@ -92,6 +93,8 @@ export default function PlayerPage() {
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
   const { updateHistoryProgress, isCollected, addCollection, removeCollection } = useUserStore();
   const { videoSourceIndex } = useSettingsStore();
+  // 是否已配置 TMDB Access Token（tmdb- id 的播放链路依赖 TMDB 标题才能发起 CMS 搜索）
+  const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
 
   const isCompact = useMemo(() => isNativePlatform(), []);
   // TV 模式：用户在设置页强制开启，或 UA 自动检测为 TV 设备时启用遥控器交互
@@ -559,6 +562,17 @@ export default function PlayerPage() {
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
 
+
+  // ── TMDB Access Token 未配置：整页提示（与首页一致，设置可点击跳转） ──
+  // 仅 tmdb- 前缀 id 依赖 token（无 token 时 TMDB 详情拿不到标题，CMS 搜索链路
+  // 必然中断，播放器白屏）；纯数字 CMS id 播放不依赖 token，不拦截。
+  if (id?.startsWith('tmdb-') && !hasToken) {
+    return (
+      <div className="page-padding player-page">
+        <TokenRequired />
+      </div>
+    );
+  }
 
   // 仅首次进入时显示页面级 loading，之后不再触发
   const shouldShowPageLoading = !hasLoadedOnce;

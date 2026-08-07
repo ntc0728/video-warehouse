@@ -8,7 +8,9 @@
  *
  * 被清除的数据均可在下一次页面访问时自动重新拉取。
  */
-import { useTMDBStore, useIPTVStore } from '@/stores';
+// 直接导入具体 store，避免经 @/stores barrel（与 SourceChecker 等经 barrel 导入 useIPTVStore 形成循环依赖，产生构建 warning）
+import { useTMDBStore } from '@/stores/useTMDBStore';
+import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { CATEGORY_CONFIG } from '@/pages/Home/categoryConfig';
 import { clearIPTVChannelCache, clearEPGCache } from '@/services/database';

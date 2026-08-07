@@ -1,0 +1,232 @@
+/* ── SourceModal ──────────────────────────────
+   弹窗宽度/最大高度放在 Radix Dialog Content 的 class（.source-modal-wrap）上，
+   内部 .source-modal 仅做内容布局（不限定宽度，避免被压缩）。 */
+/* Radix Dialog.Content：宽度限制 + 整体 padding（标题与内容都包含在内） */
+.source-modal-wrap {
+  width: min(100vw - 2 * var(--space-md), 26rem);
+  max-height: 80vh;
+  padding: var(--space-lg);
+}
+
+/* 桌面端：加宽到 30rem（移动端 <640px 保持视口自适应，不因固定宽度溢出小屏） */
+@media (width >= 640px) {
+  .source-modal-wrap {
+    width: 30rem;
+  }
+}
+
+/* 内容区不再额外 padding（由 .source-modal-wrap 统一提供，避免双 padding） */
+.source-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.source-modal__hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.source-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+.source-modal__label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+.source-modal__hint-inline {
+  margin-left: var(--space-2xs);
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+.source-modal__input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
+}
+.source-modal__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+.source-modal__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-surface-hover);
+}
+
+.source-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+/* 高级选项 */
+.source-modal__advanced {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.source-modal__advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  align-self: flex-start;
+}
+.source-modal__chevron {
+  display: inline-block;
+  font-size: var(--text-base);
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.source-modal__chevron.is-open {
+  transform: rotate(90deg);
+}
+.source-modal__advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+}
+.source-modal__id-row {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+}
+.source-modal__id-row .source-modal__input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.source-modal__id-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.source-modal__id-toggle:hover {
+  background: var(--color-surface-hover);
+}
+
+/* 启用开关 */
+.source-modal__enable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+}
+.source-modal__enable-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+.source-modal__switch {
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+}
+.source-modal__switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.source-modal__switch-track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-border);
+  border-radius: 9999px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.source-modal__switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.4rem - 4px);
+  height: calc(1.4rem - 4px);
+  background: var(--color-text-inverse, #fff);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.source-modal__switch input:checked + .source-modal__switch-track {
+  background: var(--color-text);
+}
+.source-modal__switch input:checked + .source-modal__switch-track::after {
+  transform: translateX(calc(2.5rem - 1.4rem));
+}
+
+/* Actions */
+.source-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+.source-modal__btn {
+  /* 胶囊样式：圆形两端 + 较宽水平内边距 */
+  padding: var(--space-xs) var(--space-xl);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 5rem;
+  text-align: center;
+}
+.source-modal__btn:hover {
+  background: var(--color-surface-hover);
+}
+.source-modal__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.source-modal__btn--primary {
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  border-color: var(--color-text);
+}
+.source-modal__btn--primary:hover {
+  background: color-mix(in srgb, var(--color-text) 88%, transparent);
+}
+
+/* 移动端 */
+@media (width <= 639px) {
+  .source-modal__row {
+    grid-template-columns: 1fr;
+  }
+}

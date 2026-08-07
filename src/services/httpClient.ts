@@ -31,22 +31,39 @@ const DEFAULT_RETRY_DELAY = 500;
  * - 有 `/proxy` 但无 `url=` 时：根据尾部字符追加 `url=` 或 `?url=`
  * - 已有 `url=` 或 `url=%` 时：直接返回
  */
-export function getCorsProxy(): string {
+/**
+ * 解析 CORS 代理为完整前缀列表（支持英文 ; 分隔多个代理）。
+ * 每个元素都是已拼接 `/proxy?url=` 的完整前缀（或包含 url= 的完整前缀）。
+ * 无配置时返回空数组。
+ */
+export function getCorsProxyList(): string[] {
   try {
-    const proxy = useSettingsStore.getState().corsProxy;
-    if (proxy && proxy.trim()) {
-      let url = proxy.trim();
-      if (!url.includes('/proxy')) {
-        url += '/proxy?url=';
-      } else if (!url.endsWith('url=') && !url.endsWith('url=%')) {
-        if (url.endsWith('?')) url += 'url=';
-        else if (!url.endsWith('/')) url += '?url=';
-        else url += 'url=';
-      }
-      return url;
-    }
-  } catch { /* 读取失败时使用空字符串兜底 */ }
-  return '';
+    const raw = useSettingsStore.getState().corsProxy;
+    if (!raw) return [];
+    // 拆分多个代理（; 分隔），逐个拼接
+    return raw
+      .split(';')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((p) => {
+        let url = p;
+        if (!url.includes('/proxy')) {
+          url += '/proxy?url=';
+        } else if (!url.endsWith('url=') && !url.endsWith('url=%')) {
+          if (url.endsWith('?')) url += 'url=';
+          else if (!url.endsWith('/')) url += '?url=';
+          else url += 'url=';
+        }
+        return url;
+      });
+  } catch {
+    return [];
+  }
+}
+
+/** 取第一个代理前缀（多值配置的"主代理"）；无配置返回空字符串 */
+export function getCorsProxy(): string {
+  return getCorsProxyList()[0] ?? '';
 }
 
 /** 将目标 URL 包装为完整的代理请求地址 */

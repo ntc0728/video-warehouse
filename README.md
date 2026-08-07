@@ -101,7 +101,7 @@ video-warehouse/
 │   │   ├── Collections/     # 收藏页
 │   │   └── History/         # 历史记录
 │   ├── services/            # 服务层（API、数据库）
-│   ├── stores/              # Zustand 状态管理（8 个 store）
+│   ├── stores/              # Zustand 状态管理（index.ts 导出 7 个 store；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接导入）
 │   ├── types/               # TypeScript 类型定义
 │   ├── test/                # 测试工具（setup + custom render）
 │   └── lib/                 # 工具函数
@@ -329,10 +329,18 @@ npm run preview       # 本地预览生产版本
 所有设计变量定义在 `src/assets/styles/variables.css`，采用流体 `clamp()` 实现 375px-3840px 全覆盖：
 
 ```css
-/* 间距 */
---space-xs: clamp(3px, 0.151rem + 0.087vw, 6px);
---space-sm: clamp(6px, 0.398rem + 0.145vw, 12px);
---space-md: clamp(8px, 0.582rem + 0.261vw, 18px);
+/* 间距（375px 基准 → 768px 冻结，COEFF = (MAX-MIN)/393，PREF = MIN - COEFF·375） */
+--space-3xs:    clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   */
+--space-2xs:    clamp(1px, -0.0568rem + 0.0051vw, 3px);   /* 1→3   */
+--space-xs:     clamp(3px, 0.0086rem + 0.0076vw, 6px);    /* 3→6   */
+--space-xs-plus: clamp(4px, 0.0115rem + 0.0102vw, 8px);   /* 4→8   */
+--space-sm:     clamp(6px, 0.0172rem + 0.0153vw, 12px);   /* 6→12  */
+--space-md:     clamp(8px, -0.0964rem + 0.0254vw, 18px);  /* 8→18  */
+--space-lg:     clamp(12px, -0.2042rem + 0.0407vw, 28px); /* 12→28 */
+--space-lg-xl:  clamp(14px, -0.3181rem + 0.0509vw, 34px); /* 14→34 lg↔xl 过渡档（分类快选 gap 等） */
+--space-xl:     clamp(16px, -0.4313rem + 0.0611vw, 40px); /* 16→40 */
+--space-2xl:    clamp(24px, -0.4084rem + 0.0814vw, 56px); /* 24→56 */
+--space-3xl:    clamp(32px, -0.8626rem + 0.1221vw, 80px); /* 32→80 */
 
 /* 字号 */
 --text-xs: 12px;

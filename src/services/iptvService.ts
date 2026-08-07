@@ -56,16 +56,42 @@ async function fetchContent(url: string): Promise<string> {
  * pattern 正则匹配到的 URL 不走代理（被跳过）
  */
 /**
+ * 解析 IPTV 代理为列表（支持英文 ; 分隔多个代理）。
+ * 返回裸代理 URL 数组（如 https://your-worker.workers.dev），过滤空。
+ */
+export function getIptvProxyList(proxyConfig?: string): string[] {
+  if (!proxyConfig) return [];
+  return proxyConfig
+    .split(';')
+    .map((s) => s.trim().replace(/\/+$/, '')) // 去尾部斜杠，便于拼接
+    .filter(Boolean);
+}
+
+/**
+ * 取第一个代理（多值配置的"主代理"）。IPTV 代理本期"解析 + 取第一个"。
+ */
+export function getPrimaryIptvProxy(proxyConfig?: string): string {
+  return getIptvProxyList(proxyConfig)[0] ?? '';
+}
+
+/**
  * 判断 URL 是否已经是“当前配置的代理”代理过的地址。
- * 仅当 URL 的 origin 与配置 proxyUrl 一致、且路径为某 *-proxy?url= 时才视为“自己的代理”，
+ * 支持多值代理：URL origin 命中"任一已配置代理"的 origin、且路径为某 *-proxy?url= 时才视为“自己的代理”，
  * 避免把其他代理（如 gh-proxy.com）预先代理过的频道地址误判为本代理而漏代理。
  */
 function isOwnProxy(url: string, proxyUrl?: string): boolean {
-  if (!proxyUrl) return false;
+  const list = getIptvProxyList(proxyUrl);
+  if (list.length === 0) return false;
   try {
     const u = new URL(url);
-    const p = new URL(proxyUrl);
-    if (u.origin !== p.origin) return false;
+    const isOwn = list.some((p) => {
+      try {
+        return new URL(p).origin === u.origin;
+      } catch {
+        return false;
+      }
+    });
+    if (!isOwn) return false;
     return /\/(m3u8|ts|dash|file)-proxy\?url=/.test(u.pathname + u.search);
   } catch {
     return false;
@@ -132,6 +158,8 @@ export function unwrapProxy(url: string, ownProxyUrl?: string): string {
 }
 
 function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
+  // 多值代理：统一取第一个（主代理）
+  proxyUrl = getPrimaryIptvProxy(proxyUrl);
   // 解包第三方代理前缀（如 gh-proxy.com/m3u8-proxy?url=<内层>）：
   // 抽出真实地址改走我们配置的代理，绕开失效/被墙的中间代理。
   const target = unwrapProxy(url, proxyUrl);
@@ -165,6 +193,8 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
 
 /** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传） */
 function buildProxyUrl(url: string, proxyUrl: string): string {
+  // 多值代理：统一取第一个
+  proxyUrl = getPrimaryIptvProxy(proxyUrl);
   url = unwrapProxy(url, proxyUrl);
   const type = detectVideoSourceType(url);
   const path = type === 'm3u8' ? 'm3u8-proxy' : type === 'dash' ? 'dash-proxy' : 'file-proxy';
@@ -253,7 +283,7 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   // 并行获取所有源
   const results = await Promise.allSettled(
     urls.map(async (url, index) => {
-      const proxyUrl = settings?.proxyUrl ?? '';
+      const proxyUrl = getPrimaryIptvProxy(settings?.proxyUrl);
       const fetchUrl = shouldProxy(url, proxyUrl, settings?.proxyPattern)
         ? buildProxyUrl(url, proxyUrl)
         : url;

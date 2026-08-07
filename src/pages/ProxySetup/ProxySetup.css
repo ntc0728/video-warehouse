@@ -1,0 +1,180 @@
+/* ── ProxySetup（一键配置代理页） ──────────────
+   走 AppLayout 常规路由（侧边栏保留），宽度占容器剩余空间。
+   全部用 Design Token，亮/暗主题自动适配。 */
+.proxy-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 0;
+  padding: var(--space-xl) var(--space-md);
+}
+
+.proxy-setup__inner {
+  width: 100%;
+  max-width: none;    /* 内容区域撑满整个容器宽度 */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Header */
+.proxy-setup__header { display: flex; flex-direction: column; gap: var(--space-2xs); }
+.proxy-setup__title { display: flex; align-items: center; gap: var(--space-2xs); margin: 0; font-size: var(--text-xl); font-weight: 600; color: var(--color-text); }
+.proxy-setup__sub { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); line-height: 1.6; }
+
+/* 入口卡片
+   注意：按压反馈由全局统一机制（index.css 的 button:active）处理，
+   不在本地重复定义 transform/scale，避免与全局 `scale` 属性叠加导致跳动。 */
+.proxy-setup__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+@media (width <= 639px) { .proxy-setup__grid { grid-template-columns: 1fr; } }
+.proxy-setup__card {
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text);
+  transition: border-color 0.2s, background 0.2s;
+}
+.proxy-setup__card:hover { border-color: var(--color-primary); }
+.proxy-setup__card.is-selected { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)); }
+.proxy-setup__card-head { display: flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-base); font-weight: 600; }
+.proxy-setup__card-head svg { color: var(--color-primary); }
+.proxy-setup__card-desc { margin: 0; font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.5; }
+
+/* 日志方框（深色控制台） */
+.proxy-setup__console {
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+  min-height: 10rem; max-height: 16rem; overflow-y: auto;
+  padding: var(--space-md);
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-md);
+  font-family: "SF Mono", Consolas, "Courier New", monospace;
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  white-space: pre-wrap; word-break: break-all;
+}
+.proxy-setup__log { display: block; }
+.proxy-setup__log-time { color: #8b949e; margin-right: var(--space-2xs); }
+.proxy-setup__log--info { color: #e6edf3; }
+.proxy-setup__log--success { color: #3fb950; }
+.proxy-setup__log--error { color: #f85149; }
+.proxy-setup__log--warn { color: #d29922; }
+
+/* 面板 */
+.proxy-setup__panel {
+  display: flex; flex-direction: column; gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+}
+.proxy-setup__panel-title { display: flex; align-items: center; gap: var(--space-2xs); margin: 0; font-size: var(--text-base); font-weight: 600; color: var(--color-text); }
+
+/* 字段 */
+.proxy-setup__field { display: flex; flex-direction: column; gap: var(--space-2xs); }
+.proxy-setup__field label { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.proxy-setup__optional { font-size: var(--text-xs); color: var(--color-text-tertiary); font-weight: 400; }
+.proxy-setup__input-row { display: flex; gap: var(--space-2xs); }
+.proxy-setup__input-row input { flex: 1 1 0; min-width: 0; }
+.proxy-setup__field input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  box-sizing: border-box;
+}
+.proxy-setup__field input:focus { outline: none; border-color: var(--color-primary); }
+
+/* 按钮（框体不位移，按压时仅图标/文本缩放反馈） */
+.proxy-setup__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2xs);
+  padding: var(--space-xs) var(--space-xl);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.proxy-setup__btn--lg { padding: var(--space-sm) var(--space-2xl); font-size: var(--text-base); }
+.proxy-setup__btn:hover { background: var(--color-surface-hover); }
+.proxy-setup__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+/* 按压反馈：对齐「个人设置 → 导出设置与数据」按钮（.settings-row）效果——
+   按钮框完全不缩放/位移（scale:none !important），仅内部内容（图标+文本整体）在 :active 时
+   scale 0.96 微缩（transform-origin: center，无相对偏移）。 */
+.proxy-setup__btn,
+.proxy-setup__btn:active,
+.proxy-setup__btn:active:not(:disabled) {
+  scale: none !important;
+  transform: none !important;
+}
+.proxy-setup__card,
+.proxy-setup__card:active,
+.proxy-setup__card:active:not(:disabled) {
+  scale: none !important;
+  transform: none !important;
+}
+/* 内容按压缩放：card-head（图标+文本整体）、btn-label（文本）微缩 */
+.proxy-setup__card-head,
+.proxy-setup__btn-label {
+  transform-origin: center;
+  transition: scale 0.18s var(--ease-out-expo, ease-out);
+}
+.proxy-setup__card:active:not(:disabled) .proxy-setup__card-head,
+.proxy-setup__btn--link:active:not(:disabled) .proxy-setup__btn-label {
+  scale: 0.96;
+}
+.proxy-setup__btn--primary { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); }
+.proxy-setup__btn--primary:hover { background: color-mix(in srgb, var(--color-text) 88%, transparent); }
+.proxy-setup__btn--ghost { border-color: transparent; background: transparent; color: var(--color-text-secondary); }
+.proxy-setup__btn--ghost:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.proxy-setup__btn--link { border-color: transparent; background: transparent; color: var(--color-primary); padding: 0; justify-content: flex-start; }
+.proxy-setup__btn--link:hover { text-decoration: underline; background: transparent; }
+
+/* 动作行：按钮 + 说明文字同行（避免按钮独占一行太空） */
+.proxy-setup__action-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.proxy-setup__action-hint {
+  flex: 1 1 0;
+  min-width: 12rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.6;
+}
+
+/* 结果区 */
+.proxy-setup__result {
+  display: flex; flex-direction: column; gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+}
+.proxy-setup__result-label { font-size: var(--text-xs); color: var(--color-text-secondary); }
+.proxy-setup__result-url {
+  font-family: Consolas, monospace; font-size: var(--text-xs);
+  color: var(--color-primary); word-break: break-all;
+  background: var(--color-surface);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+.proxy-setup__result-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+
+/* 测速旋转 */
+.proxy-setup__btn .spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

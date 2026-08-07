@@ -1,13 +1,25 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { List, Switch, Button, HelpPopover, Select, toast } from '@/components/ui';
 import { Film, RadioTower } from 'lucide-react';
-import type { VideoSourceConfig } from '@/types/source';
+import type { ManagedVideoSource, SourceScene } from '@/types/source';
 import { Icon } from "@/components/ui/Icon";
+import SourceManager from '@/components/SourceManager/SourceManager';
+import SourceModal, { EMPTY_FORM, type SourceModalFormValue } from '@/components/SourceManager/SourceModal';
+import {
+  exportVideoToFile,
+  exportVideoToText,
+  importFromRemoteUrl,
+  importVideoFromFile,
+  importVideoFromText,
+  summarizeImport,
+} from '@/components/SourceManager/importExport';
+import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
+import { buildProxyUrl as buildCorsProxyUrl } from '@/services/httpClient';
 
 interface VideoTabProps {
   tmdbAccessToken: string;
   tmdbLanguage: string;
   setTMDBLanguage: (l: string) => void;
-  videoSourceIndices: number[];
   corsProxy: string;
   rememberVolume: boolean;
   setRememberVolume: (v: boolean) => void;
@@ -15,8 +27,6 @@ interface VideoTabProps {
   setAutoTranslate: (v: boolean) => void;
   translationAppId: string;
   translationApiKey: string;
-  videoSources: VideoSourceConfig[];
-  handleVideoSourcesChange: (indices: string[]) => void;
   onEditTMDBToken: () => void;
   onEditCorsProxy: () => void;
   onEditBaiduApi: () => void;
@@ -32,14 +42,136 @@ const TMDB_LANGUAGES = [
 
 export default function VideoTab({
   tmdbAccessToken, tmdbLanguage, setTMDBLanguage,
-  videoSourceIndices, corsProxy,
+  corsProxy,
   rememberVolume, setRememberVolume,
   autoTranslate, setAutoTranslate,
   translationAppId, translationApiKey,
-  videoSources,
-  handleVideoSourcesChange,
   onEditTMDBToken, onEditCorsProxy, onEditBaiduApi,
 }: VideoTabProps) {
+  /* ── 源管理（SourceManager）────────────────── */
+  const managedVideo = useSourceManagerStore((s) => s.video);
+  const addCustomVideoSource = useSourceManagerStore((s) => s.addCustomVideoSource);
+  const updateVideoSource = useSourceManagerStore((s) => s.updateVideoSource);
+  const deleteCustomVideoSource = useSourceManagerStore((s) => s.deleteCustomVideoSource);
+  const setVideoEnabled = useSourceManagerStore((s) => s.setEnabled);
+  const setAllVideoEnabled = useSourceManagerStore((s) => s.setAllEnabled);
+  const setVideoLatencies = useSourceManagerStore((s) => s.setLatencies);
+  const bootstrap = useSourceManagerStore((s) => s.bootstrap);
+
+  // 挂载时注入默认源（store 内部有模块级 guard，仅执行一次；不在 render 调用避免 setState-in-render）
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
+
+  /* 弹窗（add/edit） */
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const [editing, setEditing] = useState<ManagedVideoSource | null>(null);
+  const [form, setForm] = useState<SourceModalFormValue>(EMPTY_FORM);
+  const [modalScene] = useState<SourceScene>('video');
+
+  const openAddModal = useCallback(() => {
+    setEditing(null);
+    setModalMode('add');
+    setForm(EMPTY_FORM);
+    setModalVisible(true);
+  }, []);
+  const openEditModal = useCallback((item: ManagedVideoSource) => {
+    setEditing(item);
+    setModalMode('edit');
+    setForm({
+      name: item.name,
+      url: item.api,
+      detail: item.detail,
+      enabled: item.status.enabled,
+      showAdvanced: false,
+      customId: '',
+      timeoutMs: (item as ManagedVideoSource & { timeoutMs?: number }).timeoutMs ?? 3000,
+      retries: (item as ManagedVideoSource & { retries?: number }).retries ?? 3,
+    });
+    setModalVisible(true);
+  }, []);
+  const closeModal = useCallback(() => {
+    setModalVisible(false);
+    setEditing(null);
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (modalMode === 'add') {
+      const created = addCustomVideoSource({
+        name: form.name.trim(),
+        api: form.url.trim(),
+        detail: (form.detail.trim() || form.url.trim()),
+        enabled: form.enabled,
+        timeoutMs: form.timeoutMs,
+        retries: form.retries,
+      });
+      toast.show({ content: `已添加视频源「${created.name}」`, type: 'success' });
+    } else if (editing) {
+      updateVideoSource(editing.id, {
+        name: form.name.trim(),
+        api: form.url.trim(),
+        detail: (form.detail.trim() || form.url.trim()),
+        status: { ...editing.status, enabled: form.enabled },
+        timeoutMs: form.timeoutMs,
+        retries: form.retries,
+      } as unknown as Partial<ManagedVideoSource>);
+      toast.show({ content: '已保存', type: 'success' });
+    }
+    closeModal();
+  }, [modalMode, form, editing, addCustomVideoSource, updateVideoSource, closeModal]);
+
+  /* 导入 */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const handleImportFromFile = useCallback(() => fileInputRef.current?.click(), []);
+  const handleFileSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      try {
+        const parsed = await importVideoFromFile(file);
+        summarizeImport('video', parsed, (item) =>
+          Boolean(addCustomVideoSource({ name: item.name, api: item.api, detail: item.detail, enabled: true })),
+        );
+      } catch (err) {
+        toast.show({ content: `文件导入失败：${(err as Error).message}`, type: 'error' });
+      }
+    },
+    [addCustomVideoSource],
+  );
+  const handleImportFromUrl = useCallback(() => {
+    const url = prompt('请输入远程 URL（应可直接访问 JSON / 文本）');
+    if (!url) return;
+    (async () => {
+      try {
+        const text = await importFromRemoteUrl(url);
+        const parsed = importVideoFromText(text);
+        summarizeImport('video', parsed, (item) =>
+          Boolean(addCustomVideoSource({ name: item.name, api: item.api, detail: item.detail, enabled: true })),
+        );
+      } catch (err) {
+        toast.show({ content: `URL 导入失败：${(err as Error).message}`, type: 'error' });
+      }
+    })();
+  }, [addCustomVideoSource]);
+  const handleImportFromText = useCallback(() => {
+    const text = prompt('请粘贴源文本（每行：名称:::URL[:::详情URL] 或 JSON 数组）');
+    if (!text) return;
+    try {
+      const parsed = importVideoFromText(text);
+      summarizeImport('video', parsed, (item) =>
+        Boolean(addCustomVideoSource({ name: item.name, api: item.api, detail: item.detail, enabled: true })),
+      );
+    } catch (err) {
+      toast.show({ content: `文本导入失败：${(err as Error).message}`, type: 'error' });
+    }
+  }, [addCustomVideoSource]);
+
+  /* 导出 */
+  const handleExportToFile = useCallback(() => exportVideoToFile(managedVideo), [managedVideo]);
+  const handleExportToText = useCallback(() => exportVideoToText(managedVideo), [managedVideo]);
+
   return (
     <>
       <section>
@@ -72,27 +204,8 @@ export default function VideoTab({
           <List.Item
             title={
               <>
-                视频数据源
-                <HelpPopover title="视频数据源" content="选择视频采集API数据源。支持多选（最多6个），播放时会同时从多个源搜索匹配资源。" />
-              </>
-            }
-            description="选择视频数据源（最多6个）"
-            extra={
-              <Select
-                multiple
-                options={videoSources.map((source, index) => ({ value: String(index), label: source.name }))}
-                value={(videoSourceIndices || [0]).map(String)}
-                onChange={handleVideoSourcesChange}
-                maxSelected={6}
-                onMaxReached={() => toast.show({ content: '最多选择6个数据源', type: 'warning' })}
-              />
-            }
-          />
-          <List.Item
-            title={
-              <>
                 视频采集CORS 代理
-                <HelpPopover title="CORS 代理" content="CORS（跨域资源共享）代理用于绕过浏览器的跨域限制，让应用能访问其他服务器的视频数据。如果遇到跨域错误，请配置代理地址。留空则使用默认代理。" />
+                <HelpPopover title="CORS 代理" content="CORS（跨域资源共享）代理用于绕过浏览器的跨域限制，让应用能访问其他服务器的视频数据。如果遇到跨域错误，请配置代理地址。留空则直连。" />
               </>
             }
             description={corsProxy || '默认: 不使用代理'}
@@ -137,7 +250,53 @@ export default function VideoTab({
             }
           />
         </List>
+
+        {/* 视频源管理面板（SourceManager） */}
+        <div className="settings-source-section">
+          <SourceManager
+            scene="video"
+            items={managedVideo}
+            onAdd={(input) =>
+              addCustomVideoSource({ name: input.name, api: input.url, detail: input.detail ?? input.url })
+            }
+            onUpdate={(id, patch) => updateVideoSource(id, patch as Partial<ManagedVideoSource>)}
+            onDelete={deleteCustomVideoSource}
+            onToggle={(id, e) => {
+              // 达到上限时禁止启用（store 内部有保护）
+              setVideoEnabled('video', id, e);
+            }}
+            onSetAllEnabled={(enabled) => setAllVideoEnabled('video', enabled)}
+            getLatencyUrl={(item) => buildCorsProxyUrl(item.api)}
+            onLatencies={(map) => setVideoLatencies('video', map)}
+            onOpenAddModal={openAddModal}
+            onOpenEditModal={openEditModal}
+            onImportFromFile={handleImportFromFile}
+            onImportFromUrl={handleImportFromUrl}
+            onImportFromText={handleImportFromText}
+            onExportToFile={handleExportToFile}
+            onExportToText={handleExportToText}
+          />
+        </div>
       </section>
+
+      {/* 弹窗 */}
+      <SourceModal
+        visible={modalVisible}
+        scene={modalScene}
+        mode={modalMode}
+        value={form}
+        onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+        onClose={closeModal}
+        onSubmit={handleSubmit}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,.txt,application/json,text/plain"
+        onChange={handleFileSelected}
+        style={{ display: 'none' }}
+      />
     </>
   );
 }
