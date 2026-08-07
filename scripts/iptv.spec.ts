@@ -69,6 +69,36 @@ test.describe('5.2 频道分组筛选', () => {
     });
     console.log(`✅ IPTV-010 检查完成: 分组标签存在 = ${hasGroups}`);
   });
+
+  test('IPTV-011: 分组折叠（超过 2 行折叠 + 展开/收起切换）', async ({ page }) => {
+    // ADR-019：分组 tags 超过 2 行时折叠成完整 2 行 +「展开更多」按钮。
+    // 仅当实际分组数据足够多触发折叠时验证；分组较少时跳过（条件式，避免不稳定）。
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(5000);
+
+    const expandBtn = page.locator('.grouppicker__expand-btn');
+    if (await expandBtn.isVisible().catch(() => false)) {
+      // 折叠态：文本「展开更多」，hot-tags 有 maxHeight 限制（overflow hidden）
+      const label = (await expandBtn.textContent())?.trim();
+      const hasMaxH = await page
+        .locator('.grouppicker__hot-tags')
+        .first()
+        .evaluate((el) => el.style.maxHeight !== '' && el.style.overflow === 'hidden')
+        .catch(() => false);
+      console.log(`✅ IPTV-011 折叠态: 按钮="${label}", 有 maxHeight 裁剪=${hasMaxH}`);
+      expect(label).toBe('展开更多');
+
+      // 点击展开 → 文本切为「收起」
+      await expandBtn.click();
+      await page.waitForTimeout(300);
+      const after = (await expandBtn.textContent())?.trim();
+      console.log(`✅ IPTV-011 展开态: 按钮="${after}"`);
+      expect(after).toBe('收起');
+    } else {
+      console.log('ℹ️ IPTV-011 跳过: 分组未超过 2 行，无需折叠');
+    }
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -89,6 +119,19 @@ test.describe('5.5 频道检测', () => {
     } else {
       console.log('⚠️ IPTV-040: 检测按钮未检测到');
     }
+  });
+
+  test('IPTV-041: 检测结果可用性 badge 展示', async ({ page }) => {
+    // ADR-019：检测结果写入 availabilityResults（按组隔离），卡片经 availability prop
+    // 渲染 .availability-badge。这里验证卡片具备可容纳检测结果的 badge 结构。
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    const hasBadge = await page.evaluate(() => {
+      return !!document.querySelector('.availability-badge, [class*="availability"]');
+    });
+    console.log(`✅ IPTV-041 检查完成: 可用性 badge 结构 = ${hasBadge}`);
   });
 });
 

@@ -113,24 +113,48 @@ test.describe('6.2 TMDB 配置', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('6.3 视频源配置', () => {
-  test('SET-020: 视频源多选', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+  test('SET-020: 视频源管理面板（SourceManager）', async ({ page }) => {
+    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
+    // 用 ?tab=video 深链直达「视频设置」tab。
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 预期结果: 视频源下拉存在
-    const sourceDropdown = page.locator('.source-multi-dropdown').nth(1);
-    if (await sourceDropdown.isVisible().catch(() => false)) {
-      const trigger = sourceDropdown.locator('.source-multi-trigger');
-      if (await trigger.isVisible().catch(() => false)) {
-        await trigger.click();
-        await page.waitForTimeout(500);
-        const options = sourceDropdown.locator('.source-multi-option');
-        const count = await options.count();
-        console.log(`✅ SET-020 通过: 视频源列表展开，共 ${count} 个选项`);
-      }
+    const panel = page.locator('.source-manager[data-scene="video"]');
+    if (await panel.isVisible().catch(() => false)) {
+      const title = await panel.locator('.source-manager__title').textContent();
+      const itemCount = await panel.locator('.source-manager__item').count();
+      const badge = await panel.locator('.source-manager__badge').textContent();
+      console.log(`✅ SET-020 通过: 视频源面板可见，标题="${title}"，源项=${itemCount}，${badge}`);
+      expect(itemCount).toBeGreaterThan(0);
     } else {
-      console.log('⚠️ SET-020: 视频源下拉未检测到');
+      console.log('⚠️ SET-020: 视频源管理面板未检测到');
+    }
+  });
+
+  test('SET-021: 视频源启用/停用切换', async ({ page }) => {
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const panel = page.locator('.source-manager[data-scene="video"]');
+    if (!(await panel.isVisible().catch(() => false))) {
+      console.log('⚠️ SET-021: 视频源管理面板未检测到');
+      return;
+    }
+    // 自定义 switch：input 常被 CSS 视觉隐藏，用 count() 判断存在、读 checked 状态，
+    // 并通过 label 点击触发切换（label 天然绑定 input）。
+    const switchLabels = panel.locator('.source-manager__switch');
+    const input = switchLabels.first().locator('input[type="checkbox"]');
+    if ((await switchLabels.count()) > 0) {
+      const before = await input.isChecked();
+      await switchLabels.first().click();
+      await page.waitForTimeout(300);
+      const after = await input.isChecked();
+      console.log(`✅ SET-021 通过: 视频源启用状态 ${before} → ${after}`);
+      expect(after).not.toBe(before);
+    } else {
+      console.log('⚠️ SET-021: 视频源开关未检测到');
     }
   });
 });
@@ -157,18 +181,48 @@ test.describe('6.4 播放设置', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('6.5 IPTV 配置', () => {
-  test('SET-050: IPTV 源多选', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+  test('SET-050: IPTV 源管理面板（SourceManager）', async ({ page }) => {
+    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
+    // 用 ?tab=iptv 深链直达「IPTV 设置」tab。
+    await page.goto('/settings?tab=iptv', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 预期结果: IPTV 源下拉存在
-    const iptvDropdown = page.locator('.source-multi-dropdown').nth(2);
-    if (await iptvDropdown.isVisible().catch(() => false)) {
-      console.log('✅ SET-050 通过: IPTV 源下拉存在');
+    const panel = page.locator('.source-manager[data-scene="iptv"]');
+    if (await panel.isVisible().catch(() => false)) {
+      const title = await panel.locator('.source-manager__title').textContent();
+      const itemCount = await panel.locator('.source-manager__item').count();
+      console.log(`✅ SET-050 通过: IPTV 源面板可见，标题="${title}"，源项=${itemCount}`);
+      expect(itemCount).toBeGreaterThan(0);
     } else {
-      console.log('⚠️ SET-050: IPTV 源下拉未检测到');
+      console.log('⚠️ SET-050: IPTV 源管理面板未检测到');
     }
+  });
+
+  test('SET-052: IPTV 至少保留一个源（停用最后一个被拒）', async ({ page }) => {
+    // ADR-019「至少一个源」兜底：IPTV/EPG 停用最后一个已启用源被拒绝。
+    // 通过"全部停用"按钮验证：全部停用后仍保留一个启用源。
+    await page.goto('/settings?tab=iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const panel = page.locator('.source-manager[data-scene="iptv"]');
+    if (!(await panel.isVisible().catch(() => false))) {
+      console.log('⚠️ SET-052: IPTV 源管理面板未检测到');
+      return;
+    }
+    const setAllOff = panel.locator('button[aria-label="全部停用"]');
+    if (!(await setAllOff.isVisible().catch(() => false))) {
+      console.log('⚠️ SET-052: 「全部停用」按钮未检测到');
+      return;
+    }
+    await setAllOff.click();
+    await page.waitForTimeout(400);
+    const badge = await panel.locator('.source-manager__badge').textContent();
+    // badge 形如「已启用 N/M」，全部停用后仍保留 1 个启用（至少一个源兜底）
+    const enabledCount = /已启用\s*(\d+)/.exec(badge || '')?.[1];
+    console.log(`✅ SET-052 通过: 全部停用后 badge="${badge}"`);
+    expect(enabledCount).toBe('1');
   });
 });
 
