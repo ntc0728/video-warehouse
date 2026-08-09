@@ -675,6 +675,14 @@ body.skin-transitioning .skin-btn.active {
     margin-top: var(--space-lg);
   }
 
+  /* 个人设置 section（settings-personal-section）：去掉桌面端 padding，
+     让标题（卡片外）与上方/下方元素更紧凑，对齐其他 tab List item 卡间 12px 间距。
+     原 padding: var(--space-lg) (12px) 会让标题上下各 +12px，与 List 卡内紧凑标题观感不一致 */
+  .settings-content > .settings-personal-section,
+  .settings-subpage__body > .settings-personal-section {
+    padding: 0;
+  }
+
   /* 源管理面板：桌面端去顶部分割线（原全局规则保留移动端分隔） */
   .settings-content .settings-source-section,
   .settings-subpage__body .settings-source-section {
