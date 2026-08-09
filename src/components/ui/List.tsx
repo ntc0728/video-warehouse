@@ -28,33 +28,31 @@ const ListItem: FC<ListItemProps> = ({
 
   return (
     <Component
-      className={`group flex w-full items-center gap-3 px-4 py-3 text-left${
-        clickable
-          ? ' list-item--clickable cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-hover)] focus:bg-[var(--color-surface-hover)] focus:outline-none'
-          : ''
+      className={`list-item group flex w-full flex-col text-left${
+        clickable ? ' list-item--clickable cursor-pointer' : ''
       }`}
       onClick={clickable ? onClick : undefined}
       tabIndex={clickable ? 0 : undefined}
     >
-      {prefix && <span className="flex-shrink-0">{prefix}</span>}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {title && (
-          <span className="list-item__title inline-flex flex-wrap items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
-            {title}
-          </span>
-        )}
-        {description && (
-          <span
-            className="list-item__desc text-xs truncate max-w-full"
-            style={{ color: 'var(--color-text-tertiary)' }}
-            title={typeof description === 'string' ? description : undefined}
-          >
-            {description}
-          </span>
-        )}
-        {children}
+      {/* 第一行：prefix + 标题（flex-1）+ 控件（紧贴标题，间距由卡片宽度约束） */}
+      <div className="list-item__row flex w-full items-center gap-3 px-4 pt-3 pb-1">
+        {prefix && <span className="flex-shrink-0">{prefix}</span>}
+        <span className="list-item__title inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 text-base" style={{ color: 'var(--color-text)' }}>
+          {title}
+        </span>
+        {extra && <span className="flex-shrink-0">{extra}</span>}
       </div>
-      {extra && <span className="flex-shrink-0">{extra}</span>}
+      {/* 第二行：描述独立整行（block 级，占满整行、垂直 padding 撑开高度、背景铺满） */}
+      {description && (
+        <span
+          className="list-item__desc block w-full max-w-full px-4 pb-3 text-sm"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          title={typeof description === 'string' ? description : undefined}
+        >
+          {description}
+        </span>
+      )}
+      {children}
     </Component>
   )
 }

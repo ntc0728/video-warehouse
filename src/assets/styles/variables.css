@@ -67,6 +67,7 @@
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
   --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
+  --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
   /* 骨架屏 / 占位 — 两色交替扫光 */
   --color-placeholder: #f5f5f5;            /* 骨架底色 */
   --color-placeholder-shimmer-a: #f0f0f0;  /* 扫光起始色 */
@@ -404,6 +405,7 @@
   --color-text-inverse: #141414;
   --color-border: #363636;
   --color-border-light: #2b2b2b;
+  --color-border-strong: #4a4a4a;
   --color-placeholder: #262626;
   --color-placeholder-shimmer-a: #1f1f1f;
   --color-placeholder-shimmer-b: #303030;
