@@ -1,8 +1,9 @@
 /* ── SourceManager ──────────────────────────────
    设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用）
-   结构：.source-manager-block（外层：标题行 + 卡片）
-         ├─ .source-manager__header（标题行，卡片外，可点击折叠/展开）
-         └─ .source-manager（卡片：toolbar + list，与设置页 .list-item 同卡片化） */
+   结构：.source-manager-block（外层：标题 + 卡片）
+         ├─ .source-manager__title（标题，卡片外，始终显示）
+         └─ .source-manager（卡片：折叠 header + toolbar + list，
+                             与设置页 .list-item 同卡片化） */
 .source-manager-block {
   display: flex;
   flex-direction: column;
@@ -10,13 +11,8 @@
   width: 100%;
   min-width: 0;
 }
-.source-manager-block.is-collapsed {
-  /* 折叠时收紧标题行↔卡片的 gap，折叠后仅剩标题行 */
-  gap: 0;
-}
 
-/* 卡片主体（toolbar + list）：padding 让内容在卡片内有呼吸感；
-   折叠动画时 padding 随高度一起过渡（折叠归零） */
+/* 卡片主体：padding 让内容在卡片内有呼吸感 */
 .source-manager {
   display: flex;
   flex-direction: column;
@@ -24,20 +20,19 @@
   padding: var(--space-md);
   width: 100%;
   min-width: 0;
-  transition: padding 0.35s cubic-bezier(0.76, 0, 0.24, 1);
 }
 .source-manager-block.is-collapsed .source-manager {
-  padding: 0;
+  /* 折叠时收紧 header↔body 的 gap，卡片内仅剩折叠按钮一行 */
+  gap: 0;
 }
 
-/* Header（标题 + 徽章同行，徽章右对齐；位于卡片外，整行可点击折叠/展开） */
+/* Header（折叠展开按钮）：位于卡片内，含描述 + 徽章 + 箭头 */
 .source-manager__header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--space-md);
   width: 100%;
-  padding: var(--space-2xs) 0;
+  padding: 0;
   border: none;
   background: transparent;
   color: inherit;
@@ -52,7 +47,6 @@
 /* 折叠箭头：展开时向下、折叠时向右 */
 .source-manager__collapse-chev {
   flex-shrink: 0;
-  margin-top: var(--space-xs);
   color: var(--color-text-tertiary);
   transition: transform 0.3s cubic-bezier(0.76, 0, 0.24, 1);
 }
@@ -73,10 +67,6 @@
   min-height: 0;
   overflow: hidden;
 }
-.source-manager__header-text {
-  flex: 1 1 0;
-  min-width: 0;
-}
 .source-manager__title {
   display: flex;
   align-items: center;
@@ -91,14 +81,15 @@
   color: var(--color-primary);
 }
 .source-manager__desc {
-  margin: var(--space-2xs) 0 0;
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
 .source-manager__badge {
   flex-shrink: 0;
-  align-self: center;
   padding: var(--space-2xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
@@ -414,10 +405,6 @@
 
 /* ── 移动端适配 ─────────────────────────────── */
 @media (width <= 639px) {
-  .source-manager__header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
   .source-manager__toolbar {
     gap: var(--space-2xs);
   }
