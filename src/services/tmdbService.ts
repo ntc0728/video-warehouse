@@ -23,6 +23,7 @@ import type {
 } from '@/types/tmdb';
 import { request, type RequestOptions } from './httpClient';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { decryptText } from '@/lib/crypto';
 import axios from 'axios';
 
 // ============================================================
@@ -36,11 +37,32 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 // Token & 语言
 // ============================================================
 
-function getAccessToken(): string | null {
+/**
+ * 获取设置页配置的 TMDB Access Token（异步解密）。
+ *
+ * 内存中的值在持久化时会被自定义 storage AES-GCM 加密；
+ * 启动时 onRehydrateStorage 会解密回内存明文，但以下场景仍可能短暂拿到密文：
+ * 1) 极早的首次请求（rehydrate 解密 microtask 还没跑完）；
+ * 2) onRehydrateStorage 在原地 mutate state 不通知订阅者（zustand v5 行为），
+ *    同步读取的组件与直接调用此函数的代码可能仍读到密文。
+ *
+ * 为保证「使用时一定是明文」，每次调用都按需 decryptText：
+ * decryptText 对明文输入原样返回（atob/GCM 解密失败兜底输入），
+ * 对密文输入返回真实明文。拿到明文后顺手写回 store，让后续读取都走明文。
+ */
+async function getAccessToken(): Promise<string | null> {
   // 仅使用设置页配置的 Token；不再回退到 VITE_TMDB_ACCESS_TOKEN 环境变量。
   // 此前 env 兜底导致「删除设置 Token 后仍能调用 TMDB」（收藏/历史点卡片进详情
   // 依旧请求成功），与用户预期相悖。删除 Token 后 TMDB 请求将按未配置处理。
-  return useSettingsStore.getState().tmdbAccessToken || null;
+  const raw = useSettingsStore.getState().tmdbAccessToken;
+  if (!raw) return null;
+  const plain = await decryptText(raw);
+  if (plain !== raw) {
+    // 拿到明文，回写 store 让后续读取走明文（同步触发 setState，zustand 内部
+    // 通过浅比较决定是否写盘；写盘时自定义 storage.setItem 会再次 AES-GCM 加密）
+    useSettingsStore.setState({ tmdbAccessToken: plain });
+  }
+  return plain || null;
 }
 
 /** 获取用户设置的 TMDB 语言偏好，默认 zh-CN */
@@ -64,7 +86,7 @@ export async function fetchTMDB<T>(
   params: Record<string, string | number | undefined> = {},
   options: { signal?: AbortSignal } = {},
 ): Promise<T> {
-  const token = getAccessToken();
+  const token = await getAccessToken();
   if (!token) {
     throw new Error('TMDB Access Token 未配置，请在设置中配置');
   }

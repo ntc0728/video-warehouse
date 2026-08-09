@@ -8,12 +8,53 @@
   min-width: 0;
 }
 
-/* Header（标题 + 徽章同行，徽章右对齐） */
+/* Header（标题 + 徽章同行，徽章右对齐；整行可点击折叠/展开） */
 .source-manager__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-2xs) 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.source-manager__header:hover {
+  opacity: 0.8;
+}
+/* 折叠箭头：展开时向下、折叠时向右 */
+.source-manager__collapse-chev {
+  flex-shrink: 0;
+  margin-top: var(--space-xs);
+  color: var(--color-text-tertiary);
+  transition: transform 0.3s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.source-manager.is-collapsed .source-manager__collapse-chev {
+  transform: rotate(-90deg);
+}
+
+/* 折叠主体：grid-rows 0fr→1fr 平滑展开/收起 */
+.source-manager__body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.source-manager.is-collapsed .source-manager__body {
+  grid-template-rows: 0fr;
+}
+.source-manager__body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+/* 折叠时收紧 header↔body 的 gap，消除面板底部的 8px 空带，
+   使折叠后仅剩 header 一行，卡片观感与展开状态保持一致 */
+.source-manager.is-collapsed {
+  gap: 0;
 }
 .source-manager__header-text {
   flex: 1 1 0;
@@ -184,9 +225,10 @@
   padding: var(--space-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  /* 注意：不要加 opacity 过渡——停/启用滑块会触发整体透明度渐变，造成列表项视觉抖动 */
-  transition: background 0.15s;
+  border-radius: var(--radius-lg);
+  /* 与设置页 .list-item 卡片化保持一致：边框 + 阴影过渡，
+     避免滑块切换触发的整体透明度渐变（停用态用瞬时 opacity） */
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
   min-width: 0;
 }
 .source-manager__item.is-disabled {
