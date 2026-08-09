@@ -161,7 +161,15 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
 
   return (
     <div className={`source-manager-block${collapsed ? ' is-collapsed' : ''}`} data-scene={scene}>
-      {/* Header（标题 + 徽章同行，徽章右对齐；位于卡片外，整行可点击折叠/展开） */}
+      {/* 标题：单独拆解出来，位于卡片外，始终显示（不随折叠隐藏） */}
+      <h3 className="source-manager__title">
+        <Icon icon={TypeIcon} size="md" className="source-manager__title-icon" />
+        {cfg.title}
+        <HelpPopover title={cfg.title} content={cfg.hint} />
+      </h3>
+
+      {/* 卡片：Header（折叠展开按钮，含描述 + 徽章 + 箭头）+ 主体（Toolbar + List） */}
+      <div className="source-manager">
       <button
         type="button"
         className="source-manager__header"
@@ -169,20 +177,10 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
         aria-expanded={!collapsed}
         aria-label={`${collapsed ? '展开' : '折叠'}${cfg.title}`}
       >
-        <div className="source-manager__header-text">
-          <h3 className="source-manager__title">
-            <Icon icon={TypeIcon} size="md" className="source-manager__title-icon" />
-            {cfg.title}
-            <HelpPopover title={cfg.title} content={cfg.hint} />
-          </h3>
-          <p className="source-manager__desc">{cfg.desc}</p>
-        </div>
+        <p className="source-manager__desc">{cfg.desc}</p>
         <div className="source-manager__badge">已启用 {enabledCount}/{items.length}</div>
         <Icon icon={ChevronDown} size="sm" className="source-manager__collapse-chev" />
       </button>
-
-      {/* 卡片主体：Toolbar（右侧）+ List —— 折叠面板主体 */}
-      <div className="source-manager">
       <div className="source-manager__body">
       <div className="source-manager__body-inner">
       <div className="source-manager__toolbar">

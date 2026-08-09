@@ -680,9 +680,14 @@ body.skin-transitioning .skin-btn.active {
     padding-left: 0;
   }
 
-  /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化 */
+  /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化；
+     左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。
+     flex column 下默认 stretch 不压缩 margin，显式 width calc 避免右侧超出 */
   .settings-content > .settings-profile-card,
   .settings-subpage__body > .settings-profile-card {
+    margin: var(--space-lg) var(--space-lg) 0;
+    width: calc(100% - var(--space-lg) * 2);
+    box-sizing: border-box;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
@@ -1416,19 +1421,13 @@ body.skin-transitioning .skin-btn.active {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, padding 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
   .settings-content .source-manager:hover,
   .settings-subpage__body .source-manager:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
-  }
-
-  /* 折叠时卡片彻底消失（无 padding、无边框），仅剩标题行 */
-  .settings-content .source-manager-block.is-collapsed .source-manager,
-  .settings-subpage__body .source-manager-block.is-collapsed .source-manager {
-    border: none;
   }
 
   /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
