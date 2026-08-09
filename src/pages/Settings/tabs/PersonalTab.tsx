@@ -97,11 +97,11 @@ export default function PersonalTab() {
         <h3 className="settings-card__title">配置管理</h3>
         <div className="settings-card__body">
           <div className="settings-card__header">
+            <p className="settings-card__desc" title="导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>
             <Button variant="ghost" size="sm" className="settings-action-btn settings-action-btn--inline" onClick={() => fileRef.current?.click()}>
               <Icon icon={Upload} size="sm" /> 一键导入恢复数据
             </Button>
           </div>
-          <p className="settings-card__desc">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>
           <button type="button" className="settings-row" onClick={handleExport}>
             <span className="settings-row__label"><span className="settings-row__title">导出设置与数据</span><small>含收藏、观看历史</small></span>
             <span className="settings-row__chev" aria-hidden>›</span>
@@ -119,11 +119,11 @@ export default function PersonalTab() {
         <h3 className="settings-card__title">恢复默认配置</h3>
         <div className="settings-card__body">
           <div className="settings-card__header">
+            <p className="settings-card__desc" title="将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>
             <Button variant="ghost" size="sm" className="settings-action-btn settings-action-btn--inline settings-action-btn--danger" onClick={() => setConfirm('all')}>
               <Icon icon={AlertTriangle} size="sm" /> 一键全部恢复默认
             </Button>
           </div>
-          <p className="settings-card__desc">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>
           <button type="button" className="settings-row" onClick={() => setConfirm('reset')}>
             <span className="settings-row__label"><span className="settings-row__title">恢复设置默认</span><small>仅重置设置项</small></span>
             <span className="settings-row__chev" aria-hidden>›</span>
