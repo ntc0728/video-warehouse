@@ -609,6 +609,13 @@ body.skin-transitioning .skin-btn.active {
   overflow-y: auto;
 }
 
+/* 移动端关于页：让 .about-tab 的 flex:1 生效（body 需为 flex 容器），
+   使免责声明 .about-tab__disclaimer 的 margin-top:auto 可贴到底部 */
+.settings-subpage__body:has(.about-tab) {
+  display: flex;
+  flex-direction: column;
+}
+
 /* 移动端子页面内 section：不再卡片化，改用分割线分隔 */
 @media (width <= 767px) {
   .settings-subpage__body > section {
@@ -777,7 +784,7 @@ body.skin-transitioning .skin-btn.active {
 
 .settings-profile__name {
   color: var(--color-text);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -786,7 +793,7 @@ body.skin-transitioning .skin-btn.active {
 
 .settings-profile__hint {
   color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
 }
 
 /* ===== 资料编辑弹窗 ===== */
@@ -898,7 +905,6 @@ body.skin-transitioning .skin-btn.active {
 .settings-page .settings-row__title,
 .settings-page .settings-row__label small,
 .settings-page .list-item__title,
-.settings-page .list-item__desc,
 .settings-page .settings-profile__meta {
   width: fit-content;
   align-self: flex-start;
@@ -908,8 +914,7 @@ body.skin-transitioning .skin-btn.active {
 .settings-page .settings-row:active:not(:disabled) .settings-row__title,
 .settings-page .settings-row:active:not(:disabled) .settings-row__label small,
 .settings-page .settings-profile:active:not(:disabled) .settings-profile__meta,
-.settings-page .list-item--clickable:active:not(:disabled) .list-item__title,
-.settings-page .list-item--clickable:active:not(:disabled) .list-item__desc {
+.settings-page .list-item--clickable:active:not(:disabled) .list-item__title {
   scale: 0.96;
 }
 
@@ -1011,14 +1016,14 @@ body.skin-transitioning .skin-btn.active {
 .settings-card__title {
   margin-bottom: var(--space-sm);
   color: var(--color-text);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: 700;
 }
 .settings-card__desc {
   margin: 0 0 var(--space-md);
   color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: 1.6;
 }
 .settings-row {
   display: flex;
@@ -1042,15 +1047,15 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
   gap: var(--space-2xs);
   color: var(--color-text);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
 }
 .settings-row__label small {
   color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
 }
 .settings-row__value {
   color: var(--color-text-secondary);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
 }
 .settings-row__avatar {
   display: flex;
@@ -1329,5 +1334,153 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-xs);
 }
 .cl-p { margin: var(--space-xs) 0; }
+
+/* ============================================================
+   方案 F：设置项「紧凑双行卡」卡片化（桌面端 ≥768px）
+   - 每个 List.Item 变为独立卡片（边框 + 圆角 + hover 阴影）
+   - 第一行：标题 + 控件（控件紧贴标题右侧，无 flex:1 大段空白）
+   - 第二行：描述独立整行，完整展示（不截断、有呼吸空间）
+   - 移动端（≤767px）不卡片化，保持行式（List.tsx 默认样式）
+   ============================================================ */
+@media (width >= 768px) {
+  .settings-content .list-item,
+  .settings-subpage__body .list-item {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .settings-content .list-item + .list-item,
+  .settings-subpage__body .list-item + .list-item {
+    margin-top: calc(var(--space-sm) * 2);
+  }
+
+  /* hover 反馈：边框加深 + 阴影（对齐 html 示例 .fcard:hover：border-strong + shadow-card-hover） */
+  .settings-content .list-item:hover,
+  .settings-subpage__body .list-item:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* 无描述项（如主题模式）：标题行垂直居中 + 底部补齐内边距，保持卡片观感均衡 */
+  .settings-content .list-item:not(:has(.list-item__desc)) .list-item__row,
+  .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
+    padding-bottom: var(--space-md);
+  }
+
+  /* 个人设置（PersonalTab 用 .settings-row，非 List.Item）：同样卡片化。
+     配置管理 / 恢复默认配置 两组里的行卡片化，hover 反馈与 .list-item 一致 */
+  .settings-content .settings-personal-section .settings-row {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-md) var(--space-xl);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .settings-content .settings-personal-section .settings-row + .settings-row {
+    margin-top: var(--space-sm);
+  }
+  .settings-content .settings-personal-section .settings-row:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
+     覆盖 .settings-content > section [class~="px-4"] 的 px-4 清零规则：
+     否则卡片内部文字/控件水平贴边，与草图的「内容在卡片内有呼吸感」不符。
+     特异性 (0,3,0) > 清零规则 (0,2,1)，可正常覆盖。 */
+  .settings-content .list-item .list-item__row,
+  .settings-subpage__body .list-item .list-item__row {
+    padding: var(--space-md) var(--space-xl) var(--space-sm);
+  }
+
+  /* 第二行：描述整行，与标题同卡片色（无分割线，标题+内容统一包裹在一张卡内）。
+     background 与 .list-item 一致（surface），水平 padding 与标题行对齐，加大留白。 */
+  .settings-content .list-item .list-item__desc,
+  .settings-subpage__body .list-item .list-item__desc {
+    padding: var(--space-sm) var(--space-xl) var(--space-lg);
+    background: transparent;
+    line-height: 1.6;
+  }
+
+  /* ============================================================
+     源管理（视频源 / IPTV 源 / EPG 源）面板：与 .list-item 同样的卡片化
+     - .source-manager 根容器卡片化（边框/圆角/背景/hover/transition）
+     - .source-manager__item 桌面端 hover 反馈与 .list-item 一致
+       （基础边框/圆角/transition 已在 SourceManager.css 全局统一）
+     - 移动端（≤767px）不卡片化，与 .list-item 移动端行式观感保持一致
+     ============================================================ */
+  .settings-content .source-manager,
+  .settings-subpage__body .source-manager {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .settings-content .source-manager:hover,
+  .settings-subpage__body .source-manager:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
+  .settings-content .source-manager .source-manager__item:hover,
+  .settings-subpage__body .source-manager .source-manager__item:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* 方案 F 承诺：移动端不卡片化、不放大字号（保持行式 + 原 text-sm/text-xs）。
+   List.tsx 的 tailwind 类全局生效，移动端也会被放大一档；此处回写到原档位。
+   如需「移动端也放大一档」，删除以下块即可。 */
+@media (width <= 767px) {
+  .settings-page .list-item__title,
+  .settings-subpage__body .list-item__title {
+    font-size: var(--text-sm);
+  }
+  .settings-page .list-item__desc,
+  .settings-subpage__body .list-item__desc {
+    font-size: var(--text-xs);
+  }
+}
+
+/* ============================================================
+   设置页状态标签 .settings-status-tag（对应 html 示例 .tag/.tag--ok/.tag--warn + .dot）
+   胶囊形态 + 前置圆点，用于「已配置/未配置/已开启」等状态语义。
+   全局生效（桌面端卡片 + 移动端子页均可使用）。
+   ============================================================ */
+.settings-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  background: var(--color-hover-bg);
+}
+.settings-status-tag__dot {
+  width: var(--space-xs);
+  height: var(--space-xs);
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+.settings-status-tag--ok {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+}
+.settings-status-tag--warn {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+}
 
 

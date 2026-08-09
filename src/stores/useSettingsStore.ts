@@ -270,12 +270,24 @@ export const useSettingsStore = create<SettingsState>()(
       },
       onRehydrateStorage: () => async (state) => {
         if (!state) return;
+        // 解密敏感字段。zustand v5 的 onRehydrateStorage 回调原地 mutate state
+        // 不会触发 setState / 通知订阅者（编辑弹窗预填、状态标签、tmdbService 同步读取
+        // 都会拿到密文）；同时若某个 setter 在解密完成前抢先触发 persist 写盘，
+        // 自定义 storage.setItem 会把密文再加密一次（双重加密）持久化到 localStorage。
+        // 这里解密后调用 setState：① 通知订阅者刷新 UI；② 让自定义 storage.setItem
+        // 重新写盘为单层密文，规避双重加密。null/空值直接跳过。
+        const patch: Record<string, unknown> = {};
         for (const key of SENSITIVE_FIELDS) {
           const value = state[key as keyof typeof state];
           if (typeof value === 'string' && value) {
             const decrypted = await decryptText(value);
+            patch[key] = decrypted;
+            // 同步原地写一份，保留旧实现里同步读取能拿到正确值的语义
             (state as unknown as Record<string, unknown>)[key] = decrypted;
           }
+        }
+        if (Object.keys(patch).length > 0) {
+          useSettingsStore.setState(patch);
         }
       },
     }
