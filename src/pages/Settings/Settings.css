@@ -414,7 +414,7 @@ body.skin-transitioning .skin-btn.active {
   border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 500;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease, scale 0.32s var(--ease-spring);
@@ -668,10 +668,17 @@ body.skin-transitioning .skin-btn.active {
     padding: var(--space-lg);
   }
 
-  /* section 之间的分割线 */
+  /* section 之间：桌面端不使用分割线，改用留白间隔（免责声明除外） */
   .settings-content > section + section,
   .settings-subpage__body > section + section {
-    border-top: 1px solid var(--color-border-light);
+    border-top: none;
+    margin-top: var(--space-lg);
+  }
+
+  /* 源管理面板：桌面端去顶部分割线（原全局规则保留移动端分隔） */
+  .settings-content .settings-source-section,
+  .settings-subpage__body .settings-source-section {
+    border-top: none;
   }
 
   .settings-content > section [class~="px-4"],
@@ -699,10 +706,11 @@ body.skin-transitioning .skin-btn.active {
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* 个人资料卡与下方 section 用分割线分隔 */
+  /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
   .settings-content > .settings-profile-card + section,
   .settings-subpage__body > .settings-profile-card + section {
-    border-top: 1px solid var(--color-border-light);
+    border-top: none;
+    margin-top: var(--space-lg);
   }
 }
 
@@ -1449,6 +1457,12 @@ body.skin-transitioning .skin-btn.active {
   .settings-subpage__body .source-manager .source-manager__item:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
+  }
+
+  /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */
+  .settings-content .settings-row + .settings-row,
+  .settings-subpage__body .settings-row + .settings-row {
+    border-top: none;
   }
 }
 
