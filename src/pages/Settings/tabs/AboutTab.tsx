@@ -46,9 +46,10 @@ export default function AboutTab({ onVersionClick, onChangelogClick }: AboutTabP
 
   return (
     <section className="about-tab">
-      <List header={<span className="settings-section-header"><Icon icon={Info} size="md" /> 关于</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={Info} size="lg" /> 关于</span>}>
         <List.Item
           title="版本"
+          description={`v${version} · ${platform} · ${channel}，点击检测更新`}
           extra={
             <span className="version-extra">
               <span className="version-number">v{version}</span>
@@ -60,6 +61,7 @@ export default function AboutTab({ onVersionClick, onChangelogClick }: AboutTabP
         />
         <List.Item
           title="更新日志"
+          description="查看历史版本更新记录"
           extra={<Icon icon={ScrollText} size="sm" className="settings-item-icon" />}
           onClick={onChangelogClick}
           clickable

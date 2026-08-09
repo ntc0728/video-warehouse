@@ -16,9 +16,10 @@ interface AppearanceTabProps {
 export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan }: AppearanceTabProps) {
   return (
     <section>
-      <List header={<span className="settings-section-header"><Icon icon={Palette} size="md" /> 外观</span>}>
+      <List header={<span className="settings-section-header"><Icon icon={Palette} size="lg" /> 外观</span>}>
         <List.Item
           title="主题模式"
+          description="浅色 / 深色 / 跟随系统自动切换"
           extra={
             <div className="theme-switcher">
               <button className={`theme-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} aria-label="浅色模式">

@@ -15,4 +15,6 @@ export { toast } from './toastBus';
 export { default as Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
 export { default as Slider } from './Slider';
+export { SettingsStatusTag } from './SettingsStatusTag';
+export type { SettingsStatusTone } from './SettingsStatusTag';
 

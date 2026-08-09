@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { List, Switch, Button, HelpPopover, Select, toast } from '@/components/ui';
+import { List, Switch, Button, HelpPopover, Select, SettingsStatusTag, toast } from '@/components/ui';
 import { Film, RadioTower } from 'lucide-react';
 import type { ManagedVideoSource, SourceScene } from '@/types/source';
 import { Icon } from "@/components/ui/Icon";
@@ -175,13 +175,20 @@ export default function VideoTab({
   return (
     <>
       <section>
-        <List header={<span className="settings-section-header"><Icon icon={Film} size="md" /> TMDB</span>}>
+        <List header={<span className="settings-section-header"><Icon icon={Film} size="lg" /> TMDB</span>}>
           <List.Item
-            title="TMDB Access Token"
-            description={tmdbAccessToken ? '已配置' : '未配置（首页 TMDB 发现将不可用）'}
+            title={
+              <>
+                TMDB Access Token
+                <SettingsStatusTag tone={tmdbAccessToken ? 'ok' : 'warn'}>
+                  {tmdbAccessToken ? '已配置' : '未配置'}
+                </SettingsStatusTag>
+              </>
+            }
+            description={tmdbAccessToken ? '已配置（首页 TMDB 发现可用）' : '未配置（首页 TMDB 发现将不可用）'}
             extra={
               <Button size="sm" className="settings-btn-mini" onClick={onEditTMDBToken}>
-                配置
+                {tmdbAccessToken ? '修改' : '配置'}
               </Button>
             }
           />
@@ -200,18 +207,21 @@ export default function VideoTab({
       </section>
 
       <section>
-        <List header={<span className="settings-section-header"><Icon icon={RadioTower} size="md" /> 视频源</span>}>
+        <List header={<span className="settings-section-header"><Icon icon={RadioTower} size="lg" /> 视频源</span>}>
           <List.Item
             title={
               <>
                 视频采集CORS 代理
                 <HelpPopover title="CORS 代理" content="CORS（跨域资源共享）代理用于绕过浏览器的跨域限制，让应用能访问其他服务器的视频数据。如果遇到跨域错误，请配置代理地址。留空则直连。" />
+                <SettingsStatusTag tone={corsProxy ? 'ok' : 'warn'}>
+                  {corsProxy ? '已配置' : '未配置'}
+                </SettingsStatusTag>
               </>
             }
             description={corsProxy || '默认: 不使用代理'}
             extra={
               <Button size="sm" className="settings-btn-mini" onClick={onEditCorsProxy}>
-                配置
+                {corsProxy ? '修改' : '配置'}
               </Button>
             }
           />
@@ -240,6 +250,9 @@ export default function VideoTab({
               <>
                 百度翻译 API
                 <HelpPopover title="百度翻译 API" content="配置百度翻译开放平台的App ID和密钥，用于自动翻译字幕功能。" />
+                <SettingsStatusTag tone={translationAppId && translationApiKey ? 'ok' : 'warn'}>
+                  {translationAppId && translationApiKey ? '已配置' : '未配置'}
+                </SettingsStatusTag>
               </>
             }
             description={translationAppId && translationApiKey ? '已配置' : '未配置'}
