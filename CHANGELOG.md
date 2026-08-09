@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.3.0...kinotv-v1.4.0) (2026-08-09)
+
+
+### Features
+
+* **settings:** 新增状态标签 SettingsStatusTag + List 双行布局 + 设置项 description 补全 ([2f9223b](https://github.com/ntc0728/video-warehouse/commit/2f9223b695374002ee90a58588b22ac6bcee5a83))
+
+
+### Bug Fixes
+
+* **settings:** desc 移入 header 与按钮两端对齐，单行截断+title 显示全文 ([72c684e](https://github.com/ntc0728/video-warehouse/commit/72c684e7f6b74af118ad77d420a526c6e4a3d049))
+* **settings:** title 单独拆出卡片 + header/desc/badge 移入卡片 + profile-card 左右对齐 ([665e5c0](https://github.com/ntc0728/video-warehouse/commit/665e5c0ba6a31976c2bca8657cdab84ae886f838))
+* **settings:** TMDB Token 按需解密 + 源折叠面板底部空隙 + 卡片化 ([95ec6f3](https://github.com/ntc0728/video-warehouse/commit/95ec6f3d57d7962ed0999b71be26828d21e4c909))
+* **settings:** 个人设置 section 去 padding，标题上下间距对齐其他 tab ([9c19409](https://github.com/ntc0728/video-warehouse/commit/9c1940990d44a891ca3a5508165d6e82e942bd77))
+* **settings:** 恢复个人设置 section 左右 12px 缩进 ([fa933d1](https://github.com/ntc0728/video-warehouse/commit/fa933d11680299409b80d02367ca58985119563a))
+* **settings:** 标题单独移出卡片 + source-manager 加 padding + 个人设置大卡片化 ([d08dccd](https://github.com/ntc0728/video-warehouse/commit/d08dccdfcddb501f18197232489be836b9a64b08))
+* **settings:** 桌面端设置项之间去分割线 + tabbar 文本图标稍大 ([fc426ac](https://github.com/ntc0728/video-warehouse/commit/fc426acb83db98c231fc6197a2f4c1057e42c06e))
+* **source-manager:** toolbar 与 list 间距 8px，折叠时无残留 ([1744ba9](https://github.com/ntc0728/video-warehouse/commit/1744ba98f3ce86946111d5b691fdebdbbdd6517e))
+* **source-manager:** 折叠时 gap 与 body 收缩同步过渡，消除按钮移动和收起延迟 ([b176a3a](https://github.com/ntc0728/video-warehouse/commit/b176a3a9a072224e56358f052f1abf4bdcbc124f))
+
 ## [1.3.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.2.0...kinotv-v1.3.0) (2026-08-07)
 
 
