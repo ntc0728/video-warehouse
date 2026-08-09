@@ -1,14 +1,36 @@
 /* ── SourceManager ──────────────────────────────
-   设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用） */
-.source-manager {
+   设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用）
+   结构：.source-manager-block（外层：标题行 + 卡片）
+         ├─ .source-manager__header（标题行，卡片外，可点击折叠/展开）
+         └─ .source-manager（卡片：toolbar + list，与设置页 .list-item 同卡片化） */
+.source-manager-block {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   width: 100%;
   min-width: 0;
 }
+.source-manager-block.is-collapsed {
+  /* 折叠时收紧标题行↔卡片的 gap，折叠后仅剩标题行 */
+  gap: 0;
+}
 
-/* Header（标题 + 徽章同行，徽章右对齐；整行可点击折叠/展开） */
+/* 卡片主体（toolbar + list）：padding 让内容在卡片内有呼吸感；
+   折叠动画时 padding 随高度一起过渡（折叠归零） */
+.source-manager {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  width: 100%;
+  min-width: 0;
+  transition: padding 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.source-manager-block.is-collapsed .source-manager {
+  padding: 0;
+}
+
+/* Header（标题 + 徽章同行，徽章右对齐；位于卡片外，整行可点击折叠/展开） */
 .source-manager__header {
   display: flex;
   align-items: flex-start;
@@ -34,7 +56,7 @@
   color: var(--color-text-tertiary);
   transition: transform 0.3s cubic-bezier(0.76, 0, 0.24, 1);
 }
-.source-manager.is-collapsed .source-manager__collapse-chev {
+.source-manager-block.is-collapsed .source-manager__collapse-chev {
   transform: rotate(-90deg);
 }
 
@@ -44,17 +66,12 @@
   grid-template-rows: 1fr;
   transition: grid-template-rows 0.35s cubic-bezier(0.76, 0, 0.24, 1);
 }
-.source-manager.is-collapsed .source-manager__body {
+.source-manager-block.is-collapsed .source-manager__body {
   grid-template-rows: 0fr;
 }
 .source-manager__body-inner {
   min-height: 0;
   overflow: hidden;
-}
-/* 折叠时收紧 header↔body 的 gap，消除面板底部的 8px 空带，
-   使折叠后仅剩 header 一行，卡片观感与展开状态保持一致 */
-.source-manager.is-collapsed {
-  gap: 0;
 }
 .source-manager__header-text {
   flex: 1 1 0;

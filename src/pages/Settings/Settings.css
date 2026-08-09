@@ -680,22 +680,23 @@ body.skin-transitioning .skin-btn.active {
     padding-left: 0;
   }
 
-  /* 个人资料面板去卡片化：桌面端已收归 .settings-desktop-card 整卡，
-     个人资料不再单独成卡，仅保留内边距，与下方 section 用分割线分隔。 */
-  .settings-content > .settings-profile {
-    padding: var(--space-lg);
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+  /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化 */
+  .settings-content > .settings-profile-card,
+  .settings-subpage__body > .settings-profile-card {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .settings-content > .settings-profile-card:hover,
+  .settings-subpage__body > .settings-profile-card:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
   }
 
-  .settings-content > .settings-profile:hover {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .settings-content > .settings-profile + section {
+  /* 个人资料卡与下方 section 用分割线分隔 */
+  .settings-content > .settings-profile-card + section,
+  .settings-subpage__body > .settings-profile-card + section {
     border-top: 1px solid var(--color-border-light);
   }
 }
@@ -735,25 +736,25 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
-/* ===== 个人资料卡（头像 + 用户名，桌面端/移动端共用） ===== */
+/* ===== 个人资料卡（头像 + 用户名，桌面端/移动端共用） =====
+   结构：.settings-profile-card（外层卡片，与 .list-item 同卡片化）包
+         .settings-profile（button 本体，去卡片化，仅保留内容布局与点击交互） */
+.settings-profile-card {
+  width: 100%;
+  overflow: hidden;
+}
+
 .settings-profile {
   display: flex;
   gap: var(--space-md);
   align-items: center;
   width: 100%;
   padding: var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  border: none;
+  background: transparent;
   text-align: left;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: var(--shadow-sm);
+  font: inherit;
   cursor: pointer;
-}
-
-.settings-profile:hover {
-  background: var(--color-surface-hover);
-  box-shadow: var(--shadow-card);
 }
 
 .settings-profile__avatar {
@@ -1096,16 +1097,14 @@ body.skin-transitioning .skin-btn.active {
   margin-top: var(--space-lg);
 }
 
-/* 区块标题行：桌面端标题左、一键按钮右 */
+/* 区块标题行：settings-card__title 已移出卡片单独作为区块标题，
+   本行仅剩操作按钮（一键导入 / 一键恢复默认），右对齐置于卡片内顶部 */
 .settings-card__header {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
+  justify-content: flex-end;
   margin-bottom: var(--space-sm);
-}
-.settings-card__header .settings-card__title {
-  flex: 1 1 auto;
-  margin-bottom: 0;
 }
 /* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调 */
 .settings-action-btn--inline {
@@ -1159,21 +1158,18 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
-/* 移动端个人设置：个人资料面板（.settings-profile）去除卡片式样式，仅作为区块，与下方用分割线分隔 */
+/* 移动端个人设置：个人资料卡（.settings-profile-card 外层）去除卡片式样式，
+   仅作为区块，button 内容左右贴边，与下方用分割线分隔（对齐 .list-item 移动端行式） */
 @media (width <= 767px) {
-  .settings-subpage__body .settings-profile {
-    margin-bottom: 0;
-    padding: var(--space-md) 0;
+  .settings-subpage__body > .settings-profile-card {
     border: none;
     border-radius: 0;
     background: transparent;
-    box-shadow: none;
   }
-  .settings-subpage__body .settings-profile:hover {
-    background: transparent;
-    box-shadow: none;
+  .settings-subpage__body .settings-profile {
+    padding: var(--space-md) 0;
   }
-  .settings-subpage__body .settings-profile + section {
+  .settings-subpage__body > .settings-profile-card + section {
     border-top: 1px solid var(--color-border-light);
   }
 }
@@ -1370,19 +1366,20 @@ body.skin-transitioning .skin-btn.active {
     padding-bottom: var(--space-md);
   }
 
-  /* 个人设置（PersonalTab 用 .settings-row，非 List.Item）：同样卡片化。
-     配置管理 / 恢复默认配置 两组里的行卡片化，hover 反馈与 .list-item 一致 */
-  .settings-content .settings-personal-section .settings-row {
+  /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
+     settings-card__body（header 操作按钮 + desc + 行）整体一张 list-item 风格大卡片。
+     hover 边框加深 + 阴影，与 .list-item 卡片反馈一致。 */
+  .settings-content .settings-personal-section .settings-card__body,
+  .settings-subpage__body .settings-personal-section .settings-card__body {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
+    overflow: hidden;
     padding: var(--space-md) var(--space-xl);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .settings-content .settings-personal-section .settings-row + .settings-row {
-    margin-top: var(--space-sm);
-  }
-  .settings-content .settings-personal-section .settings-row:hover {
+  .settings-content .settings-personal-section .settings-card__body:hover,
+  .settings-subpage__body .settings-personal-section .settings-card__body:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
@@ -1407,9 +1404,11 @@ body.skin-transitioning .skin-btn.active {
 
   /* ============================================================
      源管理（视频源 / IPTV 源 / EPG 源）面板：与 .list-item 同样的卡片化
-     - .source-manager 根容器卡片化（边框/圆角/背景/hover/transition）
+     - .source-manager 卡片化（边框/圆角/背景/hover/transition）
      - .source-manager__item 桌面端 hover 反馈与 .list-item 一致
        （基础边框/圆角/transition 已在 SourceManager.css 全局统一）
+     - 折叠时（.source-manager-block.is-collapsed）边框一并隐藏，
+       折叠后仅剩标题行；展开/收起时 padding 随 grid-rows 一起过渡
      - 移动端（≤767px）不卡片化，与 .list-item 移动端行式观感保持一致
      ============================================================ */
   .settings-content .source-manager,
@@ -1417,14 +1416,19 @@ body.skin-transitioning .skin-btn.active {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
-    overflow: hidden;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, padding 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
   .settings-content .source-manager:hover,
   .settings-subpage__body .source-manager:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
+  }
+
+  /* 折叠时卡片彻底消失（无 padding、无边框），仅剩标题行 */
+  .settings-content .source-manager-block.is-collapsed .source-manager,
+  .settings-subpage__body .source-manager-block.is-collapsed .source-manager {
+    border: none;
   }
 
   /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
@@ -1446,6 +1450,21 @@ body.skin-transitioning .skin-btn.active {
   .settings-page .list-item__desc,
   .settings-subpage__body .list-item__desc {
     font-size: var(--text-xs);
+  }
+
+  /* 移动端个人资料卡 + settings-card__body：不卡片化（行式），对齐 list-item 移动端 */
+  .settings-content > .settings-profile-card,
+  .settings-subpage__body > .settings-profile-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+  .settings-content .settings-personal-section .settings-card__body,
+  .settings-subpage__body .settings-personal-section .settings-card__body {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
   }
 }
 

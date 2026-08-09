@@ -89,6 +89,7 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
   const sortByLatency = useSourceManagerStore((s) => s.sortByLatency);
   const setMeasuringStore = useSourceManagerStore((s) => s.setMeasuring);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [measuring, setMeasuring] = useState(false);
   const [measureProgress, setMeasureProgress] = useState({ done: 0, total: 0 });
   const addRef = useRef<HTMLDivElement | null>(null);
@@ -159,9 +160,15 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
   };
 
   return (
-    <div className="source-manager" data-scene={scene}>
-      {/* Header（标题 + 徽章同行，徽章右对齐） */}
-      <div className="source-manager__header">
+    <div className={`source-manager-block${collapsed ? ' is-collapsed' : ''}`} data-scene={scene}>
+      {/* Header（标题 + 徽章同行，徽章右对齐；位于卡片外，整行可点击折叠/展开） */}
+      <button
+        type="button"
+        className="source-manager__header"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-expanded={!collapsed}
+        aria-label={`${collapsed ? '展开' : '折叠'}${cfg.title}`}
+      >
         <div className="source-manager__header-text">
           <h3 className="source-manager__title">
             <Icon icon={TypeIcon} size="md" className="source-manager__title-icon" />
@@ -171,9 +178,13 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
           <p className="source-manager__desc">{cfg.desc}</p>
         </div>
         <div className="source-manager__badge">已启用 {enabledCount}/{items.length}</div>
-      </div>
+        <Icon icon={ChevronDown} size="sm" className="source-manager__collapse-chev" />
+      </button>
 
-      {/* Toolbar（右侧） */}
+      {/* 卡片主体：Toolbar（右侧）+ List —— 折叠面板主体 */}
+      <div className="source-manager">
+      <div className="source-manager__body">
+      <div className="source-manager__body-inner">
       <div className="source-manager__toolbar">
         <div className="source-manager__toolbar-right">
           <button type="button" className="source-manager__toolbar-btn" onClick={handleMeasure} disabled={measuring} aria-label="测速">
@@ -287,6 +298,9 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
           </li>
         ))}
       </ul>
+      </div>
+      </div>
+    </div>
     </div>
   );
 }

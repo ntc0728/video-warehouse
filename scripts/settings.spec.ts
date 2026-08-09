@@ -120,7 +120,7 @@ test.describe('6.3 视频源配置', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const panel = page.locator('.source-manager[data-scene="video"]');
+    const panel = page.locator('.source-manager-block[data-scene="video"]');
     if (await panel.isVisible().catch(() => false)) {
       const title = await panel.locator('.source-manager__title').textContent();
       const itemCount = await panel.locator('.source-manager__item').count();
@@ -137,7 +137,7 @@ test.describe('6.3 视频源配置', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const panel = page.locator('.source-manager[data-scene="video"]');
+    const panel = page.locator('.source-manager-block[data-scene="video"]');
     if (!(await panel.isVisible().catch(() => false))) {
       console.log('⚠️ SET-021: 视频源管理面板未检测到');
       return;
@@ -188,7 +188,7 @@ test.describe('6.5 IPTV 配置', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const panel = page.locator('.source-manager[data-scene="iptv"]');
+    const panel = page.locator('.source-manager-block[data-scene="iptv"]');
     if (await panel.isVisible().catch(() => false)) {
       const title = await panel.locator('.source-manager__title').textContent();
       const itemCount = await panel.locator('.source-manager__item').count();
@@ -206,7 +206,7 @@ test.describe('6.5 IPTV 配置', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const panel = page.locator('.source-manager[data-scene="iptv"]');
+    const panel = page.locator('.source-manager-block[data-scene="iptv"]');
     if (!(await panel.isVisible().catch(() => false))) {
       console.log('⚠️ SET-052: IPTV 源管理面板未检测到');
       return;
