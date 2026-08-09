@@ -1434,7 +1434,8 @@ body.skin-transitioning .skin-btn.active {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease,
+      gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
   .settings-content .source-manager:hover,

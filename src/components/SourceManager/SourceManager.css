@@ -20,6 +20,9 @@
   padding: var(--space-md);
   width: 100%;
   min-width: 0;
+  /* gap 与 body 收缩动画同曲线同时长：避免折叠瞬间 gap 8→0 瞬时跳变
+     （卡片底部先跳 8px 再慢慢收 = 「按钮移动 + 收起延迟」的观感） */
+  transition: gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
 }
 .source-manager-block.is-collapsed .source-manager {
   /* 折叠时收紧 header↔body 的 gap，卡片内仅剩折叠按钮一行 */
