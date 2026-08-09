@@ -63,9 +63,15 @@
 .source-manager-block.is-collapsed .source-manager__body {
   grid-template-rows: 0fr;
 }
+/* toolbar ↔ list 间距：用 flex gap 而非 margin，折叠时容器高度收缩到 0、
+   overflow hidden 裁剪，间距随动画自然消失不残留（margin 在 grid 0fr 折叠
+   动画中会在底部露出一条空隙，避免用） */
 .source-manager__body-inner {
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 .source-manager__title {
   display: flex;
