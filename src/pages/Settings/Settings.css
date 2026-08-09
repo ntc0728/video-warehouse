@@ -1103,13 +1103,26 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 区块标题行：settings-card__title 已移出卡片单独作为区块标题，
-   本行仅剩操作按钮（一键导入 / 一键恢复默认），右对齐置于卡片内顶部 */
+   本行为 desc（左，弹性占满剩余空间）+ 操作按钮（右，不收缩）两端对齐 */
 .settings-card__header {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: var(--space-sm);
+}
+/* desc 与按钮两端对齐：flex 占满剩余空间，单行放不下时溢出隐藏（ellipsis）；
+   hover 时通过 title 原生提示显示全部文本 */
+.settings-card__header .settings-card__desc {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.settings-card__header .settings-action-btn--inline {
+  flex-shrink: 0;
 }
 /* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调 */
 .settings-action-btn--inline {
