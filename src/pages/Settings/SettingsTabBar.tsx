@@ -7,12 +7,12 @@ import { Palette, Film, PlayCircle, Tv, User, Info } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
-  appearance: <Icon icon={Palette} size="sm" />,
-  video: <Icon icon={Film} size="sm" />,
-  playback: <Icon icon={PlayCircle} size="sm" />,
-  iptv: <Icon icon={Tv} size="sm" />,
-  personal: <Icon icon={User} size="sm" />,
-  about: <Icon icon={Info} size="sm" />,
+  appearance: <Icon icon={Palette} size="md" />,
+  video: <Icon icon={Film} size="md" />,
+  playback: <Icon icon={PlayCircle} size="md" />,
+  iptv: <Icon icon={Tv} size="md" />,
+  personal: <Icon icon={User} size="md" />,
+  about: <Icon icon={Info} size="md" />,
 };
 
 export const SETTINGS_TABS = [
