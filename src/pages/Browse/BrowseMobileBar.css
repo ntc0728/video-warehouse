@@ -103,7 +103,7 @@
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-sm) 0;
   overflow-x: auto;
   scrollbar-width: none;
   background: var(--color-surface);
@@ -142,14 +142,13 @@
   color: var(--color-text-tertiary);
 }
 
-/* 面板底部 */
+/* 面板底部：紧贴面板底部（sticky bottom:0 + 无上下额外间距，按钮直接贴底） */
 .bmb-foot {
   position: sticky;
   bottom: 0;
   display: flex;
   gap: var(--space-sm);
-  margin-top: var(--space-xl);
-  padding-top: var(--space-lg);
+  padding: var(--space-md);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border-light);
 }

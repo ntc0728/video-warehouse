@@ -159,16 +159,6 @@ export default function SearchBox({
   const suggestionTypeLabel = (t: TMDBMultiSearchResult['media_type']): string =>
     t === 'tv' ? '剧集' : t === 'person' ? '人物' : '电影';
 
-  const handleSuggestionClick = useCallback((item: TMDBMultiSearchResult) => {
-    // 点击建议 → 直达详情页（电影/剧集）或人物页
-    const target = item.media_type === 'person'
-      ? `/person/${item.id}`
-      : `/detail/tmdb-${item.media_type}-${item.id}`;
-    navigate(target);
-    inputRef.current?.blur();
-    setIsDropdownOpen(false);
-  }, [navigate]);
-
   const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0 || hotLoading || hotError || hasQuery);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
@@ -217,6 +207,15 @@ export default function SearchBox({
       navigate('/browse', { state: { q } });
     }
   }, [value, onSearch, navigate, addHistory]);
+
+  const handleSuggestionClick = useCallback((item: TMDBMultiSearchResult) => {
+    // 点击建议 → 跳转到 Browse 页并填入关键词搜索（不再直达详情页）
+    const q = item.name || item.title || item.original_name || item.original_title || '';
+    setValue(q);
+    handleSearch(q);
+    inputRef.current?.blur();
+    setIsDropdownOpen(false);
+  }, [handleSearch]);
 
   const handleClear = useCallback(() => {
     setValue('');

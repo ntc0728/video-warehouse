@@ -2,7 +2,7 @@
 
 import React, { useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X, RotateCcw, ChevronLeft } from 'lucide-react'
+import { X, ChevronLeft } from 'lucide-react'
 import './Drawer.css'
 import { Icon } from "@/components/ui/Icon";
 
@@ -48,7 +48,6 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
                 <div className="drawer-header-actions">
                   {onReset && (
                     <button type="button" className="drawer-reset" onClick={onReset} aria-label="重置">
-                      <Icon icon={RotateCcw} size="sm" />
                       重置
                     </button>
                   )}

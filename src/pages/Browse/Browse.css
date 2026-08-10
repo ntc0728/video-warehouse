@@ -146,6 +146,13 @@
   font-size: var(--text-sm);
 }
 
+/* 移动端：排序栏隐藏 —— 排序已移入筛选弹窗（第 5 分组）、结果数已移至命令栏第二行 */
+@media (width <= 767px) {
+  .browse-sort-bar {
+    display: none;
+  }
+}
+
 /* ── 搜索模式切换 Tab（Card 1 顶部） ──────────────── */
 .browse-search-tabs {
   display: flex;
