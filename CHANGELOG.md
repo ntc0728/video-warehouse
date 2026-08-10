@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.5.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.4.0...kinotv-v1.5.0) (2026-08-10)
+
+
+### Features
+
+* **browse:** 移动端筛选区改两行命令栏 + 全屏筛选面板 ([c7ebaca](https://github.com/ntc0728/video-warehouse/commit/c7ebacab5785bf5e974bd987db15dc94d76bfcaf))
+* **settings:** 移动端设置页采用 iOS 分组圆角卡 + 子页全屏顶栏替代导航栏 + 双行卡对齐桌面 ([9331b05](https://github.com/ntc0728/video-warehouse/commit/9331b05d34ad07295a9e67d730c6b5f8d5ce8d1e))
+
+
+### Bug Fixes
+
+* **browse:** bmb-presets 与弹窗布局精确对齐 S3 HTML 示例（无偏差） ([0108703](https://github.com/ntc0728/video-warehouse/commit/01087031fe201218524652368a00c9199866c29b))
+* **browse:** 筛选面板完成制应用 + 命令栏/弹窗细节对齐 ([151f61f](https://github.com/ntc0728/video-warehouse/commit/151f61f00e1326e19a2d08de745af21a2c3c8d6c))
+* **browse:** 筛选面板对齐 S3 示例（删预设卡/返回箭头顶栏/pgIn 动画/chip 尺寸） ([98f7603](https://github.com/ntc0728/video-warehouse/commit/98f76038b1f501ea3fcddba8b2d637c2451c5093))
+* **settings:** 子页用 createPortal 挂到 body 脱离 contain:layout ([7fc13e2](https://github.com/ntc0728/video-warehouse/commit/7fc13e2326730f748d45c89550212c19ab6c8965))
+* **settings:** 子页顶栏对齐导航栏高度 + 移除淡入动画 + 个人设置/源管理卡片化对齐桌面 ([805aa73](https://github.com/ntc0728/video-warehouse/commit/805aa7336cb9325e6b6e89c1f8c4fe72b7b47456))
+* **ui:** 弹窗按钮胶囊化修复 + ProfileEditModal 按钮补宽 ([da1749d](https://github.com/ntc0728/video-warehouse/commit/da1749dfbefa59d0cfca0e65fa573f654076fe9f))
+
+
+### Performance Improvements
+
+* **dev:** dev 模式跳过 preloadAllRoutes 消除白屏 ([2586c45](https://github.com/ntc0728/video-warehouse/commit/2586c45f7818a7ab77c98e1963d602a9e11b8c65))
+* **dev:** vite server.warmup 预热核心模块，缓解首次打开慢 ([9fe8f57](https://github.com/ntc0728/video-warehouse/commit/9fe8f577a4f379683f08aab5d4ec21a4ffcb615c))
+
 ## [1.4.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.3.0...kinotv-v1.4.0) (2026-08-09)
 
 
