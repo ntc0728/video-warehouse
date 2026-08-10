@@ -57,11 +57,11 @@ export default function ProfileEditModal({
           {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="2xl" />}
         </span>
         <div className="profile-edit__avatar-actions">
-          <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
+          <Button variant="secondary" size="sm" className="rounded-full" onClick={() => fileRef.current?.click()}>
             上传头像
           </Button>
           {avatar && (
-            <Button variant="ghost" size="sm" onClick={() => setAvatarLocal('')}>
+            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setAvatarLocal('')}>
               使用默认头像
             </Button>
           )}
@@ -92,10 +92,10 @@ export default function ProfileEditModal({
       {error && <p className="profile-edit__error">{error}</p>}
 
       <div className="settings-modal__footer">
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button variant="ghost" size="sm" className="rounded-full" onClick={onClose}>
           取消
         </Button>
-        <Button variant="default" size="sm" onClick={handleSave}>
+        <Button variant="default" size="sm" className="rounded-full" onClick={handleSave}>
           保存
         </Button>
       </div>
