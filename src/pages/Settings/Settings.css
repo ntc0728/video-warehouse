@@ -480,11 +480,10 @@ body.skin-transitioning .skin-btn.active {
   margin-top: var(--space-md);
 }
 
-/* 移动端菜单列表 — 全宽无边框卡片 */
+/* 移动端菜单列表 — 分组圆角卡容器（分组标题 + 组卡由 .settings-menu-group* 提供） */
 .settings-menu-list {
   display: flex;
   flex-direction: column;
-  padding-top: var(--space-sm);
 }
 
 /* 搜索设置项无结果空状态 */
@@ -565,12 +564,18 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text-tertiary);
 }
 
-/* 移动端子页面 */
+/* 移动端子页面：全屏覆盖视口（含全局顶部导航栏区域）——
+   fixed inset:0 + z-index 高于 sticky-header(55)，顶栏固定在视口顶部、
+   与全局导航栏同高（--header-height），视觉上替代导航栏。
+   body 在顶栏下方独立滚动。 */
 .settings-subpage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
+  background: var(--color-background);
   /* 进入动画：子页面 opacity 0→1 淡入 */
   animation: settings-subpage-fade-in 500ms ease-out both;
 }
@@ -585,28 +590,59 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
+/* 子页顶栏：与全局导航栏同高、同玻璃态背景 —— 进入子页后替代顶部导航栏 */
 .settings-subpage__header {
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
   align-items: center;
-  min-height: var(--comp-btn-min-height);
-  margin-bottom: var(--space-sm);
-  padding: var(--space-2xs) 0;
+  height: var(--header-height);
+  padding: 0 var(--space-md);
   border-bottom: 1px solid var(--color-border-light);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
 }
 
+/* 返回按钮：圆形触控区，与 iOS 返回一致 */
+.settings-subpage__header .back-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* 标题：flex:1 居中（左侧返回按钮 + 右侧对称占位，形成 iOS 居中标题结构） */
 .settings-subpage__title {
+  flex: 1;
   margin: 0;
   color: var(--color-text);
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 右侧占位：与左侧返回按钮等宽，保证标题视觉居中 */
+.settings-subpage__header-spacer {
+  flex-shrink: 0;
+  width: var(--comp-btn-min-height);
 }
 
 .settings-subpage__body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding: var(--space-lg) 0 var(--space-2xl);
 }
 
 /* 移动端关于页：让 .about-tab 的 flex:1 生效（body 需为 flex 容器），
@@ -616,19 +652,19 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
 }
 
-/* 移动端子页面内 section：不再卡片化，改用分割线分隔 */
+/* 移动端子页面内 section：不再卡片化、不再用分割线 —— 由 list-item 双行卡各自成卡，
+   section 之间改用留白间隔（与桌面方案 F 一致的卡片呼吸感） */
 @media (width <= 767px) {
   .settings-subpage__body > section {
     margin-bottom: 0;
-    padding: var(--space-md) 0;
+    padding: var(--space-md) var(--space-lg);
     border: none;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
   .settings-subpage__body > section + section {
-    margin-top: 0;
-    border-top: 1px solid var(--color-border-light);
+    margin-top: var(--space-xl);
   }
   .settings-subpage__body > section [class~="px-4"] {
     padding-right: 0;
@@ -1179,17 +1215,41 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
-/* 移动端：设置页整体卡片式布局（.settings-page 本身作为卡片容器，内含资料区与菜单列表） */
+/* 移动端：设置页不再整体卡片化 —— 采用 iOS 分组圆角卡，
+   菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
+   子页打开时（:has(.settings-subpage)）移除 page-transition-enter 残留的
+   transform（fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。 */
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
-    margin: var(--space-sm);
-    padding: var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    padding: var(--space-md) 0 var(--space-2xl);
   }
+  .settings-page:has(.settings-subpage) {
+    transform: none;
+    animation: none;
+  }
+}
+
+/* 移动端分组圆角卡（iOS Settings 风格）：
+   .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行 */
+.settings-menu-group {
+  margin: 0 var(--space-lg);
+}
+.settings-menu-group + .settings-menu-group {
+  margin-top: var(--space-xl);
+}
+.settings-menu-group__cap {
+  padding: var(--space-sm) var(--space-sm) var(--space-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.settings-menu-group__card {
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 /* 移动端个人设置：个人资料卡（.settings-profile-card 外层）去除卡片式样式，
@@ -1493,6 +1553,35 @@ body.skin-transitioning .skin-btn.active {
     border: none;
     border-radius: 0;
     background: transparent;
+  }
+
+  /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
+     每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
+     卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
+  .settings-subpage__body .list-item {
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .settings-subpage__body .list-item + .list-item {
+    margin-top: var(--space-lg);
+  }
+  .settings-subpage__body .list-item .list-item__row {
+    padding: var(--space-md) var(--space-xl) var(--space-sm);
+  }
+  .settings-subpage__body .list-item .list-item__desc {
+    padding: var(--space-sm) var(--space-xl) var(--space-lg);
+    background: transparent;
+    line-height: 1.6;
+  }
+  /* 无描述项：标题行底部补齐内边距，保持卡片观感均衡 */
+  .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
+    padding-bottom: var(--space-md);
+  }
+  /* PersonalTab 卡片内行：移动端子页同样不使用分割线 */
+  .settings-subpage__body .settings-row + .settings-row {
+    border-top: none;
   }
   .settings-content .settings-personal-section .settings-card__body,
   .settings-subpage__body .settings-personal-section .settings-card__body {
