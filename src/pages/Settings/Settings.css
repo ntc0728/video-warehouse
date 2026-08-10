@@ -917,6 +917,13 @@ body.skin-transitioning .skin-btn.active {
   margin-top: var(--space-lg);
 }
 
+/* 弹窗内操作按钮统一胶囊（颜色不变，仅圆角）：
+   个人资料编辑弹窗（上传头像/默认头像/取消/保存） */
+.profile-edit__avatar-actions button,
+.settings-modal__footer button {
+  border-radius: var(--radius-full) !important;
+}
+
 .settings-empty-state__desc {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
