@@ -984,6 +984,15 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - TV 模式顶部导航栏新增 IPTV 直达入口（仅 `isTV` 时渲染，置于右侧导航项之前）
   - 工程清理：删除未挂载的 `PerformanceMonitor` 开发组件及其唯一依赖 `web-vitals`（npm uninstall 同步锁文件）；删除 9 个零引用自定义 hooks（`layout` / `useFetch` / `useFocusable` / `useGridLayout` / `useMinLoadingTime` / `usePointerType` / `usePreload` / `useThemeMode` / `useWebVitals`）并清理对应 barrel 死出口、CSS 死类/重复块与多处过时注释
   - 硬编码像素去化（Design Token 收口）：把散落在组件里的像素硬编码统一收口为 Design Token——`SearchBox`（下拉高度 `Math.min(…,448)` → 注入 `--dropdown-avail-h`、由 `--layout-dropdown-max-h` 驱动）、`Select`（下拉 `max-h-[320px]`/`px-[14px]` → `--layout-dropdown-max-h`/`--space-md`）、`IPTVOSDBar`（OSD 宽度 `OSD_MIN_WIDTH=360`/`OSD_MAX_WIDTH=1600` 的 JS 计算整段删除、纯 CSS `width: min(var(--layout-osd-max-width), 100%)`；TV 端 `--layout-osd-max-width` 由死值 `1600px` 改为标准 `clamp(100rem, 83.333vw, 200rem)`）、`Sidebar`（`isMobile ? 200 : 240` / 折叠 `:64` → `--sidebar-width-mobile`/`--sidebar-width`/`--sidebar-width-collapsed`）、`TabBar`（`text-[10px]` → `text-[var(--text-2xs)]`）、`ConfirmDialog`/`Modal`（内联 `<svg width="N">` 与 `w-[28px]` → `--icon-*`）；`variables.css` 的 `--layout-osd-max-width` 维持桌面原曲线 `clamp(320px, 20rem + 30vw, 1400px)`（旧 JS 的 360/1600 在最终 `min()` 中恒被 token 吞掉、对实际宽度零影响）；`UniversalPlayer` 移除仅为 OSD 宽度服务的 `containerWidth` state 与 `ResizeObserver`
+- **v1.8.0** - 移动端设置页整改 + Browse 筛选区重设计（2026-08-10）：
+  - 设置页移动端：入口菜单按 iOS 分组圆角卡组织（「通用」4 项 +「账户与信息」2 项，`.settings-menu-group*`，保留 `.settings-menu-item` 类名兼容 SET-090）；子页改用 `createPortal` 挂到 `document.body`（脱离 `.app-shell__scroll` 的 `contain:layout` 包含块），`position:fixed; inset:0` 覆盖全视口，顶栏（返回/居中标题/右占位）与全局导航栏同高（`--header-height-compact`）视觉替代导航栏；子页内 `.list-item` 双行卡卡片化（对齐桌面方案 F，卡片间距 `--space-lg`）；`.settings-page:has(.settings-subpage)` 移除 page-transition-enter 残留 transform；移动端子页 section 顶部 padding 为 0、左右 `--space-lg`
+  - 个人设置 / 源管理（视频源/IPTV 源/EPG 源）在子页内恢复卡片化（`.settings-profile-card` / `.settings-personal-section .settings-card__body` / `.source-manager`），与桌面端一致
+  - Browse 移动端筛选区（S3 定稿）：命令栏改两行布局——第一行 `智能检索/直链搜索` 模式段居中（`.bmb-mode-row`），第二行「筛选」小按钮（28px）+ 结果数两端对齐（`.bmb-bar-row` `space-between`）；**移除 `.bmb-presets` 预设横滚与面板内 `.bmb-rec` 推荐卡**（HTML 示例无此元素）；`.bmb-rail` 已选轨无左右 padding；移动端隐藏 `.browse-sort-bar`（排序入弹窗第 5 分组、结果数入命令栏）
+  - 筛选面板改**完成制**：面板内 FilterBar 用 `draft` 草稿值（打开时从 `value` 快照），改条件零接口请求；点「完成」才 `onChange(draft)`；「重置」重置草稿；返回丢弃草稿。Drawer 新增 `fullscreen`/`onReset` prop（全屏覆盖 + 顶栏「返回/标题居中/重置」三栏，动画 `drawer-pg-in`）；FilterBar 不 hideFooter → 排序作为第 5 分组展示
+  - SearchBox 全局修复：点击实时搜索建议不再直达详情页/人物页，改为填入关键词并跳转 `/browse?q=`（`handleSuggestionClick` 移到 `handleSearch` 之后解决 const 提升）
+  - 弹窗按钮胶囊化：`Button` 组件若 className 含 `rounded-*` 则不附加默认 `rounded-md`（修复 ConfirmDialog/ProfileEditModal 胶囊被覆盖问题）；ConfirmDialog / ProfileEditModal 按钮高度降为 `min-h-[var(--comp-tab-height)]`（更修长），ProfileEditModal 按钮补横向宽度 `px-[var(--space-xl)]`
+  - 新增测试：BROWSE-078/079/080（两行命令栏/全屏面板顶栏三栏+完成制/rail 无 padding）、SET-092/093（分组圆角卡/子页顶栏+双行卡）
+  - `vite.config.ts` 新增 `server.warmup` 预热核心模块，缓解 dev 模式冷启动首次访问慢（首屏实测首次 ~400ms / 二次 ~176ms）
 
 ---
 

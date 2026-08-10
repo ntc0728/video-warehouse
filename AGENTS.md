@@ -271,16 +271,16 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-05 校准）。
+> test 数为 `npx playwright test --list` 实际枚举数（2026-08-10 校准）。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 35 |
-| `src/pages/Browse/` | `scripts/browse.spec.ts` | 21 |
+| `src/pages/Home/` | `scripts/home.spec.ts` | 40 |
+| `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 7 |
 | `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 9 + 6 |
-| `src/pages/Settings/` | `scripts/settings.spec.ts` | 19 |
+| `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
 | `src/pages/History/` | `scripts/history.spec.ts` | 6 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
@@ -293,20 +293,20 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
 | `src/components/UniversalPlayer/` | player + iptv-player | 7 + 6 |
-| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 97 |
-| `src/components/SearchBox/` | browse + cross-page | 37 |
+| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 105 |
+| `src/components/SearchBox/` | browse + cross-page | 40 |
 | `src/components/RecordShell/` | collections + history | 12 |
 | `src/components/StatusTabs/` | collections + history | 12 |
-| `src/components/FilterBar/` | browse | 21 |
-| `src/components/HeroBanner/` | home + cross-page | 51 |
+| `src/components/FilterBar/` | browse | 24 |
+| `src/components/HeroBanner/` | home + cross-page | 56 |
 | `src/components/Layout/` | 全部页面加载测试（home/browse/detail/...各首屏用例） | 逐个 spec 首屏用例 |
 | `src/components/StickyHeader/` | 全部页面加载测试 | 逐个 spec 首屏用例 |
-| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 19 |
-| `src/services/tmdbService.ts` | home + browse + detail + person | 85 |
-| `src/services/videoService.ts` | browse + player + source-checker | 33 |
+| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 24 |
+| `src/services/tmdbService.ts` | home + browse + detail + person | 93 |
+| `src/services/videoService.ts` | browse + player + source-checker | 36 |
 | `src/services/iptvService.ts` | iptv + iptv-player | 15 |
-| `src/stores/useTMDBStore.ts` | home + browse + detail | 77 |
-| `src/stores/useSettingsStore.ts` | settings + source-checker | 24 |
+| `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |
+| `src/stores/useSettingsStore.ts` | settings + source-checker | 29 |
 | `src/stores/useUserStore.ts` | collections + history | 12 |
 
 > 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已归档到 `scripts/backup-specs/`（gitignore 忽略，不参与测试），映射表中不再引用。`scripts/backup-specs/` 中的 308 个用例不进入 `npx playwright test` 的默认执行（见「测试基建修复」）。

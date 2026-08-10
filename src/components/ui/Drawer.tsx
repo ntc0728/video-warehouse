@@ -13,7 +13,7 @@ interface DrawerProps {
   children: React.ReactNode
   /** 全屏覆盖（移动端筛选）：inset:0 覆盖整个视口含顶部导航栏，顶栏与导航栏同高 */
   fullscreen?: boolean
-  /** 顶栏右侧「重置」按钮（仅在 fullscreen 下渲染，位于关闭按钮左侧） */
+  /** 顶栏「重置」按钮（仅 fullscreen 下渲染：顶栏三栏布局——左返回箭头、中标题、右重置） */
   onReset?: () => void
 }
 
