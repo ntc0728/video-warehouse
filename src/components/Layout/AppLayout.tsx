@@ -120,7 +120,12 @@ export default function AppLayout() {
   // 「Suspense chunk 加载 → 页面自身 loading」的双重 AppLoading 闪烁。
   // 不再等待 requestIdleCallback（最长 3s）/ setTimeout(1500ms)，避免用户在首屏后
   // 的窗口期内点击分类页仍命中未缓存 chunk 而触发两次 AppLoading。
+  //
+  // dev 模式跳过：dev 下 import() 触发逐模块 transform，12 路由 248 模块编译
+  // 阻塞主线程 ~5s 白屏。dev 首屏后预加载其他路由反而拖慢后续交互。
+  // production 保留：chunk 已预构建，import() 仅 fetch+eval，无编译开销。
   useEffect(() => {
+    if (import.meta.env.DEV) return;
     preloadAllRoutes();
   }, []);
 
