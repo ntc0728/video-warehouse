@@ -180,27 +180,63 @@
 }
 
 /* 全屏面板内 FilterBar：对齐 S3 示例分组卡样式
-   （分组标题在行首 = label-as-chip，chips 32px 高圆角胶囊、字号 13px、间距 8px） */
+   每个维度 = 独立分组：cap（图标+标题）独占一行 + chips wrap 在下（gap 8px）。
+   chip 32px 高、padding 0 14px、字号 13px、圆角胶囊（示例 .s3-gchip 一致）。 */
 .drawer-content--fullscreen .drawer-body .filter-bar {
   gap: var(--space-lg);
   padding: var(--space-md) var(--space-lg);
 }
 
+/* 分组行：纵向排布（label 在上作为 cap 标题，chips 在下 wrap） */
 .drawer-content--fullscreen .drawer-body .filter-bar__row,
 .drawer-content--fullscreen .drawer-body .filter-bar__row--wrap {
-  gap: var(--space-md);
+  flex-direction: column;
   align-items: flex-start;
+  gap: var(--space-md);
 }
 
+/* label：改为示例 cap 标题（无边框、图标+文字、tertiary、600、12px） */
+.drawer-content--fullscreen .drawer-body .filter-bar__label {
+  margin-right: 0;
+  margin-top: 0;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+/* cap 图标：按行序号匹配示例（类型🎬 分类🏷️ 地区🌍 年份📅） */
+.drawer-content--fullscreen .drawer-body .filter-bar__row:nth-child(1) .filter-bar__label::before {
+  content: '🎬 ';
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__row:nth-child(2) .filter-bar__label::before {
+  content: '🏷️ ';
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__row:nth-child(3) .filter-bar__label::before {
+  content: '🌍 ';
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__row:nth-child(4) .filter-bar__label::before {
+  content: '📅 ';
+}
+
+/* 分类行 label 伪装 chip：fullscreen 下恢复为普通 cap 标题 */
+.drawer-content--fullscreen .drawer-body .filter-bar__label--as-chip {
+  flex-shrink: 0;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  box-shadow: none !important;
+  cursor: default !important;
+  pointer-events: none;
+}
+
+/* chips 容器：gap 8px */
 .drawer-content--fullscreen .drawer-body .filter-bar__chips-wrap,
 .drawer-content--fullscreen .drawer-body .filter-bar__chips-scroll {
   gap: var(--space-md);
-}
-
-.drawer-content--fullscreen .drawer-body .filter-bar__label {
-  min-width: 3em;
-  margin-top: var(--space-sm);
-  font-size: var(--text-sm);
+  padding: 0;
 }
 
 .drawer-content--fullscreen .drawer-body .filter-bar__chip {
@@ -208,6 +244,44 @@
   padding: 0 14px;
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
+}
+
+/* 排序分组（示例 ↕️ 排序）：footer 纵向化为分组，排序按钮改为 chip 样式 */
+.drawer-content--fullscreen .drawer-body .filter-bar__footer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding-top: 0;
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__footer::before {
+  content: '↕️ 排序';
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__sort {
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__sort-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__sort-btn--active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+.drawer-content--fullscreen .drawer-body .filter-bar__count {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

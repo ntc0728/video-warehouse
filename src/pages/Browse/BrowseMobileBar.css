@@ -97,70 +97,34 @@
   display: none;
 }
 
-/* 动态预设横滚 */
-.bmb-presets {
-  display: flex;
-  gap: var(--space-sm);
-  margin: var(--space-sm) 0;
-  padding-bottom: var(--space-xs-plus);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.bmb-presets::-webkit-scrollbar {
-  display: none;
-}
-.bmb-preset {
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: var(--space-xs);
-  align-items: center;
-  min-height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-hover);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--text-xs);
-  transition: border-color 0.14s, background 0.14s, color 0.14s;
-  cursor: pointer;
-}
-.bmb-preset:active {
-  border-color: var(--color-primary);
-}
-.bmb-preset.on {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-.bmb-pi {
-  font-size: var(--text-base);
-}
-.bmb-preset.aux {
-  border-style: dashed;
-  background: transparent;
-  color: var(--color-text-tertiary);
-}
-
-/* 已选轨 */
+/* 已选轨（对齐 S3 示例 .s3-rail）：单行横向滚动、背景 surface、底部边框。
+   chip：26px 高、padding 0 10px、11px 字号、primary 12% 背景（示例 rail-chip 一致）。 */
 .bmb-rail {
   display: flex;
-  flex-wrap: wrap;
+  flex-shrink: 0;
   gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.bmb-rail::-webkit-scrollbar {
+  display: none;
 }
 .bmb-chip {
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-primary);
+  height: 26px;
+  padding: 0 10px;
+  border: none;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .bmb-chip .bmb-x {
   padding: 0;
@@ -169,11 +133,11 @@
   color: inherit;
   font-size: var(--text-base);
   line-height: 1;
-  opacity: 0.8;
+  opacity: 0.7;
   cursor: pointer;
 }
 .bmb-chip.clear {
-  border-color: var(--color-border-light);
+  border: 1px dashed var(--color-border-strong);
   background: transparent;
   color: var(--color-text-tertiary);
 }
@@ -211,13 +175,7 @@
   font-weight: 600;
 }
 
-/* ── 亮色模式：移除不必要的背景填充，与桌面端视觉一致 ──
-   预设芯片 / 筛选入口在亮色下用边框区分，无需 surface-hover 填充；
-   选中筛选轨（.bmb-chip）亮色下用实色 primary 背景。暗色模式保留 surface-hover 以区分层次。 */
-[data-theme="light"] .bmb-preset,
-[data-theme="light"] .bmb-filter-trigger {
-  background: transparent;
-}
+/* ── 亮色模式：选中筛选轨（.bmb-chip）亮色下用实色 primary 背景 ── */
 [data-theme="light"] .bmb-chip:not(.clear) {
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -226,7 +184,6 @@
 /* 选中态聚焦可见性（无障碍） */
 .bmb-seg:focus-visible,
 .bmb-filter-trigger:focus-visible,
-.bmb-preset:focus-visible,
 .bmb-chip .bmb-x:focus-visible,
 .bmb-pf-reset:focus-visible,
 .bmb-pf-apply:focus-visible {
