@@ -491,6 +491,83 @@ test.describe('6.8 移动端设置主页菜单项', () => {
     expect(hasConfigSection).toBeGreaterThan(0);
     console.log('✅ SET-091 通过: 移动端点击头像进入个人设置页');
   });
+
+  test('SET-092: 移动端设置主页按 iOS 分组圆角卡组织（通用 / 账户与信息）', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    // 分组卡容器：两组（通用 / 账户与信息）
+    const groups = page.locator('.settings-menu-group');
+    await expect(groups).toHaveCount(2);
+
+    const capTexts: string[] = [];
+    const caps = page.locator('.settings-menu-group__cap');
+    for (let i = 0; i < (await caps.count()); i++) {
+      capTexts.push(((await caps.nth(i).textContent()) || '').trim());
+    }
+    expect(capTexts).toContain('通用');
+    expect(capTexts).toContain('账户与信息');
+
+    // 每组为一张 inset 圆角卡（background=surface、border-radius≠0）
+    const cardStyle = await page
+      .locator('.settings-menu-group__card')
+      .first()
+      .evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { bg: cs.backgroundColor, br: cs.borderRadius, border: cs.borderTopWidth };
+      });
+    expect(cardStyle.br).not.toBe('0px');
+    expect(cardStyle.border).not.toBe('0px');
+
+    // 6 个菜单项仍在组卡内（SET-090 兼容）
+    expect(await page.locator('.settings-menu-group__card .settings-menu-item').count()).toBe(6);
+
+    console.log(`✅ SET-092 通过: 分组=${capTexts.join('/')}，6 个菜单项均在组卡内（圆角 ${cardStyle.br}）`);
+  });
+
+  test('SET-093: 移动端子页顶栏替代全局导航栏 + 子页内双行卡（对齐桌面方案 F）', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1024 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    // 进入「外观」子页
+    await page.locator('.settings-menu-item', { hasText: '外观' }).first().click();
+    await page.waitForTimeout(800);
+    const subPage = page.locator('.settings-subpage');
+    await expect(subPage).toBeVisible({ timeout: 5000 });
+
+    // 子页顶栏：与全局导航栏同高（--header-height-compact 48px）—— 覆盖导航栏区域
+    const headerH = await subPage
+      .locator('.settings-subpage__header')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().height);
+    expect(headerH).toBeGreaterThanOrEqual(40);
+    expect(headerH).toBeLessThanOrEqual(60);
+    // 顶栏含返回按钮 + 居中标题 + 右侧占位（三栏对称布局）
+    await expect(subPage.locator('.settings-subpage__header .back-btn')).toBeVisible();
+    const titleAlign = await subPage
+      .locator('.settings-subpage__title')
+      .evaluate((el) => getComputedStyle(el).textAlign);
+    expect(titleAlign).toBe('center');
+    // 右侧占位 span（aria-hidden 空元素）：断言存在而非可见（空元素可见性为 hidden）
+    await expect(subPage.locator('.settings-subpage__header-spacer')).toHaveCount(1);
+
+    // 子页内 List.Item 双行卡（border-radius≠0、margin 间距）
+    const fcard = subPage.locator('.list-item').first();
+    if (await fcard.count()) {
+      const cardStyle = await fcard.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { br: cs.borderRadius, border: cs.borderTopWidth };
+      });
+      expect(cardStyle.br).not.toBe('0px');
+      expect(cardStyle.border).not.toBe('0px');
+    }
+
+    console.log(`✅ SET-093 通过: 子页顶栏高 ${headerH}px（对齐导航栏），标题居中=${titleAlign}，双行卡样式正常`);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

@@ -1427,7 +1427,9 @@ body.skin-transitioning .skin-btn.active {
    - 每个 List.Item 变为独立卡片（边框 + 圆角 + hover 阴影）
    - 第一行：标题 + 控件（控件紧贴标题右侧，无 flex:1 大段空白）
    - 第二行：描述独立整行，完整展示（不截断、有呼吸空间）
-   - 移动端（≤767px）不卡片化，保持行式（List.tsx 默认样式）
+   - 移动端（≤767px）：入口菜单（.settings-content）保持行式（List.tsx 默认样式）；
+     **子页内（.settings-subpage__body .list-item）卡片化，与桌面端方案 F 一致**
+     （见下方「移动端子页双行卡」覆盖块）
    ============================================================ */
 @media (width >= 768px) {
   .settings-content .list-item,
@@ -1500,7 +1502,8 @@ body.skin-transitioning .skin-btn.active {
        （基础边框/圆角/transition 已在 SourceManager.css 全局统一）
      - 折叠时（.source-manager-block.is-collapsed）边框一并隐藏，
        折叠后仅剩标题行；展开/收起时 padding 随 grid-rows 一起过渡
-     - 移动端（≤767px）不卡片化，与 .list-item 移动端行式观感保持一致
+     - 移动端（≤767px）：入口菜单保持行式；**子页内（.settings-subpage__body .source-manager）
+       卡片化，与桌面端一致**（见下方「移动端子页源管理卡片化」覆盖块）
      ============================================================ */
   .settings-content .source-manager,
   .settings-subpage__body .source-manager {
@@ -1531,9 +1534,11 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
-/* 方案 F 承诺：移动端不卡片化、不放大字号（保持行式 + 原 text-sm/text-xs）。
-   List.tsx 的 tailwind 类全局生效，移动端也会被放大一档；此处回写到原档位。
-   如需「移动端也放大一档」，删除以下块即可。 */
+/* 方案 F 承诺：移动端入口菜单（.settings-content 场景）不卡片化、不放大字号
+   （保持行式 + 原 text-sm/text-xs）。List.tsx 的 tailwind 类全局生效，
+   移动端也会被放大一档；此处回写到原档位。
+   注意：此块仅作用于入口菜单场景；子页内（.settings-subpage__body）的
+   list-item / profile-card / source-manager 已另行卡片化（对齐桌面端）。 */
 @media (width <= 767px) {
   .settings-page .list-item__title,
   .settings-subpage__body .list-item__title {

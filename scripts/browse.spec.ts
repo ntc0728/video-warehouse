@@ -587,3 +587,129 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     console.log(`✅ BROWSE-077 通过: 移动端结果区 AppLoading 被去壳（border-top-width=${border}），不卡片套卡片`);
   });
 });
+
+test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3 定稿）', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('BROWSE-078: 命令栏两行布局（模式居中 + 筛选/结果数两端对齐）+ 移动端隐藏 SortBar', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 命令栏为纵向两行容器
+    const cmdbar = page.locator('.bmb-cmdbar').first();
+    await expect(cmdbar).toBeVisible();
+    const cmdDirection = await cmdbar.evaluate((el) => getComputedStyle(el).flexDirection);
+    expect(cmdDirection).toBe('column');
+
+    // 第一行：模式段居中（.bmb-mode-row justify-content:center）
+    const modeRow = page.locator('.bmb-mode-row').first();
+    await expect(modeRow).toBeVisible();
+    const modeJustify = await modeRow.evaluate((el) => getComputedStyle(el).justifyContent);
+    expect(modeJustify).toBe('center');
+
+    // 第二行：筛选按钮 + 结果数两端对齐（.bmb-bar-row justify-content:space-between）
+    const barRow = page.locator('.bmb-bar-row').first();
+    await expect(barRow).toBeVisible();
+    const barJustify = await barRow.evaluate((el) => getComputedStyle(el).justifyContent);
+    expect(barJustify).toBe('space-between');
+    // 结果数存在且文案为「共 N 条」
+    await expect(page.locator('.bmb-result-count')).toBeVisible();
+    await expect(page.locator('.bmb-result-count')).toHaveText(/共 .+ 条/);
+
+    // 筛选按钮为小尺寸胶囊（min-height ≤ 30px，回归点：曾为 34px 偏大）
+    const triggerH = await page
+      .locator('.bmb-filter-trigger')
+      .evaluate((el) => parseFloat(getComputedStyle(el).minHeight));
+    expect(triggerH).toBeLessThanOrEqual(30);
+
+    // 移动端 SortBar 隐藏（排序已移入筛选弹窗第 5 分组；结果数已移入命令栏）
+    const sortBar = page.locator('.browse-sort-bar');
+    if (await sortBar.count()) {
+      const display = await sortBar.first().evaluate((el) => getComputedStyle(el).display);
+      expect(display).toBe('none');
+    }
+
+    console.log(`✅ BROWSE-078 通过: 命令栏两行（模式居中 justify=${modeJustify}，筛选/结果数 space-between justify=${barJustify}），筛选按钮高 ${triggerH}px，SortBar 移动端隐藏`);
+  });
+
+  test('BROWSE-079: 全屏筛选面板顶栏三栏（返回/标题居中/重置）+ 排序分组 + 完成制草稿', async ({ page }) => {
+    // 拦截 TMDB 请求计数：验证「面板内改条件不触发请求，点完成才触发」
+    let tmdbReq = 0;
+    await page.route('**/api.tmdb.org/3/**', async (route) => {
+      tmdbReq += 1;
+      await route.continue();
+    });
+
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 打开筛选面板
+    await page.locator('.bmb-filter-trigger').click();
+    const drawer = page.locator('.drawer-content').first();
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+
+    // 顶栏三栏：返回箭头 + 标题居中 + 重置按钮
+    const header = drawer.locator('.drawer-header').first();
+    await expect(header).toBeVisible();
+    await expect(drawer.locator('.drawer-close--back')).toBeVisible();
+    await expect(drawer.locator('.drawer-title')).toBeVisible();
+    await expect(drawer.locator('.drawer-reset')).toHaveText('重置');
+
+    // 排序分组存在（FilterBar 未 hideFooter → 排序作为第 5 分组）
+    const sortGroup = drawer.locator('.filter-bar__footer').first();
+    await expect(sortGroup).toBeVisible();
+    const sortChips = sortGroup.locator('.filter-bar__sort-btn');
+    expect(await sortChips.count()).toBeGreaterThanOrEqual(3);
+
+    // 完成制：面板内点击筛选 chip 不触发 TMDB 请求
+    const reqBefore = tmdbReq;
+    const chip = drawer.locator('.filter-bar__chip').nth(2);
+    if (await chip.count()) {
+      await chip.click();
+      await page.waitForTimeout(600);
+    }
+    expect(tmdbReq).toBe(reqBefore);
+
+    // 点击「完成」→ 面板关闭
+    await drawer.locator('.bmb-pf-apply').click();
+    await expect(drawer).toBeHidden({ timeout: 5000 });
+
+    console.log(`✅ BROWSE-079 通过: 面板顶栏三栏齐全，排序分组存在（${await sortChips.count()} 项），面板内改筛选零请求（req=${reqBefore}→${tmdbReq}），完成制生效`);
+  });
+
+  test('BROWSE-080: 已选轨（rail）无左右 padding，命令栏下方无预设横滚（与 S3 示例一致）', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 命令栏下方不再渲染 .bmb-presets（S3 示例无此元素，已移除）
+    expect(await page.locator('.bmb-presets').count()).toBe(0);
+
+    // 通过面板选择分类，生成已选轨后检查 rail padding
+    await page.locator('.bmb-filter-trigger').click();
+    const drawer = page.locator('.drawer-content').first();
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+    // 选择一个 chip（如「电影」），点完成
+    const movieChip = drawer.locator('.filter-bar__chip', { hasText: '电影' }).first();
+    if (await movieChip.count()) {
+      await movieChip.click();
+      await drawer.locator('.bmb-pf-apply').click();
+      await expect(drawer).toBeHidden({ timeout: 5000 });
+    }
+
+    const rail = page.locator('.bmb-rail').first();
+    if (await rail.count()) {
+      const padding = await rail.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { left: cs.paddingLeft, right: cs.paddingRight, top: cs.paddingTop };
+      });
+      expect(padding.left).toBe('0px');
+      expect(padding.right).toBe('0px');
+      console.log(`✅ BROWSE-080 通过: rail 左右 padding=${padding.left}/${padding.right}（应为 0），顶部 padding=${padding.top}`);
+    } else {
+      console.log('⚠️ BROWSE-080: 未生成已选轨（无选中条件），跳过 padding 断言');
+    }
+  });
+});
