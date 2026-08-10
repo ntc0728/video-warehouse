@@ -38,6 +38,24 @@ export default defineConfig({
     port: 3001,
     host: '127.0.0.1',
     open: false,
+    // 预热常用模块：dev server 启动后立即 transform 核心模块，
+    // 消除「首次打开浏览器 → 逐模块编译」的慢路径（感知上的首屏慢）
+    warmup: {
+      clientFiles: [
+        './src/main.tsx',
+        './src/routes.tsx',
+        './src/components/Layout/*',
+        './src/components/Layout/routeConfig.ts',
+        './src/components/Layout/AppLayout.tsx',
+        './src/components/StickyHeader/StickyHeader.tsx',
+        './src/stores/*',
+        './src/services/*',
+        './src/lib/*',
+        './src/pages/Home/*',
+        './src/pages/Browse/*',
+        './src/assets/styles/index.css',
+      ],
+    },
   },
   build: {
     outDir: 'dist',
