@@ -49,6 +49,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    // 若调用方通过 className 显式指定圆角（rounded-*），则不加默认 rounded-md，
+    // 避免原子类顺序导致 rounded-md 覆盖 rounded-full（如弹窗胶囊按钮）
+    const rounded = /rounded-\S+/.test(className) ? '' : 'rounded-md';
     return (
       <button
         ref={ref}
@@ -56,7 +59,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         onClick={onClick}
         disabled={disabled}
         className={[
-          'inline-flex items-center justify-center rounded-md font-medium',
+          'inline-flex items-center justify-center font-medium',
+          rounded,
           'min-h-[var(--comp-btn-min-width)]',
           'transition-[color,transform] duration-150 ease-in-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2',
