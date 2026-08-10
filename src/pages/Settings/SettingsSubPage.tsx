@@ -1,8 +1,12 @@
 /**
  * SettingsSubPage — 设置页移动端子页面
  *
- * 顶部有返回按钮（通用 .back-btn 样式）+ 标题，body 渲染对应 tab 内容；
- * 支持触摸右滑（>80px）返回上一级
+ * 全屏覆盖视口（含全局顶部导航栏区域）：
+ *   - 子页容器 position: fixed; inset: 0（CSS 中），z-index 高于 sticky-header，
+ *     顶栏（返回 + 标题）固定在视口顶部、与全局导航栏同高 —— 视觉上替代导航栏；
+ *   - body 在顶栏下方独立滚动；
+ *   - 支持触摸右滑（>80px）返回上一级。
+ * 仅在移动端（≤767px）使用（桌面端不渲染 SubPage，直接内联 tab 内容）。
  */
 import { useEffect, useRef, type ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
@@ -59,6 +63,8 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
           <Icon icon={ArrowLeft} size="lg" />
         </button>
         <h2 className="settings-subpage__title">{label}</h2>
+        {/* 右侧占位按钮：保持标题居中（与 iOS 导航栏左返回右菜单的对称结构） */}
+        <span className="settings-subpage__header-spacer" aria-hidden="true" />
       </div>
       <div className="settings-subpage__body">
         {children}

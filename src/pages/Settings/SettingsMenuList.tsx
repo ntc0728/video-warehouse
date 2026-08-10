@@ -1,7 +1,12 @@
 /**
  * SettingsMenuList — 设置页移动端菜单列表
  *
- * 6 个菜单项各带图标 + ChevronRight 箭头，点击后以 SubPage 形式打开对应 tab
+ * 6 个菜单项按 iOS 分组圆角卡组织：
+ *   「通用」→ 外观 / 视频设置 / 播放设置 / IPTV设置
+ *   「账户与信息」→ 个人设置 / 关于
+ * 每组一张 inset 圆角卡（左右留白 + 整卡圆角），行内彩色圆底图标 + ChevronRight。
+ * 点击后以 SubPage 形式打开对应 tab。
+ * 搜索过滤时仅展示命中的菜单项，空分组不渲染标题。
  */
 import { ChevronRight, Palette, Video, Play, Tv, User, Info } from 'lucide-react';
 import type { SettingsTabKey } from './SettingsTabBar';
@@ -25,6 +30,12 @@ export const MENU_ITEMS: { key: SettingsTabKey; label: string; icon: React.React
   { key: 'about', label: '关于', icon: <Icon icon={Info} size="md" />, desc: '版本号、KinoTV' },
 ];
 
+/** 分组定义：组名 → 该组包含的菜单项 key */
+export const MENU_GROUPS: { cap: string; keys: SettingsTabKey[] }[] = [
+  { cap: '通用', keys: ['appearance', 'video', 'playback', 'iptv'] },
+  { cap: '账户与信息', keys: ['personal', 'about'] },
+];
+
 /** 按关键字（标题或副标题）过滤设置项 */
 export function filterSettingsItems(query: string) {
   const q = query.trim().toLowerCase();
@@ -42,32 +53,49 @@ interface SettingsMenuListProps {
 
 export default function SettingsMenuList({ onSelect, query = '' }: SettingsMenuListProps) {
   const items = filterSettingsItems(query);
+  const itemMap = new Map(items.map((i) => [i.key, i]));
+
+  if (items.length === 0) {
+    return <div className="settings-menu-empty">未找到匹配的设置项</div>;
+  }
+
+  const renderItem = (key: SettingsTabKey) => {
+    const item = itemMap.get(key);
+    if (!item) return null;
+    return (
+      <button
+        key={key}
+        type="button"
+        className="settings-menu-item"
+        onClick={() => onSelect(key)}
+      >
+        <span
+          className="settings-menu-item__icon"
+          style={{ background: ICON_COLORS[key] }}
+        >
+          {item.icon}
+        </span>
+        <span className="settings-menu-item__text">
+          <span className="settings-menu-item__label">{item.label}</span>
+          <span className="settings-menu-item__desc">{item.desc}</span>
+        </span>
+        <Icon icon={ChevronRight} size="sm" className="settings-menu-item__arrow" />
+      </button>
+    );
+  };
+
   return (
     <div className="settings-menu-list">
-      {items.length === 0 ? (
-        <div className="settings-menu-empty">未找到匹配的设置项</div>
-      ) : (
-        items.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className="settings-menu-item"
-            onClick={() => onSelect(item.key)}
-          >
-            <span
-              className="settings-menu-item__icon"
-              style={{ background: ICON_COLORS[item.key] }}
-            >
-              {item.icon}
-            </span>
-            <span className="settings-menu-item__text">
-              <span className="settings-menu-item__label">{item.label}</span>
-              <span className="settings-menu-item__desc">{item.desc}</span>
-            </span>
-            <Icon icon={ChevronRight} size="sm" className="settings-menu-item__arrow" />
-          </button>
-        ))
-      )}
+      {MENU_GROUPS.map((group) => {
+        const visible = group.keys.filter((k) => itemMap.has(k));
+        if (visible.length === 0) return null;
+        return (
+          <div className="settings-menu-group" key={group.cap}>
+            <div className="settings-menu-group__cap">{group.cap}</div>
+            <div className="settings-menu-group__card">{visible.map(renderItem)}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
