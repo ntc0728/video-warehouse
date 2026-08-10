@@ -166,6 +166,7 @@
   color: var(--color-text-secondary);
   font: inherit;
   font-size: var(--text-xs);
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }

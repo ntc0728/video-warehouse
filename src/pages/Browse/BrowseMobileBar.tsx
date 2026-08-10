@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './BrowseMobileBar.css'
-import type { FilterBarProps } from '@/components/FilterBar/FilterBar'
+import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
 import { REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
 import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
@@ -29,20 +29,37 @@ export default function BrowseMobileBar({
 }: BrowseMobileBarProps) {
   const { value, onChange, excludedGenreIds = [] } = filterBarProps
   const [open, setOpen] = useState(false)
+  // 面板内草稿值：打开时从当前 value 快照，「完成」才一次性应用到 onChange，
+  // 返回/关闭丢弃草稿 —— 避免筛选过程中实时触发接口（点击「完成」后才调用）
+  const [draft, setDraft] = useState<FilterBarValue>(value)
+
+  useEffect(() => {
+    if (open) setDraft(value)
+  }, [open, value])
 
   const visibleGenres = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
 
-  const resetValue = () => {
-    onChange({
-      ...value,
-      mediaType: 'all',
-      genreIds: [...excludedGenreIds],
-      region: null,
-      year: null,
-      olderThan2015: false,
-      sortIdx: 0,
-    })
+  const defaultDraft = (base: FilterBarValue): FilterBarValue => ({
+    ...base,
+    mediaType: 'all',
+    genreIds: [...excludedGenreIds],
+    region: null,
+    year: null,
+    olderThan2015: false,
+    sortIdx: 0,
+  })
+
+  // 面板内「重置」：仅重置草稿值（不立即触发接口）
+  const resetDraft = () => setDraft(defaultDraft(draft))
+
+  // 面板内「完成」：将草稿值一次性应用到父级 onChange（触发接口）
+  const applyDraft = () => {
+    onChange(draft)
+    setOpen(false)
   }
+
+  // 已选轨移除：直接应用到 onChange（轨道在弹窗外，即时生效）
+  const patchValue = (patch: Partial<FilterBarValue>) => onChange({ ...value, ...patch })
 
   const activeCount =
     (value.mediaType !== 'all' ? 1 : 0) +
@@ -56,35 +73,35 @@ export default function BrowseMobileBar({
     chips.push({
       key: 'mt',
       label: value.mediaType === 'movie' ? '电影' : '剧集',
-      onRemove: () => onChange({ ...value, mediaType: 'all' }),
+      onRemove: () => patchValue({ mediaType: 'all' }),
     })
   }
   visibleGenres.forEach((id) => {
     chips.push({
       key: `g-${id}`,
       label: genreName(id, allGenres),
-      onRemove: () => onChange({ ...value, genreIds: value.genreIds.filter((g) => g !== id) }),
+      onRemove: () => patchValue({ genreIds: value.genreIds.filter((g) => g !== id) }),
     })
   })
   if (value.region) {
     chips.push({
       key: 'region',
       label: regionLabel(value.region),
-      onRemove: () => onChange({ ...value, region: null }),
+      onRemove: () => patchValue({ region: null }),
     })
   }
   if (value.year) {
     chips.push({
       key: 'year',
       label: `年份 · ${value.year}`,
-      onRemove: () => onChange({ ...value, year: null }),
+      onRemove: () => patchValue({ year: null }),
     })
   }
   if (value.olderThan2015) {
     chips.push({
       key: 'older',
       label: YEAR_OLDER_LABEL,
-      onRemove: () => onChange({ ...value, olderThan2015: false }),
+      onRemove: () => patchValue({ olderThan2015: false }),
     })
   }
 
@@ -141,21 +158,37 @@ export default function BrowseMobileBar({
               </button>
             </span>
           ))}
-          <button type="button" className="bmb-chip clear" onClick={resetValue}>
+          <button
+            type="button"
+            className="bmb-chip clear"
+            onClick={() => patchValue({ mediaType: 'all', genreIds: [...excludedGenreIds], region: null, year: null, olderThan2015: false, sortIdx: 0 })}
+          >
             清除全部
           </button>
         </div>
       )}
 
       {/* 全屏筛选面板（覆盖整个视口含顶部导航栏，顶栏含返回/重置）；
-          FilterBar 强制显示 footer —— 排序作为第五个分组展示（对齐 S3 示例） */}
-      <Drawer open={open} onClose={() => setOpen(false)} title="筛选" fullscreen onReset={resetValue}>
-        <FilterBar {...filterBarProps} hideFooter={false} />
+          FilterBar 强制显示 footer —— 排序作为第五个分组展示（对齐 S3 示例）。
+          面板内操作用草稿值（draft），点「完成」才应用 → 触发接口。 */}
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="筛选"
+        fullscreen
+        onReset={resetDraft}
+      >
+        <FilterBar
+          {...filterBarProps}
+          value={draft}
+          onChange={setDraft}
+          hideFooter={false}
+        />
         <div className="bmb-foot">
-          <button type="button" className="bmb-pf-reset" onClick={resetValue}>
+          <button type="button" className="bmb-pf-reset" onClick={resetDraft}>
             重置
           </button>
-          <button type="button" className="bmb-pf-apply" onClick={() => setOpen(false)}>
+          <button type="button" className="bmb-pf-apply" onClick={applyDraft}>
             完成
           </button>
         </div>
