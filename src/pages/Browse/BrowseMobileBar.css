@@ -178,49 +178,6 @@
   color: var(--color-text-tertiary);
 }
 
-/* 面板内「为你推荐」 */
-.bmb-rec {
-  margin-bottom: var(--space-md);
-}
-.bmb-rec-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-}
-.bmb-rec-card {
-  display: flex;
-  flex: 1 1 6rem;
-  flex-direction: column;
-  gap: var(--space-xs);
-  min-width: 6rem;
-  padding: var(--space-xs);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg, 0.875rem);
-  background: var(--color-surface-hover);
-  text-align: left;
-  transition: border-color 0.14s, background 0.14s;
-  cursor: pointer;
-}
-.bmb-rec-card:active {
-  border-color: var(--color-primary);
-}
-.bmb-rec-card.on {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-}
-.bmb-pc-ico {
-  font-size: var(--icon-sm);
-}
-.bmb-pc-label {
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-.bmb-pc-desc {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  line-height: 1.4;
-}
-
 /* 面板底部 */
 .bmb-foot {
   position: sticky;
@@ -270,7 +227,6 @@
 .bmb-seg:focus-visible,
 .bmb-filter-trigger:focus-visible,
 .bmb-preset:focus-visible,
-.bmb-rec-card:focus-visible,
 .bmb-chip .bmb-x:focus-visible,
 .bmb-pf-reset:focus-visible,
 .bmb-pf-apply:focus-visible {

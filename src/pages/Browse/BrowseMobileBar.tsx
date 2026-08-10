@@ -292,25 +292,8 @@ export default function BrowseMobileBar({
         </div>
       )}
 
-      {/* 全屏筛选面板（覆盖整个视口含顶部导航栏，顶栏含重置/关闭） */}
+      {/* 全屏筛选面板（覆盖整个视口含顶部导航栏，顶栏含返回/重置） */}
       <Drawer open={open} onClose={() => setOpen(false)} title="筛选" fullscreen onReset={resetValue}>
-        <div className="bmb-rec">
-          <div className="bmb-rec-cards">
-            {presets.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                className={`bmb-rec-card${matchPreset(p) ? ' on' : ''}`}
-                aria-pressed={matchPreset(p)}
-                onClick={() => applyPreset(p)}
-              >
-                <span className="bmb-pc-ico">{p.icon}</span>
-                <span className="bmb-pc-label">{p.label}</span>
-                <span className="bmb-pc-desc">{p.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
         <FilterBar {...filterBarProps} hideFooter />
         <div className="bmb-foot">
           <button type="button" className="bmb-pf-reset" onClick={resetValue}>
