@@ -60,7 +60,7 @@ export default function ProfileEditModal({
           <Button
             variant="secondary"
             size="sm"
-            className="rounded-full px-[var(--space-xl)]"
+            className="rounded-full px-[var(--space-xl)] min-h-[var(--comp-tab-height)]"
             onClick={() => fileRef.current?.click()}
           >
             上传头像
@@ -69,7 +69,7 @@ export default function ProfileEditModal({
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full px-[var(--space-xl)]"
+              className="rounded-full px-[var(--space-xl)] min-h-[var(--comp-tab-height)]"
               onClick={() => setAvatarLocal('')}
             >
               使用默认头像
@@ -102,10 +102,10 @@ export default function ProfileEditModal({
       {error && <p className="profile-edit__error">{error}</p>}
 
       <div className="settings-modal__footer">
-        <Button variant="ghost" size="sm" className="rounded-full px-[var(--space-xl)]" onClick={onClose}>
+        <Button variant="ghost" size="sm" className="rounded-full px-[var(--space-xl)] min-h-[var(--comp-tab-height)]" onClick={onClose}>
           取消
         </Button>
-        <Button variant="default" size="sm" className="rounded-full px-[var(--space-xl)]" onClick={handleSave}>
+        <Button variant="default" size="sm" className="rounded-full px-[var(--space-xl)] min-h-[var(--comp-tab-height)]" onClick={handleSave}>
           保存
         </Button>
       </div>
