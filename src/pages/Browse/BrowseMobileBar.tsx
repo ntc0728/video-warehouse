@@ -211,42 +211,44 @@ export default function BrowseMobileBar({
 
   return (
     <div className="bmb">
-      {/* 命令栏：模式切换 + 排序 + 筛选入口 */}
+      {/* 命令栏两行：第一行模式切换居中，第二行「筛选」按钮 + 结果数两端对齐 */}
       <div className="bmb-cmdbar">
-        <div className="bmb-mode-seg">
-          <button
-            type="button"
-            className={`bmb-seg${searchMode === 'smart' ? ' on' : ''}`}
-            aria-pressed={searchMode === 'smart'}
-            onClick={() => onModeChange('smart')}
-          >
-            智能检索
-          </button>
-          <button
-            type="button"
-            className={`bmb-seg${searchMode === 'cms' ? ' on' : ''}`}
-            aria-pressed={searchMode === 'cms'}
-            onClick={() => onModeChange('cms')}
-          >
-            直链搜索
-          </button>
-      </div>
-      {/* 排序入口已移至筛选抽屉；筛选入口仅「智能检索」模式展示：直链搜索无 FilterBar / SortBar */}
-      {searchMode === 'smart' && (
-        <>
-          <div className="bmb-spacer" />
-          <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
-            <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M3 5h18a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.4.9l-2-1A1 1 0 0 1 10 18v-4.5L2.2 6.6A1 1 0 0 1 3 5Z"
-              />
-            </svg>
-            筛选
-            <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
-          </button>
-        </>
-      )}
+        <div className="bmb-mode-row">
+          <div className="bmb-mode-seg">
+            <button
+              type="button"
+              className={`bmb-seg${searchMode === 'smart' ? ' on' : ''}`}
+              aria-pressed={searchMode === 'smart'}
+              onClick={() => onModeChange('smart')}
+            >
+              智能检索
+            </button>
+            <button
+              type="button"
+              className={`bmb-seg${searchMode === 'cms' ? ' on' : ''}`}
+              aria-pressed={searchMode === 'cms'}
+              onClick={() => onModeChange('cms')}
+            >
+              直链搜索
+            </button>
+          </div>
+        </div>
+        {/* 筛选入口仅「智能检索」模式展示：直链搜索无 FilterBar / SortBar */}
+        {searchMode === 'smart' && (
+          <div className="bmb-bar-row">
+            <button type="button" className="bmb-filter-trigger" onClick={() => setOpen(true)}>
+              <svg className="bmb-filter-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M3 5h18a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.4.9l-2-1A1 1 0 0 1 10 18v-4.5L2.2 6.6A1 1 0 0 1 3 5Z"
+                />
+              </svg>
+              筛选
+              <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
+            </button>
+            <span className="bmb-result-count">共 12,345 条</span>
+          </div>
+        )}
       </div>
 
       {/* 动态预设横滚（仅智能检索模式展示；直链搜索无预设，不渲染） */}
@@ -290,8 +292,8 @@ export default function BrowseMobileBar({
         </div>
       )}
 
-      {/* 右滑全屏筛选面板 */}
-      <Drawer open={open} onClose={() => setOpen(false)} title="筛选">
+      {/* 全屏筛选面板（覆盖整个视口含顶部导航栏，顶栏含重置/关闭） */}
+      <Drawer open={open} onClose={() => setOpen(false)} title="筛选" fullscreen onReset={resetValue}>
         <div className="bmb-rec">
           <div className="bmb-rec-cards">
             {presets.map((p) => (

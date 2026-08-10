@@ -82,3 +82,63 @@
     animation: none;
   }
 }
+
+/* ── fullscreen 变体：全屏覆盖整个视口（含顶部导航栏） ──
+   顶栏与全局导航栏同高（移动端紧凑高度），右侧为 重置 + 关闭 按钮组 */
+.drawer-content--fullscreen {
+  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  box-shadow: none;
+  animation: drawer-fade-in 0.22s var(--ease-out-expo, ease);
+}
+
+.drawer-content--fullscreen .drawer-header {
+  height: var(--header-height-compact);
+  padding: 0 var(--space-md);
+}
+
+.drawer-content--fullscreen .drawer-header-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.drawer-reset {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.drawer-reset:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--color-text);
+}
+
+.drawer-content--fullscreen .drawer-body {
+  padding: 0 0 var(--space-2xl);
+}
+
+@keyframes drawer-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-content--fullscreen {
+    animation: none;
+  }
+}
