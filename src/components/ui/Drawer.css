@@ -84,24 +84,75 @@
 }
 
 /* ── fullscreen 变体：全屏覆盖整个视口（含顶部导航栏） ──
-   顶栏与全局导航栏同高（移动端紧凑高度），右侧为 重置 + 关闭 按钮组 */
+   顶栏与全局导航栏同高（移动端紧凑高度），三栏布局：
+   左「‹ 返回」+ 中标题居中 + 右「重置」（与 S3 示例一致）。
+   进入动画：translateX(28px) + opacity 淡入（与 S3 示例 pgIn 一致）。 */
 .drawer-content--fullscreen {
   inset: 0;
   width: 100vw;
   max-width: 100vw;
   box-shadow: none;
-  animation: drawer-fade-in 0.22s var(--ease-out-expo, ease);
+  animation: drawer-pg-in 0.28s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes drawer-pg-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .drawer-content--fullscreen .drawer-header {
-  height: var(--header-height-compact);
-  padding: 0 var(--space-md);
-}
-
-.drawer-content--fullscreen .drawer-header-actions {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
+  justify-content: space-between;
+  height: var(--header-height-compact);
+  padding: 0 var(--space-sm);
+}
+
+/* 返回按钮：左对齐，与全局导航栏按钮视觉一致 */
+.drawer-content--fullscreen .drawer-close--back {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.drawer-content--fullscreen .drawer-close--back:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.05));
+}
+
+/* 标题：flex:1 居中 */
+.drawer-content--fullscreen .drawer-title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--text-lg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 右侧操作区：与左侧返回等宽保证标题居中 */
+.drawer-content--fullscreen .drawer-header-actions {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  align-items: center;
+  width: var(--comp-btn-min-height);
 }
 
 .drawer-reset {
@@ -128,13 +179,35 @@
   padding: 0 0 var(--space-2xl);
 }
 
-@keyframes drawer-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* 全屏面板内 FilterBar：对齐 S3 示例分组卡样式
+   （分组标题在行首 = label-as-chip，chips 32px 高圆角胶囊、字号 13px、间距 8px） */
+.drawer-content--fullscreen .drawer-body .filter-bar {
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.drawer-content--fullscreen .drawer-body .filter-bar__row,
+.drawer-content--fullscreen .drawer-body .filter-bar__row--wrap {
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.drawer-content--fullscreen .drawer-body .filter-bar__chips-wrap,
+.drawer-content--fullscreen .drawer-body .filter-bar__chips-scroll {
+  gap: var(--space-md);
+}
+
+.drawer-content--fullscreen .drawer-body .filter-bar__label {
+  min-width: 3em;
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.drawer-content--fullscreen .drawer-body .filter-bar__chip {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {

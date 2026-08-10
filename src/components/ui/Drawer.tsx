@@ -2,7 +2,7 @@
 
 import React, { useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X, RotateCcw } from 'lucide-react'
+import { X, RotateCcw, ChevronLeft } from 'lucide-react'
 import './Drawer.css'
 import { Icon } from "@/components/ui/Icon";
 
@@ -34,18 +34,34 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
           aria-describedby={undefined}
         >
           <div className="drawer-header">
-            <Dialog.Title className="drawer-title">{title || '筛选'}</Dialog.Title>
-            <div className="drawer-header-actions">
-              {fullscreen && onReset && (
-                <button type="button" className="drawer-reset" onClick={onReset} aria-label="重置">
-                  <Icon icon={RotateCcw} size="sm" />
-                  重置
+            {fullscreen ? (
+              <>
+                <button
+                  type="button"
+                  className="drawer-close drawer-close--back"
+                  onClick={onClose}
+                  aria-label="返回"
+                >
+                  <Icon icon={ChevronLeft} size="lg" />
                 </button>
-              )}
-              <button type="button" className="drawer-close" onClick={onClose} aria-label="关闭">
-                <Icon icon={X} size="md" />
-              </button>
-            </div>
+                <Dialog.Title className="drawer-title">{title || '筛选'}</Dialog.Title>
+                <div className="drawer-header-actions">
+                  {onReset && (
+                    <button type="button" className="drawer-reset" onClick={onReset} aria-label="重置">
+                      <Icon icon={RotateCcw} size="sm" />
+                      重置
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Dialog.Title className="drawer-title">{title || '筛选'}</Dialog.Title>
+                <button type="button" className="drawer-close" onClick={onClose} aria-label="关闭">
+                  <Icon icon={X} size="md" />
+                </button>
+              </>
+            )}
           </div>
           <div className="drawer-body">{children}</div>
         </Dialog.Content>
