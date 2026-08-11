@@ -678,35 +678,17 @@ test.describe('1.5 全局交互', () => {
     expect(title).toBeTruthy();
   });
 
-  test('HOME-045: 移动端 logo 右侧不显示 kinoTV 且进入指定页面时中央显示标题', async ({ page }) => {
+  test('HOME-045: 移动端 logo 右侧不显示 kinoTV 且顶栏中央为常驻搜索框', async ({ page }) => {
     await page.setViewportSize({ width: 767, height: 1024 });
 
-    // 首页：logo 右侧不显示 kinoTV 品牌字，中央显示品牌名 kinoTV
+    // 首页：logo 右侧不显示 kinoTV 品牌字（当前设计：顶栏中央为常驻搜索框，无独立标题元素）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1500);
     await expect(page.locator('.sticky-header__logo-group .sticky-header__brand')).toBeHidden({ timeout: 5000 });
-    const brandTitle = page.locator('.sticky-header__page-title--brand');
-    await expect(brandTitle).toBeVisible({ timeout: 5000 });
-    await expect(brandTitle).toHaveText('kinoTV');
-
-    // 进入指定页面：中央应显示对应标题
-    const cases = [
-      { path: '/browse', title: '搜索中心' },
-      { path: '/iptv', title: 'IPTV' },
-      { path: '/collections', title: '收藏' },
-      { path: '/history', title: '历史记录' },
-      { path: '/settings', title: '设置' },
-    ];
-    for (const c of cases) {
-      await page.goto(c.path, { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 15000 });
-      await page.waitForTimeout(1500);
-      const titleEl = page.locator('.sticky-header__page-title');
-      await expect(titleEl).toBeVisible({ timeout: 5000 });
-      await expect(titleEl).toHaveText(c.title);
-      console.log(`✅ HOME-045 通过: ${c.path} 顶部中央标题 = "${c.title}"`);
-    }
+    const centerSearch = page.locator('.sticky-header__center input[type="search"], .sticky-header__center input');
+    await expect(centerSearch).toBeVisible({ timeout: 5000 });
+    console.log('✅ HOME-045 通过: 移动端 logo 右侧隐藏品牌字，顶栏中央为搜索框');
   });
 
   test('HOME-046: 移动端打开侧边栏后头部显示 logo 与品牌字', async ({ page }) => {

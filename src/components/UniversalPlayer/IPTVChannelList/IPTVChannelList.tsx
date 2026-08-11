@@ -2,6 +2,7 @@ import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Radio, X } from 'lucide-react';
 import { CustomScrollbar } from '@/components/common';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
+import { resolveChannelLogoCandidates, markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
 import { Icon } from "@/components/ui/Icon";
 
 interface TVFocus {
@@ -67,21 +68,39 @@ function getFirstChar(name: string): string {
 }
 
 function ChannelLogoCell({ channel }: { channel: IPTVChannel }) {
-  const [imgError, setImgError] = useState(false);
+  // 台标候选链：M3U tvg-logo → 在线台标库（侧栏频道多，不逐条做 EPG 匹配）
+  const candidates = useMemo(() => resolveChannelLogoCandidates(channel), [channel]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  // 加载中即显示字母占位（候选未尝试完时），图片成功后再覆盖，避免空白等待
+  const [loaded, setLoaded] = useState(false);
+  const char = getFirstChar(channel.name);
+  const bgColor = getColorForName(channel.name);
 
-  if (channel.logo && !imgError) {
+  if (candidateIndex < candidates.length) {
     return (
-      <img
-        className="up-channel-item-logo"
-        src={channel.logo}
-        alt=""
-        onError={() => setImgError(true)}
-      />
+      <div className="up-channel-item-logo-cell">
+        {!loaded && (
+          <div className="up-channel-item-logo-fallback" style={{ backgroundColor: bgColor }}>{char}</div>
+        )}
+        <img
+          className="up-channel-item-logo"
+          src={candidates[candidateIndex]}
+          alt=""
+          onLoad={() => {
+            setLoaded(true);
+            // 成功记忆：跨会话优先复用该 URL
+            markLogoSucceeded(candidates[candidateIndex]);
+          }}
+          onError={() => {
+            markLogoFailed(candidates[candidateIndex]);
+            setLoaded(false);
+            setCandidateIndex((i) => i + 1);
+          }}
+        />
+      </div>
     );
   }
 
-  const char = getFirstChar(channel.name);
-  const bgColor = getColorForName(channel.name);
   return (
     <div
       className="up-channel-item-logo-fallback"

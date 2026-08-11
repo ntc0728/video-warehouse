@@ -7,6 +7,7 @@ import { adjustFontSizeForNative } from './lib/platform';
 import { preventPinchZoom } from './lib/preventZoom';
 import { preloadInitialRoute, preloadAllRoutes } from './components/Layout/routeConfig';
 import { useSourceManagerStore } from './stores/useSourceManagerStore';
+import { preloadLogoCache } from './services/channelLogo';
 
 // Android 原生平台：缩小字体和图标以适配 dp 单位
 adjustFontSizeForNative();
@@ -36,6 +37,9 @@ if (!import.meta.env.DEV) {
 // 不阻塞首屏（异步 + 模块级 guard 幂等）；保证「直接进入 IPTV 页」时
 // aggregatorUrls 与源管理真实启用状态一致，而非只依赖设置页 tab 挂载。
 useSourceManagerStore.getState().bootstrap();
+// 预载台标缓存（库清单 + 成败记忆，IndexedDB/网络拉取，不阻塞首屏）：
+// 清单就绪后 IPTV 页对「库外频道」不再发起注定 404 的台标猜测请求。
+void preloadLogoCache();
 preloadInitialRoute().finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>

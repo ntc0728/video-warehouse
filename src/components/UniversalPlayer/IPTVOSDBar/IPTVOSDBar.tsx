@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNetworkSpeed } from '@/hooks';
 import { SIZE_VAR, type IconSize } from '@/components/ui/Icon';
+import { markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
 import './IPTVOSDBar.css';
 
 interface ProgramInfo {
@@ -14,6 +15,8 @@ interface IPTVOSDBarProps {
   hasError?: boolean;
   channelName: string;
   channelLogo?: string;
+  /** 台标候选链（含 channelLogo 本身），失败时依次尝试；未提供时退回单 channelLogo */
+  channelLogoCandidates?: string[];
   currentProgram?: ProgramInfo;
   nextProgram?: ProgramInfo;
   channelNumber?: number;
@@ -145,6 +148,7 @@ export default function IPTVOSDBar({
   hasError = false,
   channelName,
   channelLogo,
+  channelLogoCandidates,
   currentProgram,
   nextProgram,
   channelNumber,
@@ -162,9 +166,16 @@ export default function IPTVOSDBar({
   onReturnToLive,
 }: IPTVOSDBarProps) {
   const [logoError, setLogoError] = useState(false);
+  const [logoIndex, setLogoIndex] = useState(0);
   const [tick, setTick] = useState(0);
   const controlsRef = useRef<HTMLDivElement>(null);
   const networkSpeed = useNetworkSpeed();
+
+  // 候选链：优先用完整候选，未提供时退回单 channelLogo
+  const logoCandidates = channelLogoCandidates && channelLogoCandidates.length > 0
+    ? channelLogoCandidates
+    : (channelLogo ? [channelLogo] : []);
+  const logoUrl = logoCandidates[logoIndex];
 
   const hasCurrentTitle = !!currentProgram?.title;
 
@@ -173,7 +184,9 @@ export default function IPTVOSDBar({
   const currentTimeStr = useMemo(() => formatCurrentTime(), [tick]);
 
   useEffect(() => {
+    // 频道切换（channelLogo 变化）时重置候选下标与错误态
     setLogoError(false);
+    setLogoIndex(0);
   }, [channelLogo]);
 
   useEffect(() => {
@@ -195,12 +208,23 @@ export default function IPTVOSDBar({
         )}
         <div className="iptv-osd-channel-row">
           <div className="iptv-osd-logo-wrapper">
-            {channelLogo && !logoError ? (
+            {logoUrl && !logoError ? (
               <img
                 className="iptv-osd-logo"
-                src={channelLogo}
+                src={logoUrl}
                 alt={channelName}
-                onError={() => setLogoError(true)}
+                onError={() => {
+                  markLogoFailed(logoUrl);
+                  if (logoIndex + 1 < logoCandidates.length) {
+                    setLogoIndex((i) => i + 1);
+                  } else {
+                    setLogoError(true);
+                  }
+                }}
+                onLoad={() => {
+                  // 成功记忆：跨会话优先复用该 URL
+                  markLogoSucceeded(logoUrl);
+                }}
               />
             ) : (
               <LogoFallback name={channelName} />
