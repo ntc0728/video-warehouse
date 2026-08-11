@@ -28,6 +28,16 @@ export interface IPTVChannel {
   sourceId?: string;
   noGuide?: boolean;
   supportTimeshift?: boolean;
+  /** M3U catchup 回放模式（default/append/flussonic/xtream）。预留：仅解析，暂不消费 */
+  catchup?: string;
+  /** M3U catchup-source 回放 URL 模板（可含 {utc}/{start}/{end} 占位符）。预留：仅解析，暂不消费 */
+  catchupSource?: string;
+  /** M3U catchup-days 回放窗口天数。预留：仅解析，暂不消费 */
+  catchupDays?: number;
+  /** M3U http-user-agent 属性：播放该频道需携带的 UA。预留：默认不消费（见 IPTV_CHANNEL_HEADERS_ENABLED） */
+  userAgent?: string;
+  /** M3U http-referrer 属性：播放该频道需携带的 Referer。预留：默认不消费 */
+  referrer?: string;
   currentProgram?: {
     title: string;
     start: string;

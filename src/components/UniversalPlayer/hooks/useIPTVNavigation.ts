@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { usePlayerStore } from '@/stores';
 import { playerToast } from '../PlayerToast';
 import type { PlayerToastType } from '../PlayerToast';
-import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
+import { buildChannelPlayUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
 
@@ -28,10 +28,8 @@ export function useIPTVNavigation({
     usePlayerStore.setState({ isPlaying: false });
     setCurrentChannelId(channel.id);
     setCurrentChannelName(channel.name);
-    const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
-    const playUrl = useProxy
-      ? buildProxyUrl(channel.url, proxyUrl)
-      : channel.url;
+    // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
+    const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
     setCurrentUrl(playUrl);
     setCurrentType(detectVideoSourceType(channel.url));
     setChannelListVisible(false);
@@ -59,10 +57,8 @@ export function useIPTVNavigation({
       const targetIndex = index % sameNameChannels.length;
       const nextChannel = sameNameChannels[targetIndex];
       if (nextChannel) {
-        const useProxy = shouldProxy(nextChannel.url, proxyUrl, proxyPattern);
-        const playUrl = useProxy
-          ? buildProxyUrl(nextChannel.url, proxyUrl)
-          : nextChannel.url;
+        // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
+        const playUrl = buildChannelPlayUrl(nextChannel, proxyUrl, proxyPattern);
         setCurrentUrl(playUrl);
         setCurrentType(detectVideoSourceType(nextChannel.url));
         setCurrentChannelId(nextChannel.id);
