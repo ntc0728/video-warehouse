@@ -192,7 +192,10 @@ export default function LazyImage({
       className={`lazy-image-container ${isLoaded ? 'loaded' : ''} ${error ? 'error' : ''} ${loadingVariant === 'brand' ? 'lazy-image-container--brand' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
       style={style}
     >
-      {!error && isInView && (
+      {/* 有 letter 且无有效候选时不再渲染 fallback 图（由下方 letter 分支独占）：
+          否则 /placeholder.svg 加载成功 opacity:1，与 letter 纯色块同时显示 →
+          文字占位与台标背景图重叠（2026-08-11 修复，IPTVChannelCard 无 logo 频道场景）。 */}
+      {!error && isInView && (!letter || hasValidSrc) && (
         <img
           src={imageSrc}
           alt={alt}
