@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.5.0...kinotv-v1.6.0) (2026-08-11)
+
+
+### Features
+
+* **iptv:** 台标三级回退优化（库清单预判+成败持久化+字母占位）与 sources 并发去重 ([81c55bd](https://github.com/ntc0728/video-warehouse/commit/81c55bd6286dc62f91103319d09a7cc2a0fa7cea))
+* **iptv:** 新增 3 个国内稳定源 + catchup/UA 属性解析（预留默认关闭） ([720df28](https://github.com/ntc0728/video-warehouse/commit/720df28dfb8fe4394a19ad65a877634e147fd96c))
+
+
+### Bug Fixes
+
+* **iptv:** EPG/IPTV 服务重构与页面清理，修复加载慢与泄漏 ([ebb4f8a](https://github.com/ntc0728/video-warehouse/commit/ebb4f8a1f6883ca4253cfcfc673f27c83f87b419))
+* **iptv:** 修复台标串台——成功记忆仅对当前频道候选链内排序 ([5f15dd2](https://github.com/ntc0728/video-warehouse/commit/5f15dd28bbb12946e6ccece05db1ea64c6ff5e30))
+* IPTV台标占位重叠/移动端搜索框自适应/Android启动页与APK发布链 ([b4bc035](https://github.com/ntc0728/video-warehouse/commit/b4bc03593b37d952e02058fbc7b57b60bc3737ea))
+* **settings:** 离开设置页时卸载移动端子页 portal，修复从子页跳转 source-checker/proxy-setup 被遮挡问题 ([9fef6c3](https://github.com/ntc0728/video-warehouse/commit/9fef6c33ab18f179f5db4e640cce5324a2b120a2))
+* 源增量合并/子页顶栏/占位封面/首页后台刷新 4 项优化 ([549ba18](https://github.com/ntc0728/video-warehouse/commit/549ba181ab4595d755ecf06ba4f6230acd5f5143))
+
 ## [1.5.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.4.0...kinotv-v1.5.0) (2026-08-10)
 
 
