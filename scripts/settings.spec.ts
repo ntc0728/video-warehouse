@@ -272,30 +272,64 @@ test.describe('6.6 关于与彩蛋', () => {
     }
   });
 
-  test('SET-073: 版本号彩蛋跳转源检测页', async ({ page }) => {
+  test('SET-073: 版本号彩蛋跳转源检测页（移动端子页进入，portal 不遮挡）', async ({ page }) => {
+    // 移动端视口：设置子页 SettingsSubPage 用 createPortal 挂到 body（z-index 60），
+    // 不受 Keep-Alive 的 display:none 控制。若离开 /settings 时未卸载，会盖住目标页
+    // （「路由变了、内容没变」，点返回才露出）。本用例强断言 portal 必须卸载。
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(800);
+
+    // 移动端：首层菜单 → 点「关于」进入子页（portal 出现）
+    await page.locator('.settings-menu-item', { hasText: '关于' }).first().click();
+    await page.waitForSelector('.settings-subpage', { timeout: 5000 });
+    await page.waitForTimeout(400);
 
     // 操作: 连续点击版本号 3 次
     const versionItem = page.locator('.version-item, [class*="version"]').first();
-    if (await versionItem.isVisible().catch(() => false)) {
-      await versionItem.click();
-      await page.waitForTimeout(200);
-      await versionItem.click();
-      await page.waitForTimeout(200);
-      await versionItem.click();
-      await page.waitForTimeout(1000);
+    await versionItem.click();
+    await page.waitForTimeout(200);
+    await versionItem.click();
+    await page.waitForTimeout(200);
+    await versionItem.click();
+    await page.waitForTimeout(1500);
 
-      // 预期结果: 跳转到 /source-checker
-      if (page.url().includes('/source-checker')) {
-        console.log('✅ SET-073 通过: 彩蛋正确跳转到源检测页');
-      } else {
-        console.log(`⚠️ SET-073: 未跳转（当前 URL = ${page.url()}）`);
-      }
-    } else {
-      console.log('⚠️ SET-073: 版本号未检测到');
-    }
+    // 预期结果: 跳转到 /source-checker 且设置子页 portal 已卸载、页面真实可见
+    expect(page.url()).toContain('/source-checker');
+    await expect(page.locator('.settings-subpage')).toHaveCount(0, { timeout: 3000 });
+    await expect(page.locator('.source-checker-page')).toBeVisible({ timeout: 5000 });
+    // 移动端顶栏替换为 SubPageHeader（返回+标题），与设置子页一致
+    await expect(page.locator('.sub-page-header__title')).toHaveText('源检测');
+    console.log('✅ SET-073 通过: 彩蛋正确跳转到源检测页（portal 已卸载）');
+  });
+
+  test('SET-074: KinoTV 彩蛋跳转一键配置代理页（移动端子页进入，portal 不遮挡）', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    // 移动端：首层菜单 → 点「关于」进入子页（portal 出现）
+    await page.locator('.settings-menu-item', { hasText: '关于' }).first().click();
+    await page.waitForSelector('.settings-subpage', { timeout: 5000 });
+    await page.waitForTimeout(400);
+
+    // 操作: 连续点击 KinoTV 3 次
+    const kinoItem = page.locator('.list-item', { hasText: 'KinoTV' }).first();
+    await kinoItem.click();
+    await page.waitForTimeout(200);
+    await kinoItem.click();
+    await page.waitForTimeout(200);
+    await kinoItem.click();
+    await page.waitForTimeout(1500);
+
+    // 预期结果: 跳转到 /proxy-setup 且设置子页 portal 已卸载、页面真实可见
+    expect(page.url()).toContain('/proxy-setup');
+    await expect(page.locator('.settings-subpage')).toHaveCount(0, { timeout: 3000 });
+    await expect(page.locator('.proxy-setup')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.sub-page-header__title')).toHaveText('一键配置代理');
+    console.log('✅ SET-074 通过: 彩蛋正确跳转到一键配置代理页（portal 已卸载）');
   });
 });
 
