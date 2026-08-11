@@ -304,31 +304,22 @@ test.describe('2.7 移动端搜索', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 进入搜索模式（移动端默认搜索框隐藏，需点图标）
-    const searchBtn = page.locator('.sticky-header__search-btn').first();
-    await expect(searchBtn).toBeVisible({ timeout: 5000 });
-    await searchBtn.click();
-    await page.waitForTimeout(500);
-    const mobileInput = page.locator('.sticky-header__mobile-search .search-box__input').first();
+    // 移动端顶栏中央常驻搜索框（0b1e20a 起取消「点击图标展开」临时搜索模式）
+    const mobileInput = page.locator('.sticky-header .search-box__input').first();
     await expect(mobileInput).toBeVisible({ timeout: 5000 });
 
     // 第一次搜索：mobile-a
     await mobileInput.fill('mobile-a');
-    await page.locator('.sticky-header__mobile-search .search-box__submit').first().click();
+    await page.locator('.sticky-header .search-box__submit').first().click();
     await page.waitForTimeout(1500);
     expect(searchReqs.length).toBeGreaterThanOrEqual(1);
     console.log(`✅ BROWSE-060 第一次搜索已调用接口 (请求数=${searchReqs.length})`);
 
-    // 在 /browse 上更换搜索词再次搜索：mobile-b
-    let input2 = page.locator('.sticky-header__mobile-search .search-box__input').first();
-    if (!(await input2.isVisible().catch(() => false))) {
-      await searchBtn.click();
-      await page.waitForTimeout(500);
-      input2 = page.locator('.sticky-header__mobile-search .search-box__input').first();
-    }
+    // 在 /browse 上更换搜索词再次搜索：mobile-b（路由切换后 SearchBox 因 key 重建，需重新定位）
+    const input2 = page.locator('.sticky-header .search-box__input').first();
     const before = searchReqs.length;
     await input2.fill('mobile-b');
-    await page.locator('.sticky-header__mobile-search .search-box__submit').first().click();
+    await page.locator('.sticky-header .search-box__submit').first().click();
     await page.waitForTimeout(1500);
     expect(searchReqs.length).toBeGreaterThan(before);
     console.log(`✅ BROWSE-060 更换搜索词后再次调用接口 (请求数=${searchReqs.length})`);
@@ -570,11 +561,8 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(500);
 
-    // 移动端顶部默认只显示标题，需先点搜索图标进入 isSearchMode 才渲染 SearchBox
-    await page.locator('.sticky-header__search-btn').first().click();
-
-    // 通过顶部 SearchBox 触发智能检索
-    const box = page.locator('input[placeholder*="搜索"]').first();
+    // 通过顶部常驻 SearchBox 触发智能检索（移动端不再有「点击图标展开」流程）
+    const box = page.locator('.sticky-header .search-box__input').first();
     await box.fill('batman');
     await box.press('Enter');
 
