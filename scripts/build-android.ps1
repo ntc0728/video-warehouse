@@ -47,6 +47,12 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Capacitor sync 失败" -ForegroundColor Red
     exit 1
 }
+# 应用自定义 res 补丁（values-v31 启动屏 + colors.xml；android/ 被 gitignore，
+# cap add 模板不含这些文件，统一以 scripts/android-res-patch/ 为唯一源）
+$ResPatch = Join-Path $ProjectRoot "scripts\android-res-patch"
+if (Test-Path $ResPatch) {
+    Copy-Item -Recurse -Force (Join-Path $ResPatch "*") (Join-Path $ProjectRoot "android\app\src\main\res")
+}
 Pop-Location
 
 # 4. 构建 APK

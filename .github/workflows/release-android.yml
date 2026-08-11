@@ -41,7 +41,10 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
+          Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
           node scripts/sync-android-version.mjs
+        shell: pwsh
 
       - name: Build release APK
         working-directory: android
