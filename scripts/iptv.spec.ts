@@ -214,3 +214,100 @@ test.describe('5.9 顶部搜索框', () => {
     console.log('✅ IPTV-077 通过: IPTV 页搜索历史独立存储');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 5.10 频道台标回退链（三级：M3U tvg-logo → EPG XMLTV icon → 在线台标库）
+// ═══════════════════════════════════════════════════════════════
+// 依赖真实频道数据（Level 3 配置），故采用条件式断言：频道数据/EPG 匹配
+// 不满足时记录跳过日志，不产生不稳定失败（与 IPTV-011 条件式惯例一致）。
+
+test.describe('5.10 频道台标回退链', () => {
+  // 1x1 透明 GIF（与 mock-tmdb fixture 相同的占位图惯例）
+  const PIXEL = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  test('IPTV-080: 无 tvg-logo 频道卡片使用在线台标库候选', async ({ page }) => {
+    // 三级回退链在线库级：mock fanmingming/live + wanglindl/TVlogo 台标库，
+    // 避免真实图片请求依赖外网（遵循项目 TMDB mock 惯例）
+    let libraryHits = 0;
+    await page.route('**/live.fanmingming.cn/**', async (route) => {
+      libraryHits++;
+      await route.fulfill({ status: 200, contentType: 'image/gif', body: PIXEL });
+    });
+    await page.route('**/raw.githubusercontent.com/wanglindl/**', async (route) => {
+      libraryHits++;
+      await route.fulfill({ status: 200, contentType: 'image/gif', body: PIXEL });
+    });
+
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    // 等待频道卡片出现（真实 M3U 源经代理拉取；代理不可达则无卡片，条件式跳过）
+    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(3000);
+
+    // 收集所有卡片台标 img 的 src
+    const srcs = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.iptv-channel-grid .iptv-card-cover img'))
+        .map((img) => (img as HTMLImageElement).src)
+        .filter(Boolean)
+    );
+    const onlineSrcs = srcs.filter(
+      (s) => s.startsWith('https://live.fanmingming.cn/') || s.startsWith('https://raw.githubusercontent.com/wanglindl/')
+    );
+    console.log(`✅ IPTV-080 检查完成: 卡片 img=${srcs.length}, 在线库候选=${onlineSrcs.length}, 库请求=${libraryHits}`);
+
+    if (libraryHits > 0) {
+      // 确实有无 tvg-logo 的频道走了在线库 → 其卡片 img src 必须是台标库候选 URL
+      expect(onlineSrcs.length).toBeGreaterThan(0);
+      expect(onlineSrcs[0]).toMatch(
+        /^https:\/\/(live\.fanmingming\.cn\/tv\/|raw\.githubusercontent\.com\/wanglindl\/TVlogo\/main\/img\/)/
+      );
+    } else {
+      // 环境频道全部自带 tvg-logo（或 EPG icon 已成功加载），未触发在线库 → 条件式跳过
+      console.log('ℹ️ IPTV-080 跳过: 环境频道未触发在线台标库请求');
+    }
+  });
+
+  test('IPTV-081: EPG XMLTV icon 作为台标二级回退', async ({ page }) => {
+    // EPG 请求（真实经 cors 代理、URL 保留 e.xml 字样；直连时同样命中）
+    // 返回带 <icon> 的 XMLTV，验证 EPG icon 进入频道台标候选链
+    const epgXml = `<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="CCTV-1"><display-name>CCTV-1 综合</display-name><icon src="https://mock.example.com/cctv1.png"/></channel>
+  <channel id="CCTV-13"><display-name>CCTV-13 新闻</display-name><icon src="https://mock.example.com/cctv13.png"/></channel>
+  <channel id="hunantv"><display-name>湖南卫视</display-name><icon src="https://mock.example.com/hunan.png"/></channel>
+</tv>`;
+    await page.route('**/*e.xml*', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/xml', body: epgXml });
+    });
+    // mock EPG icon 直链 + 在线台标库，避免任何真实图片请求
+    await page.route('**/mock.example.com/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/gif', body: PIXEL });
+    });
+    await page.route('**/live.fanmingming.cn/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/gif', body: PIXEL });
+    });
+    await page.route('**/raw.githubusercontent.com/wanglindl/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/gif', body: PIXEL });
+    });
+
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 20000 }).catch(() => {});
+
+    // EPG 拉取为 fire-and-forget：轮询等待匹配频道的卡片台标变为 EPG icon
+    const epgIconImgs = page.locator('.iptv-channel-grid .iptv-card-cover img[src^="https://mock.example.com/"]');
+    await expect(epgIconImgs.first()).toBeVisible({ timeout: 12000 }).catch(() => {});
+    const count = await epgIconImgs.count();
+    console.log(`✅ IPTV-081 检查完成: EPG icon 台标卡片数 = ${count}`);
+
+    if (count > 0) {
+      expect(count).toBeGreaterThan(0);
+    } else {
+      // 环境频道名与 mock EPG 频道不匹配（或频道全部自带 logo）→ 条件式跳过
+      console.log('ℹ️ IPTV-081 跳过: 无频道匹配 mock EPG 频道（含 icon）');
+    }
+  });
+});

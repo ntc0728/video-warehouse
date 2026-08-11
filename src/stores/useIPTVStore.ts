@@ -135,7 +135,10 @@ export const useIPTVStore = create<IPTVState>()(
        */
       refreshChannels: async () => {
         const { settings, favoriteChannelIds } = get();
-        set({ isLoading: true, error: null });
+        // 已有频道数据时静默刷新：旧数据继续展示，不进入全屏 loading，
+        // 避免慢源拖尾（最坏 8s 竞速窗口）期间页面长时间空白/加载态
+        const hasChannels = get().channels.length > 0;
+        set({ isLoading: !hasChannels, error: null });
 
         try {
           const result = await fetchAndParsePlaylist(settings);

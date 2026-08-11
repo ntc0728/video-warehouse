@@ -47,7 +47,10 @@ export function detectSourceType(content: string): SourceAnalysis {
 }
 
 async function fetchContent(url: string): Promise<string> {
-  return getText(url, { timeout: 15000, retries: 1 });
+  // 20s 单次超时 + 不重试：M3U 列表对失效源重试收益极低；
+  // 超时不宜过紧（8s 会误杀经代理响应慢但健康的源），配合竞速窗口「首个成功即收尾」
+  // 与「零成功时等全部 settle 快速失败」，慢源不阻塞快源。
+  return getText(url, { timeout: 20000, retries: 0 });
 }
 
 /**
@@ -261,9 +264,72 @@ export function detectTimeshiftSupport(url: string, type: string): boolean {
   return lower.includes('.m3u8');
 }
 
+/** 竞速窗口关闭时被放弃的源标记（非真实网络错误，不计入 sourceErrors） */
+const PENDING_ABANDONED = 'pending-abandoned-in-window';
+
+/**
+ * 竞速窗口等待：并行等待所有 promise，但限制总等待时长：
+ * - 首个 fulfilled 到达后，最多再等 settleMs 收尾（合并其余快源结果，保留多源聚合语义）
+ * - 全程最多 maxWaitMs（无任何成功源时也强制返回，防止慢源/失效源无限拖尾）
+ * 未完成项以 rejected(PENDING_ABANDONED) 标记，由调用方区分「真实失败」与「放弃等待」。
+ */
+function settleWithWindow<T>(
+  promises: Promise<T>[],
+  settleMs: number,
+  maxWaitMs: number
+): Promise<PromiseSettledResult<T>[]> {
+  return new Promise((resolve) => {
+    const results: Array<PromiseSettledResult<T> | undefined> = new Array(promises.length);
+    let settledCount = 0;
+    let firstFulfilledAt = 0;
+    let done = false;
+    let maxTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (maxTimer) clearTimeout(maxTimer);
+      // 未完成项标记为「放弃等待」：不算真实失败
+      for (let i = 0; i < results.length; i++) {
+        if (!results[i]) {
+          results[i] = { status: 'rejected', reason: PENDING_ABANDONED };
+        }
+      }
+      resolve(results as PromiseSettledResult<T>[]);
+    };
+
+    maxTimer = setTimeout(finish, maxWaitMs);
+
+    promises.forEach((promise, i) => {
+      promise
+        .then(
+          (value) => {
+            results[i] = { status: 'fulfilled', value };
+            if (firstFulfilledAt === 0) {
+              firstFulfilledAt = Date.now();
+              // 首个成功源到达：启动收尾窗口，等其余快源一起合并返回
+              setTimeout(finish, settleMs);
+            }
+          },
+          (reason) => {
+            results[i] = { status: 'rejected', reason };
+          }
+        )
+        .finally(() => {
+          settledCount += 1;
+          if (settledCount === promises.length) finish();
+        });
+    });
+  });
+}
+
 /**
  * 从远程获取并解析 M3U 播放列表
  * 源地址直接请求（不走代理），频道播放 URL 由前端按需走代理
+ *
+ * 加载策略（防慢源拖尾）：并行拉取所有源，但走竞速窗口——
+ * 首个成功源到达后最多再等 1.5s 收尾即返回（正常情况 2~4s 出结果），
+ * 全程最多 8s（与单源超时一致，全失败时最坏 8s 返回错误），不再等全部源 settle。
  */
 export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
   channels: IPTVChannel[];
@@ -280,8 +346,9 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
     throw new Error('IPTV 源未配置，请在设置中选择数据源');
   }
 
-  // 并行获取所有源
-  const results = await Promise.allSettled(
+  // 并行获取所有源（竞速窗口：首个成功 + 1.5s 收尾；零成功时等全部 settle 快速失败，
+  // 绝对上限 20s 兜底——上限过紧（8s）会误杀响应慢但健康的源，导致“全部源加载失败”）
+  const results = await settleWithWindow(
     urls.map(async (url, index) => {
       const proxyUrl = getPrimaryIptvProxy(settings?.proxyUrl);
       const fetchUrl = shouldProxy(url, proxyUrl, settings?.proxyPattern)
@@ -294,7 +361,9 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
         id: `${index}-${ch.id}`,
         sourceId: `source-${index}`,
       }));
-    })
+    }),
+    1500, // 首个成功源到达后的收尾窗口
+    20000 // 绝对上限（与单源超时一致）
   );
 
   const allChannels: IPTVChannel[] = [];
@@ -309,6 +378,8 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
         sourceType = PlaylistSourceType.MULTI_CHANNEL;
       }
     } else {
+      // 竞速窗口关闭时放弃的源不计入失败（非真实网络错误）
+      if (result.reason === PENDING_ABANDONED) continue;
       sourceErrors.push({
         index: i,
         url: urls[i],

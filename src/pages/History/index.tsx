@@ -21,6 +21,8 @@ import { useBackdropLoader } from '@/hooks/useBackdropLoader';
 import { useDocumentTitle } from '@/hooks';
 
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
+import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
+import type { EPGChannelIndex } from '@/services/epgService';
 import type { Video } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
@@ -169,6 +171,20 @@ export default function HistoryPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<ConfirmType>('single');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // EPG 频道预索引（零网络读 IndexedDB 缓存）：IPTV 历史卡台标二级回退（EPG XMLTV icon）
+  const [epgIndex, setEpgIndex] = useState<EPGChannelIndex | undefined>(undefined);
+  useEffect(() => {
+    let disposed = false;
+    getCachedEPGData()
+      .then((data) => {
+        if (!disposed && data.channels.length > 0) {
+          setEpgIndex(buildEPGChannelIndex(data.channels));
+        }
+      })
+      .catch(() => { /* 无 EPG 缓存时跳过，卡片走字母占位 */ });
+    return () => { disposed = true; };
+  }, []);
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('history', undefined, location.pathname === '/history');
@@ -584,7 +600,7 @@ export default function HistoryPage() {
                         </button>
                       )}
                       <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                      <IPTVChannelCard channel={ch as IPTVChannel} hideFavorite batchMode={batchMode} />
+                      <IPTVChannelCard channel={ch as IPTVChannel} hideFavorite batchMode={batchMode} epgIndex={epgIndex} />
                       <span
                         className="record-card__time"
                         title={formatFullTime(ch._histTime)}

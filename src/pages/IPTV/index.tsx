@@ -14,7 +14,8 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { getEPGCacheTime, fetchAndParseEPG } from '@/services/epgService';
+import { getEPGCacheTime, fetchAndParseEPG, buildEPGChannelIndex } from '@/services/epgService';
+import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -100,6 +101,14 @@ export default function IPTVPage() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [epgCacheTime, setEpgCacheTime] = useState<number | null>(null);
+  // EPG 频道列表（含 XMLTV icon）：供卡片台标二级回退，随下方 EPG 刷新 effect 懒加载
+  const [epgChannels, setEpgChannels] = useState<EPGChannelInfo[]>([]);
+
+  // EPG 频道预索引：一次性构建，卡片台标二级回退 O(1) 匹配，避免每卡片全量遍历数千 EPG 频道
+  const epgIndex: EPGChannelIndex | undefined = useMemo(
+    () => (epgChannels.length > 0 ? buildEPGChannelIndex(epgChannels) : undefined),
+    [epgChannels]
+  );
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('iptv', undefined, location.pathname === '/iptv');
@@ -133,20 +142,27 @@ export default function IPTVPage() {
 
   // 获取节目单缓存时间；同时后台校验 EPG 是否过期（fetchAndParseEPG 内部带
   // epgUpdateInterval TTL 判断：未过期直接返回缓存、零网络请求；过期才重新拉取），
-  // 使「只逛列表页」的用户也能让节目单数据保持新鲜。
+  // 使「只逛列表页」的用户也能让节目单数据保持新鲜；顺带把 EPG 频道列表（含 icon）
+  // 交给卡片做台标二级回退。
   useEffect(() => {
     getEPGCacheTime().then(setEpgCacheTime);
     fetchAndParseEPG()
-      .then(() => getEPGCacheTime().then(setEpgCacheTime))
+      .then((data) => {
+        setEpgChannels(data.channels);
+        return getEPGCacheTime().then(setEpgCacheTime);
+      })
       .catch(() => { /* 刷新失败保持原缓存时间显示 */ });
   }, []);
 
-  // 页面卸载时中止检测
+  // 离开 IPTV 页（Keep-Alive 下组件不卸载，unmount 清理不会执行）或真实卸载时中止检测
   useEffect(() => {
+    if (location.pathname !== '/iptv') {
+      useIPTVStore.getState().abortAvailabilityCheck();
+    }
     return () => {
       useIPTVStore.getState().abortAvailabilityCheck();
     };
-  }, []);
+  }, [location.pathname]);
 
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
@@ -428,6 +444,9 @@ export default function IPTVPage() {
                       channel={channel}
                       // 传入当前组该频道的检测结果（独立于其他 tab）
                       availability={currentGroupResults[channel.id]}
+                      // EPG 频道列表 + 预索引：台标二级回退（EPG XMLTV icon）
+                      epgChannels={epgChannels}
+                      epgIndex={epgIndex}
                     />
                   ))}
                 </div>

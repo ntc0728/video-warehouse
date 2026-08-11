@@ -29,6 +29,7 @@ import type { EPGProgram, ParsedEPGData } from '@/services/epgService';
 import { Rewind, FastForward, X } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
+import { resolveChannelLogoCandidates } from '@/services/channelLogo';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
@@ -143,7 +144,7 @@ export default function UniversalPlayer({
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
 
   // EPG 数据 hook
-  const { epgReady, epgProgramsRef, epgStatus, epgError } = useEPGData({ mode, channels: _channels });
+  const { epgReady, epgProgramsRef, epgStatus, epgError, epgChannels } = useEPGData({ mode, channels: _channels });
 
   // toast 位置：播放器页面 → 中间靠上（body 标记驱动全局 CSS 重定位 sonner）
   useEffect(() => {
@@ -179,6 +180,12 @@ export default function UniversalPlayer({
     if (mode !== 'iptv' || !currentChannelId) return undefined;
     return _channels.find(ch => ch.id === currentChannelId);
   }, [mode, currentChannelId, _channels]);
+
+  // 当前频道台标候选链（三级回退）：M3U tvg-logo → EPG icon → 在线台标库
+  const channelLogoCandidates = useMemo(
+    () => (currentChannel ? resolveChannelLogoCandidates(currentChannel, epgChannels, proxyUrl) : []),
+    [currentChannel, epgChannels, proxyUrl]
+  );
 
   // 播放器控制 hook
   const {
@@ -754,7 +761,8 @@ retryCount,
           visible={isControlsVisible}
           hasError={hasError}
           channelName={currentChannelName || channelName || ''}
-          channelLogo={currentChannel?.logo}
+          channelLogo={channelLogoCandidates[0] ?? ''}
+          channelLogoCandidates={channelLogoCandidates}
           currentProgram={channelProgram?.current ?? currentChannel?.currentProgram}
           nextProgram={channelProgram?.next ?? currentChannel?.nextProgram}
           channelNumber={channelNumber}
