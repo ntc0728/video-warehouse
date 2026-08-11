@@ -11,13 +11,6 @@
   padding: var(--space-xl) var(--space-md);
 }
 
-/* 移动端：顶部让出 SubPageHeader（fixed 顶栏）高度，避免内容被遮挡 */
-@media (width <= 767px) {
-  .proxy-setup {
-    padding: var(--header-height-compact) var(--space-md) var(--space-xl);
-  }
-}
-
 .proxy-setup__inner {
   width: 100%;
   max-width: none;    /* 内容区域撑满整个容器宽度 */

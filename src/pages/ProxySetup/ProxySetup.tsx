@@ -14,7 +14,7 @@ import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck, Wifi } from 'lucide-
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import SubPageHeader from '@/components/common/SubPageHeader/SubPageHeader';
+import SubPage from '@/components/common/SubPage/SubPage';
 import { toast } from '@/components/ui/toastBus';
 import { Icon } from '@/components/ui/Icon';
 import {
@@ -41,7 +41,7 @@ export default function ProxySetup() {
   const setCorsProxy = useSettingsStore((s) => s.setCorsProxy);
   const setIptvSettings = useIPTVStore((s) => s.setSettings);
 
-  // 移动端：渲染 SubPageHeader（返回+标题）替代全局顶部导航栏，与设置页子页一致
+  // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   // 状态
@@ -135,10 +135,8 @@ export default function ProxySetup() {
     toast.show({ content: '已写入项目设置，可跳转设置页确认', type: 'success' });
   }, [resultUrl, kind, setCorsProxy, setIptvSettings, appendLog]);
 
-  return (
+  const page = (
     <div className="proxy-setup page-transition-enter">
-      {/* 移动端子页顶栏：返回 + 标题，覆盖全局导航栏（与其他设置子页一致） */}
-      {isMobile && <SubPageHeader title="一键配置代理" />}
       <div className="proxy-setup__inner">
         <header className="proxy-setup__header">
           <h2 className="proxy-setup__title">
@@ -265,4 +263,8 @@ export default function ProxySetup() {
       </div>
     </div>
   );
+
+  // 移动端：整页 portal 挂 body（fixed inset:0 覆盖全视口），顶栏替代全局导航栏，
+  // 内容在顶栏下方独立滚动 —— 与设置页 SettingsSubPage 完全同模式，无全局 padding 补偿
+  return isMobile ? <SubPage title="一键配置代理">{page}</SubPage> : page;
 }

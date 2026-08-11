@@ -1,14 +1,22 @@
-/* ── SubPageHeader（移动端子页顶栏） ──────────────
-   与设置页 .settings-subpage__header 视觉一致：fixed 覆盖视口顶部、
-   z-index 高于全局 sticky-header(50)，进入子页后替代顶部导航栏。
+/* ── SubPage（移动端独立路由子页全屏容器） ──────────────
+   与设置页 .settings-subpage 同模式：fixed inset:0 + z-index 高于
+   sticky-header(50)，覆盖全视口；顶栏与全局导航栏同高（移动端
+   --header-height-compact），视觉上替代顶部导航栏；
+   body 在顶栏下方独立滚动，无需全局滚动容器 padding 补偿。
    仅移动端（≤767px）由调用方渲染；样式在全局作用域定义（非 CSS Module）。 */
 
-.sub-page-header {
+.sub-page {
   position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
+  inset: 0;
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-background);
+}
+
+/* 子页顶栏：与全局导航栏同高（移动端紧凑高度）、同背景 —— 进入子页后替代顶部导航栏 */
+.sub-page__header {
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
@@ -21,7 +29,7 @@
 }
 
 /* 返回按钮：方形圆角触控区，与全局导航栏按钮视觉一致 */
-.sub-page-header__back {
+.sub-page__back {
   display: inline-flex;
   flex-shrink: 0;
   justify-content: center;
@@ -37,13 +45,13 @@
   cursor: pointer;
 }
 
-.sub-page-header__back:hover,
-.sub-page-header__back:active {
+.sub-page__back:hover,
+.sub-page__back:active {
   background: var(--color-surface-hover);
 }
 
 /* 标题：flex:1 居中（左侧返回按钮 + 右侧对称占位，形成 iOS 居中标题结构） */
-.sub-page-header__title {
+.sub-page__title {
   flex: 1;
   margin: 0;
   color: var(--color-text);
@@ -56,7 +64,14 @@
 }
 
 /* 右侧占位：与左侧返回按钮等宽，保证标题视觉居中 */
-.sub-page-header__spacer {
+.sub-page__spacer {
   flex-shrink: 0;
   width: var(--comp-btn-min-height);
+}
+
+/* 子页内容区：顶栏下方独立滚动（对齐 .settings-subpage__body） */
+.sub-page__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
