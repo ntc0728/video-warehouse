@@ -56,8 +56,17 @@ export default function SettingsPage() {
     setMobileSubPage(null);
   }, []);
 
-  // ── 顶部搜索框联动：搜索设置项（按标题/副标题过滤） ─────
+  // ── 离开设置页时关闭移动端子页 portal ─────
+  // SettingsSubPage 用 createPortal 挂到 document.body（全屏覆盖层，z-index 60），
+  // 不受 AppLayout Keep-Alive 的 display:none 控制。若在子页内 navigate 到独立路由页
+  // （源检测 / 一键配置代理），portal 仍覆盖在 body 上，造成「路由变了、页面内容没变」
+  // 的假象（点返回卸载 portal 后才露出真正页面）。监听 pathname 离开 /settings 即关闭。
   const location = useLocation();
+  useEffect(() => {
+    if (location.pathname !== '/settings') {
+      setMobileSubPage(null);
+    }
+  }, [location.pathname]);
   const [searchQuery, setSearchQuery] = useState('');
   const handleSearchSettings = useCallback((q: string) => setSearchQuery(q), []);
 
