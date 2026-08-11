@@ -905,6 +905,24 @@
   object-fit: contain;
 }
 
+/* 侧栏台标叠加容器：字母占位垫底，图片加载成功后盖在其上 */
+.up-channel-item-logo-cell {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--space-lg);
+  height: var(--space-lg);
+}
+
+.up-channel-item-logo-cell .up-channel-item-logo-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.up-channel-item-logo-cell .up-channel-item-logo {
+  position: relative;
+  z-index: 1;
+}
+
 .up-channel-item-logo-fallback {
   display: flex;
   flex-shrink: 0;

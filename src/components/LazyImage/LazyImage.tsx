@@ -11,7 +11,7 @@
  *
  * 缓存工具函数见 `./imageCache.ts`。
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import CardCoverLoading from '../common/CardCoverLoading';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
@@ -43,9 +43,15 @@ interface LazyImageProps {
   style?: React.CSSProperties;
   placeholder?: React.ReactNode;
   fallbackSrc?: string;
+  /**
+   * 候选回退源链：src 加载失败时依次尝试，全部失败后才进入 error 态
+   * （走 fallbackSrc / letter 占位）。不传时行为与原先完全一致。
+   */
+  srcCandidates?: string[];
   letter?: string;
-  onLoad?: () => void;
-  onError?: (error: Error) => void;
+  onLoad?: (url?: string) => void;
+  /** error 第二参数为当前失败的候选 URL（srcCandidates 场景下定位失败项） */
+  onError?: (error: Error, failedUrl?: string) => void;
   threshold?: number;
   srcSet?: string;
   sizes?: string;
@@ -55,6 +61,12 @@ interface LazyImageProps {
    * - brand：KinoTV 抠图 + 进度条（用于 card 封面）
    */
   loadingVariant?: 'default' | 'brand';
+  /**
+   * 加载中即显示字母占位（不渲染 shimmer/spinner）：
+   * 用于台标等「无图率高、加载可能超时」的场景，避免 spinner 空白等待期；
+   * 加载成功后图片淡入替换。默认 false（保持旧占位行为）。
+   */
+  immediateLetter?: boolean;
   /**
    * 加载超时（毫秒）：图片请求挂起（既不 onLoad 也不 onError，如防盗链 pending）时
    * 超时视为加载失败 → 走 fallbackSrc。默认 8s；0 表示禁用超时。
@@ -69,6 +81,7 @@ export default function LazyImage({
   style = {},
   placeholder,
   fallbackSrc = '/placeholder.png',
+  srcCandidates,
   letter,
   onLoad,
   onError,
@@ -77,11 +90,22 @@ export default function LazyImage({
   sizes,
   loadingVariant = 'default',
   timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
+  immediateLetter = false,
 }: LazyImageProps) {
   // 命中 session 缓存时直接进入 loaded + inView 态，跳过 IntersectionObserver 等待
   const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
   const [isInView, setIsInView] = useState(() => isImageLoaded(src));
   const [error, setError] = useState(false);
+  // 候选链：src 为链首，srcCandidates 为后续候选（过滤空值）
+  const candidates = useMemo(() => {
+    const all = src ? [src, ...(srcCandidates ?? [])] : [];
+    return all.filter(Boolean);
+  }, [src, srcCandidates]);
+  // 当前候选下标：src 变化时重置回链首
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [src]);
   const imgRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   // 命中 session 缓存：DOM 重建时跳过 0.5s opacity/transform 渐显动画
@@ -122,28 +146,42 @@ export default function LazyImage({
 
   const handleLoad = () => {
     setIsLoaded(true);
-    // 写入 session 缓存，供后续同 URL 的 mount 跳过 IntersectionObserver
-    markImageLoaded(src);
-    onLoad?.();
+    // 写入 session 缓存（记录实际成功加载的候选 URL，供后续同 URL 的 mount 跳过等待）
+    markImageLoaded(imageSrc);
+    // 回调携带成功 URL（srcCandidates 场景下定位命中项；供调用方记录跨会话成功记忆）
+    onLoad?.(candidates[candidateIndex]);
   };
 
   const handleError = () => {
+    // 候选链未用尽：推进到下一候选继续尝试，不进入 error 态
+    if (candidateIndex + 1 < candidates.length) {
+      setCandidateIndex((i) => i + 1);
+      onError?.(new Error('Failed to load image'), candidates[candidateIndex]);
+      return;
+    }
     setError(true);
     // 错误的 URL 不写入缓存,允许后续重试或显示 fallback
-    onError?.(new Error('Failed to load image'));
+    onError?.(new Error('Failed to load image'), candidates[candidateIndex]);
   };
 
-  const hasValidSrc = src && src.trim().length > 0;
+  const hasValidSrc = candidates.length > 0;
 
   // C2-2（2026-08-04）：加载超时兜底——img 挂载（进入视口）后 timeoutMs 内未 onLoad
   // 也未 onError（请求挂起），视为失败走 fallbackSrc，避免 spinner 无限转。
+  // 候选链场景：超时优先推进候选，链用尽才进入 error 态。
   // onLoad/onError 改变 isLoaded/error 后本 effect 清理计时器，不误触发。
   useEffect(() => {
     if (!isInView || isLoaded || error || !hasValidSrc || timeoutMs <= 0) return;
-    const timer = window.setTimeout(() => setError(true), timeoutMs);
+    const timer = window.setTimeout(() => {
+      if (candidateIndex + 1 < candidates.length) {
+        setCandidateIndex((i) => i + 1);
+      } else {
+        setError(true);
+      }
+    }, timeoutMs);
     return () => window.clearTimeout(timer);
-  }, [isInView, isLoaded, error, hasValidSrc, timeoutMs]);
-  const imageSrc = error || !hasValidSrc ? fallbackSrc : src;
+  }, [isInView, isLoaded, error, hasValidSrc, timeoutMs, candidateIndex, candidates.length]);
+  const imageSrc = error || !hasValidSrc ? fallbackSrc : candidates[candidateIndex];
   // 移除 autoSrcSet：原逻辑 `${src} 1x, ${src} 2x` 错误地为同一 URL 声明两种密度，
   // 浏览器在高 DPR 屏幕下会加载原始大图（可能 3000px+），导致内存暴增和性能下降。
   // 若需要响应式图片，应由调用方通过 srcSet prop 传入正确格式的 srcSet。
@@ -175,7 +213,11 @@ export default function LazyImage({
       {!isLoaded && !error && hasValidSrc && (
         <div className="lazy-image-placeholder">
           {loadingVariant === 'brand' ? (
-            <CardCoverLoading />
+            immediateLetter && letter ? (
+              <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
+            ) : (
+              <CardCoverLoading />
+            )
           ) : (
             placeholder || (
               <div className="lazy-image-spinner">

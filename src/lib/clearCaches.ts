@@ -13,7 +13,8 @@ import { useTMDBStore } from '@/stores/useTMDBStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { CATEGORY_CONFIG } from '@/pages/Home/categoryConfig';
-import { clearIPTVChannelCache, clearEPGCache } from '@/services/database';
+import { clearIPTVChannelCache, clearEPGCache, clearLogoCache } from '@/services/database';
+import { resetLogoCacheInMemory } from '@/services/channelLogo';
 import { clearImageCache } from '@/components/LazyImage/imageCache';
 
 /** localStorage 中可安全清除的缓存 key（类目缓存按前缀单独处理） */
@@ -23,8 +24,11 @@ const CACHE_LS_KEYS = [
 ];
 
 export async function clearAllCaches(): Promise<void> {
-  // ── 1. IndexedDB：频道缓存 + EPG 缓存（不动收藏/历史仓库） ──
-  await Promise.all([clearIPTVChannelCache(), clearEPGCache()]);
+  // ── 1. IndexedDB：频道缓存 + EPG 缓存 + 台标缓存（不动收藏/历史仓库） ──
+  await Promise.all([clearIPTVChannelCache(), clearEPGCache(), clearLogoCache()]);
+
+  // 台标内存缓存（库清单预判 + 成败记忆）
+  resetLogoCacheInMemory();
 
   // ── 2. localStorage：固定 key + 首页类目 key（home-cat-*） ──
   for (const key of CACHE_LS_KEYS) {

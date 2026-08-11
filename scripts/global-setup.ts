@@ -94,11 +94,28 @@ export default async function globalSetup(_config: FullConfig) {
   const baseURL = _config.projects[0].use.baseURL || 'http://127.0.0.1:3001';
   await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
 
+  // 时序竞态修复（2026-08-11）：应用启动后会有「异步写回」覆盖注入值——
+  // ① useSettingsStore 的加密持久化是异步写盘（setItem 里 void async 加密后
+  //    localStorage.setItem），rehydrate 完成后可能基于「旧内存状态」异步写回；
+  // ② main.tsx 的 useSourceManagerStore.bootstrap() 会把全量内置源索引同步回
+  //    app-settings（videoSourceIndices: [28] 即全量源数）。
+  // 若直接 evaluate 注入后立即 storageState，最终落盘可能是应用写回的空 Token。
+  // 对策：先等初始化写回风暴结束 → 注入 → 再等 → 再注入（最后写入者胜）。
+  await page.waitForTimeout(2500);
+
   // 注入应用设置
   await page.evaluate(({ appSettings, iptvStore }) => {
     localStorage.setItem('app-settings', JSON.stringify(appSettings));
     localStorage.setItem('iptv-store', JSON.stringify(iptvStore));
   }, { appSettings: APP_SETTINGS, iptvStore: IPTV_STORE });
+
+  // 等注入后可能残留的异步写回（加密写盘）落盘，再覆盖一次确保注入值生效
+  await page.waitForTimeout(800);
+  await page.evaluate(({ appSettings, iptvStore }) => {
+    localStorage.setItem('app-settings', JSON.stringify(appSettings));
+    localStorage.setItem('iptv-store', JSON.stringify(iptvStore));
+  }, { appSettings: APP_SETTINGS, iptvStore: IPTV_STORE });
+  await page.waitForTimeout(300);
 
   // 保存 storageState（包含 cookies + localStorage）
   await context.storageState({ path: STORAGE_STATE_PATH });

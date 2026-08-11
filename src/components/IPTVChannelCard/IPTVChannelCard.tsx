@@ -9,6 +9,8 @@ import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
+import { resolveChannelLogoCandidates, markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
+import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './IPTVChannelCard.css';
@@ -20,9 +22,13 @@ interface IPTVChannelCardProps {
   batchMode?: boolean;
   /** 当前 tab 该频道的检测结果（由 IPTV 页按组传入，独立于其他 tab）；undefined 表示未检测 */
   availability?: boolean;
+  /** EPG 频道列表（含 XMLTV icon），用于台标二级回退来源；由 IPTV 页懒加载后传入 */
+  epgChannels?: EPGChannelInfo[];
+  /** EPG 频道预索引（O(1) 匹配，避免每卡片全量遍历数千 EPG 频道）；由页面层一次性构建 */
+  epgIndex?: EPGChannelIndex;
 }
 
-const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false, availability }: IPTVChannelCardProps) {
+const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false, availability, epgChannels, epgIndex }: IPTVChannelCardProps) {
   const toggleFavorite = useIPTVStore((s) => s.toggleFavorite);
   const setSelectedChannel = useIPTVStore((s) => s.setSelectedChannel);
   const recordPlay = useIPTVStore((s) => s.recordPlay);
@@ -42,6 +48,12 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   // 正常应用内导航由 useSmartBack 走浏览器原生后退（navigate(-1)）回退到本页，
   // 此 from 仅在深链直达 /iptv/play 时作为兜底。
   const location = useLocation();
+
+  /** 台标候选链（三级回退）：M3U tvg-logo → EPG icon → 在线台标库，全失败走字母占位 */
+  const logoCandidates = useMemo(
+    () => resolveChannelLogoCandidates(channel, epgChannels, proxyUrl, epgIndex),
+    [channel, epgChannels, proxyUrl, epgIndex]
+  );
 
   /** 构建播放链接：根据代理规则生成最终 URL */
   const to = useMemo(() => {
@@ -80,7 +92,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const staggerDelay = { animationDelay: '0.012s' };
   const titleRef = useRef<HTMLDivElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
-
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
@@ -102,11 +113,21 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     <div className="card-body">
       <div className="iptv-card-cover">
         <LazyImage
-          src={channel.logo || ''}
+          src={logoCandidates[0] ?? ''}
+          srcCandidates={logoCandidates.slice(1)}
           alt={channel.name}
           letter={channel.name.charAt(0)}
           loadingVariant="brand"
-          onLoad={() => setImageLoaded(true)}
+          immediateLetter
+          onLoad={(url) => {
+            setImageLoaded(true);
+            // 成功记忆：跨会话优先复用该 URL，避免下次重新走候选链
+            if (url) markLogoSucceeded(url);
+          }}
+          onError={(_, failedUrl) => {
+            // 候选 URL 失败后记入失败记忆，避免后续重复请求
+            if (failedUrl) markLogoFailed(failedUrl);
+          }}
         />
         {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab */}
         {!batchMode && availability !== undefined && (

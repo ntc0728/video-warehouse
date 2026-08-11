@@ -16,6 +16,11 @@ const EPG_SOURCES_URL = '/data/epg-sources.json';
 let videoSourcesCache: VideoSourceConfig[] | null = null;
 let iptvSourcesCache: IPTVSourceConfig[] | null = null;
 let epgSourcesCache: EPGSourceConfig[] | null = null;
+// in-flight promise：并发调用（bootstrap 与页面首次请求同时发生）共享同一 fetch，
+// 避免「多页面同时获取 sources.json」的重复请求；完成后清空，失败可重试
+let videoSourcesPromise: Promise<VideoSourceConfig[]> | null = null;
+let iptvSourcesPromise: Promise<IPTVSourceConfig[]> | null = null;
+let epgSourcesPromise: Promise<EPGSourceConfig[]> | null = null;
 
 /**
  * 附加源（custom，来自 useSourceManagerStore）
@@ -35,38 +40,56 @@ export function setAttachedSources(kind: 'video' | 'iptv' | 'epg', sources: Vide
 }
 
 /** 从配置文件获取所有视频源列表（含附加 custom 源，合成数组） */
-export async function getVideoSources(): Promise<VideoSourceConfig[]> {
-  if (videoSourcesCache) return [...videoSourcesCache, ...attachedVideoSources];
-  try {
-    const data = await getJSON<VideoSourcesData>(VIDEO_SOURCES_URL);
-    videoSourcesCache = Object.entries(data.api_site).map(([id, site]) => ({ ...site, id }));
-    return [...videoSourcesCache, ...attachedVideoSources];
-  } catch (error) {
-    console.error('加载视频源失败:', error);
-    return [...attachedVideoSources];
+export function getVideoSources(): Promise<VideoSourceConfig[]> {
+  if (videoSourcesCache) return Promise.resolve([...videoSourcesCache, ...attachedVideoSources]);
+  if (!videoSourcesPromise) {
+    videoSourcesPromise = (async () => {
+      try {
+        const data = await getJSON<VideoSourcesData>(VIDEO_SOURCES_URL);
+        videoSourcesCache = Object.entries(data.api_site).map(([id, site]) => ({ ...site, id }));
+      } catch (error) {
+        console.error('加载视频源失败:', error);
+      } finally {
+        videoSourcesPromise = null;
+      }
+      return [...(videoSourcesCache ?? []), ...attachedVideoSources];
+    })();
   }
+  return videoSourcesPromise;
 }
 
 /** 从配置文件获取所有 IPTV 源列表（含附加 custom 源） */
-export async function getIPTVSources(): Promise<IPTVSourceConfig[]> {
-  if (iptvSourcesCache) return [...iptvSourcesCache, ...attachedIPTVSources];
-  try {
-    iptvSourcesCache = await getJSON<IPTVSourceConfig[]>(IPTV_SOURCES_URL);
-    return [...iptvSourcesCache, ...attachedIPTVSources];
-  } catch (error) {
-    console.error('加载 IPTV 源失败:', error);
-    return [...attachedIPTVSources];
+export function getIPTVSources(): Promise<IPTVSourceConfig[]> {
+  if (iptvSourcesCache) return Promise.resolve([...iptvSourcesCache, ...attachedIPTVSources]);
+  if (!iptvSourcesPromise) {
+    iptvSourcesPromise = (async () => {
+      try {
+        iptvSourcesCache = await getJSON<IPTVSourceConfig[]>(IPTV_SOURCES_URL);
+      } catch (error) {
+        console.error('加载 IPTV 源失败:', error);
+      } finally {
+        iptvSourcesPromise = null;
+      }
+      return [...(iptvSourcesCache ?? []), ...attachedIPTVSources];
+    })();
   }
+  return iptvSourcesPromise;
 }
 
 /** 从配置文件获取所有 EPG 节目单源列表（含附加 custom 源） */
-export async function getEPGSources(): Promise<EPGSourceConfig[]> {
-  if (epgSourcesCache) return [...epgSourcesCache, ...attachedEPGSources];
-  try {
-    epgSourcesCache = await getJSON<EPGSourceConfig[]>(EPG_SOURCES_URL);
-    return [...epgSourcesCache, ...attachedEPGSources];
-  } catch (error) {
-    console.error('加载 EPG 源失败:', error);
-    return [...attachedEPGSources];
+export function getEPGSources(): Promise<EPGSourceConfig[]> {
+  if (epgSourcesCache) return Promise.resolve([...epgSourcesCache, ...attachedEPGSources]);
+  if (!epgSourcesPromise) {
+    epgSourcesPromise = (async () => {
+      try {
+        epgSourcesCache = await getJSON<EPGSourceConfig[]>(EPG_SOURCES_URL);
+      } catch (error) {
+        console.error('加载 EPG 源失败:', error);
+      } finally {
+        epgSourcesPromise = null;
+      }
+      return [...(epgSourcesCache ?? []), ...attachedEPGSources];
+    })();
   }
+  return epgSourcesPromise;
 }

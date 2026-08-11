@@ -78,6 +78,19 @@ export async function clearEPGCache(): Promise<void> {
   } catch { /* 缓存清除失败不影响主流程 */ }
 }
 
+/** 台标缓存清除：删除 settings 仓库中的台标库清单与成败记忆两个 key */
+export async function clearLogoCache(): Promise<void> {
+  try {
+    const db = await getDB();
+    const tx = db.transaction('settings', 'readwrite');
+    await Promise.all([
+      tx.store.delete('logo-library'),
+      tx.store.delete('logo-state'),
+      tx.done,
+    ]);
+  } catch { /* 缓存清除失败不影响主流程 */ }
+}
+
 /** IPTV 频道缓存清除：清空 iptvChannels 对象仓库 */
 export async function clearIPTVChannelCache(): Promise<void> {
   try {
