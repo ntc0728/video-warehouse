@@ -13,6 +13,8 @@ import { useCallback, useRef, useState } from 'react';
 import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck, Wifi } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import SubPageHeader from '@/components/common/SubPageHeader/SubPageHeader';
 import { toast } from '@/components/ui/toastBus';
 import { Icon } from '@/components/ui/Icon';
 import {
@@ -38,6 +40,9 @@ function nowTime(): string {
 export default function ProxySetup() {
   const setCorsProxy = useSettingsStore((s) => s.setCorsProxy);
   const setIptvSettings = useIPTVStore((s) => s.setSettings);
+
+  // 移动端：渲染 SubPageHeader（返回+标题）替代全局顶部导航栏，与设置页子页一致
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // 状态
   const [kind, setKind] = useState<SetupKind>(null);
@@ -132,6 +137,8 @@ export default function ProxySetup() {
 
   return (
     <div className="proxy-setup page-transition-enter">
+      {/* 移动端子页顶栏：返回 + 标题，覆盖全局导航栏（与其他设置子页一致） */}
+      {isMobile && <SubPageHeader title="一键配置代理" />}
       <div className="proxy-setup__inner">
         <header className="proxy-setup__header">
           <h2 className="proxy-setup__title">

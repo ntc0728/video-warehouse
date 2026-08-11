@@ -533,7 +533,8 @@
 /* 响应式 - 移动端两列网格 */
 @media (width <= 767px) {
   .page-padding.source-checker-page {
-    padding: var(--space-xs);
+    /* 顶部让出 SubPageHeader（fixed 顶栏）高度，避免内容被遮挡 */
+    padding: var(--header-height-compact) var(--space-xs) var(--space-xs);
   }
 
   .source-checker-stats {

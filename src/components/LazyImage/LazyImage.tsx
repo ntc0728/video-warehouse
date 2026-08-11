@@ -80,7 +80,7 @@ export default function LazyImage({
   className = '',
   style = {},
   placeholder,
-  fallbackSrc = '/placeholder.png',
+  fallbackSrc = '/placeholder.svg',
   srcCandidates,
   letter,
   onLoad,

@@ -14,6 +14,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
+  ManagedSourceBase,
   ManagedVideoSource,
   ManagedIPTVSource,
   ManagedEPGSource,
@@ -150,6 +151,40 @@ function syncConsumers(s: SourceManagerState, scene: Scene) {
     const settings = useSettingsStore.getState();
     if (enabled.length > 0) settings.setEpgUrls(enabled.map((v) => v.url).slice(0, MAX_ENABLED.epg));
   }
+}
+
+/* ── builtin 增量合并 ────────────────────────── */
+
+/**
+ * 内置源增量合并：把打包 JSON 中「已有 managed 列表没有」的新内置源追加到末尾。
+ * 场景：iptv-sources.json 等发布后新增源时，已初始化过的设备（localStorage 持久化
+ * 旧列表）必须能看到新源——旧实现仅在列表为空时注入，新增源对老用户永远不可见
+ * （只能靠「重置为默认」或清 localStorage 恢复，这就是「新增源看不到」的根因）。
+ * 规则：
+ * - 按唯一键（video: id；iptv/epg: url）比对，JSON 有而列表无 → 追加（builtin）
+ * - 新源默认启用补足到上限（不挤掉用户已启用的源）；超过上限的保持停用
+ * - 已有源的顺序与启用状态完全不动（不覆盖用户配置）
+ */
+export function mergeBuiltinSources<T extends ManagedSourceBase>(
+  existing: T[],
+  builtin: T[],
+  keyOf: (s: T) => string,
+  maxEnabled: number,
+): T[] {
+  // 列表为空 = 首次初始化：全量注入内置源（保持「默认启用第一个」的旧行为）
+  if (existing.length === 0) return builtin;
+  const have = new Set(existing.map(keyOf));
+  const missing = builtin.filter((b) => !have.has(keyOf(b)));
+  if (missing.length === 0) return existing;
+  const enabledCount = existing.filter((s) => s.status.enabled).length;
+  const slots = Math.max(0, maxEnabled - enabledCount);
+  const baseOrder = Math.max(...existing.map((s) => s.order), -1) + 1;
+  const next = missing.map((b, i) => ({
+    ...b,
+    order: baseOrder + i,
+    status: { ...b.status, enabled: i < slots ? true : b.status.enabled },
+  }));
+  return [...existing, ...next];
 }
 
 /* ── builtin 构造 ────────────────────────────── */
@@ -400,20 +435,21 @@ export const useSourceManagerStore = create<SourceManagerState>()(
         bootstrapPromise = (async () => {
           const now = Date.now();
           const updates: Partial<SourceManagerState> = {};
-          // 关键：仅当持久化列表为空时才注入默认源（不覆盖已持久化的启用状态，保证回显）。
-          // _bootstrapped 未持久化，每次刷新重置；用「列表是否已有内容」判断是否已初始化。
-          if (get().video.length === 0) {
-            const vids = await getVideoSources();
-            updates.video = vids.length > 0 ? vids.map((v, i) => toManagedVideo(v, i, now, i === 0)) : get().video;
-          }
-          if (get().iptv.length === 0) {
-            const ipts = await getIPTVSources();
-            updates.iptv = ipts.length > 0 ? ipts.map((c, i) => toManagedIPTV(c, i, now, i === 0)) : get().iptv;
-          }
-          if (get().epg.length === 0) {
-            const epgs = await getEPGSources();
-            updates.epg = epgs.length > 0 ? epgs.map((c, i) => toManagedEPG(c, i, now, i === 0)) : get().epg;
-          }
+          // 注入/合并内置源：列表为空时全量注入默认源；已有持久化列表时增量合并
+          // （打包 JSON 新增的内置源追加到末尾，已启用源与顺序不受影响）。
+          // 旧实现仅「列表为空」才注入，新增内置源对老用户永远不可见。
+          const vids = await getVideoSources();
+          const builtinVideo = vids.map((v, i) => toManagedVideo(v, i, now, i === 0));
+          const mergedVideo = mergeBuiltinSources(get().video, builtinVideo, (s) => s.id, MAX_ENABLED.video);
+          if (mergedVideo.length !== get().video.length) updates.video = mergedVideo;
+          const ipts = await getIPTVSources();
+          const builtinIptv = ipts.map((c, i) => toManagedIPTV(c, i, now, i === 0));
+          const mergedIptv = mergeBuiltinSources(get().iptv, builtinIptv, (s) => s.url, MAX_ENABLED.iptv);
+          if (mergedIptv.length !== get().iptv.length) updates.iptv = mergedIptv;
+          const epgs = await getEPGSources();
+          const builtinEpg = epgs.map((c, i) => toManagedEPG(c, i, now, i === 0));
+          const mergedEpg = mergeBuiltinSources(get().epg, builtinEpg, (s) => s.url, MAX_ENABLED.epg);
+          if (mergedEpg.length !== get().epg.length) updates.epg = mergedEpg;
           if (Object.keys(updates).length > 0) {
             set(updates as SourceManagerState);
           }
