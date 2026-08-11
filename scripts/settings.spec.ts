@@ -299,9 +299,16 @@ test.describe('6.6 关于与彩蛋', () => {
     expect(page.url()).toContain('/source-checker');
     await expect(page.locator('.settings-subpage')).toHaveCount(0, { timeout: 3000 });
     await expect(page.locator('.source-checker-page')).toBeVisible({ timeout: 5000 });
-    // 移动端顶栏替换为 SubPageHeader（返回+标题），与设置子页一致
-    await expect(page.locator('.sub-page-header__title')).toHaveText('源检测');
-    console.log('✅ SET-073 通过: 彩蛋正确跳转到源检测页（portal 已卸载）');
+    // 移动端整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage）：
+    // fixed inset:0 覆盖全视口，顶栏（y≈0）替代全局导航栏，内容在顶栏下方不被遮挡
+    await expect(page.locator('.sub-page__title')).toHaveText('源检测');
+    const headerBox = await page.locator('.sub-page__header').boundingBox();
+    expect(headerBox?.y ?? 999).toBeLessThan(4);
+    const subBox = await page.locator('.sub-page').boundingBox();
+    expect(subBox?.height ?? 0).toBeGreaterThan(800); // 覆盖全视口
+    const contentBox = await page.locator('.source-checker-page').boundingBox();
+    expect(contentBox?.y ?? 0).toBeGreaterThanOrEqual((headerBox?.y ?? 0) + (headerBox?.height ?? 0) - 1);
+    console.log('✅ SET-073 通过: 彩蛋正确跳转到源检测页（portal 已卸载，顶栏已替换）');
   });
 
   test('SET-074: KinoTV 彩蛋跳转一键配置代理页（移动端子页进入，portal 不遮挡）', async ({ page }) => {
@@ -328,8 +335,14 @@ test.describe('6.6 关于与彩蛋', () => {
     expect(page.url()).toContain('/proxy-setup');
     await expect(page.locator('.settings-subpage')).toHaveCount(0, { timeout: 3000 });
     await expect(page.locator('.proxy-setup')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('.sub-page-header__title')).toHaveText('一键配置代理');
-    console.log('✅ SET-074 通过: 彩蛋正确跳转到一键配置代理页（portal 已卸载）');
+    await expect(page.locator('.sub-page__title')).toHaveText('一键配置代理');
+    const headerBox = await page.locator('.sub-page__header').boundingBox();
+    expect(headerBox?.y ?? 999).toBeLessThan(4);
+    const subBox = await page.locator('.sub-page').boundingBox();
+    expect(subBox?.height ?? 0).toBeGreaterThan(800); // 覆盖全视口
+    const contentBox = await page.locator('.proxy-setup').boundingBox();
+    expect(contentBox?.y ?? 0).toBeGreaterThanOrEqual((headerBox?.y ?? 0) + (headerBox?.height ?? 0) - 1);
+    console.log('✅ SET-074 通过: 彩蛋正确跳转到一键配置代理页（portal 已卸载，顶栏已替换）');
   });
 });
 
