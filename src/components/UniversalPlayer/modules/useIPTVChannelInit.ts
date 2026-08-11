@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { shouldProxy, buildProxyUrl, detectVideoSourceType } from '@/services/iptvService';
+import { buildChannelPlayUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 interface UseIPTVChannelInitOptions {
@@ -72,8 +72,8 @@ export function useIPTVChannelInit({
         if (matched) {
           setCurrentChannelId(matched.id);
           setCurrentChannelName(matched.name);
-          const useProxy = shouldProxy(matched.url, pUrl, pPattern);
-          setCurrentUrl(useProxy ? buildProxyUrl(matched.url, pUrl) : matched.url);
+          // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
+          setCurrentUrl(buildChannelPlayUrl(matched, pUrl, pPattern));
           setCurrentType(detectVideoSourceType(matched.url));
           setTvFocus(matched.id);
           return;
@@ -89,8 +89,8 @@ export function useIPTVChannelInit({
         return false;
       });
       const targetUrl = matched ? matched.url : lookupUrl;
-      const useProxy = shouldProxy(targetUrl, pUrl, pPattern);
-      const playUrl = useProxy ? buildProxyUrl(targetUrl, pUrl) : targetUrl;
+      // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
+      const playUrl = buildChannelPlayUrl(matched ?? { url: targetUrl }, pUrl, pPattern);
 
       setCurrentUrl(playUrl);
       setCurrentType(detectVideoSourceType(targetUrl));
@@ -111,8 +111,7 @@ export function useIPTVChannelInit({
 
     // 频道列表尚未加载（如直接深链到 /iptv/play 的首访场景）：
     // 仍按 URL 参数直接播放，等频道列表加载后再做一次精匹配。
-    const useProxy = shouldProxy(lookupUrl, pUrl, pPattern);
-    const playUrl = useProxy ? buildProxyUrl(lookupUrl, pUrl) : lookupUrl;
+    const playUrl = buildChannelPlayUrl({ url: lookupUrl }, pUrl, pPattern);
     setCurrentUrl(playUrl);
     setCurrentType(detectVideoSourceType(lookupUrl));
     if (urlName) setCurrentChannelName(urlName);

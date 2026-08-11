@@ -194,14 +194,18 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
   }
 }
 
-/** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传） */
-function buildProxyUrl(url: string, proxyUrl: string): string {
+/** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传）
+ *  可选 headers 追加为 &headers=<JSON> 参数（worker 代理层原生合并到源站请求头，覆盖默认 UA/Referer） */
+function buildProxyUrl(url: string, proxyUrl: string, headers?: Record<string, string>): string {
   // 多值代理：统一取第一个
   proxyUrl = getPrimaryIptvProxy(proxyUrl);
   url = unwrapProxy(url, proxyUrl);
   const type = detectVideoSourceType(url);
   const path = type === 'm3u8' ? 'm3u8-proxy' : type === 'dash' ? 'dash-proxy' : 'file-proxy';
-  const result = `${proxyUrl}/${path}?url=${encodeURIComponent(url)}`;
+  let result = `${proxyUrl}/${path}?url=${encodeURIComponent(url)}`;
+  if (headers && Object.keys(headers).length > 0) {
+    result += `&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+  }
   if (import.meta.env.DEV) {
     console.debug('[IPTV 代理调试] 构造播放地址', {
       生效代理地址: proxyUrl,
@@ -212,6 +216,33 @@ function buildProxyUrl(url: string, proxyUrl: string): string {
     });
   }
   return result;
+}
+
+/**
+ * 预留开关：是否消费频道的 M3U http-user-agent / http-referrer 属性。
+ * 默认 false——iptv-org 等国际源依赖精确 UA/Referer，但国内源多数无需；
+ * 且浏览器禁止直连时设置 UA 头（forbidden header），仅代理路径可携带。
+ * 开启后代理路径自动携带频道属性，无需其他改动（worker 已支持 headers 参数合并）。
+ */
+const IPTV_CHANNEL_HEADERS_ENABLED = false;
+
+/**
+ * 构建频道播放地址（统一入口：频道列表点击 / IPTVPlayer 切频道 / 播放页初始化）。
+ * 默认行为与「shouldProxy + buildProxyUrl」完全一致；预留开关开启后，
+ * 代理路径额外携带频道的 UA/Referer 属性（M3U http-user-agent/http-referrer）。
+ */
+export function buildChannelPlayUrl(
+  channel: Pick<IPTVChannel, 'url' | 'userAgent' | 'referrer'>,
+  proxyUrl?: string,
+  pattern?: string
+): string {
+  if (!shouldProxy(channel.url, proxyUrl, pattern)) return channel.url;
+  let headers: Record<string, string> | undefined;
+  if (IPTV_CHANNEL_HEADERS_ENABLED) {
+    if (channel.userAgent) headers = { ...headers, 'User-Agent': channel.userAgent };
+    if (channel.referrer) headers = { ...headers, 'Referer': channel.referrer };
+  }
+  return buildProxyUrl(channel.url, proxyUrl ?? '', headers);
 }
 
 export { shouldProxy, buildProxyUrl };
@@ -432,8 +463,9 @@ function resolveMasterPlaylistUrl(content: string, baseUrl: string): string {
  * 解析 M3U/M3U8 内容为频道列表
  * 解析 #EXTINF 标签提取频道名称、Logo、分组等信息
  * 若标准解析无结果，尝试识别为 Master Playlist 或单流源
+ * 导出供单元测试与外部复用
  */
-function parseM3U8Content(content: string, sourceUrl?: string): IPTVChannel[] {
+export function parseM3U8Content(content: string, sourceUrl?: string): IPTVChannel[] {
   const channels: IPTVChannel[] = [];
   const lines = content.split('\n');
 
@@ -460,6 +492,20 @@ function parseM3U8Content(content: string, sourceUrl?: string): IPTVChannel[] {
       if (logoMatch) currentChannel.logo = logoMatch[1];
       if (groupMatch) currentChannel.group = groupMatch[1];
       if (tvgIdMatch) currentChannel.tvgId = tvgIdMatch[1];
+
+      // 预留属性：catchup 回放（标准 M3U catchup 规范）与 http-user-agent/http-referrer（源站请求头）。
+      // 仅解析存储——消费由 buildChannelPlayUrl 的 IPTV_CHANNEL_HEADERS_ENABLED 开关控制（默认关闭）。
+      const catchupMatch = attributes.match(/catchup="([^"]*)"/);
+      const catchupSourceMatch = attributes.match(/catchup-source="([^"]*)"/);
+      const catchupDaysMatch = attributes.match(/catchup-days="?(\d+)"?/);
+      const userAgentMatch = attributes.match(/http-user-agent="([^"]*)"/);
+      const referrerMatch = attributes.match(/http-referrer="([^"]*)"|http-referer="([^"]*)"/);
+
+      if (catchupMatch) currentChannel.catchup = catchupMatch[1];
+      if (catchupSourceMatch) currentChannel.catchupSource = catchupSourceMatch[1];
+      if (catchupDaysMatch) currentChannel.catchupDays = Number(catchupDaysMatch[1]);
+      if (userAgentMatch) currentChannel.userAgent = userAgentMatch[1];
+      if (referrerMatch) currentChannel.referrer = referrerMatch[1] || referrerMatch[2];
     } else if (line && !line.startsWith('#')) {
       // 非 # 开头的行视为频道 URL
       currentChannel.url = line;

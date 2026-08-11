@@ -6,7 +6,8 @@ import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
 import { useIsMobile, useIsTV, useRouteTitleImmediate } from '@/hooks';
 import { requestFullscreen, getFullscreenElement } from '@/components/UniversalPlayer/lib/fullscreen';
-import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
+import { buildChannelPlayUrl } from '@/services/iptvService';
+import type { IPTVChannel } from '@/types/iptv';
 import './IPTVPlayer.css';
 
 export default function IPTVPlayerPage() {
@@ -95,12 +96,10 @@ export default function IPTVPlayerPage() {
 
   const handleBack = useSmartBack('/iptv');
 
-  const handleChannelChange = useCallback((channel: { id: string; url: string; name: string }) => {
+  const handleChannelChange = useCallback((channel: IPTVChannel) => {
     const { proxyUrl, proxyPattern } = settings;
-    const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
-    const playUrl = useProxy
-      ? buildProxyUrl(channel.url, proxyUrl)
-      : channel.url;
+    // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
+    const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
     const encodedUrl = encodeURIComponent(playUrl);
     const params = new URLSearchParams({ url: encodedUrl });
     if (channel.id) params.set('id', channel.id);

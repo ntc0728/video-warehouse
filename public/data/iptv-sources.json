@@ -21,5 +21,8 @@
   { "name": "斗鱼影视", "url": "https://raw.githubusercontent.com/mursor1985/LIVE/refs/heads/main/douyuyqk.m3u" },
   { "name": "bili影视", "url": "https://raw.githubusercontent.com/mursor1985/LIVE/refs/heads/main/bililive.m3u" },
   { "name": "10000电影集", "url": "https://gh-proxy.com/raw.githubusercontent.com/alenin-zhang/IPTV/master/10000.txt" },
-  { "name": "30000电影集", "url": "https://gh-proxy.com/raw.githubusercontent.com/alenin-zhang/IPTV/master/30000.txt" }
+  { "name": "30000电影集", "url": "https://gh-proxy.com/raw.githubusercontent.com/alenin-zhang/IPTV/master/30000.txt" },
+  { "name": "fanmingming", "url": "https://live.fanmingming.cn/tv/m3u/ipv6.m3u" },
+  { "name": "vbskycn", "url": "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u" },
+  { "name": "wwb521", "url": "https://raw.githubusercontent.com/wwb521/live/main/tv.m3u" }
 ]

@@ -8,7 +8,7 @@ import { Heart, CheckCircle, XCircle } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
-import { shouldProxy, buildProxyUrl } from '@/services/iptvService';
+import { buildChannelPlayUrl } from '@/services/iptvService';
 import { resolveChannelLogoCandidates, markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
 import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
 import LazyImage from '../LazyImage/LazyImage';
@@ -55,18 +55,15 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     [channel, epgChannels, proxyUrl, epgIndex]
   );
 
-  /** 构建播放链接：根据代理规则生成最终 URL */
+  /** 构建播放链接：根据代理规则生成最终 URL（统一入口，预留 UA/Referer 携带） */
   const to = useMemo(() => {
     if (batchMode) return '#';
-    const useProxy = shouldProxy(channel.url, proxyUrl, proxyPattern);
-    const playUrl = useProxy
-      ? buildProxyUrl(channel.url, proxyUrl)
-      : channel.url;
+    const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
     const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
     params.set('id', channel.id);
     params.set('name', channel.name);
     return `/iptv/play?${params.toString()}`;
-  }, [batchMode, channel.url, channel.id, channel.name, proxyUrl, proxyPattern]);
+  }, [batchMode, channel, proxyUrl, proxyPattern]);
 
   /** 跳转前记录播放历史与当前选中频道 */
   const handleClick = useCallback((e: React.MouseEvent) => {

@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import type { IPTVChannel } from '@/types/iptv';
 
 // 动态导入避免 useIPTVStore 初始化时 PlaylistSourceType 未定义
 let detectSourceType: (content: string) => { type: string; channelCount: number; rawContent: string };
 let shouldProxy: (url: string, proxyUrl?: string, pattern?: string) => boolean;
-let buildProxyUrl: (url: string, proxyUrl: string) => string;
+let buildProxyUrl: (url: string, proxyUrl: string, headers?: Record<string, string>) => string;
+let buildChannelPlayUrl: (channel: Pick<IPTVChannel, 'url' | 'userAgent' | 'referrer'>, proxyUrl?: string, pattern?: string) => string;
+let parseM3U8Content: (content: string, sourceUrl?: string) => IPTVChannel[];
 let unwrapProxy: (url: string, ownProxyUrl?: string) => string;
 let detectVideoSourceType: (url: string) => string;
 let detectTimeshiftSupport: (url: string, type: string) => boolean;
@@ -13,6 +16,8 @@ beforeAll(async () => {
   detectSourceType = mod.detectSourceType;
   shouldProxy = mod.shouldProxy;
   buildProxyUrl = mod.buildProxyUrl;
+  buildChannelPlayUrl = mod.buildChannelPlayUrl;
+  parseM3U8Content = mod.parseM3U8Content;
   unwrapProxy = mod.unwrapProxy;
   detectVideoSourceType = mod.detectVideoSourceType;
   detectTimeshiftSupport = mod.detectTimeshiftSupport;
@@ -354,5 +359,72 @@ https://origin.com/live/segment1.ts`;
     expect(out).toContain('worker.example.com/ts-proxy?url=https%3A%2F%2Forigin.com%2Fkeys%2Fkey.bin');
     // 不能用源站 origin 作为重写地址（这是"一直不通"的根因）
     expect(out).not.toContain('origin.com/ts-proxy');
+  });
+});
+
+describe('parseM3U8Content 预留属性解析（catchup / UA / Referer）', () => {
+  it('解析 catchup 回放属性与 http-user-agent/http-referrer', () => {
+    const m3u = [
+      '#EXTM3U',
+      '#EXTINF:-1 tvg-id="CCTV1" tvg-logo="http://x/logo.png" group-title="央视" catchup="default" catchup-source="http://x/play?utc={utc}&lutc={lutc}" catchup-days="7" http-user-agent="Mozilla/5.0 (iPhone)" http-referrer="https://provider.tv/",央视',
+      'http://x/cctv1.m3u8',
+    ].join('\n');
+    const [ch] = parseM3U8Content(m3u);
+    expect(ch.catchup).toBe('default');
+    expect(ch.catchupSource).toBe('http://x/play?utc={utc}&lutc={lutc}');
+    expect(ch.catchupDays).toBe(7);
+    expect(ch.userAgent).toBe('Mozilla/5.0 (iPhone)');
+    expect(ch.referrer).toBe('https://provider.tv/');
+  });
+
+  it('兼容 http-referer 单 r 写法', () => {
+    const m3u = ['#EXTM3U', '#EXTINF:-1 http-referer="http://x/",频道', 'http://x/a.m3u8'].join('\n');
+    const [ch] = parseM3U8Content(m3u);
+    expect(ch.referrer).toBe('http://x/');
+  });
+
+  it('无预留属性时字段保持缺省', () => {
+    const m3u = ['#EXTM3U', '#EXTINF:-1 group-title="央视",新闻', 'http://x/a.m3u8'].join('\n');
+    const [ch] = parseM3U8Content(m3u);
+    expect(ch.catchup).toBeUndefined();
+    expect(ch.userAgent).toBeUndefined();
+    expect(ch.referrer).toBeUndefined();
+  });
+});
+
+describe('buildChannelPlayUrl（预留 UA/Referer 消费，默认关闭）', () => {
+  it('无预留属性时输出与 buildProxyUrl 完全一致', () => {
+    const ch = { url: 'http://example.com/live.m3u8' };
+    expect(buildChannelPlayUrl(ch, 'http://proxy.com')).toBe(
+      buildProxyUrl('http://example.com/live.m3u8', 'http://proxy.com')
+    );
+  });
+
+  it('开关默认关闭：频道带 UA/Referer 也不追加 headers 参数', () => {
+    const ch = {
+      url: 'http://example.com/live.m3u8',
+      userAgent: 'Mozilla/5.0 (iPhone)',
+      referrer: 'https://p.tv/',
+    };
+    const result = buildChannelPlayUrl(ch, 'http://proxy.com');
+    expect(result).not.toContain('headers=');
+    expect(result).toBe('http://proxy.com/m3u8-proxy?url=http%3A%2F%2Fexample.com%2Flive.m3u8');
+  });
+
+  it('直连白名单命中时返回原始 URL', () => {
+    const ch = { url: 'https://raw.githubusercontent.com/a/b.m3u8' };
+    // raw.githubusercontent 在默认 proxyPattern 直连白名单内（与 useIPTVStore 默认一致）
+    expect(buildChannelPlayUrl(ch, 'http://proxy.com', 'raw\\.githubusercontent')).toBe(ch.url);
+  });
+});
+
+describe('buildProxyUrl 可选 headers 参数（预留）', () => {
+  it('传入 headers 时追加编码后的 &headers 参数', () => {
+    const result = buildProxyUrl('http://example.com/live.m3u8', 'http://proxy.com', {
+      'User-Agent': 'UA/1.0',
+    });
+    expect(result).toContain('&headers=');
+    const headersParam = decodeURIComponent(result.split('headers=')[1]);
+    expect(JSON.parse(headersParam)).toEqual({ 'User-Agent': 'UA/1.0' });
   });
 });
