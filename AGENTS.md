@@ -215,6 +215,40 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - `toast.replace(opts)` — 清空队列立即显示新 toast（快速连续提示场景，如版本号连续点击）
 - ToastProvider 只渲染 `items[0]`（队列首项），`ToastContainer` 因 `item.id` 变化触发 useEffect 重跑
 
+### IPTV 频道台标回退链（三级）
+
+频道卡片/播放器台标按**三级回退链**生成候选 URL 列表，按序尝试，全部失败才走字母占位（`LazyImage` letter / `ChannelLogoCell` / `LogoFallback`）：
+
+1. **一级**：M3U 自带 `tvg-logo`（`channel.logo`，候选链首项）
+2. **二级**：EPG XMLTV `<icon>` —— `parseXMLTV` 提取 `<channel>` 子节点 `<icon src>`（`EPGChannelInfo.icon`），经 `matchEPGChannel` 匹配后入链
+3. **三级**：在线台标库按规范化名拼 URL —— `https://live.fanmingming.cn/tv/{name}.png`、`https://raw.githubusercontent.com/wanglindl/TVlogo/main/img/{name}.png`
+
+核心实现 `src/services/channelLogo.ts`：
+- `toLogoName(name)`：去括号注释（`[蓝光]`）→ 去清晰度标记（高清/HD/超清/标清/极致/极速/流畅/蓝光，**保留 4K/8K**）→ 循环去尾部频道定位词（综合/新闻/文艺/体育/影视/财经/纪录/科教/戏曲/少儿/音乐/国防军事/农业农村/社会与法/频道）→ 去分隔符（空格/连字符/下划线/点号/间隔号），**保留 `+` 号**（`CCTV5+` 不变）；与 EPG 匹配用的 `normalizeName` 不同——不能去掉「卫视」等品牌词
+- `resolveChannelLogoCandidates(channel, epgChannels?, proxyUrl?, epgIndex?)`：返回去重候选列表；第 4 参 `epgIndex`（EPG 预索引）存在时 EPG 匹配 O(1) 查表，否则回退全量遍历；**http 台标在 https 部署下会被混合内容拦截**，经主代理 `/file-proxy?url=` 转 https，无代理则丢弃
+- session 级 `failedLogoUrls` 失败记忆：已 404/挂起的 URL 不再进入候选链，避免无台标频道（数百张卡片）对在线库重复 404 请求
+
+接入点：`LazyImage` 新增可选 `srcCandidates` prop（`src` 失败后依次尝试，链尽才 error 态，不传时行为与原来完全一致）；`IPTVChannelCard` 用 `resolveChannelLogoCandidates` 结果渲染；IPTV 页复用现有 `fetchAndParseEPG()`（IndexedDB TTL 缓存 + in-flight 合并，**不增加 EPG 请求量**）取 `data.channels` 传给卡片；播放器 `UniversalPlayer` 经 `useEPGData` 的 `epgChannels` 组装候选传入 OSD，侧栏 `ChannelLogoCell` 手动循环候选。新增台标相关测试：`scripts/iptv.spec.ts`（IPTV-080/081 条件式用例，mock 在线库与 EPG 请求）。
+
+**EPG 预索引（性能关键）**：`matchEPGChannel` 原实现每频道全量遍历数千 EPG 频道（数百卡片 × 数千频道 = 百万次 `normalizeName`），EPG 就绪瞬间主线程卡顿。`epgService.ts` 新增 `buildEPGChannelIndex(channels)` 一次性构建（`EPGChannelIndex`：tvg-id / 规范化名 / 原始名三张 Map），`matchEPGChannelIndexed` 精确匹配 O(1)、模糊包含兜底线性（触发率低）；`matchEPGChannel` 内部改走索引（向后兼容），`matchAllChannels` 批量匹配也复用索引。**页面层必须一次性构建索引传给卡片**：IPTV 页 `useMemo` 构建（依赖 `epgChannels`）；收藏/历史页经 `getCachedEPGData()`（**零网络**，仅读 IndexedDB 缓存，无缓存直接跳过）读 `data.channels` 构建后传 `epgIndex` prop——收藏/历史页的 IPTV 卡台标因此受益于 EPG icon 二级回退。
+
+### IPTV 频道列表加载（竞速窗口，防慢源拖尾）
+
+`fetchAndParsePlaylist`（`src/services/iptvService.ts`）原实现 `Promise.allSettled` 等**全部源** settle：单源 15s 超时 × 1 次重试，任一失效源即可拖住整页最长 30s 处于 loading。现改为**竞速窗口** `settleWithWindow(promises, 1500, 20000)`：
+
+- 并行拉取所有源，**首个成功源到达后最多再等 1.5s 收尾**即返回（正常 2~4s 出结果，多源聚合语义保留——其余快源结果一并合并）
+- **零成功时等全部 settle 快速失败**（全部源立即报错时 ~1s 返回，不等待上限）；仅当部分源「慢但健康」时由**绝对上限 20s** 兜底
+- **⚠️ 上限/单源超时不宜过紧**：曾用 8s 导致经代理响应慢（>8s）但健康的源全部被 abort → 「所有源加载失败/加载不出来」——现单源超时 20s + 不重试（M3U 列表对失效源重试收益极低），慢源不再误杀
+- 窗口关闭时**放弃的源不计入 `sourceErrors`**（`PENDING_ABANDONED` 标记区分真实失败与放弃等待），避免「N 个源加载失败」误报
+
+配套 `useIPTVStore.refreshChannels`：**已有频道数据时静默刷新**（`isLoading: channels.length === 0`），旧数据继续展示、不进入全屏 loading；仅首次无缓存时才显示加载态（快路径 ≤ 首成功 + 1.5s）。
+
+**Keep-Alive 下离开页面的后台活动治理**（AppLayout 用 `display` 切换可见性、组件不卸载，unmount 清理永不执行）：
+
+- IPTV 页可用性检测：`useEffect` 监听 `location.pathname`，**路由离开即 `abortAvailabilityCheck()`**（替代不可靠的 unmount 清理）
+- `useIPTVAutoRefresh`：仅在 `location.pathname === '/iptv'` 时注册轮询 interval，离开即 clearInterval，回来重建（避免隐藏页后台拉 M3U）
+- `/iptv/play` 是顶层独立路由（不走 AppLayout），离开即卸载、播放器实例正常销毁，无泄漏
+
 ### IPTV 直播播放独立逻辑
 
 `UniversalPlayer`（`src/components/UniversalPlayer/`）在 `mode === 'iptv'`（`IPTVPlayer` 调用）下走**独立播放逻辑**，与点播（`mode === 'video'`）区分，**不要复用点播的播放/提示交互**：
@@ -279,7 +313,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 7 |
-| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 9 + 6 |
+| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 11 + 6 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
 | `src/pages/History/` | `scripts/history.spec.ts` | 6 |
@@ -305,6 +339,9 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/services/tmdbService.ts` | home + browse + detail + person | 93 |
 | `src/services/videoService.ts` | browse + player + source-checker | 36 |
 | `src/services/iptvService.ts` | iptv + iptv-player | 15 |
+| `src/services/channelLogo.ts` | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 17 |
+| `src/services/epgService.ts` | iptv + iptv-player + collections + history（EPG 匹配/缓存读取） | 各 spec EPG 用例 |
+| `src/components/LazyImage/` | home + browse + detail + collections + history + person + iptv（台标/海报图片加载用例） | 各 spec 图片用例 |
 | `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |
 | `src/stores/useSettingsStore.ts` | settings + source-checker | 29 |
 | `src/stores/useUserStore.ts` | collections + history | 12 |

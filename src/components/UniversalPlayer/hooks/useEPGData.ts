@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { IPTVChannel } from '@/types/iptv';
-import type { ChannelProgramInfo } from '@/services/epgService';
+import type { ChannelProgramInfo, EPGChannelInfo } from '@/services/epgService';
 
 interface UseEPGDataOptions {
   mode: string;
@@ -14,12 +14,15 @@ interface UseEPGDataResult {
   epgProgramsRef: React.MutableRefObject<Map<string, ChannelProgramInfo>>;
   epgStatus: EPGLoadStatus;
   epgError: string | null;
+  /** EPG 频道列表（含 XMLTV icon），供台标候选链使用 */
+  epgChannels: EPGChannelInfo[];
 }
 
 export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataResult {
   const [epgReady, setEpgReady] = useState(false);
   const [epgStatus, setEpgStatus] = useState<EPGLoadStatus>('idle');
   const [epgError, setEpgError] = useState<string | null>(null);
+  const [epgChannels, setEpgChannels] = useState<EPGChannelInfo[]>([]);
   const epgProgramsRef = useRef<Map<string, ChannelProgramInfo>>(new Map());
   const epgErrorRef = useRef<string | null>(null);
 
@@ -41,6 +44,7 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
         // fetchAndParseEPG 内部有 TTL（epgUpdateInterval）与 URL 变化判断，
         // 未过期/未变更时直接返回缓存零请求，不会产生多余网络消耗。
         if (epgData && epgData.channels.length > 0) {
+          setEpgChannels(epgData.channels);
           const programs = matchAllChannels(channels, epgData);
           epgProgramsRef.current = programs;
           setEpgStatus('success');
@@ -61,6 +65,7 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
           if (cancelled) return;
 
           if (epgData && epgData.channels.length > 0) {
+            setEpgChannels(epgData.channels);
             const programs = matchAllChannels(channels, epgData);
             epgProgramsRef.current = programs;
             setEpgStatus('success');
@@ -86,5 +91,5 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
     return () => { cancelled = true; };
   }, [mode, channels]);
 
-  return { epgReady, epgProgramsRef, epgStatus, epgError };
+  return { epgReady, epgProgramsRef, epgStatus, epgError, epgChannels };
 }

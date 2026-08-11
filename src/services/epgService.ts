@@ -19,9 +19,11 @@ export interface EPGProgram {
   isFuture?: boolean;
 }
 
-interface EPGChannelInfo {
+export interface EPGChannelInfo {
   id: string;
   name: string;
+  /** XMLTV <icon src> 台标 URL（部分 EPG 源提供，可作频道台标回退来源） */
+  icon?: string;
 }
 
 export interface ParsedEPGData {
@@ -63,7 +65,10 @@ function parseXMLTV(xml: string): ParsedEPGData {
     const id = node.getAttribute('id') || '';
     const displayName = node.querySelector('display-name');
     const name = displayName?.textContent?.trim() || id;
-    channels.push({ id, name });
+    // XMLTV 标准：<channel><icon src="..."/></channel>，作为频道台标回退来源
+    const iconEl = node.querySelector('icon');
+    const icon = iconEl?.getAttribute('src')?.trim() || undefined;
+    channels.push({ id, name, icon });
   });
 
   const programmeNodes = doc.querySelectorAll('programme');
@@ -120,7 +125,7 @@ function mergeEPGData(existing: ParsedEPGData, newData: ParsedEPGData): ParsedEP
 }
 
 /** 规范化频道名称，去除清晰度标记和冗余词汇以便匹配 */
-function normalizeName(name: string): string {
+export function normalizeName(name: string): string {
   return name
     // 去除清晰度/技术标记
     .replace(/高清|HD|标清|SD|4K|UHD|超清|极致|极速/gi, '')
@@ -132,35 +137,62 @@ function normalizeName(name: string): string {
     .toLowerCase();
 }
 
-/** 将 M3U 频道与 EPG 频道进行匹配（支持 tvg-id 精确、规范化、模糊匹配） */
-export function matchEPGChannel(
+/**
+ * EPG 频道预索引：一次性构建后，单频道匹配从 O(n) 全量遍历降为 O(1) 查表。
+ * 适用于「数百个频道 × 数千个 EPG 频道」的批量匹配场景（IPTV 页卡片台标、节目单）。
+ */
+export interface EPGChannelIndex {
+  /** tvg-id → 频道 */
+  byId: Map<string, EPGChannelInfo>;
+  /** normalizeName → 首个频道 */
+  byNormalizedName: Map<string, EPGChannelInfo>;
+  /** 原始名 → 首个频道 */
+  byRawName: Map<string, EPGChannelInfo>;
+  /** 原始列表（模糊匹配兜底） */
+  channels: EPGChannelInfo[];
+}
+
+/** 构建 EPG 频道预索引（O(n)），重复键保留首个 */
+export function buildEPGChannelIndex(epgChannels: EPGChannelInfo[]): EPGChannelIndex {
+  const byId = new Map<string, EPGChannelInfo>();
+  const byNormalizedName = new Map<string, EPGChannelInfo>();
+  const byRawName = new Map<string, EPGChannelInfo>();
+  for (const ch of epgChannels) {
+    if (ch.id && !byId.has(ch.id)) byId.set(ch.id, ch);
+    const norm = normalizeName(ch.name);
+    if (norm && !byNormalizedName.has(norm)) byNormalizedName.set(norm, ch);
+    if (ch.name && !byRawName.has(ch.name)) byRawName.set(ch.name, ch);
+  }
+  return { byId, byNormalizedName, byRawName, channels: epgChannels };
+}
+
+/** 基于预索引匹配 M3U 频道（tvg-id 精确 → 规范化 → 原始名 → 模糊兜底） */
+export function matchEPGChannelIndexed(
   channelName: string,
   tvgId: string | undefined,
-  epgChannels: EPGChannelInfo[]
+  index: EPGChannelIndex
 ): EPGChannelInfo | null {
   // 优先使用 tvg-id 精确匹配
   if (tvgId) {
-    const exactMatch = epgChannels.find(ch => ch.id === tvgId);
+    const exactMatch = index.byId.get(tvgId);
     if (exactMatch) return exactMatch;
   }
 
-  // 规范化名称匹配
+  // 规范化名称匹配（O(1)）
   const normalized = normalizeName(channelName);
-  for (const epgCh of epgChannels) {
-    if (normalizeName(epgCh.name) === normalized) {
-      return epgCh;
-    }
+  if (normalized) {
+    const byNorm = index.byNormalizedName.get(normalized);
+    if (byNorm) return byNorm;
   }
 
-  // 精确字符串匹配
-  for (const epgCh of epgChannels) {
-    if (epgCh.name === channelName) {
-      return epgCh;
-    }
-  }
+  // 精确字符串匹配（O(1)）
+  const byRaw = index.byRawName.get(channelName);
+  if (byRaw) return byRaw;
 
-  // 模糊匹配：名称包含关系
-  for (const epgCh of epgChannels) {
+  // 模糊匹配：名称包含关系（触发率低，线性扫描可接受）
+  // 空名直接返回 null——空串是任何字符串的子串，`includes('')` 恒真会误匹配首个频道
+  if (!normalized) return null;
+  for (const epgCh of index.channels) {
     const epgNameNormalized = normalizeName(epgCh.name);
     if (epgNameNormalized.includes(normalized) || normalized.includes(epgNameNormalized)) {
       return epgCh;
@@ -168,6 +200,16 @@ export function matchEPGChannel(
   }
 
   return null;
+}
+
+/** 将 M3U 频道与 EPG 频道进行匹配（支持 tvg-id 精确、规范化、模糊匹配） */
+export function matchEPGChannel(
+  channelName: string,
+  tvgId: string | undefined,
+  epgChannels: EPGChannelInfo[]
+): EPGChannelInfo | null {
+  if (!epgChannels || epgChannels.length === 0) return null;
+  return matchEPGChannelIndexed(channelName, tvgId, buildEPGChannelIndex(epgChannels));
 }
 
 /** 为节目列表添加过期/播放中/未来状态标记 */
@@ -361,9 +403,11 @@ export function matchAllChannels(
   epgData: ParsedEPGData
 ): Map<string, ChannelProgramInfo> {
   const result = new Map<string, ChannelProgramInfo>();
+  // 预索引一次，避免每个频道全量遍历 EPG 频道列表
+  const index = buildEPGChannelIndex(epgData.channels);
 
   for (const m3uCh of m3uChannels) {
-    const matched = matchEPGChannel(m3uCh.name, m3uCh.tvgId, epgData.channels);
+    const matched = matchEPGChannelIndexed(m3uCh.name, m3uCh.tvgId, index);
     if (!matched) continue;
 
     const progs = epgData.programmes.get(matched.id);
