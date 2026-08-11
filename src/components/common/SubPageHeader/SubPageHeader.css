@@ -1,0 +1,62 @@
+/* ── SubPageHeader（移动端子页顶栏） ──────────────
+   与设置页 .settings-subpage__header 视觉一致：fixed 覆盖视口顶部、
+   z-index 高于全局 sticky-header(50)，进入子页后替代顶部导航栏。
+   仅移动端（≤767px）由调用方渲染；样式在全局作用域定义（非 CSS Module）。 */
+
+.sub-page-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+  align-items: center;
+  height: var(--header-height-compact);
+  padding: 0 var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+/* 返回按钮：方形圆角触控区，与全局导航栏按钮视觉一致 */
+.sub-page-header__back {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.sub-page-header__back:hover,
+.sub-page-header__back:active {
+  background: var(--color-surface-hover);
+}
+
+/* 标题：flex:1 居中（左侧返回按钮 + 右侧对称占位，形成 iOS 居中标题结构） */
+.sub-page-header__title {
+  flex: 1;
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 右侧占位：与左侧返回按钮等宽，保证标题视觉居中 */
+.sub-page-header__spacer {
+  flex-shrink: 0;
+  width: var(--comp-btn-min-height);
+}

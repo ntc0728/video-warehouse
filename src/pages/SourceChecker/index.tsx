@@ -5,6 +5,8 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { BackToTopButton } from '@/components/common';
+import SubPageHeader from '@/components/common/SubPageHeader/SubPageHeader';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
 import { useSettingsStore } from '@/stores';
@@ -101,6 +103,9 @@ function saveCache(data: Omit<CacheData, 'timestamp'>): void {
 export default function SourceCheckerPage() {
   const { corsProxy, videoSourceIndices, iptvSourceIndices } = useSettingsStore();
   const { settings: iptvSettings } = useIPTVStore();
+
+  // 移动端：渲染 SubPageHeader（返回+标题）替代全局顶部导航栏，与设置页子页一致
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -395,6 +400,8 @@ export default function SourceCheckerPage() {
 
   return (
     <div ref={pageRef} className="page-padding source-checker-page page-transition-enter">
+      {/* 移动端子页顶栏：返回 + 标题，覆盖全局导航栏（与其他设置子页一致） */}
+      {isMobile && <SubPageHeader title="源检测" />}
       <div className="source-checker-header">
         <div className="header-left">
           <h1>源检测</h1>

@@ -4,7 +4,7 @@
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
  */
-import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
@@ -15,6 +15,7 @@ import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
+import { ActiveRouteContext } from '@/hooks/routeTitleContext';
 import CategoryQuickAccess from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
@@ -46,6 +47,9 @@ export default function HomePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  // Keep-Alive 激活路由 key：Home 被 display:none 挂起时（用户在其他页面）
+  // 不等于 '/'，用于阻止隐藏期间的定时器在后台触发 TTL 整批刷新。
+  const activeRouteKey = useContext(ActiveRouteContext);
 
   useScrollRestore('home', undefined, location.pathname === '/');
 
@@ -231,9 +235,12 @@ export default function HomePage() {
   // I2：TTL 过期定时检查——Keep-Alive 下 Home 常驻挂载，若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
   // 依赖 s 由组件订阅的 ttlExpiredSig 驱动；使用 store 模块级定时器避免每次渲染重建。
+  // Keep-Alive 挂起（display:none，activeRouteKey !== '/'）时跳过检查：避免离开首页后
+  // 定时器在后台触发整批 TMDB 请求（纯浪费配额）；重新激活时 effect 重跑并立即补查一次。
   useEffect(() => {
     if (!hasToken || isCategoryView) return;
     const check = () => {
+      if (activeRouteKey !== '/') return;
       const s = useTMDBStore.getState();
       if (s.homeFetchedAt <= 0) return;
       if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
@@ -244,9 +251,11 @@ export default function HomePage() {
       if (anyLoading) return;
       void s.fetchAllHomeData();
     };
+    // 激活/重新激活（activeRouteKey 变回 '/'）时立即补查一次，不依赖下一轮定时器
+    check();
     const timer = setInterval(check, 60 * 1000);
     return () => clearInterval(timer);
-  }, [hasToken, isCategoryView]);
+  }, [hasToken, isCategoryView, activeRouteKey]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {

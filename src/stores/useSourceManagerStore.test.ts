@@ -11,7 +11,7 @@
  * 依赖隔离：mock sourceService（getVideoSources 等）+ mock useIPTVStore（避免真实网络）。
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useSourceManagerStore, MAX_ENABLED } from './useSourceManagerStore';
+import { useSourceManagerStore, MAX_ENABLED, mergeBuiltinSources } from './useSourceManagerStore';
 import type { ManagedVideoSource, ManagedIPTVSource } from '@/types/source';
 
 /* ── mock 依赖（模块级提升，store import 前生效） ── */
@@ -213,5 +213,69 @@ describe('useSourceManagerStore', () => {
     expect(list).toHaveLength(2);
     expect(list.find((s) => s.id === 'v1')?.status.enabled).toBe(false);
     expect(list.find((s) => s.id === 'v2')?.status.enabled).toBe(true);
+  });
+});
+
+describe('mergeBuiltinSources（内置源增量合并）', () => {
+  it('空列表：全量返回内置源（首次初始化）', () => {
+    const builtin = [mkVideo('v1', 0, true), mkVideo('v2', 1, false)];
+    const merged = mergeBuiltinSources([], builtin, (s) => s.id, MAX_ENABLED.video);
+    expect(merged).toEqual(builtin);
+  });
+
+  it('无缺失：原样返回（不产生新引用/不追加）', () => {
+    const existing = [mkVideo('v1', 0, true), mkVideo('v2', 1, false)];
+    const builtin = [mkVideo('v1', 0, true), mkVideo('v2', 1, false)];
+    expect(mergeBuiltinSources(existing, builtin, (s) => s.id, MAX_ENABLED.video)).toBe(existing);
+  });
+
+  it('缺失追加：老用户持久化旧列表时，JSON 新增内置源追加到末尾', () => {
+    const existing = [mkIptv('i1', 0, true)];
+    const builtin = [
+      { ...mkIptv('i1', 0, true) },
+      mkIptv('i2', 1, false),
+      mkIptv('i3', 2, false),
+    ];
+    const merged = mergeBuiltinSources(existing, builtin, (s) => s.url, MAX_ENABLED.iptv);
+    expect(merged.map((s) => s.url)).toEqual([
+      'https://i1/list.m3u8',
+      'https://i2/list.m3u8',
+      'https://i3/list.m3u8',
+    ]);
+    // 已有源保持原顺序/启用状态
+    expect(merged[0].status.enabled).toBe(true);
+    // 新源 order 接续末尾
+    expect(merged[1].order).toBe(1);
+    expect(merged[2].order).toBe(2);
+  });
+
+  it('启用补足：新源默认启用填满上限，超出上限保持停用（不挤掉用户已启用）', () => {
+    // IPTV 上限 3：已有 1 个启用 → 新源补 2 个启用；构造第 4 个新源 → 停用
+    const existing = [mkIptv('i1', 0, true)];
+    const builtin = [
+      mkIptv('i1', 0, true),
+      mkIptv('i2', 1, false),
+      mkIptv('i3', 2, false),
+      mkIptv('i4', 3, false),
+    ];
+    const merged = mergeBuiltinSources(existing, builtin, (s) => s.url, MAX_ENABLED.iptv);
+    const enabled = merged.filter((s) => s.status.enabled).map((s) => s.url);
+    expect(enabled).toEqual([
+      'https://i1/list.m3u8',
+      'https://i2/list.m3u8',
+      'https://i3/list.m3u8',
+    ]);
+    expect(merged[3].status.enabled).toBe(false);
+  });
+
+  it('启用已满：新源全部保持停用', () => {
+    // video 上限 6：已有 6 个启用 → 新源 v7 不启用
+    const existing = Array.from({ length: 6 }, (_, i) => mkVideo(`v${i}`, i, true));
+    const builtin = [...existing.map((s) => ({ ...s })), mkVideo('v7', 6, false)];
+    const merged = mergeBuiltinSources(existing, builtin, (s) => s.id, MAX_ENABLED.video);
+    expect(merged).toHaveLength(7);
+    expect(merged[6].status.enabled).toBe(false);
+    // 原有 6 个启用状态不变
+    expect(merged.filter((s) => s.status.enabled)).toHaveLength(6);
   });
 });
