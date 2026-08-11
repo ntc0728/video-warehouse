@@ -1,0 +1,82 @@
+name: Build Android APK
+
+# release-please 发布 Release 后自动构建 APK 并上传到该 Release 的 assets。
+# 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.4.0.apk）。
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          CAPACITOR: 'true'
+
+      # android/ 目录被 .gitignore 忽略（不进 git），CI 需先 cap add 生成平台模板
+      - name: Add & sync Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+          node scripts/sync-android-version.mjs
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      # 签名策略：配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
+      # ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD 四个 Secrets 用正式 keystore 签名；
+      # 未配置时用 keytool 生成临时 keystore 签名（可安装，升级安装会因签名不同而失败）。
+      - name: Sign APK
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+            KS_PASS="$ANDROID_KEYSTORE_PASSWORD"
+            ALIAS="$ANDROID_KEY_ALIAS"
+            KEY_PASS="$ANDROID_KEY_PASSWORD"
+          else
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/keystore.jks" \
+              -storepass kinoTv2026 -alias kinoTv -keypass kinoTv2026 \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=KinoTV, OU=KinoTV, O=KinoTV, L=Beijing, S=Beijing, C=CN"
+            KS_PASS="kinoTv2026"
+            ALIAS="kinoTv"
+            KEY_PASS="kinoTv2026"
+          fi
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/keystore.jks" --ks-pass "pass:$KS_PASS" \
+            --ks-key-alias "$ALIAS" --key-pass "pass:$KEY_PASS" \
+            --out "kinoTv-v${VERSION}.apk" "$UNSIGNED"
+
+      - name: Upload APK to Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" "kinoTv-v${GITHUB_REF_NAME#v}.apk" --clobber

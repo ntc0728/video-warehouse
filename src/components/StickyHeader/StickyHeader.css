@@ -325,6 +325,13 @@
     flex: 0 0 calc(var(--comp-btn-min-height) * 2 + var(--space-sm) + var(--space-2xs) * 2);
   }
 
+  /* 无 menu-btn（如 App 端隐藏汉堡菜单）时 left 收缩为内容宽度，搜索框随之变大；
+     两端间距仍由 .sticky-header__inner 的 gap 提供。
+     用 :has() 无需 JS 类名（Chrome 105+ / Capacitor WebView 均支持）。 */
+  .sticky-header__left:not(:has(.sticky-header__menu-btn)) {
+    flex: 0 0 auto;
+  }
+
   .sticky-header__left {
     justify-content: flex-start;
   }
