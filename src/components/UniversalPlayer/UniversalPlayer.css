@@ -843,7 +843,8 @@
   border-radius: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.75);
-  font-size: var(--text-sm);
+  /* 与分组项文本大小保持一致（组项为 --text-base） */
+  font-size: var(--text-base);
   text-align: left;
   transition: background 0.15s, color 0.15s, transform 0.15s;
   cursor: pointer;
@@ -888,7 +889,8 @@
   flex-shrink: 0;
   min-width: var(--space-lg);
   color: rgba(255, 255, 255, 0.4);
-  font-size: var(--text-sm);
+  /* 与分组项文本大小保持一致 */
+  font-size: var(--text-base);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -932,7 +934,8 @@
   height: var(--space-lg);
   border-radius: var(--radius-sm);
   color: var(--player-text);
-  font-size: var(--text-sm);
+  /* 字母占位与分组项文本大小保持一致 */
+  font-size: var(--text-base);
   font-weight: 700;
 }
 
