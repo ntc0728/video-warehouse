@@ -201,7 +201,7 @@ export function resolveChannelLogoCandidates(
   proxyUrl?: string,
   epgIndex?: EPGChannelIndex
 ): string[] {
-  const out: string[] = [];
+  let out: string[] = [];
   const push = (url: string | null | undefined) => {
     if (!url) return;
     const safe = toSafeLogoUrl(url, proxyUrl);
@@ -223,12 +223,17 @@ export function resolveChannelLogoCandidates(
   // 三级：在线台标库按名拼 URL（清单预判过滤库外频道）
   for (const url of buildLogoUrlCandidates(channel.name)) push(url);
 
-  // 零级：跨会话成功记忆——上次实际加载成功的 URL 优先复用（失败时经失败记忆自然纠正）
+  // 零级：跨会话成功记忆——只对【当前频道候选链内】的 URL 排序，ok 的提到最前优先复用。
+  // 注意：绝不引入其他频道的记忆 URL。旧实现遍历全局 logoState，把任意频道成功过的
+  // URL 塞进所有频道的候选最前——频道 B 会优先加载频道 A 的台标，这是「串台」根因。
   const remembered: string[] = [];
-  for (const [url, entry] of logoState) {
-    if (entry.ok && !failedLogoUrls.has(url) && !out.includes(url)) remembered.push(url);
+  for (const url of out) {
+    if (logoState.get(url)?.ok) remembered.push(url);
   }
-  if (remembered.length > 0) out.unshift(...remembered);
+  if (remembered.length > 0) {
+    const rest = out.filter((url) => !remembered.includes(url));
+    out = [...remembered, ...rest];
+  }
 
   return out;
 }

@@ -142,7 +142,8 @@ describe('resolveChannelLogoCandidates', () => {
 
 describe('跨会话成功记忆', () => {
   it('成功记忆：加载成功的 URL 优先复用于候选链首', () => {
-    const okUrl = 'https://live.fanmingming.cn/tv/湖南卫视.png';
+    // onLoad 上报的是候选链内（已 encodeURIComponent）的库 URL
+    const okUrl = 'https://live.fanmingming.cn/tv/%E6%B9%96%E5%8D%97%E5%8D%AB%E8%A7%86.png';
     markLogoSucceeded(okUrl);
     const ch = mkChannel({ name: '湖南卫视', logo: undefined });
     const candidates = resolveChannelLogoCandidates(ch);
@@ -150,7 +151,7 @@ describe('跨会话成功记忆', () => {
   });
 
   it('成功记忆可撤销：标记失败后不再进入候选链', () => {
-    const okUrl = 'https://live.fanmingming.cn/tv/湖南卫视.png';
+    const okUrl = 'https://live.fanmingming.cn/tv/%E6%B9%96%E5%8D%97%E5%8D%AB%E8%A7%86.png';
     markLogoSucceeded(okUrl);
     markLogoFailed(okUrl);
     const ch = mkChannel({ name: '湖南卫视', logo: undefined });
@@ -163,5 +164,17 @@ describe('跨会话成功记忆', () => {
     expect(isLogoFailed(url)).toBe(true);
     markLogoSucceeded(url);
     expect(isLogoFailed(url)).toBe(false);
+  });
+
+  it('串台回归：其他频道成功记忆的 URL 绝不进入本频道候选链', () => {
+    // 频道 A（湖南卫视）台标加载成功 → onLoad 上报编码后的候选 URL 写入全局成功记忆
+    const aUrl = 'https://live.fanmingming.cn/tv/%E6%B9%96%E5%8D%97%E5%8D%AB%E8%A7%86.png';
+    markLogoSucceeded(aUrl);
+    // 频道 B（CCTV-1 综合）解析候选：候选链绝不能出现 A 的台标 URL（旧实现全局遍历导致串台）
+    const chB = mkChannel({ name: 'CCTV-1 综合', logo: undefined });
+    const candidates = resolveChannelLogoCandidates(chB);
+    expect(candidates).not.toContain(aUrl);
+    // 且 B 的候选链首仍是 B 自己的在线库候选
+    expect(candidates[0]).toBe('https://live.fanmingming.cn/tv/CCTV1.png');
   });
 });
