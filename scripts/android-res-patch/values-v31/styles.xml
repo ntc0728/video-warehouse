@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Android 12+（API 31+）系统启动屏。
+         values/styles.xml 的 Theme.SplashScreen 在 Android 12+ 上忽略 android:background，
+         必须使用 windowSplashScreen* 属性，否则显示系统默认白底 + 圆形图标
+         （splash.png 不生效 = 「启动页图片未占满」的根因，2026-08-11 修复）。
+         本 style 仅负责系统启动屏阶段（品牌色背景 + 图标）；
+         全屏启动图由 Capacitor SplashScreen 插件（CENTER_CROP + splashFullScreen）
+         在系统启动屏之后绘制。
+         注意：android/ 目录被 .gitignore 忽略，本文件由 build-android.ps1 /
+         release-android.yml 复制到 android/app/src/main/res/values-v31/。 -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">#1890ff</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+</resources>

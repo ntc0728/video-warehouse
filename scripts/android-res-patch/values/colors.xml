@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 品牌色（styles.xml 的 AppTheme 引用；cap add 模板无 colors.xml 会导致 aapt2 资源链接报错）。
+         注意：android/ 目录被 .gitignore 忽略，本文件由 build-android.ps1 /
+         release-android.yml 复制到 android/app/src/main/res/values/。 -->
+    <color name="colorPrimary">#1890FF</color>
+    <color name="colorPrimaryDark">#0F6FCC</color>
+    <color name="colorAccent">#1890FF</color>
+</resources>
