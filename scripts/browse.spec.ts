@@ -631,7 +631,10 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
 
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
+    // 等待初始化请求全部落地再取请求基线：dev server 首编译/缓存抖动时
+    // 初始化请求可能延迟到达，600ms 窗口内会被误计数为「面板内触发了请求」
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(500);
 
     // 打开筛选面板
     await page.locator('.bmb-filter-trigger').click();
