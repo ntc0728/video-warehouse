@@ -166,8 +166,9 @@ export default function SettingsPage() {
         <div className="settings-desktop-card">
           {/* 桌面端顶部栏：左上角返回按钮 + TabBar（sticky 置顶） */}
           <div className="settings-desktop-topbar">
-            <button type="button" className="back-btn" onClick={smartBack} aria-label="返回">
+            <button type="button" className="back-btn back-btn--with-text" onClick={smartBack} aria-label="返回">
               <Icon icon={ArrowLeft} size="sm" />
+              <span>返回</span>
             </button>
             <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
           </div>

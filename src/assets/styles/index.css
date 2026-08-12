@@ -711,6 +711,18 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   transform: scale(1.05);
 }
 
+/* 带文字变体：桌面设置页 topbar 等需要「← 返回」明确语义处使用。
+   复用 .back-btn 基础，仅修改圆角/宽度/内含 glyph + 文字间隔。 */
+.back-btn--with-text {
+  width: auto;
+  height: auto;
+  padding: var(--space-2xs) var(--space-md);
+  border-radius: var(--radius-full);
+  gap: var(--space-xs);
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
 .back-btn svg {
   width: calc(var(--icon-xl) / 2);
   height: calc(var(--icon-xl) / 2);

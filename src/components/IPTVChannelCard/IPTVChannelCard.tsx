@@ -4,7 +4,7 @@
  */
 import { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, CheckCircle, XCircle } from 'lucide-react';
+import { Heart, CheckCircle, XCircle, Tv } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
@@ -37,6 +37,9 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
+  // IPTV 失败占位（横向 cover 专属）：覆盖 KinoTV 纵向品牌占位图（浅蓝+播放图标不协调），
+  // 改用 Tv 图标居中显示，覆盖层 data-show 切换，无障碍 + 视觉与视频占位区分
+  const [imageError, setImageError] = useState(false);
   const isTV = useIsTV();
   // 无 logo 时使用字母占位，也应显示收藏按钮
   const showFavorite = !batchMode && !hideFavorite && (imageLoaded || !channel.logo);
@@ -114,16 +117,25 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           srcCandidates={logoCandidates.slice(1)}
           alt={channel.name}
           loadingVariant="brand"
+          /* fallbackSrc="" 强制不渲染 KinoTV 纵向品牌占位图（浅蓝+播放图标），
+             横向 cover（3:2）下不协调；改用下方专属 Tv 图标占位 */
+          fallbackSrc=""
           onLoad={(url) => {
             setImageLoaded(true);
             // 成功记忆：跨会话优先复用该 URL，避免下次重新走候选链
             if (url) markLogoSucceeded(url);
           }}
           onError={(_, failedUrl) => {
+            setImageError(true);
             // 候选 URL 失败后记入失败记忆，避免后续重复请求
             if (failedUrl) markLogoFailed(failedUrl);
           }}
         />
+        {/* 横向 cover 失败专属占位：浅灰色 Tv 图标居中，半透明，
+           与视频（点击播放）的播放图标语义区分（IPTV 是直播频道） */}
+        <div className="iptv-card-cover__glyph" data-show={imageError} aria-hidden="true">
+          <Icon icon={Tv} size="lg" />
+        </div>
         {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab */}
         {!batchMode && availability !== undefined && (
           <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
