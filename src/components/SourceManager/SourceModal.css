@@ -9,11 +9,27 @@
 }
 
 /* 桌面端：加宽到 30rem（移动端 <640px 保持视口自适应，不因固定宽度溢出小屏） */
-@media (width >= 640px) {
+@media (width >= 768px) {
   html:not([data-device="app"]) .source-modal-wrap {
     width: 30rem;
   }
 }
+
+/* 移动端（≤767px）：与通用 modal 一致改为底部滑出全宽，消除两侧间隙。
+   width 覆盖 .source-modal-wrap 的 min(100vw - 2*space-md, 26rem)（同文件内后者胜），
+   inset/动画继承自 .modal-content-animate 的移动端规则。 */
+@media (width <= 767px) {
+  .source-modal-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .source-modal-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
 
 /* 内容区不再额外 padding（由 .source-modal-wrap 统一提供，避免双 padding） */
 .source-modal {
