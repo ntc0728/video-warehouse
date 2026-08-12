@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.7.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.6.0...kinotv-v1.7.0) (2026-08-12)
+
+
+### Features
+
+* **iptv:** app 端播放页自动横屏 + 隐藏全屏按钮 ([62cd8a5](https://github.com/ntc0728/video-warehouse/commit/62cd8a50ba3b374eda19b76b0d4c6457a3dc91aa))
+* **nav:** 桌面侧边栏底部新增设置入口+版本号，顶栏设置项迁出 ([ff24bcb](https://github.com/ntc0728/video-warehouse/commit/ff24bcb35c1be266f1f017bdaf44e364f33e77a5))
+* **nav:** 桌面顶栏最右侧新增个人头像+用户名入口 ([7104d94](https://github.com/ntc0728/video-warehouse/commit/7104d948f52c2ed05f5850eaeaf8ff4736295f53))
+* **nav:** 移动 web 顶栏新增个人头像+用户名入口，抽屉设置项移到底部 ([cfc3a51](https://github.com/ntc0728/video-warehouse/commit/cfc3a51d061d6f7d7e9066e3485053d4a2052b3c))
+* **settings:** 移动端子页增加进入/退出过渡动画 ([99b9fbd](https://github.com/ntc0728/video-warehouse/commit/99b9fbd6b0cd816826c3830c85c537b782b372e7))
+* **skin:** 皮肤字体自托管（public/fonts/），替换不可达的 Google gstatic ([9b7bfc3](https://github.com/ntc0728/video-warehouse/commit/9b7bfc36021f02a59e1d5038ad24b70773670cfd))
+* **ui:** 顶栏/侧边栏/设置页细节统一（hover-scale 全局方法等 4 项） ([c67aab9](https://github.com/ntc0728/video-warehouse/commit/c67aab93d1a399980a9b51a30d1da4b8f391150e))
+
+
+### Bug Fixes
+
+* **base:** 字体基准显式化 14px + 移除 App 端无效 root 缩放 ([5da795f](https://github.com/ntc0728/video-warehouse/commit/5da795ffd1a7448b02dda9894e023194b8e0b7a4))
+* **boot:** 消除冷启动白屏 + app 端汉堡隐藏 + 布局判断统一移动 ([345690a](https://github.com/ntc0728/video-warehouse/commit/345690a4356147722e554856c180581e2decb884))
+* **browse:** 分类导航进入清空搜索词 + 立即刷新，消除旧数据闪现 ([d78ef85](https://github.com/ntc0728/video-warehouse/commit/d78ef858afdd431bce3dd9ed7b72ecdab351d71f))
+* **cover:** 封面占位品牌化（加载中+失败兜底主题自适应） ([82f7d7d](https://github.com/ntc0728/video-warehouse/commit/82f7d7d26eef75bb39d9fac5f3c2b0374f85ca40))
+* **home:** 实施时发现 50vh 移动端规则冲突，取消以让 token flex:1 撑满 ([d5c4b3f](https://github.com/ntc0728/video-warehouse/commit/d5c4b3f3aa1632e10830fe840372e5df964ae98d))
+* **iptv/settings/ci:** 源接口走IPTV代理+源管理拖拽+卡片动画+Android CI 补SDK ([dd7e718](https://github.com/ntc0728/video-warehouse/commit/dd7e718efb14dceffbbbae61bb50f140f350167a))
+* **iptv/settings/epg:** 4 项自测问题修复 ([e0ee1a3](https://github.com/ntc0728/video-warehouse/commit/e0ee1a3412e76475820abb9d55b67a851370b010))
+* **iptv:** 频道封面失败占位统一为 KinoTV fallback 图（与 VideoCard 一致） ([e854c55](https://github.com/ntc0728/video-warehouse/commit/e854c55f41729a84c8b3ac7f856a0c5496fb3f1b))
+* **layout:** app 端横屏恒为移动布局（CSS 断点双前缀） ([174433a](https://github.com/ntc0728/video-warehouse/commit/174433a325d7c37ab82f704ce493aa3f1ce9a463))
+* **records:** 收藏/历史页容器改为数据就绪后挂载，IPTV tab 切换动画正常播放 ([07f0d13](https://github.com/ntc0728/video-warehouse/commit/07f0d13684e784a355f68fb847733de700630bd2))
+* **settings/iptv:** 设置页返回按钮加文字 + IPTV 横向 cover 失败占位特殊处理 ([52cad60](https://github.com/ntc0728/video-warehouse/commit/52cad604eddd1c18285af0d3d3b2494978f0ae40))
+* **typography:** 全局字体栈显式声明中文字体 + 移除无条件 Google Fonts [@import](https://github.com/import) ([e820eab](https://github.com/ntc0728/video-warehouse/commit/e820eabd09746aad53bf22691a3023ee8afd687c))
+* **ui:** source-modal 移动端改为底部滑出全宽，消除两侧间隙 ([847ce7d](https://github.com/ntc0728/video-warehouse/commit/847ce7dfa43a8f317d544106e842aa301cd66df7))
+* **ui:** VideoCard 加载占位统一纯色背景 + HeroBanner 缩略图无间隙 ([1406613](https://github.com/ntc0728/video-warehouse/commit/14066130817639274ddbdacf2c1137acced48b91))
+* **ui:** 分类卡片 hover 上移/缩放仅限精指针设备，触摸端不再越界 ([f225262](https://github.com/ntc0728/video-warehouse/commit/f225262f700f5555e9e3c486314be731b8e9c664))
+* **ui:** 桌面端隐藏 category-quick-access + 全端移除选中高亮 ([e00fba1](https://github.com/ntc0728/video-warehouse/commit/e00fba1ef7aafccde47224cf0d159faa5bb42b70))
+* **ui:** 设置页padding对齐全局 + TabBar间距+安全区 + 免责声明贴底 ([a038443](https://github.com/ntc0728/video-warehouse/commit/a0384431c0ca58775eff6a8dcd00d854fd5a8044))
+
 ## [1.6.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.5.0...kinotv-v1.6.0) (2026-08-11)
 
 
