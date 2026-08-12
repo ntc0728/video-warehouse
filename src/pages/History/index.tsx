@@ -527,8 +527,11 @@ export default function HistoryPage() {
         </button>
       </div>
       <div className="history-body">
-        {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画 */}
-        <div key={activeTab} className="history-content animate-fade-in" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
+        {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画。
+           仅在有数据时挂载容器：数据就绪才渲染 → animate-fade-in 在内容可见时播放（旧实现
+           visibility:hidden 会在隐藏期播完动画，IPTV tab 数据异步到达后直接显示无动画） */}
+        {currentList.length > 0 ? (
+          <div key={activeTab} className="history-content animate-fade-in">
           {groupedKeys.map((group, idx) => {
             const ti = timelineItems.find((t) => t.key === group);
             const isFirst = idx === 0;
@@ -615,7 +618,8 @@ export default function HistoryPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+        ) : null}
       </div>
       {currentList.length === 0 && (
         <Empty
@@ -624,7 +628,7 @@ export default function HistoryPage() {
         />
       )}
 
-      <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
+      {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
       {/* 批量模式胶囊浮动栏 */}
       {batchMode && (
