@@ -11,7 +11,7 @@
  *   - 支持触摸右滑（>80px）返回上一级。
  * 仅在移动端（≤767px）使用（桌面端不渲染 SubPage，直接内联 tab 内容）。
  */
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft } from 'lucide-react';
 import { SETTINGS_TABS } from './SettingsTabBar';
@@ -28,8 +28,32 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
   const containerRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const isDragging = useRef(false);
+  // 退出动画状态：触发后加 .settings-subpage--leaving，animationend（或 500ms 兜底）后回调 onBack
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const label = SETTINGS_TABS.find(t => t.key === tab)?.label || tab;
+
+  /** 统一退出入口：播放退出动画后回调 onBack（返回按钮 / 触摸右滑共用） */
+  const leave = useCallback(() => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    setLeaving(true);
+    // animationend 兜底：动画被禁用/异常时保证不卡死在子页
+    leaveTimerRef.current = setTimeout(onBack, 500);
+  }, [onBack]);
+
+  useEffect(() => () => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+  }, []);
+
+  // 仅退出动画（--leaving）结束才回调；进入动画的 animationend 忽略
+  const handleAnimationEnd = useCallback(() => {
+    if (!leavingRef.current) return;
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    onBack();
+  }, [onBack]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -44,7 +68,7 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
       if (!isDragging.current) return;
       isDragging.current = false;
       const diff = e.changedTouches[0].clientX - startXRef.current;
-      if (diff > 80) onBack();
+      if (diff > 80) leave();
     };
 
     el.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -53,15 +77,19 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchend', onTouchEnd);
     };
-  }, [onBack]);
+  }, [leave]);
 
   return createPortal(
-    <div ref={containerRef} className="settings-subpage">
+    <div
+      ref={containerRef}
+      className={`settings-subpage${leaving ? ' settings-subpage--leaving' : ''}`}
+      onAnimationEnd={handleAnimationEnd}
+    >
       <div className="settings-subpage__header">
         <button
           type="button"
           className="back-btn"
-          onClick={onBack}
+          onClick={leave}
           aria-label="返回"
         >
           <Icon icon={ArrowLeft} size="lg" />
