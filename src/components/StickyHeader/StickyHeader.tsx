@@ -24,11 +24,13 @@ interface NavItem { key: string; title: string; icon: LucideIcon; path: string; 
 const RIGHT_NAV_ITEMS: NavItem[] = [
   { key: 'collections', title: '收藏', icon: Star, path: '/collections' },
   { key: 'history', title: '历史', icon: Clock, path: '/history' },
-  { key: 'settings', title: '设置', icon: Settings, path: '/settings' },
 ];
 
-/** TV 模式下在顶部导航栏补充 IPTV 入口（侧边栏在 TV 模式下隐藏，需经顶栏可达） */
+/** TV 模式在顶部导航栏补充 IPTV 入口（侧边栏在 TV 模式下隐藏，需经顶栏可达） */
 const TV_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
+
+/** 设置入口：桌面 web 已迁入 HomeSidebar 底部；TV 无侧边栏，保留顶栏入口 */
+const SETTINGS_NAV_ITEM: NavItem = { key: 'settings', title: '设置', icon: Settings, path: '/settings' };
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
@@ -272,6 +274,8 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           <nav className="sticky-header__nav" aria-label="次要导航">
             {isTV && TV_NAV_ITEMS.map(renderNavItem)}
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
+            {/* 设置入口：仅 TV 保留顶栏（桌面 web 已迁入 HomeSidebar 底部） */}
+            {isTV && renderNavItem(SETTINGS_NAV_ITEM)}
           </nav>
           {/* 移动 web：个人设置入口（头像 + 用户名）→ /settings?tab=personal
               （设置页深链自动打开个人设置子页）；app 端导航由底部 TabBar 承担，不渲染 */}

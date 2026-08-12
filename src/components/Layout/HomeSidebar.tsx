@@ -14,11 +14,12 @@
  */
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy } from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy, Settings } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HomeCategoryKey } from '@/pages/Home/categoryConfig';
+import pkg from '../../../package.json';
 import './HomeSidebar.css';
 
 type IconType = typeof Home;
@@ -108,6 +109,20 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
           );
         })}
       </nav>
+      {/* 底部设置区：设置入口 + 版本号（图标最右侧）。桌面端设置入口由顶栏迁入此处。 */}
+      <div className="home-sidebar__footer">
+        <button
+          type="button"
+          className={`home-sidebar__footer-btn${location.pathname.startsWith('/settings') ? ' active' : ''}`}
+          aria-current={location.pathname.startsWith('/settings') ? 'page' : undefined}
+          title="设置"
+          onClick={() => navigate('/settings')}
+        >
+          <Icon icon={Settings} size="md" className="home-sidebar__footer-icon" aria-hidden="true" />
+          <span className="home-sidebar__footer-label">设置</span>
+        </button>
+        <span className="home-sidebar__version" aria-hidden="true">v{pkg.version}</span>
+      </div>
     </aside>
     </>
   );
