@@ -54,7 +54,6 @@ export default function VideoTab({
   const updateVideoSource = useSourceManagerStore((s) => s.updateVideoSource);
   const deleteCustomVideoSource = useSourceManagerStore((s) => s.deleteCustomVideoSource);
   const setVideoEnabled = useSourceManagerStore((s) => s.setEnabled);
-  const setAllVideoEnabled = useSourceManagerStore((s) => s.setAllEnabled);
   const setVideoLatencies = useSourceManagerStore((s) => s.setLatencies);
   const bootstrap = useSourceManagerStore((s) => s.bootstrap);
 
@@ -278,7 +277,6 @@ export default function VideoTab({
               // 达到上限时禁止启用（store 内部有保护）
               setVideoEnabled('video', id, e);
             }}
-            onSetAllEnabled={(enabled) => setAllVideoEnabled('video', enabled)}
             getLatencyUrl={(item) => buildCorsProxyUrl(item.api)}
             onLatencies={(map) => setVideoLatencies('video', map)}
             onOpenAddModal={openAddModal}

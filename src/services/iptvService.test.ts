@@ -5,6 +5,7 @@ import type { IPTVChannel } from '@/types/iptv';
 let detectSourceType: (content: string) => { type: string; channelCount: number; rawContent: string };
 let shouldProxy: (url: string, proxyUrl?: string, pattern?: string) => boolean;
 let buildProxyUrl: (url: string, proxyUrl: string, headers?: Record<string, string>) => string;
+let buildSourceProxyUrl: (url: string, proxyUrl?: string) => string;
 let buildChannelPlayUrl: (channel: Pick<IPTVChannel, 'url' | 'userAgent' | 'referrer'>, proxyUrl?: string, pattern?: string) => string;
 let parseM3U8Content: (content: string, sourceUrl?: string) => IPTVChannel[];
 let unwrapProxy: (url: string, ownProxyUrl?: string) => string;
@@ -16,6 +17,7 @@ beforeAll(async () => {
   detectSourceType = mod.detectSourceType;
   shouldProxy = mod.shouldProxy;
   buildProxyUrl = mod.buildProxyUrl;
+  buildSourceProxyUrl = mod.buildSourceProxyUrl;
   buildChannelPlayUrl = mod.buildChannelPlayUrl;
   parseM3U8Content = mod.parseM3U8Content;
   unwrapProxy = mod.unwrapProxy;
@@ -148,6 +150,28 @@ describe('buildProxyUrl', () => {
   it('dash 流走 /dash-proxy（重写清单内部 URL）', () => {
     const result = buildProxyUrl('http://example.com/video.mpd', 'http://proxy.com');
     expect(result).toBe('http://proxy.com/dash-proxy?url=http%3A%2F%2Fexample.com%2Fvideo.mpd');
+  });
+});
+
+describe('buildSourceProxyUrl（源 M3U 接口）', () => {
+  it('无条件走 IPTV 代理且强制 /m3u8-proxy 端点（即使源 URL 不以 .m3u 结尾）', () => {
+    const result = buildSourceProxyUrl('https://api.example.com/getlist', 'https://proxy.com');
+    expect(result).toBe('https://proxy.com/m3u8-proxy?url=' + encodeURIComponent('https://api.example.com/getlist'));
+  });
+
+  it('不走代理规则：命中直连白名单特征也仍然走代理', () => {
+    // raw.githubusercontent 在默认 proxyPattern 属于直连白名单，但源接口必须无条件走代理
+    const result = buildSourceProxyUrl('https://raw.githubusercontent.com/a/b.m3u', 'https://proxy.com');
+    expect(result).toBe('https://proxy.com/m3u8-proxy?url=' + encodeURIComponent('https://raw.githubusercontent.com/a/b.m3u'));
+  });
+
+  it('未配置代理时直连兜底', () => {
+    expect(buildSourceProxyUrl('https://example.com/list.m3u')).toBe('https://example.com/list.m3u');
+  });
+
+  it('多值代理取第一个（主代理）', () => {
+    const result = buildSourceProxyUrl('https://example.com/list.m3u', 'https://p1.com; https://p2.com/');
+    expect(result.startsWith('https://p1.com/m3u8-proxy?url=')).toBe(true);
   });
 });
 

@@ -253,6 +253,26 @@
   opacity: 0.55;
 }
 
+/* 拖拽柄：左侧，整行可拖（draggable 设在 li 上），柄起视觉提示作用 */
+.source-manager__item-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  touch-action: none;
+}
+.source-manager__item.is-dragging {
+  opacity: 0.45;
+  border-style: dashed;
+  border-color: var(--color-primary);
+}
+.source-manager__item.is-drop-target {
+  border-color: var(--color-primary);
+  box-shadow: 0 -2px 0 var(--color-primary);
+}
+
 .source-manager__item-main {
   flex: 1 1 0;
   min-width: 0;
@@ -448,6 +468,9 @@
     right: 0;
     left: auto;
   }
+  .source-manager__item-drag {
+    margin-left: calc(-1 * var(--space-2xs));
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
 
@@ -484,5 +507,7 @@
     right: 0;
     left: auto;
   }
-
+  html[data-device="app"] .source-manager__item-drag {
+    margin-left: calc(-1 * var(--space-2xs));
+  }
 

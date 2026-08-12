@@ -438,7 +438,14 @@ export default function IPTVPage() {
               <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />
             ) : (
               <>
-                <div className="iptv-channel-grid">
+                {/* key 由「分组 + 源 + 关键词」构成：切换任一筛选时重挂载网格，
+                    触发与收藏页视频 tab 一致的过场动画——容器 animate-fade-in（整体淡入）
+                    + 卡片 animate-card-enter（cardFadeIn）；content-visibility 保证
+                    仅可见卡片参与动画渲染 */}
+                <div
+                  key={`${selectedGroup ?? '__all__'}-${selectedSource ?? '__all__'}-${debouncedKeyword}`}
+                  className="iptv-channel-grid animate-fade-in"
+                >
                   {displayedChannels.map((channel) => (
                     <IPTVChannelCard
                       key={channel.id}

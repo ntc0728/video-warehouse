@@ -87,8 +87,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   }, [toggleFavorite, channel.id]);
 
   // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
-  // 末尾卡片等数百毫秒才淡入"的问题。首屏 60 张几乎同时淡入,整体节奏仍
-  // 由 cardFadeIn (0.18s) 提供。
+  // 末尾卡片等数百毫秒才淡入"的问题。首屏卡片几乎同时上移淡入,整体节奏
+  // 由 fadeInUp (0.4s) 提供（与收藏页视频 tab 的卡片出场动画一致）。
   const staggerDelay = { animationDelay: '0.012s' };
   const titleRef = useRef<HTMLDivElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
@@ -107,7 +107,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     return () => ro.disconnect();
   }, [channel.name]);
 
-  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} animate-card-enter btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
+  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} animate-fade-in-up btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
 
   const cardBody = (
     <div className="card-body">
@@ -136,8 +136,9 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         <div className="iptv-card-cover__glyph" data-show={imageError} aria-hidden="true">
           <Icon icon={Tv} size="lg" />
         </div>
-        {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab */}
-        {!batchMode && availability !== undefined && (
+        {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab。
+            封面图加载失败（imageError 为 true）时隐藏左上角徽标，保证占位图干净 */}
+        {!batchMode && availability !== undefined && !imageError && (
           <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
             {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
             <span className="availability-badge__label">{availability ? '可用' : '不可用'}</span>

@@ -191,6 +191,9 @@ export default function LazyImage({
         setCandidateIndex((i) => i + 1);
       } else {
         setError(true);
+        // 与 handleError 一致：超时挂起最终进入 error 态时也要通知调用方，
+        // 否则 IPTV 卡片等依赖 onError 切换占位（如 Tv 图标）的调用方不会更新
+        onError?.(new Error('Image load timed out'), candidates[candidateIndex]);
       }
     }, timeoutMs);
     return () => window.clearTimeout(timer);
@@ -247,7 +250,7 @@ export default function LazyImage({
 
       {(error || !hasValidSrc) && letter ? (
         <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
-      ) : (error || !hasValidSrc) && (
+      ) : (error || !hasValidSrc) && resolvedFallbackSrc ? (
         <img
           src={resolvedFallbackSrc}
           alt={alt}
@@ -255,7 +258,7 @@ export default function LazyImage({
           decoding="async"
           onError={() => {}}
         />
-      )}
+      ) : null}
     </div>
   );
 }

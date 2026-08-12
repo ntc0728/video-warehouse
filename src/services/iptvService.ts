@@ -245,6 +245,18 @@ export function buildChannelPlayUrl(
   return buildProxyUrl(channel.url, proxyUrl ?? '', headers);
 }
 
+/**
+ * 拼接 IPTV 源接口代理 URL —— 强制走 /m3u8-proxy 端点（源拉取的就是 M3U 文本播放列表）。
+ * 与频道播放链接不同：源接口【无条件走代理】，不经过 shouldProxy 的直连白名单/proxyPattern 判断。
+ * 未配置代理时返回原 URL（直连兜底）。
+ */
+export function buildSourceProxyUrl(url: string, proxyUrl?: string): string {
+  const primary = getPrimaryIptvProxy(proxyUrl);
+  if (!primary) return url;
+  const target = unwrapProxy(url, primary);
+  return `${primary}/m3u8-proxy?url=${encodeURIComponent(target)}`;
+}
+
 export { shouldProxy, buildProxyUrl };
 
 export function detectVideoSourceType(url: string): 'mp4' | 'm3u8' | 'dash' | 'pan' | 'flv' {
@@ -356,17 +368,17 @@ function settleWithWindow<T>(
 
 /**
  * 从远程获取并解析 M3U 播放列表
- * 源地址直接请求（不走代理），频道播放 URL 由前端按需走代理
+ * 源接口【无条件走 IPTV 代理】（buildSourceProxyUrl，/m3u8-proxy 端点），
+ * 不经过 shouldProxy 的直连白名单/proxyPattern 判断——只有频道播放链接才走代理规则逻辑。
  *
  * 加载策略（防慢源拖尾）：并行拉取所有源，但走竞速窗口——
  * 首个成功源到达后最多再等 1.5s 收尾即返回（正常情况 2~4s 出结果），
- * 全程最多 8s（与单源超时一致，全失败时最坏 8s 返回错误），不再等全部源 settle。
+ * 全程最多 20s 兜底（与单源超时一致），不再等全部源 settle。
  */
 /**
- * 拼接 CORS 代理 URL —— 源 M3U / EPG 等「文本拉取」走通用 CORS 代理
- * （cors-proxy worker 仅提供 /proxy?url= 端点），而非 IPTV 流代理的 file-proxy。
- * 架构约定（AGENTS.md）：CMS API / M3U 文件 / EPG XML 走 Video Proxy (CORS)；
- * IPTV 直播流走 IPTV Proxy（m3u8/ts/dash/file-proxy）。
+ * 拼接 CORS 代理 URL（/proxy?url= 端点）。
+ * 注意：IPTV 源 M3U 拉取已改用 IPTV 代理（见 fetchAndParsePlaylist），
+ * 本函数仅保留给测试与其余视频/EPG 文本拉取场景使用（video 代理体系）。
  * proxyPattern 命中「直连白名单」时原样返回不走代理。
  */
 export function buildCorsProxyUrl(url: string, corsProxy: string, pattern?: string): string {
@@ -380,8 +392,7 @@ export function buildCorsProxyUrl(url: string, corsProxy: string, pattern?: stri
 }
 
 export async function fetchAndParsePlaylist(
-  settings?: Partial<IPTVSettings>,
-  corsProxy?: string
+  settings?: Partial<IPTVSettings>
 ): Promise<{
   channels: IPTVChannel[];
   sourceType: PlaylistSourceType;
@@ -401,14 +412,10 @@ export async function fetchAndParsePlaylist(
   // 绝对上限 20s 兜底——上限过紧（8s）会误杀响应慢但健康的源，导致“全部源加载失败”）
   const results = await settleWithWindow(
     urls.map(async (url, index) => {
-      const proxyUrl = getPrimaryIptvProxy(settings?.proxyUrl);
-      // 源 M3U 拉取优先走 CORS 代理（/proxy?url=，与 EPG 一致，已验证可达）；
-      // 未配置 corsProxy 时回退原逻辑（iptv 代理 file-proxy 或直连）
-      const fetchUrl = corsProxy
-        ? buildCorsProxyUrl(url, corsProxy, settings?.proxyPattern)
-        : shouldProxy(url, proxyUrl, settings?.proxyPattern)
-          ? buildProxyUrl(url, proxyUrl)
-          : url;
+      // 源 M3U 接口【无条件走 IPTV 代理】（settings.proxyUrl，/m3u8-proxy 端点）：
+      // 不经过 shouldProxy 的直连白名单/proxyPattern 判断——只有频道播放链接才走代理规则逻辑。
+      // 未配置代理时直连兜底。
+      const fetchUrl = buildSourceProxyUrl(url, settings?.proxyUrl);
       const rawContent = await fetchContent(fetchUrl);
       const channels = parseM3U8Content(rawContent, url);
       return channels.map(ch => ({

@@ -13,12 +13,12 @@
  * - 跨会话状态记忆：URL 级 ok/fail 记忆持久化到 IndexedDB（30 天）。
  *   上次成功的 URL 优先复用，失败过的 URL 不再请求，避免每次刷新重复 404。
  * - 模块级 failedLogoUrls 失败记忆：已 404/挂起的 URL 不再返回（会话内即时生效）
- * - http 台标在 https 部署下会被混合内容拦截，经 file-proxy 转 https 或直接丢弃
+ * - 台标不再走 file-proxy 代理：http 台标原样直连（是否被混合内容拦截取决于部署环境，
+ *   失败自然进入下一候选 / 字母占位），避免数百张卡片反复消耗 worker 请求额度
  */
 import type { IPTVChannel } from '@/types/iptv';
 import { matchEPGChannel, matchEPGChannelIndexed } from './epgService';
 import type { EPGChannelInfo, EPGChannelIndex } from './epgService';
-import { getPrimaryIptvProxy } from './iptvService';
 import {
   loadLogoLibrary,
   saveLogoLibrary,
@@ -82,14 +82,9 @@ export function __setLogoLibraryForTest(lib: { fanmingming: Set<string>; wanglin
   logoLibrary = lib;
 }
 
-/** http 台标转安全 URL：https 原样；http 经 file-proxy 转 https，无代理则丢弃 */
-function toSafeLogoUrl(url: string, proxyUrl?: string): string | null {
-  if (/^https:/i.test(url)) return url;
-  if (/^http:/i.test(url)) {
-    const primary = getPrimaryIptvProxy(proxyUrl);
-    if (!primary) return null; // https 部署下 http 图片会被混合内容拦截
-    return `${primary}/file-proxy?url=${encodeURIComponent(url)}`;
-  }
+/** 台标 URL 安全化：http/https 一律原样直连（不再经 file-proxy 代理，减少 worker 请求消耗） */
+function toSafeLogoUrl(url: string): string | null {
+  if (/^https?:/i.test(url)) return url;
   return null;
 }
 
@@ -194,17 +189,18 @@ export function resetLogoCacheInMemory(): void {
  * 生成频道台标候选 URL 列表（三级回退链，去重 + 过滤失败记忆 + 成功记忆优先）。
  * 返回空数组表示无任何可用候选（调用方走字母占位）。
  * 传入 epgIndex（预索引）时 EPG 匹配为 O(1) 查表；否则回退全量遍历。
+ * @param _proxyUrl 已废弃（台标不再走代理，http 直连）；保留参数仅为兼容历史调用点。
  */
 export function resolveChannelLogoCandidates(
   channel: Pick<IPTVChannel, 'name' | 'logo' | 'tvgId'>,
   epgChannels?: EPGChannelInfo[],
-  proxyUrl?: string,
+  _proxyUrl?: string,
   epgIndex?: EPGChannelIndex
 ): string[] {
   let out: string[] = [];
   const push = (url: string | null | undefined) => {
     if (!url) return;
-    const safe = toSafeLogoUrl(url, proxyUrl);
+    const safe = toSafeLogoUrl(url);
     if (safe && !failedLogoUrls.has(safe) && !out.includes(safe)) out.push(safe);
   };
 

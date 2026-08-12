@@ -47,7 +47,6 @@ export default function IptvTab({
   const deleteCustomIPTV = useSourceManagerStore((s) => s.deleteCustomIPTVSource);
   const deleteCustomEPG = useSourceManagerStore((s) => s.deleteCustomEPGSource);
   const setEnabled = useSourceManagerStore((s) => s.setEnabled);
-  const setAllEnabled = useSourceManagerStore((s) => s.setAllEnabled);
   const setLatencies = useSourceManagerStore((s) => s.setLatencies);
   const bootstrap = useSourceManagerStore((s) => s.bootstrap);
 
@@ -270,7 +269,6 @@ export default function IptvTab({
           onUpdate={(id, patch) => updateEPG(id, patch as Partial<ManagedEPGSource>)}
           onDelete={deleteCustomEPG}
           onToggle={(id, e) => setEnabled('epg', id, e)}
-          onSetAllEnabled={(enabled) => setAllEnabled('epg', enabled)}
           getLatencyUrl={(item) => buildCorsProxyUrl(item.url)}
           onLatencies={(map) => setLatencies('epg', map)}
           onOpenAddModal={openEpgAdd}
@@ -292,7 +290,6 @@ export default function IptvTab({
           onUpdate={(id, patch) => updateIPTV(id, patch as Partial<ManagedIPTVSource>)}
           onDelete={deleteCustomIPTV}
           onToggle={(id, e) => setEnabled('iptv', id, e)}
-          onSetAllEnabled={(enabled) => setAllEnabled('iptv', enabled)}
           getLatencyUrl={(item) => buildCorsProxyUrl(item.url)}
           onLatencies={(map) => setLatencies('iptv', map)}
           onOpenAddModal={openIptvAdd}

@@ -17,6 +17,7 @@ import {
   Edit3,
   FileText,
   Film,
+  GripVertical,
   ListVideo,
   Plus,
   Radio,
@@ -68,7 +69,6 @@ export interface SourceManagerProps<T extends ManagedSourceBase> {
   onUpdate: (id: string, patch: { name?: string; url?: string; detail?: string }) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string, enabled: boolean) => void;
-  onSetAllEnabled: (enabled: boolean) => void;
   /** 达到启用上限时的提示（父组件可 toast） */
   getLatencyUrl: (item: T) => string;
   onLatencies: (map: Record<string, number | null>) => void;
@@ -82,16 +82,19 @@ export interface SourceManagerProps<T extends ManagedSourceBase> {
 }
 
 export default function SourceManager<T extends ManagedSourceBase>(props: SourceManagerProps<T>) {
-  const { scene, items, onToggle, onSetAllEnabled, onOpenAddModal, onOpenEditModal, getLatencyUrl, onLatencies, onImportFromFile, onImportFromUrl, onImportFromText, onExportToFile, onExportToText } = props;
+  const { scene, items, onToggle, onOpenAddModal, onOpenEditModal, getLatencyUrl, onLatencies, onImportFromFile, onImportFromUrl, onImportFromText, onExportToFile, onExportToText } = props;
 
   const cfg = SCENE_CONFIG[scene];
   const TypeIcon = cfg.icon;
   const sortByLatency = useSourceManagerStore((s) => s.sortByLatency);
+  const reorder = useSourceManagerStore((s) => s.reorder);
   const setMeasuringStore = useSourceManagerStore((s) => s.setMeasuring);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [measuring, setMeasuring] = useState(false);
   const [measureProgress, setMeasureProgress] = useState({ done: 0, total: 0 });
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const addRef = useRef<HTMLDivElement | null>(null);
 
   // 外部点击关闭下拉
@@ -153,10 +156,30 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
     }
   };
 
-  /** 全部启用/停用 */
-  const handleSetAll = (enabled: boolean) => {
-    onSetAllEnabled(enabled);
-    toast.show({ content: enabled ? '已全部启用' : '已全部停用', type: 'success' });
+  /** 拖拽开始：记录源项下标 */
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+    setOverIndex(index);
+  };
+
+  /** 拖拽经过：更新悬停目标（同项忽略） */
+  const handleDragOver = (index: number) => {
+    if (dragIndex === null) return;
+    if (overIndex !== index) setOverIndex(index);
+  };
+
+  /** 放置：调用 store 重排 */
+  const handleDrop = (index: number) => {
+    if (dragIndex === null) return;
+    if (dragIndex !== index) reorder(scene, dragIndex, index);
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  /** 拖拽结束/取消：清空状态 */
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setOverIndex(null);
   };
 
   return (
@@ -195,12 +218,6 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
               <span>按延迟排序</span>
             </button>
           )}
-          <button type="button" className="source-manager__toolbar-btn" onClick={() => handleSetAll(false)} aria-label="全部停用">
-            <span>全部停用</span>
-          </button>
-          <button type="button" className="source-manager__toolbar-btn" onClick={() => handleSetAll(true)} aria-label="全部启用">
-            <span>全部启用</span>
-          </button>
 
           {/* 添加源下拉：手动添加 / 导入 / 导出 */}
           <div className="source-manager__popover-wrap" ref={addRef}>
@@ -237,8 +254,19 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
         {items.length === 0 && (
           <li className="source-manager__empty">暂无源，点击「添加」开始</li>
         )}
-        {items.map((item) => (
-          <li key={item.id} className={`source-manager__item${!item.status.enabled ? ' is-disabled' : ''}`}>
+        {items.map((item, index) => (
+          <li
+            key={item.id}
+            className={`source-manager__item${!item.status.enabled ? ' is-disabled' : ''}${dragIndex === index ? ' is-dragging' : ''}${overIndex === index && dragIndex !== null && dragIndex !== index ? ' is-drop-target' : ''}`}
+            draggable
+            onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; handleDragStart(index); }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; handleDragOver(index); }}
+            onDrop={(e) => { e.preventDefault(); handleDrop(index); }}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="source-manager__item-drag" title="拖拽排序" aria-label="拖拽排序">
+              <Icon icon={GripVertical} size="md" />
+            </div>
             <div className="source-manager__item-main">
               <div className="source-manager__item-title">
                 <span className="source-manager__name">{item.name}</span>
