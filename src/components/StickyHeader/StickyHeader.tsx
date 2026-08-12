@@ -277,9 +277,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
             {/* 设置入口：仅 TV 保留顶栏（桌面 web 已迁入 HomeSidebar 底部） */}
             {isTV && renderNavItem(SETTINGS_NAV_ITEM)}
           </nav>
-          {/* 移动 web：个人设置入口（头像 + 用户名）→ /settings?tab=personal
-              （设置页深链自动打开个人设置子页）；app 端导航由底部 TabBar 承担，不渲染 */}
-          {isMobile && !isNative && (
+          {/* 个人设置入口（头像 + 用户名）→ /settings?tab=personal：
+             设置页深链自动打开个人设置子页。渲染范围：移动 web（isMobile）+
+             桌面 web（!isTV，桌面设置入口在顶栏最右侧）；app 端导航由底部 TabBar
+             承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮 */}
+          {!isTV && !isNative && (
             <button
               type="button"
               className="sticky-header__profile"
