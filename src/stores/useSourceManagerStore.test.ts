@@ -2,11 +2,12 @@
  * useSourceManagerStore 单元测试
  *
  * 核心覆盖 2026-08-07 源管理收敛（ADR-019）的关键业务规则：
- *   1) 至少一个源兜底：IPTV/EPG 停用最后一个已启用源被拒；setAllEnabled(false) 改保留第一个
+ *   1) 至少一个源兜底：IPTV/EPG 停用最后一个已启用源被拒
  *   2) 启用数量上限：MAX_ENABLED（video=6 / iptv=3 / epg=3）
  *   3) bootstrap 幂等 + 仅空列表注入（保证设置页启用状态回显）
  *   4) 自定义源增删：deleteCustom* 仅删 custom、不删 builtin
  *   5) sortByLatency：启用源按延迟升序、未启用排尾
+ *   6) reorder：拖拽排序更新顺序并重排 order
  *
  * 依赖隔离：mock sourceService（getVideoSources 等）+ mock useIPTVStore（避免真实网络）。
  */
@@ -125,19 +126,32 @@ describe('useSourceManagerStore', () => {
     expect(useSourceManagerStore.getState().video[0].status.enabled).toBe(false);
   });
 
-  it('setAllEnabled：IPTV 全部停用被拒，改为只保留第一个启用', () => {
-    useSourceManagerStore.setState({ iptv: [mkIptv('i1', 0, true), mkIptv('i2', 1, true), mkIptv('i3', 2, true)] } as never);
-    useSourceManagerStore.getState().setAllEnabled('iptv', false);
-    const list = useSourceManagerStore.getState().iptv;
-    expect(list.filter((s) => s.status.enabled)).toHaveLength(1);
-    expect(list[0].status.enabled).toBe(true); // 保留第一个
-    expect(list[1].status.enabled).toBe(false);
+  it('reorder：将 index 0 移到 index 2，其余顺延且 order 重排', () => {
+    useSourceManagerStore.setState({
+      video: [mkVideo('v1', 0, true), mkVideo('v2', 1, true), mkVideo('v3', 2, false), mkVideo('v4', 3, true)],
+    } as never);
+    useSourceManagerStore.getState().reorder('video', 0, 2);
+    const list = useSourceManagerStore.getState().video;
+    expect(list.map((s) => s.id)).toEqual(['v2', 'v3', 'v1', 'v4']);
+    expect(list.map((s) => s.order)).toEqual([0, 1, 2, 3]);
   });
 
-  it('setAllEnabled：video 全部停用不被拦截', () => {
-    useSourceManagerStore.setState({ video: [mkVideo('v1', 0, true), mkVideo('v2', 1, true)] } as never);
-    useSourceManagerStore.getState().setAllEnabled('video', false);
-    expect(useSourceManagerStore.getState().video.every((s) => !s.status.enabled)).toBe(true);
+  it('reorder：将 index 3 移到 index 1，其余顺延且 order 重排', () => {
+    useSourceManagerStore.setState({
+      video: [mkVideo('v1', 0, true), mkVideo('v2', 1, true), mkVideo('v3', 2, true), mkVideo('v4', 3, true)],
+    } as never);
+    useSourceManagerStore.getState().reorder('video', 3, 1);
+    const list = useSourceManagerStore.getState().video;
+    expect(list.map((s) => s.id)).toEqual(['v1', 'v4', 'v2', 'v3']);
+  });
+
+  it('reorder：相同下标或越界时保持原样', () => {
+    useSourceManagerStore.setState({
+      video: [mkVideo('v1', 0, true), mkVideo('v2', 1, true)],
+    } as never);
+    useSourceManagerStore.getState().reorder('video', 0, 0);
+    useSourceManagerStore.getState().reorder('video', 0, 99);
+    expect(useSourceManagerStore.getState().video.map((s) => s.id)).toEqual(['v1', 'v2']);
   });
 
   it('addCustomVideoSource：追加自定义源且默认启用', () => {

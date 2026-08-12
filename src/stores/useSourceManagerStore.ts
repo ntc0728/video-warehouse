@@ -66,7 +66,8 @@ interface SourceManagerState {
   _bootstrapped: { video: boolean; iptv: boolean; epg: boolean };
 
   setEnabled: (scene: Scene, id: string, enabled: boolean) => void;
-  setAllEnabled: (scene: Scene, enabled: boolean) => void;
+  /** 拖拽排序：把 fromIndex 的项移到 toIndex，其余顺延（持久化 order + 同步消费） */
+  reorder: (scene: Scene, fromIndex: number, toIndex: number) => void;
   setLatencies: (scene: Scene, map: Record<string, number | null>) => void;
   /** 标记一批源开始测速（设置 measuring=true，latency 清空为 null 表示「正在检测」） */
   setMeasuring: (scene: Scene, ids: string[], measuring: boolean) => void;
@@ -264,23 +265,16 @@ export const useSourceManagerStore = create<SourceManagerState>()(
         syncConsumers(get(), scene);
       },
 
-      setAllEnabled: (scene, enabled) => {
-        const list = get()[scene] as Array<{ status: SourceStatusLike }>;
-        // 至少一个源兜底：全部停用 IPTV/EPG 时拒绝（保留至少一个已启用源）
-        if (!enabled && (scene === 'iptv' || scene === 'epg')) {
-          const hasAny = list.some((s) => s.status.enabled);
-          if (hasAny && list.length > 0) {
-            // 拒绝全部停用：改为只保留第一个源启用
-            set({
-              [scene]: list.map((s, i) => ({ ...s, status: { ...s.status, enabled: i === 0 } })),
-            } as Pick<SourceManagerState, Scene>);
-            syncConsumers(get(), scene);
-            return;
-          }
-        }
+      reorder: (scene, fromIndex, toIndex) => {
+        const list = (get()[scene] as Array<{ id: string }>).slice();
+        if (fromIndex < 0 || fromIndex >= list.length) return;
+        if (toIndex < 0 || toIndex >= list.length) return;
+        if (fromIndex === toIndex) return;
+        const [moved] = list.splice(fromIndex, 1);
+        list.splice(toIndex, 0, moved);
         set({
-          [scene]: list.map((s) => ({ ...s, status: { ...s.status, enabled } })),
-        } as Pick<SourceManagerState, Scene>);
+          [scene]: list.map((s, i) => ({ ...s, order: i })),
+        } as unknown as Pick<SourceManagerState, Scene>);
         syncConsumers(get(), scene);
       },
 

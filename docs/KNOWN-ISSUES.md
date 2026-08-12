@@ -104,4 +104,16 @@
 
 ---
 
+## 9. [已知 · 未修] 源管理拖拽排序在触摸设备体验受限
+
+**状态**：⚠️ 已知（2026-08-12，ADR-020）。
+
+**现象**：设置页源管理（视频/IPTV/EPG 源面板）的排序改走原生 HTML5 Drag & Drop API（`source-manager__item` 设 `draggable` + 左侧 `.source-manager__item-drag` 拖拽柄）。桌面端拖拽正常；**移动端/平板触摸环境下 HTML5 DnD 原生不友好**，拖拽柄虽设 `touch-action:none` 但长按拖拽排序的体验依赖浏览器支持，可能无法触发拖拽。
+
+**根因**：HTML5 `draggable` 事件（dragstart/dragover/drop）在触摸设备上默认不触发，原生仅支持指针/鼠标输入。
+
+**规避/修复（暂未做）**：桌面端已可用；如需完整移动端拖拽排序，后续改用 Pointer Events 方案或引入 DnD 库（如 dnd-kit）。当前移动端用户仍可通过「源顺序 = 列表顺序」间接调整（删除重建），无功能阻断。
+
+---
+
 *维护约定：新增问题按上述模板追加；已修复条目标记日期后保留作教训。此文件与 KNOWLEDGE.md 的 ADR、AGENTS.md 约定互为补充。*

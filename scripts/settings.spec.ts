@@ -199,9 +199,9 @@ test.describe('6.5 IPTV 配置', () => {
     }
   });
 
-  test('SET-052: IPTV 至少保留一个源（停用最后一个被拒）', async ({ page }) => {
+  test('SET-052: IPTV 至少保留一个源（逐个停用最后一个被拒）', async ({ page }) => {
     // ADR-019「至少一个源」兜底：IPTV/EPG 停用最后一个已启用源被拒绝。
-    // 通过"全部停用"按钮验证：全部停用后仍保留一个启用源。
+    // 已移除「全部停用」按钮，改为逐个停用已启用源：停用最后一个时被拒，badge 仍保留 1 个启用。
     await page.goto('/settings?tab=iptv', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
@@ -211,17 +211,19 @@ test.describe('6.5 IPTV 配置', () => {
       console.log('⚠️ SET-052: IPTV 源管理面板未检测到');
       return;
     }
-    const setAllOff = panel.locator('button[aria-label="全部停用"]');
-    if (!(await setAllOff.isVisible().catch(() => false))) {
-      console.log('⚠️ SET-052: 「全部停用」按钮未检测到');
-      return;
+    // 逐个点击启用源滑块停用；最后被拒时应保留 1 个启用
+    const switches = panel.locator('.source-manager__item input[type="checkbox"]');
+    const switchCount = await switches.count();
+    for (let i = 0; i < switchCount; i++) {
+      const sw = switches.nth(i);
+      if (await sw.isChecked().catch(() => false)) {
+        await sw.uncheck();
+        await page.waitForTimeout(200);
+      }
     }
-    await setAllOff.click();
-    await page.waitForTimeout(400);
     const badge = await panel.locator('.source-manager__badge').textContent();
-    // badge 形如「已启用 N/M」，全部停用后仍保留 1 个启用（至少一个源兜底）
     const enabledCount = /已启用\s*(\d+)/.exec(badge || '')?.[1];
-    console.log(`✅ SET-052 通过: 全部停用后 badge="${badge}"`);
+    console.log(`✅ SET-052 通过: 逐个停用后 badge="${badge}"`);
     expect(enabledCount).toBe('1');
   });
 });

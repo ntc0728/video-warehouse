@@ -123,15 +123,14 @@ describe('resolveChannelLogoCandidates', () => {
     expect(isLogoFailed(first[0])).toBe(true);
   });
 
-  it('http 台标：无代理时丢弃，有代理时经 file-proxy 转 https', () => {
+  it('http 台标：原样直连，不再经 file-proxy 代理', () => {
     const ch = mkChannel({ logo: 'http://epg.51zmt.top:8000/tb1/CCTV/CCTV1.png' });
-    const noProxy = resolveChannelLogoCandidates(ch);
-    expect(noProxy).not.toContain('http://epg.51zmt.top');
-
-    const proxied = resolveChannelLogoCandidates(ch, undefined, 'https://proxy.example.com');
-    expect(proxied[0]).toBe(
-      `https://proxy.example.com/file-proxy?url=${encodeURIComponent('http://epg.51zmt.top:8000/tb1/CCTV/CCTV1.png')}`
-    );
+    const candidates = resolveChannelLogoCandidates(ch);
+    expect(candidates[0]).toBe('http://epg.51zmt.top:8000/tb1/CCTV/CCTV1.png');
+    // 传入代理地址也不再改写（台标不走代理，减少 worker 消耗）
+    const withProxy = resolveChannelLogoCandidates(ch, undefined, 'https://proxy.example.com');
+    expect(withProxy[0]).toBe('http://epg.51zmt.top:8000/tb1/CCTV/CCTV1.png');
+    expect(withProxy[0]).not.toContain('file-proxy');
   });
 
   it('全部无来源时返回空数组', () => {

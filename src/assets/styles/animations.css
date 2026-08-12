@@ -185,6 +185,12 @@
   animation: cardFadeIn 0.18s var(--ease-standard) both;
 }
 
+/* 卡片出场：淡入 + 上移 12px（与收藏页视频 tab 的 .video-card-grid > * fadeInUp
+   视觉一致，用于 IPTV 卡片等需要明显出场动画的场景） */
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.35s var(--ease-standard) both;
 }
