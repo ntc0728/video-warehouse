@@ -1,11 +1,13 @@
 // 应用入口文件，挂载 React 根组件并初始化路由
+import { Suspense, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import Routes from './routes';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import AppLoading from './components/common/AppLoading';
 import './assets/styles/index.css';
 import { adjustFontSizeForNative } from './lib/platform';
 import { preventPinchZoom } from './lib/preventZoom';
-import { preloadInitialRoute, preloadAllRoutes } from './components/Layout/routeConfig';
+import { preloadInitialRoute } from './components/Layout/routeConfig';
 import { useSourceManagerStore } from './stores/useSourceManagerStore';
 import { preloadLogoCache } from './services/channelLogo';
 
@@ -14,36 +16,37 @@ adjustFontSizeForNative();
 // 移动端阻止双指缩放
 preventPinchZoom();
 
-// 预拉并 await「当前路由」chunk 再首屏渲染：lazyWithRetry 缓存了 load Promise
-// （preload 与 React.lazy 共用同一实例），await 后该 Promise 已 resolved，
-// 首屏 Suspense 直接同步渲染、绝不闪 fallback，从而彻底消除
-// 「Suspense fallback（chunk 加载中）→ 页面自身 loading」的双重 AppLoading
-// （冷刷新 chunk 需重新 fetch/eval，与 SPA 二次进入 warm 均成立）。
-//
-// 8.3A（2026-08-04）：在此同时启动 preloadAllRoutes() 预加载全部路由 chunk，
-// 让「冷启动后立即导航到未访问页面」也能命中 chunk 缓存（原逻辑等 AppLayout
-// 挂载后才预加载，存在「立即导航 → Suspense fallback + 页面 loading」两次
-// AppLoading 的窗口期）。preloadStarted 幂等，AppLayout 挂载后的重复调用会跳过。
-// 注意：import() 只加载并求值模块，不挂载、不触发数据请求，无副作用。
-//
-// 8.3B（2026-08-10）：dev 模式跳过 preloadAllRoutes()——dev 下 import() 会触发
-// Vite 逐模块 transform（TS→JS + 依赖图解析 + HMR 注入），12 个路由的依赖合计
-// 248 个模块全部编译会阻塞主线程 ~5s 白屏。production 无编译步骤（Rollup 已打包
-// 成 ~12 个 chunk，import() 仅 fetch+eval），保留以消除后续导航的双重 AppLoading。
-if (!import.meta.env.DEV) {
-  preloadAllRoutes();
+// 首屏加载兜底：路由 chunk 拉取期间显示全屏 AppLoading，替代「render 前空白」。
+// 与 AppLayout 的 LoadingFallback 一致写入 __kinoSuspenseFallback 时间戳，
+// 供首页判断「刚经历过 chunk fallback」从而跳过自身固定 500ms loading，
+// 避免 fallback 与页面 loading 两次 AppLoading 叠加（8.3C 机制）。
+function BootLoading() {
+  useEffect(() => {
+    window.__kinoSuspenseFallback = Date.now();
+  }, []);
+  return <AppLoading fullScreen showProgress={false} tip="正在启动…" />;
 }
-// 应用启动即初始化源管理（注入默认源 + 同步消费 indices/aggregatorUrls）。
-// 不阻塞首屏（异步 + 模块级 guard 幂等）；保证「直接进入 IPTV 页」时
-// aggregatorUrls 与源管理真实启用状态一致，而非只依赖设置页 tab 挂载。
+
+// 9.1（2026-08-12）：render 不再等待 preloadInitialRoute —— 原逻辑 await 完成后才
+// createRoot().render()，冷启动（chunk 需网络 fetch）期间 #root 全空、无任何 UI 兜底，
+// 造成「长时间白屏」。改为立即 render：
+//  - preload 与 React.lazy 共用 lazyWithRetry 缓存的同一 Promise（routeConfig.ts），
+//    warm（chunk 已缓存）时 Suspense 同步解析、绝不闪 fallback；
+//  - cold 时 per-route Suspense（AppLayout LoadingFallback）立即显示 AppLoading，
+//    加载完成自动进入内容 —— 白屏 → 短暂「加载中」。
+// 9.1：preloadAllRoutes() 移除（原在 render 前并发抢拉 12 个路由 chunk，与首屏
+// Home chunk 竞争带宽）。AppLayout 挂载后已立即调用（preloadStarted 幂等），
+// 预拉发生在 Home chunk 就绪之后，不再拖慢首帧。
 useSourceManagerStore.getState().bootstrap();
-// 预载台标缓存（库清单 + 成败记忆，IndexedDB/网络拉取，不阻塞首屏）：
-// 清单就绪后 IPTV 页对「库外频道」不再发起注定 404 的台标猜测请求。
+// 预载台标缓存（库清单 + 成败记忆，IndexedDB/网络拉取，不阻塞首屏）
 void preloadLogoCache();
-preloadInitialRoute().finally(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <ErrorBoundary>
+// 预拉「当前路由」chunk（不阻塞渲染）：warm 命中时 Suspense 同步解析
+void preloadInitialRoute();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <ErrorBoundary>
+    <Suspense fallback={<BootLoading />}>
       <Routes />
-    </ErrorBoundary>
-  );
-});
+    </Suspense>
+  </ErrorBoundary>
+);

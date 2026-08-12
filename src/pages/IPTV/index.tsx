@@ -23,7 +23,7 @@ import { useDocumentTitle } from '@/hooks';
 import { useIPTVAutoRefresh } from '@/hooks/useIPTVAutoRefresh';
 import { AppLoading, Empty, BackToTopButton } from '@/components/common';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import GroupPicker from './GroupPicker';
 import { useShallow } from 'zustand/react/shallow';
@@ -47,7 +47,8 @@ function useDebounce<T>(value: T, delay: number): T {
 const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout();
   const pageRef = useRef<HTMLDivElement>(null);
 
   useDocumentTitle();

@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsMobileLayout } from '@/hooks/useMediaQuery'
 
 interface BottomSheetProps {
   visible: boolean
@@ -22,7 +22,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const contentRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ y: number; time: number } | null>(null)
   const currentTranslateRef = useRef(0)
-  const isMobile = useMediaQuery('(max-width: 767px)')
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout()
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]

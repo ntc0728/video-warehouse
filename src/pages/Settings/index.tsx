@@ -8,7 +8,7 @@
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
@@ -35,7 +35,8 @@ const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
 
 export default function SettingsPage() {
   useDocumentTitle();
-  const isDesktop = useMediaQuery('(min-width: 768px)');
+  // 9.1：桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
+  const isDesktop = !useIsMobileLayout();
   const pageRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
