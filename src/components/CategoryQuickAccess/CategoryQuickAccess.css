@@ -44,9 +44,18 @@
   scroll-snap-align: start;
 }
 
-.category-quick-access__card:hover .category-quick-access__icon-wrap {
-  box-shadow: var(--shadow-lg);
-  transform: scale(1.08);
+/* 上移位移 + 图标缩放仅作用于精指针设备（鼠标 hover）：
+   触摸端点击卡片立即跳转 browse，若也位移会使图标上移越出卡片/容器范围（历史 bug）。
+   触摸端不做 hover 动效，避免点击瞬间的视觉跳动。 */
+@media (hover: hover) and (pointer: fine) {
+  .category-quick-access__card:hover {
+    transform: translateY(-4px);
+  }
+
+  .category-quick-access__card:hover .category-quick-access__icon-wrap {
+    box-shadow: var(--shadow-lg);
+    transform: scale(1.08);
+  }
 }
 
 /* 选中态高亮（--active）已全端移除（决策：点击分类立即跳转 browse，选中态停留无意义），
