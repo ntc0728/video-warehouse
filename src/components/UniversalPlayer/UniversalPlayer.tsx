@@ -35,6 +35,7 @@ import type { IPTVChannel } from '@/types/iptv';
 import type { SourceType } from '@/types/video';
 import { ERROR_CODE_BARE_STREAM } from './adapters/HLSAdapter';
 import { Icon } from "@/components/ui/Icon";
+import { isNativePlatform } from '@/lib/platform';
 
 const VOLUME_POPUP_DELAY = 3000;
 
@@ -749,8 +750,9 @@ retryCount,
         episodeLabel={episodeLabel}
         channelName={currentChannelName || channelName}
         visible={isControlsVisible || hasError}
-        /* TV 端 IPTV 播放页默认全屏，不显示放大图标；非 TV 端放大图标移至右下角（CSS） */
-        showFullscreenButton={mode === 'iptv' && platform !== 'tv'}
+        /* TV 端 IPTV 播放页默认全屏，不显示放大图标；非 TV 端放大图标移至右下角（CSS）。
+           9.1：app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全屏按钮 */
+        showFullscreenButton={mode === 'iptv' && platform !== 'tv' && !isNativePlatform()}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}
