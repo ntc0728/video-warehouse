@@ -6,6 +6,8 @@ import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { useSmartBack } from '@/lib/navigation';
 import { useIsMobile, useIsTV, useRouteTitleImmediate } from '@/hooks';
 import { requestFullscreen, getFullscreenElement } from '@/components/UniversalPlayer/lib/fullscreen';
+import { isNativePlatform } from '@/lib/platform';
+import { lockLandscape, unlockOrientation } from '@/lib/orientation';
 import { buildChannelPlayUrl } from '@/services/iptvService';
 import type { IPTVChannel } from '@/types/iptv';
 import './IPTVPlayer.css';
@@ -93,6 +95,16 @@ export default function IPTVPlayerPage() {
     requestFullscreen(el).catch(() => { /* 平台不支持/无手势时静默 */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTV]);
+
+  // 9.1：app 端进入 IPTV 播放页自动横屏（全屏铺满播放），离开恢复系统默认方向。
+  // web 端 isNativePlatform() 守卫 + 动态 import，零影响；个别 ROM 锁失败静默。
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+    void lockLandscape();
+    return () => {
+      void unlockOrientation();
+    };
+  }, []);
 
   const handleBack = useSmartBack('/iptv');
 
