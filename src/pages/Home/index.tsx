@@ -169,7 +169,9 @@ export default function HomePage() {
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
     const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds));
+    // fromCategory 标记：Browse（Keep-Alive 常驻）据此清空残留搜索词并立即刷新，
+    // 否则二次进入时 query state 残留 → 顶部搜索框残留旧词 + 数据不再重新拉取
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
   }, [navigate]);
 
   // ── Banner 项点击 → 跳到详情页 ──────────────────────
