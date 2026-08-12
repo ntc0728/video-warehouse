@@ -113,9 +113,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           src={logoCandidates[0] ?? ''}
           srcCandidates={logoCandidates.slice(1)}
           alt={channel.name}
-          letter={channel.name.charAt(0)}
           loadingVariant="brand"
-          immediateLetter
           onLoad={(url) => {
             setImageLoaded(true);
             // 成功记忆：跨会话优先复用该 URL，避免下次重新走候选链
