@@ -75,6 +75,26 @@
   aspect-ratio: 3 / 2;
 }
 
+/* 横向 cover 失败专属占位：浅灰色 Tv 图标居中（区别于视频的「可点击播放」），
+   仅 LazyImage error 时显示（data-show=true）。覆盖在 cover 上，
+   LazyImage 此时 fallbackSrc="" 不再渲染 KinoTV 纵向品牌图。 */
+.iptv-card-cover__glyph {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-standard);
+}
+
+.iptv-card-cover__glyph[data-show="true"] {
+  opacity: 0.6;
+}
+
 .iptv-card-cover .lazy-image-container {
   position: absolute;
   inset: 0;
