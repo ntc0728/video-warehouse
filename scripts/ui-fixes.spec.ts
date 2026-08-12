@@ -48,6 +48,28 @@ test.describe('桌面端', () => {
     expect(state.activeCards).toBe(0);
   });
 
+  test('UI-010: 桌面顶栏最右侧头像+用户名入口，点击进入个人设置', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        const raw = localStorage.getItem('app-settings');
+        const settings = raw ? JSON.parse(raw) : { state: {} };
+        settings.state = { ...(settings.state || {}), username: 'KinoUser', avatar: '' };
+        localStorage.setItem('app-settings', JSON.stringify(settings));
+      } catch { /* ignore */ }
+    });
+    await page.goto('/');
+    await page.waitForTimeout(1500);
+    const profile = page.locator('.sticky-header__profile');
+    await expect(profile).toBeVisible();
+    await expect(profile.locator('.sticky-header__profile-name')).toHaveText('KinoUser');
+    await profile.click();
+    await page.waitForTimeout(800);
+    expect(page.url()).toContain('/settings');
+    expect(page.url()).toContain('tab=personal');
+    // 桌面端内联打开 personal tab
+    await expect(page.locator('.settings-content .settings-personal-section').first()).toBeVisible();
+  });
+
   test('UI-002: 桌面侧边栏底部有设置入口+版本号，顶栏无设置项', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(1500);
