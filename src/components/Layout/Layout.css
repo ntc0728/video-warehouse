@@ -290,6 +290,18 @@
   transform: translateX(0);
 }
 
+/* 移动抽屉：主列表弹性撑满，底部设置区（sidebar-footer）贴底并保持间距 */
+.sidebar-container--mobile .sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
+}
+
 /* 折叠/展开（2026-08-04 重构）：宽度由 --sidebar-offset 变量一次性切换（瞬切 1 次
    reflow，无逐帧动画）。过渡动画由 HomeSidebar.css 的图标 left（收起态 absolute
    居中）与 label opacity 承担，均不触发 reflow。app-shell__main 不施加 transform。 */

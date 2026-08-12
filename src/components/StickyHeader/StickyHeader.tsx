@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, PanelLeftClose, PanelLeftOpen, Tv } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, PanelLeftClose, PanelLeftOpen, Tv, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -77,6 +77,9 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
   const currentTheme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  // 个人资料（移动 web 顶栏头像 + 用户名入口）
+  const username = useSettingsStore((s) => s.username);
+  const avatar = useSettingsStore((s) => s.avatar);
   const { goHome } = useHeaderContent();
 
   // 沉浸式模式：基于当前路由判断（不再依赖页面组件通过 setHeaderConfig 设置，
@@ -270,6 +273,22 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
             {isTV && TV_NAV_ITEMS.map(renderNavItem)}
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
           </nav>
+          {/* 移动 web：个人设置入口（头像 + 用户名）→ /settings?tab=personal
+              （设置页深链自动打开个人设置子页）；app 端导航由底部 TabBar 承担，不渲染 */}
+          {isMobile && !isNative && (
+            <button
+              type="button"
+              className="sticky-header__profile"
+              onClick={() => navigate('/settings?tab=personal')}
+              aria-label="个人设置"
+              title={username.trim() || '未设置昵称'}
+            >
+              <span className="sticky-header__profile-avatar">
+                {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="sm" />}
+              </span>
+              <span className="sticky-header__profile-name">{username.trim() || '未设置昵称'}</span>
+            </button>
+          )}
           <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
             <Icon icon={ThemeIcon} size="lg" />
           </button>
