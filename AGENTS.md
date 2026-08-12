@@ -322,7 +322,8 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
 | 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 22 |
 | 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
-| UI 整改专项（顶栏头像/侧边栏/分类入口/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 9 |
+| UI 整改专项（顶栏头像/侧边栏/分类入口/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
+| 全局问题专项（字体体系/皮肤字体自托管/基准统一/IPTV 占位/跟随系统/收藏动画） | `scripts/global-fixes.spec.ts` | 9 |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（白屏/封面/汉堡/横屏/TabBar/免责声明 各页共通的修复验证）。
 
