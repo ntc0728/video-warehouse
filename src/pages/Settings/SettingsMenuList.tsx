@@ -66,7 +66,7 @@ export default function SettingsMenuList({ onSelect, query = '' }: SettingsMenuL
       <button
         key={key}
         type="button"
-        className="settings-menu-item"
+        className="settings-menu-item hover-scale"
         onClick={() => onSelect(key)}
       >
         <span

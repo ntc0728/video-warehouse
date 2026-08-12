@@ -392,18 +392,32 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-sm);
 }
 
-/* Tab 栏容器 — 大卡片顶部一行，与内容区用分割线分隔（不再独立成卡） */
-.settings-tabbar {
+/* 桌面端顶部栏：返回按钮 + TabBar 同行，sticky 置顶（滚动时返回按钮与 tab 一起贴顶） */
+.settings-desktop-topbar {
   position: sticky;
   top: 0;
   z-index: 10;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2xs);
-  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface);
+}
+
+.settings-desktop-topbar .settings-tabbar {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tab 栏容器 — 大卡片顶部一行，与内容区用分割线分隔（不再独立成卡）；
+   sticky/padding/背景已上移至 .settings-desktop-topbar */
+.settings-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  justify-content: flex-end;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -515,7 +529,8 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text);
   font-size: var(--text-base);
   text-align: left;
-  transition: background-color 0.15s ease;
+  /* scale 过渡供 .hover-scale 微放大使用 */
+  transition: background-color 0.15s ease, scale 0.18s var(--ease-out-expo, ease-out);
   border-bottom: 1px solid var(--color-border-light);
   cursor: pointer;
 }
@@ -788,11 +803,8 @@ body.skin-transitioning .skin-btn.active {
   }
 
   html:not([data-device="app"]) /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化；
-     左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。
-     flex column 下默认 stretch 不压缩 margin，显式 width calc 避免右侧超出 */
+     左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。 */
   .settings-content > .settings-profile-card, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card {
-    margin: var(--space-lg) var(--space-lg) 0;
-    width: calc(100% - var(--space-lg) * 2);
     box-sizing: border-box;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -803,7 +815,9 @@ body.skin-transitioning .skin-btn.active {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
-
+  .settings-content--animate{
+      padding: var(--space-lg);
+  }
   html:not([data-device="app"]) /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
   .settings-content > .settings-profile-card + section, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card + section {
     border-top: none;
@@ -1627,8 +1641,6 @@ body.skin-transitioning .skin-btn.active {
   }
   /* 子页内个人资料卡：对齐桌面端卡片化（含 hover 边框加深） */
   .settings-subpage__body > .settings-profile-card {
-    margin: var(--space-lg) var(--space-lg) 0;
-    width: calc(100% - var(--space-lg) * 2);
     box-sizing: border-box;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -1722,8 +1734,6 @@ body.skin-transitioning .skin-btn.active {
   }
   html[data-device="app"] /* 子页内个人资料卡：对齐桌面端卡片化（含 hover 边框加深） */
   .settings-subpage__body > .settings-profile-card {
-    margin: var(--space-lg) var(--space-lg) 0;
-    width: calc(100% - var(--space-lg) * 2);
     box-sizing: border-box;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);

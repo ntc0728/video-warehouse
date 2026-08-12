@@ -205,6 +205,15 @@
   animation: iconBounce 0.35s ease-out both;
 }
 
+/* ── 全局 hover 微放大（统一「hover 稍微放大文本/图标」的显示效果） ──
+   使用独立 scale 属性（不干扰 transform，与 HomeSidebar 图标 hover 一致）。
+   用法：<button className="hover-scale">；scale 过渡由元素自身 transition
+   （需包含 scale）承担——本类不声明 transition，避免覆盖元素自身的
+   background/color/border 过渡；reduced-motion 由全局规则瞬变。 */
+.hover-scale:hover {
+  scale: 1.08;
+}
+
 
 /* 注：.btn-press 不再自带 :active 缩放，统一由全局方案6（scale:0.92 spring 回弹）+
    水波纹提供按压反馈；.btn-press / .ripple-container 已从全局排除名单移除，

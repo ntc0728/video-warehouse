@@ -98,7 +98,7 @@ test.describe('桌面端', () => {
 test.describe('移动端', () => {
   test.use({ ...IPHONE_13 });
 
-  test('UI-003: 顶栏头像+用户名入口，点击进入个人设置页', async ({ page }) => {
+  test('UI-003: 顶栏头像入口（移动端不显示用户名），点击进入个人设置页', async ({ page }) => {
     await page.addInitScript(() => {
       try {
         const raw = localStorage.getItem('app-settings');
@@ -112,7 +112,8 @@ test.describe('移动端', () => {
 
     const profile = page.locator('.sticky-header__profile');
     await expect(profile).toBeVisible();
-    await expect(profile.locator('.sticky-header__profile-name')).toHaveText('KinoUser');
+    // 移动 web 仅显示头像，用户名不渲染
+    await expect(profile.locator('.sticky-header__profile-name')).toHaveCount(0);
 
     await profile.click();
     await page.waitForTimeout(800);
