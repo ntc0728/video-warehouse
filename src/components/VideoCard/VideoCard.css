@@ -118,7 +118,10 @@
 .video-card-cover {
   position: relative;
   width: 100%;
-  background-color: var(--color-placeholder);
+  /* 与 LazyImage 加载中/失败容器背景统一（surface-hover）：
+     避免「真图加载完成但视觉不可见（如 mock 1×1）时透出浅蓝 placeholder」，
+     保证卡片封面任意状态下背景色一致 */
+  background-color: var(--color-surface-hover);
   overflow: hidden;
   aspect-ratio: 2 / 3;
 }

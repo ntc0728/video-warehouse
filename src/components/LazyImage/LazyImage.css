@@ -78,19 +78,12 @@
   pointer-events: none;
 }
 
-/* Brand variant: progress bar 进度条与抠图同框，占位淡出更柔 */
+/* Brand variant: progress bar 进度条与抠图同框，占位淡出更柔。
+   内层 .card-cover-loading 自身已有统一纯色背景（surface-hover），
+   此处不再叠加 shimmer 渐变（2026-08-12：浅蓝 shimmer 视觉割裂）。 */
 .lazy-image-container--brand .lazy-image-placeholder {
   background: transparent;
   animation: none;
-}
-
-.lazy-image-container--brand .lazy-image-placeholder .card-cover-loading {
-  background-image: linear-gradient(
-    135deg,
-    var(--color-placeholder-shimmer-a) 0%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 100%
-  );
 }
 
 .lazy-image-container--brand.loaded .lazy-image-placeholder {
