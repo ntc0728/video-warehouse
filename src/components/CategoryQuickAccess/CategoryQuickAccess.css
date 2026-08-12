@@ -44,27 +44,13 @@
   scroll-snap-align: start;
 }
 
-.category-quick-access__card:hover {
-  transform: translateY(-4px);
-}
-
 .category-quick-access__card:hover .category-quick-access__icon-wrap {
   box-shadow: var(--shadow-lg);
   transform: scale(1.08);
 }
 
-.category-quick-access__card--active {
-  transform: translateY(-3px);
-}
-
-.category-quick-access__card--active .category-quick-access__icon-wrap {
-  box-shadow: var(--shadow-focus), var(--shadow-lg);
-}
-
-.category-quick-access__card--active .category-quick-access__label {
-  color: var(--color-primary);
-  font-weight: 700;
-}
+/* 选中态高亮（--active）已全端移除（决策：点击分类立即跳转 browse，选中态停留无意义），
+   相关规则一并删除，Home 不再传入 activeCategory。 */
 
 /* ── Icon ────────────────────────────────────────────────────────────── */
 
@@ -187,9 +173,12 @@
 }
 
 /* ── 平板/桌面 web (>=768px)：分类导航由全局 HomeSidebar 接管，隐藏快速入口 ──
-   TV / 原生 App 保留（无侧边栏） */
+   TV / 原生 App 保留（无侧边栏）。
+   修复：原选择器 `html:not([data-device="app"]) :root:not(...)` 中 :root 即 html 自身，
+   永远不可能是 html 的后代，导致选择器永不匹配、桌面端从未隐藏。
+   改为单层属性否定选择器：仅 web（无 data-device）且非 TV 时隐藏。 */
 @media (width >= 768px) {
-  html:not([data-device="app"]) :root:not([data-device="tv"]):not([data-device="app"]) .category-quick-access {
+  html:not([data-device="app"]):not([data-device="tv"]) .category-quick-access {
     display: none;
   }
 }
