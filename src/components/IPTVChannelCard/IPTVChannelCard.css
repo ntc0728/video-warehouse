@@ -67,7 +67,10 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  background-color: var(--color-placeholder);
+  /* 封面背景统一 surface-hover：与 VideoCard 一致（2026-08-12）。
+     原 --color-placeholder（亮色 #f5f5f5 / 暗色 #262626）与 VideoCard 的
+     surface-hover 不一致，加载失败时露出冷白/近黑背景造成「占位色不统一」。 */
+  background-color: var(--color-surface-hover);
   overflow: hidden;
   aspect-ratio: 3 / 2;
 }

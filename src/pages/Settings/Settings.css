@@ -441,7 +441,8 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-base);
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease, scale 0.32s var(--ease-spring);
+  /* tab 高亮切换平滑过渡（active 背景/文字 0.2s） */
+  transition: background 0.2s ease, color 0.2s ease, scale 0.32s var(--ease-spring);
   scroll-snap-align: start;
   cursor: pointer;
 }
@@ -495,8 +496,22 @@ body.skin-transitioning .skin-btn.active {
 /* tab 切换过渡：key=activeTab 重挂载时整体纯淡入（仅 opacity，无位移、零跳动），
    复用 animations.css 的 fadeIn 关键帧。0.35s 避免过短产生闪烁感，仍保持克制、贴合设置页工具型界面；
    prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
+/* 内容区 tab 切换动画：fadeIn + 轻微上移（8px→0）。纯淡入感知弱（用户反馈
+   「点击切换页面缺少过渡动画」）——位移强化切换感。0.28s 保持克制；
+   prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
+@keyframes settings-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .settings-content--animate {
-  animation: fadeIn 0.35s var(--ease-standard) both;
+  animation: settings-content-in 0.28s var(--ease-standard) both;
 }
 
 /* 移动端子页面内 section 间距 */
