@@ -340,58 +340,61 @@ export default function CollectionsPage() {
           {batchMode ? '退出管理' : '批量管理'}
         </button>
       </div>
-      {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画 */}
-      <div key={activeTab} className="collection-content animate-fade-in" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }}>
-        {activeTab === 'video' ? (
-          <div className="video-card-grid">
-            {(displayedList as CollectionVideoItem[]).map((video) => (
-              <div
-                key={video.id}
-                className={`record-card ${batchMode && selected.has(video.id) ? 'record-card--selected' : ''}`}
-                onClick={batchMode ? () => toggleSelect(video.id) : undefined}
-              >
-                {batchMode && (
-                  <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
-                    {selected.has(video.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
-                  </button>
-                )}
-                <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="iptv-channel-grid iptv-channel-grid--batch">
-            {(displayedList as IPTVChannel[]).map((ch) => (
-              <div
-                key={ch.id}
-                className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
-                onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
-              >
-                {batchMode && (
-                  <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
-                    {selected.has(ch.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
-                  </button>
-                )}
-                <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} epgIndex={epgIndex} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画。
+         仅在有数据时挂载容器：数据就绪才渲染 → animate-fade-in 在内容可见时播放（旧实现
+         visibility:hidden 会在隐藏期播完动画，IPTV tab 数据异步到达后直接显示无动画） */}
       {userLoading ? (
         <div className="player-loading-wrap">
           <AppLoading tip="加载中…" showTip />
         </div>
-      ) : currentList.length === 0 ? (
+      ) : currentList.length > 0 ? (
+        <div key={activeTab} className="collection-content animate-fade-in">
+          {activeTab === 'video' ? (
+            <div className="video-card-grid">
+              {(displayedList as CollectionVideoItem[]).map((video) => (
+                <div
+                  key={video.id}
+                  className={`record-card ${batchMode && selected.has(video.id) ? 'record-card--selected' : ''}`}
+                  onClick={batchMode ? () => toggleSelect(video.id) : undefined}
+                >
+                  {batchMode && (
+                    <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
+                      {selected.has(video.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
+                    </button>
+                  )}
+                  <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
+                  <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="iptv-channel-grid iptv-channel-grid--batch">
+              {(displayedList as IPTVChannel[]).map((ch) => (
+                <div
+                  key={ch.id}
+                  className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
+                  onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
+                >
+                  {batchMode && (
+                    <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
+                      {selected.has(ch.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
+                    </button>
+                  )}
+                  <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
+                  <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} epgIndex={epgIndex} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
         <Empty
           title={statusFilter === 'all' ? '暂无收藏' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
           description={activeTab === 'video' ? '去首页发现喜欢的影片吧' : '去 IPTV 页面收藏喜欢的频道吧'}
         />
-      ) : null}
+      )}
 
-      <div ref={sentinelRef} aria-hidden="true" style={{ visibility: currentList.length > 0 ? 'visible' : 'hidden' }} />
+      {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
       {batchMode && (
         <div className="batch-action-bar">
