@@ -577,7 +577,17 @@ body.skin-transitioning .skin-btn.active {
 /* 移动端子页面：全屏覆盖视口（含全局顶部导航栏区域）——
    fixed inset:0 + z-index 高于 sticky-header(55)，顶栏固定在视口顶部、
    与全局导航栏同高（移动端 --header-height-compact），视觉上替代导航栏。
-   body 在顶栏下方独立滚动。 */
+   body 在顶栏下方独立滚动。
+   过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
+   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。 */
+@keyframes settings-subpage-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes settings-subpage-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
 .settings-subpage {
   position: fixed;
   inset: 0;
@@ -586,6 +596,10 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
   min-height: 0;
   background: var(--color-background);
+  animation: settings-subpage-in 0.3s var(--ease-out-expo) both;
+}
+.settings-subpage--leaving {
+  animation: settings-subpage-out 0.25s var(--ease-standard) forwards;
 }
 
 /* 子页顶栏：与全局导航栏同高（移动端紧凑高度）、同背景 —— 进入子页后替代顶部导航栏 */
