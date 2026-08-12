@@ -142,7 +142,11 @@
   --text-2xs: clamp(9px, 0.4432rem + 0.0051vw, 11px);       /* 9→11 超小标注 */
   --text-xs:   clamp(12px, 0.6904rem + 0.0025vw, 13px);     /* 12→13 */
   --text-sm:   clamp(13px, 0.7529rem + 0.0025vw, 14px);   /* 13→14 */
-  --text-base: clamp(14px, 0.8154rem + 0.0025vw, 15px);   /* 14→15 */
+  /* 基准字号显式固定 14px（web/app 移动与桌面全分辨率）：
+     原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → html { font-size: var(--text-base) }
+     形成循环 rem 解析（不动点 14px，计算值恒为下限 14px）。显式化消除隐式依赖，
+     行为零变化；TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
+  --text-base: 14px;   /* 14（web/app 固定基准；TV 覆盖为 15→30px 动态） */
   --text-lg:   clamp(14px, 0.7557rem + 0.0051vw, 16px);       /* 14→16 */
   --text-xl:   clamp(16px, 0.8807rem + 0.0051vw, 18px);      /* 16→18 */
   --text-2xl:  clamp(20px, 1.0115rem + 0.0102vw, 24px);      /* 20→24 */

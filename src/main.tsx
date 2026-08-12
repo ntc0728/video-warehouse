@@ -5,14 +5,11 @@ import Routes from './routes';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AppLoading from './components/common/AppLoading';
 import './assets/styles/index.css';
-import { adjustFontSizeForNative } from './lib/platform';
 import { preventPinchZoom } from './lib/preventZoom';
 import { preloadInitialRoute } from './components/Layout/routeConfig';
 import { useSourceManagerStore } from './stores/useSourceManagerStore';
 import { preloadLogoCache } from './services/channelLogo';
 
-// Android 原生平台：缩小字体和图标以适配 dp 单位
-adjustFontSizeForNative();
 // 移动端阻止双指缩放
 preventPinchZoom();
 
