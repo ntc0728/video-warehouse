@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import Button from './Button';
 
 export interface ConfirmDialogProps {
@@ -28,7 +28,8 @@ export default function ConfirmDialog({
   onCancel,
   className,
 }: ConfirmDialogProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout();
 
   const handleCancel = useCallback(() => {
     onCancel?.();

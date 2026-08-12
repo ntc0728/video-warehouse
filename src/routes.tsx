@@ -1,10 +1,16 @@
 // 路由配置文件，定义应用所有页面路由和布局结构
 // 页面组件的懒加载和 Suspense 由 AppLayout 的 Keep-Alive 容器统一管理
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, createHashRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import IPTVPlayerPage from './pages/IPTV/IPTVPlayer';
+import AppLoading from './components/common/AppLoading';
 import { isNativePlatform } from '@/lib/platform';
+
+// 9.1：IPTVPlayerPage 改为懒加载 —— 原静态导入使播放器（hls.js/dashjs/mpegts）打进
+// entry 首包（冷启动被迫下载 hls-vendor 517KB）。lazy 后播放器独立 chunk，
+// 进入 /iptv/play 才拉取，首屏链路显著瘦身。
+const IPTVPlayerPage = lazy(() => import('./pages/IPTV/IPTVPlayer'));
 
 const routes = [
   {
@@ -33,7 +39,11 @@ const routes = [
     // 且嵌套 overflow + flex 100% 继承链不稳定。独立路由 + fixed 定位
     // 可根本性解决滚动条 / 高度坍缩问题。
     path: '/iptv/play',
-    element: <IPTVPlayerPage />,
+    element: (
+      <Suspense fallback={<AppLoading fullScreen showProgress={false} tip="正在打开播放器…" />}>
+        <IPTVPlayerPage />
+      </Suspense>
+    ),
   },
 ];
 

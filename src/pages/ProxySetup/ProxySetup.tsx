@@ -13,7 +13,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck, Wifi } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import SubPage from '@/components/common/SubPage/SubPage';
 import { toast } from '@/components/ui/toastBus';
 import { Icon } from '@/components/ui/Icon';
@@ -41,8 +41,9 @@ export default function ProxySetup() {
   const setCorsProxy = useSettingsStore((s) => s.setCorsProxy);
   const setIptvSettings = useIPTVStore((s) => s.setSettings);
 
-  // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏。
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout();
 
   // 状态
   const [kind, setKind] = useState<SetupKind>(null);

@@ -10,7 +10,7 @@ import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
 import './Layout.css';
 import { useSettingsStore, useKeepAliveStore, useNavStore } from '@/stores';
-import { useIsTV, useIsRealMobile, useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
@@ -72,8 +72,9 @@ export default function AppLayout() {
   const isRealMobile = useIsRealMobile();
   const isTV = useIsTV();
   const isMobileWeb = !isNative && !isTV && isRealMobile;
-  // 平板端以下（< 768px）使用移动端 overlay sidebar，≥ 768px 使用桌面端常驻侧边栏
-  const isCompactViewport = useMediaQuery('(max-width: 767px)');
+  // 移动端布局判断（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
+  // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面端。
+  const isCompactViewport = useIsMobileLayout();
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
   const skin = useSettingsStore((s) => s.skin);
@@ -368,7 +369,7 @@ export default function AppLayout() {
           color: 'var(--color-text)',
         }}
       >
-        {isCompactViewport && (
+        {isCompactViewport && !isNative && (
           <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
         )}
         {!isCompactViewport && !isNative && !isTV && (
@@ -376,7 +377,7 @@ export default function AppLayout() {
         )}
         <div className="app-shell__main">
           <StickyHeader
-            onMenuToggle={isCompactViewport ? toggleSidebar : undefined}
+            onMenuToggle={isCompactViewport && !isNative ? toggleSidebar : undefined}
             menuOpen={isCompactViewport && sidebarOpen}
             onSidebarToggle={!isCompactViewport && !isNative && !isTV ? toggleSidebarCollapsed : undefined}
             sidebarCollapsed={sidebarCollapsed}

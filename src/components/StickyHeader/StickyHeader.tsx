@@ -8,8 +8,9 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, PanelLeftClose, PanelLeftOpen, Tv } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
+import { isNativePlatform } from '@/lib/platform';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
@@ -66,8 +67,11 @@ function isHotSearchDisabled(pathname: string): boolean {
 
 export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, sidebarCollapsed }: StickyHeaderProps) {
   const isTV = useIsTV();
-  // 移动端断点与 AppLayout 一致：< 768px 使用 hamburger 菜单，≥ 768px 使用侧边栏折叠按钮
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
+  // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
+  const isMobile = useIsMobileLayout();
+  // 9.1：app 端导航由底部 TabBar 承担，汉堡菜单按钮（+ 移动 Sidebar）对 app 隐藏
+  const isNative = isNativePlatform();
   const navigate = useCustomNavigate();
   const location = useLocation();
   // 使用 selector 订阅,只跟踪需要的字段,避免设置 store 任意变更都触发重渲染
@@ -223,7 +227,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
-          {isMobile ? (
+          {isMobile && !isNative ? (
             <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
               {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
             </button>

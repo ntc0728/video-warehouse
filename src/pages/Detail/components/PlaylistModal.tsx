@@ -9,7 +9,7 @@ import {
 import * as Dialog from '@radix-ui/react-dialog';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
-import { useMediaQuery, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useUserStore } from '@/stores';
 import type { Episode, Video, VideoSource } from '@/types/video';
 import './PlaylistModal.css';
@@ -92,7 +92,8 @@ export default function PlaylistModal({
   onPlayEpisode,
   onPlayLine,
 }: PlaylistModalProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout();
   const isTV = useIsTV();
   const { isSeries, seasons, seasonNumbers, video, sourceName } = data;
 

@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { BackToTopButton } from '@/components/common';
 import SubPage from '@/components/common/SubPage/SubPage';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
 import { useSettingsStore } from '@/stores';
@@ -104,8 +104,9 @@ export default function SourceCheckerPage() {
   const { corsProxy, videoSourceIndices, iptvSourceIndices } = useSettingsStore();
   const { settings: iptvSettings } = useIPTVStore();
 
-  // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏。
+  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  const isMobile = useIsMobileLayout();
 
   const pageRef = useRef<HTMLDivElement>(null);
 

@@ -3,13 +3,14 @@ import { Toaster } from 'sonner';
 import { TOAST_DURATION } from './components/ui/toastBus';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
+import AppLoading from './components/common/AppLoading';
 import { useUserStore } from './stores';
 
 function App() {
   // 首页 TMDB 数据不再在 App 层无条件预取（避免非首页刷新时也调用首页接口），
   // 改由 HomePage 挂载/显示时按需拉取（store 内有空数据判断 + in-flight 去重）。
 
-  // 初始化用户数据（从 IndexedDB 加载），加载完成前显示 loading
+  // 初始化用户数据（从 IndexedDB 加载），加载完成前显示全屏 loading
   const [dbReady, setDbReady] = useState(false);
   const loadFromDB = useUserStore((s) => s._loadFromDB);
   useEffect(() => {
@@ -18,7 +19,11 @@ function App() {
     loadFromDB().finally(() => setDbReady(true));
   }, [loadFromDB]);
 
-  if (!dbReady) return null;
+  // 9.1：dbReady 前不再 return null（白屏窗口）—— 改为全屏 AppLoading 兜底，
+  // IndexedDB 慢（database.ts 最长 6s 超时）时用户看到「正在加载本地数据」而非空白。
+  if (!dbReady) {
+    return <AppLoading fullScreen showProgress={false} tip="正在加载本地数据…" />;
+  }
 
   return (
     <>
