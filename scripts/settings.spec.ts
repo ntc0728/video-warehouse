@@ -287,7 +287,9 @@ test.describe('6.6 关于与彩蛋', () => {
     await page.waitForTimeout(400);
 
     // 操作: 连续点击版本号 3 次
-    const versionItem = page.locator('.version-item, [class*="version"]').first();
+    // 选择器限定在设置子页内：全局 [class*="version"] 会命中抽屉侧边栏
+    // 的 sidebar-footer__version（DOM 顺序更前），导致点击到视口外元素
+    const versionItem = page.locator('.settings-subpage [class*="version"]').first();
     await versionItem.click();
     await page.waitForTimeout(200);
     await versionItem.click();

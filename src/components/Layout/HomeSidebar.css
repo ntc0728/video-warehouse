@@ -58,12 +58,13 @@
 .home-sidebar__footer {
   display: flex;
   flex-shrink: 0;
-  gap: var(--space-sm);
   align-items: center;
   padding: var(--space-md) var(--space-sm);
   border-top: 1px solid var(--color-border-light);
 }
 
+/* 设置入口 + 版本号同一元素：按钮占满 footer，hover 背景覆盖整个元素（含版本号）；
+   不设选中态（.active 规则已删除） */
 .home-sidebar__footer-btn {
   display: flex;
   flex: 1;
@@ -82,19 +83,15 @@
   transition: background-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard);
 }
 
-.home-sidebar__footer-btn:hover:not(.active) {
+.home-sidebar__footer-btn:hover {
   background-color: var(--color-surface-hover);
   color: var(--color-text);
 }
 
-.home-sidebar__footer-btn.active {
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  font-weight: 700;
-}
-
+/* 版本号：按钮内最右侧（margin-left:auto 推到行尾） */
 .home-sidebar__version {
   flex-shrink: 0;
+  margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   font-weight: 500;

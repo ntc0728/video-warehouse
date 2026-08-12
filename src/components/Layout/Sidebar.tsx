@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import KinoTVLogo from '@/assets/icon/KinoTV.webp';
+import pkg from '../../../package.json';
 import { Icon } from "@/components/ui/Icon";
 
 const ariaLabels: Record<string, string> = {
@@ -132,7 +133,8 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
               );
             })}
           </div>
-          {/* 底部设置项：与主列表保持间距（上边框 + 内边距） */}
+          {/* 底部设置项：与主列表保持间距（上边框 + 内边距）；
+              版本号与设置入口同一元素（hover 背景覆盖整个元素） */}
           <div className="sidebar-footer">
             <Link
               to={settingsTab.key}
@@ -146,6 +148,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
                 {settingsTab.icon}
               </span>
               <span className="sidebar-nav-text">{settingsTab.title}</span>
+              <span className="sidebar-footer__version" aria-hidden="true">v{pkg.version}</span>
             </Link>
           </div>
         </aside>

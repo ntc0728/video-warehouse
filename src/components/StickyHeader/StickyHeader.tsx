@@ -191,7 +191,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
       <a
         key={item.key}
         href={item.path}
-        className={`sticky-header__nav-item${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
+        className={`sticky-header__nav-item hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
         onClick={(e) => { e.preventDefault(); onClick(); }}
         onContextMenu={(e) => handleNavContextMenu(e, item.path)}
         title={item.title}
@@ -280,11 +280,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           {/* 个人设置入口（头像 + 用户名）→ /settings?tab=personal：
              设置页深链自动打开个人设置子页。渲染范围：移动 web（isMobile）+
              桌面 web（!isTV，桌面设置入口在顶栏最右侧）；app 端导航由底部 TabBar
-             承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮 */}
+             承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮。
+             移动 web 仅显示头像（用户名由 isMobile 判断隐藏，手机横屏同样生效）。 */}
           {!isTV && !isNative && (
             <button
               type="button"
-              className="sticky-header__profile"
+              className="sticky-header__profile hover-scale"
               onClick={() => navigate('/settings?tab=personal')}
               aria-label="个人设置"
               title={username.trim() || '未设置昵称'}
@@ -292,10 +293,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
               <span className="sticky-header__profile-avatar">
                 {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="sm" />}
               </span>
-              <span className="sticky-header__profile-name">{username.trim() || '未设置昵称'}</span>
+              {!isMobile && (
+                <span className="sticky-header__profile-name">{username.trim() || '未设置昵称'}</span>
+              )}
             </button>
           )}
-          <button className="sticky-header__theme-btn" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
+          <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
             <Icon icon={ThemeIcon} size="lg" />
           </button>
         </div>

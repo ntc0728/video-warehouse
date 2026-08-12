@@ -208,7 +208,7 @@
 }
 
 .sticky-header__nav-item:hover:not(.sticky-header__nav-item--active) {
-  background: var(--color-surface-hover);
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
   color: var(--color-text);
 }
 
@@ -235,7 +235,7 @@
 }
 
 .sticky-header__theme-btn:hover {
-  background: var(--color-surface-hover);
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
   color: var(--color-text);
 }
 
@@ -251,14 +251,15 @@
   padding: var(--space-2xs);
   border: none;
   border-radius: var(--radius-md);
-  background: transparent;
   color: var(--color-text);
-  transition: background 0.15s ease;
+  /* scale 过渡供 .hover-scale 微放大使用 */
+  transition: color 0.15s ease, scale 0.18s var(--ease-out-expo, ease-out);
   cursor: pointer;
 }
 
 .sticky-header__profile:hover {
-  background: var(--color-surface-hover);
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
+  color: var(--color-text);
 }
 
 .sticky-header__profile-avatar {
@@ -286,13 +287,6 @@
   white-space: nowrap;
   font-size: var(--text-sm);
   font-weight: 600;
-}
-
-/* 极窄屏：仅保留头像（用户名隐藏），保证搜索框可用宽度 */
-@media (width <= 359px) {
-  .sticky-header__profile-name {
-    display: none;
-  }
 }
 
 /* ── TV ────────────────────────────────────────────── */

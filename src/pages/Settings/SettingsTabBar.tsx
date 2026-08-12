@@ -42,7 +42,7 @@ export default function SettingsTabBar({ activeTab, onChange, tabs = SETTINGS_TA
           type="button"
           role="tab"
           aria-selected={tab.key === activeTab}
-          className={`settings-tab${tab.key === activeTab ? ' settings-tab--active' : ''}`}
+          className={`settings-tab hover-scale${tab.key === activeTab ? ' settings-tab--active' : ''}`}
           onClick={() => onChange(tab.key)}
         >
           <span className="settings-tab__icon">{TAB_ICONS[tab.key]}</span>

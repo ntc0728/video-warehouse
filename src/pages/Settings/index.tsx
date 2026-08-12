@@ -8,8 +8,10 @@
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
+import { useSmartBack, NAV_FALLBACK_HOME } from '@/lib/navigation';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
 import { useSettingsState } from './hooks/useSettingsState';
@@ -26,6 +28,7 @@ import AboutTab from './tabs/AboutTab';
 import ChangelogContent from './components/ChangelogContent';
 import changelog from '../../../CHANGELOG.md?raw';
 import type { SettingsTabKey } from './SettingsTabBar';
+import { Icon } from "@/components/ui/Icon";
 import './Settings.css';
 
 // 合法设置 tab（用于 ?tab= 深链校验）
@@ -56,6 +59,9 @@ export default function SettingsPage() {
   const handleSubPageBack = useCallback(() => {
     setMobileSubPage(null);
   }, []);
+
+  // 桌面端返回按钮：有历史则浏览器后退，深链（?tab= 直达）兜底回首页
+  const smartBack = useSmartBack(NAV_FALLBACK_HOME);
 
   // ── 离开设置页时关闭移动端子页 portal ─────
   // SettingsSubPage 用 createPortal 挂到 document.body（全屏覆盖层，z-index 60），
@@ -158,7 +164,13 @@ export default function SettingsPage() {
         </SettingsSubPage>
       ) : isDesktop ? (
         <div className="settings-desktop-card">
-          <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
+          {/* 桌面端顶部栏：左上角返回按钮 + TabBar（sticky 置顶） */}
+          <div className="settings-desktop-topbar">
+            <button type="button" className="back-btn" onClick={smartBack} aria-label="返回">
+              <Icon icon={ArrowLeft} size="sm" />
+            </button>
+            <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
+          </div>
           {/* key=activeTab：切换 tab 时整体重挂载，触发进入动画；section 仍是 .settings-content 直接子级，桌面布局选择器不受影响 */}
           <div key={activeTab} className="settings-content settings-content--animate">
             {filteredItems.length === 0 ? (

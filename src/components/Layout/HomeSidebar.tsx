@@ -109,19 +109,19 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
           );
         })}
       </nav>
-      {/* 底部设置区：设置入口 + 版本号（图标最右侧）。桌面端设置入口由顶栏迁入此处。 */}
+      {/* 底部设置区：设置入口 + 版本号同一元素（hover 背景覆盖整个元素）。
+          不设选中态（设置页入口无「停留高亮」语义）。 */}
       <div className="home-sidebar__footer">
         <button
           type="button"
-          className={`home-sidebar__footer-btn${location.pathname.startsWith('/settings') ? ' active' : ''}`}
-          aria-current={location.pathname.startsWith('/settings') ? 'page' : undefined}
+          className="home-sidebar__footer-btn"
           title="设置"
           onClick={() => navigate('/settings')}
         >
           <Icon icon={Settings} size="md" className="home-sidebar__footer-icon" aria-hidden="true" />
           <span className="home-sidebar__footer-label">设置</span>
+          <span className="home-sidebar__version" aria-hidden="true">v{pkg.version}</span>
         </button>
-        <span className="home-sidebar__version" aria-hidden="true">v{pkg.version}</span>
       </div>
     </aside>
     </>
