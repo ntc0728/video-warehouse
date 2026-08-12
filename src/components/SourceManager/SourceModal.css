@@ -10,7 +10,7 @@
 
 /* 桌面端：加宽到 30rem（移动端 <640px 保持视口自适应，不因固定宽度溢出小屏） */
 @media (width >= 640px) {
-  .source-modal-wrap {
+  html:not([data-device="app"]) .source-modal-wrap {
     width: 30rem;
   }
 }
@@ -230,3 +230,10 @@
     grid-template-columns: 1fr;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .source-modal__row {
+    grid-template-columns: 1fr;
+  }
+
+

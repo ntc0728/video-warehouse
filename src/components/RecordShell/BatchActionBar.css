@@ -80,3 +80,22 @@
     height: var(--icon-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .batch-action-bar {
+    gap: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-xs);
+  }
+
+  html[data-device="app"] .batch-action-btn {
+    gap: var(--space-xs-plus);
+    padding: var(--space-xs-plus) var(--space-md);
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] .batch-action-btn svg {
+    width: var(--icon-xs);
+    height: var(--icon-xs);
+  }
+
+

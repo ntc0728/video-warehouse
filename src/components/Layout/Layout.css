@@ -312,7 +312,7 @@
 /* 桌面端/平板端（>=768px）侧边栏 + 顶栏 连接式布局
    移动端（<768px）不应用这些规则，保持原始布局不变。 */
 @media (width >= 768px) {
-  /* 常驻左侧栏 → 连接式布局（顶部与导航栏对齐，无右边框） */
+  html:not([data-device="app"]) /* 常驻左侧栏 → 连接式布局（顶部与导航栏对齐，无右边框） */
   .app-shell:not(.app-shell--immersive) .home-sidebar {
     top: var(--header-height);
     bottom: 0;
@@ -322,7 +322,7 @@
     border-right: none;
   }
 
-  /* 顶部导航栏 → 固定在视口顶部，全宽显示（main 偏移现由 grid 列宽承担，与顶栏无关） */
+  html:not([data-device="app"]) /* 顶部导航栏 → 固定在视口顶部，全宽显示（main 偏移现由 grid 列宽承担，与顶栏无关） */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
     position: fixed;
     top: 0;
@@ -336,12 +336,12 @@
     box-shadow: none;
   }
 
-  /* 固定 header 占据空间，scroll wrapper 需要 padding-top */
+  html:not([data-device="app"]) /* 固定 header 占据空间，scroll wrapper 需要 padding-top */
     .app-shell__scroll-wrapper {
     padding-top: var(--header-height);
   }
 
-  /* 沉浸式页头（fixed 叠加 Hero）全宽覆盖视口 */
+  html:not([data-device="app"]) /* 沉浸式页头（fixed 叠加 Hero）全宽覆盖视口 */
   .sticky-header--immersive {
     left: 0;
     width: 100%;

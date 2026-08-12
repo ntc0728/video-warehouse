@@ -248,6 +248,90 @@
     box-shadow: var(--shadow-sm);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .record-shell {
+    flex-direction: column;
+    gap: 0;
+    padding-top: 0;
+  }
+
+  html[data-device="app"] /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条；
+     gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
+  .record-aside {
+    z-index: 5;
+    display: flex;
+    gap: var(--space-md);
+    align-items: stretch;
+    width: 100%;
+    padding: 0;
+    flex-flow: column;
+  }
+
+  html[data-device="app"] /* 标题在移动端显示：独占顶行 */
+  .record-aside__title {
+    order: 0;
+    width: 100%;
+    padding-bottom: var(--space-xs);
+    font-size: var(--text-xl);
+  }
+
+  html[data-device="app"] /* 第一行：分段控件 + 状态标签页，同一行两端对齐 */
+  .record-filter-row {
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  html[data-device="app"] /* 分段控件：左对齐 */
+  .record-segmented {
+    order: 1;
+    width: auto;
+  }
+  html[data-device="app"] .record-filter-toggle {
+    display: none;
+  }
+  html[data-device="app"] .record-toolbar {
+    display: none;
+  }
+
+  html[data-device="app"] /* 状态标签页组：右对齐 */
+  .record-status-group {
+    flex: 1;
+    justify-content: flex-end;
+    order: 2;
+    padding-right: var(--space-xs);
+  }
+  html[data-device="app"] .record-status .status-tab {
+    width: auto;
+  }
+  html[data-device="app"] .record-status .status-tab__count {
+    margin-left: 0;
+  }
+
+  html[data-device="app"] /* 编辑按钮分隔线在移动端隐藏 */
+  .record-status-group__divider {
+    display: none;
+  }
+
+  html[data-device="app"] /* 编辑按钮行：移动端 */
+  .record-edit-row {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  html[data-device="app"] /* 移动端卡片式布局（gap 与桌面端一致用 space-sm，内部子元素间距对齐） */
+  .record-main {
+    gap: var(--space-sm);
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    桌面端（>=768px）内部筛选栏：改为「横向卡片栏」
@@ -256,11 +340,11 @@
    第 2 行：状态筛选芯片（横向、可换行，独占整行）
    ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
-  .record-shell {
+  html:not([data-device="app"]) .record-shell {
     flex-direction: column;
   }
 
-  /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
+  html:not([data-device="app"]) /* 顶部横向筛选栏（沿用默认卡片化外观 + sticky 常驻） */
   .record-aside {
     flex-shrink: 1;
     gap: var(--space-md);
@@ -269,18 +353,18 @@
     flex-flow: row wrap;
   }
 
-  /* 过滤行在桌面端不需要特殊处理 */
+  html:not([data-device="app"]) /* 过滤行在桌面端不需要特殊处理 */
   .record-filter-row {
     display: contents;
   }
 
-  /* 编辑按钮行：桌面端 */
+  html:not([data-device="app"]) /* 编辑按钮行：桌面端 */
   .record-edit-row {
     display: flex;
     justify-content: flex-end;
   }
 
-  /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
+  html:not([data-device="app"]) /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
   .record-main {
     gap: var(--space-sm);
     padding: 0 var(--space-md) var(--space-md);
@@ -290,40 +374,40 @@
     box-shadow: var(--shadow-sm);
   }
 
-  .record-aside__title {
+  html:not([data-device="app"]) .record-aside__title {
     order: 0;
   }
 
-  /* 分段控件：横向栏中两段紧凑并排 */
+  html:not([data-device="app"]) /* 分段控件：横向栏中两段紧凑并排 */
   .record-segmented {
     order: 1;
     width: auto;
   }
-  .record-segmented .category-segmented__item {
+  html:not([data-device="app"]) .record-segmented .category-segmented__item {
     flex: 0 0 auto;
     padding: 0 var(--space-md);
   }
 
-  /* 状态标签页组：靠右对齐 */
+  html:not([data-device="app"]) /* 状态标签页组：靠右对齐 */
   .record-status-group {
     order: 3;
     margin-left: auto;
   }
-  .record-status .status-tab {
+  html:not([data-device="app"]) .record-status .status-tab {
     width: auto;
   }
-  .record-status .status-tab__count {
+  html:not([data-device="app"]) .record-status .status-tab__count {
     margin-left: var(--space-xs);
   }
 
-  /* 工具栏：与分段/搜索同一行，靠右 */
+  html:not([data-device="app"]) /* 工具栏：与分段/搜索同一行，靠右 */
   .record-toolbar {
     flex-direction: row;
     gap: var(--space-sm);
     order: 3;
     margin-left: auto;
   }
-  .record-toolbar .toolbar-btn {
+  html:not([data-device="app"]) .record-toolbar .toolbar-btn {
     width: auto;
   }
 }

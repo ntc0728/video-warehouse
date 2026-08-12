@@ -28,7 +28,7 @@
 
 /* Tablet 字号 */
 @media (width >= 768px) {
-  .tmdb-movierow-title {
+  html:not([data-device="app"]) .tmdb-movierow-title {
     font-size: var(--text-xl);
   }
 }

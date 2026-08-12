@@ -449,3 +449,40 @@
     left: auto;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .source-manager__toolbar {
+    gap: var(--space-2xs);
+  }
+  html[data-device="app"] .source-manager__toolbar-btn, html[data-device="app"] .source-manager__add-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+  html[data-device="app"] /* 移动端：弹出层占满（避免贴边） */
+  .source-manager__popover {
+    left: 0;
+    right: auto;
+    min-width: 10rem;
+  }
+  html[data-device="app"] /* 移动端：item 内容紧凑 */
+  .source-manager__item {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+  }
+  html[data-device="app"] .source-manager__toolbar-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  html[data-device="app"] .source-manager__item-actions {
+    gap: 0;
+  }
+  html[data-device="app"] .source-manager__icon-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  html[data-device="app"] .source-manager__popover {
+    right: 0;
+    left: auto;
+  }
+
+

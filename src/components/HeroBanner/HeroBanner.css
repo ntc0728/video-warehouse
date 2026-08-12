@@ -412,6 +412,18 @@
     border-radius: var(--radius-md);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .hero-banner__thumbs {
+    display: none;
+  }
+
+  html[data-device="app"] .hero-banner {
+    margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+
+
 
 @media (width <= 767px) {
   .hero-banner {
@@ -427,3 +439,19 @@
     max-width: 100%;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .hero-banner {
+    aspect-ratio: 16 / 9;
+    min-height: 14rem;
+  }
+
+  html[data-device="app"] .hero-banner__content {
+    padding: var(--space-md);
+  }
+
+  html[data-device="app"] .hero-banner__text {
+    max-width: 100%;
+  }
+
+

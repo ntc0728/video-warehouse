@@ -90,3 +90,28 @@
     padding: var(--space-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .record-filter-bar__title {
+    display: none;
+  }
+  html[data-device="app"] .record-filter-bar {
+    flex-wrap: wrap;
+  }
+  html[data-device="app"] .record-filter-bar__actions {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  html[data-device="app"] .record-search-box {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+  html[data-device="app"] .toolbar-btn__label {
+    display: none;
+  }
+  html[data-device="app"] .toolbar-btn--icon {
+    padding: var(--space-xs);
+  }
+
+

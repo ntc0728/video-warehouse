@@ -707,17 +707,115 @@
     display: flex;
   }
 }
+/* 9.1 app 恒移动：@media (width < 1280px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .player-main {
+    flex-direction: column;
+    height: auto;
+    margin: 0;
+  }
+
+  html[data-device="app"] .player-video-area {
+    height: auto;
+    aspect-ratio: 16/10;
+  }
+
+  html[data-device="app"] .player-sidebar {
+    flex: none;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  html[data-device="app"] /* 移动端/App：CMS、选季面板按内容撑高 */
+  .player-panel--cms, html[data-device="app"] .player-panel--season {
+    flex: none;
+  }
+
+  html[data-device="app"] .player-panel--cms .player-panel-body, html[data-device="app"] .player-panel--season .player-panel-body {
+    padding: var(--space-sm) var(--space-md);
+    overflow-x: hidden;
+  }
+
+  html[data-device="app"] .player-panel--cms .player-panel-body.collapsed, html[data-device="app"] .player-panel--season .player-panel-body.collapsed {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  html[data-device="app"] .player-cms-list, html[data-device="app"] .player-season-list, html[data-device="app"] .player-source-list {
+    justify-content: flex-start;
+  }
+
+  html[data-device="app"] /* 移动端/App（<1280px）：CMS 源列表一行最多 6 个按钮——
+     每项 flex-basis 为「(100% - 5×gap) / 6」→ 每行恰好 6 个均分宽度；
+     空间不足（不足 6 个宽度）时自动换行，分行按钮与上方按钮同宽（flex:1 平均分配）。
+     与固定 6 列 grid 的区别：按钮文字不截断，且少于 6 个时也均分整行。 */
+  .player-cms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: flex-start;
+  }
+
+  html[data-device="app"] .player-cms-list .player-cms-item {
+    flex: 1 1 calc((100% - 5 * var(--space-sm)) / 6);
+    max-width: calc((100% - 5 * var(--space-sm)) / 6);
+    min-width: 0;
+    text-align: center;
+  }
+
+  html[data-device="app"] /* 移动端/App：选季一行 3 列（按钮文字较长） */
+  .player-season-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm);
+    justify-content: flex-start;
+  }
+
+  html[data-device="app"] /* 移动端/App：选集/线路一行 5 列 */
+  .player-episode-grid, html[data-device="app"] .player-source-list {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-sm);
+  }
+
+  html[data-device="app"] .player-episode-grid {
+    justify-items: start;
+  }
+
+  html[data-device="app"] /* 移动端/App：选集面板最高为 12 条（6行×2列）高度 */
+  .player-panel--episodes {
+    flex: none;
+    max-height: none;
+  }
+
+  html[data-device="app"] .player-panel--episodes .player-panel-body {
+    max-height: calc(var(--space-xs) + (var(--comp-tab-height) + var(--space-xs)) * 6);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  html[data-device="app"] .player-panel--episodes .player-panel-body.collapsed {
+    max-height: 0;
+    padding: 0;
+  }
+
+  html[data-device="app"] .player-overview-toggle {
+    display: flex;
+  }
+
+
 
 @media (width >= 768px) {
-  .player-page {
+  html:not([data-device="app"]) .player-page {
     min-height: calc(100dvh - var(--header-height));
   }
 
-  .player-detail-overview {
+  html:not([data-device="app"]) .player-detail-overview {
     font-size: var(--text-lg);
   }
 
-  .player-overview-toggle {
+  html:not([data-device="app"]) .player-overview-toggle {
     display: flex;
   }
 }
@@ -850,29 +948,29 @@
 
 /* ── 桌面端（≥ 1280px）：面板不可折叠，隐藏箭头，播放器撑满视口 ─── */
 @media (width >= 1280px) {
-  .player-page {
+  html:not([data-device="app"]) .player-page {
     height: 100dvh;
     min-height: 0;
     padding-top: 0;
     overflow-y: auto;
   }
 
-  .player-main {
+  html:not([data-device="app"]) .player-main {
     flex: none;
     height: calc(100dvh - var(--header-height));
     padding: var(--space-sm) var(--space-sm) 0;
   }
 
-  .player-panel-arrow {
+  html:not([data-device="app"]) .player-panel-arrow {
     display: none;
   }
 
-  .player-panel-header {
+  html:not([data-device="app"]) .player-panel-header {
     pointer-events: none;
     cursor: default;
   }
 
-  .player-panel-body.collapsed {
+  html:not([data-device="app"]) .player-panel-body.collapsed {
     flex: 1;
     height: auto;
     max-height: none;

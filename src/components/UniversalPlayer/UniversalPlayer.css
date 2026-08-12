@@ -1121,18 +1121,25 @@
     border-radius: 0;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .up-universal-player {
+    border-radius: 0;
+  }
+
+
 
 /* ===== 大屏：缩减控制栏右侧图标间距 ===== */
 @media (width >= 1920px) {
-  .up-control-right {
+  html:not([data-device="app"]) .up-control-right {
     gap: var(--space-xs);
   }
 
-  .up-control-feature {
+  html:not([data-device="app"]) .up-control-feature {
     gap: var(--space-xs);
   }
 
-  .up-control-window {
+  html:not([data-device="app"]) .up-control-window {
     gap: var(--space-xs);
   }
 }

@@ -29,6 +29,9 @@
    不在本地重复定义 transform/scale，避免与全局 `scale` 属性叠加导致跳动。 */
 .proxy-setup__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 @media (width <= 639px) { .proxy-setup__grid { grid-template-columns: 1fr; } }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+ html[data-device="app"] .proxy-setup__grid { grid-template-columns: 1fr; } 
+
 .proxy-setup__card {
   display: flex; flex-direction: column; gap: var(--space-2xs);
   padding: var(--space-lg);

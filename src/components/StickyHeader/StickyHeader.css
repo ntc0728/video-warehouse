@@ -277,6 +277,22 @@
   gap: var(--space-sm);
 }
 }
+/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .sticky-header__nav-label {
+  display: none;
+}
+  html[data-device="app"] .sticky-header__nav-item {
+  padding: var(--space-xs);
+}
+  html[data-device="app"] .sticky-header__brand-sub {
+  display: none;
+}
+  html[data-device="app"] .sticky-header__nav {
+  gap: var(--space-sm);
+}
+
+
 
 /* ── Mobile: compact header ───────────────────────── */
 
@@ -350,6 +366,76 @@
     display: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .sticky-header {
+    height: var(--header-height-compact);
+  }
+
+  html[data-device="app"] .sticky-header__left .sticky-header__nav, html[data-device="app"] .sticky-header__right .sticky-header__nav {
+    display: none;
+  }
+
+  html[data-device="app"] /* 移动端显示 logo */
+  .sticky-header__brand {
+    display: block;
+  }
+
+  html[data-device="app"] .sticky-header__logo-wrap {
+    width: var(--comp-btn-min-height) !important;
+    height: var(--comp-btn-min-height) !important;
+  }
+
+  html[data-device="app"] .sticky-header__brand-name {
+    font-size: var(--text-xl);
+  }
+
+  html[data-device="app"] /* 移动端中央常驻搜索框：弹性占据剩余空间（两端间距由 .sticky-header__inner 的
+     gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
+  .sticky-header__center > .search-box-wrap--header {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  html[data-device="app"] .sticky-header__inner {
+    gap: var(--space-sm);
+    padding: 0 var(--space-sm);
+  }
+
+  html[data-device="app"] /* 方案A：left/right 固定等宽（= 菜单/主题按钮 + 移动端 logo + 内间距，约 76px），
+     center 弹性居中 → 搜索框严格居中于屏幕（两端距屏边缘等距）；
+     app 端无 menu-btn 时 left 宽度不变，与 web 端一致。 */
+  .sticky-header__left, html[data-device="app"] .sticky-header__right {
+    flex: 0 0 calc(var(--comp-btn-min-height) * 2 + var(--space-sm) + var(--space-2xs) * 2);
+  }
+
+  html[data-device="app"] /* 无 menu-btn（如 App 端隐藏汉堡菜单）时 left 收缩为内容宽度，搜索框随之变大；
+     两端间距仍由 .sticky-header__inner 的 gap 提供。
+     用 :has() 无需 JS 类名（Chrome 105+ / Capacitor WebView 均支持）。 */
+  .sticky-header__left:not(:has(.sticky-header__menu-btn)) {
+    flex: 0 0 auto;
+  }
+
+  html[data-device="app"] .sticky-header__left {
+    justify-content: flex-start;
+  }
+
+  html[data-device="app"] .sticky-header__right {
+    justify-content: flex-end;
+  }
+
+  html[data-device="app"] .sticky-header__theme-btn {
+    width: var(--comp-btn-min-height);
+    height: var(--comp-btn-min-height);
+  }
+
+  html[data-device="app"] /* 移动端隐藏 logo-group 的品牌文字 kinoTV */
+  .sticky-header__logo-group .sticky-header__brand {
+    display: none;
+  }
+
+
 
 /* ── Mobile: immersive header keeps normal flow ── */
 
@@ -358,6 +444,13 @@
     position: static;
   }
 }
+/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .sticky-header--immersive {
+    position: static;
+  }
+
+
 
 /* ── 侧边栏展开/收起按钮 ────────────────────────── */
 .sticky-header__sidebar-toggle {
@@ -387,6 +480,13 @@
     display: none;
   }
 }
+/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .sticky-header__sidebar-toggle {
+    display: none;
+  }
+
+
 
 /* ── Desktop/Tablet web (>=768px)：保留 logo + 折叠按钮 ──
    TV / 原生 App 保留 header logo（无侧边栏） */

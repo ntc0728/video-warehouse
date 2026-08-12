@@ -371,6 +371,64 @@
     scroll-snap-align: start;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .iptv-header-top {
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+  }
+
+  html[data-device="app"] .iptv-header-left {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  html[data-device="app"] .iptv-header-meta {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    gap: var(--space-xs);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  html[data-device="app"] .force-refresh-btn {
+    display: none;
+  }
+
+  html[data-device="app"] .availability-stats {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+
+  html[data-device="app"] .iptv-toolbar {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  html[data-device="app"] .iptv-proxy-warning-inline {
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] .iptv-source-filter {
+    flex-wrap: nowrap;
+    padding-bottom: var(--space-xs);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    overflow-x: auto;
+  }
+
+  html[data-device="app"] .iptv-source-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  html[data-device="app"] .source-tag {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+
 
 .page-btn {
   padding: var(--space-xs) var(--space-md);

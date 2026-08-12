@@ -284,6 +284,17 @@
     display: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .video-card-fav-btn.hover-visible {
+    display: none;
+  }
+
+  html[data-device="app"] .video-card-fav-btn.visible {
+    display: none;
+  }
+
+
 
 /* 触屏设备（含宽屏平板/折叠屏 App）：收藏按钮常显可点，
    避免「无 hover 也无 TV focus」时收藏入口不可达 */
@@ -348,6 +359,12 @@
   .video-card:hover { transform: translateY(-1px); }
   .video-card:hover .video-card-cover img { transform: none; }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .video-card:hover { transform: translateY(-1px); }
+  html[data-device="app"] .video-card:hover .video-card-cover img { transform: none; }
+
+
 
 /* ============================================================
    TV 端
@@ -432,6 +449,18 @@
     font-size: var(--text-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .video-card--landscape .video-card-info {
+    gap: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-xs) var(--space-xs);
+  }
+
+  html[data-device="app"] .video-card--landscape .video-card__time-inline {
+    font-size: var(--text-xs);
+  }
+
+
 
 /* ── 横版封面叠加层 ──────────────────────────── */
 

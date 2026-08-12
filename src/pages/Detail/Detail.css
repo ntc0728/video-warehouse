@@ -1388,6 +1388,23 @@
     animation: bottomsheet-slide-out 0.2s ease-in forwards;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .source-all-modal.modal-content-animate {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(85dvh, var(--layout-bottomsheet-max-h));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: none;
+    animation: bottomsheet-slide-in 0.3s var(--ease-out-expo) both;
+  }
+
+  html[data-device="app"] .source-all-modal.modal-content-animate[data-state="closed"] {
+    animation: bottomsheet-slide-out 0.2s ease-in forwards;
+  }
+
+
 
 /* 状态区 */
 .detail-state {
@@ -1540,6 +1557,23 @@
     max-height: 6.5rem;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 480px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .detail-sources-grid {
+  grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-device="app"] .detail-source-group-body {
+    gap: var(--space-sm) var(--space-md);
+  }
+
+  html[data-device="app"] .detail-source-thumb {
+    width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+    aspect-ratio: 2 / 3;
+    max-height: 6.5rem;
+  }
+
+
 
 @media (width <= 767px) {
   .detail-hero {
@@ -1615,42 +1649,118 @@
   grid-template-columns: repeat(2, 1fr);
 }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .detail-hero {
+  min-height: var(--layout-card-daily-width);
+}
+
+  html[data-device="app"] .detail-hero-content {
+  padding: var(--space-xl) var(--space-md);
+}
+
+  html[data-device="app"] .detail-hero-logo {
+  max-width: min(65%, var(--layout-popover-wide-min-w));
+  max-height: var(--layout-tabbar-height);
+}
+  html[data-device="app"] .detail-hero-title {
+  font-size: var(--text-xl);
+}
+  html[data-device="app"] .detail-hero-left {
+  gap: var(--space-sm);
+  max-width: 100%;
+}
+  html[data-device="app"] .detail-hero-meta {
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+}
+  html[data-device="app"] .detail-hero-desc {
+  font-size: var(--text-xs);
+  -webkit-line-clamp: 2;
+}
+  html[data-device="app"] .detail-hero-actions {
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+  html[data-device="app"] .detail-btn {
+  gap: var(--space-2xs);
+  min-height: var(--space-2xl);
+  padding: 0 var(--space-sm);
+  font-size: var(--text-xs);
+}
+  html[data-device="app"] .detail-btn svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+  html[data-device="app"] .detail-tab {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs);
+}
+
+  html[data-device="app"] .detail-info-grid {
+  grid-template-columns: 1fr;
+}
+
+  html[data-device="app"] .detail-sources-grid {
+  grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-device="app"] .detail-seasons {
+  grid-template-columns: 1fr;
+}
+  html[data-device="app"] .detail-season-poster {
+  width: var(--comp-thumb-size);
+}
+  html[data-device="app"] .detail-season-info {
+  max-height: none;
+}
+  html[data-device="app"] .detail-season-info p {
+  -webkit-line-clamp: 3;
+}
+
+  html[data-device="app"] .detail-stills-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+
 
 /* ============================================================
    Tablet (768–1023px)
    ============================================================ */
 
 @media (width >= 768px) and (width <= 1023px) {
-  .detail-hero-content {
+  html:not([data-device="app"]) .detail-hero-content {
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
   padding: var(--space-lg) var(--space-md);
 }
 
-  .detail-hero-left {
+  html:not([data-device="app"]) .detail-hero-left {
   flex: 1;
   min-width: 0;
   max-width: calc(100% - var(--layout-detail-poster-w) - var(--space-md));
   padding: var(--space-2xs);
 }
 
-  .detail-hero-actions {
+  html:not([data-device="app"]) .detail-hero-actions {
   flex-wrap: nowrap;
 }
 
-  .detail-hero-poster {
+  html:not([data-device="app"]) .detail-hero-poster {
   display: block;
 }
 
-  .detail-sources-grid {
+  html:not([data-device="app"]) .detail-sources-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 /* 中屏：768px < 视口 < 1280px，一行显示 2 个 group */
 @media (width >= 1024px) and (width <= 1279px) {
-  .detail-sources-grid {
+  html:not([data-device="app"]) .detail-sources-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1660,14 +1770,14 @@
    ============================================================ */
 
 @media (width >= 1024px) {
-  .detail-hero-content {
+  html:not([data-device="app"]) .detail-hero-content {
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
   padding: var(--space-xl) var(--space-lg);
 }
 
-  .detail-hero-left {
+  html:not([data-device="app"]) .detail-hero-left {
   flex: 1;
   /* 桌面端：左侧不再受 --layout-hero-height 限制（避免按钮组被迫换行）。
      之前 calc(100% - 140px - 21px) 在 1024px 视口下会让按钮内
@@ -1679,17 +1789,17 @@
   padding: var(--space-2xs);
 }
 
-  .detail-hero-logo {
+  html:not([data-device="app"]) .detail-hero-logo {
   max-width: min(50%, var(--layout-episode-panel-w));
   max-height: var(--layout-tabbar-height);
 }
 
-  /* 桌面端强制"立即播放" + "加入收藏" 同一行，不允许 wrap */
+  html:not([data-device="app"]) /* 桌面端强制"立即播放" + "加入收藏" 同一行，不允许 wrap */
   .detail-hero-actions {
   flex-wrap: nowrap;
 }
 
-  /* 按钮层级：在 .detail-hero-content 内 DOM 顺序中
+  html:not([data-device="app"]) /* 按钮层级：在 .detail-hero-content 内 DOM 顺序中
      .detail-hero-poster 在 .detail-hero-left 之后，覆盖按钮。
      给 .detail-btn 显式 z-index 让 hover 缩放时不被海报遮挡。 */
   .detail-btn {
@@ -1697,31 +1807,31 @@
   z-index: 2;
 }
 
-  .detail-hero-poster {
+  html:not([data-device="app"]) .detail-hero-poster {
   display: block;
 }
 
-  .detail-hero-desc {
+  html:not([data-device="app"]) .detail-hero-desc {
   -webkit-line-clamp: 3;
 }
 
-  .detail-seasons {
+  html:not([data-device="app"]) .detail-seasons {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-  .detail-season-card {
+  html:not([data-device="app"]) .detail-season-card {
   flex-direction: row;
 }
-  .detail-season-info {
+  html:not([data-device="app"]) .detail-season-info {
   max-height: none;
 }
 
-  .detail-tab-content {
+  html:not([data-device="app"]) .detail-tab-content {
   max-width: var(--layout-hero-height);
   margin: 0 auto;
   padding: var(--space-lg);
 }
 
-  .detail-source-play-btn {
+  html:not([data-device="app"]) .detail-source-play-btn {
   gap: var(--space-2xs);
 }
 }

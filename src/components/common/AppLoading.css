@@ -178,23 +178,47 @@
   font-size: var(--text-xs);
 }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .app-loading {
+  gap: var(--space-md);
+}
+
+  html[data-device="app"] .app-loading__brand-name {
+  font-size: var(--text-xl);
+}
+
+  html[data-device="app"] .app-loading__brand-sub {
+  font-size: var(--text-xs);
+  letter-spacing: 0.24em;
+}
+
+  html[data-device="app"] .app-loading__progress {
+  width: var(--layout-channel-num-w);
+}
+
+  html[data-device="app"] .app-loading__tip {
+  font-size: var(--text-xs);
+}
+
+
 
 /* ── Desktop & Large：放大品牌字 ─────────────────────────────── */
 @media (width >= 1024px) {
-  .app-loading {
+  html:not([data-device="app"]) .app-loading {
   gap: var(--space-xl);
 }
 
-  .app-loading__brand-name {
+  html:not([data-device="app"]) .app-loading__brand-name {
   font-size: clamp(var(--text-3xl), 2rem + 1.667vw, var(--text-3xl));
 }
 
-  .app-loading__brand-sub {
+  html:not([data-device="app"]) .app-loading__brand-sub {
   font-size: var(--text-sm);
   letter-spacing: 0.4em;
 }
 
-  .app-loading__progress {
+  html:not([data-device="app"]) .app-loading__progress {
   width: var(--layout-card-daily-width);
   height: var(--space-xs);
 }

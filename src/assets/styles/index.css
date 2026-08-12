@@ -119,6 +119,22 @@
     animation: modalSlideDown 0.2s ease-in forwards;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .modal-content-animate {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(100%);
+    animation: modalSlideUp 0.25s ease-out both;
+  }
+  html[data-device="app"] .modal-content-animate[data-state="closed"] {
+    animation: modalSlideDown 0.2s ease-in forwards;
+  }
+
+
 
 @keyframes modalSlideUp {
   from {
@@ -325,6 +341,33 @@ html {
     font-size: 16px;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-x pan-y;
+  }
+  html[data-device="app"] body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  html[data-device="app"] * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  html[data-device="app"] *::-webkit-scrollbar, html[data-device="app"] *::-webkit-scrollbar-track, html[data-device="app"] *::-webkit-scrollbar-thumb, html[data-device="app"] *::-webkit-scrollbar-corner {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  html[data-device="app"] input, html[data-device="app"] textarea, html[data-device="app"] select {
+    /* iOS Safari zooms into inputs < 16px — must hard-code this value */
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list */
+    font-size: 16px;
+  }
+
+
 
 /* ── 例外：横滚容器永久隐藏滚动条（按需求 1） ─────────────── */
 .tmdb-movierow-scroll,
@@ -701,6 +744,13 @@ main {
     scrollbar-gutter: auto;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] main {
+    scrollbar-gutter: auto;
+  }
+
+
 
 /* ── 暗色模式卡片边框用半透明色值，消除亚像素渲染的白色细线 ── */
 [data-theme="dark"] .video-card,
@@ -773,13 +823,13 @@ main {
 }
 
 @media (width >= 768px) and (width <= 1023px) {
-  :root {
+  html:not([data-device="app"]) {
     --iptv-cols: 3;
   }
 }
 
 @media (width >= 1024px) {
-  :root {
+  html:not([data-device="app"]) {
     --iptv-cols: 5;
   }
 }
