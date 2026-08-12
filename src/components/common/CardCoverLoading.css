@@ -18,28 +18,10 @@
   justify-content: center;
   align-items: center;
   padding: var(--space-sm);
-  background: var(--color-placeholder);
-  background-image: linear-gradient(
-    135deg,
-    var(--color-placeholder-shimmer-a) 0%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 100%
-  );
-  background-size: 200% 200%;
+  /* 统一 loading 占位背景：纯色 surface-hover，与「加载失败」fallback 容器背景一致。
+     移除浅色 shimmer 渐变与 4s 扫光动画（2026-08-12：浅蓝 shimmer 与失败占位视觉割裂）。 */
+  background: var(--color-surface-hover);
   overflow: hidden;
-  animation: card-cover-loading-bg 4s ease-in-out infinite;
-}
-
-@keyframes card-cover-loading-bg {
-  0%   {
-  background-position: 0% 0%;
-}
-  50%  {
-  background-position: 100% 100%;
-}
-  100% {
-  background-position: 0% 0%;
-}
 }
 
 /* ── 抠图层：KinoTV 文字 ─────────────────────────────────── */
@@ -130,19 +112,9 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    Dark Theme — 抠图渐变与装饰微调
-   9.1：加载中背景改品牌蓝灰渐变（替代近黑 #262626 shimmer），
-   让「加载中」明确是有品牌感的占位而非黑块。
+   背景色统一由 .card-cover-loading 的 var(--color-surface-hover) 承担（主题自适应），
+   不再单独覆盖为品牌蓝灰渐变（2026-08-12：与「加载失败」占位背景统一）。
    ═══════════════════════════════════════════════════════════════════════ */
-[data-theme="dark"] .card-cover-loading {
-  background: linear-gradient(
-    135deg,
-    #1c2b4a 0%,
-    #12203a 50%,
-    #1a2e52 100%
-  );
-  background-size: 200% 200%;
-}
-
 [data-theme="dark"] .card-cover-loading__brand-text {
   background: linear-gradient(
     180deg,
