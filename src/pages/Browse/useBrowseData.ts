@@ -229,6 +229,47 @@ export function useBrowseData(query?: string) {
     }
   }, [loading.discover, filterValue, setFilter, fetchDiscover, fetchTopRated]);
 
+  /**
+   * 分类导航进入（Home CategoryQuickAccess → /browse?category=...）时的立即刷新。
+   *
+   * 背景：Keep-Alive 下 Browse 常驻挂载，URL 的 filterSig 变化本应走 filterSig
+   * effect 的 300ms debounce —— 但 debounce 期间旧分类数据仍可见（「显示上一次数据
+   * + 闪烁」）；且若残留搜索词，urlQ 非空会让 filterSig effect 直接 return、永不
+   * 重新拉取（残留词导致数据定格）。
+   *
+   * refreshNow()：
+   * - 同步 lastSigRef = 当前 filterSig → 清空 query 后 filterSig effect 重跑时命中
+   *   `filterSig === lastSigRef` 直接 return，不会与本次刷新重复请求；
+   * - setIsRefreshing(true) → UI 的 showResultsLoading 立即显示 loading 遮罩，
+   *   旧数据被遮挡（无「旧数据闪现」）；
+   * - 立即 fetchDiscover/TopRated(reset)（store 的 reset 同步清空 results + 置
+   *   loading，paint 前即生效）。
+   */
+  const refreshNow = useCallback(() => {
+    if (loading.discover) return; // 已有请求在飞，避免叠加
+    lastSigRef.current = filterSig;
+    hadOldDataRef.current = false;
+    setIsRefreshing(true);
+    setFilter(toStoreFilter(filterValue));
+    const p = filterValue.category === 'top'
+      ? fetchTopRated(1, { reset: true })
+      : fetchDiscover(1, { reset: true });
+    void (async () => {
+      try {
+        await p;
+      } finally {
+        if (isMountedRef.current) {
+          // 与 filterSig effect 一致：等待新内容渲染完成后再隐藏 loading（150ms 防闪）
+          await new Promise<void>((r) => setTimeout(r, 150));
+          if (isMountedRef.current) {
+            setIsRefreshing(false);
+            hadOldDataRef.current = false;
+          }
+        }
+      }
+    })();
+  }, [loading.discover, filterSig, filterValue, setFilter, fetchDiscover, fetchTopRated]);
+
   return {
     filterValue,
     updateFilter,
@@ -237,6 +278,7 @@ export function useBrowseData(query?: string) {
     hadOldData: hadOldDataRef.current,
     loadMore,
     retry,
+    refreshNow,
     hasMore,
     isLoadingMore,
     discoverResults,

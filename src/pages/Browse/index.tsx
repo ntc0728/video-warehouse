@@ -7,7 +7,7 @@
  *
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
-import { useEffect, useMemo, useRef, useCallback, useState, useContext } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState, useContext } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
@@ -54,6 +54,9 @@ export default function BrowsePage() {
   // 仅在 PUSH 导航（从顶部 SearchBox 搜索进入）时读取搜索词；POP 时直接清空。
   const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
   const urlQ = searchParams.get('q')?.trim() ?? '';
+  // 从首页分类导航进入（Home CategoryQuickAccess → /browse?category=...）：
+  // 顶部搜索框应清空（Keep-Alive 下 query state 常驻，若不处理会残留旧搜索词）
+  const fromCategory = (location.state as { fromCategory?: boolean } | null)?.fromCategory === true;
   const [query, setQuery] = useState(() => {
     if (isPop) return '';
     return stateQ || urlQ || '';
@@ -84,6 +87,7 @@ export default function BrowsePage() {
     filterValue,
     updateFilter,
     isRefreshing,
+    refreshNow,
     loadMore: loadMoreTMDB,
     hasMore,
     isLoadingMore,
@@ -179,9 +183,10 @@ export default function BrowsePage() {
   useEffect(() => {
     if (location.pathname !== '/browse') return;
     const store = usePageSearchStore.getState();
-    store.setPageSearch(query, handlePageSearch, '搜索影片、剧集…');
+    // 分类导航进入时写入空搜索词（不写残留 query），保证顶部搜索框为空
+    store.setPageSearch(fromCategory ? '' : query, handlePageSearch, '搜索影片、剧集…');
     return () => { store.clearPageSearch(); };
-  }, [query, handlePageSearch, location.pathname]);
+  }, [query, handlePageSearch, location.pathname, fromCategory]);
 
   // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 或 ?q= 中的最新搜索词触发搜索
   // 注意：必须读 stateQ/urlQ（同步变量）而非 query（异步 state）——
@@ -201,6 +206,25 @@ export default function BrowsePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, isPop]);
+
+  // ── 分类导航进入：清空残留搜索词 + 立即刷新（跳过 filterSig 300ms debounce）──
+  // useLayoutEffect 保证绘制前完成：清空 query 后顶部搜索框首帧即为空、
+  // refreshNow 同步清空 store 旧结果并置 loading，首帧即显示 loading 遮罩，
+  // 不再出现「显示上一次数据 → 闪烁 → 才加载」。
+  // handledRef 只消费「本次导航首次进入」：从 browse 进详情再返回时
+  // location.state.fromCategory 随 history 恢复为 true，但不应再次触发刷新。
+  const fromCategoryHandledRef = useRef(false);
+  useLayoutEffect(() => {
+    if (location.pathname !== '/browse') return;
+    const fc = (location.state as { fromCategory?: boolean } | null)?.fromCategory === true;
+    if (!fc || fromCategoryHandledRef.current) return;
+    fromCategoryHandledRef.current = true;
+    setQuery('');
+    lastSmartSearchedRef.current = '';
+    resetCMS();
+    refreshNow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key, location.pathname]);
 
   // ── 懒加载触发 ──────────────────────────────────
   const loadMore = useCallback(() => {
@@ -251,10 +275,12 @@ export default function BrowsePage() {
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
   // 切换筛选/排序 tab 时，store 的 reset 会同步清空 discoverResults，
   // 于是 isLoading=true 且 smartHasData=false → 直接显示「搜索中…」loading（无需额外遮罩）
+  // isRefreshing 纳入判定：filterSig 变更（切分类/筛选）到新数据就绪期间立即显示
+  // loading 遮罩，避免「旧数据闪现 300ms」（fetch 完成后 150ms 内复位）。
   const smartHasData = discoverResults.length > 0;
   const cmsHasData = cmsResults.length > 0;
   const showResultsLoading = searchMode === 'smart'
-    ? (isLoading && !smartHasData)
+    ? (isRefreshing || (isLoading && !smartHasData))
     : (isCmsLoading && !cmsHasData);
 
   const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
