@@ -2,7 +2,7 @@
  * EPG 节目列表组件
  * 展示频道的节目单，支持点击已过期节目进行回看（需源支持时移）
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { EPGProgram } from '@/services/epgService';
 import { formatTimeHHmm } from '@/services/epgService';
 import './EPGProgramList.css';
@@ -21,10 +21,23 @@ export default function EPGProgramList({
   supportTimeshift = false,
   onProgramClick,
 }: EPGProgramListProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+
   /** 按时间排序并标记状态 */
   const sortedPrograms = useMemo(() => {
     return [...programs].sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [programs]);
+
+  // 打开节目单 / 数据就绪时自动滚动到「当前播放节目」（直播中项居中定位）。
+  // 挂载（面板打开）与 programs 变化（EPG 异步到达）均触发。
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const current = list.querySelector<HTMLElement>('.epg-program-item--current');
+    if (!current) return;
+    // 定位到滚动容器中部：scrollIntoView 以最近的滚动祖先为基准
+    current.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }, [sortedPrograms]);
 
   if (sortedPrograms.length === 0) {
     return (
@@ -35,7 +48,7 @@ export default function EPGProgramList({
   }
 
   return (
-    <div className="epg-program-list">
+    <div className="epg-program-list" ref={listRef}>
       {sortedPrograms.map((program, index) => {
         const isClickable = program.isPast && supportTimeshift;
         const isCurrent = program.isCurrent;

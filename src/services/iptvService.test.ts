@@ -428,3 +428,32 @@ describe('buildProxyUrl 可选 headers 参数（预留）', () => {
     expect(JSON.parse(headersParam)).toEqual({ 'User-Agent': 'UA/1.0' });
   });
 });
+
+describe('buildCorsProxyUrl（源 M3U 走 CORS 代理）', () => {
+  let buildCorsProxyUrlFn: (url: string, corsProxy: string, pattern?: string) => string;
+
+  beforeAll(async () => {
+    const mod = await import('./iptvService');
+    buildCorsProxyUrlFn = mod.buildCorsProxyUrl;
+  });
+
+  it('拼接 /proxy?url= 端点（去尾部斜杠）', () => {
+    const u = buildCorsProxyUrlFn('https://example.com/list.m3u', 'https://cors.example.com/');
+    expect(u).toBe('https://cors.example.com/proxy?url=' + encodeURIComponent('https://example.com/list.m3u'));
+  });
+
+  it('proxyPattern 命中时直连（不走代理）', () => {
+    const u = buildCorsProxyUrlFn('https://live.fanmingming.cn/tv.m3u', 'https://cors.example.com', 'fanmingming');
+    expect(u).toBe('https://live.fanmingming.cn/tv.m3u');
+  });
+
+  it('proxyPattern 未命中时走代理', () => {
+    const u = buildCorsProxyUrlFn('https://other.com/tv.m3u', 'https://cors.example.com', 'fanmingming');
+    expect(u).toBe('https://cors.example.com/proxy?url=' + encodeURIComponent('https://other.com/tv.m3u'));
+  });
+
+  it('非法 proxyPattern 回退走代理', () => {
+    const u = buildCorsProxyUrlFn('https://example.com/list.m3u', 'https://cors.example.com', '([unclosed');
+    expect(u).toBe('https://cors.example.com/proxy?url=' + encodeURIComponent('https://example.com/list.m3u'));
+  });
+});

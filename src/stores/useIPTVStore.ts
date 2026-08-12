@@ -9,6 +9,7 @@ import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord }
 import { fetchAndParsePlaylist, checkChannelsAvailability } from '@/services/iptvService';
 import { PlaylistSourceType } from '@/types/iptv';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
+import { useSettingsStore } from './useSettingsStore';
 
 interface IPTVState {
   channels: IPTVChannel[];
@@ -141,7 +142,12 @@ export const useIPTVStore = create<IPTVState>()(
         set({ isLoading: !hasChannels, error: null });
 
         try {
-          const result = await fetchAndParsePlaylist(settings);
+          // 源 M3U 拉取走通用 CORS 代理（useSettingsStore.corsProxy），与架构约定一致：
+          // M3U 文件获取用 Video Proxy (CORS)，频道直播流才用 IPTV Proxy
+          const result = await fetchAndParsePlaylist(
+            settings,
+            useSettingsStore.getState().corsProxy,
+          );
           const { channels: rawChannels, sourceType, sourceErrors } = result;
 
           const channels = rawChannels.map(ch => ({

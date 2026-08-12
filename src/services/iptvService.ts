@@ -362,7 +362,27 @@ function settleWithWindow<T>(
  * 首个成功源到达后最多再等 1.5s 收尾即返回（正常情况 2~4s 出结果），
  * 全程最多 8s（与单源超时一致，全失败时最坏 8s 返回错误），不再等全部源 settle。
  */
-export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): Promise<{
+/**
+ * 拼接 CORS 代理 URL —— 源 M3U / EPG 等「文本拉取」走通用 CORS 代理
+ * （cors-proxy worker 仅提供 /proxy?url= 端点），而非 IPTV 流代理的 file-proxy。
+ * 架构约定（AGENTS.md）：CMS API / M3U 文件 / EPG XML 走 Video Proxy (CORS)；
+ * IPTV 直播流走 IPTV Proxy（m3u8/ts/dash/file-proxy）。
+ * proxyPattern 命中「直连白名单」时原样返回不走代理。
+ */
+export function buildCorsProxyUrl(url: string, corsProxy: string, pattern?: string): string {
+  const base = corsProxy.replace(/\/+$/, '');
+  if (pattern) {
+    try {
+      if (new RegExp(pattern).test(url)) return url;
+    } catch { /* 非法规则回退走代理 */ }
+  }
+  return `${base}/proxy?url=${encodeURIComponent(url)}`;
+}
+
+export async function fetchAndParsePlaylist(
+  settings?: Partial<IPTVSettings>,
+  corsProxy?: string
+): Promise<{
   channels: IPTVChannel[];
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
@@ -382,9 +402,13 @@ export async function fetchAndParsePlaylist(settings?: Partial<IPTVSettings>): P
   const results = await settleWithWindow(
     urls.map(async (url, index) => {
       const proxyUrl = getPrimaryIptvProxy(settings?.proxyUrl);
-      const fetchUrl = shouldProxy(url, proxyUrl, settings?.proxyPattern)
-        ? buildProxyUrl(url, proxyUrl)
-        : url;
+      // 源 M3U 拉取优先走 CORS 代理（/proxy?url=，与 EPG 一致，已验证可达）；
+      // 未配置 corsProxy 时回退原逻辑（iptv 代理 file-proxy 或直连）
+      const fetchUrl = corsProxy
+        ? buildCorsProxyUrl(url, corsProxy, settings?.proxyPattern)
+        : shouldProxy(url, proxyUrl, settings?.proxyPattern)
+          ? buildProxyUrl(url, proxyUrl)
+          : url;
       const rawContent = await fetchContent(fetchUrl);
       const channels = parseM3U8Content(rawContent, url);
       return channels.map(ch => ({
