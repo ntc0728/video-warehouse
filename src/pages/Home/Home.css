@@ -160,14 +160,22 @@
 
 /* 免责声明：位于 .home-token-required 之后（.home-page__content 兄弟节点），
    token 区 flex:1 撑满后本元素自然贴容器底部；
-   占满整行宽（不设 max-width 限宽），居中小字次级色，不抢主提示视觉 */
+   占满整行宽（不设 max-width 限宽），居中小字次级色，不抢主提示视觉。
+   9.1：贴底处理——web 端 padding-bottom 小留白贴视口底；
+   app 端 .page-transition 已有 padding-bottom: tabbar-height（全局安全区），
+   声明 padding-bottom 归零以紧贴 TabBar 上沿（无法越过 TabBar 贴物理屏幕底）。 */
 .home-disclaimer {
   width: 100%;
-  padding: 0 0 var(--space-lg);
+  padding: 0 0 var(--space-xs);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: 1.7;
   text-align: center;
+}
+
+/* 9.1 app 端：声明紧贴 TabBar 上沿（距屏幕底 = tabbar 安全区高度） */
+html[data-device="app"] .home-disclaimer {
+  padding-bottom: 0;
 }
 
 /* ── Skeleton ────────────────────────────────────────── */

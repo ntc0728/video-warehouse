@@ -646,7 +646,8 @@ body.skin-transitioning .skin-btn.active {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 0 var(--space-2xl);
+  /* 9.1：与全局 .page-padding 一致（左右 sm、上 sm、下 0；底部由 app 安全区承担） */
+  padding: var(--space-sm) var(--space-sm) 0;
 }
 
 /* 移动端关于页：让 .about-tab 的 flex:1 生效（body 需为 flex 容器），
@@ -662,7 +663,7 @@ body.skin-transitioning .skin-btn.active {
 @media (width <= 767px) {
   .settings-subpage__body > section {
     margin-bottom: 0;
-    padding: 0 var(--space-lg);
+    padding: 0;
     border: none;
     border-radius: 0;
     background: transparent;
@@ -691,7 +692,7 @@ body.skin-transitioning .skin-btn.active {
 
   html[data-device="app"] .settings-subpage__body > section {
     margin-bottom: 0;
-    padding: 0 var(--space-lg);
+    padding: 0;
     border: none;
     border-radius: 0;
     background: transparent;
@@ -759,7 +760,7 @@ body.skin-transitioning .skin-btn.active {
      让标题（卡片外）与上方/下方元素更紧凑，对齐其他 tab List item 卡间 12px 间距；
      左右保留 var(--space-lg)（12px）缩进，与其他 tab 的 section 水平对齐 */
   .settings-content > .settings-personal-section, html:not([data-device="app"]) .settings-subpage__body > .settings-personal-section {
-    padding: 0 var(--space-lg);
+    padding: 0;
   }
 
   html:not([data-device="app"]) /* 源管理面板：桌面端去顶部分割线（原全局规则保留移动端分隔） */
@@ -1287,7 +1288,7 @@ body.skin-transitioning .skin-btn.active {
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
-    padding: var(--space-md) 0 var(--space-2xl);
+    padding: var(--space-sm) var(--space-sm) 0;
   }
   .settings-page:has(.settings-subpage) {
     transform: none;
@@ -1298,7 +1299,7 @@ body.skin-transitioning .skin-btn.active {
 
   html[data-device="app"] .settings-page {
     gap: var(--space-md);
-    padding: var(--space-md) 0 var(--space-2xl);
+    padding: var(--space-sm) var(--space-sm) 0;
   }
   html[data-device="app"] .settings-page:has(.settings-subpage) {
     transform: none;
@@ -1308,9 +1309,11 @@ body.skin-transitioning .skin-btn.active {
 
 
 /* 移动端分组圆角卡（iOS Settings 风格）：
-   .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行 */
+   .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行。
+   9.1：页边距统一由 .settings-page padding 提供（与全局 .page-padding 一致），
+   组卡 margin 左右归零避免双层留白。 */
 .settings-menu-group {
-  margin: 0 var(--space-lg);
+  margin: 0;
 }
 .settings-menu-group + .settings-menu-group {
   margin-top: var(--space-xl);
