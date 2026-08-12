@@ -239,6 +239,62 @@
   color: var(--color-text);
 }
 
+/* ── 个人设置入口（移动 web 顶栏：头像 + 用户名）──────────────────
+   仅移动 web 渲染（app 端由底部 TabBar 承担导航），点击跳 /settings?tab=personal。
+   用户名限宽 + 省略号，避免 320px 窄屏挤压搜索框。 */
+.sticky-header__profile {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  max-width: 10rem;
+  padding: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.sticky-header__profile:hover {
+  background: var(--color-surface-hover);
+}
+
+.sticky-header__profile-avatar {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: var(--comp-btn-min-height);
+  height: var(--comp-btn-min-height);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+.sticky-header__profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sticky-header__profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* 极窄屏：仅保留头像（用户名隐藏），保证搜索框可用宽度 */
+@media (width <= 359px) {
+  .sticky-header__profile-name {
+    display: none;
+  }
+}
+
 /* ── TV ────────────────────────────────────────────── */
 
 /* E. overscan 对称化：TV 下 .app-shell__main 已通过 padding 给「常驻（in-flow）导航栏」
@@ -333,18 +389,11 @@
     padding: 0 var(--space-sm);
   }
 
-  /* 方案A：left/right 固定等宽（= 菜单/主题按钮 + 移动端 logo + 内间距，约 76px），
-     center 弹性居中 → 搜索框严格居中于屏幕（两端距屏边缘等距）；
-     app 端无 menu-btn 时 left 宽度不变，与 web 端一致。 */
+  /* 移动 web：left/right 均取自然宽度（左侧菜单+logo、右侧个人入口+主题按钮），
+     搜索框 flex:1 弹性占位 —— 顶部新增个人入口后不再严格居中（决策③）。
+     app 端（html[data-device="app"] 副本）不渲染个人入口，维持原固定等宽居中。 */
   .sticky-header__left,
   .sticky-header__right {
-    flex: 0 0 calc(var(--comp-btn-min-height) * 2 + var(--space-sm) + var(--space-2xs) * 2);
-  }
-
-  /* 无 menu-btn（如 App 端隐藏汉堡菜单）时 left 收缩为内容宽度，搜索框随之变大；
-     两端间距仍由 .sticky-header__inner 的 gap 提供。
-     用 :has() 无需 JS 类名（Chrome 105+ / Capacitor WebView 均支持）。 */
-  .sticky-header__left:not(:has(.sticky-header__menu-btn)) {
     flex: 0 0 auto;
   }
 

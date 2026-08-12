@@ -88,6 +88,8 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
   };
 
   if (isMobile) {
+    const settingsTab = tabs.find((t) => t.key === '/settings')!;
+    const settingsActive = location.pathname.startsWith('/settings');
     return (
       <>
         {isOpen && <div className="sidebar-overlay" onClick={onToggle} />}
@@ -107,7 +109,8 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
             </button>
           </div>
           <div className="sidebar-nav">
-            {tabs.map((tab) => {
+            {/* 设置项已移至底部独立区（sidebar-footer），列表内不再重复 */}
+            {tabs.filter((tab) => tab.key !== '/settings').map((tab) => {
               const isActive = tab.key === '/'
                 ? location.pathname === '/'
                 : location.pathname.startsWith(tab.key);
@@ -128,6 +131,22 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
                 </Link>
               );
             })}
+          </div>
+          {/* 底部设置项：与主列表保持间距（上边框 + 内边距） */}
+          <div className="sidebar-footer">
+            <Link
+              to={settingsTab.key}
+              className={`sidebar-nav-item sidebar-nav-item--footer${settingsActive ? ' active' : ''}`}
+              aria-current={settingsActive ? 'page' : undefined}
+              aria-label={ariaLabels[settingsTab.key]}
+              onClick={handleTabClick}
+            >
+              {settingsActive && <div className="sidebar-nav-indicator" />}
+              <span className={`sidebar-nav-icon ${settingsActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
+                {settingsTab.icon}
+              </span>
+              <span className="sidebar-nav-text">{settingsTab.title}</span>
+            </Link>
           </div>
         </aside>
       </>
