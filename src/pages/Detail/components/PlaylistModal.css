@@ -577,9 +577,66 @@
     gap: var(--space-sm);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .playlist-modal.playlist-modal--sheet {
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    height: min(82vh, 42.5rem);
+    max-height: 82vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(100%);
+    animation: modalSlideUp 0.3s var(--ease-out-expo) both;
+  }
+
+  html[data-device="app"] .playlist-modal.playlist-modal--sheet[data-state='closed'] {
+    animation: modalSlideDown 0.2s ease-in forwards;
+  }
+
+  html[data-device="app"] .playlist-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  html[data-device="app"] .playlist-poster {
+    width: 4rem;
+  }
+
+  html[data-device="app"] /* 移动端选集网格：sheet（≤10集底部弹窗）cell 间距放宽到与桌面/drawer 一致的
+     space-sm，避免选集按钮过于拥挤难点选 */
+  .playlist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(3.375rem, 1fr));
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  html[data-device="app"] .playlist-line-grid {
+    grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+  }
+
+  html[data-device="app"] .playlist-cell--ep {
+    padding: var(--space-3xs);
+  }
+
+  html[data-device="app"] .playlist-cell--ep .playlist-cell-num {
+    font-size: var(--text-base);
+  }
+
+  html[data-device="app"] /* 从右侧弹出的全屏抽屉：全屏空间充足，cell 间距放宽以免拥挤 */
+  .playlist-drawer .playlist-grid {
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  html[data-device="app"] .playlist-drawer .playlist-line-grid {
+    gap: var(--space-sm);
+  }
+
+
 
 @media (width >= 768px) {
-  .playlist-modal--center {
+  html:not([data-device="app"]) .playlist-modal--center {
     width: min(880px, max(720px, 54vw));
     height: min(720px, 82vh);
     max-height: min(720px, 82vh);

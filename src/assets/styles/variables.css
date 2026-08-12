@@ -354,7 +354,7 @@
    ≥ 1920 → 7   (大屏/2K/4K/TV；与 row-cols 一致,防止单行过宽)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
-  :root {
+  html:not([data-device="app"]) {
     --card-cols: 5;
     --row-cols: 5;
     /* 继续观看行：768–1279 平板 3 列 */
@@ -363,7 +363,7 @@
 }
 
 @media (width >= 1280px) {
-  :root {
+  html:not([data-device="app"]) {
     --card-cols: 7;
     --row-cols: 7;
     /* 继续观看行：≥1280 桌面 5 列 */
@@ -372,7 +372,7 @@
 }
 
 @media (width >= 1920px) {
-  :root {
+  html:not([data-device="app"]) {
     --card-cols: 7;
     --row-cols: 7;
     /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
@@ -590,7 +590,7 @@
    （这些 token 多配合 min(vh,…) 使用，vh 项本就随屏高 2×，此处只修正漏网的
    固定 px/rem 上限段。） */
 @media (width >= 1920px) {
-  :root {
+  html:not([data-device="app"]) {
     --layout-detail-hero-max-h:   clamp(50.875rem, 42.4vw,   101.75rem); /* 814→1628px */
     --layout-modal-max-h:         clamp(68.75rem,  57.29vw,  137.5rem);  /* 1100→2200px */
     --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */

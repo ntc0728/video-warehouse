@@ -562,15 +562,48 @@
     max-width: var(--error-msg-max-width);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .source-checker-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  html[data-device="app"] .stat-card {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  html[data-device="app"] .stat-card .stat-value {
+    font-size: var(--text-base);
+  }
+
+  html[data-device="app"] .stat-config {
+    display: none;
+  }
+
+  html[data-device="app"] .source-checker-tabs {
+    gap: var(--space-2xs);
+    padding: var(--space-xs);
+  }
+
+  html[data-device="app"] .tab-btn {
+    padding: var(--space-2xs) var(--space-sm);
+    font-size: var(--text-2xs);
+  }
+
+  html[data-device="app"] .error-msg {
+    max-width: var(--error-msg-max-width);
+  }
+
+
 
 @media (768px <= width <= 1279px) {
-  .source-checker-stats {
+  html:not([data-device="app"]) .source-checker-stats {
     grid-template-columns: repeat(5, 1fr);
   }
 }
 
 @media (width >= 1280px) {
-  .source-checker-stats {
+  html:not([data-device="app"]) .source-checker-stats {
     grid-template-columns: repeat(5, 1fr);
   }
 }

@@ -218,6 +218,25 @@
     line-height: 1.4;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .iptv-card-group {
+    right: var(--space-3xs);
+    bottom: var(--space-3xs);
+    padding: 0 var(--space-2xs);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  html[data-device="app"] .iptv-card-source {
+    bottom: var(--space-3xs);
+    left: var(--space-3xs);
+    padding: 0 var(--space-2xs);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+
 
 /* ---- Favorite button ---- */
 /* 默认未收藏：透明度 0 + 缩小，hover/focus 时显形；已收藏常驻 */
@@ -289,6 +308,17 @@
     display: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .iptv-card-favorite.hover-visible {
+    display: none;
+  }
+
+  html[data-device="app"] .iptv-card-favorite.visible {
+    display: none;
+  }
+
+
 
 /* TV 端：聚焦时按钮显形（遥控可达） */
 [data-device="tv"] .iptv-card-favorite.hover-visible {
@@ -307,15 +337,15 @@
    Tablet: 768–1023px
    ======================================== */
 @media (width >= 768px) and (width <= 1023px) {
-  .iptv-card-cover {
+  html:not([data-device="app"]) .iptv-card-cover {
     aspect-ratio: 16 / 10;
   }
 
-  .iptv-card-title {
+  html:not([data-device="app"]) .iptv-card-title {
     font-size: var(--text-sm);
   }
 
-  .iptv-card-group {
+  html:not([data-device="app"]) .iptv-card-group {
     right: var(--space-xs);
     bottom: var(--space-xs);
     padding: 0 var(--space-xs);
@@ -323,7 +353,7 @@
     font-size: var(--text-xs);
   }
 
-  .iptv-card-source {
+  html:not([data-device="app"]) .iptv-card-source {
     bottom: var(--space-xs);
     left: var(--space-xs);
     padding: 0 var(--space-xs);
@@ -331,20 +361,20 @@
     font-size: var(--text-xs);
   }
 
-  .iptv-card-info {
+  html:not([data-device="app"]) .iptv-card-info {
     gap: var(--space-xs);
     padding: var(--space-sm);
   }
 
-  .iptv-channel-card:hover {
+  html:not([data-device="app"]) .iptv-channel-card:hover {
     transform: translateY(-2px);
   }
 
-  .iptv-channel-card:hover .iptv-card-cover img {
+  html:not([data-device="app"]) .iptv-channel-card:hover .iptv-card-cover img {
     transform: scale(1.06);
   }
 
-  .iptv-channel-card:hover .availability-badge {
+  html:not([data-device="app"]) .iptv-channel-card:hover .availability-badge {
     transform: scale(1.15);
   }
 }
@@ -354,15 +384,15 @@
    Desktop: ≥ 1024px
    ======================================== */
 @media (width >= 1024px) {
-  .iptv-card-cover {
+  html:not([data-device="app"]) .iptv-card-cover {
     aspect-ratio: 16 / 9;
   }
 
-  .iptv-card-title {
+  html:not([data-device="app"]) .iptv-card-title {
     font-size: var(--text-sm);
   }
 
-  .iptv-card-group {
+  html:not([data-device="app"]) .iptv-card-group {
     right: var(--space-xs);
     bottom: var(--space-xs);
     max-width: 50%;
@@ -371,7 +401,7 @@
     font-size: var(--text-xs);
   }
 
-  .iptv-card-source {
+  html:not([data-device="app"]) .iptv-card-source {
     bottom: var(--space-xs);
     left: var(--space-xs);
     max-width: 50%;
@@ -380,20 +410,20 @@
     font-size: var(--text-xs);
   }
 
-  .iptv-card-info {
+  html:not([data-device="app"]) .iptv-card-info {
     gap: var(--space-xs);
     padding: var(--space-sm) var(--space-md);
   }
 
-  .iptv-channel-card:hover {
+  html:not([data-device="app"]) .iptv-channel-card:hover {
     transform: translateY(-2px);
   }
 
-  .iptv-channel-card:hover .iptv-card-cover img {
+  html:not([data-device="app"]) .iptv-channel-card:hover .iptv-card-cover img {
     transform: scale(1.06);
   }
 
-  .iptv-channel-card:hover .availability-badge {
+  html:not([data-device="app"]) .iptv-channel-card:hover .availability-badge {
     transform: scale(1.15);
   }
 }

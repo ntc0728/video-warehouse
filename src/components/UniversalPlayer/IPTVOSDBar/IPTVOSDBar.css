@@ -627,3 +627,40 @@
     padding: 0 var(--space-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .iptv-osd-bar {
+    gap: var(--space-2xs);
+    width: min(calc(100% - 2 * var(--space-xs)), var(--layout-osd-max-width));
+    min-height: var(--space-2xl);
+    padding: var(--space-sm) var(--space-sm);
+  }
+
+  html[data-device="app"] .iptv-osd-channel-number {
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  html[data-device="app"] .iptv-osd-left {
+    flex-shrink: 0;
+    width: auto;
+    min-width: var(--space-3xl);
+  }
+
+  html[data-device="app"] .iptv-osd-source-text {
+    display: none;
+  }
+
+  html[data-device="app"] .iptv-osd-name-marquee .marquee-text {
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] .iptv-osd-logo-fallback {
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] /* 窄屏中间栏压缩：减少水平 padding，让 marquee 有更多空间 */
+  .iptv-osd-center {
+    padding: 0 var(--space-xs);
+  }
+

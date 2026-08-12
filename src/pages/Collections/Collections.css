@@ -59,3 +59,10 @@
     opacity: 1;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .record-card__delete {
+    opacity: 1;
+  }
+
+

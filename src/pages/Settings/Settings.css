@@ -43,6 +43,16 @@
     box-shadow: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .settings-page section {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+
 
 /* 滚动条使用全局无感样式 */
 .settings-page ::-webkit-scrollbar {
@@ -191,7 +201,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 @media (width >= 768px) {
-  .settings-section-header {
+  html:not([data-device="app"]) .settings-section-header {
     font-size: var(--text-xl);
   }
 }
@@ -677,6 +687,36 @@ body.skin-transitioning .skin-btn.active {
     margin-top: 0;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .settings-subpage__body > section {
+    margin-bottom: 0;
+    padding: 0 var(--space-lg);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  html[data-device="app"] .settings-subpage__body > section + section {
+    margin-top: var(--space-xl);
+  }
+  html[data-device="app"] .settings-subpage__body > section [class~="px-4"] {
+    padding-right: 0;
+    padding-left: 0;
+  }
+  html[data-device="app"] /* 首 section 顶部留白：与桌面端卡片距顶栏的呼吸感一致（profile-card 自带 margin 时此处不叠加） */
+  .settings-subpage__body > section:first-child:not(:has(> .settings-profile-card)) {
+    padding-top: var(--space-lg);
+  }
+  html[data-device="app"] /* 源管理 block：与 List 卡组对齐，section 左右 padding 已提供，无需额外 margin */
+  .settings-subpage__body .source-manager-block {
+    margin-top: var(--space-lg);
+  }
+  html[data-device="app"] .settings-subpage__body .source-manager-block:first-child {
+    margin-top: 0;
+  }
+
+
 
 /* 空状态占位 */
 .settings-empty-state {
@@ -705,43 +745,37 @@ body.skin-transitioning .skin-btn.active {
    section 不再各自成卡（卡片样式收归 .settings-desktop-card 整卡），
    仅保留内边距，section 之间用分割线分隔。 */
 @media (width >= 768px) {
-  .settings-content > section,
-  .settings-subpage__body > section {
+  html:not([data-device="app"]) .settings-content > section, html:not([data-device="app"]) .settings-subpage__body > section {
     padding: var(--space-lg);
   }
 
-  /* section 之间：桌面端不使用分割线，改用留白间隔（免责声明除外） */
-  .settings-content > section + section,
-  .settings-subpage__body > section + section {
+  html:not([data-device="app"]) /* section 之间：桌面端不使用分割线，改用留白间隔（免责声明除外） */
+  .settings-content > section + section, html:not([data-device="app"]) .settings-subpage__body > section + section {
     border-top: none;
     margin-top: var(--space-lg);
   }
 
-  /* 个人设置 section（settings-personal-section）：仅去掉桌面端上下 padding，
+  html:not([data-device="app"]) /* 个人设置 section（settings-personal-section）：仅去掉桌面端上下 padding，
      让标题（卡片外）与上方/下方元素更紧凑，对齐其他 tab List item 卡间 12px 间距；
      左右保留 var(--space-lg)（12px）缩进，与其他 tab 的 section 水平对齐 */
-  .settings-content > .settings-personal-section,
-  .settings-subpage__body > .settings-personal-section {
+  .settings-content > .settings-personal-section, html:not([data-device="app"]) .settings-subpage__body > .settings-personal-section {
     padding: 0 var(--space-lg);
   }
 
-  /* 源管理面板：桌面端去顶部分割线（原全局规则保留移动端分隔） */
-  .settings-content .settings-source-section,
-  .settings-subpage__body .settings-source-section {
+  html:not([data-device="app"]) /* 源管理面板：桌面端去顶部分割线（原全局规则保留移动端分隔） */
+  .settings-content .settings-source-section, html:not([data-device="app"]) .settings-subpage__body .settings-source-section {
     border-top: none;
   }
 
-  .settings-content > section [class~="px-4"],
-  .settings-subpage__body > section [class~="px-4"] {
+  html:not([data-device="app"]) .settings-content > section [class~="px-4"], html:not([data-device="app"]) .settings-subpage__body > section [class~="px-4"] {
     padding-right: 0;
     padding-left: 0;
   }
 
-  /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化；
+  html:not([data-device="app"]) /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化；
      左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。
      flex column 下默认 stretch 不压缩 margin，显式 width calc 避免右侧超出 */
-  .settings-content > .settings-profile-card,
-  .settings-subpage__body > .settings-profile-card {
+  .settings-content > .settings-profile-card, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card {
     margin: var(--space-lg) var(--space-lg) 0;
     width: calc(100% - var(--space-lg) * 2);
     box-sizing: border-box;
@@ -750,15 +784,13 @@ body.skin-transitioning .skin-btn.active {
     background: var(--color-surface);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .settings-content > .settings-profile-card:hover,
-  .settings-subpage__body > .settings-profile-card:hover {
+  html:not([data-device="app"]) .settings-content > .settings-profile-card:hover, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
-  .settings-content > .settings-profile-card + section,
-  .settings-subpage__body > .settings-profile-card + section {
+  html:not([data-device="app"]) /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
+  .settings-content > .settings-profile-card + section, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card + section {
     border-top: none;
     margin-top: var(--space-lg);
   }
@@ -787,6 +819,16 @@ body.skin-transitioning .skin-btn.active {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .modal-content-animate.settings-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+
 
 /* 更新日志弹窗：加宽以便阅读长条目（覆盖 .settings-modal 默认宽度，不影响其它设置弹窗） */
 .modal-content-animate.changelog-modal {
@@ -1227,6 +1269,16 @@ body.skin-transitioning .skin-btn.active {
     margin-top: var(--space-md);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .settings-card__header {
+    flex-wrap: wrap;
+  }
+  html[data-device="app"] .settings-action-btn--inline {
+    margin-top: var(--space-md);
+  }
+
+
 
 /* 移动端：设置页不再整体卡片化 —— 采用 iOS 分组圆角卡，
    菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
@@ -1242,6 +1294,18 @@ body.skin-transitioning .skin-btn.active {
     animation: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .settings-page {
+    gap: var(--space-md);
+    padding: var(--space-md) 0 var(--space-2xl);
+  }
+  html[data-device="app"] .settings-page:has(.settings-subpage) {
+    transform: none;
+    animation: none;
+  }
+
+
 
 /* 移动端分组圆角卡（iOS Settings 风格）：
    .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行 */
@@ -1432,8 +1496,7 @@ body.skin-transitioning .skin-btn.active {
      （见下方「移动端子页双行卡」覆盖块）
    ============================================================ */
 @media (width >= 768px) {
-  .settings-content .list-item,
-  .settings-subpage__body .list-item {
+  html:not([data-device="app"]) .settings-content .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
@@ -1441,29 +1504,25 @@ body.skin-transitioning .skin-btn.active {
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
-  .settings-content .list-item + .list-item,
-  .settings-subpage__body .list-item + .list-item {
+  html:not([data-device="app"]) .settings-content .list-item + .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item + .list-item {
     margin-top: calc(var(--space-sm) * 2);
   }
 
-  /* hover 反馈：边框加深 + 阴影（对齐 html 示例 .fcard:hover：border-strong + shadow-card-hover） */
-  .settings-content .list-item:hover,
-  .settings-subpage__body .list-item:hover {
+  html:not([data-device="app"]) /* hover 反馈：边框加深 + 阴影（对齐 html 示例 .fcard:hover：border-strong + shadow-card-hover） */
+  .settings-content .list-item:hover, html:not([data-device="app"]) .settings-subpage__body .list-item:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* 无描述项（如主题模式）：标题行垂直居中 + 底部补齐内边距，保持卡片观感均衡 */
-  .settings-content .list-item:not(:has(.list-item__desc)) .list-item__row,
-  .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
+  html:not([data-device="app"]) /* 无描述项（如主题模式）：标题行垂直居中 + 底部补齐内边距，保持卡片观感均衡 */
+  .settings-content .list-item:not(:has(.list-item__desc)) .list-item__row, html:not([data-device="app"]) .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
     padding-bottom: var(--space-md);
   }
 
-  /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
+  html:not([data-device="app"]) /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
      settings-card__body（header 操作按钮 + desc + 行）整体一张 list-item 风格大卡片。
      hover 边框加深 + 阴影，与 .list-item 卡片反馈一致。 */
-  .settings-content .settings-personal-section .settings-card__body,
-  .settings-subpage__body .settings-personal-section .settings-card__body {
+  .settings-content .settings-personal-section .settings-card__body, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
@@ -1471,31 +1530,28 @@ body.skin-transitioning .skin-btn.active {
     padding: var(--space-md) var(--space-xl);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .settings-content .settings-personal-section .settings-card__body:hover,
-  .settings-subpage__body .settings-personal-section .settings-card__body:hover {
+  html:not([data-device="app"]) .settings-content .settings-personal-section .settings-card__body:hover, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
+  html:not([data-device="app"]) /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
      覆盖 .settings-content > section [class~="px-4"] 的 px-4 清零规则：
      否则卡片内部文字/控件水平贴边，与草图的「内容在卡片内有呼吸感」不符。
      特异性 (0,3,0) > 清零规则 (0,2,1)，可正常覆盖。 */
-  .settings-content .list-item .list-item__row,
-  .settings-subpage__body .list-item .list-item__row {
+  .settings-content .list-item .list-item__row, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__row {
     padding: var(--space-md) var(--space-xl) var(--space-sm);
   }
 
-  /* 第二行：描述整行，与标题同卡片色（无分割线，标题+内容统一包裹在一张卡内）。
+  html:not([data-device="app"]) /* 第二行：描述整行，与标题同卡片色（无分割线，标题+内容统一包裹在一张卡内）。
      background 与 .list-item 一致（surface），水平 padding 与标题行对齐，加大留白。 */
-  .settings-content .list-item .list-item__desc,
-  .settings-subpage__body .list-item .list-item__desc {
+  .settings-content .list-item .list-item__desc, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__desc {
     padding: var(--space-sm) var(--space-xl) var(--space-lg);
     background: transparent;
     line-height: 1.6;
   }
 
-  /* ============================================================
+  html:not([data-device="app"]) /* ============================================================
      源管理（视频源 / IPTV 源 / EPG 源）面板：与 .list-item 同样的卡片化
      - .source-manager 卡片化（边框/圆角/背景/hover/transition）
      - .source-manager__item 桌面端 hover 反馈与 .list-item 一致
@@ -1505,8 +1561,7 @@ body.skin-transitioning .skin-btn.active {
      - 移动端（≤767px）：入口菜单保持行式；**子页内（.settings-subpage__body .source-manager）
        卡片化，与桌面端一致**（见下方「移动端子页源管理卡片化」覆盖块）
      ============================================================ */
-  .settings-content .source-manager,
-  .settings-subpage__body .source-manager {
+  .settings-content .source-manager, html:not([data-device="app"]) .settings-subpage__body .source-manager {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
@@ -1514,22 +1569,19 @@ body.skin-transitioning .skin-btn.active {
       gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
-  .settings-content .source-manager:hover,
-  .settings-subpage__body .source-manager:hover {
+  html:not([data-device="app"]) .settings-content .source-manager:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
-  .settings-content .source-manager .source-manager__item:hover,
-  .settings-subpage__body .source-manager .source-manager__item:hover {
+  html:not([data-device="app"]) /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
+  .settings-content .source-manager .source-manager__item:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager .source-manager__item:hover {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
 
-  /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */
-  .settings-content .settings-row + .settings-row,
-  .settings-subpage__body .settings-row + .settings-row {
+  html:not([data-device="app"]) /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */
+  .settings-content .settings-row + .settings-row, html:not([data-device="app"]) .settings-subpage__body .settings-row + .settings-row {
     border-top: none;
   }
 }
@@ -1635,6 +1687,102 @@ body.skin-transitioning .skin-btn.active {
     box-shadow: var(--shadow-card-hover);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .settings-page .list-item__title, html[data-device="app"] .settings-subpage__body .list-item__title {
+    font-size: var(--text-sm);
+  }
+  html[data-device="app"] .settings-page .list-item__desc, html[data-device="app"] .settings-subpage__body .list-item__desc {
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] /* 移动端个人资料卡：子页内与桌面端一致（卡片化）；
+     .settings-content 仅桌面渲染，此处置空。 */
+  .settings-content > .settings-profile-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+  html[data-device="app"] /* 子页内个人资料卡：对齐桌面端卡片化（含 hover 边框加深） */
+  .settings-subpage__body > .settings-profile-card {
+    margin: var(--space-lg) var(--space-lg) 0;
+    width: calc(100% - var(--space-lg) * 2);
+    box-sizing: border-box;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  html[data-device="app"] .settings-subpage__body > .settings-profile-card:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+  html[data-device="app"] /* 个人资料卡与下方 section：子页内不使用分割线，改用留白间隔（对齐桌面） */
+  .settings-subpage__body > .settings-profile-card + section {
+    border-top: none;
+    margin-top: var(--space-lg);
+  }
+
+  html[data-device="app"] /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
+     每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
+     卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
+  .settings-subpage__body .list-item {
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  html[data-device="app"] .settings-subpage__body .list-item + .list-item {
+    margin-top: var(--space-lg);
+  }
+  html[data-device="app"] .settings-subpage__body .list-item .list-item__row {
+    padding: var(--space-md) var(--space-xl) var(--space-sm);
+  }
+  html[data-device="app"] .settings-subpage__body .list-item .list-item__desc {
+    padding: var(--space-sm) var(--space-xl) var(--space-lg);
+    background: transparent;
+    line-height: 1.6;
+  }
+  html[data-device="app"] /* 无描述项：标题行底部补齐内边距，保持卡片观感均衡 */
+  .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
+    padding-bottom: var(--space-md);
+  }
+  html[data-device="app"] /* PersonalTab 卡片内行：移动端子页同样不使用分割线 */
+  .settings-subpage__body .settings-row + .settings-row {
+    border-top: none;
+  }
+  html[data-device="app"] .settings-content .settings-personal-section .settings-card__body {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+  }
+  html[data-device="app"] /* 子页内个人设置（配置管理 / 恢复默认配置）：对齐桌面端 —— 整卡卡片化 */
+  .settings-subpage__body .settings-personal-section .settings-card__body {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-md) var(--space-xl);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  html[data-device="app"] .settings-subpage__body .settings-personal-section .settings-card__body:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+  html[data-device="app"] /* 子页内源管理（视频源 / IPTV 源 / EPG 源）：对齐桌面端 —— 面板卡片化 */
+  .settings-subpage__body .source-manager {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease,
+      gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+  }
+  html[data-device="app"] .settings-subpage__body .source-manager:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+
 
 /* ============================================================
    设置页状态标签 .settings-status-tag（对应 html 示例 .tag/.tag--ok/.tag--warn + .dot）

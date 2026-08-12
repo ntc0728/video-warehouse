@@ -275,13 +275,54 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .person-hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    justify-content: center;
+    align-items: center;
+    min-height: auto;
+    margin-top: var(--space-sm);
+    padding: 0 var(--space-md) var(--space-lg) var(--space-md);
+  }
+
+  html[data-device="app"] .person-info {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  html[data-device="app"] .person-avatar {
+    position: static;
+    width: 6rem;
+    margin: 0 auto var(--space-md);
+  }
+
+  html[data-device="app"] .person-meta {
+    justify-content: center;
+  }
+
+  html[data-device="app"] .person-bio {
+    text-align: left;
+  }
+
+  html[data-device="app"] .person-bio-toggle {
+    align-self: flex-end;
+  }
+
+  html[data-device="app"] .person-work-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+
 
 /* ============================================================
    Tablet (768–1023px)
    ============================================================ */
 
 @media (width >= 768px) and (width <= 1023px) {
-  .person-work-grid {
+  html:not([data-device="app"]) .person-work-grid {
     grid-template-columns: repeat(5, 1fr);
   }
 }

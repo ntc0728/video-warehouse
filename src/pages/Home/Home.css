@@ -278,6 +278,17 @@
     padding: var(--space-md);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .home-skeleton-hero__desc {
+    display: none;
+  }
+
+  html[data-device="app"] .home-skeleton-hero__content {
+    padding: var(--space-md);
+  }
+
+
 
 /* 右侧缩略图列骨架：逐字节镜像 .hero-banner__thumbs 的几何模型 —
    列宽 = (列高 / 张数) × 16/9；列高 = 100cqh 解析为【父级 .home-skeleton-hero 的高度】
@@ -330,11 +341,11 @@
 }
 
 @media (width >= 1440px) and (height >= 900px) {
-  .home-skeleton-hero__thumbs {
+  html:not([data-device="app"]) .home-skeleton-hero__thumbs {
     --hero-thumb-count: 4;
   }
 
-  .home-skeleton-hero__thumb:nth-child(4) {
+  html:not([data-device="app"]) .home-skeleton-hero__thumb:nth-child(4) {
     display: block;
   }
 }
@@ -352,6 +363,18 @@
     display: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .home-skeleton-hero {
+    margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+
+  html[data-device="app"] .home-skeleton-hero__thumbs {
+    display: none;
+  }
+
+
 
 /* 移动端：min-height 与 .hero-banner 对齐 */
 @media (width <= 767px) {
@@ -359,6 +382,13 @@
     min-height: 14rem;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .home-skeleton-hero {
+    min-height: 14rem;
+  }
+
+
 
 .home-skeleton-rows {
   display: flex;
@@ -493,6 +523,14 @@
     min-height: 50vh;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .home-token-required {
+    flex: none;
+    min-height: 50vh;
+  }
+
+
 
 /* ── TV ──────────────────────────────────────────────── */
 

@@ -128,6 +128,20 @@
     bottom: calc(var(--layout-tabbar-height) + var(--space-lg));
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .back-to-top-button {
+    right: var(--space-md);
+    bottom: var(--space-lg);
+    width: calc(var(--space-2xl) * 1.5);
+    height: calc(var(--space-2xl) * 1.5);
+  }
+  html[data-device="app"] /* App 端有底部 TabBar，需要额外间距 */
+  [data-device="app"] .back-to-top-button {
+    bottom: calc(var(--layout-tabbar-height) + var(--space-lg));
+  }
+
+
 
 /* ── Reduced motion：关闭所有动画 ────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -257,6 +271,19 @@
     bottom: calc(var(--layout-tabbar-height) + var(--space-lg) + calc(var(--space-2xl) * 1.5) + var(--space-sm));
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .edit-mode-button {
+    right: var(--space-md);
+    bottom: calc(var(--space-lg) + calc(var(--space-2xl) * 1.5) + var(--space-sm));
+    width: calc(var(--space-2xl) * 1.5);
+    height: calc(var(--space-2xl) * 1.5);
+  }
+  html[data-device="app"] [data-device="app"] .edit-mode-button {
+    bottom: calc(var(--layout-tabbar-height) + var(--space-lg) + calc(var(--space-2xl) * 1.5) + var(--space-sm));
+  }
+
+
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

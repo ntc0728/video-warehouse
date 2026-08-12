@@ -117,3 +117,51 @@
     gap: var(--space-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .skeleton-iptv-card {
+    height: 100%;
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  html[data-device="app"] .skeleton-logo {
+    width: var(--icon-xl);
+    height: var(--icon-xl);
+    border-radius: var(--radius-sm);
+  }
+
+  html[data-device="app"] .skeleton-info {
+    flex-direction: column;
+    gap: 0;
+    justify-content: center;
+    padding: 0;
+  }
+
+  html[data-device="app"] .skeleton-name {
+    width: 70%;
+    height: var(--space-sm);
+  }
+
+  html[data-device="app"] .skeleton-group {
+    width: 50%;
+    height: var(--space-xs);
+  }
+
+  html[data-device="app"] .skeleton-actions {
+    flex-direction: row;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  html[data-device="app"] .skeleton-btn {
+    width: var(--space-md);
+    height: var(--space-md);
+  }
+
+  html[data-device="app"] .skeleton-iptv-grid {
+    grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+
+

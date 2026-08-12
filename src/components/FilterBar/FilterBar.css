@@ -268,14 +268,14 @@
 
 /* ── Tablet (640-1023) ────────────────────────────── */
 @media (width >= 640px) and (width <= 1023px) {
-  .filter-bar__chip {
+  html:not([data-device="app"]) .filter-bar__chip {
     padding: var(--space-xs) var(--space-md);
   }
 }
 
 /* ── Desktop (≥ 1024) ─────────────────────────────── */
 @media (width >= 1024px) {
-  .filter-bar {
+  html:not([data-device="app"]) .filter-bar {
     padding: var(--space-md) var(--space-sm);
   }
 }

@@ -58,3 +58,11 @@
     min-height: 50vh;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .token-required {
+    flex: none;
+    min-height: 50vh;
+  }
+
+

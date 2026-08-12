@@ -172,6 +172,18 @@
   width: 50%;
 }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .card-cover-loading__brand-text {
+  font-size: var(--text-base);
+  letter-spacing: 0.1em;
+}
+
+  html[data-device="app"] .card-cover-loading__progress {
+  width: 50%;
+}
+
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    可访问性：减少动画

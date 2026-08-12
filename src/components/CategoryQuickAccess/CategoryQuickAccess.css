@@ -121,6 +121,36 @@
     scroll-snap-align: start;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .category-quick-access__inner {
+    display: flex;
+    flex-wrap: nowrap;
+    /* 移动端 40px 圆形卡片的 gap：--space-2xl(24px) 偏大（≈0.6×）、--space-lg(12px)
+       偏紧（≈0.3×）；使用 lg↔xl 过渡档 --space-lg-xl（移动端钉 14px，间隙≈0.35×）
+       间距更精确，且随视口与 lg/xl 同一曲线增长。 */
+    gap: var(--space-lg-xl);
+    justify-content: center;
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  html[data-device="app"] .category-quick-access__icon-wrap {
+    width: var(--comp-btn-min-width);
+    height: var(--comp-btn-min-width);
+  }
+  html[data-device="app"] .category-quick-access__label {
+    font-size: var(--text-xs);
+  }
+  html[data-device="app"] .category-quick-access__card {
+    flex-shrink: 0;
+    padding: var(--space-2xs);
+    scroll-snap-align: start;
+  }
+
+
 
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
@@ -159,7 +189,7 @@
 /* ── 平板/桌面 web (>=768px)：分类导航由全局 HomeSidebar 接管，隐藏快速入口 ──
    TV / 原生 App 保留（无侧边栏） */
 @media (width >= 768px) {
-  :root:not([data-device="tv"]):not([data-device="app"]) .category-quick-access {
+  html:not([data-device="app"]) :root:not([data-device="tv"]):not([data-device="app"]) .category-quick-access {
     display: none;
   }
 }

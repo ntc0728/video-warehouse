@@ -31,6 +31,13 @@
     max-width: none;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .search-box-wrap--header {
+    max-width: none;
+  }
+
+
 
 .search-box-wrap--browse {
   max-width: min(var(--layout-searchbox-browse-max-w), 100%);
@@ -455,6 +462,13 @@
     flex-shrink: 0;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .search-box-wrap--header .search-box {
+    flex-shrink: 0;
+  }
+
+
 
 /* ── TV: 放大字号与图标 ────────────────────────────── */
 

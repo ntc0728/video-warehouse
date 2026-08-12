@@ -144,15 +144,22 @@
     --card-cols: 2;
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .history-content .history-group-body .video-card-grid {
+    --card-cols: 2;
+  }
+
+
 
 @media (width >= 1280px) {
-  .history-content .history-group-body .video-card-grid {
+  html:not([data-device="app"]) .history-content .history-group-body .video-card-grid {
     --card-cols: 4;
   }
 }
 
 @media (width >= 1920px) {
-  .history-content .history-group-body .video-card-grid {
+  html:not([data-device="app"]) .history-content .history-group-body .video-card-grid {
     --card-cols: 5;
   }
 }
@@ -185,3 +192,16 @@
     font-size: var(--text-xs);
   }
 }
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .record-card__delete {
+    opacity: 1;
+  }
+  html[data-device="app"] .history-body {
+    padding: 0 var(--space-sm);
+  }
+  html[data-device="app"] .record-card__time {
+    font-size: var(--text-xs);
+  }
+
+

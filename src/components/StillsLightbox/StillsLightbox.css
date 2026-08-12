@@ -247,3 +247,35 @@
     width: 90vw;
   }
 }
+/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .stills-lightbox__close {
+    top: var(--space-sm);
+    right: var(--space-sm);
+    z-index: 100;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: rgba(255, 255, 255, 0.85);
+    color: #000;
+  }
+
+  html[data-device="app"] .stills-lightbox__close svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  html[data-device="app"] .stills-lightbox__counter {
+    top: var(--space-sm);
+  }
+
+  html[data-device="app"] .stills-lightbox__nav {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  html[data-device="app"] .stills-lightbox__thumbs {
+    bottom: var(--space-sm);
+    width: 90vw;
+  }
+
+
