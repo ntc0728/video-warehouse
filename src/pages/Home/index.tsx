@@ -449,7 +449,8 @@ export default function HomePage() {
       <div className="home-page__content page-transition-enter">
         <CategoryQuickAccess
           onCategorySelect={handleCategorySelect}
-          activeCategory={isCategoryView ? (activeCategory as CategoryKey) : null}
+          // 选中态高亮全端移除（点击分类立即跳转 browse，选中态停留无意义）
+          activeCategory={null}
         />
         {!isCategoryView && (userDataLoading || continueItems.length > 0) && (
           <TMDBMovieRow
