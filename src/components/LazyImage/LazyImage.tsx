@@ -13,6 +13,7 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import CardCoverLoading from '../common/CardCoverLoading';
+import { useSettingsStore } from '@/stores';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
 
@@ -80,7 +81,7 @@ export default function LazyImage({
   className = '',
   style = {},
   placeholder,
-  fallbackSrc = '/placeholder.svg',
+  fallbackSrc,
   srcCandidates,
   letter,
   onLoad,
@@ -96,6 +97,19 @@ export default function LazyImage({
   const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
   const [isInView, setIsInView] = useState(() => isImageLoaded(src));
   const [error, setError] = useState(false);
+
+  // 9.1：失败兜底图按主题自适应 —— 暗色用 placeholder.svg（品牌蓝灰），
+  // 亮色用 placeholder-light.svg（品牌浅色），替代固定深色 SVG 在亮色主题下的「黑色块」。
+  // 调用方传 fallbackSrc 时优先用传入值（如 PlaylistModal 的 TMDB 海报兜底）。
+  const theme = useSettingsStore((s) => s.theme);
+  const resolvedFallbackSrc =
+    fallbackSrc ??
+    (theme === 'dark' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? '/placeholder.svg'
+      : '/placeholder-light.svg');
   // 候选链：src 为链首，srcCandidates 为后续候选（过滤空值）
   const candidates = useMemo(() => {
     const all = src ? [src, ...(srcCandidates ?? [])] : [];
@@ -181,7 +195,7 @@ export default function LazyImage({
     }, timeoutMs);
     return () => window.clearTimeout(timer);
   }, [isInView, isLoaded, error, hasValidSrc, timeoutMs, candidateIndex, candidates.length]);
-  const imageSrc = error || !hasValidSrc ? fallbackSrc : candidates[candidateIndex];
+  const imageSrc = error || !hasValidSrc ? resolvedFallbackSrc : candidates[candidateIndex];
   // 移除 autoSrcSet：原逻辑 `${src} 1x, ${src} 2x` 错误地为同一 URL 声明两种密度，
   // 浏览器在高 DPR 屏幕下会加载原始大图（可能 3000px+），导致内存暴增和性能下降。
   // 若需要响应式图片，应由调用方通过 srcSet prop 传入正确格式的 srcSet。
@@ -235,7 +249,7 @@ export default function LazyImage({
         <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
       ) : (error || !hasValidSrc) && (
         <img
-          src={fallbackSrc}
+          src={resolvedFallbackSrc}
           alt={alt}
           className="lazy-image lazy-image-fallback"
           decoding="async"

@@ -666,8 +666,9 @@ export default function PlaylistModal({
           <LazyImage
             src={video.cover || posterUrl || ''}
             alt={video.title}
-            // CMS 封面缺失或加载失败时回退到 TMDB 海报（LazyImage 的 error/空值统一走 fallbackSrc）
-            fallbackSrc={posterUrl || '/placeholder.svg'}
+            // CMS 封面缺失或加载失败时回退到 TMDB 海报（LazyImage 的 error/空值统一走 fallbackSrc）；
+            // posterUrl 也缺失时不传 fallbackSrc → LazyImage 按主题自适应占位（9.1）
+            fallbackSrc={posterUrl || undefined}
           />
         </div>
         <div className="playlist-meta">

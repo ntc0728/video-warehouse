@@ -130,7 +130,19 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    Dark Theme — 抠图渐变与装饰微调
+   9.1：加载中背景改品牌蓝灰渐变（替代近黑 #262626 shimmer），
+   让「加载中」明确是有品牌感的占位而非黑块。
    ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .card-cover-loading {
+  background: linear-gradient(
+    135deg,
+    #1c2b4a 0%,
+    #12203a 50%,
+    #1a2e52 100%
+  );
+  background-size: 200% 200%;
+}
+
 [data-theme="dark"] .card-cover-loading__brand-text {
   background: linear-gradient(
     180deg,
