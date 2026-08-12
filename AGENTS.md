@@ -305,22 +305,25 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-10 校准）。
+> test 数为 `npx playwright test --list` 实际枚举数（2026-08-12 校准）。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 40 |
+| `src/pages/Home/` | `scripts/home.spec.ts` | 40 + 7 |
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 7 |
-| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 11 + 6 |
-| `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 |
+| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 11 + 6 + 2 |
+| `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
 | `src/pages/History/` | `scripts/history.spec.ts` | 6 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
 | 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
 | 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 22 |
+| 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
+
+> 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（白屏/封面/汉堡/横屏/TabBar/免责声明 各页共通的修复验证）。
 
 ### 共享组件 → 测试文件（1:N）
 
