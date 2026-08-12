@@ -7,21 +7,63 @@
    - 纹理素材：public/art-skins/<skin>/*.png（真实可平铺纹理，非纯 CSS 绘制）。
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 皮肤字体：通过 font-display: swap + 条件选择器按需加载 ── */
+/* ── 皮肤字体：自托管（public/fonts/，来源 fontsource npm 包，latin 子集）。
+   原 Google fonts.gstatic.com 在国内网络不可达 → 字体下载失败 → 皮肤只换色不换字。
+   font-display: swap + 条件选择器按需加载（仅对应皮肤激活时声明 font-family）。 */
 @font-face {
   font-family: 'Fredoka';
-  font-weight: 400 700;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('https://fonts.gstatic.com/s/fredoka/v14/X7nP4b87HvSqjb_WIi2yDCRwoQ_k7367.woff2') format('woff2');
+  src: url('/fonts/fredoka-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/fredoka-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/fredoka-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/fredoka-700-normal.woff2') format('woff2');
 }
 
 @font-face {
   font-family: 'Orbitron';
-  font-weight: 400 900;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('https://fonts.gstatic.com/s/orbitron/v31/yMJMMIlzdpvBhQQL_SC3X9yhF25-T1nyGy6BoWgz.woff2') format('woff2');
+  src: url('/fonts/orbitron-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/orbitron-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/orbitron-900-normal.woff2') format('woff2');
 }
 
 @font-face {
@@ -29,7 +71,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
+  src: url('/fonts/press-start-2p-400-normal.woff2') format('woff2');
 }
 
 /* 字体加载优化：仅在对应皮肤激活时声明 font-family，浏览器会在匹配时才下载 */
@@ -74,14 +116,14 @@ html[data-skin="cartoon"] body {
 html[data-skin="cartoon"] body,
 html[data-skin="cartoon"] button,
 html[data-skin="cartoon"] input {
-  font-family: 'Fredoka', 'Baloo 2', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: 'Fredoka', 'PingFang SC', 'Noto Sans SC', 'MiSans', 'Microsoft YaHei', system-ui, sans-serif;
 }
 html[data-skin="cartoon"] h1,
 html[data-skin="cartoon"] h2,
 html[data-skin="cartoon"] h3,
 html[data-skin="cartoon"] .brand-name,
 html[data-skin="cartoon"] [class*="title"] {
-  font-family: 'Fredoka', 'Baloo 2', 'Noto Sans SC', sans-serif;
+  font-family: 'Fredoka', 'PingFang SC', 'Noto Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif;
   font-weight: 700;
   letter-spacing: 0.2px;
 }
