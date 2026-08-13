@@ -563,6 +563,66 @@ test.describe('1.3 分类快捷入口', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// 1.3b 侧边栏分类切换过渡（交叉淡出/淡入，2026-08-13）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('1.3b 侧边栏分类切换过渡', () => {
+  test('HOME-060: 分类切换执行淡出/淡入过渡而非瞬间替换', async ({ page }) => {
+    // 前置: 桌面端（侧边栏驱动分类切换），首页数据就绪
+    await page.goto('/');
+    await page.waitForSelector('.home-page__content', { timeout: 15000 });
+    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+
+    // 操作: 点击侧边栏「电影」分类
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+
+    // 捕获过渡中间态：轮询 3s 观察 .home-page__content 的 opacity 与过渡类
+    // （等待期 dim 0.55 → fade-out 0.55→0 → fade-in 0→1）
+    const observed = await page.evaluate(async () => {
+      const el = document.querySelector('.home-page__content') as HTMLElement | null;
+      if (!el) return { dim: false, out: false, inn: false, sawSubOne: false };
+      const start = Date.now();
+      let sawSubOne = false;
+      let dim = false, out = false, inn = false;
+      while (Date.now() - start < 3000) {
+        const op = parseFloat(getComputedStyle(el).opacity);
+        if (op < 0.99) sawSubOne = true;
+        if (el.classList.contains('home-cat-dim')) dim = true;
+        if (el.classList.contains('home-cat-fade-out')) out = true;
+        if (el.classList.contains('home-cat-fade-in')) inn = true;
+        await new Promise((r) => setTimeout(r, 30));
+      }
+      return { dim, out, inn, sawSubOne };
+    });
+
+    // 预期: 过渡期间必然出现「内容变暗/透明」中间态（等待期 0.55 或淡出/淡入中间值）
+    expect(observed.sawSubOne, '应观察到 opacity<1 的过渡中间态（非瞬间替换）').toBe(true);
+    // 淡出类与淡入类至少出现其一（快源就绪可能让 fade-out 一闪而过，但 fade-in 必然可采样）
+    expect(observed.out || observed.inn, '应出现 fade-out 或 fade-in 过渡类').toBe(true);
+
+    // 终态: 过渡完成 → 内容恢复全不透明、过渡类全部移除、侧边栏高亮「电影」
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const el = document.querySelector('.home-page__content') as HTMLElement | null;
+            if (!el) return null;
+            return {
+              op: parseFloat(getComputedStyle(el).opacity),
+              dim: el.classList.contains('home-cat-dim'),
+              out: el.classList.contains('home-cat-fade-out'),
+              inn: el.classList.contains('home-cat-fade-in'),
+            };
+          }),
+        { timeout: 5000, intervals: [100] },
+      )
+      .toEqual({ op: 1, dim: false, out: false, inn: false });
+    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
+    console.log('✅ HOME-060 通过: 分类切换经淡出/淡入过渡，无瞬间替换');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 // 1.4 TMDBMovieRow 行数据
 // ═══════════════════════════════════════════════════════════════
 

@@ -29,12 +29,30 @@
   min-width: 0;
   /* 分类切换 SWR 等待反馈（2026-08-13）：旧内容保留展示期间轻微降暗，
      数据就绪后内容原位替换 + 亮度恢复过渡。仅 opacity、无 transform——
-     避免触发 HeroBanner GPU 合成层重绘闪烁（AGENTS.md 强约束）。 */
+     避免触发 HeroBanner GPU 合成层重绘闪烁（AGENTS.md 强约束）。
+     animation-fill-mode: none：解除 page-transition-enter 动画（both fill）在结束后
+     对 opacity 的锁定——否则动画最后一帧 opacity:1 永久覆盖 .home-cat-dim /
+     .home-cat-fade-* 的 opacity（降暗与淡出/淡入全部失效，切分类 = 直白瞬间替换）。 */
   transition: opacity 0.24s var(--ease-standard);
+  animation-fill-mode: none;
 }
 
 .home-cat-dim {
   opacity: 0.55;
+}
+
+/* 分类切换就绪过渡（2026-08-13）：数据就绪后不瞬间替换内容，
+   先旧内容淡出（0.55→0，0.12s）→ 原位替换 → 新内容淡入（0→1，0.28s），
+   消除「直白的显示隐藏」的突兀感。时长与 index.tsx 状态机 FADE_OUT_MS / FADE_IN_MS 同步；
+   仅 opacity、无 transform（HeroBanner GPU 合成层约束）。
+   prefers-reduced-motion 由 index.tsx 用 matchMedia 跳过计时器（等效瞬切）。 */
+.home-cat-fade-out {
+  opacity: 0;
+  transition: opacity 0.12s var(--ease-standard);
+}
+.home-cat-fade-in {
+  opacity: 1;
+  transition: opacity 0.28s var(--ease-standard);
 }
 
 /* ── Rows container ──────────────────────────────────── */
