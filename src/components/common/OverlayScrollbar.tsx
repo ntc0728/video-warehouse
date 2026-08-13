@@ -51,6 +51,25 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     };
   }, [scrollContainer, throttledUpdateThumb, updateThumb]);
 
+  // 监听内容 DOM 变化（2026-08-13 修复「内容变矮后滚动条残留」）：
+  // 滚动容器的直接子级（.page-transition）是 flex:1 恒填满视口高度，内容变矮时
+  // 容器/子级盒高都不变、scrollTop 不动——scroll 事件与 ResizeObserver 均不触发，
+  // thumb 残留。DOM 变化（Keep-Alive display 切换、设置页切 tab、异步数据渲染、
+  // 图片占位替换）是「内容变了」的可靠信号，借此重算 thumb 尺寸/位置。
+  // MutationObserver 回调本身按 microtask 批次合并，再经 useThrottle 节流，开销可控。
+  useEffect(() => {
+    const el = scrollContainer.current;
+    if (!el) return;
+    const mo = new MutationObserver(throttledUpdateThumb);
+    mo.observe(el, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+    return () => mo.disconnect();
+  }, [scrollContainer, throttledUpdateThumb]);
+
   // 延迟重试：处理 ref 可能延迟绑定的情况
   useEffect(() => {
     const timer = setTimeout(() => updateThumb(), 100);

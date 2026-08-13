@@ -439,7 +439,10 @@ body.skin-transitioning .skin-btn.active {
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-base);
-  font-weight: 500;
+  /* 字重统一 600（2026-08-13）：原 500→600 激活变化导致按钮文字变宽、
+     tab 宽度变化 → flex-wrap TabBar 整行重排（切 tab 抖动根因之一）；
+     激活态仅靠主色背景 + 反色文字区分。 */
+  font-weight: 600;
   white-space: nowrap;
   /* tab 高亮切换平滑过渡（active 背景/文字 0.2s） */
   transition: background 0.2s ease, color 0.2s ease, scale 0.32s var(--ease-spring);
@@ -493,25 +496,23 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
-/* tab 切换过渡：key=activeTab 重挂载时整体纯淡入（仅 opacity，无位移、零跳动），
-   复用 animations.css 的 fadeIn 关键帧。0.35s 避免过短产生闪烁感，仍保持克制、贴合设置页工具型界面；
-   prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
-/* 内容区 tab 切换动画：fadeIn + 轻微上移（8px→0）。纯淡入感知弱（用户反馈
-   「点击切换页面缺少过渡动画」）——位移强化切换感。0.28s 保持克制；
+/* tab 切换过渡（2026-08-13 重做）：内容区 pane 常驻挂载（display 切换可见性），
+   激活 pane 播放纯 opacity 淡入——去掉原 translateY(8px) 位移动画（重挂载 + 位移
+   是「切 tab 页面抖动」的根因之一）。内容常驻不卸载、无高度 0 突变；
    prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
 @keyframes settings-content-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.settings-content--animate {
-  animation: settings-content-in 0.28s var(--ease-standard) both;
+.settings-content__pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.settings-content__pane--active {
+  animation: settings-content-in 0.24s var(--ease-standard) both;
 }
 
 /* 移动端子页面内 section 间距 */
@@ -830,7 +831,7 @@ body.skin-transitioning .skin-btn.active {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
-  .settings-content--animate{
+  .settings-content__pane {
       padding: var(--space-lg);
   }
   html:not([data-device="app"]) /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
