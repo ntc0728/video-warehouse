@@ -1,11 +1,19 @@
 name: Build Android APK
 
-# release-please 发布 Release 后自动构建 APK 并上传到该 Release 的 assets。
+# 手动补传 APK（workflow_dispatch，填版本号如 1.6.0 → 上传 kinoTv-v1.6.0.apk 到 v1.6.0 release）。
+# 自动发布链路已移入 release-please.yml 的 build-apk job（GITHUB_TOKEN 事件不递归触发
+# 本 workflow 的 on: release，历史 release 因此全部缺失 APK），本文件仅作兜底入口。
 # 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.4.0.apk）。
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '补传的版本号（不带 v 前缀，如 1.6.0）'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -14,9 +22,20 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     steps:
+      # 手动模式取输入版本（拼 v 前缀），release 事件取 release tag
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ steps.tag.outputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
@@ -63,8 +82,10 @@ jobs:
       # 未配置时用 keytool 生成临时 keystore 签名（可安装，升级安装会因签名不同而失败）。
       - name: Sign APK
         shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
@@ -89,5 +110,6 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" "kinoTv-v${GITHUB_REF_NAME#v}.apk" --clobber
+          gh release upload "$TAG" "kinoTv-v${TAG#v}.apk" --clobber

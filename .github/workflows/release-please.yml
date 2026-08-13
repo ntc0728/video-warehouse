@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           # 默认用 GITHUB_TOKEN；若该仓库未开启「Allow GitHub Actions to create and approve
           # pull requests」（私有库/组织策略常禁用），请创建带 repo 权限的 PAT 存入
@@ -20,3 +21,94 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # APK 构建（2026-08-13 从独立 release-android.yml 移入本工作流）：
+  # release-please 用 GITHUB_TOKEN 创建 Release → GitHub 安全限制禁止 GITHUB_TOKEN
+  # 事件递归触发其他 workflow（on: release: published 死链——历史版本 release 全部
+  # 只有源码包、无 APK），改为本工作流内 needs 级联：release_created=true 时
+  # 直接在 tag 上构建 APK 并上传。手动补传走 release-android.yml 的 workflow_dispatch。
+  build-apk:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # 必须安装 Android SDK：compileSdk 34 + build-tools（含 apksigner）。
+      # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
+      # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          CAPACITOR: 'true'
+
+      # android/ 目录被 .gitignore 忽略（不进 git），CI 需先 cap add 生成平台模板
+      - name: Add & sync Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+          # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
+          Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
+          node scripts/sync-android-version.mjs
+        shell: pwsh
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      # 签名策略：配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
+      # ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD 四个 Secrets 用正式 keystore 签名；
+      # 未配置时用 keytool 生成临时 keystore 签名（可安装，升级安装会因签名不同而失败）。
+      - name: Sign APK
+        shell: bash
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          VERSION="${TAG#v}"
+          UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+            KS_PASS="$ANDROID_KEYSTORE_PASSWORD"
+            ALIAS="$ANDROID_KEY_ALIAS"
+            KEY_PASS="$ANDROID_KEY_PASSWORD"
+          else
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/keystore.jks" \
+              -storepass kinoTv2026 -alias kinoTv -keypass kinoTv2026 \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=KinoTV, OU=KinoTV, O=KinoTV, L=Beijing, S=Beijing, C=CN"
+            KS_PASS="kinoTv2026"
+            ALIAS="kinoTv"
+            KEY_PASS="kinoTv2026"
+          fi
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/keystore.jks" --ks-pass "pass:$KS_PASS" \
+            --ks-key-alias "$ALIAS" --key-pass "pass:$KEY_PASS" \
+            --out "kinoTv-v${VERSION}.apk" "$UNSIGNED"
+
+      - name: Upload APK to Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          gh release upload "$TAG" "kinoTv-v${TAG#v}.apk" --clobber
