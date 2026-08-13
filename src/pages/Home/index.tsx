@@ -78,25 +78,14 @@ export default function HomePage() {
   const isDisplayingCategory = displayedCategory !== 'home';
   const catSwitching = deferredCategory !== displayedCategory;
 
-  // ── 分类切换就绪过渡（交叉淡出/淡入，2026-08-13）──
-  // 数据就绪后不瞬间替换内容（旧 SWR 行为 = 直白显示隐藏、晃眼睛），而是：
-  //   waiting（.home-cat-dim 0.55）→ fading-out（0.55→0，120ms）→ 替换 displayedCategory
-  //   → fading-in（0→1，280ms）→ idle
-  // 竞态：过渡期间用户再次切分类 → 完成回调读取 store 最新源值：
-  //   · 切回原分类 → 直接恢复 idle（不误切）
-  //   · 最新目标已就绪 → 切到最新目标
-  //   · 最新目标未就绪 → 回 idle（旧内容淡回），等就绪 effect 重新触发淡出
-  // prefers-reduced-motion：matchMedia 检测后计时器置 0 = 瞬切（等效无动画）。
-  const [fadePhase, setFadePhase] = useState<'idle' | 'fading-out' | 'fading-in'>('idle');
-  const fadeOutMs = useMemo(
-    () => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 120),
-    [],
-  );
-  const fadeInMs = useMemo(
-    () => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 280),
-    [],
-  );
-
+  // ── 分类切换就绪过渡（暗态原位替换 + 亮度恢复，2026-08-13 终版）──
+  // 数据就绪后**不淡出到透明**（历史 fade-out 状态机会产生 120ms 完全空窗，
+  // 用户感知「banner 下方内容短暂消失」）——而是：
+  //   等待期 .home-cat-dim（opacity 0.55）→ 数据就绪 → 在暗态下原位替换内容
+  //   → catSwitching=false 移除 dim（0.55→1 transition 变亮）。
+  // 全程无透明帧：内容最低 0.55，快慢源都平滑。
+  // 竞态天然安全：替换只由「当前 deferred 分类数据就绪」触发（读的是最新源值），
+  // 用户过渡期再切分类时以最新就绪目标为准，无需额外状态机。
   useEffect(() => {
     if (deferredCategory === displayedCategory) return;
     // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = 有内容或加载已结束（含失败终态）
@@ -107,39 +96,8 @@ export default function HomePage() {
           categoryData.rows.some((r) => r.items.length > 0) ||
           !categoryData.loading));
     if (!ready) return;
-    if (fadePhase !== 'idle') return; // 过渡中，由完成回调接管
-    setFadePhase('fading-out');
-  }, [deferredCategory, displayedCategory, categoryData, fadePhase]);
-
-  useEffect(() => {
-    if (fadePhase === 'idle') return;
-    const timer = window.setTimeout(
-      () => {
-        if (fadePhase === 'fading-out') {
-          const latest = useHomeCategoryStore.getState().activeCategory as HomeCategoryKey;
-          const latestData = useHomeCategoryStore.getState().data[latest];
-          const latestReady =
-            latest === 'home' ||
-            (latestData != null &&
-              (latestData.hero.length > 0 ||
-                latestData.rows.some((r) => r.items.length > 0) ||
-                !latestData.loading));
-          if (latest === displayedCategory) {
-            setFadePhase('idle'); // 用户已切回原分类：直接恢复
-          } else if (latestReady) {
-            setDisplayedCategory(latest); // 切到最新目标后淡入
-            setFadePhase('fading-in');
-          } else {
-            setFadePhase('idle'); // 最新目标未就绪：旧内容淡回，等就绪 effect 再触发
-          }
-        } else {
-          setFadePhase('idle');
-        }
-      },
-      fadePhase === 'fading-out' ? fadeOutMs : fadeInMs,
-    );
-    return () => window.clearTimeout(timer);
-  }, [fadePhase, displayedCategory, fadeOutMs, fadeInMs]);
+    setDisplayedCategory(deferredCategory);
+  }, [deferredCategory, displayedCategory, categoryData]);
 
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
   // 用源值 activeCategory，确保点击类目即刻开始请求，不被 deferred 拖慢。
@@ -512,7 +470,6 @@ export default function HomePage() {
       */}
       <HeroBanner
         items={heroItems}
-        categoryId={isDisplayingCategory ? String(displayedCategory) : 'home'}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
@@ -526,7 +483,7 @@ export default function HomePage() {
         同时下方内容仍保有进入淡入上移动画；Keep-Alive 二次进入由 AppLayout 回放机制
         递归命中本层 .page-transition-enter 重放，HeroBanner 不受影响、保持静止。
       */}
-      <div className={`home-page__content page-transition-enter${catSwitching ? ' home-cat-dim' : ''}${fadePhase === 'fading-out' ? ' home-cat-fade-out' : ''}${fadePhase === 'fading-in' ? ' home-cat-fade-in' : ''}`}>
+      <div className={`home-page__content page-transition-enter${catSwitching ? ' home-cat-dim' : ''}`}>
         <CategoryQuickAccess
           onCategorySelect={handleCategorySelect}
           // 选中态高亮全端移除（点击分类立即跳转 browse，选中态停留无意义）

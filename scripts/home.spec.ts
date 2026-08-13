@@ -567,7 +567,7 @@ test.describe('1.3 分类快捷入口', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.3b 侧边栏分类切换过渡', () => {
-  test('HOME-060: 分类切换执行淡出/淡入过渡而非瞬间替换', async ({ page }) => {
+  test('HOME-060: 分类切换暗态替换内容（无透明空窗）', async ({ page }) => {
     // 前置: 桌面端（侧边栏驱动分类切换），首页数据就绪
     await page.goto('/');
     await page.waitForSelector('.home-page__content', { timeout: 15000 });
@@ -576,31 +576,30 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     // 操作: 点击侧边栏「电影」分类
     await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
 
-    // 捕获过渡中间态：轮询 3s 观察 .home-page__content 的 opacity 与过渡类
-    // （等待期 dim 0.55 → fade-out 0.55→0 → fade-in 0→1）
+    // 捕获过渡全程 opacity：等待期 dim 0.55 → 暗态下原位替换 → 亮度恢复 1。
+    // 核心断言：内容**不得淡出到透明**（历史 fade-out 状态机的 120ms 空窗
+    // = 「banner 下方内容短暂消失」的根因，2026-08-13 已移除）。
     const observed = await page.evaluate(async () => {
       const el = document.querySelector('.home-page__content') as HTMLElement | null;
-      if (!el) return { dim: false, out: false, inn: false, sawSubOne: false };
+      if (!el) return { minOp: 1, sawSubOne: false };
       const start = Date.now();
+      let minOp = 1;
       let sawSubOne = false;
-      let dim = false, out = false, inn = false;
       while (Date.now() - start < 3000) {
         const op = parseFloat(getComputedStyle(el).opacity);
+        if (op < minOp) minOp = op;
         if (op < 0.99) sawSubOne = true;
-        if (el.classList.contains('home-cat-dim')) dim = true;
-        if (el.classList.contains('home-cat-fade-out')) out = true;
-        if (el.classList.contains('home-cat-fade-in')) inn = true;
         await new Promise((r) => setTimeout(r, 30));
       }
-      return { dim, out, inn, sawSubOne };
+      return { minOp, sawSubOne };
     });
 
-    // 预期: 过渡期间必然出现「内容变暗/透明」中间态（等待期 0.55 或淡出/淡入中间值）
+    // 预期: 过渡期间出现降暗中间态（非瞬间替换）
     expect(observed.sawSubOne, '应观察到 opacity<1 的过渡中间态（非瞬间替换）').toBe(true);
-    // 淡出类与淡入类至少出现其一（快源就绪可能让 fade-out 一闪而过，但 fade-in 必然可采样）
-    expect(observed.out || observed.inn, '应出现 fade-out 或 fade-in 过渡类').toBe(true);
+    // 核心: 全程无透明空窗——最低 opacity 不低于 0.5（dim 0.55 的过渡下界）
+    expect(observed.minOp, '内容不应淡出到透明（无空窗）').toBeGreaterThanOrEqual(0.5);
 
-    // 终态: 过渡完成 → 内容恢复全不透明、过渡类全部移除、侧边栏高亮「电影」
+    // 终态: 过渡完成 → 内容恢复全不透明、降暗类移除、侧边栏高亮「电影」
     await expect
       .poll(
         async () =>
@@ -610,15 +609,13 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
             return {
               op: parseFloat(getComputedStyle(el).opacity),
               dim: el.classList.contains('home-cat-dim'),
-              out: el.classList.contains('home-cat-fade-out'),
-              inn: el.classList.contains('home-cat-fade-in'),
             };
           }),
         { timeout: 5000, intervals: [100] },
       )
-      .toEqual({ op: 1, dim: false, out: false, inn: false });
+      .toEqual({ op: 1, dim: false });
     await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
-    console.log('✅ HOME-060 通过: 分类切换经淡出/淡入过渡，无瞬间替换');
+    console.log('✅ HOME-060 通过: 分类切换经暗态替换，无透明空窗');
   });
 
   test('HOME-061: 分类切换时 banner 主图平滑过渡（旧图垫底→新图就绪淡入→滞留层移除）', async ({ page }) => {
@@ -651,6 +648,60 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     // 终态: 仅单层 is-active，无滞留残留
     expect(await page.locator('.hero-banner__bg-layer').count()).toBe(1);
     console.log('✅ HOME-061 通过: 分类切换主图经「旧图垫底→新图淡入」过渡，无硬切');
+  });
+
+  test('HOME-062: 分类切换后自动轮播恢复正常（轮播回归）', async ({ page }) => {
+    // 前置: 首页数据就绪 + 先切一次分类再切回（触发主图切换过渡，验证轮播不被干扰）
+    await page.goto('/');
+    await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 15000 });
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+    await page.locator('.home-sidebar__item', { hasText: '首页' }).first().click();
+    // 等切换过渡完成（switchReady 恢复 + 滞留层清理）
+    await expect
+      .poll(async () => page.locator('.hero-banner__bg-layer--stale').count(), {
+        timeout: 5000,
+        intervals: [200],
+      })
+      .toBe(0);
+
+    const src1 = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+    // 等待超过一个轮播周期（5s）+ 余量：自动轮播应已切到下一张（20 个 mock 项不会切回同一张）
+    await page.waitForTimeout(6500);
+    const src2 = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+    expect(src2, '自动轮播应持续切换（不被分类切换重置回第一张）').not.toBe(src1);
+    // 悬停预览（displayIndex 变化的另一路径）同样不被重置逻辑干扰。
+    // 注意：src2 已是 items[1]（轮播切过 1 次），悬停 nth(2)（items[2]）验证
+    // 预览切到第 3 项（≠ items[1]），避开与 src2 撞车。
+    await page.locator('.hero-banner__thumb').nth(2).hover();
+    await page.waitForTimeout(300);
+    const previewSrc = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+    expect(previewSrc, '悬停缩略图应正常预览（不被重置回第一张）').not.toBe(src2);
+    console.log('✅ HOME-062 通过: 分类切换后自动轮播 + 悬停预览正常');
+  });
+
+  test('HOME-063: 分类切换时缩略图平滑过渡（无骨架跳变/重挂载）', async ({ page }) => {
+    // 前置: 桌面端，缩略图列就绪（首图已加载）
+    await page.goto('/');
+    await page.waitForSelector('.home-page__content', { timeout: 15000 });
+    await expect(page.locator('.hero-banner__thumbs .hero-banner__thumb-img').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.hero-banner__thumb-skeleton')).toHaveCount(0, { timeout: 10000 });
+
+    // 操作: 切「电影」分类 → 缩略图列不重挂载，HeroThumb 复用走「旧图保持→新图淡入」
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+
+    // 切换后 300ms（窗口内）骨架不得出现（旧图保持显示，无「骨架→图」跳变）
+    await page.waitForTimeout(300);
+    expect(
+      await page.locator('.hero-banner__thumb-skeleton').count(),
+      '切换后缩略图不应回退到骨架（应旧图保持 + 新图就绪淡入）',
+    ).toBe(0);
+    // 缩略图 img 持续存在（列未重挂载、未消失）
+    expect(await page.locator('.hero-banner__thumbs .hero-banner__thumb-img').count()).toBeGreaterThan(0);
+
+    // 终态: 侧边栏高亮新分类，缩略图列稳定
+    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
+    await expect(page.locator('.hero-banner__thumb-skeleton')).toHaveCount(0, { timeout: 5000 });
+    console.log('✅ HOME-063 通过: 分类切换缩略图平滑过渡，无骨架跳变');
   });
 });
 

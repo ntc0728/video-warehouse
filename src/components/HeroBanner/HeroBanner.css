@@ -308,7 +308,18 @@
   height: 100%;
   object-fit: cover;
   opacity: 1;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 缩略图换图交叉淡入（2026-08-13）：旧图垫底（--prev，DOM 先渲染）、
+   新图置 --switching（opacity 0）待加载，onLoad 后类移除 → opacity 0→1
+   走上方 transition 淡入；首帧挂载无切换类 → opacity 1 常显（原行为不变） */
+.hero-banner__thumb-img--prev {
+  opacity: 1;
+}
+
+.hero-banner__thumb-img--switching {
+  opacity: 0;
 }
 
 /* 骨架占位（shimmer）：覆盖整张缩略图，加载完成后随 is-loaded 移除。
