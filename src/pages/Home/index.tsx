@@ -64,6 +64,33 @@ export default function HomePage() {
   const categoryData = useHomeCategoryStore((s) => s.data[deferredCategory]);
   const isCategoryView = deferredCategory !== 'home';
 
+  // ── 分类切换 SWR 渲染层（根治切分类白屏闪烁，2026-08-13）──
+  // 核心：渲染层只展示「上一就绪分类」的内容，直到新分类数据就绪才切换，
+  // 页面不再出现「内容→整页骨架→内容」的两次硬切换（白屏闪烁根因）。
+  // 切换只由两个确定事件驱动（无超时 hack）：
+  //   ① 新分类数据就绪（hero/行有内容，或加载结束 = 失败终态）→ 原位替换内容
+  //   ② 等待期间旧内容保留 + 内容容器轻微降暗（home-cat-dim）作为加载反馈
+  // 骨架仅保留给「首页首次加载 / 某分类首次且无任何可展示内容」场景。
+  // 注意：渲染统一走 displayedCategory（展示中的分类），deferredCategory 仅驱动
+  // 「是否在等数据」的判断与数据预取/文档标题等紧急逻辑（见上方注释）。
+  const [displayedCategory, setDisplayedCategory] = useState<HomeCategoryKey>(deferredCategory);
+  const displayedData = useHomeCategoryStore((s) => s.data[displayedCategory]);
+  const isDisplayingCategory = displayedCategory !== 'home';
+  const catSwitching = deferredCategory !== displayedCategory;
+
+  useEffect(() => {
+    if (deferredCategory === displayedCategory) return;
+    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = 有内容或加载已结束（含失败终态）
+    const ready =
+      deferredCategory === 'home' ||
+      (categoryData != null &&
+        (categoryData.hero.length > 0 ||
+          categoryData.rows.some((r) => r.items.length > 0) ||
+          !categoryData.loading));
+    if (!ready) return;
+    setDisplayedCategory(deferredCategory);
+  }, [deferredCategory, displayedCategory, categoryData]);
+
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
   // 用源值 activeCategory，确保点击类目即刻开始请求，不被 deferred 拖慢。
   useEffect(() => {
@@ -390,17 +417,18 @@ export default function HomePage() {
   );
 
   if (isInitialLoading && !isCategoryView) return homeSkeleton;
-  if (isCategoryView && !categoryData) return homeSkeleton;
+  // 分类视图且无任何可展示内容（首次进入且无缓存）→ 骨架；其余情况由 SWR 渲染层保留旧内容
+  if (isDisplayingCategory && !displayedData) return homeSkeleton;
 
-  // ── 根据 activeCategory 计算 Hero + 7 行（结构固定，内容切换） ──
-  const heroItems = isCategoryView ? (categoryData!.hero ?? []) : trending;
+  // ── 根据 displayedCategory 计算 Hero + 7 行（结构固定，内容切换） ──
+  const heroItems = isDisplayingCategory ? (displayedData?.hero ?? []) : trending;
 
-  const rowDefs = isCategoryView
-    ? CATEGORY_CONFIG[deferredCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
+  const rowDefs = isDisplayingCategory
+    ? CATEGORY_CONFIG[displayedCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
         title: r.title,
-        items: categoryData!.rows[i]?.items ?? [],
-        isLoading: categoryData!.rows[i]?.loading ?? true,
-        error: categoryData!.rows[i]?.error ?? null,
+        items: displayedData?.rows[i]?.items ?? [],
+        isLoading: displayedData?.rows[i]?.loading ?? true,
+        error: displayedData?.rows[i]?.error ?? null,
       }))
     : [
         { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
@@ -434,11 +462,11 @@ export default function HomePage() {
       */}
       <HeroBanner
         items={heroItems}
-        categoryId={isCategoryView ? String(deferredCategory) : 'home'}
+        categoryId={isDisplayingCategory ? String(displayedCategory) : 'home'}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
-        loading={isCategoryView ? (categoryData?.heroLoading ?? true) : loading.trending}
+        loading={isDisplayingCategory ? (displayedData?.heroLoading ?? true) : loading.trending}
       />
       {/*
         页面进入动画（page-transition-enter）只作用于「非 Hero 内容」包装层：
@@ -448,13 +476,13 @@ export default function HomePage() {
         同时下方内容仍保有进入淡入上移动画；Keep-Alive 二次进入由 AppLayout 回放机制
         递归命中本层 .page-transition-enter 重放，HeroBanner 不受影响、保持静止。
       */}
-      <div className="home-page__content page-transition-enter">
+      <div className={`home-page__content page-transition-enter${catSwitching ? ' home-cat-dim' : ''}`}>
         <CategoryQuickAccess
           onCategorySelect={handleCategorySelect}
           // 选中态高亮全端移除（点击分类立即跳转 browse，选中态停留无意义）
           activeCategory={null}
         />
-        {!isCategoryView && (userDataLoading || continueItems.length > 0) && (
+        {!isDisplayingCategory && (userDataLoading || continueItems.length > 0) && (
           <TMDBMovieRow
             title="继续观看"
             items={[]}

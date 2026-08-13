@@ -27,6 +27,14 @@
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
+  /* 分类切换 SWR 等待反馈（2026-08-13）：旧内容保留展示期间轻微降暗，
+     数据就绪后内容原位替换 + 亮度恢复过渡。仅 opacity、无 transform——
+     避免触发 HeroBanner GPU 合成层重绘闪烁（AGENTS.md 强约束）。 */
+  transition: opacity 0.24s var(--ease-standard);
+}
+
+.home-cat-dim {
+  opacity: 0.55;
 }
 
 /* ── Rows container ──────────────────────────────────── */
