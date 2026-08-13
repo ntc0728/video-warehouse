@@ -21,6 +21,7 @@ import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext'
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
+import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
@@ -179,6 +180,12 @@ export default function BrowsePage() {
       }
     }
   }, [searchMode, triggerSearch, filterValue.category, resetCMS]);
+
+  // [2026-08-13] 惰性 bootstrap video 场景：浏览页需要 video-sources.json（CMS 采集站配置）。
+  // 不再由 main.tsx 全局拉取，改为场景级幂等触发（bootstrapScene 每场景仅执行一次）。
+  useEffect(() => {
+    void useSourceManagerStore.getState().bootstrapScene('video');
+  }, []);
 
   useEffect(() => {
     if (location.pathname !== '/browse') return;

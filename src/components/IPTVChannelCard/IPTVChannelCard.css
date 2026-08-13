@@ -55,6 +55,33 @@
   opacity: 0.6;
 }
 
+/* [2026-08-13] 卡片出场动画改为「网格容器级 stagger」——与浏览/收藏/历史页
+   .video-card-grid > *:nth-child(n) 的阶梯入场完全一致（fadeInUp 0.4s，第 n 项
+   delay 递增 0.03s）。此前每张卡固定 0.012s delay 同时播、无阶梯感，与 video card
+   明显不一致；且曾用 reveal 机制（paused+is-revealed）导致首屏卡片透明冻结。
+   注意：nth-child 计数基于网格直接子项 .iptv-channel-card-wrap（content-visibility
+   元素），delay 作用在内部 .iptv-channel-card。 */
+
+/* 基础兜底 delay 0.39s：第 13+ 张卡（超过枚举）自动作为最后一批跟队入场，
+   任意列数都不会抢跑（与 .video-card-grid 兜底逻辑一致） */
+.iptv-channel-grid > * .iptv-channel-card.animate-fade-in-up {
+  animation-delay: 0.39s;
+}
+/* 网格直接子项 nth-child 阶梯（IPTV 页子项=wrap，收藏/历史页子项=record-card，
+   用通配符 + 后代 wrap 同时覆盖两种嵌套，与 .video-card-grid 阶梯一致） */
+.iptv-channel-grid > *:nth-child(1) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.03s; }
+.iptv-channel-grid > *:nth-child(2) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.06s; }
+.iptv-channel-grid > *:nth-child(3) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.09s; }
+.iptv-channel-grid > *:nth-child(4) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.12s; }
+.iptv-channel-grid > *:nth-child(5) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.15s; }
+.iptv-channel-grid > *:nth-child(6) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.18s; }
+.iptv-channel-grid > *:nth-child(7) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.21s; }
+.iptv-channel-grid > *:nth-child(8) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.24s; }
+.iptv-channel-grid > *:nth-child(9) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.27s; }
+.iptv-channel-grid > *:nth-child(10) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.30s; }
+.iptv-channel-grid > *:nth-child(11) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.33s; }
+.iptv-channel-grid > *:nth-child(12) .iptv-channel-card.animate-fade-in-up { animation-delay: 0.36s; }
+
 /* Card body — vertical stack */
 .iptv-channel-card .card-body {
   display: flex;

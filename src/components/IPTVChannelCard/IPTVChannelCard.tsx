@@ -86,10 +86,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     setTimeout(() => setIsAnimating(false), 450);
   }, [toggleFavorite, channel.id]);
 
-  // 固定入场延迟：所有卡片共享同一个 delay,消除"靠后批次 index 累加导致
-  // 末尾卡片等数百毫秒才淡入"的问题。首屏卡片几乎同时上移淡入,整体节奏
-  // 由 fadeInUp (0.4s) 提供（与收藏页视频 tab 的卡片出场动画一致）。
-  const staggerDelay = { animationDelay: '0.012s' };
+  // [2026-08-13] 入场动画统一由网格容器 stagger 控制（.iptv-channel-grid > *:nth-child(n)，
+  // 与收藏页/浏览页 .video-card-grid 的阶梯入场完全一致），卡片自身不再写死 delay。
   const titleRef = useRef<HTMLDivElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
   useEffect(() => {
@@ -173,7 +171,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
       {batchMode ? (
         <div
           className={cardClassName}
-          style={staggerDelay}
           aria-label={`播放 ${channel.name}`}
           tabIndex={isTV ? 0 : undefined}
         >
@@ -184,7 +181,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           to={to}
           state={{ from: location.pathname }}
           className={cardClassName}
-          style={staggerDelay}
           onClick={handleClick}
           aria-label={`播放 ${channel.name}`}
           tabIndex={isTV ? 0 : undefined}

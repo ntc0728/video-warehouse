@@ -132,8 +132,12 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
 async function discoverBoth(
   filters: Partial<TMDBFilterOptions>,
   page = 1,
+  options: { signal?: AbortSignal } = {},
 ): Promise<TMDBVideoItem[]> {
-  const [m, t] = await Promise.all([discoverMovie(filters, page), discoverTV(filters, page)]);
+  const [m, t] = await Promise.all([
+    discoverMovie(filters, page, options),
+    discoverTV(filters, page, options),
+  ]);
   return dedupeById([
     ...m.results.map(mapMovie),
     ...t.results.map(mapTV),
@@ -145,28 +149,28 @@ const YEAR = new Date().getFullYear();
 
 export interface CategoryRowDef {
   title: string;
-  fetch: () => Promise<TMDBVideoItem[]>;
+  fetch: (signal?: AbortSignal) => Promise<TMDBVideoItem[]>;
 }
 
 export interface HomeCategoryDef {
   key: Exclude<HomeCategoryKey, 'home'>;
   label: string;
-  hero: () => Promise<TMDBVideoItem[]>;
+  hero: (signal?: AbortSignal) => Promise<TMDBVideoItem[]>;
   rows: CategoryRowDef[];
 }
 
 // ── 共享 fetch 函数（hero 与首行复用同一引用，dedupFetch 通过函数引用去重） ──
-const popularMoviesMapped = async () => (await fetchPopularMovies()).results.map(mapMovie);
-const popularTVMapped = async () => (await fetchPopularTV()).results.map(mapTV);
-const topRatedMoviesMapped = async () => (await fetchTopRatedMovies()).results.map(mapMovie);
-const topRatedTVMapped = async () => (await fetchTopRatedTV()).results.map(mapTV);
+const popularMoviesMapped = async (signal?: AbortSignal) => (await fetchPopularMovies({ signal })).results.map(mapMovie);
+const popularTVMapped = async (signal?: AbortSignal) => (await fetchPopularTV({ signal })).results.map(mapTV);
+const topRatedMoviesMapped = async (signal?: AbortSignal) => (await fetchTopRatedMovies(1, { signal })).results.map(mapMovie);
+const topRatedTVMapped = async (signal?: AbortSignal) => (await fetchTopRatedTV(1, { signal })).results.map(mapTV);
 
 // 综艺：hero 与"热门综艺"共享
-const varietyPopular = async () => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'popularity' })).results.map(mapTV);
+const varietyPopular = async (signal?: AbortSignal) => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'popularity' }, 1, { signal })).results.map(mapTV);
 // 动漫：hero 与"热门动漫"共享
-const animePopular = async () => discoverBoth({ genreIds: [16], sortBy: 'popularity' });
+const animePopular = async (signal?: AbortSignal) => discoverBoth({ genreIds: [16], sortBy: 'popularity' }, 1, { signal });
 // 纪录片：hero 与"热门纪录片"共享
-const documentaryPopular = async () => discoverBoth({ genreIds: [99], sortBy: 'popularity' });
+const documentaryPopular = async (signal?: AbortSignal) => discoverBoth({ genreIds: [99], sortBy: 'popularity' }, 1, { signal });
 
 /** 内容类目配置（不含 'home'，home 由 useTMDBStore 提供） */
 export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCategoryDef> = {
@@ -175,13 +179,13 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
     label: '电影',
     hero: popularMoviesMapped,
     rows: [
-      { title: '正在热映', fetch: async () => (await fetchNowPlaying()).results.map(mapMovie) },
+      { title: '正在热映', fetch: async (s) => (await fetchNowPlaying({ signal: s })).results.map(mapMovie) },
       { title: '热门电影', fetch: popularMoviesMapped },
-      { title: '高分电影', fetch: async () => (await fetchTopRatedMovies()).results.map(mapMovie) },
-      { title: '即将上映', fetch: async () => (await fetchUpcomingMovies()).results.map(mapMovie) },
-      { title: '动作大片', fetch: async () => (await discoverMovie({ genreIds: [28] })).results.map(mapMovie) },
-      { title: '喜剧电影', fetch: async () => (await discoverMovie({ genreIds: [35] })).results.map(mapMovie) },
-      { title: '华语佳作', fetch: async () => (await discoverMovie({ originCountry: 'CN' })).results.map(mapMovie) },
+      { title: '高分电影', fetch: async (s) => (await fetchTopRatedMovies(1, { signal: s })).results.map(mapMovie) },
+      { title: '即将上映', fetch: async (s) => (await fetchUpcomingMovies({ signal: s })).results.map(mapMovie) },
+      { title: '动作大片', fetch: async (s) => (await discoverMovie({ genreIds: [28] }, 1, { signal: s })).results.map(mapMovie) },
+      { title: '喜剧电影', fetch: async (s) => (await discoverMovie({ genreIds: [35] }, 1, { signal: s })).results.map(mapMovie) },
+      { title: '华语佳作', fetch: async (s) => (await discoverMovie({ originCountry: 'CN' }, 1, { signal: s })).results.map(mapMovie) },
     ],
   },
 
@@ -191,12 +195,12 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
     hero: popularTVMapped,
     rows: [
       { title: '热门剧集', fetch: popularTVMapped },
-      { title: '高分剧集', fetch: async () => (await fetchTopRatedTV()).results.map(mapTV) },
-      { title: '今日播出', fetch: async () => (await fetchAiringTodayTV()).results.map(mapTV) },
-      { title: '美剧推荐', fetch: async () => (await discoverTV({ originCountry: 'US' })).results.map(mapTV) },
-      { title: '韩剧推荐', fetch: async () => (await discoverTV({ originCountry: 'KR' })).results.map(mapTV) },
-      { title: '国产剧', fetch: async () => (await discoverTV({ originCountry: 'CN' })).results.map(mapTV) },
-      { title: '犯罪悬疑', fetch: async () => (await discoverTV({ genreIds: [80] })).results.map(mapTV) },
+      { title: '高分剧集', fetch: async (s) => (await fetchTopRatedTV(1, { signal: s })).results.map(mapTV) },
+      { title: '今日播出', fetch: async (s) => (await fetchAiringTodayTV({ signal: s })).results.map(mapTV) },
+      { title: '美剧推荐', fetch: async (s) => (await discoverTV({ originCountry: 'US' }, 1, { signal: s })).results.map(mapTV) },
+      { title: '韩剧推荐', fetch: async (s) => (await discoverTV({ originCountry: 'KR' }, 1, { signal: s })).results.map(mapTV) },
+      { title: '国产剧', fetch: async (s) => (await discoverTV({ originCountry: 'CN' }, 1, { signal: s })).results.map(mapTV) },
+      { title: '犯罪悬疑', fetch: async (s) => (await discoverTV({ genreIds: [80] }, 1, { signal: s })).results.map(mapTV) },
     ],
   },
 
@@ -206,12 +210,14 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
     hero: varietyPopular,
     rows: [
       { title: '热门综艺', fetch: varietyPopular },
-      { title: '高分综艺', fetch: async () => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'vote_average' })).results.map(mapTV) },
-      { title: '脱口秀', fetch: async () => (await discoverTV({ genreIds: [10767] })).results.map(mapTV) },
-      { title: '真人秀', fetch: async () => (await discoverTV({ genreIds: [10764] })).results.map(mapTV) },
-      { title: '国内综艺', fetch: async () => (await discoverTV({ genreIds: [10764, 10767], originCountry: 'CN' })).results.map(mapTV) },
-      { title: '欧美综艺', fetch: async () => (await discoverTV({ genreIds: [10764, 10767], originCountry: 'US' })).results.map(mapTV) },
-      { title: '最新综艺', fetch: async () => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'release_date' })).results.map(mapTV) },
+      { title: '高分综艺', fetch: async (s) => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'vote_average' }, 1, { signal: s })).results.map(mapTV) },
+      { title: '脱口秀', fetch: async (s) => (await discoverTV({ genreIds: [10767] }, 1, { signal: s })).results.map(mapTV) },
+      { title: '真人秀', fetch: async (s) => (await discoverTV({ genreIds: [10764] }, 1, { signal: s })).results.map(mapTV) },
+      // [2026-08-13] TMDB TV 综艺类型（10764/10767）在 CN/US 区域无条目（实测 total=0），
+      // 去掉 originCountry 过滤（无国家过滤返回 9 条）避免整行空白。
+      { title: '国内综艺', fetch: async (s) => (await discoverTV({ genreIds: [10764, 10767] }, 1, { signal: s })).results.map(mapTV) },
+      { title: '欧美综艺', fetch: async (s) => (await discoverTV({ genreIds: [10764, 10767] }, 1, { signal: s })).results.map(mapTV) },
+      { title: '最新综艺', fetch: async (s) => (await discoverTV({ genreIds: [10764, 10767], sortBy: 'release_date' }, 1, { signal: s })).results.map(mapTV) },
     ],
   },
 
@@ -221,11 +227,11 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
     hero: animePopular,
     rows: [
       { title: '热门动漫', fetch: animePopular },
-      { title: '高分动漫', fetch: async () => discoverBoth({ genreIds: [16], sortBy: 'vote_average' }) },
-      { title: '日本动漫', fetch: async () => discoverBoth({ genreIds: [16], originCountry: 'JP' }) },
-      { title: '国产动漫', fetch: async () => discoverBoth({ genreIds: [16], originCountry: 'CN' }) },
-      { title: '欧美动漫', fetch: async () => discoverBoth({ genreIds: [16], originCountry: 'US' }) },
-      { title: '最新动漫', fetch: async () => discoverBoth({ genreIds: [16], sortBy: 'release_date' }) },
+      { title: '高分动漫', fetch: async (s) => discoverBoth({ genreIds: [16], sortBy: 'vote_average' }, 1, { signal: s }) },
+      { title: '日本动漫', fetch: async (s) => discoverBoth({ genreIds: [16], originCountry: 'JP' }, 1, { signal: s }) },
+      { title: '国产动漫', fetch: async (s) => discoverBoth({ genreIds: [16], originCountry: 'CN' }, 1, { signal: s }) },
+      { title: '欧美动漫', fetch: async (s) => discoverBoth({ genreIds: [16], originCountry: 'US' }, 1, { signal: s }) },
+      { title: '最新动漫', fetch: async (s) => discoverBoth({ genreIds: [16], sortBy: 'release_date' }, 1, { signal: s }) },
     ],
   },
 
@@ -235,33 +241,33 @@ export const CATEGORY_CONFIG: Record<Exclude<HomeCategoryKey, 'home'>, HomeCateg
     hero: documentaryPopular,
     rows: [
       { title: '热门纪录片', fetch: documentaryPopular },
-      { title: '高分纪录片', fetch: async () => discoverBoth({ genreIds: [99], sortBy: 'vote_average' }) },
-      { title: '国产纪录片', fetch: async () => discoverBoth({ genreIds: [99], originCountry: 'CN' }) },
-      { title: '欧美纪录片', fetch: async () => discoverBoth({ genreIds: [99], originCountry: 'US' }) },
-      { title: '日本纪录片', fetch: async () => discoverBoth({ genreIds: [99], originCountry: 'JP' }) },
-      { title: '自然地理', fetch: async () => discoverBoth({ genreIds: [99], sortBy: 'vote_average', originCountry: 'US' }) },
-      { title: '最新纪录片', fetch: async () => discoverBoth({ genreIds: [99], sortBy: 'release_date' }) },
+      { title: '高分纪录片', fetch: async (s) => discoverBoth({ genreIds: [99], sortBy: 'vote_average' }, 1, { signal: s }) },
+      { title: '国产纪录片', fetch: async (s) => discoverBoth({ genreIds: [99], originCountry: 'CN' }, 1, { signal: s }) },
+      { title: '欧美纪录片', fetch: async (s) => discoverBoth({ genreIds: [99], originCountry: 'US' }, 1, { signal: s }) },
+      { title: '日本纪录片', fetch: async (s) => discoverBoth({ genreIds: [99], originCountry: 'JP' }, 1, { signal: s }) },
+      { title: '自然地理', fetch: async (s) => discoverBoth({ genreIds: [99], sortBy: 'vote_average', originCountry: 'US' }, 1, { signal: s }) },
+      { title: '最新纪录片', fetch: async (s) => discoverBoth({ genreIds: [99], sortBy: 'release_date' }, 1, { signal: s }) },
     ],
   },
 
   top: {
     key: 'top',
     label: '排行榜',
-    hero: async () => {
+    hero: async (signal) => {
       // 复用共享函数，dedupFetch 会自动去重
-      const [movies, tv] = await Promise.all([topRatedMoviesMapped(), topRatedTVMapped()]);
+      const [movies, tv] = await Promise.all([topRatedMoviesMapped(signal), topRatedTVMapped(signal)]);
       return dedupeById([...movies, ...tv]).sort((a, b) => (b.voteAverage ?? 0) - (a.voteAverage ?? 0));
     },
     rows: [
       { title: '电影口碑榜', fetch: topRatedMoviesMapped },
       { title: '剧集口碑榜', fetch: topRatedTVMapped },
-      { title: '本周最热', fetch: async () => (await fetchTrending('all', 'week')).results
+      { title: '本周最热', fetch: async (s) => (await fetchTrending('all', 'week', { signal: s })).results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .map(mapTrending) },
       { title: '热门电影榜', fetch: popularMoviesMapped },
       { title: '热门剧集榜', fetch: popularTVMapped },
-      { title: '华语高分榜', fetch: async () => discoverBoth({ originCountry: 'CN', sortBy: 'vote_average' }) },
-      { title: '年度必看', fetch: async () => discoverBoth({ sortBy: 'vote_average', releaseYear: YEAR }) },
+      { title: '华语高分榜', fetch: async (s) => discoverBoth({ originCountry: 'CN', sortBy: 'vote_average' }, 1, { signal: s }) },
+      { title: '年度必看', fetch: async (s) => discoverBoth({ sortBy: 'vote_average', releaseYear: YEAR }, 1, { signal: s }) },
     ],
   },
 };

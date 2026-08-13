@@ -235,9 +235,12 @@ export default function HistoryPage() {
     return () => { store.clearPageSearch(); };
   }, [search, setSearch, activeTab, location.pathname]);
 
-  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）
+  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）。
+  // [2026-08-13] 守卫：仅当 store 中无频道数据时才触发。原实现每次切到 IPTV tab 都调
+  // loadFromCache()——即使数据已在内存，也会重新 setState channels → 联动 IPTV 页
+  // （Keep-Alive 常驻，订阅同一 useIPTVStore）在 display:none 下整批重渲染 = 卡顿来源之一。
   useEffect(() => {
-    if (activeTab === 'iptv') {
+    if (activeTab === 'iptv' && useIPTVStore.getState().channels.length === 0) {
       useIPTVStore.getState().loadFromCache();
     }
   }, [activeTab]);
@@ -246,13 +249,23 @@ export default function HistoryPage() {
     setVisibleCount(PAGE_SIZE);
   }, [activeTab, searchByTab.video, searchByTab.iptv, statusFilter]);
 
-  /** 判断历史视频的观看状态 */
-  const getVideoWatchStatus = useCallback((videoId: string): VideoStatus => {
-    const records = watchHistory.filter(h => h.videoId === videoId);
-    if (records.length === 0) return 'unfinished';
-    const latest = records.reduce((a, b) => a.updatedAt > b.updatedAt ? a : b);
-    if (latest.duration > 0 && latest.progress >= latest.duration * 0.9) return 'finished';
-    return 'unfinished';
+  /** [2026-08-13] 每个 videoId 的最新记录观看状态，一次性构建（O(n)）。
+   *  原 getVideoWatchStatus 对每个视频 filter 整个 watchHistory（O(n²)），且
+   *  historyVideos / statusCounts 各遍历一遍——历史量大时明显卡顿。改为 Map 预计算。 */
+  const statusMap = useMemo(() => {
+    const map = new Map<string, VideoStatus>();
+    const latestById = new Map<string, HistoryRecord>();
+    for (const h of watchHistory) {
+      const cur = latestById.get(h.videoId);
+      if (!cur || h.updatedAt > cur.updatedAt) latestById.set(h.videoId, h);
+    }
+    for (const latest of latestById.values()) {
+      map.set(
+        latest.videoId,
+        latest.duration > 0 && latest.progress >= latest.duration * 0.9 ? 'finished' : 'unfinished',
+      );
+    }
+    return map;
   }, [watchHistory]);
 
   const historyVideos = useMemo<HistoryVideoItem[]>(() => {
@@ -281,17 +294,14 @@ export default function HistoryPage() {
       });
     if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
     if (statusFilter !== 'all') {
-      list = list.filter((v) => {
-        const status = getVideoWatchStatus(v.id);
-        return status === statusFilter;
-      });
+      list = list.filter((v) => statusMap.get(v.id) === statusFilter);
     }
     return list;
-  }, [watchHistory, searchByTab.video, statusFilter, getVideoWatchStatus]);
+  }, [watchHistory, searchByTab.video, statusFilter, statusMap]);
 
   /** 状态标签的计数（在状态筛选之前） */
   const statusCounts = useMemo(() => {
-    // 按 videoId 去重，与 historyVideos 保持一致
+    // 按 videoId 去重，与 historyVideos 保持一致；状态直接查 statusMap（O(1)）
     const seenVideo = new Set<string>();
     let list = [...watchHistory]
       .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -300,7 +310,7 @@ export default function HistoryPage() {
         seenVideo.add(h.videoId);
         return true;
       })
-      .map(h => ({ id: h.videoId, title: h.title, status: getVideoWatchStatus(h.videoId) }));
+      .map(h => ({ id: h.videoId, title: h.title, status: statusMap.get(h.videoId) ?? 'unfinished' }));
     if (searchByTab.video.trim()) {
       const kw = searchByTab.video.toLowerCase();
       list = list.filter((h) => h.title?.toLowerCase().includes(kw));
@@ -308,7 +318,7 @@ export default function HistoryPage() {
     const counts: Record<VideoStatus, number> = { all: list.length, unfinished: 0, finished: 0 };
     list.forEach(h => { counts[h.status]++; });
     return counts;
-  }, [watchHistory, searchByTab.video, getVideoWatchStatus]);
+  }, [watchHistory, searchByTab.video, statusMap]);
 
   const iptvHistory = useMemo<HistoryChannelItem[]>(() => {
     // 按 channelId 去重：同一频道只保留最新一条

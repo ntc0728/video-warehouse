@@ -15,6 +15,7 @@ import { useSmartBack, NAV_FALLBACK_HOME } from '@/lib/navigation';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
 import { useSettingsState } from './hooks/useSettingsState';
+import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import SettingsTabBar from './SettingsTabBar';
 import SettingsMenuList, { filterSettingsItems } from './SettingsMenuList';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
@@ -41,6 +42,11 @@ export default function SettingsPage() {
   // 9.1：桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
   const isDesktop = !useIsMobileLayout();
   const pageRef = useRef<HTMLDivElement>(null);
+  // [2026-08-13] 惰性全量 bootstrap：设置页源管理需要 video/iptv/epg 三类源。
+  // 不再由 main.tsx 全局拉取，改为设置页挂载时幂等触发（各场景 guard 每会话仅一次）。
+  useEffect(() => {
+    void useSourceManagerStore.getState().bootstrap();
+  }, []);
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
 
