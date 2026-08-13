@@ -14,9 +14,9 @@ import { useDocumentTitle } from '@/hooks';
 import { useSmartBack, NAV_FALLBACK_HOME } from '@/lib/navigation';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
+import SettingsTabBar, { SETTINGS_TABS } from './SettingsTabBar';
 import { useSettingsState } from './hooks/useSettingsState';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
-import SettingsTabBar from './SettingsTabBar';
 import SettingsMenuList, { filterSettingsItems } from './SettingsMenuList';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import SettingsSubPage from './SettingsSubPage';
@@ -49,6 +49,19 @@ export default function SettingsPage() {
   }, []);
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
+  // 桌面端 tab 常驻（2026-08-13）：访问过的 tab 保持挂载、仅 display 切换可见性。
+  // 替代原 key={activeTab} 重挂载方案——重挂载触发「高度 0 突变 / scrollTop 钳位 /
+  // 重挂载动画」抖动链（切 tab 页面抖动的根因之一）；副作用幂等（各 tab 的
+  // bootstrap 均有模块级 guard），未访问过的 tab 不挂载、不提前执行副作用。
+  const [visitedTabs, setVisitedTabs] = useState<Set<SettingsTabKey>>(() => new Set([activeTab]));
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
 
   const state = useSettingsState();
   const { appearance, video, playback, iptv, about, modals } = state;
@@ -120,8 +133,8 @@ export default function SettingsPage() {
     }
   }, [location.search, isDesktop]);
 
-  const renderContent = () => {
-    switch (activeTab) {
+  const renderTab = (tab: SettingsTabKey) => {
+    switch (tab) {
       case 'appearance':
         return <AppearanceTab theme={appearance.theme} setTheme={appearance.setTheme} skin={appearance.skin} setSkin={appearance.setSkin} tvMode={appearance.tvMode} setTvMode={appearance.setTvMode} tvOverscan={appearance.tvOverscan} setTvOverscan={appearance.setTvOverscan} />;
       case 'video':
@@ -166,7 +179,7 @@ export default function SettingsPage() {
     <div ref={pageRef} className="page-padding settings-page page-transition-enter">
       {mobileSubPage ? (
         <SettingsSubPage key={mobileSubPage} tab={mobileSubPage} onBack={handleSubPageBack}>
-          {renderContent()}
+          {renderTab(mobileSubPage)}
         </SettingsSubPage>
       ) : isDesktop ? (
         <div className="settings-desktop-card">
@@ -178,13 +191,27 @@ export default function SettingsPage() {
             </button>
             <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
           </div>
-          {/* key=activeTab：切换 tab 时整体重挂载，触发进入动画；section 仍是 .settings-content 直接子级，桌面布局选择器不受影响 */}
-          <div key={activeTab} className="settings-content settings-content--animate">
-            {filteredItems.length === 0 ? (
-              <div className="settings-search-empty">未找到匹配的设置项</div>
-            ) : (
-              renderContent()
-            )}
+          {/* 内容区：访问过的 tab 常驻挂载、display 切换可见性（不再 key 重挂载）。
+              激活 pane 播放纯 opacity 淡入（.settings-content__pane--active 类触发）。 */}
+          <div className="settings-content">
+            {SETTINGS_TABS.map((tab) => {
+              if (!visitedTabs.has(tab.key)) return null;
+              const isActive = activeTab === tab.key;
+              return (
+                <div
+                  key={tab.key}
+                  data-tab={tab.key}
+                  className={`settings-content__pane${isActive ? ' settings-content__pane--active' : ''}`}
+                  style={{ display: isActive ? undefined : 'none' }}
+                >
+                  {isActive && filteredItems.length === 0 ? (
+                    <div className="settings-search-empty">未找到匹配的设置项</div>
+                  ) : (
+                    renderTab(tab.key)
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
