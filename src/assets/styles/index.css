@@ -849,6 +849,16 @@ main {
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
 .record-card {
   position: relative;
+  /* [2026-08-13] 离屏卡片跳过布局与绘制：收藏/历史页 Keep-Alive 常驻挂载，
+     长列表可达数百卡；从 display:none 切回 display:contents 时全部卡片同帧
+     layout+paint 导致进入页面明显卡顿。content-visibility:auto 让不在视口的
+     卡片跳过布局/绘制，auto 关键字记住上次真实高度避免滚动条跳动。
+     ★ 与 IPTV 卡片 wrap（IPTVChannelCard.css）策略一致。
+     注意：仅可见卡片参与渲染，滚动进入视口的 VideoCard 入场动画（cardFadeIn）
+     可能被跳过（与 IPTV 卡片同款现象，IPTV 卡入场动画已收敛为网格容器级 stagger，
+     容器挂载即播，不依赖卡片自身渲染时机）。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
   transition: transform 0.25s var(--ease-standard);
 }
 

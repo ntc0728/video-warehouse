@@ -55,11 +55,31 @@ const typeLabels: Record<string, string> = {
 };
 
 /**
- * 封面 TMDB 搜索兜底缓存：title -> 海报 URL（'' 表示已搜索过但无结果/失败）。
+ * 封面 TMDB 搜索兜底缓存：title -> { url, failedAt? }
+ * - url：海报 URL；'' 表示「已搜索过」。
+ * - failedAt：仅当搜索「失败」（网络/超时）时写入时间戳；成功但无 poster_path 不写
+ *   （确定无海报，永不重试）。
+ * 冷却期（FALLBACK_RETRY_MS）内失败不重试，过冷却期放行重试——避免「一次失败永久占位」。
  * CMS 源 vod_pic 常缺失，封面为空的卡片用标题向 TMDB 搜海报兜底（避免首字母占位）。
- * 缓存避免同一标题（多卡片）重复请求。
  */
-const POSTER_FALLBACK_CACHE = new Map<string, string>();
+const POSTER_FALLBACK_CACHE = new Map<string, { url: string; failedAt?: number }>();
+/** 请求级去重：同一 title 的并发搜索只发一次（模块级，跨卡片共享） */
+const POSTER_FALLBACK_INFLIGHT = new Map<string, Promise<string>>();
+/** 搜索失败后允许重试的冷却时间 */
+const FALLBACK_RETRY_MS = 10 * 60 * 1000;
+
+/**
+ * 读取封面兜底缓存。
+ * @returns { url, retryable } —— retryable=true 表示应放行重新搜索
+ */
+function readPosterFallback(title: string): { url: string; retryable: boolean } {
+  const c = POSTER_FALLBACK_CACHE.get(title);
+  if (!c) return { url: '', retryable: true };
+  if (c.url !== '') return { url: c.url, retryable: false };
+  // url === ''：区分「确定无结果」与「请求失败（冷却中）」
+  if (!c.failedAt) return { url: '', retryable: false };
+  return { url: '', retryable: Date.now() - c.failedAt >= FALLBACK_RETRY_MS };
+}
 
 const VideoCard = memo(function VideoCard({
   video,
@@ -95,30 +115,45 @@ const VideoCard = memo(function VideoCard({
   // ── 封面 TMDB 搜索兜底（CMS 源 vod_pic 缺失时） ──
   // 仅竖版卡片、video.cover 为空且已配置 token 时启用；横版用 backdrop，不参与。
   const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
-  const [fallbackPoster, setFallbackPoster] = useState(() =>
-    video.cover ? '' : (POSTER_FALLBACK_CACHE.get(video.title) ?? ''),
-  );
+  const [fallbackPoster, setFallbackPoster] = useState(() => {
+    if (video.cover) return '';
+    const c = POSTER_FALLBACK_CACHE.get(video.title);
+    return c && c.url !== '' ? c.url : '';
+  });
 
   useEffect(() => {
     if (video.cover || fallbackPoster || !hasToken) return;
-    const cached = POSTER_FALLBACK_CACHE.get(video.title);
-    if (cached !== undefined) {
-      setFallbackPoster(cached);
+    const hit = readPosterFallback(video.title);
+    if (!hit.retryable) {
+      setFallbackPoster(hit.url);
       return;
     }
     let cancelled = false;
-    searchMulti(video.title)
-      .then((res) => {
-        const hit = res.results.find(
-          (r) => (r.media_type === 'movie' || r.media_type === 'tv') && Boolean(r.poster_path),
-        );
-        const url = hit?.poster_path ? (buildImageUrl(hit.poster_path, 'w342') || '') : '';
-        POSTER_FALLBACK_CACHE.set(video.title, url);
-        if (!cancelled) setFallbackPoster(url);
-      })
-      .catch(() => {
-        POSTER_FALLBACK_CACHE.set(video.title, '');
-      });
+    // 请求级去重：同一 title 的并发搜索只发一次（切分类瞬间多张缺封面卡片共享同一请求）
+    let p = POSTER_FALLBACK_INFLIGHT.get(video.title);
+    if (!p) {
+      p = searchMulti(video.title)
+        .then((res) => {
+          const h = res.results.find(
+            (r) => (r.media_type === 'movie' || r.media_type === 'tv') && Boolean(r.poster_path),
+          );
+          const url = h?.poster_path ? (buildImageUrl(h.poster_path, 'w342') || '') : '';
+          POSTER_FALLBACK_CACHE.set(video.title, { url });
+          return url;
+        })
+        .catch(() => {
+          // 失败：带失败时间戳，冷却后允许重试
+          POSTER_FALLBACK_CACHE.set(video.title, { url: '', failedAt: Date.now() });
+          return '';
+        })
+        .finally(() => {
+          POSTER_FALLBACK_INFLIGHT.delete(video.title);
+        });
+      POSTER_FALLBACK_INFLIGHT.set(video.title, p);
+    }
+    p.then((url) => {
+      if (!cancelled) setFallbackPoster(url);
+    });
     return () => {
       cancelled = true;
     };

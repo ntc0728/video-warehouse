@@ -14,6 +14,7 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
+import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { getEPGCacheTime, fetchAndParseEPG, buildEPGChannelIndex } from '@/services/epgService';
 import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -130,11 +131,18 @@ export default function IPTVPage() {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
   }, [searchKeyword, selectedGroup, saveState]);
 
-  // 优先从 IndexedDB 缓存加载（静默，不显示加载态）；缓存未命中时走网络请求
+  // [2026-08-13] 惰性 bootstrap iptv/epg 场景：IPTV 页需要 iptv-sources.json（频道源）与
+  // epg-sources.json（节目单）。不再由 main.tsx 全局拉取，改为场景级幂等触发
+  // （bootstrapScene 每场景仅执行一次）。先注入源（syncConsumers 回写 aggregatorUrls /
+  // epgUrls），再加载频道缓存——避免新用户 aggregatorUrls 尚未注入就 refresh 空源。
   useEffect(() => {
-    useIPTVStore.getState().loadFromCache().then((loaded) => {
+    const sm = useSourceManagerStore.getState();
+    const run = async () => {
+      await Promise.all([sm.bootstrapScene('iptv'), sm.bootstrapScene('epg')]);
+      const loaded = await useIPTVStore.getState().loadFromCache();
       if (!loaded) refreshChannels();
-    });
+    };
+    void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

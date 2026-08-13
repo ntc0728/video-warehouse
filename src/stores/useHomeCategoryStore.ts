@@ -27,9 +27,6 @@ import { CATEGORY_CONFIG, type HomeCategoryKey } from '@/pages/Home/categoryConf
 const CACHE_TTL = 10 * 60 * 1000;
 /** localStorage 缓存有效期：24 小时（跨会话复用） */
 const LS_TTL = 24 * 60 * 60 * 1000;
-/** 骨架最小显示时间：200ms（防止快速加载时闪烁） */
-const SKELETON_MIN_MS = 200;
-
 /** sessionStorage key */
 const STORAGE_KEY = 'home-active-category';
 /** localStorage key 前缀 */
@@ -121,6 +118,14 @@ function errMsg(e: unknown): string {
 let _loadGeneration = 0;
 /** 骨架延迟显示定时器 */
 let _skeletonTimer: ReturnType<typeof setTimeout> | null = null;
+/** [2026-08-13] 切换分类时取消上一代所有 in-flight 请求（AbortController） */
+let _activeAbortController: AbortController | null = null;
+/** [2026-08-13] 模块级共享 fetch 缓存：已完成请求按 fetch 函数引用跨分类复用（接口竞价治理）。
+ * 只存「已完成」结果，避免共享 in-flight 请求被 abort 连坐导致新分类拿到空数据。 */
+const sharedFetchCache = new Map<
+  (signal?: AbortSignal) => Promise<TMDBVideoItem[]>,
+  { p: Promise<TMDBVideoItem[]>; at: number }
+>();
 
 function clearSkeletonTimer(): void {
   if (_skeletonTimer !== null) {
@@ -156,6 +161,7 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
     for (const key of Object.keys(CATEGORY_CONFIG)) {
       try { localStorage.removeItem(lsKey(key)); } catch { /* ignore */ }
     }
+    sharedFetchCache.clear();
     set({ data: {} });
   },
 
@@ -176,24 +182,23 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
         // 有 localStorage → 立即显示旧数据（无骨架），后台静默刷新
         set((s) => ({ data: { ...s.data, [c]: lsData } }));
       } else {
-        // 无任何缓存 → 延迟 200ms 显示骨架（防止快速加载时闪烁）
+        // [2026-08-13] 无任何缓存 → 立即写入骨架数据（不再延迟 200ms）：
+        // 之前延迟期间 categoryData 为 undefined，Home 页走 `return homeSkeleton`
+        // 整页骨架分支 → 「内容→整页骨架→内容」闪变（切分类闪屏根因）。
+        // 立即写入骨架后 Home 页走正常渲染路径：HeroBanner 骨架 + CategoryQuickAccess
+        // + TMDBMovieRow 行骨架，结构固定、数据到达后原位填充，无整页闪变。
         clearSkeletonTimer();
-        const genWhenScheduled = _loadGeneration;
-        _skeletonTimer = setTimeout(() => {
-          _skeletonTimer = null;
-          if (genWhenScheduled !== _loadGeneration) return;
-          const skeletonRows = Array.from({ length: def.rows.length }, () => ({ items: [] as TMDBVideoItem[], loading: true, error: null }));
-          set((s) => ({
-            data: {
-              ...s.data,
-              [c]: {
-                hero: [], heroLoading: true, heroError: null,
-                rows: skeletonRows,
-                fetchedAt: null, loading: true,
-              },
+        const skeletonRows = Array.from({ length: def.rows.length }, () => ({ items: [] as TMDBVideoItem[], loading: true, error: null }));
+        set((s) => ({
+          data: {
+            ...s.data,
+            [c]: {
+              hero: [], heroLoading: true, heroError: null,
+              rows: skeletonRows,
+              fetchedAt: null, loading: true,
             },
-          }));
-        }, SKELETON_MIN_MS);
+          },
+        }));
       }
     } else {
       // 有内存数据但过期 → 显示旧数据 + loading 标记
@@ -213,11 +218,32 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
     // ── 第三步：后台获取新数据 ──
     const generation = ++_loadGeneration;
 
+    // [2026-08-13] 切换分类时取消上一代所有 in-flight 请求（接口竞态治理）。
+    // 之前仅用 generation 防「写入」、不防「请求」，旧分类请求会继续飞行直到完成。
+    _activeAbortController?.abort();
+    const controller = new AbortController();
+    _activeAbortController = controller;
+    const signal = controller.signal;
+
     try {
-      const promiseCache = new Map<() => Promise<TMDBVideoItem[]>, Promise<TMDBVideoItem[]>>();
-      const dedupFetch = (fn: () => Promise<TMDBVideoItem[]>): Promise<TMDBVideoItem[]> => {
+      // 调用内 in-flight 去重：同一 fetch 函数在本次 loadCategory 内只发一次（hero/行复用）
+      const promiseCache = new Map<(signal?: AbortSignal) => Promise<TMDBVideoItem[]>, Promise<TMDBVideoItem[]>>();
+      const dedupFetch = (fn: (signal?: AbortSignal) => Promise<TMDBVideoItem[]>): Promise<TMDBVideoItem[]> => {
+        // 1) 模块级共享缓存命中（已完成 + TTL 内）→ 跨分类复用，不再请求（接口竞价治理）。
+        //    共享缓存只存「已完成」结果：in-flight 请求绑定本代 signal，切分类会被 abort，
+        //    若共享 in-flight 会被「abort 连坐」导致新分类拿到空数据，故只缓存成功结果。
+        const hit = sharedFetchCache.get(fn);
+        if (hit && Date.now() - hit.at < CACHE_TTL) return hit.p;
+        // 2) 调用内去重
         if (!promiseCache.has(fn)) {
-          promiseCache.set(fn, fn().catch(() => [] as TMDBVideoItem[]));
+          const p = fn(signal)
+            .then((items) => {
+              // 成功 → 写入模块级共享缓存（供其他分类复用）；失败不写（下次可重试）
+              sharedFetchCache.set(fn, { p: Promise.resolve(items), at: Date.now() });
+              return items;
+            })
+            .catch(() => [] as TMDBVideoItem[]);
+          promiseCache.set(fn, p);
         }
         return promiseCache.get(fn)!;
       };

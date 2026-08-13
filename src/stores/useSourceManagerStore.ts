@@ -47,9 +47,9 @@ export function formatLatency(latency: number | null): string {
 
 type Scene = 'video' | 'iptv' | 'epg';
 
-/** 模块级一次性 guard：bootstrap 只在当前会话执行一次（防止多 tab/多挂载重复注入） */
-let bootstrapStarted = false;
-let bootstrapPromise: Promise<void> | null = null;
+/** 场景级一次性 guard：bootstrapScene 每场景在当前会话只执行一次（防止多 tab/多挂载重复注入） */
+const sceneStarted: Record<Scene, boolean> = { video: false, iptv: false, epg: false };
+const scenePromises: Partial<Record<Scene, Promise<void>>> = {};
 
 interface SourceStatusLike {
   enabled: boolean;
@@ -87,6 +87,8 @@ interface SourceManagerState {
   sortByLatency: (scene: Scene) => void;
   resetToDefaults: () => Promise<void>;
   bootstrap: () => Promise<void>;
+  /** 单场景惰性 bootstrap：注入/合并该场景内置源 + 同步消费（幂等，设置页/IPTV 页按需触发） */
+  bootstrapScene: (scene: Scene) => Promise<void>;
 }
 
 /* ── 消费同步（核心） ────────────────────────── */
@@ -420,39 +422,47 @@ export const useSourceManagerStore = create<SourceManagerState>()(
       },
 
       bootstrap: async () => {
-        // 模块级 guard：同一会话只执行一次（并发调用共享同一 promise，幂等）
-        if (bootstrapStarted) {
-          if (bootstrapPromise) await bootstrapPromise;
+        // 全量 bootstrap = 三个场景并行惰性初始化（各场景幂等 guard）
+        await Promise.all([
+          get().bootstrapScene('video'),
+          get().bootstrapScene('iptv'),
+          get().bootstrapScene('epg'),
+        ]);
+      },
+
+      bootstrapScene: async (scene) => {
+        // 场景级 guard：同一会话每场景只执行一次（并发调用共享同一 promise，幂等）
+        if (sceneStarted[scene]) {
+          const p = scenePromises[scene];
+          if (p) await p;
           return;
         }
-        bootstrapStarted = true;
-        bootstrapPromise = (async () => {
+        sceneStarted[scene] = true;
+        scenePromises[scene] = (async () => {
           const now = Date.now();
-          const updates: Partial<SourceManagerState> = {};
           // 注入/合并内置源：列表为空时全量注入默认源；已有持久化列表时增量合并
           // （打包 JSON 新增的内置源追加到末尾，已启用源与顺序不受影响）。
-          // 旧实现仅「列表为空」才注入，新增内置源对老用户永远不可见。
-          const vids = await getVideoSources();
-          const builtinVideo = vids.map((v, i) => toManagedVideo(v, i, now, i === 0));
-          const mergedVideo = mergeBuiltinSources(get().video, builtinVideo, (s) => s.id, MAX_ENABLED.video);
-          if (mergedVideo.length !== get().video.length) updates.video = mergedVideo;
-          const ipts = await getIPTVSources();
-          const builtinIptv = ipts.map((c, i) => toManagedIPTV(c, i, now, i === 0));
-          const mergedIptv = mergeBuiltinSources(get().iptv, builtinIptv, (s) => s.url, MAX_ENABLED.iptv);
-          if (mergedIptv.length !== get().iptv.length) updates.iptv = mergedIptv;
-          const epgs = await getEPGSources();
-          const builtinEpg = epgs.map((c, i) => toManagedEPG(c, i, now, i === 0));
-          const mergedEpg = mergeBuiltinSources(get().epg, builtinEpg, (s) => s.url, MAX_ENABLED.epg);
-          if (mergedEpg.length !== get().epg.length) updates.epg = mergedEpg;
-          if (Object.keys(updates).length > 0) {
-            set(updates as SourceManagerState);
+          if (scene === 'video') {
+            const vids = await getVideoSources();
+            const builtin = vids.map((v, i) => toManagedVideo(v, i, now, i === 0));
+            const merged = mergeBuiltinSources(get().video, builtin, (s) => s.id, MAX_ENABLED.video);
+            if (merged.length !== get().video.length) set({ video: merged } as Pick<SourceManagerState, 'video'>);
+            syncConsumers(get(), 'video');
+          } else if (scene === 'iptv') {
+            const ipts = await getIPTVSources();
+            const builtin = ipts.map((c, i) => toManagedIPTV(c, i, now, i === 0));
+            const merged = mergeBuiltinSources(get().iptv, builtin, (s) => s.url, MAX_ENABLED.iptv);
+            if (merged.length !== get().iptv.length) set({ iptv: merged } as Pick<SourceManagerState, 'iptv'>);
+            syncConsumers(get(), 'iptv');
+          } else if (scene === 'epg') {
+            const epgs = await getEPGSources();
+            const builtin = epgs.map((c, i) => toManagedEPG(c, i, now, i === 0));
+            const merged = mergeBuiltinSources(get().epg, builtin, (s) => s.url, MAX_ENABLED.epg);
+            if (merged.length !== get().epg.length) set({ epg: merged } as Pick<SourceManagerState, 'epg'>);
+            syncConsumers(get(), 'epg');
           }
-          // 每次 bootstrap 都同步消费（从持久化的启用状态回写 indices/attached）
-          syncConsumers(get(), 'video');
-          syncConsumers(get(), 'iptv');
-          syncConsumers(get(), 'epg');
         })();
-        await bootstrapPromise;
+        await scenePromises[scene];
       },
     }),
     {

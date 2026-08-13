@@ -6,6 +6,10 @@
  * 2. 找到 → 构建完整 URL 并回写到 useUserStore 的 history
  * 3. 未找到 → 异步调用 TMDB 详情 API 获取，成功后回写
  * 4. 去重 + 防重复请求，批量限制并发数
+ *
+ * [2026-08-13] 批量提交：原先每条成功都调一次 useUserStore.setState（全量 map history
+ * + 写 IndexedDB），20 条陆续返回 = 最多 20 次连锁重渲染（历史页所有卡片重渲染）→
+ * 进入历史页明显卡顿。改为收集 pending，全部完成后一次性 setState + 批量写库。
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { useUserStore } from '@/stores';
@@ -51,39 +55,6 @@ function parseTmdbId(videoId: string): { mediaType: 'movie' | 'tv'; tmdbId: numb
   return { mediaType: mt, tmdbId: tid };
 }
 
-/**
- * 直接更新 IndexedDB 中指定 videoId 的 backdrop，
- * 避免通过 Zustand set() 全量序列化导致覆盖其他 Tab 的写入
- */
-async function updateBackdropInStorage(videoId: string, backdrop: string): Promise<void> {
-  try {
-    // 同步更新 Zustand 内存状态。
-    // 同一 videoId 可能有多条记录（电影多线路 / 剧集多集），历史页展示的是
-    // updatedAt 最新的那条，因此补全目标必须是「最新」记录而非数组第一条。
-    const storeHistory = useUserStore.getState().history;
-    let storeIdx = -1;
-    let latestAt = -1;
-    storeHistory.forEach((h, i) => {
-      if (h.videoId !== videoId) return;
-      if ((h.updatedAt ?? 0) > latestAt) {
-        latestAt = h.updatedAt ?? 0;
-        storeIdx = i;
-      }
-    });
-    if (storeIdx >= 0) {
-      const updated = { ...storeHistory[storeIdx], backdrop };
-      useUserStore.setState({
-        history: storeHistory.map((h, i) => i === storeIdx ? updated : h),
-      });
-      // 异步写入 IndexedDB
-      const { upsertHistoryRecord } = await import('@/services/database');
-      await upsertHistoryRecord(updated);
-    }
-  } catch {
-    // 写入失败静默忽略
-  }
-}
-
 /** 并发限制：并发执行 async 任务，返回 Promise.all */
 function asyncPool(
   tasks: (() => Promise<void>)[],
@@ -116,6 +87,8 @@ export function useBackdropLoader(
   enabled: boolean,
 ): void {
   const processedRef = useRef(new Set<string>());
+  /** [2026-08-13] 本次补全收集到的 { videoId, backdrop }（避免逐条 setState） */
+  const pendingRef = useRef<{ videoId: string; backdrop: string }[]>([]);
 
   const backfillBackdrop = useCallback(async (record: HistoryRecord) => {
     const { videoId } = record;
@@ -125,7 +98,7 @@ export function useBackdropLoader(
     const backdropFromStore = findBackdropInStore(videoId);
     if (backdropFromStore) {
       processedRef.current.add(videoId);
-      updateBackdropInStorage(videoId, backdropFromStore);
+      pendingRef.current.push({ videoId, backdrop: backdropFromStore });
       return;
     }
 
@@ -144,11 +117,55 @@ export function useBackdropLoader(
         : undefined;
 
       if (backdropUrl) {
-        updateBackdropInStorage(videoId, backdropUrl);
+        pendingRef.current.push({ videoId, backdrop: backdropUrl });
       }
     } catch {
       // API 失败不影响主流程，下次进入页面会重试
       processedRef.current.delete(videoId);
+    }
+  }, []);
+
+  /** [2026-08-13] 批量提交：pending 全部就绪后一次性 setState + 批量写库。
+   * 同一 videoId 可能有多条记录（电影多线路 / 剧集多集），历史页展示的是
+   * updatedAt 最新的那条，补全目标必须是「最新」记录而非数组第一条。 */
+  const commitPending = useCallback(async () => {
+    const pending = pendingRef.current;
+    pendingRef.current = [];
+    if (pending.length === 0) return;
+
+    const { upsertHistoryRecord } = await import('@/services/database');
+    const storeHistory = useUserStore.getState().history;
+
+    // 每个 videoId 找到最新一条的索引
+    const targetIdxByVideoId = new Map<string, number>();
+    let latestAtByVideoId = new Map<string, number>();
+    storeHistory.forEach((h, i) => {
+      const cur = latestAtByVideoId.get(h.videoId);
+      if (cur === undefined || (h.updatedAt ?? 0) > cur) {
+        latestAtByVideoId.set(h.videoId, h.updatedAt ?? 0);
+        targetIdxByVideoId.set(h.videoId, i);
+      }
+    });
+
+    const updates: HistoryRecord[] = [];
+    const pendingById = new Map<string, string>();
+    for (const p of pending) pendingById.set(p.videoId, p.backdrop);
+
+    const next = storeHistory.map((h, i) => {
+      const idx = targetIdxByVideoId.get(h.videoId);
+      if (idx !== i) return h;
+      const backdrop = pendingById.get(h.videoId);
+      if (!backdrop) return h;
+      const updated = { ...h, backdrop };
+      updates.push(updated);
+      return updated;
+    });
+
+    if (updates.length > 0) {
+      // 一次性同步内存（单次 setState，替代原先逐条 20 次连锁重渲染）
+      useUserStore.setState({ history: next });
+      // 批量异步写 IndexedDB（不阻塞渲染）
+      await Promise.allSettled(updates.map((u) => upsertHistoryRecord(u)));
     }
   }, []);
 
@@ -165,6 +182,7 @@ export function useBackdropLoader(
     // 限制最多补全 20 条，避免大量并发请求
     const batch = needsBackdrop.slice(0, 20);
     const tasks = batch.map((r) => () => backfillBackdrop(r));
-    asyncPool(tasks, 3);
-  }, [historyRecords, enabled, backfillBackdrop]);
+    pendingRef.current = [];
+    void asyncPool(tasks, 3).then(() => commitPending());
+  }, [historyRecords, enabled, backfillBackdrop, commitPending]);
 }

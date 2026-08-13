@@ -217,8 +217,9 @@ export async function fetchCountries(): Promise<TMDBCountry[]> {
 export async function fetchTrending(
   mediaType: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
+  options: { signal?: AbortSignal } = {},
 ): Promise<TMDBPaginatedResponse<TMDBTrendingItem>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTrendingItem>>(`/trending/${mediaType}/${timeWindow}`);
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTrendingItem>>(`/trending/${mediaType}/${timeWindow}`, {}, options);
 }
 
 // ============================================================
@@ -226,38 +227,38 @@ export async function fetchTrending(
 // ============================================================
 
 /** 获取正在上映的电影列表 */
-export async function fetchNowPlaying(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/now_playing', { region: 'CN' });
+export async function fetchNowPlaying(options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBMovie>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/now_playing', { region: 'CN' }, options);
 }
 
 /** 获取热门电影列表 */
-export async function fetchPopularMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/popular', { region: 'CN' });
+export async function fetchPopularMovies(options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBMovie>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/popular', { region: 'CN' }, options);
 }
 
 /** 获取评分最高电影列表 */
-export async function fetchTopRatedMovies(page: number = 1): Promise<TMDBPaginatedResponse<TMDBMovie>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/top_rated', { region: 'CN', page });
+export async function fetchTopRatedMovies(page: number = 1, options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBMovie>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/top_rated', { region: 'CN', page }, options);
 }
 
 /** 获取即将上映电影列表 */
-export async function fetchUpcomingMovies(): Promise<TMDBPaginatedResponse<TMDBMovie>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/upcoming', { region: 'CN' });
+export async function fetchUpcomingMovies(options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBMovie>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/movie/upcoming', { region: 'CN' }, options);
 }
 
 /** 获取热门电视剧列表 */
-export async function fetchPopularTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/popular');
+export async function fetchPopularTV(options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/popular', {}, options);
 }
 
 /** 获取评分最高电视剧列表 */
-export async function fetchTopRatedTV(page: number = 1): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/top_rated', { page });
+export async function fetchTopRatedTV(page: number = 1, options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/top_rated', { page }, options);
 }
 
 /** 获取今日播出电视剧列表 */
-export async function fetchAiringTodayTV(): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/airing_today');
+export async function fetchAiringTodayTV(options: { signal?: AbortSignal } = {}): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/tv/airing_today', {}, options);
 }
 
 // ============================================================
@@ -324,6 +325,7 @@ export async function fetchPersonTVCredits(
 export async function discoverMovie(
   filters: Partial<TMDBFilterOptions>,
   page: number = 1,
+  options: { signal?: AbortSignal } = {},
 ): Promise<TMDBPaginatedResponse<TMDBMovie>> {
   const params: Record<string, string | number | undefined> = {
     page,
@@ -336,13 +338,14 @@ export async function discoverMovie(
   else if (filters.releaseYear) params.primary_release_year = filters.releaseYear;
   if (filters.releaseDateLte) params['primary_release_date.lte'] = filters.releaseDateLte;
   if (filters.originCountry) params.with_origin_country = filters.originCountry;
-  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/discover/movie', params);
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>('/discover/movie', params, options);
 }
 
 /** 按筛选条件发现电视剧 */
 export async function discoverTV(
   filters: Partial<TMDBFilterOptions>,
   page: number = 1,
+  options: { signal?: AbortSignal } = {},
 ): Promise<TMDBPaginatedResponse<TMDBTVShow>> {
   const params: Record<string, string | number | undefined> = {
     page,
@@ -355,7 +358,7 @@ export async function discoverTV(
   else if (filters.releaseYear) params.first_air_date_year = filters.releaseYear;
   if (filters.releaseDateLte) params['first_air_date.lte'] = filters.releaseDateLte;
   if (filters.originCountry) params.with_origin_country = filters.originCountry;
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/discover/tv', params);
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/discover/tv', params, options);
 }
 
 function getSortByParam(sortBy: string, sortOrder: string, mediaType: 'movie' | 'tv'): string {

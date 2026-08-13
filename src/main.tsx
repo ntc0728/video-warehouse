@@ -7,7 +7,6 @@ import AppLoading from './components/common/AppLoading';
 import './assets/styles/index.css';
 import { preventPinchZoom } from './lib/preventZoom';
 import { preloadInitialRoute } from './components/Layout/routeConfig';
-import { useSourceManagerStore } from './stores/useSourceManagerStore';
 import { preloadLogoCache } from './services/channelLogo';
 
 // 移动端阻止双指缩放
@@ -34,7 +33,9 @@ function BootLoading() {
 // 9.1：preloadAllRoutes() 移除（原在 render 前并发抢拉 12 个路由 chunk，与首屏
 // Home chunk 竞争带宽）。AppLayout 挂载后已立即调用（preloadStarted 幂等），
 // 预拉发生在 Home chunk 就绪之后，不再拖慢首帧。
-useSourceManagerStore.getState().bootstrap();
+// [2026-08-13] 移除全局 bootstrap()：不再无条件拉取 3 个源 JSON。
+// 改为场景级惰性触发——video（浏览/详情/播放按需）、iptv/epg（IPTV 页）、
+// 全量（设置页源管理），各场景幂等，见 useSourceManagerStore.bootstrapScene。
 // 预载台标缓存（库清单 + 成败记忆，IndexedDB/网络拉取，不阻塞首屏）
 void preloadLogoCache();
 // 预拉「当前路由」chunk（不阻塞渲染）：warm 命中时 Suspense 同步解析

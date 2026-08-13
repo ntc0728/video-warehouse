@@ -22,7 +22,7 @@ import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
 import type { EPGChannelIndex } from '@/services/epgService';
 import type { Video, VideoType } from '@/types/video';
 import type { IPTVChannel } from '@/types/iptv';
-import type { CollectionRecord } from '@/types/store';
+import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import './Collections.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -143,22 +143,38 @@ export default function CollectionsPage() {
     return () => { store.clearPageSearch(); };
   }, [search, setSearch, activeTab, location.pathname]);
 
-  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）
+  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）。
+  // [2026-08-13] 守卫：仅当 store 中无频道数据时才触发。原实现每次切到 IPTV tab 都调
+  // loadFromCache()——即使数据已在内存，也会重新 setState channels → 联动 IPTV 页
+  // （Keep-Alive 常驻，订阅同一 useIPTVStore）在 display:none 下整批重渲染 = 卡顿来源之一。
   useEffect(() => {
-    if (activeTab === 'iptv') {
+    if (activeTab === 'iptv' && useIPTVStore.getState().channels.length === 0) {
       useIPTVStore.getState().loadFromCache();
     }
   }, [activeTab]);
 
-  /** Determine watch status for a video based on history records */
-  const getVideoStatus = useCallback((videoId: string): VideoStatus => {
-    const records = history.filter(h => h.videoId === videoId);
-    if (records.length === 0) return 'unwatched';
-    const latest = records.reduce((a, b) => a.updatedAt > b.updatedAt ? a : b);
-    if (latest.duration > 0 && latest.progress >= latest.duration * 0.9) return 'watched';
-    if (latest.progress > 0) return 'watching';
-    return 'unwatched';
+  /** [2026-08-13] 每个 videoId 的最新历史记录状态，一次性构建（O(n)）。
+   *  原 getVideoStatus 对每个收藏视频 filter 整个 history（O(n²)），且 collectedVideos /
+   *  statusCounts 各遍历一遍——历史量大时进入收藏页明显卡顿。改为 Map 预计算。 */
+  const videoStatusMap = useMemo(() => {
+    const map = new Map<string, VideoStatus>();
+    const latestById = new Map<string, HistoryRecord>();
+    for (const h of history) {
+      const cur = latestById.get(h.videoId);
+      if (!cur || h.updatedAt > cur.updatedAt) latestById.set(h.videoId, h);
+    }
+    for (const latest of latestById.values()) {
+      let status: VideoStatus = 'unwatched';
+      if (latest.duration > 0 && latest.progress >= latest.duration * 0.9) status = 'watched';
+      else if (latest.progress > 0) status = 'watching';
+      map.set(latest.videoId, status);
+    }
+    return map;
   }, [history]);
+
+  const getVideoStatus = useCallback((videoId: string): VideoStatus =>
+    videoStatusMap.get(videoId) ?? 'unwatched',
+  [videoStatusMap]);
 
   const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
     let list: CollectionVideoItem[] = collections
