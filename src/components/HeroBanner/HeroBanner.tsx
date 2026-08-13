@@ -41,11 +41,6 @@ interface HeroBannerProps {
   historyMap?: Map<string, { progress: number }>;
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
-  /** 分类标识：变化时（首页⇄分类切换）让右侧缩略图列整体重挂载，
-   *  立即进入各自加载骨架、加载完再显示新分类，避免「同分类交叉淡入」机制
-   *  把上一个分类的海报滞留显示（旧分类残留 + 切换延迟感）。
-   *  同分类内 activeIndex 变化不改变此值，故不重挂载、平滑交叉淡入得以保留。 */
-  categoryId?: string;
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
@@ -70,7 +65,6 @@ function bgPreloadSize(): string {
 
 export default function HeroBanner({
   items,
-  categoryId,
   autoPlayInterval = 5000,
   onItemClick,
   onContinuePlay,
@@ -196,8 +190,6 @@ export default function HeroBanner({
         setSwitchReady(true);
       }
     }
-    prevItemsRef.current = displayItems;
-    prevDisplayIdxRef.current = displayIndex;
 
     if (curLen > 0 && prevLen === 0) {
       // 从空变为有数据：重置 bannerReady，等待背景图加载
@@ -211,15 +203,29 @@ export default function HeroBanner({
       //   切换瞬间真实图→骨架→真实图的硬切换）。改为保持 true，交由各 HeroThumb 自身的
       //   「预加载完成再换图」机制在新/旧海报间做平滑交叉淡入（旧图持续显示直到新图就绪），
       //   实现图片参与动画、无延迟无闪烁。主图背景层 key=item.id（见下方渲染）：新类目首项
-      //   id 不同 → 新建 <img>；配合上方 staleBg 滞留层做「旧图垫底 → 新图就绪淡入」，
+      //   id 不同 → 新建 <img>；配合上方 staleSnapshot 滞留层做「旧图垫底 → 新图就绪淡入」，
       //   也不会出现「仍显示上一个类目图片」的滞留（滞留层在新图淡入完成后移除）。
-      //   整页切换过渡由 Home 页级 .home-cat-fade 统一负责（见 Home/index.tsx）。
+      //   整页切换过渡由 Home 页级 .home-cat-dim 统一负责（见 Home/index.tsx）。
       prevItemsLenRef.current = curLen;
     } else {
       // 变为空：重置
       setBannerReady(false);
       prevItemsLenRef.current = curLen;
     }
+    // ⚠️ 依赖必须仅 [displayItems]（不含 displayIndex）：
+    // 轮播/悬停/拖拽会改变 displayIndex，若被本 effect 捕获会执行上方的
+    // setActiveIndex(0)/setHoveredIndex(null)/setBgIndices([0]) 重置，
+    // 导致「轮播切到下一张立刻被重置回 0」的轮播失效（2026-08-13 回归教训）。
+    // refs（prevItemsRef/prevDisplayIdxRef）的同步已移入下方独立 useLayoutEffect。
+  }, [displayItems]);
+
+  // 渲染期派生（分类切换过渡）读的 refs 同步：每个 commit 后（paint 前）更新，
+  // 使渲染期读到的 prevItemsRef/prevDisplayIdxRef 恒为「上一 commit」的值。
+  // 独立 effect（无 setState 副作用）：displayIndex 频繁变化（轮播/悬停）也不会
+  // 触发上方的重置逻辑（那是轮播失效根因）。
+  useLayoutEffect(() => {
+    prevItemsRef.current = displayItems;
+    prevDisplayIdxRef.current = displayIndex;
   }, [displayItems, displayIndex]);
 
   // 用 JS 实测 banner 实际高度注入 --hero-banner-h，供右侧缩略图列宽计算。
@@ -531,10 +537,13 @@ export default function HeroBanner({
 
       {/* ── 右侧缩略图列（桌面端，横图 + 悬浮标题；窗口化，选中居中） ──
           banner 未就绪时显示固定数量骨架占位（立即出现），
-          banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架） */}
+          banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架）。
+          ⚠️ 不挂 key={categoryId}（2026-08-13）：分类切换时列不重挂载，
+          HeroThumb 组件按 key={pos} 复用 → item 引用变化走「预加载完成再换图 +
+          双层交叉淡入」，旧海报保持显示直至新海报就绪淡入（平滑过渡动画），
+          不再「骨架→图」硬切换。同分类窗口滑动逻辑不受影响。 */}
       {!isMobile && (
         <div
-          key={categoryId}
           className="hero-banner__thumbs"
           style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}
         >
@@ -588,9 +597,14 @@ const HeroThumb = memo(
   const thumbUrl = thumbPath ? buildImageUrl(thumbPath, HERO_THUMB_SIZE) : '';
   const title = item.name || item.title || '';
 
-  // 单层 + 预加载就绪再换图：切换目标 url 时先用 new Image() 预加载，
-  // 加载完成（已进缓存）才更新 img.src；加载期间保持显示旧图，从根上避免露白闪烁。
+  // 双层 + 预加载就绪再换图（2026-08-13 增强为交叉淡入）：
+  // 切换目标 url 时先用 new Image() 预加载，完成（已进缓存）才更新 img.src；
+  // 旧图快照进 prevSrc 垫底层，新图（cur 层）先置 --switching（opacity 0）再
+  // onLoad 后淡入（opacity transition 0.3s）→ 淡入完成清理 prev 层。
+  // 加载期间旧图持续显示，从根上避免露白闪烁与突变跳变。
   const [currentSrc, setCurrentSrc] = useState(thumbUrl);
+  const [prevSrc, setPrevSrc] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
   const [ready, setReady] = useState(false);
   const currentSrcRef = useRef(thumbUrl);
   currentSrcRef.current = currentSrc;
@@ -600,6 +614,8 @@ const HeroThumb = memo(
     if (!thumbUrl) {
       currentSrcRef.current = '';
       setCurrentSrc('');
+      setPrevSrc(null);
+      setSwitching(false);
       setReady(false);
       loadingRef.current = null;
       return;
@@ -614,7 +630,10 @@ const HeroThumb = memo(
     loadingRef.current = thumbUrl;
     const apply = () => {
       if (loadingRef.current === thumbUrl) {
+        // 旧图快照垫底 → 新图置为待淡入态
+        setPrevSrc(currentSrcRef.current);
         setCurrentSrc(thumbUrl);
+        setSwitching(true);
         setReady(true);
         loadingRef.current = null;
       }
@@ -623,6 +642,19 @@ const HeroThumb = memo(
     img.onerror = apply;
     img.src = thumbUrl;
   }, [thumbUrl]);
+
+  // 新图淡入（0.3s）完成后清理垫底层
+  useEffect(() => {
+    if (!switching) return;
+    const t = window.setTimeout(() => setSwitching(false), 30);
+    return () => window.clearTimeout(t);
+  }, [switching]);
+  // prev 层在淡入完成后移除（延时兜底，不依赖动画事件）
+  useEffect(() => {
+    if (!prevSrc) return;
+    const t = window.setTimeout(() => setPrevSrc(null), 450);
+    return () => window.clearTimeout(t);
+  }, [prevSrc, currentSrc]);
 
   return (
     <button
@@ -633,14 +665,23 @@ const HeroThumb = memo(
       aria-label={title}
       aria-current={active ? 'true' : undefined}
     >
+      {prevSrc && (
+        <img
+          className="hero-banner__thumb-img hero-banner__thumb-img--prev"
+          src={prevSrc}
+          alt=""
+          loading="eager"
+          draggable={false}
+        />
+      )}
       {currentSrc ? (
         <img
-          className="hero-banner__thumb-img"
+          className={`hero-banner__thumb-img${switching ? ' hero-banner__thumb-img--switching' : ''}`}
           src={currentSrc}
           alt=""
           loading="eager"
           draggable={false}
-          onLoad={() => setReady(true)}
+          onLoad={() => { setReady(true); setSwitching(false); }}
         />
       ) : null}
       {!ready && <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" aria-hidden="true" />}
