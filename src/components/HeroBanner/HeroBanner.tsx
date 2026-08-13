@@ -107,6 +107,22 @@ export default function HeroBanner({
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
   const [bannerReady, setBannerReady] = useState(false);
+  // ── 分类切换图片过渡（2026-08-13）──
+  // 分类切换（items 引用变化）时主图不再硬切：切换渲染当帧起「不渲染新层」，
+  // 旧活跃图快照为滞留层（--stale，opacity 1 垫底），同时用 new Image() 预加载
+  // 新首项背景图——就绪后 switchReady=true 才挂载新层（图片已缓存 → 立即绘制 +
+  // is-active 的 heroBgFadeIn 0.8s 淡入完整播放），再延时移除滞留层。
+  // 消除「旧图卸载 → 新图加载期间空白 → 加载完直接蹦出」的硬切，与轮播 crossfade 同机制。
+  // ⚠️ 过渡期判断 = `itemsChanged || !switchReady`：渲染期派生只覆盖切换那一帧，
+  // useLayoutEffect 紧接着 setSwitchReady(false) 标记过渡中，避免「img 挂载时状态陈旧、
+  // load 事件早发导致永远卡在透明层」的闭包竞态；解除动作全部幂等。
+  // 无背景图 / 新图加载失败：fail-open 直接渲染（新层无图区域由背景色承接）。
+  const [switchReady, setSwitchReady] = useState(true);
+  // 当前预加载 url：快速连点切换时旧预加载完成后不得覆盖新目标（防竞态）
+  const switchLoadRef = useRef<string | null>(null);
+  // 过渡期滞留层快照（state）：切换帧由渲染期派生首帧，useLayoutEffect 写入同值（幂等），
+  // 过渡期（itemsChanged 已消失）继续垫底；新层淡入完成后由清理 effect 置 null。
+  const [staleSnapshot, setStaleSnapshot] = useState<{ url: string; srcSet?: string; id: string } | null>(null);
   // 缩略图数量自适应：大屏 4 个，普通桌面 3 个
   const maxCount = isWide ? 4 : 3;
   const visibleCount = Math.min(maxCount, displayItems.length);
@@ -115,6 +131,10 @@ export default function HeroBanner({
   // 仅在 items 从空变为有时重置 bannerReady（骨架→真实），
   // 已有数据时保持 bannerReady 不变，避免骨架图闪烁。
   const prevItemsLenRef = useRef(displayItems.length);
+  // 分类切换滞留层快照用：上一 committed 的 items 引用 + 活跃索引
+  // （useLayoutEffect 在每个 commit 后同步更新，渲染期读到的即「上一 commit」的值）
+  const prevItemsRef = useRef<HeroItem[]>(displayItems);
+  const prevDisplayIdxRef = useRef(displayIndex);
   // banner 根元素 ref：用于实测其实际高度（含 max-height 截断）注入 --hero-banner-h，
   // 供右侧缩略图列宽计算，避免 100cqh 首帧回退（详见下方 useLayoutEffect）。
   const bannerRef = useRef<HTMLElement>(null);
@@ -136,6 +156,48 @@ export default function HeroBanner({
 
     const prevLen = prevItemsLenRef.current;
     const curLen = displayItems.length;
+    // 分类切换图片过渡（切换帧提交后同步执行）：
+    // 新首项图预加载就绪前不渲染新层（滞留层旧图垫底），就绪后 switchReady=true 恢复渲染。
+    // 预加载走 new Image()（独立于 React img），完成后触发重渲染；
+    // switchLoadRef 防快速连点：仅最近一次预加载的结果生效。
+    const itemsChanged = prevItemsRef.current !== displayItems;
+    if (itemsChanged) {
+      const oldItem = prevItemsRef.current[prevDisplayIdxRef.current];
+      const oldPath = oldItem?.backdropPath || oldItem?.backdrop_path;
+      const newPath = displayItems[0]?.backdropPath || displayItems[0]?.backdrop_path;
+      if (curLen > 0 && oldPath && newPath) {
+        const oldUrl = buildImageUrl(oldPath, 'w1280');
+        const url = buildImageUrl(newPath, 'w1280');
+        if (oldUrl && url) {
+          // 与切换帧渲染期派生的快照同值（幂等写入 state，供过渡期继续垫底）
+          setStaleSnapshot({
+            url: oldUrl,
+            srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
+            id: String(oldItem.id),
+          });
+          switchLoadRef.current = url;
+          setSwitchReady(false);
+          const img = new Image();
+          const done = () => {
+            if (switchLoadRef.current === url) {
+              switchLoadRef.current = null;
+              setSwitchReady(true);
+            }
+          };
+          img.onload = done;
+          img.onerror = done;
+          img.src = url;
+        } else {
+          setStaleSnapshot(null);
+          setSwitchReady(true);
+        }
+      } else {
+        setStaleSnapshot(null);
+        setSwitchReady(true);
+      }
+    }
+    prevItemsRef.current = displayItems;
+    prevDisplayIdxRef.current = displayIndex;
 
     if (curLen > 0 && prevLen === 0) {
       // 从空变为有数据：重置 bannerReady，等待背景图加载
@@ -149,7 +211,8 @@ export default function HeroBanner({
       //   切换瞬间真实图→骨架→真实图的硬切换）。改为保持 true，交由各 HeroThumb 自身的
       //   「预加载完成再换图」机制在新/旧海报间做平滑交叉淡入（旧图持续显示直到新图就绪），
       //   实现图片参与动画、无延迟无闪烁。主图背景层 key=item.id（见下方渲染）：新类目首项
-      //   id 不同 → 新建 <img>、旧图随旧层卸载，也不会出现「仍显示上一个类目图片」的滞留。
+      //   id 不同 → 新建 <img>；配合上方 staleBg 滞留层做「旧图垫底 → 新图就绪淡入」，
+      //   也不会出现「仍显示上一个类目图片」的滞留（滞留层在新图淡入完成后移除）。
       //   整页切换过渡由 Home 页级 .home-cat-fade 统一负责（见 Home/index.tsx）。
       prevItemsLenRef.current = curLen;
     } else {
@@ -157,7 +220,7 @@ export default function HeroBanner({
       setBannerReady(false);
       prevItemsLenRef.current = curLen;
     }
-  }, [displayItems]);
+  }, [displayItems, displayIndex]);
 
   // 用 JS 实测 banner 实际高度注入 --hero-banner-h，供右侧缩略图列宽计算。
   // 彻底摆脱对 container-type:size + 100cqh 的依赖：硬重载/首帧 CSS 容器查询
@@ -193,6 +256,14 @@ export default function HeroBanner({
       return [last, displayIndex];
     });
   }, [displayIndex]);
+
+  // 分类切换过渡收尾：新层就绪（switchReady=true）挂载后，等待其 is-active 淡入
+  // （0.8s）完成，移除滞留层（延时兜底，不依赖动画事件；reduced-motion 无动画时同样清理）
+  useEffect(() => {
+    if (!switchReady) return;
+    const t = window.setTimeout(() => setStaleSnapshot(null), 1200);
+    return () => window.clearTimeout(t);
+  }, [switchReady]);
 
   // 滑动冷却期：滑动后 1000ms 内暂停自动轮播，避免动画冲突
   const swipeCooldownRef = useRef(0);
@@ -307,6 +378,29 @@ export default function HeroBanner({
   const activeItem = displayItems[displayIndex];
   // 防御性判空：极端情况下（items 切换竞态）displayIndex 仍可能越界，直接返回避免白屏
   if (!activeItem) return null;
+
+  // ── 分类切换图片过渡（渲染期派生）──
+  // 切换帧（items 引用 vs 上一 commit 不同）：本次渲染立即派生「旧活跃图快照」用于滞留层垫底，
+  // 且不渲染新层（hideNewLayer）——不依赖 effect setState 时序，杜绝闭包陈旧竞态。
+  // 过渡期（itemsChanged 已消失，switchReady=false）由 state 快照 + !switchReady 继续维持；
+  // 新首项图预加载就绪（switchReady=true）后新层正常渲染（is-active 淡入），清理 effect 移除滞留层。
+  const prevItems = prevItemsRef.current;
+  const itemsChanged = prevItems !== displayItems;
+  const oldActivePath = (() => {
+    const it = prevItems[prevDisplayIdxRef.current];
+    return it?.backdropPath || it?.backdrop_path;
+  })();
+  const newFirstPath = displayItems[0]?.backdropPath || displayItems[0]?.backdrop_path;
+  const crossfadeSwitch = itemsChanged && displayItems.length > 0 && !!oldActivePath && !!newFirstPath;
+  const staleLayer = crossfadeSwitch
+    ? {
+        url: buildImageUrl(oldActivePath, 'w1280') || '',
+        srcSet: buildImageSrcSet(oldActivePath, ['w780', 'w1280']) ?? undefined,
+        id: String(prevItems[prevDisplayIdxRef.current].id),
+      }
+    : staleSnapshot;
+  const hideNewLayer = crossfadeSwitch || !switchReady;
+
   const itemData = activeItem as HeroItem;
   const title = itemData.name || itemData.title || '';
   const releaseDate = itemData.releaseDate || itemData.release_date || itemData.first_air_date;
@@ -346,6 +440,24 @@ export default function HeroBanner({
         className={`hero-banner__main${slideDir ? ` slide-${slideDir}` : ''}`}
       >
         {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
+        {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
+            新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
+            就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
+            淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
+        {staleLayer && (
+          <img
+            key={`stale-${staleLayer.id}`}
+            className="hero-banner__bg-layer hero-banner__bg-layer--stale"
+            src={staleLayer.url}
+            srcSet={staleLayer.srcSet || undefined}
+            sizes="(max-width: 767px) 100vw, 80vw"
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            decoding="async"
+            draggable={false}
+          />
+        )}
         {bgIndices.map((idx) => {
           const item = displayItems[idx];
           if (!item) return null;
@@ -353,12 +465,14 @@ export default function HeroBanner({
           const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
           const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
           const isActive = idx === displayIndex;
+          // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
+          if (isActive && hideNewLayer) return null;
           return (
             // ⚠️ key 必须用 item.id（而非下标 idx）：
             // 切换分类时新分类首项也是下标 0，若用 idx 作 key，React 会复用同一个 <img>
             // DOM 元素仅改 src——浏览器在新图解码完成前会持续显示「上一分类/页面的旧图」，
             // 表现为「banner 还在显示上一个页面的图片，过一会才更新」。改用 item.id 后，
-            // 不同条目 key 不同 → 创建全新 <img>、旧层卸载，彻底消除旧图滞留；
+            // 不同条目 key 不同 → 创建全新 <img>、旧层卸载（旧图由 staleLayer 滞留层继续垫底）；
             // 自动轮播/悬停预览仍由 bgIndices 双层层叠 crossfade，表现不变（同 id 元素还可复用缓存）。
             <img
               key={item.id}

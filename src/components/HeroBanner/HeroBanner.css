@@ -59,6 +59,16 @@
   animation: heroBgFadeIn 0.8s var(--ease-out-expo);
 }
 
+/* 分类切换滞留层（旧图垫底）：opacity 1 常驻底层，直至新图淡入完成后由组件移除 */
+.hero-banner__bg-layer--stale {
+  opacity: 1;
+}
+
+/* 分类切换新层待加载态：新图 onLoad 前保持透明（旧图透过显示），就绪后换 is-active 触发淡入 */
+.hero-banner__bg-layer--pending {
+  opacity: 0;
+}
+
 @keyframes heroBgFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

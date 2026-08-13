@@ -205,7 +205,12 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **滑动切换动画（所有客户端）**：`activeIndex` 切换统一走 `slide-left`（前进，新图从右滑入）/ `slide-right`（后退，新图从左滑入）；自动轮播（5s）也设置 `slideDir='left'` 走滑动切换；滑动后 1000ms 冷却期内暂停自动轮播。`.slide-*` 规则定义在 `HeroBanner.css` 全局作用域（非移动端媒体查询内），选择器特异性高于 `.is-active` crossfade。**桌面端悬停缩略图预览**由 `handleThumbEnter` 显式清除 `slideDir`（设 null）→ 回退为 crossfade（`heroBgFadeIn`）。**注意**：slide 动画结束后**不**重置 `slideDir`（保持方向类），否则 `.is-active` 层会回退匹配默认 crossfade 规则、因 `animation-name` 改变重新播放淡入，导致「闪一下、短暂出现上一张图片」。
 - **高度**：`min-height: var(--layout-hero-banner-min-h)` + `max-height: min(70vh, var(--layout-hero-banner-max-h))`（vh + vw 双上限，防止超宽屏溢出）
 - **预加载**：自动轮播时预加载下一张背景图（w1280）+ 缩略图窗口前后各 2 张（w500）
-- **bannerReady**：仅 items 从空变为有时重置，**切换分类（items 已有数据再变化）时务必保持 `true`、绝不可重置为骨架**——否则缩略图会走「真实图→骨架→真实图」硬切换 = "闪一下"（这是历史回归点，已修复）。切换时由 `HeroThumb` 自带的「预加载完成再换图」机制在新/旧海报间平滑交叉淡入（旧图持续显示直到新图就绪）；主图背景层 `key={item.id}`（非下标），新类目首项 id 不同 → 新建 `<img>`、旧图随旧层卸载，不滞留旧图。
+- **bannerReady**：仅 items 从空变为有时重置，**切换分类（items 已有数据再变化）时务必保持 `true`、绝不可重置为骨架**——否则缩略图会走「真实图→骨架→真实图」硬切换 = "闪一下"（这是历史回归点，已修复）。切换时由 `HeroThumb` 自带的「预加载完成再换图」机制在新/旧海报间平滑交叉淡入（旧图持续显示直到新图就绪）。
+- **主图分类切换过渡（2026-08-13）**：分类切换时主图**不得硬切**（旧图卸载 → 新图加载期间空白 → 蹦出）。实现 = 渲染期派生 + `switchReady` 状态机：
+  - 切换帧（items 引用变化）由**渲染期派生**（`itemsChanged = prevItemsRef.current !== displayItems`，ref 在 useLayoutEffect 每 commit 后同步更新）：旧活跃图快照 → `--stale` 滞留层垫底（DOM 底层 opacity 1）+ **新层不渲染**。
+  - `useLayoutEffect` 同帧 `setStaleSnapshot`（幂等同值，供过渡期继续垫底）+ `setSwitchReady(false)` + `new Image()` 预加载新首项图（`switchLoadRef` 防快速连点竞态）；就绪（onload/onerror fail-open）→ `switchReady=true` → 新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放）。
+  - 清理 effect（switchReady 后 1.2s，不依赖动画事件，reduced-motion 同样清理）移除滞留层。
+  - **⚠️ 过渡期判断 = `itemsChanged || !switchReady`**：渲染期派生只覆盖切换那一帧，后续过渡帧由 state 维持；**绝不可**用「effect setState 标记过渡」——img 挂载时闭包陈旧 + load 事件早发会永久卡在透明层（首版实现实测踩坑）。
 - **无障碍**：`prefers-reduced-motion: reduce` 时禁用所有动画
 
 ### Toast 系统

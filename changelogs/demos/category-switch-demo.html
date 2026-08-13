@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页分类切换过渡方案对比 Demo</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #1a1d24; --border: #2a2e38;
+    --old: #3d6bb3; --new: #b3653d; --text: #e6e8ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .sub { color: #9aa3b2; font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .card {
+    flex: 1 1 280px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card h2 { font-size: 14px; }
+  .card .desc { font-size: 12px; color: #9aa3b2; line-height: 1.6; min-height: 52px; }
+  .stage {
+    position: relative; height: 190px; border-radius: 8px; overflow: hidden;
+    background: #0b0d11; border: 1px solid var(--border);
+  }
+  /* 内容层：模拟首页内容块 */
+  .layer {
+    position: absolute; inset: 0; padding: 12px; display: flex; flex-direction: column;
+    gap: 8px; opacity: 1;
+  }
+  .layer.old { background: linear-gradient(135deg, #22324f, #2c4066); }
+  .layer.new { background: linear-gradient(135deg, #4f2f22, #66432c); }
+  .hero { height: 52%; border-radius: 6px; background: rgba(255,255,255,0.14); }
+  .bars { display: flex; gap: 6px; flex: 1; }
+  .bars span { flex: 1; border-radius: 4px; background: rgba(255,255,255,0.10); }
+  .bar-label { position: absolute; left: 12px; bottom: 8px; font-size: 11px; color: rgba(255,255,255,0.75); z-index: 5; }
+  .status {
+    position: absolute; right: 10px; top: 8px; z-index: 6; font-size: 11px;
+    background: rgba(0,0,0,0.55); padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .status.dim { color: #ffd479; }
+  .status.empty { color: #ff7d7d; }
+  .status.ready { color: #7dff9e; }
+  .controls { display: flex; gap: 8px; }
+  button {
+    flex: 1; padding: 8px 0; border: 1px solid var(--border); border-radius: 8px;
+    background: #232733; color: var(--text); font-size: 12px; cursor: pointer;
+  }
+  button:hover { background: #2c3140; }
+  .log { font-size: 11px; color: #7d8694; font-family: Consolas, monospace; min-height: 32px; line-height: 1.7; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; margin-right: 6px; }
+  .badge.a { background: #5b3232; color: #ffb3b3; }
+  .badge.b { background: #2f5b32; color: #b3ffbb; }
+</style>
+</head>
+<body>
+<h1>首页分类切换过渡方案对比（模拟时间线）</h1>
+<div class="sub">
+  蓝块 = 旧分类内容，橙块 = 新分类内容。「就绪」= 新数据到达。<br>
+  <b style="color:#ff7d7d">方案 A（当前实现）</b>：降暗 → 淡出到透明 → 空窗 → 淡入 —— 快场景实测含 <b>166ms 完全空屏</b>。<br>
+  <b style="color:#7dff9e">方案 B（推荐）</b>：降暗 → 就绪后在暗态下直接替换 → 平滑变亮 —— 无空窗、无闪没。
+</div>
+
+<div class="row">
+  <!-- 方案 A -->
+  <div class="card">
+    <h2><span class="badge a">A 当前</span>先淡出到透明再淡入</h2>
+    <div class="desc">就绪后：旧内容 0.55→0（120ms）→ 空窗 → 新内容 0→1（280ms）。<br>快场景总 ~525ms，含 ~170ms 完全空白。</div>
+    <div class="stage" id="stageA">
+      <div class="layer old" id="aOld"><div class="hero"></div><div class="bars"><span></span><span></span><span></span><span></span></div></div>
+      <div class="layer new" id="aNew" style="opacity:0; pointer-events:none;"></div>
+      <div class="bar-label">旧分类内容（蓝）</div>
+      <div class="status" id="aStatus">就绪</div>
+    </div>
+    <div class="controls">
+      <button onclick="run('A','fast')">快场景（缓存命中）</button>
+      <button onclick="run('A','slow')">慢场景（等 2s）</button>
+    </div>
+    <div class="log" id="aLog"></div>
+  </div>
+
+  <!-- 方案 B -->
+  <div class="card">
+    <h2><span class="badge b">B 推荐</span>暗态替换 + 亮度恢复</h2>
+    <div class="desc">点击即降暗 0.55（240ms）；就绪时<b>在暗态下原位替换内容</b>（无透明帧），随后 0.55→1 平滑变亮（240ms）。全程无空窗。</div>
+    <div class="stage" id="stageB">
+      <div class="layer old" id="bOld"><div class="hero"></div><div class="bars"><span></span><span></span><span></span><span></span></div></div>
+      <div class="layer new" id="bNew" style="opacity:0; pointer-events:none;"></div>
+      <div class="bar-label">旧分类内容（蓝）</div>
+      <div class="status" id="bStatus">就绪</div>
+    </div>
+    <div class="controls">
+      <button onclick="run('B','fast')">快场景（缓存命中）</button>
+      <button onclick="run('B','slow')">慢场景（等 2s）</button>
+    </div>
+    <div class="log" id="bLog"></div>
+  </div>
+</div>
+
+<script>
+// 状态：每方案独立（old/new 层 + 状态标签 + 日志）
+const S = {
+  A: { old: null, new: null, status: null, log: null, busy: false },
+  B: { old: null, new: null, status: null, log: null, busy: false },
+};
+S.A.old = document.getElementById('aOld');
+S.A.new = document.getElementById('aNew');
+S.A.status = document.getElementById('aStatus');
+S.A.log = document.getElementById('aLog');
+S.B.old = document.getElementById('bOld');
+S.B.new = document.getElementById('bNew');
+S.B.status = document.getElementById('bStatus');
+S.B.log = document.getElementById('bLog');
+
+const setNew = (st, show) => {
+  st.new.style.opacity = show ? 1 : 0;
+  st.new.style.pointerEvents = show ? 'auto' : 'none';
+  st.old.style.opacity = show ? 0 : 1;
+};
+const label = (st, txt, cls) => {
+  st.status.textContent = txt;
+  st.status.className = 'status' + (cls ? ' ' + cls : '');
+};
+const logLine = (st, txt) => {
+  st.log.textContent = '↳ ' + txt;
+};
+
+function run(which, speed) {
+  const st = S[which];
+  if (st.busy) return;
+  st.busy = true;
+  setNew(st, false);
+  st.old.style.opacity = 1;
+  st.old.style.transition = 'none';
+  st.new.style.transition = 'none';
+  requestAnimationFrame(() => {
+    st.old.style.transition = 'opacity 0.24s cubic-bezier(0.4,0,0.2,1)';
+    st.new.style.transition = 'opacity 0.24s cubic-bezier(0.4,0,0.2,1)';
+    const t0 = performance.now();
+    const wait = speed === 'fast' ? 60 : 2000;
+    const log = (t, m) => logLine(st, `t=${t}ms  ${m}`);
+
+    // 1) 点击：降暗到 0.55
+    st.old.style.opacity = 0.55;
+    label(st, '加载中（降暗 0.55）', 'dim');
+    log(0, '点击分类 → 旧内容降暗 0.55（240ms）');
+
+    if (which === 'A') {
+      // A：就绪后先淡出到 0 → 空窗 → 淡入
+      setTimeout(() => {
+        const t1 = Math.round(performance.now() - t0);
+        st.old.style.opacity = 0;
+        label(st, '淡出中', 'dim');
+        log(t1, `t=${t1}ms 数据就绪 → 淡出到透明（120ms）`);
+        setTimeout(() => {
+          const t2 = Math.round(performance.now() - t0);
+          st.old.style.opacity = 0;
+          st.new.style.opacity = 0;
+          label(st, '完全空白', 'empty');
+          log(t2, `t=${t2}ms 空窗（旧内容已消失，新内容未出现）`);
+          // 淡入新内容
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setNew(st, true);
+              st.new.style.opacity = 0;
+              requestAnimationFrame(() => {
+                st.new.style.opacity = 1;
+                label(st, '新内容淡入', 'ready');
+                const t3 = Math.round(performance.now() - t0);
+                log(t3, `t=${t3}ms 新内容淡入 0→1（280ms）`);
+                setTimeout(() => {
+                  const t4 = Math.round(performance.now() - t0);
+                  label(st, '完成', 'ready');
+                  log(t4, `t=${t4}ms 完成（共 ~${t4}ms，含空窗）`);
+                  st.busy = false;
+                }, 280);
+              });
+            });
+          });
+        }, 120);
+      }, wait);
+    } else {
+      // B：就绪后在暗态下直接替换 → 恢复亮度
+      setTimeout(() => {
+        const t1 = Math.round(performance.now() - t0);
+        setNew(st, true);           // 暗态下替换（旧 0.55 → 新 0.55）
+        st.new.style.opacity = 0.55;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            st.new.style.opacity = 1;   // 0.55 → 1 平滑变亮
+            label(st, '新内容变亮', 'ready');
+            log(t1, `t=${t1}ms 数据就绪 → 暗态下原位替换（无透明帧）→ 变亮`);
+            setTimeout(() => {
+              const t4 = Math.round(performance.now() - t0);
+              label(st, '完成', 'ready');
+              log(t4, `t=${t4}ms 完成（无空窗）`);
+              st.busy = false;
+            }, 240);
+          });
+        });
+      }, wait);
+    }
+  });
+}
+</script>
+</body>
+</html>
