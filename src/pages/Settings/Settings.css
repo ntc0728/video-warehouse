@@ -507,6 +507,9 @@ body.skin-transitioning .skin-btn.active {
 
 .settings-content__pane {
   display: flex;
+  /* flex-basis auto：短内容（如关于页）撑满内容区，免责声明才能贴底；
+     长内容 tab 保持自然高度不被压缩（flex:1 1 0 会把长内容压进视口导致溢出卡片）。 */
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
 }
@@ -1090,6 +1093,17 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+/* 关于页可点击项标题：解除 List 组件 flex-1 满宽——满宽元素以整行中心为缩放原点，
+   按下 scale 0.96 时靠左文本被拉向中心（实测位移 ~19px = "左右平移"）；
+   flex:none 后宽度回落文本自身宽度（width:fit-content 见上），
+   缩放原点=文本中心 = 原地放大缩小，与个人设置项反馈一致。 */
+.about-tab .list-item__row {
+  justify-content: space-between;
+}
+.about-tab .list-item__title {
+  flex: none;
 }
 
 /* 关于页免责声明：靠页面底部（flex 容器内 margin-top:auto 推到底）、
