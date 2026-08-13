@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.0...kinotv-v1.7.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **ci:** APK 构建移入 release-please 工作流根治 Release 缺 assets ([70e9953](https://github.com/ntc0728/video-warehouse/commit/70e9953bc0c92bd957897e1401948f99e6a5a41f))
+* **hero-banner:** 分类切换主图旧图垫底→新图就绪淡入，消除硬切 ([3474500](https://github.com/ntc0728/video-warehouse/commit/34745006e95374104fba80b3ead2eaabf12d3102))
+* **home:** 分类切换交叉淡出/淡入过渡，消除直白瞬间替换 ([0f1e40f](https://github.com/ntc0728/video-warehouse/commit/0f1e40fa86f6175fccccf2bb4ee07c231186c968))
+* **home:** 分类切换内容无透明空窗 + 修复轮播回归 + 缩略图交叉淡入 ([455c8ce](https://github.com/ntc0728/video-warehouse/commit/455c8cefd1481acf557cc704008c3b05b93b41d2))
+* **home:** 分类切换改渲染层 SWR 根治白屏闪烁 ([0154816](https://github.com/ntc0728/video-warehouse/commit/01548164e0f78e05b18a3b3d2225b1b04475a046))
+* **settings:** tab 常驻挂载消除切 tab 抖动 + OverlayScrollbar 补内容变化监听 ([4e08cb6](https://github.com/ntc0728/video-warehouse/commit/4e08cb612a4c989a9319689a4922e4e9714ac07e))
+* **settings:** 关于页免责声明贴底 + 点击项左右平移改文本缩放 ([d69dbd7](https://github.com/ntc0728/video-warehouse/commit/d69dbd7a05f3f7be5faddf4705d68ff91409d133))
+
+
+### Performance Improvements
+
+* 页面走读问题整改（源JSON按需加载/分类请求取消与去重/封面失败重试/IP层动画统一/收藏历史页卡顿优化） ([8748f30](https://github.com/ntc0728/video-warehouse/commit/8748f3093b3ddfe4adcc2a45f20aa72b5a31d8d6))
+
 ## [1.7.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.6.0...kinotv-v1.7.0) (2026-08-12)
 
 
