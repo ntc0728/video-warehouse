@@ -620,6 +620,38 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
     console.log('✅ HOME-060 通过: 分类切换经淡出/淡入过渡，无瞬间替换');
   });
+
+  test('HOME-061: 分类切换时 banner 主图平滑过渡（旧图垫底→新图就绪淡入→滞留层移除）', async ({ page }) => {
+    // 前置: 桌面端，首页数据就绪（首页首图已加载/缓存）
+    await page.goto('/');
+    await page.waitForSelector('.home-page__content', { timeout: 15000 });
+    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+
+    // 操作: 切「电影」分类 → 触发主图过渡（旧图滞留层垫底 → 新图就绪淡入）
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+
+    // 阶段1: 过渡中滞留层出现（旧图垫底，新层就绪前不渲染，无空白帧）
+    await expect(page.locator('.hero-banner__bg-layer--stale')).toBeVisible({ timeout: 3000 });
+
+    // 阶段2: 新层挂载 is-active（预加载就绪 → heroBgFadeIn 淡入），淡入期间滞留层仍垫底
+    await expect(page.locator('.hero-banner__bg-layer.is-active')).toBeVisible({ timeout: 3000 });
+    expect(
+      await page.locator('.hero-banner__bg-layer--stale').count(),
+      '淡入期间滞留层应继续垫底（无空白帧）',
+    ).toBe(1);
+
+    // 阶段3: 滞留层在淡入完成后移除（清理 effect ~1.2s）
+    await expect
+      .poll(async () => page.locator('.hero-banner__bg-layer--stale').count(), {
+        timeout: 5000,
+        intervals: [200],
+      })
+      .toBe(0);
+
+    // 终态: 仅单层 is-active，无滞留残留
+    expect(await page.locator('.hero-banner__bg-layer').count()).toBe(1);
+    console.log('✅ HOME-061 通过: 分类切换主图经「旧图垫底→新图淡入」过渡，无硬切');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
