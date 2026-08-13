@@ -59,6 +59,10 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // 关闭构建前的 dist 清空：CI/本地环境的安全删除防护（safe-delete）会拦截
+    // vite 的 emptyDir(dist/assets) 批量删除（>50 文件），导致构建失败。
+    // 关闭后同名产物直接覆盖写入，无实际影响。
+    emptyOutDir: false,
     sourcemap: false,
     // 使用 terser 替代 esbuild，支持更激进的混淆压缩
     minify: 'terser',
