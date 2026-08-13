@@ -1066,8 +1066,8 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
 - **ADR-010 RecordShell 桌面横向筛选栏 vs 移动 M6（2026-08-05 补录）**
   收藏页/历史页共用 RecordShell 外壳：**桌面（≥768px）**顶部横向 sticky 卡片（第 1 行 = 标题+影视/IPTV 分段+搜索框+批量工具栏，第 2 行 = 状态筛选芯片横向可换行），主区在下方；**移动（≤767px）**顶部 sticky 精简栏滚动时折叠筛选芯片行。实现：末尾追加 `@media (width >= 768px)` 覆盖块，原移动端规则逐字节未动（零影响）；桌面横向 flex 中 `width:100%` 元素须显式 `width:auto` 复位。详见 AGENTS.md「RecordShell」。
 
-- **ADR-011 首页分类切换 deferredCategory 解耦 + 纯 opacity 过渡（2026-08-05 补录）**
-  首页「类目切换」将 `activeCategory`（点击立即响应）与 `deferredCategory`（驱动数据/内容渲染）解耦，切换时整页 `.home-page__content` 重放 `.home-cat-fade`（opacity 0→1，0.28s，动画结束移除类、首挂载跳过）。**关键约束：过渡只用 opacity、绝不含 transform**——HeroBanner 的 GPU 合成缩略图层遇 transform 会重绘闪烁（"闪一下"）。详见 AGENTS.md「首页类目切换过渡」。
+- **ADR-011 首页分类切换 deferredCategory 解耦 + 纯 opacity 过渡（2026-08-05 补录，2026-08-13 终版修订）**
+  首页「类目切换」将 `activeCategory`（点击立即响应）与 `deferredCategory`（驱动数据/内容渲染）解耦，切换由「新分类数据就绪」事件触发：等待期旧内容保留 + `.home-cat-dim`（opacity 0.55）降暗 → 数据就绪**暗态下原位替换** `displayedCategory` → 移除 dim → opacity 0.24s 变亮恢复 1。**全程无透明帧（最低 0.55）**——历史 `.home-cat-fade`（opacity 0→1）/ `fadePhase` 三态状态机（淡出到 0）均已移除（曾产生「banner 下方内容短暂消失」空窗）。`.home-page__content` 必须保留 `animation-fill-mode: none`（解除 `page-transition-enter` 的 `both` fill 对 opacity 的锁定，否则降暗失效）。**关键约束：过渡只用 opacity、绝不含 transform**——HeroBanner 的 GPU 合成缩略图层遇 transform 会重绘闪烁（"闪一下"）。详见 AGENTS.md「首页类目切换过渡」。
 
 - **ADR-012 侧边栏折叠重构：瞬切 + 图标绝对居中 + label 淡出（2026-08-04）**
   侧边栏折叠从「宽度动画（0.24s transition）」改为**瞬切**：spacer 与 sidebar 同帧到位、无宽度动画（避免折叠时主内容区逐帧重排 reflow 卡顿）；图标收起态**绝对定位居中**（`left` 固定像素、可过渡平滑位移），label 淡出。实现细节：图标 absolute 化后不占 flex 流，item 显式 min-height 恢复行高；按钮 300ms 防抖。回归测试 `scripts/regression-detail.spec.ts` REG-013/014。
