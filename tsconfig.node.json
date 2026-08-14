@@ -5,7 +5,11 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "strict": true,
+    // emit 重定向到 node_modules/.tmp：否则 tsc -b 会把 vite.config.ts 编译成根目录
+    // vite.config.js，而 Vite 加载配置 .js 优先于 .ts → 实际生效的是编译产物（双源隐患），
+    // 改配置后未跑 tsc 时 dev/构建仍用旧配置。Vite 原生 esbuild 转译 .ts，无需根目录产物。
+    "outDir": "./node_modules/.tmp/vite-config"
   },
   "include": ["vite.config.ts"]
 }
