@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string[]]$Files,
     [string]$Group = "all",        # smoke, regression, all
     [string]$Grep = "",            # 按测试编号前缀/关键词精准回归（透传 --grep）
@@ -103,6 +103,15 @@ $uiPrecisionMap = @{
         spec = @("scripts/browse.spec.ts")
         grep = "BROWSE-025|BROWSE-030|BROWSE-043|BROWSE-053|BROWSE-060"
     }
+
+    # ── HeroBanner（轮播/缩略图/分类切换过渡）──
+    # grep 用 describe 段号（1.2 交互 + 1.3b 切换过渡）而非逐个编号：
+    # 段内新增用例自动涵盖，映射无需随用例增减维护。
+    # ⚠️ 段号是正则：1.2 的 "." 必须转义为 1\.2（否则 "1023px" 等含 1?2 的标题误命中）
+    "src/components/HeroBanner/**" = @{
+        spec = @("scripts/home.spec.ts")
+        grep = "1\.2|1\.3b"
+    }
 }
 
 # 逻辑层：使用 vitest 单元测试
@@ -158,10 +167,12 @@ if (-not $Grep -and ($AutoDetect -or $Files.Count -eq 0)) {
 
 $matchedPlaywrightTests = [System.Collections.Generic.HashSet[string]]::new()
 $grepPatterns = [System.Collections.Generic.HashSet[string]]::new()
+$unmatchedFiles = @()
 $runVitest = $false
 
 foreach ($file in $Files) {
     $normalizedFile = $file.Replace('\', '/')
+    $fileMatched = $false
 
     # 1) 精粒度匹配：文件 → 测试编号前缀（优先，只跑相关测试）
     $precisionMatched = $false
@@ -178,6 +189,7 @@ foreach ($file in $Files) {
         }
     }
     if ($precisionMatched) {
+        $fileMatched = $true
         Write-Host "  [精粒度] $file → grep: $($fileGrepList -join ' | ')"
     }
 
@@ -186,6 +198,7 @@ foreach ($file in $Files) {
         foreach ($pattern in $uiTestMap.Keys) {
             $regexPattern = "^" + ($pattern -replace '\*', '.*') + "$"
             if ($normalizedFile -match $regexPattern) {
+                $fileMatched = $true
                 foreach ($test in $uiTestMap[$pattern]) {
                     [void]$matchedPlaywrightTests.Add($test)
                 }
@@ -197,9 +210,23 @@ foreach ($file in $Files) {
     foreach ($pattern in $logicTestMap.Keys) {
         $regexPattern = "^" + ($pattern -replace '\*', '.*') + "$"
         if ($normalizedFile -match $regexPattern) {
+            $fileMatched = $true
             $runVitest = $true
         }
     }
+
+    # 4) 未命中任何映射 → 收集警告（防止改文件却静默不跑测试）
+    if (-not $fileMatched) {
+        $unmatchedFiles += $normalizedFile
+    }
+}
+
+# 输出未匹配映射的变更文件（提示补充 $uiPrecisionMap）
+if ($unmatchedFiles.Count -gt 0 -and -not $Grep) {
+    Write-Host ""
+    Write-Host "⚠️  以下变更文件未匹配到任何测试映射（本次不会跑对应测试）：" -ForegroundColor Yellow
+    $unmatchedFiles | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
+    Write-Host "  处理：补充脚本上方 $uiPrecisionMap 精粒度条目（grep 用 describe 段号），或手动 -Grep 指定段号/编号。" -ForegroundColor Yellow
 }
 
 # 手动 -Grep 优先：显式覆盖（只跑指定编号/关键词）
