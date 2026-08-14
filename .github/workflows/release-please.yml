@@ -12,31 +12,57 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           # 默认用 GITHUB_TOKEN；若该仓库未开启「Allow GitHub Actions to create and approve
           # pull requests」（私有库/组织策略常禁用），请创建带 repo 权限的 PAT 存入
           # 仓库 Secrets 的 RELEASE_PLEASE_TOKEN，即可绕过该限制自动开版 PR。
+          # ⚠️ 注意：未配置 PAT 时 release 由 GITHUB_TOKEN 创建（author=github-actions[bot]），
+          # 该事件被 GitHub 递归保护吞掉，`on: release: published` 永远不会触发；
+          # 配置 PAT 后 release 由 PAT 身份创建 → 事件可正常触发（release-android.yml 复活）。
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # APK 构建（2026-08-13 起双通道）：
-  # 主通道 = release-android.yml 的 on: release: published——本仓库 release 由
-  # release-please **GitHub App** 在 release PR 合并时创建（PR 打 `autorelease: tagged`
-  # label 实证，非 GITHUB_TOKEN action 创建）→ 不受 GITHUB_TOKEN 事件递归限制，
-  # release 事件可触发（历史死链是 action 创建 release 时的旧场景）。
-  # 本 job = 兜底：仅当 action 亲自创建 release（release_created=true，如 App 未安装）
-  # 时构建上传；App 先行发布时 action 判定已发布 → 自动 skipped，无副作用。
+      # 探测本次 push 是否就是「发版 commit」：package.json 版本对应 tag 的 release 存在
+      # 且 target 指向当前 HEAD（= release PR 合并的 push）才构建。
+      # 为什么不用 release_created：本仓库 release 实际由 GITHUB_TOKEN 通道创建（v1.7.1/v1.7.2
+      # 两次实证 author=github-actions[bot]），action 再运行时 release 已存在 →
+      # release_created=false → 原门控恒跳过（历史 build-apk 全 skipped 的根因）。
+      # 为什么校验 target：仅凭「release 存在」会让普通 push（版本未变）也触发构建，
+      # 用 target==HEAD 精确匹配「本次 push 刚发布的版本」。
+      - name: Check release exists for HEAD
+        id: check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="kinotv-v${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          TARGET="$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json targetCommitish --jq .targetCommitish 2>/dev/null || true)"
+          if [ -n "${TARGET}" ] && [ "${TARGET}" = "${GITHUB_SHA}" ]; then
+            echo "release_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # APK 构建（2026-08-14 双通道）：
+  # 通道 A = release-android.yml 的 on: release: published——仅当 release 由 PAT/
+  # App 创建（非 GITHUB_TOKEN）时可触发；当前 release 由 GITHUB_TOKEN 创建 → 事件被
+  # 递归保护吞掉，此通道为死链（配置 RELEASE_PLEASE_TOKEN 后自动复活）。
+  # 本 job = 始终可用的构建通道：release 已存在（无论谁创建）即构建上传。
   build-apk:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_exists == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
+          ref: ${{ needs.release-please.outputs.tag }}
 
       - uses: actions/setup-node@v5
         with:
@@ -84,9 +110,9 @@ jobs:
       - name: Sign APK
         shell: bash
         env:
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.release-please.outputs.tag }}
         run: |
-          VERSION="${TAG#v}"
+          VERSION="${TAG#kinotv-v}"
           UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
@@ -111,6 +137,6 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.release-please.outputs.tag }}
         run: |
-          gh release upload "$TAG" "kinoTv-v${TAG#v}.apk" --clobber
+          gh release upload "$TAG" "kinoTv-v${TAG#kinotv-v}.apk" --clobber

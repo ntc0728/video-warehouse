@@ -1,16 +1,17 @@
 name: Build Android APK
 
 # APK 补传/兜底入口：
-# - release 事件：release-please **GitHub App** 在 release PR 合并时创建 tag + release
-#   （PR 会打上 `autorelease: tagged` label 实证）——App 创建不触发 GITHUB_TOKEN
-#   递归限制，release: published 事件**可以**触发本 workflow，这是 APK 自动上传的
-#   主通道（2026-08-13 实证：release-please.yml 内 build-apk 依赖 action 的
-#   release_created 输出，但 App 先行发布后 action 判定已发布 → 恒 skipped → APK 缺失）。
-# - workflow_dispatch：手动补传任意版本（填版本号如 1.7.1 → 上传 kinoTv-v1.7.1.apk
-#   到 kinotv-v1.7.1 release）。
+# - release 事件：⚠️ 2026-08-14 实测（v1.7.2）release 由 GITHUB_TOKEN 创建
+#   （author=github-actions[bot]），GITHUB_TOKEN 创建的事件被 GitHub 递归保护吞掉，
+#   `on: release: published` **不会触发**本 workflow——此通道仅当 release 由 PAT/App
+#   身份创建时可用（配置 RELEASE_PLEASE_TOKEN 后 release 由 PAT 创建 → 自动复活）。
+#   自动上传的可靠通道 = release-please.yml 内的 build-apk（release 存在性门控）。
+# - workflow_dispatch：手动补传任意版本（填版本号如 1.7.2 → 上传 kinoTv-v1.7.2.apk
+#   到 kinotv-v1.7.2 release）。
 # ⚠️ tag 前缀必须是 `kinotv-v`（release-please 按 package.json name=kinotv 派生，
-#   实际 tag 如 kinotv-v1.7.1）——曾拼 `v${version}` 导致 checkout git exit 1。
-# 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.7.1.apk）。
+#   实际 tag 如 kinotv-v1.7.2）——曾拼 `v${version}` 导致 checkout git exit 1，
+#   版本号提取亦须用 `${TAG#kinotv-v}`（`${TAG#v}` 删不掉前缀）。
+# 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.7.2.apk）。
 
 on:
   release:
@@ -92,7 +93,7 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          VERSION="${TAG#v}"
+          VERSION="${TAG#kinotv-v}"
           UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
@@ -119,4 +120,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release upload "$TAG" "kinoTv-v${TAG#v}.apk" --clobber
+          gh release upload "$TAG" "kinoTv-v${TAG#kinotv-v}.apk" --clobber
