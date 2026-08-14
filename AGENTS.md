@@ -364,29 +364,54 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ```bash
 # 单个页面（最常见）
-npx playwright test scripts/player.spec.ts
+pnpm exec playwright test scripts/player.spec.ts
 
 # 共享组件（如 VideoCard）
-npx playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/detail.spec.ts scripts/collections.spec.ts scripts/history.spec.ts
+pnpm exec playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/detail.spec.ts scripts/collections.spec.ts scripts/history.spec.ts
 
 # 全量（仅 CI 或发版前）
-npx playwright test
+pnpm exec playwright test
 ```
 
-### 判断规则
+### 增量测试（推荐日常使用）
+
+`scripts/run-tests.ps1` 支持**文件级精粒度映射**（`$uiPrecisionMap`：改哪个文件只跑其相关 describe 段，而非整个 spec）：
+
+```powershell
+# 自动检测 git 改动并匹配映射（推荐）
+.\scripts\run-tests.ps1 -AutoDetect
+
+# 手动指定改动文件，验证匹配效果（不实际跑时可加 -Files）
+.\scripts\run-tests.ps1 -Files @("src/components/HeroBanner/HeroBanner.tsx")
+
+# 手动按 describe 段号/测试编号精准过滤（Grep 透传 playwright --grep）
+.\scripts\run-tests.ps1 -Grep "1\.2"
+.\scripts\run-tests.ps1 -Grep "HOME-010|HOME-011|HOME-012"
+
+# 发版前真实 API 回归
+.\scripts\run-tests.ps1 -Group regression -RealApi
+```
+
+**映射维护约定**（改动代码后同步维护）：
+- 新增/修改组件或页面文件时，检查 `scripts/run-tests.ps1` 的 `$uiPrecisionMap` 是否有对应条目；没有则补充（`spec` = 受影响的 spec 文件，`grep` = 相关 describe 段号或测试编号）
+- **grep 优先用 describe 段号**（如 `1\.2` 覆盖整个 HeroBanner 段）：段内新增用例自动涵盖，映射无需随用例增减维护
+- ⚠️ **段号是正则**：`.` 必须转义（`1.2` 的 `.` 会通配任意字符，误命中含 `1023px` 等 1?2 序列的其他段标题），写 `1\.2`
+- 未匹配到映射的变更文件会输出黄色警告并**不跑对应测试**——提示补映射或用 `-Grep` 手动指定
+
+**判断规则**：
 
 ```
 IF 只改了 src/pages/Xxx/ 目录下的文件
-THEN 只跑该页面对应的 1 个 spec 文件
+THEN 跑对应 spec（优先查 $uiPrecisionMap 是否有该文件的精确条目）
 
 IF 改了 src/components/ 下的共享组件
-THEN 按上表跑所有受影响的 spec 文件
+THEN 优先用 -AutoDetect / 查 $uiPrecisionMap；无映射时按上表跑所有受影响 spec
 
 IF 改了 src/services/ 或 src/stores/ 下的文件
-THEN 按上表跑所有受影响的 spec 文件
+THEN 按上表跑所有受影响的 spec 文件（逻辑层自动加跑 vitest）
 
 IF 改了多个目录
-THEN 取所有受影响 spec 文件的并集（去重）
+THEN 取所有受影响测试的并集（去重）
 ```
 
 ## 文档同步协议（AI Agent 必读）
