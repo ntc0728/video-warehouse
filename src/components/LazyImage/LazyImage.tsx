@@ -12,7 +12,6 @@
  * 缓存工具函数见 `./imageCache.ts`。
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import CardCoverLoading from '../common/CardCoverLoading';
 import { useSettingsStore } from '@/stores';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
@@ -57,12 +56,6 @@ interface LazyImageProps {
   srcSet?: string;
   sizes?: string;
   /**
-   * 加载占位风格：
-   * - default：shimmer + 小 spinner（默认，向后兼容）
-   * - brand：KinoTV 抠图 + 进度条（用于 card 封面）
-   */
-  loadingVariant?: 'default' | 'brand';
-  /**
    * 加载中即显示字母占位（不渲染 shimmer/spinner）：
    * 用于台标等「无图率高、加载可能超时」的场景，避免 spinner 空白等待期；
    * 加载成功后图片淡入替换。默认 false（保持旧占位行为）。
@@ -89,7 +82,6 @@ export default function LazyImage({
   threshold = 0.1,
   srcSet,
   sizes,
-  loadingVariant = 'default',
   timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
   immediateLetter = false,
 }: LazyImageProps) {
@@ -211,7 +203,7 @@ export default function LazyImage({
   return (
     <div
       ref={imgRef}
-      className={`lazy-image-container ${isLoaded || isCached ? 'loaded' : ''} ${error ? 'error' : ''} ${loadingVariant === 'brand' ? 'lazy-image-container--brand' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
+      className={`lazy-image-container ${isLoaded || isCached ? 'loaded' : ''} ${error ? 'error' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
       style={style}
     >
       {/* 有 letter 且无有效候选时不再渲染 fallback 图（由下方 letter 分支独占）：
@@ -240,12 +232,8 @@ export default function LazyImage({
           白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。 */}
       {!isLoaded && !isCached && !error && hasValidSrc && (
         <div className="lazy-image-placeholder">
-          {loadingVariant === 'brand' ? (
-            immediateLetter && letter ? (
-              <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
-            ) : (
-              <CardCoverLoading />
-            )
+          {immediateLetter && letter ? (
+            <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
           ) : (
             placeholder || (
               <div className="lazy-image-spinner">

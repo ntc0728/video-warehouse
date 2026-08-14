@@ -93,8 +93,6 @@ export default function HomePage() {
     // （hero + 前 getVisibleRowCount 行，含 1 行缓冲）且有可展示内容（或加载已结束的失败终态）。
     // ⚠️ 不等「全部行」settle：loadCategory 分批到达（首行快、其余行 requestIdleCallback
     //   延迟加载），等待所有行会让最慢的 discover 行拖住整页切换（用户反馈"切换很慢"）。
-    //   预加载只覆盖首屏可见行（已按 viewport 高度 + hero 占位估算），首屏外的行保持原有
-    //   懒加载（滚动到时正常骨架→图，视口外无感知）。
     const visibleRowCount = getVisibleRowCount({ width: window.innerWidth, height: window.innerHeight });
     const ready =
       deferredCategory === 'home' ||
@@ -106,17 +104,16 @@ export default function HomePage() {
           categoryData.rows.every((r) => r.error != null)));
     if (!ready) return;
 
-    // 卡片封面「就绪替换」门控（2026-08-14，对齐 HeroBanner）：
-    // 数据就绪后**不立即**切换，先预加载目标分类首屏可见卡片的封面图
-    // （w342/w185 + markImageLoaded 写 session 缓存，超时兜底）。
-    // 新卡片挂载时 LazyImage 命中缓存 → 直接 loaded 态渲染，无骨架闪。
-    // 切换期间用户再切分类 → effect 重跑（cleanup 置 cancelled）→ 旧预加载作废，
-    // 新目标以其自身数据就绪为准，天然竞态安全。
-    const target = deferredCategory;
-    let cancelled = false;
+    // ⚠️（2026-08-14 修正）：**立即切换，不做预加载阻塞门控**。
+    // 历史实现曾「数据就绪后先等全部首屏卡片图预加载完成再 setDisplayedCategory」，
+    // 导致切换被拖慢（最多 2s 超时）、且 banner/缩略图/卡片绑定一起等一起变——
+    // 用户反馈「页面切过去图片要等很久才变更，不可接受」。
+    // 预加载改为**后台非阻塞预热**：切换立即发生，卡片图走各自懒加载；
+    // 预加载仅为后续滚动/二次进入的 session 缓存命中加速，不 gate 切换。
+    setDisplayedCategory(deferredCategory);
     // 目标分类行数据（首页取 useTMDBStore 最新值，非订阅——仅预加载用途，不触发重渲染）
     const rowsForPreload =
-      target === 'home'
+      deferredCategory === 'home'
         ? (() => {
             const s = useTMDBStore.getState();
             return [
@@ -130,15 +127,10 @@ export default function HomePage() {
             ];
           })()
         : (categoryData?.rows ?? []);
-    preloadRowCovers(rowsForPreload, {
+    void preloadRowCovers(rowsForPreload, {
       width: window.innerWidth,
       height: window.innerHeight,
-    }).then(() => {
-      if (!cancelled) setDisplayedCategory(target);
     });
-    return () => {
-      cancelled = true;
-    };
   }, [deferredCategory, displayedCategory, categoryData]);
 
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）

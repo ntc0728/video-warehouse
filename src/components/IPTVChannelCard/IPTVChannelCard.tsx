@@ -114,7 +114,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           src={logoCandidates[0] ?? ''}
           srcCandidates={logoCandidates.slice(1)}
           alt={channel.name}
-          loadingVariant="brand"
           /* fallbackSrc="" 强制不渲染 KinoTV 纵向品牌占位图（浅蓝+播放图标），
              横向 cover（3:2）下不协调；改用下方专属 Tv 图标占位 */
           fallbackSrc=""
