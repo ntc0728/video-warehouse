@@ -274,7 +274,6 @@ const VideoCard = memo(function VideoCard({
           sizes={variant === 'portrait' ? sizes : undefined}
           alt={video.title}
           className={`video-card-cover-img ${variant === 'landscape' ? 'video-card-cover-img--landscape' : ''}`}
-          loadingVariant="brand"
           onLoad={() => setImageLoaded(true)}
         />
 

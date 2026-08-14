@@ -34,9 +34,9 @@ test.describe('9.1 冷启动与首屏', () => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.video-card, .lazy-image-container', { timeout: 15000 });
     await page.waitForTimeout(2500);
-    // error 态渲染 fallback 图（.lazy-image-fallback）；加载中渲染 brand 占位（.card-cover-loading）
+    // error 态渲染 fallback 图（.lazy-image-fallback）；加载中渲染默认占位（.lazy-image-placeholder）
     const fallbackCount = await page.locator('.lazy-image-fallback').count();
-    const loadingCount = await page.locator('.card-cover-loading').count();
+    const loadingCount = await page.locator('.lazy-image-placeholder').count();
     expect(fallbackCount + loadingCount).toBeGreaterThan(0);
     // 兜底图必须是主题自适应 SVG（非深色 placeholder 的灰度覆盖判定：src 含 placeholder）
     const fallbackSrcs = await page
