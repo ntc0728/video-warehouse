@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.4...kinotv-v1.7.5) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** build-apk 门控改为 release PR merge commit 判定（release_created 恒 false 与 API 探测竞态均不可靠，零探测终版） ([0a43a73](https://github.com/ntc0728/video-warehouse/commit/0a43a73385af748ace50671e6b840b45b80ab0db))
+
 ## [1.7.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.3...kinotv-v1.7.4) (2026-08-14)
 
 
