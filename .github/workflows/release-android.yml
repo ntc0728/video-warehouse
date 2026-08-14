@@ -1,9 +1,16 @@
 name: Build Android APK
 
-# 手动补传 APK（workflow_dispatch，填版本号如 1.6.0 → 上传 kinoTv-v1.6.0.apk 到 v1.6.0 release）。
-# 自动发布链路已移入 release-please.yml 的 build-apk job（GITHUB_TOKEN 事件不递归触发
-# 本 workflow 的 on: release，历史 release 因此全部缺失 APK），本文件仅作兜底入口。
-# 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.4.0.apk）。
+# APK 补传/兜底入口：
+# - release 事件：release-please **GitHub App** 在 release PR 合并时创建 tag + release
+#   （PR 会打上 `autorelease: tagged` label 实证）——App 创建不触发 GITHUB_TOKEN
+#   递归限制，release: published 事件**可以**触发本 workflow，这是 APK 自动上传的
+#   主通道（2026-08-13 实证：release-please.yml 内 build-apk 依赖 action 的
+#   release_created 输出，但 App 先行发布后 action 判定已发布 → 恒 skipped → APK 缺失）。
+# - workflow_dispatch：手动补传任意版本（填版本号如 1.7.1 → 上传 kinoTv-v1.7.1.apk
+#   到 kinotv-v1.7.1 release）。
+# ⚠️ tag 前缀必须是 `kinotv-v`（release-please 按 package.json name=kinotv 派生，
+#   实际 tag 如 kinotv-v1.7.1）——曾拼 `v${version}` 导致 checkout git exit 1。
+# 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.7.1.apk）。
 
 on:
   release:
@@ -11,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '补传的版本号（不带 v 前缀，如 1.6.0）'
+        description: '补传的版本号（不带 v 前缀，如 1.7.1）'
         required: true
         type: string
 
@@ -22,27 +29,27 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     steps:
-      # 手动模式取输入版本（拼 v 前缀），release 事件取 release tag
+      # 手动模式取输入版本拼 kinotv-v 前缀，release 事件直接用 release tag（已含前缀）
       - name: Resolve tag
         id: tag
         shell: bash
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=kinotv-v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ steps.tag.outputs.tag }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
