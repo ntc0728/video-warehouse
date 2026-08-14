@@ -703,6 +703,61 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     await expect(page.locator('.hero-banner__thumb-skeleton')).toHaveCount(0, { timeout: 5000 });
     console.log('✅ HOME-063 通过: 分类切换缩略图平滑过渡，无骨架跳变');
   });
+
+  test('HOME-064: 分类切换时下方卡片封面无骨架闪（预加载就绪替换门控）', async ({ page }) => {
+    // 前置: 桌面端，首页数据就绪
+    await page.goto('/');
+    await page.waitForSelector('.home-page__content', { timeout: 15000 });
+    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+
+    // 给 TMDB 图片请求加 300ms 延迟，制造「慢网」场景：
+    // 门控生效时，新分类首屏卡片图在「切换前」的预加载期已全部请求完成并写入
+    // session 缓存，替换后卡片挂载即命中缓存（LazyImage 渲染派生直接绘制），
+    // 视口内全程无骨架闪；无门控时替换后新卡片立即进入加载态（骨架出现）。
+    await page.route('**/image.tmdb.org/**', async (route) => {
+      await new Promise((r) => setTimeout(r, 300));
+      await route.continue();
+    });
+    await page.waitForTimeout(100); // 让路由注册生效
+
+    // 操作: 切「电影」分类 → 数据就绪后先预加载封面图，就绪才替换内容
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+
+    // 等待期: 出现降暗（home-cat-dim）→ 预加载进行中，旧内容保留
+    await expect(page.locator('.home-page__content.home-cat-dim')).toBeVisible({ timeout: 5000 });
+
+    // 终态: dim 移除（切换完成）+ 视口内卡片全部无骨架（门控核心证据：预加载就绪才替换）
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const el = document.querySelector('.home-page__content');
+            if (!el || el.classList.contains('home-cat-dim')) return false;
+            // 视口内卡片（横向滚动露出 ≥10% 才被 IO 加载；全部检查有骨架即失败）
+            const cards = Array.from(document.querySelectorAll('.tmdb-movierow-card'));
+            const visible = cards.filter((c) => {
+              const r = (c as HTMLElement).getBoundingClientRect();
+              return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+            });
+            if (visible.length === 0) return false;
+            // 门控核心证据：所有视口卡片封面已加载完成（无骨架、无未加载 placeholder）
+            return visible.every((c) => !c.querySelector('.lazy-image-placeholder'));
+          }),
+        { timeout: 15000, intervals: [200] },
+      )
+      .toBe(true);
+    // 替换后视口内卡片封面全部处于「已加载」态（无骨架 = 预加载就绪替换门控生效）
+    const loadedCards = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.tmdb-movierow-card'));
+      return cards.filter((c) => {
+        const r = (c as HTMLElement).getBoundingClientRect();
+        return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+      }).length;
+    });
+    expect(loadedCards, '替换后视口内应有可见卡片').toBeGreaterThan(0);
+    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
+    console.log('✅ HOME-064 通过: 分类切换卡片封面经预加载就绪替换，无骨架闪');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

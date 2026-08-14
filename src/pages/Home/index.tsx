@@ -22,6 +22,7 @@ import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/consta
 import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
+import { preloadRowCovers, getVisibleRowCount } from './preloadRowCovers';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDocumentTitle } from '@/hooks';
@@ -88,15 +89,56 @@ export default function HomePage() {
   // 用户过渡期再切分类时以最新就绪目标为准，无需额外状态机。
   useEffect(() => {
     if (deferredCategory === displayedCategory) return;
-    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = 有内容或加载已结束（含失败终态）
+    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = **首屏可见行加载结束**
+    // （hero + 前 getVisibleRowCount 行，含 1 行缓冲）且有可展示内容（或加载已结束的失败终态）。
+    // ⚠️ 不等「全部行」settle：loadCategory 分批到达（首行快、其余行 requestIdleCallback
+    //   延迟加载），等待所有行会让最慢的 discover 行拖住整页切换（用户反馈"切换很慢"）。
+    //   预加载只覆盖首屏可见行（已按 viewport 高度 + hero 占位估算），首屏外的行保持原有
+    //   懒加载（滚动到时正常骨架→图，视口外无感知）。
+    const visibleRowCount = getVisibleRowCount({ width: window.innerWidth, height: window.innerHeight });
     const ready =
       deferredCategory === 'home' ||
       (categoryData != null &&
+        categoryData.rows.length > 0 &&
+        categoryData.rows.slice(0, visibleRowCount).every((r) => !r.loading) &&
         (categoryData.hero.length > 0 ||
-          categoryData.rows.some((r) => r.items.length > 0) ||
-          !categoryData.loading));
+          categoryData.rows.slice(0, visibleRowCount).some((r) => r.items.length > 0) ||
+          categoryData.rows.every((r) => r.error != null)));
     if (!ready) return;
-    setDisplayedCategory(deferredCategory);
+
+    // 卡片封面「就绪替换」门控（2026-08-14，对齐 HeroBanner）：
+    // 数据就绪后**不立即**切换，先预加载目标分类首屏可见卡片的封面图
+    // （w342/w185 + markImageLoaded 写 session 缓存，超时兜底）。
+    // 新卡片挂载时 LazyImage 命中缓存 → 直接 loaded 态渲染，无骨架闪。
+    // 切换期间用户再切分类 → effect 重跑（cleanup 置 cancelled）→ 旧预加载作废，
+    // 新目标以其自身数据就绪为准，天然竞态安全。
+    const target = deferredCategory;
+    let cancelled = false;
+    // 目标分类行数据（首页取 useTMDBStore 最新值，非订阅——仅预加载用途，不触发重渲染）
+    const rowsForPreload =
+      target === 'home'
+        ? (() => {
+            const s = useTMDBStore.getState();
+            return [
+              { items: s.nowPlaying },
+              { items: s.popularMovies },
+              { items: s.topRatedMovies },
+              { items: s.upcomingMovies },
+              { items: s.popularTv },
+              { items: s.topRatedTv },
+              { items: s.airingTodayTv },
+            ];
+          })()
+        : (categoryData?.rows ?? []);
+    preloadRowCovers(rowsForPreload, {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }).then(() => {
+      if (!cancelled) setDisplayedCategory(target);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [deferredCategory, displayedCategory, categoryData]);
 
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
@@ -506,6 +548,7 @@ export default function HomePage() {
               items={row.items}
               isLoading={row.isLoading}
               error={row.error}
+              scrollResetToken={isDisplayingCategory ? displayedCategory : 'home'}
             />
           ))}
         </div>
