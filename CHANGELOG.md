@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.6](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.5...kinotv-v1.7.6) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** 包管理器迁移 npm→pnpm 并适配构建链路（workflows/scripts 换 pnpm 语法、sharp 常驻、新增 pnpm-lock.yaml/.npmrc） ([b19ecf9](https://github.com/ntc0728/video-warehouse/commit/b19ecf905c676e30e93720b05e1b3878d5fe7841))
+
 ## [1.7.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.4...kinotv-v1.7.5) (2026-08-14)
 
 
