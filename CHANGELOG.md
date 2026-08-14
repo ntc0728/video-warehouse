@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.1...kinotv-v1.7.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** APK 构建恢复 release 事件主通道 + 修复手动补传 tag 前缀 ([7b54c7d](https://github.com/ntc0728/video-warehouse/commit/7b54c7dbb715cd17c76b415f346f16d276be54dd))
+
 ## [1.7.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.0...kinotv-v1.7.1) (2026-08-13)
 
 
