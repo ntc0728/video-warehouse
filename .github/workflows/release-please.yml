@@ -27,24 +27,27 @@ jobs:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # 探测本次 push 是否就是「发版 commit」：package.json 版本对应 tag 的 release 存在
-      # 且 target 指向当前 HEAD（= release PR 合并的 push）才构建。
-      # 为什么不用 release_created：本仓库 release 实际由 GITHUB_TOKEN 通道创建（v1.7.1/v1.7.2
-      # 两次实证 author=github-actions[bot]），action 再运行时 release 已存在 →
+      # 探测本次 push 是否就是「发版 commit」：在 release 列表里找 target_commitish
+      # == 本次 GITHUB_SHA 的 release（= release PR 合并的 push）才构建。
+      # 为什么不用 release_created：本仓库 release 实际由 GITHUB_TOKEN 通道创建（v1.7.1~v1.7.3
+      # 三次实证 author=github-actions[bot]），action 再运行时 release 已存在 →
       # release_created=false → 原门控恒跳过（历史 build-apk 全 skipped 的根因）。
-      # 为什么校验 target：仅凭「release 存在」会让普通 push（版本未变）也触发构建，
-      # 用 target==HEAD 精确匹配「本次 push 刚发布的版本」。
-      - name: Check release exists for HEAD
+      # 为什么用 API 而非读工作区 package.json：release-please-action 运行期间会
+      # 执行 git 操作（切 manifest 分支/打 tag），结束后工作区 HEAD 不再是 GITHUB_SHA，
+      # 读出的版本/文件不可靠（v1.7.3 发版实测仍 skipped）。直接对 GitHub API 匹配
+      # release.target_commitish == GITHUB_SHA 精确命中「本次 push 刚发布的版本」，
+      # 普通 push（无 release 指向它）自动跳过。
+      - name: Check release for HEAD
         id: check
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          TAG="kinotv-v${VERSION}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          TARGET="$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json targetCommitish --jq .targetCommitish 2>/dev/null || true)"
-          if [ -n "${TARGET}" ] && [ "${TARGET}" = "${GITHUB_SHA}" ]; then
+          TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq ".[] | select(.target_commitish == \"${GITHUB_SHA}\" and .draft == false) | .tag_name" \
+            | head -1 || true)"
+          if [ -n "${TAG}" ]; then
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
             echo "release_exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_exists=false" >> "$GITHUB_OUTPUT"
