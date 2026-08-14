@@ -12,6 +12,7 @@ import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
 import { buildImageUrl, buildImageSrcSet, HERO_THUMB_SIZE } from '@/services/tmdbService';
+import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
 import './HeroBanner.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -163,24 +164,35 @@ export default function HeroBanner({
         const oldUrl = buildImageUrl(oldPath, 'w1280');
         const url = buildImageUrl(newPath, 'w1280');
         if (oldUrl && url) {
-          // 与切换帧渲染期派生的快照同值（幂等写入 state，供过渡期继续垫底）
-          setStaleSnapshot({
-            url: oldUrl,
-            srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
-            id: String(oldItem.id),
-          });
-          switchLoadRef.current = url;
-          setSwitchReady(false);
-          const img = new Image();
-          const done = () => {
-            if (switchLoadRef.current === url) {
-              switchLoadRef.current = null;
-              setSwitchReady(true);
-            }
-          };
-          img.onload = done;
-          img.onerror = done;
-          img.src = url;
+          // 目标分类首项图无缓存（session 未加载过，如首次进入项目/首次切到该分类）：
+          // 不做「旧图滞留 + 预加载门控」——新分类的图片区域本来就是骨架占位，
+          // 直接渲染新层让图片走自身加载（加载完成 heroBgFadeIn 淡入），
+          // 消除「切过去旧图滞留很久才更新」的慢感知（用户反馈无缓存时切换特别慢）。
+          // 有缓存（切回已看过的分类）才保留旧图垫底 → 新图就绪淡入的平滑过渡。
+          if (!isImageLoaded(url)) {
+            switchLoadRef.current = null;
+            setStaleSnapshot(null);
+            setSwitchReady(true);
+          } else {
+            // 与切换帧渲染期派生的快照同值（幂等写入 state，供过渡期继续垫底）
+            setStaleSnapshot({
+              url: oldUrl,
+              srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
+              id: String(oldItem.id),
+            });
+            switchLoadRef.current = url;
+            setSwitchReady(false);
+            const img = new Image();
+            const done = () => {
+              if (switchLoadRef.current === url) {
+                switchLoadRef.current = null;
+                setSwitchReady(true);
+              }
+            };
+            img.onload = done;
+            img.onerror = done;
+            img.src = url;
+          }
         } else {
           setStaleSnapshot(null);
           setSwitchReady(true);
@@ -397,7 +409,13 @@ export default function HeroBanner({
     return it?.backdropPath || it?.backdrop_path;
   })();
   const newFirstPath = displayItems[0]?.backdropPath || displayItems[0]?.backdrop_path;
-  const crossfadeSwitch = itemsChanged && displayItems.length > 0 && !!oldActivePath && !!newFirstPath;
+  // 目标分类首项图是否已有缓存（session 级，切回看过的分类命中）。无缓存时不做
+  // 「旧图滞留 + 预加载门控 + 淡入」切换动画——图片本来就是骨架占位，直接渲染新层
+  // 让图片自然加载（有缓存才保留旧图垫底 → 新图就绪淡入的平滑过渡）。
+  const newFirstUrl = newFirstPath ? (buildImageUrl(newFirstPath, 'w1280') || '') : '';
+  const targetCached = newFirstUrl ? isImageLoaded(newFirstUrl) : false;
+  const crossfadeSwitch =
+    itemsChanged && displayItems.length > 0 && !!oldActivePath && !!newFirstPath && targetCached;
   const staleLayer = crossfadeSwitch
     ? {
         url: buildImageUrl(oldActivePath, 'w1280') || '',
@@ -491,11 +509,14 @@ export default function HeroBanner({
               loading="eager"
               decoding="async"
               draggable={false}
-              onLoad={() => { if (isActive) setBannerReady(true); }}
+              onLoad={() => { if (backdropUrl) markImageLoaded(backdropUrl); if (isActive) setBannerReady(true); }}
               onError={() => { if (isActive) setBannerReady(true); }}
               ref={(el) => {
-                // 已缓存图片不会触发 onLoad，用 complete 兜底标记就绪
-                if (el && el.complete && el.naturalWidth > 0 && isActive) setBannerReady(true);
+                // 已缓存图片不会触发 onLoad，用 complete 兜底标记就绪 + 缓存标记
+                if (el && el.complete && el.naturalWidth > 0) {
+                  if (backdropUrl) markImageLoaded(backdropUrl);
+                  if (isActive) setBannerReady(true);
+                }
               }}
             />
           );
@@ -625,6 +646,18 @@ const HeroThumb = memo(
       loadingRef.current = null;
       return;
     }
+    // 目标缩略图无缓存（session 未加载过，首次进入/首次切到该分类）：跳过
+    // 「预加载完成再换图」门控——图片区域本来就是骨架占位，直接切换 src，
+    // 骨架占位持续显示直到新图加载完成淡入（消除旧图滞留的慢感知）。
+    // 有缓存（切回已看过的分类）才保留旧图垫底 → 新图就绪交叉淡入的平滑过渡。
+    if (!isImageLoaded(thumbUrl)) {
+      loadingRef.current = null;
+      setPrevSrc(null);
+      setCurrentSrc(thumbUrl);
+      setSwitching(true);
+      setReady(false);
+      return;
+    }
     // 预加载新图，完成后（缓存就绪）再替换 src，期间旧图持续显示
     const img = new Image();
     loadingRef.current = thumbUrl;
@@ -681,7 +714,7 @@ const HeroThumb = memo(
           alt=""
           loading="eager"
           draggable={false}
-          onLoad={() => { setReady(true); setSwitching(false); }}
+          onLoad={() => { if (currentSrc) markImageLoaded(currentSrc); setReady(true); setSwitching(false); }}
         />
       ) : null}
       {!ready && <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" aria-hidden="true" />}

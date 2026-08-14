@@ -573,6 +573,16 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     await page.waitForSelector('.home-page__content', { timeout: 15000 });
     await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
 
+    // 给「电影」分类数据源（/movie/popular）加 500ms 延迟，拉长 dim 过渡窗口。
+    // mock 下数据本地立即就绪 → 分类切换瞬间完成 → dim 窗口仅 ~70ms（实测），
+    // 30ms 采样循环随机错过（基线 flaky）。加延迟后窗口 500ms+，采样必命中，
+    // 且更贴近真实网络（用户实际有网络延迟）。
+    await page.route('**/api.tmdb.org/**/movie/popular**', async (route) => {
+      await new Promise((r) => setTimeout(r, 500));
+      await route.continue();
+    });
+    await page.waitForTimeout(100); // 让路由注册生效
+
     // 操作: 点击侧边栏「电影」分类
     await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
 
@@ -733,6 +743,62 @@ test.describe('1.3b 侧边栏分类切换过渡', () => {
     // 浅白遮罩（CardCoverLoading）已彻底删除：任何时刻都不应渲染 .card-cover-loading
     expect(await page.locator('.card-cover-loading').count()).toBe(0);
     console.log(`✅ HOME-064 通过: 切换完成耗时 ${elapsed}ms（<3s）+ 无浅白遮罩`);
+  });
+
+  test('HOME-065: 无缓存分类切换直接渲染（跳过旧图滞留层，新层立即 is-active）', async ({ page }) => {
+    // 前置: 首页数据就绪（首页首图已加载/缓存）
+    await page.goto('/');
+    await page.waitForSelector('.home-page__content', { timeout: 15000 });
+    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+
+    // 关键构造: 覆盖「电影」分类 hero 数据源 /movie/popular，返回**与首页不同**的 backdrop URL，
+    // 使目标首图从未加载过 → isImageLoaded=false → 走「无缓存」分支（跳过旧图垫底/预加载门控，
+    // 直接渲染新层，图片走骨架占位自然加载）。真实首次进入项目即为该场景。
+    const catResults = Array.from({ length: 20 }, (_, i) => ({
+      id: 5000 + i,
+      title: `分类电影 ${i + 1}`,
+      name: `分类剧集 ${i + 1}`,
+      overview: '分类 mock 数据（backdrop 与首页不同，模拟无缓存）',
+      poster_path: `/test-cat-poster-${i}.jpg`,
+      backdrop_path: `/test-cat-backdrop-${i}.jpg`,
+      release_date: '2024-06-15',
+      first_air_date: '2024-06-15',
+      vote_average: 7.5,
+      vote_count: 500,
+      popularity: 80 + i,
+      genre_ids: [28],
+      original_language: 'zh',
+    }));
+    await page.route('**/api.tmdb.org/3/movie/popular**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ page: 1, results: catResults, total_pages: 1, total_results: 20 }),
+      });
+    });
+
+    // 操作: 切「电影」分类 → 目标首图（/test-cat-backdrop-0.jpg）无缓存 → 直接渲染新层
+    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+
+    // 断言1: 全程不出现旧图滞留层（无缓存跳过「旧图垫底+预加载门控」，无 stale 层）
+    await page.waitForTimeout(200);
+    expect(await page.locator('.hero-banner__bg-layer--stale').count()).toBe(0);
+
+    // 断言2: 新层立即 is-active 且 src 指向目标分类首图（未等预加载完成）
+    await expect(page.locator('.hero-banner__bg-layer.is-active')).toBeVisible({ timeout: 3000 });
+    const src = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+    expect(src).toContain('test-cat-backdrop-0');
+
+    // 断言3: 缩略图直接换源（无旧图保持的预加载态，首张 src 已切换为目标图）
+    await expect(page.locator('.hero-banner__thumb-img').first()).toHaveAttribute(
+      'src',
+      /test-cat-backdrop/,
+      { timeout: 3000 },
+    );
+
+    // 终态: 侧边栏高亮新分类
+    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
+    console.log('✅ HOME-065 通过: 无缓存分类切换直接渲染新层（跳过旧图滞留）');
   });
 });
 
