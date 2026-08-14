@@ -27,45 +27,21 @@ jobs:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # 探测本次 push 是否就是「发版 commit」：在 release 列表里找 target_commitish
-      # == 本次 GITHUB_SHA 的 release（= release PR 合并的 push）才构建。
-      # 为什么不用 release_created：本仓库 release 实际由 GITHUB_TOKEN 通道创建（v1.7.1~v1.7.3
-      # 三次实证 author=github-actions[bot]），action 再运行时 release 已存在 →
-      # release_created=false → 原门控恒跳过（历史 build-apk 全 skipped 的根因）。
-      # 为什么用 API 而非读工作区 package.json：release-please-action 运行期间会
-      # 执行 git 操作（切 manifest 分支/打 tag），结束后工作区 HEAD 不再是 GITHUB_SHA，
-      # 读出的版本/文件不可靠（v1.7.3 发版实测仍 skipped）。直接对 GitHub API 匹配
-      # release.target_commitish == GITHUB_SHA 精确命中「本次 push 刚发布的版本」，
-      # 普通 push（无 release 指向它）自动跳过。
-      - name: Check release for HEAD
-        id: check
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            --jq ".[] | select(.target_commitish == \"${GITHUB_SHA}\" and .draft == false) | .tag_name" \
-            | head -1 || true)"
-          if [ -n "${TAG}" ]; then
-            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-            echo "release_exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "release_exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  # APK 构建（2026-08-14 双通道）：
-  # 通道 A = release-android.yml 的 on: release: published——仅当 release 由 PAT/
-  # App 创建（非 GITHUB_TOKEN）时可触发；当前 release 由 GITHUB_TOKEN 创建 → 事件被
-  # 递归保护吞掉，此通道为死链（配置 RELEASE_PLEASE_TOKEN 后自动复活）。
-  # 本 job = 始终可用的构建通道：release 已存在（无论谁创建）即构建上传。
+  # APK 构建（2026-08-14 终版）：
+  # 门控 = 本次 push 是否为 release PR 的 merge commit（commit message 含
+  # "release-please--branches--master"，GitHub 生成的 merge commit 格式固定，100% 可靠）。
+  # 为什么不用 release_created / API 探测：
+  # - release_created：release 由 GITHUB_TOKEN 通道创建（v1.7.1~v1.7.4 实证 author=
+  #   github-actions[bot]），action 再运行时 release 已存在 → 恒 false → 恒 skipped。
+  # - API 探测（target_commitish==GITHUB_SHA）：与 release 发布存在竞态——check 步骤
+  #   运行时 release 可能尚在 draft/未入列表（列表 API 不返回 draft），v1.7.4 实测仍 skipped。
+  # 本方案零探测：merge commit 必为发版 commit，版本号直接从 checkout 的
+  # package.json 读取（release PR 已 bump 版本），无需 tag/release 状态。
   build-apk:
-    needs: release-please
-    if: needs.release-please.outputs.release_exists == 'true'
+    if: contains(github.event.head_commit.message, 'release-please--branches--master')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.release-please.outputs.tag }}
 
       - uses: actions/setup-node@v5
         with:
@@ -112,10 +88,8 @@ jobs:
       # 未配置时用 keytool 生成临时 keystore 签名（可安装，升级安装会因签名不同而失败）。
       - name: Sign APK
         shell: bash
-        env:
-          TAG: ${{ needs.release-please.outputs.tag }}
         run: |
-          VERSION="${TAG#kinotv-v}"
+          VERSION="$(node -p "require('./package.json').version")"
           UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
@@ -140,6 +114,14 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release-please.outputs.tag }}
         run: |
-          gh release upload "$TAG" "kinoTv-v${TAG#kinotv-v}.apk" --clobber
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="kinotv-v${VERSION}"
+          # release-please job 与本 job 并行，release 可能尚未发布，轮询等待（最长 5 分钟）
+          for i in $(seq 1 30); do
+            if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 10
+          done
+          gh release upload "${TAG}" "kinoTv-v${VERSION}.apk" --clobber
