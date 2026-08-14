@@ -145,15 +145,6 @@ export default defineConfig({
           if (id.includes('/axios/')) {
             return 'http-vendor'
           }
-
-          // 通用工具：dayjs / clsx / tailwind-merge 等
-          if (
-            id.includes('/dayjs/') ||
-            id.includes('/clsx/') ||
-            id.includes('/tailwind-merge/')
-          ) {
-            return 'utils-vendor'
-          }
         },
       },
     },
