@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.3...kinotv-v1.7.4) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** release 门控改用 API 匹配 target_commitish==GITHUB_SHA（release-please-action 运行后工作区 HEAD 漂移，读 package.json 不可靠） ([76ec1c7](https://github.com/ntc0728/video-warehouse/commit/76ec1c75962ac36e81eb4450951ad098d62e422c))
+
 ## [1.7.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.2...kinotv-v1.7.3) (2026-08-14)
 
 
