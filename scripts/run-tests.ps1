@@ -34,9 +34,12 @@ $uiTestMap = @{
     "src/pages/Player/**" = @("scripts/player.spec.ts")
     "src/pages/SourceChecker/**" = @("scripts/source-checker.spec.ts")
     "src/pages/Person/**" = @("scripts/person.spec.ts")
+    "src/pages/ProxySetup/**" = @("scripts/proxy-setup.spec.ts")
     "src/components/UniversalPlayer/**" = @("scripts/player.spec.ts", "scripts/iptv-player.spec.ts")
     "src/components/SearchBox/**" = @("scripts/browse.spec.ts")
     "src/components/RecordShell/**" = @("scripts/collections.spec.ts", "scripts/history.spec.ts")
+    # 未在精粒度映射中的组件 → 跑受影响面最广的页面 spec（比静默不跑好）
+    "src/components/**" = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/person.spec.ts")
 }
 
 # ── UI 层：文件 → 测试编号前缀（精粒度，4 个高频改动区） ──────
@@ -112,12 +115,139 @@ $uiPrecisionMap = @{
         spec = @("scripts/home.spec.ts")
         grep = "1\.2|1\.3b"
     }
+
+    # ── 首页组件 ──
+    "src/components/CategoryQuickAccess/**" = @{
+        spec = @("scripts/home.spec.ts")
+        grep = "1\.3"
+    }
+
+    # ── 全局壳（Layout/StickyHeader/SearchBox 影响所有页面首屏）──
+    "src/components/Layout/**" = @{
+        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/cross-page.spec.ts", "scripts/regression-detail.spec.ts", "scripts/fix-2026-08.spec.ts", "scripts/ui-fixes.spec.ts")
+        grep = "1\.1|1\.3b|1\.5|2\.1|3\.1|4\.1|5\.1|6\.1|7\.1|8\.1|9\.1|10\.1|13\.1|13\.12|3\.17|桌面端|移动端"
+    }
+    "src/components/StickyHeader/**" = @{
+        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/ui-fixes.spec.ts")
+        grep = "1\.1|1\.5|2\.1|3\.1|4\.1|5\.1|6\.1|7\.1|8\.1|9\.1|10\.1|桌面端"
+    }
+    "src/components/SearchBox/**" = @{
+        spec = @("scripts/browse.spec.ts", "scripts/settings.spec.ts", "scripts/iptv.spec.ts", "scripts/cross-page.spec.ts", "scripts/ui-fixes.spec.ts")
+        grep = "2\.1|2\.2|6\.9|5\.9|13\.1|桌面端"
+    }
+
+    # ── 卡片模块 ──
+    "src/components/VideoCard/**" = @{
+        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/person.spec.ts")
+        grep = "1\.4|2\.2|2\.5|2\.6|3\.8|7\.2|7\.4|8\.2|8\.3|8\.4|8\.5|10\.4"
+    }
+    "src/components/LazyImage/**" = @{
+        spec = @("scripts/home.spec.ts", "scripts/detail.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/person.spec.ts", "scripts/iptv.spec.ts")
+        grep = "1\.4|3\.2|7\.2|7\.4|8\.2|10\.4|5\.10"
+    }
+
+    # ── 收藏/历史共用 ──
+    "src/components/RecordShell/**" = @{
+        spec = @("scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/global-fixes.spec.ts")
+        grep = "7\.1|7\.6|8\.1|8\.5|收藏页动画"
+    }
+    "src/components/StatusTabs/**" = @{
+        spec = @("scripts/collections.spec.ts", "scripts/history.spec.ts")
+        grep = "7\.1|8\.1"
+    }
+
+    # ── Detail ──
+    "src/components/StillsLightbox/**" = @{
+        spec = @("scripts/detail.spec.ts")
+        grep = "3\.5|3\.6"
+    }
+
+    # ── IPTV ──
+    "src/components/IPTVChannelCard/**" = @{
+        spec = @("scripts/iptv.spec.ts", "scripts/global-fixes.spec.ts")
+        grep = "5\.1|5\.2|5\.10|IPTV 卡片"
+    }
+    "src/components/EPGProgramList/**" = @{
+        spec = @("scripts/iptv.spec.ts")
+        grep = "5\.5|5\.9"
+    }
+
+    # ── 设置 ──
+    "src/components/SourceManager/**" = @{
+        spec = @("scripts/settings.spec.ts")
+        grep = "6\.3|6\.4|6\.5"
+    }
+    "src/components/TokenRequired/**" = @{
+        spec = @("scripts/settings.spec.ts")
+        grep = "6\.2"
+    }
+    "src/components/ui/**" = @{
+        spec = @("scripts/settings.spec.ts")
+        grep = "6\.6"
+    }
 }
 
-# 逻辑层：使用 vitest 单元测试
+# ── 逻辑层：vitest 单测 + 关键服务文件联动 E2E ─────────────
+# spec 含 "vitest" 标记时触发 vitest run；其余为 playwright spec。
+# 服务层全局目录不在此列——匹配循环末尾对 services/stores/hooks/lib 做通用 vitest 兜底，
+# 此处只放「需联动 E2E」的关键文件精确条目（顺序无关，因为无 glob 吞并）。
 $logicTestMap = @{
-    "src/stores/**" = @("vitest")
-    "src/hooks/**" = @("vitest")
+    "src/services/tmdbService.ts" = @{
+        spec = @("vitest", "scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/person.spec.ts")
+        grep = "1\.1|2\.1|2\.2|3\.1|10\.1"
+    }
+    "src/services/videoService.ts" = @{
+        spec = @("vitest", "scripts/browse.spec.ts", "scripts/player.spec.ts", "scripts/source-checker.spec.ts")
+        grep = "2\.4|4\.5|9\.1"
+    }
+    "src/services/iptvService.ts" = @{
+        spec = @("vitest", "scripts/iptv.spec.ts", "scripts/iptv-player.spec.ts")
+        grep = "5\.1|5\.2|5\.5|11\.1"
+    }
+    "src/services/epgService.ts" = @{
+        spec = @("vitest", "scripts/iptv.spec.ts")
+        grep = "5\.1|5\.5|5\.9"
+    }
+    "src/services/channelLogo.ts" = @{
+        spec = @("vitest", "scripts/iptv.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts")
+        grep = "5\.10|7\.2|8\.2"
+    }
+    "src/services/sourceService.ts" = @{
+        spec = @("vitest", "scripts/settings.spec.ts", "scripts/source-checker.spec.ts")
+        grep = "6\.3|9\.1|9\.6"
+    }
+    "src/services/vodParser.ts" = @{
+        spec = @("vitest", "scripts/player.spec.ts")
+        grep = "4\.5"
+    }
+    "src/services/httpClient.ts" = @{
+        spec = @("vitest")
+        grep = ""
+    }
+    "src/stores/useSettingsStore.ts" = @{
+        spec = @("vitest", "scripts/settings.spec.ts", "scripts/source-checker.spec.ts")
+        grep = "6\.[1-9]|9\.1|9\.6"
+    }
+    "src/stores/useUserStore.ts" = @{
+        spec = @("vitest", "scripts/collections.spec.ts", "scripts/history.spec.ts")
+        grep = "7\.[1-6]|8\.[1-5]"
+    }
+    "src/stores/useTMDBStore.ts" = @{
+        spec = @("vitest", "scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts")
+        grep = "1\.1|2\.1|2\.2|3\.1"
+    }
+    "src/stores/useIPTVStore.ts" = @{
+        spec = @("vitest", "scripts/iptv.spec.ts", "scripts/iptv-player.spec.ts")
+        grep = "5\.[1-9]|11\.[1-3]"
+    }
+    "src/stores/usePlayerStore.ts" = @{
+        spec = @("vitest", "scripts/player.spec.ts")
+        grep = "4\.[1-9]|4\.10"
+    }
+    "src/stores/useSourceManagerStore.ts" = @{
+        spec = @("vitest", "scripts/settings.spec.ts", "scripts/source-checker.spec.ts")
+        grep = "6\.3|6\.4|9\.6"
+    }
 }
 
 # 测试分组定义
@@ -167,6 +297,7 @@ if (-not $Grep -and ($AutoDetect -or $Files.Count -eq 0)) {
 
 $matchedPlaywrightTests = [System.Collections.Generic.HashSet[string]]::new()
 $grepPatterns = [System.Collections.Generic.HashSet[string]]::new()
+$grepPairs = @()   # @(@{spec=...; grep=...})，供段号失效检测按文件验证
 $unmatchedFiles = @()
 $runVitest = $false
 
@@ -186,6 +317,9 @@ foreach ($file in $Files) {
             }
             [void]$grepPatterns.Add($uiPrecisionMap[$pattern].grep)
             $fileGrepList += $uiPrecisionMap[$pattern].grep
+            foreach ($t in $uiPrecisionMap[$pattern].spec) {
+                $grepPairs += @{ spec = $t; grep = $uiPrecisionMap[$pattern].grep }
+            }
         }
     }
     if ($precisionMatched) {
@@ -206,13 +340,33 @@ foreach ($file in $Files) {
         }
     }
 
-    # 3) 逻辑层
+    # 3) 逻辑层（统一 {spec, grep} 结构；spec 含 "vitest" 标记触发单测）
     foreach ($pattern in $logicTestMap.Keys) {
         $regexPattern = "^" + ($pattern -replace '\*', '.*') + "$"
         if ($normalizedFile -match $regexPattern) {
             $fileMatched = $true
-            $runVitest = $true
+            foreach ($test in $logicTestMap[$pattern].spec) {
+                if ($test -eq "vitest") {
+                    $runVitest = $true
+                } else {
+                    [void]$matchedPlaywrightTests.Add($test)
+                }
+            }
+            $logicGrep = $logicTestMap[$pattern].grep
+            if ($logicGrep) {
+                [void]$grepPatterns.Add($logicGrep)
+                foreach ($t in $logicTestMap[$pattern].spec) {
+                    if ($t -ne "vitest") {
+                        $grepPairs += @{ spec = $t; grep = $logicGrep }
+                    }
+                }
+            }
         }
+    }
+
+    # 3.5) 逻辑层通用兜底：services/stores/hooks/lib 任意文件 → vitest
+    if ($normalizedFile -like "src/services/*" -or $normalizedFile -like "src/stores/*" -or $normalizedFile -like "src/hooks/*" -or $normalizedFile -like "src/lib/*") {
+        $runVitest = $true
     }
 
     # 4) 未命中任何映射 → 收集警告（防止改文件却静默不跑测试）
@@ -238,6 +392,31 @@ if ($Grep) {
     }
     $grepPatterns = [System.Collections.Generic.HashSet[string]]::new()
     [void]$grepPatterns.Add($Grep)
+}
+
+# ── 映射失效检测：grep 段号在对应 spec 中已不存在 → 警告（映射过时，需更新）──
+# 代码改动导致 describe 段被删除/重命名时，旧段号 grep 会零命中，此处提前暴露。
+if ($grepPairs.Count -gt 0 -and -not $Grep) {
+    $staleFound = $false
+    foreach ($pair in $grepPairs) {
+        if (-not (Test-Path $pair.spec)) { continue }
+        $specContent = Get-Content $pair.spec -Raw -Encoding UTF8
+        # 该 grep 对某 spec 可能只有部分子模式适用（如 VideoCard 在 detail 只命中 3.8）——
+        # 任一子模式存在即视为该映射对该 spec 有效；全部零命中才报失效
+        $anyMatch = $false
+        foreach ($sub in ($pair.grep -split '\|')) {
+            if ([string]::IsNullOrWhiteSpace($sub)) { continue }
+            if ($specContent -match $sub) { $anyMatch = $true; break }
+        }
+        if (-not $anyMatch) {
+            if (-not $staleFound) {
+                Write-Host ""
+                Write-Host "⚠️  映射失效检测：以下 grep 在对应 spec 中零命中（describe 段被删除/重命名？）：" -ForegroundColor Yellow
+                $staleFound = $true
+            }
+            Write-Host "  $($pair.spec) → '$($pair.grep)' 零命中，映射可能过时，请更新 $uiPrecisionMap / $logicTestMap" -ForegroundColor Yellow
+        }
+    }
 }
 
 # 应用测试分组过滤
