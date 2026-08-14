@@ -229,7 +229,7 @@ if ($Group -ne "all" -and $testGroups.ContainsKey($Group)) {
 # 运行 vitest（如果有逻辑层文件变更）
 if ($runVitest) {
     Write-Host "`nRunning vitest (logic layer)..."
-    & npx vitest run
+    & pnpm exec vitest run
 }
 
 # 运行 playwright（如果有 UI 层文件变更）
@@ -249,7 +249,7 @@ if ($matchedPlaywrightTests.Count -gt 0) {
         Write-Host "  grep filter: '$grepJoined'"
     }
 
-    & npx playwright test @testArgs
+    & pnpm exec playwright test @testArgs
 }
 
 if (-not $runVitest -and $matchedPlaywrightTests.Count -eq 0) {

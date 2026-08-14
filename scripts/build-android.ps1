@@ -16,23 +16,23 @@ Write-Host ""
 
 # 1. 安装依赖（可跳过）
 if (-not $SkipInstall) {
-    Write-Host "[1/5] 安装 npm 依赖..." -ForegroundColor Yellow
+    Write-Host "[1/5] 安装 pnpm 依赖..." -ForegroundColor Yellow
     Push-Location $ProjectRoot
-    npm install
+    pnpm install
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "npm install 失败" -ForegroundColor Red
+        Write-Host "pnpm install 失败" -ForegroundColor Red
         exit 1
     }
     Pop-Location
 } else {
-    Write-Host "[1/5] 跳过 npm install" -ForegroundColor Yellow
+    Write-Host "[1/5] 跳过 pnpm install" -ForegroundColor Yellow
 }
 
 # 2. 构建 Web 资源（CAPACITOR=true）
 Write-Host "[2/5] 构建 Web 资源 (CAPACITOR=true)..." -ForegroundColor Yellow
 Push-Location $ProjectRoot
 $env:CAPACITOR = "true"
-npm run build
+pnpm run build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Web 构建失败" -ForegroundColor Red
     exit 1
@@ -42,7 +42,7 @@ Pop-Location
 # 3. 同步到 Android 项目
 Write-Host "[3/5] 同步 Capacitor 资源到 Android..." -ForegroundColor Yellow
 Push-Location $ProjectRoot
-npx cap sync android
+pnpm exec cap sync android
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Capacitor sync 失败" -ForegroundColor Red
     exit 1
