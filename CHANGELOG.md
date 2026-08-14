@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.2...kinotv-v1.7.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** release-please.yml 门控改为 release 存在性探测（release_created 恒跳过根因修复）+ 双 workflow 版本号提取兼容 kinotv-v 前缀 ([c9373e7](https://github.com/ntc0728/video-warehouse/commit/c9373e76b483783317703be6bb7074b87d01c643))
+
 ## [1.7.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.1...kinotv-v1.7.2) (2026-08-14)
 
 
