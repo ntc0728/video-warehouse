@@ -45,10 +45,14 @@ jobs:
         with:
           ref: ${{ steps.tag.outputs.tag }}
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v5
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
       - uses: actions/setup-java@v5
         with:
@@ -64,18 +68,19 @@ jobs:
           api-level: 34
 
       - name: Install dependencies
-        run: npm ci
+        # --registry 覆盖提交的 .npmrc（本地用 npmmirror 加速，CI 用 npmjs 官方源更稳）
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
 
       - name: Build web assets
-        run: npm run build
+        run: pnpm run build
         env:
           CAPACITOR: 'true'
 
       # android/ 目录被 .gitignore 忽略（不进 git），CI 需先 cap add 生成平台模板
       - name: Add & sync Android platform
         run: |
-          npx cap add android
-          npx cap sync android
+          pnpm exec cap add android
+          pnpm exec cap sync android
           # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
           Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
           node scripts/sync-android-version.mjs

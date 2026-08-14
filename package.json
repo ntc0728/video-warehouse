@@ -8,18 +8,18 @@
     "build": "tsc -b && vite build",
     "build:fast": "tsc -b && cross-env VITE_COMPRESS=false vite build",
     "sync:capacitor-version": "node scripts/sync-capacitor-version.mjs",
-    "build:android": "cross-env CAPACITOR=true tsc -b && vite build && node scripts/clean-compressed.js && node scripts/sync-capacitor-version.mjs && npx cap sync android",
-    "icons:android": "npm install --no-save sharp && node scripts/generate-icons.mjs && npm uninstall sharp",
-    "open:android": "npx cap open android",
+    "build:android": "cross-env CAPACITOR=true tsc -b && vite build && node scripts/clean-compressed.js && node scripts/sync-capacitor-version.mjs && pnpm exec cap sync android",
+    "icons:android": "node scripts/generate-icons.mjs",
+    "open:android": "pnpm exec cap open android",
     "lint": "eslint .",
     "lint:css": "stylelint \"src/**/*.{css,scss}\"",
     "lint:css:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
     "lint:fix": "eslint . --fix",
-    "lint:all": "npm run lint:css && npm run lint && npm run build",
+    "lint:all": "pnpm run lint:css && pnpm run lint && pnpm run build",
     "preview": "vite preview",
-    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name video-warehouse",
-    "deploy:worker": "cd worker && npx wrangler deploy",
-    "deploy:cors": "cd worker && npx wrangler deploy -c wrangler-cors.toml",
+    "deploy:pages": "pnpm run build && pnpm dlx wrangler pages deploy dist --project-name video-warehouse",
+    "deploy:worker": "cd worker && pnpm dlx wrangler deploy",
+    "deploy:cors": "cd worker && pnpm dlx wrangler deploy -c wrangler-cors.toml",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -27,8 +27,8 @@
     "test:smart": "pwsh scripts/run-tests.ps1 -AutoDetect",
     "test:smoke": "pwsh scripts/run-tests.ps1 -AutoDetect -Group smoke",
     "test:regression": "pwsh scripts/run-tests.ps1 -AutoDetect -Group regression",
-    "test:e2e": "npx playwright test && node scripts/localize-report.mjs",
-    "test:e2e:report": "npx playwright show-report"
+    "test:e2e": "pnpm exec playwright test && node scripts/localize-report.mjs",
+    "test:e2e:report": "pnpm exec playwright show-report"
   },
   "dependencies": {
     "@capacitor/screen-orientation": "^6.0.4",
@@ -75,6 +75,7 @@
     "globals": "^16.0.0",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.16",
+    "sharp": "^0.35.3",
     "stylelint": "^17.12.0",
     "stylelint-config-standard": "^40.0.0",
     "stylelint-order": "^8.1.1",
@@ -84,5 +85,11 @@
     "vite": "^6.3.5",
     "vite-plugin-compression": "^0.5.1",
     "vitest": "^4.1.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }
