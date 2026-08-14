@@ -119,10 +119,15 @@ export default function LazyImage({
   const [candidateIndex, setCandidateIndex] = useState(0);
   useEffect(() => {
     setCandidateIndex(0);
+    // 复用组件场景（分类切换后 key 相同的卡片复用）：src 变化时必须重置 error，
+    // 否则旧卡 error=true 状态残留 → 新图永远走 fallback 不渲染真实图。
+    setError(false);
   }, [src]);
   const imgRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   // 命中 session 缓存：DOM 重建时跳过 0.5s opacity/transform 渐显动画
+  // 注意：每次 render 计算最新值（非仅 mount）。复用卡场景 src 引用未变但缓存
+  // 已被预加载标记时，靠「渲染派生」直接生效，不依赖 state 同步。
   const isCached = isImageLoaded(src);
 
   /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前50px预加载 */
@@ -206,13 +211,16 @@ export default function LazyImage({
   return (
     <div
       ref={imgRef}
-      className={`lazy-image-container ${isLoaded ? 'loaded' : ''} ${error ? 'error' : ''} ${loadingVariant === 'brand' ? 'lazy-image-container--brand' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
+      className={`lazy-image-container ${isLoaded || isCached ? 'loaded' : ''} ${error ? 'error' : ''} ${loadingVariant === 'brand' ? 'lazy-image-container--brand' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
       style={style}
     >
       {/* 有 letter 且无有效候选时不再渲染 fallback 图（由下方 letter 分支独占）：
           否则 /placeholder.svg 加载成功 opacity:1，与 letter 纯色块同时显示 →
           文字占位与台标背景图重叠（2026-08-11 修复，IPTVChannelCard 无 logo 频道场景）。 */}
-      {!error && isInView && (!letter || hasValidSrc) && (
+      {/* isInView || isCached：命中 session 缓存即渲染 img（不依赖 IO 触发）。
+          复用卡场景（分类切换后 key 相同的卡片复用，旧 isInView 可能为 false）且
+          src 引用未变时，effect 不会重跑，靠「渲染派生」直接绘制。 */}
+      {!error && (isInView || isCached) && (!letter || hasValidSrc) && (
         <img
           src={imageSrc}
           alt={alt}
@@ -230,7 +238,7 @@ export default function LazyImage({
           收紧原因（2026-08-04）：error / 空源时走下方 fallback 图分支，
           该分支无 onLoad → isLoaded 恒为 false → 若此时仍渲染占位层，
           白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。 */}
-      {!isLoaded && !error && hasValidSrc && (
+      {!isLoaded && !isCached && !error && hasValidSrc && (
         <div className="lazy-image-placeholder">
           {loadingVariant === 'brand' ? (
             immediateLetter && letter ? (

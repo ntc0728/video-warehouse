@@ -52,6 +52,14 @@ interface TMDBMovieRowProps {
   continueMode?: boolean;
   /** continueMode 时使用的继续观看数据（带 progress/duration/backdrop/overlayLabel） */
   continueItems?: ContinueWatchingItem[];
+  /**
+   * 分类切换信号：值变化时将行 scrollLeft 复位为 0。
+   * 首页分类切换时行内容整体替换（items 引用变化），浏览器 scroll-snap 会把
+   * scrollLeft 拉到 maxScroll（40 卡→20 卡时实测 0→2032），导致「预加载收集的
+   * 首屏卡（index 0..N）」与「实际可见卡（行尾）」错位 → 未命中缓存 → 骨架遮罩。
+   * 复位后可见卡回到 index 0 起，与预加载范围对齐，命中 session 缓存直接 loaded。
+   */
+  scrollResetToken?: string;
 }
 
 /**
@@ -121,6 +129,7 @@ function TMDBMovieRow({
   error = null,
   continueMode = false,
   continueItems,
+  scrollResetToken,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -193,6 +202,24 @@ function TMDBMovieRow({
     // continueMode 下 items 恒为空数组（引用不变），continueItems 变化时
     // 必须重新计算 hasOverflow，否则箭头在数据到达后不显示
   }, [items, continueItems, updateArrows]);
+
+  // 分类切换（scrollResetToken 变化）时行 scrollLeft 复位为 0：
+  // 内容整体替换瞬间 scroll-snap 会把 scrollLeft 拉到 maxScroll（实测 0→2032），
+  // 导致预加载覆盖的首屏卡（index 0..N）与可见卡错位 → 未命中缓存 → 骨架遮罩闪。
+  // 复位后与预加载范围对齐，命中 session 缓存直接 loaded 渲染。
+  useEffect(() => {
+    if (scrollResetToken === undefined) return;
+    const el = rowRef.current;
+    if (!el) return;
+    // 先禁用 scroll-snap，避免复位瞬间又被 snap 拉走（snap 在内容变化帧会重新吸附）
+    el.classList.add('tmdb-movierow-scroll--no-snap');
+    el.scrollLeft = 0;
+    updateArrows();
+    // 下一帧恢复 snap（复位后内容已稳定，不再触发重新吸附）
+    requestAnimationFrame(() => {
+      el.classList.remove('tmdb-movierow-scroll--no-snap');
+    });
+  }, [scrollResetToken, updateArrows]);
 
   /** 视口步进：点击箭头滚动一屏，剩余不足一屏则直接到末尾（浏览器原生平滑滚动） */
   const scrollByViewport = useCallback(
