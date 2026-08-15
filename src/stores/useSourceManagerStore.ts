@@ -93,7 +93,7 @@ interface SourceManagerState {
 
 /* ── 消费同步（核心） ────────────────────────── */
 
-/** 计算「启用的源」并把它们注入消费链路（setAttachedSources + 回写 settings indices） */
+/** 计算「启用的源」并把它们注入消费链路（setAttachedSources + 回写 settings 启用 ID） */
 function syncConsumers(s: SourceManagerState, scene: Scene) {
   if (scene === 'video') {
     const enabled = s.video.filter((v) => v.status.enabled).sort((a, b) => a.order - b.order);
@@ -109,44 +109,34 @@ function syncConsumers(s: SourceManagerState, scene: Scene) {
       };
     });
     setAttachedSources('video', attached);
-    void (async () => {
-      const merged = await getVideoSources();
-      const idxMap = new Map<string, number>();
-      merged.forEach((v, i) => idxMap.set(v.id, i));
-      const indices = enabled.map((v) => idxMap.get(v.id)).filter((i): i is number => i != null);
-      const settings = useSettingsStore.getState();
-      if (indices.length > 0) settings.setVideoSourceIndices(indices.slice(0, MAX_ENABLED.video));
-    })();
+    // ID 持久化：启用源按 ID 记录（而非 attached 段下标——源可拖拽排序，下标不稳定）
+    const settings = useSettingsStore.getState();
+    if (enabled.length > 0) settings.setVideoSourceIds(enabled.map((v) => v.id).slice(0, MAX_ENABLED.video));
   } else if (scene === 'iptv') {
     const enabled = s.iptv.filter((v) => v.status.enabled).sort((a, b) => a.order - b.order);
     const attached: IPTVSourceConfig[] = enabled.map((v) => ({ name: v.name, url: v.url }));
     setAttachedSources('iptv', attached);
-    void (async () => {
-      const merged = await getIPTVSources();
-      const idxMap = new Map<string, number>();
-      merged.forEach((m, i) => idxMap.set(m.url, i));
-      const indices = enabled.map((v) => idxMap.get(v.url)).filter((i): i is number => i != null);
-      const settings = useSettingsStore.getState();
-      if (indices.length > 0) settings.setIPTVSourceIndices(indices.slice(0, MAX_ENABLED.iptv));
-      // 同时直接同步 useIPTVStore 的 aggregatorUrls（不依赖 IPTV 页面挂载），
-      // 确保在设置页启用 IPTV 源后立即生效、能正确加载频道。
-      const urls = enabled.map((v) => v.url);
-      const names = enabled.map((v) => v.name || `源 ${idxMap.get(v.url)! + 1}`);
-      const iptv = useIPTVStore.getState();
-      const cur = iptv.settings;
-      const urlsChanged =
-        urls.length !== (cur.aggregatorUrls?.length ?? 0) ||
-        urls.some((u, i) => u !== cur.aggregatorUrls?.[i]);
-      if (urlsChanged) {
-        iptv.setSettings({
-          aggregatorUrl: urls[0] || '',
-          aggregatorUrls: urls,
-          sourceNames: names,
-        });
-        // 源变更后触发频道刷新，避免「启用了新源但 IPTV 页仍显示旧数据」（含旧缓存误命中）。
-        iptv.refreshChannels();
-      }
-    })();
+    // ID 持久化：IPTV 源 ID = URL
+    const settings = useSettingsStore.getState();
+    if (enabled.length > 0) settings.setIPTVSourceIds(enabled.map((v) => v.url).slice(0, MAX_ENABLED.iptv));
+    // 同时直接同步 useIPTVStore 的 aggregatorUrls（不依赖 IPTV 页面挂载），
+    // 确保在设置页启用 IPTV 源后立即生效、能正确加载频道。
+    const urls = enabled.map((v) => v.url);
+    const names = enabled.map((v) => v.name || `源 ${urls.indexOf(v.url) + 1}`);
+    const iptv = useIPTVStore.getState();
+    const cur = iptv.settings;
+    const urlsChanged =
+      urls.length !== (cur.aggregatorUrls?.length ?? 0) ||
+      urls.some((u, i) => u !== cur.aggregatorUrls?.[i]);
+    if (urlsChanged) {
+      iptv.setSettings({
+        aggregatorUrl: urls[0] || '',
+        aggregatorUrls: urls,
+        sourceNames: names,
+      });
+      // 源变更后触发频道刷新，避免「启用了新源但 IPTV 页仍显示旧数据」（含旧缓存误命中）。
+      iptv.refreshChannels();
+    }
   } else if (scene === 'epg') {
     const enabled = s.epg.filter((v) => v.status.enabled).sort((a, b) => a.order - b.order);
     const attached: EPGSourceConfig[] = enabled.map((v) => ({ name: v.name, url: v.url }));

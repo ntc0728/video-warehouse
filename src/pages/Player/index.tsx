@@ -92,7 +92,6 @@ export default function PlayerPage() {
 
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
   const { updateHistoryProgress, isCollected, addCollection, removeCollection } = useUserStore();
-  const { videoSourceIndex } = useSettingsStore();
   // 是否已配置 TMDB Access Token（tmdb- id 的播放链路依赖 TMDB 标题才能发起 CMS 搜索）
   const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
 
@@ -260,8 +259,8 @@ export default function PlayerPage() {
       if (!id) return;
       setLoadError(null);
 
-      /** 当前使用的 CMS 源索引（优先级：routeSourceIndex > videoSourceIndex） */
-      let activeSourceIndex = routeSourceIndex ?? videoSourceIndex;
+      /** 当前使用的 CMS 源索引（优先级：routeSourceIndex > 历史记录 > 设置默认） */
+      let activeSourceIndex: number | undefined = routeSourceIndex;
       /** 历史记录（用于恢复 CMS 源和选集） */
       let historyRecord: HistoryRecord | undefined;
       if (!skipHistory) {
@@ -281,6 +280,12 @@ export default function PlayerPage() {
             if (matchedIdx >= 0) activeSourceIndex = matchedIdx;
           }
         } catch { /* history read failed */ }
+      }
+      // 默认源：设置页启用的第一个视频源（ID 持久化 → 解析下标）
+      if (activeSourceIndex === undefined) {
+        const { getEnabledVideoSourceIndices } = await import('@/services/sourceService');
+        const idxs = await getEnabledVideoSourceIndices();
+        activeSourceIndex = idxs[0] ?? 0;
       }
       historyRecordRef.current = historyRecord;
       setActiveSourceIndex(activeSourceIndex);
@@ -390,7 +395,7 @@ export default function PlayerPage() {
       resetPlayer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, routeSourceIndex, videoSourceIndex]);
+  }, [id, routeSourceIndex]);
 
   // TMDB 就绪后设置 hasLoadedOnce，取消全屏 loading
   useEffect(() => {

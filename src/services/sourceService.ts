@@ -2,8 +2,10 @@
  * 数据源配置服务
  * 从本地 JSON 配置文件加载视频源、IPTV 源和 EPG 源的定义
  */
-import type { VideoSourceConfig, IPTVSourceConfig, VideoSourcesData, EPGSourceConfig } from '@/types/source';
+import type { VideoSourceConfig, IPTVSourceConfig, VideoSourcesData, EPGSourceConfig, ManagedVideoSource } from '@/types/source';
 import { getJSON } from './httpClient';
+import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // 为向后兼容重新导出类型
 export type { EPGSourceConfig } from '@/types/source';
@@ -39,9 +41,69 @@ export function setAttachedSources(kind: 'video' | 'iptv' | 'epg', sources: Vide
   else attachedEPGSources = sources as EPGSourceConfig[];
 }
 
-/** 从配置文件获取所有视频源列表（含附加 custom 源，合成数组） */
+/** 去重（按 id；video 源） */
+function uniqueById<T extends { id: string }>(arr: T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const x of arr) {
+    if (!x || seen.has(x.id)) continue;
+    seen.add(x.id);
+    out.push(x);
+  }
+  return out;
+}
+
+/** 去重（按 url；iptv/epg 源） */
+function uniqueByUrl<T extends { url: string }>(arr: T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const x of arr) {
+    if (!x || seen.has(x.url)) continue;
+    seen.add(x.url);
+    out.push(x);
+  }
+  return out;
+}
+
+/**
+ * 从持久化 SourceManager store 派生「启用的视频源」（含 custom）。
+ * 原实现依赖 bootstrapScene→syncConsumers 写入的模块内存 attached，Player 等
+ * 不触发 bootstrap 的页面在新会话中拿不到启用源 → 「保存下标指向 attached 段」全部失效。
+ * 改为每次调用时从持久化 store 实时派生，合成数组会话内稳定，下标始终有效。
+ */
+function enabledVideoFromStore(): VideoSourceConfig[] {
+  const s = useSourceManagerStore.getState();
+  if (!s || !Array.isArray(s.video)) return [];
+  return s.video
+    .filter((v) => v?.status?.enabled)
+    .sort((a, b) => a.order - b.order)
+    .map((v) => {
+      const meta = v as ManagedVideoSource & { timeoutMs?: number; retries?: number };
+      return {
+        id: v.id,
+        name: v.name,
+        api: v.api,
+        detail: v.detail,
+        timeoutMs: meta.timeoutMs,
+        retries: meta.retries,
+      };
+    });
+}
+
+/** 从持久化 SourceManager store 派生「启用的 IPTV 源」（含 custom） */
+function enabledIPTVFromStore(): IPTVSourceConfig[] {
+  const s = useSourceManagerStore.getState();
+  if (!s || !Array.isArray(s.iptv)) return [];
+  return s.iptv
+    .filter((v) => v?.status?.enabled)
+    .sort((a, b) => a.order - b.order)
+    .map((v) => ({ name: v.name, url: v.url }));
+}
+
+/** 从配置文件获取所有视频源列表（含启用 custom 源，合成数组） */
 export function getVideoSources(): Promise<VideoSourceConfig[]> {
-  if (videoSourcesCache) return Promise.resolve([...videoSourcesCache, ...attachedVideoSources]);
+  const merged = () => uniqueById([...(videoSourcesCache ?? []), ...attachedVideoSources, ...enabledVideoFromStore()]);
+  if (videoSourcesCache) return Promise.resolve(merged());
   if (!videoSourcesPromise) {
     videoSourcesPromise = (async () => {
       try {
@@ -52,15 +114,16 @@ export function getVideoSources(): Promise<VideoSourceConfig[]> {
       } finally {
         videoSourcesPromise = null;
       }
-      return [...(videoSourcesCache ?? []), ...attachedVideoSources];
+      return merged();
     })();
   }
   return videoSourcesPromise;
 }
 
-/** 从配置文件获取所有 IPTV 源列表（含附加 custom 源） */
+/** 从配置文件获取所有 IPTV 源列表（含启用 custom 源） */
 export function getIPTVSources(): Promise<IPTVSourceConfig[]> {
-  if (iptvSourcesCache) return Promise.resolve([...iptvSourcesCache, ...attachedIPTVSources]);
+  const merged = () => uniqueByUrl([...(iptvSourcesCache ?? []), ...attachedIPTVSources, ...enabledIPTVFromStore()]);
+  if (iptvSourcesCache) return Promise.resolve(merged());
   if (!iptvSourcesPromise) {
     iptvSourcesPromise = (async () => {
       try {
@@ -70,7 +133,7 @@ export function getIPTVSources(): Promise<IPTVSourceConfig[]> {
       } finally {
         iptvSourcesPromise = null;
       }
-      return [...(iptvSourcesCache ?? []), ...attachedIPTVSources];
+      return merged();
     })();
   }
   return iptvSourcesPromise;
@@ -92,4 +155,32 @@ export function getEPGSources(): Promise<EPGSourceConfig[]> {
     })();
   }
   return epgSourcesPromise;
+}
+
+/**
+ * 解析「启用的视频源」在 getVideoSources() 合成数组中的下标。
+ * ID 持久化（videoSourceIds）→ 按 ID 解析下标，替代旧的「保存 attached 段位置」逻辑。
+ * settings 无 ID（从未 bootstrap）时回退从持久化 SourceManager store 派生，保证自定义源可用。
+ */
+export async function getEnabledVideoSourceIndices(): Promise<number[]> {
+  let ids = useSettingsStore.getState().videoSourceIds;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    const s = useSourceManagerStore.getState();
+    ids = s?.video?.filter((v) => v?.status?.enabled)?.sort((a, b) => a.order - b.order)?.map((v) => v.id) ?? [];
+  }
+  const sources = await getVideoSources();
+  const indices = ids.map((id) => sources.findIndex((s) => s.id === id)).filter((i) => i >= 0);
+  return indices.length > 0 ? indices : [0];
+}
+
+/** 解析「启用的 IPTV 源」在 getIPTVSources() 合成数组中的下标（ID = URL） */
+export async function getEnabledIPTVSourceIndices(): Promise<number[]> {
+  let ids = useSettingsStore.getState().iptvSourceIds;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    const s = useSourceManagerStore.getState();
+    ids = s?.iptv?.filter((v) => v?.status?.enabled)?.sort((a, b) => a.order - b.order)?.map((v) => v.url) ?? [];
+  }
+  const sources = await getIPTVSources();
+  const indices = ids.map((id) => sources.findIndex((s) => s.url === id)).filter((i) => i >= 0);
+  return indices.length > 0 ? indices : [0];
 }

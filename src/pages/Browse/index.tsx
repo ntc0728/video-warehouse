@@ -21,6 +21,7 @@ import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext'
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
+import type { VideoSourceConfig } from '@/types/source';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -294,8 +295,8 @@ export default function BrowsePage() {
   const currentError = searchMode === 'smart' ? error : cmsError;
 
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
-  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
-  const [videoSources, setVideoSources] = useState<{ name: string }[]>([]);
+  const { videoSourceIds } = useSettingsStore();
+  const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
   useEffect(() => {
     let alive = true;
     getVideoSources().then((list) => {
@@ -306,13 +307,12 @@ export default function BrowsePage() {
     };
   }, []);
   const cmsSourceList = useMemo(() => {
-    const indices =
-      videoSourceIndices && videoSourceIndices.length > 0 ? videoSourceIndices : [videoSourceIndex];
-    return indices.map((idx) => {
-      const name = videoSources[idx]?.name ?? `源${idx}`;
-      return { name, available: !failedSources.includes(name) };
-    });
-  }, [videoSourceIndices, videoSourceIndex, videoSources, failedSources]);
+    const ids = videoSourceIds && videoSourceIds.length > 0 ? videoSourceIds : [];
+    const nameMap = new Map(videoSources.map((s) => [s.id, s.name]));
+    return ids
+      .map((id) => nameMap.get(id) ?? `源${id}`)
+      .map((name) => ({ name, available: !failedSources.includes(name) }));
+  }, [videoSourceIds, videoSources, failedSources]);
 
   return (
     <div

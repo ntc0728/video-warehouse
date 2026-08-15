@@ -5,13 +5,13 @@
  */
 import type { Video, VideoType, Episode } from '@/types/video';
 import type { VideoSourceConfig } from '@/types/source';
-import { getVideoSources, getIPTVSources } from './sourceService';
+import { getVideoSources, getIPTVSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndices } from './sourceService';
 import { getJSON } from './httpClient';
 import { extractSeasonNumber } from './seasonMatcher';
 import { parsePlaySources } from './vodParser';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
-export { getVideoSources };
+export { getVideoSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndices };
 export { parsePlaySources } from './vodParser';
 
 interface SourceStatus {
@@ -579,10 +579,14 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
   const sources = await getVideoSources();
   if (sources.length === 0) return null;
 
-  // 用新源管理链路的主源（videoSourceIndices[0]，指向 getVideoSources 合成数组）
+  // 用新源管理链路的主源（videoSourceIds[0] 按 ID 解析，指向 getVideoSources 合成数组）
   // 替代旧的直读 localStorage 'app-settings' 单数 videoSourceIndex 逻辑
-  const configuredIndices = useSettingsStore.getState().videoSourceIndices;
-  let sourceIndex = (Array.isArray(configuredIndices) && configuredIndices.length > 0) ? configuredIndices[0] : 0;
+  const configuredIds = useSettingsStore.getState().videoSourceIds;
+  let sourceIndex = 0;
+  if (Array.isArray(configuredIds) && configuredIds.length > 0) {
+    const idx = sources.findIndex((s) => s.id === configuredIds[0]);
+    if (idx >= 0) sourceIndex = idx;
+  }
 
   const searchTerm = title;
 

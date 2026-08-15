@@ -61,7 +61,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   } = opts;
 
   const { setSource, setSources } = usePlayerStore();
-  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
+  const { videoSourceIds } = useSettingsStore();
 
   const [cmsResults, setCmsResults] = useState<VideoDetailResult[]>([]);
   const [cmsLoading, setCmsLoading] = useState(false);
@@ -136,11 +136,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       if (matchedIdx >= 0) sourceIdx = matchedIdx;
     }
 
-    // 3) 默认使用设置页中第一个被选中的 CMS 源
+    // 3) 默认使用设置页中第一个被选中的 CMS 源（ID 持久化 → 解析下标）
     if (sourceIdx === undefined) {
-      sourceIdx = videoSourceIndices && videoSourceIndices.length > 0
-        ? videoSourceIndices[0]
-        : videoSourceIndex;
+      const { getEnabledVideoSourceIndices } = await import('@/services/sourceService');
+      const idxs = await getEnabledVideoSourceIndices();
+      sourceIdx = idxs[0] ?? 0;
     }
 
     activeCmsSourceIndexRef.current = sourceIdx;
@@ -431,7 +431,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason, routePlayUrl, routeSeasonNumber]);
+  }, [id, videoSourceIds, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason, routePlayUrl, routeSeasonNumber]);
 
   // ── handleFetchCMSSourceById ──────────────────────
   const handleFetchCMSSourceById = useCallback(async (sourceId: string) => {
@@ -649,10 +649,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       mod.getVideoSources().then(sources => {
         setSourceNameMap(new Map(sources.map(s => [s.id, s.name])));
         if (id?.startsWith('tmdb-')) {
-          const indices = videoSourceIndices && videoSourceIndices.length > 0
-            ? videoSourceIndices
-            : [videoSourceIndex];
-          setSelectedSourceIds(indices.map(i => sources[i]?.id).filter(Boolean));
+          // 面板直接展示设置页启用的源 ID（不再依赖下标）
+          const ids = videoSourceIds.length > 0
+            ? videoSourceIds
+            : (sources[0] ? [sources[0].id] : []);
+          setSelectedSourceIds(ids);
         } else if (routeSourceIndex !== undefined && sources[routeSourceIndex]) {
           const sourceId = sources[routeSourceIndex].id;
           setSelectedSourceIds([sourceId]);
@@ -666,7 +667,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         }
       }).catch(() => {});
     }).catch(() => {});
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, activeSourceIndex]);
+  }, [id, videoSourceIds, routeSourceIndex, activeSourceIndex]);
 
   // TMDB 详情加载后触发 CMS 搜索
   useEffect(() => {

@@ -39,8 +39,8 @@ export function useSettingsState() {
   const versionClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
-    theme, setTheme, videoSourceIndices, iptvSourceIndices,
-    setVideoSourceIndices, setIPTVSourceIndices,
+    theme, setTheme, videoSourceIds, iptvSourceIds,
+    setVideoSourceIds, setIPTVSourceIds,
     corsProxy, setCorsProxy, epgUrls,
     epgUpdateInterval, setEpgUpdateInterval,
     rememberVolume, setRememberVolume,
@@ -177,7 +177,7 @@ export function useSettingsState() {
     video: {
       tmdbAccessToken, setTMDBToken,
       tmdbLanguage, setTMDBLanguage,
-      videoSourceIndices, setVideoSourceIndices,
+      videoSourceIds, setVideoSourceIds,
       corsProxy, setCorsProxy,
       rememberVolume, setRememberVolume,
       autoTranslate, setAutoTranslate,
@@ -190,7 +190,7 @@ export function useSettingsState() {
     },
     iptv: {
       iptvSettings, setIPTVSettings,
-      iptvSourceIndices, setIPTVSourceIndices,
+      iptvSourceIds, setIPTVSourceIds,
       epgUrls, epgUpdateInterval, setEpgUpdateInterval,
     },
     about: {
