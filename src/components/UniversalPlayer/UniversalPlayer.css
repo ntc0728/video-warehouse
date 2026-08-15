@@ -1595,15 +1595,14 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* 桌面端操作类提示锚点：紧贴右上角（top: space-lg）。
-   IPTV 播放页的全屏按钮已被 CSS 移到右下角（.iptv-player-page .up-header-fullscreen-btn），
-   头部右上角从不渲染控件，无需避让。
-   仅桌面布局生效（html[data-mobile-layout] 缺省 且 视口 ≥768px）；移动端布局走 center-toast，
-   不受影响。移动端布局判定见 AppLayout 的 html[data-mobile-layout]（App 恒真 / 真实手机 / <768px）。 */
-@media (width >= 768px) {
-  html:not([data-mobile-layout="true"]) .up-player-toast {
-    top: var(--space-lg);
-  }
+/* 操作类提示锚点：当头部右侧真正有操作控件时（html[data-player-header-controls] 由
+   UniversalPlayer JS 实测写入），下移到控件下方（--player-header-height + space-sm）避免重叠；
+   无控件则紧贴右上角（top: space-lg，由 .up-player-toast 基础规则保证）。
+   mobileCenter 仅对真实移动设备（App / 真实手机 UA）生效，CSS 不依赖 data-mobile-layout——
+   移动端走 center-toast（.up-player-toast 不渲染），本规则自然不命中；桌面窄窗有 3 图标，
+   本规则使 toast 锚定在图标下方而非叠加。 */
+html[data-player-header-controls="true"] .up-player-toast {
+  top: calc(var(--player-header-height, 0px) + var(--space-sm));
 }
 
 /* 移动端更多设置操作提示（屏幕居中，与 HTML demo 一致改为居中显示） */

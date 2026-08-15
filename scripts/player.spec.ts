@@ -404,14 +404,16 @@ test.describe('4.12 移动端布局判定', () => {
       await page.waitForTimeout(4000);
     });
 
-    test('PLAYER-M12: 桌面 UA 窄视口 → 操作提示右上角（mobileCenter 仅真实移动设备）', async ({ page }) => {
-      // 桌面 UA + 视口 390：非真实移动设备 → 操作提示走 .up-player-toast 右上角，不屏幕居中
+    test('PLAYER-M12: 桌面 UA 窄视口 → 操作提示在头部图标下方（非叠加、非居中）', async ({ page }) => {
+      // 桌面 UA + 视口 390：非真实移动设备 → mobileCenter=false，toast 走 .up-player-toast。
+      // 但窄视口下头部右侧有 HeadActions（画中画/投屏/更多设置 3 个图标），
+      // JS 写入 data-player-header-controls="true"，CSS 将 toast 锚定在图标下方。
       await page.keyboard.press('ArrowDown');
       const toast = page.locator('.up-player-toast');
       await expect(toast).toContainText('音量');
       await expect(page.locator('.up-player-center-toast')).toHaveCount(0);
       await page.waitForTimeout(400);
-      // 紧贴右上角：computed top = --space-lg（probe 解析 clamp() 自定义属性）
+      // toast 应在头部图标下方（top > --space-lg），而非紧贴右上角叠加在图标上
       const toastTop = await toast.evaluate((el) => parseFloat(getComputedStyle(el).top));
       const spaceLg = await page.evaluate(() => {
         const probe = document.createElement('div');
@@ -423,9 +425,13 @@ test.describe('4.12 移动端布局判定', () => {
         probe.remove();
         return v;
       });
+      const headerH = await page.evaluate(() => {
+        const h = document.querySelector('.up-player-header');
+        return h ? h.getBoundingClientRect().height : 0;
+      });
       expect(Number.isFinite(toastTop)).toBe(true);
-      expect(Number.isFinite(spaceLg)).toBe(true);
-      expect(Math.abs(toastTop - spaceLg)).toBeLessThan(1);
+      expect(toastTop).toBeGreaterThan(spaceLg); // 不在贴顶位置
+      expect(toastTop).toBeLessThan(headerH + 10); // 在 header 下方附近（允许 10px 误差）
     });
   });
 
