@@ -36,7 +36,7 @@ import type { SourceType } from '@/types/video';
 import { ERROR_CODE_BARE_STREAM } from './adapters/HLSAdapter';
 import { Icon } from "@/components/ui/Icon";
 import { isNativePlatform } from '@/lib/platform';
-import { useIsMobileLayout } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout, useIsRealPhone } from '@/hooks/useMediaQuery';
 import HeaderActions from './MobileUI/HeaderActions';
 import MobileMoreSheet from './MobileUI/MobileMoreSheet';
 import SubtitleSettingsModal from './MobileUI/SubtitleSettingsModal';
@@ -137,6 +137,13 @@ export default function UniversalPlayer({
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
   // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
   const isMobileLayout = useIsMobileLayout();
+  // 操作类提示的「移动端居中」仅针对真实移动设备（App / 真实手机 UA）：
+  // 桌面浏览器窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast（与桌面一致）。
+  const isMobileDevice = isNativePlatform() || useIsRealPhone();
+  // 头部是否真正有操作控件（桌面端 = IPTV 全屏按钮；移动端点播 = 画中画/投屏/更多设置）。
+  // 用于桌面 toast 锚点：有控件 → 锚在控件下方避让；无控件 → 紧贴右上角。
+  // CSS 无法感知按钮渲染状态，必须 JS 判定后写全局标记（与 data-mobile-layout 同模式）。
+  const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 头部全屏按钮仅 IPTV 播放页非 TV 端渲染，且被 CSS 移到右下角
   // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
   // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
@@ -759,7 +766,7 @@ skipHistory,
 
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
-    <ToastProvider mobileCenter={isMobileLayout}>
+    <ToastProvider mobileCenter={isMobileDevice}>
     <ToastTrigger mode={mode} />
     <PlayerErrorBoundary>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>

@@ -42,9 +42,9 @@ const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIco
  * 播放器内提示：操作类（播放/暂停、音量、切线路、切频道、频道号等）+ 更多设置操作类。
  * - 桌面端：操作类提示渲染于播放器右上角（.up-player-toast），紧贴右上角（top: space-lg）——
  *   IPTV 播放页全屏按钮已移至右下角，头部右上角无控件可避让；与全局 sonner toast（中间靠上）区分。
- *   更多设置提示仅移动端使用（.up-player-center-toast）。
- * - 移动端（mobileCenter）：操作类提示改在屏幕居中渲染（.up-player-center-toast，portal 到 body），
- *   与更多设置提示一致；桌面端右上角位置保持不变。
+ * - 移动端（mobileCenter，仅真实移动设备 App / 真实手机 UA）：操作类提示改在屏幕居中渲染
+ *   （.up-player-center-toast，portal 到 body），与更多设置提示一致；
+ *   桌面窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast。
  * 统一 3s 自动消失；show(msg, duration, type) 支持语义色图标。
  */
 export function ToastProvider({ children, mobileCenter = false }: { children: React.ReactNode; mobileCenter?: boolean }) {
