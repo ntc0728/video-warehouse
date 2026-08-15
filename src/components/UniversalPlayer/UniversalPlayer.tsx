@@ -144,8 +144,10 @@ export default function UniversalPlayer({
   // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
   // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
   const showHeaderFullscreen = mode === 'iptv' && platform !== 'tv' && !isNativePlatform();
-  // 头部是否真正有操作控件（桌面端 = IPTV 全屏按钮；移动端点播 = 画中画/投屏/更多设置）。
+  // 头部是否真正有操作控件（桌面端 = IPTV 全屏按钮；移动端/App 端/窄窗点播 = 画中画/投屏/更多设置）。
   // 用于桌面 toast 锚点：有控件 → 锚在控件下方避让；无控件 → 紧贴右上角。
+  // 注意：只要 isMobileLayout 且是 video 模式，头部右侧就会渲染 HeadActions（3个图标），
+  // 与 isMobileDevice 无关（窄窗桌面也会显示）。
   // CSS 无法感知按钮渲染状态，必须 JS 判定后写全局标记（与 data-mobile-layout 同模式）。
   const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 移动端弹窗状态
