@@ -372,10 +372,21 @@ test.describe('4.12 移动端布局判定', () => {
       await expect(toast).toContainText('音量');
       // 等淡入动画结束再测量
       await page.waitForTimeout(400);
-      // 紧贴右上角：computed top = --space-lg（不再锚到 header 下方 —— IPTV 全屏按钮已移至右下角）
+      // 紧贴右上角：computed top = --space-lg（不再锚到 header 下方 —— IPTV 全屏按钮已移至右下角）。
+      // 自定义属性 computed 值是 clamp() 原文，需用 probe 元素解析成 px。
       const toastTop = await toast.evaluate((el) => parseFloat(getComputedStyle(el).top));
-      const spaceLg = await page.evaluate(() =>
-        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-lg')));
+      const spaceLg = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        probe.style.top = 'var(--space-lg)';
+        document.body.appendChild(probe);
+        const v = parseFloat(getComputedStyle(probe).top);
+        probe.remove();
+        return v;
+      });
+      expect(Number.isFinite(toastTop)).toBe(true);
+      expect(Number.isFinite(spaceLg)).toBe(true);
       expect(Math.abs(toastTop - spaceLg)).toBeLessThan(1);
     });
   });
