@@ -102,7 +102,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           <Dialog.Title className="absolute w-[1px] h-[1px] m-[-1px] p-0 border-0 overflow-hidden clip-path-[inset(50%)]">
             {title || '面板'}
           </Dialog.Title>
-          <div className="w-[var(--space-xl)] h-[var(--space-2xs)] mx-auto mt-[var(--space-xs)] mb-[var(--space-sm)] rounded-[var(--space-3xs)] bg-[var(--color-border)]" aria-hidden="true" />
           {children}
         </Dialog.Content>
       </Dialog.Portal>

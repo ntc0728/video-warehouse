@@ -12,7 +12,9 @@
          release-android.yml 复制到 android/app/src/main/res/values-v31/。 -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <item name="windowSplashScreenBackground">#1890ff</item>
+        <!-- 系统启动屏背景跟随设备主题（白/黑）：引用 splash_background 色资源，
+             夜间由 values-night/colors.xml 覆盖；logo 由 drawable-night-* 的 splash.png 提供。 -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
