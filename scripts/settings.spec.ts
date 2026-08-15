@@ -212,12 +212,14 @@ test.describe('6.5 IPTV 配置', () => {
       return;
     }
     // 逐个点击启用源滑块停用；最后被拒时应保留 1 个启用
-    const switches = panel.locator('.source-manager__item input[type="checkbox"]');
+    // input 被 CSS 视觉隐藏（opacity:0 零尺寸），uncheck() 不可用；点 label 触发切换（同 SET-021）。
+    const switches = panel.locator('.source-manager__item .source-manager__switch');
     const switchCount = await switches.count();
     for (let i = 0; i < switchCount; i++) {
       const sw = switches.nth(i);
-      if (await sw.isChecked().catch(() => false)) {
-        await sw.uncheck();
+      const input = sw.locator('input[type="checkbox"]');
+      if (await input.isChecked().catch(() => false)) {
+        await sw.click();
         await page.waitForTimeout(200);
       }
     }
