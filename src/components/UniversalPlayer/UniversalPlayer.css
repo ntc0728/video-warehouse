@@ -1716,6 +1716,14 @@
   overflow: hidden;
 }
 
+/* 移动端布局（App / 真实手机 UA / 视口 <768px，由 AppLayout 写入 html[data-mobile-layout]）：
+   更多设置/投屏弹窗占满整个页面宽度。max-width: 40rem 会让「桌面窄窗 / 平板竖屏」
+   视口 640-767px 的弹窗收窄居中，不占满全宽。 */
+html[data-mobile-layout="true"] .up-ms-sheet,
+html[data-mobile-layout="true"] .up-cast-sheet {
+  max-width: none;
+}
+
 .up-ms-head {
   display: flex;
   justify-content: space-between;

@@ -112,7 +112,11 @@ test.describe('4.8 收藏与详情', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('4.11 移动端播放器整改', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  // 真实手机 UA：操作类提示「移动端屏幕居中」仅对真实移动设备生效（mobileCenter = App/真实手机 UA），
+  // 桌面浏览器窄窗（视口 <768 但非移动设备）走右上角 .up-player-toast（见 PLAYER-M12）。
+  const MOBILE_UA =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+  test.use({ viewport: { width: 390, height: 844 }, userAgent: MOBILE_UA });
   // 串行执行：/play 依赖真实 CMS 源加载，多并发会把代理打满导致播放器不挂载（历史 flaky）
   test.describe.configure({ mode: 'serial' });
 
@@ -374,6 +378,40 @@ test.describe('4.12 移动端布局判定', () => {
       await page.waitForTimeout(400);
       // 紧贴右上角：computed top = --space-lg（不再锚到 header 下方 —— IPTV 全屏按钮已移至右下角）。
       // 自定义属性 computed 值是 clamp() 原文，需用 probe 元素解析成 px。
+      const toastTop = await toast.evaluate((el) => parseFloat(getComputedStyle(el).top));
+      const spaceLg = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        probe.style.top = 'var(--space-lg)';
+        document.body.appendChild(probe);
+        const v = parseFloat(getComputedStyle(probe).top);
+        probe.remove();
+        return v;
+      });
+      expect(Number.isFinite(toastTop)).toBe(true);
+      expect(Number.isFinite(spaceLg)).toBe(true);
+      expect(Math.abs(toastTop - spaceLg)).toBeLessThan(1);
+    });
+  });
+
+  test.describe('桌面 UA + 窄视口 390（<768）→ 非移动设备：操作提示右上角', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+    test.describe.configure({ mode: 'serial' });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+      await page.waitForTimeout(4000);
+    });
+
+    test('PLAYER-M12: 桌面 UA 窄视口 → 操作提示右上角（mobileCenter 仅真实移动设备）', async ({ page }) => {
+      // 桌面 UA + 视口 390：非真实移动设备 → 操作提示走 .up-player-toast 右上角，不屏幕居中
+      await page.keyboard.press('ArrowDown');
+      const toast = page.locator('.up-player-toast');
+      await expect(toast).toContainText('音量');
+      await expect(page.locator('.up-player-center-toast')).toHaveCount(0);
+      await page.waitForTimeout(400);
+      // 紧贴右上角：computed top = --space-lg（probe 解析 clamp() 自定义属性）
       const toastTop = await toast.evaluate((el) => parseFloat(getComputedStyle(el).top));
       const spaceLg = await page.evaluate(() => {
         const probe = document.createElement('div');
