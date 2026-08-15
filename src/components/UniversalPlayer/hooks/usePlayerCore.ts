@@ -138,6 +138,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const prevTypeRef = useRef<SourceType | null>(null);
   const pendingHotSwitchRef = useRef(false);
+  // 进度恢复竞态守卫：源/集切换时推进 token，迟到的 loadProgress 据此丢弃
+  const progressTokenRef = useRef(0);
 
   // useLayoutEffect 在 useEffect cleanup 之前执行，提前标记热切换
   useLayoutEffect(() => {
@@ -150,6 +152,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const video = videoRef.current;
     if (!video) return;
     if (!type || !url) return;
+
+    // 源/集变化即推进 token：作废仍在途的进度恢复（快速切集时不串集）
+    progressTokenRef.current++;
 
     // 切换视频源时先暂停当前播放，避免声音残留
     if (!video.paused) {
@@ -232,7 +237,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (dur > 0 && isFinite(dur)) {
         getStore().setDuration(dur);
       }
-      loadProgress(videoRef);
+      const token = progressTokenRef.current;
+      loadProgress(videoRef, () => progressTokenRef.current === token);
     };
 
     // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源
@@ -352,7 +358,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
    */
   useEffect(() => {
     if (episodeUrl && videoRef.current && videoRef.current.readyState >= 1) {
-      loadProgress(videoRef);
+      const token = progressTokenRef.current;
+      loadProgress(videoRef, () => progressTokenRef.current === token);
     }
   }, [episodeUrl, loadProgress]);
 
@@ -364,9 +371,20 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       } else {
         await videoRef.current?.play();
       }
-    } catch {
-      // 警告类提示 → 全局 sonner（播放器页定位在播放器内部中间靠上，黑色透明 + 圆角）
-      toast.warning('播放被浏览器拦截，请点击屏幕重试');
+    } catch (err) {
+      // 按拒绝类型区分提示（之前对所有 rejection 一律提示「被浏览器拦截」，
+      // 导致切源/切集打断进行中的 play()（AbortError）被误报为浏览器拦截）：
+      const name = (err as DOMException | undefined)?.name;
+      if (name === 'NotAllowedError') {
+        // 真拦截：无用户手势带声音自动播放被浏览器禁止 → 提示点击屏幕
+        toast.warning('播放被浏览器拦截，请点击屏幕重试');
+      } else if (name === 'AbortError') {
+        // 播放操作被中断（快速切集/切线路打断 pending play），正常切换，静默
+      } else if (name === 'NotSupportedError') {
+        toast.error('当前视频格式不受支持');
+      } else {
+        toast.warning('播放失败，请点击屏幕重试');
+      }
     }
   }, []);
 
@@ -384,6 +402,11 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      // 加载/切集期（isPlayerLoading 且未就绪）禁止 play 排队：canplay 前 play()
+      // 会 pending，随后被切源 abort（误报「被拦截」）或与 canplay 后 setPlaying(false)
+      // 交错产生「视频在播但 UI 显示暂停」的瞬时态
+      const { isPlayerLoading, isReadyToPlay } = usePlayerStore.getState();
+      if (isPlayerLoading && !isReadyToPlay) return;
       // 用户手动点击播放 → 标记来源，ToastTrigger 据此显示「播放」提示
       // （自动缓冲播放由 handleCanPlay 直接 video.play()，不设此标记）
       usePlayerStore.getState().setUserPlayRequested(true);
@@ -412,7 +435,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const seek = useCallback((time: number) => {
     if (videoRef.current && !videoRef.current.error) {
       videoRef.current.currentTime = time;
-      // 右上角提示最新播放进度（拖拽进度条 / 键盘快捷键 / 长按快进均触发）
+      // 提示最新播放进度（拖拽进度条 / 键盘快捷键 / 长按快进均触发）；
+      // 移动端渲染位置由 ToastProvider 的 mobileCenter 决定（屏幕居中）
       playerToast(`已跳转 ${formatSeekTime(time)}`);
     }
   }, []);

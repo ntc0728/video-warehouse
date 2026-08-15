@@ -983,6 +983,31 @@ body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][da
   top: 18% !important;
 }
 
+/* 桌面端播放器页：错误/警告类 sonner toast 约束到播放器内水平居中 + 贴近播放器上边框
+   （header 之下，top 由 UniversalPlayer 实测写入 --player-toast-* 变量）。
+   移动端（<=767px）仍走下方屏幕居中规则，不受影响。 */
+@media (width >= 768px) {
+  body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
+    top: calc(var(--player-toast-top, 0px) + var(--space-sm)) !important;
+    left: var(--player-toast-left, 0px) !important;
+    right: auto !important;
+    width: var(--player-toast-width, 100vw) !important;
+  }
+}
+
+/* 移动端 + 播放器页：全局 sonner 提示改屏幕居中（桌面端保持 18% 靠上不变）
+   --front-toast-height 为 sonner 容器内联变量（前部 toast 高度），用于垂直居中补偿；
+   toaster 是 fixed 容器、height 0（子项 absolute），translateY(-50%) 无意义，必须用 calc 算偏移 */
+@media (width <= 767px) {
+  body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
+    top: calc(50% - var(--front-toast-height) / 2) !important;
+  }
+}
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
+  top: calc(50% - var(--front-toast-height) / 2) !important;
+}
+
 [data-sonner-toaster] [data-sonner-toast] {
   width: fit-content;
   min-width: 10rem;

@@ -85,6 +85,7 @@ export default function ControlBar({
   slots,
 }: ControlBarProps) {
   const isPlaying = usePlayerStore(s => s.isPlaying);
+  const isPlayerLoading = usePlayerStore(s => s.isPlayerLoading);
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
   const decoderMode = usePlayerStore(s => s.decoderMode);
@@ -109,18 +110,36 @@ export default function ControlBar({
       aria-label="播放器控制栏"
       aria-orientation="horizontal"
     >
-      <ProgressBar
-        mode={mode}
-        currentTime={currentTime}
-        duration={videoDuration}
-        buffered={buffered}
-        onSeek={onSeek}
-        buffering={isBuffering}
-      />
+      {isMobile ? (
+        /* 移动端单行布局：播放 / 进度条 / 时间轴 / 全屏 同行（桌面端不受影响） */
+        <div className="up-control-mobile-row">
+          <PlayButton isPlaying={isPlaying} disabled={(isBuffering && !isPlaying) || isPlayerLoading} onClick={onTogglePlay} />
+          <ProgressBar
+            mode={mode}
+            currentTime={currentTime}
+            duration={videoDuration}
+            buffered={buffered}
+            onSeek={onSeek}
+            buffering={isBuffering}
+          />
+          {isVideoMode && <TimeDisplay currentTime={currentTime} duration={videoDuration} />}
+          {isLiveLike && onRefresh && <RefreshButton onClick={onRefresh} />}
+          <FullscreenButton containerRef={containerRef} />
+        </div>
+      ) : (
+        <>
+          <ProgressBar
+            mode={mode}
+            currentTime={currentTime}
+            duration={videoDuration}
+            buffered={buffered}
+            onSeek={onSeek}
+            buffering={isBuffering}
+          />
 
-      <div className="up-control-bar-buttons">
+          <div className="up-control-bar-buttons">
         <div className="up-control-left">
-          {hasPrevEpisode !== undefined && (
+          {hasPrevEpisode !== undefined && !isMobile && (
             <button
               disabled={!hasPrevEpisode}
               onClick={onPrevEpisode}
@@ -129,9 +148,9 @@ export default function ControlBar({
               <DuoIcon primary={SkipBack} secondary={StepBack} size="md" />
             </button>
           )}
-          {/* 缓冲中仍可点击暂停（仅缓冲且未播放时禁用：此时点播放无意义） */}
-          <PlayButton isPlaying={isPlaying} disabled={isBuffering && !isPlaying} onClick={onTogglePlay} />
-          {hasNextEpisode !== undefined && (
+          {/* 缓冲中仍可点击暂停；加载/切集期禁用（此时点播放无意义，且 play() 排队会被切源中断） */}
+          <PlayButton isPlaying={isPlaying} disabled={(isBuffering && !isPlaying) || isPlayerLoading} onClick={onTogglePlay} />
+          {hasNextEpisode !== undefined && !isMobile && (
             <button
               disabled={!hasNextEpisode}
               onClick={onNextEpisode}
@@ -157,12 +176,14 @@ export default function ControlBar({
         )}
 
         <div className="up-control-right">
-          <VolumeControl
-            volume={volume}
-            onChange={onVolumeChange}
-            activePopover={activePopover}
-            onPopoverChange={onPopoverChange}
-          />
+          {!isMobile && (
+            <VolumeControl
+              volume={volume}
+              onChange={onVolumeChange}
+              activePopover={activePopover}
+              onPopoverChange={onPopoverChange}
+            />
+          )}
           <div className="up-control-feature">
             {isVideoMode && !isMobile && (
               <SubtitleControl
@@ -171,12 +192,14 @@ export default function ControlBar({
                 onPopoverChange={onPopoverChange}
               />
             )}
-            <SpeedControl
-              currentRate={playbackRate}
-              onChange={onPlaybackRateChange}
-              activePopover={activePopover}
-              onPopoverChange={onPopoverChange}
-            />
+            {!isMobile && (
+              <SpeedControl
+                currentRate={playbackRate}
+                onChange={onPlaybackRateChange}
+                activePopover={activePopover}
+                onPopoverChange={onPopoverChange}
+              />
+            )}
             {isVideoMode && !isMobile && (
               <ResolutionSwitch
                 levels={levels}
@@ -191,42 +214,28 @@ export default function ControlBar({
               <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}
           </div>
-          <MoreMenu
-            activePopover={activePopover}
-            onPopoverChange={onPopoverChange}
-          >
-            {isVideoMode && isMobile && (
-              <SubtitleControl
-                onImportSubtitle={onImportSubtitle}
-                activePopover={activePopover}
-                onPopoverChange={onPopoverChange}
-              />
-            )}
-            {isVideoMode && isMobile && (
-              <ResolutionSwitch
-                levels={levels}
-                currentLevel={currentLevel}
-                onChange={onLevelChange}
-                visible={isHls}
-                activePopover={activePopover}
-                onPopoverChange={onPopoverChange}
-              />
-            )}
-            {isVideoMode && isMobile && onLoopModeChange && (
-              <LoopButton mode={loopMode} onChange={onLoopModeChange} />
-            )}
-            <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
-            {isVideoMode && <MirrorButton />}
-            {isVideoMode && <RatioButton />}
-            {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}
-          </MoreMenu>
-          <div className="up-control-window">
-            <PiPButton isPiP={isPiP} onClick={onTogglePiP} />
-            <FullscreenButton containerRef={containerRef} />
-          </div>
+          {!isMobile && (
+            <MoreMenu
+              activePopover={activePopover}
+              onPopoverChange={onPopoverChange}
+            >
+              <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
+              {isVideoMode && <MirrorButton />}
+              {isVideoMode && <RatioButton />}
+              {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}
+            </MoreMenu>
+          )}
+          {!isMobile && (
+            <div className="up-control-window">
+              <PiPButton isPiP={isPiP} onClick={onTogglePiP} />
+              <FullscreenButton containerRef={containerRef} />
+            </div>
+          )}
           {slots?.right}
-        </div>
-      </div>
+          </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

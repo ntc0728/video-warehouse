@@ -36,6 +36,11 @@ import type { SourceType } from '@/types/video';
 import { ERROR_CODE_BARE_STREAM } from './adapters/HLSAdapter';
 import { Icon } from "@/components/ui/Icon";
 import { isNativePlatform } from '@/lib/platform';
+import { useIsMobileLayout } from '@/hooks/useMediaQuery';
+import HeaderActions from './MobileUI/HeaderActions';
+import MobileMoreSheet from './MobileUI/MobileMoreSheet';
+import SubtitleSettingsModal from './MobileUI/SubtitleSettingsModal';
+import CastSheet from './MobileUI/CastSheet';
 
 const VOLUME_POPUP_DELAY = 3000;
 
@@ -130,6 +135,16 @@ export default function UniversalPlayer({
   // D1 裸流降级：HLS 解析失败（非 HLS 清单）时临时覆盖播放器类型为 flv，
   // 复用同一 URL 重建 mpegts.js 重试（URL 变化时复位）
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
+  // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
+  const isMobileLayout = useIsMobileLayout();
+  // 移动端弹窗状态
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [castSheetOpen, setCastSheetOpen] = useState(false);
+  const [subtitleSheetOpen, setSubtitleSheetOpen] = useState(false);
+  // 定时关闭（分钟；0 = 关闭）
+  const [sleepMinutes, setSleepMinutes] = useState(0);
+  // 投屏激活状态（右上角图标常亮提示）
+  const [castActive, setCastActive] = useState(false);
 
   const {
     decoderMode, isControlsVisible, isChannelListVisible,
@@ -152,6 +167,36 @@ export default function UniversalPlayer({
     document.body.dataset.playerToast = 'active';
     return () => {
       delete document.body.dataset.playerToast;
+    };
+  }, []);
+
+  // 桌面端 toast 定位几何：把全局 sonner（错误/警告类）约束到播放器内水平居中 + 贴近上边框
+  // （header 之下），并给操作类提示提供「头部右控件下方」锚点。
+  // 因 sonner 是 fixed 视口容器，必须用 JS 测量播放器矩形写 CSS 变量才能相对播放器居中。
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const header = el.querySelector<HTMLElement>('.up-player-header');
+    const updateVars = () => {
+      const rect = el.getBoundingClientRect();
+      const headerH = header?.getBoundingClientRect().height ?? 0;
+      const root = document.documentElement;
+      root.style.setProperty('--player-toast-left', `${rect.left}px`);
+      root.style.setProperty('--player-toast-width', `${rect.width}px`);
+      // sonner top = 播放器顶 + header 高（贴近上边框、不遮 header）
+      root.style.setProperty('--player-toast-top', `${rect.top + headerH}px`);
+      root.style.setProperty('--player-header-height', `${headerH}px`);
+    };
+    updateVars();
+    const ro = new ResizeObserver(updateVars);
+    ro.observe(el);
+    if (header) ro.observe(header);
+    window.addEventListener('scroll', updateVars, true);
+    window.addEventListener('resize', updateVars);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', updateVars, true);
+      window.removeEventListener('resize', updateVars);
     };
   }, []);
 
@@ -314,10 +359,10 @@ cmsSourceId,
 episodeLabel,
 seasonNumber,
 skipHistory,
-autoPlay,
-decoderMode,
-retryCount,
-    onProgress,
+  autoPlay,
+  decoderMode,
+  retryCount,
+      onProgress,
     onEnded,
     onPlay,
     onPause,
@@ -545,8 +590,51 @@ retryCount,
   }, [mode, currentChannel, _channels]);
 
   const volume = usePlayerStore(s => s.volume);
+  const isPiP = usePlayerStore(s => s.isPiP);
   const networkSpeed = useNetworkSpeed();
   const networkQuality = useNetworkQuality();
+  // 当前播放流类型（HLS 时显示清晰度卡）；与 useIPTVNavigation 的 currentType 区分命名
+  const streamType = usePlayerStore(s => s.currentType);
+  const isHls = streamType === 'm3u8';
+
+  // 移动端更多设置：字幕 / 后台听视频 / 字幕样式（store 运行时字段）
+  const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
+  const setSubtitleEnabled = usePlayerStore(s => s.setSubtitleEnabled);
+  const backgroundPlay = usePlayerStore(s => s.backgroundPlay);
+  const setBackgroundPlay = usePlayerStore(s => s.setBackgroundPlay);
+  const subtitleSettings = usePlayerStore(s => s.subtitleSettings);
+  const updateSubtitleSettings = usePlayerStore(s => s.updateSubtitleSettings);
+  const mirror = usePlayerStore(s => s.mirror);
+  const setMirror = usePlayerStore(s => s.setMirror);
+  const aspectRatio = usePlayerStore(s => s.aspectRatio);
+  const setAspectRatio = usePlayerStore(s => s.setAspectRatio);
+  const playbackRate = usePlayerStore(s => s.playbackRate);
+  const loopMode = usePlayerStore(s => s.loopMode);
+  const playerProgress = usePlayerStore(s => s.progress);
+  const playerDuration = usePlayerStore(s => s.duration);
+
+  // 字幕翻译设置（双语 / 目标语言）
+  const {
+    autoTranslate, setAutoTranslate, targetLang, setTargetLang,
+    translationAppId, translationApiKey,
+  } = useSettingsStore();
+  const translationConfigured = Boolean(translationAppId && translationApiKey);
+  // 字幕大字号开关 = 字号 >= 40
+  const subtitleBigFont = subtitleSettings.fontSize >= 40;
+
+  // 定时关闭：到时暂停播放（睡眠定时器，0 = 关闭）。
+  // playerCore 对象每次渲染重建（内部 callback 稳定），用 ref 避免定时器随渲染重置。
+  const playerCoreRef = useRef(playerCore);
+  playerCoreRef.current = playerCore;
+  useEffect(() => {
+    if (sleepMinutes <= 0) return;
+    const timer = setTimeout(() => {
+      playerCoreRef.current.pause();
+      setSleepMinutes(0);
+      toast.show({ content: '定时关闭：已暂停播放', type: 'success' });
+    }, sleepMinutes * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [sleepMinutes]);
 
   /** 解析网速字符串为数值（KB/s）用于判断网络状态 */
   const parseSpeedKBs = (speedStr: string): number => {
@@ -667,7 +755,7 @@ retryCount,
 
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
-    <ToastProvider>
+    <ToastProvider mobileCenter={isMobileLayout}>
     <ToastTrigger mode={mode} />
     <PlayerErrorBoundary>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
@@ -756,6 +844,17 @@ retryCount,
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}
+        actions={
+          isMobileLayout && mode === 'video' ? (
+            <HeaderActions
+              isPiP={isPiP}
+              onTogglePiP={playerCore.togglePiP}
+              castActive={castActive}
+              onCastClick={() => setCastSheetOpen(true)}
+              onMoreClick={() => setMoreSheetOpen(true)}
+            />
+          ) : undefined
+        }
       />
 
       {mode === 'iptv' ? (
@@ -787,6 +886,7 @@ retryCount,
           platform={platform}
           visible={isControlsVisible}
           containerRef={containerRef as React.RefObject<HTMLElement>}
+          isMobile={isMobileLayout}
           onTogglePlay={playerCore.togglePlay}
           onSeek={playerCore.seek}
           onVolumeChange={playerCore.setVolume}
@@ -809,6 +909,19 @@ retryCount,
           onNextEpisode={onNextEpisode}
           isBuffering={isBuffering}
         />
+      )}
+
+      {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染） */}
+      {isMobileLayout && mode === 'video' && (
+        <div
+          className={`up-mobile-progress-edge${!isControlsVisible ? ' up-mobile-progress-edge-visible' : ''}`}
+          aria-hidden="true"
+        >
+          <div
+            className="up-mobile-progress-edge__inner"
+            style={{ width: `${playerDuration > 0 && Number.isFinite(playerDuration) ? Math.min(100, (playerProgress / playerDuration) * 100) : 0}%` }}
+          />
+        </div>
       )}
 
       {mode === 'iptv' && (
@@ -854,6 +967,57 @@ retryCount,
             setTvFocusSection(focus.activeSection);
           } : undefined}
         />
+      )}
+
+      {/* 移动端/App 端点播页：右上角操作组对应的底部弹窗（更多设置 / 投屏 / 字幕二级弹窗） */}
+      {isMobileLayout && mode === 'video' && (
+        <>
+          <MobileMoreSheet
+            visible={moreSheetOpen}
+            onClose={() => setMoreSheetOpen(false)}
+            currentRate={playbackRate}
+            onPlaybackRateChange={playerCore.setPlaybackRate}
+            loopMode={loopMode}
+            onLoopModeChange={setLoopMode}
+            levels={levels}
+            currentLevel={currentLevel}
+            onLevelChange={playerCore.switchLevel}
+            isHls={isHls}
+            sleepMinutes={sleepMinutes}
+            onSleepChange={setSleepMinutes}
+            backgroundPlay={backgroundPlay}
+            onBackgroundPlayChange={setBackgroundPlay}
+            subtitleEnabled={subtitleEnabled}
+            onSubtitleToggle={setSubtitleEnabled}
+            onOpenSubtitleSettings={() => {
+              setMoreSheetOpen(false);
+              setSubtitleSheetOpen(true);
+            }}
+            onImportSubtitle={(file) => handleImportSubtitle(file)}
+            mirror={mirror}
+            onMirrorToggle={setMirror}
+            aspectRatio={aspectRatio}
+            onAspectRatioChange={setAspectRatio}
+          />
+          <CastSheet
+            visible={castSheetOpen}
+            onClose={() => setCastSheetOpen(false)}
+            url={url}
+            title={title}
+            onCastActiveChange={setCastActive}
+          />
+          <SubtitleSettingsModal
+            visible={subtitleSheetOpen}
+            onClose={() => setSubtitleSheetOpen(false)}
+            autoTranslate={autoTranslate}
+            onAutoTranslateChange={setAutoTranslate}
+            bigFont={subtitleBigFont}
+            onBigFontChange={(on) => updateSubtitleSettings({ fontSize: on ? 40 : 24 })}
+            targetLang={targetLang}
+            onTargetLangChange={setTargetLang}
+            translationConfigured={translationConfigured}
+          />
+        </>
       )}
     </div>
     </PlayerContext.Provider>
