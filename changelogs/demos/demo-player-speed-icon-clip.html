@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桌面 play 页倍速图标裁剪排查 Demo</title>
+<style>
+  :root {
+    /* 桌面端变量集（variables.css html:not([data-device=app]) 段） */
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.75rem;
+    --icon-sm: calc(var(--text-sm) * 1.30);
+    --icon-md: calc(var(--text-base) * 1.43);
+    --icon-xl: calc(var(--text-2xl) * 1.33);
+    --icon-2xl: calc(var(--text-3xl) * 1.30);
+    --space-2xs: clamp(0.1875rem, 0.1563vw, 0.375rem);
+    --space-xs: clamp(0.375rem, 0.3125vw, 0.75rem);
+    --space-sm: clamp(0.75rem, 0.625vw, 1.5rem);
+    --space-md: clamp(1.125rem, 0.9375vw, 2.25rem);
+    --space-lg: clamp(1.75rem, 1.4583vw, 3.5rem);
+    --space-2xl: clamp(3.5rem, 2.9167vw, 7rem);
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --layout-channel-num-w: 2.5rem;
+    --layout-time-display-min-w: 3.5rem;
+    --layout-spinner-border: 3px;
+    --player-text: #fff;
+    --player-bg: #000;
+    --player-accent: #e50914;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; font-family: system-ui, sans-serif; }
+
+  /* 复刻 .player-video-area（桌面 play 页） */
+  .player-video-area {
+    position: relative;
+    width: 1024px;
+    height: 620px;
+    margin: 24px auto;
+    border-radius: 12px;
+    background: #000;
+    overflow: hidden;
+  }
+  .player-video-area .up-universal-player {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  /* ══ 复刻 UniversalPlayer.css 相关规则 ══ */
+  .up-universal-player {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    background: var(--player-bg);
+    overflow: hidden;
+    user-select: none;
+  }
+  .up-control-bar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    padding: var(--space-sm) var(--space-md) var(--space-md);
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .up-control-bar button {
+    display: flex;
+    gap: var(--space-xs);
+    justify-content: center;
+    align-items: center;
+    min-width: var(--icon-xl);
+    min-height: var(--icon-xl);
+    padding: var(--space-xs);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    font-size: var(--text-base);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  .up-platform-desktop .up-control-bar button {
+    min-width: var(--space-2xl);
+    min-height: var(--space-2xl);
+  }
+  .up-control-bar button:hover { background: rgba(255,255,255,0.1); color: var(--player-text); }
+  .up-control-bar-buttons { display: flex; justify-content: space-between; align-items: center; }
+  .up-control-right { display: flex; gap: var(--space-sm); align-items: center; }
+  .up-control-feature { display: flex; gap: var(--space-sm); align-items: center; }
+
+  .up-icon-duo {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  .up-icon-duo > span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.18s ease, transform 0.18s var(--ease-standard);
+  }
+  .up-icon-duo__secondary {
+    opacity: 0;
+    transform: scale(0.55) translateY(4px);
+  }
+  .up-control-bar button:hover .up-icon-duo__primary {
+    opacity: 0;
+    transform: scale(0.55) translateY(-4px);
+  }
+  .up-control-bar button:hover .up-icon-duo__secondary {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  .up-speed-label {
+    display: inline-block;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transition: transform 0.18s ease;
+  }
+  .up-control-bar button:hover .up-speed-label { transform: scale(1.12); }
+
+  .up-popover-control { position: relative; display: flex; align-items: center; }
+  .up-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    z-index: 30;
+    min-width: var(--layout-channel-num-w);
+    padding: var(--space-sm) var(--space-xs);
+    border-radius: var(--radius-md);
+    background: rgba(20,20,20,0.96);
+    transform: translateX(-50%);
+    backdrop-filter: blur(8px);
+  }
+  .up-popover-item {
+    display: block;
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    font-size: var(--text-base);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .up-popover-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .up-popover-item-active {
+    position: relative;
+    padding-left: calc(var(--space-md) + var(--layout-spinner-border));
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-weight: 600;
+  }
+  .up-popover-item-active::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 0;
+    width: var(--layout-spinner-border);
+    height: 60%;
+    border-radius: 0 3px 3px 0;
+    background: #fff;
+  }
+
+  /* 速览标注 */
+  .hint { color:#888; font-size:12px; text-align:center; padding:4px; }
+  .grid { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; }
+  .cell { text-align:center; }
+  .cell h3 { color:#ccc; font-size:14px; margin:8px 0 4px; font-weight:500; }
+</style>
+</head>
+<body>
+<div class="hint">复刻桌面 play 页 .player-video-area（1024×620，overflow:hidden）+ .up-universal-player（overflow:hidden）+ 底部控制栏 + 倍速 DuoIcon + 弹出菜单</div>
+<div class="grid">
+  <div class="cell">
+    <h3>状态 A：未 hover（primary 显示）</h3>
+    <div class="player-video-area">
+      <div class="up-universal-player up-platform-desktop">
+        <div class="up-control-bar">
+          <div class="up-control-bar-buttons">
+            <div class="up-control-right">
+              <div class="up-control-feature">
+                <div class="up-popover-control">
+                  <button class="up-speed-btn" title="倍速">
+                    <span class="up-icon-duo" style="width:var(--icon-md);height:var(--icon-md)">
+                      <span class="up-icon-duo__primary">
+                        <svg width="var(--icon-md)" height="var(--icon-md)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></svg>
+                      </span>
+                      <span class="up-icon-duo__secondary">
+                        <svg width="var(--icon-md)" height="var(--icon-md)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 15l3-3-3-3"/><path d="M13 15l3-3-3-3"/></svg>
+                      </span>
+                    </span>
+                    <span class="up-speed-label">倍速</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <h3>状态 B：hover（secondary 放大 + primary 淡出）</h3>
+    <div class="player-video-area" id="hoverTarget">
+      <div class="up-universal-player up-platform-desktop">
+        <div class="up-control-bar">
+          <div class="up-control-bar-buttons">
+            <div class="up-control-right">
+              <div class="up-control-feature">
+                <div class="up-popover-control" id="popCtrl">
+                  <button class="up-speed-btn" title="倍速">
+                    <span class="up-icon-duo" style="width:var(--icon-md);height:var(--icon-md)">
+                      <span class="up-icon-duo__primary">
+                        <svg width="var(--icon-md)" height="var(--icon-md)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></svg>
+                      </span>
+                      <span class="up-icon-duo__secondary">
+                        <svg width="var(--icon-md)" height="var(--icon-md)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 15l3-3-3-3"/><path d="M13 15l3-3-3-3"/></svg>
+                      </span>
+                    </span>
+                    <span class="up-speed-label">倍速</span>
+                  </button>
+                  <div class="up-popover up-speed-popover" role="menu">
+                    <button class="up-popover-item">0.5x</button>
+                    <button class="up-popover-item">0.75x</button>
+                    <button class="up-popover-item up-popover-item-active">正常</button>
+                    <button class="up-popover-item">1.25x</button>
+                    <button class="up-popover-item">1.5x</button>
+                    <button class="up-popover-item">2x</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 模拟 hover：给 B 的控制栏按钮加 hover 类以呈现动画后的最终态
+  const btn = document.querySelector('#hoverTarget .up-speed-btn');
+  btn.classList.add('hover-sim');
+  btn.closest('.up-control-bar').style.background = 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)';
+  // 直接复用 CSS 的 button:hover 规则：用真实 hover 事件
+  setTimeout(() => {
+    const btn2 = document.querySelector('#hoverTarget .up-speed-btn');
+    const ev = new MouseEvent('mouseover', { bubbles: true });
+    btn2.dispatchEvent(ev);
+    document.querySelectorAll('#hoverTarget .up-icon-duo__primary').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.55) translateY(-4px)';
+    });
+    document.querySelectorAll('#hoverTarget .up-icon-duo__secondary').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'scale(1) translateY(0)';
+    });
+    const lbl = document.querySelector('#hoverTarget .up-speed-label');
+    lbl.style.transform = 'scale(1.12)';
+  }, 100);
+</script>
+</body>
+</html>

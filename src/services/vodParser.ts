@@ -109,11 +109,13 @@ export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sou
       if (isMovie) {
         parsed.forEach((entry, idx) => {
           allSources.push({
-            id: `source-${i}`,
+            // 同组多分段加条目序号，避免 id 重复（同组全部复用 source-${i} 会触发 React 重复 key）
+            id: `source-${i}-${idx}`,
             name: entry.title,
             url: entry.url,
             type: entry.type,
-            isDefault: idx === 0,
+            // 与单段分支一致：仅全局首个源为默认（旧实现 idx===0 会让每组首个都标记默认）
+            isDefault: allSources.length === 0,
           });
         });
       } else {

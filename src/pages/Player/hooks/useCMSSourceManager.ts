@@ -38,6 +38,8 @@ interface UseCMSSourceManagerOptions {
   setLocalEpisodeId: (id: string | undefined) => void;
   videoCache: Map<string, CachedVideoEntry>;
   routeSourceIndex: number | undefined;
+  /** 当前实际使用的 CMS 源索引（历史恢复/设置默认等计算后的最终值，普通 CMS id 进入时用于初始化面板） */
+  activeSourceIndex?: number;
   skipHistory: boolean;
   onSwitchEpisode: (ep: Episode) => void;
   handlePlaySource: (src: VideoSource) => void;
@@ -54,7 +56,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
-    routeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
+    routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
     routePlayUrl, routeSeasonNumber,
   } = opts;
 
@@ -655,10 +657,16 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           const sourceId = sources[routeSourceIndex].id;
           setSelectedSourceIds([sourceId]);
           setActiveSourceId(sourceId);
+        } else if (activeSourceIndex !== undefined && sources[activeSourceIndex]) {
+          // 普通 CMS vod id（历史记录/直接 URL 进入，无 routeSourceIndex）：
+          // 以当前实际播放源填充面板，避免「暂无数据源」
+          const sourceId = sources[activeSourceIndex].id;
+          setSelectedSourceIds([sourceId]);
+          setActiveSourceId(sourceId);
         }
       }).catch(() => {});
     }).catch(() => {});
-  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex]);
+  }, [id, videoSourceIndex, videoSourceIndices, routeSourceIndex, activeSourceIndex]);
 
   // TMDB 详情加载后触发 CMS 搜索
   useEffect(() => {

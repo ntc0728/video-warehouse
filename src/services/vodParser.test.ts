@@ -161,6 +161,22 @@ describe('parsePlaySources', () => {
       );
       expect(result.sources).toHaveLength(2);
     });
+
+    it('同线路多分段（多分辨率）id 不重复且全局唯一', () => {
+      const result = parsePlaySources(
+        '线路A$蓝光$http://a.com/v1.m3u8#高清$http://a.com/v2.m3u8$$$线路B$http://b.com/v.mp4',
+        'movie'
+      );
+      expect(result.sources).toHaveLength(3);
+      const ids = result.sources.map(s => s.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      // 多分段组内条目带序号；单段线路保持 source-{i}（与多段组不冲突）
+      expect(ids[0]).toBe('source-0-0');
+      expect(ids[1]).toBe('source-0-1');
+      expect(ids[2]).toBe('source-1');
+      // 仅全局首个源为默认
+      expect(result.sources.filter(s => s.isDefault)).toHaveLength(1);
+    });
   });
 
   describe('多条线路去重', () => {
