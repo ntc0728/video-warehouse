@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.8.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.6...kinotv-v1.8.0) (2026-08-15)
+
+
+### Features
+
+* **player:** 播放器移动端设置——控制栏精简 + 右上角操作组（画中画/投屏/更多）+ 底部卡片弹层 + 字幕二级弹窗 + 投屏服务 ([cf5e65a](https://github.com/ntc0728/video-warehouse/commit/cf5e65ae012fc8d370812ec35fa94c6b1958da5f))
+
+
+### Bug Fixes
+
+* **home:** ???????????????????????? ([875e651](https://github.com/ntc0728/video-warehouse/commit/875e6510190f56b4b2efe9c3bde38e54495c8382))
+* **home:** 分类切换快速完成（移除预加载阻塞门控）+ 彻底删除 CardCoverLoading 浅白遮罩 ([2e64db1](https://github.com/ntc0728/video-warehouse/commit/2e64db13cd01d50473a6afdf83e52f8046ee8bf2))
+* **home:** 无缓存时分类切换跳过旧图滞留动画（直接渲染新层，骨架占位自然加载） ([c6fafe0](https://github.com/ntc0728/video-warehouse/commit/c6fafe0384401219e860fc701d68386fe026c377))
+* **player:** data-mobile-layout 全局标记驱动播放器 toast 定位（App 恒移动/手机桌面模式不再按视口误判桌面端）+ IPTV 全屏按钮右下角 ([d87ff21](https://github.com/ntc0728/video-warehouse/commit/d87ff21fecd4e88d6f67eda0a1cc208b0cd70594))
+* **player:** 修复窄窗桌面 toast 叠在头部图标上——CSS 锚点规则不再受 data-mobile-layout 拦截 ([1da8e91](https://github.com/ntc0728/video-warehouse/commit/1da8e91fa61d06ef2a6ae4cf669f306188bfa68c))
+* **player:** 区分移动端布局与真实移动设备（toast 居中仅手机）+ 弹窗全宽 ([15ba25e](https://github.com/ntc0728/video-warehouse/commit/15ba25ecf53aebbb0279d0d9cc9f9fc6a6200c64))
+* **player:** 播放页桌面端修复——vodParser 源 id 去重与 isDefault 全局化、CMS 面板空初始化、play 错误分类、进度恢复竞态守卫 ([5a8392f](https://github.com/ntc0728/video-warehouse/commit/5a8392f5d8bf4018bd983f34d955f28c389d99a3))
+* **player:** 桌面 toast 锚定头部右控件（data-player-header-controls）+ 移动端布局判定用例（4.12 M09/M10） ([fb23144](https://github.com/ntc0728/video-warehouse/commit/fb231446fe7714fb4dcfa1f589bd4da18382cf4e))
+* **player:** 补充 data-player-header-controls 全局标记（桌面 toast 锚定头部右控件） ([e180e24](https://github.com/ntc0728/video-warehouse/commit/e180e24e9e3d532c2e04b7b831c7bd19fb26ab0d))
+
 ## [1.7.6](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.5...kinotv-v1.7.6) (2026-08-14)
 
 
