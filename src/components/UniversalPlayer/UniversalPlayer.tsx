@@ -140,14 +140,14 @@ export default function UniversalPlayer({
   // 操作类提示的「移动端居中」仅针对真实移动设备（App / 真实手机 UA）：
   // 桌面浏览器窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast（与桌面一致）。
   const isMobileDevice = isNativePlatform() || useIsRealPhone();
-  // 头部是否真正有操作控件（桌面端 = IPTV 全屏按钮；移动端点播 = 画中画/投屏/更多设置）。
-  // 用于桌面 toast 锚点：有控件 → 锚在控件下方避让；无控件 → 紧贴右上角。
-  // CSS 无法感知按钮渲染状态，必须 JS 判定后写全局标记（与 data-mobile-layout 同模式）。
-  const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 头部全屏按钮仅 IPTV 播放页非 TV 端渲染，且被 CSS 移到右下角
   // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
   // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
   const showHeaderFullscreen = mode === 'iptv' && platform !== 'tv' && !isNativePlatform();
+  // 头部是否真正有操作控件（桌面端 = IPTV 全屏按钮；移动端点播 = 画中画/投屏/更多设置）。
+  // 用于桌面 toast 锚点：有控件 → 锚在控件下方避让；无控件 → 紧贴右上角。
+  // CSS 无法感知按钮渲染状态，必须 JS 判定后写全局标记（与 data-mobile-layout 同模式）。
+  const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 移动端弹窗状态
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [castSheetOpen, setCastSheetOpen] = useState(false);
@@ -210,6 +210,13 @@ export default function UniversalPlayer({
       window.removeEventListener('resize', updateVars);
     };
   }, []);
+
+  // 桌面 toast 锚点：头部右侧真正有控件（全屏/更多设置等）才下移避让；无控件则紧贴右上角。
+  // CSS 无法感知按钮渲染状态，必须 JS 判定后写全局标记（与 data-mobile-layout 同模式）。
+  // mobileCenter 仅对真实移动设备生效，桌面窄窗不居中，走此逻辑。
+  useEffect(() => {
+    document.documentElement.dataset.playerHeaderControls = hasHeaderRightControls ? 'true' : 'false';
+  }, [hasHeaderRightControls]);
 
   // EPG 加载失败时显示 toast
   useEffect(() => {
