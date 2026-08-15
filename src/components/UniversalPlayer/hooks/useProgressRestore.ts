@@ -42,8 +42,10 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
   /**
    * 加载并恢复播放进度
    * @param videoRef - video 元素的 ref
+   * @param isCurrent - 竞态守卫：异步读历史期间若源/集已切换（返回 false），
+   *                    丢弃本次恢复，避免把旧集的进度迟到写进新集（快速切集场景）
    */
-  const loadProgress = useCallback(async (videoRef: React.RefObject<HTMLVideoElement | null>) => {
+  const loadProgress = useCallback(async (videoRef: React.RefObject<HTMLVideoElement | null>, isCurrent?: () => boolean) => {
     // 前置条件：需要有 videoId、video 元素、且不跳过历史
     if (!videoId || !videoRef.current || skipHistory) return;
     try {
@@ -79,6 +81,8 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
       // 恢复进度：将 currentTime 设置为上次播放位置
       const video = videoRef.current;
       if (videoHistory && videoHistory.progress > 0 && video.duration && isFinite(video.duration)) {
+        // 竞态守卫：异步读历史期间源/集已切换则丢弃（防止旧集进度迟到写进新集）
+        if (isCurrent && !isCurrent()) return;
         // 避免跳转到视频末尾（duration - 1 秒）
         video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
         // 提示已自动恢复播放位置（右上角；PlayerToast.show 自带覆盖语义，防双触发叠加）

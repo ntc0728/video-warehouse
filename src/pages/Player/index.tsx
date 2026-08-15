@@ -103,6 +103,8 @@ export default function PlayerPage() {
   const [video, setVideo] = useState<Video | null>(null);
   const [currentSrc, setCurrentSrc] = useState<{ url: string; type: VideoSource['type'] } | null>(null);
   const [loadError, setLoadError] = useState<'api' | null>(null);
+  // 当前实际使用的 CMS 源索引（历史恢复/设置默认计算后的最终值，供 CMS 面板初始化普通 vod id）
+  const [activeSourceIndex, setActiveSourceIndex] = useState<number | undefined>();
 
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(video?.title || null, true);
@@ -209,7 +211,7 @@ export default function PlayerPage() {
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
-    routeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
+    routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
     // 弹窗直达：初始选集/季优先按 routePlayUrl / routeSeasonNumber 对齐，避免首播季号竞态
     routePlayUrl, routeSeasonNumber,
   });
@@ -281,6 +283,7 @@ export default function PlayerPage() {
         } catch { /* history read failed */ }
       }
       historyRecordRef.current = historyRecord;
+      setActiveSourceIndex(activeSourceIndex);
 
       try {
         /**
