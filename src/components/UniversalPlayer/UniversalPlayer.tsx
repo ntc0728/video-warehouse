@@ -137,6 +137,10 @@ export default function UniversalPlayer({
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
   // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
   const isMobileLayout = useIsMobileLayout();
+  // 头部全屏按钮仅 IPTV 播放页非 TV 端渲染，且被 CSS 移到右下角
+  // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
+  // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
+  const showHeaderFullscreen = mode === 'iptv' && platform !== 'tv' && !isNativePlatform();
   // 移动端弹窗状态
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [castSheetOpen, setCastSheetOpen] = useState(false);
@@ -840,7 +844,7 @@ skipHistory,
         visible={isControlsVisible || hasError}
         /* TV 端 IPTV 播放页默认全屏，不显示放大图标；非 TV 端放大图标移至右下角（CSS）。
            9.1：app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全屏按钮 */
-        showFullscreenButton={mode === 'iptv' && platform !== 'tv' && !isNativePlatform()}
+        showFullscreenButton={showHeaderFullscreen}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}

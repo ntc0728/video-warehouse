@@ -286,16 +286,12 @@
 }
 
 /* ── 双图标 hover（DuoIcon） ────────────────────────────
-   原实现：hover 时主图标淡出缩小上移、副图标淡入归位（交叉淡化）。
-   过渡中途两图标各约 50% 半透明 + 相互错位缩小 → 观感像「图标被裁剪/残缺」。
-   现改为单图标变换：仅主图标 scale(1.1) 轻量放大（无交叉淡化重影），
-   副图标恒隐藏（保留 DOM 结构，切换状态时主图标由 React 按 isPlaying 等替换）。
-   纯 transform 过渡（GPU 合成不卡顿，不触发 layout）。 */
+   原实现：hover 时主图标淡出上移、副图标淡入归位（交叉淡化 + translateY「跳动」）。
+   去 scale（不做放大缩小），保留原 translateY 跳动：主图标上跳 4px 淡出，副图标从下方归位淡入。 */
 .up-icon-duo {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
-  transition: transform 0.18s var(--ease-standard);
 }
 .up-icon-duo > span {
   position: absolute;
@@ -303,15 +299,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: opacity 0.18s ease, transform 0.18s var(--ease-standard);
 }
 .up-icon-duo__secondary {
   opacity: 0;
+  transform: translateY(4px);
 }
-.up-control-bar button:hover .up-icon-duo,
-.iptv-osd-bar button:hover .up-icon-duo,
-.up-control-bar button:focus-visible .up-icon-duo,
-.iptv-osd-bar button:focus-visible .up-icon-duo {
-  transform: scale(1.1);
+.up-control-bar button:hover .up-icon-duo__primary,
+.iptv-osd-bar button:hover .up-icon-duo__primary,
+.up-control-bar button:focus-visible .up-icon-duo__primary {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.up-control-bar button:hover .up-icon-duo__secondary,
+.iptv-osd-bar button:hover .up-icon-duo__secondary,
+.up-control-bar button:focus-visible .up-icon-duo__secondary {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .up-control-left {
@@ -351,12 +355,6 @@
   display: inline-block;
   font-size: var(--text-sm);
   font-weight: 600;
-  /* 倍速文本随 hover 图标缩放联动（与 .up-icon-duo 过渡同速，GPU 合成不卡顿） */
-  transition: transform 0.18s ease;
-}
-.up-control-bar button:hover .up-speed-label {
-  /* 倍速文本随图标放大（图标 secondary scale 0.55→1，文本同步放大更协调） */
-  transform: scale(1.12);
 }
 
 /* ===== Progress Bar ===== */
@@ -1597,11 +1595,14 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* 桌面端操作类提示锚点：头部右控件下方（--player-header-height 由 UniversalPlayer 实测写入）。
-   右上角头部若有全屏/更多设置图标，提示显示在其下方，不重叠；移动端走 center-toast，不受影响。 */
+/* 桌面端操作类提示锚点：紧贴右上角（top: space-lg）。
+   IPTV 播放页的全屏按钮已被 CSS 移到右下角（.iptv-player-page .up-header-fullscreen-btn），
+   头部右上角从不渲染控件，无需避让。
+   仅桌面布局生效（html[data-mobile-layout] 缺省 且 视口 ≥768px）；移动端布局走 center-toast，
+   不受影响。移动端布局判定见 AppLayout 的 html[data-mobile-layout]（App 恒真 / 真实手机 / <768px）。 */
 @media (width >= 768px) {
-  .up-player-toast {
-    top: calc(var(--player-header-height, 0px) + var(--space-sm));
+  html:not([data-mobile-layout="true"]) .up-player-toast {
+    top: var(--space-lg);
   }
 }
 
