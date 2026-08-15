@@ -1,0 +1,193 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Cast, X, RotateCcw, Monitor, Play, Pause, Volume2, Link2Off } from 'lucide-react';
+import { BottomSheet } from '@/components/ui';
+import { Icon } from '@/components/ui/Icon';
+import { toast } from '@/components/ui';
+import {
+  discoverCastDevices, connectCastDevice, disconnectCast,
+  getCastBridge, type CastDevice,
+} from '@/services/castService';
+
+type CastView = 'searching' | 'list' | 'connecting' | 'connected';
+
+interface CastSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  /** 当前播放 URL（连接后推送至电视） */
+  url: string;
+  title?: string;
+  /** 投屏状态变化通知父组件（用于右上角图标常亮提示） */
+  onCastActiveChange: (active: boolean) => void;
+}
+
+/** 投屏底部弹窗（UI + 状态机；原生 DLNA 模块后续接入）：
+ *  搜索动画 → 设备列表 / 空态 → 连接中 → 已连接控制面板 → 断开 */
+export default function CastSheet({ visible, onClose, url, title, onCastActiveChange }: CastSheetProps) {
+  const [view, setView] = useState<CastView>('searching');
+  const [devices, setDevices] = useState<CastDevice[]>([]);
+  const [connectedDevice, setConnectedDevice] = useState<CastDevice | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const startSearch = useCallback(async () => {
+    setView('searching');
+    const found = await discoverCastDevices();
+    if (!mountedRef.current) return;
+    setDevices(found);
+    setView('list');
+  }, []);
+
+  // 打开即搜索
+  useEffect(() => {
+    if (visible) {
+      void startSearch();
+    } else {
+      // 关闭时复位状态（断开态由 disconnect 流程处理）
+      setConnectingId(null);
+    }
+  }, [visible, startSearch]);
+
+  const handleConnect = useCallback(async (device: CastDevice) => {
+    setConnectingId(device.id);
+    setView('connecting');
+    try {
+      await connectCastDevice(device.id);
+      const bridge = getCastBridge();
+      if (bridge?.setSource && url) {
+        await bridge.setSource(url, title);
+      }
+      if (!mountedRef.current) return;
+      setConnectedDevice(device);
+      setView('connected');
+      onCastActiveChange(true);
+      toast.show({ content: `已开始投屏到「${device.name}」`, type: 'success' });
+    } catch {
+      if (!mountedRef.current) return;
+      setConnectingId(null);
+      setView('list');
+      toast.show({ content: '连接失败，请重试', type: 'error' });
+    }
+  }, [url, title, onCastActiveChange]);
+
+  const handleDisconnect = useCallback(async () => {
+    await disconnectCast();
+    if (!mountedRef.current) return;
+    setConnectedDevice(null);
+    setView('list');
+    onCastActiveChange(false);
+    toast.show({ content: '已断开投屏', type: 'success' });
+  }, [onCastActiveChange]);
+
+  const handleBridgePlay = useCallback(async (action: 'play' | 'pause') => {
+    const bridge = getCastBridge();
+    if (!bridge) return;
+    try {
+      if (action === 'play') await bridge.play?.();
+      else await bridge.pause?.();
+    } catch { /* 静默 */ }
+  }, []);
+
+  return (
+    <BottomSheet visible={visible} onClose={onClose} title="投屏到电视" className="up-cast-sheet">
+      <div className="up-ms-head">
+        <span className="up-ms-title">投屏到电视</span>
+        <button className="up-ms-close" onClick={onClose} aria-label="关闭投屏">
+          <Icon icon={X} size="sm" />
+        </button>
+      </div>
+
+      <div className="up-cast-body">
+        <div className="up-cast-hint">
+          请确保手机与电视连接<b>同一 Wi-Fi</b>，将自动发现局域网内支持 <b>DLNA</b> 的投屏设备。
+        </div>
+
+        {view === 'searching' && (
+          <div className="up-cast-status">
+            <div className="up-cast-radar">
+              <div className="up-cast-ring" />
+              <div className="up-cast-ring" />
+              <div className="up-cast-ring" />
+              <div className="up-cast-core"><Icon icon={Cast} size="lg" /></div>
+            </div>
+            <p>正在搜索局域网中的投屏设备…</p>
+          </div>
+        )}
+
+        {view === 'list' && devices.length === 0 && (
+          <div className="up-cast-status">
+            <div style={{ fontSize: 40, lineHeight: 1 }}>📡</div>
+            <p>未发现投屏设备<br />
+              <span className="up-cast-empty-sub">请确认手机与电视在同一 Wi-Fi，并在电视端开启「多屏互动 / DLNA」</span>
+            </p>
+            <button className="up-cast-btn up-cast-btn--primary" onClick={() => void startSearch()}>
+              <Icon icon={RotateCcw} size="sm" /> 重新搜索
+            </button>
+          </div>
+        )}
+
+        {view === 'list' && devices.length > 0 && (
+          <div className="up-cast-list">
+            {devices.map(device => (
+              <button
+                key={device.id}
+                className="up-cast-device"
+                onClick={() => void handleConnect(device)}
+                disabled={connectingId !== null}
+              >
+                <span className="up-cast-device-icon"><Icon icon={Monitor} size="md" /></span>
+                <span className="up-cast-device-name">{device.name}</span>
+                <span className="up-cast-device-go">投屏 <Icon icon={Play} size="sm" /></span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {view === 'connecting' && (
+          <div className="up-cast-status">
+            <div className="up-cast-spinner" />
+            <p>正在连接设备…</p>
+          </div>
+        )}
+
+        {view === 'connected' && connectedDevice && (
+          <div className="up-cast-connected">
+            <div className="up-cast-banner">
+              <Icon icon={Cast} size="md" />
+              <span>已连接 · {connectedDevice.name}</span>
+            </div>
+            <div className="up-ms-card">
+              <div className="up-ms-row">
+                <div className="up-ms-label">正在投屏</div>
+                <span className="up-ms-sub">{title || url}</span>
+              </div>
+            </div>
+            <div className="up-cast-actions-row">
+              <button className="up-cast-mini" title="暂停" onClick={() => void handleBridgePlay('pause')}>
+                <Icon icon={Pause} size="sm" />
+              </button>
+              <button className="up-cast-mini up-cast-mini--primary" title="播放" onClick={() => void handleBridgePlay('play')}>
+                <Icon icon={Play} size="md" />
+              </button>
+              <button className="up-cast-mini" title="音量" onClick={() => { const b = getCastBridge(); void b?.setVolume?.(0.5); }}>
+                <Icon icon={Volume2} size="sm" />
+              </button>
+            </div>
+            <button className="up-cast-btn" onClick={() => void handleDisconnect()}>
+              <Icon icon={Link2Off} size="sm" /> 断开投屏
+            </button>
+            <div className="up-cast-note">
+              <b>DLNA 实现说明：</b>当前为 UI + 状态机演示。正式接入时由 Android 原生模块经 SSDP 发现设备 → 用
+              <code>SetAVTransportURI</code> 推送当前播放 URL 至电视 → 电视侧独立解码播放（手机可关屏/切走），
+              并通过 <code>Play/Pause/Seek</code> 反向控制。
+            </div>
+          </div>
+        )}
+      </div>
+    </BottomSheet>
+  );
+}

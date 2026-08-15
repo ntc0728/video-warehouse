@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 夜间模式启动页背景覆盖：splash_background 在深色主题下解析为深色。
+         注意：android/ 目录被 .gitignore 忽略，本文件由 build-android.ps1 /
+         release-android.yml 复制到 android/app/src/main/res/values-night/。 -->
+    <color name="splash_background">#0E0E12</color>
+</resources>

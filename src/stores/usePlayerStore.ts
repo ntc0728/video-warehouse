@@ -38,6 +38,10 @@ interface PlayerState {
   isPiP: boolean;
   subtitleUrl: string | null;
   subtitleSettings: SubtitleSettings;
+  /** 字幕是否启用（移动端更多设置里开关；关闭时隐藏字幕及字幕设置入口） */
+  subtitleEnabled: boolean;
+  /** 后台听视频开关（App 端依赖 Android 前台服务/媒体会话实现，Web 端仅标记） */
+  backgroundPlay: boolean;
   mode: PlayerMode;
   platform: PlatformType;
   isControlsVisible: boolean;
@@ -78,6 +82,8 @@ interface PlayerState {
   setIsPiP: (isPiP: boolean) => void;
   setSubtitleUrl: (url: string | null) => void;
   updateSubtitleSettings: (settings: Partial<SubtitleSettings>) => void;
+  setSubtitleEnabled: (enabled: boolean) => void;
+  setBackgroundPlay: (enabled: boolean) => void;
   setMode: (mode: PlayerMode) => void;
   setPlatform: (platform: PlatformType) => void;
   setControlsVisible: (visible: boolean) => void;
@@ -113,6 +119,8 @@ const initialState = {
   isPiP: false,
   subtitleUrl: null as string | null,
   subtitleSettings: defaultSubtitleSettings,
+  subtitleEnabled: true,
+  backgroundPlay: false,
   mode: 'video' as PlayerMode,
   platform: 'desktop' as PlatformType,
   isControlsVisible: false,
@@ -156,6 +164,8 @@ export const usePlayerStore = create<PlayerState>()(
         set((state) => ({
           subtitleSettings: { ...state.subtitleSettings, ...settings },
         })),
+      setSubtitleEnabled: (subtitleEnabled) => set({ subtitleEnabled }),
+      setBackgroundPlay: (backgroundPlay) => set({ backgroundPlay }),
       setMode: (mode) => set({ mode }),
       setPlatform: (platform) => set({ platform }),
       setControlsVisible: (isControlsVisible) => set({ isControlsVisible }),
@@ -185,6 +195,8 @@ export const usePlayerStore = create<PlayerState>()(
         currentAudioTrack: -1,
         isPiP: false,
         subtitleUrl: null,
+        subtitleEnabled: true,
+        backgroundPlay: false,
         mode: 'video' as PlayerMode,
         platform: 'desktop' as PlatformType,
         isControlsVisible: false,

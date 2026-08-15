@@ -13,6 +13,8 @@ interface PlayerHeaderProps {
   containerRef: React.RefObject<HTMLElement | null>;
   onBack: () => void;
   onActivity?: () => void;
+  /** 右上角操作组（移动端/App 端点播页：画中画 · 投屏 · 更多设置） */
+  actions?: React.ReactNode;
 }
 
 export default function PlayerHeader({
@@ -25,6 +27,7 @@ export default function PlayerHeader({
   containerRef,
   onBack,
   onActivity,
+  actions,
 }: PlayerHeaderProps) {
   const displayTitle = mode === 'iptv' ? (channelName || title) : title;
 
@@ -41,6 +44,7 @@ export default function PlayerHeader({
         {displayTitle}
         {episodeLabel && <span className="up-header-episode-badge">{episodeLabel}</span>}
       </span>
+      {actions}
       {showFullscreenButton && <FullscreenButton containerRef={containerRef} />}
     </div>
   );

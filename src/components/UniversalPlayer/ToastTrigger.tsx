@@ -16,7 +16,7 @@ const RATIO_LABELS: Record<string, string> = {
   fill: '铺满画面',
 };
 
-export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
+export default function ToastTrigger({ mode, disabled = false }: { mode?: PlayerMode; disabled?: boolean }) {
   const { show } = usePlayerToast();
   const prevVolume = useRef(usePlayerStore.getState().volume);
   const prevSource = useRef(usePlayerStore.getState().currentSrc);
@@ -31,8 +31,10 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
   const autoPlayToastShownRef = useRef(false);
 
   useEffect(() => {
-    // IPTV 直播有独立逻辑，右上角不显示任何点播类操作提示
-    if (mode === 'iptv') {
+    // 移动端/App 端 /play 点播页：右上角不显示任何点播类操作提示（由 disabled 控制，
+    // 父组件在「移动端布局 && 点播模式」时传入 true）。
+    // IPTV 直播有独立逻辑，右上角不显示任何点播类操作提示。
+    if (disabled || mode === 'iptv') {
       return;
     }
     const unsub = usePlayerStore.subscribe((state) => {
@@ -125,7 +127,7 @@ export default function ToastTrigger({ mode }: { mode?: PlayerMode }) {
       }
     });
     return unsub;
-  }, [show, mode]);
+  }, [show, mode, disabled]);
 
   return null;
 }

@@ -6,4 +6,10 @@
     <color name="colorPrimary">#1890FF</color>
     <color name="colorPrimaryDark">#0F6FCC</color>
     <color name="colorAccent">#1890FF</color>
+
+    <!-- 启动页背景（浅色主题）：白底 + 高清 logo。
+         夜间模式由 values-night/colors.xml 覆盖为深色。
+         windowSplashScreenBackground 引用此色，资源限定符自动按设备主题选择。 -->
+    <color name="splash_background">#FFFFFF</color>
+    <color name="splash_background_night">#0E0E12</color>
 </resources>
