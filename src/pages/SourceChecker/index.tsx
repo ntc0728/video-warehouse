@@ -101,7 +101,7 @@ function saveCache(data: Omit<CacheData, 'timestamp'>): void {
 }
 
 export default function SourceCheckerPage() {
-  const { corsProxy, videoSourceIndices, iptvSourceIndices } = useSettingsStore();
+  const { corsProxy, videoSourceIds, iptvSourceIds } = useSettingsStore();
   const { settings: iptvSettings } = useIPTVStore();
 
   // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏。
@@ -388,12 +388,12 @@ export default function SourceCheckerPage() {
   };
 
   // 获取选中的源名称
-  const selectedIPTVNames = (iptvSourceIndices || [0])
-    .map(i => iptvSources[i]?.name)
+  const selectedIPTVNames = (iptvSourceIds || [])
+    .map(id => iptvSources.find(s => s.url === id)?.name)
     .filter(Boolean)
     .join(', ') || '未选择';
-  const selectedVideoNames = (videoSourceIndices || [0])
-    .map(i => videoSources[i]?.name)
+  const selectedVideoNames = (videoSourceIds || [])
+    .map(id => videoSources.find(s => s.id === id)?.name)
     .filter(Boolean)
     .join(', ') || '未选择';
   const iptvProxyUrl = iptvSettings?.proxyUrl || '未配置';

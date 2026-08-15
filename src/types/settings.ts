@@ -5,10 +5,10 @@
 
 /** 应用全局设置 */
 export interface AppSettings {
-  videoSourceIndex: number;
-  videoSourceIndices: number[];
-  iptvSourceIndex: number;
-  iptvSourceIndices: number[];
+  /** 启用的视频源 ID（内置源 = video-sources.json 的 key；自定义源 = 生成的 UUID） */
+  videoSourceIds: string[];
+  /** 启用的 IPTV 源 ID（= 源的 URL） */
+  iptvSourceIds: string[];
   theme: 'light' | 'dark' | 'system';
   /** 美术资源皮肤画风：default(无) / cartoon(卡通) / mechanical(机械) / retro(复古) */
   skin: 'default' | 'cartoon' | 'mechanical' | 'retro';

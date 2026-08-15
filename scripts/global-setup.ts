@@ -12,6 +12,7 @@
 import { chromium, type FullConfig } from '@playwright/test';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import { config } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -29,24 +30,32 @@ const CORS_PROXY = process.env.CORS_PROXY || 'https://your-cors-proxy.example.co
 const IPTV_PROXY = process.env.IPTV_PROXY || 'https://your-iptv-proxy.example.com';
 
 // ─── 视频数据源（5 个，覆盖不同类型） ───────────────────────
-// video-sources.json 索引：
+// video-sources.json 下标：
 //   0=爱奇艺  1=豆瓣  6=猫眼  11=非凡  21=光速
 const VIDEO_SOURCE_INDICES = [0, 1, 6, 11, 21];
 
 // ─── IPTV 数据源（3 个，覆盖不同 CDN） ──────────────────────
-// iptv-sources.json 索引：
+// iptv-sources.json 下标：
 //   0=IPTV(GitHub)  2=猫影视TV  7=风云TV4
 const IPTV_SOURCE_INDICES = [0, 2, 7];
+
+// ID 持久化：从配置文件解析内置源 ID（video = api_site key；iptv = url）
+const videoSourcesJson = JSON.parse(
+  readFileSync(resolve(__dirname, '../public/data/video-sources.json'), 'utf8'),
+) as { api_site: Record<string, unknown> };
+const iptvSourcesJson = JSON.parse(
+  readFileSync(resolve(__dirname, '../public/data/iptv-sources.json'), 'utf8'),
+) as { name: string; url: string }[];
+const VIDEO_SOURCE_IDS = VIDEO_SOURCE_INDICES.map((i) => Object.keys(videoSourcesJson.api_site)[i]);
+const IPTV_SOURCE_IDS = IPTV_SOURCE_INDICES.map((i) => iptvSourcesJson[i].url);
 
 // ─── Zustand persist 格式的 localStorage 数据 ────────────────
 
 // useSettingsStore（app-settings）
 const APP_SETTINGS = {
   state: {
-    videoSourceIndex: VIDEO_SOURCE_INDICES[0],
-    videoSourceIndices: VIDEO_SOURCE_INDICES,
-    iptvSourceIndex: IPTV_SOURCE_INDICES[0],
-    iptvSourceIndices: IPTV_SOURCE_INDICES,
+    videoSourceIds: VIDEO_SOURCE_IDS,
+    iptvSourceIds: IPTV_SOURCE_IDS,
     theme: 'light',
     corsProxy: CORS_PROXY,
     epgUrls: ['http://epg.51zmt.top:8000/e.xml'],

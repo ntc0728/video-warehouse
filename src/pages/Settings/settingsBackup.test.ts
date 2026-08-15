@@ -28,8 +28,7 @@ describe('settingsBackup', () => {
     useSettingsStore.setState({
       tmdbAccessToken: '',
       translationApiKey: '',
-      videoSourceIndex: 0,
-      videoSourceIndices: [0],
+      videoSourceIds: [],
     });
     useUserStore.setState({ collections: [], history: [], _initialized: true });
   });

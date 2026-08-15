@@ -5,7 +5,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { searchAllFromCMSSource } from '@/services/videoService';
 import type { Video } from '@/types/video';
-import { useSettingsStore } from '@/stores';
 
 export interface CMSResultItem extends Video {
   cmsSourceName: string;
@@ -27,7 +26,6 @@ interface CMSSearchState {
 }
 
 export function useCMSSearch() {
-  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   const [state, setState] = useState<CMSSearchState>({
     results: [],
     loading: false,
@@ -44,12 +42,11 @@ export function useCMSSearch() {
   const sourcePagesRef = useRef<Map<number, number>>(new Map());
   const abortRef = useRef<AbortController | null>(null);
 
-  /** 获取所有选中的源索引 */
-  const getSourceIndices = useCallback(() => {
-    return videoSourceIndices && videoSourceIndices.length > 0
-      ? videoSourceIndices
-      : [videoSourceIndex];
-  }, [videoSourceIndex, videoSourceIndices]);
+  /** 获取所有选中的源索引（按 settings 启用的源 ID 解析，读取时实时派生） */
+  const getSourceIndices = useCallback(async (): Promise<number[]> => {
+    const { getEnabledVideoSourceIndices } = await import('@/services/sourceService');
+    return getEnabledVideoSourceIndices();
+  }, []);
 
   /** 搜索指定关键词（重置状态） */
   const search = useCallback(async (query: string) => {
@@ -65,7 +62,7 @@ export function useCMSSearch() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    const sourceIndices = getSourceIndices();
+    const sourceIndices = await getSourceIndices();
     sourcePagesRef.current.clear();
     sourceIndices.forEach(idx => sourcePagesRef.current.set(idx, 1));
 
@@ -155,7 +152,7 @@ export function useCMSSearch() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    const sourceIndices = getSourceIndices();
+    const sourceIndices = await getSourceIndices();
     const loadingSources = sourceIndices.filter(idx => {
       const currentPage = sourcePagesRef.current.get(idx) ?? 1;
       return currentPage >= 1;

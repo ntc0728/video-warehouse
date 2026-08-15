@@ -30,8 +30,8 @@ interface SettingsState extends AppSettings {
   translationApiKey: string;
   autoTranslate: boolean;
   targetLang: string;
-  setVideoSourceIndices: (indices: number[]) => void;
-  setIPTVSourceIndices: (indices: number[]) => void;
+  setVideoSourceIds: (ids: string[]) => void;
+  setIPTVSourceIds: (ids: string[]) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setSkin: (skin: 'default' | 'cartoon' | 'mechanical' | 'retro') => void;
   setCorsProxy: (url: string) => void;
@@ -63,10 +63,8 @@ const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
 
 /** 设置项默认值（用于"恢复默认配置"） */
 export const DEFAULT_SETTINGS = {
-  videoSourceIndex: 0,
-  videoSourceIndices: [0] as number[],
-  iptvSourceIndex: 0,
-  iptvSourceIndices: [0] as number[],
+  videoSourceIds: [] as string[],
+  iptvSourceIds: [] as string[],
   theme: 'light' as const,
   skin: 'default' as const,
   corsProxy: '',
@@ -166,10 +164,8 @@ const encryptedStorage = createJSONStorage<SettingsState>(() => {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
-      videoSourceIndex: 0,
-      videoSourceIndices: [0],
-      iptvSourceIndex: 0,
-      iptvSourceIndices: [0],
+      videoSourceIds: [],
+      iptvSourceIds: [],
       theme: 'light' as const,
       skin: 'default' as const,
       corsProxy: '',
@@ -192,8 +188,8 @@ export const useSettingsStore = create<SettingsState>()(
   username: '',
   avatar: '',
 
-  setVideoSourceIndices: (indices) => set({ videoSourceIndices: indices }),
-      setIPTVSourceIndices: (indices) => set({ iptvSourceIndices: indices }),
+  setVideoSourceIds: (ids) => set({ videoSourceIds: ids }),
+      setIPTVSourceIds: (ids) => set({ iptvSourceIds: ids }),
       setTheme: (theme) => set({ theme }),
       setSkin: (skin) => set({ skin }),
       setCorsProxy: (url) => set({ corsProxy: url }),

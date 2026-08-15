@@ -9,7 +9,7 @@ import { useParams, useLocation, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore, useKeepAliveStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, checkSelectedVideoSources } from '@/services/videoService';
+import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, checkSelectedVideoSources } from '@/services/videoService';
 import type { SelectedSourceCheckResult } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
@@ -97,7 +97,6 @@ export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useCustomNavigate();
-  const { videoSourceIndex, videoSourceIndices } = useSettingsStore();
   // 是否已配置 TMDB Access Token（play/detail 的 tmdb- 数据依赖）
   const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
   const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
@@ -163,8 +162,7 @@ export default function DetailPage() {
   }>({ status: 'idle', done: 0, total: 0, ok: 0, fail: 0, results: [] });
 
   const runSourceDetection = useCallback(async () => {
-    const indices =
-      videoSourceIndices && videoSourceIndices.length > 0 ? videoSourceIndices : [videoSourceIndex];
+    const indices = await getEnabledVideoSourceIndices();
     if (indices.length === 0) return;
     setSrcDetect({ status: 'running', done: 0, total: indices.length, ok: 0, fail: 0, results: [] });
     try {
@@ -183,7 +181,7 @@ export default function DetailPage() {
     } catch {
       setSrcDetect((s) => ({ ...s, status: 'idle' }));
     }
-  }, [videoSourceIndices, videoSourceIndex]);
+  }, []);
   // 查询动画轮播的源名称（加载开始后填充真实 CMS 源名）
   const [querySourceNames, setQuerySourceNames] = useState<string[]>([]);
   const [queryMsgIndex, setQueryMsgIndex] = useState(0);
@@ -328,9 +326,7 @@ export default function DetailPage() {
     cmsAbortRef.current = ctrl;
     setCmsLoading(true); setCmsError(null); setCmsResults([]);
 
-    const indices = videoSourceIndices && videoSourceIndices.length > 0
-      ? videoSourceIndices
-      : [videoSourceIndex];
+    const indices = await getEnabledVideoSourceIndices();
 
     // 填充查询动画轮播用的真实源名称
     try {
@@ -399,7 +395,7 @@ export default function DetailPage() {
       if (!ctrl.signal.aborted) setCmsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, tmdbDetail, videoSourceIndex, videoSourceIndices]);
+  }, [id, tmdbDetail]);
 
   useEffect(() => {
     if (activeTab === 'sources' && !cmsLoaded && !cmsLoading) fetchCMSSources();
