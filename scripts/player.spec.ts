@@ -6,6 +6,7 @@
  * 覆盖: PLAYER-001 ~ PLAYER-092
  */
 import { test, expect } from './fixtures/mock-tmdb';
+import { devices } from '@playwright/test';
 
 const TEST_MOVIE_ID = 'tmdb-movie-550';
 
@@ -322,6 +323,105 @@ test.describe('4.11 移动端播放器整改', () => {
     if (box && containerBox) {
       expect(Math.abs(box.y + box.height - (containerBox.y + containerBox.height))).toBeLessThan(4);
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 4.12 移动端布局判定（手机/App 端 ≠ 视口 <768px）
+// ═══════════════════════════════════════════════════════════════
+// 回归：App 恒移动、真实手机 web 桌面模式等视口可 ≥768px 仍属移动端布局。
+// 此前桌面 toast 定位用 @media(width >= 768px) 会把它们误判为桌面端（错误播放器内定位）。
+
+test.describe('4.12 移动端布局判定', () => {
+  const { defaultBrowserType: _dbt, ...IPHONE_13 } = devices['iPhone 13'];
+  const MOBILE_UA =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+  test.describe('桌面 UA + 视口 1024（≥768）→ 桌面布局：播放器内 toast 定位', () => {
+    test.use({ viewport: { width: 1024, height: 768 } });
+    test.describe.configure({ mode: 'serial' });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+      await page.waitForTimeout(4000);
+    });
+
+    test('PLAYER-M09: html 无 data-mobile-layout，播放器几何变量已写入（桌面 toast 定位生效）', async ({ page }) => {
+      // 桌面 UA 即使视口 1024 也属桌面布局：无移动端布局标记
+      const marker = await page.evaluate(() =>
+        document.documentElement.hasAttribute('data-mobile-layout'));
+      expect(marker).toBe(false);
+      // 桌面 toast 定位几何已测量写入（播放器矩形 + header 高度）
+      const vars = await page.evaluate(() => {
+        const s = getComputedStyle(document.documentElement);
+        return {
+          left: s.getPropertyValue('--player-toast-left').trim(),
+          width: s.getPropertyValue('--player-toast-width').trim(),
+          top: s.getPropertyValue('--player-toast-top').trim(),
+        };
+      });
+      expect(vars.left).toMatch(/px$/);
+      expect(vars.width).toMatch(/px$/);
+      expect(vars.top).toMatch(/px$/);
+    });
+
+    test('PLAYER-M11: 桌面视频模式操作提示紧贴右上角（无头部右控件避让）', async ({ page }) => {
+      // 触发操作类提示（音量，不依赖真实播放）→ 桌面渲染于 .up-player-toast
+      await page.keyboard.press('ArrowDown');
+      const toast = page.locator('.up-player-toast');
+      await expect(toast).toContainText('音量');
+      // 等淡入动画结束再测量
+      await page.waitForTimeout(400);
+      // 紧贴右上角：computed top = --space-lg（不再锚到 header 下方 —— IPTV 全屏按钮已移至右下角）
+      const toastTop = await toast.evaluate((el) => parseFloat(getComputedStyle(el).top));
+      const spaceLg = await page.evaluate(() =>
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-lg')));
+      expect(Math.abs(toastTop - spaceLg)).toBeLessThan(1);
+    });
+  });
+
+  test.describe('手机 UA + 视口 1024（≥768）→ 仍移动端布局：sonner 屏幕居中', () => {
+    test.use({ viewport: { width: 1024, height: 768 }, ...IPHONE_13, userAgent: MOBILE_UA });
+    test.describe.configure({ mode: 'serial' });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+      await page.waitForTimeout(4000);
+    });
+
+    test('PLAYER-M10: 手机 UA 视口 1024 → data-mobile-layout 存在，错误提示屏幕居中（非播放器内）', async ({ page }) => {
+      // 手机 UA（isRealPhone 命中）→ 即使视口 1024 ≥768 也写入移动端布局标记
+      const marker = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-mobile-layout'));
+      expect(marker).toBe('true');
+
+      // 注入失败投屏桥 → 触发全局 sonner 错误提示 → 应为屏幕居中（移动端布局），而非播放器内定位
+      await page.evaluate(() => {
+        const win = window as unknown as { CastBridge?: unknown };
+        win.CastBridge = {
+          discover: async () => [{ id: 'tv-1', name: '客厅电视' }],
+          connect: async () => { throw new Error('mock fail'); },
+          disconnect: async () => {},
+        };
+      });
+      await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+      await page.locator('.up-cast-sheet').getByText('客厅电视').click();
+      const toastLi = page.locator('.app-toast');
+      await expect(toastLi).toContainText('连接失败，请重试');
+      // 等 sonner 滑入动画完全结束再测量（500ms 时仍处于 translate 动画中，中心会偏 toast 半高）
+      await page.waitForTimeout(800);
+      const box = await toastLi.boundingBox();
+      if (box) {
+        // 核心回归：移动端布局（非桌面）→ toast 屏幕中部区域，而非「播放器内定位」（top≈130px）
+        // 像素级 50% 居中在设备仿真下存在 ≤52px 偏移（--front-toast-height 测量抖动），用中带断言
+        expect(Math.abs(box.y + box.height / 2 - 768 / 2)).toBeLessThan(120);
+      }
+      // 操作类提示同样走移动端屏幕居中，右上角不出现
+      await page.keyboard.press('ArrowDown');
+      const centerToast = page.locator('.up-player-center-toast');
+      await expect(centerToast).toContainText('音量');
+      await expect(page.locator('.up-player-toast')).toHaveCount(0);
+    });
   });
 });
 
