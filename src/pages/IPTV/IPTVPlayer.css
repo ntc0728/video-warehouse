@@ -33,7 +33,21 @@
   min-height: 0;
 }
 
-/* 非 TV 端 IPTV 播放页：右上角放大图标移到右下角（TV 端默认全屏，图标不显示） */
+/* 非 TV 端 IPTV 播放页：右上角放大图标移到右下角（TV 端默认全屏，图标不显示）
+   关键：必须撤销 header 的 transform（可见/隐藏态 translateY），
+   否则非 none transform 祖先会成为 position:fixed 后代的包含块，
+   放大按钮会锚定到 header 盒（右上）而非视口（右下）。
+   改用 top 动画维持同样的滑入/滑出观感，不引入 transform。 */
+.iptv-player-page .up-player-header {
+  transition: opacity 0.3s ease, top 0.3s ease;
+}
+.iptv-player-page .up-player-header-visible,
+.iptv-player-page .up-player-header-hidden {
+  transform: none;
+}
+.iptv-player-page .up-player-header-hidden {
+  top: -10px;
+}
 .iptv-player-page .up-header-fullscreen-btn {
   position: fixed;
   right: var(--space-lg);

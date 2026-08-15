@@ -135,7 +135,13 @@ export default function AppLayout() {
   useEffect(() => {
     const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
     document.documentElement.setAttribute('data-device', device);
-  }, [isTV, isNative, isMobileWeb]);
+    // 移动端布局全局标记（useIsMobileLayout：App 恒真 / 真实手机 UA 恒真 / 视口 <768px）：
+    // 供全局 CSS 以「布局」而非「视口宽度」区分桌面/移动 —— App 横屏/手机桌面模式等
+    // 视口可 ≥768px 仍属移动端布局，仅用 @media(max-width:767px) 会把它们误判为桌面端。
+    const root = document.documentElement;
+    if (isCompactViewport) root.dataset.mobileLayout = 'true';
+    else delete root.dataset.mobileLayout;
+  }, [isTV, isNative, isMobileWeb, isCompactViewport]);
 
   // TV 过扫描（overscan）安全区：预设滑块（0/5/10/15/20，单位 vw/vh）写入 CSS 变量。
   // 0 = 铺满到裁切边；兼容旧版本持久化的布尔值（true→5，false→0）及任意旧数值（吸附到最近预设）。
