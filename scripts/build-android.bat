@@ -37,6 +37,16 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+REM 应用 res + DLNA 补丁（android/ 被 gitignore，cap add 模板不含这些文件）
+if exist "%PROJECT_ROOT%\scripts\android-res-patch" (
+    xcopy /E /Y /I "%PROJECT_ROOT%\scripts\android-res-patch\*" "%PROJECT_ROOT%\android\app\src\main\res\"
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%\scripts\patch-android-dlna.ps1"
+if %ERRORLEVEL% neq 0 (
+    echo DLNA 补丁失败
+    exit /b 1
+)
+
 REM 4. 构建 APK
 echo [4/5] 构建 APK...
 cd /d "%PROJECT_ROOT%\android"

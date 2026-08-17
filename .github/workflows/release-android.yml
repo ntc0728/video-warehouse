@@ -83,6 +83,8 @@ jobs:
           pnpm exec cap sync android
           # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
           Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
+          # 应用 DLNA 投屏补丁（原生 Java 源码 + AndroidManifest 权限合并）
+          ./scripts/patch-android-dlna.ps1
           node scripts/sync-android-version.mjs
         shell: pwsh
 

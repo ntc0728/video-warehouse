@@ -155,6 +155,15 @@ scripts/                 # 构建脚本 + E2E 测试 + 数据获取脚本
 public/data/             # 数据源配置 JSON
 ```
 
+### Android 原生代码（DLNA 投屏 / 启动屏补丁）
+
+`android/` 整目录被 gitignore，CI 靠 `cap add android` + `cap sync android` 重建。因此原生代码/资源的**唯一源**放在 `scripts/` 下，由构建脚本在 cap sync 后复制进 android/：
+
+- `scripts/android-res-patch/` — res 资源补丁（values/values-night/values-v31 启动屏 + colors.xml），`build-android.ps1` 复制到 `android/app/src/main/res/`
+- `scripts/android-dlna-patch/java/` — DLNA 投屏原生 Java 源码（`MainActivity.java` + `cast/` 包），由幂等脚本 `scripts/patch-android-dlna.ps1` 复制到 `android/app/src/main/java/` 并合并 Manifest 权限
+
+投屏链路：前端 `castService.ts` 定义 `window.CastBridge` 契约（`CastDevice`/`CastBridge`）→ `MainActivity` 注册 `CastBridgePlugin`（Capacitor 6 原生插件，`@PluginMethod` 注解）+ `onPageLoaded` 注入 shim 代理到 `Capacitor.Plugins.CastBridge` → `SSDPDiscovery`（MulticastSocket + MulticastLock + M-SEARCH，3s 预算）发现 DLNA 设备 → `UPnPAVTransport`（SOAP SetAVTransportURI + 自动 Play/Play/Pause/Stop/Seek/SetVolume）推送。新增/修改 Android 原生代码必须同步 `scripts/android-dlna-patch/` 与 `scripts/patch-android-dlna.ps1`，不得直接改 android/（会被重建覆盖）。**PS5.1 下含中文的 .ps1 必须带 UTF-8 BOM**（无 BOM 按 GBK 解码会 parse error）。iOS 端尚未实现同名桥，`getCastBridge()` 返回 null → 投屏空态。
+
 ## Keep-Alive 路由
 
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
