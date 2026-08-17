@@ -121,6 +121,15 @@ test.describe('4.11 移动端播放器整改', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
+    // 投屏按钮显隐在挂载时由 getCastMode() 判定：注入占位原生桥让 native 模式生效（按钮可见）。
+    // 各用例内 page.evaluate 覆盖为各自专属桥（空/成功/失败），不影响按钮可见性。
+    await page.addInitScript(() => {
+      (window as unknown as { CastBridge?: unknown }).CastBridge = {
+        discover: async () => [],
+        connect: async () => {},
+        disconnect: async () => {},
+      };
+    });
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     // CMS 源经代理异步加载，播放器可能稍晚挂载；attached + 长超时
     await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
@@ -129,6 +138,7 @@ test.describe('4.11 移动端播放器整改', () => {
   });
 
   test('PLAYER-M01: 控制栏精简 + 右上角操作组 + 单行布局', async ({ page }) => {
+    // beforeEach 已注入占位原生桥 → native 模式 → 投屏按钮可见（iOS Web 隐藏行为见 4.13 M13）
     // 右上角操作组：投屏 / 更多设置（画中画视平台支持）
     await expect(page.locator('.up-header-actions')).toBeVisible();
     await expect(page.locator('.up-header-actions button[aria-label="投屏到电视"]')).toBeVisible();
@@ -271,7 +281,12 @@ test.describe('4.11 移动端播放器整改', () => {
     await expect(page.locator('.up-player-center-toast')).toContainText('字幕大字号已开启');
   });
 
-  test('PLAYER-M04: 投屏空态（无原生桥）', async ({ page }) => {
+  test('PLAYER-M04: 投屏空态（原生桥无设备）', async ({ page }) => {
+    // iOS Safari UA 下无原生桥 → 投屏按钮隐藏；注入空设备 mock 桥走 native 模式验证空态
+    await page.evaluate(() => {
+      const win = window as unknown as { CastBridge?: unknown };
+      win.CastBridge = { discover: async () => [], connect: async () => {}, disconnect: async () => {} };
+    });
     await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
     const sheet = page.locator('.up-cast-sheet');
     await expect(sheet).toBeVisible();
@@ -327,6 +342,96 @@ test.describe('4.11 移动端播放器整改', () => {
     if (box && containerBox) {
       expect(Math.abs(box.y + box.height - (containerBox.y + containerBox.height))).toBeLessThan(4);
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 4.13 投屏能力分端（iOS Web 隐藏按钮 · 安卓 Web Cast SDK 投屏）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('4.13 投屏能力分端（Web Cast / iOS 隐藏）', () => {
+  const IPHONE_UA =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+  // 安卓 Chrome UA：isWebCastSupported() 命中（Chromium 且非 iOS）→ 投屏走 Web Cast SDK
+  const ANDROID_CHROME_UA =
+    'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
+  test.describe('iOS Safari UA → 投屏按钮隐藏（iOS Web 不支持 Cast SDK）', () => {
+    test.use({ viewport: { width: 390, height: 844 }, userAgent: IPHONE_UA });
+    test.describe.configure({ mode: 'serial' });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+      await page.waitForTimeout(4000);
+    });
+
+    test('PLAYER-M13: iOS Web 隐藏投屏按钮（更多设置仍可见）', async ({ page }) => {
+      // 无原生桥（Web 环境）→ getCastMode()='none' → 投屏按钮不渲染
+      await expect(page.locator('.up-header-actions')).toBeVisible();
+      await expect(page.locator('.up-header-actions button[aria-label="投屏到电视"]')).toHaveCount(0);
+      await expect(page.locator('.up-header-actions button[aria-label="更多设置"]')).toBeVisible();
+    });
+  });
+
+  test.describe('安卓 Chrome UA → Web Cast SDK 投屏', () => {
+    test.use({ viewport: { width: 390, height: 844 }, userAgent: ANDROID_CHROME_UA });
+    test.describe.configure({ mode: 'serial' });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+      await page.waitForTimeout(4000);
+    });
+
+    test('PLAYER-M14: 安卓 Web 显示投屏按钮（Web Cast 模式）', async ({ page }) => {
+      await expect(page.locator('.up-header-actions')).toBeVisible();
+      await expect(page.locator('.up-header-actions button[aria-label="投屏到电视"]')).toBeVisible();
+    });
+
+    test('PLAYER-M15: 安卓 Web 投屏全流程（mock Cast SDK）', async ({ page }) => {
+      // 注入 mock Cast SDK：requestSession 模拟系统弹窗选择「客厅电视」
+      await page.evaluate(() => {
+        const win = window as unknown as Record<string, unknown>;
+        win.cast = {
+          framework: {
+            CastContext: {
+              getInstance: () => ({
+                setOptions: () => {},
+                requestSession: async () => ({
+                  getCastDevice: () => ({ id: 'cast-1', friendlyName: '客厅电视' }),
+                }),
+              }),
+            },
+            RemotePlayer: class {},
+            RemotePlayerController: class {
+              constructor() {
+                (this as { load?: unknown }).load = async () => {};
+                (this as { playOrPause?: unknown }).playOrPause = async () => {};
+                (this as { setVolumeLevel?: unknown }).setVolumeLevel = () => {};
+              }
+            },
+          },
+        };
+        // 触发 mediaInfo 组装走 MediaInfo 分支（SDK 存在）
+        win.chrome = win.chrome || {};
+        (win.chrome as Record<string, unknown>).cast = {
+          media: {
+            MediaInfo: class {
+              constructor(public contentId: string, public contentType: string) {}
+            },
+            GenericMediaMetadata: class {},
+          },
+        };
+      });
+
+      await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+      const sheet = page.locator('.up-cast-sheet');
+      await expect(sheet).toBeVisible();
+      // 系统弹窗模拟连接 → 已连接面板
+      await expect(sheet.getByText('已连接 · 客厅电视')).toBeVisible();
+      // 断开 → 回到空态（Web 无设备列表，回「未选择投屏设备」）
+      await sheet.getByText('断开投屏').click();
+      await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+    });
   });
 });
 
@@ -439,6 +544,14 @@ test.describe('4.12 移动端布局判定', () => {
     test.use({ viewport: { width: 1024, height: 768 }, ...IPHONE_13, userAgent: MOBILE_UA });
     test.describe.configure({ mode: 'serial' });
     test.beforeEach(async ({ page }) => {
+      // 投屏按钮显隐在挂载时由 getCastMode() 判定：占位原生桥让 native 模式生效（按钮可见）
+      await page.addInitScript(() => {
+        (window as unknown as { CastBridge?: unknown }).CastBridge = {
+          discover: async () => [],
+          connect: async () => {},
+          disconnect: async () => {},
+        };
+      });
       await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
       await page.waitForTimeout(4000);

@@ -4,6 +4,7 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import { toast } from '@/components/ui';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
 import { buildProxyUrl } from '@/services/iptvService';
+import { getCastMode } from '@/services/castService';
 import { usePlayerCore } from './hooks/usePlayerCore';
 import { usePlayerControls } from './hooks/usePlayerControls';
 import { useIPTVNavigation } from './hooks/useIPTVNavigation';
@@ -870,6 +871,7 @@ skipHistory,
               isPiP={isPiP}
               onTogglePiP={playerCore.togglePiP}
               castActive={castActive}
+              castEnabled={getCastMode() !== 'none'}
               onCastClick={() => setCastSheetOpen(true)}
               onMoreClick={() => setMoreSheetOpen(true)}
             />
