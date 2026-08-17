@@ -140,6 +140,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const pendingHotSwitchRef = useRef(false);
   // 进度恢复竞态守卫：源/集切换时推进 token，迟到的 loadProgress 据此丢弃
   const progressTokenRef = useRef(0);
+  /** 每个源/集是否已恢复过播放进度（canplay 首次触发，播放中重缓冲 canplay 不再重复恢复） */
+  const progressRestoredRef = useRef(false);
+  /** 自动播放被拦截后是否已进入静音兜底（用户手动播放/调音量时解除） */
+  const autoMutedRef = useRef(false);
+  /** 最新 loadProgress 引用（主 effect 闭包每次重建时同步，避免捕获过期的 seasonNumber/episodeLabel） */
+  const loadProgressRef = useRef(loadProgress);
+  loadProgressRef.current = loadProgress;
 
   // useLayoutEffect 在 useEffect cleanup 之前执行，提前标记热切换
   useLayoutEffect(() => {
@@ -155,6 +162,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
     // 源/集变化即推进 token：作废仍在途的进度恢复（快速切集时不串集）
     progressTokenRef.current++;
+    // 每个源/集仅恢复一次进度（canplay 首次触发恢复）
+    progressRestoredRef.current = false;
 
     // 切换视频源时先暂停当前播放，避免声音残留
     if (!video.paused) {
@@ -190,6 +199,14 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const handleCanPlay = () => {
       usePlayerStore.getState().setPlayerLoading(false);
       usePlayerStore.getState().setReadyToPlay(true);
+      // 进度恢复：canplay（视频可播放）时每个源/集仅恢复一次。与「自动跳转」提示联动——
+      // 提示时机跟随 loadProgress 内部的 seeked 等待，保证「视频可以播放之后才提示」
+      // （审查报告 2.1/2.2：不再在 loadedmetadata 时提前恢复，也不再有 episodeUrl 双入口）
+      if (!progressRestoredRef.current) {
+        progressRestoredRef.current = true;
+        const token = progressTokenRef.current;
+        loadProgressRef.current(videoRef, () => progressTokenRef.current === token);
+      }
       if (autoPlay) {
         // IPTV 直播等场景：接口加载成功后直接播放，无需点击中间播放按钮
         const p = video.play();
@@ -197,11 +214,22 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
           p.catch(() => {
             // 自动播放被浏览器拦截（多因带声音且无用户手势），静音兜底重试一次，避免黑屏与播放按钮
             video.muted = true;
+            autoMutedRef.current = true;
+            // 同步音量 UI 到静音状态（避免「UI 显示满音量但实际无声」的失真）
+            usePlayerStore.getState().setVolume(0);
             const p2 = video.play();
-            if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+            if (p2 && typeof p2.catch === 'function') {
+              p2.then(() => {
+                // 静音兜底播放成功：告知用户自动播放被拦截（全局 toast 中间靠上，醒目）
+                toast.show({ content: '自动播放被拦截，已静音播放，点击播放或调节音量恢复声音', type: 'warning' });
+              }).catch(() => {});
+            }
           });
         }
-      } else {
+      } else if (video.paused) {
+        // 仅「视频确实未在播放」时才写暂停态（首次加载就绪）；
+        // 播放中 seek 重缓冲完成后 canplay 会再次触发，此时视频仍在播放（paused=false），
+        // 不能把 UI 播放状态错误置为暂停（审查报告 4.1：UI 与实际播放状态不一致）
         usePlayerStore.getState().setPlaying(false);
       }
     };
@@ -211,7 +239,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     const getStore = usePlayerStore.getState;
     const handlePlay = () => { getStore().setPlaying(true); onPlay?.(); };
     const handlePlaying = () => { getStore().setPlaying(true); };
-    const handlePause = () => { getStore().setPlaying(false); onPause?.(); };
+    const handlePause = () => {
+      getStore().setPlaying(false);
+      // 暂停（含缓冲中主动暂停）即清除缓冲态：暂停后不再等待 waiting/canplay 才恢复，
+      // 避免「缓冲遮罩常驻 + 播放按钮/进度条持续禁用」的锁死（审查报告 1.1/4.4）
+      getStore().setBuffering(false);
+      onPause?.();
+    };
     const handleTimeUpdate = () => {
       const ct = video.currentTime;
       const dur = video.duration;
@@ -237,8 +271,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (dur > 0 && isFinite(dur)) {
         getStore().setDuration(dur);
       }
-      const token = progressTokenRef.current;
-      loadProgress(videoRef, () => progressTokenRef.current === token);
+      // 进度恢复统一在 canplay（可播放）时执行一次，不再在此触发——loadedmetadata 仅元数据
+      // 就绪（视频仍在缓冲），此时恢复会提前弹「已自动跳转」提示（审查报告 2.1/2.2）
     };
 
     // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源
@@ -348,23 +382,21 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type, decoderMode, retryCount]);
 
   /**
-   * episodeUrl 变化时重新恢复进度
+   * episodeUrl 变化的进度恢复入口已移除（审查报告 2.2）
    *
-   * 场景：首次加载时 currentSrc 初始为 null，episodeUrl 也为 null，
-   * 当 loadVideo 设置 currentSrc 后，episodeUrl 才有值。
-   * 此 effect 监听 episodeUrl 变化，确保在 video 元素就绪后恢复进度。
-   *
-   * 条件：episodeUrl 有值 + video 元素存在 + 元数据已加载（readyState >= 1）
+   * 原实现与 loadedmetadata 构成「双入口」，同一内容可能重复 getHistory + 重复 seek。
+   * 进度恢复统一收敛到 handleCanPlay 的 progressRestoredRef 单入口（每个源/集仅一次）。
+   * episodeUrl === url（PlayerPage 传入 episodeUrl={currentSrc.url}），url 变化时主 effect
+   * 会重建并重置 progressRestoredRef，因此 canplay 入口天然覆盖切集场景。
    */
-  useEffect(() => {
-    if (episodeUrl && videoRef.current && videoRef.current.readyState >= 1) {
-      const token = progressTokenRef.current;
-      loadProgress(videoRef, () => progressTokenRef.current === token);
-    }
-  }, [episodeUrl, loadProgress]);
 
   const play = useCallback(async () => {
     try {
+      // 用户手动发起播放 = 明确想听到声音：解除自动静音兜底（拦截已过用户手势窗口）
+      if (autoMutedRef.current && videoRef.current) {
+        videoRef.current.muted = false;
+        autoMutedRef.current = false;
+      }
       const adapter = adapterRef.current;
       if (adapter) {
         await adapter.play();
@@ -412,6 +444,10 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
+      // 缓冲中（waiting，数据不足）点击暂停按钮/单击视频/空格：不执行暂停——
+      // 用户多为想唤起控制栏而非暂停，且暂停会叠加「缓冲锁死」问题（审查报告 1.3/1.1）
+      const { isBuffering } = usePlayerStore.getState();
+      if (isBuffering) return;
       // 用户手动点击暂停 → 标记来源，ToastTrigger 据此显示「暂停」提示
       // （拖拽进度条触发的自动 pause 不设此标记 → 不提示『暂停』，改显示进度）
       usePlayerStore.getState().setUserPauseRequested(true);
@@ -432,17 +468,48 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
+  /** seek 提示的待发通知（seeked 生效后才提示；连续 seek 只保留最后一次） */
+  const seekToastRef = useRef<{ cleanup: () => void } | null>(null);
+
   const seek = useCallback((time: number) => {
-    if (videoRef.current && !videoRef.current.error) {
-      videoRef.current.currentTime = time;
-      // 提示最新播放进度（拖拽进度条 / 键盘快捷键 / 长按快进均触发）；
-      // 移动端渲染位置由 ToastProvider 的 mobileCenter 决定（屏幕居中）
-      playerToast(`已跳转 ${formatSeekTime(time)}`);
-    }
+    const video = videoRef.current;
+    if (!video || video.error) return;
+    video.currentTime = time;
+    // 提示在 seek 生效（seeked 事件）后再显示，避免「提示先于生效」的误导（审查报告 1.6）；
+    // 目标与当前位置一致时不触发 seeked，用超时兜底保证提示不丢失。
+    // 连续 seek（拖拽/连按方向键）时清理上一 pending 通知，防止监听器/定时器堆积。
+    const msg = `已跳转 ${formatSeekTime(time)}`;
+    if (seekToastRef.current) seekToastRef.current.cleanup();
+    let notified = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onSeeked = () => {
+      if (notified) return;
+      notified = true;
+      video.removeEventListener('seeked', onSeeked);
+      if (timer) clearTimeout(timer);
+      playerToast(msg);
+    };
+    timer = setTimeout(onSeeked, 800);
+    video.addEventListener('seeked', onSeeked);
+    seekToastRef.current = {
+      cleanup: () => {
+        if (notified) return;
+        notified = true;
+        video.removeEventListener('seeked', onSeeked);
+        if (timer) clearTimeout(timer);
+      },
+    };
   }, []);
 
   const setVideoVolume = useCallback((vol: number) => {
-    if (videoRef.current) videoRef.current.volume = Math.max(0, Math.min(1, vol));
+    const video = videoRef.current;
+    if (!video) return;
+    // 用户主动调节音量 = 明确想听到声音：解除自动静音兜底（审查报告 3.1）
+    if (autoMutedRef.current) {
+      video.muted = false;
+      autoMutedRef.current = false;
+    }
+    video.volume = Math.max(0, Math.min(1, vol));
   }, []);
 
   const setVideoPlaybackRate = useCallback((rate: number) => {

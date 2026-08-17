@@ -1,6 +1,7 @@
 import { useCallback, useRef, useMemo } from 'react';
 import { usePlayerStore } from '@/stores';
 import { playerToast } from '@/components/UniversalPlayer/PlayerToast';
+import { suppressSourceToast } from '@/components/UniversalPlayer/lib/utils';
 import type { Video, VideoSource, Episode } from '@/types/video';
 
 interface UseEpisodeSwitcherOptions {
@@ -38,6 +39,9 @@ export function useEpisodeSwitcher({
     if (episodeSwitchTimerRef.current) return;
     const matchedEp = video?.episodes?.find(e => e.id === ep.id) ?? ep;
     switchToEpisode(matchedEp);
+    // 临时抑制后续 300ms 内 ToastTrigger 的「已切换到线路名」提示，
+    // 确保本条「已切换到集标题」提示独占显示（审查报告 3.2）
+    suppressSourceToast(300);
     // 集数切换提示（右上角；覆盖 ToastTrigger 可能误报的「已切换到线路名」）
     playerToast(`已切换到${matchedEp.title}`);
     episodeSwitchTimerRef.current = setTimeout(() => {

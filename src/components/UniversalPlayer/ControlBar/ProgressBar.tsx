@@ -7,8 +7,6 @@ interface ProgressBarProps {
   duration: number;
   buffered: number;
   onSeek: (time: number) => void;
-  /** 缓冲中禁止拖拽进度条（缓冲时 seek 无效，且避免误操作） */
-  buffering?: boolean;
 }
 
 function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent): number {
@@ -18,7 +16,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, buffering = false }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -52,8 +50,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   }, [duration, isDragging, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    // 直播 / 无时长 / 缓冲中 均禁止拖拽（缓冲中 seek 无效且误触会打断缓冲）
-    if (isLive || duration <= 0 || buffering) return;
+    // 直播 / 无时长 禁止拖拽；缓冲中允许 seek（跳到已缓冲位置可立即恢复播放，
+    // 跳到未缓冲位置由浏览器自行等待）——不再一刀切禁用，避免缓冲中无法跳转（审查报告 1.4）
+    if (isLive || duration <= 0) return;
     setIsDragging(true);
     const time = calcTime(clientX);
     const ratio = (time / duration) * 100;
@@ -62,7 +61,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, calcTime, onSeek, buffering]);
+  }, [isLive, duration, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
@@ -186,7 +185,8 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         {!isLive && (
           <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />
         )}
-        {hoverTime !== null && !isLive && (
+        {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」（审查报告 4.3） */}
+        {hoverTime !== null && !isLive && duration > 0 && (
           <div className="up-progress-tooltip" style={{ left: `${hoverPosition}%` }}>
             {formatTime(hoverTime)}
           </div>
