@@ -53,6 +53,8 @@ $ResPatch = Join-Path $ProjectRoot "scripts\android-res-patch"
 if (Test-Path $ResPatch) {
     Copy-Item -Recurse -Force (Join-Path $ResPatch "*") (Join-Path $ProjectRoot "android\app\src\main\res")
 }
+# 应用 DLNA 投屏补丁（原生 Java 源码 + AndroidManifest 权限合并，幂等）
+& (Join-Path $ProjectRoot "scripts\patch-android-dlna.ps1")
 Pop-Location
 
 # 4. 构建 APK
