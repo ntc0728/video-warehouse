@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo, Component, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, Component, lazy, Suspense, type ReactNode } from 'react';
 import { usePlayerStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { toast } from '@/components/ui';
@@ -41,7 +41,9 @@ import { useIsMobileLayout, useIsRealPhone } from '@/hooks/useMediaQuery';
 import HeaderActions from './MobileUI/HeaderActions';
 import MobileMoreSheet from './MobileUI/MobileMoreSheet';
 import SubtitleSettingsModal from './MobileUI/SubtitleSettingsModal';
-import CastSheet from './MobileUI/CastSheet';
+// 投屏弹窗懒加载（按需加载打包）：CastSheet + webCastSdk 仅首次点击投屏按钮时才拉取 chunk，
+// 不进播放器主 chunk（播放器 chunk 里只保留轻量的 getCastMode 能力检测）。
+const CastSheet = lazy(() => import('./MobileUI/CastSheet'));
 
 const VOLUME_POPUP_DELAY = 3000;
 
@@ -154,6 +156,8 @@ export default function UniversalPlayer({
   // 移动端弹窗状态
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [castSheetOpen, setCastSheetOpen] = useState(false);
+  // 投屏弹窗懒加载：首次点击投屏按钮后才挂载（触发 lazy chunk 拉取），之后保持挂载以复用状态
+  const [castMounted, setCastMounted] = useState(false);
   const [subtitleSheetOpen, setSubtitleSheetOpen] = useState(false);
   // 定时关闭（分钟；0 = 关闭）
   const [sleepMinutes, setSleepMinutes] = useState(0);
@@ -872,7 +876,10 @@ skipHistory,
               onTogglePiP={playerCore.togglePiP}
               castActive={castActive}
               castEnabled={getCastMode() !== 'none'}
-              onCastClick={() => setCastSheetOpen(true)}
+              onCastClick={() => {
+                setCastMounted(true);
+                setCastSheetOpen(true);
+              }}
               onMoreClick={() => setMoreSheetOpen(true)}
             />
           ) : undefined
@@ -1021,13 +1028,17 @@ skipHistory,
             aspectRatio={aspectRatio}
             onAspectRatioChange={setAspectRatio}
           />
-          <CastSheet
-            visible={castSheetOpen}
-            onClose={() => setCastSheetOpen(false)}
-            url={url}
-            title={title}
-            onCastActiveChange={setCastActive}
-          />
+          {castMounted && (
+            <Suspense fallback={null}>
+              <CastSheet
+                visible={castSheetOpen}
+                onClose={() => setCastSheetOpen(false)}
+                url={url}
+                title={title}
+                onCastActiveChange={setCastActive}
+              />
+            </Suspense>
+          )}
           <SubtitleSettingsModal
             visible={subtitleSheetOpen}
             onClose={() => setSubtitleSheetOpen(false)}

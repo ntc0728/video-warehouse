@@ -4,4 +4,6 @@ compatibility_date = "2025-01-01"
 
 [observability]
 enabled = true
-head_sampling_rate = 1
+# 采样率 1.0 = 100% 请求都打 trace/日志，对高流量代理（CORS + 流代理）观测成本高。
+# 降到 10%（0.1）保留足够的排障采样，同时显著降低日志/可观测性费用与边缘开销。
+head_sampling_rate = 0.1

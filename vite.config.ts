@@ -59,10 +59,10 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    // 关闭构建前的 dist 清空：CI/本地环境的安全删除防护（safe-delete）会拦截
-    // vite 的 emptyDir(dist/assets) 批量删除（>50 文件），导致构建失败。
-    // 关闭后同名产物直接覆盖写入，无实际影响。
-    emptyOutDir: false,
+    // 恢复构建前清空 dist：历史上本地「安全删除防护（safe-delete）」会拦截 emptyDir 的
+    // >50 文件批量删除导致构建失败，故此前关闭。现已实测批量删除不再被拦截，
+    // 恢复清空以消除多次构建累积的陈旧产物（69MB / 1700+ 陈旧 js）拖慢 Pages 部署的问题。
+    emptyOutDir: true,
     sourcemap: false,
     // 使用 esbuild 压缩（Vite 默认 minifier）：核心构建 16s→8s，比 terser 快约一倍，
     // 产物 gzip 后体积差距 <2%（dash-vendor 785KB→835KB raw，gzip 差距更小）。
