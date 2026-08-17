@@ -321,18 +321,18 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-12 校准）。
+> test 数为 `npx playwright test --list` 实际枚举数（2026-08-17 校准）。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
 | `src/pages/Home/` | `scripts/home.spec.ts` | 40 + 7 |
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
-| `src/pages/Player/` | `scripts/player.spec.ts` | 7 |
-| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 11 + 6 + 2 |
+| `src/pages/Player/` | `scripts/player.spec.ts` | 21 |
+| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
-| `src/pages/History/` | `scripts/history.spec.ts` | 6 |
+| `src/pages/History/` | `scripts/history.spec.ts` | 8 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
 | 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
@@ -347,7 +347,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
-| `src/components/UniversalPlayer/` | player + iptv-player | 7 + 6 |
+| `src/components/UniversalPlayer/` | player + iptv + iptv-player | 40 |
 | `src/components/VideoCard/` | home + browse + detail + collections + history + person | 105 |
 | `src/components/SearchBox/` | browse + cross-page | 40 |
 | `src/components/RecordShell/` | collections + history | 12 |
@@ -359,8 +359,8 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 24 |
 | `src/services/tmdbService.ts` | home + browse + detail + person | 93 |
 | `src/services/videoService.ts` | browse + player + source-checker | 36 |
-| `src/services/iptvService.ts` | iptv + iptv-player | 15 |
-| `src/services/channelLogo.ts` | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 17 |
+| `src/services/iptvService.ts` | iptv + iptv-player | 19 |
+| `src/services/channelLogo.ts` | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 33 |
 | `src/services/epgService.ts` | iptv + iptv-player + collections + history（EPG 匹配/缓存读取） | 各 spec EPG 用例 |
 | `src/components/LazyImage/` | home + browse + detail + collections + history + person + iptv（台标/海报图片加载用例） | 各 spec 图片用例 |
 | `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |

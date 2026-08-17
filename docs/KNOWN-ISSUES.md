@@ -117,3 +117,48 @@
 ---
 
 *维护约定：新增问题按上述模板追加；已修复条目标记日期后保留作教训。此文件与 KNOWLEDGE.md 的 ADR、AGENTS.md 约定互为补充。*
+
+---
+
+## 10. [已修复 · 2026-08-17] P1：播放器缓冲/加载期交互冲突（审查报告 13 项）
+
+**状态**：✅ 已修复（commit `8a1c213`）。
+
+**现象**（修复前）：
+- 播放中缓冲（`waiting`）时点暂停 → `isBuffering` 残留 `true` → 播放按钮/中间播放按钮/进度条三重禁用，用户无法恢复播放直到 `canplay` 解禁（慢源/卡住时完全锁死）。
+- 缓冲中单击视频区域会误触发 `pause()`（用户只想显示控制栏）。
+- `handleCanPlay` 无条件 `setPlaying(false)` → 播放中 seek 重缓冲完成 canplay 时 UI 被错误置为暂停态（中间播放按钮闪现、控制栏重显，极端时序 UI 与实际播放状态不一致）。
+- 进度恢复「已自动跳转到上次观看的位置」在 `loadedmetadata`（仅元数据、spinner 还在转）时就弹出，提示时机早于可播放。
+- `loadedmetadata` 与 `episodeUrl` effect 双入口重复 `loadProgress`（双 getHistory + 双 seek + 双提示）。
+- 键盘左右键 seek 无缓冲守卫（长按快进有），且 `playerToast('已跳转 mm:ss')` 在 seek 生效前就弹出。
+- 缓冲中进度条一刀切禁止拖拽（即使目标位置已缓冲也无权 seek）。
+- autoPlay 被浏览器拦截时的静音兜底无任何提示、UI 音量失真（store volume 仍 100%）、调音量无法解除 muted。
+- 点播模式缓冲遮罩显示直播专属的「延迟/丢包」指标。
+- 加载期（duration=0）进度条 hover tooltip 显示 `0:00`。
+- 切集时 ToastTrigger 的「已切换到线路名」提示与 `handlePlayEpisode` 的「已切换到集标题」提示竞争覆盖，时序脆弱。
+
+**根因**：
+1. `isBuffering` 由 `waiting/playing/canplay` 事件驱动，未感知「用户主动暂停」意图，暂停后遮罩/按钮持续禁用。
+2. `handleCanPlay` 未区分「首帧就绪」与「播放中重缓冲 canplay」，无条件写 `setPlaying(false)`。
+3. 进度恢复挂在 `loadedmetadata`（过早）且双入口（`loadedmetadata` + `episodeUrl` effect）。
+4. 各操作入口（键盘/长按/单击/按钮）对缓冲状态的守卫不一致。
+5. `autoPlay` 静音兜底缺少提示与恢复路径。
+6. 缓冲遮罩文案未区分 mode（IPTV vs 点播）。
+
+**修复**（`src/components/UniversalPlayer/hooks/usePlayerCore.ts` 等 10 个文件）：
+- `handlePause` 清 `isBuffering`；`togglePlay` 暂停分支加 `isBuffering` 守卫（缓冲中单击不暂停）。
+- `handleCanPlay` 仅 `video.paused === true` 时才写 `setPlaying(false)`。
+- 进度恢复收敛到 `canplay` 单入口 + `progressRestoredRef`（每源/集只恢复一次）；`loadProgress` 内等 `seeked` 事件（800ms 超时兜底）后再提示。
+- `debouncedSeek` 加 `isBuffering/isPlayerLoading` 守卫；`seek()` 提示改 `seeked` 后显示。
+- `ProgressBar.beginDrag` 移除 `buffering` 一刀切禁用；tooltip 加 `duration > 0` 条件。
+- `autoMutedRef` + toast 警告 + `play()/setVideoVolume()` 解除 muted + store.volume 同步为 0。
+- 缓冲遮罩延迟/丢包指标加 `mode === 'iptv'` 条件。
+- `useEpisodeSwitcher.handlePlayEpisode` 切集前调 `suppressSourceToast(300)`；`ToastTrigger` src 变化检查抑制窗口。
+
+**教训**：
+- 缓冲态（`isBuffering`）与暂停态（`isPlaying=false`）是正交语义——暂停是用户主动意图，不应让缓冲遮罩持续锁死恢复入口。
+- `canplay` 事件在「首帧就绪」和「播放中 re-buffer」都会触发， handler 必须按 `video.paused` 区分，不能无差别写状态。
+- 提示时机要跟随实际生效时机（seek 用 `seeked`、进度恢复用 `canplay + seeked`），避免「先提示后生效」误导用户。
+- 操作入口（键盘/长按/单击/按钮）对同一状态（缓冲）的守卫必须一致，否则出现「按钮禁用但键盘可用」的割裂感。
+
+**涉及文件**：`usePlayerCore.ts`、`useProgressRestore.ts`、`useKeyboardShortcuts.ts`、`ProgressBar.tsx`、`ControlBar.tsx`、`UniversalPlayer.tsx`、`ToastTrigger.tsx`、`lib/utils.ts`、`useEpisodeSwitcher.ts`。详见 `changelogs/2026-08-17.md`。
