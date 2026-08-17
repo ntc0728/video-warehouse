@@ -4,11 +4,7 @@
   justify-content: center;
   align-items: center;
   min-height: 0;
-  /* [2026-08-13] 占位底色从纯色 var(--color-placeholder) 改为半透明 var(--color-surface-hover)：
-     亮色主题下 placeholder=#f5f5f5（近纯白），切分类/换图瞬间大量卡片同时显示近白占位
-     → 视觉「闪白屏」；surface-hover 亮色=rgba(0,0,0,.05)/暗色=rgba(255,255,255,.05)，
-     柔和半透明，与 .video-card-cover 封面容器一致，消除大面积白闪。 */
-  background-color: var(--color-surface-hover);
+  background-color: transparent;
   overflow: hidden;
 }
 
@@ -17,7 +13,7 @@
 }
 
 .lazy-image-container.error {
-  background-color: var(--color-surface-hover);
+  background-color: transparent;
 }
 
 .lazy-image-placeholder {
@@ -27,9 +23,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 .lazy-image-spinner {
@@ -113,9 +107,7 @@
 .lazy-image-bg-loading {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, var(--color-placeholder-shimmer-a) 25%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 75%);
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 @media (width <= 767px) {
