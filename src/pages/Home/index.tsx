@@ -22,7 +22,7 @@ import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/consta
 import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
-import { preloadRowCovers, getVisibleRowCount } from './preloadRowCovers';
+import { preloadRowCovers } from './preloadRowCovers';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDocumentTitle } from '@/hooks';
@@ -89,18 +89,23 @@ export default function HomePage() {
   // 用户过渡期再切分类时以最新就绪目标为准，无需额外状态机。
   useEffect(() => {
     if (deferredCategory === displayedCategory) return;
-    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = **首屏可见行加载结束**
-    // （hero + 前 getVisibleRowCount 行，含 1 行缓冲）且有可展示内容（或加载已结束的失败终态）。
-    // ⚠️ 不等「全部行」settle：loadCategory 分批到达（首行快、其余行 requestIdleCallback
-    //   延迟加载），等待所有行会让最慢的 discover 行拖住整页切换（用户反馈"切换很慢"）。
-    const visibleRowCount = getVisibleRowCount({ width: window.innerWidth, height: window.innerHeight });
+    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = **hero（banner/缩略图数据源）
+    // 就绪**（或失败终态）。
+    // ⚠️ 不再等「首屏可见行全部加载结束」（历史实现）：
+    //   store 分层加载「hero + 首行 Promise.all 先到 → 其余行 requestIdleCallback 延迟」。
+    //   旧 ready 用 getVisibleRowCount 要求首屏可见行（移动端/高屏可达 2-3 行）全部 !loading，
+    //   慢的 discover 行会拖住 banner + 缩略图 + 首行 video card 一起等待——
+    //   「三者绑定、等特定封面图全部渲染好才显示新图」（用户反馈切换慢到极致的根因）。
+    //   现改为 hero 就绪即切换：banner + 缩略图立即显示新分类；首行与 hero 同批到达
+    //   （store 部分更新同步写入），切换时已有数据；其余行由 TMDBMovieRow 自身的
+    //   isLoading 骨架独立占位、数据到达后原位填充——各自独立切换，互不等待。
+    const heroFailed = categoryData != null && categoryData.heroLoading === false && categoryData.hero.length === 0;
     const ready =
       deferredCategory === 'home' ||
       (categoryData != null &&
         categoryData.rows.length > 0 &&
-        categoryData.rows.slice(0, visibleRowCount).every((r) => !r.loading) &&
         (categoryData.hero.length > 0 ||
-          categoryData.rows.slice(0, visibleRowCount).some((r) => r.items.length > 0) ||
+          (heroFailed && categoryData.rows.some((r) => r.items.length > 0)) ||
           categoryData.rows.every((r) => r.error != null)));
     if (!ready) return;
 

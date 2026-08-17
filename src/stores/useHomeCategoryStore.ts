@@ -258,19 +258,43 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
           .catch((e) => ({ items: [] as TMDBVideoItem[], error: errMsg(e) })),
       );
 
-      const [heroRes, firstRowRes] = await Promise.all([
-        heroP,
-        dedupFetch(def.rows[0].fetch)
-          .then((items) => ({ items, error: null }))
-          .catch((e) => ({ items: [] as TMDBVideoItem[], error: errMsg(e) })),
-      ]);
+      // hero 独立就绪即写入（不与首行 Promise.all 绑定）：
+      // 历史实现 Promise.all([hero, firstRow]) 让 banner/缩略图被首行拖住——
+      // 首行慢时整个分类切换都慢（用户反馈「banner/缩略图/video card 三者绑定、
+      // 等特定封面图全部渲染好才显示新图」）。拆开后 hero 就绪 → Home 立即切换，
+      // 首行/其余行各自骨架独立填充。
+      const heroRes = await heroP;
 
       if (generation !== _loadGeneration) { clearSkeletonTimer(); return; }
 
-      // 部分更新：hero + 首行就绪，其余行保留旧数据并标记 loading。
+      // hero 独立部分更新：只写 hero，行保持骨架 loading（不触碰首行/其余行）
+      set((s) => {
+        const prev = s.data[c];
+        return {
+          data: {
+            ...s.data,
+            [c]: {
+              hero: heroRes.items,
+              heroLoading: false,
+              heroError: heroRes.error,
+              rows: prev?.rows ?? [],
+              fetchedAt: prev?.fetchedAt ?? null,
+              loading: true,
+            },
+          },
+        };
+      });
+
+      // 首行独立部分更新：只替换首行，其余行保留旧数据并标记 loading。
       // 注意：其余行绝不能设为 loading:false + items:[] —— 那会让 TMDBMovieRow
       // 整行卸载（return null），页面高度骤减导致浏览器把 scrollTop 钳位到顶部，
       // 待其余行返回后用户滚动位置已丢失（滚动条被"强制复位"）。
+      const firstRowRes = await dedupFetch(def.rows[0].fetch)
+        .then((items) => ({ items, error: null }))
+        .catch((e) => ({ items: [] as TMDBVideoItem[], error: errMsg(e) }));
+
+      if (generation !== _loadGeneration) { clearSkeletonTimer(); return; }
+
       set((s) => {
         const prev = s.data[c];
         const restRows = def.rows.slice(1).map((_, i) => ({
@@ -282,11 +306,8 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
           data: {
             ...s.data,
             [c]: {
-              hero: heroRes.items,
-              heroLoading: false,
-              heroError: null,
+              ...(prev ?? { hero: [], heroLoading: true, heroError: null, fetchedAt: null }),
               rows: [{ items: firstRowRes.items, loading: false, error: firstRowRes.error }, ...restRows],
-              fetchedAt: prev?.fetchedAt ?? null,
               loading: true,
             },
           },
