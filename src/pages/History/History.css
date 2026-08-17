@@ -41,6 +41,15 @@
   min-width: 0;
 }
 
+.history-groups {
+  min-width: 0;
+}
+
+/* 左侧算珠面板：默认（移动端）隐藏，桌面端在下方 @media (width >= 768px) 启用 */
+.history-timeline {
+  display: none;
+}
+
 .history-group {
   display: flex;
   flex-direction: column;
@@ -48,18 +57,19 @@
   scroll-margin-top: var(--space-md);
 }
 
+/* 移动端内联时间轴节点行（桌面隐藏，由左侧算珠面板替代）。
+   点击范围收窄到 .history-node（原 .history-node-col 整行 padding 区均可点）。 */
 .history-node-col {
   display: flex;
   align-items: center;
   padding: var(--space-md) var(--space-md);
-  cursor: pointer;
 }
 
-.history-node-col:focus-visible {
+.history-node:focus-visible {
   outline: none;
 }
 
-.history-node-col:active .history-dot {
+.history-node:active .history-dot {
   background: var(--color-primary);
   transform: translate(-50%, -50%) scale(1.4);
   transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
@@ -77,6 +87,7 @@
   gap: var(--space-xs);
   align-items: center;
   padding-left: calc(var(--timeline-dot-size, 0.75rem) + var(--space-xs));
+  cursor: pointer;
 }
 
 .history-dot {
@@ -132,6 +143,156 @@
 .history-group-body {
   min-width: 0;
   padding-left: calc(var(--timeline-dot-size, 0.75rem) + var(--space-xs) + var(--space-md));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   桌面端（≥768px）：左侧算珠时间轴（sticky 常驻 + 算珠累加）
+   移动端隐藏面板、保留内联节点（原布局不动）；桌面端隐藏内联节点、展示面板。
+   算珠纵向位置由 JS 按 max(pileY_i, groupTrack_i) 驱动（transform 每帧更新，
+   无 CSS transition → 无回弹）。面板拉伸满列高使 sticky 全程常驻视口。
+   珠子横向布局：时间文本左对齐面板左、数量徽标右对齐面板右、圆点（rail 竖线）
+   钉在面板中线——时间在轴线左侧、数量在轴线右侧。
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .history-content {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1px;
+  }
+
+  html:not([data-device="app"]) .history-content::before {
+    display: none;
+  }
+
+  html:not([data-device="app"]) .history-timeline {
+    position: sticky;
+    top: 0;
+    display: block;
+    align-self: flex-start;
+    flex-shrink: 0;
+    height: calc(100vh - var(--header-height));
+    width: clamp(4.5rem, 6vw, 6rem);
+    min-width: 0;
+  }
+
+  html:not([data-device="app"]) .history-timeline__rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--timeline-rail-size, 0.125rem);
+    background: var(--color-border);
+    transform: translateX(-50%);
+  }
+
+  html:not([data-device="app"]) .history-timeline__beads {
+    position: relative;
+    z-index: 1;
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--timeline-bead-h, 1.5rem);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    will-change: transform;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  /* 时间、圆点、数量三者间距用 var(--space-sm)，绝对定位保证不重叠 */
+  html:not([data-device="app"]) .history-timeline__label {
+    position: absolute;
+    top: 50%;
+    right: calc(50% + var(--timeline-dot-size, 0.75rem) / 2 + var(--space-sm));
+    transform: translateY(-50%);
+    color: inherit;
+    white-space: nowrap;
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-text);
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead.is-active {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead:focus-visible {
+    outline: 0.125rem solid var(--color-primary);
+    outline-offset: 0.125rem;
+  }
+
+  html:not([data-device="app"]) .history-timeline__dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--timeline-dot-size, 0.75rem);
+    height: var(--timeline-dot-size, 0.75rem);
+    border-radius: 50%;
+    background: var(--color-text-tertiary);
+    transform: translate(-50%, -50%);
+    transition: background 0.18s ease;
+    pointer-events: none;
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead.is-active .history-timeline__dot {
+    background: var(--color-primary);
+  }
+
+  html:not([data-device="app"]) .history-timeline__count {
+    position: absolute;
+    top: 50%;
+    left: calc(50% + var(--timeline-dot-size, 0.75rem) / 2 + var(--space-sm));
+    transform: translateY(-50%);
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    min-width: var(--timeline-count-min-w, 1.25rem);
+    height: var(--timeline-count-h, 1.125rem);
+    padding: 0 var(--space-2xs);
+    border-radius: var(--radius-full);
+    background: var(--color-hover-bg);
+    color: var(--color-text-secondary);
+    font-size: var(--timeline-count-font, 0.6875rem);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  html:not([data-device="app"]) .history-timeline__bead.is-active .history-timeline__count {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  html:not([data-device="app"]) .history-groups {
+    flex: 1 1 0;
+    min-width: 0;
+    /* 卡片区下移一个轴点高度，与珠子中心对齐 */
+    padding-top: var(--timeline-dot-size, 0.75rem);
+  }
+
+  html:not([data-device="app"]) .history-node-col {
+    display: none;
+  }
+
+  html:not([data-device="app"]) .history-group-body {
+    padding-left: 0;
+  }
 }
 
 /* 历史页 video tab 横版卡片网格列数：2 (≤767) → 3 (768-1279) → 4 (≥1280) → 5 (≥1920) */
