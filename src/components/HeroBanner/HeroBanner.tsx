@@ -42,6 +42,14 @@ interface HeroBannerProps {
   historyMap?: Map<string, { progress: number }>;
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
+  /**
+   * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
+   * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
+   * 用于：离开时暂停自动轮播（避免隐藏期间 activeIndex/bgIndices/slideDir 继续推进、
+   * 切回时 CSS animation 因 display:none→block 重播导致「闪一下上一张图」），
+   * 切回时重置过渡状态 + 归单层 bgIndices。
+   */
+  active?: boolean;
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
@@ -71,6 +79,7 @@ export default function HeroBanner({
   onContinuePlay,
   historyMap,
   loading = false,
+  active = true,
 }: HeroBannerProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -231,6 +240,42 @@ export default function HeroBanner({
     // refs（prevItemsRef/prevDisplayIdxRef）的同步已移入下方独立 useLayoutEffect。
   }, [displayItems]);
 
+  // ── Keep-Alive 可见性守卫（离开/切回首页时重置过渡状态）──
+  // AppLayout 用 display:none 隐藏离开页面（组件不卸载）。display:none 会中断
+  // CSS animation，恢复 display:block 时浏览器**从 from 帧重播** is-active 层的
+  // heroBgFadeIn/slide 动画。若此时 bgIndices 是 2 层（轮播/悬停/拖拽过），
+  // 底层旧图（opacity:1 常显）会在重播淡入期间透出 →「先闪一下上一张图再淡入当前图」。
+  // 处理：
+  //  - 切回（active false→true）：归单层 bgIndices（底层无旧图可透出）+ 清 slideDir
+  //    （不重播滑动动画）+ 清 hovered/滞留层/switchReady 过渡态 + 恢复轮播。
+  //  - 离开（active true→false）：暂停轮播（interval 由 active 守卫控制）+ 清过渡态，
+  //    避免隐藏期间状态残留、切回时被重播。
+  const prevActiveRef = useRef(active);
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
+  useLayoutEffect(() => {
+    const wasActive = prevActiveRef.current;
+    prevActiveRef.current = active;
+    if (wasActive === active) return;
+    if (active) {
+      // 切回首页：归单层 + 清滑动方向/悬停/过渡态，防止 display:none→block 重播动画
+      setHoveredIndex(null);
+      setPaused(false);
+      setSlideDir(null);
+      setBgIndices([Math.min(activeIndexRef.current, Math.max(0, displayItems.length - 1))]);
+      switchLoadRef.current = null;
+      setStaleSnapshot(null);
+      setSwitchReady(true);
+    } else {
+      // 离开首页：暂停轮播 + 清过渡态
+      setPaused(true);
+      setHoveredIndex(null);
+      switchLoadRef.current = null;
+      setStaleSnapshot(null);
+      setSwitchReady(true);
+    }
+  }, [active]);
+
   // 渲染期派生（分类切换过渡）读的 refs 同步：每个 commit 后（paint 前）更新，
   // 使渲染期读到的 prevItemsRef/prevDisplayIdxRef 恒为「上一 commit」的值。
   // 独立 effect（无 setState 副作用）：displayIndex 频繁变化（轮播/悬停）也不会
@@ -313,9 +358,9 @@ export default function HeroBanner({
     }
   }, [activeIndex, displayItems]);
 
-  // 自动轮播（悬停暂停 / 仅 1 项不轮播 / 滑动冷却期内暂停）
+  // 自动轮播（悬停暂停 / 仅 1 项不轮播 / 滑动冷却期内暂停 / 页面隐藏（Keep-Alive 离开）不轮播）
   useEffect(() => {
-    if (paused || displayItems.length <= 1) return;
+    if (paused || !active || displayItems.length <= 1) return;
     const timer = window.setInterval(() => {
       // 滑动后 1000ms 内不轮播，避免与滑动动画冲突
       if (Date.now() - swipeCooldownRef.current < 1000) return;
@@ -324,7 +369,7 @@ export default function HeroBanner({
       setActiveIndex((i) => (i + 1) % displayItems.length);
     }, autoPlayInterval);
     return () => window.clearInterval(timer);
-  }, [paused, displayItems.length, autoPlayInterval]);
+  }, [paused, active, displayItems.length, autoPlayInterval]);
 
   // 悬停缩略图：预览主图 + 暂停轮播 + 预加载背景图
   const handleThumbEnter = useCallback((idx: number) => {

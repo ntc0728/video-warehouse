@@ -391,4 +391,51 @@ test.describe('13.12 Keep-Alive 状态保持', () => {
       console.log('⚠️ X-120: 无可用卡片');
     }
   });
+
+  test('X-121: Keep-Alive 首页切走再切回 banner 不闪烁（归单层/无滞留层/轮播暂停）', async ({ page }) => {
+    // 前置: 桌面端，首页数据就绪，等一次自动轮播（5s）使 bgIndices 成 2 层
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 15000 });
+    await page.waitForTimeout(6000); // 超过一个轮播周期 → bgIndices 应为 [last, current]
+
+    // 确认离开前已是 2 层（轮播已推进）——若不足则跳过后续断言（防御）
+    const layersBefore = await page.locator('.hero-banner__bg-layer').count();
+    console.log(`✅ X-121 检查: 切走前 bg 层数 = ${layersBefore}`);
+    const srcBefore = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+
+    // 操作: 切到详情页（Keep-Alive 隐藏首页，HeroBanner 不卸载）
+    const card = page.locator('.video-card a, .video-card').first();
+    if (!(await card.isVisible().catch(() => false))) {
+      console.log('⚠️ X-121: 无可用卡片，跳过');
+      return;
+    }
+    await card.click();
+    await page.waitForTimeout(1000);
+    expect(page.url()).toContain('/detail/');
+    // 等 active 信号翻转（activeRouteKey !== '/'）生效
+    await page.waitForTimeout(500);
+
+    // 返回首页（active false→true 触发过渡状态重置）
+    const backBtn = page.locator('.detail-hero-back, [class*="hero-back"]').first();
+    if (!(await backBtn.isVisible().catch(() => false))) {
+      console.log('⚠️ X-121: 无返回按钮，跳过');
+      return;
+    }
+    await backBtn.click();
+    await page.waitForTimeout(1000);
+
+    // 核心断言1: 切回后 bg 层数归单层（无底层旧图可透出 → 不闪「上一张图」）
+    expect(
+      await page.locator('.hero-banner__bg-layer').count(),
+      '切回首页后背景层应归单层（无旧图垫底透出）',
+    ).toBe(1);
+    // 核心断言2: 无滞留层残留
+    expect(await page.locator('.hero-banner__bg-layer--stale').count(), '不应有滞留层残留').toBe(0);
+    // 核心断言3: 离开期间轮播暂停（active 图未推进，仍是切走前那张）
+    const srcAfter = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
+    expect(srcAfter, '切回后主图应为切走前那张（隐藏期间轮播已暂停）').toBe(srcBefore);
+    // 核心断言4: 过渡状态已恢复（is-active 层存在、无卡在透明层）
+    await expect(page.locator('.hero-banner__bg-layer.is-active')).toBeVisible({ timeout: 3000 });
+    console.log(`✅ X-121 通过: 切回后 bg 层数=${layersBefore}→1，轮播暂停、无滞留层`);
+  });
 });

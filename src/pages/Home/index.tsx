@@ -513,6 +513,7 @@ export default function HomePage() {
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
         loading={isDisplayingCategory ? (displayedData?.heroLoading ?? true) : loading.trending}
+        active={activeRouteKey === '/'}
       />
       {/*
         页面进入动画（page-transition-enter）只作用于「非 Hero 内容」包装层：
