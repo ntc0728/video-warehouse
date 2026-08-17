@@ -6,10 +6,12 @@ import { toast } from '@/components/ui';
 import {
   discoverCastDevices, connectCastDevice, disconnectCast,
   getCastBridge, getCastMode,
-  initWebCast, webCastRequestSession, webCastLoadMedia,
-  webCastTogglePlay, webCastSetVolume, webCastEndSession,
   type CastDevice,
 } from '@/services/castService';
+import {
+  initWebCast, webCastRequestSession, webCastLoadMedia,
+  webCastTogglePlay, webCastSetVolume, webCastEndSession,
+} from '@/services/webCastSdk';
 
 type CastView = 'searching' | 'list' | 'connecting' | 'connected';
 
