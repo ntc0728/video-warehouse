@@ -36,3 +36,4 @@
 | `demos/demo-sidebar-perf-2026-07-27.html` | 侧边栏折叠性能方案 A/B/C 对比（width transition / transform 补偿 / 主内容 transform 平移），最终采用方案 B | 2026-07-27 |
 | `demos/demo-player-mobile-settings.html` | 播放器移动端整改：控制栏精简 + 右上角图标组（画中画/投屏/更多）+ 更多设置底部卡片弹层 + 字幕设置二级弹窗 + 启动封面白/黑适配 | 2026-08-15 |
 | `demos/demo-player-speed-icon-clip.html` | 倍速图标 hover 动画「被裁剪/重影」根因演示：OLD=双图标交叉淡化（中途两半透明图标错位重叠）/ NEW=单图标缩放（消除重影） | 2026-08-15 |
+| `demos/demo-history-abacus-timeline-2026-08-17.html` | 历史页左侧固定时间轴（算珠累加）：滚动时轴点逐颗累加、不消失，向上滚动逐步恢复，点击轴点/组标题跳转 | 2026-08-17 |

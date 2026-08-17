@@ -3,7 +3,7 @@
  * 影视 + IPTV 双 Tab，懒加载、搜索、日期分组、多选删除、清除全部
  * 通用左侧竖向时间轴导航（桌面/平板）+ 顶部横向时间轴（移动）
  */
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
@@ -32,6 +32,10 @@ import { Icon } from "@/components/ui/Icon";
 
 const PAGE_SIZE = 30;
 
+/** 算珠面板：首珠顶部留白 / 珠间垂直步进（在珠高之上） */
+const BEAD_PAD = 8;
+const BEAD_GAP = 10;
+
 /** 5 段分组（按时间从新到旧） */
 const GROUP_ORDER = [
   '今天',
@@ -59,6 +63,7 @@ interface HistoryChannelItem {
   logo?: string;
   group?: string;
   url: string;
+  sourceId?: string;
   _histTime: number;
 }
 
@@ -338,6 +343,7 @@ export default function HistoryPage() {
           logo: ch?.logo ?? r.channelLogo,
           group: ch?.group ?? r.channelGroup,
           url: ch?.url ?? '',
+          sourceId: ch?.sourceId,
           _histTime: r.playedAt,
         };
       });
@@ -450,6 +456,85 @@ export default function HistoryPage() {
     setTimeout(() => { clickScrollingRef.current = false; }, 500);
   }, []);
 
+  // ── 左侧算珠面板：sticky 常驻 + 算珠随滚动逐颗累加 ─────────────────────────
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const beadRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const setBeadRef = useCallback((key: string) => (el: HTMLButtonElement | null) => {
+    if (el) beadRefs.current[key] = el;
+    else delete beadRefs.current[key];
+  }, []);
+
+  /** 堆叠步长（珠高 + 间距），分组/数据变化时重新测量 */
+  const beadStepRef = useRef(BEAD_PAD);
+  const beadRafRef = useRef<number | null>(null);
+
+  /** 算珠定位：bead.y = max(pileY_i, groupTrack_i)
+   *  pileY_i  = 第 i 颗珠在堆叠中的槽位（面板顶往下）
+   *  groupTrack_i = 分组头相对面板顶的当前位置
+   *  珠始终跟随其分组移动，直到越过自身堆叠槽位后被「吸」入堆叠（逐颗累加、
+   *  保持间距、无重叠）；向上滚动时 track 重新超过槽位则跟随分组恢复。 */
+  const updateBeadPositions = useCallback(() => {
+    beadRafRef.current = null;
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+    const panelRect = timeline.getBoundingClientRect();
+    if (panelRect.width <= 0) return; // 面板隐藏（移动端）时跳过
+
+    const keys = GROUP_ORDER.filter((k) => groupRefs.current[k] && beadRefs.current[k]);
+    // 先批量读分组位置，再写 transform，避免读-写交替触发布局抖动
+    const tops: number[] = keys.map((key) => {
+      const g = groupRefs.current[key];
+      return g ? g.getBoundingClientRect().top : 0;
+    });
+    const step = beadStepRef.current;
+    keys.forEach((key, i) => {
+      const bead = beadRefs.current[key];
+      if (!bead) return;
+      const pileY = BEAD_PAD + i * step;
+      const trackY = tops[i] - panelRect.top;
+      bead.style.transform = `translateY(${Math.max(pileY, trackY)}px)`;
+    });
+  }, []);
+
+  const scheduleBeadUpdate = useCallback(() => {
+    if (beadRafRef.current != null) return;
+    beadRafRef.current = requestAnimationFrame(updateBeadPositions);
+  }, [updateBeadPositions]);
+
+  // 重新测量珠高 → 堆叠步长（分组/数据变化后；面板隐藏时跳过测量）
+  useLayoutEffect(() => {
+    const keys = GROUP_ORDER.filter((k) => beadRefs.current[k]);
+    const firstBead = keys.length > 0 ? beadRefs.current[keys[0]] : null;
+    if (firstBead) {
+      const h = firstBead.getBoundingClientRect().height;
+      if (h > 0) beadStepRef.current = h + BEAD_GAP;
+    }
+  }, [groupedKeys]);
+
+  // 滚动监听 + 尺寸监听：同步首帧定位（无闪烁），滚动时 rAF 节流重算。
+  // Keep-Alive 下离开页面即解绑（后台零开销），回来时随 pathname 变化重新绑定并立即定位。
+  useLayoutEffect(() => {
+    if (location.pathname !== '/history') return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    updateBeadPositions();
+
+    container.addEventListener('scroll', scheduleBeadUpdate, { passive: true });
+    const ro = new ResizeObserver(() => scheduleBeadUpdate());
+    if (timelineRef.current) ro.observe(timelineRef.current);
+    ro.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', scheduleBeadUpdate);
+      ro.disconnect();
+      if (beadRafRef.current != null) {
+        cancelAnimationFrame(beadRafRef.current);
+        beadRafRef.current = null;
+      }
+    };
+  }, [updateBeadPositions, scheduleBeadUpdate, scrollContainerRef, location.pathname, groupedKeys]);
+
   const toggleSelect = (id: string) => setSelected((p) => {
     const n = new Set(p);
     if (n.has(id)) n.delete(id);
@@ -542,6 +627,28 @@ export default function HistoryPage() {
            visibility:hidden 会在隐藏期播完动画，IPTV tab 数据异步到达后直接显示无动画） */}
         {currentList.length > 0 ? (
           <div key={activeTab} className="history-content animate-fade-in">
+            {/* 左侧算珠时间轴（桌面端 sticky 常驻，算珠随滚动逐颗累加；移动端隐藏，保留内联节点） */}
+            <div className="history-timeline" ref={timelineRef}>
+              <span className="history-timeline__rail" aria-hidden="true" />
+              <div className="history-timeline__beads">
+                {timelineItems.map((ti) => (
+                  <button
+                    key={ti.key}
+                    type="button"
+                    ref={setBeadRef(ti.key)}
+                    className={`history-timeline__bead${ti.active ? ' is-active' : ''}`}
+                    onClick={() => handleTimelineClick(ti.key)}
+                    aria-label={`跳转到${ti.label}`}
+                  >
+                    <span className="history-timeline__dot" aria-hidden="true" />
+                    <span className="history-timeline__label">{ti.label}</span>
+                    {ti.count !== undefined && ti.count > 0 && <span className="history-timeline__count">{ti.count}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="history-groups">
           {groupedKeys.map((group, idx) => {
             const ti = timelineItems.find((t) => t.key === group);
             const isFirst = idx === 0;
@@ -553,16 +660,16 @@ export default function HistoryPage() {
                 data-group-key={group}
                 className={`history-group${ti?.active ? ' history-group--active' : ''}`}
               >
-                <div
-                  className="history-node-col"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleTimelineClick(group)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTimelineClick(group); } }}
-                  aria-label={`跳转到${group}`}
-                >
+                <div className="history-node-col">
                   {!isFirst && <span className="history-rail" aria-hidden="true" />}
-                  <div className="history-node">
+                  <div
+                    className="history-node"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleTimelineClick(group)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTimelineClick(group); } }}
+                    aria-label={`跳转到${group}`}
+                  >
                     <span className="history-dot" aria-hidden="true" />
                     <span className="history-node-label">{group}</span>
                     {ti && (ti.count ?? 0) > 0 && <span className="history-node-count">{ti.count}</span>}
@@ -628,6 +735,7 @@ export default function HistoryPage() {
               </div>
             );
           })}
+            </div>
           </div>
         ) : null}
       </div>

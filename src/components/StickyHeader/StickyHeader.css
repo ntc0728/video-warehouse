@@ -154,35 +154,6 @@
   padding-inline: var(--space-xs);
 }
 
-/* Logo 右键菜单 */
-.sticky-header__logo-context-menu {
-  position: fixed;
-  z-index: 1000;
-  min-width: 12rem;
-  padding: var(--space-2xs);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md, 0 6px 20px rgba(0, 0, 0, 0.15));
-}
-.sticky-header__logo-context-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: var(--space-xs) var(--space-md);
-  border: none;
-  background: transparent;
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-}
-.sticky-header__logo-context-item:hover {
-  background: var(--color-surface-hover);
-}
-
 /* ── Nav ───────────────────────────────────────────── */
 
 .sticky-header__nav {

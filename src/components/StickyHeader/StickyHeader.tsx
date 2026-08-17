@@ -98,48 +98,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
     }
   }, [navigate, goHome]);
 
-  // ── 统一右键菜单（logo 与右侧导航项共用，含"在新标签页中打开链接"） ──
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
-  // 打开右键菜单：e.clientX/clientY 定位，targetPath 为新标签页要打开的地址
-  const openContextMenu = useCallback((e: React.MouseEvent, targetPath: string) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, path: targetPath });
-  }, []);
-  // logo 右键 → 打开首页
-  const handleLogoContextMenu = useCallback((e: React.MouseEvent) => {
-    openContextMenu(e, '/');
-  }, [openContextMenu]);
-  // 导航项右键 → 打开该项路径
-  const handleNavContextMenu = useCallback((e: React.MouseEvent, path: string) => {
-    openContextMenu(e, path);
-  }, [openContextMenu]);
-
-  // 点击菜单项：新开页签打开对应链接
-  const openInNewTab = useCallback(() => {
-    if (!contextMenu) return;
-    window.open(contextMenu.path, '_blank', 'noopener');
-    setContextMenu(null);
-  }, [contextMenu]);
-
-  // 点击其他区域 / 按 Esc 时关闭菜单
-  useEffect(() => {
-    if (!contextMenu) return;
-    const onDocDown = (e: MouseEvent) => {
-      const el = e.target as Node;
-      if (el instanceof HTMLElement && el.closest('.sticky-header__logo-context-menu')) return;
-      setContextMenu(null);
-    };
-    const onDocKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setContextMenu(null);
-    };
-    document.addEventListener('mousedown', onDocDown);
-    document.addEventListener('keydown', onDocKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocDown);
-      document.removeEventListener('keydown', onDocKey);
-    };
-  }, [contextMenu]);
-
   const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   // ── 滚动检测：仅首页监听滚动距离，超过 --header-height 切换为实体背景 ──
@@ -193,7 +151,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
         href={item.path}
         className={`sticky-header__nav-item hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
         onClick={(e) => { e.preventDefault(); onClick(); }}
-        onContextMenu={(e) => handleNavContextMenu(e, item.path)}
         title={item.title}
       >
         <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
@@ -248,14 +205,14 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
               </button>
             )
           )}
-          <button className="sticky-header__logo-group no-interaction-visual" onClick={goHome} onContextMenu={handleLogoContextMenu} aria-label="kinoTv — 返回首页">
+          <a href="/" className="sticky-header__logo-group no-interaction-visual" onClick={(e) => { e.preventDefault(); goHome(); }} aria-label="kinoTv — 返回首页">
             <div className="sticky-header__logo-wrap">
               <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
             </div>
             <div className="sticky-header__brand">
               <span className="sticky-header__brand-name">kinoTV</span>
             </div>
-          </button>
+          </a>
         </div>
         <div className="sticky-header__center">
           {/* 移动端/桌面端统一：中央常驻搜索框（不再有"点击搜索按钮展开"的临时搜索模式） */}
@@ -283,10 +240,10 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
              承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮。
              移动 web 仅显示头像（用户名由 isMobile 判断隐藏，手机横屏同样生效）。 */}
           {!isTV && !isNative && (
-            <button
-              type="button"
+            <a
+              href="/settings?tab=personal"
               className="sticky-header__profile hover-scale"
-              onClick={() => navigate('/settings?tab=personal')}
+              onClick={(e) => { e.preventDefault(); navigate('/settings?tab=personal'); }}
               aria-label="个人设置"
               title={username.trim() || '未设置昵称'}
             >
@@ -296,26 +253,13 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
               {!isMobile && (
                 <span className="sticky-header__profile-name">{username.trim() || '未设置昵称'}</span>
               )}
-            </button>
+            </a>
           )}
           <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
             <Icon icon={ThemeIcon} size="lg" />
           </button>
         </div>
       </div>
-
-      {/* 统一右键菜单（logo / 右侧导航项共用）：在新标签页中打开链接 */}
-      {contextMenu && (
-        <div
-          className="sticky-header__logo-context-menu"
-          role="menu"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          <button type="button" role="menuitem" className="sticky-header__logo-context-item" onClick={openInNewTab}>
-            在新标签页中打开链接
-          </button>
-        </div>
-      )}
     </header>
   );
 }

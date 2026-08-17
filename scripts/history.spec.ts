@@ -134,3 +134,145 @@ test.describe('8.5 批量管理', () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 8.6 桌面算珠时间轴（sticky 面板 + 算珠累加）
+// 覆盖: HIS-050 面板/断点切换、HIS-051 滚动累加与回弹验证
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('8.6 桌面算珠时间轴', () => {
+  // 注入跨「今天/昨天/更早」三分组的历史记录（周一无「本周」组）
+  const seedHistory = async (page: import('@playwright/test').Page) => {
+    await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open('video-warehouse');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const tx = db.transaction('history', 'readwrite');
+      const now = Date.now();
+      const H = 3600000;
+      let id = 0;
+      const put = (label: string, hoursAgo: number) => {
+        tx.objectStore('history').put({
+          id: `hist-abacus-${id++}`,
+          videoId: `tmdb-movie-${id}`,
+          title: `${label}${id}`,
+          cover: '',
+          backdrop: '',
+          type: 'movie',
+          progress: 100,
+          duration: 8000,
+          updatedAt: now - hoursAgo * H,
+          createdAt: now - hoursAgo * H,
+        });
+      };
+      for (let i = 0; i < 12; i++) put('今天剧', i); // 0~11h
+      for (let i = 0; i < 8; i++) put('昨天剧', 24 + i); // 24~31h
+      for (let i = 0; i < 8; i++) put('更早剧', 24 * 8 + i); // 8 天前
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+  };
+
+  test('HIS-050: 桌面端算珠面板渲染 / 移动端隐藏', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+    await seedHistory(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.history-timeline', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 桌面：面板可见、珠数 = 分组数（3）、内联节点行隐藏
+    const desktop = await page.evaluate(() => {
+      const panel = document.querySelector('.history-timeline');
+      const beads = document.querySelectorAll('.history-timeline__bead');
+      const inlineCols = document.querySelectorAll('.history-node-col');
+      return {
+        panelVisible: !!panel && getComputedStyle(panel).display !== 'none',
+        beadCount: beads.length,
+        inlineColHidden: inlineCols.length > 0
+          ? getComputedStyle(inlineCols[0]).display === 'none'
+          : null,
+      };
+    });
+    expect(desktop.panelVisible).toBe(true);
+    expect(desktop.beadCount).toBe(3);
+    expect(desktop.inlineColHidden).toBe(true);
+    console.log(`✅ HIS-050 桌面: 面板=${desktop.panelVisible} 珠数=${desktop.beadCount} 内联行隐藏=${desktop.inlineColHidden}`);
+
+    // 移动端（767px）：面板隐藏、内联节点行保留
+    await page.setViewportSize({ width: 767, height: 800 });
+    await page.waitForTimeout(600);
+    const mobile = await page.evaluate(() => {
+      const panel = document.querySelector('.history-timeline');
+      const inlineCols = document.querySelectorAll('.history-node-col');
+      return {
+        panelHidden: panel ? getComputedStyle(panel).display === 'none' : true,
+        inlineColVisible: inlineCols.length > 0
+          ? getComputedStyle(inlineCols[0]).display !== 'none'
+          : false,
+      };
+    });
+    expect(mobile.panelHidden).toBe(true);
+    expect(mobile.inlineColVisible).toBe(true);
+    console.log(`✅ HIS-050 移动端: 面板隐藏=${mobile.panelHidden} 内联行可见=${mobile.inlineColVisible}`);
+  });
+
+  test('HIS-051: 滚动时算珠逐颗累加（无重叠），回顶恢复原位（无回弹）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+    await seedHistory(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.history-timeline', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 珠 y（相对面板顶）快照
+    const beadYs = () =>
+      page.evaluate(() => {
+        const panel = document.querySelector('.history-timeline') as HTMLElement | null;
+        const panelTop = panel?.getBoundingClientRect().top ?? 0;
+        return [...document.querySelectorAll('.history-timeline__bead')].map((b) => {
+          const r = b.getBoundingClientRect();
+          return { label: b.textContent ?? '', y: Math.round((r.top - panelTop) * 100) / 100 };
+        });
+      });
+
+    const initial = await beadYs();
+    expect(initial.length).toBe(3);
+    // 初始位置应互不重叠且与分组对齐（今天珠在顶部 8px 槽位）
+    expect(initial[0].y).toBeLessThan(50);
+
+    // 滚动到底：中间组（昨天）应滚过面板顶并被收进堆叠槽 → 珠 y 严格递增、间距 ≈ 28px
+    await page.evaluate(() => {
+      const el = document.querySelector('.app-shell__scroll') as HTMLElement;
+      el.scrollTop = el.scrollHeight;
+    });
+    await page.waitForTimeout(500);
+    const bottom = await beadYs();
+    const gaps = bottom.slice(1).map((b, i) => b.y - bottom[i].y);
+    expect(bottom[0].y).toBeLessThan(50); // 今天珠仍在顶部槽位
+    for (const g of gaps) expect(g).toBeGreaterThan(24); // 无重叠、间距不塌陷
+    expect(bottom[bottom.length - 1].y).toBeGreaterThan(100); // 未读分组仍跟随其分组（未误入堆叠）
+    console.log(`✅ HIS-051 底部: y=[${bottom.map((b) => b.y).join(', ')}] 间距=[${gaps.join(', ')}]`);
+
+    // 回到顶部：全部珠恢复初始 y（无回弹、无漂移）
+    await page.evaluate(() => {
+      const el = document.querySelector('.app-shell__scroll') as HTMLElement;
+      el.scrollTop = 0;
+    });
+    await page.waitForTimeout(500);
+    const restored = await beadYs();
+    for (let i = 0; i < initial.length; i++) {
+      expect(Math.abs(restored[i].y - initial[i].y)).toBeLessThan(2);
+    }
+    console.log(`✅ HIS-051 回顶: 恢复原位差异 ≤ 1px（${restored.map((b) => b.y).join(', ')}）`);
+  });
+});
