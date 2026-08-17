@@ -120,7 +120,6 @@ export default function ControlBar({
             duration={videoDuration}
             buffered={buffered}
             onSeek={onSeek}
-            buffering={isBuffering}
           />
           {isVideoMode && <TimeDisplay currentTime={currentTime} duration={videoDuration} />}
           {isLiveLike && onRefresh && <RefreshButton onClick={onRefresh} />}
@@ -134,7 +133,6 @@ export default function ControlBar({
             duration={videoDuration}
             buffered={buffered}
             onSeek={onSeek}
-            buffering={isBuffering}
           />
 
           <div className="up-control-bar-buttons">

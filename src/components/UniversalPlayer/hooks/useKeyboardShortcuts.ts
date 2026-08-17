@@ -42,6 +42,13 @@ export function useKeyboardShortcuts({
     const debouncedSeek = (time: number) => {
       if (seekDebounceRef.current) clearTimeout(seekDebounceRef.current);
       seekDebounceRef.current = setTimeout(() => {
+        // 缓冲/加载中不执行键盘 seek（与长按快进守卫一致，审查报告 1.5）：
+        // 缓冲中 seek 到未缓冲位置会引发二次缓冲，且 seek 提示会造成「已跳转」假象
+        const { isBuffering, isPlayerLoading } = usePlayerStore.getState();
+        if (isBuffering || isPlayerLoading) {
+          seekDebounceRef.current = null;
+          return;
+        }
         playerCore.seek(time);
         seekDebounceRef.current = null;
       }, SEEK_DEBOUNCE_MS);

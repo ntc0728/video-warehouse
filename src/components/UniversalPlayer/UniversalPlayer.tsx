@@ -808,14 +808,17 @@ skipHistory,
           {isBuffering && (
             <>
               <span className="up-iptv-buffering-text">{networkSpeed}</span>
-              <div className="up-iptv-buffering-metrics">
-                <span className="up-iptv-buffering-metric">
-                  延迟 {networkQuality.latency}
-                </span>
-                <span className="up-iptv-buffering-metric">
-                  丢包 {networkQuality.packetLoss}
-                </span>
-              </div>
+              {/* 延迟/丢包是直播（IPTV）专属指标，点播缓冲不显示（审查报告 4.2） */}
+              {mode === 'iptv' && (
+                <div className="up-iptv-buffering-metrics">
+                  <span className="up-iptv-buffering-metric">
+                    延迟 {networkQuality.latency}
+                  </span>
+                  <span className="up-iptv-buffering-metric">
+                    丢包 {networkQuality.packetLoss}
+                  </span>
+                </div>
+              )}
               <span className="up-iptv-buffering-reason">
                 {getBufferingReason()}
               </span>

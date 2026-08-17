@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode } from '@/types/player';
 import { usePlayerToast } from './PlayerToast';
+import { isSourceToastSuppressed } from './lib/utils';
 
 const LOOP_LABELS: Record<string, string> = {
   none: '循环关闭',
@@ -56,10 +57,17 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
 
       // 切换线路（首帧 src 从 null 初始化为实际值不算「切换」，不提示）
       if (src && prevSource.current !== null && src !== prevSource.current) {
-        prevSource.current = src;
-        const sources = state.sources;
-        const matched = sources.find(s => s.url === src);
-        if (matched) show(`已切换到${matched.name}`);
+        // 切集/切线路瞬间会短暂经过此处；抑制窗口内跳过，避免误报「已切换到线路名」
+        // 后由 handlePlayEpisode 的集标题提示独占显示（审查报告 3.2）
+        if (!isSourceToastSuppressed()) {
+          prevSource.current = src;
+          const sources = state.sources;
+          const matched = sources.find(s => s.url === src);
+          if (matched) show(`已切换到${matched.name}`);
+        } else {
+          // 抑制窗口内也更新 prevSource，避免下次触发误报
+          prevSource.current = src;
+        }
       }
 
       // 播放/暂停

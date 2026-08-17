@@ -84,9 +84,27 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
         // 竞态守卫：异步读历史期间源/集已切换则丢弃（防止旧集进度迟到写进新集）
         if (isCurrent && !isCurrent()) return;
         // 避免跳转到视频末尾（duration - 1 秒）
-        video.currentTime = Math.min(videoHistory.progress, video.duration - 1);
-        // 提示已自动恢复播放位置（右上角；PlayerToast.show 自带覆盖语义，防双触发叠加）
-        playerToast('已自动跳转到上次观看的位置');
+        const target = Math.min(videoHistory.progress, video.duration - 1);
+        // 目标与当前位置几乎一致时无需 seek，直接提示
+        if (Math.abs(video.currentTime - target) < 0.5) {
+          playerToast('已自动跳转到上次观看的位置');
+          return;
+        }
+        video.currentTime = target;
+        // 提示时机：等 seeked（跳转生效、视频可播放）后再显示，避免「视频还在缓冲
+        // 就提示已跳转」的误导（审查报告 2.1）；带超时兜底，防止 seeked 不触发导致提示丢失
+        let notified = false;
+        const notify = () => {
+          if (notified) return;
+          notified = true;
+          video.removeEventListener('seeked', onSeeked);
+          // 等待期间源/集已切换则丢弃提示（避免旧集提示迟到）
+          if (isCurrent && !isCurrent()) return;
+          playerToast('已自动跳转到上次观看的位置');
+        };
+        const onSeeked = () => notify();
+        video.addEventListener('seeked', onSeeked);
+        setTimeout(notify, 800);
       }
     } catch (err) {
       console.error('Failed to load progress:', err);

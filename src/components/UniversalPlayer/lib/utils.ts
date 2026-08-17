@@ -1,7 +1,20 @@
 const VOLUME_POPUP_DELAY = 3000;
 
+// 切集/切线路时的操作提示抑制窗口（毫秒）
+let sourceToastSuppressUntil = 0;
+
 export function getAutoHideDelay(): number {
   return 3000;
+}
+
+/** 临时抑制「已切换到线路名」ToastTrigger 提示的持续时间（毫秒） */
+export function suppressSourceToast(ms: number): void {
+  sourceToastSuppressUntil = Date.now() + ms;
+}
+
+/** 是否处于线路提示抑制窗口内 */
+export function isSourceToastSuppressed(): boolean {
+  return Date.now() < sourceToastSuppressUntil;
 }
 
 export function isIOS(): boolean {
