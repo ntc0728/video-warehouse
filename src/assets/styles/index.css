@@ -36,17 +36,7 @@
    暗底 + overlay 混合；扫光动画走 --card-shimmer-duration。
    两处各自的布局（定位/边框/比例）由各自类提供，本类只负责「视觉背景 + 扫光」。 */
 .thumbnail-skeleton-bg {
-  background:
-    linear-gradient(
-      90deg,
-      var(--color-placeholder-shimmer-a) 25%,
-      var(--color-placeholder-shimmer-b) 50%,
-      var(--color-placeholder-shimmer-a) 75%
-    ),
-    rgba(0, 0, 0, 0.25);
-  background-size: 200% 100%, 100% 100%;
-  background-blend-mode: overlay;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 /* Modal animation classes */

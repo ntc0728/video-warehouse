@@ -224,14 +224,7 @@ html[data-device="app"] .home-disclaimer {
 .home-skeleton-hero__banner {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 /* Hero 内容占位 — 严格镜像 .hero-banner__content / .hero-banner__text：
@@ -255,7 +248,7 @@ html[data-device="app"] .home-disclaimer {
   width: 70%;
   height: clamp(1.5rem, 2.5vw, 2.5rem);
   border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.2));
+  background: transparent;
   animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
@@ -268,7 +261,7 @@ html[data-device="app"] .home-disclaimer {
 .home-skeleton-hero__meta-item {
   height: var(--icon-md);
   border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.18));
+  background: transparent;
   animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
@@ -279,7 +272,7 @@ html[data-device="app"] .home-disclaimer {
   width: 88%;
   height: var(--text-sm);
   border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.14));
+  background: transparent;
   animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
@@ -431,14 +424,7 @@ html[data-device="app"] .home-disclaimer {
   width: clamp(7.5rem, 6.667rem + 1.667vw, 12.5rem);
   height: clamp(1.5rem, 1.333rem + 0.333vw, 2.25rem);
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 .home-skeleton-row-cards {
@@ -469,14 +455,7 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-md);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
   overflow: hidden;
 }
 
@@ -485,7 +464,7 @@ html[data-device="app"] .home-disclaimer {
   position: absolute;
   display: block;
   border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  background: transparent;
   animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
@@ -522,14 +501,7 @@ html[data-device="app"] .home-disclaimer {
   width: 80%;
   height: clamp(1rem, 0.889rem + 0.222vw, 1.5rem);
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
+  background: transparent;
 }
 
 /* ── Mobile ──────────────────────────────────────────── */

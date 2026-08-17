@@ -7,7 +7,7 @@
 
 .skeleton-card-cover {
   position: relative;
-  background: var(--color-placeholder);
+  background: transparent;
   overflow: hidden;
   aspect-ratio: 16 / 10;
 }
@@ -21,14 +21,7 @@
 
 .skeleton-shimmer {
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
+  background: transparent;
 }
 
 .skeleton-title {
