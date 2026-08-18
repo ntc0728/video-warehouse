@@ -1,13 +1,13 @@
 /**
  * RecordFilterPanel — 「更多筛选」折叠面板（收藏页 / 历史页共用）
  *
- * 与历史页原「更多筛选」面板完全一致：观看状态 chips（仅影视项）+ 排序。
- * 排序控件：空间足够显示 chips，空间不足（容器查询）降级为下拉框。
+ * 与历史页原「更多筛选」面板一致：观看状态 chips（仅影视项）+ 排序 chips。
+ * 排序恒显示 chips，不再提供下拉框；空间不足时排序行（标签 + chips）随
+ * 面板 flex-wrap 另起一行，chips 自身亦可换行。
  * 状态圆点颜色由 statusOptions 的 color 传入（inline --chip-dot-color），
  * 不传默认 var(--color-text)（黑），is-active 时反色。
  */
 import type { CSSProperties } from 'react';
-import { Select } from '@/components/ui';
 import './RecordFilterPanel.css';
 
 export interface RecordFilterStatusOption {
@@ -80,13 +80,6 @@ export default function RecordFilterPanel({
               {opt.label}
             </button>
           ))}
-        </div>
-        <div className="record-filter-sort-dropdown">
-          <Select
-            options={sortOptions}
-            value={sortBy}
-            onChange={onSortChange}
-          />
         </div>
       </div>
     </div>
