@@ -72,4 +72,6 @@ export interface HistoryRecord {
   seasonNumber?: number;
   /** 当前季的 vod_id，用于选季面板高亮 */
   currentSeasonId?: string;
+  /** TMDB 评分（vote_average，0-10），播放时写入，用于历史页评分排序 */
+  rating?: number;
 }

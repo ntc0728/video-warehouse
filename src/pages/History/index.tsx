@@ -1,19 +1,21 @@
 /**
  * 观看历史页面（重构）
- * 影视 + IPTV 双 Tab，懒加载、搜索、日期分组、多选删除、清除全部
- * 通用左侧竖向时间轴导航（桌面/平板）+ 顶部横向时间轴（移动）
+ * 融合 Tab（综合/视频/IPTV）+「更多筛选」面板（状态 chips + 排序）+ 批量管理
+ * 统一横版 RecordCard（视频/IPTV 同尺寸），时间轴分组/算珠联动逻辑保持不变
  */
 import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { VideoCard } from '@/components/VideoCard';
-import IPTVChannelCard from '@/components/IPTVChannelCard';
+import { LayoutGrid, PlayCircle, Tv, Trash2, CheckSquare, Square, ListChecks, SlidersHorizontal } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { type TimelineItem } from '@/components/ui';
-import { Trash2, CheckSquare, Square, LayoutGrid, Eye, CheckCircle2, ListChecks } from 'lucide-react';
-import RecordShell from '@/components/RecordShell';
+import { Icon } from "@/components/ui/Icon";
+import RecordShell, { type RecordStatusTab } from '@/components/RecordShell';
+import RecordFilterPanel from '@/components/RecordFilterPanel';
+import { RecordCard, type RecordCardItem } from '@/components/RecordCard';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -23,12 +25,12 @@ import { useDocumentTitle } from '@/hooks';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
 import type { EPGChannelIndex } from '@/services/epgService';
+import { resolveChannelLogoCandidates } from '@/services/channelLogo';
+import { buildChannelPlayUrl } from '@/services/iptvService';
 import type { Video } from '@/types/video';
-import type { IPTVChannel } from '@/types/iptv';
 import type { HistoryRecord } from '@/types/store';
 import type { IPTVPlayRecord } from '@/types';
 import './History.css';
-import { Icon } from "@/components/ui/Icon";
 
 const PAGE_SIZE = 30;
 
@@ -55,6 +57,7 @@ interface HistoryVideoItem extends Video {
   _histCmsSourceName?: string;
   _histEpisodeLabel?: string;
   _histSeasonNumber?: number;
+  _histRating?: number;
 }
 
 interface HistoryChannelItem {
@@ -73,22 +76,22 @@ function getDateGroup(ts: number): GroupKey {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const diff = todayStart - ts;
-  
+
   // 今天
   if (diff < 0) return '今天';
-  
+
   // 昨天（昨天 00:00 ~ 今天 00:00）
   if (diff < DAY_MS) return '昨天';
-  
+
   // 本周（周一 00:00 ~ 昨天 00:00）
   const dayOfWeek = now.getDay() || 7; // 周日为 7
   const weekStart = todayStart - (dayOfWeek - 1) * DAY_MS;
   if (ts >= weekStart) return '本周';
-  
+
   // 本月（1号 00:00 ~ 周一 00:00）
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   if (ts >= monthStart) return '本月';
-  
+
   // 更早
   return '更早';
 }
@@ -131,32 +134,45 @@ function formatFullTime(ts: number): string {
   return timeFormatter.format(ts);
 }
 
-/** 构建横版封面左上角标签：CMS 源名称 + 集数 */
-function getOverlayLabel(video: HistoryVideoItem): string {
-  const parts: string[] = [];
-  if (video._histCmsSourceName) parts.push(video._histCmsSourceName);
-  if (video._histSeasonNumber && video._histEpisodeLabel) {
-    parts.push(`第${video._histSeasonNumber}季 ${video._histEpisodeLabel}`);
-  } else if (video._histEpisodeLabel) {
-    parts.push(video._histEpisodeLabel);
-  }
-  return parts.length > 0 ? parts.join(' · ') : '';
-}
-
-type Tab = 'video' | 'iptv';
+type MainTab = 'all' | 'video' | 'iptv';
 type VideoStatus = 'all' | 'unfinished' | 'finished';
+type SortKey = 'recent' | 'oldest' | 'name-asc' | 'name-desc' | 'rating-desc' | 'rating-asc';
 
 type ConfirmType = 'single' | 'batch' | 'clearAll';
 
-const STATUS_CONFIG: Record<VideoStatus, { label: string; icon: typeof LayoutGrid; color: string }> = {
-  all: { label: '全部', icon: LayoutGrid, color: 'var(--color-text-tertiary)' },
-  unfinished: { label: '未看完', icon: Eye, color: '#d97706' },
-  finished: { label: '已看完', icon: CheckCircle2, color: '#22c55e' },
+const STATUS_CONFIG: Record<VideoStatus, { label: string }> = {
+  all: { label: '全部' },
+  unfinished: { label: '未看完' },
+  finished: { label: '已看完' },
 };
+
+/** 状态 chip 圆点颜色（RecordFilterPanel 用）：全部=黑（默认，不传）、未看完=橙、已看完=绿 */
+const STATUS_DOT: Partial<Record<VideoStatus, string>> = {
+  unfinished: '#d97706',
+  finished: 'var(--color-success)',
+};
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'recent', label: '最近观看' },
+  { value: 'oldest', label: '最早观看' },
+  { value: 'name-asc', label: '名称 A-Z' },
+  { value: 'name-desc', label: '名称 Z-A' },
+  { value: 'rating-desc', label: '评分高到低' },
+  { value: 'rating-asc', label: '评分低到高' },
+];
+
+/** 融合 Tab 元数据：综合 / 视频 / IPTV（彩色圆点 + 计数） */
+const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: string }[] = [
+  { key: 'all', label: '综合', icon: LayoutGrid, color: 'var(--color-primary)' },
+  { key: 'video', label: '视频', icon: PlayCircle, color: 'var(--color-primary)' },
+  { key: 'iptv', label: 'IPTV', icon: Tv, color: '#22c55e' },
+];
 
 export default function HistoryPage() {
   const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
+  const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
+  const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
   const saved = getState('history');
 
@@ -164,9 +180,11 @@ export default function HistoryPage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<Tab>((saved?.tab as Tab) || 'video');
+  const [mainTab, setMainTab] = useState<MainTab>((saved?.tab as MainTab) || 'all');
   const [statusFilter, setStatusFilter] = useState<VideoStatus>('all');
-  const [searchByTab, setSearchByTab] = useState<{ video: string; iptv: string }>({ video: '', iptv: '' });
+  const [sortBy, setSortBy] = useState<SortKey>('recent');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchByTab, setSearchByTab] = useState<Record<MainTab, string>>({ all: '', video: '', iptv: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -175,7 +193,7 @@ export default function HistoryPage() {
   // 确认对话框状态
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<ConfirmType>('single');
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; kind: 'video' | 'iptv' } | null>(null);
 
   // EPG 频道预索引（零网络读 IndexedDB 缓存）：IPTV 历史卡台标二级回退（EPG XMLTV icon）
   const [epgIndex, setEpgIndex] = useState<EPGChannelIndex | undefined>(undefined);
@@ -194,8 +212,8 @@ export default function HistoryPage() {
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('history', undefined, location.pathname === '/history');
 
-  // backdrop 自动补全（仅 video tab）
-  useBackdropLoader(watchHistory, activeTab === 'video');
+  // backdrop 自动补全（视频卡展示时启用：综合/视频 tab）
+  useBackdropLoader(watchHistory, mainTab !== 'iptv');
 
   // 离开页面时清空筛选状态
   const prevPathnameRef = useRef(location.pathname);
@@ -203,18 +221,20 @@ export default function HistoryPage() {
     const prev = prevPathnameRef.current;
     prevPathnameRef.current = location.pathname;
     if (prev === '/history' && location.pathname !== '/history') {
-      setActiveTab('video');
+      setMainTab('all');
       setStatusFilter('all');
-      setSearchByTab({ video: '', iptv: '' });
+      setSortBy('recent');
+      setFilterOpen(false);
+      setSearchByTab({ all: '', video: '', iptv: '' });
       setBatchMode(false);
       setSelected(new Set());
     }
   }, [location.pathname]);
 
-  const search = searchByTab[activeTab];
+  const search = searchByTab[mainTab];
   const setSearch = useCallback((v: string) => {
-    setSearchByTab((prev) => ({ ...prev, [activeTab]: v }));
-  }, [activeTab]);
+    setSearchByTab((prev) => ({ ...prev, [mainTab]: v }));
+  }, [mainTab]);
 
   const searchByTabRef = useRef(searchByTab);
   searchByTabRef.current = searchByTab;
@@ -222,41 +242,40 @@ export default function HistoryPage() {
   useEffect(() => {
     return () => {
       saveState('history', {
-        tab: activeTab,
-        search: searchByTabRef.current[activeTab] || '',
+        tab: mainTab,
+        search: searchByTabRef.current[mainTab] || '',
         filter: { searchByTab: { ...searchByTabRef.current } },
       });
     };
-  }, [activeTab, saveState]);
+  }, [mainTab, saveState]);
 
-  useEffect(() => { setSelected(new Set()); setBatchMode(false); }, [activeTab]);
+  useEffect(() => { setSelected(new Set()); setBatchMode(false); }, [mainTab]);
 
   // 注册顶部导航栏搜索回调（仅当前路由匹配时注册，防止 Keep-Alive 下离开页面后重注册）
   useEffect(() => {
     if (location.pathname !== '/history') return;
     const store = usePageSearchStore.getState();
-    const placeholder = activeTab === 'video' ? '搜索影视剧...' : '搜索频道...';
+    const placeholder = mainTab === 'video'
+      ? '搜索影视剧...'
+      : mainTab === 'iptv'
+        ? '搜索频道...'
+        : '搜索影视或频道...';
     store.setPageSearch(search, setSearch, placeholder);
     return () => { store.clearPageSearch(); };
-  }, [search, setSearch, activeTab, location.pathname]);
+  }, [search, setSearch, mainTab, location.pathname]);
 
-  // IPTV tab 首次激活时从 IndexedDB 缓存加载频道数据（静默）。
-  // [2026-08-13] 守卫：仅当 store 中无频道数据时才触发。原实现每次切到 IPTV tab 都调
-  // loadFromCache()——即使数据已在内存，也会重新 setState channels → 联动 IPTV 页
-  // （Keep-Alive 常驻，订阅同一 useIPTVStore）在 display:none 下整批重渲染 = 卡顿来源之一。
+  // IPTV 数据首次需要时从 IndexedDB 缓存加载频道数据（静默）。
   useEffect(() => {
-    if (activeTab === 'iptv' && useIPTVStore.getState().channels.length === 0) {
+    if (mainTab !== 'video' && useIPTVStore.getState().channels.length === 0) {
       useIPTVStore.getState().loadFromCache();
     }
-  }, [activeTab]);
+  }, [mainTab]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeTab, searchByTab.video, searchByTab.iptv, statusFilter]);
+  }, [mainTab, searchByTab.all, searchByTab.video, searchByTab.iptv, statusFilter, sortBy]);
 
-  /** [2026-08-13] 每个 videoId 的最新记录观看状态，一次性构建（O(n)）。
-   *  原 getVideoWatchStatus 对每个视频 filter 整个 watchHistory（O(n²)），且
-   *  historyVideos / statusCounts 各遍历一遍——历史量大时明显卡顿。改为 Map 预计算。 */
+  /** 每个 videoId 的最新记录观看状态，一次性构建（O(n)）。 */
   const statusMap = useMemo(() => {
     const map = new Map<string, VideoStatus>();
     const latestById = new Map<string, HistoryRecord>();
@@ -273,8 +292,9 @@ export default function HistoryPage() {
     return map;
   }, [watchHistory]);
 
+  /** 视频历史：按 videoId 去重（同一剧集只保留最新一条），应用搜索 + 状态筛选。
+   *  状态筛选仅作用于视频项；IPTV 不涉及观看进度，恒显示。 */
   const historyVideos = useMemo<HistoryVideoItem[]>(() => {
-    // 按 videoId 去重：同一剧集（不同集）只保留最新一条，避免历史列表重复
     const seenVideo = new Set<string>();
     let list: HistoryVideoItem[] = [...watchHistory]
       .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -295,38 +315,18 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber };
+        return { ...base, _histTime: h.updatedAt, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber, _histRating: h.rating };
       });
-    if (searchByTab.video.trim()) { const kw = searchByTab.video.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(kw)); }
+    const kw = searchByTab[mainTab === 'all' ? 'all' : 'video'] || '';
+    if (kw.trim()) { const key = kw.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(key)); }
     if (statusFilter !== 'all') {
       list = list.filter((v) => statusMap.get(v.id) === statusFilter);
     }
     return list;
-  }, [watchHistory, searchByTab.video, statusFilter, statusMap]);
+  }, [watchHistory, searchByTab, mainTab, statusFilter, statusMap]);
 
-  /** 状态标签的计数（在状态筛选之前） */
-  const statusCounts = useMemo(() => {
-    // 按 videoId 去重，与 historyVideos 保持一致；状态直接查 statusMap（O(1)）
-    const seenVideo = new Set<string>();
-    let list = [...watchHistory]
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .filter((h) => {
-        if (seenVideo.has(h.videoId)) return false;
-        seenVideo.add(h.videoId);
-        return true;
-      })
-      .map(h => ({ id: h.videoId, title: h.title, status: statusMap.get(h.videoId) ?? 'unfinished' }));
-    if (searchByTab.video.trim()) {
-      const kw = searchByTab.video.toLowerCase();
-      list = list.filter((h) => h.title?.toLowerCase().includes(kw));
-    }
-    const counts: Record<VideoStatus, number> = { all: list.length, unfinished: 0, finished: 0 };
-    list.forEach(h => { counts[h.status]++; });
-    return counts;
-  }, [watchHistory, searchByTab.video, statusMap]);
-
+  /** IPTV 历史：按 channelId 去重（同一频道只保留最新一条），应用搜索。 */
   const iptvHistory = useMemo<HistoryChannelItem[]>(() => {
-    // 按 channelId 去重：同一频道只保留最新一条
     const seenChannel = new Set<string>();
     let list: HistoryChannelItem[] = [...playHistory]
       .sort((a, b) => b.playedAt - a.playedAt)
@@ -347,18 +347,69 @@ export default function HistoryPage() {
           _histTime: r.playedAt,
         };
       });
-    if (searchByTab.iptv.trim()) { const kw = searchByTab.iptv.toLowerCase(); list = list.filter((c) => c.name?.toLowerCase().includes(kw)); }
+    const kw = searchByTab[mainTab === 'all' ? 'all' : 'iptv'] || '';
+    if (kw.trim()) { const key = kw.toLowerCase(); list = list.filter((c) => c.name?.toLowerCase().includes(key)); }
     return list;
-  }, [playHistory, iptvChannels, searchByTab.iptv]);
+  }, [playHistory, iptvChannels, searchByTab, mainTab]);
 
-  const currentList: HistoryVideoItem[] | HistoryChannelItem[] = activeTab === 'video' ? historyVideos : iptvHistory;
+  /** 融合 Tab 计数：综合 = 视频 + IPTV（均已应用「更多筛选」状态过滤与搜索）；视频/IPTV = 各自项数 */
+  const fusedCounts = useMemo(() => ({
+    all: historyVideos.length + iptvHistory.length,
+    video: historyVideos.length,
+    iptv: iptvHistory.length,
+  }), [historyVideos, iptvHistory]);
+
+  const fusedCategories = useMemo<{ tabs: RecordStatusTab[]; active: string; onChange: (k: string) => void }>(() => ({
+    tabs: FUSED_TAB_META.map((t) => ({
+      key: t.key,
+      label: t.label,
+      icon: t.icon,
+      color: t.color,
+      count: fusedCounts[t.key],
+    })),
+    active: mainTab,
+    onChange: (k: string) => setMainTab(k as MainTab),
+  }), [fusedCounts, mainTab]);
+
+  /** 视频历史 ID 集合（删除时区分视频/IPTV 记录） */
+  const videoIdSet = useMemo(() => new Set(historyVideos.map((v) => v.id)), [historyVideos]);
+
+  /** 当前列表：mainTab 混合视频 + IPTV（按 _histTime），或单类。排序：时间/名称/评分 */
+  const currentList = useMemo<(HistoryVideoItem | HistoryChannelItem)[]>(() => {
+    const list: (HistoryVideoItem | HistoryChannelItem)[] =
+      mainTab === 'video' ? [...historyVideos]
+        : mainTab === 'iptv' ? [...iptvHistory]
+          : [...historyVideos, ...iptvHistory];
+    const titleOf = (item: HistoryVideoItem | HistoryChannelItem) =>
+      ('title' in item ? (item as HistoryVideoItem).title : (item as HistoryChannelItem).name) || '';
+    const ratingOf = (item: HistoryVideoItem | HistoryChannelItem) =>
+      'cover' in item ? ((item as HistoryVideoItem)._histRating ?? 0) : 0;
+    switch (sortBy) {
+      case 'oldest':
+        list.sort((a, b) => a._histTime - b._histTime);
+        break;
+      case 'name-asc':
+        list.sort((a, b) => titleOf(a).localeCompare(titleOf(b), 'zh'));
+        break;
+      case 'name-desc':
+        list.sort((a, b) => titleOf(b).localeCompare(titleOf(a), 'zh'));
+        break;
+      case 'rating-desc':
+        list.sort((a, b) => ratingOf(b) - ratingOf(a));
+        break;
+      case 'rating-asc':
+        list.sort((a, b) => ratingOf(a) - ratingOf(b));
+        break;
+      default:
+        list.sort((a, b) => b._histTime - a._histTime);
+    }
+    return list;
+  }, [mainTab, historyVideos, iptvHistory, sortBy]);
+
   const currentListLenRef = useRef(currentList.length);
   currentListLenRef.current = currentList.length;
 
-  const displayedList = useMemo(
-    () => (currentList as (HistoryVideoItem | HistoryChannelItem)[]).slice(0, visibleCount),
-    [currentList, visibleCount],
-  );
+  const displayedList = useMemo(() => currentList.slice(0, visibleCount), [currentList, visibleCount]);
   const hasMore = visibleCount < currentList.length;
   const loadMore = useCallback(() => {
     setVisibleCount((v) => Math.min(v + PAGE_SIZE, currentListLenRef.current));
@@ -468,11 +519,6 @@ export default function HistoryPage() {
   const beadStepRef = useRef(BEAD_PAD);
   const beadRafRef = useRef<number | null>(null);
 
-  /** 算珠定位：bead.y = max(pileY_i, groupTrack_i)
-   *  pileY_i  = 第 i 颗珠在堆叠中的槽位（面板顶往下）
-   *  groupTrack_i = 分组头相对面板顶的当前位置
-   *  珠始终跟随其分组移动，直到越过自身堆叠槽位后被「吸」入堆叠（逐颗累加、
-   *  保持间距、无重叠）；向上滚动时 track 重新超过槽位则跟随分组恢复。 */
   const updateBeadPositions = useCallback(() => {
     beadRafRef.current = null;
     const timeline = timelineRef.current;
@@ -512,7 +558,6 @@ export default function HistoryPage() {
   }, [groupedKeys]);
 
   // 滚动监听 + 尺寸监听：同步首帧定位（无闪烁），滚动时 rAF 节流重算。
-  // Keep-Alive 下离开页面即解绑（后台零开销），回来时随 pathname 变化重新绑定并立即定位。
   useLayoutEffect(() => {
     if (location.pathname !== '/history') return;
     const container = scrollContainerRef.current;
@@ -543,28 +588,91 @@ export default function HistoryPage() {
   });
   const selectAll = () => setSelected(selected.size === currentList.length ? new Set() : new Set(currentList.map((v) => v.id)));
 
+  // ── RecordCard 数据组装 ───────────────────────────────────────────────
+  const iptvChannelMap = useMemo(() => new Map(iptvChannels.map((c) => [c.id, c])), [iptvChannels]);
+
+  /** 台标候选链（三级回退）：M3U tvg-logo → EPG icon → 在线台标库 */
+  const iptvLogoCandidates = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const item of iptvHistory) {
+      const ch = iptvChannelMap.get(item.id);
+      const base = ch ?? { name: item.name, logo: item.logo, tvgId: undefined };
+      map.set(item.id, resolveChannelLogoCandidates(base, undefined, undefined, epgIndex));
+    }
+    return map;
+  }, [iptvHistory, iptvChannelMap, epgIndex]);
+
+  const buildIptvNav = useCallback((item: HistoryChannelItem): { to: string; state: Record<string, unknown> } => {
+    const ch = iptvChannelMap.get(item.id);
+    const playUrl = buildChannelPlayUrl(ch ?? { url: item.url }, proxyUrl, proxyPattern);
+    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    params.set('id', item.id);
+    params.set('name', item.name);
+    return { to: `/iptv/play?${params.toString()}`, state: { from: location.pathname } };
+  }, [iptvChannelMap, proxyUrl, proxyPattern, location.pathname]);
+
+  const buildRecordCardItem = useCallback((item: HistoryVideoItem | HistoryChannelItem, group: GroupKey): RecordCardItem => {
+    const timeText = formatPlayTime(item._histTime, group);
+    const timeTitle = formatFullTime(item._histTime);
+    if ('cover' in item) {
+      const v = item as HistoryVideoItem;
+      const finished = v._histProgress !== undefined && v._histDuration !== undefined && v._histDuration > 0 && v._histProgress >= v._histDuration * 0.9;
+      return {
+        id: v.id,
+        kind: 'video',
+        title: v.title || '未知',
+        media: v._histBackdrop || v.cover,
+        source: v._histCmsSourceName,
+        episode: v._histEpisodeLabel ? (v._histSeasonNumber ? `第${v._histSeasonNumber}季 ${v._histEpisodeLabel}` : v._histEpisodeLabel) : undefined,
+        status: finished ? 'finished' : 'unfinished',
+        timeText,
+        timeTitle,
+        progress: v._histProgress,
+        duration: v._histDuration,
+        navigateTo: `/play/${v.id}`,
+      };
+    }
+    const ch = item as HistoryChannelItem;
+    const candidates = iptvLogoCandidates.get(ch.id) ?? [];
+    const nav = buildIptvNav(ch);
+    return {
+      id: ch.id,
+      kind: 'iptv',
+      title: ch.name,
+      media: candidates[0],
+      logoCandidates: candidates.slice(1),
+      source: ch.group,
+      status: undefined,
+      timeText,
+      timeTitle,
+      navigateTo: nav.to,
+      navState: nav.state,
+    };
+  }, [iptvLogoCandidates, buildIptvNav]);
+
   // 根据确认类型执行删除
-  // 视频历史：single/batch 均按 videoId 删除该视频全部记录（电影多线路 / 剧集多季多集），
-  // 否则只删单条记录会导致「已删除的视频仍显示在历史页」或批量删除完全失效。
   const executeDelete = useCallback(() => {
-    if (confirmType === 'single' && pendingDeleteId) {
-      if (activeTab === 'video') removeHistoryByVideo(pendingDeleteId);
-      else removePlayRecord(pendingDeleteId);
+    if (confirmType === 'single' && pendingDelete) {
+      if (pendingDelete.kind === 'video') removeHistoryByVideo(pendingDelete.id);
+      else removePlayRecord(pendingDelete.id);
     } else if (confirmType === 'batch') {
-      if (activeTab === 'video') selected.forEach(id => removeHistoryByVideo(id));
-      else selected.forEach(id => removePlayRecord(id));
+      selected.forEach((id) => {
+        const isVideo = mainTab === 'video' || (mainTab === 'all' && videoIdSet.has(id));
+        if (isVideo) removeHistoryByVideo(id);
+        else removePlayRecord(id);
+      });
       setSelected(new Set());
     } else if (confirmType === 'clearAll') {
-      if (activeTab === 'video') clearHistory();
-      else clearPlayHistory();
+      if (mainTab !== 'iptv') clearHistory();
+      if (mainTab !== 'video') clearPlayHistory();
     }
-    setPendingDeleteId(null);
-  }, [confirmType, pendingDeleteId, selected, activeTab, removeHistoryByVideo, removePlayRecord, clearHistory, clearPlayHistory]);
+    setPendingDelete(null);
+  }, [confirmType, pendingDelete, selected, mainTab, videoIdSet, removeHistoryByVideo, removePlayRecord, clearHistory, clearPlayHistory]);
 
   // 打开确认对话框
-  const handleSingleDelete = useCallback((id: string, e: React.MouseEvent) => {
+  const handleSingleDelete = useCallback((item: RecordCardItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    setPendingDeleteId(id);
+    setPendingDelete({ id: item.id, kind: item.kind });
     setConfirmType('single');
     setConfirmOpen(true);
   }, []);
@@ -592,41 +700,59 @@ export default function HistoryPage() {
       ? `确定要删除选中的 ${selected.size} 条记录吗？删除后无法恢复。`
       : '确定要清除所有观看记录吗？此操作无法恢复。';
 
+  // ── 顶部操作按钮组（更多筛选 / 清空历史 / 批量管理） ─────────────────────
+  const actions = (
+    <>
+      <button
+        type="button"
+        className={`action-btn action-btn--filter${filterOpen ? ' is-active' : ''}`}
+        onClick={() => setFilterOpen((v) => !v)}
+        aria-expanded={filterOpen}
+      >
+        <Icon icon={SlidersHorizontal} size="sm" />
+        <span className="action-btn__label">更多筛选</span>
+      </button>
+      <button type="button" className="action-btn action-btn--clear" onClick={handleClearAll}>
+        <Icon icon={Trash2} size="sm" />
+        <span className="action-btn__label">清空历史</span>
+      </button>
+      <button
+        type="button"
+        className={`action-btn action-btn--batch${batchMode ? ' is-active' : ''}`}
+        onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+      >
+        <Icon icon={ListChecks} size="sm" />
+        <span className="action-btn__label">{batchMode ? '退出管理' : '批量管理'}</span>
+      </button>
+    </>
+  );
 
   return (
     <RecordShell
       containerRef={pageRef}
       pageClassName="history-page"
-      activeTab={activeTab}
-      onTabChange={(tab) => setActiveTab(tab)}
-      statusTabs={activeTab === 'video'
-        ? (Object.keys(STATUS_CONFIG) as VideoStatus[]).map((key) => ({
-            key,
-            label: STATUS_CONFIG[key].label,
-            icon: STATUS_CONFIG[key].icon,
-            color: STATUS_CONFIG[key].color,
-            count: statusCounts[key],
-          }))
-        : undefined}
-      activeStatus={statusFilter}
-      onStatusChange={(key) => setStatusFilter(key as VideoStatus)}
+      fusedCategories={fusedCategories}
+      actions={actions}
     >
-      <div className="record-edit-row">
-        <button
-          type="button"
-          className={`record-edit-btn ${batchMode ? 'record-edit-btn--active' : ''}`}
-          onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
-        >
-          <Icon icon={ListChecks} size="xs" />
-          {batchMode ? '退出管理' : '批量管理'}
-        </button>
-      </div>
+      {/* 「更多筛选」折叠面板：状态 chips（仅视频）+ 排序（公共组件，收藏页复用） */}
+      {filterOpen && (
+        <RecordFilterPanel
+          statusOptions={(['all', 'unfinished', 'finished'] as VideoStatus[]).map((k) => ({
+            key: k,
+            label: STATUS_CONFIG[k].label,
+            color: STATUS_DOT[k],
+          }))}
+          statusFilter={statusFilter}
+          onStatusChange={(k) => setStatusFilter(k as VideoStatus)}
+          sortOptions={SORT_OPTIONS}
+          sortBy={sortBy}
+          onSortChange={(v) => setSortBy(v as SortKey)}
+        />
+      )}
       <div className="history-body">
-        {/* key=activeTab：仅「影视↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载、不误触发动画。
-           仅在有数据时挂载容器：数据就绪才渲染 → animate-fade-in 在内容可见时播放（旧实现
-           visibility:hidden 会在隐藏期播完动画，IPTV tab 数据异步到达后直接显示无动画） */}
+        {/* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载 */}
         {currentList.length > 0 ? (
-          <div key={activeTab} className="history-content animate-fade-in">
+          <div key={`${mainTab}-${statusFilter}-${sortBy}`} className="history-content animate-fade-in">
             {/* 左侧算珠时间轴（桌面端 sticky 常驻，算珠随滚动逐颗累加；移动端隐藏，保留内联节点） */}
             <div className="history-timeline" ref={timelineRef}>
               <span className="history-timeline__rail" aria-hidden="true" />
@@ -649,92 +775,53 @@ export default function HistoryPage() {
             </div>
 
             <div className="history-groups">
-          {groupedKeys.map((group, idx) => {
-            const ti = timelineItems.find((t) => t.key === group);
-            const isFirst = idx === 0;
-            const isLast = idx === groupedKeys.length - 1;
-            return (
-              <div
-                key={group}
-                ref={setGroupRef(group)}
-                data-group-key={group}
-                className={`history-group${ti?.active ? ' history-group--active' : ''}`}
-              >
-                <div className="history-node-col">
-                  {!isFirst && <span className="history-rail" aria-hidden="true" />}
+              {groupedKeys.map((group, idx) => {
+                const ti = timelineItems.find((t) => t.key === group);
+                const isFirst = idx === 0;
+                const isLast = idx === groupedKeys.length - 1;
+                return (
                   <div
-                    className="history-node"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleTimelineClick(group)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTimelineClick(group); } }}
-                    aria-label={`跳转到${group}`}
+                    key={group}
+                    ref={setGroupRef(group)}
+                    data-group-key={group}
+                    className={`history-group${ti?.active ? ' history-group--active' : ''}`}
                   >
-                    <span className="history-dot" aria-hidden="true" />
-                    <span className="history-node-label">{group}</span>
-                    {ti && (ti.count ?? 0) > 0 && <span className="history-node-count">{ti.count}</span>}
-                  </div>
-                  {!isLast && <span className="history-rail" aria-hidden="true" />}
-                </div>
-                <div className="history-group-body">
-              {activeTab === 'video' ? (
-                <div className="video-card-grid">
-                  {(grouped[group] as HistoryVideoItem[]).map((video) => (
-                    <div
-                      key={video.id}
-                      className={`record-card ${batchMode && selected.has(video.id) ? 'record-card--selected' : ''}`}
-                      onClick={batchMode ? () => toggleSelect(video.id) : undefined}
-                    >
-                      {batchMode && (
-                        <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(video.id); }} aria-label={selected.has(video.id) ? '取消选择' : '选择'} aria-pressed={selected.has(video.id)}>
-                          {selected.has(video.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
-                        </button>
-                      )}
-                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                      <VideoCard
-                        video={video}
-                        hideFavorite
-                        batchMode={batchMode}
-                        variant="landscape"
-                        backdropSrc={video._histBackdrop}
-                        timeLabel={formatPlayTime(video._histTime, group as GroupKey)}
-                        overlayLabel={getOverlayLabel(video)}
-                        progress={video._histProgress}
-                        duration={video._histDuration}
-                        navigateTo={`/play/${video.id}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="iptv-channel-grid">
-                  {(grouped[group] as HistoryChannelItem[]).map((ch) => (
-                    <div
-                      key={ch.id}
-                      className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
-                      onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
-                    >
-                      {batchMode && (
-                        <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
-                          {selected.has(ch.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
-                        </button>
-                      )}
-                      <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                      <IPTVChannelCard channel={ch as IPTVChannel} hideFavorite batchMode={batchMode} epgIndex={epgIndex} />
-                      <span
-                        className="record-card__time"
-                        title={formatFullTime(ch._histTime)}
+                    <div className="history-node-col">
+                      {!isFirst && <span className="history-rail" aria-hidden="true" />}
+                      <div
+                        className="history-node"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleTimelineClick(group)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTimelineClick(group); } }}
+                        aria-label={`跳转到${group}`}
                       >
-                        {formatPlayTime(ch._histTime, group as GroupKey)}
-                      </span>
+                        <span className="history-dot" aria-hidden="true" />
+                        <span className="history-node-label">{group}</span>
+                        {ti && (ti.count ?? 0) > 0 && <span className="history-node-count">{ti.count}</span>}
+                      </div>
+                      {!isLast && <span className="history-rail" aria-hidden="true" />}
                     </div>
-                  ))}
-                </div>
-              )}
-                </div>
-              </div>
-            );
-          })}
+                    <div className="history-group-body">
+                      <div className="history-grid">
+                        {(grouped[group] as (HistoryVideoItem | HistoryChannelItem)[]).map((item) => {
+                          const card = buildRecordCardItem(item, group as GroupKey);
+                          return (
+                            <RecordCard
+                              key={card.id}
+                              item={card}
+                              batchMode={batchMode}
+                              selected={selected.has(card.id)}
+                              onToggleSelect={() => toggleSelect(card.id)}
+                              onDelete={(e) => handleSingleDelete(card, e)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}

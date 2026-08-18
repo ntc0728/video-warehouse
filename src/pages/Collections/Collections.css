@@ -10,6 +10,30 @@
   min-height: auto;
 }
 
+/* ── 综合 tab 分区（影视竖版海报墙 / 直播原项目 IPTV 卡） ── */
+.collection-section + .collection-section {
+  margin-top: var(--space-lg);
+}
+
+.collection-section-head {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: baseline;
+  margin: var(--space-sm) 0 var(--space-2xs);
+}
+
+.collection-section-head__title {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.collection-section-head__count {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
 /* ── 加载态：player-loading-wrap 在 Player 页为 absolute 叠加层，
     收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ──────── */
 .collection-page .record-main > .player-loading-wrap {
@@ -42,16 +66,6 @@
 
 .collection-sentinel {
   height: var(--comp-thumb-size);
-}
-
-/* 排序下拉：位于批量管理同一行最左侧（record-edit-row 默认 flex-end，
-   用 margin-right: auto 将其推到最左，批量管理按钮保持靠右） */
-.collection-page .record-edit-row {
-  gap: var(--space-sm);
-  align-items: center;
-}
-.collection-page .record-sort {
-  margin-right: auto;
 }
 
 @media (width <= 767px) {

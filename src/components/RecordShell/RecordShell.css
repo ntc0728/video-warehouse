@@ -411,3 +411,94 @@
     width: auto;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RecordShell 通用能力（自 History.css 迁入，去 .history-page 前缀）
+   收藏页/历史页共用：融合 Tab（胶囊式 StatusTabs）+ 操作按钮组（图标+文本）
+   ═══════════════════════════════════════════════════════════════════════════ */
+.record-status--fused {
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border-bottom: none;
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+}
+.record-status--fused .status-tab {
+  flex-shrink: 0;
+  height: auto;
+  margin-bottom: 0;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-base);
+  border-bottom: none;
+  scroll-snap-align: none;
+}
+.record-status--fused .status-tab:hover {
+  background: transparent;
+}
+.record-status--fused .status-tab--active {
+  border-bottom: none;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.record-status--fused .status-tab__dot {
+  width: var(--space-sm);
+  height: var(--space-sm);
+}
+.record-status--fused .status-tab__count {
+  margin-left: var(--space-xs);
+}
+
+/* ── 操作按钮组（更多筛选 / 清空 / 批量管理） ──
+   图标 + 文本胶囊；窄屏（≤640px）降级为仅图标圆钮（C 方案） */
+.record-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-left: auto;
+}
+
+.action-btn {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs-plus) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+.action-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.action-btn.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.action-btn svg {
+  flex-shrink: 0;
+}
+
+@media (width <= 640px) {
+  .action-btn {
+    padding: var(--space-sm);
+  }
+  .action-btn__label {
+    display: none;
+  }
+}
+/* 9.1 app 恒移动：@media (width <= 640px) 的仅图标降级副本 */
+html[data-device="app"] .action-btn {
+  padding: var(--space-sm);
+}
+html[data-device="app"] .action-btn__label {
+  display: none;
+}

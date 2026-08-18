@@ -83,29 +83,30 @@ test.describe('7.4 批量管理', () => {
     }
   });
 
-  test('COL-031: 排序下拉（批量管理同一行最左侧）', async ({ page }) => {
+  test('COL-031: 排序（「更多筛选」面板内，宽容器 chips / 窄容器下拉，与历史页一致）', async ({ page }) => {
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 预期结果: 影视 Tab 下排序下拉可见，默认"最近收藏"
-    const sortTrigger = page.locator('.record-edit-row .record-sort button');
-    await expect(sortTrigger).toBeVisible({ timeout: 5000 });
-    await expect(sortTrigger).toContainText('最近收藏');
+    // 预期结果: 排序位于「更多筛选」面板内，宽容器显示排序 chips，默认"最近收藏"激活
+    const filterBtn = page.locator('.action-btn--filter');
+    await expect(filterBtn).toBeVisible({ timeout: 5000 });
+    await filterBtn.click();
+    await page.waitForSelector('.record-filter-panel', { timeout: 5000 });
 
-    // 打开下拉，检查 6 个排序选项
-    await sortTrigger.click();
-    await page.waitForTimeout(300);
-    const dropdown = page.locator('.portal-dropdown');
-    for (const label of ['最近收藏', '最早收藏', '名称A-Z', '名称Z-A', '评分从高到低', '评分从低到高']) {
-      await expect(dropdown.getByText(label, { exact: true })).toBeVisible();
-    }
+    const sortChips = page.locator('.record-filter-chips--sort .record-filter-chip');
+    await expect(sortChips.first()).toBeVisible({ timeout: 5000 });
 
-    // 选择"最早收藏"后触发器文本更新
-    await dropdown.getByText('最早收藏', { exact: true }).click();
-    await page.waitForTimeout(300);
-    await expect(sortTrigger).toContainText('最早收藏');
-    console.log('✅ COL-031 通过: 排序下拉选项完整且可切换');
+    // 6 个排序选项完整
+    await expect(sortChips).toHaveCount(6);
+    const recentChip = sortChips.filter({ hasText: '最近收藏' });
+    await expect(recentChip).toHaveClass(/is-active/);
+
+    // 选择"最早收藏"后激活态切换
+    await sortChips.filter({ hasText: '最早收藏' }).click();
+    await page.waitForTimeout(200);
+    await expect(sortChips.filter({ hasText: '最早收藏' })).toHaveClass(/is-active/);
+    console.log('✅ COL-031 通过: 排序 chips 完整且可切换');
   });
 });
 

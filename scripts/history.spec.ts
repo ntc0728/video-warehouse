@@ -3,7 +3,7 @@
  * 路由: /history
  * 配置依赖: Level 3（全配置）
  *
- * 覆盖: HIS-001 ~ HIS-053
+ * 覆盖: HIS-001 ~ HIS-061
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
@@ -86,20 +86,20 @@ test.describe('8.4 去重显示', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // 操作: 在影视 tab 记录卡片数量，切换到 IPTV tab 再切回来
-    const videoCards = page.locator('.video-card-grid .record-card, .record-card');
+    // 操作: 在「综合」tab 记录卡片数量，切换到「IPTV」tab 再切回来
+    const videoCards = page.locator('.history-page .record-card');
     const initialVideoCount = await videoCards.count();
 
-    // 切换到 IPTV tab
-    const iptvTab = page.locator('.category-segmented__item').nth(1);
+    // 切换到 IPTV tab（融合 StatusTabs 第三项）
+    const iptvTab = page.locator('.status-tab').filter({ hasText: 'IPTV' });
     if (await iptvTab.isVisible().catch(() => false)) {
       await iptvTab.click();
       await page.waitForTimeout(1000);
 
-      // 切回影视 tab
-      const videoTab = page.locator('.category-segmented__item').nth(0);
-      if (await videoTab.isVisible().catch(() => false)) {
-        await videoTab.click();
+      // 切回综合 tab
+      const allTab = page.locator('.status-tab').filter({ hasText: '综合' });
+      if (await allTab.isVisible().catch(() => false)) {
+        await allTab.click();
         await page.waitForTimeout(1000);
 
         // 预期结果: 影视卡片数量不增加（同一剧集不同集不重复显示）
@@ -107,7 +107,7 @@ test.describe('8.4 去重显示', () => {
         expect(afterSwitchCount).toBeLessThanOrEqual(initialVideoCount);
         console.log(`✅ HIS-025 通过: 切换前后卡片数 ${initialVideoCount} → ${afterSwitchCount}`);
       } else {
-        console.log('⚠️ HIS-025: 影视 tab 未检测到');
+        console.log('⚠️ HIS-025: 综合 tab 未检测到');
       }
     } else {
       console.log('⚠️ HIS-025: IPTV tab 未检测到');
@@ -125,13 +125,129 @@ test.describe('8.5 批量管理', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const editBtn = page.locator('.record-edit-btn, [class*="edit-btn"]');
+    const editBtn = page.locator('.action-btn--batch');
     if (await editBtn.isVisible().catch(() => false)) {
       const text = await editBtn.textContent();
       console.log(`✅ HIS-040 通过: 批量管理按钮文本 = "${text}"`);
     } else {
       console.log('⚠️ HIS-040: 批量管理按钮未检测到');
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8.7 融合 Tab（综合/视频/IPTV）与「更多筛选」面板
+// 覆盖: HIS-060 融合 Tab 渲染、HIS-061 筛选面板开关
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('8.7 融合 Tab 与筛选面板', () => {
+  test('HIS-060: 融合 Tab 渲染（综合/视频/IPTV，默认激活综合）', async ({ page }) => {
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const tabs = page.locator('.record-status--fused .status-tab');
+    expect(await tabs.count()).toBe(3);
+    const labels = (await tabs.allTextContents()).map((t) => t.replace(/\s+/g, '').replace(/\d+/g, ''));
+    expect(labels.join(',')).toContain('综合');
+    expect(labels.join(',')).toContain('视频');
+    expect(labels.join(',')).toContain('IPTV');
+
+    const active = page.locator('.record-status--fused .status-tab--active');
+    expect((await active.textContent())?.replace(/\d+/g, '')).toContain('综合');
+    console.log(`✅ HIS-060 通过: 融合 Tab 标签 = ${labels.join('/')}，默认激活综合`);
+  });
+
+  test('HIS-061: 「更多筛选」面板展开/收起（状态 chips + 排序）', async ({ page }) => {
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const filterBtn = page.locator('.action-btn--filter');
+    const panel = page.locator('.record-filter-panel');
+
+    // 初始收起
+    expect(await panel.count()).toBe(0);
+
+    // 展开
+    await filterBtn.click();
+    await page.waitForSelector('.record-filter-panel', { timeout: 5000 });
+    expect(await page.locator('.record-filter-chip--status').count()).toBe(3); // 全部/未看完/已看完
+
+    // 收起
+    await filterBtn.click();
+    await page.waitForTimeout(400);
+    expect(await page.locator('.record-filter-panel').count()).toBe(0);
+    console.log('✅ HIS-061 通过: 筛选面板可展开/收起');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8.8 网格列数（视口自适应：桌面 3 列 / 平板·移动 2 列 / 手机 1 列）
+// 覆盖: HIS-062
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('8.8 网格列数', () => {
+  const seedGrid = async (page: import('@playwright/test').Page) => {
+    await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open('video-warehouse');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const tx = db.transaction('history', 'readwrite');
+      const now = Date.now();
+      let id = 0;
+      const put = (label: string, hoursAgo: number) => {
+        tx.objectStore('history').put({
+          id: `hist-grid-${id++}`,
+          videoId: `tmdb-grid-${id}`,
+          title: `${label}${id}`,
+          cover: '',
+          backdrop: '',
+          type: 'movie',
+          progress: 100,
+          duration: 8000,
+          updatedAt: now - hoursAgo * 3600000,
+          createdAt: now - hoursAgo * 3600000,
+        });
+      };
+      for (let i = 0; i < 6; i++) put('今天剧', i);
+      for (let i = 0; i < 6; i++) put('更早剧', 24 * 8 + i);
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+  };
+
+  test('HIS-062: 列数随视口变化（1280→3 列、600→2 列、375→1 列）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/history', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(800);
+    await seedGrid(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.history-grid', { timeout: 15000 });
+    await page.waitForTimeout(800);
+
+    const cols = () =>
+      page.evaluate(() => {
+        const g = document.querySelector('.history-grid') as HTMLElement;
+        if (!g) return 0;
+        const matches = getComputedStyle(g).gridTemplateColumns.match(/[^ ]+(?:px|fr|%)/g);
+        return matches ? matches.length : 0;
+      });
+
+    expect(await cols()).toBe(3); // 桌面 ≥1280：3 列
+    await page.setViewportSize({ width: 600, height: 800 });
+    await page.waitForTimeout(500);
+    expect(await cols()).toBe(2); // <1280（平板/小桌面/移动）：2 列
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.waitForTimeout(500);
+    expect(await cols()).toBe(1); // ≤480：1 列
+    console.log('✅ HIS-062 通过: 1280→3 列 / 600→2 列 / 375→1 列');
   });
 });
 
@@ -169,7 +285,7 @@ test.describe('8.6 桌面算珠时间轴', () => {
       };
       for (let i = 0; i < 12; i++) put('今天剧', i); // 0~11h
       for (let i = 0; i < 8; i++) put('昨天剧', 24 + i); // 24~31h
-      for (let i = 0; i < 8; i++) put('更早剧', 24 * 8 + i); // 8 天前
+      for (let i = 0; i < 14; i++) put('更早剧', 24 * 8 + i); // 8 天前（3 列网格下末组高度 < 视口，保证滚动到末组仍在折叠线以下）
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
