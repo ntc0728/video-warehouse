@@ -83,7 +83,7 @@ test.describe('7.4 批量管理', () => {
     }
   });
 
-  test('COL-031: 排序（「更多筛选」面板内，宽容器 chips / 窄容器下拉，与历史页一致）', async ({ page }) => {
+  test('COL-031: 排序 chips（「更多筛选」面板内，无下拉框，空间不足自动换行）', async ({ page }) => {
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);

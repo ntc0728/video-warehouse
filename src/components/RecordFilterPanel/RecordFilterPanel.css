@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    RecordFilterPanel — 「更多筛选」折叠面板（收藏页 / 历史页共用）
-   状态 chips（仅影视项）+ 排序；自 History.css 迁移并去 .history- 前缀。
-   排序控件：空间足够显示 chips，空间不足（容器查询）降级为下拉框。
+   状态 chips（仅影视项）+ 排序 chips；不再提供排序下拉框。
+   空间不足时：面板 flex-wrap 让排序行整体另起一行，排序 chips 自身亦可换行。
    ═══════════════════════════════════════════════════════════════════════════ */
 .record-filter-panel {
   display: flex;
@@ -14,7 +14,6 @@
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-  container-type: inline-size;
 }
 
 .record-filter-row {
@@ -70,9 +69,8 @@
   background: var(--color-text-inverse);
 }
 
-/* ── 排序控件：空间足够显示 chips，不足降级为下拉框 ──
-   以 .record-filter-panel 为容器（container-type: inline-size），
-   容器查询切下拉；app 恒移动 → 恒走下拉框。 */
+/* ── 排序 chips：与状态 chips 同款胶囊（不带圆点） ──
+   面板/行均为 flex-wrap：空间不足时「排序」行整体另起一行，chips 可继续换行 */
 .record-filter-row--sort {
   flex-flow: row wrap;
 }
@@ -82,28 +80,4 @@
   flex-flow: row wrap;
   gap: var(--space-xs);
   align-items: center;
-}
-
-.record-filter-sort-dropdown {
-  display: none;
-}
-
-/* 容器宽度不足 → 隐藏排序 chips、显示下拉框（并压缩下拉宽度） */
-@container (max-width: 720px) {
-  .record-filter-chips--sort {
-    display: none;
-  }
-  .record-filter-sort-dropdown {
-    display: inline-flex;
-  }
-  .record-filter-sort-dropdown .source-multi-trigger {
-    min-width: 0;
-  }
-}
-
-/* 小视口（375px）下拉框进一步收窄（source-multi-dropdown 默认 min-width 来自 --layout-select-w） */
-@media (width <= 375px) {
-  .record-filter-row--sort .source-multi-trigger {
-    min-width: var(--layout-select-w-mobile);
-  }
 }
