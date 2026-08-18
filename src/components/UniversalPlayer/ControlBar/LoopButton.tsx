@@ -2,13 +2,12 @@ import { Repeat, Repeat1 } from 'lucide-react';
 import type { LoopMode } from '@/types/player';
 import { Icon } from '@/components/ui/Icon';
 import { DuoIcon } from '@/components/ui/DuoIcon';
+import { LOOP_CYCLE } from '../lib/utils';
 
 interface LoopButtonProps {
   mode: LoopMode;
   onChange: (mode: LoopMode) => void;
 }
-
-const LOOP_CYCLE: LoopMode[] = ['none', 'single', 'list'];
 
 export function LoopButtonMenuItem({ mode, onChange }: LoopButtonProps) {
   const nextMode: LoopMode = LOOP_CYCLE[(LOOP_CYCLE.indexOf(mode) + 1) % LOOP_CYCLE.length];

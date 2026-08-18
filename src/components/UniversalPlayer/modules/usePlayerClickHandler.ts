@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { getFullscreenElement, requestFullscreen, exitFullscreen } from '../lib/fullscreen';
+import { toggleFullscreen } from '../lib/fullscreen';
 
 interface UsePlayerClickHandlerOptions {
   mode: 'video' | 'iptv' | 'live';
@@ -19,19 +19,9 @@ export function usePlayerClickHandler({
 }: UsePlayerClickHandlerOptions) {
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // C4/R2：全屏切换统一走 lib/fullscreen 的 toggleFullscreen（退出目标 + hasError 守卫三处一致）
   const handleToggleFullscreen = useCallback(async () => {
-    if (hasError) return;
-    const el = containerRef.current;
-    if (!el) return;
-    try {
-      if (getFullscreenElement()) {
-        await exitFullscreen(videoElementRef.current);
-      } else {
-        await requestFullscreen(el);
-      }
-    } catch {
-      // 部分平台不支持全屏 API，静默失败
-    }
+    await toggleFullscreen(containerRef.current, videoElementRef.current, hasError);
   }, [hasError, containerRef, videoElementRef]);
 
   const handlePlayerClick = useCallback((e: React.MouseEvent) => {

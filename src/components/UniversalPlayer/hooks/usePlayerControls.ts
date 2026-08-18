@@ -33,10 +33,28 @@ export function usePlayerControls({ setControlsVisible, activePopover }: UsePlay
     }
   }, [setControlsVisible]);
 
+  /**
+   * R5：控制栏可见性的单一同步出口。
+   * 播放状态变化时统一在此决策，避免各处散落的 setControlsVisible/resetAutoHideTimer 互相覆盖：
+   * - 播放中：显示 → 排自动隐藏
+   * - 暂停/缓冲/出错/弹层打开：常驻显示，不排隐藏
+   */
+  const syncAutoHide = useCallback(({ isPlaying, isBuffering, hasError }: { isPlaying: boolean; isBuffering?: boolean; hasError?: boolean }) => {
+    if (isBuffering || hasError || !isPlaying) {
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+        autoHideTimerRef.current = null;
+      }
+      return;
+    }
+    showControls();
+  }, [showControls]);
+
   return {
     autoHideTimerRef,
     resetAutoHideTimer,
     showControls,
     hideControls,
+    syncAutoHide,
   };
 }

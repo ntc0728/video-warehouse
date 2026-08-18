@@ -10,6 +10,7 @@ interface PlayerCoreProps {
   onClick: (e: React.MouseEvent) => void;
   onPointerDown?: (e: React.PointerEvent) => void;
   onPointerUp?: (e: React.PointerEvent) => void;
+  onPointerMove?: (e: React.PointerEvent) => void;
   onPointerLeave?: () => void;
   /** IPTV 错误态快捷入口：唤起频道列表 */
   onOpenChannelList?: () => void;
@@ -34,6 +35,7 @@ export default function PlayerCore({
   onClick,
   onPointerDown,
   onPointerUp,
+  onPointerMove,
   onPointerLeave,
   onOpenChannelList,
   onRetry,
@@ -61,6 +63,7 @@ export default function PlayerCore({
       onClick={onClick}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
+      onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >
       <video
