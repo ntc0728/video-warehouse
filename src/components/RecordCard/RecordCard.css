@@ -56,10 +56,11 @@
   object-fit: cover;
 }
 
-/* IPTV 台标：充满整个容器（不再圆形），失败/缺失走 Tv 图标占位 */
+/* IPTV 台标：充满整个容器（不再圆形），失败/缺失走 Tv 图标占位。
+   背景与收藏页 IPTVChannelCard 封面一致（--color-surface-hover），失败样式完全统一 */
 .history-page .record-card__media--logo {
   position: relative;
-  background: linear-gradient(135deg, #1f2937, #374151);
+  background: var(--color-surface-hover);
 }
 .history-page .record-card__media--logo .lazy-image,
 .history-page .record-card__media--logo .lazy-image-fallback {
@@ -85,19 +86,13 @@
   opacity: 0.6;
 }
 
-/* LIVE 角标（IPTV） */
-.history-page .record-card__live-badge {
+/* LIVE 角标（IPTV）：视觉见全局 .record-card__live-badge（index.css），此处仅负责
+   历史页横版卡媒体区内的 absolute 定位（IPTVChannelCard 走 badges 容器 static） */
+.history-page .record-card__media .record-card__live-badge {
   position: absolute;
   top: var(--space-2xs);
   left: var(--space-2xs);
   z-index: 3;
-  padding: var(--space-3xs) var(--space-xs);
-  border-radius: var(--radius-sm);
-  background: var(--color-danger);
-  color: #fff;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  line-height: 1.4;
 }
 
 /* 视频底部进度条 */

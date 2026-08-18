@@ -903,6 +903,21 @@ main {
   color: #ff4d4f;
 }
 
+/* LIVE 角标（IPTV 卡）：全局视觉（历史页 RecordCard 与 IPTVChannelCard 共用），
+   定位由各自容器决定——历史页 media 内 absolute（RecordCard.css），
+   IPTVChannelCard 封面 badges 容器内 static（IPTVChannelCard.css） */
+.record-card__live-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .record-card__time {
   position: absolute;
   right: var(--space-sm);

@@ -136,12 +136,20 @@
   transition: transform 0.3s;
 }
 
+/* ---- Cover 左上角角标组（LIVE + 检测结果并排） ---- */
+.iptv-card-cover__badges {
+  position: absolute;
+  top: var(--space-2xs);
+  left: var(--space-2xs);
+  z-index: 3;
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  pointer-events: none;
+}
+
 /* ---- Availability badge ---- */
 .availability-badge {
-  position: absolute;
-  top: var(--space-xs);
-  left: var(--space-xs);
-  z-index: 3;
   display: flex;
   gap: var(--space-2xs);
   align-items: center;
