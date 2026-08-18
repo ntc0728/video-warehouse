@@ -2,17 +2,7 @@ import { useCallback } from 'react';
 import { Monitor, MonitorPlay } from 'lucide-react';
 import type { PlayerLevel } from '@/types/player';
 import { DuoIcon } from '@/components/ui/DuoIcon';
-
-function getResolutionLabel(level: PlayerLevel): string {
-  if (level.height >= 2160) return '4K';
-  if (level.height >= 1440) return '2K';
-  if (level.height >= 1080) return '1080p';
-  if (level.height >= 720) return '720p';
-  if (level.height >= 480) return '480p';
-  if (level.height >= 360) return '360p';
-  if (level.height > 0) return `${level.height}p`;
-  return level.name || '未知';
-}
+import { getResolutionLabel } from '../lib/utils';
 
 function getCurrentLabel(levels: PlayerLevel[], currentLevel: number): string {
   if (currentLevel === -1) return '自动';

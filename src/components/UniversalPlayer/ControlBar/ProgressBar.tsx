@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { PlayerMode } from '@/types/player';
+import ThumbnailPreview, { type ThumbnailSource } from './ThumbnailPreview';
 
 interface ProgressBarProps {
   mode: PlayerMode;
@@ -7,6 +8,8 @@ interface ProgressBarProps {
   duration: number;
   buffered: number;
   onSeek: (time: number) => void;
+  /** G1：hover 缩略图源（可选）；缺省时 tooltip 仅显示时间戳 */
+  thumbnails?: ThumbnailSource;
 }
 
 function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent): number {
@@ -16,7 +19,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, thumbnails }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -185,10 +188,15 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         {!isLive && (
           <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />
         )}
-        {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」（审查报告 4.3） */}
+        {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」（审查报告 4.3）。
+            G1：提供缩略图源时展示预览图，否则回退时间戳文本 */}
         {hoverTime !== null && !isLive && duration > 0 && (
           <div className="up-progress-tooltip" style={{ left: `${hoverPosition}%` }}>
-            {formatTime(hoverTime)}
+            <ThumbnailPreview
+              source={thumbnails}
+              time={hoverTime}
+              fallback={formatTime(hoverTime)}
+            />
           </div>
         )}
       </div>

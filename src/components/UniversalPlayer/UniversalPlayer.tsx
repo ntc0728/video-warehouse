@@ -18,7 +18,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { ToastProvider } from './PlayerToast';
 import ToastTrigger from './ToastTrigger';
 import { useTimeshift } from './hooks/useTimeshift';
-import { getFullscreenElement, requestFullscreen, exitFullscreen } from './lib/fullscreen';
+import { toggleFullscreen } from './lib/fullscreen';
 import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
 import PlayerHeader from './PlayerHeader';
@@ -30,6 +30,8 @@ import type { EPGProgram, ParsedEPGData } from '@/services/epgService';
 import { Rewind, FastForward, X } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
+import { useTouchGesture } from './hooks/useTouchGesture';
+import BrightnessVolumeIndicator from './MobileUI/BrightnessVolumeIndicator';
 import { resolveChannelLogoCandidates } from '@/services/channelLogo';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
@@ -49,6 +51,8 @@ const VOLUME_POPUP_DELAY = 3000;
 
 interface PlayerErrorBoundaryProps {
   children: ReactNode;
+  /** 重试时通知外部（如递增 retryCount 触发解码器重建），只负责渲染异常兜底 */
+  onRetry?: () => void;
 }
 
 interface PlayerErrorBoundaryState {
@@ -56,6 +60,11 @@ interface PlayerErrorBoundaryState {
   error: Error | null;
 }
 
+/**
+ * R4：仅兜底「渲染阶段抛出的异常」（React 组件树崩溃）；
+ * 不处理播放/网络/解码错误（那些走 hasError → PlayerErrorOverlay）。
+ * 视频内容故障 ≠ 组件崩溃：渲染异常才会被捕获，播放错误不影响本层。
+ */
 class PlayerErrorBoundary extends Component<PlayerErrorBoundaryProps, PlayerErrorBoundaryState> {
   constructor(props: PlayerErrorBoundaryProps) {
     super(props);
@@ -71,6 +80,7 @@ class PlayerErrorBoundary extends Component<PlayerErrorBoundaryProps, PlayerErro
   }
 
   handleRetry = (): void => {
+    this.props.onRetry?.();
     this.setState({ hasError: false, error: null });
   };
 
@@ -83,6 +93,9 @@ class PlayerErrorBoundary extends Component<PlayerErrorBoundaryProps, PlayerErro
             <span style={{ fontSize: 'var(--text-sm)', opacity: 0.7 }}>
               {this.state.error?.message || '未知错误'}
             </span>
+            <button className="up-player-error-retry" onClick={this.handleRetry}>
+              重试
+            </button>
           </div>
         </div>
       );
@@ -264,25 +277,52 @@ export default function UniversalPlayer({
     resetAutoHideTimer,
     showControls,
     hideControls,
+    syncAutoHide,
   } = usePlayerControls({ setControlsVisible, activePopover });
 
-  // 长按 hook
+  // 移动端纵向滑动手势（亮度/音量）激活标记：
+  // 与 useLongPress 共享——纵向滑动主导后取消长按快进/快退，避免手势冲突（G7-G10）
+  const verticalGestureActiveRef = useRef(false);
+
+  // 长按 hook（C3：seek 统一走 playerCore.seek，带缓冲允许 seek 策略；N5：IPTV 同样支持）
   const {
     seekIndicator,
     hasLongPressedRef,
     handlePointerDown,
+    handlePointerMove,
     handlePointerUp,
     handlePointerLeave,
   } = useLongPress({
     onSeek: useCallback((direction: 'left' | 'right') => {
-      if (hasError || isBuffering) return;
+      if (hasError) return;
       const video = videoElementRef.current;
       if (!video || video.error || video.readyState < 2) return;
+      // C3：长按 seek 与键盘/进度条共用 playerCore.seek（seek 守卫策略同一处）
       const seekAmount = direction === 'left' ? -6 : 6;
-      video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount));
-    }, [hasError, isBuffering]),
-    mode,
-    disabled: isBuffering,
+      playerCore.seek(Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount)));
+    }, [hasError]),
+    // C3：仅加载未就绪禁用（缓冲中允许 seek，与键盘/进度条一致）
+    disabled: isPlayerLoading && !isReadyToPlay,
+    verticalGestureActiveRef,
+  });
+
+  // G7-G10：移动端双击左侧/右侧播放器 = 亮度/音量调节（仅移动端布局、点播模式生效；
+  // 通过 touch 事件驱动，桌面鼠标不受影响）
+  const {
+    brightness,
+    volume: gestureVolume,
+    indicatorVisible: gestureIndicatorActive,
+    axis: gestureAxis,
+  } = useTouchGesture({
+    containerRef,
+    enabled: isMobileLayout && mode === 'video',
+    initialBrightness: 1,
+    onBrightnessChange: (v) => {
+      const video = videoElementRef.current;
+      if (video) video.style.filter = `brightness(${v.toFixed(2)})`;
+    },
+    onVolumeChange: (v) => playerCore.setVolume(v),
+    verticalGestureActiveRef,
   });
 
   // 字幕导入 hook
@@ -306,18 +346,8 @@ export default function UniversalPlayer({
   }, [baseHandleChannelSelect]);
 
   const handleToggleFullscreen = useCallback(async () => {
-    if (hasError) return;
-    const el = containerRef.current;
-    if (!el) return;
-    try {
-      if (getFullscreenElement()) {
-        await exitFullscreen(videoElementRef.current);
-      } else {
-        await requestFullscreen(el);
-      }
-    } catch {
-      // 部分平台不支持全屏 API，静默失败
-    }
+    // C4/R2：统一走 lib/fullscreen 的 toggleFullscreen（hasError 守卫一致）
+    await toggleFullscreen(containerRef.current, videoElementRef.current, hasError);
   }, [hasError]);
 
   // 键盘快捷键 hook
@@ -333,6 +363,7 @@ export default function UniversalPlayer({
       seek: (t) => playerCore.seek(t),
       getCurrentTime: () => playerCore.getCurrentTime(),
       getDuration: () => playerCore.getDuration(),
+      toggleMute: () => playerCore.toggleMute(),
     },
     showVolumePopupWithTimer,
     toggleFullscreen: handleToggleFullscreen,
@@ -751,25 +782,11 @@ skipHistory,
     setDegradedType(null);
   }, [url, currentUrl]);
 
-  // 错误状态管理
+  // 错误状态管理（R5：统一走 syncAutoHide，避免散落的 setControlsVisible 互相覆盖）
   useEffect(() => {
-    if (hasError) {
-      setControlsVisible(true);
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-        autoHideTimerRef.current = null;
-      }
-    } else if (!isPlaying) {
-      setControlsVisible(true);
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-        autoHideTimerRef.current = null;
-      }
-    } else {
-      resetAutoHideTimer();
-    }
+    syncAutoHide({ isPlaying, isBuffering, hasError });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasError, isPlaying]);
+  }, [hasError, isPlaying, isBuffering]);
 
   // 错误恢复
   useEffect(() => {
@@ -782,7 +799,7 @@ skipHistory,
   return (
     <ToastProvider mobileCenter={isMobileDevice}>
     <ToastTrigger mode={mode} />
-    <PlayerErrorBoundary>
+    <PlayerErrorBoundary onRetry={() => setRetryCount(c => c + 1)}>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
     <div
       ref={containerRef}
@@ -796,6 +813,7 @@ skipHistory,
         onClick={handlePlayerClick}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
+        onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onOpenChannelList={() => setChannelListVisible(true)}
         onRetry={() => { setHasError(false); setRetryCount(c => c + 1); }}
@@ -922,6 +940,8 @@ skipHistory,
           onTogglePlay={playerCore.togglePlay}
           onSeek={playerCore.seek}
           onVolumeChange={playerCore.setVolume}
+          onToggleMute={playerCore.toggleMute}
+          onVolumePopup={showVolumePopupWithTimer}
           onPlaybackRateChange={playerCore.setPlaybackRate}
           onDecoderModeChange={setDecoderMode}
           onTogglePiP={playerCore.togglePiP}
@@ -939,7 +959,7 @@ skipHistory,
           hasNextEpisode={hasNextEpisode}
           onPrevEpisode={onPrevEpisode}
           onNextEpisode={onNextEpisode}
-          isBuffering={isBuffering}
+          hasError={hasError}
         />
       )}
 
@@ -956,11 +976,20 @@ skipHistory,
         </div>
       )}
 
-      {mode === 'iptv' && (
-        <VolumePopup
-          visible={showVolumePopup}
-          volume={volume}
-          onVolumeChange={playerCore.setVolume}
+      {/* G2：音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动 */}
+      <VolumePopup
+        visible={showVolumePopup}
+        volume={volume}
+        onVolumeChange={playerCore.setVolume}
+      />
+
+      {/* G7-G10：移动端纵向滑动亮度/音量指示器（仅点播模式启用时可能显示） */}
+      {isMobileLayout && mode === 'video' && (
+        <BrightnessVolumeIndicator
+          visible={gestureIndicatorActive}
+          axis={gestureAxis}
+          brightness={brightness}
+          volume={gestureVolume}
         />
       )}
 
@@ -1030,6 +1059,11 @@ skipHistory,
             onMirrorToggle={setMirror}
             aspectRatio={aspectRatio}
             onAspectRatioChange={setAspectRatio}
+            volume={volume}
+            onVolumeChange={playerCore.setVolume}
+            onToggleMute={playerCore.toggleMute}
+            isPiP={isPiP}
+            onTogglePiP={playerCore.togglePiP}
           />
           {castMounted && (
             <Suspense fallback={null}>

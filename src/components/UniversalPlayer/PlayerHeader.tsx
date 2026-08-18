@@ -10,6 +10,8 @@ interface PlayerHeaderProps {
   channelName?: string;
   visible: boolean;
   showFullscreenButton?: boolean;
+  /** 播放错误态：透传给 FullscreenButton，错误时禁用全屏（C4 守卫一致） */
+  hasError?: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   onBack: () => void;
   onActivity?: () => void;
@@ -24,6 +26,7 @@ export default function PlayerHeader({
   channelName,
   visible,
   showFullscreenButton = true,
+  hasError = false,
   containerRef,
   onBack,
   onActivity,
@@ -45,7 +48,7 @@ export default function PlayerHeader({
         {episodeLabel && <span className="up-header-episode-badge">{episodeLabel}</span>}
       </span>
       {actions}
-      {showFullscreenButton && <FullscreenButton containerRef={containerRef} />}
+      {showFullscreenButton && <FullscreenButton containerRef={containerRef} hasError={hasError} />}
     </div>
   );
 }

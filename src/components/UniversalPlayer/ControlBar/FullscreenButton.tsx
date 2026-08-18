@@ -1,14 +1,16 @@
 import { Maximize, Minimize, Maximize2, Minimize2 } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { usePlayerStore } from '@/stores';
-import { getFullscreenElement, requestFullscreen, exitFullscreen } from '../lib/fullscreen';
+import { getFullscreenElement, toggleFullscreen } from '../lib/fullscreen';
 import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface FullscreenButtonProps {
   containerRef: React.RefObject<HTMLElement | null>;
+  /** 播放错误态：为真时拒绝全屏切换（C4 三处守卫一致） */
+  hasError?: boolean;
 }
 
-export default function FullscreenButton({ containerRef }: FullscreenButtonProps) {
+export default function FullscreenButton({ containerRef, hasError = false }: FullscreenButtonProps) {
   const isFullscreen = usePlayerStore(s => s.isFullscreen);
   const setFullscreen = usePlayerStore(s => s.setFullscreen);
 
@@ -26,24 +28,17 @@ export default function FullscreenButton({ containerRef }: FullscreenButtonProps
     };
   }, [setFullscreen]);
 
-  const toggleFullscreen = useCallback(async () => {
+  // C4/R2：与 F 键 / 双击共用 lib/fullscreen 的 toggleFullscreen
+  const toggleFullscreenButton = useCallback(async () => {
     const container = containerRef.current;
     if (!container) return;
-    try {
-      if (getFullscreenElement()) {
-        await exitFullscreen();
-      } else {
-        await requestFullscreen(container);
-      }
-    } catch {
-      // 部分平台不支持或需要用户手势，静默失败
-    }
-  }, [containerRef]);
+    await toggleFullscreen(container, container.querySelector('video'), hasError);
+  }, [containerRef, hasError]);
 
   return (
     <button
       className="up-header-fullscreen-btn"
-      onClick={toggleFullscreen}
+      onClick={toggleFullscreenButton}
       title="全屏 (F)"
       aria-label={isFullscreen ? '退出全屏' : '全屏'}
       aria-pressed={isFullscreen}

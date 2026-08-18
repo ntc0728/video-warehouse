@@ -5,13 +5,17 @@ import { DuoIcon } from '@/components/ui/DuoIcon';
 interface VolumeControlProps {
   volume: number;
   onChange: (volume: number) => void;
+  /** C2：统一静音入口（记忆原音量），与键盘 M 共用 toggleMute */
+  onToggleMute?: () => void;
+  /** G2：音量变化时弹出 3s 音量条 */
+  onVolumePopup?: () => void;
   activePopover: string | null;
   onPopoverChange: (id: string | null) => void;
 }
 
 const POPOVER_ID = 'volume';
 
-export default function VolumeControl({ volume, onChange, activePopover, onPopoverChange }: VolumeControlProps) {
+export default function VolumeControl({ volume, onChange, onToggleMute, onVolumePopup, activePopover, onPopoverChange }: VolumeControlProps) {
   const isOpen = activePopover === POPOVER_ID;
   const isTouchRef = useRef(false);
 
@@ -24,8 +28,18 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
       isTouchRef.current = false;
       return;
     }
-    onChange(volume === 0 ? 1 : 0);
-  }, [volume, onChange]);
+    // C2：统一走 toggleMute（记忆原音量）；未提供时回退旧行为
+    if (onToggleMute) {
+      onToggleMute();
+    } else {
+      onChange(volume === 0 ? 1 : 0);
+    }
+  }, [volume, onChange, onToggleMute]);
+
+  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(parseFloat(e.target.value));
+    onVolumePopup?.();
+  }, [onChange, onVolumePopup]);
 
   const handleButtonTouch = useCallback(() => {
     isTouchRef.current = true;
@@ -59,7 +73,7 @@ export default function VolumeControl({ volume, onChange, activePopover, onPopov
               max={1}
               step={0.01}
               value={volume}
-              onChange={(e) => onChange(parseFloat(e.target.value))}
+              onChange={handleSliderChange}
               className="up-volume-slider"
             />
           </div>

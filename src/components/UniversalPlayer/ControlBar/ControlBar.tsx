@@ -29,6 +29,9 @@ interface ControlBarProps {
   onTogglePlay: () => void;
   onSeek: (time: number) => void;
   onVolumeChange: (volume: number) => void;
+  onToggleMute?: () => void;
+  /** 音量变化时弹出 3s 音量条（G2：点播模式与 IPTV 一致） */
+  onVolumePopup?: () => void;
   onPlaybackRateChange: (rate: number) => void;
   onDecoderModeChange: (mode: DecoderMode) => void;
   onTogglePiP: () => void;
@@ -38,7 +41,8 @@ interface ControlBarProps {
   onRefresh?: () => void;
   onScreenshot?: () => void;
   isMobile?: boolean;
-  isBuffering?: boolean;
+  /** 播放错误态：透传给全屏按钮，错误时禁用全屏（C4 守卫一致） */
+  hasError?: boolean;
   levels: PlayerLevel[];
   currentLevel: number;
   onLevelChange: (level: number) => void;
@@ -63,6 +67,8 @@ export default function ControlBar({
   onTogglePlay,
   onSeek,
   onVolumeChange,
+  onToggleMute,
+  onVolumePopup,
   onPlaybackRateChange,
   onDecoderModeChange,
   onTogglePiP,
@@ -72,7 +78,7 @@ export default function ControlBar({
   onRefresh,
   onScreenshot,
   isMobile = false,
-  isBuffering = false,
+  hasError = false,
   levels,
   currentLevel,
   onLevelChange,
@@ -86,6 +92,7 @@ export default function ControlBar({
 }: ControlBarProps) {
   const isPlaying = usePlayerStore(s => s.isPlaying);
   const isPlayerLoading = usePlayerStore(s => s.isPlayerLoading);
+  const isReadyToPlay = usePlayerStore(s => s.isReadyToPlay);
   const volume = usePlayerStore(s => s.volume);
   const playbackRate = usePlayerStore(s => s.playbackRate);
   const decoderMode = usePlayerStore(s => s.decoderMode);
@@ -113,7 +120,7 @@ export default function ControlBar({
       {isMobile ? (
         /* 移动端单行布局：播放 / 进度条 / 时间轴 / 全屏 同行（桌面端不受影响） */
         <div className="up-control-mobile-row">
-          <PlayButton isPlaying={isPlaying} disabled={(isBuffering && !isPlaying) || isPlayerLoading} onClick={onTogglePlay} />
+          <PlayButton isPlaying={isPlaying} disabled={isPlayerLoading && !isReadyToPlay} onClick={onTogglePlay} />
           <ProgressBar
             mode={mode}
             currentTime={currentTime}
@@ -123,7 +130,7 @@ export default function ControlBar({
           />
           {isVideoMode && <TimeDisplay currentTime={currentTime} duration={videoDuration} />}
           {isLiveLike && onRefresh && <RefreshButton onClick={onRefresh} />}
-          <FullscreenButton containerRef={containerRef} />
+          <FullscreenButton containerRef={containerRef} hasError={hasError} />
         </div>
       ) : (
         <>
@@ -146,8 +153,9 @@ export default function ControlBar({
               <DuoIcon primary={SkipBack} secondary={StepBack} size="md" />
             </button>
           )}
-          {/* 缓冲中仍可点击暂停；加载/切集期禁用（此时点播放无意义，且 play() 排队会被切源中断） */}
-          <PlayButton isPlaying={isPlaying} disabled={(isBuffering && !isPlaying) || isPlayerLoading} onClick={onTogglePlay} />
+          {/* 缓冲中是否暂停由 togglePlay 统一决定（缓冲中不暂停，防缓冲锁死）；
+              仅加载/切集未就绪时禁用按钮（此时点播放无意义，且 play() 排队会被切源中断） */}
+          <PlayButton isPlaying={isPlaying} disabled={isPlayerLoading && !isReadyToPlay} onClick={onTogglePlay} />
           {hasNextEpisode !== undefined && !isMobile && (
             <button
               disabled={!hasNextEpisode}
@@ -178,6 +186,8 @@ export default function ControlBar({
             <VolumeControl
               volume={volume}
               onChange={onVolumeChange}
+              onToggleMute={onToggleMute}
+              onVolumePopup={onVolumePopup}
               activePopover={activePopover}
               onPopoverChange={onPopoverChange}
             />
@@ -226,7 +236,7 @@ export default function ControlBar({
           {!isMobile && (
             <div className="up-control-window">
               <PiPButton isPiP={isPiP} onClick={onTogglePiP} />
-              <FullscreenButton containerRef={containerRef} />
+              <FullscreenButton containerRef={containerRef} hasError={hasError} />
             </div>
           )}
           {slots?.right}

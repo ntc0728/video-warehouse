@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores';
 import { playerToast } from '../PlayerToast';
-import type { PlatformType, PlayerMode, LoopMode } from '@/types/player';
+import { LOOP_CYCLE } from '../lib/utils';
+import type { PlatformType, PlayerMode } from '@/types/player';
 
 interface UseKeyboardShortcutsOptions {
   platform: PlatformType;
@@ -9,14 +10,13 @@ interface UseKeyboardShortcutsOptions {
   isControlsVisible: boolean;
   showControls: () => void;
   hideControls: () => void;
-  playerCore: { togglePlay: () => void; setVolume: (v: number) => void; seek: (time: number) => void; getCurrentTime: () => number; getDuration: () => number };
+  playerCore: { togglePlay: () => void; setVolume: (v: number) => void; toggleMute: () => void; seek: (time: number) => void; getCurrentTime: () => number; getDuration: () => number };
   showVolumePopupWithTimer: () => void;
   toggleFullscreen?: () => void;
   onPrevEpisode?: () => void;
   onNextEpisode?: () => void;
 }
 
-const LOOP_CYCLE: LoopMode[] = ['none', 'single', 'list'];
 const SEEK_DEBOUNCE_MS = 100;
 
 export function useKeyboardShortcuts({
@@ -42,10 +42,11 @@ export function useKeyboardShortcuts({
     const debouncedSeek = (time: number) => {
       if (seekDebounceRef.current) clearTimeout(seekDebounceRef.current);
       seekDebounceRef.current = setTimeout(() => {
-        // 缓冲/加载中不执行键盘 seek（与长按快进守卫一致，审查报告 1.5）：
-        // 缓冲中 seek 到未缓冲位置会引发二次缓冲，且 seek 提示会造成「已跳转」假象
-        const { isBuffering, isPlayerLoading } = usePlayerStore.getState();
-        if (isBuffering || isPlayerLoading) {
+        // C3 统一 seek 策略：仅加载未就绪（isPlayerLoading && !isReadyToPlay）拒绝；
+        // 缓冲中允许 seek（跳到已缓冲位置可立即恢复，与拖拽 ProgressBar 一致）。
+        // seek 提示统一走 playerCore.seek（seeked 生效后『已跳转』）。
+        const { isPlayerLoading, isReadyToPlay } = usePlayerStore.getState();
+        if (isPlayerLoading && !isReadyToPlay) {
           seekDebounceRef.current = null;
           return;
         }
@@ -83,13 +84,8 @@ export function useKeyboardShortcuts({
           case 'm':
           case 'M':
             e.preventDefault();
-            if (volume > 0) {
-              usePlayerStore.getState().setMutedVolume(volume);
-              playerCore.setVolume(0);
-            } else {
-              const prev = usePlayerStore.getState().mutedVolume;
-              playerCore.setVolume(prev > 0 ? prev : 1);
-            }
+            // C2：静音统一走 playerCore.toggleMute（记忆原音量，解除恢复原值）
+            playerCore.toggleMute();
             break;
           case 'Escape':
             if (isControlsVisible) {
@@ -135,13 +131,8 @@ export function useKeyboardShortcuts({
         case 'm':
         case 'M':
           e.preventDefault();
-          if (volume > 0) {
-            usePlayerStore.getState().setMutedVolume(volume);
-            playerCore.setVolume(0);
-          } else {
-            const prev = usePlayerStore.getState().mutedVolume;
-            playerCore.setVolume(prev > 0 ? prev : 1);
-          }
+          // C2：静音统一走 playerCore.toggleMute（记忆原音量，解除恢复原值）
+          playerCore.toggleMute();
           break;
         case 'l':
         case 'L': {

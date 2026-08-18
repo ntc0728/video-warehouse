@@ -3,6 +3,7 @@ import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
 import { playerToast } from '../PlayerToast';
+import { getResolutionLabel } from '../lib/utils';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
 import type { DecoderMode, PlayerLevel } from '@/types/player';
@@ -512,6 +513,22 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     video.volume = Math.max(0, Math.min(1, vol));
   }, []);
 
+  /**
+   * 统一的静音切换（C2：VolumeControl 喇叭 / 键盘 M 共用，消除「0↔1 满音量」与
+   * 「0↔记忆值」两条路径的语义不一致）：
+   * - 当前有声 → 记住当前音量（mutedVolume），静音
+   * - 当前静音 → 恢复记忆值（非满音量；无记忆时兜底 1）
+   */
+  const toggleMute = useCallback(() => {
+    const { volume, mutedVolume } = usePlayerStore.getState();
+    if (volume > 0) {
+      usePlayerStore.getState().setMutedVolume(volume);
+      setVideoVolume(0);
+    } else {
+      setVideoVolume(mutedVolume > 0 ? mutedVolume : 1);
+    }
+  }, [setVideoVolume]);
+
   const setVideoPlaybackRate = useCallback((rate: number) => {
     if (videoRef.current) videoRef.current.playbackRate = rate;
   }, []);
@@ -545,6 +562,12 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     if (adapterRef.current) {
       adapterRef.current.setCurrentLevel(level);
       setCurrentLevel(level);
+      // G4 清晰度切换反馈：与倍速/循环/镜像/比例提示一致（R3 复用 getResolutionLabel）
+      const levels = adapterRef.current.getLevels();
+      const label = level === -1
+        ? '自动'
+        : (levels[level] ? getResolutionLabel(levels[level]) : '自动');
+      playerToast(`清晰度：${label}`);
     }
   }, [setCurrentLevel]);
 
@@ -571,6 +594,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     togglePlay,
     seek,
     setVolume: setVideoVolume,
+    toggleMute,
     setPlaybackRate: setVideoPlaybackRate,
     togglePiP,
     switchLevel,

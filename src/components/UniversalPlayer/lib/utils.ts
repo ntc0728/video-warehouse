@@ -1,4 +1,21 @@
+import type { LoopMode, PlayerLevel } from '@/types/player';
+
 const VOLUME_POPUP_DELAY = 3000;
+
+/** 循环模式切换顺序（R6：useKeyboardShortcuts 与 LoopButton 共用，避免重复定义） */
+export const LOOP_CYCLE: LoopMode[] = ['none', 'single', 'list'];
+
+/** 根据清晰度 level 生成展示标签（R3：ResolutionSwitch / MobileMoreSheet / switchLevel 共用） */
+export function getResolutionLabel(level: PlayerLevel): string {
+  if (level.height >= 2160) return '4K';
+  if (level.height >= 1440) return '2K';
+  if (level.height >= 1080) return '1080p';
+  if (level.height >= 720) return '720p';
+  if (level.height >= 480) return '480p';
+  if (level.height >= 360) return '360p';
+  if (level.height > 0) return `${level.height}p`;
+  return level.name || '未知';
+}
 
 // 切集/切线路时的操作提示抑制窗口（毫秒）
 let sourceToastSuppressUntil = 0;

@@ -67,3 +67,22 @@ export async function exitFullscreen(videoElement?: HTMLVideoElement | null) {
   if (d.mozCancelFullScreen) return d.mozCancelFullScreen();
   if (d.msExitFullscreen) return d.msExitFullscreen();
 }
+
+/**
+ * 统一的全屏切换入口（C4/R2：FullscreenButton / F 键 / 双击 三处共用）：
+ * - 已全屏 → 退出（videoElement 仅用于 iOS 视频级全屏退出，其余走 document.exitFullscreen）
+ * - 未全屏 → 对容器请求全屏
+ * - hasError 为真时统一拒绝（三处行为一致，消除守卫不一致）
+ */
+export async function toggleFullscreen(
+  container: HTMLElement | null | undefined,
+  videoElement?: HTMLVideoElement | null,
+  hasError?: boolean,
+): Promise<void> {
+  if (hasError) return;
+  if (getFullscreenElement()) {
+    await exitFullscreen(videoElement);
+  } else if (container) {
+    await requestFullscreen(container);
+  }
+}

@@ -1,12 +1,13 @@
 import { useCallback, useRef } from 'react';
 import {
   Gauge, Repeat, AlarmClock, Headphones, Subtitles, FlipHorizontal2, RectangleHorizontal,
-  ChevronRight, MonitorPlay, X,
+  ChevronRight, MonitorPlay, Volume2, VolumeX, PictureInPicture2, X,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui';
 import Switch from '@/components/ui/Switch';
 import { Icon } from '@/components/ui/Icon';
 import { mobileSettingsToast } from '../PlayerToast';
+import { getResolutionLabel } from '../lib/utils';
 import type { LoopMode, PlayerLevel } from '@/types/player';
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -39,17 +40,6 @@ const RATIO_LABELS: Record<string, string> = {
   fill: '铺满',
 };
 
-function getResolutionLabel(level: PlayerLevel): string {
-  if (level.height >= 2160) return '4K';
-  if (level.height >= 1440) return '2K';
-  if (level.height >= 1080) return '1080p';
-  if (level.height >= 720) return '720p';
-  if (level.height >= 480) return '480p';
-  if (level.height >= 360) return '360p';
-  if (level.height > 0) return `${level.height}p`;
-  return level.name || '未知';
-}
-
 interface MobileMoreSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -61,6 +51,13 @@ interface MobileMoreSheetProps {
   currentLevel: number;
   onLevelChange: (level: number) => void;
   isHls: boolean;
+  /** G3：移动端音量调节 */
+  volume: number;
+  onVolumeChange: (volume: number) => void;
+  onToggleMute?: () => void;
+  /** G6：移动端画中画入口（不支持的环境隐藏） */
+  isPiP: boolean;
+  onTogglePiP: () => void;
   sleepMinutes: number;
   onSleepChange: (minutes: number) => void;
   backgroundPlay: boolean;
@@ -95,11 +92,32 @@ function ChipRow<T extends string | number>({ options, value, onChange }: {
   );
 }
 
+/** 移动端音量滑块：显示当前百分比 + 拖动调音量（G3） */
+function VolumeSlider({ volume, onChange }: { volume: number; onChange: (v: number) => void }) {
+  return (
+    <div className="up-ms-volume">
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={volume}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="up-ms-volume-slider"
+        aria-label="音量"
+      />
+      <span className="up-ms-volume-value">{Math.round(volume * 100)}%</span>
+    </div>
+  );
+}
+
 export default function MobileMoreSheet({
   visible, onClose,
   currentRate, onPlaybackRateChange,
   loopMode, onLoopModeChange,
   levels, currentLevel, onLevelChange, isHls,
+  volume, onVolumeChange, onToggleMute,
+  isPiP, onTogglePiP,
   sleepMinutes, onSleepChange,
   backgroundPlay, onBackgroundPlayChange,
   subtitleEnabled, onSubtitleToggle, onOpenSubtitleSettings, onImportSubtitle,
@@ -134,6 +152,41 @@ export default function MobileMoreSheet({
         </button>
       </div>
       <div className="up-ms-body">
+        {/* 音量（G3：移动端缺少音量调节的唯一入口） */}
+        <div className="up-ms-card">
+          <div className="up-ms-row">
+            <div className="up-ms-label"><Icon icon={Volume2} size="sm" /> 音量</div>
+            <div className="up-ms-volume-control">
+              <VolumeSlider volume={volume} onChange={onVolumeChange} />
+              <button
+                className="up-ms-mute-btn"
+                onClick={() => onToggleMute?.()}
+                aria-label="静音切换"
+              >
+                <Icon icon={volume === 0 ? VolumeX : Volume2} size="sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 画中画（G6：仅支持环境显示） */}
+        {typeof document !== 'undefined' && document.pictureInPictureEnabled && (
+          <div className="up-ms-card">
+            <div className="up-ms-row">
+              <div className="up-ms-label"><Icon icon={PictureInPicture2} size="sm" /> 画中画</div>
+              <button
+                className="up-ms-chip up-ms-chip--on"
+                onClick={() => {
+                  onTogglePiP();
+                  onClose();
+                }}
+              >
+                {isPiP ? '退出' : '开启'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 倍速 */}
         <div className="up-ms-card">
           <div className="up-ms-row">
