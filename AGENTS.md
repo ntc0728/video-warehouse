@@ -75,7 +75,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | IPTV | `/iptv` | IPTVChannelList + EPGProgramList | M3U 解析 + EPG XMLTV 匹配 |
 | 设置 | `/settings` | List + Modal + ThemeSwitcher | useSettingsStore (localStorage AES-GCM) |
 | 收藏 | `/collections` | RecordShell + CollectionGrid | useUserStore (IndexedDB) |
-| 历史 | `/history` | RecordShell + Timeline + ProgressBar | useUserStore (IndexedDB) |
+| 历史 | `/history` | 融合 Tab（综合/视频/IPTV）+ RecordCard 横版卡 + 更多筛选（状态 chips + 排序）+ 批量管理 + 桌面算珠时间轴 | useUserStore + useIPTVStore (IndexedDB) |
 | 源检测 | `/source-checker` | SourceTable | videoService.checkAllVideoSources |
 | 人物 | `/person/:id` | PersonHeader + MovieCredits | TMDB person detail + credits |
 | IPTV 播放 | `/iptv/play` | IPTVPlayer (独立全屏) | IPTV channel stream |
@@ -321,7 +321,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-17 校准）。
+> test 数为 `npx playwright test --list` 实际枚举数（2026-08-18 校准）。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
@@ -332,7 +332,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
-| `src/pages/History/` | `scripts/history.spec.ts` | 8 |
+| `src/pages/History/` | `scripts/history.spec.ts` | 11 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
 | 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
@@ -348,10 +348,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
 | `src/components/UniversalPlayer/` | player + iptv + iptv-player | 40 |
-| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 105 |
+| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 110 |
 | `src/components/SearchBox/` | browse + cross-page | 40 |
-| `src/components/RecordShell/` | collections + history | 12 |
-| `src/components/StatusTabs/` | collections + history | 12 |
+| `src/components/RecordShell/` | collections + history | 17 |
+| `src/components/RecordFilterPanel/` | collections + history | 17 |
+| `src/components/StatusTabs/` | collections + history | 17 |
 | `src/components/FilterBar/` | browse | 24 |
 | `src/components/HeroBanner/` | home + cross-page | 56 |
 | `src/components/Layout/` | 全部页面加载测试（home/browse/detail/...各首屏用例） | 逐个 spec 首屏用例 |

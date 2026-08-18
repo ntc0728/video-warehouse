@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RecordFilterPanel — 「更多筛选」折叠面板（收藏页 / 历史页共用）
+   状态 chips（仅影视项）+ 排序；自 History.css 迁移并去 .history- 前缀。
+   排序控件：空间足够显示 chips，空间不足（容器查询）降级为下拉框。
+   ═══════════════════════════════════════════════════════════════════════════ */
+.record-filter-panel {
+  display: flex;
+  flex-flow: row wrap;
+  gap: var(--space-md) var(--space-lg);
+  align-items: center;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  container-type: inline-size;
+}
+
+.record-filter-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.record-filter-label {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.record-filter-chips {
+  display: inline-flex;
+  gap: var(--space-sm);
+}
+
+/* 观看状态 chip：文本左侧彩色圆点（--chip-dot-color），is-active 时圆点转反色 */
+.record-filter-chip {
+  display: inline-flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.record-filter-chip:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.record-filter-chip.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.record-filter-chip--status .record-filter-chip__dot {
+  flex-shrink: 0;
+  width: var(--space-sm);
+  height: var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--chip-dot-color, var(--color-text));
+}
+.record-filter-chip--status.is-active .record-filter-chip__dot {
+  background: var(--color-text-inverse);
+}
+
+/* ── 排序控件：空间足够显示 chips，不足降级为下拉框 ──
+   以 .record-filter-panel 为容器（container-type: inline-size），
+   容器查询切下拉；app 恒移动 → 恒走下拉框。 */
+.record-filter-row--sort {
+  flex-flow: row wrap;
+}
+
+.record-filter-chips--sort {
+  display: flex;
+  flex-flow: row wrap;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.record-filter-sort-dropdown {
+  display: none;
+}
+
+/* 容器宽度不足 → 隐藏排序 chips、显示下拉框（并压缩下拉宽度） */
+@container (max-width: 720px) {
+  .record-filter-chips--sort {
+    display: none;
+  }
+  .record-filter-sort-dropdown {
+    display: inline-flex;
+  }
+  .record-filter-sort-dropdown .source-multi-trigger {
+    min-width: 0;
+  }
+}
+
+/* 小视口（375px）下拉框进一步收窄（source-multi-dropdown 默认 min-width 来自 --layout-select-w） */
+@media (width <= 375px) {
+  .record-filter-row--sort .source-multi-trigger {
+    min-width: var(--layout-select-w-mobile);
+  }
+}

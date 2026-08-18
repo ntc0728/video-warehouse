@@ -415,9 +415,9 @@ export default function PlayerPage() {
       if (hasEpisodes && !currentEp) return;
       const epLabel = currentEp ? `第${currentEp.number}集` : (!hasEpisodes ? currentSourceNameRef.current : undefined);
       const vodId = id.startsWith('tmdb-') ? undefined : id;
-      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: hasEpisodes ? selectedSeasonRef.current : undefined });
+      updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: hasEpisodes ? selectedSeasonRef.current : undefined, rating: tmdbDetail?.vote_average });
     }
-  }, [id, updateHistoryProgress]);
+  }, [id, updateHistoryProgress, tmdbDetail]);
 
   const handleBack = useSmartBack(id ? `/detail/${id}` : undefined);
 

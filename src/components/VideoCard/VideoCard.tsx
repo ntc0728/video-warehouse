@@ -45,6 +45,9 @@ interface VideoCardProps {
   navigateTo?: string;
   /** 自定义导航 state，与 navigateTo 配合使用 */
   navigateState?: Record<string, unknown>;
+  /** 观看状态（收藏页传入）：传入时封面角标改为「左下=年份+类型合并、右下=观看状态」；
+   *  不传时保持默认「左下=年份、右下=类型」。仅竖版卡片使用，其他页面零影响。 */
+  status?: 'unwatched' | 'watching' | 'watched';
 }
 
 const typeLabels: Record<string, string> = {
@@ -52,6 +55,12 @@ const typeLabels: Record<string, string> = {
   tv: '剧集',
   variety: '综艺',
   anime: '动漫',
+};
+
+const STATUS_LABELS: Record<'unwatched' | 'watching' | 'watched', string> = {
+  unwatched: '未观看',
+  watching: '正在看',
+  watched: '已看完',
 };
 
 /**
@@ -97,6 +106,7 @@ const VideoCard = memo(function VideoCard({
   duration,
   navigateTo,
   navigateState,
+  status,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -306,16 +316,36 @@ const VideoCard = memo(function VideoCard({
           </button>
         )}
 
-        {/* 年份 — 左下角（批量模式下隐藏） */}
-        {!batchMode && video.year && (
-          <span className="video-card-year-badge">{video.year}</span>
-        )}
+        {/* 封面角标：传 status（收藏页）→ 左下=年份+类型合并、右下=观看状态；
+            不传（Browse/Home/Detail 等）→ 原布局：左下=年份、右下=类型 */}
+        {!batchMode && status ? (
+          <>
+            <span className="video-card-badges-bl">
+              {video.year && <span className="video-card-badge-item">{video.year}</span>}
+              {video.type && (
+                <span className="video-card-badge-item video-card-badge-item--type">
+                  {typeLabels[video.type] || video.type}
+                </span>
+              )}
+            </span>
+            <span className={`video-card-status status--${status}`}>
+              {STATUS_LABELS[status]}
+            </span>
+          </>
+        ) : (
+          <>
+            {/* 年份 — 左下角（批量模式下隐藏） */}
+            {!batchMode && video.year && (
+              <span className="video-card-year-badge">{video.year}</span>
+            )}
 
-        {/* 类型 — 右下角（批量模式下隐藏） */}
-        {!batchMode && video.type && (
-          <span className="video-card-type">
-            {typeLabels[video.type] || video.type}
-          </span>
+            {/* 类型 — 右下角（批量模式下隐藏） */}
+            {!batchMode && video.type && (
+              <span className="video-card-type">
+                {typeLabels[video.type] || video.type}
+              </span>
+            )}
+          </>
         )}
 
         {/* 横版封面叠加层：源+集数徽章 + 底部渐变进度 */}

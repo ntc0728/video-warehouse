@@ -1,9 +1,6 @@
 /* History — 历史页 */
-/* 页面级 padding 已去除(让 .video-card-grid 水平边距 100% 自管),
-   改由 filter-bar / title-row / status-tabs / group-title 等子元素自管水平 padding。 */
-
-/* 布局外壳（左侧筛选栏 + 右侧卡片区）由 RecordShell 组件提供，
-   .record-search / .category-segmented / .record-shell 等样式见 RecordShell.css。 */
+/* 布局外壳（顶部卡片：融合 Tab + 操作按钮）由 RecordShell 组件提供，
+   状态筛选 / 排序 / 卡片区 / 算珠时间轴样式在本文件内。 */
 
 .history-content {
   position: relative;
@@ -157,8 +154,8 @@
   html:not([data-device="app"]) .history-content {
     display: flex;
     flex-direction: row;
+    gap: var(--space-3xs);
     align-items: stretch;
-    gap: 1px;
   }
 
   html:not([data-device="app"]) .history-content::before {
@@ -169,11 +166,11 @@
     position: sticky;
     top: 0;
     display: block;
-    align-self: flex-start;
     flex-shrink: 0;
-    height: calc(100vh - var(--header-height));
+    align-self: flex-start;
     width: clamp(4.5rem, 6vw, 6rem);
     min-width: 0;
+    height: calc(100vh - var(--header-height));
   }
 
   html:not([data-device="app"]) .history-timeline__rail {
@@ -217,9 +214,9 @@
     position: absolute;
     top: 50%;
     right: calc(50% + var(--timeline-dot-size, 0.75rem) / 2 + var(--space-sm));
-    transform: translateY(-50%);
     color: inherit;
     white-space: nowrap;
+    transform: translateY(-50%);
   }
 
   html:not([data-device="app"]) .history-timeline__bead:hover {
@@ -258,7 +255,6 @@
     position: absolute;
     top: 50%;
     left: calc(50% + var(--timeline-dot-size, 0.75rem) / 2 + var(--space-sm));
-    transform: translateY(-50%);
     display: inline-flex;
     flex-shrink: 0;
     justify-content: center;
@@ -272,6 +268,7 @@
     font-size: var(--timeline-count-font, 0.6875rem);
     font-weight: 600;
     line-height: 1;
+    transform: translateY(-50%);
   }
 
   html:not([data-device="app"]) .history-timeline__bead.is-active .history-timeline__count {
@@ -295,48 +292,34 @@
   }
 }
 
-/* 历史页 video tab 横版卡片网格列数：2 (≤767) → 3 (768-1279) → 4 (≥1280) → 5 (≥1920) */
-.history-content .history-group-body .video-card-grid {
-  --card-cols: 3;
+/* 历史页统一横版记录卡网格：
+   ≥1280px 桌面 → 3 列（最多 3 列，不随超宽屏膨胀）
+   1280px 以下（平板/小桌面/移动）→ 2 列
+   ≤480px 手机 → 1 列（全宽横版卡）
+   app 恒移动：恒 2 列（副本） */
+.history-content .history-group-body .history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
 }
-
-@media (width <= 767px) {
-  .history-content .history-group-body .video-card-grid {
-    --card-cols: 2;
-  }
-}
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .history-content .history-group-body .video-card-grid {
-    --card-cols: 2;
-  }
-
-
 
 @media (width >= 1280px) {
-  html:not([data-device="app"]) .history-content .history-group-body .video-card-grid {
-    --card-cols: 4;
+  html:not([data-device="app"]) .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+/* 9.1 app 恒移动：恒 2 列副本（覆盖 ≥1280 的 3 列） */
+html[data-device="app"] .history-content .history-group-body .history-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (width <= 480px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
 
-@media (width >= 1920px) {
-  html:not([data-device="app"]) .history-content .history-group-body .video-card-grid {
-    --card-cols: 5;
-  }
-}
-
-/* 历史页 IPTV 频道网格沿用全局 .iptv-channel-grid 默认列数(2/3/5),不单独覆盖 */
-
-/* 历史页记录卡片 hover：整体上移，并覆盖内部卡片的 hover transform */
-.history-content .record-card:hover {
-  transform: translateY(-3px);
-}
-
-/* 覆盖 VideoCard / IPTVChannelCard 自身的 hover transform，避免叠加 */
-.history-content .record-card:hover .video-card,
-.history-content .record-card:hover .iptv-channel-card {
-  transform: none;
-}
+/* 记录卡 hover 上移由 RecordCard.css 提供（.history-page .record-card:hover） */
 
 .history-sentinel {
   height: var(--comp-thumb-size);
@@ -349,9 +332,6 @@
   .history-body {
     padding: 0 var(--space-sm);
   }
-  .record-card__time {
-    font-size: var(--text-xs);
-  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -361,8 +341,17 @@
   html[data-device="app"] .history-body {
     padding: 0 var(--space-sm);
   }
-  html[data-device="app"] .record-card__time {
-    font-size: var(--text-xs);
-  }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   融合 Tab（综合/视频/IPTV）+ 操作按钮组样式已迁至 RecordShell.css
+   （.record-status--fused / .record-actions / .action-btn，去 .history-page 前缀），
+   收藏页与历史页共用，此处不再重复定义。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   「更多筛选」折叠面板样式已抽为公共组件 RecordFilterPanel
+   （src/components/RecordFilterPanel/RecordFilterPanel.css），历史页与收藏页共用，
+   此处不再重复定义。
+   ═══════════════════════════════════════════════════════════════════════ */
 
 
