@@ -1,5 +1,4 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
-import { useThrottle } from '@/hooks/useThrottle';
 import './OverlayScrollbar.css';
 
 interface OverlayScrollbarProps {
@@ -9,11 +8,16 @@ interface OverlayScrollbarProps {
 /**
  * OverlayScrollbar — 覆盖式自定义滚动条
  *
- * thumb 的尺寸/位置直接写入 DOM（style.height / transform），**不经 React state**：
- * 滚动是高频事件，若每帧 setState 触发重渲染，主线程繁忙（长列表 content-visibility
- * 布局、入场动画、Keep-Alive 多页常驻）时 thumb 更新会被渲染调度挤占，表现为
- * 「页面在滚、滚动条卡在顶部不跟手」。直接 DOM 写入绕开 React 调度，始终实时跟手。
- * 仅 visible（有/无滚动）切换走 state——低频，且同值 setState React 自动 bail out。
+ * 实现要点（踩坑记录，勿回退）：
+ * 1. thumb 尺寸/位置直接写 DOM（style.height/transform），**不经 React state**——
+ *    高频滚动下 setState 渲染会被主线程繁忙（content-visibility 布局、入场动画、
+ *    Keep-Alive 多页常驻）挤占，表现为「页面在滚、滚动条卡顶不跟手」。
+ * 2. 所有监听器（scroll / ResizeObserver / MutationObserver）**直接调用 updateThumb**，
+ *    不用 rAF 节流——`requestAnimationFrame` 在 headless / 后台标签 / 节能模式 /
+ *    主线程繁忙时会延迟甚至不触发，scroll 更新会被吞掉（实测 thumb 固定顶部）。
+ *    scroll 事件本身由浏览器合成器以 60fps 上限派发，DOM 写入成本极低，无需节流；
+ *    MutationObserver 回调按 microtask 批次合并，天然低频。
+ * 3. 仅 visible（有/无滚动）切换走 state——低频，且同值 setState React 自动 bail out。
  */
 export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarProps) {
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -47,32 +51,29 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     updateThumb();
   }, [updateThumb]);
 
-  const throttledUpdateThumb = useThrottle(updateThumb);
-
-  // 监听滚动事件
+  // 监听滚动事件 + 容器尺寸变化（直接调用，不经 rAF 节流）
   useEffect(() => {
     const el = scrollContainer.current;
     if (!el) return;
-    el.addEventListener('scroll', throttledUpdateThumb, { passive: true });
+    el.addEventListener('scroll', updateThumb, { passive: true });
     updateThumb();
-    const ro = new ResizeObserver(throttledUpdateThumb);
+    const ro = new ResizeObserver(updateThumb);
     ro.observe(el);
     return () => {
-      el.removeEventListener('scroll', throttledUpdateThumb);
+      el.removeEventListener('scroll', updateThumb);
       ro.disconnect();
     };
-  }, [scrollContainer, throttledUpdateThumb, updateThumb]);
+  }, [scrollContainer, updateThumb]);
 
   // 监听内容 DOM 变化（2026-08-13 修复「内容变矮后滚动条残留」）：
   // 滚动容器的直接子级（.page-transition）是 flex:1 恒填满视口高度，内容变矮时
   // 容器/子级盒高都不变、scrollTop 不动——scroll 事件与 ResizeObserver 均不触发，
   // thumb 残留。DOM 变化（Keep-Alive display 切换、设置页切 tab、异步数据渲染、
   // 图片占位替换）是「内容变了」的可靠信号，借此重算 thumb 尺寸/位置。
-  // MutationObserver 回调本身按 microtask 批次合并，再经 useThrottle 节流，开销可控。
   useEffect(() => {
     const el = scrollContainer.current;
     if (!el) return;
-    const mo = new MutationObserver(throttledUpdateThumb);
+    const mo = new MutationObserver(updateThumb);
     mo.observe(el, {
       childList: true,
       subtree: true,
@@ -80,7 +81,7 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
       attributeFilter: ['style', 'class'],
     });
     return () => mo.disconnect();
-  }, [scrollContainer, throttledUpdateThumb]);
+  }, [scrollContainer, updateThumb]);
 
   // 延迟重试：处理 ref 可能延迟绑定的情况
   useEffect(() => {
