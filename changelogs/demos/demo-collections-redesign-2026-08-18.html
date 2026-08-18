@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>收藏页 UI 整改原型 · 方案 B（融合 Tab + 分区）</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f8fa;
+    --color-background-tertiary: #f1f2f4;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5f5e5a;
+    --color-text-tertiary: #888780;
+    --color-border-tertiary: rgba(0, 0, 0, 0.12);
+    --color-border-secondary: rgba(0, 0, 0, 0.22);
+    --color-primary: #7f77dd;
+    --color-primary-soft: rgba(127, 119, 221, 0.12);
+    --color-success: #22c55e;
+    --color-danger: #e24b4a;
+    --color-info: #378add;
+    --radius-sm: 8px;
+    --radius-lg: 12px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-base: 13px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--color-background-tertiary);
+    color: var(--color-text-primary);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--space-lg) var(--space-md) 96px;
+  }
+
+  .page-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0 0 var(--space-md);
+  }
+
+  /* ── 顶部 record-aside：融合 Tab + 操作按钮 ── */
+  .record-aside {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+  }
+
+  .status-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .status-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .status-tab--active {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+  .status-tab__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-tab-color, var(--color-text-tertiary));
+  }
+  .status-tab__count {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    background: var(--color-background-tertiary);
+    border-radius: 999px;
+    padding: 0 7px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .record-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-left: auto;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .action-btn--active {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+  .action-btn svg { display: block; }
+
+  .sort-select {
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  /* ── 分区标题 ── */
+  .section { margin-bottom: var(--space-lg); }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    margin: 0 0 var(--space-sm);
+  }
+  .section-head h2 {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .section-head .count {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── 影视：竖版海报墙 ── */
+  .video-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-md);
+  }
+  .vcard {
+    position: relative;
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s ease;
+  }
+  .vcard--selected { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-soft); }
+  .vcard__poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    background: var(--color-background-tertiary);
+  }
+  .vcard__poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .vcard__status {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 4;
+    font-size: var(--text-xs);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+  /* 左下角：年份 + 类型 组合徽标（合并原项目的「左下年份」与「右下类型」） */
+  .vcard__meta {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 4;
+    display: flex;
+    gap: 4px;
+  }
+  .vcard__meta span {
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.88);
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 999px;
+    padding: 2px 8px;
+    line-height: 1.4;
+  }
+  .status--watched { background: rgba(34, 197, 94, 0.92); }
+  .status--watching { background: rgba(217, 119, 6, 0.92); }
+  .status--unwatched { background: rgba(59, 130, 246, 0.92); }
+  .vcard__title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    padding: 8px 10px 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .vcard__rating {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    padding: 0 10px 10px;
+  }
+
+  /* ── 直播：原项目 IPTVChannelCard 竖排布局（台标封面在上 + 标题在下） ── */
+  .iptv-channel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-md);
+  }
+  .iptv-channel-card-wrap {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+  }
+  .iptv-channel-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius-sm);
+    background: var(--color-background-primary);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .iptv-channel-card-wrap:hover .iptv-channel-card {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+  }
+  .iptv-card-cover {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+    background-color: var(--color-background-tertiary);
+    overflow: hidden;
+    aspect-ratio: 3 / 2;
+  }
+  .iptv-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .iptv-card-group,
+  .iptv-card-source {
+    position: absolute;
+    bottom: 6px;
+    z-index: 2;
+    max-width: 56%;
+    padding: 0 7px;
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .iptv-card-group { right: 6px; }
+  .iptv-card-source { left: 6px; }
+  .iptv-card-info {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 2px;
+    justify-content: center;
+    min-width: 0;
+    padding: 8px 10px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+  }
+  .iptv-card-title {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .iptv-card-favorite {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+  }
+  .iptv-card-favorite.active {
+    color: #ff4d4f;
+    background: rgba(255, 77, 79, 0.18);
+  }
+
+  /* ── 批量勾选 / 删除（覆盖在卡片上） ── */
+  .pick-btn {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 0.5px solid var(--color-border-secondary);
+    background: rgba(255, 255, 255, 0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .pick-btn svg { width: 14px; height: 14px; }
+  body.batch .pick-btn { display: inline-flex; }
+  body.batch .iptv-card-favorite { display: none; }
+  .vcard .pick-btn--check { top: 8px; left: 8px; }
+  .iptv-channel-card-wrap .pick-btn--check { top: 8px; left: 8px; }
+  .pick-btn--del { top: 8px; right: 8px; color: var(--color-danger); }
+  .pick-btn--check.is-on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  body:not(.batch) .pick-btn--del { display: inline-flex; }
+
+  /* ── 批量操作底栏 ── */
+  .batch-action-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    display: none;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 999px;
+    padding: 10px 18px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+  body.batch .batch-action-bar { display: inline-flex; }
+  .batch-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+  }
+  .batch-action-btn--danger { color: var(--color-danger); }
+  .batch-action-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .empty {
+    text-align: center;
+    color: var(--color-text-tertiary);
+    padding: var(--space-lg) 0;
+  }
+
+  /* 窄屏：操作按钮降级为仅图标 */
+  @media (max-width: 640px) {
+    .action-btn .label { display: none; }
+    .action-btn { padding: 8px; }
+    .sort-select { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="page-title">收藏</h1>
+
+    <div class="record-aside">
+      <div class="status-tabs" id="tabs">
+        <button class="status-tab" data-tab="all" style="--status-tab-color:#7f77dd">
+          <span class="status-tab__dot"></span>综合<span class="status-tab__count" id="cnt-all">0</span>
+        </button>
+        <button class="status-tab" data-tab="video" style="--status-tab-color:#378add">
+          <span class="status-tab__dot"></span>视频<span class="status-tab__count" id="cnt-video">0</span>
+        </button>
+        <button class="status-tab" data-tab="iptv" style="--status-tab-color:#22c55e">
+          <span class="status-tab__dot"></span>IPTV<span class="status-tab__count" id="cnt-iptv">0</span>
+        </button>
+      </div>
+
+      <div class="record-actions">
+        <select class="sort-select" id="sort">
+          <option value="recent">最近收藏</option>
+          <option value="oldest">最早收藏</option>
+          <option value="title-asc">名称 A-Z</option>
+          <option value="title-desc">名称 Z-A</option>
+          <option value="rating-desc">评分高到低</option>
+          <option value="rating-asc">评分低到高</option>
+        </select>
+        <button class="action-btn" id="btn-batch">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span class="label">批量管理</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <div class="batch-action-bar">
+    <button class="batch-action-btn" id="btn-select-all">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span>全选</span>
+    </button>
+    <button class="batch-action-btn batch-action-btn--danger" id="btn-del" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      <span>删除</span>
+    </button>
+    <button class="batch-action-btn batch-action-btn--danger" id="btn-clear">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      <span>清除全部</span>
+    </button>
+  </div>
+
+<script>
+  const STATUS = {
+    unwatched: { label: '未观看', cls: 'status--unwatched' },
+    watching: { label: '正在看', cls: 'status--watching' },
+    watched: { label: '已看完', cls: 'status--watched' },
+  };
+
+  const TYPE_LABELS = { movie: '电影', tv: '剧集', variety: '综艺', anime: '动漫' };
+
+  const H = 3600 * 1000;
+  const now = Date.now();
+  const sampleVideos = [
+    { id: 'v1', title: '流浪地球2', poster: 'https://picsum.photos/seed/le2/300/450', rating: 8.3, status: 'watched', year: 2023, type: 'movie', addedAt: now - 1 * H },
+    { id: 'v2', title: '奥本海默', poster: 'https://picsum.photos/seed/opp/300/450', rating: 8.6, status: 'watching', year: 2023, type: 'movie', addedAt: now - 5 * H },
+    { id: 'v3', title: '周处除三害', poster: 'https://picsum.photos/seed/zc/300/450', rating: 8.1, status: 'unwatched', year: 2023, type: 'movie', addedAt: now - 26 * H },
+    { id: 'v4', title: '繁花', poster: 'https://picsum.photos/seed/fh/300/450', rating: 7.9, status: 'watched', year: 2023, type: 'tv', addedAt: now - 50 * H },
+    { id: 'v5', title: '年会不能停', poster: 'https://picsum.photos/seed/nh/300/450', rating: 7.7, status: 'unwatched', year: 2022, type: 'movie', addedAt: now - 80 * H },
+    { id: 'v6', title: '漫长的季节', poster: 'https://picsum.photos/seed/cj/300/450', rating: 9.0, status: 'watched', year: 2023, type: 'tv', addedAt: now - 120 * H },
+    { id: 'v7', title: '封神第一部', poster: 'https://picsum.photos/seed/fs/300/450', rating: 7.5, status: 'watching', year: 2023, type: 'movie', addedAt: now - 160 * H },
+    { id: 'v8', title: '热辣滚烫', poster: 'https://picsum.photos/seed/rl/300/450', rating: 7.0, status: 'unwatched', year: 2024, type: 'movie', addedAt: now - 220 * H },
+  ];
+  const sampleIptv = [
+    { id: 'i1', name: 'CCTV-1 综合', logo: 'https://picsum.photos/seed/cctv1/300/200', group: '央视', source: '默认源', favorite: true, lastPlayed: now - 2 * H },
+    { id: 'i2', name: '湖南卫视', logo: 'https://picsum.photos/seed/hn/300/200', group: '卫视', source: '默认源', favorite: true, lastPlayed: now - 10 * H },
+    { id: 'i3', name: 'BBC Earth', logo: 'https://picsum.photos/seed/bbc/300/200', group: '海外', source: '备用源', favorite: true, lastPlayed: now - 30 * H },
+    { id: 'i4', name: 'NHK 世界', logo: 'https://picsum.photos/seed/nhk/300/200', group: '海外', source: '备用源', favorite: true, lastPlayed: now - 70 * H },
+  ];
+
+  const state = {
+    tab: 'all',
+    sort: 'recent',
+    batch: false,
+    selected: new Set(),
+  };
+
+  const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+  const squareSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+  const trashSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';
+  const heartSvg = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-8-4.5-8-10a4.5 4.5 0 0 1 8-2.6A4.5 4.5 0 0 1 20 11c0 5.5-8 10-8 10z"/></svg>';
+
+  function sortVideos(list) {
+    const arr = list.slice();
+    const byAddedDesc = (a, b) => b.addedAt - a.addedAt;
+    switch (state.sort) {
+      case 'oldest': arr.sort((a, b) => a.addedAt - b.addedAt); break;
+      case 'title-asc': arr.sort((a, b) => a.title.localeCompare(b.title, 'zh-Hans-CN') || byAddedDesc(a, b)); break;
+      case 'title-desc': arr.sort((a, b) => b.title.localeCompare(a.title, 'zh-Hans-CN') || byAddedDesc(a, b)); break;
+      case 'rating-desc': arr.sort((a, b) => (b.rating - a.rating) || byAddedDesc(a, b)); break;
+      case 'rating-asc': arr.sort((a, b) => (a.rating - b.rating) || byAddedDesc(a, b)); break;
+      default: arr.sort(byAddedDesc);
+    }
+    return arr;
+  }
+
+  function videoCardHtml(v) {
+    const sel = state.selected.has(v.id) ? ' vcard--selected' : '';
+    const on = state.selected.has(v.id);
+    const st = STATUS[v.status];
+    const typeLabel = TYPE_LABELS[v.type] || v.type || '';
+    return `<div class="vcard${sel}" data-type="video" data-id="${v.id}">
+      <button class="pick-btn pick-btn--check ${on ? 'is-on' : ''}" data-id="${v.id}" data-type="video">${on ? checkSvg : squareSvg}</button>
+      <button class="pick-btn pick-btn--del" data-del="video" data-id="${v.id}">${trashSvg}</button>
+      <div class="vcard__poster">
+        <img src="${v.poster}" alt=""/>
+        <div class="vcard__meta">
+          <span>${v.year}</span>
+          <span>${typeLabel}</span>
+        </div>
+        <span class="vcard__status ${st.cls}">${st.label}</span>
+      </div>
+      <div class="vcard__title">${v.title}</div>
+      <div class="vcard__rating">★ ${v.rating.toFixed(1)}</div>
+    </div>`;
+  }
+
+  function iptvCardHtml(ch) {
+    const sel = state.selected.has(ch.id) ? ' iptv-channel-card--selected' : '';
+    const on = state.selected.has(ch.id);
+    const fav = ch.favorite ? ' active' : '';
+    return `<div class="iptv-channel-card-wrap${sel}" data-type="iptv" data-id="${ch.id}">
+      <div class="iptv-channel-card">
+        <button class="pick-btn pick-btn--check ${on ? 'is-on' : ''}" data-id="${ch.id}" data-type="iptv">${on ? checkSvg : squareSvg}</button>
+        <div class="iptv-card-cover">
+          <img src="${ch.logo}" alt=""/>
+          <span class="iptv-card-group">${ch.group}</span>
+          <span class="iptv-card-source">${ch.source}</span>
+        </div>
+        <div class="iptv-card-info">
+          <div class="iptv-card-title">${ch.name}</div>
+        </div>
+      </div>
+      <button class="iptv-card-favorite${fav}" data-fav="iptv" data-id="${ch.id}" aria-label="收藏">${heartSvg}</button>
+    </div>`;
+  }
+
+  function sectionHtml(title, count, inner) {
+    return `<section class="section">
+      <div class="section-head"><h2>${title}</h2><span class="count">${count} 项</span></div>
+      ${inner}
+    </section>`;
+  }
+
+  function render() {
+    document.body.classList.toggle('batch', state.batch);
+
+    // 计数
+    document.getElementById('cnt-all').textContent = sampleVideos.length + sampleIptv.length;
+    document.getElementById('cnt-video').textContent = sampleVideos.length;
+    document.getElementById('cnt-iptv').textContent = sampleIptv.length;
+
+    // tab 高亮
+    document.querySelectorAll('.status-tab').forEach(btn => {
+      btn.classList.toggle('status-tab--active', btn.dataset.tab === state.tab);
+    });
+
+    const showVideo = state.tab === 'all' || state.tab === 'video';
+    const showIptv = state.tab === 'all' || state.tab === 'iptv';
+    const videos = sortVideos(sampleVideos);
+
+    let html = '';
+    if (showVideo) {
+      const grid = videos.map(videoCardHtml).join('');
+      html += sectionHtml('影视', videos.length, `<div class="video-card-grid">${grid}</div>`);
+    }
+    if (showIptv) {
+      const list = sampleIptv
+        .slice()
+        .sort((a, b) => b.lastPlayed - a.lastPlayed)
+        .map(iptvCardHtml)
+        .join('');
+      html += sectionHtml('直播', sampleIptv.length, `<div class="iptv-channel-grid">${list}</div>`);
+    }
+    if (!showVideo && !showIptv) html = '<div class="empty">暂无内容</div>';
+
+    document.getElementById('content').innerHTML = html;
+    syncBatchBar();
+  }
+
+  function currentListIds() {
+    const ids = [];
+    if (state.tab === 'all' || state.tab === 'video') sampleVideos.forEach(v => ids.push(v.id));
+    if (state.tab === 'all' || state.tab === 'iptv') sampleIptv.forEach(c => ids.push(c.id));
+    return ids;
+  }
+
+  function syncBatchBar() {
+    const del = document.getElementById('btn-del');
+    del.disabled = state.selected.size === 0;
+    const selAll = document.getElementById('btn-select-all');
+    const total = currentListIds().length;
+    selAll.querySelector('span').textContent = (state.selected.size === total && total > 0) ? '取消全选' : '全选';
+  }
+
+  function removeItem(type, id) {
+    if (type === 'video') {
+      const i = sampleVideos.findIndex(v => v.id === id);
+      if (i >= 0) sampleVideos.splice(i, 1);
+    } else {
+      const i = sampleIptv.findIndex(c => c.id === id);
+      if (i >= 0) sampleIptv.splice(i, 1);
+    }
+    state.selected.delete(id);
+  }
+
+  // 事件绑定
+  document.getElementById('tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.status-tab');
+    if (!btn) return;
+    state.tab = btn.dataset.tab;
+    state.selected.clear();
+    render();
+  });
+
+  document.getElementById('sort').addEventListener('change', (e) => {
+    state.sort = e.target.value;
+    render();
+  });
+
+  document.getElementById('btn-batch').addEventListener('click', () => {
+    state.batch = !state.batch;
+    if (!state.batch) state.selected.clear();
+    document.getElementById('btn-batch').classList.toggle('action-btn--active', state.batch);
+    document.getElementById('btn-batch').querySelector('.label').textContent = state.batch ? '退出管理' : '批量管理';
+    render();
+  });
+
+  document.getElementById('content').addEventListener('click', (e) => {
+    const fav = e.target.closest('[data-fav]');
+    if (fav) {
+      e.stopPropagation();
+      const c = sampleIptv.find(x => x.id === fav.dataset.id);
+      if (c) c.favorite = !c.favorite;
+      render();
+      return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      e.stopPropagation();
+      removeItem(del.dataset.del, del.dataset.id);
+      render();
+      return;
+    }
+    const pick = e.target.closest('.pick-btn--check');
+    if (pick) {
+      e.stopPropagation();
+      const id = pick.dataset.id;
+      if (state.selected.has(id)) state.selected.delete(id);
+      else state.selected.add(id);
+      render();
+      return;
+    }
+    if (state.batch) {
+      const card = e.target.closest('[data-id]');
+      if (card && !e.target.closest('.pick-btn')) {
+        const id = card.dataset.id;
+        if (state.selected.has(id)) state.selected.delete(id);
+        else state.selected.add(id);
+        render();
+      }
+    }
+  });
+
+  document.getElementById('btn-select-all').addEventListener('click', () => {
+    const ids = currentListIds();
+    if (state.selected.size === ids.length) state.selected.clear();
+    else ids.forEach(id => state.selected.add(id));
+    render();
+  });
+
+  document.getElementById('btn-del').addEventListener('click', () => {
+    if (state.selected.size === 0) return;
+    currentListIds().forEach(id => {
+      const type = sampleVideos.some(v => v.id === id) ? 'video' : 'iptv';
+      removeItem(type, id);
+    });
+    state.selected.clear();
+    render();
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    if (state.tab === 'video' || state.tab === 'all') sampleVideos.length = 0;
+    if (state.tab === 'iptv' || state.tab === 'all') sampleIptv.length = 0;
+    state.selected.clear();
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

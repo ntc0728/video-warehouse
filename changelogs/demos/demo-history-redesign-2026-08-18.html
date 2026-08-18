@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>历史页整改原型 · 保留时间轴</title>
+<style>
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-hover: #f1f3f5;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #4a4a4a;
+    --color-text-tertiary: #8a8a8a;
+    --color-border: #e5e7eb;
+    --color-primary: #6366f1;
+    --color-primary-soft: rgba(99, 102, 241, 0.12);
+    --color-hover-bg: #eef0f2;
+    --color-text-inverse: #ffffff;
+    --color-success: #22c55e;
+    --color-danger: #e11d48;
+    --radius-sm: 8px;
+    --radius-full: 9999px;
+    --space-2xs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --timeline-rail-size: 0.125rem;
+    --timeline-dot-size: 0.75rem;
+    --timeline-count-min-w: 1.25rem;
+    --timeline-count-h: 1.125rem;
+    --timeline-count-font: 0.6875rem;
+    --header-height: 56px;
+    --card-cols: 4;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: var(--space-md);
+  }
+
+  /* ───────── 顶层 aside：融合 Tab + 操作按钮 ───────── */
+  .record-aside {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+  }
+
+  /* 融合后的 status-tabs：综合 / 视频 / 直播 */
+  .status-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    background: var(--color-hover-bg);
+    border-radius: var(--radius-full);
+  }
+  .status-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .status-tab.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .status-tab__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-tab-color, var(--color-text-tertiary));
+  }
+  .status-tab__count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+  }
+  .status-tab.is-active .status-tab__count {
+    background: var(--status-tab-color, var(--color-primary));
+    color: #fff;
+  }
+
+  /* 操作按钮组（C 方案）：图标+文案；窄屏降级为仅图标 */
+  .record-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .action-btn:hover { background: var(--color-surface-hover); }
+  .action-btn svg { width: 16px; height: 16px; }
+
+  /* ───────── 历史主体 ───────── */
+  /* 关键：保留原有时间轴布局体系 —— .history-content flex 行（桌面） + 左侧算珠面板 + 右侧分组，
+     以及移动端 .history-content::before 贯穿竖线 + .history-node-col 圆点。 */
+  .history-body { width: 100%; min-width: 0; }
+
+  .history-content {
+    position: relative;
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+  }
+  /* 移动端贯穿竖线（桌面被隐藏） */
+  .history-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--space-md);
+    width: var(--timeline-rail-size);
+    background: var(--color-border);
+    pointer-events: none;
+  }
+
+  /* 左侧算珠面板（桌面 sticky），原型内改为静态堆叠以还原外观 */
+  .history-timeline {
+    display: none;
+  }
+  .history-timeline__rail {
+    display: none;
+  }
+
+  .history-groups { min-width: 0; }
+
+  .history-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--space-lg);
+    scroll-margin-top: var(--space-md);
+  }
+
+  /* 移动端内联时间轴节点：圆点 + 连接线 + 标题 + 计数 */
+  .history-node-col {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md);
+  }
+  .history-node {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    gap: var(--space-xs);
+    align-items: center;
+    padding-left: calc(var(--timeline-dot-size) + var(--space-xs));
+    cursor: pointer;
+  }
+  .history-dot {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    z-index: 1;
+    width: var(--timeline-dot-size);
+    height: var(--timeline-dot-size);
+    border-radius: 50%;
+    background: var(--color-text-tertiary);
+    transform: translate(-50%, -50%);
+  }
+  .history-node-label {
+    color: var(--color-text-secondary);
+    font-size: var(--text-xs, 13px);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .history-node-count {
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    min-width: var(--timeline-count-min-w);
+    height: var(--timeline-count-h);
+    padding: 0 var(--space-2xs);
+    border-radius: var(--radius-full);
+    background: var(--color-hover-bg);
+    color: var(--color-text-secondary);
+    font-size: var(--timeline-count-font);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .history-group-body {
+    min-width: 0;
+    padding-left: calc(var(--timeline-dot-size) + var(--space-xs) + var(--space-md));
+  }
+
+  /* 桌面端：左侧算珠面板启用、内联节点隐藏、贯穿竖线隐藏 */
+  @media (width >= 768px) {
+    .history-content { display: flex; flex-direction: row; align-items: stretch; }
+    .history-content::before { display: none; }
+    .history-timeline {
+      position: sticky;
+      top: 0;
+      display: block;
+      align-self: flex-start;
+      flex-shrink: 0;
+      width: clamp(4.5rem, 6vw, 6rem);
+      min-width: 0;
+      padding-top: 8px;
+    }
+    .history-timeline__beads {
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    .history-timeline__bead {
+      position: relative;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      border: none;
+      background: transparent;
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .history-timeline__dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: var(--timeline-dot-size);
+      height: var(--timeline-dot-size);
+      border-radius: 50%;
+      background: var(--color-text-tertiary);
+      transform: translate(-50%, -50%);
+    }
+    .history-timeline__bead.is-active { color: var(--color-text); font-weight: 600; }
+    .history-timeline__bead.is-active .history-timeline__dot { background: var(--color-primary); }
+    .history-timeline__label { color: inherit; }
+    .history-timeline__count {
+      display: inline-flex;
+      flex-shrink: 0;
+      justify-content: center;
+      align-items: center;
+      min-width: var(--timeline-count-min-w);
+      height: var(--timeline-count-h);
+      padding: 0 var(--space-2xs);
+      border-radius: var(--radius-full);
+      background: var(--color-hover-bg);
+      color: var(--color-text-secondary);
+      font-size: var(--timeline-count-font);
+      font-weight: 600;
+      line-height: 1;
+    }
+    .history-timeline__bead.is-active .history-timeline__count {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+    .history-node-col { display: none; }
+    .history-group-body { padding-left: 0; }
+  }
+
+  /* ───────── 卡片网格（动态列数） ───────── */
+  .record-grid {
+    grid-template-columns: repeat(var(--card-cols), minmax(0, 1fr));
+    gap: var(--space-md);
+    display: grid;
+  }
+  @media (max-width: 677px) { .record-grid { --card-cols: 2; } }
+  @media (max-width: 375px) { .record-grid { --card-cols: 1; } }
+
+  /* ───────── 卡片（统一：视频/IPTV 同尺寸，正文 3 行） ───────── */
+  .record-card {
+    position: relative;
+    display: flex;
+    gap: var(--space-sm);
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+  .record-card--selected { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-soft); }
+
+  .record-card__media {
+    flex-shrink: 0;
+    width: 132px;
+    height: 78px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+  }
+  .record-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .record-card__media--logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f2937, #374151);
+  }
+  .record-card__media--logo img {
+    width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
+  }
+  .record-card__media .live-badge {
+    position: absolute; top: 4px; left: 4px;
+    background: var(--color-danger); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+  }
+  .progress-wrap {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.3);
+  }
+  .progress-bar { height: 100%; background: var(--color-primary); }
+
+  .record-card__body {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2px 2px;
+  }
+  .record-card__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .record-card__line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .record-card__line:last-child { justify-content: space-between; }
+  .badge-type {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-type--video { background: var(--color-primary-soft); color: var(--color-primary); }
+  .badge-type--live { background: rgba(34, 197, 94, 0.14); color: var(--color-success); }
+  .badge-source {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 11px;
+  }
+  .badge-status-finished { color: var(--color-success); font-weight: 600; }
+  .badge-status-unfinished { color: #d97706; font-weight: 600; }
+  .record-card__time { flex-shrink: 0; }
+
+  .record-card__check, .record-card__delete {
+    position: absolute;
+    top: 6px;
+    width: 26px; height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    display: none;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .record-card__check { left: 6px; }
+  .record-card__delete { right: 6px; }
+  .batch-mode .record-card__check { display: inline-flex; }
+
+  .empty {
+    padding: 60px 0;
+    text-align: center;
+    color: var(--color-text-tertiary);
+  }
+
+  /* 批量悬浮栏 */
+  .batch-bar {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: var(--space-sm);
+    padding: 10px 16px;
+    background: var(--color-text);
+    border-radius: var(--radius-full);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 50;
+  }
+  .batch-mode ~ .batch-bar, .batch-bar.show { display: inline-flex; }
+  .batch-bar button {
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #fff;
+    background: rgba(255,255,255,0.16);
+  }
+  .batch-bar button.danger { background: var(--color-danger); }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- 顶层：融合 Tab + 操作按钮（保留 record-aside 语义） -->
+  <div class="record-aside">
+    <div class="status-tabs" id="tabs">
+      <button class="status-tab is-active" data-tab="all" style="--status-tab-color:#6366f1">综合 <span class="status-tab__count" id="cnt-all">0</span></button>
+      <button class="status-tab" data-tab="video" style="--status-tab-color:#6366f1">视频 <span class="status-tab__count" id="cnt-video">0</span></button>
+      <button class="status-tab" data-tab="iptv" style="--status-tab-color:#22c55e">直播 <span class="status-tab__count" id="cnt-iptv">0</span></button>
+    </div>
+    <div class="record-actions">
+      <button class="action-btn" id="btn-filter">⚙ 更多筛选</button>
+      <button class="action-btn" id="btn-clear">🗑 清空历史</button>
+      <button class="action-btn" id="btn-batch">☑ 批量管理</button>
+    </div>
+  </div>
+
+  <!-- 历史主体：保留原有时间轴布局体系 -->
+  <div class="history-body">
+    <div class="history-content" id="history-content">
+      <div class="history-timeline">
+        <span class="history-timeline__rail"></span>
+        <div class="history-timeline__beads" id="beads"></div>
+      </div>
+      <div class="history-groups" id="groups"></div>
+    </div>
+  </div>
+</div>
+
+<div class="batch-bar" id="batchBar">
+  <button id="btn-select-all">☑ 全选</button>
+  <button class="danger" id="btn-del-batch">🗑 删除</button>
+  <button class="danger" id="btn-clear-all">🗑 清除全部</button>
+</div>
+
+<script>
+  const H = 3600 * 1000, D = 86400000, now = Date.now();
+  const GROUP_ORDER = ['今天', '昨天', '本周', '本月', '更早'];
+
+  const sample = [
+    { id:'v1', type:'video', title:'甄嬛传', cover:'https://picsum.photos/seed/zhhen/300/170', source:'光速API', episode:'第12集', progress:35, ts: now - 1*H },
+    { id:'i1', type:'iptv', title:'CCTV-1 综合', logo:'https://picsum.photos/seed/cctv1/100', group:'央视', ts: now - 2*H },
+    { id:'v2', type:'video', title:'流浪地球2', cover:'https://picsum.photos/seed/wlq/300/170', source:'非凡API', episode:'正片', progress:100, ts: now - 5*H },
+    { id:'i2', type:'iptv', title:'湖南卫视', logo:'https://picsum.photos/seed/hn/100', group:'卫视', ts: now - 6*H },
+    { id:'v3', type:'video', title:'狂飙', cover:'https://picsum.photos/seed/kb/300/170', source:'量子API', episode:'第28集', progress:72, ts: now - 22*H },
+    { id:'i3', type:'iptv', title:'CCTV-5 体育', logo:'https://picsum.photos/seed/cctv5/100', group:'央视', ts: now - 23*H },
+    { id:'v4', type:'video', title:'三体', cover:'https://picsum.photos/seed/santi/300/170', source:'光速API', episode:'第6集', progress:10, ts: now - 3*D },
+    { id:'i4', type:'iptv', title:'浙江卫视', logo:'https://picsum.photos/seed/zj/100', group:'卫视', ts: now - 4*D },
+    { id:'v5', type:'video', title:'繁花', cover:'https://picsum.photos/seed/fanhua/300/170', source:'非凡API', episode:'正片', progress:100, ts: now - 6*D },
+    { id:'v6', type:'video', title:'庆余年', cover:'https://picsum.photos/seed/qyn/300/170', source:'量子API', episode:'第9集', progress:40, ts: now - 12*D },
+    { id:'i5', type:'iptv', title:'CCTV-新闻', logo:'https://picsum.photos/seed/cctvnews/100', group:'央视', ts: now - 20*D },
+  ];
+
+  const state = { tab: 'all', batch: false, selected: new Set() };
+
+  function getDateGroup(ts){
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const diff = todayStart.getTime() - ts;
+    if (diff < 0) return '今天';
+    if (diff < D) return '昨天';
+    const dow = todayStart.getDay() || 7;
+    const weekStart = todayStart.getTime() - (dow - 1) * D;
+    if (ts >= weekStart) return '本周';
+    const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1).getTime();
+    if (ts >= monthStart) return '本月';
+    return '更早';
+  }
+  function fmtTime(ts, group){
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2,'0');
+    if (group === '今天') return `${p(d.getHours())}:${p(d.getMinutes())}`;
+    if (group === '昨天') return `昨天 ${p(d.getHours())}:${p(d.getMinutes())}`;
+    if (group === '本周') return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()] + ` ${p(d.getHours())}:${p(d.getMinutes())}`;
+    if (group === '本月') return `${d.getMonth()+1}月${d.getDate()}日`;
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  }
+
+  const icons = {
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+    square:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0v14h10V6"/></svg>'
+  };
+
+  function renderTabs(){
+    const all = sample.length;
+    const video = sample.filter(x=>x.type==='video').length;
+    const iptv = sample.filter(x=>x.type==='iptv').length;
+    document.getElementById('cnt-all').textContent = all;
+    document.getElementById('cnt-video').textContent = video;
+    document.getElementById('cnt-iptv').textContent = iptv;
+    document.querySelectorAll('.status-tab').forEach(b=> b.classList.toggle('is-active', b.dataset.tab===state.tab));
+  }
+
+  function renderBeads(){
+    const groups = GROUP_ORDER.filter(g => sample.some(it => getDateGroup(it.ts)===g));
+    document.getElementById('beads').innerHTML = groups.map(g=>{
+      const n = sample.filter(it=>getDateGroup(it.ts)===g).length;
+      const cfg = { '今天':'#6366f1','昨天':'#6366f1','本周':'#6366f1','本月':'#6366f1','更早':'#8a8a8a' };
+      return `<button class="history-timeline__bead">
+        <span class="history-timeline__label">${g}</span>
+        <span class="history-timeline__dot" style="background:${cfg[g]}"></span>
+        <span class="history-timeline__count">${n}</span>
+      </button>`;
+    }).join('');
+  }
+
+  function cardHTML(it, group){
+    const sel = state.selected.has(it.id) ? ' record-card--selected' : '';
+    const checkIcon = state.selected.has(it.id) ? icons.check : icons.square;
+    const pct = Math.round(it.progress ?? 0);
+    const stCls = pct >= 90 ? 'badge-status-finished' : 'badge-status-unfinished';
+    const stTxt = pct >= 90 ? '已看完' : '未看完';
+    if (it.type === 'iptv'){
+      return `<div class="record-card${sel}" data-id="${it.id}">
+        <button class="record-card__check" data-id="${it.id}">${checkIcon}</button>
+        <button class="record-card__delete" data-id="${it.id}">${icons.trash}</button>
+        <div class="record-card__media record-card__media--logo">
+          <img src="${it.logo}" alt=""/>
+          <span class="live-badge">LIVE</span>
+        </div>
+        <div class="record-card__body">
+          <p class="record-card__title">${it.title}</p>
+          <div class="record-card__line">
+            <span class="badge-type badge-type--live">直播</span>
+            <span class="badge-source">${it.group}</span>
+          </div>
+          <div class="record-card__line">
+            <span class="${stCls}">${stTxt}</span>
+            <span class="record-card__time">${fmtTime(it.ts, group)}</span>
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div class="record-card${sel}" data-id="${it.id}">
+      <button class="record-card__check" data-id="${it.id}">${checkIcon}</button>
+      <button class="record-card__delete" data-id="${it.id}">${icons.trash}</button>
+      <div class="record-card__media">
+        <img src="${it.cover}" alt=""/>
+        <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+      </div>
+      <div class="record-card__body">
+        <p class="record-card__title">${it.title}</p>
+        <div class="record-card__line">
+          <span class="badge-type badge-type--video">视频</span>
+          <span class="badge-source">${it.source}</span>
+          <span>${it.episode}</span>
+        </div>
+        <div class="record-card__line">
+          <span class="${stCls}">${stTxt}</span>
+          <span class="record-card__time">${fmtTime(it.ts, group)}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function render(){
+    const list = state.tab === 'all' ? sample : sample.filter(x => x.type === state.tab);
+    const grouped = {};
+    list.forEach(it => { const g = getDateGroup(it.ts); (grouped[g] = grouped[g] || []).push(it); });
+    const keys = GROUP_ORDER.filter(g => grouped[g] && grouped[g].length);
+    if (keys.length === 0){
+      document.getElementById('groups').innerHTML = '<div class="empty">暂无观看记录</div>';
+      return;
+    }
+    let html = keys.map(g => `
+      <div class="history-group" data-group-key="${g}">
+        <div class="history-node-col">
+          <div class="history-node">
+            <span class="history-dot"></span>
+            <span class="history-node-label">${g}</span>
+            <span class="history-node-count">${grouped[g].length}</span>
+          </div>
+        </div>
+        <div class="history-group-body">
+          <div class="record-grid">
+            ${grouped[g].map(it => cardHTML(it, g)).join('')}
+          </div>
+        </div>
+      </div>`).join('');
+    document.getElementById('groups').innerHTML = html;
+  }
+
+  function refresh(){ renderTabs(); renderBeads(); render(); }
+
+  document.getElementById('tabs').addEventListener('click', e=>{
+    const b = e.target.closest('.status-tab'); if(!b) return;
+    state.tab = b.dataset.tab; refresh();
+  });
+  document.getElementById('btn-batch').addEventListener('click', ()=>{
+    state.batch = !state.batch; state.selected.clear();
+    document.body.classList.toggle('batch-mode', state.batch);
+    document.getElementById('batchBar').classList.toggle('show', state.batch);
+    render();
+  });
+  document.getElementById('btn-select-all').addEventListener('click', ()=>{
+    const list = state.tab==='all' ? sample : sample.filter(x=>x.type===state.tab);
+    state.selected = state.selected.size===list.length ? new Set() : new Set(list.map(x=>x.id));
+    render();
+  });
+  document.getElementById('btn-del-batch').addEventListener('click', ()=>{
+    if(state.selected.size===0) return;
+    for(const id of [...state.selected]){ const i=sample.findIndex(x=>x.id===id); if(i>=0) sample.splice(i,1); }
+    state.selected.clear(); refresh();
+  });
+  document.getElementById('btn-clear-all').addEventListener('click', ()=>{ sample.length=0; state.selected.clear(); refresh(); });
+  document.getElementById('groups').addEventListener('click', e=>{
+    const chk = e.target.closest('.record-card__check');
+    const del = e.target.closest('.record-card__delete');
+    if (chk && state.batch){ const id=chk.dataset.id; state.selected.has(id)?state.selected.delete(id):state.selected.add(id); render(); }
+    if (del){ const id=del.dataset.id; const i=sample.findIndex(x=>x.id===id); if(i>=0) sample.splice(i,1); state.selected.delete(id); refresh(); }
+  });
+
+  refresh();
+</script>
+</body>
+</html>

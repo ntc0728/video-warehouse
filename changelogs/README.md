@@ -37,3 +37,5 @@
 | `demos/demo-player-mobile-settings.html` | 播放器移动端整改：控制栏精简 + 右上角图标组（画中画/投屏/更多）+ 更多设置底部卡片弹层 + 字幕设置二级弹窗 + 启动封面白/黑适配 | 2026-08-15 |
 | `demos/demo-player-speed-icon-clip.html` | 倍速图标 hover 动画「被裁剪/重影」根因演示：OLD=双图标交叉淡化（中途两半透明图标错位重叠）/ NEW=单图标缩放（消除重影） | 2026-08-15 |
 | `demos/demo-history-abacus-timeline-2026-08-17.html` | 历史页左侧固定时间轴（算珠累加）：滚动时轴点逐颗累加、不消失，向上滚动逐步恢复，点击轴点/组标题跳转 | 2026-08-17 |
+| `demos/demo-history-redesign-2026-08-18.html` | 历史页 UI 整改原型：融合 Tab（综合/视频/IPTV）+ 操作按钮（更多筛选/清空/批量）+ 统一横版卡 + 时间轴 + 动态列数 | 2026-08-18 |
+| `demos/demo-collections-redesign-2026-08-18.html` | 收藏页 UI 整改原型（方案 B）：融合 Tab + 影视/直播分区（竖版海报墙 + 原项目 IPTV 卡）+ 视频卡角标重组（左下年份+类型、右下状态） | 2026-08-18 |
