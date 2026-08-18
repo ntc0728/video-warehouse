@@ -319,6 +319,25 @@ html[data-device="app"] .history-content .history-group-body .history-grid {
   }
 }
 
+/* 卡片出场动画：与收藏页 .video-card-grid stagger 完全一致（fadeInUp 0.4s +
+   nth-child 阶梯延迟，第 13+ 项兜底 0.39s 跟队入场，任意列数不抢跑） */
+.history-content .history-group-body .history-grid > * {
+  animation: fadeInUp 0.4s var(--ease-standard) both;
+  animation-delay: 0.39s;
+}
+.history-content .history-group-body .history-grid > *:nth-child(1) { animation-delay: 0.03s; }
+.history-content .history-group-body .history-grid > *:nth-child(2) { animation-delay: 0.06s; }
+.history-content .history-group-body .history-grid > *:nth-child(3) { animation-delay: 0.09s; }
+.history-content .history-group-body .history-grid > *:nth-child(4) { animation-delay: 0.12s; }
+.history-content .history-group-body .history-grid > *:nth-child(5) { animation-delay: 0.15s; }
+.history-content .history-group-body .history-grid > *:nth-child(6) { animation-delay: 0.18s; }
+.history-content .history-group-body .history-grid > *:nth-child(7) { animation-delay: 0.21s; }
+.history-content .history-group-body .history-grid > *:nth-child(8) { animation-delay: 0.24s; }
+.history-content .history-group-body .history-grid > *:nth-child(9) { animation-delay: 0.27s; }
+.history-content .history-group-body .history-grid > *:nth-child(10) { animation-delay: 0.30s; }
+.history-content .history-group-body .history-grid > *:nth-child(11) { animation-delay: 0.33s; }
+.history-content .history-group-body .history-grid > *:nth-child(12) { animation-delay: 0.36s; }
+
 /* 记录卡 hover 上移由 RecordCard.css 提供（.history-page .record-card:hover） */
 
 .history-sentinel {

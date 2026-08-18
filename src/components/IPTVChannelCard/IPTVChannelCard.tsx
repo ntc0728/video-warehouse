@@ -134,11 +134,17 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           <Icon icon={Tv} size="lg" />
         </div>
         {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab。
-            封面图加载失败（imageError 为 true）时隐藏左上角徽标，保证占位图干净 */}
-        {!batchMode && availability !== undefined && !imageError && (
-          <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
-            {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
-            <span className="availability-badge__label">{availability ? '可用' : '不可用'}</span>
+            封面图加载失败（imageError 为 true）时隐藏检测徽标，保证占位图干净。
+            左上角角标组：LIVE 角标（全局 record-card__live-badge）+ 检测结果并排 */}
+        {!batchMode && (
+          <div className="iptv-card-cover__badges">
+            <span className="record-card__live-badge">LIVE</span>
+            {availability !== undefined && !imageError && (
+              <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
+                {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
+                <span className="availability-badge__label">{availability ? '可用' : '不可用'}</span>
+              </div>
+            )}
           </div>
         )}
         {!batchMode && channel.group ? (
