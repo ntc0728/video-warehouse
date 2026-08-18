@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.9.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.8.0...kinotv-v1.9.0) (2026-08-17)
+
+
+### Features
+
+* **cast:** Android 原生 DLNA 投屏模块（SSDP 发现 + UPnP AVTransport 推送） ([115be2f](https://github.com/ntc0728/video-warehouse/commit/115be2f6b0891bbe421876877083c72e21b010d4))
+* **cast:** Web 端投屏分端实现 - iOS 隐藏按钮，安卓 Web 走 Google Cast SDK ([b1e27fb](https://github.com/ntc0728/video-warehouse/commit/b1e27fb77affa9721412410cde6dbaab943aeb7a))
+* **history:** 历史页桌面端左侧算珠时间轴 + StickyHeader 清理 ([0727c42](https://github.com/ntc0728/video-warehouse/commit/0727c429697cf06e65097447dd0124a8089016ed))
+
+
+### Bug Fixes
+
+* **home:** Keep-Alive 首页切走再切回 banner 不闪烁 ([4b9bfa1](https://github.com/ntc0728/video-warehouse/commit/4b9bfa12d09575e5aa6fcd5e26d5ae61a2249b6b))
+* **home:** 解除分类切换时 banner/缩略图/video card 三者绑定 ([8ac0dca](https://github.com/ntc0728/video-warehouse/commit/8ac0dca17c145a8d136ffd9d5c319119853f0004))
+* **player:** buffering/loading logic conflicts fix (13 items per review) ([8a1c213](https://github.com/ntc0728/video-warehouse/commit/8a1c213703593d3ce38b5028b977097e4e614505))
+
+
+### Performance Improvements
+
+* **cast:** 投屏按需加载打包 + 部署性能优化 ([270a886](https://github.com/ntc0728/video-warehouse/commit/270a886afa17958e939e8f6aca22c365d20bd42a))
+
 ## [1.8.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.6...kinotv-v1.8.0) (2026-08-15)
 
 
