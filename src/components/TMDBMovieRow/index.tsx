@@ -60,6 +60,11 @@ interface TMDBMovieRowProps {
    * 复位后可见卡回到 index 0 起，与预加载范围对齐，命中 session 缓存直接 loaded。
    */
   scrollResetToken?: string;
+  /**
+   * 卡片封面旧图→新图交叉淡入（首页分类切换用）。开启后卡片以「槽位索引」复用，
+   * 封面切换走 LazyImage 交叉淡入，与 banner/缩略图过渡一致；不开启时保持原 blur-up。
+   */
+  crossfadeOnChange?: boolean;
 }
 
 /**
@@ -152,6 +157,7 @@ function TMDBMovieRow({
   continueMode = false,
   continueItems,
   scrollResetToken,
+  crossfadeOnChange = false,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -458,7 +464,7 @@ function TMDBMovieRow({
               </div>
             ))
           ) : (
-            items.map((item) => {
+            items.map((item, index) => {
               // 为 TMDB poster 图片生成响应式 srcSet
               // TMDBMovieRow 是横向滚动布局，卡片宽度根据 --card-cols 动态计算
               // 使用 (100vw / var(--card-cols)) 作为 sizes 参考值，浏览器会自动选择合适尺寸
@@ -467,7 +473,9 @@ function TMDBMovieRow({
               const posterSrcSet = item.posterPath ? buildImageSrcSet(item.posterPath, POSTER_CARD_SIZES) : undefined;
                return (
                  <div
-                   key={item.id}
+                   // 槽位索引 key：分类切换时卡片实例存活（不重挂载），
+                   // 既避免 animate-card-enter 重放，又让 LazyImage 复用实例走交叉淡入。
+                   key={index}
                    className="tmdb-movierow-card"
                    onFocus={(e) => handleCardFocus(e.currentTarget)}
                    onClickCapture={(e) => {
@@ -483,6 +491,7 @@ function TMDBMovieRow({
                     rating={item.voteAverage}
                     srcSet={posterSrcSet ?? undefined}
                     sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
+                    crossfadeOnChange={crossfadeOnChange}
                   />
                 </div>
               );

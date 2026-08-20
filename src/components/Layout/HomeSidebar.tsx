@@ -18,7 +18,6 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy, Settings } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
-import { useScrollContainer } from '@/hooks/useScrollContext';
 import type { HomeCategoryKey } from '@/pages/Home/categoryConfig';
 import pkg from '../../../package.json';
 import './HomeSidebar.css';
@@ -53,7 +52,6 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
   const location = useLocation();
   const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
   const setActiveCategory = useHomeCategoryStore((s) => s.setActiveCategory);
-  const scrollContainerRef = useScrollContainer();
 
   // ── 分类切换防抖（C 项，~100ms）──
   // 快速连点不同分类（电影→电视剧→综艺）时，每次点击都会触发 setActiveCategory →
@@ -85,11 +83,10 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
     if (location.pathname !== '/') {
       navigate('/');
     }
+    // 滚动复位交由 Home 页统一处理（deferredCategory 变化 → 内容先切换 → 再复位滚动，
+    // 见 Home/index.tsx「类目切换滚动复位」effect）。此处不再手动 scrollTo——
+    // 旧实现 rAF 立即回顶 + 100ms 防抖后切内容 = 「先复位、后切换」割裂体感。
     debouncedSetCategory(cat);
-    requestAnimationFrame(() => {
-      const el = scrollContainerRef.current;
-      if (el) el.scrollTo({ top: 0, behavior: 'auto' });
-    });
   };
 
   const isActive = (item: SidebarItem): boolean => {

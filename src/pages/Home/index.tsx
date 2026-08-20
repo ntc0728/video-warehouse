@@ -4,7 +4,7 @@
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
  */
-import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
@@ -24,6 +24,7 @@ import { buildContinueItems } from './continueItems';
 import { preloadRowCovers } from './preloadRowCovers';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
 import './Home.css';
@@ -43,7 +44,6 @@ const homeRetryCooldown = new Map<string, number>();
 
 export default function HomePage() {
   const navigate = useCustomNavigate();
-  const location = useLocation();
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -58,79 +58,45 @@ export default function HomePage() {
   const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
   const loadCategory = useHomeCategoryStore((s) => s.loadCategory);
   const deferredCategory = useDeferredValue(activeCategory);
-  const categoryData = useHomeCategoryStore((s) => s.data[deferredCategory]);
   const isCategoryView = deferredCategory !== 'home';
 
-  // ── 分类切换 SWR 渲染层（根治切分类白屏闪烁，2026-08-13）──
-  // 核心：渲染层只展示「上一就绪分类」的内容，直到新分类数据就绪才切换，
-  // 页面不再出现「内容→整页骨架→内容」的两次硬切换（白屏闪烁根因）。
-  // 切换只由两个确定事件驱动（无超时 hack）：
-  //   ① 新分类数据就绪（hero/行有内容，或加载结束 = 失败终态）→ 原位替换内容
-  //   ② 等待期间旧内容保留 + 内容容器轻微降暗（home-cat-dim）作为加载反馈
-  // 骨架仅保留给「首页首次加载 / 某分类首次且无任何可展示内容」场景。
-  // 注意：渲染统一走 displayedCategory（展示中的分类），deferredCategory 仅驱动
-  // 「是否在等数据」的判断与数据预取/文档标题等紧急逻辑（见上方注释）。
-  const [displayedCategory, setDisplayedCategory] = useState<HomeCategoryKey>(deferredCategory);
-  const displayedData = useHomeCategoryStore((s) => s.data[displayedCategory]);
-  const isDisplayingCategory = displayedCategory !== 'home';
-  const catSwitching = deferredCategory !== displayedCategory;
+  // 注：isMobile / isTV 已下沉至 CategoryView 子组件（back/front 各需独立实例）。
 
-  // ── 分类切换就绪过渡（暗态原位替换 + 亮度恢复，2026-08-13 终版）──
-  // 数据就绪后**不淡出到透明**（历史 fade-out 状态机会产生 120ms 完全空窗，
-  // 用户感知「banner 下方内容短暂消失」）——而是：
-  //   等待期 .home-cat-dim（opacity 0.55）→ 数据就绪 → 在暗态下原位替换内容
-  //   → catSwitching=false 移除 dim（0.55→1 transition 变亮）。
-  // 全程无透明帧：内容最低 0.55，快慢源都平滑。
-  // 竞态天然安全：替换只由「当前 deferred 分类数据就绪」触发（读的是最新源值），
-  // 用户过渡期再切分类时以最新就绪目标为准，无需额外状态机。
+  // ── 分类切换：单树直接渲染目标内容 ──
+  // 经历三版迭代（保留旧内容→整页骨架硬插→双层 crossfade）后确定：
+  //   整页子树替换 / 双层重叠 DOM 必然导致「banner 缩小 / 收尾时整树重挂载二次闪」。
+  // 现采用单树 —— 直接用 deferredCategory 渲染单一 CategoryView：
+  //   • 切换即时（deferred 仅做非阻塞降级，非「等数据」），无旧内容停留、无整页骨架；
+  //   • banner 由 HeroBanner 内部 stale 垫底 + 新层淡入交叉过渡（不硬切、不缩小）；
+  //   • 卡片图由 LazyImage 命中缓存也走淡入（见 LazyImage，消除缓存命中硬现）。
+  // 后台非阻塞预热首屏卡片封面（仅加速后续滚动/二次进入，不 gate 切换）。
   useEffect(() => {
-    if (deferredCategory === displayedCategory) return;
-    // home 数据恒就绪（由 useTMDBStore 独立管理）；分类就绪 = **hero（banner/缩略图数据源）
-    // 就绪**（或失败终态）。
-    // ⚠️ 不再等「首屏可见行全部加载结束」（历史实现）：
-    //   store 分层加载「hero + 首行 Promise.all 先到 → 其余行 requestIdleCallback 延迟」。
-    //   旧 ready 用 getVisibleRowCount 要求首屏可见行（移动端/高屏可达 2-3 行）全部 !loading，
-    //   慢的 discover 行会拖住 banner + 缩略图 + 首行 video card 一起等待——
-    //   「三者绑定、等特定封面图全部渲染好才显示新图」（用户反馈切换慢到极致的根因）。
-    //   现改为 hero 就绪即切换：banner + 缩略图立即显示新分类；首行与 hero 同批到达
-    //   （store 部分更新同步写入），切换时已有数据；其余行由 TMDBMovieRow 自身的
-    //   isLoading 骨架独立占位、数据到达后原位填充——各自独立切换，互不等待。
-    // 放宽 ready：新分类行骨架数据已由 store 在分类切换时立即写入（分层加载），
-    // 行数据存在即 swap → 新分类 SkeletonCards 原地出现（补回骨架反馈）；
-    // hero 仍由其自身 loading/placeholder 处理，不阻塞行切换，避免旧内容 dim 顶替无骨架。
-    const ready =
-      deferredCategory === 'home' ||
-      (categoryData != null && categoryData.rows.length > 0);
-    if (!ready) return;
+    if (deferredCategory === 'home') return;
+    const cat = useHomeCategoryStore.getState().data[deferredCategory];
+    if (cat) {
+      void preloadRowCovers(cat.rows, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+  }, [deferredCategory]);
 
-    // ⚠️（2026-08-14 修正）：**立即切换，不做预加载阻塞门控**。
-    // 历史实现曾「数据就绪后先等全部首屏卡片图预加载完成再 setDisplayedCategory」，
-    // 导致切换被拖慢（最多 2s 超时）、且 banner/缩略图/卡片绑定一起等一起变——
-    // 用户反馈「页面切过去图片要等很久才变更，不可接受」。
-    // 预加载改为**后台非阻塞预热**：切换立即发生，卡片图走各自懒加载；
-    // 预加载仅为后续滚动/二次进入的 session 缓存命中加速，不 gate 切换。
-    setDisplayedCategory(deferredCategory);
-    // 目标分类行数据（首页取 useTMDBStore 最新值，非订阅——仅预加载用途，不触发重渲染）
-    const rowsForPreload =
-      deferredCategory === 'home'
-        ? (() => {
-            const s = useTMDBStore.getState();
-            return [
-              { items: s.nowPlaying },
-              { items: s.popularMovies },
-              { items: s.topRatedMovies },
-              { items: s.upcomingMovies },
-              { items: s.popularTv },
-              { items: s.topRatedTv },
-              { items: s.airingTodayTv },
-            ];
-          })()
-        : (categoryData?.rows ?? []);
-    void preloadRowCovers(rowsForPreload, {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-  }, [deferredCategory, displayedCategory, categoryData]);
+  // ── 类目切换滚动复位（内容切换优先，2026-08-20）──
+  // 用户诉求：向下滚一点再切分类 → 滚动条要复位，且**内容切换发生在滚动复位之前**。
+  // 旧实现（HomeSidebar rAF 立即 scrollTo + setActiveCategory 100ms 防抖）是「先复位、
+  // 后切换」——滚动跳顶时 DOM 还是旧分类，体感割裂。
+  // 现由 deferredCategory 驱动：deferredCategory 变化 → 内容先以新分类提交渲染 →
+  // 本 effect（DOM commit 后、绘制前）才执行 scrollTo(0)——「内容先切、滚动后复位」，
+  // 且同帧原子生效，无可见中间跳变。prevRef 守卫：初次挂载 / 跨路由恢复（useScrollRestore）
+  // 时跳过，避免覆盖已恢复的滚动位置。
+  const scrollContainerRef = useScrollContainer();
+  const prevScrollCatRef = useRef(deferredCategory);
+  useLayoutEffect(() => {
+    if (prevScrollCatRef.current === deferredCategory) return;
+    prevScrollCatRef.current = deferredCategory;
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTo({ top: 0, behavior: 'auto' });
+  }, [deferredCategory, scrollContainerRef]);
 
   // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
   // 用源值 activeCategory，确保点击类目即刻开始请求，不被 deferred 拖慢。
@@ -211,50 +177,8 @@ export default function HomePage() {
   // 定时器 effect 用它在「停留 60min 后」触发兜底刷新）
   const homeFetchedAt = useTMDBStore((s) => s.homeFetchedAt);
 
-  // 历史记录：用于 Banner 中显示"继续播放"
-  // 内存态 history 不保证按 updatedAt 排序（新记录 append、更新原地修改），
-  // 电影线路独立后同一 videoId 可能存在多条记录，必须按 updatedAt 取最新，
-  // 避免数组顺序覆盖导致取到旧线路/旧集的记录。
-  const history = useUserStore((s) => s.history);
-  // 首次 IndexedDB 加载中标志：加载中且有历史播放记录时，继续观看行显示骨架；
-  // 加载完成仍无记录则整行隐藏（由下方 continueItems.length > 0 条件控制）。
-  const userDataLoading = useUserStore((s) => s._loading);
-  const historyMap = useMemo(() => {
-    const map = new Map<string, (typeof history)[0]>();
-    for (const h of history) {
-      if (h.progress <= 0) continue;
-      const key = String(h.videoId);
-      const prev = map.get(key);
-      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
-    }
-    return map;
-  }, [history]);
-
-  // 「继续观看」横排数据：取自历史中「有进度且未看完（<90%）」的最新记录，按 updatedAt 倒序。
-  // 与 HeroBanner 的 historyMap 共用一份数据源，但排除已看完项并补全卡片所需字段。
-  const continueItems = useMemo(() => buildContinueItems(history), [history]);
-
-  // ── 分类点击 → 跳到独立筛选页 ──────────────────────
-  const handleCategorySelect = useCallback((cat: CategoryKey) => {
-    const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新，
-    // 否则二次进入时 query state 残留 → 顶部搜索框残留旧词 + 数据不再重新拉取
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
-  }, [navigate]);
-
-  // ── Banner 项点击 → 跳到详情页 ──────────────────────
-  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
-    navigate(`/detail/${item.id}`, {
-      state: { from: location.pathname + location.search },
-    });
-  }, [navigate, location.pathname, location.search]);
-
-  // ── Banner 继续播放 → 直接跳到播放页 ──────────────────
-  const handleContinuePlay = useCallback((item: { id: string | number }) => {
-    navigate(`/play/${item.id}`, {
-      state: { from: location.pathname + location.search },
-    });
-  }, [navigate, location.pathname, location.search]);
+  // 历史记录 / 继续观看 / Banner 点击处理器已迁移至 CategoryView 子组件
+  // （back/front 各需独立实例，且须避免 HomePage 条件渲染导致 hooks 调用顺序变化）。
 
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
@@ -457,29 +381,8 @@ export default function HomePage() {
     </div>
   );
 
+  // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
   if (isInitialLoading && !isCategoryView) return homeSkeleton;
-  // 分类视图且无任何可展示内容（首次进入且无缓存）→ 骨架；其余情况由 SWR 渲染层保留旧内容
-  if (isDisplayingCategory && !displayedData) return homeSkeleton;
-
-  // ── 根据 displayedCategory 计算 Hero + 7 行（结构固定，内容切换） ──
-  const heroItems = isDisplayingCategory ? (displayedData?.hero ?? []) : trending;
-
-  const rowDefs = isDisplayingCategory
-    ? CATEGORY_CONFIG[displayedCategory as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
-        title: r.title,
-        items: displayedData?.rows[i]?.items ?? [],
-        isLoading: displayedData?.rows[i]?.loading ?? true,
-        error: displayedData?.rows[i]?.error ?? null,
-      }))
-    : [
-        { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
-        { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
-        { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
-        { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
-        { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
-        { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
-        { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
-      ];
 
   // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
   if (!isCategoryView && !hasAnyData && allFailed) {
@@ -498,31 +401,105 @@ export default function HomePage() {
 
   return (
     <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-      {/*
-        trending / hero 为空时 HeroBanner 仍渲染；loading 期间显示骨架而非"暂无推荐"误导文字。
-      */}
+      <CategoryView catKey={deferredCategory} animateEnter />
+    </div>
+  );
+}
+
+// ── 单个类目视图（hero + content + rows）──
+// 被 HomePage 在「稳定态」或「crossfade 双层」中复用，故必须自给自足（不依赖 HomePage 的
+// props/闭包 hook），否则在 back/front 各渲染一份时会触发 hooks 调用顺序变化或闭包陈旧。
+// 首次无缓存时：本组件内 HeroBanner（loading=true → 骨架占位，placeholder 延续）+
+// TMDBMovieRow（isLoading=true → SkeletonCards）自然呈现骨架，数据到达后组件内原位填充，
+// 配合 HeroBanner 的图淡入与 VideoCard 的 animate-card-enter 完成「骨架→图」平滑过渡，
+// 不再由外层整页 homeSkeleton 硬插。
+function CategoryView({ catKey, animateEnter }: { catKey: HomeCategoryKey; animateEnter: boolean }) {
+  const navigate = useCustomNavigate();
+  const location = useLocation();
+  const isCat = catKey !== 'home';
+
+  const catData = useHomeCategoryStore((s) => s.data[catKey]);
+  const {
+    trending, nowPlaying, popularMovies, topRatedMovies,
+    upcomingMovies, popularTv, topRatedTv, airingTodayTv,
+    loading, errors,
+  } = useTMDBStore(
+    useShallow((s) => ({
+      trending: s.trending,
+      nowPlaying: s.nowPlaying,
+      popularMovies: s.popularMovies,
+      topRatedMovies: s.topRatedMovies,
+      upcomingMovies: s.upcomingMovies,
+      popularTv: s.popularTv,
+      topRatedTv: s.topRatedTv,
+      airingTodayTv: s.airingTodayTv,
+      loading: s.loading,
+      errors: s.errors,
+    })),
+  );
+  const history = useUserStore((s) => s.history);
+  const userDataLoading = useUserStore((s) => s._loading);
+  const historyMap = useMemo(() => {
+    const map = new Map<string, (typeof history)[0]>();
+    for (const h of history) {
+      if (h.progress <= 0) continue;
+      const key = String(h.videoId);
+      const prev = map.get(key);
+      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
+    }
+    return map;
+  }, [history]);
+  // 「继续观看」横排数据：取自历史中「有进度且未看完（<90%）」的最新记录，按 updatedAt 倒序。
+  const continueItems = useMemo(() => buildContinueItems(history), [history]);
+
+  useHeaderContent({ immersive: true });
+
+  const heroItems = isCat ? (catData?.hero ?? []) : trending;
+  const heroLoading = isCat ? (catData?.heroLoading ?? true) : loading.trending;
+
+  const rowDefs = isCat
+    ? CATEGORY_CONFIG[catKey as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
+        title: r.title,
+        items: catData?.rows[i]?.items ?? [],
+        isLoading: catData?.rows[i]?.loading ?? true,
+        error: catData?.rows[i]?.error ?? null,
+      }))
+    : [
+        { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
+        { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
+        { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
+        { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
+        { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
+        { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
+        { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
+      ];
+
+  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
+    navigate(`/detail/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleContinuePlay = useCallback((item: { id: string | number }) => {
+    navigate(`/play/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleCategorySelect = useCallback((cat: CategoryKey) => {
+    const cfg = BROWSE_CATEGORY_CONFIG[cat];
+    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
+  }, [navigate]);
+
+  return (
+    <>
       <HeroBanner
         items={heroItems}
         onItemClick={handleBannerItemClick}
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
-        loading={isDisplayingCategory ? (displayedData?.heroLoading ?? true) : loading.trending}
+        loading={heroLoading}
       />
-      {/*
-        页面进入动画（page-transition-enter）只作用于「非 Hero 内容」包装层：
-        HeroBanner 自身有 background crossfade 与缩略图揭示等动画，其缩略图/背景层是
-        GPU 合成层；若祖先带 transform 动画会触发合成层重绘闪烁（"闪一下"）。
-        让 HeroBanner 作为本包装层的兄弟节点、祖先不再有 transform 动画，即可消除闪烁，
-        同时下方内容仍保有进入淡入上移动画；每次路由挂载自然重放本层 .page-transition-enter，
-        HeroBanner 不受影响、保持静止。
-      */}
-      <div className={`home-page__content page-transition-enter${catSwitching ? ' home-cat-dim' : ''}`}>
-        <CategoryQuickAccess
-          onCategorySelect={handleCategorySelect}
-          // 选中态高亮全端移除（点击分类立即跳转 browse，选中态停留无意义）
-          activeCategory={null}
-        />
-        {!isDisplayingCategory && (userDataLoading || continueItems.length > 0) && (
+      <div className={`home-page__content${animateEnter ? ' page-transition-enter' : ''}`}>
+        <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
+        {!isCat && (userDataLoading || continueItems.length > 0) && (
           <TMDBMovieRow
             title="继续观看"
             items={[]}
@@ -532,20 +509,23 @@ export default function HomePage() {
           />
         )}
         <div className="home-rows">
-          {rowDefs.map((row) => (
+          {/* 行以槽位索引为 key：分类切换时 7 行实例存活（仅 title/items 更新），
+              配合卡片索引 key，整条链路实例复用 → 无重挂载闪烁，封面走交叉淡入。 */}
+          {rowDefs.map((row, i) => (
             <TMDBMovieRow
-              key={row.title}
+              key={i}
               title={row.title}
               items={row.items}
               isLoading={row.isLoading}
               error={row.error}
-              scrollResetToken={isDisplayingCategory ? displayedCategory : 'home'}
+              scrollResetToken={isCat ? catKey : 'home'}
+              crossfadeOnChange
             />
           ))}
         </div>
 
         <BackToTopButton />
       </div>
-    </div>
+    </>
   );
 }

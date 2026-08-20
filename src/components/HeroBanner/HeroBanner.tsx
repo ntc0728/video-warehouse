@@ -262,7 +262,8 @@ export default function HeroBanner({
       //   实现图片参与动画、无延迟无闪烁。主图背景层 key=item.id（见下方渲染）：新类目首项
       //   id 不同 → 新建 <img>；配合上方 staleSnapshot 滞留层做「旧图垫底 → 新图就绪淡入」，
       //   也不会出现「仍显示上一个类目图片」的滞留（滞留层在新图淡入完成后移除）。
-      //   整页切换过渡由 Home 页级 .home-cat-dim 统一负责（见 Home/index.tsx）。
+      //   整页切换过渡由 Home 页级 SWR 渲染层负责（旧内容保留 + 首屏卡片预加载后再
+      //   原位替换，不再做亮度凹陷），见 Home/index.tsx。
       prevItemsLenRef.current = curLen;
     } else {
       // 变为空：重置

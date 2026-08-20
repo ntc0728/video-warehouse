@@ -27,18 +27,11 @@
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
-  /* 分类切换 SWR 等待反馈（2026-08-13）：旧内容保留展示期间轻微降暗，
-     数据就绪后内容原位替换 + 亮度恢复过渡。仅 opacity、无 transform——
-     避免触发 HeroBanner GPU 合成层重绘闪烁（AGENTS.md 强约束）。
+  /* 分类切换 SWR 渲染层（2026-08-20）：内容常驻不透明，旧内容保留至新数据就绪后
+     原位替换，不再做亮度凹陷（消除整片闪一下）。
      animation-fill-mode: none：解除 page-transition-enter 动画（both fill）在结束后
-     对 opacity 的锁定——否则动画最后一帧 opacity:1 永久覆盖 .home-cat-dim 的
-     opacity（降暗失效，切分类 = 直白瞬间替换）。 */
-  transition: opacity 0.24s var(--ease-standard);
+     对 opacity 的锁定，避免祖先动画状态残留影响本层。 */
   animation-fill-mode: none;
-}
-
-.home-cat-dim {
-  opacity: 0.55;
 }
 
 /* ── Rows container ──────────────────────────────────── */
