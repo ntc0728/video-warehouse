@@ -27,6 +27,11 @@
   overflow: hidden;
 }
 
+/* 展开个人简介：解除 hero max-height 封顶，让完整 bio + 收起按钮撑开 hero 高度 */
+.person-hero.person-hero--expanded {
+  max-height: none;
+}
+
 /* 噪声纹理 */
 .person-hero::after {
   content: '';
@@ -369,6 +374,9 @@
 [data-device="tv"] .person-hero {
   min-height: clamp(22rem, 20rem + 8vw, 32rem);
   max-height: min(55vh, clamp(32rem, 30rem + 8vw, 48rem));
+}
+[data-device="tv"] .person-hero.person-hero--expanded {
+  max-height: none;
 }
 
 [data-device="tv"] .person-avatar {

@@ -62,6 +62,11 @@ const RecordCard = memo(function RecordCard({
   const pct = hasProgress
     ? Math.min(100, Math.round((item.progress! / item.duration!) * 100))
     : 0;
+  const progressLabel = hasProgress
+    ? pct >= 90
+      ? '已看完'
+      : `${formatClock(item.progress!)}/${formatClock(item.duration!)}`
+    : '';
 
   const checkIcon = selected ? CheckSquare : Square;
 
@@ -103,8 +108,11 @@ const RecordCard = memo(function RecordCard({
         )}
         {!isVideo && <span className="record-card__live-badge">LIVE</span>}
         {hasProgress && (
-          <div className="record-card__progress-wrap">
-            <div className="record-card__progress-bar" style={{ width: `${pct}%` }} />
+          <div className="record-card__progress-overlay">
+            <div className="record-card__progress-bar-wrap">
+              <div className="record-card__progress-bar" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="record-card__progress-text">{progressLabel}</span>
           </div>
         )}
       </div>
@@ -150,3 +158,13 @@ const RecordCard = memo(function RecordCard({
 });
 
 export default RecordCard;
+
+/** 秒 → "MM:SS" / "H:MM:SS"（与横版 VideoCard 进度文本一致） */
+function formatClock(s: number): string {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  return h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}

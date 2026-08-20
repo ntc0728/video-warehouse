@@ -79,19 +79,36 @@
   z-index: 3;
 }
 
-/* 视频底部进度条 */
-.history-page .record-card__progress-wrap {
+/* 视频底部进度条（2026-08-20 整改：加高 + 已看时间文本，对齐横版 VideoCard 样式） */
+.history-page .record-card__progress-overlay {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
   z-index: 3;
-  height: var(--space-2xs);
-  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+.history-page .record-card__progress-bar-wrap {
+  width: 100%;
+  height: var(--space-xs);
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
 }
 .history-page .record-card__progress-bar {
   height: 100%;
-  background: var(--color-primary);
+  background: #e11d48;
+  transition: width 0.3s ease;
+}
+.history-page .record-card__progress-text {
+  position: absolute;
+  right: var(--space-2xs);
+  bottom: calc(var(--space-xs) + var(--space-3xs));
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
 }
 
 /* ── 右 3 行正文 ───────────────────────────────────────────── */

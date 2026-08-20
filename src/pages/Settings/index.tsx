@@ -6,7 +6,7 @@
  *   移动（≤767px）：MenuList 首层菜单 → 选中的 tab 以 SubPage 形式滑动进入
  *   所有编辑操作通过 Modal 弹窗完成
  */
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
@@ -37,18 +37,27 @@ const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
   'appearance', 'video', 'playback', 'iptv', 'personal', 'about',
 ];
 
+/** 读取 URL ?tab= 深链参数（合法则返回，否则 null） */
+function getDeepLinkTab(): SettingsTabKey | null {
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab && (SETTINGS_TAB_KEYS as string[]).includes(tab)) return tab as SettingsTabKey;
+  return null;
+}
+
 export default function SettingsPage() {
   useDocumentTitle();
   // 9.1：桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
   const isDesktop = !useIsMobileLayout();
+  // 深链 tab 惰性初始化：进入 /settings?tab=xxx 首帧即激活目标 tab，
+  // 消除「先渲染外观 → useEffect 再切到目标 tab」的闪烁（Keep-Alive 二次进入由下方 useLayoutEffect 兜底）。
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>(() => getDeepLinkTab() ?? 'appearance');
+  const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(() => (isDesktop ? null : getDeepLinkTab()));
   const pageRef = useRef<HTMLDivElement>(null);
   // [2026-08-13] 惰性全量 bootstrap：设置页源管理需要 video/iptv/epg 三类源。
   // 不再由 main.tsx 全局拉取，改为设置页挂载时幂等触发（各场景 guard 每会话仅一次）。
   useEffect(() => {
     void useSourceManagerStore.getState().bootstrap();
   }, []);
-  const [activeTab, setActiveTab] = useState<SettingsTabKey>('appearance');
-  const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(null);
   // 桌面端 tab 常驻（2026-08-13）：访问过的 tab 保持挂载、仅 display 切换可见性。
   // 替代原 key={activeTab} 重挂载方案——重挂载触发「高度 0 突变 / scrollTop 钳位 /
   // 重挂载动画」抖动链（切 tab 页面抖动的根因之一）；副作用幂等（各 tab 的
@@ -125,7 +134,8 @@ export default function SettingsPage() {
 
   // ── 深链：/settings?tab=xxx 一键直达具体设置项 ─────
   // 进入设置页时若 URL 带合法 tab 参数，直接激活对应 tab（移动端同时打开 SubPage）。
-  useEffect(() => {
+  // 用 useLayoutEffect：Keep-Alive 二次进入时在「绘制前」同步切 tab，避免旧 tab 先闪现一帧。
+  useLayoutEffect(() => {
     const tab = new URLSearchParams(location.search).get('tab');
     if (tab && (SETTINGS_TAB_KEYS as string[]).includes(tab)) {
       setActiveTab(tab as SettingsTabKey);

@@ -129,6 +129,9 @@
   gap: var(--space-2xs);
   align-items: center;
   pointer-events: none;
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger);
 }
 
 /* ---- Availability badge ---- */

@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Upload, AlertTriangle } from 'lucide-react';
+import { Upload, AlertTriangle, Settings2, RotateCcw } from 'lucide-react';
 import { Button, ConfirmDialog, toast } from '@/components/ui';
 import { useSettingsStore } from '@/stores';
 import { useUserStore } from '@/stores';
@@ -94,7 +94,10 @@ export default function PersonalTab() {
 
       {/* 配置管理 */}
       <section className="settings-personal-section">
-        <h3 className="settings-card__title">配置管理</h3>
+        <h3 className="settings-card__title">
+          <Icon icon={Settings2} size="md" className="settings-card__title-icon" />
+          <span>配置管理</span>
+        </h3>
         <div className="settings-card__body">
           <div className="settings-card__header">
             <p className="settings-card__desc" title="导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>
@@ -116,7 +119,10 @@ export default function PersonalTab() {
 
       {/* 恢复默认配置 */}
       <section className="settings-personal-section">
-        <h3 className="settings-card__title">恢复默认配置</h3>
+        <h3 className="settings-card__title">
+          <Icon icon={RotateCcw} size="md" className="settings-card__title-icon" />
+          <span>恢复默认配置</span>
+        </h3>
         <div className="settings-card__body">
           <div className="settings-card__header">
             <p className="settings-card__desc" title="将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>

@@ -194,7 +194,7 @@ export default function PersonPage() {
   return (
     <div ref={pageRef} className="page-padding person-page">
       {/* Hero */}
-      <section className="person-hero">
+      <section className={`person-hero${bioExpanded ? ' person-hero--expanded' : ''}`}>
         <div className="person-hero-gradient" />
 
         <button className="person-hero-back" onClick={handleBack} aria-label="返回">

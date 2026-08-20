@@ -1632,22 +1632,25 @@
   grid-template-columns: minmax(0, 1fr);
   }
 
-  .detail-seasons {
+.detail-seasons {
   grid-template-columns: 1fr;
 }
+  .detail-season-card {
+  align-items: flex-start;
+  }
   .detail-season-poster {
-  width: var(--comp-thumb-size);
-}
+  width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+  }
   .detail-season-info {
   max-height: none;
-}
+  }
   .detail-season-info p {
   -webkit-line-clamp: 3;
-}
+  }
 
   .detail-stills-grid {
   grid-template-columns: repeat(2, 1fr);
-}
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -1710,15 +1713,18 @@
   html[data-device="app"] .detail-seasons {
   grid-template-columns: 1fr;
 }
+  html[data-device="app"] .detail-season-card {
+  align-items: flex-start;
+  }
   html[data-device="app"] .detail-season-poster {
-  width: var(--comp-thumb-size);
-}
+  width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+  }
   html[data-device="app"] .detail-season-info {
   max-height: none;
-}
+  }
   html[data-device="app"] .detail-season-info p {
   -webkit-line-clamp: 3;
-}
+  }
 
   html[data-device="app"] .detail-stills-grid {
   grid-template-columns: repeat(2, 1fr);

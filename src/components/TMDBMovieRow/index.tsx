@@ -77,13 +77,14 @@ function toVideo(item: {
   cover: string;
   type: VideoType;
   tags?: string[];
+  year?: number;
 }): Video {
   return {
     id: item.id,
     title: item.title,
     cover: item.cover,
     type: item.type,
-    year: undefined,
+    year: item.year,
     tags: item.tags ?? [],
     description: undefined,
     actors: [],
@@ -107,6 +108,7 @@ function getVideo(item: {
   cover: string;
   type: VideoType;
   tags?: string[];
+  year?: number;
 }): Video {
   const cached = videoMemoCache.get(item);
   if (cached) return cached;

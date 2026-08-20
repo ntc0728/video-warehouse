@@ -270,8 +270,10 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
             <div className="source-manager__item-main">
               <div className="source-manager__item-title">
                 <span className="source-manager__name">{item.name}</span>
-                {/* 延迟状态：测速中显示旋转图标；测速完成按延迟分级显示颜色文字；超时红色「超时」 */}
-                {item.status.measuring ? (
+                {/* 延迟状态：仅启用源显示（停用源隐藏）；测速中显示旋转图标；
+                    测速完成按延迟分级显示颜色文字；超时红色「超时」；
+                    启用后显示上一次测速的延迟 */}
+                {item.status.enabled && (item.status.measuring ? (
                   <span className="source-manager__latency source-manager__latency--measuring" aria-label="测速中">
                     <Icon icon={Activity} size="sm" className="spin" />
                   </span>
@@ -281,7 +283,7 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
                   <span className={`source-manager__latency source-manager__latency--${latencyTone(item.status.latency)}`}>
                     {formatLatency(item.status.latency)}
                   </span>
-                ) : null}
+                ) : null)}
               </div>
               <div className="source-manager__item-meta">
                 {/* 爬建/自建徽章放原 time 位置；时间移到右侧 */}
