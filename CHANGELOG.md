@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.11.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.10.0...kinotv-v1.11.0) (2026-08-20)
+
+
+### Features
+
+* apply source-section spacing to all settings sections ([4e6afd2](https://github.com/ntc0728/video-warehouse/commit/4e6afd271d7b5e97c8ca0420198895e151c3c954))
+* **home:** 进入过渡覆盖层 + HeroBanner 初始淡入延迟 + VideoCard skipAnimations ([ad7e511](https://github.com/ntc0728/video-warehouse/commit/ad7e51169d71f83cd16be58dc676e0e934770732))
+
+
+### Bug Fixes
+
+* **home:** 分类切换过渡与滚动复位时序重做——单树渲染+卡片交叉淡入+内容先切后复位 ([6b6a9ce](https://github.com/ntc0728/video-warehouse/commit/6b6a9ce4d8c040336910c97591aa0ff98e55a997))
+* settings personal section titles moved outside cards with consistent border/hover styling ([ae342c8](https://github.com/ntc0728/video-warehouse/commit/ae342c8df5c16e854dab5a15f38b33cdee43643f))
+* settings-profile-card border now visible on all screen sizes ([c25ff6e](https://github.com/ntc0728/video-warehouse/commit/c25ff6e3ab784e0f1e563637788986f89a5197c6))
+* **ui:** 角标配色统一+收藏卡移动端布局+首页年份+暗色chip文字可读性+六项零散UI修复（进度条/季卡海报/bio展开/设置深链闪烁/停用源延迟/设置标题图标） ([232bfa8](https://github.com/ntc0728/video-warehouse/commit/232bfa8f830cb407168ff405bef9596e2cb9125d))
+
 ## [1.10.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.9.0...kinotv-v1.10.0) (2026-08-20)
 
 
