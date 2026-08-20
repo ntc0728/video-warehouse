@@ -128,3 +128,6 @@ ehthumbs.db
 *.swp
 *.swo
 *~
+
+# ── git 仓库损坏备份（重建后不应提交） ─────────
+.git.broken-*/
