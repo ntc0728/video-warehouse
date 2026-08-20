@@ -59,18 +59,43 @@
   object-fit: cover;
 }
 
-.lazy-image-container.loaded .lazy-image {
+/* 揭示态（挂载后下一帧）：图片从 opacity:0 淡入；
+   命中缓存仅淡入（无 blur/scale 抖动），未命中走 blur-up。 */
+.lazy-image-container.loaded.revealed .lazy-image {
   opacity: 1;
   filter: blur(0);
   transform: scale(1);
 }
 
-/* 命中 session 缓存：DOM 重建时直接以最终态渲染，跳过 blur-up 动画 */
+/* 命中 session 缓存：不做 blur-up，仅 opacity 短淡入，消除「硬现」闪 */
 .lazy-image-container--cached .lazy-image {
-  opacity: 1;
   filter: blur(0);
   transform: scale(1);
-  transition: none;
+}
+.lazy-image-container--cached.loaded.revealed .lazy-image {
+  opacity: 1;
+  transition: opacity var(--dur-fast) var(--ease-out-expo);
+}
+
+/* 交叉淡入层（crossfadeOnChange）：旧图作底(base)、新图淡入覆盖(pending)，
+   与 HeroBanner stale crossfade 同源，保证卡片封面切换平滑（不硬切）。
+   base 恒为最终态（opacity:1，无 blur/scale）；pending 由 opacity 0→1 过渡，
+   加载完成加 .is-loaded 后显现，过渡结束由 JS 提交为新底图。 */
+.lazy-image--base {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+  z-index: 1;
+}
+.lazy-image--pending {
+  z-index: 2;
+  opacity: 0;
+  filter: blur(0);
+  transform: none;
+  transition: opacity var(--lazy-crossfade, 280ms) var(--ease-out-expo);
+}
+.lazy-image--pending.is-loaded {
+  opacity: 1;
 }
 
 .lazy-image-container.loaded .lazy-image-placeholder {

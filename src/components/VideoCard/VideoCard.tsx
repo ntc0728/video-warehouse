@@ -48,6 +48,8 @@ interface VideoCardProps {
   /** 观看状态（收藏页传入）：传入时封面角标改为「左下=年份+类型合并、右下=观看状态」；
    *  不传时保持默认「左下=年份、右下=类型」。仅竖版卡片使用，其他页面零影响。 */
   status?: 'unwatched' | 'watching' | 'watched';
+  /** 封面旧图→新图交叉淡入（首页卡片封面切换用），透传给 LazyImage。 */
+  crossfadeOnChange?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -107,6 +109,7 @@ const VideoCard = memo(function VideoCard({
   navigateTo,
   navigateState,
   status,
+  crossfadeOnChange = false,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -287,6 +290,7 @@ const VideoCard = memo(function VideoCard({
           // 加载失败走 LazyImage 品牌兜底（lucide MonitorPlay 图标 + kinoTV，亮暗同款），
           // 与 IPTV/历史等卡统一；不传 fallbackSrc 即沿用该默认。
           onLoad={() => setImageLoaded(true)}
+          crossfadeOnChange={crossfadeOnChange}
         />
 
         {/* 光泽扫光层（hover 时触发 glowSweep 动画） */}

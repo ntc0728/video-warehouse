@@ -54,6 +54,12 @@ interface LazyImageProps {
    * 超时视为加载失败 → 走 fallbackSrc。默认 8s；0 表示禁用超时。
    */
   timeoutMs?: number;
+  /**
+   * 旧图→新图交叉淡入（opt-in）：src 变化且已有旧图时，旧图作底、新图淡入覆盖，
+   * 与 HeroBanner 的 stale crossfade 同源，保证 banner/缩略图/卡片封面切换效果一致。
+   * 仅用于需要「切换平滑过渡」的场景（首页卡片封面）；其余场景保持原 blur-up 不变。
+   */
+  crossfadeOnChange?: boolean;
 }
 
 export default function LazyImage({
@@ -72,6 +78,7 @@ export default function LazyImage({
   srcSet,
   sizes,
   timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
+  crossfadeOnChange = false,
 }: LazyImageProps) {
   // 命中 session 缓存时直接进入 loaded + inView 态，跳过 IntersectionObserver 等待
   const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
@@ -100,6 +107,26 @@ export default function LazyImage({
   // 注意：每次 render 计算最新值（非仅 mount）。复用卡场景 src 引用未变但缓存
   // 已被预加载标记时，靠「渲染派生」直接生效，不依赖 state 同步。
   const isCached = isImageLoaded(src);
+
+  // 揭示标志：挂载后下一帧才揭示，确保「命中缓存」的图片也走 opacity 0→1 淡入，
+  // 而非 transition:none 硬现。分类切换时新卡片命中缓存会瞬间以最终态出现、造成
+  // 「硬闪」；强制 reveal 延迟一帧后过渡，与新图加载完成的淡入表现一致（视觉统一）。
+  // 仅首帧生效（mount 一次），二次进入/复用不再重放，避免过度动画。
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRevealed(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // 交叉淡入状态（仅 crossfadeOnChange 启用）：
+  // committedSrc = 当前已完全显示的底图；pendingSrc = 正在淡入覆盖的新图。
+  // src 变化且 committedSrc 存在 → 启动交叉淡入（旧底图保留、新图淡入）；
+  // 新图 onLoad 后过渡结束提交为新底。首帧/无旧图则直接以新图为底。
+  const CROSSFADE_MS = 280;
+  const [committedSrc, setCommittedSrc] = useState<string | null>(null);
+  const [pendingSrc, setPendingSrc] = useState<string | null>(null);
+  const [pendingLoaded, setPendingLoaded] = useState(false);
+  const prevSrcRef = useRef(src);
 
   /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前50px预加载 */
   useEffect(() => {
@@ -140,6 +167,21 @@ export default function LazyImage({
     markImageLoaded(imageSrc);
     // 回调携带成功 URL（srcCandidates 场景下定位命中项；供调用方记录跨会话成功记忆）
     onLoad?.(candidates[candidateIndex]);
+    // 交叉淡入：单图（无 pending）加载完成即以新图为底
+    if (crossfadeOnChange) setCommittedSrc(imageSrc);
+  };
+
+  // 交叉淡入：新图（pending）加载完成 → 淡入后提交为新底图
+  const handlePendingLoad = () => {
+    setPendingLoaded(true);
+    const ps = pendingSrc;
+    window.setTimeout(() => {
+      setCommittedSrc(ps);
+      setPendingSrc(null);
+      setPendingLoaded(false);
+      setIsLoaded(true);
+      if (ps) markImageLoaded(ps);
+    }, CROSSFADE_MS + 40);
   };
 
   const handleError = () => {
@@ -179,28 +221,74 @@ export default function LazyImage({
   // 浏览器在高 DPR 屏幕下会加载原始大图（可能 3000px+），导致内存暴增和性能下降。
   // 若需要响应式图片，应由调用方通过 srcSet prop 传入正确格式的 srcSet。
 
+  // 交叉淡入（crossfadeOnChange）：src 变化且已有旧底图时，旧图作底、新图淡入覆盖，
+  // 与 HeroBanner stale crossfade 同源，保证 banner/缩略图/卡片封面切换效果一致。
+  // src 未变（初始/普通重渲染）直接返回；否则比较 committedSrc 决定「启动交叉淡入」或
+  // 「直接以新图为底」（首帧/无旧图场景）。committedSrc 变化（提交后）会再次触发，
+  // 此时 src 已等于 prevSrcRef → 立即返回，不会形成循环。
+  useEffect(() => {
+    if (!crossfadeOnChange) return;
+    if (src === prevSrcRef.current) return;
+    prevSrcRef.current = src;
+    if (committedSrc !== null && committedSrc !== imageSrc) {
+      setPendingSrc(imageSrc);
+      setPendingLoaded(false);
+    } else {
+      setCommittedSrc(imageSrc);
+      setPendingSrc(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src, imageSrc, crossfadeOnChange]);
+
   return (
     <div
       ref={imgRef}
-      className={`lazy-image-container ${isLoaded || isCached ? 'loaded' : ''} ${error ? 'error' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
+      className={`lazy-image-container ${isLoaded || isCached || (crossfadeOnChange && committedSrc) ? 'loaded' : ''} ${error ? 'error' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${revealed ? 'revealed' : ''} ${className}`}
       style={style}
     >
       {/* isInView || isCached：命中 session 缓存即渲染 img（不依赖 IO 触发）。
           复用卡场景（分类切换后 key 相同的卡片复用，旧 isInView 可能为 false）且
           src 引用未变时，effect 不会重跑，靠「渲染派生」直接绘制。
-          hasValidSrc：空源（无有效候选）时不渲染主图，交由下方 fallback 兜底图分支。 */}
+          hasValidSrc：空源（无有效候选）时不渲染主图，交由下方 fallback 兜底图分支。
+          交叉淡入分支：pendingSrc 存在时渲染 base(旧底图) + pending(新图淡入) 两层；
+          否则渲染单图（首帧/无 pending），由 handleLoad 提交为新底图。 */}
       {!error && hasValidSrc && (isInView || isCached) && (
-        <img
-          src={imageSrc}
-          alt={alt}
-          className="lazy-image"
-          onLoad={handleLoad}
-          onError={handleError}
-          loading="lazy"
-          decoding="async"
-          srcSet={srcSet}
-          sizes={sizes}
-        />
+        <>
+          {(!crossfadeOnChange || !pendingSrc) && (
+            <img
+              src={imageSrc}
+              alt={alt}
+              className="lazy-image"
+              onLoad={handleLoad}
+              onError={handleError}
+              loading="lazy"
+              decoding="async"
+              srcSet={srcSet}
+              sizes={sizes}
+            />
+          )}
+          {crossfadeOnChange && pendingSrc && (
+            <>
+              <img
+                src={committedSrc ?? ''}
+                alt=""
+                aria-hidden="true"
+                className="lazy-image lazy-image--base"
+                decoding="async"
+              />
+              <img
+                src={pendingSrc}
+                alt={alt}
+                className={`lazy-image lazy-image--pending${pendingLoaded ? ' is-loaded' : ''}`}
+                onLoad={handlePendingLoad}
+                onError={handleError}
+                decoding="async"
+                srcSet={srcSet}
+                sizes={sizes}
+              />
+            </>
+          )}
+        </>
       )}
 
       {/* 占位层仅在「有有效 src 且正在加载」时渲染。
@@ -209,8 +297,9 @@ export default function LazyImage({
           白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。
           默认占位 = 骨架 shimmer（2026-08-19）：卡片封面加载不再显示转圈，
           统一为项目级骨架占位图（--color-placeholder-shimmer-* + shimmer 扫光），
-          与卡片网格级 SkeletonCard / 行级 SkeletonCards 视觉一致。 */}
-      {!isLoaded && !isCached && !error && hasValidSrc && (
+          与卡片网格级 SkeletonCard / 行级 SkeletonCards 视觉一致。
+          交叉淡入进行中（committedSrc 已有旧底图）不渲染骨架——旧底图已可见。 */}
+      {!isLoaded && !isCached && !error && hasValidSrc && !(crossfadeOnChange && committedSrc) && (
         <div className="lazy-image-placeholder">
           {placeholder || <div className="lazy-image-skeleton" aria-hidden="true" />}
         </div>
