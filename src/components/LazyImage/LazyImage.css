@@ -26,19 +26,21 @@
   background: transparent;
 }
 
-.lazy-image-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.image-spinner {
-  width: var(--space-lg);
-  height: var(--space-lg);
-  border: 2px solid var(--color-placeholder);
-  border-top: 2px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+/* 加载占位 = 骨架 shimmer（2026-08-19）：
+   卡片封面加载不再显示转圈（原 .image-spinner），统一为项目级骨架占位图。
+   背景与卡片网格级骨架（SkeletonCard / 行级 SkeletonCards / 缩略图骨架）共用
+   --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。 */
+.lazy-image-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 
 .lazy-image {
@@ -85,18 +87,51 @@
   filter: grayscale(100%);
 }
 
-.lazy-image-letter {
+/* 品牌兜底（lucide 图标 + kinoTV 品牌字，视频 MonitorPlay / IPTV Tv）：
+   纯 CSS 渲染，不再使用手绘 SVG 文件。
+   背景 = 主题自适应中性灰渐变（亮/暗各一套 shimmer 色），无蓝相；
+   图标 + 品牌字用 --color-text-tertiary，与全站文字层级一致，
+   flex 纵向居中 + 图标随 --icon-* token 自适应（TV 端自动放大）。 */
+.lazy-image-fallback--brand {
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    var(--color-placeholder-shimmer-a),
+    var(--color-placeholder-shimmer-b)
+  );
+  opacity: 1;
+  filter: none;
+}
+
+.lazy-image-fallback__icon {
+  color: var(--color-text-tertiary);
+  opacity: 0.9;
+}
+
+.lazy-image-fallback__brand {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  opacity: 0.8;
+}
+
+/* 自定义兜底节点容器：不附加图片兜底的灰度/半透明 */
+.lazy-image-fallback--custom {
   position: absolute;
   inset: 0;
   z-index: 2;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #fff;
-  font-size: 2em;
-  font-weight: 700;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  opacity: 0.85;
+  opacity: 1;
+  filter: none;
 }
 
 .lazy-image-bg-container {

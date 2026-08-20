@@ -86,6 +86,14 @@ interface TMDBStoreState {
    * 或请求失败时骨架闪烁。
    */
   discoverLastStatus: 'pending' | 'success' | 'error' | null;
+  /**
+   * 最近一次成功写入 discoverResults 的 filterOptions 快照（方案 B：无 Keep-Alive 下
+   * Browse 重新挂载时据此判断「store 缓存是否对应当前筛选条件」，命中则直接回显、
+   * 跳过重新请求）。搜索模式（search）成功时写入 null，表示当前结果非 discover 数据。
+   */
+  discoverFetchedFilter: TMDBFilterOptions | null;
+  /** 最近一次成功写入 discoverResults 的时间戳（0 = 从未成功获取） */
+  discoverFetchedAt: number;
 
   // ---- 筛选 ----
   filterOptions: TMDBFilterOptions;
@@ -380,6 +388,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   discoverResults: [],
   discoverPagination: { page: 1, totalPages: 0, totalResults: 0 },
   discoverLastStatus: null,
+  discoverFetchedFilter: null,
+  discoverFetchedAt: 0,
 
   filterOptions: { ...DEFAULT_FILTER_OPTIONS },
 
@@ -819,6 +829,9 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
+          // 搜索模式：结果非 discover 数据，缓存回显判断据此跳过
+          discoverFetchedFilter: null,
+          discoverFetchedAt: Date.now(),
         };
       });
     } catch (err) {
@@ -912,6 +925,9 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
+          // 记录本次结果的筛选条件快照：Browse 重新挂载时命中则直接回显
+          discoverFetchedFilter: filterOptions,
+          discoverFetchedAt: Date.now(),
         };
       });
     } catch (err) {
@@ -928,6 +944,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   fetchTopRated: async (page = 1, opts?: { reset?: boolean }) => {
     const seq = ++_discoverSeq; // 竞态保护：仅最新一次排行可写结果
     const forceReset = opts?.reset === true;
+    const { filterOptions } = get();
     set((s) => ({
       loading: { ...s.loading, discover: true },
       errors: { ...s.errors, discover: null },
@@ -964,6 +981,9 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         },
         loading: { ...s.loading, discover: false },
         discoverLastStatus: 'success',
+        // 记录本次结果的筛选条件快照：Browse 重新挂载时命中则直接回显
+        discoverFetchedFilter: filterOptions,
+        discoverFetchedAt: Date.now(),
       }));
     } catch (err) {
       if (seq !== _discoverSeq) return; // 过期失败不写错误态

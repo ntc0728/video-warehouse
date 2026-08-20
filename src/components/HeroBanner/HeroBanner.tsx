@@ -53,12 +53,26 @@ interface HeroBannerProps {
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
+/**
+ * 分类切换滞留层清除延迟：新层真实绘制完成（onLoad/onError/ref-complete）后，
+ * 等其 is-active 淡入（0.8s）播完再加余量再移除滞留层（旧图垫底防露底）。
+ * reduced-motion 下动画被禁用、无 animationend 事件，由定时器兜底。
+ */
+const STALE_CLEAR_DELAY = 1200;
+/** 预加载 URL 集合容量上限：长会话防无界增长（E 项，LRU 近似 FIFO 淘汰最旧） */
+const MAX_PRELOADED_URLS = 1000;
 /** 已请求预加载的 URL 集合：快速左右滑动时避免对同一 URL 重复 new Image + 解码（卡顿主因之一） */
 const preloadedSet = new Set<string>();
 /** 预加载图片（按视口选择解码尺寸：宽屏 w1280，窄屏/移动端 w780 足够且解码更快） */
 function preloadImage(url: string | null | undefined): void {
-  if (!url || preloadedSet.has(url)) return;
+  if (!url) return;
+  if (preloadedSet.has(url)) return;
   preloadedSet.add(url);
+  // 超容量淘汰最早加入的 URL：本场景仅需「已请求过」去重，无需 LRU 提升（偶发淘汰后重取，可忽略）
+  if (preloadedSet.size > MAX_PRELOADED_URLS) {
+    const oldest = preloadedSet.values().next().value;
+    if (oldest !== undefined) preloadedSet.delete(oldest);
+  }
   const img = new Image();
   img.decoding = 'async';
   img.src = url;
@@ -125,8 +139,28 @@ export default function HeroBanner({
   // 当前预加载 url：快速连点切换时旧预加载完成后不得覆盖新目标（防竞态）
   const switchLoadRef = useRef<string | null>(null);
   // 过渡期滞留层快照（state）：切换帧由渲染期派生首帧，useLayoutEffect 写入同值（幂等），
-  // 过渡期（itemsChanged 已消失）继续垫底；新层淡入完成后由清理 effect 置 null。
+  // 过渡期（itemsChanged 已消失）继续垫底；新层淡入完成后由清除逻辑置 null。
   const [staleSnapshot, setStaleSnapshot] = useState<{ url: string; srcSet?: string; id: string } | null>(null);
+  // ── 滞留层清除（D 项收尾）──
+  // 由「新层真实绘制事件」驱动启动，而非 switchReady 变化即起算——switchReady=true（预加载
+  // onload）到新层 <img> 实际绘制（onLoad/ref-complete）之间存在渲染/解码间隙，旧实现从
+  // switchReady 起算 1200ms，间隙大时「旧层被提前清 → 新层未就绪 → 露深色」。改为新层
+  // is-active 层真实绘制完成后起算（覆盖 0.8s 淡入 + 余量），杜绝提前清。
+  const staleSnapshotRef = useRef(staleSnapshot);
+  staleSnapshotRef.current = staleSnapshot;
+  const staleClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleStaleClear = useCallback(() => {
+    if (staleSnapshotRef.current == null) return;
+    if (staleClearTimerRef.current) clearTimeout(staleClearTimerRef.current);
+    staleClearTimerRef.current = setTimeout(() => {
+      staleClearTimerRef.current = null;
+      setStaleSnapshot(null);
+    }, STALE_CLEAR_DELAY);
+  }, []);
+  // 卸载兜底清理（Keep-Alive 下组件常驻，但 /play 等非 Keep-Alive 路由仍会卸载）
+  useEffect(() => () => {
+    if (staleClearTimerRef.current) clearTimeout(staleClearTimerRef.current);
+  }, []);
   // 缩略图数量自适应：大屏 4 个，普通桌面 3 个
   const maxCount = isWide ? 4 : 3;
   const visibleCount = Math.min(maxCount, displayItems.length);
@@ -178,30 +212,32 @@ export default function HeroBanner({
           // 直接渲染新层让图片走自身加载（加载完成 heroBgFadeIn 淡入），
           // 消除「切过去旧图滞留很久才更新」的慢感知（用户反馈无缓存时切换特别慢）。
           // 有缓存（切回已看过的分类）才保留旧图垫底 → 新图就绪淡入的平滑过渡。
-          if (!isImageLoaded(url)) {
-            switchLoadRef.current = null;
-            setStaleSnapshot(null);
-            setSwitchReady(true);
-          } else {
-            // 与切换帧渲染期派生的快照同值（幂等写入 state，供过渡期继续垫底）
-            setStaleSnapshot({
-              url: oldUrl,
-              srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
-              id: String(oldItem.id),
-            });
-            switchLoadRef.current = url;
-            setSwitchReady(false);
-            const img = new Image();
-            const done = () => {
-              if (switchLoadRef.current === url) {
-                switchLoadRef.current = null;
-                setSwitchReady(true);
-              }
-            };
-            img.onload = done;
-            img.onerror = done;
-            img.src = url;
+          // 统一「旧图垫底 → 新图就绪淡入」：无论是否命中 session 缓存，都保留旧图作
+          // stale 垫底，新层挂起（opacity:0）待 new Image() 预加载 onload 后 switchReady
+          // 淡入覆盖。命中缓存时浏览器同步绘制、onload 近乎瞬时，无「旧图滞留变慢」感知；
+          // 未缓存时旧图垫底消除「新层淡入露出 bg-placeholder 渐变」导致的 banner 闪窗。
+          // 新一轮过渡开始：清掉上一轮残留清除定时器（否则上一轮定时器到期会把新 stale 清掉）
+          if (staleClearTimerRef.current) {
+            clearTimeout(staleClearTimerRef.current);
+            staleClearTimerRef.current = null;
           }
+          setStaleSnapshot({
+            url: oldUrl,
+            srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
+            id: String(oldItem.id),
+          });
+          switchLoadRef.current = url;
+          setSwitchReady(false);
+          const img = new Image();
+          const done = () => {
+            if (switchLoadRef.current === url) {
+              switchLoadRef.current = null;
+              setSwitchReady(true);
+            }
+          };
+          img.onload = done;
+          img.onerror = done;
+          img.src = url;
         } else {
           setStaleSnapshot(null);
           setSwitchReady(true);
@@ -264,6 +300,7 @@ export default function HeroBanner({
       setSlideDir(null);
       setBgIndices([Math.min(activeIndexRef.current, Math.max(0, displayItems.length - 1))]);
       switchLoadRef.current = null;
+      if (staleClearTimerRef.current) { clearTimeout(staleClearTimerRef.current); staleClearTimerRef.current = null; }
       setStaleSnapshot(null);
       setSwitchReady(true);
     } else {
@@ -271,6 +308,7 @@ export default function HeroBanner({
       setPaused(true);
       setHoveredIndex(null);
       switchLoadRef.current = null;
+      if (staleClearTimerRef.current) { clearTimeout(staleClearTimerRef.current); staleClearTimerRef.current = null; }
       setStaleSnapshot(null);
       setSwitchReady(true);
     }
@@ -320,13 +358,10 @@ export default function HeroBanner({
     });
   }, [displayIndex]);
 
-  // 分类切换过渡收尾：新层就绪（switchReady=true）挂载后，等待其 is-active 淡入
-  // （0.8s）完成，移除滞留层（延时兜底，不依赖动画事件；reduced-motion 无动画时同样清理）
-  useEffect(() => {
-    if (!switchReady) return;
-    const t = window.setTimeout(() => setStaleSnapshot(null), 1200);
-    return () => window.clearTimeout(t);
-  }, [switchReady]);
+  // 分类切换过渡收尾：滞留层移除改由「新层 is-active img 真实绘制事件」
+  // （onLoad/onError/ref-complete）驱动 scheduleStaleClear（见新层 <img> 事件绑定），
+  // 不再在 switchReady 变化即起算 1200ms 定时器——消除预加载就绪与新层实际绘制
+  // 之间的间隙导致「旧层提前清、新层未就绪露深色」的可能（D 项收尾）。
 
   // 滑动冷却期：滑动后 1000ms 内暂停自动轮播，避免动画冲突
   const swipeCooldownRef = useRef(0);
@@ -554,13 +589,29 @@ export default function HeroBanner({
               loading="eager"
               decoding="async"
               draggable={false}
-              onLoad={() => { if (backdropUrl) markImageLoaded(backdropUrl); if (isActive) setBannerReady(true); }}
-              onError={() => { if (isActive) setBannerReady(true); }}
+              onLoad={() => {
+                if (backdropUrl) markImageLoaded(backdropUrl);
+                if (isActive) {
+                  setBannerReady(true);
+                  // 新层真实绘制完成 → 自此起算淡入（0.8s）后移除滞留层（D 项收尾）
+                  scheduleStaleClear();
+                }
+              }}
+              onError={() => {
+                if (isActive) {
+                  setBannerReady(true);
+                  // 新图加载失败（fail-open）→ 同样结束过渡，移除滞留层避免旧图永驻
+                  scheduleStaleClear();
+                }
+              }}
               ref={(el) => {
-                // 已缓存图片不会触发 onLoad，用 complete 兜底标记就绪 + 缓存标记
+                // 已缓存图片不会触发 onLoad，用 complete 兜底标记就绪 + 缓存标记 + 结束过渡
                 if (el && el.complete && el.naturalWidth > 0) {
                   if (backdropUrl) markImageLoaded(backdropUrl);
-                  if (isActive) setBannerReady(true);
+                  if (isActive) {
+                    setBannerReady(true);
+                    scheduleStaleClear();
+                  }
                 }
               }}
             />

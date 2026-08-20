@@ -3,9 +3,9 @@
  * 左媒体（视频海报 / IPTV 台标充满容器）+ 右 3 行正文（标题 / 类型·来源·集数 / 状态·时间）
  * 复用全局 .record-card 选中边框 / 批量勾选 / 删除按钮类名，独立实现布局，不依赖 VideoCard/IPTVChannelCard。
  */
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckSquare, Square, Trash2, Tv } from 'lucide-react';
+import { CheckSquare, Square, Trash2 } from 'lucide-react';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { Icon } from '@/components/ui/Icon';
 import './RecordCard.css';
@@ -54,7 +54,6 @@ const RecordCard = memo(function RecordCard({
 }: RecordCardProps) {
   const isVideo = item.kind === 'video';
   const isFinished = item.status === 'finished';
-  const [logoError, setLogoError] = useState(false);
   const hasProgress =
     isVideo &&
     item.duration !== undefined &&
@@ -91,24 +90,16 @@ const RecordCard = memo(function RecordCard({
             src={item.media || ''}
             alt={item.title}
             className="record-card__media-img"
-            letter={item.title ? item.title[0] : ''}
-            fallbackSrc=""
+            // 视频失败：默认 'image' → lucide MonitorPlay 图标 + kinoTV（与 VideoCard 统一）
           />
         ) : (
-          <>
-            <LazyImage
-              src={item.media || ''}
-              srcCandidates={item.logoCandidates}
-              alt={item.title}
-              className="record-card__media-img record-card__media-img--logo"
-              fallbackSrc=""
-              onError={() => setLogoError(true)}
-            />
-            {/* IPTV 台标失败/缺失占位：Tv 图标居中（与 IPTVChannelCard 横向 cover 占位一致） */}
-            <div className="record-card__media-glyph" data-show={logoError || (!item.media && !(item.logoCandidates?.length))} aria-hidden="true">
-              <Icon icon={Tv} size="lg" />
-            </div>
-          </>
+          <LazyImage
+            src={item.media || ''}
+            srcCandidates={item.logoCandidates}
+            alt={item.title}
+            className="record-card__media-img record-card__media-img--logo"
+            fallbackVariant="tv"
+          />
         )}
         {!isVideo && <span className="record-card__live-badge">LIVE</span>}
         {hasProgress && (

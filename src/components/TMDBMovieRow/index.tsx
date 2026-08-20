@@ -88,6 +88,28 @@ function toVideo(item: {
   };
 }
 
+/**
+ * 稳定 video 引用（B 项修复）：VideoCard 是 memo，但此前每次渲染都传
+ * `toVideo(item)`（新建对象）→ memo 永远失效 → 父级任意重渲染都让全部卡片重渲染，
+ * 击穿 memo。这里按 item 对象本身（store 中同一数据项引用恒定）缓存转换结果，
+ * 同一 item 跨渲染/跨分类复用同一 video 引用 → 仅数据真变的卡片重渲染。
+ * 数据刷新后 store 会换成新的 item 对象 → 自动重新计算，不会显示旧数据。
+ */
+const videoMemoCache = new WeakMap<object, Video>();
+function getVideo(item: {
+  id: string;
+  title: string;
+  cover: string;
+  type: VideoType;
+  tags?: string[];
+}): Video {
+  const cached = videoMemoCache.get(item);
+  if (cached) return cached;
+  const v = toVideo(item);
+  videoMemoCache.set(item, v);
+  return v;
+}
+
 /** 骨架卡片（错开动画延迟，避免同步闪烁）
  *  - 默认竖版（2:3）：镜像 .video-card portrait 结构 — 封面 + 左上评分角标 + 右上收藏点 + 左下年份 + 右下类型 + 底部标题
  *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + 底部标题
@@ -424,7 +446,7 @@ function TMDBMovieRow({
                 }}
               >
                 <VideoCard
-                  video={toVideo(item)}
+                  video={getVideo(item)}
                   hideFavorite
                   variant="landscape"
                   backdropSrc={item.backdrop || item.cover}
@@ -456,12 +478,12 @@ function TMDBMovieRow({
                      }
                    }}
                  >
-                   <VideoCard
-                     video={toVideo(item)}
-                     rating={item.voteAverage}
-                     srcSet={posterSrcSet ?? undefined}
+                  <VideoCard
+                    video={getVideo(item)}
+                    rating={item.voteAverage}
+                    srcSet={posterSrcSet ?? undefined}
                     sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
-                 />
+                  />
                 </div>
               );
             })

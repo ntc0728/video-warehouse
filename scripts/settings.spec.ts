@@ -277,9 +277,8 @@ test.describe('6.6 关于与彩蛋', () => {
   });
 
   test('SET-073: 版本号彩蛋跳转源检测页（移动端子页进入，portal 不遮挡）', async ({ page }) => {
-    // 移动端视口：设置子页 SettingsSubPage 用 createPortal 挂到 body（z-index 60），
-    // 不受 Keep-Alive 的 display:none 控制。若离开 /settings 时未卸载，会盖住目标页
-    // （「路由变了、内容没变」，点返回才露出）。本用例强断言 portal 必须卸载。
+    // 移动端视口：设置子页 SettingsSubPage 用 createPortal 挂到 body（z-index 60）。
+    // 方案 B（无 Keep-Alive）：离开 /settings 组件卸载，portal 随之移除。本用例强断言 portal 必须卸载。
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });

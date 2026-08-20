@@ -110,23 +110,7 @@ export default function CollectionsPage() {
   }, []);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('collections', undefined, location.pathname === '/collections');
-
-  // 离开页面时清空筛选状态
-  const prevPathnameRef = useRef(location.pathname);
-  useEffect(() => {
-    const prev = prevPathnameRef.current;
-    prevPathnameRef.current = location.pathname;
-    if (prev === '/collections' && location.pathname !== '/collections') {
-      setMainTab('all');
-      setStatusFilter('all');
-      setSortBy('recent');
-      setFilterOpen(false);
-      setSearchByTab({ all: '', video: '', iptv: '' });
-      setBatchMode(false);
-      setSelected(new Set());
-    }
-  }, [location.pathname]);
+  useScrollRestore('collections');
 
   const search = searchByTab[mainTab];
   const setSearch = useCallback((v: string) => {

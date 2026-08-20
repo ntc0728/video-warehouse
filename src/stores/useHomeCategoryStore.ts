@@ -126,6 +126,21 @@ const sharedFetchCache = new Map<
   (signal?: AbortSignal) => Promise<TMDBVideoItem[]>,
   { p: Promise<TMDBVideoItem[]>; at: number }
 >();
+/** 共享 fetch 缓存容量上限：分类 fn 数量有限（7 类 × 8 行），上限为防御性防无界增长（E 项） */
+const MAX_SHARED_FETCH = 100;
+
+/** 淘汰共享 fetch 缓存：先清过期条目（TTL 内不命中、白占内存），再按插入序淘汰超容量最旧 */
+function pruneSharedFetchCache(): void {
+  const now = Date.now();
+  for (const [fn, v] of sharedFetchCache) {
+    if (now - v.at >= CACHE_TTL) sharedFetchCache.delete(fn);
+  }
+  while (sharedFetchCache.size > MAX_SHARED_FETCH) {
+    const oldest = sharedFetchCache.keys().next().value;
+    if (oldest === undefined) break;
+    sharedFetchCache.delete(oldest);
+  }
+}
 
 function clearSkeletonTimer(): void {
   if (_skeletonTimer !== null) {
@@ -238,8 +253,9 @@ export const useHomeCategoryStore = create<HomeCategoryState>()((set, get) => {
         if (!promiseCache.has(fn)) {
           const p = fn(signal)
             .then((items) => {
-              // 成功 → 写入模块级共享缓存（供其他分类复用）；失败不写（下次可重试）
+              // 成功 → 写入模块级共享缓存（供其他分类复用）并淘汰过期/超容量条目；失败不写（下次可重试）
               sharedFetchCache.set(fn, { p: Promise.resolve(items), at: Date.now() });
+              pruneSharedFetchCache();
               return items;
             })
             .catch(() => [] as TMDBVideoItem[]);

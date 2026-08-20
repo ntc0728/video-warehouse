@@ -13,6 +13,8 @@
 
 /** 本会话内已成功 onLoad 的图片 URL 集合 */
 const loadedImageCache = new Set<string>();
+/** 容量上限：长会话（Keep-Alive 常驻 + 大量分类/海报）防无界增长（E 项，LRU 近似 FIFO 淘汰最旧） */
+const MAX_LOADED_URLS = 1000;
 
 /** 查询 URL 是否在本会话内已成功加载 */
 export function isImageLoaded(url: string): boolean {
@@ -21,7 +23,14 @@ export function isImageLoaded(url: string): boolean {
 
 /** 将 URL 标记为已加载（供 Image() 预热等场景手动调用） */
 export function markImageLoaded(url: string): void {
+  if (loadedImageCache.has(url)) return;
   loadedImageCache.add(url);
+  // 超容量淘汰最早加入的 URL：仅需「已加载」事实查询，无需 LRU 提升（偶发淘汰后图片重载走
+  // 浏览器 HTTP 缓存同步绘制，行为等价；「清除缓存」入口仍可整体清空）
+  if (loadedImageCache.size > MAX_LOADED_URLS) {
+    const oldest = loadedImageCache.values().next().value;
+    if (oldest !== undefined) loadedImageCache.delete(oldest);
+  }
 }
 
 /** 清空本会话的图片加载缓存（用于「清除全部缓存」入口） */

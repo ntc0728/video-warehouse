@@ -284,6 +284,8 @@ const VideoCard = memo(function VideoCard({
           sizes={variant === 'portrait' ? sizes : undefined}
           alt={video.title}
           className={`video-card-cover-img ${variant === 'landscape' ? 'video-card-cover-img--landscape' : ''}`}
+          // 加载失败走 LazyImage 品牌兜底（lucide MonitorPlay 图标 + kinoTV，亮暗同款），
+          // 与 IPTV/历史等卡统一；不传 fallbackSrc 即沿用该默认。
           onLoad={() => setImageLoaded(true)}
         />
 

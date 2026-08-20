@@ -1,21 +1,5 @@
 # Changelog
 
-## [1.10.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.9.0...kinotv-v1.10.0) (2026-08-18)
-
-
-### Features
-
-* **cards:** 卡片四项细节调整——角标统一/历史卡动画/IPTV封面失败样式/LIVE角标 ([6fe9f7d](https://github.com/ntc0728/video-warehouse/commit/6fe9f7d71dd891f45006251fc91ed0fdb4ef328f))
-* **collections:** 收藏页融合 Tab + 分区整改（方案 B）+ VideoCard 角标重组 ([95573d4](https://github.com/ntc0728/video-warehouse/commit/95573d4d828850098e01db8f9fbd1e407f5936f3))
-
-
-### Bug Fixes
-
-* **collections:** 「更多筛选」排序去掉下拉框，恒显示 chips，空间不足自动换行 ([853e482](https://github.com/ntc0728/video-warehouse/commit/853e482a7ab0e0bebe9463881b3fc1e1ddf69d43))
-* **player:** 播放器交互修复计划落地（C1-C5 冲突 · G1-G10 缺口 · R1-R6 冗余） ([5d18a2e](https://github.com/ntc0728/video-warehouse/commit/5d18a2e783602ebee1825d28e8045cdcc395a358))
-* **scrollbar:** OverlayScrollbar thumb 直接 DOM 写入，消除主线程繁忙时「滚动条卡顶不跟手」 ([1a89705](https://github.com/ntc0728/video-warehouse/commit/1a89705ea72dd95dd8104ef51f74879e439cb98e))
-* **scrollbar:** 彻底移除 rAF 节流——监听器直接调用 updateThumb，根治滚动条卡顶 ([e970b65](https://github.com/ntc0728/video-warehouse/commit/e970b6531718eddcb59465abe700536e266b4319))
-
 ## [1.9.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.8.0...kinotv-v1.9.0) (2026-08-17)
 
 

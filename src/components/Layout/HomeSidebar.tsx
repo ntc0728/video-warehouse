@@ -12,6 +12,7 @@
  *
  * 高亮：根据当前路由 + activeCategory 判断（IPTV 由路由判定，类目由 store 判定）。
  */
+import { useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Home, Tv, Film, Clapperboard, Mic2, Sparkles, Camera, Trophy, Settings } from 'lucide-react';
@@ -54,6 +55,27 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
   const setActiveCategory = useHomeCategoryStore((s) => s.setActiveCategory);
   const scrollContainerRef = useScrollContainer();
 
+  // ── 分类切换防抖（C 项，~100ms）──
+  // 快速连点不同分类（电影→电视剧→综艺）时，每次点击都会触发 setActiveCategory →
+  // loadCategory（写骨架 + 新请求）→ HeroBanner 状态机切换 + preload 爆发，
+  // 中间分类逐个渲染/请求造成卡顿与图片连接池被打满。防抖让连续点击「落定在最后一项」，
+  // 仅对最终分类发起一次 loadCategory，中间分类不渲染、不请求。
+  // 单次点击约延迟 100ms 才切（用户已确认可接受）；超过 100ms 间隔的点击各自立即生效。
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSetCategory = useCallback(
+    (cat: HomeCategoryKey) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        setActiveCategory(cat);
+      }, 100);
+    },
+    [setActiveCategory],
+  );
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+  }, []);
+
   const handleClick = (item: SidebarItem) => {
     if (item.route) {
       navigate(item.route);
@@ -63,7 +85,7 @@ export default function HomeSidebar({ collapsed = false }: HomeSidebarProps) {
     if (location.pathname !== '/') {
       navigate('/');
     }
-    setActiveCategory(cat);
+    debouncedSetCategory(cat);
     requestAnimationFrame(() => {
       const el = scrollContainerRef.current;
       if (el) el.scrollTo({ top: 0, behavior: 'auto' });

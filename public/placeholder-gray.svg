@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+  <!-- KinoTV 纯中性灰占位底（Detail 页原生 img 兜底用）：
+       无图标、无文字，仅供原生 <img onError> 换 src 场景作为纯色背景块。
+       LazyImage 组件的品牌兜底（MonitorPlay/Tv 图标 + kinoTV）走 lucide 组件渲染，不使用本文件。
+       背景为纯中性灰（R=G=B，无蓝相），亮/暗主题统一。 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ececec"/>
+      <stop offset="1" stop-color="#dedede"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+</svg>

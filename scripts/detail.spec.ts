@@ -297,8 +297,9 @@ test.describe('3.5 概览 Tab', () => {
     console.log(`✅ DETAIL-047 通过: 剧照截断 items=${info.items}, limited=${info.limited}, more=${info.more}`);
   });
 
-  test('DETAIL-048: Keep-Alive 隐藏期间加载剧照后，仍保持 2 行截断（不全部平铺）', async ({ page }) => {
-    // 复现隐藏加载场景：进详情 → 后退（detail 被 display:none 隐藏）→ 剧照在隐藏期间加载完 → 再前进
+  test('DETAIL-048: 重新进入 detail 后剧照仍保持 2 行截断（不全部平铺）', async ({ page }) => {
+    // 方案 B（无 Keep-Alive）：后退卸载 detail → 前进重新挂载，剧照重新加载/回显。
+    // 断言核心：无论加载路径如何，visibleCount 必须是有限值（视口兜底），不能全部平铺。
     await page.route('**/api.tmdb.org/**', async (route) => {
       const url = route.request().url();
       if (url.includes('/images')) {
@@ -319,10 +320,10 @@ test.describe('3.5 概览 Tab', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    // 后退隐藏 detail（keep-alive 用 display:none），等待剧照在隐藏期加载完
+    // 后退卸载 detail，等待剧照在卸载期间加载完（模拟慢接口）
     await page.goBack();
     await page.waitForTimeout(3500);
-    // 再前进，detail 重新可见；等待真实网格（带「查看全部」按钮，仅截断后渲染）出现
+    // 再前进，detail 重新挂载；等待真实网格（带「查看全部」按钮，仅截断后渲染）出现
     await page.goForward();
     await page.waitForSelector('.detail-stills-more', { timeout: 15000 });
     await page.waitForTimeout(300);

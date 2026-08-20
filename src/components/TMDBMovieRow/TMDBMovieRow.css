@@ -125,7 +125,15 @@
   position: relative;
   width: 100%;
   border-radius: var(--radius-md);
-  background: transparent;
+  /* 与 .video-card__poster 一致的 shimmer 封面 */
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer var(--card-shimmer-duration) infinite;
   aspect-ratio: 2 / 3;
   overflow: hidden;
 }
@@ -136,7 +144,7 @@
   position: absolute;
   display: block;
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
@@ -173,7 +181,7 @@
   width: var(--layout-channel-num-w);
   height: var(--icon-md);
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.06));
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 

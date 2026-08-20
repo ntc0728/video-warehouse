@@ -210,26 +210,10 @@ export default function HistoryPage() {
   }, []);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('history', undefined, location.pathname === '/history');
+  useScrollRestore('history');
 
   // backdrop 自动补全（视频卡展示时启用：综合/视频 tab）
   useBackdropLoader(watchHistory, mainTab !== 'iptv');
-
-  // 离开页面时清空筛选状态
-  const prevPathnameRef = useRef(location.pathname);
-  useEffect(() => {
-    const prev = prevPathnameRef.current;
-    prevPathnameRef.current = location.pathname;
-    if (prev === '/history' && location.pathname !== '/history') {
-      setMainTab('all');
-      setStatusFilter('all');
-      setSortBy('recent');
-      setFilterOpen(false);
-      setSearchByTab({ all: '', video: '', iptv: '' });
-      setBatchMode(false);
-      setSelected(new Set());
-    }
-  }, [location.pathname]);
 
   const search = searchByTab[mainTab];
   const setSearch = useCallback((v: string) => {
