@@ -65,6 +65,8 @@ interface TMDBMovieRowProps {
    * 封面切换走 LazyImage 交叉淡入，与 banner/缩略图过渡一致；不开启时保持原 blur-up。
    */
   crossfadeOnChange?: boolean;
+  /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
+  skipAnimations?: boolean;
 }
 
 /**
@@ -160,6 +162,7 @@ function TMDBMovieRow({
   continueItems,
   scrollResetToken,
   crossfadeOnChange = false,
+  skipAnimations = false,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -453,16 +456,17 @@ function TMDBMovieRow({
                   }
                 }}
               >
-                <VideoCard
-                  video={getVideo(item)}
-                  hideFavorite
-                  variant="landscape"
-                  backdropSrc={item.backdrop || item.cover}
-                  overlayLabel={item.overlayLabel}
-                  progress={item.progress}
-                  duration={item.duration}
-                  navigateTo={`/play/${item.id}`}
-                />
+                 <VideoCard
+                   video={getVideo(item)}
+                   hideFavorite
+                   variant="landscape"
+                   backdropSrc={item.backdrop || item.cover}
+                   overlayLabel={item.overlayLabel}
+                   progress={item.progress}
+                   duration={item.duration}
+                   navigateTo={`/play/${item.id}`}
+                   skipAnimations={skipAnimations}
+                 />
               </div>
             ))
           ) : (
@@ -488,13 +492,14 @@ function TMDBMovieRow({
                      }
                    }}
                  >
-                  <VideoCard
-                    video={getVideo(item)}
-                    rating={item.voteAverage}
-                    srcSet={posterSrcSet ?? undefined}
-                    sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
-                    crossfadeOnChange={crossfadeOnChange}
-                  />
+                   <VideoCard
+                     video={getVideo(item)}
+                     rating={item.voteAverage}
+                     srcSet={posterSrcSet ?? undefined}
+                     sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
+                     crossfadeOnChange={crossfadeOnChange}
+                     skipAnimations={skipAnimations}
+                   />
                 </div>
               );
             })

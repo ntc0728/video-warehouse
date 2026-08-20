@@ -42,14 +42,16 @@ interface HeroBannerProps {
   historyMap?: Map<string, { progress: number }>;
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
-  /**
-   * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
-   * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
-   * 用于：离开时暂停自动轮播（避免隐藏期间 activeIndex/bgIndices/slideDir 继续推进、
-   * 切回时 CSS animation 因 display:none→block 重播导致「闪一下上一张图」），
-   * 切回时重置过渡状态 + 归单层 bgIndices。
-   */
-  active?: boolean;
+   /**
+    * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
+    * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
+    * 用于：离开时暂停自动轮播（避免隐藏期间 activeIndex/bgIndices/slideDir 继续推进、
+    * 切回时 CSS animation 因 display:none→block 重播导致「闪一下上一张图」），
+    * 切回时重置过渡状态 + 归单层 bgIndices。
+    */
+   active?: boolean;
+   /** 初始淡入延迟（ms）：进入首页时延迟 heroBgFadeIn，等骨架覆盖层消失后再开始，避免叠加混乱。 */
+   initialEnterDelay?: number;
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
@@ -94,6 +96,7 @@ export default function HeroBanner({
   historyMap,
   loading = false,
   active = true,
+  initialEnterDelay = 0,
 }: HeroBannerProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -529,6 +532,7 @@ export default function HeroBanner({
     <section
       ref={bannerRef}
       className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
+      style={initialEnterDelay > 0 ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms` } as React.CSSProperties : undefined}
       aria-roledescription="carousel"
       aria-label="热门推荐"
       onMouseEnter={() => setPaused(true)}

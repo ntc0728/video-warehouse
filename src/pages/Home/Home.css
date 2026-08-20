@@ -11,6 +11,7 @@
   width: 100%;
   min-width: 0;
   background-color: var(--color-background);
+  position: relative;
 }
 
 .home-page--loading {
@@ -543,4 +544,42 @@ html[data-device="app"] .home-disclaimer {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── 进入过渡覆盖层：缓存数据场景下的骨架→淡出过渡 ── */
+.home-enter-skeleton {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-background);
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.home-enter-skeleton--fading {
+  opacity: 0;
+}
+.home-enter-skeleton .home-skeleton {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+}
+
+/* ── 内容延迟进入动画（骨架覆盖期隐藏，覆盖消失后再淡入上移） ── */
+@keyframes page-transition-enter-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.home-page__content--delayed-enter {
+  animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
+  animation-delay: 800ms;
+  opacity: 0;
 }

@@ -57,6 +57,7 @@
 .hero-banner__bg-layer.is-active {
   /* animation 在挂载/class 变化时都会播放，保证新层淡入（transition 仅在属性变化时触发，挂载时无法淡入） */
   animation: heroBgFadeIn 0.8s var(--ease-out-expo);
+  animation-delay: var(--hero-bg-fadein-delay, 0s);
 }
 
 /* 分类切换滞留层（旧图垫底）：opacity 1 常驻底层，直至新图淡入完成后由组件移除 */
