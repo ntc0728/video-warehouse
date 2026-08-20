@@ -1,6 +1,6 @@
 /**
  * 懒加载图片组件
- * 使用 IntersectionObserver 实现图片懒加载，支持加载占位、错误回退和文字首字母占位
+ * 使用 IntersectionObserver 实现图片懒加载，支持加载占位与错误回退（品牌 SVG 兜底）。
  *
  * Session 缓存机制：
  * 模块级 `loadedImageCache` 记录本会话内已成功 onLoad 的图片 URL。
@@ -12,29 +12,15 @@
  * 缓存工具函数见 `./imageCache.ts`。
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useSettingsStore } from '@/stores';
+import { MonitorPlay, Tv } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
-
-const LETTER_COLORS = [
-  '#e57373', '#f06292', '#ba68c8', '#9575cd',
-  '#7986cb', '#64b5f6', '#4fc3f7', '#4dd0e1',
-  '#4db6ac', '#81c784', '#aed581', '#ffed57',
-  '#ffd54f', '#ffb74d', '#ff8a65', '#a1887f',
-];
 
 /** C2-2（2026-08-04）：图片请求挂起兜底——默认超时 8s（可经 timeoutMs prop 覆盖）。
  *  请求既不 onLoad 也不 onError（防盗链/连接挂起）时，超时视为失败 → 走 fallbackSrc，
  *  避免 spinner 无限转（「海报一直处于加载中」）。 */
 export const DEFAULT_IMAGE_LOAD_TIMEOUT = 8000;
-
-function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return LETTER_COLORS[Math.abs(hash) % LETTER_COLORS.length];
-}
 
 interface LazyImageProps {
   src: string;
@@ -44,23 +30,25 @@ interface LazyImageProps {
   placeholder?: React.ReactNode;
   fallbackSrc?: string;
   /**
+   * 失败/缺失兜底形态（视频 / IPTV 分离的关键）：
+   * - 'image'（默认）：无自定义 fallbackSrc 时渲染 lucide MonitorPlay 图标 + kinoTV 品牌字 —— 视频类共用
+   * - 'tv'：渲染 lucide Tv 图标 + kinoTV 品牌字 —— IPTV 台标失败/缺失专用
+   * 传 fallbackSrc 时仍按图片渲染（如 PlaylistModal 的 TMDB 海报兜底）；自定义节点可用 fallback prop 覆盖。
+   */
+  fallbackVariant?: 'image' | 'tv';
+  /** 自定义失败兜底节点（优先级高于 fallbackVariant） */
+  fallback?: React.ReactNode;
+  /**
    * 候选回退源链：src 加载失败时依次尝试，全部失败后才进入 error 态
-   * （走 fallbackSrc / letter 占位）。不传时行为与原先完全一致。
+   * （走 fallbackSrc）。不传时行为与原先完全一致。
    */
   srcCandidates?: string[];
-  letter?: string;
   onLoad?: (url?: string) => void;
   /** error 第二参数为当前失败的候选 URL（srcCandidates 场景下定位失败项） */
   onError?: (error: Error, failedUrl?: string) => void;
   threshold?: number;
   srcSet?: string;
   sizes?: string;
-  /**
-   * 加载中即显示字母占位（不渲染 shimmer/spinner）：
-   * 用于台标等「无图率高、加载可能超时」的场景，避免 spinner 空白等待期；
-   * 加载成功后图片淡入替换。默认 false（保持旧占位行为）。
-   */
-  immediateLetter?: boolean;
   /**
    * 加载超时（毫秒）：图片请求挂起（既不 onLoad 也不 onError，如防盗链 pending）时
    * 超时视为加载失败 → 走 fallbackSrc。默认 8s；0 表示禁用超时。
@@ -75,33 +63,24 @@ export default function LazyImage({
   style = {},
   placeholder,
   fallbackSrc,
+  fallbackVariant = 'image',
+  fallback,
   srcCandidates,
-  letter,
   onLoad,
   onError,
   threshold = 0.1,
   srcSet,
   sizes,
   timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
-  immediateLetter = false,
 }: LazyImageProps) {
   // 命中 session 缓存时直接进入 loaded + inView 态，跳过 IntersectionObserver 等待
   const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
   const [isInView, setIsInView] = useState(() => isImageLoaded(src));
   const [error, setError] = useState(false);
 
-  // 9.1：失败兜底图按主题自适应 —— 暗色用 placeholder.svg（品牌蓝灰），
-  // 亮色用 placeholder-light.svg（品牌浅色），替代固定深色 SVG 在亮色主题下的「黑色块」。
-  // 调用方传 fallbackSrc 时优先用传入值（如 PlaylistModal 的 TMDB 海报兜底）。
-  const theme = useSettingsStore((s) => s.theme);
-  const resolvedFallbackSrc =
-    fallbackSrc ??
-    (theme === 'dark' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches)
-      ? '/placeholder.svg'
-      : '/placeholder-light.svg');
+  // 失败兜底：传 fallbackSrc 时按自定义图片渲染（如 PlaylistModal 的 TMDB 海报兜底）；
+  // 未传时由下方 fallback 分支用 lucide 组件渲染（MonitorPlay / Tv 图标 + kinoTV 品牌字）。
+  const resolvedFallbackSrc = fallbackSrc ?? '';
   // 候选链：src 为链首，srcCandidates 为后续候选（过滤空值）
   const candidates = useMemo(() => {
     const all = src ? [src, ...(srcCandidates ?? [])] : [];
@@ -206,13 +185,11 @@ export default function LazyImage({
       className={`lazy-image-container ${isLoaded || isCached ? 'loaded' : ''} ${error ? 'error' : ''} ${isCached ? 'lazy-image-container--cached' : ''} ${className}`}
       style={style}
     >
-      {/* 有 letter 且无有效候选时不再渲染 fallback 图（由下方 letter 分支独占）：
-          否则 /placeholder.svg 加载成功 opacity:1，与 letter 纯色块同时显示 →
-          文字占位与台标背景图重叠（2026-08-11 修复，IPTVChannelCard 无 logo 频道场景）。 */}
       {/* isInView || isCached：命中 session 缓存即渲染 img（不依赖 IO 触发）。
           复用卡场景（分类切换后 key 相同的卡片复用，旧 isInView 可能为 false）且
-          src 引用未变时，effect 不会重跑，靠「渲染派生」直接绘制。 */}
-      {!error && (isInView || isCached) && (!letter || hasValidSrc) && (
+          src 引用未变时，effect 不会重跑，靠「渲染派生」直接绘制。
+          hasValidSrc：空源（无有效候选）时不渲染主图，交由下方 fallback 兜底图分支。 */}
+      {!error && hasValidSrc && (isInView || isCached) && (
         <img
           src={imageSrc}
           alt={alt}
@@ -229,32 +206,46 @@ export default function LazyImage({
       {/* 占位层仅在「有有效 src 且正在加载」时渲染。
           收紧原因（2026-08-04）：error / 空源时走下方 fallback 图分支，
           该分支无 onLoad → isLoaded 恒为 false → 若此时仍渲染占位层，
-          白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。 */}
+          白色 shimmer 将永不淡出，形成盖在兜底图上的「白遮罩」。
+          默认占位 = 骨架 shimmer（2026-08-19）：卡片封面加载不再显示转圈，
+          统一为项目级骨架占位图（--color-placeholder-shimmer-* + shimmer 扫光），
+          与卡片网格级 SkeletonCard / 行级 SkeletonCards 视觉一致。 */}
       {!isLoaded && !isCached && !error && hasValidSrc && (
         <div className="lazy-image-placeholder">
-          {immediateLetter && letter ? (
-            <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
-          ) : (
-            placeholder || (
-              <div className="lazy-image-spinner">
-                <div className="image-spinner"></div>
-              </div>
-            )
-          )}
+          {placeholder || <div className="lazy-image-skeleton" aria-hidden="true" />}
         </div>
       )}
 
-      {(error || !hasValidSrc) && letter ? (
-        <div className="lazy-image-letter" style={{ backgroundColor: stringToColor(letter) }}>{letter}</div>
-      ) : (error || !hasValidSrc) && resolvedFallbackSrc ? (
-        <img
-          src={resolvedFallbackSrc}
-          alt={alt}
-          className="lazy-image lazy-image-fallback"
-          decoding="async"
-          onError={() => {}}
-        />
-      ) : null}
+      {/* 失败 / 空源兜底：按 fallbackVariant 分发。
+          'tv' → lucide Tv 图标 + kinoTV 品牌字（IPTV 台标失败/缺失）；
+          其余无自定义 fallbackSrc → lucide MonitorPlay 图标 + kinoTV 品牌字（视频类）；
+          有自定义 fallbackSrc → 该图片（如 PlaylistModal 的 TMDB 海报兜底）。
+          fallback 自定义节点优先级最高。 */}
+      {(error || !hasValidSrc) && (
+        fallback ? (
+          <div className="lazy-image-fallback lazy-image-fallback--custom">
+            {fallback}
+          </div>
+        ) : fallbackVariant === 'tv' ? (
+          <div className="lazy-image-fallback lazy-image-fallback--brand">
+            <Icon icon={Tv} size="xl" className="lazy-image-fallback__icon" />
+            <span className="lazy-image-fallback__brand">kinoTV</span>
+          </div>
+        ) : resolvedFallbackSrc ? (
+          <img
+            src={resolvedFallbackSrc}
+            alt={alt}
+            className="lazy-image lazy-image-fallback"
+            decoding="async"
+            onError={() => {}}
+          />
+        ) : (
+          <div className="lazy-image-fallback lazy-image-fallback--brand">
+            <Icon icon={MonitorPlay} size="xl" className="lazy-image-fallback__icon" />
+            <span className="lazy-image-fallback__brand">kinoTV</span>
+          </div>
+        )
+      )}
     </div>
   );
 }

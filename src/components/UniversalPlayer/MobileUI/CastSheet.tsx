@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Cast, X, RotateCcw, Monitor, Play, Pause, Volume2, Link2Off } from 'lucide-react';
+import { Cast, X, RotateCcw, Monitor, Play, Pause, Volume2, Link2Off, Settings } from 'lucide-react';
 import { BottomSheet } from '@/components/ui';
 import { Icon } from '@/components/ui/Icon';
 import { toast } from '@/components/ui';
 import {
   discoverCastDevices, connectCastDevice, disconnectCast,
-  getCastBridge, getCastMode,
+  getCastBridge, getCastMode, ensureCastPermission, openCastAppSettings,
   type CastDevice,
 } from '@/services/castService';
 import {
@@ -13,7 +13,7 @@ import {
   webCastTogglePlay, webCastSetVolume, webCastEndSession,
 } from '@/services/webCastSdk';
 
-type CastView = 'searching' | 'list' | 'connecting' | 'connected';
+type CastView = 'searching' | 'list' | 'connecting' | 'connected' | 'permission';
 
 interface CastSheetProps {
   visible: boolean;
@@ -43,6 +43,13 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
   }, []);
 
   const startSearch = useCallback(async () => {
+    // 权限前置：DLNA 组播需要「附近的设备」权限，未授予时引导去系统设置（不闪雷达）
+    const perm = await ensureCastPermission();
+    if (!mountedRef.current) return;
+    if (perm === 'denied') {
+      setView('permission');
+      return;
+    }
     setView('searching');
     const found = await discoverCastDevices();
     if (!mountedRef.current) return;
@@ -51,8 +58,9 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
   }, []);
 
   // Web Cast：初始化 SDK → 弹系统设备选择弹窗 → 已连接
-  const startWebCast = useCallback(async () => {
-    setView('searching');
+  // 第二参 showSearching：空态「重新选择设备」时传 false → 不再闪雷达、直接重开系统选择器
+  const startWebCast = useCallback(async (showSearching = true) => {
+    if (showSearching) setView('searching');
     const ready = await initWebCast();
     if (!mountedRef.current) return;
     if (!ready) {
@@ -171,8 +179,26 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
                   : '请确认手机与电视在同一 Wi-Fi，并在电视端开启「多屏互动 / DLNA」'}
               </span>
             </p>
-            <button className="up-cast-btn up-cast-btn--primary" onClick={() => void (isWeb ? startWebCast() : startSearch())}>
+            <button className="up-cast-btn up-cast-btn--primary" onClick={() => void (isWeb ? startWebCast(false) : startSearch())}>
               <Icon icon={RotateCcw} size="sm" /> {isWeb ? '重新选择设备' : '重新搜索'}
+            </button>
+          </div>
+        )}
+
+        {view === 'permission' && (
+          <div className="up-cast-status">
+            <div style={{ fontSize: 40, lineHeight: 1 }}>🔒</div>
+            <p>
+              需要投屏权限<br />
+              <span className="up-cast-empty-sub">
+                请在系统设置中授权「附近的设备 / 本地网络」后重试
+              </span>
+            </p>
+            <button
+              className="up-cast-btn up-cast-btn--primary"
+              onClick={() => void openCastAppSettings()}
+            >
+              <Icon icon={Settings} size="sm" /> 去设置授权
             </button>
           </div>
         )}

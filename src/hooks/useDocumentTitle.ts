@@ -5,10 +5,13 @@
  *   useDocumentTitle()           — 仅路由标题
  *   useDocumentTitle('海王')      — 路由 + 内容标题
  *   useDocumentTitle(null, true)  — 沉浸模式，只显示内容标题
+ *
+ * 方案 B（无 Keep-Alive）：页面只在激活时挂载，卸载即销毁，不存在「多页并发
+ * 挂载、非激活页覆盖标题」的问题。因此本 hook 简化为「挂载/内容变化即写标题」，
+ * 不再依赖激活路由上下文（原 SelfRouteContext / activeRouteStore 已删除）。
  */
-import { useEffect, useContext, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ActiveRouteContext, SelfRouteContext } from './routeTitleContext';
 
 export const APP_NAME = 'kinoTV';
 
@@ -47,15 +50,8 @@ export function useRouteTitleImmediate(): void {
 
 export function useDocumentTitle(contentTitle?: string | null, immersive = false) {
   const location = useLocation();
-  // Keep-Alive：仅当本页是激活页时才写标题，避免已切走页面覆盖
-  const activeRouteKey = useContext(ActiveRouteContext);
-  const selfRouteKey = useContext(SelfRouteContext);
 
   useEffect(() => {
-    // 未被 SelfRouteContext 包裹（独立顶层路由，如 /iptv/play）→ 退化为旧行为直接写
-    // 被包裹但非激活页 → 跳过，交给激活页写
-    if (selfRouteKey != null && selfRouteKey !== activeRouteKey) return;
-
     let title: string;
 
     if (immersive && contentTitle) {
@@ -71,7 +67,7 @@ export function useDocumentTitle(contentTitle?: string | null, immersive = false
     }
 
     document.title = title;
-  }, [location.pathname, contentTitle, immersive, activeRouteKey, selfRouteKey]);
+  }, [location.pathname, contentTitle, immersive]);
 }
 
 export function getRouteTitle(pathname: string): string | null {

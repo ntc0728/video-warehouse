@@ -1,13 +1,21 @@
 package com.videowarehouse.app.cast;
 
+import android.Manifest;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * 方法与前端 src/services/castService.ts 的 CastBridge 契约一一对应。
  */
-@CapacitorPlugin(name = "CastBridge")
+@CapacitorPlugin(
+        name = "CastBridge",
+        permissions = {
+                @Permission(strings = {Manifest.permission.NEARBY_WIFI_DEVICES}, alias = "nearbyWifi")
+        })
 public class CastBridgePlugin extends Plugin {
 
     private static final String TAG = "CastBridgePlugin";
@@ -148,6 +160,48 @@ public class CastBridgePlugin extends Plugin {
             UPnPAVTransport.setVolume(device, vol);
             return null;
         }, "setVolume");
+    }
+
+    /**
+     * 检查/请求投屏所需权限。
+     * DLNA SSDP 组播在 Android 12L+/13+ 受「附近的设备」(NEARBY_WIFI_DEVICES) 运行时权限约束；
+     * 未授权时触发系统授权弹窗，用户拒绝后前端展示「去设置授权」并调 openAppSettings。
+     * 老系统（无该运行时权限）视为已授予。
+     */
+    @PluginMethod
+    public void ensurePermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (getPermissionState("nearbyWifi") != PermissionState.GRANTED) {
+                requestPermissionForAlias("nearbyWifi", call, "permissionResult");
+                return;
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("status", "granted");
+        call.resolve(ret);
+    }
+
+    @PermissionCallback
+    private void permissionResult(PluginCall call) {
+        boolean granted = getPermissionState("nearbyWifi") == PermissionState.GRANTED;
+        JSObject ret = new JSObject();
+        ret.put("status", granted ? "granted" : "denied");
+        call.resolve(ret);
+    }
+
+    /** 打开系统应用详情页（设置）供用户手动授权被拒的权限 */
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            Log.w(TAG, "openAppSettings failed: " + e.getMessage());
+            call.reject("openAppSettings failed: " + e.getMessage());
+        }
     }
 
     private interface DeviceAction {

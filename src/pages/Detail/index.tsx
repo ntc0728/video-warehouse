@@ -5,9 +5,9 @@
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useLocation, useNavigationType } from 'react-router-dom';
+import { useParams, useNavigationType } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { useUserStore, useSettingsStore, useKeepAliveStore } from '@/stores';
+import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, checkSelectedVideoSources } from '@/services/videoService';
 import type { SelectedSourceCheckResult } from '@/services/videoService';
@@ -36,6 +36,54 @@ import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
 // ── 常量 ──────────────────────────────────────────────
 
 const CMS_DEBOUNCE_MS = 2000;
+
+/**
+ * 模块级 Detail 缓存（方案 B：无 Keep-Alive）
+ *
+ * detail → /play → detail 返回时组件重新挂载，TMDB detail + 剧照会重新请求。
+ * 用模块级 Map 在「会话内」缓存成功结果（TTL 10min），返回时直接回显、零网络请求；
+ * 过期或未命中则走正常加载。CMS 播放源结果不缓存——其语义依赖「当前启用的视频源」，
+ * 且只在用户切到播放列表 tab 时按需加载（返回 detail 时 activeTab 重置为 info，不触发）。
+ */
+interface DetailCacheEntry {
+  tmdbDetail: TMDBMovieDetail | TMDBTVShowDetail | null;
+  tmdbError: string | null;
+  tmdbMediaType: 'movie' | 'tv';
+  stills: string[];
+  fetchedAt: number;
+}
+const detailCache = new Map<string, DetailCacheEntry>();
+const DETAIL_CACHE_TTL_MS = 10 * 60 * 1000;
+/** 容量上限：detail 访问量有限，上限为防御性防无界增长（超出删最旧） */
+const MAX_DETAIL_CACHE = 50;
+
+function readDetailCache(id: string): DetailCacheEntry | null {
+  const c = detailCache.get(id);
+  if (!c) return null;
+  if (Date.now() - c.fetchedAt > DETAIL_CACHE_TTL_MS) {
+    detailCache.delete(id);
+    return null;
+  }
+  return c;
+}
+
+function writeDetailCache(id: string, patch: Partial<DetailCacheEntry>): void {
+  const prev = detailCache.get(id);
+  detailCache.set(id, {
+    tmdbDetail: null,
+    tmdbError: null,
+    tmdbMediaType: 'movie',
+    stills: [],
+    ...prev,
+    ...patch,
+    fetchedAt: Date.now(),
+  });
+  // 防御性淘汰：超容量删最旧插入项
+  if (detailCache.size > MAX_DETAIL_CACHE) {
+    const oldestKey = detailCache.keys().next().value;
+    if (oldestKey !== undefined) detailCache.delete(oldestKey);
+  }
+}
 
 const typeLabels: Record<string, string> = {
   movie: '电影', tv: '剧集', variety: '综艺', anime: '动漫',
@@ -95,7 +143,6 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 // ============================================================
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
-  const location = useLocation();
   const navigate = useCustomNavigate();
   // 是否已配置 TMDB Access Token（play/detail 的 tmdb- 数据依赖）
   const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
@@ -109,10 +156,8 @@ export default function DetailPage() {
 
   const pageRef = useRef<HTMLDivElement>(null);
 
-  // ── 滚动位置保存/恢复（由 useScrollRestore 接管，原内联 useEffect 已删除） ────
-  // 传入 isActive：仅当本页确为当前可见路由（pathname 仍是 /detail/*）时才参与恢复，
-  // 避免 Keep-Alive 隐藏态下的 detail 组件篡改共享容器滚动位置。
-  useScrollRestore(`detail:${id}`, undefined, location.pathname.startsWith('/detail'));
+  // ── 滚动位置保存/恢复（useScrollRestore 接管；方案 B 下挂载即恢复） ────
+  useScrollRestore(`detail:${id}`);
 
   // 前进（PUSH/REPLACE）进入新的详情页时归顶；返回（POP）由 useScrollRestore 恢复，不覆盖。
   const scrollContainerRef = useScrollContainer();
@@ -231,9 +276,9 @@ export default function DetailPage() {
       return;
     }
     if (w === 0) {
-      // 容器不可见（keep-alive 隐藏为 display:none 时 clientWidth=0）时无法测量，
+      // 容器尚未布局（首次渲染或尺寸未就绪时 clientWidth=0）无法测量，
       // 用视口宽度估算兜底，避免 visibleCount 永远停在 null 导致剧照全部平铺；
-      // 页面显示后 ResizeObserver 会用上面的精确值纠正。
+      // 布局完成后 ResizeObserver 会用精确值纠正。
       const vw = window.innerWidth;
       if (vw <= 0) return;
       let actualCols: number;
@@ -284,14 +329,25 @@ export default function DetailPage() {
   }, [measureStills]);
 
   // ── TMDB 加载 ────────────────────────────────
-  // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 Keep-Alive 复用
-  // 同一实例时，hero 先以「上一个 detail 的 tmdbDetail」绘制一帧（封面/名称闪旧内容）。
+  // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 hero 先以
+  // 「上一个 detail 的 tmdbDetail」绘制一帧（封面/名称闪旧内容）。
+  // 方案 B（无 Keep-Alive）：挂载时先查模块级缓存，命中（detail → /play → detail
+  // 返回）直接回显，不重新请求；未命中走正常加载并写入缓存。
   useLayoutEffect(() => {
     if (!id) return;
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null); setTmdbDetail(null); setBgLoaded(false);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
     setActiveTab('info');
+
+    const cached = id.startsWith('tmdb-') ? readDetailCache(id) : null;
+    if (cached?.tmdbDetail) {
+      setTmdbMediaType(cached.tmdbMediaType);
+      setTmdbDetail(cached.tmdbDetail);
+      setTmdbError(cached.tmdbError ?? null);
+      setTmdbLoading(false);
+      return () => ctrl.abort();
+    }
 
     (async () => {
       try {
@@ -306,6 +362,7 @@ export default function DetailPage() {
           : await fetchMovieDetail(tid, { signal: ctrl.signal });
         if (ctrl.signal.aborted) return;
         setTmdbDetail(detail);
+        writeDetailCache(id, { tmdbDetail: detail, tmdbError: null, tmdbMediaType: mt });
       } catch (err) {
         if (ctrl.signal.aborted) return;
         setTmdbError(err instanceof Error ? err.message : '加载失败');
@@ -418,6 +475,13 @@ export default function DetailPage() {
   // 而非从 tmdbDetail.images 提取。
   useEffect(() => {
     if (!id || !id.startsWith('tmdb-')) return;
+    // 方案 B 缓存回显：detail → /play → detail 返回时直接恢复剧照，不重新请求
+    const cached = readDetailCache(id);
+    if (cached?.stills?.length) {
+      setStills(cached.stills);
+      setStillsLoading(false);
+      return;
+    }
     const parts = id.replace('tmdb-', '').split('-');
     const mt = parts[0] as 'movie' | 'tv';
     const tid = parseInt(parts.slice(1).join('-'), 10);
@@ -440,6 +504,7 @@ export default function DetailPage() {
             .filter((u): u is string => Boolean(u)),
         ));
         setStills(urls);
+        writeDetailCache(id, { stills: urls });
       })
       .catch((err) => {
         if (ctrl.signal.aborted) return;
@@ -464,16 +529,14 @@ export default function DetailPage() {
   }, [id, collected, addCollection, removeCollection, tmdbDetail]);
 
   // ── 播放 ──────────────────────────────────────
-  // 进入 /play 前 pin 当前 detail，使其被 AppLayout 挂起缓存；从 /play 返回时瞬时恢复。
-  // 其他进入 detail 的路径（首页/Browse/推荐/前进后退）不 pin，detail 重新挂载并重新加载。
+  // 方案 B（无 Keep-Alive）：detail 进入 /play 时组件卸载，返回时重新挂载，
+  // 由模块级 detail 缓存（readDetailCache）回显 TMDB detail + 剧照，避免重新请求。
   const handlePlay = () => {
     if (!id) return;
-    useKeepAliveStore.getState().pinDetail(id);
     navigate(`/play/${id}`, { state: { from: `/detail/${id}` } });
   };
   const handlePlayFromBeginning = () => {
     if (!id) return;
-    useKeepAliveStore.getState().pinDetail(id);
     navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true } });
   };
 
@@ -486,11 +549,9 @@ export default function DetailPage() {
   }
 
   // ── 动态页签标题 ──────────────────────────────
-  // 守卫：仅当当前确实处于详情路由时才写入标题。
-  // 详情页是 Keep-Alive 常驻挂载，离开（pathname 变为 '/' 等）后组件不卸载，
-  // 若仍用旧 contentTitle 写 document.title 会覆盖新页面的标题，造成"返回首页后
-  // 页签仍显示详情标题"的概率性残留。离开后传 null → 由当前路由标题接管。
-  useDocumentTitle(location.pathname.startsWith('/detail') ? (title || null) : null);
+  // 方案 B（无 Keep-Alive）：detail 只在 /detail 路由挂载，挂载即写标题；
+  // 离开后组件卸载，标题由新页接管，无需「是否激活」守卫。
+  useDocumentTitle(title || null);
 
   const isTV = d ? 'name' in d : false;
   const logoPath = d?.images?.logos?.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en')?.file_path;
@@ -522,7 +583,7 @@ export default function DetailPage() {
   const cast: TMDBCastMember[] = d?.credits?.cast || [];
 
   // 演员行溢出检测：折叠态下 scrollHeight > clientHeight 即超过 2 行，显示展开按钮。
-  // ResizeObserver 覆盖窗口缩放与 Keep-Alive 隐藏页（尺寸 0）显示后的纠正场景。
+  // ResizeObserver 覆盖窗口缩放与布局尺寸变化的纠正场景。
   useEffect(() => {
     const el = castRowRef.current;
     if (!el) return;
@@ -575,17 +636,6 @@ export default function DetailPage() {
   const lastEpisodeLabel = historyRecord?.seasonNumber && historyRecord?.episodeLabel
     ? `第${historyRecord.seasonNumber}季 ${historyRecord.episodeLabel}`
     : historyRecord?.episodeLabel;
-
-  // 有限 Keep-Alive 下，detail 不做 navStore 状态恢复：
-  // - pin 的 play→detail 路径组件不重挂载，state 自然保留；
-  // - 其他路径 detail 重新挂载，应重新加载（而非恢复旧内容）。
-  // 组件卸载（离开 detail）时解除 pin，使 detail 不再常驻。
-  useEffect(() => {
-    return () => {
-      if (!id) return;
-      useKeepAliveStore.getState().unpinDetail();
-    };
-  }, [id]);
 
   // ── Loading ──────────────────────────────────
   // ── TMDB Access Token 未配置：整页提示（与首页一致，设置可点击跳转） ──
@@ -707,7 +757,18 @@ export default function DetailPage() {
           {/* 桌面端右侧海报 */}
           {posterUrl && (
             <div className="detail-hero-poster">
-              <img src={posterUrl} alt={title} width={300} height={450} />
+              <img
+                src={posterUrl}
+                alt={title}
+                width={300}
+                height={450}
+                onError={(e) => {
+                  // 海报加载失败 → 统一中性灰占位（placeholder-gray.svg 纯色块，亮暗同款），
+                  // 与卡片失败态一致；直接换 src 避免破图闪烁。
+                  e.currentTarget.src = '/placeholder-gray.svg';
+                  e.currentTarget.onerror = null;
+                }}
+              />
               {hasWatchingHistory && (
                 <div className="detail-hero-poster-progress">
                   <div
@@ -1015,7 +1076,7 @@ export default function DetailPage() {
                             <button
                               className="detail-source-play-btn"
                               disabled={!playable}
-                              onClick={() => { if (id) { useKeepAliveStore.getState().pinDetail(id); navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } }); } }}
+                              onClick={() => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } }); }}
                             >
                               <Icon icon={Play} size="xs" fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
                             </button>
@@ -1034,8 +1095,7 @@ export default function DetailPage() {
                     progressMap={progressMap}
                     onClose={() => setPlayModal(null)}
                     onPlayEpisode={(ep) => {
-                      if (id) useKeepAliveStore.getState().pinDetail(id);
-                      navigate(`/play/${id}`, {
+                      if (id) navigate(`/play/${id}`, {
                         state: {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,
@@ -1049,8 +1109,7 @@ export default function DetailPage() {
                     onPlayLine={(_lineIndex, seasonNumber, playUrl, playType) => {
                       // _lineIndex 是线路在 video.sources 中的下标；Player 的 state.sourceIndex
                       // 语义是 CMS 采集源索引，故取 playModal.sourceIndex，线路由 playUrl 精确匹配。
-                      if (id) useKeepAliveStore.getState().pinDetail(id);
-                      navigate(`/play/${id}`, {
+                      if (id) navigate(`/play/${id}`, {
                         state: {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,

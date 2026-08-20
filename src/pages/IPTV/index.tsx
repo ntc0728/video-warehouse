@@ -113,19 +113,7 @@ export default function IPTVPage() {
   );
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('iptv', undefined, location.pathname === '/iptv');
-
-  // 离开页面时清空筛选状态
-  const prevPathnameRef = useRef(location.pathname);
-  useEffect(() => {
-    const prev = prevPathnameRef.current;
-    prevPathnameRef.current = location.pathname;
-    if (prev === '/iptv' && location.pathname !== '/iptv') {
-      setSelectedGroup(null);
-      setSelectedSource(null);
-      setSearchKeyword('');
-    }
-  }, [location.pathname]);
+  useScrollRestore('iptv');
 
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };

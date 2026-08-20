@@ -10,6 +10,59 @@ import { devices } from '@playwright/test';
 
 const TEST_MOVIE_ID = 'tmdb-movie-550';
 
+/**
+ * 注入 mock Google Cast SDK（addInitScript，页面加载前生效）。
+ * 行为由 window.__castMock 控制：
+ *  - mode: 'null'（无设备/用户取消，requestSession 返回 null）/ 'session'（返回假 session）/ 'error'（抛错）
+ *  - requestSessionCalls: 累计 requestSession 调用次数（断言「重选再次调用」）
+ * initWebCast 见 (win.cast).framework 存在即跳过 gstatic 脚本加载 → 直接可用。
+ */
+async function injectMockCastSdk(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    const win = window as unknown as Record<string, unknown>;
+    const mock: { mode: 'null' | 'session' | 'error'; requestSessionCalls: number } = {
+      mode: 'null',
+      requestSessionCalls: 0,
+    };
+    (win as { __castMock?: typeof mock }).__castMock = mock;
+    const session = {
+      getCastDevice: () => ({ id: 'cast-1', friendlyName: '客厅电视' }),
+    };
+    win.cast = {
+      framework: {
+        CastContext: {
+          getInstance: () => ({
+            setOptions: () => {},
+            requestSession: async () => {
+              mock.requestSessionCalls += 1;
+              if (mock.mode === 'error') throw new Error('no devices');
+              if (mock.mode === 'session') return session;
+              return null;
+            },
+          }),
+        },
+        RemotePlayer: class {},
+        RemotePlayerController: class {
+          constructor() {
+            (this as { load?: unknown }).load = async () => {};
+            (this as { playOrPause?: unknown }).playOrPause = async () => {};
+            (this as { setVolumeLevel?: unknown }).setVolumeLevel = () => {};
+          }
+        },
+      },
+    };
+    win.chrome = win.chrome || {};
+    (win.chrome as Record<string, unknown>).cast = {
+      media: {
+        MediaInfo: class {
+          constructor(public contentId: string, public contentType: string) {}
+        },
+        GenericMediaMetadata: class {},
+      },
+    };
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 4.1 页面加载
 // ═══════════════════════════════════════════════════════════════
@@ -343,6 +396,83 @@ test.describe('4.11 移动端播放器整改', () => {
       expect(Math.abs(box.y + box.height - (containerBox.y + containerBox.height))).toBeLessThan(4);
     }
   });
+
+  test('PLAYER-M19: 权限被拒 → 显示「去设置授权」并跳应用设置页', async ({ page }) => {
+    // 注入 ensurePermission 返回 denied 的原生桥 → 打开弹窗即「去设置授权」视图（不闪雷达不搜索）
+    await page.evaluate(() => {
+      const win = window as unknown as { CastBridge?: unknown };
+      (win as { __castOpenSettings?: number }).__castOpenSettings = 0;
+      win.CastBridge = {
+        discover: async () => [],
+        connect: async () => {},
+        disconnect: async () => {},
+        ensurePermission: async () => 'denied',
+        openAppSettings: async () => {
+          const w = window as unknown as { __castOpenSettings?: number };
+          w.__castOpenSettings = (w.__castOpenSettings ?? 0) + 1;
+        },
+      };
+    });
+    await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+    const sheet = page.locator('.up-cast-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText('需要投屏权限')).toBeVisible();
+    await expect(sheet.getByText('去设置授权')).toBeVisible();
+    // 雷达不得出现（权限前置即返回，不做搜索动画）
+    await expect(page.locator('.up-cast-radar')).toHaveCount(0);
+
+    // 点「去设置授权」→ 调桥 openAppSettings（跳系统应用设置页）
+    await sheet.getByText('去设置授权').click();
+    await page.waitForTimeout(100);
+    const calls = await page.evaluate(() =>
+      (window as unknown as { __castOpenSettings?: number }).__castOpenSettings ?? 0);
+    expect(calls).toBe(1);
+  });
+
+  test('PLAYER-M20: 权限授予 → 正常发现设备列表', async ({ page }) => {
+    // 注入 ensurePermission 返回 granted + 有设备的桥 → 权限通过后正常出设备列表
+    await page.evaluate(() => {
+      const win = window as unknown as { CastBridge?: unknown };
+      win.CastBridge = {
+        discover: async () => [{ id: 'tv-1', name: '客厅电视' }],
+        connect: async () => {},
+        disconnect: async () => {},
+        ensurePermission: async () => 'granted',
+      };
+    });
+    await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+    const sheet = page.locator('.up-cast-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText('客厅电视')).toBeVisible();
+  });
+
+  test('PLAYER-M21: 全链路 setSource 推送正确 URL（discover→connect→setSource）', async ({ page }) => {
+    // 捕获 setSource 收到的 URL/title，断言与当前播放地址一致（真实推送值）
+    await page.evaluate(() => {
+      const win = window as unknown as { CastBridge?: unknown };
+      (win as { __castSetSource?: { url: string; title?: string } }).__castSetSource = { url: '' };
+      win.CastBridge = {
+        discover: async () => [{ id: 'tv-1', name: '客厅电视' }],
+        connect: async () => {},
+        disconnect: async () => {},
+        setSource: async (url: string, title?: string) => {
+          (window as unknown as { __castSetSource?: { url: string; title?: string } }).__castSetSource = { url, title };
+        },
+      };
+    });
+    await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+    const sheet = page.locator('.up-cast-sheet');
+    await expect(sheet).toBeVisible();
+    await sheet.getByText('客厅电视').click();
+    await expect(sheet.getByText('已连接 · 客厅电视')).toBeVisible();
+
+    // setSource 已被调用且 URL 非空（推送的就是播放器实际播放地址）
+    const pushed = await page.evaluate(() =>
+      (window as unknown as { __castSetSource?: { url: string; title?: string } }).__castSetSource);
+    expect(pushed).not.toBeNull();
+    expect(pushed?.url?.length ?? 0).toBeGreaterThan(0);
+    expect(pushed?.url).toMatch(/^https?:\/\//);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -377,6 +507,9 @@ test.describe('4.13 投屏能力分端（Web Cast / iOS 隐藏）', () => {
     test.use({ viewport: { width: 390, height: 844 }, userAgent: ANDROID_CHROME_UA });
     test.describe.configure({ mode: 'serial' });
     test.beforeEach(async ({ page }) => {
+      // mock Cast SDK 需在页面加载前注入（addInitScript）：initWebCast 见 win.cast.framework
+      // 存在即跳过 gstatic 脚本加载 → 行为由 window.__castMock 控制（M14/M15 各自覆盖 win.cast 不受影响）
+      await injectMockCastSdk(page);
       await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
       await page.waitForTimeout(4000);
@@ -431,6 +564,62 @@ test.describe('4.13 投屏能力分端（Web Cast / iOS 隐藏）', () => {
       // 断开 → 回到空态（Web 无设备列表，回「未选择投屏设备」）
       await sheet.getByText('断开投屏').click();
       await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+    });
+
+    test('PLAYER-M16: 安卓 Web 无 Chromecast → 回空态（未选择投屏设备）', async ({ page }) => {
+      // addInitScript 注入的 mock 默认 mode='null'（requestSession 返回 null）→ 空态 + 重新选择设备按钮
+      await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+      const sheet = page.locator('.up-cast-sheet');
+      await expect(sheet).toBeVisible();
+      await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+      await expect(sheet.getByText('重新选择设备')).toBeVisible();
+      // requestSession 确实被调用过（打开即请求系统面板）
+      const calls = await page.evaluate(() =>
+        (window as unknown as { __castMock?: { requestSessionCalls: number } }).__castMock?.requestSessionCalls ?? 0);
+      expect(calls).toBeGreaterThanOrEqual(1);
+    });
+
+    test('PLAYER-M17: 重选设备直接重开选择器（不闪雷达、requestSession 再次调用）', async ({ page }) => {
+      // 首次打开 mode='null'（用户取消/无设备）→ 空态
+      await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+      const sheet = page.locator('.up-cast-sheet');
+      await expect(sheet).toBeVisible();
+      await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+
+      // 切 mode='session'：点「重新选择设备」→ 直接重开系统选择器（无雷达 searching 视图）→ 已连接
+      await page.evaluate(() => {
+        const mock = (window as unknown as { __castMock?: { mode: string } }).__castMock;
+        if (mock) mock.mode = 'session';
+      });
+      await sheet.getByText('重新选择设备').click();
+      // 闪烁断言：点击后雷达（.up-cast-radar）不得出现——若先闪 searching 再回 list 则捕获
+      await page.waitForTimeout(120);
+      await expect(page.locator('.up-cast-radar')).toHaveCount(0);
+      await expect(sheet.getByText('已连接 · 客厅电视')).toBeVisible();
+      // requestSession 确实被再次调用（2 次：首次打开 + 重选）
+      const calls = await page.evaluate(() =>
+        (window as unknown as { __castMock?: { requestSessionCalls: number } }).__castMock?.requestSessionCalls ?? 0);
+      expect(calls).toBe(2);
+    });
+
+    test('PLAYER-M18: 连续点「重新选择设备」不闪雷达、requestSession 每次都被调用', async ({ page }) => {
+      // mock 保持 mode='null'（无设备）→ 每次重选都回空态，绝不闪 searching 雷达
+      await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
+      const sheet = page.locator('.up-cast-sheet');
+      await expect(sheet).toBeVisible();
+      await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+
+      // 连续点 3 次「重新选择设备」→ 每次点击后雷达都不出现、仍停在空态
+      for (let i = 0; i < 3; i++) {
+        await sheet.getByText('重新选择设备').click();
+        await page.waitForTimeout(80);
+        await expect(page.locator('.up-cast-radar')).toHaveCount(0);
+        await expect(sheet.getByText('未选择投屏设备')).toBeVisible();
+      }
+      // requestSession 总调用 = 首次打开 1 + 3 次重选 = 4
+      const calls = await page.evaluate(() =>
+        (window as unknown as { __castMock?: { requestSessionCalls: number } }).__castMock?.requestSessionCalls ?? 0);
+      expect(calls).toBe(4);
     });
   });
 });

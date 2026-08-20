@@ -212,6 +212,10 @@ $logicTestMap = @{
         spec = @("vitest", "scripts/iptv.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts")
         grep = "5\.10|7\.2|8\.2"
     }
+    "src/services/castService.ts" = @{
+        spec = @("vitest", "scripts/player.spec.ts")
+        grep = "4\.13"
+    }
     "src/services/sourceService.ts" = @{
         spec = @("vitest", "scripts/settings.spec.ts", "scripts/source-checker.spec.ts")
         grep = "6\.3|9\.1|9\.6"

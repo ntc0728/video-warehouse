@@ -10,13 +10,16 @@
  *
  * 返回按钮缺省走历史后退，无历史记录（直接输入 URL / 刷新首进）时回退到设置页。
  * 仅由调用方在移动端（≤767px）条件渲染；桌面端保持页面常规布局。
+ *
+ * 方案 B（无 Keep-Alive）：页面只在激活时挂载，portal 随页面销毁，
+ * 不再需要「激活路由判断」防隐藏页残留遮挡（原 ActiveRouteContext /
+ * SelfRouteContext 已删除）。
  */
-import { useContext, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useCustomNavigate } from '@/lib/navigation';
-import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext';
 import { Icon } from '@/components/ui/Icon';
 import './SubPage.css';
 
@@ -33,14 +36,6 @@ export default function SubPage({ title, onBack, children }: SubPageProps) {
   const navigate = useCustomNavigate();
   const location = useLocation();
 
-  // Keep-Alive 激活判断：portal 挂在 document.body，若本页被 Keep-Alive 挂起
-  // （display:none）时组件不卸载，portal 会残留覆盖在别的页面上（全屏遮挡）。
-  // 因此仅当本页为「当前激活路由」时才渲染 portal。
-  // 未被 SelfRouteContext 包裹（独立顶层路由）时退化为始终渲染，兼容旧用法。
-  const activeRouteKey = useContext(ActiveRouteContext);
-  const selfRouteKey = useContext(SelfRouteContext);
-  const isActive = selfRouteKey === null || selfRouteKey === activeRouteKey;
-
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -53,8 +48,6 @@ export default function SubPage({ title, onBack, children }: SubPageProps) {
       navigate('/settings');
     }
   };
-
-  if (!isActive) return null;
 
   return createPortal(
     <div className="sub-page">

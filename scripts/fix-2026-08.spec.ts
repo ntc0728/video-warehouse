@@ -38,12 +38,17 @@ test.describe('9.1 冷启动与首屏', () => {
     const fallbackCount = await page.locator('.lazy-image-fallback').count();
     const loadingCount = await page.locator('.lazy-image-placeholder').count();
     expect(fallbackCount + loadingCount).toBeGreaterThan(0);
-    // 兜底图必须是主题自适应 SVG（非深色 placeholder 的灰度覆盖判定：src 含 placeholder）
-    const fallbackSrcs = await page
-      .locator('.lazy-image-fallback')
-      .evaluateAll((els) => els.map((e) => (e as HTMLImageElement).src));
-    for (const s of fallbackSrcs) {
-      expect(s).toMatch(/placeholder(-light)?\.svg/);
+    // 兜底为品牌占位（.lazy-image-fallback--brand，lucide MonitorPlay 图标 + kinoTV 文字），
+    // 主题自适应中性灰背景，非黑色块
+    if (fallbackCount > 0) {
+      const brandCount = await page.locator('.lazy-image-fallback--brand').count();
+      expect(brandCount).toBeGreaterThan(0);
+      await expect(
+        page.locator('.lazy-image-fallback--brand .lucide').first()
+      ).toBeVisible();
+      await expect(
+        page.locator('.lazy-image-fallback__brand').first()
+      ).toHaveText('kinoTV');
     }
     console.log(`✅ FIX-102 通过: fallback=${fallbackCount} loading=${loadingCount}`);
   });

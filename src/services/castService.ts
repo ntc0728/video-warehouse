@@ -27,6 +27,9 @@ export type CastConnectionState = 'disconnected' | 'connecting' | 'connected' | 
 /** 投屏能力模式：原生桥（App 内 DLNA） / Web Cast SDK（Chromecast·Google TV） / 无 */
 export type CastMode = 'native' | 'web' | 'none';
 
+/** 投屏所需权限状态（原生桥 ensurePermission 返回值） */
+export type CastPermissionStatus = 'granted' | 'denied';
+
 /** 原生桥接口（由 Android 原生模块实现并注入 window.CastBridge） */
 export interface CastBridge {
   /** 发现局域网内 DLNA 设备（SSDP M-SEARCH） */
@@ -41,6 +44,10 @@ export interface CastBridge {
   pause?: () => Promise<void>;
   seek?: (time: number) => Promise<void>;
   setVolume?: (volume: number) => Promise<void>;
+  /** 检查/请求投屏所需权限（如 Android 13+「附近的设备」），必要时弹系统授权；缺失/未实现时由前端兜底 */
+  ensurePermission?: () => Promise<CastPermissionStatus>;
+  /** 打开系统应用设置页（权限被拒后引导用户手动授权） */
+  openAppSettings?: () => Promise<void>;
 }
 
 /** 兼容 re-export：Web Cast 会话设备类型（定义于 webCastSdk.ts） */
@@ -94,6 +101,33 @@ export async function discoverCastDevices(): Promise<CastDevice[]> {
     return Array.isArray(devices) ? devices : [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * 检查/请求投屏所需权限（原生桥 ensurePermission）。
+ * 返回 'granted' 表示可继续；'denied' 表示用户拒绝/未授权；'unsupported' 表示桥未实现
+ *（老版本 App / 测试 mock 缺该方法）——此时前端按「无权限门槛」继续旧流程。
+ */
+export async function ensureCastPermission(): Promise<CastPermissionStatus | 'unsupported'> {
+  const bridge = getCastBridge();
+  if (!bridge?.ensurePermission) return 'unsupported';
+  try {
+    const status = await bridge.ensurePermission();
+    return status === 'granted' ? 'granted' : 'denied';
+  } catch {
+    return 'unsupported';
+  }
+}
+
+/** 打开系统应用设置页（权限被拒后引导用户手动授权；桥未实现时静默） */
+export async function openCastAppSettings(): Promise<void> {
+  const bridge = getCastBridge();
+  if (!bridge?.openAppSettings) return;
+  try {
+    await bridge.openAppSettings();
+  } catch {
+    // 静默
   }
 }
 

@@ -25,6 +25,13 @@ import { SORT_OPTIONS } from './constants';
 import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
+/**
+ * discover 缓存回显 TTL（方案 B：无 Keep-Alive）
+ * Browse 重新挂载时，若 store 已有「当前筛选条件」的成功结果且未超 TTL，直接回显、
+ * 跳过重新请求；超过 TTL 则重新拉取（数据保鲜）。
+ */
+const DISCOVER_CACHE_TTL_MS = 10 * 60 * 1000;
+
 /** 把 FilterBarValue 转成 store 需要的 TMDBFilterOptions */
 export function toStoreFilter(value: FilterBarValue) {
   const sort = SORT_OPTIONS[value.sortIdx] ?? SORT_OPTIONS[0];
@@ -87,6 +94,8 @@ export function useBrowseData(query?: string) {
   // 首次 mount：立即发起一次查询，让"从首页进入"也能直接看到数据
   // 搜索模式（urlQ 非空）由父组件 Browse/index.tsx 统一触发 search()，
   // 此处仅处理 discover / top-rated 场景。
+  // 方案 B（无 Keep-Alive）：重新挂载时若 store 已有「当前筛选条件」的成功结果
+  // 且未超 TTL，直接回显缓存、跳过重新请求（避免切回 Browse 重复拉取）。
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
     initialFetchDoneRef.current = true;
@@ -96,6 +105,20 @@ export function useBrowseData(query?: string) {
 
     // 有搜索词时跳过：由父组件 search() 处理
     if (urlQ) return;
+
+    // 缓存回显判断：store 结果对应当前筛选条件且未过期 → 直接渲染，不重新请求
+    const st = useTMDBStore.getState();
+    const cachedFilter = st.discoverFetchedFilter;
+    const cacheHit =
+      st.discoverResults.length > 0 &&
+      cachedFilter != null &&
+      st.discoverFetchedAt > 0 &&
+      Date.now() - st.discoverFetchedAt < DISCOVER_CACHE_TTL_MS &&
+      JSON.stringify(cachedFilter) === JSON.stringify(toStoreFilter(filterValue));
+    if (cacheHit) {
+      hadOldDataRef.current = true;
+      return;
+    }
 
     // 首次进入页面，无论有无旧数据都显示 loading
     setIsRefreshing(true);

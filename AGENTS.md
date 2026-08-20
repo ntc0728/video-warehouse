@@ -164,6 +164,8 @@ public/data/             # 数据源配置 JSON
 
 投屏链路：前端 `castService.ts` 定义 `window.CastBridge` 契约（`CastDevice`/`CastBridge`）→ `MainActivity` 注册 `CastBridgePlugin`（Capacitor 6 原生插件，`@PluginMethod` 注解）+ `onPageLoaded` 注入 shim 代理到 `Capacitor.Plugins.CastBridge` → `SSDPDiscovery`（MulticastSocket + MulticastLock + M-SEARCH，3s 预算）发现 DLNA 设备 → `UPnPAVTransport`（SOAP SetAVTransportURI + 自动 Play/Play/Pause/Stop/Seek/SetVolume）推送。新增/修改 Android 原生代码必须同步 `scripts/android-dlna-patch/` 与 `scripts/patch-android-dlna.ps1`，不得直接改 android/（会被重建覆盖）。**PS5.1 下含中文的 .ps1 必须带 UTF-8 BOM**（无 BOM 按 GBK 解码会 parse error）。iOS 端尚未实现同名桥，`getCastBridge()` 返回 null → 投屏空态。
 
+**投屏权限流程（2026-08-19）**：`CastBridge` 契约含 `ensurePermission(): Promise<'granted'|'denied'>` + `openAppSettings(): Promise<void>`。`CastSheet` native 打开时先 `ensureCastPermission()`（`castService.ts`；桥未实现返回 `'unsupported'` → 按旧流程继续，向后兼容老 App/测试 mock），`denied` → 显示🔒「需要投屏权限」+「去设置授权」按钮（调 `openAppSettings` 跳系统应用设置页）；`granted` → 正常发现。原生侧：`CastBridgePlugin.ensurePermission` 在 API 33+ 检查/请求 `NEARBY_WIFI_DEVICES`（`@PermissionCallback` 回调；老系统直接 granted），`openAppSettings` 走 `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`。`patch-android-dlna.ps1` 会合并 `NEARBY_WIFI_DEVICES` 权限。注意 Capacitor 6 `PermissionState` 是独立枚举（`com.getcapacitor.PermissionState`），需显式 import。Web Cast（Google Cast）不走权限前置——系统设备选择器自带授权。
+
 ## Keep-Alive 路由
 
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
@@ -328,7 +330,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/Home/` | `scripts/home.spec.ts` | 40 + 7 |
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
-| `src/pages/Player/` | `scripts/player.spec.ts` | 21 |
+| `src/pages/Player/` | `scripts/player.spec.ts` | 27 |
 | `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
@@ -347,7 +349,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
-| `src/components/UniversalPlayer/` | player + iptv + iptv-player | 40 |
+| `src/components/UniversalPlayer/` | player + iptv + iptv-player | 46 |
 | `src/components/VideoCard/` | home + browse + detail + collections + history + person | 110 |
 | `src/components/SearchBox/` | browse + cross-page | 40 |
 | `src/components/RecordShell/` | collections + history | 17 |

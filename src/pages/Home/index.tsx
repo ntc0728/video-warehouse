@@ -4,7 +4,7 @@
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
  */
-import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue, useContext } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
@@ -15,7 +15,6 @@ import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { ActiveRouteContext } from '@/hooks/routeTitleContext';
 import CategoryQuickAccess from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
@@ -48,11 +47,8 @@ export default function HomePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  // Keep-Alive 激活路由 key：Home 被 display:none 挂起时（用户在其他页面）
-  // 不等于 '/'，用于阻止隐藏期间的定时器在后台触发 TTL 整批刷新。
-  const activeRouteKey = useContext(ActiveRouteContext);
 
-  useScrollRestore('home', undefined, location.pathname === '/');
+  useScrollRestore('home');
 
   // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────
   // activeCategory：源值，驱动「数据预取 / 文档标题 / 侧边栏高亮」等紧急更新（不希望有延迟）。
@@ -99,14 +95,12 @@ export default function HomePage() {
     //   现改为 hero 就绪即切换：banner + 缩略图立即显示新分类；首行与 hero 同批到达
     //   （store 部分更新同步写入），切换时已有数据；其余行由 TMDBMovieRow 自身的
     //   isLoading 骨架独立占位、数据到达后原位填充——各自独立切换，互不等待。
-    const heroFailed = categoryData != null && categoryData.heroLoading === false && categoryData.hero.length === 0;
+    // 放宽 ready：新分类行骨架数据已由 store 在分类切换时立即写入（分层加载），
+    // 行数据存在即 swap → 新分类 SkeletonCards 原地出现（补回骨架反馈）；
+    // hero 仍由其自身 loading/placeholder 处理，不阻塞行切换，避免旧内容 dim 顶替无骨架。
     const ready =
       deferredCategory === 'home' ||
-      (categoryData != null &&
-        categoryData.rows.length > 0 &&
-        (categoryData.hero.length > 0 ||
-          (heroFailed && categoryData.rows.some((r) => r.items.length > 0)) ||
-          categoryData.rows.every((r) => r.error != null)));
+      (categoryData != null && categoryData.rows.length > 0);
     if (!ready) return;
 
     // ⚠️（2026-08-14 修正）：**立即切换，不做预加载阻塞门控**。
@@ -144,7 +138,7 @@ export default function HomePage() {
     if (activeCategory !== 'home') loadCategory(activeCategory);
   }, [activeCategory, loadCategory]);
 
-  // Keep-Alive 切回时检查缓存是否过期，过期则重新加载
+  // 页面重新挂载 / 浏览器 Tab 切回时检查缓存是否过期，过期则重新加载
   // 覆盖场景：切换浏览器 Tab 返回时（visibilitychange）
   // 类目：检查 useHomeCategoryStore 10min TTL；首页（activeCategory==='home'）：检查
   // useTMDBStore 首页 8 区块 60min TTL（数据全满时静默刷新，避免长会话内数据陈旧）。
@@ -243,7 +237,7 @@ export default function HomePage() {
   // ── 分类点击 → 跳到独立筛选页 ──────────────────────
   const handleCategorySelect = useCallback((cat: CategoryKey) => {
     const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    // fromCategory 标记：Browse（Keep-Alive 常驻）据此清空残留搜索词并立即刷新，
+    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新，
     // 否则二次进入时 query state 残留 → 顶部搜索框残留旧词 + 数据不再重新拉取
     navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
   }, [navigate]);
@@ -308,15 +302,12 @@ export default function HomePage() {
     void s.fetchAllHomeData();
   }, [hasToken, isCategoryView, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv, homeFetchedAt]);
 
-  // I2：TTL 过期定时检查——Keep-Alive 下 Home 常驻挂载，若用户停留在首页超过 60min，
+  // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
   // 依赖 s 由组件订阅的 ttlExpiredSig 驱动；使用 store 模块级定时器避免每次渲染重建。
-  // Keep-Alive 挂起（display:none，activeRouteKey !== '/'）时跳过检查：避免离开首页后
-  // 定时器在后台触发整批 TMDB 请求（纯浪费配额）；重新激活时 effect 重跑并立即补查一次。
   useEffect(() => {
     if (!hasToken || isCategoryView) return;
     const check = () => {
-      if (activeRouteKey !== '/') return;
       const s = useTMDBStore.getState();
       if (s.homeFetchedAt <= 0) return;
       if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
@@ -327,11 +318,11 @@ export default function HomePage() {
       if (anyLoading) return;
       void s.fetchAllHomeData();
     };
-    // 激活/重新激活（activeRouteKey 变回 '/'）时立即补查一次，不依赖下一轮定时器
+    // 挂载时立即补查一次，不依赖下一轮定时器
     check();
     const timer = setInterval(check, 60 * 1000);
     return () => clearInterval(timer);
-  }, [hasToken, isCategoryView, activeRouteKey]);
+  }, [hasToken, isCategoryView]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {
@@ -360,10 +351,13 @@ export default function HomePage() {
   // loading 出现（避免骨架一闪而过）。时间戳超 1s 视为过期（不误跳过），
   // 消费后即清除，不影响后续进入。
   const [pageLoading, setPageLoading] = useState(() => {
+    // 方案 B（无 Keep-Alive）：页面重新挂载时若 store 已有缓存数据，直接渲染，
+    // 不再走固定 500ms 整页 loading（否则每次切回首页都闪一次整页 loading）。
     const marked = window.__kinoSuspenseFallback;
     window.__kinoSuspenseFallback = 0;
     const recentlyFellBack = typeof marked === 'number' && marked > 0 && Date.now() - marked < 1000;
-    return !recentlyFellBack;
+    if (recentlyFellBack) return false;
+    return !hasAnyData;
   });
 
   useEffect(() => {
@@ -513,15 +507,14 @@ export default function HomePage() {
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
         loading={isDisplayingCategory ? (displayedData?.heroLoading ?? true) : loading.trending}
-        active={activeRouteKey === '/'}
       />
       {/*
         页面进入动画（page-transition-enter）只作用于「非 Hero 内容」包装层：
         HeroBanner 自身有 background crossfade 与缩略图揭示等动画，其缩略图/背景层是
         GPU 合成层；若祖先带 transform 动画会触发合成层重绘闪烁（"闪一下"）。
         让 HeroBanner 作为本包装层的兄弟节点、祖先不再有 transform 动画，即可消除闪烁，
-        同时下方内容仍保有进入淡入上移动画；Keep-Alive 二次进入由 AppLayout 回放机制
-        递归命中本层 .page-transition-enter 重放，HeroBanner 不受影响、保持静止。
+        同时下方内容仍保有进入淡入上移动画；每次路由挂载自然重放本层 .page-transition-enter，
+        HeroBanner 不受影响、保持静止。
       */}
       <div className={`home-page__content page-transition-enter${catSwitching ? ' home-cat-dim' : ''}`}>
         <CategoryQuickAccess

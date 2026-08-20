@@ -7,7 +7,7 @@
  *
  * 数据流：URL ↔ useBrowseData（TMDB）/ useCMSSearch（CMS）
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState, useContext } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
@@ -17,7 +17,6 @@ import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { ActiveRouteContext, SelfRouteContext } from '@/hooks/routeTitleContext';
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
@@ -48,7 +47,7 @@ export default function BrowsePage() {
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
 
-  useScrollRestore('browse', undefined, location.pathname === '/browse');
+  useScrollRestore('browse');
 
   // ── 搜索词（优先从 location.state 读取，兜底兼容 ?q= 查询参数）──
   // createBrowserRouter 下 window.history.state 在刷新后被浏览器保留，
@@ -57,15 +56,14 @@ export default function BrowsePage() {
   const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
   const urlQ = searchParams.get('q')?.trim() ?? '';
   // 从首页分类导航进入（Home CategoryQuickAccess → /browse?category=...）：
-  // 顶部搜索框应清空（Keep-Alive 下 query state 常驻，若不处理会残留旧搜索词）
+  // 顶部搜索框应清空（query state 常驻，若不处理会残留旧搜索词）
   const fromCategory = (location.state as { fromCategory?: boolean } | null)?.fromCategory === true;
   const [query, setQuery] = useState(() => {
     if (isPop) return '';
     return stateQ || urlQ || '';
   });
 
-  // Keep-Alive 下二次从顶部导航搜索进入时，location.state 变化但组件未重挂载，
-  // 需主动同步搜索词到 query → 进而带入 Browse 页搜索框（defaultValue）
+  // 从顶部导航搜索进入时，location.state 变化（组件可能已挂载），需主动同步搜索词
   useEffect(() => {
     // POP 导航（刷新/后退）不从 location.state / ?q= 恢复搜索词
     if (isPop) return;
@@ -75,14 +73,11 @@ export default function BrowsePage() {
     }
   }, [stateQ, urlQ, isPop]);
 
-  // ── 浏览器标签标题（Keep-Alive：仅激活页写，避免已切走页面覆盖） ──
-  const activeRouteKeyB = useContext(ActiveRouteContext);
-  const selfRouteKeyB = useContext(SelfRouteContext);
+  // ── 浏览器标签标题：挂载即写（无 Keep-Alive，页面卸载后标题由新页接管） ──
   useEffect(() => {
-    if (selfRouteKeyB != null && selfRouteKeyB !== activeRouteKeyB) return;
     document.title =
       searchMode === 'cms' && query ? `${query} - 搜索 - kinoTV` : '搜索 - kinoTV';
-  }, [searchMode, query, activeRouteKeyB, selfRouteKeyB]);
+  }, [searchMode, query]);
 
   // ── TMDB 数据（智能检索）─────────────────────────
   const {
@@ -196,7 +191,7 @@ export default function BrowsePage() {
     return () => { store.clearPageSearch(); };
   }, [query, handlePageSearch, location.pathname, fromCategory]);
 
-  // 从顶部导航搜索进入 / Keep-Alive 二次进入：用 location.state 或 ?q= 中的最新搜索词触发搜索
+  // 从顶部导航搜索进入：用 location.state 或 ?q= 中的最新搜索词触发搜索
   // 注意：必须读 stateQ/urlQ（同步变量）而非 query（异步 state）——
   // location.key 变化时 setQuery 尚未生效，query 仍是上一次的旧值。
   useEffect(() => {
