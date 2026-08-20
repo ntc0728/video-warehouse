@@ -88,6 +88,7 @@
   /* 语义色 — 状态反馈 */
   --color-success: #52c41a;                /* 成功/可用 */
   --color-error: #ff4d4f;                  /* 错误/不可用 */
+  --color-danger: #ef4444;                 /* 危险/角标红（LIVE 角标、收藏页年份类型徽标） */
   --color-warning: #fa8c16;                /* 警告 */
   --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
@@ -427,6 +428,7 @@
   --color-tab-inactive-text: #a0a0a0;
   --color-success: #49aa19;
   --color-error: #d32029;
+  --color-danger: #ef4444;                 /* 危险/角标红（亮红在暗色下同样醒目） */
   --color-warning: #d89614;
   --color-info: #177ddc;                  /* 暗色主题链接蓝 */
   --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */

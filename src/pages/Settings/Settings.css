@@ -897,6 +897,21 @@ body.skin-transitioning .skin-btn.active {
   overflow: hidden;
 }
 
+/* 个人资料卡标题行（图标 + 文字），横向 padding 与下方 .settings-profile 按钮对齐 */
+.settings-profile-card__title {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg) 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+.settings-profile-card__title-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
 .settings-profile {
   display: flex;
   gap: var(--space-md);
@@ -1186,10 +1201,17 @@ body.skin-transitioning .skin-btn.active {
 
 /* ===== 个人设置（个人资料 / 配置管理 / 恢复默认配置） ===== */
 .settings-card__title {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
   margin-bottom: var(--space-sm);
   color: var(--color-text);
   font-size: var(--text-lg);
   font-weight: 700;
+}
+.settings-card__title-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
 }
 .settings-card__desc {
   margin: 0 0 var(--space-md);

@@ -61,7 +61,7 @@
 
 .status-tab--active .status-tab__count {
   background: var(--status-tab-color, var(--color-primary));
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 @media (width <= 767px) {
