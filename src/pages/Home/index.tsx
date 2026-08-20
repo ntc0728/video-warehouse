@@ -290,6 +290,19 @@ export default function HomePage() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // ── 进入过渡相位控制：骨架覆盖 → 淡出 → 完成 ──
+  // 目的：缓存数据场景下避免 heroBgFadeIn 与骨架消失同时发生导致"大片从骨架变图片"的闪烁。
+  // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出）→ done（内容自由渲染）。
+  // 冷加载路径（pageLoading=true）由上方 isInitialLoading 分支直接返回，本段不生效。
+  const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>('skeleton');
+  useEffect(() => {
+    const SHOW_MS = 200;
+    const FADE_MS = 600;
+    const t1 = window.setTimeout(() => setEnterPhase('fading'), SHOW_MS);
+    const t2 = window.setTimeout(() => setEnterPhase('done'), SHOW_MS + FADE_MS);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, []);
+
   if (!hasToken) {
     return (
       <div className="page-padding home-page">
@@ -330,11 +343,11 @@ export default function HomePage() {
     );
   }
 
-  // 首屏骨架（home 初始加载 或 类目首次加载共用，结构一致）
+  // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
   // home-skeleton-hero 刻意与 HeroBanner 同构：左侧主图 + 右侧缩略图列，
   // 保证加载期缩略图骨架与 banner 同时出现（修复「缩略图骨架不和 banner 一起出现」）。
-  const homeSkeleton = (
-    <div className="page-padding home-page home-skeleton">
+  const homeSkeletonBody = (
+    <>
       <div className="home-skeleton-hero">
         <div className="home-skeleton-hero__banner">
           {/* 内容占位：镜像 hero-banner__text — 标题 / 评分·年份·类型 / 简介（桌面端） */}
@@ -378,7 +391,10 @@ export default function HomePage() {
           </div>
         ))}
       </div>
-    </div>
+    </>
+  );
+  const homeSkeleton = (
+    <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
   );
 
   // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
@@ -400,9 +416,19 @@ export default function HomePage() {
   }
 
   return (
-    <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-      <CategoryView catKey={deferredCategory} animateEnter />
-    </div>
+    <>
+      {/* 进入过渡覆盖层：缓存数据场景下，首页从其他页切回时显示骨架覆盖 → 淡出 → 内容。
+          仅在 enterPhase !== 'done' 时渲染（skeleton/fading），done 后自动卸载。
+          position: fixed 以覆盖整个视口，不受 home-page relative 约束。 */}
+      {enterPhase !== 'done' && (
+        <div className={`home-enter-skeleton${enterPhase === 'fading' ? ' home-enter-skeleton--fading' : ''}`}>
+          <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
+        </div>
+      )}
+      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+        <CategoryView catKey={deferredCategory} animateEnter enterPhase={enterPhase} />
+      </div>
+    </>
   );
 }
 
@@ -413,7 +439,7 @@ export default function HomePage() {
 // TMDBMovieRow（isLoading=true → SkeletonCards）自然呈现骨架，数据到达后组件内原位填充，
 // 配合 HeroBanner 的图淡入与 VideoCard 的 animate-card-enter 完成「骨架→图」平滑过渡，
 // 不再由外层整页 homeSkeleton 硬插。
-function CategoryView({ catKey, animateEnter }: { catKey: HomeCategoryKey; animateEnter: boolean }) {
+function CategoryView({ catKey, animateEnter, enterPhase }: { catKey: HomeCategoryKey; animateEnter: boolean; enterPhase: 'skeleton' | 'fading' | 'done' }) {
   const navigate = useCustomNavigate();
   const location = useLocation();
   const isCat = catKey !== 'home';
@@ -496,8 +522,9 @@ function CategoryView({ catKey, animateEnter }: { catKey: HomeCategoryKey; anima
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
         loading={heroLoading}
+        initialEnterDelay={enterPhase !== 'done' ? 800 : 0}
       />
-      <div className={`home-page__content${animateEnter ? ' page-transition-enter' : ''}`}>
+      <div className={`home-page__content${animateEnter ? ' page-transition-enter home-page__content--delayed-enter' : ' home-page__content--delayed-enter'}`}>
         <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
         {!isCat && (userDataLoading || continueItems.length > 0) && (
           <TMDBMovieRow
@@ -506,6 +533,7 @@ function CategoryView({ catKey, animateEnter }: { catKey: HomeCategoryKey; anima
             continueMode
             continueItems={continueItems}
             isLoading={userDataLoading}
+            skipAnimations={enterPhase !== 'done'}
           />
         )}
         <div className="home-rows">

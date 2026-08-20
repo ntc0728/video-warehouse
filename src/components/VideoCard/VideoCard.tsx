@@ -50,6 +50,8 @@ interface VideoCardProps {
   status?: 'unwatched' | 'watching' | 'watched';
   /** 封面旧图→新图交叉淡入（首页卡片封面切换用），透传给 LazyImage。 */
   crossfadeOnChange?: boolean;
+  /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
+  skipAnimations?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -110,6 +112,7 @@ const VideoCard = memo(function VideoCard({
   navigateState,
   status,
   crossfadeOnChange = false,
+  skipAnimations = false,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -272,8 +275,8 @@ const VideoCard = memo(function VideoCard({
   return (
     <Link
       to={navigateTo || `/detail/${video.id}`}
-      className={`video-card ${variant === 'landscape' ? 'video-card--landscape' : ''} animate-card-enter ${batchMode ? 'video-card--batch' : ''}`}
-      style={stagger}
+      className={`video-card ${variant === 'landscape' ? 'video-card--landscape' : ''}${skipAnimations ? '' : ' animate-card-enter'} ${batchMode ? 'video-card--batch' : ''}`}
+      style={skipAnimations ? undefined : stagger}
       state={{ from: location.pathname + location.search, ...navigateState }}
       tabIndex={isTV ? 0 : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
