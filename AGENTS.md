@@ -204,7 +204,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - IPTV 页 `.iptv-top-card`（筛选控制）+ `.iptv-grid-card`（频道网格）— `IPTV.css`
 - 人物页 `.person-hero`（资料卡片）+ `.person-grid-card`（Tab+作品网格）— `Person.css`
 - 详情页 `detail-hero` — 去掉负 margin，受 page-padding 约束（`Detail.css`）
-- 设置页桌面端 `.settings-desktop-card` — TabBar + 内容区放入**同一张大卡片**，section 去卡片化、之间用分割线（`border-top`）分隔（`Settings.css`）；移动端子页布局不变
+- 设置页桌面端 `.settings-desktop-card` — TabBar + 内容区放入**同一张大卡片**，section 去卡片化、之间用留白（margin-top + padding-top）分隔，无分割线（`Settings.css`）；移动端子页布局不变
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
 
