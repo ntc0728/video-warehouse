@@ -11,13 +11,14 @@ export default function ProfileHeader() {
 
   return (
     <>
+      {/* 个人资料标题：移出卡片，与「配置管理」「恢复默认配置」标题同行样式 */}
+      <h3 className="settings-card__title">
+        <Icon icon={User} size="md" className="settings-card__title-icon" />
+        <span>个人资料</span>
+      </h3>
       {/* 外层卡片（.settings-profile-card）：与设置页 .list-item 同卡片化；
-         button 本体去卡片化，仅保留内容布局与点击交互 */}
+          button 本体去卡片化，仅保留内容布局与点击交互 */}
       <div className="settings-profile-card">
-        <h3 className="settings-profile-card__title">
-          <Icon icon={User} size="md" className="settings-profile-card__title-icon" />
-          <span>个人资料</span>
-        </h3>
         <button
           type="button"
           className="settings-profile"
