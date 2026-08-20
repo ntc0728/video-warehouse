@@ -725,7 +725,7 @@ body.skin-transitioning .skin-btn.active {
     padding-left: 0;
   }
   /* 首 section 顶部留白：与桌面端卡片距顶栏的呼吸感一致（profile-card 自带 margin 时此处不叠加） */
-  .settings-subpage__body > section:first-child:not(:has(> .settings-profile-card)) {
+  .settings-subpage__body > section:first-child:not(:has(> .settings-profile-card)):not(:has(> .settings-card__title)) {
     padding-top: var(--space-lg);
   }
   /* 源管理 block：与 List 卡组对齐，section 左右 padding 已提供，无需额外 margin */
@@ -754,7 +754,7 @@ body.skin-transitioning .skin-btn.active {
     padding-left: 0;
   }
   html[data-device="app"] /* 首 section 顶部留白：与桌面端卡片距顶栏的呼吸感一致（profile-card 自带 margin 时此处不叠加） */
-  .settings-subpage__body > section:first-child:not(:has(> .settings-profile-card)) {
+  .settings-subpage__body > section:first-child:not(:has(> .settings-profile-card)):not(:has(> .settings-card__title)) {
     padding-top: var(--space-lg);
   }
   html[data-device="app"] /* 源管理 block：与 List 卡组对齐，section 左右 padding 已提供，无需额外 margin */
@@ -822,7 +822,7 @@ body.skin-transitioning .skin-btn.active {
   }
 
   html:not([data-device="app"]) /* 个人资料卡（.settings-profile-card 外层卡片）与 .list-item 同卡片化；
-     左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。 */
+      左右留白与 .settings-content > section 的 padding-lg 对齐，保证与其他设置项边缘一致。 */
   .settings-content > .settings-profile-card, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card {
     box-sizing: border-box;
     border: 1px solid var(--color-border-light);
@@ -834,13 +834,23 @@ body.skin-transitioning .skin-btn.active {
     border-color: var(--color-border-strong);
     box-shadow: var(--shadow-card-hover);
   }
+  /* 个人资料卡与标题：桌面端 8px 间距（与 .settings-card__body + title 的 margin-top 一致） */
+  html:not([data-device="app"]) .settings-content > .settings-card__title + .settings-profile-card,
+  html:not([data-device="app"]) .settings-subpage__body > .settings-card__title + .settings-profile-card {
+    margin-top: var(--space-sm);
+  }
   .settings-content__pane {
       padding: var(--space-lg);
   }
-  html:not([data-device="app"]) /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
-  .settings-content > .settings-profile-card + section, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card + section {
+  /* 个人资料卡与下方 section：桌面端不使用分割线，改用留白间隔 */
+  html:not([data-device="app"]) .settings-content > .settings-profile-card + section, html:not([data-device="app"]) .settings-subpage__body > .settings-profile-card + section {
     border-top: none;
     margin-top: var(--space-lg);
+  }
+  /* 配置管理/恢复默认配置的 title + body 间距：8px（与 list-item 卡间距保持一致） */
+  html:not([data-device="app"]) .settings-content .settings-personal-section .settings-card__title,
+  html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__title {
+    margin-bottom: var(--space-sm);
   }
 }
 
@@ -897,19 +907,9 @@ body.skin-transitioning .skin-btn.active {
   overflow: hidden;
 }
 
-/* 个人资料卡标题行（图标 + 文字），横向 padding 与下方 .settings-profile 按钮对齐 */
+/* 个人资料卡标题行（图标 + 文字）— 已移至卡片外部，仅保留兼容选择器 */
 .settings-profile-card__title {
-  display: flex;
-  gap: var(--space-2xs);
-  align-items: center;
-  padding: var(--space-md) var(--space-lg) 0;
-  color: var(--color-text);
-  font-size: var(--text-lg);
-  font-weight: 700;
-}
-.settings-profile-card__title-icon {
-  flex-shrink: 0;
-  color: var(--color-primary);
+  display: none;
 }
 
 .settings-profile {
@@ -1708,6 +1708,11 @@ body.skin-transitioning .skin-btn.active {
     border-top: none;
     margin-top: var(--space-lg);
   }
+  /* 个人资料卡与标题：子页内 8px 间距 */
+  .settings-subpage__body > .settings-card__title + .settings-profile-card,
+  .settings-content > .settings-card__title + .settings-profile-card {
+    margin-top: var(--space-sm);
+  }
 
   /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
      每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
@@ -1736,6 +1741,10 @@ body.skin-transitioning .skin-btn.active {
   /* PersonalTab 卡片内行：移动端子页同样不使用分割线 */
   .settings-subpage__body .settings-row + .settings-row {
     border-top: none;
+  }
+  /* 个人资料卡 / 配置管理 / 恢复默认配置 标题与卡片间距（移动端子页） */
+  .settings-subpage__body .settings-card__title {
+    margin-bottom: var(--space-sm);
   }
   .settings-content .settings-personal-section .settings-card__body {
     border: none;
@@ -1801,6 +1810,11 @@ body.skin-transitioning .skin-btn.active {
     border-top: none;
     margin-top: var(--space-lg);
   }
+  html[data-device="app"] /* 个人资料卡与标题：子页内 8px 间距 */
+  .settings-subpage__body > .settings-card__title + .settings-profile-card,
+  .settings-content > .settings-card__title + .settings-profile-card {
+    margin-top: var(--space-sm);
+  }
 
   html[data-device="app"] /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
      每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
@@ -1829,6 +1843,10 @@ body.skin-transitioning .skin-btn.active {
   html[data-device="app"] /* PersonalTab 卡片内行：移动端子页同样不使用分割线 */
   .settings-subpage__body .settings-row + .settings-row {
     border-top: none;
+  }
+  html[data-device="app"] /* 个人资料卡 / 配置管理 / 恢复默认配置 标题与卡片间距（移动端子页） */
+  .settings-subpage__body .settings-card__title {
+    margin-bottom: var(--space-sm);
   }
   html[data-device="app"] .settings-content .settings-personal-section .settings-card__body {
     border: none;
