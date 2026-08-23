@@ -1,26 +1,35 @@
 /* ═══════════════════════════════════════════════════════════════════════
    HeroBanner — 首页 Hero 横幅
-   布局：左侧主背景图（crossfade）+ 右侧竖排缩略图列（海报+标题）
-   桌面端：主图区 flex:1 + 缩略图列 240px；移动端：仅主图区
+   布局：卡片容器 + 内部左侧主背景图（crossfade，16:9）+ 右侧竖排缩略图列（16:9）
+   桌面端：主图区 flex:1 + 缩略图列自适应；移动端：仅主图区
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 卡片容器 ── */
+.hero-banner__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-sm);
+  overflow: hidden;
+}
 
 .hero-banner {
   position: relative;
   display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
   width: 100%;
-  min-height: var(--layout-hero-banner-min-h);
-  max-height: min(70vh, var(--layout-hero-banner-max-h));
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-  /* 缩略图列宽现由「自身拉伸高度经 aspect-ratio 反推」（见 .hero-banner__thumbs），
-     不再依赖 container-type:size + 100cqh，故移除尺寸容器；
-     从首帧起骨架与真实缩略图列宽即恒等，消除硬重载首帧 100cqh 回退视口高度导致的列宽跳变。 */
+  /*
+    数学推导（两个 16:9 约束的必然结果）：
+    缩略图列宽 = H × 16/27；banner宽 = W − 16H/27
+    (W − 16H/27) / H = 16/9  →  W = 64H/27  →  H = 27W/64
+    最小高度 H_min = 40rem（banner≈71rem≈1138px，缩略图≈23.7rem≈379px，均可读）
+  */
+  height: clamp(40rem, 28rem + 8vw, 56rem);
+  max-height: 70vh;
   user-select: none;
   -webkit-user-drag: none;
-  /* C1-1（2026-08-04）：允许纵向滚动、把横向手势留给 JS 拖拽判定。
-     此前无 touch-action，移动端横向滑动常被页面纵向滚动/浏览器默认手势（回退/缩放）
-     吞掉 → onTouchEnd 的 dx < 50px 不触发切换，表现为「左右滑动有时失效」。 */
   touch-action: pan-y;
 }
 
@@ -28,9 +37,12 @@
 
 .hero-banner__main {
   position: relative;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
+  height: 100%;
   overflow: hidden;
+  /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
+     图片用 object-fit: cover 视觉保持 16:9 */
 }
 
 .hero-banner__bg-wrapper {
@@ -244,31 +256,19 @@
 }
 
 /* ── 右侧缩略图列（桌面端） ──
-    宽度由缩略图 16:9 比例自适应，容器 position:absolute 右对齐。 */
+    列宽 = 容器高 × 16/27（3 张缩略图 × 16/9 = 16/27） */
 
 .hero-banner__thumbs {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  /* 缩略图之间不留间隙（2026-08-12：gap 归零，列宽公式同步去掉 gap 项） */
   gap: 0;
   justify-content: flex-start;
-  padding: 0 0 0 var(--space-sm);
-  /* 列宽 = (列高 / 张数) × 16/9：本列自身即容器（container-type:size），
-     其 100cqh 解析为列自身高度（由 position:absolute; top:0; bottom:0 撑满 banner，
-     纯布局确定、与 CSS/JS 时序无关），故从第 0 帧起列宽即正确，
-     彻底摆脱对 JS 注入 --hero-banner-h 的依赖，且不再有「初始骨架宽、后续窄」的跳变。
-     张数 N = 内联 style 注入的 --hero-thumb-count（宽屏 4 / 普通 3，首帧即就绪）。
-     当 --hero-banner-h 未注入时回退 100cqh（= 列自身高度，等同正确值）。 */
+  flex-shrink: 0;
+  /* 列宽 = 容器高 × 16/27：container-type:size 使 100cqh = 列自身高度 = 容器高度 */
   container-type: size;
-  width: calc(
-    var(--hero-banner-h, 100cqh)
-    / var(--hero-thumb-count, 3) * 16 / 9
-  );
+  width: calc(100cqh * 16 / 27);
   overflow: hidden;
 }
 
@@ -281,7 +281,7 @@
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* 不设 aspect-ratio：flex:1 已定高，宽度由列宽 calc 给出，自然形成 16:9 */
   /* 去掉半透明白色描边：它与 gap 共同构成「缩略图之间间隙」的视觉，
      无间隙需求下移除；其余属性（尺寸/圆角/背景/hover 缩放等）保持不变 */
   border: none;
@@ -432,7 +432,7 @@
     display: none;
   }
 
-  .hero-banner {
+  .hero-banner__card {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
@@ -443,7 +443,7 @@
     display: none;
   }
 
-  html[data-device="app"] .hero-banner {
+  html[data-device="app"] .hero-banner__card {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
@@ -452,8 +452,13 @@
 
 @media (width <= 767px) {
   .hero-banner {
+    height: auto;
     aspect-ratio: 16 / 9;
-    min-height: 14rem;
+    min-height: 18rem;
+  }
+
+  .hero-banner__main {
+    height: auto;
   }
 
   .hero-banner__content {
