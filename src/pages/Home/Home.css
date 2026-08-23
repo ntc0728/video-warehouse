@@ -194,7 +194,6 @@ html[data-device="app"] .home-disclaimer {
   position: relative;
   width: 100%;
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
-  container-type: size;
   /* 与真实 .hero-banner 一致：H_min=40rem，缩略图可读 */
   height: clamp(40rem, 28rem + 8vw, 56rem);
   max-height: 70vh;
@@ -304,9 +303,9 @@ html[data-device="app"] .home-disclaimer {
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  /* container-type 在外层 .home-skeleton-hero 上；100cqh = 卡片高度 */
-  /* 与真实 .hero-banner__thumbs 一致：列宽 = 容器高 × 16/27 */
-  width: calc(100cqh * 16 / 27);
+  /* 与真实 .hero-banner__thumbs 一致：列宽 = banner 实际高度 × 16/27
+     --hero-banner-h 由 HeroBanner.useLayoutEffect 注入（首帧为 0px fallback） */
+  width: calc(var(--hero-banner-h, 0px) * 16 / 27);
   overflow: hidden;
 }
 

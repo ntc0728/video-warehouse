@@ -12,9 +12,8 @@
   box-shadow: var(--shadow-sm);
   padding: var(--space-sm);
   overflow: hidden;
-  /* container-type 放卡片上：100cqh 锚定卡片高度（= banner 高度），
-     而不是缩略图列自身高度（flex 子项高度可能未稳定） */
-  container-type: size;
+  /* 不使用 container-type：由 JS useEffect 实测 bannerRef.current.clientHeight
+     并注入 --hero-banner-h，缩略图列宽直接引用该变量，避免 cqh 依赖容器上下文的不可靠性。 */
 }
 
 .hero-banner {
@@ -269,8 +268,8 @@
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  /* 列宽 = 卡片高 × 16/27（container-type 在 .hero-banner__card 上，100cqh = 卡片高度 = banner 高度） */
-  width: calc(100cqh * 16 / 27);
+  /* 列宽 = banner 实际高度 × 16/27（JS 注入 --hero-banner-h，避免 100cqh 依赖容器上下文） */
+  width: calc(var(--hero-banner-h, 0px) * 16 / 27);
   overflow: hidden;
 }
 
