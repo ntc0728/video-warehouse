@@ -12,6 +12,9 @@
   box-shadow: var(--shadow-sm);
   padding: var(--space-sm);
   overflow: hidden;
+  /* container-type 放卡片上：100cqh 锚定卡片高度（= banner 高度），
+     而不是缩略图列自身高度（flex 子项高度可能未稳定） */
+  container-type: size;
 }
 
 .hero-banner {
@@ -266,8 +269,7 @@
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  /* 列宽 = 容器高 × 16/27：container-type:size 使 100cqh = 列自身高度 = 容器高度 */
-  container-type: size;
+  /* 列宽 = 卡片高 × 16/27（container-type 在 .hero-banner__card 上，100cqh = 卡片高度 = banner 高度） */
   width: calc(100cqh * 16 / 27);
   overflow: hidden;
 }

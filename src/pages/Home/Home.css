@@ -304,7 +304,7 @@ html[data-device="app"] .home-disclaimer {
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  container-type: size;
+  /* container-type 在外层 .home-skeleton-hero 上；100cqh = 卡片高度 */
   /* 与真实 .hero-banner__thumbs 一致：列宽 = 容器高 × 16/27 */
   width: calc(100cqh * 16 / 27);
   overflow: hidden;
