@@ -428,10 +428,20 @@
   }
 }
 
-/* ── Mobile / 平板：隐藏右侧缩略图列，仅主图 ─── */
+/* ── Mobile / 平板：隐藏右侧缩略图列，仅主图，banner 退回 16:9 ─── */
 @media (width <= 1023px) {
   .hero-banner__thumbs {
     display: none;
+  }
+
+  .hero-banner {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 28rem;
+  }
+
+  .hero-banner__main {
+    height: auto;
   }
 
   .hero-banner__card {
@@ -449,6 +459,8 @@
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
+
+  /* app 端无需 height/aspect-ratio 副本：@media (width <= 1023px) 已覆盖 */
 
 
 
@@ -472,11 +484,6 @@
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .hero-banner {
-    aspect-ratio: 16 / 9;
-    min-height: 14rem;
-  }
 
   html[data-device="app"] .hero-banner__content {
     padding: var(--space-md);
