@@ -347,10 +347,16 @@ html[data-device="app"] .home-disclaimer {
   }
 }
 
-/* 平板及以下：卡片样式已由外层 .hero-banner__card 提供 */
+/* 平板及以下：卡片样式已由外层 .hero-banner__card 提供，banner 退回 16:9 */
 @media (width <= 1023px) {
   .home-skeleton-hero__thumbs {
     display: none;
+  }
+
+  .home-skeleton-hero {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 28rem;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
@@ -358,6 +364,8 @@ html[data-device="app"] .home-disclaimer {
   html[data-device="app"] .home-skeleton-hero__thumbs {
     display: none;
   }
+
+  /* app 端无需 height/aspect-ratio 副本：@media (width <= 1023px) 已覆盖 */
 
 
 
@@ -372,8 +380,6 @@ html[data-device="app"] .home-disclaimer {
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .home-skeleton-hero {
-    height: auto;
-    aspect-ratio: 16 / 9;
     min-height: 18rem;
   }
 
