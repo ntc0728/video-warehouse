@@ -29,7 +29,9 @@
 /* 加载占位 = 骨架 shimmer（2026-08-19）：
    卡片封面加载不再显示转圈（原 .image-spinner），统一为项目级骨架占位图。
    背景与卡片网格级骨架（SkeletonCard / 行级 SkeletonCards / 缩略图骨架）共用
-   --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。 */
+   --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。
+   同时提供 solid 底色兜底：若 shimmer gradient 因尺寸/浏览器问题未渲染，
+   仍有实色背景防止短暂露白。 */
 .lazy-image-skeleton {
   position: absolute;
   inset: 0;
@@ -40,6 +42,7 @@
     var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
+  background-color: var(--color-placeholder-shimmer-a);
   animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 
@@ -98,8 +101,11 @@
   opacity: 1;
 }
 
+/* loaded 时 placeholder 同步消失（transition: none），与图片 fade-in 同时发生，
+   避免 shimmer 先淡出、图片仍在 blur-up 中（opacity 0）的时间窗口露白。 */
 .lazy-image-container.loaded .lazy-image-placeholder {
   opacity: 0;
+  transition: none;
   pointer-events: none;
 }
 
