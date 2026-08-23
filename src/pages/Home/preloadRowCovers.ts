@@ -102,10 +102,9 @@ export function preloadRowCovers(
   if (urls.length === 0) return Promise.resolve();
   // w342 = 缓存判定键（LazyImage src）：只标记、不实际请求
   const cacheKeys = urls.filter((u) => u.includes('/w342/'));
-  cacheKeys.forEach((u) => markImageLoaded(u));
   // 实际加载的只有 w185（浏览器从 srcSet 实际选中的渲染尺寸）
   const loadUrls = urls.filter((u) => u.includes('/w185/'));
-  if (loadUrls.length === 0) return Promise.resolve();
+  if (loadUrls.length === 0 && cacheKeys.length === 0) return Promise.resolve();
 
   return new Promise((resolve) => {
     let remaining = loadUrls.length;
@@ -116,6 +115,10 @@ export function preloadRowCovers(
       resolve();
     }
 
+    // 先标记所有 w342 为已加载（让 LazyImage 命中缓存）
+    cacheKeys.forEach((u) => markImageLoaded(u));
+
+    // 再实际加载 w185
     for (const url of loadUrls) {
       const img = new Image();
       img.onload = () => {
@@ -130,5 +133,8 @@ export function preloadRowCovers(
       };
       img.src = url;
     }
+
+    // 如果没有 w185 需要加载，直接完成
+    if (loadUrls.length === 0) done();
   });
 }

@@ -52,6 +52,9 @@ interface VideoCardProps {
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
   skipAnimations?: boolean;
+  /** 禁用图片懒加载：为 true 时跳过 IntersectionObserver，不加载图片。
+   *  用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。 */
+  imageDisabled?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -113,6 +116,7 @@ const VideoCard = memo(function VideoCard({
   status,
   crossfadeOnChange = false,
   skipAnimations = false,
+  imageDisabled = false,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -294,6 +298,7 @@ const VideoCard = memo(function VideoCard({
           // 与 IPTV/历史等卡统一；不传 fallbackSrc 即沿用该默认。
           onLoad={() => setImageLoaded(true)}
           crossfadeOnChange={crossfadeOnChange}
+          disabled={imageDisabled}
         />
 
         {/* 光泽扫光层（hover 时触发 glowSweep 动画） */}

@@ -24,7 +24,7 @@
    Banner 高度采用双约束策略（防止超宽屏溢出）：
    max-height: min(VH_CAP, vw流体值)
      VH_CAP    : 占屏幕高度的上限百分比（HeroBanner 70vh / DetailHero 65vh）
-     vw流体值  : 基于视口宽度的流体 clamp（即下方 --layout-hero-banner-max-h 等）
+      vw流体值  : 基于视口宽度的流体 clamp
    aspect-ratio: 16/9 作为最小保证（窄屏不至于太扁）
 
    高度类值使用 vh 流体:
@@ -243,8 +243,6 @@
   --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
   --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px); /* 内容区最大宽度 */
   --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px); /* 首页 Hero 高度 */
-  --layout-hero-banner-min-h:  clamp(20rem, 15rem + 2vw, 28rem);  /* HeroBanner 最小高度：20→28rem 流体 */
-  --layout-hero-banner-max-h:  clamp(35rem, 25rem + 20vw, 100rem);  /* HeroBanner 最大高度 */
   --layout-hero-height-mobile: clamp(280px, 17.5rem + 0.5vw, 340px);  /* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width:   clamp(200px, 12.5rem + 3vw, 320px);  /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
   --layout-error-detail-height: clamp(200px, 12.5rem + 2vw, 320px);  /* 错误详情区高度：200→320px 流体 */

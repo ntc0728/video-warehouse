@@ -60,6 +60,11 @@ interface LazyImageProps {
    * 仅用于需要「切换平滑过渡」的场景（首页卡片封面）；其余场景保持原 blur-up 不变。
    */
   crossfadeOnChange?: boolean;
+  /**
+   * 禁用懒加载：为 true 时跳过 IntersectionObserver，不加载图片。
+   * 用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。
+   */
+  disabled?: boolean;
 }
 
 export default function LazyImage({
@@ -79,10 +84,12 @@ export default function LazyImage({
   sizes,
   timeoutMs = DEFAULT_IMAGE_LOAD_TIMEOUT,
   crossfadeOnChange = false,
+  disabled = false,
 }: LazyImageProps) {
   // 命中 session 缓存时直接进入 loaded + inView 态，跳过 IntersectionObserver 等待
-  const [isLoaded, setIsLoaded] = useState(() => isImageLoaded(src));
-  const [isInView, setIsInView] = useState(() => isImageLoaded(src));
+  // 但 disabled 模式下，即使有缓存也不加载（TMDBMovieRow 滚动触发场景）
+  const [isLoaded, setIsLoaded] = useState(() => !disabled && isImageLoaded(src));
+  const [isInView, setIsInView] = useState(() => !disabled && isImageLoaded(src));
   const [error, setError] = useState(false);
 
   // 失败兜底：传 fallbackSrc 时按自定义图片渲染（如 PlaylistModal 的 TMDB 海报兜底）；
@@ -128,10 +135,16 @@ export default function LazyImage({
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const prevSrcRef = useRef(src);
 
-  /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前50px预加载 */
+  /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前20px预加载 */
   useEffect(() => {
-    // session 缓存命中：URL 已加载过，无需再监听视口
+    // disabled 模式：外部控制不加载图片（TMDBMovieRow 滚动触发场景）
+    if (disabled) {
+      setIsInView(false);
+      return;
+    }
+    // session 缓存命中：URL 已加载过，无需再监听视口，直接设置为可见
     if (isImageLoaded(src)) {
+      setIsInView(true);
       return;
     }
     if (!imgRef.current) return;
@@ -147,7 +160,7 @@ export default function LazyImage({
       },
       {
         root: null,
-        rootMargin: '50px 0px',
+        rootMargin: '20px 0px',
         threshold,
       }
     );
@@ -159,7 +172,7 @@ export default function LazyImage({
         observerRef.current.disconnect();
       }
     };
-  }, [threshold, src]);
+  }, [threshold, src, disabled]);
 
   const handleLoad = () => {
     setIsLoaded(true);
