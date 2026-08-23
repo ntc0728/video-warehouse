@@ -165,9 +165,12 @@ function TMDBMovieRow({
   skipAnimations = false,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [hasOverflow, setHasOverflow] = useState(false);
+  // 标题是否进入视口：用于控制该行图片是否加载
+  const [isHeaderVisible, setIsHeaderVisible] = useState(false);
   // 用 useIsMobileLayout（native || 真实手机UA || 视口<768px）而非 useIsMobile（<1024px）：
   // 非手机 web 小视口（768–1023px 桌面窄窗 / 平板横竖屏）仍走桌面 UI，应显示左右箭头；
   // 只有真实手机 / App / <768px 窄窗（触摸布局）才隐藏箭头。
@@ -191,6 +194,45 @@ function TMDBMovieRow({
   const rafIdRef = useRef<number | null>(null);
   /** 全局最小拖拽阈值：6px — 卡片上轻抖不触发 dragMovedRef，避免被误判为点击跳详情 */
   const DRAG_MIN_DISTANCE_SQ = 36; // 6 * 6
+
+  // IntersectionObserver：检测标题是否进入视口，控制该行图片加载
+  // scrollResetToken 变化（分类切换）时重置 isHeaderVisible 并重建 Observer，
+  // 确保 reset 同步 commit 后再 observe，避免 React 18 批处理导致 reset 被吞。
+  const prevTokenRef = useRef(scrollResetToken);
+  useEffect(() => {
+    const tokenChanged = prevTokenRef.current !== scrollResetToken;
+    if (tokenChanged) {
+      prevTokenRef.current = scrollResetToken;
+      setIsHeaderVisible(false);
+    }
+    // tokenChanged 时：setIsHeaderVisible(false) 已同步 commit（useLayoutEffect 后），
+    // 此时创建的 Observer 回调会在下一个微任务/宏任务触发，false 必定先于 true 生效。
+    // 非 tokenChanged（首次挂载）：直接创建 Observer。
+
+    if (!headerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsHeaderVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px 0px',
+        threshold: 0,
+      }
+    );
+
+    observer.observe(headerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [scrollResetToken]);
 
   /** 焦点管理：TV 端卡片聚焦时自动滚动到可见区域 */
   const handleCardFocus = useCallback(
@@ -406,7 +448,7 @@ function TMDBMovieRow({
       data-device-row={isTV ? 'tv' : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
     >
-      <div className="tmdb-movierow-header">
+      <div className="tmdb-movierow-header" ref={headerRef}>
         <h2 className="tmdb-movierow-title">{title}</h2>
       </div>
 
@@ -456,17 +498,18 @@ function TMDBMovieRow({
                   }
                 }}
               >
-                 <VideoCard
-                   video={getVideo(item)}
-                   hideFavorite
-                   variant="landscape"
-                   backdropSrc={item.backdrop || item.cover}
-                   overlayLabel={item.overlayLabel}
-                   progress={item.progress}
-                   duration={item.duration}
-                   navigateTo={`/play/${item.id}`}
-                   skipAnimations={skipAnimations}
-                 />
+                  <VideoCard
+                    video={getVideo(item)}
+                    hideFavorite
+                    variant="landscape"
+                    backdropSrc={item.backdrop || item.cover}
+                    overlayLabel={item.overlayLabel}
+                    progress={item.progress}
+                    duration={item.duration}
+                    navigateTo={`/play/${item.id}`}
+                    skipAnimations={skipAnimations}
+                    imageDisabled={!isHeaderVisible}
+                  />
               </div>
             ))
           ) : (
@@ -492,14 +535,15 @@ function TMDBMovieRow({
                      }
                    }}
                  >
-                   <VideoCard
-                     video={getVideo(item)}
-                     rating={item.voteAverage}
-                     srcSet={posterSrcSet ?? undefined}
-                     sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
-                     crossfadeOnChange={crossfadeOnChange}
-                     skipAnimations={skipAnimations}
-                   />
+                    <VideoCard
+                      video={getVideo(item)}
+                      rating={item.voteAverage}
+                      srcSet={posterSrcSet ?? undefined}
+                      sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
+                      crossfadeOnChange={crossfadeOnChange}
+                      skipAnimations={skipAnimations}
+                      imageDisabled={!isHeaderVisible}
+                    />
                 </div>
               );
             })

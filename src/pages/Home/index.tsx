@@ -21,7 +21,6 @@ import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/consta
 import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
-import { preloadRowCovers } from './preloadRowCovers';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -69,17 +68,6 @@ export default function HomePage() {
   //   • 切换即时（deferred 仅做非阻塞降级，非「等数据」），无旧内容停留、无整页骨架；
   //   • banner 由 HeroBanner 内部 stale 垫底 + 新层淡入交叉过渡（不硬切、不缩小）；
   //   • 卡片图由 LazyImage 命中缓存也走淡入（见 LazyImage，消除缓存命中硬现）。
-  // 后台非阻塞预热首屏卡片封面（仅加速后续滚动/二次进入，不 gate 切换）。
-  useEffect(() => {
-    if (deferredCategory === 'home') return;
-    const cat = useHomeCategoryStore.getState().data[deferredCategory];
-    if (cat) {
-      void preloadRowCovers(cat.rows, {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-  }, [deferredCategory]);
 
   // ── 类目切换滚动复位（内容切换优先，2026-08-20）──
   // 用户诉求：向下滚一点再切分类 → 滚动条要复位，且**内容切换发生在滚动复位之前**。
@@ -348,26 +336,28 @@ export default function HomePage() {
   // 保证加载期缩略图骨架与 banner 同时出现（修复「缩略图骨架不和 banner 一起出现」）。
   const homeSkeletonBody = (
     <>
-      <div className="home-skeleton-hero">
-        <div className="home-skeleton-hero__banner">
-          {/* 内容占位：镜像 hero-banner__text — 标题 / 评分·年份·类型 / 简介（桌面端） */}
-          <div className="home-skeleton-hero__content">
-            <div className="home-skeleton-hero__title" />
-            <div className="home-skeleton-hero__meta">
-              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
-              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
-              <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--xs" />
+      <div className="hero-banner__card">
+        <div className="home-skeleton-hero">
+          <div className="home-skeleton-hero__banner">
+            {/* 内容占位：镜像 hero-banner__text — 标题 / 评分·年份·类型 / 简介（桌面端） */}
+            <div className="home-skeleton-hero__content">
+              <div className="home-skeleton-hero__title" />
+              <div className="home-skeleton-hero__meta">
+                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--xs" />
+              </div>
+              <div className="home-skeleton-hero__desc" />
+              <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
             </div>
-            <div className="home-skeleton-hero__desc" />
-            <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
           </div>
-        </div>
-        <div className="home-skeleton-hero__thumbs">
-          {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
-              与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="home-skeleton-hero__thumb thumbnail-skeleton-bg" />
-          ))}
+          <div className="home-skeleton-hero__thumbs">
+            {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
+                与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="home-skeleton-hero__thumb thumbnail-skeleton-bg" />
+            ))}
+          </div>
         </div>
       </div>
       <div className="home-skeleton-rows">
