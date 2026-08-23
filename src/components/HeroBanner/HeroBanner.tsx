@@ -11,7 +11,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
-import { buildImageUrl, buildImageSrcSet, HERO_THUMB_SIZE } from '@/services/tmdbService';
+import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
 import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
 import './HeroBanner.css';
 import { Icon } from "@/components/ui/Icon";
@@ -176,9 +176,16 @@ export default function HeroBanner({
   // （useLayoutEffect 在每个 commit 后同步更新，渲染期读到的即「上一 commit」的值）
   const prevItemsRef = useRef<HeroItem[]>(displayItems);
   const prevDisplayIdxRef = useRef(displayIndex);
-  // banner 根元素 ref：用于实测其实际高度（含 max-height 截断）注入 --hero-banner-h，
-  // 供右侧缩略图列宽计算，避免 100cqh 首帧回退（详见下方 useLayoutEffect）。
+  // banner 根元素 ref：useEffect 实测其实际高度（含 max-height 截断）注入 --hero-banner-h，
+  // 供右侧缩略图列宽 calc 使用，比 100cqh 更可靠。
   const bannerRef = useRef<HTMLElement>(null);
+  // 首帧同步：useLayoutEffect 在浏览器 paint 前测量并注入高度，避免缩略图列首帧宽度跳变
+  useLayoutEffect(() => {
+    const h = bannerRef.current?.clientHeight;
+    if (h != null) {
+      document.documentElement.style.setProperty('--hero-banner-h', `${h}px`);
+    }
+  });
   // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：bannerReady 重置必须在「浏览器 paint 之前」
   // 同步完成，否则会出现以下闪烁序列——React 先按旧的 bannerReady=true 渲染出「新分类的真实
   // 缩略图」并绘制一帧，useEffect（paint 之后）才把它重渲染成骨架，再等背景图加载后又变回真实
@@ -327,25 +334,6 @@ export default function HeroBanner({
     prevDisplayIdxRef.current = displayIndex;
   }, [displayItems, displayIndex]);
 
-  // 用 JS 实测 banner 实际高度注入 --hero-banner-h，供右侧缩略图列宽计算。
-  // 彻底摆脱对 container-type:size + 100cqh 的依赖：硬重载/首帧 CSS 容器查询
-  // 上下文尚未建立时，100cqh 会回退到视口高度（如 100vh），使缩略图列宽异常变宽，
-  // 与样式就绪后的真实列宽不一致（清缓存硬重载时「宽度不一致」的根因）。
-  // 直接读取渲染后 banner 实际高度最可靠；ResizeObserver 兜底 CSS 注入 / 窗口变化 /
-  // 分类切换导致的高度变化，自动纠正。
-  useLayoutEffect(() => {
-    const el = bannerRef.current;
-    if (!el) return;
-    const update = () => {
-      const h = el.getBoundingClientRect().height;
-      if (h > 0) el.style.setProperty('--hero-banner-h', `${h}px`);
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   // 当前主图无背景图时（无图可等），直接视为已就绪，避免缩略图列一直卡在骨架
   useEffect(() => {
     const item = displayItems[displayIndex];
@@ -369,31 +357,45 @@ export default function HeroBanner({
 
   // 滑动冷却期：滑动后 1000ms 内暂停自动轮播，避免动画冲突
   const swipeCooldownRef = useRef(0);
+  // 滑动速度检测：记录上次滑动时间，快速滑动时扩大预加载范围
+  const lastSlideTimeRef = useRef(0);
+  // 动态预加载范围：默认 3，快速滑动时扩大到 6
+  const preloadRangeRef = useRef(3);
 
-  // 预加载下一张背景图 + 即将出现的缩略图，保证轮播切换时图片已就绪
+  // 预加载背景图 + 即将出现的缩略图，保证轮播切换时图片已就绪
   useEffect(() => {
     if (displayItems.length <= 1) return;
     const total = displayItems.length;
 
-    // 预加载前后各一张背景图（C1-2，2026-08-04）：
-    // 自动轮播前进（+1）与手动拖拽后退（-1）的目标索引都覆盖，避免切换时目标图
-    // 未预加载 → 动画期间新层空白（滑动「失效」感）+ 大图解码主线程卡顿。
-    // 尺寸按视口选择（w780/w1280），preloadImage 内部按 URL 去重，快速滑动不重复解码。
+    // 动态预加载范围：根据滑动速度调整
+    // 快速连续滑动（<300ms 间隔）→ 扩大到 6，否则保持 3
+    const now = Date.now();
+    const timeSinceLastSlide = now - lastSlideTimeRef.current;
+    if (timeSinceLastSlide < 300 && timeSinceLastSlide > 0) {
+      preloadRangeRef.current = Math.min(6, total);
+    } else if (timeSinceLastSlide >= 500) {
+      // 500ms 无滑动 → 恢复默认范围
+      preloadRangeRef.current = 3;
+    }
+    lastSlideTimeRef.current = now;
+
     const bgSize = bgPreloadSize();
-    const nextIdx = (activeIndex + 1) % total;
-    const prevIdx = (activeIndex - 1 + total) % total;
-    for (const idx of [nextIdx, prevIdx]) {
+    const range = preloadRangeRef.current;
+
+    // 预加载当前索引 ± range 范围内的所有背景图
+    for (let offset = -range; offset <= range; offset++) {
+      const idx = ((activeIndex + offset) % total + total) % total;
       const p = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
       if (p) preloadImage(buildImageUrl(p, bgSize));
     }
 
-    // 预加载即将出现在缩略图窗口中的图片（窗口大小 4，提前预加载前后各 2 张）
-    const n = Math.min(4, total);
+    // 预加载即将出现在缩略图窗口中的图片（窗口大小 3，提前预加载前后各 1 张）
+    const n = Math.min(3, total);
     const half = Math.floor(n / 2);
     for (let offset = -half; offset < n - half; offset++) {
       const idx = ((activeIndex + offset + 1) % total + total) % total;
       const thumbPath = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
-      if (thumbPath) preloadImage(buildImageUrl(thumbPath, HERO_THUMB_SIZE));
+      if (thumbPath) preloadImage(buildImageUrl(thumbPath, bgSize));
     }
   }, [activeIndex, displayItems]);
 
@@ -444,6 +446,8 @@ export default function HeroBanner({
     setSlideDir(Math.sign(dx) > 0 ? 'right' : 'left');
     // 记录滑动时间，冷却期内（1000ms）暂停自动轮播
     swipeCooldownRef.current = Date.now();
+    // 记录滑动时间，用于检测快速滑动以扩大预加载范围
+    lastSlideTimeRef.current = Date.now();
     setActiveIndex((i) => (i - Math.sign(dx) + total) % total);
     setHoveredIndex(null);
   }, [displayItems.length]);
@@ -452,28 +456,30 @@ export default function HeroBanner({
   // 注意：即使 items 为空，也立即渲染右侧缩略图骨架列，避免骨架"出现太慢"。
   if (!displayItems.length) {
     return (
-      <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
-        <div className="hero-banner__bg-wrapper">
-          <div className="hero-banner__bg-placeholder" />
-          <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
-        </div>
-        {!loading && (
-          <div className="hero-banner__content">
-            <div className="hero-banner__text">
-              <h1 className="hero-banner__title hero-banner__title--placeholder">暂无推荐</h1>
-            </div>
+      <div className="hero-banner__card">
+        <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
+          <div className="hero-banner__bg-wrapper">
+            <div className="hero-banner__bg-placeholder" />
+            <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
           </div>
-        )}
-        {!isMobile && (
-          <div className="hero-banner__thumbs" aria-hidden="true" style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}>
-            {Array.from({ length: maxCount }).map((_, i) => (
-              <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
-                <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
+          {!loading && (
+            <div className="hero-banner__content">
+              <div className="hero-banner__text">
+                <h1 className="hero-banner__title hero-banner__title--placeholder">暂无推荐</h1>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            </div>
+          )}
+          {!isMobile && (
+            <div className="hero-banner__thumbs" aria-hidden="true" style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}>
+              {Array.from({ length: maxCount }).map((_, i) => (
+                <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
+                  <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     );
   }
 
@@ -529,11 +535,12 @@ export default function HeroBanner({
   }
 
   return (
-    <section
-      ref={bannerRef}
-      className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
-      style={initialEnterDelay > 0 ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms` } as React.CSSProperties : undefined}
-      aria-roledescription="carousel"
+    <div className="hero-banner__card">
+      <section
+        ref={bannerRef}
+        className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
+        style={initialEnterDelay > 0 ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms` } as React.CSSProperties : undefined}
+        aria-roledescription="carousel"
       aria-label="热门推荐"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={handleBannerLeave}
@@ -690,7 +697,8 @@ export default function HeroBanner({
           )}
         </div>
       )}
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -714,9 +722,9 @@ const HeroThumb = memo(
     onClick: () => void;
   }) {
   const thumbPath = item.backdropPath || item.backdrop_path || '';
-  // 右侧缩略图（backdrop 横图）压缩：w500 → w300，显示宽度仅 ~180–220px，体积更小、解码更快。
-  // Hero 主图（buildImageUrl(..., 'w1280')）保持原画质不参与压缩。
-  const thumbUrl = thumbPath ? buildImageUrl(thumbPath, HERO_THUMB_SIZE) : '';
+  // 复用主图 URL（w1280），通过 CSS 缩放显示，减少 HTTP 请求数
+  // 主图加载后缩略图可直接使用已缓存的资源，提升切换流畅度
+  const thumbUrl = thumbPath ? buildImageUrl(thumbPath, 'w1280') : '';
   const title = item.name || item.title || '';
 
   // 双层 + 预加载就绪再换图（2026-08-13 增强为交叉淡入）：
@@ -777,13 +785,9 @@ const HeroThumb = memo(
     img.src = thumbUrl;
   }, [thumbUrl]);
 
-  // 新图淡入（0.3s）完成后清理垫底层
-  useEffect(() => {
-    if (!switching) return;
-    const t = window.setTimeout(() => setSwitching(false), 30);
-    return () => window.clearTimeout(t);
-  }, [switching]);
-  // prev 层在淡入完成后移除（延时兜底，不依赖动画事件）
+  // 新图淡入完成后清理垫底层（不依赖动画事件，延时兜底）
+  // 注：switching 状态由 onLoad 清除，不用超时——未缓存图片加载期间 switching 保持 true，
+  // 骨架持续显示，避免快速滑动时骨架提前消失导致闪烁。
   useEffect(() => {
     if (!prevSrc) return;
     const t = window.setTimeout(() => setPrevSrc(null), 450);
@@ -806,6 +810,7 @@ const HeroThumb = memo(
           alt=""
           loading="eager"
           draggable={false}
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
         />
       )}
       {currentSrc ? (
@@ -815,6 +820,7 @@ const HeroThumb = memo(
           alt=""
           loading="eager"
           draggable={false}
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
           onLoad={() => { if (currentSrc) markImageLoaded(currentSrc); setReady(true); setSwitching(false); }}
         />
       ) : null}
