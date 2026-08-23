@@ -12,6 +12,7 @@
   box-shadow: var(--shadow-sm);
   padding: var(--space-sm);
   overflow: hidden;
+  /* 不与下方分类区的间距由 Home.css 控制，避免重复 */
   /* 不使用 container-type：由 JS useEffect 实测 bannerRef.current.clientHeight
      并注入 --hero-banner-h，缩略图列宽直接引用该变量，避免 cqh 依赖容器上下文的不可靠性。 */
 }
@@ -20,7 +21,7 @@
   position: relative;
   display: flex;
   flex-direction: row;
-  gap: var(--space-sm);
+  gap: 2px;
   width: 100%;
   /*
     数学推导（两个 16:9 约束的必然结果）：

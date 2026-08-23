@@ -54,7 +54,11 @@
 .home-page .hero-banner {
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅覆盖布局属性 */
   width: auto;
-  margin-bottom: 0;
+}
+
+/* 桌面端卡片底部间距：与下方分类区保持 var(--space-sm) 间隔 */
+.home-page .hero-banner__card {
+  margin-bottom: var(--space-sm);
 }
 
 /* 分类快捷入口 → 卡片模块 */
@@ -198,6 +202,8 @@ html[data-device="app"] .home-disclaimer {
   height: clamp(40rem, 28rem + 8vw, 56rem);
   max-height: 70vh;
   overflow: hidden;
+  /* 与下方分类区的间距（对齐真实 .hero-banner__card 的 margin-bottom） */
+  margin-bottom: var(--space-sm);
 }
 
 .home-skeleton-hero__banner {
