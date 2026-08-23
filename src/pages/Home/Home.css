@@ -52,14 +52,9 @@
    仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
 
 .home-page .hero-banner {
-  /* 覆盖基础 width:100%，让 banner 自然填充 card padding 区域，右侧 padding 可见 */
+  /* 卡片样式已由外层 .hero-banner__card 提供，此处仅覆盖布局属性 */
   width: auto;
-  /* 保留原有圆角；增加 surface 背景框 + 阴影 + 模块间距 */
-  margin-bottom: var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  margin-bottom: 0;
 }
 
 /* 分类快捷入口 → 卡片模块 */
@@ -198,26 +193,18 @@ html[data-device="app"] .home-disclaimer {
 .home-skeleton-hero {
   position: relative;
   width: 100%;
-  /* 尺寸容器放在【父级】而非缩略图列自身：列宽用 100cqh 解析为「本 banner 框高度」，
-     由 aspect-ratio + min/max 稳定确定（不依赖子内容），避免「列自身既当容器又用 cqh 算自己宽」的自引用循环，
-     否则 100cqh 会退化成视口高度导致列宽被算大。真实 .hero-banner 用 JS 注入的 --hero-banner-h（同高度），故两者恒等。 */
+  /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
   container-type: size;
-  aspect-ratio: 16 / 9;
-  min-height: var(--layout-hero-banner-min-h);
-  max-height: min(70vh, var(--layout-hero-banner-max-h));
-  margin-bottom: var(--space-sm);
-  /* 与真实 .hero-banner 同款「无边框盒子」：仅圆角 + 阴影，不要 border / surface 底色。
-     真实 hero-banner 经 .home-page .hero-banner 只设 width/margin/shadow，base 规则也无 border/surface，
-     故骨架也不能加——否则会比真实 banner 多出 1px 边框与表面底色，视觉像「内嵌的小卡片/拼接块」，
-     banner 主体可见宽度也比真实窄，切换时一眼看出两套 banner 不一致。 */
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  /* 与真实 .hero-banner 一致：H_min=40rem，缩略图可读 */
+  height: clamp(40rem, 28rem + 8vw, 56rem);
+  max-height: 70vh;
   overflow: hidden;
 }
 
 .home-skeleton-hero__banner {
   position: absolute;
   inset: 0;
+  /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾） */
   background: linear-gradient(
     90deg,
     var(--color-placeholder-shimmer-a) 25%,
@@ -310,23 +297,16 @@ html[data-device="app"] .home-disclaimer {
    与真实缩略图列公式恒等（真实用 JS 注入的 --hero-banner-h = 同一高度），消除骨架→真实的列宽跳变。
    张数 N 默认 3，大屏（与 useScreenTier 的 large/xlarge 对齐）为 4，见下方媒体查询。 */
 .home-skeleton-hero__thumbs {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3xs);
+  gap: 0;
   justify-content: flex-start;
-  padding: 0 0 0 var(--space-sm);
-  width: calc(
-    (100cqh - var(--space-3xs) * (var(--hero-thumb-count, 3) - 1))
-    / var(--hero-thumb-count, 3) * 16 / 9
-  );
-  /* 不要列背景：真实 .hero-banner__thumbs 无 background（透明），
-     其左 padding 与缩略图缝隙里透出的是 banner 背后的图。
-     若这里加 surface 底色（亮色主题为亮白），会在 banner 右缘形成一条亮白「边框」，
-     与真实不一致。保持透明，让缝隙透出底层 shimmer banner。 */
+  flex-shrink: 0;
+  container-type: size;
+  /* 与真实 .hero-banner__thumbs 一致：列宽 = 容器高 × 16/27 */
+  width: calc(100cqh * 16 / 27);
   overflow: hidden;
 }
 
@@ -339,11 +319,9 @@ html[data-device="app"] .home-disclaimer {
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border: var(--space-3xs) solid rgba(255, 255, 255, 0.12);
+  /* 不设 aspect-ratio，与真实缩略图一致（flex:1 已定高） */
+  border: none;
   border-radius: var(--radius-md);
-  /* 视觉背景 + 扫光由公共类 .thumbnail-skeleton-bg 提供（与 banner 内部
-     缩略图骨架共用，防分叉）；此处仅保留缩略图块自身布局 */
   overflow: hidden;
 }
 
@@ -364,25 +342,13 @@ html[data-device="app"] .home-disclaimer {
   }
 }
 
-/* 平板及以下：边框/圆角/下边距与 .hero-banner 的断点行为对齐，避免卡片框/间距跳动；
-   缩略图列骨架隐藏断点与真实列一致（.hero-banner__thumbs 在 ≤1023px 隐藏，
-   原骨架到 ≤767px 才隐藏，导致平板区间骨架多显示一列） */
+/* 平板及以下：卡片样式已由外层 .hero-banner__card 提供 */
 @media (width <= 1023px) {
-  .home-skeleton-hero {
-    margin-bottom: var(--space-md);
-    border-radius: var(--radius-md);
-  }
-
   .home-skeleton-hero__thumbs {
     display: none;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .home-skeleton-hero {
-    margin-bottom: var(--space-md);
-    border-radius: var(--radius-md);
-  }
 
   html[data-device="app"] .home-skeleton-hero__thumbs {
     display: none;
@@ -390,16 +356,20 @@ html[data-device="app"] .home-disclaimer {
 
 
 
-/* 移动端：min-height 与 .hero-banner 对齐 */
+/* 移动端：与 .hero-banner 对齐（无缩略图，16:9） */
 @media (width <= 767px) {
   .home-skeleton-hero {
-    min-height: 14rem;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 18rem;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .home-skeleton-hero {
-    min-height: 14rem;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 18rem;
   }
 
 
