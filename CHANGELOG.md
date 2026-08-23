@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.12.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.11.0...kinotv-v1.12.0) (2026-08-23)
+
+
+### Features
+
+* **home:** 卡片封面滚动触发加载 + LazyImage placeholder 露白修复 ([ef00395](https://github.com/ntc0728/video-warehouse/commit/ef00395e4fa29c8e11beaa39baffad1d6e874293))
+
+
+### Bug Fixes
+
+* banner在768-1023px断点退回16:9，清理app端冗余height/aspect-ratio副本 ([d0a464f](https://github.com/ntc0728/video-warehouse/commit/d0a464f60aa229754afcae4d3f8d997bec31d5fa))
+* banner缩略图间距改2px，卡片底部与分类区保持space-sm间隔 ([096f702](https://github.com/ntc0728/video-warehouse/commit/096f70211f78ab5d1da218107f81d03ced038128))
+* container-type size 移到卡片层，缩略图列宽正确锚定 banner 高度 ([5877281](https://github.com/ntc0728/video-warehouse/commit/5877281971daa961f76c431b6c3b163194565837))
+* HeroBanner 最小高度改 40rem，确保 banner/缩略图真实 16:9 ([1b89a66](https://github.com/ntc0728/video-warehouse/commit/1b89a66f0cb69a6053047d278f3f1da1646e44b2))
+* lazy-image placeholder 加载时不露白（transition:none + solid背景兜底） ([f859046](https://github.com/ntc0728/video-warehouse/commit/f859046b029c2158387953c721ae60ac8f912532))
+* 用 JS 实测 banner 高度注入 --hero-banner-h，彻底去掉 container-type 依赖 ([0446076](https://github.com/ntc0728/video-warehouse/commit/0446076b5d6f8204db199bccb400bfcafa25bb78))
+
 ## [1.11.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.10.0...kinotv-v1.11.0) (2026-08-20)
 
 
