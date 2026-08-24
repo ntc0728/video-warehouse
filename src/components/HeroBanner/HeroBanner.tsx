@@ -737,6 +737,8 @@ const HeroThumb = memo(
   const currentSrcRef = useRef(thumbUrl);
   currentSrcRef.current = currentSrc;
   const loadingRef = useRef<string | null>(null);
+  // 上次 thumbUrl 变化时间戳：识别「快速连续切换」以跳过淡入避免闪烁
+  const thumbLastChangeRef = useRef(0);
 
   useEffect(() => {
     if (!thumbUrl) {
@@ -751,6 +753,19 @@ const HeroThumb = memo(
     // 已是当前显示图：无需切换
     if (thumbUrl === currentSrcRef.current) {
       loadingRef.current = null;
+      return;
+    }
+    // 快速连续切换（<250ms）：跳过「旧图垫底 / 预加载门控」多层淡入，直接以新图落底，
+    // 避免连续淡入叠加造成的闪烁；新图若已缓存则瞬时显示，否则走骨架占位（ready=false）。
+    const now = Date.now();
+    const rapid = now - thumbLastChangeRef.current < 250;
+    thumbLastChangeRef.current = now;
+    if (rapid) {
+      loadingRef.current = null;
+      setPrevSrc(null);
+      setCurrentSrc(thumbUrl);
+      setSwitching(false);
+      setReady(isImageLoaded(thumbUrl));
       return;
     }
     // 目标缩略图无缓存（session 未加载过，首次进入/首次切到该分类）：跳过
