@@ -21,7 +21,7 @@
   position: relative;
   display: flex;
   flex-direction: row;
-  gap: 2px;
+  gap: 0;
   width: 100%;
   /*
     数学推导（两个 16:9 约束的必然结果）：
@@ -285,9 +285,10 @@
   width: 100%;
   /* 不设 aspect-ratio：flex:1 已定高，宽度由列宽 calc 给出，自然形成 16:9 */
   /* 去掉半透明白色描边：它与 gap 共同构成「缩略图之间间隙」的视觉，
-     无间隙需求下移除；其余属性（尺寸/圆角/背景/hover 缩放等）保持不变 */
+      无间隙需求下移除；其余属性（尺寸/圆角/背景/hover 缩放等）保持不变。
+      border-radius 现已取消统一四角 --radius-md，改由桌面端媒体查询按
+      「外侧圆角（列首右上 / 列尾右下）」精确设置，内侧拼接边保持直角。 */
   border: none;
-  border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.25);
   overflow: hidden;
   transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
@@ -400,6 +401,30 @@
 
 .hero-banner--tv .hero-banner__title {
   font-size: clamp(var(--text-3xl), 3vw + 1rem, 2.5rem);
+}
+
+/* ── 桌面端（缩略图列可见）：外框圆角 + 首/尾缩略图常显标题 ──
+   仅在缩略图列显示时（≥1024px）生效：banner 左缘（上/下）圆角 +
+   缩略图列首右上 / 列尾右下圆角，内侧拼接边保持直角，构成整体外框圆角；
+   同时首、尾缩略图常显视频标题（不再仅激活态显示）。
+   注：列尾 = :last-child，3 张布局下即第 3 张，4 张布局下即第 4 张（外框右下角）。 */
+@media (width >= 1024px) {
+  .hero-banner__main {
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  }
+
+  .hero-banner__thumbs > .hero-banner__thumb:first-child {
+    border-top-right-radius: var(--radius-lg);
+  }
+
+  .hero-banner__thumbs > .hero-banner__thumb:last-child {
+    border-bottom-right-radius: var(--radius-lg);
+  }
+
+  .hero-banner__thumbs > .hero-banner__thumb:first-child .hero-banner__thumb-title,
+  .hero-banner__thumbs > .hero-banner__thumb:last-child .hero-banner__thumb-title {
+    opacity: 1;
+  }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */

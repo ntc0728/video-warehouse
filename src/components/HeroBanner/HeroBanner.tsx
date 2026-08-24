@@ -815,6 +815,7 @@ const HeroThumb = memo(
       )}
       {currentSrc ? (
         <img
+          key={currentSrc}
           className={`hero-banner__thumb-img${switching ? ' hero-banner__thumb-img--switching' : ''}`}
           src={currentSrc}
           alt=""
