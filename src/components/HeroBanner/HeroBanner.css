@@ -24,13 +24,16 @@
   gap: 0;
   width: 100%;
   /*
-    数学推导（两个 16:9 约束的必然结果）：
-    缩略图列宽 = H × 16/27；banner宽 = W − 16H/27
-    (W − 16H/27) / H = 16/9  →  W = 64H/27  →  H = 27W/64
-    最小高度 H_min = 40rem（banner≈71rem≈1138px，缩略图≈23.7rem≈379px，均可读）
-  */
-  height: clamp(40rem, 28rem + 8vw, 56rem);
-  max-height: 70vh;
+     几何由 aspect-ratio 统一驱动（不再依赖 JS 注入高度 + 固定 height clamp）：
+     设缩略图张数 N（= --hero-thumb-count，普通桌面 3 / 大屏 4）。
+     每张缩略图 16:9 → 列宽 = 列高 × 16/9 ÷ N；banner 与列等高、同为 16:9。
+     整体宽高比 = (banner宽 + 列宽) / 列高 = 16(N+1)/(9N)：
+       N=3 → 64/27；N=4 → 80/36 = 20/9。
+     缩略图列宽 = 100% / (N+1)（banner 占 N/(N+1)）。
+     于是「任意视口宽度」下 banner 与各缩略图均严格 16:9，且全程纯 CSS、
+     响应式，无 JS 量高时序 → 切分类/拖拽视口不再出现白隙或比例漂移。
+   */
+  aspect-ratio: 64 / 27; /* 默认 3 张缩略图（N=3 → 16(N+1)/(9N) = 64/27）；4 张由内联 style 覆盖为 20/9 */
   user-select: none;
   -webkit-user-drag: none;
   touch-action: pan-y;
@@ -44,8 +47,12 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
+  /* 加载中新图未就绪时垫底深色（与空态占位同源），避免透出卡片浅色底色造成「白隙」 */
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-primary, #6c5ce7) 18%, transparent),
+    color-mix(in srgb, var(--color-secondary, #00b894) 12%, transparent));
   /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
-     图片用 object-fit: cover 视觉保持 16:9 */
+      图片用 object-fit: cover 视觉保持 16:9 */
 }
 
 .hero-banner__bg-wrapper {
@@ -269,8 +276,8 @@
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  /* 列宽 = banner 实际高度 × 16/27（JS 注入 --hero-banner-h，避免 100cqh 依赖容器上下文） */
-  width: calc(var(--hero-banner-h, 0px) * 16 / 27);
+  /* 列宽 = 整体宽度的 1/(N+1)，与 aspect-ratio 联动保证每张 16:9（N = --hero-thumb-count） */
+  width: calc(100% / (var(--hero-thumb-count, 3) + 1));
   overflow: hidden;
 }
 

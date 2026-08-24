@@ -176,16 +176,9 @@ export default function HeroBanner({
   // （useLayoutEffect 在每个 commit 后同步更新，渲染期读到的即「上一 commit」的值）
   const prevItemsRef = useRef<HeroItem[]>(displayItems);
   const prevDisplayIdxRef = useRef(displayIndex);
-  // banner 根元素 ref：useEffect 实测其实际高度（含 max-height 截断）注入 --hero-banner-h，
-  // 供右侧缩略图列宽 calc 使用，比 100cqh 更可靠。
+  // banner 根元素 ref：仅用于 DOM 挂载锚点（aspect-ratio 由 CSS 通过 --hero-thumb-count
+  // 计算，缩略图列宽改为百分比，不再依赖 JS 注入的高度变量）。
   const bannerRef = useRef<HTMLElement>(null);
-  // 首帧同步：useLayoutEffect 在浏览器 paint 前测量并注入高度，避免缩略图列首帧宽度跳变
-  useLayoutEffect(() => {
-    const h = bannerRef.current?.clientHeight;
-    if (h != null) {
-      document.documentElement.style.setProperty('--hero-banner-h', `${h}px`);
-    }
-  });
   // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：bannerReady 重置必须在「浏览器 paint 之前」
   // 同步完成，否则会出现以下闪烁序列——React 先按旧的 bannerReady=true 渲染出「新分类的真实
   // 缩略图」并绘制一帧，useEffect（paint 之后）才把它重渲染成骨架，再等背景图加载后又变回真实
@@ -457,7 +450,7 @@ export default function HeroBanner({
   if (!displayItems.length) {
     return (
       <div className="hero-banner__card">
-        <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
+        <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} style={{ ['--hero-thumb-count' as string]: maxCount, aspectRatio: maxCount === 4 ? '20 / 9' : '64 / 27' } as React.CSSProperties} aria-label="热门推荐">
           <div className="hero-banner__bg-wrapper">
             <div className="hero-banner__bg-placeholder" />
             <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
@@ -513,6 +506,9 @@ export default function HeroBanner({
         id: String(prevItems[prevDisplayIdxRef.current].id),
       }
     : staleSnapshot;
+  // 保留 `|| !switchReady`：已缓存分类切换时，itemsChanged 在首个 effect 后即翻 false，
+  // 仅靠 crossfadeSwitch 无法在「预加载未完成」窗口继续隐藏新层；!switchReady 负责该间隙。
+  // 未缓存分类切换时主图区短暂透明由 .hero-banner__main 的深色渐变底色承接，不再透出卡片浅色（白隙）。
   const hideNewLayer = crossfadeSwitch || !switchReady;
 
   const itemData = activeItem as HeroItem;
@@ -539,7 +535,9 @@ export default function HeroBanner({
       <section
         ref={bannerRef}
         className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
-        style={initialEnterDelay > 0 ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms` } as React.CSSProperties : undefined}
+        style={initialEnterDelay > 0
+          ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms`, ['--hero-thumb-count' as string]: maxCount, aspectRatio: maxCount === 4 ? '20 / 9' : '64 / 27' } as React.CSSProperties
+          : { ['--hero-thumb-count' as string]: maxCount, aspectRatio: maxCount === 4 ? '20 / 9' : '64 / 27' } as React.CSSProperties}
         aria-roledescription="carousel"
       aria-label="热门推荐"
       onMouseEnter={() => setPaused(true)}

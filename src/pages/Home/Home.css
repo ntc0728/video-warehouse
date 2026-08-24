@@ -198,9 +198,10 @@ html[data-device="app"] .home-disclaimer {
   position: relative;
   width: 100%;
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
-  /* 与真实 .hero-banner 一致：H_min=40rem，缩略图可读 */
-  height: clamp(40rem, 28rem + 8vw, 56rem);
-  max-height: 70vh;
+  /* 与真实 .hero-banner 一致：几何由 aspect-ratio 驱动（N = --hero-thumb-count）：
+     N=3 → 64/27，N=4 → 20/9；缩略图列宽 = 100%/(N+1)（下方媒体查询切到 4 张时同步改 20/9） */
+  --hero-thumb-count: 3;
+  aspect-ratio: 64 / 27;
   overflow: hidden;
   /* 与下方分类区的间距（对齐真实 .hero-banner__card 的 margin-bottom） */
   margin-bottom: var(--space-sm);
@@ -297,10 +298,9 @@ html[data-device="app"] .home-disclaimer {
 
 
 /* 右侧缩略图列骨架：逐字节镜像 .hero-banner__thumbs 的几何模型 —
-   列宽 = (列高 / 张数) × 16/9；列高 = 100cqh 解析为【父级 .home-skeleton-hero 的高度】
-   （父级是尺寸容器，高度由 aspect-ratio + min/max 稳定确定，纯布局、非自引用），
-   与真实缩略图列公式恒等（真实用 JS 注入的 --hero-banner-h = 同一高度），消除骨架→真实的列宽跳变。
-   张数 N 默认 3，大屏（与 useScreenTier 的 large/xlarge 对齐）为 4，见下方媒体查询。 */
+    列宽 = 整体宽度的 1/(N+1)（N = --hero-thumb-count，由父级 .home-skeleton-hero 继承），
+    与真实 .hero-banner__thumbs 的 calc(100%/(N+1)) 恒等，消除骨架→真实的列宽跳变。
+    张数 N 默认 3，大屏（与 useScreenTier 的 large/xlarge 对齐）为 4，见下方媒体查询。 */
 .home-skeleton-hero__thumbs {
   position: relative;
   z-index: 10;
@@ -309,9 +309,7 @@ html[data-device="app"] .home-disclaimer {
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
-  /* 与真实 .hero-banner__thumbs 一致：列宽 = banner 实际高度 × 16/27
-     --hero-banner-h 由 HeroBanner.useLayoutEffect 注入（首帧为 0px fallback） */
-  width: calc(var(--hero-banner-h, 0px) * 16 / 27);
+  width: calc(100% / (var(--hero-thumb-count, 3) + 1));
   overflow: hidden;
 }
 
@@ -338,8 +336,9 @@ html[data-device="app"] .home-disclaimer {
 }
 
 @media (width >= 1440px) and (height >= 900px) {
-  html:not([data-device="app"]) .home-skeleton-hero__thumbs {
+  html:not([data-device="app"]) .home-skeleton-hero {
     --hero-thumb-count: 4;
+    aspect-ratio: 20 / 9;
   }
 
   html:not([data-device="app"]) .home-skeleton-hero__thumb:nth-child(4) {
