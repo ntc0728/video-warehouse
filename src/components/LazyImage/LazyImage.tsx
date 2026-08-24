@@ -134,6 +134,10 @@ export default function LazyImage({
   const [pendingSrc, setPendingSrc] = useState<string | null>(null);
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const prevSrcRef = useRef(src);
+  // 交叉淡入过渡定时器（提交 pending → committed 用），切换更快时用于取消在途过渡
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 上次 src 变化时间戳：用于识别「快速连续切换」并跳过淡入动画避免叠加闪烁
+  const lastCrossfadeRef = useRef(0);
 
   /** 使用 IntersectionObserver 监听元素是否进入可视区域，提前20px预加载 */
   useEffect(() => {
@@ -188,7 +192,9 @@ export default function LazyImage({
   const handlePendingLoad = () => {
     setPendingLoaded(true);
     const ps = pendingSrc;
-    window.setTimeout(() => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = window.setTimeout(() => {
+      transitionTimerRef.current = null;
       setCommittedSrc(ps);
       setPendingSrc(null);
       setPendingLoaded(false);
@@ -238,18 +244,40 @@ export default function LazyImage({
   // 与 HeroBanner stale crossfade 同源，保证 banner/缩略图/卡片封面切换效果一致。
   // src 未变（初始/普通重渲染）直接返回；否则比较 committedSrc 决定「启动交叉淡入」或
   // 「直接以新图为底」（首帧/无旧图场景）。committedSrc 变化（提交后）会再次触发，
-  // 此时 src 已等于 prevSrcRef → 立即返回，不会形成循环。
+  // 此时 src 已等于 prevSrc → 立即返回，不会形成循环。
+  // ⚠️ 快速连续切换（<300ms）优化：跳过淡入动画、直接以最新图为底，避免多层淡入叠加
+  // 造成闪烁（base 仍停在首张、pending 反复重启动画 → 画面抖动）。在途过渡定时器一并清除。
   useEffect(() => {
     if (!crossfadeOnChange) return;
     if (src === prevSrcRef.current) return;
     prevSrcRef.current = src;
-    if (committedSrc !== null && committedSrc !== imageSrc) {
-      setPendingSrc(imageSrc);
-      setPendingLoaded(false);
-    } else {
+
+    const now = Date.now();
+    const rapid = now - lastCrossfadeRef.current < 300;
+    lastCrossfadeRef.current = now;
+
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+
+    // 快速连续切换：直接以新图为底，取消淡入，base 立即跟上最新（不再滞后于首张）
+    if (rapid) {
       setCommittedSrc(imageSrc);
       setPendingSrc(null);
+      setPendingLoaded(false);
+      return;
     }
+
+    setCommittedSrc((prev) => {
+      if (prev !== null && prev !== imageSrc) {
+        setPendingSrc(imageSrc);
+        setPendingLoaded(false);
+      } else {
+        setPendingSrc(null);
+      }
+      return prev;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, imageSrc, crossfadeOnChange]);
 
