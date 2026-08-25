@@ -13,9 +13,16 @@ import { useSettingsStore, useNavStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
+import { setCurrentPathname, recordPopPrevious } from '@/lib/navigation';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 import { getRouteTitle, APP_NAME } from '@/hooks/useDocumentTitle';
+
+// 已访问过的路由集合（模块级，跨导航持久）。用于「二次进入」门控：已访问过的路由
+// 不再重放 opacity:0 进入动画（见 animations.css 的 .page-transition[data-revisit] 规则），
+// 消除方案 B（每次重新挂载）下「先空白再出现数据」的重进闪烁。首页刻意不排除——
+// 其 .home-page__content 在 CSS 中被 :not() 排除，保持专属过渡。
+const visitedRoutes = new Set<string>();
 
 function LoadingFallback() {
   // 8.3B：chunk fallback 不显示进度条——进度条只由「页面自身 loading」播放一次，
@@ -159,6 +166,23 @@ export default function AppLayout() {
   const location = useLocation();
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
+  // 当前路由是否「二次进入」。首次进入为 false（播放进入动画），再进入为 true（抑制动画）。
+  const isRevisit = activeRouteKey ? visitedRoutes.has(activeRouteKey) : false;
+  useEffect(() => {
+    if (activeRouteKey) visitedRoutes.add(activeRouteKey);
+  }, [activeRouteKey]);
+
+  // 同步当前展示路径（供 useScrollRestore 判定「从哪个页面进入」）
+  useLayoutEffect(() => {
+    setCurrentPathname(activePath);
+  }, [activePath]);
+
+  // 浏览器前进/后退：在新页提交前记录来源 = 当前展示页
+  useEffect(() => {
+    const onPop = () => recordPopPrevious();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // ── 进入新页面立即更新浏览器页签标题（无需等待页面 chunk / 数据加载） ──
   // 路由切换瞬间（layout 阶段，绘制前）即写入路由名兜底标题，避免「已切到新页、
@@ -270,7 +294,7 @@ export default function AppLayout() {
               style={{ backgroundColor: 'var(--color-background)' }}
               direction="vertical"
             >
-              <div className="page-transition">
+              <div className="page-transition" data-revisit={isRevisit ? 'true' : 'false'}>
                 {Component ? (
                   <Suspense fallback={<LoadingFallback />}>
                     <RouteRenderer Component={Component} />

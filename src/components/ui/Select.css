@@ -1,0 +1,15 @@
+/* Select Dropdown 动画 */
+.select-dropdown-content {
+  animation: select-dropdown-fade-in 0.18s ease both;
+}
+
+@keyframes select-dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

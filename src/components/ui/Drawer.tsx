@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, ChevronLeft } from 'lucide-react'
 import './Drawer.css'
@@ -17,10 +17,18 @@ interface DrawerProps {
   onReset?: () => void
 }
 
+const DRAWER_EXIT_MS = 260; // 与 CSS drawer-slide-out 时长一致
+
 const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscreen, onReset }) => {
+  const isClosingRef = useRef(false);
+
   const handleOpenChange = useCallback(
     (o: boolean) => {
-      if (!o) onClose()
+      if (!o && !isClosingRef.current) {
+        isClosingRef.current = true;
+        onClose();
+        setTimeout(() => { isClosingRef.current = false; }, DRAWER_EXIT_MS);
+      }
     },
     [onClose],
   )
@@ -39,7 +47,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
                 <button
                   type="button"
                   className="drawer-close drawer-close--back"
-                  onClick={onClose}
+                  onClick={handleOpenChange.bind(null, false)}
                   aria-label="返回"
                 >
                   <Icon icon={ChevronLeft} size="lg" />
@@ -56,7 +64,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
             ) : (
               <>
                 <Dialog.Title className="drawer-title">{title || '筛选'}</Dialog.Title>
-                <button type="button" className="drawer-close" onClick={onClose} aria-label="关闭">
+                <button type="button" className="drawer-close" onClick={handleOpenChange.bind(null, false)} aria-label="关闭">
                   <Icon icon={X} size="md" />
                 </button>
               </>

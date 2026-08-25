@@ -89,6 +89,19 @@ export default function CollectionsPage() {
   const [searchByTab, setSearchByTab] = useState<{ all: string; video: string; iptv: string }>({ all: '', video: '', iptv: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
+  const [batchIsExiting, setBatchIsExiting] = useState(false);
+  const toggleBatchMode = useCallback(() => {
+    if (batchMode) {
+      setBatchIsExiting(true);
+      setTimeout(() => {
+        setBatchMode(false);
+        setSelected(new Set());
+        setBatchIsExiting(false);
+      }, 180);
+    } else {
+      setBatchMode(true);
+    }
+  }, [batchMode, setSelected]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -110,7 +123,7 @@ export default function CollectionsPage() {
   }, []);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('collections');
+  useScrollRestore('collections', undefined, true, { restoreFrom: ['detail', 'play'] });
 
   const search = searchByTab[mainTab];
   const setSearch = useCallback((v: string) => {
@@ -357,7 +370,7 @@ export default function CollectionsPage() {
       <button
         type="button"
         className={`action-btn action-btn--batch${batchMode ? ' is-active' : ''}`}
-        onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+        onClick={toggleBatchMode}
       >
         <Icon icon={ListChecks} size="sm" />
         <span className="action-btn__label">{batchMode ? '退出管理' : '批量管理'}</span>
@@ -371,6 +384,7 @@ export default function CollectionsPage() {
       pageClassName="collection-page"
       fusedCategories={fusedCategories}
       actions={actions}
+      isBatchMode={batchMode || batchIsExiting}
     >
       {/* 「更多筛选」折叠面板：状态 chips（仅影视）+ 排序（公共组件，与历史页一致） */}
       {filterOpen && (
@@ -459,8 +473,8 @@ export default function CollectionsPage() {
 
       {allIds.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
-      {batchMode && (
-        <div className="batch-action-bar">
+      {(batchMode || batchIsExiting) && (
+        <div className={`batch-action-bar${batchIsExiting ? ' batch-action-bar--exiting' : ''}`}>
           <button type="button" className="batch-action-btn" onClick={selectAll}>
             {selected.size === allIds.length && allIds.length > 0
               ? <Icon icon={CheckSquare} size="sm" />

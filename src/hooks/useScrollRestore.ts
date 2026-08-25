@@ -16,17 +16,24 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavStore } from '@/stores/useNavStore';
 import { useScrollContainer, type ScrollContainerRef } from './useScrollContext';
+import { getPreviousPathname } from '@/lib/navigation';
+
+/** 允许恢复滚动位置的来源路由前缀（如 ['detail', 'play'] 表示仅从详情/播放页进入时恢复）。 */
+export type RestoreFrom = Array<'detail' | 'play' | 'collections' | 'history' | 'browse' | 'home' | 'iptv'>;
 
 export function useScrollRestore(
   pageKey: string,
   containerRef?: ScrollContainerRef,
   isActive = true,
+  options?: { restoreFrom?: RestoreFrom },
 ) {
   const { getState, saveState } = useNavStore();
   const fallbackRef = useScrollContainer();
   const container = containerRef ?? fallbackRef;
   const saveRef = useRef(saveState);
   saveRef.current = saveState;
+  const restoreFromRef = useRef(options?.restoreFrom);
+  restoreFromRef.current = options?.restoreFrom;
   // 本轮「可见期」是否已恢复，避免可见期内重复恢复
   const restoredRef = useRef(false);
 
@@ -51,6 +58,8 @@ export function useScrollRestore(
   }, [pageKey, container, isActive]);
 
   // 本页变为可见时恢复保存的位置（每次可见期只恢复一次）
+  // options.restoreFrom 存在时：仅当来源路径命中允许列表才恢复，否则重置到顶部。
+  //   例：收藏页仅「从 detail/play 进入」时恢复滚动条，其余（侧栏/首页进入）重置。
   useLayoutEffect(() => {
     if (!isActive) {
       // 隐藏时清空守卫，下次可见能重新恢复
@@ -59,6 +68,18 @@ export function useScrollRestore(
     }
     if (restoredRef.current) return;
 
+    const from = getPreviousPathname();
+    const allowed = restoreFromRef.current;
+    const shouldRestore = !allowed || allowed.some((r) => from != null && from.startsWith('/' + r));
+
+    const el = container.current;
+    if (!shouldRestore) {
+      // 不符合恢复条件：直接回顶，不读取/恢复保存位置
+      if (el) el.scrollTop = 0;
+      restoredRef.current = true;
+      return;
+    }
+
     const target = getState(pageKey)?.scrollTop;
     if (target == null || target <= 0) {
       // 无保存位置时也标记已恢复，避免反复尝试
@@ -66,7 +87,6 @@ export function useScrollRestore(
       return;
     }
 
-    const el = container.current;
     if (!el) return;
 
     el.scrollTop = target;

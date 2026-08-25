@@ -279,8 +279,9 @@ export default function HomePage() {
   }, []);
 
   // ── 进入过渡相位控制：骨架覆盖 → 淡出 → 完成 ──
-  // 目的：缓存数据场景下避免 heroBgFadeIn 与骨架消失同时发生导致"大片从骨架变图片"的闪烁。
-  // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出）→ done（内容自由渲染）。
+  // 目的：缓存数据场景下，进入首页时用骨架覆盖层遮挡内容，避免内容瞬间硬现。
+  // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出，同时内容/hero 以
+  // 200ms 延迟同步淡入——交叉淡化，无空白窗口）→ done（覆盖层卸载，内容自由渲染）。
   // 冷加载路径（pageLoading=true）由上方 isInitialLoading 分支直接返回，本段不生效。
   const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>('skeleton');
   useEffect(() => {
@@ -512,7 +513,7 @@ function CategoryView({ catKey, animateEnter, enterPhase }: { catKey: HomeCatego
         onContinuePlay={handleContinuePlay}
         historyMap={historyMap}
         loading={heroLoading}
-        initialEnterDelay={enterPhase !== 'done' ? 800 : 0}
+        initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
       />
       <div className={`home-page__content${animateEnter ? ' page-transition-enter home-page__content--delayed-enter' : ' home-page__content--delayed-enter'}`}>
         <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
@@ -523,7 +524,7 @@ function CategoryView({ catKey, animateEnter, enterPhase }: { catKey: HomeCatego
             continueMode
             continueItems={continueItems}
             isLoading={userDataLoading}
-            skipAnimations={enterPhase !== 'done'}
+            skipAnimations
           />
         )}
         <div className="home-rows">

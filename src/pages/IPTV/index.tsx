@@ -128,10 +128,12 @@ export default function IPTVPage() {
     const run = async () => {
       await Promise.all([sm.bootstrapScene('iptv'), sm.bootstrapScene('epg')]);
       const loaded = await useIPTVStore.getState().loadFromCache();
-      if (!loaded) refreshChannels();
+      if (!loaded) await useIPTVStore.getState().refreshChannels();
+      // 首屏引导完成：在此之前 channels 为空且未加载，应显示整页 loading 而非 <Empty>，
+      // 避免首访先闪「暂无频道数据」再被数据/loading 替换的视觉跳变（方案 E）。
+      setBootstrapped(true);
     };
     void run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 自动刷新频道列表
@@ -172,6 +174,7 @@ export default function IPTVPage() {
   }, [selectedGroup, debouncedKeyword, scrollContainerRef, location.pathname]);
 
   const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
+  const [bootstrapped, setBootstrapped] = useState(false);
 
   /** 按分组、数据源和关键词筛选频道 */
   const filteredChannels = useMemo(() => {
@@ -289,7 +292,7 @@ export default function IPTVPage() {
   // 与 Home/Detail 首屏 loading 风格一致（内联居中于页面容器内）。
   // 仅「首次加载且无数据」走此分支；已有数据后的刷新（isLoading 且 channels 非空）
   // 保持下方 .iptv-grid-card 内局部 loading 语义不变。
-  if (isLoading && channels.length === 0) {
+  if ((isLoading || !bootstrapped) && channels.length === 0) {
     return (
       <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
         <AppLoading tip="加载频道列表…" showTip />

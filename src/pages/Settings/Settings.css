@@ -11,7 +11,93 @@
   min-height: 0;
   overflow-x: hidden;
   /* 进入动画统一由 .page-transition-enter 提供（根容器 className 加该类），
-     与 Detail / Person / SourceChecker 等页面一致，且由 AppLayout 二次进入重放。 */
+     与 Detail / Person / SourceChecker 等页面一致；设置页已在 animations.css 的
+     data-revisit 门控中排除，故「二次进入」也照样播放（无空白帧、纯平滑淡入）。 */
+}
+
+/* 元素入场动画：设置页各区块 / 设置行错峰淡入上移，强化「页面进入」的层次感。
+   这些元素在每次进入设置页（含二次进入，已在 animations.css 的 data-revisit 门控中
+   排除 .settings-page，故照样播放）时随页面过渡错峰呈现，避免「整页硬切、元素突兀出现」。 */
+/* 桌面端大卡片的两大块：顶部栏（返回+TabBar）与内容区，先错峰淡入 */
+.settings-desktop-card > .settings-desktop-topbar {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+  animation-delay: 0.05s;
+}
+.settings-desktop-card > .settings-content {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+  animation-delay: 0.12s;
+}
+/* 内容区内的设置行 / 列表项：在区块之后进一步错峰淡入 */
+.settings-content__pane--active .list-item,
+.settings-content__pane--active .settings-row {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+.settings-content__pane--active .list-item:nth-child(1),
+.settings-content__pane--active .settings-row:nth-child(1) { animation-delay: 0.04s; }
+.settings-content__pane--active .list-item:nth-child(2),
+.settings-content__pane--active .settings-row:nth-child(2) { animation-delay: 0.22s; }
+.settings-content__pane--active .list-item:nth-child(3),
+.settings-content__pane--active .settings-row:nth-child(3) { animation-delay: 0.26s; }
+.settings-content__pane--active .list-item:nth-child(4),
+.settings-content__pane--active .settings-row:nth-child(4) { animation-delay: 0.30s; }
+.settings-content__pane--active .list-item:nth-child(5),
+.settings-content__pane--active .settings-row:nth-child(5) { animation-delay: 0.34s; }
+.settings-content__pane--active .list-item:nth-child(n + 6),
+.settings-content__pane--active .settings-row:nth-child(n + 6) { animation-delay: 0.38s; }
+/* 移动端：菜单列表项错峰淡入 */
+.settings-menu-list > * {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+.settings-menu-list > *:nth-child(1) { animation-delay: 0.06s; }
+.settings-menu-list > *:nth-child(2) { animation-delay: 0.12s; }
+.settings-menu-list > *:nth-child(3) { animation-delay: 0.18s; }
+.settings-menu-list > *:nth-child(4) { animation-delay: 0.24s; }
+.settings-menu-list > *:nth-child(5) { animation-delay: 0.30s; }
+.settings-menu-list > *:nth-child(n + 6) { animation-delay: 0.34s; }
+/* 移动端子页面：子页内列表项错峰淡入，与主内容区 .settings-content__pane--active 保持一致 */
+.settings-subpage__body .list-item,
+.settings-subpage__body .settings-row {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+.settings-subpage__body .list-item:nth-child(1),
+.settings-subpage__body .settings-row:nth-child(1) { animation-delay: 0.04s; }
+.settings-subpage__body .list-item:nth-child(2),
+.settings-subpage__body .settings-row:nth-child(2) { animation-delay: 0.22s; }
+.settings-subpage__body .list-item:nth-child(3),
+.settings-subpage__body .settings-row:nth-child(3) { animation-delay: 0.26s; }
+.settings-subpage__body .list-item:nth-child(4),
+.settings-subpage__body .settings-row:nth-child(4) { animation-delay: 0.30s; }
+.settings-subpage__body .list-item:nth-child(5),
+.settings-subpage__body .settings-row:nth-child(5) { animation-delay: 0.34s; }
+.settings-subpage__body .list-item:nth-child(n + 6),
+.settings-subpage__body .settings-row:nth-child(n + 6) { animation-delay: 0.38s; }
+/* 个人设置（PersonalTab）元素出场动画：与主内容区 .list-item 错峰节奏对齐。
+   原规则只覆盖行级 .settings-row —— 区块标题（settings-card__title）/ 个人资料卡
+   （settings-profile-card）/ 整卡（settings-card__body）均无动画，且行级 fadeInUp 上移
+   在 .settings-card__body（overflow:hidden）内会被卡顶裁切，观感「卡先现、行后出」割裂。
+   此处将动画单元提升为「区块标题 + 卡片」整块错峰淡入（标题→资料卡→section 顺序递增），
+   卡内行/头部随卡片整体动画（禁用行级独立动画，避免双重动画）。
+   桌面端（pane 直接子元素）与移动端子页（body 直接子元素）规则一致。 */
+.settings-content__pane--active > .settings-card__title,
+.settings-content__pane--active > .settings-profile-card,
+.settings-content__pane--active > .settings-personal-section,
+.settings-subpage__body > .settings-card__title,
+.settings-subpage__body > .settings-profile-card,
+.settings-subpage__body > .settings-personal-section {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+.settings-content__pane--active > .settings-card__title:nth-child(1),
+.settings-subpage__body > .settings-card__title:nth-child(1) { animation-delay: 0.04s; }
+.settings-content__pane--active > .settings-profile-card:nth-child(2),
+.settings-subpage__body > .settings-profile-card:nth-child(2) { animation-delay: 0.10s; }
+.settings-content__pane--active > .settings-personal-section:nth-child(3),
+.settings-subpage__body > .settings-personal-section:nth-child(3) { animation-delay: 0.16s; }
+.settings-content__pane--active > .settings-personal-section:nth-child(4),
+.settings-subpage__body > .settings-personal-section:nth-child(4) { animation-delay: 0.22s; }
+/* 个人设置卡片内行：随卡片整体动画，不再单独错峰（覆盖上方行级规则） */
+.settings-content__pane--active .settings-personal-section .settings-row,
+.settings-subpage__body .settings-personal-section .settings-row {
+  animation: none;
 }
 
 /* 源管理（视频源 / IPTV 源 / EPG 源）独立 section，桌面端不卡片化、上下分割线分隔 */

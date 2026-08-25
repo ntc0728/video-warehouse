@@ -49,31 +49,41 @@ const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIco
  */
 export function ToastProvider({ children, mobileCenter = false }: { children: React.ReactNode; mobileCenter?: boolean }) {
   const [item, setItem] = useState<{ msg: string; type: PlayerToastType } | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [centerItem, setCenterItem] = useState<{ msg: string; type: PlayerToastType } | null>(null);
+  const [centerIsExiting, setCenterIsExiting] = useState(false);
   const centerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
+    setCenterIsExiting(false);
     setCenterItem({ msg, type });
     centerTimerRef.current = setTimeout(() => {
-      setCenterItem(null);
-      centerTimerRef.current = null;
+      setCenterIsExiting(true);
+      setTimeout(() => {
+        setCenterItem(null);
+        setCenterIsExiting(false);
+        centerTimerRef.current = null;
+      }, 180);
     }, duration);
   }, []);
 
   const show = useCallback((msg: string, duration = 3000, type: PlayerToastType = 'default') => {
-    // 移动端：操作类提示改走屏幕居中槽位（与 mobileSettingsToast 共用，后到者覆盖，
-    // 避免「设置项改 store → ToastTrigger 与弹窗 toast 各显示一条」的叠加重复）
     if (mobileCenter) {
       showCenter(msg, duration, type);
       return;
     }
     if (timerRef.current) clearTimeout(timerRef.current);
+    setIsExiting(false);
     setItem({ msg, type });
     timerRef.current = setTimeout(() => {
-      setItem(null);
-      timerRef.current = null;
+      setIsExiting(true);
+      setTimeout(() => {
+        setItem(null);
+        setIsExiting(false);
+        timerRef.current = null;
+      }, 180);
     }, duration);
   }, [mobileCenter, showCenter]);
 
@@ -106,20 +116,28 @@ export function ToastProvider({ children, mobileCenter = false }: { children: Re
     <ToastContext.Provider value={{ show }}>
       {children}
       {/* 操作类提示：桌面端 → 右上角；移动端 → 屏幕居中 */}
-      {item &&
-        (mobileCenter
-          ? renderCenterToast(item.msg, item.type)
-          : (
-            <div className={`up-player-toast${item.type !== 'default' ? ` up-player-toast--${item.type}` : ''}`}>
-              {item.type !== 'default' && (
-                <span className="up-player-toast__icon" style={{ color: TOAST_ICONS[item.type].color }}>
-                  <Icon icon={TOAST_ICONS[item.type].icon} size="md" />
-                </span>
-              )}
-              <span className="up-player-toast__text">{item.msg}</span>
-            </div>
-          ))}
-      {centerItem && renderCenterToast(centerItem.msg, centerItem.type)}
+      {item && !isExiting && (
+        <div className={`up-player-toast${item.type !== 'default' ? ` up-player-toast--${item.type}` : ''}`}>
+          {item.type !== 'default' && (
+            <span className="up-player-toast__icon" style={{ color: TOAST_ICONS[item.type].color }}>
+              <Icon icon={TOAST_ICONS[item.type].icon} size="md" />
+            </span>
+          )}
+          <span className="up-player-toast__text">{item.msg}</span>
+        </div>
+      )}
+      {isExiting && item && (
+        <div className={`up-player-toast up-player-toast--exiting${item.type !== 'default' ? ` up-player-toast--${item.type}` : ''}`}>
+          {item.type !== 'default' && (
+            <span className="up-player-toast__icon" style={{ color: TOAST_ICONS[item.type].color }}>
+              <Icon icon={TOAST_ICONS[item.type].icon} size="md" />
+            </span>
+          )}
+          <span className="up-player-toast__text">{item.msg}</span>
+        </div>
+      )}
+      {centerItem && !centerIsExiting && renderCenterToast(centerItem.msg, centerItem.type)}
+      {centerIsExiting && centerItem && renderCenterToast(centerItem.msg, centerItem.type)}
     </ToastContext.Provider>
   );
 }

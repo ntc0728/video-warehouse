@@ -35,6 +35,8 @@ interface RecordShellProps {
   pageClassName?: string;
   /** 外部传入的容器 ref（用于 TV 空间导航） */
   containerRef?: Ref<HTMLDivElement>;
+  /** 批量管理模式 */
+  isBatchMode?: boolean;
   children: ReactNode;
 }
 
@@ -48,13 +50,14 @@ export default function RecordShell({
   actions,
   pageClassName = '',
   containerRef,
+  isBatchMode = false,
   children,
 }: RecordShellProps) {
   const hasStatus = !!(statusTabs && statusTabs.length > 0 && activeStatus !== undefined && onStatusChange);
   const hasFused = !!(fusedCategories && fusedCategories.tabs.length > 0);
 
   return (
-    <div ref={containerRef} className={`page-padding record-page page-transition-enter--stagger ${pageClassName}`}>
+    <div ref={containerRef} className={`page-padding record-page page-transition-enter--stagger${isBatchMode ? ' batch-mode' : ''} ${pageClassName}`}>
       <div className="record-shell" style={{ '--stagger': 0 } as CSSProperties}>
         <div className="record-main">
           <aside className="record-aside">

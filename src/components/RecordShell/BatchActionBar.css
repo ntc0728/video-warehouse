@@ -15,6 +15,10 @@
   animation: slideUpCentered 0.2s var(--ease-standard);
 }
 
+.batch-action-bar--exiting {
+  animation: slideDownCentered 0.18s ease-in forwards;
+}
+
 @keyframes slideUpCentered {
   from {
     opacity: 0;
@@ -24,6 +28,33 @@
     opacity: 1;
     transform: translateX(50%) translateY(0);
   }
+}
+
+@keyframes slideDownCentered {
+  from {
+    opacity: 1;
+    transform: translateX(50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(50%) translateY(var(--space-md));
+  }
+}
+
+/* 批量模式进入时：卡片选中标记同步淡入，避免与底部操作栏出现时间差造成闪烁感 */
+.batch-mode .record-card__check {
+  animation: batchCheckFadeIn 0.2s var(--ease-standard) both;
+}
+
+@keyframes batchCheckFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* 批量模式下禁用封面扫光，避免选中态视觉干扰 */
+.batch-mode .video-card:hover .video-card-glow::after {
+  animation: none;
+  opacity: 0;
 }
 
 /* 批量操作按钮 */

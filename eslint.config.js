@@ -47,12 +47,13 @@ export default tseslint.config(
         },
       ],
       // 导航 API 强约束：禁止业务层直接引入 react-router-dom 的 useNavigate，
-      // 必须从 @/lib/navigation 使用 useCustomNavigate（其 options 类型已剔除 viewTransition）。
+      // 必须从 @/lib/navigation 使用 useCustomNavigate（二次进入的闪烁由 AppLayout 的
+      // data-revisit 门控统一处理，与导航入口保持一致）。
       'no-restricted-imports': ['error', {
         paths: [{
           name: 'react-router-dom',
           importNames: ['useNavigate'],
-          message: '请使用 @/lib/navigation 的 useCustomNavigate，禁止直接引入 react-router-dom 的 useNavigate（防止重新启用 viewTransition 导致移动端切换卡顿）。',
+          message: '请使用 @/lib/navigation 的 useCustomNavigate，禁止直接引入 react-router-dom 的 useNavigate（避免绕过统一的导航入口与重进门控）。',
         }],
       }],
     },

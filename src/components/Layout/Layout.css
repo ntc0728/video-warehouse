@@ -363,6 +363,16 @@
     padding-top: var(--header-height);
   }
 
+  /* overlay 滚动条 track 起点与滚动区顶边对齐（2026-08-24 修复）：
+     wrapper 有 padding-top 时，absolute 定位的 .overlay-scrollbar 若 top:0，
+     其包含块是 wrapper 的 padding box 顶（= 视口顶）→ track/thumb 起点跑到
+     导航栏区域内（thumb 穿过顶栏、与滚动区 y 轴错位 --header-height）。
+     与上方 padding-top 对称声明 top，移动 web(<768)/app 下 wrapper 无
+     padding-top（header 为 static 占据布局流），overlay 保持默认 top:0 不受影响。 */
+  html:not([data-device="app"]) .app-shell__scroll-wrapper .overlay-scrollbar {
+    top: var(--header-height);
+  }
+
   html:not([data-device="app"]) /* 沉浸式页头（fixed 叠加 Hero）全宽覆盖视口 */
   .sticky-header--immersive {
     left: 0;
