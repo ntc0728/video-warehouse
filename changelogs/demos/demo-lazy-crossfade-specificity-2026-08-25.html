@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LazyImage 切分类封面淡入失效 Demo — reveal 规则特异性修复前后对比</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #1a1d24; --border: #2a2e38;
+    --old: #3d6bb3; --new: #b3653d; --text: #e6e8ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Microsoft YaHei", sans-serif; padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .sub { color: #9aa3b2; font-size: 12px; margin-bottom: 20px; line-height: 1.7; }
+  .sub code { background: #232733; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .card {
+    flex: 1 1 320px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card h2 { font-size: 14px; }
+  .card .desc { font-size: 12px; color: #9aa3b2; line-height: 1.6; min-height: 40px; }
+  .stage { position: relative; height: 170px; border-radius: 8px; overflow: hidden; background: #0b0d11; border: 1px solid var(--border); }
+  .status {
+    position: absolute; right: 10px; top: 8px; z-index: 6; font-size: 11px;
+    background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .controls { display: flex; gap: 8px; }
+  button {
+    flex: 1; padding: 8px 0; border: 1px solid var(--border); border-radius: 8px;
+    background: #232733; color: var(--text); font-size: 12px; cursor: pointer;
+  }
+  button:hover { background: #2c3140; }
+  .opacity-debug { font-size: 11px; font-family: Consolas, monospace; color: #ffd479; min-height: 16px; }
+</style>
+
+<!-- ==================================================================
+  该 demo 复刻 Home 卡片封装链 crossfadeOnChange 下的两图层叠放结构：
+  .lazy-image-container.loaded.revealed 内：
+    - .lazy-image.lazy-image--base        （committedSrc，常驻底图层）
+    - .lazy-image.lazy-image--pending     （新 src，opacity:0，is-loaded 后淡入）
+  reveal 规则（0,4,0 / 0,5,0）在 OLD 下把两图层一律 opacity:1 —— 特异性压过
+  .lazy-image--pending（0,1,0），pending 首帧即不透明 →「硬化/无淡入」。
+
+  修复 = reveal 选择器加 :not(.lazy-image--base):not(.lazy-image--pending)，
+  特异度不变（:not 不贡献），但不再命中 pending 层。
+=================================================================== -->
+<style>
+  .lazy-image { position: absolute; inset: 0; transition: opacity 0.3s var(--ease-out-expo, ease-out); }
+  /* base：常驻底图 */
+  .lazy-image--base { opacity: 1; filter: blur(0); transform: scale(1); }
+  /* pending：等待淡入的顶层 */
+  .lazy-image--pending { opacity: 0; transition: opacity var(--lazy-crossfade, 280ms) ease-out; }
+  .lazy-image--pending.is-loaded { opacity: 1; }
+
+  /* --- 修复前（OLD）：unscoped reveal 打到所有子层 --- */
+  .stage-old.lazy-image-container.loaded.revealed .lazy-image { opacity: 1; filter: blur(0); transform: scale(1); }
+  .stage-old.lazy-image-container--cached.loaded.revealed .lazy-image { opacity: 1; transition: opacity 0.15s ease-out; }
+
+  /* --- 修复后（NEW）：排除 base 与 pending（特异性等同，仅不再命中过渡层）--- */
+  .stage-new.lazy-image-container.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) { opacity: 1; filter: blur(0); transform: scale(1); }
+  .stage-new.lazy-image-container--cached.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) { opacity: 1; transition: opacity 0.15s ease-out; }
+
+  .cover-a { background: linear-gradient(135deg, #2c4066, #22324f); }
+  .cover-b { background: linear-gradient(135deg, #66432c, #4f2f22); }
+  .cover-c { background: linear-gradient(135deg, #2f5b32, #1f3d24); }
+  .cover-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.85); }
+</style>
+</head>
+<body>
+<h1>LazyImage 卡片封面淡入修复 — reveal 特异性对比 Demo</h1>
+<div class="sub">
+  模拟 Home 切分类 + 直进（未缓存）路径：两图层叠放，外层容器带 <code>.loaded.revealed</code>。<br>
+  <b style="color:#ff7d7d">OLD</b>：reveal 规则（0,4,0）把 <code>.lazy-image--pending</code>(0,1,0) 也压成 opacity:1 → 新封面<b>立即硬化显示、280ms 淡入消失</b>。<br>
+  <b style="color:#7dff9e">NEW</b>：reveal 加 <code>:not()</code> 排除 base/pending（特异性不变）→ pending 先 opacity:0，is-loaded 后 280ms 平滑过渡。
+</div>
+
+<div class="row">
+  <div class="card">
+    <h2><span style="color:#ff7d7d">■</span> OLD（修复前）</h2>
+    <div class="desc">两图层都命中 reveal → 顶层新封面从一开始就完全不透明，点击「切到新封面」是硬化换图，无淡入。</div>
+    <div class="stage stage-old lazy-image-container loaded revealed" id="stageOld">
+      <div class="lazy-image lazy-image--base cover-a"><div class="cover-label">BASE（旧封面，常驻）</div></div>
+      <div class="lazy-image lazy-image--pending cover-b" id="oldPending"><div class="cover-label">PENDING（新封面）is-loaded 后应 280ms 淡入</div></div>
+      <div class="status" id="oldStatus">未触发</div>
+    </div>
+    <div class="opacity-debug" id="oldDebug">pending opacity 当前: —</div>
+    <div class="controls">
+      <button onclick="run('old')">切到新封面（pending → is-loaded）</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span style="color:#7dff9e">■</span> NEW（修复后）</h2>
+    <div class="desc">reveal 不再命中 pending → pending 保持 opacity:0；is-loaded 后 280ms 淡入，旧封面垫底平滑过渡。</div>
+    <div class="stage stage-new lazy-image-container loaded revealed" id="stageNew">
+      <div class="lazy-image lazy-image--base cover-a"><div class="cover-label">BASE（旧封面，常驻）</div></div>
+      <div class="lazy-image lazy-image--pending cover-c" id="newPending"><div class="cover-label">PENDING（新封面）is-loaded 后应 280ms 淡入</div></div>
+      <div class="status" id="newStatus">未触发</div>
+    </div>
+    <div class="opacity-debug" id="newDebug">pending opacity 当前: —</div>
+    <div class="controls">
+      <button onclick="run('new')">切到新封面（pending → is-loaded）</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function run(kind) {
+    const pend = document.getElementById(kind === 'old' ? 'oldPending' : 'newPending');
+    const status = document.getElementById(kind === 'old' ? 'oldStatus' : 'newStatus');
+    const debug = document.getElementById(kind === 'old' ? 'oldDebug' : 'newDebug');
+    if (pend.classList.contains('is-loaded')) {
+      pend.classList.remove('is-loaded');
+      status.textContent = '重置（pending → opacity 0）';
+    } else {
+      pend.classList.add('is-loaded');
+      status.textContent = kind === 'old' ? '硬化显示（无淡入）' : '280ms 淡入中';
+    }
+    const getOpacity = () => {
+      const cs = getComputedStyle(pend);
+      const raw = cs.opacity;
+      debug.textContent = 'pending opacity 当前: ' + raw + '（transition: ' + cs.transitionProperty + ' ' + cs.transitionDuration + '）';
+    };
+    getOpacity();
+    setTimeout(getOpacity, 320);
+    setTimeout(getOpacity, 900);
+  }
+</script>
+</body>
+</html>

@@ -187,6 +187,19 @@ export default function HistoryPage() {
   const [searchByTab, setSearchByTab] = useState<Record<MainTab, string>>({ all: '', video: '', iptv: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
+  const [batchIsExiting, setBatchIsExiting] = useState(false);
+  const toggleBatchMode = useCallback(() => {
+    if (batchMode) {
+      setBatchIsExiting(true);
+      setTimeout(() => {
+        setBatchMode(false);
+        setSelected(new Set());
+        setBatchIsExiting(false);
+      }, 180);
+    } else {
+      setBatchMode(true);
+    }
+  }, [batchMode, setSelected]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [activeGroupKey, setActiveGroupKey] = useState<GroupKey | null>(null);
 
@@ -210,7 +223,7 @@ export default function HistoryPage() {
   }, []);
 
   const scrollContainerRef = useScrollContainer();
-  useScrollRestore('history');
+  useScrollRestore('history', undefined, true, { restoreFrom: ['play'] });
 
   // backdrop 自动补全（视频卡展示时启用：综合/视频 tab）
   useBackdropLoader(watchHistory, mainTab !== 'iptv');
@@ -703,7 +716,7 @@ export default function HistoryPage() {
       <button
         type="button"
         className={`action-btn action-btn--batch${batchMode ? ' is-active' : ''}`}
-        onClick={() => { setBatchMode(!batchMode); if (batchMode) setSelected(new Set()); }}
+        onClick={toggleBatchMode}
       >
         <Icon icon={ListChecks} size="sm" />
         <span className="action-btn__label">{batchMode ? '退出管理' : '批量管理'}</span>
@@ -717,6 +730,7 @@ export default function HistoryPage() {
       pageClassName="history-page"
       fusedCategories={fusedCategories}
       actions={actions}
+      isBatchMode={batchMode || batchIsExiting}
     >
       {/* 「更多筛选」折叠面板：状态 chips（仅视频）+ 排序（公共组件，收藏页复用） */}
       {filterOpen && (
@@ -820,8 +834,8 @@ export default function HistoryPage() {
       {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
       {/* 批量模式胶囊浮动栏 */}
-      {batchMode && (
-        <div className="batch-action-bar">
+      {(batchMode || batchIsExiting) && (
+        <div className={`batch-action-bar${batchIsExiting ? ' batch-action-bar--exiting' : ''}`}>
           <button type="button" className="batch-action-btn" onClick={selectAll}>
             {selected.size === currentList.length && currentList.length > 0
               ? <Icon icon={CheckSquare} size="sm" />

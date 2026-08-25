@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import './OverlayScrollbar.css';
 
 interface OverlayScrollbarProps {
@@ -22,6 +23,9 @@ interface OverlayScrollbarProps {
 export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarProps) {
   const thumbRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  // 路由切换过渡锁：切换期间 updateThumb 不主动显示 thumb，
+  // 等新页面首帧布局稳定后再判定（见底部 route-change useLayoutEffect）。
+  const transitioningRef = useRef(false);
   const isDraggingRef = useRef(false);
   const dragStartY = useRef(0);
   const dragStartScrollTop = useRef(0);
@@ -37,6 +41,10 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
       setVisible(false);
       return;
     }
+    // 路由切换过渡期：不主动显示。新页面布局未稳（旧内容卸载、字体/图片/异步数据
+    // 未就绪）时 scrollHeight 会短暂「假性溢出」，若此刻显示就会闪现旧页滚动条；
+    // 等 route-change 的 rAF/超时解锁后再判定真实显隐（见下方 useLayoutEffect）。
+    if (transitioningRef.current) return;
     const ratio = clientHeight / scrollHeight;
     const h = Math.max(30, clientHeight * ratio);
     const maxTop = clientHeight - h;
@@ -88,6 +96,41 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
     const timer = setTimeout(() => updateThumb(), 100);
     return () => clearTimeout(timer);
   }, [updateThumb]);
+
+  // ── 路由切换同步重算 thumb（2026-08-24，二次修正）────────────────
+  // 根因（实测复现）：路由切换时旧页面（高内容 → thumb 可见）卸载、新页面（如设置页）
+  // 挂载。旧实现直接在 layout 阶段调 updateThumb，但此刻新页面布局未稳——
+  // 旧内容刚卸载、字体/图片/异步数据未就绪，scrollHeight 会短暂「假性溢出」，
+  // updateThumb 误判为可滚动 → 保留 thumb 可见；等设置页稳定变矮后，后续
+  // MutationObserver 才把它隐藏。表现即「进入设置页滚动条先显示再消失」。
+  // 修复：
+  //  1) 路由切换瞬间在 layout 阶段先 setVisible(false)（绘制前、无过渡，CSS base
+  //     规则无 opacity 过渡 → 立即消失，不闪旧页状态）。
+  //  2) 置 transitioningRef 锁：过渡期内 updateThumb 不主动 setVisible(true)，
+  //     屏蔽 MutationObserver/ResizeObserver/scroll 因过渡态「假性溢出」提前显示。
+  //  3) 等新页面首帧布局稳定后再解锁并 updateThumb 判定真实显隐：
+  //     rAF 覆盖绝大多数情况（~16ms）；setTimeout(200) 兜底 rAF 被吞
+  //     （headless / 后台标签 / 节能模式，详见文件头踩坑记录）。
+  const location = useLocation();
+  const lastPathRef = useRef(location.pathname);
+  useLayoutEffect(() => {
+    if (lastPathRef.current !== location.pathname) {
+      lastPathRef.current = location.pathname;
+      transitioningRef.current = true;
+      setVisible(false);
+      const settle = () => {
+        if (!transitioningRef.current) return;
+        transitioningRef.current = false;
+        updateThumb();
+      };
+      const raf = requestAnimationFrame(settle);
+      const timer = setTimeout(settle, 200);
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+  }, [location.pathname, updateThumb]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();

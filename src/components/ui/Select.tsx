@@ -10,6 +10,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import './Select.css';
 
 export interface SelectOption {
   value: string;
@@ -51,7 +52,7 @@ const triggerBase =
    —— 下拉经 Radix Portal 挂 body，z-index 必须高于固定层才会显示，但绝不可抬到与弹窗同档。
    注意：portal-dropdown / source-multi-* 是 E2E 选择器钩子（collections.spec.ts / settings.spec.ts），勿删。 */
 const contentBase =
-  'z-[var(--z-popover)] mt-1 p-1 min-w-[var(--layout-select-w)] max-h-[var(--layout-dropdown-max-h)] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-md shadow-[var(--shadow-card)] portal-dropdown';
+   'z-[var(--z-popover)] mt-1 p-1 min-w-[var(--layout-select-w)] max-h-[var(--layout-dropdown-max-h)] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-md shadow-[var(--shadow-card)] portal-dropdown select-dropdown-content';
 
 const itemBase =
   'relative flex items-center gap-2 pl-8 pr-3 py-2 text-sm text-[var(--color-text)] rounded-sm cursor-pointer outline-none select-none hover:bg-[var(--color-surface-hover)] data-[state=checked]:bg-[var(--color-surface-hover)] source-multi-option';

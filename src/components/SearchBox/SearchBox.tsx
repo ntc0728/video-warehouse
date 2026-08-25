@@ -101,6 +101,7 @@ export default function SearchBox({
 
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownIsExiting, setDropdownIsExiting] = useState(false);
   const visibleHotItems = showHotSearch ? hotItems : [];
 
   // 懒加载热门搜索：仅当下拉打开且需要展示热门搜索时才拉取 trending。
@@ -277,8 +278,12 @@ export default function SearchBox({
 
   const handleBlur = useCallback(() => {
     blurTimerRef.current = setTimeout(() => {
-      setIsDropdownOpen(false);
-      blurTimerRef.current = null;
+      setDropdownIsExiting(true);
+      setTimeout(() => {
+        setIsDropdownOpen(false);
+        setDropdownIsExiting(false);
+        blurTimerRef.current = null;
+      }, 150);
     }, BLUR_DELAY_MS);
   }, []);
 
@@ -315,7 +320,11 @@ export default function SearchBox({
     if (e.key === 'Escape') {
       e.preventDefault();
       if (showDropdown) {
-        setIsDropdownOpen(false);
+        setDropdownIsExiting(true);
+        setTimeout(() => {
+          setIsDropdownOpen(false);
+          setDropdownIsExiting(false);
+        }, 150);
       } else {
         handleClear();
       }
@@ -391,12 +400,13 @@ export default function SearchBox({
       </div>
 
       {/* ── 搜索历史 + 热门搜索 Dropdown ──────────────── */}
-      {showDropdown && (
+      {(showDropdown || dropdownIsExiting) && (
         <div
           ref={dropdownRef}
           className={[
             'search-box-dropdown',
             dropdownAbove ? 'search-box-dropdown--above' : '',
+            dropdownIsExiting ? 'search-box-dropdown--exiting' : '',
           ].filter(Boolean).join(' ')}
           role="listbox"
           onMouseDown={handleDropdownMouseDown}

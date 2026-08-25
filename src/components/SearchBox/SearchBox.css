@@ -249,6 +249,21 @@
   animation-name: search-dropdown-fade-in-above;
 }
 
+.search-box-dropdown--exiting {
+  animation: search-dropdown-fade-out 0.15s ease-in forwards;
+}
+
+@keyframes search-dropdown-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-2xs)));
+  }
+}
+
 @keyframes search-dropdown-fade-in-above {
   from {
     opacity: 0;

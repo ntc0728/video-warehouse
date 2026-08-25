@@ -17,12 +17,19 @@
   pointer-events: auto;
   cursor: default;
   opacity: 0;
-  transition: opacity 0.2s, width 0.15s, background 0.2s;
+  /* 仅过渡 width/background：移除 --visible 时 opacity 立即归零（无过渡），
+     避免路由切换后「旧页滚动条残留 → 渐隐」的先显后隐抖动（OverlayScrollbar.tsx
+     的路由 layout effect 已在绘制前把状态置为隐藏，但 base 规则的 opacity 过渡
+     仍会让其从上一页的 opacity:1 渐隐到 0，表现为「进入设置页滚动条先显示再消失」）。
+     淡入过渡在下方 --visible 规则内单独声明。 */
+  transition: width 0.15s, background 0.2s;
 }
 
 .overlay-scrollbar--visible .overlay-scrollbar__thumb,
 .overlay-scrollbar__thumb--dragging {
   opacity: 1;
+  /* 淡入平滑；隐藏时本规则不再命中，回退到上方无 opacity 过渡 → 立即消失，无抖动。 */
+  transition: opacity 0.2s, width 0.15s, background 0.2s;
 }
 
 .overlay-scrollbar__thumb:hover {

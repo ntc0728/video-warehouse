@@ -39,3 +39,4 @@
 | `demos/demo-history-abacus-timeline-2026-08-17.html` | 历史页左侧固定时间轴（算珠累加）：滚动时轴点逐颗累加、不消失，向上滚动逐步恢复，点击轴点/组标题跳转 | 2026-08-17 |
 | `demos/demo-history-redesign-2026-08-18.html` | 历史页 UI 整改原型：融合 Tab（综合/视频/IPTV）+ 操作按钮（更多筛选/清空/批量）+ 统一横版卡 + 时间轴 + 动态列数 | 2026-08-18 |
 | `demos/demo-collections-redesign-2026-08-18.html` | 收藏页 UI 整改原型（方案 B）：融合 Tab + 影视/直播分区（竖版海报墙 + 原项目 IPTV 卡）+ 视频卡角标重组（左下年份+类型、右下状态） | 2026-08-18 |
+| `demos/demo-lazy-crossfade-specificity-2026-08-25.html` | LazyImage 封面淡入失效对比：OLD=reveal 已经把 pending 压成不透明（硬化切图）/ NEW=reveal 排除 base+pending、280ms 淡入恢复 | 2026-08-25 |

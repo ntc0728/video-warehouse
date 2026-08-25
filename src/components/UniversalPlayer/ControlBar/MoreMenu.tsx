@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { MoreVertical, MoreHorizontal } from 'lucide-react';
 import { DuoIcon } from '@/components/ui/DuoIcon';
 
@@ -12,10 +12,15 @@ const POPOVER_ID = 'more';
 
 export default function MoreMenu({ children, activePopover, onPopoverChange }: MoreMenuProps) {
   const isOpen = activePopover === POPOVER_ID;
+  const [isExiting, setIsExiting] = useState(false);
 
   const handleButtonTouch = useCallback(() => {
     if (isOpen) {
-      onPopoverChange(null);
+      setIsExiting(true);
+      setTimeout(() => {
+        onPopoverChange(null);
+        setIsExiting(false);
+      }, 160);
     } else {
       onPopoverChange(POPOVER_ID);
     }
@@ -29,8 +34,8 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
   return (
     <div
       className="up-popover-control up-more-menu"
-      onMouseEnter={() => onPopoverChange(POPOVER_ID)}
-      onMouseLeave={() => onPopoverChange(null)}
+      onMouseEnter={() => { if (!isOpen && !isExiting) onPopoverChange(POPOVER_ID); }}
+      onMouseLeave={() => { if (!isExiting) { setIsExiting(true); setTimeout(() => { onPopoverChange(null); setIsExiting(false); }, 160); } }}
     >
       <button
         title="更多"
@@ -38,8 +43,8 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
       >
         <DuoIcon primary={MoreVertical} secondary={MoreHorizontal} size="md" />
       </button>
-      {isOpen && (
-        <div className="up-popover up-more-popover" onClick={handlePopoverClick}>
+      {(isOpen || isExiting) && (
+        <div className={`up-popover up-more-popover${isExiting ? ' up-more-popover--exiting' : ''}`} onClick={handlePopoverClick}>
           {children}
         </div>
       )}

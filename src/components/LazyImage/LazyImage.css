@@ -63,8 +63,11 @@
 }
 
 /* 揭示态（挂载后下一帧）：图片从 opacity:0 淡入；
-   命中缓存仅淡入（无 blur/scale 抖动），未命中走 blur-up。 */
-.lazy-image-container.loaded.revealed .lazy-image {
+   命中缓存仅淡入（无 blur/scale 抖动），未命中走 blur-up。
+   排除交叉淡入层（base/pending）：两层的 opacity 由各自规则独立控制，
+   否则 loaded.revealed 的 opacity:1 会以更高特异性（0,4,0/0,5,0）压过
+   --pending 的 opacity:0（0,1,0），使新图首帧即全不透明、淡入形同虚设。 */
+.lazy-image-container.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) {
   opacity: 1;
   filter: blur(0);
   transform: scale(1);
@@ -75,7 +78,7 @@
   filter: blur(0);
   transform: scale(1);
 }
-.lazy-image-container--cached.loaded.revealed .lazy-image {
+.lazy-image-container--cached.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) {
   opacity: 1;
   transition: opacity var(--dur-fast) var(--ease-out-expo);
 }

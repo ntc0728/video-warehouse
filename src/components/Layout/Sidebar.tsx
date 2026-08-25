@@ -3,8 +3,9 @@
  * 桌面端左侧导航栏，支持展开/收起切换
  * 移动端 overlay 模式，从左侧滑入
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import {
   Home,
   Search,
@@ -46,6 +47,7 @@ const tabs = [
 
 export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
   const location = useLocation();
+  const navigate = useCustomNavigate();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // 移动端：从屏幕边缘滑动关闭侧边栏
@@ -84,8 +86,13 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
   }, [isMobile, isOpen, onToggle]);
 
 
-  const handleTabClick = () => {
+  // 通过 useCustomNavigate 触发（非首页间导航自带 View Transitions 交叉淡入）。
+  // 修饰键 / 中键点击放行，交给浏览器默认行为（新标签打开）。
+  const handleNavClick = (e: MouseEvent, to: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
     if (isMobile) onToggle();
+    navigate(to);
   };
 
   if (isMobile) {
@@ -122,7 +129,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
                   className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={ariaLabels[tab.key]}
-                  onClick={handleTabClick}
+                  onClick={(e) => handleNavClick(e, tab.key)}
                 >
                   {isActive && <div className="sidebar-nav-indicator" />}
                   <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
@@ -141,7 +148,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
               className={`sidebar-nav-item sidebar-nav-item--footer${settingsActive ? ' active' : ''}`}
               aria-current={settingsActive ? 'page' : undefined}
               aria-label={ariaLabels[settingsTab.key]}
-              onClick={handleTabClick}
+              onClick={(e) => handleNavClick(e, settingsTab.key)}
             >
               {settingsActive && <div className="sidebar-nav-indicator" />}
               <span className={`sidebar-nav-icon ${settingsActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
@@ -187,6 +194,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
               className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
               aria-label={ariaLabels[tab.key]}
+              onClick={(e) => handleNavClick(e, tab.key)}
             >
               {isActive && <div className="sidebar-nav-indicator" />}
               <span className={`sidebar-nav-icon ${isActive ? 'animate-icon-bounce' : ''}`} aria-hidden="true">
