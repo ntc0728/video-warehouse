@@ -253,10 +253,13 @@
 .hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(3) { animation-delay: 0.16s; }
 .hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(4) { animation-delay: 0.24s; }
 
+/* 静止入场：位移收到 6px，确保所有视口（移动端 content 底部留白最小仅 8px）下
+   文字起步都在图片底边之上，不会压到图片外（容器里）再从下方浮入。
+   与切换入场的 heroTextIn6(6px) 对齐，观感统一。 */
 @keyframes heroTextIn {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
