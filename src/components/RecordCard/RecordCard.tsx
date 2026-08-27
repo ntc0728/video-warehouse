@@ -142,16 +142,24 @@ const RecordCard = memo(function RecordCard({
 
   const cardClass = `record-card record-card--${item.kind}${selected ? ' record-card--selected' : ''}`;
 
-  if (batchMode) {
-    return (
-      <div className={cardClass} onClick={onToggleSelect}>
-        {content}
-      </div>
-    );
-  }
+  // 始终渲染同一根元素（Link），批量模式拦截导航改为切换选中——
+  // 避免「非批量 Link / 批量 div」根元素类型切换触发 React 卸载重建所有卡片，
+  // 进而 LazyImage 重载淡入、整页卡片闪烁（2026-08-27 修复）。
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (batchMode) {
+      e.preventDefault();
+      onToggleSelect();
+    }
+  };
 
   return (
-    <Link to={item.navigateTo} state={item.navState} className={cardClass} aria-label={item.title}>
+    <Link
+      to={item.navigateTo}
+      state={item.navState}
+      className={cardClass}
+      aria-label={item.title}
+      onClick={handleCardClick}
+    >
       {content}
     </Link>
   );

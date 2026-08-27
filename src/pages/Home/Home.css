@@ -192,10 +192,14 @@ html[data-device="app"] .home-disclaimer {
 /* 与 .hero-banner 完全同高、同外包盒的占位（消除骨架→真实 banner 的高度/外框跳动）：
    复用同一套 height 模型（aspect-ratio 16/9 + min/max）+ 同款「无边框盒子」（圆角 + 阴影），
    真实 .hero-banner 无 border / 无 surface 底色，骨架严格镜像才能避免切换时外框不一致。
-   .hero-banner 的子元素均为绝对定位、无内容高度，故其高度纯由该模型决定，
-   骨架须严格镜像才能避免切换时的布局位移。 */
+   .hero-banner 的高度纯由该模型决定（flex row 内主图区 flex:1、缩略图列 flex-shrink:0，
+   均无固有内容高度，靠容器 aspect-ratio 定高后 stretch），骨架须严格镜像（主图区 flex:1 +
+   缩略图列 flex-shrink:0）才能避免切换时的布局位移。 */
 .home-skeleton-hero {
   position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   width: 100%;
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
   /* 与真实 .hero-banner 一致：几何由 aspect-ratio 驱动（N = --hero-thumb-count）：
@@ -208,8 +212,11 @@ html[data-device="app"] .home-disclaimer {
 }
 
 .home-skeleton-hero__banner {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
   /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾） */
   background: linear-gradient(
     90deg,
@@ -355,7 +362,6 @@ html[data-device="app"] .home-disclaimer {
   .home-skeleton-hero {
     height: auto;
     aspect-ratio: 16 / 9;
-    min-height: 28rem;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
@@ -373,14 +379,11 @@ html[data-device="app"] .home-disclaimer {
   .home-skeleton-hero {
     height: auto;
     aspect-ratio: 16 / 9;
-    min-height: 18rem;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
-  html[data-device="app"] .home-skeleton-hero {
-    min-height: 18rem;
-  }
+  /* app 端无需 height/aspect-ratio 副本：@media (width <= 767px) 已覆盖 */
 
 
 
@@ -565,5 +568,14 @@ html[data-device="app"] .home-disclaimer {
 .home-page__content--delayed-enter {
   animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
   animation-delay: 200ms;
+  opacity: 0;
+}
+/* ── 「继续观看」行进入动画（2026-08-26） ──
+   分类切回首页时该行全新挂载（isCat 翻转），挂载即触发淡入上移，
+   消除「从分类切回首页突然闪现」；行内卡片靠 skipAnimations 禁用
+   animate-card-enter（避免卡片闪烁），故仅在行容器层做整体进入过渡。
+   reduced-motion 由 animations.css 全局规则覆盖。 */
+.home-continue-row {
+  animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
   opacity: 0;
 }

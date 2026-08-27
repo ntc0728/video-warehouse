@@ -585,7 +585,7 @@ export default function HeroBanner({
       || mainRef.current?.offsetWidth
       || bannerRef.current?.offsetWidth
       || 1;
-    const threshold = Math.max(100, mainW * 0.5);
+    const threshold = Math.max(100, mainW * 0.4);
     const switched = Math.abs(dx) >= threshold && total > 1;
     recordSwipeData({ mainWidth: mainW, dx, threshold, switched });
     setIsDragging(false);
@@ -851,7 +851,80 @@ export default function HeroBanner({
         ref={mainRef}
         className={`hero-banner__main${isDragging ? ' is-dragging' : ''}`}
       >
-        {trackActive ? (
+        {/* crossfade 背景层：始终渲染（track 模式期间被 .hero-banner__track 绝对层盖住）。
+            关键修复：track→crossfade 切换时当前图 <img> 不再重挂载，移动端/App（Capacitor
+            WebView）不会因新 img 元素首帧解码延迟而透明闪出底层旧图。 */}
+        <>
+          {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
+          {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
+              新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
+              就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
+              淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
+          {staleLayer && (
+            <img
+              key={`stale-${staleLayer.id}`}
+              className="hero-banner__bg-layer hero-banner__bg-layer--stale"
+              src={staleLayer.url}
+              srcSet={staleLayer.srcSet || undefined}
+              sizes="(max-width: 767px) 100vw, 80vw"
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              draggable={false}
+            />
+          )}
+          {bgIndices.map((idx) => {
+            const item = displayItems[idx];
+            if (!item) return null;
+            const backdropPath = item.backdropPath || item.backdrop_path || '';
+            const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
+            const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
+            const isActive = idx === displayIndex;
+            // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
+            if (isActive && hideNewLayer) return null;
+            return (
+              <img
+                key={item.id}
+                className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}${isActive && suppressFadeInId === item.id ? ' hero-banner__bg-layer--no-anim' : ''}`}
+                src={backdropUrl}
+                srcSet={backdropSrcSet || undefined}
+                sizes="(max-width: 767px) 100vw, 80vw"
+                alt=""
+                aria-hidden="true"
+                loading="eager"
+                decoding="async"
+                draggable={false}
+                onLoad={() => {
+                  if (backdropUrl) markImageLoaded(backdropUrl);
+                  if (isActive) {
+                    setBannerReady(true);
+                    scheduleStaleClear();
+                  }
+                }}
+                onError={() => {
+                  if (isActive) {
+                    setBannerReady(true);
+                    scheduleStaleClear();
+                  }
+                }}
+                ref={(el) => {
+                  if (el && el.complete && el.naturalWidth > 0) {
+                    if (backdropUrl) markImageLoaded(backdropUrl);
+                    if (isActive) {
+                      setBannerReady(true);
+                      scheduleStaleClear();
+                    }
+                  }
+                }}
+              />
+            );
+          })}
+        </>
+        {/* 三联 track 模式：仅拖拽 / 滑动动画期间渲染，绝对定位覆盖在 crossfade 背景之上
+            （.hero-banner__track 加 position:absolute; inset:0; z-index:1）。滑动结束 trackActive=false
+            时仅移除该覆盖层，crossfade 已常驻、当前图已解码 → 切换无缝、无闪烁。 */}
+        {trackActive && (
           /* ── 三联 track 模式 ── */
           <div
             className="hero-banner__track"
@@ -903,75 +976,6 @@ export default function HeroBanner({
               );
             })}
           </div>
-        ) : (
-          /* ── crossfade 模式（默认） ── */
-          <>
-            {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
-            {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
-                新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
-                就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
-                淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
-            {staleLayer && (
-              <img
-                key={`stale-${staleLayer.id}`}
-                className="hero-banner__bg-layer hero-banner__bg-layer--stale"
-                src={staleLayer.url}
-                srcSet={staleLayer.srcSet || undefined}
-                sizes="(max-width: 767px) 100vw, 80vw"
-                alt=""
-                aria-hidden="true"
-                loading="eager"
-                decoding="async"
-                draggable={false}
-              />
-            )}
-            {bgIndices.map((idx) => {
-              const item = displayItems[idx];
-              if (!item) return null;
-              const backdropPath = item.backdropPath || item.backdrop_path || '';
-              const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
-              const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
-              const isActive = idx === displayIndex;
-              // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
-              if (isActive && hideNewLayer) return null;
-              return (
-                <img
-                  key={item.id}
-                  className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}${isActive && suppressFadeInId === item.id ? ' hero-banner__bg-layer--no-anim' : ''}`}
-                  src={backdropUrl}
-                  srcSet={backdropSrcSet || undefined}
-                  sizes="(max-width: 767px) 100vw, 80vw"
-                  alt=""
-                  aria-hidden="true"
-                  loading="eager"
-                  decoding="async"
-                  draggable={false}
-                  onLoad={() => {
-                    if (backdropUrl) markImageLoaded(backdropUrl);
-                    if (isActive) {
-                      setBannerReady(true);
-                      scheduleStaleClear();
-                    }
-                  }}
-                  onError={() => {
-                    if (isActive) {
-                      setBannerReady(true);
-                      scheduleStaleClear();
-                    }
-                  }}
-                  ref={(el) => {
-                    if (el && el.complete && el.naturalWidth > 0) {
-                      if (backdropUrl) markImageLoaded(backdropUrl);
-                      if (isActive) {
-                        setBannerReady(true);
-                        scheduleStaleClear();
-                      }
-                    }
-                  }}
-                />
-              );
-            })}
-          </>
         )}
         <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
 

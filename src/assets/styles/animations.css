@@ -90,12 +90,20 @@
    消除方案 B（每次重新挂载）下「先空白再出现数据」的重进闪烁。
    AppLayout 对再次进入的路由给 .page-transition 打 data-revisit="true"，
    已挂载页面直接以 opacity:1 呈现，不再从透明起播 → 无空白帧、无抖动。
-   首页 .home-page__content 刻意排除（:not）：保持 HeroBanner 等专属过渡，不参与抑制。
    ============================================================ */
-.page-transition[data-revisit="true"] .page-transition-enter:not(.home-page__content),
+.page-transition[data-revisit="true"] .page-transition-enter,
 .page-transition[data-revisit="true"] .page-transition-enter--stagger,
 .page-transition[data-revisit="true"] .page-transition-enter--stagger > * {
   animation: none;
+}
+
+/* 首页：二次进入（data-revisit）时直接以不透明呈现。
+   .home-page__content--delayed-enter 的基础样式是 opacity:0（仅靠动画淡入），
+   只取消动画会让内容永久透明，因此必须显式复位 opacity:1。
+   HeroBanner 是 .home-page__content 的兄弟节点，不受本条影响，其专属过渡保留。 */
+.page-transition[data-revisit="true"] .home-page__content--delayed-enter {
+  animation: none;
+  opacity: 1;
 }
 
 /* 尊重系统「减少动态效果」偏好 */
