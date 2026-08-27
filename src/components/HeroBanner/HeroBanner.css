@@ -82,6 +82,12 @@
   animation-delay: var(--hero-bg-fadein-delay, 0s);
 }
 
+/* track→crossfade 切换瞬间跳过淡入动画（track 已显示该图，crossfade 层以 opacity 1 静态挂载，无缝衔接） */
+.hero-banner__bg-layer--no-anim {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
 /* 分类切换滞留层（旧图垫底）：opacity 1 常驻底层，直至新图淡入完成后由组件移除 */
 .hero-banner__bg-layer--stale {
   opacity: 1;
@@ -90,6 +96,34 @@
 /* 分类切换新层待加载态：新图 onLoad 前保持透明（旧图透过显示），就绪后换 is-active 触发淡入 */
 .hero-banner__bg-layer--pending {
   opacity: 0;
+}
+
+/* ── 三联 track（拖拽/滑动动画）──
+   track 内三张 slide 并排，每张 100% 宽，translateX(-100%) 居中当前图。
+   拖拽时偏移跟随，松手后动画滑出。 */
+.hero-banner__track {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.hero-banner__slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.hero-banner__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 @keyframes heroBgFadeIn {
@@ -108,6 +142,11 @@
 
 .hero-banner__main.slide-right .hero-banner__bg-layer.is-active {
   animation: heroBgSlideRight 0.5s var(--ease-out-expo);
+}
+
+/* 拖拽中：crossfade 层不渲染（由 track 接管），此规则仅保留防御 */
+.hero-banner__main.is-dragging .hero-banner__bg-layer.is-active {
+  animation: none;
 }
 
 @keyframes heroBgSlideLeft {
@@ -163,6 +202,7 @@
   align-items: flex-end;
   padding: var(--space-xl);
   pointer-events: none;
+  overflow: hidden;
 }
 
 .hero-banner__text {
@@ -170,6 +210,98 @@
   flex-direction: column;
   gap: var(--space-sm);
   max-width: 60%;
+  opacity: 0; /* 离屏 slide 默认隐藏，仅当前 / 入场 slide 可见 */
+}
+
+/* 文字 track：与背景图 track 同构（三联 flex 行 + 相同 transform），
+   锚定在 .hero-banner__main（banner 自身区域）内，文字随 banner 物理滑动。 */
+.hero-banner__text-track {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.hero-banner__text-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* 切换中（问题 #3）：文本不做水平位移，保持居中；新文本以 6px 垂直位移错峰淡入出场 */
+.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > * {
+  animation: heroTextIn6 0.45s var(--ease-out-expo) both;
+}
+.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(1) { animation-delay: 0s; }
+.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(2) { animation-delay: 0.06s; }
+.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(3) { animation-delay: 0.12s; }
+.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(4) { animation-delay: 0.18s; }
+
+/* 静止当前文字：始终可见；垂直入场（错峰）仅在允许入场（is-rise）时播，
+   避免「滑动中新文字已入场、落定又重播」的二次抖动。 */
+.hero-banner__text-track:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text {
+  opacity: 1;
+}
+.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > * {
+  animation: heroTextIn 0.5s var(--ease-out-expo) both;
+}
+.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(1) { animation-delay: 0s; }
+.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(2) { animation-delay: 0.08s; }
+.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(3) { animation-delay: 0.16s; }
+.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(4) { animation-delay: 0.24s; }
+
+@keyframes heroTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 切换时文本垂直位移（问题 #3）：位移距离 6px，自下而上错峰淡入 */
+@keyframes heroTextIn6 {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 加载骨架条：复用公共 shimmer 视觉（.thumbnail-skeleton-bg 只提供背景+扫光），
+   尺寸/圆角/宽度由这里提供；height 与对应真实元素的行高对齐。 */
+.hero-banner__skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+.hero-banner__skeleton--title {
+  height: 2.5rem;
+  width: min(60%, 26rem);
+}
+
+.hero-banner__skeleton--meta {
+  height: 1.125rem;
+  width: min(38%, 15rem);
+}
+
+.hero-banner__skeleton--desc {
+  height: 0.875rem;
+  width: min(52%, 22rem);
+}
+
+.hero-banner__skeleton--btn {
+  height: 2.75rem;
+  width: 8rem;
+  border-radius: var(--radius-full);
 }
 
 /* ── Title & Meta ────────────────────────────────────────────────────── */
@@ -276,6 +408,9 @@
   gap: 0;
   justify-content: flex-start;
   flex-shrink: 0;
+  /* 空态/骨架态下无 .hero-banner__main（flex:1）兄弟元素，缩略图列会被排到最左；
+     margin-left:auto 将该列推回右侧，与真实态（main 撑满后无剩余空间、auto 无副作用）完全一致 */
+  margin-left: auto;
   /* 列宽 = 整体宽度的 1/(N+1)，与 aspect-ratio 联动保证每张 16:9（N = --hero-thumb-count） */
   width: calc(100% / (var(--hero-thumb-count, 3) + 1));
   overflow: hidden;
@@ -319,7 +454,7 @@
   height: 100%;
   object-fit: cover;
   opacity: 1;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.2s ease;
 }
 
 /* 缩略图换图交叉淡入（2026-08-13）：旧图垫底（--prev，DOM 先渲染）、
@@ -375,7 +510,7 @@
   opacity: 0;
 }
 
-/* 标题悬浮叠加在图片底部（渐变蒙版保证可读）— 仅激活态显示 */
+/* 标题悬浮叠加在图片底部（渐变蒙版保证可读）— 全部缩略图均显示标题，激活态加粗高亮 */
 .hero-banner__thumb-title {
   position: absolute;
   right: 0;
@@ -387,18 +522,18 @@
   background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 65%, transparent 100%);
   color: #fff;
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.3;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   pointer-events: none;
-  opacity: 0;
+  opacity: 0.7;
   transition: opacity 0.3s ease;
 }
 
-/* 激活态显示标题 */
+/* 激活态高亮标题 */
 .hero-banner__thumb.is-active .hero-banner__thumb-title {
   font-weight: 700;
   opacity: 1;
@@ -410,11 +545,11 @@
   font-size: clamp(var(--text-3xl), 3vw + 1rem, 2.5rem);
 }
 
-/* ── 桌面端（缩略图列可见）：外框圆角 + 首/尾缩略图常显标题 ──
+/* ── 桌面端（缩略图列可见）：外框圆角 ──
    仅在缩略图列显示时（≥1024px）生效：banner 左缘（上/下）圆角 +
-   缩略图列首右上 / 列尾右下圆角，内侧拼接边保持直角，构成整体外框圆角；
-   同时首、尾缩略图常显视频标题（不再仅激活态显示）。
-   注：列尾 = :last-child，3 张布局下即第 3 张，4 张布局下即第 4 张（外框右下角）。 */
+   缩略图列首右上 / 列尾右下圆角，内侧拼接边保持直角，构成整体外框圆角。
+   注：列尾 = :last-child，3 张布局下即第 3 张，4 张布局下即第 4 张（外框右下角）。
+   标题全部显示（非激活态 opacity 0.7、激活态 opacity 1 加粗，见 .hero-banner__thumb-title 规则）。 */
 @media (width >= 1024px) {
   .hero-banner__main {
     border-radius: var(--radius-lg) 0 0 var(--radius-lg);
@@ -427,11 +562,6 @@
   .hero-banner__thumbs > .hero-banner__thumb:last-child {
     border-bottom-right-radius: var(--radius-lg);
   }
-
-  .hero-banner__thumbs > .hero-banner__thumb:first-child .hero-banner__thumb-title,
-  .hero-banner__thumbs > .hero-banner__thumb:last-child .hero-banner__thumb-title {
-    opacity: 1;
-  }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */
@@ -439,6 +569,10 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-banner__bg-layer {
     transition: none !important;
+    animation: none !important;
+  }
+
+  .hero-banner__text {
     animation: none !important;
   }
 
@@ -469,7 +603,6 @@
   .hero-banner {
     height: auto;
     aspect-ratio: 16 / 9;
-    min-height: 28rem;
   }
 
   .hero-banner__main {
@@ -500,7 +633,6 @@
   .hero-banner {
     height: auto;
     aspect-ratio: 16 / 9;
-    min-height: 18rem;
   }
 
   .hero-banner__main {
