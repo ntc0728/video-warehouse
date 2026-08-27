@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.13.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.12.0...kinotv-v1.13.0) (2026-08-27)
+
+
+### Features
+
+* 设置页/首页/Banner/历史页一系列体验修复与样式重构 ([8e156be](https://github.com/ntc0728/video-warehouse/commit/8e156be30264581db978d1063e331e5fef6aca04))
+
+
+### Bug Fixes
+
+* **hero-banner:** 16:9 几何改 aspect-ratio 驱动 + 切分类白隙修复 ([5ed1cc1](https://github.com/ntc0728/video-warehouse/commit/5ed1cc1950b72fe6abfd78f3c039ed02893e2bb5))
+* **hero-banner:** banner/缩略图无缝拼接 + 外框圆角重排 + 首/尾缩略图常显标题 + 切换旧图闪现修复 ([80a95a4](https://github.com/ntc0728/video-warehouse/commit/80a95a47a4a4f7102ea6226464e9e52137fbf8e1))
+* **HeroBanner:** 文本跟随 banner 滑动、回弹隐藏下一张文本、切换改为垂直 6px 位移 ([dd6b05e](https://github.com/ntc0728/video-warehouse/commit/dd6b05efc7fd68b605f8d343e3c2556e3a597c61))
+* **HeroBanner:** 静止入场位移 16px→6px，避免文字压到图片外(容器)再浮入 ([557b896](https://github.com/ntc0728/video-warehouse/commit/557b89622b1969ed9efd649d85fb838e71596c93))
+* 快速连续切换分类时缩略图/卡片封面闪烁修复 ([151c230](https://github.com/ntc0728/video-warehouse/commit/151c2302f2f6f54b16eb7683fbb569093dd4ca58))
+
 ## [1.12.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.11.0...kinotv-v1.12.0) (2026-08-23)
 
 
