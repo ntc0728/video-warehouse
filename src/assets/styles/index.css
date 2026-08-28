@@ -400,6 +400,14 @@ body {
   touch-action: manipulation;
 }
 
+/* 全局去除移动端点击的灰色高亮方块（原生 web 廉价感来源之一）；
+   改由 index.css 已有的 :active 内容缩放反馈提供「按下」感知。
+   -webkit- 前缀覆盖 iOS Safari/WebView，标准属性覆盖其余。 */
+* {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
 /* 主题切换（2026-08-04 终修）：完全瞬切——transition:none。
    根因：此前 theme-transitioning 对 `*` 全量元素做颜色过渡（即使仅 3 属性、200ms），
    Keep-Alive 常驻可见页数百上千元素同时逐帧动画 → 主线程动画压力 → 仍卡顿。

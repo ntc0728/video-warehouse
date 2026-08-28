@@ -53,9 +53,31 @@ export default defineConfig({
         './src/lib/*',
         './src/pages/Home/*',
         './src/pages/Browse/*',
+        // 首页/浏览页直接依赖的共享组件（冷启动 transform 瀑布主因）
+        './src/components/HeroBanner/*',
+        './src/components/TMDBMovieRow/*',
+        './src/components/VideoCard/*',
+        './src/components/CategoryQuickAccess/*',
+        './src/components/LazyImage/*',
+        './src/components/common/*',
+        './src/components/ui/*',
+        './src/hooks/*',
+        './src/types/*',
         './src/assets/styles/index.css',
       ],
     },
+  },
+  // 预打包重型/懒加载依赖：hls.js/dashjs/mpegts.js 仅在懒加载的播放器 chunk 中出现，
+  // 若不预打包，首次访问 /play 等路由会触发 Vite 重新 optimize + 整页 reload 的二次白屏
+  optimizeDeps: {
+    include: [
+      'hls.js', 'dashjs', 'mpegts.js', 'axios', 'idb',
+      'lucide-react', 'zustand', 'sonner',
+      '@radix-ui/react-dialog', '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover',
+      '@radix-ui/react-progress', '@radix-ui/react-switch',
+      '@radix-ui/react-tabs', '@radix-ui/react-tooltip',
+    ],
   },
   build: {
     outDir: 'dist',

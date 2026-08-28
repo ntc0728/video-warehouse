@@ -1,0 +1,196 @@
+/* Demo 页面：页面本体 overflow:hidden，不可下拉；滚动/下拉手势完全交给 PullToRefresh */
+
+.ptr-demo {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--color-background);
+  overflow: hidden;            /* 关键：页面本体不滚动 */
+}
+
+.ptr-demo__bar {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.ptr-demo__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.ptr-demo__title {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.ptr-demo__sub {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.ptr-demo__controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.ptr-demo__seg {
+  display: inline-flex;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.ptr-demo__seg button {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.ptr-demo__seg button.is-on {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.ptr-demo__action {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.ptr-demo__action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ptr-demo__toggle {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ptr-demo__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-2xs) var(--space-md);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.ptr-demo__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.ptr-demo__badge--pulling {
+  color: var(--color-text);
+}
+
+.ptr-demo__badge--armed {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.ptr-demo__badge--refreshing {
+  background: var(--color-primary-light);
+  color: var(--color-info);
+}
+
+.ptr-demo__badge--success {
+  background: var(--color-surface-hover);
+  color: var(--color-success);
+}
+
+.ptr-demo__meta { white-space: nowrap; }
+
+.ptr-demo__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.ptr-demo__card {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.ptr-demo__poster {
+  display: flex;
+  flex: 0 0 96px;            /* 海报宽度：卡片内固定列宽 */
+  align-items: flex-end;
+  aspect-ratio: 3 / 4;       /* 海报高宽比（96 → 128），避免写死 px 高度 */
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ptr-demo__poster-title {
+  color: var(--color-on-image);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.ptr-demo__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  justify-content: center;
+}
+
+.ptr-demo__name {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.ptr-demo__desc {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.ptr-demo__tip {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  text-align: center;
+}

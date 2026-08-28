@@ -39,6 +39,8 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
   const leave = useCallback(() => {
     if (leavingRef.current) return;
     leavingRef.current = true;
+    // 标记 body：触发下方菜单视差归位（与子页右滑同步），强化「返回」层级感
+    document.body.classList.add('settings-subpage--closing');
     setLeaving(true);
     // animationend 兜底：动画被禁用/异常时保证不卡死在子页
     leaveTimerRef.current = setTimeout(onBack, 500);
@@ -46,12 +48,18 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
 
   useEffect(() => () => {
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    // 异常卸载（如路由直接切走）时清掉 body 标记，避免残留影响其它页
+    document.body.classList.remove('settings-subpage--closing');
   }, []);
 
-  // 仅退出动画（--leaving）结束才回调；进入动画的 animationend 忽略
-  const handleAnimationEnd = useCallback(() => {
+  // 仅退出动画（--leaving）结束才回调；进入动画的 animationend 忽略。
+  // 必须校验 e.target 为容器自身：animationend 会冒泡，后代元素动画结束
+  // 也会被此处捕获，若不过滤会在离场途中误触发 onBack 导致子页提前卸载。
+  const handleAnimationEnd = useCallback((e: React.AnimationEvent<HTMLDivElement>) => {
+    if (e.target !== containerRef.current) return;
     if (!leavingRef.current) return;
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    document.body.classList.remove('settings-subpage--closing');
     onBack();
   }, [onBack]);
 

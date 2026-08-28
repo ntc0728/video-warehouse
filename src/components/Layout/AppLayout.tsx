@@ -8,6 +8,7 @@ import StickyHeader, { IMMERSIVE_ROUTES } from '@/components/StickyHeader';
 import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
+import { PullToRefreshProvider, PullToRefreshOverlay } from '@/components/ui/PullToRefresh';
 import './Layout.css';
 import { useSettingsStore, useNavStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
@@ -266,6 +267,7 @@ export default function AppLayout() {
   return (
     <Tooltip.Provider delayDuration={200}>
       <ScrollContainerContext.Provider value={scrollContainerRef}>
+        <PullToRefreshProvider>
         <div
         ref={appShellRef}
         className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell--sidebar-collapsed' : ''}`}
@@ -304,10 +306,12 @@ export default function AppLayout() {
               </div>
             </CustomScrollbar>
             <OverlayScrollbar scrollContainer={scrollContainerRef} />
+            <PullToRefreshOverlay />
           </div>
           {isNative && <TabBar />}
         </div>
       </div>
+        </PullToRefreshProvider>
     </ScrollContainerContext.Provider>
     </Tooltip.Provider>
   );

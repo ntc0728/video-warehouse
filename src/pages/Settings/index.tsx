@@ -8,10 +8,8 @@
  */
 import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
-import { useSmartBack, NAV_FALLBACK_HOME } from '@/lib/navigation';
 import { Modal, Button } from '@/components/ui';
 import SettingsMobileProfile from './SettingsMobileProfile';
 import SettingsTabBar, { SETTINGS_TABS } from './SettingsTabBar';
@@ -29,8 +27,8 @@ import AboutTab from './tabs/AboutTab';
 import ChangelogContent from './components/ChangelogContent';
 import changelog from '../../../CHANGELOG.md?raw';
 import type { SettingsTabKey } from './SettingsTabBar';
-import { Icon } from "@/components/ui/Icon";
 import './Settings.css';
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 // 合法设置 tab（用于 ?tab= 深链校验）
 const SETTINGS_TAB_KEYS: SettingsTabKey[] = [
@@ -48,6 +46,8 @@ export default function SettingsPage() {
   useDocumentTitle();
   // 9.1：桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
   const isDesktop = !useIsMobileLayout();
+  // 下拉刷新（设置页专用变体：页面中间位移出现的圆形刷新按钮）：重新校验并注入源配置
+  usePullToRefresh(() => useSourceManagerStore.getState().bootstrap(), { variant: 'settings' });
   // 深链 tab 惰性初始化：进入 /settings?tab=xxx 首帧即激活目标 tab，
   // 消除「先渲染外观 → useEffect 再切到目标 tab」的闪烁（Keep-Alive 二次进入由下方 useLayoutEffect 兜底）。
   const [activeTab, setActiveTab] = useState<SettingsTabKey>(() => getDeepLinkTab() ?? 'appearance');
@@ -87,9 +87,6 @@ export default function SettingsPage() {
   const handleSubPageBack = useCallback(() => {
     setMobileSubPage(null);
   }, []);
-
-  // 桌面端返回按钮：有历史则浏览器后退，深链（?tab= 直达）兜底回首页
-  const smartBack = useSmartBack(NAV_FALLBACK_HOME);
 
   // ── 离开设置页时关闭移动端子页 portal ─────
   // SettingsSubPage 用 createPortal 挂到 document.body（全屏覆盖层，z-index 60），
@@ -193,12 +190,12 @@ export default function SettingsPage() {
         </SettingsSubPage>
       ) : isDesktop ? (
         <div className="settings-desktop-card">
-          {/* 桌面端顶部栏：左上角返回按钮 + TabBar（sticky 置顶） */}
+          {/* 桌面端顶部栏（方案 D）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar */}
           <div className="settings-desktop-topbar">
-            <button type="button" className="back-btn back-btn--with-text" onClick={smartBack} aria-label="返回">
-              <Icon icon={ArrowLeft} size="sm" />
-              <span>返回</span>
-            </button>
+            <div className="settings-desktop-title">
+              <span className="settings-desktop-title__dot" aria-hidden="true" />
+              <span className="settings-desktop-title__text">设置</span>
+            </div>
             <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
           </div>
           {/* 内容区：访问过的 tab 常驻挂载、display 切换可见性（不再 key 重挂载）。

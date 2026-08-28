@@ -47,10 +47,10 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
-  /* 加载中新图未就绪时垫底深色（与空态占位同源），避免透出卡片浅色底色造成「白隙」 */
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--color-primary, #6c5ce7) 18%, transparent),
-    color-mix(in srgb, var(--color-secondary, #00b894) 12%, transparent));
+  /* 兜底深色（与空态占位同源）：banner 始终为照片，任何图片未就绪/重新解码的
+     透明窗口都应露出深色而非白底，避免「切回页签先闪一下灰白再出图」。
+     此前用浅色渐变，亮色主题下渲染为灰白 → 问题 #3 的根因之一。 */
+  background: #0b0b0e;
   /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
       图片用 object-fit: cover 视觉保持 16:9 */
 }
@@ -102,6 +102,9 @@
    track 内三张 slide 并排，每张 100% 宽，translateX(-100%) 居中当前图。
    拖拽时偏移跟随，松手后动画滑出。 */
 .hero-banner__track {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -174,10 +177,8 @@
 .hero-banner__bg-placeholder {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--color-primary, #6c5ce7) 18%, transparent),
-      color-mix(in srgb, var(--color-secondary, #00b894) 12%, transparent));
+  /* 兜底深色，与 .hero-banner__main 一致（问题 #3） */
+  background: #0b0b0e;
   animation: heroPlaceholderPulse 4s ease-in-out infinite;
   transform-origin: center center;
 }
@@ -190,6 +191,7 @@
 .hero-banner__mask {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
 /* ── Content 叠加（左下） ────────────────────────────────────────────── */
@@ -200,7 +202,10 @@
   z-index: 2;
   display: flex;
   align-items: flex-end;
-  padding: var(--space-xl);
+  /* 边距不再挂在这里：track 是三联 flex 行、靠 translateX 百分比位移，
+     挂在外层容器会让「下一张 slide」在落定/滑入时文本左缘贴到容器外缘（缺少左边距）。
+     边距已下沉到每张 .hero-banner__text-slide 自身，与 track transform 解耦。 */
+  padding: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -210,7 +215,9 @@
   flex-direction: column;
   gap: var(--space-sm);
   max-width: 60%;
-  opacity: 0; /* 离屏 slide 默认隐藏，仅当前 / 入场 slide 可见 */
+  /* 始终可见：文本不再有出场/垂直入场动画（问题 #1）；滑动期间随 banner 一起水平位移，
+     由 .hero-banner__text-track 的 transform 驱动（见 textTrackStyle / textTrackIndices）。 */
+  opacity: 1;
 }
 
 /* 文字 track：与背景图 track 同构（三联 flex 行 + 相同 transform），
@@ -229,52 +236,15 @@
   height: 100%;
   display: flex;
   align-items: flex-end;
+  /* 边距下沉到每张 slide：无论 track 怎么 translateX 位移，文本始终自带
+     左/下边距，下一张 banner 落定或滑入时都不会出现「左下角贴边、缺少边距」。 */
+  padding: var(--space-xl);
 }
 
-/* 切换中（问题 #3）：文本不做水平位移，保持居中；新文本以 6px 垂直位移错峰淡入出场 */
-.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > * {
-  animation: heroTextIn6 0.45s var(--ease-out-expo) both;
-}
-.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(1) { animation-delay: 0s; }
-.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(2) { animation-delay: 0.06s; }
-.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(3) { animation-delay: 0.12s; }
-.hero-banner__text-track.is-switching .hero-banner__text-slide--current .hero-banner__text > *:nth-child(4) { animation-delay: 0.18s; }
-
-/* 静止当前文字：始终可见；垂直入场（错峰）仅在允许入场（is-rise）时播，
-   避免「滑动中新文字已入场、落定又重播」的二次抖动。 */
-.hero-banner__text-track:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text {
-  opacity: 1;
-}
-.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > * {
-  animation: heroTextIn 0.5s var(--ease-out-expo) both;
-}
-.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(1) { animation-delay: 0s; }
-.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(2) { animation-delay: 0.08s; }
-.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(3) { animation-delay: 0.16s; }
-.hero-banner__text-track.is-rise:not(.is-sliding) .hero-banner__text-slide--current .hero-banner__text > *:nth-child(4) { animation-delay: 0.24s; }
-
-@keyframes heroTextIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 切换时文本垂直位移（问题 #3）：位移距离 6px，自下而上错峰淡入 */
-@keyframes heroTextIn6 {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* 文字始终可见（opacity:1），不再有出场/垂直入场动画（问题 #1）。
+   滑动（slideAnim）期间文字 track 复用背景图 track 的索引 [prev, current(old), next]
+   并镜像其 transform（forward→-200% / backward→0%），物理跟随 banner 一起水平滑动；
+   静止/拖拽/回弹态仍由 textTrackStyle 驱动位移。详见 HeroBanner.tsx。 */
 
 /* 加载骨架条：复用公共 shimmer 视觉（.thumbnail-skeleton-bg 只提供背景+扫光），
    尺寸/圆角/宽度由这里提供；height 与对应真实元素的行高对齐。 */
@@ -376,25 +346,25 @@
   padding: var(--space-sm) var(--space-lg);
   border: none;
   border-radius: var(--radius-full);
-  background: #fff;
-  color: #000;
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
   font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, opacity 0.2s;
 }
 
 .hero-banner__cta:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--color-surface-hover);
 }
 
 .hero-banner__cta--continue {
-  background: #e53935;
-  color: #fff;
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
 }
 
 .hero-banner__cta--continue:hover {
-  background: #c62828;
+  filter: brightness(0.9);
 }
 
 /* ── 右侧缩略图列（桌面端） ──
