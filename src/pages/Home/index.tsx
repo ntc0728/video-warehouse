@@ -26,6 +26,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 import './Home.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -58,6 +59,15 @@ export default function HomePage() {
   const loadCategory = useHomeCategoryStore((s) => s.loadCategory);
   const deferredCategory = useDeferredValue(activeCategory);
   const isCategoryView = deferredCategory !== 'home';
+
+  // 下拉刷新：首页视图拉取全部首页数据；类目视图拉取当前类目数据
+  usePullToRefresh(() => {
+    if (activeCategory !== 'home') {
+      loadCategory(activeCategory);
+    } else {
+      void useTMDBStore.getState().fetchAllHomeData();
+    }
+  });
 
   // 注：isMobile / isTV 已下沉至 CategoryView 子组件（back/front 各需独立实例）。
 
@@ -283,11 +293,18 @@ export default function HomePage() {
   // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出，同时内容/hero 以
   // 200ms 延迟同步淡入——交叉淡化，无空白窗口）→ done（覆盖层卸载，内容自由渲染）。
   // 冷加载路径（pageLoading=true）由上方 isInitialLoading 分支直接返回，本段不生效。
-  const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>('skeleton');
+  const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>(
+    () => (hasAnyData ? 'done' : 'skeleton'),
+  );
   useEffect(() => {
+    // 方案 B 二次进入（已访问路由，AppLayout data-revisit）：初始即 done，
+    // 跳过 800ms 骨架覆盖层，内容立即呈现；t1 因函数式守卫直接 no-op。
     const SHOW_MS = 200;
     const FADE_MS = 600;
-    const t1 = window.setTimeout(() => setEnterPhase('fading'), SHOW_MS);
+    const t1 = window.setTimeout(
+      () => setEnterPhase((p) => (p === 'done' ? p : 'fading')),
+      SHOW_MS,
+    );
     const t2 = window.setTimeout(() => setEnterPhase('done'), SHOW_MS + FADE_MS);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
   }, []);
@@ -518,14 +535,16 @@ function CategoryView({ catKey, animateEnter, enterPhase }: { catKey: HomeCatego
       <div className={`home-page__content${animateEnter ? ' page-transition-enter home-page__content--delayed-enter' : ' home-page__content--delayed-enter'}`}>
         <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
         {!isCat && (userDataLoading || continueItems.length > 0) && (
-          <TMDBMovieRow
-            title="继续观看"
-            items={[]}
-            continueMode
-            continueItems={continueItems}
-            isLoading={userDataLoading}
-            skipAnimations
-          />
+          <div className="home-continue-row">
+            <TMDBMovieRow
+              title="继续观看"
+              items={[]}
+              continueMode
+              continueItems={continueItems}
+              isLoading={userDataLoading}
+              skipAnimations
+            />
+          </div>
         )}
         <div className="home-rows">
           {/* 行以槽位索引为 key：分类切换时 7 行实例存活（仅 title/items 更新），

@@ -88,6 +88,8 @@
   contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
+  /* 禁用浏览器原生下拉刷新 / 滚动到边界的橡皮筋回弹（移动端 web 与 app 统一生效） */
+  overscroll-behavior: none;
   /* 允许焦点方框（outline）向外溢出最多 8px 仍被绘制，避免聚焦元素贴边时
      方框被 overflow 裁切（表现为「方框被裁 / 只剩一个小圆点」，
      在非 TV 模式无过扫描安全区缓冲时尤为明显、方框贴顶显得「位置偏高」）。
@@ -122,9 +124,6 @@
 [data-device="app"] .page-transition {
   /* 原生 App 底部 TabBar 遮挡滚动内容，预留底部安全区 */
   padding-bottom: var(--layout-tabbar-height);
-}
-[data-device="app"] .app-shell .app-shell__scroll {
-  overscroll-behavior: none;
 }
 
 .sidebar-header {

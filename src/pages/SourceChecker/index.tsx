@@ -14,6 +14,7 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 
 import './SourceChecker.css';
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 type TabKey = 'network' | 'iptv' | 'video' | 'iptvProxy' | 'videoProxy';
 
@@ -337,6 +338,9 @@ export default function SourceCheckerPage() {
       setIsBatchChecking(false);
     }
   }, [isBatchChecking, checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy]);
+
+  // 下拉刷新：一键重新检测所有源
+  usePullToRefresh(() => handleCheckAll(), { meta: () => '全部检测' });
 
   const handleCheck = useCallback(async (tab: TabKey) => {
     setCheckingTabs((prev) => new Set(prev).add(tab));

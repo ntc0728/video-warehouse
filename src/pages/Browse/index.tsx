@@ -33,6 +33,7 @@ import BrowseLoadMore from './BrowseLoadMore';
 import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
 import { Icon } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 type SearchMode = 'smart' | 'cms';
 
@@ -93,6 +94,23 @@ export default function BrowsePage() {
     isLoading,
     error,
   } = useBrowseData(query);
+
+  // 下拉刷新：智能检索重跑当前筛选；直链搜索重跑当前关键词；meta 记录当前搜索/分类参数
+  usePullToRefresh(() => {
+    if (searchMode === 'cms') {
+      searchCMS(query);
+    } else {
+      refreshNow();
+    }
+  }, {
+    meta: () => {
+      const q = (searchParams.get('q')?.trim()) || query.trim();
+      const category = searchParams.get('category')?.trim();
+      if (q) return `搜索: ${q}`;
+      if (category) return `分类: ${category}`;
+      return undefined;
+    },
+  });
 
   // ── CMS 数据（直链搜索）─────────────────────────
   const {

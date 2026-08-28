@@ -71,7 +71,7 @@
 
 .video-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .video-card:active { transform: scale(0.98); }
@@ -157,7 +157,7 @@
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.72);
-  color: #f5c518;
+  color: var(--color-rating);
   font-size: var(--text-xs);
   font-weight: 600;
   line-height: 1;

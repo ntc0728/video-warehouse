@@ -323,7 +323,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-18 校准）。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-18 校准）；表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
@@ -369,6 +369,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |
 | `src/stores/useSettingsStore.ts` | settings + source-checker | 29 |
 | `src/stores/useUserStore.ts` | collections + history | 12 |
+| `src/components/ui/PullToRefresh/` | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx` | 4 |
 
 > 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已归档到 `scripts/backup-specs/`（gitignore 忽略，不参与测试），映射表中不再引用。`scripts/backup-specs/` 中的 308 个用例不进入 `npx playwright test` 的默认执行（见「测试基建修复」）。
 

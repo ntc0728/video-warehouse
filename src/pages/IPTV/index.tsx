@@ -31,6 +31,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import './IPTV.css';
 import { Icon } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 /** 防抖 Hook：延迟更新值，避免频繁触发搜索过滤 */
 const MAX_VISIBLE_SOURCES = 6;
@@ -114,6 +115,9 @@ export default function IPTVPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('iptv');
+
+  // 下拉刷新：重新拉取 IPTV 频道列表
+  usePullToRefresh(() => useIPTVStore.getState().refreshChannels());
 
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };

@@ -13,6 +13,7 @@ import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { type TimelineItem } from '@/components/ui';
 import { Icon } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 import RecordShell, { type RecordStatusTab } from '@/components/RecordShell';
 import RecordFilterPanel from '@/components/RecordFilterPanel';
 import { RecordCard, type RecordCardItem } from '@/components/RecordCard';
@@ -224,6 +225,9 @@ export default function HistoryPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('history', undefined, true, { restoreFrom: ['play'] });
+
+  // 下拉刷新：从 IndexedDB 重新读取观看历史
+  usePullToRefresh(() => useUserStore.getState().reload());
 
   // backdrop 自动补全（视频卡展示时启用：综合/视频 tab）
   useBackdropLoader(watchHistory, mainTab !== 'iptv');

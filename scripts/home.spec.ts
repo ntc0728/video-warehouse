@@ -124,18 +124,24 @@ test.describe('1.2 HeroBanner 交互', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
 
-    // 操作: 点击 Banner 上的 CTA 按钮（"立即播放"或"查看详情"）
-    const ctaBtn = page.locator('.hero-banner__cta, [class*="hero-banner__cta"]').first();
-    if (await ctaBtn.isVisible().catch(() => false)) {
-      await ctaBtn.click();
-      await page.waitForTimeout(1000);
-      // 预期结果: 跳转到 /detail/{id}
-      const url = page.url();
-      expect(url).toContain('/detail/');
-      console.log(`✅ HOME-011 通过: Banner CTA 点击正确跳转详情页 (URL = ${url})`);
-    } else {
-      console.log('⚠️ HOME-011: HeroBanner CTA 按钮不可见');
+    // 操作: 点击 Banner 上的「查看详情」CTA
+    // 轮播会自动切换条目并重建文字子树（key 变化），Playwright 坐标点击可能在重建瞬间
+    // 命中已卸载节点而丢失；改用原生 el.click() 重试，命中即跳转。
+    let ok = false;
+    for (let i = 0; i < 12 && !ok; i += 1) {
+      const target = page
+        .locator('.hero-banner__cta:not(.hero-banner__cta--continue)')
+        .filter({ visible: true })
+        .first();
+      if (await target.count()) {
+        await target.evaluate((el) => el.click()).catch(() => {});
+      }
+      await page.waitForTimeout(400);
+      ok = page.url().includes('/detail/');
     }
+    const url = page.url();
+    expect(url).toContain('/detail/');
+    if (ok) console.log(`✅ HOME-011 通过: Banner CTA 点击正确跳转详情页 (URL = ${url})`);
   });
 
   test('HOME-012: 缩略图点击跳转详情页', async ({ page }) => {

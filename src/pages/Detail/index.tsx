@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import './Detail.css';
 import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 // ── 常量 ──────────────────────────────────────────────
 
@@ -171,6 +172,10 @@ export default function DetailPage() {
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
   const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
+  // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）
+  const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
+  usePullToRefresh(() => setPullRefreshNonce((n) => n + 1));
+  const prevDetailIdRef = useRef<string | undefined>(undefined);
 
   const [tmdbLoading, setTmdbLoading] = useState(true);
   const [tmdbDetail, setTmdbDetail] = useState<TMDBMovieDetail | TMDBTVShowDetail | null>(null);
@@ -338,9 +343,9 @@ export default function DetailPage() {
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null); setTmdbDetail(null); setBgLoaded(false);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
-    setActiveTab('info');
+    if (prevDetailIdRef.current !== id) { setActiveTab('info'); prevDetailIdRef.current = id; }
 
-    const cached = id.startsWith('tmdb-') ? readDetailCache(id) : null;
+    const cached = pullRefreshNonce === 0 && id.startsWith('tmdb-') ? readDetailCache(id) : null;
     if (cached?.tmdbDetail) {
       setTmdbMediaType(cached.tmdbMediaType);
       setTmdbDetail(cached.tmdbDetail);
@@ -370,7 +375,7 @@ export default function DetailPage() {
     })();
 
     return () => ctrl.abort();
-  }, [id]);
+  }, [id, pullRefreshNonce]);
 
   // ── CMS 按需加载 ─────────────────────────────
   const fetchCMSSources = useCallback(async () => {
@@ -475,8 +480,9 @@ export default function DetailPage() {
   // 而非从 tmdbDetail.images 提取。
   useEffect(() => {
     if (!id || !id.startsWith('tmdb-')) return;
-    // 方案 B 缓存回显：detail → /play → detail 返回时直接恢复剧照，不重新请求
-    const cached = readDetailCache(id);
+    // 方案 B 缓存回显：detail → /play → detail 返回时直接恢复剧照，不重新请求；
+    // 下拉刷新（nonce>0）时绕过缓存，强制重新拉取剧照。
+    const cached = pullRefreshNonce === 0 ? readDetailCache(id) : null;
     if (cached?.stills?.length) {
       setStills(cached.stills);
       setStillsLoading(false);
@@ -516,7 +522,7 @@ export default function DetailPage() {
       });
 
     return () => ctrl.abort();
-  }, [id]);
+  }, [id, pullRefreshNonce]);
 
   // ── 收藏 ──────────────────────────────────────
   const collected = id ? isCollected(id) : false;
