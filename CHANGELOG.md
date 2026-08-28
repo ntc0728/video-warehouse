@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.13.0...kinotv-v1.14.0) (2026-08-28)
+
+
+### Features
+
+* 本地 PullToRefresh 黑白配色+方案C光晕、设备调试修复、免责声明左对齐及全站样式/组件重构 ([f46c36b](https://github.com/ntc0728/video-warehouse/commit/f46c36ba57c74e47192aa4146b1bb4b46d4fcf4b))
+
 ## [1.13.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.12.0...kinotv-v1.13.0) (2026-08-27)
 
 
