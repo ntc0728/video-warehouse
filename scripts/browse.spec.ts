@@ -23,9 +23,6 @@ test.describe('2.1 搜索模式切换', () => {
     if (await smartTab.isVisible().catch(() => false)) {
       const isActive = await smartTab.evaluate(el => el.classList.contains('active'));
       expect(isActive).toBe(true);
-      console.log('✅ BROWSE-001 通过: 默认选中智能检索模式');
-    } else {
-      console.log('⚠️ BROWSE-001: 搜索 Tab 未检测到');
     }
   });
 
@@ -43,9 +40,6 @@ test.describe('2.1 搜索模式切换', () => {
       // 预期结果: 切换到 CMS 搜索模式
       const isActive = await cmsTab.evaluate(el => el.classList.contains('active'));
       expect(isActive).toBe(true);
-      console.log('✅ BROWSE-002 通过: 成功切换到直链搜索模式');
-    } else {
-      console.log('⚠️ BROWSE-002: 直链搜索 Tab 未检测到');
     }
   });
 });
@@ -71,9 +65,6 @@ test.describe('2.2 搜索功能', () => {
       const hasResults = await page.evaluate(() => {
         return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
       });
-      console.log(`✅ BROWSE-010 检查完成: 搜索结果 = ${hasResults}`);
-    } else {
-      console.log('⚠️ BROWSE-010: 搜索框未检测到');
     }
   });
 
@@ -94,9 +85,6 @@ test.describe('2.2 搜索功能', () => {
       if (await clearBtn.isVisible().catch(() => false)) {
         await clearBtn.click();
         await page.waitForTimeout(2000);
-        console.log('✅ BROWSE-012 通过: 清空搜索词后恢复默认结果');
-      } else {
-        console.log('⚠️ BROWSE-012: 清除按钮未检测到');
       }
     }
   });
@@ -117,9 +105,6 @@ test.describe('2.2 搜索功能', () => {
       const isEmpty = await page.evaluate(() => {
         return !!document.querySelector('.empty-state, [class*="empty"]');
       });
-      console.log(`✅ BROWSE-013 检查完成: 空状态显示 = ${isEmpty}`);
-    } else {
-      console.log('⚠️ BROWSE-013: 搜索框未检测到');
     }
   });
 
@@ -143,9 +128,6 @@ test.describe('2.2 搜索功能', () => {
       // 预期结果: 顶部搜索框为空（不残留上次搜索词）
       const inputValue = await searchInput.inputValue();
       expect(inputValue).toBe('');
-      console.log('✅ BROWSE-014 通过: 刷新后搜索框已清空');
-    } else {
-      console.log('⚠️ BROWSE-014: 搜索框未检测到');
     }
   });
 });
@@ -163,7 +145,6 @@ test.describe('2.3 筛选与排序', () => {
     // 预期结果: FilterBar 存在
     const filterBar = page.locator('.filter-bar, [class*="filter"]');
     const hasFilter = await filterBar.isVisible().catch(() => false);
-    console.log(`✅ BROWSE-020 检查完成: FilterBar 存在 = ${hasFilter}`);
   });
 
   test('BROWSE-023: 排序切换', async ({ page }) => {
@@ -174,7 +155,6 @@ test.describe('2.3 筛选与排序', () => {
     // 预期结果: 排序栏存在
     const sortBar = page.locator('.browse-sort-bar, [class*="sort"]');
     const hasSort = await sortBar.isVisible().catch(() => false);
-    console.log(`✅ BROWSE-023 检查完成: 排序栏存在 = ${hasSort}`);
   });
 
   test('BROWSE-025: 结果总数显示', async ({ page }) => {
@@ -186,9 +166,6 @@ test.describe('2.3 筛选与排序', () => {
     const countEl = page.locator('.browse-sort-bar__count, [class*="count"]');
     if (await countEl.isVisible().catch(() => false)) {
       const text = await countEl.textContent();
-      console.log(`✅ BROWSE-025 通过: 结果数显示 = "${text}"`);
-    } else {
-      console.log('⚠️ BROWSE-025: 结果数未显示');
     }
   });
 });
@@ -220,10 +197,7 @@ test.describe('2.4 CMS 直链搜索', () => {
         const hasIndicator = await page.evaluate(() => {
           return !!document.querySelector('[class*="source-status"], [class*="indicator"]');
         });
-        console.log(`✅ BROWSE-030 检查完成: CMS 搜索源状态指示器 = ${hasIndicator}`);
       }
-    } else {
-      console.log('⚠️ BROWSE-030: 直链搜索 Tab 未检测到');
     }
   });
 });
@@ -245,11 +219,6 @@ test.describe('2.5 懒加载与滚动', () => {
 
     // 预期结果: 回到顶部按钮可见
     const backToTop = page.locator('.back-to-top-button');
-    if (await backToTop.isVisible().catch(() => false)) {
-      console.log('✅ BROWSE-043 通过: 返回顶部按钮显示');
-    } else {
-      console.log('⚠️ BROWSE-043: 返回顶部按钮未显示');
-    }
   });
 });
 
@@ -278,10 +247,7 @@ test.describe('2.6 页面状态', () => {
         // 预期结果: 显示"复仇者 - 搜索 - kinoTV"
         const title = await page.title();
         expect(title).toContain('搜索');
-        console.log(`✅ BROWSE-053 通过: CMS 搜索标题 = "${title}"`);
       }
-    } else {
-      console.log('⚠️ BROWSE-053: 直链搜索 Tab 未检测到');
     }
   });
 });
@@ -313,7 +279,6 @@ test.describe('2.7 移动端搜索', () => {
     await page.locator('.sticky-header .search-box__submit').first().click();
     await page.waitForTimeout(1500);
     expect(searchReqs.length).toBeGreaterThanOrEqual(1);
-    console.log(`✅ BROWSE-060 第一次搜索已调用接口 (请求数=${searchReqs.length})`);
 
     // 在 /browse 上更换搜索词再次搜索：mobile-b（路由切换后 SearchBox 因 key 重建，需重新定位）
     const input2 = page.locator('.sticky-header .search-box__input').first();
@@ -322,7 +287,6 @@ test.describe('2.7 移动端搜索', () => {
     await page.locator('.sticky-header .search-box__submit').first().click();
     await page.waitForTimeout(1500);
     expect(searchReqs.length).toBeGreaterThan(before);
-    console.log(`✅ BROWSE-060 更换搜索词后再次调用接口 (请求数=${searchReqs.length})`);
   });
 });
 
@@ -366,7 +330,6 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     await expect(page.locator('.bmb-mode-seg .bmb-seg').first()).toBeVisible();
     await expect(page.locator('.bmb-filter-trigger')).toBeVisible();
 
-    console.log('✅ BROWSE-070 通过: 移动端命令栏渲染且 CSS 已加载（display=flex）');
   });
 
   test('BROWSE-071: 点击「筛选」打开右滑全屏面板，可关闭', async ({ page }) => {
@@ -391,7 +354,6 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     await page.locator('.drawer-close').click();
     await expect(page.locator('.drawer-content').first()).toBeHidden({ timeout: 5000 });
 
-    console.log('✅ BROWSE-071 通过: 筛选面板可打开/关闭');
   });
 
   test('BROWSE-072: 移动端模式切换（智能↔直链）生效', async ({ page }) => {
@@ -420,7 +382,6 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     // 结果区仍在
     await expect(page.locator('.browse-card--results').first()).toBeVisible();
 
-    console.log('✅ BROWSE-072 通过: 移动端模式切换生效，且直链模式隐藏排序/筛选入口');
   });
 
   test('BROWSE-073: 暗色主题下激活态文字为纯白 #fff（与桌面端 browse-search-tab.active 一致）', async ({ page }) => {
@@ -436,7 +397,6 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
 
     // 移动端激活模式 tab 文本色已统一为硬编码 #fff，与桌面端 .browse-search-tab.active 一致
     expect(activeColor.toLowerCase()).toBe('rgb(255, 255, 255)');
-    console.log(`✅ BROWSE-073 通过: 激活态文字色 = ${activeColor}（= #fff，与桌面端一致）`);
   });
 });
 
@@ -453,7 +413,6 @@ test.describe('2.8 移动端命令栏 — 桌面回归守卫', () => {
     // 桌面搜索 Tab 正常渲染
     await expect(page.locator('.browse-search-tab').first()).toBeVisible();
 
-    console.log('✅ BROWSE-074 通过: 桌面宽视口不渲染移动端命令栏');
   });
 });
 
@@ -507,7 +466,6 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
       .evaluate((el) => getComputedStyle(el).overflowY);
     expect(resultsOverflowY).not.toBe('auto');
 
-    console.log(`✅ BROWSE-075 通过: 移动端双卡片相连（命令栏/结果区均带 surface 边框圆角阴影），根容器 overflow=${overflow} 不裁切滚动`);
   });
 
   test('BROWSE-076: 移动端整页 AppLoading（--inline 变体带卡片外壳）正常渲染', async ({ page }) => {
@@ -548,7 +506,6 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     expect(style.border).not.toBe('0px');
     expect(style.br).not.toBe('0px');
     expect(style.shadow).not.toBe('none');
-    console.log(`✅ BROWSE-076 通过: 移动端整页 AppLoading（--inline 带卡片 border=${style.border}）正常渲染`);
   });
 
   test('BROWSE-077: 移动端结果区 AppLoading 被去壳（不卡片套卡片，与桌面端一致）', async ({ page }) => {
@@ -572,7 +529,6 @@ test.describe('2.8 移动端命令栏 — 整页卡片', () => {
     // 结果区已落在 .browse-card--results 卡内，AppLoading 自身卡片应被剥去（border-top=0）
     const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
     expect(border).toBe('0px');
-    console.log(`✅ BROWSE-077 通过: 移动端结果区 AppLoading 被去壳（border-top-width=${border}），不卡片套卡片`);
   });
 });
 
@@ -618,7 +574,6 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
       expect(display).toBe('none');
     }
 
-    console.log(`✅ BROWSE-078 通过: 命令栏两行（模式居中 justify=${modeJustify}，筛选/结果数 space-between justify=${barJustify}），筛选按钮高 ${triggerH}px，SortBar 移动端隐藏`);
   });
 
   test('BROWSE-079: 全屏筛选面板顶栏三栏（返回/标题居中/重置）+ 排序分组 + 完成制草稿', async ({ page }) => {
@@ -667,7 +622,6 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
     await drawer.locator('.bmb-pf-apply').click();
     await expect(drawer).toBeHidden({ timeout: 5000 });
 
-    console.log(`✅ BROWSE-079 通过: 面板顶栏三栏齐全，排序分组存在（${await sortChips.count()} 项），面板内改筛选零请求（req=${reqBefore}→${tmdbReq}），完成制生效`);
   });
 
   test('BROWSE-080: 已选轨（rail）无左右 padding，命令栏下方无预设横滚（与 S3 示例一致）', async ({ page }) => {
@@ -698,9 +652,6 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
       });
       expect(padding.left).toBe('0px');
       expect(padding.right).toBe('0px');
-      console.log(`✅ BROWSE-080 通过: rail 左右 padding=${padding.left}/${padding.right}（应为 0），顶部 padding=${padding.top}`);
-    } else {
-      console.log('⚠️ BROWSE-080: 未生成已选轨（无选中条件），跳过 padding 断言');
     }
   });
 });

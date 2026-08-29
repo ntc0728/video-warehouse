@@ -302,7 +302,7 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // 首页 8 区块内存缓存 TTL：60 分钟（数据全满时仍会过期静默刷新）
 export const HOME_TTL_MS = 60 * 60 * 1000;
 
-// ── 首页 8 区块 localStorage 持久化（对齐 useHomeCategoryStore 的 24h 策略）────────
+// ── 首页 8 区块 localStorage 持久化 ───────────────────────────
 // 冷启动（刷新页面）时先读 LS 立即展示旧数据（stale-while-revalidate），
 // 再按内存 TTL（60min）决定何时静默刷新。LS 本身带 24h 新鲜度校验，
 // 超过 24h 的缓存视为失效直接丢弃（避免展示过旧数据）。

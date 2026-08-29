@@ -21,9 +21,6 @@ test.describe('9.1 网速检测', () => {
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
     if (await checkBtn.isVisible().catch(() => false)) {
       const text = await checkBtn.textContent();
-      console.log(`✅ CHK-001 通过: 网速检测按钮文本 = "${text}"`);
-    } else {
-      console.log('⚠️ CHK-001: 检测按钮未检测到');
     }
   });
 
@@ -42,9 +39,6 @@ test.describe('9.1 网速检测', () => {
       const isChecking = await page.evaluate(() => {
         return !!document.querySelector('.checking-spinner, [class*="checking"]');
       });
-      console.log(`✅ CHK-004 检查完成: 检测中状态 = ${isChecking}`);
-    } else {
-      console.log('⚠️ CHK-004: 检测按钮未检测到');
     }
   });
 });
@@ -64,9 +58,6 @@ test.describe('9.6 Tab 与统计', () => {
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
-      console.log(`✅ CHK-050 通过: Tab 数量 = ${count}，内容 = [${tabTexts.map(t => t.trim()).join(', ')}]`);
-    } else {
-      console.log('⚠️ CHK-050: Tab 未检测到');
     }
   });
 
@@ -81,9 +72,6 @@ test.describe('9.6 Tab 与统计', () => {
       const isActive = await firstTab.evaluate(el => el.classList.contains('active'));
       const text = await firstTab.textContent();
       expect(isActive).toBe(true);
-      console.log(`✅ CHK-051 通过: 默认 Tab = "${text?.trim()}"`);
-    } else {
-      console.log('⚠️ CHK-051: Tab 未检测到');
     }
   });
 
@@ -95,6 +83,5 @@ test.describe('9.6 Tab 与统计', () => {
     // 预期结果: 统计卡片存在
     const statCards = page.locator('.stat-card, [class*="stat-card"]');
     const count = await statCards.count();
-    console.log(`✅ CHK-052 检查完成: 统计卡片数量 = ${count}`);
   });
 });

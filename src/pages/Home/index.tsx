@@ -72,12 +72,6 @@ export default function HomePage() {
 
   useHeaderContent({ immersive: true });
 
-  // ── 类目切换过渡：让整页图片（行海报、快捷分类）参与淡入 ─────────
-  // 注：类目切换不再对整页内容做 opacity 淡入（home-cat-fade）。
-  // 此前该淡入会让所有 .tmdb-movierow 容器（卡片盒）一起从 opacity:0 淡入，
-  // 表现为「容器整体闪烁」。容器盒保持常驻不透明，图片由 LazyImage 的
-  // blur-up / 会话缓存命中做平滑过渡，类目切换不再有容器闪跳。
-
   // 从设置 store 获取 TMDB Access Token
   const tmdbAccessToken = useSettingsStore((s) => s.tmdbAccessToken);
 
@@ -417,7 +411,7 @@ export default function HomePage() {
           initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
         />
         <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-          <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
+          <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
           {(userDataLoading || continueItems.length > 0) && (
             <div className="home-continue-row">
               <TMDBMovieRow

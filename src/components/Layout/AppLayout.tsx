@@ -44,11 +44,11 @@ function LoadingFallback() {
  * 路由渲染器（方案 B：无 Keep-Alive，每次路由切换重新挂载页面组件）
  *
  * 路由切换时旧页面卸载、新页面挂载：数据回显依赖各页面的 store 缓存
- * （useTMDBStore TTL / useHomeCategoryStore / sourceManager 幂等 bootstrap /
- * IndexedDB 读取），组件内部状态（tab、筛选、滚动等）随卸载重置。
+ * （useTMDBStore TTL / sourceManager 幂等 bootstrap / IndexedDB 读取），
+ * 组件内部状态（tab、筛选、滚动等）随卸载重置。
  *
- * memo 包裹：AppLayout 因侧边栏折叠/展开等状态变化而重渲染时，
- * Component 引用在 routeComponentMap 中稳定 → 已挂载页面不被牵连重渲染。
+ * memo 包裹：AppLayout 因顶栏状态等变化而重渲染时，Component 引用在
+ * routeComponentMap 中稳定 → 已挂载页面不被牵连重渲染。
  */
 const RouteRenderer = memo(function RouteRenderer({ Component }: { Component: ComponentType }) {
   return <Component />;

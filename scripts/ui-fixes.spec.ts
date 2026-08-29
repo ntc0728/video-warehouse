@@ -42,7 +42,6 @@ test.describe('桌面端', () => {
     expect(page.url()).toContain('/browse');
     const url = new URL(page.url());
     expect(url.searchParams.get('category')).toBe('movie');
-    console.log('✅ UI-001 通过: 桌面显示分类快选且点击跳转 /browse?category=movie');
   });
 
   test('UI-010: 桌面顶栏最右侧头像+用户名入口，点击进入个人设置', async ({ page }) => {
@@ -77,7 +76,6 @@ test.describe('桌面端', () => {
       [...document.querySelectorAll('.sticky-header__nav-item')].map((el) => (el as HTMLElement).title || (el as HTMLElement).textContent?.trim() || ''),
     );
     expect(topNavTitles.join(' ')).toContain('设置');
-    console.log('✅ UI-002 通过: 桌面无左侧栏，顶栏含设置入口');
   });
 });
 

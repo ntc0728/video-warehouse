@@ -25,7 +25,6 @@ test.describe('9.1 冷启动与首屏', () => {
     await expect(page.locator('#root > *').first()).toBeVisible({ timeout: 15000 });
     const html = await page.evaluate(() => document.querySelector('#root')?.innerHTML ?? '');
     expect(html.length).toBeGreaterThan(0);
-    console.log('✅ FIX-101 通过: #root 非空，无 render 前白屏窗口');
   });
 
   test('FIX-102: 封面图加载失败显示主题兜底（非黑色块）', async ({ page }) => {
@@ -50,7 +49,6 @@ test.describe('9.1 冷启动与首屏', () => {
         page.locator('.lazy-image-fallback__brand').first()
       ).toHaveText('kinoTV');
     }
-    console.log(`✅ FIX-102 通过: fallback=${fallbackCount} loading=${loadingCount}`);
   });
 });
 
@@ -62,7 +60,6 @@ test.describe('9.1 app 端适配', () => {
     await page.waitForSelector('.sticky-header', { timeout: 15000 });
     const menuBtnCount = await page.locator('.sticky-header__menu-btn').count();
     expect(menuBtnCount).toBe(0);
-    console.log('✅ FIX-103a 通过: app 端无汉堡按钮');
   });
 
   test('FIX-103b: web 手机端保留汉堡按钮', async ({ page }) => {
@@ -71,7 +68,6 @@ test.describe('9.1 app 端适配', () => {
     await page.waitForSelector('.sticky-header', { timeout: 15000 });
     const menuBtnCount = await page.locator('.sticky-header__menu-btn').count();
     expect(menuBtnCount).toBe(1);
-    console.log('✅ FIX-103b 通过: web 手机端汉堡按钮保留');
   });
 
   test('FIX-104: app 横屏保持移动布局（--card-cols 不变）', async ({ page }) => {
@@ -87,7 +83,6 @@ test.describe('9.1 app 端适配', () => {
     // app 端不渲染桌面侧边栏
     const sidebarCount = await page.locator('.home-sidebar').count();
     expect(sidebarCount).toBe(0);
-    console.log(`✅ FIX-104 通过: 横屏 --card-cols=${cardCols}，无桌面侧边栏`);
   });
 
   test('FIX-105: app 端 IPTV 播放页无全屏按钮', async ({ page }) => {
@@ -97,7 +92,6 @@ test.describe('9.1 app 端适配', () => {
     await page.waitForTimeout(3000);
     const fullscreenCount = await page.locator('.up-header-fullscreen-btn').count();
     expect(fullscreenCount).toBe(0);
-    console.log('✅ FIX-105 通过: app 端 IPTV 播放页无全屏按钮');
   });
 
   test('FIX-105b: web 端 IPTV 播放页保留全屏按钮', async ({ page }) => {
@@ -106,7 +100,6 @@ test.describe('9.1 app 端适配', () => {
     await page.waitForTimeout(3000);
     const fullscreenCount = await page.locator('.up-header-fullscreen-btn').count();
     expect(fullscreenCount).toBeGreaterThan(0);
-    console.log('✅ FIX-105b 通过: web 端保留全屏按钮');
   });
 
   test('FIX-107: app 端 TabBar 图标文字间距 ≥ 6px', async ({ page }) => {
@@ -119,7 +112,6 @@ test.describe('9.1 app 端适配', () => {
       .first()
       .evaluate((el) => parseFloat(getComputedStyle(el).gap || '0'));
     expect(gap).toBeGreaterThanOrEqual(5);
-    console.log(`✅ FIX-107 通过: TabBar gap=${gap}px`);
   });
 });
 
@@ -183,6 +175,5 @@ test.describe('9.1 布局一致性', () => {
     expect(box).not.toBeNull();
     const gapToBottom = vh - ((box as { y: number; height: number }).y + (box as { y: number; height: number }).height);
     expect(gapToBottom).toBeLessThan(20);
-    console.log(`✅ FIX-108 通过: 声明距视口底 ${gapToBottom}px`);
   });
 });
