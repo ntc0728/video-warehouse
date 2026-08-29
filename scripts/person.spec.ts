@@ -24,11 +24,6 @@ test.describe('10.1 页面加载', () => {
     const hasContent = await page.evaluate(() => {
       return !!document.querySelector('.person-page, [class*="person"]');
     });
-    if (hasContent) {
-      console.log('✅ PER-001 通过: 人物页正常加载');
-    } else {
-      console.log('⚠️ PER-001: 人物页未检测到');
-    }
   });
 
   test('PER-003: 无效 ID 显示错误', async ({ page }) => {
@@ -40,7 +35,6 @@ test.describe('10.1 页面加载', () => {
       const text = document.body.innerText;
       return text.includes('无效') || text.includes('不存在');
     });
-    console.log(`✅ PER-003 检查完成: 无效 ID 错误 = ${hasError}`);
   });
 });
 
@@ -58,7 +52,6 @@ test.describe('10.2 Hero 区域', () => {
     const hasAvatar = await page.evaluate(() => {
       return !!document.querySelector('.person-avatar, [class*="avatar"]');
     });
-    console.log(`✅ PER-010 检查完成: 头像存在 = ${hasAvatar}`);
   });
 
   test('PER-012: 又名显示', async ({ page }) => {
@@ -70,7 +63,6 @@ test.describe('10.2 Hero 区域', () => {
     const hasAKA = await page.evaluate(() => {
       return !!document.querySelector('.person-aka, [class*="aka"]');
     });
-    console.log(`✅ PER-012 检查完成: 又名存在 = ${hasAKA}`);
   });
 
   test('PER-018: 返回按钮', async ({ page }) => {
@@ -80,11 +72,6 @@ test.describe('10.2 Hero 区域', () => {
 
     // 预期结果: 返回按钮存在
     const backBtn = page.locator('.person-hero-back, [class*="hero-back"]');
-    if (await backBtn.isVisible().catch(() => false)) {
-      console.log('✅ PER-018 通过: 返回按钮存在');
-    } else {
-      console.log('⚠️ PER-018: 返回按钮未检测到');
-    }
   });
 });
 
@@ -103,9 +90,6 @@ test.describe('10.3 作品列表 Tab', () => {
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
-      console.log(`✅ PER-020 通过: Tab 数量 = ${count}，内容 = [${tabTexts.map(t => t.trim()).join(', ')}]`);
-    } else {
-      console.log('⚠️ PER-020: Tab 未检测到');
     }
   });
 });
@@ -124,7 +108,6 @@ test.describe('10.4 作品卡片与懒加载', () => {
     const hasWorks = await page.evaluate(() => {
       return !!document.querySelector('.person-work-grid, [class*="work-grid"]');
     });
-    console.log(`✅ PER-030 检查完成: 作品网格存在 = ${hasWorks}`);
   });
 
   test('PER-035: 文档标题', async ({ page }) => {
@@ -133,7 +116,6 @@ test.describe('10.4 作品卡片与懒加载', () => {
     await page.waitForTimeout(3000);
 
     const title = await page.title();
-    console.log(`✅ PER-035 检查完成: 文档标题 = "${title}"`);
     expect(title).toBeTruthy();
   });
 });

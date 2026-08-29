@@ -22,7 +22,6 @@ test.describe('5.1 页面加载', () => {
       return !!document.querySelector('.iptv-page, [class*="iptv"]');
     });
     expect(hasContent).toBe(true);
-    console.log('✅ IPTV-001 通过: IPTV 页正常加载');
   });
 
   test('IPTV-003: 无频道数据时显示空状态', async ({ page }) => {
@@ -37,7 +36,6 @@ test.describe('5.1 页面加载', () => {
     const hasEmpty = await page.evaluate(() => {
       return !!document.querySelector('.empty-state, [class*="empty"]');
     });
-    console.log(`✅ IPTV-003 检查完成: 频道数据 = ${hasChannels}，空状态 = ${hasEmpty}`);
   });
 
   test('IPTV-004: 代理未配置警告', async ({ page }) => {
@@ -49,7 +47,6 @@ test.describe('5.1 页面加载', () => {
     const hasWarning = await page.evaluate(() => {
       return !!document.querySelector('.iptv-proxy-warning-inline, [class*="proxy-warning"]');
     });
-    console.log(`✅ IPTV-004 检查完成: 代理警告 = ${hasWarning}`);
   });
 });
 
@@ -67,7 +64,6 @@ test.describe('5.2 频道分组筛选', () => {
     const hasGroups = await page.evaluate(() => {
       return !!document.querySelector('.grouppicker__hot-tag, .grouppicker__hot-tags');
     });
-    console.log(`✅ IPTV-010 检查完成: 分组标签存在 = ${hasGroups}`);
   });
 
   test('IPTV-011: 分组折叠（超过 2 行折叠 + 展开/收起切换）', async ({ page }) => {
@@ -86,14 +82,12 @@ test.describe('5.2 频道分组筛选', () => {
         .first()
         .evaluate((el) => el.style.maxHeight !== '' && el.style.overflow === 'hidden')
         .catch(() => false);
-      console.log(`✅ IPTV-011 折叠态: 按钮="${label}", 有 maxHeight 裁剪=${hasMaxH}`);
       expect(label).toBe('展开更多');
 
       // 点击展开 → 文本切为「收起」
       await expandBtn.click();
       await page.waitForTimeout(300);
       const after = (await expandBtn.textContent())?.trim();
-      console.log(`✅ IPTV-011 展开态: 按钮="${after}"`);
       expect(after).toBe('收起');
     } else {
       console.log('ℹ️ IPTV-011 跳过: 分组未超过 2 行，无需折叠');
@@ -115,9 +109,6 @@ test.describe('5.5 频道检测', () => {
     const checkBtn = page.locator('.refresh-btn').first();
     if (await checkBtn.isVisible().catch(() => false)) {
       const text = await checkBtn.textContent();
-      console.log(`✅ IPTV-040 通过: 检测按钮文本 = "${text}"`);
-    } else {
-      console.log('⚠️ IPTV-040: 检测按钮未检测到');
     }
   });
 
@@ -131,7 +122,6 @@ test.describe('5.5 频道检测', () => {
     const hasBadge = await page.evaluate(() => {
       return !!document.querySelector('.availability-badge, [class*="availability"]');
     });
-    console.log(`✅ IPTV-041 检查完成: 可用性 badge 结构 = ${hasBadge}`);
   });
 });
 
@@ -152,11 +142,6 @@ test.describe('5.7 懒加载与滚动', () => {
 
     // 预期结果: 回到顶部按钮可见
     const backToTop = page.locator('.back-to-top-button');
-    if (await backToTop.isVisible().catch(() => false)) {
-      console.log('✅ IPTV-062 通过: 返回顶部按钮显示');
-    } else {
-      console.log('⚠️ IPTV-062: 返回顶部按钮未显示');
-    }
   });
 });
 
@@ -171,7 +156,6 @@ test.describe('5.8 页面状态', () => {
 
     // 预期结果: 显示默认标题
     const title = await page.title();
-    console.log(`✅ IPTV-075 检查完成: 文档标题 = "${title}"`);
     expect(title).toBeTruthy();
   });
 });
@@ -193,7 +177,6 @@ test.describe('5.9 顶部搜索框', () => {
     // 预期结果: 下拉框不应出现「热门搜索」
     const hotSearch = page.locator('.sticky-header').getByText('热门搜索', { exact: false });
     await expect(hotSearch).toHaveCount(0);
-    console.log('✅ IPTV-076 通过: IPTV 页顶部搜索框不显示热门搜索');
   });
 
   test('IPTV-077: IPTV 页搜索历史与全局独立', async ({ page }) => {
@@ -211,7 +194,6 @@ test.describe('5.9 顶部搜索框', () => {
     const globalHistory = await page.evaluate(() => localStorage.getItem('search-history'));
     expect(iptvHistory).toContain('iptv独立历史');
     expect(globalHistory ?? '').not.toContain('iptv独立历史');
-    console.log('✅ IPTV-077 通过: IPTV 页搜索历史独立存储');
   });
 });
 
@@ -256,7 +238,6 @@ test.describe('5.10 频道台标回退链', () => {
     const onlineSrcs = srcs.filter(
       (s) => s.startsWith('https://live.fanmingming.cn/') || s.startsWith('https://raw.githubusercontent.com/wanglindl/')
     );
-    console.log(`✅ IPTV-080 检查完成: 卡片 img=${srcs.length}, 在线库候选=${onlineSrcs.length}, 库请求=${libraryHits}`);
 
     if (libraryHits > 0) {
       // 确实有无 tvg-logo 的频道走了在线库 → 其卡片 img src 必须是台标库候选 URL
@@ -301,7 +282,6 @@ test.describe('5.10 频道台标回退链', () => {
     const epgIconImgs = page.locator('.iptv-channel-grid .iptv-card-cover img[src^="https://mock.example.com/"]');
     await expect(epgIconImgs.first()).toBeVisible({ timeout: 12000 }).catch(() => {});
     const count = await epgIconImgs.count();
-    console.log(`✅ IPTV-081 检查完成: EPG icon 台标卡片数 = ${count}`);
 
     if (count > 0) {
       expect(count).toBeGreaterThan(0);

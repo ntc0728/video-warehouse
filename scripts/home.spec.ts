@@ -25,9 +25,6 @@ test.describe('1.1 页面加载与初始状态', () => {
     if (await tokenPrompt.isVisible().catch(() => false)) {
       const link = page.locator('.home-token-required-link');
       await expect(link).toBeVisible();
-      console.log('✅ HOME-001 通过: 无 Token 时正确显示配置提示');
-    } else {
-      console.log('⚠️ HOME-001: 未检测到 Token 提示（可能已配置 Token）');
     }
   });
 
@@ -46,9 +43,6 @@ test.describe('1.1 页面加载与初始状态', () => {
       await page.waitForTimeout(500);
       // 预期结果: 跳转到 /settings
       expect(page.url()).toContain('/settings');
-      console.log('✅ HOME-002 通过: 配置按钮正确跳转到设置页');
-    } else {
-      console.log('⚠️ HOME-002: 跳过（无 Token 提示）');
     }
   });
 
@@ -60,7 +54,6 @@ test.describe('1.1 页面加载与初始状态', () => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
     // loading 可能因缓存秒回而不显示，这是正常的
-    console.log(`✅ HOME-003 检查完成: loading 状态 = ${loadingVisible}`);
   });
 
   test('HOME-004: 有 Token 且数据就绪显示完整首页', async ({ page }) => {
@@ -77,7 +70,6 @@ test.describe('1.1 页面加载与初始状态', () => {
       return !!document.querySelector('.home-page, [class*="home"]');
     });
     expect(hasHomeContent).toBe(true);
-    console.log('✅ HOME-004 通过: 首页完整加载');
   });
 
   test('HOME-005: 首页 loading 最大超时 10 秒', async ({ page }) => {
@@ -94,7 +86,6 @@ test.describe('1.1 页面加载与初始状态', () => {
       return loading ? getComputedStyle(loading).display !== 'none' : false;
     });
     // loading 应该已关闭或页面已显示内容
-    console.log(`✅ HOME-005 检查完成: ${elapsed}ms 后 loading 状态 = ${loadingStillVisible}`);
   });
 });
 
@@ -112,11 +103,6 @@ test.describe('1.2 HeroBanner 交互', () => {
     const heroExists = await page.evaluate(() => {
       return !!document.querySelector('.home-hero, [class*="hero"]');
     });
-    if (heroExists) {
-      console.log('✅ HOME-010 通过: HeroBanner 已渲染');
-    } else {
-      console.log('⚠️ HOME-010: HeroBanner 未检测到（可能无 trending 数据）');
-    }
   });
 
   test('HOME-011: Banner 点击跳转详情页', async ({ page }) => {
@@ -157,9 +143,6 @@ test.describe('1.2 HeroBanner 交互', () => {
       // 预期结果: 跳转到 /detail/{id}
       const url = page.url();
       expect(url).toContain('/detail/');
-      console.log(`✅ HOME-012 通过: 缩略图点击正确跳转详情页 (URL = ${url})`);
-    } else {
-      console.log('⚠️ HOME-012: HeroBanner 缩略图不可见（可能无数据或移动端）');
     }
   });
 });
@@ -182,9 +165,6 @@ test.describe('1.3 分类快捷入口', () => {
       await page.waitForTimeout(1000);
       // 预期结果: 跳转到 /browse?category=...
       expect(page.url()).toContain('/browse');
-      console.log(`✅ HOME-020 通过: 分类点击正确跳转到浏览页（共 ${count} 个分类）`);
-    } else {
-      console.log('⚠️ HOME-020: 跳过（无分类入口）');
     }
   });
 
@@ -196,7 +176,6 @@ test.describe('1.3 分类快捷入口', () => {
     const chips = page.locator('.category-quick-access__card');
     const count = await chips.count();
     // 预期结果: 显示分类入口（数量与 CATEGORY_CONFIG 一致）
-    console.log(`✅ HOME-021 检查完成: 分类入口数量 = ${count}`);
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
@@ -261,9 +240,6 @@ test.describe('1.3 分类快捷入口', () => {
           expect(genre).toBeNull();
         }
 
-        console.log(`✅ HOME-022 通过: "${tc.label}" 跳转 URL 参数正确 → ${url.search}`);
-      } else {
-        console.log(`⚠️ HOME-022: "${tc.label}" 分类按钮未检测到`);
       }
     });
   }
@@ -309,11 +285,9 @@ test.describe('1.3 分类快捷入口', () => {
         const categoryLabel = page.locator('.filter-bar__category, [class*="category"]');
         if (await categoryLabel.isVisible().catch(() => false)) {
           const labelText = await categoryLabel.textContent();
-          console.log(`✅ HOME-023: "${tc.label}" → FilterBar 分类标签 = "${labelText}"`);
         }
       }
     }
-    console.log('✅ HOME-023 通过: 所有分类跳转后 Browse 页筛选条件正确');
   });
 
   // ── 桌面端全分类测试（含纪录片） ──────────────────────────────────
@@ -365,9 +339,6 @@ test.describe('1.3 分类快捷入口', () => {
           expect(url.searchParams.get('genre')).toBe(tc.expectedGenre);
         }
 
-        console.log(`✅ HOME-024: "${tc.label}" 跳转 URL 参数正确 → ${url.search}`);
-      } else {
-        console.log(`⚠️ HOME-024: "${tc.label}" 分类按钮未检测到`);
       }
     }
   });
@@ -423,7 +394,6 @@ test.describe('1.3 分类快捷入口', () => {
     const hasResults = await page.locator('.browse-results-body').isVisible();
     expect(hasResults).toBe(true);
 
-    console.log('✅ HOME-024b: 分类跳转后搜索框输入验证通过');
   });
 
   test('HOME-025: 分类跳转后搜索框联动搜索', async ({ page }) => {
@@ -447,7 +417,6 @@ test.describe('1.3 分类快捷入口', () => {
       const url1 = new URL(page.url());
       expect(url1.pathname).toBe('/browse');
       expect(url1.searchParams.get('category')).toBe('movie');
-      console.log(`✅ HOME-025: 分类跳转成功 → ${url1.pathname}${url1.search}`);
 
       // 移动端默认隐藏搜索框，需点击"打开搜索"进入搜索模式
       const searchToggle25 = page.locator('.sticky-header__search-btn');
@@ -459,7 +428,6 @@ test.describe('1.3 分类快捷入口', () => {
       // 2. 在搜索框输入关键词并搜索
       const searchInput = page.locator('.sticky-header .search-box__input');
       const isSearchVisible = await searchInput.isVisible().catch(() => false);
-      console.log(`✅ HOME-025: 搜索框可见 = ${isSearchVisible}`);
 
       if (isSearchVisible) {
         await searchInput.click();
@@ -468,7 +436,6 @@ test.describe('1.3 分类快捷入口', () => {
 
         // 验证输入值
         const inputValue = await searchInput.inputValue();
-        console.log(`✅ HOME-025: 搜索框输入值 = "${inputValue}"`);
 
         await searchInput.press('Enter');
         await page.waitForTimeout(3000);
@@ -477,7 +444,6 @@ test.describe('1.3 分类快捷入口', () => {
         const hasResults = await page.evaluate(() => {
           return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
         });
-        console.log(`✅ HOME-025: 分类跳转后搜索结果 = ${hasResults}`);
 
         // 4. 清空搜索词，验证恢复到分类筛选结果
         const clearBtn = page.locator('.sticky-header .search-box__clear');
@@ -488,7 +454,6 @@ test.describe('1.3 分类快捷入口', () => {
           // 验证恢复到电影分类筛选
           const url2 = new URL(page.url());
           expect(url2.searchParams.get('category')).toBe('movie');
-          console.log('✅ HOME-025: 清空搜索词后恢复到电影分类筛选');
         }
       }
     }
@@ -524,7 +489,6 @@ test.describe('1.3 分类快捷入口', () => {
         const url1 = new URL(page.url());
         expect(url1.pathname).toBe('/browse');
         expect(url1.searchParams.get('category')).toBe(tc.expectedCategory);
-        console.log(`✅ HOME-026: "${tc.label}" 分类跳转成功 → ${url1.pathname}${url1.search}`);
 
         // 移动端默认隐藏搜索框，需点击"打开搜索"进入搜索模式
         const searchToggle26 = page.locator('.sticky-header__search-btn');
@@ -536,7 +500,6 @@ test.describe('1.3 分类快捷入口', () => {
         // 在搜索框输入关键词并搜索
         const searchInput = page.locator('.sticky-header .search-box__input');
         const isSearchVisible = await searchInput.isVisible().catch(() => false);
-        console.log(`✅ HOME-026: "${tc.label}" 搜索框可见 = ${isSearchVisible}`);
 
         if (isSearchVisible) {
           await searchInput.click();
@@ -545,7 +508,6 @@ test.describe('1.3 分类快捷入口', () => {
 
           // 验证输入值
           const inputValue = await searchInput.inputValue();
-          console.log(`✅ HOME-026: "${tc.label}" 搜索框输入值 = "${inputValue}"`);
 
           await searchInput.press('Enter');
           await page.waitForTimeout(3000);
@@ -554,7 +516,6 @@ test.describe('1.3 分类快捷入口', () => {
           const hasResults = await page.evaluate(() => {
             return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
           });
-          console.log(`✅ HOME-026: "${tc.label}" 分类搜索 "${tc.searchQuery}" 结果 = ${hasResults}`);
 
           // 清空搜索词
           const clearBtn = page.locator('.sticky-header .search-box__clear');
@@ -593,7 +554,6 @@ test.describe('1.3b 桌面端分类入口', () => {
     const url = new URL(page.url());
     expect(url.pathname).toBe('/browse');
     expect(url.searchParams.get('category')).toBe('movie');
-    console.log('✅ HOME-060 通过: 桌面端分类快选可见并跳转 /browse?category=movie');
   });
 
   test('HOME-061: 桌面端顶栏提供 IPTV 与设置入口（无左侧栏）', async ({ page }) => {
@@ -607,7 +567,6 @@ test.describe('1.3b 桌面端分类入口', () => {
     );
     expect(titles.join(' ')).toContain('IPTV');
     expect(titles.join(' ')).toContain('设置');
-    console.log('✅ HOME-061 通过: 桌面端顶栏含 IPTV + 设置入口');
   });
 });
 
@@ -628,9 +587,6 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
     });
     if (rowsExist) {
       const rowCount = await page.locator('.home-rows > *, [class*="home-row"]').count();
-      console.log(`✅ HOME-030 通过: 行数据容器存在，行数 = ${rowCount}`);
-    } else {
-      console.log('⚠️ HOME-030: 行数据容器未检测到');
     }
   });
 
@@ -645,7 +601,6 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
       if (!row) return false;
       return row.scrollWidth > row.clientWidth;
     });
-    console.log(`✅ HOME-031 检查完成: 行可水平滚动 = ${hasScrollableRow}`);
   });
 
   test('HOME-032: 行数据加载中显示骨架', async ({ page }) => {
@@ -655,7 +610,6 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
       return !!document.querySelector('.home-skeleton, [class*="skeleton"]');
     });
     // 骨架可能因缓存秒回而不显示
-    console.log(`✅ HOME-032 检查完成: 骨架状态 = ${skeletonVisible}`);
   });
 
   test('HOME-035: 卡片点击跳转详情', async ({ page }) => {
@@ -670,9 +624,6 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
       await page.waitForTimeout(1000);
       // 预期结果: 跳转到 /detail/{id}
       expect(page.url()).toContain('/detail/');
-      console.log('✅ HOME-035 通过: 卡片点击正确跳转到详情页');
-    } else {
-      console.log('⚠️ HOME-035: 跳过（无可用卡片）');
     }
   });
 });
@@ -699,9 +650,6 @@ test.describe('1.5 全局交互', () => {
       await page.waitForTimeout(500);
       const scrollY = await page.evaluate(() => window.scrollY);
       expect(scrollY).toBeLessThan(100);
-      console.log('✅ HOME-040 通过: 回到顶部按钮功能正常');
-    } else {
-      console.log('⚠️ HOME-040: 回到顶部按钮未显示');
     }
   });
 
@@ -715,7 +663,6 @@ test.describe('1.5 全局交互', () => {
     const hasError = await page.evaluate(() => {
       return !!document.querySelector('.home-empty, [class*="empty"], [class*="error"]');
     });
-    console.log(`✅ HOME-041 检查完成: 错误状态 = ${hasError}`);
   });
 
   test('HOME-044: 文档标题', async ({ page }) => {
@@ -724,7 +671,6 @@ test.describe('1.5 全局交互', () => {
 
     // 预期结果: 显示默认标题（无自定义标题）
     const title = await page.title();
-    console.log(`✅ HOME-044 检查完成: 文档标题 = "${title}"`);
     expect(title).toBeTruthy();
   });
 
@@ -738,7 +684,6 @@ test.describe('1.5 全局交互', () => {
     await expect(page.locator('.sticky-header__logo-group .sticky-header__brand')).toBeHidden({ timeout: 5000 });
     const centerSearch = page.locator('.sticky-header__center input[type="search"], .sticky-header__center input');
     await expect(centerSearch).toBeVisible({ timeout: 5000 });
-    console.log('✅ HOME-045 通过: 移动端 logo 右侧隐藏品牌字，顶栏中央为搜索框');
   });
 
   test('HOME-046: 移动端打开侧边栏后头部显示 logo 与品牌字', async ({ page }) => {
@@ -757,7 +702,6 @@ test.describe('1.5 全局交互', () => {
     const logo = page.locator('.sidebar-header__brand .sidebar-logo').first();
     await expect(logo).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.sidebar-header__brand .sidebar-title')).toHaveText('KinoTV');
-    console.log('✅ HOME-046 通过: 移动端侧边栏头部显示 logo + KinoTV');
   });
 });
 
@@ -775,14 +719,12 @@ test.describe('1.6 UI 微调回归', () => {
     const arrow = page.locator('.tmdb-movierow-arrow').first();
     const wrapper = page.locator('.tmdb-movierow-wrapper').first();
     if ((await arrow.count()) === 0 || (await wrapper.count()) === 0) {
-      console.log('⚠️ HOME-050: 未检测到 TMDB 行/箭头，跳过');
       return;
     }
     // 桌面端默认 opacity=0（隐藏），悬停整行后淡入 opacity=1
     await expect(arrow).toHaveCSS('opacity', '0');
     await wrapper.hover();
     await expect(arrow).toHaveCSS('opacity', '1');
-    console.log('✅ HOME-050 通过: 桌面端 TMDB 行箭头默认隐藏、悬停显示');
   });
 
   test('HOME-051: 桌面端键盘焦点不显示焦点框', async ({ page }) => {
@@ -794,11 +736,9 @@ test.describe('1.6 UI 微调回归', () => {
     for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
     const fv = page.locator(':focus').first();
     if ((await fv.count()) === 0) {
-      console.log('⚠️ HOME-051: 未捕获键盘焦点元素，跳过');
       return;
     }
     await expect(fv).toHaveCSS('outline-style', 'none');
-    console.log('✅ HOME-051 通过: 桌面端键盘焦点 outline-style=none（非 TV 零焦点框）');
   });
 
   test('HOME-052: 移动端分类快选横向间距收紧为 --space-lg', async ({ page }) => {
@@ -808,7 +748,6 @@ test.describe('1.6 UI 微调回归', () => {
     await page.waitForTimeout(1500);
     const inner = page.locator('.category-quick-access__inner').first();
     if ((await inner.count()) === 0) {
-      console.log('⚠️ HOME-052: 未检测到分类快选容器，跳过');
       return;
     }
     const gap = await inner.evaluate((el) => getComputedStyle(el).gap);
@@ -816,7 +755,6 @@ test.describe('1.6 UI 微调回归', () => {
     // 旧值为 --space-2xl（下限 24px，对 40px 圆形卡片偏松）；现为 --space-lg（更小、更紧凑）
     expect(px).toBeGreaterThan(0);
     expect(px).toBeLessThan(24);
-    console.log(`✅ HOME-052 通过: 移动端分类快选 gap=${gap}（< 24px）`);
   });
 
   test('HOME-053: 桌面端页面主体内容全局左右 padding 加大（≥--space-lg）', async ({ page }) => {
@@ -836,7 +774,6 @@ test.describe('1.6 UI 微调回归', () => {
     expect(res.left).toBeGreaterThanOrEqual(12);
     expect(res.right).toBeGreaterThanOrEqual(12);
     expect(res.left).toBeCloseTo(res.right, 0);
-    console.log(`✅ HOME-053 通过: 桌面端 .page-padding 左右 padding=${res.left}px（≥移动端 6px）`);
   });
 });
 
@@ -864,7 +801,6 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     const rowCount = await rows.count();
     if (rowCount === 0) {
       // 数据未加载（如未补齐 8 区块 mock 的环境）——跳过，不视为失败
-      console.log('⚠️ HOME-054: 800×900 无 TMDB 行（mock 数据未加载），跳过');
       return;
     }
 
@@ -872,7 +808,6 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     const arrowCount = await arrow.count();
     if (arrowCount === 0) {
       // 行未溢出（异常情况）——回退为「行已渲染」断言
-      console.log('⚠️ HOME-054: 800×900 行未溢出，箭头未渲染（数据或布局异常）');
       return;
     }
     // 桌面 UI 规则：箭头默认 opacity=0，悬停行后 opacity=1
@@ -880,7 +815,6 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     const wrapper = page.locator('.tmdb-movierow-wrapper').first();
     await wrapper.hover();
     await expect(arrow).toHaveCSS('opacity', '1');
-    console.log('✅ HOME-054 通过: 800×900 小视口 TMDB 行箭头显示（非手机 web 小视口档）');
   });
 
   test('HOME-055: 小视口（800×900）不渲染移动端分类快选，由侧边栏接管', async ({ page }) => {
@@ -894,9 +828,6 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     const count = await quickAccess.count();
     if (count > 0) {
       const visible = await quickAccess.isVisible().catch(() => false);
-      console.log(`⚠️ HOME-055: 800×900 检测到分类快选元素（visible=${visible}），确认 768–1023 不渲染`);
-    } else {
-      console.log('✅ HOME-055 通过: 800×900 不渲染移动端分类快选');
     }
   });
 
@@ -910,7 +841,6 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     const mobileInput = page.locator('.sticky-header__mobile-search .search-box__input').first();
     const desktopVisible = await desktopInput.isVisible().catch(() => false);
     const mobileVisible = await mobileInput.isVisible().catch(() => false);
-    console.log(`✅ HOME-056 检查完成: 800×900 桌面搜索框=${desktopVisible} 移动搜索框=${mobileVisible}`);
     // 非手机 web 小视口走桌面 UI：桌面搜索框应可见
     expect(desktopVisible).toBe(true);
   });
@@ -964,7 +894,6 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
 
     const row = page.locator('.tmdb-movierow--continue').first();
     if ((await row.count()) === 0) {
-      console.log('⚠️ HOME-057: 未检测到继续观看行（历史注入可能未生效）');
       return;
     }
     // 行标题应为「继续观看」
@@ -972,7 +901,6 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     expect(title).toContain('继续观看');
     // 骨架横版角标结构存在（骨架标签或真实卡片均可；行渲染即证明数据链路通）
     const cards = row.locator('.tmdb-movierow-card').count();
-    console.log(`✅ HOME-057 通过: 继续观看行渲染（标题="${title}"，卡片数=${await cards}）`);
   });
 
   test('HOME-058: 继续观看行左右箭头显示 + 列数 2/3/5 响应式', async ({ page }) => {
@@ -1017,14 +945,12 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     const row = page.locator('.tmdb-movierow--continue').first();
     const rowCount = await row.count();
     if (rowCount === 0) {
-      console.log('⚠️ HOME-058: 未检测到继续观看行（历史注入可能未生效）');
       return;
     }
 
     // 800px → ≥768 断点：continue 3 列（--continue-cols: 3）
     const cardW = await row.locator('.tmdb-movierow-card').first().evaluate((el) => (el as HTMLElement).offsetWidth);
     const rowW = await row.locator('.tmdb-movierow-scroll').first().evaluate((el) => (el as HTMLElement).clientWidth);
-    console.log(`✅ HOME-058 检查: 800px continue 卡宽=${cardW}px 行宽=${rowW}px`);
     // 3 列：卡宽约为行宽/3（含 gap，允许 ±15% 误差）
     expect(cardW).toBeGreaterThan(rowW / 4);
     expect(cardW).toBeLessThan(rowW / 2.4);
@@ -1035,7 +961,6 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     const leftArrow = row.locator('.tmdb-movierow-arrow-left').first();
     const rightCount = await rightArrow.count();
     const leftCount = await leftArrow.count();
-    console.log(`✅ HOME-058 检查: 右箭头=${rightCount} 左箭头=${leftCount}`);
     expect(rightCount).toBe(1);
     expect(leftCount).toBe(0);
 
@@ -1048,8 +973,6 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     await rightArrow.click();
     await page.waitForTimeout(600);
     const leftCountAfter = await leftArrow.count();
-    console.log(`✅ HOME-058 检查: 滚动后左箭头=${leftCountAfter}`);
     expect(leftCountAfter).toBe(1);
-    console.log('✅ HOME-058 通过: 继续观看行箭头显示 + 列数 2/3/5 响应式');
   });
 });

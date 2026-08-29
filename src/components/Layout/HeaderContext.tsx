@@ -14,7 +14,6 @@ import { createContext, useState, useCallback, useMemo, useRef, type ReactNode }
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useScrollContainer } from '@/hooks/useScrollContext';
-import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import type { HeaderConfig, HeaderActionsValue, HeaderStateValue } from './types';
 
 const HeaderActionsContext = createContext<HeaderActionsValue>({
@@ -49,9 +48,6 @@ export function HeaderProvider({ children }: { children: ReactNode }) {
     if (!isOnHome) {
       navigate('/');
     }
-    // 重置首页激活类目：sessionStorage 可能残留已删除类目视图的脏值，
-    // 归位避免下次进入首页时读到非 home 类目。
-    useHomeCategoryStore.getState().setActiveCategory('home');
     if (homeTimerRef.current) clearTimeout(homeTimerRef.current);
     homeTimerRef.current = setTimeout(() => {
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });

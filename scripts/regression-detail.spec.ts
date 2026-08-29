@@ -161,7 +161,6 @@ test.describe('3.10 海报优先级', () => {
     expect(src).toBeTruthy();
     expect(src).toContain('mock-cms.example.com/cms-movie-poster.jpg');
     expect(src).not.toContain('image.tmdb.org');
-    console.log('✅ REG-001 通过: 海报优先 CMS 原图 =', src);
   });
 
   test('REG-002: CMS 封面加载失败时降级 TMDB 兜底', async ({ page }) => {
@@ -177,7 +176,6 @@ test.describe('3.10 海报优先级', () => {
     const src = await page.locator('.detail-source-group .detail-source-thumb img').first()
       .getAttribute('src');
     expect(src).toContain('image.tmdb.org');
-    console.log('✅ REG-002 通过: 封面失败后 TMDB 兜底 =', src);
   });
 });
 
@@ -199,7 +197,6 @@ test.describe('3.11 弹窗选中态与已看判定', () => {
     // 电影 mock 有两条线路
     const cellCount = await page.locator('.playlist-modal .playlist-cell').count();
     expect(cellCount).toBe(2);
-    console.log(`✅ REG-003 通过: 零选中 (selected=0, cells=${cellCount})`);
   });
 
   test('REG-004: 已看判定仅限真实进度记录（有记录的第2集标已看，其余不标）', async ({ page }) => {
@@ -231,7 +228,6 @@ test.describe('3.11 弹窗选中态与已看判定', () => {
       .locator('.playlist-modal .playlist-cell--ep.is-watched .playlist-cell-num')
       .allTextContents();
     expect(watchedNums.join(',')).toBe('2');
-    console.log('✅ REG-004 通过: 仅真实进度记录的第2集标已看，其余未标');
   });
 });
 
@@ -272,7 +268,6 @@ test.describe('3.12 电影线路进度独立', () => {
 
     await expect(lineA.locator('.playlist-cell-pct')).toHaveText('30%');
     await expect(lineB.locator('.playlist-cell-pct')).toHaveText('90%');
-    console.log('✅ REG-005 通过: 线路A=30%、线路B=90%（线路进度独立）');
   });
 });
 
@@ -318,7 +313,6 @@ test.describe('3.13 历史页删除', () => {
     await page.waitForTimeout(1500);
     const cardCountAfter = await page.locator('.record-card').count();
     expect(cardCountAfter).toBe(0);
-    console.log(`✅ REG-006 通过: 删除后 reload 无残留卡片 (before=${cardCountBefore}, after=${cardCountAfter})`);
   });
 });
 
@@ -345,7 +339,6 @@ test.describe('3.14 首页继续播放', () => {
     await page.waitForSelector('.hero-banner__cta--continue', { timeout: 15000 });
     const text = await page.locator('.hero-banner__cta--continue').first().innerText();
     expect(text).toContain('继续播放');
-    console.log('✅ REG-007 通过: 首页显示「继续播放」按钮');
   });
 });
 
@@ -384,7 +377,6 @@ test.describe('3.15 弹窗优化', () => {
       .locator('.playlist-modal .playlist-cell--ep.is-selected .playlist-cell-num')
       .allTextContents();
     expect(selectedNums.join(',')).toBe('2');
-    console.log('✅ REG-008 通过: 弹窗对齐历史季（第3季）并选中第2集');
   });
 
   test('REG-009: 选集超过40集时全部集可显示（移动端兜底补齐 + 滚动懒加载）', async ({ page }) => {
@@ -411,7 +403,6 @@ test.describe('3.15 弹窗优化', () => {
     }
     const count = await page.locator('.playlist-modal .playlist-cell--ep').count();
     expect(count).toBe(50);
-    console.log(`✅ REG-009 通过: 50 集全部可显示（${count}）`);
   });
 
   test('REG-010: 移动端选集网格按钮间距放宽到 space-sm（≥6px）', async ({ page }) => {
@@ -429,7 +420,6 @@ test.describe('3.15 弹窗优化', () => {
     });
     const gapPx = parseFloat(gap);
     expect(gapPx).toBeGreaterThanOrEqual(6);
-    console.log(`✅ REG-010 通过: 移动端 grid gap = ${gap} (≥6px)`);
   });
 });
 
@@ -449,7 +439,6 @@ test.describe('3.16 易用性修复', () => {
     await expect(page.locator('.playlist-modal .lazy-image-placeholder')).toHaveCount(0);
     // fallback 图（TMDB 兜底）渲染可见
     await expect(page.locator('.playlist-modal .lazy-image-fallback')).toHaveCount(1);
-    console.log('✅ REG-011 通过: error 分支无白遮罩，fallback 图直接显示');
   });
 
   test('REG-012: 首屏 loading 不叠加两次，进度条（若出现）渐进且不满格卡死', async ({ page }) => {
@@ -474,16 +463,12 @@ test.describe('3.16 易用性修复', () => {
         expect(info.x).toBeGreaterThan(0);
         expect(info.x).toBeLessThan(0.999);
         sampled = true;
-        console.log(`✅ REG-012 采样: scaleX=${info.x.toFixed(3)}（渐进且不满格）`);
         break;
       }
     }
 
     // 无论是否采样到 loading，Home 最终必须渲染内容（8.3C 路径 = fallback 后直接内容）
     await page.waitForSelector('.home-page__content', { timeout: 10000 });
-    if (!sampled) {
-      console.log('✅ REG-012 通过（8.3C 路径）: chunk fallback 后 Home 直接渲染内容，无叠加 loading');
-    }
   });
 });
 
@@ -510,7 +495,6 @@ test.describe('3.17 桌面端布局重构', () => {
     );
     expect(titles.join(' ')).toContain('IPTV');
     expect(titles.join(' ')).toContain('设置');
-    console.log('✅ REG-013 通过: 桌面端无左侧栏，分类快选 + 顶栏 IPTV/设置 双入口');
   });
 });
 
@@ -544,7 +528,6 @@ test.describe('3.18 细节修复', () => {
     await page.waitForSelector('.iptv-page .app-loading', { timeout: 15000 });
     // 首载整页 loading：筛选卡不渲染
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
-    console.log('✅ REG-015 通过: IPTV 首载整页 AppLoading，无 iptv-top-card');
   });
 
   test('REG-016: 弹窗海报请求挂起时超时兜底显示 fallback（不再无限加载）', async ({ page }) => {
@@ -571,7 +554,6 @@ test.describe('3.18 细节修复', () => {
     // 8s 超时兜底后：fallback 图挂载、占位消失（attached 即可，证明「不再无限加载」）
     await page.locator('.playlist-modal .lazy-image-fallback').first().waitFor({ state: 'attached', timeout: 25000 });
     expect(await page.locator('.playlist-modal .lazy-image-placeholder').count()).toBe(0);
-    console.log('✅ REG-016 通过: 海报请求挂起后 8s 超时走 fallback 兜底');
   });
 });
 
@@ -588,7 +570,6 @@ test.describe('3.19 体验修复', () => {
     const first = await page.locator('.person-work-card .video-card').first().innerText();
     const firstYear = /\b(19|20)\d{2}\b/.exec(first)?.[0] ?? '';
     expect(firstYear).toBe('2023');
-    console.log(`✅ REG-017 通过: Person 电影年份倒序，第一项年份 = ${firstYear}`);
   });
 
   test('REG-018: 热门搜索数字徽标 ≥16px（不再截断 1/2/3）', async ({ page }) => {
@@ -602,7 +583,6 @@ test.describe('3.19 体验修复', () => {
       return parseFloat(getComputedStyle(el).width);
     });
     expect(size).toBeGreaterThanOrEqual(15); // --space-xl 桌面 16px
-    console.log(`✅ REG-018 通过: rank 徽标宽 = ${size}px（≥15px，不再截断）`);
   });
 
   test('REG-020: detail-cast-item 头像/姓名放大（头像≥64px、姓名≥13px）', async ({ page }) => {
@@ -621,7 +601,6 @@ test.describe('3.19 体验修复', () => {
     });
     expect(metrics.avatar).toBeGreaterThanOrEqual(64); // --layout-cast-avatar clamp 下限
     expect(metrics.nameSize).toBeGreaterThanOrEqual(13); // --text-sm
-    console.log(`✅ REG-020 通过: 头像 ${metrics.avatar}px、姓名 ${metrics.nameSize}px`);
   });
 });
 
@@ -656,7 +635,6 @@ test.describe('3.20 实时搜索', () => {
     expect(items.join(' ')).toContain('Chaos TV Show');
     expect(items.join(' ')).toContain('电影');
     expect(items.join(' ')).toContain('剧集');
-    console.log('✅ REG-021 通过: 实时搜索结果（名称 + 电影/剧集类型标签）显示');
   });
 
   test('REG-022: 搜索失败显示提示信息', async ({ page }) => {
@@ -667,7 +645,6 @@ test.describe('3.20 实时搜索', () => {
     await page.locator('.search-box__input').fill('cha');
     // 防抖 + 请求后进入失败态（hint 类三态共用，需等待具体文案出现）
     await expect(page.locator('.search-box-dropdown__hint')).toContainText('搜索失败', { timeout: 10000 });
-    console.log('✅ REG-022 通过: 搜索失败提示显示');
   });
 
   test('REG-023: 搜索无数据显示提示信息', async ({ page }) => {
@@ -677,6 +654,5 @@ test.describe('3.20 实时搜索', () => {
     await openHome(page);
     await page.locator('.search-box__input').fill('zzzzzz');
     await expect(page.locator('.search-box-dropdown__hint')).toContainText('未找到', { timeout: 10000 });
-    console.log('✅ REG-023 通过: 无结果提示显示');
   });
 });
