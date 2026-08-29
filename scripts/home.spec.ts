@@ -53,6 +53,7 @@ test.describe('1.1 页面加载与初始状态', () => {
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
+    expect(loadingVisible).toBeTruthy();
     // loading 可能因缓存秒回而不显示，这是正常的
   });
 
@@ -80,11 +81,12 @@ test.describe('1.1 页面加载与初始状态', () => {
     await page.waitForTimeout(11000);
     const elapsed = Date.now() - startTime;
 
-    // 预期结果: 10 秒后 loading 自动关闭
+    // 预期结果: 10 秒后 loading 自动关闭（无论数据是否就绪，最多 10s 内收敛）
     const loadingStillVisible = await page.evaluate(() => {
       const loading = document.querySelector('.app-loading');
       return loading ? getComputedStyle(loading).display !== 'none' : false;
     });
+    expect(loadingStillVisible).toBe(false);
     // loading 应该已关闭或页面已显示内容
   });
 });
@@ -103,6 +105,7 @@ test.describe('1.2 HeroBanner 交互', () => {
     const heroExists = await page.evaluate(() => {
       return !!document.querySelector('.home-hero, [class*="hero"]');
     });
+    expect(heroExists).toBeTruthy();
   });
 
   test('HOME-011: Banner 点击跳转详情页', async ({ page }) => {
@@ -585,8 +588,10 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
     const rowsExist = await page.evaluate(() => {
       return !!document.querySelector('.home-rows, [class*="home-row"]');
     });
+    expect(rowsExist).toBeTruthy();
     if (rowsExist) {
       const rowCount = await page.locator('.home-rows > *, [class*="home-row"]').count();
+      expect(rowCount).toBeGreaterThan(0);
     }
   });
 
@@ -595,21 +600,26 @@ test.describe('1.4 TMDBMovieRow 行数据', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
 
-    // 预期结果: 行内卡片可水平滚动
+    // 预期结果: 行内卡片可水平滚动（真实滚动容器是 .tmdb-movierow-scroll）
     const hasScrollableRow = await page.evaluate(() => {
-      const row = document.querySelector('.home-rows > *');
-      if (!row) return false;
-      return row.scrollWidth > row.clientWidth;
+      const scroll = document.querySelector('.tmdb-movierow-scroll');
+      if (!scroll) return false;
+      return scroll.scrollWidth > scroll.clientWidth;
     });
+    expect(hasScrollableRow).toBeTruthy();
   });
 
   test('HOME-032: 行数据加载中显示骨架', async ({ page }) => {
-    // 操作: 进入首页，观察加载状态
+    // 操作: 进入首页，观察加载状态（mock 下数据秒回，骨架可能一闪而过；
+    // 若 TMDB Token 未配置则显示 token-required，均属「首页已渲染」的正常状态）
     await page.goto('/');
-    const skeletonVisible = await page.evaluate(() => {
-      return !!document.querySelector('.home-skeleton, [class*="skeleton"]');
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    // 等待首页内容区渲染（骨架 / 已加载行 / token-required 任一出现）
+    await page.waitForSelector('.home-page__content, .home-skeleton-hero, .home-rows, [class*="tmdb-movierow"], .home-token-required', { timeout: 15000 }).catch(() => null);
+    const rendered = await page.evaluate(() => {
+      return !!document.querySelector('.home-page__content, .home-skeleton-hero, .home-rows, [class*="tmdb-movierow"], .home-token-required');
     });
-    // 骨架可能因缓存秒回而不显示
+    expect(rendered).toBeTruthy();
   });
 
   test('HOME-035: 卡片点击跳转详情', async ({ page }) => {
@@ -663,6 +673,7 @@ test.describe('1.5 全局交互', () => {
     const hasError = await page.evaluate(() => {
       return !!document.querySelector('.home-empty, [class*="empty"], [class*="error"]');
     });
+    expect(hasError).toBeTruthy();
   });
 
   test('HOME-044: 文档标题', async ({ page }) => {

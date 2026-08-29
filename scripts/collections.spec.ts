@@ -31,6 +31,7 @@ test.describe('7.1 Tab 切换', () => {
 
     // 操作: 点击"IPTV" Tab
     const iptvTab = page.locator('.status-tab, [class*="tab"]').filter({ hasText: 'IPTV' });
+    expect(await iptvTab.count()).toBeGreaterThan(0);
     if (await iptvTab.isVisible().catch(() => false)) {
       await iptvTab.click();
       await page.waitForTimeout(500);
@@ -48,13 +49,14 @@ test.describe('7.2 影视收藏', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // 预期结果: 有收藏数据或显示空状态
+    // 预期结果: 有收藏数据或显示空状态（二者其一必然存在）
     const hasData = await page.evaluate(() => {
       return !!document.querySelector('.video-card-grid, [class*="card-grid"]');
     });
     const hasEmpty = await page.evaluate(() => {
       return !!document.querySelector('.empty-state, [class*="empty"]');
     });
+    expect(hasData || hasEmpty).toBeTruthy();
   });
 });
 
@@ -68,8 +70,9 @@ test.describe('7.4 批量管理', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 预期结果: 批量管理按钮存在
-    const editBtn = page.locator('.record-edit-btn, [class*="edit-btn"]');
+    // 预期结果: 批量管理按钮存在（当前类名 .action-btn--batch）
+    const editBtn = page.locator('.action-btn--batch');
+    expect(await editBtn.count()).toBeGreaterThan(0);
     if (await editBtn.isVisible().catch(() => false)) {
       const text = await editBtn.textContent();
     }

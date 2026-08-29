@@ -193,9 +193,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           </a>
         </div>
         <div className="sticky-header__center">
-          {/* 移动端/桌面端统一：中央常驻搜索框（不再有"点击搜索按钮展开"的临时搜索模式） */}
+          {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
+             原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
+             造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname
+             同步输入值（见 SearchBox.tsx），避免无谓的重挂载开销。 */}
           <SearchBox
-            key={location.pathname}
             variant="header"
             className="sticky-header__search"
             defaultValue={pageSearch.search || undefined}
@@ -212,12 +214,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
             {!isMobile && renderNavItem(SETTINGS_NAV_ITEM)}
           </nav>
-          {/* 个人设置入口（头像 + 用户名）→ /settings?tab=personal：
-             设置页深链自动打开个人设置子页。渲染范围：移动 web（isMobile）+
-             桌面 web（!isTV，桌面设置入口在顶栏最右侧）；app 端导航由底部 TabBar
-             承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮。
-             移动 web 仅显示头像（用户名由 isMobile 判断隐藏，手机横屏同样生效）。 */}
-          {!isTV && !isNative && (
+          {/* 个人设置入口（移动 web 头像）→ /settings?tab=personal：
+             桌面端已有「设置」文字入口、无需重复；app 端导航由底部 TabBar 承担、
+             TV 端保留顶栏「设置」文字入口，均不渲染本按钮。仅移动 web
+             （isMobile && !isNative）显示头像作为个人设置入口。 */}
+          {isMobile && !isNative && (
             <a
               href="/settings?tab=personal"
               className="sticky-header__profile hover-scale"

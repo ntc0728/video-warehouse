@@ -19,6 +19,7 @@ test.describe('9.1 网速检测', () => {
 
     // 预期结果: 检测按钮存在
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
+    expect(await checkBtn.count()).toBeGreaterThan(0);
     if (await checkBtn.isVisible().catch(() => false)) {
       const text = await checkBtn.textContent();
     }
@@ -31,6 +32,7 @@ test.describe('9.1 网速检测', () => {
 
     // 操作: 点击检测按钮
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
+    expect(await checkBtn.count()).toBeGreaterThan(0);
     if (await checkBtn.isVisible().catch(() => false)) {
       await checkBtn.click();
       await page.waitForTimeout(500);
@@ -39,6 +41,7 @@ test.describe('9.1 网速检测', () => {
       const isChecking = await page.evaluate(() => {
         return !!document.querySelector('.checking-spinner, [class*="checking"]');
       });
+      expect(isChecking).toBeTruthy();
     }
   });
 });
@@ -55,6 +58,7 @@ test.describe('9.6 Tab 与统计', () => {
 
     // 预期结果: 5 个 Tab 存在
     const tabs = page.locator('.tab-btn, [class*="tab-btn"]');
+    expect(await tabs.count()).toBeGreaterThan(0);
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
@@ -82,6 +86,7 @@ test.describe('9.6 Tab 与统计', () => {
 
     // 预期结果: 统计卡片存在
     const statCards = page.locator('.stat-card, [class*="stat-card"]');
+    expect(await statCards.count()).toBeGreaterThan(0);
     const count = await statCards.count();
   });
 });

@@ -40,6 +40,7 @@ test.describe('8.2 影视历史', () => {
     const hasEmpty = await page.evaluate(() => {
       return !!document.querySelector('.empty-state, [class*="empty"]');
     });
+    expect(hasData || hasEmpty).toBeTruthy();
   });
 });
 
@@ -57,6 +58,7 @@ test.describe('8.3 时间分组', () => {
     const hasGroups = await page.evaluate(() => {
       return !!document.querySelector('.history-group, [class*="group"]');
     });
+    expect(hasGroups).toBeTruthy();
   });
 
   test('HIS-022: 时间轴导航', async ({ page }) => {
@@ -65,10 +67,11 @@ test.describe('8.3 时间分组', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // 预期结果: 时间轴存在（桌面端）
-    const hasTimeline = await page.evaluate(() => {
-      return !!document.querySelector('.history-node-col, [class*="timeline"]');
+    // 预期结果: 历史页渲染（时间轴在存在观看记录时出现，空状态时为「暂无观看记录」）
+    const hasHistory = await page.evaluate(() => {
+      return !!document.querySelector('.history-page, .history-timeline, [class*="history"]');
     });
+    expect(hasHistory).toBeTruthy();
   });
 });
 
@@ -117,6 +120,7 @@ test.describe('8.5 批量管理', () => {
     await page.waitForTimeout(1000);
 
     const editBtn = page.locator('.action-btn--batch');
+    expect(await editBtn.count()).toBeGreaterThan(0);
     if (await editBtn.isVisible().catch(() => false)) {
       const text = await editBtn.textContent();
     }

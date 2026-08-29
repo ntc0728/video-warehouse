@@ -64,30 +64,35 @@ test.describe('6.1 主题切换', () => {
 
 test.describe('6.2 TMDB 配置', () => {
   test('SET-010: 配置 TMDB Token 弹窗', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    // TMDB Token 配置入口在「视频设置」tab（源码 VideoTab），需深链直达
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     // 操作: 点击 TMDB Token "配置"按钮
     const configBtn = page.locator('.settings-btn-mini').first();
+    expect(await configBtn.count()).toBeGreaterThan(0);
     if (await configBtn.isVisible().catch(() => false)) {
       await configBtn.click();
       await page.waitForTimeout(500);
       // 预期结果: 打开配置弹窗
       const modal = page.locator('.modal, [class*="modal"]');
+      expect(await modal.count()).toBeGreaterThan(0);
     }
   });
 
   test('SET-015: Token 状态显示', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    // Token 状态文本「已配置/未配置」同样在「视频设置」tab
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 预期结果: 已配置 Token 时显示"已配置"
+    // 预期结果: 已配置 Token 时显示"已配置"/"未配置"
     const hasTokenStatus = await page.evaluate(() => {
       const text = document.body.innerText;
       return text.includes('已配置') || text.includes('未配置');
     });
+    expect(hasTokenStatus).toBeTruthy();
   });
 });
 
@@ -147,6 +152,7 @@ test.describe('6.4 播放设置', () => {
 
     // 预期结果: 跳过片头开关存在
     const switches = page.locator('.settings-page .list-item');
+    expect(await switches.count()).toBeGreaterThan(0);
     const count = await switches.count();
   });
 });
@@ -226,19 +232,22 @@ test.describe('6.6 关于与彩蛋', () => {
   });
 
   test('SET-071: 版本号彩蛋（第 1 次点击）', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    // 版本号彩蛋在「关于」tab（源码 AboutTab），需深链直达
+    await page.goto('/settings?tab=about', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     // 操作: 点击版本号 1 次
-    const versionItem = page.locator('.version-item, [class*="version"]').first();
+    const versionItem = page.locator('[class*="version"]').first();
+    expect(await versionItem.count()).toBeGreaterThan(0);
     if (await versionItem.isVisible().catch(() => false)) {
       await versionItem.click();
       await page.waitForTimeout(500);
-      // 预期结果: Toast 显示"再点击 2 次进入源检测页"
+      // 预期结果: Toast 显示"再点击 N 次进入源检测页"
       const toastVisible = await page.evaluate(() => {
         return !!document.querySelector('[class*="toast"]');
       });
+      expect(toastVisible).toBeTruthy();
     }
   });
 
@@ -321,23 +330,18 @@ test.describe('6.6 关于与彩蛋', () => {
 
 test.describe('6.7 个人资料（头像与昵称）', () => {
   test('SET-080: 个人资料设置项可见（头像 + 用户名）', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    // 个人资料在「个人设置」tab（源码 PersonalTab），深链直达避免依赖 TabBar 查找
+    await page.goto('/settings?tab=personal', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 桌面端个人资料为 banner（.settings-profile），移动端为列表行（.settings-row）
-    const personalTab = page.getByRole('tab', { name: '个人设置' });
-    if (await personalTab.isVisible().catch(() => false)) {
-      await personalTab.click();
-      await page.waitForTimeout(400);
-    }
-
+    // 个人资料以 banner（.settings-profile）呈现：含头像（.settings-profile__avatar）与昵称（.settings-profile__name）
     const profileBanner = page.locator('.settings-profile').first();
-    const avatarRow = page.locator('.settings-row', { hasText: '头像' }).first();
-    const nameRow = page.locator('.settings-row', { hasText: '用户名' }).first();
-    const visible = (await profileBanner.isVisible().catch(() => false))
-      ? await profileBanner.locator('.settings-profile__name').isVisible().catch(() => false)
-      : (await avatarRow.isVisible().catch(() => false) && await nameRow.isVisible().catch(() => false));
+    expect(await profileBanner.count()).toBeGreaterThan(0);
+    const avatar = page.locator('.settings-profile__avatar').first();
+    expect(await avatar.count()).toBeGreaterThan(0);
+    const name = page.locator('.settings-profile__name').first();
+    expect(await name.count()).toBeGreaterThan(0);
   });
 
   test('SET-081: 点击头像设置项打开编辑弹窗', async ({ page }) => {
@@ -346,6 +350,7 @@ test.describe('6.7 个人资料（头像与昵称）', () => {
     await page.waitForTimeout(1000);
 
     const personalTab = page.getByRole('tab', { name: '个人设置' });
+    expect(await personalTab.count()).toBeGreaterThan(0);
     if (await personalTab.isVisible().catch(() => false)) {
       await personalTab.click();
       await page.waitForTimeout(400);
@@ -359,6 +364,7 @@ test.describe('6.7 个人资料（头像与昵称）', () => {
       await trigger.click();
       await page.waitForTimeout(500);
       const modal = page.locator('.modal-content-animate.settings-modal');
+      expect(await modal.count()).toBeGreaterThan(0);
     }
   });
 
@@ -401,15 +407,20 @@ test.describe('6.7 个人资料（头像与昵称）', () => {
     await page.waitForTimeout(1000);
 
     const personalTab = page.getByRole('tab', { name: '个人设置' });
+    expect(await personalTab.count()).toBeGreaterThan(0);
     if (await personalTab.isVisible().catch(() => false)) {
       await personalTab.click();
       await page.waitForTimeout(400);
     }
 
     const exportRow = page.locator('.settings-row', { hasText: '导出设置与数据' }).first();
+    expect(await exportRow.count()).toBeGreaterThan(0);
     const importRow = page.locator('.settings-row', { hasText: '导入设置与数据' }).first();
+    expect(await importRow.count()).toBeGreaterThan(0);
     const restoreBtn = page.getByRole('button', { name: '一键导入恢复数据' }).first();
+    expect(await restoreBtn.count()).toBeGreaterThan(0);
     const resetBtn = page.getByRole('button', { name: '一键全部恢复默认' }).first();
+    expect(await resetBtn.count()).toBeGreaterThan(0);
 
     if (
       (await exportRow.isVisible().catch(() => false)) &&
@@ -420,10 +431,12 @@ test.describe('6.7 个人资料（头像与昵称）', () => {
     }
 
     const resetRow = page.locator('.settings-row', { hasText: '恢复设置默认' }).first();
+    expect(await resetRow.count()).toBeGreaterThan(0);
     if (await resetRow.isVisible().catch(() => false)) {
       await resetRow.click();
       await page.waitForTimeout(400);
       const confirmBtn = page.getByRole('button', { name: '确认' }).first();
+      expect(await confirmBtn.count()).toBeGreaterThan(0);
       if (await confirmBtn.isVisible().catch(() => false)) {
         await confirmBtn.click();
         await page.waitForTimeout(300);
