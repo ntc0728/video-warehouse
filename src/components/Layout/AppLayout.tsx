@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
 import Sidebar from './Sidebar';
-import HomeSidebar from './HomeSidebar';
 import StickyHeader, { IMMERSIVE_ROUTES } from '@/components/StickyHeader';
 import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
@@ -70,23 +69,6 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
 
-  // ── HomeSidebar 展开/收起状态（持久化到 localStorage） ──
-  const SIDEBAR_STORAGE_KEY = 'sidebar-collapsed';
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'; }
-    catch { return false; }
-  });
-  const toggleSidebarCollapsed = useCallback(() => {
-    const next = !sidebarCollapsed;
-    // 2026-08-04 侧边栏折叠重构（方案 A''）：不再做宽度动画。
-    // 折叠/展开 = 一次状态翻转（app-shell--sidebar-collapsed 类切换 --sidebar-offset），
-    // spacer 与 sidebar 宽度同帧到位（仅 1 次 reflow）——右侧不卡不抖、左右缘恒定、
-    // 无中间态遮挡/空白。过渡动画由非布局属性承担：图标 left 位移（收起态 absolute
-    // 居中）+ label 淡出（见 HomeSidebar.css），均不触发 reflow。
-    setSidebarCollapsed(next);
-    try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-  }, [sidebarCollapsed]);
-
     useEffect(() => {
       if (sidebarOpen) {
       document.body.style.overflow = 'hidden';
@@ -97,10 +79,7 @@ export default function AppLayout() {
   }, [sidebarOpen]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // appShellRef 供 useSpatialNavigation（TV 方向键空间导航）与折叠状态类绑定使用。
-  // 折叠/展开不再有宽度动画：宽度由 --sidebar-offset 变量 + app-shell--sidebar-collapsed
-  // 类一次性切换（瞬切，仅 1 次 reflow），过渡动画由 HomeSidebar.css 的图标 left /
-  // label opacity 承担。
+  // appShellRef 供 useSpatialNavigation（TV 方向键空间导航）使用。
   const appShellRef = useRef<HTMLDivElement>(null);
 
   // 空闲（首屏渲染后）立即预加载所有路由 chunk：切换到未访问页面时不再出现
@@ -245,20 +224,6 @@ export default function AppLayout() {
     (route) => activePath === route || activePath.startsWith(route),
   );
 
-  // 进入沉浸式（全屏播放）页时自动收起左侧公共栏，离开时恢复进入前的状态，
-  // 避免污染其它页面的侧边栏偏好（isImmersive 的切换沿路由变化，非全局持久）
-  const prevImmersiveRef = useRef(false);
-  const savedCollapsedRef = useRef(sidebarCollapsed);
-  useEffect(() => {
-    if (isImmersive && !prevImmersiveRef.current) {
-      savedCollapsedRef.current = sidebarCollapsed;
-      setSidebarCollapsed(true);
-    } else if (!isImmersive && prevImmersiveRef.current) {
-      setSidebarCollapsed(savedCollapsedRef.current);
-    }
-    prevImmersiveRef.current = isImmersive;
-  }, [isImmersive, sidebarCollapsed, setSidebarCollapsed]);
-
   // 方案 B：只渲染当前激活路由（无 Keep-Alive 容器）。
   // 路由切换 = 卸载旧页 + 挂载新页；chunk 已由 preloadAllRoutes 预加载
   // （lazyWithRetry 缓存 Promise），Suspense 同步解析，不闪 fallback。
@@ -270,7 +235,7 @@ export default function AppLayout() {
         <PullToRefreshProvider>
         <div
         ref={appShellRef}
-        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell--sidebar-collapsed' : ''}`}
+        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}`}
         style={{
           backgroundColor: 'var(--color-background)',
           color: 'var(--color-text)',
@@ -279,15 +244,10 @@ export default function AppLayout() {
         {isCompactViewport && !isNative && (
           <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
         )}
-        {!isCompactViewport && !isNative && !isTV && (
-          <HomeSidebar collapsed={sidebarCollapsed} />
-        )}
         <div className="app-shell__main">
           <StickyHeader
             onMenuToggle={isCompactViewport && !isNative ? toggleSidebar : undefined}
             menuOpen={isCompactViewport && sidebarOpen}
-            onSidebarToggle={!isCompactViewport && !isNative && !isTV ? toggleSidebarCollapsed : undefined}
-            sidebarCollapsed={sidebarCollapsed}
           />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar

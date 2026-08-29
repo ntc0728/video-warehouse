@@ -615,6 +615,15 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   padding: var(--space-sm) var(--space-sm) 0 var(--space-sm);
 }
 
+@media (width >= 768px) {
+  /* 桌面端页面主体内容左右留白放大（由 --space-sm 提升至 --space-lg），
+     避免宽屏下内容贴边；上下与移动端保持一致。 */
+  .page-padding {
+    padding-right: var(--space-lg);
+    padding-left: var(--space-lg);
+  }
+}
+
 .empty-state-wrapper {
   display: flex;
   flex: 1;
