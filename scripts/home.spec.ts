@@ -817,18 +817,19 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
     await expect(arrow).toHaveCSS('opacity', '1');
   });
 
-  test('HOME-055: 小视口（800×900）不渲染移动端分类快选，由侧边栏接管', async ({ page }) => {
+  test('HOME-055: 小视口（800×900）同样渲染分类快选（桌面隐藏规则已解禁）', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 分类快选仅 <768px 渲染；800px 宽 → 不应出现
+    // 分类快选已解禁桌面隐藏：≥768px 的小视口同样渲染（旧规则在此视口是 display:none）
     const quickAccess = page.locator('.category-quick-access').first();
-    const count = await quickAccess.count();
-    if (count > 0) {
-      const visible = await quickAccess.isVisible().catch(() => false);
-    }
+    await expect(quickAccess).toBeVisible();
+    // 卡片数走 useIsMobile()（断点 max-width:1023px）：800px 仍属 mobile → 6 项精简集；
+    // ≥1024px 才渲染完整 7 项（含「纪录片」）。
+    const cardCount = await page.locator('.category-quick-access__card').count();
+    expect(cardCount).toBe(6);
   });
 
   test('HOME-056: 小视口（800×900）桌面搜索框渲染而非移动搜索框', async ({ page }) => {
