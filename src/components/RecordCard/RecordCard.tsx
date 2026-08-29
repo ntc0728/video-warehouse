@@ -83,7 +83,12 @@ const RecordCard = memo(function RecordCard({
           <Icon icon={checkIcon} size="sm" />
         </button>
       )}
-      <button type="button" className="record-card__delete" onClick={onDelete} aria-label="删除">
+      <button
+        type="button"
+        className="record-card__delete"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(e); }}
+        aria-label="删除"
+      >
         <Icon icon={Trash2} size="xs" />
       </button>
 

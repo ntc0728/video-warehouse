@@ -22,7 +22,8 @@ test.describe('13.1 首页 → 其他页面', () => {
     // 操作: 点击 Banner 上的 CTA 按钮（"立即播放"或"查看详情"）
     const ctaBtn = page.locator('.hero-banner__cta, [class*="hero-banner__cta"]').first();
     if (await ctaBtn.isVisible().catch(() => false)) {
-      await ctaBtn.click();
+      // 顶栏为 fixed，Hero 在滚动容器内；用 JS click 规避「在视口外」的 Playwright 判定
+      await ctaBtn.evaluate((el) => el.click());
       await page.waitForTimeout(1000);
       const url = page.url();
       const navigated = url.includes('/detail/') || url.includes('/play/');
@@ -200,12 +201,14 @@ test.describe('13.5 IPTV 相关跳转', () => {
 
 test.describe('13.6 设置页与其他页面', () => {
   test('X-060: 设置页 → 源检测页（版本号彩蛋）', async ({ page }) => {
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    // 版本号彩蛋在「关于」tab（源码 SettingsAboutTab），需深链直达
+    await page.goto('/settings?tab=about', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 操作: 连续点击版本号 3 次
-    const versionItem = page.locator('.version-item, [class*="version"]').first();
+    // 操作: 连续点击版本号 3 次（version 元素的父行可点击）
+    const versionItem = page.locator('[class*="version"]').first();
+    expect(await versionItem.count()).toBeGreaterThan(0);
     if (await versionItem.isVisible().catch(() => false)) {
       await versionItem.click();
       await page.waitForTimeout(200);
@@ -215,6 +218,7 @@ test.describe('13.6 设置页与其他页面', () => {
       await page.waitForTimeout(1000);
 
       // 预期结果: 跳转到 /source-checker
+      expect(page.url()).toContain('/source-checker');
     }
   });
 });
@@ -264,6 +268,7 @@ test.describe('13.9 深链场景', () => {
 
     // 点击返回
     const backBtn = page.locator('.person-hero-back, [class*="hero-back"]').first();
+    expect(await backBtn.count()).toBeGreaterThan(0);
     if (await backBtn.isVisible().catch(() => false)) {
       await backBtn.click();
       await page.waitForTimeout(1000);
@@ -290,6 +295,7 @@ test.describe('13.10 数据连续性验证', () => {
 
     // 切换到深色模式
     const moonBtn = page.locator('.theme-btn').nth(1);
+    expect(await moonBtn.count()).toBeGreaterThan(0);
     if (await moonBtn.isVisible().catch(() => false)) {
       await moonBtn.click();
       await page.waitForTimeout(500);
@@ -301,6 +307,7 @@ test.describe('13.10 数据连续性验证', () => {
         return document.documentElement.getAttribute('data-theme') === 'dark'
           || document.body.classList.contains('dark');
       });
+      expect(isDark).toBeTruthy();
     }
   });
 });

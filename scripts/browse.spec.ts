@@ -56,6 +56,7 @@ test.describe('2.2 搜索功能', () => {
 
     // 操作: 在顶部导航栏搜索框输入关键词并回车
     const searchInput = page.locator('.sticky-header .search-box__input');
+    expect(await searchInput.count()).toBeGreaterThan(0);
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('复仇者联盟');
       await searchInput.press('Enter');
@@ -65,6 +66,7 @@ test.describe('2.2 搜索功能', () => {
       const hasResults = await page.evaluate(() => {
         return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
       });
+      expect(hasResults).toBeTruthy();
     }
   });
 
@@ -75,6 +77,7 @@ test.describe('2.2 搜索功能', () => {
 
     // 操作: 先搜索，再清空
     const searchInput = page.locator('.sticky-header .search-box__input');
+    expect(await searchInput.count()).toBeGreaterThan(0);
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('复仇者');
       await searchInput.press('Enter');
@@ -82,6 +85,7 @@ test.describe('2.2 搜索功能', () => {
 
       // 清空搜索词
       const clearBtn = page.locator('.sticky-header .search-box__clear');
+      expect(await clearBtn.count()).toBeGreaterThan(0);
       if (await clearBtn.isVisible().catch(() => false)) {
         await clearBtn.click();
         await page.waitForTimeout(2000);
@@ -96,6 +100,7 @@ test.describe('2.2 搜索功能', () => {
 
     // 操作: 输入不存在的关键词
     const searchInput = page.locator('.sticky-header .search-box__input');
+    expect(await searchInput.count()).toBeGreaterThan(0);
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('zzzxxxnotexist12345');
       await searchInput.press('Enter');
@@ -105,6 +110,7 @@ test.describe('2.2 搜索功能', () => {
       const isEmpty = await page.evaluate(() => {
         return !!document.querySelector('.empty-state, [class*="empty"]');
       });
+      expect(isEmpty).toBeTruthy();
     }
   });
 
@@ -144,6 +150,7 @@ test.describe('2.3 筛选与排序', () => {
 
     // 预期结果: FilterBar 存在
     const filterBar = page.locator('.filter-bar, [class*="filter"]');
+    expect(await filterBar.count()).toBeGreaterThan(0);
     const hasFilter = await filterBar.isVisible().catch(() => false);
   });
 
@@ -154,6 +161,7 @@ test.describe('2.3 筛选与排序', () => {
 
     // 预期结果: 排序栏存在
     const sortBar = page.locator('.browse-sort-bar, [class*="sort"]');
+    expect(await sortBar.count()).toBeGreaterThan(0);
     const hasSort = await sortBar.isVisible().catch(() => false);
   });
 
@@ -164,6 +172,7 @@ test.describe('2.3 筛选与排序', () => {
 
     // 预期结果: 显示"共 X 条"结果数
     const countEl = page.locator('.browse-sort-bar__count, [class*="count"]');
+    expect(await countEl.count()).toBeGreaterThan(0);
     if (await countEl.isVisible().catch(() => false)) {
       const text = await countEl.textContent();
     }
@@ -182,12 +191,14 @@ test.describe('2.4 CMS 直链搜索', () => {
 
     // 操作: 切换到直链搜索模式
     const cmsTab = page.locator('.browse-search-tab').nth(1);
+    expect(await cmsTab.count()).toBeGreaterThan(0);
     if (await cmsTab.isVisible().catch(() => false)) {
       await cmsTab.click();
       await page.waitForTimeout(500);
 
       // 输入关键词搜索
       const searchInput = page.locator('.sticky-header .search-box__input');
+      expect(await searchInput.count()).toBeGreaterThan(0);
       if (await searchInput.isVisible().catch(() => false)) {
         await searchInput.fill('复仇者');
         await searchInput.press('Enter');
@@ -197,6 +208,7 @@ test.describe('2.4 CMS 直链搜索', () => {
         const hasIndicator = await page.evaluate(() => {
           return !!document.querySelector('[class*="source-status"], [class*="indicator"]');
         });
+        expect(hasIndicator).toBeTruthy();
       }
     }
   });
@@ -213,12 +225,13 @@ test.describe('2.5 懒加载与滚动', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // 操作: 滚动到页面下方
-    await page.evaluate(() => window.scrollTo(0, 2000));
+    // 操作: 滚动到页面下方（真实滚动容器是 .app-shell__scroll，而非 .app-shell / window）
+    await page.locator('.app-shell__scroll').evaluate((el) => { el.scrollTop = 2000; });
     await page.waitForTimeout(500);
 
     // 预期结果: 回到顶部按钮可见
     const backToTop = page.locator('.back-to-top-button');
+    expect(await backToTop.count()).toBeGreaterThan(0);
   });
 });
 

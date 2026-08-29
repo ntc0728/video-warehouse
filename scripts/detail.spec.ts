@@ -26,6 +26,7 @@ test.describe('3.1 页面加载', () => {
     const hasHero = await page.evaluate(() => {
       return !!document.querySelector('.detail-hero, [class*="detail-hero"]');
     });
+    expect(hasHero).toBeTruthy();
   });
 
   test('DETAIL-002: 正常加载剧集详情', async ({ page }) => {
@@ -38,8 +39,10 @@ test.describe('3.1 页面加载', () => {
     const hasTabs = await page.evaluate(() => {
       return !!document.querySelector('.detail-tabs, [class*="detail-tab"]');
     });
+    expect(hasTabs).toBeTruthy();
     if (hasTabs) {
       const tabTexts = await page.locator('.detail-tab').allTextContents();
+      expect(tabTexts).toBeTruthy();
       const hasSeasonTab = tabTexts.some(t => t.includes('季'));
     }
   });
@@ -50,6 +53,7 @@ test.describe('3.1 页面加载', () => {
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
+    expect(loadingVisible).toBeTruthy();
   });
 
   test('DETAIL-004: 无效 ID 显示错误', async ({ page }) => {
@@ -62,6 +66,7 @@ test.describe('3.1 页面加载', () => {
       const text = document.body.innerText;
       return text.includes('暂仅支持') || text.includes('无效') || text.includes('不存在');
     });
+    expect(hasError).toBeTruthy();
   });
 
   test('DETAIL-005: 无效 TMDB ID 显示错误', async ({ page }) => {
@@ -74,6 +79,7 @@ test.describe('3.1 页面加载', () => {
       const text = document.body.innerText;
       return text.includes('无效') || text.includes('不存在');
     });
+    expect(hasError).toBeTruthy();
   });
 });
 
@@ -93,6 +99,7 @@ test.describe('3.2 Hero 区域', () => {
       if (!bg) return false;
       return getComputedStyle(bg).backgroundImage !== 'none' || bg.getAttribute('src');
     });
+    expect(hasBg).toBeTruthy();
   });
 
   test('DETAIL-014: Meta 信息显示', async ({ page }) => {
@@ -104,6 +111,7 @@ test.describe('3.2 Hero 区域', () => {
     const hasMeta = await page.evaluate(() => {
       return !!document.querySelector('.detail-hero-meta, [class*="hero-meta"]');
     });
+    expect(hasMeta).toBeTruthy();
   });
 
   test('DETAIL-016: 返回按钮', async ({ page }) => {
@@ -113,6 +121,7 @@ test.describe('3.2 Hero 区域', () => {
 
     // 预期结果: 返回按钮存在
     const backBtn = page.locator('.detail-hero-back, [class*="detail-hero-back"]');
+    expect(await backBtn.count()).toBeGreaterThan(0);
   });
 });
 
@@ -128,6 +137,7 @@ test.describe('3.3 操作按钮', () => {
 
     // 预期结果: 播放按钮存在
     const playBtn = page.locator('.detail-btn-play, [class*="btn-play"]');
+    expect(await playBtn.count()).toBeGreaterThan(0);
     if (await playBtn.isVisible().catch(() => false)) {
       const text = await playBtn.textContent();
     }
@@ -140,6 +150,7 @@ test.describe('3.3 操作按钮', () => {
 
     // 预期结果: 收藏按钮存在
     const collectBtn = page.locator('.detail-btn-collect, [class*="btn-collect"]');
+    expect(await collectBtn.count()).toBeGreaterThan(0);
     if (await collectBtn.isVisible().catch(() => false)) {
       const text = await collectBtn.textContent();
     }
@@ -172,6 +183,7 @@ test.describe('3.4 Tab 导航', () => {
 
     // 预期结果: 显示 3 个 Tab：概览、播放列表、季信息
     const tabs = page.locator('.detail-tab');
+    expect(await tabs.count()).toBeGreaterThan(0);
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
@@ -209,6 +221,7 @@ test.describe('3.5 概览 Tab', () => {
     const hasCast = await page.evaluate(() => {
       return !!document.querySelector('.detail-cast-row, [class*="cast"]');
     });
+    expect(hasCast).toBeTruthy();
   });
 
   test('DETAIL-046: 剧照网格（专用 /images 接口，全语言 backdrops）', async ({ page }) => {
@@ -318,6 +331,7 @@ test.describe('3.6 播放列表 Tab', () => {
 
     // 操作: 点击播放列表 Tab
     const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
+    expect(await sourcesTab.count()).toBeGreaterThan(0);
     if (await sourcesTab.isVisible().catch(() => false)) {
       await sourcesTab.click();
       await page.waitForTimeout(3000);
@@ -326,6 +340,7 @@ test.describe('3.6 播放列表 Tab', () => {
       const hasSourceContent = await page.evaluate(() => {
         return !!document.querySelector('.detail-sources, [class*="source"]');
       });
+      expect(hasSourceContent).toBeTruthy();
     }
   });
 
@@ -344,6 +359,7 @@ test.describe('3.6 播放列表 Tab', () => {
     await page.waitForTimeout(3000);
 
     const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
+    expect(await sourcesTab.count()).toBeGreaterThan(0);
     if (!(await sourcesTab.isVisible().catch(() => false))) {
       return;
     }
@@ -360,8 +376,11 @@ test.describe('3.6 播放列表 Tab', () => {
       .isVisible()
       .catch(() => false);
     const errStatusCount = await page.locator('.detail-source-status--err').count();
+    // 注释已说明：mock 下全部失败应不渲染错误卡片，故此处断言为 0（并非期望 >0）
+    expect(errStatusCount).toBe(0);
 
-    // 仅当存在可用源时，卡片才出现“全部”按钮（mock 下 CMS 全部失败 → 不出现）
+    // 仅当存在可用源时，卡片才出现“全部”按钮（mock 下 CMS 全部失败 → 不出现），故不强制断言其存在；
+    // 下方 if (!hasAllBtn) 分支已校验“全部源不可用时显示统一提示”
     const allBtn = page.locator('.detail-source-all-btn').first();
     const hasAllBtn = await allBtn.isVisible().catch(() => false);
     if (!hasAllBtn) {
@@ -375,8 +394,11 @@ test.describe('3.6 播放列表 Tab', () => {
     await page.waitForTimeout(800);
 
     const modalVisible = await page.locator('.source-all-modal').isVisible().catch(() => false);
+    expect(modalVisible).toBeTruthy();
     const rowCount = await page.locator('.source-all-modal__row').count();
+    expect(rowCount).toBeGreaterThan(0);
     const playBtnCount = await page.locator('.source-all-modal__play-btn').count();
+    expect(playBtnCount).toBeGreaterThan(0);
 
     // 点击第一条线路的播放按钮应跳转到播放页
     if (playBtnCount > 0) {
@@ -401,6 +423,7 @@ test.describe('3.8 推荐区域', () => {
     const hasRecommend = await page.evaluate(() => {
       return !!document.querySelector('.detail-recommend, [class*="recommend"]');
     });
+    expect(hasRecommend).toBeTruthy();
   });
 });
 

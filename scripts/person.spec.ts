@@ -24,6 +24,7 @@ test.describe('10.1 页面加载', () => {
     const hasContent = await page.evaluate(() => {
       return !!document.querySelector('.person-page, [class*="person"]');
     });
+    expect(hasContent).toBeTruthy();
   });
 
   test('PER-003: 无效 ID 显示错误', async ({ page }) => {
@@ -35,6 +36,7 @@ test.describe('10.1 页面加载', () => {
       const text = document.body.innerText;
       return text.includes('无效') || text.includes('不存在');
     });
+    expect(hasError).toBeTruthy();
   });
 });
 
@@ -52,6 +54,7 @@ test.describe('10.2 Hero 区域', () => {
     const hasAvatar = await page.evaluate(() => {
       return !!document.querySelector('.person-avatar, [class*="avatar"]');
     });
+    expect(hasAvatar).toBeTruthy();
   });
 
   test('PER-012: 又名显示', async ({ page }) => {
@@ -63,6 +66,7 @@ test.describe('10.2 Hero 区域', () => {
     const hasAKA = await page.evaluate(() => {
       return !!document.querySelector('.person-aka, [class*="aka"]');
     });
+    expect(hasAKA).toBeTruthy();
   });
 
   test('PER-018: 返回按钮', async ({ page }) => {
@@ -72,6 +76,7 @@ test.describe('10.2 Hero 区域', () => {
 
     // 预期结果: 返回按钮存在
     const backBtn = page.locator('.person-hero-back, [class*="hero-back"]');
+    expect(await backBtn.count()).toBeGreaterThan(0);
   });
 });
 
@@ -87,6 +92,7 @@ test.describe('10.3 作品列表 Tab', () => {
 
     // 预期结果: 电影 Tab 存在
     const tabs = page.locator('.person-tab, [class*="person-tab"]');
+    expect(await tabs.count()).toBeGreaterThan(0);
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
@@ -108,6 +114,7 @@ test.describe('10.4 作品卡片与懒加载', () => {
     const hasWorks = await page.evaluate(() => {
       return !!document.querySelector('.person-work-grid, [class*="work-grid"]');
     });
+    expect(hasWorks).toBeTruthy();
   });
 
   test('PER-035: 文档标题', async ({ page }) => {

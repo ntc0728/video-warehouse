@@ -78,6 +78,7 @@ test.describe('4.1 页面加载', () => {
     const hasPlayer = await page.evaluate(() => {
       return !!document.querySelector('.player-page, [class*="player-page"]');
     });
+    expect(hasPlayer).toBeTruthy();
   });
 
   test('PLAYER-003: 首次 loading', async ({ page }) => {
@@ -86,6 +87,7 @@ test.describe('4.1 页面加载', () => {
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
+    expect(loadingVisible).toBeTruthy();
   });
 });
 
@@ -99,10 +101,11 @@ test.describe('4.5 CMS 源管理', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(8000);
 
-    // 预期结果: CMS 面板存在
+    // 预期结果: CMS 面板存在（源码类名 .player-panel--cms）
     const hasCMSPanel = await page.evaluate(() => {
-      return !!document.querySelector('[class*="cms-panel"], [class*="CMSPanel"]');
+      return !!document.querySelector('.player-panel, [class*="cms"]');
     });
+    expect(hasCMSPanel).toBeTruthy();
   });
 
   test('PLAYER-045: CMS 面板折叠/展开', async ({ page }) => {
@@ -112,6 +115,7 @@ test.describe('4.5 CMS 源管理', () => {
 
     // 预期结果: 面板可折叠/展开
     const panelHeader = page.locator('[class*="panel-header"], [class*="cms-panel"] button').first();
+    expect(await panelHeader.count()).toBeGreaterThan(0);
   });
 });
 
@@ -127,6 +131,7 @@ test.describe('4.8 收藏与详情', () => {
 
     // 预期结果: 收藏按钮存在
     const favBtn = page.locator('.player-detail-fav-btn, [class*="fav-btn"]');
+    expect(await favBtn.count()).toBeGreaterThan(0);
     if (await favBtn.isVisible().catch(() => false)) {
       const text = await favBtn.textContent();
     }
@@ -141,6 +146,7 @@ test.describe('4.8 收藏与详情', () => {
     const hasDetail = await page.evaluate(() => {
       return !!document.querySelector('.player-detail-section, [class*="player-detail"]');
     });
+    expect(hasDetail).toBeTruthy();
   });
 });
 
