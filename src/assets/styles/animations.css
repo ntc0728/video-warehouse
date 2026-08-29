@@ -232,7 +232,7 @@
 }
 
 /* ── 全局 hover 微放大（统一「hover 稍微放大文本/图标」的显示效果） ──
-   使用独立 scale 属性（不干扰 transform，与 HomeSidebar 图标 hover 一致）。
+   使用独立 scale 属性（不干扰 transform，与各导航图标 hover 一致）。
    用法：<button className="hover-scale">；scale 过渡由元素自身 transition
    （需包含 scale）承担——本类不声明 transition，避免覆盖元素自身的
    background/color/border 过渡；reduced-motion 由全局规则瞬变。 */

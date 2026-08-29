@@ -487,102 +487,33 @@ test.describe('3.16 易用性修复', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 3.17 侧边栏折叠重构（2026-08-04）：瞬切 + 图标居中 + label 淡出
-// ═══════════════════════════════════════════════════════════════
+// =============================================================
+// 3.17 桌面端布局重构（2026-08-29）：删除左侧栏，分类快选 + 顶栏双入口
+// =============================================================
 
-test.describe('3.17 侧边栏折叠', () => {
-  async function openHomeDesktop(page: Page) {
+test.describe('3.17 桌面端布局重构', () => {
+  test('REG-013: 桌面端无左侧栏，分类快选可见且顶栏含 IPTV/设置', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.home-sidebar', { timeout: 15000 });
-    await page.waitForTimeout(500);
-  }
+    await page.waitForTimeout(2000);
 
-  test('REG-013: 折叠/展开为瞬切（spacer 与 sidebar 同帧到位，无宽度动画）', async ({ page }) => {
-    await openHomeDesktop(page);
+    // 旧 HomeSidebar 已删除
+    expect(await page.locator('.home-sidebar').count()).toBe(0);
 
-    // 展开态：sidebar 宽度 = --sidebar-width（@1280 = clamp(160, 12vw=153.6, 240) = 160px）
-    const widthBefore = await page.evaluate(() => {
-      const s = document.querySelector('.home-sidebar');
-      return s ? s.getBoundingClientRect().width : -1;
-    });
-    expect(widthBefore).toBe(160);
+    // 分类快选在所有端显示（桌面不再隐藏）
+    await expect(page.locator('.category-quick-access').first()).toBeVisible();
 
-    // 点击折叠按钮
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    // 瞬切：点击后 100ms 内宽度必须已到位（若仍有 480ms 动画，此刻宽度应在 160~64 之间）
-    await page.waitForTimeout(100);
-    const state = await page.evaluate(() => {
-      const sidebar = document.querySelector('.home-sidebar');
-      const spacer = document.querySelector('.sidebar-spacer');
-      const shell = document.querySelector('.app-shell');
-      return {
-        sidebarWidth: sidebar ? sidebar.getBoundingClientRect().width : -1,
-        spacerWidth: spacer ? spacer.getBoundingClientRect().width : -1,
-        collapsedClass: shell ? shell.classList.contains('app-shell--sidebar-collapsed') : false,
-      };
-    });
-    expect(state.sidebarWidth).toBe(64);
-    expect(state.spacerWidth).toBe(64);
-    expect(state.collapsedClass).toBe(true);
-    console.log(`✅ REG-013 通过: 折叠瞬切 sidebar=${state.sidebarWidth}px spacer=${state.spacerWidth}px`);
-
-    // 再点展开，同样瞬切。StickyHeader 折叠按钮有 300ms 防抖，需等待后再点。
-    await page.waitForTimeout(400);
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    await page.waitForTimeout(100);
-    const widthAfter = await page.evaluate(() => {
-      const s = document.querySelector('.home-sidebar');
-      return s ? s.getBoundingClientRect().width : -1;
-    });
-    expect(widthAfter).toBe(160);
-    console.log('✅ REG-013 通过: 展开同样瞬切回 160px');
-  });
-
-  test('REG-014: 图标收起态绝对居中（left 固定像素、可过渡），label 淡出', async ({ page }) => {
-    await openHomeDesktop(page);
-
-    const readIcon = () => page.evaluate(() => {
-      const icon = document.querySelector('.home-sidebar__icon');
-      if (!icon) return { left: -1, position: '', transition: '' };
-      const cs = getComputedStyle(icon);
-      return { left: parseFloat(cs.left), position: cs.position, transition: cs.transitionProperty };
-    });
-    const readLabelOpacity = () => page.evaluate(() => {
-      const label = document.querySelector('.home-sidebar__label');
-      return label ? parseFloat(getComputedStyle(label).opacity) : -1;
-    });
-
-    // 展开态：图标绝对定位（不参与 flex 流，不随栏宽漂移），left = --space-xl（16px），
-    // transition 含 left（收起时平滑位移）
-    const before = await readIcon();
-    expect(before.position).toBe('absolute');
-    expect(before.left).toBeGreaterThanOrEqual(15);
-    expect(before.left).toBeLessThanOrEqual(17);
-    expect(before.transition).toContain('left');
-    expect(await readLabelOpacity()).toBe(1);
-
-    // 按钮高度：图标 absolute 化后不占流，显式 min-height 恢复原行高（2×space-lg + 图标高）
-    const itemHeight = await page.evaluate(() => {
-      const item = document.querySelector('.home-sidebar__item');
-      return item ? item.getBoundingClientRect().height : -1;
-    });
-    expect(itemHeight).toBeGreaterThanOrEqual(40);
-
-    // 折叠：图标绝对居中 left=(64-图标宽)/2 ≈ 22px；label 淡出为 0
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    await page.waitForTimeout(450); // 等 left(0.32s) / label(0.2s) 过渡完成
-    const after = await readIcon();
-    expect(after.position).toBe('absolute');
-    // 居中公式（修正后）：(64 − nav padding 2×6 − 图标宽 20) / 2 = 16px
-    expect(after.left).toBeGreaterThanOrEqual(14);
-    expect(after.left).toBeLessThanOrEqual(18);
-    expect(await readLabelOpacity()).toBe(0);
-    console.log(`✅ REG-014 通过: 展开 left=${before.left}px → 收起居中 left=${after.left}px，label opacity=0`);
+    // 顶栏提供 IPTV + 设置入口（原左侧栏职责上移）
+    const titles = await page.evaluate(() =>
+      [...document.querySelectorAll('.sticky-header__nav-item')].map((el) => (el as HTMLElement).title || (el as HTMLElement).textContent?.trim() || ''),
+    );
+    expect(titles.join(' ')).toContain('IPTV');
+    expect(titles.join(' ')).toContain('设置');
+    console.log('✅ REG-013 通过: 桌面端无左侧栏，分类快选 + 顶栏 IPTV/设置 双入口');
   });
 });
+
 
 // ═══════════════════════════════════════════════════════════════
 // 3.18 细节修复（2026-08-04）：IPTV 首载整页 loading / 海报超时兜底

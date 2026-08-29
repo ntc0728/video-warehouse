@@ -68,7 +68,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 
 | 页面 | 路由 | 核心组件 | 数据源 |
 |------|------|---------|--------|
-| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
+| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
 | 浏览/搜索 | `/browse` | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供） | TMDB discover/search + CMS searchAll |
 | 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
 | 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
@@ -196,7 +196,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
 
 应用位置：
-- 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、宽度 `clamp(160px, 12vw, 240px)`、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
+- 顶部导航 `StickyHeader` 承载全局导航；桌面 web / TV **已无左侧栏**（旧 `HomeSidebar` 于 2026-08-29 删除）：桌面经顶栏补充 IPTV + 设置入口（`StickyHeader` 的 `EXTRA_NAV_ITEMS` / `SETTINGS_NAV_ITEM` 在 `!isMobile` 时渲染），移动 web / app 经抽屉侧栏 / 底部 TabBar。`--sidebar-width*` token 仍保留供移动端 `Sidebar.tsx` 使用。
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
 - 浏览页双卡片结构 — `Browse.css`：
   - Card 1（搜索区）：搜索 tabs + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压（SearchBox 已移至顶部导航，通过 `usePageSearchStore` 注册回调）
@@ -323,11 +323,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-18 校准）；表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-29 校准）；表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 40 + 7 |
+| `src/pages/Home/` | `scripts/home.spec.ts` | 35 + 7 |
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 27 |
@@ -338,9 +338,9 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
 | 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
-| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 22 |
+| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 21 |
 | 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
-| UI 整改专项（顶栏头像/侧边栏/分类入口/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
+| UI 整改专项（顶栏头像/分类入口(全端)/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
 | 全局问题专项（字体体系/皮肤字体自托管/基准统一/IPTV 占位/跟随系统/收藏动画） | `scripts/global-fixes.spec.ts` | 9 |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（白屏/封面/汉堡/横屏/TabBar/免责声明 各页共通的修复验证）。

@@ -224,7 +224,7 @@ test.describe('1.3 分类快捷入口', () => {
 
   for (const tc of CATEGORY_TEST_CASES) {
     test(`HOME-022: 点击"${tc.label}"跳转 URL 参数正确`, async ({ page }) => {
-      // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+      // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
       await page.setViewportSize({ width: 767, height: 1024 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -269,7 +269,7 @@ test.describe('1.3 分类快捷入口', () => {
   }
 
   test('HOME-023: 所有分类跳转后 Browse 页筛选条件正确', async ({ page }) => {
-    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
     await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -320,7 +320,7 @@ test.describe('1.3 分类快捷入口', () => {
 
   test('HOME-024: 所有分类跳转 URL 参数正确', async ({ page }) => {
     test.setTimeout(60000);
-    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
     await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -375,7 +375,7 @@ test.describe('1.3 分类快捷入口', () => {
   // ── 分类跳转后联动搜索框搜索 ──────────────────────────────────
 
   test('HOME-024b: 分类跳转后搜索框输入验证', async ({ page }) => {
-    // 使用移动端视口（< 768px），平板/桌面端（>=768px）分类快速入口已由 HomeSidebar 接管并隐藏
+    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
     await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -427,7 +427,7 @@ test.describe('1.3 分类快捷入口', () => {
   });
 
   test('HOME-025: 分类跳转后搜索框联动搜索', async ({ page }) => {
-    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
     await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -495,7 +495,7 @@ test.describe('1.3 分类快捷入口', () => {
   });
 
   test('HOME-026: 各分类跳转后搜索框搜索验证', async ({ page }) => {
-    // 使用移动端视口（< 768px），平板/桌面端分类快速入口已由 HomeSidebar 接管并隐藏
+    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选（旧 HomeSidebar 隐藏规则已解禁）
     await page.setViewportSize({ width: 767, height: 1024 });
 
     const searchTestCases = [
@@ -568,245 +568,49 @@ test.describe('1.3 分类快捷入口', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 1.3b 侧边栏分类切换过渡（交叉淡出/淡入，2026-08-13）
-// ═══════════════════════════════════════════════════════════════
+// =============================================================
+// 1.3b 桌面端分类入口（2026-08-29）：旧左侧栏页面内分类切换已删除，
+// 桌面 web 经顶栏（IPTV/设置）+ 分类快选卡片双入口；点击分类卡片跳 /browse（与移动端一致）。
+// =============================================================
 
-test.describe('1.3b 侧边栏分类切换过渡', () => {
-  test('HOME-060: 分类切换暗态替换内容（无透明空窗）', async ({ page }) => {
-    // 前置: 桌面端（侧边栏驱动分类切换），首页数据就绪
-    await page.goto('/');
-    await page.waitForSelector('.home-page__content', { timeout: 15000 });
-    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+test.describe('1.3b 桌面端分类入口', () => {
+  test('HOME-060: 桌面端分类快选可见且点击跳转 /browse（与移动端一致）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2000);
 
-    // 给「电影」分类数据源（/movie/popular）加 500ms 延迟，拉长 dim 过渡窗口。
-    // mock 下数据本地立即就绪 → 分类切换瞬间完成 → dim 窗口仅 ~70ms（实测），
-    // 30ms 采样循环随机错过（基线 flaky）。加延迟后窗口 500ms+，采样必命中，
-    // 且更贴近真实网络（用户实际有网络延迟）。
-    await page.route('**/api.tmdb.org/**/movie/popular**', async (route) => {
-      await new Promise((r) => setTimeout(r, 500));
-      await route.continue();
-    });
-    await page.waitForTimeout(100); // 让路由注册生效
+    // 桌面端分类快选不再隐藏（旧 HomeSidebar 隐藏规则已解禁）
+    const qa = page.locator('.category-quick-access').first();
+    await expect(qa).toBeVisible();
 
-    // 操作: 点击侧边栏「电影」分类
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
+    // 点击「电影」卡片 → 跳转 /browse?category=movie
+    const movieCard = page.locator('.category-quick-access__card[aria-label="分类：电影"]');
+    await expect(movieCard).toBeVisible();
+    await movieCard.click();
+    await page.waitForTimeout(1000);
 
-    // 捕获过渡全程 opacity：等待期 dim 0.55 → 暗态下原位替换 → 亮度恢复 1。
-    // 核心断言：内容**不得淡出到透明**（历史 fade-out 状态机的 120ms 空窗
-    // = 「banner 下方内容短暂消失」的根因，2026-08-13 已移除）。
-    const observed = await page.evaluate(async () => {
-      const el = document.querySelector('.home-page__content') as HTMLElement | null;
-      if (!el) return { minOp: 1, sawSubOne: false };
-      const start = Date.now();
-      let minOp = 1;
-      let sawSubOne = false;
-      while (Date.now() - start < 3000) {
-        const op = parseFloat(getComputedStyle(el).opacity);
-        if (op < minOp) minOp = op;
-        if (op < 0.99) sawSubOne = true;
-        await new Promise((r) => setTimeout(r, 30));
-      }
-      return { minOp, sawSubOne };
-    });
-
-    // 预期: 过渡期间出现降暗中间态（非瞬间替换）
-    expect(observed.sawSubOne, '应观察到 opacity<1 的过渡中间态（非瞬间替换）').toBe(true);
-    // 核心: 全程无透明空窗——最低 opacity 不低于 0.5（dim 0.55 的过渡下界）
-    expect(observed.minOp, '内容不应淡出到透明（无空窗）').toBeGreaterThanOrEqual(0.5);
-
-    // 终态: 过渡完成 → 内容恢复全不透明、降暗类移除、侧边栏高亮「电影」
-    await expect
-      .poll(
-        async () =>
-          page.evaluate(() => {
-            const el = document.querySelector('.home-page__content') as HTMLElement | null;
-            if (!el) return null;
-            return {
-              op: parseFloat(getComputedStyle(el).opacity),
-              dim: el.classList.contains('home-cat-dim'),
-            };
-          }),
-        { timeout: 5000, intervals: [100] },
-      )
-      .toEqual({ op: 1, dim: false });
-    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
-    console.log('✅ HOME-060 通过: 分类切换经暗态替换，无透明空窗');
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/browse');
+    expect(url.searchParams.get('category')).toBe('movie');
+    console.log('✅ HOME-060 通过: 桌面端分类快选可见并跳转 /browse?category=movie');
   });
 
-  test('HOME-061: 分类切换时 banner 主图平滑过渡（旧图垫底→新图就绪淡入→滞留层移除）', async ({ page }) => {
-    // 前置: 桌面端，首页数据就绪（首页首图已加载/缓存）
-    await page.goto('/');
-    await page.waitForSelector('.home-page__content', { timeout: 15000 });
-    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
+  test('HOME-061: 桌面端顶栏提供 IPTV 与设置入口（无左侧栏）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header__nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
 
-    // 操作: 切「电影」分类 → 触发主图过渡（旧图滞留层垫底 → 新图就绪淡入）
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
-
-    // 阶段1: 过渡中滞留层出现（旧图垫底，新层就绪前不渲染，无空白帧）
-    await expect(page.locator('.hero-banner__bg-layer--stale')).toBeVisible({ timeout: 3000 });
-
-    // 阶段2: 新层挂载 is-active（预加载就绪 → heroBgFadeIn 淡入），淡入期间滞留层仍垫底
-    await expect(page.locator('.hero-banner__bg-layer.is-active')).toBeVisible({ timeout: 3000 });
-    expect(
-      await page.locator('.hero-banner__bg-layer--stale').count(),
-      '淡入期间滞留层应继续垫底（无空白帧）',
-    ).toBe(1);
-
-    // 阶段3: 滞留层在淡入完成后移除（清理 effect ~1.2s）
-    await expect
-      .poll(async () => page.locator('.hero-banner__bg-layer--stale').count(), {
-        timeout: 5000,
-        intervals: [200],
-      })
-      .toBe(0);
-
-    // 终态: 仅单层 is-active，无滞留残留
-    expect(await page.locator('.hero-banner__bg-layer').count()).toBe(1);
-    console.log('✅ HOME-061 通过: 分类切换主图经「旧图垫底→新图淡入」过渡，无硬切');
-  });
-
-  test('HOME-062: 分类切换后自动轮播恢复正常（轮播回归）', async ({ page }) => {
-    // 前置: 首页数据就绪 + 先切一次分类再切回（触发主图切换过渡，验证轮播不被干扰）
-    await page.goto('/');
-    await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 15000 });
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
-    await page.locator('.home-sidebar__item', { hasText: '首页' }).first().click();
-    // 等切换过渡完成（switchReady 恢复 + 滞留层清理）
-    await expect
-      .poll(async () => page.locator('.hero-banner__bg-layer--stale').count(), {
-        timeout: 5000,
-        intervals: [200],
-      })
-      .toBe(0);
-
-    const src1 = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
-    // 等待超过一个轮播周期（5s）+ 余量：自动轮播应已切到下一张（20 个 mock 项不会切回同一张）
-    await page.waitForTimeout(6500);
-    const src2 = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
-    expect(src2, '自动轮播应持续切换（不被分类切换重置回第一张）').not.toBe(src1);
-    // 悬停预览（displayIndex 变化的另一路径）同样不被重置逻辑干扰。
-    // 注意：src2 已是 items[1]（轮播切过 1 次），悬停 nth(2)（items[2]）验证
-    // 预览切到第 3 项（≠ items[1]），避开与 src2 撞车。
-    await page.locator('.hero-banner__thumb').nth(2).hover();
-    await page.waitForTimeout(300);
-    const previewSrc = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
-    expect(previewSrc, '悬停缩略图应正常预览（不被重置回第一张）').not.toBe(src2);
-    console.log('✅ HOME-062 通过: 分类切换后自动轮播 + 悬停预览正常');
-  });
-
-  test('HOME-063: 分类切换时缩略图平滑过渡（无骨架跳变/重挂载）', async ({ page }) => {
-    // 前置: 桌面端，缩略图列就绪（首图已加载）
-    await page.goto('/');
-    await page.waitForSelector('.home-page__content', { timeout: 15000 });
-    await expect(page.locator('.hero-banner__thumbs .hero-banner__thumb-img').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.hero-banner__thumb-skeleton')).toHaveCount(0, { timeout: 10000 });
-
-    // 操作: 切「电影」分类 → 缩略图列不重挂载，HeroThumb 复用走「旧图保持→新图淡入」
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
-
-    // 切换后 300ms（窗口内）骨架不得出现（旧图保持显示，无「骨架→图」跳变）
-    await page.waitForTimeout(300);
-    expect(
-      await page.locator('.hero-banner__thumb-skeleton').count(),
-      '切换后缩略图不应回退到骨架（应旧图保持 + 新图就绪淡入）',
-    ).toBe(0);
-    // 缩略图 img 持续存在（列未重挂载、未消失）
-    expect(await page.locator('.hero-banner__thumbs .hero-banner__thumb-img').count()).toBeGreaterThan(0);
-
-    // 终态: 侧边栏高亮新分类，缩略图列稳定
-    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
-    await expect(page.locator('.hero-banner__thumb-skeleton')).toHaveCount(0, { timeout: 5000 });
-    console.log('✅ HOME-063 通过: 分类切换缩略图平滑过渡，无骨架跳变');
-  });
-
-  test('HOME-064: 分类切换快速完成（不等待封面图预加载）且无浅白遮罩（CardCoverLoading 已删除）', async ({ page }) => {
-    // 前置: 桌面端，首页数据就绪
-    await page.goto('/');
-    await page.waitForSelector('.home-page__content', { timeout: 15000 });
-    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
-
-    // 给 TMDB 图片请求加 800ms 延迟，制造「慢网」场景：
-    // 切换逻辑**不应**等待封面图下载完成（历史「预加载就绪替换门控」会阻塞切换，
-    // 用户反馈「切换慢、与 banner/缩略图绑定一起更新」），应快速完成切换。
-    await page.route('**/image.tmdb.org/**', async (route) => {
-      await new Promise((r) => setTimeout(r, 800));
-      await route.continue();
-    });
-    await page.waitForTimeout(100); // 让路由注册生效
-
-    // 操作: 切「电影」分类 → 记录点击时刻
-    const started = Date.now();
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
-
-    // 核心证据: 800ms 图片延迟下切换仍**快速完成**（侧边栏高亮新分类）。
-    // 若切换 gate 在封面图预加载上（历史行为），需等首屏多张图 × 800ms 串行/并发，
-    // 远超 3s 仍停留在加载；立即切换则在数据就绪后立刻替换。
-    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible({ timeout: 3000 });
-    const elapsed = Date.now() - started;
-    expect(elapsed, `切换耗时 ${elapsed}ms 应在 3s 内完成（不等待封面图下载）`).toBeLessThan(3000);
-
-    // 浅白遮罩（CardCoverLoading）已彻底删除：任何时刻都不应渲染 .card-cover-loading
-    expect(await page.locator('.card-cover-loading').count()).toBe(0);
-    console.log(`✅ HOME-064 通过: 切换完成耗时 ${elapsed}ms（<3s）+ 无浅白遮罩`);
-  });
-
-  test('HOME-065: 无缓存分类切换直接渲染（跳过旧图滞留层，新层立即 is-active）', async ({ page }) => {
-    // 前置: 首页数据就绪（首页首图已加载/缓存）
-    await page.goto('/');
-    await page.waitForSelector('.home-page__content', { timeout: 15000 });
-    await expect(page.locator('.home-rows')).toBeVisible({ timeout: 15000 });
-
-    // 关键构造: 覆盖「电影」分类 hero 数据源 /movie/popular，返回**与首页不同**的 backdrop URL，
-    // 使目标首图从未加载过 → isImageLoaded=false → 走「无缓存」分支（跳过旧图垫底/预加载门控，
-    // 直接渲染新层，图片走骨架占位自然加载）。真实首次进入项目即为该场景。
-    const catResults = Array.from({ length: 20 }, (_, i) => ({
-      id: 5000 + i,
-      title: `分类电影 ${i + 1}`,
-      name: `分类剧集 ${i + 1}`,
-      overview: '分类 mock 数据（backdrop 与首页不同，模拟无缓存）',
-      poster_path: `/test-cat-poster-${i}.jpg`,
-      backdrop_path: `/test-cat-backdrop-${i}.jpg`,
-      release_date: '2024-06-15',
-      first_air_date: '2024-06-15',
-      vote_average: 7.5,
-      vote_count: 500,
-      popularity: 80 + i,
-      genre_ids: [28],
-      original_language: 'zh',
-    }));
-    await page.route('**/api.tmdb.org/3/movie/popular**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ page: 1, results: catResults, total_pages: 1, total_results: 20 }),
-      });
-    });
-
-    // 操作: 切「电影」分类 → 目标首图（/test-cat-backdrop-0.jpg）无缓存 → 直接渲染新层
-    await page.locator('.home-sidebar__item', { hasText: '电影' }).first().click();
-
-    // 断言1: 全程不出现旧图滞留层（无缓存跳过「旧图垫底+预加载门控」，无 stale 层）
-    await page.waitForTimeout(200);
-    expect(await page.locator('.hero-banner__bg-layer--stale').count()).toBe(0);
-
-    // 断言2: 新层立即 is-active 且 src 指向目标分类首图（未等预加载完成）
-    await expect(page.locator('.hero-banner__bg-layer.is-active')).toBeVisible({ timeout: 3000 });
-    const src = await page.locator('.hero-banner__bg-layer.is-active').getAttribute('src');
-    expect(src).toContain('test-cat-backdrop-0');
-
-    // 断言3: 缩略图直接换源（无旧图保持的预加载态，首张 src 已切换为目标图）
-    await expect(page.locator('.hero-banner__thumb-img').first()).toHaveAttribute(
-      'src',
-      /test-cat-backdrop/,
-      { timeout: 3000 },
+    const titles = await page.evaluate(() =>
+      [...document.querySelectorAll('.sticky-header__nav-item')].map((el) => (el as HTMLElement).title || (el as HTMLElement).textContent?.trim() || ''),
     );
-
-    // 终态: 侧边栏高亮新分类
-    await expect(page.locator('.home-sidebar__item.active', { hasText: '电影' })).toBeVisible();
-    console.log('✅ HOME-065 通过: 无缓存分类切换直接渲染新层（跳过旧图滞留）');
+    expect(titles.join(' ')).toContain('IPTV');
+    expect(titles.join(' ')).toContain('设置');
+    console.log('✅ HOME-061 通过: 桌面端顶栏含 IPTV + 设置入口');
   });
 });
+
 
 // ═══════════════════════════════════════════════════════════════
 // 1.4 TMDBMovieRow 行数据
@@ -1015,20 +819,25 @@ test.describe('1.6 UI 微调回归', () => {
     console.log(`✅ HOME-052 通过: 移动端分类快选 gap=${gap}（< 24px）`);
   });
 
-  test('HOME-053: 桌面端侧边栏导航项横向留白加大（--space-xl）', async ({ page }) => {
+  test('HOME-053: 桌面端页面主体内容全局左右 padding 加大（≥--space-lg）', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1500);
-    const item = page.locator('.home-sidebar__item').first();
-    if ((await item.count()) === 0) {
-      console.log('⚠️ HOME-053: 未检测到侧边栏项，跳过');
-      return;
-    }
-    const padLeft = await item.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
-    // 横向 padding 由 --space-lg（下限 12px）提到 --space-xl（下限 16px），元素不再贴左
-    expect(padLeft).toBeGreaterThanOrEqual(16);
-    console.log(`✅ HOME-053 通过: 侧边栏项横向 padding-left=${padLeft}px（≥16px）`);
+    await page.waitForSelector('.page-padding', { timeout: 15000 });
+    await page.waitForTimeout(500);
+
+    const res = await page.evaluate(() => {
+      const el = document.querySelector('.page-padding') as HTMLElement;
+      const cs = getComputedStyle(el);
+      const lg = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-lg'));
+      return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight), lg };
+    });
+    // 桌面端 .page-padding 左右 padding 使用 --space-lg（≥12px），明显大于移动端 --space-sm（6px）
+    expect(res.lg).toBeGreaterThan(0);
+    expect(res.left).toBeCloseTo(res.lg, 0);
+    expect(res.right).toBeCloseTo(res.lg, 0);
+    expect(res.left).toBeGreaterThan(6);
+    console.log(`✅ HOME-053 通过: 桌面端 .page-padding 左右 padding=${res.left}px（--space-lg=${res.lg}px）`);
   });
 });
 
