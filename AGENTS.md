@@ -313,7 +313,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` + `!docs/PRODUCTION-REVIEW-*.md` — 仅提交知识库 / 测试案例 / 已知问题 / 生产级对标报告文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略
 - `scripts/*.ts` + `!scripts/*.spec.ts` + `!scripts/global-setup.ts` — 仅保留 E2E 测试脚本与全局初始化
 - `scripts/*.mjs` + `!scripts/fetch-diagram-data.mjs` — 仅保留数据获取脚本，工具脚本不提交
-- `scripts/fixtures/`、`scripts/backup-specs/` — 本地测试夹具与旧测试备份，一律忽略（不参与 E2E，见「测试基建修复」）
+- `scripts/fixtures/` — 本地测试夹具，忽略（不参与 E2E，见「测试基建修复」）
 - AI 工具本地配置（.workbuddy/ .claude/ .opencode/ .codegraph/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
@@ -323,7 +323,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-29 校准）；表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-29 二次校准，全量 258 条 / 17 个 spec）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
@@ -337,7 +337,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/History/` | `scripts/history.spec.ts` | 11 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
-| 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
+| 跨页联动回归 | `scripts/cross-page.spec.ts` | 17 |
 | 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 21 |
 | 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
 | UI 整改专项（顶栏头像/分类入口(全端)/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
@@ -371,7 +371,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/stores/useUserStore.ts` | collections + history | 12 |
 | `src/components/ui/PullToRefresh/` | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx` | 4 |
 
-> 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已归档到 `scripts/backup-specs/`（gitignore 忽略，不参与测试），映射表中不再引用。`scripts/backup-specs/` 中的 308 个用例不进入 `npx playwright test` 的默认执行（见「测试基建修复」）。
+> 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已彻底删除（原归档目录 `scripts/backup-specs/` 于 2026-08-29 连同 8 个一次性 `.mjs` 工具脚本一并清理，已备份至 `backups/scripts-untracked-20260829/`），映射表中不再引用。`playwright.config.ts` 的 `testIgnore` 规则已随之移除。
 
 ### 快速跑法
 
