@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.0...kinotv-v1.14.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **e2e:** 修复 23 个失败用例并补全真实断言 ([297e576](https://github.com/ntc0728/video-warehouse/commit/297e576119e5676983f0a2987494abe196d18fa7))
+* **home:** 修复 HomePage hook 在提前 return 后调用导致整页崩溃 ([00284cf](https://github.com/ntc0728/video-warehouse/commit/00284cfa3b1083210fb98519843b3a4ff56e2c93))
+
 ## [1.14.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.13.0...kinotv-v1.14.0) (2026-08-28)
 
 
