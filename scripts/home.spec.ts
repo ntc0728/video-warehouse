@@ -829,15 +829,14 @@ test.describe('1.6 UI 微调回归', () => {
     const res = await page.evaluate(() => {
       const el = document.querySelector('.page-padding') as HTMLElement;
       const cs = getComputedStyle(el);
-      const lg = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-lg'));
-      return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight), lg };
+      return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight) };
     });
-    // 桌面端 .page-padding 左右 padding 使用 --space-lg（≥12px），明显大于移动端 --space-sm（6px）
-    expect(res.lg).toBeGreaterThan(0);
-    expect(res.left).toBeCloseTo(res.lg, 0);
-    expect(res.right).toBeCloseTo(res.lg, 0);
-    expect(res.left).toBeGreaterThan(6);
-    console.log(`✅ HOME-053 通过: 桌面端 .page-padding 左右 padding=${res.left}px（--space-lg=${res.lg}px）`);
+    // 桌面端（≥768px）.page-padding 左右 padding 由 --space-lg（clamp 下限 12px）驱动，
+    // 明显大于移动端默认 --space-sm（6px），且左右对称。
+    expect(res.left).toBeGreaterThanOrEqual(12);
+    expect(res.right).toBeGreaterThanOrEqual(12);
+    expect(res.left).toBeCloseTo(res.right, 0);
+    console.log(`✅ HOME-053 通过: 桌面端 .page-padding 左右 padding=${res.left}px（≥移动端 6px）`);
   });
 });
 

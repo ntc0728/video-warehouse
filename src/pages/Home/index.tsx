@@ -107,6 +107,36 @@ export default function HomePage() {
   // 定时器 effect 用它在「停留 60min 后」触发兜底刷新）
   const homeFetchedAt = useTMDBStore((s) => s.homeFetchedAt);
 
+  // 继续观看行所需数据（必须在所有提前 return 之前调用，避免 hook 数随渲染分支变化而漂移）
+  const history = useUserStore((s) => s.history);
+  const userDataLoading = useUserStore((s) => s._loading);
+  const historyMap = useMemo(() => {
+    const map = new Map<string, (typeof history)[0]>();
+    for (const h of history) {
+      if (h.progress <= 0) continue;
+      const key = String(h.videoId);
+      const prev = map.get(key);
+      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
+    }
+    return map;
+  }, [history]);
+  const continueItems = useMemo(() => buildContinueItems(history), [history]);
+
+  // 事件 handler（同样须在提前 return 之前，保持 hook 数恒定）
+  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
+    navigate(`/detail/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleContinuePlay = useCallback((item: { id: string | number }) => {
+    navigate(`/play/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleCategorySelect = useCallback((cat: CategoryKey) => {
+    const cfg = BROWSE_CATEGORY_CONFIG[cat];
+    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
+  }, [navigate]);
+
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
 
@@ -354,33 +384,8 @@ export default function HomePage() {
 
   // ── 首页内容（HeroBanner + 分类快捷入口 + 继续观看 + 7 行横滚）──
   // 分类切换已移除：点击 CategoryQuickAccess 卡片直接跳 /browse，不再在首页内切类目。
-  const history = useUserStore((s) => s.history);
-  const userDataLoading = useUserStore((s) => s._loading);
-  const historyMap = useMemo(() => {
-    const map = new Map<string, (typeof history)[0]>();
-    for (const h of history) {
-      if (h.progress <= 0) continue;
-      const key = String(h.videoId);
-      const prev = map.get(key);
-      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
-    }
-    return map;
-  }, [history]);
-  const continueItems = useMemo(() => buildContinueItems(history), [history]);
-
-  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
-    navigate(`/detail/${item.id}`, { state: { from: location.pathname + location.search } });
-  }, [navigate, location.pathname, location.search]);
-
-  const handleContinuePlay = useCallback((item: { id: string | number }) => {
-    navigate(`/play/${item.id}`, { state: { from: location.pathname + location.search } });
-  }, [navigate, location.pathname, location.search]);
-
-  const handleCategorySelect = useCallback((cat: CategoryKey) => {
-    const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
-  }, [navigate]);
+  // 注：history / userDataLoading / historyMap / continueItems 及三个事件 handler 的
+  // hook 已上移至组件顶部（所有提前 return 之前），此处仅复用，避免 hook 数随分支漂移。
 
   const homeRows = [
     { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
