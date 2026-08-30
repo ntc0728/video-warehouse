@@ -55,6 +55,7 @@ const routeComponentMap: Record<string, PreloadableLazy> = {
   '/play': lazyWithRetry(() => import('@/pages/Player')),
   '/player': lazyWithRetry(() => import('@/pages/Player')),
   '/person': lazyWithRetry(() => import('@/pages/Person')),
+  '/ptr-demo': lazyWithRetry(() => import('@/pages/PullToRefreshDemo')),
   '/proxy-setup': lazyWithRetry(() => import('@/pages/ProxySetup/ProxySetup')),
 };
 
