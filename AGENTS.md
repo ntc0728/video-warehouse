@@ -308,6 +308,13 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 **导航 API 强约束**：所有业务导航一律使用 `src/lib/navigation.ts` 的 `useCustomNavigate()`，禁止直接 `import { useNavigate } from 'react-router-dom'`（已由 ESLint `no-restricted-imports` 封死，仅 `src/lib/navigation.ts` 豁免）。`useCustomNavigate` 现只走 react-router 原生 navigate（不启用 View Transitions——见「页面进入过渡统一约定」：VT 在方案 B 下会引入抖动与白色间隙回归）。二次进入的「先空白再出现数据」闪烁由 AppLayout 的 `data-revisit` 门控消除，与导航方式无关（无论经 `useCustomNavigate` 还是侧栏 `<Link>` 改走的 `useCustomNavigate` onClick，重进门控都生效）。
 - **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
 
+### 共享加载态约定（小电视 TvMascot）
+
+- **唯一加载角色 `TvMascot`**：B 站同款「小电视」SVG 角色（TV 身 + 双天线耳朵 + 笑脸 + 电波），定义在 `src/components/ui/TvMascot/`（与 `PullToRefresh`、`UniversalPlayer` 加载态共用同一份 SVG + 配色，严禁再内联重复定义）。**所有环形/转圈加载图标（lucide `Loader` / `Tv`、`.up-loading-spinner` / `.up-iptv-buffering-spinner` / `.up-cast-spinner` 等）已全部移除**，新加载态一律用 `TvMascot`。
+- **统一 props**：`armed`（耳朵直立 + 头顶电波）、`blink`（眨眼，用于 refreshing/success）、`earProgress`（0→1 耳朵竖起进度，随下拉进度）、`is-shaking`（刷新时摇摆）、`className`（可挂 `ptr-tv--on-dark` 适配黑色舞台）。`PullIndicator` 已封装「图标为主、文本为辅」的 B 站情绪化三段式文案（再拉就刷新 / 够啦松开人家嘛 / 更新中… / 更新啦）。
+- **PullToRefresh 两变体**：`default`=顶部导航栏下方居中（靠 SVG filter 光晕 `#ptr-halo` 把小电视托起与图片分离，文字走深色填充 + 白色描边 `paint-order: stroke fill`）；`settings`=页面正中间圆形刷新按钮（自带 `--color-surface` 圆钮 + 阴影）。**陷阱**：`settings` 变体文本胶囊自带浅色背景，**必须走 `color: var(--color-text-secondary)`（主题文字色），不能继承 base 的 `--color-on-image`（白字）——否则浅色主题下白字压白底不可见**（2026-08-30 修复 `2e0ca40`）。
+- **播放器加载/缓冲**：`UniversalPlayer` 缓冲浮层用 `<TvMascot className="ptr-tv--on-dark" blink is-shaking />`；首帧准备（非缓冲）时也需显示「加载中…」文本，避免出现「只有小电视、无文案」的裸电视态（2026-08-30 修复 `bfdaacf`）。播放页进入时右侧 `PlayerSidebarSkeleton`（CMS/季/集三栏 shimmer）必须每次渲染，不再用全屏 `AppLoading` 覆盖播放器（2026-08 `ecc197c`）。
+
 ### .gitignore 策略
 
 - `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` + `!docs/PRODUCTION-REVIEW-*.md` — 仅提交知识库 / 测试案例 / 已知问题 / 生产级对标报告文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略

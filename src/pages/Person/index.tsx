@@ -178,7 +178,7 @@ export default function PersonPage() {
   if (loading) return <div className="page-padding person-page person-page--loading"><AppLoading /></div>;
   if (error || !person) {
     return (
-      <div className="page-padding person-page page-transition-enter">
+      <div className="page-padding person-page">
         <div className="person-not-found">
           <Icon icon={AlertTriangle} size="3xl" />
           <span>{error || '人物不存在'}</span>

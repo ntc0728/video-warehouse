@@ -138,6 +138,9 @@
   --dur-slow: 500ms;     /* 页面级：route transition */
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
   --dur-theme: 200ms;    /* 主题/皮肤切换过渡（11.6：500ms→200ms，配合去 box-shadow 消除卡顿） */
+  --dur-pt-enter: 240ms; /* 页面内容进场：柔和淡入，与 --ease-standard 搭配，不产生亮度跃变 */
+  --dur-pt-leave: 200ms; /* 来源页离场：进入黑场路由（/iptv/play）时旧页退场 */
+  --dur-pt-curtain: 200ms; /* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
 
   /* ── Typography ───────────────────────────────────────────────────────────
      三 regime 统一契约：移动端(≤375)=MIN，桌面端(≥768)=MAX 且冻结，TV=[data-device="tv"] 2×。
