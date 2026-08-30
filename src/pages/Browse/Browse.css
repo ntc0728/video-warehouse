@@ -10,7 +10,8 @@
   gap: 0; /* 搜索卡片与结果卡片相连，合成一张大卡片 */
   width: 100%;
   background-color: var(--color-background);
-  /* 进入动画统一由 .page-transition-enter--stagger 提供（根容器 className 加该类） */
+  /* 进入动画由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供，
+     本页不再自挂过渡类（2026-08-30） */
 }
 
 /* 双卡片相连：search 为上半部、results 为下半部，合成一张大卡片 */

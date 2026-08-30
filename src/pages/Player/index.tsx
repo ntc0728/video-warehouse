@@ -13,7 +13,6 @@ import { UniversalPlayer } from '@/components/UniversalPlayer';
 import { VideoCard } from '@/components/VideoCard';
 import type { Video, VideoSource, Episode } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBCastMember } from '@/types/tmdb';
-import { AppLoading } from '@/components/common';
 import type { HistoryRecord } from '@/types/store';
 import { useSmartBack } from '@/lib/navigation';
 import { isNativePlatform } from '@/lib/platform';
@@ -26,10 +25,13 @@ import { PlayerCMSPanel } from './PlayerCMSPanel';
 import { PlayerSeasonPanel } from './PlayerSeasonPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
+import { PlayerSidebarSkeleton } from './PlayerSidebarSkeleton';
+import { PlayerTVLoader } from './PlayerTVLoader';
 import { useDocumentTitle, useIsTV } from '@/hooks';
 import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager, useNextEpisodePreload } from './hooks';
 import './Player.css';
 import { Icon } from "@/components/ui/Icon";
+// 注：播放页不再使用全屏 AppLoading（已于入场加载态重构时移除），故此处不引入 AppLoading。
 
 // ── 模块级视频缓存（方案 2：会话内短暂缓存）──────────────
 // Player 是 noKeepAlive 路由（每次进入 /play 重新挂载组件），若缓存放组件内，
@@ -570,34 +572,9 @@ export default function PlayerPage() {
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
 
-
-  // ── TMDB Access Token 未配置：整页提示（与首页一致，设置可点击跳转） ──
-  // 仅 tmdb- 前缀 id 依赖 token（无 token 时 TMDB 详情拿不到标题，CMS 搜索链路
-  // 必然中断，播放器白屏）；纯数字 CMS id 播放不依赖 token，不拦截。
-  if (id?.startsWith('tmdb-') && !hasToken) {
-    return (
-      <div className="page-padding player-page">
-        <TokenRequired />
-      </div>
-    );
-  }
-
-  // 仅首次进入时显示页面级 loading，之后不再触发
-  const shouldShowPageLoading = !hasLoadedOnce;
-
-  if (shouldShowPageLoading) {
-    return (
-      <div className="page-padding player-page">
-        <div className="player-page__container">
-          <div className="player-loading-wrap">
-            <AppLoading tip="加载中…" showTip />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ── 公共详情区（所有 return 路径共用，保持播放器高度稳定）──
+  // 提前到加载态分支之前声明：入场加载态分支（!video && !cmsLoading && !cmsSwitching）
+  // 也可能在 d 已就绪而 video 仍在搜索时命中，需一并渲染详情区。
   const detailSection = (d || v) ? (
     <div className="player-detail-section">
       <div className="player-detail-content">
@@ -689,6 +666,43 @@ export default function PlayerPage() {
     </div>
   ) : null;
 
+
+
+  // ── TMDB Access Token 未配置：整页提示（与首页一致，设置可点击跳转） ──
+  // 仅 tmdb- 前缀 id 依赖 token（无 token 时 TMDB 详情拿不到标题，CMS 搜索链路
+  // 必然中断，播放器白屏）；纯数字 CMS id 播放不依赖 token，不拦截。
+  if (id?.startsWith('tmdb-') && !hasToken) {
+    return (
+      <div className="page-padding player-page">
+        <TokenRequired />
+      </div>
+    );
+  }
+
+  // 入场加载态：无 video、无 CMS 搜索、无换源切换时，直接渲染完整播放器布局，
+  // 不再用全屏 AppLoading 覆盖播放器（播放器自身负责缓冲态；黑场占位与最终播放器
+  // 同尺寸同底色，零跳动、零「白→黑」闪光）。右侧渲染骨架占位（PlayerSidebarSkeleton），
+  // 数据就绪后由主分支渲染真实面板（播放器豁免进场动画见 animations.css [data-variant="player"]）。
+  if (!video && !cmsLoading && !cmsSwitching) {
+    return (
+      <div className="page-padding player-page">
+        <div className="player-main">
+          <div className="player-video-area">
+            <div className="player-stage-placeholder">
+              <PlayerTVLoader />
+            </div>
+          </div>
+          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
+          <PlayerSidebar>
+            <PlayerSidebarSkeleton />
+          </PlayerSidebar>
+        </div>
+        {detailSection}
+      </div>
+    );
+  }
+
+
   // CMS 加载中且无视频数据：播放器区域显示加载动画，面板显示局部 loading
   if (cmsLoading && !video) {
     return (
@@ -696,45 +710,12 @@ export default function PlayerPage() {
         <div className="player-main">
           <div className="player-video-area">
             <div className="player-loading-wrap">
-              <div className="player-loading-spinner" />
+              <PlayerTVLoader />
             </div>
           </div>
+          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
           <PlayerSidebar>
-            <PlayerCMSPanel
-              selectedSourceIds={selectedSourceIds}
-              sourceNameMap={sourceNameMap}
-              cmsResults={cmsResults}
-              currentSrc={currentSrc}
-              activeSourceId={activeSourceId}
-              onPlaySource={handlePlayCMSSource}
-              onFetchSource={handleFetchCMSSourceById}
-              expanded={expandedPanels.cms}
-              onToggle={() => togglePanel('cms')}
-              compact={isCompact}
-              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
-            />
-            <PlayerSeasonPanel
-              seasons={seasons}
-              activeSeason={selectedSeason}
-              onSelectSeason={handleSelectSeason}
-              expanded={expandedPanels.season}
-              onToggle={() => togglePanel('season')}
-              compact={isCompact}
-              currentSeasonName={currentSeasonName}
-            />
-            <PlayerEpisodesPanel
-              episodes={episodes}
-              sources={playerSources}
-              currentSrc={currentSrc}
-              activeEpisodeId={localEpisodeId}
-              loading={cmsLoading}
-              onPlayEpisode={handlePlayEpisode}
-              onPlaySource={handlePlaySource}
-              expanded={expandedPanels.episodes}
-              onToggle={() => togglePanel('episodes')}
-              compact={isCompact}
-              isTV={isTV}
-            />
+            <PlayerSidebarSkeleton />
           </PlayerSidebar>
         </div>
         {detailSection}

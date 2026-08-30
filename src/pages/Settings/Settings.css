@@ -10,9 +10,9 @@
   flex-direction: column;
   min-height: 0;
   overflow-x: hidden;
-  /* 进入动画统一由 .page-transition-enter 提供（根容器 className 加该类），
-     与 Detail / Person / SourceChecker 等页面一致；设置页已在 animations.css 的
-     data-revisit 门控中排除，故「二次进入」也照样播放（无空白帧、纯平滑淡入）。 */
+  /* 进入动画由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供，
+     本页不再自挂过渡类（2026-08-30）。二次进入时动画压到 140ms 线性，
+     不再完全取消 —— 避免「首次有动画 / 二次无动画」的不一致闪烁。 */
 }
 
 /* 设置项出场动画已移除：各 .list-item / .settings-row / .settings-card__title /
@@ -416,10 +416,14 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: var(--color-surface);
+  padding: var(--space-sm) var(--space-lg);
+  /* 方案 B（2026-08-30）：topbar 降级为「头部条」——只留底部 1px 分割线、
+     背景用 --color-primary-light 浅灰带，与外层大卡片形成「一体」而非套盒；
+     顶部圆角减 1px 贴合卡片外框，避免直角顶在圆角内侧露出白弧。
+     去掉原四边 border（与卡片 border 叠成双线）。 */
+  border-bottom: 1px solid var(--color-border-light);
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  background: var(--color-primary-light);
 }
 
 /* 胶囊 TabBar 推到右侧，与左侧标题形成左右分层 */
@@ -445,24 +449,13 @@ body.skin-transitioning .skin-btn.active {
   white-space: nowrap;
 }
 
-/* 状态点：主色实心 + 柔和脉冲光环，弱化「二级页无标题」的平铺感、强化层级。 */
-.settings-desktop-title__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-  animation: settings-title-pulse 2.4s var(--ease-out-expo) infinite;
-}
-
-@keyframes settings-title-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-  70%  { box-shadow: 0 0 0 7px rgba(99, 102, 241, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .settings-desktop-title__dot { animation: none; }
+/* 方案 B（2026-08-30）：去掉无限脉冲状态点（静止页常闪、纯噪音），
+   改为静态 sliders 图标（来自 index.tsx），弱化二级页平铺感。 */
+.settings-desktop-title__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--color-text-secondary);
 }
 
 /* Tab 栏容器 — 桌面端顶部栏（已为卡片式外观）内的一行选项按钮，靠左排列；
@@ -484,32 +477,50 @@ body.skin-transitioning .skin-btn.active {
 }
 
 .settings-tab {
+  position: relative;
   display: inline-flex;
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
   padding: var(--space-xs) var(--space-md);
-  /* 胶囊（pill）样式：圆角全满 + 浅边框 + 浅背景，激活态主色填充抬起 */
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
+  /* 方案 B（2026-08-30）：tab 从「主色实心胶囊」改为「透明按钮 + 激活态浅底
+     （白）+ 底部 2px 主色指示条」，与收藏/历史页 tab 语言一致；圆角改 md（原 full），
+     指示条靠 ::after 在底部中间展开。 */
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   /* 字重统一 600（2026-08-13）：原 500→600 激活变化导致按钮文字变宽、
      tab 宽度变化 → flex-wrap TabBar 整行重排（切 tab 抖动根因之一）；
-     激活态仅靠主色背景 + 反色文字区分。 */
+     激活态仅靠浅底 + 指示条区分。 */
   font-weight: 600;
   white-space: nowrap;
-  /* tab 高亮切换平滑过渡（active 背景/文字/边框 0.2s） */
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
   scroll-snap-align: start;
   cursor: pointer;
 }
 
+/* 激活态底部指示条：居中展开 2px 主色条 */
+.settings-tab::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  transform: translateX(-50%);
+  transition: width 0.22s var(--ease-standard);
+}
+.settings-tab--active::after {
+  width: 60%;
+}
+
 .settings-tab:hover {
-  background: var(--color-surface-hover);
+  background: var(--color-surface);
   color: var(--color-text);
-  border-color: var(--color-border-strong);
 }
 
 .settings-tab:focus-visible {
@@ -520,24 +531,21 @@ body.skin-transitioning .skin-btn.active {
   transform: none;
 }
 
+/* 激活态：浅底（白）+ 主色文字 + 底部 2px 指示条（与收藏/历史页 tab 同源） */
 .settings-tab--active {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary);
-  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: transparent;
 }
-
 .settings-tab--active .settings-tab__icon {
-  color: var(--color-text-inverse);
+  color: var(--color-text-secondary);
 }
-
-/* 激化状态下 hover 保持主色与反色文本/图标，避免被 .settings-tab:hover 覆盖导致看不清 */
 .settings-tab--active:hover {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 .settings-tab--active:hover .settings-tab__icon {
-  color: var(--color-text-inverse);
+  color: var(--color-text-secondary);
 }
 
 .settings-tab__icon {
@@ -575,6 +583,39 @@ body.skin-transitioning .skin-btn.active {
 .settings-content__pane--active {
   animation: settings-content-in 0.24s var(--ease-standard) both;
 }
+
+/* ── 进入过渡「方案 1」（2026-08-30）：对齐 IPTV/收藏/历史的「两层节奏」 ──
+   容器层 soft 淡入由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供
+   （见 animations.css）。本段只补「topbar 先落位 + 内容区逐块轻上浮」这一层：
+   - topbar 180ms 先落（Y -4px），与容器 soft 起点错开，形成「头先到、内容后浮」；
+   - 内容区每个直接子（tab 根 section / 分组）按 6px / 320ms / 0.028s 阶梯上浮——
+     幅度是卡片的一半（6 vs 12px）、时长短 20%（320 vs 400ms），同语言、更轻口音；
+     多块 tab（视频/IPTV/个人）享阶梯，单块 tab 自然成一块；切 tab 重放也不闹。
+   前缀 .page-transition[data-variant="soft"] 保证只在进入路由（容器重挂载）时整播，
+   prefers-reduced-motion 由全局 * 规则压缩。 */
+@keyframes settings-topbar-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes settings-block-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-transition[data-variant="soft"] .settings-desktop-topbar {
+  animation: settings-topbar-in 180ms var(--ease-standard) both;
+}
+.page-transition[data-variant="soft"] .settings-content__pane--active > * {
+  animation: settings-block-in 320ms var(--ease-standard) both;
+  animation-delay: 0.34s; /* 压轴延迟：超出枚举的第 N+1 子项跟队入场 */
+}
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(1) { animation-delay: 0.06s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(2) { animation-delay: 0.088s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(3) { animation-delay: 0.116s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(4) { animation-delay: 0.144s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(5) { animation-delay: 0.172s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(6) { animation-delay: 0.20s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(7) { animation-delay: 0.228s; }
+.page-transition[data-variant="soft"] .settings-content__pane--active > *:nth-child(8) { animation-delay: 0.256s; }
 
 /* 移动端子页面内 section 间距 */
 .settings-subpage__body section + section {
@@ -671,7 +712,9 @@ body.skin-transitioning .skin-btn.active {
    与全局导航栏同高（移动端 --header-height-compact），视觉上替代导航栏。
    body 在顶栏下方独立滚动。
    过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
-   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。 */
+   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。
+   方案1（iOS 对称 push/pop）：进出统一 0.3s + cubic-bezier(.32,.72,0,1)，
+   父列表视差同曲线同时长、子页左缘投影、prefers-reduced-motion 守卫。 */
 @keyframes settings-subpage-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -688,10 +731,14 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
   min-height: 0;
   background: var(--color-background);
-  animation: settings-subpage-in 0.3s var(--ease-out-expo) both;
+  /* 左缘投影：推入/滑出时读得出「浮在父页之上」的层级深度 */
+  box-shadow: -10px 0 24px rgb(0 0 0 / 0.2);
+  /* 方案1：进出统一 iOS push 曲线，对称不违和 */
+  animation: settings-subpage-in 0.3s cubic-bezier(.32, .72, 0, 1) both;
 }
 .settings-subpage--leaving {
-  animation: settings-subpage-out 0.25s var(--ease-standard) forwards;
+  /* 方案1：与进入同曲线同时长（0.3s），对称 pop */
+  animation: settings-subpage-out 0.3s cubic-bezier(.32, .72, 0, 1) forwards;
 }
 
 /* 子页顶栏：与全局导航栏同高（移动端紧凑高度）、同背景 —— 进入子页后替代顶部导航栏 */
@@ -1418,8 +1465,10 @@ body.skin-transitioning .skin-btn.active {
 
 /* 移动端：设置页不再整体卡片化 —— 采用 iOS 分组圆角卡，
    菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
-   子页打开时（:has(.settings-subpage)）移除 page-transition-enter 残留的
-   transform（fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。 */
+   子页打开时（:has(.settings-subpage)）关掉进场动画残留的 transform
+   （fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。
+   注：容器层 data-variant="soft" 已改用 fill-mode: none，动画结束后不再残留
+   transform；这里保留 animation:none 只是防止子页打开瞬间动画仍在播而干扰视差。 */
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
@@ -1431,12 +1480,28 @@ body.skin-transitioning .skin-btn.active {
   body:has(.settings-subpage) .settings-page {
     transform: translateX(-6%) scale(0.98);
     transform-origin: left center;
-    transition: transform 0.25s var(--ease-out-expo);
+    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步；
+       轻微压暗强化「进入下层」的层级深度 */
+    transition: transform 0.3s cubic-bezier(.32, .72, 0, 1),
+                filter 0.3s cubic-bezier(.32, .72, 0, 1);
+    filter: brightness(0.96);
     animation: none;
   }
   /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感 */
   body.settings-subpage--closing .settings-page {
     transform: none;
+    filter: none;
+  }
+  /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
+  @media (prefers-reduced-motion: reduce) {
+    .settings-subpage { animation: none; }
+    .settings-subpage--leaving { animation: none; }
+    body:has(.settings-subpage) .settings-page,
+    body.settings-subpage--closing .settings-page {
+      transform: none;
+      filter: none;
+      transition: none;
+    }
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */

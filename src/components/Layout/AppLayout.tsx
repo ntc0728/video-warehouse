@@ -1,5 +1,5 @@
 import { Suspense, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useBlocker, useLocation, type BlockerFunction } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
 import Sidebar from './Sidebar';
@@ -17,6 +17,13 @@ import { setCurrentPathname, recordPopPrevious } from '@/lib/navigation';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 import { getRouteTitle, APP_NAME } from '@/hooks/useDocumentTitle';
+import {
+  getPageVariant,
+  needsLeaveAnimation,
+  raiseCurtain,
+  prefersReducedMotion,
+  PT_DUR,
+} from '@/lib/pageTransition';
 
 // 已访问过的路由集合（模块级，跨导航持久）。用于「二次进入」门控：已访问过的路由
 // 不再重放 opacity:0 进入动画（见 animations.css 的 .page-transition[data-revisit] 规则），
@@ -34,7 +41,7 @@ function LoadingFallback() {
     window.__kinoSuspenseFallback = Date.now();
   }, []);
   return (
-    <div className="page-padding page-loading page-transition-enter">
+    <div className="page-padding page-loading">
       <AppLoading showProgress={false} />
     </div>
   );
@@ -146,11 +153,49 @@ export default function AppLayout() {
   const location = useLocation();
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
-  // 当前路由是否「二次进入」。首次进入为 false（播放进入动画），再进入为 true（抑制动画）。
+  // 当前路由是否「二次进入」。首次进入为 false（完整进场动画），再进入为 true
+  // （动画压到 140ms 线性，不再完全取消 —— 见 animations.css 的说明）。
   const isRevisit = activeRouteKey ? visitedRoutes.has(activeRouteKey) : false;
   useEffect(() => {
     if (activeRouteKey) visitedRoutes.add(activeRouteKey);
   }, [activeRouteKey]);
+
+  // ── 页面进场变体：由路由统一决定，页面代码零感知 ──
+  // 容器加 key={activeRouteKey} → 路由一换容器就重挂载 → CSS animation 必然重放。
+  // 页面自身的 loading / notFound / 错误分支因此一并被覆盖，不会再出现
+  // 「Person 主分支漏挂、Player 七个分支全漏」这种事。
+  const pageVariant = getPageVariant(activeRouteKey);
+  const pageTransitionRef = useRef<HTMLDivElement>(null);
+
+  // ── 进入黑场路由（/iptv/play）：拦下导航，先让来源页离场，再放行 ──
+  // 拦截点选在路由层而不是各入口：IPTV 频道卡是 <Link>、历史页是 navigate，
+  // 只有在路由层拦才覆盖得住所有入口。POP（浏览器后退）由 react-router
+  // 自行放行，不做拦截 —— 后退本就该是瞬时回退。
+  const blocker = useBlocker(
+    useCallback<BlockerFunction>(
+      ({ currentLocation, nextLocation }) =>
+        needsLeaveAnimation(currentLocation.pathname, nextLocation.pathname),
+      [],
+    ),
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    const el = pageTransitionRef.current;
+    const reduced = prefersReducedMotion();
+
+    // 幕布先升起：盖住来源页退场后的空档，也顺带盖住 IPTV 播放器首帧缓冲
+    raiseCurtain();
+    if (el && !reduced) el.dataset.leaving = 'true';
+
+    // 用固定时长而不是 animationend：动画被 reduced-motion 关掉、或元素提前卸载时
+    // animationend 不会触发，导航就被永久卡死。多等一帧的代价远小于卡死。
+    const timer = window.setTimeout(() => blocker.proceed(), reduced ? 0 : PT_DUR.leave);
+    return () => {
+      window.clearTimeout(timer);
+      if (el) delete el.dataset.leaving;
+    };
+  }, [blocker.state, blocker.proceed]);
 
   // 同步当前展示路径（供 useScrollRestore 判定「从哪个页面进入」）
   useLayoutEffect(() => {
@@ -256,7 +301,13 @@ export default function AppLayout() {
               style={{ backgroundColor: 'var(--color-background)' }}
               direction="vertical"
             >
-              <div className="page-transition" data-revisit={isRevisit ? 'true' : 'false'}>
+              <div
+                ref={pageTransitionRef}
+                className="page-transition"
+                key={activeRouteKey ?? 'none'}
+                data-variant={pageVariant}
+                data-revisit={isRevisit ? 'true' : 'false'}
+              >
                 {Component ? (
                   <Suspense fallback={<LoadingFallback />}>
                     <RouteRenderer Component={Component} />

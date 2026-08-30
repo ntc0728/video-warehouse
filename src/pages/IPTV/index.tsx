@@ -298,14 +298,14 @@ export default function IPTVPage() {
   // 保持下方 .iptv-grid-card 内局部 loading 语义不变。
   if ((isLoading || !bootstrapped) && channels.length === 0) {
     return (
-      <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
+      <div ref={pageRef} className="page-padding iptv-page">
         <AppLoading tip="加载频道列表…" showTip />
       </div>
     );
   }
 
   return (
-    <div ref={pageRef} className="page-padding iptv-page page-transition-enter">
+    <div ref={pageRef} className="page-padding iptv-page">
         <div className="iptv-top-card">
           <div className="iptv-header">
             {!proxyUrl && (

@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { PTRActionsContext, PTRSnapshotContext, type PullPhase } from './PullToRefreshContext';
 import { PullIndicator } from './PullIndicator';
 
@@ -29,6 +30,7 @@ function damp(dy: number): number {
  * - 变体：default=顶部导航栏下方居中指示器；settings=页面中间位移出现刷新按钮。
  */
 export function PullToRefreshOverlay() {
+  const isDesktop = useIsDesktop();
   const scrollCtx = useScrollContainer();
   const ptrActions = useContext(PTRActionsContext);
   const snapshot = useContext(PTRSnapshotContext);
@@ -66,6 +68,8 @@ export function PullToRefreshOverlay() {
   );
 
   useEffect(() => {
+    // 桌面端不接管下拉手势：鼠标拖拽不应触发下拉刷新浮层
+    if (isDesktop) return;
     const fallbackSc = scrollCtx.current;
     const getHandler = () => ptrActions?.getHandler() ?? null;
 
@@ -190,7 +194,10 @@ export function PullToRefreshOverlay() {
       window.removeEventListener('pointercancel', onPointerCancel);
       window.removeEventListener('touchmove', onTouchMove);
     };
-  }, [scrollCtx, ptrActions, setPhaseBoth, setPullBoth]);
+  }, [scrollCtx, ptrActions, setPhaseBoth, setPullBoth, isDesktop]);
+
+  // 桌面端不渲染下拉刷新浮层（与上面的手势门控配对）
+  if (isDesktop) return null;
 
   // 读取响应式快照（随 register 实时更新），保证「中间按钮/顶部指示」切换立即生效
   const variant = snapshot?.variant ?? 'default';
