@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.15.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.1...kinotv-v1.15.0) (2026-08-30)
+
+
+### Features
+
+* **player/settings:** 入场骨架+小电视加载态 / 设置移动端子页过渡方案1 ([c6a55b6](https://github.com/ntc0728/video-warehouse/commit/c6a55b698f297f1d4f56714481d72bf388d23902))
+* **pull-to-refresh:** 桌面端禁止下拉刷新浮层 ([cb9f0d3](https://github.com/ntc0728/video-warehouse/commit/cb9f0d3f819e06c2df1e30a07810b0cf7b25430d))
+* **settings:** 桌面端 topbar 改头部条样式 + 进入过渡对齐卡片页 ([4c96126](https://github.com/ntc0728/video-warehouse/commit/4c96126b120b8fa6608269a013910910dd5defa2))
+* **transition:** 统一页面进入过渡到容器层并适配播放页 ([3b99cd6](https://github.com/ntc0728/video-warehouse/commit/3b99cd63e43df61dfa15d1b28a0c98f706ea70f4))
+
+
+### Bug Fixes
+
+* **player:** 移除覆盖播放器的全屏 AppLoading，入场直接渲染完整布局 ([ecc197c](https://github.com/ntc0728/video-warehouse/commit/ecc197c347bcdd2760ad6f40afb4ec8009512c8c))
+* **pull-to-refresh:** settings 变体文本在浅色主题下白字压白底不可见 ([2e0ca40](https://github.com/ntc0728/video-warehouse/commit/2e0ca40aedfb09003bf655df57c009385b405f3d))
+* **tv-loader:** 修正黑场小电视五官不可见 + 消除裸电视加载态 ([bfdaacf](https://github.com/ntc0728/video-warehouse/commit/bfdaacfd4583764c0dc74f1fd8987e9a2c4bb8f9))
+
 ## [1.14.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.0...kinotv-v1.14.1) (2026-08-29)
 
 
