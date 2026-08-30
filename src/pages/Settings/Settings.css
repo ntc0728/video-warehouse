@@ -10,95 +10,16 @@
   flex-direction: column;
   min-height: 0;
   overflow-x: hidden;
-  /* 进入动画统一由 .page-transition-enter 提供（根容器 className 加该类），
-     与 Detail / Person / SourceChecker 等页面一致；设置页已在 animations.css 的
-     data-revisit 门控中排除，故「二次进入」也照样播放（无空白帧、纯平滑淡入）。 */
+  /* 进入动画由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供，
+     本页不再自挂过渡类（2026-08-30）。二次进入时动画压到 140ms 线性，
+     不再完全取消 —— 避免「首次有动画 / 二次无动画」的不一致闪烁。 */
 }
 
-/* 元素入场动画：设置页各区块 / 设置行错峰淡入上移，强化「页面进入」的层次感。
-   这些元素在每次进入设置页（含二次进入，已在 animations.css 的 data-revisit 门控中
-   排除 .settings-page，故照样播放）时随页面过渡错峰呈现，避免「整页硬切、元素突兀出现」。 */
-/* 桌面端大卡片的两大块：顶部栏（返回+TabBar）与内容区，先错峰淡入 */
-.settings-desktop-card > .settings-desktop-topbar {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-  animation-delay: 0.05s;
-}
-.settings-desktop-card > .settings-content {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-  animation-delay: 0.12s;
-}
-/* 内容区内的设置行 / 列表项：在区块之后进一步错峰淡入 */
-.settings-content__pane--active .list-item,
-.settings-content__pane--active .settings-row {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-}
-.settings-content__pane--active .list-item:nth-child(1),
-.settings-content__pane--active .settings-row:nth-child(1) { animation-delay: 0.04s; }
-.settings-content__pane--active .list-item:nth-child(2),
-.settings-content__pane--active .settings-row:nth-child(2) { animation-delay: 0.22s; }
-.settings-content__pane--active .list-item:nth-child(3),
-.settings-content__pane--active .settings-row:nth-child(3) { animation-delay: 0.26s; }
-.settings-content__pane--active .list-item:nth-child(4),
-.settings-content__pane--active .settings-row:nth-child(4) { animation-delay: 0.30s; }
-.settings-content__pane--active .list-item:nth-child(5),
-.settings-content__pane--active .settings-row:nth-child(5) { animation-delay: 0.34s; }
-.settings-content__pane--active .list-item:nth-child(n + 6),
-.settings-content__pane--active .settings-row:nth-child(n + 6) { animation-delay: 0.38s; }
-/* 移动端：菜单列表项错峰淡入 */
-.settings-menu-list > * {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-}
-.settings-menu-list > *:nth-child(1) { animation-delay: 0.06s; }
-.settings-menu-list > *:nth-child(2) { animation-delay: 0.12s; }
-.settings-menu-list > *:nth-child(3) { animation-delay: 0.18s; }
-.settings-menu-list > *:nth-child(4) { animation-delay: 0.24s; }
-.settings-menu-list > *:nth-child(5) { animation-delay: 0.30s; }
-.settings-menu-list > *:nth-child(n + 6) { animation-delay: 0.34s; }
-/* 移动端子页面：子页内列表项错峰淡入，与主内容区 .settings-content__pane--active 保持一致 */
-.settings-subpage__body .list-item,
-.settings-subpage__body .settings-row {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-}
-.settings-subpage__body .list-item:nth-child(1),
-.settings-subpage__body .settings-row:nth-child(1) { animation-delay: 0.04s; }
-.settings-subpage__body .list-item:nth-child(2),
-.settings-subpage__body .settings-row:nth-child(2) { animation-delay: 0.22s; }
-.settings-subpage__body .list-item:nth-child(3),
-.settings-subpage__body .settings-row:nth-child(3) { animation-delay: 0.26s; }
-.settings-subpage__body .list-item:nth-child(4),
-.settings-subpage__body .settings-row:nth-child(4) { animation-delay: 0.30s; }
-.settings-subpage__body .list-item:nth-child(5),
-.settings-subpage__body .settings-row:nth-child(5) { animation-delay: 0.34s; }
-.settings-subpage__body .list-item:nth-child(n + 6),
-.settings-subpage__body .settings-row:nth-child(n + 6) { animation-delay: 0.38s; }
-/* 个人设置（PersonalTab）元素出场动画：与主内容区 .list-item 错峰节奏对齐。
-   原规则只覆盖行级 .settings-row —— 区块标题（settings-card__title）/ 个人资料卡
-   （settings-profile-card）/ 整卡（settings-card__body）均无动画，且行级 fadeInUp 上移
-   在 .settings-card__body（overflow:hidden）内会被卡顶裁切，观感「卡先现、行后出」割裂。
-   此处将动画单元提升为「区块标题 + 卡片」整块错峰淡入（标题→资料卡→section 顺序递增），
-   卡内行/头部随卡片整体动画（禁用行级独立动画，避免双重动画）。
-   桌面端（pane 直接子元素）与移动端子页（body 直接子元素）规则一致。 */
-.settings-content__pane--active > .settings-card__title,
-.settings-content__pane--active > .settings-profile-card,
-.settings-content__pane--active > .settings-personal-section,
-.settings-subpage__body > .settings-card__title,
-.settings-subpage__body > .settings-profile-card,
-.settings-subpage__body > .settings-personal-section {
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
-}
-.settings-content__pane--active > .settings-card__title:nth-child(1),
-.settings-subpage__body > .settings-card__title:nth-child(1) { animation-delay: 0.04s; }
-.settings-content__pane--active > .settings-profile-card:nth-child(2),
-.settings-subpage__body > .settings-profile-card:nth-child(2) { animation-delay: 0.10s; }
-.settings-content__pane--active > .settings-personal-section:nth-child(3),
-.settings-subpage__body > .settings-personal-section:nth-child(3) { animation-delay: 0.16s; }
-.settings-content__pane--active > .settings-personal-section:nth-child(4),
-.settings-subpage__body > .settings-personal-section:nth-child(4) { animation-delay: 0.22s; }
-/* 个人设置卡片内行：随卡片整体动画，不再单独错峰（覆盖上方行级规则） */
-.settings-content__pane--active .settings-personal-section .settings-row,
-.settings-subpage__body .settings-personal-section .settings-row {
-  animation: none;
-}
+/* 设置项出场动画已移除：各 .list-item / .settings-row / .settings-card__title /
+   .settings-profile-card 等不再错峰 fadeInUp，进入设置页时随根容器 .page-transition-enter
+   整页淡入即可，避免逐项突兀/抖动。
+   Tab 切换过渡由 .settings-content__pane--active (settings-content-in 0.24s opacity 淡入)
+   提供，保留；移动端子页推入/滑出 (.settings-subpage-in/-out) 是导航过渡，保留。 */
 
 /* 源管理（视频源 / IPTV 源 / EPG 源）独立 section，桌面端不卡片化、上下分割线分隔 */
 .settings-source-section {
@@ -484,7 +405,9 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-sm);
 }
 
-/* 桌面端顶部栏：返回按钮 + TabBar 同行，sticky 置顶（滚动时返回按钮与 tab 一起贴顶） */
+/* 桌面端顶部栏（方案 D，2026-08-28）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar。
+   卡片式外观：圆角 + 边框，底部边框兼作与内容区的分割线；仍是原大卡片的顶部，
+   不额外留间距（与内容区一体），仅靠分割线区分 —— 见 2026-08-27 需求「仅外观加卡片感」。 */
 .settings-desktop-topbar {
   position: sticky;
   top: 0;
@@ -493,23 +416,63 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-xs) var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface);
 }
 
+/* 胶囊 TabBar 推到右侧，与左侧标题形成左右分层 */
 .settings-desktop-topbar .settings-tabbar {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
-/* Tab 栏容器 — 大卡片顶部一行，与内容区用分割线分隔（不再独立成卡）；
-   sticky/padding/背景已上移至 .settings-desktop-topbar */
+/* 桌面端顶部栏标题（方案 D）：左侧「设置」标题 + 状态点，与右侧胶囊 TabBar 拉开层级。 */
+.settings-desktop-title {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-right: var(--space-xs);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+
+.settings-desktop-title__text {
+  white-space: nowrap;
+}
+
+/* 状态点：主色实心 + 柔和脉冲光环，弱化「二级页无标题」的平铺感、强化层级。 */
+.settings-desktop-title__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  animation: settings-title-pulse 2.4s var(--ease-out-expo) infinite;
+}
+
+@keyframes settings-title-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  70%  { box-shadow: 0 0 0 7px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-desktop-title__dot { animation: none; }
+}
+
+/* Tab 栏容器 — 桌面端顶部栏（已为卡片式外观）内的一行选项按钮，靠左排列；
+   单个 tab 为普通选项按钮（激活态主色填充），卡片感由外层 .settings-desktop-topbar 提供 */
 .settings-tabbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
+  flex-wrap: nowrap;
   gap: var(--space-2xs);
-  justify-content: flex-end;
+  justify-content: flex-start;
+  padding: 0;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -525,19 +488,20 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  border: none;
+  padding: var(--space-xs) var(--space-md);
+  /* 胶囊（pill）样式：圆角全满 + 浅边框 + 浅背景，激活态主色填充抬起 */
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   /* 字重统一 600（2026-08-13）：原 500→600 激活变化导致按钮文字变宽、
      tab 宽度变化 → flex-wrap TabBar 整行重排（切 tab 抖动根因之一）；
      激活态仅靠主色背景 + 反色文字区分。 */
   font-weight: 600;
   white-space: nowrap;
-  /* tab 高亮切换平滑过渡（active 背景/文字 0.2s） */
-  transition: background 0.2s ease, color 0.2s ease, scale 0.32s var(--ease-spring);
+  /* tab 高亮切换平滑过渡（active 背景/文字/边框 0.2s） */
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   scroll-snap-align: start;
   cursor: pointer;
 }
@@ -545,6 +509,7 @@ body.skin-transitioning .skin-btn.active {
 .settings-tab:hover {
   background: var(--color-surface-hover);
   color: var(--color-text);
+  border-color: var(--color-border-strong);
 }
 
 .settings-tab:focus-visible {
@@ -558,6 +523,7 @@ body.skin-transitioning .skin-btn.active {
 .settings-tab--active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
+  border-color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -1452,16 +1418,27 @@ body.skin-transitioning .skin-btn.active {
 
 /* 移动端：设置页不再整体卡片化 —— 采用 iOS 分组圆角卡，
    菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
-   子页打开时（:has(.settings-subpage)）移除 page-transition-enter 残留的
-   transform（fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。 */
+   子页打开时（:has(.settings-subpage)）关掉进场动画残留的 transform
+   （fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。
+   注：容器层 data-variant="soft" 已改用 fill-mode: none，动画结束后不再残留
+   transform；这里保留 animation:none 只是防止子页打开瞬间动画仍在播而干扰视差。 */
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-sm) 0;
   }
-  .settings-page:has(.settings-subpage) {
-    transform: none;
+  /* 子页打开：下方菜单做轻微视差左移 + 缩小，营造「进入下层」的层级深度。
+     注意：子页经 createPortal 挂到 document.body，并非 .settings-page 的后代，
+     原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。 */
+  body:has(.settings-subpage) .settings-page {
+    transform: translateX(-6%) scale(0.98);
+    transform-origin: left center;
+    transition: transform 0.25s var(--ease-out-expo);
     animation: none;
+  }
+  /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感 */
+  body.settings-subpage--closing .settings-page {
+    transform: none;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -1470,10 +1447,8 @@ body.skin-transitioning .skin-btn.active {
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-sm) 0;
   }
-  html[data-device="app"] .settings-page:has(.settings-subpage) {
-    transform: none;
-    animation: none;
-  }
+  /* app 端同源逻辑已由上方 body:has(.settings-subpage) 覆盖（子页同样在 body 下），
+     此处不再重复（原 .settings-page:has 选择器对 portal 内容无效）。 */
 
 
 

@@ -45,6 +45,11 @@
   --color-primary-shadow: rgba(0, 0, 0, 0.15); /* 激活 tag/chip 的投影色 */
   --color-progress-stripe: rgba(255, 255, 255, 0.15); /* 进度条条纹高光 */
 
+  /* ── 下拉刷新小电视品牌色（B 站同款，仅 PullToRefresh 组件使用） ── */
+  --color-bili: #fb7299;        /* B 站粉主色 */
+  --color-bili-light: #ffc4d6;  /* 腮红/浅粉 */
+  --color-bili-deep: #e85a8a;   /* 深粉（投影/描边加重） */
+
   /* ── Z-index 层级体系 ─────────────────────────────────────────────────
      浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
        固定导航  sticky header 55 / sidebar-overlay 90 / sidebar 100
@@ -65,6 +70,7 @@
   --color-text-secondary: #666;            /* 次要文字 */
   --color-text-tertiary: #999;             /* 辅助/占位文字 */
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
+  --color-on-image: #fff;                  /* 图片/彩色渐变上的前景，不随主题翻转（始终白） */
   --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
   --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
@@ -90,6 +96,7 @@
   --color-error: #ff4d4f;                  /* 错误/不可用 */
   --color-danger: #ef4444;                 /* 危险/角标红（LIVE 角标、收藏页年份类型徽标） */
   --color-warning: #fa8c16;                /* 警告 */
+  --color-rating: #f5c518;                 /* 评分星色（IMDb 黄） */
   --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
   --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
@@ -131,6 +138,9 @@
   --dur-slow: 500ms;     /* 页面级：route transition */
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
   --dur-theme: 200ms;    /* 主题/皮肤切换过渡（11.6：500ms→200ms，配合去 box-shadow 消除卡顿） */
+  --dur-pt-enter: 240ms; /* 页面内容进场：柔和淡入，与 --ease-standard 搭配，不产生亮度跃变 */
+  --dur-pt-leave: 200ms; /* 来源页离场：进入黑场路由（/iptv/play）时旧页退场 */
+  --dur-pt-curtain: 200ms; /* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
 
   /* ── Typography ───────────────────────────────────────────────────────────
      三 regime 统一契约：移动端(≤375)=MIN，桌面端(≥768)=MAX 且冻结，TV=[data-device="tv"] 2×。
@@ -428,6 +438,7 @@
   --color-error: #d32029;
   --color-danger: #ef4444;                 /* 危险/角标红（亮红在暗色下同样醒目） */
   --color-warning: #d89614;
+  --color-rating: #ffd54a;                 /* 评分星色（暗底提亮） */
   --color-info: #177ddc;                  /* 暗色主题链接蓝 */
   --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */
   --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */

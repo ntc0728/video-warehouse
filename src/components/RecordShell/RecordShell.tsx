@@ -57,7 +57,7 @@ export default function RecordShell({
   const hasFused = !!(fusedCategories && fusedCategories.tabs.length > 0);
 
   return (
-    <div ref={containerRef} className={`page-padding record-page page-transition-enter--stagger${isBatchMode ? ' batch-mode' : ''} ${pageClassName}`}>
+    <div ref={containerRef} className={`page-padding record-page${isBatchMode ? ' batch-mode' : ''} ${pageClassName}`}>
       <div className="record-shell" style={{ '--stagger': 0 } as CSSProperties}>
         <div className="record-main">
           <aside className="record-aside">
