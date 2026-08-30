@@ -25,6 +25,8 @@ import { PlayerCMSPanel } from './PlayerCMSPanel';
 import { PlayerSeasonPanel } from './PlayerSeasonPanel';
 import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
+import { PlayerSidebarSkeleton } from './PlayerSidebarSkeleton';
+import { PlayerTVLoader } from './PlayerTVLoader';
 import { useDocumentTitle, useIsTV } from '@/hooks';
 import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager, useNextEpisodePreload } from './hooks';
 import './Player.css';
@@ -679,52 +681,20 @@ export default function PlayerPage() {
 
   // 入场加载态：无 video、无 CMS 搜索、无换源切换时，直接渲染完整播放器布局，
   // 不再用全屏 AppLoading 覆盖播放器（播放器自身负责缓冲态；黑场占位与最终播放器
-  // 同尺寸同底色，零跳动、零「白→黑」闪光）。右侧渲染真实侧栏面板（数据就绪即填充），
-  // 消除「空骨架占位」观感（播放器豁免进场动画见 animations.css [data-variant="player"]）。
+  // 同尺寸同底色，零跳动、零「白→黑」闪光）。右侧渲染骨架占位（PlayerSidebarSkeleton），
+  // 数据就绪后由主分支渲染真实面板（播放器豁免进场动画见 animations.css [data-variant="player"]）。
   if (!video && !cmsLoading && !cmsSwitching) {
     return (
       <div className="page-padding player-page">
         <div className="player-main">
           <div className="player-video-area">
-            <div className="player-stage-placeholder" />
+            <div className="player-stage-placeholder">
+              <PlayerTVLoader />
+            </div>
           </div>
-          {/* 真实侧栏：CMS/选季/选集面板，加载中显示其自然空态，不另起骨架占位 */}
+          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
           <PlayerSidebar>
-            <PlayerCMSPanel
-              selectedSourceIds={selectedSourceIds}
-              sourceNameMap={sourceNameMap}
-              cmsResults={cmsResults}
-              currentSrc={currentSrc}
-              activeSourceId={activeSourceId}
-              onPlaySource={handlePlayCMSSource}
-              onFetchSource={handleFetchCMSSourceById}
-              expanded={expandedPanels.cms}
-              onToggle={() => togglePanel('cms')}
-              compact={isCompact}
-              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
-            />
-            <PlayerSeasonPanel
-              seasons={seasons}
-              activeSeason={selectedSeason}
-              onSelectSeason={handleSelectSeason}
-              expanded={expandedPanels.season}
-              onToggle={() => togglePanel('season')}
-              compact={isCompact}
-              currentSeasonName={currentSeasonName}
-            />
-            <PlayerEpisodesPanel
-              episodes={episodes}
-              sources={playerSources}
-              currentSrc={currentSrc}
-              activeEpisodeId={localEpisodeId}
-              loading={cmsLoading}
-              onPlayEpisode={handlePlayEpisode}
-              onPlaySource={handlePlaySource}
-              expanded={expandedPanels.episodes}
-              onToggle={() => togglePanel('episodes')}
-              compact={isCompact}
-              isTV={isTV}
-            />
+            <PlayerSidebarSkeleton />
           </PlayerSidebar>
         </div>
         {detailSection}
@@ -740,45 +710,12 @@ export default function PlayerPage() {
         <div className="player-main">
           <div className="player-video-area">
             <div className="player-loading-wrap">
-              <div className="player-loading-spinner" />
+              <PlayerTVLoader />
             </div>
           </div>
+          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
           <PlayerSidebar>
-            <PlayerCMSPanel
-              selectedSourceIds={selectedSourceIds}
-              sourceNameMap={sourceNameMap}
-              cmsResults={cmsResults}
-              currentSrc={currentSrc}
-              activeSourceId={activeSourceId}
-              onPlaySource={handlePlayCMSSource}
-              onFetchSource={handleFetchCMSSourceById}
-              expanded={expandedPanels.cms}
-              onToggle={() => togglePanel('cms')}
-              compact={isCompact}
-              readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
-            />
-            <PlayerSeasonPanel
-              seasons={seasons}
-              activeSeason={selectedSeason}
-              onSelectSeason={handleSelectSeason}
-              expanded={expandedPanels.season}
-              onToggle={() => togglePanel('season')}
-              compact={isCompact}
-              currentSeasonName={currentSeasonName}
-            />
-            <PlayerEpisodesPanel
-              episodes={episodes}
-              sources={playerSources}
-              currentSrc={currentSrc}
-              activeEpisodeId={localEpisodeId}
-              loading={cmsLoading}
-              onPlayEpisode={handlePlayEpisode}
-              onPlaySource={handlePlaySource}
-              expanded={expandedPanels.episodes}
-              onToggle={() => togglePanel('episodes')}
-              compact={isCompact}
-              isTV={isTV}
-            />
+            <PlayerSidebarSkeleton />
           </PlayerSidebar>
         </div>
         {detailSection}
