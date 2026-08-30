@@ -82,15 +82,6 @@
   backdrop-filter: blur(12px);
 }
 
-.up-loading-spinner {
-  color: var(--player-text);
-  animation: up-spin 1s linear infinite;
-}
-
-@keyframes up-spin {
-  to { transform: rotate(360deg); }
-}
-
 .up-player-error-content {
   display: flex;
   flex-direction: column;
@@ -1402,28 +1393,10 @@
 }
 
 .up-iptv-buffering-tv {
-  color: var(--color-primary);
-  /* 轻微呼吸，与 spinner 同呼吸节奏但更轻，强调「电视在缓冲」 */
-  animation: up-buffering-tv-pulse 1.8s var(--ease-out-expo) infinite;
+  /* 小电视 mascot（ptr-tv--on-dark 转白底），黑场可见、与下拉刷新同款 */
+  width: var(--icon-2xl);
+  height: var(--icon-2xl);
   margin-bottom: var(--space-xs);
-}
-
-@keyframes up-buffering-tv-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.06); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .up-iptv-buffering-tv { animation: none; }
-}
-
-.up-iptv-buffering-spinner {
-  width: var(--space-xl);
-  height: var(--space-xl);
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: up-iptv-buffering-spin 0.8s linear infinite;
 }
 
 .up-iptv-buffering-text {
@@ -1451,11 +1424,6 @@
   font-size: var(--text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-
-@keyframes up-iptv-buffering-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* ===== Resposive: 3xl (2560) and 4xl (3840) handled by variables.css ===== */
@@ -2055,18 +2023,10 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   }
 }
 
-/* 连接中 spinner */
-.up-cast-spinner {
+/* 连接中：小电视 mascot（默认主题配色，sheet 浅底可见） */
+.up-cast-tv {
   width: var(--icon-xl);
   height: var(--icon-xl);
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: up-spin 0.8s linear infinite;
-}
-
-@keyframes up-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* 设备列表 */
