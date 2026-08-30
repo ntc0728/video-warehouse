@@ -712,7 +712,9 @@ body.skin-transitioning .skin-btn.active {
    与全局导航栏同高（移动端 --header-height-compact），视觉上替代导航栏。
    body 在顶栏下方独立滚动。
    过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
-   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。 */
+   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。
+   方案1（iOS 对称 push/pop）：进出统一 0.3s + cubic-bezier(.32,.72,0,1)，
+   父列表视差同曲线同时长、子页左缘投影、prefers-reduced-motion 守卫。 */
 @keyframes settings-subpage-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -729,10 +731,14 @@ body.skin-transitioning .skin-btn.active {
   flex-direction: column;
   min-height: 0;
   background: var(--color-background);
-  animation: settings-subpage-in 0.3s var(--ease-out-expo) both;
+  /* 左缘投影：推入/滑出时读得出「浮在父页之上」的层级深度 */
+  box-shadow: -10px 0 24px rgb(0 0 0 / 0.2);
+  /* 方案1：进出统一 iOS push 曲线，对称不违和 */
+  animation: settings-subpage-in 0.3s cubic-bezier(.32, .72, 0, 1) both;
 }
 .settings-subpage--leaving {
-  animation: settings-subpage-out 0.25s var(--ease-standard) forwards;
+  /* 方案1：与进入同曲线同时长（0.3s），对称 pop */
+  animation: settings-subpage-out 0.3s cubic-bezier(.32, .72, 0, 1) forwards;
 }
 
 /* 子页顶栏：与全局导航栏同高（移动端紧凑高度）、同背景 —— 进入子页后替代顶部导航栏 */
@@ -1474,12 +1480,28 @@ body.skin-transitioning .skin-btn.active {
   body:has(.settings-subpage) .settings-page {
     transform: translateX(-6%) scale(0.98);
     transform-origin: left center;
-    transition: transform 0.25s var(--ease-out-expo);
+    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步；
+       轻微压暗强化「进入下层」的层级深度 */
+    transition: transform 0.3s cubic-bezier(.32, .72, 0, 1),
+                filter 0.3s cubic-bezier(.32, .72, 0, 1);
+    filter: brightness(0.96);
     animation: none;
   }
   /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感 */
   body.settings-subpage--closing .settings-page {
     transform: none;
+    filter: none;
+  }
+  /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
+  @media (prefers-reduced-motion: reduce) {
+    .settings-subpage { animation: none; }
+    .settings-subpage--leaving { animation: none; }
+    body:has(.settings-subpage) .settings-page,
+    body.settings-subpage--closing .settings-page {
+      transform: none;
+      filter: none;
+      transition: none;
+    }
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */

@@ -27,7 +27,7 @@ import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
 import type { EPGProgram, ParsedEPGData } from '@/services/epgService';
-import { Rewind, FastForward, X } from 'lucide-react';
+import { Rewind, FastForward, X, Tv } from 'lucide-react';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
 import { useTouchGesture } from './hooks/useTouchGesture';
@@ -822,6 +822,8 @@ skipHistory,
       {/* 加载中 / 缓冲中统一显示带文字信息的遮罩 */}
       {(isPlayerLoading || isBuffering) && !hasError && (
         <div className="up-iptv-buffering-overlay">
+          {/* 小电视图标：置于缓冲 spinner 之上，与播放页入场加载指示视觉统一 */}
+          <Icon icon={Tv} size="2xl" className="up-iptv-buffering-tv" />
           <div className="up-iptv-buffering-spinner" />
           {isBuffering && (
             <>

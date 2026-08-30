@@ -1401,6 +1401,22 @@
   transform: translate(-50%, -50%);
 }
 
+.up-iptv-buffering-tv {
+  color: var(--color-primary);
+  /* 轻微呼吸，与 spinner 同呼吸节奏但更轻，强调「电视在缓冲」 */
+  animation: up-buffering-tv-pulse 1.8s var(--ease-out-expo) infinite;
+  margin-bottom: var(--space-xs);
+}
+
+@keyframes up-buffering-tv-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .up-iptv-buffering-tv { animation: none; }
+}
+
 .up-iptv-buffering-spinner {
   width: var(--space-xl);
   height: var(--space-xl);
