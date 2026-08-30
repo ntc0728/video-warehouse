@@ -140,6 +140,16 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: var(--shadow-card-hover);
+  /* settings 变体自带浅色圆钮 + 浅色文本胶囊：必须走主题文字色，
+     不能继承 base 的 --color-on-image（白字），否则浅色主题下白字压白底不可见 */
+  color: var(--color-text-secondary);
+}
+.ptr-indicator--settings .ptr-indicator__meta {
+  padding: 0 var(--space-xs);
+  color: var(--color-text-tertiary);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* mascot 的摇摆/眨眼/电波动画与 @keyframes 已迁移到 components/ui/TvMascot/TvMascot.css */
