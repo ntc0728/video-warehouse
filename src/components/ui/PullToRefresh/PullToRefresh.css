@@ -1,0 +1,251 @@
+/* ============================================================
+   PullToRefresh —— 全局下拉刷新浮层样式（复刻 B 站小电视同款）
+   设计约束：
+   - 浮层为应用级（仅 AppLayout 挂载一次），不向页面注入任何 DOM
+   - 页面内容绝不发生位移；仅浮层指示器随手势做入场 / 位移动画
+   - 指示器：图标（小电视角色）为主、文本为辅；严禁下拉箭头 / 通用环形图标
+   - default 变体：顶部导航栏下方居中；settings 变体：页面中间位移刷新按钮
+   - 全部走项目 token（黑白灰配色：描边/眼睛/电波走 --color-text，腮红走 --color-border-light）
+   ============================================================ */
+
+.ptr-overlay {
+  position: absolute;
+  inset: 0;                /* 撑满可视区，使 top:50% 落到真正的垂直中点（而非 0 高盒子的 0） */
+  z-index: 50;              /* 高于内容，低于 StickyHeader（header 在 scroll-wrapper 之外） */
+  overflow: visible;
+  pointer-events: none;     /* 浮层不拦截任何触摸/点击 */
+}
+
+.ptr-overlay__indicator {
+  position: absolute;
+  will-change: transform, opacity;
+  /* 入场/位移动画：松手归位、刷新/成功态走此过渡 */
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease;
+}
+/* 拖拽中关闭过渡：让指示器 1:1 跟手，避免 0.18s 缓动导致「拖手指时指示器滞后」 */
+.ptr-overlay__indicator[data-drag="true"] {
+  transition: none;
+}
+
+/* default：顶部导航栏下方居中 */
+.ptr-overlay__indicator--default {
+  top: calc(var(--header-height) + var(--space-sm));
+  left: 50%;
+}
+
+/* default 变体：不使用背景色 / 阴影，仅靠 SVG filter 光晕（#ptr-halo）把小电视「托起」与图片分离。
+   光晕加在 .ptr-tv 上（见下方规则）；此容器仅负责内边距与定位，不再有任何背景 / 阴影。 */
+.ptr-overlay__indicator--default .ptr-indicator {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-lg);
+}
+
+/* settings：页面正中间 */
+.ptr-overlay__indicator--settings {
+  top: 50%;
+  left: 50%;
+}
+
+/* ---------- 方案 C：default 变体专属（浮于图片上时） ----------
+   不使用任何背景色 / box-shadow，靠两处「白描边」让黑白线稿 + 文字在任意图片底色上自带着色轮廓：
+   1) 小电视整体套一层 SVG filter 光晕（#ptr-halo，见 PullToRefreshOverlay 注入的 <defs>）；
+   2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。 */
+.ptr-overlay__indicator--default .ptr-tv {
+  filter: url(#ptr-halo);
+}
+.ptr-overlay__indicator--default .ptr-indicator__text {
+  color: #1a1a1a;                   /* 深色填充 */
+  -webkit-text-stroke: 1.5px #fff;  /* 白色描边兜底 */
+  paint-order: stroke fill;
+}
+.ptr-overlay__indicator--default .ptr-indicator__meta {
+  color: #1a1a1a;
+  -webkit-text-stroke: 1px #fff;
+  paint-order: stroke fill;
+}
+
+/* 方案 C 的 SVG 光晕 filter 定义容器：全局仅渲染一次，零尺寸、不占布局 */
+.ptr-halo-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- 指示器整体布局（图标为主、文本为辅） ---------- */
+.ptr-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  align-items: center;
+  text-align: center;
+  user-select: none;
+}
+
+/* 图标容器（承载小电视），下拉时整体轻微放大 */
+.ptr-indicator__icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-2xl);
+  height: var(--icon-2xl);
+  transition: transform 0.08s linear;
+}
+.ptr-indicator__icon .ptr-tv {
+  width: var(--icon-2xl);
+  height: var(--icon-2xl);
+}
+
+/* tips：文本为辅 —— 更小、更弱。
+   颜色走 --color-on-image（白字），供 settings 变体（自带 surface 圆钮）使用；
+   default 变体（浮于图片上）由下方 .ptr-overlay__indicator--default 规则改写为双描边。 */
+.ptr-indicator__text {
+  color: var(--color-on-image);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.ptr-indicator__meta {
+  color: var(--color-on-image);
+  opacity: 0.8;                  /* 次级文本略降透明，仍保持白字层级 */
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+}
+
+/* ---------- 小电视角色 ---------- */
+.ptr-tv {
+  display: block;
+  overflow: visible;
+  /* 摇摆/缩放以「机身底部中心」为支点，像不倒翁而非绕图心旋转 */
+  transform-origin: 50% 92%;
+}
+
+.ptr-tv__body {
+  fill: var(--color-surface);
+  stroke: var(--color-text);
+  stroke-width: 3;
+}
+.ptr-tv__ear line {
+  stroke: var(--color-text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.ptr-tv__ear circle {
+  fill: var(--color-text);
+}
+.ptr-tv__cheek {
+  fill: var(--color-border-light);
+  opacity: 0.9;
+}
+.ptr-tv__eyes circle {
+  fill: var(--color-text);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.14s ease;
+}
+.ptr-tv__eyes.is-blink circle {
+  animation: ptr-blink 0.5s ease-in-out infinite;
+}
+.ptr-tv__mouth {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+/* 达标/刷新时头顶电波 */
+.ptr-tv__wave path {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.7;
+  animation: ptr-wave 0.9s ease-in-out infinite;
+}
+.ptr-tv__wave path:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+/* ---------- settings 变体：页面中间的圆形刷新按钮 ---------- */
+.ptr-indicator__btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  /* 圆钮尺寸随视口流体图标基准 + 流体间距，避免写死 px */
+  width: calc(var(--icon-3xl) + var(--space-md));
+  height: calc(var(--icon-3xl) + var(--space-md));
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card-hover);
+}
+.ptr-indicator__btn .ptr-tv {
+  width: var(--icon-3xl);
+  height: var(--icon-3xl);
+}
+.ptr-indicator--settings .ptr-indicator__text {
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ---------- 动画 ---------- */
+/* 刷新中：小电视左右摇摆（B 站 loading 同款韵律），配合眨眼 */
+.ptr-tv.is-shaking {
+  animation: ptr-shake 0.9s ease-in-out infinite;
+}
+
+@keyframes ptr-blink {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes ptr-wave {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ptr-shake {
+  0%, 100% {
+    transform: rotate(-7deg);
+  }
+
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+/* 降低动效偏好：弱化眨眼/电波/摇摆，并关闭指示器入场/位移动画（仅去过渡，保留 translate 定位） */
+@media (prefers-reduced-motion: reduce) {
+  .ptr-overlay__indicator {
+    transition: none;
+  }
+
+  .ptr-tv.is-shaking {
+    animation: none;
+  }
+
+  .ptr-tv__eyes.is-blink circle {
+    animation: none;
+  }
+
+  .ptr-tv__wave path {
+    opacity: 0.6;
+    animation: none;
+  }
+}
