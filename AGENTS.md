@@ -68,7 +68,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 
 | 页面 | 路由 | 核心组件 | 数据源 |
 |------|------|---------|--------|
-| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
+| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
 | 浏览/搜索 | `/browse` | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供） | TMDB discover/search + CMS searchAll |
 | 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
 | 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
@@ -196,7 +196,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
 
 应用位置：
-- 侧边栏 `HomeSidebar` + 顶部导航 `StickyHeader` — 桌面端（≥1024px）采用**连接式布局**：Sidebar 左对齐（top/bottom/left=0）、宽度 `clamp(160px, 12vw, 240px)`、Header 与 Sidebar 无缝对接（margin=0、无边框无阴影），形成统一的 L 型导航区域 — `Layout.css` 内 `@media (width >= 1024px)`
+- 顶部导航 `StickyHeader` 承载全局导航；桌面 web / TV **已无左侧栏**（旧 `HomeSidebar` 于 2026-08-29 删除）：桌面经顶栏补充 IPTV + 设置入口（`StickyHeader` 的 `EXTRA_NAV_ITEMS` / `SETTINGS_NAV_ITEM` 在 `!isMobile` 时渲染），移动 web / app 经抽屉侧栏 / 底部 TabBar。`--sidebar-width*` token 仍保留供移动端 `Sidebar.tsx` 使用。
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
 - 浏览页双卡片结构 — `Browse.css`：
   - Card 1（搜索区）：搜索 tabs + FilterBar（`hideFooter` 隐藏排序 footer），`flex-shrink: 0` 防挤压（SearchBox 已移至顶部导航，通过 `usePageSearchStore` 注册回调）
@@ -303,17 +303,24 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 - **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。**特例 — 首页**：`.home-page` 内嵌的 HeroBanner 自带 background crossfade + 缩略图揭示，且其缩略图/背景层是 `will-change`/`z-index` 的 **GPU 合成层**；若祖先（`.home-page` 根）带 `page-enter-fade` 的 `transform` 动画，会触发这些合成层重绘**闪烁（"闪一下"）**。因此首页的 `.page-transition-enter` **刻意落在仅包裹非 Hero 内容的 `.home-page__content` 包装层**（HeroBanner 作为其兄弟节点，祖先不再有 transform 动画），既保留进入淡入上移动画，又消除缩略图闪烁；HeroBanner 在二次进入时保持静止（首页被刻意排除在 VT 交叉淡入与重进抑制之外，顺带规避其"上一张图闪现"的已知问题）。
 - **方案 B（无 Keep-Alive）下的页面进入过渡（2026-08 修订）**：当前 AppLayout 每次路由切换重新挂载页面（见上文「路由渲染器」）。若页面根容器每次都从 `page-transition-enter` 的 `opacity:0` 起播，二次进入会「先空白再出现数据」、快速连点尤为晃眼。**治理方式（方案 A — data-revisit 门控）**：AppLayout 用模块级 `visitedRoutes` 记录已访问路由，给 `.page-transition` 打 `data-revisit="true"`（仅对再次进入的路由）；`animations.css` 据此把 `.page-transition-enter` / `--stagger` 及其子元素置 `animation:none`，已挂载页面直接 `opacity:1` 呈现、不再从透明起播 → 无空白帧、无抖动。首页 `.home-page__content` 在上述 CSS 规则中被 `:not()` 排除，保持专属过渡、不参与抑制。**View Transitions（document.startViewTransition 交叉淡入）曾在此启用，但实测在方案 B 下反而有害**：(1) 首次进入因 flushSync 提交引发布局抖动；(2) 二次进入时缓存命中本应瞬间可见的页面在 VT 交叉淡入期间被拍成空白快照，把白色间隙时长拉长。故已彻底移除 VT，`useCustomNavigate` 现只走 react-router 原生 navigate（见「导航 API 强约束」）。
-- **首页「类目切换」过渡（SWR 渲染层 + 暗态原位替换，2026-08-13 终版；切换快慢修正 2026-08-14）**：切换首页/其他分类时由 `Home/index.tsx` 的 **`displayedCategory` state 驱动**——渲染层只展示「上一就绪分类」的内容，切换仅由「新分类数据就绪（hero/行有内容，或加载结束 = 失败终态）」事件触发（无超时 hack，无「内容→整页骨架→内容」路径）。等待期旧内容保留 + `.home-cat-dim`（`opacity 0.55`）轻微降暗反馈；数据就绪后**暗态下原位替换** `displayedCategory` → `catSwitching=false` 移除 dim → `transition: opacity 0.24s` 亮度恢复 1。**全程无透明帧（内容最低 opacity 0.55）**——历史 `fadePhase` 三态状态机（fading-out 120ms → 替换 → fading-in 280ms）曾把内容淡出到 0，产生「banner 下方内容短暂消失」空窗（已彻底移除，`fadePhase`/`home-cat-fade-out/in` 不复存在）。**⚠️ 切换不被封面图阻塞（2026-08-14）**：数据就绪即 `setDisplayedCategory`，**不做预加载阻塞门控**——历史实现曾先 `await preloadRowCovers(...)`（≤2s 超时）才替换，导致切换慢、banner/缩略图/卡片绑定一起等一起变（用户反馈「切换不可接受」）；现预加载降级为**后台非阻塞预热**（`void preloadRowCovers(...)` fire-and-forget），仅为滚动/二次进入的 session 缓存命中加速。**竞态**：就绪 effect 只由「当前 deferred 分类数据就绪」触发且读最新源值（`activeCategory`），过渡期间用户再切分类时以最新就绪目标为准，无需额外状态机。**`animation-fill-mode: none` 必须保留在 `.home-page__content` 上**——`page-transition-enter` 动画 `both` fill 会在结束后用最后一帧 `opacity:1` 永久锁定 opacity，使 `.home-cat-dim` 失效（降暗从未真正生效的历史根因）。骨架仅保留给「首页首次加载 / 分类首次且无任何可展示内容」。**关键约束：该过渡只用 `opacity`、绝不含 `transform`**——对 HeroBanner 的 GPU 合成缩略图层用 `transform` 会触发重绘闪烁（即"闪一下"），故刻意避开；HeroBanner 自身的缩略图交叉淡入（`HeroThumb` 双层）与主图切换过渡已让其图片参与过渡，无需外部 transform。不要给 `.home-page` 或任何 HeroBanner 祖先加 `transform` 类动画。**浅白遮罩（CardCoverLoading）已彻底删除（2026-08-14）**：`loadingVariant="brand"` 及 `CardCoverLoading` 组件/CSS 全删，卡片封面加载占位回退默认 shimmer+spinner；`preloadRowCovers` 仅做 w185 实载 + w342 缓存标记（w342 直连会 `net::ERR_ABORTED`，且 Playwright route 拦截下浏览器 HTTP 缓存不生效、同 URL 二次请求必再发请求——「替换后 0 新增请求」断言不可行）。
+- **首页分类入口（2026-08-29 修订：页面内类目切换已彻底移除）**：首页**不再有页面内类目切换**——旧 `HomeSidebar` 与 `Home/index.tsx` 的 `CategoryView` 已删除，分类切换统一走路由：点击 `CategoryQuickAccess` 卡片 → `navigate('/browse?category=...')`（各端一致）。**以下历史机制均已不存在，勿再引用**：`displayedCategory` / `catSwitching` / `.home-cat-dim` / `home-cat-fade-*` / `fadePhase` / `useHomeCategoryStore` / `pages/Home/categoryConfig.ts` / `pages/Home/preloadRowCovers.ts` / `CategoryQuickAccess` 的 `activeCategory` prop 与 `--active` 样式。**仍保留的约束**：(1) `animation-fill-mode: none` 保留在 `.home-page__content` 上（防 `page-transition-enter` 的 `both` fill 永久锁定 opacity）；(2) 不要给 `.home-page` 或任何 HeroBanner 祖先加 `transform` 类动画（GPU 合成缩略图层会重绘闪烁，即「闪一下」）。
 
 **导航 API 强约束**：所有业务导航一律使用 `src/lib/navigation.ts` 的 `useCustomNavigate()`，禁止直接 `import { useNavigate } from 'react-router-dom'`（已由 ESLint `no-restricted-imports` 封死，仅 `src/lib/navigation.ts` 豁免）。`useCustomNavigate` 现只走 react-router 原生 navigate（不启用 View Transitions——见「页面进入过渡统一约定」：VT 在方案 B 下会引入抖动与白色间隙回归）。二次进入的「先空白再出现数据」闪烁由 AppLayout 的 `data-revisit` 门控消除，与导航方式无关（无论经 `useCustomNavigate` 还是侧栏 `<Link>` 改走的 `useCustomNavigate` onClick，重进门控都生效）。
 - **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
+
+### 共享加载态约定（小电视 TvMascot）
+
+- **唯一加载角色 `TvMascot`**：B 站同款「小电视」SVG 角色（TV 身 + 双天线耳朵 + 笑脸 + 电波），定义在 `src/components/ui/TvMascot/`（与 `PullToRefresh`、`UniversalPlayer` 加载态共用同一份 SVG + 配色，严禁再内联重复定义）。**所有环形/转圈加载图标（lucide `Loader` / `Tv`、`.up-loading-spinner` / `.up-iptv-buffering-spinner` / `.up-cast-spinner` 等）已全部移除**，新加载态一律用 `TvMascot`。
+- **统一 props**：`armed`（耳朵直立 + 头顶电波）、`blink`（眨眼，用于 refreshing/success）、`earProgress`（0→1 耳朵竖起进度，随下拉进度）、`is-shaking`（刷新时摇摆）、`className`（可挂 `ptr-tv--on-dark` 适配黑色舞台）。`PullIndicator` 已封装「图标为主、文本为辅」的 B 站情绪化三段式文案（再拉就刷新 / 够啦松开人家嘛 / 更新中… / 更新啦）。
+- **PullToRefresh 两变体**：`default`=顶部导航栏下方居中（靠 SVG filter 光晕 `#ptr-halo` 把小电视托起与图片分离，文字走深色填充 + 白色描边 `paint-order: stroke fill`）；`settings`=页面正中间圆形刷新按钮（自带 `--color-surface` 圆钮 + 阴影）。**陷阱**：`settings` 变体文本胶囊自带浅色背景，**必须走 `color: var(--color-text-secondary)`（主题文字色），不能继承 base 的 `--color-on-image`（白字）——否则浅色主题下白字压白底不可见**（2026-08-30 修复 `2e0ca40`）。
+- **播放器加载/缓冲**：`UniversalPlayer` 缓冲浮层用 `<TvMascot className="ptr-tv--on-dark" blink is-shaking />`；首帧准备（非缓冲）时也需显示「加载中…」文本，避免出现「只有小电视、无文案」的裸电视态（2026-08-30 修复 `bfdaacf`）。播放页进入时右侧 `PlayerSidebarSkeleton`（CMS/季/集三栏 shimmer）必须每次渲染，不再用全屏 `AppLoading` 覆盖播放器（2026-08 `ecc197c`）。
 
 ### .gitignore 策略
 
 - `docs/*` + `!docs/KNOWLEDGE.md` + `!docs/TEST-CASES.md` + `!docs/KNOWN-ISSUES.md` + `!docs/PRODUCTION-REVIEW-*.md` — 仅提交知识库 / 测试案例 / 已知问题 / 生产级对标报告文档，docs/ 其余（含 `docs/page-diagrams/` 原理图）忽略
 - `scripts/*.ts` + `!scripts/*.spec.ts` + `!scripts/global-setup.ts` — 仅保留 E2E 测试脚本与全局初始化
 - `scripts/*.mjs` + `!scripts/fetch-diagram-data.mjs` — 仅保留数据获取脚本，工具脚本不提交
-- `scripts/fixtures/`、`scripts/backup-specs/` — 本地测试夹具与旧测试备份，一律忽略（不参与 E2E，见「测试基建修复」）
+- `scripts/fixtures/` — 本地测试夹具，忽略（不参与 E2E，见「测试基建修复」）
 - AI 工具本地配置（.workbuddy/ .claude/ .opencode/ .codegraph/ 等）全部忽略
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
@@ -323,11 +330,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数为 `npx playwright test --list` 实际枚举数（2026-08-18 校准）。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-08-29 二次校准，全量 258 条 / 17 个 spec）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 40 + 7 |
+| `src/pages/Home/` | `scripts/home.spec.ts` | 35 + 7 |
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 27 |
@@ -337,10 +344,10 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/History/` | `scripts/history.spec.ts` | 11 |
 | `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
 | `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
-| 跨页联动回归 | `scripts/cross-page.spec.ts` | 16 |
-| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 22 |
+| 跨页联动回归 | `scripts/cross-page.spec.ts` | 17 |
+| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 21 |
 | 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
-| UI 整改专项（顶栏头像/侧边栏/分类入口/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
+| UI 整改专项（顶栏头像/分类入口(全端)/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
 | 全局问题专项（字体体系/皮肤字体自托管/基准统一/IPTV 占位/跟随系统/收藏动画） | `scripts/global-fixes.spec.ts` | 9 |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（白屏/封面/汉堡/横屏/TabBar/免责声明 各页共通的修复验证）。
@@ -369,8 +376,9 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |
 | `src/stores/useSettingsStore.ts` | settings + source-checker | 29 |
 | `src/stores/useUserStore.ts` | collections + history | 12 |
+| `src/components/ui/PullToRefresh/` | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx` | 4 |
 
-> 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已归档到 `scripts/backup-specs/`（gitignore 忽略，不参与测试），映射表中不再引用。`scripts/backup-specs/` 中的 308 个用例不进入 `npx playwright test` 的默认执行（见「测试基建修复」）。
+> 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已彻底删除（原归档目录 `scripts/backup-specs/` 于 2026-08-29 连同 8 个一次性 `.mjs` 工具脚本一并清理，已备份至 `backups/scripts-untracked-20260829/`），映射表中不再引用。`playwright.config.ts` 的 `testIgnore` 规则已随之移除。
 
 ### 快速跑法
 

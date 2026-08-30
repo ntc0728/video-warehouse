@@ -8,9 +8,6 @@ const STORAGE_STATE = resolve(__dirname, 'test-storage-state.json');
 export default defineConfig({
   globalSetup: resolve(__dirname, 'scripts/global-setup.ts'),
   testDir: './scripts',
-  // 排除 gitignore 的旧测试备份目录（backup-specs/ 308 个用例不参与 E2E，否则全量测试会
-  // 执行已废弃用例并产生稳定失败，掩盖真实回归信号）。详见 docs/KNOWN-ISSUES.md #2。
-  testIgnore: '**/backup-specs/**',
   timeout: 45000,
   expect: { timeout: 5000 },
   fullyParallel: true,

@@ -83,9 +83,6 @@ agent-browser.json
 public/db-inspector.html
 public/debug-source.html
 
-# ── 脚本截图目录 ──────────────────────────────
-scripts/screenshots/
-
 # ── 文档（仅提交 KNOWLEDGE.md / TEST-CASES.md / KNOWN-ISSUES.md / PRODUCTION-REVIEW）──
 docs/*
 !docs/KNOWLEDGE.md
@@ -115,7 +112,6 @@ scripts/*.mjs
 # 首页 8 区块等 mock 覆盖一致，箭头/骨架等测试可稳定断言
 scripts/fixtures/*
 !scripts/fixtures/*.ts
-scripts/backup-specs/
 
 # ── OS 临时文件 ───────────────────────────────
 .DS_Store

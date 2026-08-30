@@ -161,7 +161,6 @@ test.describe('3.10 海报优先级', () => {
     expect(src).toBeTruthy();
     expect(src).toContain('mock-cms.example.com/cms-movie-poster.jpg');
     expect(src).not.toContain('image.tmdb.org');
-    console.log('✅ REG-001 通过: 海报优先 CMS 原图 =', src);
   });
 
   test('REG-002: CMS 封面加载失败时降级 TMDB 兜底', async ({ page }) => {
@@ -177,7 +176,6 @@ test.describe('3.10 海报优先级', () => {
     const src = await page.locator('.detail-source-group .detail-source-thumb img').first()
       .getAttribute('src');
     expect(src).toContain('image.tmdb.org');
-    console.log('✅ REG-002 通过: 封面失败后 TMDB 兜底 =', src);
   });
 });
 
@@ -199,7 +197,6 @@ test.describe('3.11 弹窗选中态与已看判定', () => {
     // 电影 mock 有两条线路
     const cellCount = await page.locator('.playlist-modal .playlist-cell').count();
     expect(cellCount).toBe(2);
-    console.log(`✅ REG-003 通过: 零选中 (selected=0, cells=${cellCount})`);
   });
 
   test('REG-004: 已看判定仅限真实进度记录（有记录的第2集标已看，其余不标）', async ({ page }) => {
@@ -231,7 +228,6 @@ test.describe('3.11 弹窗选中态与已看判定', () => {
       .locator('.playlist-modal .playlist-cell--ep.is-watched .playlist-cell-num')
       .allTextContents();
     expect(watchedNums.join(',')).toBe('2');
-    console.log('✅ REG-004 通过: 仅真实进度记录的第2集标已看，其余未标');
   });
 });
 
@@ -272,7 +268,6 @@ test.describe('3.12 电影线路进度独立', () => {
 
     await expect(lineA.locator('.playlist-cell-pct')).toHaveText('30%');
     await expect(lineB.locator('.playlist-cell-pct')).toHaveText('90%');
-    console.log('✅ REG-005 通过: 线路A=30%、线路B=90%（线路进度独立）');
   });
 });
 
@@ -318,7 +313,6 @@ test.describe('3.13 历史页删除', () => {
     await page.waitForTimeout(1500);
     const cardCountAfter = await page.locator('.record-card').count();
     expect(cardCountAfter).toBe(0);
-    console.log(`✅ REG-006 通过: 删除后 reload 无残留卡片 (before=${cardCountBefore}, after=${cardCountAfter})`);
   });
 });
 
@@ -345,7 +339,6 @@ test.describe('3.14 首页继续播放', () => {
     await page.waitForSelector('.hero-banner__cta--continue', { timeout: 15000 });
     const text = await page.locator('.hero-banner__cta--continue').first().innerText();
     expect(text).toContain('继续播放');
-    console.log('✅ REG-007 通过: 首页显示「继续播放」按钮');
   });
 });
 
@@ -384,7 +377,6 @@ test.describe('3.15 弹窗优化', () => {
       .locator('.playlist-modal .playlist-cell--ep.is-selected .playlist-cell-num')
       .allTextContents();
     expect(selectedNums.join(',')).toBe('2');
-    console.log('✅ REG-008 通过: 弹窗对齐历史季（第3季）并选中第2集');
   });
 
   test('REG-009: 选集超过40集时全部集可显示（移动端兜底补齐 + 滚动懒加载）', async ({ page }) => {
@@ -411,7 +403,6 @@ test.describe('3.15 弹窗优化', () => {
     }
     const count = await page.locator('.playlist-modal .playlist-cell--ep').count();
     expect(count).toBe(50);
-    console.log(`✅ REG-009 通过: 50 集全部可显示（${count}）`);
   });
 
   test('REG-010: 移动端选集网格按钮间距放宽到 space-sm（≥6px）', async ({ page }) => {
@@ -429,7 +420,6 @@ test.describe('3.15 弹窗优化', () => {
     });
     const gapPx = parseFloat(gap);
     expect(gapPx).toBeGreaterThanOrEqual(6);
-    console.log(`✅ REG-010 通过: 移动端 grid gap = ${gap} (≥6px)`);
   });
 });
 
@@ -449,7 +439,6 @@ test.describe('3.16 易用性修复', () => {
     await expect(page.locator('.playlist-modal .lazy-image-placeholder')).toHaveCount(0);
     // fallback 图（TMDB 兜底）渲染可见
     await expect(page.locator('.playlist-modal .lazy-image-fallback')).toHaveCount(1);
-    console.log('✅ REG-011 通过: error 分支无白遮罩，fallback 图直接显示');
   });
 
   test('REG-012: 首屏 loading 不叠加两次，进度条（若出现）渐进且不满格卡死', async ({ page }) => {
@@ -474,115 +463,41 @@ test.describe('3.16 易用性修复', () => {
         expect(info.x).toBeGreaterThan(0);
         expect(info.x).toBeLessThan(0.999);
         sampled = true;
-        console.log(`✅ REG-012 采样: scaleX=${info.x.toFixed(3)}（渐进且不满格）`);
         break;
       }
     }
 
     // 无论是否采样到 loading，Home 最终必须渲染内容（8.3C 路径 = fallback 后直接内容）
     await page.waitForSelector('.home-page__content', { timeout: 10000 });
-    if (!sampled) {
-      console.log('✅ REG-012 通过（8.3C 路径）: chunk fallback 后 Home 直接渲染内容，无叠加 loading');
-    }
   });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 3.17 侧边栏折叠重构（2026-08-04）：瞬切 + 图标居中 + label 淡出
-// ═══════════════════════════════════════════════════════════════
+// =============================================================
+// 3.17 桌面端布局重构（2026-08-29）：删除左侧栏，分类快选 + 顶栏双入口
+// =============================================================
 
-test.describe('3.17 侧边栏折叠', () => {
-  async function openHomeDesktop(page: Page) {
+test.describe('3.17 桌面端布局重构', () => {
+  test('REG-013: 桌面端无左侧栏，分类快选可见且顶栏含 IPTV/设置', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.home-sidebar', { timeout: 15000 });
-    await page.waitForTimeout(500);
-  }
+    await page.waitForTimeout(2000);
 
-  test('REG-013: 折叠/展开为瞬切（spacer 与 sidebar 同帧到位，无宽度动画）', async ({ page }) => {
-    await openHomeDesktop(page);
+    // 旧 HomeSidebar 已删除
+    expect(await page.locator('.home-sidebar').count()).toBe(0);
 
-    // 展开态：sidebar 宽度 = --sidebar-width（@1280 = clamp(160, 12vw=153.6, 240) = 160px）
-    const widthBefore = await page.evaluate(() => {
-      const s = document.querySelector('.home-sidebar');
-      return s ? s.getBoundingClientRect().width : -1;
-    });
-    expect(widthBefore).toBe(160);
+    // 分类快选在所有端显示（桌面不再隐藏）
+    await expect(page.locator('.category-quick-access').first()).toBeVisible();
 
-    // 点击折叠按钮
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    // 瞬切：点击后 100ms 内宽度必须已到位（若仍有 480ms 动画，此刻宽度应在 160~64 之间）
-    await page.waitForTimeout(100);
-    const state = await page.evaluate(() => {
-      const sidebar = document.querySelector('.home-sidebar');
-      const spacer = document.querySelector('.sidebar-spacer');
-      const shell = document.querySelector('.app-shell');
-      return {
-        sidebarWidth: sidebar ? sidebar.getBoundingClientRect().width : -1,
-        spacerWidth: spacer ? spacer.getBoundingClientRect().width : -1,
-        collapsedClass: shell ? shell.classList.contains('app-shell--sidebar-collapsed') : false,
-      };
-    });
-    expect(state.sidebarWidth).toBe(64);
-    expect(state.spacerWidth).toBe(64);
-    expect(state.collapsedClass).toBe(true);
-    console.log(`✅ REG-013 通过: 折叠瞬切 sidebar=${state.sidebarWidth}px spacer=${state.spacerWidth}px`);
-
-    // 再点展开，同样瞬切。StickyHeader 折叠按钮有 300ms 防抖，需等待后再点。
-    await page.waitForTimeout(400);
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    await page.waitForTimeout(100);
-    const widthAfter = await page.evaluate(() => {
-      const s = document.querySelector('.home-sidebar');
-      return s ? s.getBoundingClientRect().width : -1;
-    });
-    expect(widthAfter).toBe(160);
-    console.log('✅ REG-013 通过: 展开同样瞬切回 160px');
-  });
-
-  test('REG-014: 图标收起态绝对居中（left 固定像素、可过渡），label 淡出', async ({ page }) => {
-    await openHomeDesktop(page);
-
-    const readIcon = () => page.evaluate(() => {
-      const icon = document.querySelector('.home-sidebar__icon');
-      if (!icon) return { left: -1, position: '', transition: '' };
-      const cs = getComputedStyle(icon);
-      return { left: parseFloat(cs.left), position: cs.position, transition: cs.transitionProperty };
-    });
-    const readLabelOpacity = () => page.evaluate(() => {
-      const label = document.querySelector('.home-sidebar__label');
-      return label ? parseFloat(getComputedStyle(label).opacity) : -1;
-    });
-
-    // 展开态：图标绝对定位（不参与 flex 流，不随栏宽漂移），left = --space-xl（16px），
-    // transition 含 left（收起时平滑位移）
-    const before = await readIcon();
-    expect(before.position).toBe('absolute');
-    expect(before.left).toBeGreaterThanOrEqual(15);
-    expect(before.left).toBeLessThanOrEqual(17);
-    expect(before.transition).toContain('left');
-    expect(await readLabelOpacity()).toBe(1);
-
-    // 按钮高度：图标 absolute 化后不占流，显式 min-height 恢复原行高（2×space-lg + 图标高）
-    const itemHeight = await page.evaluate(() => {
-      const item = document.querySelector('.home-sidebar__item');
-      return item ? item.getBoundingClientRect().height : -1;
-    });
-    expect(itemHeight).toBeGreaterThanOrEqual(40);
-
-    // 折叠：图标绝对居中 left=(64-图标宽)/2 ≈ 22px；label 淡出为 0
-    await page.locator('.sticky-header__sidebar-toggle').click();
-    await page.waitForTimeout(450); // 等 left(0.32s) / label(0.2s) 过渡完成
-    const after = await readIcon();
-    expect(after.position).toBe('absolute');
-    // 居中公式（修正后）：(64 − nav padding 2×6 − 图标宽 20) / 2 = 16px
-    expect(after.left).toBeGreaterThanOrEqual(14);
-    expect(after.left).toBeLessThanOrEqual(18);
-    expect(await readLabelOpacity()).toBe(0);
-    console.log(`✅ REG-014 通过: 展开 left=${before.left}px → 收起居中 left=${after.left}px，label opacity=0`);
+    // 顶栏提供 IPTV + 设置入口（原左侧栏职责上移）
+    const titles = await page.evaluate(() =>
+      [...document.querySelectorAll('.sticky-header__nav-item')].map((el) => (el as HTMLElement).title || (el as HTMLElement).textContent?.trim() || ''),
+    );
+    expect(titles.join(' ')).toContain('IPTV');
+    expect(titles.join(' ')).toContain('设置');
   });
 });
+
 
 // ═══════════════════════════════════════════════════════════════
 // 3.18 细节修复（2026-08-04）：IPTV 首载整页 loading / 海报超时兜底
@@ -613,7 +528,6 @@ test.describe('3.18 细节修复', () => {
     await page.waitForSelector('.iptv-page .app-loading', { timeout: 15000 });
     // 首载整页 loading：筛选卡不渲染
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
-    console.log('✅ REG-015 通过: IPTV 首载整页 AppLoading，无 iptv-top-card');
   });
 
   test('REG-016: 弹窗海报请求挂起时超时兜底显示 fallback（不再无限加载）', async ({ page }) => {
@@ -640,7 +554,6 @@ test.describe('3.18 细节修复', () => {
     // 8s 超时兜底后：fallback 图挂载、占位消失（attached 即可，证明「不再无限加载」）
     await page.locator('.playlist-modal .lazy-image-fallback').first().waitFor({ state: 'attached', timeout: 25000 });
     expect(await page.locator('.playlist-modal .lazy-image-placeholder').count()).toBe(0);
-    console.log('✅ REG-016 通过: 海报请求挂起后 8s 超时走 fallback 兜底');
   });
 });
 
@@ -657,7 +570,6 @@ test.describe('3.19 体验修复', () => {
     const first = await page.locator('.person-work-card .video-card').first().innerText();
     const firstYear = /\b(19|20)\d{2}\b/.exec(first)?.[0] ?? '';
     expect(firstYear).toBe('2023');
-    console.log(`✅ REG-017 通过: Person 电影年份倒序，第一项年份 = ${firstYear}`);
   });
 
   test('REG-018: 热门搜索数字徽标 ≥16px（不再截断 1/2/3）', async ({ page }) => {
@@ -671,7 +583,6 @@ test.describe('3.19 体验修复', () => {
       return parseFloat(getComputedStyle(el).width);
     });
     expect(size).toBeGreaterThanOrEqual(15); // --space-xl 桌面 16px
-    console.log(`✅ REG-018 通过: rank 徽标宽 = ${size}px（≥15px，不再截断）`);
   });
 
   test('REG-020: detail-cast-item 头像/姓名放大（头像≥64px、姓名≥13px）', async ({ page }) => {
@@ -690,7 +601,6 @@ test.describe('3.19 体验修复', () => {
     });
     expect(metrics.avatar).toBeGreaterThanOrEqual(64); // --layout-cast-avatar clamp 下限
     expect(metrics.nameSize).toBeGreaterThanOrEqual(13); // --text-sm
-    console.log(`✅ REG-020 通过: 头像 ${metrics.avatar}px、姓名 ${metrics.nameSize}px`);
   });
 });
 
@@ -725,7 +635,6 @@ test.describe('3.20 实时搜索', () => {
     expect(items.join(' ')).toContain('Chaos TV Show');
     expect(items.join(' ')).toContain('电影');
     expect(items.join(' ')).toContain('剧集');
-    console.log('✅ REG-021 通过: 实时搜索结果（名称 + 电影/剧集类型标签）显示');
   });
 
   test('REG-022: 搜索失败显示提示信息', async ({ page }) => {
@@ -736,7 +645,6 @@ test.describe('3.20 实时搜索', () => {
     await page.locator('.search-box__input').fill('cha');
     // 防抖 + 请求后进入失败态（hint 类三态共用，需等待具体文案出现）
     await expect(page.locator('.search-box-dropdown__hint')).toContainText('搜索失败', { timeout: 10000 });
-    console.log('✅ REG-022 通过: 搜索失败提示显示');
   });
 
   test('REG-023: 搜索无数据显示提示信息', async ({ page }) => {
@@ -746,6 +654,5 @@ test.describe('3.20 实时搜索', () => {
     await openHome(page);
     await page.locator('.search-box__input').fill('zzzzzz');
     await expect(page.locator('.search-box-dropdown__hint')).toContainText('未找到', { timeout: 10000 });
-    console.log('✅ REG-023 通过: 无结果提示显示');
   });
 });

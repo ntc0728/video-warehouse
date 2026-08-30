@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeroBanner 三联 Track 拖拽 Demo</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#111; font-family:system-ui; padding:20px; }
+.banner-card {
+  border-radius:12px; overflow:hidden; border:1px solid #333;
+  max-width:960px; margin:0 auto;
+}
+.banner {
+  position:relative;
+  aspect-ratio:16/9;
+  overflow:hidden;
+  touch-action:pan-y;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+/* track: flex row, 每张图 100% 宽 */
+.banner-track {
+  display:flex;
+  flex-direction:row;
+  height:100%;
+  /* JS 控制 translateX */
+}
+.banner-slide {
+  position:relative;
+  flex:0 0 100%;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+.banner-slide img {
+  width:100%; height:100%; object-fit:cover; object-position:center 20%;
+  pointer-events:none;
+  -webkit-user-drag:none;
+}
+.banner-mask {
+  position:absolute; inset:0;
+  background:linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.2) 40%, transparent 60%);
+}
+.banner-content {
+  position:absolute; inset:0; z-index:2;
+  display:flex; align-items:flex-end;
+  padding:32px;
+}
+.banner-text {
+  display:flex; flex-direction:column; gap:8px;
+  max-width:60%;
+  /* 淡入动画 */
+  animation:textIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+.banner-title {
+  color:#fff; font-size:clamp(1.5rem,3.2vw+0.5rem,2.5rem);
+  font-weight:800; letter-spacing:-0.03em;
+  text-shadow:0 2px 12px rgba(0,0,0,0.7);
+  opacity:0;
+  animation:textIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  animation-delay:0.1s;
+}
+.banner-meta {
+  display:flex; gap:8px; align-items:center;
+  opacity:0;
+  animation:textIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  animation-delay:0.2s;
+}
+.banner-meta span { color:rgba(255,255,255,0.8); font-size:1rem; }
+.banner-meta .rating { color:#ffc107; }
+.banner-desc {
+  color:rgba(255,255,255,0.9); font-size:0.875rem; line-height:1.6;
+  background:rgba(0,0,0,0.25); border-radius:4px; padding:4px 8px;
+  border-left:3px solid #6c5ce7; max-width:22rem;
+  -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  display:-webkit-box;
+  opacity:0;
+  animation:textIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  animation-delay:0.3s;
+}
+.banner-btn {
+  display:inline-flex; gap:6px; align-items:center;
+  padding:8px 16px; border:none; border-radius:999px;
+  background:#fff; color:#000; font-size:1rem; font-weight:600;
+  cursor:pointer; margin-top:4px;
+  opacity:0;
+  animation:textIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  animation-delay:0.4s;
+}
+@keyframes textIn {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* 指示器 */
+.dots { display:flex; gap:6px; justify-content:center; margin-top:12px; }
+.dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.3); transition:all 0.3s; }
+.dot.active { background:#6c5ce7; width:24px; border-radius:4px; }
+
+.info { color:#888; font-size:0.8rem; text-align:center; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div class="banner-card">
+  <div class="banner" id="banner">
+    <div class="banner-track" id="track">
+      <!-- JS 渲染 3 张: [prev | current | next] -->
+    </div>
+    <div class="banner-content">
+      <div class="banner-text" id="text">
+        <h1 class="banner-title" id="title">标题</h1>
+        <div class="banner-meta" id="meta">
+          <span class="rating">★ 8.5</span>
+          <span>2024</span>
+          <span>电影</span>
+        </div>
+        <p class="banner-desc">这是影片简介文字，用于演示淡入效果。</p>
+        <button class="banner-btn">查看详情</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="dots" id="dots"></div>
+<p class="info">左右拖拽切换 · 松手判定翻页 · 文字逐项淡入</p>
+
+<script>
+const items = [
+  { id:1, title:'深海寻踪', year:2024, rating:8.5, type:'电影', desc:'一段深海探险的悬疑故事，揭开海底古老文明的秘密。' },
+  { id:2, title:'都市迷局', year:2023, rating:7.8, type:'剧集', desc:'繁华都市背后的权力角逐与人性考验。' },
+  { id:3, title:'星际航迹', year:2025, rating:9.1, type:'电影', desc:'人类首次飞出太阳系的壮阔旅程。' },
+  { id:4, title:'雾中花园', year:2022, rating:8.0, type:'电影', desc:'一座神秘花园里发生的超自然事件。' },
+  { id:5, title:'代码人生', year:2024, rating:7.5, type:'剧集', desc:'程序员在虚拟与现实之间寻找自我的故事。' },
+];
+const colors = ['#2d3a5e','#3d2d5e','#2d5e3d','#5e2d2d','#5e5e2d'];
+const total = items.length;
+let currentIdx = 0;
+
+const track = document.getElementById('track');
+const banner = document.getElementById('banner');
+const titleEl = document.getElementById('title');
+const metaEl = document.getElementById('meta');
+const textEl = document.getElementById('text');
+const dotsEl = document.getElementById('dots');
+
+function renderTrack() {
+  const prevIdx = (currentIdx - 1 + total) % total;
+  const nextIdx = (currentIdx + 1) % total;
+  const indices = [prevIdx, currentIdx, nextIdx];
+  track.innerHTML = indices.map((idx, pos) => {
+    const item = items[idx];
+    const color = colors[idx];
+    return `
+      <div class="banner-slide">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg, ${color}, ${color}88);"></div>
+      </div>
+    `;
+  }).join('');
+  track.style.transform = 'translateX(-100%)';
+}
+
+function renderDots() {
+  dotsEl.innerHTML = items.map((_, i) =>
+    `<div class="dot${i === currentIdx ? ' active' : ''}"></div>`
+  ).join('');
+}
+
+function updateText() {
+  const item = items[currentIdx];
+  // 重建 DOM 触发动画
+  textEl.innerHTML = `
+    <h1 class="banner-title">${item.title}</h1>
+    <div class="banner-meta">
+      <span class="rating">★ ${item.rating}</span>
+      <span>${item.year}</span>
+      <span>${item.type}</span>
+    </div>
+    <p class="banner-desc">${item.desc}</p>
+    <button class="banner-btn">查看详情</button>
+  `;
+}
+
+function moveTo(newIdx, animate = true) {
+  currentIdx = (newIdx + total) % total;
+  if (animate) {
+    track.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+  } else {
+    track.style.transition = 'none';
+  }
+  track.style.transform = 'translateX(-100%)';
+  renderDots();
+  updateText();
+}
+
+// 拖拽
+let dragStartX = 0;
+let isDragging = false;
+let trackWidth = 0;
+
+function onDragStart(x) {
+  isDragging = true;
+  dragStartX = x;
+  trackWidth = banner.clientWidth;
+  track.style.transition = 'none';
+}
+function onDragMove(x) {
+  if (!isDragging) return;
+  const offset = x - dragStartX;
+  track.style.transform = `translateX(calc(-100% + ${offset}px))`;
+}
+function onDragEnd(x) {
+  if (!isDragging) return;
+  isDragging = false;
+  const dx = x - dragStartX;
+  const threshold = trackWidth * 0.15; // 15% 宽度
+
+  if (Math.abs(dx) > threshold) {
+    // 翻页
+    const dir = dx < 0 ? 1 : -1;
+    const newIdx = currentIdx + dir;
+    // 先动画滑出
+    track.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+    track.style.transform = `translateX(${dir > 0 ? -200 : 0}%)`;
+    setTimeout(() => {
+      moveTo(newIdx, false);
+    }, 400);
+  } else {
+    // 回弹
+    track.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+    track.style.transform = 'translateX(-100%)';
+  }
+}
+
+// 鼠标
+banner.addEventListener('mousedown', (e) => { e.preventDefault(); onDragStart(e.clientX); });
+window.addEventListener('mousemove', (e) => onDragMove(e.clientX));
+window.addEventListener('mouseup', (e) => onDragEnd(e.clientX));
+// 触摸
+banner.addEventListener('touchstart', (e) => onDragStart(e.touches[0].clientX), { passive: true });
+banner.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientX), { passive: true });
+banner.addEventListener('touchend', (e) => onDragEnd(e.changedTouches[0].clientX));
+
+// 自动轮播
+setInterval(() => {
+  if (isDragging) return;
+  track.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+  track.style.transform = 'translateX(-200%)';
+  setTimeout(() => {
+    moveTo(currentIdx + 1, false);
+  }, 400);
+}, 5000);
+
+renderTrack();
+renderDots();
+updateText();
+</script>
+</body>
+</html>

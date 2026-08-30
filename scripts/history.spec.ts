@@ -21,7 +21,6 @@ test.describe('8.1 Tab 切换', () => {
       return !!document.querySelector('.history-page, [class*="history"]');
     });
     expect(hasContent).toBe(true);
-    console.log('✅ HIS-001 通过: 历史记录页默认加载');
   });
 });
 
@@ -41,7 +40,7 @@ test.describe('8.2 影视历史', () => {
     const hasEmpty = await page.evaluate(() => {
       return !!document.querySelector('.empty-state, [class*="empty"]');
     });
-    console.log(`✅ HIS-011 检查完成: 历史数据 = ${hasData}，空状态 = ${hasEmpty}`);
+    expect(hasData || hasEmpty).toBeTruthy();
   });
 });
 
@@ -59,7 +58,7 @@ test.describe('8.3 时间分组', () => {
     const hasGroups = await page.evaluate(() => {
       return !!document.querySelector('.history-group, [class*="group"]');
     });
-    console.log(`✅ HIS-020 检查完成: 时间分组存在 = ${hasGroups}`);
+    expect(hasGroups).toBeTruthy();
   });
 
   test('HIS-022: 时间轴导航', async ({ page }) => {
@@ -68,11 +67,11 @@ test.describe('8.3 时间分组', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // 预期结果: 时间轴存在（桌面端）
-    const hasTimeline = await page.evaluate(() => {
-      return !!document.querySelector('.history-node-col, [class*="timeline"]');
+    // 预期结果: 历史页渲染（时间轴在存在观看记录时出现，空状态时为「暂无观看记录」）
+    const hasHistory = await page.evaluate(() => {
+      return !!document.querySelector('.history-page, .history-timeline, [class*="history"]');
     });
-    console.log(`✅ HIS-022 检查完成: 时间轴存在 = ${hasTimeline}`);
+    expect(hasHistory).toBeTruthy();
   });
 });
 
@@ -105,12 +104,7 @@ test.describe('8.4 去重显示', () => {
         // 预期结果: 影视卡片数量不增加（同一剧集不同集不重复显示）
         const afterSwitchCount = await videoCards.count();
         expect(afterSwitchCount).toBeLessThanOrEqual(initialVideoCount);
-        console.log(`✅ HIS-025 通过: 切换前后卡片数 ${initialVideoCount} → ${afterSwitchCount}`);
-      } else {
-        console.log('⚠️ HIS-025: 综合 tab 未检测到');
       }
-    } else {
-      console.log('⚠️ HIS-025: IPTV tab 未检测到');
     }
   });
 });
@@ -126,11 +120,9 @@ test.describe('8.5 批量管理', () => {
     await page.waitForTimeout(1000);
 
     const editBtn = page.locator('.action-btn--batch');
+    expect(await editBtn.count()).toBeGreaterThan(0);
     if (await editBtn.isVisible().catch(() => false)) {
       const text = await editBtn.textContent();
-      console.log(`✅ HIS-040 通过: 批量管理按钮文本 = "${text}"`);
-    } else {
-      console.log('⚠️ HIS-040: 批量管理按钮未检测到');
     }
   });
 });
@@ -155,7 +147,6 @@ test.describe('8.7 融合 Tab 与筛选面板', () => {
 
     const active = page.locator('.record-status--fused .status-tab--active');
     expect((await active.textContent())?.replace(/\d+/g, '')).toContain('综合');
-    console.log(`✅ HIS-060 通过: 融合 Tab 标签 = ${labels.join('/')}，默认激活综合`);
   });
 
   test('HIS-061: 「更多筛选」面板展开/收起（状态 chips + 排序）', async ({ page }) => {
@@ -178,7 +169,6 @@ test.describe('8.7 融合 Tab 与筛选面板', () => {
     await filterBtn.click();
     await page.waitForTimeout(400);
     expect(await page.locator('.record-filter-panel').count()).toBe(0);
-    console.log('✅ HIS-061 通过: 筛选面板可展开/收起');
   });
 });
 
@@ -247,7 +237,6 @@ test.describe('8.8 网格列数', () => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.waitForTimeout(500);
     expect(await cols()).toBe(1); // ≤480：1 列
-    console.log('✅ HIS-062 通过: 1280→3 列 / 600→2 列 / 375→1 列');
   });
 });
 
@@ -320,7 +309,6 @@ test.describe('8.6 桌面算珠时间轴', () => {
     expect(desktop.panelVisible).toBe(true);
     expect(desktop.beadCount).toBe(3);
     expect(desktop.inlineColHidden).toBe(true);
-    console.log(`✅ HIS-050 桌面: 面板=${desktop.panelVisible} 珠数=${desktop.beadCount} 内联行隐藏=${desktop.inlineColHidden}`);
 
     // 移动端（767px）：面板隐藏、内联节点行保留
     await page.setViewportSize({ width: 767, height: 800 });
@@ -337,7 +325,6 @@ test.describe('8.6 桌面算珠时间轴', () => {
     });
     expect(mobile.panelHidden).toBe(true);
     expect(mobile.inlineColVisible).toBe(true);
-    console.log(`✅ HIS-050 移动端: 面板隐藏=${mobile.panelHidden} 内联行可见=${mobile.inlineColVisible}`);
   });
 
   test('HIS-051: 滚动时算珠逐颗累加（无重叠），回顶恢复原位（无回弹）', async ({ page }) => {
@@ -377,7 +364,6 @@ test.describe('8.6 桌面算珠时间轴', () => {
     expect(bottom[0].y).toBeLessThan(50); // 今天珠仍在顶部槽位
     for (const g of gaps) expect(g).toBeGreaterThan(24); // 无重叠、间距不塌陷
     expect(bottom[bottom.length - 1].y).toBeGreaterThan(100); // 未读分组仍跟随其分组（未误入堆叠）
-    console.log(`✅ HIS-051 底部: y=[${bottom.map((b) => b.y).join(', ')}] 间距=[${gaps.join(', ')}]`);
 
     // 回到顶部：全部珠恢复初始 y（无回弹、无漂移）
     await page.evaluate(() => {
@@ -389,6 +375,5 @@ test.describe('8.6 桌面算珠时间轴', () => {
     for (let i = 0; i < initial.length; i++) {
       expect(Math.abs(restored[i].y - initial[i].y)).toBeLessThan(2);
     }
-    console.log(`✅ HIS-051 回顶: 恢复原位差异 ≤ 1px（${restored.map((b) => b.y).join(', ')}）`);
   });
 });

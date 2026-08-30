@@ -4,13 +4,12 @@
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
  */
-import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo, useDeferredValue } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
 import { HOME_TTL_MS } from '@/stores/useTMDBStore';
-import { useHomeCategoryStore } from '@/stores/useHomeCategoryStore';
 import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
@@ -18,14 +17,12 @@ import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import CategoryQuickAccess from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
-import { CATEGORY_CONFIG, type HomeCategoryKey } from './categoryConfig';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
-import { useScrollContainer } from '@/hooks/useScrollContext';
-import { useDocumentTitle } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 import './Home.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -43,98 +40,37 @@ const homeRetryCooldown = new Map<string, number>();
 
 export default function HomePage() {
   const navigate = useCustomNavigate();
+  const location = useLocation();
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
 
   useScrollRestore('home');
 
-  // ── 首页内容类目（侧边栏驱动，不跳页） ──────────────────
-  // activeCategory：源值，驱动「数据预取 / 文档标题 / 侧边栏高亮」等紧急更新（不希望有延迟）。
-  // deferredCategory：降优先级镜像，仅用于「页面内容渲染」。
-  //   切换类目时源值立即提交（侧边栏高亮秒切），而 Hero + 7 行（≈50 卡片）的重新渲染被放入
-  //   后台 transition 非阻塞执行，避免阻塞主线程导致高亮与交互出现卡顿/延迟。
-  const activeCategory = useHomeCategoryStore((s) => s.activeCategory);
-  const loadCategory = useHomeCategoryStore((s) => s.loadCategory);
-  const deferredCategory = useDeferredValue(activeCategory);
-  const isCategoryView = deferredCategory !== 'home';
+  // 下拉刷新：拉取全部首页数据
+  usePullToRefresh(() => {
+    void useTMDBStore.getState().fetchAllHomeData();
+  });
 
-  // 注：isMobile / isTV 已下沉至 CategoryView 子组件（back/front 各需独立实例）。
-
-  // ── 分类切换：单树直接渲染目标内容 ──
-  // 经历三版迭代（保留旧内容→整页骨架硬插→双层 crossfade）后确定：
-  //   整页子树替换 / 双层重叠 DOM 必然导致「banner 缩小 / 收尾时整树重挂载二次闪」。
-  // 现采用单树 —— 直接用 deferredCategory 渲染单一 CategoryView：
-  //   • 切换即时（deferred 仅做非阻塞降级，非「等数据」），无旧内容停留、无整页骨架；
-  //   • banner 由 HeroBanner 内部 stale 垫底 + 新层淡入交叉过渡（不硬切、不缩小）；
-  //   • 卡片图由 LazyImage 命中缓存也走淡入（见 LazyImage，消除缓存命中硬现）。
-
-  // ── 类目切换滚动复位（内容切换优先，2026-08-20）──
-  // 用户诉求：向下滚一点再切分类 → 滚动条要复位，且**内容切换发生在滚动复位之前**。
-  // 旧实现（HomeSidebar rAF 立即 scrollTo + setActiveCategory 100ms 防抖）是「先复位、
-  // 后切换」——滚动跳顶时 DOM 还是旧分类，体感割裂。
-  // 现由 deferredCategory 驱动：deferredCategory 变化 → 内容先以新分类提交渲染 →
-  // 本 effect（DOM commit 后、绘制前）才执行 scrollTo(0)——「内容先切、滚动后复位」，
-  // 且同帧原子生效，无可见中间跳变。prevRef 守卫：初次挂载 / 跨路由恢复（useScrollRestore）
-  // 时跳过，避免覆盖已恢复的滚动位置。
-  const scrollContainerRef = useScrollContainer();
-  const prevScrollCatRef = useRef(deferredCategory);
-  useLayoutEffect(() => {
-    if (prevScrollCatRef.current === deferredCategory) return;
-    prevScrollCatRef.current = deferredCategory;
-    const el = scrollContainerRef.current;
-    if (el) el.scrollTo({ top: 0, behavior: 'auto' });
-  }, [deferredCategory, scrollContainerRef]);
-
-  // 进入类目视图时按需拉取数据（store 内带 10 分钟缓存）
-  // 用源值 activeCategory，确保点击类目即刻开始请求，不被 deferred 拖慢。
+  // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景）
   useEffect(() => {
-    if (activeCategory !== 'home') loadCategory(activeCategory);
-  }, [activeCategory, loadCategory]);
-
-  // 页面重新挂载 / 浏览器 Tab 切回时检查缓存是否过期，过期则重新加载
-  // 覆盖场景：切换浏览器 Tab 返回时（visibilitychange）
-  // 类目：检查 useHomeCategoryStore 10min TTL；首页（activeCategory==='home'）：检查
-  // useTMDBStore 首页 8 区块 60min TTL（数据全满时静默刷新，避免长会话内数据陈旧）。
-  useEffect(() => {
-    const CACHE_TTL = 10 * 60 * 1000;
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') return;
-      if (activeCategory === 'home') {
-        const s = useTMDBStore.getState();
-        if (s.homeFetchedAt <= 0) return; // 从未拉取：交给「按需兜底」effect
-        if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
-        const anyLoading =
-          s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
-          s.loading.topRatedMovies || s.loading.upcomingMovies ||
-          s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
-        if (anyLoading) return;
-        void s.fetchAllHomeData();
-      } else {
-        const data = useHomeCategoryStore.getState().data[activeCategory];
-        if (data?.fetchedAt && Date.now() - data.fetchedAt > CACHE_TTL) {
-          loadCategory(activeCategory);
-        }
-      }
+      const s = useTMDBStore.getState();
+      if (s.homeFetchedAt <= 0) return; // 从未拉取：交给「按需兜底」effect
+      if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
+      const anyLoading =
+        s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
+        s.loading.topRatedMovies || s.loading.upcomingMovies ||
+        s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
+      if (anyLoading) return;
+      void s.fetchAllHomeData();
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [activeCategory, loadCategory]);
-
-  // 文档标题随类目变化（home 用默认标题）
-  useDocumentTitle(
-    activeCategory !== 'home'
-      ? CATEGORY_CONFIG[activeCategory as Exclude<HomeCategoryKey, 'home'>].label
-      : undefined,
-  );
+  }, []);
 
   useHeaderContent({ immersive: true });
-
-  // ── 类目切换过渡：让整页图片（行海报、快捷分类）参与淡入 ─────────
-  // 注：类目切换不再对整页内容做 opacity 淡入（home-cat-fade）。
-  // 此前该淡入会让所有 .tmdb-movierow 容器（卡片盒）一起从 opacity:0 淡入，
-  // 表现为「容器整体闪烁」。容器盒保持常驻不透明，图片由 LazyImage 的
-  // blur-up / 会话缓存命中做平滑过渡，类目切换不再有容器闪跳。
 
   // 从设置 store 获取 TMDB Access Token
   const tmdbAccessToken = useSettingsStore((s) => s.tmdbAccessToken);
@@ -165,8 +101,35 @@ export default function HomePage() {
   // 定时器 effect 用它在「停留 60min 后」触发兜底刷新）
   const homeFetchedAt = useTMDBStore((s) => s.homeFetchedAt);
 
-  // 历史记录 / 继续观看 / Banner 点击处理器已迁移至 CategoryView 子组件
-  // （back/front 各需独立实例，且须避免 HomePage 条件渲染导致 hooks 调用顺序变化）。
+  // 继续观看行所需数据（必须在所有提前 return 之前调用，避免 hook 数随渲染分支变化而漂移）
+  const history = useUserStore((s) => s.history);
+  const userDataLoading = useUserStore((s) => s._loading);
+  const historyMap = useMemo(() => {
+    const map = new Map<string, (typeof history)[0]>();
+    for (const h of history) {
+      if (h.progress <= 0) continue;
+      const key = String(h.videoId);
+      const prev = map.get(key);
+      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
+    }
+    return map;
+  }, [history]);
+  const continueItems = useMemo(() => buildContinueItems(history), [history]);
+
+  // 事件 handler（同样须在提前 return 之前，保持 hook 数恒定）
+  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
+    navigate(`/detail/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleContinuePlay = useCallback((item: { id: string | number }) => {
+    navigate(`/play/${item.id}`, { state: { from: location.pathname + location.search } });
+  }, [navigate, location.pathname, location.search]);
+
+  const handleCategorySelect = useCallback((cat: CategoryKey) => {
+    const cfg = BROWSE_CATEGORY_CONFIG[cat];
+    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
+    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
+  }, [navigate]);
 
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
@@ -190,7 +153,7 @@ export default function HomePage() {
   // I2（2026-08-06）：追加 TTL——数据全满但距上次拉取 > 60min 时也触发 fetchAllHomeData
   // （内部 shouldFetch 会对过期区块重新拉取；loading 仅空区块置位，不会闪骨架）。
   useEffect(() => {
-    if (!hasToken || isCategoryView) return;
+    if (!hasToken) return;
     const s = useTMDBStore.getState();
     // 更新冷却表：区块有数据 = 恢复成功，清除冷却；有错误且无记录 = 写入冷却起始时间
     for (const k of HOME_BLOCKS) {
@@ -212,13 +175,13 @@ export default function HomePage() {
       s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
     if (anyLoading) return;
     void s.fetchAllHomeData();
-  }, [hasToken, isCategoryView, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv, homeFetchedAt]);
+  }, [hasToken, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv, homeFetchedAt]);
 
   // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
   // 依赖 s 由组件订阅的 ttlExpiredSig 驱动；使用 store 模块级定时器避免每次渲染重建。
   useEffect(() => {
-    if (!hasToken || isCategoryView) return;
+    if (!hasToken) return;
     const check = () => {
       const s = useTMDBStore.getState();
       if (s.homeFetchedAt <= 0) return;
@@ -234,7 +197,7 @@ export default function HomePage() {
     check();
     const timer = setInterval(check, 60 * 1000);
     return () => clearInterval(timer);
-  }, [hasToken, isCategoryView]);
+  }, [hasToken]);
 
   // 所有请求都失败 + 无缓存数据
   const allFailed = (() => {
@@ -283,11 +246,18 @@ export default function HomePage() {
   // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出，同时内容/hero 以
   // 200ms 延迟同步淡入——交叉淡化，无空白窗口）→ done（覆盖层卸载，内容自由渲染）。
   // 冷加载路径（pageLoading=true）由上方 isInitialLoading 分支直接返回，本段不生效。
-  const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>('skeleton');
+  const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>(
+    () => (hasAnyData ? 'done' : 'skeleton'),
+  );
   useEffect(() => {
+    // 方案 B 二次进入（已访问路由，AppLayout data-revisit）：初始即 done，
+    // 跳过 800ms 骨架覆盖层，内容立即呈现；t1 因函数式守卫直接 no-op。
     const SHOW_MS = 200;
     const FADE_MS = 600;
-    const t1 = window.setTimeout(() => setEnterPhase('fading'), SHOW_MS);
+    const t1 = window.setTimeout(
+      () => setEnterPhase((p) => (p === 'done' ? p : 'fading')),
+      SHOW_MS,
+    );
     const t2 = window.setTimeout(() => setEnterPhase('done'), SHOW_MS + FADE_MS);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
   }, []);
@@ -388,11 +358,11 @@ export default function HomePage() {
     <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
   );
 
-  // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
-  if (isInitialLoading && !isCategoryView) return homeSkeleton;
+  // 首屏骨架（仅 home 初始加载/整页无数据时使用）
+  if (isInitialLoading) return homeSkeleton;
 
   // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
-  if (!isCategoryView && !hasAnyData && allFailed) {
+  if (!hasAnyData && allFailed) {
     return (
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
         <div className="home-page__content page-transition-enter">
@@ -406,6 +376,21 @@ export default function HomePage() {
     );
   }
 
+  // ── 首页内容（HeroBanner + 分类快捷入口 + 继续观看 + 7 行横滚）──
+  // 分类切换已移除：点击 CategoryQuickAccess 卡片直接跳 /browse，不再在首页内切类目。
+  // 注：history / userDataLoading / historyMap / continueItems 及三个事件 handler 的
+  // hook 已上移至组件顶部（所有提前 return 之前），此处仅复用，避免 hook 数随分支漂移。
+
+  const homeRows = [
+    { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
+    { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
+    { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
+    { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
+    { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
+    { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
+    { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
+  ];
+
   return (
     <>
       {/* 进入过渡覆盖层：缓存数据场景下，首页从其他页切回时显示骨架覆盖 → 淡出 → 内容。
@@ -417,133 +402,43 @@ export default function HomePage() {
         </div>
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-        <CategoryView catKey={deferredCategory} animateEnter enterPhase={enterPhase} />
-      </div>
-    </>
-  );
-}
-
-// ── 单个类目视图（hero + content + rows）──
-// 被 HomePage 在「稳定态」或「crossfade 双层」中复用，故必须自给自足（不依赖 HomePage 的
-// props/闭包 hook），否则在 back/front 各渲染一份时会触发 hooks 调用顺序变化或闭包陈旧。
-// 首次无缓存时：本组件内 HeroBanner（loading=true → 骨架占位，placeholder 延续）+
-// TMDBMovieRow（isLoading=true → SkeletonCards）自然呈现骨架，数据到达后组件内原位填充，
-// 配合 HeroBanner 的图淡入与 VideoCard 的 animate-card-enter 完成「骨架→图」平滑过渡，
-// 不再由外层整页 homeSkeleton 硬插。
-function CategoryView({ catKey, animateEnter, enterPhase }: { catKey: HomeCategoryKey; animateEnter: boolean; enterPhase: 'skeleton' | 'fading' | 'done' }) {
-  const navigate = useCustomNavigate();
-  const location = useLocation();
-  const isCat = catKey !== 'home';
-
-  const catData = useHomeCategoryStore((s) => s.data[catKey]);
-  const {
-    trending, nowPlaying, popularMovies, topRatedMovies,
-    upcomingMovies, popularTv, topRatedTv, airingTodayTv,
-    loading, errors,
-  } = useTMDBStore(
-    useShallow((s) => ({
-      trending: s.trending,
-      nowPlaying: s.nowPlaying,
-      popularMovies: s.popularMovies,
-      topRatedMovies: s.topRatedMovies,
-      upcomingMovies: s.upcomingMovies,
-      popularTv: s.popularTv,
-      topRatedTv: s.topRatedTv,
-      airingTodayTv: s.airingTodayTv,
-      loading: s.loading,
-      errors: s.errors,
-    })),
-  );
-  const history = useUserStore((s) => s.history);
-  const userDataLoading = useUserStore((s) => s._loading);
-  const historyMap = useMemo(() => {
-    const map = new Map<string, (typeof history)[0]>();
-    for (const h of history) {
-      if (h.progress <= 0) continue;
-      const key = String(h.videoId);
-      const prev = map.get(key);
-      if (!prev || (h.updatedAt ?? 0) > (prev.updatedAt ?? 0)) map.set(key, h);
-    }
-    return map;
-  }, [history]);
-  // 「继续观看」横排数据：取自历史中「有进度且未看完（<90%）」的最新记录，按 updatedAt 倒序。
-  const continueItems = useMemo(() => buildContinueItems(history), [history]);
-
-  useHeaderContent({ immersive: true });
-
-  const heroItems = isCat ? (catData?.hero ?? []) : trending;
-  const heroLoading = isCat ? (catData?.heroLoading ?? true) : loading.trending;
-
-  const rowDefs = isCat
-    ? CATEGORY_CONFIG[catKey as Exclude<HomeCategoryKey, 'home'>].rows.map((r, i) => ({
-        title: r.title,
-        items: catData?.rows[i]?.items ?? [],
-        isLoading: catData?.rows[i]?.loading ?? true,
-        error: catData?.rows[i]?.error ?? null,
-      }))
-    : [
-        { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
-        { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
-        { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
-        { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
-        { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
-        { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
-        { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
-      ];
-
-  const handleBannerItemClick = useCallback((item: { id: string | number }) => {
-    navigate(`/detail/${item.id}`, { state: { from: location.pathname + location.search } });
-  }, [navigate, location.pathname, location.search]);
-
-  const handleContinuePlay = useCallback((item: { id: string | number }) => {
-    navigate(`/play/${item.id}`, { state: { from: location.pathname + location.search } });
-  }, [navigate, location.pathname, location.search]);
-
-  const handleCategorySelect = useCallback((cat: CategoryKey) => {
-    const cfg = BROWSE_CATEGORY_CONFIG[cat];
-    // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
-    navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
-  }, [navigate]);
-
-  return (
-    <>
-      <HeroBanner
-        items={heroItems}
-        onItemClick={handleBannerItemClick}
-        onContinuePlay={handleContinuePlay}
-        historyMap={historyMap}
-        loading={heroLoading}
-        initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
-      />
-      <div className={`home-page__content${animateEnter ? ' page-transition-enter home-page__content--delayed-enter' : ' home-page__content--delayed-enter'}`}>
-        <CategoryQuickAccess onCategorySelect={handleCategorySelect} activeCategory={null} />
-        {!isCat && (userDataLoading || continueItems.length > 0) && (
-          <TMDBMovieRow
-            title="继续观看"
-            items={[]}
-            continueMode
-            continueItems={continueItems}
-            isLoading={userDataLoading}
-            skipAnimations
-          />
-        )}
-        <div className="home-rows">
-          {/* 行以槽位索引为 key：分类切换时 7 行实例存活（仅 title/items 更新），
-              配合卡片索引 key，整条链路实例复用 → 无重挂载闪烁，封面走交叉淡入。 */}
-          {rowDefs.map((row, i) => (
-            <TMDBMovieRow
-              key={i}
-              title={row.title}
-              items={row.items}
-              isLoading={row.isLoading}
-              error={row.error}
-              scrollResetToken={isCat ? catKey : 'home'}
-              crossfadeOnChange
-            />
-          ))}
+        <HeroBanner
+          items={trending}
+          onItemClick={handleBannerItemClick}
+          onContinuePlay={handleContinuePlay}
+          historyMap={historyMap}
+          loading={loading.trending}
+          initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
+        />
+        <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
+          <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
+          {(userDataLoading || continueItems.length > 0) && (
+            <div className="home-continue-row">
+              <TMDBMovieRow
+                title="继续观看"
+                items={[]}
+                continueMode
+                continueItems={continueItems}
+                isLoading={userDataLoading}
+                skipAnimations
+              />
+            </div>
+          )}
+          <div className="home-rows">
+            {homeRows.map((row, i) => (
+              <TMDBMovieRow
+                key={i}
+                title={row.title}
+                items={row.items}
+                isLoading={row.isLoading}
+                error={row.error}
+                scrollResetToken="home"
+                crossfadeOnChange
+              />
+            ))}
+          </div>
+          <BackToTopButton />
         </div>
-
-        <BackToTopButton />
       </div>
     </>
   );

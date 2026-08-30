@@ -4,6 +4,10 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  // App 暗色切换走 [data-theme="dark"] 属性（variables.css 据此翻转 token），
+  // 而非系统 prefers-color-scheme。未配置时 dark: 变体只响应系统媒体查询，
+  // 导致 Button/Switch 等组件在 App 内切暗色时纹丝不动（死代码）。
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       screens: {

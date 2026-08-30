@@ -46,9 +46,9 @@ export default class ErrorBoundary extends Component<Props, State> {
             title="页面加载失败"
             description={
               <div className="text-left">
-                <p className="text-red-600 mb-2">{this.state.error?.message || '发生了未知错误'}</p>
+                <p className="text-error mb-2">{this.state.error?.message || '发生了未知错误'}</p>
                 {this.state.errorInfo?.componentStack && (
-                  <details className="mt-2 text-xs text-gray-500 whitespace-pre-wrap">
+                  <details className="mt-2 text-xs text-tertiary whitespace-pre-wrap">
                     <summary className="cursor-pointer">查看详细信息</summary>
                     {this.state.errorInfo.componentStack}
                   </details>

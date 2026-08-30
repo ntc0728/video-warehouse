@@ -93,11 +93,12 @@ video-warehouse/
 │   │   ├── useUserStore.ts      # 用户数据（收藏 + 历史，IndexedDB）
 │   │   ├── useTMDBStore.ts      # TMDB 数据状态
 │   │   ├── useNavStore.ts       # 页面导航状态
-│   │   ├── useKeepAliveStore.ts # Keep-Alive 缓存状态
-│   │   └── index.ts             # Store 统一导出（7 个；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接导入，不在此 barrel）
+│   │   └── index.ts             # Store 统一导出（useSourceManagerStore / usePageSearchStore 按需直接导入，不在此 barrel）
 │   │
 │   │   # 注：useRatingStore 合并入 useUserStore；useRecommendStore 随 DailyPicks 删除移除；
-│   │   #     useSubtitleStore 拆分合并；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接引用
+│   │   #     useSubtitleStore 拆分合并；useKeepAliveStore 随方案 B 移除 keep-alive 机制一并删除；
+│   │   #     useHomeCategoryStore 随首页分类入口重构（2026-08-29）删除；
+│   │   #     useSourceManagerStore / usePageSearchStore 按需直接引用
 │   │
 │   ├── types/                   # TypeScript 类型定义
 │   │   ├── video.ts             # 视频相关类型
