@@ -27,7 +27,8 @@ import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
 import type { EPGProgram, ParsedEPGData } from '@/services/epgService';
-import { Rewind, FastForward, X, Tv } from 'lucide-react';
+import { Rewind, FastForward, X } from 'lucide-react';
+import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
 import { useTouchGesture } from './hooks/useTouchGesture';
@@ -819,12 +820,10 @@ skipHistory,
         onRetry={() => { setHasError(false); setRetryCount(c => c + 1); }}
       />
 
-      {/* 加载中 / 缓冲中统一显示带文字信息的遮罩 */}
+      {/* 加载中 / 缓冲中统一显示小电视 mascot（复用下拉刷新同款，白底可见），不再用转圈 spinner */}
       {(isPlayerLoading || isBuffering) && !hasError && (
         <div className="up-iptv-buffering-overlay">
-          {/* 小电视图标：置于缓冲 spinner 之上，与播放页入场加载指示视觉统一 */}
-          <Icon icon={Tv} size="2xl" className="up-iptv-buffering-tv" />
-          <div className="up-iptv-buffering-spinner" />
+          <TvMascot className="up-iptv-buffering-tv ptr-tv--on-dark" blink is-shaking />
           {isBuffering && (
             <>
               <span className="up-iptv-buffering-text">{networkSpeed}</span>

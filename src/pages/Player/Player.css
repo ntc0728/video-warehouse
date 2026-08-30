@@ -431,9 +431,8 @@
 }
 
 .player-tv-loader__icon {
-  color: var(--color-primary);
-  /* 轻微呼吸，强调「电视在加载」而非死图标 */
-  animation: player-tv-pulse 1.8s var(--ease-out-expo) infinite;
+  width: var(--icon-3xl);
+  height: var(--icon-3xl);
 }
 
 .player-tv-loader__dots {
@@ -457,11 +456,6 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.04em;
-}
-
-@keyframes player-tv-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.06); }
 }
 
 @keyframes player-tv-dot {

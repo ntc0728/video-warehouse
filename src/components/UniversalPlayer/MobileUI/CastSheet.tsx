@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Cast, X, RotateCcw, Monitor, Play, Pause, Volume2, Link2Off, Settings } from 'lucide-react';
 import { BottomSheet } from '@/components/ui';
 import { Icon } from '@/components/ui/Icon';
+import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import { toast } from '@/components/ui';
 import {
   discoverCastDevices, connectCastDevice, disconnectCast,
@@ -222,7 +223,7 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
 
         {view === 'connecting' && (
           <div className="up-cast-status">
-            <div className="up-cast-spinner" />
+            <TvMascot className="up-cast-tv" blink is-shaking />
             <p>正在连接设备…</p>
           </div>
         )}

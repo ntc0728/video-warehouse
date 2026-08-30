@@ -1,0 +1,125 @@
+/* ── 共享小电视 mascot（B 站同款）──────────────────────────────────────
+   下拉刷新与播放器加载态共用。配色跟随主题；
+   播放器黑场加 .ptr-tv--on-dark 转白底可见。 */
+
+.ptr-tv {
+  display: block;
+  overflow: visible;
+  /* 摇摆/缩放以「机身底部中心」为支点，像不倒翁而非绕图心旋转 */
+  transform-origin: 50% 92%;
+}
+
+.ptr-tv__body {
+  fill: var(--color-surface);
+  stroke: var(--color-text);
+  stroke-width: 3;
+}
+.ptr-tv__ear line {
+  stroke: var(--color-text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.ptr-tv__ear circle {
+  fill: var(--color-text);
+}
+.ptr-tv__cheek {
+  fill: var(--color-border-light);
+  opacity: 0.9;
+}
+.ptr-tv__eyes circle {
+  fill: var(--color-text);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.14s ease;
+}
+.ptr-tv__eyes.is-blink circle {
+  animation: ptr-blink 0.5s ease-in-out infinite;
+}
+.ptr-tv__mouth {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+/* 达标/刷新时头顶电波 */
+.ptr-tv__wave path {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.7;
+  animation: ptr-wave 0.9s ease-in-out infinite;
+}
+.ptr-tv__wave path:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+/* 播放器黑场：转白底，保证可见且不刺眼（与缓冲白环统一） */
+.ptr-tv--on-dark .ptr-tv__body {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke: #fff;
+}
+.ptr-tv--on-dark .ptr-tv__ear line,
+.ptr-tv--on-dark .ptr-tv__ear circle,
+.ptr-tv--on-dark .ptr-tv__eyes circle,
+.ptr-tv--on-dark .ptr-tv__mouth,
+.ptr-tv--on-dark .ptr-tv__wave path {
+  stroke: #fff;
+}
+.ptr-tv--on-dark .ptr-tv__ear circle,
+.ptr-tv--on-dark .ptr-tv__eyes circle {
+  fill: #fff;
+}
+.ptr-tv--on-dark .ptr-tv__cheek {
+  fill: rgba(255, 255, 255, 0.28);
+}
+
+/* ---------- 动画 ---------- */
+/* 加载/刷新中：小电视左右摇摆（B 站 loading 同款韵律），配合眨眼 */
+.ptr-tv.is-shaking {
+  animation: ptr-shake 0.9s ease-in-out infinite;
+}
+
+@keyframes ptr-blink {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes ptr-wave {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ptr-shake {
+  0%, 100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+/* 降低动效偏好：弱化眨眼/电波/摇摆 */
+@media (prefers-reduced-motion: reduce) {
+  .ptr-tv.is-shaking {
+    animation: none;
+  }
+  .ptr-tv__eyes.is-blink circle {
+    animation: none;
+  }
+  .ptr-tv__wave path {
+    opacity: 0.6;
+    animation: none;
+  }
+}

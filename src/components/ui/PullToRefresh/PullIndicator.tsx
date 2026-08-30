@@ -1,4 +1,5 @@
 import type { PullPhase } from './PullToRefreshContext';
+import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 
 export interface PullIndicatorProps {
   /** 当前阶段 */
@@ -43,9 +44,8 @@ export function PullIndicator({
   const isSuccess = phase === 'success';
   const armed = phase === 'armed' || isRefreshing || isSuccess;
 
-  // 耳朵角度：进度 0 → 耷拉 -18°，进度 1 → 直立 0°
+  // 耳朵竖起进度交给 TvMascot 计算（0 → 耷拉、1 → 直立）
   const p = Math.min(Math.max(progress, 0), 1);
-  const earRot = -18 * (1 - p);
   // 下拉时整体轻微放大，增强跟手感
   const pullScale = 1 + p * 0.06;
 
@@ -55,40 +55,12 @@ export function PullIndicator({
   else if (isSuccess) label = successText;
 
   const mascot = (
-    <svg
-      className={`ptr-tv${isRefreshing ? ' is-shaking' : ''}`}
-      viewBox="0 0 64 64"
-      aria-hidden="true"
-    >
-      {/* 达标/刷新时头顶电波（坐标已收进 viewBox 0..64，不依赖 overflow 兜底） */}
-      {armed && (
-        <g className="ptr-tv__wave">
-          <path d="M22 13 a13 13 0 0 1 20 0" />
-          <path d="M18 12 a17 17 0 0 1 28 0" />
-        </g>
-      )}
-      {/* 天线耳朵（绕底部基点旋转） */}
-      <g className="ptr-tv__ear" transform={`rotate(${earRot} 24 20)`}>
-        <line x1="24" y1="20" x2="15" y2="6" />
-        <circle cx="15" cy="6" r="3" />
-      </g>
-      <g className="ptr-tv__ear" transform={`rotate(${-earRot} 40 20)`}>
-        <line x1="40" y1="20" x2="49" y2="6" />
-        <circle cx="49" cy="6" r="3" />
-      </g>
-      {/* 电视机身 */}
-      <rect className="ptr-tv__body" x="10" y="20" width="44" height="32" rx="10" />
-      {/* 腮红 */}
-      <circle className="ptr-tv__cheek" cx="20" cy="40" r="3.4" />
-      <circle className="ptr-tv__cheek" cx="44" cy="40" r="3.4" />
-      {/* 眼睛（刷新/成功时眨眼） */}
-      <g className={`ptr-tv__eyes${isRefreshing || isSuccess ? ' is-blink' : ''}`}>
-        <circle cx="26" cy="34" r="3" />
-        <circle cx="38" cy="34" r="3" />
-      </g>
-      {/* 嘴 */}
-      <path className="ptr-tv__mouth" d="M26 41 Q32 47 38 41" />
-    </svg>
+    <TvMascot
+      armed={armed}
+      blink={isRefreshing || isSuccess}
+      earProgress={p}
+      className={isRefreshing ? 'is-shaking' : ''}
+    />
   );
 
   return (
