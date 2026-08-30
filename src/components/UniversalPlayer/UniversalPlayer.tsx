@@ -824,7 +824,7 @@ skipHistory,
       {(isPlayerLoading || isBuffering) && !hasError && (
         <div className="up-iptv-buffering-overlay">
           <TvMascot className="up-iptv-buffering-tv ptr-tv--on-dark" blink is-shaking />
-          {isBuffering && (
+          {isBuffering ? (
             <>
               <span className="up-iptv-buffering-text">{networkSpeed}</span>
               {/* 延迟/丢包是直播（IPTV）专属指标，点播缓冲不显示（审查报告 4.2） */}
@@ -842,6 +842,10 @@ skipHistory,
                 {getBufferingReason()}
               </span>
             </>
+          ) : (
+            /* 初次准备播放（isPlayerLoading 且未进入缓冲）时也要有文案，
+               否则只剩一只裸电视图标，观感割裂 */
+            <span className="up-iptv-buffering-text">加载中…</span>
           )}
         </div>
       )}
