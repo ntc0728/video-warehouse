@@ -7,10 +7,12 @@
  *   所有编辑操作通过 Modal 弹窗完成
  */
 import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
 import { Modal, Button } from '@/components/ui';
+import { Icon } from "@/components/ui/Icon";
 import SettingsMobileProfile from './SettingsMobileProfile';
 import SettingsTabBar, { SETTINGS_TABS } from './SettingsTabBar';
 import { useSettingsState } from './hooks/useSettingsState';
@@ -193,7 +195,7 @@ export default function SettingsPage() {
           {/* 桌面端顶部栏（方案 D）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar */}
           <div className="settings-desktop-topbar">
             <div className="settings-desktop-title">
-              <span className="settings-desktop-title__dot" aria-hidden="true" />
+              <Icon icon={SlidersHorizontal} size="sm" className="settings-desktop-title__icon" />
               <span className="settings-desktop-title__text">设置</span>
             </div>
             <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
