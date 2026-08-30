@@ -228,6 +228,8 @@ export const TMDB_MOCK_ROUTES: MockRoute[] = [
   { pattern: /\/trending\//, response: makePage(TRENDING_RESULTS) },
 
   // Search
+  // 明确「无结果」用例（BROWSE-013）：特定关键词返回空列表，验证空状态渲染
+  { pattern: /\/search\/.*zzzxxxnotexist12345/, response: makePage([]) },
   { pattern: /\/search\/multi/, response: SEARCH_RESULTS },
   { pattern: /\/search\//, response: SEARCH_RESULTS },
 

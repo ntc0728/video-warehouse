@@ -181,13 +181,5 @@
   }
 }
 
-/* ── 平板/桌面 web (>=768px)：分类导航由全局 HomeSidebar 接管，隐藏快速入口 ──
-   TV / 原生 App 保留（无侧边栏）。
-   修复：原选择器 `html:not([data-device="app"]) :root:not(...)` 中 :root 即 html 自身，
-   永远不可能是 html 的后代，导致选择器永不匹配、桌面端从未隐藏。
-   改为单层属性否定选择器：仅 web（无 data-device）且非 TV 时隐藏。 */
-@media (width >= 768px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .category-quick-access {
-    display: none;
-  }
-}
+/* 分类快捷入口在所有端显示（桌面 web 不再隐藏）：点击分类跳 /browse，与移动端一致；
+   全局左侧栏已删除，桌面 web 经顶栏 + 本卡片双入口可达分类。 */

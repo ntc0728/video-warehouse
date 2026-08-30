@@ -19,11 +19,9 @@ test.describe('9.1 网速检测', () => {
 
     // 预期结果: 检测按钮存在
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
+    expect(await checkBtn.count()).toBeGreaterThan(0);
     if (await checkBtn.isVisible().catch(() => false)) {
       const text = await checkBtn.textContent();
-      console.log(`✅ CHK-001 通过: 网速检测按钮文本 = "${text}"`);
-    } else {
-      console.log('⚠️ CHK-001: 检测按钮未检测到');
     }
   });
 
@@ -34,6 +32,7 @@ test.describe('9.1 网速检测', () => {
 
     // 操作: 点击检测按钮
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
+    expect(await checkBtn.count()).toBeGreaterThan(0);
     if (await checkBtn.isVisible().catch(() => false)) {
       await checkBtn.click();
       await page.waitForTimeout(500);
@@ -42,9 +41,7 @@ test.describe('9.1 网速检测', () => {
       const isChecking = await page.evaluate(() => {
         return !!document.querySelector('.checking-spinner, [class*="checking"]');
       });
-      console.log(`✅ CHK-004 检查完成: 检测中状态 = ${isChecking}`);
-    } else {
-      console.log('⚠️ CHK-004: 检测按钮未检测到');
+      expect(isChecking).toBeTruthy();
     }
   });
 });
@@ -61,12 +58,10 @@ test.describe('9.6 Tab 与统计', () => {
 
     // 预期结果: 5 个 Tab 存在
     const tabs = page.locator('.tab-btn, [class*="tab-btn"]');
+    expect(await tabs.count()).toBeGreaterThan(0);
     const count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
-      console.log(`✅ CHK-050 通过: Tab 数量 = ${count}，内容 = [${tabTexts.map(t => t.trim()).join(', ')}]`);
-    } else {
-      console.log('⚠️ CHK-050: Tab 未检测到');
     }
   });
 
@@ -81,9 +76,6 @@ test.describe('9.6 Tab 与统计', () => {
       const isActive = await firstTab.evaluate(el => el.classList.contains('active'));
       const text = await firstTab.textContent();
       expect(isActive).toBe(true);
-      console.log(`✅ CHK-051 通过: 默认 Tab = "${text?.trim()}"`);
-    } else {
-      console.log('⚠️ CHK-051: Tab 未检测到');
     }
   });
 
@@ -94,7 +86,7 @@ test.describe('9.6 Tab 与统计', () => {
 
     // 预期结果: 统计卡片存在
     const statCards = page.locator('.stat-card, [class*="stat-card"]');
+    expect(await statCards.count()).toBeGreaterThan(0);
     const count = await statCards.count();
-    console.log(`✅ CHK-052 检查完成: 统计卡片数量 = ${count}`);
   });
 });

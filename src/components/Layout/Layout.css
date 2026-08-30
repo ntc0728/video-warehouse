@@ -30,26 +30,9 @@
   flex-direction: row;
   height: 100dvh;
   overflow: hidden;
-  /* 折叠/展开（2026-08-04 重构）：宽度一次性切换（--sidebar-offset 变量随
-     app-shell--sidebar-collapsed 类瞬切），spacer 与 sidebar 同帧到位——仅 1 次
-     reflow，右侧不卡不抖、左右缘恒定。过渡动画由图标 left / label opacity 承担
-     （HomeSidebar.css），不触发 reflow。app-shell__main 不施加 transform（避免
-     creating block 使内部 fixed 顶栏位移）。 */
-  --sidebar-offset: var(--sidebar-width);
 }
 
-.app-shell.app-shell--sidebar-collapsed {
-  --sidebar-offset: var(--sidebar-width-collapsed);
-}
-
-.sidebar-spacer {
-  flex-shrink: 0;
-  width: var(--sidebar-offset);
-  /* 动画期间 width 由 JS WAAPI 控制（inline），结束后切 --sidebar-collapsed 类，
-     CSS（var(--sidebar-offset)）接管；main 走独立 transform，不依赖此 width 过渡。 */
-}
-
-/* ── Main column: 包裹 header + scroll + tabbar（纯 flex:1，左侧偏移由 spacer 承担，无 margin-left） ── */
+/* ── Main column: 包裹 header + scroll + tabbar（纯 flex:1，无左侧栏偏移） ── */
 .app-shell__main {
   display: flex;
   flex: 1 1 0;
@@ -88,6 +71,8 @@
   contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
+  /* 禁用浏览器原生下拉刷新 / 滚动到边界的橡皮筋回弹（移动端 web 与 app 统一生效） */
+  overscroll-behavior: none;
   /* 允许焦点方框（outline）向外溢出最多 8px 仍被绘制，避免聚焦元素贴边时
      方框被 overflow 裁切（表现为「方框被裁 / 只剩一个小圆点」，
      在非 TV 模式无过扫描安全区缓冲时尤为明显、方框贴顶显得「位置偏高」）。
@@ -122,9 +107,6 @@
 [data-device="app"] .page-transition {
   /* 原生 App 底部 TabBar 遮挡滚动内容，预留底部安全区 */
   padding-bottom: var(--layout-tabbar-height);
-}
-[data-device="app"] .app-shell .app-shell__scroll {
-  overscroll-behavior: none;
 }
 
 .sidebar-header {
@@ -312,17 +294,6 @@
   white-space: nowrap;
 }
 
-/* 折叠/展开（2026-08-04 重构）：宽度由 --sidebar-offset 变量一次性切换（瞬切 1 次
-   reflow，无逐帧动画）。过渡动画由 HomeSidebar.css 的图标 left（收起态 absolute
-   居中）与 label opacity 承担，均不触发 reflow。app-shell__main 不施加 transform。 */
-
-@media (prefers-reduced-motion: reduce) {
-  /* 无障碍：折叠/展开本身已瞬切（无宽度动画）；此处禁用图标 left / label 过渡，
-     HomeSidebar.css 内已对图标/label 单独禁过渡，保持双保险。 */
-  .sidebar-spacer { transition: none; }
-  .home-sidebar { transition: none; }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════
    侧边栏 + 顶部导航栏 连接式布局（作用于所有「非沉浸式」页面）
    顶部导航栏与左侧侧边栏在视觉上连接，形成统一的导航区域。
@@ -334,17 +305,7 @@
 /* 桌面端/平板端（>=768px）侧边栏 + 顶栏 连接式布局
    移动端（<768px）不应用这些规则，保持原始布局不变。 */
 @media (width >= 768px) {
-  html:not([data-device="app"]) /* 常驻左侧栏 → 连接式布局（顶部与导航栏对齐，无右边框） */
-  .app-shell:not(.app-shell--immersive) .home-sidebar {
-    top: var(--header-height);
-    bottom: 0;
-    left: 0;
-    background-color: var(--color-surface);
-    overflow: hidden;
-    border-right: none;
-  }
-
-  html:not([data-device="app"]) /* 顶部导航栏 → 固定在视口顶部，全宽显示（main 偏移现由 grid 列宽承担，与顶栏无关） */
+  html:not([data-device="app"]) /* 顶部导航栏 → 固定在视口顶部，全宽显示 */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
     position: fixed;
     top: 0;

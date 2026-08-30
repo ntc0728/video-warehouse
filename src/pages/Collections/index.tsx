@@ -29,6 +29,7 @@ import type { Video, VideoType } from '@/types/video';
 import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import './Collections.css';
 import { Icon } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 const PAGE_SIZE = 30;
 
@@ -124,6 +125,9 @@ export default function CollectionsPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections', undefined, true, { restoreFrom: ['detail', 'play'] });
+
+  // 下拉刷新：从 IndexedDB 重新读取收藏与历史
+  usePullToRefresh(() => useUserStore.getState().reload());
 
   const search = searchByTab[mainTab];
   const setSearch = useCallback((v: string) => {

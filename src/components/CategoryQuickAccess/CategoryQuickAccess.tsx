@@ -32,10 +32,9 @@ const MOBILE_CATEGORIES: CategoryKey[] = ['all', 'movie', 'tv', 'variety', 'anim
 
 interface CategoryQuickAccessProps {
   onCategorySelect: (category: CategoryKey) => void;
-  activeCategory?: CategoryKey | null;
 }
 
-export default function CategoryQuickAccess({ onCategorySelect, activeCategory = null }: CategoryQuickAccessProps) {
+export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickAccessProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
 
@@ -49,11 +48,10 @@ export default function CategoryQuickAccess({ onCategorySelect, activeCategory =
       <div className="category-quick-access__inner">
         {displayCategories.map((cat) => {
           const CatIcon = cat.icon;
-          const isActive = activeCategory === cat.key;
           return (
             <button
               key={cat.key}
-              className={`category-quick-access__card${isActive ? ' category-quick-access__card--active' : ''}`}
+              className="category-quick-access__card"
               onClick={() => onCategorySelect(cat.key)}
               aria-label={`分类：${cat.label}`}
             >

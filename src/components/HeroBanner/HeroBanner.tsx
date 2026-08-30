@@ -572,7 +572,23 @@ export default function HeroBanner({
   }, []);
   const handleDragMove = useCallback((x: number) => {
     if (!isDragging) return;
-    setDragOffset(x - dragStartX.current);
+    // 橡胶带阻尼：拖拽限制在一个 slide 宽（±mainW）内。到 ±mainW 时恰好显示上/下一张、不露空白；
+    // 超过 70% 后施加阻力形成「到边变重」手感，消除「拖过头露空白 / 过度滑动」的劣质观感。
+    // 之前 dragOffset 无上限，track 只有 [prev|current|next] 三张，拖过一屏便露出空白再回弹。
+    const mainW = bannerWidthRef.current
+      || mainRef.current?.offsetWidth
+      || bannerRef.current?.offsetWidth
+      || 1;
+    let offset = x - dragStartX.current;
+    const limit = mainW;
+    const resistStart = mainW * 0.7;
+    const abs = Math.abs(offset);
+    if (abs > resistStart) {
+      const over = abs - resistStart;
+      offset = Math.sign(offset) * (resistStart + over * 0.35);
+    }
+    if (Math.abs(offset) > limit) offset = Math.sign(offset) * limit;
+    setDragOffset(offset);
   }, [isDragging]);
   const handleDragEnd = useCallback((x: number) => {
     if (!isDragging || dragEndedRef.current) return;
@@ -585,7 +601,9 @@ export default function HeroBanner({
       || mainRef.current?.offsetWidth
       || bannerRef.current?.offsetWidth
       || 1;
-    const threshold = Math.max(100, mainW * 0.5);
+    // 阈值从 0.4（40% 宽，过重导致大量本应翻页的滑动被判定为「未达阈值」而回弹）
+    // 降到 0.2（20% 宽，最小 40px），正常滑动即可可靠翻页，减少无谓回弹。
+    const threshold = Math.max(40, mainW * 0.2);
     const switched = Math.abs(dx) >= threshold && total > 1;
     recordSwipeData({ mainWidth: mainW, dx, threshold, switched });
     setIsDragging(false);
@@ -695,8 +713,10 @@ export default function HeroBanner({
   // 回弹中文字跟随 banner 平滑回位，但右侧下一张文本保持隐藏（问题 #1）；
   // 切换（slideAnim）时不水平位移、改为居中 + 垂直 6px 入场（问题 #3）。
   const textTotal = displayItems.length;
+  // 切换（slideAnim）期间文字 track 以「旧活跃索引」safeActiveIndex 为中心（与背景图 track 一致），
+  // 随 banner 一起水平滑出到 -200%/0% 揭示新文本，而非提前静止显示新标题（问题 #2 修复）。
   const textCenter = slideAnim !== null
-    ? safeSwitchIndex
+    ? safeActiveIndex
     : bounceBack
       ? safeActiveIndex
       : safeHoveredIndex !== null
@@ -796,8 +816,14 @@ export default function HeroBanner({
       return { transform: `translateX(calc(-100% + ${dragOffset}px))`, transition: 'none' };
     }
     if (slideAnim === 'forward' || slideAnim === 'backward') {
-      // 切换：不水平位移，保持居中（水平滑动已删除，问题 #3）
-      return { transform: 'translateX(-100%)', transition: 'none' };
+      // 切换：文字 track 与背景图 track 完全镜像（forward→-200% / backward→0%），
+      // 同 SLIDE_MS 缓动，文字随 banner 一起水平滑出（修复问题 #2：此前文字静止居中、
+      // 仅做垂直入场，与 banner 水平滑动脱节）。textCenter 已切到 safeActiveIndex，
+      // 故此时居中槽仍是旧文本，水平滑出后揭示的新文本与背景图同帧到位、无跳变。
+      return {
+        transform: `translateX(${slideAnim === 'forward' ? '-200%' : '0%'})`,
+        transition: `transform ${SLIDE_MS}ms cubic-bezier(0.45, 0, 0.25, 1)`,
+      };
     }
     if (bounceBack) {
       // 回弹：文字跟随 banner 从拖拽位置平滑回到中心（与背景图同步），下一张文本因无 is-sliding 类保持隐藏
@@ -851,7 +877,80 @@ export default function HeroBanner({
         ref={mainRef}
         className={`hero-banner__main${isDragging ? ' is-dragging' : ''}`}
       >
-        {trackActive ? (
+        {/* crossfade 背景层：始终渲染（track 模式期间被 .hero-banner__track 绝对层盖住）。
+            关键修复：track→crossfade 切换时当前图 <img> 不再重挂载，移动端/App（Capacitor
+            WebView）不会因新 img 元素首帧解码延迟而透明闪出底层旧图。 */}
+        <>
+          {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
+          {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
+              新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
+              就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
+              淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
+          {staleLayer && (
+            <img
+              key={`stale-${staleLayer.id}`}
+              className="hero-banner__bg-layer hero-banner__bg-layer--stale"
+              src={staleLayer.url}
+              srcSet={staleLayer.srcSet || undefined}
+              sizes="(max-width: 767px) 100vw, 80vw"
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              draggable={false}
+            />
+          )}
+          {bgIndices.map((idx) => {
+            const item = displayItems[idx];
+            if (!item) return null;
+            const backdropPath = item.backdropPath || item.backdrop_path || '';
+            const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
+            const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
+            const isActive = idx === displayIndex;
+            // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
+            if (isActive && hideNewLayer) return null;
+            return (
+              <img
+                key={item.id}
+                className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}${isActive && suppressFadeInId === item.id ? ' hero-banner__bg-layer--no-anim' : ''}`}
+                src={backdropUrl}
+                srcSet={backdropSrcSet || undefined}
+                sizes="(max-width: 767px) 100vw, 80vw"
+                alt=""
+                aria-hidden="true"
+                loading="eager"
+                decoding="async"
+                draggable={false}
+                onLoad={() => {
+                  if (backdropUrl) markImageLoaded(backdropUrl);
+                  if (isActive) {
+                    setBannerReady(true);
+                    scheduleStaleClear();
+                  }
+                }}
+                onError={() => {
+                  if (isActive) {
+                    setBannerReady(true);
+                    scheduleStaleClear();
+                  }
+                }}
+                ref={(el) => {
+                  if (el && el.complete && el.naturalWidth > 0) {
+                    if (backdropUrl) markImageLoaded(backdropUrl);
+                    if (isActive) {
+                      setBannerReady(true);
+                      scheduleStaleClear();
+                    }
+                  }
+                }}
+              />
+            );
+          })}
+        </>
+        {/* 三联 track 模式：仅拖拽 / 滑动动画期间渲染，绝对定位覆盖在 crossfade 背景之上
+            （.hero-banner__track 加 position:absolute; inset:0; z-index:1）。滑动结束 trackActive=false
+            时仅移除该覆盖层，crossfade 已常驻、当前图已解码 → 切换无缝、无闪烁。 */}
+        {trackActive && (
           /* ── 三联 track 模式 ── */
           <div
             className="hero-banner__track"
@@ -903,75 +1002,6 @@ export default function HeroBanner({
               );
             })}
           </div>
-        ) : (
-          /* ── crossfade 模式（默认） ── */
-          <>
-            {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
-            {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
-                新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
-                就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
-                淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
-            {staleLayer && (
-              <img
-                key={`stale-${staleLayer.id}`}
-                className="hero-banner__bg-layer hero-banner__bg-layer--stale"
-                src={staleLayer.url}
-                srcSet={staleLayer.srcSet || undefined}
-                sizes="(max-width: 767px) 100vw, 80vw"
-                alt=""
-                aria-hidden="true"
-                loading="eager"
-                decoding="async"
-                draggable={false}
-              />
-            )}
-            {bgIndices.map((idx) => {
-              const item = displayItems[idx];
-              if (!item) return null;
-              const backdropPath = item.backdropPath || item.backdrop_path || '';
-              const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
-              const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
-              const isActive = idx === displayIndex;
-              // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
-              if (isActive && hideNewLayer) return null;
-              return (
-                <img
-                  key={item.id}
-                  className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}${isActive && suppressFadeInId === item.id ? ' hero-banner__bg-layer--no-anim' : ''}`}
-                  src={backdropUrl}
-                  srcSet={backdropSrcSet || undefined}
-                  sizes="(max-width: 767px) 100vw, 80vw"
-                  alt=""
-                  aria-hidden="true"
-                  loading="eager"
-                  decoding="async"
-                  draggable={false}
-                  onLoad={() => {
-                    if (backdropUrl) markImageLoaded(backdropUrl);
-                    if (isActive) {
-                      setBannerReady(true);
-                      scheduleStaleClear();
-                    }
-                  }}
-                  onError={() => {
-                    if (isActive) {
-                      setBannerReady(true);
-                      scheduleStaleClear();
-                    }
-                  }}
-                  ref={(el) => {
-                    if (el && el.complete && el.naturalWidth > 0) {
-                      if (backdropUrl) markImageLoaded(backdropUrl);
-                      if (isActive) {
-                        setBannerReady(true);
-                        scheduleStaleClear();
-                      }
-                    }
-                  }}
-                />
-              );
-            })}
-          </>
         )}
         <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
 
@@ -989,9 +1019,9 @@ export default function HeroBanner({
               const item = displayItems[idx];
               if (!item) return null;
               const isCurrent = pos === 1;
-              // 切换中（slideAnim）中心槽即新文本（textCenter=safeSwitchIndex），标记为入场；
-              // 拖拽/回弹不标 is-incoming（无 is-sliding 类，下一张文本 opacity 保持 0，见问题 #1）
-              const isIncoming = slideAnim !== null && isCurrent;
+              // 切换中文字随 banner 水平滑动入场（与背景图镜像），不再用垂直入场，
+              // 故不标 is-incoming，避免与水平滑动重复动效（问题 #2 修复）。
+              const isIncoming = false;
               return (
                 <div
                   key={`t-${pos}`}

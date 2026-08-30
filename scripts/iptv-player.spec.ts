@@ -17,11 +17,11 @@ test.describe('11.1 页面加载与频道匹配', () => {
     await page.goto('/iptv/play', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
-    // 预期结果: 显示空播放器或错误提示
+    // 预期结果: 无 url 时路由应落在 IPTV 播放/列表相关页面（空播放器或回落到频道列表）
     const hasContent = await page.evaluate(() => {
-      return !!document.querySelector('.player-page, [class*="player"]');
+      return !!document.querySelector('.iptv-player-page, .iptv-page, [class*="player"]');
     });
-    console.log(`✅ IPTVP-007 检查完成: 页面状态 = ${hasContent}`);
+    expect(hasContent).toBeTruthy();
   });
 
   test('IPTVP-008: 返回按钮', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('11.1 页面加载与频道匹配', () => {
     const hasBack = await page.evaluate(() => {
       return !!document.querySelector('.up-header-back, [class*="header-back"]');
     });
-    console.log(`✅ IPTVP-008 检查完成: 返回按钮存在 = ${hasBack}`);
+    expect(hasBack).toBeTruthy();
   });
 });
 
@@ -50,7 +50,7 @@ test.describe('11.2 平台适配', () => {
     const hasContent = await page.evaluate(() => {
       return !!document.querySelector('.player-page, [class*="player"]');
     });
-    console.log(`✅ IPTVP-010 检查完成: 桌面端布局 = ${hasContent}`);
+    expect(hasContent).toBeTruthy();
   });
 
   test('IPTVP-011: 移动端播放', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('11.2 平台适配', () => {
     const hasContent = await page.evaluate(() => {
       return !!document.querySelector('.player-page, [class*="player"]');
     });
-    console.log(`✅ IPTVP-011 检查完成: 移动端布局 = ${hasContent}`);
+    expect(hasContent).toBeTruthy();
   });
 });
 
@@ -80,7 +80,6 @@ test.describe('11.3 IPTV 播放独立逻辑', () => {
       return !!document.querySelector('.up-player-paused-overlay');
     });
     expect(hasCenterPlay).toBe(false);
-    console.log(`✅ IPTVP-013 通过: IPTV 不显示中间播放按钮 = ${!hasCenterPlay}`);
   });
 
   test('IPTVP-014: IPTV 右上角不显示点播类 toast 提示', async ({ page }) => {
@@ -92,6 +91,5 @@ test.describe('11.3 IPTV 播放独立逻辑', () => {
       return !!document.querySelector('.up-player-toast');
     });
     expect(hasToast).toBe(false);
-    console.log(`✅ IPTVP-014 通过: IPTV 右上角不显示 toast = ${!hasToast}`);
   });
 });

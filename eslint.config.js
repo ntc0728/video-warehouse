@@ -3,6 +3,7 @@ import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
+import noHardcodedColors from './eslint-rules/no-hardcoded-colors.js';
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'build', '**/build/**', 'backups/**', 'output/**', 'scripts/**', 'docs/**', '*.config.js', '*.config.ts'] },
@@ -16,6 +17,7 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'no-hardcoded-colors': { rules: { 'no-hardcoded-colors': noHardcodedColors } },
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -56,6 +58,10 @@ export default tseslint.config(
           message: '请使用 @/lib/navigation 的 useCustomNavigate，禁止直接引入 react-router-dom 的 useNavigate（避免绕过统一的导航入口与重进门控）。',
         }],
       }],
+      // 设计 token 护栏：禁止在 className 使用 Tailwind 默认调色板与裸 hex，
+      // 强制走项目设计 token（bg-primary / text-text-inverse / bg-danger 等），
+      // 防止移动端/App 质感劣化复发。仅 warn，不阻断 CI。
+      'no-hardcoded-colors/no-hardcoded-colors': 'warn',
     },
   },
   {

@@ -56,6 +56,8 @@ interface UserState {
   clearHistory: () => void;
 
   _loadFromDB: () => Promise<void>;
+  /** 从 IndexedDB 重新读取收藏与历史（下拉刷新等场景，绕过 _initialized 守卫） */
+  reload: () => Promise<void>;
 }
 
 /**
@@ -193,6 +195,19 @@ export const useUserStore = create<UserState>()((set, get) => ({
       console.error('Failed to load user data from IndexedDB:', err);
       // 允许重试：不清除 _initialized 标记
       set({ _loading: false });
+    }
+  },
+
+  /** 从 IndexedDB 重新读取收藏与历史（用于下拉刷新等场景，绕过 _initialized 守卫） */
+  reload: async () => {
+    try {
+      const [collections, history] = await Promise.all([
+        getCollections(),
+        getHistory(),
+      ]);
+      set({ collections, history });
+    } catch (err) {
+      console.error('[useUserStore] reload failed:', err);
     }
   },
 

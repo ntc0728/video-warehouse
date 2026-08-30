@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, PanelLeftClose, PanelLeftOpen, Tv, User } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
@@ -26,10 +26,10 @@ const RIGHT_NAV_ITEMS: NavItem[] = [
   { key: 'history', title: '历史', icon: Clock, path: '/history' },
 ];
 
-/** TV 模式在顶部导航栏补充 IPTV 入口（侧边栏在 TV 模式下隐藏，需经顶栏可达） */
-const TV_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
+/** 桌面 web / TV：顶部导航栏补充 IPTV 入口（无左侧栏，需经顶栏可达） */
+const EXTRA_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
 
-/** 设置入口：桌面 web 已迁入 HomeSidebar 底部；TV 无侧边栏，保留顶栏入口 */
+/** 设置入口：桌面 web / TV 无左侧栏，经顶栏可达（移动 web / app 经侧栏 / TabBar） */
 const SETTINGS_NAV_ITEM: NavItem = { key: 'settings', title: '设置', icon: Settings, path: '/settings' };
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
@@ -38,8 +38,6 @@ const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'syste
 interface StickyHeaderProps {
   onMenuToggle?: () => void;
   menuOpen?: boolean;
-  onSidebarToggle?: () => void;
-  sidebarCollapsed?: boolean;
 }
 
 /** 沉浸式页面路由前缀：播放页（hero 透明叠加）
@@ -67,7 +65,7 @@ function isHotSearchDisabled(pathname: string): boolean {
   return HOT_SEARCH_DISABLED_PAGES.some((base) => p === base || p.startsWith(base + '/'));
 }
 
-export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, sidebarCollapsed }: StickyHeaderProps) {
+export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const isTV = useIsTV();
   // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
   // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
@@ -174,36 +172,16 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
   const searchScope = getSearchScope(location.pathname);
   const showHotSearch = !isHotSearchDisabled(location.pathname);
 
-  // 侧边栏展开/收起按钮防抖：忽略 300ms 内的连续点击，避免快速连点导致状态抖动
-  const lastSidebarToggleRef = useRef(0);
-  const handleSidebarToggle = useCallback(() => {
-    const now = Date.now();
-    if (now - lastSidebarToggleRef.current < 300) return;
-    lastSidebarToggleRef.current = now;
-    onSidebarToggle?.();
-  }, [onSidebarToggle]);
-
   return (
     <header
       className={`sticky-header${immersive ? ' sticky-header--immersive' : ''}${isTV ? ' sticky-header--tv' : ''}${isScrolled ? ' sticky-header--scrolled' : ''}`}
     >
       <div className="sticky-header__inner">
         <div className="sticky-header__left">
-          {isMobile && !isNative ? (
+          {isMobile && !isNative && (
             <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
               {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
             </button>
-          ) : (
-            onSidebarToggle && (
-              <button
-                className="sticky-header__sidebar-toggle"
-                onClick={handleSidebarToggle}
-                aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-                title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-              >
-                {sidebarCollapsed ? <Icon icon={PanelLeftOpen} size="md" /> : <Icon icon={PanelLeftClose} size="md" />}
-              </button>
-            )
           )}
           <a href="/" className="sticky-header__logo-group no-interaction-visual" onClick={(e) => { e.preventDefault(); goHome(); }} aria-label="kinoTv — 返回首页">
             <div className="sticky-header__logo-wrap">
@@ -215,9 +193,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
           </a>
         </div>
         <div className="sticky-header__center">
-          {/* 移动端/桌面端统一：中央常驻搜索框（不再有"点击搜索按钮展开"的临时搜索模式） */}
+          {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
+             原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
+             造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname
+             同步输入值（见 SearchBox.tsx），避免无谓的重挂载开销。 */}
           <SearchBox
-            key={location.pathname}
             variant="header"
             className="sticky-header__search"
             defaultValue={pageSearch.search || undefined}
@@ -229,17 +209,16 @@ export default function StickyHeader({ onMenuToggle, menuOpen, onSidebarToggle, 
         </div>
         <div className="sticky-header__right">
           <nav className="sticky-header__nav" aria-label="次要导航">
-            {isTV && TV_NAV_ITEMS.map(renderNavItem)}
+            {/* 桌面 web / TV 无左侧栏，经顶栏提供 IPTV + 设置入口 */}
+            {!isMobile && EXTRA_NAV_ITEMS.map(renderNavItem)}
             {RIGHT_NAV_ITEMS.map(renderNavItem)}
-            {/* 设置入口：仅 TV 保留顶栏（桌面 web 已迁入 HomeSidebar 底部） */}
-            {isTV && renderNavItem(SETTINGS_NAV_ITEM)}
+            {!isMobile && renderNavItem(SETTINGS_NAV_ITEM)}
           </nav>
-          {/* 个人设置入口（头像 + 用户名）→ /settings?tab=personal：
-             设置页深链自动打开个人设置子页。渲染范围：移动 web（isMobile）+
-             桌面 web（!isTV，桌面设置入口在顶栏最右侧）；app 端导航由底部 TabBar
-             承担、TV 端保留顶栏「设置」文字入口（无侧边栏），均不渲染本按钮。
-             移动 web 仅显示头像（用户名由 isMobile 判断隐藏，手机横屏同样生效）。 */}
-          {!isTV && !isNative && (
+          {/* 个人设置入口（移动 web 头像）→ /settings?tab=personal：
+             桌面端已有「设置」文字入口、无需重复；app 端导航由底部 TabBar 承担、
+             TV 端保留顶栏「设置」文字入口，均不渲染本按钮。仅移动 web
+             （isMobile && !isNative）显示头像作为个人设置入口。 */}
+          {isMobile && !isNative && (
             <a
               href="/settings?tab=personal"
               className="sticky-header__profile hover-scale"

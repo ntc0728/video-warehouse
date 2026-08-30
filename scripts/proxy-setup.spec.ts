@@ -15,17 +15,14 @@ test.describe('ProxySetup 一键配置代理页', () => {
 
     // 标题
     const title = await page.locator('.proxy-setup__title').textContent();
-    console.log(`✅ PROXY-001: 标题="${title}"`);
     expect(title).toContain('一键配置代理');
 
     // 两个入口卡片
     const cardCount = await page.locator('.proxy-setup__card').count();
-    console.log(`✅ PROXY-001: 入口卡片数量 = ${cardCount}`);
     expect(cardCount).toBe(2);
 
     // 日志方框存在且含初始提示
     const consoleVisible = await page.locator('.proxy-setup__console').isVisible().catch(() => false);
-    console.log(`✅ PROXY-001: 日志方框可见 = ${consoleVisible}`);
     expect(consoleVisible).toBe(true);
   });
 
@@ -39,12 +36,10 @@ test.describe('ProxySetup 一键配置代理页', () => {
     await page.waitForTimeout(300);
 
     const isSelected = await corsCard.evaluate((el) => el.classList.contains('is-selected'));
-    console.log(`✅ PROXY-002: CORS 卡片选中态 = ${isSelected}`);
     expect(isSelected).toBe(true);
 
     // 日志追加了「已选择」
     const logText = await page.locator('.proxy-setup__console').textContent();
-    console.log(`✅ PROXY-002: 日志包含选择提示 = ${logText?.includes('已选择')}`);
     expect(logText).toContain('已选择');
   });
 
@@ -62,7 +57,6 @@ test.describe('ProxySetup 一键配置代理页', () => {
     await page.waitForTimeout(300);
 
     const logText = await page.locator('.proxy-setup__console').textContent();
-    console.log(`✅ PROXY-003: 日志含错误提示 = ${logText?.includes('请填写 Cloudflare API Token')}`);
     expect(logText).toContain('请填写 Cloudflare API Token');
   });
 });
