@@ -9,6 +9,7 @@ import { requestFullscreen, getFullscreenElement } from '@/components/UniversalP
 import { isNativePlatform } from '@/lib/platform';
 import { lockLandscape, unlockOrientation } from '@/lib/orientation';
 import { buildChannelPlayUrl } from '@/services/iptvService';
+import { dropCurtain } from '@/lib/pageTransition';
 import type { IPTVChannel } from '@/types/iptv';
 import './IPTVPlayer.css';
 
@@ -87,13 +88,27 @@ export default function IPTVPlayerPage() {
     };
   }, []);
 
+  // 黑场转场的收尾：本页挂载（播放器已就位、黑底已铺满）后放幕。
+  // 播放器自身不做任何进场动画 —— 幕布淡出只是把"黑"换成"播放器画面"，
+  // 中间没有亮度跃变，也没有播放器首帧的重采样闪烁。
+  // 双帧再放幕：首帧时 chunk 刚 eval，DOM 可能还没完成首次绘制。
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => dropCurtain());
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, []);
+
   // TV 端进入 IPTV 播放页默认全屏（无用户手势可能被拦截，静默失败；退出后不再次强制）
   useEffect(() => {
     if (!isTV) return;
     const el = pageRef.current;
     if (!el || getFullscreenElement()) return;
     requestFullscreen(el).catch(() => { /* 平台不支持/无手势时静默 */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTV]);
 
   // 9.1：app 端进入 IPTV 播放页自动横屏（全屏铺满播放），离开恢复系统默认方向。

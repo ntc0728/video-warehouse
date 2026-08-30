@@ -137,7 +137,7 @@ export default function ProxySetup() {
   }, [resultUrl, kind, setCorsProxy, setIptvSettings, appendLog]);
 
   const page = (
-    <div className="proxy-setup page-transition-enter">
+    <div className="proxy-setup">
       <div className="proxy-setup__inner">
         <header className="proxy-setup__header">
           <h2 className="proxy-setup__title">

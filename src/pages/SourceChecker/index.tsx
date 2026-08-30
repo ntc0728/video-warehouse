@@ -14,6 +14,7 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 
 import './SourceChecker.css';
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 type TabKey = 'network' | 'iptv' | 'video' | 'iptvProxy' | 'videoProxy';
 
@@ -338,6 +339,9 @@ export default function SourceCheckerPage() {
     }
   }, [isBatchChecking, checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy]);
 
+  // 下拉刷新：一键重新检测所有源
+  usePullToRefresh(() => handleCheckAll(), { meta: () => '全部检测' });
+
   const handleCheck = useCallback(async (tab: TabKey) => {
     setCheckingTabs((prev) => new Set(prev).add(tab));
     setIptvProgress({ current: 0, total: 0 });
@@ -400,7 +404,7 @@ export default function SourceCheckerPage() {
   const videoProxyUrl = corsProxy || '未配置';
 
   const page = (
-    <div ref={pageRef} className="page-padding source-checker-page page-transition-enter">
+    <div ref={pageRef} className="page-padding source-checker-page">
       <div className="source-checker-header">
         <div className="header-left">
           <h1>源检测</h1>

@@ -1,13 +1,13 @@
 import { Suspense, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useBlocker, useLocation, type BlockerFunction } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
 import Sidebar from './Sidebar';
-import HomeSidebar from './HomeSidebar';
 import StickyHeader, { IMMERSIVE_ROUTES } from '@/components/StickyHeader';
 import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
+import { PullToRefreshProvider, PullToRefreshOverlay } from '@/components/ui/PullToRefresh';
 import './Layout.css';
 import { useSettingsStore, useNavStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
@@ -17,6 +17,13 @@ import { setCurrentPathname, recordPopPrevious } from '@/lib/navigation';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 import { getRouteTitle, APP_NAME } from '@/hooks/useDocumentTitle';
+import {
+  getPageVariant,
+  needsLeaveAnimation,
+  raiseCurtain,
+  prefersReducedMotion,
+  PT_DUR,
+} from '@/lib/pageTransition';
 
 // 已访问过的路由集合（模块级，跨导航持久）。用于「二次进入」门控：已访问过的路由
 // 不再重放 opacity:0 进入动画（见 animations.css 的 .page-transition[data-revisit] 规则），
@@ -34,7 +41,7 @@ function LoadingFallback() {
     window.__kinoSuspenseFallback = Date.now();
   }, []);
   return (
-    <div className="page-padding page-loading page-transition-enter">
+    <div className="page-padding page-loading">
       <AppLoading showProgress={false} />
     </div>
   );
@@ -44,11 +51,11 @@ function LoadingFallback() {
  * 路由渲染器（方案 B：无 Keep-Alive，每次路由切换重新挂载页面组件）
  *
  * 路由切换时旧页面卸载、新页面挂载：数据回显依赖各页面的 store 缓存
- * （useTMDBStore TTL / useHomeCategoryStore / sourceManager 幂等 bootstrap /
- * IndexedDB 读取），组件内部状态（tab、筛选、滚动等）随卸载重置。
+ * （useTMDBStore TTL / sourceManager 幂等 bootstrap / IndexedDB 读取），
+ * 组件内部状态（tab、筛选、滚动等）随卸载重置。
  *
- * memo 包裹：AppLayout 因侧边栏折叠/展开等状态变化而重渲染时，
- * Component 引用在 routeComponentMap 中稳定 → 已挂载页面不被牵连重渲染。
+ * memo 包裹：AppLayout 因顶栏状态等变化而重渲染时，Component 引用在
+ * routeComponentMap 中稳定 → 已挂载页面不被牵连重渲染。
  */
 const RouteRenderer = memo(function RouteRenderer({ Component }: { Component: ComponentType }) {
   return <Component />;
@@ -69,23 +76,6 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
 
-  // ── HomeSidebar 展开/收起状态（持久化到 localStorage） ──
-  const SIDEBAR_STORAGE_KEY = 'sidebar-collapsed';
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'; }
-    catch { return false; }
-  });
-  const toggleSidebarCollapsed = useCallback(() => {
-    const next = !sidebarCollapsed;
-    // 2026-08-04 侧边栏折叠重构（方案 A''）：不再做宽度动画。
-    // 折叠/展开 = 一次状态翻转（app-shell--sidebar-collapsed 类切换 --sidebar-offset），
-    // spacer 与 sidebar 宽度同帧到位（仅 1 次 reflow）——右侧不卡不抖、左右缘恒定、
-    // 无中间态遮挡/空白。过渡动画由非布局属性承担：图标 left 位移（收起态 absolute
-    // 居中）+ label 淡出（见 HomeSidebar.css），均不触发 reflow。
-    setSidebarCollapsed(next);
-    try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* ignore */ }
-  }, [sidebarCollapsed]);
-
     useEffect(() => {
       if (sidebarOpen) {
       document.body.style.overflow = 'hidden';
@@ -96,10 +86,7 @@ export default function AppLayout() {
   }, [sidebarOpen]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // appShellRef 供 useSpatialNavigation（TV 方向键空间导航）与折叠状态类绑定使用。
-  // 折叠/展开不再有宽度动画：宽度由 --sidebar-offset 变量 + app-shell--sidebar-collapsed
-  // 类一次性切换（瞬切，仅 1 次 reflow），过渡动画由 HomeSidebar.css 的图标 left /
-  // label opacity 承担。
+  // appShellRef 供 useSpatialNavigation（TV 方向键空间导航）使用。
   const appShellRef = useRef<HTMLDivElement>(null);
 
   // 空闲（首屏渲染后）立即预加载所有路由 chunk：切换到未访问页面时不再出现
@@ -166,11 +153,49 @@ export default function AppLayout() {
   const location = useLocation();
   const activePath = location.pathname;
   const activeRouteKey = useMemo(() => matchRoute(activePath), [activePath]);
-  // 当前路由是否「二次进入」。首次进入为 false（播放进入动画），再进入为 true（抑制动画）。
+  // 当前路由是否「二次进入」。首次进入为 false（完整进场动画），再进入为 true
+  // （动画压到 140ms 线性，不再完全取消 —— 见 animations.css 的说明）。
   const isRevisit = activeRouteKey ? visitedRoutes.has(activeRouteKey) : false;
   useEffect(() => {
     if (activeRouteKey) visitedRoutes.add(activeRouteKey);
   }, [activeRouteKey]);
+
+  // ── 页面进场变体：由路由统一决定，页面代码零感知 ──
+  // 容器加 key={activeRouteKey} → 路由一换容器就重挂载 → CSS animation 必然重放。
+  // 页面自身的 loading / notFound / 错误分支因此一并被覆盖，不会再出现
+  // 「Person 主分支漏挂、Player 七个分支全漏」这种事。
+  const pageVariant = getPageVariant(activeRouteKey);
+  const pageTransitionRef = useRef<HTMLDivElement>(null);
+
+  // ── 进入黑场路由（/iptv/play）：拦下导航，先让来源页离场，再放行 ──
+  // 拦截点选在路由层而不是各入口：IPTV 频道卡是 <Link>、历史页是 navigate，
+  // 只有在路由层拦才覆盖得住所有入口。POP（浏览器后退）由 react-router
+  // 自行放行，不做拦截 —— 后退本就该是瞬时回退。
+  const blocker = useBlocker(
+    useCallback<BlockerFunction>(
+      ({ currentLocation, nextLocation }) =>
+        needsLeaveAnimation(currentLocation.pathname, nextLocation.pathname),
+      [],
+    ),
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    const el = pageTransitionRef.current;
+    const reduced = prefersReducedMotion();
+
+    // 幕布先升起：盖住来源页退场后的空档，也顺带盖住 IPTV 播放器首帧缓冲
+    raiseCurtain();
+    if (el && !reduced) el.dataset.leaving = 'true';
+
+    // 用固定时长而不是 animationend：动画被 reduced-motion 关掉、或元素提前卸载时
+    // animationend 不会触发，导航就被永久卡死。多等一帧的代价远小于卡死。
+    const timer = window.setTimeout(() => blocker.proceed(), reduced ? 0 : PT_DUR.leave);
+    return () => {
+      window.clearTimeout(timer);
+      if (el) delete el.dataset.leaving;
+    };
+  }, [blocker.state, blocker.proceed]);
 
   // 同步当前展示路径（供 useScrollRestore 判定「从哪个页面进入」）
   useLayoutEffect(() => {
@@ -244,20 +269,6 @@ export default function AppLayout() {
     (route) => activePath === route || activePath.startsWith(route),
   );
 
-  // 进入沉浸式（全屏播放）页时自动收起左侧公共栏，离开时恢复进入前的状态，
-  // 避免污染其它页面的侧边栏偏好（isImmersive 的切换沿路由变化，非全局持久）
-  const prevImmersiveRef = useRef(false);
-  const savedCollapsedRef = useRef(sidebarCollapsed);
-  useEffect(() => {
-    if (isImmersive && !prevImmersiveRef.current) {
-      savedCollapsedRef.current = sidebarCollapsed;
-      setSidebarCollapsed(true);
-    } else if (!isImmersive && prevImmersiveRef.current) {
-      setSidebarCollapsed(savedCollapsedRef.current);
-    }
-    prevImmersiveRef.current = isImmersive;
-  }, [isImmersive, sidebarCollapsed, setSidebarCollapsed]);
-
   // 方案 B：只渲染当前激活路由（无 Keep-Alive 容器）。
   // 路由切换 = 卸载旧页 + 挂载新页；chunk 已由 preloadAllRoutes 预加载
   // （lazyWithRetry 缓存 Promise），Suspense 同步解析，不闪 fallback。
@@ -266,9 +277,10 @@ export default function AppLayout() {
   return (
     <Tooltip.Provider delayDuration={200}>
       <ScrollContainerContext.Provider value={scrollContainerRef}>
+        <PullToRefreshProvider>
         <div
         ref={appShellRef}
-        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}${sidebarCollapsed && !isCompactViewport && !isNative && !isTV ? ' app-shell--sidebar-collapsed' : ''}`}
+        className={`app-shell${activePath === '/' ? ' app-shell--home' : ''}${isImmersive ? ' app-shell--immersive' : ''}`}
         style={{
           backgroundColor: 'var(--color-background)',
           color: 'var(--color-text)',
@@ -277,15 +289,10 @@ export default function AppLayout() {
         {isCompactViewport && !isNative && (
           <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} isMobile />
         )}
-        {!isCompactViewport && !isNative && !isTV && (
-          <HomeSidebar collapsed={sidebarCollapsed} />
-        )}
         <div className="app-shell__main">
           <StickyHeader
             onMenuToggle={isCompactViewport && !isNative ? toggleSidebar : undefined}
             menuOpen={isCompactViewport && sidebarOpen}
-            onSidebarToggle={!isCompactViewport && !isNative && !isTV ? toggleSidebarCollapsed : undefined}
-            sidebarCollapsed={sidebarCollapsed}
           />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar
@@ -294,7 +301,13 @@ export default function AppLayout() {
               style={{ backgroundColor: 'var(--color-background)' }}
               direction="vertical"
             >
-              <div className="page-transition" data-revisit={isRevisit ? 'true' : 'false'}>
+              <div
+                ref={pageTransitionRef}
+                className="page-transition"
+                key={activeRouteKey ?? 'none'}
+                data-variant={pageVariant}
+                data-revisit={isRevisit ? 'true' : 'false'}
+              >
                 {Component ? (
                   <Suspense fallback={<LoadingFallback />}>
                     <RouteRenderer Component={Component} />
@@ -304,10 +317,12 @@ export default function AppLayout() {
               </div>
             </CustomScrollbar>
             <OverlayScrollbar scrollContainer={scrollContainerRef} />
+            <PullToRefreshOverlay />
           </div>
           {isNative && <TabBar />}
         </div>
       </div>
+        </PullToRefreshProvider>
     </ScrollContainerContext.Provider>
     </Tooltip.Provider>
   );

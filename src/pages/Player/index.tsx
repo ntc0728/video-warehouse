@@ -585,13 +585,21 @@ export default function PlayerPage() {
   // 仅首次进入时显示页面级 loading，之后不再触发
   const shouldShowPageLoading = !hasLoadedOnce;
 
+  // 占位符结构与「主分支」逐层同构（.player-main → .player-video-area / .player-sidebar）。
+  // 播放器就绪后只是把占位内容换成 UniversalPlayer：尺寸不变、底色都是 #000，
+  // 因此既没有布局跳动，也没有「白底 → 黑播放器」的那一下闪光。
+  // 播放器本身不参与任何进场动画（见 animations.css 的 [data-variant="player"]）。
   if (shouldShowPageLoading) {
     return (
       <div className="page-padding player-page">
-        <div className="player-page__container">
-          <div className="player-loading-wrap">
-            <AppLoading tip="加载中…" showTip />
+        <div className="player-main">
+          <div className="player-video-area">
+            <div className="player-stage-placeholder">
+              <AppLoading tip="加载中…" showTip />
+            </div>
           </div>
+          {/* 侧栏占位：预留与主分支一致的宽度，避免播放器横向收缩跳动 */}
+          <div className="player-sidebar player-sidebar--placeholder" aria-hidden="true" />
         </div>
       </div>
     );

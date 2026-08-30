@@ -17,6 +17,7 @@ import { VideoCard } from '@/components/VideoCard';
 import { ArrowLeft, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import './Person.css';
 import { Icon } from "@/components/ui/Icon";
+import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 type Tab = 'movies' | 'tv';
 
@@ -49,6 +50,9 @@ export default function PersonPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 下拉刷新：通过 nonce 重新触发人物详情/作品拉取
+  const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
+  usePullToRefresh(() => setPullRefreshNonce((n) => n + 1));
   const [person, setPerson] = useState<TMDBPersonDetail | null>(null);
   const [movies, setMovies] = useState<TMDBMovie[]>([]);
   const [tvShows, setTVShows] = useState<TMDBTVShow[]>([]);
@@ -143,7 +147,7 @@ export default function PersonPage() {
     })();
 
     return () => ctrl.abort();
-  }, [id]);
+  }, [id, pullRefreshNonce]);
 
   // 年份倒序排序：电影用 release_date、剧集用 first_air_date；
   // 无年份的排最后，同年份按 popularity 降序兜底。
@@ -174,7 +178,7 @@ export default function PersonPage() {
   if (loading) return <div className="page-padding person-page person-page--loading"><AppLoading /></div>;
   if (error || !person) {
     return (
-      <div className="page-padding person-page page-transition-enter">
+      <div className="page-padding person-page">
         <div className="person-not-found">
           <Icon icon={AlertTriangle} size="3xl" />
           <span>{error || '人物不存在'}</span>

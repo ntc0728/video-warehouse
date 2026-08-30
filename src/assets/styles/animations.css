@@ -15,33 +15,17 @@
 }
 
 /* ============================================================
-   页面进入统一过渡（淡入 + 轻微上移）
-   供 Home / Detail / Person / SourceChecker / RecordShell(收藏·历史) 复用，
-    与 Browse(.browse-page) / IPTV(.iptv-content) / Settings(.settings-page) 的进入动画保持一致，
-    消除「进入首页/分类页僵硬、无过渡」的观感。
-    注意：当前为方案 B（无 Keep-Alive），每次导航重新挂载页面。为避免二次进入从 opacity:0
-         起播造成的闪烁，二次进入由 AppLayout 的 .page-transition[data-revisit="true"] 门控
-         抑制进入动画（见下方「方案 A」规则）；方案 A 让已挂载页面直接以 opacity:1 呈现，
-         无空白帧、无抖动。首页 .home-page__content 不在门控范围内，保持专属过渡。
-   ============================================================ */
-/* ============================================================
-   页面进入过渡动画（统一三套变体）
+   旧版页面进入过渡（2026-08-30 起仅首页仍在用）
    ------------------------------------------------------------
-   设计目标（解决 4 个痛点）：
-   1. 不卡顿：只动画 transform/opacity（GPU 合成层，不 reflow）
-   2. 不闪烁：方案--fade/--stagger 容器层纯 opacity，不触发常驻页
-      GPU 合成层重绘（Home HeroBanner 等不闪一下）
-   3. 不太快/不跳动：时长 0.3s 左右，配合内容错峰，避免「冒出/跳动」
-   4. 大量图片优雅展开：方案--stagger 内容块错峰渐入（每块 40ms）
-   ------------------------------------------------------------
-    二次进入门控：AppLayout 记录已访问路由，二次进入时给 .page-transition 打
-    data-revisit="true"，本文件下方规则据此将进入动画置为 animation:none，
-    已挂载的页面根容器直接以 opacity:1 呈现，不再从透明起播 → 无闪烁。
-    首页 .home-page__content 在规则中被 :not() 排除，保持专属过渡。
+   页面进入过渡已统一由下方「统一容器层页面转场」接管 —— AppLayout 的
+   .page-transition[data-variant] 配合 key={activeRouteKey}，各页面不再自己挂类，
+   loading / notFound / 错误分支因此一并被覆盖。
+
+   本段保留的 .page-transition-enter 只服务首页 .home-page__content：
+   首页走 data-variant="home"，容器层刻意不出规则，维持其专属过渡。
    ============================================================ */
 
-/* 变体 1：纯淡入（无位移，避免布局抖动）—— Detail / Settings
-   二次进入时由 data-revisit 门控直接跳过，已挂载页面保持 opacity:1。 */
+/* 纯淡入（无位移，避免布局抖动） */
 @keyframes page-enter-fade {
   from {
     opacity: 0;
@@ -55,20 +39,47 @@
   animation: page-enter-fade 0.32s var(--ease-out-expo) both;
 }
 
-
-/* 变体 3：分层错峰 —— Home / Browse / Collections / History / SourceChecker / Person
-   容器纯 opacity 淡入（不触发常驻页合成层重绘），内部直接子元素错峰上移。
-   --stagger 变量由各页面给子元素设置（0,1,2,...），每级延迟 40ms。
-   错峰总时长 = 容器淡入 0.3s + 子元素动画 0.4s + 末块延迟，整体约 0.7s。 */
-@keyframes page-enter-stagger-container {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+/* 二次进入已访问路由时抑制 opacity:0 起播，消除「先空白再出现数据」的重进闪烁。 */
+.page-transition[data-revisit="true"] .page-transition-enter {
+  animation: none;
 }
 
-@keyframes page-enter-stagger-item {
+/* 首页：二次进入（data-revisit）时直接以不透明呈现。
+   .home-page__content--delayed-enter 的基础样式是 opacity:0（仅靠动画淡入），
+   只取消动画会让内容永久透明，因此必须显式复位 opacity:1。
+   HeroBanner 是 .home-page__content 的兄弟节点，不受本条影响，其专属过渡保留。 */
+.page-transition[data-revisit="true"] .home-page__content--delayed-enter {
+  animation: none;
+  opacity: 1;
+}
+
+/* 尊重系统「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-enter {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   统一容器层页面转场（2026-08-30）
+   ------------------------------------------------------------
+   接管方：AppLayout 的 .page-transition 容器（key={activeRouteKey} +
+   data-variant）。各页面不再自己挂过渡类 —— loading / notFound / 错误分支
+   因此一并被覆盖，不会再出现 Person 主分支、Player 七个分支这种漏挂。
+
+   不闪眼的三个要点：
+   1. 容器自身永不做 opacity 动画 —— 页面背景常驻，不产生全屏亮度跃变；
+   2. 内容层起点 opacity 0.45 而非 0，位移仅 6px —— 没有「空白→内容」的跳变；
+   3. 缓动用 --ease-standard 而非 --ease-out-expo —— 后者前段速度过快，
+      观感是「啪」地弹出来，正是刺眼的来源。
+
+   时长与 src/lib/pageTransition.ts 的 PT_DUR 对齐，改一处必须改两处。
+   ============================================================ */
+
+@keyframes pt-enter-soft {
   from {
-    opacity: 0;
-    transform: translateY(10px);
+    opacity: 0.45;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -76,34 +87,85 @@
   }
 }
 
-.page-transition-enter--stagger {
-  animation: page-enter-stagger-container 0.3s ease-out both;
+/* fill-mode 必须 none：both 会让 transform 永久残留，容器成为包含块后
+   页内 position: fixed 元素（播放页全屏按钮 / 控制条）会整体错位。 */
+.page-transition[data-variant="soft"] > * {
+  animation: pt-enter-soft var(--dur-pt-enter) var(--ease-standard) none;
 }
 
-.page-transition-enter--stagger > * {
-  animation: page-enter-stagger-item 0.4s var(--ease-out-expo) both;
-  animation-delay: calc(var(--stagger, 0) * 0.04s);
-}
+/* 首页（data-variant="home"）：本文件刻意不写任何 [data-variant="home"] 规则。
+   首页保留自己的专属过渡（Hero 不参与、.home-page__content 淡入、
+   骨架屏 --delayed-enter 延迟淡入）—— 这套是专门调过的，容器一旦接管，
+   HeroBanner 会被卷进 opacity 动画而出现合成层闪烁。此处只做记录，不要补规则。 */
 
-/* ============================================================
-   方案 A：抑制「二次进入已访问路由」时页面根容器的 opacity:0 进入动画，
-   消除方案 B（每次重新挂载）下「先空白再出现数据」的重进闪烁。
-   AppLayout 对再次进入的路由给 .page-transition 打 data-revisit="true"，
-   已挂载页面直接以 opacity:1 呈现，不再从透明起播 → 无空白帧、无抖动。
-   首页 .home-page__content 刻意排除（:not）：保持 HeroBanner 等专属过渡，不参与抑制。
-   ============================================================ */
-.page-transition[data-revisit="true"] .page-transition-enter:not(.home-page__content),
-.page-transition[data-revisit="true"] .page-transition-enter--stagger,
-.page-transition[data-revisit="true"] .page-transition-enter--stagger > * {
+/* 视频播放页（/play、/player）：页面根不整体动画 —— 播放器就在其中，
+   任何 opacity / transform 都会让播放器首帧重采样、控制条抖动。
+   只让标记了 .pt-soft 的周边区块柔和淡入；播放器区域保持静态 + 深色占位。 */
+.page-transition[data-variant="player"] > * {
   animation: none;
 }
 
-/* 尊重系统「减少动态效果」偏好 */
+.page-transition[data-variant="player"] .pt-soft,
+.page-transition[data-variant="player"] .player-sidebar,
+.page-transition[data-variant="player"] .player-detail-section {
+  animation: pt-enter-soft var(--dur-pt-enter) var(--ease-standard) none;
+}
+
+/* 二次进入（已访问路由）：仍保留极轻过渡。直接 animation:none 会让
+   「首次有动画 / 二次无动画」来回切换，这种不一致本身也是一种闪烁；
+   这里只把幅度压到几乎不可见（0.45 起播、140ms、线性），无空白帧。 */
+.page-transition[data-revisit="true"][data-variant="soft"] > * {
+  animation: pt-enter-soft 140ms linear none;
+}
+
+/* ── 来源页离场：进入黑场路由（/iptv/play）时旧页退场 ─────────
+   与黑场幕布配合：旧页下沉淡出 → 幕布全黑 → 导航 → 新页挂载 → 幕布淡出。
+   播放器自始至终零动画。 */
+@keyframes pt-leave-sink {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+.page-transition[data-leaving="true"] {
+  animation: pt-leave-sink var(--dur-pt-leave) var(--ease-standard) both !important;
+  pointer-events: none;
+}
+
+/* ── 黑场幕布：挂在 body 上，跨 React 树存活 ──────────────────
+   /iptv/play 是顶层独立路由，进入时 AppLayout 会卸载，
+   因此幕布不能挂在 React 树内（见 src/lib/pageTransition.ts）。
+   z-index 必须高于 .iptv-player-page 的 9999，否则遮不住播放器首帧。 */
+.pt-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: linear;
+  will-change: opacity;
+}
+
+.pt-curtain--active {
+  display: block;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .page-transition-enter,
-  .page-transition-enter--stagger,
-  .page-transition-enter--stagger > * {
-    animation: none;
+  .page-transition[data-variant="soft"] > *,
+  .page-transition[data-revisit="true"][data-variant="soft"] > *,
+  .page-transition[data-variant="player"] .pt-soft,
+  .page-transition[data-variant="player"] .player-sidebar,
+  .page-transition[data-variant="player"] .player-detail-section,
+  .page-transition[data-leaving="true"] {
+    animation: none !important;
   }
 }
 
@@ -224,7 +286,7 @@
 }
 
 /* ── 全局 hover 微放大（统一「hover 稍微放大文本/图标」的显示效果） ──
-   使用独立 scale 属性（不干扰 transform，与 HomeSidebar 图标 hover 一致）。
+   使用独立 scale 属性（不干扰 transform，与各导航图标 hover 一致）。
    用法：<button className="hover-scale">；scale 过渡由元素自身 transition
    （需包含 scale）承担——本类不声明 transition，避免覆盖元素自身的
    background/color/border 过渡；reduced-motion 由全局规则瞬变。 */
