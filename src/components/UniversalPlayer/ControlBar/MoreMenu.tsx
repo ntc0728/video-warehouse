@@ -57,7 +57,7 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
     if (!isOpen) onPopoverChange(POPOVER_ID);
   }, [isOpen, onPopoverChange, clearClose]);
 
-  // 计算弹窗定位（fixed）：显示在「更多」图标正上方、右对齐图标，并夹紧在播放器容器内
+  // 计算弹窗定位（fixed）：显示在「更多」图标正上方、水平居中，并夹紧在播放器容器内
   useLayoutEffect(() => {
     if (!isOpen) return;
     const compute = () => {
@@ -65,9 +65,13 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
       const p = popRef.current;
       if (!t || !p) return;
       const iconRect = t.getBoundingClientRect();
-      const popRect = p.getBoundingClientRect();
-      const popW = popRect.width;
-      const popH = popRect.height;
+      // 用 offsetWidth/offsetHeight 代替 getBoundingClientRect().width/height：
+      // 弹窗有 scale 动画（more-popover-fade-in: scale(0.96)→scale(1)），
+      // getBoundingClientRect 返回变换后尺寸（动画初始时偏小），导致首次测量位置偏上，
+      // 动画完成后重测位置下移 → 用户看到「弹窗移动一次」。
+      // offsetWidth/offsetHeight 不受 transform 影响，返回真实布局尺寸。
+      const popW = p.offsetWidth;
+      const popH = p.offsetHeight;
       const gap = 8;
       const margin = 4;
       // 以播放器容器为边界（找不到则退化为视口），避免弹窗超出播放器
@@ -94,7 +98,9 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
     compute();
     window.addEventListener('resize', compute);
     return () => window.removeEventListener('resize', compute);
-  }, [isOpen, children]);
+    // 依赖仅 isOpen：children 引用每次父渲染都变化，但内容固定不影响定位，
+    // 列入依赖会导致 effect 频繁重跑（与 scale 动画叠加产生二次测量跳变）。
+  }, [isOpen]);
 
   // 点击外部关闭
   useEffect(() => {
