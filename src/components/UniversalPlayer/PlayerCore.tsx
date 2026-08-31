@@ -43,6 +43,9 @@ export default function PlayerCore({
   const mirror = usePlayerStore(s => s.mirror);
   const aspectRatio = usePlayerStore(s => s.aspectRatio);
   const isPiP = usePlayerStore(s => s.isPiP);
+  // 外挂字幕渲染管线：subtitleUrl（blob VTT）此前只存 store 无消费方，导入字幕从未显示
+  const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
+  const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
 
   const containerStyle = RATIO_CONTAINER_STYLES[aspectRatio];
   const mirrorTransform = mirror ? 'scaleX(-1)' : '';
@@ -72,7 +75,12 @@ export default function PlayerCore({
         style={videoStyle}
         playsInline
         preload="auto"
-      />
+      >
+        {/* 外挂字幕轨：仅点播模式；key=subtitleUrl 保证换字幕文件时重建轨；关闭时卸载 track 隐藏 */}
+        {mode === 'video' && subtitleUrl && subtitleEnabled && (
+          <track key={subtitleUrl} kind="subtitles" src={subtitleUrl} default />
+        )}
+      </video>
 
       {hasError && (
         <div className="up-player-error">

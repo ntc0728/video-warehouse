@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseLongPressOptions {
   onSeek: (direction: 'left' | 'right') => void;
@@ -93,6 +93,9 @@ export function useLongPress({ onSeek, disabled = false, verticalGestureActiveRe
     pressOriginRef.current = null;
     clearLongPress();
   }, [clearLongPress]);
+
+  // P2-5：组件卸载时清掉 pending 长按定时器与 seek 循环，避免泄漏后继续触发 seek
+  useEffect(() => () => clearLongPress(), [clearLongPress]);
 
   return {
     seekIndicator,

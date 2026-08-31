@@ -23,6 +23,7 @@ import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
 import PlayerHeader from './PlayerHeader';
 import { ControlBar } from './ControlBar';
+import ShortcutHelp from './ControlBar/ShortcutHelp';
 import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
@@ -204,6 +205,8 @@ export default function UniversalPlayer({
   const [subtitleSheetOpen, setSubtitleSheetOpen] = useState(false);
   // 定时关闭（分钟；0 = 关闭）
   const [sleepMinutes, setSleepMinutes] = useState(0);
+  // P1-5：快捷键面板（Shift+? / 更多菜单）
+  const [showShortcuts, setShowShortcuts] = useState(false);
   // 投屏激活状态（右上角图标常亮提示）
   const [castActive, setCastActive] = useState(false);
 
@@ -398,6 +401,8 @@ export default function UniversalPlayer({
       togglePlay: () => playerCore.togglePlay(),
       setVolume: (v) => playerCore.setVolume(v),
       seek: (t) => playerCore.seek(t),
+      pause: () => playerCore.pause(),
+      togglePiP: () => { void playerCore.togglePiP(); },
       getCurrentTime: () => playerCore.getCurrentTime(),
       getDuration: () => playerCore.getDuration(),
       toggleMute: () => playerCore.toggleMute(),
@@ -406,6 +411,7 @@ export default function UniversalPlayer({
     toggleFullscreen: handleToggleFullscreen,
     onPrevEpisode,
     onNextEpisode,
+    onToggleShortcuts: () => setShowShortcuts(s => !s),
   });
 
   // IPTV 超时 hook
@@ -594,11 +600,11 @@ skipHistory,
   // 缓冲检测
   useBufferMonitor(videoElementRef, currentUrl);
 
-  // 点击处理
+  // 点击处理（移动端单击即时响应：P1-2）
   const { handlePlayerClick, clickTimerRef } = usePlayerClickHandler({
-    mode, hasError, isControlsVisible,
+    mode, hasError, isControlsVisible, isMobileLayout,
     hasLongPressedRef, videoElementRef, containerRef,
-    showControls, togglePlay: () => playerCore.togglePlay(),
+    showControls, hideControls, togglePlay: () => playerCore.togglePlay(),
   });
 
   const handleOpenProgramGuide = useCallback(async () => {
@@ -1000,6 +1006,7 @@ skipHistory,
           slots={controlBarSlots}
           onActivity={resetAutoHideTimer}
           onScreenshot={handleScreenshot}
+          onShowShortcuts={() => setShowShortcuts(true)}
           levels={levels}
           currentLevel={currentLevel}
           onLevelChange={playerCore.switchLevel}
@@ -1011,6 +1018,11 @@ skipHistory,
           onNextEpisode={onNextEpisode}
           hasError={hasError}
         />
+      )}
+
+      {/* P1-5：快捷键面板（Shift+? / 更多菜单） */}
+      {showShortcuts && (
+        <ShortcutHelp visible onClose={() => setShowShortcuts(false)} />
       )}
 
       {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染）。

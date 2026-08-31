@@ -1,6 +1,7 @@
 import { useRef } from 'react';
-import { SkipBack, SkipForward, StepBack, StepForward } from 'lucide-react';
+import { SkipBack, SkipForward, StepBack, StepForward, Keyboard } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
+import { Icon } from '@/components/ui/Icon';
 import type { PlayerMode, PlatformType, DecoderMode, PlayerLevel, LoopMode } from '@/types/player';
 import MirrorButton from './MirrorButton';
 import RatioButton from './RatioButton';
@@ -40,6 +41,8 @@ interface ControlBarProps {
   onActivity?: () => void;
   onRefresh?: () => void;
   onScreenshot?: () => void;
+  /** 打开键盘快捷键面板（Shift+? / 更多菜单入口） */
+  onShowShortcuts?: () => void;
   isMobile?: boolean;
   /** 播放错误态：透传给全屏按钮，错误时禁用全屏（C4 守卫一致） */
   hasError?: boolean;
@@ -77,6 +80,7 @@ export default function ControlBar({
   onActivity,
   onRefresh,
   onScreenshot,
+  onShowShortcuts,
   isMobile = false,
   hasError = false,
   levels,
@@ -234,6 +238,16 @@ export default function ControlBar({
               {isVideoMode && <MirrorButton />}
               {isVideoMode && <RatioButton />}
               {onScreenshot && <ScreenshotButton onClick={onScreenshot} />}
+              {onShowShortcuts && (
+                <button
+                  className="up-popover-item"
+                  title="键盘快捷键 (Shift+?)"
+                  onClick={(e) => { e.stopPropagation(); onPopoverChange(null); onShowShortcuts(); }}
+                >
+                  <Icon icon={Keyboard} size="sm" />
+                  <span>快捷键</span>
+                </button>
+              )}
             </MoreMenu>
           )}
           {!isMobile && (
