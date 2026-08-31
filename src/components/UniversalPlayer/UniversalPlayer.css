@@ -2556,19 +2556,26 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 .up-settings-panel__header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: var(--space-md);
 }
 
 .up-settings-panel__title {
+  flex: 1;
+  text-align: center;
   font-size: var(--text-base);
   font-weight: 600;
   color: #fff;
 }
 
 .up-settings-panel__close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   padding: var(--space-xs);
   border: none;
@@ -2585,14 +2592,14 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 .up-settings-panel__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-lg);
 }
 
 .up-settings-row {
   display: grid;
   grid-template-columns: auto auto 1fr auto;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 .up-settings-row__icon { color: rgba(255, 255, 255, 0.7); }
 .up-settings-row__label {
@@ -2604,6 +2611,14 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   text-align: right;
   font-size: var(--text-sm);
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* 色彩调整：标签文本右对齐并固定宽度，视觉贴合滑块 */
+.up-settings-row--color {
+  grid-template-columns: auto 4.5rem 1fr auto;
+}
+.up-settings-row--color .up-settings-row__label {
+  text-align: right;
 }
 
 .up-settings-slider {
@@ -2635,8 +2650,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 
 .up-settings-panel__footer {
   display: flex;
-  justify-content: flex-end;
-  margin-top: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-lg);
 }
 .up-settings-reset {
   padding: var(--space-xs) var(--space-lg);
