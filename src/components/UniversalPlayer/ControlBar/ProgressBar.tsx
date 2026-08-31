@@ -35,9 +35,6 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
 
   const isLive = mode === 'live';
 
-  /** P1-11：缓冲中向前可拖的上界 = 已缓冲末端（向后不受限） */
-  const maxSeekableTime = isBuffering ? Math.min(duration, Math.max(0, buffered)) : Infinity;
-
   const calcTime = useCallback((clientX: number): number => {
     if (!barRef.current || duration <= 0) return 0;
     const rect = barRef.current.getBoundingClientRect();
@@ -46,12 +43,12 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   }, [duration]);
 
   const updateFromEvent = useCallback((clientX: number) => {
+    // Issue3：缓冲中（非拖拽）hover 不更新圆点/tooltip 位置——避免「圆点跟随鼠标」的误导
+    if (!isDragging && isBuffering) return;
     if (!barRef.current || duration <= 0) return;
     const rect = barRef.current.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    let time = ratio * duration;
-    // P1-11：缓冲中向前钳制到已缓冲区间
-    if (time > maxSeekableTime) time = maxSeekableTime;
+    const time = ratio * duration;
     // hover 预览始终更新（tooltip），但非拖拽不触发 seek（thumb 不跟随鼠标）
     setHoverTime(time);
     setHoverPosition((time / duration) * 100);
@@ -60,23 +57,21 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
       setPendingPosition((time / duration) * 100);
       onSeek(time);
     }
-  }, [duration, isDragging, onSeek, maxSeekableTime]);
+  }, [duration, isDragging, isBuffering, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    // 直播 / 无时长 禁止拖拽；缓冲中允许 seek（跳到已缓冲位置可立即恢复播放，
-    // 跳到未缓冲位置由浏览器自行等待）——不再一刀切禁用，避免缓冲中无法跳转（审查报告 1.4）；
-    // P1-11：缓冲中向前拖拽钳制到已缓冲区间（见 maxSeekableTime）
+    // 直播 / 无时长 禁止拖拽；Issue3：缓冲中允许自由 seek（点击即跳到目标位置，
+    // 以最后一次点击为准；浏览器会自动缓冲到该区间），不再钳制到已缓冲区间（避免「圆点复位到 0」）
     if (isLive || duration <= 0) return;
     setIsDragging(true);
-    let time = calcTime(clientX);
-    if (time > maxSeekableTime) time = maxSeekableTime;
+    const time = calcTime(clientX);
     const ratio = (time / duration) * 100;
     setHoverTime(time);
     setHoverPosition(ratio);
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, calcTime, onSeek, maxSeekableTime]);
+  }, [isLive, duration, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
@@ -117,8 +112,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           if (barRef.current && duration > 0) {
             const rect = barRef.current.getBoundingClientRect();
             const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            let time = ratio * duration;
-            if (time > maxSeekableTime) time = maxSeekableTime;
+            const time = ratio * duration;
             setPendingTime(time);
             setPendingPosition((time / duration) * 100);
             onSeek(time);
@@ -135,8 +129,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
             const rect = barRef.current.getBoundingClientRect();
             const clientX = getClientX(e);
             const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-            let time = ratio * duration;
-            if (time > maxSeekableTime) time = maxSeekableTime;
+            const time = ratio * duration;
             setPendingTime(time);
             setPendingPosition((time / duration) * 100);
             onSeek(time);
@@ -158,7 +151,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         window.removeEventListener('touchend', handleGlobalTouchEnd);
       };
     }
-  }, [isDragging, duration, onSeek, endDrag, maxSeekableTime]);
+  }, [isDragging, duration, onSeek, endDrag]);
 
   // pendingTime 追上 currentTime 时清除 pending 状态
   useEffect(() => {
