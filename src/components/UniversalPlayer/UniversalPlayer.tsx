@@ -323,6 +323,8 @@ export default function UniversalPlayer({
       if (video) video.style.filter = `brightness(${v.toFixed(2)})`;
     },
     onVolumeChange: (v) => playerCore.setVolume(v),
+    // P0-4：手势开始时同步真实音量（此前初值恒 0）
+    getInitialVolume: () => usePlayerStore.getState().volume,
     verticalGestureActiveRef,
   });
 
