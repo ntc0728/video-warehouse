@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.16.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.15.0...kinotv-v1.16.0) (2026-08-31)
+
+
+### Features
+
+* **player:** P0-1 移动端横向滑动 seek 手势 ([3d880fd](https://github.com/ntc0728/video-warehouse/commit/3d880fd0ef78885a1020a10f047729cd080f11b2))
+* **player:** P0-2/P0-3/P1-11 进度条无障碍 + 重渲染治理 + 缓冲拖拽钳制 ([9fdb579](https://github.com/ntc0728/video-warehouse/commit/9fdb579eb18359284350f75634748df3b587131a))
+* **player:** 后台听视频 MediaSession + 冻结修复 + CMS自适应 + Switch改完即关 + 画面比例重构 ([631c802](https://github.com/ntc0728/video-warehouse/commit/631c8020f49157448b20312c355299547936055a))
+* **player:** 后台听视频 P2 iOS检测 + P3 Android原生前台媒体服务 ([bd6fbb6](https://github.com/ntc0728/video-warehouse/commit/bd6fbb68cf0fff3f306c550bdb92be58ebf5e2cd))
+* **player:** 批次4 P1快捷键重写/单击即时响应/清晰度记忆/字幕track渲染/定时器清理 ([4d93c2d](https://github.com/ntc0728/video-warehouse/commit/4d93c2d4f7babde9d004bde13b1b0ee9b35ffdfb))
+* **player:** 批次5 P1-3错误文案透传/P1-4续播卡片/P1-10进度展示解耦/P2-6安全区/P2-7移动端toast上移 ([bc35506](https://github.com/ntc0728/video-warehouse/commit/bc355069c88d832b955853b2e371632a19534987))
+* **player:** 批次6 P1-6桌面右键菜单/P2-3控制栏对比度/P2-4移动端触摸目标 ([0fe34dd](https://github.com/ntc0728/video-warehouse/commit/0fe34dd343066c669c5c41cefbd10bd99ef944c0))
+* **player:** 播放器整改交互 Demo（/player-lab 路由） ([80d37b3](https://github.com/ntc0728/video-warehouse/commit/80d37b38cb84a26faf890dffb8ac5346b2ae3dc8))
+
+
+### Bug Fixes
+
+* **player:** iOS后台提示仅真实设备显示(三层检测) + 删除移动端更多设置音量调节项 ([8c44db9](https://github.com/ntc0728/video-warehouse/commit/8c44db951c5fd2b6441e56cd53da5ea241c18497))
+* **player:** Issue2 冻结解冻重写为分级策略（translateZ 方案实测无效） ([da44c86](https://github.com/ntc0728/video-warehouse/commit/da44c86988e63d167fa02365565c60e3284eb616))
+* **player:** P0 止血——缓冲中可暂停、手势音量初值/滚动/UI 区三修复 (P0-7/4/5/6) ([d6371e1](https://github.com/ntc0728/video-warehouse/commit/d6371e1c8af0306aac8481e6d91e9adafcb212e3))
+* **player:** 修正更多设置弹窗未贴在图标正上方 ([91d8a1c](https://github.com/ntc0728/video-warehouse/commit/91d8a1c24588d6511936008a7e0a3694c3e6cc13))
+* **player:** 居中提示退出闪烁(单元素切换类名) + 清理reviveFrozenVideo重复定义 ([2d97962](https://github.com/ntc0728/video-warehouse/commit/2d9796275ac089213260f5227ff17985e47ebce6))
+* **player:** 弹窗/右键菜单/更多设置 UI 微调 ([1f6e30f](https://github.com/ntc0728/video-warehouse/commit/1f6e30f475f1aee8b487f7d24f2df86f528afd2b))
+* **player:** 弹窗关闭不影响提示语(去重) + 更多弹窗移动一次根因修复(offsetWidth) + 补全reviveFrozenVideo ([7f2da1b](https://github.com/ntc0728/video-warehouse/commit/7f2da1be82d317086187db93df0be1d0132627a3))
+* **player:** 截图提示居中靠上并避让移动端header + 修复更多弹窗悬浮跳变 ([192edd8](https://github.com/ntc0728/video-warehouse/commit/192edd846f2a94c39aa0764556038ec2fc5e7ef0))
+* **player:** 截图提示改为播放器内屏幕居中 toast ([345421a](https://github.com/ntc0728/video-warehouse/commit/345421af24967743f8386e8a6b2e74590c034564))
+* **player:** 截图提示改为播放器容器居中 + 更多弹窗居中于图标 ([ce000c6](https://github.com/ntc0728/video-warehouse/commit/ce000c6a029efd292490a5e57a7096d796cdb7dd))
+* **player:** 更多设置弹窗容器内定位 + 右键菜单文本尺寸 ([93d35ff](https://github.com/ntc0728/video-warehouse/commit/93d35ffc039e0ed971279f0cb088b532a4ccb14d))
+* **player:** 自测修复 Issue1/2/3 桌面手势条/切后台冻结/缓冲中进度条 ([95c36a1](https://github.com/ntc0728/video-warehouse/commit/95c36a107b2f54f048d9f4def0be7fd2323099a8))
+* **player:** 自测修复 Issue4 右键菜单改版/色彩调整/音效调节 ([0d8390f](https://github.com/ntc0728/video-warehouse/commit/0d8390fbea1a4228175990b8c48036def2d10359))
+
 ## [1.15.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.1...kinotv-v1.15.0) (2026-08-30)
 
 
