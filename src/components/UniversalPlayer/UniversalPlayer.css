@@ -2355,57 +2355,6 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   box-shadow: var(--shadow-md);
 }
 
-/* ==== MobileMoreSheet 音量（G3）/ 画中画（G6）==== */
-.up-ms-volume-control {
-  display: flex;
-  flex: 1 1 auto;
-  gap: var(--space-sm);
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.up-ms-volume {
-  display: flex;
-  flex: 1 1 auto;
-  gap: var(--space-xs);
-  align-items: center;
-  max-width: 10rem;
-}
-
-.up-ms-volume-slider {
-  flex: 1 1 auto;
-  min-width: 0;
-  accent-color: var(--color-primary);
-}
-
-.up-ms-volume-value {
-  flex-shrink: 0;
-  min-width: 2.5rem;
-  color: var(--color-text-secondary);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.up-ms-mute-btn {
-  display: inline-flex;
-  flex-shrink: 0;
-  justify-content: center;
-  align-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.up-ms-mute-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
 /* ============ 外挂字幕轨（<track kind="subtitles">）默认渲染样式 ============ */
 /* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式（P1-9 批次4） */
 .up-player-core video::cue {

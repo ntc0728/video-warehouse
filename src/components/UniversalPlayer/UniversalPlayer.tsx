@@ -1207,9 +1207,6 @@ skipHistory,
             onMirrorToggle={setMirror}
             aspectRatio={aspectRatio}
             onAspectRatioChange={setAspectRatio}
-            volume={volume}
-            onVolumeChange={playerCore.setVolume}
-            onToggleMute={playerCore.toggleMute}
           />
           {castMounted && (
             <Suspense fallback={null}>
