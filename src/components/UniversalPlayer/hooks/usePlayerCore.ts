@@ -445,10 +445,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
-      // 缓冲中（waiting，数据不足）点击暂停按钮/单击视频/空格：不执行暂停——
-      // 用户多为想唤起控制栏而非暂停，且暂停会叠加「缓冲锁死」问题（审查报告 1.3/1.1）
-      const { isBuffering } = usePlayerStore.getState();
-      if (isBuffering) return;
+      // P0-7（2026-08-31）：缓冲中允许暂停。原实现为防「缓冲锁死」在暂停分支
+      // `if (isBuffering) return`，反而让 handlePause 里的 setBuffering(false) 解锁
+      // 逻辑永远走不到，形成「暂停入口自锁」。暂停本身即解锁缓冲态（见 handlePause）。
       // 用户手动点击暂停 → 标记来源，ToastTrigger 据此显示「暂停」提示
       // （拖拽进度条触发的自动 pause 不设此标记 → 不提示『暂停』，改显示进度）
       usePlayerStore.getState().setUserPauseRequested(true);

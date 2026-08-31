@@ -6,6 +6,8 @@ interface UseTouchGestureOptions {
   initialBrightness: number;
   onBrightnessChange: (value: number) => void;
   onVolumeChange: (value: number) => void;
+  /** P0-4：手势开始时同步真实音量（此前硬编码 0，气泡与实际音量脱节） */
+  getInitialVolume: () => number;
   /** 纵向手势主导后置 true，通知 useLongPress 取消长按（G8 防手势冲突） */
   verticalGestureActiveRef?: React.MutableRefObject<boolean>;
 }
@@ -19,6 +21,27 @@ const MAX_BRIGHTNESS = 2;
 const INDICATOR_HIDE_DELAY = 1200;
 /** 手势增量灵敏度：位移 1px 对应的值变化（亮度/音量） */
 const SENSITIVITY = 1 / 200;
+/**
+ * P0-5：容器高度覆盖视口达到该比例才视为「全屏形态」，纵向手势才接管（preventDefault）。
+ * 不依赖 document.fullscreenElement——App 端是 CSS 全屏布局，不触发该 API。
+ * 嵌入/可滚动页面（覆盖不足）时纵向滑动交还页面滚动。
+ */
+const VIEWPORT_COVERAGE_RATIO = 0.85;
+/** P0-6：手势排除区（与 useLongPress 同名单 + 移动端弹层），触摸这些区域不触发亮度/音量手势 */
+const GESTURE_EXCLUDE_SELECTOR = [
+  '.up-control-bar',
+  '.up-player-header',
+  '.up-channel-list-overlay',
+  '.iptv-osd-bar',
+  '.iptv-volume-popup',
+  '.up-ms-sheet',
+  '.up-cast-sheet',
+  '.up-subtitle-settings',
+  '.up-program-guide-overlay',
+  '.up-player-error',
+  '.up-error-actions',
+  '.up-player-play-button',
+].join(', ');
 
 export function useTouchGesture({
   containerRef,
@@ -26,6 +49,7 @@ export function useTouchGesture({
   initialBrightness,
   onBrightnessChange,
   onVolumeChange,
+  getInitialVolume,
   verticalGestureActiveRef,
 }: UseTouchGestureOptions) {
   const [brightness, setBrightness] = useState(initialBrightness);
@@ -37,10 +61,12 @@ export function useTouchGesture({
   const volumeRef = useRef(0);
   const onBrightnessChangeRef = useRef(onBrightnessChange);
   const onVolumeChangeRef = useRef(onVolumeChange);
+  const getInitialVolumeRef = useRef(getInitialVolume);
   const verticalGestureActiveRefRef = useRef(verticalGestureActiveRef);
 
   onBrightnessChangeRef.current = onBrightnessChange;
   onVolumeChangeRef.current = onVolumeChange;
+  getInitialVolumeRef.current = getInitialVolume;
   verticalGestureActiveRefRef.current = verticalGestureActiveRef;
 
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,6 +78,8 @@ export function useTouchGesture({
     startX: number;
     startY: number;
     axis: 'brightness' | 'volume' | null;
+    /** P0-5：本手势开始时容器是否覆盖视口（≥85% 视为全屏形态，纵向手势才接管） */
+    coversViewport: boolean;
   } | null>(null);
 
   const applyBrightness = useCallback((value: number) => {
@@ -87,10 +115,17 @@ export function useTouchGesture({
     if (!el || !enabled) return;
     // 原生 touch 监听（passive:false 以便 preventDefault），React 合成 touchmove 在 root passive 下无法阻止滚动
     const onTouchStart = (e: TouchEvent) => {
+      // P0-6：控制栏/头部/弹层内的触摸不触发手势（与 useLongPress 同名单）
+      const target = e.target as HTMLElement | null;
+      if (target?.closest(GESTURE_EXCLUDE_SELECTOR)) return;
       const touch = e.touches[0];
       if (!touch) return;
       const rect = el.getBoundingClientRect();
       const relX = touch.clientX - rect.left;
+      // P0-4：手势开始时从真实音量同步一次（此前 volumeRef 恒 0，气泡显示失真）
+      const realVolume = getInitialVolumeRef.current();
+      volumeRef.current = realVolume;
+      setVolume(realVolume);
       // 左半屏=亮度、右半屏=音量
       gestureRef.current = {
         pointerId: touch.identifier,
@@ -100,6 +135,8 @@ export function useTouchGesture({
         startX: touch.clientX,
         startY: touch.clientY,
         axis: relX < rect.width / 2 ? 'brightness' : 'volume',
+        // P0-5：容器几何覆盖视口 ≥85% 才视为全屏形态
+        coversViewport: rect.height >= window.innerHeight * VIEWPORT_COVERAGE_RATIO,
       };
     };
 
@@ -116,7 +153,13 @@ export function useTouchGesture({
         return;
       }
       if (Math.abs(dx) > Math.abs(dy)) {
-        // 横向主导：非本手势，放弃（交给长按 seek）
+        // 横向主导：非本手势，放弃（交给滑动 seek）
+        gestureRef.current = null;
+        return;
+      }
+
+      // P0-5：非全屏形态（嵌入/可滚动页面）纵向滑动交还页面滚动，不接管
+      if (!g.coversViewport) {
         gestureRef.current = null;
         return;
       }
