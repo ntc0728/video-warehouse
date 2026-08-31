@@ -281,6 +281,18 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (dur > 0 && isFinite(dur)) {
         getStore().setDuration(dur);
       }
+      // P1-8 清晰度记忆恢复：每个新源 levels 就绪后应用上次显式选择的档位（index 仍有效时）。
+      // -1（自动）是默认值，无需恢复；loadSource 时的 setCurrentLevel(-1) 不再丢失用户偏好。
+      try {
+        const remembered = Number(localStorage.getItem('kinotv-remembered-level'));
+        if (Number.isInteger(remembered) && remembered >= 0) {
+          const levels = adapterRef.current?.getLevels() ?? [];
+          if (remembered < levels.length) {
+            adapterRef.current?.setCurrentLevel(remembered);
+            getStore().setCurrentLevel(remembered);
+          }
+        }
+      } catch { /* localStorage 不可用忽略 */ }
       // 进度恢复统一在 canplay（可播放）时执行一次，不再在此触发——loadedmetadata 仅元数据
       // 就绪（视频仍在缓冲），此时恢复会提前弹「已自动跳转」提示（审查报告 2.1/2.2）
     };
@@ -570,6 +582,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     if (adapterRef.current) {
       adapterRef.current.setCurrentLevel(level);
       setCurrentLevel(level);
+      // P1-8 清晰度记忆：显式选择写入 localStorage，避免热切换 setCurrentLevel(-1)
+      // 覆盖 zustand persist 里的记忆（每集冷加载时由 handleLoadedMetadata 恢复）
+      try { localStorage.setItem('kinotv-remembered-level', String(level)); } catch { /* 私有模式忽略 */ }
       // G4 清晰度切换反馈：与倍速/循环/镜像/比例提示一致（R3 复用 getResolutionLabel）
       const levels = adapterRef.current.getLevels();
       const label = level === -1
@@ -593,6 +608,16 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
   const getCurrentAudioTrack = useCallback((): number => {
     return adapterRef.current?.getCurrentAudioTrack() ?? -1;
+  }, []);
+
+  // P2-5：卸载清理 hook 级定时器引用（seek 提示 toast / togglePlay 双击去抖）
+  useEffect(() => () => {
+    seekToastRef.current?.cleanup();
+    seekToastRef.current = null;
+    if (togglePlayTimerRef.current) {
+      clearTimeout(togglePlayTimerRef.current);
+      togglePlayTimerRef.current = null;
+    }
   }, []);
 
   return {
