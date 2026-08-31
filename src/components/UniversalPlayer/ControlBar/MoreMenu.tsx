@@ -12,7 +12,7 @@ interface MoreMenuProps {
 
 const POPOVER_ID = 'more';
 
-type Pos = { top?: number; bottom?: number; left?: number; right?: number };
+type Pos = { top?: number; left?: number };
 
 /**
  * 更多设置弹窗。
@@ -57,32 +57,39 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
     if (!isOpen) onPopoverChange(POPOVER_ID);
   }, [isOpen, onPopoverChange, clearClose]);
 
-  // 计算弹窗定位（fixed），避开 .up-universal-player 的 overflow:hidden 裁剪
+  // 计算弹窗定位（fixed）：显示在「更多」图标正上方、右对齐图标，并夹紧在播放器容器内
   useLayoutEffect(() => {
     if (!isOpen) return;
     const compute = () => {
       const t = triggerRef.current;
       const p = popRef.current;
       if (!t || !p) return;
-      const rect = t.getBoundingClientRect();
-      const pop = p.getBoundingClientRect();
+      const iconRect = t.getBoundingClientRect();
+      const popRect = p.getBoundingClientRect();
+      const popW = popRect.width;
+      const popH = popRect.height;
       const gap = 8;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const next: Pos = {};
-      // 优先向上展开；顶部空间不足则翻到按钮下方
-      if (rect.top - gap - pop.height < 8) {
-        next.top = rect.bottom + gap;
-      } else {
-        next.bottom = vh - rect.top + gap;
+      const margin = 4;
+      // 以播放器容器为边界（找不到则退化为视口），避免弹窗超出播放器
+      const playerEl = t.closest('.up-universal-player') as HTMLElement | null;
+      const bound = playerEl
+        ? playerEl.getBoundingClientRect()
+        : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+
+      // 默认右对齐图标右缘，再在容器内水平夹紧
+      let left = iconRect.right - popW;
+      left = Math.max(bound.left + margin, Math.min(left, bound.right - popW - margin));
+
+      // 默认显示在图标正上方；上方空间不足则翻到图标下方
+      let top = iconRect.top - gap - popH;
+      if (top < bound.top + margin) {
+        top = iconRect.bottom + gap;
+        // 下方仍放不下则夹紧到容器内
+        if (top + popH > bound.bottom - margin) {
+          top = Math.max(bound.top + margin, bound.bottom - popH - margin);
+        }
       }
-      // 优先右对齐按钮右缘；左侧越界则左对齐按钮左缘
-      if (vw - rect.right - pop.width < 8) {
-        next.left = rect.left;
-      } else {
-        next.right = vw - rect.right;
-      }
-      setPos(next);
+      setPos({ top, left });
     };
     compute();
     window.addEventListener('resize', compute);
@@ -108,9 +115,7 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
   const style: CSSProperties = {
     position: 'fixed',
     top: pos?.top ?? 'auto',
-    bottom: pos?.bottom ?? 'auto',
     left: pos?.left ?? 'auto',
-    right: pos?.right ?? 'auto',
   };
 
   return (
