@@ -70,6 +70,9 @@ export function ToastProvider({
   const [centerItem, setCenterItem] = useState<{ msg: string; type: PlayerToastType } | null>(null);
   const [centerIsExiting, setCenterIsExiting] = useState(false);
   const centerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 当前居中提示的内容引用：用于 showCenter 去重——相同内容连续调用只重置定时器，
+  // 不触发 setCenterItem 重渲染（避免 ToastTrigger 与 mobileSettingsToast 重复调用导致动画重播/闪烁）
+  const centerItemRef = useRef<{ msg: string; type: PlayerToastType } | null>(null);
   const [centerPos, setCenterPos] = useState<{ x: number; y: number }>(() => ({
     x: window.innerWidth / 2,
     y: window.innerHeight / 2,
@@ -111,13 +114,20 @@ export function ToastProvider({
     // 确保提示位置避让最新的 up-player-header
     measureCenterPos();
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
-    setCenterIsExiting(false);
-    setCenterItem({ msg, type });
+    // 去重：与当前提示内容相同时只重置定时器，不触发 setCenterItem 重渲染，
+    // 避免 ToastTrigger（store 订阅）与 mobileSettingsToast 连续调用相同内容导致动画重播/闪烁
+    const sameAsCurrent = centerItemRef.current?.msg === msg && centerItemRef.current?.type === type;
+    if (!sameAsCurrent) {
+      setCenterIsExiting(false);
+      setCenterItem({ msg, type });
+      centerItemRef.current = { msg, type };
+    }
     centerTimerRef.current = setTimeout(() => {
       setCenterIsExiting(true);
       setTimeout(() => {
         setCenterItem(null);
         setCenterIsExiting(false);
+        centerItemRef.current = null;
         centerTimerRef.current = null;
       }, 180);
     }, duration);

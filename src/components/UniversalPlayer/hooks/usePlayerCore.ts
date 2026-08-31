@@ -177,24 +177,36 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
   }, [url, type]);
 
-  // Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
-  // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
-  // （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
-  // 画面停在最后一帧。解冻手段 = 制造一次「真实样式变化」强制合成层失效重建：
-  // 追加 translateZ(0)，两帧后还原。原实现（同值重写 transform + offsetWidth）不产生
-  // 任何样式变化，对合成层无效。仅对「正在播放」的视频生效，已暂停/结束的不打扰。
-  useEffect(() => {
+  /**
+   * 解冻切后台后冻结的视频画面：追加 translateZ(0) 制造真实样式变化，
+   * 强制 Chromium 合成层失效重建；两帧后还原（不残留额外 transform）。
+   * 背景：带 transform（镜像/画面比例）或 filter（色彩调整）的视频合成层，
+   * 部分 Chromium 版本切回前台后不会自动重新栅格化，画面停在最后一帧。
+   */
+  const reviveFrozenVideo = useCallback((video: HTMLVideoElement, _isLive: boolean) => {
+    const prevTransform = video.style.transform;
+    video.style.transform = prevTransform ? `${prevTransform} translateZ(0)` : 'translateZ(0)';
+    // 两帧后还原：确保浏览器已完成一次重绘（合成层重建），再清除临时 transform
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        video.style.transform = prevTransform;
+      });
+    });
+  }, []);
+
+// Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
+// 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
+// （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
+// 画面停在最后一帧。解冻策略见 reviveFrozenVideo()（其上方定义）。
+useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== 'visible') return;
       const video = videoRef.current;
       if (!video || video.paused || video.ended || video.error) return;
       // play() 对播放中视频为幂等 no-op，但可唤醒被浏览器后台自动暂停的流
       video.play().catch(() => {});
-      const prevTransform = video.style.transform;
-      video.style.transform = `${prevTransform} translateZ(0)`.trim();
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        video.style.transform = prevTransform;
-      }));
+
+      reviveFrozenVideo(video, adapterRef.current?.isLive() ?? false);
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
