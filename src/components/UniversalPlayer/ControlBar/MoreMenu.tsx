@@ -76,8 +76,8 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
         ? playerEl.getBoundingClientRect()
         : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
 
-      // 默认右对齐图标右缘，再在容器内水平夹紧
-      let left = iconRect.right - popW;
+      // 默认在图标正上方水平居中，再在容器内水平夹紧
+      let left = iconRect.left + iconRect.width / 2 - popW / 2;
       left = Math.max(bound.left + margin, Math.min(left, bound.right - popW - margin));
 
       // 默认显示在图标正上方；上方空间不足则翻到图标下方

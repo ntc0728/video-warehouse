@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -55,13 +55,25 @@ const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIco
  *   桌面窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast。
  * 统一 3s 自动消失；show(msg, duration, type) 支持语义色图标。
  */
-export function ToastProvider({ children, mobileCenter = false }: { children: React.ReactNode; mobileCenter?: boolean }) {
+export function ToastProvider({
+  children,
+  mobileCenter = false,
+  containerRef,
+}: {
+  children: React.ReactNode;
+  mobileCenter?: boolean;
+  containerRef?: React.RefObject<HTMLElement | null>;
+}) {
   const [item, setItem] = useState<{ msg: string; type: PlayerToastType } | null>(null);
   const [isExiting, setIsExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [centerItem, setCenterItem] = useState<{ msg: string; type: PlayerToastType } | null>(null);
   const [centerIsExiting, setCenterIsExiting] = useState(false);
   const centerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [centerPos, setCenterPos] = useState<{ x: number; y: number }>(() => ({
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  }));
 
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
@@ -106,11 +118,37 @@ export function ToastProvider({ children, mobileCenter = false }: { children: Re
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
   }, []);
 
+  // 屏幕居中提示改为「在播放器容器内部居中」：基于 containerRef 实时测量播放器中心（viewport 坐标）
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = containerRef?.current;
+      if (!el) {
+        setCenterPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      setCenterPos({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [containerRef]);
+
   // 屏幕居中提示（portal 到 body：.app-shell__scroll 的 contain:layout 会劫持 fixed 包含块，
-  // 必须逃出滚动容器才能做到真正的视口居中）
+  // 必须逃出滚动容器才能做到真正的播放器容器居中）
   const renderCenterToast = (msg: string, type: PlayerToastType) =>
     createPortal(
-      <div className={`up-player-center-toast${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}>
+      <div
+        className={`up-player-center-toast${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}
+        style={{ top: centerPos.y, left: centerPos.x }}
+      >
         {type !== 'default' && (
           <span className="up-player-center-toast__icon" style={{ color: TOAST_ICONS[type].color }}>
             <Icon icon={TOAST_ICONS[type].icon} size="md" />
