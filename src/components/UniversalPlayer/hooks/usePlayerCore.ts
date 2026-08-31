@@ -247,20 +247,29 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       getStore().setBuffering(false);
       onPause?.();
     };
+    // P0-3：进度写 store 节流——timeupdate 高频触发会让所有订阅 progress 的组件
+    // （ControlBar/TimeDisplay 等）跟着重渲染；200ms 节流 + 跳变 >1s 立即写（seek 响应）
+    let lastProgressWriteAt = 0;
+    let lastProgressWriteCt = 0;
+
     const handleTimeUpdate = () => {
       const ct = video.currentTime;
       const dur = video.duration;
-      if (dur > 0) {
-        const s = getStore();
+      if (dur <= 0) return;
 
-        // 跳过片头/片尾
-        if (checkSkipIntro(video)) return;
-        if (checkSkipOutro(video)) return;
+      // 跳过片头/片尾（每次 timeupdate 都要检查，不参与节流）
+      if (checkSkipIntro(video)) return;
+      if (checkSkipOutro(video)) return;
 
-        s.setProgress(ct);
-        s.setDuration(dur);
-        onProgress?.(ct, dur);
-      }
+      const now = performance.now();
+      if (now - lastProgressWriteAt < 200 && Math.abs(ct - lastProgressWriteCt) < 1) return;
+      lastProgressWriteAt = now;
+      lastProgressWriteCt = ct;
+
+      const s = getStore();
+      s.setProgress(ct);
+      s.setDuration(dur);
+      onProgress?.(ct, dur);
     };
     const handleEnded = () => { getStore().setPlaying(false); onEnded?.(); };
     const handleVolumeChange = () => { getStore().setVolume(video.volume); };
