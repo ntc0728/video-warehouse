@@ -115,7 +115,9 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
   const style: CSSProperties = {
     position: 'fixed',
     top: pos?.top ?? 'auto',
+    bottom: 'auto',
     left: pos?.left ?? 'auto',
+    right: 'auto',
   };
 
   return (
