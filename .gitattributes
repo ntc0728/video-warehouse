@@ -1,0 +1,24 @@
+# 统一仓库行尾为 LF，消除 CRLF/LF 翻转造成的巨型噪声 diff
+* text=auto eol=lf
+
+# 二进制资源不归一（保持原样，避免被误当文本处理）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.mp4 binary
+*.webm binary
+*.mov binary
+*.mkv binary
+*.zip binary
+*.gz binary
+*.br binary
+*.pdf binary
