@@ -459,6 +459,17 @@ export default function UniversalPlayer({
   // D1 裸流降级标记：每 URL 仅降级 1 次（mpegts.js 也失败则走 C1 切线路 / A3 切代理）
   const bareStreamRetriedRef = useRef<Set<string>>(new Set());
 
+// MediaSession（后台听视频）媒体信息：点播 = 影片名 + 集名，IPTV = 频道名；
+// useMemo 稳定引用，避免每次渲染重注册媒体会话
+const mediaSession = useMemo(() => ({
+  info: {
+    title: mode === 'iptv' ? (channelName || 'IPTV 直播') : (title || '视频播放'),
+    artist: mode === 'iptv' ? '直播' : (episodeLabel || undefined),
+  },
+  onPrev: onPrevEpisode,
+  onNext: onNextEpisode,
+}), [mode, channelName, title, episodeLabel, onPrevEpisode, onNextEpisode]);
+
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
 type: (mode === 'iptv' ? (degradedType ?? currentType ?? type) : type) as SourceType,
@@ -478,6 +489,7 @@ skipHistory,
     onPause,
     onSkipIntro,
     onSkipOutro,
+    mediaSession,
     onError: useCallback((error: Error) => {
       if (currentUrlRef.current !== currentUrl) return;
       // C1 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，

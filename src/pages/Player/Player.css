@@ -204,9 +204,12 @@
   animation: spin 1s linear infinite;
 }
 
+/* CMS 源 tab：flex-wrap 内容自适应宽度，放不下自动换行——
+   旧实现 grid 固定列均分会把 tab 压窄，长源名被 .player-cms-name 的
+   ellipsis 截断（移动端旧 max-width 钳制 1/6 行宽同理）。 */
 .player-cms-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-sm);
 }
 
@@ -225,6 +228,8 @@
   white-space: nowrap;
   transition: all 0.2s;
   cursor: pointer;
+  /* 单个 tab 超长时以容器为上限（name 的 ellipsis 兜底），不撑破面板 */
+  max-width: 100%;
 }
 
 .player-cms-item:hover:not(.active) {
@@ -783,23 +788,9 @@
     justify-content: flex-start;
   }
 
-  /* 移动端/App（<1280px）：CMS 源列表一行最多 6 个按钮——
-     每项 flex-basis 为「(100% - 5×gap) / 6」→ 每行恰好 6 个均分宽度；
-     空间不足（不足 6 个宽度）时自动换行，分行按钮与上方按钮同宽（flex:1 平均分配）。
-     与固定 6 列 grid 的区别：按钮文字不截断，且少于 6 个时也均分整行。 */
-  .player-cms-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-    justify-content: flex-start;
-  }
-
-  .player-cms-list .player-cms-item {
-    flex: 1 1 calc((100% - 5 * var(--space-sm)) / 6);
-    max-width: calc((100% - 5 * var(--space-sm)) / 6);
-    min-width: 0;
-    text-align: center;
-  }
+  /* 移动端/App（<1280px）：CMS 源 tab 与桌面一致——flex-wrap 内容自适应宽度、
+     放不下自动换行，源名不再被列宽截断（旧实现 max-width 钳制 1/6 行宽 +
+     ellipsis 会截断长源名，其「按钮文字不截断」的注释与实际行为不符，已废弃）。 */
 
   /* 移动端/App：选季一行 3 列（按钮文字较长） */
   .player-season-list {
@@ -881,23 +872,8 @@
     justify-content: flex-start;
   }
 
-  html[data-device="app"] /* 移动端/App（<1280px）：CMS 源列表一行最多 6 个按钮——
-     每项 flex-basis 为「(100% - 5×gap) / 6」→ 每行恰好 6 个均分宽度；
-     空间不足（不足 6 个宽度）时自动换行，分行按钮与上方按钮同宽（flex:1 平均分配）。
-     与固定 6 列 grid 的区别：按钮文字不截断，且少于 6 个时也均分整行。 */
-  .player-cms-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-    justify-content: flex-start;
-  }
-
-  html[data-device="app"] .player-cms-list .player-cms-item {
-    flex: 1 1 calc((100% - 5 * var(--space-sm)) / 6);
-    max-width: calc((100% - 5 * var(--space-sm)) / 6);
-    min-width: 0;
-    text-align: center;
-  }
+  /* 9.1 app 恒移动：CMS 源 tab 同基础 flex-wrap 规则（内容自适应、不截断），
+     旧 max-width 钳制 1/6 行宽的副本已随媒体查询一并废弃。 */
 
   html[data-device="app"] /* 移动端/App：选季一行 3 列（按钮文字较长） */
   .player-season-list {

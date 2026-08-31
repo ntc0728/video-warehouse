@@ -239,6 +239,7 @@ export default function MobileMoreSheet({
               onChange={(on) => {
                 onBackgroundPlayChange(on);
                 mobileSettingsToast(on ? '已开启后台听视频' : '已关闭后台听视频', 1800);
+                onClose();
               }}
             />
           </div>
@@ -259,8 +260,8 @@ export default function MobileMoreSheet({
               onChange={(on) => {
                 onSubtitleToggle(on);
                 mobileSettingsToast(on ? '字幕已开启' : '字幕已关闭', 1800);
-                // 关闭字幕 → 弹窗一并关闭（开启不关，便于直接进入下方字幕设置）
-                if (!on) onClose();
+                // 开关类设置改完即关（与 chip 类 selectAndClose 行为一致）
+                onClose();
               }}
             />
           </div>
@@ -297,6 +298,7 @@ export default function MobileMoreSheet({
               onChange={(on) => {
                 onMirrorToggle(on);
                 mobileSettingsToast(on ? '镜像已开启' : '镜像已关闭', 1800);
+                onClose();
               }}
             />
           </div>
