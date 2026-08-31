@@ -1823,6 +1823,22 @@ html[data-player-header-controls="true"] .up-player-toast {
   }
 }
 
+/* 居中提示退出：单元素切换类名（不卸载重挂载），避免淡入动画重播导致闪烁 */
+.up-player-center-toast--exiting {
+  animation: toast-center-fade-out 0.18s ease-in forwards;
+}
+
+@keyframes toast-center-fade-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - var(--space-xs)));
+  }
+}
+
 /* ══════════ 移动端/App 端点播页整改 ══════════ */
 
 /* ---- 右上角操作组（画中画 · 投屏 · 更多设置） ---- */

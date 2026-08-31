@@ -176,10 +176,10 @@ export function ToastProvider({
 
   // 屏幕居中提示（portal 到 body：.app-shell__scroll 的 contain:layout 会劫持 fixed 包含块，
   // 必须逃出滚动容器才能做到真正的播放器容器居中）
-  const renderCenterToast = (msg: string, type: PlayerToastType) =>
+  const renderCenterToast = (msg: string, type: PlayerToastType, isExiting: boolean) =>
     createPortal(
       <div
-        className={`up-player-center-toast${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}
+        className={`up-player-center-toast${isExiting ? ' up-player-center-toast--exiting' : ''}${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}
         style={{ top: centerPos.y, left: centerPos.x }}
       >
         {type !== 'default' && (
@@ -216,8 +216,7 @@ export function ToastProvider({
           <span className="up-player-toast__text">{item.msg}</span>
         </div>
       )}
-      {centerItem && !centerIsExiting && renderCenterToast(centerItem.msg, centerItem.type)}
-      {centerIsExiting && centerItem && renderCenterToast(centerItem.msg, centerItem.type)}
+      {centerItem && renderCenterToast(centerItem.msg, centerItem.type, centerIsExiting)}
     </ToastContext.Provider>
   );
 }
