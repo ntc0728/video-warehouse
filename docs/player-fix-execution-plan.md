@@ -81,3 +81,28 @@
 
 - 每批次：`npm run build` 通过 → `git add <改动文件>` → commit（**禁止 `git rm` / `git stash`**）。
 - 手工验收路径：`/play/:id` 桌面（快捷键/进度条键盘/右键）+ 移动模拟（手势/弹窗/触摸目标）。
+
+---
+
+## 自测修复轮（Issue1-4，2026-08-31）
+
+用户自测发现 4 个问题，独立实施两批（仅 VOD，IPTV 不参与）：
+
+### Issue1/2/3 → commit `95c36a1`
+| # | 问题 | 改动 | 文件 |
+|---|------|------|------|
+| 1 | 桌面端出现音量/亮度调节柱状图（右侧音量弹窗 + 移动端手势指示器） | 引入 `isDesktopWeb = platform==='desktop' && !isMobileDevice`；`useTouchGesture`/`VolumePopup`/`BrightnessVolumeIndicator` 在桌面 Web 全部禁用 | `UniversalPlayer.tsx` |
+| 2 | 切后台视频画面冻结（进度/音频正常） | 新增 `visibilitychange` 监听：回前台且视频本在播放时强制 `video.play()` + 触发 reflow（读 `offsetWidth` 并复原 transform）唤醒合成层 | `usePlayerCore.ts` |
+| 3 | 缓冲中点击进度条圆点立即复位 / hover 跟随 | 放开缓冲中 seek 钳制（点击即更新到最后点击位）；`!isDragging && isBuffering` 时 hover 不移动圆点/tooltip | `ProgressBar.tsx` |
+
+### Issue4 → commit `0d8390f`
+| # | 改动 | 文件 |
+|---|------|------|
+| 4a | 右键菜单改为 4 项：播放/暂停、视频色彩调整、视频音效调节、快捷键说明（删除原循环/画中画项） | `ContextMenu.tsx` / `UniversalPlayer.tsx` |
+| 4b | 色彩调整弹窗：亮度/饱和度/对比度 + 重置，经 `store.colorFilter` 由 `PlayerCore` 统一应用 CSS `filter` | `ColorAdjustPanel.tsx` / `PlayerCore.tsx` |
+| 4c | 音效调节弹窗：8 EQ 预设（关闭/流行/摇滚/古典/重低音/人声/高音增强/3D 环绕）+ 声道平衡 + 音量增强 + 重置 | `AudioEffectsPanel.tsx` |
+| 4d | `useAudioEffects`：Web Audio 图谱（source→3段EQ→声道拆分→右声道 Haas 延迟→合并→增益→声道平衡→输出）；**默认态（off+balance0+gain1）不构建图谱**（零风险），首次非默认才建图，3D 预设加 ~20ms 延迟；卸载关闭 AudioContext | `useAudioEffects.ts` |
+| 4e | `usePlayerStore` 新增 `colorFilter`/`audioEffect` 状态与 setter（含类型修正：`audioEffect` 字面量加 `as AudioEffectState` 避免 string 推断） | `usePlayerStore.ts` |
+
+> 色彩调整：移动端纵向滑动手势也写 `store.colorFilter.brightness`，与弹窗共用同一字段，由 `PlayerCore` 统一应用。
+> 音效图谱采用「默认不建图」策略规避 `createMediaElementSource` 只能建一次 + 截断原生音频路径的风险。
