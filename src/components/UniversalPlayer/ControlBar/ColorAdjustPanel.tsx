@@ -28,8 +28,10 @@ export default function ColorAdjustPanel({ onClose }: { onClose: () => void }) {
       <div className="up-settings-panel__body">
         {FIELDS.map((f) => (
           <label key={f.key} className="up-settings-row up-settings-row--color">
-            <Icon icon={f.icon} size="sm" className="up-settings-row__icon" />
-            <span className="up-settings-row__label">{f.label}</span>
+            <span className="up-settings-row__lead">
+              <Icon icon={f.icon} size="sm" className="up-settings-row__icon" />
+              <span className="up-settings-row__label">{f.label}</span>
+            </span>
             <input
               type="range"
               min={f.min}

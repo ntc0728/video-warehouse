@@ -646,6 +646,8 @@
 .up-more-popover {
   min-width: clamp(7.5rem, 10vw, 9rem);
   padding: var(--space-sm);
+  z-index: 95;
+  transform: none;
   animation: more-popover-fade-in 0.16s ease both;
 }
 
@@ -1540,8 +1542,11 @@
   max-height: calc(100% - 4rem);
   overflow: auto;
   padding: var(--space-lg);
-  border-radius: var(--radius-md);
-  background: rgba(20, 20, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--player-text);
 }
 
@@ -2482,6 +2487,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: transparent;
   color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-base);
+  font-weight: 600;
   text-align: left;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s;
@@ -2613,17 +2619,20 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* 色彩调整：标签文本右对齐并固定宽度，视觉贴合滑块 */
+/* 色彩调整：图标与文本紧贴成一组（消除原 4.5rem 右对齐列造成的间距），标签仍按固定宽度对齐 */
 .up-settings-row--color {
-  grid-template-columns: auto 4.5rem 1fr auto;
+  grid-template-columns: auto 1fr auto;
 }
-.up-settings-row--color .up-settings-row__label {
-  text-align: right;
+.up-settings-row__lead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 5rem;
 }
 
 .up-settings-slider {
   width: 100%;
-  accent-color: var(--color-primary);
+  accent-color: var(--player-accent);
 }
 
 .up-settings-presets {
