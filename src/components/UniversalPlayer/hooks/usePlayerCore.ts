@@ -79,6 +79,8 @@ interface UsePlayerCoreOptions {
   /** MediaSession（后台听视频）媒体信息与上下集/频道动作；不传则锁屏卡片无标题 */
   mediaSession?: {
     info: MediaSessionInfo;
+    /** 当前流 URL（P3 原生服务接管音频用） */
+    streamUrl?: string;
     onPrev?: () => void;
     onNext?: () => void;
   };
@@ -120,6 +122,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   useMediaSession({
     videoRef,
     info: mediaSession?.info ?? { title: '' },
+    streamUrl: mediaSession?.streamUrl,
     onPrev: mediaSession?.onPrev,
     onNext: mediaSession?.onNext,
   });

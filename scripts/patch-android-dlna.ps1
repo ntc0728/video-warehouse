@@ -46,7 +46,10 @@ $permissions = @(
     'android.permission.ACCESS_NETWORK_STATE',
     'android.permission.ACCESS_WIFI_STATE',
     'android.permission.CHANGE_WIFI_MULTICAST_STATE',
-    'android.permission.NEARBY_WIFI_DEVICES'
+    'android.permission.NEARBY_WIFI_DEVICES',
+    # 后台媒体前台服务（P3）：API 28+ 需声明 FOREGROUND_SERVICE，API 34+ 需 specialUse 子类型
+    'android.permission.FOREGROUND_SERVICE',
+    'android.permission.FOREGROUND_SERVICE_SPECIAL_USE'
 )
 $changed = $false
 foreach ($perm in $permissions) {
@@ -62,6 +65,23 @@ foreach ($perm in $permissions) {
 if ($manifest -notmatch 'usesCleartextTraffic') {
     $manifest = $manifest -replace '(?s)(<application\b[^>]*?)>',
         '$1 android:usesCleartextTraffic="true">'
+    $changed = $true
+}
+
+# 后台媒体前台服务（P3）：声明 MediaService，API 34+ 需 foregroundServiceType=specialUse
+if ($manifest -notmatch 'com\.videowarehouse\.app\.media\.MediaService') {
+    $serviceNode = @"
+        <service
+            android:name="com.videowarehouse.app.media.MediaService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Background audio playback" />
+        </service>
+"@
+    # 插入到 </application> 前
+    $manifest = $manifest -replace '(?s)(\s*</application>)', "$serviceNode`$1"
     $changed = $true
 }
 
