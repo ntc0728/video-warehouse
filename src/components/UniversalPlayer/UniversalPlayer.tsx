@@ -525,7 +525,9 @@ skipHistory,
         toast.show({ content: error.message, type: 'error' });
         return;
       }
+      // P1-3：adapter/网络类错误的具体文案也透传给 PlayerCore 错误覆盖层
       setHasError(true);
+      usePlayerStore.getState().setErrorMessage(error.message);
       onError?.(error);
     }, [currentUrl, onError, mode, proxyUrl, buildProxyUrl, setCurrentUrl]),
   });
@@ -695,6 +697,20 @@ skipHistory,
   // 当前播放流类型（HLS 时显示清晰度卡）；与 useIPTVNavigation 的 currentType 区分命名
   const streamType = usePlayerStore(s => s.currentType);
   const isHls = streamType === 'm3u8';
+  // P1-4 续播卡片：loadProgress 找到历史进度时写入，提供「从头播放」操作
+  const resumeAt = usePlayerStore(s => s.resumeAt);
+
+  const handleResumeFromStart = useCallback(() => {
+    playerCore.seek(0);
+    usePlayerStore.getState().setResumeAt(null);
+  }, [playerCore]);
+
+  // 续播卡片 6s 自动消失（用户未操作时静默关闭，不打断播放）
+  useEffect(() => {
+    if (resumeAt == null) return;
+    const timer = setTimeout(() => usePlayerStore.getState().setResumeAt(null), 6000);
+    return () => clearTimeout(timer);
+  }, [resumeAt]);
 
   // 移动端更多设置：字幕 / 后台听视频 / 字幕样式（store 运行时字段）
   const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
@@ -1018,6 +1034,20 @@ skipHistory,
           onNextEpisode={onNextEpisode}
           hasError={hasError}
         />
+      )}
+
+      {/* P1-4 续播卡片：进度恢复后短暂显示，提供「从头播放」操作（6s 自动消失） */}
+      {mode === 'video' && resumeAt != null && !hasError && (
+        <div className="up-resume-card" role="status" onClick={(e) => e.stopPropagation()}>
+          <span className="up-resume-card__text">已从上次位置继续播放</span>
+          <button
+            type="button"
+            className="up-resume-card__action"
+            onClick={(e) => { e.stopPropagation(); handleResumeFromStart(); }}
+          >
+            从头播放
+          </button>
+        </div>
       )}
 
       {/* P1-5：快捷键面板（Shift+? / 更多菜单） */}

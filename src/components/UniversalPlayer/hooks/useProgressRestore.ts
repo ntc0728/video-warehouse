@@ -20,6 +20,7 @@
  */
 import { useCallback } from 'react';
 import { getHistory } from '@/services/database';
+import { usePlayerStore } from '@/stores';
 import { playerToast } from '../PlayerToast';
 
 /** Hook 配置选项 */
@@ -85,6 +86,14 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
         if (isCurrent && !isCurrent()) return;
         // 避免跳转到视频末尾（duration - 1 秒）
         const target = Math.min(videoHistory.progress, video.duration - 1);
+        // P1-10 展示与 seek 解耦：找到目标立即写 progress，进度条/时间轴马上显示上次
+        // 位置，不等「点击播放 → canplay → seek」链路（修复「点播放才显示已播进度」）
+        const store = usePlayerStore.getState();
+        if (Math.abs(video.currentTime - target) >= 0.5) {
+          store.setProgress(target);
+          // P1-4 续播卡片数据：驱动「已从上次位置继续」卡片（含从头播放入口）
+          store.setResumeAt(target);
+        }
         // 目标与当前位置几乎一致时无需 seek，直接提示
         if (Math.abs(video.currentTime - target) < 0.5) {
           playerToast('已自动跳转到上次观看的位置');
@@ -92,15 +101,13 @@ export function useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, s
         }
         video.currentTime = target;
         // 提示时机：等 seeked（跳转生效、视频可播放）后再显示，避免「视频还在缓冲
-        // 就提示已跳转」的误导（审查报告 2.1）；带超时兜底，防止 seeked 不触发导致提示丢失
+        // 就提示已跳转」的误导（审查报告 2.1）；带超时兜底，防止 seeked 不触发导致提示丢失。
+        // 卡片（resumeAt）已立即显示，此处 toast 不再重复——用户可从卡片操作「从头播放」
         let notified = false;
         const notify = () => {
           if (notified) return;
           notified = true;
           video.removeEventListener('seeked', onSeeked);
-          // 等待期间源/集已切换则丢弃提示（避免旧集提示迟到）
-          if (isCurrent && !isCurrent()) return;
-          playerToast('已自动跳转到上次观看的位置');
         };
         const onSeeked = () => notify();
         video.addEventListener('seeked', onSeeked);

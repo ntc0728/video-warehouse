@@ -63,12 +63,19 @@ interface PlayerState {
    * 用于 ToastTrigger 区分「用户手动暂停」（显示『暂停』提示）与
    * 「拖拽进度条触发的自动 pause」（不提示『暂停』，改显示最新进度）。 */
   userPauseRequested: boolean;
+  /** 播放错误的具体文案（P1-3）：native error / adapter error 时写入，PlayerCore 覆盖层透传显示 */
+  errorMessage: string | null;
+  /** 续播恢复目标时间（P1-4/P1-10）：loadProgress 找到历史进度时写入，
+   * 驱动「已从上次位置继续」卡片（从头播放入口）；null 表示本次无续播 */
+  resumeAt: number | null;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
   setPlaying: (isPlaying: boolean) => void;
   setUserPlayRequested: (requested: boolean) => void;
   setUserPauseRequested: (requested: boolean) => void;
+  setErrorMessage: (message: string | null) => void;
+  setResumeAt: (time: number | null) => void;
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
@@ -136,6 +143,8 @@ const initialState = {
   aspectRatio: 'default' as const,
   userPlayRequested: false,
   userPauseRequested: false,
+  errorMessage: null as string | null,
+  resumeAt: null as number | null,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -148,6 +157,8 @@ export const usePlayerStore = create<PlayerState>()(
       setPlaying: (isPlaying) => set({ isPlaying }),
       setUserPlayRequested: (userPlayRequested) => set({ userPlayRequested }),
       setUserPauseRequested: (userPauseRequested) => set({ userPauseRequested }),
+      setErrorMessage: (errorMessage) => set({ errorMessage }),
+      setResumeAt: (resumeAt) => set({ resumeAt }),
       setProgress: (progress) => set({ progress }),
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume }),
@@ -209,6 +220,8 @@ export const usePlayerStore = create<PlayerState>()(
         isReadyToPlay: false,
         userPlayRequested: false,
         userPauseRequested: false,
+        errorMessage: null,
+        resumeAt: null,
         // 保留用户偏好
         volume: state.volume,
         mutedVolume: state.mutedVolume,
