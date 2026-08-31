@@ -18,12 +18,14 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { ToastProvider } from './PlayerToast';
 import ToastTrigger from './ToastTrigger';
 import { useTimeshift } from './hooks/useTimeshift';
+import { LOOP_CYCLE } from './lib/utils';
 import { toggleFullscreen } from './lib/fullscreen';
 import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
 import PlayerHeader from './PlayerHeader';
 import { ControlBar } from './ControlBar';
 import ShortcutHelp from './ControlBar/ShortcutHelp';
+import ContextMenu from './ControlBar/ContextMenu';
 import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
@@ -207,6 +209,8 @@ export default function UniversalPlayer({
   const [sleepMinutes, setSleepMinutes] = useState(0);
   // P1-5：快捷键面板（Shift+? / 更多菜单）
   const [showShortcuts, setShowShortcuts] = useState(false);
+  // P1-6 桌面右键菜单（点播模式，位置为视口坐标）
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   // 投屏激活状态（右上角图标常亮提示）
   const [castActive, setCastActive] = useState(false);
 
@@ -699,11 +703,28 @@ skipHistory,
   const isHls = streamType === 'm3u8';
   // P1-4 续播卡片：loadProgress 找到历史进度时写入，提供「从头播放」操作
   const resumeAt = usePlayerStore(s => s.resumeAt);
+  // P1-6 右键菜单播放/暂停项的文案与图标
+  const isPlayingForMenu = usePlayerStore(s => s.isPlaying);
 
   const handleResumeFromStart = useCallback(() => {
     playerCore.seek(0);
     usePlayerStore.getState().setResumeAt(null);
   }, [playerCore]);
+
+  // P1-6：桌面点播模式右键菜单（移动端/IPTV 不启用）
+  const handleContainerContextMenu = useCallback((e: React.MouseEvent) => {
+    if (isMobileLayout || mode === 'iptv' || mode === 'live') return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.up-control-bar') || target.closest('.up-player-header')) return;
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  }, [isMobileLayout, mode]);
+
+  const handleCycleLoopFromMenu = useCallback(() => {
+    const current = usePlayerStore.getState().loopMode;
+    const idx = LOOP_CYCLE.indexOf(current);
+    setLoopMode(LOOP_CYCLE[(idx + 1) % LOOP_CYCLE.length]);
+  }, [setLoopMode]);
 
   // 续播卡片 6s 自动消失（用户未操作时静默关闭，不打断播放）
   useEffect(() => {
@@ -862,6 +883,7 @@ skipHistory,
       ref={containerRef}
       className={`up-universal-player up-platform-${platform} up-mode-${mode}`}
       tabIndex={-1}
+      onContextMenu={handleContainerContextMenu}
     >
       <PlayerCore
         videoRef={storeVideoRef}
@@ -1053,6 +1075,22 @@ skipHistory,
       {/* P1-5：快捷键面板（Shift+? / 更多菜单） */}
       {showShortcuts && (
         <ShortcutHelp visible onClose={() => setShowShortcuts(false)} />
+      )}
+
+      {/* P1-6：桌面点播右键菜单（portal 到 body，避免被播放器 transform/contain 影响） */}
+      {contextMenu && (
+        <ContextMenu
+          visible
+          x={contextMenu.x}
+          y={contextMenu.y}
+          isPlaying={isPlayingForMenu}
+          loopMode={loopMode}
+          onClose={() => setContextMenu(null)}
+          onTogglePlay={() => playerCore.togglePlay()}
+          onCycleLoop={handleCycleLoopFromMenu}
+          onTogglePiP={() => { playerCore.togglePiP(); }}
+          onShowShortcuts={() => setShowShortcuts(true)}
+        />
       )}
 
       {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染）。

@@ -2455,3 +2455,79 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border-color: var(--color-primary);
   background: rgba(255, 255, 255, 0.12);
 }
+
+/* ============ P1-6 桌面右键菜单（portal 到 body，fixed 定位） ============ */
+.up-context-menu {
+  position: fixed;
+  z-index: 90;
+  min-width: 12.5rem;
+  padding: var(--space-xs);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.35));
+}
+
+.up-context-menu__item {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: var(--text-base);
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.up-context-menu__item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.up-context-menu__kbd {
+  margin-left: auto;
+  padding: 0 var(--space-xs);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--text-xs);
+  font-family: inherit;
+}
+
+.up-context-menu__divider {
+  height: 1px;
+  margin: var(--space-xs) var(--space-sm);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ============ P2-3 控制栏对比度增强 ============ */
+/* 播放器 UI 固定深底白字（--player-text 恒 #fff，与 B站/YouTube 一致），但 0.8 透明度的
+   白字压在 0.8 透明度的黑渐变上，亮画面场景对比度不足。统一提升到 0.92 / 0.88。 */
+.up-control-bar {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
+}
+
+.up-control-bar button {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.up-popover-item {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ============ P2-4 移动端触摸目标 ≥44px ============ */
+/* --icon-xl ≈ 32px（border-box），移动端点击热区不足 WCAG 44px 建议。
+   移动平台布局下控制栏按钮提到 --tap-target；桌面端不受影响。 */
+.up-platform-mobile .up-control-bar button {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+}
