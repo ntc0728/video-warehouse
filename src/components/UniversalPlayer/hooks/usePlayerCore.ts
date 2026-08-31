@@ -16,6 +16,62 @@ import { useMediaSession } from './useMediaSession';
 import type { MediaSessionInfo } from './useMediaSession';
 
 /**
+ * 解冻切后台后冻结的视频画面（Issue2）。
+ *
+ * 旧实现失效原因（实测）：
+ * 1. 同值重写 transform + offsetWidth —— 不产生任何样式变化，合成层不失效，完全无效。
+ * 2. 追加 translateZ(0) 两帧后还原 —— translateZ 只触发「合成层重绘」，若解码管道
+ *    未重新提交帧，重绘的仍是最后一帧 → 视觉不变。
+ *
+ * 分级策略（副作用从低到高）：
+ * - 直播流：不 seek（会跳过实时位置），直接 display:none→block 重建合成层。
+ * - 点播：currentTime 微推 +0.1s —— 强制解码器解码新位置、合成器提交新帧；
+ *   rVFC 可用时监听首个新帧提交即恢复原位置（超时 600ms 兜底）；rVFC 不可用延时 400ms 恢复。
+ *   ±100ms 对进度条不可见，timeupdate 同步 store 后 UI 一致。
+ * - currentTime 不可微推（0s / 时长异常）：退回 display 翻转重建。
+ *
+ * 抽出为纯函数以便单测验证策略选择与位置恢复（视觉解冻需真机验证）。
+ */
+export function reviveFrozenVideo(video: HTMLVideoElement, isLive: boolean): 'rebuild-layer' | 'seek-nudge' {
+  if (isLive) {
+    video.style.display = 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      video.style.display = '';
+    }));
+    return 'rebuild-layer';
+  }
+
+  const seekTo = video.currentTime;
+  const dur = video.duration;
+  if (seekTo > 0 && Number.isFinite(dur) && seekTo + 0.1 < dur) {
+    let revived = false;
+    const restore = () => {
+      if (revived) return;
+      revived = true;
+      video.currentTime = seekTo;
+    };
+    video.currentTime = seekTo + 0.1;
+    const rvfc = (video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (cb: () => void) => number;
+    }).requestVideoFrameCallback;
+    if (typeof rvfc === 'function') {
+      rvfc.call(video, restore);
+      setTimeout(restore, 600); // 超时兜底：rVFC 未触发也恢复
+    } else {
+      setTimeout(restore, 400); // rVFC 不可用：延时恢复原位置
+    }
+    return 'seek-nudge';
+  }
+
+  // currentTime 不可微推（0s / 时长异常）：退回 display 翻转重建
+  video.style.display = 'none';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    video.style.display = '';
+  }));
+  return 'rebuild-layer';
+}
+
+/**
  * 播放器核心 Hook
  *
  * 管理播放器的核心功能：
@@ -176,23 +232,6 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       pendingHotSwitchRef.current = true;
     }
   }, [url, type]);
-
-  /**
-   * 解冻切后台后冻结的视频画面：追加 translateZ(0) 制造真实样式变化，
-   * 强制 Chromium 合成层失效重建；两帧后还原（不残留额外 transform）。
-   * 背景：带 transform（镜像/画面比例）或 filter（色彩调整）的视频合成层，
-   * 部分 Chromium 版本切回前台后不会自动重新栅格化，画面停在最后一帧。
-   */
-  const reviveFrozenVideo = useCallback((video: HTMLVideoElement, _isLive: boolean) => {
-    const prevTransform = video.style.transform;
-    video.style.transform = prevTransform ? `${prevTransform} translateZ(0)` : 'translateZ(0)';
-    // 两帧后还原：确保浏览器已完成一次重绘（合成层重建），再清除临时 transform
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        video.style.transform = prevTransform;
-      });
-    });
-  }, []);
 
 // Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
 // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
