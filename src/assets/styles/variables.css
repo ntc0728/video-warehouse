@@ -187,6 +187,8 @@
   --icon-xl:  calc(var(--text-2xl)  * 1.33);   /* 20→24 ×1.33 = 26.7→31.9 */
   --icon-2xl: calc(var(--text-3xl)  * 1.30);   /* 26→30 ×1.30 = 33.8→39.0 */
   --icon-3xl: calc(var(--text-3xl)  * 1.70);   /* 26→30 ×1.70 = 44.2→51.0 */
+  /* 触摸目标最小尺寸（WCAG 2.5.5 / iOS HIG 44pt）：移动端控制栏等点击热区下限，恒定不随主题缩放 */
+  --tap-target: 44px;
 
   /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
   --dot-size:     clamp(5px, 0.1336rem + 0.0076vw, 8px);   /* 5→8   圆点 */
