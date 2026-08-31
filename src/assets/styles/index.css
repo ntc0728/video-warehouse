@@ -1029,11 +1029,10 @@ body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][da
 }
 
 /* 移动端布局（App / 真实手机 web / 视口 <768px，一律 html[data-mobile-layout="true"]）：
-   播放器页全局 sonner 提示改屏幕居中（桌面端保持播放器内定位不变）。
-   --front-toast-height 为 sonner 容器内联变量（前部 toast 高度），用于垂直居中补偿；
-   toaster 是 fixed 容器、height 0（子项 absolute），translateY(-50%) 无意义，必须用 calc 算偏移 */
+   播放器页全局 sonner 提示改屏幕上部（P2-7：垂直居中会与系统手势条/音量 HUD 重叠，
+   上移到安全区下方），桌面端保持播放器内定位不变。 */
 html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
-  top: calc(50% - var(--front-toast-height) / 2) !important;
+  top: calc(var(--header-height, 3.5rem) + var(--space-lg)) !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] {

@@ -2406,3 +2406,52 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   line-height: 1.5;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
+
+/* ============ P1-4 续播卡片（已从上次位置继续 + 从头播放） ============ */
+.up-resume-card {
+  position: absolute;
+  top: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  background: rgba(20, 20, 24, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: up-resume-in 0.24s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes up-resume-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.up-resume-card__text {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.up-resume-card__action {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: #fff;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.up-resume-card__action:hover {
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.12);
+}

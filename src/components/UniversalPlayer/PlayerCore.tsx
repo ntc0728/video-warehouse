@@ -16,6 +16,8 @@ interface PlayerCoreProps {
   onOpenChannelList?: () => void;
   /** 重试播放 */
   onRetry?: () => void;
+  /** P1-3 预留：错误态「切换播放源」入口（PlayerPage 接线后启用） */
+  onSwitchSource?: () => void;
 }
 
 const RATIO_CONTAINER_STYLES: Record<string, React.CSSProperties> = {
@@ -39,6 +41,7 @@ export default function PlayerCore({
   onPointerLeave,
   onOpenChannelList,
   onRetry,
+  onSwitchSource,
 }: PlayerCoreProps) {
   const mirror = usePlayerStore(s => s.mirror);
   const aspectRatio = usePlayerStore(s => s.aspectRatio);
@@ -46,6 +49,8 @@ export default function PlayerCore({
   // 外挂字幕渲染管线：subtitleUrl（blob VTT）此前只存 store 无消费方，导入字幕从未显示
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
   const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
+  // P1-3：错误覆盖层透传具体错误文案（adapter/native error 写入 store）
+  const errorMessage = usePlayerStore(s => s.errorMessage);
 
   const containerStyle = RATIO_CONTAINER_STYLES[aspectRatio];
   const mirrorTransform = mirror ? 'scaleX(-1)' : '';
@@ -86,7 +91,11 @@ export default function PlayerCore({
         <div className="up-player-error">
           <div className="up-player-error-content">
             <Icon icon={AlertTriangle} size="3xl" />
-            {mode === 'iptv' ? (<p>频道加载失败，请更换其他频道</p>) : (<p>播放失败，请检查网络连接</p>)}
+            {mode === 'iptv' ? (
+              <p>{errorMessage || '频道加载失败，请更换其他频道'}</p>
+            ) : (
+              <p>{errorMessage || '播放失败，请检查网络连接'}</p>
+            )}
           </div>
           <div className="up-error-actions" onClick={(e) => e.stopPropagation()}>
             {mode === 'iptv' && onOpenChannelList && (
@@ -97,6 +106,16 @@ export default function PlayerCore({
               >
                 <Icon icon={ListVideo} size="xs" />
                 <span>切换频道</span>
+              </button>
+            )}
+            {mode !== 'iptv' && onSwitchSource && (
+              <button
+                type="button"
+                className="up-error-actions-btn"
+                onClick={(e) => { e.stopPropagation(); onSwitchSource(); }}
+              >
+                <Icon icon={ListVideo} size="xs" />
+                <span>切换播放源</span>
               </button>
             )}
             {mode !== 'iptv' && onRetry && (

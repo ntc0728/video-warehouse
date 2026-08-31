@@ -92,7 +92,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         <Dialog.Content
           ref={contentRef}
           className={`bottomsheet-content-animate ${className ?? ''}`}
-          style={{ padding: 'var(--space-sm) var(--space-md) var(--space-lg)' }}
+          style={{ padding: 'var(--space-sm) var(--space-md) calc(var(--space-lg) + env(safe-area-inset-bottom))' }}
           onOpenAutoFocus={handleOpenAutoFocus}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}

@@ -181,6 +181,9 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     store.setBufferedProgress(0);
     store.setPlayerLoading(true);
     store.setReadyToPlay(false);
+    // P1-3/P1-4：新源加载清上一集的错误文案与续播卡片
+    store.setErrorMessage(null);
+    store.setResumeAt(null);
 
     // 复用已有适配器热切换源（避免 destroy+recreate 导致的黑屏闪烁）
     if (adapterRef.current && prevTypeRef.current === type) {
@@ -281,6 +284,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
       if (dur > 0 && isFinite(dur)) {
         getStore().setDuration(dur);
       }
+      // 成功拿到元数据即清除上一轮错误文案（错误覆盖层显示恢复为默认/隐藏）
+      getStore().setErrorMessage(null);
       // P1-8 清晰度记忆恢复：每个新源 levels 就绪后应用上次显式选择的档位（index 仍有效时）。
       // -1（自动）是默认值，无需恢复；loadSource 时的 setCurrentLevel(-1) 不再丢失用户偏好。
       try {
@@ -349,6 +354,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
         toast.show({ content: msg, type: 'error' });
         return;
       }
+      // P1-3：具体错误文案透传给 PlayerCore 错误覆盖层（替代固定「播放失败」文案）
+      getStore().setErrorMessage(msg);
       onError?.(new Error(msg));
     };
 
