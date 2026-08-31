@@ -189,6 +189,10 @@ export default function UniversalPlayer({
   // 操作类提示的「移动端居中」仅针对真实移动设备（App / 真实手机 UA）：
   // 桌面浏览器窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast（与桌面一致）。
   const isMobileDevice = isNativePlatform() || useIsRealPhone();
+  // 严格「桌面 Web」判定：platform=desktop 且非真实移动设备（排除了原生 App / 真实手机 UA）。
+  // 用于隐藏仅在触摸设备有意义的 UI：手势亮度/音量条、右侧 iptv-volume-popup 音量条。
+  // 桌面浏览器即使把窗口调窄（isMobileLayout 命中）也属于 desktop web，不应出现这些触摸向 UI。
+  const isDesktopWeb = platform === 'desktop' && !isMobileDevice;
   // 头部全屏按钮仅 IPTV 播放页非 TV 端渲染，且被 CSS 移到右下角
   // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
   // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
@@ -352,7 +356,7 @@ export default function UniversalPlayer({
     seekHud,
   } = useTouchGesture({
     containerRef,
-    enabled: isMobileLayout && mode === 'video',
+    enabled: !isDesktopWeb && mode === 'video',
     initialBrightness: 1,
     onBrightnessChange: (v) => {
       const video = videoElementRef.current;
@@ -1099,15 +1103,16 @@ skipHistory,
         <MobileProgressEdge visible={!isControlsVisible} />
       )}
 
-      {/* G2：音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动 */}
+      {/* G2：音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动。
+          Web 桌面端隐藏：右侧垂直音量条是触摸/遥控场景设计，桌面走控制栏音量滑杆即可（Issue1） */}
       <VolumePopup
-        visible={showVolumePopup}
+        visible={showVolumePopup && !isDesktopWeb}
         volume={volume}
         onVolumeChange={playerCore.setVolume}
       />
 
-      {/* G7-G10：移动端纵向滑动亮度/音量指示器（仅点播模式启用时可能显示） */}
-      {isMobileLayout && mode === 'video' && (
+      {/* G7-G10：移动端纵向滑动亮度/音量指示器（仅真实移动设备/原生 App 点播模式启用时显示，Web 桌面端隐藏，Issue1） */}
+      {!isDesktopWeb && mode === 'video' && (
         <BrightnessVolumeIndicator
           visible={gestureIndicatorActive}
           axis={gestureAxis}

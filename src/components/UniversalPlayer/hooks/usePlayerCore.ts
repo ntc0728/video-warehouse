@@ -156,6 +156,26 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
   }, [url, type]);
 
+  // Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
+  // 浏览器后台 Tab 会停掉 video 的帧呈现；切回前台时若仍 playing 需主动唤醒渲染管线。
+  // 仅对「正在播放」的视频生效，已暂停/结束的不打扰。
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      const video = videoRef.current;
+      if (!video || video.paused || video.ended || video.error) return;
+      // play() 对已播放视频为幂等 no-op，但会强制解码/合成链路重新产出帧，解除冻结
+      video.play().catch(() => {});
+      // 兜底：强制一次样式重算，促使 transformed 视频层重新栅格化（部分 Chromium 版本仅靠 play 不够）
+      const t = video.style.transform;
+      // 触发 reflow 以重绘合成层
+      void video.offsetWidth;
+      video.style.transform = t;
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
