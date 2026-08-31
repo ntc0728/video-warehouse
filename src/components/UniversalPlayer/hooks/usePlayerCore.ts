@@ -11,6 +11,7 @@ import type { SourceType } from '@/types/video';
 import type { AudioTrack } from '../adapters/PlayerAdapter';
 import { useSkipLogic } from './useSkipLogic';
 import { useProgressRestore } from './useProgressRestore';
+import { useAudioEffects } from './useAudioEffects';
 
 /**
  * 播放器核心 Hook
@@ -105,6 +106,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const { checkSkipIntro, checkSkipOutro, reset: resetSkip } = useSkipLogic({ onSkipIntro, onSkipOutro, onEnded });
   /** 播放进度恢复逻辑 */
   const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory });
+  /** Issue4 音效调节：Web Audio 图谱随 audioEffect 状态变化应用（默认态不构建图谱，零风险） */
+  useAudioEffects(videoRef);
 
   const initAdapter = useCallback(() => {
     if (adapterRef.current) {

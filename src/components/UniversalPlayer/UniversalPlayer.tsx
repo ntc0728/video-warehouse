@@ -18,7 +18,6 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { ToastProvider } from './PlayerToast';
 import ToastTrigger from './ToastTrigger';
 import { useTimeshift } from './hooks/useTimeshift';
-import { LOOP_CYCLE } from './lib/utils';
 import { toggleFullscreen } from './lib/fullscreen';
 import PlayerCore from './PlayerCore';
 import './UniversalPlayer.css';
@@ -26,6 +25,8 @@ import PlayerHeader from './PlayerHeader';
 import { ControlBar } from './ControlBar';
 import ShortcutHelp from './ControlBar/ShortcutHelp';
 import ContextMenu from './ControlBar/ContextMenu';
+import ColorAdjustPanel from './ControlBar/ColorAdjustPanel';
+import AudioEffectsPanel from './ControlBar/AudioEffectsPanel';
 import { IPTVChannelList } from './IPTVChannelList';
 import { IPTVOSDBar, VolumePopup } from './IPTVOSDBar';
 import EPGProgramList from '@/components/EPGProgramList/EPGProgramList';
@@ -215,6 +216,8 @@ export default function UniversalPlayer({
   const [showShortcuts, setShowShortcuts] = useState(false);
   // P1-6 桌面右键菜单（点播模式，位置为视口坐标）
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  // Issue4：右键菜单触发的设置弹窗（色彩/音效），null 表示关闭
+  const [activePanel, setActivePanel] = useState<'color' | 'audio' | null>(null);
   // 投屏激活状态（右上角图标常亮提示）
   const [castActive, setCastActive] = useState(false);
 
@@ -358,9 +361,9 @@ export default function UniversalPlayer({
     containerRef,
     enabled: !isDesktopWeb && mode === 'video',
     initialBrightness: 1,
+    // 手势亮度调节统一写入 store.colorFilter（与色彩调整弹窗同源），由 PlayerCore 经 CSS filter 应用
     onBrightnessChange: (v) => {
-      const video = videoElementRef.current;
-      if (video) video.style.filter = `brightness(${v.toFixed(2)})`;
+      usePlayerStore.getState().setColorFilter({ brightness: v });
     },
     onVolumeChange: (v) => playerCore.setVolume(v),
     // P0-4：手势开始时同步真实音量（此前初值恒 0）
@@ -724,12 +727,6 @@ skipHistory,
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, [isMobileLayout, mode]);
 
-  const handleCycleLoopFromMenu = useCallback(() => {
-    const current = usePlayerStore.getState().loopMode;
-    const idx = LOOP_CYCLE.indexOf(current);
-    setLoopMode(LOOP_CYCLE[(idx + 1) % LOOP_CYCLE.length]);
-  }, [setLoopMode]);
-
   // 续播卡片 6s 自动消失（用户未操作时静默关闭，不打断播放）
   useEffect(() => {
     if (resumeAt == null) return;
@@ -1088,13 +1085,23 @@ skipHistory,
           x={contextMenu.x}
           y={contextMenu.y}
           isPlaying={isPlayingForMenu}
-          loopMode={loopMode}
           onClose={() => setContextMenu(null)}
           onTogglePlay={() => playerCore.togglePlay()}
-          onCycleLoop={handleCycleLoopFromMenu}
-          onTogglePiP={() => { playerCore.togglePiP(); }}
+          onOpenColor={() => setActivePanel('color')}
+          onOpenAudio={() => setActivePanel('audio')}
           onShowShortcuts={() => setShowShortcuts(true)}
         />
+      )}
+
+      {/* Issue4：色彩/音效调整弹窗（覆盖层点击关闭，弹窗内 stopPropagation 避免误触播放） */}
+      {activePanel && (
+        <div className="up-settings-overlay" onClick={() => setActivePanel(null)}>
+          {activePanel === 'color' ? (
+            <ColorAdjustPanel onClose={() => setActivePanel(null)} />
+          ) : (
+            <AudioEffectsPanel onClose={() => setActivePanel(null)} />
+          )}
+        </div>
       )}
 
       {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染）。

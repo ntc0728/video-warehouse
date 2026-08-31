@@ -12,6 +12,26 @@ import type { VideoSource, SourceType } from '@/types/video';
 import type { PlayerMode, PlatformType, LoopMode } from '@/types/player';
 import type { SubtitleSettings } from '@/types/subtitle';
 
+/** 视频色彩调整（CSS filter 参数；1 = 原始值），Issue4 色彩调整弹窗 */
+export interface ColorFilter {
+  brightness: number;
+  saturation: number;
+  contrast: number;
+}
+
+/** 音效预设（常见播放器音效；off = 关闭/透传），Issue4 音效调节弹窗 */
+export type AudioPreset =
+  | 'off' | 'pop' | 'rock' | 'classical' | 'bass' | 'vocal' | 'treble' | '3d';
+
+/** 视频音效调节状态 */
+export interface AudioEffectState {
+  preset: AudioPreset;
+  /** 声道平衡：-1 左声道 … 1 右声道 */
+  balance: number;
+  /** 音量增强倍数：0.5 – 2 */
+  gain: number;
+}
+
 const defaultSubtitleSettings: SubtitleSettings = {
   fontSize: 24,
   fontColor: '#ffffff',
@@ -68,6 +88,10 @@ interface PlayerState {
   /** 续播恢复目标时间（P1-4/P1-10）：loadProgress 找到历史进度时写入，
    * 驱动「已从上次位置继续」卡片（从头播放入口）；null 表示本次无续播 */
   resumeAt: number | null;
+  /** 视频色彩调整（CSS filter）：亮度/饱和度/对比度，1 为原始值（Issue4 色彩调整弹窗） */
+  colorFilter: ColorFilter;
+  /** 视频音效调节状态（Issue4 音效调节弹窗）：预设 + 声道平衡 + 音量增强 */
+  audioEffect: AudioEffectState;
 
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
@@ -76,6 +100,8 @@ interface PlayerState {
   setUserPauseRequested: (requested: boolean) => void;
   setErrorMessage: (message: string | null) => void;
   setResumeAt: (time: number | null) => void;
+  setColorFilter: (patch: Partial<ColorFilter>) => void;
+  setAudioEffect: (patch: Partial<AudioEffectState>) => void;
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
@@ -145,6 +171,8 @@ const initialState = {
   userPauseRequested: false,
   errorMessage: null as string | null,
   resumeAt: null as number | null,
+  colorFilter: { brightness: 1, saturation: 1, contrast: 1 },
+  audioEffect: { preset: 'off', balance: 0, gain: 1 } as AudioEffectState,
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -159,6 +187,8 @@ export const usePlayerStore = create<PlayerState>()(
       setUserPauseRequested: (userPauseRequested) => set({ userPauseRequested }),
       setErrorMessage: (errorMessage) => set({ errorMessage }),
       setResumeAt: (resumeAt) => set({ resumeAt }),
+  setColorFilter: (patch) => set((state) => ({ colorFilter: { ...state.colorFilter, ...patch } })),
+  setAudioEffect: (patch) => set((state) => ({ audioEffect: { ...state.audioEffect, ...patch } })),
       setProgress: (progress) => set({ progress }),
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume }),
@@ -230,6 +260,8 @@ export const usePlayerStore = create<PlayerState>()(
         subtitleSettings: state.subtitleSettings,
         currentLevel: state.currentLevel,
         loopMode: state.loopMode,
+        colorFilter: { brightness: 1, saturation: 1, contrast: 1 },
+        audioEffect: { preset: 'off', balance: 0, gain: 1 } as AudioEffectState,
       })),
     }),
     {

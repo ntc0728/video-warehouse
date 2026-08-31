@@ -46,6 +46,8 @@ export default function PlayerCore({
   const mirror = usePlayerStore(s => s.mirror);
   const aspectRatio = usePlayerStore(s => s.aspectRatio);
   const isPiP = usePlayerStore(s => s.isPiP);
+  // Issue4 色彩调整：亮度/饱和度/对比度经 CSS filter 应用到视频（手势与弹窗共用同一 store 字段）
+  const colorFilter = usePlayerStore(s => s.colorFilter);
   // 外挂字幕渲染管线：subtitleUrl（blob VTT）此前只存 store 无消费方，导入字幕从未显示
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
   const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
@@ -58,9 +60,14 @@ export default function PlayerCore({
   // PiP 模式下强制 16:9 比例，避免画中画窗口比例过方
   const ratioStyle = isPiP ? { aspectRatio: '16/9', objectFit: 'contain' as const, transform: '' } : RATIO_VIDEO_STYLES[aspectRatio];
   const ratioTransform = ratioStyle?.transform || '';
+  const colorFilterCss =
+    colorFilter.brightness === 1 && colorFilter.saturation === 1 && colorFilter.contrast === 1
+      ? undefined
+      : `brightness(${colorFilter.brightness}) saturate(${colorFilter.saturation}) contrast(${colorFilter.contrast})`;
   const videoStyle: React.CSSProperties = {
     ...ratioStyle,
     transform: [mirrorTransform, ratioTransform].filter(Boolean).join(' ') || undefined,
+    filter: colorFilterCss,
   };
 
   return (
