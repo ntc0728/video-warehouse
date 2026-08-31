@@ -271,19 +271,22 @@ test.describe('4.11 移动端播放器整改', () => {
     await expect(tapRows).toHaveCount(2);
     await expect(tapRows.nth(0)).toContainText('字幕设置');
     await expect(tapRows.nth(1)).toContainText('导入字幕文件');
-    // 关闭字幕 → 子项隐藏且弹窗一并关闭
+    // 关闭字幕 → 子项隐藏且弹窗一并关闭（Switch 类设置改完即关，与 chip 一致）
     await subtitleCard.getByRole('switch').click();
-    await expect(tapRows).toHaveCount(0);
     await expect(sheet).toBeHidden();
 
-    // 重新打开并开启字幕 → 子项恢复
+    // 重新打开弹窗（字幕已关，子项隐藏）→ 开启字幕 → 弹窗同样关闭
     await page.locator('.up-header-actions button[aria-label="更多设置"]').click();
     await expect(sheet).toBeVisible();
     const subtitleCard2 = sheet.locator('.up-ms-card', { hasText: '字幕' });
+    await expect(subtitleCard2.locator('.up-ms-row--tap')).toHaveCount(0);
     await subtitleCard2.getByRole('switch').click();
-    await expect(subtitleCard2.locator('.up-ms-row--tap')).toHaveCount(2);
+    await expect(sheet).toBeHidden();
 
-    // chip 选中（倍速 1.5x）→ 屏幕居中提示 + 弹窗关闭 + 设置生效
+    // 再次打开弹窗（字幕已开，子项恢复）→ chip 选中（倍速 1.5x）→ 屏幕居中提示 + 弹窗关闭 + 设置生效
+    await page.locator('.up-header-actions button[aria-label="更多设置"]').click();
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('.up-ms-card', { hasText: '字幕' }).locator('.up-ms-row--tap')).toHaveCount(2);
     await sheet.getByText('1.5x').click();
     await expect(page.locator('.up-player-center-toast')).toContainText('倍速 1.5x');
     await expect(sheet).toBeHidden();

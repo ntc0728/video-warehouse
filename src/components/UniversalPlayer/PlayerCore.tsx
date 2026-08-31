@@ -24,9 +24,14 @@ const RATIO_CONTAINER_STYLES: Record<string, React.CSSProperties> = {
   fill: { width: '100%', height: '100%' },
 };
 
+// 画面比例覆盖语义与 PotPlayer/VLC 一致：内容拉伸填充所选比例框（objectFit: fill）。
+// 若用 contain，内容始终按固有比例显示、只会在框内加黑边——比例选择不改变画面几何，
+// 无法纠正 CMS 源常见的 DAR 元数据错误（如 4:3 内容被标 16:9）。
+// 居中用 margin:auto（.up-player-video 已是 absolute + inset:0），不再引入 translateX/Y
+// transform，减少视频合成层在后台页签被冻结的面。
 const RATIO_VIDEO_STYLES: Record<string, React.CSSProperties> = {
-  '4:3': { top: '0', bottom: '0', left: '50%', right: 'auto', width: 'auto', height: '100%', aspectRatio: '4/3', objectFit: 'contain', transform: 'translateX(-50%)' },
-  '16:9': { left: '0', right: '0', top: '50%', bottom: 'auto', width: '100%', height: 'auto', aspectRatio: '16/9', objectFit: 'contain', transform: 'translateY(-50%)' },
+  '4:3': { margin: 'auto', width: 'auto', height: '100%', aspectRatio: '4/3', objectFit: 'fill' },
+  '16:9': { margin: 'auto', width: '100%', height: 'auto', aspectRatio: '16/9', objectFit: 'fill' },
   fill: { objectFit: 'fill' },
 };
 
@@ -55,18 +60,16 @@ export default function PlayerCore({
   const errorMessage = usePlayerStore(s => s.errorMessage);
 
   const containerStyle = RATIO_CONTAINER_STYLES[aspectRatio];
-  const mirrorTransform = mirror ? 'scaleX(-1)' : '';
 
-  // PiP 模式下强制 16:9 比例，避免画中画窗口比例过方
-  const ratioStyle = isPiP ? { aspectRatio: '16/9', objectFit: 'contain' as const, transform: '' } : RATIO_VIDEO_STYLES[aspectRatio];
-  const ratioTransform = ratioStyle?.transform || '';
+  // PiP 模式下强制 16:9 比例，避免画中画窗口比例过方（contain 防止 PiP 窗内变形）
+  const ratioStyle = isPiP ? { aspectRatio: '16/9', objectFit: 'contain' as const } : RATIO_VIDEO_STYLES[aspectRatio];
   const colorFilterCss =
     colorFilter.brightness === 1 && colorFilter.saturation === 1 && colorFilter.contrast === 1
       ? undefined
       : `brightness(${colorFilter.brightness}) saturate(${colorFilter.saturation}) contrast(${colorFilter.contrast})`;
   const videoStyle: React.CSSProperties = {
     ...ratioStyle,
-    transform: [mirrorTransform, ratioTransform].filter(Boolean).join(' ') || undefined,
+    transform: mirror ? 'scaleX(-1)' : undefined,
     filter: colorFilterCss,
   };
 

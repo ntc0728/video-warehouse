@@ -12,6 +12,8 @@ import type { AudioTrack } from '../adapters/PlayerAdapter';
 import { useSkipLogic } from './useSkipLogic';
 import { useProgressRestore } from './useProgressRestore';
 import { useAudioEffects } from './useAudioEffects';
+import { useMediaSession } from './useMediaSession';
+import type { MediaSessionInfo } from './useMediaSession';
 
 /**
  * 播放器核心 Hook
@@ -74,6 +76,12 @@ interface UsePlayerCoreOptions {
   onSkipIntro?: () => void;
   /** 跳过片尾回调 */
   onSkipOutro?: () => void;
+  /** MediaSession（后台听视频）媒体信息与上下集/频道动作；不传则锁屏卡片无标题 */
+  mediaSession?: {
+    info: MediaSessionInfo;
+    onPrev?: () => void;
+    onNext?: () => void;
+  };
 }
 
 /**
@@ -83,7 +91,7 @@ interface UsePlayerCoreOptions {
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
     url, type, videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory = false, autoPlay = false, decoderMode, retryCount,
-    onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro,
+    onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro, mediaSession,
   } = options;
 
   /** video 元素的 ref */
@@ -108,6 +116,13 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory });
   /** Issue4 音效调节：Web Audio 图谱随 audioEffect 状态变化应用（默认态不构建图谱，零风险） */
   useAudioEffects(videoRef);
+  /** MediaSession（后台听视频）：锁屏媒体卡片 + 媒体键控制；开关由 store.backgroundPlay 驱动 */
+  useMediaSession({
+    videoRef,
+    info: mediaSession?.info ?? { title: '' },
+    onPrev: mediaSession?.onPrev,
+    onNext: mediaSession?.onNext,
+  });
 
   const initAdapter = useCallback(() => {
     if (adapterRef.current) {
@@ -160,20 +175,23 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   }, [url, type]);
 
   // Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
-  // 浏览器后台 Tab 会停掉 video 的帧呈现；切回前台时若仍 playing 需主动唤醒渲染管线。
-  // 仅对「正在播放」的视频生效，已暂停/结束的不打扰。
+  // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
+  // （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
+  // 画面停在最后一帧。解冻手段 = 制造一次「真实样式变化」强制合成层失效重建：
+  // 追加 translateZ(0)，两帧后还原。原实现（同值重写 transform + offsetWidth）不产生
+  // 任何样式变化，对合成层无效。仅对「正在播放」的视频生效，已暂停/结束的不打扰。
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== 'visible') return;
       const video = videoRef.current;
       if (!video || video.paused || video.ended || video.error) return;
-      // play() 对已播放视频为幂等 no-op，但会强制解码/合成链路重新产出帧，解除冻结
+      // play() 对播放中视频为幂等 no-op，但可唤醒被浏览器后台自动暂停的流
       video.play().catch(() => {});
-      // 兜底：强制一次样式重算，促使 transformed 视频层重新栅格化（部分 Chromium 版本仅靠 play 不够）
-      const t = video.style.transform;
-      // 触发 reflow 以重绘合成层
-      void video.offsetWidth;
-      video.style.transform = t;
+      const prevTransform = video.style.transform;
+      video.style.transform = `${prevTransform} translateZ(0)`.trim();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        video.style.transform = prevTransform;
+      }));
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
