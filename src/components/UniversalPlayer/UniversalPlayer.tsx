@@ -1197,8 +1197,6 @@ skipHistory,
             volume={volume}
             onVolumeChange={playerCore.setVolume}
             onToggleMute={playerCore.toggleMute}
-            isPiP={isPiP}
-            onTogglePiP={playerCore.togglePiP}
           />
           {castMounted && (
             <Suspense fallback={null}>

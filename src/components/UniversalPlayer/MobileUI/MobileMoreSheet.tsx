@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import {
   Gauge, Repeat, AlarmClock, Headphones, Subtitles, FlipHorizontal2, RectangleHorizontal,
-  ChevronRight, MonitorPlay, Volume2, VolumeX, PictureInPicture2, X,
+  ChevronRight, MonitorPlay, Volume2, VolumeX, X,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui';
 import Switch from '@/components/ui/Switch';
@@ -55,9 +55,6 @@ interface MobileMoreSheetProps {
   volume: number;
   onVolumeChange: (volume: number) => void;
   onToggleMute?: () => void;
-  /** G6：移动端画中画入口（不支持的环境隐藏） */
-  isPiP: boolean;
-  onTogglePiP: () => void;
   sleepMinutes: number;
   onSleepChange: (minutes: number) => void;
   backgroundPlay: boolean;
@@ -117,7 +114,6 @@ export default function MobileMoreSheet({
   loopMode, onLoopModeChange,
   levels, currentLevel, onLevelChange, isHls,
   volume, onVolumeChange, onToggleMute,
-  isPiP, onTogglePiP,
   sleepMinutes, onSleepChange,
   backgroundPlay, onBackgroundPlayChange,
   subtitleEnabled, onSubtitleToggle, onOpenSubtitleSettings, onImportSubtitle,
@@ -168,24 +164,6 @@ export default function MobileMoreSheet({
             </div>
           </div>
         </div>
-
-        {/* 画中画（G6：仅支持环境显示） */}
-        {typeof document !== 'undefined' && document.pictureInPictureEnabled && (
-          <div className="up-ms-card">
-            <div className="up-ms-row">
-              <div className="up-ms-label"><Icon icon={PictureInPicture2} size="sm" /> 画中画</div>
-              <button
-                className="up-ms-chip up-ms-chip--on"
-                onClick={() => {
-                  onTogglePiP();
-                  onClose();
-                }}
-              >
-                {isPiP ? '退出' : '开启'}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 倍速 */}
         <div className="up-ms-card">
