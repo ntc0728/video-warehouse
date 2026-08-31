@@ -50,6 +50,16 @@ const CastSheet = lazy(() => import('./MobileUI/CastSheet'));
 
 const VOLUME_POPUP_DELAY = 3000;
 
+/** P0-1：滑动 seek HUD 的时间偏移格式化（h:mm:ss / m:ss） */
+function formatSeekHudTime(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
 interface PlayerErrorBoundaryProps {
   children: ReactNode;
   /** 重试时通知外部（如递增 retryCount 触发解码器重建），只负责渲染异常兜底 */
@@ -307,13 +317,13 @@ export default function UniversalPlayer({
     verticalGestureActiveRef,
   });
 
-  // G7-G10：移动端双击左侧/右侧播放器 = 亮度/音量调节（仅移动端布局、点播模式生效；
-  // 通过 touch 事件驱动，桌面鼠标不受影响）
+  // 移动端手势（P0-1/P0-4/P0-5/P0-6：横向滑动 seek + 半屏亮度/音量 + 排除 UI 区 + 滚动分级）
   const {
     brightness,
     volume: gestureVolume,
     indicatorVisible: gestureIndicatorActive,
     axis: gestureAxis,
+    seekHud,
   } = useTouchGesture({
     containerRef,
     enabled: isMobileLayout && mode === 'video',
@@ -325,6 +335,11 @@ export default function UniversalPlayer({
     onVolumeChange: (v) => playerCore.setVolume(v),
     // P0-4：手势开始时同步真实音量（此前初值恒 0）
     getInitialVolume: () => usePlayerStore.getState().volume,
+    // P0-1：横向滑动 seek（错误态/无时长时由 hook 内部守卫放弃）
+    canSeek: mode === 'video' && !hasError,
+    getDuration: () => videoElementRef.current?.duration ?? 0,
+    getSeekBaseTime: () => videoElementRef.current?.currentTime ?? 0,
+    onSeekTarget: (t) => playerCore.seek(t),
     verticalGestureActiveRef,
   });
 
@@ -882,6 +897,17 @@ skipHistory,
         <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
           {seekIndicator === 'left' ? <Icon icon={Rewind} size="2xl" /> : <Icon icon={FastForward} size="2xl" />}
           <span>6s</span>
+        </div>
+      )}
+
+      {/* P0-1：移动端横向滑动 seek 的居中时间气泡（跟随手指，松手消失） */}
+      {seekHud.active && (
+        <div className={`up-seek-hud ${seekHud.deltaSeconds >= 0 ? 'up-seek-hud-forward' : 'up-seek-hud-backward'}`}>
+          <Icon icon={seekHud.deltaSeconds >= 0 ? FastForward : Rewind} size="2xl" />
+          <span>
+            {seekHud.deltaSeconds >= 0 ? '+' : '-'}
+            {formatSeekHudTime(Math.abs(seekHud.deltaSeconds))}
+          </span>
         </div>
       )}
 
