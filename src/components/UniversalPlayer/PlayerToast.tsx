@@ -32,6 +32,14 @@ export function mobileSettingsToast(msg: string, duration?: number, type?: Playe
   mobileSettingsToastRef.current?.(msg, duration, type);
 }
 
+/** 命令式 API（播放器内重要提示——屏幕居中，独立于全局 sonner 的视口级居中） */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const playerToastCenterRef: { current: ((msg: string, duration?: number, type?: PlayerToastType) => void) | null } = { current: null };
+
+export function playerToastCenter(msg: string, duration?: number, type?: PlayerToastType) {
+  playerToastCenterRef.current?.(msg, duration, type);
+}
+
 const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIcon; color: string }> = {
   success: { icon: CheckCircle2, color: 'var(--color-success)' },
   warning: { icon: AlertTriangle, color: 'var(--color-warning)' },
@@ -89,8 +97,9 @@ export function ToastProvider({ children, mobileCenter = false }: { children: Re
 
   // 将 show 暴露给命令式 playerToast()（render 期间更新 ref 是常见模式）
   playerToastRef.current = show;
-  // 将 showCenter 暴露给命令式 mobileSettingsToast()
+  // 将 showCenter 暴露给命令式 mobileSettingsToast() / playerToastCenter()
   mobileSettingsToastRef.current = showCenter;
+  playerToastCenterRef.current = showCenter;
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
