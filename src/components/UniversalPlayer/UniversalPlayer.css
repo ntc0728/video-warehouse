@@ -2486,7 +2486,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.92);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
