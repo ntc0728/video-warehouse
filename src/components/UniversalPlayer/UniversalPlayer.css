@@ -2531,3 +2531,120 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   min-width: var(--tap-target);
   min-height: var(--tap-target);
 }
+
+/* ============ Issue4 色彩/音效调整弹窗 ============ */
+.up-settings-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.up-settings-panel {
+  width: min(22rem, 90%);
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.45));
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.up-settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.up-settings-panel__title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: #fff;
+}
+
+.up-settings-panel__close {
+  display: inline-flex;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+.up-settings-panel__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.up-settings-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.up-settings-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.up-settings-row__icon { color: rgba(255, 255, 255, 0.7); }
+.up-settings-row__label {
+  white-space: nowrap;
+  font-size: var(--text-sm);
+}
+.up-settings-row__value {
+  min-width: 3rem;
+  text-align: right;
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.up-settings-slider {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.up-settings-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+}
+.up-settings-preset {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.up-settings-preset:hover { background: rgba(255, 255, 255, 0.08); }
+.up-settings-preset.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.up-settings-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+.up-settings-reset {
+  padding: var(--space-xs) var(--space-lg);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: #fff;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.up-settings-reset:hover { background: rgba(255, 255, 255, 0.12); }

@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Pause, Repeat, Repeat1, PictureInPicture2, Keyboard } from 'lucide-react';
+import { Play, Pause, Palette, Volume2, Keyboard } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
-import type { LoopMode } from '@/types/player';
 
 interface ContextMenuProps {
   visible: boolean;
@@ -10,28 +9,30 @@ interface ContextMenuProps {
   x: number;
   y: number;
   isPlaying: boolean;
-  loopMode: LoopMode;
   onClose: () => void;
   onTogglePlay: () => void;
-  onCycleLoop: () => void;
-  onTogglePiP: () => void;
+  /** Issue4：打开「视频色彩调整」弹窗 */
+  onOpenColor: () => void;
+  /** Issue4：打开「视频音效调节」弹窗 */
+  onOpenAudio: () => void;
   onShowShortcuts: () => void;
 }
 
-const LOOP_LABEL: Record<LoopMode, string> = {
-  none: '关闭',
-  single: '单个视频',
-  list: '列表循环',
-};
-
 /**
- * P1-6 桌面右键菜单（对齐 B站/YouTube 播放器）：
- * 播放/暂停、循环模式、画中画、键盘快捷键。
+ * P1-6 桌面点播右键菜单（对齐 B站/YouTube 播放器）：
+ * 播放/暂停、视频色彩调整、视频音效调节、快捷键说明。
  * 仅桌面点播模式挂载；点击外部 / Escape 关闭；位置钳制在视口内。
  */
 export default function ContextMenu({
-  visible, x, y, isPlaying, loopMode, onClose,
-  onTogglePlay, onCycleLoop, onTogglePiP, onShowShortcuts,
+  visible,
+  x,
+  y,
+  isPlaying,
+  onClose,
+  onTogglePlay,
+  onOpenColor,
+  onOpenAudio,
+  onShowShortcuts,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -86,22 +87,21 @@ export default function ContextMenu({
         <span>{isPlaying ? '暂停' : '播放'}</span>
         <kbd className="up-context-menu__kbd">K</kbd>
       </button>
-      <button className="up-context-menu__item" role="menuitem" onClick={act(onCycleLoop)}>
-        <Icon icon={loopMode === 'single' ? Repeat1 : Repeat} size="sm" />
-        <span>循环播放：{LOOP_LABEL[loopMode]}</span>
+      <button className="up-context-menu__item" role="menuitem" onClick={act(onOpenColor)}>
+        <Icon icon={Palette} size="sm" />
+        <span>视频色彩调整</span>
       </button>
-      <button className="up-context-menu__item" role="menuitem" onClick={act(onTogglePiP)}>
-        <Icon icon={PictureInPicture2} size="sm" />
-        <span>画中画</span>
-        <kbd className="up-context-menu__kbd">P</kbd>
+      <button className="up-context-menu__item" role="menuitem" onClick={act(onOpenAudio)}>
+        <Icon icon={Volume2} size="sm" />
+        <span>视频音效调节</span>
       </button>
       <div className="up-context-menu__divider" />
       <button className="up-context-menu__item" role="menuitem" onClick={act(onShowShortcuts)}>
         <Icon icon={Keyboard} size="sm" />
-        <span>键盘快捷键</span>
+        <span>快捷键说明</span>
         <kbd className="up-context-menu__kbd">Shift+?</kbd>
       </button>
     </div>,
-    document.body
+    document.body,
   );
 }
