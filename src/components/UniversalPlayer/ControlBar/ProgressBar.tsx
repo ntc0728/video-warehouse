@@ -10,6 +10,11 @@ interface ProgressBarProps {
   onSeek: (time: number) => void;
   /** G1：hover 缩略图源（可选）；缺省时 tooltip 仅显示时间戳 */
   thumbnails?: ThumbnailSource;
+  /**
+   * P1-11：缓冲中拖拽钳制——向前拖不超出已缓冲区间（向后不受限），
+   * 兼顾「缓冲中不可乱拖」与「防缓冲锁死」（审查报告 1.4 折中方案）
+   */
+  isBuffering?: boolean;
 }
 
 function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent): number {
@@ -19,7 +24,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, thumbnails }: ProgressBarProps) {
+export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, thumbnails, isBuffering = false }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -29,6 +34,9 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   const [pendingPosition, setPendingPosition] = useState(0);
 
   const isLive = mode === 'live';
+
+  /** P1-11：缓冲中向前可拖的上界 = 已缓冲末端（向后不受限） */
+  const maxSeekableTime = isBuffering ? Math.min(duration, Math.max(0, buffered)) : Infinity;
 
   const calcTime = useCallback((clientX: number): number => {
     if (!barRef.current || duration <= 0) return 0;
@@ -41,30 +49,34 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
     if (!barRef.current || duration <= 0) return;
     const rect = barRef.current.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const time = ratio * duration;
+    let time = ratio * duration;
+    // P1-11：缓冲中向前钳制到已缓冲区间
+    if (time > maxSeekableTime) time = maxSeekableTime;
     // hover 预览始终更新（tooltip），但非拖拽不触发 seek（thumb 不跟随鼠标）
     setHoverTime(time);
-    setHoverPosition(ratio * 100);
+    setHoverPosition((time / duration) * 100);
     if (isDragging) {
       setPendingTime(time);
-      setPendingPosition(ratio * 100);
+      setPendingPosition((time / duration) * 100);
       onSeek(time);
     }
-  }, [duration, isDragging, onSeek]);
+  }, [duration, isDragging, onSeek, maxSeekableTime]);
 
   const beginDrag = useCallback((clientX: number) => {
     // 直播 / 无时长 禁止拖拽；缓冲中允许 seek（跳到已缓冲位置可立即恢复播放，
-    // 跳到未缓冲位置由浏览器自行等待）——不再一刀切禁用，避免缓冲中无法跳转（审查报告 1.4）
+    // 跳到未缓冲位置由浏览器自行等待）——不再一刀切禁用，避免缓冲中无法跳转（审查报告 1.4）；
+    // P1-11：缓冲中向前拖拽钳制到已缓冲区间（见 maxSeekableTime）
     if (isLive || duration <= 0) return;
     setIsDragging(true);
-    const time = calcTime(clientX);
+    let time = calcTime(clientX);
+    if (time > maxSeekableTime) time = maxSeekableTime;
     const ratio = (time / duration) * 100;
     setHoverTime(time);
     setHoverPosition(ratio);
     setPendingTime(time);
     setPendingPosition(ratio);
     onSeek(time);
-  }, [isLive, duration, calcTime, onSeek]);
+  }, [isLive, duration, calcTime, onSeek, maxSeekableTime]);
 
   const endDrag = useCallback(() => {
     setIsDragging(false);
@@ -105,9 +117,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           if (barRef.current && duration > 0) {
             const rect = barRef.current.getBoundingClientRect();
             const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            const time = ratio * duration;
+            let time = ratio * duration;
+            if (time > maxSeekableTime) time = maxSeekableTime;
             setPendingTime(time);
-            setPendingPosition(ratio * 100);
+            setPendingPosition((time / duration) * 100);
             onSeek(time);
           }
           mouseRafId = 0;
@@ -122,9 +135,10 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
             const rect = barRef.current.getBoundingClientRect();
             const clientX = getClientX(e);
             const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-            const time = ratio * duration;
+            let time = ratio * duration;
+            if (time > maxSeekableTime) time = maxSeekableTime;
             setPendingTime(time);
-            setPendingPosition(ratio * 100);
+            setPendingPosition((time / duration) * 100);
             onSeek(time);
           }
           touchRafId = 0;
@@ -144,7 +158,7 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         window.removeEventListener('touchend', handleGlobalTouchEnd);
       };
     }
-  }, [isDragging, duration, onSeek, endDrag]);
+  }, [isDragging, duration, onSeek, endDrag, maxSeekableTime]);
 
   // pendingTime 追上 currentTime 时清除 pending 状态
   useEffect(() => {
@@ -169,6 +183,39 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   const displayPercent = showPending
     ? (hoverTime !== null ? hoverPosition : (pendingTime !== null ? pendingPosition : progress))
     : progress;
+  const displayTime = (displayPercent / 100) * duration;
+
+  // P0-2：键盘操作进度（role=slider 标准交互；Shift 加速步长）
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (isLive || duration <= 0) return;
+    const step = e.shiftKey ? 30 : 5;
+    let handled = true;
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        onSeek(Math.max(0, currentTime - step));
+        break;
+      case 'ArrowRight':
+      case 'ArrowUp':
+        onSeek(Math.min(duration, currentTime + step));
+        break;
+      case 'PageUp':
+        onSeek(Math.min(duration, currentTime + 60));
+        break;
+      case 'PageDown':
+        onSeek(Math.max(0, currentTime - 60));
+        break;
+      case 'Home':
+        onSeek(0);
+        break;
+      case 'End':
+        onSeek(duration);
+        break;
+      default:
+        handled = false;
+    }
+    if (handled) e.preventDefault();
+  }, [isLive, duration, currentTime, onSeek]);
 
   return (
     <div className="up-progress-container">
@@ -182,6 +229,16 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        /* P0-2：进度条语义化 + 键盘可达（B站/YouTube 均为 role=slider） */
+        role="slider"
+        aria-label="播放进度"
+        aria-valuemin={0}
+        aria-valuemax={isLive || duration <= 0 ? 0 : Math.round(duration)}
+        aria-valuenow={isLive || duration <= 0 ? 0 : Math.round(displayTime)}
+        aria-valuetext={isLive || duration <= 0 ? '直播' : `${formatTime(displayTime)} / ${formatTime(duration)}`}
+        aria-disabled={isLive}
+        tabIndex={isLive || duration <= 0 ? -1 : 0}
+        onKeyDown={handleKeyDown}
       >
         <div className="up-progress-buffered" style={{ width: `${bufferedPercent}%` }} />
         <div className="up-progress-played" style={{ width: `${displayPercent}%` }} />
@@ -189,9 +246,13 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
           <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />
         )}
         {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」（审查报告 4.3）。
-            G1：提供缩略图源时展示预览图，否则回退时间戳文本 */}
+            G1：提供缩略图源时展示预览图，否则回退时间戳文本。
+            tooltip 水平钳制：两端不溢出进度条边界（left clamp，宽约 9rem 上限） */}
         {hoverTime !== null && !isLive && duration > 0 && (
-          <div className="up-progress-tooltip" style={{ left: `${hoverPosition}%` }}>
+          <div
+            className="up-progress-tooltip"
+            style={{ left: `clamp(4.5rem, ${hoverPosition}%, calc(100% - 4.5rem))` }}
+          >
             <ThumbnailPreview
               source={thumbnails}
               time={hoverTime}

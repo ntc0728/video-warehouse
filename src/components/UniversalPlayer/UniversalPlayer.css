@@ -397,6 +397,13 @@
   height: var(--space-xs-plus);
 }
 
+/* P0-2：键盘聚焦进度条的可见焦点环（role=slider 可达性配套） */
+.up-progress-bar:focus-visible {
+  outline: 2px solid var(--player-accent, currentColor);
+  outline-offset: 4px;
+  height: var(--space-xs-plus);
+}
+
 .up-progress-live {
   cursor: default;
 }

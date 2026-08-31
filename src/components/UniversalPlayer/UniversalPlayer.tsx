@@ -60,6 +60,25 @@ function formatSeekHudTime(seconds: number): string {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
+/**
+ * P0-3：移动端底部细进度线（原内联在 UniversalPlayer 中）。
+ * 独立订阅 store 进度——timeupdate ~4Hz 的重渲染被隔离在这棵小组件子树内，
+ * 不再拖动整棵 UniversalPlayer（含 ControlBar/PlayerCore/MobileUI）每帧 reconcile。
+ */
+function MobileProgressEdge({ visible }: { visible: boolean }) {
+  const progress = usePlayerStore(s => s.progress);
+  const duration = usePlayerStore(s => s.duration);
+  const pct = duration > 0 && Number.isFinite(duration) ? Math.min(100, (progress / duration) * 100) : 0;
+  return (
+    <div
+      className={`up-mobile-progress-edge${visible ? ' up-mobile-progress-edge-visible' : ''}`}
+      aria-hidden="true"
+    >
+      <div className="up-mobile-progress-edge__inner" style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 interface PlayerErrorBoundaryProps {
   children: ReactNode;
   /** 重试时通知外部（如递增 retryCount 触发解码器重建），只负责渲染异常兜底 */
@@ -684,8 +703,6 @@ skipHistory,
   const setAspectRatio = usePlayerStore(s => s.setAspectRatio);
   const playbackRate = usePlayerStore(s => s.playbackRate);
   const loopMode = usePlayerStore(s => s.loopMode);
-  const playerProgress = usePlayerStore(s => s.progress);
-  const playerDuration = usePlayerStore(s => s.duration);
 
   // 字幕翻译设置（双语 / 目标语言）
   const {
@@ -996,17 +1013,10 @@ skipHistory,
         />
       )}
 
-      {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染） */}
+      {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染）。
+          P0-3：进度订阅隔离在 MobileProgressEdge 内部，避免整棵播放器树跟随 timeupdate 重渲染 */}
       {isMobileLayout && mode === 'video' && (
-        <div
-          className={`up-mobile-progress-edge${!isControlsVisible ? ' up-mobile-progress-edge-visible' : ''}`}
-          aria-hidden="true"
-        >
-          <div
-            className="up-mobile-progress-edge__inner"
-            style={{ width: `${playerDuration > 0 && Number.isFinite(playerDuration) ? Math.min(100, (playerProgress / playerDuration) * 100) : 0}%` }}
-          />
-        </div>
+        <MobileProgressEdge visible={!isControlsVisible} />
       )}
 
       {/* G2：音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动 */}

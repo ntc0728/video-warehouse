@@ -100,6 +100,7 @@ export default function ControlBar({
   const currentTime = usePlayerStore(s => s.progress);
   const videoDuration = usePlayerStore(s => s.duration);
   const buffered = usePlayerStore(s => s.bufferedProgress);
+  const isBuffering = usePlayerStore(s => s.isBuffering);
   const loopMode = usePlayerStore(s => s.loopMode);
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +128,7 @@ export default function ControlBar({
             duration={videoDuration}
             buffered={buffered}
             onSeek={onSeek}
+            isBuffering={isBuffering}
           />
           {isVideoMode && <TimeDisplay currentTime={currentTime} duration={videoDuration} />}
           {isLiveLike && onRefresh && <RefreshButton onClick={onRefresh} />}
@@ -140,6 +142,7 @@ export default function ControlBar({
             duration={videoDuration}
             buffered={buffered}
             onSeek={onSeek}
+            isBuffering={isBuffering}
           />
 
           <div className="up-control-bar-buttons">
