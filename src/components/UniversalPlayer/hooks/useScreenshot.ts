@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { usePlayerElement } from '../context/PlayerContext';
-import { toast } from '@/components/ui/toastBus';
+import { playerToastCenter } from '../PlayerToast';
 
 interface UseScreenshotOptions {
   title?: string;
@@ -8,7 +8,9 @@ interface UseScreenshotOptions {
 
 /**
  * 播放器截图 Hook
- * 成功 → success 提示；失败 → error 提示（统一 3s 由 toastBus 兜底）
+ * 成功 → success 提示；失败 → error 提示。
+ * 统一走播放器内「屏幕居中」toast（playerToastCenter），不依赖全局 sonner 的
+ * 视口级居中 CSS——避免出现「提示出现在页面顶部而非播放器内居中」的问题。
  */
 export function useScreenshot({ title }: UseScreenshotOptions = {}) {
   const { getVideoElement } = usePlayerElement();
@@ -16,13 +18,13 @@ export function useScreenshot({ title }: UseScreenshotOptions = {}) {
   const handleScreenshot = useCallback(() => {
     const video = getVideoElement();
     if (!video) {
-      toast.show({ content: '截图失败：视频未就绪', type: 'error' });
+      playerToastCenter('截图失败：视频未就绪', 2500, 'error');
       return;
     }
 
     // 检查视频是否准备好
     if (video.readyState < 2) {
-      toast.show({ content: '截图失败：视频尚未加载完成', type: 'error' });
+      playerToastCenter('截图失败：视频尚未加载完成', 2500, 'error');
       return;
     }
 
@@ -31,14 +33,14 @@ export function useScreenshot({ title }: UseScreenshotOptions = {}) {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      toast.show({ content: '截图失败：无法创建画布', type: 'error' });
+      playerToastCenter('截图失败：无法创建画布', 2500, 'error');
       return;
     }
 
     try {
       ctx.drawImage(video, 0, 0);
     } catch {
-      toast.show({ content: '截图失败：视频源不允许截图', type: 'error' });
+      playerToastCenter('截图失败：视频源不允许截图', 2500, 'error');
       return;
     }
 
@@ -47,7 +49,7 @@ export function useScreenshot({ title }: UseScreenshotOptions = {}) {
     const pad = (n: number) => String(n).padStart(2, '0');
     const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timeStr = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const safeTitle = (title || 'video').replace(/[<>:\"/\\\\|?*]/g, '_').slice(0, 50);
+    const safeTitle = (title || 'video').replace(/[<>:\"/\\|?*]/g, '_').slice(0, 50);
     const filename = `screenshot_${safeTitle}_${dateStr}_${timeStr}.png`;
 
     try {
@@ -56,9 +58,9 @@ export function useScreenshot({ title }: UseScreenshotOptions = {}) {
       link.download = filename;
       link.href = dataUrl;
       link.click();
-      toast.show({ content: `截图已保存: ${filename}`, type: 'success' });
+      playerToastCenter(`截图已保存: ${filename}`, 2500, 'success');
     } catch {
-      toast.show({ content: '截图失败：跨域限制，请更换视频源', type: 'error' });
+      playerToastCenter('截图失败：跨域限制，请更换视频源', 2500, 'error');
     }
   }, [getVideoElement, title]);
 
