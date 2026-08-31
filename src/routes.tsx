@@ -31,6 +31,8 @@ const routes = [
       { path: 'person/:id', element: <div /> },
       { path: 'ptr-demo', element: <div /> },
       { path: 'proxy-setup', element: <div /> },
+      // 播放器整改调研 demo 入口（实际渲染映射见 routeConfig.ts 的 routeComponentMap）
+      { path: 'player-lab', element: <div /> },
     ],
   },
   {
