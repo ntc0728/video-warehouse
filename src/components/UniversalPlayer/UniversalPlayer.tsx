@@ -876,7 +876,7 @@ skipHistory,
 
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
-    <ToastProvider mobileCenter={isMobileDevice}>
+    <ToastProvider mobileCenter={isMobileDevice} containerRef={containerRef}>
     <ToastTrigger mode={mode} />
     <PlayerErrorBoundary onRetry={() => setRetryCount(c => c + 1)}>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
