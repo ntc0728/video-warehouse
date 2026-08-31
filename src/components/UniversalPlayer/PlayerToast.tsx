@@ -75,7 +75,41 @@ export function ToastProvider({
     y: window.innerHeight / 2,
   }));
 
+  /**
+   * 测量居中提示的目标位置：
+   * - 水平：播放器容器水平居中
+   * - 垂直：播放器高度约 30% 处（居中靠上，不遮挡视频主体）
+   * - 移动端（mobileCenter）：避让可见的 up-player-header，确保在其下方
+   */
+  const measureCenterPos = useCallback(() => {
+    const el = containerRef?.current;
+    if (!el) {
+      setCenterPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    // 居中靠上：播放器高度 30% 处
+    let y = rect.top + rect.height * 0.3;
+    // 移动端：避让 up-player-header（返回栏 + 右上角操作组），不被其遮挡
+    if (mobileCenter) {
+      const header = el.querySelector<HTMLElement>('.up-player-header');
+      if (header) {
+        const headerH = header.getBoundingClientRect().height;
+        if (headerH > 0) {
+          y = Math.max(y, rect.top + headerH + 12);
+        }
+      }
+    }
+    setCenterPos({
+      x: rect.left + rect.width / 2,
+      y,
+    });
+  }, [containerRef, mobileCenter]);
+
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
+    // 显示前重新测量：header 可见性/尺寸可能刚变化（如触摸后控制栏弹出），
+    // 确保提示位置避让最新的 up-player-header
+    measureCenterPos();
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
     setCenterIsExiting(false);
     setCenterItem({ msg, type });
@@ -87,7 +121,7 @@ export function ToastProvider({
         centerTimerRef.current = null;
       }, 180);
     }, duration);
-  }, []);
+  }, [measureCenterPos]);
 
   const show = useCallback((msg: string, duration = 3000, type: PlayerToastType = 'default') => {
     if (mobileCenter) {
@@ -118,28 +152,17 @@ export function ToastProvider({
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
   }, []);
 
-  // 屏幕居中提示改为「在播放器容器内部居中」：基于 containerRef 实时测量播放器中心（viewport 坐标）
+  // 居中提示位置：基于 containerRef 实时测量播放器容器（viewport 坐标），
+  // 垂直方向居中靠上（30%），移动端避让 up-player-header
   useLayoutEffect(() => {
-    const measure = () => {
-      const el = containerRef?.current;
-      if (!el) {
-        setCenterPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-        return;
-      }
-      const rect = el.getBoundingClientRect();
-      setCenterPos({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    window.addEventListener('scroll', measure, true);
+    measureCenterPos();
+    window.addEventListener('resize', measureCenterPos);
+    window.addEventListener('scroll', measureCenterPos, true);
     return () => {
-      window.removeEventListener('resize', measure);
-      window.removeEventListener('scroll', measure, true);
+      window.removeEventListener('resize', measureCenterPos);
+      window.removeEventListener('scroll', measureCenterPos, true);
     };
-  }, [containerRef]);
+  }, [measureCenterPos]);
 
   // 屏幕居中提示（portal 到 body：.app-shell__scroll 的 contain:layout 会劫持 fixed 包含块，
   // 必须逃出滚动容器才能做到真正的播放器容器居中）

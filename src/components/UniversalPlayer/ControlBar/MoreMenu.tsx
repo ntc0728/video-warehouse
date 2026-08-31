@@ -118,6 +118,11 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
     bottom: 'auto',
     left: pos?.left ?? 'auto',
     right: 'auto',
+    // 位置未计算好前隐藏：首帧 pos=null 时弹窗以 top:auto/left:auto 渲染在视口左上角，
+    // useLayoutEffect 测量后 setPos 才移到正确位置——中间帧若被 paint 会看到「弹窗移动一次」。
+    // visibility:hidden 不影响布局测量（getBoundingClientRect 仍返回真实尺寸），
+    // 等位置就绪后再显示，消除跳变。
+    visibility: pos ? 'visible' : 'hidden',
   };
 
   return (

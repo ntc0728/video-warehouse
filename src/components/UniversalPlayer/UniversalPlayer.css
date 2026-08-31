@@ -1747,7 +1747,11 @@ html[data-player-header-controls="true"] .up-player-toast {
   top: calc(var(--player-header-height, 0px) + var(--space-sm));
 }
 
-/* 移动端更多设置操作提示（屏幕居中，与 HTML demo 一致改为居中显示） */
+/* 播放器内居中提示（截图成功/失败 + 移动端操作类 + 更多设置操作类）。
+   位置由 PlayerToast.tsx 的 measureCenterPos() 动态计算并写入 inline style：
+   水平 = 播放器容器水平居中；垂直 = 播放器高度约 30% 处（居中靠上，不遮挡视频主体）；
+   移动端（mobileCenter）额外避让 up-player-header，确保在其下方。
+   CSS 的 top:50%/left:50% 仅为 JS 未就绪时的兜底，transform:translate(-50%,-50%) 使元素以 top/left 为中心。 */
 .up-player-center-toast {
   position: fixed;
   top: 50%;
