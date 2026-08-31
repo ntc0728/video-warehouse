@@ -6,13 +6,15 @@ import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
 import com.videowarehouse.app.cast.CastBridgePlugin;
+import com.videowarehouse.app.media.MediaBridgePlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // 原生投屏桥：必须在 super.onCreate() 之前注册，确保 WebView 端
-        // Capacitor.Plugins.CastBridge 代理可用（注入见下方 onPageLoaded shim）
+        // 原生投屏桥 + 后台媒体桥：必须在 super.onCreate() 之前注册，确保 WebView 端
+        // Capacitor.Plugins.CastBridge / MediaBridge 代理可用（注入见下方 onPageLoaded shim）
         registerPlugin(CastBridgePlugin.class);
+        registerPlugin(MediaBridgePlugin.class);
 
         super.onCreate(savedInstanceState);
 
@@ -30,13 +32,14 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
-        // 页面加载完成后注入 window.CastBridge shim（代理到原生 CastBridge 插件）。
-        // shim 方法签名与前端 src/services/castService.ts 的 CastBridge 契约一一对应。
+        // 页面加载完成后注入 window.CastBridge / window.MediaBridge shim（代理到原生插件）。
+        // shim 方法签名与前端 src/services/castService.ts / backgroundAudioService.ts 契约一一对应。
         if (getBridge() != null) {
             getBridge().addWebViewListener(new WebViewListener() {
                 @Override
                 public void onPageLoaded(WebView webView) {
                     injectCastBridgeShim(webView);
+                    injectMediaBridgeShim(webView);
                 }
             });
         }
@@ -110,6 +113,60 @@ public class MainActivity extends BridgeActivity {
             webView.evaluateJavascript(shim, null);
         } catch (Exception ignored) {
             // 注入失败则前端 getCastBridge() 返回 null → 投屏弹窗空态，功能不受影响
+        }
+    }
+
+    /** 注入 window.MediaBridge shim：代理到原生 MediaBridge 插件（后台音频前台服务，P3） */
+    private static void injectMediaBridgeShim(WebView webView) {
+        String shim = "(function () {"
+                + "  if (window.MediaBridge) { return; }"
+                + "  function plugin() {"
+                + "    return window.Capacitor && window.Capacitor.Plugins"
+                + "      && window.Capacitor.Plugins.MediaBridge;"
+                + "  }"
+                + "  window.MediaBridge = {"
+                + "    start: function (metadata) {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.start) { return Promise.resolve(); }"
+                + "      return p.start({"
+                + "        url: metadata.url,"
+                + "        title: metadata.title || '',"
+                + "        artist: metadata.artist || ''"
+                + "      });"
+                + "    },"
+                + "    play: function () {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.play) { return Promise.resolve(); }"
+                + "      return p.play();"
+                + "    },"
+                + "    pause: function () {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.pause) { return Promise.resolve(); }"
+                + "      return p.pause();"
+                + "    },"
+                + "    stop: function () {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.stop) { return Promise.resolve(); }"
+                + "      return p.stop();"
+                + "    },"
+                + "    seek: function (time) {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.seek) { return Promise.resolve(); }"
+                + "      return p.seek({ timeMs: Math.round(time * 1000) });"
+                + "    },"
+                + "    getState: function () {"
+                + "      var p = plugin();"
+                + "      if (!p || !p.getState) { return Promise.resolve('stopped'); }"
+                + "      return p.getState().then(function (r) {"
+                + "        return (r && r.state) || 'stopped';"
+                + "      });"
+                + "    }"
+                + "  };"
+                + "})();";
+        try {
+            webView.evaluateJavascript(shim, null);
+        } catch (Exception ignored) {
+            // 注入失败则前端 getMediaBridge() 返回 null → 后台听视频降级为 P1 MediaSession
         }
     }
 }

@@ -8,6 +8,7 @@ import Switch from '@/components/ui/Switch';
 import { Icon } from '@/components/ui/Icon';
 import { mobileSettingsToast } from '../PlayerToast';
 import { getResolutionLabel } from '../lib/utils';
+import { getIOSBackgroundAudioCapability } from '@/services/backgroundAudioService';
 import type { LoopMode, PlayerLevel } from '@/types/player';
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -238,7 +239,12 @@ export default function MobileMoreSheet({
               checked={backgroundPlay}
               onChange={(on) => {
                 onBackgroundPlayChange(on);
-                mobileSettingsToast(on ? '已开启后台听视频' : '已关闭后台听视频', 1800);
+                // P2：iOS 旧版本（<17）不支持 ManagedMediaSource，后台必停媒体，提示用户
+                if (on && getIOSBackgroundAudioCapability() === 'unsupported') {
+                  mobileSettingsToast('当前 iOS 版本切后台会暂停播放，建议升级至 iOS 17+', 2500);
+                } else {
+                  mobileSettingsToast(on ? '已开启后台听视频' : '已关闭后台听视频', 1800);
+                }
                 onClose();
               }}
             />

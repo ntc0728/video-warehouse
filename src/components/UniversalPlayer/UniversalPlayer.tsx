@@ -466,9 +466,10 @@ const mediaSession = useMemo(() => ({
     title: mode === 'iptv' ? (channelName || 'IPTV 直播') : (title || '视频播放'),
     artist: mode === 'iptv' ? '直播' : (episodeLabel || undefined),
   },
+  streamUrl: url,
   onPrev: onPrevEpisode,
   onNext: onNextEpisode,
-}), [mode, channelName, title, episodeLabel, onPrevEpisode, onNextEpisode]);
+}), [mode, channelName, title, episodeLabel, url, onPrevEpisode, onNextEpisode]);
 
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
