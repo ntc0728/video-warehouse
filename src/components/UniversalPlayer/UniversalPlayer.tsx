@@ -47,6 +47,7 @@ import { isNativePlatform } from '@/lib/platform';
 import { useIsMobileLayout, useIsRealPhone } from '@/hooks/useMediaQuery';
 import HeaderActions from './MobileUI/HeaderActions';
 import MobileMoreSheet from './MobileUI/MobileMoreSheet';
+import SettingsDrawer from './MobileUI/SettingsDrawer';
 import SubtitleSettingsModal from './MobileUI/SubtitleSettingsModal';
 // 投屏弹窗懒加载（按需加载打包）：CastSheet + webCastSdk 仅首次点击投屏按钮时才拉取 chunk，
 // 不进播放器主 chunk（播放器 chunk 里只保留轻量的 getCastMode 能力检测）。
@@ -206,6 +207,8 @@ export default function UniversalPlayer({
   const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 移动端弹窗状态
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  // 全屏/横屏「更多设置」右侧抽屉（需求⑤）
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [castSheetOpen, setCastSheetOpen] = useState(false);
   // 投屏弹窗懒加载：首次点击投屏按钮后才挂载（触发 lazy chunk 拉取），之后保持挂载以复用状态
   const [castMounted, setCastMounted] = useState(false);
@@ -716,6 +719,7 @@ skipHistory,
 
   const volume = usePlayerStore(s => s.volume);
   const isPiP = usePlayerStore(s => s.isPiP);
+  const isFullscreen = usePlayerStore(s => s.isFullscreen);
   const networkSpeed = useNetworkSpeed();
   const networkQuality = useNetworkQuality();
   // 当前播放流类型（HLS 时显示清晰度卡）；与 useIPTVNavigation 的 currentType 区分命名
@@ -999,7 +1003,7 @@ skipHistory,
         onBack={() => onBack?.()}
         onActivity={resetAutoHideTimer}
         actions={
-          isMobileLayout && mode === 'video' ? (
+          isMobileLayout && mode === 'video' && !isFullscreen ? (
             <HeaderActions
               isPiP={isPiP}
               onTogglePiP={playerCore.togglePiP}
@@ -1014,6 +1018,24 @@ skipHistory,
           ) : undefined
         }
       />
+
+      {/* 全屏/横屏常驻右上角操作组（需求④）：画中画·投屏·更多设置。
+          与控制栏自动隐藏解耦——控制栏隐藏后仍在，点击「更多设置」打开右侧抽屉。 */}
+      {isFullscreen && mode === 'video' && (
+        <div className="up-fs-corner">
+          <HeaderActions
+            isPiP={isPiP}
+            onTogglePiP={playerCore.togglePiP}
+            castActive={castActive}
+            castEnabled={getCastMode() !== 'none'}
+            onCastClick={() => {
+              setCastMounted(true);
+              setCastSheetOpen(true);
+            }}
+            onMoreClick={() => setDrawerOpen(true)}
+          />
+        </div>
+      )}
 
       {mode === 'iptv' ? (
         <IPTVOSDBar
@@ -1045,6 +1067,7 @@ skipHistory,
           visible={isControlsVisible}
           containerRef={containerRef as React.RefObject<HTMLElement>}
           isMobile={isMobileLayout}
+          fullscreen={isFullscreen && mode === 'video'}
           onTogglePlay={playerCore.togglePlay}
           onSeek={playerCore.seek}
           onVolumeChange={playerCore.setVolume}
@@ -1232,6 +1255,41 @@ skipHistory,
           />
         </>
       )}
+
+      {/* 全屏/横屏「更多设置」右侧抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项，
+          加全屏专属的解码模式与快捷键；选中不关闭以支持连续调节 */}
+        {isFullscreen && mode === 'video' && (
+          <SettingsDrawer
+            visible={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            currentRate={playbackRate}
+            onPlaybackRateChange={playerCore.setPlaybackRate}
+            loopMode={loopMode}
+            onLoopModeChange={setLoopMode}
+            levels={levels}
+            currentLevel={currentLevel}
+            onLevelChange={playerCore.switchLevel}
+            isHls={isHls}
+            sleepMinutes={sleepMinutes}
+            onSleepChange={setSleepMinutes}
+            backgroundPlay={backgroundPlay}
+            onBackgroundPlayChange={setBackgroundPlay}
+            subtitleEnabled={subtitleEnabled}
+            onSubtitleToggle={setSubtitleEnabled}
+            onOpenSubtitleSettings={() => {
+              setDrawerOpen(false);
+              setSubtitleSheetOpen(true);
+            }}
+            onImportSubtitle={(file) => handleImportSubtitle(file)}
+            mirror={mirror}
+            onMirrorToggle={setMirror}
+            aspectRatio={aspectRatio}
+            onAspectRatioChange={setAspectRatio}
+            decoderMode={decoderMode}
+            onDecoderModeChange={setDecoderMode}
+            onShowShortcuts={() => setShowShortcuts(true)}
+          />
+        )}
     </div>
     </PlayerContext.Provider>
     </PlayerErrorBoundary>
