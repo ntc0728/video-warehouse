@@ -195,6 +195,33 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     expect(headerBox).not.toBeNull();
     expect(toastBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 1);
 
+    // 遮挡锁定（真机回归：全屏下 toast portal 到 body 会被 top layer/伪全屏 z-index:9998 盖住）：
+    // fullscreen-api 档下 container 处于 top layer → center-toast 必须挂在 container 内部才可见
+    const inContainer = await toast.evaluate((el) => el.closest('.up-universal-player') != null);
+    expect(inContainer).toBe(true);
+
+    expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('PLAYER-FS-BACK: 全屏下点返回仅退出全屏，不导航离开播放页', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(playUrl(TEST_MOVIE_ID), { waitUntil: 'domcontentloaded' });
+    await waitPlayer(page);
+    await allowClickThroughError(page);
+
+    await enterFullscreen(page);
+    const urlBefore = page.url();
+
+    // 点 header 返回按钮 → 只退出全屏（角落组消失），URL 不变（不导航）
+    await page.locator('.up-header-back').click();
+    await page.waitForTimeout(800);
+
+    await expect(page.locator('.up-fs-corner')).toHaveCount(0);
+    expect(page.url()).toBe(urlBefore);
+
+    // 播放器仍在页面上（未离开播放页）
+    await expect(page.locator('.up-universal-player')).toBeAttached();
+
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });
 

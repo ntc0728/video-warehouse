@@ -1009,7 +1009,15 @@ skipHistory,
            9.1：app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全屏按钮 */
         showFullscreenButton={showHeaderFullscreen}
         containerRef={containerRef as React.RefObject<HTMLElement>}
-        onBack={() => onBack?.()}
+        onBack={() => {
+          // 全屏播放中点返回 = 仅退出全屏，不导航离开播放页。
+          // hasError 传 false：退出全屏不应被错误守卫拦截（错误中也要能退出全屏）。
+          if (isFullscreen) {
+            void toggleFullscreen(containerRef.current, videoElementRef.current, false);
+            return;
+          }
+          onBack?.();
+        }}
         onActivity={resetAutoHideTimer}
         actions={
           isMobileLayout && mode === 'video' && !isFullscreen ? (
