@@ -355,7 +355,7 @@
 }
 
 .hero-banner__cta:hover {
-  background: var(--color-surface-hover);
+  filter: brightness(0.9);
 }
 
 .hero-banner__cta--continue {

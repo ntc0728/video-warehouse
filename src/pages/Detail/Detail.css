@@ -354,7 +354,7 @@
   box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 .detail-btn-play:hover {
-  background: var(--color-surface-hover);
+  filter: brightness(0.92);
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 

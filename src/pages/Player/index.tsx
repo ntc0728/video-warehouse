@@ -561,6 +561,16 @@ export default function PlayerPage() {
     year = v.year;
   }
   const voteAverage: number = d?.vote_average ?? 0;
+  // 类型标签（对齐 Detail 页 detail-hero-meta）
+  const typeLabel = tmdbMediaType === 'tv' ? '剧集' : '电影';
+  // 剧集总季/集数：优先 CMS 季映射聚合，fallback TMDB seasons
+  const totalSeasons = seasons.length > 0
+    ? seasons.length
+    : (d && isTV ? ((d as TMDBTVShowDetail).seasons ?? []).length : 0);
+  const totalEpisodes = seasons.length > 0
+    ? seasons.reduce((sum, s) => sum + (s.episode_count ?? 0), 0)
+    : (d && isTV ? ((d as TMDBTVShowDetail).seasons ?? []).reduce((sum, s) => sum + (s.episode_count ?? 0), 0) : 0);
+  const popularity: number = d?.popularity ?? 0;
   const runtime = isTV
     ? (d as TMDBTVShowDetail | undefined)?.episode_run_time?.[0]
     : ((d as TMDBMovieDetail | undefined)?.runtime ?? v?.duration);
@@ -575,6 +585,10 @@ export default function PlayerPage() {
   // ── 公共详情区（所有 return 路径共用，保持播放器高度稳定）──
   // 提前到加载态分支之前声明：入场加载态分支（!video && !cmsLoading && !cmsSwitching）
   // 也可能在 d 已就绪而 video 仍在搜索时命中，需一并渲染详情区。
+  // 收藏按钮切换动画计数：点击切换后递增，Icon key 变化触发重挂载以重播心跳动画
+  // （初始为 0 不挂动画类，避免进页时已收藏状态闪跳一次）。
+  const [favBump, setFavBump] = useState(0);
+  const collected = isCollected(id!);
   const detailSection = (d || v) ? (
     <div className="player-detail-section">
       <div className="player-detail-content">
@@ -583,9 +597,9 @@ export default function PlayerPage() {
             <div className="player-detail-title-row">
               <h3 className="player-detail-title">{title}</h3>
               <button
-                className={`player-detail-fav-btn${isCollected(id!) ? ' collected' : ''}`}
+                className={`player-detail-fav-btn${collected ? ' collected' : ''}`}
                 onClick={() => {
-                  if (isCollected(id!)) {
+                  if (collected) {
                     removeCollection(id!);
                   } else {
                     addCollection(id!, {
@@ -595,27 +609,51 @@ export default function PlayerPage() {
                       year: video?.year,
                     });
                   }
+                  setFavBump((b) => b + 1);
                 }}
               >
-                <Icon icon={Heart} size="sm" fill={isCollected(id!) ? 'currentColor' : 'none'} />
-                <span>{isCollected(id!) ? '已收藏' : '收藏'}</span>
+                <Icon
+                  key={favBump === 0 ? 'fav-heart' : `fav-heart-${favBump}`}
+                  className={favBump === 0 ? undefined : 'player-detail-fav-heart'}
+                  icon={Heart}
+                  size="sm"
+                  fill={collected ? 'currentColor' : 'none'}
+                />
+                <span>{collected ? '已收藏' : '收藏'}</span>
               </button>
             </div>
             <div className="player-detail-meta">
-              {voteAverage > 0 && <span>★ {voteAverage.toFixed(1)}</span>}
-              {year && <span>{year}</span>}
-              {runtime && <span>{runtime}分钟</span>}
-              {director && <span>导演: {director}</span>}
+              {voteAverage > 0 && (
+                <div className="detail-hero-rating">★ {voteAverage.toFixed(1)}</div>
+              )}
+              {year && (
+                <div className="detail-hero-meta-item">{year}</div>
+              )}
+              <div className="detail-hero-meta-item detail-hero-meta-item--type">
+                {typeLabel}
+              </div>
+              {isTV && totalSeasons > 0 && (
+                <div className="detail-hero-meta-item">{totalSeasons} 季 / {totalEpisodes} 集</div>
+              )}
+              {runtime && (
+                <div className="detail-hero-meta-item">{runtime} 分钟</div>
+              )}
+              {popularity > 0 && (
+                <div className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</div>
+              )}
+              {director && (
+                <div className="player-detail-meta-block">
+                  <span className="player-detail-meta-label">导演:</span><span className="player-detail-meta-value">{director}</span>
+                </div>
+              )}
             </div>
             {cast.length > 0 ? (
-              <div className="player-detail-cast">
-                <span className="player-detail-cast-label">演员:</span>
-                {cast.map((c) => c.name).join(' / ')}
+              <div className="player-detail-meta-block">
+                <span className="player-detail-meta-label">演员:</span><span className="player-detail-meta-value">{cast.map((c) => c.name).join(' / ')}</span>
               </div>
             ) : cmsActors.length > 0 ? (
-              <div className="player-detail-cast">
-                <span className="player-detail-cast-label">演员:</span>
-                {cmsActors.join(' / ')}
+              <div className="player-detail-meta-block">
+                <span className="player-detail-meta-label">演员:</span><span className="player-detail-meta-value">{cmsActors.join(' / ')}</span>
               </div>
             ) : null}
           </div>

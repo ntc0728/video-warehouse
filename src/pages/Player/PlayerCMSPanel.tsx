@@ -1,3 +1,4 @@
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { type VideoSource } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
@@ -39,6 +40,46 @@ export function PlayerCMSPanel({
   // sourceId → VideoDetailResult 映射
   const resultMap = new Map(cmsResults.map(r => [r.sourceId, r]));
 
+  // ── 移动端（<1280px / app 恒移动）CMS tab 均分行布局 ──
+  // 列数 = 一行能容下的最多 tab 数：列宽下限取「最宽 tab 的自然宽度」，
+  // 保证任何 tab 都不会被列宽截断；所有行共用同一列网格 → 首行 tab 平均分配空间、
+  // 后续行与首行列对齐。列数写入 --cms-tab-cols（CSS 变量），仅移动端网格规则消费，
+  // 桌面端（≥1280px）仍为 flex-wrap 内容自适应宽度。
+  const listRef = useRef<HTMLDivElement>(null);
+  // 内容签名：tab 文本（displayName）变化也会改变最宽 tab 宽度，需重算列数
+  const nameSig = selectedSourceIds.map((id) => sourceNameMap.get(id) ?? id).join('|');
+
+  const syncCmsTabCols = useCallback(() => {
+    const list = listRef.current;
+    if (!list || list.children.length === 0) return;
+    const items = Array.from(list.children) as HTMLElement[];
+    // 测量态：临时强制单行 + tab 自然宽度（layout effect 内同步量完立即移除，不产生绘制帧）
+    list.classList.add('player-cms-list--measure');
+    const widths = items.map((el) => el.offsetWidth);
+    list.classList.remove('player-cms-list--measure');
+    const containerW = list.clientWidth;
+    const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
+    const maxItemW = Math.max(...widths);
+    const cols = Math.max(1, Math.min(items.length, Math.floor((containerW + gap) / (maxItemW + gap))));
+    if (list.style.getPropertyValue('--cms-tab-cols') !== String(cols)) {
+      list.style.setProperty('--cms-tab-cols', String(cols));
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    syncCmsTabCols();
+  }, [nameSig, syncCmsTabCols]);
+
+  // 容器宽度变化（旋转 / 窗口缩放 / 面板尺寸变化）时重算列数；
+  // 重算只改 CSS 变量且值不变时不写入，ResizeObserver 不会无限循环。
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => syncCmsTabCols());
+    ro.observe(list);
+    return () => ro.disconnect();
+  }, [syncCmsTabCols]);
+
   // 判断某个源是否正在播放中
   const isActiveSource = (sourceId: string) => {
     if (readOnly) return true;
@@ -69,7 +110,7 @@ export function PlayerCMSPanel({
       </HeaderTag>
       <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
         {selectedSourceIds.length > 0 ? (
-          <div className="player-cms-list">
+          <div ref={listRef} className="player-cms-list">
             {selectedSourceIds.map((sourceId) => {
               const result = resultMap.get(sourceId);
               const displayName = sourceNameMap.get(sourceId) ?? sourceId;
