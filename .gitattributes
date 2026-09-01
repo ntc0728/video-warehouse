@@ -27,3 +27,7 @@
 *.woff2 binary
 *.ttf  binary
 *.eot  binary
+
+# 本地 HLS 测试流片段（MPEG-TS 二进制，勿当文本归一化，否则损坏）
+scripts/fixtures/hls/stream/*.ts binary
+scripts/fixtures/hls/stream/*.m3u8 text eol=lf
