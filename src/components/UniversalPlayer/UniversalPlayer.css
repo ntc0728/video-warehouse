@@ -2387,7 +2387,10 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 /* ============ P1-4 续播卡片（已从上次位置继续 + 从头播放） ============ */
 .up-resume-card {
   position: absolute;
-  top: var(--space-lg);
+  /* 避让 up-player-header（z-index 20、absolute 覆盖视频顶部）：卡片恒定落在
+     header 之下（--player-header-height 由 UniversalPlayer JS 实测写入 root），
+     header 隐藏态（opacity:0）也保持该偏移，避免与 header 任何时刻重叠 */
+  top: calc(var(--player-header-height, 0px) + var(--space-sm));
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;

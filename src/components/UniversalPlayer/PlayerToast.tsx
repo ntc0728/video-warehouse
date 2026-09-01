@@ -176,8 +176,23 @@ export function ToastProvider({
     };
   }, [measureCenterPos]);
 
-  // 屏幕居中提示（portal 到 body：.app-shell__scroll 的 contain:layout 会劫持 fixed 包含块，
-  // 必须逃出滚动容器才能做到真正的播放器容器居中）
+  // 全部提示的 portal 目标动态选择（center / 右上角通用）——
+  // - 全屏（fullscreen-api 档 / webkit 档）：container 处于浏览器 top layer，
+  //   body 下的任何元素都会被其覆盖（z-index 无效）→ 必须 portal 进 container 本身；
+  // - css-pseudo 伪全屏：container z-index 9998 > toast 的 1500 → 同样必须进 container；
+  // - 非全屏：portal 到 body（逃出 .app-shell__scroll 的 contain:layout 劫持 fixed 包含块）。
+  // 坐标无需换算：全屏时 container rect = (0,0,vw,vh)，容器坐标 == 测量得到的视口坐标。
+  const getToastPortalTarget = (): HTMLElement => {
+    const fsElement = document.fullscreenElement
+      ?? (document as Document & { webkitFullscreenElement?: Element | null }).webkitFullscreenElement
+      ?? null;
+    if (fsElement != null && containerRef?.current != null && fsElement === containerRef.current) {
+      return containerRef.current;
+    }
+    return document.body;
+  };
+
+  // 屏幕居中提示
   const renderCenterToast = (msg: string, type: PlayerToastType, isExiting: boolean) =>
     createPortal(
       <div
@@ -191,14 +206,17 @@ export function ToastProvider({
         )}
         <span className="up-player-center-toast__text">{msg}</span>
       </div>,
-      document.body
+      getToastPortalTarget()
     );
+
+  // 右上角操作类提示（桌面端）：同为视口级元素，全屏时同样需 portal 进 container 才可见
+  const renderCornerToast = (node: React.ReactNode) => createPortal(node, getToastPortalTarget());
 
   return (
     <ToastContext.Provider value={{ show }}>
       {children}
       {/* 操作类提示：桌面端 → 右上角；移动端 → 屏幕居中 */}
-      {item && !isExiting && (
+      {item && !isExiting && renderCornerToast(
         <div className={`up-player-toast${item.type !== 'default' ? ` up-player-toast--${item.type}` : ''}`}>
           {item.type !== 'default' && (
             <span className="up-player-toast__icon" style={{ color: TOAST_ICONS[item.type].color }}>
@@ -208,7 +226,7 @@ export function ToastProvider({
           <span className="up-player-toast__text">{item.msg}</span>
         </div>
       )}
-      {isExiting && item && (
+      {isExiting && item && renderCornerToast(
         <div className={`up-player-toast up-player-toast--exiting${item.type !== 'default' ? ` up-player-toast--${item.type}` : ''}`}>
           {item.type !== 'default' && (
             <span className="up-player-toast__icon" style={{ color: TOAST_ICONS[item.type].color }}>

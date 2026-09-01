@@ -332,7 +332,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-01 三次校准，全量 264 条 / 18 个 spec）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-01 四次校准，全量 265 条 / 18 个 spec）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
@@ -340,7 +340,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
 | `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
 | `src/pages/Player/` | `scripts/player.spec.ts` | 27 |
-| `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts` | 6 |
+| `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts` | 7 |
 | `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
 | `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
 | `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
@@ -359,7 +359,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 | 修改的源文件 | 影响的测试文件 | 合计 test 数 |
 |-------------|--------------|-------------|
-| `src/components/UniversalPlayer/` | player + iptv + iptv-player + smoke-player-fs-mobile | 52 |
+| `src/components/UniversalPlayer/` | player + iptv + iptv-player + smoke-player-fs-mobile | 53 |
 | `src/components/VideoCard/` | home + browse + detail + collections + history + person | 110 |
 | `src/components/SearchBox/` | browse + cross-page | 40 |
 | `src/components/RecordShell/` | collections + history | 17 |
