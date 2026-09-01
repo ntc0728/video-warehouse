@@ -16,6 +16,8 @@ interface PlayerCMSPanelProps {
   compact?: boolean;
   /** 只读模式：源默认选中，点击无操作（直链搜索场景） */
   readOnly?: boolean;
+  /** 桌面端（>1280px）无选季面板模式：CMS tab 一行各占 1/3 空间（与选集面板等宽） */
+  seasonAvailable?: boolean;
 }
 
 export function PlayerCMSPanel({
@@ -30,6 +32,7 @@ export function PlayerCMSPanel({
   onToggle,
   compact = false,
   readOnly = false,
+  seasonAvailable = true,
 }: PlayerCMSPanelProps) {
   const HeaderTag = compact ? 'div' : 'button';
 
@@ -50,7 +53,7 @@ export function PlayerCMSPanel({
   };
 
   return (
-    <div className="player-panel player-panel--cms">
+    <div className={`player-panel player-panel--cms${!seasonAvailable ? ' player-panel--cms-movie' : ''}`}>
       <HeaderTag
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
