@@ -633,7 +633,7 @@ skipHistory,
   const { handlePlayerClick, clickTimerRef } = usePlayerClickHandler({
     mode, hasError, isControlsVisible, isMobileLayout,
     hasLongPressedRef, videoElementRef, containerRef,
-    showControls, hideControls, togglePlay: () => playerCore.togglePlay(),
+    showControls, togglePlay: () => playerCore.togglePlay(),
   });
 
   const handleOpenProgramGuide = useCallback(async () => {
@@ -720,6 +720,15 @@ skipHistory,
   const volume = usePlayerStore(s => s.volume);
   const isPiP = usePlayerStore(s => s.isPiP);
   const isFullscreen = usePlayerStore(s => s.isFullscreen);
+  // 仅「真机移动端 + 全屏 + 点播」走本次整改（控制栏改造 / 右上角组 / 右侧抽屉）。
+  // 用 isMobileDevice 而非 isMobileLayout：横屏手机宽度 > 767px 会被 isMobileLayout 判成非移动，
+  // 而 PC 桌面全屏必须保持原样（需求①：pc 桌面 web 不改）。
+  const fsMobile = isMobileDevice && isFullscreen && mode === 'video';
+  // 需求④：每次进入/退出全屏（移动端）都强制关闭更多设置抽屉，
+  // 保证「再次全屏需手动点击更多设置图标才出现弹窗」。
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [fsMobile]);
   const networkSpeed = useNetworkSpeed();
   const networkQuality = useNetworkQuality();
   // 当前播放流类型（HLS 时显示清晰度卡）；与 useIPTVNavigation 的 currentType 区分命名
@@ -1021,8 +1030,8 @@ skipHistory,
 
       {/* 全屏/横屏常驻右上角操作组（需求④）：画中画·投屏·更多设置。
           与控制栏自动隐藏解耦——控制栏隐藏后仍在，点击「更多设置」打开右侧抽屉。 */}
-      {isFullscreen && mode === 'video' && (
-        <div className="up-fs-corner">
+      {fsMobile && (
+        <div className="up-fs-corner" onClick={(e) => e.stopPropagation()}>
           <HeaderActions
             isPiP={isPiP}
             onTogglePiP={playerCore.togglePiP}
@@ -1032,7 +1041,7 @@ skipHistory,
               setCastMounted(true);
               setCastSheetOpen(true);
             }}
-            onMoreClick={() => setDrawerOpen(true)}
+            onMoreClick={() => setDrawerOpen(o => !o)}
           />
         </div>
       )}
@@ -1067,7 +1076,7 @@ skipHistory,
           visible={isControlsVisible}
           containerRef={containerRef as React.RefObject<HTMLElement>}
           isMobile={isMobileLayout}
-          fullscreen={isFullscreen && mode === 'video'}
+          fullscreen={fsMobile}
           onTogglePlay={playerCore.togglePlay}
           onSeek={playerCore.seek}
           onVolumeChange={playerCore.setVolume}
@@ -1258,7 +1267,7 @@ skipHistory,
 
       {/* 全屏/横屏「更多设置」右侧抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项，
           加全屏专属的解码模式与快捷键；选中不关闭以支持连续调节 */}
-        {isFullscreen && mode === 'video' && (
+        {fsMobile && (
           <SettingsDrawer
             visible={drawerOpen}
             onClose={() => setDrawerOpen(false)}
