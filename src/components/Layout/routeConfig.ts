@@ -59,6 +59,8 @@ const routeComponentMap: Record<string, PreloadableLazy> = {
   '/proxy-setup': lazyWithRetry(() => import('@/pages/ProxySetup/ProxySetup')),
   // 播放器整改调研 demo（对照现有 UniversalPlayer，仅用于验收交互方向，不进入正式导航）
   '/player-lab': lazyWithRetry(() => import('@/pages/PlayerLab')),
+  // 移动端横屏 / 全屏 / 画中画整改 demo（iOS/安卓多端兼容策略验证，不进入正式导航）
+  '/player-mobile-lab': lazyWithRetry(() => import('@/pages/PlayerMobileLab')),
 };
 
 /** 路径前缀列表（按长度降序排列，确保最长前缀优先匹配） */
