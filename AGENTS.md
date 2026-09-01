@@ -332,7 +332,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-01 四次校准，全量 265 条 / 18 个 spec）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-01 校准，全量 267 条 / 19 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件 | 跑这个测试 | test 数 |
 |-------------|-----------|---------|
