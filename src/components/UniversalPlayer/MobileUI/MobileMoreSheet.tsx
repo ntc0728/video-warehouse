@@ -27,10 +27,15 @@ interface MobileMoreSheetProps {
   onMirrorToggle: (on: boolean) => void;
   aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
   onAspectRatioChange: (ratio: 'default' | '4:3' | '16:9' | 'fill') => void;
+  /**
+   * Portal 容器（全屏场景必传，否则 body 下的抽屉被全屏盖住）
+   */
+  portalContainer?: HTMLElement | null;
 }
 
 export default function MobileMoreSheet({
   visible, onClose,
+  portalContainer,
   currentRate, onPlaybackRateChange,
   loopMode, onLoopModeChange,
   levels, currentLevel, onLevelChange, isHls,
@@ -41,7 +46,7 @@ export default function MobileMoreSheet({
   aspectRatio, onAspectRatioChange,
 }: MobileMoreSheetProps) {
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="更多设置" className="up-ms-sheet">
+    <BottomSheet visible={visible} onClose={onClose} title="更多设置" className="up-ms-sheet" portalContainer={portalContainer}>
       <div className="up-ms-head">
         <span className="up-ms-title">更多设置</span>
         <button className="up-ms-close" onClick={onClose} aria-label="关闭更多设置">
