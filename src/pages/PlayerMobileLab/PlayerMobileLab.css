@@ -1,0 +1,557 @@
+/**
+ * 移动端播放器整改 Demo 样式
+ * 播放器本体走深色表面（与主流播放器一致），页面容器跟随应用浅色主题。
+ */
+
+.pml-page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  color: var(--color-text, #1f2329);
+}
+
+.pml-page-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.3;
+}
+.pml-tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-primary, #00aeec);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pml-summary { margin: 0 0 4px; font-size: 14px; }
+.pml-summary b { color: var(--color-primary, #00aeec); }
+.pml-hintline { margin: 0 0 20px; color: var(--color-text-secondary, #646a73); font-size: 13px; }
+
+.pml-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .pml-layout { grid-template-columns: 1fr; }
+}
+.pml-player-col { min-width: 0; }
+
+/* ───────── 播放器本体 ───────── */
+.pml-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* CSS 网页伪全屏：固定铺满视口，DOM 覆盖层（控制栏/抽屉）完整保留 */
+.pml-player--pseudo-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100dvh;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+/* 元素级全屏下由浏览器接管尺寸，只需抹掉圆角 */
+.pml-player:fullscreen { border-radius: 0; aspect-ratio: auto; width: 100vw; height: 100vh; }
+.pml-player:-webkit-full-screen { border-radius: 0; aspect-ratio: auto; width: 100vw; height: 100vh; }
+
+.pml-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: contain;
+}
+
+.pml-error {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+.pml-error-icon { font-size: 32px; }
+.pml-error p { margin: 0; }
+
+/* ───────── 右上角常驻操作组 ───────── */
+.pml-fs-corner {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 70;
+  display: flex;
+  gap: 6px;
+}
+.pml-fs-corner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.18s, color 0.18s;
+}
+.pml-fs-corner-btn:hover { background: rgba(0, 0, 0, 0.68); color: #fff; }
+.pml-fs-corner-btn--on {
+  background: rgba(0, 174, 236, 0.28);
+  color: #7fdcff;
+}
+
+/* ───────── 全屏控制栏（桌面布局 − 音量 − 循环）───────── */
+.pml-fs-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 65;
+  padding: 28px 16px max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.35) 55%, transparent);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.pml-fs-bar--visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.pml-fs-progress { position: relative; height: 4px; margin-bottom: 10px; }
+.pml-fs-progress-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.26);
+  overflow: hidden;
+}
+.pml-fs-progress-buffer { position: absolute; inset: 0 auto 0 0; background: rgba(255, 255, 255, 0.38); }
+.pml-fs-progress-play {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-primary, #00aeec);
+  border-radius: 2px;
+}
+.pml-fs-progress-input {
+  position: absolute;
+  inset: -8px 0;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pml-fs-row { display: flex; gap: 8px; align-items: center; }
+.pml-fs-left,
+.pml-fs-right { display: flex; gap: 4px; align-items: center; min-width: 0; }
+.pml-fs-spacer { flex: 1 1 auto; }
+
+.pml-fs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.pml-fs-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.pml-fs-btn:disabled { opacity: 0.38; cursor: default; }
+.pml-fs-btn--on { color: var(--color-primary, #00aeec); }
+.pml-fs-btn--text { font-variant-numeric: tabular-nums; }
+
+.pml-fs-time {
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pml-fs-time b { color: #fff; font-weight: 600; }
+
+/* 窄屏（横屏手机高度小）下收敛尺寸，避免控制栏吃掉半个画面 */
+@media (max-height: 480px) {
+  .pml-fs-bar { padding-top: 18px; padding-bottom: 8px; }
+  .pml-fs-btn { min-width: 32px; height: 32px; }
+  .pml-fs-corner-btn { width: 34px; height: 34px; }
+}
+
+/* ───────── 竖屏精简控制栏 ───────── */
+.pml-portrait-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 65;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+}
+.pml-pt-btn {
+  min-width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.pml-pt-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.pml-pt-time { color: rgba(255, 255, 255, 0.8); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pml-pt-spacer { flex: 1 1 auto; }
+
+/* ───────── 右侧设置抽屉（横屏 / 全屏）───────── */
+.pml-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, 42%);
+  min-width: 260px;
+  padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  background: rgba(18, 20, 26, 0.94);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  animation: pml-drawer-in 0.22s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+@keyframes pml-drawer-in {
+  from { transform: translateX(100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+/* 横屏矮屏：抽屉吃满高度，头部与正文压缩留白 */
+@media (max-height: 480px) {
+  .pml-drawer { padding-top: 10px; padding-bottom: 10px; }
+  .pml-drawer-head { padding-bottom: 8px; margin-bottom: 8px; }
+}
+
+.pml-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pml-drawer-title { color: #fff; font-size: 16px; font-weight: 700; }
+.pml-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+.pml-drawer-close:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.pml-drawer-body { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+
+/* ───────── 竖版底部弹窗（宽度修满）───────── */
+.pml-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  animation: pml-fade-in 0.18s ease both;
+}
+@keyframes pml-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.pml-sheet {
+  position: fixed;
+  /* 关键修复 1：显式 100dvw，不依赖 body 内容盒宽度。
+     Radix 等弹窗库打开时会给 body 加 padding-right 做滚动锁补偿，
+     用 width:100% 会跟着变窄，右侧露出一条缝。 */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  width: 100dvw;
+  /* 关键修复 2：显式解除外层 max-width（40rem 之类）的收窄，
+     否则 640–844px 的横屏手机 / 平板竖屏 / 桌面窄窗会被居中留白。 */
+  max-width: 100dvw;
+  max-height: 80dvh;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  border-radius: 16px 16px 0 0;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: pml-sheet-in 0.26s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+@keyframes pml-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+.pml-sheet-grabber {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: var(--color-border, #dfe3e8);
+}
+.pml-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.pml-sheet-title { color: var(--color-text, #1f2329); font-size: 17px; font-weight: 700; }
+.pml-sheet-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-hover, #f2f3f5);
+  color: var(--color-text-secondary, #646a73);
+  cursor: pointer;
+}
+.pml-sheet-body { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+
+/* ───────── 设置内容（抽屉 / 弹窗共用）───────── */
+.pml-settings-body { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+
+.pml-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  border-radius: 10px;
+  background: rgba(127, 127, 127, 0.08);
+}
+.pml-sheet .pml-card {
+  border-color: var(--color-border-light, #e5e6eb);
+  background: color-mix(in srgb, var(--color-text, #1f2329) 4%, var(--color-surface, #fff));
+}
+
+.pml-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 6px 0;
+}
+.pml-row--tap {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 8px;
+  border: none;
+  border-top: 1px solid rgba(127, 127, 127, 0.18);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.pml-sheet .pml-row--tap { border-top-color: var(--color-border-light, #e5e6eb); }
+
+.pml-label {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+.pml-sheet .pml-label { color: var(--color-text, #1f2329); }
+
+.pml-label__stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pml-label__title { font-size: 14px; line-height: 1.3; }
+.pml-sub { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-weight: 400; }
+.pml-sheet .pml-sub { color: var(--color-text-secondary, #646a73); }
+
+.pml-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.pml-chip {
+  padding: 5px 10px;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s, border-color 0.16s;
+}
+.pml-chip:hover { border-color: rgba(255, 255, 255, 0.5); color: #fff; }
+.pml-sheet .pml-chip {
+  border-color: var(--color-border, #dfe3e8);
+  color: var(--color-text-secondary, #646a73);
+}
+.pml-sheet .pml-chip:hover { color: var(--color-text, #1f2329); }
+.pml-chip--on {
+  border-color: var(--color-primary, #00aeec);
+  background: rgba(0, 174, 236, 0.18);
+  color: var(--color-primary, #00aeec);
+}
+
+/* ───────── 源输入 / 预览开关 ───────── */
+.pml-source { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pml-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border, #dfe3e8);
+  border-radius: 8px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1f2329);
+  font-size: 13px;
+}
+.pml-preview-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.pml-check { display: flex; gap: 6px; align-items: center; color: var(--color-text-secondary, #646a73); font-size: 13px; }
+
+.pml-btn {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border, #dfe3e8);
+  border-radius: 8px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1f2329);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
+.pml-btn:hover { border-color: var(--color-primary, #00aeec); color: var(--color-primary, #00aeec); }
+.pml-btn--ghost { background: transparent; }
+
+/* ───────── Toast ───────── */
+.pml-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 90;
+  max-width: 80%;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  animation: pml-fade-in 0.16s ease both;
+}
+
+/* ───────── 右侧面板 ───────── */
+.pml-side { display: flex; flex-direction: column; gap: 14px; }
+.pml-panel {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border, #e5e6eb);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+}
+.pml-panel h3 { margin: 0 0 10px; font-size: 14px; }
+
+.pml-cap { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pml-cap th,
+.pml-cap td {
+  padding: 6px 4px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border-light, #f0f1f3);
+}
+.pml-cap thead th { font-size: 12px; color: var(--color-text-secondary, #646a73); }
+.pml-cap tbody th { width: 46%; font-weight: 500; color: var(--color-text-secondary, #646a73); }
+.pml-ok { color: #17a34a; }
+.pml-bad { color: #e5484d; }
+.pml-cap--compare td { color: var(--color-text, #1f2329); }
+.pml-cap--compare tbody td:first-child { color: var(--color-text-secondary, #646a73); }
+
+.pml-field { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.pml-field label { flex: none; width: 84px; color: var(--color-text-secondary, #646a73); font-size: 13px; }
+.pml-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border, #dfe3e8);
+  border-radius: 8px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1f2329);
+  font-size: 13px;
+}
+.pml-note { margin: 6px 0 0; color: var(--color-text-secondary, #646a73); font-size: 12px; }
+
+.pml-caveats { margin: 0; padding-left: 18px; color: var(--color-text-secondary, #646a73); font-size: 12.5px; line-height: 1.6; }
+.pml-caveats li { margin-bottom: 4px; }
+
+.pml-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  margin-bottom: 8px;
+  overflow-y: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pml-log { display: flex; gap: 6px; line-height: 1.45; }
+.pml-log-time { flex: none; color: var(--color-text-secondary, #646a73); }
+.pml-log--info { color: var(--color-text-secondary, #646a73); }
+.pml-log--ok { color: #17a34a; }
+.pml-log--warn { color: #d97706; }
+.pml-log--error { color: #e5484d; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pml-drawer,
+  .pml-sheet,
+  .pml-sheet-scrim,
+  .pml-toast { animation: none; }
+  .pml-fs-bar { transition: none; }
+}
