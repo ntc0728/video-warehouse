@@ -17,6 +17,20 @@
 import type { FullscreenCapability } from './deviceCaps';
 import { detectDeviceCaps } from './deviceCaps';
 
+/**
+ * 开发/冒烟测试逃生口：在 dev 环境且 URL 带 `__smoke_fullscreen=1` 时，
+ * 忽略 hasError 以允许全屏进入，方便在无有效视频源时验证全屏 UI。
+ * 生产构建中 import.meta.env.DEV 为 false，不会生效。
+ */
+function isSmokeFullscreen(): boolean {
+  return (
+    typeof import.meta.env !== 'undefined' &&
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('__smoke_fullscreen')
+  );
+}
+
 export type FullscreenMode = 'none' | 'element' | 'css-pseudo' | 'ios-video';
 
 /* ───────── 能力（模块级只探测一次）───────── */
@@ -164,7 +178,7 @@ export async function toggleFullscreen(
   videoElement?: HTMLVideoElement | null,
   hasError?: boolean,
 ): Promise<void> {
-  if (hasError) return;
+  if (hasError && !isSmokeFullscreen()) return;
   if (!container) return;
 
   // 已进入任意全屏 → 退出
