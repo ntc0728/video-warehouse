@@ -480,25 +480,27 @@
 }
 
 .player-skeleton-panel {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  padding: var(--space-sm) var(--space-md);
+  overflow: hidden;
 }
 
 .player-skeleton-panel__head {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding-bottom: var(--space-xs);
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
 }
 
 .player-skeleton-panel__body {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
+  padding: var(--space-sm);
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 .player-skeleton-row {
@@ -528,7 +530,8 @@
 @media (prefers-reduced-motion: reduce) {
   .player-tv-loader__icon,
   .player-tv-loader__dots > span,
-  .player-skeleton-block {
+  .player-skeleton-block,
+  .player-detail-fav-heart {
     animation: none;
   }
 }
@@ -706,14 +709,39 @@
   opacity: 0.8;
 }
 
-.player-detail-cast {
+/* 评分/年份与 Detail 页 detail-hero-meta 同结构（detail-hero-rating + detail-hero-meta-item） */
+
+/* 导演/演员：独占一行块，标签 + 内容同行紧贴，内容超出该行时自动折行（标签不换行） */
+.player-detail-meta-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2xs);
   margin-bottom: var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
-.player-detail-cast-label {
-  font-weight: 500;
+.player-detail-meta-label {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.player-detail-meta-value {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 收藏心跳：点击切换后（Icon 经 key 重挂载）播放一次小幅弹跳，进页初始态不播 */
+.player-detail-fav-heart {
+  animation: player-fav-heart-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes player-fav-heart-pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* ── 推荐区（与 Detail 页保持一致） ──────────── */
@@ -788,9 +816,14 @@
     justify-content: flex-start;
   }
 
-  /* 移动端/App（<1280px）：CMS 源 tab 与桌面一致——flex-wrap 内容自适应宽度、
-     放不下自动换行，源名不再被列宽截断（旧实现 max-width 钳制 1/6 行宽 +
-     ellipsis 会截断长源名，其「按钮文字不截断」的注释与实际行为不符，已废弃）。 */
+  /* 移动端/App（<1280px）：CMS 源 tab 改为均分行网格——列数由 PlayerCMSPanel 按容器
+     宽度与最宽 tab 自然宽度计算写入 --cms-tab-cols（列宽下限 ≥ 最宽 tab 自然宽度，
+     长源名不会被截断），首行 tab 平均分配空间、后续行与首行列对齐。
+     桌面端（≥1280px）仍为 flex-wrap 内容自适应宽度。 */
+  .player-cms-list {
+    display: grid;
+    grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
+  }
 
   /* 移动端/App：选季一行 3 列（按钮文字较长） */
   .player-season-list {
@@ -872,8 +905,12 @@
     justify-content: flex-start;
   }
 
-  /* 9.1 app 恒移动：CMS 源 tab 同基础 flex-wrap 规则（内容自适应、不截断），
-     旧 max-width 钳制 1/6 行宽的副本已随媒体查询一并废弃。 */
+  /* 9.1 app 恒移动：CMS 源 tab 同移动端均分行网格规则（首行平均分配、后续行跟随，
+     列数由 JS 写入 --cms-tab-cols），列宽下限 ≥ 最宽 tab 自然宽度、长源名不截断。 */
+  html[data-device="app"] .player-cms-list {
+    display: grid;
+    grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
+  }
 
   html[data-device="app"] /* 移动端/App：选季一行 3 列（按钮文字较长） */
   .player-season-list {
@@ -1117,5 +1154,23 @@
     white-space: normal;
     text-align: center;
   }
+}
+
+/* ── CMS tab 列数测量态（PlayerCMSPanel 同步测量用，量完立即移除，不产生绘制帧）──
+   强制单行 + tab 自然宽度（width: max-content），使 offsetWidth 反映真实内容宽度，
+   不受当前网格/flex 布局的拉伸影响；同时禁用 transition，避免同步测量读到过渡中间值。
+   !important 用于压过 html[data-device="app"] 前缀的移动端网格规则。 */
+.player-cms-list--measure,
+html[data-device="app"] .player-cms-list--measure {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+}
+
+.player-cms-list--measure .player-cms-item,
+html[data-device="app"] .player-cms-list--measure .player-cms-item {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  max-width: none !important;
+  transition: none !important;
 }
 

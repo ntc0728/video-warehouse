@@ -130,6 +130,10 @@ export default function HeroBanner({
   const [paused, setPaused] = useState(false);
   // 悬停预览态：鼠标悬停缩略图时主图预览该项，但不改变 activeIndex（缩略图窗口不移动）
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  // 模块级 hoveredIndexRef：渲染阶段同步最新 hoveredIndex，
+  // 供 handleDragStart 在 mousedown 闭包内读取（state 闭包会陈旧）。
+  const hoveredIndexRef = useRef<number | null>(null);
+  hoveredIndexRef.current = hoveredIndex;
   // 主图实际显示项：悬停时预览 hoveredIndex，否则显示 activeIndex。
   // ⚠️ 越界保护：items 变化（切换分类）时 activeIndex 仅在下方 useEffect 中重置，
   // 其间的渲染会用「旧 activeIndex + 新 items」——若新 items 更短则越界，
@@ -559,6 +563,14 @@ export default function HeroBanner({
   // 避免「切走后移除类重新触发淡入」导致的闪一下。随每次切换被新 id 覆盖，无需定时器。
   const [suppressFadeInId, setSuppressFadeInId] = useState<string | number | null>(null);
   const handleDragStart = useCallback((x: number) => {
+    // 预览态 mousedown：先提交 hoveredIndex 为 activeIndex，使 track 中心 = 当前显示项，
+    // 避免「主图先复位到中间图再离开」的视觉跳变。ref 在渲染阶段同步，闭包读到最新值。
+    const hovered = hoveredIndexRef.current;
+    if (hovered !== null && hovered !== activeIndex) {
+      setActiveIndex(hovered);
+      setSwitchIndex(hovered);
+    }
+    setHoveredIndex(null);
     dragEndedRef.current = false;
     dragStartX.current = x;
     // 参照物必须是「主图区真实宽度」(hero-banner__main)，不是整张 banner。
@@ -569,7 +581,7 @@ export default function HeroBanner({
     setIsDragging(true);
     setSlideAnim(null);
     setPaused(true);
-  }, []);
+  }, [activeIndex]);
   const handleDragMove = useCallback((x: number) => {
     if (!isDragging) return;
     // 橡胶带阻尼：拖拽限制在一个 slide 宽（±mainW）内。到 ±mainW 时恰好显示上/下一张、不露空白；
