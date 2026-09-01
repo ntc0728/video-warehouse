@@ -1225,6 +1225,7 @@ skipHistory,
           <MobileMoreSheet
             visible={moreSheetOpen}
             onClose={() => setMoreSheetOpen(false)}
+            portalContainer={containerRef.current}
             currentRate={playbackRate}
             onPlaybackRateChange={playerCore.setPlaybackRate}
             loopMode={loopMode}
@@ -1264,6 +1265,7 @@ skipHistory,
           <SubtitleSettingsModal
             visible={subtitleSheetOpen}
             onClose={() => setSubtitleSheetOpen(false)}
+            portalContainer={containerRef.current}
             autoTranslate={autoTranslate}
             onAutoTranslateChange={setAutoTranslate}
             bigFont={subtitleBigFont}

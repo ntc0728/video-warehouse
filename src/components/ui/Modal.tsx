@@ -12,6 +12,12 @@ interface ModalProps {
   closeOnAction?: boolean
   children?: React.ReactNode
   className?: string
+  /**
+   * Portal 容器（Radix Dialog.Portal container）。默认 body。
+   * 播放器全屏场景（尤其是 App WebView 的 css-pseudo 全屏 z-index:9998，及真实全屏 top layer）
+   * 必须传入播放器容器，否则 body 下的弹窗会被完全盖住。
+   */
+  portalContainer?: HTMLElement | null
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -22,6 +28,7 @@ const Modal: React.FC<ModalProps> = ({
   closeOnAction = true,
   children,
   className,
+  portalContainer,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -83,7 +90,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <Dialog.Root open={visible} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer ?? undefined}>
         <Dialog.Overlay className="modal-overlay-animate" />
         <Dialog.Content
           ref={contentRef}

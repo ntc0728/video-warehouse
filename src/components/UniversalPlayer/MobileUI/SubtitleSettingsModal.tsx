@@ -16,19 +16,24 @@ interface SubtitleSettingsModalProps {
   onTargetLangChange: (lang: string) => void;
   /** 是否已配置百度翻译 API（无密钥时隐藏翻译区块） */
   translationConfigured: boolean;
+  /**
+   * Portal 容器（全屏场景必传，否则 body 下的弹窗被全屏盖住）
+   */
+  portalContainer?: HTMLElement | null;
 }
 
 /** 字幕设置二级弹窗（移动端更多设置 → 字幕设置）：
  *  双语字幕 / 字幕大字号 / 翻译语言（百度翻译 AI）。 */
 export default function SubtitleSettingsModal({
   visible, onClose,
+  portalContainer,
   autoTranslate, onAutoTranslateChange,
   bigFont, onBigFontChange,
   targetLang, onTargetLangChange,
   translationConfigured,
 }: SubtitleSettingsModalProps) {
   return (
-    <Modal visible={visible} onClose={onClose} title="字幕设置" className="up-subsettings-modal">
+    <Modal visible={visible} onClose={onClose} title="字幕设置" className="up-subsettings-modal" portalContainer={portalContainer}>
       <div className="up-ms-card">
         <div className="up-ms-row">
           <div className="up-ms-label">双语字幕</div>
