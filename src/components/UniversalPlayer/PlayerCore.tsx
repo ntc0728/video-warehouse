@@ -2,6 +2,13 @@ import { AlertTriangle, ListVideo, RefreshCw } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode } from '@/types/player';
 import { Icon } from "@/components/ui/Icon";
+import { detectDeviceCaps, getVideoCompatAttrs } from './lib/deviceCaps';
+
+// <video> 兼容属性须首帧渲染即存在（iOS 不认运行时补的 webkit-playsinline；X5 须静态
+// 写出 x5-video-player-type 等同层属性）。模块级探测一次即可。
+// 注：webkit-playsinline / x5-* 等非标准属性不在 React 类型里，运行时 React 会原样渲染，
+// 这里用 unknown 桥接绕过 TS 校验。
+const VIDEO_COMPAT_ATTRS = getVideoCompatAttrs(detectDeviceCaps()) as unknown as React.HTMLAttributes<HTMLVideoElement>;
 
 interface PlayerCoreProps {
   videoRef: (element: HTMLVideoElement | null) => void;
@@ -88,7 +95,7 @@ export default function PlayerCore({
         ref={videoRef}
         className="up-player-video"
         style={videoStyle}
-        playsInline
+        {...VIDEO_COMPAT_ATTRS}
         preload="auto"
       >
         {/* 外挂字幕轨：仅点播模式；key=subtitleUrl 保证换字幕文件时重建轨；关闭时卸载 track 隐藏 */}

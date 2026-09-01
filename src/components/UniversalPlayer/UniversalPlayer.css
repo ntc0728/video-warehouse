@@ -1883,8 +1883,11 @@ html[data-player-header-controls="true"] .up-player-toast {
   --switch-thumb-offset: 1.1875rem;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 40rem;
+  /* 修复「横屏 / 平板竖屏某些设备 modal 没占满设备宽度」：
+     原 max-width: 40rem 在横屏（宽 ≥1024px 不命中 data-mobile-layout）时被压成 640px 居中。
+     移动端更多设置弹窗本就是全宽底部弹窗，直接吃满视口宽度。 */
+  width: 100dvw;
+  max-width: 100dvw;
   max-height: min(88dvh, 52rem);
   margin: 0 auto;
   border-radius: 1.25rem 1.25rem 0 0;
@@ -2641,3 +2644,122 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   cursor: pointer;
 }
 .up-settings-reset:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ════════════ 全屏 / 横屏 UI（需求④⑤）════════════ */
+
+/* CSS 网页伪全屏：容器 fixed 铺满视口，自定义 UI 完整保留（iOS iPhone 默认档）。
+   与 :fullscreen 伪类不同，这是 JS 加的类，用于「无元素级 fullscreen 能力」的环境。 */
+.up-universal-player.up-fs-css-pseudo {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0;
+  background: #000;
+}
+
+/* 全屏常驻右上角操作组（画中画·投屏·更多设置）：与控制栏自动隐藏解耦，
+   控制栏隐藏后仍在。复用 .up-header-actions / .up-header-action-btn 既有样式。 */
+.up-fs-corner {
+  position: absolute;
+  top: calc(var(--space-sm) + env(safe-area-inset-top));
+  right: calc(var(--space-sm) + env(safe-area-inset-right));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  pointer-events: auto;
+}
+
+/* 全屏控制栏：桌面风格栏贴底，增强底部渐变对比（控制栏自身 z-index:20，
+   这里在 hover 态之上再抬一级避免被视频遮挡） */
+.up-control-bar--fullscreen {
+  z-index: 60;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+  padding: var(--space-md) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
+}
+
+/* 右侧「更多设置」抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项 + 全屏专属解码/快捷键。
+   深色半透明，保证在视频上也清晰；选中不关闭以支持连续调节。 */
+.up-fs-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(340px, 42%);
+  min-width: 260px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 20, 26, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: -0.5rem 0 2rem rgba(0, 0, 0, 0.45);
+  animation: up-fs-drawer-in 0.22s ease-out both;
+}
+.up-fs-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  color: #fff;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.up-fs-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+.up-fs-drawer-close:hover { color: #fff; }
+.up-fs-drawer-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
+}
+.up-fs-drawer .up-ms-body {
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--space-sm);
+  padding-bottom: 0;
+}
+.up-fs-drawer .up-ms-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+.up-fs-drawer .up-ms-label { color: rgba(255, 255, 255, 0.92); }
+.up-fs-drawer .up-ms-label__title { color: rgba(255, 255, 255, 0.92); }
+.up-fs-drawer .up-ms-sub { color: rgba(255, 255, 255, 0.5); }
+.up-fs-drawer .up-ms-chip {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+.up-fs-drawer .up-ms-chip--on {
+  background: var(--color-primary, #3b82f6);
+  color: #fff;
+}
+
+@keyframes up-fs-drawer-in {
+  from { transform: translateX(100%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* 横屏矮屏（如手机横屏高 ~390px）：压缩抽屉宽度与头部留白，避免内容溢出 */
+@media (max-height: 480px) {
+  .up-fs-drawer { width: min(300px, 40%); }
+  .up-fs-drawer-head { padding-top: var(--space-xs); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .up-fs-drawer { animation: none; }
+}

@@ -44,6 +44,8 @@ interface ControlBarProps {
   /** 打开键盘快捷键面板（Shift+? / 更多菜单入口） */
   onShowShortcuts?: () => void;
   isMobile?: boolean;
+  /** 全屏模式：恢复桌面布局但去除音量/循环，并把画中画+更多设置移出底部（改由右上角常驻操作组承担） */
+  fullscreen?: boolean;
   /** 播放错误态：透传给全屏按钮，错误时禁用全屏（C4 守卫一致） */
   hasError?: boolean;
   levels: PlayerLevel[];
@@ -82,6 +84,7 @@ export default function ControlBar({
   onScreenshot,
   onShowShortcuts,
   isMobile = false,
+  fullscreen = false,
   hasError = false,
   levels,
   currentLevel,
@@ -111,18 +114,20 @@ export default function ControlBar({
   const isHls = usePlayerStore(s => s.currentType) === 'm3u8';
   const isVideoMode = mode === 'video';
   const isLiveLike = mode === 'iptv' || mode === 'live';
+  // 功能按钮（字幕/倍速/清晰度）在桌面栏显示：桌面非全屏，或全屏（任意端）
+  const showFeatureButtons = fullscreen || !isMobile;
 
   return (
     <div
       ref={barRef}
       data-visible={String(visible)}
-      className={`up-control-bar ${visible ? 'up-control-bar-visible' : 'up-control-bar-hidden'} up-platform-${platform}`}
+      className={`up-control-bar ${visible ? 'up-control-bar-visible' : 'up-control-bar-hidden'} up-platform-${platform}${fullscreen ? ' up-control-bar--fullscreen' : ''}`}
       onMouseMove={onActivity}
       role="toolbar"
       aria-label="播放器控制栏"
       aria-orientation="horizontal"
     >
-      {isMobile ? (
+      {isMobile && !fullscreen ? (
         /* 移动端单行布局：播放 / 进度条 / 时间轴 / 全屏 同行（桌面端不受影响） */
         <div className="up-control-mobile-row">
           <PlayButton isPlaying={isPlaying} disabled={isPlayerLoading && !isReadyToPlay} onClick={onTogglePlay} />
@@ -189,7 +194,8 @@ export default function ControlBar({
         )}
 
         <div className="up-control-right">
-          {!isMobile && (
+          {/* 音量：全屏模式按需求④移除（移动端音量无意义，iOS 甚至禁止 JS 改音量） */}
+          {!isMobile && !fullscreen && (
             <VolumeControl
               volume={volume}
               onChange={onVolumeChange}
@@ -200,14 +206,14 @@ export default function ControlBar({
             />
           )}
           <div className="up-control-feature">
-            {isVideoMode && !isMobile && (
+            {isVideoMode && showFeatureButtons && (
               <SubtitleControl
                 onImportSubtitle={onImportSubtitle}
                 activePopover={activePopover}
                 onPopoverChange={onPopoverChange}
               />
             )}
-            {!isMobile && (
+            {showFeatureButtons && (
               <SpeedControl
                 currentRate={playbackRate}
                 onChange={onPlaybackRateChange}
@@ -215,7 +221,7 @@ export default function ControlBar({
                 onPopoverChange={onPopoverChange}
               />
             )}
-            {isVideoMode && !isMobile && (
+            {isVideoMode && showFeatureButtons && (
               <ResolutionSwitch
                 levels={levels}
                 currentLevel={currentLevel}
@@ -225,11 +231,13 @@ export default function ControlBar({
                 onPopoverChange={onPopoverChange}
               />
             )}
-            {isVideoMode && !isMobile && onLoopModeChange && (
+            {/* 循环：全屏模式按需求④移出底部（收纳进右上角「更多设置」抽屉） */}
+            {isVideoMode && !isMobile && !fullscreen && onLoopModeChange && (
               <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}
           </div>
-          {!isMobile && (
+          {/* 更多设置：全屏模式移出底部，改由右上角常驻操作组承担（FsTopRightActions） */}
+          {!isMobile && !fullscreen && (
             <MoreMenu
               activePopover={activePopover}
               onPopoverChange={onPopoverChange}
@@ -250,11 +258,21 @@ export default function ControlBar({
               )}
             </MoreMenu>
           )}
-          {!isMobile && (
+          {/* 画中画+全屏：全屏模式移出底部（画中画改由右上角常驻操作组承担），
+              仅保留全屏按钮在底栏右侧收尾 */}
+          {!isMobile && !fullscreen && (
             <div className="up-control-window">
               <PiPButton isPiP={isPiP} onClick={onTogglePiP} />
               <FullscreenButton containerRef={containerRef} hasError={hasError} />
             </div>
+          )}
+          {/* 全屏模式底部栏：字幕/倍速/清晰度之后补「截图 + 全屏」，
+              画中画与更多设置已在右上角常驻，不再出现于底栏 */}
+          {fullscreen && onScreenshot && (
+            <ScreenshotButton onClick={onScreenshot} />
+          )}
+          {fullscreen && (
+            <FullscreenButton containerRef={containerRef} hasError={hasError} />
           )}
           {slots?.right}
           </div>
