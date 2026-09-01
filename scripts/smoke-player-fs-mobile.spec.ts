@@ -3,10 +3,11 @@ import { test, expect, type Page } from './fixtures/mock-tmdb';
 /**
  * 真实播放器（UniversalPlayer）移动端全屏整改冒烟测试
  *
- * 覆盖自测整改后的核心行为（对照 commit f02eb23 的需求①/②/④）：
+ * 覆盖自测整改后的核心行为（对照 commit f02eb23 的需求①/②/④ + 本轮需求①②）：
  *   ① 全屏整改仅限真机移动端 —— PC 桌面 web 全屏保持原样（无角落组/右侧抽屉，音量/画中画组/更多菜单保留）
  *   ② 右侧更多设置抽屉：背景对齐右键菜单、隐藏倍速/字幕/快捷键，保留循环/镜像/画面比例/解码模式
  *   ④ 细节交互：点空白关抽屉、重进全屏抽屉不自动开、移动端点击控制栏已显→不再隐藏（改暂停）
+ *   + 改子设置项后自动关抽屉，操作提示（center-toast）完整避开 up-player-header
  *
  * 用 iPhone UA 模拟真机；全屏走 Fullscreen API（headless Chromium 支持）或回退 CSS 伪全屏，
  * 两种都会置 isFullscreen=true → fsMobile 成立 → 触发整改 UI。
@@ -158,6 +159,41 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     expect(box).not.toBeNull();
     expect(box!.width).toBeGreaterThan(340);
     expect(box!.width).toBeLessThan(844 * 0.7);
+
+    expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('PLAYER-FS-TOAST: 改子设置项后关抽屉 + 操作提示避让 header（需求①②）', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(playUrl(TEST_MOVIE_ID), { waitUntil: 'domcontentloaded' });
+    await waitPlayer(page);
+
+    await enterFullscreen(page);
+
+    // hasError 场景 header 常显（visible = isControlsVisible || hasError）
+    const header = page.locator('.up-player-header');
+    await expect(header).toHaveClass(/up-player-header-visible/);
+
+    // 打开抽屉，点「循环播放」子项 chip（默认 loopMode=none → 点「单集循环」必触发 onChange）
+    await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
+    const drawer = page.locator('.up-fs-drawer');
+    await expect(drawer).toBeVisible();
+    await drawer.locator('button').filter({ hasText: /单集循环|列表循环/ }).first().click();
+
+    // 需求②：修改子设置项后抽屉自动关闭
+    await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
+
+    // 需求②：播放器内部居中靠上操作提示出现（center-toast）
+    const toast = page.locator('.up-player-center-toast');
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText(/单集循环|列表循环/);
+
+    // 需求①：提示完整避开 up-player-header —— toast 顶部 ≥ header 底部
+    const toastBox = await toast.boundingBox();
+    const headerBox = await header.boundingBox();
+    expect(toastBox).not.toBeNull();
+    expect(headerBox).not.toBeNull();
+    expect(toastBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 1);
 
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });

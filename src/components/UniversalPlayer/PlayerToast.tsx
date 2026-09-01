@@ -82,7 +82,9 @@ export function ToastProvider({
    * 测量居中提示的目标位置：
    * - 水平：播放器容器水平居中
    * - 垂直：播放器高度约 30% 处（居中靠上，不遮挡视频主体）
-   * - 移动端（mobileCenter）：避让可见的 up-player-header，确保在其下方
+   * - 避让 up-player-header（header 可见时）：提示完整落在 header 下方。
+   *   ⚠️ 提示以 top 为中心（translate(-50%,-50%)），余量必须 ≥ 提示半高（~18px）
+   *   才不会与 header 重叠（历史 bug：余量 12px 时提示上半截伸进 header 区域）。
    */
   const measureCenterPos = useCallback(() => {
     const el = containerRef?.current;
@@ -93,21 +95,21 @@ export function ToastProvider({
     const rect = el.getBoundingClientRect();
     // 居中靠上：播放器高度 30% 处
     let y = rect.top + rect.height * 0.3;
-    // 移动端：避让 up-player-header（返回栏 + 右上角操作组），不被其遮挡
-    if (mobileCenter) {
-      const header = el.querySelector<HTMLElement>('.up-player-header');
-      if (header) {
-        const headerH = header.getBoundingClientRect().height;
-        if (headerH > 0) {
-          y = Math.max(y, rect.top + headerH + 12);
-        }
+    // 避让 up-player-header（返回栏 + 右上角操作组）：仅 header 可见时；
+    // 隐藏态（.up-player-header-hidden，opacity:0）不遮挡任何内容，无需避让
+    const header = el.querySelector<HTMLElement>('.up-player-header');
+    if (header && !header.classList.contains('up-player-header-hidden')) {
+      const headerH = header.getBoundingClientRect().height;
+      if (headerH > 0) {
+        // 余量 = 提示半高(~18px) + 间距，确保提示完整在 header 之下
+        y = Math.max(y, rect.top + headerH + 36);
       }
     }
     setCenterPos({
       x: rect.left + rect.width / 2,
       y,
     });
-  }, [containerRef, mobileCenter]);
+  }, [containerRef]);
 
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
     // 显示前重新测量：header 可见性/尺寸可能刚变化（如触摸后控制栏弹出），
