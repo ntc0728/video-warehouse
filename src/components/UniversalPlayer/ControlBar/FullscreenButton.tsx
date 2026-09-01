@@ -1,7 +1,7 @@
 import { Maximize, Minimize, Maximize2, Minimize2 } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { usePlayerStore } from '@/stores';
-import { getFullscreenElement, toggleFullscreen } from '../lib/fullscreen';
+import { toggleFullscreen, subscribeFullscreen } from '../lib/fullscreen';
 import { DuoIcon } from '@/components/ui/DuoIcon';
 
 interface FullscreenButtonProps {
@@ -14,19 +14,9 @@ export default function FullscreenButton({ containerRef, hasError = false }: Ful
   const isFullscreen = usePlayerStore(s => s.isFullscreen);
   const setFullscreen = usePlayerStore(s => s.setFullscreen);
 
-  useEffect(() => {
-    const handleChange = () => {
-      setFullscreen(!!getFullscreenElement());
-    };
-    document.addEventListener('fullscreenchange', handleChange);
-    document.addEventListener('webkitfullscreenchange', handleChange);
-    document.addEventListener('msfullscreenchange', handleChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleChange);
-      document.removeEventListener('webkitfullscreenchange', handleChange);
-      document.removeEventListener('msfullscreenchange', handleChange);
-    };
-  }, [setFullscreen]);
+  // 订阅统一全屏管理器：合并「元素级 fullscreenchange / iOS webkitbegin-endfullscreen /
+  // CSS 伪全屏」三种来源，iOS 系统全屏与伪全屏都能驱动 isFullscreen。
+  useEffect(() => subscribeFullscreen((active) => setFullscreen(active)), [setFullscreen]);
 
   // C4/R2：与 F 键 / 双击共用 lib/fullscreen 的 toggleFullscreen
   const toggleFullscreenButton = useCallback(async () => {

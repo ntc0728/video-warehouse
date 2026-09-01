@@ -3,6 +3,7 @@ import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
 import { toast } from '@/components/ui';
 import { playerToast } from '../PlayerToast';
+import { togglePip } from '../lib/pipController';
 import { getResolutionLabel } from '../lib/utils';
 import type { IPlayerAdapter } from '../adapters/PlayerAdapter';
 import type { BasePlayerAdapter } from '../adapters/PlayerAdapter';
@@ -374,6 +375,14 @@ useEffect(() => {
     const handleRateChange = () => { getStore().setPlaybackRate(video.playbackRate); };
     const handleEnterPiP = () => { getStore().setIsPiP(true); };
     const handleLeavePiP = () => { getStore().setIsPiP(false); };
+    // iOS 系统 UI 触发的 PiP 进出只走 webkitpresentationmodechanged（标准 enter/leave 不触发）
+    const handlePipModeChange = () => {
+      const v = video as HTMLVideoElement & { webkitPresentationMode?: string };
+      getStore().setIsPiP(
+        document.pictureInPictureElement === video
+        || v.webkitPresentationMode === 'picture-in-picture',
+      );
+    };
     const handleLoadedMetadata = () => {
       const dur = video.duration;
       if (dur > 0 && isFinite(dur)) {
@@ -463,6 +472,7 @@ useEffect(() => {
     video.addEventListener('ratechange', handleRateChange);
     video.addEventListener('enterpictureinpicture', handleEnterPiP);
     video.addEventListener('leavepictureinpicture', handleLeavePiP);
+    video.addEventListener('webkitpresentationmodechanged', handlePipModeChange);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('error', handleNativeError);
     video.addEventListener('progress', handleProgress);
@@ -483,6 +493,7 @@ useEffect(() => {
       video.removeEventListener('ratechange', handleRateChange);
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
+      video.removeEventListener('webkitpresentationmodechanged', handlePipModeChange);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('error', handleNativeError);
       video.removeEventListener('progress', handleProgress);
@@ -656,23 +667,12 @@ useEffect(() => {
   }, []);
 
   const togglePiP = useCallback(async () => {
-    try {
-      const video = videoRef.current;
-      if (!video) return;
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (document.pictureInPictureEnabled) {
-        if (video.readyState === 0) {
-          await new Promise<void>((resolve) => {
-            const onLoaded = () => { video.removeEventListener('loadedmetadata', onLoaded); resolve(); };
-            video.addEventListener('loadedmetadata', onLoaded);
-          });
-        }
-        video.disablePictureInPicture = false;
-        await video.requestPictureInPicture();
-      }
-    } catch (err) {
-      console.error('PiP failed:', err);
+    const video = videoRef.current;
+    // 统一走 lib/pipController：元数据等待带超时、整体请求带总超时（杜绝「竖屏点 PiP 卡死」）、
+    // iOS iPhone 走「先全屏再切 PiP」、标准事件 + webkitpresentationmodechanged 双订阅。
+    const res = await togglePip(video, {});
+    if (!res.ok && res.message) {
+      playerToast(res.message);
     }
   }, []);
 
