@@ -10,6 +10,13 @@ interface BottomSheetProps {
   title?: string
   children: React.ReactNode
   className?: string
+  /**
+   * Portal 容器（Radix Dialog.Portal container）。默认 body。
+   * 播放器全屏场景必须传入播放器容器：fullscreen-api 档下 container 处于浏览器
+   * top layer，body 下的弹窗会被完全盖住；伪全屏 container z-index 9998 同样盖住。
+   * （Radix Portal 仅在 open 时挂载，届时传入的 DOM 节点必然已存在。）
+   */
+  portalContainer?: HTMLElement | null
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -18,6 +25,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   title,
   children,
   className,
+  portalContainer,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ y: number; time: number } | null>(null)
@@ -87,7 +95,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <Dialog.Root open={visible} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer ?? undefined}>
         <Dialog.Overlay className="modal-overlay-animate" />
         <Dialog.Content
           ref={contentRef}

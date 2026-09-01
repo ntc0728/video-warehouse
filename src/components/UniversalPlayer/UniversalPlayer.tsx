@@ -1138,6 +1138,7 @@ skipHistory,
           x={contextMenu.x}
           y={contextMenu.y}
           isPlaying={isPlayingForMenu}
+          containerRef={containerRef}
           onClose={() => setContextMenu(null)}
           onTogglePlay={() => playerCore.togglePlay()}
           onOpenColor={() => setActivePanel('color')}
@@ -1256,6 +1257,7 @@ skipHistory,
                 url={url}
                 title={title}
                 onCastActiveChange={setCastActive}
+                portalContainer={containerRef.current}
               />
             </Suspense>
           )}

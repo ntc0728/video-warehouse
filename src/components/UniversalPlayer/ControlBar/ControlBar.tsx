@@ -241,6 +241,7 @@ export default function ControlBar({
             <MoreMenu
               activePopover={activePopover}
               onPopoverChange={onPopoverChange}
+              containerRef={containerRef}
             >
               <DecoderSwitchMenuItem currentMode={decoderMode} onChange={onDecoderModeChange} visible={isHls} />
               {isVideoMode && <MirrorButton />}
