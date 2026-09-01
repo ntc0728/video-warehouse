@@ -24,12 +24,14 @@ interface CastSheetProps {
   title?: string;
   /** 投屏状态变化通知父组件（用于右上角图标常亮提示） */
   onCastActiveChange: (active: boolean) => void;
+  /** Portal 容器：播放器全屏（top layer / 伪全屏）时必须传容器，否则弹窗被盖不可见 */
+  portalContainer?: HTMLElement | null;
 }
 
 /** 投屏底部弹窗（双模式）：
  *  - native：搜索动画 → 设备列表 / 空态 → 连接中 → 已连接控制面板（原生 DLNA 桥）
  *  - web：打开即调系统 Cast 设备选择弹窗（Chromecast / Google TV）→ 已连接控制面板 */
-export default function CastSheet({ visible, onClose, url, title, onCastActiveChange }: CastSheetProps) {
+export default function CastSheet({ visible, onClose, url, title, onCastActiveChange, portalContainer }: CastSheetProps) {
   const mode = getCastMode();
   const isWeb = mode === 'web';
   const [view, setView] = useState<CastView>('searching');
@@ -140,7 +142,7 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
   }, [isWeb]);
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="投屏到电视" className="up-cast-sheet">
+    <BottomSheet visible={visible} onClose={onClose} title="投屏到电视" className="up-cast-sheet" portalContainer={portalContainer}>
       <div className="up-ms-head">
         <span className="up-ms-title">投屏到电视</span>
         <button className="up-ms-close" onClick={onClose} aria-label="关闭投屏">

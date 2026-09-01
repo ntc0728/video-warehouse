@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
+import { getOverlayPortalTarget } from './lib/overlayPortal';
 
 export type PlayerToastType = 'default' | 'success' | 'warning' | 'error';
 
@@ -177,20 +178,11 @@ export function ToastProvider({
   }, [measureCenterPos]);
 
   // 全部提示的 portal 目标动态选择（center / 右上角通用）——
-  // - 全屏（fullscreen-api 档 / webkit 档）：container 处于浏览器 top layer，
-  //   body 下的任何元素都会被其覆盖（z-index 无效）→ 必须 portal 进 container 本身；
-  // - css-pseudo 伪全屏：container z-index 9998 > toast 的 1500 → 同样必须进 container；
-  // - 非全屏：portal 到 body（逃出 .app-shell__scroll 的 contain:layout 劫持 fixed 包含块）。
-  // 坐标无需换算：全屏时 container rect = (0,0,vw,vh)，容器坐标 == 测量得到的视口坐标。
-  const getToastPortalTarget = (): HTMLElement => {
-    const fsElement = document.fullscreenElement
-      ?? (document as Document & { webkitFullscreenElement?: Element | null }).webkitFullscreenElement
-      ?? null;
-    if (fsElement != null && containerRef?.current != null && fsElement === containerRef.current) {
-      return containerRef.current;
-    }
-    return document.body;
-  };
+  // 全屏（top layer / 伪全屏 z-index:9998）时必须 portal 进 container 才可见，
+  // 非全屏 portal 到 body（逃出 .app-shell__scroll 的 contain:layout 劫持 fixed 包含块）。
+  // 详见 lib/overlayPortal.ts。
+  const getToastPortalTarget = (): HTMLElement =>
+    getOverlayPortalTarget(containerRef?.current);
 
   // 屏幕居中提示
   const renderCenterToast = (msg: string, type: PlayerToastType, isExiting: boolean) =>

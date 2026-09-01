@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreVertical, MoreHorizontal } from 'lucide-react';
 import { DuoIcon } from '@/components/ui/DuoIcon';
+import { getOverlayPortalTarget } from '../lib/overlayPortal';
 
 interface MoreMenuProps {
   children: ReactNode;
   activePopover: string | null;
   onPopoverChange: (id: string | null) => void;
+  /** 播放器容器：全屏（top layer / 伪全屏）时弹窗必须 portal 进容器才可见 */
+  containerRef?: RefObject<HTMLElement | null>;
 }
 
 const POPOVER_ID = 'more';
@@ -20,7 +23,7 @@ type Pos = { top?: number; left?: number };
  * 现改为 portal 到 body + position:fixed 按触发按钮 getBoundingClientRect 计算坐标，
  * 彻底逃离播放器容器的裁剪；并保留「悬停打开 / 悬停离开延迟关闭」语义（按钮与弹窗之间加桥接）。
  */
-export default function MoreMenu({ children, activePopover, onPopoverChange }: MoreMenuProps) {
+export default function MoreMenu({ children, activePopover, onPopoverChange, containerRef }: MoreMenuProps) {
   const isOpen = activePopover === POPOVER_ID;
   const [isExiting, setIsExiting] = useState(false);
   const [pos, setPos] = useState<Pos | null>(null);
@@ -153,7 +156,7 @@ export default function MoreMenu({ children, activePopover, onPopoverChange }: M
           >
             {children}
           </div>,
-          document.body,
+          getOverlayPortalTarget(containerRef?.current),
         )}
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Play, Pause, Palette, Volume2, Keyboard } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
+import { getOverlayPortalTarget } from '../lib/overlayPortal';
 
 interface ContextMenuProps {
   visible: boolean;
@@ -9,6 +10,8 @@ interface ContextMenuProps {
   x: number;
   y: number;
   isPlaying: boolean;
+  /** 播放器容器：全屏（top layer / 伪全屏）时菜单必须 portal 进容器才可见 */
+  containerRef: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onTogglePlay: () => void;
   /** Issue4：打开「视频色彩调整」弹窗 */
@@ -22,12 +25,14 @@ interface ContextMenuProps {
  * P1-6 桌面点播右键菜单（对齐 B站/YouTube 播放器）：
  * 播放/暂停、视频色彩调整、视频音效调节、快捷键说明。
  * 仅桌面点播模式挂载；点击外部 / Escape 关闭；位置钳制在视口内。
+ * portal 目标由 getOverlayPortalTarget 决定（全屏进 container，否则 body）。
  */
 export default function ContextMenu({
   visible,
   x,
   y,
   isPlaying,
+  containerRef,
   onClose,
   onTogglePlay,
   onOpenColor,
@@ -102,6 +107,6 @@ export default function ContextMenu({
         <kbd className="up-context-menu__kbd">Shift+?</kbd>
       </button>
     </div>,
-    document.body,
+    getOverlayPortalTarget(containerRef.current),
   );
 }
