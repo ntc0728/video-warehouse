@@ -12,7 +12,8 @@ interface SettingsDrawerProps extends Omit<SettingsContentProps, 'closeOnChipSel
  * 全屏 / 横屏时的「更多设置」右侧抽屉（需求⑤）。
  * 内容 = 原移动端竖版更多设置（清晰度/循环/定时关闭/后台听视频/镜像/画面比例/解码模式），
  * 按需求②移除倍速 / 字幕 / 快捷键，避免与全屏场景冗余。
- * closeOnChipSelect=false → 选中不关闭，支持连续调节。
+ * closeOnChipSelect=true → 选取/修改子设置项后关闭抽屉，操作提示在播放器内
+ * 居中靠上显示（mobileSettingsToast → center-toast，避让 up-player-header）。
  * 抽屉定位在播放器内右侧，高度吃满、宽度增大，视频画面仍可见。
  * 阻止事件冒泡到播放器（点抽屉不会触发播放/暂停）；点击抽屉之外（含视频空白）关闭抽屉。
  */
@@ -59,7 +60,7 @@ export default function SettingsDrawer({
       <div className="up-fs-drawer-body">
         <SettingsContent
           {...content}
-          closeOnChipSelect={false}
+          closeOnChipSelect={true}
           onClose={onClose}
           hideSpeed
           hideSubtitle

@@ -16,6 +16,7 @@
  */
 import type { FullscreenCapability } from './deviceCaps';
 import { detectDeviceCaps } from './deviceCaps';
+import { isNativePlatform } from '@/lib/platform';
 
 /**
  * 开发/冒烟测试逃生口：在 dev 环境且 URL 带 `__smoke_fullscreen=1` 时，
@@ -152,16 +153,33 @@ export async function exitFullscreen(video?: HTMLVideoElement | null): Promise<v
   unlockOrientation();
 }
 
-/** 屏幕方向锁定（仅真·全屏下浏览器允许，伪全屏/非全屏会 reject → 静默） */
+/**
+ * 屏幕方向锁定（非桌面端全屏默认横屏，需求⑥）：
+ * 1. Web 标准 screen.orientation.lock —— 仅真·全屏下浏览器允许，伪全屏/非全屏会 reject → 静默。
+ * 2. App 端兜底（Capacitor WebView 无元素级全屏 → 降级 CSS 伪全屏 → Web lock 必 reject）：
+ *    走 @capacitor/screen-orientation 原生桥，无需全屏状态。
+ *    iOS 的 Web API 与插件均不支持 lock → 自动静默失败（iOS 不做横屏锁定）。
+ */
 export async function lockLandscape(): Promise<boolean> {
   try {
     const o = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
-    if (!o?.lock) return false;
-    await o.lock('landscape');
-    return true;
+    if (o?.lock) {
+      await o.lock('landscape');
+      return true;
+    }
   } catch {
-    return false;
+    /* Web lock 失败 → 尝试 App 原生桥兜底 */
   }
+  if (isNativePlatform()) {
+    try {
+      const { ScreenOrientation } = await import('@capacitor/screen-orientation');
+      await ScreenOrientation.lock({ orientation: 'landscape' });
+      return true;
+    } catch {
+      /* iOS / ROM 不支持：静默失败，不阻塞播放 */
+    }
+  }
+  return false;
 }
 
 export function unlockOrientation(): void {
