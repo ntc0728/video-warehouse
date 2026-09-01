@@ -215,6 +215,12 @@
   flex-direction: column;
   gap: var(--space-sm);
   max-width: 60%;
+  /* 左 / 下边距：叠在 .hero-banner__text-slide 的 padding（--space-xl）之上，
+     避免文字贴 banner 左下角。写在 .hero-banner__text 本身而非 slide 上，
+     是因为 slide 只负责「随 track 位移」，文字块的边距跟着文字走，
+     无论 track 怎么平移、无论空态（无 slide 包裹）都一致。 */
+  margin-left: var(--space-lg);
+  margin-bottom: var(--space-md);
   /* 始终可见：文本不再有出场/垂直入场动画（问题 #1）；滑动期间随 banner 一起水平位移，
      由 .hero-banner__text-track 的 transform 驱动（见 textTrackStyle / textTrackIndices）。 */
   opacity: 1;
@@ -253,8 +259,10 @@
   border-radius: var(--radius-sm);
 }
 
+/* 高度对齐「标题位」：有 logo 时是 logo（max-height --space-3xl，见下方
+   .hero-banner__text .detail-hero-logo），无 logo 时是文字标题。 */
 .hero-banner__skeleton--title {
-  height: 2.5rem;
+  height: var(--space-2xl);
   width: min(60%, 26rem);
 }
 
@@ -275,6 +283,14 @@
 }
 
 /* ── Title & Meta ────────────────────────────────────────────────────── */
+
+/* 标题位 logo：复用 Detail 页的 .detail-hero-logo（全局样式见
+   assets/styles/shared-hero.css），此处只做 banner 场景的尺寸覆盖。 */
+.hero-banner__text .detail-hero-logo {
+  max-width: 100%;
+  max-height: var(--space-3xl);
+  margin-bottom: var(--space-2xs);
+}
 
 .hero-banner__title {
   margin: 0;

@@ -14,8 +14,8 @@
  */
 import type { PipCapability } from './deviceCaps';
 
-const METADATA_TIMEOUT_MS = 1500;
-const REQUEST_TIMEOUT_MS = 3000;
+const METADATA_TIMEOUT_MS = 3000;
+const REQUEST_TIMEOUT_MS = 4000;
 
 type WebkitVideo = HTMLVideoElement & {
   webkitSetPresentationMode?: (mode: 'inline' | 'picture-in-picture' | 'fullscreen') => void;
@@ -52,7 +52,8 @@ async function waitMetadata(video: HTMLVideoElement): Promise<void> {
       video.addEventListener('error', onError, { once: true });
     }),
     METADATA_TIMEOUT_MS,
-    '等待视频元数据',
+    // 内部 label：超时后会由外层兜底翻译为「视频加载超时」给用户，不会直接外泄。
+    'metadata',
   );
 }
 
@@ -101,6 +102,15 @@ export async function togglePip(
 
   const v = video as WebkitVideo;
 
+  // 快速短路：媒体明确未加载且未在播放 → 不浪费 3s 等元数据，直接给可执行的提示
+  // （CMS 源/代理慢、首帧没来时点 PiP 的常见场景）
+  if (video.readyState === 0 && video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+    return { ok: false, message: '视频源加载失败，请切换其他源' };
+  }
+  if (video.readyState === 0 && video.paused && !video.currentTime) {
+    return { ok: false, message: '视频尚未加载，请先开始播放' };
+  }
+
   // 退出
   if (isCurrentlyPip(video)) {
     try {
@@ -119,9 +129,17 @@ export async function togglePip(
 
   // 外层总超时，杜绝任何形式的永久挂起（这是「竖屏点 PiP 卡死」的根因）
   try {
-    return await withTimeout(doEnterPip(video, cap, forceFullscreenFirst), REQUEST_TIMEOUT_MS, '画中画请求');
+    return await withTimeout(doEnterPip(video, cap, forceFullscreenFirst), REQUEST_TIMEOUT_MS, 'request');
   } catch (e) {
-    return { ok: false, message: (e as Error).message || '画中画请求失败' };
+    // 兜底翻译：内部 timeout label（"metadata"/"request"）不直接外泄，统一为可读中文
+    const msg = (e as Error).message || '';
+    if (msg === 'metadata超时' || /metadata/.test(msg)) {
+      return { ok: false, message: '视频加载超时，请稍后再试' };
+    }
+    if (msg === 'request超时' || /request/.test(msg)) {
+      return { ok: false, message: '画中画请求超时，请重试' };
+    }
+    return { ok: false, message: msg || '画中画请求失败' };
   }
 }
 

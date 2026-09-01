@@ -1,0 +1,71 @@
+/* ============================================================
+   跨页共享 Hero 元素（logo / meta）
+   ────────────────────────────────────────────────────────────
+   这些类最初只服务 Detail 页（Detail.css），现被三处复用：
+     - Detail 页   .detail-hero-logo / .detail-hero-meta
+     - Play 页     .player-detail-meta（meta 项与 Detail 页同结构同条件）
+     - 首页 banner .hero-banner__text 内的标题位（用 logo 代替纯文字标题）
+   Detail.css 由 Detail/index.tsx 懒加载引入，Vite 会把它打进 Detail 的
+   异步 CSS chunk —— 首页 / Play 页在未访问过 Detail 页时拿不到这些规则
+   （实测 dist 中 .detail-hero-rating 只存在于 index-DaBpgXjC.css 异步块）。
+   故将共享规则上提到本文件，由 index.css 全局引入。
+   ============================================================ */
+
+/* TMDB Logo（标题位：有 logo 时用它代替文字标题） */
+.detail-hero-logo {
+  align-self: flex-start;
+  width: auto;
+  max-width: min(55%, var(--layout-panel-medium-w));
+  max-height: var(--header-height);
+  margin-bottom: var(--space-sm);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* ── Meta 行元素（Detail 页 detail-hero-meta / Play 页 player-detail-meta 共用） ── */
+
+.detail-hero-rating {
+  color: var(--color-rating);
+  font-weight: 600;
+}
+
+/* 颜色走可覆写变量：Detail 页是压在 backdrop 上的白字，
+   Play 页 player-detail-meta 是 --color-surface 浅底（深色字），
+   由 .player-detail-meta 覆写这两个变量即可，无需重复写选择器。 */
+.detail-hero-meta-item {
+  color: var(--hero-meta-color, rgba(255, 255, 255, 0.8));
+}
+
+.detail-hero-meta-item--type {
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--hero-meta-type-bg, rgba(255, 255, 255, 0.15));
+  color: var(--hero-meta-color, rgba(255, 255, 255, 0.8));
+  font-size: var(--text-xs);
+}
+
+/* ── 响应式（移动端 / App 恒移动副本 / 桌面 / TV）── */
+
+@media (width <= 767px) {
+  .detail-hero-logo {
+    max-width: min(65%, var(--layout-popover-wide-min-w));
+    max-height: var(--layout-tabbar-height);
+  }
+}
+
+html[data-device="app"] .detail-hero-logo {
+  max-width: min(65%, var(--layout-popover-wide-min-w));
+  max-height: var(--layout-tabbar-height);
+}
+
+@media (width >= 1024px) {
+  html:not([data-device="app"]) .detail-hero-logo {
+    max-width: min(50%, var(--layout-episode-panel-w));
+    max-height: var(--layout-tabbar-height);
+  }
+}
+
+[data-device="tv"] .detail-hero-logo {
+  max-width: min(45%, var(--layout-episode-panel-w-alt));
+  max-height: var(--layout-channel-num-w);
+}

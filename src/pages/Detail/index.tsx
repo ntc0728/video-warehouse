@@ -710,7 +710,8 @@ export default function DetailPage() {
 
             {/* Meta 行（对齐轮播图风格） */}
             <div className="detail-hero-meta">
-              <span className="detail-hero-rating">★ {voteAverage > 0 ? voteAverage.toFixed(1) : ''}</span>
+              {/* 评分：无值不显示（旧实现恒渲染，voteAverage=0 时会留下一个孤零零的 ★ 图标） */}
+              {voteAverage > 0 && <span className="detail-hero-rating">★ {voteAverage.toFixed(1)}</span>}
               {year && <span className="detail-hero-meta-item">{year}</span>}
               <span className="detail-hero-meta-item detail-hero-meta-item--type">
                 {typeLabels[tmdbMediaType]}
