@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '@/stores';
 import { createAdapter } from '../adapters/adapterRegistry';
-import { toast } from '@/components/ui';
 import { playerToast } from '../PlayerToast';
 import { togglePip } from '../lib/pipController';
 import { getResolutionLabel } from '../lib/utils';
@@ -320,8 +319,8 @@ useEffect(() => {
             const p2 = video.play();
             if (p2 && typeof p2.catch === 'function') {
               p2.then(() => {
-                // 静音兜底播放成功：告知用户自动播放被拦截（全局 toast 中间靠上，醒目）
-                toast.show({ content: '自动播放被拦截，已静音播放，点击播放或调节音量恢复声音', type: 'warning' });
+                // 静音兜底播放成功：告知用户自动播放被拦截（播放器内 toast，全屏下也可见）
+                playerToast('自动播放被拦截，已静音播放，点击播放或调节音量恢复声音', 3000, 'warning');
               }).catch(() => {});
             }
           });
@@ -455,7 +454,7 @@ useEffect(() => {
       }
       // If video is already playing (e.g. audio works), show non-blocking toast instead of error overlay
       if (!video.paused) {
-        toast.show({ content: msg, type: 'error' });
+        playerToast(msg, 3000, 'error');
         return;
       }
       // P1-3：具体错误文案透传给 PlayerCore 错误覆盖层（替代固定「播放失败」文案）
@@ -544,13 +543,13 @@ useEffect(() => {
       const name = (err as DOMException | undefined)?.name;
       if (name === 'NotAllowedError') {
         // 真拦截：无用户手势带声音自动播放被浏览器禁止 → 提示点击屏幕
-        toast.warning('播放被浏览器拦截，请点击屏幕重试');
+        playerToast('播放被浏览器拦截，请点击屏幕重试', 3000, 'warning');
       } else if (name === 'AbortError') {
         // 播放操作被中断（快速切集/切线路打断 pending play），正常切换，静默
       } else if (name === 'NotSupportedError') {
-        toast.error('当前视频格式不受支持');
+        playerToast('当前视频格式不受支持', 3000, 'error');
       } else {
-        toast.warning('播放失败，请点击屏幕重试');
+        playerToast('播放失败，请点击屏幕重试', 3000, 'warning');
       }
     }
   }, []);
