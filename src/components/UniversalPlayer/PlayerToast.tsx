@@ -106,6 +106,11 @@ export function ToastProvider({
         y = Math.max(y, rect.top + headerH + 36);
       }
     }
+    // 兜底：容器滚出视口时（如用户滚到剧集列表后触发错误提示），
+    // rect.top 为负会把提示带到视口外（曾实测 centerY=-422 不可见），
+    // 夹取到视口内保证任何滚动状态下提示都可见
+    const EDGE_MARGIN = 48;
+    y = Math.min(Math.max(y, EDGE_MARGIN), window.innerHeight - EDGE_MARGIN);
     setCenterPos({
       x: rect.left + rect.width / 2,
       y,
