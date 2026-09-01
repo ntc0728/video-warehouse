@@ -2687,14 +2687,17 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(340px, 42%);
-  min-width: 260px;
+  width: min(440px, 50%);
+  min-width: 300px;
   z-index: 70;
   display: flex;
   flex-direction: column;
-  background: rgba(18, 20, 26, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* 需求②：背景与右键菜单弹窗一致 */
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: -0.5rem 0 2rem rgba(0, 0, 0, 0.45);
   animation: up-fs-drawer-in 0.22s ease-out both;
 }
@@ -2706,7 +2709,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: #fff;
   font-size: var(--text-lg);
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 .up-fs-drawer-close {
   display: flex;
@@ -2737,8 +2740,10 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
-.up-fs-drawer .up-ms-label { color: rgba(255, 255, 255, 0.92); }
-.up-fs-drawer .up-ms-label__title { color: rgba(255, 255, 255, 0.92); }
+/* 需求②：抽屉内文本/图标样式与右键菜单一致（--text-sm / font-weight 600 / 白色图标） */
+.up-fs-drawer .up-ms-label { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
+.up-fs-drawer .up-ms-label .lucide { color: rgba(255, 255, 255, 0.92); opacity: 1; }
+.up-fs-drawer .up-ms-label__title { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
 .up-fs-drawer .up-ms-sub { color: rgba(255, 255, 255, 0.5); }
 .up-fs-drawer .up-ms-chip {
   background: rgba(255, 255, 255, 0.1);
@@ -2756,7 +2761,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 
 /* 横屏矮屏（如手机横屏高 ~390px）：压缩抽屉宽度与头部留白，避免内容溢出 */
 @media (max-height: 480px) {
-  .up-fs-drawer { width: min(300px, 40%); }
+  .up-fs-drawer { width: min(360px, 44%); }
   .up-fs-drawer-head { padding-top: var(--space-xs); }
 }
 
