@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.17.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.16.0...kinotv-v1.17.0) (2026-09-01)
+
+
+### Features
+
+* **player:** 新增移动端横屏/全屏/画中画多端兼容整改 demo ([ecf6fee](https://github.com/ntc0728/video-warehouse/commit/ecf6fee4c156db8aedaff54c72b571585c30da7c))
+* **player:** 桌面端面板高度动态调整 + 播放器最小高度 ([577d5cf](https://github.com/ntc0728/video-warehouse/commit/577d5cf026323df3be39c877eb582aa019454238))
+
+
+### Bug Fixes
+
+* **player:** 8 项 UI 整改 + 播放器父级不脱标 + pipController 错误文案可读 ([91c9d3a](https://github.com/ntc0728/video-warehouse/commit/91c9d3abb2e1380167d884e83d3b5ee85924da19))
+* **player:** usePlayerCore 补齐 5 处 sonner → playerToast（全屏可达路径清零） ([db39c60](https://github.com/ntc0728/video-warehouse/commit/db39c604272d334365512dd649e63b13509609bb))
+* **player:** 全屏可达提示统一走 playerToast，center-toast 滚出视口夹取兜底 ([3070aa4](https://github.com/ntc0728/video-warehouse/commit/3070aa4453aa7c4fd07cddc60e4b2ee737c993a2))
+* **player:** 提示避让 header + 抽屉改子项即关 + 非桌面全屏默认横屏 ([4e9ba96](https://github.com/ntc0728/video-warehouse/commit/4e9ba969d47cf43c143e3c04fe98f9b8decdd918))
+* **player:** 更多设置抽屉 + 字幕弹窗 portal 进播放器容器（全屏不再被盖） ([0614b36](https://github.com/ntc0728/video-warehouse/commit/0614b367796ce905c864f32bb57d118334464207))
+* **player:** 浮层 portal 目标穷尽修复——全屏下菜单/弹窗同样被盖 ([f260bca](https://github.com/ntc0728/video-warehouse/commit/f260bca81a2e129979521009d959e3c86e645b5f))
+* **player:** 续播卡片避让 header + 全屏返回仅退全屏 + 全屏提示可visible修复 ([67622d3](https://github.com/ntc0728/video-warehouse/commit/67622d3cc774888f174e19244983903aea00853e))
+* **playwright:** 修复 player.spec.ts 沙箱 flake + 清理根目录调试脚本 ([d48d637](https://github.com/ntc0728/video-warehouse/commit/d48d637ce0941ffe5606f51a14b4b576590e4c35))
+* **UniversalPlayer:** 全屏控制栏改造 + 右侧更多设置抽屉 + 竖版弹窗占满宽度 ([6c0a1e8](https://github.com/ntc0728/video-warehouse/commit/6c0a1e87cd62bd639dc3f0577c21f29ca242ad79))
+* **UniversalPlayer:** 自测整改 —— 全屏整改仅限真机移动端 + 抽屉对齐右键菜单 + 交互细节 ([f02eb23](https://github.com/ntc0728/video-warehouse/commit/f02eb23e38f8a49b513984f7b4b26fd3dddaecc4))
+* **UniversalPlayer:** 落地画中画防卡死 + 全屏三级降级策略 ([cc8d45b](https://github.com/ntc0728/video-warehouse/commit/cc8d45b1833d46b56d99a5b6e7b1d1bc5908e980))
+* 恢复 5.1-5.5 丢失的改动（hover/骨架/CMS tab/meta/收藏动画） ([f67e94d](https://github.com/ntc0728/video-warehouse/commit/f67e94dd2ae6fbde99613a230f18bd7f8e2f0b1f))
+
 ## [1.16.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.15.0...kinotv-v1.16.0) (2026-08-31)
 
 
