@@ -1776,6 +1776,13 @@
    ============================================================ */
 
 @media (width >= 1024px) {
+  /* 桌面端 hero 最小高度：防止详情区内容过多时 banner 被压扁；
+     同时解除 16/9 比例钳制（aspect-ratio: auto），让 min-height 生效而非被比例覆盖。 */
+  html:not([data-device="app"]) .detail-hero {
+    min-height: 380px;
+    aspect-ratio: auto;
+  }
+
   html:not([data-device="app"]) .detail-hero-content {
   flex-direction: row;
   justify-content: space-between;

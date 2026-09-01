@@ -1071,6 +1071,11 @@
     padding: var(--space-sm) var(--space-sm) 0;
   }
 
+  /* 桌面端播放器最小高度：防止下方详情区挤压导致播放器被压扁至不可用 */
+  html:not([data-device="app"]) .player-video-area {
+    min-height: 540px;
+  }
+
   html:not([data-device="app"]) .player-panel-arrow {
     display: none;
   }
@@ -1088,6 +1093,29 @@
     padding-bottom: var(--space-sm);
     border-top: 1px solid var(--color-border-light);
     overflow: auto;
+  }
+
+  /* ── 桌面端面板高度动态调整（由 PlayerSidebar variant 驱动）────────
+     "tv"=有选季面板：cms:season:episodes = 2:4:4
+     "movie"=无选季面板：cms:episodes = 3:7
+     注意：此块只覆盖桌面端（≥1280px），移动端/App 仍以 --layout-sidebar-width 横向堆叠、按内容撑高。 */
+  html:not([data-device="app"]) .player-sidebar--tv .player-panel--cms    { flex: 2; }
+  html:not([data-device="app"]) .player-sidebar--tv .player-panel--season { flex: 4; }
+  html:not([data-device="app"]) .player-sidebar--tv .player-panel--episodes { flex: 4; }
+
+  html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms { flex: 3; }
+  html:not([data-device="app"]) .player-sidebar--movie .player-panel--episodes { flex: 7; }
+
+  /* 无季模式：CMS tab 一行各占 1/3 空间（与下方选集面板等宽），tab 名允许折行避免被截断 */
+  html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms-movie .player-cms-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms-movie .player-cms-item {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
   }
 }
 

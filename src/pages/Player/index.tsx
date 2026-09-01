@@ -693,7 +693,7 @@ export default function PlayerPage() {
             </div>
           </div>
           {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
-          <PlayerSidebar>
+          <PlayerSidebar variant="tv">
             <PlayerSidebarSkeleton />
           </PlayerSidebar>
         </div>
@@ -714,7 +714,7 @@ export default function PlayerPage() {
             </div>
           </div>
           {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
-          <PlayerSidebar>
+          <PlayerSidebar variant="tv">
             <PlayerSidebarSkeleton />
           </PlayerSidebar>
         </div>
@@ -762,7 +762,7 @@ export default function PlayerPage() {
               </div>
             </div>
           </div>
-          <PlayerSidebar>
+          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -775,6 +775,7 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
               readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
+              seasonAvailable={seasons.length > 1}
             />
             <PlayerSeasonPanel
               seasons={seasons}
@@ -833,7 +834,7 @@ export default function PlayerPage() {
             </div>
           </div>
 
-          <PlayerSidebar>
+          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -846,6 +847,7 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
               readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
+              seasonAvailable={seasons.length > 1}
             />
             <PlayerSeasonPanel
               seasons={seasons}
@@ -935,7 +937,7 @@ export default function PlayerPage() {
           )}
         </div>
 
-        <PlayerSidebar>
+        <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
           <PlayerCMSPanel
             selectedSourceIds={selectedSourceIds}
             sourceNameMap={sourceNameMap}
@@ -947,6 +949,7 @@ export default function PlayerPage() {
             expanded={expandedPanels.cms}
             onToggle={() => togglePanel('cms')}
             compact={isCompact}
+            seasonAvailable={seasons.length > 1}
           />
           <PlayerSeasonPanel
             seasons={seasons}
