@@ -11,7 +11,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useScreenTier } from '@/hooks/useScreenTier';
-import { buildImageUrl, buildImageSrcSet } from '@/services/tmdbService';
+import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
 import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
 import './HeroBanner.css';
 import { Icon } from "@/components/ui/Icon";
@@ -19,6 +19,8 @@ import { Icon } from "@/components/ui/Icon";
 interface HeroItem {
   id: number | string;
   title: string;
+  /** TMDB 原始 id（TMDBVideoItem 提供），用于按条目拉取 /images 拿 logo */
+  tmdbId?: number;
   backdropPath?: string | null;
   posterPath?: string | null;
   overview?: string;
@@ -109,6 +111,107 @@ function recordSwipeData(data: { mainWidth: number; dx: number; threshold: numbe
 }
 
 
+/* ── 首页 banner 标题 logo ──────────────────────────────────────────────
+   Detail 页标题位用 TMDB 详情的 images.logos（.detail-hero-logo 元素）；
+   首页 banner 的数据源是 trending 列表，不含 logo，需要额外请求
+   /movie|tv/{id}/images 才能拿到。为控制请求量：
+   - 首屏只取前 HERO_LOGO_PREFETCH 项；轮播/悬停到更靠后的条目时再按需补拉；
+   - 模块级缓存 + 进行中去重：同一条目整个会话只请求一次（含「确认无 logo」的 null）；
+   - 串行发起（不并发打爆 TMDB）；拿不到 logo 就回落文字标题，不阻塞渲染。 */
+const HERO_LOGO_PREFETCH = 6;
+/** key → logo 文件路径；值为 null 表示该条目确认无 logo，不再重试 */
+const heroLogoCache = new Map<string, string | null>();
+const heroLogoInflight = new Set<string>();
+
+/** 条目 → logo 缓存 key（`movie:123` / `tv:456`）；无法识别时返回 null */
+function heroLogoKey(item: HeroItem | undefined): string | null {
+  if (!item) return null;
+  const mt = item.mediaType
+    ?? (item.media_type === 'tv' ? 'tv' : item.media_type === 'movie' ? 'movie' : undefined);
+  let id = typeof item.tmdbId === 'number' ? item.tmdbId : NaN;
+  if (!Number.isFinite(id) && typeof item.id === 'string') {
+    id = Number(item.id.match(/^tmdb-(?:movie|tv)-(\d+)$/)?.[1]);
+  }
+  if (!mt || !Number.isFinite(id)) return null;
+  return `${mt}:${id}`;
+}
+
+/** 取条目的 logo 文件路径（zh/en 优先），无 logo 返回 null */
+async function fetchHeroLogo(key: string): Promise<string | null> {
+  const [mt, idStr] = key.split(':');
+  const id = Number(idStr);
+  const images = mt === 'tv' ? await fetchTVImages(id) : await fetchMovieImages(id);
+  const logos = images?.logos ?? [];
+  const logo = logos.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en') ?? logos[0];
+  return logo?.file_path ?? null;
+}
+
+/**
+ * 批量/按需拉取 hero logo，返回 key → logo 文件路径的映射（未就绪的 key 不在映射里）。
+ * @param activeKey 当前显示条目的 key：轮播 / 悬停到新条目时按需补拉它的 logo
+ */
+function useHeroLogos(items: HeroItem[], activeKey: string | null, active: boolean) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const [logos, setLogos] = useState<Record<string, string>>({});
+
+  const ensure = useCallback(async (item: HeroItem | undefined) => {
+    const key = heroLogoKey(item);
+    if (!key || heroLogoInflight.has(key)) return;
+    const cached = heroLogoCache.get(key);
+    if (cached !== undefined) {
+      if (cached) setLogos((prev) => (prev[key] ? prev : { ...prev, [key]: cached as string }));
+      return;
+    }
+    heroLogoInflight.add(key);
+    try {
+      const path = await fetchHeroLogo(key);
+      heroLogoCache.set(key, path);
+      if (path) setLogos((prev) => (prev[key] ? prev : { ...prev, [key]: path }));
+    } catch {
+      // 失败也记 null：本次会话不再重试，标题回落文字
+      heroLogoCache.set(key, null);
+    } finally {
+      heroLogoInflight.delete(key);
+    }
+  }, []);
+
+  // 首屏：串行补齐前 N 项
+  const headSig = items
+    .slice(0, HERO_LOGO_PREFETCH)
+    .map((i) => heroLogoKey(i) ?? '')
+    .join('|');
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    (async () => {
+      for (const item of itemsRef.current.slice(0, HERO_LOGO_PREFETCH)) {
+        if (cancelled) return;
+        await ensure(item);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [headSig, active, ensure]);
+
+  // 按需：当前显示条目（轮播 / 悬停预览）未缓存时补拉
+  useEffect(() => {
+    if (!active || !activeKey) return;
+    const cached = heroLogoCache.get(activeKey);
+    if (cached !== undefined) {
+      if (cached) setLogos((prev) => (prev[activeKey] ? prev : { ...prev, [activeKey]: cached }));
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const item = itemsRef.current.find((i) => heroLogoKey(i) === activeKey);
+      if (item && !cancelled) await ensure(item);
+    })();
+    return () => { cancelled = true; };
+  }, [activeKey, active, ensure]);
+
+  return logos;
+}
+
 export default function HeroBanner({
   items,
   autoPlayInterval = 5000,
@@ -146,6 +249,10 @@ export default function HeroBanner({
     ? hoveredIndex
     : null;
   const displayIndex = safeHoveredIndex !== null ? safeHoveredIndex : safeActiveIndex;
+  // 标题位 logo（TMDB /images）：优先展示 logo，取不到时回落文字标题（见 renderText）
+  const heroLogos = useHeroLogos(displayItems, heroLogoKey(displayItems[displayIndex]), active);
+  // logo 图片加载失败（URL 404 / 网络错误）→ 永久回落该条目的文字标题
+  const [heroLogoFailed, setHeroLogoFailed] = useState<Record<string, true>>({});
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
@@ -750,9 +857,25 @@ export default function HeroBanner({
     const rt = d.voteAverage ?? d.vote_average ?? 0;
     const ov = item.overview || '';
     const mt = d.mediaType || d.media_type;
+    // 标题位：有 TMDB logo 时用 logo（Detail 页同款 .detail-hero-logo 元素），
+    // 无 logo / logo 加载失败时回落文字标题。
+    const logoKey = heroLogoKey(d);
+    const logoPath = logoKey && !heroLogoFailed[logoKey] ? heroLogos[logoKey] : undefined;
+    const logoUrl = logoPath ? buildImageUrl(logoPath, 'w342') || '' : '';
     return (
       <>
-        <h1 className="hero-banner__title">{t}</h1>
+        {logoUrl ? (
+          <img
+            className="detail-hero-logo"
+            src={logoUrl}
+            alt={t}
+            onError={() => {
+              if (logoKey) setHeroLogoFailed((prev) => ({ ...prev, [logoKey]: true }));
+            }}
+          />
+        ) : (
+          <h1 className="hero-banner__title">{t}</h1>
+        )}
         <div className="hero-banner__meta">
           {rt > 0 && <span className="hero-banner__rating">★ {rt.toFixed(1)}</span>}
           {y && <span className="hero-banner__year">{y}</span>}

@@ -1,6 +1,7 @@
 @import "@/assets/styles/variables.css";
 @import "@/assets/styles/animations.css";
 @import "@/assets/styles/skins.css";
+@import "@/assets/styles/shared-hero.css";
 
 @tailwind base;
 @tailwind components;

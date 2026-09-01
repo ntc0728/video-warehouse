@@ -550,6 +550,9 @@ export default function PlayerPage() {
     const match = v.title.match(/(第[一二三四五六七八九十\d]+季|season\s*\d+|S\d+)/i);
     return match ? match[1] : `第${seasonNum}季`;
   }, [seasons.length, v?.title]);
+  // 年份：仅取 TMDB 上映/首播日期，与 Detail 页 detail-hero-meta 完全一致。
+  // 不再回退 CMS video.year —— 两个来源混用会让同一部片在 Detail 页与 Play 页
+  // 显示不同年份，且 CMS 年份缺失时会在 meta 行留下空位。
   let year: number | undefined;
   if (d && tmdbMediaType === 'tv') {
     const dateStr = (d as TMDBTVShowDetail).first_air_date;
@@ -557,8 +560,6 @@ export default function PlayerPage() {
   } else if (d && tmdbMediaType === 'movie') {
     const dateStr = (d as TMDBMovieDetail).release_date;
     year = dateStr ? new Date(dateStr).getFullYear() || undefined : undefined;
-  } else if (v?.year) {
-    year = v.year;
   }
   const voteAverage: number = d?.vote_average ?? 0;
   // 类型标签（对齐 Detail 页 detail-hero-meta）
@@ -641,12 +642,14 @@ export default function PlayerPage() {
               {popularity > 0 && (
                 <div className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</div>
               )}
-              {director && (
-                <div className="player-detail-meta-block">
-                  <span className="player-detail-meta-label">导演:</span><span className="player-detail-meta-value">{director}</span>
-                </div>
-              )}
             </div>
+            {/* 导演 / 演员：独占一行块（不进 meta 行，避免与评分/年份等挤在同一行），
+                内容一行显示不全时自然折行显示多行（标签不换行，见 .player-detail-meta-block） */}
+            {director && (
+              <div className="player-detail-meta-block">
+                <span className="player-detail-meta-label">导演:</span><span className="player-detail-meta-value">{director}</span>
+              </div>
+            )}
             {cast.length > 0 ? (
               <div className="player-detail-meta-block">
                 <span className="player-detail-meta-label">演员:</span><span className="player-detail-meta-value">{cast.map((c) => c.name).join(' / ')}</span>
@@ -730,9 +733,10 @@ export default function PlayerPage() {
               <PlayerTVLoader />
             </div>
           </div>
-          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
-          <PlayerSidebar variant="tv">
-            <PlayerSidebarSkeleton />
+          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板。
+              变体与主分支同判据，骨架 → 真实面板时面板数量/高度比例不跳变。 */}
+          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
+            <PlayerSidebarSkeleton variant={seasons.length > 1 ? 'tv' : 'movie'} />
           </PlayerSidebar>
         </div>
         {detailSection}
@@ -751,9 +755,9 @@ export default function PlayerPage() {
               <PlayerTVLoader />
             </div>
           </div>
-          {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板 */}
-          <PlayerSidebar variant="tv">
-            <PlayerSidebarSkeleton />
+          {/* 变体与主分支同判据，避免骨架 → 真实面板时面板数量/高度比例跳变 */}
+          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
+            <PlayerSidebarSkeleton variant={seasons.length > 1 ? 'tv' : 'movie'} />
           </PlayerSidebar>
         </div>
         {detailSection}

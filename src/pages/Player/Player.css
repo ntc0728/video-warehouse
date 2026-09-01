@@ -469,38 +469,23 @@
 }
 
 /* ── 右侧侧栏骨架占位（入场加载阶段，数据就绪后由真实面板替换） ──────────
-   复用项目级 --color-skeleton / --color-skeleton-shine + shimmer 扫光（明暗主题已适配）。 */
+   复用项目级 --color-skeleton / --color-skeleton-shine + shimmer 扫光（明暗主题已适配）。
+   ⚠️ 结构必须与真实面板逐层同构，否则「骨架 → 真实面板」切换瞬间会横向/纵向抖动：
+   旧实现自带 .player-skeleton-panel / __head / __body 三套私有类，内边距/边框/
+   scrollbar-gutter 与 .player-panel-* 不完全一致，且面板高度按内容撑（真实面板
+   按 2:4:4 / 3:7 的 flex 比例分配），两侧盒模型对不上 → 肉眼可见抖动。
+   现在骨架直接复用 .player-panel / .player-panel-header / .player-panel-body，
+   并把外层容器设为 display:contents（面板直接成为 .player-sidebar 的 flex 子项，
+   继承 tv/movie 变体的 flex 比例），盒模型逐像素对齐真实面板。 */
 .player-sidebar-skeleton {
+  display: contents;
+}
+
+/* 骨架行容器：列向 flex + gap（真实面板用 grid，骨架用等距行模拟密度） */
+.player-skeleton-rows {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.player-skeleton-panel {
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  overflow: hidden;
-}
-
-.player-skeleton-panel__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-}
-
-.player-skeleton-panel__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  border-top: 1px solid var(--color-border-light);
-  padding: var(--space-sm);
-  overflow: hidden;
-  scrollbar-gutter: stable;
 }
 
 .player-skeleton-row {
@@ -524,6 +509,8 @@
 
 .player-skeleton-block--icon  { width: 18px; height: 18px; border-radius: var(--radius-sm); flex-shrink: 0; }
 .player-skeleton-block--title { width: 40%; height: 14px; }
+/* 头部右侧计数位（对齐真实 .player-panel-info 的 "N个源" / "N季"） */
+.player-skeleton-block--info  { width: 30%; height: 12px; margin-left: auto; }
 .player-skeleton-block--thumb { width: 56px; height: 32px; border-radius: var(--radius-sm); flex-shrink: 0; }
 .player-skeleton-block--line  { flex: 1; height: 12px; }
 
@@ -643,6 +630,12 @@
   margin-bottom: var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+  /* meta 项复用 Detail 页的 .detail-hero-meta-item / --type（全局共享类，
+     见 assets/styles/shared-hero.css）。Detail 页是压在 backdrop 上的白字，
+     这里是 --color-surface 浅底 → 覆写共享变量改回深色字 + 浅色类型胶囊，
+     否则白字压白底看不见。 */
+  --hero-meta-color: var(--color-text-secondary);
+  --hero-meta-type-bg: var(--color-hover-bg);
 }
 
 .player-detail-fav-btn {
@@ -1102,14 +1095,27 @@
     overflow-y: auto;
   }
 
+  /* 桌面端：高度用 min-height 而非 height —— .player-video-area 有 min-height:540px，
+     固定 height 时子元素的 min-height 撑不开父级（父级高度写死），播放器会溢出
+     父容器「脱标」（视觉上盖到下方详情区）。改 min-height 后父级随子元素长大，
+     .player-page 的 overflow-y:auto 负责滚动。 */
   html:not([data-device="app"]) .player-main {
     flex: none;
-    height: calc(100dvh - var(--header-height));
+    height: auto;
+    min-height: calc(100dvh - var(--header-height));
     padding: var(--space-sm) var(--space-sm) 0;
   }
 
-  /* 桌面端播放器最小高度：防止下方详情区挤压导致播放器被压扁至不可用 */
-  html:not([data-device="app"]) .player-video-area {
+  /* 桌面端播放器最小高度：防止下方详情区挤压导致播放器被压扁至不可用。
+     两侧（播放器 / 侧栏）同步给同一个下限 + height:auto，
+     让 flex 的 align-items: stretch 把它们拉到同一行高：
+     - 父级 min-height 生效（视口高）→ 行高 = 父级内高，两侧撑满；
+     - 视口矮于 540px → 行高由子项 min-height 顶到 540，父级被撑开（不再脱标）。
+     ⚠️ 不能留 height:100% —— 父级高度 auto 时百分比解析为 auto 且
+     不再参与 stretch，播放器只会停在 min-height 那一行高、下方留空白。 */
+  html:not([data-device="app"]) .player-video-area,
+  html:not([data-device="app"]) .player-sidebar {
+    height: auto;
     min-height: 540px;
   }
 
@@ -1143,15 +1149,20 @@
   html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms { flex: 3; }
   html:not([data-device="app"]) .player-sidebar--movie .player-panel--episodes { flex: 7; }
 
-  /* 无季模式：CMS tab 一行各占 1/3 空间（与下方选集面板等宽），tab 名允许折行避免被截断 */
-  html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms-movie .player-cms-list {
+  /* ── 桌面端 CMS tab 均分行网格（有选季 / 无选季两种变体同一套规则）──
+     旧实现桌面端仍是 flex-wrap 内容自适应宽度：有选季面板时 CMS 面板只占 2/10
+     高度、tab 少，整行右侧空一大片，tab 之间没有平分空间。
+     改为与移动端同一套「列数按最宽 tab 自然宽度计算」的网格：
+     列数由 PlayerCMSPanel 写入 --cms-tab-cols，列宽 1fr → 同一行内 tab 平分空间，
+     列宽下限 ≥ 最宽 tab 自然宽度（长源名不会被截断）。 */
+  html:not([data-device="app"]) .player-panel--cms .player-cms-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
   }
-  html:not([data-device="app"]) .player-sidebar--movie .player-panel--cms-movie .player-cms-item {
+
+  html:not([data-device="app"]) .player-panel--cms .player-cms-item {
     width: 100%;
     justify-content: center;
-    white-space: normal;
     text-align: center;
   }
 }

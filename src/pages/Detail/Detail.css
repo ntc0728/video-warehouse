@@ -241,16 +241,7 @@
 
 
 
-/* TMDB Logo */
-.detail-hero-logo {
-  align-self: flex-start;
-  width: auto;
-  max-width: min(55%, var(--layout-panel-medium-w));
-  max-height: var(--header-height);
-  margin-bottom: var(--space-sm);
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
-}
+/* TMDB Logo：见 assets/styles/shared-hero.css（Play 页 / 首页 banner 共用） */
 
 /* 标题（无 logo 时的回落） */
 .detail-hero-title {
@@ -281,21 +272,8 @@
   font-size: var(--text-sm);
 }
 
-.detail-hero-rating {
-  color: var(--color-rating);
-  font-weight: 600;
-}
-
-.detail-hero-meta-item {
-  color: rgba(255,255,255,0.8);
-}
-
-.detail-hero-meta-item--type {
-  padding: var(--space-2xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.15);
-  font-size: var(--text-xs);
-}
+/* .detail-hero-rating / .detail-hero-meta-item / --type：见 assets/styles/shared-hero.css
+   （Play 页 player-detail-meta 复用同一套类，必须全局可用） */
 
 /* ── 简介 ──────────────────────────────────────── */
 
@@ -326,8 +304,12 @@
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
-  min-height: var(--comp-btn-min-width);
-  padding: 0 var(--space-lg);
+  /* 高度/内边距下调：旧值 min-height = --comp-btn-min-width（桌面 60px）
+     + 左右 --space-lg（桌面 28px），在 hero 里明显偏大。
+     改用 --comp-tab-height（桌面 44px）+ --space-md（桌面 18px），
+     与首页 banner CTA（padding --space-sm + 文字 ≈ 40px）量级一致。 */
+  min-height: var(--comp-tab-height);
+  padding: 0 var(--space-md);
   border: none;
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -1591,6 +1573,7 @@
   .detail-hero-title {
   font-size: var(--text-xl);
 }
+  /* .detail-hero-logo 响应式：见 assets/styles/shared-hero.css */
   .detail-hero-left {
   gap: var(--space-sm);
   max-width: 100%;
@@ -1662,10 +1645,7 @@
   padding: var(--space-xl) var(--space-md);
 }
 
-  html[data-device="app"] .detail-hero-logo {
-  max-width: min(65%, var(--layout-popover-wide-min-w));
-  max-height: var(--layout-tabbar-height);
-}
+  /* html[data-device="app"] .detail-hero-logo：见 assets/styles/shared-hero.css */
   html[data-device="app"] .detail-hero-title {
   font-size: var(--text-xl);
 }
@@ -1776,11 +1756,15 @@
    ============================================================ */
 
 @media (width >= 1024px) {
-  /* 桌面端 hero 最小高度：防止详情区内容过多时 banner 被压扁；
-     同时解除 16/9 比例钳制（aspect-ratio: auto），让 min-height 生效而非被比例覆盖。 */
+  /* 桌面端 hero 最小高度：防止详情区内容过多时 banner 被压扁。
+     ⚠️ 不要加 aspect-ratio: auto —— 那会让 hero 高度退回「纯内容高」，
+     比 16/9 的固有高度矮一大截（banner 明显变小）。
+     min-height 对 aspect-ratio 派生的高度同样生效（CSS 尺寸约束里
+     min 优先于计算值），即最终高度 = max(380px, min(宽×9/16, 65vh))。
+     不加 flex-shrink: 0 —— 内容超高时仍允许 hero 收缩到 min-height 为止，
+     把剩余空间让给下方详情区（min-height 本身已是收缩下限，无需再锁死）。 */
   html:not([data-device="app"]) .detail-hero {
     min-height: 380px;
-    aspect-ratio: auto;
   }
 
   html:not([data-device="app"]) .detail-hero-content {
@@ -1802,10 +1786,7 @@
   padding: var(--space-2xs);
 }
 
-  html:not([data-device="app"]) .detail-hero-logo {
-  max-width: min(50%, var(--layout-episode-panel-w));
-  max-height: var(--layout-tabbar-height);
-}
+  /* html:not([data-device="app"]) .detail-hero-logo：见 assets/styles/shared-hero.css */
 
   html:not([data-device="app"]) /* 桌面端强制"立即播放" + "加入收藏" 同一行，不允许 wrap */
   .detail-hero-actions {
@@ -1864,10 +1845,7 @@
 [data-device="tv"] .detail-hero-content {
   padding: var(--space-2xl) var(--space-2xl);
 }
-[data-device="tv"] .detail-hero-logo {
-  max-width: min(45%, var(--layout-episode-panel-w-alt));
-  max-height: var(--layout-channel-num-w);
-}
+/* [data-device="tv"] .detail-hero-logo：见 assets/styles/shared-hero.css */
 [data-device="tv"] .detail-hero-poster {
   width: var(--layout-detail-poster-w-tv);
 }
