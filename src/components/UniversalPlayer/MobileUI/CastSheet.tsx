@@ -3,7 +3,7 @@ import { Cast, X, RotateCcw, Monitor, Play, Pause, Volume2, Link2Off, Settings }
 import { BottomSheet } from '@/components/ui';
 import { Icon } from '@/components/ui/Icon';
 import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
-import { toast } from '@/components/ui';
+import { playerToast } from '../PlayerToast';
 import {
   discoverCastDevices, connectCastDevice, disconnectCast,
   getCastBridge, getCastMode, ensureCastPermission, openCastAppSettings,
@@ -81,7 +81,7 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
     setConnectedDevice(device);
     setView('connected');
     onCastActiveChange(true);
-    toast.show({ content: `已开始投屏到「${device.name}」`, type: 'success' });
+    playerToast(`已开始投屏到「${device.name}」`, 3000, 'success');
     await webCastLoadMedia(url, title);
   }, [url, title, onCastActiveChange]);
 
@@ -109,12 +109,12 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
       setConnectedDevice(device);
       setView('connected');
       onCastActiveChange(true);
-      toast.show({ content: `已开始投屏到「${device.name}」`, type: 'success' });
+      playerToast(`已开始投屏到「${device.name}」`, 3000, 'success');
     } catch {
       if (!mountedRef.current) return;
       setConnectingId(null);
       setView('list');
-      toast.show({ content: '连接失败，请重试', type: 'error' });
+      playerToast('连接失败，请重试', 3000, 'error');
     }
   }, [url, title, onCastActiveChange]);
 
@@ -125,7 +125,7 @@ export default function CastSheet({ visible, onClose, url, title, onCastActiveCh
     setConnectedDevice(null);
     setView('list');
     onCastActiveChange(false);
-    toast.show({ content: '已断开投屏', type: 'success' });
+    playerToast('已断开投屏', 3000, 'success');
   }, [isWeb, onCastActiveChange]);
 
   const handleBridgePlay = useCallback(async (action: 'play' | 'pause') => {

@@ -235,8 +235,8 @@ test.describe('4.11 移动端播放器整改', () => {
     }
   });
 
-  test('PLAYER-M08: 错误提示移动端屏幕居中（sonner）', async ({ page }) => {
-    // 注入「连接失败」的原生投屏桥 → 触发全局 sonner 错误提示（连接失败，请重试）
+  test('PLAYER-M08: 错误提示移动端屏幕居中（播放器内 center-toast）', async ({ page }) => {
+    // 注入「连接失败」的原生投屏桥 → 触发播放器内 playerToast 错误提示（连接失败，请重试）
     await page.evaluate(() => {
       const win = window as unknown as { CastBridge?: unknown };
       win.CastBridge = {
@@ -247,16 +247,16 @@ test.describe('4.11 移动端播放器整改', () => {
     });
     await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
     await page.locator('.up-cast-sheet').getByText('客厅电视').click();
-    const toastLi = page.locator('.app-toast');
+    const toastLi = page.locator('.up-player-center-toast');
     await expect(toastLi).toContainText('连接失败，请重试');
-    // 等 sonner 滑入动画结束再测量
     await page.waitForTimeout(500);
     const box = await toastLi.boundingBox();
     if (box) {
       const centerY = box.y + box.height / 2;
-      // 移动端全局 sonner 错误提示：屏幕上部（P2-7 避免与系统手势条/音量 HUD 重叠），非严格正中
-      expect(centerY).toBeLessThan(844 * 0.3);
-      expect(centerY).toBeGreaterThan(0);
+      // 移动端 playerToast 走 showCenter：居中靠上（≈视口 30% 处，避让 header），
+      // 且 portal 进播放器容器（全屏下也可见），不再走全局 sonner
+      expect(centerY).toBeLessThan(844 * 0.5);
+      expect(centerY).toBeGreaterThan(844 * 0.05);
     }
   });
 
@@ -750,13 +750,13 @@ test.describe('4.12 移动端布局判定', () => {
       await page.waitForTimeout(4000);
     });
 
-    test('PLAYER-M10: 手机 UA 视口 1024 → data-mobile-layout 存在，错误提示屏幕居中（非播放器内）', async ({ page }) => {
+    test('PLAYER-M10: 手机 UA 视口 1024 → data-mobile-layout 存在，错误提示屏幕居中（播放器内）', async ({ page }) => {
       // 手机 UA（isRealPhone 命中）→ 即使视口 1024 ≥768 也写入移动端布局标记
       const marker = await page.evaluate(() =>
         document.documentElement.getAttribute('data-mobile-layout'));
       expect(marker).toBe('true');
 
-      // 注入失败投屏桥 → 触发全局 sonner 错误提示 → 应为屏幕居中（移动端布局），而非播放器内定位
+      // 注入失败投屏桥 → 触发播放器内 playerToast 错误提示 → 移动端走 showCenter（居中靠上）
       await page.evaluate(() => {
         const win = window as unknown as { CastBridge?: unknown };
         win.CastBridge = {
@@ -767,18 +767,16 @@ test.describe('4.12 移动端布局判定', () => {
       });
       await page.locator('.up-header-actions button[aria-label="投屏到电视"]').click();
       await page.locator('.up-cast-sheet').getByText('客厅电视').click();
-      const toastLi = page.locator('.app-toast');
+      const toastLi = page.locator('.up-player-center-toast');
       await expect(toastLi).toContainText('连接失败，请重试');
-      // 等 sonner 滑入动画完全结束再测量（500ms 时仍处于 translate 动画中，中心会偏 toast 半高）
       await page.waitForTimeout(800);
       const box = await toastLi.boundingBox();
       if (box) {
         const centerY = box.y + box.height / 2;
-        // 核心回归：移动端布局（非桌面）→ 全局 sonner 错误提示位于屏幕上部
-        // （P2-7：避免与系统手势条/音量 HUD 重叠），而非「播放器内定位」(top≈130px) 也非屏幕正中。
-        // 视口 768 下实测落点 ~88px（top: calc(--header-height + --space-lg)）。
-        expect(centerY).toBeLessThan(768 * 0.3);
-        expect(centerY).toBeGreaterThan(0);
+        // 核心回归：移动端布局（非桌面）→ 播放器内 center-toast 居中靠上
+        // （measureCenterPos：y ≈ max(视口*0.3, headerH+36)，视口 768 下 ≈230px + 半高）
+        expect(centerY).toBeLessThan(768 * 0.5);
+        expect(centerY).toBeGreaterThan(768 * 0.05);
       }
       // 操作类提示同样走移动端屏幕居中，右上角不出现
       await page.keyboard.press('ArrowDown');

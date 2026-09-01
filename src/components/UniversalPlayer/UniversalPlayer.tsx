@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo, Component, lazy, Suspense, type ReactNode } from 'react';
 import { usePlayerStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
-import { toast } from '@/components/ui';
+import { playerToast } from './PlayerToast';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
 import { buildProxyUrl } from '@/services/iptvService';
 import { getCastMode } from '@/services/castService';
@@ -288,7 +288,7 @@ export default function UniversalPlayer({
   // EPG 加载失败时显示 toast
   useEffect(() => {
     if (epgStatus === 'error' && epgError && mode === 'iptv') {
-      toast.show({ content: `EPG: ${epgError}`, type: 'error' });
+      playerToast(`EPG: ${epgError}`, 3000, 'error');
     }
   }, [epgStatus, epgError, mode]);
 
@@ -517,7 +517,7 @@ skipHistory,
             return;
           }
         }
-        toast.show({ content: error.message, type: 'error' });
+        playerToast(error.message, 3000, 'error');
         onError?.(error);
         return;
       }
@@ -531,7 +531,7 @@ skipHistory,
         if (!bareStreamRetriedRef.current.has(currentUrl)) {
           bareStreamRetriedRef.current.add(currentUrl);
           setDegradedType('flv');
-          toast.show({ content: '检测到裸流，切换解码方式重试…', type: 'warning' });
+          playerToast('检测到裸流，切换解码方式重试…', 3000, 'warning');
           return;
         }
       }
@@ -541,7 +541,7 @@ skipHistory,
         if (!proxyRetriedRef.current) {
           proxyRetriedRef.current = true;
           const proxied = buildProxyUrl(currentUrl, proxyUrl);
-          toast.show({ content: '直连失败，自动切换代理播放…', type: 'warning' });
+          playerToast('直连失败，自动切换代理播放…', 3000, 'warning');
           setCurrentUrl(proxied);
           return;
         }
@@ -549,7 +549,7 @@ skipHistory,
       // If video is already playing (e.g. audio works but video decode fails),
       // show non-blocking toast instead of the full error overlay
       if (videoElementRef.current && !videoElementRef.current.paused) {
-        toast.show({ content: error.message, type: 'error' });
+        playerToast(error.message, 3000, 'error');
         return;
       }
       // P1-3：adapter/网络类错误的具体文案也透传给 PlayerCore 错误覆盖层
@@ -792,7 +792,7 @@ skipHistory,
     const timer = setTimeout(() => {
       playerCoreRef.current.pause();
       setSleepMinutes(0);
-      toast.show({ content: '定时关闭：已暂停播放', type: 'success' });
+      playerToast('定时关闭：已暂停播放', 3000, 'success');
     }, sleepMinutes * 60 * 1000);
     return () => clearTimeout(timer);
   }, [sleepMinutes]);
