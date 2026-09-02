@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IPTV 卡片角标布局：旧 ↔ 新（2026-09-02）</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #0f1115; color: #e8eaed; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #9aa0a6; font-size: 13px; margin: 0 0 24px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; }
+  .case { width: 280px; }
+  .case h2 { font-size: 14px; margin: 0 0 12px; color: #8ab4f8; }
+  .cover { position: relative; width: 280px; height: 158px; border-radius: 10px; background:
+    linear-gradient(135deg, #2a2f3a, #3a4150); overflow: hidden; }
+  .cover .thumb { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #5f6672; font-size: 13px; }
+  .badges { position: absolute; top: 8px; left: 8px; z-index: 3; display: flex; }
+
+  /* OLD：横向排列 + 红色容器底 */
+  .old .badges { flex-direction: row; gap: 6px; background: #e53935; padding: 4px; border-radius: 6px; align-items: center; }
+  .old .live { background: #e53935; color: #fff; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .old .avail { background: #2e7d32; color: #fff; font-weight: 600; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+
+  /* NEW：纵向排列 + 去容器红底，LIVE 自带红底，availability 在下方留间距 */
+  .new .badges { flex-direction: column; gap: 6px; align-items: flex-start; pointer-events: none; }
+  .new .live { background: #e53935; color: #fff; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .new .avail { background: #2e7d32; color: #fff; font-weight: 600; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+
+  .note { margin-top: 10px; font-size: 12px; color: #9aa0a6; line-height: 1.5; }
+  .tag { color: #f28b82; }
+</style>
+</head>
+<body>
+  <h1>IPTV 卡片 Cover 角标布局对比</h1>
+  <p class="sub">2026-09-02 · <code>.iptv-card-cover__badges</code> 由「横向 + 红色容器底」改为「纵向 + 去容器红底」，availability 落在 LIVE 下方并保留间距。</p>
+  <div class="row">
+    <div class="case">
+      <h2>OLD — 修复前</h2>
+      <div class="cover old">
+        <div class="thumb">频道封面</div>
+        <div class="badges">
+          <span class="live">LIVE</span>
+          <span class="avail">可播放</span>
+        </div>
+      </div>
+      <p class="note"><span class="tag">问题</span>：红底容器把两个角标包在一起、横向挤在左上角；availability 与 LIVE 同级等高，无层级感，红底与 LIVE 红底重复。</p>
+    </div>
+    <div class="case">
+      <h2>NEW — 修复后</h2>
+      <div class="cover new">
+        <div class="thumb">频道封面</div>
+        <div class="badges">
+          <span class="live">LIVE</span>
+          <span class="avail">可播放</span>
+        </div>
+      </div>
+      <p class="note"><span class="tag">修复</span>：角标组 <code>flex-direction: column</code> + <code>gap: var(--space-2xs)</code>，容器去红底（LIVE 自带红底）；availability 在 LIVE 正下方、纵向错落有间距，容器不再有多余红底。</p>
+    </div>
+  </div>
+</body>
+</html>
