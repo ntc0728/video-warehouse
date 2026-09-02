@@ -365,14 +365,14 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-02 校准，全量 271 条 / 19 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-02 校准，全量 272 条 / 20 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
 | `src/pages/Home/`                                    | `scripts/home.spec.ts`                                 | 35 + 7 |
 | `src/pages/Browse/`                                  | `scripts/browse.spec.ts`                               | 24     |
 | `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 21     |
-| `src/pages/Player/`                                  | `scripts/player.spec.ts`                               | 31     |
+| `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` | 31 + 1 |
 | `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts`               | 7      |
 | `src/pages/IPTV/`                                    | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
 | `src/pages/Settings/`                                | `scripts/settings.spec.ts`                             | 24 + 1 |

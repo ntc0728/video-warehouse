@@ -42,6 +42,22 @@ import { Icon } from "@/components/ui/Icon";
 //   - 不同源（详情页指定 A vs 历史恢复 B）→ 缓存不命中，播对源。
 const VIDEO_CACHE_TTL_MS = 5 * 60 * 1000;
 
+/** 收集一个 Video 所有可播放分源 URL（电影线路 + 剧集每集首线路），用于故障转移去重 */
+function collectPlayableUrls(v: Video | null | undefined): string[] {
+  if (!v) return [];
+  const urls: string[] = [];
+  for (const s of v.sources ?? []) if (s.url) urls.push(s.url);
+  for (const ep of v.episodes ?? []) {
+    for (const s of ep.sources ?? []) if (s.url) urls.push(s.url);
+  }
+  return urls;
+}
+
+/** 判断 Video 是否存在任意可播放源 */
+function hasPlayableSource(v: Video | null | undefined): boolean {
+  return collectPlayableUrls(v).length > 0;
+}
+
 export interface CachedVideoEntry {
   video: Video;
   sourceIndex: number;
@@ -218,6 +234,58 @@ export default function PlayerPage() {
   });
 
 
+  // ── VOD 自动故障转移：源死亡时同源切下一线路 → 跨源重搜 ──────────
+  // 实测结论：CMS 源多为静态日期目录 URL（无签名参数），源不可用的根因是
+  // CDN 临时目录实效 / IP 限流，重拉 CMS 取不到新签名。正确自愈是「换活源」而非重抓同 URL。
+  const MAX_FAILOVER_ATTEMPTS = 16;
+  const failoverRef = useRef<{ tried: Set<string>; attempts: number }>({
+    tried: new Set<string>(),
+    attempts: 0,
+  });
+  const cmsResultsRef = useRef(cmsResults);
+  cmsResultsRef.current = cmsResults;
+
+  const handlePlayerError = useCallback((error: Error) => {
+    const msg = error?.message ?? '';
+    // 仅对「源死亡」类致命错误触发自动转移；解码/网络抖动等不触发，避免误切
+    const isFatal = /源不可用|网络连接失败|频道源不可用|HLS error|媒体解码失败/.test(msg);
+    if (!isFatal) return;
+
+    const fo = failoverRef.current;
+    if (fo.attempts >= MAX_FAILOVER_ATTEMPTS) return; // 上限防环
+
+    const currentUrl = currentSrcRef.current?.url;
+
+    // Step1：同源（当前线路列表）下一未尝试线路
+    const lines = usePlayerStore.getState().sources;
+    if (currentUrl && lines.length > 1) {
+      const idx = lines.findIndex((s) => s.url === currentUrl);
+      for (let i = idx + 1; i < lines.length; i++) {
+        const next = lines[i];
+        if (next.url && !fo.tried.has(next.url)) {
+          fo.tried.add(next.url);
+          fo.attempts++;
+          handlePlaySource(next);
+          return;
+        }
+      }
+    }
+
+    // Step2：跨 CMS 源（复用已搜出的 cmsResults，跳过当前源与已尝试源）
+    const currentSrcIdx = activeCmsSourceIndexRef.current;
+    for (const r of cmsResultsRef.current) {
+      if (r.sourceIndex === currentSrcIdx) continue;
+      if (!r.video || !hasPlayableSource(r.video)) continue;
+      const urls = collectPlayableUrls(r.video);
+      if (!urls.some((u) => !fo.tried.has(u))) continue;
+      urls.forEach((u) => fo.tried.add(u));
+      fo.attempts++;
+      handlePlayCMSSource(r);
+      return;
+    }
+    // Step3：全部失败 → 不拦截，保留默认「源不可用」覆盖层
+  }, [handlePlaySource, handlePlayCMSSource]);
+
   // ── 初始加载：读取视频数据 ──────────────────────────────
   /** 上一次的视频 ID，用于检测 id 变化 */
   const prevIdRef = useRef(id);
@@ -249,6 +317,8 @@ export default function PlayerPage() {
       // 重置“全部”弹框指定线路/选集的生效标记
       appliedRoutePlayRef.current = false;
       prevIdRef.current = id;
+      // 切换视频时重置故障转移状态，避免残留上一视频的已尝试源集合
+      failoverRef.current = { tried: new Set<string>(), attempts: 0 };
     }
 
     /**
@@ -957,6 +1027,7 @@ export default function PlayerPage() {
             hasNextEpisode={episodes.length > 0 ? !isLastEpisode : undefined}
             onPrevEpisode={handlePrevEpisode}
             onNextEpisode={handleNextEpisode}
+            onError={handlePlayerError}
           />
 
           {/* Skip indicator */}
