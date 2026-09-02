@@ -449,6 +449,12 @@ export default function UniversalPlayer({
   // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
   const proxyRetriedRef = useRef(false);
 
+  // 后台错误挂起：页签不可见时浏览器强节流定时器，hls.js 加载循环易停滞误报 fatal。
+  // 若在后台直接走故障转移（自动切线路/切源）→ usePlayerCore effect 会 pause 视频
+  // → 用户返回时遇到「莫名其妙被暂停/切了线路」。改为后台期间只暂存错误，
+  // 返回前台时若流已自愈（无媒体错误且在播）则丢弃，否则再走正常错误处理链。
+  const pendingErrorRef = useRef<Error | null>(null);
+
   // C1 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
   // /iptv/play 为独立全屏路由，离开页面即卸载组件，标记随之失效，无需手动清理。
   const audioOnlyLineSwitchedRef = useRef<Set<string>>(new Set());
@@ -474,28 +480,14 @@ const mediaSession = useMemo(() => ({
   onNext: onNextEpisode,
 }), [mode, channelName, title, episodeLabel, url, onPrevEpisode, onNextEpisode]);
 
-const playerCore = usePlayerCore({
-url: mode === 'iptv' ? (currentUrl || url) : url,
-type: (mode === 'iptv' ? (degradedType ?? currentType ?? type) : type) as SourceType,
-videoId,
-vodId,
-episodeUrl,
-cmsSourceId,
-episodeLabel,
-seasonNumber,
-skipHistory,
-  autoPlay,
-  decoderMode,
-  retryCount,
-      onProgress,
-    onEnded,
-    onPlay,
-    onPause,
-    onSkipIntro,
-    onSkipOutro,
-    mediaSession,
-    onError: useCallback((error: Error) => {
+// adapter 错误统一处理（原内联于 usePlayerCore 的 onError，提出以便后台挂起 flush 复用）
+const handleAdapterError = useCallback((error: Error) => {
       if (currentUrlRef.current !== currentUrl) return;
+      // 后台期间挂起：返回前台时由 visibilitychange flush 决定丢弃或补处理
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        pendingErrorRef.current = error;
+        return;
+      }
       // C1 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，
       // 无论播放状态都走 toast（不触发全屏错误）。
       // IPTV 模式自动切线路：存在同名其它线路（sourceId 不同）时自动切到第一条其它线路，
@@ -564,7 +556,48 @@ skipHistory,
       setHasError(true);
       usePlayerStore.getState().setErrorMessage(error.message);
       onError?.(error);
-    }, [currentUrl, onError, mode, proxyUrl, buildProxyUrl, setCurrentUrl]),
+    }, [currentUrl, onError, mode, proxyUrl, buildProxyUrl, setCurrentUrl]);
+
+// 返回前台 flush 挂起错误：usePlayerCore 的可见性恢复链（resume + play）若已救活
+// 流（无媒体错误且处于播放态），误报错误直接丢弃；仍异常则补走完整错误处理链
+// （IPTV 切线路/切代理、VOD 故障转移、错误覆盖层）。
+const handleAdapterErrorRef = useRef(handleAdapterError);
+handleAdapterErrorRef.current = handleAdapterError;
+useEffect(() => {
+  const flushPendingError = () => {
+    if (document.visibilityState !== 'visible') return;
+    const pending = pendingErrorRef.current;
+    if (!pending) return;
+    pendingErrorRef.current = null;
+    const video = videoElementRef.current;
+    if (video && !video.error && !video.paused) return;
+    handleAdapterErrorRef.current(pending);
+  };
+  document.addEventListener('visibilitychange', flushPendingError);
+  return () => document.removeEventListener('visibilitychange', flushPendingError);
+}, []);
+
+const playerCore = usePlayerCore({
+url: mode === 'iptv' ? (currentUrl || url) : url,
+type: (mode === 'iptv' ? (degradedType ?? currentType ?? type) : type) as SourceType,
+videoId,
+vodId,
+episodeUrl,
+cmsSourceId,
+episodeLabel,
+seasonNumber,
+skipHistory,
+  autoPlay,
+  decoderMode,
+  retryCount,
+      onProgress,
+    onEnded,
+    onPlay,
+    onPause,
+    onSkipIntro,
+    onSkipOutro,
+    mediaSession,
+    onError: handleAdapterError,
   });
 
   const storeVideoRef = useCallback((element: HTMLVideoElement | null) => {

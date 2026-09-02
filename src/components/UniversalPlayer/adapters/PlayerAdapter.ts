@@ -27,6 +27,13 @@ export interface IPlayerAdapter {
   setCurrentAudioTrack(trackId: number): void;
   getCurrentAudioTrack(): number;
   resetErrorCount(): void;
+  /**
+   * 唤醒加载引擎（切后台/页签切换较久后返回前台时调用）。
+   * 背景：后台页签定时器被浏览器强节流，hls.js 等引擎的加载循环可能停滞甚至
+   * fatal 停转，video 元素无新数据 → 返回后画面冻结、播放无法继续。
+   * 子类按需实现（HLS：重置错误计数 + startLoad 重启加载循环）；默认空实现。
+   */
+  resume(): void;
   /** 切换播放源（复用现有实例避免 destroy+recreate 导致的黑屏闪烁） */
   switchSource(url: string, options?: Record<string, unknown>): void;
   /** 流是否为直播（非点播） */
@@ -124,6 +131,8 @@ export abstract class BasePlayerAdapter implements IPlayerAdapter {
   }
 
   resetErrorCount(): void {}
+
+  resume(): void {}
 
   isLive(): boolean {
     // 默认：检查 video 元素是否报告无限时长

@@ -94,7 +94,13 @@ httpClient.interceptors.request.use(
     const cfg = config as RequestOptions;
     // CORS 代理：原生平台（Android/iOS）不受 CORS 限制，直连即可
     if (!isNativePlatform() && cfg.useProxy && config.url) {
-      config.url = buildProxyUrl(config.url);
+      // 幂等防护：响应拦截器重试时 config.url 已是「代理前缀 + encodeURIComponent(原始URL)」，
+      // 再次包装会对 wd 等查询参数叠加一层编码（目标站收到带 % 字面量的关键词）。
+      // 已是当前代理地址的请求直接跳过，保证整条链路「编码一次、代理解码一次」不变式。
+      const proxyPrefix = getCorsProxy();
+      if (!proxyPrefix || !config.url.startsWith(proxyPrefix)) {
+        config.url = buildProxyUrl(config.url);
+      }
     }
     return config;
   },

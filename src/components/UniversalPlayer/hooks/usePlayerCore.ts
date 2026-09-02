@@ -237,15 +237,32 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
 // （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
 // 画面停在最后一帧。解冻策略见 reviveFrozenVideo()（其上方定义）。
+//
+// 后台恢复链（2026-09-02 增强）：后台页签定时器被强节流，hls.js 加载循环可能
+// 停滞甚至 fatal 停转（errorCount 打满后 onError，engine 不再拉数据）→ 返回前台
+// 后画面即使解冻也无新帧、无法续播、重试前引擎就是死的。因此返回 visible 时：
+// 1) 播放态（含媒体层已有 error）先 adapter.resume() 唤醒加载引擎（HLS：重置
+//    错误计数 + startLoad 可重入重启）；2) video.play() 幂等续播；
+// 3) reviveFrozenVideo 解决合成层冻结。用户主动暂停（paused 且无 error）不打扰。
 useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== 'visible') return;
       const video = videoRef.current;
-      if (!video || video.paused || video.ended || video.error) return;
-      // play() 对播放中视频为幂等 no-op，但可唤醒被浏览器后台自动暂停的流
-      video.play().catch(() => {});
-
-      reviveFrozenVideo(video, adapterRef.current?.isLive() ?? false);
+      if (!video || video.ended) return;
+      const adapter = adapterRef.current;
+      // 恢复判定：媒体层已有 error，或数据不足（readyState ≤ HAVE_CURRENT_DATA，
+      // 引擎停滞/停转的旁证）。正常播放中（readyState ≥ 3）不重启加载循环，避免
+      // hls.js stopLoad→restart 丢弃在途分片的无谓开销。
+      const shouldRecover = video.error || video.readyState < 3;
+      if (shouldRecover && !video.paused) {
+        // 幂等唤醒：正常加载中重复 startLoad 无害（内部 stopLoad 后重启），
+        // 停滞/fatal 停转时则真正恢复数据供给
+        adapter?.resume();
+        video.play().catch(() => {});
+      }
+      if (!video.paused && !video.error) {
+        reviveFrozenVideo(video, adapter?.isLive() ?? false);
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
