@@ -21,6 +21,50 @@ import {
   clearHistory as clearHistoryDB,
 } from '@/services/database';
 
+// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// 本页写收藏/历史时经 BroadcastChannel 广播；其它页签收到后静默 reload()
+// 拉最新 DB 快照——「另一页签增删收藏/历史，本页无需手动刷新即更新」。
+// 防回环：广播带随机 session，接收端忽略自己的消息；reload() 只读不写，不二次广播。
+// 历史进度的高频更新（timeupdate 约 1s 一次）不广播，只在
+// 「新增内容身份 / 删除 / 退场 flush」时广播，避免广播风暴。
+const CROSS_TAB_CHANNEL = 'kinotv-userdata';
+const crossTabSessionId = Math.random().toString(36).slice(2);
+let crossTabChannel: BroadcastChannel | null = null;
+let crossTabReloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+function isCrossTabSyncEnabled(): boolean {
+  return typeof window !== 'undefined'
+    && typeof BroadcastChannel !== 'undefined'
+    && import.meta.env?.MODE !== 'test'; // 单测环境不建频道，避免同 worker 跨文件串扰
+}
+
+function initCrossTabSync(): void {
+  if (!isCrossTabSyncEnabled()) return;
+  if (crossTabChannel) return; // 幂等：只建一次频道（postUserDataChange 可能触发重复 init）
+  try {
+    const ch = new BroadcastChannel(CROSS_TAB_CHANNEL);
+    crossTabChannel = ch;
+    ch.addEventListener('message', (ev: MessageEvent) => {
+      const data = (ev.data ?? {}) as { scope?: string; session?: string };
+      if (!data.scope || data.session === crossTabSessionId) return;
+      if (data.scope !== 'collections' && data.scope !== 'history') return;
+      // 突发广播（连续删除/清空）去抖合并，150ms 后拉一次最新快照
+      if (crossTabReloadTimer) clearTimeout(crossTabReloadTimer);
+      crossTabReloadTimer = setTimeout(() => {
+        useUserStore.getState().reload().catch(() => {});
+      }, 150);
+    });
+  } catch { /* BroadcastChannel 不可用时退化为「手动刷新才同步」 */ }
+}
+
+function postUserDataChange(scope: 'collections' | 'history'): void {
+  if (!isCrossTabSyncEnabled()) return;
+  if (!crossTabChannel) initCrossTabSync();
+  try {
+    crossTabChannel?.postMessage({ scope, at: Date.now(), session: crossTabSessionId });
+  } catch { /* 忽略 */ }
+}
+
 interface UserState {
   collections: CollectionRecord[];
   history: HistoryRecord[];
@@ -123,6 +167,10 @@ async function flushHistoryRecords(): Promise<void> {
     // DB 层带跨页签守卫：仅写入不比 DB 旧的记录（保留 updatedAt 较新者），
     // 防止关页签 / 残留旧脏记录覆盖另一页签更新的进度
     await upsertHistoryRecords(records);
+    // 落库成功才广播：接收端此刻 reload 必能读到这批记录。
+    // （不能提前到 addHistory 同步广播——记录尚未落库，接收端读到旧库。）
+    // 覆盖三类场景：定时 flush（新增/进度更新）、退场 flush、页面隐藏 flush。
+    postUserDataChange('history');
   } catch {
     // 批量写入失败：保留脏记录（下次 flush / 下次进度更新会重试）
     records.forEach((r) => { historyDirtyRecords.set(r.id!, r); });
@@ -134,7 +182,7 @@ function scheduleHistoryFlush(): void {
   historyFlushTimer = setTimeout(flushHistoryRecords, HISTORY_FLUSH_MS);
 }
 
-/** 立即落库（供 Player 退场 / 页面隐藏兜底调用） */
+/** 立即落库（供 Player 退场 / 页面隐藏兜底调用）；广播由 flushHistoryRecords 落库成功后统一发出 */
 function flushHistoryNow(): void {
   flushHistoryRecords();
 }
@@ -196,6 +244,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
 
       set({ collections, history, _initialized: true, _loading: false });
 
+      // 建立跨页签广播频道（只建一次；此后其它页签的写操作会广播触发本页签静默 reload）
+      initCrossTabSync();
+
       // 后台异步清理历史遗留记录（不阻塞初始化）
       cleanupLegacyHistoryRecords();
     } catch (err) {
@@ -244,20 +295,27 @@ export const useUserStore = create<UserState>()((set, get) => ({
       collections: [...state.collections, newCollection],
     }));
 
-    // 异步写入 IndexedDB
-    addCollectionRecord(newCollection).catch(console.error);
+    // 异步写入 IndexedDB；落库成功后才广播（接收端 reload 必能读到新收藏，
+    // 避免写事务未提交时接收端读到旧库）
+    addCollectionRecord(newCollection)
+      .then(() => postUserDataChange('collections'))
+      .catch(console.error);
   },
 
   removeCollection: (videoId) => {
     set((state) => ({
       collections: state.collections.filter((c) => c.videoId !== videoId),
     }));
-    removeCollectionByVideoId(videoId).catch(console.error);
+    removeCollectionByVideoId(videoId)
+      .then(() => postUserDataChange('collections'))
+      .catch(console.error);
   },
 
   clearCollections: () => {
     set({ collections: [] });
-    clearCollectionsDB().catch(console.error);
+    clearCollectionsDB()
+      .then(() => postUserDataChange('collections'))
+      .catch(console.error);
   },
 
   isCollected: (videoId) =>
@@ -323,6 +381,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
       }));
       historyDirtyRecords.set(dedupId, newHistory);
       scheduleHistoryFlush();
+      // 不在此广播：记录尚未落库（3s 节流后 flush 才写 DB），
+      // 广播统一由 flushHistoryRecords 落库成功后发出，避免接收端读到旧库
     }
   },
 
@@ -344,7 +404,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }));
     // 同步清除节流脏记录，避免 flush 把已删除记录重新写回
     historyDirtyRecords.delete(historyId);
-    removeHistoryRecord(historyId).catch(console.error);
+    removeHistoryRecord(historyId)
+      .then(() => postUserDataChange('history'))
+      .catch(console.error);
   },
 
   removeHistoryByVideo: (videoId) => {
@@ -354,15 +416,20 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }));
     removed.forEach((h) => {
       historyDirtyRecords.delete(h.id!);
-      removeHistoryRecord(h.id).catch(console.error);
     });
+    // 批量删除落库后统一广播一次（含失败项——DB 仍残留的记录会让接收端 reload 读回，状态诚实一致）
+    Promise.allSettled(removed.map((h) => removeHistoryRecord(h.id!)))
+      .then(() => { if (removed.length > 0) postUserDataChange('history'); })
+      .catch(console.error);
   },
 
   clearHistory: () => {
     set({ history: [] });
     // 清空脏记录集合，避免 flush 重新写回
     historyDirtyRecords = new Map();
-    clearHistoryDB().catch(console.error);
+    clearHistoryDB()
+      .then(() => postUserDataChange('history'))
+      .catch(console.error);
   },
 
   /** 立即落库所有待写入的历史记录（Player 退场 / 页面隐藏已由全局监听兜底） */

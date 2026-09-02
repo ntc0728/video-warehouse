@@ -11,8 +11,10 @@
  * 本用例用同一 context 的两个 page（共享真实 IndexedDB）复现原始场景：
  *  1. 清掉该 videoId 的历史残留（含 legacy 随机 id 行）
  *  2. 两页签各自全新加载详情页（内存都为空、按钮都处于「未收藏」）
- *  3. 同时点击收藏
- *  4. 断言 DB 中该 videoId 恰有 1 条记录（回归锁：旧实现下此断言必红）
+ *  3. 同一帧同步触发两页签的收藏（DOM .click() 同步派发，避免 Playwright
+ *     actionability 等待把第二次点击推迟到广播之后——否则实时同步功能会让
+ *     第二页按钮先翻转为「已收藏」，点击语义变「取消收藏」，测的就不是并发收藏了）
+ *  4. 断言 DB 中该 videoId 恰有 1 条记录（回归锁：旧随机主键实现下此断言必红）
  */
 import { test, expect, ENABLE_MOCK } from './fixtures/mock-tmdb';
 import { matchMockRoute } from './fixtures/tmdb-mock-data';
@@ -111,8 +113,18 @@ test('COL-CROSS-001: 两页签并发收藏同一视频 → DB 仅一条记录', 
   await expect.poll(async () => (await collectBtn1.textContent()) ?? '').not.toContain('已收藏');
   await expect.poll(async () => (await collectBtn2.textContent()) ?? '').not.toContain('已收藏');
 
-  // 4. 同时点击收藏
-  await Promise.all([collectBtn1.click(), collectBtn2.click()]);
+  // 4. 同帧同步点击收藏（DOM .click() 同步派发 → React 同步触发 addCollection；
+  //    两个页签此刻内存都为空、都判定「未收藏」→ 各自 add，真并发写）
+  await Promise.all([
+    page.evaluate(() => {
+      const btn = document.querySelector('.detail-btn-collect, [class*="btn-collect"]') as HTMLElement | null;
+      btn?.click();
+    }),
+    page2.evaluate(() => {
+      const btn = document.querySelector('.detail-btn-collect, [class*="btn-collect"]') as HTMLElement | null;
+      btn?.click();
+    }),
+  ]);
 
   // 5. 幂等收敛：写路径确定性主键 → 并发收藏后该 videoId 恰 1 条
   //    （旧随机主键实现下此断言红：会得到 2 条）
