@@ -839,3 +839,89 @@ test.describe('4.14 侧栏骨架变体稳定性', () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════
+// 4.15 桌面端滚动条槽位稳定性（防「骨架→详情」横向跳动回归）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('4.15 桌面端滚动条槽位稳定性', () => {
+  test.use({ viewport: { width: 1440, height: 900 } }); // ≥1280 桌面端
+
+  test('PLAYER-091: ≥1280 时 .player-page 是滚动容器且常驻预留滚动条槽位', async ({ page }) => {
+    await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.player-page', { timeout: 15000 });
+
+    const cs = await page.evaluate(() => {
+      const el = document.querySelector('.player-page');
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      return { overflowY: s.overflowY, scrollbarGutter: s.scrollbarGutter };
+    });
+
+    // 契约：.player-page 必须是真正的纵向滚动容器，且常驻预留槽位。
+    // 二者缺一都会复现「骨架阶段无右边距 / TMDB 响应后挤出右边距」的横向跳动：
+    //   - 没有 overflow-y:auto → scrollbar-gutter 不生效（该属性只对 auto/scroll 生效）；
+    //   - 没有 stable → 详情区入列后滚动条才出现，clientWidth 瞬间窄一个滚动条宽，
+    //     固定宽度的 .player-sidebar 只能整块左移。
+    expect(cs?.overflowY).toBe('auto');
+    expect(cs?.scrollbarGutter).toBe('stable');
+  });
+
+  // ⚠️ 该用例是「行为护栏」，不是本回归的探测器：headless Chromium 默认带
+  //    --hide-scrollbars，滚动条即使出现也不占布局宽度，因此撤掉 scrollbar-gutter
+  //    后本用例依然会通过（实测确认）。它只在 headed / 经典滚动条浏览器下才有效。
+  //    真正能拦住「槽位被删」的是上面的 PLAYER-091（断言 computed scrollbar-gutter）。
+  test('PLAYER-092: 骨架→详情→真实面板全过程中侧栏右边缘与宽度零变化', async ({ page }) => {
+    // 延迟 TMDB 详情 3s，拉长「只有骨架」的阶段以便覆盖两个阶段的采样点
+    await page.route('**/api.tmdb.org/**', async (route) => {
+      await new Promise((r) => setTimeout(r, 3000));
+      await route.fallback();
+    });
+
+    await page.goto('/play/tmdb-movie-550', { waitUntil: 'commit' });
+
+    // 每 50ms 采样一次侧栏几何，覆盖：骨架 → 详情区入列 → 真实面板
+    const samples = await page.evaluate(async () => {
+      const out: { right: number; width: number; detail: boolean; skeleton: boolean }[] = [];
+      const t0 = performance.now();
+      while (performance.now() - t0 < 8000) {
+        const sb = document.querySelector('.player-sidebar');
+        if (sb) {
+          const r = sb.getBoundingClientRect();
+          out.push({
+            right: Math.round(r.right * 100) / 100,
+            width: Math.round(r.width * 100) / 100,
+            detail: !!document.querySelector('.player-detail-section'),
+            skeleton: !!document.querySelector('.player-sidebar-skeleton'),
+          });
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return out;
+    });
+
+    // 采样必须同时覆盖「无详情」与「有详情」两个阶段，否则该用例形同虚设
+    expect(samples.some((s) => !s.detail)).toBe(true);
+    expect(samples.some((s) => s.detail)).toBe(true);
+
+    const rights = new Set(samples.map((s) => s.right));
+    const widths = new Set(samples.map((s) => s.width));
+    // 右侧边缘与宽度全过程恒定 → 无横向跳动
+    expect([...rights]).toHaveLength(1);
+    expect([...widths]).toHaveLength(1);
+  });
+
+  test('PLAYER-093: <1280 时 .player-page 不是滚动容器（滚动交给外层 main）', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.player-page', { timeout: 15000 });
+
+    const overflowY = await page.evaluate(() => {
+      const el = document.querySelector('.player-page');
+      return el ? getComputedStyle(el).overflowY : null;
+    });
+    // <1280 走 .app-shell__scroll（main，带 scrollbar-gutter: stable）滚动，
+    // 页面自身不 overflow，避免桌面端规则泄漏到窄屏
+    expect(overflowY).not.toBe('auto');
+  });
+});
+
