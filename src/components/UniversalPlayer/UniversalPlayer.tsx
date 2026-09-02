@@ -449,10 +449,12 @@ export default function UniversalPlayer({
   // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
   const proxyRetriedRef = useRef(false);
 
-  // 后台错误挂起：页签不可见时浏览器强节流定时器，hls.js 加载循环易停滞误报 fatal。
-  // 若在后台直接走故障转移（自动切线路/切源）→ usePlayerCore effect 会 pause 视频
-  // → 用户返回时遇到「莫名其妙被暂停/切了线路」。改为后台期间只暂存错误，
-  // 返回前台时若流已自愈（无媒体错误且在播）则丢弃，否则再走正常错误处理链。
+  // 后台错误挂起：页签不可见或浏览器窗口失焦（切到其他软件）时，定时器节流/媒体
+  // 管线背压会让 hls.js 误报 fatal。若直接走故障转移（自动切线路/切源）→ usePlayerCore
+  // effect 会 pause 视频 → 用户返回时遇到「莫名其妙被暂停/切了线路」。改为失焦期间只
+  // 暂存错误，返回前台（visibilitychange / focus）时若流已自愈（无媒体错误且在播）则
+  // 丢弃，否则再走正常错误处理链。注意页签 hidden 只覆盖切页签场景，窗口级失焦时
+  // visibilityState 仍为 'visible'，必须用 document.hasFocus() 补齐。
   const pendingErrorRef = useRef<Error | null>(null);
 
   // C1 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
