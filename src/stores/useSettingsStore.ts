@@ -315,7 +315,7 @@ let settingsCrossTabSyncAttached = false;
 const CROSS_TAB_EXCLUDED_KEYS = new Set(['tvMode', 'tvOverscan']);
 
 /** 解析另一页签写入的持久化载荷，白名单逐键比对合并（含敏感字段解密） */
-async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
+export async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
   let parsed: { state?: Record<string, unknown> };
   try {
     parsed = JSON.parse(raw) as { state?: Record<string, unknown> };
