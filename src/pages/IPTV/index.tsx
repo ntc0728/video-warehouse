@@ -17,6 +17,7 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { getEPGCacheTime, fetchAndParseEPG, buildEPGChannelIndex } from '@/services/epgService';
 import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
+import { checkChannelsAvailability } from '@/services/iptvService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -71,6 +72,7 @@ export default function IPTVPage() {
     checkAvailability,
     abortAvailabilityCheck,
     availabilityResults,
+    channelAvailability,
   } = useIPTVStore(
     useShallow((s) => ({
       channels: s.channels,
@@ -87,6 +89,7 @@ export default function IPTVPage() {
       checkAvailability: s.checkAvailability,
       abortAvailabilityCheck: s.abortAvailabilityCheck,
       availabilityResults: s.availabilityResults,
+      channelAvailability: s.channelAvailability,
     })),
   );
   // availabilityProgress 在检测时每频道回调一次,单独 selector 避免联动
@@ -157,13 +160,20 @@ export default function IPTVPage() {
       .catch(() => { /* 刷新失败保持原缓存时间显示 */ });
   }, []);
 
+  // 整改4：后台预检测的中止控制器与去重签名（供下方离开页面/卸载时 abort）
+  const autoCheckSignatureRef = useRef<string | null>(null);
+  const autoCheckAbortRef = useRef<AbortController | null>(null);
+
   // 离开 IPTV 页（Keep-Alive 下组件不卸载，unmount 清理不会执行）或真实卸载时中止检测
+  // （手动检测走 store.abortAvailabilityCheck；后台预检测走本组件的 AbortController）
   useEffect(() => {
     if (location.pathname !== '/iptv') {
       useIPTVStore.getState().abortAvailabilityCheck();
+      autoCheckAbortRef.current?.abort();
     }
     return () => {
       useIPTVStore.getState().abortAvailabilityCheck();
+      autoCheckAbortRef.current?.abort();
     };
   }, [location.pathname]);
 
@@ -179,6 +189,31 @@ export default function IPTVPage() {
 
   const [visibleCount, setVisibleCount] = useState(IPTV_PAGE_SIZE);
   const [bootstrapped, setBootstrapped] = useState(false);
+
+  // 整改4：频道可用性后台静默预检测——频道列表加载后自动检测前 50 个频道，
+  // 结果写入 store.channelAvailability，卡片标灰不可用频道，降低点到死链的概率。
+  // 与手动「检测可用性」（availabilityResults，按 tab 隔离）独立；手动检测进行中则跳过本轮。
+  useEffect(() => {
+    if (!bootstrapped || channels.length === 0) return;
+    // 频道列表未变化（长度+刷新时间签名一致）则不重复检测
+    const signature = `${channels.length}-${lastRefresh ?? ''}`;
+    if (autoCheckSignatureRef.current === signature) return;
+    if (useIPTVStore.getState().isCheckingAvailability) return;
+    autoCheckSignatureRef.current = signature;
+    const controller = new AbortController();
+    autoCheckAbortRef.current = controller;
+    const list = channels.slice(0, 50).map(ch => ({ id: ch.id, url: ch.url }));
+    checkChannelsAvailability(list, undefined, controller.signal)
+      .then((results) => {
+        const map: Record<string, boolean> = {};
+        results.forEach((available, channelId) => { map[channelId] = available; });
+        useIPTVStore.getState().setChannelAvailability(map);
+      })
+      .catch(() => { /* 预检测失败静默忽略，不影响页面 */ })
+      .finally(() => {
+        if (autoCheckAbortRef.current === controller) autoCheckAbortRef.current = null;
+      });
+  }, [bootstrapped, channels, lastRefresh]);
 
   /** 按分组、数据源和关键词筛选频道 */
   const filteredChannels = useMemo(() => {
@@ -453,8 +488,9 @@ export default function IPTVPage() {
                     <IPTVChannelCard
                       key={channel.id}
                       channel={channel}
-                      // 传入当前组该频道的检测结果（独立于其他 tab）
-                      availability={currentGroupResults[channel.id]}
+                      // 传入当前组该频道的检测结果（独立于其他 tab）；
+                      // 无手动检测结果时回退到后台预检测（整改4），标灰不可用频道
+                      availability={currentGroupResults[channel.id] ?? channelAvailability[channel.id]}
                       // EPG 频道列表 + 预索引：台标二级回退（EPG XMLTV icon）
                       epgChannels={epgChannels}
                       epgIndex={epgIndex}

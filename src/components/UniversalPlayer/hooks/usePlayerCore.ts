@@ -116,6 +116,8 @@ interface UsePlayerCoreOptions {
   autoPlay?: boolean;
   /** 解码模式（硬件/软件） */
   decoderMode: DecoderMode;
+  /** 是否直播模式（IPTV）：MPEGTS 适配器据此切换直播低延迟/点播可 seek 配置 */
+  isLive?: boolean;
   /** 重试次数（用于错误恢复） */
   retryCount?: number;
   /** 播放进度回调（ currentTime, duration ） */
@@ -148,7 +150,7 @@ interface UsePlayerCoreOptions {
  */
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory = false, autoPlay = false, decoderMode, retryCount,
+    url, type, videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory = false, autoPlay = false, decoderMode, isLive, retryCount,
     onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro, mediaSession,
   } = options;
 
@@ -194,6 +196,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
     const adapter = createAdapter(type, url, {
       decoderMode,
+      isLive,
       startLevel: usePlayerStore.getState().currentLevel,
       onError,
     });
@@ -212,7 +215,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 
       setTimeout(() => clearInterval(checkLevels), 10000);
     }
-  }, [url, type, decoderMode, onError, setLevels]);
+  }, [url, type, decoderMode, isLive, onError, setLevels]);
 
   const prevTypeRef = useRef<SourceType | null>(null);
   const pendingHotSwitchRef = useRef(false);

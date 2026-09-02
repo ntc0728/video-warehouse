@@ -34,6 +34,12 @@ interface IPTVState {
    * value = channelId → 是否可用。每个 tab 的检测结果独立存储、互不干扰。
    */
   availabilityResults: Record<string, Record<string, boolean>>;
+  /**
+   * 频道可用性预检测结果（后台静默检测，与手动检测的 availabilityResults 独立）：
+   * key = channelId，value = 是否可用。仅内存态，不持久化。
+   * 见 docs/player-iptv-frontend-refactor.md 整改4。
+   */
+  channelAvailability: Record<string, boolean>;
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
   playHistory: IPTVPlayRecord[];
@@ -56,6 +62,7 @@ interface IPTVState {
   clearCache: () => void;
   checkAvailability: (groupName?: string | null) => void;
   abortAvailabilityCheck: () => void;
+  setChannelAvailability: (results: Record<string, boolean>) => void;
   recordPlay: (channelId: string) => void;
   clearPlayHistory: () => void;
   removePlayRecord: (channelId: string) => void;
@@ -95,6 +102,7 @@ export const useIPTVStore = create<IPTVState>()(
       checkingGroupId: null,
       availabilityProgress: null,
       availabilityResults: {},
+      channelAvailability: {},
       sourceType: PlaylistSourceType.UNKNOWN,
       sourceErrors: [],
       playHistory: [],
@@ -386,6 +394,11 @@ export const useIPTVStore = create<IPTVState>()(
           availabilityProgress: null,
           _abortController: null,
         });
+      },
+
+      /** 写入后台预检测结果（与手动检测的 availabilityResults 独立存储） */
+      setChannelAvailability: (results) => {
+        set({ channelAvailability: { ...get().channelAvailability, ...results } });
       },
 
       /**

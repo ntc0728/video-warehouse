@@ -517,9 +517,10 @@ const handleAdapterError = useCallback((error: Error) => {
       }
       // D1 裸流降级：HLS 解析失败（manifestParsingError → BARE_STREAM）说明内容非 HLS 清单，
       // 极可能是裸 TS/FLV 流。降级到 mpegts.js 重试同一 URL（每 URL 仅 1 次防循环，
-      // 再次失败则走下方 C1 切线路 / A3 切代理）。worker 端 m3u8-proxy 已支持裸流透传，
-      // 因此代理 URL 无需改写即可被 mpegts.js 拉流。
-      if ((error as Error & { code?: string }).code === ERROR_CODE_BARE_STREAM && mode === 'iptv') {
+      // 再次失败则走下方 C1 切线路 / A3 切代理 / VOD 故障转移）。点播与 IPTV 均启用——
+      // 点播 FLV/TS 直链同样可能被 detectSourceType 归为 m3u8 后解析失败。
+      // worker 端 m3u8-proxy 已支持裸流透传，代理 URL 无需改写即可被 mpegts.js 拉流。
+      if ((error as Error & { code?: string }).code === ERROR_CODE_BARE_STREAM) {
         // 已确认内容是裸流（将降级 mpegts.js）：停止加载动画，避免 spinner 一直转
         usePlayerStore.getState().setPlayerLoading(false);
         if (!bareStreamRetriedRef.current.has(currentUrl)) {
@@ -581,7 +582,7 @@ useEffect(() => {
 
 const playerCore = usePlayerCore({
 url: mode === 'iptv' ? (currentUrl || url) : url,
-type: (mode === 'iptv' ? (degradedType ?? currentType ?? type) : type) as SourceType,
+type: (degradedType ?? (mode === 'iptv' ? currentType : type)) as SourceType,
 videoId,
 vodId,
 episodeUrl,
@@ -591,6 +592,7 @@ seasonNumber,
 skipHistory,
   autoPlay,
   decoderMode,
+  isLive: mode === 'iptv',
   retryCount,
       onProgress,
     onEnded,

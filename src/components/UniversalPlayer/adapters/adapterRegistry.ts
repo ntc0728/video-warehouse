@@ -31,10 +31,11 @@ registry.set('pan', (url) => {
   return new NativeAdapter(url);
 });
 
-// C3 兜底：FLV / 裸 TS 流 → mpegts.js 播放
+// C3 兜底：FLV / 裸 TS 流 → mpegts.js 播放（isLive 区分直播/点播配置）
 registry.set('flv', (url, options) => {
   return new MPEGTSAdapter(url, {
     onError: options?.onError as ((error: Error) => void) | undefined,
+    isLive: (options?.isLive as boolean) ?? true,
   });
 });
 

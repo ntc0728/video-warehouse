@@ -43,9 +43,11 @@ export function isValidVideoUrl(url: string): boolean {
  * 根据 URL 推断播放源类型：
  * 含 m3u8 特征（扩展名或中转脚本名如 m3u8.php）→ hls；.mpd → dash；其余走原生播放。
  */
-export function detectSourceType(url: string): 'm3u8' | 'dash' | 'mp4' {
+export function detectSourceType(url: string): 'm3u8' | 'dash' | 'mp4' | 'flv' {
   if (/m3u8/i.test(url)) return 'm3u8';
   if (/\.mpd([?&#/;]|$)/i.test(url)) return 'dash';
+  // FLV / TS / M2TS 直链 → mpegts.js（点播 FLV/TS 支持此前缺口，见 docs/player-iptv-frontend-refactor.md 整改2）
+  if (/\.(flv|ts|m2ts)([?&#/;]|$)/i.test(url)) return 'flv';
   return 'mp4';
 }
 
