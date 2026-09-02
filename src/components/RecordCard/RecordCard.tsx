@@ -35,6 +35,8 @@ export interface RecordCardItem {
   navigateTo: string;
   /** 导航时写入 history state */
   navState?: Record<string, unknown>;
+  /** 跳转前拦截：返回 false 时阻止导航（如 CMS 源未启用） */
+  onBeforeNavigate?: () => boolean;
 }
 
 interface RecordCardProps {
@@ -43,6 +45,8 @@ interface RecordCardProps {
   selected: boolean;
   onToggleSelect: () => void;
   onDelete: (e: React.MouseEvent) => void;
+  /** 跳转前拦截：返回 false 时阻止 Link 导航（如 CMS 源未启用） */
+  onBeforeNavigate?: () => boolean;
 }
 
 const RecordCard = memo(function RecordCard({
@@ -51,6 +55,7 @@ const RecordCard = memo(function RecordCard({
   selected,
   onToggleSelect,
   onDelete,
+  onBeforeNavigate,
 }: RecordCardProps) {
   const isVideo = item.kind === 'video';
   const isFinished = item.status === 'finished';
@@ -154,6 +159,10 @@ const RecordCard = memo(function RecordCard({
     if (batchMode) {
       e.preventDefault();
       onToggleSelect();
+      return;
+    }
+    if (onBeforeNavigate && !onBeforeNavigate()) {
+      e.preventDefault();
     }
   };
 

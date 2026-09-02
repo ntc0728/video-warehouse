@@ -166,30 +166,22 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
   // 解包第三方代理前缀（如 gh-proxy.com/m3u8-proxy?url=<内层>）：
   // 抽出真实地址改走我们配置的代理，绕开失效/被墙的中间代理。
   const target = unwrapProxy(url, proxyUrl);
-  if (target !== url && import.meta.env.DEV) {
-    console.debug('[IPTV 代理调试] 解包第三方代理前缀', { 原地址: url, 解包后真实地址: target });
-  }
   url = target;
   if (!proxyUrl) {
-    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 不走代理：proxyUrl 为空（未配置流代理地址）', { url });
     return false;
   }
   // 防止双重代理：仅当 URL 已经是“当前配置的代理”地址时才跳过；
   // 若是其他代理（如 gh-proxy.com）预先代理过的地址，仍走我们的代理重走，确保自定义代理生效
   if (isOwnProxy(url, proxyUrl)) {
-    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 跳过：已是本代理地址（防双重代理）', { url });
     return false;
   }
   if (!pattern) {
-    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 走代理（无匹配规则）', { url, 生效代理地址: proxyUrl });
     return true;
   }
   try {
     const matched = new RegExp(pattern).test(url);
-    if (import.meta.env.DEV) console.debug(matched ? '[IPTV 代理调试] 跳过：命中匹配规则' : '[IPTV 代理调试] 走代理（未命中匹配规则）', { url, pattern, 生效代理地址: proxyUrl });
     return !matched;
   } catch {
-    if (import.meta.env.DEV) console.debug('[IPTV 代理调试] 走代理（匹配规则非法，回退放行）', { url, pattern });
     return true;
   }
 }
@@ -205,15 +197,6 @@ function buildProxyUrl(url: string, proxyUrl: string, headers?: Record<string, s
   let result = `${proxyUrl}/${path}?url=${encodeURIComponent(url)}`;
   if (headers && Object.keys(headers).length > 0) {
     result += `&headers=${encodeURIComponent(JSON.stringify(headers))}`;
-  }
-  if (import.meta.env.DEV) {
-    console.debug('[IPTV 代理调试] 构造播放地址', {
-      生效代理地址: proxyUrl,
-      资源类型: type,
-      代理端点: path,
-      原始地址: url,
-      最终地址: result,
-    });
   }
   return result;
 }

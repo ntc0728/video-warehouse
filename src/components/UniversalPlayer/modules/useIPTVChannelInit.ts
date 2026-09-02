@@ -56,14 +56,6 @@ export function useIPTVChannelInit({
     };
 
     const { proxyUrl: pUrl, proxyPattern: pPattern } = useIPTVStore.getState().settings;
-    if (import.meta.env.DEV) {
-      console.debug('[IPTV 代理调试] 播放链路读取到的设置', {
-        当前生效代理地址: pUrl || '(空)',
-        匹配规则: pPattern || '(无)',
-        模式: mode,
-        入参地址: url,
-      });
-    }
 
     // 频道列表已加载：优先做频道精确匹配（拿到正确的频道 URL / 分组焦点）
     if (channels.length > 0) {

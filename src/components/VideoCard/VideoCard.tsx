@@ -12,6 +12,7 @@ import { useIsTV } from '@/hooks/useMediaQuery';
 import { useHighlightedText } from '@/lib/highlight';
 import type { Video } from '@/types/video';
 import { searchMulti, buildImageUrl } from '@/services/tmdbService';
+import { getVideoSources } from '@/services/sourceService';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './VideoCard.css';
@@ -55,6 +56,8 @@ interface VideoCardProps {
   /** 禁用图片懒加载：为 true 时跳过 IntersectionObserver，不加载图片。
    *  用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。 */
   imageDisabled?: boolean;
+  /** 跳转前拦截：返回 false 时阻止 Link 导航（如 CMS 源未启用） */
+  onBeforeNavigate?: () => boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -117,6 +120,7 @@ const VideoCard = memo(function VideoCard({
   crossfadeOnChange = false,
   skipAnimations = false,
   imageDisabled = false,
+  onBeforeNavigate,
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
@@ -251,12 +255,35 @@ const VideoCard = memo(function VideoCard({
   }, [video.title]);
 
   const handleFavorite = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       setIsAnimating(true);
-      if (isCollected) removeCollection(video.id);
-      else addCollection(video.id, { title: video.title, cover: video.cover, type: video.type, year: video.year, rating, sourceIndex: navigateState?.sourceIndex as number | undefined });
+      if (isCollected) {
+        removeCollection(video.id);
+      } else {
+        // 直链收藏：从 sourceIndex 解析出 cmsSourceId/Name 一并写入，
+        // 供收藏页跳转前校验「该源是否仍在设置中启用」。
+        const srcIndex = navigateState?.sourceIndex as number | undefined;
+        let srcId: string | undefined;
+        let srcName: string | undefined;
+        if (srcIndex != null) {
+          const allSrc = await getVideoSources();
+          const src = allSrc[srcIndex];
+          srcId = src?.id;
+          srcName = src?.name;
+        }
+        addCollection(video.id, {
+          title: video.title,
+          cover: video.cover,
+          type: video.type,
+          year: video.year,
+          rating,
+          sourceIndex: srcIndex,
+          cmsSourceId: srcId,
+          cmsSourceName: srcName,
+        });
+      }
       setTimeout(() => setIsAnimating(false), 450);
     },
     [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating, navigateState],
@@ -285,7 +312,15 @@ const VideoCard = memo(function VideoCard({
       tabIndex={isTV ? 0 : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
       aria-label={video.title}
-      onClick={batchMode ? (e) => { e.preventDefault(); } : undefined}
+      onClick={(e) => {
+        if (batchMode) {
+          e.preventDefault();
+          return;
+        }
+        if (onBeforeNavigate && !onBeforeNavigate()) {
+          e.preventDefault();
+        }
+      }}
     >
       <div className="video-card-cover">
         <LazyImage

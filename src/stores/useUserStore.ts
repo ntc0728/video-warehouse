@@ -71,7 +71,7 @@ interface UserState {
   _initialized: boolean;
   _loading: boolean;
 
-  addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number; sourceIndex?: number }) => void;
+  addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number; sourceIndex?: number; cmsSourceId?: string; cmsSourceName?: string }) => void;
   removeCollection: (videoId: string) => void;
   clearCollections: () => void;
   isCollected: (videoId: string) => boolean;
@@ -306,6 +306,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
       year: meta?.year,
       rating: meta?.rating,
       sourceIndex: meta?.sourceIndex,
+      cmsSourceId: meta?.cmsSourceId,
+      cmsSourceName: meta?.cmsSourceName,
     };
 
     // 写入内存

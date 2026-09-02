@@ -22,6 +22,8 @@ import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useBackdropLoader } from '@/hooks/useBackdropLoader';
 import { useDocumentTitle } from '@/hooks';
+import { useCmsSourceGuard } from '@/hooks/useCmsSourceGuard';
+import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
 
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
@@ -56,6 +58,7 @@ interface HistoryVideoItem extends Video {
   _histProgress?: number;
   _histDuration?: number;
   _histCmsSourceName?: string;
+  _histCmsSourceId?: string;
   _histEpisodeLabel?: string;
   _histSeasonNumber?: number;
   _histRating?: number;
@@ -176,6 +179,8 @@ export default function HistoryPage() {
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
   const saved = getState('history');
+  // CMS 源启用守卫：视频历史点击跳转前校验所选源是否启用，未启用则拦截并弹窗
+  const cmsSourceGuard = useCmsSourceGuard();
 
   useDocumentTitle();
   const pageRef = useRef<HTMLDivElement>(null);
@@ -316,7 +321,7 @@ export default function HistoryPage() {
           createdAt: 0,
           updatedAt: 0,
         };
-        return { ...base, _histTime: h.updatedAt, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber, _histRating: h.rating };
+        return { ...base, _histTime: h.updatedAt, _histBackdrop: h.backdrop, _histProgress: h.progress, _histDuration: h.duration, _histCmsSourceName: h.cmsSourceName, _histCmsSourceId: h.cmsSourceId, _histEpisodeLabel: h.episodeLabel, _histSeasonNumber: h.seasonNumber, _histRating: h.rating };
       });
     const kw = searchByTab[mainTab === 'all' ? 'all' : 'video'] || '';
     if (kw.trim()) { const key = kw.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(key)); }
@@ -631,6 +636,7 @@ export default function HistoryPage() {
         progress: v._histProgress,
         duration: v._histDuration,
         navigateTo: `/play/${v.id}`,
+        onBeforeNavigate: () => cmsSourceGuard.requestNavigate(v._histCmsSourceId, v._histCmsSourceName),
       };
     }
     const ch = item as HistoryChannelItem;
@@ -649,7 +655,7 @@ export default function HistoryPage() {
       navigateTo: nav.to,
       navState: nav.state,
     };
-  }, [iptvLogoCandidates, buildIptvNav]);
+  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate]);
 
   // 根据确认类型执行删除
   const executeDelete = useCallback(() => {
@@ -874,6 +880,12 @@ export default function HistoryPage() {
         confirmText="删除"
         variant="danger"
         onConfirm={executeDelete}
+      />
+
+      <CmsSourceBlockedModal
+        visible={cmsSourceGuard.modalVisible}
+        sourceName={cmsSourceGuard.blockedSourceName ?? ''}
+        onClose={cmsSourceGuard.closeModal}
       />
     </RecordShell>
   );

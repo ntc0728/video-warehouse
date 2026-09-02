@@ -95,6 +95,8 @@ export function applyBackup(data: SettingsBackup): void {
     year: c.year,
     rating: c.rating,
     sourceIndex: c.sourceIndex,
+    cmsSourceId: c.cmsSourceId,
+    cmsSourceName: c.cmsSourceName,
   }));
   data.history.forEach((h) => useUserStore.getState().addHistory(h));
 }
