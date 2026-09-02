@@ -100,14 +100,19 @@ export async function clearIPTVChannelCache(): Promise<void> {
 }
 
 /**
- * 初始化数据库，创建对象仓库和索引
- * 使用单例模式确保全局只有一个数据库实例
+ * 打开数据库（含超时保护与阻塞处理），返回成功打开的实例。
+ *
+ * 升级被旧连接阻塞时（多页签场景），openDB 请求会挂起直到旧连接关闭。
+ * 设计要点：
+ *  - 超时 reject 后调用方放弃，但不尝试取消请求（无法取消）——迟到的成功连接
+ *    会在此处立即关闭（孤儿连接回收），避免无主连接永久占住 DB 版本，
+ *    导致后续版本升级再次被「孤儿」blocked（自我延续的坑）。
+ *  - blocking() 回调 = 本页是「旧连接」（另一页签正以更高版本升级同一 DB，
+ *    即 versionchange 事件）。此时自动关闭本连接放行升级；后续 DB 操作
+ *    会以新版本自动重连。提示打在真正该处理的旧页签，而非新页签。
  */
-export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
-  if (dbInstance) return dbInstance;
-
-  const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+async function openWithTimeout(): Promise<IDBPDatabase<VideoWarehouseDB>> {
+  const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {    upgrade(db) {
       if (!db.objectStoreNames.contains('collections')) {
         const collectionStore = db.createObjectStore('collections', { keyPath: 'id' });
         collectionStore.createIndex('by-video', 'videoId');
@@ -142,37 +147,91 @@ export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
     blocked() {
       console.warn('[DB] database open blocked — 升级被旧连接阻塞，请关闭其它标签页后刷新');
     },
+    blocking() {
+      // 旧页签收到 versionchange：本连接阻塞了新版本升级。
+      // 静默让路（关闭自身连接放行），不打扰用户；下次 DB 操作以新版本重连。
+      console.info('[DB] 本页持有旧版数据库连接，正在自动关闭以放行新版本升级');
+      closeDatabase();
+    },
     terminated() {
       // 连接被意外终止（如浏览器隐私模式），允许下次重新初始化
-      dbInstance = null;
+      closeDatabase();
     },
   });
 
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(
+  // 孤儿连接回收：仅在本次尝试失败（通常为超时）后挂接——
+  // 若 openDB 迟到成功（阻塞它的旧连接刚好关闭），该连接无人认领，
+  // 立即关闭，避免无主连接永久占住 DB 版本、阻塞后续升级。
+  // （不能提前挂：会先于 dbInstance 赋值执行，误关正常赢家连接。）
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
       () => reject(new Error('[DB] openDB 超时：可能被旧页面连接阻塞，请刷新页面')),
       DB_OPEN_TIMEOUT,
-    ),
-  );
+    );
+  });
 
-  dbInstance = await Promise.race([openPromise, timeoutPromise]);
-  return dbInstance;
+  try {
+    return await Promise.race([openPromise, timeoutPromise]);
+  } catch (err) {
+    openPromise
+      .then((db) => {
+        try { db.close(); } catch { /* 已关闭 */ }
+      })
+      .catch(() => { /* openPromise 自身也失败（如隐私模式），忽略 */ });
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 进行中的开库尝试（单飞）：并发调用共享同一次 openDB，失败后清空允许下次重试 */
+let dbOpenPromise: Promise<IDBPDatabase<VideoWarehouseDB>> | null = null;
+
+/**
+ * 关闭当前连接并清空单例状态。
+ * 调用方（blocking 让路 / terminated / 测试重置）需确保没有其它进行中的事务。
+ * 关闭后下次 getDB/initDB 会以当前 DB_VERSION 自动重开。
+ */
+export function closeDatabase(): void {
+  try {
+    dbInstance?.close();
+  } catch { /* 已关闭 */ }
+  dbInstance = null;
+  dbOpenPromise = null;
+}
+
+/**
+ * 初始化数据库，创建对象仓库和索引
+ * 单例 + 单飞：全局同时最多一次 openDB 尝试，杜绝「超时重试叠层」——
+ * 旧实现失败后 dbInstance 仍为 null，getDB 的 catch 再调 initDB 会再等一个 6s
+ * （一次操作链 12s），且每次重试都留下一枚超时无法取消的孤儿连接。
+ */
+export async function initDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
+  if (dbInstance) return dbInstance;
+  if (!dbOpenPromise) {
+    const attempt = openWithTimeout();
+    // 先挂成功链（写入 dbInstance），再挂孤儿回收——保证正常路径不会误关赢家连接
+    dbOpenPromise = attempt
+      .then((db) => {
+        dbInstance = db;
+        return db;
+      })
+      .catch((err) => {
+        dbOpenPromise = null; // 失败后允许下次调用重试（如用户已关闭阻塞页签）
+        throw err;
+      });
+  }
+  return dbOpenPromise;
 }
 
 /**
  * 获取数据库实例，未初始化时自动初始化
- * 包含连接关闭时自动重连
+ * 连接关闭（blocking 让路 / terminated）后自动以新版本重连
  */
 export async function getDB(): Promise<IDBPDatabase<VideoWarehouseDB>> {
-  try {
-    if (!dbInstance) {
-      return initDB();
-    }
-    return dbInstance;
-  } catch {
-    dbInstance = null;
-    return initDB();
-  }
+  return initDB();
 }
 
 /**
@@ -245,22 +304,71 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
 
 // ── 收藏操作 ──────────────────────────────────────────────
 
-/** 获取所有收藏记录，按添加时间倒序排列 */
+/** 收藏主键收敛：同一 videoId 全局唯一一条，id 统一为 `col-{videoId}`。
+ *  旧实现 id 为 `col-{timestamp}-{random}`（随机主键），跨页签并发收藏时
+ *  两页签内存各自判定「未收藏」→ IndexedDB 出现两条同 videoId 记录。
+ *  改为确定性主键后，db.put 天然幂等覆盖（含跨页签），DB 层不可能再出现双记录。
+ *  页面层语义（每 videoId 一条，Collections/index.tsx 以 videoId 作 key）与此一致。 */
+function collectionCanonicalId(videoId: string): string {
+  return `col-${videoId}`;
+}
+
+/**
+ * 获取所有收藏记录，按添加时间倒序排列
+ * 附带「惰性收敛」：历史上遗留的随机 id / 同 videoId 双记录在读取时自愈——
+ * 每组 videoId 保留 addedAt 最新一条并重键为 col-{videoId}，其余删除。
+ */
 export async function getCollections(): Promise<CollectionRecord[]> {
   try {
     const db = await getDB();
     const all = await db.getAll('collections');
-    return all.sort((a, b) => b.addedAt - a.addedAt);
+
+    // 快路径：快照已满足约束（全部为 col-{videoId} 且无同 videoId 重复）→ 直接返回
+    const canonicalIds = new Set<string>();
+    let needsHeal = false;
+    for (const c of all) {
+      const cid = collectionCanonicalId(c.videoId);
+      if (c.id !== cid || canonicalIds.has(cid)) { needsHeal = true; break; }
+      canonicalIds.add(cid);
+    }
+    if (!needsHeal) return all.sort((a, b) => b.addedAt - a.addedAt);
+
+    // 自愈：按 videoId 分组 → 组内保留 addedAt 最新一条重键为 col-{videoId}，删除其余原 id
+    const groups = new Map<string, CollectionRecord[]>();
+    for (const c of all) {
+      const g = groups.get(c.videoId);
+      if (g) g.push(c);
+      else groups.set(c.videoId, [c]);
+    }
+
+    const healed: CollectionRecord[] = [];
+    const tx = db.transaction('collections', 'readwrite');
+    for (const [videoId, recs] of groups) {
+      const cid = collectionCanonicalId(videoId);
+      let best = recs[0];
+      for (const r of recs) {
+        if (r.addedAt > best.addedAt) best = r;
+      }
+      // 唯一合法值写入；随后删除组内所有非 col-{videoId} 的旧 id
+      await tx.store.put({ ...best, id: cid });
+      healed.push({ ...best, id: cid });
+      for (const r of recs) {
+        if (r.id !== cid) await tx.store.delete(r.id);
+      }
+    }
+    await tx.done;
+
+    return healed.sort((a, b) => b.addedAt - a.addedAt);
   } catch {
     return [];
   }
 }
 
-/** 添加收藏记录 */
+/** 添加收藏记录（id 由 videoId 派生，幂等覆盖，跨页签安全） */
 export async function addCollectionRecord(record: CollectionRecord): Promise<void> {
   try {
     const db = await getDB();
-    await db.put('collections', record);
+    await db.put('collections', { ...record, id: collectionCanonicalId(record.videoId) });
   } catch { /* 写入失败不影响主流程 */ }
 }
 
@@ -295,6 +403,25 @@ export async function upsertHistoryRecord(record: HistoryRecord): Promise<void> 
     const db = await getDB();
     await db.put('history', record);
   } catch { /* 写入失败不影响主流程 */ }
+}
+
+/**
+ * 批量更新观看历史（节流 flush 专用）。
+ * 跨页签守卫：写前读取 DB 现值，仅当本地记录不比 DB 新（updatedAt 较新）才写入，
+ * 否则跳过。防止「关页签 pagehide flush / 残留旧脏记录」用过期进度覆盖另一页签
+ * 刚写入的新进度。
+ */
+export async function upsertHistoryRecords(records: HistoryRecord[]): Promise<void> {
+  if (records.length === 0) return;
+  const db = await getDB();
+  const tx = db.transaction('history', 'readwrite');
+  for (const r of records) {
+    const cur = await tx.store.get(r.id);
+    if (!cur || r.updatedAt >= cur.updatedAt) {
+      await tx.store.put(r);
+    }
+  }
+  await tx.done;
 }
 
 /** 删除观看历史记录（按 id） */

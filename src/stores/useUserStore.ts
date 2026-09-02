@@ -16,6 +16,7 @@ import {
   clearCollections as clearCollectionsDB,
   getHistory,
   upsertHistoryRecord,
+  upsertHistoryRecords,
   removeHistoryRecord,
   clearHistory as clearHistoryDB,
 } from '@/services/database';
@@ -110,7 +111,7 @@ let historyDirtyRecords = new Map<string, HistoryRecord>();
 let historyFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** 批量落库：把脏记录一次性写入 IndexedDB（独立于 store，供 flush 调用） */
-function flushHistoryRecords(): void {
+async function flushHistoryRecords(): Promise<void> {
   if (historyFlushTimer) {
     clearTimeout(historyFlushTimer);
     historyFlushTimer = null;
@@ -118,8 +119,14 @@ function flushHistoryRecords(): void {
   if (historyDirtyRecords.size === 0) return;
   const records = Array.from(historyDirtyRecords.values());
   historyDirtyRecords = new Map();
-  // 批量写入，任一条失败不阻塞其余记录；失败静默（下次进度更新会再次标记脏）
-  records.forEach((r) => { upsertHistoryRecord(r).catch(() => { historyDirtyRecords.set(r.id!, r); }); });
+  try {
+    // DB 层带跨页签守卫：仅写入不比 DB 旧的记录（保留 updatedAt 较新者），
+    // 防止关页签 / 残留旧脏记录覆盖另一页签更新的进度
+    await upsertHistoryRecords(records);
+  } catch {
+    // 批量写入失败：保留脏记录（下次 flush / 下次进度更新会重试）
+    records.forEach((r) => { historyDirtyRecords.set(r.id!, r); });
+  }
 }
 
 function scheduleHistoryFlush(): void {
@@ -219,7 +226,9 @@ export const useUserStore = create<UserState>()((set, get) => ({
     if (existing) return;
 
     const newCollection: CollectionRecord = {
-      id: `col-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      // 确定性主键 col-{videoId}：与 DB 层保持一致（addCollectionRecord 亦会归一化），
+      // 跨页签并发收藏同视频时按主键幂等覆盖，DB 不会出现两条同 videoId 记录
+      id: `col-${videoId}`,
       videoId,
       addedAt: Date.now(),
       title: meta?.title,
