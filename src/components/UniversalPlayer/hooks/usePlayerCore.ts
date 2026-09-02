@@ -240,32 +240,54 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 //
 // 后台恢复链（2026-09-02 增强）：后台页签定时器被强节流，hls.js 加载循环可能
 // 停滞甚至 fatal 停转（errorCount 打满后 onError，engine 不再拉数据）→ 返回前台
-// 后画面即使解冻也无新帧、无法续播、重试前引擎就是死的。因此返回 visible 时：
+// 后画面即使解冻也无新帧、无法续播、重试前引擎就是死的。因此返回前台时：
 // 1) 播放态（含媒体层已有 error）先 adapter.resume() 唤醒加载引擎（HLS：重置
 //    错误计数 + startLoad 可重入重启）；2) video.play() 幂等续播；
-// 3) reviveFrozenVideo 解决合成层冻结。用户主动暂停（paused 且无 error）不打扰。
+// 3) reviveFrozenVideo 解决合成层冻结。用户主动暂停（paused）不打扰。
+//
+// 两个入口（2026-09-02 二次增强）：
+// - visibilitychange：页签间切换（hidden ↔ visible），经典后台节流场景。
+// - window focus/blur：切到其他软件（浏览器整个窗口失焦）。此时页签 visibilityState
+//   保持 'visible'，visibilitychange 不触发；但失焦/遮挡会停掉视频帧呈现 → 返回后
+//   画面冻结（音频正常走），MSE 管线背压还可能诱发 hls.js fatal 停转。focus 事件
+//   与 visibilitychange 走同一条恢复链；快速 alt-tab（<1s）不触发，避免无谓微抖。
+//
+// resume() 无条件调用（幂等）：引擎死转时 readyState 可能仍 ≥3（缓冲未耗尽），
+// 仅按 readyState 判定会漏掉死引擎；startLoad 可重入且每次用户 play() 本就会调，
+// 返回前台时多调一次的开销可忽略。
 useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState !== 'visible') return;
+    const recoverForeground = () => {
       const video = videoRef.current;
       if (!video || video.ended) return;
+      if (video.paused) return; // 用户主动暂停：不打扰
       const adapter = adapterRef.current;
-      // 恢复判定：媒体层已有 error，或数据不足（readyState ≤ HAVE_CURRENT_DATA，
-      // 引擎停滞/停转的旁证）。正常播放中（readyState ≥ 3）不重启加载循环，避免
-      // hls.js stopLoad→restart 丢弃在途分片的无谓开销。
-      const shouldRecover = video.error || video.readyState < 3;
-      if (shouldRecover && !video.paused) {
-        // 幂等唤醒：正常加载中重复 startLoad 无害（内部 stopLoad 后重启），
-        // 停滞/fatal 停转时则真正恢复数据供给
-        adapter?.resume();
+      // 幂等唤醒：正常加载中重复 startLoad 无害（内部 stopLoad 后重启），
+      // 停滞/fatal 停转时则真正恢复数据供给，并顺带重置错误计数
+      adapter?.resume();
+      if (!video.error) {
+        // error 态 play() 必 reject：媒体层错误交给 UniversalPlayer 的挂起错误 flush 链
         video.play().catch(() => {});
-      }
-      if (!video.paused && !video.error) {
         reviveFrozenVideo(video, adapter?.isLive() ?? false);
       }
     };
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      recoverForeground();
+    };
+    let blurredAt = 0;
+    const onBlur = () => { blurredAt = performance.now(); };
+    const onFocus = () => {
+      if (blurredAt && performance.now() - blurredAt > 1000) recoverForeground();
+      blurredAt = 0;
+    };
     document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   useEffect(() => {
