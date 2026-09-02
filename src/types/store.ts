@@ -10,7 +10,8 @@
  * 记录用户收藏的视频信息，用于收藏页展示和快速跳转。
  */
 export interface CollectionRecord {
-  /** 收藏记录唯一 ID（格式：col-{timestamp}-{random}） */
+  /** 收藏记录唯一 ID（确定性主键：`col-{videoId}`，同 videoId 全局唯一一条，
+   *  由 DB 写入层归一化，幂等覆盖含跨页签） */
   id: string;
   /** TMDB 视频 ID（如 tmdb-movie-12345） */
   videoId: string;
@@ -42,7 +43,8 @@ export interface CollectionRecord {
  * 同一集的记录会更新进度，不会重复创建。
  */
 export interface HistoryRecord {
-  /** 历史记录唯一 ID（格式：hist-{timestamp}-{random}） */
+  /** 历史记录唯一 ID（确定性主键：`hist-{videoId}...`，由内容身份派生，
+   *  同一视频/选集/线路天然去重，DB 主键级幂等覆盖） */
   id: string;
   /** TMDB 视频 ID（如 tmdb-movie-12345） */
   videoId: string;
