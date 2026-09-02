@@ -995,6 +995,19 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - 新增测试：BROWSE-078/079/080（两行命令栏/全屏面板顶栏三栏+完成制/rail 无 padding）、SET-092/093（分组圆角卡/子页顶栏+双行卡）
   - `vite.config.ts` 新增 `server.warmup` 预热核心模块，缓解 dev 模式冷启动首次访问慢（首屏实测首次 ~400ms / 二次 ~176ms）
 
+- **v1.9.0** - 全格式播放器缓冲优化 + IPTV 纯前端整改（2026-09-02）：
+  - **HLS 缓冲 90MB 折中方案**：移除过度 300MB/3000s 配置与暂停轮询预加载 hack；`maxBufferSize` 改为 90MB（比默认 60MB 高 50%），`maxBufferLength`/`maxMaxBufferLength`/`backBufferLength` 走 hls.js 默认值；`abrEwmaDefaultEstimate=1.5Mbps` 改善初始选档。2Mbps 视频缓冲约 6 分钟、4Mbps 约 3 分钟，填满后停下载不再抢带宽。
+  - **HLS 直播低延迟**：`LEVEL_LOADED` 直播分支经 `this.hls.config` 写入 `liveSyncDurationCount=3` / `liveMaxLatencyDurationCount=6` / `liveDurationInfinity=true`（延迟 5-10s）+ 缓冲收敛（60/120/20s）。修正了直接赋值 getter（`this.hls.maxBufferLength`）不生效的坑。
+  - **Dash 缓冲提升**：`bufferTimeDefault=30s` / `bufferTimeAtTopQuality=45s` / `bufferTimeAtTopQualityLongForm=60s`，高码率 DASH 更抗波动。
+  - **MPEGTS 点播 + 重连**：`isLive` 改为动态（`options.isLive ?? true`）；点播分支启用 stash 缓冲 + `seek()` 支持；`ERROR` 监听断流重连（2s × 最多 5 次），重连期间 toast，LOAD 成功重置计数。
+  - **vodParser**：`detectSourceType` 新增 `.flv/.ts/.m2ts` → `'flv'`（走 mpegts.js）；`vodParser.test.ts` 补用例。
+  - **UniversalPlayer 点播降级**：`type` 计算去 `mode==='iptv'` 限制，点播也走 `degradedType ?? currentType ?? type`；点播 `BARE_STREAM` 错误也降级到 mpegts；`adapterRegistry` 传 `isLive`，`usePlayerCore` 据 `mode==='iptv'` 传入。
+  - **IPTV 可用性预检测**：频道列表加载后后台静默检测前 50 个（`checkChannelsAvailability`），结果写 `useIPTVStore.channelAvailability`；路由离开（Keep-Alive）abort 避免隐藏页空跑。
+  - **IPTV 角标下移**：卡片 `availability-badge` 移到 `record-card__live-badge`（LIVE）下方（`flex column` + `gap space-2xs`），容器去红底。
+  - **历史/收藏 CMS 源拦截**：直链收藏/历史记录点击跳转前，若所选 CMS 源未在设置勾选启用 → 不跳转，弹居中 modal（`CmsSourceBlockedModal` + `useCmsSourceGuard`，基于 `settings.videoSourceIds`）。`CollectionRecord` 扩展 `cmsSourceId/cmsSourceName`，`VideoCard` 收藏时经 `getVideoSources()` 异步解析写入。
+  - **清理**：删除 IPTV 代理调试 `[IPTV 代理调试]` `console.debug` 打印代码。
+  - 实施细节见 `docs/player-buffer-optimization.md` 与 `docs/player-iptv-frontend-refactor.md`；测试：`npm run build` + Vitest 383 通过 + 播放器/IPTV/历史/收藏 E2E 全绿。
+
 ---
 
 ## 架构决策记录（ADR）

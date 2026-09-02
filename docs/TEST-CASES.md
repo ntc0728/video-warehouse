@@ -499,6 +499,20 @@
 | PLAYER-091 | 折叠面板 | 面板展开中 | 点击面板标题 | 面板内容折叠 |
 | PLAYER-092 | 展开面板 | 面板折叠中 | 点击面板标题 | 面板内容展开 |
 
+### 4.11 缓冲优化与格式降级（2026-09-02）
+
+| 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
+|------|---------|---------|---------|---------|
+| PLAYER-01E | 点播裸流降级（FLV/TS） | 点播链接为 `.flv`/`.ts` 裸流 | 进入播放页 | `detectSourceType` 识别为 `flv` → MPEGTSAdapter 播放；若 Native 失败触发 BARE_STREAM 错误，UniversalPlayer 降级 `setDegradedType('flv')` 重试（点播也生效，不再限 `mode==='iptv'`） |
+| PLAYER-01F | MPEGTS 点播 seek | 点播 FLV/TS 已加载 | 拖动进度条 | `isLive=false` 分支启用 stash 缓冲 + `seek()` 支持，可跳转 |
+| PLAYER-01G | MPEGTS 断流重连 | IPTV 裸流源断开 | 观察播放器 | `ERROR` 监听触发，2s 后重连（最多 5 次），重连期间 toast「源流断开，正在重连…」，LOAD 成功重置计数 |
+| PLAYER-01H | HLS 90MB 点播缓冲 | 点播 HLS（约 2Mbps） | 播放并暂停 | 缓冲增长到约 6 分钟后停止下载（`maxBufferSize=90MB`）；暂停时 hls.js 默认继续缓冲到目标；无频繁 `waiting` 卡顿 |
+| PLAYER-01I | HLS 直播低延迟 | IPTV HLS 直播 | 播放并对比源站时间 | 延迟 5-10s（`liveSyncDurationCount=3` / `liveMaxLatencyDurationCount=6` / `liveDurationInfinity=true`）；网络抖动恢复后自动追帧到 live edge |
+| PLAYER-01J | HLS 直播缓冲收敛 | IPTV HLS 直播 | 观察缓冲 | `LEVEL_LOADED` 直播分支经 `this.hls.config` 写入 `maxBufferLength=60s`/`maxMaxBufferLength=120s`/`backBufferLength=20s`（修正直接赋值 getter 不生效） |
+| PLAYER-01K | Dash 缓冲提升 | DASH 源 | 播放 | `bufferTimeDefault=30s` / `bufferTimeAtTopQuality=45s` / `bufferTimeAtTopQualityLongForm=60s`，高码率更充足 |
+
+> **单元保障**：`vodParser.test.ts` 覆盖 `detectSourceType` 的 `m3u8`/`mpd`/`mp4`/`flv`/`ts`/`m2ts` 分支；HLS 90MB config 由 `npm run build` 类型校验 + 手动验证兜底。
+
 ---
 
 ## 5. IPTV 直播页
@@ -775,6 +789,7 @@
 | HIS-013 | 状态筛选 | 有观看历史 | 点击状态标签（全部/未看完/已看完） | 按观看状态筛选 |
 | HIS-014 | 状态计数 | 有观看历史 | 查看状态标签 | 各标签显示对应数量 |
 | HIS-015 | 点击历史卡片 | 有观看历史 | 点击某历史卡片 | 跳转到播放页，恢复播放进度 |
+| HIS-016 | 历史所选 CMS 源未启用拦截 | 历史记录所选 CMS 源未在设置勾选 | 点击历史卡片 | 不跳转，弹居中 modal 提示源名 +「前往设置」；源已启用则恢复进度跳转播放页 |
 
 ### 8.3 时间分组
 

@@ -162,3 +162,27 @@
 - 操作入口（键盘/长按/单击/按钮）对同一状态（缓冲）的守卫必须一致，否则出现「按钮禁用但键盘可用」的割裂感。
 
 **涉及文件**：`usePlayerCore.ts`、`useProgressRestore.ts`、`useKeyboardShortcuts.ts`、`ProgressBar.tsx`、`ControlBar.tsx`、`UniversalPlayer.tsx`、`ToastTrigger.tsx`、`lib/utils.ts`、`useEpisodeSwitcher.ts`。详见 `changelogs/2026-08-17.md`。
+
+---
+
+## 11. [已知 · flaky] PLAYER-M17 投屏设备重选偶发失败
+
+**状态**：⚠️ 已知 flaky（2026-09-02 回归发现，重跑通过，非回归）。
+
+**现象**：E2E 回归时 `PLAYER-M17`（投屏设备重选）偶发失败，重跑（约 6.4s）即通过。
+
+**根因**：投屏设备列表异步加载时序偶发竞态，与本次播放器缓冲优化 / IPTV 前端整改无关。
+
+**规避**：重跑该用例即可；如需稳定，后续给投屏设备列表加载加 `waitFor` 或确定性 mock，避免异步竞态。
+
+---
+
+## 12. [已知 · 未修] VOD 源不可用无自动故障转移（自愈无效）
+
+**状态**：⚠️ 已知（2026-09-02，源自播放页「源不可用」根因分析）。
+
+**现象**：播放页 CMS 源报「源不可用」时，VOD 错误路径无自动故障转移；「重拉 CMS 取新签名」自愈无效（URL 静态、重拉同死）。
+
+**根因**：CMS 源 URL 为静态日期目录（`/20260902/<hash>/index.m3u8`），无签名过期；真正根因是 CDN 临时目录过期 / IP 限流 → 分片 404/403 → hls.js 致命错误。VOD「重拉取新签名」自愈对静态 URL 无效。
+
+**规避/修复方向**：VOD 应做自动故障转移（同源切线路 → 跨源按 TMDB 标题重搜）；目前 VOD 错误路径无自动转移。IPTV 直播走 IPTV Proxy 重写了内部 URL，不受此静态 URL 限制。
