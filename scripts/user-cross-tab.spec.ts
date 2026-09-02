@@ -15,8 +15,10 @@
  *  1. A 收藏 → B 无需手动刷新，store 内存态自动出现该收藏
  *  2. A 自身不因自己的广播触发 reload（session 过滤，collections 数组引用不变）
  *  3. B 取消收藏 → A 内存态自动消失（反向同步）
- *  4. A 写历史并立即 flush 落库 → B 内存态自动出现（落库成功才广播，非 addHistory 同步发）
- *  5. B 删该视频全部历史 → A 内存态自动消失
+ *  4. 脏进度保护：B 节流窗口内未落库的本地历史（覆盖 DB 旧值 / 全新未落库两类），
+ *     不被 A 的广播 reload 回退——reload 合并脏集合，本地变更以内存为准
+ *  5. A 写历史并立即 flush 落库 → B 内存态自动出现（落库成功才广播，非 addHistory 同步发）
+ *  6. B 删该视频全部历史 → A 内存态自动消失
  *
  * 反向验证（红）做法：临时把 postUserDataChange 内 postMessage 注释掉，本用例必超时红；
  * 恢复后复绿 —— 证明广播→reload 链路是真实回归锁而非假绿。
@@ -132,7 +134,52 @@ test('USER-CROSS-001: 跨页签广播 → 另一页签内存快照静默刷新�
   }, VID_COLLECT);
   await expect.poll(() => hasCollection(page, VID_COLLECT), { timeout: 10000 }).toBe(false);
 
-  // 5. A 页签新增历史 + 立即 flush 落库（落库成功后广播）→ B 页签内存态自动出现
+  // 5. 脏进度保护：B 页签节流窗口内未落库的本地历史，不被 A 的广播 reload 回退。
+  //    dirty-a：DB 已落库 7 → 内存更新到 42（未 flush）→ reload 后应保留 42（merge 覆盖 DB 旧值）
+  //    dirty-b：全新记录（DB 无）→ reload 后应仍存在（merge append）
+  const DIRTY_VID = 'xcc-u1-dirty';
+  await page2.evaluate(async (vid) => {
+    const us = (window as unknown as {
+      __us: { getState(): {
+        addHistory(r: object): void;
+        flushHistoryNow(): void;
+      } }
+    }).__us;
+    const st = us.getState();
+    st.addHistory({ videoId: vid, title: 'DirtyA', progress: 7, duration: 100, episodeUrl: 'https://example.invalid/dirty-a.m3u8' });
+    st.flushHistoryNow(); // 落库 dirty-a@7
+    await new Promise((r) => setTimeout(r, 300)); // 等 flush 完成
+    st.addHistory({ videoId: vid, title: 'DirtyA', progress: 42, duration: 100, episodeUrl: 'https://example.invalid/dirty-a.m3u8' });
+    st.addHistory({ videoId: vid, title: 'DirtyB', progress: 5, duration: 100, episodeUrl: 'https://example.invalid/dirty-b.m3u8' });
+  }, DIRTY_VID);
+  // A 广播收藏 → B reload。先等 reload 真正落地（noise 收藏出现 = reload 已执行并把
+  // 广播快照写入内存），再断言脏记录在 reload 之后仍保留——若先断言脏值，poll 会在
+  // reload 覆盖前抢跑（B 造脏那一刻内存就是 42/5），无法区分 merge 是否生效。
+  await page.evaluate((vid) => {
+    const us = (window as unknown as { __us: { getState(): { addCollection(v: string, m: object): void } } }).__us;
+    us.getState().addCollection(vid, { title: 'Noise', type: 'movie' });
+  }, 'xcc-u1-noise');
+  await expect.poll(() => hasCollection(page2, 'xcc-u1-noise'), { timeout: 10000 }).toBe(true);
+  await expect.poll(() => page2.evaluate((vid) => {
+    const us = (window as unknown as { __us?: { getState(): { history: Array<{ videoId: string; episodeUrl?: string; progress: number }> } } }).__us;
+    const a = us?.getState().history.find((h) => h.videoId === vid && h.episodeUrl === 'https://example.invalid/dirty-a.m3u8');
+    const b = us?.getState().history.find((h) => h.videoId === vid && h.episodeUrl === 'https://example.invalid/dirty-b.m3u8');
+    return a && b ? { a: a.progress, b: b.progress } : null;
+  }, DIRTY_VID), { timeout: 10000 }).toEqual({ a: 42, b: 5 });
+  // 清理：B 落库两条脏记录并整删；A 移除噪音收藏
+  await page2.evaluate((vid) => {
+    const us = (window as unknown as {
+      __us: { getState(): { flushHistoryNow(): void; removeHistoryByVideo(v: string): void } }
+    }).__us;
+    us.getState().flushHistoryNow();
+    us.getState().removeHistoryByVideo(vid);
+  }, DIRTY_VID);
+  await page.evaluate((vid) => {
+    const us = (window as unknown as { __us: { getState(): { removeCollection(v: string): void } } }).__us;
+    us.getState().removeCollection(vid);
+  }, 'xcc-u1-noise');
+
+  // 6. A 页签新增历史 + 立即 flush 落库（落库成功后广播）→ B 页签内存态自动出现
   await page.evaluate((vid) => {
     const us = (window as unknown as {
       __us: {
@@ -154,7 +201,7 @@ test('USER-CROSS-001: 跨页签广播 → 另一页签内存快照静默刷新�
   }, VID_HISTORY);
   await expect.poll(() => hasHistory(page2, VID_HISTORY), { timeout: 10000 }).toBe(true);
 
-  // 6. B 页签删除该视频全部历史 → A 页签内存态自动消失
+  // 7. B 页签删除该视频全部历史 → A 页签内存态自动消失
   await page2.evaluate((vid) => {
     const us = (window as unknown as { __us: { getState(): { removeHistoryByVideo(v: string): void } } }).__us;
     us.getState().removeHistoryByVideo(vid);
