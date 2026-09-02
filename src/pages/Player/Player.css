@@ -1093,6 +1093,15 @@
     min-height: 0;
     padding-top: 0;
     overflow-y: auto;
+    /* ⚠️ 必须常驻预留滚动条槽位：本元素是播放页桌面端真正的滚动容器
+       （外层 .app-shell__scroll 的原生滚动条已被 display:none 隐藏）。
+       入场骨架阶段只有 .player-main（min-height: 100dvh - header）→ 不溢出 → 无滚动条；
+       TMDB 详情响应后底部 .player-detail-section 加入 → 内容远超 100dvh → 纵向滚动条出现，
+       容器 clientWidth 瞬间窄掉一个滚动条宽度（Windows/Chrome 经典滚动条约 15px），
+       .player-main 是「负 margin 出血 + 自身 padding」撑满内容盒的，宽度直接跟随 clientWidth
+       → 右侧折叠面板整块左移，肉眼看到「骨架一开始没有右边距、数据回来才挤出右边距」的抖动。
+       scrollbar-gutter: stable 让槽位从入场第一帧就存在，两个阶段几何完全一致。 */
+    scrollbar-gutter: stable;
   }
 
   /* 桌面端：高度用 min-height 而非 height —— .player-video-area 有 min-height:540px，
