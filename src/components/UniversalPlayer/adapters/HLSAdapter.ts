@@ -326,6 +326,20 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   resetErrorCount(): void {
     this.errorCount = 0;
+    this.lastErrorTime = 0;
+  }
+
+  /**
+   * 唤醒加载引擎（切后台/页签切换较久后返回前台时调用）。
+   * hls.js 的加载循环依赖定时器，后台页签被浏览器强节流后可能停滞或 fatal 停转；
+   * startLoad 是官方恢复入口（内部 stopLoad 后重启加载循环，可重入），
+   * 重置错误计数后重启，保证恢复期间新的 fatal 仍能走 startLoad 重试而非直接放弃。
+   */
+  resume(): void {
+    this.resetErrorCount();
+    if (this.hls) {
+      this.hls.startLoad();
+    }
   }
 
   isLive(): boolean {
