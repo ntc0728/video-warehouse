@@ -256,14 +256,27 @@ export const useUserStore = create<UserState>()((set, get) => ({
     }
   },
 
-  /** 从 IndexedDB 重新读取收藏与历史（用于下拉刷新等场景，绕过 _initialized 守卫） */
+  /** 从 IndexedDB 重新读取收藏与历史（下拉刷新 / 跨页签广播触发，绕过 _initialized 守卫） */
   reload: async () => {
     try {
       const [collections, history] = await Promise.all([
         getCollections(),
         getHistory(),
       ]);
-      set({ collections, history });
+      // 本地尚未落库的脏历史（3s 节流窗口内、本页正在更新的进度）以内存值为准合并回快照：
+      // 快照中已有的按 id 覆盖为内存值，快照没有的（首播未 flush）append。
+      // 否则另一页签的广播 reload 会把本页正在写的进度回退成 DB 旧值。
+      let mergedHistory = history;
+      if (historyDirtyRecords.size > 0) {
+        const dirtyById = new Map(
+          Array.from(historyDirtyRecords.values()).map((r) => [r.id!, r]),
+        );
+        mergedHistory = history.map((h) => dirtyById.get(h.id!) ?? h);
+        historyDirtyRecords.forEach((r) => {
+          if (!mergedHistory.some((h) => h.id === r.id)) mergedHistory = [...mergedHistory, r];
+        });
+      }
+      set({ collections, history: mergedHistory });
     } catch (err) {
       console.error('[useUserStore] reload failed:', err);
     }
