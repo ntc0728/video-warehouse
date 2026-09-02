@@ -100,6 +100,19 @@ describe('detectSourceType', () => {
     expect(detectSourceType('http://a.com/v.mpd?token=1')).toBe('dash');
   });
 
+  it('FLV/TS/M2TS 直链 → flv（mpegts.js，点播/裸流支持）', () => {
+    expect(detectSourceType('http://a.com/v.flv')).toBe('flv');
+    expect(detectSourceType('http://a.com/v.ts')).toBe('flv');
+    expect(detectSourceType('http://a.com/v.m2ts')).toBe('flv');
+    expect(detectSourceType('http://a.com/v.flv?token=1')).toBe('flv');
+    expect(detectSourceType('http://a.com/live/v.ts#frag')).toBe('flv');
+  });
+
+  it('大小写不敏感：.FLV/.TS → flv', () => {
+    expect(detectSourceType('http://a.com/v.FLV')).toBe('flv');
+    expect(detectSourceType('http://a.com/v.Ts')).toBe('flv');
+  });
+
   it('其余 → mp4（原生）', () => {
     expect(detectSourceType('http://a.com/v.mp4')).toBe('mp4');
     expect(detectSourceType('https://x.com/play.php?id=123')).toBe('mp4');
@@ -114,7 +127,9 @@ describe('detectSourceType', () => {
   });
 
   it('无转码能力的封装 → 仍归 mp4（交由浏览器尝试解码）', () => {
-    for (const ext of ['mkv', 'flv', 'avi', 'wmv', 'rmvb', 'rm', 'ts', '3gp', 'm2ts', 'asf', 'f4v']) {
+    // flv/ts/m2ts 自 2026-09 起识别为 flv（mpegts.js 播放，见 docs/player-iptv-frontend-refactor.md 整改2），
+    // 不再归入 mp4
+    for (const ext of ['mkv', 'avi', 'wmv', 'rmvb', 'rm', '3gp', 'asf', 'f4v']) {
       expect(detectSourceType(`http://a.com/v.${ext}`)).toBe('mp4');
     }
   });

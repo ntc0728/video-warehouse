@@ -31,6 +31,11 @@ export class DashAdapter extends BasePlayerAdapter {
           },
           buffer: {
             fastSwitchEnabled: true,
+            // 提高默认缓冲时间：dash.js 默认 12s 偏短，高码率视频易卡顿。
+            // 30s 与 hls.js 高码率兜底一致，长内容自动升到 60s
+            bufferTimeDefault: 30,
+            bufferTimeAtTopQuality: 45,
+            bufferTimeAtTopQualityLongForm: 60,
           },
         },
       });
