@@ -16,10 +16,13 @@ interface PlayerSidebarSkeletonProps {
 }
 
 export function PlayerSidebarSkeleton({ variant = 'tv' }: PlayerSidebarSkeletonProps) {
-  // 三个面板：CMS 源（3 行）、选季（6 行）、选集（6 行），行数贴近真实面板密度
+  // 三个面板行数与真实面板对齐：
+  //   - CMS 源：MAX_ENABLED.video=6，桌面端 3~4 列 → 最多 2 行
+  //   - 选季：桌面端 2 列，常见 6 季 → 3 行（季数更多时真实面板滚动，骨架不模拟溢出）
+  //   - 选集：PAGE_SIZE=12，桌面端 2 列 → 6 行
   const panels = [
-    { key: 'cms', mod: 'player-panel--cms', rows: 3 },
-    { key: 'season', mod: 'player-panel--season', rows: 6 },
+    { key: 'cms', mod: 'player-panel--cms', rows: 2 },
+    { key: 'season', mod: 'player-panel--season', rows: 3 },
     { key: 'episodes', mod: 'player-panel--episodes', rows: 6 },
   ].filter((p) => variant === 'tv' || p.key !== 'season');
 
