@@ -20,6 +20,8 @@ import RecordFilterPanel from '@/components/RecordFilterPanel';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
+import { useCmsSourceGuard } from '@/hooks/useCmsSourceGuard';
+import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
 
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
@@ -52,6 +54,10 @@ interface CollectionVideoItem extends Video {
   _rating?: number;
   _status?: ConcreteVideoStatus;
   _sourceIndex?: number;
+  /** 直链收藏时写入的 CMS 源 ID（域名 key），用于跳转前校验是否启用 */
+  _cmsSourceId?: string;
+  /** 直链收藏时写入的 CMS 源名称，用于未启用时弹窗提示 */
+  _cmsSourceName?: string;
   /** 收藏时间（用于排序） */
   _addedAt?: number;
 }
@@ -77,6 +83,8 @@ export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
+  // CMS 源启用守卫：直链收藏点击跳转前校验所选源是否启用，未启用则拦截并弹窗
+  const cmsSourceGuard = useCmsSourceGuard();
 
   useDocumentTitle();
   const pageRef = useRef<HTMLDivElement>(null);
@@ -214,6 +222,8 @@ export default function CollectionsPage() {
           _rating: c.rating,
           _status: status,
           _sourceIndex: c.sourceIndex,
+          _cmsSourceId: c.cmsSourceId,
+          _cmsSourceName: c.cmsSourceName,
           _addedAt: c.addedAt,
         };
       });
@@ -432,7 +442,7 @@ export default function CollectionsPage() {
                       </button>
                     )}
                     <button className="record-card__delete" onClick={(e) => handleSingleDelete(video.id, 'video', e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                    <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} status={video._status} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} />
+                    <VideoCard video={video} rating={video._rating} hideFavorite batchMode={batchMode} status={video._status} navigateTo={video._sourceIndex !== undefined ? `/play/${video.id}` : undefined} navigateState={video._sourceIndex !== undefined ? { sourceIndex: video._sourceIndex } : undefined} onBeforeNavigate={video._sourceIndex !== undefined ? () => cmsSourceGuard.requestNavigate(video._cmsSourceId, video._cmsSourceName) : undefined} />
                   </div>
                 ))}
               </div>
@@ -513,6 +523,12 @@ export default function CollectionsPage() {
         confirmText="删除"
         variant="danger"
         onConfirm={executeDelete}
+      />
+
+      <CmsSourceBlockedModal
+        visible={cmsSourceGuard.modalVisible}
+        sourceName={cmsSourceGuard.blockedSourceName ?? ''}
+        onClose={cmsSourceGuard.closeModal}
       />
     </RecordShell>
   );

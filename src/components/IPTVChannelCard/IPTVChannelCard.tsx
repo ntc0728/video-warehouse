@@ -131,7 +131,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
         {/* 横向 cover 失败兜底：LazyImage fallbackVariant="tv" 渲染 lucide Tv 图标 + kinoTV 品牌字 */}
         {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab。
             封面图加载失败（imageError 为 true）时隐藏检测徽标，保证占位图干净。
-            左上角角标组：LIVE 角标（全局 record-card__live-badge）+ 检测结果并排 */}
+            左上角角标组：LIVE 角标（全局 record-card__live-badge）在上，检测结果在其下方，纵向排列并保持间距 */}
         {!batchMode && (
           <div className="iptv-card-cover__badges">
             <span className="record-card__live-badge">LIVE</span>

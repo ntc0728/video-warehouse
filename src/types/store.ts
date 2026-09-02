@@ -34,6 +34,10 @@ export interface CollectionRecord {
    * 存在时收藏页点击跳转到 /play/:id 而非 /detail/:id
    */
   sourceIndex?: number;
+  /** CMS 源配置 ID（域名 key，如 "cj.lzcaiji.com"），用于匹配设置中是否启用 */
+  cmsSourceId?: string;
+  /** CMS 源配置名称（如 "量子资源"），用于未启用时弹窗提示 */
+  cmsSourceName?: string;
 }
 
 /**
