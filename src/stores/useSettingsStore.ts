@@ -61,6 +61,9 @@ interface SettingsState extends AppSettings {
 
 const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
 
+/** zustand persist 落 localStorage 的键名（persist name / 跨页签 storage 监听共用） */
+const APP_SETTINGS_PERSIST_KEY = 'app-settings';
+
 /** 设置项默认值（用于"恢复默认配置"） */
 export const DEFAULT_SETTINGS = {
   videoSourceIds: [] as string[],
@@ -228,7 +231,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'app-settings',
+      name: APP_SETTINGS_PERSIST_KEY,
       storage: encryptedStorage,
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Record<string, unknown>;
@@ -289,3 +292,68 @@ export const useSettingsStore = create<SettingsState>()(
     }
   )
 );
+
+// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// 静态配置（主题/皮肤/视频源选择/代理/EPG/token 等）经 zustand persist 落
+// localStorage（键 APP_SETTINGS_PERSIST_KEY）。同源其它页签写入自动触发本页签
+// window 'storage' 事件，此处做**白名单受控合并**让设置跨页签实时一致。
+//
+// ⚠️ 为什么不能用「storage 事件 → persist.rehydrate()」（iptv-store 的做法）：
+//   ① encryptText 每次生成随机 IV → 同一明文每次密文都不同。rehydrate 的解密
+//      onRehydrateStorage 必然 setState → persist 自动写盘 = 全新密文 → 其它页签
+//      再收到事件再 rehydrate → **敏感字段非空时无限事件循环**；
+//   ② persist 水合期自身的 setState 会写盘，而合并值里敏感字段是密文 → 自定义
+//      setItem 对密文再加密 = 双重加密，会污染持久化数据。
+//   所以这里不复用 persist 通道：直接解析事件载荷，逐键解密+比对后才 setState。
+//   收敛性：接收页签仅在「值确实变化」时 set；set 后 persist 写回的内容与自身
+//   内存一致 → 对端再收到事件时逐键比对全相等 → 不再 set → 环自动断裂。
+//
+// 白名单排除（CROSS_TAB_EXCLUDED_KEYS）：tvMode / tvOverscan 属「播放布局类」，
+// 实时灌入会突变另一页签正在播放页的布局（TV 导航框架 + 过扫描安全区），不同步。
+// 每页签保留自己的值；excluded 键永远不会被写回覆盖，也不参与收敛。
+let settingsCrossTabSyncAttached = false;
+const CROSS_TAB_EXCLUDED_KEYS = new Set(['tvMode', 'tvOverscan']);
+
+/** 解析另一页签写入的持久化载荷，白名单逐键比对合并（含敏感字段解密） */
+async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
+  let parsed: { state?: Record<string, unknown> };
+  try {
+    parsed = JSON.parse(raw) as { state?: Record<string, unknown> };
+  } catch {
+    return;
+  }
+  const incoming = parsed?.state;
+  if (!incoming || typeof incoming !== 'object') return;
+
+  const patch: Record<string, unknown> = {};
+  for (const [key, rawValue] of Object.entries(incoming)) {
+    if (CROSS_TAB_EXCLUDED_KEYS.has(key)) continue; // 播放布局类：本页签保留自己的值
+    if ((SENSITIVE_FIELDS as readonly string[]).includes(key)) {
+      if (typeof rawValue !== 'string' || !rawValue) continue; // 空值跳过（无明文可同步）
+      const decrypted = await decryptText(rawValue);
+      const cur = useSettingsStore.getState()[key as keyof SettingsState] as unknown;
+      if (decrypted !== cur) patch[key] = decrypted;
+      continue;
+    }
+    const cur = useSettingsStore.getState()[key as keyof SettingsState] as unknown;
+    // JSON 比对兼容数组（epgUrls 等）：同内容不同引用不触发无谓写盘
+    if (JSON.stringify(cur) !== JSON.stringify(rawValue)) patch[key] = rawValue;
+  }
+
+  if (Object.keys(patch).length > 0) {
+    useSettingsStore.setState(patch as Partial<SettingsState>);
+  }
+}
+
+function initSettingsCrossTabSync(): void {
+  if (typeof window === 'undefined' || import.meta.env?.MODE === 'test') return;
+  if (settingsCrossTabSyncAttached) return; // 幂等：模块被多路径 import / HMR 时只挂一次
+  settingsCrossTabSyncAttached = true;
+
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key !== APP_SETTINGS_PERSIST_KEY || e.storageArea !== localStorage) return;
+    if (e.newValue === null) return; // removeItem 无独立归零入口（resetToDefaults 走整写），保持本页内存
+    void mergeSettingsFromCrossTab(e.newValue);
+  });
+}
+initSettingsCrossTabSync();
