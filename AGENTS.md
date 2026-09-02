@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-**Video Warehouse (KinoTV)** — 影视聚合平台，支持多数据源视频浏览、IPTV 直播、收藏管理和智能搜索。
+**Video Warehouse (KinoTV)** — 影视聚合平台，支持多数据源视频浏览、IPTV 直播、收藏管理和智能搜索。  
 技术栈：React 18 + TypeScript + Vite 6 + Zustand + Tailwind CSS + HLS.js/DASH.js。
 
 ## 架构设计（四层分层）
@@ -18,23 +18,23 @@ Layer 4: 外部数据源               → TMDB API / CMS 采集站 / IPTV M3U /
 
 ### Store → Service → API 映射
 
-| Store | Service | 外部数据源 | 代理 |
-|-------|---------|-----------|------|
-| useTMDBStore | tmdbService | TMDB API v3 (api.tmdb.org/3) | 直连 (CORS) |
-| useSettingsStore | sourceService | video-sources.json / iptv-sources.json | 本地文件 |
-| useUserStore | database (idb) | IndexedDB | 本地存储 |
-| useIPTVStore | iptvService + epgService | M3U 播放列表 + XMLTV EPG | Video Proxy |
-| usePlayerStore | videoService | CMS 采集站 API | Video Proxy |
-| useSourceManagerStore | sourceService | 视频/IP/EPG 三源统一管理（启用+顺序+聚合 URL 回写） | 本地文件 |
-| useNavStore | — | 页面导航状态 | 内存 |
+| Store                 | Service                  | 外部数据源                                  | 代理          |
+| --------------------- | ------------------------ | -------------------------------------- | ----------- |
+| useTMDBStore          | tmdbService              | TMDB API v3 (api.tmdb.org/3)           | 直连 (CORS)   |
+| useSettingsStore      | sourceService            | video-sources.json / iptv-sources.json | 本地文件        |
+| useUserStore          | database (idb)           | IndexedDB                              | 本地存储        |
+| useIPTVStore          | iptvService + epgService | M3U 播放列表 + XMLTV EPG                   | Video Proxy |
+| usePlayerStore        | videoService             | CMS 采集站 API                            | Video Proxy |
+| useSourceManagerStore | sourceService            | 视频/IP/EPG 三源统一管理（启用+顺序+聚合 URL 回写）      | 本地文件        |
+| useNavStore           | —                        | 页面导航状态                                 | 内存          |
 
 ## 代理配置
 
-| 代理 | URL 模式 | 用途 |
-|------|---------|------|
-| Video Proxy (CORS) | `https://your-video-proxy.example.com/proxy?url={encoded}` | CMS API 请求、M3U 文件获取、EPG XML 获取 |
-| IPTV Proxy (M3U8) | `https://your-iptv-proxy.example.com/m3u8-proxy?url={encoded}` | IPTV 直播流代理（重写内部 URL） |
-| TS Proxy | `https://your-iptv-proxy.example.com/ts-proxy?url={encoded}` | TS 分片代理 |
+| 代理                 | URL 模式                                                         | 用途                             |
+| ------------------ | -------------------------------------------------------------- | ------------------------------ |
+| Video Proxy (CORS) | `https://your-video-proxy.example.com/proxy?url={encoded}`     | CMS API 请求、M3U 文件获取、EPG XML 获取 |
+| IPTV Proxy (M3U8)  | `https://your-iptv-proxy.example.com/m3u8-proxy?url={encoded}` | IPTV 直播流代理（重写内部 URL）           |
+| TS Proxy           | `https://your-iptv-proxy.example.com/ts-proxy?url={encoded}`   | TS 分片代理                        |
 
 CMS API 和 IPTV M3U 请求必须通过 Video Proxy 代理（浏览器跨域限制）。TMDB API 原生支持 CORS，直连即可。
 
@@ -43,6 +43,7 @@ CMS API 和 IPTV M3U 请求必须通过 Video Proxy 代理（浏览器跨域限�
 **位置**: `docs/page-diagrams/`
 
 **核心文件**:
+
 - `index.html` — 索引页，导航到所有页面原理图和流程图
 - `flowchart.html` — 项目流程图（页面导航地图 + 数据流架构 + 核心播放流程），所有页面节点可点击跳转
 - `diagram-data.json` — 真实 API 数据（由 `scripts/fetch-diagram-data.mjs` 生成）
@@ -52,11 +53,13 @@ CMS API 和 IPTV M3U 请求必须通过 Video Proxy 代理（浏览器跨域限�
 **10 个页面原理图**: home / browse / detail / player / iptv / settings / collections / history / source-checker / person
 
 **联动机制**:
+
 - 流程图中页面节点可点击 → 跳转到对应原理图
 - 原理图 page-nav 有 "📊 流程图" 链接 → 跳回流程图并高亮当前页面节点
 - 索引页有流程图入口卡片
 
 **数据获取脚本**: `scripts/fetch-diagram-data.mjs`
+
 ```bash
 node scripts/fetch-diagram-data.mjs                    # 获取 CMS + IPTV 数据
 TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数据
@@ -64,34 +67,38 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 
 **本地预览**: 在 `docs/page-diagrams/` 目录下启动 HTTP 服务器即可预览。
 
+
 ## 页面与路由
 
-| 页面 | 路由 | 核心组件 | 数据源 |
-|------|------|---------|--------|
-| 首页 | `/` | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
-| 浏览/搜索 | `/browse` | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供） | TMDB discover/search + CMS searchAll |
-| 详情 | `/detail/:id` | DetailHeader + TabBar + CastList + StillsLightbox | TMDB movie/tv detail + CMS searchVideoByTitle |
-| 播放 | `/play/:id` | UniversalPlayer + Sidebar (PlayLineList + EpisodeList) | CMS vod_play_url 解析 → HLS/DASH/Native Adapter |
-| IPTV | `/iptv` | IPTVChannelList + EPGProgramList | M3U 解析 + EPG XMLTV 匹配 |
-| 设置 | `/settings` | List + Modal + ThemeSwitcher | useSettingsStore (localStorage AES-GCM) |
-| 收藏 | `/collections` | RecordShell + CollectionGrid | useUserStore (IndexedDB) |
-| 历史 | `/history` | 融合 Tab（综合/视频/IPTV）+ RecordCard 横版卡 + 更多筛选（状态 chips + 排序）+ 批量管理 + 桌面算珠时间轴 | useUserStore + useIPTVStore (IndexedDB) |
-| 源检测 | `/source-checker` | SourceTable | videoService.checkAllVideoSources |
-| 人物 | `/person/:id` | PersonHeader + MovieCredits | TMDB person detail + credits |
-| IPTV 播放 | `/iptv/play` | IPTVPlayer (独立全屏) | IPTV channel stream |
+| 页面      | 路由                | 核心组件                                                                                         | 数据源                                                                                 |
+| ------- | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 首页      | `/`               | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
+| 浏览/搜索   | `/browse`         | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供）                    | TMDB discover/search + CMS searchAll                                                |
+| 详情      | `/detail/:id`     | DetailHeader + TabBar + CastList + StillsLightbox                                            | TMDB movie/tv detail + CMS searchVideoByTitle                                       |
+| 播放      | `/play/:id`       | UniversalPlayer + Sidebar (PlayLineList + EpisodeList)                                       | CMS vod_play_url 解析 → HLS/DASH/Native Adapter                                       |
+| IPTV    | `/iptv`           | IPTVChannelList + EPGProgramList                                                             | M3U 解析 + EPG XMLTV 匹配                                                               |
+| 设置      | `/settings`       | List + Modal + ThemeSwitcher                                                                 | useSettingsStore (localStorage AES-GCM)                                             |
+| 收藏      | `/collections`    | RecordShell + CollectionGrid                                                                 | useUserStore (IndexedDB)                                                            |
+| 历史      | `/history`        | 融合 Tab（综合/视频/IPTV）+ RecordCard 横版卡 + 更多筛选（状态 chips + 排序）+ 批量管理 + 桌面算珠时间轴                     | useUserStore + useIPTVStore (IndexedDB)                                             |
+| 源检测     | `/source-checker` | SourceTable                                                                                  | videoService.checkAllVideoSources                                                   |
+| 人物      | `/person/:id`     | PersonHeader + MovieCredits                                                                  | TMDB person detail + credits                                                        |
+| IPTV 播放 | `/iptv/play`      | IPTVPlayer (独立全屏)                                                                            | IPTV channel stream                                                                 |
 
 ## 关键数据格式
 
 ### CMS vod_play_url 解析
+
 ```
 线路1$第1集$http://example.com/ep1.m3u8#第2集$http://example.com/ep2.m3u8$$$线路2$第1集$http://example2.com/ep1.m3u8
 ```
+
 - `$$$` 分隔播放线路
 - `#` 分隔集数
 - `$` 分隔集标题和 URL
 - URL 后缀决定适配器: `.m3u8` → HLS (hls.js), `.mpd` → DASH (dash.js), 其他 → Native
 
 ### 数据源配置文件
+
 - `public/data/video-sources.json` — 28 个 CMS 采集站（苹果 CMS V10 API）
 - `public/data/iptv-sources.json` — 24 个 IPTV M3U 源
 - `public/data/epg-sources.json` — 3 个 EPG XMLTV 源
@@ -110,33 +117,41 @@ npm run test         # Vitest 单元测试
 npx playwright test  # E2E 测试（TMDB Mock 默认启用，-RealApi 关闭）
 ```
 
-> **⚠️ 代码修改后必须执行 `npm run build`**
-> 禁止用 `npx tsc --noEmit --skipLibCheck` 替代——`--skipLibCheck` 会跳过 `noUnusedLocals` 检查，导致未使用变量提交后 CI 构建失败。
+> **⚠️ 代码修改后必须执行 `npm run build`**  
+> 禁止用 `npx tsc --noEmit --skipLibCheck` 替代——`--skipLibCheck` 会跳过 `noUnusedLocals` 检查，导致未使用变量提交后 CI 构建失败。  
 > 正确流程：修改代码 → `npm run build` 验证通过 → `git commit` → `git push`。
 
-> **⚠️ 改动必须及时 commit，不要堆积在工作区**
+> **⚠️ 改动必须及时 commit，不要堆积在工作区**  
 > 所有改动若不 commit，子代理或其他操作可以一键覆盖全部。每完成一个独立功能就立即 commit。
 
-> **⚠️ 子代理操作前必须 commit 保护现有改动**
+> **⚠️ 子代理操作前必须 commit 保护现有改动**  
 > 子代理可能重写非指定文件。使用子代理前，先 `git stash` 或 commit 保护当前状态。
 
-> **⚠️ CSS 检查必须 grep 所有 display:none 规则**
+> **⚠️ CSS 检查必须 grep 所有 display:none 规则**  
 > 恢复代码后必须用 `grep` 搜索所有 `display: none` / `visibility: hidden` 确认无遗漏，不能只看 git diff 标记。
 
-> **⚠️ 不要在未逐行确认时声称"恢复完成"**
+> **⚠️ 不要在未逐行确认时声称"恢复完成"**  
 > 只说"已验证的改动"，不说"全部恢复"。除非逐文件逐行确认过，否则用"大部分已恢复，待验证"。
 
 ## TMDB Mock 策略
 
 测试通过 `scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求，返回本地 mock 数据。
 
-| 模式 | 命令 | Token 风险 |
-|------|------|-----------|
-| Mock 模式（默认） | `npx playwright test` | 无 |
-| 真实 API 模式 | `TMDB_MOCK=false npx playwright test` | 有 |
-| 增量测试 | `.\scripts\run-tests.ps1`（mock）/ `-RealApi`（真实） | 按模式 |
+| 模式          | 命令                                              | Token 风险 |
+| ----------- | ----------------------------------------------- | -------- |
+| Mock 模式（默认） | `npx playwright test`                           | 无        |
+| 真实 API 模式   | `TMDB_MOCK=false npx playwright test`           | 有        |
+| 增量测试        | `.\scripts\run-tests.ps1`（mock）/ `-RealApi`（真实） | 按模式      |
 
 Mock 覆盖：trending / search / discover / movie detail / tv detail / person / genres / images。
+
+> **⚠️ 播放页沙箱 mock（2026-09-01）**：`scripts/player.spec.ts` 改从 `scripts/fixtures/cms-mock.ts` 引入  
+> `test`（它内部 `extend` 自 `mock-tmdb`）。`cms-mock` 在 TMDB 拦截之外再叠加两条规则：
+>
+> 1. 拦截 CMS 搜索请求（`ac=videolist`，**注意经 CORS 代理包装后会被编码成 `ac%3Dvideolist`**，两者都要匹配）  
+>    返回固定 `CMSListResponse`（`vod_play_url` 指向本地 `cms-mock.local` 的 HLS 流），使播放器可靠挂载 `.up-universal-player`。
+> 2. 拦截 `cms-mock.local` 的 m3u8/ts，从 `scripts/fixtures/hls/stream/`（ffmpeg 生成的本地 HLS）直接 fulfill，hls.js 可完整初始化。  
+>    这样播放页测试不再依赖沙箱不可达的 CORS 代理 / CMS 源，消除 M04/M09/M12/M15 等移动端 flake。
 
 ## 关键目录
 
@@ -155,6 +170,7 @@ scripts/                 # 构建脚本 + E2E 测试 + 数据获取脚本
 public/data/             # 数据源配置 JSON
 ```
 
+
 ### Android 原生代码（DLNA 投屏 / 启动屏补丁）
 
 `android/` 整目录被 gitignore，CI 靠 `cap add android` + `cap sync android` 重建。因此原生代码/资源的**唯一源**放在 `scripts/` 下，由构建脚本在 cap sync 后复制进 android/：
@@ -168,17 +184,18 @@ public/data/             # 数据源配置 JSON
 
 **后台听视频链路（2026-08-31）**：三级实现，`usePlayerStore.backgroundPlay` 开关驱动。**P1（全平台）**：`useMediaSession.ts`（`UniversalPlayer/hooks/`）集成 `navigator.mediaSession` ——锁屏媒体卡片（标题/副标题/进度）+ 媒体键 play/pause/seek±10s/上一集·下一集；`usePlayerCore` 经新增 `mediaSession` option 接入，`UniversalPlayer` 用 `useMemo` 构造 info（点播=title+episodeLabel，IPTV=channelName）+ `streamUrl` + `onPrev/onNext` 接线。开关关闭时不注册元数据（锁屏无卡片）。**P2（iOS Safari）**：`backgroundAudioService.ts` 的 `getIOSBackgroundAudioCapability()` 返回 `'supported'`（iOS 17+ `ManagedMediaSource` 可用，`HLSAdapter` 已配 `preferManagedMediaSource:true` → 后台续播由浏览器保证）/`'unsupported'`（旧 iOS 切后台必停，前端无法绕过）/`'irrelevant'`（非 iOS 或 Android App 端）；`MobileMoreSheet` 开关 onChange 在 `unsupported` 时提示「建议升级 iOS 17+」。**P3（Android App）**：`backgroundAudioService.ts` 定义 `window.MediaBridge` 契约（`MediaBridge`：start/play/pause/stop/seek/getState）+ `getMediaBridge()` + `isNativeMediaServiceSupported()`；`useMediaSession` 监听 `visibilitychange`，切后台时 `bridge.start({url, title, artist})` → `seek(pos)` → `play()` 接管音频、暂停 WebView video（省电 + 避免双音轨），切回前台 `bridge.stop()` 并恢复 video 播放；Web/iOS 无桥跳过、P1 兜底。原生侧（与 CastBridge 同体系，唯一源在 `scripts/android-dlna-patch/`）：`MainActivity` 注册 `MediaBridgePlugin`（Capacitor 6 插件，`@PluginMethod` 驱动 `start/play/pause/stop/seek/getState`）+ `injectMediaBridgeShim` 注入 `window.MediaBridge` 代理到 `Capacitor.Plugins.MediaBridge` → `MediaService`（前台 Service + `MediaPlayer` 独立解码 + `MediaSessionCompat` 锁屏控制 + `NotificationCompat`+`MediaStyle` 前台通知，API 22–34 兼容；API 34 用 `FOREGROUND_SERVICE_TYPE_SPECIAL_USE`）。`patch-android-dlna.ps1` 追加 `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` 权限 + 声明 `MediaService`（`foregroundServiceType=specialUse` + `PROPERTY_SPECIAL_USE_FGS_SUBTYPE`）。新增/修改 Android 原生媒体代码同样必须同步 `scripts/android-dlna-patch/` 与 `scripts/patch-android-dlna.ps1`，不得直接改 android/。
 
+
 ## Keep-Alive 路由
 
-AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。
+AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。  
 路由切换不触发 unmount/remount，修改页面状态时需考虑组件已挂载的二次进入场景。
 
 **路由 chunk 预加载（消除双重 AppLoading）**：`routeConfig.ts` 的 `lazyWithRetry` 暴露 `preload()`。`preloadInitialRoute()` 在 `main.tsx` 首屏渲染**前**调用，预拉「当前 URL 对应」的路由 chunk（warm 命中缓存时 Suspense 同步解析，避免首屏「Suspense fallback → 页面自身 loading」双重 AppLoading）。`preloadAllRoutes()` 在 `AppLayout` 挂载后**立即**执行（不再等待 `requestIdleCallback`/setTimeout），缩短首屏后的窗口期，导航场景基本不再触发两次 AppLoading。`import()` 只求值模块、不挂载、不触发数据请求，无副作用。
 
 **SearchBox 懒加载热门搜索**：SearchBox 常驻顶栏，`trending`（`/trending/all/day`）改为「下拉打开且 `showHotSearch` 为真」时才拉取，避免「非首页刷新即请求 trending」；首页数据仍由 `fetchAllHomeData` 负责。
 
-**⚠️ 异步数据 + 布局测量的隐形雷区**
-隐藏页（`display:none`，`clientWidth=0`）期间完成的异步加载（如剧照 `/images`、推荐、CMS 源）会让任何「依赖容器尺寸」的逻辑（`useEffect` 里 `if (clientWidth<=0) return`、用 `getComputedStyle` 读 `gridTemplateColumns` 算列数等）永久失效，且 `display:none` 的元素 `ResizeObserver` 不触发、显示后也无法纠正。受影响的 UI：详情页剧照 2 行截断、任何分页/虚拟滚动/自适应列数。
+**⚠️ 异步数据 + 布局测量的隐形雷区**  
+隐藏页（`display:none`，`clientWidth=0`）期间完成的异步加载（如剧照 `/images`、推荐、CMS 源）会让任何「依赖容器尺寸」的逻辑（`useEffect` 里 `if (clientWidth<=0) return`、用 `getComputedStyle` 读 `gridTemplateColumns` 算列数等）永久失效，且 `display:none` 的元素 `ResizeObserver` 不触发、显示后也无法纠正。受影响的 UI：详情页剧照 2 行截断、任何分页/虚拟滚动/自适应列数。  
 **正确做法**：测量逻辑在容器不可见（`clientWidth<=0`）时改用「视口宽度估算兜底」（按 CSS 列宽公式 `clamp(8rem, 6rem+8vw, 16rem)` 推算列数），保证状态一定是有限值；页面显示后 `ResizeObserver` 用真实列数纠正。复现手法：`page.route` 给目标接口加 `setTimeout` 延迟 → 导航进页 → `page.goBack()` 隐藏 → 等延迟过 → `page.goForward()` 显示 → 断言（详见 `scripts/detail.spec.ts` DETAIL-048）。
 
 ## 关键模式与约定
@@ -186,18 +203,22 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 ### RecordShell（收藏页/历史页共用外壳）
 
 `src/components/RecordShell/` — 收藏页和历史页的共用布局组件：
+
 - **桌面（≥768px）：顶部横向卡片筛选栏** — `.record-aside` 由竖向侧栏改为横向（`flex-flow: row wrap`、宽度 100%），顶部常驻 sticky 卡片：第 1 行 = 标题 + 影视/IPTV 分段 + 搜索框（弹性撑开）+ 批量/清除工具栏（靠右），第 2 行 = 状态筛选芯片（横向、可换行、独占整行）；主区 `.record-main` 在其下方
 - **移动（≤767px）方案 M6**：顶部 sticky 精简栏，滚动时自动折叠状态芯片行，仅留分段+搜索+筛选按钮（**保持不变**）
 - CSS 在 `RecordShell.css`，两页共享；实现方式为「末尾追加 `@media (width >= 768px)` 块覆盖默认竖向布局」，原移动端规则逐字节未动，确保移动端零影响；桌面侧栏 `width:100%` 的元素在移动横向 flex 行必须显式 `width:auto` 复位
 
+
 ### 卡片模块 (Card Module) UI 约定
 
 项目级统一视觉风格：每个功能区块作为独立「卡片模块」：
+
 - 背景 `var(--color-surface)` + `1px solid var(--color-border-light)` 边框 + `var(--radius-lg)` 圆角 + `var(--shadow-sm)` 阴影
 - 模块（卡片）之间间距统一 `var(--space-sm)`
 - **所有设备启用**（移动端/平板/桌面端），卡片样式直接写在组件样式中，无需媒体查询包裹
 
 应用位置：
+
 - 顶部导航 `StickyHeader` 承载全局导航；桌面 web / TV **已无左侧栏**（旧 `HomeSidebar` 于 2026-08-29 删除）：桌面经顶栏补充 IPTV + 设置入口（`StickyHeader` 的 `EXTRA_NAV_ITEMS` / `SETTINGS_NAV_ITEM` 在 `!isMobile` 时渲染），移动 web / app 经抽屉侧栏 / 底部 TabBar。`--sidebar-width*` token 仍保留供移动端 `Sidebar.tsx` 使用。
 - 首页 `HeroBanner` / `CategoryQuickAccess` / 每个 `TMDBMovieRow` — `Home.css`（`.home-page` 作用域）
 - 浏览页双卡片结构 — `Browse.css`：
@@ -210,9 +231,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 骨架占位扫光速度：全局变量 `var(--card-shimmer-duration)`（默认 `3s`，原 `1.5s`）定义在 `variables.css` 的 `:root`；`LazyImage` / `TMDBMovieRow` 行骨架 / `SkeletonCard` / `SkeletonIPTVCard` 统一引用，调快慢只需改这一处。
 
+
 ### HeroBanner 组件
 
 `src/components/HeroBanner/` — 首页 Hero 横幅轮播：
+
 - **布局**：左侧主背景图（左右滑动切换）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
 - **缩略图**：`position: absolute; z-index: 10`，`overflow: hidden` 不影响 banner 圆角；激活态使用 `2px solid var(--color-primary)` 边框 + `var(--color-primary-shadow)` 阴影；点击跳转 detail 页；标题仅激活态显示
 - **滑动切换动画（所有客户端）**：`activeIndex` 切换统一走 `slide-left`（前进，新图从右滑入）/ `slide-right`（后退，新图从左滑入）；自动轮播（5s）也设置 `slideDir='left'` 走滑动切换；滑动后 1000ms 冷却期内暂停自动轮播。`.slide-*` 规则定义在 `HeroBanner.css` 全局作用域（非移动端媒体查询内），选择器特异性高于 `.is-active` crossfade。**桌面端悬停缩略图预览**由 `handleThumbEnter` 显式清除 `slideDir`（设 null）→ 回退为 crossfade（`heroBgFadeIn`）。**注意**：slide 动画结束后**不**重置 `slideDir`（保持方向类），否则 `.is-active` 层会回退匹配默认 crossfade 规则、因 `animation-name` 改变重新播放淡入，导致「闪一下、短暂出现上一张图片」。
@@ -231,9 +254,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 ### Toast 系统
 
 `src/components/ui/toastBus.ts` + `Toast.tsx`：
+
 - `toast.show(opts)` — 入队，排队等待（前一个 toast 超时后才显示下一个）
 - `toast.replace(opts)` — 清空队列立即显示新 toast（快速连续提示场景，如版本号连续点击）
 - ToastProvider 只渲染 `items[0]`（队列首项），`ToastContainer` 因 `item.id` 变化触发 useEffect 重跑
+
 
 ### IPTV 频道台标回退链（三级）
 
@@ -244,6 +269,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 3. **三级**：在线台标库按规范化名拼 URL —— `https://live.fanmingming.cn/tv/{name}.png`、`https://raw.githubusercontent.com/wanglindl/TVlogo/main/img/{name}.png`
 
 核心实现 `src/services/channelLogo.ts`：
+
 - `toLogoName(name)`：去括号注释（`[蓝光]`）→ 去清晰度标记（高清/HD/超清/标清/极致/极速/流畅/蓝光，**保留 4K/8K**）→ 循环去尾部频道定位词（综合/新闻/文艺/体育/影视/财经/纪录/科教/戏曲/少儿/音乐/国防军事/农业农村/社会与法/频道）→ 去分隔符（空格/连字符/下划线/点号/间隔号），**保留 `+` 号**（`CCTV5+` 不变）；与 EPG 匹配用的 `normalizeName` 不同——不能去掉「卫视」等品牌词
 - `resolveChannelLogoCandidates(channel, epgChannels?, proxyUrl?, epgIndex?)`：返回去重候选列表；第 4 参 `epgIndex`（EPG 预索引）存在时 EPG 匹配 O(1) 查表，否则回退全量遍历；**http 台标在 https 部署下会被混合内容拦截**，经主代理 `/file-proxy?url=` 转 https，无代理则丢弃
 - session 级 `failedLogoUrls` 失败记忆：已 404/挂起的 URL 不再进入候选链，避免无台标频道（数百张卡片）对在线库重复 404 请求
@@ -251,6 +277,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 接入点：`LazyImage` 新增可选 `srcCandidates` prop（`src` 失败后依次尝试，链尽才 error 态，不传时行为与原来完全一致）；`IPTVChannelCard` 用 `resolveChannelLogoCandidates` 结果渲染；IPTV 页复用现有 `fetchAndParseEPG()`（IndexedDB TTL 缓存 + in-flight 合并，**不增加 EPG 请求量**）取 `data.channels` 传给卡片；播放器 `UniversalPlayer` 经 `useEPGData` 的 `epgChannels` 组装候选传入 OSD，侧栏 `ChannelLogoCell` 手动循环候选。新增台标相关测试：`scripts/iptv.spec.ts`（IPTV-080/081 条件式用例，mock 在线库与 EPG 请求）。
 
 **EPG 预索引（性能关键）**：`matchEPGChannel` 原实现每频道全量遍历数千 EPG 频道（数百卡片 × 数千频道 = 百万次 `normalizeName`），EPG 就绪瞬间主线程卡顿。`epgService.ts` 新增 `buildEPGChannelIndex(channels)` 一次性构建（`EPGChannelIndex`：tvg-id / 规范化名 / 原始名三张 Map），`matchEPGChannelIndexed` 精确匹配 O(1)、模糊包含兜底线性（触发率低）；`matchEPGChannel` 内部改走索引（向后兼容），`matchAllChannels` 批量匹配也复用索引。**页面层必须一次性构建索引传给卡片**：IPTV 页 `useMemo` 构建（依赖 `epgChannels`）；收藏/历史页经 `getCachedEPGData()`（**零网络**，仅读 IndexedDB 缓存，无缓存直接跳过）读 `data.channels` 构建后传 `epgIndex` prop——收藏/历史页的 IPTV 卡台标因此受益于 EPG icon 二级回退。
+
 
 ### IPTV 频道列表加载（竞速窗口，防慢源拖尾）
 
@@ -269,9 +296,11 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - `useIPTVAutoRefresh`：仅在 `location.pathname === '/iptv'` 时注册轮询 interval，离开即 clearInterval，回来重建（避免隐藏页后台拉 M3U）
 - `/iptv/play` 是顶层独立路由（不走 AppLayout），离开即卸载、播放器实例正常销毁，无泄漏
 
+
 ### IPTV 直播播放独立逻辑
 
 `UniversalPlayer`（`src/components/UniversalPlayer/`）在 `mode === 'iptv'`（`IPTVPlayer` 调用）下走**独立播放逻辑**，与点播（`mode === 'video'`）区分，**不要复用点播的播放/提示交互**：
+
 - **自动播放**：`usePlayerCore.handleCanPlay` 在 `autoPlay=true` 且流可播放时直接 `video.play()`，加载即播；被浏览器拦截（多因带声音且无用户手势）时静音兜底重试一次，避免黑屏与中间播放按钮。
 - **无中间播放按钮**：中间暂停遮罩 `.up-player-paused-overlay` 仅在 `mode !== 'iptv'` 时渲染，IPTV 直播不显示大播放按钮（点播保留，供用户点击开始）。
 - **提示体系（双轨）**：① 全局 `toastBus`（sonner）——普通页面顶部居中（导航栏下方），播放器页面中间靠上（top 42%），`success/warning/error` 语义色图标，统一 3s，用于**错误/成功/警告**类。② 播放器**操作类**提示独立走 `PlayerToast`（`.up-player-toast`，播放器**右上角**）——播放/暂停、音量、切线路、切频道、频道号输入等；`show(msg, duration, type)` 统一 3s，命令式 `playerToast()` 供组件顶层 hooks 调用（ToastTrigger/useTVInput/useIPTVNavigation/useKeyboardShortcuts）。`ToastTrigger` 在 `mode === 'iptv'` 跳过点播类订阅；IPTV 切线路由 `handleSourceSwitch` 提示（右上角）。IPTV 播放页：非 TV 放大图标在**右下角**；**TV 端默认全屏**（挂载时 requestFullscreen，拦截静默）且不显示放大图标；TV 遥控器音量弹**音量柱** + 右上角提示，换频道/频道号输入右上角提示。
@@ -301,6 +330,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **`.no-interaction-visual`**：移除 hover/active/focus 视觉反馈的工具类，用于 logo、品牌名等不需要交互反馈的元素（`index.css`）
 - **Logo tokens**：流式尺寸变量（`variables.css`）—— `--layout-logo-size`（48→64px）、`--layout-logo-size-sm`（40→52px）、`--layout-logo-size-lg`（56→72px）；`--layout-brand-font-size`（20→24px）、`--layout-brand-font-size-sm`（16→20px）、`--layout-brand-font-size-lg`（24→28px）。Sidebar 和 StickyHeader 的 logo 统一使用这些 token
 
+
 ### 页面进入过渡统一约定
 
 - **共享工具类 `.page-transition-enter`**：定义在 `src/assets/styles/animations.css` 的 `@keyframes page-enter-fade`（淡入 + `translateY(8px)→0`，`0.28s var(--ease-out-expo) both`），已含 `prefers-reduced-motion: reduce` 守卫。**所有缺少进入动画的页面根容器都应加该类**：Detail / Person / SourceChecker / RecordShell（收藏·历史）。Browse（`.browse-page`）、IPTV（`.iptv-content`）、Settings（`.settings-page`）已有各自进入动画，勿重复加。**特例 — 首页**：`.home-page` 内嵌的 HeroBanner 自带 background crossfade + 缩略图揭示，且其缩略图/背景层是 `will-change`/`z-index` 的 **GPU 合成层**；若祖先（`.home-page` 根）带 `page-enter-fade` 的 `transform` 动画，会触发这些合成层重绘**闪烁（"闪一下"）**。因此首页的 `.page-transition-enter` **刻意落在仅包裹非 Hero 内容的 `.home-page__content` 包装层**（HeroBanner 作为其兄弟节点，祖先不再有 transform 动画），既保留进入淡入上移动画，又消除缩略图闪烁；HeroBanner 在二次进入时保持静止（首页被刻意排除在 VT 交叉淡入与重进抑制之外，顺带规避其"上一张图闪现"的已知问题）。
@@ -308,7 +338,9 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 - **首页分类入口（2026-08-29 修订：页面内类目切换已彻底移除）**：首页**不再有页面内类目切换**——旧 `HomeSidebar` 与 `Home/index.tsx` 的 `CategoryView` 已删除，分类切换统一走路由：点击 `CategoryQuickAccess` 卡片 → `navigate('/browse?category=...')`（各端一致）。**以下历史机制均已不存在，勿再引用**：`displayedCategory` / `catSwitching` / `.home-cat-dim` / `home-cat-fade-*` / `fadePhase` / `useHomeCategoryStore` / `pages/Home/categoryConfig.ts` / `pages/Home/preloadRowCovers.ts` / `CategoryQuickAccess` 的 `activeCategory` prop 与 `--active` 样式。**仍保留的约束**：(1) `animation-fill-mode: none` 保留在 `.home-page__content` 上（防 `page-transition-enter` 的 `both` fill 永久锁定 opacity）；(2) 不要给 `.home-page` 或任何 HeroBanner 祖先加 `transform` 类动画（GPU 合成缩略图层会重绘闪烁，即「闪一下」）。
 
 **导航 API 强约束**：所有业务导航一律使用 `src/lib/navigation.ts` 的 `useCustomNavigate()`，禁止直接 `import { useNavigate } from 'react-router-dom'`（已由 ESLint `no-restricted-imports` 封死，仅 `src/lib/navigation.ts` 豁免）。`useCustomNavigate` 现只走 react-router 原生 navigate（不启用 View Transitions——见「页面进入过渡统一约定」：VT 在方案 B 下会引入抖动与白色间隙回归）。二次进入的「先空白再出现数据」闪烁由 AppLayout 的 `data-revisit` 门控消除，与导航方式无关（无论经 `useCustomNavigate` 还是侧栏 `<Link>` 改走的 `useCustomNavigate` onClick，重进门控都生效）。
+
 - **Suspense 兜底**：`AppLayout` 的 `LoadingFallback` 也已加 `.page-transition-enter`，冷加载时不再生硬弹出。
+
 
 ### 共享加载态约定（小电视 TvMascot）
 
@@ -330,56 +362,58 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 > 修改源文件后，只跑对应列的测试文件。共享组件变更才会影响多个测试文件。
 
+
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-01 校准，全量 267 条 / 19 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-02 校准，全量 271 条 / 19 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
-| 修改的源文件 | 跑这个测试 | test 数 |
-|-------------|-----------|---------|
-| `src/pages/Home/` | `scripts/home.spec.ts` | 35 + 7 |
-| `src/pages/Browse/` | `scripts/browse.spec.ts` | 24 |
-| `src/pages/Detail/` | `scripts/detail.spec.ts` | 21 |
-| `src/pages/Player/` | `scripts/player.spec.ts` | 27 |
-| `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts` | 7 |
-| `src/pages/IPTV/` | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
-| `src/pages/Settings/` | `scripts/settings.spec.ts` | 24 + 1 |
-| `src/pages/Collections/` | `scripts/collections.spec.ts` | 6 |
-| `src/pages/History/` | `scripts/history.spec.ts` | 11 |
-| `src/pages/SourceChecker/` | `scripts/source-checker.spec.ts` | 5 |
-| `src/pages/Person/` | `scripts/person.spec.ts` | 8 |
-| 跨页联动回归 | `scripts/cross-page.spec.ts` | 17 |
-| 详情页回归（原 DETAIL 段） | `scripts/regression-detail.spec.ts` | 21 |
-| 9.1 自测问题修复 | `scripts/fix-2026-08.spec.ts` | 10 |
-| UI 整改专项（顶栏头像/分类入口(全端)/browse 刷新/设置动画/modal 宽度） | `scripts/ui-fixes.spec.ts` | 10 |
-| 全局问题专项（字体体系/皮肤字体自托管/基准统一/IPTV 占位/跟随系统/收藏动画） | `scripts/global-fixes.spec.ts` | 9 |
+| 修改的源文件                                               | 跑这个测试                                                  | test 数 |
+| ---------------------------------------------------- | ------------------------------------------------------ | ------ |
+| `src/pages/Home/`                                    | `scripts/home.spec.ts`                                 | 35 + 7 |
+| `src/pages/Browse/`                                  | `scripts/browse.spec.ts`                               | 24     |
+| `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 21     |
+| `src/pages/Player/`                                  | `scripts/player.spec.ts`                               | 31     |
+| `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts`               | 7      |
+| `src/pages/IPTV/`                                    | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 13 + 6 |
+| `src/pages/Settings/`                                | `scripts/settings.spec.ts`                             | 24 + 1 |
+| `src/pages/Collections/`                             | `scripts/collections.spec.ts`                          | 6      |
+| `src/pages/History/`                                 | `scripts/history.spec.ts`                              | 11     |
+| `src/pages/SourceChecker/`                           | `scripts/source-checker.spec.ts`                       | 5      |
+| `src/pages/Person/`                                  | `scripts/person.spec.ts`                               | 8      |
+| 跨页联动回归                                               | `scripts/cross-page.spec.ts`                           | 17     |
+| 详情页回归（原 DETAIL 段）                                    | `scripts/regression-detail.spec.ts`                    | 21     |
+| 9.1 自测问题修复                                           | `scripts/fix-2026-08.spec.ts`                          | 10     |
+| UI 整改专项（顶栏头像/分类入口(全端)/browse 刷新/设置动画/modal 宽度）       | `scripts/ui-fixes.spec.ts`                             | 10     |
+| 全局问题专项（字体体系/皮肤字体自托管/基准统一/IPTV 占位/跟随系统/收藏动画）          | `scripts/global-fixes.spec.ts`                         | 9      |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（白屏/封面/汉堡/横屏/TabBar/免责声明 各页共通的修复验证）。
 
+
 ### 共享组件 → 测试文件（1:N）
 
-| 修改的源文件 | 影响的测试文件 | 合计 test 数 |
-|-------------|--------------|-------------|
-| `src/components/UniversalPlayer/` | player + iptv + iptv-player + smoke-player-fs-mobile | 53 |
-| `src/components/VideoCard/` | home + browse + detail + collections + history + person | 110 |
-| `src/components/SearchBox/` | browse + cross-page | 40 |
-| `src/components/RecordShell/` | collections + history | 17 |
-| `src/components/RecordFilterPanel/` | collections + history | 17 |
-| `src/components/StatusTabs/` | collections + history | 17 |
-| `src/components/FilterBar/` | browse | 24 |
-| `src/components/HeroBanner/` | home + cross-page | 56 |
-| `src/components/Layout/` | 全部页面加载测试（home/browse/detail/...各首屏用例） | 逐个 spec 首屏用例 |
-| `src/components/StickyHeader/` | 全部页面加载测试 | 逐个 spec 首屏用例 |
-| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击) | 24 |
-| `src/services/tmdbService.ts` | home + browse + detail + person | 93 |
-| `src/services/videoService.ts` | browse + player + source-checker | 36 |
-| `src/services/iptvService.ts` | iptv + iptv-player | 19 |
-| `src/services/channelLogo.ts` | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 33 |
-| `src/services/epgService.ts` | iptv + iptv-player + collections + history（EPG 匹配/缓存读取） | 各 spec EPG 用例 |
-| `src/components/LazyImage/` | home + browse + detail + collections + history + person + iptv（台标/海报图片加载用例） | 各 spec 图片用例 |
-| `src/stores/useTMDBStore.ts` | home + browse + detail | 85 |
-| `src/stores/useSettingsStore.ts` | settings + source-checker | 29 |
-| `src/stores/useUserStore.ts` | collections + history | 12 |
-| `src/components/ui/PullToRefresh/` | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx` | 4 |
+| 修改的源文件                                        | 影响的测试文件                                                                        | 合计 test 数     |
+| --------------------------------------------- | ------------------------------------------------------------------------------ | ------------- |
+| `src/components/UniversalPlayer/`             | player + iptv + iptv-player + smoke-player-fs-mobile                           | 57            |
+| `src/components/VideoCard/`                   | home + browse + detail + collections + history + person                        | 110           |
+| `src/components/SearchBox/`                   | browse + cross-page                                                            | 40            |
+| `src/components/RecordShell/`                 | collections + history                                                          | 17            |
+| `src/components/RecordFilterPanel/`           | collections + history                                                          | 17            |
+| `src/components/StatusTabs/`                  | collections + history                                                          | 17            |
+| `src/components/FilterBar/`                   | browse                                                                         | 24            |
+| `src/components/HeroBanner/`                  | home + cross-page                                                              | 56            |
+| `src/components/Layout/`                      | 全部页面加载测试（home/browse/detail/...各首屏用例）                                          | 逐个 spec 首屏用例  |
+| `src/components/StickyHeader/`                | 全部页面加载测试                                                                       | 逐个 spec 首屏用例  |
+| `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击)                                                               | 24            |
+| `src/services/tmdbService.ts`                 | home + browse + detail + person                                                | 93            |
+| `src/services/videoService.ts`                | browse + player + source-checker                                               | 36            |
+| `src/services/iptvService.ts`                 | iptv + iptv-player                                                             | 19            |
+| `src/services/channelLogo.ts`                 | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 33            |
+| `src/services/epgService.ts`                  | iptv + iptv-player + collections + history（EPG 匹配/缓存读取）                        | 各 spec EPG 用例 |
+| `src/components/LazyImage/`                   | home + browse + detail + collections + history + person + iptv（台标/海报图片加载用例）    | 各 spec 图片用例   |
+| `src/stores/useTMDBStore.ts`                  | home + browse + detail                                                         | 85            |
+| `src/stores/useSettingsStore.ts`              | settings + source-checker                                                      | 29            |
+| `src/stores/useUserStore.ts`                  | collections + history                                                          | 12            |
+| `src/components/ui/PullToRefresh/`            | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx`         | 4             |
 
 > 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已彻底删除（原归档目录 `scripts/backup-specs/` 于 2026-08-29 连同 8 个一次性 `.mjs` 工具脚本一并清理，已备份至 `backups/scripts-untracked-20260829/`），映射表中不再引用。`playwright.config.ts` 的 `testIgnore` 规则已随之移除。
 
@@ -395,6 +429,7 @@ pnpm exec playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/de
 # 全量（仅 CI 或发版前）
 pnpm exec playwright test
 ```
+
 
 ### 增量测试（推荐日常使用）
 
@@ -416,6 +451,7 @@ pnpm exec playwright test
 ```
 
 **映射维护约定**（改动代码后同步维护）：
+
 - 新增/修改组件或页面文件时，检查 `scripts/run-tests.ps1` 的 `$uiPrecisionMap` 是否有对应条目；没有则补充（`spec` = 受影响的 spec 文件，`grep` = 相关 describe 段号或测试编号）
 - **grep 优先用 describe 段号**（如 `1\.2` 覆盖整个 HeroBanner 段）：段内新增用例自动涵盖，映射无需随用例增减维护
 - ⚠️ **段号是正则**：`.` 必须转义（`1.2` 的 `.` 会通配任意字符，误命中含 `1023px` 等 1?2 序列的其他段标题），写 `1\.2`
@@ -456,7 +492,7 @@ IF 你删除了某个 UI 区块（如 suggestions）
 THEN 删除或重写依赖该区块的测试用例
 ```
 
-**位置**: `scripts/*.spec.ts`
+**位置**: `scripts/*.spec.ts`  
 **时机**: 必须与代码变更在同一个 commit 中
 
 ### 规则 2：记忆库 — 做完就写
@@ -469,8 +505,8 @@ IF 你确立了项目级约定或可复用模式
 THEN 追加到 .workbuddy/memory/MEMORY.md
 ```
 
-**位置**: `.workbuddy/memory/YYYY-MM-DD.md`（日志）+ `.workbuddy/memory/MEMORY.md`（长期）
-**时机**: 每次工作会话结束时
+**位置**: `.workbuddy/memory/YYYY-MM-DD.md`（日志）+ `.workbuddy/memory/MEMORY.md`（长期）  
+**时机**: 每次工作会话结束时  
 **内容**: 做了什么 + 为什么这么做 + 踩了什么坑（不要写"搜索了XX文件"这种过程噪音）
 
 ### 规则 3：知识库 — 架构变了才动
@@ -483,8 +519,8 @@ IF .gitignore 策略变化
 THEN 更新 AGENTS.md ".gitignore 策略"章节
 ```
 
-**位置**: `AGENTS.md`（综合）+ `CONTEXT.md`（术语）
-**时机**: 架构变更时
+**位置**: `AGENTS.md`（综合）+ `CONTEXT.md`（术语）  
+**时机**: 架构变更时  
 **不更新**: Store 内部逻辑修改、组件 props 调整、CSS 微调
 
 ### 规则 4：页面原理图 — 布局结构变了才动
@@ -500,8 +536,8 @@ IF 新增页面
 THEN 创建 docs/page-diagrams/<page>.html + 更新 index.html 索引
 ```
 
-**位置**: `docs/page-diagrams/*.html`
-**时机**: 页面结构变更时
+**位置**: `docs/page-diagrams/*.html`  
+**时机**: 页面结构变更时  
 **不更新**: 颜色、间距、内部逻辑优化
 
 ### 规则 5：流程图 — 导航/架构变了才动
@@ -517,23 +553,23 @@ IF 代理配置变化
 THEN 更新 flowchart.html + AGENTS.md 代理表
 ```
 
-**位置**: `docs/page-diagrams/flowchart.html`
-**时机**: 导航或架构变更时
+**位置**: `docs/page-diagrams/flowchart.html`  
+**时机**: 导航或架构变更时  
 **不更新**: 页面内部变化、内部重构
 
 ### 快速判断表
 
-| 变更类型 | 测试 | 记忆 | 知识库 | 原理图 | 流程图 |
-|---------|------|------|--------|--------|--------|
-| CSS bug 修复 | — | 日志 | — | — | — |
-| 类名/选择器变更 | ✅ 同提交 | 日志 | — | — | — |
-| 新增页面 | ✅ | 日志+长期 | ✅ | ✅ 新建 | ✅ |
-| 新增核心组件 | ✅ | 日志+长期 | ✅ | ✅ 受影响页 | — |
-| 架构分层变化 | ✅ | 日志+长期 | ✅ | ✅ | ✅ |
-| 代理配置变化 | — | 长期 | ✅ | ✅ | ✅ |
-| .gitignore 策略 | — | 长期 | ✅ | — | — |
-| 新增领域术语 | — | — | ✅ | — | — |
-| 内部重构（不改外部接口） | ✅ | 日志 | — | — | — |
+| 变更类型          | 测试    | 记忆    | 知识库 | 原理图    | 流程图 |
+| ------------- | ----- | ----- | --- | ------ | --- |
+| CSS bug 修复    | —     | 日志    | —   | —      | —   |
+| 类名/选择器变更      | ✅ 同提交 | 日志    | —   | —      | —   |
+| 新增页面          | ✅     | 日志+长期 | ✅   | ✅ 新建   | ✅   |
+| 新增核心组件        | ✅     | 日志+长期 | ✅   | ✅ 受影响页 | —   |
+| 架构分层变化        | ✅     | 日志+长期 | ✅   | ✅      | ✅   |
+| 代理配置变化        | —     | 长期    | ✅   | ✅      | ✅   |
+| .gitignore 策略 | —     | 长期    | ✅   | —      | —   |
+| 新增领域术语        | —     | —     | ✅   | —      | —   |
+| 内部重构（不改外部接口）  | ✅     | 日志    | —   | —      | —   |
 
 ---
 
@@ -543,10 +579,10 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 
 ### 两类文件的定位
 
-| 类别 | 文件 | 是否提交 | 协同策略 |
-|------|------|---------|---------|
-| **共享知识库（唯一事实源）** | `AGENTS.md` `CLAUDE.md` `.cursorrules` `.github/copilot-instructions.md` `CONTEXT.md` `docs/page-diagrams/` `docs/KNOWLEDGE.md` | ✅ 提交（团队共享） | 全队一致，靠 git + PR review 同步 |
-| **本地 AI 记忆（个人上下文缓存）** | `.workbuddy/memory/` `~/.workbuddy/MEMORY.md` 云端 profile | ❌ 不提交（已被 `.gitignore` 忽略） | 每位开发者独立、天然允许不同，无需统一 |
+| 类别                    | 文件                                                                                                                              | 是否提交                      | 协同策略                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------- |
+| **共享知识库（唯一事实源）**      | `AGENTS.md` `CLAUDE.md` `.cursorrules` `.github/copilot-instructions.md` `CONTEXT.md` `docs/page-diagrams/` `docs/KNOWLEDGE.md` | ✅ 提交（团队共享）                | 全队一致，靠 git + PR review 同步 |
+| **本地 AI 记忆（个人上下文缓存）** | `.workbuddy/memory/` `~/.workbuddy/MEMORY.md` 云端 profile                                                                        | ❌ 不提交（已被 `.gitignore` 忽略） | 每位开发者独立、天然允许不同，无需统一       |
 
 ### 核心原则
 
@@ -576,46 +612,55 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 
 ## 人机协作约定（UI / 观感类任务必读）
 
-> 历史教训：多次对话陷入「纯文字诊断 → 猜意图 → 改 CSS → 不符合预期」的循环。
-> 用户看不到代码，只能看到我的文字描述，导致反复返工。以下约定旨在把「猜疑」环节
+> 历史教训：多次对话陷入「纯文字诊断 → 猜意图 → 改 CSS → 不符合预期」的循环。  
+> 用户看不到代码，只能看到我的文字描述，导致反复返工。以下约定旨在把「猜疑」环节  
 > 前置、压缩到最低成本，让每次改动可验证、可对照。
 
 ### 1. 观感类问题 → 先做可预览的视觉 Demo，再落代码
+
 - 动画 / 过渡 / 布局 / 折叠展开等**纯观感**问题，不要只写文字描述。
-- 优先产出一个**可运行的 HTML 对比 Demo**（A = 当前逻辑 / B = 新逻辑），用浏览器
+- 优先产出一个**可运行的 HTML 对比 Demo**（A = 当前逻辑 / B = 新逻辑），用浏览器  
   `preview_url` 预览给用户看，由其判断「对味不对味」，再落到项目代码。
-- 适合资源：本仓库 `docs/page-diagrams/` 同级可放临时 demo；或直接用 `image_gen` /
+- 适合资源：本仓库 `docs/page-diagrams/` 同级可放临时 demo；或直接用 `image_gen` /  
   截图对照。
 
 ### 2. 每次逻辑改动 → 必附「旧逻辑 ↔ 新逻辑」对照块
+
 固定格式，用户一眼核对是否对齐预期：
+
 ```
 【问题】一句话描述现象
 【旧逻辑】当前实现 + 为什么会有问题（引用具体代码/文件:行）
 【新逻辑】改成什么 + 解决点
 【预览】preview_url(...) 或 截图
 ```
+
 不为描述而描述；对照块是强制产出，不是可选说明。
 
 ### 3. 需求有歧义 → 先给 2 个候选 Demo，而非直接改
-- 接到 UI 诉求时，若实现方向不唯一，**先反问**「你想要的效果更接近 A 还是 B？」，
+
+- 接到 UI 诉求时，若实现方向不唯一，**先反问**「你想要的效果更接近 A 还是 B？」，  
   并立刻做一个最小 Demo 让用户选，确认后再改真代码。
 - 避免凭猜测直接改、改完才发现方向错、白改 n 次。
 
 ### 4. 参照物优先
+
 - 用户描述 UI 诉求时，**优先提供参照**：截图 / 录屏 / 某个网站链接 / 手绘。
 - 若用户给了参照，以参照为唯一验收标准，不自行发挥。
 - 若用户没给参照且描述模糊，按第 3 条先出候选 Demo。
 
 ### 5. 意图复述 + 快速 Mock 确认
-- 收到需求后，先用一句话**区分「表面诉求」与「实际目的」**复述意图；
+
+- 收到需求后，先用一句话**区分「表面诉求」与「实际目的」**&#x590D;述意图；
 - 给一个 30 秒能看的 Mock，用户确认「对，就是这个」后再实现，把猜疑成本压到最低。
 
 ### 适用边界
+
 - 纯逻辑 / 数据 / 性能类改动（无视觉效果）仍以代码 + 对照块为主，不强制 Demo。
 - 紧急修复可先改后补 Demo，但需在回复中说明「已先修、Demo 待补」。
 
 ### 6. 改动留痕：写入 `changelogs/`（每次改动必更新）
+
 - 详细机制见 `changelogs/README.md`。核心：
   - **每日一文件** `changelogs/YYYY-MM-DD.md`，同日多次改动追加到同一文件。
   - **每次改动（无论大小）完成即追加一条记录**：问题 / 旧逻辑 / 新逻辑 / 涉及文件 / 关联 Demo / 构建结果。
@@ -637,6 +682,7 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 - 预发布通道：`-alpha.N` / `-beta.N` / `-rc.N`；正式发布时去掉通道。
 - 项目已发布：首次发布实测产出 `1.0.0`（2026-07），当前版本 `1.1.0`（见 `package.json` / `.release-please-manifest.json` / `CHANGELOG.md`，三者是唯一可信源）。
 
+
 ### 2. 自动版本（release-please）
 
 - 配置：`.release-please-config.json`、`.release-please-manifest.json`（记录最近发布版，当前 `1.1.0`）。
@@ -647,7 +693,6 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
   1. **首选（管理员，已实测可用）**：仓库 **Settings → Actions → General** 勾选 **「Allow GitHub Actions to create and approve pull requests」**，并将「Workflow permissions」设为 **Read and write permissions**。2026-07-31 实测：开启后默认 `GITHUB_TOKEN` 即可直接开版 PR（PR #1 / 1.1.0 成功创建，整条链路跑通）。
   2. **兜底（无 admin / 无法改仓库设置时）**：在仓库 **Settings → Secrets and variables → Actions → Repository secrets** 新增 `RELEASE_PLEASE_TOKEN`，值为一个带 `repo`（含 `public_repo`/`repo:status`/`read:org` 等足够权限）范围的 Personal Access Token；工作流已配置 `token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}` 自动优先使用它。该复选框只限制默认 `GITHUB_TOKEN`，用 PAT 可绕过。
   - 若两者都未满足，Action 会在开版 PR 步骤报 `GitHub Actions is not permitted to create or approve pull requests` 而失败（此时版本号已算好、CHANGELOG 已生成，仅缺 PR/tag/Release）。
-
 - **本地兜底（无 admin / 无法配置 Secrets 时）**：用自己账号的 PAT（GitHub 账号 Settings → Developer settings → PAT，勾 `repo`）在本地跑，不依赖仓库 Secrets，也不受「禁止 Actions 创建 PR」限制。PAT 是**个人账号**创建（任何成员都能建），与仓库 admin 无关：
   ```powershell
   $env:GITHUB_TOKEN = "ghp_你的PAT"
@@ -670,3 +715,4 @@ THEN 更新 flowchart.html + AGENTS.md 代理表
 - 设置页「关于」标签（`src/pages/Settings/tabs/AboutTab.tsx`）从 `package.json` 动态读取版本号，并显示 `平台 · 通道`（Web/Android × 正式版/开发版，靠 `import.meta.env.CAPACITOR` / `DEV` 判断）。
 - 「更新日志」入口（`ChangelogContent.tsx`）渲染仓库根 `CHANGELOG.md`（release-please 自动维护）。
 - 架构决策见 `docs/KNOWLEDGE.md` ADR-004；改动留痕见 `changelogs/`。
+
