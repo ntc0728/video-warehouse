@@ -10,6 +10,12 @@ import { fetchAndParsePlaylist, checkChannelsAvailability } from '@/services/ipt
 import { PlaylistSourceType } from '@/types/iptv';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
 
+/**
+ * zustand persist 落 localStorage 的键名。
+ * clearCache（removeItem）/ persist name / 跨页签 storage 监听共用，防三处字面量漂移。
+ */
+const IPTV_PERSIST_KEY = 'iptv-store';
+
 interface IPTVState {
   channels: IPTVChannel[];
   groups: IPTVGroup[];
@@ -268,7 +274,7 @@ export const useIPTVStore = create<IPTVState>()(
        * 清除所有缓存数据，仅保留设置项
        */
       clearCache: () => {
-        localStorage.removeItem('iptv-store');
+        localStorage.removeItem(IPTV_PERSIST_KEY);
         const { settings } = get();
         set({
           channels: [],
@@ -453,7 +459,7 @@ export const useIPTVStore = create<IPTVState>()(
       },
     }),
     {
-      name: 'iptv-store',
+      name: IPTV_PERSIST_KEY,
       // 仅持久化配置和用户数据，运行时状态（频道列表、加载状态等）不持久化
       partialize: ({ _abortController, ...state }: IPTVState) => ({
         settings: state.settings,
@@ -492,5 +498,59 @@ export const useIPTVStore = create<IPTVState>()(
     }
   )
 );
+
+// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// 收藏/播放历史/设置经 zustand persist 落 localStorage（键 IPTV_PERSIST_KEY）。
+// localStorage 的同源跨页签通知是浏览器原生 window 'storage' 事件：其它页签
+// setItem/removeItem 后自动在本页签触发——无需 BroadcastChannel（useUserStore
+// 落 IndexedDB、无原生通知，才需要广播频道，见 useUserStore.ts）。
+//
+// 收到本键变更：
+//   ① e.newValue === null（另一页签 clearCache 先 removeItem）→ 镜像归零：
+//      收藏/播放历史/筛选重置、频道 isFavorite 全 false。频道列表本身保留
+//      （它是可自 IDB 缓存/远程重取的运行时数据，不是用户数据）。
+//   ② 常规写入 → persist.rehydrate() 重读合并持久化切片（复用自定义 merge，
+//      含旧版代理路径迁移，不重复实现），再按新 favoriteChannelIds 重派生
+//      channels.isFavorite——否则「心形收藏态」与收藏数组脱节。
+//
+// 无回环：浏览器规范保证本页签自身的 localStorage 写入不触发自身 storage 事件；
+// 即便其它页签把重派生结果写回，内容与已持久化切片一致（setItem 相同字符串不
+// 产生事件），链路收敛。
+let iptvCrossTabSyncAttached = false;
+
+/** 重读持久化切片并重派生频道收藏标记（storage 事件「常规写入」路径） */
+async function reloadIPTVPersisted(): Promise<void> {
+  await useIPTVStore.persist.rehydrate(); // 兼容 sync 路径返回 void
+  const { channels, favoriteChannelIds } = useIPTVStore.getState();
+  useIPTVStore.setState({
+    channels: channels.map((ch) => ({ ...ch, isFavorite: favoriteChannelIds.includes(ch.id) })),
+  });
+}
+
+function initIPTVStoreCrossTabSync(): void {
+  if (typeof window === 'undefined' || import.meta.env?.MODE === 'test') return;
+  if (iptvCrossTabSyncAttached) return; // 幂等：模块被多路径 import / HMR 时只挂一次
+  iptvCrossTabSyncAttached = true;
+
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key !== IPTV_PERSIST_KEY || e.storageArea !== localStorage) return;
+
+    if (e.newValue === null) {
+      // 另一页签「清除全部缓存」：持久化用户数据归零（保留 settings，与 clearCache 语义一致）
+      const { channels } = useIPTVStore.getState();
+      useIPTVStore.setState({
+        favoriteChannelIds: [],
+        playHistory: [],
+        filter: {},
+        channels: channels.map((ch) => ({ ...ch, isFavorite: false })),
+      });
+      return;
+    }
+
+    // 常规写入：重读合并持久化切片后，按新收藏数组重派生频道标记
+    void reloadIPTVPersisted();
+  });
+}
+initIPTVStoreCrossTabSync();
 
 
