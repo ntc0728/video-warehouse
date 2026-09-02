@@ -8,7 +8,7 @@
  *    把这三个面板直接变成 .player-sidebar 的 flex 子项 —— 于是骨架与真实面板：
  *    - 内边距 / 边框 / scrollbar-gutter 完全一致（无横向抖动）；
  *    - 高度由 tv(2:4:4) / movie(3:7) 变体比例分配，骨架阶段就是最终高度（无纵向跳动）。
- *    行数按 2:4:4 的比例取 3/6/6，密度贴近真实面板。
+ *    行数取 2/6/6，密度贴近真实面板。
  */
 interface PlayerSidebarSkeletonProps {
   /** 与 PlayerSidebar 同变体："tv"=有选季面板（3 个骨架），"movie"=无选季面板（2 个骨架） */
@@ -16,13 +16,13 @@ interface PlayerSidebarSkeletonProps {
 }
 
 export function PlayerSidebarSkeleton({ variant = 'tv' }: PlayerSidebarSkeletonProps) {
-  // 三个面板行数与真实面板对齐：
-  //   - CMS 源：MAX_ENABLED.video=6，桌面端 3~4 列 → 最多 2 行
-  //   - 选季：桌面端 2 列，常见 6 季 → 3 行（季数更多时真实面板滚动，骨架不模拟溢出）
+  // 三个面板行数：
+  //   - CMS 源：2 行
+  //   - 选季：6 行
   //   - 选集：PAGE_SIZE=12，桌面端 2 列 → 6 行
   const panels = [
     { key: 'cms', mod: 'player-panel--cms', rows: 2 },
-    { key: 'season', mod: 'player-panel--season', rows: 3 },
+    { key: 'season', mod: 'player-panel--season', rows: 6 },
     { key: 'episodes', mod: 'player-panel--episodes', rows: 6 },
   ].filter((p) => variant === 'tv' || p.key !== 'season');
 
