@@ -25,8 +25,8 @@ import {
 // 本页写收藏/历史时经 BroadcastChannel 广播；其它页签收到后静默 reload()
 // 拉最新 DB 快照——「另一页签增删收藏/历史，本页无需手动刷新即更新」。
 // 防回环：广播带随机 session，接收端忽略自己的消息；reload() 只读不写，不二次广播。
-// 历史进度的高频更新（timeupdate 约 1s 一次）不广播，只在
-// 「新增内容身份 / 删除 / 退场 flush」时广播，避免广播风暴。
+// 广播频率天然被历史 3s flush 节流约束（≤ 每 3s 一次）——不是每次 timeupdate
+// 都广播；落库成功即通知接收端重读，接收端 150ms 去抖合并突发再 reload。
 const CROSS_TAB_CHANNEL = 'kinotv-userdata';
 const crossTabSessionId = Math.random().toString(36).slice(2);
 let crossTabChannel: BroadcastChannel | null = null;
@@ -182,14 +182,19 @@ function scheduleHistoryFlush(): void {
   historyFlushTimer = setTimeout(flushHistoryRecords, HISTORY_FLUSH_MS);
 }
 
-/** 立即落库（供 Player 退场 / 页面隐藏兜底调用）；广播由 flushHistoryRecords 落库成功后统一发出 */
-function flushHistoryNow(): void {
+/**
+ * 立即落库所有脏历史（退场 / 页面隐藏兜底）。
+ * 命名带 DirtyRecordsNow：与 store 公开方法 flushHistoryNow 区分——
+ * 该方法仅作为全局监听（pagehide / visibilitychange）的内部入口，
+ * 落库成功后由 flushHistoryRecords 统一广播。
+ */
+function flushHistoryDirtyRecordsNow(): void {
   flushHistoryRecords();
 }
 
 if (typeof window !== 'undefined') {
-  const onPageHide = () => flushHistoryNow();
-  const onVisibilityHidden = () => { if (document.visibilityState === 'hidden') flushHistoryNow(); };
+  const onPageHide = () => flushHistoryDirtyRecordsNow();
+  const onVisibilityHidden = () => { if (document.visibilityState === 'hidden') flushHistoryDirtyRecordsNow(); };
   window.addEventListener('pagehide', onPageHide);
   document.addEventListener('visibilitychange', onVisibilityHidden);
 }
@@ -447,6 +452,6 @@ export const useUserStore = create<UserState>()((set, get) => ({
 
   /** 立即落库所有待写入的历史记录（Player 退场 / 页面隐藏已由全局监听兜底） */
   flushHistoryNow: () => {
-    flushHistoryNow();
+    flushHistoryDirtyRecordsNow();
   },
 }));
