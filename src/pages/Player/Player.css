@@ -1089,7 +1089,7 @@
 /* ── 桌面端（≥ 1280px）：面板不可折叠，隐藏箭头，播放器撑满视口 ─── */
 @media (width >= 1280px) {
   html:not([data-device="app"]) .player-page {
-    height: 100dvh;
+    height: calc(100dvh - var(--header-height));
     min-height: 0;
     padding-top: 0;
     overflow-y: auto;
