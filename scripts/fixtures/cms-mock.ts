@@ -62,6 +62,7 @@ async function fulfillHls(route: import('@playwright/test').Route) {
     await route.fulfill({
       status: 200,
       contentType: isM3u8 ? 'application/vnd.apple.mpegurl' : 'video/mp2t',
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: buf,
     });
   } catch {
@@ -82,6 +83,13 @@ function isCmsSearchRequest(url: URL): boolean {
  * 在 mock-tmdb（TMDB 拦截）基础上，叠加 CMS 源搜索 + 本地 HLS 拦截。
  * 收到的 page 已带 TMDB 路由，这里仅追加两条规则。
  */
+
+/** 允许测试用例在运行前覆盖 CMS 搜索返回（用于故障转移等场景注入多线路/多源） */
+let cmsSearchOverride: unknown = null;
+export function setCmsSearchResponse(response: unknown): void {
+  cmsSearchOverride = response;
+}
+
 export const test = tmdbTest.extend({
   page: async ({ page }, use) => {
     // 1) CMS 搜索请求（ac=videolist，可能经代理编码为 ac%3Dvideolist）→ 固定返回可解析的电影条目
@@ -89,7 +97,7 @@ export const test = tmdbTest.extend({
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(CMS_SEARCH_RESPONSE),
+        body: JSON.stringify(cmsSearchOverride ?? CMS_SEARCH_RESPONSE),
       });
     });
 

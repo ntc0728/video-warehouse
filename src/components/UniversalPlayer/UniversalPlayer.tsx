@@ -549,6 +549,14 @@ skipHistory,
       // If video is already playing (e.g. audio works but video decode fails),
       // show non-blocking toast instead of the full error overlay
       if (videoElementRef.current && !videoElementRef.current.paused) {
+        // VOD：致命「源死亡」类错误即便播放中也需上报页面，由其做跨线路/跨源故障转移；
+        // 转移成功后 isPlaying 会清除本覆盖层，全部失败则保留「源不可用」提示。
+        if (mode === 'video') {
+          setHasError(true);
+          usePlayerStore.getState().setErrorMessage(error.message);
+          onError?.(error);
+          return;
+        }
         playerToast(error.message, 3000, 'error');
         return;
       }
