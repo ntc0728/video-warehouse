@@ -541,6 +541,15 @@ export default function PlayerPage() {
   const seasons = cmsSeasons.length > 0
     ? cmsSeasons
     : (isTV && d ? ((d as TMDBTVShowDetail).seasons ?? []) : []);
+  // 侧栏面板变体（有无选季面板）：真实面板以 CMS 季数据（cmsSeasons）为准；
+  // CMS 尚未就绪时按 tmdb id 类型兜底（tmdb-tv → 有选季面板）。
+  // 修复：入场骨架原用 seasons.length（TMDB 详情加载前恒空 → movie 变体），
+  // TMDB 响应成功后 seasons 变为剧集季列表 → variant 突变 movie→tv → 骨架自身
+  // 从 2 面板重排成 3 面板（高度全变），肉眼可见抖动。改按 id 类型兜底后，
+  // tmdb-tv 的骨架从入场起就是 tv 变体，TMDB 就绪前后不再变化。
+  const hasSeasonPanel = cmsSeasons.length > 1
+    || (cmsSeasons.length === 0 && id?.startsWith('tmdb-tv-'));
+  const playerVariant: 'tv' | 'movie' = hasSeasonPanel ? 'tv' : 'movie';
   // 从 video.title 提取当前季名称（如 "第二季"），用于非 TMDB 视频的选季面板展示
   const currentSeasonName = useMemo(() => {
     if (seasons.length > 0 || !v?.title) return undefined;
@@ -735,8 +744,8 @@ export default function PlayerPage() {
           </div>
           {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板。
               变体与主分支同判据，骨架 → 真实面板时面板数量/高度比例不跳变。 */}
-          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
-            <PlayerSidebarSkeleton variant={seasons.length > 1 ? 'tv' : 'movie'} />
+          <PlayerSidebar variant={playerVariant}>
+            <PlayerSidebarSkeleton variant={playerVariant} />
           </PlayerSidebar>
         </div>
         {detailSection}
@@ -756,8 +765,8 @@ export default function PlayerPage() {
             </div>
           </div>
           {/* 变体与主分支同判据，避免骨架 → 真实面板时面板数量/高度比例跳变 */}
-          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
-            <PlayerSidebarSkeleton variant={seasons.length > 1 ? 'tv' : 'movie'} />
+          <PlayerSidebar variant={playerVariant}>
+            <PlayerSidebarSkeleton variant={playerVariant} />
           </PlayerSidebar>
         </div>
         {detailSection}
@@ -804,7 +813,7 @@ export default function PlayerPage() {
               </div>
             </div>
           </div>
-          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
+          <PlayerSidebar variant={playerVariant}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -817,7 +826,7 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
               readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
-              seasonAvailable={seasons.length > 1}
+              seasonAvailable={hasSeasonPanel}
             />
             <PlayerSeasonPanel
               seasons={seasons}
@@ -876,7 +885,7 @@ export default function PlayerPage() {
             </div>
           </div>
 
-          <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
+          <PlayerSidebar variant={playerVariant}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -889,7 +898,7 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
               readOnly={!id?.startsWith('tmdb-') && routeSourceIndex !== undefined}
-              seasonAvailable={seasons.length > 1}
+              seasonAvailable={hasSeasonPanel}
             />
             <PlayerSeasonPanel
               seasons={seasons}
@@ -979,7 +988,7 @@ export default function PlayerPage() {
           )}
         </div>
 
-        <PlayerSidebar variant={seasons.length > 1 ? 'tv' : 'movie'}>
+        <PlayerSidebar variant={playerVariant}>
           <PlayerCMSPanel
             selectedSourceIds={selectedSourceIds}
             sourceNameMap={sourceNameMap}
@@ -991,7 +1000,7 @@ export default function PlayerPage() {
             expanded={expandedPanels.cms}
             onToggle={() => togglePanel('cms')}
             compact={isCompact}
-            seasonAvailable={seasons.length > 1}
+            seasonAvailable={hasSeasonPanel}
           />
           <PlayerSeasonPanel
             seasons={seasons}

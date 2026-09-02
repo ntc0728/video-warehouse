@@ -5,7 +5,7 @@
  *
  * 覆盖: PLAYER-001 ~ PLAYER-092
  */
-import { test, expect } from './fixtures/mock-tmdb';
+import { test, expect } from './fixtures/cms-mock';
 import { devices } from '@playwright/test';
 
 const TEST_MOVIE_ID = 'tmdb-movie-550';
@@ -784,6 +784,58 @@ test.describe('4.12 移动端布局判定', () => {
       await expect(centerToast).toContainText('音量');
       await expect(page.locator('.up-player-toast')).toHaveCount(0);
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 4.14 侧栏骨架变体稳定性
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('4.14 侧栏骨架变体稳定性', () => {
+  test('PLAYER-090: tmdb-tv 无缓存进入，骨架入场即 tv 变体，TMDB 响应前不突变', async ({ page }) => {
+    // 延迟 TMDB tv 详情 5s，拉长骨架阶段以便断言
+    // （修复前：TMDB 详情未加载时 seasons=[] → 骨架 movie 变体（2 面板），
+    //   TMDB 响应成功后 seasons 变多季 → variant 突变 tv（3 面板）→ 骨架重排抖动）
+    await page.route('**/api.tmdb.org/3/tv/123**', async (route) => {
+      await new Promise((r) => setTimeout(r, 5000));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 123, name: '测试剧集', first_air_date: '2020-01-01',
+          overview: 'x', poster_path: '/x.jpg', backdrop_path: '/y.jpg',
+          vote_average: 8, popularity: 1, episode_run_time: [45],
+          seasons: [
+            { season_number: 1, episode_count: 12 },
+            { season_number: 2, episode_count: 12 },
+            { season_number: 3, episode_count: 12 },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/play/tmdb-tv-123', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.player-sidebar-skeleton', { timeout: 15000 });
+
+    const readSkeleton = () => page.evaluate(() => {
+      const sb = document.querySelector('.player-sidebar');
+      if (!sb) return null;
+      return {
+        variant: sb.className.includes('--tv') ? 'tv' : sb.className.includes('--movie') ? 'movie' : '?',
+        panels: document.querySelectorAll('.player-sidebar .player-panel').length,
+      };
+    });
+
+    // 入场骨架即为 tv 变体（3 面板：cms/season/episodes）
+    const s1 = await readSkeleton();
+    expect(s1?.variant).toBe('tv');
+    expect(s1?.panels).toBe(3);
+
+    // TMDB 详情响应前（2s 后）骨架保持 tv 不变（防 movie→tv 突变抖动）
+    await page.waitForTimeout(2000);
+    const s2 = await readSkeleton();
+    expect(s2?.variant).toBe('tv');
+    expect(s2?.panels).toBe(3);
   });
 });
 
