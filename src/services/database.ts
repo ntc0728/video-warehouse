@@ -112,7 +112,8 @@ export async function clearIPTVChannelCache(): Promise<void> {
  *    会以新版本自动重连。提示打在真正该处理的旧页签，而非新页签。
  */
 async function openWithTimeout(): Promise<IDBPDatabase<VideoWarehouseDB>> {
-  const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {    upgrade(db) {
+  const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
+    upgrade(db) {
       if (!db.objectStoreNames.contains('collections')) {
         const collectionStore = db.createObjectStore('collections', { keyPath: 'id' });
         collectionStore.createIndex('by-video', 'videoId');
