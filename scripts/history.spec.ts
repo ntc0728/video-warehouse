@@ -173,7 +173,7 @@ test.describe('8.7 融合 Tab 与筛选面板', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 8.8 网格列数（视口自适应：桌面 ≥1024 每档 4 列起 / 平板 2 列 / 手机 1 列）
+// 8.8 网格列数（视口自适应：桌面 ≥1024 每档 4 列起 / 768–1023 三列 / 480–767 两列 / 手机 1 列）
 // 覆盖: HIS-062
 // ═══════════════════════════════════════════════════════════════
 
@@ -212,7 +212,7 @@ test.describe('8.8 网格列数', () => {
     });
   };
 
-  test('HIS-062: 列数随视口变化（1280→4 列、600→2 列、375→1 列）', async ({ page }) => {
+  test('HIS-062: 列数随视口变化（1280→4 列、900→3 列、600→2 列、375→1 列）', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -231,9 +231,12 @@ test.describe('8.8 网格列数', () => {
       });
 
     expect(await cols()).toBe(4); // 桌面 ≥1024：4 列（2026-09-03 每档 +1）
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.waitForTimeout(500);
+    expect(await cols()).toBe(3); // 768–1023：3 列（2026-09-03 补档）
     await page.setViewportSize({ width: 600, height: 800 });
     await page.waitForTimeout(500);
-    expect(await cols()).toBe(2); // <1280（平板/小桌面/移动）：2 列
+    expect(await cols()).toBe(2); // 480–767：2 列
     await page.setViewportSize({ width: 375, height: 800 });
     await page.waitForTimeout(500);
     expect(await cols()).toBe(1); // ≤480：1 列
