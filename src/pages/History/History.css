@@ -292,9 +292,10 @@
   }
 }
 
-/* 历史页统一横版记录卡网格——显式列数断点阶梯（2026-09-03 用户规划；当日二次调整：≥1024 每档 +1 列）：
+/* 历史页统一横版记录卡网格——显式列数断点阶梯（2026-09-03 用户规划；当日二次调整：≥1024 每档 +1 列、补 768 档 3 列）：
      默认（<480px，含移动端 / app 竖屏）→ 1 列
-     480px  ≤ 视口 < 1024px → 2 列
+     480px  ≤ 视口 < 768px  → 2 列
+     768px  ≤ 视口 < 1024px → 3 列
      1024px ≤ 视口 < 1440px → 4 列
      1440px ≤ 视口 < 1920px → 5 列
      1920px ≤ 视口 < 2560px → 6 列
@@ -309,7 +310,12 @@
 }
 @media (min-width: 480px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 480–1023：2 列 */
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 480–767：2 列 */
+  }
+}
+@media (min-width: 768px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 768–1023：3 列（2026-09-03 补档） */
   }
 }
 @media (min-width: 1024px) {
