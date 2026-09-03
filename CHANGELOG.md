@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.18.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.17.0...kinotv-v1.18.0) (2026-09-02)
+
+
+### Features
+
+* **iptv-store:** 补跨页签实时同步（storage 事件 → rehydrate + isFavorite 重派生） ([f012aae](https://github.com/ntc0728/video-warehouse/commit/f012aaeded2ef1d16d297dc6c4187ece3e7425bf))
+* **player:** 实施 HLS 缓冲优化与 MPEGTS 点播/重连/预检测 ([2eeaa16](https://github.com/ntc0728/video-warehouse/commit/2eeaa16cb28ea0c0e93d373eeff7f6df7c86442c))
+* **settings-store:** 设置静态配置跨页签实时同步（storage 事件白名单受控合并） ([801c179](https://github.com/ntc0728/video-warehouse/commit/801c1795cc6371af71626110a124419bebf03a92))
+* **user-store:** 跨页签内存快照实时同步——BroadcastChannel 广播 + 静默 reload ([7ec0223](https://github.com/ntc0728/video-warehouse/commit/7ec02233214b72f2d6d5b23cd0e4f4811de3d80e))
+* 删除 IPTV 代理调试日志 + 可用性角标下移 + 历史/收藏 CMS 源未启用拦截 ([691807e](https://github.com/ntc0728/video-warehouse/commit/691807e19f9584c7f2129cb70d65546b8d7a9458))
+
+
+### Bug Fixes
+
+* **db:** 跨页签 IDB 一致性——收藏主键收敛 + 历史 flush 守卫 + openDB 单飞与阻塞让路 ([178387b](https://github.com/ntc0728/video-warehouse/commit/178387b4cf7e13352cfe4c6932ca574cc512bf3b))
+* **player+proxy:** CMS wd 双重编码 + 后台返回播放冻结/意外暂停 ([4eb252b](https://github.com/ntc0728/video-warehouse/commit/4eb252b3dde847131058a5531be7a90c34edf631))
+* **player:** VOD 源不可用自动故障转移（同源切线路→跨源重搜） ([1f86d02](https://github.com/ntc0728/video-warehouse/commit/1f86d022a30f3e08718c0a72abc167b46296c4e7))
+* **player:** 侧栏骨架 variant 不再随 TMDB 异步数据突变 ([8d188de](https://github.com/ntc0728/video-warehouse/commit/8d188de1c8984ba7b500d0fe35fa494358843421))
+* **player:** 侧栏骨架行数与真实面板对齐 ([999a5d6](https://github.com/ntc0728/video-warehouse/commit/999a5d635d2a57ab2431bc55d21a42c50d3acfe4))
+* **player:** 桌面播放页高度 100dvh → calc(100dvh - header-height) ([eabf6d1](https://github.com/ntc0728/video-warehouse/commit/eabf6d1a3e46b03cefe22835088b45bf7060e821))
+* **player:** 桌面端播放页预留滚动条槽位，消除骨架到详情的横向跳动 ([ae295ab](https://github.com/ntc0728/video-warehouse/commit/ae295ab26d64c5a312e70cb59a69e5af1befe3a5))
+* **player:** 浏览器窗口失焦（切其他软件）返回后画面冻结/误报错误 ([925f3f2](https://github.com/ntc0728/video-warehouse/commit/925f3f291dc512ba6800f231b43696d0e258ef6a))
+* **player:** 选季面板骨架行数 3→6，与 CMS 面板 2 行对齐调整 ([ae04bf5](https://github.com/ntc0728/video-warehouse/commit/ae04bf5c9056f01b2b79bb93a4b661cddd598a7d))
+* **user-store:** reload 合并脏集合，防广播回退本页节流窗口内的进度 ([8b9a53f](https://github.com/ntc0728/video-warehouse/commit/8b9a53f72f664bd2130aafad43d0052b7f1c087d))
+
 ## [1.17.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.16.0...kinotv-v1.17.0) (2026-09-01)
 
 
