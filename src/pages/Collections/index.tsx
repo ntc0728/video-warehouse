@@ -81,7 +81,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 
 export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
-  const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
+  const { channels: iptvChannels, toggleFavorite, clearFavorites, channelAvailability } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   // CMS 源启用守卫：直链收藏点击跳转前校验所选源是否启用，未启用则拦截并弹窗
   const cmsSourceGuard = useCmsSourceGuard();
@@ -467,7 +467,7 @@ export default function CollectionsPage() {
                       </button>
                     )}
                     <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, 'iptv', e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                    <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} epgIndex={epgIndex} />
+                    <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} epgIndex={epgIndex} availability={channelAvailability[ch.id]} />
                   </div>
                 ))}
               </div>

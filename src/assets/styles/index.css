@@ -625,6 +625,18 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   全局设计规则 — 桌面端画布最小宽度 1024px（2026-09-03 用户拍板，写入全局规则）
+   桌面 Web（视口 ≥768px，且非 App / 非 TV）的版式以 1024px 为最小画布宽度：
+   窗口被压缩到 1024px 以下时不再收缩 / 挤扁布局，由浏览器出现横向滚动条承接。
+   真正移动端（<768px，手机布局）与 App / TV 形态不在本规则适用范围。
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) body {
+    min-width: var(--layout-min-width-desktop, 1024px);
+  }
+}
+
 .empty-state-wrapper {
   display: flex;
   flex: 1;
@@ -939,11 +951,16 @@ main {
   align-items: center;
   padding: var(--space-3xs) var(--space-xs);
   border-radius: var(--radius-sm);
-  background: var(--color-danger);
+  /* 可看 = 绿（默认）；不可看 = 红（见 .is-unavailable） */
+  background: var(--color-success);
   color: #fff;
   font-size: var(--text-2xs);
   font-weight: 700;
   line-height: 1.4;
+}
+/* IPTV 无法观看：红色警示（历史页 / 收藏页 iptv-card-cover__badges 共用） */
+.record-card__live-badge.is-unavailable {
+  background: var(--color-danger);
 }
 
 .record-card__time {

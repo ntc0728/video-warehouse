@@ -174,7 +174,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 
 export default function HistoryPage() {
   const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
-  const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
+  const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord, channelAvailability } = useIPTVStore();
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
@@ -655,7 +655,7 @@ export default function HistoryPage() {
       navigateTo: nav.to,
       navState: nav.state,
     };
-  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate]);
+  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate, channelAvailability]);
 
   // 根据确认类型执行删除
   const executeDelete = useCallback(() => {

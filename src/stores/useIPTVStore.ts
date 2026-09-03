@@ -479,6 +479,8 @@ export const useIPTVStore = create<IPTVState>()(
         filter: state.filter,
         playHistory: state.playHistory,
         favoriteChannelIds: state.favoriteChannelIds,
+        // IPTV 可看性缓存：持久化到 localStorage，历史/收藏页进入时读取同步
+        channelAvailability: state.channelAvailability,
       }),
       /**
        * 合并持久化数据与当前默认值

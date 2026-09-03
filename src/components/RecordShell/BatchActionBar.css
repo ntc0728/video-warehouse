@@ -1,43 +1,51 @@
-/* ── 批量操作浮动栏（收藏/历史页共用） ──────────────── */
+/* ── 批量操作浮动栏（收藏/历史页共用） ────────────────
+   定位必须用 position: sticky + bottom，而非 position: fixed——
+   悬浮栏渲染在全局滚动容器 .app-shell__scroll（contain:layout）内部，
+   contain:layout 会使内部 fixed 子元素以滚动容器为包含块，滚动时悬浮栏
+   随内容滚走（实测滚动 900px 时 top 变负）。sticky 在同样容器内全程
+   钉在滚动区底部上方 bottom 偏移处（实测任意 scrollTop 下 bottom 恒定）。 */
 .batch-action-bar {
-  position: fixed;
-  right: 50%;
+  position: sticky;
   bottom: var(--space-xl);
   z-index: 50;
   display: flex;
   gap: var(--space-xs);
   align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  margin: var(--space-md) auto 0; /* 水平 auto = 居中；上边距与正文拉开 */
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
-  transform: translateX(50%);
-  animation: slideUpCentered 0.2s var(--ease-standard);
+  animation: batchBarSlideUp 0.2s var(--ease-standard);
 }
 
 .batch-action-bar--exiting {
-  animation: slideDownCentered 0.18s ease-in forwards;
+  animation: batchBarSlideDown 0.18s ease-in forwards;
 }
 
-@keyframes slideUpCentered {
+@keyframes batchBarSlideUp {
   from {
     opacity: 0;
-    transform: translateX(50%) translateY(var(--space-md));
+    transform: translateY(var(--space-md));
   }
   to {
     opacity: 1;
-    transform: translateX(50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
-@keyframes slideDownCentered {
+@keyframes batchBarSlideDown {
   from {
     opacity: 1;
-    transform: translateX(50%) translateY(0);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateX(50%) translateY(var(--space-md));
+    transform: translateY(var(--space-md));
   }
 }
 
