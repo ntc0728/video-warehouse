@@ -632,6 +632,12 @@
   .hero-banner__text {
     max-width: 100%;
   }
+
+  /* 移动端 slide padding 偏大（--space-xl≈16px）：16:9 矮图上四边留白过重，
+     下调一档至 --space-lg（375px 视口≈12px），文字区域更透气贴合 */
+  .hero-banner__text-slide {
+    padding: var(--space-lg);
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -641,6 +647,10 @@
 
   html[data-device="app"] .hero-banner__text {
     max-width: 100%;
+  }
+
+  html[data-device="app"] .hero-banner__text-slide {
+    padding: var(--space-lg);
   }
 
 
