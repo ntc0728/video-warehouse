@@ -93,15 +93,15 @@
   @media (min-width:480px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media (min-width:1024px){
-    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-  @media (min-width:1440px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-  @media (min-width:1920px){
+  @media (min-width:1440px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-  @media (min-width:2560px){
+  @media (min-width:1920px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
-  @media (min-width:3840px){
+  @media (min-width:2560px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(7,minmax(0,1fr))}}
+  @media (min-width:3840px){
+    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
   html[data-device="tv"] .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 
   /* ═══ 内嵌真实 CSS 2/4：index.css 全局 record-card 类 ═══
@@ -142,7 +142,7 @@
   .app .history-page .record-card__progress-bar{height:100%;background:#e11d48;transition:width .3s ease}
   .app .history-page .record-card__progress-text{position:absolute;right:var(--space-2xs);
     bottom:calc(var(--space-xs) + var(--space-3xs));color:rgba(255,255,255,.9);
-    font-size:var(--text-2xs);font-weight:600;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}
+    font-size:var(--text-xs);font-weight:600;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}
   .app .history-page .record-card__body{display:flex;flex-direction:column;gap:var(--space-xs);min-width:0}
   .app .history-page .record-card__title{margin:0;color:var(--color-text);font-size:var(--text-base);
     font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -348,7 +348,7 @@
     .history-page .record-card__progress-bar{height:100%;background:#e11d48;transition:width .3s ease}
     .history-page .record-card__progress-text{position:absolute;right:var(--space-2xs);
       bottom:calc(var(--space-xs) + var(--space-3xs));color:rgba(255,255,255,.9);
-      font-size:var(--text-2xs);font-weight:600;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}
+      font-size:var(--text-xs);font-weight:600;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}
     /* 窄屏 meta-col：默认隐藏，与 meta-row 二选一 */
     .history-page .record-card__meta-col{display:none}
     .history-page .record-card__delete{position:absolute;top:var(--space-xs);right:var(--space-xs);z-index:5;
