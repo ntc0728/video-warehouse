@@ -41,4 +41,4 @@
 | `demos/demo-collections-redesign-2026-08-18.html` | 收藏页 UI 整改原型（方案 B）：融合 Tab + 影视/直播分区（竖版海报墙 + 原项目 IPTV 卡）+ 视频卡角标重组（左下年份+类型、右下状态） | 2026-08-18 |
 | `demos/demo-lazy-crossfade-specificity-2026-08-25.html` | LazyImage 封面淡入失效对比：OLD=reveal 已经把 pending 压成不透明（硬化切图）/ NEW=reveal 排除 base+pending、280ms 淡入恢复 | 2026-08-25 |
 | `demos/demo-iptv-badge-layout-2026-09-02.html` | IPTV 卡片 Cover 角标布局：OLD=横向+红底容器 / NEW=纵向(LIVE 上、availability 下)+去容器红底 | 2026-09-02 |
-| `demos/demo-history-card-2026-09-03.html` | 历史页记录卡整改 v3 — 仅方案 A(横版16:9)：类型独占一行、状态左/时间右同行、批量方框悬浮封面可点选、大显示器根字号收缩(16→15→14px)、卡片全 rem 随根字号等比缩小、超大视口列数封顶 5、无横向滚动、IPTV 台标铺满、长标题悬停跑马灯、含「卡片排列布局」说明块；仅 demo，未落地真实代码 | 2026-09-03 |
+| `demos/demo-history-card-2026-09-03.html` | 历史页记录卡整改终稿（已落地，多迭代同步）：竖版卡 上封面(16:9)+下 2 行文字（标题 + 类型/来源/集数/时间 meta 行）+ 无缝跑马灯带点间距、批量栏 sticky 钉底、桌面 min-width 1024 全局规则、**移动端 <480 切横版**（封面 124px 132:92 左侧 + 标题/类型/来源逐行 + 集数·时间同行两端对齐）、桌面 grid ≥1024 每档 +1 列（1024→4…3840→8）、补 768 档 3 列、IPTV LIVE/无法观看红绿角标、进度文本 text-xs；双 stage（桌面列数阶梯 + 375px iframe 窄屏横版） | 2026-09-03 |
