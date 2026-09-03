@@ -4,7 +4,7 @@
  */
 import { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, CheckCircle, XCircle } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import type { IPTVChannel } from '@/types/iptv';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
@@ -37,9 +37,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
-  // 台标加载失败标记：失败时隐藏可用性角标（避免叠加在兜底图标上），
-  // 失败兜底图统一由 LazyImage fallbackVariant="tv"（lucide Tv 图标 + kinoTV）渲染。
-  const [imageError, setImageError] = useState(false);
   const isTV = useIsTV();
   // 无 logo 时使用字母占位，也应显示收藏按钮
   const showFavorite = !batchMode && !hideFavorite && (imageLoaded || !channel.logo);
@@ -123,26 +120,18 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
             if (url) markLogoSucceeded(url);
           }}
           onError={(_, failedUrl) => {
-            setImageError(true);
             // 候选 URL 失败后记入失败记忆，避免后续重复请求
             if (failedUrl) markLogoFailed(failedUrl);
           }}
         />
         {/* 横向 cover 失败兜底：LazyImage fallbackVariant="tv" 渲染 lucide Tv 图标 + kinoTV 品牌字 */}
-        {/* 批量模式下隐藏封面元素；检测结果来自当前 tab（availability prop），独立于其他 tab。
-            封面图加载失败（imageError 为 true）时隐藏检测徽标，保证占位图干净。
-            左上角角标组：LIVE 角标（全局 record-card__live-badge）在上，检测结果在其下方，纵向排列并保持间距 */}
+        {/* 批量模式下隐藏封面角标。可用性单源（availability prop）：false → 卡片标灰 +
+            红色「无法观看」（.is-unavailable）；true/undefined → 绿色 LIVE。 */}
         {!batchMode && (
           <div className="iptv-card-cover__badges">
             <span className={`record-card__live-badge ${availability === false ? 'is-unavailable' : 'is-available'}`}>
               {availability === false ? '无法观看' : 'LIVE'}
             </span>
-            {availability !== undefined && !imageError && (
-              <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
-                {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}
-                <span className="availability-badge__label">{availability ? '可用' : '不可用'}</span>
-              </div>
-            )}
           </div>
         )}
         {!batchMode && channel.group ? (

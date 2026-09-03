@@ -650,6 +650,9 @@ export default function HistoryPage() {
       logoCandidates: candidates.slice(1),
       source: ch.group,
       status: undefined,
+      // 后台预检测结果（channelAvailability）：false → RecordCard 红色「无法观看」；
+      // undefined（未检测）→ 默认 LIVE。修复：此前漏传导致历史 iptv 卡恒显 LIVE（2026-09-03）
+      available: channelAvailability[ch.id],
       timeText,
       timeTitle,
       navigateTo: nav.to,
