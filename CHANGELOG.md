@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.19.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.18.0...kinotv-v1.19.0) (2026-09-03)
+
+
+### Features
+
+* **history:** 记录卡整改收尾——桌面 grid ≥1024 每档 +1 列、进度字号调档、&lt;480 横版、IPTV 可看性角标 ([8f1115a](https://github.com/ntc0728/video-warehouse/commit/8f1115a42c5a48b77da92eaa6f0042106cf01a50))
+
+
+### Bug Fixes
+
+* **history:** grid 断点补 768 档——768–1023 三列（用户抓漏） ([0b7adaf](https://github.com/ntc0728/video-warehouse/commit/0b7adaf0922f88fa2ca43f5e41e2cee870c86a94))
+* **home:** 移动端 hero 文本距图左/下过远——双收 slide padding 与 text margin ([b2ada48](https://github.com/ntc0728/video-warehouse/commit/b2ada4803cd0e0717fa6b1dc428af743c72a2c83))
+* **iptv/history:** 频道可用性角标单源化 + 历史页 iptv 卡恒显 LIVE 修复 ([ad36d79](https://github.com/ntc0728/video-warehouse/commit/ad36d79a44fca2304a81953632d55971d63ac467))
+
+
+### Performance Improvements
+
+* **home:** hero logo 改窗口预取+空闲补齐, 消除滑动期请求与闪变 ([01666e0](https://github.com/ntc0728/video-warehouse/commit/01666e01536ee4723cdfd99d20696af44970cde6))
+* **home:** 空闲补齐改缓慢递进——滑动静默+固定间隔, 不再密集拉取剩余 logo ([b21771f](https://github.com/ntc0728/video-warehouse/commit/b21771f24b1bd510fbece374db8b7f97f30c5517))
+
 ## [1.18.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.17.0...kinotv-v1.18.0) (2026-09-02)
 
 
