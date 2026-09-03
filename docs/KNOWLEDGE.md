@@ -1008,6 +1008,17 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - **清理**：删除 IPTV 代理调试 `[IPTV 代理调试]` `console.debug` 打印代码。
   - 实施细节见 `docs/player-buffer-optimization.md` 与 `docs/player-iptv-frontend-refactor.md`；测试：`npm run build` + Vitest 383 通过 + 播放器/IPTV/历史/收藏 E2E 全绿。
 
+- **v1.10.0** - 全站卡片间距统一 + 大屏列数梯度 + 状态角标单源化 + HeroBanner 文本间距与标题位 logo 时序（2026-09-03）：
+  - **全站卡片 gap 统一 `--space-lg`**：TMDBMovieRow 横滚行（gap + 卡宽公式两处）、首页 continue 行、VideoCard 网格 + 骨架、Home 骨架行、Detail/Person/Player 相似网格、IPTV 频道网格（`index.css .iptv-channel-grid`）+ SkeletonIPTVCard、RecordFilterPanel chips 由 `--space-xs` 放宽至 `--space-sm`——消除「真实行/骨架行/跨页网格间距不一致」。
+  - **卡片列数大屏梯度（Card Columns v6，`variables.css` + `index.css`）**：`--card-cols`/`--row-cols` <768=3 / ≥768=5 / ≥1024=6 / ≥1280=8 / ≥2560=9 / ≥3840=10（TV 恒 8）；`--continue-cols` <768=2 / ≥768=3 / ≥1280=6 / ≥2560=7 / ≥3840=8（TV 恒 6）；`--iptv-cols` <768=2 / 768=3 / 1024–1279=4 / 1280–1439=5 / 1440–2559=6 / ≥2560=7 / ≥3840=8（TV 恒 5）。改档须三处同步：源码注释块 + TV 覆盖 + Skeleton 注释（记忆库有案例）。
+  - **竖版卡标题跑马灯（VideoCard）**：JS 测首段文本溢出 → 写 `--marquee-distance`（首段文本宽 + `--space-lg` 段距）；CSS 两段同构 `translateX` 无缝滚 + `mask-image` 渐变遮罩；桌面 `:hover`/`:focus-within` 才播，`≤767px` 与 `html[data-device="app"]` 自动播。
+  - **⚠️ spacing token 曲线 bug 定位（桌面恒卡 MIN，用户拍板不修）**：`variables.css:166-177` 11 条 `--space-*` 的 vw 系数漏乘 100（`0.0407vw` 裸值，应 `4.07vw`）→ ≥768px 桌面恒取 MIN（`--space-lg` 桌面=12px 而非契约 28px）。修复会导致全站观感整体放大，已被用户否决回退。**勿再修曲线**；大屏间距需求走「网格单独补 gap 放大档」。登记 `docs/KNOWN-ISSUES.md` #13（待办）。
+  - **频道可用性角标单源化**：删除 `availability-badge`（可用/不可用 + CheckCircle/XCircle 双图标独立表达），并入 `record-card__live-badge` 单徽标（`availability===false` → 红「无法观看」`.is-unavailable`；true/undefined → 绿 LIVE）。IPTVChannelCard 移除 `imageError` state 与 availability-badge 渲染；历史页 iptv 记录卡修复 `available` 漏传（此前恒显 LIVE，`History/index.tsx` 补 `available: channelAvailability[ch.id]`）+ live 角标补 `position:absolute`（曾因漏 position 声明被 `overflow:hidden` 裁掉 → 历史页 iptv 角标一直不可见）+ 移至左上角（与频道卡一致）+ 批量模式 `!batchMode` 隐藏避免与勾选框重叠。E2E：IPTV-041 断言从 `.availability-badge` 改 `.record-card__live-badge`。
+  - **HeroBanner 移动端文本距图左/下双收**：`≤767px` + app 副本内 slide padding `--space-xl→--space-md`、text margin `--space-lg/md→--space-sm/xs`，距左 28→≈14px、距下 24→≈11px；桌面/平板不动。demo：`changelogs/demos/demo-hero-text-slide-padding-2026-09-03.html`。
+  - **HeroBanner 标题位 logo 加载时序重构（窗口预取 + 像素预热 + 空闲缓慢递进）**：根因=旧逻辑首屏串行前 6 + activeKey（滑动结束才变）按需补拉 → `/images` 落在滑动瞬间 + logo 像素文件从不预加载（`<img>` 挂载现下载解码）→ 闪变 + 卡顿。改为与背景图 preloadRange 同节奏：① 焦点 ±3 窗口并发预取（滑入前决策已落地，滑动期零请求零 setState）；② 空闲补齐**缓慢递进**（`focusIndex` 每次变化重建 effect → 静默 1.2s 后、固定 2s 间隔每步补一项，滑动活跃期天然零请求；`requestIdleCallback` 密集推进版因空闲帧近乎无间隔连续 step 撞轮播被弃）；③ `fetchHeroLogo` 拿 file_path 即 `preloadImage` 同 w342 URL（挂载即命中缓存）；④ 删 `heroLogoFailed` state 改 `dropLogo`（缓存记 null + 一次 setState 回落）。demo：`changelogs/demos/demo-hero-logo-prefetch-2026-09-03.html`。
+  - 历史页记录卡整改终稿（桌面 grid 每档 +1 列至 8、<480 横版、进度字号 text-xs、IPTV 可看角标）于本日早些提交（8f1115a/0b7adaf/fcb2839）。
+  - 完整改动明细与踩坑见 `changelogs/2026-09-03.md`；观感对比见 `changelogs/demos/`（README 索引）；构建与测试全绿（tsc/vite 双绿、home 42 条 + 相关 spec 冒烟通过）。
+
 ---
 
 ## 架构决策记录（ADR）
