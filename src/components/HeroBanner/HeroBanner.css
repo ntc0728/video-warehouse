@@ -633,10 +633,18 @@
     max-width: 100%;
   }
 
-  /* 移动端 slide padding 偏大（--space-xl≈16px）：16:9 矮图上四边留白过重，
-     下调一档至 --space-lg（375px 视口≈12px），文字区域更透气贴合 */
+  /* 移动端文本距图左/下缘过远根因：slide.padding(--space-xl) 与 text 自身的
+     margin(--space-lg/--space-md) 双重叠加 → 左 28px / 下 24px，在 390px 的
+     16:9 矮图上留白过大。此处双收：slide padding 收到 --space-md(8px)，
+     text margin 收到 --space-sm/--space-xs(6px/3px) → 左≈14px、下≈11px。
+     桌面端保持原值不动（图宽、占比合理）。 */
   .hero-banner__text-slide {
-    padding: var(--space-lg);
+    padding: var(--space-md);
+  }
+
+  .hero-banner__text {
+    margin-left: var(--space-sm);
+    margin-bottom: var(--space-xs);
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -650,7 +658,12 @@
   }
 
   html[data-device="app"] .hero-banner__text-slide {
-    padding: var(--space-lg);
+    padding: var(--space-md);
+  }
+
+  html[data-device="app"] .hero-banner__text {
+    margin-left: var(--space-sm);
+    margin-bottom: var(--space-xs);
   }
 
 

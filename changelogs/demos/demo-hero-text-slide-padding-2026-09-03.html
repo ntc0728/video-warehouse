@@ -3,14 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HeroBanner 移动端文本 slide padding 微调对比 · 2026-09-03</title>
+<title>HeroBanner 移动端文本距图左/下过远修复对比 · 2026-09-03</title>
 <style>
-  :root {
-    --space-xl: 16px; /* 移动端 375px 视口解析值（token 曲线卡 MIN 现状） */
-    --space-lg: 12px;
-    --space-md: 8px;
-    --radius-md: 12px;
-  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -21,7 +15,7 @@
   }
   .page-title { font-size: 18px; margin: 0 0 4px; }
   .page-sub { font-size: 13px; color: #666; margin: 0 0 20px; line-height: 1.6; }
-  .stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
   .stage {
     background: #fff;
     border: 1px solid #e3e6ea;
@@ -35,83 +29,92 @@
     background: #eef1f5; color: #555;
   }
   .stage-tag.new { background: #e6f4ea; color: #1e7d34; }
-  .stage-note { font-size: 12px; color: #888; margin: 10px 0 0; line-height: 1.5; }
+  .stage-note { font-size: 12px; color: #888; margin: 10px 0 0; line-height: 1.6; }
   code {
     background: #f0f2f5; border-radius: 4px; padding: 0 4px;
     font-family: ui-monospace, Consolas, monospace; font-size: 12px;
   }
+  .meas { color: #c00; font-weight: 700; }
 
-  /* ── 手机壳（390×~360 视口模拟） ── */
+  /* ── 390px 视口内 16:9 banner 模拟（移动端 token 卡 MIN：xl=16 lg=12 md=8 sm=6 xs=3） ── */
   .phone {
     width: 100%;
     background: #000;
-    border-radius: 18px;
+    border-radius: 14px;
     overflow: hidden;
     position: relative;
   }
-  .phone-screen { position: relative; aspect-ratio: 16 / 9; background: linear-gradient(135deg, #16324f 0%, #0d6e6e 55%, #1b4332 100%); }
-  .phone-screen::after { /* 模拟氛围光斑，非交互 */
+  .phone-screen {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #16324f 0%, #0d6e6e 55%, #1b4332 100%);
+  }
+  .phone-screen::after { /* 氛围光斑 */
     content: "";
     position: absolute; inset: 0;
     background: radial-gradient(120% 90% at 78% 30%, rgba(255, 214, 120, 0.28), transparent 55%);
   }
-  /* 与 HeroBanner 同构的层级：slide 撑满、flex-end + padding 放文本 */
+  /* 与 HeroBanner 同构：content(0 padding) > track > slide(flex-end+padding) > text(margin) */
   .text-track { position: absolute; inset: 0; z-index: 2; display: flex; width: 100%; height: 100%; }
   .text-slide {
     flex: 0 0 100%; width: 100%; height: 100%;
     display: flex; align-items: flex-end;
   }
-  .text-slide.old { padding: var(--space-xl); }  /* 旧：--space-xl（移动解析 16px） */
-  .text-slide.new { padding: var(--space-lg); }  /* 新：--space-lg（移动解析 12px） */
-  .hero-text { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  /* 测量参照：在 slide 上画出 padding 内边（黄虚线） */
+  .text-slide { outline: 1px dashed rgba(255, 230, 80, 0.65); outline-offset: -1px; }
+  .hero-text { display: flex; flex-direction: column; gap: 5px; width: 100%; }
   .hero-meta { display: flex; gap: 6px; align-items: center; }
   .badge { font-size: 10px; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,0.22); color: #fff; }
   .badge.hd { background: #f5c518; color: #1a1a1a; font-weight: 700; }
-  .hero-title { margin: 0; font-size: 17px; font-weight: 800; color: #fff; line-height: 1.25; letter-spacing: 0.2px; }
-  .hero-desc {
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; margin: 0; font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.92);
-    padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,0.25);
-  }
+  .hero-title { margin: 0; font-size: 16px; font-weight: 800; color: #fff; line-height: 1.25; }
   .hero-cta { display: inline-flex; align-items: center; gap: 4px; width: fit-content; font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 999px; background: rgba(255,255,255,0.92); color: #111; }
+
+  /* OLD：slide padding xl(16) + text margin lg/md(12/8) → 距图左 28 / 距下 24 */
+  .text-slide.old { padding: var(--space-xl, 16px); }
+  .old .hero-text { margin-left: var(--space-lg, 12px); margin-bottom: var(--space-md, 8px); }
+  /* NEW：slide padding md(8) + text margin sm/xs(6/3) → 距图左 ≈14 / 距下 ≈11 */
+  .text-slide.new { padding: var(--space-md, 8px); }
+  .new .hero-text { margin-left: var(--space-sm, 6px); margin-bottom: var(--space-xs, 3px); }
 </style>
 </head>
 <body>
-  <h1 class="page-title">HeroBanner 移动端文本区 padding 微调对比</h1>
+  <h1 class="page-title">HeroBanner 移动端：文本距图「左/下」过远修复对比</h1>
   <p class="page-sub">
-    <code>.hero-banner__text-slide</code> 四边 padding：<b>OLD</b> = <code>var(--space-xl)</code>（移动 375px 视口解析 ≈16px）；
-    <b>NEW</b> = <code>var(--space-lg)</code>（≈12px）。仅 <code>@media (width &lt;= 767px)</code> 与
-    <code>html[data-device="app"]</code> 副本生效，桌面 &gt;767px 不受影响。背景图按 16:9 矮图模拟，
-    文本与 desc 投影带不贴边的对比最直观。
+    根因：<code>.hero-banner__text-slide</code> 的 <code>padding: var(--space-xl)</code> 与
+    <code>.hero-banner__text</code> 自身的 <code>margin-left: var(--space-lg)</code> /
+    <code>margin-bottom: var(--space-md)</code> <b>双重叠加</b> → 文本距图左 <b class="meas">28px</b>、
+    距图下 <b class="meas">24px</b>（桌面图宽占比小无感，390px 的 16:9 矮图上非常空）。<br />
+    修复：仅 <code>@media (width &lt;= 767px)</code> + <code>html[data-device="app"]</code> 副本内双收——
+    slide padding → <code>var(--space-md)</code>（8px）、text margin → <code>--space-sm/--space-xs</code>
+    （6px/3px）→ 距左 <b class="meas">≈14px</b>、距下 <b class="meas">≈11px</b>。桌面 &gt;767px 原值不动。
+    黄虚线 = slide padding 内边测量框。
   </p>
   <div class="stage-grid">
     <section class="stage">
-      <div class="stage-head"><span class="stage-title">OLD · padding: var(--space-xl)</span><span class="stage-tag">修改前 ≈16px</span></div>
+      <div class="stage-head"><span class="stage-title">OLD · 修复前</span><span class="stage-tag">左 28px / 下 24px</span></div>
       <div class="phone"><div class="phone-screen">
         <div class="text-track"><div class="text-slide old">
           <div class="hero-text">
             <div class="hero-meta"><span class="badge hd">4K</span><span class="badge">科幻</span><span class="badge">2026</span></div>
             <h2 class="hero-title">沙丘：命运之子的星际远征</h2>
-            <p class="hero-desc">少年保罗在厄拉科斯星球的沙漠中觉醒预言之力，直面宿命与家族荣光。</p>
-            <span class="hero-cta">立即播放</span>
+            <span class="hero-cta">查看详情</span>
           </div>
         </div></div>
       </div></div>
-      <p class="stage-note">注意标题行 / desc 底 / CTA 距图底边的留白（红框即 slide 四边 padding 16px）。</p>
+      <p class="stage-note">黄框外（左侧、下侧）空白明显偏大，文本像被"吊"在图中部偏下。</p>
     </section>
     <section class="stage">
-      <div class="stage-head"><span class="stage-title">NEW · padding: var(--space-lg)</span><span class="stage-tag new">修改后 ≈12px</span></div>
+      <div class="stage-head"><span class="stage-title">NEW · 修复后</span><span class="stage-tag new">左 ≈14px / 下 ≈11px</span></div>
       <div class="phone"><div class="phone-screen">
         <div class="text-track"><div class="text-slide new">
           <div class="hero-text">
             <div class="hero-meta"><span class="badge hd">4K</span><span class="badge">科幻</span><span class="badge">2026</span></div>
             <h2 class="hero-title">沙丘：命运之子的星际远征</h2>
-            <p class="hero-desc">少年保罗在厄拉科斯星球的沙漠中觉醒预言之力，直面宿命与家族荣光。</p>
-            <span class="hero-cta">立即播放</span>
+            <span class="hero-cta">查看详情</span>
           </div>
         </div></div>
       </div></div>
-      <p class="stage-note">文本整体向下/向内收缩 4px/边，文字区更贴近画面主体，留白收一档（对照上方 OLD 逐像素比较）。</p>
+      <p class="stage-note">文本整体贴向左下，与画面主体关系更紧凑（对照左侧逐像素比较左右/下方黄框外留白）。</p>
     </section>
   </div>
 </body>
