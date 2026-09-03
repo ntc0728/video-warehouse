@@ -114,11 +114,15 @@ function recordSwipeData(data: { mainWidth: number; dx: number; threshold: numbe
 /* ── 首页 banner 标题 logo ──────────────────────────────────────────────
    Detail 页标题位用 TMDB 详情的 images.logos（.detail-hero-logo 元素）；
    首页 banner 的数据源是 trending 列表，不含 logo，需要额外请求
-   /movie|tv/{id}/images 才能拿到。为控制请求量：
-   - 首屏只取前 HERO_LOGO_PREFETCH 项；轮播/悬停到更靠后的条目时再按需补拉；
+   /movie|tv/{id}/images 才能拿到。为「滑到即显示、不卡顿不闪变」：
+   - 窗口预取：焦点项（displayIndex，含悬停预览）± HERO_LOGO_WINDOW 内的条目在
+     滑入可视前就请求决策（与背景图预取同理）——判断提前，滑动期零请求零 setState；
+   - 空闲补齐：窗口就绪后 requestIdleCallback 串行补全剩余条目，任何滑法都不遇「未决」；
+   - 像素文件预热：fetchHeroLogo 拿到 file_path 即 preloadImage 同 URL（渲染 <img>
+     直接命中缓存，无「滑到才下载/解码」卡顿）；
    - 模块级缓存 + 进行中去重：同一条目整个会话只请求一次（含「确认无 logo」的 null）；
-   - 串行发起（不并发打爆 TMDB）；拿不到 logo 就回落文字标题，不阻塞渲染。 */
-const HERO_LOGO_PREFETCH = 6;
+   - 拿不到 logo 就回落文字标题，不阻塞渲染。 */
+const HERO_LOGO_WINDOW = 3;
 /** key → logo 文件路径；值为 null 表示该条目确认无 logo，不再重试 */
 const heroLogoCache = new Map<string, string | null>();
 const heroLogoInflight = new Set<string>();
@@ -143,14 +147,22 @@ async function fetchHeroLogo(key: string): Promise<string | null> {
   const images = mt === 'tv' ? await fetchTVImages(id) : await fetchMovieImages(id);
   const logos = images?.logos ?? [];
   const logo = logos.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en') ?? logos[0];
-  return logo?.file_path ?? null;
+  const filePath = logo?.file_path ?? null;
+  if (filePath) {
+    // 像素文件预热：与 renderText 里 <img> 完全同 URL（w342），挂载即命中浏览器缓存，
+    // 杜绝「决策就绪但文件现下载/解码」在滑动动画期间抢主线程（卡顿主因之一）。
+    const url = buildImageUrl(filePath, 'w342');
+    if (url) preloadImage(url);
+  }
+  return filePath;
 }
 
 /**
- * 批量/按需拉取 hero logo，返回 key → logo 文件路径的映射（未就绪的 key 不在映射里）。
- * @param activeKey 当前显示条目的 key：轮播 / 悬停到新条目时按需补拉它的 logo
+ * 窗口预取 + 空闲补齐 hero logo 决策，返回 key → logo 文件路径映射（只含已确认存在；
+ * 未决 / 确认无 logo / 文件加载失败的 key 不在映射里 → 渲染回退文字标题）。
+ * @param focusIndex 当前显示 / 正滑向的条目索引（displayIndex，含悬停预览）
  */
-function useHeroLogos(items: HeroItem[], activeKey: string | null, active: boolean) {
+function useHeroLogos(items: HeroItem[], focusIndex: number, active: boolean) {
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const [logos, setLogos] = useState<Record<string, string>>({});
@@ -176,40 +188,85 @@ function useHeroLogos(items: HeroItem[], activeKey: string | null, active: boole
     }
   }, []);
 
-  // 首屏：串行补齐前 N 项
-  const headSig = items
-    .slice(0, HERO_LOGO_PREFETCH)
-    .map((i) => heroLogoKey(i) ?? '')
-    .join('|');
+  // 内容签名：items 内容变化（刷新 / 换列表）时两个预取 effect 重新对齐
+  const contentSig = items.map((i) => heroLogoKey(i) ?? '').join('|');
+
+  // ① 窗口预取：焦点 ± WINDOW（含两侧即将滑入的 prev/next），滑入前决策已落地 → 判断提前。
+  //    未决项并发发起（窗口内通常 1~3 个，inflight 去重后量很小，不会打爆 TMDB）；
+  //    已决项幂等跳过，故滑动过程中 effect 重跑仅 O(窗口) 次缓存查询，无请求无 setState。
+  useEffect(() => {
+    if (!active) return;
+    const total = itemsRef.current.length;
+    if (total === 0) return;
+    const center = Math.min(focusIndex, total - 1);
+    const targets = new Set<number>();
+    for (let off = -HERO_LOGO_WINDOW; off <= HERO_LOGO_WINDOW; off++) {
+      targets.add(((center + off) % total + total) % total);
+    }
+    const pending = [...targets]
+      .map((i) => itemsRef.current[i])
+      .filter((it) => {
+        const k = heroLogoKey(it);
+        return !!k && heroLogoCache.get(k) === undefined && !heroLogoInflight.has(k);
+      });
+    if (pending.length > 0) void Promise.allSettled(pending.map((it) => ensure(it)));
+  }, [focusIndex, contentSig, active, ensure]);
+
+  // ② 空闲补齐：窗口外剩余条目低优先级串行补全（requestIdleCallback，退化 setTimeout），
+  //    整条列表决策最终全量就绪，任何滑法（含快速连续滑动）都不再遇「先标题后跳 logo」。
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    (async () => {
-      for (const item of itemsRef.current.slice(0, HERO_LOGO_PREFETCH)) {
-        if (cancelled) return;
-        await ensure(item);
+    let handle: number | null = null;
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    const clearHandle = () => {
+      if (handle === null) return;
+      if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+      handle = null;
+    };
+    const schedule = (fn: () => void) => {
+      if (cancelled) return;
+      if (typeof w.requestIdleCallback === 'function') {
+        handle = w.requestIdleCallback(() => { handle = null; fn(); }, { timeout: 3000 });
+      } else {
+        handle = window.setTimeout(() => { handle = null; fn(); }, 300);
       }
-    })();
-    return () => { cancelled = true; };
-  }, [headSig, active, ensure]);
+    };
+    const step = () => {
+      if (cancelled) return;
+      const item = itemsRef.current.find((it) => {
+        const k = heroLogoKey(it);
+        return !!k && heroLogoCache.get(k) === undefined && !heroLogoInflight.has(k);
+      });
+      if (!item) return; // 全部已决（含确认无 logo）
+      void ensure(item).then(() => {
+        if (!cancelled) schedule(step);
+      });
+    };
+    schedule(step);
+    return () => {
+      cancelled = true;
+      clearHandle();
+    };
+  }, [contentSig, active, ensure]);
 
-  // 按需：当前显示条目（轮播 / 悬停预览）未缓存时补拉
-  useEffect(() => {
-    if (!active || !activeKey) return;
-    const cached = heroLogoCache.get(activeKey);
-    if (cached !== undefined) {
-      if (cached) setLogos((prev) => (prev[activeKey] ? prev : { ...prev, [activeKey]: cached }));
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const item = itemsRef.current.find((i) => heroLogoKey(i) === activeKey);
-      if (item && !cancelled) await ensure(item);
-    })();
-    return () => { cancelled = true; };
-  }, [activeKey, active, ensure]);
+  // 文件加载失败（URL 404 / 网络）→ 永久回落该条目文字标题：缓存记 null（不重试），
+  // 并从就绪映射移除（一次 state 更新触发回落渲染）。
+  const dropLogo = useCallback((key: string) => {
+    heroLogoCache.set(key, null);
+    setLogos((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
-  return logos;
+  return { logos, dropLogo };
 }
 
 export default function HeroBanner({
@@ -249,10 +306,9 @@ export default function HeroBanner({
     ? hoveredIndex
     : null;
   const displayIndex = safeHoveredIndex !== null ? safeHoveredIndex : safeActiveIndex;
-  // 标题位 logo（TMDB /images）：优先展示 logo，取不到时回落文字标题（见 renderText）
-  const heroLogos = useHeroLogos(displayItems, heroLogoKey(displayItems[displayIndex]), active);
-  // logo 图片加载失败（URL 404 / 网络错误）→ 永久回落该条目的文字标题
-  const [heroLogoFailed, setHeroLogoFailed] = useState<Record<string, true>>({});
+  // 标题位 logo（TMDB /images）：优先展示 logo，取不到时回落文字标题（见 renderText）。
+  // 决策由窗口预取 + 空闲补齐提前就绪，滑入即稳定显示、不闪变。
+  const { logos: heroLogos, dropLogo } = useHeroLogos(displayItems, displayIndex, active);
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
@@ -858,9 +914,10 @@ export default function HeroBanner({
     const ov = item.overview || '';
     const mt = d.mediaType || d.media_type;
     // 标题位：有 TMDB logo 时用 logo（Detail 页同款 .detail-hero-logo 元素），
-    // 无 logo / logo 加载失败时回落文字标题。
+    // 无 logo / 决策未决 / 文件加载失败时回落文字标题。heroLogos 只含已确认的
+    // path（fetchHeroLogo 已预热同 URL 像素 → <img> 挂载即命中缓存，无现下载解码）。
     const logoKey = heroLogoKey(d);
-    const logoPath = logoKey && !heroLogoFailed[logoKey] ? heroLogos[logoKey] : undefined;
+    const logoPath = (logoKey && heroLogos[logoKey]) || undefined;
     const logoUrl = logoPath ? buildImageUrl(logoPath, 'w342') || '' : '';
     return (
       <>
@@ -870,7 +927,9 @@ export default function HeroBanner({
             src={logoUrl}
             alt={t}
             onError={() => {
-              if (logoKey) setHeroLogoFailed((prev) => ({ ...prev, [logoKey]: true }));
+              // 文件加载失败（URL 404 / 网络）→ 永久回落：缓存记 null + 移出就绪映射，
+              // 不再重试、不再现下载（dropLogo 一次 setState 触发回落）。
+              if (logoKey) dropLogo(logoKey);
             }}
           />
         ) : (
