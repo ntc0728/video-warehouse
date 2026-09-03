@@ -134,7 +134,9 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
             左上角角标组：LIVE 角标（全局 record-card__live-badge）在上，检测结果在其下方，纵向排列并保持间距 */}
         {!batchMode && (
           <div className="iptv-card-cover__badges">
-            <span className="record-card__live-badge">LIVE</span>
+            <span className={`record-card__live-badge ${availability === false ? 'is-unavailable' : 'is-available'}`}>
+              {availability === false ? '无法观看' : 'LIVE'}
+            </span>
             {availability !== undefined && !imageError && (
               <div className={`availability-badge ${availability ? 'available' : 'unavailable'}`}>
                 {availability ? <Icon icon={CheckCircle} size="xs" /> : <Icon icon={XCircle} size="xs" />}

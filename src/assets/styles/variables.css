@@ -248,6 +248,7 @@
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
   --layout-loading-min-height: clamp(300px, 18.75rem + 3vw, 480px);  /* 加载态最小高度：300→480px 流体 */
+  --layout-min-width-desktop:  1024px; /* 桌面端画布最小宽度（全局规则：桌面 Web ≥768 且非 app/tv 时 body min-width 取此值，窄于此出现横向滚动条） */
   --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px); /* 弹窗最大宽度 */
   /* IPTV OSD 控制栏最大宽度（桌面基线，保持原流式曲线不变）：1024→~627px / 1920→~896px / 2560→~1088px，封顶 1400px。
      原 JS 内 OSD_MIN_WIDTH=360 / OSD_MAX_WIDTH=1600 硬编码已移除（实测对最终宽度无影响），宽度改由本 token 纯驱动。

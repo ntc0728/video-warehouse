@@ -292,31 +292,55 @@
   }
 }
 
-/* 历史页统一横版记录卡网格：
-   ≥1280px 桌面 → 3 列（最多 3 列，不随超宽屏膨胀）
-   1280px 以下（平板/小桌面/移动）→ 2 列
-   ≤480px 手机 → 1 列（全宽横版卡）
-   app 恒移动：恒 2 列（副本） */
+/* 历史页统一横版记录卡网格——显式列数断点阶梯（2026-09-03 用户规划；当日二次调整：≥1024 每档 +1 列）：
+     默认（<480px，含移动端 / app 竖屏）→ 1 列
+     480px  ≤ 视口 < 1024px → 2 列
+     1024px ≤ 视口 < 1440px → 4 列
+     1440px ≤ 视口 < 1920px → 5 列
+     1920px ≤ 视口 < 2560px → 6 列
+     2560px ≤ 视口 < 3840px → 7 列
+     3840px ≤ 视口          → 8 列
+     TV（html[data-device="tv"]）→ 恒 5 列（覆盖以上全部，见本段末）
+   每列 minmax(0,1fr) 平均分配整行宽度 → 无侧边空白、卡片随视口等比放大。 */
 .history-content .history-group-body .history-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-sm);
+  grid-template-columns: repeat(1, minmax(0, 1fr)); /* <480px：1 列 */
+  gap: var(--space-lg); /* 卡片间距加大（--space-lg：桌面 12→28px 流体） */
 }
-
-@media (width >= 1280px) {
-  html:not([data-device="app"]) .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-/* 9.1 app 恒移动：恒 2 列副本（覆盖 ≥1280 的 3 列） */
-html[data-device="app"] .history-content .history-group-body .history-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (width <= 480px) {
+@media (min-width: 480px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 480–1023：2 列 */
   }
+}
+@media (min-width: 1024px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* 1024–1439：4 列 */
+  }
+}
+@media (min-width: 1440px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)); /* 1440–1919：5 列 */
+  }
+}
+@media (min-width: 1920px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)); /* 1920–2559：6 列 */
+  }
+}
+@media (min-width: 2560px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 2560–3839：7 列 */
+  }
+}
+@media (min-width: 3840px) {
+  .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)); /* ≥3840：8 列 */
+  }
+}
+/* TV（data-device="tv"）恒 5 列：选择器带 html[data-device] → 特异性高于纯类断点，
+   任意 TV 视口（1080p / 4K）都锁定 5 列，不受上方 min-width 阶梯影响（2026-09-03 二次调整 TV 不变） */
+html[data-device="tv"] .history-content .history-group-body .history-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 /* 卡片出场动画：与收藏页 .video-card-grid stagger 完全一致（fadeInUp 0.4s +
