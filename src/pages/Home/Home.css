@@ -422,9 +422,9 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-row-cards {
   display: flex;
-  /* 与真实电影行 .tmdb-movierow-scroll 的 gap 保持一致（var(--space-sm)），
+  /* 与真实电影行 .tmdb-movierow-scroll 的 gap 保持一致（var(--space-lg)），
      否则骨架行与真实行的卡片间距不同，视觉上"骨架比真实稀疏" */
-  gap: var(--space-sm);
+  gap: var(--space-lg);
   overflow: hidden;
 }
 
@@ -433,12 +433,12 @@ html[data-device="app"] .home-disclaimer {
   flex-direction: column;
   gap: var(--space-sm);
   /* 关键：宽度必须与真实电影行卡片 .tmdb-movierow-card 使用同一套公式
-     calc((100% - (var(--card-cols)-1)*var(--space-sm)) / var(--card-cols))，
+     calc((100% - (var(--card-cols)-1)*var(--space-lg)) / var(--card-cols))，
      否则骨架卡片（固定 clamp 宽度）与真实卡片（按 --card-cols 计算宽度）宽度不一致，
      尤其在移动端差距可达 ~44px。原先的 clamp 写法是"缩略图骨架宽度与真实不一致"的
      首页根因之一。 */
   flex: 0 0 calc(
-    (100% - (var(--card-cols, 7) - 1) * var(--space-sm))
+    (100% - (var(--card-cols, 7) - 1) * var(--space-lg))
     / var(--card-cols, 7)
   );
 }

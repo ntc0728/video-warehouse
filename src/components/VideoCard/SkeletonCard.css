@@ -49,7 +49,9 @@
      fallback 不同（3 vs 6），骨架卡片会比真实卡片宽近一倍，造成"骨架宽度与真实宽度
      不一致"的可见跳变。统一为 6 后，即便 --card-cols 暂未就绪，两者列数也相同。 */
   grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  gap: var(--grid-gap);
+  /* 必须与真实网格 .video-card-grid 的间距一致（同为 --space-lg），
+     否则骨架与真实卡片的列间距不同，切换瞬间会跳一下。 */
+  gap: var(--space-lg);
   padding: var(--space-sm) 0;
 }
 

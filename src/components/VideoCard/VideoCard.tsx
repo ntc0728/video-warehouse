@@ -128,8 +128,11 @@ const VideoCard = memo(function VideoCard({
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const isTV = useIsTV();
+  // 横版卡（历史/继续观看）沿用 20 字截断；竖版卡改用完整标题 ——
+  // 竖版标题溢出时走无缝跑马灯滚动，若先截断再滚动，滚动的仍是残缺文本，失去意义。
   const displayTitle = video.title.length > 20 ? video.title.slice(0, 20) + '…' : video.title;
-  const highlightedTitle = useHighlightedText(displayTitle, highlightQuery ?? '');
+  const titleText = variant === 'landscape' ? displayTitle : video.title;
+  const highlightedTitle = useHighlightedText(titleText, highlightQuery ?? '');
 
   const isCollected = useUserStore(
     (s) => s.collections.some((c) => c.videoId === video.id),
@@ -183,67 +186,57 @@ const VideoCard = memo(function VideoCard({
     };
   }, [video.title, video.cover, fallbackPoster, hasToken]);
 
+  // ── 竖版标题跑马灯：只测量，不跑动画（2026-09-03）──
+  // 旧实现用 rAF 常驻循环驱动 transform：每张溢出卡一个 rAF，Browse 页上百张卡片
+  // 同时跑会持续占用主线程，且滚到头后瞬间跳回原点（非无缝）。
+  // 现改为：测量「第一份文本宽度 + gap」写入 --marquee-distance / --marquee-duration，
+  // 真正的滚动交给 CSS animation，播放时机由 animation-play-state 控制
+  // （桌面 hover 卡片才滚 / 移动端自动滚），无 hover 时不产生任何动画开销。
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
+    // 横版卡不参与跑马灯（历史/继续观看行保持单行截断）
+    if (variant === 'landscape') {
+      setIsOverflow(false);
+      el.style.removeProperty('--marquee-distance');
+      el.style.removeProperty('--marquee-duration');
+      return;
+    }
     let cancelled = false;
     let rafId = 0;
 
-    const check = () => {
+    const measure = () => {
       if (cancelled) return;
       const textEl = el.querySelector('.video-card-title-text') as HTMLElement | null;
       const trackEl = el.querySelector('.video-card-title-track') as HTMLElement | null;
       if (!textEl || !trackEl) return;
 
-      const overflow = textEl.scrollWidth > el.clientWidth;
+      // 滚动距离 = 第一份文本宽 + 两份之间的 gap：动画回到 0 时第二份文本
+      // 正好补到第一份的起始位置 → 首尾相接，无缝无跳帧。
+      const textWidth = textEl.getBoundingClientRect().width;
+      const overflow = textWidth > el.clientWidth + 1;
       setIsOverflow(overflow);
 
-      // 停止之前的动画
-      cancelAnimationFrame(rafId);
-      trackEl.style.transform = '';
-
-      if (!overflow) return;
-
-      const distance = textEl.scrollWidth;
-      const speed = 20; // px/s
-      const pauseMs = 1500;
-
-      let startTime = 0;
-      let phase: 'scroll' | 'pause-end' | 'pause-start' = 'scroll';
-
-      const animate = (now: DOMHighResTimeStamp) => {
-        if (cancelled) return;
-        if (!startTime) startTime = now;
-        const elapsed = now - startTime;
-
-        if (phase === 'scroll') {
-          const d = Math.min(elapsed / 1000 * speed, distance);
-          trackEl.style.transform = `translateX(${-d}px)`;
-          if (d >= distance) {
-            phase = 'pause-end';
-            startTime = now;
-          }
-        } else if (phase === 'pause-end') {
-          if (elapsed >= pauseMs) {
-            trackEl.style.transform = '';
-            phase = 'pause-start';
-            startTime = now;
-          }
-        } else if (phase === 'pause-start') {
-          if (elapsed >= pauseMs) {
-            phase = 'scroll';
-            startTime = now;
-          }
-        }
-
-        rafId = requestAnimationFrame(animate);
-      };
-
-      rafId = requestAnimationFrame(animate);
+      if (!overflow) {
+        el.style.removeProperty('--marquee-distance');
+        el.style.removeProperty('--marquee-duration');
+        return;
+      }
+      const gap = parseFloat(getComputedStyle(trackEl).columnGap) || 0;
+      const distance = textWidth + gap;
+      // 匀速 30px/s；过短文本夹到 5s（避免窄卡里"闪滚"），超长标题封顶 24s
+      const duration = Math.min(Math.max(distance / 30, 5), 24);
+      el.style.setProperty('--marquee-distance', `${distance.toFixed(1)}px`);
+      el.style.setProperty('--marquee-duration', `${duration.toFixed(2)}s`);
     };
 
-    const initRaf = requestAnimationFrame(() => requestAnimationFrame(check));
-    const ro = new ResizeObserver(check);
+    // 双 rAF：等首帧布局/字体就绪后再量，避免拿到 0 宽度
+    const initRaf = requestAnimationFrame(() => requestAnimationFrame(measure));
+    const ro = new ResizeObserver(() => {
+      // 列数/字体变化会连发多次 resize，用 rAF 合并成一次测量
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(measure);
+    });
     ro.observe(el);
 
     return () => {
@@ -252,7 +245,9 @@ const VideoCard = memo(function VideoCard({
       cancelAnimationFrame(rafId);
       ro.disconnect();
     };
-  }, [video.title]);
+    // isOverflow 变化（第二份文本挂载）后需按实际 track 重测一次 gap，故列入依赖；
+    // 值稳定后不再触发，无循环风险。
+  }, [titleText, highlightQuery, variant, isOverflow]);
 
   const handleFavorite = useCallback(
     async (e: React.MouseEvent) => {
@@ -437,15 +432,17 @@ const VideoCard = memo(function VideoCard({
           <div
             ref={titleRef}
             className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
-            title={video.title}
           >
+            {/* 两份文本：第二份仅用于无缝衔接（滚完第一份后补位），对读屏隐藏。
+                完整标题由外层 Link 的 aria-label 提供，故不再挂原生 title tooltip
+                —— hover 时跑马灯已在滚动，tooltip 只会重叠干扰。 */}
             <span className="video-card-title-track">
               <span className="video-card-title-text">
-                {highlightQuery ? highlightedTitle : displayTitle}
+                {highlightQuery ? highlightedTitle : titleText}
               </span>
               {isOverflow && (
                 <span className="video-card-title-text" aria-hidden>
-                  {highlightQuery ? highlightedTitle : displayTitle}
+                  {highlightQuery ? highlightedTitle : titleText}
                 </span>
               )}
             </span>

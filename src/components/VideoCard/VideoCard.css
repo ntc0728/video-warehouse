@@ -6,7 +6,9 @@
 .video-card-grid {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  gap: var(--grid-gap, var(--space-md));
+  /* 卡片间距统一 --space-lg（2026-09-03）：与首页横滚行 / IPTV 频道网格一致，
+     不再走 --grid-gap（它仍是 Detail 源网格的间距来源）。 */
+  gap: var(--space-lg);
   /* width: 100% 让 grid 撑满父容器,1fr 才能均分列宽;
      旧实现用 max-content 会让 1fr 退化为 0,grid 永远收缩到内容自然宽(单卡约 60px),
      视觉上卡片"远远小于"父容器应有的尺寸。 */
@@ -420,8 +422,46 @@
 
 .video-card-title-track {
   display: flex;
+  /* 两份标题之间的间距：无缝滚动时前后两段内容不粘连（与卡片间距同一 token）。
+     仅一份文本时 flex 无兄弟项，gap 不产生任何可见间距。 */
+  gap: var(--space-lg);
   width: fit-content;
   white-space: nowrap;
+}
+
+/* ── 竖版标题溢出 → 无缝跑马灯（2026-09-03）─────────────────────────────
+   位移距离 = 第一份文本宽 + 两段之间 gap，由 JS 写入 --marquee-distance：
+   动画走完时第二份文本正好补到第一份的起始位置 → 首尾相接，无跳帧、无空档。
+   默认暂停；播放时机由下方 animation-play-state 规则控制：
+     · 桌面（精确指针）：hover 卡片 / 键盘聚焦时滚动
+     · 移动端（≤767px 与 App）：无 hover，自动滚动
+   暂停态 animation 仍存在但不推进，hover 时从当前相位续播，不会重置。 */
+@keyframes video-card-title-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-1 * var(--marquee-distance, 100%))); }
+}
+
+.video-card-title--overflow .video-card-title-track {
+  animation: video-card-title-marquee var(--marquee-duration, 8s) linear infinite;
+  animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .video-card:hover .video-card-title--overflow .video-card-title-track,
+  .video-card:focus-visible .video-card-title--overflow .video-card-title-track {
+    animation-play-state: running;
+  }
+}
+
+@media (width <= 767px) {
+  .video-card-title--overflow .video-card-title-track {
+    animation-play-state: running;
+  }
+}
+
+/* App 端恒移动（WebView 视口可能不以 ≤767px 上报，这里强制自动滚动） */
+html[data-device="app"] .video-card-title--overflow .video-card-title-track {
+  animation-play-state: running;
 }
 
 .video-card-title-text {
