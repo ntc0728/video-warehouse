@@ -848,12 +848,14 @@ main {
 }
 
 /* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
-   列数：2 (≤767px) → 3 (768-1023px) → 5 (≥1024px)
+   列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (1280-1439px)
+        → 6 (1440-2559px) → 7 (2560-3839px) → 8 (≥3840px)；TV 端恒 5（见文件末尾覆盖）
    由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略 */
 .iptv-channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
-  gap: var(--space-sm);
+  /* 卡片间距与 .video-card-grid 统一为 --space-lg（2026-09-03） */
+  gap: var(--space-lg);
   grid-auto-rows: auto;
   align-content: start;
   width: 100%;
@@ -869,9 +871,35 @@ main {
   }
 }
 
+/* 1024–1279 → 4 列（IPTV 卡比影视海报宽，列数少于 --card-cols 的 6 列） */
 @media (width >= 1024px) {
   html:not([data-device="app"]) {
+    --iptv-cols: 4;
+  }
+}
+
+/* 1280–1439 → 5 列（比 1024 档 +1；1440 起主流笔记本/桌面宽，升 6） */
+@media (width >= 1280px) and (width <= 1439px) {
+  html:not([data-device="app"]) {
     --iptv-cols: 5;
+  }
+}
+
+@media (width >= 1440px) {
+  html:not([data-device="app"]) {
+    --iptv-cols: 6;
+  }
+}
+
+@media (width >= 2560px) {
+  html:not([data-device="app"]) {
+    --iptv-cols: 7;
+  }
+}
+
+@media (width >= 3840px) {
+  html:not([data-device="app"]) {
+    --iptv-cols: 8;
   }
 }
 
@@ -949,7 +977,9 @@ main {
 .record-card__live-badge {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-3xs) var(--space-xs);
+  /* 2026-09-03 横向 padding xs→sm：与状态/类型徽章族（availability-badge / badge-type /
+     badge-source）同尺寸，全站 iptv 状态徽标统一。 */
+  padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
   /* 可看 = 绿（默认）；不可看 = 红（见 .is-unavailable） */
   background: var(--color-success);
@@ -1084,4 +1114,13 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
   height: auto;
   display: flex;
   align-items: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TV 端 IPTV 频道网格列数 — 恒定 5 列，不随视口断点变化（2026-09-03）
+   与 variables.css 末尾的 html[data-device="tv"]（--card-cols/--continue-cols）
+   同源策略：同为 (0,1,1) 特异性，靠源码顺序覆盖上方 @media 断点。
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-device="tv"] {
+  --iptv-cols: 5;
 }

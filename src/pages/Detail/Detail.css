@@ -373,8 +373,6 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   backdrop-filter: blur(8px);
   animation: heroItemIn 0.6s 0.65s cubic-bezier(0.22,0.61,0.36,1) both;
@@ -1496,7 +1494,8 @@
 .detail-recommend-row {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
-  gap: var(--space-sm);
+  /* 卡片间距统一 --space-lg（2026-09-03），与首页/Browse/收藏一致 */
+  gap: var(--space-lg);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;

@@ -363,11 +363,14 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 视口断点梯度 (v5)
+   Card Columns — 视口断点梯度 (v6，2026-09-03)
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
    ≥ 768  → 5   (平板 / 小桌面)
-   ≥ 1280 → 7   (PC 默认)
-   ≥ 1920 → 7   (大屏/2K/4K/TV；与 row-cols 一致,防止单行过宽)
+   ≥ 1024 → 6
+   ≥ 1280 → 8   (PC 默认)
+   ≥ 2560 → 9   (2.5K / 准 4K)
+   ≥ 3840 → 10  (4K)
+   TV 端恒 8 列（见文件末尾 html[data-device="tv"] 覆盖，不随视口变化）
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]) {
@@ -378,22 +381,46 @@
   }
 }
 
+@media (width >= 1024px) {
+  html:not([data-device="app"]) {
+    --card-cols: 6;
+    --row-cols: 6;
+  }
+}
+
 @media (width >= 1280px) {
   html:not([data-device="app"]) {
-    --card-cols: 7;
-    --row-cols: 7;
-    /* 继续观看行：≥1280 桌面 5 列 */
-    --continue-cols: 5;
+    --card-cols: 8;
+    --row-cols: 8;
+    /* 继续观看行：≥1280 桌面 6 列 */
+    --continue-cols: 6;
   }
 }
 
 @media (width >= 1920px) {
   html:not([data-device="app"]) {
-    --card-cols: 7;
-    --row-cols: 7;
-    /* 2K/4K 视口下适当放大 grid 间距，提升卡片透气感 */
+    /* 2K/4K 视口下适当放大 grid 间距（Detail 源网格等仍用 --grid-gap）。
+       卡片网格间距已统一为 --space-lg，列数见下方 2560 / 3840 断点。 */
     --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
     --layout-searchbox-max-w: clamp(17.5rem, 50vw, 110rem);
+  }
+}
+
+@media (width >= 2560px) {
+  html:not([data-device="app"]) {
+    --card-cols: 9;
+    --row-cols: 9;
+    /* 继续观看行（横版 16:9）：≥2560 → 7 列 */
+    --continue-cols: 7;
+  }
+}
+
+@media (width >= 3840px) {
+  html:not([data-device="app"]) {
+    --card-cols: 10;
+    --row-cols: 10;
+    /* 继续观看行（横版 16:9）：≥3840 → 8 列 */
+    --continue-cols: 8;
   }
 }
 
@@ -617,4 +644,17 @@
     --layout-dropdown-max-h:      clamp(23.375rem, 19.5vw,  46.75rem);   /* 374→748 (桌面374, 4K=748) */
 
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TV 端卡片列数 — 恒定，不随视口断点变化（2026-09-03）
+   ---------------------------------------------------------------------------
+   必须放在所有 @media 断点之后：断点规则选择器为 html:not([data-device="app"])，
+   特异性 (0,1,1)；本规则 html[data-device="tv"] 同为 (0,1,1)，靠源码顺序取胜。
+   TV 端 --space-lg 已是 28→56px 的放大曲线，卡片间距无需额外处理。
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-device="tv"] {
+  --card-cols: 8;
+  --row-cols: 8;
+  --continue-cols: 6;
 }

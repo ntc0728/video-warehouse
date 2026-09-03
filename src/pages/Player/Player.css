@@ -758,7 +758,8 @@
 .player-recommend-row {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
-  gap: var(--space-sm);
+  /* 卡片间距统一 --space-lg（2026-09-03） */
+  gap: var(--space-lg);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;

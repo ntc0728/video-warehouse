@@ -78,6 +78,6 @@
 .record-filter-chips--sort {
   display: flex;
   flex-flow: row wrap;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   align-items: center;
 }

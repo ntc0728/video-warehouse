@@ -65,9 +65,11 @@
 
 .skeleton-iptv-grid {
   display: grid;
-  /* 对齐真实 .iptv-channel-grid 列数(2/3/5)，由全局 --iptv-cols 驱动，不使用 auto-fill */
+  /* 对齐真实 .iptv-channel-grid 列数，由全局 --iptv-cols 驱动，不使用 auto-fill
+     （1024–1279→4 / 1280–1439→5 / ≥1440→6 / ≥2560→7 / ≥3840→8，TV 恒 5） */
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
-  gap: var(--space-sm);
+  /* 与真实 .iptv-channel-grid 统一 --space-lg（2026-09-03） */
+  gap: var(--space-lg);
   padding: 0 var(--space-xs);
 }
 
