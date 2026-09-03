@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeroBanner logo 时序 — 现状 vs 窗口预取方案</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f6f7f9; color: #222; padding: 24px; }
+  h1 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+  .panel { background: #fff; border: 1px solid #e3e5e8; border-radius: 12px; padding: 14px 16px 16px; margin-bottom: 14px; }
+  .phead { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin-bottom: 10px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 1px 9px; border-radius: 99px; font-weight: 500; }
+  .b-old { background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
+  .b-new { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
+  .desc { font-size: 12px; color: #555; line-height: 1.6; margin-bottom: 10px; }
+  .stage { border-radius: 10px; background: #141b24; padding: 10px; margin-bottom: 8px; min-height: 66px; display: flex; gap: 8px; }
+  .card { flex: 1; height: 46px; border-radius: 8px; background: #222c3a; display: flex; align-items: center; justify-content: center; position: relative; color: rgba(255,255,255,.88); font-size: 12px; }
+  .card.prev, .card.next { opacity: .62; }
+  .card .no { position: absolute; top: 4px; left: 8px; font-size: 10px; color: rgba(255,255,255,.5); }
+  .card .body { font-weight: 500; }
+  .card.cur { outline: 2px solid rgba(255,255,255,.85); outline-offset: -2px; }
+  .card.flash { outline-color: #ffb02e; animation: blink .6s ease-in-out 2; }
+  @keyframes blink { 50% { background: #2a3a1f; } }
+  .logo { background: rgba(255,255,255,.93); color: #141b24; border-radius: 5px; padding: 2px 9px; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+  .pend { background: transparent; border: 1px dashed rgba(255,255,255,.5); border-radius: 5px; padding: 2px 7px; font-size: 11px; color: rgba(255,255,255,.75); }
+  .title { color: rgba(255,255,255,.85); font-size: 12px; }
+  .meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .chip { font-size: 11px; padding: 2px 9px; border-radius: 99px; background: #eef0f3; border: 1px solid #dfe2e7; color: #444; }
+  .chip.warn { background: #fcebeb; border-color: #f7c1c1; color: #a32d2d; }
+  .chip.ok { background: #e1f5ee; border-color: #9fe1cb; color: #0f6e56; }
+  .chip.dim { color: #999; }
+  .log { font-size: 11px; color: #778; margin-top: 7px; font-family: ui-monospace, Consolas, monospace; min-height: 13px; line-height: 1.5; }
+  .ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+  button { font-size: 12px; padding: 6px 15px; border-radius: 8px; border: 1px solid #d4d7db; background: #fff; cursor: pointer; }
+  button:hover { background: #f2f4f6; }
+  button.primary { background: #185fa5; border-color: #185fa5; color: #fff; }
+  button.primary:hover { background: #0c447c; }
+  .sum { font-size: 12px; color: #555; margin-left: 4px; }
+  .sum b { font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>HeroBanner 标题位 logo — 加载时序对比（模拟，RTT≈600ms）</h1>
+  <div class="sub">同一条 20 项列表、同一总请求量。左：现状（首屏串行前 6，第 7 项起<b>滑动结束才发</b> /images → 先标题后跳 logo、滑动画期间下载解码）。右：方案（焦点 ±3 <b>窗口预取</b> + 空闲补齐 + 像素预热 → 滑入前决策已就绪，<b>滑到即显示 logo</b>）。反复点「下一张」观察两边的差异。</div>
+
+  <div class="panel">
+    <div class="phead">现状（当前实现）<span class="badge b-old">滑到才判断 → 闪变 + 卡</span></div>
+    <div class="stage" id="stOld"></div>
+    <div class="meta">
+      <span class="chip" id="oldPos">焦点 #1</span>
+      <span class="chip" id="oldReq">请求 0</span>
+      <span class="chip" id="oldDone">已决 0/20</span>
+      <span class="chip dim" id="oldFly"></span>
+    </div>
+    <div class="log" id="oldLog"></div>
+  </div>
+
+  <div class="panel">
+    <div class="phead">方案（窗口预取 + 空闲补齐）<span class="badge b-new">滑到即正确形态</span></div>
+    <div class="stage" id="stNew"></div>
+    <div class="meta">
+      <span class="chip" id="newPos">焦点 #1</span>
+      <span class="chip" id="newReq">请求 0</span>
+      <span class="chip" id="newDone">已决 0/20</span>
+      <span class="chip dim" id="newFly"></span>
+    </div>
+    <div class="log" id="newLog"></div>
+  </div>
+
+  <div class="ctl">
+    <button class="primary" id="btnNext">下一张 ▸</button>
+    <button id="btnFast">快滑 ×6 ▸▸</button>
+    <button id="btnPrev">◂ 上一张</button>
+    <button id="btnReset">重置</button>
+    <span class="sum" id="sum"></span>
+  </div>
+
+<script>
+(function () {
+  const TOTAL = 20, RTT = 600, IDLE_MS = 420;
+  const HAS_LOGO = i => i % 5 !== 3;
+  const now = () => new Date().toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+
+  const O = { idx: 0, req: 0, done: new Set(), fly: new Set() };   // 现状
+  const N = { idx: 0, req: 0, done: new Set(), fly: new Set() };   // 方案
+  let idleTimer = null;
+
+  const $ = id => document.getElementById(id);
+  function setLog(id, html) { $(id).innerHTML = html; }
+
+  // ── 现状：滑到 >=7 且未决 → 此刻才发（单飞）；首屏串行 6 已由 reset 预决
+  function stepOld(target) {
+    O.idx = target;
+    if (target >= 6 && !O.done.has(target) && !O.fly.has(target)) {
+      O.fly.add(target); O.req++;
+      setLog('oldLog', now() + ' 滑动到 #' + (target + 1) + ' → 此刻才发 /images…（先渲染文字标题）');
+      paint();
+      setTimeout(() => {
+        O.fly.delete(target); O.done.add(target);
+        setLog('oldLog', now() + ' #' + (target + 1) + ' 决策回来' + (HAS_LOGO(target) ? '：有 logo → 标题突然跳成 LOGO（闪变）+ <img> 现下载解码' : '：无 logo，保留标题'));
+        paint();
+      }, RTT);
+    } else {
+      setLog('oldLog', now() + ' #' + (target + 1) + ' 已在首屏 6 项缓存内，直接显示');
+      paint();
+    }
+  }
+
+  // ── 方案：焦点 ±3 窗口预取 + idle 补齐
+  function windowFire(st, logEl, label, target) {
+    if (target === undefined) target = st.idx;
+    let fired = 0;
+    for (let off = -3; off <= 3; off++) {
+      const i = ((target + off) % TOTAL + TOTAL) % TOTAL;
+      if (st.done.has(i) || st.fly.has(i)) continue;
+      st.fly.add(i); st.req++; fired++;
+      (function (idx) {
+        setTimeout(() => {
+          st.fly.delete(idx); st.done.add(idx);
+          paint();
+        }, RTT);
+      })(i);
+    }
+    if (fired) {
+      const list = [];
+      for (let off = -3; off <= 3; off++) list.push(((target + off) % TOTAL + TOTAL) % TOTAL + 1);
+      setLog(logEl, now() + ' ' + label + ' 窗口 ±3 预取 ' + fired + ' 项：#' + list.join(' #'));
+    }
+    return fired;
+  }
+  function stepNew(target) {
+    const preInFly = N.fly.size;
+    N.idx = target;
+    const fired = windowFire(N, 'newLog', '焦点 #' + (target + 1), target);
+    const dec = N.done.has(target) ? (HAS_LOGO(target) ? 'logo' : 'none') : 'pending';
+    if (dec === 'logo') {
+      setLog('newLog', now() + ' #' + (target + 1) + ' 滑入：决策早已就绪 → 直接显示 LOGO（零请求零闪变）' + (fired ? '，同时后台预取下几格' : ''));
+    }
+    paint();
+  }
+  function idleFill() {
+    if (N.done.size + N.fly.size >= TOTAL) {
+      clearInterval(idleTimer); idleTimer = null;
+      setLog('newLog', now() + ' ✓ 全量决策就绪（' + TOTAL + '/20）：任何滑法都不再遇「未决」');
+      paint();
+      return;
+    }
+    for (let i = 0; i < TOTAL; i++) {
+      if (N.done.has(i) || N.fly.has(i)) continue;
+      N.fly.add(i); N.req++;
+      setLog('newLog', now() + ' [空闲补齐] 串行补 #' + (i + 1) + '…');
+      paint();
+      (function (idx) {
+        setTimeout(() => { N.fly.delete(idx); N.done.add(idx); paint(); }, RTT);
+      })(i);
+      return;
+    }
+  }
+
+  function cardHTML(i, mode, st, isCur) {
+    const dec = st.done.has(i) ? (HAS_LOGO(i) ? 'logo' : 'none') : 'pending';
+    const body = dec === 'logo' ? '<span class="logo">LOGO</span>'
+      : dec === 'none' ? '<span class="title">标题（无 logo）</span>'
+      : isCur ? '<span class="pend">标题（未决）</span>' : '<span class="pend" style="opacity:0"></span>';
+    let cls = 'card' + (isCur ? ' cur' : '') + (st.fly.has(i) ? ' flash' : '');
+    return '<div class="card ' + (isCur ? 'cur' : '') + (st.fly.has(i) ? ' flash' : '') + '"><span class="no">#' + (i + 1) + '</span><span class="body">' + body + '</span></div>';
+  }
+  function paintStage(id, st, mode) {
+    const host = $(id);
+    const p = ((st.idx - 1) % TOTAL + TOTAL) % TOTAL;
+    const c = st.idx;
+    const n = (st.idx + 1) % TOTAL;
+    host.innerHTML = cardHTML(p, mode, st, false) + cardHTML(c, mode, st, true) + cardHTML(n, mode, st, false);
+    $(id + 'Pos').textContent = '焦点 #' + (c + 1);
+    $(id + 'Req').textContent = '请求 ' + st.req;
+    $(id + 'Done').textContent = '已决 ' + st.done.size + '/' + TOTAL;
+    const flyEl = $(id + 'Fly');
+    flyEl.textContent = st.fly.size ? '◉ 在飞 ' + st.fly.size : '';
+  }
+  function paint() {
+    paintStage('stOld', O, 'old');
+    paintStage('stNew', N, 'new');
+    const logO = $('oldLog').innerHTML, logN = $('newLog').innerHTML;
+    $('oldFly').textContent = O.fly.size ? '◉ 在飞 ' + O.fly.size : '';
+    $('newFly').textContent = N.fly.size ? '◉ 在飞 ' + N.fly.size : '';
+    $('sum').innerHTML = '请求总数：<b>现状 ' + O.req + '</b> vs <b>方案 ' + N.req + '</b>（同一批数据，仅时机不同）';
+  }
+
+  function reset() {
+    if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+    O.idx = 0; O.req = 0; O.done = new Set(); O.fly = new Set();
+    N.idx = 0; N.req = 0; N.done = new Set(); N.fly = new Set();
+    // 首屏：现状串行前 6
+    setLog('oldLog', now() + ' 首屏串行预取 #1…#6（每项等前一项完成）…');
+    (function seed(i) {
+      if (i >= 6) { paint(); return; }
+      O.fly.add(i); O.req++;
+      setTimeout(() => { O.fly.delete(i); O.done.add(i); seed(i + 1); paint(); }, RTT / 3 + 30);
+    })(0);
+    // 首屏：方案窗口 ±3
+    windowFire(N, 'newLog', '首屏', 0);
+    setLog('newLog', now() + ' 首屏窗口 ±3 预取 #19 #20 #1 #2 #3 #4…');
+    idleTimer = setInterval(idleFill, IDLE_MS);
+    paint();
+  }
+
+  document.getElementById('btnNext').onclick = function () {
+    const t = (O.idx + 1) % TOTAL;
+    stepOld(t); stepNew(t);
+  };
+  document.getElementById('btnPrev').onclick = function () {
+    const t = ((O.idx - 1) % TOTAL + TOTAL) % TOTAL;
+    stepOld(t); stepNew(t);
+  };
+  document.getElementById('btnFast').onclick = function () {
+    for (let k = 0; k < 6; k++) {
+      const t = (O.idx + 1) % TOTAL;
+      stepOld(t); stepNew(t);
+    }
+  };
+  document.getElementById('btnReset').onclick = reset;
+  reset();
+})();
+</script>
+</body>
+</html>
