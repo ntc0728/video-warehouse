@@ -119,7 +119,8 @@
   transition: transform 0.3s;
 }
 
-/* ---- Cover 左上角角标组（LIVE 在上，检测结果在其下方，纵向排列并保留间距） ---- */
+/* ---- Cover 左上角 LIVE 角标容器（全局 .record-card__live-badge：可看=绿 LIVE /
+       不可看=红「无法观看」；availability 角标已合并进该徽标，2026-09-03） ---- */
 .iptv-card-cover__badges {
   position: absolute;
   top: var(--space-2xs);
@@ -130,33 +131,6 @@
   gap: var(--space-2xs);
   align-items: flex-start;
   pointer-events: none;
-}
-
-/* ---- Availability badge ---- */
-.availability-badge {
-  display: flex;
-  gap: var(--space-2xs);
-  align-items: center;
-  padding: var(--space-3xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-2xs);
-  font-weight: 600;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.availability-badge.available {
-  background-color: var(--color-success);
-  color: white;
-}
-
-.availability-badge.unavailable {
-  background-color: var(--color-error);
-  color: white;
-}
-
-.availability-badge__label {
-  white-space: nowrap;
 }
 
 /* ---- Info area ---- */
@@ -415,10 +389,6 @@
   html:not([data-device="app"]) .iptv-channel-card:hover .iptv-card-cover img {
     transform: scale(1.06);
   }
-
-  html:not([data-device="app"]) .iptv-channel-card:hover .availability-badge {
-    transform: scale(1.15);
-  }
 }
 
 
@@ -463,10 +433,6 @@
 
   html:not([data-device="app"]) .iptv-channel-card:hover .iptv-card-cover img {
     transform: scale(1.06);
-  }
-
-  html:not([data-device="app"]) .iptv-channel-card:hover .availability-badge {
-    transform: scale(1.15);
   }
 }
 

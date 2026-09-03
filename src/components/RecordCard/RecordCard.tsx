@@ -164,7 +164,8 @@ const RecordCard = memo(function RecordCard({
             fallbackVariant="tv"
           />
         )}
-        {!isVideo && <span className={liveBadgeClass}>{liveBadgeText}</span>}
+        {/* LIVE 角标（仅 iptv 记录）：批量勾选框亦在左上角 → 批量模式隐藏本角标，避免重叠 */}
+        {!isVideo && !batchMode && <span className={liveBadgeClass}>{liveBadgeText}</span>}
         {hasProgress && (
           <div className="record-card__progress-overlay">
             <div className="record-card__progress-bar-wrap">

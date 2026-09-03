@@ -118,14 +118,15 @@ test.describe('5.5 频道检测', () => {
 
   test('IPTV-041: 检测结果可用性 badge 展示', async ({ page }) => {
     // ADR-019：检测结果写入 availabilityResults（按组隔离），卡片经 availability prop
-    // 渲染 .availability-badge。这里验证卡片具备可容纳检测结果的 badge 结构。
+    // 驱动 .record-card__live-badge（绿 LIVE / 红「无法观看」；2026-09-03 起原
+    // .availability-badge 已并入该徽标，仅保留一套状态表达）。
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(3000);
 
-    // 频道列表已加载（检测页可见），badge 需手动「检测」后才出现；此处校验频道已渲染
+    // 频道已渲染（LIVE 徽标每张卡恒渲染，红/绿态随检测结果切换）；此处校验卡片结构存在
     const hasChannels = await page.evaluate(() => {
-      return !!document.querySelector('.availability-badge, [class*="iptv-channel"], [class*="channel-card"]');
+      return !!document.querySelector('.record-card__live-badge, [class*="iptv-channel"], [class*="channel-card"]');
     });
     expect(hasChannels).toBeTruthy();
   });

@@ -82,12 +82,15 @@
   background: rgba(0, 0, 0, 0.55);
 }
 
-/* LIVE 角标：置于封面右上角，避免与左上勾选框重叠；
-   颜色由全局 .record-card__live-badge（绿/红）控制 */
+/* LIVE 角标：absolute 于封面左上角（与 IPTV 频道卡一致；批量勾选框亦在左上 →
+   批量模式下由 tsx 隐藏本角标，避免重叠）。曾漏 position 声明 → static 排入
+   .lazy-image-container 之后被 media overflow:hidden 裁掉，历史页 iptv 角标
+   一直不可见（2026-09-03 修复）；颜色由全局 .record-card__live-badge 控制 */
 .history-page .record-card__media .record-card__live-badge {
+  position: absolute;
   top: var(--space-2xs);
-  right: var(--space-2xs);
-  left: auto;
+  left: var(--space-2xs);
+  z-index: 3;
 }
 
 /* 视频底部进度条 */
