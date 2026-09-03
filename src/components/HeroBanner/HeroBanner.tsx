@@ -117,12 +117,17 @@ function recordSwipeData(data: { mainWidth: number; dx: number; threshold: numbe
    /movie|tv/{id}/images 才能拿到。为「滑到即显示、不卡顿不闪变」：
    - 窗口预取：焦点项（displayIndex，含悬停预览）± HERO_LOGO_WINDOW 内的条目在
      滑入可视前就请求决策（与背景图预取同理）——判断提前，滑动期零请求零 setState；
-   - 空闲补齐：窗口就绪后 requestIdleCallback 串行补全剩余条目，任何滑法都不遇「未决」；
+   - 空闲补齐：窗口就绪后按固定间隔缓慢递进补全剩余条目（每步一项、焦点滑动期静默），
+     任何滑法都不遇「未决」；不密集拉取，避免剩余条目请求/解码撞上滑动轮播；
    - 像素文件预热：fetchHeroLogo 拿到 file_path 即 preloadImage 同 URL（渲染 <img>
      直接命中缓存，无「滑到才下载/解码」卡顿）；
    - 模块级缓存 + 进行中去重：同一条目整个会话只请求一次（含「确认无 logo」的 null）；
    - 拿不到 logo 就回落文字标题，不阻塞渲染。 */
 const HERO_LOGO_WINDOW = 3;
+/** 空闲补齐步进最小间隔：缓慢递进、每步一项，避免短时密集请求/解码 */
+const HERO_LOGO_IDLE_STEP_MS = 2000;
+/** 焦点（滑动/轮播切换）变化后的静默期：期间不推进补齐，保证动画期零干扰 */
+const HERO_LOGO_IDLE_COOLDOWN_MS = 1200;
 /** key → logo 文件路径；值为 null 表示该条目确认无 logo，不再重试 */
 const heroLogoCache = new Map<string, string | null>();
 const heroLogoInflight = new Set<string>();
@@ -212,47 +217,50 @@ function useHeroLogos(items: HeroItem[], focusIndex: number, active: boolean) {
     if (pending.length > 0) void Promise.allSettled(pending.map((it) => ensure(it)));
   }, [focusIndex, contentSig, active, ensure]);
 
-  // ② 空闲补齐：窗口外剩余条目低优先级串行补全（requestIdleCallback，退化 setTimeout），
-  //    整条列表决策最终全量就绪，任何滑法（含快速连续滑动）都不再遇「先标题后跳 logo」。
+  // ② 空闲补齐：窗口外剩余条目「缓慢递进」补齐——固定间隔 setTimeout 链式、每步一项。
+  //    不用 requestIdleCallback+timeout 逼迫空闲帧密集推进（那会让剩余条目的 /images 与
+  //    像素预热在几秒内全部打出，撞上轮播/滑动抢主线程与带宽 = 卡）。
+  //    focusIndex 每次变化（滑动/轮播切换）都重建本 effect：间隔被重置 → 静默
+  //    HERO_LOGO_IDLE_COOLDOWN_MS 后才可能推进，滑动活跃期天然零请求零 setState，
+  //    列表静止后按 HERO_LOGO_IDLE_STEP_MS 节奏缓慢补完剩余条目。
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
     let handle: number | null = null;
-    const w = window as unknown as {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (h: number) => void;
-    };
+    // 本 effect 重建时刻 = 焦点/内容刚变化 → 从此刻起先进入静默期
+    const focusAt = Date.now();
     const clearHandle = () => {
-      if (handle === null) return;
-      if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle);
-      else window.clearTimeout(handle);
-      handle = null;
-    };
-    const schedule = (fn: () => void) => {
-      if (cancelled) return;
-      if (typeof w.requestIdleCallback === 'function') {
-        handle = w.requestIdleCallback(() => { handle = null; fn(); }, { timeout: 3000 });
-      } else {
-        handle = window.setTimeout(() => { handle = null; fn(); }, 300);
+      if (handle !== null) {
+        window.clearTimeout(handle);
+        handle = null;
       }
+    };
+    const schedule = (ms: number) => {
+      if (cancelled) return;
+      handle = window.setTimeout(() => { handle = null; step(); }, ms);
     };
     const step = () => {
       if (cancelled) return;
+      // 距最近一次焦点变化不足静默期 → 再推迟，滑动/轮播动画期间不发补齐请求
+      if (Date.now() - focusAt < HERO_LOGO_IDLE_COOLDOWN_MS) {
+        schedule(HERO_LOGO_IDLE_COOLDOWN_MS);
+        return;
+      }
       const item = itemsRef.current.find((it) => {
         const k = heroLogoKey(it);
         return !!k && heroLogoCache.get(k) === undefined && !heroLogoInflight.has(k);
       });
-      if (!item) return; // 全部已决（含确认无 logo）
+      if (!item) return; // 全部已决（含确认无 logo / 文件失败）
       void ensure(item).then(() => {
-        if (!cancelled) schedule(step);
+        if (!cancelled) schedule(HERO_LOGO_IDLE_STEP_MS);
       });
     };
-    schedule(step);
+    schedule(HERO_LOGO_IDLE_STEP_MS);
     return () => {
       cancelled = true;
       clearHandle();
     };
-  }, [contentSig, active, ensure]);
+  }, [focusIndex, contentSig, active, ensure]);
 
   // 文件加载失败（URL 404 / 网络）→ 永久回落该条目文字标题：缓存记 null（不重试），
   // 并从就绪映射移除（一次 state 更新触发回落渲染）。

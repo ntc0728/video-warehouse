@@ -43,7 +43,7 @@
 </head>
 <body>
   <h1>HeroBanner 标题位 logo — 加载时序对比（模拟，RTT≈600ms）</h1>
-  <div class="sub">同一条 20 项列表、同一总请求量。左：现状（首屏串行前 6，第 7 项起<b>滑动结束才发</b> /images → 先标题后跳 logo、滑动画期间下载解码）。右：方案（焦点 ±3 <b>窗口预取</b> + 空闲补齐 + 像素预热 → 滑入前决策已就绪，<b>滑到即显示 logo</b>）。反复点「下一张」观察两边的差异。</div>
+  <div class="sub">同一条 20 项列表、同一总请求量。左：现状（首屏串行前 6，第 7 项起<b>滑动结束才发</b> /images → 先标题后跳 logo、滑动画期间下载解码）。右：方案（焦点 ±3 <b>窗口预取</b> + 像素预热 + <b>空闲缓慢递进补齐</b>——滑动/轮播期间暂停补齐、静止后每 ~1.8s 才补一项 → 滑入前决策已就绪、<b>滑到即显示 logo</b>，且不再密集拉取）。反复点「下一张」观察两边的差异。</div>
 
   <div class="panel">
     <div class="phead">现状（当前实现）<span class="badge b-old">滑到才判断 → 闪变 + 卡</span></div>
@@ -58,7 +58,7 @@
   </div>
 
   <div class="panel">
-    <div class="phead">方案（窗口预取 + 空闲补齐）<span class="badge b-new">滑到即正确形态</span></div>
+    <div class="phead">方案（窗口预取 + 缓慢递进补齐）<span class="badge b-new">滑到即正确形态</span></div>
     <div class="stage" id="stNew"></div>
     <div class="meta">
       <span class="chip" id="newPos">焦点 #1</span>
@@ -79,12 +79,12 @@
 
 <script>
 (function () {
-  const TOTAL = 20, RTT = 600, IDLE_MS = 420;
+  const TOTAL = 20, RTT = 600, IDLE_MS = 1800, COOLDOWN = 1200;
   const HAS_LOGO = i => i % 5 !== 3;
   const now = () => new Date().toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
 
   const O = { idx: 0, req: 0, done: new Set(), fly: new Set() };   // 现状
-  const N = { idx: 0, req: 0, done: new Set(), fly: new Set() };   // 方案
+  const N = { idx: 0, req: 0, done: new Set(), fly: new Set(), lastMove: 0 };   // 方案（lastMove=最近焦点变化时刻）
   let idleTimer = null;
 
   const $ = id => document.getElementById(id);
@@ -133,6 +133,7 @@
   function stepNew(target) {
     const preInFly = N.fly.size;
     N.idx = target;
+    N.lastMove = Date.now();   // 滑动/轮播切换 → 空闲补齐进入静默
     const fired = windowFire(N, 'newLog', '焦点 #' + (target + 1), target);
     const dec = N.done.has(target) ? (HAS_LOGO(target) ? 'logo' : 'none') : 'pending';
     if (dec === 'logo') {
@@ -147,10 +148,12 @@
       paint();
       return;
     }
+    // 滑动/轮播刚切过（静默期内）→ 本轮不补，等静止后再递进
+    if (Date.now() - N.lastMove < COOLDOWN) return;
     for (let i = 0; i < TOTAL; i++) {
       if (N.done.has(i) || N.fly.has(i)) continue;
       N.fly.add(i); N.req++;
-      setLog('newLog', now() + ' [空闲补齐] 串行补 #' + (i + 1) + '…');
+      setLog('newLog', now() + ' [空闲补齐] 滑动静止期缓慢递进补 #' + (i + 1) + '…（间隔 ~1.8s）');
       paint();
       (function (idx) {
         setTimeout(() => { N.fly.delete(idx); N.done.add(idx); paint(); }, RTT);
@@ -191,7 +194,7 @@
   function reset() {
     if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
     O.idx = 0; O.req = 0; O.done = new Set(); O.fly = new Set();
-    N.idx = 0; N.req = 0; N.done = new Set(); N.fly = new Set();
+    N.idx = 0; N.req = 0; N.done = new Set(); N.fly = new Set(); N.lastMove = Date.now();
     // 首屏：现状串行前 6
     setLog('oldLog', now() + ' 首屏串行预取 #1…#6（每项等前一项完成）…');
     (function seed(i) {
