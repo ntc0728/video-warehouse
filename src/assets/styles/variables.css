@@ -497,8 +497,8 @@
   html:not([data-device="app"]) {
     --card-cols: 4;
     --row-cols: 4;
-    /* 继续观看行：768–1279 平板 2 列（原 3） */
-    --continue-cols: 2;
+    /* 继续观看行：768–1279 平板 3 列（用户反馈 2 列稀疏，回调 +1） */
+    --continue-cols: 3;
   }
 }
 
