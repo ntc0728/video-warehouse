@@ -7,9 +7,15 @@
 }
 
 .category-quick-access__inner {
-  display: flex;
+  /* 2026-09-04 用户要求：弃用 flex（原 space-between 平均分配），改 grid 紧凑居中——
+     卡片按固定 gap 成组居中，不再两端撑开。移动端 ≤639 与 app 副本仍为 flex（下方断点覆盖）。
+     safe center：视口不足以容纳全部卡片时自动退化为起始对齐，避免居中溢出裁掉左侧、无法回滚。 */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
   gap: var(--space-md);
-  justify-content: space-between;
+  justify-content: center;
+  justify-content: safe center;
   max-width: var(--layout-content-max-width);
   margin: 0 auto;
   padding-right: var(--space-md);
@@ -64,11 +70,9 @@
 /* ── Icon ────────────────────────────────────────────────────────────── */
 
 .category-quick-access__icon-wrap {
-  /* grid + place-items 居中（2026-09-04 用户要求弃用 flex 居中）：
-     place-items 同时接管 justify/align，SVG 图标在圆形底盘内精确居中，
-     且 grid 不会像 flex 那样对 svg 子项做 shrink/baseline 干预。 */
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   /* 圆形底盘直径 = 圆形按钮 token（原写法 clamp(A, x, A) 上下界相同、中间值恒被夹掉，
      等价于 A，此处直接写明以免误读为「流体尺寸」）。 */
   width: var(--comp-btn-min-width);
