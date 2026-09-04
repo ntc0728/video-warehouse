@@ -20,8 +20,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: clamp(18rem, 16rem + 10vw, 28rem);
-  max-height: min(50vh, clamp(28rem, 26rem + 10vw, 40rem));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  min-height: clamp(288px, 256px + 10vw, 448px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  max-height: min(50vh, clamp(448px, 416px + 10vw, 640px));
   margin: 0 calc(-1 * var(--space-sm));
   background: rgba(0, 0, 0, 0.92);
   overflow: hidden;
@@ -82,7 +84,8 @@
   gap: var(--space-lg);
   margin-top: var(--space-3xl);
   padding: var(--space-xl);
-  padding-right: clamp(10rem, 14vw + 3rem, 14rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  padding-right: clamp(160px, 14vw + 48px, 224px);
 }
 
 .person-info {
@@ -93,7 +96,8 @@
 }
 
 .person-info--no-bio {
-  margin-top: calc(clamp(9rem, 12vw + 3rem, 11rem) - var(--space-lg));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  margin-top: calc(clamp(144px, 12vw + 48px, 176px) - var(--space-lg));
 }
 
 .person-avatar {
@@ -101,7 +105,8 @@
   top: var(--space-xl);
   right: var(--space-xl);
   flex-shrink: 0;
-  width: clamp(9rem, 12vw + 3rem, 11rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(144px, 12vw + 48px, 176px);
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -373,15 +378,18 @@
    ============================================================ */
 
 [data-device="tv"] .person-hero {
-  min-height: clamp(22rem, 20rem + 8vw, 32rem);
-  max-height: min(55vh, clamp(32rem, 30rem + 8vw, 48rem));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  min-height: clamp(352px, 320px + 8vw, 512px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  max-height: min(55vh, clamp(512px, 480px + 8vw, 768px));
 }
 [data-device="tv"] .person-hero.person-hero--expanded {
   max-height: none;
 }
 
 [data-device="tv"] .person-avatar {
-  width: clamp(9rem, 10vw + 4rem, 14rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(144px, 10vw + 64px, 224px);
 }
 
 [data-device="tv"] .person-name {

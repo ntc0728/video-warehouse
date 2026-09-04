@@ -66,7 +66,8 @@
     var(--color-text-tertiary) 100%
   );
   color: var(--color-text);
-  font-size: clamp(var(--text-2xl), 0.525rem + 1.083vw, var(--text-3xl));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  font-size: clamp(var(--text-2xl), 8.4px + 1.083vw, var(--text-3xl));
   font-weight: 800;
   letter-spacing: -0.03em;
   animation: app-loading-fade-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
@@ -90,7 +91,8 @@
 /* ── 进度条：颜色与全局滚动条悬停色一致 ──────────────────────── */
 .app-loading__progress {
   position: relative;
-  width: clamp(var(--layout-channel-num-w), 0.892rem + 8.077vw, var(--layout-popover-wide-min-w));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(var(--layout-channel-num-w), 14.272px + 8.077vw, var(--layout-popover-wide-min-w));
   height: var(--space-2xs);
   border-radius: var(--radius-full);
   background: var(--color-border-light);
@@ -210,7 +212,8 @@
 }
 
   html:not([data-device="app"]) .app-loading__brand-name {
-  font-size: clamp(var(--text-3xl), 2rem + 1.667vw, var(--text-3xl));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  font-size: clamp(var(--text-3xl), 32px + 1.667vw, var(--text-3xl));
 }
 
   html:not([data-device="app"]) .app-loading__brand-sub {

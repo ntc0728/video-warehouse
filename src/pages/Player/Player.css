@@ -597,7 +597,8 @@
 
 .player-detail-poster {
   flex-shrink: 0;
-  width: clamp(8rem, 5rem + 6vw, 22rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(128px, 80px + 6vw, 352px);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }

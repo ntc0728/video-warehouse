@@ -200,7 +200,8 @@ body.skin-transitioning .skin-btn.active {
 }
 
 .overscan-slider {
-  width: clamp(7rem, 30vw, 11rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(112px, 30vw, 176px);
 }
 
 /* 设置区块标题（含图标）：inline-flex 水平居中，桌面端放大至 text-xl */

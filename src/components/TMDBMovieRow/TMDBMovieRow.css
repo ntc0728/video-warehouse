@@ -192,7 +192,8 @@
 }
 
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-badge--tl {
-  width: clamp(2.5rem, 6vw, 5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(40px, 6vw, 80px);
 }
 
 @keyframes tmdb-skeleton-pulse {

@@ -295,7 +295,8 @@
 .hero-banner__title {
   margin: 0;
   color: #fff;
-  font-size: clamp(var(--text-2xl), 3.2vw + 0.5rem, var(--text-3xl));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  font-size: clamp(var(--text-2xl), 3.2vw + 8px, var(--text-3xl));
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -528,7 +529,8 @@
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
 .hero-banner--tv .hero-banner__title {
-  font-size: clamp(var(--text-3xl), 3vw + 1rem, 2.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  font-size: clamp(var(--text-3xl), 3vw + 16px, 40px);
 }
 
 /* ── 桌面端（缩略图列可见）：外框圆角 ──

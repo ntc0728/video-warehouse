@@ -644,7 +644,8 @@
 }
 
 .up-more-popover {
-  min-width: clamp(7.5rem, 10vw, 9rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  min-width: clamp(120px, 10vw, 144px);
   padding: var(--space-sm);
   z-index: 95;
   transform: none;
@@ -1337,8 +1338,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: clamp(3rem, 3rem + 1.5vw, 6rem);
-  height: clamp(3rem, 3rem + 1.5vw, 6rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(48px, 48px + 1.5vw, 96px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(48px, 48px + 1.5vw, 96px);
   border: none;
   border-radius: 50%;
   background: transparent;

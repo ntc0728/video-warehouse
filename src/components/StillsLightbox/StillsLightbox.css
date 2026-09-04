@@ -34,8 +34,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: clamp(2.5rem, 2rem + 1vw, 3rem);
-  height: clamp(2.5rem, 2rem + 1vw, 3rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(40px, 32px + 1vw, 48px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(40px, 32px + 1vw, 48px);
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
@@ -76,9 +78,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: clamp(2.75rem, 2rem + 2vw, 3.5rem);
-  height: clamp(2.75rem, 2rem + 2vw, 3.5rem);
-  margin-top: clamp(-1.75rem, -1rem + -1vw, -1.75rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(44px, 32px + 2vw, 56px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(44px, 32px + 2vw, 56px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  margin-top: clamp(-28px, -16px + -1vw, -28px);
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
@@ -109,7 +114,8 @@
   gap: var(--space-sm);
   width: 100%;
   height: 100%;
-  padding: clamp(4rem, 3rem + 2vw, 6rem) clamp(1.5rem, 1rem + 3vw, 4rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  padding: clamp(64px, 48px + 2vw, 96px) clamp(24px, 16px + 3vw, 64px);
   overflow: hidden;
 }
 
@@ -172,8 +178,10 @@
 
 .stills-lightbox__thumb {
   flex: 0 0 auto;
-  width: clamp(3rem, 2rem + 3vw, 4.5rem);
-  height: clamp(2rem, 1.3rem + 2vw, 3rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(48px, 32px + 3vw, 72px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(32px, 20.8px + 2vw, 48px);
   padding: 0;
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
@@ -201,18 +209,24 @@
 /* ── TV 端 ──────────────────────────────────────── */
 
 [data-device="tv"] .stills-lightbox__nav {
-  width: clamp(3.5rem, 2.5rem + 2vw, 4rem);
-  height: clamp(3.5rem, 2.5rem + 2vw, 4rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(56px, 40px + 2vw, 64px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(56px, 40px + 2vw, 64px);
 }
 
 [data-device="tv"] .stills-lightbox__close {
-  width: clamp(3rem, 2rem + 2vw, 3.5rem);
-  height: clamp(3rem, 2rem + 2vw, 3.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(48px, 32px + 2vw, 56px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(48px, 32px + 2vw, 56px);
 }
 
 [data-device="tv"] .stills-lightbox__thumb {
-  width: clamp(4rem, 3rem + 2vw, 5.5rem);
-  height: clamp(2.5rem, 1.8rem + 1.5vw, 3.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(64px, 48px + 2vw, 88px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(40px, 28.8px + 1.5vw, 56px);
 }
 
 /* ── Mobile ────────────────────────────────────── */
