@@ -205,7 +205,7 @@
   --comp-btn-min-height: calc(clamp(34px, 17.461px + 4.411vw, 51.333px) * var(--ui-scale)); /* 34→60 封面/海报按钮 */
   --comp-tab-height: calc(clamp(28px, 17.822px + 2.714vw, 38.667px) * var(--ui-scale)); /* 28→44 筛选/标签 tab */
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
-  --comp-input-height: calc(clamp(40px, 28.55px + 3.053vw, 52px) * var(--ui-scale)); /* 40→58 输入框高度 */
+  --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale)); /* 40→48 输入框高度（2026-09-04 降 MAX：旧 58 为 R2 遗留，桌面渲染过大） */
   /* 顶部导航 SearchBox 专用矮曲线（40→48，契约 375→1920）：宿主 --header-height 是 R3
      （60→76，不乘 --ui-scale），全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏。
      同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。 */
@@ -382,7 +382,7 @@
     --badge-size: calc(clamp(18px, 15.333px + 0.347vw, 22px) * var(--ui-scale));
     --comp-btn-min-height: calc(clamp(51.333px, 45.556px + 0.752vw, 60px) * var(--ui-scale));
     --comp-btn-min-width: calc(clamp(53.333px, 48.889px + 0.579vw, 60px) * var(--ui-scale));
-    --comp-input-height: calc(clamp(52px, 48px + 0.521vw, 58px) * var(--ui-scale));
+    --comp-input-height: calc(clamp(45.333px, 43.555px + 0.2315vw, 48px) * var(--ui-scale));
     --comp-input-min-w: calc(clamp(260px, 233.333px + 3.472vw, 300px) * var(--ui-scale));
     --comp-tab-height: calc(clamp(38.667px, 35.111px + 0.463vw, 44px) * var(--ui-scale));
     --comp-thumb-size: calc(clamp(23.333px, 20.222px + 0.405vw, 28px) * var(--ui-scale));
@@ -699,7 +699,7 @@
   --comp-btn-min-height: clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
   --comp-tab-height:     clamp(2.75rem, 2.2917vw, 5.5rem);     /* 44→88   (桌面44, 4K=88) */
   --comp-btn-min-width:  clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
-  --comp-input-height:   clamp(3.625rem, 3.0208vw, 7.25rem);   /* 58→116  (桌面58, 4K=116) */
+  --comp-input-height:   clamp(3.625rem, 3.0208vw, 7.25rem);   /* 58→116 (TV 自有契约，与桌面 40→48 解耦；TV 导航栏 200px 级) */
   --comp-input-min-w:    clamp(18.75rem, 15.625vw, 37.5rem);   /* 300→600 (桌面300, 4K=600) */
   --comp-thumb-size:     clamp(1.75rem, 1.4583vw, 3.5rem);     /* 28→56   (桌面28, 4K=56) */
   --switch-track-height: clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
