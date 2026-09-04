@@ -55,6 +55,15 @@
   padding: var(--space-sm) 0;
 }
 
+/* 阶段 C：与真实网格同构（auto-fill + 居中），否则骨架与真实卡宽不一致跳变。
+   约束与 VideoCard.css 完全一致（≥1280、排除 app/tv、auto-fill 非 auto-fit）。 */
+@media (width >= 1280px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .skeleton-grid {
+    grid-template-columns: repeat(auto-fill, var(--card-size));
+    justify-content: center;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    IPTV 变体骨架（v4 改造）
    ------------------------------------------------------------------------

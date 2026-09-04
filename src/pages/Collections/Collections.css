@@ -7,7 +7,11 @@
 
 .collection-content {
   flex: 0 0 auto;
+  /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
+  width: 100%;
+  max-width: var(--layout-content-max-width);
   min-height: auto;
+  margin-inline: auto;
 }
 
 /* ── 综合 tab 分区（影视竖版海报墙 / 直播原项目 IPTV 卡） ── */

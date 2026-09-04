@@ -1505,6 +1505,14 @@
   padding: 0 var(--space-sm);
 }
 
+/* 阶段 C：推荐位网格同竖向网格封顶（≥1280 auto-fill + 居中，排除 app/tv） */
+@media (width >= 1280px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-recommend-row {
+    grid-template-columns: repeat(auto-fill, var(--card-size));
+    justify-content: center;
+  }
+}
+
 /* ── Not Found ─────────────────────────────────── */
 
 .detail-not-found {

@@ -6,6 +6,10 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
+  /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
+  width: 100%;
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
   background: var(--color-background);
   color: var(--color-text);
 }

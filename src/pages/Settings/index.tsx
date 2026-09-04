@@ -145,7 +145,7 @@ export default function SettingsPage() {
   const renderTab = (tab: SettingsTabKey) => {
     switch (tab) {
       case 'appearance':
-        return <AppearanceTab theme={appearance.theme} setTheme={appearance.setTheme} skin={appearance.skin} setSkin={appearance.setSkin} tvMode={appearance.tvMode} setTvMode={appearance.setTvMode} tvOverscan={appearance.tvOverscan} setTvOverscan={appearance.setTvOverscan} />;
+        return <AppearanceTab theme={appearance.theme} setTheme={appearance.setTheme} skin={appearance.skin} setSkin={appearance.setSkin} tvMode={appearance.tvMode} setTvMode={appearance.setTvMode} tvOverscan={appearance.tvOverscan} setTvOverscan={appearance.setTvOverscan} uiScale={appearance.uiScale} setUiScale={appearance.setUiScale} />;
       case 'video':
         return (
           <VideoTab

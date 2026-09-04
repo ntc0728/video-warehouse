@@ -101,6 +101,7 @@ export default function AppLayout() {
   }, []);
 
   const tvOverscan = useSettingsStore((s) => s.tvOverscan);
+  const uiScale = useSettingsStore((s) => s.uiScale);
 
   useEffect(() => {
     const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
@@ -129,6 +130,17 @@ export default function AppLayout() {
     root.style.setProperty('--safe-area-x', `${v}vw`);
     root.style.setProperty('--safe-area-y', `${v}vh`);
   }, [tvOverscan]);
+
+  // 界面缩放手动档（阶段 C）：>0 写 <html> 内联 --ui-scale（内联优先于 @media 自动档）；
+  // 0 = 自动 → 移除内联，交回 @media（width≥1920 且 dpr<1.5）判定。
+  useEffect(() => {
+    const root = document.documentElement;
+    if (typeof uiScale === 'number' && uiScale > 0) {
+      root.style.setProperty('--ui-scale', String(uiScale));
+    } else {
+      root.style.removeProperty('--ui-scale');
+    }
+  }, [uiScale]);
 
   // TV 方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）
   useSpatialNavigation({ containerRef: appShellRef, isTV });

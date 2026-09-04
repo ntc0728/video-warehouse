@@ -893,13 +893,15 @@ main {
 
 @media (width >= 2560px) {
   html:not([data-device="app"]) {
-    --iptv-cols: 7;
+    /* 阶段 C：与 --card-cols 对齐，≥1440 起恒 6 列（撤销 7 递增） */
+    --iptv-cols: 6;
   }
 }
 
 @media (width >= 3840px) {
   html:not([data-device="app"]) {
-    --iptv-cols: 8;
+    /* 阶段 C：同上（撤销 8 递增） */
+    --iptv-cols: 6;
   }
 }
 

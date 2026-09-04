@@ -51,6 +51,7 @@ export function useSettingsState() {
     skipOutroDuration, setSkipOutroDuration,
     autoPlay, setAutoPlay, skin, setSkin,
     tvMode, setTvMode, tvOverscan, setTvOverscan,
+    uiScale, setUiScale,
   } = useSettingsStore();
 
   const [showApiInput, setShowApiInput] = useState(false);
@@ -173,7 +174,7 @@ export function useSettingsState() {
   }, []);
 
   return {
-    appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan },
+    appearance: { theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan, uiScale, setUiScale },
     video: {
       tmdbAccessToken, setTMDBToken,
       tmdbLanguage, setTMDBLanguage,
