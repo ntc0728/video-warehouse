@@ -206,6 +206,10 @@
   --comp-tab-height: calc(clamp(28px, 17.822px + 2.714vw, 38.667px) * var(--ui-scale)); /* 28→44 筛选/标签 tab */
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
   --comp-input-height: calc(clamp(40px, 28.55px + 3.053vw, 52px) * var(--ui-scale)); /* 40→58 输入框高度 */
+  /* 顶部导航 SearchBox 专用矮曲线（40→48，契约 375→1920）：宿主 --header-height 是 R3
+     （60→76，不乘 --ui-scale），全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏。
+     同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。 */
+  --comp-input-height-header: clamp(40px, 38.058px + 0.5178vw, 48px);
   --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
   /* Switch 开关 */
@@ -259,7 +263,9 @@
      原 JS 内 OSD_MIN_WIDTH=360 / OSD_MAX_WIDTH=1600 硬编码已移除（实测对最终宽度无影响），宽度改由本 token 纯驱动。
      TV 端在 .up-platform-tv 内以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=1600 → 1080p=1600、4K=3200）。 */
   --layout-osd-max-width: calc(clamp(320px, -367.023px + 183.206vw, 1040px) * var(--ui-scale));
-  --layout-content-max-width: clamp(320px, 116.947px + 54.147vw, 2200px); /* 内容区最大宽度 */
+  /* 内容区最大宽度：移动端(<768)不约束（100%）——旧单条 clamp 曲线 375→320px 会把
+     移动端内容钳到比视口还窄；桌面曲线移至段2（≥768）块，TV 由文件末 html[data-device="tv"] 恒 MIN 覆盖。 */
+  --layout-content-max-width: 100%;
   --layout-hero-height: calc(clamp(200px, 9.16px + 50.891vw, 400px) * var(--ui-scale)); /* 首页 Hero 高度 */
   --layout-hero-height-mobile: calc(clamp(280px, 241.832px + 10.178vw, 320px) * var(--ui-scale)); /* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
@@ -396,6 +402,7 @@
     --layout-cast-avatar: calc(clamp(80px, 74.667px + 0.694vw, 88px) * var(--ui-scale));
     --layout-channel-num-w: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1177.778px + 11.574vw, 1400px) * var(--ui-scale));
+    --layout-content-max-width: clamp(320px, 116.947px + 54.147vw, 2200px); /* 内容区最大宽度（仅桌面 ≥768 生效，移动端 :root=100% 不约束） */
     --layout-datepicker-width: calc(clamp(420px, 393.333px + 3.472vw, 460px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 161.52px + 1.588vw, 192px) * var(--ui-scale));
     --layout-detail-poster-w: calc(clamp(277.333px, 227.556px + 6.481vw, 352px) * var(--ui-scale));
