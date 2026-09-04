@@ -402,7 +402,7 @@
     --layout-cast-avatar: calc(clamp(80px, 74.667px + 0.694vw, 88px) * var(--ui-scale));
     --layout-channel-num-w: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1177.778px + 11.574vw, 1400px) * var(--ui-scale));
-    --layout-content-max-width: clamp(320px, 116.947px + 54.147vw, 2200px); /* 内容区最大宽度（仅桌面 ≥768 生效，移动端 :root=100% 不约束） */
+    --layout-content-max-width: min(100%, 2200px); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线 */
     --layout-datepicker-width: calc(clamp(420px, 393.333px + 3.472vw, 460px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 161.52px + 1.588vw, 192px) * var(--ui-scale));
     --layout-detail-poster-w: calc(clamp(277.333px, 227.556px + 6.481vw, 352px) * var(--ui-scale));
