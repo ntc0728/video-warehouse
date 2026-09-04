@@ -64,9 +64,11 @@
 /* ── Icon ────────────────────────────────────────────────────────────── */
 
 .category-quick-access__icon-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  /* grid + place-items 居中（2026-09-04 用户要求弃用 flex 居中）：
+     place-items 同时接管 justify/align，SVG 图标在圆形底盘内精确居中，
+     且 grid 不会像 flex 那样对 svg 子项做 shrink/baseline 干预。 */
+  display: grid;
+  place-items: center;
   /* 圆形底盘直径 = 圆形按钮 token（原写法 clamp(A, x, A) 上下界相同、中间值恒被夹掉，
      等价于 A，此处直接写明以免误读为「流体尺寸」）。 */
   width: var(--comp-btn-min-width);
