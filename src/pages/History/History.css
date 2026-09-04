@@ -299,10 +299,10 @@
      1024px ≤ 视口 < 1440px → 4 列
      1440px ≤ 视口 < 1920px → 5 列
      1920px ≤ 视口 < 2560px → 6 列
-     2560px ≤ 视口 < 3840px → 7 列
-     3840px ≤ 视口          → 8 列
+     ≥2560px（超宽屏）→ 封顶 5 列 + 容器锁宽（2560→1600px、3440→1500px，居中）→ 卡片宽 ~320/~300px
      TV（html[data-device="tv"]）→ 恒 5 列（覆盖以上全部，见本段末）
-   每列 minmax(0,1fr) 平均分配整行宽度 → 无侧边空白、卡片随视口等比放大。 */
+   每列 minmax(0,1fr) 平均分配整行宽度 → 无侧边空白、卡片随视口等比放大；
+   超宽屏不再继续 +1 列（原 7/8 列方案已撤销，2026-09-04 落地），避免大显示器近距离观看 UI 元素过大。 */
 .history-content .history-group-body .history-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr)); /* <480px：1 列 */
@@ -333,14 +333,27 @@
     grid-template-columns: repeat(6, minmax(0, 1fr)); /* 1920–2559：6 列 */
   }
 }
+/* 超宽视口封顶 5 列（2026-09-04 落地，参考 demo 的 @media min-width:2560→1600px、3440→1500px）：
+   大显示器（24/27/32 寸）近距离观看 UI 元素过大 → 网格封顶 5 列 + 容器锁宽居中，
+   卡片宽控制在 ~320px（2560）/ ~300px（3440），不再随视口无限放大。 */
 @media (min-width: 2560px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 2560–3839：7 列 */
+    grid-template-columns: repeat(5, minmax(0, 1fr)); /* ≥2560 超宽屏封顶 5 列（撤销原 7 列） */
+  }
+  .history-content .history-group-body {
+    max-width: 1600px; /* 2560 视口 → 容器锁 1600px 居中 */
+    margin-left: auto;
+    margin-right: auto;
   }
 }
-@media (min-width: 3840px) {
+@media (min-width: 3440px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr)); /* ≥3840：8 列 */
+    grid-template-columns: repeat(5, minmax(0, 1fr)); /* ≥3440 仍封顶 5 列（撤销原 8 列） */
+  }
+  .history-content .history-group-body {
+    max-width: 1500px; /* 3440 视口 → 容器锁 1500px 居中 */
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 /* TV（data-device="tv"）恒 5 列：选择器带 html[data-device] → 特异性高于纯类断点，

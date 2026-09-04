@@ -101,9 +101,11 @@
   @media (min-width:1920px){
     .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
   @media (min-width:2560px){
-    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(7,minmax(0,1fr))}}
-  @media (min-width:3840px){
-    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
+    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .app .history-content .history-group-body{max-width:1600px;margin-left:auto;margin-right:auto}}
+  @media (min-width:3440px){
+    .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .app .history-content .history-group-body{max-width:1500px;margin-left:auto;margin-right:auto}}
   html[data-device="tv"] .app .history-content .history-group-body .history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 
   /* ═══ 内嵌真实 CSS 2/4：index.css 全局 record-card 类 ═══
@@ -283,7 +285,7 @@
       </div>
     </div>
   </div>
-  <div class="stage-foot">列数断点阶梯（真实 History.css）：默认 1 → ≥480px:2 → ≥768px:3 → ≥1024px:4 → ≥1440px:5 → ≥1920px:6 → ≥2560px:7 → ≥3840px:8；TV（data-device=tv）恒 5 列。</div>
+  <div class="stage-foot">列数断点阶梯（真实 History.css，2026-09-04 落地超宽封顶）：默认 1 → ≥480:2 → ≥768:3 → ≥1024:4 → ≥1440:5 → 1920–2559:6 → <strong>≥2560 封顶 5 列 + 容器锁 1600px</strong> → ≥3440 容器锁 1500px；TV（data-device=tv）恒 5 列。</div>
 </div>
 
 <!-- ═════════════ 舞台：移动端横版（iframe srcdoc 视口固定 375，触发 @media (width<480px)） ═════════════ -->

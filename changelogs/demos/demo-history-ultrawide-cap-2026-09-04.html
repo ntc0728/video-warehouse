@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>历史页超宽视口列数封顶 5 列（2026-09-04 落地）验证 Demo</title>
+<style>
+  :root{
+    --space-lg:20px;
+    --radius-md:8px;
+    --color-bg:#141518; --color-surface:#1f1f1f; --color-border:#2b2b2b;
+    --color-text:#fff; --color-text-tertiary:#777; --color-primary:#6366f1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#0f1012;color:var(--color-text);
+    font:400 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .bar{position:sticky;top:0;z-index:20;background:rgba(20,21,24,.95);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--color-border);padding:12px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .bar h1{margin:0;font-size:15px;font-weight:700}
+  .bar h1 small{display:block;font-weight:400;font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+  .btn{border:1px solid var(--color-border);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;
+    background:#1f1f1f;color:var(--color-text)}
+  .btn.on{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
+  .tag{font-size:11px;color:var(--color-text-tertiary);background:#1f1f1f;border:1px solid var(--color-border);
+    border-radius:999px;padding:3px 10px}
+  .hint{max-width:1720px;margin:14px auto 0;padding:0 20px;color:var(--color-text-tertiary);font-size:12.5px}
+  .hint b{color:var(--color-text)}
+
+  /* 模拟显示器外框：内部宽度 = 选中视口，外层横向滚动承载超宽 */
+  .scroll{overflow:auto;padding:18px 20px 40px}
+  .compare{display:flex;gap:24px;align-items:flex-start}
+  .monitor{border:2px solid #3a3a3a;border-radius:12px;padding:14px;background:#0b0c0e;flex:0 0 auto}
+  .monitor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+    font-size:12px;color:var(--color-text-tertiary)}
+  .monitor-head .mode{font-weight:700;font-size:13px;color:var(--color-text)}
+  .monitor-head .mode.after{color:#49aa19}
+  .monitor-head .mode.before{color:#ef4444}
+  .frame{position:relative;background:var(--color-bg);border-radius:6px;overflow:hidden}
+  .frame-inner{padding:14px}
+  .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .badge{font-size:11px;background:#1f1f1f;border:1px solid var(--color-border);border-radius:6px;padding:4px 8px}
+  .badge b{color:var(--color-primary)}
+  .badge.warn b{color:#ef4444}
+  .badge.ok b{color:#49aa19}
+
+  /* ── 真实 RecordCard.css（history-page 作用域）镜像 ── */
+  .history-page .record-card{position:relative;display:flex;flex-direction:column;align-items:stretch;
+    gap:8px;padding:10px;border:1px solid #2b2b2b;border-radius:var(--radius-md);background:var(--color-surface);
+    text-decoration:none;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer}
+  .history-page .record-card__media{position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;
+    background:linear-gradient(135deg,#2a3a52,#101820);overflow:hidden}
+  .history-page .record-card__media .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:#5b6b85}
+  .history-page .record-card__title{margin:0;color:var(--color-text);font-size:14px;font-weight:600;line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .history-page .record-card__meta{display:flex;align-items:center;gap:8px;color:var(--color-text-tertiary);
+    font-size:12px;white-space:nowrap;overflow:hidden}
+  .history-page .record-card__meta .b{flex-shrink:0;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
+  .history-page .record-card__meta .b.v{background:rgba(99,102,241,.14);color:var(--color-primary)}
+  .history-page .record-card__meta .t{margin-left:auto;flex-shrink:0;font-weight:500}
+
+  .legend{display:flex;gap:18px;margin:0 20px;color:var(--color-text-tertiary);font-size:12px;flex-wrap:wrap}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>历史页超宽视口列数封顶 5 列（2026-09-04 落地）<small>大显示器(24/27/32寸)近距离观看 UI 元素过大 → ≥2560 封顶 5 列 + 容器锁宽居中（2560→1600px、3440→1500px）</small></h1>
+  <span style="display:flex;gap:6px">
+    <button class="btn" data-vp="2560">模拟视口 2560px</button>
+    <button class="btn" data-vp="3440">模拟视口 3440px</button>
+  </span>
+  <span class="tag">左右对照：红=旧(7/8 列铺满) · 绿=新(封顶 5 列 + 锁宽)</span>
+</div>
+
+<div class="hint">
+  <b>说明：</b>本 demo 用外层固定宽度模拟超宽显示器（非真实设备，真实观感仍需你在真机验证）。每个监视器内渲染 16 张真实结构记录卡，
+  下方徽标实时显示「列数 / 容器宽 / 单卡宽 / 两侧留白」，证明落地后超宽屏卡片不再无限放大。
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#ef4444"></span>旧方案：≥2560 仍 7 列、≥3840 8 列，卡片铺满整屏 → 单卡可达 360px+（大屏观感过大）</span>
+  <span><span class="dot" style="background:#49aa19"></span>新方案：≥2560 封顶 5 列 + 容器锁 1600/1500px 居中 → 单卡 ~320/300px，两侧留白</span>
+</div>
+
+<div class="scroll">
+  <div class="compare" id="compare">
+    <div class="monitor">
+      <div class="monitor-head"><span class="mode before">BEFORE · 旧 7/8 列铺满</span><span id="vpLabelB">2560px</span></div>
+      <div class="frame" id="frameB"><div class="frame-inner">
+        <div class="badge-row" id="badgesB"></div>
+        <div class="history-page"><div class="history-grid" id="gridB"></div></div>
+      </div></div>
+    </div>
+    <div class="monitor">
+      <div class="monitor-head"><span class="mode after">AFTER · 新 封顶 5 列 + 锁宽</span><span id="vpLabelA">2560px</span></div>
+      <div class="frame" id="frameA"><div class="frame-inner">
+        <div class="badge-row" id="badgesA"></div>
+        <div class="history-page"><div class="history-grid" id="gridA"></div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 列数阶梯：旧方案（未封顶）/ 新方案（≥2560 封顶 5 + 锁宽） */
+function colsBefore(W){
+  return W>=3840?8 : W>=2560?7 : W>=1920?6 : W>=1440?5 : W>=1024?4 : W>=768?3 : W>=480?2 : 1;
+}
+function colsAfter(W){
+  if(W<2560) return colsBefore(W);
+  return 5;
+}
+function containerAfter(W){ return W>=3440?1500:1600; }
+
+const GAP = 20; // demo 固定间距，对应 --space-lg
+
+function cardHTML(i){
+  return `<a class="record-card" href="javascript:void(0)">
+    <span class="record-card__media"><span class="ph">封面 ${i}</span></span>
+    <p class="record-card__title">测试标题 ${i} · 超宽屏历史记录卡片列数封顶验证</p>
+    <span class="record-card__meta"><span class="b v">视频</span><span class="b" style="background:rgba(0,0,0,.55);color:#fff">采集站A</span><span class="t">今天 18:30</span></span>
+  </a>`;
+}
+const N=16;
+const gridB=document.getElementById('gridB'), gridA=document.getElementById('gridA');
+gridB.innerHTML=Array.from({length:N},(_,i)=>cardHTML(i+1)).join('');
+gridA.innerHTML=gridB.innerHTML;
+
+function applyMode(W){
+  // BEFORE：铺满整屏
+  const cB=colsBefore(W);
+  const contB=W;
+  gridB.style.gridTemplateColumns=`repeat(${cB},minmax(0,1fr))`;
+  gridB.style.maxWidth='none';
+  gridB.style.margin='0';
+  document.getElementById('frameB').style.width=W+'px';
+  document.getElementById('vpLabelB').textContent=W+'px';
+  const cardB=Math.round((contB-GAP*(cB-1))/cB);
+  document.getElementById('badgesB').innerHTML=
+    `<span class="badge">列数 <b>${cB}</b></span>`+
+    `<span class="badge">容器 <b>${contB}px</b></span>`+
+    `<span class="badge">单卡 <b>${cardB}px</b></span>`+
+    `<span class="badge">两侧留白 <b>0px</b></span>`;
+
+  // AFTER：封顶 5 + 锁宽
+  const cA=colsAfter(W);
+  const contA=containerAfter(W);
+  gridA.style.gridTemplateColumns=`repeat(${cA},minmax(0,1fr))`;
+  gridA.style.maxWidth=contA+'px';
+  gridA.style.margin='0 auto';
+  document.getElementById('frameA').style.width=W+'px';
+  document.getElementById('vpLabelA').textContent=W+'px';
+  const cardA=Math.round((contA-GAP*(cA-1))/cA);
+  const sideW=W-contA;
+  document.getElementById('badgesA').innerHTML=
+    `<span class="badge ok">列数 <b>${cA}</b></span>`+
+    `<span class="badge ok">容器 <b>${contA}px</b></span>`+
+    `<span class="badge ok">单卡 <b>${cardA}px</b></span>`+
+    `<span class="badge ok">两侧留白 <b>${sideW}px</b></span>`;
+}
+applyMode(2560);
+
+document.querySelectorAll('.bar .btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.bar .btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    applyMode(parseInt(b.dataset.vp,10));
+  });
+});
+document.querySelector('.bar .btn[data-vp="2560"]').classList.add('on');
+</script>
+</body>
+</html>
