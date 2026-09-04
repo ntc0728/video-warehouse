@@ -28,6 +28,9 @@
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
+  /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
   /* 分类切换 SWR 渲染层（2026-08-20）：内容常驻不透明，旧内容保留至新数据就绪后
      原位替换，不再做亮度凹陷（消除整片闪一下）。
      animation-fill-mode: none：解除 page-transition-enter 动画（both fill）在结束后

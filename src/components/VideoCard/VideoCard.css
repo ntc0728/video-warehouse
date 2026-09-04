@@ -18,6 +18,16 @@
   animation: video-card-grid-fade 0.3s ease both;
 }
 
+/* ≥1280：卡片固定宽 + 列数自适应 + 剩余空间居中（阶段 C 卡片封顶）。
+   <1280 保留 --card-cols 阶梯（窄视口 333px 单列会溢出）；必须 auto-fill
+   （auto-fit 会折叠空轨道拉伸卡片、破坏封顶）；排除 app/tv。 */
+@media (width >= 1280px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .video-card-grid {
+    grid-template-columns: repeat(auto-fill, var(--card-size));
+    justify-content: center;
+  }
+}
+
 /* 子项 stagger 入场动画。
    兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
    还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、

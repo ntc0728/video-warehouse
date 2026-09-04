@@ -334,27 +334,18 @@
     grid-template-columns: repeat(6, minmax(0, 1fr)); /* 1920–2559：6 列 */
   }
 }
-/* 超宽视口封顶 5 列（2026-09-04 落地，参考 demo 的 @media min-width:2560→1600px、3440→1500px）：
-   大显示器（24/27/32 寸）近距离观看 UI 元素过大 → 网格封顶 5 列 + 容器锁宽居中，
-   卡片宽控制在 ~320px（2560）/ ~300px（3440），不再随视口无限放大。 */
-@media (min-width: 2560px) {
-  .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)); /* ≥2560 超宽屏封顶 5 列（撤销原 7 列） */
-  }
-  .history-content .history-group-body {
-    max-width: 1600px; /* 2560 视口 → 容器锁 1600px 居中 */
-    margin-left: auto;
-    margin-right: auto;
-  }
+/* 内容区约束（全断点，阶段 C）：列表型页面接入 2200 硬上限，超宽居中 */
+.history-content .history-group-body {
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
 }
-@media (min-width: 3440px) {
-  .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)); /* ≥3440 仍封顶 5 列（撤销原 8 列） */
-  }
-  .history-content .history-group-body {
-    max-width: 1500px; /* 3440 视口 → 容器锁 1500px 居中 */
-    margin-left: auto;
-    margin-right: auto;
+
+/* ≥1280：横版记录卡同样固定宽 + 列数自适应（阶段 C；<1280 保留上方 1–4 列阶梯；
+   必须 auto-fill 非 auto-fit；排除 app/tv，TV 仍走下方恒 5 列覆盖） */
+@media (width >= 1280px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .history-content .history-group-body .history-grid {
+    grid-template-columns: repeat(auto-fill, var(--card-size));
+    justify-content: center;
   }
 }
 /* TV（data-device="tv"）恒 5 列：选择器带 html[data-device] → 特异性高于纯类断点，

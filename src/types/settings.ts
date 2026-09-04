@@ -26,6 +26,8 @@ export interface AppSettings {
   tvMode: boolean;
   /** TV 过扫描（overscan）安全区大小：预设挡位 0/5/10/15/20（单位 vw 左右 / vh 上下）；0 = 铺满到裁切边 */
   tvOverscan: number;
+  /** 界面缩放（阶段 C 大屏手动档）：0 = 自动（按视口宽 + dpr 判定）；>0 = 手动倍率，覆盖自动档 */
+  uiScale: number;
   /** 用户昵称（个人资料） */
   username: string;
   /** 用户头像（data URL，留空则使用默认图标） */

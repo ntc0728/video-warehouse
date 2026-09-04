@@ -53,6 +53,8 @@ interface SettingsState extends AppSettings {
   setTvMode: (value: boolean) => void;
   /** TV 过扫描安全区大小（0–10） */
   setTvOverscan: (value: number) => void;
+  /** 界面缩放（0=自动；>0 手动倍率，覆盖自动档） */
+  setUiScale: (value: number) => void;
   setUsername: (username: string) => void;
   setAvatar: (avatar: string) => void;
   resetToDefaults: () => void;
@@ -87,6 +89,7 @@ export const DEFAULT_SETTINGS = {
   autoPlay: true,
   tvMode: false,
   tvOverscan: 5,
+  uiScale: 0,
   username: '',
   avatar: '',
 };
@@ -188,6 +191,7 @@ export const useSettingsStore = create<SettingsState>()(
   autoPlay: true,
   tvMode: false,
   tvOverscan: 5,
+  uiScale: 0,
   username: '',
   avatar: '',
 
@@ -218,6 +222,7 @@ export const useSettingsStore = create<SettingsState>()(
       setAutoPlay: (autoPlay) => set({ autoPlay }),
       setTvMode: (tvMode) => set({ tvMode }),
       setTvOverscan: (tvOverscan) => set({ tvOverscan }),
+      setUiScale: (uiScale) => set({ uiScale }),
       setUsername: (username) => set({ username }),
       setAvatar: (avatar) => set({ avatar }),
       resetToDefaults: () => set({ ...DEFAULT_SETTINGS }),

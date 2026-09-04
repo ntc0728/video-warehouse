@@ -11,9 +11,11 @@ interface AppearanceTabProps {
   setTvMode: (v: boolean) => void;
   tvOverscan: number;
   setTvOverscan: (v: number) => void;
+  uiScale: number;
+  setUiScale: (v: number) => void;
 }
 
-export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan }: AppearanceTabProps) {
+export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan, uiScale, setUiScale }: AppearanceTabProps) {
   return (
     <section>
       <List header={<span className="settings-section-header"><Icon icon={Palette} size="lg" /> 外观</span>}>
@@ -84,6 +86,27 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
                   className="overscan-slider"
                 />
               </div>
+            }
+          />
+        )}
+        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线 */}
+        {!tvMode && (
+          <List.Item
+            title="界面缩放"
+            description="大屏（≥1920px 且系统缩放 <150%）默认自动适配；可手动覆盖"
+            extra={
+              <select
+                value={uiScale}
+                onChange={(e) => setUiScale(Number(e.target.value))}
+                aria-label="界面缩放"
+              >
+                <option value={0}>自动</option>
+                <option value={1}>100%（不缩放）</option>
+                <option value={1.1}>110%</option>
+                <option value={1.15}>115%</option>
+                <option value={1.3}>130%</option>
+                <option value={1.5}>150%</option>
+              </select>
             }
           />
         )}
