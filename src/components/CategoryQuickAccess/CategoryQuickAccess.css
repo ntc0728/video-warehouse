@@ -13,7 +13,7 @@
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
-  gap: var(--space-md);
+  gap: var(--space-lg);
   justify-content: center;
   justify-content: safe center;
   max-width: var(--layout-content-max-width);
