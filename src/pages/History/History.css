@@ -293,21 +293,22 @@
   }
 }
 
-/* 历史页统一横版记录卡网格——显式列数断点阶梯（2026-09-03 用户规划；当日二次调整：≥1024 每档 +1 列、补 768 档 3 列）：
-     默认（<480px，含移动端 / app 竖屏）→ 1 列
-     480px  ≤ 视口 < 768px  → 2 列
-     768px  ≤ 视口 < 1024px → 3 列
-     1024px ≤ 视口 < 1440px → 4 列
-     1440px ≤ 视口 < 1920px → 5 列
-     1920px ≤ 视口 < 2560px → 6 列
-     ≥2560px（超宽屏）→ 封顶 5 列 + 容器锁宽（2560→1600px、3440→1500px，居中）→ 卡片宽 ~320/~300px
-     TV（html[data-device="tv"]）→ 恒 5 列（覆盖以上全部，见本段末）
-   每列 minmax(0,1fr) 平均分配整行宽度 → 无侧边空白、卡片随视口等比放大；
-   超宽屏不再继续 +1 列（原 7/8 列方案已撤销，2026-09-04 落地），避免大显示器近距离观看 UI 元素过大。 */
+/* 历史页统一横版记录卡网格（整合方案阶段 C 改版，2026-09-04）：
+     < 480px                → 1 列   ┐ minmax 阶梯（移动端 / app；
+     480px  ≤ 视口 < 768px  → 2 列   │ app 宽视口沿用至下述 1440/1920 档）
+     768px  ≤ 视口 < 1024px → 3 列   │
+     1024px ≤ 视口 < 1280px → 4 列   ┘
+     ≥1280px（桌面，非 app/tv）→ 固定轨道 auto-fill：repeat(auto-fill, var(--card-size))
+       + justify-content:center —— 卡片宽恒定不拉伸、列数自适应、多余宽度居中消化
+     1440/1920 两档 minmax 规则保留：仅 app 设备宽视口回退用（桌面 ≥1280 已被
+       auto-fill 接管，对桌面为死规则）
+     TV（html[data-device="tv"]）→ 恒 5 列（特异性覆盖，任意视口）
+   （原「≥2560 封顶 5 列 + 容器锁宽 1600/1500px」方案已撤销，由整合方案阶段 C
+     统一接管：changelogs/design-docs/2026-09-04-大屏与流体体系整合整改方案.md） */
 .history-content .history-group-body .history-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr)); /* <480px：1 列 */
-  gap: var(--space-lg); /* 卡片间距加大（--space-lg：桌面 12→28px 流体） */
+  gap: var(--space-lg); /* 卡片间距（--space-lg：三段式流体） */
 }
 @media (min-width: 480px) {
   .history-content .history-group-body .history-grid {
@@ -326,12 +327,12 @@
 }
 @media (min-width: 1440px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)); /* 1440–1919：5 列 */
+    grid-template-columns: repeat(5, minmax(0, 1fr)); /* 1440–1919：5 列（仅 app 宽视口生效；桌面 ≥1280 由下方 auto-fill 接管） */
   }
 }
 @media (min-width: 1920px) {
   .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr)); /* 1920–2559：6 列 */
+    grid-template-columns: repeat(6, minmax(0, 1fr)); /* ≥1920：6 列（同上，仅 app 宽视口生效） */
   }
 }
 /* 内容区约束（全断点，阶段 C）：列表型页面接入 2200 硬上限，超宽居中 */
