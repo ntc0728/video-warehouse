@@ -168,7 +168,8 @@
     display: block;
     flex-shrink: 0;
     align-self: flex-start;
-    width: clamp(4.5rem, 6vw, 6rem);
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    width: clamp(72px, 6vw, 96px);
     min-width: 0;
     height: calc(100vh - var(--header-height));
   }

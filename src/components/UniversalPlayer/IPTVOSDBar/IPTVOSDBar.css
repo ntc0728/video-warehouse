@@ -550,7 +550,7 @@
 /* ===== TV 平台适配（与 .up-platform-tv 配合） ===== */
 .up-platform-tv .iptv-osd-bar {
   /* TV 端 OSD 封顶：标准 clamp(A,(A/19.2)vw,2A)，A=1600 → 1080p=1600px、4K=3200px（原硬编码 1600px 不随分辨率缩放，已改） */
-  --layout-osd-max-width: clamp(100rem, 83.333vw, 200rem);
+  --layout-osd-max-width: clamp(1600px, 83.333vw, 3200px);
   gap: var(--space-md);
   /* TV 端边缘留白放大为 --space-lg，适配远距离观看 */
   max-width: calc(100% - 2 * var(--space-lg));

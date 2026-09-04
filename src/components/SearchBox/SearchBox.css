@@ -49,7 +49,8 @@
   /* 父级 toolbar 多为 flex-wrap: wrap,加 min-width 防止被 chip
      挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
   min-width: var(--comp-input-min-w);
-  max-width: clamp(14rem, 30vw, 22rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  max-width: clamp(224px, 30vw, 352px);
 }
 
 /* ── 字段容器（box + submit 水平排列） ──────────── */

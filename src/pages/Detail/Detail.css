@@ -614,7 +614,8 @@
 }
 
 .detail-company-logo {
-  width: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(20px, 16px + 1vw, 28px);
   height: auto;
   max-height: var(--space-xl);
   object-fit: contain;
@@ -639,7 +640,7 @@
 
 .detail-stills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(8rem, 6rem + 8vw, 16rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(clamp(128px, 96px + 8vw, 256px), 1fr));
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
 }
@@ -699,7 +700,8 @@
 
 .detail-stills-more__count {
   color: #fff;
-  font-size: clamp(var(--text-xl), 2vw + 0.5rem, var(--text-2xl));
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  font-size: clamp(var(--text-xl), 2vw + 8px, var(--text-2xl));
   font-weight: 700;
   line-height: 1;
 }
@@ -1042,7 +1044,8 @@
   position: relative;
   flex-shrink: 0;
   align-self: flex-start;
-  width: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(36px, 24px + 2.5vw, 56px);
   aspect-ratio: 2 / 3;
   max-height: 5.5rem;
   border-radius: var(--radius-sm);
@@ -1533,7 +1536,8 @@
   }
 
   .detail-source-thumb {
-    width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    width: clamp(48px, 40px + 4vw, 72px);
     aspect-ratio: 2 / 3;
     max-height: 6.5rem;
   }
@@ -1549,7 +1553,8 @@
   }
 
   html[data-device="app"] .detail-source-thumb {
-    width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    width: clamp(48px, 40px + 4vw, 72px);
     aspect-ratio: 2 / 3;
     max-height: 6.5rem;
   }
@@ -1621,7 +1626,8 @@
   align-items: flex-start;
   }
   .detail-season-poster {
-  width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(48px, 40px + 4vw, 72px);
   }
   .detail-season-info {
   max-height: none;
@@ -1696,7 +1702,8 @@
   align-items: flex-start;
   }
   html[data-device="app"] .detail-season-poster {
-  width: clamp(3rem, 2.5rem + 4vw, 4.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(48px, 40px + 4vw, 72px);
   }
   html[data-device="app"] .detail-season-info {
   max-height: none;

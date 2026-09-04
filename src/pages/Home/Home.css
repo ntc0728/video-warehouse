@@ -249,7 +249,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-hero__title {
   width: 70%;
-  height: clamp(1.5rem, 2.5vw, 2.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(24px, 2.5vw, 40px);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.2));
   animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
@@ -407,8 +408,10 @@ html[data-device="app"] .home-disclaimer {
 }
 
 .home-skeleton-row-title {
-  width: clamp(7.5rem, 6.667rem + 1.667vw, 12.5rem);
-  height: clamp(1.5rem, 1.333rem + 0.333vw, 2.25rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  width: clamp(120px, 106.672px + 1.667vw, 200px);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(24px, 21.328px + 0.333vw, 36px);
   border-radius: var(--radius-sm);
   background: linear-gradient(
     90deg,
@@ -499,7 +502,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-card-title {
   width: 80%;
-  height: clamp(1rem, 0.889rem + 0.222vw, 1.5rem);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  height: clamp(16px, 14.224px + 0.222vw, 24px);
   border-radius: var(--radius-sm);
   background: linear-gradient(
     90deg,
