@@ -157,11 +157,12 @@
   --text-2xs: calc(clamp(9px, 7.728px + 0.339vw, 10.333px) * var(--ui-scale)); /* 9→11 超小标注 */
   --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale)); /* 12→13 */
   --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale)); /* 13→14 */
-  /* 基准字号显式固定 14px（web/app 移动与桌面全分辨率）：
-     原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → html { font-size: var(--text-base) }
-     形成循环 rem 解析（不动点 14px，计算值恒为下限 14px）。显式化消除隐式依赖，
-     行为零变化；TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
-  --text-base: calc(clamp(14px, 14px, 15.333px) * var(--ui-scale)); /* 14（web/app 固定基准；TV 覆盖为 15→30px 动态） */
+  /* 基准字号（D7/B3 契约）：段1（<768）恒 14px——html { font-size: var(--text-base) }
+     原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → 形成 rem 解析循环（不动点 14px），
+     显式 px 消除隐式依赖。段2（≥768）14→16px 线性流动至 1920（D7：终点 16px；
+     768 处 14px 连续，rem 流动仅发生在 768→1920，移动端零回归）。
+     TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
+  --text-base: calc(14px * var(--ui-scale)); /* <768 恒 14；≥768 见段2：14→16 流体；TV 覆盖 15→30px */
   --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 14→16 */
   --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→18 */
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24 */
@@ -288,13 +289,17 @@
   --layout-select-w: calc(clamp(140px, 63.664px + 20.356vw, 220px) * var(--ui-scale)); /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
   --layout-select-w-mobile: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
-  --layout-bottomsheet-max-h: calc(clamp(500px, 360.051px + 37.32vw, 646.667px) * var(--ui-scale)); /* 底部弹出面板最大高度：500→720px 流体 */
+  /* R6 大屏兜底（E2a 回退，维持「不动」契约）：保留旧 rem 式——消费点 min(vh,…) 由
+     vh 主导，三段式化收益低、desktop 768–1920 渲染值 +31~41% 不可接受。
+     注：rem 随 D7 在 768→1920 流动（14→16），本组随之轻微上行（≤+14%），与全局 rem
+     消费（Tailwind 数字档等）方向一致，属已接受偏差（v2.1 B15）。 */
+  --layout-bottomsheet-max-h: clamp(500px, 31.25rem + 3vw, 720px); /* 底部弹出面板最大高度：500→720px 流体 */
   --layout-epg-empty-min-height: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 空态最小高度：100→150px 流体 */
   --layout-epg-time-min-width: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 时间列最小宽度：100→150px 流体 */
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
-  --layout-detail-hero-max-h: calc(clamp(450px, 290.967px + 42.409vw, 616.667px) * var(--ui-scale)); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
-  --layout-modal-max-h: calc(clamp(480px, 212.824px + 71.247vw, 760px) * var(--ui-scale)); /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
-  --layout-program-guide-max-h: calc(clamp(400px, 145.547px + 67.854vw, 666.667px) * var(--ui-scale)); /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
+  --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
+  --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
+  --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
   --layout-dropdown-max-h:      clamp(20rem, 20rem + 5vh, 28rem);           /* 顶部搜索下拉最大高度（桌面默认/非 TV 非大屏）：320→448px（vh 基、封顶 448，不随 4K 翻倍）。TV 与桌面大屏(≥1920)由各自块以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=374→748），1080p 下两者均=374px。 */
   --layout-osd-timeshift-dot: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 时移进度条圆点尺寸：6→10px 流体 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
@@ -382,7 +387,8 @@
     --error-msg-max-width: calc(clamp(126.667px, 117.778px + 1.157vw, 140px) * var(--ui-scale));
     --grid-gap: calc(clamp(20px, 17.333px + 0.347vw, 24px) * var(--ui-scale));
     --header-height-compact: calc(clamp(58.667px, 55.111px + 0.463vw, 64px) * var(--ui-scale));
-    --layout-bottomsheet-max-h: calc(clamp(646.667px, 597.778px + 6.366vw, 720px) * var(--ui-scale));
+    /* ▼ R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）无段2：
+       已回退旧 rem 式（E2a），全程单条 clamp，不参与三段式 */
     --layout-brand-font-size: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
     --layout-brand-font-size-lg: calc(clamp(26.667px, 25.778px + 0.116vw, 28px) * var(--ui-scale));
     --layout-brand-font-size-sm: calc(clamp(18.667px, 17.778px + 0.116vw, 20px) * var(--ui-scale));
@@ -391,7 +397,6 @@
     --layout-channel-num-w: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1177.778px + 11.574vw, 1400px) * var(--ui-scale));
     --layout-datepicker-width: calc(clamp(420px, 393.333px + 3.472vw, 460px) * var(--ui-scale));
-    --layout-detail-hero-max-h: calc(clamp(616.667px, 561.111px + 7.234vw, 700px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 161.52px + 1.588vw, 192px) * var(--ui-scale));
     --layout-detail-poster-w: calc(clamp(277.333px, 227.556px + 6.481vw, 352px) * var(--ui-scale));
     --layout-detail-poster-w-tv: calc(clamp(143.333px, 132.222px + 1.447vw, 160px) * var(--ui-scale));
@@ -406,7 +411,6 @@
     --layout-hero-height-mobile: calc(clamp(320px, 306.667px + 1.736vw, 340px) * var(--ui-scale));
     --layout-hero-poster-w: calc(clamp(240px, 213.333px + 3.472vw, 280px) * var(--ui-scale));
     --layout-loading-min-height: calc(clamp(420px, 380px + 5.208vw, 480px) * var(--ui-scale));
-    --layout-modal-max-h: calc(clamp(760px, 666.667px + 12.153vw, 900px) * var(--ui-scale));
     --layout-modal-max-width: calc(clamp(506.667px, 444.444px + 8.102vw, 600px) * var(--ui-scale));
     --layout-osd-max-width: calc(clamp(1040px, 800px + 31.25vw, 1400px) * var(--ui-scale));
     --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
@@ -416,7 +420,6 @@
     --layout-player-vol-w: calc(clamp(106.667px, 97.778px + 1.157vw, 120px) * var(--ui-scale));
     --layout-popover-min-w: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
     --layout-popover-wide-min-w: calc(clamp(180px, 166.667px + 1.736vw, 200px) * var(--ui-scale));
-    --layout-program-guide-max-h: calc(clamp(666.667px, 577.778px + 11.574vw, 800px) * var(--ui-scale));
     --layout-quality-badge-min-w: calc(clamp(108px, 100px + 1.042vw, 120px) * var(--ui-scale));
     --layout-searchbox-browse-max-w: calc(clamp(693.333px, 648.889px + 5.787vw, 760px) * var(--ui-scale));
     --layout-searchbox-header-max-w: calc(clamp(613.333px, 568.889px + 5.787vw, 680px) * var(--ui-scale));
@@ -457,7 +460,7 @@
     --text-2xl: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
     --text-2xs: calc(clamp(10.333px, 9.889px + 0.058vw, 11px) * var(--ui-scale));
     --text-3xl: calc(clamp(28.667px, 27.778px + 0.116vw, 30px) * var(--ui-scale));
-    --text-base: calc(clamp(15.333px, 14.889px + 0.058vw, 16px) * var(--ui-scale));
+    --text-base: calc(clamp(14px, 12.667px + 0.17361vw, 16px) * var(--ui-scale)); /* 14@768 连续 → 16@1920（D7；768 处 = 12.667+1.333 = 14.000，无跳变） */
     --text-lg: calc(clamp(15.333px, 14.889px + 0.058vw, 16px) * var(--ui-scale));
     --text-sm: calc(clamp(13.667px, 13.444px + 0.029vw, 14px) * var(--ui-scale));
     --text-xl: calc(clamp(17.333px, 16.889px + 0.058vw, 18px) * var(--ui-scale));
@@ -472,14 +475,17 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 视口断点梯度 (v6，2026-09-03)
+   Card Columns — 视口断点梯度（阶段 C 重算，2026-09-04；v6 断点结构不变）
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
    ≥ 768  → 5   (平板 / 小桌面)
    ≥ 1024 → 6
    ≥ 1280 → 8   (PC 默认)
-   ≥ 2560 → 9   (2.5K / 准 4K)
-   ≥ 3840 → 10  (4K)
-   TV 端恒 8 列（见文件末尾 html[data-device="tv"] 覆盖，不随视口变化）
+   ≥ 2560 → 6   (阶段 C：内容区封顶 2200 + 卡片封顶 333.5px，原 9 → 6)
+   ≥ 3840 → 6   (阶段 C：原 10 → 6)
+   TV 端恒 8 列（文件末尾 html[data-device="tv"] 无条件覆盖；≥2560/≥3840 块已显式
+   :not(tv) 排除，768/1024/1280 三档数值与 TV 相容或被 TV 块按源序覆盖）
+   注：竖向网格（History 等）≥1280 已改 auto-fill 固定轨道（--card-size），
+   --card-cols 仅余横向滚动行消费（TMDBMovieRow / Home calc）。
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]) {
@@ -516,8 +522,10 @@
 }
 
 @media (width >= 2560px) {
-  html:not([data-device="app"]) {
-    /* 阶段 C：内容区封顶 2200 + 卡片封顶，列数不再递增（原 9→6；横向行见 §4.2） */
+  html:not([data-device="app"]):not([data-device="tv"]) {
+    /* 阶段 C：内容区封顶 2200 + 卡片封顶，列数不再递增（原 9→6；横向行见 §4.2）
+       E4：显式排除 tv，TV 恒 8 列由文件末尾 html[data-device="tv"] 无条件提供，
+       不再依赖源码顺序取胜 */
     --card-cols: 6;
     --row-cols: 6;
     /* 继续观看行（横版 16:9）：≥2560 保持 6（撤销 7 递增） */
@@ -526,8 +534,8 @@
 }
 
 @media (width >= 3840px) {
-  html:not([data-device="app"]) {
-    /* 阶段 C：同上（原 10→6） */
+  html:not([data-device="app"]):not([data-device="tv"]) {
+    /* 阶段 C：同上（原 10→6）；E4：显式排除 tv */
     --card-cols: 6;
     --row-cols: 6;
     /* 继续观看行（横版 16:9）：≥3840 保持 6（撤销 8 递增） */
@@ -741,13 +749,14 @@
      --tv-focus-* 驱动方框粗细与间距，集中在此便于统一调参。 */
   --tv-focus-width: 3px;
   --tv-focus-offset: 2px;
-  /* ── TV 漏斗补钉（阶段 A）：:root 流体但 TV 未覆盖者恒 MIN，零回归 ── */
+  /* ── TV 漏斗补钉（阶段 A）：:root 流体但 TV 未覆盖者恒 MIN，零回归 ──
+     注（E2a 回退）：R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）
+     已撤销补钉——其 :root 定义恢复旧 rem 式（= 旧 TV 实际渲染值），无需钉 MIN。 */
   --avatar-lg: 72px;
   --avatar-sm: 56px;
   --avatar-xs: 30px;
   --error-msg-max-width: 100px;
   --header-height-compact: 48px;
-  --layout-bottomsheet-max-h: 500px;
   --layout-brand-font-size-lg: 24px;
   --layout-brand-font-size-sm: 16px;
   --layout-card-daily-width: 200px;
@@ -756,7 +765,6 @@
   --layout-collapse-max-h: 1000px;
   --layout-content-max-width: 320px;
   --layout-datepicker-width: 340px;
-  --layout-detail-hero-max-h: 450px;
   --layout-detail-hero-play-icon: 137.136px;
   --layout-detail-poster-w: 128px;
   --layout-detail-poster-w-tv: 110px;
@@ -771,7 +779,6 @@
   --layout-hero-height-mobile: 280px;
   --layout-hero-poster-w: 160px;
   --layout-loading-min-height: 300px;
-  --layout-modal-max-h: 480px;
   --layout-modal-max-width: 320px;
   --layout-osd-max-width: 320px;
   --layout-osd-timeshift-dot: 6px;
@@ -781,7 +788,6 @@
   --layout-player-vol-w: 80px;
   --layout-popover-min-w: 100px;
   --layout-popover-wide-min-w: 140px;
-  --layout-program-guide-max-h: 400px;
   --layout-quality-badge-min-w: 84px;
   --layout-searchbox-browse-max-w: 560px;
   --layout-searchbox-header-max-w: 480px;
@@ -834,8 +840,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TV 端卡片列数 — 恒定，不随视口断点变化（2026-09-03）
    ---------------------------------------------------------------------------
-   必须放在所有 @media 断点之后：断点规则选择器为 html:not([data-device="app"])，
-   特异性 (0,1,1)；本规则 html[data-device="tv"] 同为 (0,1,1)，靠源码顺序取胜。
+   ≥2560/≥3840 断点已显式 :not(tv) 排除（E4），本块对 card-cols 不再依赖源码顺序；
+   768/1024/1280 三档仍靠源码顺序取胜（数值 5/6/8，TV 实际渲染恒为下方 8）。
    TV 端 --space-lg 已是 28→56px 的放大曲线，卡片间距无需额外处理。
    ═══════════════════════════════════════════════════════════════════════ */
 html[data-device="tv"] {
