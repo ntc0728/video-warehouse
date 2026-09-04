@@ -91,6 +91,14 @@
   backdrop-filter: blur(8px);
 }
 
+/* header variant 高度预算：顶部导航栏高度 = R3 --header-height（60→76，不随 --ui-scale）。
+   全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏，故 header 场景用专用矮曲线
+   40→48（同样不乘 ui-scale）。:not(tv) 让 TV 继续走下方 --comp-input-height-tv 覆盖。 */
+html:not([data-device='tv']) .search-box-wrap--header .search-box,
+html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
+  height: var(--comp-input-height-header);
+}
+
 /* iptv variant：独立使用 box（无 submit），完整圆角 + 保留右边框 */
 .search-box--iptv {
   height: var(--comp-btn-min-height);
@@ -381,10 +389,11 @@
   flex-shrink: 0;
   justify-content: center;
   align-items: center;
-  /* 11.3：徽标从 --space-md（桌面 8px）放大到 --space-xl（桌面 16px）——
-     原 8px 装不下 --text-sm（13px）数字导致 1/2/3 被裁切。 */
-  width: var(--space-xl);
-  height: var(--space-xl);
+  /* 11.3：徽标从 --space-md（桌面 8px）放大——原 8px 装不下 --text-sm（13px）数字导致 1/2/3 被裁切。
+     2026-09-04：不再用 --space-xl（三段式后桌面恒 32px，视觉过大），改派生自字号的
+     --icon-md（20→22，随 --text-base 自动缩放），数字仍装得下。 */
+  width: var(--icon-md);
+  height: var(--icon-md);
   border-radius: var(--radius-sm);
   background: var(--color-surface-hover);
   color: var(--color-text-tertiary);
