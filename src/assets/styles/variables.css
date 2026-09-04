@@ -482,40 +482,39 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 视口断点梯度（阶段 C 重算，2026-09-04；v6 断点结构不变）
+   Card Columns — 视口断点梯度（2026-09-04 用户调整：>768 每档列数 −1）
    < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
-   ≥ 768  → 5   (平板 / 小桌面)
-   ≥ 1024 → 6
-   ≥ 1280 → 8   (PC 默认)
-   ≥ 2560 → 6   (阶段 C：内容区封顶 2200 + 卡片封顶 333.5px，原 9 → 6)
-   ≥ 3840 → 6   (阶段 C：原 10 → 6)
-   TV 端恒 8 列（文件末尾 html[data-device="tv"] 无条件覆盖；≥2560/≥3840 块已显式
-   :not(tv) 排除，768/1024/1280 三档数值与 TV 相容或被 TV 块按源序覆盖）
+   ≥ 768  → 4   (平板 / 小桌面，原 5)
+   ≥ 1024 → 5   (原 6)
+   ≥ 1280 → 7   (PC 默认，原 8)
+   ≥ 2560 → 5   (原 6；内容区 min(100%,2200) 满屏后卡片随之变大)
+   ≥ 3840 → 5   (原 6)
+   TV 端恒 8 列（文件末尾 html[data-device="tv"] 无条件覆盖，不受本梯度影响）
    注：竖向网格（History 等）≥1280 已改 auto-fill 固定轨道（--card-size），
-   --card-cols 仅余横向滚动行消费（TMDBMovieRow / Home calc）。
+   --card-cols 仅余横向滚动行消费（TMDBMovieRow / Home calc）与 <1280 共享网格。
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]) {
-    --card-cols: 5;
-    --row-cols: 5;
-    /* 继续观看行：768–1279 平板 3 列 */
-    --continue-cols: 3;
+    --card-cols: 4;
+    --row-cols: 4;
+    /* 继续观看行：768–1279 平板 2 列（原 3） */
+    --continue-cols: 2;
   }
 }
 
 @media (width >= 1024px) {
   html:not([data-device="app"]) {
-    --card-cols: 6;
-    --row-cols: 6;
+    --card-cols: 5;
+    --row-cols: 5;
   }
 }
 
 @media (width >= 1280px) {
   html:not([data-device="app"]) {
-    --card-cols: 8;
-    --row-cols: 8;
-    /* 继续观看行：≥1280 桌面 6 列 */
-    --continue-cols: 6;
+    --card-cols: 7;
+    --row-cols: 7;
+    /* 继续观看行：≥1280 桌面 5 列（原 6） */
+    --continue-cols: 5;
   }
 }
 
@@ -530,23 +529,22 @@
 
 @media (width >= 2560px) {
   html:not([data-device="app"]):not([data-device="tv"]) {
-    /* 阶段 C：内容区封顶 2200 + 卡片封顶，列数不再递增（原 9→6；横向行见 §4.2）
-       E4：显式排除 tv，TV 恒 8 列由文件末尾 html[data-device="tv"] 无条件提供，
-       不再依赖源码顺序取胜 */
-    --card-cols: 6;
-    --row-cols: 6;
-    /* 继续观看行（横版 16:9）：≥2560 保持 6（撤销 7 递增） */
-    --continue-cols: 6;
+    /* 2026-09-04 用户调整：>768 每档 −1（原阶段 C 6→5）；E4：显式排除 tv，
+       TV 恒 8 列由文件末尾 html[data-device="tv"] 无条件提供 */
+    --card-cols: 5;
+    --row-cols: 5;
+    /* 继续观看行（横版 16:9）：≥2560 → 5（原 6） */
+    --continue-cols: 5;
   }
 }
 
 @media (width >= 3840px) {
   html:not([data-device="app"]):not([data-device="tv"]) {
-    /* 阶段 C：同上（原 10→6）；E4：显式排除 tv */
-    --card-cols: 6;
-    --row-cols: 6;
-    /* 继续观看行（横版 16:9）：≥3840 保持 6（撤销 8 递增） */
-    --continue-cols: 6;
+    /* 2026-09-04 用户调整：同上 6→5；E4：显式排除 tv */
+    --card-cols: 5;
+    --row-cols: 5;
+    /* 继续观看行（横版 16:9）：≥3840 → 5（原 6） */
+    --continue-cols: 5;
   }
 }
 

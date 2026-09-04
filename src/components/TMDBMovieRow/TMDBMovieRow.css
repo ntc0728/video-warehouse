@@ -58,8 +58,10 @@
    padding 设为 0，box width 严格等于 100% 公式参考，N 张 card 严格填满可视区 */
 .tmdb-movierow-scroll {
   display: flex;
-  /* 卡片间距统一 --space-lg（2026-09-03）：与 Browse / 收藏网格、IPTV 频道网格一致 */
-  gap: var(--space-lg);
+  /* 卡片间距 --space-md（2026-09-04 用户调整）：首页行内间距小于全站网格 --space-lg。
+     ⚠️ 下方卡片宽度公式 (100%-(cols-1)*gap)/cols 与骨架行（Home.css）都用 --space-md，
+     改这里必须三处联动，否则 100% 宽公式算出的卡宽与可视区错位。 */
+  gap: var(--space-md);
   /* 上下留白：TV 聚焦时卡片 scale 放大 + 焦点方框向外延伸，
      若此处为 0 会被 overflow:auto hidden 纵向裁掉（表现为「方框被裁 / 只剩小圆点」）。
      padding-block 用 --space-md（桌面 18px / TV 36px）给放大与方框留足空间，
@@ -104,7 +106,7 @@
    cursor 移到这里：仅在 card 上显示 grab；空白处不响应拖动（pointerdown 直接 return） */
 .tmdb-movierow-card {
   flex: 0 0 calc(
-    (100% - (var(--card-cols, 7) - 1) * var(--space-lg))
+    (100% - (var(--card-cols, 7) - 1) * var(--space-md))
     / var(--card-cols, 7)
   );
   scroll-snap-align: start;
@@ -279,7 +281,7 @@
    ============================================================ */
 .tmdb-movierow.tmdb-movierow--continue .tmdb-movierow-card {
   flex-basis: calc(
-    (100% - (var(--continue-cols, 5) - 1) * var(--space-lg))
+    (100% - (var(--continue-cols, 5) - 1) * var(--space-md))
     / var(--continue-cols, 5)
   );
 }
