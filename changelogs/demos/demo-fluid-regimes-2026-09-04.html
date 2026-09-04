@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN" data-page-node-id="rkTIOtqd7y6SixM0Yxk0GF">
+<head data-page-node-id="d6OnwhR8eD37l6vFzGrDmi">
+<meta charset="UTF-8" data-page-node-id="c8oAgrUdeOS1qqRv4WMu1m">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="j1rOMAF05ifvvQkqCui7ih">
 <title>流体适配体系审计 · 8 种 regime 曲线</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -49,68 +49,68 @@ tr:hover td{background:#1c2128}
 .kv .v{font:600 16px/1.35 monospace;color:#e6edf3}
 </style>
 </head>
-<body>
+<body data-page-node-id="SBv8hDqLPELfcSKwmouHYa">
 
-<h1>流体适配体系审计 · 8 种 regime 曲线</h1>
-<div class="sub">数据源：<code>src/assets/styles/variables.css</code> 全量 92 个流体 token + 全项目 clamp 消费点 · 桌面 rem=14px 实际基准</div>
+<h1 data-page-node-id="XNWzPnKUFfLFPLz7SLvgmk">流体适配体系审计 · 8 种 regime 曲线</h1>
+<div class="sub" data-page-node-id="mZNFA7KjwrLRVB6gwROqsD">数据源：<code data-page-node-id="4EJNp0jQOOJu6QfQ8utYkR">src/assets/styles/variables.css</code> 全量 92 个流体 token + 全项目 clamp 消费点 · 桌面 rem=14px 实际基准</div>
 
-<div class="verdict">
-<b>核心结论：</b>项目并存 <b>8 种</b> 流式适配机制 —— R1（41 个）<b>完全失效</b>、R2（46 个）<b>无契约</b>、R3（5 个）/ R4（TV 61 个）/ R6（6 个）<span class="g">正确</span>、R5 阶梯与流体混用、R7（53 处）脱离 token、R8 常量。<br>
-上轮「倍数校验非 100 → 不动」的规则 <b>已作废</b>：它把「真有独立契约」与「没契约、系数随手填」混为一谈。真正该不动的只有 <b>5 个</b>，不是整个 <code>--layout-*</code> / <code>--avatar-*</code> / <code>--scrollbar-*</code> 大类。<br>
-<b>恢复曲线解决不了大屏问题</b> —— 契约是 <code>375→768</code>，768px 以上全部冻结取 MAX，14 寸与 27 寸拿到完全相同的值。
+<div class="verdict" data-page-node-id="lbA8HOWvZMGCOqBFXp2KPa">
+<b data-page-node-id="OSpBYVSa9L2aZjk10o3ath">核心结论：</b>项目并存 <b data-page-node-id="GiYCymAzNuarBtSr6PbgHI">8 种</b> 流式适配机制 —— R1（41 个）<b data-page-node-id="MARVM0v0BrQiA4MoF3BhZN">完全失效</b>、R2（46 个）<b data-page-node-id="kb3u4ybNT45qY8R9FLqdIO">无契约</b>、R3（5 个）/ R4（TV 61 个）/ R6（6 个）<span class="g" data-page-node-id="0IX7PT7lxdnfjOfB0MUWBP">正确</span>、R5 阶梯与流体混用、R7（53 处）脱离 token、R8 常量。<br data-page-node-id="nTvodONhqO0kMIDx7bM9J5">
+上轮「倍数校验非 100 → 不动」的规则 <b data-page-node-id="oaDL3viZrkYRPPcb1Y1Zc2">已作废</b>：它把「真有独立契约」与「没契约、系数随手填」混为一谈。真正该不动的只有 <b data-page-node-id="3FaCAiPvVgo68WrQMfa8TK">5 个</b>，不是整个 <code data-page-node-id="IFYmqjWW8zTlkXsnBeud6M">--layout-*</code> / <code data-page-node-id="8uvK79ysgDslRtlvAhWVSA">--avatar-*</code> / <code data-page-node-id="R4k8qCSxi6iGWeSTB4I8oi">--scrollbar-*</code> 大类。<br data-page-node-id="7mKdLMTJ3gj8S4LrekTCsT">
+<b data-page-node-id="dM0j7Yv1KiOEUzOyXXa1pD">恢复曲线解决不了大屏问题</b> —— 契约是 <code data-page-node-id="fefYLNP4coVVd1OijSP4Py">375→768</code>，768px 以上全部冻结取 MAX，14 寸与 27 寸拿到完全相同的值。
 </div>
 
-<div class="grid8" id="r8"></div>
+<div class="grid8" id="r8" data-page-node-id="BQuQ8LVlSkzRA20qHfcPFN"></div>
 
-<div class="sec">曲线全景：92 个 token 的行程完成度</div>
-<div class="panel">
-  <div class="ctrl">
-    <label>模拟视口</label>
-    <input type="range" id="vw" min="320" max="3840" value="2560" step="1">
-    <span class="vwv" id="vwv">2560px</span>
-    <button class="btn on" id="mNorm">归一化 (完成度 %)</button>
-    <button class="btn" id="mAbs">绝对值 (px)</button>
-    <button class="btn on" data-cls="A">R1 失效 41</button>
-    <button class="btn on" data-cls="B">R2 无契约 46</button>
-    <button class="btn on" data-cls="C">R3 正确 5</button>
-    <button class="btn" data-cls="TV">TV 参考</button>
+<div class="sec" data-page-node-id="cxqBERcr3Iyxe0ffZNmmmI">曲线全景：92 个 token 的行程完成度</div>
+<div class="panel" data-page-node-id="sfLl818NIHfMs7Ss8UaIyk">
+  <div class="ctrl" data-page-node-id="TVBAfIg3IrQQCpSyyAIPPn">
+    <label data-page-node-id="bAjUYQptWQLDHSsHlaAJUR">模拟视口</label>
+    <input type="range" id="vw" min="320" max="3840" value="2560" step="1" data-page-node-id="kpdfqMnEFHoGvDK308Zicu">
+    <span class="vwv" id="vwv" data-page-node-id="qut2qCFo57C4XaSmlOxdYi">2560px</span>
+    <button class="btn on" id="mNorm" data-page-node-id="TzX2PfDeIhSFwsmDHuLcng">归一化 (完成度 %)</button>
+    <button class="btn" id="mAbs" data-page-node-id="PF2PgCXxzgVGnoOKtuRHWk">绝对值 (px)</button>
+    <button class="btn on" data-cls="A" data-page-node-id="eshYKjnJt9xSQXua5X1Nhs">R1 失效 41</button>
+    <button class="btn on" data-cls="B" data-page-node-id="lKucmoHH3KGXWkCs5Z5fmZ">R2 无契约 46</button>
+    <button class="btn on" data-cls="C" data-page-node-id="IfVUjzLS1jn3AyAAPiI83d">R3 正确 5</button>
+    <button class="btn" data-cls="TV" data-page-node-id="i0f2eUyHAJxQccTmKQyEbU">TV 参考</button>
   </div>
-  <svg id="chart" viewBox="0 0 1200 430"></svg>
-  <div class="legend">
-    <span><i style="background:#f85149"></i>R1 375→768 契约（漏 100×，恒 MIN）</span>
-    <span><i style="background:#d29922"></i>R2 PREF=MIN 经验流体（无契约）</span>
-    <span><i style="background:#3fb950"></i>R3 真实独立契约（正确）</span>
-    <span><i style="background:#58a6ff"></i>TV 视口映射（正确）</span>
+  <svg id="chart" viewBox="0 0 1200 430" data-page-node-id="stCZmveFcJFHX3ImG1tpya"></svg>
+  <div class="legend" data-page-node-id="jPyUAYGfyU4EUbHpVkVFEr">
+    <span data-page-node-id="OcfJx7l2UnzHiGaKH1t0G3"><i style="background:#f85149" data-page-node-id="jr01AVWWN7YjyubBucP8EY"></i>R1 375→768 契约（漏 100×，恒 MIN）</span>
+    <span data-page-node-id="gE2Aw7RgGCqGlvAxtM0uky"><i style="background:#d29922" data-page-node-id="gnBUjKdT4YXHmYCf9MZSAb"></i>R2 PREF=MIN 经验流体（无契约）</span>
+    <span data-page-node-id="74ZONh7icVLJEg7EPH36T4"><i style="background:#3fb950" data-page-node-id="cwAOAZW75Zu4CrVUfUmUZN"></i>R3 真实独立契约（正确）</span>
+    <span data-page-node-id="QYAFcZGK1kQqfSDO5yCOLM"><i style="background:#58a6ff" data-page-node-id="QBFu6iK5mpWsEV7Yc8EhPh"></i>TV 视口映射（正确）</span>
   </div>
-  <div class="kv" id="kv"></div>
-  <div class="note">拖动视口滑块：R1 是贴底的红平线（完全不动）；R2 是一把散开的黄扇面（46 种斜率、彼此无关）；R3 是少数几条正常爬升的绿线；勾上 TV 参考可看到「正确流体」应有的样子。</div>
+  <div class="kv" id="kv" data-page-node-id="ouAJFJ1qwO6NWwbiRL1V3K"></div>
+  <div class="note" data-page-node-id="yS4UiE06V2TtqUDpNFMCRc">拖动视口滑块：R1 是贴底的红平线（完全不动）；R2 是一把散开的黄扇面（46 种斜率、彼此无关）；R3 是少数几条正常爬升的绿线；勾上 TV 参考可看到「正确流体」应有的样子。</div>
 </div>
 
-<div class="sec">断点跳变特写：<code>--grid-gap</code> 在 1919 → 1920</div>
-<div class="panel">
-  <svg id="jump" viewBox="0 0 1200 270"></svg>
-  <div class="note">
-    <code>:root:229</code> 的 <code>clamp(12px, 0.0344rem + 0.0305vw, 24px)</code> 因漏写 100 倍恒取 12px；
-    <code>:404</code> 的 <code>@media(≥1920)</code> 覆盖为 <code>clamp(20px, 1rem + 0.5vw, 36px)</code> 且该式<b>未漏写</b>（斜率正常）
-    → 跨过 1920 时从 12px 直接跳到 23.6px，<b>跳变 +96.7%</b>。
+<div class="sec" data-page-node-id="rLYii12p8Ablc2j6vFIytd">断点跳变特写：<code data-page-node-id="FwT8PDUOuBYM4MQw4xopPA">--grid-gap</code> 在 1919 → 1920</div>
+<div class="panel" data-page-node-id="1v04PgT0jkrbsyAvDmW5wZ">
+  <svg id="jump" viewBox="0 0 1200 270" data-page-node-id="eOuFbpbo4AQT1pTCiA8iVn"></svg>
+  <div class="note" data-page-node-id="PFDBp16nbZfvQkYoM2FyzF">
+    <code data-page-node-id="UBTB3j6RTt4OkfKrgwl9ac">:root:229</code> 的 <code data-page-node-id="ssGNfG7Ir9PxaH0PN1dyeO">clamp(12px, 0.0344rem + 0.0305vw, 24px)</code> 因漏写 100 倍恒取 12px；
+    <code data-page-node-id="9RCtIeUMPt0mD4xr7I61O8">:404</code> 的 <code data-page-node-id="5pE8g6xTdWyAAQCdCYkR37">@media(≥1920)</code> 覆盖为 <code data-page-node-id="5mdzGQqlF1H317OU1PHZCT">clamp(20px, 1rem + 0.5vw, 36px)</code> 且该式<b data-page-node-id="CFslMyWar5viGMyQde63Bo">未漏写</b>（斜率正常）
+    → 跨过 1920 时从 12px 直接跳到 23.6px，<b data-page-node-id="RGeXQbqFKVIgxA7A4ND9ae">跳变 +96.7%</b>。
   </div>
 </div>
 
-<div class="sec">全量 token 明细（92）</div>
-<div class="panel">
-  <div class="ctrl">
-    <button class="btn on" data-f="all">全部</button>
-    <button class="btn" data-f="A">R1 失效</button>
-    <button class="btn" data-f="B">R2 无契约</button>
-    <button class="btn" data-f="C">R3 正确</button>
-    <span style="color:#8b949e;font-size:12px">点击表头排序 · 悬停曲线看详情</span>
+<div class="sec" data-page-node-id="d3H8xyrforu5ppQCwWZGZ3">全量 token 明细（92）</div>
+<div class="panel" data-page-node-id="tDL8dT2HZk5tUdUkOHqVZO">
+  <div class="ctrl" data-page-node-id="hErRyvtnnOn8EHAdd3rKSc">
+    <button class="btn on" data-f="all" data-page-node-id="sDv8MxZyxFX0cHxL59pkaL">全部</button>
+    <button class="btn" data-f="A" data-page-node-id="6UGaODCktFOvCH4YVkSEqs">R1 失效</button>
+    <button class="btn" data-f="B" data-page-node-id="xYjXA136if1md5HHaJRUhT">R2 无契约</button>
+    <button class="btn" data-f="C" data-page-node-id="IzExbyAcGkCfXbMp9OdKCy">R3 正确</button>
+    <span style="color:#8b949e;font-size:12px" data-page-node-id="GDnGKmDfbIfxT8dCkKkduR">点击表头排序 · 悬停曲线看详情</span>
   </div>
-  <div class="tw"><table id="tb"><thead><tr>
-    <th data-s="0">token</th><th data-s="5">类</th><th data-s="8">行</th>
-    <th data-s="1">MIN</th><th data-s="4">MAX</th><th data-s="6">锚点 lo</th><th data-s="7">锚点 hi</th>
-    <th data-s="v">@视口</th><th data-s="p">完成度</th>
-  </tr></thead><tbody></tbody></table></div>
-  <div class="note">锚点 = <code>(值 − PREF) ÷ (K/100)</code>，PREF 按设计稿 rem16 折算。锚点 hi 落在 37400+ → 契约被放大 100 倍（R1）；lo=0 → 无起点契约（R2）；落在 600~3847 → 真实独立契约（R3）。</div>
+  <div class="tw" data-page-node-id="c1fBGB7xLoelZjBfwFcxnC"><table id="tb" data-page-node-id="21vv4bybOwroep6NBHyx4H"><thead data-page-node-id="JIqhOw2tqBVG6ax1PFqIT1"><tr data-page-node-id="emCmirsKQxhiQ5oITjFCL4">
+    <th data-s="0" data-page-node-id="JrpdTpRmkjUue9FWLfkjkN">token</th><th data-s="5" data-page-node-id="FyKvWJ863xXiaAONn11sTZ">类</th><th data-s="8" data-page-node-id="cVP5172RKe5yrXcGsbe3HU">行</th>
+    <th data-s="1" data-page-node-id="bqU7jWCfJNyMy194BapHuN">MIN</th><th data-s="4" data-page-node-id="tqB560JVHaUHwKoIQW3uqs">MAX</th><th data-s="6" data-page-node-id="EEqVpxT4FHRlJQYGJz4Uly">锚点 lo</th><th data-s="7" data-page-node-id="RldrKJc14PCmY9GjK40Lzt">锚点 hi</th>
+    <th data-s="v" data-page-node-id="w8ubp8IVaHvGqedrpxxf3P">@视口</th><th data-s="p" data-page-node-id="f6TnlAe1gStzkuWtEZ0qKk">完成度</th>
+  </tr></thead><tbody data-page-node-id="GoDylHx1zBNLIxaShNtpZf"></tbody></table></div>
+  <div class="note" data-page-node-id="4BRDXmdcH3rCb5r5PoKX0E">锚点 = <code data-page-node-id="AJpFH48E8QlNRS0u2lX8j6">(值 − PREF) ÷ (K/100)</code>，PREF 按设计稿 rem16 折算。锚点 hi 落在 37400+ → 契约被放大 100 倍（R1）；lo=0 → 无起点契约（R2）；落在 600~3847 → 真实独立契约（R3）。</div>
 </div>
 
 <script>
