@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>流体适配体系审计 · 8 种 regime 曲线</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#e6edf3;font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;padding:28px 32px 60px}
+h1{font-size:22px;font-weight:600;margin-bottom:6px}
+.sub{color:#8b949e;font-size:13px;margin-bottom:22px}
+code{background:#21262d;padding:1px 5px;border-radius:3px;color:#79c0ff;font-size:12px}
+.verdict{background:#161b22;border:1px solid #30363d;border-left:3px solid #f85149;border-radius:6px;padding:14px 18px;margin-bottom:24px;font-size:13px;line-height:1.85}
+.verdict b{color:#f85149}
+.verdict .g{color:#3fb950}
+.grid8{display:grid;grid-template-columns:repeat(auto-fit,minmax(236px,1fr));gap:12px;margin-bottom:26px}
+.rc{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:12px 14px}
+.rc .hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rc .tag{font:600 11px/1 monospace;padding:3px 6px;border-radius:3px;background:#30363d;color:#e6edf3}
+.rc .n{font-size:15px;font-weight:600}
+.rc .meta{color:#8b949e;font-size:11.5px;line-height:1.55}
+.rc .st{font-weight:600;font-size:11.5px;margin-top:5px}
+.ok{color:#3fb950}.warn{color:#d29922}.bad{color:#f85149}
+.sec{margin:30px 0 12px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px}
+.sec::before{content:"";width:3px;height:15px;background:#58a6ff;border-radius:2px}
+.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px 18px;margin-bottom:18px}
+.ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ctrl label{color:#8b949e;font-size:12.5px}
+input[type=range]{width:270px;accent-color:#58a6ff}
+.vwv{font:600 15px/1 monospace;color:#58a6ff;min-width:66px}
+.btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12.5px}
+.btn:hover{border-color:#58a6ff;color:#58a6ff}
+.btn.on{background:#1f6feb;border-color:#1f6feb;color:#fff}
+svg{display:block;width:100%;height:auto;background:#0d1117;border-radius:5px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:#8b949e}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font:12px/1.5 monospace}
+th,td{padding:5px 8px;text-align:right;border-bottom:1px solid #21262d;white-space:nowrap}
+th{color:#8b949e;font-weight:600;position:sticky;top:0;background:#161b22;cursor:pointer;user-select:none}
+th:hover{color:#58a6ff}
+td:first-child,th:first-child{text-align:left}
+.tw{max-height:340px;overflow-y:auto;border:1px solid #21262d;border-radius:5px}
+tr:hover td{background:#1c2128}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px}
+.note{color:#8b949e;font-size:12px;margin-top:10px;line-height:1.8}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-top:12px}
+.kv>div{background:#0d1117;border:1px solid #21262d;border-radius:5px;padding:8px 11px}
+.kv .k{color:#8b949e;font-size:11px}
+.kv .v{font:600 16px/1.35 monospace;color:#e6edf3}
+</style>
+</head>
+<body>
+
+<h1>流体适配体系审计 · 8 种 regime 曲线</h1>
+<div class="sub">数据源：<code>src/assets/styles/variables.css</code> 全量 92 个流体 token + 全项目 clamp 消费点 · 桌面 rem=14px 实际基准</div>
+
+<div class="verdict">
+<b>核心结论：</b>项目并存 <b>8 种</b> 流式适配机制 —— R1（41 个）<b>完全失效</b>、R2（46 个）<b>无契约</b>、R3（5 个）/ R4（TV 61 个）/ R6（6 个）<span class="g">正确</span>、R5 阶梯与流体混用、R7（53 处）脱离 token、R8 常量。<br>
+上轮「倍数校验非 100 → 不动」的规则 <b>已作废</b>：它把「真有独立契约」与「没契约、系数随手填」混为一谈。真正该不动的只有 <b>5 个</b>，不是整个 <code>--layout-*</code> / <code>--avatar-*</code> / <code>--scrollbar-*</code> 大类。<br>
+<b>恢复曲线解决不了大屏问题</b> —— 契约是 <code>375→768</code>，768px 以上全部冻结取 MAX，14 寸与 27 寸拿到完全相同的值。
+</div>
+
+<div class="grid8" id="r8"></div>
+
+<div class="sec">曲线全景：92 个 token 的行程完成度</div>
+<div class="panel">
+  <div class="ctrl">
+    <label>模拟视口</label>
+    <input type="range" id="vw" min="320" max="3840" value="2560" step="1">
+    <span class="vwv" id="vwv">2560px</span>
+    <button class="btn on" id="mNorm">归一化 (完成度 %)</button>
+    <button class="btn" id="mAbs">绝对值 (px)</button>
+    <button class="btn on" data-cls="A">R1 失效 41</button>
+    <button class="btn on" data-cls="B">R2 无契约 46</button>
+    <button class="btn on" data-cls="C">R3 正确 5</button>
+    <button class="btn" data-cls="TV">TV 参考</button>
+  </div>
+  <svg id="chart" viewBox="0 0 1200 430"></svg>
+  <div class="legend">
+    <span><i style="background:#f85149"></i>R1 375→768 契约（漏 100×，恒 MIN）</span>
+    <span><i style="background:#d29922"></i>R2 PREF=MIN 经验流体（无契约）</span>
+    <span><i style="background:#3fb950"></i>R3 真实独立契约（正确）</span>
+    <span><i style="background:#58a6ff"></i>TV 视口映射（正确）</span>
+  </div>
+  <div class="kv" id="kv"></div>
+  <div class="note">拖动视口滑块：R1 是贴底的红平线（完全不动）；R2 是一把散开的黄扇面（46 种斜率、彼此无关）；R3 是少数几条正常爬升的绿线；勾上 TV 参考可看到「正确流体」应有的样子。</div>
+</div>
+
+<div class="sec">断点跳变特写：<code>--grid-gap</code> 在 1919 → 1920</div>
+<div class="panel">
+  <svg id="jump" viewBox="0 0 1200 270"></svg>
+  <div class="note">
+    <code>:root:229</code> 的 <code>clamp(12px, 0.0344rem + 0.0305vw, 24px)</code> 因漏写 100 倍恒取 12px；
+    <code>:404</code> 的 <code>@media(≥1920)</code> 覆盖为 <code>clamp(20px, 1rem + 0.5vw, 36px)</code> 且该式<b>未漏写</b>（斜率正常）
+    → 跨过 1920 时从 12px 直接跳到 23.6px，<b>跳变 +96.7%</b>。
+  </div>
+</div>
+
+<div class="sec">全量 token 明细（92）</div>
+<div class="panel">
+  <div class="ctrl">
+    <button class="btn on" data-f="all">全部</button>
+    <button class="btn" data-f="A">R1 失效</button>
+    <button class="btn" data-f="B">R2 无契约</button>
+    <button class="btn" data-f="C">R3 正确</button>
+    <span style="color:#8b949e;font-size:12px">点击表头排序 · 悬停曲线看详情</span>
+  </div>
+  <div class="tw"><table id="tb"><thead><tr>
+    <th data-s="0">token</th><th data-s="5">类</th><th data-s="8">行</th>
+    <th data-s="1">MIN</th><th data-s="4">MAX</th><th data-s="6">锚点 lo</th><th data-s="7">锚点 hi</th>
+    <th data-s="v">@视口</th><th data-s="p">完成度</th>
+  </tr></thead><tbody></tbody></table></div>
+  <div class="note">锚点 = <code>(值 − PREF) ÷ (K/100)</code>，PREF 按设计稿 rem16 折算。锚点 hi 落在 37400+ → 契约被放大 100 倍（R1）；lo=0 → 无起点契约（R2）；落在 600~3847 → 真实独立契约（R3）。</div>
+</div>
+
+<script>
+const TOKENS=[
+["--text-2xs",9,0.4432,0.0051,11,"A",37427,76643,153],
+["--text-xs",12,0.6904,0.0025,13,"A",38144,78144,154],
+["--text-sm",13,0.7529,0.0025,14,"A",38144,78144,155],
+["--text-lg",14,0.7557,0.0051,16,"A",37427,76643,161],
+["--text-xl",16,0.8807,0.0051,18,"A",37427,76643,162],
+["--text-2xl",20,1.0115,0.0102,24,"A",37412,76627,163],
+["--text-3xl",26,1.3865,0.0102,30,"A",37412,76627,164],
+["--space-3xs",1,0.0029,0.0025,2,"A",38144,78144,167],
+["--space-2xs",1,-0.0568,0.0051,3,"A",37427,76643,168],
+["--space-xs",3,0.0086,0.0076,6,"A",37663,77137,169],
+["--space-xs-plus",4,0.0115,0.0102,8,"A",37412,76627,170],
+["--space-sm",6,0.0172,0.0153,12,"A",37417,76633,171],
+["--space-md",8,-0.0964,0.0254,18,"A",37569,76939,172],
+["--space-lg",12,-0.2042,0.0407,28,"A",37512,76824,173],
+["--space-lg-xl",14,-0.3181,0.0509,34,"A",37504,76797,174],
+["--space-xl",16,-0.4313,0.0611,40,"A",37481,76761,175],
+["--space-2xl",24,-0.4084,0.0814,56,"A",37512,76824,176],
+["--space-3xl",32,-0.8626,0.1221,80,"A",37512,76824,177],
+["--dot-size",5,0.1336,0.0076,8,"A",37663,77137,194],
+["--dot-active-w",16,0.5229,0.0204,24,"A",37420,76635,195],
+["--dot-active-h",5,0.1336,0.0076,8,"A",37663,77137,196],
+["--dot-gap",3,0.0086,0.0076,6,"A",37663,77137,197],
+["--comp-btn-min-height",34,0.5744,0.0662,60,"A",37477,76752,200],
+["--comp-tab-height",28,0.7958,0.0407,44,"A",37512,76824,201],
+["--comp-btn-min-width",40,1.3073,0.0509,60,"A",37492,76784,202],
+["--comp-input-height",40,1.4265,0.0458,58,"A",37502,76803,203],
+["--comp-input-min-w",180,4.0935,0.3053,300,"A",37505,76811,204],
+["--comp-thumb-size",14,0.0401,0.0356,28,"A",37524,76849,205],
+["--switch-track-height",18,0.7672,0.0153,24,"A",37417,76633,207],
+["--switch-track-width",32,1.0458,0.0407,48,"A",37512,76824,208],
+["--switch-thumb-size",14,0.2786,0.0254,24,"A",37569,76939,209],
+["--switch-thumb-offset",16,0.5229,0.0204,24,"A",37420,76635,210],
+["--vol-track-width",3,0.1279,0.0025,4,"A",38144,78144,214],
+["--vol-track-radius",1,0.0029,0.0025,2,"A",38144,78144,215],
+["--radio-size",14,0.0401,0.0356,28,"A",37524,76849,217],
+["--radio-dot-size",6,-0.1021,0.0204,14,"A",37420,76635,218],
+["--badge-size",10,-0.0906,0.0305,22,"A",37540,76884,220],
+["--radius-sm",3,0.0682,0.0051,5,"A",37427,76643,223],
+["--radius-md",6,0.1365,0.0102,10,"A",37412,76627,224],
+["--radius-lg",10,0.1479,0.0204,18,"A",37420,76635,225],
+["--grid-gap",12,0.0344,0.0305,24,"A",37540,76884,229],
+["--layout-loading-min-height",300,18.75,3,480,"B",0,6000,250],
+["--layout-modal-max-width",320,20,4,600,"B",0,7000,252],
+["--layout-osd-max-width",320,20,30,1400,"B",0,3600,256],
+["--layout-content-max-width",320,20,30,1920,"B",0,5333,257],
+["--layout-hero-height",200,12.5,5,500,"B",0,6000,258],
+["--layout-hero-height-mobile",280,17.5,0.5,340,"B",0,12000,259],
+["--layout-card-daily-width",200,12.5,3,320,"B",0,4000,260],
+["--layout-error-detail-height",200,12.5,2,320,"B",0,6000,261],
+["--layout-spinner-border",3,0.1875,0.1,5,"B",0,2000,262],
+["--layout-perf-panel-min-w",280,17.5,1.5,420,"B",0,9333,263],
+["--layout-channel-num-w",120,7.5,0.5,180,"B",0,12000,264],
+["--layout-quality-badge-min-w",84,5.25,0.5,120,"B",0,7200,265],
+["--layout-vol-popup-w",60,3.75,0.5,96,"B",0,7200,266],
+["--layout-vol-slider-w",180,11.25,1,280,"B",0,10000,267],
+["--layout-player-vol-w",80,5,0.5,120,"B",0,8000,268],
+["--layout-popover-min-w",100,6.25,0.5,150,"B",0,10000,269],
+["--layout-popover-wide-min-w",140,8.75,0.5,200,"B",0,12000,270],
+["--layout-sidebar-width",260,15.84,1.73,320,"C",379,3847,272],
+["--layout-episode-panel-w",420,26.25,4,560,"B",0,3500,273],
+["--layout-episode-panel-w-alt",440,27.5,4,600,"B",0,4000,274],
+["--layout-time-display-min-w",90,5.625,0.5,140,"B",0,10000,275],
+["--layout-panel-medium-w",280,17.5,3.5,480,"B",0,5714,277],
+["--layout-source-url-max-w",160,10,0.5,240,"B",0,16000,279],
+["--layout-searchbox-header-max-w",480,30,2,680,"B",0,10000,281],
+["--layout-searchbox-browse-max-w",560,35,2,760,"B",0,10000,282],
+["--layout-groups-collapsed-h",76,4.75,0.5,110,"B",0,6800,283],
+["--layout-select-w",140,8.75,4,260,"B",0,3000,284],
+["--layout-select-w-mobile",120,7.5,0.5,180,"B",0,12000,285],
+["--layout-bottomsheet-max-h",500,31.25,3,720,"B",0,7333,287],
+["--layout-epg-empty-min-height",100,6.25,0.5,150,"B",0,10000,288],
+["--layout-epg-time-min-width",100,6.25,0.5,150,"B",0,10000,289],
+["--layout-osd-timeshift-dot",6,0.375,0.1,10,"B",0,4000,295],
+["--layout-logo-size",48,2.667,0.87,64,"C",612,2451,297],
+["--layout-logo-size-sm",40,2.222,0.73,52,"C",609,2253,298],
+["--layout-logo-size-lg",56,3.111,1.02,72,"C",610,2179,299],
+["--layout-outline-width",2,0.125,0.05,3,"B",0,2000,304],
+["--avatar-xs",30,1.875,0.5,52,"B",0,4400,307],
+["--avatar-sm",56,3.5,1,96,"B",0,4000,308],
+["--avatar-lg",72,4.5,1.5,128,"B",0,3733,309],
+["--source-meta-min-width",120,7.5,0.5,180,"B",0,12000,313],
+["--error-msg-max-width",100,6.25,0.3,140,"B",0,13333,314],
+["--src-det-popup-max-h",220,13.75,1,320,"B",0,10000,317],
+["--src-det-grid-min",150,9.375,0.5,220,"B",0,14000,318],
+["--layout-tabbar-height",56,3.5,0.3,72,"B",0,5333,320],
+["--layout-cast-avatar",64,4,0.5,88,"B",0,4800,321],
+["--layout-datepicker-width",340,21.25,1,460,"B",0,12000,322],
+["--layout-collapse-max-h",1000,62.5,4,1400,"B",0,10000,323],
+["--header-height",60,3.375,1,76,"C",600,2200,337],
+["--header-height-compact",48,3,0.3,64,"B",0,5333,338],
+["--scrollbar-width",6,0.375,0.1,10,"B",0,4000,353],
+["--scrollbar-width-thin",4,0.25,0.1,8,"B",0,4000,354]
+];
+const REM=14.0;
+const COL={A:"#f85149",B:"#d29922",C:"#3fb950",TV:"#58a6ff"};
+const VWS=[320,375,768,1024,1280,1920,2560,3440,3840];
+let vw=2560, mode="norm", show={A:1,B:1,C:1,TV:0}, filter="all", sortK="0", sortD=1;
+
+function val(t,w){const mn=t[1],rem=t[2],k=t[3],mx=t[4];
+  return Math.min(Math.max(mn, rem*REM + k*w/100), mx);}
+function prog(t,w){return t[4]===t[1]?0:(val(t,w)-t[1])/(t[4]-t[1])*100;}
+function tvVal(w){return Math.min(Math.max(15, 0.78125*w/100),30);}
+function tvProg(w){return (tvVal(w)-15)/15*100;}
+
+const X0=62,X1=1170,Y0=18,Y1=380;
+const sx=w=>X0+(w-320)/(3840-320)*(X1-X0);
+function sy(p,max){return Y1-(p/max)*(Y1-Y0);}
+
+function draw(){
+  const max = mode==="norm"?100:Math.max(...TOKENS.filter(t=>show[t[5]]).map(t=>t[4]),80);
+  let s='<rect x="'+X0+'" y="'+Y0+'" width="'+(X1-X0)+'" height="'+(Y1-Y0)+'" fill="#0d1117"/>';
+  for(let p=0;p<=100;p+=20){const y=sy(p,100);
+    s+='<line x1="'+X0+'" y1="'+y+'" x2="'+X1+'" y2="'+y+'" stroke="#21262d" stroke-width="1"/>';
+    s+='<text x="'+(X0-8)+'" y="'+(y+4)+'" fill="#6e7681" font-size="11" text-anchor="end">'+(mode==="norm"?p+"%":Math.round(p/100*max))+'</text>';}
+  VWS.forEach(w=>{const x=sx(w);
+    s+='<line x1="'+x+'" y1="'+Y0+'" x2="'+x+'" y2="'+Y1+'" stroke="#21262d" stroke-dasharray="3 5"/>';
+    s+='<text x="'+x+'" y="'+(Y1+16)+'" fill="#6e7681" font-size="10.5" text-anchor="middle">'+w+'</text>';});
+  s+='<text x="'+((X0+X1)/2)+'" y="'+(Y1+34)+'" fill="#6e7681" font-size="11" text-anchor="middle">视口宽度 (px)</text>';
+  const N=180, step=(3840-320)/N;
+  const drawOne=(t,color,op)=>{let d="";
+    for(let i=0;i<=N;i++){const w=320+i*step;
+      const p = mode==="norm"?prog(t,w):val(t,w);
+      d += (i?"L":"M")+sx(w).toFixed(1)+" "+sy(p,max).toFixed(1);}
+    return '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="1.4" opacity="'+op+'"><title>'+t[0]+'  MIN '+t[1]+'  MAX '+t[4]+'  ['+t[5]+']  锚点 '+t[6]+'→'+t[7]+'  @'+vw+'px = '+val(t,vw).toFixed(1)+'px ('+prog(t,vw).toFixed(0)+'%)</title></path>';};
+  TOKENS.forEach(t=>{if(show[t[5]]) s+=drawOne(t,COL[t[5]], t[5]==="B"?0.55:0.9);});
+  if(show.TV){let d="";
+    for(let i=0;i<=N;i++){const w=320+i*step;
+      const p = mode==="norm"?tvProg(w):tvVal(w);
+      d += (i?"L":"M")+sx(w).toFixed(1)+" "+sy(p,max).toFixed(1);}
+    s+='<path d="'+d+'" fill="none" stroke="'+COL.TV+'" stroke-width="2.4" opacity="0.95"><title>TV --text-base clamp(15px,0.78125vw,30px)  @'+vw+'px = '+tvVal(vw).toFixed(1)+'px</title></path>';}
+  const xv=sx(vw);
+  s+='<line x1="'+xv+'" y1="'+Y0+'" x2="'+xv+'" y2="'+Y1+'" stroke="#58a6ff" stroke-width="1.6"/>';
+  s+='<circle cx="'+xv+'" cy="'+Y0+'" r="3.5" fill="#58a6ff"/>';
+  document.getElementById("chart").innerHTML=s;
+}
+
+function drawJump(){
+  const g=(w)=> w<1920 ? 12 : Math.min(Math.max(20, 1*REM+0.5*w/100),36);
+  const H=200;
+  let s='<rect x="'+X0+'" y="'+Y0+'" width="'+(X1-X0)+'" height="'+H+'" fill="#0d1117"/>';
+  for(let v=0;v<=40;v+=10){const y=Y0+H-(v/40)*H;
+    s+='<line x1="'+X0+'" y1="'+y+'" x2="'+X1+'" y2="'+y+'" stroke="#21262d"/>';
+    s+='<text x="'+(X0-8)+'" y="'+(y+4)+'" fill="#6e7681" font-size="11" text-anchor="end">'+v+'</text>';}
+  [768,1280,1920,2560,3840].forEach(w=>{const x=sx(w);
+    s+='<line x1="'+x+'" y1="'+Y0+'" x2="'+x+'" y2="'+(Y0+H)+'" stroke="#21262d" stroke-dasharray="3 5"/>';
+    s+='<text x="'+x+'" y="'+(Y0+H+18)+'" fill="#6e7681" font-size="10.5" text-anchor="middle">'+w+'</text>';});
+  let d1="",d2="";
+  for(let w=320;w<1920;w+=8) d1+=(d1?"L":"M")+sx(w).toFixed(1)+" "+(Y0+H-(g(w)/40)*H).toFixed(1);
+  for(let w=1920;w<=3840;w+=8) d2+=(d2?"L":"M")+sx(w).toFixed(1)+" "+(Y0+H-(g(w)/40)*H).toFixed(1);
+  s+='<path d="'+d1+'" fill="none" stroke="#f85149" stroke-width="2.4"/>';
+  s+='<path d="'+d2+'" fill="none" stroke="#3fb950" stroke-width="2.4"/>';
+  const xj=sx(1920), y1=Y0+H-(12/40)*H, y2=Y0+H-(g(1920)/40)*H;
+  s+='<line x1="'+xj+'" y1="'+y1+'" x2="'+xj+'" y2="'+y2+'" stroke="#d29922" stroke-width="2" stroke-dasharray="4 3"/>';
+  s+='<circle cx="'+xj+'" cy="'+y1+'" r="4" fill="#f85149"/><circle cx="'+xj+'" cy="'+y2+'" r="4" fill="#3fb950"/>';
+  s+='<text x="'+(xj-12)+'" y="'+((y1+y2)/2)+'" fill="#d29922" font-size="12.5" text-anchor="end" font-weight="600">+96.7%</text>';
+  s+='<text x="'+(xj+12)+'" y="'+(y2-6)+'" fill="#3fb950" font-size="12">23.6px</text>';
+  s+='<text x="'+(xj+12)+'" y="'+(y1+16)+'" fill="#f85149" font-size="12">12.0px</text>';
+  document.getElementById("jump").innerHTML=s;
+}
+
+function updKV(){
+  const A=TOKENS.filter(t=>t[5]==="A"),B=TOKENS.filter(t=>t[5]==="B"),C=TOKENS.filter(t=>t[5]==="C");
+  const avg=(arr,f)=>arr.reduce((s,t)=>s+f(t),0)/arr.length;
+  const pr=B.map(t=>prog(t,vw)).sort((a,b)=>b-a);
+  document.getElementById("kv").innerHTML=
+    '<div><div class="k">R1 平均完成度</div><div class="v" style="color:'+COL.A+'">'+avg(A,t=>prog(t,vw)).toFixed(1)+'%</div></div>'+
+    '<div><div class="k">R2 平均完成度</div><div class="v" style="color:'+COL.B+'">'+avg(B,t=>prog(t,vw)).toFixed(1)+'%</div></div>'+
+    '<div><div class="k">R3 平均完成度</div><div class="v" style="color:'+COL.C+'">'+avg(C,t=>prog(t,vw)).toFixed(1)+'%</div></div>'+
+    '<div><div class="k">R2 离散度 (max−min)</div><div class="v" style="color:'+COL.B+'">'+(pr[0]-pr[pr.length-1]).toFixed(0)+'pt</div></div>'+
+    '<div><div class="k">TV --text-base</div><div class="v" style="color:'+COL.TV+'">'+tvVal(vw).toFixed(1)+'px</div></div>';
+}
+
+function drawTable(){
+  const rows=TOKENS.filter(t=>filter==="all"||t[5]===filter).slice();
+  rows.sort((a,b)=>{const k=sortK;
+    const va = k==="v"?val(a,vw) : k==="p"?prog(a,vw) : (k==="0"?a[0]:a[+k]);
+    const vb = k==="v"?val(b,vw) : k==="p"?prog(b,vw) : (k==="0"?b[0]:b[+k]);
+    return (typeof va==="string"?va.localeCompare(vb):va-vb)*sortD;});
+  document.querySelector("#tb tbody").innerHTML=rows.map(t=>
+    '<tr><td><span class="dot" style="background:'+COL[t[5]]+'"></span>'+t[0]+'</td>'+
+    '<td style="color:'+COL[t[5]]+';font-weight:600">'+t[5]+'</td><td style="color:#6e7681">'+t[8]+'</td>'+
+    '<td>'+t[1]+'</td><td>'+t[4]+'</td>'+
+    '<td style="color:#6e7681">'+t[6]+'</td><td style="color:'+(t[7]>10000?COL.A:COL.C)+'">'+t[7]+'</td>'+
+    '<td style="color:#e6edf3;font-weight:600">'+val(t,vw).toFixed(1)+'</td>'+
+    '<td style="color:'+(prog(t,vw)<1?COL.A:COL.B)+'">'+prog(t,vw).toFixed(0)+'%</td></tr>').join("");
+}
+
+const R8=[
+ ["R1","375→768 契约流体","41","variables.css:153-229","375→768（实跑 37500→76800）","bad","❌ 完全失效 · 漏写 100×"],
+ ["R2","PREF=MIN 经验流体","46","variables.css:250-354","vw_lo=0，vw_hi=2000~16000","warn","⚠️ 无契约 · K 随手填"],
+ ["R3","真实独立契约流体","5","variables.css:272,297-299,337","600→2451","ok","✅ 正确 · 不该动"],
+ ["R4","TV 视口映射 2×","61","variables.css:510-618","clamp(A,(A/19.2)vw,2A)","ok","✅ 正确 · 整条曲线×2"],
+ ["R5","@media 阶梯断点","3组×6档","variables.css:375-423,656-660","768/1024/1280/2560/3840","warn","⚠️ 与流体混用"],
+ ["R6","大屏兜底 2× 流体","6","variables.css:637-644","1920→3840（配 min(vh,…)）","ok","✅ 正确 · 有 rem 偏差"],
+ ["R7","组件级硬编码 clamp","53","11 个 CSS 文件","各自为政","warn","⚠️ 脱离 token 体系"],
+ ["R8","常量 + 派生","113+7","variables.css:41-357","不响应视口","","— 含 --text-base:14px"]
+];
+document.getElementById("r8").innerHTML=R8.map(r=>
+ '<div class="rc"><div class="hd"><span class="tag">'+r[0]+'</span><span class="n">'+r[1]+' <span style="color:#8b949e;font-weight:400">×'+r[2]+'</span></span></div>'+
+ '<div class="meta">'+r[3]+'<br>锚点：'+r[4]+'</div><div class="st '+r[5]+'">'+r[6]+'</div></div>').join("");
+
+document.getElementById("vw").oninput=e=>{vw=+e.target.value;
+  document.getElementById("vwv").textContent=vw+"px";draw();updKV();drawTable();};
+document.getElementById("mNorm").onclick=e=>{mode="norm";e.target.classList.add("on");
+  document.getElementById("mAbs").classList.remove("on");draw();};
+document.getElementById("mAbs").onclick=e=>{mode="abs";e.target.classList.add("on");
+  document.getElementById("mNorm").classList.remove("on");draw();};
+document.querySelectorAll("[data-cls]").forEach(b=>b.onclick=()=>{
+  const c=b.dataset.cls;show[c]=show[c]?0:1;b.classList.toggle("on",!!show[c]);draw();updKV();});
+document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f;
+  document.querySelectorAll("[data-f]").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");drawTable();});
+document.querySelectorAll("#tb th").forEach(th=>th.onclick=()=>{
+  const k=th.dataset.s;sortD=(sortK===k?-sortD:1);sortK=k;drawTable();});
+
+draw();drawJump();updKV();drawTable();
+</script>
+</body>
+</html>

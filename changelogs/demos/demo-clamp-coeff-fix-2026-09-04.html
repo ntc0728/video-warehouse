@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="VjKljBC7NNWJlFnGuP92ak">
+<head data-page-node-id="qenfq7eF3JYNTXOuyBgQQC">
+<meta charset="UTF-8" data-page-node-id="fKkxmT13WRSQdhPcLV2mlR">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="SWBclkYUS3BGkMyho1CeZD">
+<title>流体 token COEFF 修复验证 · 2026-09-04</title>
+<style>
+  :root{
+    --bg:#f5f5f5; --surface:#fff; --text:#000; --text2:#666; --text3:#999;
+    --border:#e8e8e8; --border-strong:#d9d9d9; --accent:#1677ff;
+    --ok:#52c41a; --warn:#fa8c16; --err:#ff4d4f; --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       font-size:14px;line-height:1.6}
+  .wrap{max-width:1720px;margin:0 auto;padding:20px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--text2);font-size:13px;margin-bottom:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+
+  /* ── 控制条 ── */
+  .ctrl{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:6px}
+  .fld>label{font-size:12px;color:var(--text2);font-weight:600}
+  .seg{display:flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:var(--surface);padding:7px 14px;font-size:13px;cursor:pointer;
+              border-right:1px solid var(--border);color:var(--text2)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--text);color:#fff;font-weight:600}
+  input[type=range]{width:220px}
+  select{padding:6px 10px;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;background:var(--surface)}
+  .val{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600}
+
+  /* ── 指标卡 ── */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .m{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .m .k{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .m .v{font-family:var(--mono);font-size:19px;font-weight:700}
+  .m .d{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+  .m.up .v{color:var(--ok)} .m.dn .v{color:var(--err)}
+
+  /* ── 并排舞台 ── */
+  .stage{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1180px){.stage{grid-template-columns:1fr}}
+  .pane{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .pane-hd{padding:10px 14px;border-bottom:1px solid var(--border);background:#fafafa;
+           font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .pane-hd .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--border);color:var(--text2)}
+  .pane-hd .tag.bad{background:#fff1f0;color:var(--err)}
+  .pane-hd .tag.good{background:#f6ffed;color:var(--ok)}
+  .pane-bd{padding:16px;overflow-x:auto}
+
+  /* ── 被测试的真实组件（用 scope 变量驱动）── */
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--t-grid-gap)}
+  .rc{border:1px solid var(--border);border-radius:var(--t-radius-lg);overflow:hidden;background:var(--surface)}
+  .rc .cover{aspect-ratio:16/9;background:linear-gradient(135deg,#dfe6f0,#b9c6da);
+             display:flex;align-items:center;justify-content:center;font-size:var(--t-text-2xl);color:#7c8aa0}
+  .rc .body{padding:var(--t-space-md)}
+  .rc .title{font-size:var(--t-text-base);font-weight:600;margin:0 0 var(--t-space-xs);
+             overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rc .meta{font-size:var(--t-text-xs);color:var(--text3);margin:0 0 var(--t-space-sm)}
+  .rc .bar{height:var(--t-space-2xs);background:var(--border);border-radius:99px;overflow:hidden}
+  .rc .bar>i{display:block;height:100%;width:62%;background:var(--accent)}
+  .row{margin-top:var(--t-space-lg);display:flex;gap:var(--t-space-md);align-items:center;flex-wrap:wrap}
+  .btn{min-height:var(--t-comp-btn-min-height);min-width:var(--t-comp-btn-min-width);
+       padding:0 var(--t-space-lg);background:var(--text);color:#fff;border:0;
+       border-radius:var(--t-radius-md);font-size:var(--t-text-sm);cursor:pointer}
+  .inp{min-height:var(--t-comp-input-height);min-width:var(--t-comp-input-min-w);
+       padding:0 var(--t-space-md);border:1px solid var(--border-strong);
+       border-radius:var(--t-radius-md);font-size:var(--t-text-sm);background:var(--surface)}
+  .dots{display:flex;gap:var(--t-dot-gap);align-items:center;margin-top:var(--t-space-lg)}
+  .dots i{display:block;width:var(--t-dot-size);height:var(--t-dot-size);border-radius:99px;background:var(--border-strong)}
+  .dots i.on{width:var(--t-dot-active-w);height:var(--t-dot-active-h);background:var(--text)}
+  .h-demo{font-size:var(--t-text-3xl);font-weight:700;margin:var(--t-space-xl) 0 var(--t-space-sm)}
+  .p-demo{font-size:var(--t-text-sm);color:var(--text2);margin:0 0 var(--t-space-sm)}
+  .gapmark{height:var(--t-grid-gap);background:repeating-linear-gradient(90deg,#ffd591 0 6px,#fff7e6 6px 12px);
+           border-top:1px solid var(--warn);border-bottom:1px solid var(--warn);margin-top:var(--t-space-sm)}
+
+  /* ── 对照表 ── */
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+  th{position:sticky;top:0;background:#fafafa;font-weight:700;text-align:right;z-index:2}
+  td:first-child,th:first-child{text-align:left}
+  tr.grp td{background:#fafafa;font-weight:700;color:var(--text2);text-align:left}
+  .bump{color:var(--ok);font-weight:700}
+  .same{color:var(--text3)}
+  .tbl-wrap{max-height:460px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  .note{font-size:12px;color:var(--text2);line-height:1.8}
+  .note b{color:var(--text)}
+  code{font-family:var(--mono);background:#f0f0f0;padding:1px 5px;border-radius:4px;font-size:12px}
+  .warnbox{background:#fff7e6;border:1px solid #ffd591;border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:16px}
+  .warnbox b{color:#ad6800}
+</style>
+</head>
+<body data-page-node-id="i5rmgLUltRoctyJSpPAlZt">
+<div class="wrap" data-page-node-id="1QOEkiJOgoqEDG5XaIUH7N">
+
+  <h1 data-page-node-id="8Eyr8gRQSKxAlGkXZaV8Gz">流体 token COEFF 修复验证</h1>
+  <div class="sub" data-page-node-id="mEXvyS7LlAWm29J36XovKl">
+    variables.css 的 <code data-page-node-id="pUnGPHEtyHnNGPQswDfMYd">clamp(MIN, PREF + COEFF·100vw, MAX)</code> 被写成 <code data-page-node-id="A5tDiBS4NbTJpjwqTumnEk">COEFF·1vw</code>（漏 100 倍），
+    且 PREF 用 <code data-page-node-id="E1mG3LClCIIE20RgeXrKzE">rem</code> 表达而 <code data-page-node-id="8wrYR7kGGyEilrRAlKBFJ2">html{font-size:14px}</code> → 中项在 2560px 视口仍低于 MIN、甚至为负 →
+    <b data-page-node-id="QH8PHVkimOKvmb2q1WyBlx">clamp 恒取 MIN，桌面端从未拿到设计 MAX</b>。本 demo 对比「现状 / 修复 / 修复+1.15」三态。
+  </div>
+
+  <div class="warnbox" data-page-node-id="jHuNySycxa62AllIxa9t1W">
+    <b data-page-node-id="4540s9SlNggPe3Z3N3WO3C">⚠️ 这是「第二期」独立议题，与一期 <code data-page-node-id="H9iNSyvifrGVzOpkxF074p">--ui-scale</code> 性质不同：</b>
+    一期是「在现有（偏小的）基线上等比放大」；二期是「把基线本身恢复到设计稿尺寸」。
+    修复后桌面端间距一次性 <b data-page-node-id="EI1A6nRlwwEsb6WMRvywcw">+133%</b>、控件高度 <b data-page-node-id="VRzl6SR5DWcbDzAInMmJE5">+76%</b>、栅格间距 <b data-page-node-id="vYpe9WAgiqLjb9NR7VP5fo">+100%</b> —— 观感剧变，故必须先看 demo。
+  </div>
+
+  <!-- 控制条 -->
+  <div class="card" data-page-node-id="yscn4i6eqGNrqv52hdZmYy">
+    <div class="ctrl" data-page-node-id="StehStEFBRETR9wb1qDrz0">
+      <div class="fld" data-page-node-id="5ufw02ZxmxGkBuqZdH08nO">
+        <label data-page-node-id="UXRhOGL5rtG6BBOnhgYqpy">对比模式</label>
+        <div class="seg" id="segMode" data-page-node-id="YQfZWzZmIWdzZpx86ziSKA">
+          <button data-m="now" class="on" data-page-node-id="GK5bLh5R0qgLmZd9CLERAS">① 现状（COEFF 漏 100×）</button>
+          <button data-m="fix" data-page-node-id="terqFPMt6LniIGejL3cvRJ">② 修复（恢复设计曲线）</button>
+          <button data-m="fix115" data-page-node-id="xDNBMONDxZiFAXlgNtIwyO">③ 修复 + ui-scale 1.15</button>
+        </div>
+      </div>
+      <div class="fld" data-page-node-id="GEFU7L0vBwHIEcLhq5jL2b">
+        <label data-page-node-id="b1KoY5xnokJlRn96i3FUBO">模拟视口宽 <span class="val" id="vwVal" data-page-node-id="wvjbRsQCiJSjG01s7OYDzT">2560px</span></label>
+        <input type="range" id="vw" min="320" max="3840" step="1" value="2560" data-page-node-id="VxFiT5WPE4YljUlEBvTrqa">
+      </div>
+      <div class="fld" data-page-node-id="0LoDa07ttWq7JeOX14ajND">
+        <label data-page-node-id="hUOzb7nKTpdO0vCHmyaNMK">设备（PPI / 系统缩放 / 观看距离）</label>
+        <select id="dev" data-page-node-id="yv53JKkuCMQs7wrY2zZEJC">
+          <option value="108.8|1|70" data-page-node-id="9DoceVhfoGAYfz6pBbwUvu">27" 2560×1440 @100% · PPI109 · 70cm</option>
+          <option value="92|1|60" data-page-node-id="EYERP6DngULZnz1NpzX0Az">24" 1920×1080 @100% · PPI92 · 60cm</option>
+          <option value="157.4|1.5|45" selected data-page-node-id="V2EC6qHVBDbUkEchBv3EFR">14" 1920×1080 @150% · PPI157 · 45cm</option>
+          <option value="80.1|1|300" data-page-node-id="7cxLKL04EshKFW8KiAHr3A">55" 4K TV @100% · PPI80 · 300cm</option>
+          <option value="163|2|55" data-page-node-id="3QthFKK7XEWh75sarWrHn1">15" Retina @200% · PPI163 · 55cm</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 指标 -->
+  <div class="metrics" id="metrics" data-page-node-id="0ndozetqKcBVTCvoXKN4g0"></div>
+
+  <!-- 并排舞台 -->
+  <div class="stage" data-page-node-id="xJxscAXh3fooGmuRG12gGL">
+    <div class="pane" data-page-node-id="8ZPHxu3untIi4rHLoL9uaa">
+      <div class="pane-hd" data-page-node-id="S0JuSEtgX4chg4NOSgC2iu"><span data-page-node-id="PtIq8zgUHlzhQPzt6Joh2J">现状（线上真实表现）</span><span class="tag bad" id="tagNow" data-page-node-id="l38j5FcsZjNixkjIwJYofh">恒取 MIN</span></div>
+      <div class="pane-bd" data-page-node-id="FMk3jMabf1KH3bLwceI87M"><div class="scope" id="scopeNow" data-page-node-id="MKaCWkgZGnNA8uBLmOqgXV"></div></div>
+    </div>
+    <div class="pane" data-page-node-id="fEIXSnEcNoOF0yVmAvmAJN">
+      <div class="pane-hd" data-page-node-id="WCZCgEyZ0gPYUyAfQjHV5o"><span id="paneFixTitle" data-page-node-id="eodF5TihLF0jOGCFrpHpvb">修复后</span><span class="tag good" id="tagFix" data-page-node-id="JDxzXIXYZ2q4YUJa6tldep">375→768 流体 · 768+ 冻结 MAX</span></div>
+      <div class="pane-bd" data-page-node-id="bQOPFuzyU2uKBN4qUfROHu"><div class="scope" id="scopeFix" data-page-node-id="9PT8WNCAAEXSASkLakFOwk"></div></div>
+    </div>
+  </div>
+
+  <!-- 对照表 -->
+  <div class="card" style="margin-top:16px" data-page-node-id="OUR5PU0FHPOrvRU5ZITIVL">
+    <div style="font-weight:700;margin-bottom:10px" data-page-node-id="9arGVWzcNBAqDYFcGixDDW">41 个基准流体 token — 当前视口下的取值对照</div>
+    <div class="tbl-wrap" data-page-node-id="RsN3NokWbiIEtMaCM5DTvk">
+      <table data-page-node-id="Pc270YfZHDXj4h38MAm3Wm">
+        <thead data-page-node-id="9PZtDJsoRq8dfuAknl9Mqi"><tr data-page-node-id="QfzSwPPgPTf9gNYZgjoCT3">
+          <th data-page-node-id="HmmZIpY2epgZIN0bsHGoTJ">token</th><th data-page-node-id="Z7TGH3ZQ3S7m3wp1bye2pl">MIN</th><th data-page-node-id="O324D5iAOvJEUK6pDeDtnC">MAX</th>
+          <th data-page-node-id="TwCCda2awvwoGBUins9cx3">现状取值</th><th data-page-node-id="9jVvybiGsYL5C3rJoL3gvo">修复取值</th><th data-page-node-id="5f5sNt10A2EyC8DBqiUK12">变化</th>
+          <th data-page-node-id="QJ2jjX0ZZeQFySMhOhsqVR">物理(mm)</th><th data-page-node-id="j1hdBlaKM73E0FBNyvxteu">视角(′)</th>
+        </tr></thead>
+        <tbody id="tbl" data-page-node-id="44uB1FT1hGIHdowlrrDnUE"></tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:12px" data-page-node-id="JDPeWJiW1mGtPpFXDH9Xo3">
+      <b data-page-node-id="j3kv2KIYdBqtuyyrlEbpoH">修复公式</b>：<code data-page-node-id="ew6fV7zLNIK1yOAPCDiBR4">clamp(MINpx, (MIN − COEFF×375)px + (COEFF×100)vw, MAXpx)</code>，其中 <code data-page-node-id="mXTh9ERQmTsEta2dsj7I61">COEFF=(MAX−MIN)/393</code>。
+      同时把 PREF 从 <code data-page-node-id="xofPK34N5SkzYFyyZMrN9z">rem</code> 改为 <b data-page-node-id="6GYlFS3DpCmf1NtGcUGyyd">px 字面</b> —— 现有 PREF 按 <code data-page-node-id="USPiOMvp9eXkkfxyPbzTo1">rem=16</code> 设计，而项目把
+      <code data-page-node-id="1c26juDDZPGw4jsgS8L1d7">html{font-size}</code> 设为 14px，导致 PREF 再偏小 12.5%。改为 px 后也顺带消除一期
+      <code data-page-node-id="uy0VZNVSonWZQekWiEWeDC">--ui-scale</code> 的 rem 双重缩放隐患。
+      <br data-page-node-id="rqoquHJpg1CG3CH3g7ku1D"><b data-page-node-id="1v5l5dilqBYGVA5EOEYXxy">不修的</b>：<code data-page-node-id="yXr3TCBZHC7JfDSBwRGEw2">--layout-*</code> / <code data-page-node-id="lcGn0oWpFYU5XC3CB47C5t">--avatar-*</code> / <code data-page-node-id="uYcybJQkRfaSO3QSz4yijF">--scrollbar-*</code> / <code data-page-node-id="1jByMH2kydqyw3Mb86wMBx">--header-height</code>
+      属<b data-page-node-id="DqAlLjGn00ICYbuDbhr9Mf">另一套 regime</b>（跨 320→1920/3840 流体，倍数校验分别为 4–40 倍，非 100），本轮不动。
+    </div>
+  </div>
+
+  <div class="card" data-page-node-id="F3HavXPss8pAekprFHRPEf">
+    <div style="font-weight:700;margin-bottom:8px" data-page-node-id="DT2cyfuCvWhAgSEU3dMBQi">怎么读这个 demo</div>
+    <div class="note" data-page-node-id="AIYgYceElsEoTaFIdZ2rD7">
+      1. 把「模拟视口宽」拖到 <b data-page-node-id="oJtPe7ryJSySvsjgSV6goH">≥768</b>，左侧现状面板<b data-page-node-id="TqSeNECHLtftG8UBc3Ulw5">完全不变</b>（这就是 bug：流体失效），右侧随视口增长到 768 后冻结在 MAX。<br data-page-node-id="qZpvW8rDOaGwfyAZsFgktN">
+      2. 拖到 <b data-page-node-id="UIpHFo7HN9TovbYcwMJmJm">375–768</b> 之间，右侧可见真实流体过渡，左侧依然是死的 MIN 值。<br data-page-node-id="sRZN6VDiqQTJ8S820R7ZdS">
+      3. 设备选 <b data-page-node-id="HuyzBTVNa4KAFw6FSXnmQp">27" 2560@100%</b> 看物理毫米与视角角分 —— 这才是你实际看到的大小。<br data-page-node-id="WPrrGFealtOaZAoGiKNSqN">
+      4. 模式 ③ 是「二期修复 + 一期缩放」叠加后的最终效果，用于判断 1.15 在新基线上是否还合适。
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── 41 个基准 token：mn/mx 设计值，rem=现有 PREF(rem)，vwNow=现有(错误)系数，
+      prefFix/vwFix = 修复后的 px 字面 PREF 与正确 vw 系数 ── */
+const T=[
+["--text-2xs",9,11,0.4432,0.0051,7.0916,0.5089],["--text-xs",12,13,0.6904,0.0025,11.0458,0.2545],
+["--text-sm",13,14,0.7529,0.0025,12.0458,0.2545],["--text-lg",14,16,0.7557,0.0051,12.0916,0.5089],
+["--text-xl",16,18,0.8807,0.0051,14.0916,0.5089],["--text-2xl",20,24,1.0115,0.0102,16.1832,1.0178],
+["--text-3xl",26,30,1.3865,0.0102,22.1832,1.0178],
+["--space-3xs",1,2,0.0029,0.0025,0.0458,0.2545],["--space-2xs",1,3,-0.0568,0.0051,-0.9084,0.5089],
+["--space-xs",3,6,0.0086,0.0076,0.1374,0.7634],["--space-xs-plus",4,8,0.0115,0.0102,0.1832,1.0178],
+["--space-sm",6,12,0.0172,0.0153,0.2748,1.5267],["--space-md",8,18,-0.0964,0.0254,-1.542,2.5445],
+["--space-lg",12,28,-0.2042,0.0407,-3.2672,4.0712],["--space-lg-xl",14,34,-0.3181,0.0509,-5.084,5.0891],
+["--space-xl",16,40,-0.4313,0.0611,-6.9008,6.1069],["--space-2xl",24,56,-0.4084,0.0814,-6.5344,8.1425],
+["--space-3xl",32,80,-0.8626,0.1221,-13.8015,12.2137],
+["--dot-size",5,8,0.1336,0.0076,2.1374,0.7634],["--dot-active-w",16,24,0.5229,0.0204,8.3664,2.0356],
+["--dot-active-h",5,8,0.1336,0.0076,2.1374,0.7634],["--dot-gap",3,6,0.0086,0.0076,0.1374,0.7634],
+["--comp-btn-min-height",34,60,0.5744,0.0662,9.1908,6.6158],["--comp-tab-height",28,44,0.7958,0.0407,12.7328,4.0712],
+["--comp-btn-min-width",40,60,1.3073,0.0509,20.916,5.0891],["--comp-input-height",40,58,1.4265,0.0458,22.8244,4.5802],
+["--comp-input-min-w",180,300,4.0935,0.3053,65.4962,30.5344],["--comp-thumb-size",14,28,0.0401,0.0356,0.6412,3.5623],
+["--switch-track-height",18,24,0.7672,0.0153,12.2748,1.5267],["--switch-track-width",32,48,1.0458,0.0407,16.7328,4.0712],
+["--switch-thumb-size",14,24,0.2786,0.0254,4.458,2.5445],["--switch-thumb-offset",16,24,0.5229,0.0204,8.3664,2.0356],
+["--vol-track-width",3,4,0.1279,0.0025,2.0458,0.2545],["--vol-track-radius",1,2,0.0029,0.0025,0.0458,0.2545],
+["--radio-size",14,28,0.0401,0.0356,0.6412,3.5623],["--radio-dot-size",6,14,-0.1021,0.0204,-1.6336,2.0356],
+["--badge-size",10,22,-0.0906,0.0305,-1.4504,3.0534],
+["--radius-sm",3,5,0.0682,0.0051,1.0916,0.5089],["--radius-md",6,10,0.1365,0.0102,2.1832,1.0178],
+["--radius-lg",10,18,0.1479,0.0204,2.3664,2.0356],
+["--grid-gap",12,24,0.0344,0.0305,0.5496,3.0534]
+].map(([n,mn,mx,rem,vwNow,prefFix,vwFix])=>({n,mn,mx,rem,vwNow,prefFix,vwFix}));
+
+/* 常量型基准 token（无 clamp） */
+const CONST={"--text-base":14,"--slider-track-h":6};
+
+let mode="now", vw=2560, ppi=157.4, dpr=1.5, dist=45;
+
+function calc(t,vw,fx,scale){
+  const pref = fx ? t.prefFix : t.rem*14;      // 现状用 rem(14px)，修复用 px 字面
+  const co   = fx ? t.vwFix   : t.vwNow;
+  let v = pref + co*vw/100;
+  v = Math.min(Math.max(v,t.mn),t.mx);
+  return v*(fx?scale:1);
+}
+const constVal=(k,fx,scale)=>CONST[k]*(fx?scale:1);
+
+function vals(fx,scale){
+  const o={};
+  T.forEach(t=>o[t.n]=calc(t,vw,fx,scale));
+  Object.keys(CONST).forEach(k=>o[k]=constVal(k,fx,scale));
+  // icon 派生自 text（与 variables.css 一致）
+  o["--icon-sm"]=o["--text-sm"]*1.30; o["--icon-md"]=o["--text-base"]*1.43;
+  o["--icon-lg"]=o["--text-xl"]*1.50; o["--icon-2xl"]=o["--text-3xl"]*1.30;
+  return o;
+}
+const mm=(px)=>px*dpr/ppi*25.4;
+const arcmin=(px)=>2*Math.atan(mm(px)/2/(dist*10))*180/Math.PI*60;
+
+/* ── 面板 HTML（真实 RecordCard + 控件结构）── */
+const MARKUP=`
+  <div class="h-demo">间距与字号实测</div>
+  <p class="p-demo">每行之间的间隔是 --space-sm，卡片网格间距是 --grid-gap（橙色标记条可视化）。</p>
+  <div class="grid">
+    ${[1,2,3].map(i=>`<div class="rc">
+      <div class="cover">${i}</div>
+      <div class="body">
+        <div class="title">记录卡标题 · 第 ${i} 集</div>
+        <div class="meta">剧集 · 2026-09-04 · 已看 62%</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="gapmark"></div>
+  <div class="row">
+    <button class="btn">按钮</button>
+    <input class="inp" placeholder="输入框 min-height">
+    <div class="dots"><i class="on"></i><i></i><i></i></div>
+  </div>`;
+
+/* 组件 CSS 用 --t-<name> 前缀（--text-base → --t-text-base），直接由 token 名推导，无需映射表 */
+function applyVars(el,v){
+  Object.entries(v).forEach(([k,px])=>el.style.setProperty("--t-"+k.slice(2), px+"px"));
+}
+
+function render(){
+  const fx = mode!=="now";
+  const scale = mode==="fix115"?1.15:1;
+  const vNow=vals(false,1), vFix=vals(fx,scale);
+
+  // 左侧恒为现状；右侧按模式
+  const sn=document.getElementById("scopeNow"), sf=document.getElementById("scopeFix");
+  if(!sn.dataset.init){sn.innerHTML=MARKUP;sn.dataset.init=1;applyVars(sn,vNow);}
+  else applyVars(sn,vNow);
+  if(!sf.dataset.init){sf.innerHTML=MARKUP;sf.dataset.init=1;}
+  applyVars(sf,vFix);
+
+  document.getElementById("paneFixTitle").textContent =
+    mode==="now"?"修复后（当前未启用）":mode==="fix"?"修复后（COEFF ×100 + PREF 改 px）":"修复后 + --ui-scale 1.15";
+  document.getElementById("tagFix").textContent =
+    mode==="fix115"?"375→768 流体 · 768+ 冻结 MAX · ×1.15":"375→768 流体 · 768+ 冻结 MAX";
+
+  // 指标
+  const items=[
+    ["--text-base 基准字号",vFix["--text-base"],vNow["--text-base"],"px"],
+    ["--text-2xl 次级标题",vFix["--text-2xl"],vNow["--text-2xl"],"px"],
+    ["--space-lg 主间距",vFix["--space-lg"],vNow["--space-lg"],"px"],
+    ["--grid-gap 卡片间距",vFix["--grid-gap"],vNow["--grid-gap"],"px"],
+    ["--comp-btn-min-height 按钮高",vFix["--comp-btn-min-height"],vNow["--comp-btn-min-height"],"px"],
+    ["--comp-input-height 输入框高",vFix["--comp-input-height"],vNow["--comp-input-height"],"px"],
+    ["--icon-md 图标",vFix["--icon-md"],vNow["--icon-md"],"px"]
+  ];
+  document.getElementById("metrics").innerHTML=items.map(([k,f,n,u])=>{
+    const d=f-n, cls=d>0.05?"up":d<-0.05?"dn":"";
+    const pct=n?((f-n)/n*100):0;
+    return `<div class="m ${cls}"><div class="k">${k}</div>
+      <div class="v">${f.toFixed(1)}<span style="font-size:12px;font-weight:400">${u}</span></div>
+      <div class="d">现状 ${n.toFixed(1)} · ${d>0.05?"+":""}${pct.toFixed(0)}% · 物理 ${mm(f).toFixed(2)}mm · ${arcmin(f).toFixed(1)}′</div>
+    </div>`;
+  }).join('');
+
+  // 表格
+  const groups=[["Typography","--text"],["Spacing","--space"],["Pagination Dots","--dot"],
+                ["Component","--comp"],["Switch","--switch"],["Volume/Radio/Badge","--vol"],
+                ["Volume/Radio/Badge","--radio"],["Volume/Radio/Badge","--badge"],
+                ["Radius/Gap","--radius"],["Radius/Gap","--grid-gap"]];
+  let html="",done=new Set();
+  groups.forEach(([label,pref])=>{
+    const rows=T.filter(t=>t.n.startsWith(pref)&&!done.has(t.n));
+    if(!rows.length)return;
+    html+=`<tr class="grp"><td colspan="8">${label}</td></tr>`;
+    rows.forEach(t=>{
+      done.add(t.n);
+      const f=vFix[t.n],n=vNow[t.n];
+      const d=(f-n)/n*100;
+      const cls=d>0.5?"bump":(Math.abs(d)<0.5?"same":"");
+      html+=`<tr><td>${t.n}</td><td>${t.mn}</td><td>${t.mx}</td>
+        <td>${n.toFixed(2)}</td><td>${f.toFixed(2)}</td>
+        <td class="${cls}">${d>0.5?"+":""}${d.toFixed(0)}%</td>
+        <td>${mm(f).toFixed(2)}</td><td>${arcmin(f).toFixed(1)}</td></tr>`;
+    });
+  });
+  document.getElementById("tbl").innerHTML=html;
+}
+
+document.getElementById("segMode").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); mode=b.dataset.m; render();
+});
+document.getElementById("vw").addEventListener("input",e=>{
+  vw=+e.target.value; document.getElementById("vwVal").textContent=vw+"px"; render();
+});
+document.getElementById("dev").addEventListener("change",e=>{
+  const [p,d,di]=e.target.value.split("|"); ppi=+p; dpr=+d; dist=+di; render();
+});
+render();
+</script>
+</body>
+</html>
