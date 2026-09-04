@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="wNEiU5zzFEL67CyHwmUFfb">
+<head data-page-node-id="omuqBjGvDKqFJLRJI2p7TI">
+<meta charset="UTF-8" data-page-node-id="NNrBhmpm2rhZzMfeBlSEht">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="oJkTdCGvug7lQLotwCzraL">
+<title>大屏观感诊断与方案 — 全局 UI 缩放 vs 局部放大字号（2026-09-04）</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   本 demo 忠实复刻项目真实 token（src/assets/styles/variables.css
+   768px+ 冻结值）与真实卡片结构（src/components/RecordCard/RecordCard.css）。
+   --ui-scale = 1 时，渲染结果与线上 27 寸屏现状逐像素一致。
+   ═══════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #0d0d0f;
+  color: #e8e8ea;
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.wrap { max-width: 1500px; margin: 0 auto; padding: 24px 20px 80px; }
+
+h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: .3px; }
+h2 { font-size: 17px; margin: 34px 0 12px; padding-left: 10px; border-left: 3px solid #6c8cff; }
+h3 { font-size: 14px; margin: 18px 0 8px; color: #b9b9c4; }
+.lede { color: #9a9aa8; margin: 0 0 4px; }
+code { background: #1d1d22; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: #ffd88a; }
+.k { color: #6c8cff; font-weight: 600; }
+.warn { color: #ff9a6c; font-weight: 600; }
+.ok { color: #6ede8a; font-weight: 600; }
+
+/* ── 控制条 ── */
+.controls {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; gap: 18px 26px; align-items: flex-end;
+  background: rgba(20,20,26,.96); backdrop-filter: blur(12px);
+  border: 1px solid #2c2c36; border-radius: 12px;
+  padding: 14px 18px; margin: 18px 0 22px;
+}
+.ctl { display: flex; flex-direction: column; gap: 5px; }
+.ctl > label { font-size: 11.5px; color: #8d8d9c; text-transform: uppercase; letter-spacing: .6px; }
+.ctl output { font-size: 13px; color: #ffd88a; font-variant-numeric: tabular-nums; font-weight: 600; }
+input[type=range] { width: 168px; accent-color: #6c8cff; }
+select {
+  background: #1d1d22; color: #e8e8ea; border: 1px solid #3a3a46;
+  border-radius: 7px; padding: 6px 9px; font-size: 13px; min-width: 190px;
+}
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+button.tab {
+  background: #1d1d22; color: #b9b9c4; border: 1px solid #3a3a46;
+  border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer;
+  transition: all .15s;
+}
+button.tab:hover { border-color: #5a5a6a; color: #e8e8ea; }
+button.tab.on { background: #6c8cff; border-color: #6c8cff; color: #fff; font-weight: 600; }
+
+/* ── 诊断卡 ── */
+.diag {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 12px; margin: 14px 0 6px;
+}
+.diag .cell {
+  background: #15151b; border: 1px solid #26262f; border-radius: 10px; padding: 12px 14px;
+}
+.diag .cell .lb { font-size: 11.5px; color: #85859a; text-transform: uppercase; letter-spacing: .5px; }
+.diag .cell .vl { font-size: 21px; font-weight: 700; color: #e8e8ea; font-variant-numeric: tabular-nums; margin-top: 3px; }
+.diag .cell .sub { font-size: 11.5px; color: #79798c; margin-top: 3px; }
+.diag .cell.bad { border-color: #6b3535; background: #1e1517; }
+.diag .cell.bad .vl { color: #ff9a6c; }
+.diag .cell.good { border-color: #2f5b3a; background: #141c17; }
+.diag .cell.good .vl { color: #6ede8a; }
+
+/* ── 模拟视口 ── */
+.stage-outer { background: #101014; border: 1px solid #26262f; border-radius: 12px; padding: 16px; overflow: auto; }
+.stage-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: #85859a; margin-bottom: 10px; gap: 14px; flex-wrap: wrap;
+}
+.stage-head b { color: #e8e8ea; font-size: 13px; }
+#zoomBox { transform-origin: top left; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   模拟视口内部 —— 真实 token 体系（768px+ 冻结值） × --ui-scale
+   ═══════════════════════════════════════════════════════════════════ */
+.sim {
+  --ui-scale: 1;
+  /* 字号：variables.css 768+ 冻结值 */
+  --text-2xs: calc(11px * var(--ui-scale));
+  --text-xs:   calc(13px * var(--ui-scale));
+  --text-sm:   calc(14px * var(--ui-scale));
+  --text-base: calc(14px * var(--ui-scale));
+  --text-lg:   calc(16px * var(--ui-scale));
+  /* 间距 */
+  --space-3xs: calc(2px  * var(--ui-scale));
+  --space-2xs: calc(3px  * var(--ui-scale));
+  --space-xs:  calc(6px  * var(--ui-scale));
+  --space-xs-plus: calc(8px * var(--ui-scale));
+  --space-sm:  calc(12px * var(--ui-scale));
+  --space-md:  calc(18px * var(--ui-scale));
+  --space-lg:  calc(28px * var(--ui-scale));
+  --space-xl:  calc(40px * var(--ui-scale));
+  /* 圆角 */
+  --radius-sm: calc(5px  * var(--ui-scale));
+  --radius-md: calc(10px * var(--ui-scale));
+  /* grid gap（variables.css:229 默认 clamp(12px,…,24px) → 768+ 触顶 24px；
+     ≥1920 被覆盖为 clamp(20px, 1rem+0.5vw, 36px)，2560 时 ≈28.8px —— 见 G 方案开关） */
+  --grid-gap: calc(24px * var(--ui-scale));
+  /* 布局 */
+  --header-height: calc(76px * var(--ui-scale));
+
+  --color-background: #141414;
+  --color-surface: #1f1f1f;
+  --color-border-light: #2b2b2b;
+  --color-text: #fff;
+  --color-text-tertiary: #666;
+  --color-placeholder: #262626;
+  --color-success: #49aa19;
+  --color-rating: #ffd54a;
+
+  width: var(--sim-width, 2560px);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+/* 方案 G：复刻线上真实的「≥1920 段 gap 继续放大」（variables.css:404）——这是"分散"推手之一 */
+.sim.gap-inflate { --grid-gap: calc(var(--gap-real, 28.8px) * var(--ui-scale)); }
+
+/* 模拟顶栏：铺满（与线上一致） */
+.sim-header {
+  display: flex; align-items: center; gap: var(--space-lg);
+  height: var(--header-height);
+  padding: 0 var(--space-xl);
+  background: #101010;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--text-lg); font-weight: 600;
+}
+.sim-header .logo { color: #6c8cff; }
+.sim-header .nav { display: flex; gap: var(--space-lg); font-size: var(--text-sm); font-weight: 400; color: #9a9aa8; }
+
+/* 内容区 */
+.sim-content { padding: var(--space-xl); }
+.sim-content .inner { max-width: var(--content-max, 1600px); margin: 0 auto; }
+.sim-h { font-size: calc(20px * var(--ui-scale)); font-weight: 700; margin: 0 0 var(--space-lg); }
+.sim-grid { display: grid; gap: var(--grid-gap); grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); }
+
+/* ── 真实 RecordCard 结构（RecordCard.css 逐条对应）── */
+.rc {
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: var(--space-xs-plus);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.rc__media {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #30304a 0%, #1d2b3d 55%, #2a1d33 100%);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.rc__media::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 12px, transparent 12px 24px);
+}
+.rc__badge-live {
+  position: absolute; top: var(--space-2xs); left: var(--space-2xs);
+  background: #e11d48; color: #fff; font-size: var(--text-2xs); font-weight: 700;
+  padding: var(--space-3xs) var(--space-sm); border-radius: var(--radius-sm); z-index: 3;
+}
+.rc__progress {
+  position: absolute; right: 0; bottom: 0; left: 0; z-index: 3;
+  height: var(--space-xs); background: rgba(255,255,255,.15);
+}
+.rc__progress i { display: block; height: 100%; background: #e11d48; }
+.rc__body { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; }
+.rc__title {
+  margin: 0; color: var(--color-text); font-size: var(--text-base); font-weight: 600;
+  line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+}
+.rc__meta {
+  display: flex; align-items: center; gap: var(--space-sm); min-width: 0;
+  color: var(--color-text-tertiary); font-size: var(--text-xs);
+  white-space: nowrap; overflow: hidden;
+}
+.rc__badge-type {
+  flex-shrink: 0; padding: var(--space-3xs) var(--space-sm); border-radius: var(--radius-sm);
+  font-size: var(--text-2xs); font-weight: 600; line-height: 1.5;
+  background: rgba(108,140,255,.16); color: #8fa4ff;
+}
+.rc__badge-src {
+  flex-shrink: 0; padding: var(--space-3xs) var(--space-sm); border-radius: var(--radius-sm);
+  background: rgba(0,0,0,.55); color: #fff; font-size: var(--text-2xs); line-height: 1.5;
+}
+.rc__ep { flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+.rc__time { flex: 0 0 auto; margin-left: auto; font-weight: 500; }
+
+/* 方案 B：只放大字号（用户试过的做法）—— 间距/圆角/控件不跟随 → 比例崩坏 */
+.sim.mode-B {
+  --text-2xs: calc(11px * var(--ui-scale) * var(--ui-scale));
+  --text-xs:   calc(13px * var(--ui-scale) * var(--ui-scale));
+  --text-base: calc(14px * var(--ui-scale) * var(--ui-scale));
+  --text-lg:   calc(16px * var(--ui-scale) * var(--ui-scale));
+}
+/* （演示用）方案 B 的极端版：只把字号放大到 1.4×，其它一律不动 */
+.sim.mode-B-fixed { --ui-scale: 1; }
+.sim.mode-B-fixed {
+  --text-2xs: calc(11px * var(--font-only, 1.4));
+  --text-xs:   calc(13px * var(--font-only, 1.4));
+  --text-base: calc(14px * var(--font-only, 1.4));
+  --text-lg:   calc(16px * var(--font-only, 1.4));
+}
+
+/* 方案 D：卡片宽度封顶 → 列数由容器宽自然推导（Netflix / YouTube / B站 做法） */
+.sim.mode-D .sim-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-max, 340px), 1fr));
+}
+
+/* ── 指标表 ── */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 10px; margin-top: 14px; }
+.metrics .m { background: #15151b; border: 1px solid #26262f; border-radius: 9px; padding: 10px 12px; }
+.metrics .m .lb { font-size: 11px; color: #85859a; text-transform: uppercase; letter-spacing: .5px; }
+.metrics .m .vl { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.metrics .m .vl small { font-size: 11.5px; font-weight: 400; color: #85859a; }
+
+/* ── 业界对照表 ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid #26262f; vertical-align: top; }
+th { color: #8d8d9c; font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; }
+td b { color: #e8e8ea; }
+tr.hl td { background: #161d2b; }
+
+.note { background: #15151b; border-left: 3px solid #6c8cff; border-radius: 0 9px 9px 0; padding: 12px 15px; margin: 14px 0; color: #b9b9c4; font-size: 13px; }
+.note.warn-n { border-left-color: #ff9a6c; }
+.note.ok-n { border-left-color: #6ede8a; }
+.note b { color: #e8e8ea; }
+
+.legend { display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px; color: #85859a; margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+</style>
+</head>
+<body data-page-node-id="ryGNEoU1ClMDaNtnVKrZwo">
+<div class="wrap" data-page-node-id="FMPv0Iegm4MtKU9eVAMwfK">
+
+<h1 data-page-node-id="yyCOiAF58utpnNJNoyRLzt">大屏观感诊断 — 为什么 14 寸「还行」、27 寸「分散」</h1>
+<p class="lede" data-page-node-id="DCiTcXr0LnIrfRfHGvlfdI">本页复刻项目真实 token 与真实卡片结构，<code data-page-node-id="UgzJZJHO2rYgt1HM1NiSuY">--ui-scale=1</code> 时与线上 27 寸屏逐像素一致。拖动滑块直接对比四种方案。</p>
+
+<!-- ══════════ 1. 诊断 ══════════ -->
+<h2 data-page-node-id="BTRsqZ1zTlCPgkBfPSRLOV">① 根因：你两台设备的「系统缩放」不同，CSS 像素不是物理尺寸</h2>
+<div class="note warn-n" data-page-node-id="Wo42A5EyjM3C6Ba8XqivN3">
+<b data-page-node-id="HMXl6EIDIpTFZCaFOGSbdc">核心误解：</b>项目的基础 token（<code data-page-node-id="PD1BP4C6WZMLB4VLdWZvTL">--text-*</code> / <code data-page-node-id="HB4fBQQsm4pGnRNVbXKCXe">--space-*</code> / <code data-page-node-id="MBDW6cXtHhmnr2BKLIlYS1">--icon-*</code>）在 <b data-page-node-id="SbIu7KQGukyDQ3nmZzwaR1">768px 就冻结了</b>（<code data-page-node-id="jbEFd3UnhcXcKpnFTjt3Qc">variables.css:146-152</code> 明确写着「桌面不再随 4K 继续放大」）。
+所以 14 寸笔记本和 27 寸显示器拿到的<b data-page-node-id="tRhJkmUm80ezhx3UxLohWB">是完全相同的 14px 字号、完全相同的间距</b>。差别不在代码，在<b data-page-node-id="WfA0Z1Q6O0rrLCiEzyQXk9">系统缩放（devicePixelRatio）</b>。
+</div>
+
+<div class="diag" id="diag" data-page-node-id="XD1LjKlULg7sdDHivFIbYG"></div>
+
+<div class="note" data-page-node-id="4TuD6vhNJcVmdgoHbPOMnE">
+<b data-page-node-id="w4rPZCreyT4O3cHJOohEMW">换算逻辑：</b>浏览器里的 <code data-page-node-id="0TgOyEsOCzcbPGopXorZtg">14px</code> 是 <b data-page-node-id="tqTCjzsf3561ipTIMXFkBg">CSS 像素</b>，物理高度 = <code data-page-node-id="vB4oDOUeV0BcuiRGAypI3K">14 × dpr ÷ PPI</code> 英寸。
+Windows 对高 PPI 笔记本默认给 125%/150% 缩放（dpr = 1.25/1.5），对 27 寸 2560×1440 默认给 <b data-page-node-id="z73JtuS9SBPQGUNLgXGo0y">100%</b>（dpr = 1，PPI 仅 109）。
+再叠加观看距离（笔记本 ~45cm vs 显示器 ~70cm），最终<b data-page-node-id="YPzOPY53oY6A7PBnC6lCG0">文字视角</b>差出 1.4~1.6 倍 —— 这就是「14 寸还能看、27 寸偏小」的量化解释。
+</div>
+
+<h3 data-page-node-id="AvSW1NuUBdZfHNl2DSGYI2">为什么「单独把字体放大」一定会怪</h3>
+<div class="note warn-n" data-page-node-id="DHySQtGyRTrYab6XOP9Tgr">
+因为 <code data-page-node-id="i8hmpja2z3ZPPmNeD4jE8S">--space-*</code> / <code data-page-node-id="h3Dkluq907grgEWhp81tG9">--radius-*</code> / <code data-page-node-id="YyT9kJcbWdyT25EiaHMkoW">--comp-*</code> / <code data-page-node-id="QKBgUr3cWpHD3yR0dqyQPJ">--grid-gap</code> 是<b data-page-node-id="q1ZVbbZmzEQcFVGClqD9Dc">独立 clamp、不会跟着 font-size 走</b>。
+只放大字号 → 字变大、字距/卡片内边距/圆角/gap 全都不变 → <b data-page-node-id="to98twMgRssvmGPxZ6HCBy">文字撑破留白、行挤成一团、卡片比例失衡</b>。这就是你看到的「很怪」。
+<b data-page-node-id="FdAAshns8SIHDw2YZcJdiK">正解是全局等比缩放</b>：一个 <code data-page-node-id="rliFJfqe3JaopMMsXM59Lm">--ui-scale</code> 同时乘到全部 token 上，比例恒定不变。
+</div>
+
+<!-- ══════════ 2. 方案对比 ══════════ -->
+<h2 data-page-node-id="DDD9mXamtjCAFHLwTxoS58">② 方案对比（在下面直接切着看）</h2>
+
+<div class="controls" data-page-node-id="LsJk9VlDtQ22l8IKdfbWGd">
+  <div class="ctl" data-page-node-id="DkX38eQQ9oGzQZyo1fihB9">
+    <label data-page-node-id="bcrC4heug39fEHRtcF4vTv">方案</label>
+    <div class="btnrow" id="modeTabs" data-page-node-id="6lmTD7JU8MP4SHOBKDCSBU">
+      <button class="tab on" data-mode="A" data-page-node-id="Y7MM4m4mTp7EU4WpfNQFzV">A · 现状</button>
+      <button class="tab" data-mode="B" data-page-node-id="4aFPMkKPXySwVUJsF32wgp">B · 只放大字号</button>
+      <button class="tab" data-mode="C" data-page-node-id="aCT9blw2ke9IG8c3NYeCXI">C · 全局等比缩放</button>
+      <button class="tab" data-mode="D" data-page-node-id="EHR5LaunO9PyM4GsqCWMVN">D · 全局缩放 + 卡片封顶</button>
+    </div>
+  </div>
+  <div class="ctl" data-page-node-id="HEyOZmj02wBMbwFFKDnOmd">
+    <label data-page-node-id="uZ0nZzXuBC9eHPVBxKcAwf">模拟视口宽（CSS px）</label>
+    <select id="vwSel" data-page-node-id="ehQ0rCiJp9Ywu89CBEtFCA">
+      <option value="1280" data-page-node-id="CUHzGRcM2ILbDmSNXnvn7k">1280 · 14寸笔记本 @150%</option>
+      <option value="1920" data-page-node-id="2DkCRiF2m2nBpXIidCSDAx">1920 · 24寸 1080p @100%</option>
+      <option value="2560" selected data-page-node-id="AwuZhfD6TzCaMauO6aVN9x">2560 · 27寸 1440p @100%（你的情况）</option>
+      <option value="3440" data-page-node-id="GYGxQa3xed2MggGFYFDbxk">3440 · 34寸带鱼屏 @100%</option>
+      <option value="3840" data-page-node-id="cCCvzz3eySdAToK8hMtL4T">3840 · 32寸 4K @100%</option>
+    </select>
+  </div>
+  <div class="ctl" data-page-node-id="uEgrEfYUMClsWwCCbo8ATr">
+    <label data-page-node-id="EELg58ZUjAq45rZb9Ktv6P">UI 缩放 <code data-page-node-id="kNIr9Hes6SZXbY4MYOfFlr">--ui-scale</code></label>
+    <input type="range" id="scaleR" min="1" max="1.6" step="0.05" value="1" data-page-node-id="GL2YgDI120beyGrzJ8vwPC">
+    <output id="scaleO" data-page-node-id="EM8xlidzA7XxKqb3GWmDq4">1.00×</output>
+  </div>
+  <div class="ctl" data-page-node-id="6XRzV54m7fwvfaRrEn8czh">
+    <label data-page-node-id="IUjahL3bg1uI9SsEDh3F2v">内容区最大宽度</label>
+    <input type="range" id="cmaxR" min="1200" max="2400" step="20" value="1600" data-page-node-id="mxmIyPr3zM8ppCVIcQBPfu">
+    <output id="cmaxO" data-page-node-id="F8N2jt6fABcq0hHBmwTmz7">1600px</output>
+  </div>
+  <div class="ctl" data-page-node-id="bMwxWGGZjLghUXe9iFCT6w">
+    <label data-page-node-id="ZtOZKPv87uvxOGAPexytmJ">列数（A/B/C 方案）</label>
+    <input type="range" id="colsR" min="3" max="10" step="1" value="5" data-page-node-id="F9Lnx90OoT9vGJbG8W4xE8">
+    <output id="colsO" data-page-node-id="d4IYAdK0DR51JBjXDzYs7j">5 列</output>
+  </div>
+  <div class="ctl" data-page-node-id="UVk3J8DY0eSIpvHSWHxdme">
+    <label data-page-node-id="1GILM82ADyIkPSvc3WJOGu">卡片目标宽（D 方案）</label>
+    <input type="range" id="cardR" min="260" max="460" step="10" value="340" data-page-node-id="daB1A4pVzCW3VAq51LIIjX">
+    <output id="cardO" data-page-node-id="HH3WGFiwEHQJOCQ7KIGBWL">340px</output>
+  </div>
+  <div class="ctl" data-page-node-id="ZV0FmhKpFw5iUzaClhzLQs">
+    <label data-page-node-id="6Hc8HK3NeFxwJ9WCYFiqND">参照显示器（物理换算）</label>
+    <select id="monSel" data-page-node-id="rGNH6D9xUZmqw3uqRBbjZF">
+      <option value="27x1440x1" selected data-page-node-id="zaP4BKgBUcBapLd5ycZlPv">27寸 2560×1440 @100%</option>
+      <option value="24x1080x1" data-page-node-id="HzdUKmXhg3mvTCFcGqdo60">24寸 1920×1080 @100%</option>
+      <option value="14x1080x1.5" data-page-node-id="xlFDg6uyCS742z2roep0m3">14寸 1920×1080 @150%</option>
+      <option value="14x1800x2" data-page-node-id="cGFXvIAoukCzysEo2E4iZM">14寸 2880×1800 @200%</option>
+      <option value="32x2160x1.5" data-page-node-id="6IBl6CeS0t4uYmjLt66nAO">32寸 3840×2160 @150%</option>
+    </select>
+  </div>
+  <div class="ctl" data-page-node-id="P57LNvqEYpo8LiVNjl9U5o">
+    <label data-page-node-id="3kXDMYZkTtd9RVPqNTlABP">预览缩放（仅为看清全貌，不影响计算）</label>
+    <input type="range" id="zoomR" min="0.2" max="1" step="0.02" value="0.42" data-page-node-id="eJjoNo2tpylXnt1WE9ZeAD">
+    <output id="zoomO" data-page-node-id="ImM5DDicfZ1a5cI46DXUI3">0.42×</output>
+  </div>
+</div>
+
+<div class="stage-outer" data-page-node-id="PFCbrOoZ9Llx5sxP6uM88l">
+  <div class="stage-head" data-page-node-id="L4IniOIRNomtzAGhnBpyfR">
+    <span data-page-node-id="u4B5SN1BOCbkppIvoHeRpT">方案 <b id="modeLabel" data-page-node-id="3bLBoc7ltv6oHX5Rv4DJzR">A · 现状</b> — <span id="modeDesc" data-page-node-id="JUuuO3tcE8m1SqC91adq8h">线上当前实现：内容区锁 1600px 居中 + 5 列 + 14px 字号</span></span>
+    <span id="physHint" data-page-node-id="I0GxrtQkNlDgpG3BIEXPe7"></span>
+  </div>
+  <div id="zoomBox" data-page-node-id="mwvkxCBahe793UpWRmVO7a">
+    <div class="sim" id="sim" data-page-node-id="lFz01K6dMBq6o0Nfo74S1N">
+      <div class="sim-header" data-page-node-id="ujb9mNYRvJo2TWejaxxU6z">
+        <span class="logo" data-page-node-id="gZSQlozvaTe0OOOBSQNjYw">KinoTV</span>
+        <span class="nav" data-page-node-id="kNaYtgEEE2OzDFkpSV5OrN"><span data-page-node-id="Lp7p1WIeXGtbBt0HP1Glym">首页</span><span data-page-node-id="Gdhypsh33k6Ep2PTcWATYG">浏览</span><span data-page-node-id="DIhRShApL93t3XocawzZDu">收藏</span><span data-page-node-id="p8sxKnk0sl8WfFEmRhXMY2">历史</span><span data-page-node-id="czD1a6F0InQ9OAgARg64Vz">直播</span><span data-page-node-id="lr5XEdUBwAc1Uc8zCwcNpC">设置</span></span>
+      </div>
+      <div class="sim-content" data-page-node-id="h9oaQ40EOmCeuPqEeTCw3W">
+        <div class="inner" data-page-node-id="26kkgfSlyBQ1Rb9kmTM29U">
+          <div class="sim-h" data-page-node-id="NwYucLT30Vj0hD5CfypjkD">今天观看</div>
+          <div class="sim-grid" id="grid" data-page-node-id="MhTXh2gmTXGY1ohxiK84eW"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="metrics" id="metrics" data-page-node-id="89dUxxGAO7k7pIpvwO8ugc"></div>
+
+<div class="legend" data-page-node-id="3dJ1fqEByXnoH8bAGmNFcr">
+  <span data-page-node-id="IGKPIVtY03WgDGgwKHWFyY"><i style="background:#ff9a6c" data-page-node-id="mdGpev9hPoGD6ug0P0ClIO"></i>红 = 问题项</span>
+  <span data-page-node-id="AVdOCL2b0D6HxDwtTd6duu"><i style="background:#6ede8a" data-page-node-id="XG86uF8w2oBoUcgrhblrm8"></i>绿 = 达标项</span>
+  <span style="color:#6c8cff" data-page-node-id="n1SWvWKJJiEARXziI1RW92">单卡宽 &lt; 300px 或 &gt; 420px 通常观感不佳</span>
+</div>
+
+<!-- ══════════ 3. 业界做法 ══════════ -->
+<h2 data-page-node-id="zifLxd8TUIVGVN2ayB8O0D">③ 主流产品怎么处理大屏（调研结论）</h2>
+<table data-page-node-id="vviVlafY517yQSy0ocXRPJ">
+  <thead data-page-node-id="YDgOzpElWofbRVwSiVg7pd">
+    <tr data-page-node-id="jdLq7vkeE69m6EahIyX026"><th data-page-node-id="bklYme1U5h8hgG0Vm0yuYb">产品</th><th data-page-node-id="Q80CP7A8nFyvpdZeLeXn6K">卡片尺寸</th><th data-page-node-id="sz4HJEnM6kaR0NVMmj3rA4">列数</th><th data-page-node-id="lA5ELv6IpgHkHw1EK3xur7">字号</th><th data-page-node-id="6wjiFj1DHtVYqDrj4ZzQ9M">内容区</th><th data-page-node-id="9heY2LFQpEItvo65MTvxH5">关键手段</th></tr>
+  </thead>
+  <tbody data-page-node-id="2GuOJxi4bfTavCTEQUxBbS">
+    <tr class="hl" data-page-node-id="QBFkpYYgUx9bx08WVZpFxj">
+      <td data-page-node-id="3itHchxW05uEIAYEHPhCuZ"><b data-page-node-id="I91INoVjkLvLnEX6DLzLjq">Netflix</b></td>
+      <td data-page-node-id="CaLhjk7hEeiqRTrILMVVum"><b data-page-node-id="RdiijQ5Mx1ig5GDbQqevpJ">封顶</b> ~250–310px</td><td data-page-node-id="of7nPUDGEPExKYwA7wVYVN">随宽度增加（最多 6–7）</td>
+      <td data-page-node-id="Ol0VmPef1CkENdkheJn9Pm">固定 px</td><td data-page-node-id="wKbf1m3CFCIQGYcyIMo8vF">无硬锁宽，靠列数消化</td>
+      <td data-page-node-id="BBIId5Gig8ebv7HG8YJqG7">卡片绝不无限拉伸，多出来的宽度用<b data-page-node-id="A1HrL1CRPqhLKGHTbCJ9GK">更多列</b>吸收</td>
+    </tr>
+    <tr class="hl" data-page-node-id="MsChH7V8kAcI066pDg45pe">
+      <td data-page-node-id="AHJcXXO59F8thtHff1EvGn"><b data-page-node-id="FC52kcOb6khfF0hX4TsmbR">YouTube</b></td>
+      <td data-page-node-id="ufeDOup0cLOaxn2Hdk4FKE"><b data-page-node-id="nVHq7Snav9LJCmbA40moQC">封顶</b> ~360px</td><td data-page-node-id="XhoxIjCsx3FiQTZUpKALgY">随宽度增加</td>
+      <td data-page-node-id="ilEnjy5KbpykWe2JeRLAup">固定 + <b data-page-node-id="w4EtcyjgvL5D4Mp8222wbB">用户可调缩放</b></td><td data-page-node-id="2EPADE9yIZzc8qlj6l1Kzd">网格居中留白</td>
+      <td data-page-node-id="fQHvuPJwAhHdkDjpFBYwXH">设置 → 外观 → <b data-page-node-id="eSrzeSQbceKG94dzJv8O6X">缩放 1x/1.25x/1.5x/1.75x/2x</b></td>
+    </tr>
+    <tr data-page-node-id="6xsWFFuqYQ7MU1bnTD3pkS">
+      <td data-page-node-id="xvBxJX4yqpGYRH88057Nrq"><b data-page-node-id="aJHaTFqvytDZhh0Jk4kAcG">哔哩哔哩</b></td>
+      <td data-page-node-id="Yn1lixqCr1KbolQvH58u6H"><b data-page-node-id="1OawEYUQL7Q3WBRb6fy2AT">封顶</b> ~320px</td><td data-page-node-id="3bjkIKvg8B06kcmeXSC872">随宽度增加</td>
+      <td data-page-node-id="oJQXgpLGiWHD0wnBJPxQrP">固定</td><td data-page-node-id="kcIpK8D4H2BJUdjmO9vDwB"><b data-page-node-id="5rXLrITzR6gyoTuZ0KjHwJ">max-width ≈ 2200px 居中</b></td>
+      <td data-page-node-id="yHk70ymdLTj58pvAtEdutI">首页提供「宽屏模式」开关</td>
+    </tr>
+    <tr data-page-node-id="aiJqmNn4GlPXUCm51V2try">
+      <td data-page-node-id="x1q8Nu69sbyc2IBYG4uNp6"><b data-page-node-id="HCOKnnGFoLAWonfKOsYizS">爱奇艺 / 腾讯视频</b></td>
+      <td data-page-node-id="VAz7v0vgBBskXj9xIJ67jO"><b data-page-node-id="ajfZfcOd1qj3GU8brq3980">封顶</b></td><td data-page-node-id="WC6cJ8bREYE7tzM7GmXGiC">随宽度增加</td>
+      <td data-page-node-id="rXlzfMEoFnyw7N6ZuwfnIB">固定</td><td data-page-node-id="AsZXhF7m44xqCFgbNzetU9"><b data-page-node-id="FJc4ABxiOTAXKdxTL0RKep">硬锁 1200–1600px</b>（连导航一起）</td>
+      <td data-page-node-id="O4Fb8m3uXZSLs9sRd0SzQe">整站锁宽成一条内容带，大屏就是留白</td>
+    </tr>
+    <tr data-page-node-id="nI6rG1VgsEKHKR3LTfTyz5">
+      <td data-page-node-id="yXX4lmtFvjxljLvnxDXYPQ"><b data-page-node-id="TypxJ6GlO2SYosfEhNDyBu">Plex / Jellyfin / Emby</b></td>
+      <td data-page-node-id="fFNjAwztUBgD2FoRL7kiE1">用户可调</td><td data-page-node-id="PAE5AgTMOI1CVyAPCNGDkh">自适应</td>
+      <td data-page-node-id="avLREVwctK1W2ZZpwNMLto">固定 + <b data-page-node-id="1QPF1iLh2u5VoChAlXSB5Z">UI scale</b></td><td data-page-node-id="or3NuKeNOm8SbDxjRq58Cd">跟随窗口</td>
+      <td data-page-node-id="MrWCv2s7tGPDoAlTbvr2Kx"><code data-page-node-id="gW3dLwIbR4sI7yIgQgUoUY">--scale-factor 1.25</code> / 设置项全局缩放</td>
+    </tr>
+    <tr data-page-node-id="Jj2andaeqgM6lLn9rpg7JA">
+      <td data-page-node-id="fsQCjUA0p0p9o0pCFFFft7"><b data-page-node-id="DAs4BZqq4RrHU29bi3cAbt">Disney+ / Max</b></td>
+      <td data-page-node-id="YAZ7Gy9j1rLKFQvk5qJ9oD"><b data-page-node-id="vgFwuWrlOditTPi9BGHzfP">封顶</b></td><td data-page-node-id="PW6BLRXLf6j6zfoMknFeM7">随宽度增加</td>
+      <td data-page-node-id="lfzjF3KAwTmYkOqaGwVYKk">固定</td><td data-page-node-id="klge6UPeA0jIjYjDWer03G">居中留白</td>
+      <td data-page-node-id="KuTS7O0pa4EkByAyoyujjB">同上，卡片尺寸恒定</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note ok-n" data-page-node-id="yLoSdZW0FJRKX0fZSwPDKd">
+<b data-page-node-id="mm68EV1rLpROB3p1VBRXs3">业界共识（三件事的组合，缺一不可）：</b><br data-page-node-id="tDu7uxViiilPDXfzGzyfuh">
+<b data-page-node-id="bAkAjA9up17BfWTkeJVZpb">1. 卡片尺寸封顶</b> —— 卡片宽度有上限（280–360px），<b data-page-node-id="rnEbh8vBeXiGmnoC2auMpe">绝不</b>随视口无限拉伸。这是解决「元素过大/过小」的根本手段。<br data-page-node-id="bFfcnCJT7kOVn19DoK1RFr">
+<b data-page-node-id="TY4YBPkBvi8CwexVCWPQ13">2. 列数随宽度增加（不是封顶）</b> —— 多出来的宽度用<b data-page-node-id="5hLikkvpu4VJuhL9pBdgiE">更多列</b>消化，而不是把卡片撑大。你之前要求的「封顶 5 列」其实放大了问题：5 列 × 1600px = 单卡 320px，两侧还空 960px。<br data-page-node-id="4sWTthDcG2puPYelJBdhSX">
+<b data-page-node-id="4vQ7A0GJwKhLePEk59x9WE">3. 字号不随视口缩放 —— 交给「用户显式缩放」</b> —— YouTube / Plex / VS Code / Slack / Discord 全都提供全局 UI 缩放设置，而不是响应式字号。响应式放大字号在所有产品里都被证明会破坏比例。
+</div>
+
+<div class="note warn-n" data-page-node-id="eejadHgejjuicDEQ5NF7gB">
+<b data-page-node-id="w4yvEDzllEAlSwUV9Xdtyy">对照本项目现状，三个都对不上：</b><br data-page-node-id="zwk7Dmx85ixv3bEKSYzLkF">
+① 卡片宽度<b data-page-node-id="7AE3jnrp0mhpClwPOu2Jt5">没有封顶</b> —— <code data-page-node-id="brHPaktcaUXi96hooHU6Ci">--card-cols</code> 是硬编码列数（≥2560 → 9 列、≥3840 → 10 列，<code data-page-node-id="KSGTo4DEYJfUg9TXRXrGdQ">variables.css:409-425</code>），卡片随视口被动拉伸/压缩，没有尺寸约束。<br data-page-node-id="K6PY0sP1JLcSE2gBTvz5M7">
+② 大屏把列数<b data-page-node-id="b0UbYsJZsjVfZlMPwftBub">越加越多</b>（9/10 列）→ 卡片越来越小、画面越来越碎 → 这就是「分散」的直接来源之一。<br data-page-node-id="kWy7G1xfFyFewqjHvFhEkG">
+③ 完全没有 UI 缩放机制 —— 全项目 grep 无 <code data-page-node-id="IMHwR9qHnLKQihqSsX80Xn">uiScale</code>、无 <code data-page-node-id="FkSZFZyRp7b0IsgrYhFma0">dppx</code>/<code data-page-node-id="e5KuohuhUVHR4myUilqV5L">resolution</code> 媒体查询、无 <code data-page-node-id="9YT6LBgprNX6dTiGcrueSJ">zoom</code>、无 <code data-page-node-id="dxlazq8W0ou25DKfoN7ulW">devicePixelRatio</code> 检测。TV 的 <code data-page-node-id="uo6Q4Qcwr937fkPB4WY7fy">tvOverscan</code> 只是安全边距，不是缩放。
+</div>
+
+<h3 data-page-node-id="jTMZ8XXHoDverHMSH6w2Ce">「分散」的三个叠加来源（都能在代码里指到行）</h3>
+<table data-page-node-id="YFInoLq6DmIQwnCKA1RFAe">
+  <thead data-page-node-id="8mLRfixvyce8uZHBQ3k1ue"><tr data-page-node-id="ItFcm7ONpbblFJszPHR097"><th data-page-node-id="TGXrccLj0nYHUWvRXkzchF">来源</th><th data-page-node-id="3oJAk0cOrOLcSil1a9GL2n">位置</th><th data-page-node-id="in5hu7b5zyMFS5GZwxoBHp">现状</th><th data-page-node-id="zOgAy1NXXS05YeSAVnZrKZ">后果</th></tr></thead>
+  <tbody data-page-node-id="dNiDKjr835rAz8lmL1Rl5z">
+    <tr data-page-node-id="uNfwBhAM0x4k4CwSVmR3Gy">
+      <td data-page-node-id="90QNSg3oCjPhEE8K7nnAyB">grid-gap 在大屏继续放大</td>
+      <td data-page-node-id="9V6Ov3KJ3X7CXphyZEpDC1"><code data-page-node-id="XCaCOoCs0kJNHW6DdlFn1x">variables.css:404</code></td>
+      <td data-page-node-id="0shWaDt2jHKtqk06e2w8fA">≥1920 覆盖为 <code data-page-node-id="CTKjHrcFGo8WegoWAd8plh">clamp(20px, 1rem+0.5vw, 36px)</code> → 2560 时 ≈28.8px（比桌面 24px 大 20%）</td>
+      <td data-page-node-id="5syavDMuogcofEdbjZpXzc">间距放大而文字不变 → 元素彼此越离越远</td>
+    </tr>
+    <tr data-page-node-id="fXP0TwhRCxfkhizZSnplcc">
+      <td data-page-node-id="IDz1oKKNTkFTt3WXGgF74Y">列数在大屏越加越多</td>
+      <td data-page-node-id="f8O3kPyMDBTdLqMieKOEos"><code data-page-node-id="ifv32NjUvxbWOXBA5LL4Cd">variables.css:409-425</code></td>
+      <td data-page-node-id="P8moeU5E7NiPDPvEk7a49n">≥2560 → 9 列；≥3840 → 10 列</td>
+      <td data-page-node-id="beEZ4SQoWKTujvrDtnEz3y">卡片越碎，视觉重心涣散</td>
+    </tr>
+    <tr data-page-node-id="4YGuNhdoPRDbXbuDd2KvVG">
+      <td data-page-node-id="9kiTJirslWuDHKtSZUt4W5">内容区锁窄、框架铺满</td>
+      <td data-page-node-id="tSbY9rzmBokIWt44N7ddmr"><code data-page-node-id="SFSjufoDK4EaOMMarxn6Dn">History.css:339-353</code>（我昨天加的）</td>
+      <td data-page-node-id="pfnQYmOjpA2s6RmE9kwWEq">2560 视口锁 1600px 居中，两侧各空 480px，而顶栏铺满</td>
+      <td data-page-node-id="q2ANDAjeaVH8qHaGLFem6J">「孤岛感」—— 内容挤中间，四周空荡</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ══════════ 4. 建议 ══════════ -->
+<h2 data-page-node-id="ftyEnqCjpiCJTqkGCgOTWQ">④ 建议落地路径（待你拍板）</h2>
+<table data-page-node-id="Sznv9rBK2Ywh1dvYuydH7m">
+  <thead data-page-node-id="ZXsYiTT3bGf6CloagYG4ut"><tr data-page-node-id="BLSwhCK3T1HH7jTEd1D1ey"><th style="width:52px" data-page-node-id="ITYrE06TAFVPNpQAzbjEeK">步</th><th data-page-node-id="hOuyQD7BXzDDOFveJuz63M">动作</th><th data-page-node-id="xuX17WeH7L4CrGjlMeFZDK">改什么</th><th data-page-node-id="G9Mg1wfpj8UzRF6orJU2Hn">解决什么</th><th style="width:76px" data-page-node-id="upZd3ryBpzqBub8U8k7vrm">风险</th></tr></thead>
+  <tbody data-page-node-id="OJBKBOBRGrESwBYss89d6A">
+    <tr data-page-node-id="ErAcMw4gy5dJD9QMbH6WwN">
+      <td data-page-node-id="jklUC2PXu3yj8P2IEHll3v"><b data-page-node-id="siRSIfB30IQpH1HdsIbWlR">1</b></td>
+      <td data-page-node-id="mU6Z8kxu3FzdYUXcV08Z9G">引入 <code data-page-node-id="CsbvhULCEs84QvtWWTJ8Ls">--ui-scale</code> 全局缩放因子</td>
+      <td data-page-node-id="X9cNwUuCP4zSh9YWjV5HWg"><code data-page-node-id="k6xngqEglfCbYqDYCPwOrd">variables.css</code> 基础 token 定义处统一包 <code data-page-node-id="IQhGL0NitndFDwMcmQQ9Lw">calc(clamp(…) * var(--ui-scale))</code>；<code data-page-node-id="Ehn7hjq0CrsH9VxHzOzMaj">--icon-*</code> 派生自 <code data-page-node-id="h2J8K3r5qBBS2RIYLeGrtG">--text-*</code> 自动跟随，不重复缩放</td>
+      <td data-page-node-id="VbI2UlpJiSLSJcIUTH84Lq">一次缩放文字+间距+图标+圆角+控件，<b data-page-node-id="QiRQOm3AdbEkZjgrRaf0uU">比例恒定</b> → 干掉「放大字体很怪」</td>
+      <td data-page-node-id="S9PLd39zAxqXlnrXSl9jtA">中（一次性改 60+ token 定义）</td>
+    </tr>
+    <tr data-page-node-id="4O3EuQl3JxfOtlHhIGB0fP">
+      <td data-page-node-id="pes6XcchUkxvDyP3qbD18O"><b data-page-node-id="Sel77SomQAoDmQGND4OF8n">2</b></td>
+      <td data-page-node-id="Qh0nUqJi110snr2feWFYkK">自动档：按 dpr + 视口宽推断低密度大屏</td>
+      <td data-page-node-id="KuNc57GxECj9AGK0ffRxqq"><code data-page-node-id="Iayt5fPWFkC9CidfaKrSxx">@media (min-width:1920px) and (resolution &lt; 1.5dppx) { --ui-scale: 1.15 }</code><br data-page-node-id="lfOFuD0TV2Z3dBjV6ZZ6tE"><code data-page-node-id="Kp0UzKPb3NAfTBnhAqP4lw">@media (min-width:2560px) and (resolution &lt; 1.5dppx) { --ui-scale: 1.3 }</code></td>
+      <td data-page-node-id="gW0sH8DRPe1DBcKhIgDB7s">27 寸 100% 缩放（dpr=1）自动放大；14 寸 dpr≥1.5 的高 PPI 屏<b data-page-node-id="tFN60b20IJiEQHfAQHWKxz">完全不受影响</b></td>
+      <td data-page-node-id="8BsrIRkuwjjyyd64qKREXt">低</td>
+    </tr>
+    <tr data-page-node-id="ePgJt7m0rROYSNhDwspHny">
+      <td data-page-node-id="TDNO9IXerHceT7jG72KM2Q"><b data-page-node-id="Q3KE8fGcEuVwr9E0QGCCKP">3</b></td>
+      <td data-page-node-id="Kt5jIDcxYQxZvbRQFKMAJp">手动档：设置页「界面缩放」档位</td>
+      <td data-page-node-id="fyTJagrFqKeigSEKbj0uYP"><code data-page-node-id="HDsyTCA2z7vozPnJBv50jO">useSettingsStore</code> 新增 <code data-page-node-id="63EU6GrxCyHdEGS8nqps4a">uiScale</code>（100/110/125/150%），写入 <code data-page-node-id="CJ8YxeydALlCpPcvEFkMOY">&lt;html&gt;</code> 内联变量覆盖自动档</td>
+      <td data-page-node-id="GYmDPNHSndjn4OxUV9sBzK">业界标准做法（YouTube/Plex/VSCode），<b data-page-node-id="MSNn08JL3vTYzihTOswYyH">最终拍板权在你</b></td>
+      <td data-page-node-id="Ylt86VXFwSSdKduq53v62p">低</td>
+    </tr>
+    <tr data-page-node-id="IUjDKgs5OuzW82sAwCjFK9">
+      <td data-page-node-id="3MH9L4Lad0CE64lLIrtZQT"><b data-page-node-id="RGiFSinE7f6MweR7PKFmbL">4</b></td>
+      <td data-page-node-id="jIwrlpTyKXkxPdL3RHAjIt">卡片宽度封顶，列数由容器推导</td>
+      <td data-page-node-id="qFOyuRVqLbwAfX04iyH44E">网格改 <code data-page-node-id="qsSz7McctR5OMPOo4VWGEM">repeat(auto-fill, minmax(var(--card-max), 1fr))</code>，<code data-page-node-id="LCVluZpZBmRxcKtQOW7i4M">--card-max</code> 随 <code data-page-node-id="gYCgQ26lmkoDyVkg2JxBCX">--ui-scale</code> 缩放（≈340px×scale）</td>
+      <td data-page-node-id="sye3BwqqtN6TSjaVM7h5Sw">干掉「卡片无限拉伸」；列数自然确定，不再硬编码 9/10 列</td>
+      <td data-page-node-id="8CBsBayIoWzNLLByUzaKfi">中（影响所有卡片网格页）</td>
+    </tr>
+    <tr data-page-node-id="qIV1I8HqX34LlbOhLDSHtj">
+      <td data-page-node-id="MaJ7o63wjh6UKGFey9VdH0"><b data-page-node-id="HKPBIy0HEaqwRCScTh1tLe">5</b></td>
+      <td data-page-node-id="L5cC1WGDBiV1eIqHy1ln8a">撤销 ≥1920 的 gap 放大 + 放宽内容区</td>
+      <td data-page-node-id="OCyHuzquDL1ijCRMSC3Gm6">删除 <code data-page-node-id="DYsc916X2mUuMf6apxxCoS">variables.css:404</code> 的 gap 覆盖（或让它跟随 <code data-page-node-id="4PeZWLZNOEWExPtwOifDJh">--ui-scale</code>）；History 内容区 1600 → 跟随缩放或放宽到 ~1900px</td>
+      <td data-page-node-id="RwiTnl0CEKDvCinIAwBd9w">干掉「间距放大而内容不变」的失衡与孤岛感</td>
+      <td data-page-node-id="2DVHbo4wfFForkfm7D0Pfm">低</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note" data-page-node-id="RM3KYjwDtGOa3SU2cQCihP">
+<b data-page-node-id="UnkAtKK9MeS7JlijNDuJBx">为什么不用 <code data-page-node-id="6kQpmdmTtJb64peU1igmk8">html { zoom }</code> / <code data-page-node-id="hDQqTKs73zLog22VA8WXgz">transform: scale()</code>？</b>
+前者在 Chrome/Firefox 下对媒体查询、<code data-page-node-id="iCfI3lVusVmNbT9V0QOZgf">vw/vh</code>、fixed/sticky 定位有一致性副作用；后者不影响布局流，需要额外补偿宽高。
+项目已有完整的 token 体系，<code data-page-node-id="yQrGOmebsjhVxM2FA5wpt4">--ui-scale</code> 乘在 token 上是<b data-page-node-id="e2FokBrA5bhriiRVYSm6eE">最可控、零副作用</b>的路径，且 TV 模式早已用同一套「整条曲线 ×2」的契约验证过可行性。
+</div>
+
+<div class="note warn-n" data-page-node-id="HU89oJJwYZgKKD3pVhmJBn">
+<b data-page-node-id="irFji05dvunLAg7Ym2vGdG">需要你拍板的两件事：</b><br data-page-node-id="YHtlbdHDqKoCY9dTEwNY6J">
+<b data-page-node-id="1MujOSQSyiAW1dVgzbcIl3">1. 缩放幅度</b> —— 上面「全局等比缩放」滑块请拖到你 27 寸上最舒服的值（我预判 1.15–1.3，但这是主观的，只有你能定）。<br data-page-node-id="V0X4iD5n9Zzwox3HTwZce6">
+<b data-page-node-id="KvimWf5u8tRSqXIBnsHvRm">2. 卡片尺寸路线</b> —— 是继续「固定列数 + 卡片随视口缩放」，还是改「卡片宽度封顶 + 列数自适应」（业界主流）。方案 D 可预览后者。
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SAMPLES = [
+    { t: '沙丘：第三部', src: '量子资源', ep: 'HD 1080P', time: '12:04', live: false, p: 68 },
+    { t: '三体 第一季', src: '蓝光专线', ep: '第 08 集', time: '10:31', live: false, p: 42 },
+    { t: 'CCTV-1 综合', src: '央视频道', ep: '新闻联播', time: '09:58', live: true, p: 55 },
+    { t: '奥本海默', src: '急速云播', ep: '4K HDR', time: '昨天', live: false, p: 91 },
+    { t: '繁花', src: '量子资源', ep: '第 21 集', time: '昨天', live: false, p: 23 },
+    { t: '浙江卫视', src: '地方频道', ep: '综艺回放', time: '周一', live: true, p: 12 },
+    { t: '流浪地球 3', src: '蓝光专线', ep: 'HD 1080P', time: '周一', live: false, p: 77 },
+    { t: '漫长的季节', src: '急速云播', ep: '第 05 集', time: '周日', live: false, p: 34 },
+    { t: 'CCTV-5 体育', src: '央视频道', ep: '赛事直播', time: '周日', live: true, p: 60 },
+    { t: '周处除三害', src: '量子资源', ep: 'HD 1080P', time: '周六', live: false, p: 100 },
+    { t: '湖南卫视', src: '地方频道', ep: '电视剧场', time: '周六', live: true, p: 8 },
+    { t: '银翼杀手 2049', src: '蓝光专线', ep: '4K HDR', time: '周五', live: false, p: 46 }
+  ];
+
+  var MONITORS = {
+    '27x1440x1':    { name: '27寸 2560×1440 @100%', ppi: 108.8, dpr: 1,   distCm: 70 },
+    '24x1080x1':    { name: '24寸 1920×1080 @100%', ppi: 91.8,  dpr: 1,   distCm: 65 },
+    '14x1080x1.5':  { name: '14寸 1920×1080 @150%', ppi: 157.4, dpr: 1.5, distCm: 45 },
+    '14x1800x2':    { name: '14寸 2880×1800 @200%', ppi: 242.5, dpr: 2,   distCm: 45 },
+    '32x2160x1.5':  { name: '32寸 3840×2160 @150%', ppi: 137.7, dpr: 1.5, distCm: 80 }
+  };
+
+  var MODES = {
+    A: { label: 'A · 现状', desc: '线上当前实现：内容区锁 1600px 居中 + 5 列 + 14px 字号（未缩放）', gapInflate: true },
+    B: { label: 'B · 只放大字号', desc: '只把 --text-* 放大 1.4×，间距/圆角/gap 一律不动 → 比例失衡（你试过的结果）', gapInflate: true },
+    C: { label: 'C · 全局等比缩放', desc: '--ui-scale 同时乘到字号/间距/图标/圆角/gap → 比例恒定', gapInflate: false },
+    D: { label: 'D · 全局缩放 + 卡片封顶', desc: '在 C 基础上把网格改成 auto-fill + minmax(卡片封顶宽, 1fr)，列数由容器自然推导（Netflix/YouTube/B站 做法）', gapInflate: false }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var sim = $('sim'), grid = $('grid');
+
+  var state = { mode: 'A', vw: 2560, scale: 1, cmax: 1600, cols: 5, card: 340, mon: '27x1440x1', zoom: 0.42 };
+
+  /* 渲染卡片 */
+  function renderCards() {
+    var need = state.mode === 'D' ? 12 : Math.min(12, Math.max(state.cols * 2, 10));
+    var html = '';
+    for (var i = 0; i < need; i++) {
+      var s = SAMPLES[i % SAMPLES.length];
+      html += '<div class="rc">'
+        + '<div class="rc__media">'
+        + (s.live ? '<span class="rc__badge-live">LIVE</span>' : '')
+        + '<span class="rc__progress"><i style="width:' + s.p + '%"></i></span>'
+        + '</div>'
+        + '<div class="rc__body">'
+        + '<div class="rc__title">' + s.t + '</div>'
+        + '<div class="rc__meta">'
+        + '<span class="rc__badge-type">' + (s.live ? '直播' : '视频') + '</span>'
+        + '<span class="rc__badge-src">' + s.src + '</span>'
+        + '<span class="rc__ep">' + s.ep + '</span>'
+        + '<span class="rc__time">' + s.time + '</span>'
+        + '</div></div></div>';
+    }
+    grid.innerHTML = html;
+  }
+
+  /* 2560 视口下线上真实 gap：clamp(20px, 1rem + 0.5vw, 36px) */
+  function realGap(vw) {
+    if (vw < 1920) return 24;
+    return Math.min(36, Math.max(20, 16 + 0.005 * vw));
+  }
+
+  function apply() {
+    var m = MODES[state.mode];
+
+    /* 模式类 */
+    sim.className = 'sim' + (m.gapInflate ? ' gap-inflate' : '') + ' mode-' + state.mode;
+
+    /* A / B / C：显式列数；D：auto-fill 封顶 */
+    if (state.mode === 'D') {
+      sim.style.setProperty('--card-max', (state.card * state.scale) + 'px');
+      sim.style.removeProperty('--cols');
+    } else {
+      sim.style.setProperty('--cols', state.cols);
+      sim.style.removeProperty('--card-max');
+    }
+
+    /* B 方案：字号单独放大 1.4×，其余不动 */
+    sim.style.setProperty('--font-only', 1.4);
+
+    /* 缩放：B 方案下 --ui-scale 不驱动字号（字号已由 --font-only 接管），
+       但为了让"内容区/顶栏"两方案可比，B 的 ui-scale 保持 1 */
+    sim.style.setProperty('--ui-scale', state.mode === 'B' ? 1 : state.scale);
+
+    /* 视口宽 + 内容区 */
+    sim.style.setProperty('--sim-width', state.vw + 'px');
+    sim.style.setProperty('--content-max', (state.cmax * (state.mode === 'B' ? 1 : state.scale)) + 'px');
+    sim.style.setProperty('--gap-real', realGap(state.vw) + 'px');
+
+    /* 预览缩放 */
+    $('zoomBox').style.transform = 'scale(' + state.zoom + ')';
+    $('zoomBox').style.width = (state.vw * state.zoom) + 'px';
+    $('zoomBox').style.height = (760 * state.zoom) + 'px';
+
+    renderCards();
+    requestAnimationFrame(measure);
+  }
+
+  /* 测量真实渲染结果 */
+  function measure() {
+    var card = grid.querySelector('.rc');
+    if (!card) return;
+    var cardW = card.getBoundingClientRect().width / state.zoom;
+    var title = card.querySelector('.rc__title');
+    var meta = card.querySelector('.rc__meta');
+    var cs = getComputedStyle(sim);
+
+    var cols = state.mode === 'D'
+      ? Math.round((parseFloat(cs.getPropertyValue('--content-max')) + parseFloat(cs.getPropertyValue('--grid-gap')))
+                   / (cardW + parseFloat(cs.getPropertyValue('--grid-gap'))))
+      : state.cols;
+
+    var contentW = parseFloat(cs.getPropertyValue('--content-max'));
+    var sideGutter = (state.vw - Math.min(contentW, state.vw)) / 2;
+
+    /* 物理换算 */
+    var mon = MONITORS[state.mon];
+    var titlePx = parseFloat(getComputedStyle(title).fontSize) / state.zoom;
+    var metaPx = parseFloat(getComputedStyle(meta).fontSize) / state.zoom;
+    var titleMM = titlePx * mon.dpr / mon.ppi * 25.4;
+    var metaMM = metaPx * mon.dpr / mon.ppi * 25.4;
+    var cardMM = cardW * mon.dpr / mon.ppi * 25.4;
+    /* 视角（角分）：2*atan(h/2d) */
+    var titleArc = 2 * Math.atan(titleMM / 2 / (mon.distCm * 10)) * 180 / Math.PI * 60;
+
+    var gapPx = parseFloat(cs.getPropertyValue('--grid-gap'));
+
+    var items = [
+      { lb: '单卡宽', vl: cardW.toFixed(0) + 'px', sub: cardMM.toFixed(0) + ' mm 物理',
+        bad: cardW < 300 || cardW > 420 },
+      { lb: '标题字号', vl: titlePx.toFixed(1) + 'px', sub: titleMM.toFixed(2) + ' mm · ' + titleArc.toFixed(1) + '′ 视角',
+        bad: titleArc < 15 },
+      { lb: 'meta 字号', vl: metaPx.toFixed(1) + 'px', sub: metaMM.toFixed(2) + ' mm', bad: metaMM < 2.0 },
+      { lb: 'grid gap', vl: gapPx.toFixed(1) + 'px', sub: (gapPx / titlePx).toFixed(2) + '× 标题字高', bad: gapPx / titlePx > 2.2 },
+      { lb: '实际列数', vl: cols + ' 列', sub: '容器 ' + contentW.toFixed(0) + 'px', bad: cols > 8 },
+      { lb: '两侧留白', vl: sideGutter.toFixed(0) + 'px', sub: '各一侧 · 共 ' + (sideGutter * 2).toFixed(0) + 'px', bad: sideGutter > 300 }
+    ];
+
+    $('metrics').innerHTML = items.map(function (it) {
+      return '<div class="m"><div class="lb">' + it.lb + '</div>'
+        + '<div class="vl" style="color:' + (it.bad ? '#ff9a6c' : '#6ede8a') + '">' + it.vl + '</div>'
+        + '<div class="lb" style="text-transform:none;letter-spacing:0">' + it.sub + '</div></div>';
+    }).join('');
+
+    $('physHint').innerHTML = '物理换算参照：<b>' + mon.name + '</b> · PPI ' + mon.ppi
+      + ' · dpr ' + mon.dpr + ' · 观看距离 ' + mon.distCm + 'cm';
+    $('modeLabel').textContent = m.label;
+    $('modeDesc').textContent = m.desc;
+  }
+
+  /* 诊断区：14寸 vs 27寸 量化对比 */
+  function renderDiag() {
+    var rows = [
+      { mon: '14x1080x1.5', label: '你的 14 寸笔记本', good: true },
+      { mon: '27x1440x1', label: '你的 27 寸显示器', good: false },
+      { mon: '32x2160x1.5', label: '（参照）32 寸 4K @150%', good: true }
+    ];
+    $('diag').innerHTML = rows.map(function (r) {
+      var m = MONITORS[r.mon];
+      var cssPx = 14 * (1 / 1);                    /* token 固定 14px */
+      var physPx = cssPx * m.dpr;                  /* 物理像素 */
+      var mm = physPx / m.ppi * 25.4;              /* 物理毫米 */
+      var arc = 2 * Math.atan(mm / 2 / (m.distCm * 10)) * 180 / Math.PI * 60; /* 角分 */
+      return '<div class="cell ' + (r.good ? 'good' : 'bad') + '">'
+        + '<div class="lb">' + r.label + '</div>'
+        + '<div class="vl">' + arc.toFixed(1) + '′</div>'
+        + '<div class="sub">14px 文字的<b>视角</b>（越大越易读）</div>'
+        + '<div class="sub" style="margin-top:6px">PPI ' + m.ppi + ' · 系统缩放 ' + (m.dpr * 100) + '% · 距离 ' + m.distCm + 'cm</div>'
+        + '<div class="sub">物理字高 ' + mm.toFixed(2) + ' mm（' + physPx.toFixed(1) + ' 物理像素）</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  /* 事件绑定 */
+  $('modeTabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button.tab');
+    if (!b) return;
+    state.mode = b.dataset.mode;
+    [].forEach.call(this.querySelectorAll('button.tab'), function (x) { x.classList.remove('on'); });
+    b.classList.add('on');
+    /* 切到 B 时给一个默认放大感，切回时还原 */
+    apply();
+  });
+
+  $('vwSel').addEventListener('change', function () { state.vw = +this.value; apply(); });
+  $('monSel').addEventListener('change', function () { state.mon = this.value; apply(); });
+  $('scaleR').addEventListener('input', function () {
+    state.scale = +this.value; $('scaleO').textContent = state.scale.toFixed(2) + '×'; apply();
+  });
+  $('cmaxR').addEventListener('input', function () {
+    state.cmax = +this.value; $('cmaxO').textContent = state.cmax + 'px'; apply();
+  });
+  $('colsR').addEventListener('input', function () {
+    state.cols = +this.value; $('colsO').textContent = state.cols + ' 列'; apply();
+  });
+  $('cardR').addEventListener('input', function () {
+    state.card = +this.value; $('cardO').textContent = state.card + 'px'; apply();
+  });
+  $('zoomR').addEventListener('input', function () {
+    state.zoom = +this.value; $('zoomO').textContent = state.zoom.toFixed(2) + '×'; apply();
+  });
+  window.addEventListener('resize', function () { measure(); });
+
+  renderDiag();
+  apply();
+})();
+</script>
+</body>
+</html>

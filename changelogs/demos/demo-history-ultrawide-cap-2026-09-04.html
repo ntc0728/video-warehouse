@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<html lang="zh-CN" data-theme="dark" data-page-node-id="UuWlfqAtDj8kb7tUHiPVx0">
+<head data-page-node-id="AWiCpeskpiFQTwQBDD6upE">
+<meta charset="UTF-8" data-page-node-id="HG5yqoDnl7EKdD1Kvpo9g2" />
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="KRdXr2WnEXMpOleqXEnIzn" />
 <title>历史页超宽视口列数封顶 5 列（2026-09-04 落地）验证 Demo</title>
 <style>
   :root{
@@ -63,41 +63,41 @@
   .legend .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
 </style>
 </head>
-<body>
+<body data-page-node-id="SzHSFfYlTAIRXS8hEd5Dr0">
 
-<div class="bar">
-  <h1>历史页超宽视口列数封顶 5 列（2026-09-04 落地）<small>大显示器(24/27/32寸)近距离观看 UI 元素过大 → ≥2560 封顶 5 列 + 容器锁宽居中（2560→1600px、3440→1500px）</small></h1>
-  <span style="display:flex;gap:6px">
-    <button class="btn" data-vp="2560">模拟视口 2560px</button>
-    <button class="btn" data-vp="3440">模拟视口 3440px</button>
+<div class="bar" data-page-node-id="THiq5ln3m1iVJQ8S4BQl1x">
+  <h1 data-page-node-id="oORZ0ctBFjXmtL9TbFrZWV">历史页超宽视口列数封顶 5 列（2026-09-04 落地）<small data-page-node-id="DnNBxWb4ugYYUbLQ80Hb2g">大显示器(24/27/32寸)近距离观看 UI 元素过大 → ≥2560 封顶 5 列 + 容器锁宽居中（2560→1600px、3440→1500px）</small></h1>
+  <span style="display:flex;gap:6px" data-page-node-id="OQcwLRsucTeJe6BGuGRL9P">
+    <button class="btn" data-vp="2560" data-page-node-id="pdmpFobz0kFQjM3INpnD7a">模拟视口 2560px</button>
+    <button class="btn" data-vp="3440" data-page-node-id="pqqkp7f8ppNlOVmfzROy6A">模拟视口 3440px</button>
   </span>
-  <span class="tag">左右对照：红=旧(7/8 列铺满) · 绿=新(封顶 5 列 + 锁宽)</span>
+  <span class="tag" data-page-node-id="uOrWSWm51IFav0kxBuqgAr">左右对照：红=旧(7/8 列铺满) · 绿=新(封顶 5 列 + 锁宽)</span>
 </div>
 
-<div class="hint">
-  <b>说明：</b>本 demo 用外层固定宽度模拟超宽显示器（非真实设备，真实观感仍需你在真机验证）。每个监视器内渲染 16 张真实结构记录卡，
+<div class="hint" data-page-node-id="bQfevsFBCZtlYRgM4A1hPY">
+  <b data-page-node-id="EjOcwxFP8iXMXvadM5UAVC">说明：</b>本 demo 用外层固定宽度模拟超宽显示器（非真实设备，真实观感仍需你在真机验证）。每个监视器内渲染 16 张真实结构记录卡，
   下方徽标实时显示「列数 / 容器宽 / 单卡宽 / 两侧留白」，证明落地后超宽屏卡片不再无限放大。
 </div>
 
-<div class="legend">
-  <span><span class="dot" style="background:#ef4444"></span>旧方案：≥2560 仍 7 列、≥3840 8 列，卡片铺满整屏 → 单卡可达 360px+（大屏观感过大）</span>
-  <span><span class="dot" style="background:#49aa19"></span>新方案：≥2560 封顶 5 列 + 容器锁 1600/1500px 居中 → 单卡 ~320/300px，两侧留白</span>
+<div class="legend" data-page-node-id="f3BVopNy8dO5GIWVGOvwkJ">
+  <span data-page-node-id="g2g9A1pacoB0dlvLuCCryS"><span class="dot" style="background:#ef4444" data-page-node-id="FgIFPJ4ssScmGhZLUstJyN"></span>旧方案：≥2560 仍 7 列、≥3840 8 列，卡片铺满整屏 → 单卡可达 360px+（大屏观感过大）</span>
+  <span data-page-node-id="6Sc8Gf94cnotrPdzqqg0OG"><span class="dot" style="background:#49aa19" data-page-node-id="9C0hgL6eJp5C6ojP7E3HgO"></span>新方案：≥2560 封顶 5 列 + 容器锁 1600/1500px 居中 → 单卡 ~320/300px，两侧留白</span>
 </div>
 
-<div class="scroll">
-  <div class="compare" id="compare">
-    <div class="monitor">
-      <div class="monitor-head"><span class="mode before">BEFORE · 旧 7/8 列铺满</span><span id="vpLabelB">2560px</span></div>
-      <div class="frame" id="frameB"><div class="frame-inner">
-        <div class="badge-row" id="badgesB"></div>
-        <div class="history-page"><div class="history-grid" id="gridB"></div></div>
+<div class="scroll" data-page-node-id="OFNAjswwqTMy6vdCVlwbSh">
+  <div class="compare" id="compare" data-page-node-id="xUT4kw1F1rxhHod3DE36ac">
+    <div class="monitor" data-page-node-id="SUc9O0d721psJmO5zADw8o">
+      <div class="monitor-head" data-page-node-id="fD3B9kBKiBuYV2KvaUQz6Z"><span class="mode before" data-page-node-id="IVNuNfhfitmpadaksA6Fcn">BEFORE · 旧 7/8 列铺满</span><span id="vpLabelB" data-page-node-id="4nBOoWatP8HXmpXbQfiVQ4">2560px</span></div>
+      <div class="frame" id="frameB" data-page-node-id="5eRktHTwQRBVGTwyj55pdD"><div class="frame-inner" data-page-node-id="vb94KSfDgzPYMshUxaNYP2">
+        <div class="badge-row" id="badgesB" data-page-node-id="SNqSvFz7nSBBofW0UBwvWh"></div>
+        <div class="history-page" data-page-node-id="fvkrLslEPCX3vn4363BcoF"><div class="history-grid" id="gridB" data-page-node-id="YNfFdRlaZJEkg2v8v6Q5Ju"></div></div>
       </div></div>
     </div>
-    <div class="monitor">
-      <div class="monitor-head"><span class="mode after">AFTER · 新 封顶 5 列 + 锁宽</span><span id="vpLabelA">2560px</span></div>
-      <div class="frame" id="frameA"><div class="frame-inner">
-        <div class="badge-row" id="badgesA"></div>
-        <div class="history-page"><div class="history-grid" id="gridA"></div></div>
+    <div class="monitor" data-page-node-id="aG2XZZ2GcIjiw4lJmZZccj">
+      <div class="monitor-head" data-page-node-id="kVVpo8TwXXEMIwd6kPrax5"><span class="mode after" data-page-node-id="BYVCLxwKg1MeTYdvByIPCI">AFTER · 新 封顶 5 列 + 锁宽</span><span id="vpLabelA" data-page-node-id="T3uK3WZKRjGNHBWBWgpBV1">2560px</span></div>
+      <div class="frame" id="frameA" data-page-node-id="7CIUt1ApMdYtOwx8Qg3774"><div class="frame-inner" data-page-node-id="pz98aqRY5as1L4htGIu4yj">
+        <div class="badge-row" id="badgesA" data-page-node-id="g4SoDM0SmjJIUAPVPmDjFA"></div>
+        <div class="history-page" data-page-node-id="8RHAp8u1OxuqKGYCoXAszh"><div class="history-grid" id="gridA" data-page-node-id="B1CNkRdomxOICIWpjIyl9K"></div></div>
       </div></div>
     </div>
   </div>
