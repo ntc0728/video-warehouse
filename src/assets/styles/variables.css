@@ -36,6 +36,10 @@
 
 :root {
   color-scheme: light;
+  /* ── UI 全局缩放（2026-09-04 三段式×大屏整合，阶段 A）── */
+  --ui-scale: 1;
+  /* 卡片固定宽度（阶段 C 消费，≥1280 auto-fill 轨道）：290 设计基 × scale */
+  --card-size: calc(290px * var(--ui-scale));
   /* ── Colors ─────────────────────────────────────────────────────────── */
   /* 主色 — 按钮/链接/激活态/焦点环/进度条，暗色下反转为白 */
   --color-primary: #000;
@@ -150,31 +154,31 @@
         · 任意基础 token 的 preferred 在 768px 精确触顶，1920/3840 取值=MAX(冻结)。
      非 TV 的 4K 桌面：基础 token 复用 768 桌面值（更密），仅布局 token(--layout-*) 继续
         流体填满屏幕；TV 模式经 [data-device="tv"] 把整条曲线 2×，无失衡。 */
-  --text-2xs: clamp(9px, 0.4432rem + 0.0051vw, 11px);       /* 9→11 超小标注 */
-  --text-xs:   clamp(12px, 0.6904rem + 0.0025vw, 13px);     /* 12→13 */
-  --text-sm:   clamp(13px, 0.7529rem + 0.0025vw, 14px);   /* 13→14 */
+  --text-2xs: calc(clamp(9px, 7.728px + 0.339vw, 10.333px) * var(--ui-scale)); /* 9→11 超小标注 */
+  --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale)); /* 12→13 */
+  --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale)); /* 13→14 */
   /* 基准字号显式固定 14px（web/app 移动与桌面全分辨率）：
      原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → html { font-size: var(--text-base) }
      形成循环 rem 解析（不动点 14px，计算值恒为下限 14px）。显式化消除隐式依赖，
      行为零变化；TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
-  --text-base: 14px;   /* 14（web/app 固定基准；TV 覆盖为 15→30px 动态） */
-  --text-lg:   clamp(14px, 0.7557rem + 0.0051vw, 16px);       /* 14→16 */
-  --text-xl:   clamp(16px, 0.8807rem + 0.0051vw, 18px);      /* 16→18 */
-  --text-2xl:  clamp(20px, 1.0115rem + 0.0102vw, 24px);      /* 20→24 */
-  --text-3xl:  clamp(26px, 1.3865rem + 0.0102vw, 30px);  /* 26→30 */
+  --text-base: calc(clamp(14px, 14px, 15.333px) * var(--ui-scale)); /* 14（web/app 固定基准；TV 覆盖为 15→30px 动态） */
+  --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 14→16 */
+  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→18 */
+  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24 */
+  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale)); /* 26→30 */
 
   /* ── Spacing (积极增长 ~2.0x–3.0x；统一 375→768 流体、768+ 冻结) ───── */
-  --space-3xs: clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   */
-  --space-2xs: clamp(1px, -0.0568rem + 0.0051vw, 3px);    /* 1→3   */
-  --space-xs:  clamp(3px, 0.0086rem + 0.0076vw, 6px);    /* 3→6   */
-  --space-xs-plus: clamp(4px, 0.0115rem + 0.0102vw, 8px); /* 4→8   */
-  --space-sm:  clamp(6px, 0.0172rem + 0.0153vw, 12px);   /* 6→12  */
-  --space-md:  clamp(8px, -0.0964rem + 0.0254vw, 18px);   /* 8→18  */
-  --space-lg:  clamp(12px, -0.2042rem + 0.0407vw, 28px);   /* 12→28 */
-  --space-lg-xl: clamp(14px, -0.3181rem + 0.0509vw, 34px);  /* 14→34 lg↔xl 过渡档（分类快选 gap 等） */
-  --space-xl:  clamp(16px, -0.4313rem + 0.0611vw, 40px);   /* 16→40 */
-  --space-2xl: clamp(24px, -0.4084rem + 0.0814vw, 56px);   /* 24→56 */
-  --space-3xl: clamp(32px, -0.8626rem + 0.1221vw, 80px);   /* 32→80 */
+  --space-3xs: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2   */
+  --space-2xs: calc(clamp(1px, -0.272px + 0.339vw, 2.333px) * var(--ui-scale)); /* 1→3   */
+  --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6   */
+  --space-xs-plus: calc(clamp(4px, 1.455px + 0.679vw, 6.667px) * var(--ui-scale)); /* 4→8   */
+  --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale)); /* 6→12  */
+  --space-md: calc(clamp(8px, 1.639px + 1.696vw, 14.667px) * var(--ui-scale)); /* 8→18  */
+  --space-lg: calc(clamp(12px, 1.822px + 2.714vw, 22.667px) * var(--ui-scale)); /* 12→28 */
+  --space-lg-xl: calc(clamp(14px, 1.277px + 3.393vw, 27.333px) * var(--ui-scale)); /* 14→34 lg↔xl 过渡档（分类快选 gap 等） */
+  --space-xl: calc(clamp(16px, 0.733px + 4.071vw, 32px) * var(--ui-scale)); /* 16→40 */
+  --space-2xl: calc(clamp(24px, 3.644px + 5.428vw, 45.333px) * var(--ui-scale)); /* 24→56 */
+  --space-3xl: calc(clamp(32px, 1.466px + 8.142vw, 64px) * var(--ui-scale)); /* 32→80 */
 
   /* ── Icons（派生自文字 token × 固定系数，与文字共享同一条 vw 曲线）──────
      任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
@@ -191,42 +195,42 @@
   --tap-target: 44px;
 
   /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
-  --dot-size:     clamp(5px, 0.1336rem + 0.0076vw, 8px);   /* 5→8   圆点 */
-  --dot-active-w: clamp(16px, 0.5229rem + 0.0204vw, 24px);  /* 16→24 激活胶囊宽 */
-  --dot-active-h: clamp(5px, 0.1336rem + 0.0076vw, 8px);   /* 5→8   激活胶囊高 */
-  --dot-gap:      clamp(3px, 0.0086rem + 0.0076vw, 6px);   /* 3→6   圆点间距 */
+  --dot-size: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8   圆点 */
+  --dot-active-w: calc(clamp(16px, 10.911px + 1.357vw, 21.333px) * var(--ui-scale)); /* 16→24 激活胶囊宽 */
+  --dot-active-h: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8   激活胶囊高 */
+  --dot-gap: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6   圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  --comp-btn-min-height: clamp(34px, 0.5744rem + 0.0662vw, 60px);  /* 34→60 封面/海报按钮 */
-  --comp-tab-height:     clamp(28px, 0.7958rem + 0.0407vw, 44px);    /* 28→44 筛选/标签 tab */
-  --comp-btn-min-width:  clamp(40px, 1.3073rem + 0.0509vw, 60px);  /* 40→60 圆形按钮（返回/收藏） */
-  --comp-input-height:   clamp(40px, 1.4265rem + 0.0458vw, 58px);  /* 40→58 输入框高度 */
-  --comp-input-min-w:    clamp(180px, 4.0935rem + 0.3053vw, 300px); /* 180→300 输入框最小宽度 */
-  --comp-thumb-size:     clamp(14px, 0.0401rem + 0.0356vw, 28px);  /* 14→28 滑块拖拽手柄 */
+  --comp-btn-min-height: calc(clamp(34px, 17.461px + 4.411vw, 51.333px) * var(--ui-scale)); /* 34→60 封面/海报按钮 */
+  --comp-tab-height: calc(clamp(28px, 17.822px + 2.714vw, 38.667px) * var(--ui-scale)); /* 28→44 筛选/标签 tab */
+  --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
+  --comp-input-height: calc(clamp(40px, 28.55px + 3.053vw, 52px) * var(--ui-scale)); /* 40→58 输入框高度 */
+  --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
+  --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
   /* Switch 开关 */
-  --switch-track-height: clamp(18px, 0.7672rem + 0.0153vw, 24px);  /* 18→24 轨道高度 */
-  --switch-track-width:  clamp(32px, 1.0458rem + 0.0407vw, 48px);  /* 32→48 轨道宽度 */
-  --switch-thumb-size:   clamp(14px, 0.2786rem + 0.0254vw, 24px);  /* 14→24 滑块尺寸 */
-  --switch-thumb-offset: clamp(16px, 0.5229rem + 0.0204vw, 24px);  /* 16→24 滑块偏移量 */
+  --switch-track-height: calc(clamp(18px, 14.183px + 1.018vw, 22px) * var(--ui-scale)); /* 18→24 轨道高度 */
+  --switch-track-width: calc(clamp(32px, 21.822px + 2.714vw, 42.667px) * var(--ui-scale)); /* 32→48 轨道宽度 */
+  --switch-thumb-size: calc(clamp(14px, 7.639px + 1.696vw, 20.667px) * var(--ui-scale)); /* 14→24 滑块尺寸 */
+  --switch-thumb-offset: calc(clamp(16px, 10.911px + 1.357vw, 21.333px) * var(--ui-scale)); /* 16→24 滑块偏移量 */
   /* 滑块轨道高度（与 Slider.css 共用，供拇指垂直居中 calc 使用） */
   --slider-track-h:      6px;
   /* 音量滑块 */
-  --vol-track-width:     clamp(3px, 0.1279rem + 0.0025vw, 4px);    /* 3→4   音量滑块轨道 */
-  --vol-track-radius:    clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   音量滑块圆角 */
+  --vol-track-width: calc(clamp(3px, 2.364px + 0.17vw, 3.667px) * var(--ui-scale)); /* 3→4   音量滑块轨道 */
+  --vol-track-radius: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2   音量滑块圆角 */
   /* 单选按钮 */
-  --radio-size:          clamp(14px, 0.0401rem + 0.0356vw, 28px);  /* 14→28 外圈尺寸 */
-  --radio-dot-size:      clamp(6px, -0.1021rem + 0.0204vw, 14px);  /* 6→14 内圈尺寸 */
+  --radio-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 外圈尺寸 */
+  --radio-dot-size: calc(clamp(6px, 0.911px + 1.357vw, 11.333px) * var(--ui-scale)); /* 6→14 内圈尺寸 */
   /* 徽章 */
-  --badge-size:          clamp(10px, -0.0906rem + 0.0305vw, 22px);  /* 10→22 频道可用性徽章 */
+  --badge-size: calc(clamp(10px, 2.366px + 2.036vw, 18px) * var(--ui-scale)); /* 10→22 频道可用性徽章 */
 
   /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
-  --radius-sm: clamp(3px, 0.0682rem + 0.0051vw, 5px);    /* 3→5   */
-  --radius-md: clamp(6px, 0.1365rem + 0.0102vw, 10px);   /* 6→10  */
-  --radius-lg: clamp(10px, 0.1479rem + 0.0204vw, 18px);   /* 10→18 */
+  --radius-sm: calc(clamp(3px, 1.728px + 0.339vw, 4.333px) * var(--ui-scale)); /* 3→5   */
+  --radius-md: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 6→10  */
+  --radius-lg: calc(clamp(10px, 4.911px + 1.357vw, 15.333px) * var(--ui-scale)); /* 10→18 */
   --radius-full: 9999px;                                /* 胶囊专用：不缩放，圆弧完美 */
 
   /* ── Layout ──────────────────────────────────────────────────────────── */
-  --grid-gap: clamp(12px, 0.0344rem + 0.0305vw, 24px);    /* 12→24 */
+  --grid-gap: calc(clamp(12px, 4.366px + 2.036vw, 20px) * var(--ui-scale)); /* 12→24 */
 
   /* ── Focus Ring ──────────────────────────────────────────────────────── */
   /* 双层焦点环：内层底色隔离，外层 primary 色 */
@@ -247,83 +251,83 @@
   --breakpoint-4xl: 3840px;   /* 4K */
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
-  --layout-loading-min-height: clamp(300px, 18.75rem + 3vw, 480px);  /* 加载态最小高度：300→480px 流体 */
+  --layout-loading-min-height: calc(clamp(300px, 185.496px + 30.534vw, 420px) * var(--ui-scale)); /* 加载态最小高度：300→480px 流体 */
   --layout-min-width-desktop:  1024px; /* 桌面端画布最小宽度（全局规则：桌面 Web ≥768 且非 app/tv 时 body min-width 取此值，窄于此出现横向滚动条） */
-  --layout-modal-max-width:    clamp(320px, 20rem + 4vw, 600px); /* 弹窗最大宽度 */
+  --layout-modal-max-width: calc(clamp(320px, 141.883px + 47.498vw, 506.667px) * var(--ui-scale)); /* 弹窗最大宽度 */
   /* IPTV OSD 控制栏最大宽度（桌面基线，保持原流式曲线不变）：1024→~627px / 1920→~896px / 2560→~1088px，封顶 1400px。
      原 JS 内 OSD_MIN_WIDTH=360 / OSD_MAX_WIDTH=1600 硬编码已移除（实测对最终宽度无影响），宽度改由本 token 纯驱动。
      TV 端在 .up-platform-tv 内以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=1600 → 1080p=1600、4K=3200）。 */
-  --layout-osd-max-width:      clamp(320px, 20rem + 30vw, 1400px);
-  --layout-content-max-width:  clamp(320px, 20rem + 30vw, 1920px); /* 内容区最大宽度 */
-  --layout-hero-height:        clamp(200px, 12.5rem + 5vw, 500px); /* 首页 Hero 高度 */
-  --layout-hero-height-mobile: clamp(280px, 17.5rem + 0.5vw, 340px);  /* 移动端 Hero 高度：280→340px 流体 */
-  --layout-card-daily-width:   clamp(200px, 12.5rem + 3vw, 320px);  /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
-  --layout-error-detail-height: clamp(200px, 12.5rem + 2vw, 320px);  /* 错误详情区高度：200→320px 流体 */
-  --layout-spinner-border:     clamp(3px, 0.1875rem + 0.1vw, 5px);  /* 加载旋转环边框粗细：3→5px 流体 */
-  --layout-perf-panel-min-w:   clamp(280px, 17.5rem + 1.5vw, 420px); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
-  --layout-channel-num-w:      clamp(120px, 7.5rem + 0.5vw, 180px); /* 频道编号/时间显示最小宽度：120→180px 流体 */
-  --layout-quality-badge-min-w: clamp(84px, 5.25rem + 0.5vw, 120px);  /* 画质徽章最小宽度：84→120px 流体 */
-  --layout-vol-popup-w:        clamp(60px, 3.75rem + 0.5vw, 96px);  /* 音量弹出框宽度：60→96px 流体 */
-  --layout-vol-slider-w:       clamp(180px, 11.25rem + 1vw, 280px); /* 音量滑块宽度：180→280px 流体 */
-  --layout-player-vol-w:       clamp(80px, 5rem + 0.5vw, 120px);  /* 播放器音量控制区宽度：80→120px 流体 */
-  --layout-popover-min-w:      clamp(100px, 6.25rem + 0.5vw, 150px);  /* 气泡提示最小宽度：100→150px 流体 */
-  --layout-popover-wide-min-w: clamp(140px, 8.75rem + 0.5vw, 200px);  /* 宽气泡最小宽度：140→200px 流体 */
-  --layout-help-popover-w:     clamp(260px, 30vw, 380px); /* 帮助气泡宽度（HelpPopover） */
+  --layout-osd-max-width: calc(clamp(320px, -367.023px + 183.206vw, 1040px) * var(--ui-scale));
+  --layout-content-max-width: clamp(320px, 116.947px + 54.147vw, 2200px); /* 内容区最大宽度 */
+  --layout-hero-height: calc(clamp(200px, 9.16px + 50.891vw, 400px) * var(--ui-scale)); /* 首页 Hero 高度 */
+  --layout-hero-height-mobile: calc(clamp(280px, 241.832px + 10.178vw, 320px) * var(--ui-scale)); /* 移动端 Hero 高度：280→340px 流体 */
+  --layout-card-daily-width: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
+  --layout-error-detail-height: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 错误详情区高度：200→320px 流体 */
+  --layout-spinner-border: calc(clamp(3px, 1.728px + 0.339vw, 4.333px) * var(--ui-scale)); /* 加载旋转环边框粗细：3→5px 流体 */
+  --layout-perf-panel-min-w: calc(clamp(280px, 190.941px + 23.749vw, 373.333px) * var(--ui-scale)); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
+  --layout-channel-num-w: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 频道编号/时间显示最小宽度：120→180px 流体 */
+  --layout-quality-badge-min-w: calc(clamp(84px, 61.099px + 6.107vw, 108px) * var(--ui-scale)); /* 画质徽章最小宽度：84→120px 流体 */
+  --layout-vol-popup-w: calc(clamp(60px, 37.099px + 6.107vw, 84px) * var(--ui-scale)); /* 音量弹出框宽度：60→96px 流体 */
+  --layout-vol-slider-w: calc(clamp(180px, 116.387px + 16.964vw, 246.667px) * var(--ui-scale)); /* 音量滑块宽度：180→280px 流体 */
+  --layout-player-vol-w: calc(clamp(80px, 54.555px + 6.785vw, 106.667px) * var(--ui-scale)); /* 播放器音量控制区宽度：80→120px 流体 */
+  --layout-popover-min-w: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* 气泡提示最小宽度：100→150px 流体 */
+  --layout-popover-wide-min-w: calc(clamp(140px, 101.832px + 10.178vw, 180px) * var(--ui-scale)); /* 宽气泡最小宽度：140→200px 流体 */
+  --layout-help-popover-w: calc(clamp(260px, 183.664px + 20.356vw, 340px) * var(--ui-scale)); /* 帮助气泡宽度（HelpPopover） */
   --layout-sidebar-width:      clamp(260px, 15.84rem + 1.73vw, 320px);  /* 260→320px 流体 */
-  --layout-episode-panel-w:    clamp(420px, 26.25rem + 4vw, 560px); /* 剧集面板宽度（播放器侧边栏）：420→560px 流体（宽屏占比增大） */
-  --layout-episode-panel-w-alt: clamp(440px, 27.5rem + 4vw, 600px); /* 剧集面板备选宽度：440→600px 流体 */
-  --layout-time-display-min-w: clamp(90px, 5.625rem + 0.5vw, 140px);  /* 时间显示最小宽度：90→140px 流体 */
+  --layout-episode-panel-w: calc(clamp(420px, 330.941px + 23.749vw, 513.333px) * var(--ui-scale)); /* 剧集面板宽度（播放器侧边栏）：420→560px 流体（宽屏占比增大） */
+  --layout-episode-panel-w-alt: calc(clamp(440px, 338.219px + 27.142vw, 546.667px) * var(--ui-scale)); /* 剧集面板备选宽度：440→600px 流体 */
+  --layout-time-display-min-w: calc(clamp(90px, 58.193px + 8.482vw, 123.333px) * var(--ui-scale)); /* 时间显示最小宽度：90→140px 流体 */
   /* 频道列表 / 播放器内侧面板宽度 — 连续流体（替代原 6 档离散 + 未接线的 iptv 变体） */
-  --layout-panel-medium-w: clamp(280px, 17.5rem + 3.5vw, 480px);  /* 280→480px 流体：面板/中等宽封顶通用值（播放器侧面板、logo、错误文案、进度条复用） */
+  --layout-panel-medium-w: calc(clamp(280px, 152.774px + 33.927vw, 413.333px) * var(--ui-scale)); /* 280→480px 流体：面板/中等宽封顶通用值（播放器侧面板、logo、错误文案、进度条复用） */
 
-  --layout-source-url-max-w:   clamp(160px, 10rem + 0.5vw, 240px);  /* 源地址最大宽度：160→240px 流体 */
-  --layout-hero-poster-w:      clamp(160px, 6.25vw + 120px, 280px);  /* Hero 海报宽度：160→280px 流体 */
-  --layout-searchbox-header-max-w: clamp(480px, 30rem + 2vw, 680px);  /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
-  --layout-searchbox-browse-max-w: clamp(560px, 35rem + 2vw, 760px);  /* Browse 页 SearchBox 最大宽度：560→760px 流体 */
-  --layout-groups-collapsed-h: clamp(76px, 4.75rem + 0.5vw, 110px);  /* IPTV 分组折叠高度：76→110px 流体 */
-  --layout-select-w:           clamp(140px, 8.75rem + 4vw, 260px);   /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
-  --layout-select-w-mobile:    clamp(120px, 7.5rem + 0.5vw, 180px);  /* 移动端下拉宽度：120→180px 流体 */
+  --layout-source-url-max-w: calc(clamp(160px, 109.109px + 13.571vw, 213.333px) * var(--ui-scale)); /* 源地址最大宽度：160→240px 流体 */
+  --layout-hero-poster-w: calc(clamp(160px, 83.664px + 20.356vw, 240px) * var(--ui-scale)); /* Hero 海报宽度：160→280px 流体 */
+  --layout-searchbox-header-max-w: calc(clamp(480px, 352.774px + 33.927vw, 613.333px) * var(--ui-scale)); /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
+  --layout-searchbox-browse-max-w: calc(clamp(560px, 432.774px + 33.927vw, 693.333px) * var(--ui-scale)); /* Browse 页 SearchBox 最大宽度：560→760px 流体 */
+  --layout-groups-collapsed-h: calc(clamp(76px, 54.372px + 5.768vw, 98.667px) * var(--ui-scale)); /* IPTV 分组折叠高度：76→110px 流体 */
+  --layout-select-w: calc(clamp(140px, 63.664px + 20.356vw, 220px) * var(--ui-scale)); /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
+  --layout-select-w-mobile: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
-  --layout-bottomsheet-max-h:  clamp(500px, 31.25rem + 3vw, 720px);  /* 底部弹出面板最大高度：500→720px 流体 */
-  --layout-epg-empty-min-height: clamp(100px, 6.25rem + 0.5vw, 150px);  /* EPG 空态最小高度：100→150px 流体 */
-  --layout-epg-time-min-width: clamp(100px, 6.25rem + 0.5vw, 150px);  /* EPG 时间列最小宽度：100→150px 流体 */
+  --layout-bottomsheet-max-h: calc(clamp(500px, 360.051px + 37.32vw, 646.667px) * var(--ui-scale)); /* 底部弹出面板最大高度：500→720px 流体 */
+  --layout-epg-empty-min-height: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 空态最小高度：100→150px 流体 */
+  --layout-epg-time-min-width: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 时间列最小宽度：100→150px 流体 */
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
-  --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
-  --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
-  --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
+  --layout-detail-hero-max-h: calc(clamp(450px, 290.967px + 42.409vw, 616.667px) * var(--ui-scale)); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
+  --layout-modal-max-h: calc(clamp(480px, 212.824px + 71.247vw, 760px) * var(--ui-scale)); /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
+  --layout-program-guide-max-h: calc(clamp(400px, 145.547px + 67.854vw, 666.667px) * var(--ui-scale)); /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
   --layout-dropdown-max-h:      clamp(20rem, 20rem + 5vh, 28rem);           /* 顶部搜索下拉最大高度（桌面默认/非 TV 非大屏）：320→448px（vh 基、封顶 448，不随 4K 翻倍）。TV 与桌面大屏(≥1920)由各自块以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=374→748），1080p 下两者均=374px。 */
-  --layout-osd-timeshift-dot:  clamp(6px, 0.375rem + 0.1vw, 10px);  /* 时移进度条圆点尺寸：6→10px 流体 */
+  --layout-osd-timeshift-dot: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 时移进度条圆点尺寸：6→10px 流体 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
   --layout-logo-size-sm:       clamp(40px, 2.222rem + 0.73vw, 52px);  /* 40→52px 流体 */
   --layout-logo-size-lg:       clamp(56px, 3.111rem + 1.02vw, 72px);  /* 56→72px 流体 */
-  --layout-brand-font-size:    clamp(1.25rem, 0.833rem + 0.87vw, 1.5rem);  /* 20→24px 流体 */
-  --layout-brand-font-size-sm: clamp(1rem, 0.667rem + 0.69vw, 1.25rem);  /* 16→20px 流体 */
-  --layout-brand-font-size-lg: clamp(1.5rem, 1rem + 1.04vw, 1.75rem);  /* 24→28px 流体 */
-  --layout-detail-hero-play-icon: clamp(8.571rem, 6rem + 1vw, 12rem);  /* 详情页 Hero 播放按钮尺寸：8.571→12rem 流体 */
-  --layout-outline-width:      clamp(2px, 0.125rem + 0.05vw, 3px);  /* 聚焦轮廓线粗细：2→3px 流体 */
+  --layout-brand-font-size: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24px 流体 */
+  --layout-brand-font-size-sm: calc(clamp(16px, 13.455px + 0.679vw, 18.667px) * var(--ui-scale)); /* 16→20px 流体 */
+  --layout-brand-font-size-lg: calc(clamp(24px, 21.455px + 0.679vw, 26.667px) * var(--ui-scale)); /* 24→28px 流体 */
+  --layout-detail-hero-play-icon: calc(clamp(137.136px, 102.235px + 9.307vw, 173.712px) * var(--ui-scale)); /* 详情页 Hero 播放按钮尺寸：8.571→12rem 流体 */
+  --layout-outline-width: calc(clamp(2px, 1.364px + 0.17vw, 2.667px) * var(--ui-scale)); /* 聚焦轮廓线粗细：2→3px 流体 */
 
   /* ── Avatar Sizes ───────────────────────────────────────────────────────── */
-  --avatar-xs: clamp(30px, 1.875rem + 0.5vw, 52px);   /* 行内小头像（设置行）：30→52px 流体（TV 放大） */
-  --avatar-sm: clamp(56px, 3.5rem + 1vw, 96px);       /* 资料卡头像：56→96px 流体（TV 放大） */
-  --avatar-lg: clamp(72px, 4.5rem + 1.5vw, 128px);    /* 头像预览 / 移动端资料头像：72→128px 流体（TV 放大） */
+  --avatar-xs: calc(clamp(30px, 16.005px + 3.732vw, 44.667px) * var(--ui-scale)); /* 行内小头像（设置行）：30→52px 流体（TV 放大） */
+  --avatar-sm: calc(clamp(56px, 30.555px + 6.785vw, 82.667px) * var(--ui-scale)); /* 资料卡头像：56→96px 流体（TV 放大） */
+  --avatar-lg: calc(clamp(72px, 36.377px + 9.5vw, 109.333px) * var(--ui-scale)); /* 头像预览 / 移动端资料头像：72→128px 流体（TV 放大） */
 
     /* ── Misc Sizes ─────────────────────────────────────────────────────────── */
     --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
-  --source-meta-min-width: clamp(120px, 7.5rem + 0.5vw, 180px);  /* 源详情最小宽度：120→180px 流体 */
-  --error-msg-max-width: clamp(100px, 6.25rem + 0.3vw, 140px);  /* 错误文案最大宽度：100→140px 流体 */
+  --source-meta-min-width: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 源详情最小宽度：120→180px 流体 */
+  --error-msg-max-width: calc(clamp(100px, 74.555px + 6.785vw, 126.667px) * var(--ui-scale)); /* 错误文案最大宽度：100→140px 流体 */
   /* ── 源检测组件微尺寸（SourceDetectPill / SourceStatusIndicator 同源，组件 CSS 内不再写死真实 px）── */
   --src-det-progress-w: 46px;                                  /* 内联进度条宽度（微元素，固定） */
-  --src-det-popup-max-h: clamp(220px, 13.75rem + 1vw, 320px);  /* 检测弹层最大高度：220→320px 流体 */
-  --src-det-grid-min: clamp(150px, 9.375rem + 0.5vw, 220px);   /* 弹层网格单元最小宽：150→220px 流体 */
+  --src-det-popup-max-h: calc(clamp(220px, 156.387px + 16.964vw, 286.667px) * var(--ui-scale)); /* 检测弹层最大高度：220→320px 流体 */
+  --src-det-grid-min: calc(clamp(150px, 105.471px + 11.874vw, 196.667px) * var(--ui-scale)); /* 弹层网格单元最小宽：150→220px 流体 */
   --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
-  --layout-tabbar-height:      clamp(56px, 3.5rem + 0.3vw, 72px);  /* 移动端底部 TabBar 高度：56→72px 流体 */
-  --layout-cast-avatar:        clamp(64px, 4rem + 0.5vw, 88px);    /* Detail 演员头像：64→88px 流体（11.4） */
-  --layout-datepicker-width:   clamp(340px, 21.25rem + 1vw, 460px); /* 日期选择器宽度：340→460px 流体 */
-  --layout-collapse-max-h:     clamp(1000px, 62.5rem + 4vw, 1400px);  /* 折叠面板最大高度：1000→1400px 流体 */
-  --layout-detail-poster-w:    clamp(8rem, 2rem + 8vw, 22rem); /* 详情页海报宽度 */
-  --layout-detail-poster-w-tv: clamp(6.875rem, 5.5rem + 1.5vw, 10rem); /* TV 端海报宽度 */
-  --layout-searchbox-max-w:    clamp(17.5rem, 65vw, 50rem); /* SearchBox 最大宽度（通用） */
+  --layout-tabbar-height: calc(clamp(56px, 45.822px + 2.714vw, 66.667px) * var(--ui-scale)); /* 移动端底部 TabBar 高度：56→72px 流体 */
+  --layout-cast-avatar: calc(clamp(64px, 48.733px + 4.071vw, 80px) * var(--ui-scale)); /* Detail 演员头像：64→88px 流体（11.4） */
+  --layout-datepicker-width: calc(clamp(340px, 263.664px + 20.356vw, 420px) * var(--ui-scale)); /* 日期选择器宽度：340→460px 流体 */
+  --layout-collapse-max-h: calc(clamp(1000px, 745.547px + 67.854vw, 1266.667px) * var(--ui-scale)); /* 折叠面板最大高度：1000→1400px 流体 */
+  --layout-detail-poster-w: calc(clamp(128px, -14.494px + 37.998vw, 277.333px) * var(--ui-scale)); /* 详情页海报宽度 */
+  --layout-detail-poster-w-tv: calc(clamp(110px, 78.193px + 8.482vw, 143.333px) * var(--ui-scale)); /* TV 端海报宽度 */
+  --layout-searchbox-max-w: calc(clamp(280px, -50.789px + 88.21vw, 626.667px) * var(--ui-scale)); /* SearchBox 最大宽度（通用） */
 
   /* ── Card Grid Columns (统一 VideoCard 列数，375px → 3840px) ─────────── */
   --card-cols: 3;   /* 默认：移动端 (< 768)             */
@@ -335,7 +339,7 @@
 
   /* ── Sticky Header ───────────────────────────────────────────────────── */
   --header-height: clamp(60px, 3.375rem + 1vw, 76px); /* 顶部导航栏高度 */
-  --header-height-compact: clamp(48px, 3rem + 0.3vw, 64px);  /* 紧凑模式（滚动后折叠）：48→64px 流体 */
+  --header-height-compact: calc(clamp(48px, 37.822px + 2.714vw, 58.667px) * var(--ui-scale)); /* 紧凑模式（滚动后折叠）：48→64px 流体 */
 
   /* ── Glass Effect (玻璃态背景) ───────────────────────────────────────── */
   /* 普通页面导航栏背景（65% 玻璃,透出页面背景 35% — 解决"导航栏不透明"问题） */
@@ -350,13 +354,118 @@
   --glass-border:      rgba(0, 0, 0, 0.08);
 
   /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
-  --scrollbar-width: clamp(6px, 0.375rem + 0.1vw, 10px);          /* 滚动条宽度：6→10px 流体 */
-  --scrollbar-width-thin: clamp(4px, 0.25rem + 0.1vw, 8px);        /* 极细滚动条（横向）：4→8px 流体 */
+  --scrollbar-width: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 滚动条宽度：6→10px 流体 */
+  --scrollbar-width-thin: calc(clamp(4px, 1.455px + 0.679vw, 6.667px) * var(--ui-scale)); /* 极细滚动条（横向）：4→8px 流体 */
   --scrollbar-color: rgba(0, 0, 0, 0.15); /* 滚动条默认色（极淡） */
   --scrollbar-color-hover: rgba(0, 0, 0, 0.3);   /* hover 态加深 */
   --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
 }
 
+
+/* ── 三段式段2（768→1920，阶段 A 生成）── */
+@media (width >= 768px) {
+  :root {
+    --avatar-lg: calc(clamp(109.333px, 96.889px + 1.62vw, 128px) * var(--ui-scale));
+    --avatar-sm: calc(clamp(82.667px, 73.778px + 1.157vw, 96px) * var(--ui-scale));
+    --avatar-xs: calc(clamp(44.667px, 39.778px + 0.637vw, 52px) * var(--ui-scale));
+    --badge-size: calc(clamp(18px, 15.333px + 0.347vw, 22px) * var(--ui-scale));
+    --comp-btn-min-height: calc(clamp(51.333px, 45.556px + 0.752vw, 60px) * var(--ui-scale));
+    --comp-btn-min-width: calc(clamp(53.333px, 48.889px + 0.579vw, 60px) * var(--ui-scale));
+    --comp-input-height: calc(clamp(52px, 48px + 0.521vw, 58px) * var(--ui-scale));
+    --comp-input-min-w: calc(clamp(260px, 233.333px + 3.472vw, 300px) * var(--ui-scale));
+    --comp-tab-height: calc(clamp(38.667px, 35.111px + 0.463vw, 44px) * var(--ui-scale));
+    --comp-thumb-size: calc(clamp(23.333px, 20.222px + 0.405vw, 28px) * var(--ui-scale));
+    --dot-active-h: calc(clamp(7px, 6.333px + 0.087vw, 8px) * var(--ui-scale));
+    --dot-active-w: calc(clamp(21.333px, 19.556px + 0.231vw, 24px) * var(--ui-scale));
+    --dot-gap: calc(clamp(5px, 4.333px + 0.087vw, 6px) * var(--ui-scale));
+    --dot-size: calc(clamp(7px, 6.333px + 0.087vw, 8px) * var(--ui-scale));
+    --error-msg-max-width: calc(clamp(126.667px, 117.778px + 1.157vw, 140px) * var(--ui-scale));
+    --grid-gap: calc(clamp(20px, 17.333px + 0.347vw, 24px) * var(--ui-scale));
+    --header-height-compact: calc(clamp(58.667px, 55.111px + 0.463vw, 64px) * var(--ui-scale));
+    --layout-bottomsheet-max-h: calc(clamp(646.667px, 597.778px + 6.366vw, 720px) * var(--ui-scale));
+    --layout-brand-font-size: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
+    --layout-brand-font-size-lg: calc(clamp(26.667px, 25.778px + 0.116vw, 28px) * var(--ui-scale));
+    --layout-brand-font-size-sm: calc(clamp(18.667px, 17.778px + 0.116vw, 20px) * var(--ui-scale));
+    --layout-card-daily-width: calc(clamp(280px, 253.333px + 3.472vw, 320px) * var(--ui-scale));
+    --layout-cast-avatar: calc(clamp(80px, 74.667px + 0.694vw, 88px) * var(--ui-scale));
+    --layout-channel-num-w: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
+    --layout-collapse-max-h: calc(clamp(1266.667px, 1177.778px + 11.574vw, 1400px) * var(--ui-scale));
+    --layout-datepicker-width: calc(clamp(420px, 393.333px + 3.472vw, 460px) * var(--ui-scale));
+    --layout-detail-hero-max-h: calc(clamp(616.667px, 561.111px + 7.234vw, 700px) * var(--ui-scale));
+    --layout-detail-hero-play-icon: calc(clamp(173.712px, 161.52px + 1.588vw, 192px) * var(--ui-scale));
+    --layout-detail-poster-w: calc(clamp(277.333px, 227.556px + 6.481vw, 352px) * var(--ui-scale));
+    --layout-detail-poster-w-tv: calc(clamp(143.333px, 132.222px + 1.447vw, 160px) * var(--ui-scale));
+    --layout-epg-empty-min-height: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
+    --layout-epg-time-min-width: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
+    --layout-episode-panel-w: calc(clamp(513.333px, 482.222px + 4.051vw, 560px) * var(--ui-scale));
+    --layout-episode-panel-w-alt: calc(clamp(546.667px, 511.111px + 4.63vw, 600px) * var(--ui-scale));
+    --layout-error-detail-height: calc(clamp(280px, 253.333px + 3.472vw, 320px) * var(--ui-scale));
+    --layout-groups-collapsed-h: calc(clamp(98.667px, 91.111px + 0.984vw, 110px) * var(--ui-scale));
+    --layout-help-popover-w: calc(clamp(340px, 313.333px + 3.472vw, 380px) * var(--ui-scale));
+    --layout-hero-height: calc(clamp(400px, 333.333px + 8.681vw, 500px) * var(--ui-scale));
+    --layout-hero-height-mobile: calc(clamp(320px, 306.667px + 1.736vw, 340px) * var(--ui-scale));
+    --layout-hero-poster-w: calc(clamp(240px, 213.333px + 3.472vw, 280px) * var(--ui-scale));
+    --layout-loading-min-height: calc(clamp(420px, 380px + 5.208vw, 480px) * var(--ui-scale));
+    --layout-modal-max-h: calc(clamp(760px, 666.667px + 12.153vw, 900px) * var(--ui-scale));
+    --layout-modal-max-width: calc(clamp(506.667px, 444.444px + 8.102vw, 600px) * var(--ui-scale));
+    --layout-osd-max-width: calc(clamp(1040px, 800px + 31.25vw, 1400px) * var(--ui-scale));
+    --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
+    --layout-outline-width: calc(clamp(2.667px, 2.444px + 0.029vw, 3px) * var(--ui-scale));
+    --layout-panel-medium-w: calc(clamp(413.333px, 368.889px + 5.787vw, 480px) * var(--ui-scale));
+    --layout-perf-panel-min-w: calc(clamp(373.333px, 342.222px + 4.051vw, 420px) * var(--ui-scale));
+    --layout-player-vol-w: calc(clamp(106.667px, 97.778px + 1.157vw, 120px) * var(--ui-scale));
+    --layout-popover-min-w: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
+    --layout-popover-wide-min-w: calc(clamp(180px, 166.667px + 1.736vw, 200px) * var(--ui-scale));
+    --layout-program-guide-max-h: calc(clamp(666.667px, 577.778px + 11.574vw, 800px) * var(--ui-scale));
+    --layout-quality-badge-min-w: calc(clamp(108px, 100px + 1.042vw, 120px) * var(--ui-scale));
+    --layout-searchbox-browse-max-w: calc(clamp(693.333px, 648.889px + 5.787vw, 760px) * var(--ui-scale));
+    --layout-searchbox-header-max-w: calc(clamp(613.333px, 568.889px + 5.787vw, 680px) * var(--ui-scale));
+    --layout-searchbox-max-w: calc(clamp(626.667px, 511.111px + 15.046vw, 800px) * var(--ui-scale));
+    --layout-select-w: calc(clamp(220px, 193.333px + 3.472vw, 260px) * var(--ui-scale));
+    --layout-select-w-mobile: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
+    --layout-source-url-max-w: calc(clamp(213.333px, 195.556px + 2.315vw, 240px) * var(--ui-scale));
+    --layout-spinner-border: calc(clamp(4.333px, 3.889px + 0.058vw, 5px) * var(--ui-scale));
+    --layout-tabbar-height: calc(clamp(66.667px, 63.111px + 0.463vw, 72px) * var(--ui-scale));
+    --layout-time-display-min-w: calc(clamp(123.333px, 112.222px + 1.447vw, 140px) * var(--ui-scale));
+    --layout-vol-popup-w: calc(clamp(84px, 76px + 1.042vw, 96px) * var(--ui-scale));
+    --layout-vol-slider-w: calc(clamp(246.667px, 224.444px + 2.894vw, 280px) * var(--ui-scale));
+    --radio-dot-size: calc(clamp(11.333px, 9.556px + 0.231vw, 14px) * var(--ui-scale));
+    --radio-size: calc(clamp(23.333px, 20.222px + 0.405vw, 28px) * var(--ui-scale));
+    --radius-lg: calc(clamp(15.333px, 13.556px + 0.231vw, 18px) * var(--ui-scale));
+    --radius-md: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
+    --radius-sm: calc(clamp(4.333px, 3.889px + 0.058vw, 5px) * var(--ui-scale));
+    --scrollbar-width: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
+    --scrollbar-width-thin: calc(clamp(6.667px, 5.778px + 0.116vw, 8px) * var(--ui-scale));
+    --source-meta-min-width: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
+    --space-2xl: calc(clamp(45.333px, 38.222px + 0.926vw, 56px) * var(--ui-scale));
+    --space-2xs: calc(clamp(2.333px, 1.889px + 0.058vw, 3px) * var(--ui-scale));
+    --space-3xl: calc(clamp(64px, 53.333px + 1.389vw, 80px) * var(--ui-scale));
+    --space-3xs: calc(clamp(1.667px, 1.444px + 0.029vw, 2px) * var(--ui-scale));
+    --space-lg: calc(clamp(22.667px, 19.111px + 0.463vw, 28px) * var(--ui-scale));
+    --space-lg-xl: calc(clamp(27.333px, 22.889px + 0.579vw, 34px) * var(--ui-scale));
+    --space-md: calc(clamp(14.667px, 12.444px + 0.289vw, 18px) * var(--ui-scale));
+    --space-sm: calc(clamp(10px, 8.667px + 0.174vw, 12px) * var(--ui-scale));
+    --space-xl: calc(clamp(32px, 26.667px + 0.694vw, 40px) * var(--ui-scale));
+    --space-xs: calc(clamp(5px, 4.333px + 0.087vw, 6px) * var(--ui-scale));
+    --space-xs-plus: calc(clamp(6.667px, 5.778px + 0.116vw, 8px) * var(--ui-scale));
+    --src-det-grid-min: calc(clamp(196.667px, 181.111px + 2.025vw, 220px) * var(--ui-scale));
+    --src-det-popup-max-h: calc(clamp(286.667px, 264.444px + 2.894vw, 320px) * var(--ui-scale));
+    --switch-thumb-offset: calc(clamp(21.333px, 19.556px + 0.231vw, 24px) * var(--ui-scale));
+    --switch-thumb-size: calc(clamp(20.667px, 18.444px + 0.289vw, 24px) * var(--ui-scale));
+    --switch-track-height: calc(clamp(22px, 20.667px + 0.174vw, 24px) * var(--ui-scale));
+    --switch-track-width: calc(clamp(42.667px, 39.111px + 0.463vw, 48px) * var(--ui-scale));
+    --text-2xl: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
+    --text-2xs: calc(clamp(10.333px, 9.889px + 0.058vw, 11px) * var(--ui-scale));
+    --text-3xl: calc(clamp(28.667px, 27.778px + 0.116vw, 30px) * var(--ui-scale));
+    --text-base: calc(clamp(15.333px, 14.889px + 0.058vw, 16px) * var(--ui-scale));
+    --text-lg: calc(clamp(15.333px, 14.889px + 0.058vw, 16px) * var(--ui-scale));
+    --text-sm: calc(clamp(13.667px, 13.444px + 0.029vw, 14px) * var(--ui-scale));
+    --text-xl: calc(clamp(17.333px, 16.889px + 0.058vw, 18px) * var(--ui-scale));
+    --text-xs: calc(clamp(12.667px, 12.444px + 0.029vw, 13px) * var(--ui-scale));
+    --vol-track-radius: calc(clamp(1.667px, 1.444px + 0.029vw, 2px) * var(--ui-scale));
+    --vol-track-width: calc(clamp(3.667px, 3.444px + 0.029vw, 4px) * var(--ui-scale));
+  }
+}
 
 /* Typography & icon tokens use fixed values in :root (see above).
    TV-only scale-up is handled by [data-device="tv"] at the bottom of this file. */
@@ -401,7 +510,7 @@
   html:not([data-device="app"]) {
     /* 2K/4K 视口下适当放大 grid 间距（Detail 源网格等仍用 --grid-gap）。
        卡片网格间距已统一为 --space-lg，列数见下方 2560 / 3840 断点。 */
-    --grid-gap: clamp(20px, 1rem + 0.5vw, 36px);
+    /* ▼ 已删除（阶段 A）：--grid-gap ≥1920 放大是 1919→1920 +96.7% 跳变源，由三段式统一接管 */
     --layout-searchbox-max-w: clamp(17.5rem, 50vw, 110rem);
   }
 }
@@ -615,6 +724,65 @@
      --tv-focus-* 驱动方框粗细与间距，集中在此便于统一调参。 */
   --tv-focus-width: 3px;
   --tv-focus-offset: 2px;
+  /* ── TV 漏斗补钉（阶段 A）：:root 流体但 TV 未覆盖者恒 MIN，零回归 ── */
+  --avatar-lg: 72px;
+  --avatar-sm: 56px;
+  --avatar-xs: 30px;
+  --error-msg-max-width: 100px;
+  --header-height-compact: 48px;
+  --layout-bottomsheet-max-h: 500px;
+  --layout-brand-font-size-lg: 24px;
+  --layout-brand-font-size-sm: 16px;
+  --layout-card-daily-width: 200px;
+  --layout-cast-avatar: 64px;
+  --layout-channel-num-w: 120px;
+  --layout-collapse-max-h: 1000px;
+  --layout-content-max-width: 320px;
+  --layout-datepicker-width: 340px;
+  --layout-detail-hero-max-h: 450px;
+  --layout-detail-hero-play-icon: 137.136px;
+  --layout-detail-poster-w: 128px;
+  --layout-detail-poster-w-tv: 110px;
+  --layout-epg-empty-min-height: 100px;
+  --layout-epg-time-min-width: 100px;
+  --layout-episode-panel-w: 420px;
+  --layout-episode-panel-w-alt: 440px;
+  --layout-error-detail-height: 200px;
+  --layout-groups-collapsed-h: 76px;
+  --layout-help-popover-w: 260px;
+  --layout-hero-height: 200px;
+  --layout-hero-height-mobile: 280px;
+  --layout-hero-poster-w: 160px;
+  --layout-loading-min-height: 300px;
+  --layout-modal-max-h: 480px;
+  --layout-modal-max-width: 320px;
+  --layout-osd-max-width: 320px;
+  --layout-osd-timeshift-dot: 6px;
+  --layout-outline-width: 2px;
+  --layout-panel-medium-w: 280px;
+  --layout-perf-panel-min-w: 280px;
+  --layout-player-vol-w: 80px;
+  --layout-popover-min-w: 100px;
+  --layout-popover-wide-min-w: 140px;
+  --layout-program-guide-max-h: 400px;
+  --layout-quality-badge-min-w: 84px;
+  --layout-searchbox-browse-max-w: 560px;
+  --layout-searchbox-header-max-w: 480px;
+  --layout-searchbox-max-w: 280px;
+  --layout-select-w: 140px;
+  --layout-select-w-mobile: 120px;
+  --layout-source-url-max-w: 160px;
+  --layout-spinner-border: 3px;
+  --layout-tabbar-height: 56px;
+  --layout-time-display-min-w: 90px;
+  --layout-vol-popup-w: 60px;
+  --layout-vol-slider-w: 180px;
+  --scrollbar-width: 6px;
+  --scrollbar-width-thin: 4px;
+  --source-meta-min-width: 120px;
+  --space-lg-xl: 14px;
+  --src-det-grid-min: 150px;
+  --src-det-popup-max-h: 220px;
 }
 
 /* ── lucide 图标尺寸由 --icon-* token 驱动 ───────────────────────────────
