@@ -192,7 +192,10 @@ export async function fetchCategoryPanel(
       items = (await fetchTrending(cat.type as 'movie' | 'tv', 'day', { signal }))
         .results.map(mapTrendingToVideoItem);
     }
-    const top = items.slice(0, 9);
+    // 统一按热度倒序后截取（2026-09-06 用户反馈）：/trending 返回的是「趋势序」
+    // 而非 popularity 降序，直接展示会出现热度数字忽高忽低像随机排列
+    const sorted = [...items].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    const top = sorted.slice(0, 9);
     panelCache.set(key, top);
     return top;
   })();
