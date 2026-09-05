@@ -1,0 +1,367 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用）
+   布局：左 banner（minmax(0,1fr)）+ 右 3×2 竖版卡（--hero-side-w）+ 脱标换一换浮层
+   全部尺寸走 token（variables.css「--page-pad-x 分档 + HeroBili token」节）：
+   banner-h = 内容宽 × 27.27%、右栏 = 内容宽 × 56%，比例恒定、无断点档位。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.hero-bili {
+  display: none;
+  margin-bottom: var(--space-sm);
+}
+
+@media (width > 1280px) {
+  /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
+  html:not([data-device="tv"]) .hero-bili {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--hero-side-w); /* banner 吃剩余 */
+    gap: var(--hero-main-gap);
+    justify-content: center;
+  }
+}
+
+/* ── 左：banner ─────────────────────────────────────────────────────── */
+
+.hero-bili__banner {
+  position: relative;
+  height: var(--hero-banner-h);
+  overflow: hidden;
+  border-radius: var(--hero-card-radius);
+  /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
+  background: #0b0b0e;
+}
+
+.hero-bili__banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  opacity: 1;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* 交叉淡入：旧层垫底常显，新层挂 is-active 淡入（与 HeroBanner bg-layer 同机制） */
+.hero-bili__banner-img.is-active {
+  animation: heroBiliFadeIn 0.8s var(--ease-out-expo);
+}
+
+@keyframes heroBiliFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 左右箭头：悬浮 banner 时显现 */
+.hero-bili__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.25s ease, background-color 0.2s ease;
+}
+
+.hero-bili__arrow:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.hero-bili__banner:hover .hero-bili__arrow {
+  opacity: 1;
+}
+
+.hero-bili__arrow--prev {
+  left: var(--space-md);
+}
+
+.hero-bili__arrow--next {
+  right: var(--space-md);
+}
+
+/* 轮播圆点（右上角） */
+.hero-bili__dots {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  z-index: 3;
+  display: flex;
+  gap: var(--dot-gap);
+  align-items: center;
+}
+
+.hero-bili__dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.hero-bili__dot.is-active {
+  width: var(--dot-active-w);
+  background: #fff;
+}
+
+/* 底部渐变字幕：标题 + meta + 双按钮 */
+.hero-bili__caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  padding: var(--space-2xl) var(--space-lg) var(--space-md);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+  color: #fff;
+  pointer-events: none;
+}
+
+.hero-bili__title {
+  margin: 0;
+  font-size: clamp(var(--text-2xl), 3.2vw + 8px, var(--text-3xl));
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+.hero-bili__meta {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-top: var(--space-2xs);
+  font-size: var(--text-base);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.hero-bili__rating {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.hero-bili__year,
+.hero-bili__type {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），
+   仅需在此放开 pointer-events（caption 整体 none） */
+.hero-bili__caption .hero-banner__actions {
+  pointer-events: auto;
+}
+
+/* ── 右：3×2 竖版卡 + 脱标换一换 ────────────────────────────────────── */
+
+.hero-bili__right {
+  position: relative;
+  min-width: 0;
+}
+
+.hero-bili__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--hero-side-gap);
+  height: var(--hero-banner-h);
+}
+
+/* 单张竖版卡：封面满铺在上、标题条在下，无卡片内边距 */
+.hero-side-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--hero-card-radius);
+  background: var(--color-surface-elevated);
+  cursor: pointer;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.hero-side-card:hover {
+  box-shadow: 0 0 16px var(--color-primary-shadow);
+  transform: translateY(-2px);
+}
+
+.hero-side-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.hero-side-card__cover {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.hero-side-card__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.hero-side-card:hover .hero-side-card__img {
+  transform: scale(1.04);
+}
+
+/* 四角标：与封面边界保持 --space-sm 距离 */
+.hero-side-card__corner {
+  position: absolute;
+  z-index: 2;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.hero-side-card__corner--rating {
+  top: var(--space-sm);
+  left: var(--space-sm);
+  color: #ffc107;
+}
+
+.hero-side-card__corner--year {
+  bottom: var(--space-sm);
+  left: var(--space-sm);
+}
+
+.hero-side-card__corner--type {
+  right: var(--space-sm);
+  bottom: var(--space-sm);
+}
+
+/* 收藏按钮：悬浮卡片时右上角显现；已收藏常显红心 */
+.hero-side-card__fav {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.hero-side-card:hover .hero-side-card__fav,
+.hero-side-card__fav.is-on,
+.hero-side-card__fav:focus-visible {
+  opacity: 1;
+}
+
+.hero-side-card__fav.is-on {
+  color: var(--color-danger);
+}
+
+.hero-side-card__fav:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* 标题条：不换行，溢出悬浮跑马灯（双段等长无缝循环） */
+.hero-side-card__title {
+  padding: var(--space-xs) var(--space-sm);
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--hero-title-size);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.hero-side-card__title-track {
+  display: inline-flex;
+}
+
+.hero-side-card__title-seg {
+  padding-right: var(--space-lg);
+}
+
+.hero-side-card__title.is-marquee .hero-side-card__title-track {
+  animation: heroBiliMarquee 4.5s linear infinite;
+}
+
+@keyframes heroBiliMarquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* 换一换：脱标浮层（absolute 不占布局），与第一行对齐、高度 = 单卡一半
+   （单卡高 = (banner-h - gap)/2，一半 = /4）；图标上、竖排文本下 */
+.hero-bili__shuffle {
+  position: absolute;
+  top: 0;
+  left: calc(100% + var(--hero-main-gap));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-bili__shuffle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+
+/* 竖排文本 */
+.hero-bili__shuffle-text {
+  font-size: var(--text-xs);
+  letter-spacing: 0.15em;
+  writing-mode: vertical-rl;
+}
+
+/* 转圈动效：is-spinning 既是动画驱动又是防抖锁（JS 0.6s 后移除） */
+.hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
+  animation: heroBiliSpin 0.6s var(--ease-out-expo);
+}
+
+@keyframes heroBiliSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bili__banner-img,
+  .hero-side-card,
+  .hero-side-card__img,
+  .hero-side-card__title.is-marquee .hero-side-card__title-track,
+  .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+}

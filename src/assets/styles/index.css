@@ -617,11 +617,12 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 @media (width >= 768px) {
-  /* 桌面端页面主体内容左右留白放大（由 --space-sm 提升至 --space-lg），
-     避免宽屏下内容贴边；上下与移动端保持一致。 */
+  /* 桌面端页面主体内容左右留白改由 --page-pad-x 分档驱动（2026-09-05）：
+     <1280 沿用 --space-lg；≥1280<1920=60px；≥1920<2560=80px；≥2560=140px（见 variables.css）。
+     上下与移动端保持一致。 */
   .page-padding {
-    padding-right: var(--space-lg);
-    padding-left: var(--space-lg);
+    padding-right: var(--page-pad-x);
+    padding-left: var(--page-pad-x);
   }
 }
 

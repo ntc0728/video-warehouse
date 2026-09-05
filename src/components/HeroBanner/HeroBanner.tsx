@@ -10,9 +10,11 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 'react';
 import { Play } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { useScreenTier } from '@/hooks/useScreenTier';
 import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
 import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
+import HeroBili from './HeroBili';
 import './HeroBanner.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -277,7 +279,7 @@ function useHeroLogos(items: HeroItem[], focusIndex: number, active: boolean) {
   return { logos, dropLogo };
 }
 
-export default function HeroBanner({
+function HeroBannerClassic({
   items,
   autoPlayInterval = 5000,
   onItemClick,
@@ -1409,4 +1411,28 @@ function heroThumbPropsEqual(
   next: { item: HeroItem; active: boolean },
 ): boolean {
   return prev.item === next.item && prev.active === next.active;
+}
+
+/**
+ * HeroBanner — 首页 Hero 分支入口
+ *
+ * >1280px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右 3×2 竖版卡 + 换一换）；
+ * ≤1280px / TV / 空数据：走原 HeroBannerClassic 渲染路径（原结构逐行未动）。
+ * 空数据回落 Classic：Classic 的空态骨架/「暂无推荐」文案保持原行为，
+ * HeroBili 不重复实现空态（宽屏整页骨架由 Home 的 home-skeleton-hero 承接）。
+ */
+export default function HeroBanner(props: HeroBannerProps) {
+  const isWideDesktop = useIsWideDesktop();
+  if (isWideDesktop && props.items.length > 0) {
+    return (
+      <HeroBili
+        items={props.items}
+        onItemClick={props.onItemClick}
+        onContinuePlay={props.onContinuePlay}
+        historyMap={props.historyMap}
+        active={props.active}
+      />
+    );
+  }
+  return <HeroBannerClassic {...props} />;
 }

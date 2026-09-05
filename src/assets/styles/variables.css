@@ -854,3 +854,45 @@ html[data-device="tv"] {
   --row-cols: 8;
   --continue-cols: 6;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   页面全局左右 padding 分档 --page-pad-x + 首页 Hero B 站风 token（2026-09-05）
+   ---------------------------------------------------------------------------
+   --page-pad-x 分档（用户拍板）：<1280 沿用桌面既有 --space-lg；
+   ≥1280 且 <1920 = 60px；≥1920 且 <2560 = 80px；≥2560 = 140px。
+   替换 .page-padding 的桌面左右 padding（index.css），<768 移动端不受影响。
+   TV 红线：分档 @media 必须 html:not([data-device="tv"]) 前缀，TV 恒 --space-lg。
+   HeroBili token 纯比例驱动（无 clamp 档位）：
+     banner-h = 内容宽 × 27.27%、右栏 = 内容宽 × 56%（1440 定稿 360 / 739，
+     1920(pad80) 480 / 986，≥2560 524 / 1075）→ banner 宽高比恒 ~1.59:1、43:56 恒定。
+     min(100vw, 2200px) 与 --layout-content-max-width 的 2200 硬上限契约对齐。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --page-pad-x: var(--space-lg);
+
+  /* ── HeroBili 专用 ── */
+  --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.2727);
+  --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.56);
+  --hero-main-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));      /* 10@1440 → 12@1920 */
+  --hero-side-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));
+  --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
+  --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
+}
+
+@media (width >= 1280px) and (width < 1920px) {
+  html:not([data-device="tv"]) {
+    --page-pad-x: 60px;
+  }
+}
+
+@media (width >= 1920px) and (width < 2560px) {
+  html:not([data-device="tv"]) {
+    --page-pad-x: 80px;
+  }
+}
+
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) {
+    --page-pad-x: 140px;
+  }
+}
