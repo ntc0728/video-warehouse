@@ -89,9 +89,10 @@ function itemBackdropUrl(item: HeroBiliItem): string {
 
 /** 卡片横版封面：backdrop 优先（横图），缺失时回落竖版海报 */
 function itemCardCoverUrl(item: HeroBiliItem): string {
+  // 2026-09-06 约定（与分类面板横版卡一致）：无横版 backdrop 不再回退竖版海报，
+  // 返回空串 → HeroSideCard 渲染 --empty 骨架占位
   const bd = item.backdropPath || item.backdrop_path || '';
-  if (bd) return buildImageUrl(bd, 'w780') || '';
-  return itemPosterUrl(item);
+  return bd ? buildImageUrl(bd, 'w780') || '' : '';
 }
 
 export default function HeroBili({

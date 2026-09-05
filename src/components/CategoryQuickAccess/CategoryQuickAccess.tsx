@@ -271,11 +271,15 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
                             }}
                           >
                             <span className="cqa-catcard__idx">{j + 1}</span>
-                            <LazyImage
-                              src={buildImageUrl(item.posterPath ?? null, 'w92') ?? ''}
-                              alt={item.title}
-                              className="cqa-catcard__poster"
-                            />
+                            {buildImageUrl(item.backdropPath ?? null, 'w300') ? (
+                              <LazyImage
+                                src={buildImageUrl(item.backdropPath ?? null, 'w300') ?? ''}
+                                alt={item.title}
+                                className="cqa-catcard__poster"
+                              />
+                            ) : (
+                              <span className="cqa-catcard__poster cqa-catcard__poster--empty thumbnail-skeleton-bg" />
+                            )}
                             <span className="cqa-catcard__t">{item.title}</span>
                             <span className="cqa-catcard__h">
                               <Icon icon={Flame} size="xs" />
@@ -326,11 +330,15 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateDetail(item.id); }}
                   >
                     <span className="cqa-hotcard__rank">{i + 1}</span>
-                    <LazyImage
-                      src={buildImageUrl(item.backdropPath ?? item.posterPath ?? null, 'w300') ?? ''}
-                      alt={item.title}
-                      className="cqa-hotcard__poster"
-                    />
+                    {buildImageUrl(item.backdropPath ?? null, 'w300') ? (
+                      <LazyImage
+                        src={buildImageUrl(item.backdropPath ?? null, 'w300') ?? ''}
+                        alt={item.title}
+                        className="cqa-hotcard__poster"
+                      />
+                    ) : (
+                      <span className="cqa-hotcard__poster cqa-hotcard__poster--empty thumbnail-skeleton-bg" />
+                    )}
                     <div className="cqa-hotcard__body">
                       <div className="cqa-hotcard__t">{item.title}</div>
                       <div className="cqa-hotcard__m">

@@ -223,7 +223,7 @@
     /* 高度锁定（2026-09-06 用户拍板：切换 chip 面板高度不得变化）——
        hotgrid 3 行与 catgrid 单行的显示高度由同一组变量推出，
        catgrid 额外并入子分类行高度（默认面板无子分类行） */
-    --cqa-row-h: calc(54px + 2 * var(--space-xs)); /* hotcard 横版封面 96×54 */
+    --cqa-row-h: calc(68px + 2 * var(--space-xs)); /* hotcard 横版封面 120×68（拍板：调大 + 整体增高） */
     --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
   }
@@ -449,9 +449,10 @@
   }
   html:not([data-device="tv"]) .cqa-catcard__row:first-child .cqa-catcard__idx { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-catcard__poster {
-    flex: 0 0 48px;
-    width: 48px;
-    height: 72px;
+    flex: 0 0 96px;
+    width: 96px;
+    height: 54px;
+    display: block;
     border-radius: var(--radius-md);
     object-fit: cover;
     background: var(--color-placeholder);
@@ -467,6 +468,10 @@
     text-overflow: ellipsis;
   }
   html:not([data-device="tv"]) .cqa-catcard__row:hover .cqa-catcard__t { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-catcard__poster--empty,
+  html:not([data-device="tv"]) .cqa-hotcard__poster--empty {
+    border-radius: var(--radius-md);
+  }
   html:not([data-device="tv"]) .cqa-catcard__h {
     flex: 0 0 auto;
     display: inline-flex;
@@ -512,9 +517,9 @@
   }
   html:not([data-device="tv"]) .cqa-hotcard:nth-child(-n + 3) .cqa-hotcard__rank { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-hotcard__poster {
-    flex: 0 0 96px;
-    width: 96px;
-    height: 54px;
+    flex: 0 0 120px;
+    width: 120px;
+    height: 68px;
     border-radius: var(--radius-md);
     object-fit: cover;
     background: var(--color-placeholder);
