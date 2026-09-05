@@ -147,20 +147,21 @@
   --dur-pt-curtain: 200ms; /* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
 
   /* ── Typography ───────────────────────────────────────────────────────────
-     三 regime 统一契约：移动端(≤375)=MIN，桌面端(≥768)=MAX 且冻结，TV=[data-device="tv"] 2×。
-     小号(text-2xs~base) 与大号(text-lg~3xl) 现均严格 375→768px 流体、768px+ 固定：
-        · 坐近看屏，文字稳定保可读，桌面不再随 4K 继续放大；
-        · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 触顶）；
-        · 任意基础 token 的 preferred 在 768px 精确触顶，1920/3840 取值=MAX(冻结)。
-     非 TV 的 4K 桌面：基础 token 复用 768 桌面值（更密），仅布局 token(--layout-*) 继续
-        流体填满屏幕；TV 模式经 [data-device="tv"] 把整条曲线 2×，无失衡。 */
+     三 regime 统一契约：移动端(≤375)=MIN，桌面端 768→2200 流体、≥2200 冻结（2026-09-05
+     方案 A：冻结点 1920→2200 与内容封顶 --layout-content-max-width 对齐），TV=[data-device="tv"] 2×。
+     小号(text-2xs~base) 与大号(text-lg~3xl) 段1 375→768px 流体、段2 768→2200px 流体：
+        · 坐近看屏，文字稳定保可读，≥2200（内容封顶点）不再继续放大；
+        · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 起步）；
+        · 任意段2 token 768 处=A(连续无跳变)、2200 处=MAX(冻结)，1920 处仍流动。
+     非 TV 的 4K 桌面：≥2200 后 token 冻结（与内容区同步封顶），TV 模式经
+        [data-device="tv"] 把整条曲线 2×，无失衡。 */
   --text-2xs: calc(clamp(9px, 7.728px + 0.339vw, 10.333px) * var(--ui-scale)); /* 9→11 超小标注 */
   --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale)); /* 12→13 */
   --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale)); /* 13→14 */
   /* 基准字号（D7/B3 契约）：段1（<768）恒 14px——html { font-size: var(--text-base) }
      原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → 形成 rem 解析循环（不动点 14px），
-     显式 px 消除隐式依赖。段2（≥768）14→16px 线性流动至 1920（D7：终点 16px；
-     768 处 14px 连续，rem 流动仅发生在 768→1920，移动端零回归）。
+     显式 px 消除隐式依赖。段2（≥768）14→16px 线性流动至 2200（D7：终点 16px；
+     768 处 14px 连续，rem 流动仅发生在 768→2200，移动端零回归；≥2200 冻结）。
      TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
   --text-base: calc(14px * var(--ui-scale)); /* <768 恒 14；≥768 见段2：14→16 流体；TV 覆盖 15→30px */
   --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 14→16 */
@@ -373,107 +374,107 @@
 }
 
 
-/* ── 三段式段2（768→1920，阶段 A 生成）── */
+/* ── 三段式段2（768→2200，冻结点与内容封顶 2200 对齐；方案 A 2026-09-05 迁移）── */
 @media (width >= 768px) {
   :root {
-    --avatar-lg: calc(clamp(109.333px, 96.889px + 1.62vw, 128px) * var(--ui-scale));
-    --avatar-sm: calc(clamp(82.667px, 73.778px + 1.157vw, 96px) * var(--ui-scale));
-    --avatar-xs: calc(clamp(44.667px, 39.778px + 0.637vw, 52px) * var(--ui-scale));
-    --badge-size: calc(clamp(18px, 15.333px + 0.347vw, 22px) * var(--ui-scale));
-    --comp-btn-min-height: calc(clamp(51.333px, 45.556px + 0.752vw, 60px) * var(--ui-scale));
-    --comp-btn-min-width: calc(clamp(53.333px, 48.889px + 0.579vw, 60px) * var(--ui-scale));
-    --comp-input-height: calc(clamp(45.333px, 43.555px + 0.2315vw, 48px) * var(--ui-scale));
-    --comp-input-min-w: calc(clamp(260px, 233.333px + 3.472vw, 300px) * var(--ui-scale));
-    --comp-tab-height: calc(clamp(38.667px, 35.111px + 0.463vw, 44px) * var(--ui-scale));
-    --comp-thumb-size: calc(clamp(23.333px, 20.222px + 0.405vw, 28px) * var(--ui-scale));
-    --dot-active-h: calc(clamp(7px, 6.333px + 0.087vw, 8px) * var(--ui-scale));
-    --dot-active-w: calc(clamp(21.333px, 19.556px + 0.231vw, 24px) * var(--ui-scale));
-    --dot-gap: calc(clamp(5px, 4.333px + 0.087vw, 6px) * var(--ui-scale));
-    --dot-size: calc(clamp(7px, 6.333px + 0.087vw, 8px) * var(--ui-scale));
-    --error-msg-max-width: calc(clamp(126.667px, 117.778px + 1.157vw, 140px) * var(--ui-scale));
-    --grid-gap: calc(clamp(20px, 17.333px + 0.347vw, 24px) * var(--ui-scale));
-    --header-height-compact: calc(clamp(58.667px, 55.111px + 0.463vw, 64px) * var(--ui-scale));
+    --avatar-lg: calc(clamp(109.333px, 99.32165px + 1.30356vw, 128px) * var(--ui-scale));
+    --avatar-sm: calc(clamp(82.667px, 75.51634px + 0.93108vw, 96px) * var(--ui-scale));
+    --avatar-xs: calc(clamp(44.667px, 40.73422px + 0.51208vw, 52px) * var(--ui-scale));
+    --badge-size: calc(clamp(18px, 15.85475px + 0.27933vw, 22px) * var(--ui-scale));
+    --comp-btn-min-height: calc(clamp(51.333px, 46.68478px + 0.60524vw, 60px) * var(--ui-scale));
+    --comp-btn-min-width: calc(clamp(53.333px, 49.7574px + 0.46557vw, 60px) * var(--ui-scale));
+    --comp-input-height: calc(clamp(45.333px, 43.90265px + 0.18624vw, 48px) * var(--ui-scale));
+    --comp-input-min-w: calc(clamp(260px, 238.54749px + 2.7933vw, 300px) * var(--ui-scale));
+    --comp-tab-height: calc(clamp(38.667px, 35.80684px + 0.37242vw, 44px) * var(--ui-scale));
+    --comp-thumb-size: calc(clamp(23.333px, 20.83003px + 0.32591vw, 28px) * var(--ui-scale));
+    --dot-active-h: calc(clamp(7px, 6.46369px + 0.06983vw, 8px) * var(--ui-scale));
+    --dot-active-w: calc(clamp(21.333px, 19.90265px + 0.18624vw, 24px) * var(--ui-scale));
+    --dot-gap: calc(clamp(5px, 4.46369px + 0.06983vw, 6px) * var(--ui-scale));
+    --dot-size: calc(clamp(7px, 6.46369px + 0.06983vw, 8px) * var(--ui-scale));
+    --error-msg-max-width: calc(clamp(126.667px, 119.51634px + 0.93108vw, 140px) * var(--ui-scale));
+    --grid-gap: calc(clamp(20px, 17.85475px + 0.27933vw, 24px) * var(--ui-scale));
+    --header-height-compact: calc(clamp(58.667px, 55.80684px + 0.37242vw, 64px) * var(--ui-scale));
     /* ▼ R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）无段2：
        已回退旧 rem 式（E2a），全程单条 clamp，不参与三段式 */
-    --layout-brand-font-size: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
-    --layout-brand-font-size-lg: calc(clamp(26.667px, 25.778px + 0.116vw, 28px) * var(--ui-scale));
-    --layout-brand-font-size-sm: calc(clamp(18.667px, 17.778px + 0.116vw, 20px) * var(--ui-scale));
-    --layout-card-daily-width: calc(clamp(280px, 253.333px + 3.472vw, 320px) * var(--ui-scale));
-    --layout-cast-avatar: calc(clamp(80px, 74.667px + 0.694vw, 88px) * var(--ui-scale));
-    --layout-channel-num-w: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
-    --layout-collapse-max-h: calc(clamp(1266.667px, 1177.778px + 11.574vw, 1400px) * var(--ui-scale));
+    --layout-brand-font-size: calc(clamp(22.667px, 21.95209px + 0.09309vw, 24px) * var(--ui-scale));
+    --layout-brand-font-size-lg: calc(clamp(26.667px, 25.95209px + 0.09309vw, 28px) * var(--ui-scale));
+    --layout-brand-font-size-sm: calc(clamp(18.667px, 17.95209px + 0.09309vw, 20px) * var(--ui-scale));
+    --layout-card-daily-width: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
+    --layout-cast-avatar: calc(clamp(80px, 75.7095px + 0.55866vw, 88px) * var(--ui-scale));
+    --layout-channel-num-w: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
+    --layout-collapse-max-h: calc(clamp(1266.667px, 1195.1588px + 9.31096vw, 1400px) * var(--ui-scale));
     --layout-content-max-width: min(100%, 2200px); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线 */
-    --layout-datepicker-width: calc(clamp(420px, 393.333px + 3.472vw, 460px) * var(--ui-scale));
-    --layout-detail-hero-play-icon: calc(clamp(173.712px, 161.52px + 1.588vw, 192px) * var(--ui-scale));
-    --layout-detail-poster-w: calc(clamp(277.333px, 227.556px + 6.481vw, 352px) * var(--ui-scale));
-    --layout-detail-poster-w-tv: calc(clamp(143.333px, 132.222px + 1.447vw, 160px) * var(--ui-scale));
-    --layout-epg-empty-min-height: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
-    --layout-epg-time-min-width: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
-    --layout-episode-panel-w: calc(clamp(513.333px, 482.222px + 4.051vw, 560px) * var(--ui-scale));
-    --layout-episode-panel-w-alt: calc(clamp(546.667px, 511.111px + 4.63vw, 600px) * var(--ui-scale));
-    --layout-error-detail-height: calc(clamp(280px, 253.333px + 3.472vw, 320px) * var(--ui-scale));
-    --layout-groups-collapsed-h: calc(clamp(98.667px, 91.111px + 0.984vw, 110px) * var(--ui-scale));
-    --layout-help-popover-w: calc(clamp(340px, 313.333px + 3.472vw, 380px) * var(--ui-scale));
-    --layout-hero-height: calc(clamp(400px, 333.333px + 8.681vw, 500px) * var(--ui-scale));
-    --layout-hero-height-mobile: calc(clamp(320px, 306.667px + 1.736vw, 340px) * var(--ui-scale));
-    --layout-hero-poster-w: calc(clamp(240px, 213.333px + 3.472vw, 280px) * var(--ui-scale));
-    --layout-loading-min-height: calc(clamp(420px, 380px + 5.208vw, 480px) * var(--ui-scale));
-    --layout-modal-max-width: calc(clamp(506.667px, 444.444px + 8.102vw, 600px) * var(--ui-scale));
-    --layout-osd-max-width: calc(clamp(1040px, 800px + 31.25vw, 1400px) * var(--ui-scale));
-    --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
-    --layout-outline-width: calc(clamp(2.667px, 2.444px + 0.029vw, 3px) * var(--ui-scale));
-    --layout-panel-medium-w: calc(clamp(413.333px, 368.889px + 5.787vw, 480px) * var(--ui-scale));
-    --layout-perf-panel-min-w: calc(clamp(373.333px, 342.222px + 4.051vw, 420px) * var(--ui-scale));
-    --layout-player-vol-w: calc(clamp(106.667px, 97.778px + 1.157vw, 120px) * var(--ui-scale));
-    --layout-popover-min-w: calc(clamp(133.333px, 122.222px + 1.447vw, 150px) * var(--ui-scale));
-    --layout-popover-wide-min-w: calc(clamp(180px, 166.667px + 1.736vw, 200px) * var(--ui-scale));
-    --layout-quality-badge-min-w: calc(clamp(108px, 100px + 1.042vw, 120px) * var(--ui-scale));
-    --layout-searchbox-browse-max-w: calc(clamp(693.333px, 648.889px + 5.787vw, 760px) * var(--ui-scale));
-    --layout-searchbox-header-max-w: calc(clamp(613.333px, 568.889px + 5.787vw, 680px) * var(--ui-scale));
-    --layout-searchbox-max-w: calc(clamp(626.667px, 511.111px + 15.046vw, 800px) * var(--ui-scale));
-    --layout-select-w: calc(clamp(220px, 193.333px + 3.472vw, 260px) * var(--ui-scale));
-    --layout-select-w-mobile: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
-    --layout-source-url-max-w: calc(clamp(213.333px, 195.556px + 2.315vw, 240px) * var(--ui-scale));
-    --layout-spinner-border: calc(clamp(4.333px, 3.889px + 0.058vw, 5px) * var(--ui-scale));
-    --layout-tabbar-height: calc(clamp(66.667px, 63.111px + 0.463vw, 72px) * var(--ui-scale));
-    --layout-time-display-min-w: calc(clamp(123.333px, 112.222px + 1.447vw, 140px) * var(--ui-scale));
-    --layout-vol-popup-w: calc(clamp(84px, 76px + 1.042vw, 96px) * var(--ui-scale));
-    --layout-vol-slider-w: calc(clamp(246.667px, 224.444px + 2.894vw, 280px) * var(--ui-scale));
-    --radio-dot-size: calc(clamp(11.333px, 9.556px + 0.231vw, 14px) * var(--ui-scale));
-    --radio-size: calc(clamp(23.333px, 20.222px + 0.405vw, 28px) * var(--ui-scale));
-    --radius-lg: calc(clamp(15.333px, 13.556px + 0.231vw, 18px) * var(--ui-scale));
-    --radius-md: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
-    --radius-sm: calc(clamp(4.333px, 3.889px + 0.058vw, 5px) * var(--ui-scale));
-    --scrollbar-width: calc(clamp(8.667px, 7.778px + 0.116vw, 10px) * var(--ui-scale));
-    --scrollbar-width-thin: calc(clamp(6.667px, 5.778px + 0.116vw, 8px) * var(--ui-scale));
-    --source-meta-min-width: calc(clamp(160px, 146.667px + 1.736vw, 180px) * var(--ui-scale));
-    --space-2xl: calc(clamp(45.333px, 38.222px + 0.926vw, 56px) * var(--ui-scale));
-    --space-2xs: calc(clamp(2.333px, 1.889px + 0.058vw, 3px) * var(--ui-scale));
-    --space-3xl: calc(clamp(64px, 53.333px + 1.389vw, 80px) * var(--ui-scale));
-    --space-3xs: calc(clamp(1.667px, 1.444px + 0.029vw, 2px) * var(--ui-scale));
-    --space-lg: calc(clamp(22.667px, 19.111px + 0.463vw, 28px) * var(--ui-scale));
-    --space-lg-xl: calc(clamp(27.333px, 22.889px + 0.579vw, 34px) * var(--ui-scale));
-    --space-md: calc(clamp(14.667px, 12.444px + 0.289vw, 18px) * var(--ui-scale));
-    --space-sm: calc(clamp(10px, 8.667px + 0.174vw, 12px) * var(--ui-scale));
-    --space-xl: calc(clamp(32px, 26.667px + 0.694vw, 40px) * var(--ui-scale));
-    --space-xs: calc(clamp(5px, 4.333px + 0.087vw, 6px) * var(--ui-scale));
-    --space-xs-plus: calc(clamp(6.667px, 5.778px + 0.116vw, 8px) * var(--ui-scale));
-    --src-det-grid-min: calc(clamp(196.667px, 181.111px + 2.025vw, 220px) * var(--ui-scale));
-    --src-det-popup-max-h: calc(clamp(286.667px, 264.444px + 2.894vw, 320px) * var(--ui-scale));
-    --switch-thumb-offset: calc(clamp(21.333px, 19.556px + 0.231vw, 24px) * var(--ui-scale));
-    --switch-thumb-size: calc(clamp(20.667px, 18.444px + 0.289vw, 24px) * var(--ui-scale));
-    --switch-track-height: calc(clamp(22px, 20.667px + 0.174vw, 24px) * var(--ui-scale));
-    --switch-track-width: calc(clamp(42.667px, 39.111px + 0.463vw, 48px) * var(--ui-scale));
-    --text-2xl: calc(clamp(22.667px, 21.778px + 0.116vw, 24px) * var(--ui-scale));
-    --text-2xs: calc(clamp(10.333px, 9.889px + 0.058vw, 11px) * var(--ui-scale));
-    --text-3xl: calc(clamp(28.667px, 27.778px + 0.116vw, 30px) * var(--ui-scale));
-    --text-base: calc(clamp(14px, 12.667px + 0.17361vw, 16px) * var(--ui-scale)); /* 14@768 连续 → 16@1920（D7；768 处 = 12.667+1.333 = 14.000，无跳变） */
-    --text-lg: calc(clamp(15.333px, 14.889px + 0.058vw, 16px) * var(--ui-scale));
-    --text-sm: calc(clamp(13.667px, 13.444px + 0.029vw, 14px) * var(--ui-scale));
-    --text-xl: calc(clamp(17.333px, 16.889px + 0.058vw, 18px) * var(--ui-scale));
-    --text-xs: calc(clamp(12.667px, 12.444px + 0.029vw, 13px) * var(--ui-scale));
-    --vol-track-radius: calc(clamp(1.667px, 1.444px + 0.029vw, 2px) * var(--ui-scale));
-    --vol-track-width: calc(clamp(3.667px, 3.444px + 0.029vw, 4px) * var(--ui-scale));
+    --layout-datepicker-width: calc(clamp(420px, 398.54749px + 2.7933vw, 460px) * var(--ui-scale));
+    --layout-detail-hero-play-icon: calc(clamp(173.712px, 163.90391px + 1.27709vw, 192px) * var(--ui-scale));
+    --layout-detail-poster-w: calc(clamp(277.333px, 237.28813px + 5.21418vw, 352px) * var(--ui-scale));
+    --layout-detail-poster-w-tv: calc(clamp(143.333px, 134.39427px + 1.1639vw, 160px) * var(--ui-scale));
+    --layout-epg-empty-min-height: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
+    --layout-epg-time-min-width: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
+    --layout-episode-panel-w: calc(clamp(513.333px, 488.30489px + 3.25887vw, 560px) * var(--ui-scale));
+    --layout-episode-panel-w-alt: calc(clamp(546.667px, 518.06383px + 3.72437vw, 600px) * var(--ui-scale));
+    --layout-error-detail-height: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
+    --layout-groups-collapsed-h: calc(clamp(98.667px, 92.58897px + 0.79141vw, 110px) * var(--ui-scale));
+    --layout-help-popover-w: calc(clamp(340px, 318.54749px + 2.7933vw, 380px) * var(--ui-scale));
+    --layout-hero-height: calc(clamp(400px, 346.36872px + 6.98324vw, 500px) * var(--ui-scale));
+    --layout-hero-height-mobile: calc(clamp(320px, 309.27374px + 1.39665vw, 340px) * var(--ui-scale));
+    --layout-hero-poster-w: calc(clamp(240px, 218.54749px + 2.7933vw, 280px) * var(--ui-scale));
+    --layout-loading-min-height: calc(clamp(420px, 387.82123px + 4.18994vw, 480px) * var(--ui-scale));
+    --layout-modal-max-width: calc(clamp(506.667px, 456.61131px + 6.51767vw, 600px) * var(--ui-scale));
+    --layout-osd-max-width: calc(clamp(1040px, 846.92737px + 25.13966vw, 1400px) * var(--ui-scale));
+    --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
+    --layout-outline-width: calc(clamp(2.667px, 2.48841px + 0.02325vw, 3px) * var(--ui-scale));
+    --layout-panel-medium-w: calc(clamp(413.333px, 377.57863px + 4.65552vw, 480px) * var(--ui-scale));
+    --layout-perf-panel-min-w: calc(clamp(373.333px, 348.30489px + 3.25887vw, 420px) * var(--ui-scale));
+    --layout-player-vol-w: calc(clamp(106.667px, 99.51634px + 0.93108vw, 120px) * var(--ui-scale));
+    --layout-popover-min-w: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
+    --layout-popover-wide-min-w: calc(clamp(180px, 169.27374px + 1.39665vw, 200px) * var(--ui-scale));
+    --layout-quality-badge-min-w: calc(clamp(108px, 101.56425px + 0.83799vw, 120px) * var(--ui-scale));
+    --layout-searchbox-browse-max-w: calc(clamp(693.333px, 657.57863px + 4.65552vw, 760px) * var(--ui-scale));
+    --layout-searchbox-header-max-w: calc(clamp(613.333px, 577.57863px + 4.65552vw, 680px) * var(--ui-scale));
+    --layout-searchbox-max-w: calc(clamp(626.667px, 533.70628px + 12.10426vw, 800px) * var(--ui-scale));
+    --layout-select-w: calc(clamp(220px, 198.54749px + 2.7933vw, 260px) * var(--ui-scale));
+    --layout-select-w-mobile: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
+    --layout-source-url-max-w: calc(clamp(213.333px, 199.03115px + 1.86222vw, 240px) * var(--ui-scale));
+    --layout-spinner-border: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
+    --layout-tabbar-height: calc(clamp(66.667px, 63.80684px + 0.37242vw, 72px) * var(--ui-scale));
+    --layout-time-display-min-w: calc(clamp(123.333px, 114.39427px + 1.1639vw, 140px) * var(--ui-scale));
+    --layout-vol-popup-w: calc(clamp(84px, 77.56425px + 0.83799vw, 96px) * var(--ui-scale));
+    --layout-vol-slider-w: calc(clamp(246.667px, 228.79008px + 2.32772vw, 280px) * var(--ui-scale));
+    --radio-dot-size: calc(clamp(11.333px, 9.90265px + 0.18624vw, 14px) * var(--ui-scale));
+    --radio-size: calc(clamp(23.333px, 20.83003px + 0.32591vw, 28px) * var(--ui-scale));
+    --radius-lg: calc(clamp(15.333px, 13.90265px + 0.18624vw, 18px) * var(--ui-scale));
+    --radius-md: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
+    --radius-sm: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
+    --scrollbar-width: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
+    --scrollbar-width-thin: calc(clamp(6.667px, 5.95209px + 0.09309vw, 8px) * var(--ui-scale));
+    --source-meta-min-width: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
+    --space-2xl: calc(clamp(45.333px, 39.61215px + 0.7449vw, 56px) * var(--ui-scale));
+    --space-2xs: calc(clamp(2.333px, 1.97528px + 0.04658vw, 3px) * var(--ui-scale));
+    --space-3xl: calc(clamp(64px, 55.41899px + 1.11732vw, 80px) * var(--ui-scale));
+    --space-3xs: calc(clamp(1.667px, 1.48841px + 0.02325vw, 2px) * var(--ui-scale));
+    --space-lg: calc(clamp(22.667px, 19.80684px + 0.37242vw, 28px) * var(--ui-scale));
+    --space-lg-xl: calc(clamp(27.333px, 23.7574px + 0.46557vw, 34px) * var(--ui-scale));
+    --space-md: calc(clamp(14.667px, 12.87947px + 0.23275vw, 18px) * var(--ui-scale));
+    --space-sm: calc(clamp(10px, 8.92737px + 0.13966vw, 12px) * var(--ui-scale));
+    --space-xl: calc(clamp(32px, 27.7095px + 0.55866vw, 40px) * var(--ui-scale));
+    --space-xs: calc(clamp(5px, 4.46369px + 0.06983vw, 6px) * var(--ui-scale));
+    --space-xs-plus: calc(clamp(6.667px, 5.95209px + 0.09309vw, 8px) * var(--ui-scale));
+    --src-det-grid-min: calc(clamp(196.667px, 184.15321px + 1.6294vw, 220px) * var(--ui-scale));
+    --src-det-popup-max-h: calc(clamp(286.667px, 268.79008px + 2.32772vw, 320px) * var(--ui-scale));
+    --switch-thumb-offset: calc(clamp(21.333px, 19.90265px + 0.18624vw, 24px) * var(--ui-scale));
+    --switch-thumb-size: calc(clamp(20.667px, 18.87947px + 0.23275vw, 24px) * var(--ui-scale));
+    --switch-track-height: calc(clamp(22px, 20.92737px + 0.13966vw, 24px) * var(--ui-scale));
+    --switch-track-width: calc(clamp(42.667px, 39.80684px + 0.37242vw, 48px) * var(--ui-scale));
+    --text-2xl: calc(clamp(22.667px, 21.95209px + 0.09309vw, 24px) * var(--ui-scale));
+    --text-2xs: calc(clamp(10.333px, 9.97528px + 0.04658vw, 11px) * var(--ui-scale));
+    --text-3xl: calc(clamp(28.667px, 27.95209px + 0.09309vw, 30px) * var(--ui-scale));
+    --text-base: calc(clamp(14px, 12.92737px + 0.13966vw, 16px) * var(--ui-scale)); /* 14@768 连续 → 16@2200（D7；768 处 = pref + coeff×7.68 ≈ 14.0，无跳变；≥2200 冻结） */
+    --text-lg: calc(clamp(15.333px, 14.97528px + 0.04658vw, 16px) * var(--ui-scale));
+    --text-sm: calc(clamp(13.667px, 13.48841px + 0.02325vw, 14px) * var(--ui-scale));
+    --text-xl: calc(clamp(17.333px, 16.97528px + 0.04658vw, 18px) * var(--ui-scale));
+    --text-xs: calc(clamp(12.667px, 12.48841px + 0.02325vw, 13px) * var(--ui-scale));
+    --vol-track-radius: calc(clamp(1.667px, 1.48841px + 0.02325vw, 2px) * var(--ui-scale));
+    --vol-track-width: calc(clamp(3.667px, 3.48841px + 0.02325vw, 4px) * var(--ui-scale));
   }
 }
 
