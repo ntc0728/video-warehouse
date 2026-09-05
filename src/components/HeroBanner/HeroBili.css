@@ -182,6 +182,12 @@
 .hero-bili__right {
   position: relative;
   min-width: 0;
+  /* 融合卡内布局：卡网格 + 换一换占位列（2026-09-06，替代绝对定位外挂，
+     避免按钮贴/溢出 hero 卡右缘） */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-sm);
 }
 
 .hero-bili__cards {
@@ -326,9 +332,7 @@
 /* 换一换：脱标浮层（absolute 不占布局），与第一行对齐、高度 = 单卡一半
    （单卡高 = (banner-h - gap)/2，一半 = /4）；图标上、竖排文本下 */
 .hero-bili__shuffle {
-  position: absolute;
-  top: 0;
-  left: calc(100% + var(--hero-main-gap));
+  position: static;
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
