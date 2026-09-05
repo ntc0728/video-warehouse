@@ -2,9 +2,10 @@
  * HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用）
  *
  * 布局：左侧大 banner 轮播（1fr）+ 右侧 3×2 竖版卡（--hero-side-w）+ 脱标「换一换」浮层。
- * - 轮播（5s 自动 / 左右箭头 / 圆点）只推进 activeIndex，【不重建右侧卡片】
- * - 「换一换」只推进 shuffleOffset、重建右侧 6 卡（从非当前 banner 项中顺时针取）——
- *   activeIndex 与 shuffleOffset 两个状态完全解耦（demo v16 定稿行为）
+ * - banner 池固定前 6 张（BANNER_POOL），轮播（5s 自动 / 左右箭头 / 圆点）只在这 6 张内
+ *   推进 activeIndex，【绝不重建右侧卡片】
+ * - 右侧卡片展示 banner 池之外的条目（第 7 张起）；「换一换」只推进 shuffleOffset、
+ *   按卡片数整组推进——activeIndex 与 shuffleOffset 两个状态完全解耦
  * - banner 保留 继续播放（historyMap 命中时渲染）/ 查看详情 双按钮（沿用 hero-banner__cta token）
  * - 卡片点击跳详情；收藏按钮命中时 toggle 收藏 + 不冒泡（不触发跳转）
  * - 卡片标题不换行，溢出时悬浮跑马灯（双段等长无缝循环）
@@ -47,6 +48,8 @@ interface HeroBiliProps {
 /** 右侧卡片数：3 列 × 2 行 */
 const SIDE_COLS = 3;
 const SIDE_ROWS = 2;
+/** banner 轮播只取前 6 张，其余条目全部进右侧卡片 */
+const BANNER_POOL = 6;
 /** 换一换动画锁时长（= 转圈动画时长，防抖窗口） */
 const SHUFFLE_LOCK_MS = 600;
 
@@ -84,6 +87,13 @@ function itemBackdropUrl(item: HeroBiliItem): string {
   return p ? buildImageUrl(p, 'w1280') || '' : '';
 }
 
+/** 卡片横版封面：backdrop 优先（横图），缺失时回落竖版海报 */
+function itemCardCoverUrl(item: HeroBiliItem): string {
+  const bd = item.backdropPath || item.backdrop_path || '';
+  if (bd) return buildImageUrl(bd, 'w780') || '';
+  return itemPosterUrl(item);
+}
+
 export default function HeroBili({
   items,
   onItemClick,
@@ -92,6 +102,9 @@ export default function HeroBili({
   active = true,
 }: HeroBiliProps) {
   const total = items.length;
+  // banner 池固定前 6 张；轮播只在这 6 张内推进，与右侧卡片完全解耦
+  const bannerItems = useMemo(() => items.slice(0, BANNER_POOL), [items]);
+  const bannerTotal = bannerItems.length;
   const [activeIndex, setActiveIndex] = useState(0);
   const [shuffleOffset, setShuffleOffset] = useState(0);
   // 换一换动画锁：true 期间既驱动转圈动画、又拦截重复点击（防抖）
@@ -100,7 +113,7 @@ export default function HeroBili({
   const [layers, setLayers] = useState<number[]>([0]);
   const shuffleTimerRef = useRef<number | null>(null);
 
-  const safeActiveIndex = total > 0 ? Math.min(activeIndex, total - 1) : 0;
+  const safeActiveIndex = bannerTotal > 0 ? Math.min(activeIndex, bannerTotal - 1) : 0;
 
   // items 变化（切分类）：重置轮播与换一换状态
   useEffect(() => {
@@ -125,29 +138,29 @@ export default function HeroBili({
 
   // 预加载当前与下一张 banner 背景
   useEffect(() => {
-    if (total <= 1) return;
+    if (bannerTotal <= 1) return;
     for (const off of [0, 1]) {
-      const it = items[(safeActiveIndex + off) % total];
+      const it = bannerItems[(safeActiveIndex + off) % bannerTotal];
       const url = it ? itemBackdropUrl(it) : '';
       if (!url) continue;
       const img = new Image();
       img.decoding = 'async';
       img.src = url;
     }
-  }, [safeActiveIndex, items, total]);
+  }, [safeActiveIndex, bannerItems, bannerTotal]);
 
   const go = useCallback((dir: 1 | -1) => {
-    if (total <= 1) return;
-    setActiveIndex((i) => ((i + dir) % total + total) % total);
-  }, [total]);
+    if (bannerTotal <= 1) return;
+    setActiveIndex((i) => ((i + dir) % bannerTotal + bannerTotal) % bannerTotal);
+  }, [bannerTotal]);
 
   // 自动轮播（5s）：悬停暂停 / 页面隐藏暂停 / 仅 1 项不轮播
   const [paused, setPaused] = useState(false);
   useEffect(() => {
-    if (paused || !active || total <= 1) return;
+    if (paused || !active || bannerTotal <= 1) return;
     const timer = window.setInterval(() => go(1), 5000);
     return () => window.clearInterval(timer);
-  }, [paused, active, total, go]);
+  }, [paused, active, bannerTotal, go]);
 
   // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
   const handleShuffle = useCallback(() => {
@@ -158,17 +171,18 @@ export default function HeroBili({
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
   }, [spinning]);
 
-  // 右侧 6 卡：从「非当前 banner 项」中、自 activeIndex+1+shuffleOffset 起顺时针取
+  // 右侧卡片：banner 池（前 6 张）之外的条目，换一换按卡片数整组推进——
+  // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡
   const rightCards = useMemo(() => {
-    if (total === 0) return [];
+    if (total <= BANNER_POOL) return [];
     const out: { item: HeroBiliItem; idx: number }[] = [];
-    const count = Math.min(SIDE_COLS * SIDE_ROWS, total - 1);
+    const count = Math.min(SIDE_COLS * SIDE_ROWS, total - BANNER_POOL);
     for (let i = 0; i < count; i++) {
-      const idx = ((safeActiveIndex + 1 + shuffleOffset + i) % total + total) % total;
+      const idx = ((BANNER_POOL + shuffleOffset + i) % total + total) % total;
       out.push({ item: items[idx], idx });
     }
     return out;
-  }, [items, total, safeActiveIndex, shuffleOffset]);
+  }, [items, total, shuffleOffset]);
 
   const activeItem = items[safeActiveIndex];
   if (!activeItem) return null;
@@ -201,7 +215,7 @@ export default function HeroBili({
             );
           })}
 
-          {total > 1 && (
+          {bannerTotal > 1 && (
             <>
               <button
                 type="button"
@@ -219,17 +233,6 @@ export default function HeroBili({
               >
                 <Icon icon={ChevronRight} size="lg" />
               </button>
-              <div className="hero-bili__dots" role="tablist" aria-label="轮播圆点">
-                {items.map((it, i) => (
-                  <button
-                    key={`dot-${it.id}-${i}`}
-                    type="button"
-                    className={`hero-bili__dot${i === safeActiveIndex ? ' is-active' : ''}`}
-                    aria-label={`第 ${i + 1} 张`}
-                    onClick={() => setActiveIndex(i)}
-                  />
-                ))}
-              </div>
             </>
           )}
 
@@ -267,6 +270,20 @@ export default function HeroBili({
                     <span>查看详情</span>
                   </button>
                 )}
+              </div>
+            )}
+            {/* 圆点：banner 底部居中、双按钮下方 */}
+            {bannerTotal > 1 && (
+              <div className="hero-bili__dots" role="tablist" aria-label="轮播圆点">
+                {bannerItems.map((it, i) => (
+                  <button
+                    key={`dot-${it.id}-${i}`}
+                    type="button"
+                    className={`hero-bili__dot${i === safeActiveIndex ? ' is-active' : ''}`}
+                    aria-label={`第 ${i + 1} 张`}
+                    onClick={() => setActiveIndex(i)}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -314,6 +331,7 @@ function HeroSideCard({
   const videoId = String(item.id);
   const title = itemTitle(item);
   const posterUrl = itemPosterUrl(item);
+  const coverUrl = itemCardCoverUrl(item);
   // 收藏态：订阅 collections（命中即重渲染）
   const collected = useUserStore((s) => s.collections.some((c) => c.videoId === videoId));
   const addCollection = useUserStore((s) => s.addCollection);
@@ -321,10 +339,12 @@ function HeroSideCard({
   const [marquee, setMarquee] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
 
+  // 跑马灯只在「悬浮 + 溢出」时启用，移出即停（不自动滚动）
   const handleTitleEnter = useCallback(() => {
     const el = titleRef.current;
     if (el && el.scrollWidth > el.clientWidth) setMarquee(true);
   }, []);
+  const handleTitleLeave = useCallback(() => setMarquee(false), []);
 
   const handleFav = useCallback((e: React.MouseEvent) => {
     // 收藏不冒泡：命中收藏按钮 → toggle + 阻止冒泡，绝不进入跳转分支
@@ -354,10 +374,10 @@ function HeroSideCard({
       aria-label={title}
     >
       <div className="hero-side-card__cover">
-        {posterUrl ? (
+        {coverUrl ? (
           <img
             className="hero-side-card__img"
-            src={posterUrl}
+            src={coverUrl}
             alt=""
             loading="lazy"
             decoding="async"
@@ -392,10 +412,14 @@ function HeroSideCard({
         ref={titleRef}
         className={`hero-side-card__title${marquee ? ' is-marquee' : ''}`}
         onMouseEnter={handleTitleEnter}
+        onMouseLeave={handleTitleLeave}
       >
         <span className="hero-side-card__title-track">
           <span className="hero-side-card__title-seg">{title}</span>
-          <span className="hero-side-card__title-seg">{title}</span>
+          {/* 第二段只在与跑马灯时渲染——短标题不会出现「两个标题」 */}
+          {marquee && (
+            <span className="hero-side-card__title-seg" aria-hidden="true">{title}</span>
+          )}
         </span>
       </div>
     </div>
