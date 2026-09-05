@@ -152,7 +152,6 @@
 
   .qa2__loading, .qa2__error { padding: var(--space-xl); text-align: center; font-size: var(--text-sm); color: #9499a0; }
   .qa2__error button { margin-left: var(--space-sm); border: 1px solid #e3e5e7; background: #fff; border-radius: 999px; padding: var(--space-xs) var(--space-md); cursor: pointer; font-family: inherit; font-size: var(--text-xs); }
-  @media (width < 1500px) { .hotgrid { grid-template-columns: repeat(2, 1fr); } .catgrid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -425,7 +424,7 @@
     <b>数据源（全部真实 TMDB，zh-CN，右上角日志可见每笔请求）</b>：<br>
     ① 分类热度徽标 + 默认榜：<span class="url">/trending/all/day</span> 按分类桶聚合（Σpopularity + 计数）；② 分类热榜：<span class="url">/trending/{movie,tv}/day</span>；子分类 chip → <span class="url">/discover/{type}?with_genres=X&sort_by=popularity.desc</span>；③ 排行榜子分类：日/周/电影/剧集四种 <span class="url">/trending/*/…</span>；④ genre：/genre/{movie,tv}/list?language=zh-CN。<br>
     <b>网络兼容</b>：API 双域名自动回退——<span class="url">api.tmdb.org</span>（官方备用域名）优先，主域名 api.themoviedb.org 部分网络不可达（对真实落地同样关键）；海报加载失败优雅降级。<br>
-    <b>跳转</b>：chip 展开面板（不跳转）；「全部分类」→ <span class="url">/browse</span>；hotcard → <span class="url">/detail/{type}/{id}</span>；catcard → 展开对应分类面板。
+    <b>v2.3 修订</b>：删除小于 1500px 的降级规则（此前把分类面板降为 2 列、catcard 降为竖排 1 列，导致看到的不是 3×3 / 1 行 3 列）——demo 锁定大于 1280 桌面形态：catgrid 恒 1 行 3 列、hotgrid 恒 3 行 × 3 列。<br><b>跳转</b>：chip 展开面板（不跳转）；「全部分类」→ <span class="url">/browse</span>；hotcard → <span class="url">/detail/{type}/{id}</span>；catcard → 展开对应分类面板。
   `;
 </script>
 </body>
