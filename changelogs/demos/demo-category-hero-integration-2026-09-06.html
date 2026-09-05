@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分类导航 × HeroBili 融合方案对比 · 2026-09-06</title>
+<style>
+  /* ═════════════════════════════════════════════════════════════════
+     问题：category-quick-access--wide 悬在 hero-bili 上方，两个模块
+     「强行凑在一起」——① chrome（文字导航+白卡面板）与沉浸式 hero 两套
+     模块语言背靠背；② 左右边界不对齐；③ 热度面板 delay 了 hero 主角。
+     方案甲（推荐）：导航带并入 hero 卡内部顶端（同一圆角容器），面板
+       overlay 覆盖在 banner 上（不推挤文档流，hero 高度恒定）。
+     方案乙（现状对照）：导航 / 面板 / hero 三块独立堆叠。
+     ═════════════════════════════════════════════════════════════════ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; background: #f5f6f8; color: #18191c; }
+
+  .topbar { position: sticky; top: 0; z-index: 60; background: #fff; border-bottom: 1px solid #e3e5e7; padding: 12px 24px; }
+  .topbar h1 { font-size: 15px; font-weight: 600; }
+  .topbar p { font-size: 12px; color: #61666d; margin-top: 4px; line-height: 1.6; }
+  .switch { display: inline-flex; margin-top: 8px; border: 1px solid #e3e5e7; border-radius: 999px; overflow: hidden; }
+  .switch button { border: none; background: #fff; padding: 5px 16px; font-size: 12px; cursor: pointer; font-family: inherit; color: #61666d; }
+  .switch button.on { background: #18191c; color: #fff; font-weight: 600; }
+
+  .stage-wrap { padding: 16px 24px 0; }
+  .stage { background: #f5f6f8; border: 2px solid #fb7299; border-radius: 10px; overflow: hidden; margin-bottom: 6px; padding: var(--space-lg); min-height: 620px; }
+  .stage--now { border-color: #c9ccd1; }
+  .note { font-size: 12px; color: #61666d; line-height: 1.7; padding: 10px 16px; background: #fff; border: 1px solid #e3e5e7; border-radius: 10px; margin-bottom: 6px; }
+  .note b { color: #18191c; }
+
+  /* token（v2.2 @1440 近似值，demo 固定视口演示） */
+  .stage {
+    --text-xs: 11.3px; --text-sm: 12.2px; --text-base: 13.2px; --text-lg: 13.8px;
+    --space-xs: 4px; --space-sm: 8px; --space-md: 11px; --space-lg: 16px; --space-xl: 23px;
+    --radius-md: 7px; --radius-lg: 12px;
+    --comp-tab-height: 36.4px;
+    --color-bili: #fb7299; --color-bili-light: #ffe3ec; --color-bili-deep: #e85a8a;
+    --color-surface: #fff; --color-border-light: #e8e8e8; --color-text: #18191c;
+    --color-text-secondary: #61666d; --color-text-tertiary: #9499a0; --color-tag-bg: #f6f7f8;
+    --shadow-card: 0 1px 4px rgba(0,0,0,.08);
+  }
+
+  .pad { padding: 0 var(--space-lg); }
+
+  /* ═══ 导航 chips（两方案共用样式）═══ */
+  .cqa-nav { display: flex; align-items: center; gap: var(--space-xs); }
+  .cqa-nav__item {
+    display: inline-flex; align-items: center; gap: var(--space-xs);
+    height: var(--comp-tab-height); padding: 0 var(--space-sm);
+    border: none; background: none; border-radius: var(--radius-md);
+    font-size: var(--text-sm); color: var(--color-text-secondary); cursor: pointer;
+    white-space: nowrap; position: relative; font-family: inherit;
+  }
+  .cqa-nav__item:hover { color: var(--color-text); background: rgba(0,0,0,.05); }
+  .cqa-nav__item--on { color: var(--color-bili); font-weight: 600; }
+  .cqa-nav__item--on::after { content: ''; position: absolute; left: var(--space-sm); right: var(--space-sm); bottom: 0; height: 2px; background: var(--color-bili); border-radius: 2px; }
+  .cqa-nav__heat { font-size: 10px; color: var(--color-bili); background: var(--color-bili-light); border-radius: 999px; padding: 0 6px; line-height: 15px; font-weight: 600; }
+  .cqa-nav__more { margin-left: auto; }
+
+  /* ═══ 方案甲：hero 单元卡（导航带内嵌）═══ */
+  .hero-unit { position: relative; background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+  .hero-unit__nav { padding: var(--space-xs) var(--space-lg) 0; border-bottom: 1px solid var(--color-border-light); }
+  .hero-unit__body { padding: var(--space-md) var(--space-lg) var(--space-lg); }
+  .hero-unit__panel {
+    position: absolute; left: 0; right: 0; top: calc(var(--comp-tab-height) + var(--space-xs) + 1px);
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border-light);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    padding: var(--space-md) var(--space-lg) var(--space-lg); z-index: 20;
+  }
+
+  /* B 站风 hero 内部（banner + 右栏） */
+  .bili-grid { display: grid; grid-template-columns: 1fr 340px; gap: var(--space-md); }
+  .bili-banner { position: relative; border-radius: var(--radius-lg); overflow: hidden; height: 300px;
+    background: linear-gradient(120deg, #00a1d6 0%, #6b7cff 55%, #9b6bff 100%); color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end; padding: var(--space-lg); }
+  .bili-banner__t { font-size: 20px; font-weight: 700; }
+  .bili-banner__m { font-size: var(--text-sm); opacity: .85; margin-top: var(--space-xs); }
+  .bili-side { display: grid; grid-template-rows: repeat(3, 1fr); gap: var(--space-sm); }
+  .bili-side__card { display: flex; gap: var(--space-sm); background: var(--color-tag-bg); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; }
+  .bili-side__card:hover { background: #ecedef; }
+  .bili-side__thumb { flex: 0 0 118px; background: linear-gradient(135deg, #c9d2dc, #aeb9c6); }
+  .bili-side__body { flex: 1; min-width: 0; padding: var(--space-sm) var(--space-sm) var(--space-sm) 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+  .bili-side__t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bili-side__m { font-size: var(--text-xs); color: var(--color-text-tertiary); }
+
+  /* 热度榜内容（两方案共用） */
+  .catgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+  .catcard { border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-surface); padding: var(--space-md); cursor: pointer; }
+  .catcard:hover { border-color: var(--color-bili-light); }
+  .catcard__head { display: flex; align-items: center; gap: var(--space-sm); }
+  .catcard__rank { font-size: var(--text-lg); font-weight: 700; font-style: italic; color: #c9ccd1; }
+  .catcard:nth-child(-n+3) .catcard__rank { color: var(--color-bili); }
+  .catcard__name { font-size: var(--text-base); font-weight: 600; }
+  .catcard__heat { margin-left: auto; text-align: right; }
+  .catcard__heat .n { display: block; font-size: var(--text-base); font-weight: 700; color: var(--color-bili); }
+  .catcard__heat .l { font-size: 10px; color: var(--color-text-tertiary); }
+  .catcard__bar { height: 5px; background: #f0f1f3; border-radius: 999px; overflow: hidden; margin: var(--space-sm) 0; }
+  .catcard__bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--color-bili), var(--color-bili-deep)); }
+  .catcard__row { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
+  .catcard__idx { font-size: var(--text-xs); font-weight: 700; font-style: italic; color: #c9ccd1; width: 12px; }
+  .catcard__poster { width: 96px; height: 54px; border-radius: var(--radius-md); background: linear-gradient(135deg, #c9d2dc, #aeb9c6); object-fit: cover; flex: 0 0 96px; }
+  .catcard__t { font-size: var(--text-xs); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .catcard__h { margin-left: auto; font-size: var(--text-xs); color: var(--color-bili); font-weight: 600; white-space: nowrap; }
+
+  /* ═══ 方案乙（现状）：三块独立堆叠 ═══ */
+  .now-nav { padding: var(--space-xs) var(--space-md) var(--space-sm); border-bottom: 1px dashed #dfe1e5; }
+  .now-panel { margin: var(--space-sm) var(--space-md) var(--space-md); }
+  .now-hero { margin: 0 var(--space-md) var(--space-lg); }
+
+  /* hero 下方内容行占位 */
+  .rows { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-top: var(--space-lg); }
+  .row-card__cover { aspect-ratio: 16/9; border-radius: var(--radius-md); background: linear-gradient(135deg, #dfe3e8, #c9d2dc); }
+  .row-card__t { font-size: var(--text-sm); font-weight: 500; margin-top: var(--space-xs); }
+  @media (width < 1500px) { .bili-grid { grid-template-columns: 1fr 300px; } .rows { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>分类导航 × HeroBili 融合方案</h1>
+  <p>违和根因：① chrome（文字导航+白卡面板）与沉浸式 hero 两套模块语言背靠背；② 左右边界不对齐；③ 热度面板 delay hero 主角。<b>方案甲（推荐）</b>：导航带并入 hero 卡内部顶端、面板 overlay 覆盖 banner（不推挤、hero 高度恒定）；<b>方案乙</b>：现状三块独立堆叠（对照）。用顶部开关切换。</p>
+  <div class="switch">
+    <button id="btn-a" class="on" onclick="show('a')">甲 · 导航并入 hero 卡（推荐）</button>
+    <button id="btn-b" onclick="show('b')">乙 · 现状对照</button>
+    <button id="btn-p" class="on" onclick="togglePanel()">面板开/关</button>
+  </div>
+</header>
+
+<main class="stage-wrap">
+  <!-- ═══════════ 方案甲 ═══════════ -->
+  <div id="demo-a">
+    <div class="stage">
+      <div class="hero-unit">
+        <nav class="hero-unit__nav">
+          <div class="cqa-nav">
+            <button class="cqa-nav__item cqa-nav__item--on">首页</button>
+            <button class="cqa-nav__item">电影</button>
+            <button class="cqa-nav__item">剧集</button>
+            <button class="cqa-nav__item">综艺</button>
+            <button class="cqa-nav__item">动漫</button>
+            <button class="cqa-nav__item">纪录片</button>
+            <button class="cqa-nav__item">排行榜</button>
+            <button class="cqa-nav__item cqa-nav__more">全部分类 ›</button>
+          </div>
+        </nav>
+        <div class="hero-unit__body">
+          <div class="bili-grid">
+            <div class="bili-banner">
+              <div class="bili-banner__t">沙丘 3（2026）</div>
+              <div class="bili-banner__m">科幻 / 冒险 · 8.6 分 · 面板打开时 overlay 覆盖 banner 顶部，标题区仍可见</div>
+            </div>
+            <div class="bili-side">
+              <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">星际穿越</div><div class="bili-side__m">8.9 分 · 2014</div></div></div>
+              <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">奥本海默</div><div class="bili-side__m">8.8 分 · 2023</div></div></div>
+              <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">沙丘 2</div><div class="bili-side__m">8.7 分 · 2024</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-unit__panel" id="panel-a">
+          <div class="catgrid">
+            <div class="catcard">
+              <div class="catcard__head"><span class="catcard__rank">1</span><span class="catcard__name">剧集</span><span class="catcard__heat"><span class="n">2.4k</span><span class="l">分类热度 Σ</span></span></div>
+              <div class="catcard__bar"><i style="width:100%"></i></div>
+              <div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">.example 横版占位 96×54</span><span class="catcard__h">🔥351.8</span></div>
+              <div class="catcard__row"><span class="catcard__idx">2</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 2</span><span class="catcard__h">🔥203.1</span></div>
+              <div class="catcard__row"><span class="catcard__idx">3</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 3</span><span class="catcard__h">🔥187.4</span></div>
+            </div>
+            <div class="catcard">
+              <div class="catcard__head"><span class="catcard__rank">2</span><span class="catcard__name">电影</span><span class="catcard__heat"><span class="n">1.9k</span><span class="l">分类热度 Σ</span></span></div>
+              <div class="catcard__bar"><i style="width:79%"></i></div>
+              <div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 1</span><span class="catcard__h">🔥298.6</span></div>
+              <div class="catcard__row"><span class="catcard__idx">2</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 2</span><span class="catcard__h">🔥176.2</span></div>
+              <div class="catcard__row"><span class="catcard__idx">3</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 3</span><span class="catcard__h">🔥154.9</span></div>
+            </div>
+            <div class="catcard">
+              <div class="catcard__head"><span class="catcard__rank">3</span><span class="catcard__name">动漫</span><span class="catcard__heat"><span class="n">1.1k</span><span class="l">分类热度 Σ</span></span></div>
+              <div class="catcard__bar"><i style="width:46%"></i></div>
+              <div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 1</span><span class="catcard__h">🔥183.6</span></div>
+              <div class="catcard__row"><span class="catcard__idx">2</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 2</span><span class="catcard__h">🔥142.0</span></div>
+              <div class="catcard__row"><span class="catcard__idx">3</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 3</span><span class="catcard__h">🔥98.7</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pad">
+        <div class="rows">
+          <div><div class="row-card__cover"></div><div class="row-card__t">正在热播</div></div>
+          <div><div class="row-card__cover"></div><div class="row-card__t">—</div></div>
+          <div><div class="row-card__cover"></div><div class="row-card__t">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>甲要点</b>：① 导航带是 hero 卡的第一行（同容器/同圆角/同顶边）——「一个模块」；② 面板 overlay 覆盖在 banner 上，hero 高度恒定、无推挤；③ 面板底部大圆角 + 深投影，与卡片分离清晰；④ 关闭面板时首屏即完整 hero。<b>代价</b>：与「默认面板加载即显示」的拍板冲突——甲默认收起；若要保留，可把「分类热度榜」挪到 hero 下方做成常规内容行（点「首页」chip 滚动定位到该行）。
+    </div>
+  </div>
+
+  <!-- ═══════════ 方案乙（现状对照）═══════════ -->
+  <div id="demo-b" style="display:none">
+    <div class="stage stage--now">
+      <div class="now-nav">
+        <div class="cqa-nav">
+          <button class="cqa-nav__item cqa-nav__item--on">首页</button>
+          <button class="cqa-nav__item">电影</button>
+          <button class="cqa-nav__item">剧集</button>
+          <button class="cqa-nav__item">综艺</button>
+          <button class="cqa-nav__item">动漫</button>
+          <button class="cqa-nav__item">纪录片</button>
+          <button class="cqa-nav__item">排行榜</button>
+          <button class="cqa-nav__item cqa-nav__more">全部分类 ›</button>
+        </div>
+      </div>
+      <div class="now-panel">
+        <div class="catgrid">
+          <div class="catcard"><div class="catcard__head"><span class="catcard__rank">1</span><span class="catcard__name">剧集</span><span class="catcard__heat"><span class="n">2.4k</span></span></div><div class="catcard__bar"><i style="width:100%"></i></div><div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 1</span><span class="catcard__h">🔥351.8</span></div></div>
+          <div class="catcard"><div class="catcard__head"><span class="catcard__rank">2</span><span class="catcard__name">电影</span><span class="catcard__heat"><span class="n">1.9k</span></span></div><div class="catcard__bar"><i style="width:79%"></i></div><div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 1</span><span class="catcard__h">🔥298.6</span></div></div>
+          <div class="catcard"><div class="catcard__head"><span class="catcard__rank">3</span><span class="catcard__name">动漫</span><span class="catcard__heat"><span class="n">1.1k</span></span></div><div class="catcard__bar"><i style="width:46%"></i></div><div class="catcard__row"><span class="catcard__idx">1</span><img class="catcard__poster" src=""><span class="catcard__t">热门搜索值 1</span><span class="catcard__h">🔥183.6</span></div></div>
+        </div>
+      </div>
+      <div class="now-hero">
+        <div class="bili-grid">
+          <div class="bili-banner"><div class="bili-banner__t">沙丘 3（2026）</div><div class="bili-banner__m">科幻 / 冒险 · 8.6 分</div></div>
+          <div class="bili-side">
+            <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">星际穿越</div><div class="bili-side__m">8.9 分 · 2014</div></div></div>
+            <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">奥本海默</div><div class="bili-side__m">8.8 分 · 2023</div></div></div>
+            <div class="bili-side__card"><div class="bili-side__thumb"></div><div class="bili-side__body"><div class="bili-side__t">沙丘 2</div><div class="bili-side__m">8.7 分 · 2024</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>乙（现状）问题回看</b>：导航条悬在灰底、面板白卡、hero 渐变大卡三者依次堆叠——两套模块语言、边界不对齐、hero 被推低。对照甲即可看出「并卡」后的整体感。
+    </div>
+  </div>
+</main>
+
+<script>
+  function show(which) {
+    document.getElementById('demo-a').style.display = which === 'a' ? '' : 'none';
+    document.getElementById('demo-b').style.display = which === 'b' ? '' : 'none';
+    document.getElementById('btn-a').classList.toggle('on', which === 'a');
+    document.getElementById('btn-b').classList.toggle('on', which === 'b');
+  }
+  function togglePanel() {
+    const p = document.getElementById('panel-a');
+    p.style.display = p.style.display === 'none' ? '' : 'none';
+    document.getElementById('btn-p').classList.toggle('on');
+  }
+</script>
+</body>
+</html>
