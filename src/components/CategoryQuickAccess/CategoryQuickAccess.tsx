@@ -87,13 +87,11 @@ function formatHeatSum(v: number | undefined): string {
 interface CategoryOverlayState {
   activeKey: WideCategoryKey | null;
   toggle: (key: WideCategoryKey) => void;
-  open: (key: WideCategoryKey) => void;
   close: () => void;
 }
 export const useCategoryOverlayStore = create<CategoryOverlayState>((set, get) => ({
   activeKey: null,
   toggle: (key) => set({ activeKey: get().activeKey === key ? null : key }),
-  open: (key) => set({ activeKey: key }),
   close: () => set({ activeKey: null }),
 }));
 
@@ -241,9 +239,9 @@ export function CategoryQuickAccessWide() {
         {WIDE_CATEGORIES.map((cat) => (
           <button
             key={cat.key}
-            className={`cqa-nav__item${activeKey === cat.key ? ' cqa-nav__item--on' : ''}`}
+            className={`cqa-nav__item${(cat.key === 'home' ? activeKey === null : activeKey === cat.key) ? ' cqa-nav__item--on' : ''}`}
             aria-expanded={activeKey === cat.key}
-            onClick={() => toggle(cat.key)}
+            onClick={() => (cat.key === 'home' ? close() : toggle(cat.key))}
           >
             <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
             <span>{cat.label}</span>
@@ -268,53 +266,33 @@ export function CategoryQuickAccessWide() {
         </button>
       </nav>
 
-      {activeCat && (
+      {activeCat && activeCat.key !== 'home' && (
         <div ref={panelRef} className="cqa-overlay" role="dialog" aria-label={`${activeCat.label}面板`}>
-          {activeCat.key === 'home' ? (
-            <>
-              <div className="cqa-panel__head">
-                <Icon icon={Flame} size="sm" />
-                <span className="cqa-panel__title">分类热度榜</span>
-                <span className="cqa-panel__sub">
-                  热度 = TMDB /trending/all/day 各分类 Σpopularity（实时）· 点击卡查看该分类
-                </span>
-              </div>
-              {heatBuckets.length === 0 ? (
-                <div className="cqa-panel__loading">正在聚合实时热度…</div>
-              ) : (
-                <CategoryHeatCards
-                  buckets={heatBuckets}
-                  onCardClick={(key) => useCategoryOverlayStore.getState().open(key)}
-                />
-              )}
-            </>
-          ) : (
-            <>
-              <div className="cqa-panel__head">
-                <Icon icon={WIDE_NAV_ICONS[activeCat.key]} size="sm" />
-                <span className="cqa-panel__title">{activeCat.label} · 最热门搜索值</span>
-                <span className="cqa-panel__sub">热度 = TMDB popularity（实时）· 点击卡进详情</span>
-              </div>
-              <div className="cqa-subgenres">
-                {currentSubs
-                  ? currentSubs.map((s) => (
-                      <button
-                        key={s.id}
-                        className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
-                        onClick={() => selectSub(activeCat.key, s.id)}
-                      >
-                        {s.label}
-                      </button>
-                    ))
-                  : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
-              </div>
-              {panelLoading ? (
-                <div className="cqa-panel__loading">正在获取 {activeCat.label} 实时数据…</div>
-              ) : (
-                <CategoryHotGrid items={panelItems ?? []} />
-              )}
-            </>
-          )}
+          <>
+            <div className="cqa-panel__head">
+              <Icon icon={WIDE_NAV_ICONS[activeCat.key]} size="sm" />
+              <span className="cqa-panel__title">{activeCat.label} · 最热门搜索值</span>
+              <span className="cqa-panel__sub">热度 = TMDB popularity（实时）· 点击卡进详情</span>
+            </div>
+            <div className="cqa-subgenres">
+              {currentSubs
+                ? currentSubs.map((s) => (
+                    <button
+                      key={s.id}
+                      className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
+                      onClick={() => selectSub(activeCat.key, s.id)}
+                    >
+                      {s.label}
+                    </button>
+                  ))
+                : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
+            </div>
+            {panelLoading ? (
+              <div className="cqa-panel__loading">正在获取 {activeCat.label} 实时数据…</div>
+            ) : (
+              <CategoryHotGrid items={panelItems ?? []} />
+            )}
+          </>
         </div>
       )}
     </>
@@ -372,14 +350,8 @@ function CategoryHotGrid({ items }: { items: TMDBVideoItem[] }) {
   );
 }
 
-/** 热度榜前 3 分类卡（overlay 与常驻行共用） */
-function CategoryHeatCards({
-  buckets,
-  onCardClick,
-}: {
-  buckets: ReturnType<typeof aggregateCategoryHeat>;
-  onCardClick: (key: WideCategoryKey) => void;
-}) {
+/** 热度榜前 3 分类卡（常驻行）：分类卡 = 分类入口（跳 browse，与圆卡/全部分类同语义）；条目行 = 跳详情 */
+function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCategoryHeat> }) {
   const navigate = useCustomNavigate();
   const navigateDetail = useCallback(
     (id: string) => navigate(`/detail/${id}`),
@@ -398,9 +370,9 @@ function CategoryHeatCards({
             className="cqa-catcard"
             role="button"
             tabIndex={0}
-            onClick={() => onCardClick(bucket.key as WideCategoryKey)}
+            onClick={() => navigate(buildBrowseUrl(bucket.key))}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onCardClick(bucket.key as WideCategoryKey);
+              if (e.key === 'Enter' || e.key === ' ') navigate(buildBrowseUrl(bucket.key));
             }}
           >
             <div className="cqa-catcard__head">
@@ -452,11 +424,10 @@ function CategoryHeatCards({
   );
 }
 
-/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡打开 overlay 并回顶） */
+/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡跳 browse 对应分类） */
 export function CategoryHeatRow() {
   const trending = useTMDBStore((s) => s.trending);
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
-  const open = useCategoryOverlayStore((s) => s.open);
   if (heatBuckets.length === 0) return null;
   return (
     <section className="cqa-heat-row">
@@ -465,13 +436,7 @@ export function CategoryHeatRow() {
         <span className="cqa-heat-row__title">分类热度榜</span>
         <span className="cqa-heat-row__sub">热度 = TMDB /trending/all/day 各分类 Σpopularity（实时）· 点击卡查看该分类</span>
       </div>
-      <CategoryHeatCards
-        buckets={heatBuckets}
-        onCardClick={(key) => {
-          open(key);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      <CategoryHeatCards buckets={heatBuckets} />
     </section>
   );
 }

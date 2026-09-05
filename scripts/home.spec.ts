@@ -942,10 +942,23 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.locator('.cqa-heat-row__title').click();
     await page.waitForTimeout(500);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
-    // 首页 chip → 热度榜面板（3 分类卡）
+    // 方案 A：首页 chip = 收起（不开面板；再次点击仍无面板）
     await page.locator('.cqa-nav__item').first().click();
-    await page.waitForSelector('.cqa-overlay .cqa-catcard', { timeout: 15000 });
-    expect(await page.locator('.cqa-overlay .cqa-catcard').count()).toBe(3);
+    await page.waitForTimeout(500);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+  });
+
+  test('HOME-077: 热度榜分类卡跳转 browse 对应分类（方案 1）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    await page.locator('.cqa-heat-row .cqa-catcard').first().click();
+    await page.waitForTimeout(1000);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/browse');
+    expect(['tv', 'movie', 'variety', 'anime', 'documentary']).toContain(url.searchParams.get('category'));
   });
 
   test('HOME-074: 「全部分类」跳转 /browse', async ({ page }) => {
