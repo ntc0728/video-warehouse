@@ -327,7 +327,7 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
                   >
                     <span className="cqa-hotcard__rank">{i + 1}</span>
                     <LazyImage
-                      src={buildImageUrl(item.posterPath ?? null, 'w185') ?? ''}
+                      src={buildImageUrl(item.backdropPath ?? item.posterPath ?? null, 'w300') ?? ''}
                       alt={item.title}
                       className="cqa-hotcard__poster"
                     />
