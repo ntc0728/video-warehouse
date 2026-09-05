@@ -285,18 +285,19 @@
 /* ── Desktop (≥1024)：密度契约 v2 后顶栏右侧回归校准 ─────────────
    v2/v2.2 把 space-2xs/xs/sm 收紧 ~27%（1440 处 2xs≈2px / xs≈4px / sm≈8px），
    顶栏右侧出现两处瑕疵：① 图标组间距拥挤 ② 选中态胶囊偏小。
-   校准原则 = 恢复 v2 前的视觉组合「小 gap + 大内边距」（pill 间视觉间距
-   = gap 2xs≈2px + 两侧 padding-md 10.9×2 ≈ 24px，与 v2 前 ≈24.5px 一致）；
-   right 区 gap 取 xs-plus≈5.3px（≈ v2 前 space-xs 5.5px）。
-   一版曾误把 gap 拉到 space-sm（8px）导致「间距又太大」，已回退。
+   校准原则 = 恢复 v2 前的视觉组合「小 gap + 大内边距」，并在用户反馈后三调收窄：
+   · pill 间视觉间距 = gap 2xs≈2px + 两侧 padding-sm 7.9×2 ≈ 18px
+     （一版 gap sm≈30px 过宽、二版 padding-md≈24px 仍宽，三档定稿 18px）
+   · right 区 gap = xs≈4px（≈ v2 前观感）
+   · 选中胶囊高度方向 padding-xs-plus 保留（方框偏小修复不回退）
    移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
    TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right {
-    gap: var(--space-xs-plus);
+    gap: var(--space-xs);
   }
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item {
-    padding: var(--space-xs-plus) var(--space-md);
+    padding: var(--space-xs-plus) var(--space-sm);
   }
 }
 
