@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流体 token 端点方案对比 · 1440 密度选型 · 2026-09-05</title>
+<style>
+  /* ═════════════════════════════════════════════════════════════════
+     流体 token 端点方案对比 demo
+     背景：1440 视口下用户感觉字体/图标/间距偏大。实测根因是段1 预载 2/3，
+     1440 处已到 MAX 的 89-93%。本 demo 用真实 vw clamp 公式并排渲染
+     6 个候选契约，供 1440 真机手感选型，选中后批量落地 variables.css。
+     方案：
+       base  现状基线（预载2/3，段2 768→2200，MAX 现值）
+       d768  768 冻结（≥768 恒 768 处值，撤销段2增长）
+       s09   现曲线 × ui-scale 0.9
+       s085  现曲线 × ui-scale 0.85
+       E1    缓升端点（预载 1/3 + MAX×0.85，段2 768→2200）
+       E2    紧凑端点（B站密度：1440 目标 text-base≈13.2 / md≈10.6 / lg≈15.6）
+     ═════════════════════════════════════════════════════════════════ */
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: #f5f6f8; color: #18191c;
+  }
+
+  /* ── 顶栏 ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: #fff; border-bottom: 1px solid #e3e5e7;
+    padding: 12px 24px;
+  }
+  .topbar h1 { font-size: 15px; font-weight: 600; }
+  .topbar p { font-size: 12px; color: #61666d; margin-top: 4px; }
+  .topbar .vp { font-variant-numeric: tabular-nums; color: #00a1d6; font-weight: 600; }
+
+  /* ── 方案段 ── */
+  .stage-wrap { padding: 16px 24px 0; }
+  .stage-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .stage-head .name { font-size: 14px; font-weight: 700; }
+  .stage-head .desc { font-size: 12px; color: #61666d; }
+  .stage-head .vals { font-size: 12px; color: #9499a0; font-variant-numeric: tabular-nums; }
+  .stage-head .vals b { color: #18191c; font-weight: 600; }
+
+  .stage {
+    background: #fff; border: 1px solid #e3e5e7; border-radius: 10px;
+    overflow: hidden; margin-bottom: 4px;
+  }
+  .stage-base { border: 2px solid #00a1d6; }
+  .stage-e1 { border: 2px solid #fb7299; }
+  .stage-e2 { border: 2px solid #fb7299; }
+
+  /* ═══ 方案 token 定义（每个 scheme 一份完整曲线）═══ */
+  /* 图标派生：icon-sm=text-sm×1.30，icon-md=text-base×1.43，icon-lg=text-lg×1.69（现曲线比值） */
+
+  /* base：现状（逐字抄 variables.css 段1+段2） */
+  .scheme-base {
+    --ui-scale: 1;
+    --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale));
+    --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale));
+    --text-base: calc(clamp(14px, 12.92737px + 0.13966vw, 16px) * var(--ui-scale));
+    --text-lg: calc(clamp(15.333px, 14.97528px + 0.04658vw, 16px) * var(--ui-scale));
+    --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale));
+    --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale));
+    --space-md: calc(clamp(14.667px, 12.87947px + 0.23275vw, 18px) * var(--ui-scale));
+    --space-lg: calc(clamp(22.667px, 19.80684px + 0.37242vw, 28px) * var(--ui-scale));
+  }
+  @media (width < 768px) {
+    .scheme-base {
+      --text-base: calc(14px * var(--ui-scale));
+      --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale));
+      --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale));
+      --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale));
+      --space-md: calc(clamp(8px, 1.639px + 1.696vw, 14.667px) * var(--ui-scale));
+      --space-lg: calc(clamp(12px, 1.822px + 2.714vw, 22.667px) * var(--ui-scale));
+    }
+  }
+
+  /* d768：≥768 冻结在 768 处值（撤销段2增长；段1 不动） */
+  .scheme-d768 {
+    --ui-scale: 1;
+    --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale));
+    --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale));
+    --text-base: calc(14px * var(--ui-scale));
+    --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale));
+    --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale));
+    --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale));
+    --space-md: calc(clamp(8px, 1.639px + 1.696vw, 14.667px) * var(--ui-scale));
+    --space-lg: calc(clamp(12px, 1.822px + 2.714vw, 22.667px) * var(--ui-scale));
+  }
+  @media (width >= 768px) {
+    .scheme-d768 {
+      --text-xs: 12.667px; --text-sm: 13.667px; --text-base: 14px; --text-lg: 15.333px;
+      --space-xs: 5px; --space-sm: 10px; --space-md: 14.667px; --space-lg: 22.667px;
+    }
+  }
+
+  /* s09 / s085：现曲线 × 手动缩放 */
+  .scheme-s09 { --ui-scale: 0.9; }
+  .scheme-s085 { --ui-scale: 0.85; }
+  .scheme-s09, .scheme-s085 {
+    --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale));
+    --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale));
+    --text-base: calc(clamp(14px, 12.92737px + 0.13966vw, 16px) * var(--ui-scale));
+    --text-lg: calc(clamp(15.333px, 14.97528px + 0.04658vw, 16px) * var(--ui-scale));
+    --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale));
+    --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale));
+    --space-md: calc(clamp(14.667px, 12.87947px + 0.23275vw, 18px) * var(--ui-scale));
+    --space-lg: calc(clamp(22.667px, 19.80684px + 0.37242vw, 28px) * var(--ui-scale));
+  }
+  @media (width < 768px) {
+    .scheme-s09, .scheme-s085 {
+      --text-base: calc(14px * var(--ui-scale));
+      --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale));
+      --space-xs: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale));
+      --space-sm: calc(clamp(6px, 2.183px + 1.018vw, 10px) * var(--ui-scale));
+      --space-md: calc(clamp(8px, 1.639px + 1.696vw, 14.667px) * var(--ui-scale));
+      --space-lg: calc(clamp(12px, 1.822px + 2.714vw, 22.667px) * var(--ui-scale));
+    }
+  }
+
+  /* E1 缓升端点：预载 1/3 + MAX×0.85（space）/ 字号 MIN −1、MAX 收窄；段2 768→2200 */
+  .scheme-e1 {
+    --ui-scale: 1;
+    --text-xs: calc(clamp(11px, 10.682px + 0.0848vw, 11.333px) * var(--ui-scale));
+    --text-sm: calc(clamp(12px, 11.523px + 0.12723vw, 12.5px) * var(--ui-scale));
+    --text-base: calc(clamp(13px, 13.012px + 0.0848vw, 13.333px) * var(--ui-scale));
+    --text-lg: calc(clamp(14px, 14.012px + 0.0848vw, 14.333px) * var(--ui-scale));
+    --space-xs: calc(clamp(3px, 2.332px + 0.17812vw, 3.7px) * var(--ui-scale));
+    --space-sm: calc(clamp(6px, 4.664px + 0.35623vw, 7.4px) * var(--ui-scale));
+    --space-md: calc(clamp(8px, 5.678px + 0.61908vw, 10.433px) * var(--ui-scale));
+    --space-lg: calc(clamp(12px, 8.247px + 1.00077vw, 15.933px) * var(--ui-scale));
+  }
+  @media (width >= 768px) {
+    .scheme-e1 {
+      --text-xs: calc(clamp(11.333px, 10.975px + 0.04657vw, 12px) * var(--ui-scale));
+      --text-sm: calc(clamp(12.5px, 11.964px + 0.06983vw, 13.5px) * var(--ui-scale));
+      --text-base: calc(clamp(13.333px, 12.707px + 0.08149vw, 14.5px) * var(--ui-scale));
+      --text-lg: calc(clamp(14.333px, 13.707px + 0.08149vw, 15.5px) * var(--ui-scale));
+      --space-xs: calc(clamp(3.7px, 2.949px + 0.09777vw, 5.1px) * var(--ui-scale));
+      --space-sm: calc(clamp(7.4px, 5.898px + 0.19553vw, 10.2px) * var(--ui-scale));
+      --space-md: calc(clamp(10.433px, 7.823px + 0.33987vw, 15.3px) * var(--ui-scale));
+      --space-lg: calc(clamp(15.933px, 11.714px + 0.54937vw, 23.8px) * var(--ui-scale));
+    }
+  }
+
+  /* E2 紧凑端点（B站密度）：预载 1/3；1440 目标 text-base≈13.2 / space-md≈10.6 / lg≈15.6 */
+  .scheme-e2 {
+    --ui-scale: 1;
+    --text-xs: calc(clamp(11px, 10.682px + 0.0848vw, 11.333px) * var(--ui-scale));
+    --text-sm: calc(clamp(12px, 12.012px + 0.0848vw, 12.333px) * var(--ui-scale));
+    --text-base: calc(clamp(12.5px, 12.087px + 0.11018vw, 12.933px) * var(--ui-scale));
+    --text-lg: calc(clamp(13.5px, 13.523px + 0.12723vw, 14px) * var(--ui-scale));
+    --space-xs: calc(clamp(3px, 2.523px + 0.12723vw, 3.5px) * var(--ui-scale));
+    --space-sm: calc(clamp(6px, 5.046px + 0.25445vw, 7px) * var(--ui-scale));
+    --space-md: calc(clamp(8px, 6.569px + 0.38168vw, 9.5px) * var(--ui-scale));
+    --space-lg: calc(clamp(12px, 9.774px + 0.59364vw, 14.333px) * var(--ui-scale));
+  }
+  @media (width >= 768px) {
+    .scheme-e2 {
+      --text-xs: calc(clamp(11.333px, 10.975px + 0.04657vw, 12px) * var(--ui-scale));
+      --text-sm: calc(clamp(12.333px, 11.975px + 0.04657vw, 13px) * var(--ui-scale));
+      --text-base: calc(clamp(12.933px, 12.468px + 0.06054vw, 13.8px) * var(--ui-scale));
+      --text-lg: calc(clamp(14px, 13.464px + 0.06983vw, 15px) * var(--ui-scale));
+      --space-xs: calc(clamp(3.5px, 2.964px + 0.06983vw, 4.5px) * var(--ui-scale));
+      --space-sm: calc(clamp(7px, 5.928px + 0.13966vw, 9px) * var(--ui-scale));
+      --space-md: calc(clamp(9.5px, 7.891px + 0.2095vw, 12.5px) * var(--ui-scale));
+      --space-lg: calc(clamp(14.333px, 11.83px + 0.32591vw, 19px) * var(--ui-scale));
+    }
+  }
+
+  /* 图标派生（全部 scheme 一致） */
+  .stage { --icon-sm: calc(var(--text-sm) * 1.30); --icon-md: calc(var(--text-base) * 1.43); --icon-lg: calc(var(--text-lg) * 1.69); }
+
+  /* ═══ 对比内容（六个 stage 完全相同的 mock 内容）═══ */
+  .mini { padding: var(--space-lg); }
+  .mini__header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--space-md); }
+  .mini__title { font-size: var(--text-lg); font-weight: 600; }
+  .mini__more { font-size: var(--text-xs); color: #9499a0; }
+
+  .mini__chips { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid #e3e5e7; border-radius: 999px;
+    font-size: var(--text-xs); color: #61666d; background: #f6f7f8;
+  }
+  .chip__icon { font-size: var(--icon-sm); line-height: 1; }
+
+  .mini__banner {
+    position: relative; height: 150px; border-radius: 8px; overflow: hidden;
+    background: linear-gradient(120deg, #00a1d6 0%, #6b7cff 60%, #9b6bff 100%);
+    color: #fff; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-md);
+  }
+  .mini__banner-title { font-size: var(--text-lg); font-weight: 600; }
+  .mini__banner-meta { font-size: var(--text-xs); opacity: .85; margin-top: var(--space-xs); }
+  .mini__banner-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-sm); }
+  .btn {
+    display: inline-flex; align-items: center; gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-md); border-radius: 6px; border: none;
+    font-size: var(--text-sm); cursor: pointer;
+  }
+  .btn--primary { background: #fff; color: #00a1d6; font-weight: 600; }
+  .btn--ghost { background: rgba(255,255,255,.18); color: #fff; }
+  .btn__icon { font-size: var(--icon-sm); line-height: 1; }
+
+  .mini__cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-md); }
+  .card { background: #fff; }
+  .card__cover { aspect-ratio: 16/9; border-radius: 6px; background: linear-gradient(135deg, #dfe3e8, #c9d2dc); position: relative; }
+  .card__cover .rate {
+    position: absolute; top: var(--space-xs); left: var(--space-xs);
+    background: #fb7299; color: #fff; font-size: var(--text-xs);
+    padding: 0 var(--space-xs); border-radius: 4px; line-height: 1.6;
+  }
+  .card__title { font-size: var(--text-sm); font-weight: 500; margin-top: var(--space-xs); }
+  .card__meta { font-size: var(--text-xs); color: #9499a0; margin-top: var(--space-xs); }
+
+  .mini__ladder { display: flex; align-items: flex-end; gap: var(--space-md); }
+  .bar { display: flex; flex-direction: column; align-items: center; gap: var(--space-xs); }
+  .bar__block { background: #00a1d6; opacity: .75; border-radius: 3px; width: 56px; }
+  .bar--sm .bar__block { height: var(--space-sm); }
+  .bar--md .bar__block { height: var(--space-md); }
+  .bar--lg .bar__block { height: var(--space-lg); }
+  .bar__label { font-size: var(--text-xs); color: #9499a0; }
+
+  @media (width < 900px) { .mini__cards { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>流体 token 端点方案对比 · 1440 密度选型</h1>
+  <p>当前视口宽 <span class="vp" id="vpw">—</span>px。六个方案用真实 vw clamp 公式渲染同一组内容；每段标题右侧为该方案在当前视口下的解析值。重点看 1440：<b>现状</b> text-base 14.94 / md 16.23 / lg 25.17 / icon-md 21.36。</p>
+</header>
+
+<main id="stages"></main>
+
+<script>
+  const SCHEMES = [
+    { key: 'base', name: '① 现状基线', desc: '预载 2/3 · 段2 768→2200 · MAX 现值', cls: 'scheme-base stage-base' },
+    { key: 'd768', name: '② 768 冻结', desc: '≥768 恒 768 处值（撤销段2增长）', cls: 'scheme-d768' },
+    { key: 's09', name: '③ ui-scale 0.9', desc: '现曲线整体 ×0.9（设置项，随时回退）', cls: 'scheme-s09' },
+    { key: 's085', name: '④ ui-scale 0.85', desc: '现曲线整体 ×0.85（更小一档）', cls: 'scheme-s085' },
+    { key: 'e1', name: '⑤ E1 缓升端点', desc: '预载 1/3 + space MAX×0.85 · 字号 MIN −1 · 768→2200', cls: 'scheme-e1 stage-e1' },
+    { key: 'e2', name: '⑥ E2 紧凑端点（B站密度）', desc: '预载 1/3 · 1440 目标 text-base≈13.2 / md≈10.6 / lg≈15.6 / icon-md≈18.9', cls: 'scheme-e2 stage-e2' },
+  ];
+
+  const CARD = (t, m, r) => `
+    <div class="card">
+      <div class="card__cover"><span class="rate">${r}</span></div>
+      <div class="card__title">${t}</div>
+      <div class="card__meta">${m}</div>
+    </div>`;
+
+  const MINI = `
+    <div class="mini">
+      <div class="mini__header">
+        <span class="mini__title">继续观看</span>
+        <span class="mini__more">查看全部 ›</span>
+      </div>
+      <div class="mini__chips">
+        <span class="chip"><span class="chip__icon">▶</span>电影</span>
+        <span class="chip"><span class="chip__icon">📺</span>剧集</span>
+        <span class="chip"><span class="chip__icon">🎤</span>综艺</span>
+        <span class="chip"><span class="chip__icon">🏆</span>排行榜</span>
+      </div>
+      <div class="mini__banner">
+        <div class="mini__banner-title">沙丘 3（2026）</div>
+        <div class="mini__banner-meta">科幻 / 冒险 · 8.6 分 · 已播至 01:24:00</div>
+        <div class="mini__banner-actions">
+          <button class="btn btn--primary"><span class="btn__icon">▶</span>继续播放</button>
+          <button class="btn btn--ghost"><span class="btn__icon">ⓘ</span>查看详情</button>
+        </div>
+      </div>
+      <div class="mini__cards">
+        ${CARD('星际穿越','2014 · 科幻','8.9')}
+        ${CARD('奥本海默','2023 · 传记','8.8')}
+        ${CARD('沙丘 2','2024 · 科幻','8.7')}
+        ${CARD('流浪地球 3','2027 · 科幻','待映')}
+      </div>
+      <div class="mini__ladder">
+        <div class="bar bar--sm"><div class="bar__block"></div><span class="bar__label">space-sm</span></div>
+        <div class="bar bar--md"><div class="bar__block"></div><span class="bar__label">space-md</span></div>
+        <div class="bar bar--lg"><div class="bar__block"></div><span class="bar__label">space-lg</span></div>
+      </div>
+    </div>`;
+
+  const root = document.getElementById('stages');
+  root.innerHTML = SCHEMES.map((s) => `
+    <section class="stage-wrap">
+      <div class="stage-head">
+        <span class="name">${s.name}</span>
+        <span class="desc">${s.desc}</span>
+        <span class="vals" data-vals="${s.key}"></span>
+      </div>
+      <div class="stage ${s.cls}" data-stage="${s.key}">${MINI}</div>
+    </section>`).join('');
+
+  function fmt(px) { return Math.round(px * 10) / 10; }
+
+  function readVals(stageEl) {
+    // 专用探针：直接按 token 取解析值，避免挂错业务元素
+    let probe = stageEl.querySelector('.valprobe');
+    if (!probe) {
+      probe = document.createElement('div');
+      probe.className = 'valprobe';
+      probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
+      stageEl.appendChild(probe);
+    }
+    probe.style.fontSize = 'var(--text-base)';
+    const base = fmt(parseFloat(getComputedStyle(probe).fontSize));
+    probe.style.fontSize = 'var(--icon-md)';
+    const iconMd = fmt(parseFloat(getComputedStyle(probe).fontSize));
+    probe.style.fontSize = 'var(--text-sm)';
+    const sm = fmt(parseFloat(getComputedStyle(probe).fontSize));
+    probe.style.padding = 'var(--space-md)';
+    const md = fmt(parseFloat(getComputedStyle(probe).paddingTop));
+    probe.style.padding = 'var(--space-lg)';
+    const lg = fmt(parseFloat(getComputedStyle(probe).paddingTop));
+    probe.style.padding = '';
+    return { base, sm, md, lg, iconMd };
+  }
+
+  function render() {
+    document.getElementById('vpw').textContent = window.innerWidth;
+    for (const s of SCHEMES) {
+      const el = document.querySelector(`[data-stage="${s.key}"]`);
+      const v = readVals(el);
+      document.querySelector(`[data-vals="${s.key}"]`).innerHTML =
+        `text-base <b>${v.base}</b> · text-sm <b>${v.sm}</b> · space-md(pad) <b>${v.md}</b> · space-lg(pad) <b>${v.lg}</b> · icon-md <b>${v.iconMd}</b>`;
+    }
+  }
+  window.addEventListener('resize', render);
+  render();
+</script>
+</body>
+</html>
