@@ -14,7 +14,7 @@
          discover with_genres=主,副 AND，全部实测有数据）
        · 一部剧同时命中多分类 → 各分类重复展示（桶规则天然如此）
        · 默认面板首页加载即显示
-       · 下方内容：分类面板 3 行 × 1 行 3 列（9 个内容卡）+ 右侧 2 个内容；
+       · 下方内容：分类面板 3 行 × 1 行 3 列（9 个内容卡）
          首页默认面板只显示前 3 个分类（1 行 3 列）+ 右侧 2 个内容
      数据全部运行时调真实 TMDB API（zh-CN），无写死值。
      ═════════════════════════════════════════════════════════════════ */
@@ -93,9 +93,7 @@
   .qa2__panel-title { font-size: var(--text-base); font-weight: 600; }
   .qa2__panel-sub { font-size: var(--text-xs); color: #9499a0; }
   .qa2__panel-sub .live { color: #00a1d6; }
-  .qa2__body { display: flex; gap: var(--space-lg); align-items: stretch; }
-  .qa2__main { flex: 1; min-width: 0; }
-  .qa2__side { flex: 0 0 300px; display: flex; flex-direction: column; gap: var(--space-md); }
+
 
   /* genre / 子分类 chips 行 */
   .qa2__genres { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-bottom: var(--space-md); }
@@ -130,23 +128,6 @@
   .hotcard__heat .l { font-size: 10px; color: #9499a0; }
   .hotcard__star { font-size: var(--text-xs); color: #61666d; margin-top: 2px; font-variant-numeric: tabular-nums; }
 
-  /* ── 右侧 2 个内容卡 ── */
-  .sidecard {
-    position: relative; flex: 1; border: 1px solid #f0f1f3; border-radius: var(--radius-lg);
-    overflow: hidden; cursor: pointer; min-height: 128px;
-    background: linear-gradient(160deg, #dfe3e8, #c9d2dc);
-  }
-  .sidecard__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .sidecard__shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.72)); }
-  .sidecard__body { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--space-md); color: #fff; }
-  .sidecard__badge {
-    position: absolute; top: var(--space-sm); left: var(--space-sm);
-    background: rgba(0,0,0,.55); color: #fff; font-size: var(--text-xs);
-    padding: 2px var(--space-sm); border-radius: 999px; backdrop-filter: blur(4px);
-  }
-  .sidecard__t { font-size: var(--text-base); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sidecard__m { font-size: var(--text-xs); opacity: .9; margin-top: 2px; }
-  .sidecard__heat { font-size: var(--text-sm); font-weight: 700; color: #ffb3c8; margin-top: var(--space-xs); font-variant-numeric: tabular-nums; }
 
   /* ── 首页默认面板：前 3 分类卡（1 行 3 列；左侧分类热度 + 右侧 3 条热门数据）── */
   .catgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
@@ -171,14 +152,14 @@
 
   .qa2__loading, .qa2__error { padding: var(--space-xl); text-align: center; font-size: var(--text-sm); color: #9499a0; }
   .qa2__error button { margin-left: var(--space-sm); border: 1px solid #e3e5e7; background: #fff; border-radius: 999px; padding: var(--space-xs) var(--space-md); cursor: pointer; font-family: inherit; font-size: var(--text-xs); }
-  @media (width < 1500px) { .hotgrid { grid-template-columns: repeat(2, 1fr); } .catgrid { grid-template-columns: 1fr; } .qa2__side { flex-basis: 240px; } }
+  @media (width < 1500px) { .hotgrid { grid-template-columns: repeat(2, 1fr); } .catgrid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <header class="topbar">
   <h1>方案 A2 v2 · 频道导航 + 热门分类拓展面板（真实 TMDB 数据）</h1>
-  <p>视口 <span class="vp" id="vpw">—</span>px。默认「首页」面板加载即显示：前 3 个热度分类（1 行 3 列）+ 右侧全站最热 2 个内容；点分类 chip → 面板 3 行 × 3 列 9 个热门内容 + 右侧该榜 top2；综艺/动漫/纪录片有真实交叉子分类；「全部分类」→ 跳 <b>/browse</b>。热度 = TMDB popularity 原始值。</p>
+  <p>视口 <span class="vp" id="vpw">—</span>px。默认「首页」面板加载即显示：前 3 个热度分类（1 行 3 列）+ 点分类 chip → 面板 3 行 × 3 列 9 个热门内容 综艺/动漫/纪录片有真实交叉子分类；「全部分类」→ 跳 <b>/browse</b>。热度 = TMDB popularity 原始值。</p>
   <p style="margin-top:6px">Token（默认取仓库 .env 只读 token，可覆盖，存 localStorage）：<input id="tokenInput" placeholder="TMDB Bearer Token"></p>
   <div class="api-log" id="apilog">— 请求日志 —</div>
 </header>
@@ -313,19 +294,7 @@
       <div class="hotcard__heat"><span class="n">🔥${(it.popularity || 0).toFixed(1)}</span><span class="l">热度</span></div>
     </div>`;
   }
-  function sideCard(it, i, label, mediaType) {
-    const bg = it.backdrop_path ? `${IMG}/w300${it.backdrop_path}` : postImg(it.poster_path, "w185");
-    return `<div class="sidecard" data-url="/detail/${mediaType}/${it.id}">
-      <img class="sidecard__img" src="${bg}" loading="lazy" onerror="this.remove()">
-      <div class="sidecard__shade"></div>
-      <span class="sidecard__badge">${label}</span>
-      <div class="sidecard__body">
-        <div class="sidecard__t">${it.title || it.name}</div>
-        <div class="sidecard__m">${(it.release_date || it.first_air_date || '').slice(0, 4) || '—'} ★${it.vote_average.toFixed(1)}</div>
-        <div class="sidecard__heat">🔥 热度 ${(it.popularity || 0).toFixed(1)}</div>
-      </div>
-    </div>`;
-  }
+
 
   /* ═══════════ 默认面板：前 3 分类（1 行 3 列）+ 右侧全站最热 2 个内容 ═══════════ */
   function renderDefaultPanel(data) {
@@ -366,18 +335,14 @@
         </div>
       </div>`;
     }).join('');
-    const side = items.slice(0, 2).map((it, i) =>
-      sideCard(it, i, `全站最热 #${i + 1}`, it.media_type === 'tv' ? 'tv' : 'movie')).join('');
+
     document.getElementById('panel').innerHTML = `
       <div class="qa2__panel">
         <div class="qa2__panel-head">
           <span class="qa2__panel-title">🔥 分类热度榜</span>
-          <span class="qa2__panel-sub">热度 = <span class="live">/trending/all/day</span> 各分类 Σpopularity（实时）· 显示前 3 分类 · 点击卡展开该分类</span>
+          <span class="qa2__panel-sub">热度 = <span class="live">/trending/all/day</span> 各分类 Σpopularity（实时）· 显示前 3 分类（每分类右侧 3 条热门数据）· 点击卡展开该分类</span>
         </div>
-        <div class="qa2__body">
-          <div class="qa2__main"><div class="catgrid">${catCards}</div></div>
-          <div class="qa2__side">${side}</div>
-        </div>
+        <div class="catgrid">${catCards}</div>
       </div>`;
     document.querySelectorAll('.catcard').forEach(r => r.addEventListener('click', () => select(r.dataset.goto)));
   }
@@ -411,10 +376,9 @@
         hotPath = cat.hot.path; hotParams = {}; mediaType = cat.type;
       }
       const data = await tmdb(hotPath, hotParams);
-      const items = (data.results || []).slice(0, 11);   // 9 主区 + 2 右侧
+      const items = (data.results || []).slice(0, 9);
       const grid9 = items.slice(0, 9).map((it, i) => hotCard(it, i, mediaType === 'all' ? (it.media_type || 'movie') : mediaType)).join('');
-      const side2 = items.slice(0, 2).map((it, i) =>
-        sideCard(it, i, `${cat.label} #${i + 1}`, mediaType === 'all' ? (it.media_type || 'movie') : mediaType)).join('');
+
       panel.innerHTML = `
         <div class="qa2__panel">
           <div class="qa2__panel-head">
@@ -422,10 +386,7 @@
             <span class="qa2__panel-sub">数据源 <span class="live">${hotPath}${hotParams.with_genres ? `?with_genres=${hotParams.with_genres}` : ''}</span> · 热度 = popularity 原始值 · 点卡片进详情</span>
           </div>
           <div class="qa2__genres">${subs.map(s => `<button class="qa2__gchip ${s.id === sel ? 'qa2__gchip--on' : ''}" data-genre="${s.id}">${s.name}</button>`).join('')}</div>
-          <div class="qa2__body">
-            <div class="qa2__main"><div class="hotgrid">${grid9}</div></div>
-            <div class="qa2__side">${side2}</div>
-          </div>
+          <div class="hotgrid">${grid9}</div>
         </div>`;
       panel.querySelectorAll('.qa2__gchip').forEach(g => g.addEventListener('click', () => {
         subSel[cat.key] = isNaN(Number(g.dataset.genre)) ? g.dataset.genre : Number(g.dataset.genre);
@@ -460,11 +421,11 @@
   document.getElementById('vpw').textContent = window.innerWidth;
 
   document.getElementById('note').innerHTML = `
-    <b>v2.1 修订（2026-09-06 用户反馈）</b>：① 首页默认面板每个分类卡右侧显示 3 条热门数据（排名+小海报+标题+🔥）；② 分类面板内容卡改紧凑横排（海报 54×80，rank 内联，3 行×3 列不变），右侧卡 backdrop 降为 w300。<br><b>拍板落地（2026-09-06）</b>：hero 下移（面板在文档流）· popularity 原始值 · 综艺/动漫/纪录片有真实交叉子分类（discover with_genres 主,副 AND，全部实测有数据：综艺×家庭 794 部 / 动漫×喜剧 4902 部 / 纪录×音乐 12626 部）· 多分类命中重复计入 · 默认面板加载即显示 · 面板主区 3 行 × 3 列 9 个内容 + 右侧 2 个内容（首页默认 = 前 3 分类卡 1 行 3 列 + 右侧全站最热 2 个）。<br>
+    <b>v2.1 修订（2026-09-06 用户反馈）</b>：① 首页默认面板每个分类卡右侧显示 3 条热门数据（排名+小海报+标题+🔥）；② 分类面板内容卡改紧凑横排（海报 54×80，rank 内联，3 行×3 列）；③ v2.2 按用户选择去掉面板右侧栏，主区占满整行。<br><b>拍板落地（2026-09-06）</b>：hero 下移（面板在文档流）· popularity 原始值 · 综艺/动漫/纪录片有真实交叉子分类（discover with_genres 主,副 AND，全部实测有数据：综艺×家庭 794 部 / 动漫×喜剧 4902 部 / 纪录×音乐 12626 部）· 多分类命中重复计入 · 默认面板加载即显示 · 面板主区 3 行 × 3 列 9 个内容 + 右侧 2 个内容（首页默认 = 前 3 分类卡 1 行 3 列 + 右侧全站最热 2 个）。<br>
     <b>数据源（全部真实 TMDB，zh-CN，右上角日志可见每笔请求）</b>：<br>
     ① 分类热度徽标 + 默认榜：<span class="url">/trending/all/day</span> 按分类桶聚合（Σpopularity + 计数）；② 分类热榜：<span class="url">/trending/{movie,tv}/day</span>；子分类 chip → <span class="url">/discover/{type}?with_genres=X&sort_by=popularity.desc</span>；③ 排行榜子分类：日/周/电影/剧集四种 <span class="url">/trending/*/…</span>；④ genre：/genre/{movie,tv}/list?language=zh-CN。<br>
     <b>网络兼容</b>：API 双域名自动回退——<span class="url">api.tmdb.org</span>（官方备用域名）优先，主域名 api.themoviedb.org 部分网络不可达（对真实落地同样关键）；海报加载失败优雅降级。<br>
-    <b>跳转</b>：chip 展开面板（不跳转）；「全部分类」→ <span class="url">/browse</span>；hotcard/sidecard → <span class="url">/detail/{type}/{id}</span>；catcard → 展开对应分类面板。
+    <b>跳转</b>：chip 展开面板（不跳转）；「全部分类」→ <span class="url">/browse</span>；hotcard → <span class="url">/detail/{type}/{id}</span>；catcard → 展开对应分类面板。
   `;
 </script>
 </body>
