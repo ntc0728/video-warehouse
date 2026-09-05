@@ -324,7 +324,7 @@
   gap: var(--space-2xs);
   align-items: center;
   justify-content: center;
-  padding: var(--space-xs) var(--space-2xs);
+  padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
