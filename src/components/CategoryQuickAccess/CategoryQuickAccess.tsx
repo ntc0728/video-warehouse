@@ -63,6 +63,13 @@ const CATEGORIES: Category[] = [
 // 移动端只显示的分类
 const MOBILE_CATEGORIES: CategoryKey[] = ['all', 'movie', 'tv', 'variety', 'anime', 'top'];
 
+/** Σpopularity 徽标缩写：≥1000 以 k 为单位（1 位小数，去尾 .0），否则取整 */
+function formatHeatSum(v: number | undefined): string {
+  if (!v) return '';
+  if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  return String(Math.round(v));
+}
+
 /** 宽屏导航图标映射（移动端圆卡维持 CATEGORIES 原映射，互不影响） */
 const WIDE_NAV_ICONS: Record<string, LucideIcon> = {
   home: HomeIcon,
@@ -87,9 +94,10 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
   // ── 宽屏面板数据（hooks 恒序调用；非宽屏时 trending 聚合代价可忽略）──
   const trending = useTMDBStore((s) => s.trending);
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
-  const heatCount = useMemo(() => {
+  // 徽标口径（2026-09-06 用户拍板 A）：与面板分类卡同口径 Σpopularity，k 单位缩写
+  const heatSum = useMemo(() => {
     const map: Partial<Record<WideCategoryKey, number>> = {};
-    for (const b of heatBuckets) map[b.key] = b.count;
+    for (const b of heatBuckets) map[b.key] = b.heat;
     return map;
   }, [heatBuckets]);
 
@@ -200,10 +208,10 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
           >
             <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
             <span>{cat.label}</span>
-            {heatCount[cat.key] ? (
+            {heatSum[cat.key] ? (
               <span className="cqa-nav__heat">
                 <Icon icon={Flame} size="xs" />
-                {heatCount[cat.key]}
+                {formatHeatSum(heatSum[cat.key])}
               </span>
             ) : null}
           </button>
