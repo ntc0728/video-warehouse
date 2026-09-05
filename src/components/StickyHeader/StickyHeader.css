@@ -282,6 +282,26 @@
   font-size: var(--text-base);
 }
 
+/* ── Desktop (≥1024)：密度契约 v2 后顶栏右侧回归校准 ─────────────
+   v2/v2.2 把 space-2xs/xs/sm 收紧 ~27%（1440 处 2xs≈2px / xs≈4px / sm≈8px），
+   顶栏右侧出现两处瑕疵：① 图标组间距拥挤 ② 选中态胶囊偏小。
+   本块只调桌面（≥1024）局部长度，不动全局 token：
+   · nav / right 间距 2xs·xs → sm（1440 处 ≈8px）
+   · nav-item padding xs → xs-plus md（≈ v2 前旧 xs/sm 的实际渲染值 5.3/10.9）
+   移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
+   TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right {
+    gap: var(--space-sm);
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav {
+    gap: var(--space-sm);
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item {
+    padding: var(--space-xs-plus) var(--space-md);
+  }
+}
+
 /* ── Narrow: hide nav labels ───────────────────────── */
 
 @media (width <= 1023px) {
