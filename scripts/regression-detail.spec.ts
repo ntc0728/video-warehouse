@@ -600,7 +600,7 @@ test.describe('3.19 体验修复', () => {
       };
     });
     expect(metrics.avatar).toBeGreaterThanOrEqual(64); // --layout-cast-avatar clamp 下限
-    expect(metrics.nameSize).toBeGreaterThanOrEqual(13); // --text-sm
+    expect(metrics.nameSize).toBeGreaterThanOrEqual(12); // --text-sm 段2 递减下限（密度契约 v2.1：1280 处 ≈12.56px）
   });
 });
 

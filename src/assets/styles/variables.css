@@ -153,12 +153,16 @@
        changelogs/demos/demo-fluid-endpoints-2026-09-05.html）：
         · 间距族 space-2xs~3xl + grid-gap = E2 紧凑端点：375 处 MIN 与旧契约相同（手机零回归），
           768 处 = MIN + (MAX_v2 − MIN)/3（预载 1/3），2200 处 MAX ≈ 旧 × 0.65~0.75；
-        · 字号微降仅动段2 终点（base 16→14.5 / lg 16→15.5 / xl 18→17.5 / 2xl 24→23.5 / 3xl 30→29），
-          段1 字号（含 text-base 恒 14 的 D7/B3 契约）与 xs/sm/2xs 全部不动——移动端零回归；
+        · 字号 = v2.1 段2 递减曲线（2026-09-05 用户拍板「移动端不变，段2 必须调小」）：
+          段1 字号（含 text-base 恒 14 的 D7/B3 契约）与 text-2xs 完全不动 → 移动端零回归；
+          段2 从 768 处=段1 末值出发【递减】，1440 处命中 E2/B站锚点，随后冻结在下限
+          （base 14→13.2@1440→13 / sm 13.667→12.22→12 / xs →11.33→11 / lg →13.83→13.5 /
+          xl →15.59→15 / 2xl →20.37→19.75 / 3xl →25.46→24.75，冻结点均 ≥1536）。
+          递减曲线写法：clamp(下限, PREF − |C|vw, 768锚点)，小值放 MIN 位；
         · 控件/圆点/圆角/滚动条等 token 本轮不动（触控目标与导航栏装填约束优先），
           真机若现「字小钮大」再单独校准；
         · 1440 读数：md 16.23→10.91 / lg 25.17→16.52 / grid-gap 21.88→14.58 /
-          text-base 14.94→14.23 / icon-md 21.36→20.36。
+          text-base 14.94→13.2 / icon-md 21.36→18.88（E2/B站锚点命中）。
      小号(text-2xs~base) 与大号(text-lg~3xl) 段1 375→768px 流体、段2 768→2200px 流体：
         · 坐近看屏，文字稳定保可读，≥2200（内容封顶点）不再继续放大；
         · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 起步）；
@@ -170,11 +174,11 @@
   --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale)); /* 13→14 */
   /* 基准字号（D7/B3 契约）：段1（<768）恒 14px——html { font-size: var(--text-base) }
      原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → 形成 rem 解析循环（不动点 14px），
-     显式 px 消除隐式依赖。段2（≥768）14→14.5px 线性流动至 2200（密度契约 v2 微降：
-     旧终点 16px；768 处 14px 连续，rem 流动仅发生在 768→2200，移动端零回归；≥2200 冻结。
-     rem 消费端（header/logo/sidebar 等 rem 式 token）随根字号同向轻微收窄，属 v2 已接受偏差）。
-     TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
-  --text-base: calc(14px * var(--ui-scale)); /* <768 恒 14；≥768 见段2：14→14.5 流体；TV 覆盖 15→30px */
+     显式 px 消除隐式依赖。段2（≥768）为递减曲线 14→13.2@1440→13 冻结（密度契约 v2.1：
+     移动端不动、段2 命中 E2/B站锚点；768 处 14px 连续，rem 流动仅发生在 768→~1608，
+     移动端零回归。rem 消费端（header/logo/sidebar 等 rem 式 token）随根字号收窄 ≤7%，
+     属 v2 已接受偏差）。TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
+  --text-base: calc(14px * var(--ui-scale)); /* <768 恒 14；≥768 见段2：14→13.2@1440→13 递减；TV 覆盖 15→30px */
   --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 14→16 */
   --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→18 */
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24 */
@@ -480,14 +484,16 @@
     --switch-thumb-size: calc(clamp(20.667px, 18.87947px + 0.23275vw, 24px) * var(--ui-scale));
     --switch-track-height: calc(clamp(22px, 20.92737px + 0.13966vw, 24px) * var(--ui-scale));
     --switch-track-width: calc(clamp(42.667px, 39.80684px + 0.37242vw, 48px) * var(--ui-scale));
-    --text-2xl: calc(clamp(22.667px, 22.22025px + 0.05817vw, 23.5px) * var(--ui-scale));
-    --text-2xs: calc(clamp(10.333px, 9.97528px + 0.04658vw, 11px) * var(--ui-scale));
-    --text-3xl: calc(clamp(28.667px, 28.48844px + 0.02325vw, 29px) * var(--ui-scale));
-    --text-base: calc(clamp(14px, 13.73181px + 0.03492vw, 14.5px) * var(--ui-scale)); /* v2 微降：14@768 连续 → 14.5@2200（旧 16）；rem 消费端随根字号轻微收窄 */
-    --text-lg: calc(clamp(15.333px, 15.24345px + 0.01166vw, 15.5px) * var(--ui-scale));
-    --text-sm: calc(clamp(13.667px, 13.48841px + 0.02325vw, 14px) * var(--ui-scale));
-    --text-xl: calc(clamp(17.333px, 17.24345px + 0.01166vw, 17.5px) * var(--ui-scale));
-    --text-xs: calc(clamp(12.667px, 12.48841px + 0.02325vw, 13px) * var(--ui-scale));
+    /* 字号段2 为【递减曲线】（v2.1：段1 不动 → 768 处=段1 末值，1440 命中 E2/B站锚点，随后
+       冻结在下限；递减时 clamp 小值必须放 MIN 位，MAX=768 锚点，斜率为负 vw 系数） */
+    --text-2xl: calc(clamp(19.75px, 25.29214px - 0.34182vw, 22.667px) * var(--ui-scale)); /* 递减：22.667@768 → 20.37@1440 → 19.75 冻结 */
+    --text-2xs: calc(clamp(10.333px, 9.97528px + 0.04658vw, 11px) * var(--ui-scale)); /* 唯一保留递增的超小标注档 */
+    --text-3xl: calc(clamp(24.75px, 32.33214px - 0.47723vw, 28.667px) * var(--ui-scale)); /* 递减：28.667@768 → 25.46@1440 → 24.75 */
+    --text-base: calc(clamp(13px, 14.91429px - 0.11905vw, 14px) * var(--ui-scale)); /* 递减：14@768 连续 → 13.2@1440（E2/B站锚点）→ 13 冻结；rem 消费端随根字号收窄 ≤7% */
+    --text-lg: calc(clamp(13.5px, 17.05071px - 0.22366vw, 15.333px) * var(--ui-scale)); /* 递减：15.333@768 → 13.83@1440 → 13.5 */
+    --text-sm: calc(clamp(12px, 15.32071px - 0.21533vw, 13.667px) * var(--ui-scale)); /* 递减：13.667@768 → 12.22@1440 → 12 */
+    --text-xl: calc(clamp(15px, 19.325px - 0.25937vw, 17.333px) * var(--ui-scale)); /* 递减：17.333@768 → 15.59@1440 → 15 */
+    --text-xs: calc(clamp(11px, 14.195px - 0.19896vw, 12.667px) * var(--ui-scale)); /* 递减：12.667@768 → 11.33@1440 → 11 */
     --vol-track-radius: calc(clamp(1.667px, 1.48841px + 0.02325vw, 2px) * var(--ui-scale));
     --vol-track-width: calc(clamp(3.667px, 3.48841px + 0.02325vw, 4px) * var(--ui-scale));
   }
