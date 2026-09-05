@@ -1129,30 +1129,16 @@ html[data-device="tv"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   >1280 桌面：全站去卡片化 + 卡片间距统一（2026-09-05 用户决策）
-   1) video / iptv / record 三类卡片去掉卡片式外观（边框/底色/投影），
-      仅保留内容本身；焦点环与批量选中态等功能性描边保留（见下方守护规则）。
-   2) 所有 video / iptv card 之间的间距统一为 var(--hero-side-gap)（10px@1440 → 12px@1920）。
+   >1280 桌面：卡片间距统一（2026-09-05 用户决策）
+   1) 所有 video / iptv card 之间的间距统一为 var(--hero-side-gap)（10px@1440 → 12px@1920）。
+   2) 焦点环与批量选中态等功能性描边守护保留（特异性盖过卡片自身边框/投影）。
+   ⚠️ 撤销记录（2026-09-05 晚，用户要求恢复边框）：本块原含「全站去卡片化」——
+      video/iptv/record 三类卡 >1280 去 border/bg/shadow——已整体移除，
+      卡片恢复组件自带外观（VideoCard.css / IPTVChannelCard.css / RecordShell）。
    ⚠️ TV 红线：全部规则带 html:not([data-device="tv"]) 前缀（TV 恒用原卡片外观）。
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width > 1280px) {
-  /* ── 去卡片化：三类卡片根元素 ── */
-  html:not([data-device="tv"]) .video-card,
-  html:not([data-device="tv"]) .iptv-channel-card,
-  html:not([data-device="tv"]) .record-card {
-    border: none;
-    background: none;
-    box-shadow: none;
-  }
-
-  /* hover 投影随卡片外观一并去除（位移保留） */
-  html:not([data-device="tv"]) .video-card:hover,
-  html:not([data-device="tv"]) .iptv-channel-card:hover,
-  html:not([data-device="tv"]) .history-page .record-card:hover {
-    box-shadow: none;
-  }
-
-  /* ── 功能性描边守护（特异性高于上方去卡片化规则，不被吞） ── */
+  /* ── 功能性描边守护（特异性高于组件默认规则，确保焦点/选中态可见） ── */
   /* 键盘焦点环 */
   html:not([data-device="tv"]) .video-card:focus-visible {
     box-shadow: 0 0 0 3px var(--color-primary);
