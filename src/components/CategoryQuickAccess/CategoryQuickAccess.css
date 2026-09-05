@@ -218,23 +218,18 @@
    本块内 catgrid/hotgrid 恒 3 列（v2.3 教训：降级规则会破坏 3×3 形态）。
    ══════════════════════════════════════════════════════════════════════ */
 @media (width > 1280px) {
-  html:not([data-device="tv"]) .category-quick-access--wide {
-    padding: var(--space-sm) 0 0;
-    /* 高度锁定（2026-09-06 用户拍板：切换 chip 面板高度不得变化）——
-       hotgrid 3 行与 catgrid 单行的显示高度由同一组变量推出，
-       catgrid 额外并入子分类行高度（默认面板无子分类行） */
-    --cqa-row-h: calc(68px + 2 * var(--space-xs)); /* hotcard 横版封面 120×68（拍板：调大 + 整体增高） */
-    --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
-    --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
-  }
+
 
   /* ── 导航条 ── */
   html:not([data-device="tv"]) .cqa-nav {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md) 0;
+    padding: var(--space-xs) var(--space-md);
     border-bottom: 1px solid var(--color-border-light);
+    position: relative;
+    z-index: 51;
+    background: var(--color-surface);
   }
   html:not([data-device="tv"]) .cqa-nav__item {
     display: inline-flex;
@@ -294,12 +289,25 @@
   html:not([data-device="tv"]) .cqa-nav__heat svg { width: 10px; height: 10px; }
 
   /* ── 面板（hero 下移：面板在文档流中）── */
-  html:not([data-device="tv"]) .cqa-panel {
-    /* 拍板：面板本体去底色/边框/圆角/投影，卡片自带边框直接落在页面底色上 */
-    margin-top: var(--space-sm);
+  /* overlay 面板（融合方案甲）：绝对定位于 hero 卡内、覆盖 banner 顶部，
+     不推挤文档流 → hero 高度恒定；高度锁定公式保留（切 chip 零变化） */
+  html:not([data-device="tv"]) .cqa-overlay {
+    /* hotcard 横版封面 120×68 */
+    --cqa-row-h: calc(68px + 2 * var(--space-xs));
+    --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
+    --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
+    /* 导航带总高（overlay top 锚点）：上下 padding + tab 高 + 分隔线 */
+    --cqa-nav-h: calc(2 * var(--space-xs) + var(--comp-tab-height) + 1px);
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--cqa-nav-h);
+    z-index: 50;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-light);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
     padding: var(--space-md) var(--space-lg) var(--space-lg);
-    /* 高度恒定（2026-09-06 二次修复）：内容总高 = head + 子分类行 + 网格，
-       任何状态（加载中/子分类未就绪/空数据）都不低于此值 → 切 chip 零高度变化 */
     min-height: calc(
       1.5 * var(--text-base)
       + var(--space-md)
@@ -307,6 +315,26 @@
       + var(--space-md)
       + var(--cqa-grid-h)
     );
+  }
+
+  /* ── hero 下方常驻「分类热度榜」内容行（加载即显示）── */
+  html:not([data-device="tv"]) .cqa-heat-row {
+    margin-top: var(--space-lg);
+  }
+  html:not([data-device="tv"]) .cqa-heat-row__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+  html:not([data-device="tv"]) .cqa-heat-row__title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  html:not([data-device="tv"]) .cqa-heat-row__sub {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-panel__head {
     display: flex;
