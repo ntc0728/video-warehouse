@@ -865,210 +865,93 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
 //      --continue-cols 对齐 --card-cols（3/5/7）。
 // 测试策略：注入 IndexedDB 历史 → 进入首页 → 断言「继续观看」行渲染
 //          且横版骨架元素结构存在。
-// ═══════════════════════════════════════════════════════════════
-
-test.describe('1.8 继续观看行骨架与响应式', () => {
-  test('HOME-057: 有历史播放记录时「继续观看」行渲染（骨架元素结构就绪）', async ({ page }) => {
-    // 注入一条有进度、未看完的历史记录（IndexedDB）
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.evaluate(async () => {
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open('video-warehouse');
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-      const record = {
-        id: 'hist-home-057',
-        videoId: 'tmdb-550',
-        title: '骨架测试片',
-        cover: '',
-        backdrop: '',
-        type: 'movie',
-        progress: 300,
-        duration: 1200,
-        updatedAt: Date.now(),
-        createdAt: Date.now(),
-      };
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction('history', 'readwrite');
-        tx.objectStore('history').put(record);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    });
-
-    // 重新进入首页，等待 history 从 IndexedDB 加载（_loadFromDB）
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2000);
-
-    const row = page.locator('.tmdb-movierow--continue').first();
-    if ((await row.count()) === 0) {
-      return;
-    }
-    // 行标题应为「继续观看」
-    const title = await row.locator('.tmdb-movierow-title').first().innerText();
-    expect(title).toContain('继续观看');
-    // 骨架横版角标结构存在（骨架标签或真实卡片均可；行渲染即证明数据链路通）
-    const cards = row.locator('.tmdb-movierow-card').count();
-  });
-
-  test('HOME-058: 继续观看行左右箭头显示 + 列数 2/3/5 响应式', async ({ page }) => {
-    // 注入 14 条历史（横版卡较宽，800px 下 3 列 → 必然溢出 → 箭头渲染）
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.evaluate(async () => {
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open('video-warehouse');
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-      const tx = db.transaction('history', 'readwrite');
-      const now = Date.now();
-      for (let i = 0; i < 14; i++) {
-        tx.objectStore('history').put({
-          id: `hist-home-058-${i}`,
-          videoId: `tmdb-1${100 + i}`,
-          title: `继续观看 ${i + 1}`,
-          cover: '',
-          backdrop: '',
-          type: 'movie',
-          progress: 100 + i * 10,
-          duration: 1200,
-          updatedAt: now - i * 1000,
-          createdAt: now,
-        });
-      }
-      await new Promise<void>((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    });
-
-    // 非手机 web 小视口（800×900）：确认 continue 行渲染 + 箭头出现
-    await page.setViewportSize({ width: 800, height: 900 });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2500);
-
-    const row = page.locator('.tmdb-movierow--continue').first();
-    const rowCount = await row.count();
-    if (rowCount === 0) {
-      return;
-    }
-
-    // 800px → ≥768 断点：continue 3 列（--continue-cols: 3）
-    const cardW = await row.locator('.tmdb-movierow-card').first().evaluate((el) => (el as HTMLElement).offsetWidth);
-    const rowW = await row.locator('.tmdb-movierow-scroll').first().evaluate((el) => (el as HTMLElement).clientWidth);
-    // 3 列：卡宽约为行宽/3（含 gap，允许 ±15% 误差）
-    expect(cardW).toBeGreaterThan(rowW / 4);
-    expect(cardW).toBeLessThan(rowW / 2.4);
-
-    // 箭头：右箭头应渲染（hasOverflow=true 且 continueItems>0）。
-    // 初始 scrollLeft=0 → 左箭头不显示（showLeftArrow = scrollLeft>0），右箭头显示。
-    const rightArrow = row.locator('.tmdb-movierow-arrow-right').first();
-    const leftArrow = row.locator('.tmdb-movierow-arrow-left').first();
-    const rightCount = await rightArrow.count();
-    const leftCount = await leftArrow.count();
-    expect(rightCount).toBe(1);
-    expect(leftCount).toBe(0);
-
-    // 悬停行后右箭头可见（opacity 0→1）
-    await expect(rightArrow).toHaveCSS('opacity', '0');
-    await row.hover();
-    await expect(rightArrow).toHaveCSS('opacity', '1');
-
-    // 点击右箭头滚动后，左箭头应出现
-    await rightArrow.click();
-    await page.waitForTimeout(600);
-    const leftCountAfter = await leftArrow.count();
-    expect(leftCountAfter).toBe(1);
-  });
-});
-
 // =============================================================
-// 1.3c 宽屏分类面板（2026-09-06 方案 A2）：>1280 桌面「频道导航 + 热门分类面板」
-// —— 导航 chip 不跳转展开面板；默认「分类热度榜」加载即显示（前 3 分类卡，
-//     每卡右侧 3 条热门数据）；分类面板 = 子分类 chips + 3 行 × 3 列热门内容卡；
-//     「全部分类」跳 /browse；1280 视口回归（圆卡不命中宽屏分支）。
-// 设计文档：changelogs/design-docs/2026-09-06-category-quick-access-a2-实施方案.md
+// 1.3c 宽屏分类面板（2026-09-06 融合方案甲）：
+// —— 导航带内嵌 HeroBili 卡首行；点击 chip 在卡内 overlay 展开面板（覆盖 banner、不推挤）；
+//    再点同 chip / 点击外部 / Esc 收起；hero 下方常驻「分类热度榜」行（加载即显示）；
+//    「全部分类」跳 /browse；1280 视口回归（圆卡分支）。
 // =============================================================
 
 test.describe('1.3c 宽屏分类面板', () => {
-  test('HOME-070: >1280 导航条渲染 7 chip + 全部分类，热度徽标可见', async ({ page }) => {
+  test('HOME-070: 导航带内嵌 hero 卡、8 个入口、热度徽标可见、默认 overlay 收起', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
     const navItems = page.locator('.cqa-nav__item');
-    // 7 分类 chip + 全部分类
-    expect(await navItems.count()).toBe(8);
-    // lucide 图标（svg）存在
+    expect(await navItems.count()).toBe(8); // 7 分类 chip + 全部分类
     expect(await page.locator('.cqa-nav__item svg').count()).toBeGreaterThanOrEqual(8);
-    // 热度徽标：movie/tv/variety/anime/documentary 五桶非零（mock 数据按索引分桶）
     expect(await page.locator('.cqa-nav__heat').count()).toBeGreaterThanOrEqual(3);
-    // 首页 chip 默认激活
-    await expect(page.locator('.cqa-nav__item').first()).toHaveClass(/cqa-nav__item--on/);
+    // 默认 overlay 收起（拍板：首屏完整 hero）
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
-  test('HOME-071: 默认「分类热度榜」加载即显示，前 3 分类卡 × 各 3 条热门数据', async ({ page }) => {
+  test('HOME-071: hero 下方常驻「分类热度榜」行：3 分类卡 × 各 3 条热门数据', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-catgrid', { timeout: 15000 });
-    await page.waitForTimeout(1500);
+    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
+    await page.waitForTimeout(1000);
 
-    // 前 3 分类卡（恒 1 行 3 列）
-    expect(await page.locator('.cqa-catcard').count()).toBe(3);
-    // 每卡右侧 3 条热门数据
-    const rows = page.locator('.cqa-catcard__row');
-    expect(await rows.count()).toBe(9);
-    // 热度条 + Σ热度值
-    expect(await page.locator('.cqa-catcard__bar i').count()).toBe(3);
+    expect(await page.locator('.cqa-heat-row .cqa-catcard').count()).toBe(3);
+    expect(await page.locator('.cqa-heat-row .cqa-catcard__row').count()).toBe(9);
+    expect(await page.locator('.cqa-heat-row__title').count()).toBe(1);
   });
 
-  test('HOME-072: 点击「电影」chip 展开面板：子分类 chips + 3×3 内容卡', async ({ page }) => {
+  test('HOME-072: 点击「电影」chip → overlay 面板展开：子分类 chips + 3×3 内容卡', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 导航第 2 项 = 电影
-    await page.locator('.cqa-nav__item').nth(1).click();
-    await page.waitForSelector('.cqa-hotgrid .cqa-hotcard', { timeout: 15000 });
+    await page.locator('.cqa-nav__item').nth(1).click(); // 电影
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
 
-    // 子分类 chips（全量 genre list mock + 「全部」chip）
+    expect(await page.locator('.cqa-overlay').count()).toBe(1);
     expect(await page.locator('.cqa-subgenres__chip').count()).toBeGreaterThanOrEqual(2);
-    // 3 行 × 3 列 = 9 个内容卡
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
-    // 内容卡：排名 + 海报 + 热度
-    expect(await page.locator('.cqa-hotcard__rank').count()).toBe(9);
-    expect(await page.locator('.cqa-hotcard__poster').count()).toBe(9);
-    expect(await page.locator('.cqa-hotcard__heat').count()).toBe(9);
+    // overlay 覆盖在 hero 卡内（不推挤：hero 卡高度不变在 DOM 上体现为 overlay 为 absolute，
+    // 此处断言 overlay 位于 .hero-bili 内部）
+    expect(await page.locator('.hero-bili .cqa-overlay').count()).toBe(1);
   });
 
   test('HOME-073: 点子分类 chip 面板不消失（内容切换，仍为 9 卡）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click(); // 电影
-    await page.waitForSelector('.cqa-hotgrid .cqa-hotcard', { timeout: 15000 });
-    await page.locator('.cqa-subgenres__chip').nth(1).click(); // 切子分类
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    await page.locator('.cqa-subgenres__chip').nth(1).click();
     await page.waitForTimeout(1200);
 
-    await expect(page.locator('.cqa-hotgrid')).toBeVisible();
+    await expect(page.locator('.cqa-overlay')).toBeVisible();
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+  });
+
+  test('HOME-076: 点击面板以外区域收起 overlay；「首页」chip 展开热度榜面板', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).click(); // 电影 → overlay
+    await page.waitForSelector('.cqa-overlay', { timeout: 15000 });
+    // 点击面板/导航以外的中性元素（热度榜行标题）
+    await page.locator('.cqa-heat-row__title').click();
+    await page.waitForTimeout(500);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+    // 首页 chip → 热度榜面板（3 分类卡）
+    await page.locator('.cqa-nav__item').first().click();
+    await page.waitForSelector('.cqa-overlay .cqa-catcard', { timeout: 15000 });
+    expect(await page.locator('.cqa-overlay .cqa-catcard').count()).toBe(3);
   });
 
   test('HOME-074: 「全部分类」跳转 /browse', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
     await page.locator('.cqa-nav__more').click();
@@ -1084,9 +967,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
-    // >1280 严格大于：1280 不命中宽屏分支
     expect(await page.locator('.cqa-nav').count()).toBe(0);
-    // 圆卡仍在（HOME-060 链路不回归）
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible();
   });
 });

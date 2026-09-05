@@ -14,7 +14,7 @@ import { BackToTopButton, AppLoading } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import CategoryQuickAccess from '@/components/CategoryQuickAccess';
+import CategoryQuickAccess, { CategoryHeatRow } from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
@@ -405,8 +405,6 @@ export default function HomePage() {
         </div>
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-        {/* >1280 桌面：分类入口在 Hero 上方（B 站式顶部导航位）；其余端保持 Hero 在前 */}
-        {isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
         <HeroBanner
           items={trending}
           onItemClick={handleBannerItemClick}
@@ -417,6 +415,7 @@ export default function HomePage() {
         />
         <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
           {!isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
+          {isWide && <CategoryHeatRow />}
           {(userDataLoading || continueItems.length > 0) && (
             <div className="home-continue-row">
               <TMDBMovieRow

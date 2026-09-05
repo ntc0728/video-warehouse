@@ -13,10 +13,20 @@
 @media (width > 1280px) {
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
+    /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
+       banner/右栏网格；overlay 面板绝对定位锚定本卡（CategoryQuickAccess.css） */
+    position: relative;
+    display: block;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  html:not([data-device="tv"]) .hero-bili__grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--hero-side-w); /* banner 吃剩余 */
     gap: var(--hero-main-gap);
-    justify-content: center;
+    padding: var(--space-sm) var(--space-md) var(--space-md);
   }
 }
 
