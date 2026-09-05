@@ -186,7 +186,7 @@
      避免按钮贴/溢出 hero 卡右缘） */
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start; /* 换一换与第一行 card 顶对齐（用户拍板） */
   column-gap: var(--space-sm);
 }
 
