@@ -298,6 +298,15 @@
     /* 拍板：面板本体去底色/边框/圆角/投影，卡片自带边框直接落在页面底色上 */
     margin-top: var(--space-sm);
     padding: var(--space-md) var(--space-lg) var(--space-lg);
+    /* 高度恒定（2026-09-06 二次修复）：内容总高 = head + 子分类行 + 网格，
+       任何状态（加载中/子分类未就绪/空数据）都不低于此值 → 切 chip 零高度变化 */
+    min-height: calc(
+      1.5 * var(--text-base)
+      + var(--space-md)
+      + var(--cqa-sub-h)
+      + var(--space-md)
+      + var(--cqa-grid-h)
+    );
   }
   html:not([data-device="tv"]) .cqa-panel__head {
     display: flex;
@@ -305,6 +314,17 @@
     gap: var(--space-sm);
     margin-bottom: var(--space-md);
     min-height: calc(1.5 * var(--text-base));
+    flex-wrap: nowrap;
+  }
+  html:not([data-device="tv"]) .cqa-panel__title {
+    flex: 0 0 auto;
+  }
+  html:not([data-device="tv"]) .cqa-panel__sub {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   html:not([data-device="tv"]) .cqa-panel__title {
     font-size: var(--text-base);
@@ -316,7 +336,10 @@
     color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-panel__loading {
-    padding: var(--space-xl) 0;
+    min-height: var(--cqa-grid-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
@@ -327,9 +350,17 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     margin-bottom: var(--space-md);
     min-height: var(--cqa-sub-h);
+  }
+  html:not([data-device="tv"]) .cqa-subgenres::-webkit-scrollbar { display: none; }
+  html:not([data-device="tv"]) .cqa-subgenres__loading {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip {
     padding: var(--space-xs) var(--space-sm);
@@ -341,6 +372,7 @@
     cursor: pointer;
     white-space: nowrap;
     line-height: 1.2;
+    flex: 0 0 auto;
     transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip:hover {
