@@ -162,28 +162,40 @@ export default function HeroBili({
     return () => window.clearInterval(timer);
   }, [paused, active, bannerTotal, go]);
 
+  // 池计算：banner 池（前 6 张）之外的条目；换一换一次整批 6 张，
+  // 轮数 = ceil(池大小 / 6)，新图耗尽后回到最初一轮
+  const cardPoolSize = Math.max(0, total - BANNER_POOL);
+  const shuffleBatch = SIDE_COLS * SIDE_ROWS;
+  const shuffleCycles = cardPoolSize > 0 ? Math.ceil(cardPoolSize / shuffleBatch) : 1;
+
   // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
   const handleShuffle = useCallback(() => {
     if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
     setSpinning(true);
-    setShuffleOffset((o) => o + 1);
+    // 一次整批推进（6 张）；新图耗尽后回到最初一轮（补位逻辑见 rightCards）
+    setShuffleOffset((o) => (o + 1) % shuffleCycles);
     if (shuffleTimerRef.current) window.clearTimeout(shuffleTimerRef.current);
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
-  }, [spinning]);
+  }, [spinning, shuffleCycles]);
 
   // 右侧卡片：banner 池（前 6 张）之外的条目，取数循环也排除 banner 池——
-  // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡；换一换每次推进 1 张、在池内循环
-  const cardPoolSize = Math.max(0, total - BANNER_POOL);
+  // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡。
+  // 换一换一次整批替换 6 张新图（cursor×6 起始）；池内新图不够一批时，
+  // 用池首（最初的图片）补位，新图耗尽后整体回到最初一轮。
   const rightCards = useMemo(() => {
     if (cardPoolSize === 0) return [];
+    const count = Math.min(shuffleBatch, cardPoolSize);
+    const base = shuffleOffset * shuffleBatch;
     const out: { item: HeroBiliItem; idx: number }[] = [];
-    const count = Math.min(SIDE_COLS * SIDE_ROWS, cardPoolSize);
     for (let i = 0; i < count; i++) {
-      const idx = BANNER_POOL + ((shuffleOffset + i) % cardPoolSize);
+      const p = base + i;
+      // 新图不够一批：超出池尾的部分用池首（最初的图片）补位
+      const pIdx = p < cardPoolSize ? p : p - cardPoolSize;
+      const idx = BANNER_POOL + pIdx;
       out.push({ item: items[idx], idx });
     }
     return out;
-  }, [items, cardPoolSize, shuffleOffset]);
+  }, [items, cardPoolSize, shuffleOffset, shuffleBatch]);
 
   const activeItem = items[safeActiveIndex];
   if (!activeItem) return null;
