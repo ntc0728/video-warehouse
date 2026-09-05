@@ -51,3 +51,4 @@
 | `demos/demo-hero-bili-style-2026-09-05.html` | 首页 Hero B 站风改造（>1280：大 banner + 右侧 2×3 横版卡 + 换一换 + 圆点），v1→v3 多轮参数档位调节（**已拍板落地，见同日 HeroBili 提交**） | 2026-09-05 |
 | `demos/demo-fluid-endpoints-2026-09-05.html` | 流体 token 端点六方案对比（base/d768/s09/s085/E1/E2，1440 密度选型），**拍板「E2 间距 + 字号微降」→ 演进为密度契约 v2/v2.1/v2.2 已落地**（commits ef2d902/d5e554b/6ab01ea） | 2026-09-05 |
 | `demos/demo-category-quick-access-wide-2026-09-05.html` | CategoryQuickAccess >1280 整改方案对比（**待审阅，未落地**）：现状基线 + 三候选——A 频道文字导航条 + hover 全量 TMDB genre 双列下拉面板（B站/爱奇艺式，★推荐，行高 90→50px）/ B YouTube 式 pill chips 单行滚动 / C 现状圆卡 + hover 类型子菜单；token 与 v2.2 逐字对齐、真实 TMDB genre id（电影 19/剧集 16）、标注跳转 URL 与改动面 | 2026-09-05 |
+| `demos/demo-category-quick-access-2026-09-05.html` | CategoryQuickAccess >1280 整改方案对比 · 第二视角（**待审阅，未落地**，与上一份互补）：现状基线 + 三候选——A chip 胶囊行（影/剧分段切换 + genre 胶囊横滑）/ B 彩色分区卡 + hover 二级 genre 缩略面板 / C TMDB backdrop 图文频道卡；每候选附 TMDB 数据依赖、请求预算（IndexedDB 缓存策略）、跳转 URL、实现成本与优缺点 + 四方案对比表 + 5 项待拍板问题清单 | 2026-09-05 |
