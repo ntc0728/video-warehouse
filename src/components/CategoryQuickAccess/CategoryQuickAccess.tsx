@@ -301,21 +301,19 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
               <span className="cqa-panel__title">{activeCat.label} · 最热门搜索值</span>
               <span className="cqa-panel__sub">热度 = TMDB popularity（实时）· 点击卡进详情</span>
             </div>
-            {currentSubs ? (
-              <div className="cqa-subgenres">
-                {currentSubs.map((s) => (
-                  <button
-                    key={s.id}
-                    className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
-                    onClick={() => selectSub(activeCat.key, s.id)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="cqa-panel__loading">正在加载子分类…</div>
-            )}
+            <div className="cqa-subgenres">
+              {currentSubs
+                ? currentSubs.map((s) => (
+                    <button
+                      key={s.id}
+                      className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
+                      onClick={() => selectSub(activeCat.key, s.id)}
+                    >
+                      {s.label}
+                    </button>
+                  ))
+                : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
+            </div>
             {panelLoading ? (
               <div className="cqa-panel__loading">正在获取 {activeCat.label} 实时数据…</div>
             ) : (
