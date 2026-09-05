@@ -244,7 +244,7 @@
   align-items: flex-end;
   /* 边距下沉到每张 slide：无论 track 怎么 translateX 位移，文本始终自带
      左/下边距，下一张 banner 落定或滑入时都不会出现「左下角贴边、缺少边距」。 */
-  padding: var(--space-xl);
+  padding: var(--space-md);
 }
 
 /* 文字始终可见（opacity:1），不再有出场/垂直入场动画（问题 #1）。
