@@ -6,6 +6,7 @@
 import { LayoutGrid, Film, Tv, Mic2, Sparkles, Trophy, Camera } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import './CategoryQuickAccess.css';
 
 export type CategoryKey = 'all' | 'movie' | 'tv' | 'variety' | 'anime' | 'top' | 'documentary';
@@ -37,6 +38,8 @@ interface CategoryQuickAccessProps {
 export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickAccessProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  // >1280 桌面：入口上移到 hero 上方，图标小一号（xl → lg）
+  const isWide = useIsWideDesktop();
 
   // 移动端只显示 6 个分类
   const displayCategories = isMobile
@@ -56,7 +59,7 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
               aria-label={`分类：${cat.label}`}
             >
               <div className="category-quick-access__icon-wrap" style={{ background: cat.color }}>
-                <Icon icon={CatIcon} size={isMobile ? 'md' : isTV ? '2xl' : 'xl'} />
+                <Icon icon={CatIcon} size={isMobile ? 'md' : isTV ? '2xl' : isWide ? 'lg' : 'xl'} />
               </div>
               <span className="category-quick-access__label">{cat.label}</span>
             </button>

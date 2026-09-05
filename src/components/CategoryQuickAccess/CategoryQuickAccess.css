@@ -153,6 +153,26 @@
 
 
 
+/* ── >1280 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
+   去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
+   「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。 */
+@media (width > 1280px) {
+  html:not([data-device="tv"]) .category-quick-access__card {
+    padding: 0;
+  }
+
+  html:not([data-device="tv"]) .category-quick-access__icon-wrap {
+    /* ×1.8：×2 在 1440 恰与 --comp-btn-min-width(53.3px) 撞值、等于没缩；
+       1.8×icon-lg ≈ 47px，相对基准真小一号且随图标曲线同步 */
+    width: calc(var(--icon-lg) * 1.8);
+    height: calc(var(--icon-lg) * 1.8);
+  }
+
+  html:not([data-device="tv"]) .category-quick-access__label {
+    font-size: var(--text-xs);
+  }
+}
+
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
 /* 圆形底盘直径派生自「内部图标档」（TV 下 Icon size=2xl = --icon-2xl，1920 屏 ≈78px）。
