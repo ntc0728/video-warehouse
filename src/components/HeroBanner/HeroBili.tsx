@@ -171,18 +171,19 @@ export default function HeroBili({
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
   }, [spinning]);
 
-  // 右侧卡片：banner 池（前 6 张）之外的条目，换一换按卡片数整组推进——
-  // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡
+  // 右侧卡片：banner 池（前 6 张）之外的条目，取数循环也排除 banner 池——
+  // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡；换一换每次推进 1 张、在池内循环
+  const cardPoolSize = Math.max(0, total - BANNER_POOL);
   const rightCards = useMemo(() => {
-    if (total <= BANNER_POOL) return [];
+    if (cardPoolSize === 0) return [];
     const out: { item: HeroBiliItem; idx: number }[] = [];
-    const count = Math.min(SIDE_COLS * SIDE_ROWS, total - BANNER_POOL);
+    const count = Math.min(SIDE_COLS * SIDE_ROWS, cardPoolSize);
     for (let i = 0; i < count; i++) {
-      const idx = ((BANNER_POOL + shuffleOffset + i) % total + total) % total;
+      const idx = BANNER_POOL + ((shuffleOffset + i) % cardPoolSize);
       out.push({ item: items[idx], idx });
     }
     return out;
-  }, [items, total, shuffleOffset]);
+  }, [items, cardPoolSize, shuffleOffset]);
 
   const activeItem = items[safeActiveIndex];
   if (!activeItem) return null;
@@ -307,7 +308,7 @@ export default function HeroBili({
           onClick={handleShuffle}
           aria-label="换一换"
         >
-          <Icon icon={RefreshCw} size="md" className="hero-bili__shuffle-icon" />
+          <Icon icon={RefreshCw} size="sm" className="hero-bili__shuffle-icon" />
           <span className="hero-bili__shuffle-text">换一换</span>
         </button>
       </div>

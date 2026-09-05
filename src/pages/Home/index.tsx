@@ -20,6 +20,7 @@ import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/consta
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
@@ -44,6 +45,8 @@ export default function HomePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
+  // >1280 桌面（非 TV）：分类快捷入口上移到 Hero 上方（与 HeroBili 启用条件一致）
+  const isWide = useIsWideDesktop();
 
   useScrollRestore('home');
 
@@ -402,6 +405,8 @@ export default function HomePage() {
         </div>
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+        {/* >1280 桌面：分类入口在 Hero 上方（B 站式顶部导航位）；其余端保持 Hero 在前 */}
+        {isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
         <HeroBanner
           items={trending}
           onItemClick={handleBannerItemClick}
@@ -411,7 +416,7 @@ export default function HomePage() {
           initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
         />
         <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-          <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
+          {!isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
           {(userDataLoading || continueItems.length > 0) && (
             <div className="home-continue-row">
               <TMDBMovieRow
