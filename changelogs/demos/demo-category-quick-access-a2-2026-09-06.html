@@ -107,30 +107,33 @@
   .qa2__gchip:hover { color: #fb7299; background: #fff1f4; }
   .qa2__gchip--on { color: #fff; background: #18191c; }
 
-  /* ── 3 行 × 3 列内容卡（分类面板主区，9 个）── */
-  .hotgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md) var(--space-md); }
-  .hotcard { position: relative; cursor: pointer; border-radius: var(--radius-md); }
-  .hotcard__poster {
-    width: 100%; aspect-ratio: 2/3; border-radius: var(--radius-md);
-    background: linear-gradient(160deg, #e8eaee, #d4d8de); object-fit: cover; display: block;
+  /* ── 3 行 × 3 列内容卡（紧凑横排：海报 54×80，不再是大竖版海报）── */
+  .hotgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm) var(--space-md); }
+  .hotcard {
+    display: flex; align-items: center; gap: var(--space-sm);
+    background: #fff; border: 1px solid #f0f1f3; border-radius: var(--radius-md);
+    padding: var(--space-xs) var(--space-sm); cursor: pointer; transition: border-color .15s;
+    position: relative; min-width: 0;
   }
+  .hotcard:hover { border-color: #ffd0de; }
   .hotcard__rank {
-    position: absolute; top: var(--space-xs); left: var(--space-xs);
-    min-width: 22px; height: 22px; border-radius: var(--radius-md);
-    background: rgba(0,0,0,.62); color: #fff; font-size: var(--text-xs); font-weight: 700;
-    display: flex; align-items: center; justify-content: center; padding: 0 5px; font-style: italic;
+    flex: 0 0 20px; text-align: center; font-size: var(--text-base); font-weight: 700;
+    font-style: italic; color: #c9ccd1;
   }
-  .hotcard:nth-child(-n+3) .hotcard__rank { background: #fb7299; }
-  .hotcard__t { font-size: var(--text-sm); font-weight: 500; margin-top: var(--space-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hotcard__meta { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; }
-  .hotcard__m { font-size: var(--text-xs); color: #9499a0; }
-  .hotcard__heat { font-size: var(--text-xs); color: #fb7299; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .hotcard__star { font-size: var(--text-xs); color: #61666d; font-variant-numeric: tabular-nums; }
+  .hotcard:nth-child(-n+3) .hotcard__rank { color: #fb7299; }
+  .hotcard__poster { flex: 0 0 54px; width: 54px; height: 80px; border-radius: var(--radius-md); background: linear-gradient(160deg, #e8eaee, #d4d8de); object-fit: cover; display: block; }
+  .hotcard__body { flex: 1; min-width: 0; }
+  .hotcard__t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hotcard__m { font-size: var(--text-xs); color: #9499a0; margin-top: 2px; }
+  .hotcard__heat { text-align: right; flex: 0 0 auto; }
+  .hotcard__heat .n { font-size: var(--text-sm); font-weight: 600; color: #fb7299; font-variant-numeric: tabular-nums; display: block; }
+  .hotcard__heat .l { font-size: 10px; color: #9499a0; }
+  .hotcard__star { font-size: var(--text-xs); color: #61666d; margin-top: 2px; font-variant-numeric: tabular-nums; }
 
   /* ── 右侧 2 个内容卡 ── */
   .sidecard {
     position: relative; flex: 1; border: 1px solid #f0f1f3; border-radius: var(--radius-lg);
-    overflow: hidden; cursor: pointer; min-height: 150px;
+    overflow: hidden; cursor: pointer; min-height: 128px;
     background: linear-gradient(160deg, #dfe3e8, #c9d2dc);
   }
   .sidecard__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -145,7 +148,7 @@
   .sidecard__m { font-size: var(--text-xs); opacity: .9; margin-top: 2px; }
   .sidecard__heat { font-size: var(--text-sm); font-weight: 700; color: #ffb3c8; margin-top: var(--space-xs); font-variant-numeric: tabular-nums; }
 
-  /* ── 首页默认面板：前 3 分类卡（1 行 3 列）── */
+  /* ── 首页默认面板：前 3 分类卡（1 行 3 列；左侧分类热度 + 右侧 3 条热门数据）── */
   .catgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
   .catcard { border: 1px solid #f0f1f3; border-radius: var(--radius-lg); background: #fff; padding: var(--space-md); cursor: pointer; transition: border-color .15s; }
   .catcard:hover { border-color: #ffd0de; }
@@ -158,11 +161,13 @@
   .catcard__heat .l { font-size: 10px; color: #9499a0; display: block; }
   .catcard__bar { height: 5px; background: #f0f1f3; border-radius: 999px; overflow: hidden; margin: var(--space-sm) 0; }
   .catcard__bar i { display: block; height: 100%; background: linear-gradient(90deg, #fb7299, #ff9db8); border-radius: 999px; }
-  .catcard__top { display: flex; align-items: center; gap: var(--space-sm); }
-  .catcard__top img { flex: 0 0 40px; height: 56px; border-radius: var(--radius-md); background: #eef0f2; object-fit: cover; }
-  .catcard__top .t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .catcard__top .m { font-size: 10px; color: #9499a0; }
-  .catcard__top .h { font-size: var(--text-xs); color: #fb7299; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .catcard__list { display: flex; flex-direction: column; gap: var(--space-xs); }
+  .catcard__row { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; }
+  .catcard__row .idx { flex: 0 0 14px; text-align: center; font-size: var(--text-xs); font-weight: 700; font-style: italic; color: #c9ccd1; }
+  .catcard__row:nth-child(-n+1) .idx { color: #fb7299; }
+  .catcard__row img { flex: 0 0 28px; width: 28px; height: 40px; border-radius: var(--radius-md); background: #eef0f2; object-fit: cover; }
+  .catcard__row .t { flex: 1; min-width: 0; font-size: var(--text-xs); font-weight: 500; color: var(--color-text, #18191c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .catcard__row .h { flex: 0 0 auto; font-size: var(--text-xs); color: #fb7299; font-weight: 600; font-variant-numeric: tabular-nums; }
 
   .qa2__loading, .qa2__error { padding: var(--space-xl); text-align: center; font-size: var(--text-sm); color: #9499a0; }
   .qa2__error button { margin-left: var(--space-sm); border: 1px solid #e3e5e7; background: #fff; border-radius: 999px; padding: var(--space-xs) var(--space-md); cursor: pointer; font-family: inherit; font-size: var(--text-xs); }
@@ -299,17 +304,17 @@
   /* ═══════════ 内容卡模板 ═══════════ */
   function hotCard(it, i, mediaType) {
     return `<div class="hotcard" data-url="/detail/${mediaType}/${it.id}">
-      <img class="hotcard__poster" src="${postImg(it.poster_path, 'w342')}" loading="lazy" onerror="this.style.opacity=.35">
       <span class="hotcard__rank">${i + 1}</span>
-      <div class="hotcard__t">${it.title || it.name}</div>
-      <div class="hotcard__meta">
-        <span class="hotcard__m">${(it.release_date || it.first_air_date || '').slice(0, 4) || '—'} ★${it.vote_average.toFixed(1)}</span>
-        <span class="hotcard__heat">🔥${(it.popularity || 0).toFixed(1)}</span>
+      <img class="hotcard__poster" src="${postImg(it.poster_path, 'w185')}" loading="lazy" onerror="this.style.opacity=.35">
+      <div class="hotcard__body">
+        <div class="hotcard__t">${it.title || it.name}</div>
+        <div class="hotcard__m">${(it.release_date || it.first_air_date || '').slice(0, 4) || '—'} <span class="hotcard__star">★${it.vote_average.toFixed(1)}</span></div>
       </div>
+      <div class="hotcard__heat"><span class="n">🔥${(it.popularity || 0).toFixed(1)}</span><span class="l">热度</span></div>
     </div>`;
   }
   function sideCard(it, i, label, mediaType) {
-    const bg = it.backdrop_path ? `${IMG}/w780${it.backdrop_path}` : postImg(it.poster_path, 'w342');
+    const bg = it.backdrop_path ? `${IMG}/w300${it.backdrop_path}` : postImg(it.poster_path, "w185");
     return `<div class="sidecard" data-url="/detail/${mediaType}/${it.id}">
       <img class="sidecard__img" src="${bg}" loading="lazy" onerror="this.remove()">
       <div class="sidecard__shade"></div>
@@ -343,7 +348,7 @@
     const maxHeat = Math.max(...top3.map(b => b.heat), 1);
     renderNav();  // 徽标已就绪，重画导航
     const catCards = top3.map((b, i) => {
-      const top = b.items.sort((x, y) => y.popularity - x.popularity)[0];
+      const tops = b.items.sort((x, y) => y.popularity - x.popularity).slice(0, 3);   // 每分类右侧 3 条热门数据（拍板）
       return `<div class="catcard" data-goto="${b.key}">
         <div class="catcard__head">
           <span class="catcard__rank">${i + 1}</span>
@@ -351,11 +356,14 @@
           <span class="catcard__heat"><span class="n">${b.heat.toFixed(0)}</span><span class="l">分类热度 Σ</span></span>
         </div>
         <div class="catcard__bar"><i style="width:${(b.heat / maxHeat * 100).toFixed(1)}%"></i></div>
-        ${top ? `<div class="catcard__top">
-          <img src="${postImg(top.poster_path, 'w92')}" loading="lazy" onerror="this.style.opacity=.35">
-          <span style="min-width:0;flex:1"><span class="m">最热门搜索值</span><br>
-            <span class="t">${top.title || top.name}</span> <span class="h">🔥${(top.popularity || 0).toFixed(1)}</span></span>
-        </div>` : '<div class="catcard__top"><span class="m">—</span></div>'}
+        <div class="catcard__list">
+          ${tops.map((t, j) => `<div class="catcard__row">
+            <span class="idx">${j + 1}</span>
+            <img src="${postImg(t.poster_path, 'w92')}" loading="lazy" onerror="this.style.opacity=.35">
+            <span class="t">${t.title || t.name}</span>
+            <span class="h">🔥${(t.popularity || 0).toFixed(1)}</span>
+          </div>`).join('')}
+        </div>
       </div>`;
     }).join('');
     const side = items.slice(0, 2).map((it, i) =>
@@ -452,7 +460,7 @@
   document.getElementById('vpw').textContent = window.innerWidth;
 
   document.getElementById('note').innerHTML = `
-    <b>拍板落地（2026-09-06）</b>：hero 下移（面板在文档流）· popularity 原始值 · 综艺/动漫/纪录片有真实交叉子分类（discover with_genres 主,副 AND，全部实测有数据：综艺×家庭 794 部 / 动漫×喜剧 4902 部 / 纪录×音乐 12626 部）· 多分类命中重复计入 · 默认面板加载即显示 · 面板主区 3 行 × 3 列 9 个内容 + 右侧 2 个内容（首页默认 = 前 3 分类卡 1 行 3 列 + 右侧全站最热 2 个）。<br>
+    <b>v2.1 修订（2026-09-06 用户反馈）</b>：① 首页默认面板每个分类卡右侧显示 3 条热门数据（排名+小海报+标题+🔥）；② 分类面板内容卡改紧凑横排（海报 54×80，rank 内联，3 行×3 列不变），右侧卡 backdrop 降为 w300。<br><b>拍板落地（2026-09-06）</b>：hero 下移（面板在文档流）· popularity 原始值 · 综艺/动漫/纪录片有真实交叉子分类（discover with_genres 主,副 AND，全部实测有数据：综艺×家庭 794 部 / 动漫×喜剧 4902 部 / 纪录×音乐 12626 部）· 多分类命中重复计入 · 默认面板加载即显示 · 面板主区 3 行 × 3 列 9 个内容 + 右侧 2 个内容（首页默认 = 前 3 分类卡 1 行 3 列 + 右侧全站最热 2 个）。<br>
     <b>数据源（全部真实 TMDB，zh-CN，右上角日志可见每笔请求）</b>：<br>
     ① 分类热度徽标 + 默认榜：<span class="url">/trending/all/day</span> 按分类桶聚合（Σpopularity + 计数）；② 分类热榜：<span class="url">/trending/{movie,tv}/day</span>；子分类 chip → <span class="url">/discover/{type}?with_genres=X&sort_by=popularity.desc</span>；③ 排行榜子分类：日/周/电影/剧集四种 <span class="url">/trending/*/…</span>；④ genre：/genre/{movie,tv}/list?language=zh-CN。<br>
     <b>网络兼容</b>：API 双域名自动回退——<span class="url">api.tmdb.org</span>（官方备用域名）优先，主域名 api.themoviedb.org 部分网络不可达（对真实落地同样关键）；海报加载失败优雅降级。<br>
