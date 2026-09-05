@@ -319,7 +319,9 @@
 
   /* ── hero 下方常驻「分类热度榜」内容行（加载即显示）── */
   html:not([data-device="tv"]) .cqa-heat-row {
+    /* 与 TMDBMovieRow 模块间距体系一致：模块间 = --space-lg */
     margin-top: var(--space-lg);
+    margin-bottom: var(--space-lg);
   }
   html:not([data-device="tv"]) .cqa-heat-row__head {
     display: flex;
