@@ -180,7 +180,7 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
   return out;
 }
 
-function mapMovieToVideoItem(movie: TMDBMovie): TMDBVideoItem {
+export function mapMovieToVideoItem(movie: TMDBMovie): TMDBVideoItem {
   return {
     tmdbId: movie.id,
     id: `tmdb-movie-${movie.id}`,
@@ -204,7 +204,7 @@ function mapMovieToVideoItem(movie: TMDBMovie): TMDBVideoItem {
   };
 }
 
-function mapTVToVideoItem(tv: TMDBTVShow): TMDBVideoItem {
+export function mapTVToVideoItem(tv: TMDBTVShow): TMDBVideoItem {
   return {
     tmdbId: tv.id,
     id: `tmdb-tv-${tv.id}`,
@@ -228,7 +228,7 @@ function mapTVToVideoItem(tv: TMDBTVShow): TMDBVideoItem {
   };
 }
 
-function mapTrendingToVideoItem(item: TMDBTrendingItem): TMDBVideoItem {
+export function mapTrendingToVideoItem(item: TMDBTrendingItem): TMDBVideoItem {
   const isMovie = item.media_type === 'movie';
   const mediaType = isMovie ? 'movie' as const : 'tv' as const;
   return {

@@ -209,3 +209,352 @@
 
 /* 分类快捷入口在所有端显示（桌面 web 不再隐藏）：点击分类跳 /browse，与移动端一致；
    全局左侧栏已删除，桌面 web 经顶栏 + 本卡片双入口可达分类。 */
+
+/* ══════════════════════════════════════════════════════════════════════
+   >1280 桌面宽屏分支（2026-09-06 方案 A2，设计文档见 changelogs/design-docs/）：
+   频道文字导航条 + 热门分类面板。JS 分支由 useIsWideDesktop（>1281px 且非 TV）
+   控制，≤1280 / TV / app 不会命中本块；此处 media 查询为双保险。
+   token 全部取自 variables.css v2.2 密度契约；无降级媒体查询——
+   本块内 catgrid/hotgrid 恒 3 列（v2.3 教训：降级规则会破坏 3×3 形态）。
+   ══════════════════════════════════════════════════════════════════════ */
+@media (width > 1280px) {
+  html:not([data-device="tv"]) .category-quick-access--wide {
+    padding: var(--space-sm) 0 0;
+  }
+
+  /* ── 导航条 ── */
+  html:not([data-device="tv"]) .cqa-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-md) 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  html:not([data-device="tv"]) .cqa-nav__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    height: var(--comp-tab-height);
+    padding: 0 var(--space-sm);
+    border: none;
+    background: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    position: relative;
+    transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-nav__item:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+  html:not([data-device="tv"]) .cqa-nav__item--on {
+    color: var(--color-bili);
+    font-weight: 600;
+  }
+  html:not([data-device="tv"]) .cqa-nav__item--on::after {
+    content: '';
+    position: absolute;
+    left: var(--space-sm);
+    right: var(--space-sm);
+    bottom: 0;
+    height: 2px;
+    background: var(--color-bili);
+    border-radius: 2px;
+  }
+  html:not([data-device="tv"]) .cqa-nav__more {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+  }
+  html:not([data-device="tv"]) .cqa-nav__more:hover {
+    color: var(--color-info);
+    background: var(--color-surface-hover);
+  }
+  html:not([data-device="tv"]) .cqa-nav__heat {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: 10px;
+    font-style: normal;
+    color: var(--color-bili);
+    background: var(--color-bili-light);
+    border-radius: var(--radius-full);
+    padding: 0 var(--space-xs);
+    line-height: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-nav__heat svg { width: 10px; height: 10px; }
+
+  /* ── 面板（hero 下移：面板在文档流中）── */
+  html:not([data-device="tv"]) .cqa-panel {
+    margin-top: var(--space-sm);
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  html:not([data-device="tv"]) .cqa-panel__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+  }
+  html:not([data-device="tv"]) .cqa-panel__title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  html:not([data-device="tv"]) .cqa-panel__sub {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-panel__loading {
+    padding: var(--space-xl) 0;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+
+  /* 子分类 chips 行 */
+  html:not([data-device="tv"]) .cqa-subgenres {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+  }
+  html:not([data-device="tv"]) .cqa-subgenres__chip {
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    background: var(--color-tag-bg);
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-subgenres__chip:hover {
+    color: var(--color-bili);
+    background: var(--color-bili-light);
+  }
+  html:not([data-device="tv"]) .cqa-subgenres__chip--on {
+    color: var(--color-tab-active-text);
+    background: var(--color-tab-active-bg);
+  }
+
+  /* ── 默认面板：前 3 分类卡（恒 1 行 3 列）── */
+  html:not([data-device="tv"]) .cqa-catgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+  html:not([data-device="tv"]) .cqa-catcard {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-md);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-catcard:hover,
+  html:not([data-device="tv"]) .cqa-catcard:focus-visible {
+    border-color: var(--color-bili-light);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__rank {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-catcard:nth-child(-n + 3) .cqa-catcard__rank { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-catcard__name {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__heat {
+    margin-left: auto;
+    text-align: right;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__heat .n {
+    display: block;
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-bili);
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__heat .l {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__bar {
+    height: 5px;
+    background: var(--color-background);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin: var(--space-sm) 0;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__bar i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-bili), var(--color-bili-deep));
+    border-radius: var(--radius-full);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__idx {
+    flex: 0 0 14px;
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__row:first-child .cqa-catcard__idx { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-catcard__poster {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    background: var(--color-placeholder);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__t {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__row:hover .cqa-catcard__t { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-catcard__h {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--text-xs);
+    color: var(--color-bili);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__h svg { width: 10px; height: 10px; }
+
+  /* ── 分类面板：3 行 × 3 列紧凑内容卡（无降级规则，恒 3 列）── */
+  html:not([data-device="tv"]) .cqa-hotgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm) var(--space-md);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: var(--space-xs) var(--space-sm);
+    cursor: pointer;
+    min-width: 0;
+    transition: border-color var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard:hover,
+  html:not([data-device="tv"]) .cqa-hotcard:focus-visible {
+    border-color: var(--color-bili-light);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__rank {
+    flex: 0 0 20px;
+    text-align: center;
+    font-size: var(--text-base);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard:nth-child(-n + 3) .cqa-hotcard__rank { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-hotcard__poster {
+    flex: 0 0 54px;
+    width: 54px;
+    height: 80px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    background: var(--color-placeholder);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__body {
+    flex: 1;
+    min-width: 0;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__t {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-hotcard__m {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__star {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__star svg { width: 10px; height: 10px; }
+  html:not([data-device="tv"]) .cqa-hotcard__heat {
+    flex: 0 0 auto;
+    text-align: right;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__heat .n {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-bili);
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard__heat .n svg { width: 10px; height: 10px; }
+  html:not([data-device="tv"]) .cqa-hotcard__heat .l {
+    display: block;
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+  }
+
+  /* prefers-reduced-motion：去掉过渡（与全站约定一致） */
+  html:not([data-device="tv"]) .cqa-nav__item,
+  html:not([data-device="tv"]) .cqa-subgenres__chip,
+  html:not([data-device="tv"]) .cqa-catcard,
+  html:not([data-device="tv"]) .cqa-hotcard {
+    transition: none;
+  }
+}

@@ -361,6 +361,26 @@ export async function discoverTV(
   return fetchTMDB<TMDBPaginatedResponse<TMDBTVShow>>('/discover/tv', params, options);
 }
 
+/**
+ * 分类快捷入口面板专用 discover（2026-09-06 方案 A2）：
+ * 与 discoverMovie/discoverTV 的差异——
+ *   · 固定 sort_by=popularity.desc（面板语义 = 该分类最热门）；
+ *   · vote_count.gte 放宽到 10（现有 50 会过滤综艺×新闻等小池子，实测 101 部的池子被滤到个位数）。
+ * genreIds 传多个时为 AND 语义（TMDB with_genres 逗号分隔），供「综艺×家庭」类交叉子分类使用。
+ */
+export async function discoverCategory(
+  mediaType: 'movie' | 'tv',
+  genreIds: number[],
+  options: { signal?: AbortSignal } = {},
+): Promise<TMDBPaginatedResponse<TMDBMovie | TMDBTVShow>> {
+  const endpoint = mediaType === 'movie' ? '/discover/movie' : '/discover/tv';
+  return fetchTMDB<TMDBPaginatedResponse<TMDBMovie | TMDBTVShow>>(
+    endpoint,
+    { page: 1, sort_by: 'popularity.desc', 'vote_count.gte': 10, with_genres: genreIds.join(',') },
+    options,
+  );
+}
+
 function getSortByParam(sortBy: string, sortOrder: string, mediaType: 'movie' | 'tv'): string {
   const order = sortOrder === 'asc' ? 'asc' : 'desc';
   const dateField = mediaType === 'movie' ? 'primary_release_date' : 'first_air_date';
