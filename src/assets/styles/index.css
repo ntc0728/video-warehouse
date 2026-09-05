@@ -1203,4 +1203,13 @@ html[data-device="tv"] {
       / var(--card-cols, 7)
     );
   }
+
+  /* 继续观看行：横版卡公式必须与上方 scroll gap 联动重算
+     （TMDBMovieRow.css:282 原公式用 --space-md，gap 改 --hero-side-gap 后会错位） */
+  html:not([data-device="tv"]) .tmdb-movierow.tmdb-movierow--continue .tmdb-movierow-card {
+    flex-basis: calc(
+      (100% - (var(--continue-cols, 5) - 1) * var(--hero-side-gap))
+      / var(--continue-cols, 5)
+    );
+  }
 }

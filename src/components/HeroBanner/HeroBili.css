@@ -336,8 +336,9 @@
 
 .hero-bili__shuffle:hover {
   border-color: var(--color-border-light);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  /* 浅灰色 hover（不换边框色、不反色） */
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 /* 竖排文本 */
