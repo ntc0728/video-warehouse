@@ -220,6 +220,12 @@
 @media (width > 1280px) {
   html:not([data-device="tv"]) .category-quick-access--wide {
     padding: var(--space-sm) 0 0;
+    /* 高度锁定（2026-09-06 用户拍板：切换 chip 面板高度不得变化）——
+       hotgrid 3 行与 catgrid 单行的显示高度由同一组变量推出，
+       catgrid 额外并入子分类行高度（默认面板无子分类行） */
+    --cqa-row-h: calc(80px + 2 * var(--space-xs));
+    --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
+    --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
   }
 
   /* ── 导航条 ── */
@@ -289,19 +295,16 @@
 
   /* ── 面板（hero 下移：面板在文档流中）── */
   html:not([data-device="tv"]) .cqa-panel {
+    /* 拍板：面板本体去底色/边框/圆角/投影，卡片自带边框直接落在页面底色上 */
     margin-top: var(--space-sm);
     padding: var(--space-md) var(--space-lg) var(--space-lg);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
   }
   html:not([data-device="tv"]) .cqa-panel__head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: var(--space-sm);
     margin-bottom: var(--space-md);
-    flex-wrap: wrap;
+    min-height: calc(1.5 * var(--text-base));
   }
   html:not([data-device="tv"]) .cqa-panel__title {
     font-size: var(--text-base);
@@ -322,9 +325,11 @@
   /* 子分类 chips 行 */
   html:not([data-device="tv"]) .cqa-subgenres {
     display: flex;
+    align-items: center;
     gap: var(--space-xs);
     flex-wrap: wrap;
     margin-bottom: var(--space-md);
+    min-height: var(--cqa-sub-h);
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip {
     padding: var(--space-xs) var(--space-sm);
@@ -335,6 +340,7 @@
     border: 1px solid transparent;
     cursor: pointer;
     white-space: nowrap;
+    line-height: 1.2;
     transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip:hover {
@@ -351,8 +357,12 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
+    /* = hotgrid 高度 + 子分类行高度（默认面板无子分类行，由 catcard 吸收） */
+    height: calc(var(--cqa-grid-h) + var(--cqa-sub-h) + var(--space-md));
   }
   html:not([data-device="tv"]) .cqa-catcard {
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
@@ -368,6 +378,8 @@
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    min-height: calc(1.5 * var(--text-lg));
+    flex: 0 0 auto;
   }
   html:not([data-device="tv"]) .cqa-catcard__rank {
     font-size: var(--text-lg);
@@ -397,6 +409,7 @@
     color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-catcard__bar {
+    flex: 0 0 auto;
     height: 5px;
     background: var(--color-background);
     border-radius: var(--radius-full);
@@ -410,8 +423,10 @@
     border-radius: var(--radius-full);
   }
   html:not([data-device="tv"]) .cqa-catcard__list {
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: var(--space-xs);
   }
   html:not([data-device="tv"]) .cqa-catcard__row {
@@ -432,9 +447,9 @@
   }
   html:not([data-device="tv"]) .cqa-catcard__row:first-child .cqa-catcard__idx { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-catcard__poster {
-    flex: 0 0 28px;
-    width: 28px;
-    height: 40px;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 84px;
     border-radius: var(--radius-md);
     object-fit: cover;
     background: var(--color-placeholder);
@@ -466,6 +481,7 @@
   html:not([data-device="tv"]) .cqa-hotgrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, var(--cqa-row-h));
     gap: var(--space-sm) var(--space-md);
   }
   html:not([data-device="tv"]) .cqa-hotcard {
