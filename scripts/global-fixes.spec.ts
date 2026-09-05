@@ -68,7 +68,7 @@ test.describe('字体体系', () => {
 
 // ═══════════════ 基准统一 ═══════════════
 test.describe('基准统一', () => {
-  test('G-03: 桌面 html font-size 走 v2 流体曲线（14→14.5px @768→2200），无 root 内联缩放', async ({ page }) => {
+  test('G-03: 桌面 html font-size 走 v2.1 递减曲线（14→13.2@1440→13），无 root 内联缩放', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.waitForTimeout(2500);
@@ -81,12 +81,12 @@ test.describe('基准统一', () => {
       };
     });
     console.log('[G-03]', JSON.stringify(m));
-    // 密度契约 v2（2026-09-05）：桌面段2 base 14→14.5px 流体，1280 处 ≈14.18px（旧「恒 14px」契约已随方案 A/v2 演进）
+    // 密度契约 v2.1（2026-09-05）：桌面段2 base 递减 14→13.2@1440→13 冻结，1280 处 ≈13.39px
     const px = parseFloat(m.htmlFontSize);
-    expect(px).toBeGreaterThanOrEqual(14);
-    expect(px).toBeLessThanOrEqual(14.5);
+    expect(px).toBeGreaterThanOrEqual(13);
+    expect(px).toBeLessThanOrEqual(14);
+    expect(m.textBase).toContain('13px');
     expect(m.textBase).toContain('14px');
-    expect(m.textBase).toContain('14.5px');
     expect(m.inlineStyle).toBe('(empty)');
   });
 
