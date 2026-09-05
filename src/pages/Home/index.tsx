@@ -415,7 +415,7 @@ export default function HomePage() {
         />
         <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
           {!isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
-          {isWide && <CategoryHeatRow />}
+          {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
           {(userDataLoading || continueItems.length > 0) && (
             <div className="home-continue-row">
               <TMDBMovieRow
@@ -428,6 +428,7 @@ export default function HomePage() {
               />
             </div>
           )}
+          {isWide && <CategoryHeatRow />}
           <div className="home-rows">
             {homeRows.map((row, i) => (
               <TMDBMovieRow
