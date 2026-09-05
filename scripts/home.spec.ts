@@ -988,3 +988,105 @@ test.describe('1.8 继续观看行骨架与响应式', () => {
     expect(leftCountAfter).toBe(1);
   });
 });
+
+// =============================================================
+// 1.3c 宽屏分类面板（2026-09-06 方案 A2）：>1280 桌面「频道导航 + 热门分类面板」
+// —— 导航 chip 不跳转展开面板；默认「分类热度榜」加载即显示（前 3 分类卡，
+//     每卡右侧 3 条热门数据）；分类面板 = 子分类 chips + 3 行 × 3 列热门内容卡；
+//     「全部分类」跳 /browse；1280 视口回归（圆卡不命中宽屏分支）。
+// 设计文档：changelogs/design-docs/2026-09-06-category-quick-access-a2-实施方案.md
+// =============================================================
+
+test.describe('1.3c 宽屏分类面板', () => {
+  test('HOME-070: >1280 导航条渲染 7 chip + 全部分类，热度徽标可见', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    const navItems = page.locator('.cqa-nav__item');
+    // 7 分类 chip + 全部分类
+    expect(await navItems.count()).toBe(8);
+    // lucide 图标（svg）存在
+    expect(await page.locator('.cqa-nav__item svg').count()).toBeGreaterThanOrEqual(8);
+    // 热度徽标：movie/tv/variety/anime/documentary 五桶非零（mock 数据按索引分桶）
+    expect(await page.locator('.cqa-nav__heat').count()).toBeGreaterThanOrEqual(3);
+    // 首页 chip 默认激活
+    await expect(page.locator('.cqa-nav__item').first()).toHaveClass(/cqa-nav__item--on/);
+  });
+
+  test('HOME-071: 默认「分类热度榜」加载即显示，前 3 分类卡 × 各 3 条热门数据', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.cqa-catgrid', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 前 3 分类卡（恒 1 行 3 列）
+    expect(await page.locator('.cqa-catcard').count()).toBe(3);
+    // 每卡右侧 3 条热门数据
+    const rows = page.locator('.cqa-catcard__row');
+    expect(await rows.count()).toBe(9);
+    // 热度条 + Σ热度值
+    expect(await page.locator('.cqa-catcard__bar i').count()).toBe(3);
+  });
+
+  test('HOME-072: 点击「电影」chip 展开面板：子分类 chips + 3×3 内容卡', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 导航第 2 项 = 电影
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForSelector('.cqa-hotgrid .cqa-hotcard', { timeout: 15000 });
+
+    // 子分类 chips（全量 genre list mock + 「全部」chip）
+    expect(await page.locator('.cqa-subgenres__chip').count()).toBeGreaterThanOrEqual(2);
+    // 3 行 × 3 列 = 9 个内容卡
+    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+    // 内容卡：排名 + 海报 + 热度
+    expect(await page.locator('.cqa-hotcard__rank').count()).toBe(9);
+    expect(await page.locator('.cqa-hotcard__poster').count()).toBe(9);
+    expect(await page.locator('.cqa-hotcard__heat').count()).toBe(9);
+  });
+
+  test('HOME-073: 点子分类 chip 面板不消失（内容切换，仍为 9 卡）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).click(); // 电影
+    await page.waitForSelector('.cqa-hotgrid .cqa-hotcard', { timeout: 15000 });
+    await page.locator('.cqa-subgenres__chip').nth(1).click(); // 切子分类
+    await page.waitForTimeout(1200);
+
+    await expect(page.locator('.cqa-hotgrid')).toBeVisible();
+    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+  });
+
+  test('HOME-074: 「全部分类」跳转 /browse', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.category-quick-access--wide', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__more').click();
+    await page.waitForTimeout(1000);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/browse');
+    expect(url.searchParams.get('category')).toBe('all');
+  });
+
+  test('HOME-075: 1280 视口回归——仍渲染圆卡分支，不命中宽屏面板', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    // >1280 严格大于：1280 不命中宽屏分支
+    expect(await page.locator('.cqa-nav').count()).toBe(0);
+    // 圆卡仍在（HOME-060 链路不回归）
+    await expect(page.locator('.category-quick-access__card').first()).toBeVisible();
+  });
+});

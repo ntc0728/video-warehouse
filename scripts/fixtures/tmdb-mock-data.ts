@@ -30,7 +30,8 @@ const TRENDING_RESULTS = Array.from({ length: 20 }, (_, i) => ({
   vote_average: +(7 + (i % 3) * 0.5).toFixed(1),
   vote_count: 1000 + i * 100,
   media_type: i % 2 === 0 ? 'movie' : 'tv',
-  genre_ids: [28, 12],
+  // 1.3c 宽屏分类热度桶需要多分类非零：movie 混入 99(纪录)、tv 混入 16(动漫)/10764(综艺)
+  genre_ids: i % 2 === 0 ? (i % 4 === 0 ? [99, 28] : [28, 12]) : (i % 4 === 1 ? [16, 10759] : [10764]),
   popularity: 100 + i * 10,
   original_language: 'en',
 }));
