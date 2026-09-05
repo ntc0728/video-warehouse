@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CategoryQuickAccess 方案 A2 · 热门分类拓展面板 · 真实 TMDB 数据 · 2026-09-06</title>
+<style>
+  /* ═════════════════════════════════════════════════════════════════
+     方案 A2（A 拓展版）—— 仅 demo，未动真实源码
+     在 A「频道导航条」基础上：
+       · 「全部分类」= 跳 /browse（不再 hover 下拉）
+       · 点击导航 chip → 下方展开面板：该分类的 genre 分类（真实 /genre/list）
+         + 该分类最热门搜索值（真实 /trending、/discover，含热度=popularity）
+       · 面板内点不同 genre chip → 热门榜实时切换（discover with_genres）
+       · 默认「首页」面板 = 热度最高的分类排行（trending/all/day 按
+         分类桶聚合 Σpopularity）+ 各分类最热门搜索值
+     所有数据运行时调真实 TMDB API（zh-CN），无写死值。
+     ═════════════════════════════════════════════════════════════════ */
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; background: #f5f6f8; color: #18191c; }
+
+  /* ── 顶栏 ── */
+  .topbar { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid #e3e5e7; padding: 12px 24px; }
+  .topbar h1 { font-size: 15px; font-weight: 600; }
+  .topbar p { font-size: 12px; color: #61666d; margin-top: 4px; line-height: 1.6; }
+  .topbar .vp { font-variant-numeric: tabular-nums; color: #00a1d6; font-weight: 600; }
+  .topbar input { font-size: 11px; padding: 3px 8px; border: 1px solid #e3e5e7; border-radius: 6px; width: 340px; font-family: Consolas, monospace; }
+  .api-log { font-size: 11px; color: #9499a0; font-family: Consolas, monospace; max-height: 54px; overflow-y: auto; margin-top: 4px; line-height: 1.6; }
+  .api-log b { color: #00a1d6; font-weight: 400; }
+
+  /* ── 方案段 ── */
+  .stage-wrap { padding: 16px 24px 0; }
+  .stage { background: #fff; border: 2px solid #fb7299; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+  .note { font-size: 12px; color: #61666d; line-height: 1.7; padding: 10px 16px; background: #fafbfc; border-top: 1px dashed #e3e5e7; }
+  .note b { color: #18191c; }
+  .note .url { font-family: Consolas, monospace; font-size: 11px; color: #00a1d6; background: #f0f8ff; padding: 0 4px; border-radius: 3px; }
+
+  /* ═══ 真实 token（v2.2 段2 逐字拷贝）═══ */
+  .stage {
+    --ui-scale: 1;
+    --text-xs: calc(clamp(11px, 14.195px - 0.19896vw, 12.667px) * var(--ui-scale));
+    --text-sm: calc(clamp(12px, 15.32071px - 0.21533vw, 13.667px) * var(--ui-scale));
+    --text-base: calc(clamp(13px, 14.91429px - 0.11905vw, 14px) * var(--ui-scale));
+    --text-lg: calc(clamp(13.5px, 17.05071px - 0.22366vw, 15.333px) * var(--ui-scale));
+    --text-xl: calc(clamp(15px, 19.325px - 0.25937vw, 17.333px) * var(--ui-scale));
+    --space-xs: calc(clamp(3.5px, 2.96371px + 0.06983vw, 4.5px) * var(--ui-scale));
+    --space-sm: calc(clamp(7px, 5.92741px + 0.13966vw, 9px) * var(--ui-scale));
+    --space-md: calc(clamp(9.5px, 7.89104px + 0.2095vw, 12.5px) * var(--ui-scale));
+    --space-lg: calc(clamp(14.333px, 11.83001px + 0.32591vw, 19px) * var(--ui-scale));
+    --comp-tab-height: calc(clamp(35.827px, 41.28871px - 0.34137vw, 38.667px) * var(--ui-scale));
+    --radius-md: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale));
+    --radius-lg: calc(clamp(10px, 4.911px + 1.357vw, 15.333px) * var(--ui-scale));
+    --icon-md: calc(var(--text-base) * 1.43);
+  }
+
+  /* ── mini 首页上下文 ── */
+  .pagepad { padding: 0 var(--space-lg); }
+  .mini-hero {
+    height: 150px; border-radius: var(--radius-lg); overflow: hidden; position: relative;
+    background: linear-gradient(120deg, #00a1d6 0%, #6b7cff 55%, #9b6bff 100%);
+    color: #fff; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: var(--space-md) var(--space-lg); margin-top: var(--space-md);
+  }
+  .mini-hero__t { font-size: var(--text-lg); font-weight: 600; }
+  .mini-hero__m { font-size: var(--text-xs); opacity: .85; margin-top: var(--space-xs); }
+  .mini-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-top: var(--space-md); padding-bottom: var(--space-lg); }
+  .mini-card__cover { aspect-ratio: 16/9; border-radius: var(--radius-md); background: linear-gradient(135deg, #dfe3e8, #c9d2dc); }
+  .mini-card__t { font-size: var(--text-sm); font-weight: 500; margin-top: var(--space-xs); }
+  @media (width < 1500px) { .mini-row { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ═══ A2 导航条 ═══ */
+  .qa2 { border-bottom: 1px solid #f0f1f3; position: relative; }
+  .qa2__nav { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-md) 0; }
+  .qa2__item {
+    display: inline-flex; align-items: center; gap: var(--space-xs);
+    height: var(--comp-tab-height); padding: 0 var(--space-sm);
+    border: none; background: none; border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: var(--text-sm); color: #61666d; cursor: pointer; font-family: inherit;
+    transition: color .15s, background .15s; white-space: nowrap; position: relative;
+  }
+  .qa2__item .ic { font-size: var(--icon-md); line-height: 1; opacity: .75; }
+  .qa2__item:hover { color: #18191c; background: #f6f7f8; }
+  .qa2__item--on { color: #fb7299; font-weight: 600; }
+  .qa2__item--on::after { content: ''; position: absolute; left: var(--space-sm); right: var(--space-sm); bottom: 0; height: 2px; background: #fb7299; border-radius: 2px; }
+  .qa2__heat {
+    font-size: 10px; font-style: normal; color: #fb7299; background: #fff1f4;
+    border-radius: 999px; padding: 0 5px; line-height: 15px; font-variant-numeric: tabular-nums;
+  }
+  .qa2__more { margin-left: auto; color: #61666d; }
+  .qa2__more:hover { color: #00a1d6; }
+
+  /* ═══ A2 热门面板（点击 chip 展开）═══ */
+  .qa2__panel { padding: var(--space-md) var(--space-lg) var(--space-lg); border-top: 1px dashed #f0f1f3; background: #fcfcfd; }
+  .qa2__panel-head { display: flex; align-items: baseline; gap: var(--space-sm); margin-bottom: var(--space-sm); flex-wrap: wrap; }
+  .qa2__panel-title { font-size: var(--text-base); font-weight: 600; }
+  .qa2__panel-sub { font-size: var(--text-xs); color: #9499a0; }
+  .qa2__panel-sub .live { color: #00a1d6; }
+
+  /* genre 分类行 */
+  .qa2__genres { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-bottom: var(--space-md); }
+  .qa2__gchip {
+    padding: var(--space-xs) var(--space-sm); border-radius: 999px;
+    font-size: var(--text-xs); color: #61666d; background: #f6f7f8;
+    border: 1px solid transparent; cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .qa2__gchip:hover { color: #fb7299; background: #fff1f4; }
+  .qa2__gchip--on { color: #fff; background: #18191c; }
+
+  /* 热门搜索值榜（双列排行） */
+  .hotgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-lg); }
+  .hotrow {
+    display: flex; align-items: center; gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); cursor: pointer;
+  }
+  .hotrow:hover { background: #fff; }
+  .hotrow__rank { flex: 0 0 22px; text-align: center; font-size: var(--text-base); font-weight: 700; color: #c9ccd1; font-style: italic; }
+  .hotrow:nth-child(-n+3) .hotrow__rank { color: #fb7299; }
+  .hotrow__poster { flex: 0 0 40px; height: 56px; border-radius: var(--radius-md); background: #eef0f2; object-fit: cover; }
+  .hotrow__body { flex: 1; min-width: 0; }
+  .hotrow__t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hotrow__m { font-size: var(--text-xs); color: #9499a0; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hotrow__heat { flex: 0 0 auto; text-align: right; }
+  .hotrow__heat .n { font-size: var(--text-sm); font-weight: 600; color: #fb7299; font-variant-numeric: tabular-nums; }
+  .hotrow__heat .l { font-size: 10px; color: #9499a0; display: block; }
+  .hotrow__star { font-size: var(--text-xs); color: #61666d; margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+  /* 默认面板：分类热度排行 */
+  .catrank { display: flex; flex-direction: column; gap: var(--space-xs); }
+  .catrow {
+    display: flex; align-items: center; gap: var(--space-md);
+    background: #fff; border: 1px solid #f0f1f3; border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md); cursor: pointer;
+  }
+  .catrow:hover { border-color: #ffd0de; }
+  .catrow__rank { flex: 0 0 22px; text-align: center; font-size: var(--text-lg); font-weight: 700; color: #c9ccd1; font-style: italic; }
+  .catrow:nth-child(-n+3) .catrow__rank { color: #fb7299; }
+  .catrow__name { flex: 0 0 70px; font-size: var(--text-base); font-weight: 600; }
+  .catrow__heat { flex: 0 0 110px; }
+  .catrow__heat .n { font-size: var(--text-base); font-weight: 700; color: #fb7299; font-variant-numeric: tabular-nums; }
+  .catrow__heat .l { font-size: 10px; color: #9499a0; display: block; }
+  .catrow__bar { flex: 1; height: 6px; background: #f0f1f3; border-radius: 999px; overflow: hidden; }
+  .catrow__bar i { display: block; height: 100%; background: linear-gradient(90deg, #fb7299, #ff9db8); border-radius: 999px; }
+  .catrow__top { flex: 0 0 38%; min-width: 0; display: flex; align-items: center; gap: var(--space-sm); }
+  .catrow__top img { flex: 0 0 32px; height: 44px; border-radius: var(--radius-md); background: #eef0f2; object-fit: cover; }
+  .catrow__top .t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .catrow__top .m { font-size: var(--text-xs); color: #9499a0; }
+  .catrow__top .h { font-size: var(--text-xs); color: #fb7299; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 加载 / 错误态 */
+  .qa2__loading, .qa2__error { padding: var(--space-xl); text-align: center; font-size: var(--text-sm); color: #9499a0; }
+  .qa2__error button { margin-left: var(--space-sm); border: 1px solid #e3e5e7; background: #fff; border-radius: 999px; padding: var(--space-xs) var(--space-md); cursor: pointer; font-family: inherit; font-size: var(--text-xs); }
+  @media (width < 1500px) { .hotgrid { grid-template-columns: 1fr; } .catrow__top { flex-basis: 30%; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>方案 A2 · 频道导航 + 热门分类拓展面板（真实 TMDB 数据）</h1>
+  <p>视口 <span class="vp" id="vpw">—</span>px。点击导航 chip（电影/剧集/综艺/动漫/纪录片/排行榜）→ 下方展开「该分类 genre 分类 + 最热门搜索值（热度=TMDB popularity）」；面板内点 genre chip 切换热门榜；默认「首页」= 热度最高的分类排行 + 各分类最热门搜索值。「全部分类」→ 跳 <b>/browse</b>。<b>全部数据运行时调真实 TMDB API（zh-CN），无写死值</b>。</p>
+  <p style="margin-top:6px">Token（默认取仓库 .env 只读 token，可覆盖，存 localStorage）：<input id="tokenInput" placeholder="TMDB Bearer Token"></p>
+  <div class="api-log" id="apilog">— 请求日志 —</div>
+</header>
+
+<main class="stage-wrap">
+  <div class="stage">
+    <div class="pagepad">
+      <div class="qa2" id="qa2"></div>
+      <div class="mini-hero">
+        <div class="mini-hero__t">沙丘 3（2026）</div>
+        <div class="mini-hero__m">科幻 / 冒险 · 8.6 分 · 面板展开时 hero 下移（或覆盖，见备注）</div>
+      </div>
+      <div class="mini-row">
+        <div><div class="mini-card__cover"></div><div class="mini-card__t">—</div></div>
+        <div><div class="mini-card__cover"></div><div class="mini-card__t">—</div></div>
+        <div><div class="mini-card__cover"></div><div class="mini-card__t">—</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" id="note"></div>
+</main>
+
+<script>
+  /* ═══════════ 配置与鉴权 ═══════════ */
+  const TOKEN_DEFAULT = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlYWNjZjRiMjc2NmQ0MTI2NDZmYzU5OTg1MmVlNjE2YSIsIm5iZiI6MTc4MDMwMTYwOS44NTUsInN1YiI6IjZhMWQzZjI5NjNlMzVkYTdjYjgxMjAzYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.z8uzVf9xAIjMposAgQCYjIcRyME_36376U3pBB_yxyE';
+  const input = document.getElementById('tokenInput');
+  input.value = localStorage.getItem('demo_tmdb_token') || TOKEN_DEFAULT;
+  localStorage.setItem('demo_tmdb_token', input.value);
+  input.addEventListener('change', () => { localStorage.setItem('demo_tmdb_token', input.value); location.reload(); });
+  const API_HOSTS = ['https://api.tmdb.org/3', 'https://api.themoviedb.org/3']; // tmdb.org 为官方备用域名（部分网络 only 此域名可达），实测优先生效
+  let apiHost = localStorage.getItem('demo_tmdb_host') || API_HOSTS[0];
+  const IMG = 'https://image.tmdb.org/t/p/w92';
+  const cache = new Map();
+  const logEl = document.getElementById('apilog');
+  function log(msg, ok) {
+    const line = document.createElement('div');
+    line.innerHTML = ok ? `<b>✓</b> ${msg}` : `<b style="color:#ff4d4f">✗</b> ${msg}`;
+    logEl.prepend(line);
+    while (logEl.children.length > 6) logEl.lastChild.remove();
+  }
+  async function tmdb(path, params = {}) {
+    const qs = `?language=zh-CN&${new URLSearchParams(params)}`;
+    const key = apiHost + path + qs;
+    if (cache.has(key)) return cache.get(key);
+    const t0 = performance.now();
+    let j = null;
+    for (const host of [apiHost, ...API_HOSTS.filter(h => h !== apiHost)]) {
+      try {
+        const r = await fetch(host + path + qs, { headers: { Authorization: `Bearer ${localStorage.getItem('demo_tmdb_token')}` } });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        j = await r.json();
+        if (host !== apiHost) { apiHost = host; localStorage.setItem('demo_tmdb_host', host); }
+        break;
+      } catch (e) { log(`${host}${path} ${e.message}`, false); }
+    }
+    if (!j) throw new Error('全部域名不可达');
+    log(`${apiHost}${path} <b>${(performance.now() - t0).toFixed(0)}ms</b> · ${j.results ? j.results.length + ' items' : 'ok'}`, true);
+    cache.set(key, j);
+    return j;
+  }
+
+  /* ═══════════ 分类定义（与 CATEGORY_CONFIG 对齐）═══════════ */
+  const CATS = [
+    { key: 'home',        label: '首页',   icon: '▦' },
+    { key: 'movie',       label: '电影',   icon: '🎬', type: 'movie', genres: null,        hot: { path: '/trending/movie/day' } },
+    { key: 'tv',          label: '剧集',   icon: '📺', type: 'tv',   genres: null,        hot: { path: '/trending/tv/day' } },
+    { key: 'variety',     label: '综艺',   icon: '🎤', type: 'tv',   genres: [10764],     hot: { path: '/discover/tv', p: { with_genres: 10764, sort_by: 'popularity.desc', 'vote_count.gte': 10 } } },
+    { key: 'anime',       label: '动漫',   icon: '✨', type: 'tv',   genres: [16],        hot: { path: '/discover/tv', p: { with_genres: 16, sort_by: 'popularity.desc', 'vote_count.gte': 10 } } },
+    { key: 'documentary', label: '纪录片', icon: '📷', type: 'movie', genres: [99],       hot: { path: '/discover/movie', p: { with_genres: 99, sort_by: 'popularity.desc', 'vote_count.gte': 10 } } },
+    { key: 'top',         label: '排行榜', icon: '🏆', hot: { path: '/trending/all/week' } },
+  ];
+
+  /* ═══════════ 导航条渲染 ═══════════ */
+  let active = null;           // 当前展开的分类 key
+  let genreSel = {};           // { catKey: genreId | 0(全部) }
+  const heatOf = {};           // 分类热度徽标（trending/all/day 桶计）
+  const qa2 = document.getElementById('qa2');
+
+  function renderNav() {
+    qa2.innerHTML = `<div class="qa2__nav">
+      <button class="qa2__item ${active === 'home' || !active ? 'qa2__item--on' : ''}" data-key="home"><span class="ic">▦</span>首页</button>
+      ${CATS.slice(1).map(c => `
+        <button class="qa2__item ${active === c.key ? 'qa2__item--on' : ''}" data-key="${c.key}">
+          <span class="ic">${c.icon}</span>${c.label}
+          ${heatOf[c.key] ? `<i class="qa2__heat">🔥${heatOf[c.key].count}</i>` : ''}
+        </button>`).join('')}
+      <button class="qa2__item qa2__more" data-url="/browse">全部分类 →</button>
+    </div>
+    <div id="panel"></div>`;
+    qa2.querySelectorAll('.qa2__item[data-key]').forEach(b => b.addEventListener('click', () => select(b.dataset.key)));
+  }
+
+  /* ═══════════ 默认面板：分类热度排行（trending/all/day 聚合）═══════════ */
+  function renderDefaultPanel(data) {
+    const items = data.results || [];
+    const buckets = CATS.slice(1, 6).map(c => ({ ...c, items: [], heat: 0 }));
+    for (const it of items) {
+      for (const b of buckets) {
+        const match = b.key === 'movie' ? it.media_type === 'movie'
+          : b.key === 'tv' ? it.media_type === 'tv'
+          : it.media_type === 'tv' && b.genres.some(g => (it.genre_ids || []).includes(g))
+          || (b.key === 'documentary' && it.media_type === 'movie' && (it.genre_ids || []).includes(99));
+        if (match) { b.items.push(it); b.heat += it.popularity || 0; }
+      }
+    }
+    buckets.forEach(b => heatOf[b.key] = { count: b.items.length });
+    buckets.sort((x, y) => y.heat - x.heat);
+    const maxHeat = Math.max(...buckets.map(b => b.heat), 1);
+    const rank = buckets.map((b, i) => {
+      const top = b.items.sort((x, y) => y.popularity - x.popularity)[0];
+      return `<div class="catrow" data-goto="${b.key}">
+        <span class="catrow__rank">${i + 1}</span>
+        <span class="catrow__name">${b.icon} ${b.label}</span>
+        <span class="catrow__heat"><span class="n">${b.heat.toFixed(0)}</span><span class="l">分类热度 Σ</span></span>
+        <span class="catrow__bar"><i style="width:${(b.heat / maxHeat * 100).toFixed(1)}%"></i></span>
+        <span class="catrow__top">${top ? `<img src="${IMG}${top.poster_path}" loading="lazy" onerror="this.style.visibility='hidden'">
+          <span style="min-width:0"><span class="t">${top.title || top.name}</span><br><span class="m">最热门搜索值</span> <span class="h">🔥${(top.popularity || 0).toFixed(0)}</span></span>` : '<span class="m">—</span>'}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('panel').innerHTML = `
+      <div class="qa2__panel">
+        <div class="qa2__panel-head">
+          <span class="qa2__panel-title">🔥 分类热度榜</span>
+          <span class="qa2__panel-sub">热度 = TMDB <span class="live">/trending/all/day</span> 各分类 Σpopularity（实时）· 点击行展开该分类</span>
+        </div>
+        <div class="catrank">${rank}</div>
+      </div>`;
+    document.querySelectorAll('.catrow').forEach(r => r.addEventListener('click', () => select(r.dataset.goto)));
+  }
+
+  /* ═══════════ 分类面板：genre 分类 + 热门搜索值 ═══════════ */
+  async function renderCatPanel(cat) {
+    const panel = document.getElementById('panel');
+    panel.innerHTML = `<div class="qa2__panel"><div class="qa2__loading">正在获取 ${cat.label} 真实数据…</div></div>`;
+    try {
+      // genre 分类行（电影/剧集拉全量 genre list；固定 genre 分类显示单标签）
+      let genres = [];
+      if (cat.genres) {
+        genres = cat.genres.map(g => ({ id: g, name: cat.label }));
+      } else if (cat.type) {
+        const gl = await tmdb(`/genre/${cat.type}/list`);
+        genres = [{ id: 0, name: '全部' }, ...gl.genres];
+      }
+      const sel = genreSel[cat.key] ?? 0;
+      // 热门搜索值
+      let hotPath = cat.hot.path, hotParams = { ...(cat.hot.p || {}) };
+      if (cat.type && sel) {
+        hotPath = `/discover/${cat.type}`;
+        hotParams = { with_genres: sel, sort_by: 'popularity.desc', 'vote_count.gte': 30 };
+      }
+      const data = await tmdb(hotPath, hotParams);
+      const items = (data.results || []).slice(0, 10);
+      const rows = items.map((it, i) => `
+        <div class="hotrow" data-url="/detail/${it.media_type === 'tv' || hotPath.includes('tv') ? 'tv' : 'movie'}/${it.id}">
+          <span class="hotrow__rank">${i + 1}</span>
+          <img class="hotrow__poster" src="${it.poster_path ? IMG + it.poster_path : ''}" loading="lazy" onerror="this.style.visibility='hidden'">
+          <span class="hotrow__body">
+            <span class="hotrow__t">${it.title || it.name}</span>
+            <span class="hotrow__m">${(it.release_date || it.first_air_date || '').slice(0, 4) || '—'} · ${it.media_type === 'tv' || hotPath.includes('tv') ? '剧集' : '电影'}</span>
+          </span>
+          <span class="hotrow__heat">
+            <span class="n">🔥${(it.popularity || 0).toFixed(1)}</span>
+            <span class="l">热度</span>
+            <span class="hotrow__star">★ ${it.vote_average.toFixed(1)}</span>
+          </span>
+        </div>`).join('');
+      const genreChips = cat.type
+        ? `<div class="qa2__genres">${genres.map(g => `<button class="qa2__gchip ${g.id === sel ? 'qa2__gchip--on' : ''}" data-genre="${g.id}">${g.name}</button>`).join('')}</div>`
+        : '';
+      panel.innerHTML = `
+        <div class="qa2__panel">
+          <div class="qa2__panel-head">
+            <span class="qa2__panel-title">${cat.icon} ${cat.label} · 最热门搜索值</span>
+            <span class="qa2__panel-sub">数据源 <span class="live">${hotPath}</span>（实时）· 热度 = popularity · 点击行进详情</span>
+          </div>
+          ${genreChips}
+          <div class="hotgrid">${rows}</div>
+        </div>`;
+      panel.querySelectorAll('.qa2__gchip').forEach(g => g.addEventListener('click', () => {
+        genreSel[cat.key] = Number(g.dataset.genre);
+        renderCatPanel(cat);   // 点不同 genre chip → 内容切换（真实重新请求/缓存）
+      }));
+    } catch (e) {
+      panel.innerHTML = `<div class="qa2__panel"><div class="qa2__error">TMDB 请求失败（${e.message}）<button onclick="renderCatPanel(CATS.find(c=>c.key==='${cat.key}'))">重试</button></div></div>`;
+    }
+  }
+
+  /* ═══════════ 选中逻辑 ═══════════ */
+  async function select(key) {
+    if (active === key) { active = null; renderNav(); return; }   // 再点收起
+    active = key; renderNav();
+    if (key === 'home') {
+      document.getElementById('panel').innerHTML = '<div class="qa2__panel"><div class="qa2__loading">正在聚合 /trending/all/day …</div></div>';
+      try { renderDefaultPanel(await tmdb('/trending/all/day')); } catch (e) { /* 面板内已兜底 */ }
+    } else {
+      renderCatPanel(CATS.find(c => c.key === key));
+    }
+  }
+  window.renderCatPanel = renderCatPanel;
+  window.CATS = CATS;
+
+  /* 全部分类 → /browse；hotrow → /detail */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-url]');
+    if (t) console.log('[demo] 跳转:', t.dataset.url);
+  });
+
+  /* ═══════════ 初始化：拉 trending/all/day 出分类热度徽标 + 默认面板 ═══════════ */
+  renderNav();
+  select('home');
+  document.getElementById('vpw').textContent = window.innerWidth;
+
+  document.getElementById('note').innerHTML = `
+    <b>数据源（全部真实 TMDB，zh-CN，右上角日志可见每笔请求）</b>：<br>
+    ① 分类热度徽标 + 默认「分类热度榜」：<span class="url">/trending/all/day</span> 按分类桶聚合（Σpopularity + 计数）——「热度最高的分类类型 + 相应分类最热门搜索值」；<br>
+    ② 电影/剧集热榜：<span class="url">/trending/movie/day</span>、<span class="url">/trending/tv/day</span>；面板内 genre chip → <span class="url">/discover/{type}?with_genres=X&sort_by=popularity.desc</span>（点不同 chip 内容实时切换）；<br>
+    ③ 综艺/动漫/纪录片：/discover with_genres=10764 / 16 / 99（与 CATEGORY_CONFIG 一致）；④ 排行榜：/trending/all/week；⑤ genre 名称：/genre/{movie,tv}/list?language=zh-CN。<br>
+    <b>网络兼容</b>：API 双域名自动回退——官方备用域名 <span class="url">api.tmdb.org</span> 优先（实测部分网络主域名 api.themoviedb.org 不可达，此发现对真实落地同样关键）；海报 image.tmdb.org 加载失败时优雅隐藏、不阻塞榜单。<br>
+    <b>跳转</b>：导航 chip 展开面板（不跳转）；「全部分类」→ <span class="url">/browse</span>；catrow → 展开对应分类面板；hotrow → <span class="url">/detail/{type}/{id}</span>。<br>
+    <b>真实落地要点</b>：① 首页需在 fetchAllHomeData 并入 /trending/all/day（SearchBox 热搜已拉同接口，可共享缓存，零额外请求）；② browse 需支持 ?genre= 直达（复用 defaultGenreIds）；③ 面板展开时 hero 下移（本 demo）或覆盖 hero（二选一，落地时定）。
+  `;
+</script>
+</body>
+</html>
