@@ -506,9 +506,11 @@ html[data-device="app"] .action-btn__label {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   方案 C（2026-09-06）：桌面内嵌筛选条 + 排序弹层 + 「⋯」溢出菜单
+   方案 C（2026-09-06）：桌面内嵌筛选条 + 排序弹层 + 清空按钮响应式降级
    收藏页/历史页共用。移动端（≤767 / app 恒移动）不渲染，
    移动端仍走「更多筛选」按钮 + RecordFilterPanel 折叠面板。
+   清空按钮断点（用户拍板 2026-09-06）：>1280 空间充足直接显示「清空」；
+   768–1280 空间不足 → 清空收进「⋯」溢出菜单（record-overflow-wrap）。
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* 内嵌筛选条：默认（移动/app）隐藏 */
@@ -519,15 +521,16 @@ html[data-device="app"] .action-btn__label {
   align-items: center;
 }
 
-/* 「⋯」溢出菜单按钮：默认（移动/app）隐藏 */
+/* 「⋯」溢出菜单：默认（移动/app 与宽裕桌面）隐藏 */
 .record-overflow-wrap {
   position: relative;
   display: none;
   flex-shrink: 0;
 }
 
-/* 桌面（≥768 非 app）：显示内嵌筛选条与溢出菜单，隐藏移动专用的
-   「更多筛选/清空」按钮与折叠面板（宽度账实测 1440 下总需求 989px / 可用 1296px） */
+/* 桌面（≥768 非 app）：显示内嵌筛选条，隐藏移动专用的
+   「更多筛选」按钮与折叠面板；此段（768–1280）宽度不足 →
+   清空按钮收进「⋯」溢出菜单 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .record-inline-filter {
     display: inline-flex;
@@ -541,6 +544,17 @@ html[data-device="app"] .action-btn__label {
   }
   html:not([data-device="app"]) .record-filter-panel {
     display: none;
+  }
+}
+
+/* >1280（与 index.css「卡片间距统一」块同断点）：空间充足，
+   清空按钮恢复直接显示、「⋯」菜单隐藏 */
+@media (width > 1280px) {
+  html:not([data-device="app"]) .record-overflow-wrap {
+    display: none;
+  }
+  html:not([data-device="app"]) .record-actions .action-btn--clear {
+    display: inline-flex;
   }
 }
 
@@ -564,7 +578,7 @@ html[data-device="app"] .action-btn__label {
   color: var(--color-text);
 }
 
-/* 弹层容器（排序 / 「⋯」溢出菜单共用） */
+/* 弹层容器（排序） */
 .record-pop {
   position: absolute;
   top: calc(100% + var(--space-2xs));
@@ -628,7 +642,7 @@ html[data-device="app"] .action-btn__label {
   color: var(--color-primary);
   font-size: var(--text-xs);
 }
-/* 溢出菜单内的危险操作项（清空收藏/清空历史） */
+/* 溢出菜单内的危险操作项（清空收藏/清空历史，仅 768–1280 断点可见） */
 .record-pop-item--danger {
   color: var(--color-danger, #dc2626);
 }

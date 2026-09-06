@@ -44,7 +44,8 @@ interface RecordShellProps {
   /** 桌面端内嵌筛选条：分隔线 + 状态 chips + 排序弹层（≥768 非 app 显示；
    *  融合 tab 为 IPTV 时整段隐藏——状态/排序仅作用于影视项，IPTV 下无效） */
   inlineFilter?: RecordInlineFilter;
-  /** 「⋯」溢出菜单内容（桌面端显示；低频危险操作收纳，如清空收藏/清空历史） */
+  /** 「⋯」溢出菜单内容（仅空间不足的桌面断点 768–1199 显示；≥1200 由 CSS 恢复
+   *  直接显示 actions 里的清空按钮、隐藏本菜单） */
   overflowActions?: ReactNode;
   /** 附加操作按钮组（历史页：更多筛选/清空历史/批量管理），渲染在 record-aside 右侧 */
   actions?: ReactNode;
@@ -115,7 +116,8 @@ function SortMenu({ sortOptions: options, sortBy, onSortChange }: Pick<RecordInl
   );
 }
 
-/** 「⋯」溢出菜单（E-①）：低频危险操作收纳，与高频按钮物理隔离 */
+/** 「⋯」溢出菜单：低频/危险操作收纳——仅空间不足的桌面断点（768–1199）显示，
+ *  ≥1200 空间充足时由 CSS 恢复直接显示清空按钮、隐藏本菜单（用户拍板 2026-09-06） */
 function OverflowMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const wrapRef = usePopoverClose(open, () => setOpen(false));

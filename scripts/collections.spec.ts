@@ -108,13 +108,23 @@ test.describe('7.4 批量管理', () => {
     await expect(pop).toHaveCount(0);
     await expect(sortBtn).toContainText('最早收藏');
 
-    // 「⋯」溢出菜单：桌面可见，含「清空收藏」危险项
+    // 清空按钮响应式降级（断点 >1280，与卡片间距块同款）：
+    // 1280 视口（不大于 1280）→ 清空收进「⋯」溢出菜单
+    await expect(page.locator('.action-btn--clear')).toBeVisible({ visible: false }).catch(() => {});
+    expect(await page.locator('.action-btn--clear').isVisible()).toBe(false);
     const overflowBtn = page.locator('.record-overflow-btn');
     await expect(overflowBtn).toBeVisible();
     await overflowBtn.click();
     const overflowPop = page.locator('.record-pop--right');
     await expect(overflowPop).toBeVisible({ timeout: 5000 });
     await expect(overflowPop.locator('.record-pop-item--danger')).toContainText('清空收藏');
+    await page.keyboard.press('Escape');
+
+    // 1440 视口（>1280）→ 清空按钮直接显示、⋯ 隐藏
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(400);
+    expect(await page.locator('.record-overflow-btn').isVisible()).toBe(false);
+    await expect(page.locator('.action-btn--clear')).toBeVisible();
   });
 });
 
