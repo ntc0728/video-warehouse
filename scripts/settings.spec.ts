@@ -3,7 +3,7 @@
  * 路由: /settings
  * 配置依赖: 无需前置配置（设置页本身就是配置入口）
  *
- * 覆盖: SET-001 ~ SET-084
+ * 覆盖: SET-001 ~ SET-094
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
@@ -624,5 +624,38 @@ test.describe('6.9 顶部搜索框', () => {
     const globalHistory = await page.evaluate(() => localStorage.getItem('search-history'));
     expect(settingsHistory).toContain('独立历史测试');
     expect(globalHistory ?? '').not.toContain('独立历史测试');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6.10 返回顶部
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('6.10 返回顶部', () => {
+  test('SET-094: 桌面端内容下滑显示回到顶部按钮，点击回顶', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 前置: 页面顶部时按钮不渲染（threshold 280px 未达到）
+    expect(await page.locator('.back-to-top-button').count()).toBe(0);
+
+    // 操作: 滚动到页面下方（真实滚动容器是 .app-shell__scroll，而非 .app-shell / window）
+    await page.locator('.app-shell__scroll').evaluate((el) => { el.scrollTop = 800; });
+    await page.waitForTimeout(500);
+
+    // 预期结果: 按钮出现在视口右下角
+    const backToTop = page.locator('.back-to-top-button');
+    await expect(backToTop).toBeVisible();
+
+    // 操作: 点击按钮
+    await backToTop.click();
+    await page.waitForTimeout(800);
+
+    // 预期结果: 滚动容器回到顶部，按钮随之隐藏
+    const scrollTop = await page.locator('.app-shell__scroll').evaluate((el) => el.scrollTop);
+    expect(scrollTop).toBeLessThan(50);
+    await expect(backToTop).not.toBeVisible();
   });
 });

@@ -12,6 +12,7 @@ import { useLocation } from 'react-router-dom';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks';
 import { Modal, Button } from '@/components/ui';
+import { BackToTopButton } from '@/components/common';
 import { Icon } from "@/components/ui/Icon";
 import SettingsMobileProfile from './SettingsMobileProfile';
 import SettingsTabBar, { SETTINGS_TABS } from './SettingsTabBar';
@@ -191,7 +192,8 @@ export default function SettingsPage() {
           {renderTab(mobileSubPage)}
         </SettingsSubPage>
       ) : isDesktop ? (
-        <div className="settings-desktop-card">
+        <>
+          <div className="settings-desktop-card">
           {/* 桌面端顶部栏（方案 D）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar */}
           <div className="settings-desktop-topbar">
             <div className="settings-desktop-title">
@@ -223,6 +225,11 @@ export default function SettingsPage() {
             })}
           </div>
         </div>
+        {/* 桌面端内容下滑 >280px 显示「返回顶部」（复用 Browse/History/Chart 同款玻璃感按钮，
+            Portal 挂 body、监听 AppLayout 共享滚动容器）。仅桌面分支渲染：
+            移动端子页是 fixed inset:0 全屏覆盖层（z-index 60），若按钮常驻会在子页上方悬浮。 */}
+        <BackToTopButton />
+        </>
       ) : (
         <>
           <SettingsMobileProfile onProfileClick={() => handleSelectMenu('personal')} />
