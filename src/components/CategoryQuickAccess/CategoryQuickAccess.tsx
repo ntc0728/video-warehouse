@@ -434,7 +434,7 @@ export function CategoryQuickAccessPanel() {
             {panelLoading && (
               <div className="cqa-panel__refresh" role="status">
                 <TvMascot className="is-shaking" blink size={30} />
-                <span>更新中…</span>
+                <span>加载中…</span>
               </div>
             )}
           </div>

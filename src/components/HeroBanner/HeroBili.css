@@ -198,12 +198,14 @@
   height: var(--hero-banner-h);
 }
 
-/* 单张竖版卡：封面满铺在上、标题条在下，无卡片内边距 */
+/* 单张竖版卡：封面满铺在上、标题条在下，无卡片内边距。
+   边框对齐卡片模块规范（surface + 1px border-light，与 VideoCard 同语言） */
 .hero-side-card {
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--color-border-light);
   border-radius: var(--hero-card-radius);
   background: var(--color-surface-elevated);
   cursor: pointer;
