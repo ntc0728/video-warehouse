@@ -16,6 +16,7 @@ import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play } from 'lucide-react'
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
 import { Icon } from '@/components/ui/Icon';
+import LazyImage from '@/components/LazyImage/LazyImage';
 import './HeroBili.css';
 
 /** HeroBili 接受的条目形状（TMDB trending，与 HeroBanner 的 HeroItem 结构兼容；title 必填与其对齐） */
@@ -393,13 +394,12 @@ function HeroSideCard({
     >
       <div className="hero-side-card__cover">
         {coverUrl ? (
-          <img
-            className="hero-side-card__img"
+          /* 封面失败兜底与「继续观看」卡（VideoCard → LazyImage）一致：
+             骨架占位加载，失败走默认品牌兜底（MonitorPlay + kinoTV） */
+          <LazyImage
             src={coverUrl}
             alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
+            className="hero-side-card__img"
           />
         ) : (
           <span className="hero-side-card__img hero-side-card__img--empty thumbnail-skeleton-bg" />

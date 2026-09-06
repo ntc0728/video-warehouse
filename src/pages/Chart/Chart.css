@@ -8,6 +8,12 @@
 .chart-page {
   padding-top: var(--space-md);
   padding-bottom: var(--space-lg);
+  /* 充满滚动区剩余高度（flex 链：.app-shell__scroll → .page-transition → 本页）：
+     首次进入榜单不足一屏时卡片不留白塌缩，chart-list 撑满卡片剩余空间 */
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .chart-card {
@@ -17,6 +23,10 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ── 页头 ── */
@@ -142,6 +152,9 @@
   gap: var(--space-xs) var(--space-md);
   padding: var(--space-xs) var(--space-md) var(--space-md);
   min-height: 200px;
+  /* 撑满卡片剩余高度（.chart-card 已 flex column） */
+  flex: 1 1 auto;
+  position: relative;
 }
 .chart-row {
   display: flex;
@@ -293,11 +306,46 @@
 .chart-list__skeleton .d { flex: 0 0 84px; height: 18px; }
 @keyframes chart-shimmer { to { background-position: -200% 0; } }
 
+/* ── 切 tab 刷新态：旧榜单降沉 + 居中「加载中」胶囊（与 CQA 面板刷新同款视觉）── */
+.chart-list--refreshing .chart-row,
+.chart-list--refreshing .chart-list__end {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) ease;
+}
+/* 零高度 sticky 载体：chart-card 首个子元素，钉在滚动视口 40dvh 处；
+   height:0 + pointer-events:none 保证不占布局、不拦交互 */
+.chart-refresh-sticky {
+  position: sticky;
+  top: 40dvh;
+  z-index: 5;
+  height: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.chart-list__refresh {
+  /* translateY(-50%)：载体高 0，胶囊以载体线为轴垂直居中 */
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
 .chart-loading {
   min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1 1 auto;
 }
 .chart-error {
   min-height: 320px;
@@ -309,6 +357,7 @@
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   text-align: center;
+  flex: 1 1 auto;
 }
 .chart-error__retry {
   padding: var(--space-xs) var(--space-lg);
@@ -353,4 +402,6 @@ html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .chart-list__skeleton i { animation: none; }
+  .chart-list--refreshing .chart-row,
+  .chart-list--refreshing .chart-list__end { transition: none; }
 }

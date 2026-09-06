@@ -535,7 +535,11 @@
     color: var(--color-text);
     background: var(--color-surface-hover);
   }
-  html:not([data-device="tv"]) .cqa-subgenres__chip--on {
+  /* 选中态复用站内 Tab 语言：黑底白字。必须连 :hover 一并声明——
+     上方 .cqa-subgenres__chip:hover 的 surface-hover 与本规则特异性相同
+     且源顺序在前，不加 ：hover 分支会让选中 chip 悬停时被 hover 底色覆盖（掉背景）。 */
+  html:not([data-device="tv"]) .cqa-subgenres__chip--on,
+  html:not([data-device="tv"]) .cqa-subgenres__chip--on:hover {
     color: var(--color-tab-active-text);
     background: var(--color-tab-active-bg);
   }
