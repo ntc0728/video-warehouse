@@ -521,7 +521,7 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
             <span className="cqa-hotcard__poster cqa-hotcard__poster--empty thumbnail-skeleton-bg" />
           )}
           <div className="cqa-hotcard__body">
-            <div className="cqa-hotcard__t">{item.title}</div>
+            <HotCardTitle title={item.title} />
             <div className="cqa-hotcard__m">
               {item.year ?? '—'}
               <span className="cqa-hotcard__star">
@@ -539,6 +539,33 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 卡片标题：溢出检测（ResizeObserver）+ 悬浮跑马灯（--marquee-x = 溢出宽度，非溢出不滚动） */
+function HotCardTitle({ title }: { title: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [overflowX, setOverflowX] = useState(0);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const check = () => setOverflowX(Math.max(0, el.scrollWidth - el.clientWidth));
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [title]);
+
+  return (
+    <div className="cqa-hotcard__t" ref={wrapRef}>
+      <span
+        className={`cqa-hotcard__t-text${overflowX > 0 ? ' is-overflow' : ''}`}
+        style={overflowX > 0 ? { '--marquee-x': `-${overflowX}px` } as React.CSSProperties : undefined}
+      >
+        {title}
+      </span>
     </div>
   );
 }
