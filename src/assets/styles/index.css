@@ -443,8 +443,8 @@ a[role="button"],
 
 /* 纯净文本框缩放兜底（仅当无结构化子内容时生效）：整框缩放 0.96 */
 button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
+a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard),
+[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard),
 [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
 .sidebar-nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button),
 .sticky-header__nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button) {
@@ -454,16 +454,16 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 /* 内容缩放：按钮含结构化子内容时，框静止、直接子元素（文本/图标）缩放 0.96 */
 button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *),
-a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *),
-[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *),
+a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *),
+[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *),
 [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *),
 .sidebar-nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *),
 .sticky-header__nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) {
   scale: 1;
 }
 button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
+a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *) > *,
+[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *) > *,
 [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
 .sidebar-nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
 .sticky-header__nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > * {
@@ -473,14 +473,14 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 @media (prefers-reduced-motion: reduce) {
   button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
+  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard),
+  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard),
   [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
   .sidebar-nav-item:active,
   .sticky-header__nav-item:active,
   button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
+  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *) > *,
+  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):not(.cqa-catcard):has(> *) > *,
   [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
   .sidebar-nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
   .sticky-header__nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > * {
@@ -490,6 +490,8 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 /* 不应用弹性按压的元素（整改清单）：
    ① 已有自身 transform:scale 反馈 → 避免与全局 scale 叠加成双重缩放；
+   ①′ .cqa-catcard（首页分类热度榜卡）：整卡内容缩放视觉过重，改组件内
+      本地实现「仅文本缩放」按压（对齐设置页可点项范式，见 CategoryQuickAccess.css）；
    ② 装饰/靠 transform 定位的元素；
    ③ 设置页独占一行的全宽按钮/行（自身已有 :active 背景反馈，缩放整行观感差）。 */
 .no-press,
