@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>demo — cqa-nav 融合顶栏 v2：hover 触发 + 真实图标（2026-09-06）</title>
+<style>
+  :root {
+    --text-xs: 12px; --text-sm: 13.4px; --text-base: 15.2px;
+    --space-xs: 3.5px; --space-sm: 8.5px; --space-md: 11.8px; --space-lg: 16.3px;
+    --radius-md: 7.6px; --radius-full: 999px; --radius-lg: 12.8px;
+    --color-text: #17181a; --color-text-secondary: #61666d; --color-text-tertiary: #9499a0;
+    --color-surface: #fff; --color-surface-hover: rgba(0,0,0,.05);
+    --color-border-light: #e8e8e8; --color-tab-active-bg: #000; --color-tab-active-text: #fff;
+    --color-warning: #fa8c16; --color-placeholder: #f0f1f3;
+    --header-h: 56px; --hgap: 4px; /* 顶栏统一间距：chips 与右侧图标共用 */
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "PingFang SC","Microsoft YaHei",system-ui,sans-serif; background: #f6f7f8; color: var(--color-text); }
+  .intro { padding: 18px 24px 12px; }
+  h1 { font-size: 17px; margin-bottom: 4px; }
+  .note { font-size: 12px; color: var(--color-text-tertiary); line-height: 1.7; }
+
+  /* ── 舞台：header + hero + 可滚动内容（真实滚动验证「滚下面板消失」） ── */
+  .stage { position: sticky; top: 0; z-index: 10; }
+
+  /* ── 顶栏（融合态，真实结构复刻） ── */
+  .header { display: flex; align-items: center; gap: 12px; height: var(--header-h);
+            background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--color-border-light); padding: 0 20px; }
+  .left { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#fb7299,#ffb64d);
+          display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; }
+  .brand { font-size: 16px; font-weight: 700; letter-spacing: .2px; }
+  .center { flex: 1 1 auto; display: flex; align-items: center; gap: var(--hgap); min-width: 0; }
+  .nav-chips { display: flex; align-items: center; gap: var(--hgap); flex: 0 1 auto; min-width: 0; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 9px;
+          border: none; background: none; border-radius: var(--radius-full); font-size: var(--text-sm);
+          color: var(--color-text-secondary); cursor: pointer; font-family: inherit; white-space: nowrap;
+          transition: color .15s ease, background .15s ease; }
+  .chip svg { width: 15px; height: 15px; }
+  .chip:hover, .chip.on { color: var(--color-text); background: var(--color-surface-hover); }
+  .chip.open { color: var(--color-tab-active-text); background: var(--color-tab-active-bg); font-weight: 600; }
+  .chip.more { color: var(--color-text-tertiary); }
+  .search { flex: 1 1 auto; max-width: 440px; min-width: 150px; margin-left: auto; height: 34px;
+            border: 1px solid var(--color-border-light); border-radius: var(--radius-full); background: #f6f7f8;
+            display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--color-text-tertiary); font-size: 13px; }
+  .search svg { width: 15px; height: 15px; flex: 0 0 auto; }
+  .right { flex: 0 0 auto; display: flex; align-items: center; gap: var(--hgap); }
+  .rnav { display: inline-flex; align-items: center; gap: 6px; padding: 6px 7px; border-radius: var(--radius-md);
+          color: var(--color-text-secondary); font-size: var(--text-sm); cursor: pointer; transition: background .15s, transform .15s; }
+  .rnav:hover { background: var(--color-surface-hover); transform: scale(1.05); }
+  .rnav svg { width: 17px; height: 17px; }
+  .theme-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+               border: none; background: none; border-radius: 50%; color: var(--color-text-secondary);
+               cursor: pointer; transition: background .15s, transform .15s; }
+  .theme-btn:hover { background: var(--color-surface-hover); transform: scale(1.05); }
+  .theme-btn svg { width: 19px; height: 19px; }
+
+  /* ── hero + mega 面板（hover 触发 / 移出关闭 / 滚动关闭） ── */
+  .hero-zone { position: relative; }
+  .hero { height: 210px; background: linear-gradient(120deg, #00a1d6 0%, #6b7cff 55%, #9b6bff 100%); color: #fff;
+          display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 24px; }
+  .hero .t { font-size: 16px; font-weight: 600; }
+  .hero .m { font-size: 12.5px; opacity: .85; margin-top: 5px; }
+  .mega { position: absolute; left: 0; right: 0; top: 0; z-index: 5; display: none;
+          background: var(--color-surface); border-bottom: 1px solid var(--color-border-light);
+          box-shadow: 0 16px 40px rgba(0,0,0,.22); padding: 10px 20px 14px;
+          border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .mega.show { display: block; animation: megaIn .18s ease-out; }
+  @keyframes megaIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .mega-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .mega-title { font-size: var(--text-base); font-weight: 600; }
+  .mega-heat { display: inline-flex; align-items: center; gap: 3px; font-size: var(--text-xs); font-weight: 600;
+               color: var(--color-warning); font-variant-numeric: tabular-nums; }
+  .mega-heat svg { width: 12px; height: 12px; }
+  .mega-sub { flex: 1; font-size: var(--text-xs); color: var(--color-text-tertiary); }
+  .mega-info { display: inline-flex; color: var(--color-text-tertiary); cursor: help; }
+  .mega-info svg { width: 13px; height: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 44px); grid-auto-flow: column; gap: 7px 11px; }
+  .card { display: flex; align-items: center; gap: 7px; border: 1px solid var(--color-border-light);
+          border-radius: var(--radius-md); padding: 3px 7px; cursor: pointer; }
+  .card:hover { border-color: #bfbfbf; }
+  .rank { flex: 0 0 16px; text-align: center; font-weight: 700; font-style: italic; color: var(--color-text-tertiary); font-size: 12px; }
+  .poster { flex: 0 0 58px; height: 33px; border-radius: 5px; background: var(--color-placeholder); }
+  .tt { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ht { flex: 0 0 auto; font-size: 11px; color: var(--color-warning); font-weight: 600; }
+
+  /* ── 可滚动填充内容（验证滚动关闭） ── */
+  .filler { padding: 20px 24px 60px; }
+  .filler h2 { font-size: 14px; margin-bottom: 10px; color: var(--color-text-secondary); }
+  .row { display: grid; grid-auto-flow: column; grid-auto-columns: 150px; gap: 12px; margin-bottom: 18px; overflow: hidden; }
+  .ph { height: 84px; border-radius: 8px; background: linear-gradient(135deg,#dfe3e8,#c9d2dc); }
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>cqa-nav 融合顶栏 v2 — hover 触发 + 真实图标复刻</h1>
+  <div class="note">
+    交互：鼠标悬停 chip → 面板展开（黑底白字激活）；移出到导航/面板以外 → 收起；<b>页面向下滚动 → 面板立即消失</b>（页面可滚动，往下拖验证）。<br>
+    顶栏右侧为真实结构复刻：IPTV / 收藏 / 历史 / 设置（图标+文字，hover-scale）+ 主题切换按钮；logo 标题「kinoTV」暂保留，拥挤则后续去掉。
+  </div>
+</div>
+
+<div class="stage">
+  <header class="header" id="header">
+    <div class="left">
+      <div class="logo">K</div>
+      <span class="brand">kinoTV</span>
+    </div>
+    <div class="center">
+      <nav class="nav-chips" id="chips" aria-label="分类导航"></nav>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>搜索电影 / 剧集 / IPTV…</div>
+    </div>
+    <div class="right">
+      <span class="rnav" data-icon="tv">IPTV</span>
+      <span class="rnav" data-icon="star">收藏</span>
+      <span class="rnav" data-icon="clock">历史</span>
+      <span class="rnav" data-icon="settings">设置</span>
+      <button class="theme-btn" data-icon="sun" aria-label="主题切换"></button>
+    </div>
+  </header>
+
+  <div class="hero-zone" id="heroZone">
+    <div class="mega" id="mega">
+      <div class="mega-head">
+        <span class="mega-title" id="mTitle">电影 · 今日最热</span>
+        <span class="mega-heat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span id="mHeat">3820</span></span>
+        <span class="mega-sub">按热度排序 · 点卡片看详情</span>
+        <span class="mega-info" title="热度基于 TMDB 每日趋势数据聚合，定期更新"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+      </div>
+      <div class="grid" id="mGrid"></div>
+    </div>
+    <div class="hero">
+      <div class="t">Hero 主视觉 —— 悬停上方任一分类 chip 体验面板；页面下滚面板即收起</div>
+      <div class="m">面板 = header 正下方 mega-menu；hero 卡内不再有导航带首行</div>
+    </div>
+  </div>
+</div>
+
+<div class="filler">
+  <h2>↓ 向下滚动内容区：面板会立即收起（chip 仍随 header 常驻，再悬停会先回顶再展开）</h2>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+  <div class="row"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+</div>
+
+<script>
+  // ── lucide 真实 path（与项目 WIDE_NAV_ICONS / StickyHeader 图标一一对应） ──
+  const ICONS = {
+    home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    film: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/>',
+    tv: '<rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>',
+    mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>',
+    sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    video: '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+    trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+    grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    chev: '<path d="m9 18 6-6-6-6"/>',
+  };
+  const svg = (name, cls) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${cls ? `class="${cls}"` : ''}>${ICONS[name]}</svg>`;
+
+  // 右侧真实图标
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    el.insertAdjacentHTML('afterbegin', svg(el.dataset.icon));
+  });
+
+  const CATS = [
+    { key: 'home',    label: '首页',   icon: 'home' },
+    { key: 'movie',   label: '电影',   icon: 'film',   heat: '3820' },
+    { key: 'tv',      label: '剧集',   icon: 'tv',     heat: '2914' },
+    { key: 'variety', label: '综艺',   icon: 'mic',    heat: '1903' },
+    { key: 'anime',   label: '动漫',   icon: 'sparkles', heat: '1717' },
+    { key: 'doc',     label: '纪录片', icon: 'video',  heat: '1038' },
+    { key: 'top',     label: '排行榜', icon: 'trophy', heat: '—' },
+  ];
+
+  const chipsEl = document.getElementById('chips');
+  const mega = document.getElementById('mega');
+  const heroZone = document.getElementById('heroZone');
+  let activeKey = null;
+
+  // chips 渲染
+  CATS.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.dataset.key = cat.key;
+    b.innerHTML = svg(cat.icon) + `<span>${cat.label}</span>`;
+    b.addEventListener('mouseenter', () => openPanel(cat));
+    chipsEl.appendChild(b);
+  });
+  const more = document.createElement('button');
+  more.className = 'chip more';
+  more.innerHTML = svg('grid') + '<span>全部分类</span>' + svg('chev');
+  more.addEventListener('mouseenter', closePanel);
+  chipsEl.appendChild(more);
+
+  // 面板内容（9 卡示意）
+  const gridEl = document.getElementById('mGrid');
+  gridEl.innerHTML = Array.from({ length: 9 }, (_, i) =>
+    `<div class="card"><span class="rank">${i + 1}</span><span class="poster"></span><span class="tt">测试条目 ${i + 1} · 2024</span><span class="ht">🔥 ${(290 - i * 10).toFixed(0)}</span></div>`
+  ).join('');
+
+  function openPanel(cat) {
+    if (cat.key === 'home' || cat.key === 'top' || !cat.heat) { closePanel(); return; }
+    activeKey = cat.key;
+    document.getElementById('mTitle').textContent = `${cat.label} · 今日最热`;
+    document.getElementById('mHeat').textContent = cat.heat;
+    chipsEl.querySelectorAll('.chip').forEach(c => c.classList.toggle('open', c.dataset.key === cat.key));
+    mega.classList.add('show');
+  }
+  function closePanel() {
+    activeKey = null;
+    mega.classList.remove('show');
+    chipsEl.querySelectorAll('.chip').forEach(c => c.classList.remove('open'));
+  }
+
+  // 鼠标移出「chips + 面板」区域 → 收起
+  [chipsEl, mega].forEach(el => el.addEventListener('mouseleave', closePanel));
+  // 向下滚动 → 面板收起
+  window.addEventListener('scroll', closePanel, { passive: true });
+</script>
+</body>
+</html>

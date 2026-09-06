@@ -16,7 +16,7 @@ import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play } from 'lucide-react'
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
 import { Icon } from '@/components/ui/Icon';
-import { CategoryQuickAccessWide } from '@/components/CategoryQuickAccess';
+import { CategoryQuickAccessPanel } from '@/components/CategoryQuickAccess';
 import './HeroBili.css';
 
 /** HeroBili 接受的条目形状（TMDB trending，与 HeroBanner 的 HeroItem 结构兼容；title 必填与其对齐） */
@@ -206,8 +206,8 @@ export default function HeroBili({
 
   return (
     <section className="hero-bili" data-role="hero" aria-label="热门推荐">
-      {/* ── 频道导航带（融合方案甲：hero 卡内首行；overlay 覆盖 banner，不推挤）── */}
-      <CategoryQuickAccessWide />
+      {/* ── mega 面板（hover chips 触发；绝对定位于 hero 卡顶，贴 header 下缘）── */}
+      <CategoryQuickAccessPanel />
       <div className="hero-bili__grid">
       {/* ── 左：banner 轮播 ── */}
       <div className="hero-bili__left">

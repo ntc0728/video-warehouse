@@ -154,6 +154,12 @@
   padding-inline: var(--space-xs);
 }
 
+/* 分类 chips 融合顶栏（2026-09-06，仅首页宽屏渲染）：chips 靠左、搜索框靠右，
+   间距与顶栏右侧图标统一为 --space-xs 档 */
+.sticky-header__center > .cqa-nav + .search-box-wrap--header {
+  margin-left: auto;
+}
+
 /* ── Nav ───────────────────────────────────────────── */
 
 .sticky-header__nav {

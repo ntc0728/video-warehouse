@@ -1,11 +1,11 @@
 /**
- * CategoryQuickAccess — 分类入口（2026-09-06 融合方案甲，三分支）：
- *  · default export        ≤1280 / app：7 彩色圆卡（现状不变，点击跳 browse）
- *  · CategoryQuickAccessWide  >1280：渲染在 HeroBili 卡片内部的「频道导航带」，
- *    点击 chip 在导航带下缘展开 overlay 面板（覆盖 banner、不推挤文档流）。
- *    再点同一 chip / 点击面板与导航以外区域 / Esc 收起。
- *  · CategoryHeatRow       >1280：hero 下方常驻「分类热度榜」内容行（加载即显示，
- *    与 TMDBMovieRow 同层级），点分类卡打开对应 overlay 并回顶。
+ * CategoryQuickAccess — 分类入口（2026-09-06 顶栏融合方案，三分支）：
+ *  · default export              ≤1280 / app：7 彩色圆卡（现状不变，点击跳 browse）
+ *  · CategoryQuickAccessNav      >1280：分类 chips 融合进 StickyHeader（仅首页渲染），
+ *    hover chip 打开面板；移出导航/面板延迟收起；页面滚动收起（滚离 hero 后悬停先回顶）。
+ *  · CategoryQuickAccessPanel    >1280：mega 面板（HeroBili 卡顶渲染，贴 header 下缘），
+ *    hover 期间常驻；热度 Σ 值显示在面板头「今日最热」右侧。
+ *  · CategoryHeatRow             >1280：hero 下方常驻「分类热度榜」内容行。
  * 数据与图标方案：changelogs/design-docs/2026-09-06-category-quick-access-a2-实施方案.md
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -35,6 +35,8 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useTMDBStore } from '@/stores/useTMDBStore';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import {
@@ -83,23 +85,41 @@ const WIDE_NAV_ICONS: Record<string, LucideIcon> = {
   top: Trophy,
 };
 
-/** Σpopularity 徽标缩写：≥1000 以 k 为单位（1 位小数，去尾 .0），否则取整 */
+/** Σpopularity 面板头展示：取整（千位级由分类卡/徽标另行缩写） */
 function formatHeatSum(v: number | undefined): string {
   if (!v) return '';
-  if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k`;
   return String(Math.round(v));
 }
 
-// ── overlay 开合状态（热度榜常驻行与导航带共享；模块级，跨 Keep-Alive 复进保持）──
+// ── overlay 开合状态（hover 语义：chips 在 StickyHeader、面板在 HeroBili 卡顶；
+//    模块级 store 让两个组件共享开合，跨 Keep-Alive 复进保持）──
 interface CategoryOverlayState {
   activeKey: WideCategoryKey | null;
-  toggle: (key: WideCategoryKey) => void;
+  open: (key: WideCategoryKey) => void;
   close: () => void;
+  /** 鼠标移出导航/面板时延迟收起（穿越 nav↔panel 的空隙缓冲） */
+  scheduleClose: () => void;
+  /** 鼠标进入导航/面板时取消延迟收起 */
+  cancelClose: () => void;
 }
-export const useCategoryOverlayStore = create<CategoryOverlayState>((set, get) => ({
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+export const useCategoryOverlayStore = create<CategoryOverlayState>((set) => ({
   activeKey: null,
-  toggle: (key) => set({ activeKey: get().activeKey === key ? null : key }),
-  close: () => set({ activeKey: null }),
+  open: (key) => {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    set({ activeKey: key });
+  },
+  close: () => {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    set({ activeKey: null });
+  },
+  scheduleClose: () => {
+    if (closeTimer) clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => { closeTimer = null; set({ activeKey: null }); }, 120);
+  },
+  cancelClose: () => {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+  },
 }));
 
 interface CategoryQuickAccessProps {
@@ -229,22 +249,138 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
 }
 
 /**
- * >1280：频道导航带（HeroBili 卡内首行）+ overlay 面板。
- * 本组件由 HeroBili 渲染；overlay 绝对定位于 hero 卡内、覆盖 banner 顶部。
+ * >1280 桌面全页面：分类 chips（由 StickyHeader 中央渲染，搜索框左侧）。
+ * 首页：hover chip → 打开 hero 卡顶的 mega 面板；移出导航 → 延迟收起；页面滚动 → 立即收起；
+ *       滚离 hero 后悬停 chip → 先回顶再展开（回顶滚动期间豁免滚动收起）。
+ * 其他页面：面板载体（hero）不存在，chips 退化为纯导航——hover 不开面板，
+ *       点击分类直达 /browse 对应分类，点「首页」回首页。
  */
-export function CategoryQuickAccessWide() {
+export function CategoryQuickAccessNav() {
+  const navigate = useCustomNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  const activeKey = useCategoryOverlayStore((s) => s.activeKey);
+  const open = useCategoryOverlayStore((s) => s.open);
+  const close = useCategoryOverlayStore((s) => s.close);
+  const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
+  const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
+  const scrollContainerRef = useScrollContainer();
+  // 程序化回顶期间豁免「滚动收起」，否则刚展开的面板会被自己触发的滚动立即关掉
+  const suppressScrollCloseUntilRef = useRef(0);
+
+  // 页面滚动 → 面板立即收起（仅首页存在面板）
+  useEffect(() => {
+    if (!isHome) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (Date.now() < suppressScrollCloseUntilRef.current) return;
+      useCategoryOverlayStore.getState().close();
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [isHome, scrollContainerRef]);
+
+  // Esc / 点击导航与面板以外区域 → 收起（Nav 与 Panel 分处 header/hero，用 closest 判定内侧）
+  useEffect(() => {
+    if (!isHome || !activeKey) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      if (target?.closest?.('.cqa-nav, .cqa-overlay')) return;
+      close();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [isHome, activeKey, close]);
+
+  // 路由切离首页时收起面板（面板载体 hero 已隐藏，避免残留展开态）
+  useEffect(() => {
+    if (!isHome) close();
+  }, [isHome, close]);
+
+  const handleChipEnter = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
+    cancelClose();
+    if (!isHome) return; // 非首页无面板载体，hover 不开面板
+    if (cat.key === 'home') { close(); return; }
+    const el = scrollContainerRef.current;
+    if (el && el.scrollTop > 0) {
+      suppressScrollCloseUntilRef.current = Date.now() + 800;
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    open(cat.key);
+  }, [cancelClose, close, isHome, open, scrollContainerRef]);
+
+  const handleChipClick = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
+    if (!isHome) {
+      // 非首页：chips = 纯导航
+      if (cat.key === 'home') navigate('/');
+      else navigate(buildBrowseUrl(cat.key));
+      return;
+    }
+    if (cat.key === 'home') { close(); return; }
+    open(cat.key);
+  }, [close, isHome, navigate, open]);
+
+  const isChipOn = (key: WideCategoryKey) =>
+    isHome && (key === 'home' ? activeKey === null : activeKey === key);
+
+  return (
+    <nav
+      className="cqa-nav"
+      aria-label="分类导航"
+      onMouseEnter={cancelClose}
+      onMouseLeave={scheduleClose}
+    >
+      {WIDE_CATEGORIES.map((cat) => (
+        <button
+          key={cat.key}
+          className={`cqa-nav__item${isChipOn(cat.key) ? ' cqa-nav__item--on' : ''}`}
+          aria-expanded={isHome ? activeKey === cat.key : undefined}
+          onMouseEnter={() => handleChipEnter(cat)}
+          onClick={() => handleChipClick(cat)}
+        >
+          <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
+          <span>{cat.label}</span>
+        </button>
+      ))}
+      <button
+        className="cqa-nav__item cqa-nav__more"
+        onMouseEnter={isHome ? close : undefined}
+        onClick={() => {
+          close();
+          navigate(buildBrowseUrl('all'), { state: { fromCategory: true } });
+        }}
+      >
+        <Icon icon={LayoutGrid} size="md" />
+        <span>全部分类</span>
+        <Icon icon={ChevronRight} size="xs" />
+      </button>
+    </nav>
+  );
+}
+
+/**
+ * >1280：mega 面板（由 HeroBili 渲染于 hero 卡顶，贴 header 下缘）。
+ * hover 常驻：进入面板取消延迟收起、移出面板延迟收起（与 Nav 的缓冲互补）。
+ */
+export function CategoryQuickAccessPanel() {
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
-  const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
   const heatSum = useMemo(() => {
     const map: Partial<Record<WideCategoryKey, number>> = {};
-    for (const b of heatBuckets) map[b.key] = b.heat;
+    for (const b of aggregateCategoryHeat(trending)) map[b.key] = b.heat;
     return map;
-  }, [heatBuckets]);
+  }, [trending]);
 
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
-  const toggle = useCategoryOverlayStore((s) => s.toggle);
   const close = useCategoryOverlayStore((s) => s.close);
+  const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
+  const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
   const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage } =
     useWideCategoryPanel(activeKey);
 
@@ -264,138 +400,95 @@ export function CategoryQuickAccessWide() {
     navigate(buildBrowseUrl(activeCat.key, currentSub?.genreIds ?? []));
   }, [activeCat, currentSub, close, navigate]);
 
-  const navRef = useRef<HTMLElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // 点击导航/面板以外区域或 Esc → 收起
-  useEffect(() => {
-    if (!activeKey) return;
-    const onDown = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (navRef.current?.contains(target) || panelRef.current?.contains(target)) return;
-      close();
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [activeKey, close]);
+  if (!activeCat || activeCat.key === 'home') return null;
 
   return (
-    <>
-      <nav ref={navRef} className="cqa-nav" aria-label="分类导航">
-        {WIDE_CATEGORIES.map((cat) => (
-          <button
-            key={cat.key}
-            className={`cqa-nav__item${(cat.key === 'home' ? activeKey === null : activeKey === cat.key) ? ' cqa-nav__item--on' : ''}`}
-            aria-expanded={activeKey === cat.key}
-            onClick={() => (cat.key === 'home' ? close() : toggle(cat.key))}
-          >
-            <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
-            <span>{cat.label}</span>
-            {heatSum[cat.key] ? (
-              <span className="cqa-nav__heat">
-                <Icon icon={Flame} size="xs" />
-                {formatHeatSum(heatSum[cat.key])}
-              </span>
-            ) : null}
-          </button>
-        ))}
-        <button
-          className="cqa-nav__item cqa-nav__more"
-          onClick={() => {
-            close();
-            navigate(buildBrowseUrl('all'), { state: { fromCategory: true } });
-          }}
-        >
-          <Icon icon={LayoutGrid} size="md" />
-          <span>全部分类</span>
-          <Icon icon={ChevronRight} size="xs" />
-        </button>
-      </nav>
-
-      {activeCat && activeCat.key !== 'home' && (
-        <div ref={panelRef} className="cqa-overlay" role="dialog" aria-label={`${activeCat.label}面板`}>
-          <>
-            <div className="cqa-panel__head">
-              <Icon icon={WIDE_NAV_ICONS[activeCat.key]} size="sm" />
-              <span className="cqa-panel__title">{activeCat.label} · 今日最热</span>
-              <span className="cqa-panel__sub">按热度排序 · 点卡片看详情</span>
-              <InfoTip label="热度口径说明" text="热度基于 TMDB 每日趋势数据（/trending/day 的 popularity 值）聚合，定期更新，非实时数值。" />
-            </div>
-            <div className="cqa-subgenres">
-              {currentSubs
-                ? currentSubs.map((s) => (
-                    <button
-                      key={s.id}
-                      className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
-                      onClick={() => selectSub(activeCat.key, s.id)}
-                    >
-                      {s.label}
-                    </button>
-                  ))
-                : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
-            </div>
-            {panelItems === null && panelLoading ? (
-              <div className="cqa-panel__loading">
-                <TvMascot blink size={44} />
-                <span>正在获取 {activeCat.label} 数据…</span>
-              </div>
-            ) : (
-              <>
-                <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
-                  <CategoryHotGrid items={pageItems} rankOffset={(panelPage - 1) * PANEL_PAGE_SIZE} />
-                  {panelLoading && (
-                    <div className="cqa-panel__refresh" role="status">
-                      <TvMascot className="is-shaking" blink size={30} />
-                      <span>更新中…</span>
-                    </div>
-                  )}
-                </div>
-                {panelTotal > 0 && (
-                  <div className="cqa-panel__pager">
-                    <button
-                      type="button"
-                      className="cqa-panel__pager__btn"
-                      disabled={panelPage <= 1}
-                      aria-label="上一页"
-                      onClick={() => setPanelPage((p) => Math.max(1, p - 1))}
-                    >
-                      <Icon icon={ChevronLeft} size="xs" />
-                      上一页
-                    </button>
-                    <span className="cqa-panel__pager__ind">{panelPage} / {panelTotalPages}</span>
-                    {panelPage < panelTotalPages ? (
-                      <button
-                        type="button"
-                        className="cqa-panel__pager__btn"
-                        aria-label="下一页"
-                        onClick={() => setPanelPage((p) => Math.min(panelTotalPages, p + 1))}
-                      >
-                        下一页
-                        <Icon icon={ChevronRight} size="xs" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="cqa-panel__pager__btn cqa-panel__pager__btn--more"
-                        onClick={goBrowseMore}
-                      >
-                        查看更多
-                        <Icon icon={ChevronRight} size="xs" />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </>
+    <div
+      className="cqa-overlay"
+      role="dialog"
+      aria-label={`${activeCat.label}面板`}
+      onMouseEnter={cancelClose}
+      onMouseLeave={scheduleClose}
+    >
+      <div className="cqa-panel__head">
+        <Icon icon={WIDE_NAV_ICONS[activeCat.key]} size="sm" />
+        <span className="cqa-panel__title">{activeCat.label} · 今日最热</span>
+        {heatSum[activeCat.key] ? (
+          <span className="cqa-panel__heat">
+            <Icon icon={Flame} size="xs" />
+            {formatHeatSum(heatSum[activeCat.key])}
+          </span>
+        ) : null}
+        <span className="cqa-panel__sub">按热度排序 · 点卡片看详情</span>
+        <InfoTip label="热度口径说明" text="热度基于 TMDB 每日趋势数据（/trending/day 的 popularity 值）聚合，定期更新，非实时数值。" />
+      </div>
+      <div className="cqa-subgenres">
+        {currentSubs
+          ? currentSubs.map((s) => (
+              <button
+                key={s.id}
+                className={`cqa-subgenres__chip${currentSubId === s.id ? ' cqa-subgenres__chip--on' : ''}`}
+                onClick={() => selectSub(activeCat.key, s.id)}
+              >
+                {s.label}
+              </button>
+            ))
+          : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
+      </div>
+      {panelItems === null && panelLoading ? (
+        <div className="cqa-panel__loading">
+          <TvMascot blink size={44} />
+          <span>正在获取 {activeCat.label} 数据…</span>
         </div>
+      ) : (
+        <>
+          <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
+            <CategoryHotGrid items={pageItems} rankOffset={(panelPage - 1) * PANEL_PAGE_SIZE} />
+            {panelLoading && (
+              <div className="cqa-panel__refresh" role="status">
+                <TvMascot className="is-shaking" blink size={30} />
+                <span>更新中…</span>
+              </div>
+            )}
+          </div>
+          {panelTotal > 0 && (
+            <div className="cqa-panel__pager">
+              <button
+                type="button"
+                className="cqa-panel__pager__btn"
+                disabled={panelPage <= 1}
+                aria-label="上一页"
+                onClick={() => setPanelPage((p) => Math.max(1, p - 1))}
+              >
+                <Icon icon={ChevronLeft} size="xs" />
+                上一页
+              </button>
+              <span className="cqa-panel__pager__ind">{panelPage} / {panelTotalPages}</span>
+              {panelPage < panelTotalPages ? (
+                <button
+                  type="button"
+                  className="cqa-panel__pager__btn"
+                  aria-label="下一页"
+                  onClick={() => setPanelPage((p) => Math.min(panelTotalPages, p + 1))}
+                >
+                  下一页
+                  <Icon icon={ChevronRight} size="xs" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="cqa-panel__pager__btn cqa-panel__pager__btn--more"
+                  onClick={goBrowseMore}
+                >
+                  查看更多
+                  <Icon icon={ChevronRight} size="xs" />
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -450,11 +543,15 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
   );
 }
 
-/** 热度榜前 3 分类卡（常驻行）：分类卡 = 分类入口（跳 browse，与圆卡/全部分类同语义）；条目行 = 跳详情 */
+/** 热度榜前 3 分类卡（常驻行）：分类卡 = 榜单入口（v2 起跳 /chart 热度榜页对应分类，沉浸看完整榜单）；条目行 = 跳详情 */
 function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCategoryHeat> }) {
   const navigate = useCustomNavigate();
   const navigateDetail = useCallback(
     (id: string) => navigate(`/detail/${id}`),
+    [navigate],
+  );
+  const navigateChart = useCallback(
+    (key: CategoryKey) => navigate(`/chart?category=${key}`),
     [navigate],
   );
   const top3 = buckets.slice(0, 3);
@@ -470,9 +567,9 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
             className="cqa-catcard"
             role="button"
             tabIndex={0}
-            onClick={() => navigate(buildBrowseUrl(bucket.key))}
+            onClick={() => navigateChart(bucket.key)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') navigate(buildBrowseUrl(bucket.key));
+              if (e.key === 'Enter' || e.key === ' ') navigateChart(bucket.key);
             }}
           >
             <div className="cqa-catcard__head">
@@ -524,8 +621,9 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
   );
 }
 
-/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡跳 browse 对应分类） */
+/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单） */
 export function CategoryHeatRow() {
+  const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
   if (heatBuckets.length === 0) return null;
@@ -539,6 +637,14 @@ export function CategoryHeatRow() {
           label="分类热度口径说明"
           text="分类热度 = 该分类下今日 TMDB 趋势条目的 popularity 之和（多分类命中重复计入），基于每日趋势数据聚合，定期更新。"
         />
+        <button
+          className="cqa-heat-row__more"
+          onClick={() => navigate('/chart')}
+          aria-label="查看完整热度榜"
+        >
+          查看完整榜单
+          <Icon icon={ChevronRight} size="xs" />
+        </button>
       </div>
       <CategoryHeatCards buckets={heatBuckets} />
     </section>
