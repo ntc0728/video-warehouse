@@ -252,6 +252,9 @@ const VideoCard = memo(function VideoCard({
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      // 鼠标点击后主动移除焦点：否则取消收藏后按钮因 .video-card:focus-within 常显不消失
+      // （键盘 Enter 触发的 click e.detail=0，不 blur，保证键盘可达性）
+      if (e.detail > 0) (e.currentTarget as HTMLElement).blur();
       if (isCollected) {
         removeCollection(video.id);
       } else {
