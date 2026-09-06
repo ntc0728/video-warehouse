@@ -252,22 +252,13 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
  * >1280 桌面全页面：分类 chips（由 StickyHeader 中央渲染，搜索框左侧）。
  * 首页：hover chip → 打开 hero 卡顶的 mega 面板；移出导航 → 延迟收起；页面滚动 → 立即收起；
  *       滚离 hero 后悬停 chip → 先回顶再展开（回顶滚动期间豁免滚动收起）。
- * 其他页面：面板载体（hero）不存在，chips 退化为纯导航——hover 不开面板，
- *       点击分类直达 /browse 对应分类，点「首页」回首页。
+ * 其他页面：chips 仅视觉常驻（导航栏跨页一致），与页面无关联——hover 不开面板、
+ *       点击分类不改 URL；「首页」chip 仍为回首页入口。
  */
 export function CategoryQuickAccessNav() {
   const navigate = useCustomNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/';
-  // browse 页状态双向关联：chips 选中态跟随 URL 分类（FilterBar 改分类 → URL 变 → chip 高亮跟随）
-  const isBrowse = location.pathname === '/browse';
-  const browseCategory = useMemo<CategoryKey | null>(() => {
-    if (!isBrowse) return null;
-    const c = new URLSearchParams(location.search).get('category');
-    return (c && ['all', 'movie', 'tv', 'variety', 'anime', 'top', 'documentary'].includes(c))
-      ? (c as CategoryKey)
-      : 'all';
-  }, [isBrowse, location.search]);
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
   const open = useCategoryOverlayStore((s) => s.open);
   const close = useCategoryOverlayStore((s) => s.close);
@@ -326,23 +317,17 @@ export function CategoryQuickAccessNav() {
 
   const handleChipClick = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
     if (!isHome) {
-      // 非首页：chips = 纯导航
-      if (cat.key === 'home') { navigate('/'); return; }
-      const target = buildBrowseUrl(cat.key);
-      // 已在该分类（URL 完全一致）→ 不重复压历史栈
-      if (location.pathname + location.search === target) return;
-      navigate(target);
+      // 非首页：chips 仅视觉常驻，与当前页面无关联——分类 chip 不改 URL、不导航；
+      // 唯一例外是「首页」chip（回首页入口）
+      if (cat.key === 'home') navigate('/');
       return;
     }
     if (cat.key === 'home') { close(); return; }
     open(cat.key);
-  }, [close, isHome, location.pathname, location.search, navigate, open]);
+  }, [close, isHome, navigate, open]);
 
-  const isChipOn = (key: WideCategoryKey) => {
-    if (key === 'home') return isHome && activeKey === null;
-    // 首页 = 面板开合态；browse = 跟随 URL 分类（双向关联）
-    return isHome ? activeKey === key : browseCategory === key;
-  };
+  const isChipOn = (key: WideCategoryKey) =>
+    isHome && (key === 'home' ? activeKey === null : activeKey === key);
 
   return (
     <nav
@@ -364,7 +349,7 @@ export function CategoryQuickAccessNav() {
         </button>
       ))}
       <button
-        className={`cqa-nav__item cqa-nav__more${!isHome && browseCategory === 'all' ? ' cqa-nav__item--on' : ''}`}
+        className="cqa-nav__item cqa-nav__more"
         onMouseEnter={isHome ? close : undefined}
         onClick={() => {
           close();

@@ -199,7 +199,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         <div className="sticky-header__center">
           {/* 分类 chips 融合顶栏（2026-09-06）：宽屏桌面（>1280 非 TV）全页面渲染；
               首页 = hover 开 mega 面板（面板本体由 HeroBili 渲染）；
-              其他页面 = 纯导航（点分类直达 browse、点「首页」回首页） */}
+              其他页面 = 仅视觉常驻（点分类不改 URL），「首页」chip 回首页 */}
           {!isMobile && isWideDesktop && <CategoryQuickAccessNav />}
           {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
              原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
