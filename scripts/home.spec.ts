@@ -1023,4 +1023,60 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForTimeout(1200);
     expect(await gridCards.count()).toBe(9);
   });
+
+  test('HOME-081: 面板分页——右下角上一页/下一页翻页，末页「查看更多」携分类+genre 跳 browse', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).click(); // 电影（子分类=全部，20 条 → 3 页）
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+
+    const pager = page.locator('.cqa-panel__pager');
+    await expect(pager).toBeVisible();
+    await expect(page.locator('.cqa-panel__pager__ind')).toHaveText('1 / 3');
+    await expect(page.locator('.cqa-panel__pager__btn').first()).toBeDisabled(); // 上一页禁用
+    const firstTitle = await page.locator('.cqa-hotcard__t').first().textContent();
+
+    // 下一页：排名跨页续号（第 10 名），内容变化
+    await page.getByLabel('下一页').click();
+    await expect(page.locator('.cqa-panel__pager__ind')).toHaveText('2 / 3');
+    await expect(page.locator('.cqa-hotcard__rank').first()).toHaveText('10');
+    const secondTitle = await page.locator('.cqa-hotcard__t').first().textContent();
+    expect(secondTitle).not.toBe(firstTitle);
+
+    // 末页：下一页被「查看更多」替换，点击携分类与 genre 跳 browse
+    await page.getByLabel('下一页').click();
+    await expect(page.locator('.cqa-panel__pager__ind')).toHaveText('3 / 3');
+    await expect(page.locator('.cqa-panel__pager__btn--more')).toHaveText(/查看更多/);
+    await page.locator('.cqa-panel__pager__btn--more').click();
+    await page.waitForTimeout(1000);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/browse');
+    expect(url.searchParams.get('category')).toBe('movie');
+    expect(url.searchParams.get('mediaType')).toBe('movie');
+  });
+
+  test('HOME-082: 面板网格竖向排列——1/2/3 同列自上而下（grid-auto-flow: column）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+
+    const cards = page.locator('.cqa-hotcard');
+    const [b1, b2, b4] = await Promise.all([
+      cards.nth(0).boundingBox(),
+      cards.nth(1).boundingBox(),
+      cards.nth(3).boundingBox(),
+    ]);
+    expect(b1).toBeTruthy();
+    // 1/2 同列：x 相同、y 递增；4 在第 2 列：x 明显更大
+    expect(Math.abs(b1!.x - b2!.x)).toBeLessThan(4);
+    expect(b2!.y).toBeGreaterThan(b1!.y);
+    expect(b4!.x - b1!.x).toBeGreaterThan(b1!.width / 2);
+  });
 });
