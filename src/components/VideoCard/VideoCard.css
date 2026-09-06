@@ -276,14 +276,14 @@
   transform: scale(1.1);
 }
 
+/* 已收藏（2026-09-06 统一样式）：实底红（--color-danger）+ 白色实心心，无弹跳动效 */
 .video-card-fav-btn.active {
-  background: rgba(255, 77, 79, 0.15);
-  color: var(--color-favorite-active);
-  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.25);
+  background: var(--color-danger);
+  color: #fff;
 }
 
-.video-card-fav-btn.active.visible {
-  box-shadow: 0 0 0 2px rgba(250, 140, 22, 0.3);
+.video-card-fav-btn.active:hover {
+  background: var(--color-danger);
 }
 
 /* Mobile：完全隐藏收藏按钮（用户已可通过收藏页管理） */

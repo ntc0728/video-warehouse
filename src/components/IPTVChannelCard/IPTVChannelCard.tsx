@@ -35,7 +35,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
   const isTV = useIsTV();
   // 无 logo 时使用字母占位，也应显示收藏按钮
@@ -75,12 +74,10 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     recordPlay(channel.id);
   }, [batchMode, channel, setSelectedChannel, recordPlay]);
 
-  /** 收藏切换，带弹跳动画反馈 */
+  /** 收藏切换（动效统一由按钮 hover/scale 过渡承担，不再做弹跳动画） */
   const handleFavorite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsAnimating(true);
     toggleFavorite(channel.id);
-    setTimeout(() => setIsAnimating(false), 450);
   }, [toggleFavorite, channel.id]);
 
   // [2026-08-13] 入场动画统一由网格容器 stagger 控制（.iptv-channel-grid > *:nth-child(n)，
@@ -184,15 +181,12 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
       {showFavorite && (
         <button
           type="button"
-          className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
+          className={`iptv-card-favorite ${channel.isFavorite ? 'visible active' : 'hover-visible'}`}
           onClick={handleFavorite}
           aria-label={channel.isFavorite ? '取消收藏' : '添加收藏'}
           aria-pressed={channel.isFavorite}
         >
-          <Icon icon={Heart} size="xs"
-                              fill={channel.isFavorite ? 'var(--color-favorite-active)' : 'none'}
-                              color={channel.isFavorite ? 'var(--color-favorite-active)' : 'currentColor'}
-                            />
+          <Icon icon={Heart} size="xs" fill="currentColor" />
         </button>
       )}
     </div>
