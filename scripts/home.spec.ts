@@ -954,7 +954,9 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    await page.locator('.cqa-heat-row .cqa-catcard').first().click();
+    // 封面加大后卡片几何中心落在条目行（行语义 = 跳详情）；分类卡「跳 browse」语义在卡头
+    // （排名 + 图标 + 分类名 + Σ热度），故点卡头验证分类入口
+    await page.locator('.cqa-heat-row .cqa-catcard').first().locator('.cqa-catcard__head').click();
     await page.waitForTimeout(1000);
     const url = new URL(page.url());
     expect(url.pathname).toBe('/browse');
@@ -982,5 +984,43 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     expect(await page.locator('.cqa-nav').count()).toBe(0);
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible();
+  });
+
+  test('HOME-079: 热度口径 tooltip——热度榜/面板 Info 图标悬停显示口径说明，副标题为用户视角文案', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    // 热度榜行：副标题为用户视角 + Info 图标存在，悬停显示口径说明
+    await expect(page.locator('.cqa-heat-row__sub')).toHaveText(/今日各分类最热/);
+    const rowTip = page.locator('.cqa-heat-row .cqa-info-tip');
+    await expect(rowTip).toHaveCount(1);
+    await rowTip.hover();
+    await expect(page.locator('.cqa-info-tip__content')).toBeVisible();
+    await expect(page.locator('.cqa-info-tip__content')).toContainText('TMDB');
+
+    // 面板 head 同样有 Info 图标与用户视角副标题
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    await expect(page.locator('.cqa-panel__sub')).toHaveText(/点卡片看详情/);
+    await expect(page.locator('.cqa-overlay .cqa-info-tip')).toHaveCount(1);
+  });
+
+  test('HOME-080: 子分类切换保留旧网格（降沉刷新态），不闪成空白加载行', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+
+    // 切子分类瞬间：网格容器仍在且卡片未卸载（最多短暂降沉），无「正在获取」整行替换
+    await page.locator('.cqa-subgenres__chip').nth(1).click();
+    const gridCards = page.locator('.cqa-panel__grid .cqa-hotcard');
+    await expect(gridCards.first()).toBeAttached();
+    await page.waitForTimeout(1200);
+    expect(await gridCards.count()).toBe(9);
   });
 });

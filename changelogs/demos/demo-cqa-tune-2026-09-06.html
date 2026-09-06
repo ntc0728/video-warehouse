@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>demo — 宽屏分类面板四项微调（2026-09-06）</title>
+<style>
+  /* token 近似（与 variables.css 浅色主题同值） */
+  :root {
+    --text-xs: 12px; --text-sm: 13.4px; --text-base: 15.2px; --text-lg: 17.9px;
+    --space-xs: 5.5px; --space-sm: 8.5px; --space-md: 11.8px; --space-lg: 16.3px;
+    --radius-md: 7.6px; --radius-lg: 12.8px; --radius-full: 999px;
+    --color-text: #17181a; --color-text-secondary: #61666d; --color-text-tertiary: #9499a0;
+    --color-surface: #fff; --color-surface-hover: rgba(0,0,0,.05);
+    --color-border-light: #e8e8e8; --color-border-strong: #bfbfbf;
+    --color-tab-active-bg: #000; --color-tab-active-text: #fff;
+    --color-warning: #fa8c16; --color-placeholder: #f0f1f3;
+    /* 旧版粉色系（仅 A 侧使用） */
+    --bili: #fb7299; --bili-light: #ffc4d6; --bili-deep: #e85a8a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "PingFang SC","Microsoft YaHei",system-ui,sans-serif; background: #f6f7f8; color: var(--color-text); padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .note { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 20px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1100px) { .compare { grid-template-columns: 1fr; } }
+  .pane { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: 16px; }
+  .pane h2 { font-size: 14px; margin-bottom: 12px; }
+  .pane.a h2 { color: var(--bili-deep); } .pane.b h2 { color: #17a26d; }
+  .tag { display:inline-block; font-size:11px; padding:1px 8px; border-radius:999px; margin-left:6px; vertical-align:1px; }
+  .pane.a .tag { background:#fff1f4; color:var(--bili); } .pane.b .tag { background:#e8f7f0; color:#17a26d; }
+  .item { margin-bottom: 18px; }
+  .item > .cap { font-size:12px; color:var(--color-text-tertiary); margin-bottom:6px; }
+
+  /* ── 导航条（共用结构） ── */
+  .nav { display:flex; align-items:center; gap:6px; padding:6px 12px; border-bottom:1px solid var(--color-border-light); }
+  .nv { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 10px; border:none; background:none;
+        font-size:var(--text-sm); color:var(--color-text-secondary); cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .nv .ic { width:15px; height:15px; display:inline-block; }
+  .heat { display:inline-flex; align-items:center; gap:1px; font-size:10px; line-height:15px; padding:0 5px; border-radius:999px; font-variant-numeric:tabular-nums; }
+  /* A 旧：下划线 Tab + 粉色激活 + 粉底徽标 */
+  .a .nv.on { color: var(--bili); font-weight:600; position:relative; }
+  .a .nv.on::after { content:''; position:absolute; left:10px; right:10px; bottom:0; height:2px; background:var(--bili); border-radius:2px; }
+  .a .heat { color:var(--bili); background:var(--bili-light); }
+  /* B 新：pill chip + 黑底白字激活 + 暖橙徽标 */
+  .b .nv { border-radius:999px; padding:0 12px; }
+  .b .nv:hover { color:var(--color-text); background:var(--color-surface-hover); }
+  .b .nv.on { color:var(--color-tab-active-text); background:var(--color-tab-active-bg); font-weight:600; }
+  .b .heat { color:var(--color-warning); }
+
+  /* ── 面板头 ── */
+  .phead { display:flex; align-items:center; gap:8px; margin:12px 0 8px; min-height:23px; }
+  .ptitle { font-size:var(--text-base); font-weight:600; }
+  .psub { flex:1; font-size:var(--text-xs); color:var(--color-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .info { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; border:none; background:none; padding:0; color:var(--color-text-tertiary); cursor:help; position:relative; }
+  .info svg { width:13px; height:13px; }
+  .info .tip { position:absolute; top:calc(100% + 6px); right:-4px; width:280px; padding:6px 9px; border:1px solid var(--color-border-light);
+               border-radius:var(--radius-md); background:#fff; box-shadow:0 8px 28px rgba(0,0,0,.16);
+               font-size:var(--text-xs); line-height:1.6; color:var(--color-text-secondary); text-align:left;
+               opacity:0; pointer-events:none; transition:opacity .15s; z-index:5; }
+  .info:hover .tip, .info:focus-visible .tip { opacity:1; }
+  .a .psub.dev, .dev { color:#b45309; }
+
+  /* ── catcard ── */
+  .catgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:10px; }
+  .catcard { border:1px solid var(--color-border-light); border-radius:var(--radius-lg); background:var(--color-surface); padding:12px; cursor:pointer; transition:border-color .15s; }
+  .a .catcard:hover { border-color:var(--bili-light); } .b .catcard:hover { border-color:var(--color-border-strong); }
+  .chead { display:flex; align-items:center; gap:8px; min-height:27px; }
+  .rank { font-size:var(--text-lg); font-weight:700; font-style:italic; color:var(--color-text-tertiary); }
+  .a .rank.top { color:var(--bili); }
+  .cname { font-size:var(--text-base); font-weight:600; }
+  .cheat { margin-left:auto; text-align:right; }
+  .cheat .n { display:block; font-size:var(--text-base); font-weight:700; font-variant-numeric:tabular-nums; }
+  .a .cheat .n { color:var(--bili); } .b .cheat .n { color:var(--color-warning); }
+  .cheat .l { font-size:10px; color:var(--color-text-tertiary); }
+  .bar { height:5px; background:#f6f7f8; border-radius:999px; overflow:hidden; margin:8px 0; }
+  .bar i { display:block; height:100%; border-radius:999px; }
+  .a .bar i { background:linear-gradient(90deg,var(--bili),var(--bili-deep)); }
+  .b .bar i { background:var(--color-warning); }
+  .crow { display:flex; align-items:center; gap:8px; min-width:0; border-radius:var(--radius-md); }
+  .a .crow:hover .ct { color:var(--bili); }
+  .b .crow:hover { background:var(--color-surface-hover); }
+  .idx { flex:0 0 14px; text-align:center; font-size:var(--text-xs); font-weight:700; font-style:italic; color:var(--color-text-tertiary); }
+  .a .idx.top { color:var(--bili); }
+  .ap { flex:0 0 96px; height:54px; } .bp { flex:0 0 120px; height:68px; }
+  .ap,.bp { display:block; border-radius:var(--radius-md); object-fit:cover; background:var(--color-placeholder); }
+  .ct { flex:1; min-width:0; font-size:var(--text-xs); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ch { flex:0 0 auto; display:inline-flex; align-items:center; gap:1px; font-size:var(--text-xs); font-weight:600; font-variant-numeric:tabular-nums; }
+  .a .ch { color:var(--bili); } .b .ch { color:var(--color-warning); }
+  .ch svg { width:10px; height:10px; }
+  .flame::before { content:'🔥'; font-size:10px; }
+  svg.i { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; display:inline-block; vertical-align:-2px; }
+
+  /* ── 加载过渡示意 ── */
+  .load-demo { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; transition:opacity .2s; }
+  .load-demo.dim { opacity:.45; pointer-events:none; }
+  .mini { height:44px; border:1px solid var(--color-border-light); border-radius:var(--radius-md); background:var(--color-surface); }
+  .refresh { position:absolute; inset:0; display:none; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--color-text-tertiary); }
+  .load-demo.dim .refresh { display:flex; }
+  .old-loading { display:flex; align-items:center; justify-content:center; height:160px; border:1px dashed var(--color-border-light); border-radius:var(--radius-md); font-size:13px; color:var(--color-text-tertiary); margin-top:8px; }
+  .tv { font-size:22px; }
+</style>
+</head>
+<body>
+<h1>宽屏分类面板四项微调（对照）</h1>
+<div class="note">2026-09-06 · A = 旧实现（bili 粉 + 空白加载） / B = 新实现（灰白结构 + 黑底白字选中 + 暖橙热度 + 降沉刷新 + 封面 120×68 + 口径 tooltip）。左 A 右 B 同屏对照；tooltip 悬停左上角 ⓘ 可预览。</div>
+
+<div class="compare">
+  <!-- ═══ A 旧 ═══ -->
+  <div class="pane a">
+    <h2>A · 旧实现<span class="tag">粉色孤岛</span></h2>
+
+    <div class="item">
+      <div class="cap">① 副标题（开发者术语直出） + ② 选中态（粉下划线）+ 热度徽标（粉）</div>
+      <div class="nav">
+        <button class="nv">首页</button>
+        <button class="nv on">电影</button>
+        <button class="nv">剧集</button>
+        <button class="nv">动漫<span class="heat"><span class="flame"></span>12.3k</span></button>
+      </div>
+      <div class="phead">
+        <span class="ptitle">电影 · 最热门搜索值</span>
+        <span class="psub dev">热度 = TMDB popularity（实时）· 点击卡进详情</span>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="cap">③ 热度榜分类卡：封面 96×54（偏挤）+ 粉热度/粉排名</div>
+      <div class="catgrid">
+        <div class="catcard">
+          <div class="chead"><span class="rank top">1</span><span class="cname">电影</span>
+            <span class="cheat"><span class="n">3820</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:100%"></i></div>
+          <div class="crow"><span class="idx top">1</span><span class="ap"></span><span class="ct">陋室 · 2026</span><span class="ch"><span class="flame"></span>812.4</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="ap"></span><span class="ct">长夜将尽 · 2025</span><span class="ch"><span class="flame"></span>634.7</span></div>
+        </div>
+        <div class="catcard">
+          <div class="chead"><span class="rank top">2</span><span class="cname">剧集</span>
+            <span class="cheat"><span class="n">2914</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:76%"></i></div>
+          <div class="crow"><span class="idx top">1</span><span class="ap"></span><span class="ct">沉香如屑 · 2026</span><span class="ch"><span class="flame"></span>733.1</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="ap"></span><span class="ct">放课后少年 · 2025</span><span class="ch"><span class="flame"></span>589.9</span></div>
+        </div>
+        <div class="catcard">
+          <div class="chead"><span class="rank top">3</span><span class="cname">综艺</span>
+            <span class="cheat"><span class="n">1903</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:50%"></i></div>
+          <div class="crow"><span class="idx top">1</span><span class="ap"></span><span class="ct">快乐再出发 · 2026</span><span class="ch"><span class="flame"></span>421.6</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="ap"></span><span class="ct">歌手 · 2025</span><span class="ch"><span class="flame"></span>388.2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="cap">② 切子分类加载：旧网格整块被「正在获取…实时数据…」替换（闪空白）</div>
+      <div class="old-loading">正在获取 电影 实时数据…</div>
+    </div>
+  </div>
+
+  <!-- ═══ B 新 ═══ -->
+  <div class="pane b">
+    <h2>B · 新实现<span class="tag">灰白 + 单一暖橙</span></h2>
+
+    <div class="item">
+      <div class="cap">① 副标题改用户视角 + ⓘ 悬停口径说明（悬停可看） · ② pill chip 黑底白字选中 + 暖橙热度</div>
+      <div class="nav">
+        <button class="nv">首页</button>
+        <button class="nv on">电影</button>
+        <button class="nv">剧集</button>
+        <button class="nv">动漫<span class="heat"><span class="flame"></span>12.3k</span></button>
+      </div>
+      <div class="phead">
+        <span class="ptitle">电影 · 今日最热</span>
+        <span class="psub">按热度排序 · 点卡片看详情</span>
+        <button class="info" aria-label="热度口径说明"><span class="i">ⓘ</span>
+          <span class="tip">热度基于 TMDB 每日趋势数据（/trending/day 的 popularity 值）聚合，定期更新，非实时数值。</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="cap">③ 封面对齐 hotcard 规格 120×68（不再挤压）+ 排名中性灰 + 热度暖橙</div>
+      <div class="catgrid">
+        <div class="catcard">
+          <div class="chead"><span class="rank">1</span><span class="cname">电影</span>
+            <span class="cheat"><span class="n">3820</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:100%"></i></div>
+          <div class="crow"><span class="idx">1</span><span class="bp"></span><span class="ct">陋室 · 2026</span><span class="ch"><span class="flame"></span>812.4</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="bp"></span><span class="ct">长夜将尽 · 2025</span><span class="ch"><span class="flame"></span>634.7</span></div>
+        </div>
+        <div class="catcard">
+          <div class="chead"><span class="rank">2</span><span class="cname">剧集</span>
+            <span class="cheat"><span class="n">2914</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:76%"></i></div>
+          <div class="crow"><span class="idx">1</span><span class="bp"></span><span class="ct">沉香如屑 · 2026</span><span class="ch"><span class="flame"></span>733.1</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="bp"></span><span class="ct">放课后少年 · 2025</span><span class="ch"><span class="flame"></span>589.9</span></div>
+        </div>
+        <div class="catcard">
+          <div class="chead"><span class="rank">3</span><span class="cname">综艺</span>
+            <span class="cheat"><span class="n">1903</span><span class="l">分类热度 Σ</span></span></div>
+          <div class="bar"><i style="width:50%"></i></div>
+          <div class="crow"><span class="idx">1</span><span class="bp"></span><span class="ct">快乐再出发 · 2026</span><span class="ch"><span class="flame"></span>421.6</span></div>
+          <div class="crow" style="margin-top:6px"><span class="idx">2</span><span class="bp"></span><span class="ct">歌手 · 2025</span><span class="ch"><span class="flame"></span>388.2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="cap">② 切子分类：旧网格保留 + 降沉 + 小电视「更新中」（点下方按钮体验）</div>
+      <div class="load-demo" id="demo">
+        <div class="mini"></div><div class="mini"></div><div class="mini"></div>
+        <div class="mini"></div><div class="mini"></div><div class="mini"></div>
+        <div class="refresh"><span class="tv">📺</span>更新中…</div>
+      </div>
+      <div style="margin-top:8px"><button class="nv" style="border:1px solid var(--color-border-light);border-radius:999px" id="btn">模拟切子分类</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const demo = document.getElementById('demo');
+  let t = null;
+  document.getElementById('btn').onclick = () => {
+    demo.classList.add('dim');
+    clearTimeout(t);
+    t = setTimeout(() => demo.classList.remove('dim'), 1200);
+  };
+</script>
+</body>
+</html>

@@ -9,12 +9,14 @@
  * 数据与图标方案：changelogs/design-docs/2026-09-06-category-quick-access-a2-实施方案.md
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Camera,
   ChevronRight,
   Film,
   Flame,
   Home as HomeIcon,
+  Info,
   LayoutGrid,
   Mic2,
   Sparkles,
@@ -27,6 +29,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { TMDBVideoItem } from '@/types/tmdb';
 import { create } from 'zustand';
 import { Icon } from '@/components/ui/Icon';
+import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useTMDBStore } from '@/stores/useTMDBStore';
@@ -99,6 +102,27 @@ interface CategoryQuickAccessProps {
   onCategorySelect: (category: CategoryKey) => void;
 }
 
+/** 口径说明 tooltip（Info 图标悬停/聚焦显示；内容经 Portal 渲染且 pointer-events:none，
+ *  不拦截 mousedown → 不会触发 overlay 的「点击外部收起」） */
+function InfoTip({ label, text }: { label: string; text: string }) {
+  return (
+    <Tooltip.Provider delayDuration={150}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <button type="button" className="cqa-info-tip" aria-label={label}>
+            <Icon icon={Info} size="xs" />
+          </button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className="cqa-info-tip__content" sideOffset={6} collisionPadding={8}>
+            {text}
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+}
+
 /** ≤1280 / app：7 彩色圆卡（现状不变） */
 export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickAccessProps) {
   const isMobile = useIsMobile();
@@ -161,14 +185,19 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
     return () => { cancelled = true; };
   }, [activeCat, genreSubs]);
 
-  // 面板数据：切换分类/子分类即取
+  // 面板数据：切换分类/子分类即取。
+  // 切子分类保留旧网格（降沉 + 更新中徽标，视觉连续）；切分类清空走首载文案（避免闪现上一分类内容）。
+  const prevCatKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!activeCat || activeCat.key === 'home' || !currentSubs) return;
     const sub = currentSubs.find((s) => s.id === currentSubId) ?? currentSubs[0];
     if (!sub) return;
+    const catChanged = prevCatKeyRef.current !== activeCat.key;
+    prevCatKeyRef.current = activeCat.key;
     const ctrl = new AbortController();
     abortRef.current?.abort();
     abortRef.current = ctrl;
+    if (catChanged) setPanelItems(null);
     setPanelLoading(true);
     fetchCategoryPanel(activeCat, sub.id, ctrl.signal)
       .then((items) => {
@@ -271,8 +300,9 @@ export function CategoryQuickAccessWide() {
           <>
             <div className="cqa-panel__head">
               <Icon icon={WIDE_NAV_ICONS[activeCat.key]} size="sm" />
-              <span className="cqa-panel__title">{activeCat.label} · 最热门搜索值</span>
-              <span className="cqa-panel__sub">热度 = TMDB popularity（实时）· 点击卡进详情</span>
+              <span className="cqa-panel__title">{activeCat.label} · 今日最热</span>
+              <span className="cqa-panel__sub">按热度排序 · 点卡片看详情</span>
+              <InfoTip label="热度口径说明" text="热度基于 TMDB 每日趋势数据（/trending/day 的 popularity 值）聚合，定期更新，非实时数值。" />
             </div>
             <div className="cqa-subgenres">
               {currentSubs
@@ -287,10 +317,21 @@ export function CategoryQuickAccessWide() {
                   ))
                 : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
             </div>
-            {panelLoading ? (
-              <div className="cqa-panel__loading">正在获取 {activeCat.label} 实时数据…</div>
+            {panelItems === null && panelLoading ? (
+              <div className="cqa-panel__loading">
+                <TvMascot blink size={44} />
+                <span>正在获取 {activeCat.label} 数据…</span>
+              </div>
             ) : (
-              <CategoryHotGrid items={panelItems ?? []} />
+              <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
+                <CategoryHotGrid items={panelItems ?? []} />
+                {panelLoading && (
+                  <div className="cqa-panel__refresh" role="status">
+                    <TvMascot className="is-shaking" blink size={30} />
+                    <span>更新中…</span>
+                  </div>
+                )}
+              </div>
             )}
           </>
         </div>
@@ -434,7 +475,11 @@ export function CategoryHeatRow() {
       <div className="cqa-heat-row__head">
         <Icon icon={Flame} size="sm" />
         <span className="cqa-heat-row__title">分类热度榜</span>
-        <span className="cqa-heat-row__sub">热度 = TMDB /trending/all/day 各分类 Σpopularity（实时）· 点击卡查看该分类</span>
+        <span className="cqa-heat-row__sub">今日各分类最热 · 点分类卡进入</span>
+        <InfoTip
+          label="分类热度口径说明"
+          text="分类热度 = 该分类下今日 TMDB 趋势条目的 popularity 之和（多分类命中重复计入），基于每日趋势数据聚合，定期更新。"
+        />
       </div>
       <CategoryHeatCards buckets={heatBuckets} />
     </section>
