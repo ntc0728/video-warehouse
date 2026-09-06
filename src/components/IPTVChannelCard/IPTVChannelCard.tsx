@@ -77,6 +77,8 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   /** 收藏切换（动效统一由按钮 hover/scale 过渡承担，不再做弹跳动画） */
   const handleFavorite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    // 鼠标点击后主动移除焦点：否则取消收藏后按钮因 :focus-within 常显不消失
+    if (e.detail > 0) (e.currentTarget as HTMLElement).blur();
     toggleFavorite(channel.id);
   }, [toggleFavorite, channel.id]);
 

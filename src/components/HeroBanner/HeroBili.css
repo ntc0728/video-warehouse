@@ -268,7 +268,8 @@
   bottom: var(--space-sm);
 }
 
-/* 收藏按钮：悬浮卡片时右上角显现；已收藏常显红心 */
+/* 收藏按钮：与其他卡片统一定稿——圆形黑底 --icon-lg、图标 xs 档；
+   hover = 加深底色 + 放大；已收藏外圈不变、仅心形变红（--color-danger）实心 */
 .hero-side-card__fav {
   position: absolute;
   top: var(--space-sm);
@@ -277,7 +278,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-xs);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  padding: 0;
   border: none;
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.5);
@@ -293,20 +296,13 @@
   opacity: 1;
 }
 
-/* hover 动效与其他卡片收藏按钮统一：放大 + 加深底色 */
 .hero-side-card__fav:hover {
   background: rgba(0, 0, 0, 0.7);
   transform: scale(1.1);
 }
 
-/* 已收藏（2026-09-06 统一样式）：实底红（--color-danger）+ 白色实心心 */
 .hero-side-card__fav.is-on {
-  background: var(--color-danger);
-  color: #fff;
-}
-
-.hero-side-card__fav.is-on:hover {
-  background: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* 标题条：不换行，溢出悬浮跑马灯（双段等长无缝循环） */

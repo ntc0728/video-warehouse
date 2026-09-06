@@ -368,6 +368,8 @@ function HeroSideCard({
   const handleFav = useCallback((e: React.MouseEvent) => {
     // 收藏不冒泡：命中收藏按钮 → toggle + 阻止冒泡，绝不进入跳转分支
     e.stopPropagation();
+    // 鼠标点击后主动移除焦点：与 VideoCard 收藏按钮行为统一
+    if (e.detail > 0) (e.currentTarget as HTMLElement).blur();
     if (collected) {
       removeCollection(videoId);
     } else {
@@ -416,7 +418,7 @@ function HeroSideCard({
           aria-label={collected ? '取消收藏' : '收藏'}
           onClick={handleFav}
         >
-          <Icon icon={Heart} size="sm" fill="currentColor" />
+          <Icon icon={Heart} size="xs" fill="currentColor" />
         </button>
         {itemYear(item) !== undefined && (
           <span className="hero-side-card__corner hero-side-card__corner--year">

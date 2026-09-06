@@ -304,14 +304,9 @@
   transform: scale(1.1);
 }
 
-/* 已收藏（2026-09-06 统一样式）：实底红（--color-danger）+ 白色实心心，无弹跳动效 */
+/* 已收藏（2026-09-06 统一定稿）：外圈底色不变，仅心形变红（--color-danger）实心 */
 .iptv-card-favorite.active {
-  background: var(--color-danger);
-  color: #fff;
-}
-
-.iptv-card-favorite.active:hover {
-  background: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* Mobile：完全隐藏收藏按钮 */
