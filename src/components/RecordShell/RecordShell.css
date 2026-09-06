@@ -8,6 +8,8 @@
 
 /* 提供 .category-segmented 基础样式，保证组件自持（Vite 会对重复 import 去重） */
 @import '@/components/StatusTabs/FilterBar.css';
+/* 方案 C：内嵌筛选条复用 .record-filter-chip*（同 FilterBar.css 先例，重复 import 去重） */
+@import '@/components/RecordFilterPanel/RecordFilterPanel.css';
 
 .record-page {
   position: relative;
@@ -501,4 +503,136 @@ html[data-device="app"] .action-btn {
 }
 html[data-device="app"] .action-btn__label {
   display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   方案 C（2026-09-06）：桌面内嵌筛选条 + 排序弹层 + 「⋯」溢出菜单
+   收藏页/历史页共用。移动端（≤767 / app 恒移动）不渲染，
+   移动端仍走「更多筛选」按钮 + RecordFilterPanel 折叠面板。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 内嵌筛选条：默认（移动/app）隐藏 */
+.record-inline-filter {
+  display: none;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+/* 「⋯」溢出菜单按钮：默认（移动/app）隐藏 */
+.record-overflow-wrap {
+  position: relative;
+  display: none;
+  flex-shrink: 0;
+}
+
+/* 桌面（≥768 非 app）：显示内嵌筛选条与溢出菜单，隐藏移动专用的
+   「更多筛选/清空」按钮与折叠面板（宽度账实测 1440 下总需求 989px / 可用 1296px） */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .record-inline-filter {
+    display: inline-flex;
+  }
+  html:not([data-device="app"]) .record-overflow-wrap {
+    display: block;
+  }
+  html:not([data-device="app"]) .record-actions .action-btn--filter,
+  html:not([data-device="app"]) .record-actions .action-btn--clear {
+    display: none;
+  }
+  html:not([data-device="app"]) .record-filter-panel {
+    display: none;
+  }
+}
+
+/* 状态 chips 与分隔线之间的间距加强（与融合 tab 组隔开） */
+.record-inline-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 22px;
+  margin-inline: var(--space-2xs);
+  background: var(--color-border);
+}
+
+/* 排序弹层（方案 C）：胶囊按钮 + 列表弹层 */
+.record-sort-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.record-sort-btn.is-open {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* 弹层容器（排序 / 「⋯」溢出菜单共用） */
+.record-pop {
+  position: absolute;
+  top: calc(100% + var(--space-2xs));
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  padding: var(--space-2xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.12));
+  animation: record-pop-in 0.16s var(--ease-standard) both;
+}
+.record-pop--right {
+  left: auto;
+  right: 0;
+}
+@keyframes record-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .record-pop {
+    animation: none;
+  }
+}
+
+.record-pop-item {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.record-pop-item:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text);
+}
+.record-pop-item.is-active {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.record-pop-item__tick {
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+}
+/* 溢出菜单内的危险操作项（清空收藏/清空历史） */
+.record-pop-item--danger {
+  color: var(--color-danger, #dc2626);
+}
+.record-pop-item--danger:hover {
+  background: color-mix(in srgb, var(--color-danger, #dc2626) 8%, transparent);
+  color: var(--color-danger, #dc2626);
 }

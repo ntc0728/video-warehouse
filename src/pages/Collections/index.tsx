@@ -397,6 +397,23 @@ export default function CollectionsPage() {
       containerRef={pageRef}
       pageClassName="collection-page"
       fusedCategories={fusedCategories}
+      inlineFilter={{
+        statusOptions: (['all', 'unwatched', 'watching', 'watched'] as VideoStatus[]).map((k) => ({
+          key: k,
+          label: STATUS_CONFIG[k].label,
+          color: STATUS_CONFIG[k].color,
+        })),
+        statusFilter,
+        onStatusChange: (k) => setStatusFilter(k as VideoStatus),
+        sortOptions: SORT_OPTIONS,
+        sortBy,
+        onSortChange: (v) => setSortBy(v as SortKey),
+      }}
+      overflowActions={
+        <button type="button" className="record-pop-item record-pop-item--danger" onClick={handleClearAll} role="menuitem">
+          清空收藏…
+        </button>
+      }
       actions={actions}
       isBatchMode={batchMode || batchIsExiting}
     >
