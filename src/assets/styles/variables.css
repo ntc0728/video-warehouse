@@ -429,7 +429,7 @@
     --layout-content-max-width: min(100%, 2200px); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线 */
     --layout-datepicker-width: calc(clamp(420px, 398.54749px + 2.7933vw, 460px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 163.90391px + 1.27709vw, 192px) * var(--ui-scale));
-    --layout-detail-poster-w: calc(clamp(277.333px, 237.28813px + 5.21418vw, 352px) * var(--ui-scale));
+    --layout-detail-poster-w: calc(clamp(128px, 32px + 8vw, 352px) * var(--ui-scale)); /* 详情页海报宽度：2026-09-06 恢复 868f4cb 前旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920，用户反馈 277→352 过大） */
     --layout-detail-poster-w-tv: calc(clamp(143.333px, 134.39427px + 1.1639vw, 160px) * var(--ui-scale));
     --layout-epg-empty-min-height: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
     --layout-epg-time-min-width: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
