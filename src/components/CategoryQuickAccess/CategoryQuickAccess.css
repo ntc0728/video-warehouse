@@ -236,10 +236,10 @@
     align-items: center;
     gap: var(--space-xs);
     height: var(--comp-tab-height);
-    padding: 0 var(--space-sm);
+    padding: 0 var(--space-md);
     border: none;
     background: none;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--radius-full);
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
     cursor: pointer;
@@ -251,36 +251,28 @@
     color: var(--color-text);
     background: var(--color-surface-hover);
   }
+  /* 选中态复用站内 Tab 语言：黑底白字（暗色主题自动反转为白底黑字） */
   html:not([data-device="tv"]) .cqa-nav__item--on {
-    color: var(--color-bili);
+    color: var(--color-tab-active-text);
+    background: var(--color-tab-active-bg);
     font-weight: 600;
-  }
-  html:not([data-device="tv"]) .cqa-nav__item--on::after {
-    content: '';
-    position: absolute;
-    left: var(--space-sm);
-    right: var(--space-sm);
-    bottom: 0;
-    height: 2px;
-    background: var(--color-bili);
-    border-radius: 2px;
   }
   html:not([data-device="tv"]) .cqa-nav__more {
     margin-left: auto;
     color: var(--color-text-secondary);
   }
   html:not([data-device="tv"]) .cqa-nav__more:hover {
-    color: var(--color-info);
+    color: var(--color-text);
     background: var(--color-surface-hover);
   }
+  /* 热度徽标 = 全模块唯一语义强调色（暖橙，与 Flame「热」语义一致） */
   html:not([data-device="tv"]) .cqa-nav__heat {
     display: inline-flex;
     align-items: center;
     gap: 1px;
     font-size: 10px;
     font-style: normal;
-    color: var(--color-bili);
-    background: var(--color-bili-light);
+    color: var(--color-warning);
     border-radius: var(--radius-full);
     padding: 0 var(--space-xs);
     line-height: 15px;
@@ -329,6 +321,10 @@
     gap: var(--space-sm);
     margin-bottom: var(--space-md);
   }
+  /* 榜单头 Flame 图标随热度语义走暖橙强调色 */
+  html:not([data-device="tv"]) .cqa-heat-row__head > svg {
+    color: var(--color-warning);
+  }
   html:not([data-device="tv"]) .cqa-heat-row__title {
     font-size: var(--text-base);
     font-weight: 600;
@@ -365,13 +361,67 @@
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
   }
+  /* 口径说明 Info 图标 + 悬停 tooltip（内容 Portal 到 body，pointer-events:none
+     不拦截 mousedown，避免误触发 overlay 的点击外部收起） */
+  html:not([data-device="tv"]) .cqa-info-tip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-text-tertiary);
+    cursor: help;
+    transition: color var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-info-tip:hover,
+  html:not([data-device="tv"]) .cqa-info-tip:focus-visible {
+    color: var(--color-text-secondary);
+  }
+  html:not([data-device="tv"]) .cqa-info-tip__content {
+    z-index: var(--z-popover);
+    max-width: 320px;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-elevated);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    pointer-events: none;
+  }
+  /* 首载态：小电视 + 文案（居中，占满 3×3 高度） */
   html:not([data-device="tv"]) .cqa-panel__loading {
     min-height: var(--cqa-grid-h);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: var(--space-sm);
     text-align: center;
     font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+  /* 刷新态：保留旧网格，降沉 + 居中小徽标提示，新数据到达后原位替换 */
+  html:not([data-device="tv"]) .cqa-panel__grid {
+    position: relative;
+    transition: opacity var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-panel__grid--refreshing {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  html:not([data-device="tv"]) .cqa-panel__refresh {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
     color: var(--color-text-tertiary);
   }
 
@@ -406,8 +456,8 @@
     transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip:hover {
-    color: var(--color-bili);
-    background: var(--color-bili-light);
+    color: var(--color-text);
+    background: var(--color-surface-hover);
   }
   html:not([data-device="tv"]) .cqa-subgenres__chip--on {
     color: var(--color-tab-active-text);
@@ -415,12 +465,13 @@
   }
 
   /* ── 默认面板：前 3 分类卡（恒 1 行 3 列）── */
+  /* 注：本行在文档流中（.cqa-heat-row 内），不在 overlay 上——
+     旧版曾引用 .cqa-overlay 上定义的 --cqa-* 变量锁高，实际取不到值（height 失效为 auto），
+     属死代码已删；高度由 catcard 内容自然撑开。 */
   html:not([data-device="tv"]) .cqa-catgrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
-    /* = hotgrid 高度 + 子分类行高度（默认面板无子分类行，由 catcard 吸收） */
-    height: calc(var(--cqa-grid-h) + var(--cqa-sub-h) + var(--space-md));
   }
   html:not([data-device="tv"]) .cqa-catcard {
     display: flex;
@@ -434,7 +485,7 @@
   }
   html:not([data-device="tv"]) .cqa-catcard:hover,
   html:not([data-device="tv"]) .cqa-catcard:focus-visible {
-    border-color: var(--color-bili-light);
+    border-color: var(--color-border-strong);
   }
   html:not([data-device="tv"]) .cqa-catcard__head {
     display: flex;
@@ -449,7 +500,6 @@
     font-style: italic;
     color: var(--color-text-tertiary);
   }
-  html:not([data-device="tv"]) .cqa-catcard:nth-child(-n + 3) .cqa-catcard__rank { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-catcard__name {
     font-size: var(--text-base);
     font-weight: 600;
@@ -463,7 +513,7 @@
     display: block;
     font-size: var(--text-base);
     font-weight: 700;
-    color: var(--color-bili);
+    color: var(--color-warning);
     font-variant-numeric: tabular-nums;
   }
   html:not([data-device="tv"]) .cqa-catcard__heat .l {
@@ -481,7 +531,7 @@
   html:not([data-device="tv"]) .cqa-catcard__bar i {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, var(--color-bili), var(--color-bili-deep));
+    background: var(--color-warning);
     border-radius: var(--radius-full);
   }
   html:not([data-device="tv"]) .cqa-catcard__list {
@@ -509,11 +559,10 @@
     font-style: italic;
     color: var(--color-text-tertiary);
   }
-  html:not([data-device="tv"]) .cqa-catcard__row:first-child .cqa-catcard__idx { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-catcard__poster {
-    flex: 0 0 96px;
-    width: 96px;
-    height: 54px;
+    flex: 0 0 120px;
+    width: 120px;
+    height: 68px;
     display: block;
     border-radius: var(--radius-md);
     object-fit: cover;
@@ -529,7 +578,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  html:not([data-device="tv"]) .cqa-catcard__row:hover .cqa-catcard__t { color: var(--color-bili); }
+  html:not([data-device="tv"]) .cqa-catcard__row:hover {
+    background: var(--color-surface-hover);
+  }
   html:not([data-device="tv"]) .cqa-catcard__poster--empty,
   html:not([data-device="tv"]) .cqa-hotcard__poster--empty {
     border-radius: var(--radius-md);
@@ -540,7 +591,7 @@
     align-items: center;
     gap: 1px;
     font-size: var(--text-xs);
-    color: var(--color-bili);
+    color: var(--color-warning);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -567,7 +618,7 @@
   }
   html:not([data-device="tv"]) .cqa-hotcard:hover,
   html:not([data-device="tv"]) .cqa-hotcard:focus-visible {
-    border-color: var(--color-bili-light);
+    border-color: var(--color-border-strong);
   }
   html:not([data-device="tv"]) .cqa-hotcard__rank {
     flex: 0 0 20px;
@@ -577,7 +628,6 @@
     font-style: italic;
     color: var(--color-text-tertiary);
   }
-  html:not([data-device="tv"]) .cqa-hotcard:nth-child(-n + 3) .cqa-hotcard__rank { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-hotcard__poster {
     flex: 0 0 120px;
     width: 120px;
@@ -598,7 +648,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t { color: var(--color-bili); }
   html:not([data-device="tv"]) .cqa-hotcard__m {
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
@@ -625,7 +674,7 @@
     gap: 1px;
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--color-bili);
+    color: var(--color-warning);
     font-variant-numeric: tabular-nums;
   }
   html:not([data-device="tv"]) .cqa-hotcard__heat .n svg { width: 10px; height: 10px; }
@@ -639,6 +688,7 @@
   html:not([data-device="tv"]) .cqa-nav__item,
   html:not([data-device="tv"]) .cqa-subgenres__chip,
   html:not([data-device="tv"]) .cqa-catcard,
+  html:not([data-device="tv"]) .cqa-panel__grid,
   html:not([data-device="tv"]) .cqa-hotcard {
     transition: none;
   }
