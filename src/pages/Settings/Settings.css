@@ -9,7 +9,11 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow-x: hidden;
+  /* overflow-x 用 clip 不用 hidden：hidden 会把 overflow-y 计算成 auto，
+     使 .settings-page 成为滚动容器 → 左栏 .settings-sidenav 的 position:sticky
+     相对这个永不滚动的容器吸附而失效；clip 不产生滚动容器，sticky 正常
+     相对 .app-shell__scroll 生效。 */
+  overflow-x: clip;
   /* 进入动画由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供，
      本页不再自挂过渡类（2026-08-30）。二次进入时动画压到 140ms 线性，
      不再完全取消 —— 避免「首次有动画 / 二次无动画」的不一致闪烁。 */
@@ -394,46 +398,84 @@ body.skin-transitioning .skin-btn.active {
    设置页重构组件样式（TabBar / MenuList / SubPage）
    ════════════════════════════════════════ */
 
-/* 桌面端整体大卡片：TabBar + 内容区放入同一张卡（仅桌面分支渲染） */
+/* 桌面端整体大卡片：左竖排导航 + 内容区放入同一张卡（仅桌面分支渲染）。
+   方案 B（2026-09-06 拍板）：导航移左栏竖排，内容区满宽自适应（不设固定 max-width）。 */
 .settings-desktop-card {
   display: flex;
   flex: 1;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   min-height: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  /* ⚠️ 不可加 overflow:hidden——会为 sticky 子元素（.settings-sidenav）创建独立
+     滚动上下文，导航将卡在卡片顶部不再跟随页面滚动；左栏圆角由
+     .settings-sidenav 自身 radius 贴合，无需容器裁切。 */
 }
 
-/* 桌面端顶部栏（方案 D，2026-08-28）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar。
-   卡片式外观：圆角 + 边框，底部边框兼作与内容区的分割线；仍是原大卡片的顶部，
-   不额外留间距（与内容区一体），仅靠分割线区分 —— 见 2026-08-27 需求「仅外观加卡片感」。 */
-.settings-desktop-topbar {
+/* 桌面端左侧竖排导航（方案 B）：标题 + 竖排 TabBar。
+   宽度走流体 clamp（176→216px 随视口），不锁死固定值；
+   sticky 跟随页面滚动（滚动容器是 .app-shell__scroll，top:0 即其顶）；
+   背景延续原 topbar 的 --color-primary-light 浅灰带，右缘分割线兼作与内容区分界，
+   左侧圆角减 1px 贴合卡片外框（同原 topbar 处理）。 */
+.settings-sidenav {
   position: sticky;
   top: 0;
   z-index: 10;
+  align-self: flex-start;
   display: flex;
   flex-shrink: 0;
-  gap: var(--space-xs);
-  align-items: center;
-  padding: var(--space-sm) var(--space-lg);
-  /* 方案 B（2026-08-30）：topbar 降级为「头部条」——只留底部 1px 分割线、
-     背景用 --color-primary-light 浅灰带，与外层大卡片形成「一体」而非套盒；
-     顶部圆角减 1px 贴合卡片外框，避免直角顶在圆角内侧露出白弧。
-     去掉原四边 border（与卡片 border 叠成双线）。 */
-  border-bottom: 1px solid var(--color-border-light);
-  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  flex-direction: column;
+  flex-basis: clamp(176px, 13vw, 216px);
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-sm);
+  border-right: 1px solid var(--color-border-light);
+  border-radius: calc(var(--radius-lg) - 1px) 0 0 calc(var(--radius-lg) - 1px);
   background: var(--color-primary-light);
 }
 
-/* 胶囊 TabBar 推到右侧，与左侧标题形成左右分层 */
-.settings-desktop-topbar .settings-tabbar {
-  flex: 0 0 auto;
-  margin-left: auto;
+/* 桌面端内容主列：包住 settings-content，吃掉导航之外的剩余宽度（min-width:0 防撑破） */
+.settings-desktop-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
 }
 
-/* 桌面端顶部栏标题（方案 D）：左侧「设置」标题 + 状态点，与右侧胶囊 TabBar 拉开层级。 */
+/* TabBar 竖排化：仅作用于左栏内（移动端菜单/其他场景不受影响） */
+.settings-sidenav .settings-tabbar {
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  gap: var(--space-2xs);
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.settings-sidenav .settings-tab {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+/* 激活指示条：底部横条 → 左缘竖条（沿用收藏/历史页 tab 语言的旋转版） */
+.settings-sidenav .settings-tab::after {
+  top: 50%;
+  bottom: auto;
+  left: -1px;
+  width: 2px;
+  height: 0;
+  transform: translateY(-50%);
+  transition: height 0.22s var(--ease-standard);
+}
+.settings-sidenav .settings-tab--active::after {
+  width: 2px;
+  height: 60%;
+}
+
+/* 「设置」标题（方案 B 2026-09-06 起位于左栏顶部，原顶部栏左侧标题沿用同名类） */
 .settings-desktop-title {
   display: inline-flex;
   flex-shrink: 0;
@@ -459,8 +501,8 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text-secondary);
 }
 
-/* Tab 栏容器 — 桌面端顶部栏（已为卡片式外观）内的一行选项按钮，靠左排列；
-   单个 tab 为普通选项按钮（激活态主色填充），卡片感由外层 .settings-desktop-topbar 提供 */
+/* Tab 栏容器 — 默认横排（左栏内被 .settings-sidenav 覆盖为竖排；
+   移动端子页等场景如复用仍走横排）。单个 tab 为普通选项按钮（激活态浅底 + 指示条） */
 .settings-tabbar {
   display: inline-flex;
   flex-wrap: nowrap;
@@ -602,7 +644,7 @@ body.skin-transitioning .skin-btn.active {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-transition[data-variant="soft"] .settings-desktop-topbar {
+.page-transition[data-variant="soft"] .settings-sidenav {
   animation: settings-topbar-in 180ms var(--ease-standard) both;
 }
 .page-transition[data-variant="soft"] .settings-content__pane--active > * {
