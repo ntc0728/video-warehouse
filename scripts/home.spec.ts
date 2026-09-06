@@ -913,8 +913,8 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-panel__heat').count()).toBe(1);
     expect(await page.locator('.cqa-subgenres__chip').count()).toBeGreaterThanOrEqual(2);
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
-    // overlay 覆盖在 hero 卡内（面板 = header 正下方 mega-menu）
-    expect(await page.locator('.hero-bili .cqa-overlay').count()).toBe(1);
+    // 面板 = AppLayout 全局挂载、fixed 于 header 正下方（跨页 mega-menu）
+    expect(await page.locator('.app-shell .cqa-overlay').count()).toBe(1);
   });
 
   test('HOME-073: 点子分类 chip 面板不消失（内容切换，仍为 9 卡）', async ({ page }) => {
@@ -1115,44 +1115,53 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
-  test('HOME-085: 其他页面 chips 视觉常驻——点「首页」回首页、点分类不改 URL', async ({ page }) => {
+  test('HOME-085: 其他页面 hover/点 chip 开面板、首页 chip 收起、URL 全程不变', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 其他页面无面板载体：悬停分类 chip 不展开面板
+    // 其他页与首页同语义：hover 分类 chip → 面板展开
     await page.locator('.cqa-nav__item').nth(1).hover();
-    await page.waitForTimeout(600);
-    expect(await page.locator('.cqa-overlay').count()).toBe(0);
-
-    // 点击「首页」chip → 回首页；首页 chips 仍在（导航栏跨页一致）
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    expect(await page.locator('.cqa-overlay').count()).toBe(1);
+    // 点「首页」chip → 收起面板（不导航），URL 仍是 /browse
     await page.locator('.cqa-nav__item').first().click();
-    await page.waitForTimeout(1000);
-    expect(new URL(page.url()).pathname).toBe('/');
+    await page.waitForTimeout(400);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+    expect(new URL(page.url()).pathname).toBe('/browse');
 
-    // 再进其他页（设置），点击「剧集」chip → URL 不变（chips 与页面无关联，仅视觉常驻）
+    // 再进其他页（设置）：hover/点击 chip 同样开面板（面板全局挂载），URL 全程不变
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     const urlBefore = page.url();
-    await page.locator('.cqa-nav__item').nth(2).click();
-    await page.waitForTimeout(800);
+    await page.locator('.cqa-nav__item').nth(2).hover(); // 剧集
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    await page.locator('.cqa-nav__item').nth(2).click(); // 点击等效开面板
+    await page.waitForTimeout(500);
+    expect(await page.locator('.cqa-overlay').count()).toBe(1);
     expect(page.url()).toBe(urlBefore);
-    // 非首页 chips 无选中态
-    expect(await page.locator('.cqa-nav__item--on').count()).toBe(0);
+    // 「首页」chip = 收起面板（全端统一语义，不导航）
+    await page.locator('.cqa-nav__item').first().click();
+    await page.waitForTimeout(400);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+    expect(page.url()).toBe(urlBefore);
   });
 
-  test('HOME-086: browse 页点击分类 chip 不改 URL、不产生关联', async ({ page }) => {
+  test('HOME-086: browse 页 hover chip 开面板且 URL 不变', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse?category=movie', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 点击「剧集」chip：URL 不变、无 chip 高亮（chips 与 browse 页完全解耦）
     const urlBefore = page.url();
-    await page.locator('.cqa-nav__item').nth(2).click();
-    await page.waitForTimeout(800);
+    await page.locator('.cqa-nav__item').nth(2).hover(); // 剧集 → 面板展开
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    expect(await page.locator('.cqa-overlay').count()).toBe(1);
     expect(page.url()).toBe(urlBefore);
-    expect(await page.locator('.cqa-nav__item--on').count()).toBe(0);
+    // 移出导航 → 面板延迟收起
+    await page.locator('.sticky-header__brand').hover();
+    await page.waitForTimeout(400);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 });

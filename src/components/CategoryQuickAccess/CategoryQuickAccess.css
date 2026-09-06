@@ -269,7 +269,7 @@
     background: var(--color-surface-hover);
   }
 
-  /* ── mega 面板（HeroBili 卡顶，贴 header 下缘 = 视觉 mega-menu）── */
+  /* ── mega 面板（AppLayout 全局挂载：fixed 于 header 正下方 = 跨页 mega-menu）── */
   html:not([data-device="tv"]) .cqa-overlay {
     /* hotcard 横版封面 120×68 */
     --cqa-row-h: calc(68px + 2 * var(--space-xs));
@@ -277,11 +277,14 @@
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-md));
     /* 分页条（右下角 上一页/页码/下一页·查看更多） */
     --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
-    position: absolute;
+    position: fixed;
+    top: var(--header-height);
     left: 0;
     right: 0;
-    top: 0;
-    z-index: 50;
+    margin-inline: auto;
+    max-width: var(--layout-content-max-width);
+    /* header z-50 之下、页面内容之上 */
+    z-index: 49;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border-light);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);

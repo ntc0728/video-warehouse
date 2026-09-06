@@ -34,9 +34,9 @@ import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useTMDBStore } from '@/stores/useTMDBStore';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsWideDesktop } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
-import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import {
@@ -252,38 +252,31 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
  * >1280 桌面全页面：分类 chips（由 StickyHeader 中央渲染，搜索框左侧）。
  * 首页：hover chip → 打开 hero 卡顶的 mega 面板；移出导航 → 延迟收起；页面滚动 → 立即收起；
  *       滚离 hero 后悬停 chip → 先回顶再展开（回顶滚动期间豁免滚动收起）。
- * 其他页面：chips 仅视觉常驻（导航栏跨页一致），与页面无关联——hover 不开面板、
- *       点击分类不改 URL；「首页」chip 仍为回首页入口。
+ * 全页面统一行为（2026-09-06 拍板）：hover chip → 开面板；点 chip → 开面板；
+ * 「首页」chip → 收起面板；移出导航/面板延迟收起；页面滚动 / Esc / 点击外部 → 收起。
+ * 面板由 AppLayout 全局挂载（fixed 于 header 正下方），不依赖首页 hero。
  */
 export function CategoryQuickAccessNav() {
   const navigate = useCustomNavigate();
-  const location = useLocation();
-  const isHome = location.pathname === '/';
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
   const open = useCategoryOverlayStore((s) => s.open);
   const close = useCategoryOverlayStore((s) => s.close);
   const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
   const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
   const scrollContainerRef = useScrollContainer();
-  // 程序化回顶期间豁免「滚动收起」，否则刚展开的面板会被自己触发的滚动立即关掉
-  const suppressScrollCloseUntilRef = useRef(0);
 
-  // 页面滚动 → 面板立即收起（仅首页存在面板）
+  // 页面滚动 → 面板立即收起（AppLayout 滚动容器，全页面生效）
   useEffect(() => {
-    if (!isHome) return;
     const el = scrollContainerRef.current;
     if (!el) return;
-    const onScroll = () => {
-      if (Date.now() < suppressScrollCloseUntilRef.current) return;
-      useCategoryOverlayStore.getState().close();
-    };
+    const onScroll = () => useCategoryOverlayStore.getState().close();
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
-  }, [isHome, scrollContainerRef]);
+  }, [scrollContainerRef]);
 
-  // Esc / 点击导航与面板以外区域 → 收起（Nav 与 Panel 分处 header/hero，用 closest 判定内侧）
+  // Esc / 点击导航与面板以外区域 → 收起（Nav 与 Panel 分处 header/页面层，用 closest 判定内侧）
   useEffect(() => {
-    if (!isHome || !activeKey) return;
+    if (!activeKey) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     const onDown = (e: MouseEvent) => {
       const target = e.target as Element | null;
@@ -296,38 +289,16 @@ export function CategoryQuickAccessNav() {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onDown);
     };
-  }, [isHome, activeKey, close]);
-
-  // 路由切离首页时收起面板（面板载体 hero 已隐藏，避免残留展开态）
-  useEffect(() => {
-    if (!isHome) close();
-  }, [isHome, close]);
+  }, [activeKey, close]);
 
   const handleChipEnter = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
     cancelClose();
-    if (!isHome) return; // 非首页无面板载体，hover 不开面板
-    if (cat.key === 'home') { close(); return; }
-    const el = scrollContainerRef.current;
-    if (el && el.scrollTop > 0) {
-      suppressScrollCloseUntilRef.current = Date.now() + 800;
-      el.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    open(cat.key);
-  }, [cancelClose, close, isHome, open, scrollContainerRef]);
-
-  const handleChipClick = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
-    if (!isHome) {
-      // 非首页：chips 仅视觉常驻，与当前页面无关联——分类 chip 不改 URL、不导航；
-      // 唯一例外是「首页」chip（回首页入口）
-      if (cat.key === 'home') navigate('/');
-      return;
-    }
     if (cat.key === 'home') { close(); return; }
     open(cat.key);
-  }, [close, isHome, navigate, open]);
+  }, [cancelClose, close, open]);
 
   const isChipOn = (key: WideCategoryKey) =>
-    isHome && (key === 'home' ? activeKey === null : activeKey === key);
+    key === 'home' ? activeKey === null : activeKey === key;
 
   return (
     <nav
@@ -340,9 +311,9 @@ export function CategoryQuickAccessNav() {
         <button
           key={cat.key}
           className={`cqa-nav__item${isChipOn(cat.key) ? ' cqa-nav__item--on' : ''}`}
-          aria-expanded={isHome ? activeKey === cat.key : undefined}
+          aria-expanded={activeKey === cat.key}
           onMouseEnter={() => handleChipEnter(cat)}
-          onClick={() => handleChipClick(cat)}
+          onClick={() => (cat.key === 'home' ? close() : open(cat.key))}
         >
           <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
           <span>{cat.label}</span>
@@ -350,7 +321,7 @@ export function CategoryQuickAccessNav() {
       ))}
       <button
         className="cqa-nav__item cqa-nav__more"
-        onMouseEnter={isHome ? close : undefined}
+        onMouseEnter={close}
         onClick={() => {
           close();
           navigate(buildBrowseUrl('all'), { state: { fromCategory: true } });
@@ -365,10 +336,13 @@ export function CategoryQuickAccessNav() {
 }
 
 /**
- * >1280：mega 面板（由 HeroBili 渲染于 hero 卡顶，贴 header 下缘）。
+ * >1280：mega 面板（AppLayout 全局挂载，fixed 于 header 正下方 = 跨页 mega-menu）。
+ * 自门控：仅宽屏桌面（>1280 非 TV）且非移动布局渲染；移动端/TV 恒 null。
  * hover 常驻：进入面板取消延迟收起、移出面板延迟收起（与 Nav 的缓冲互补）。
  */
 export function CategoryQuickAccessPanel() {
+  const isWideDesktop = useIsWideDesktop();
+  const isMobileLayout = useIsMobileLayout();
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
   const heatSum = useMemo(() => {
@@ -383,6 +357,8 @@ export function CategoryQuickAccessPanel() {
   const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
   const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage } =
     useWideCategoryPanel(activeKey);
+
+  if (!isWideDesktop || isMobileLayout) return null;
 
   // 客户端分页：接口最多 20 条，每页 9（末页可能不满）
   const panelTotal = panelItems?.length ?? 0;
