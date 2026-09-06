@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { TMDBVideoItem } from '@/types/tmdb';
-import { AppLoading } from '@/components/common';
+import { AppLoading, BackToTopButton } from '@/components/common';
 import { Icon } from '@/components/ui/Icon';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl, discoverCategory, fetchTrending } from '@/services/tmdbService';
@@ -335,6 +335,7 @@ export default function ChartPage() {
           </div>
         )}
       </section>
+      <BackToTopButton />
     </div>
   );
 }
