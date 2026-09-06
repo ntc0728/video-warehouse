@@ -37,6 +37,7 @@ import { useTMDBStore } from '@/stores/useTMDBStore';
 import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import {
@@ -258,6 +259,8 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
  */
 export function CategoryQuickAccessNav() {
   const navigate = useCustomNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
   const open = useCategoryOverlayStore((s) => s.open);
   const close = useCategoryOverlayStore((s) => s.close);
@@ -298,7 +301,7 @@ export function CategoryQuickAccessNav() {
   }, [cancelClose, close, open]);
 
   const isChipOn = (key: WideCategoryKey) =>
-    key === 'home' ? activeKey === null : activeKey === key;
+    key === 'home' ? isHome && activeKey === null : activeKey === key;
 
   return (
     <nav
@@ -313,7 +316,12 @@ export function CategoryQuickAccessNav() {
           className={`cqa-nav__item${isChipOn(cat.key) ? ' cqa-nav__item--on' : ''}`}
           aria-expanded={activeKey === cat.key}
           onMouseEnter={() => handleChipEnter(cat)}
-          onClick={() => (cat.key === 'home' ? close() : open(cat.key))}
+          onClick={() => {
+            if (cat.key !== 'home') { open(cat.key); return; }
+            // 「首页」chip：首页 = 收起面板；其他页 = 回首页
+            close();
+            if (!isHome) navigate('/');
+          }}
         >
           <Icon icon={WIDE_NAV_ICONS[cat.key]} size="md" />
           <span>{cat.label}</span>
@@ -358,6 +366,17 @@ export function CategoryQuickAccessPanel() {
   const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage } =
     useWideCategoryPanel(activeKey);
 
+  // ⚠️ Rules of Hooks：useCallback 必须在所有提前 return 之前——
+  // 原写在下方 `if (!activeCat...) return null` 之后，面板关闭→打开的
+  // 下一帧会「Rendered more hooks than during the previous render」崩溃。
+  const currentSub = currentSubs?.find((s) => s.id === currentSubId) ?? currentSubs?.[0];
+  // 末页「查看更多」：携带分类 + 当前子分类 genre 进 browse（面板只在非 home 分类下渲染）
+  const goBrowseMore = useCallback(() => {
+    if (!activeCat || activeCat.key === 'home') return;
+    close();
+    navigate(buildBrowseUrl(activeCat.key, currentSub?.genreIds ?? []));
+  }, [activeCat, currentSub, close, navigate]);
+
   if (!isWideDesktop || isMobileLayout) return null;
 
   // 客户端分页：接口最多 20 条，每页 9（末页可能不满）
@@ -367,14 +386,6 @@ export function CategoryQuickAccessPanel() {
     (panelPage - 1) * PANEL_PAGE_SIZE,
     panelPage * PANEL_PAGE_SIZE,
   ) ?? [];
-  const currentSub = currentSubs?.find((s) => s.id === currentSubId) ?? currentSubs?.[0];
-
-  // 末页「查看更多」：携带分类 + 当前子分类 genre 进 browse（面板只在非 home 分类下渲染）
-  const goBrowseMore = useCallback(() => {
-    if (!activeCat || activeCat.key === 'home') return;
-    close();
-    navigate(buildBrowseUrl(activeCat.key, currentSub?.genreIds ?? []));
-  }, [activeCat, currentSub, close, navigate]);
 
   if (!activeCat || activeCat.key === 'home') return null;
 

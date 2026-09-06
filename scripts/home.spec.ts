@@ -1115,7 +1115,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
-  test('HOME-085: 其他页面 hover/点 chip 开面板、首页 chip 收起、URL 全程不变', async ({ page }) => {
+  test('HOME-085: 其他页面 hover/点 chip 开面板；「首页」chip 收起面板并回首页', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
@@ -1125,11 +1125,11 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.locator('.cqa-nav__item').nth(1).hover();
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
     expect(await page.locator('.cqa-overlay').count()).toBe(1);
-    // 点「首页」chip → 收起面板（不导航），URL 仍是 /browse
+    // 点「首页」chip → 收起面板并跳转回首页（其他页特殊处理）
     await page.locator('.cqa-nav__item').first().click();
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(800);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
-    expect(new URL(page.url()).pathname).toBe('/browse');
+    expect(new URL(page.url()).pathname).toBe('/');
 
     // 再进其他页（设置）：hover/点击 chip 同样开面板（面板全局挂载），URL 全程不变
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
@@ -1141,11 +1141,11 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForTimeout(500);
     expect(await page.locator('.cqa-overlay').count()).toBe(1);
     expect(page.url()).toBe(urlBefore);
-    // 「首页」chip = 收起面板（全端统一语义，不导航）
+    // 「首页」chip = 收起面板 + 跳回首页（其他页特殊处理）
     await page.locator('.cqa-nav__item').first().click();
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(800);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
-    expect(page.url()).toBe(urlBefore);
+    expect(new URL(page.url()).pathname).toBe('/');
   });
 
   test('HOME-086: browse 页 hover chip 开面板且 URL 不变', async ({ page }) => {
