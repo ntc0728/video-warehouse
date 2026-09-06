@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>设置页大屏布局方案对比 — 2026-09-06</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  /* ===== 站点 token 对齐（variables.css，浅色主题）===== */
+  :root {
+    --color-primary: #000;
+    --color-primary-light: rgba(0, 0, 0, 0.05);
+    --color-primary-bg: rgba(0, 0, 0, 0.08);
+    --color-surface: #fff;
+    --color-background: #f6f6f6;
+    --color-border-light: #e8e8e8;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #666;
+    --color-text-tertiary: #999;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --warn: #e8833a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ===== Demo 控制条 ===== */
+  .demo-ui {
+    position: sticky; top: 0; z-index: 100;
+    background: #fff; border-bottom: 1px solid var(--color-border-light);
+    padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+  }
+  .demo-ui .brand { font-weight: 700; }
+  .demo-ui .brand small { color: var(--color-text-tertiary); font-weight: 400; margin-left: 6px; }
+  .v-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .v-pill {
+    border: 1px solid var(--color-border-light); background: #fff; border-radius: 999px;
+    padding: 6px 14px; cursor: pointer; font-size: 13px; color: var(--color-text-secondary);
+    transition: all .15s;
+  }
+  .v-pill:hover { border-color: var(--color-text-secondary); }
+  .v-pill.on { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .v-pill .tag { font-size: 11px; margin-left: 4px; opacity: .85; }
+  .w-ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-secondary); margin-left: auto; }
+  .w-ctl output { min-width: 52px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--color-text); }
+  input[type="range"] { accent-color: #000; width: 160px; }
+
+  .v-note {
+    padding: 10px 20px; font-size: 13px; color: var(--color-text-secondary);
+    border-bottom: 1px dashed var(--color-border-light); background: #fafafa;
+  }
+  .v-note b { color: var(--color-text); }
+  .v-note .rec { color: var(--warn); font-weight: 600; }
+
+  /* ===== 舞台与容器（宽度可调）===== */
+  .stage { padding: 28px 20px 60px; display: flex; justify-content: center; }
+  .frame { width: 1440px; max-width: 100%; transition: width .2s; }
+
+  /* ===== 变体切换 ===== */
+  .variant { display: none; }
+  body[data-v="a"] .variant[data-v="a"],
+  body[data-v="b"] .variant[data-v="b"],
+  body[data-v="c"] .variant[data-v="c"],
+  body[data-v="d"] .variant[data-v="d"] { display: block; }
+
+  /* ===== 通用卡片（settings-desktop-card 语义复刻）===== */
+  .card {
+    display: flex; flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    min-height: 620px;
+    overflow: hidden;
+  }
+
+  /* ===== 顶栏（A / D 现状复刻）===== */
+  .topbar {
+    display: flex; align-items: center; gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-primary-light);
+  }
+  .title { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+  .title svg { width: 16px; height: 16px; color: var(--color-text-secondary); }
+  .tabbar { display: inline-flex; gap: 4px; margin-left: auto; }
+  .tab {
+    position: relative; display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border: none; background: transparent; cursor: pointer;
+    border-radius: var(--radius-md); font-size: 13.5px; color: var(--color-text-secondary);
+    white-space: nowrap; transition: background .15s, color .15s;
+  }
+  .tab svg { width: 15px; height: 15px; }
+  .tab:hover { background: var(--color-primary-light); }
+  .tab.on { background: #fff; color: var(--color-text); font-weight: 600; }
+  .tab.on::after {
+    content: ""; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 22px; height: 2px; border-radius: 2px; background: var(--color-primary);
+  }
+
+  /* ===== 内容区（A/D 全宽；B/C 右侧）===== */
+  .panes { padding: var(--space-lg) var(--space-lg) var(--space-xl, 28px); overflow: auto; }
+  .pane { display: none; animation: fadein .22s ease both; }
+  .pane.on { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* 内容限宽：B/C/D 的核心配套——行不再被宽屏拉长 */
+  .panes--capped { max-width: 860px; }
+  .card--centered { max-width: 980px; margin: 0 auto; }
+
+  .sec { margin-bottom: var(--space-lg); }
+  .sec-h {
+    font-size: 12.5px; font-weight: 600; color: var(--color-text-tertiary);
+    letter-spacing: .04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .sec-h svg { width: 14px; height: 14px; }
+  .list { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); overflow: hidden; }
+  .row {
+    display: flex; align-items: center; gap: var(--space-md);
+    padding: 13px var(--space-md); font-size: 13.5px;
+  }
+  .row + .row { border-top: 1px solid var(--color-border-light); }
+  .row .lbl { flex: 1; min-width: 0; }
+  .row .lbl .t { font-weight: 500; }
+  .row .lbl .d { font-size: 12px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .row .val { color: var(--color-text-tertiary); font-size: 13px; }
+
+  /* ===== 控件 ===== */
+  .seg { display: inline-flex; border: 1px solid var(--color-border-light); border-radius: var(--radius-sm); overflow: hidden; }
+  .seg button { border: none; background: #fff; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); }
+  .seg button + button { border-left: 1px solid var(--color-border-light); }
+  .seg button.on { background: var(--color-primary); color: #fff; }
+  .sw { position: relative; width: 40px; height: 22px; border-radius: 999px; background: #d4d4d4; cursor: pointer; transition: background .15s; flex-shrink: 0; border: none; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .sw.on { background: var(--color-primary); }
+  .sw.on::after { left: 20px; }
+  .btn {
+    border: 1px solid var(--color-border-light); background: #fff; border-radius: var(--radius-sm);
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--color-text);
+  }
+  .btn:hover { border-color: var(--color-text-secondary); }
+  .sel {
+    border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+    padding: 6px 10px; font-size: 13px; background: #fff; color: var(--color-text); cursor: pointer;
+  }
+  .range-sim { display: inline-flex; align-items: center; gap: 10px; }
+  .range-sim .bar { width: 140px; height: 4px; border-radius: 4px; background: #e0e0e0; position: relative; }
+  .range-sim .bar i { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--color-primary); border-radius: 4px; }
+  .range-sim .bar i::after { content: ""; position: absolute; right: -7px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--color-primary); }
+  .chips { display: inline-flex; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--color-border-light); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; background: #fff; }
+  .chip.on { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); }
+
+  /* ===== B：左侧竖排导航 ===== */
+  .card--split { flex-direction: row; }
+  .sidenav {
+    flex: 0 0 196px; display: flex; flex-direction: column; gap: 2px;
+    padding: var(--space-md) var(--space-sm);
+    border-right: 1px solid var(--color-border-light);
+    background: var(--color-primary-light);
+  }
+  .sidenav .title { padding: 2px 10px 12px; font-size: 15px; }
+  .vtab {
+    position: relative; display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 10px 12px; border: none; background: transparent; cursor: pointer;
+    border-radius: var(--radius-sm); font-size: 13.5px; color: var(--color-text-secondary);
+    text-align: left; transition: background .15s, color .15s;
+  }
+  .vtab svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .vtab:hover { background: rgba(0, 0, 0, 0.06); }
+  .vtab.on { background: #fff; color: var(--color-text); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .vtab.on::before {
+    content: ""; position: absolute; left: -10px; top: 22%; bottom: 22%;
+    width: 3px; border-radius: 3px; background: var(--color-primary);
+  }
+  .main-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .main-col .panes { flex: 1; }
+
+  /* ===== C：窄图标栏 ===== */
+  .rail {
+    flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: var(--space-md) 8px;
+    border-right: 1px solid var(--color-border-light);
+    background: var(--color-primary-light);
+  }
+  .rail .rail-title {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--color-primary); color: #fff;
+    display: grid; place-items: center; margin-bottom: 8px;
+  }
+  .rail .rail-title svg { width: 18px; height: 18px; }
+  .rtab {
+    position: relative; width: 58px; padding: 8px 2px 7px; border: none; background: transparent;
+    border-radius: var(--radius-sm); cursor: pointer; color: var(--color-text-secondary);
+    display: flex; flex-direction: column; align-items: center; gap: 3px; transition: background .15s, color .15s;
+  }
+  .rtab svg { width: 18px; height: 18px; }
+  .rtab .rt-lb { font-size: 10.5px; transform: scale(.92); white-space: nowrap; }
+  .rtab:hover { background: rgba(0, 0, 0, 0.06); }
+  .rtab.on { background: var(--color-primary); color: #fff; }
+
+  /* 注释标注 */
+  .anno { font-size: 11.5px; color: var(--warn); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+  .anno::before { content: "↳"; }
+</style>
+</head>
+<body data-v="b">
+
+  <div class="demo-ui">
+    <span class="brand">设置页大屏布局<small>4 方案 · tab 可点 · 拖宽度感受大屏</small></span>
+    <div class="v-pills">
+      <button class="v-pill" data-set="a">A · 现状</button>
+      <button class="v-pill on" data-set="b">B · 左侧竖排导航<span class="tag">（你的想法）</span></button>
+      <button class="v-pill" data-set="c">C · 窄图标栏</button>
+      <button class="v-pill" data-set="d">D · 保持顶栏 + 限宽</button>
+    </div>
+    <label class="w-ctl">容器宽度
+      <input type="range" id="wr" min="900" max="1760" value="1440" step="20" />
+      <output id="wo">1440px</output>
+    </label>
+  </div>
+  <div class="v-note" id="note"></div>
+
+  <div class="stage">
+    <div class="frame" id="frame">
+      <div class="variant" data-v="a"><div class="card" id="card-a"></div></div>
+      <div class="variant" data-v="b"><div class="card card--split" id="card-b"></div></div>
+      <div class="variant" data-v="c"><div class="card card--split" id="card-c"></div></div>
+      <div class="variant" data-v="d"><div class="card card--centered" id="card-d"></div></div>
+    </div>
+  </div>
+
+<script>
+  /* ===== Tab 定义（对齐 SettingsTabBar.tsx）===== */
+  const TABS = [
+    { key: 'appearance', label: '外观',     icon: 'palette' },
+    { key: 'video',      label: '视频设置', icon: 'film' },
+    { key: 'playback',   label: '播放设置', icon: 'circle-play' },
+    { key: 'iptv',       label: 'IPTV设置', icon: 'tv' },
+    { key: 'personal',   label: '个人设置', icon: 'user' },
+    { key: 'about',      label: '关于',     icon: 'info' },
+  ];
+  const SEC_ICONS = { appearance: 'palette', video: 'film', playback: 'circle-play', iptv: 'tv', personal: 'user', about: 'info' };
+
+  /* ===== 内容（简化自各 Tab 组件，行结构 = label + desc + 控件）===== */
+  const row = (t, d, ctrl) => `<div class="row"><div class="lbl"><div class="t">${t}</div>${d ? `<div class="d">${d}</div>` : ''}</div>${ctrl}</div>`;
+  const sec = (tab, inner) => `<div class="sec"><div class="sec-h"><i data-lucide="${SEC_ICONS[tab]}"></i>${TABS.find(x => x.key === tab).label}</div><div class="list">${inner}</div></div>`;
+  const sw  = (on) => `<button class="sw${on ? ' on' : ''}" onclick="this.classList.toggle('on')"></button>`;
+  const CONTENT = {
+    appearance: sec('appearance',
+      row('主题', '浅色 / 深色 / 跟随系统', `<span class="seg"><button>浅色</button><button>深色</button><button class="on">跟随系统</button></span>`)
+      + row('皮肤', '界面配色主题', `<span class="chips"><span class="chip on"><i class="swatch" style="background:#111"></i>默认</span><span class="chip"><i class="swatch" style="background:#3b5b7a"></i>深海</span><span class="chip"><i class="swatch" style="background:#b06a3b"></i>暖橙</span></span>`)
+      + row('TV 过扫描补偿', '电视端画面边缘裁切补偿', `<span class="range-sim"><span class="bar"><i style="width:0%"></i></span><span class="val">铺满</span></span>`)
+    ),
+    video: sec('video',
+      row('TMDB 访问令牌', '已配置 · 点击修改', `<button class="btn">配置</button>`)
+      + row('CORS 代理', 'CMS 采集站请求转发', `<button class="btn">配置</button>`)
+      + row('记住音量', '下次打开恢复上次音量', sw(true))
+      + row('自动翻译', '外文标题自动调取中文翻译', sw(false))
+    ),
+    playback: sec('playback',
+      row('自动连播', '单集结束自动播放下一集', sw(true))
+      + row('默认清晰度', '优先选择的清晰度档位', `<select class="sel"><option>1080P</option><option>720P</option><option>自动</option></select>`)
+      + row('默认倍速', '进入播放器初始倍速', `<select class="sel"><option>1.0x</option><option>1.25x</option><option>1.5x</option></select>`)
+    ),
+    iptv: sec('iptv',
+      row('EPG 更新间隔', '节目单自动刷新频率', `<select class="sel"><option>12 小时</option><option>24 小时</option></select>`)
+      + row('IPTV 代理地址', 'M3U8 / TS 分片代理', `<button class="btn">配置</button>`)
+      + row('频道源测速', '检测所有 IPTV 源可用性', `<button class="btn">开始检测</button>`)
+    ),
+    personal: sec('personal',
+      row('个人资料', '昵称与头像', `<button class="btn">编辑</button>`)
+      + row('观看历史', '共 236 条记录', `<button class="btn">管理</button>`)
+      + row('清除缓存', '图片与节目单缓存 · 约 128 MB', `<button class="btn">清除</button>`)
+    ),
+    about: sec('about',
+      row('版本', 'KinoTV v1.1.0 · Web', `<span class="val">检查更新</span>`)
+      + row('更新日志', '查看历史版本改动', `<span class="val">›</span>`)
+      + row('开源致谢', 'React · Vite · hls.js · TMDB', `<span class="val">›</span>`)
+    ),
+  };
+
+  /* ===== 四个变体外壳拼装 ===== */
+  const iconOf = k => TABS.find(t => t.key === k).icon;
+  const panesHTML = (activeKey) => TABS.map(t =>
+    `<div class="pane${t.key === activeKey ? ' on' : ''}" data-pane="${t.key}">${CONTENT[t.key]}</div>`
+  ).join('');
+  const topbarHTML = (activeKey) =>
+    `<div class="topbar"><div class="title"><i data-lucide="sliders-horizontal"></i>设置</div><div class="tabbar">` +
+    TABS.map(t => `<button class="tab${t.key === activeKey ? ' on' : ''}" data-tab="${t.key}"><i data-lucide="${t.icon}"></i>${t.label}</button>`).join('') +
+    `</div></div>`;
+
+  /* A 现状：顶栏 + 全宽内容 */
+  document.getElementById('card-a').innerHTML =
+    topbarHTML('appearance') +
+    `<div class="panes" data-scope="a">${panesHTML('appearance')}</div>`;
+
+  /* B 左侧竖排导航（用户想法）+ 内容限宽 */
+  document.getElementById('card-b').innerHTML =
+    `<aside class="sidenav"><div class="title"><i data-lucide="sliders-horizontal"></i>设置</div>` +
+    TABS.map(t => `<button class="vtab${t.key === 'appearance' ? ' on' : ''}" data-tab="${t.key}"><i data-lucide="${t.icon}"></i>${t.label}</button>`).join('') +
+    `</aside><div class="main-col"><div class="panes panes--capped" data-scope="b">${panesHTML('appearance')}</div></div>`;
+
+  /* C 窄图标栏 + 内容限宽（更宽） */
+  document.getElementById('card-c').innerHTML =
+    `<aside class="rail"><div class="rail-title"><i data-lucide="sliders-horizontal"></i></div>` +
+    TABS.map(t => `<button class="rtab${t.key === 'appearance' ? ' on' : ''}" data-tab="${t.key}"><i data-lucide="${t.icon}"></i><span class="rt-lb">${t.label.replace('设置','')}</span></button>`).join('') +
+    `</aside><div class="main-col"><div class="panes panes--capped" style="max-width:920px" data-scope="c">${panesHTML('appearance')}</div></div>`;
+
+  /* D 保持顶栏 + 整卡限宽居中 */
+  document.getElementById('card-d').innerHTML =
+    topbarHTML('appearance') +
+    `<div class="panes" data-scope="d">${panesHTML('appearance')}</div>`;
+
+  /* ===== 交互：变体内 tab 切换（事件委托）===== */
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tab]');
+    if (!btn) return;
+    const scope = btn.closest('.card');
+    const key = btn.dataset.tab;
+    scope.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b === btn));
+    scope.querySelectorAll('[data-pane]').forEach(p => p.classList.toggle('on', p.dataset.pane === key));
+  });
+
+  /* ===== 变体切换 + 说明 ===== */
+  const NOTES = {
+    a: `<b>A · 现状</b>：标题在左、6 个胶囊 tab 挤在右上角，内容整卡铺满 —— 宽屏下「入口在右上、内容满屏拉长」，就是分散感的来源。<span class="rec">基线</span>`,
+    b: `<b>B · 左侧竖排导航（你的想法）</b>：tab 移到左栏竖排（图标 + 全称），动线变成「左选右看」，与大宽屏的横向空间天然匹配；右内容区<b>同时限宽 860px</b>，行不再拉伸。<span class="rec">★ 推荐</span>`,
+    c: `<b>C · 窄图标栏</b>：只留图标 + 微缩标签（约 72px），内容区比 B 更宽；更紧凑，但「IPTV设置」等全称需悬停或学习，信息直读性略降。<span class="rec">紧凑取向</span>`,
+    d: `<b>D · 保持顶栏 + 限宽</b>：结构完全不动，仅整卡限宽居中（~980px）；改动最小，但 tab 仍挤在顶部、纵向空间利用率一般，属于保守解。`,
+  };
+  const noteEl = document.getElementById('note');
+  function setV(v) {
+    document.body.dataset.v = v;
+    noteEl.innerHTML = NOTES[v];
+    document.querySelectorAll('.v-pill').forEach(p => p.classList.toggle('on', p.dataset.set === v));
+  }
+  document.querySelectorAll('.v-pill').forEach(p => p.addEventListener('click', () => setV(p.dataset.set)));
+  setV('b');
+
+  /* ===== 容器宽度 ===== */
+  const wr = document.getElementById('wr'), wo = document.getElementById('wo'), frame = document.getElementById('frame');
+  wr.addEventListener('input', () => { frame.style.width = wr.value + 'px'; wo.textContent = wr.value + 'px'; });
+
+  lucide.createIcons();
+</script>
+</body>
+</html>
