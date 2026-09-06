@@ -1,0 +1,337 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Chart — 热度榜页（2026-09-06 v2）
+   卡片模块规范：surface + 1px border-light + radius-lg + shadow-sm（全端启用）。
+   配色契约（2026-09-06 拍板）：灰白结构 + 暖橙 --color-warning 为唯一语义强调色
+   （top3 排名与热度值）；选中态 = 黑底白字 --color-tab-active-*（与全站 Tab 一致）。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.chart-page {
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-lg);
+}
+
+.chart-card {
+  max-width: 960px;
+  margin: 0 auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ── 页头 ── */
+.chart-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-lg) 0;
+  flex-wrap: nowrap;
+}
+.chart-head__title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+.chart-head__sub {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 口径 tooltip（与 CategoryQuickAccess InfoTip 同款） */
+.chart-info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: help;
+  padding: 0;
+}
+.chart-info-tip__content {
+  max-width: 280px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* ── Tab 行（pill + 黑底白字选中，与 cqa-nav / 全站 Tab 同语言） ── */
+.chart-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chart-tabs::-webkit-scrollbar { display: none; }
+.chart-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 0 0 auto;
+  height: calc(var(--comp-tab-height) - var(--space-sm));
+  padding: 0 var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-tag-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+.chart-tabs__tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+.chart-tabs__tab--on,
+.chart-tabs__tab--on:hover {
+  color: var(--color-tab-active-text);
+  background: var(--color-tab-active-bg);
+  font-weight: 600;
+}
+/* 趋势榜 tab 内 今日/本周 分段 */
+.chart-tabs__window {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  background: var(--color-tag-bg);
+  border-radius: var(--radius-full);
+  padding: 2px;
+}
+.chart-tabs__window-btn,
+.chart-tabs__window-btn--on {
+  border: none;
+  background: none;
+  padding: calc(var(--space-2xs) + 1px) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chart-tabs__window-btn--on {
+  background: var(--color-tab-active-bg);
+  color: var(--color-tab-active-text);
+  font-weight: 600;
+}
+
+/* ── 榜单列表 ── */
+.chart-list {
+  padding: var(--space-xs) var(--space-md) var(--space-md);
+  min-height: 200px;
+}
+.chart-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-width: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chart-row:hover { background: var(--color-surface-hover); }
+}
+.chart-row:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.chart-row__rank {
+  flex: 0 0 44px;
+  text-align: center;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-style: italic;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.chart-row--top .chart-row__rank {
+  color: var(--color-warning);
+  font-size: var(--text-xl);
+}
+.chart-row__cover {
+  flex: 0 0 160px;
+  width: 160px;
+  height: 90px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-placeholder);
+  flex-shrink: 0;
+}
+.chart-row__body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.chart-row__t {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-row__m {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+.chart-row__badge {
+  background: var(--color-tag-bg);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-xs);
+  line-height: 18px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.chart-row__desc {
+  margin-top: var(--space-2xs);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-row__heat {
+  flex: 0 0 auto;
+  text-align: right;
+}
+.chart-row__heat .n {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-warning);
+  font-variant-numeric: tabular-nums;
+}
+.chart-row__heat .n svg { width: 12px; height: 12px; }
+.chart-row__heat .l {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+.chart-row__heat .v {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.chart-row__heat .v svg { width: 10px; height: 10px; }
+
+/* 加载/到底/错误 */
+.chart-list__skeleton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+}
+.chart-list__skeleton i {
+  display: block;
+  border-radius: var(--radius-md);
+  background: linear-gradient(100deg, var(--color-placeholder-shimmer-a) 40%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 60%);
+  background-size: 200% 100%;
+  animation: chart-shimmer var(--card-shimmer-duration) infinite;
+}
+.chart-list__skeleton .a { flex: 0 0 44px; height: 28px; }
+.chart-list__skeleton .b { flex: 0 0 160px; height: 90px; }
+.chart-list__skeleton .c { flex: 1; height: 18px; }
+.chart-list__skeleton .d { flex: 0 0 84px; height: 18px; }
+@keyframes chart-shimmer { to { background-position: -200% 0; } }
+
+.chart-list__end {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: var(--space-md) 0 var(--space-xs);
+}
+.chart-sentinel { height: 1px; }
+
+.chart-loading {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chart-error {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+.chart-error__retry {
+  padding: var(--space-xs) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.chart-error__retry:hover { background: var(--color-surface-hover); }
+
+/* ── 移动端：封面缩为 120×68，简介隐藏 ── */
+@media (width <= 639px) {
+  .chart-head { padding: var(--space-md) var(--space-md) 0; }
+  .chart-tabs { padding: var(--space-sm) var(--space-md); }
+  .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
+  .chart-row__cover {
+    flex-basis: 120px;
+    width: 120px;
+    height: 68px;
+  }
+  .chart-row__desc { display: none; }
+  .chart-row__rank { flex-basis: 32px; }
+  .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
+  .chart-list__skeleton .b { flex-basis: 120px; height: 68px; }
+}
+html[data-device="app"] .chart-head { padding: var(--space-md) var(--space-md) 0; }
+html[data-device="app"] .chart-tabs { padding: var(--space-sm) var(--space-md); }
+html[data-device="app"] .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
+html[data-device="app"] .chart-row__cover {
+  flex-basis: 120px;
+  width: 120px;
+  height: 68px;
+}
+html[data-device="app"] .chart-row__desc { display: none; }
+html[data-device="app"] .chart-row__rank { flex-basis: 32px; }
+html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .chart-list__skeleton i { animation: none; }
+}

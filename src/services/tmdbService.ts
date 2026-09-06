@@ -213,13 +213,17 @@ export async function fetchCountries(): Promise<TMDBCountry[]> {
 // 热门趋势
 // ============================================================
 
-/** 获取热门趋势内容列表 */
+/** 获取热门趋势内容列表（page 供热度榜页翻页；不传默认第 1 页，向后兼容） */
 export async function fetchTrending(
   mediaType: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
-  options: { signal?: AbortSignal } = {},
+  options: { signal?: AbortSignal; page?: number } = {},
 ): Promise<TMDBPaginatedResponse<TMDBTrendingItem>> {
-  return fetchTMDB<TMDBPaginatedResponse<TMDBTrendingItem>>(`/trending/${mediaType}/${timeWindow}`, {}, options);
+  return fetchTMDB<TMDBPaginatedResponse<TMDBTrendingItem>>(
+    `/trending/${mediaType}/${timeWindow}`,
+    { page: options.page ?? 1 },
+    options,
+  );
 }
 
 // ============================================================
@@ -372,11 +376,12 @@ export async function discoverCategory(
   mediaType: 'movie' | 'tv',
   genreIds: number[],
   options: { signal?: AbortSignal } = {},
+  page: number = 1,
 ): Promise<TMDBPaginatedResponse<TMDBMovie | TMDBTVShow>> {
   const endpoint = mediaType === 'movie' ? '/discover/movie' : '/discover/tv';
   return fetchTMDB<TMDBPaginatedResponse<TMDBMovie | TMDBTVShow>>(
     endpoint,
-    { page: 1, sort_by: 'popularity.desc', 'vote_count.gte': 10, with_genres: genreIds.join(',') },
+    { page, sort_by: 'popularity.desc', 'vote_count.gte': 10, with_genres: genreIds.join(',') },
     options,
   );
 }

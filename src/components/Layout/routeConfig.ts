@@ -47,6 +47,7 @@ const routeComponentMap: Record<string, PreloadableLazy> = {
   '/': lazyWithRetry(() => import('@/pages/Home/HomeRoute')),
   '/iptv': lazyWithRetry(() => import('@/pages/IPTV')),
   '/browse': lazyWithRetry(() => import('@/pages/Browse')),
+  '/chart': lazyWithRetry(() => import('@/pages/Chart')),
   '/settings': lazyWithRetry(() => import('@/pages/Settings')),
   '/collections': lazyWithRetry(() => import('@/pages/Collections')),
   '/history': lazyWithRetry(() => import('@/pages/History')),

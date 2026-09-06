@@ -28,6 +28,7 @@ const routes = [
       { path: 'player/:id', element: <div /> },
       { path: 'source-checker', element: <div /> },
       { path: 'browse', element: <div /> },
+      { path: 'chart', element: <div /> },
       { path: 'person/:id', element: <div /> },
       { path: 'ptr-demo', element: <div /> },
       { path: 'proxy-setup', element: <div /> },
