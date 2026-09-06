@@ -742,6 +742,23 @@ export default function HistoryPage() {
       containerRef={pageRef}
       pageClassName="history-page"
       fusedCategories={fusedCategories}
+      inlineFilter={{
+        statusOptions: (['all', 'unfinished', 'finished'] as VideoStatus[]).map((k) => ({
+          key: k,
+          label: STATUS_CONFIG[k].label,
+          color: STATUS_DOT[k],
+        })),
+        statusFilter,
+        onStatusChange: (k) => setStatusFilter(k as VideoStatus),
+        sortOptions: SORT_OPTIONS,
+        sortBy,
+        onSortChange: (v) => setSortBy(v as SortKey),
+      }}
+      overflowActions={
+        <button type="button" className="record-pop-item record-pop-item--danger" onClick={handleClearAll} role="menuitem">
+          清空历史…
+        </button>
+      }
       actions={actions}
       isBatchMode={batchMode || batchIsExiting}
     >

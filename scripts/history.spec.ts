@@ -149,26 +149,42 @@ test.describe('8.7 融合 Tab 与筛选面板', () => {
     expect((await active.textContent())?.replace(/\d+/g, '')).toContain('综合');
   });
 
-  test('HIS-061: 「更多筛选」面板展开/收起（状态 chips + 排序）', async ({ page }) => {
+  test('HIS-061: 桌面内嵌筛选条（方案 C）：状态 chips 常驻 + 排序弹层 + IPTV tab 隐藏', async ({ page }) => {
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    const filterBtn = page.locator('.action-btn--filter');
-    const panel = page.locator('.record-filter-panel');
+    const inlineFilter = page.locator('.record-inline-filter');
 
-    // 初始收起
-    expect(await panel.count()).toBe(0);
+    // 状态 chips 常驻：3 个（全部/未看完/已看完），默认「全部」激活
+    await expect(inlineFilter).toBeVisible({ timeout: 5000 });
+    const statusChips = inlineFilter.locator('.record-filter-chip--status');
+    await expect(statusChips).toHaveCount(3);
+    await expect(statusChips.filter({ hasText: '全部' })).toHaveClass(/is-active/);
 
-    // 展开
-    await filterBtn.click();
-    await page.waitForSelector('.record-filter-panel', { timeout: 5000 });
-    expect(await page.locator('.record-filter-chip--status').count()).toBe(3); // 全部/未看完/已看完
+    // 排序弹层：默认「最近观看」，点开 6 项，选择「最早观看」后收起并更新文案
+    const sortBtn = inlineFilter.locator('.record-sort-btn');
+    await expect(sortBtn).toContainText('最近观看');
+    await sortBtn.click();
+    const pop = page.locator('.record-pop');
+    await expect(pop).toBeVisible({ timeout: 5000 });
+    const sortItems = pop.locator('.record-pop-item');
+    await expect(sortItems).toHaveCount(6);
 
-    // 收起
-    await filterBtn.click();
+    await sortItems.filter({ hasText: '最早观看' }).click();
+    await page.waitForTimeout(300);
+    await expect(pop).toHaveCount(0);
+    await expect(sortBtn).toContainText('最早观看');
+
+    // E-②：IPTV tab 下状态/排序仅作用于影视 → 内嵌筛选条整段隐藏
+    await page.locator('.record-status--fused .status-tab', { hasText: 'IPTV' }).click();
     await page.waitForTimeout(400);
-    expect(await page.locator('.record-filter-panel').count()).toBe(0);
+    await expect(inlineFilter).toHaveCount(0);
+
+    // 切回综合恢复
+    await page.locator('.record-status--fused .status-tab', { hasText: '综合' }).click();
+    await page.waitForTimeout(400);
+    await expect(inlineFilter).toBeVisible();
   });
 });
 
