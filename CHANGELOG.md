@@ -1,5 +1,58 @@
 # Changelog
 
+## [1.20.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.19.0...kinotv-v1.20.0) (2026-09-06)
+
+
+### Features
+
+* **chart:** 新增 /chart 热度榜页——排名/热度/无缝滚动/去重翻页 + 品牌兜底 demo 修正 ([ee9c725](https://github.com/ntc0728/video-warehouse/commit/ee9c7259dae0f0ba06d068a0d8a50ffab2886914))
+* **detail:** 推荐网格对齐首页 --card-cols 等分——撤销 ≥1280 auto-fill 290px 固定轨道，gap 并入全站 --hero-side-gap 统一 ([8a00409](https://github.com/ntc0728/video-warehouse/commit/8a0040921c3ba02c35471f66a6ca07c4aef541cc))
+* **fluid:** comp-input-height 桌面契约 40-&gt;48（旧 MAX 58 为 R2 遗留，桌面渲染过大） ([0f7a8d3](https://github.com/ntc0728/video-warehouse/commit/0f7a8d3bfa7506edae847cd3494c4159adbc4a44))
+* **fluid:** 内容区契约改 min(100%,2200px)——桌面满屏仅超宽封顶（用户拍板） ([1ce4cef](https://github.com/ntc0728/video-warehouse/commit/1ce4cef2226f4ce8881e5c6ebdc4cb2c269db728))
+* **fluid:** 阶段A 三段式token重定义+TV漏斗补钉+gap跳变删除 ([868f4cb](https://github.com/ntc0728/video-warehouse/commit/868f4cb5a48fc9fa46c904e6b8fe5787af0a2374))
+* **fluid:** 阶段B R7组件clamp内rem转px防二次流动+lint豁免 ([c89fd74](https://github.com/ntc0728/video-warehouse/commit/c89fd7415ba8dbe981ad308a8cdf95de2e580282))
+* **history:** 超宽视口(&gt;=2560px)列数封顶 5 列 + 容器锁宽 (2560-&gt;1600px/3440-&gt;1500px) ([8f2249c](https://github.com/ntc0728/video-warehouse/commit/8f2249cc6716409ca6e7d3cad586e5943b6d8e46))
+* **home:** 「首页」chip 其他页特殊处理——收起面板并跳转回首页 ([0ec305f](https://github.com/ntc0728/video-warehouse/commit/0ec305f1d3bc4989bb57e1aacc4501e68d797004))
+* **home:** &gt;1280 全站去卡片化 + 卡片间距统一 --hero-side-gap + 分类入口上移 ([d231752](https://github.com/ntc0728/video-warehouse/commit/d231752d435c7a0940b966b24ad0f0bd7ec6a188))
+* **home:** CategoryQuickAccess &gt;1280 方案 A2——频道导航+热门分类面板（真实 TMDB 数据） ([1a1f3bc](https://github.com/ntc0728/video-warehouse/commit/1a1f3bce77883431b65189b429ae0cbb6d965361))
+* **home:** cqa-nav 融合顶栏 + hover 面板语义 + 跨页常驻导航 ([3aefc66](https://github.com/ntc0728/video-warehouse/commit/3aefc661a66dc0c52b9add1ec08fbf08e06f5e84))
+* **home:** Hero B 站风落地（HeroBili &gt;1280 分支）+ 全局 --page-pad-x 三档 padding ([5d4ee0e](https://github.com/ntc0728/video-warehouse/commit/5d4ee0ea61ffec5c1758f07af3740140dcbf43e5))
+* **home:** 宽屏面板客户端分页 9/页 + 末页查看更多跳 browse ([a45e950](https://github.com/ntc0728/video-warehouse/commit/a45e950fc2c1e02438cd2d78d53c25e98d4ea59c))
+* **home:** 融合方案甲——分类导航带并入 HeroBili 卡、chip overlay 面板、热度榜常驻行 ([13cc3c6](https://github.com/ntc0728/video-warehouse/commit/13cc3c633e74e68abef7bbad1d03a5b4cc62a426))
+* **home:** 面板全局挂载——chips 全端统一 hover 语义（跨页 mega-menu） ([0762fe6](https://github.com/ntc0728/video-warehouse/commit/0762fe6b1536a427396ff14146c96bee599d1a63))
+* **home:** 面板分页（右下角+末页查看更多跳browse）+ hotgrid 竖向排列 ([0e700e1](https://github.com/ntc0728/video-warehouse/commit/0e700e126567f7974e49734520907ab6ac011a4a))
+* **home:** 首页卡片&gt;768每档列数-1 + 行内gap改--space-md（含骨架/宽度公式联动） ([56479cb](https://github.com/ntc0728/video-warehouse/commit/56479cb54828ef8df78f39178170ab42ffb1fa76))
+* **large-screen:** 阶段C 大屏机制落地-内容区2200/卡片封顶auto-fill/列数重算/自动档默认1.0/手动档uiScale ([40864e9](https://github.com/ntc0728/video-warehouse/commit/40864e9b40769641d61713b6f29976cdc6f0baa7))
+* **record-shell:** 顶栏方案 C+E——状态 chips 常驻+排序弹层+清空降级+IPTV 隐藏无效筛选 ([a74e83e](https://github.com/ntc0728/video-warehouse/commit/a74e83e496650aa9ead2ae5dd44c6ce76605d64f))
+* **settings:** 桌面端改方案 B——topbar 移左栏竖排导航，内容满宽自适应 ([7b8cadc](https://github.com/ntc0728/video-warehouse/commit/7b8cadc3eb2d23d61ffdd9fb20b4f552f9ce3786))
+* **settings:** 桌面端设置项下滑加回到顶部按钮（复用 BackToTopButton） ([f0fecdd](https://github.com/ntc0728/video-warehouse/commit/f0fecdd6560e0913c7364c3d4eac24f145f43378))
+* **styles:** 密度契约 v2.1——段2 字号改递减曲线，1440 命中 E2/B站锚点 ([d5e554b](https://github.com/ntc0728/video-warehouse/commit/d5e554b2044c57c04ba4f4c41ac2a44d5dae40fd))
+* **styles:** 密度契约 v2.2——控件族段2 按 ×0.8835 同字号比例递减校准 ([6ab01ea](https://github.com/ntc0728/video-warehouse/commit/6ab01ea13c66f40839c633f717c54491cf3b82d8))
+* **styles:** 流体 token 密度契约 v2——E2 间距端点 + 字号段2 微降 ([ef2d902](https://github.com/ntc0728/video-warehouse/commit/ef2d9022ce1fba4954585c4927033e32a2027af6))
+
+
+### Bug Fixes
+
+* **detail:** hero 海报恢复 868f4cb 前旧尺寸曲线 clamp(8rem,2rem+8vw,22rem)——三段式重定义误将 277→352px 抬高约 2 倍 ([7b58305](https://github.com/ntc0728/video-warehouse/commit/7b58305f3696de88fdae64e2646af387221524fd))
+* **fluid:** 核查修正 E1 text-base 段2 跳变 + E2a R6 回退 + E3 注释 + E4 tv 前缀 ([b3de5f8](https://github.com/ntc0728/video-warehouse/commit/b3de5f8ef719ae5d663ab2cfc0b453098a745a41))
+* **header:** 密度契约 v2 补瑕——桌面顶栏右侧图标间距与选中态胶囊回归校准 ([bc0223c](https://github.com/ntc0728/video-warehouse/commit/bc0223cce081a642dda10e44d1e7587bdfb04717))
+* **header:** 顶栏右侧间距三调——胶囊 padding-x md→sm（视觉 ≈18px）、right gap →xs ([43afa2f](https://github.com/ntc0728/video-warehouse/commit/43afa2fb7c6e40d5d69ac0bfdae923b0e5881ece))
+* **header:** 顶栏右侧间距二调——gap 回 2xs 恢复「小 gap+大内边距」组合，right 区取 xs-plus ([3e927aa](https://github.com/ntc0728/video-warehouse/commit/3e927aafc2f592be5b469e6bd65d555085452311))
+* **home:** browse 页 chips 双向关联——选中态跟随 URL 分类、重复点击不压栈 ([94f506c](https://github.com/ntc0728/video-warehouse/commit/94f506cef015260521f4cf7146f605d33509004a))
+* **home:** CategoryQuickAccessPanel hooks 顺序崩溃——goBrowseMore useCallback 移到提前 return 之前 ([fc902ea](https://github.com/ntc0728/video-warehouse/commit/fc902eaacfb0a40710c1b71a1f7d81d65ed6a8ca))
+* **home:** HeroBili 六项验收修复——banner池6张/右卡横图/圆点归位/按钮缩小/跑马灯时机 ([784fc49](https://github.com/ntc0728/video-warehouse/commit/784fc4929cc70b264e18eec0d2745c7d02b1cdec))
+* **home:** HeroBili 换一换整批替换+池首补位 / hover 浅灰 / 继续观看行公式重算 ([5250ea3](https://github.com/ntc0728/video-warehouse/commit/5250ea31d3ebef357e63b7f1b3d6cebe9e4e1cb5))
+* **home:** 分类面板切 chip 高度恒定——子分类单行滚动、加载态定高、head 不折行、panel min-height 兜底 ([e4a4cc5](https://github.com/ntc0728/video-warehouse/commit/e4a4cc5bb4ceb68c56294bd7cf81a0c742140715))
+* **home:** 分类面板数据统一按 popularity 倒序——/trending 趋势序不再直出 ([1d3e58b](https://github.com/ntc0728/video-warehouse/commit/1d3e58b38a704c65722cc968d808b03a3826db2b))
+* **home:** 继续观看行 768-1279 档 2-&gt;3 列（用户反馈稀疏回调） ([0e1d764](https://github.com/ntc0728/video-warehouse/commit/0e1d76455e4ea711a86940faae1f31bc555ab7e0))
+* **home:** 非首页 chips 与页面完全解耦——点分类不改 URL、无高亮 ([0603303](https://github.com/ntc0728/video-warehouse/commit/0603303b007829414204dc3a9f25b9ca5debd508))
+* **iptv:** ≥1440 列数恒 5 + 收藏按钮先于卡片出场修复——animate-fade-in-up 上移 wrap ([aabee95](https://github.com/ntc0728/video-warehouse/commit/aabee95941eb48e37f59d7173933b0f9eefc02f8))
+* **record-grid:** 历史网格单列塌缩修复 + 收藏/Browse 网格回归 --card-cols 等分 ([f963406](https://github.com/ntc0728/video-warehouse/commit/f9634064fa1e0f76a5a964ba717a111817d45d50))
+* **record-shell:** 清空按钮响应式降级——&gt;1280 直显、768-1280 收进「⋯」（断点与间距块同款） ([d3e2da1](https://github.com/ntc0728/video-warehouse/commit/d3e2da1ca825b0a54a8ffcaacf1a0bba7fb486b4))
+* **ui:** category-quick-access__inner flex均分改grid紧凑居中；还原icon-wrap误改 ([a232097](https://github.com/ntc0728/video-warehouse/commit/a2320977d92d407d9c37dab2c7522220fdd262c2))
+* **ui:** cqa 子分类chip选中hover掉底色+Chart满高/切tab遮罩胶囊+hero卡边框与封面品牌兜底 ([94e25c4](https://github.com/ntc0728/video-warehouse/commit/94e25c4b46bfe5a257988bc4e51947f05874b66b))
+* **ui:** 首页验收反馈三修——导航搜索框高度/热搜徽标/内容区曲线移至段2 ([03f5f37](https://github.com/ntc0728/video-warehouse/commit/03f5f370a4610483de57baa66bab793c4813b1a9))
+
 ## [1.19.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.18.0...kinotv-v1.19.0) (2026-09-03)
 
 
