@@ -1,6 +1,7 @@
 /* ============================================================
-   公共 Grid 容器 — Browse / Collections / History 共用
-   视觉契约:6 列自适应 grid,水平 padding 由 grid 自管(页面级 padding 0)
+   公共 Grid 容器 — Browse / Collections 共用
+   视觉契约:列数与首页横滚行同一 --card-cols 阶梯等分（2026-09-06 对齐）,
+   水平 padding 由 grid 自管(页面级 padding 0)
    ============================================================ */
 
 .video-card-grid {
@@ -18,17 +19,11 @@
   animation: video-card-grid-fade 0.3s ease both;
 }
 
-/* ≥1280：卡片固定宽 + 列数自适应 + 剩余空间居中（阶段 C 卡片封顶）。
-   <1280 保留 --card-cols 阶梯（窄视口 333px 单列会溢出）；必须 auto-fill
-   （auto-fit 会折叠空轨道拉伸卡片、破坏封顶）；排除 app/tv。 */
-@media (width >= 1280px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .video-card-grid {
-    grid-template-columns: repeat(auto-fill, var(--card-size));
-    justify-content: center;
-  }
-}
-
-/* 子项 stagger 入场动画。
+/* ≥1280 卡片间距与首页行统一为 --hero-side-gap（见 index.css「卡片间距统一」块，
+   该覆盖也在那里）——列布局恒走上方 --card-cols 等分，与首页 VideoCard 行一致。
+   （原「≥1280 auto-fill --card-size 固定轨道 + 居中」已撤销：收藏/Browse 卡片
+   与首页行卡尺寸脱节，290px vs ~180px 差异过大，2026-09-06 用户拍板回归等分。）
+   子项 stagger 入场动画。
    兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
    还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、
    不跟队"——收藏页 7 列 ×2 行=14 张可视卡片时第 13/14 张即复现。

@@ -335,8 +335,13 @@
     grid-template-columns: repeat(6, minmax(0, 1fr)); /* ≥1920：6 列（同上，仅 app 宽视口生效） */
   }
 }
-/* 内容区约束（全断点，阶段 C）：列表型页面接入 2200 硬上限，超宽居中 */
+/* 内容区约束（全断点，阶段 C）：列表型页面接入 2200 硬上限，超宽居中。
+   ⚠️ 必须显式 width:100%：.history-group 是 flex column，flexbox 规范下子项一旦
+   设 auto margin 即放弃 stretch 退化为 fit-content 宽——auto-fill 网格的
+   max-content 只算一轨，容器塌缩成 290px 单列（auto margin 再把它居中，
+   视觉上像刻意设计）。width:100% 恢复撑满，2200 上限内的居中行为不受影响。 */
 .history-content .history-group-body {
+  width: 100%;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
 }
