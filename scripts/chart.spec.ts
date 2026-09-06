@@ -51,7 +51,6 @@ async function routeTwoPageDiscover(page: Page) {
   await page.route('**/api.tmdb.org/3/discover/movie**', async (route) => {
     const url = new URL(route.request().url());
     const p = Number(url.searchParams.get('page') ?? '1');
-    console.log('[route] discover/movie page=' + p);
     if (p <= 1) {
       counters.p1++;
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(makePage(page1, 1)) });

@@ -166,8 +166,10 @@ export default function ChartPage() {
       fetchChartPage(tab, window, 1, ctrl.signal)
         .then((items) => {
           if (ctrl.signal.aborted) return;
+          // 首页同样去重 + 热度重排：TMDB sort_by=popularity.desc 与返回的 popularity
+          // 字段存在出入（实测页内即乱序），discover 口径必须本地重排保证热度值单调
           const next: ChartFeed = {
-            items,
+            items: mergePage([], items, tabKey === 'trend' ? 'trend' : tabKey),
             page: 1,
             // 单页不足 20 条 = 接口已到底（真实接口末页可能 < 20）
             exhausted: items.length < 20,
@@ -316,8 +318,14 @@ export default function ChartPage() {
               <ChartRow key={item.id} item={item} rank={i + 1} showBadge={isTrend} />
             ))}
             {loading && items.length > 0 && (
-              <div className="chart-list__skeleton" aria-hidden="true">
-                <i className="a" /><i className="b" /><i className="c" /><i className="d" />
+              <div className="chart-list__loading" aria-live="polite">
+                <div className="chart-list__skeleton" aria-hidden="true">
+                  <i className="a" /><i className="b" /><i className="c" /><i className="d" />
+                </div>
+                <div className="chart-list__skeleton" aria-hidden="true">
+                  <i className="a" /><i className="b" /><i className="c" /><i className="d" />
+                </div>
+                <span className="chart-list__loading-text">正在加载更多…</span>
               </div>
             )}
             {feed?.exhausted && (
