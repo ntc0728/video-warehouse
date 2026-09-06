@@ -415,11 +415,8 @@ body.skin-transitioning .skin-btn.active {
      .settings-sidenav 自身 radius 贴合，无需容器裁切。 */
 }
 
-/* 桌面端左侧竖排导航（方案 B）：标题 + 竖排 TabBar。
-   宽度走流体 clamp（176→216px 随视口），不锁死固定值；
-   sticky 跟随页面滚动（滚动容器是 .app-shell__scroll，top:0 即其顶）；
-   背景延续原 topbar 的 --color-primary-light 浅灰带，右缘分割线兼作与内容区分界，
-   左侧圆角减 1px 贴合卡片外框（同原 topbar 处理）。 */
+/* 桌面端左侧竖排导航（方案 B 二调，2026-09-06）：去背景色与圆角，仅保留右缘分割线；
+   宽度流体 clamp 不锁固定值；sticky 跟随页面滚动。 */
 .settings-sidenav {
   position: sticky;
   top: 0;
@@ -428,12 +425,13 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  flex-basis: clamp(176px, 13vw, 216px);
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-sm);
+  flex-basis: clamp(184px, 14vw, 224px);
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-md) var(--space-xl);
   border-right: 1px solid var(--color-border-light);
-  border-radius: calc(var(--radius-lg) - 1px) 0 0 calc(var(--radius-lg) - 1px);
-  background: var(--color-primary-light);
+  /* 视觉无背景色，但必须非透明：sticky 悬浮时滚动内容会从导航文字底下透过，
+     用与卡片同色的 surface 遮挡（观感 = 无色） */
+  background: var(--color-surface);
 }
 
 /* 桌面端内容主列：包住 settings-content，吃掉导航之外的剩余宽度（min-width:0 防撑破） */
@@ -444,20 +442,39 @@ body.skin-transitioning .skin-btn.active {
   min-width: 0;
 }
 
-/* TabBar 竖排化：仅作用于左栏内（移动端菜单/其他场景不受影响） */
+/* TabBar 竖排化：仅作用于左栏内（移动端菜单/其他场景不受影响）；
+   项间距放宽（二调：原 --space-2xs 太挤）。图标/字号 token 与顶栏导航项一致
+   （实测同为 --text-sm 12.56px / --icon-sm 16.33px / 600），显式声明防漂移。 */
 .settings-sidenav .settings-tabbar {
   flex: 1 1 auto;
   flex-direction: column;
   align-items: stretch;
   width: 100%;
-  gap: var(--space-2xs);
+  gap: var(--space-xs);
   overflow: visible;
   scroll-snap-type: none;
 }
 
 .settings-sidenav .settings-tab {
   justify-content: flex-start;
+  gap: var(--space-xs);
   width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+}
+
+.settings-sidenav .settings-tab__icon svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+/* 去背景后 hover/激活改用 primary-light 浅灰（原 surface 白底在白卡上不可见） */
+.settings-sidenav .settings-tab:hover {
+  background: var(--color-primary-light);
+}
+.settings-sidenav .settings-tab--active,
+.settings-sidenav .settings-tab--active:hover {
+  background: var(--color-primary-light);
 }
 
 /* 激活指示条：底部横条 → 左缘竖条（沿用收藏/历史页 tab 语言的旋转版） */
