@@ -34,6 +34,7 @@ $uiTestMap = @{
     "src/pages/Player/**" = @("scripts/player.spec.ts")
     "src/pages/SourceChecker/**" = @("scripts/source-checker.spec.ts")
     "src/pages/Person/**" = @("scripts/person.spec.ts")
+    "src/pages/Chart/**" = @("scripts/chart.spec.ts")
     "src/pages/ProxySetup/**" = @("scripts/proxy-setup.spec.ts")
     "src/components/UniversalPlayer/**" = @("scripts/player.spec.ts", "scripts/iptv-player.spec.ts")
     "src/components/SearchBox/**" = @("scripts/browse.spec.ts")
@@ -107,13 +108,13 @@ $uiPrecisionMap = @{
         grep = "BROWSE-025|BROWSE-030|BROWSE-043|BROWSE-053|BROWSE-060"
     }
 
-    # ── HeroBanner（轮播/缩略图/分类切换过渡）──
-    # grep 用 describe 段号（1.2 交互 + 1.3b 切换过渡）而非逐个编号：
+    # ── HeroBanner（轮播/缩略图/分类切换过渡 + 宽屏 HeroBili 卡）──
+    # grep 用 describe 段号（1.2 交互 + 1.3b 切换过渡 + 1.3d HeroBili 卡）而非逐个编号：
     # 段内新增用例自动涵盖，映射无需随用例增减维护。
     # ⚠️ 段号是正则：1.2 的 "." 必须转义为 1\.2（否则 "1023px" 等含 1?2 的标题误命中）
     "src/components/HeroBanner/**" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "1\.2|1\.3b"
+        grep = "1\.2|1\.3b|1\.3d"
     }
 
     # ── 首页组件 ──

@@ -74,6 +74,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | ------- | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | 首页      | `/`               | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
 | 浏览/搜索   | `/browse`         | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供）                    | TMDB discover/search + CMS searchAll                                                |
+| 热度榜    | `/chart`          | Chart：6 分类 tab + 排名榜行（top3 暖橙）+ useInfiniteScroll 无缝滚动（按 id 去重 + popularity 重排）+ 口径 tooltip + 切 tab 刷新态（旧行降沉 + 零高度 sticky「加载中」胶囊，⚠️ sticky 不能放 grid 内——grid item 只能在自身 row track 内移动）+ flex 链满容器高度；入口 = 首页热度榜分类卡与「查看完整榜单」 | TMDB discover popularity.desc 分页 + trending（趋势榜） |
 | 详情      | `/detail/:id`     | DetailHeader + TabBar + CastList + StillsLightbox                                            | TMDB movie/tv detail + CMS searchVideoByTitle                                       |
 | 播放      | `/play/:id`       | UniversalPlayer + Sidebar (PlayLineList + EpisodeList)                                       | CMS vod_play_url 解析 → HLS/DASH/Native Adapter                                       |
 | IPTV    | `/iptv`           | IPTVChannelList + EPGProgramList                                                             | M3U 解析 + EPG XMLTV 匹配                                                               |
@@ -236,6 +237,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 `src/components/HeroBanner/` — 首页 Hero 横幅轮播：
 
+- **HeroBili 宽屏分支（>1280 桌面专用，TV 不启用）**：`HeroBili.tsx` 左 banner 轮播（前 6 张池）+ 右栏 3×2 竖版卡（banner 池外条目）+「换一换」（只推进 shuffleOffset、与轮播解耦，0.6s 动画锁防抖）。右栏卡 `.hero-side-card` 带 `1px solid var(--color-border-light)` 边框（卡片模块规范）；封面 = `LazyImage`（骨架占位 + 失败走默认品牌兜底 MonitorPlay+kinoTV，与「继续观看」卡同链路），**勿改回裸 `<img>`**。
 - **布局**：左侧主背景图（左右滑动切换）+ 右侧缩略图列（absolute 定位覆盖在 banner 边缘）
 - **缩略图**：`position: absolute; z-index: 10`，`overflow: hidden` 不影响 banner 圆角；激活态使用 `2px solid var(--color-primary)` 边框 + `var(--color-primary-shadow)` 阴影；点击跳转 detail 页；标题仅激活态显示
 - **滑动切换动画（所有客户端）**：`activeIndex` 切换统一走 `slide-left`（前进，新图从右滑入）/ `slide-right`（后退，新图从左滑入）；自动轮播（5s）也设置 `slideDir='left'` 走滑动切换；滑动后 1000ms 冷却期内暂停自动轮播。`.slide-*` 规则定义在 `HeroBanner.css` 全局作用域（非移动端媒体查询内），选择器特异性高于 `.is-active` crossfade。**桌面端悬停缩略图预览**由 `handleThumbEnter` 显式清除 `slideDir`（设 null）→ 回退为 crossfade（`heroBgFadeIn`）。**注意**：slide 动画结束后**不**重置 `slideDir`（保持方向类），否则 `.is-active` 层会回退匹配默认 crossfade 规则、因 `animation-name` 改变重新播放淡入，导致「闪一下、短暂出现上一张图片」。
@@ -365,12 +367,13 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-02 校准，全量 276 条 / 24 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-06 校准，全量 301 条 / 25 个 spec）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
-| `src/pages/Home/`                                    | `scripts/home.spec.ts`                                 | 35 + 7 |
+| `src/pages/Home/`                                    | `scripts/home.spec.ts`                                 | 58     |
 | `src/pages/Browse/`                                  | `scripts/browse.spec.ts`                               | 24     |
+| `src/pages/Chart/`                                   | `scripts/chart.spec.ts`                                | 6      |
 | `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 21     |
 | `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` | 31 + 1 |
 | `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts`               | 7      |
@@ -404,7 +407,7 @@ AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 
 | `src/components/RecordFilterPanel/`           | collections + history                                                          | 17            |
 | `src/components/StatusTabs/`                  | collections + history                                                          | 17            |
 | `src/components/FilterBar/`                   | browse                                                                         | 24            |
-| `src/components/HeroBanner/`                  | home + cross-page                                                              | 56            |
+| `src/components/HeroBanner/`                  | home + cross-page                                                              | 57            |
 | `src/components/Layout/`                      | 全部页面加载测试（home/browse/detail/...各首屏用例）                                          | 逐个 spec 首屏用例  |
 | `src/components/StickyHeader/`                | 全部页面加载测试                                                                       | 逐个 spec 首屏用例  |
 | `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击)                                                               | 24            |

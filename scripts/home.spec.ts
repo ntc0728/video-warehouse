@@ -1164,4 +1164,54 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForTimeout(400);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
+
+  test('HOME-087: 面板切子分类显示「加载中」胶囊（文案回归：不得是「更新中」）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // discover/movie 延迟 600ms 再穿透到 fixture：观察子分类切换的刷新中间态
+    await page.route('**/api.tmdb.org/3/discover/movie**', async (route) => {
+      await new Promise((r) => setTimeout(r, 600));
+      await route.fallback();
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+
+    await page.locator('.cqa-nav__item').nth(1).hover(); // 电影
+    await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
+    // 切第 2 个子分类：旧网格保留 + 刷新胶囊（2026-09-06 起文案为「加载中…」）
+    await page.locator('.cqa-subgenres__chip').nth(1).click();
+    await page.waitForSelector('.cqa-panel__refresh', { timeout: 5000 });
+    await expect(page.locator('.cqa-panel__refresh')).toContainText('加载中…');
+    await page.waitForSelector('.cqa-panel__refresh', { state: 'detached', timeout: 15000 });
+    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+  });
+});
+
+// =============================================================
+// —— 1.3d 宽屏 HeroBili 卡（>1280 专用 hero 右栏 3×2 卡）——
+// 边框对齐卡片模块规范；封面 = LazyImage（骨架占位 + 失败品牌兜底，与「继续观看」卡同链路）。
+// =============================================================
+
+test.describe('1.3d 宽屏 HeroBili 卡', () => {
+  test('HOME-088: hero 卡 1px 边框；封面加载失败走 kinoTV 品牌兜底', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // 第 7 条 trending（右栏首卡）的 backdrop 强制 404 → LazyImage error 态
+    await page.route('**/test-backdrop-6.jpg**', (route) => route.fulfill({ status: 404, body: '' }));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-side-card', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    expect(await page.locator('.hero-side-card').count()).toBe(6);
+    // 边框：卡片模块规范 1px solid border-light
+    const border = await page.locator('.hero-side-card').first().evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { style: cs.borderStyle, width: cs.borderWidth };
+    });
+    expect(border.style).toBe('solid');
+    expect(border.width).toBe('1px');
+    // 封面容器 = lazy-image-container（LazyImage 接管，非裸 img）
+    expect(await page.locator('.hero-side-card__img.lazy-image-container').count()).toBeGreaterThan(0);
+    // 404 的那卡进入品牌兜底（MonitorPlay + kinoTV），其余正常加载
+    expect(await page.locator('.hero-side-card .lazy-image-container.error').count()).toBe(1);
+    await expect(page.locator('.hero-side-card .lazy-image-container.error .lazy-image-fallback--brand')).toContainText('kinoTV');
+  });
 });
