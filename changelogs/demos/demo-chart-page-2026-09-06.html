@@ -109,7 +109,7 @@
   .row__t { font-size: var(--text-lg); font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row:hover .row__t { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-border); }
   .row__m { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: var(--text-xs); color: var(--color-text-tertiary); }
-  .row__badge { background: var(--color-tag-bg); border-radius: 4px; padding: 0 6px; line-height: 18px; font-size: 11px; }
+  .row__badge { background: var(--color-tag-bg); border-radius: 4px; padding: 0 6px; line-height: 18px; font-size: 11px; white-space: nowrap; flex: 0 0 auto; }
   .row__desc { margin-top: 4px; font-size: var(--text-xs); color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stage.mobile .row__desc { display: none; }
   .stage.mobile .row__cover { flex-basis: 120px; width: 120px; height: 68px; }
@@ -263,7 +263,7 @@ function rankOffset(key, win, page) { return page * PAGE_SIZE; }
 
 function rowHTML(item, rank, key) {
   const top = rank <= 3 ? ' row--top' : '';
-  const badge = key === 'trend' ? `<span class="row__badge">$item.mt ? (item.mt === 'movie' ? '电影' : '剧集') : ''</span>` : '';
+  const badge = key === 'trend' && item.mt ? `<span class="row__badge">${item.mt === 'movie' ? '电影' : '剧集'}</span>` : '';
   const cover = item.backdrop
     ? `<img class="row__cover" loading="lazy" src="https://image.tmdb.org/t/p/w300${item.backdrop}" alt="${item.title}"
          onerror="this.outerHTML='<span class=\\'row__cover row__cover--empty\\'>${(item.title || '?')[0]}</span>'">`
