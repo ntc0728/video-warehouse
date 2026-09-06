@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>demo — 面板分页 + 竖向排列（2026-09-06）</title>
+<style>
+  :root {
+    --text-xs: 12px; --text-sm: 13.4px; --text-base: 15.2px;
+    --space-xs: 3.5px; --space-sm: 8.5px; --space-md: 11.8px;
+    --radius-md: 7.6px; --radius-full: 999px;
+    --color-text: #17181a; --color-text-secondary: #61666d; --color-text-tertiary: #9499a0;
+    --color-surface: #fff; --color-border-light: #e8e8e8; --color-border-strong: #bfbfbf;
+    --color-warning: #fa8c16; --color-placeholder: #f0f1f3;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "PingFang SC","Microsoft YaHei",system-ui,sans-serif; background: #f6f7f8; color: var(--color-text); padding: 24px; }
+  h1 { font-size: 17px; margin-bottom: 4px; }
+  .note { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 18px; }
+  .panel { background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 14px 16px 16px; max-width: 980px; margin-bottom: 18px; }
+  .ptitle { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+
+  /* 竖向排列 3×3（grid-auto-flow: column） */
+  .hotgrid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 60px); grid-auto-flow: column; gap: 8px 12px; }
+  .hotcard { display: flex; align-items: center; gap: 8px; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 4px 8px; min-width: 0; }
+  .rank { flex: 0 0 20px; text-align: center; font-size: var(--text-base); font-weight: 700; font-style: italic; color: var(--color-text-tertiary); }
+  .poster { flex: 0 0 74px; height: 42px; border-radius: 6px; background: var(--color-placeholder); }
+  .body { flex: 1; min-width: 0; }
+  .t { font-size: var(--text-sm); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .heat { flex: 0 0 auto; font-size: var(--text-xs); color: var(--color-warning); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .flow-note { font-size: 11px; color: var(--color-text-tertiary); margin-top: 8px; }
+
+  /* 分页条（右下角） */
+  .pager { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-xs); margin-top: 10px; }
+  .pbtn { display: inline-flex; align-items: center; gap: 2px; padding: 2px 10px; border: 1px solid var(--color-border-light);
+          border-radius: 999px; background: var(--color-surface); font-size: var(--text-xs); color: var(--color-text-secondary);
+          cursor: pointer; font-family: inherit; }
+  .pbtn:hover:not(:disabled) { color: var(--color-text); border-color: var(--color-border-strong); }
+  .pbtn:disabled { opacity: .4; cursor: default; }
+  .pbtn.more { color: var(--color-text); font-weight: 600; }
+  .ind { font-size: var(--text-xs); color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; min-width: 36px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>chip 面板：分页（右下角）+ 竖向排列</h1>
+<div class="note">2026-09-06 · 接口 20 条按 9/页客户端分页（3 页：9/9/2）；网格 grid-auto-flow: column → 1/2/3 第 1 列自上而下（榜单「先纵后横」动线）；末页「下一页」替换为「查看更多」携 category+genre 跳 /browse。</div>
+
+<div class="panel">
+  <div class="ptitle">第 1 页（上一页禁用）· 数字为跨页连续排名</div>
+  <div class="hotgrid">
+    <div class="hotcard"><span class="rank">1</span><span class="poster"></span><div class="body"><div class="t">测试电影 1</div></div><span class="heat">290</span></div>
+    <div class="hotcard"><span class="rank">2</span><span class="poster"></span><div class="body"><div class="t">测试电影 2</div></div><span class="heat">280</span></div>
+    <div class="hotcard"><span class="rank">3</span><span class="poster"></span><div class="body"><div class="t">测试电影 3</div></div><span class="heat">270</span></div>
+    <div class="hotcard"><span class="rank">4</span><span class="poster"></span><div class="body"><div class="t">测试电影 4</div></div><span class="heat">260</span></div>
+    <div class="hotcard"><span class="rank">5</span><span class="poster"></span><div class="body"><div class="t">测试电影 5</div></div><span class="heat">250</span></div>
+    <div class="hotcard"><span class="rank">6</span><span class="poster"></span><div class="body"><div class="t">测试电影 6</div></div><span class="heat">240</span></div>
+    <div class="hotcard"><span class="rank">7</span><span class="poster"></span><div class="body"><div class="t">测试电影 7</div></div><span class="heat">230</span></div>
+    <div class="hotcard"><span class="rank">8</span><span class="poster"></span><div class="body"><div class="t">测试电影 8</div></div><span class="heat">220</span></div>
+    <div class="hotcard"><span class="rank">9</span><span class="poster"></span><div class="body"><div class="t">测试电影 9</div></div><span class="heat">210</span></div>
+  </div>
+  <div class="flow-note">↑ 阅读动线：1→2→3 纵向下行，再到第 2 列（对比旧版横排 1/2/3 横向一行）</div>
+  <div class="pager">
+    <button class="pbtn" disabled>‹ 上一页</button>
+    <span class="ind">1 / 3</span>
+    <button class="pbtn">下一页 ›</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ptitle">末页（9/9/2 → 第 3 页仅 2 条，竖排填满第 1 列）·「下一页」替换为「查看更多」</div>
+  <div class="hotgrid">
+    <div class="hotcard"><span class="rank">19</span><span class="poster"></span><div class="body"><div class="t">测试电影 19</div></div><span class="heat">110</span></div>
+    <div class="hotcard"><span class="rank">20</span><span class="poster"></span><div class="body"><div class="t">测试电影 20</div></div><span class="heat">100</span></div>
+  </div>
+  <div class="pager">
+    <button class="pbtn">‹ 上一页</button>
+    <span class="ind">3 / 3</span>
+    <button class="pbtn more">查看更多 ›（跳 /browse?category=movie&genre=…）</button>
+  </div>
+</div>
+</body>
+</html>
