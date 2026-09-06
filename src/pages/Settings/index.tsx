@@ -193,15 +193,19 @@ export default function SettingsPage() {
         </SettingsSubPage>
       ) : isDesktop ? (
         <>
-          <div className="settings-desktop-card">
-          {/* 桌面端顶部栏（方案 D）：左侧「设置」标题 + 状态点，右侧胶囊 TabBar */}
-          <div className="settings-desktop-topbar">
+        <div className="settings-desktop-card">
+          {/* 桌面端左侧竖排导航（方案 B，2026-09-06 拍板）：标题 + 竖排 TabBar 常驻左栏
+              （sticky 跟随滚动），内容区在右、满宽自适应（不加固定 max-width）。
+              复用 SettingsTabBar（.settings-tab 类名不变，E2E 选择器兼容），
+              竖排样式由 .settings-sidenav 作用域 CSS 覆盖。 */}
+          <aside className="settings-sidenav">
             <div className="settings-desktop-title">
               <Icon icon={SlidersHorizontal} size="sm" className="settings-desktop-title__icon" />
               <span className="settings-desktop-title__text">设置</span>
             </div>
             <SettingsTabBar activeTab={activeTab} onChange={handleSelectTab} tabs={desktopTabs} />
-          </div>
+          </aside>
+          <div className="settings-desktop-main">
           {/* 内容区：访问过的 tab 常驻挂载、display 切换可见性（不再 key 重挂载）。
               激活 pane 播放纯 opacity 淡入（.settings-content__pane--active 类触发）。 */}
           <div className="settings-content">
@@ -223,6 +227,7 @@ export default function SettingsPage() {
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
         {/* 桌面端内容下滑 >280px 显示「返回顶部」（复用 Browse/History/Chart 同款玻璃感按钮，

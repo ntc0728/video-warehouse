@@ -659,3 +659,63 @@ test.describe('6.10 返回顶部', () => {
     await expect(backToTop).not.toBeVisible();
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 6.11 桌面端左栏竖排导航（方案 B）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('6.11 桌面端左栏竖排导航（方案 B）', () => {
+  test('SET-095: 左栏竖排导航在左、内容主列满宽自适应（无固定上限）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    // 用 video tab（外观 tab 内容不足一屏、无法验证滚动行为）
+    await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    // 预期结果: 左栏可见，含「设置」标题与 6 个竖排 tab，激活态为「外观」
+    const sidenav = page.locator('.settings-sidenav');
+    await expect(sidenav).toBeVisible();
+    expect(await sidenav.locator('.settings-desktop-title__text').innerText()).toBe('设置');
+    expect(await sidenav.locator('.settings-tab').count()).toBe(6);
+    await expect(sidenav.locator('.settings-tab--active', { hasText: '视频设置' })).toBeVisible();
+
+    // 预期结果: 内容主列在左栏右侧且填满卡片剩余宽度（自适应，不被固定 max-width 截断）
+    const boxes = await page.evaluate(() => {
+      const rect = (sel: string) => document.querySelector(sel)?.getBoundingClientRect();
+      const sidenav = rect('.settings-sidenav');
+      const main = rect('.settings-desktop-main');
+      const card = rect('.settings-desktop-card');
+      return { sidenav, main, card };
+    });
+    expect(boxes.main.x).toBeGreaterThan(boxes.sidenav.x);
+    // 主列右缘与卡片右缘对齐（flex 撑满，允许 4px 容差）
+    expect(Math.abs(boxes.main.x + boxes.main.width - (boxes.card.x + boxes.card.width))).toBeLessThan(4);
+    // 1280 视口下主列应 >800px（若被 demo 旧稿的 860px 上限截断则不成立）
+    expect(boxes.main.width).toBeGreaterThan(800);
+
+    // 预期结果: 左栏 sticky——下滑 800px 后左栏仍吸附在滚动容器顶（top:0 语义下
+    // 吸附位比静止位高约一个卡内 padding ≈ 9px；未 sticky 会随内容上移 800px）
+    const beforeTop = await sidenav.evaluate((el) => el.getBoundingClientRect().top);
+    await page.locator('.app-shell__scroll').evaluate((el) => { el.scrollTop = 800; });
+    await page.waitForTimeout(300);
+    const afterTop = await sidenav.evaluate((el) => el.getBoundingClientRect().top);
+    const scrolled = await page.locator('.app-shell__scroll').evaluate((el) => el.scrollTop);
+    expect(scrolled).toBeGreaterThanOrEqual(800);
+    expect(beforeTop - afterTop).toBeLessThan(40);
+  });
+
+  test('SET-096: 左栏 tab 点击切换内容', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForTimeout(1200);
+
+    // 操作: 点击左栏「视频设置」
+    await page.locator('.settings-sidenav .settings-tab', { hasText: '视频设置' }).click();
+    await page.waitForTimeout(500);
+
+    // 预期结果: 激活态迁移，对应 pane 可见
+    await expect(page.locator('.settings-sidenav .settings-tab--active', { hasText: '视频设置' })).toBeVisible();
+    await expect(page.locator('.settings-content__pane--active [data-tab="video"], .settings-content__pane[data-tab="video"]')).toBeVisible();
+  });
+});
