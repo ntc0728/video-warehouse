@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>收藏/历史页 筛选面板布局方案对比 — 2026-09-06</title>
+<style>
+  /* ── 模拟项目设计 token（浅色主题取值） ── */
+  :root {
+    --primary: #171717;
+    --text: #171717;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-light: #f0f0f2;
+    --surface: #ffffff;
+    --hover-bg: #f4f4f5;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-full: 999px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+    --blue: #3b82f6; --amber: #d97706; --green: #22c55e;
+    --danger: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: #fafafa; color: var(--text); padding-bottom: 80px;
+  }
+  .page { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── 页头 ── */
+  .doc-head { padding: 36px 0 8px; }
+  .doc-head h1 { font-size: 22px; font-weight: 700; }
+  .doc-head p { color: var(--text-2); font-size: 13.5px; margin-top: 8px; line-height: 1.7; }
+
+  /* ── 方案区块 ── */
+  .scheme { margin-top: 34px; }
+  .scheme-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .scheme-head .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    padding: 3px 9px; border-radius: var(--radius-full);
+    background: var(--primary); color: #fff; flex-shrink: 0;
+  }
+  .scheme-head .tag.tag--reco { background: var(--green); }
+  .scheme-head h2 { font-size: 16px; font-weight: 700; }
+  .scheme-note { font-size: 12.5px; color: var(--text-2); line-height: 1.75; margin-bottom: 12px; max-width: 900px; }
+  .scheme-note b { color: var(--text); }
+  .scheme-note .pro { color: #15803d; }
+  .scheme-note .con { color: #b45309; }
+
+  /* ── 模拟舞台（页面容器） ── */
+  .stage {
+    background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 16px 20px 20px; box-shadow: var(--shadow-sm);
+  }
+  /* 顶栏示意 */
+  .fake-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 4px 14px; border-bottom: 1px solid var(--border-light); margin-bottom: 14px;
+  }
+  .fake-brand { font-weight: 800; font-size: 15px; }
+  .fake-nav { display: flex; gap: 14px; font-size: 12px; color: var(--text-3); }
+  .fake-search {
+    flex: 1; max-width: 420px; height: 32px; border: 1px solid var(--border);
+    border-radius: var(--radius-full); background: var(--hover-bg);
+    display: flex; align-items: center; padding: 0 14px; color: var(--text-3); font-size: 12px;
+  }
+
+  /* ── record 顶栏第一行（融合 tab + 操作按钮） ── */
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .fused-tabs {
+    display: inline-flex; gap: 2px; padding: 4px;
+    background: var(--hover-bg); border-radius: var(--radius-full);
+  }
+  .ftab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: var(--radius-full);
+    font-size: 13px; color: var(--text-2); border: none; background: transparent; cursor: pointer;
+    transition: all .15s;
+  }
+  .ftab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+  .ftab .dot.g { background: var(--green); }
+  .ftab .cnt { font-size: 11px; color: var(--text-3); }
+  .ftab.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .toolbar-spacer { flex: 1; }
+
+  .abtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 14px; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-2); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: all .15s;
+    white-space: nowrap;
+  }
+  .abtn:hover { background: var(--hover-bg); color: var(--text); }
+  .abtn.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .abtn svg { width: 14px; height: 14px; }
+  .abtn--danger-quiet { color: var(--text-2); } /* 降级后的清空按钮 */
+
+  /* ── 面板（现状/常驻共用样式） ── */
+  .panel {
+    display: flex; flex-flow: row wrap; gap: 10px 22px; align-items: center;
+    margin-top: 12px; padding: 10px 16px;
+    border: 1px solid var(--border-light); border-radius: var(--radius-lg);
+    background: var(--surface); box-shadow: var(--shadow-sm);
+    animation: fadeIn .28s ease both;
+  }
+  .panel.hidden { display: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .panel-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .panel-label { font-size: 11.5px; font-weight: 600; color: var(--text-3); white-space: nowrap; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 13px; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-2); font-size: 12px; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { background: var(--hover-bg); color: var(--text); }
+  .chip.on { border-color: var(--primary); background: var(--primary); color: #fff; }
+  .chip .cdot { width: 7px; height: 7px; border-radius: 50%; background: var(--cd, var(--primary)); }
+  .chip.on .cdot { background: #fff; }
+
+  /* 排序 popover（方案 C/D） */
+  .sort-wrap { position: relative; display: inline-block; }
+  .popover {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+    display: flex; flex-direction: column; gap: 2px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    min-width: 150px;
+    animation: fadeIn .18s ease both;
+  }
+  .popover.hidden { display: none; }
+  .pop-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 7px 12px; border: none; background: transparent; border-radius: 8px;
+    font-size: 12.5px; color: var(--text-2); cursor: pointer; text-align: left; white-space: nowrap;
+  }
+  .pop-item:hover { background: var(--hover-bg); color: var(--text); }
+  .pop-item.on { color: var(--text); font-weight: 600; }
+  .pop-item .tick { font-size: 12px; color: var(--primary); visibility: hidden; }
+  .pop-item.on .tick { visibility: visible; }
+
+  /* ── 示意卡片网格（card 不改，仅示意占位） ── */
+  .grid-demo {
+    margin-top: 14px;
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;
+  }
+  .ghost-card { border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); background: #fff; }
+  .ghost-cover { aspect-ratio: 2/3; background: linear-gradient(135deg, #ececef, #e2e2e6); position: relative; }
+  .ghost-cover::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
+    background-size: 200% 100%; animation: shimmer 3s infinite;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .ghost-bar { height: 8px; margin: 7px 8px; border-radius: 4px; background: #ececef; }
+
+  /* ── 危险操作降级示意（方案 E） ── */
+  .menu-wrap { position: relative; display: inline-block; }
+  .danger-chip-demo {
+    display: flex; gap: 12px; align-items: center; margin-top: 12px;
+    padding: 10px 16px; border: 1px dashed var(--border); border-radius: var(--radius-md);
+    font-size: 12px; color: var(--text-3); flex-wrap: wrap;
+  }
+  .divider-v { width: 1px; height: 22px; background: var(--border); }
+
+  .footnote { margin-top: 40px; padding: 16px 20px; background: var(--hover-bg); border-radius: var(--radius-lg); font-size: 12.5px; color: var(--text-2); line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-head">
+    <h1>收藏 / 历史页 — 筛选面板布局方案对比</h1>
+    <p>背景：桌面端（≥768px）RecordShell 顶栏 = 融合 Tab（综合/视频/IPTV）+ 右侧「更多筛选 / 清空收藏 / 批量管理」；点「更多筛选」弹出 RecordFilterPanel（状态 chips ×4 + 排序 chips ×6）。<br>
+    本页对比「取消按钮、面板常驻」及若干变体。所有方案 <b>卡片一律不动</b>，仅调整顶栏/筛选区。chips 可点击感受交互。</p>
+  </div>
+
+  <!-- ═══ 方案 A ═══ -->
+  <div class="scheme">
+    <div class="scheme-head"><span class="tag">方案 A</span><h2>现状基线 — 按钮折叠</h2></div>
+    <p class="scheme-note"><b class="pro">＋</b> 顶栏最矮（一行）；<b class="con">－</b> 状态筛选/排序的可见性为零，多数用户不知道有这能力；多一次点击。</p>
+    <div class="stage">
+      <div class="fake-header"><span class="fake-brand">kinoTV</span>
+        <span class="fake-nav">首页 电影 剧集 …</span>
+        <span class="fake-search">搜索影视或频道…</span>
+      </div>
+      <div class="toolbar">
+        <div class="fused-tabs">
+          <button class="ftab on"><span class="dot"></span>综合 <span class="cnt">16</span></button>
+          <button class="ftab"><span class="dot"></span>视频 <span class="cnt">13</span></button>
+          <button class="ftab"><span class="dot g"></span>IPTV <span class="cnt">3</span></button>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button class="abtn" id="aToggle">⚙ 更多筛选</button>
+        <button class="abtn">🗑 清空收藏</button>
+        <button class="abtn">☰ 批量管理</button>
+      </div>
+      <div class="panel hidden" id="aPanel">
+        <div class="panel-row">
+          <span class="panel-label">观看状态</span>
+          <button class="chip on"><span class="cdot"></span>全部</button>
+          <button class="chip" style="--cd: var(--blue)"><span class="cdot"></span>未观看</button>
+          <button class="chip" style="--cd: var(--amber)"><span class="cdot"></span>正在看</button>
+          <button class="chip" style="--cd: var(--green)"><span class="cdot"></span>已看完</button>
+        </div>
+        <div class="panel-row">
+          <span class="panel-label">排序</span>
+          <button class="chip on">最近收藏</button><button class="chip">最早收藏</button><button class="chip">名称A-Z</button>
+          <button class="chip">名称Z-A</button><button class="chip">评分从高到低</button><button class="chip">评分从低到高</button>
+        </div>
+      </div>
+      <div class="grid-demo"><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 方案 B ═══ -->
+  <div class="scheme">
+    <div class="scheme-head"><span class="tag">方案 B</span><h2>面板常驻 — 你的提案原样</h2></div>
+    <p class="scheme-note">去掉「更多筛选」按钮，RecordFilterPanel 恒显示（保留 animate-fade-in，进场动画只在进入页面时播一次）。<br>
+      <b class="pro">＋</b> 零点击直达全部筛选，能力可见性最强；实现最简单（删按钮 + 常渲染面板）。<br>
+      <b class="con">－</b> 顶栏多占约 90px 垂直空间（历史页有算珠时间轴，会更挤）；排序 6 chips 属低频操作全铺开略吵；IPTV tab 下状态筛选无效但仍然显示（矛盾被放大）。</p>
+    <div class="stage">
+      <div class="fake-header"><span class="fake-brand">kinoTV</span>
+        <span class="fake-nav">首页 电影 剧集 …</span>
+        <span class="fake-search">搜索影视或频道…</span>
+      </div>
+      <div class="toolbar">
+        <div class="fused-tabs">
+          <button class="ftab on"><span class="dot"></span>综合 <span class="cnt">16</span></button>
+          <button class="ftab"><span class="dot"></span>视频 <span class="cnt">13</span></button>
+          <button class="ftab"><span class="dot g"></span>IPTV <span class="cnt">3</span></button>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button class="abtn">🗑 清空收藏</button>
+        <button class="abtn">☰ 批量管理</button>
+      </div>
+      <div class="panel">
+        <div class="panel-row">
+          <span class="panel-label">观看状态</span>
+          <button class="chip on"><span class="cdot"></span>全部</button>
+          <button class="chip" style="--cd: var(--blue)"><span class="cdot"></span>未观看</button>
+          <button class="chip" style="--cd: var(--amber)"><span class="cdot"></span>正在看</button>
+          <button class="chip" style="--cd: var(--green)"><span class="cdot"></span>已看完</button>
+        </div>
+        <div class="panel-row">
+          <span class="panel-label">排序</span>
+          <button class="chip on">最近收藏</button><button class="chip">最早收藏</button><button class="chip">名称A-Z</button>
+          <button class="chip">名称Z-A</button><button class="chip">评分从高到低</button><button class="chip">评分从低到高</button>
+        </div>
+      </div>
+      <div class="grid-demo"><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 方案 C ═══ -->
+  <div class="scheme">
+    <div class="scheme-head"><span class="tag tag--reco">方案 C · 推荐</span><h2>状态常驻 + 排序收纳 — 高频常显、低频进弹出层</h2></div>
+    <p class="scheme-note">状态 4 chips 是高频且有语义（彩色圆点 = 计数含义），直接并入顶栏第一行；排序低频，收纳为单个「排序」胶囊，点击弹出 chips 弹层（保留 chips 交互约定，不回退下拉框语义——弹层里仍是同款 chips）。<br>
+      <b class="pro">＋</b> 顶栏只多一行 40px；状态筛选永远可见；排序可达但不占常驻空间。<br>
+      <b class="con">－</b> 实现量中等（需要把弹层做出来）；弹层在移动端要换形态（可退回现在的折叠面板）。</p>
+    <div class="stage">
+      <div class="fake-header"><span class="fake-brand">kinoTV</span>
+        <span class="fake-nav">首页 电影 剧集 …</span>
+        <span class="fake-search">搜索影视或频道…</span>
+      </div>
+      <div class="toolbar">
+        <div class="fused-tabs">
+          <button class="ftab on"><span class="dot"></span>综合 <span class="cnt">16</span></button>
+          <button class="ftab"><span class="dot"></span>视频 <span class="cnt">13</span></button>
+          <button class="ftab"><span class="dot g"></span>IPTV <span class="cnt">3</span></button>
+        </div>
+        <span class="divider-v"></span>
+        <button class="chip on"><span class="cdot"></span>全部</button>
+        <button class="chip" style="--cd: var(--blue)"><span class="cdot"></span>未观看</button>
+        <button class="chip" style="--cd: var(--amber)"><span class="cdot"></span>正在看</button>
+        <button class="chip" style="--cd: var(--green)"><span class="cdot"></span>已看完</button>
+        <div class="sort-wrap">
+          <button class="chip" id="cSortBtn">↕ 排序：最近收藏 ▾</button>
+          <div class="popover hidden" id="cSortPop">
+            <button class="pop-item on">最近收藏<span class="tick">✓</span></button>
+            <button class="pop-item">最早收藏<span class="tick">✓</span></button>
+            <button class="pop-item">名称A-Z<span class="tick">✓</span></button>
+            <button class="pop-item">名称Z-A<span class="tick">✓</span></button>
+            <button class="pop-item">评分从高到低<span class="tick">✓</span></button>
+            <button class="pop-item">评分从低到高<span class="tick">✓</span></button>
+          </div>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button class="abtn">🗑 清空收藏</button>
+        <button class="abtn">☰ 批量管理</button>
+      </div>
+      <div class="grid-demo"><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 方案 D ═══ -->
+  <div class="scheme">
+    <div class="scheme-head"><span class="tag">方案 D</span><h2>全行化 — tab + 状态 + 排序 + 操作挤一行</h2></div>
+    <p class="scheme-note">顶栏压缩到绝对一行（≤1296px 内容宽刚好放得下），信息密度最高、页面最矮。<br>
+      <b class="pro">＋</b> 零垂直开销；整页像「一条工具带」。<br>
+      <b class="con">－</b> 一行塞 8+ 个胶囊，视觉最吵；窄一点（1024–1279）就放不下需要降级规则；「更多筛选」取消后同方案 B 的 IPTV tab 问题仍在。</p>
+    <div class="stage">
+      <div class="fake-header"><span class="fake-brand">kinoTV</span>
+        <span class="fake-nav">首页 电影 剧集 …</span>
+        <span class="fake-search">搜索影视或频道…</span>
+      </div>
+      <div class="toolbar">
+        <div class="fused-tabs">
+          <button class="ftab on"><span class="dot"></span>综合 <span class="cnt">16</span></button>
+          <button class="ftab"><span class="dot"></span>视频 <span class="cnt">13</span></button>
+          <button class="ftab"><span class="dot g"></span>IPTV <span class="cnt">3</span></button>
+        </div>
+        <button class="chip on"><span class="cdot"></span>全部</button>
+        <button class="chip" style="--cd: var(--blue)"><span class="cdot"></span>未观看</button>
+        <button class="chip" style="--cd: var(--amber)"><span class="cdot"></span>正在看</button>
+        <button class="chip" style="--cd: var(--green)"><span class="cdot"></span>已看完</button>
+        <div class="sort-wrap">
+          <button class="chip" id="dSortBtn">↕ 最近收藏 ▾</button>
+          <div class="popover hidden" id="dSortPop">
+            <button class="pop-item on">最近收藏<span class="tick">✓</span></button>
+            <button class="pop-item">最早收藏<span class="tick">✓</span></button>
+            <button class="pop-item">名称A-Z<span class="tick">✓</span></button>
+            <button class="pop-item">评分从高到低<span class="tick">✓</span></button>
+            <button class="pop-item">评分从低到高<span class="tick">✓</span></button>
+          </div>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button class="abtn">🗑</button>
+        <button class="abtn">☰ 批量管理</button>
+      </div>
+      <div class="grid-demo"><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 方案 E ═══ -->
+  <div class="scheme">
+    <div class="scheme-head"><span class="tag">方案 E · 附加</span><h2>顺手建议 — 危险操作降级 + IPTV tab 无效筛选隐藏</h2></div>
+    <p class="scheme-note">与面板方案正交，可叠加到 A–D 任意一款：<br>
+      ① <b>「清空收藏/清空历史」降级</b>——现在它与普通按钮同权重并排，误触风险高（虽有确认弹窗）。降级为「⋯ 更多」溢出菜单，或降为纯图标弱化色；破坏性操作离高频按钮越远越好。<br>
+      ② <b>IPTV tab 下隐藏状态 chips</b>——状态筛选只作用于影视分区，IPTV tab 显示一堆点了没反应的 chips 是认知噪音（现在折叠面板也有此问题，常驻后会放大）。</p>
+    <div class="stage">
+      <div class="toolbar">
+        <div class="fused-tabs">
+          <button class="ftab on"><span class="dot"></span>综合 <span class="cnt">16</span></button>
+          <button class="ftab"><span class="dot"></span>视频 <span class="cnt">13</span></button>
+          <button class="ftab"><span class="dot g"></span>IPTV <span class="cnt">3</span></button>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button class="abtn">⚙ 更多筛选</button>
+        <button class="abtn">☰ 批量管理</button>
+        <div class="menu-wrap">
+          <button class="abtn" id="eMoreBtn">⋯</button>
+          <div class="popover hidden" id="eMorePop" style="left:auto; right:0;">
+            <button class="pop-item" style="color: var(--danger)">🗑 清空收藏…</button>
+          </div>
+        </div>
+      </div>
+      <div class="danger-chip-demo">↑ 点右侧「⋯」看效果：清空操作收进溢出菜单，危险动作与高频动作物理隔离（确认弹窗保留）</div>
+      <div class="grid-demo"><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div><div class="ghost-card"><div class="ghost-cover"></div><div class="ghost-bar"></div></div></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>我的推荐</b>：方案 C（状态常驻 + 排序收纳），叠加方案 E 两条微调。理由：状态筛选是这两页唯一的高频筛选且自带彩色语义，值得常驻；排序是低频配置，弹层足够；方案 B 虽然实现最省，但 90px 垂直开销 + 低频 chips 铺开的噪音在历史页会更明显。若你更看重「所有能力一眼可见」，B 也完全可接受——它就是你的原始提案，成本最低。<br>
+    交互细节备注：常驻面板的 animate-fade-in 只在进入页面时播一次（Keep-Alive 二次进入被 data-revisit 门控抑制，不会反复闪）；IPTV tab 下状态行建议隐藏（E-②）。
+  </div>
+</div>
+
+<script>
+  // chips 视觉切换（纯 demo）
+  document.querySelectorAll('.panel-row, .toolbar').forEach(row => {
+    row.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip || chip.id) return;
+      const group = [...chip.parentElement.querySelectorAll(':scope > .chip')];
+      group.forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+    });
+  });
+  // 方案 A：折叠
+  const aT = document.getElementById('aToggle'), aP = document.getElementById('aPanel');
+  aT.addEventListener('click', () => { aP.classList.toggle('hidden'); aT.classList.toggle('on'); });
+  // 排序弹层（C/D/E 共用逻辑）
+  function bindPop(btnId, popId, onPick) {
+    const btn = document.getElementById(btnId), pop = document.getElementById(popId);
+    if (!btn || !pop) return;
+    btn.addEventListener('click', e => { e.stopPropagation(); pop.classList.toggle('hidden'); });
+    document.addEventListener('click', e => { if (!pop.contains(e.target)) pop.classList.add('hidden'); });
+    if (onPick) pop.addEventListener('click', e => {
+      const item = e.target.closest('.pop-item');
+      if (!item) return;
+      pop.querySelectorAll('.pop-item').forEach(i => i.classList.remove('on'));
+      item.classList.add('on');
+      onPick(item.textContent.replace('✓','').trim());
+      pop.classList.add('hidden');
+    });
+  }
+  bindPop('cSortBtn', 'cSortPop', label => { document.getElementById('cSortBtn').textContent = '↕ 排序：' + label + ' ▾'; });
+  bindPop('dSortBtn', 'dSortPop', label => { document.getElementById('dSortBtn').textContent = '↕ ' + label + ' ▾'; });
+  bindPop('eMoreBtn', 'eMorePop');
+</script>
+</body>
+</html>
