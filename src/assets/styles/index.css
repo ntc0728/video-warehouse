@@ -851,8 +851,8 @@ main {
 }
 
 /* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
-   列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (1280-1439px)
-        → 6 (1440-2559px) → 7 (2560-3839px) → 8 (≥3840px)；TV 端恒 5（见文件末尾覆盖）
+   列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (≥1280px 恒定)
+   （2026-09-06 用户定稿：≥1440 不再升 6，1280 起恒 5）；TV 端恒 5（见文件末尾覆盖）
    由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略 */
 .iptv-channel-grid {
   display: grid;
@@ -881,7 +881,7 @@ main {
   }
 }
 
-/* 1280–1439 → 5 列（比 1024 档 +1；1440 起主流笔记本/桌面宽，升 6） */
+/* 1280–1439 → 5 列（2026-09-06 定稿：≥1440 不再升 6，1280 起恒 5） */
 @media (width >= 1280px) and (width <= 1439px) {
   html:not([data-device="app"]) {
     --iptv-cols: 5;
@@ -890,21 +890,21 @@ main {
 
 @media (width >= 1440px) {
   html:not([data-device="app"]) {
-    --iptv-cols: 6;
+    --iptv-cols: 5;
   }
 }
 
 @media (width >= 2560px) {
   html:not([data-device="app"]) {
-    /* 阶段 C：与 --card-cols 对齐，≥1440 起恒 6 列（撤销 7 递增） */
-    --iptv-cols: 6;
+    /* 2026-09-06：与 ≥1440 档对齐，超宽屏同样恒 5 */
+    --iptv-cols: 5;
   }
 }
 
 @media (width >= 3840px) {
   html:not([data-device="app"]) {
-    /* 阶段 C：同上（撤销 8 递增） */
-    --iptv-cols: 6;
+    /* 2026-09-06：同上，恒 5 */
+    --iptv-cols: 5;
   }
 }
 

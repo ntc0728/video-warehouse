@@ -101,7 +101,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     return () => ro.disconnect();
   }, [channel.name]);
 
-  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} animate-fade-in-up btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
+  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
 
   const cardBody = (
     <div className="card-body">
@@ -158,7 +158,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   );
 
   return (
-    <div className="iptv-channel-card-wrap">
+    <div className="iptv-channel-card-wrap animate-fade-in-up">
       {batchMode ? (
         <div
           className={cardClassName}
