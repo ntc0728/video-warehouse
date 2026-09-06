@@ -1155,9 +1155,10 @@ html[data-device="tv"] {
   }
 
   /* ── 卡片间距统一为 --hero-side-gap ── */
-  /* Browse / Collections 网格 + IPTV 频道网格 */
+  /* Browse / Collections 网格 + IPTV 频道网格 + Detail 推荐网格 */
   html:not([data-device="tv"]) .video-card-grid,
-  html:not([data-device="tv"]) .iptv-channel-grid {
+  html:not([data-device="tv"]) .iptv-channel-grid,
+  html:not([data-device="tv"]) .detail-recommend-row {
     gap: var(--hero-side-gap);
   }
 

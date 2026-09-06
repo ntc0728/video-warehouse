@@ -1493,24 +1493,17 @@
   font-weight: 700;
 }
 
-/* 多行网格 — 列数由 --card-cols 统一驱动 */
+/* 多行网格 — 列数由 --card-cols 统一驱动（与首页 TMDBMovieRow 等分公式一致：
+   列宽 = (100%-(cols-1)*gap)/cols，gap 基础 --space-md、≥1280 桌面统一
+   --hero-side-gap（见 index.css「卡片间距统一」块，2026-09-06 对齐首页）） */
 .detail-recommend-row {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
-  /* 卡片间距统一 --space-lg（2026-09-03），与首页/Browse/收藏一致 */
-  gap: var(--space-lg);
+  gap: var(--space-md);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
   padding: 0 var(--space-sm);
-}
-
-/* 阶段 C：推荐位网格同竖向网格封顶（≥1280 auto-fill + 居中，排除 app/tv） */
-@media (width >= 1280px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-recommend-row {
-    grid-template-columns: repeat(auto-fill, var(--card-size));
-    justify-content: center;
-  }
 }
 
 /* ── Not Found ─────────────────────────────────── */
