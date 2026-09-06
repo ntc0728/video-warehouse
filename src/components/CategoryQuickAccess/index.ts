@@ -1,6 +1,7 @@
 export { default } from './CategoryQuickAccess';
 export {
-  CategoryQuickAccessWide,
+  CategoryQuickAccessNav,
+  CategoryQuickAccessPanel,
   CategoryHeatRow,
   useCategoryOverlayStore,
 } from './CategoryQuickAccess';

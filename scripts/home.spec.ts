@@ -867,23 +867,24 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
 //          且横版骨架元素结构存在。
 // =============================================================
 // 1.3c 宽屏分类面板（2026-09-06 融合方案甲）：
-// —— 导航带内嵌 HeroBili 卡首行；点击 chip 在卡内 overlay 展开面板（覆盖 banner、不推挤）；
-//    再点同 chip / 点击外部 / Esc 收起；hero 下方常驻「分类热度榜」行（加载即显示）；
+// —— 分类 chips 融合 StickyHeader（仅首页宽屏渲染）；hover chip 在 hero 卡顶展开 mega 面板；
+//    移出导航/面板延迟收起、点击外部 / Esc / 页面滚动收起；hero 下方常驻「分类热度榜」行；
 //    「全部分类」跳 /browse；1280 视口回归（圆卡分支）。
 // =============================================================
 
 test.describe('1.3c 宽屏分类面板', () => {
-  test('HOME-070: 导航带内嵌 hero 卡、8 个入口、热度徽标可见、默认 overlay 收起', async ({ page }) => {
+  test('HOME-070: chips 融合顶栏、8 个入口、热度徽标移除、默认 overlay 收起', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(2000);
 
     const navItems = page.locator('.cqa-nav__item');
     expect(await navItems.count()).toBe(8); // 7 分类 chip + 全部分类
     expect(await page.locator('.cqa-nav__item svg').count()).toBeGreaterThanOrEqual(8);
-    expect(await page.locator('.cqa-nav__heat').count()).toBeGreaterThanOrEqual(3);
-    // 默认 overlay 收起（拍板：首屏完整 hero）
+    // 热度徽标已从 chip 移除（Σ 值改为面板头「今日最热」右侧展示）
+    expect(await page.locator('.cqa-nav__heat').count()).toBe(0);
+    // 默认 overlay 收起（hover 触发语义：未悬停不展开）
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
@@ -898,30 +899,31 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-heat-row__title').count()).toBe(1);
   });
 
-  test('HOME-072: 点击「电影」chip → overlay 面板展开：子分类 chips + 3×3 内容卡', async ({ page }) => {
+  test('HOME-072: 悬停「电影」chip → mega 面板展开：热度值+子分类 chips+3×3 内容卡', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click(); // 电影
+    await page.locator('.cqa-nav__item').nth(1).hover(); // 电影
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
 
     expect(await page.locator('.cqa-overlay').count()).toBe(1);
+    // 热度 Σ 值移到面板头「今日最热」右侧（chip 徽标移除）
+    expect(await page.locator('.cqa-panel__heat').count()).toBe(1);
     expect(await page.locator('.cqa-subgenres__chip').count()).toBeGreaterThanOrEqual(2);
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
-    // overlay 覆盖在 hero 卡内（不推挤：hero 卡高度不变在 DOM 上体现为 overlay 为 absolute，
-    // 此处断言 overlay 位于 .hero-bili 内部）
+    // overlay 覆盖在 hero 卡内（面板 = header 正下方 mega-menu）
     expect(await page.locator('.hero-bili .cqa-overlay').count()).toBe(1);
   });
 
   test('HOME-073: 点子分类 chip 面板不消失（内容切换，仍为 9 卡）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.locator('.cqa-nav__item').nth(1).hover();
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
     await page.locator('.cqa-subgenres__chip').nth(1).click();
     await page.waitForTimeout(1200);
@@ -930,43 +932,44 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
   });
 
-  test('HOME-076: 点击面板以外区域收起 overlay；「首页」chip 展开热度榜面板', async ({ page }) => {
+  test('HOME-076: 点击面板以外区域收起 overlay；「首页」chip 不展开面板', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click(); // 电影 → overlay
+    await page.locator('.cqa-nav__item').nth(1).hover(); // 电影 → overlay
     await page.waitForSelector('.cqa-overlay', { timeout: 15000 });
     // 点击面板/导航以外的中性元素（热度榜行标题）
     await page.locator('.cqa-heat-row__title').click();
     await page.waitForTimeout(500);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
-    // 方案 A：首页 chip = 收起（不开面板；再次点击仍无面板）
-    await page.locator('.cqa-nav__item').first().click();
+    // 首页 chip = 收起（不开面板）
+    await page.locator('.cqa-nav__item').first().hover();
     await page.waitForTimeout(500);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
-  test('HOME-077: 热度榜分类卡跳转 browse 对应分类（方案 1）', async ({ page }) => {
+  test('HOME-077: 热度榜分类卡跳转 /chart 对应分类（v2 榜单页）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    // 封面加大后卡片几何中心落在条目行（行语义 = 跳详情）；分类卡「跳 browse」语义在卡头
+    // 封面加大后卡片几何中心落在条目行（行语义 = 跳详情）；分类卡「跳榜单页」语义在卡头
     // （排名 + 图标 + 分类名 + Σ热度），故点卡头验证分类入口
     await page.locator('.cqa-heat-row .cqa-catcard').first().locator('.cqa-catcard__head').click();
     await page.waitForTimeout(1000);
     const url = new URL(page.url());
-    expect(url.pathname).toBe('/browse');
+    expect(url.pathname).toBe('/chart');
     expect(['tv', 'movie', 'variety', 'anime', 'documentary']).toContain(url.searchParams.get('category'));
+    await page.waitForSelector('.chart-card', { timeout: 15000 });
   });
 
   test('HOME-074: 「全部分类」跳转 /browse', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
     await page.locator('.cqa-nav__more').click();
@@ -974,6 +977,18 @@ test.describe('1.3c 宽屏分类面板', () => {
     const url = new URL(page.url());
     expect(url.pathname).toBe('/browse');
     expect(url.searchParams.get('category')).toBe('all');
+  });
+
+  test('HOME-083: 「查看完整榜单」入口跳 /chart（v2 热度榜页）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.cqa-heat-row', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    await page.locator('.cqa-heat-row__more').click();
+    await page.waitForTimeout(1000);
+    expect(new URL(page.url()).pathname).toBe('/chart');
+    await page.waitForSelector('.chart-card', { timeout: 15000 });
   });
 
   test('HOME-075: 1280 视口回归——仍渲染圆卡分支，不命中宽屏面板', async ({ page }) => {
@@ -1000,20 +1015,21 @@ test.describe('1.3c 宽屏分类面板', () => {
     await expect(page.locator('.cqa-info-tip__content')).toBeVisible();
     await expect(page.locator('.cqa-info-tip__content')).toContainText('TMDB');
 
-    // 面板 head 同样有 Info 图标与用户视角副标题
-    await page.locator('.cqa-nav__item').nth(1).click();
+    // 面板 head 同样有 Info 图标、热度值与用户视角副标题
+    await page.locator('.cqa-nav__item').nth(1).hover();
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
     await expect(page.locator('.cqa-panel__sub')).toHaveText(/点卡片看详情/);
+    await expect(page.locator('.cqa-panel__heat')).toBeVisible();
     await expect(page.locator('.cqa-overlay .cqa-info-tip')).toHaveCount(1);
   });
 
   test('HOME-080: 子分类切换保留旧网格（降沉刷新态），不闪成空白加载行', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.locator('.cqa-nav__item').nth(1).hover();
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
 
     // 切子分类瞬间：网格容器仍在且卡片未卸载（最多短暂降沉），无「正在获取」整行替换
@@ -1027,10 +1043,10 @@ test.describe('1.3c 宽屏分类面板', () => {
   test('HOME-081: 面板分页——右下角上一页/下一页翻页，末页「查看更多」携分类+genre 跳 browse', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click(); // 电影（子分类=全部，20 条 → 3 页）
+    await page.locator('.cqa-nav__item').nth(1).hover(); // 电影（子分类=全部，20 条 → 3 页）
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
 
     const pager = page.locator('.cqa-panel__pager');
@@ -1061,10 +1077,10 @@ test.describe('1.3c 宽屏分类面板', () => {
   test('HOME-082: 面板网格竖向排列——1/2/3 同列自上而下（grid-auto-flow: column）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.locator('.cqa-nav__item').nth(1).hover();
     await page.waitForSelector('.cqa-overlay .cqa-hotcard', { timeout: 15000 });
 
     const cards = page.locator('.cqa-hotcard');
@@ -1078,5 +1094,50 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(Math.abs(b1!.x - b2!.x)).toBeLessThan(4);
     expect(b2!.y).toBeGreaterThan(b1!.y);
     expect(b4!.x - b1!.x).toBeGreaterThan(b1!.width / 2);
+  });
+
+  test('HOME-084: 页面向下滚动 → 面板立即收起（hover 触发语义）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.locator('.cqa-nav__item').nth(1).hover();
+    await page.waitForSelector('.cqa-overlay', { timeout: 15000 });
+
+    // 滚动主内容容器（AppLayout CustomScrollbar）→ scroll 事件触发面板收起
+    await page.evaluate(() => {
+      const el = (document.querySelector('.custom-scrollbar-container') ||
+        document.querySelector('[class*="scroll"]')) as HTMLElement | null;
+      if (el) el.scrollTop = 400;
+    });
+    await page.waitForTimeout(400);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+  });
+
+  test('HOME-085: 其他页面 chips 常驻为纯导航——点「首页」回首页、点分类直达 browse', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 其他页面无面板载体：悬停分类 chip 不展开面板
+    await page.locator('.cqa-nav__item').nth(1).hover();
+    await page.waitForTimeout(600);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
+
+    // 点击「首页」chip → 回首页；首页 chips 仍在（导航栏跨页一致）
+    await page.locator('.cqa-nav__item').first().click();
+    await page.waitForTimeout(1000);
+    expect(new URL(page.url()).pathname).toBe('/');
+
+    // 再进其他页（设置），点击「剧集」chip → 直达 /browse?category=tv
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.locator('.cqa-nav__item').nth(2).click();
+    await page.waitForTimeout(1000);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/browse');
+    expect(url.searchParams.get('category')).toBe('tv');
   });
 });

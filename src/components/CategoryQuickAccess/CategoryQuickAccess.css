@@ -220,16 +220,15 @@
 @media (width > 1280px) {
 
 
-  /* ── 导航条 ── */
+  /* ── 导航条（2026-09-06 融合顶栏）── */
+  /* chips 现渲染在 StickyHeader 中央：卡片化背景/边框/定位全部移除，仅保留行内布局；
+     间距 = --space-xs（≈demo 拍板 4px 档） */
   html:not([data-device="tv"]) .cqa-nav {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md);
-    border-bottom: 1px solid var(--color-border-light);
-    position: relative;
-    z-index: 51;
-    background: var(--color-surface);
+    /* 不可收缩：chips 被压缩会横向溢出到搜索框下方，拦截其点击 */
+    flex: 0 0 auto;
   }
   html:not([data-device="tv"]) .cqa-nav__item {
     display: inline-flex;
@@ -261,31 +260,14 @@
     font-weight: 600;
   }
   html:not([data-device="tv"]) .cqa-nav__more {
-    margin-left: auto;
-    color: var(--color-text-secondary);
+    color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-nav__more:hover {
     color: var(--color-text);
     background: var(--color-surface-hover);
   }
-  /* 热度徽标 = 全模块唯一语义强调色（暖橙，与 Flame「热」语义一致） */
-  html:not([data-device="tv"]) .cqa-nav__heat {
-    display: inline-flex;
-    align-items: center;
-    gap: 1px;
-    font-size: 10px;
-    font-style: normal;
-    color: var(--color-warning);
-    border-radius: var(--radius-full);
-    padding: 0 var(--space-xs);
-    line-height: 15px;
-    font-variant-numeric: tabular-nums;
-  }
-  html:not([data-device="tv"]) .cqa-nav__heat svg { width: 10px; height: 10px; }
 
-  /* ── 面板（hero 下移：面板在文档流中）── */
-  /* overlay 面板（融合方案甲）：绝对定位于 hero 卡内、覆盖 banner 顶部，
-     不推挤文档流 → hero 高度恒定；高度锁定公式保留（切 chip 零变化） */
+  /* ── mega 面板（HeroBili 卡顶，贴 header 下缘 = 视觉 mega-menu）── */
   html:not([data-device="tv"]) .cqa-overlay {
     /* hotcard 横版封面 120×68 */
     --cqa-row-h: calc(68px + 2 * var(--space-xs));
@@ -293,12 +275,10 @@
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
     /* 分页条（右下角 上一页/页码/下一页·查看更多） */
     --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
-    /* 导航带总高（overlay top 锚点）：上下 padding + tab 高 + 分隔线 */
-    --cqa-nav-h: calc(2 * var(--space-xs) + var(--comp-tab-height) + 1px);
     position: absolute;
     left: 0;
     right: 0;
-    top: var(--cqa-nav-h);
+    top: 0;
     z-index: 50;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border-light);
@@ -311,7 +291,7 @@
       + var(--cqa-sub-h)
       + var(--space-md)
       + var(--cqa-grid-h)
-      + var(--space-xs)
+      + var(--space-sm)
       + var(--cqa-pager-h)
     );
   }
@@ -341,6 +321,26 @@
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
   }
+  /* 「查看完整榜单」→ /chart（热度榜页入口，v2）：与副标题同行靠右，中性灰白 hover 提亮 */
+  html:not([data-device="tv"]) .cqa-heat-row__more {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border: none;
+    background: none;
+    padding: var(--space-2xs) var(--space-xs);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-heat-row__more:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
   html:not([data-device="tv"]) .cqa-panel__head {
     display: flex;
     align-items: center;
@@ -368,6 +368,18 @@
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
   }
+  /* 面板头热度 Σ 值（「今日最热」右侧）：全模块唯一语义强调色（暖橙） */
+  html:not([data-device="tv"]) .cqa-panel__heat {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-warning);
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-panel__heat svg { width: 12px; height: 12px; }
   /* 口径说明 Info 图标 + 悬停 tooltip（内容 Portal 到 body，pointer-events:none
      不拦截 mousedown，避免误触发 overlay 的点击外部收起） */
   html:not([data-device="tv"]) .cqa-info-tip {
@@ -445,7 +457,8 @@
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-xs);
-    margin-top: var(--space-xs);
+    /* 与网格拉开一档（--space-sm）：贴太近显得分页条挤在内容上 */
+    margin-top: var(--space-sm);
     min-height: var(--cqa-pager-h);
   }
   html:not([data-device="tv"]) .cqa-panel__pager__btn {
