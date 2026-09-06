@@ -284,7 +284,7 @@
   color: #fff;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 }
 
 .hero-side-card:hover .hero-side-card__fav,
@@ -293,12 +293,20 @@
   opacity: 1;
 }
 
-.hero-side-card__fav.is-on {
-  color: var(--color-danger);
-}
-
+/* hover 动效与其他卡片收藏按钮统一：放大 + 加深底色 */
 .hero-side-card__fav:hover {
   background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+/* 已收藏（2026-09-06 统一样式）：实底红（--color-danger）+ 白色实心心 */
+.hero-side-card__fav.is-on {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.hero-side-card__fav.is-on:hover {
+  background: var(--color-danger);
 }
 
 /* 标题条：不换行，溢出悬浮跑马灯（双段等长无缝循环） */

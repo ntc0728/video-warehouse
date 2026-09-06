@@ -124,7 +124,6 @@ const VideoCard = memo(function VideoCard({
 }: VideoCardProps) {
   const location = useLocation();
   const { addCollection, removeCollection } = useUserStore();
-  const [isAnimating, setIsAnimating] = useState(false);
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const isTV = useIsTV();
@@ -253,7 +252,6 @@ const VideoCard = memo(function VideoCard({
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setIsAnimating(true);
       if (isCollected) {
         removeCollection(video.id);
       } else {
@@ -279,7 +277,6 @@ const VideoCard = memo(function VideoCard({
           cmsSourceName: srcName,
         });
       }
-      setTimeout(() => setIsAnimating(false), 450);
     },
     [isCollected, addCollection, removeCollection, video.id, video.title, video.cover, video.type, video.year, rating, navigateState],
   );
@@ -345,18 +342,15 @@ const VideoCard = memo(function VideoCard({
           </span>
         )}
 
-        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻（批量模式下隐藏） */}
+        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻红底（批量模式下隐藏） */}
         {!batchMode && !hideFavorite && imageLoaded && (
           <button
-            className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'} ${isAnimating ? 'animate-pop-bounce' : ''}`}
+            className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'}`}
             onClick={handleFavorite}
             title={isCollected ? '取消收藏' : '添加收藏'}
             aria-label={isCollected ? '取消收藏' : '添加收藏'}
           >
-            <Icon icon={Heart} size="xs"
-                                    fill={isCollected ? 'var(--color-favorite-active)' : 'none'}
-                                    color={isCollected ? 'var(--color-favorite-active)' : 'currentColor'}
-                                  />
+            <Icon icon={Heart} size="xs" fill="currentColor" />
           </button>
         )}
 
