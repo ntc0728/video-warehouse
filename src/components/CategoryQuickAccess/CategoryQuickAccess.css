@@ -563,6 +563,22 @@
   html:not([data-device="tv"]) .cqa-catcard:focus-visible {
     border-color: var(--color-border-strong);
   }
+  /* 按压反馈（对齐设置页「个人设置可点项」范式）：已从全局方案6 排除（整卡内容
+     缩放视觉过重）——仅分类名 / 榜单行标题文本缩放 0.96，卡框/海报/热度条静止 */
+  html:not([data-device="tv"]) .cqa-catcard__name {
+    width: fit-content;
+    transition: scale 0.18s var(--ease-out-expo, ease-out);
+  }
+  html:not([data-device="tv"]) .cqa-catcard:active .cqa-catcard__name {
+    scale: 0.96;
+  }
+  html:not([data-device="tv"]) .cqa-catcard__t {
+    transform-origin: left center;
+    transition: scale 0.18s var(--ease-out-expo, ease-out);
+  }
+  html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t {
+    scale: 0.96;
+  }
   html:not([data-device="tv"]) .cqa-catcard__head {
     display: flex;
     align-items: center;
@@ -776,6 +792,8 @@
   html:not([data-device="tv"]) .cqa-nav__item,
   html:not([data-device="tv"]) .cqa-subgenres__chip,
   html:not([data-device="tv"]) .cqa-catcard,
+  html:not([data-device="tv"]) .cqa-catcard__name,
+  html:not([data-device="tv"]) .cqa-catcard__t,
   html:not([data-device="tv"]) .cqa-panel__grid--refreshing .cqa-hotgrid,
   html:not([data-device="tv"]) .cqa-panel__pager__btn,
   html:not([data-device="tv"]) .cqa-hotcard {
@@ -783,6 +801,10 @@
   }
   html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-text.is-overflow {
     animation: none;
+  }
+  html:not([data-device="tv"]) .cqa-catcard:active .cqa-catcard__name,
+  html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t {
+    scale: none;
   }
 }
 
