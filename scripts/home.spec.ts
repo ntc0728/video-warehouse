@@ -1140,4 +1140,28 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(url.pathname).toBe('/browse');
     expect(url.searchParams.get('category')).toBe('tv');
   });
+
+  test('HOME-086: browse 页 chip 双向关联——点击高亮跟随 URL 分类，重复点击不压历史栈', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // 初始 browse 无参数 → 「全部分类」高亮
+    await expect(page.locator('.cqa-nav__more')).toHaveClass(/cqa-nav__item--on/);
+
+    // 点击「电影」chip → URL 变 + 电影 chip 高亮、全部分类取消高亮
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForTimeout(1000);
+    expect(new URL(page.url()).searchParams.get('category')).toBe('movie');
+    const onItems = page.locator('.cqa-nav__item--on');
+    await expect(onItems).toHaveCount(1);
+    await expect(onItems).toHaveText(/电影/);
+
+    // 重复点击同分类 chip：URL 不变（不压历史栈）
+    const urlBefore = page.url();
+    await page.locator('.cqa-nav__item').nth(1).click();
+    await page.waitForTimeout(500);
+    expect(page.url()).toBe(urlBefore);
+  });
 });

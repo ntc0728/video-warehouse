@@ -259,6 +259,15 @@ export function CategoryQuickAccessNav() {
   const navigate = useCustomNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/';
+  // browse 页状态双向关联：chips 选中态跟随 URL 分类（FilterBar 改分类 → URL 变 → chip 高亮跟随）
+  const isBrowse = location.pathname === '/browse';
+  const browseCategory = useMemo<CategoryKey | null>(() => {
+    if (!isBrowse) return null;
+    const c = new URLSearchParams(location.search).get('category');
+    return (c && ['all', 'movie', 'tv', 'variety', 'anime', 'top', 'documentary'].includes(c))
+      ? (c as CategoryKey)
+      : 'all';
+  }, [isBrowse, location.search]);
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
   const open = useCategoryOverlayStore((s) => s.open);
   const close = useCategoryOverlayStore((s) => s.close);
@@ -318,16 +327,22 @@ export function CategoryQuickAccessNav() {
   const handleChipClick = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
     if (!isHome) {
       // 非首页：chips = 纯导航
-      if (cat.key === 'home') navigate('/');
-      else navigate(buildBrowseUrl(cat.key));
+      if (cat.key === 'home') { navigate('/'); return; }
+      const target = buildBrowseUrl(cat.key);
+      // 已在该分类（URL 完全一致）→ 不重复压历史栈
+      if (location.pathname + location.search === target) return;
+      navigate(target);
       return;
     }
     if (cat.key === 'home') { close(); return; }
     open(cat.key);
-  }, [close, isHome, navigate, open]);
+  }, [close, isHome, location.pathname, location.search, navigate, open]);
 
-  const isChipOn = (key: WideCategoryKey) =>
-    isHome && (key === 'home' ? activeKey === null : activeKey === key);
+  const isChipOn = (key: WideCategoryKey) => {
+    if (key === 'home') return isHome && activeKey === null;
+    // 首页 = 面板开合态；browse = 跟随 URL 分类（双向关联）
+    return isHome ? activeKey === key : browseCategory === key;
+  };
 
   return (
     <nav
@@ -349,7 +364,7 @@ export function CategoryQuickAccessNav() {
         </button>
       ))}
       <button
-        className="cqa-nav__item cqa-nav__more"
+        className={`cqa-nav__item cqa-nav__more${!isHome && browseCategory === 'all' ? ' cqa-nav__item--on' : ''}`}
         onMouseEnter={isHome ? close : undefined}
         onClick={() => {
           close();
