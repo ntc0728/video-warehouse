@@ -3,12 +3,13 @@
  * 路由: /chart?category=movie|tv|variety|anime|documentary|trend(&window=day|week)
  * 配置依赖: mock-tmdb fixture（TMDB API 拦截）+ storageState（token）
  *
- * 覆盖: CHART-001 ~ CHART-005
+ * 覆盖: CHART-001 ~ CHART-006
  *   - 001 直达渲染：6 tab + 默认电影 20 行 + top3 强调
  *   - 002 tab 切换：综艺（discover/tv）/ 趋势榜（今日/本周分段）
  *   - 003 无缝滚动：两页数据翻页合并（排名连续）+ 去重后到底提示
  *   - 004 行点击 → /detail/:id
  *   - 005 URL 直达参数生效（category + window）
+ *   - 006 切 tab 刷新态：旧行降沉 + 「加载中」胶囊可见 + 完成移除 + 缓存命中零遮罩
  */
 import { test, expect } from './fixtures/mock-tmdb';
 import type { Page } from '@playwright/test';
@@ -142,5 +143,36 @@ test.describe('CHART 热度榜页', () => {
     await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/趋势榜/);
     await expect(page.locator('.chart-tabs__window-btn--on')).toHaveText('本周');
     await page.waitForSelector('.chart-row', { timeout: 15000 });
+  });
+
+  test('CHART-006: 切 tab 刷新态——旧行降沉 + 居中「加载中」胶囊，完成后移除；缓存命中零遮罩', async ({ page }) => {
+    await page.goto('/chart', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.chart-row', { timeout: 15000 });
+
+    // discover/tv（综艺）延迟 800ms 后 fallback 到 fixture mock：观察刷新中间态
+    await page.route('**/api.tmdb.org/3/discover/tv**', async (route) => {
+      await new Promise((r) => setTimeout(r, 800));
+      await route.fallback();
+    });
+
+    await page.locator('.chart-tabs__tab', { hasText: '综艺' }).click();
+    await page.waitForSelector('.chart-list--refreshing', { timeout: 5000 });
+    // 旧行降沉（opacity 0.45）且不可交互
+    await expect(page.locator('.chart-list--refreshing .chart-row').first()).toHaveCSS('opacity', '0.45');
+    // 「加载中」胶囊可见（小电视 + 文案，sticky 于视口中部）——不能是旧文案「更新中」
+    const pill = page.locator('.chart-refresh-sticky .chart-list__refresh');
+    await expect(pill).toBeVisible();
+    await expect(pill).toContainText('加载中…');
+
+    // 刷新完成：遮罩与胶囊移除，新榜单渲染
+    await page.waitForSelector('.chart-list:not(.chart-list--refreshing)', { timeout: 15000 });
+    await expect(page.locator('.chart-refresh-sticky')).toHaveCount(0);
+    await expect(page.locator('.chart-row').first()).toBeVisible();
+
+    // 切回电影（已缓存）：零遮罩直接显示
+    await page.locator('.chart-tabs__tab', { hasText: '电影' }).first().click();
+    await page.waitForTimeout(400);
+    expect(await page.locator('.chart-list--refreshing').count()).toBe(0);
+    await expect(page.locator('.chart-row').first()).toBeVisible();
   });
 });

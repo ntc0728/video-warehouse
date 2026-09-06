@@ -346,12 +346,13 @@
   margin-inline: auto;
 }
 
-/* ≥1280：横版记录卡同样固定宽 + 列数自适应（阶段 C；<1280 保留上方 1–4 列阶梯；
-   必须 auto-fill 非 auto-fit；排除 app/tv，TV 仍走下方恒 5 列覆盖） */
+/* ≥1280：恒 6 列等分（2026-09-06 用户拍板）：取消「固定 290px 轨道 auto-fill」，
+   卡片随容器拉伸、列数封顶不随视口增加（2560 下原为 7 列 ×290）。
+   1440 ≈ 292px/卡（与旧 290 观感一致），2560 ≈ 350px、4K 上限 2200 后 ≈ 355px。
+   <1280 保留上方 1–4 列阶梯；排除 app/tv（app 走 1440/1920 五六列档，TV 恒 5 列） */
 @media (width >= 1280px) {
   html:not([data-device="app"]):not([data-device="tv"]) .history-content .history-group-body .history-grid {
-    grid-template-columns: repeat(auto-fill, var(--card-size));
-    justify-content: center;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 /* TV（data-device="tv"）恒 5 列：选择器带 html[data-device] → 特异性高于纯类断点，
