@@ -4,6 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import TabBar from './TabBar';
 import Sidebar from './Sidebar';
 import StickyHeader, { IMMERSIVE_ROUTES } from '@/components/StickyHeader';
+import { CategoryQuickAccessPanel } from '@/components/CategoryQuickAccess';
 import { CustomScrollbar } from '@/components/common';
 import OverlayScrollbar from '@/components/common/OverlayScrollbar';
 import { AppLoading } from '@/components/common';
@@ -306,6 +307,8 @@ export default function AppLayout() {
             onMenuToggle={isCompactViewport && !isNative ? toggleSidebar : undefined}
             menuOpen={isCompactViewport && sidebarOpen}
           />
+          {/* 分类 mega 面板：fixed 于 header 正下方，跨页全局挂载（组件内部自门控宽屏非移动端） */}
+          <CategoryQuickAccessPanel />
           <div className="app-shell__scroll-wrapper">
             <CustomScrollbar
               ref={scrollContainerRef}
