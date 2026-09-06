@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Camera,
+  ChevronLeft,
   ChevronRight,
   Film,
   Flame,
@@ -45,6 +46,9 @@ import {
   type WideSubCategory,
 } from './categoryPanelData';
 import './CategoryQuickAccess.css';
+
+/** 面板每页条数（3 列 × 3 行，overlay 高度锁定不变） */
+const PANEL_PAGE_SIZE = 9;
 
 export type CategoryKey = 'all' | 'movie' | 'tv' | 'variety' | 'anime' | 'top' | 'documentary';
 
@@ -166,6 +170,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
   const [genreSubs, setGenreSubs] = useState<Partial<Record<'movie' | 'tv', WideSubCategory[]>>>({});
   const [panelItems, setPanelItems] = useState<TMDBVideoItem[] | null>(null);
   const [panelLoading, setPanelLoading] = useState(false);
+  const [panelPage, setPanelPage] = useState(1);
   const abortRef = useRef<AbortController | null>(null);
 
   const currentSubs: WideSubCategory[] | null = useMemo(() => {
@@ -198,6 +203,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
     abortRef.current?.abort();
     abortRef.current = ctrl;
     if (catChanged) setPanelItems(null);
+    setPanelPage(1);
     setPanelLoading(true);
     fetchCategoryPanel(activeCat, sub.id, ctrl.signal)
       .then((items) => {
@@ -219,7 +225,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
     setSubSel((prev) => ({ ...prev, [key]: id }));
   }, []);
 
-  return { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading };
+  return { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage };
 }
 
 /**
@@ -239,8 +245,24 @@ export function CategoryQuickAccessWide() {
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
   const toggle = useCategoryOverlayStore((s) => s.toggle);
   const close = useCategoryOverlayStore((s) => s.close);
-  const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading } =
+  const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage } =
     useWideCategoryPanel(activeKey);
+
+  // 客户端分页：接口最多 20 条，每页 9（末页可能不满）
+  const panelTotal = panelItems?.length ?? 0;
+  const panelTotalPages = Math.max(1, Math.ceil(panelTotal / PANEL_PAGE_SIZE));
+  const pageItems = panelItems?.slice(
+    (panelPage - 1) * PANEL_PAGE_SIZE,
+    panelPage * PANEL_PAGE_SIZE,
+  ) ?? [];
+  const currentSub = currentSubs?.find((s) => s.id === currentSubId) ?? currentSubs?.[0];
+
+  // 末页「查看更多」：携带分类 + 当前子分类 genre 进 browse（面板只在非 home 分类下渲染）
+  const goBrowseMore = useCallback(() => {
+    if (!activeCat || activeCat.key === 'home') return;
+    close();
+    navigate(buildBrowseUrl(activeCat.key, currentSub?.genreIds ?? []));
+  }, [activeCat, currentSub, close, navigate]);
 
   const navRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -323,15 +345,52 @@ export function CategoryQuickAccessWide() {
                 <span>正在获取 {activeCat.label} 数据…</span>
               </div>
             ) : (
-              <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
-                <CategoryHotGrid items={panelItems ?? []} />
-                {panelLoading && (
-                  <div className="cqa-panel__refresh" role="status">
-                    <TvMascot className="is-shaking" blink size={30} />
-                    <span>更新中…</span>
+              <>
+                <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
+                  <CategoryHotGrid items={pageItems} rankOffset={(panelPage - 1) * PANEL_PAGE_SIZE} />
+                  {panelLoading && (
+                    <div className="cqa-panel__refresh" role="status">
+                      <TvMascot className="is-shaking" blink size={30} />
+                      <span>更新中…</span>
+                    </div>
+                  )}
+                </div>
+                {panelTotal > 0 && (
+                  <div className="cqa-panel__pager">
+                    <button
+                      type="button"
+                      className="cqa-panel__pager__btn"
+                      disabled={panelPage <= 1}
+                      aria-label="上一页"
+                      onClick={() => setPanelPage((p) => Math.max(1, p - 1))}
+                    >
+                      <Icon icon={ChevronLeft} size="xs" />
+                      上一页
+                    </button>
+                    <span className="cqa-panel__pager__ind">{panelPage} / {panelTotalPages}</span>
+                    {panelPage < panelTotalPages ? (
+                      <button
+                        type="button"
+                        className="cqa-panel__pager__btn"
+                        aria-label="下一页"
+                        onClick={() => setPanelPage((p) => Math.min(panelTotalPages, p + 1))}
+                      >
+                        下一页
+                        <Icon icon={ChevronRight} size="xs" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="cqa-panel__pager__btn cqa-panel__pager__btn--more"
+                        onClick={goBrowseMore}
+                      >
+                        查看更多
+                        <Icon icon={ChevronRight} size="xs" />
+                      </button>
+                    )}
                   </div>
                 )}
-              </div>
+              </>
             )}
           </>
         </div>
@@ -340,8 +399,8 @@ export function CategoryQuickAccessWide() {
   );
 }
 
-/** 面板 3×3 内容卡 */
-function CategoryHotGrid({ items }: { items: TMDBVideoItem[] }) {
+/** 面板 3×3 内容卡（rankOffset：分页时排名跨页续号） */
+function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; rankOffset?: number }) {
   const navigate = useCustomNavigate();
   const navigateDetail = useCallback(
     (id: string) => navigate(`/detail/${id}`),
@@ -358,7 +417,7 @@ function CategoryHotGrid({ items }: { items: TMDBVideoItem[] }) {
           onClick={() => navigateDetail(item.id)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateDetail(item.id); }}
         >
-          <span className="cqa-hotcard__rank">{i + 1}</span>
+          <span className="cqa-hotcard__rank">{i + 1 + rankOffset}</span>
           {buildImageUrl(item.backdropPath ?? null, 'w300') ? (
             <LazyImage
               src={buildImageUrl(item.backdropPath ?? null, 'w300') ?? ''}

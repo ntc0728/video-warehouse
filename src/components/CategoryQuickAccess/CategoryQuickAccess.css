@@ -291,6 +291,8 @@
     --cqa-row-h: calc(68px + 2 * var(--space-xs));
     --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
+    /* 分页条（右下角 上一页/页码/下一页·查看更多） */
+    --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
     /* 导航带总高（overlay top 锚点）：上下 padding + tab 高 + 分隔线 */
     --cqa-nav-h: calc(2 * var(--space-xs) + var(--comp-tab-height) + 1px);
     position: absolute;
@@ -309,6 +311,8 @@
       + var(--cqa-sub-h)
       + var(--space-md)
       + var(--cqa-grid-h)
+      + var(--space-xs)
+      + var(--cqa-pager-h)
     );
   }
 
@@ -434,6 +438,49 @@
     color: var(--color-text-secondary);
     pointer-events: none;
     white-space: nowrap;
+  }
+  /* 分页条：面板右下角（上一页 / 页码 / 下一页，末页 = 查看更多） */
+  html:not([data-device="tv"]) .cqa-panel__pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    min-height: var(--cqa-pager-h);
+  }
+  html:not([data-device="tv"]) .cqa-panel__pager__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-panel__pager__btn:hover:not(:disabled) {
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+  html:not([data-device="tv"]) .cqa-panel__pager__btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  html:not([data-device="tv"]) .cqa-panel__pager__btn--more {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  html:not([data-device="tv"]) .cqa-panel__pager__ind {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+    min-width: calc(3 * var(--text-xs));
+    text-align: center;
   }
 
   /* 子分类 chips 行 */
@@ -608,11 +655,14 @@
   }
   html:not([data-device="tv"]) .cqa-catcard__h svg { width: 10px; height: 10px; }
 
-  /* ── 分类面板：3 行 × 3 列紧凑内容卡（无降级规则，恒 3 列）── */
+  /* ── 分类面板：3 列 × 3 行紧凑内容卡（无降级规则，恒 3 列）──
+     竖向排列（2026-09-06 用户需求）：grid-auto-flow: column → 1/2/3 在第 1 列自上而下，
+     榜单阅读动线为「先纵后横」 */
   html:not([data-device="tv"]) .cqa-hotgrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, var(--cqa-row-h));
+    grid-auto-flow: column;
     gap: var(--space-sm) var(--space-md);
   }
   html:not([data-device="tv"]) .cqa-hotcard {
@@ -700,6 +750,7 @@
   html:not([data-device="tv"]) .cqa-subgenres__chip,
   html:not([data-device="tv"]) .cqa-catcard,
   html:not([data-device="tv"]) .cqa-panel__grid--refreshing .cqa-hotgrid,
+  html:not([data-device="tv"]) .cqa-panel__pager__btn,
   html:not([data-device="tv"]) .cqa-hotcard {
     transition: none;
   }

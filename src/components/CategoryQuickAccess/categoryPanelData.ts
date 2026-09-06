@@ -152,11 +152,15 @@ function panelCacheKey(cat: WideCategory, subId: string | number): string {
 }
 
 /**
- * 拉取某分类某子分类的热门内容（≤9 条，popularity 降序）。
+ * 拉取某分类某子分类的热门内容（≤20 条 = TMDB 单页上限，popularity 降序）。
  * - 电影/剧集「全部」→ /trending/{type}/day；指定 genre → /discover（gte 放宽到 10）
  * - 综艺/动漫/纪录片 → /discover with_genres 主genre[,副genre]（AND）
  * - 排行榜 → /trending/{all,movie,tv}/{day,week}
+ *
+ * 20 条由面板组件按 9 条/页客户端分页（2026-09-06 用户需求）。
  */
+export const PANEL_MAX_ITEMS = 20;
+
 export async function fetchCategoryPanel(
   cat: WideCategory,
   subId: string | number,
@@ -195,7 +199,7 @@ export async function fetchCategoryPanel(
     // 统一按热度倒序后截取（2026-09-06 用户反馈）：/trending 返回的是「趋势序」
     // 而非 popularity 降序，直接展示会出现热度数字忽高忽低像随机排列
     const sorted = [...items].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-    const top = sorted.slice(0, 9);
+    const top = sorted.slice(0, PANEL_MAX_ITEMS);
     panelCache.set(key, top);
     return top;
   })();
