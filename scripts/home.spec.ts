@@ -1115,7 +1115,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
   });
 
-  test('HOME-085: 其他页面 chips 常驻为纯导航——点「首页」回首页、点分类直达 browse', async ({ page }) => {
+  test('HOME-085: 其他页面 chips 视觉常驻——点「首页」回首页、点分类不改 URL', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
@@ -1131,37 +1131,28 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForTimeout(1000);
     expect(new URL(page.url()).pathname).toBe('/');
 
-    // 再进其他页（设置），点击「剧集」chip → 直达 /browse?category=tv
+    // 再进其他页（设置），点击「剧集」chip → URL 不变（chips 与页面无关联，仅视觉常驻）
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    const urlBefore = page.url();
     await page.locator('.cqa-nav__item').nth(2).click();
-    await page.waitForTimeout(1000);
-    const url = new URL(page.url());
-    expect(url.pathname).toBe('/browse');
-    expect(url.searchParams.get('category')).toBe('tv');
+    await page.waitForTimeout(800);
+    expect(page.url()).toBe(urlBefore);
+    // 非首页 chips 无选中态
+    expect(await page.locator('.cqa-nav__item--on').count()).toBe(0);
   });
 
-  test('HOME-086: browse 页 chip 双向关联——点击高亮跟随 URL 分类，重复点击不压历史栈', async ({ page }) => {
+  test('HOME-086: browse 页点击分类 chip 不改 URL、不产生关联', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.goto('/browse?category=movie', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await page.waitForTimeout(1500);
 
-    // 初始 browse 无参数 → 「全部分类」高亮
-    await expect(page.locator('.cqa-nav__more')).toHaveClass(/cqa-nav__item--on/);
-
-    // 点击「电影」chip → URL 变 + 电影 chip 高亮、全部分类取消高亮
-    await page.locator('.cqa-nav__item').nth(1).click();
-    await page.waitForTimeout(1000);
-    expect(new URL(page.url()).searchParams.get('category')).toBe('movie');
-    const onItems = page.locator('.cqa-nav__item--on');
-    await expect(onItems).toHaveCount(1);
-    await expect(onItems).toHaveText(/电影/);
-
-    // 重复点击同分类 chip：URL 不变（不压历史栈）
+    // 点击「剧集」chip：URL 不变、无 chip 高亮（chips 与 browse 页完全解耦）
     const urlBefore = page.url();
-    await page.locator('.cqa-nav__item').nth(1).click();
-    await page.waitForTimeout(500);
+    await page.locator('.cqa-nav__item').nth(2).click();
+    await page.waitForTimeout(800);
     expect(page.url()).toBe(urlBefore);
+    expect(await page.locator('.cqa-nav__item--on').count()).toBe(0);
   });
 });
