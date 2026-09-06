@@ -241,6 +241,8 @@
     background: none;
     border-radius: var(--radius-full);
     font-size: var(--text-sm);
+    /* 文本样式与右侧 sticky-header__nav-item 一致（600，激活 700） */
+    font-weight: 600;
     color: var(--color-text-secondary);
     cursor: pointer;
     white-space: nowrap;
@@ -257,7 +259,7 @@
   html:not([data-device="tv"]) .cqa-nav__item--on:hover {
     color: var(--color-tab-active-text);
     background: var(--color-tab-active-bg);
-    font-weight: 600;
+    font-weight: 700;
   }
   html:not([data-device="tv"]) .cqa-nav__more {
     color: var(--color-text-tertiary);
@@ -272,7 +274,7 @@
     /* hotcard 横版封面 120×68 */
     --cqa-row-h: calc(68px + 2 * var(--space-xs));
     --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
-    --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-sm));
+    --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-md));
     /* 分页条（右下角 上一页/页码/下一页·查看更多） */
     --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
     position: absolute;
@@ -676,7 +678,8 @@
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, var(--cqa-row-h));
     grid-auto-flow: column;
-    gap: var(--space-sm) var(--space-md);
+    /* 间距拉大一档（sm/md → md/lg）：card 随之稍窄、更透气（高度公式同步 --cqa-grid-h） */
+    gap: var(--space-md) var(--space-lg);
   }
   html:not([data-device="tv"]) .cqa-hotcard {
     display: flex;
@@ -721,6 +724,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* 标题跑马灯（2026-09-06）：溢出时悬浮 card 来回滚动展示全标题（非溢出不滚动） */
+  html:not([data-device="tv"]) .cqa-hotcard__t-text {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-text.is-overflow {
+    animation: cqaHotMarquee 5s var(--ease-standard) infinite;
   }
   html:not([data-device="tv"]) .cqa-hotcard__m {
     font-size: var(--text-xs);
@@ -767,4 +778,14 @@
   html:not([data-device="tv"]) .cqa-hotcard {
     transition: none;
   }
+  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-text.is-overflow {
+    animation: none;
+  }
+}
+
+/* 标题跑马灯：去程停留 → 滚到尾 → 停留 → 滚回（--marquee-x 由 JS 注入溢出宽度） */
+@keyframes cqaHotMarquee {
+  0%, 12% { transform: translateX(0); }
+  46%, 58% { transform: translateX(var(--marquee-x, -100%)); }
+  92%, 100% { transform: translateX(0); }
 }
