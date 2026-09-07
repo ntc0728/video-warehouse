@@ -502,9 +502,12 @@
     box-shadow: none;
   }
 
-  /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占一行 */
+  /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占一行 + 靠左
+     （覆盖网格 justify-items:center 与 chip text-align:center） */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
+    justify-self: start;
+    text-align: left;
   }
 }
