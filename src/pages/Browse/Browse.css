@@ -291,3 +291,74 @@
     animation: none !important;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   BR-C（2026-09-07 超宽视口定稿 T5）：≥1440 侧栏筛选（用户拍板阈值）
+   原理：.browse-card--search display:contents 解体，其两个子块
+   （.browse-search-tabs / .filter-bar）由 .browse-page grid 重排；
+   .browse-card--results 整体占右列，筛选面板 sticky 左列 264px。
+   契约：
+   - 数据层零改动（URL ↔ FilterBarValue 双向同步仍在 useBrowseData.ts）；
+   - TV / 移动双保险排除（设备前缀 + :not(--mobile/--tv)，且移动 <768
+     根本不进本 media）；
+   - display:contents 会丢掉 search 卡自身的卡片 chrome → filter-bar
+     面板化补偿（results 卡 chrome 保留）；
+   - 窗口 <1440 media 失效整体回落，现行布局零残留。
+   ═════════════════════════════════════════════════════════════════════ */
+@media (width >= 1440px) {
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
+    display: grid;
+    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-areas:
+      'tabs    results'
+      'filters results';
+    gap: 0 24px;
+    align-items: start;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-card--search {
+    display: contents;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-search-tabs {
+    grid-area: tabs;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-card--results {
+    grid-area: results;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar {
+    grid-area: filters;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--header-height, 64px) + 20px);
+    /* 面板化：竖排 + 补回卡片 chrome */
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* 侧栏内禁横向滚动 → 竖排换行 */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar__row--scroll,
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar__chips-scroll {
+    overflow-x: visible;
+    flex-wrap: wrap;
+  }
+}
