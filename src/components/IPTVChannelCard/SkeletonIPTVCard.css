@@ -66,7 +66,9 @@
 .skeleton-iptv-grid {
   display: grid;
   /* 对齐真实 .iptv-channel-grid 列数，由全局 --iptv-cols 驱动，不使用 auto-fill
-     （1024–1279→4 / 1280–1439→5 / ≥1440→6 / ≥2560→7 / ≥3840→8，TV 恒 5） */
+     （<768→2 / 768–1023→3 / 1024–1279→4 / ≥1280→恒 5，TV 恒 5）
+     ⚠️ 2026-09-07 修正：旧注释写的「≥1440→6 / ≥2560→7 / ≥3840→8」早已不成立，
+     index.css 里四档全是 5、且 2026-09-07 已合并为单条 ≥1280 恒 5。 */
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
   /* 与真实 .iptv-channel-grid 统一 --space-lg（2026-09-03） */
   gap: var(--space-lg);
