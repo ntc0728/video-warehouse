@@ -274,7 +274,7 @@ export default function ChartPage() {
   const isTrend = activeTab === 'trend';
 
   return (
-    <div className="page-padding chart-page">
+    <div className="page-padding chart-page content-shell">
       <section className="chart-card">
         {/* 切 tab 刷新态「加载中」胶囊：零高度 sticky 钉在滚动视口中部（40dvh）。
             不能放进 .chart-list 里——grid item 的 sticky 只能在自身 row track 内移动，

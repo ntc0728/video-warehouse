@@ -649,7 +649,7 @@ export default function DetailPage() {
   // 不在此拦截，避免误判场景。
   if (id?.startsWith('tmdb-') && !hasToken) {
     return (
-      <div className="page-padding detail-page">
+      <div className="page-padding detail-page content-shell">
         <TokenRequired />
       </div>
     );
@@ -660,7 +660,7 @@ export default function DetailPage() {
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
     return (
-      <div className="page-padding detail-page">
+      <div className="page-padding detail-page content-shell">
         <div className="detail-not-found">
           <Icon icon={AlertTriangle} size="3xl" />
           <span>{tmdbError || '影片不存在'}</span>
@@ -670,7 +670,7 @@ export default function DetailPage() {
   }
 
   return (
-    <div ref={pageRef} className="page-padding detail-page" key={id}>
+    <div ref={pageRef} className="page-padding detail-page content-shell" key={id}>
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}
