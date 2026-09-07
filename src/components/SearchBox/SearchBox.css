@@ -25,9 +25,10 @@
   max-width: var(--layout-searchbox-max-w);
 }
 
-/* 大屏封顶（2026-09-06 顶栏融合配套）：≥1281 header 搜索框不再随视口增长到 627~800px，
+/* 大屏封顶（2026-09-06 顶栏融合配套，2026-09-07 断点 1281 → 1441）：
+   ≥1441 header 搜索框不再随视口增长到 627~800px，
    与 YouTube（~560px）/B 站（~500px）的大屏搜索框宽度对齐 */
-@media (width >= 1281px) {
+@media (width >= 1441px) {
   .search-box-wrap--header {
     max-width: min(var(--layout-searchbox-max-w), calc(480px * var(--ui-scale, 1)));
   }

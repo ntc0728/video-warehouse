@@ -1,11 +1,11 @@
 /**
  * CategoryQuickAccess — 分类入口（2026-09-06 顶栏融合方案，三分支）：
- *  · default export              ≤1280 / app：7 彩色圆卡（现状不变，点击跳 browse）
- *  · CategoryQuickAccessNav      >1280：分类 chips 融合进 StickyHeader（仅首页渲染），
+ *  · default export              ≤1440 / app：7 彩色圆卡（现状不变，点击跳 browse）
+ *  · CategoryQuickAccessNav      >1440：分类 chips 融合进 StickyHeader（仅首页渲染），
  *    hover chip 打开面板；移出导航/面板延迟收起；页面滚动收起（滚离 hero 后悬停先回顶）。
- *  · CategoryQuickAccessPanel    >1280：mega 面板（HeroBili 卡顶渲染，贴 header 下缘），
+ *  · CategoryQuickAccessPanel    >1440：mega 面板（HeroBili 卡顶渲染，贴 header 下缘），
  *    hover 期间常驻；热度 Σ 值显示在面板头「今日最热」右侧。
- *  · CategoryHeatRow             >1280：hero 下方常驻「分类热度榜」内容行。
+ *  · CategoryHeatRow             >1440：hero 下方常驻「分类热度榜」内容行。
  * 数据与图标方案：changelogs/design-docs/2026-09-06-category-quick-access-a2-实施方案.md
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -148,7 +148,7 @@ function InfoTip({ label, text }: { label: string; text: string }) {
   );
 }
 
-/** ≤1280 / app：7 彩色圆卡（现状不变） */
+/** ≤1440 / app：7 彩色圆卡（现状不变） */
 export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickAccessProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
@@ -250,7 +250,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
 }
 
 /**
- * >1280 桌面全页面：分类 chips（由 StickyHeader 中央渲染，搜索框左侧）。
+ * >1440 桌面全页面：分类 chips（由 StickyHeader 中央渲染，搜索框左侧）。
  * 首页：hover chip → 打开 hero 卡顶的 mega 面板；移出导航 → 延迟收起；页面滚动 → 立即收起；
  *       滚离 hero 后悬停 chip → 先回顶再展开（回顶滚动期间豁免滚动收起）。
  * 全页面统一行为（2026-09-06 拍板）：hover chip → 开面板；点 chip → 开面板；
@@ -344,8 +344,8 @@ export function CategoryQuickAccessNav() {
 }
 
 /**
- * >1280：mega 面板（AppLayout 全局挂载，fixed 于 header 正下方 = 跨页 mega-menu）。
- * 自门控：仅宽屏桌面（>1280 非 TV）且非移动布局渲染；移动端/TV 恒 null。
+ * >1440：mega 面板（AppLayout 全局挂载，fixed 于 header 正下方 = 跨页 mega-menu）。
+ * 自门控：仅宽屏桌面（>1440 非 TV）且非移动布局渲染；移动端/TV 恒 null。
  * hover 常驻：进入面板取消延迟收起、移出面板延迟收起（与 Nav 的缓冲互补）。
  */
 export function CategoryQuickAccessPanel() {
@@ -635,7 +635,7 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
   );
 }
 
-/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单） */
+/** >1440：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单） */
 export function CategoryHeatRow() {
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);

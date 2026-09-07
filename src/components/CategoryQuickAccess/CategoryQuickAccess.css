@@ -153,10 +153,11 @@
 
 
 
-/* ── >1280 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
+/* ── >1440 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
    去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
-   「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。 */
-@media (width > 1280px) {
+   「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。
+   2026-09-07 断点 1280 → 1440。 */
+@media (width > 1440px) {
   html:not([data-device="tv"]) .category-quick-access__card {
     padding: 0;
   }
@@ -211,14 +212,24 @@
    全局左侧栏已删除，桌面 web 经顶栏 + 本卡片双入口可达分类。 */
 
 /* ══════════════════════════════════════════════════════════════════════
-   >1280 桌面宽屏分支（2026-09-06 方案 A2，设计文档见 changelogs/design-docs/）：
-   频道文字导航条 + 热门分类面板。JS 分支由 useIsWideDesktop（>1281px 且非 TV）
-   控制，≤1280 / TV / app 不会命中本块；此处 media 查询为双保险。
+   >1440 桌面宽屏分支（2026-09-06 方案 A2，设计文档见 changelogs/design-docs/）：
+   频道文字导航条 + 热门分类面板。JS 分支由 useIsWideDesktop（>1441px 且非 TV）
+   控制，≤1440 / TV / app 不会命中本块；此处 media 查询为双保险。
+   2026-09-07 断点 1280 → 1440（CSS 与 JS 同步）。
    token 全部取自 variables.css v2.2 密度契约；无降级媒体查询——
    本块内 catgrid/hotgrid 恒 3 列（v2.3 教训：降级规则会破坏 3×3 形态）。
    ══════════════════════════════════════════════════════════════════════ */
-@media (width > 1280px) {
+@media (width > 1440px) {
 
+  /* ── 横版封面尺寸（overlay 面板 hotcard + 首页分类热度榜 catcard 共用）──
+     2026-09-07 用户要求调大：120×68 → 150×85（等比 1.25×，16:9 比例不变）。
+     两个消费方不在同一作用域（hotcard 在 fixed overlay 内、catcard 在文档流
+     .cqa-heat-row 内），故变量定义在两者宿主上，改一处即两处同步。 */
+  html:not([data-device="tv"]) .cqa-overlay,
+  html:not([data-device="tv"]) .cqa-heat-row {
+    --cqa-poster-w: 150px;
+    --cqa-poster-h: 85px;
+  }
 
   /* ── 导航条（2026-09-06 融合顶栏）── */
   /* chips 现渲染在 StickyHeader 中央：卡片化背景/边框/定位全部移除，仅保留行内布局；
@@ -271,16 +282,22 @@
 
   /* ── mega 面板（AppLayout 全局挂载：fixed 于 header 正下方 = 跨页 mega-menu）── */
   html:not([data-device="tv"]) .cqa-overlay {
-    /* hotcard 横版封面 120×68 */
-    --cqa-row-h: calc(68px + 2 * var(--space-xs));
+    /* hotcard 行高 = 横版封面高 + 上下内边距（封面尺寸见上方 --cqa-poster-*） */
+    --cqa-row-h: calc(var(--cqa-poster-h) + 2 * var(--space-xs));
     --cqa-sub-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs) + 2px);
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-md));
     /* 分页条（右下角 上一页/页码/下一页·查看更多） */
     --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
     position: fixed;
     top: var(--header-height);
-    left: 0;
-    right: 0;
+    /* ⚠️ 必须按 --page-pad-x 内缩，不能用 left/right:0：
+       本元素是 fixed，max-width 里的 100% 按「视口」解析，而页面内容的
+       min(100%, 2200px) 里的 100% 是「减去 page-pad-x 的内容盒」。
+       用 0 会导致 <2280 视口下面板反而比内容宽 2×pad（1920 下面板 1920、
+       内容 1760，直接顶到屏幕边、网格与下方卡片错开）。内缩后
+       面板宽度 ≡ 内容宽度（≥2560 仍为 2200 封顶居中），全宽度段对齐。 */
+    left: var(--page-pad-x);
+    right: var(--page-pad-x);
     margin-inline: auto;
     max-width: var(--layout-content-max-width);
     /* header z-50 之下、页面内容之上 */
@@ -656,9 +673,9 @@
     color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-catcard__poster {
-    flex: 0 0 120px;
-    width: 120px;
-    height: 68px;
+    flex: 0 0 var(--cqa-poster-w);
+    width: var(--cqa-poster-w);
+    height: var(--cqa-poster-h);
     display: block;
     border-radius: var(--radius-md);
     object-fit: cover;
@@ -729,9 +746,9 @@
     color: var(--color-text-tertiary);
   }
   html:not([data-device="tv"]) .cqa-hotcard__poster {
-    flex: 0 0 120px;
-    width: 120px;
-    height: 68px;
+    flex: 0 0 var(--cqa-poster-w);
+    width: var(--cqa-poster-w);
+    height: var(--cqa-poster-h);
     border-radius: var(--radius-md);
     object-fit: cover;
     background: var(--color-placeholder);

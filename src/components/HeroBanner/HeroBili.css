@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用）
+   HeroBili — 首页 Hero B 站风（>1440px 桌面专用，TV 不启用；2026-09-07 断点 1280 → 1440）
    布局：左 banner（minmax(0,1fr)）+ 右 3×2 竖版卡（--hero-side-w）+ 脱标换一换浮层
    全部尺寸走 token（variables.css「--page-pad-x 分档 + HeroBili token」节）：
    banner-h = 内容宽 × 27.27%、右栏 = 内容宽 × 56%，比例恒定、无断点档位。
@@ -10,7 +10,7 @@
   margin-bottom: var(--space-sm);
 }
 
-@media (width > 1280px) {
+@media (width > 1440px) {
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
     /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +

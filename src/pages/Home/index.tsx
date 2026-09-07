@@ -45,7 +45,7 @@ export default function HomePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  // >1280 桌面（非 TV）：分类快捷入口上移到 Hero 上方（与 HeroBili 启用条件一致）
+  // >1440 桌面（非 TV）：分类快捷入口上移到 Hero 上方（与 HeroBili 启用条件一致）
   const isWide = useIsWideDesktop();
 
   useScrollRestore('home');

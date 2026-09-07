@@ -1419,8 +1419,8 @@ function heroThumbPropsEqual(
 /**
  * HeroBanner — 首页 Hero 分支入口
  *
- * >1280px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右 3×2 竖版卡 + 换一换）；
- * ≤1280px / TV / 空数据：走原 HeroBannerClassic 渲染路径（原结构逐行未动）。
+ * >1440px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右 3×2 竖版卡 + 换一换）；
+ * ≤1440px / TV / 空数据：走原 HeroBannerClassic 渲染路径（原结构逐行未动）。
  * 空数据回落 Classic：Classic 的空态骨架/「暂无推荐」文案保持原行为，
  * HeroBili 不重复实现空态（宽屏整页骨架由 Home 的 home-skeleton-hero 承接）。
  */
