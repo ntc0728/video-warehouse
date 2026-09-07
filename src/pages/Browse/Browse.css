@@ -361,7 +361,7 @@
    BR-C（2026-09-07 超宽视口定稿 T5）：≥1440 侧栏筛选（用户拍板阈值）
    原理：.browse-card--search display:contents 解体，其两个子块
    （.browse-search-tabs / .filter-bar）由 .browse-page grid 重排；
-   .browse-card--results 整体占右列，筛选面板左列 240px（随页滚动不 fixed）。
+   .browse-card--results 整体占右列，筛选面板左列 200px（随页滚动不 fixed）。
    二次定稿（2026-09-07 用户四点反馈）：模式 tabs 通栏首行、类型移出面板
    （→ 结果区头部 browse-sort-bar）、面板选项 3 列网格、面板去 sticky。
    契约：
@@ -377,7 +377,7 @@
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
     display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 200px minmax(0, 1fr);
     /* 行高修复（2026-09-07 用户实测反馈）：两条隐式 auto 行 + results 跨行
        → 跨行项目剩余高度被平摊进所跨行，row1（tabs）从 46px 被撑到数百 px，
        筛选面板与顶部出现巨大间距。row2 用 1fr 吸收跨行剩余高度，
