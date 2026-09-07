@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
-<head>
-<meta charset="utf-8">
+<html lang="zh-CN" data-theme="light" data-page-node-id="4WwDd1Jaehk9RZNRJtEX8n">
+<head data-page-node-id="o99rcSKHXWQ2EliOwxF3Tq">
+<meta charset="utf-8" data-page-node-id="O2pZdkYEY9tSL4C8uFSRqQ">
 <title>卡片列数梯度 / page-pad 渐进 — 2026-09-07 改动验证</title>
-<link rel="stylesheet" href="../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="../../src/assets/styles/variables.css" data-page-node-id="qCfCzWjvIrF70cDF2Qc8qR">
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; padding: 28px; background: #fff; color: #1a1a1a;
@@ -25,43 +25,43 @@
   code { background: #f4f4f5; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
 </style>
 </head>
-<body>
-<h1>卡片列数梯度 + page-pad 渐进</h1>
-<div class="sub">2026-09-07 · 实测（Playwright Chromium，dpr=1，读真实 computed 宽度）</div>
+<body data-page-node-id="7XzrLHVT3dMdrDq6qPdflx">
+<h1 data-page-node-id="TgQcT0PaKdHRKSNArUtpH3">卡片列数梯度 + page-pad 渐进</h1>
+<div class="sub" data-page-node-id="J9GIpDuVBzYd3k01R90HJo">2026-09-07 · 实测（Playwright Chromium，dpr=1，读真实 computed 宽度）</div>
 
-<h2>一、主网格 <code>--card-cols</code>（Browse / 收藏 / 首页横滚行 / Detail 推荐 / Person / Player 侧栏）</h2>
-<table>
-  <thead><tr><th>视口</th><th>列数</th><th>page-pad</th><th>内容区</th><th>卡宽</th><th>Δ</th><th>说明</th></tr></thead>
-  <tbody id="t1"></tbody>
+<h2 data-page-node-id="ojhWVUygjhrXT5DSERUJiu">一、主网格 <code data-page-node-id="P3Xinu820UQU1Vz0TXfPQ7">--card-cols</code>（Browse / 收藏 / 首页横滚行 / Detail 推荐 / Person / Player 侧栏）</h2>
+<table data-page-node-id="4QQmNf9bevpQSbitfdv7k7">
+  <thead data-page-node-id="ZeExvo2pOhxpVFoMrT5T8g"><tr data-page-node-id="H18CX3ISLhaGvzEs9eh0zV"><th data-page-node-id="ctihGvRriSYCaJAntJqXwH">视口</th><th data-page-node-id="weuUCOHPzKvY6l4xAcQWEJ">列数</th><th data-page-node-id="PB3abrDHTGgW6rXW87bSOl">page-pad</th><th data-page-node-id="lZhNG00BwFPgfMBm4O0ldx">内容区</th><th data-page-node-id="4YHTqJpISgVPyBqmTV5RJH">卡宽</th><th data-page-node-id="icfwDTAP3bR5Nrg4bjYIqw">Δ</th><th data-page-node-id="Xxa80Ue9R6zmQgLFjW9hd7">说明</th></tr></thead>
+  <tbody id="t1" data-page-node-id="4bbmMfHEpRDf6OIrpiKnDC"></tbody>
 </table>
-<p class="note">
-  <b>改了什么</b>：<code>≥1280</code> 7 列 → <b>6 列</b>；新增 <code>≥1440</code> → <b>7 列</b>。
+<p class="note" data-page-node-id="A9vPDKEUMBWgxkoGSuWdYi">
+  <b data-page-node-id="moe0xmrv1OeG0DNK5n9lX6">改了什么</b>：<code data-page-node-id="eqOJNVmFCEekaUUUQ2ATVf">≥1280</code> 7 列 → <b data-page-node-id="18bWEBjtc8t06uSgjc6ACg">6 列</b>；新增 <code data-page-node-id="xFifMNcLhJRRGi89KNELTP">≥1440</code> → <b data-page-node-id="9eFgn59EYDV3XFh8g3sTTe">7 列</b>。
   梯度由 5→7→8 变成 5→6→7→8，每档只 +1。
-  <code>--page-pad-x</code>：1280 档 60 → <b>32</b>，新增 1440 档 <b>48</b>，1920 档 80 不变。
-  <br><b>1280 那个 −35.5% 的腰斩降到 −20.0%</b>（卡宽 236.6 → 189.3，改前是 236.6 → 153.5）。
+  <code data-page-node-id="94ffLZY2fOJGIrbcgzLs4y">--page-pad-x</code>：1280 档 60 → <b data-page-node-id="kphshzLvRGjvLh5mVIvNyH">32</b>，新增 1440 档 <b data-page-node-id="pyh248wCEh29p6bV1hFOlL">48</b>，1920 档 80 不变。
+  <br data-page-node-id="iy7dljjYxuCYZ3YGuNO7zc"><b data-page-node-id="NCGKJQCzzqACcHxqdAYbZW">1280 那个 −35.5% 的腰斩降到 −20.0%</b>（卡宽 236.6 → 189.3，改前是 236.6 → 153.5）。
 </p>
 
-<h2>二、历史页 <code>.history-grid</code>（独立体系，横版记录卡）</h2>
-<table>
-  <thead><tr><th>视口</th><th>列数</th><th>gap</th><th>卡宽</th><th>Δ</th><th>说明</th></tr></thead>
-  <tbody id="t2"></tbody>
+<h2 data-page-node-id="AHR1OAxTGQW9DYnBgP1dBH">二、历史页 <code data-page-node-id="DTGb87TMvkQSH7BO5PIHLu">.history-grid</code>（独立体系，横版记录卡）</h2>
+<table data-page-node-id="bmftqpuvzuyLuQYtbXE3Pl">
+  <thead data-page-node-id="pT1t5avdJUJoCwGzPUttqn"><tr data-page-node-id="OLcJOtYjvFQSrFYidtkotL"><th data-page-node-id="EoJ1sTIKWkw0Pb2IvzyVw7">视口</th><th data-page-node-id="1DTqMYEOC964CE5BCUGjRW">列数</th><th data-page-node-id="qI81AOCe5UdgZ5wA9wjsXj">gap</th><th data-page-node-id="bJ04IuY7ZRdJSoNoSOIMQi">卡宽</th><th data-page-node-id="xMIcoDNzULXJJ0CLfFkego">Δ</th><th data-page-node-id="H7LNofb65U7C6YJ9MqIQ4q">说明</th></tr></thead>
+  <tbody id="t2" data-page-node-id="yKevqEz8j1iTUMqht4YTmw"></tbody>
 </table>
-<p class="note">
-  历史页不走 <code>--card-cols</code>，是自己的 minmax 阶梯；<code>≥1280</code> 恒 <b>6 列</b>（2026-09-06 拍板）。
+<p class="note" data-page-node-id="gUfUfZYucjVSGHy2G3reF0">
+  历史页不走 <code>--card-cols</code>，是自己的 minmax 阶梯；桌面 <code>≥1280</code> → <b>5 列</b>、<code>≥1920</code> → <b>6 列</b>（2026-09-07 拍板，原为「≥1280 恒 6 列」）。
   容器 = <code>.history-group-body</code>（2200 封顶 + 算珠列 <code>padding-left</code> 占位）。
   gap 在 <code>&gt;1280</code> 被 <code>index.css:1172</code> 覆盖为 <code>--hero-side-gap</code>。
-  <br><b>⚠️ 1280 处 4 列 → 6 列跳两档，卡宽 293 → 185（−36.9%）</b> —— 与主网格改前同病，性质更严重，待拍板。
+  <br><b>1280 处的 −36.9%（4 列 → 6 列跳两档）已降到 −23.2%</b>（4 → 5 列）；1920 新增 6 列档 −20.2%。
 </p>
 
-<h2>三、现存「视口变宽卡片反而缩小」全量清单</h2>
-<table>
-  <thead><tr><th>体系</th><th>断点</th><th>列数</th><th>卡宽变化</th><th>降幅</th><th>状态</th></tr></thead>
-  <tbody id="t3"></tbody>
+<h2 data-page-node-id="yiWFQo43rJ0TafhvRV3DAs">三、现存「视口变宽卡片反而缩小」全量清单</h2>
+<table data-page-node-id="cz8UajBfuvwJiRAalaLS6L">
+  <thead data-page-node-id="bHvtmAG8ETHWBvptwFfPYD"><tr data-page-node-id="ZFxnWIH5uK6pDhEVBmXECD"><th data-page-node-id="0hFK5v0PFaDGerJ42ZNQDL">体系</th><th data-page-node-id="1q2NZPR92uYRpauxLniH6l">断点</th><th data-page-node-id="Y4jaGcVDiA0DkbDpblVcsT">列数</th><th data-page-node-id="KFUcn95S2xca5X2GJ1yMQv">卡宽变化</th><th data-page-node-id="CyBLZ3OgJKKYXSwy5AFXIE">降幅</th><th data-page-node-id="GkloCbh5FGlrNbrpDDv5DC">状态</th></tr></thead>
+  <tbody id="t3" data-page-node-id="md4ASEpCP3U5pbv9FmsoCa"></tbody>
 </table>
-<p class="note">
-  分档列数的降幅下限是 <b>≈1/N</b>（N = 新列数）——增列瞬间卡片必然变小，这是数学必然，
+<p class="note" data-page-node-id="X6VkSu4U9PrAdUmPlMfPmx">
+  分档列数的降幅下限是 <b data-page-node-id="NcVrdlTkW5AKDgVY0uc53k">≈1/N</b>（N = 新列数）——增列瞬间卡片必然变小，这是数学必然，
   分档只能把它摊薄到每档 −14% 左右，不能归零。
-  真正归零要靠固定轨道 <code>repeat(auto-fill, var(--card-size))</code> + <code>justify-content:center</code>。
+  真正归零要靠固定轨道 <code data-page-node-id="CZvtWjln0XEJilVMEUTdsL">repeat(auto-fill, var(--card-size))</code> + <code data-page-node-id="FrmZoLtipVExG2tRezLFdB">justify-content:center</code>。
 </p>
 
 <script>
@@ -76,18 +76,17 @@ var t1 = [
   ['≥ 2560', 8, 140, 2200, 257.1, '0.0%', '已封顶，pad 增不影响']
 ];
 var t2 = [
-  ['< 480', 1, 'space-lg', '全宽', '', '单列'],
-  ['480–767', 2, 'space-lg', 221→362, '', ''],
-  ['768–1023', 3, 'space-lg', 228.6→312.2, '', ''],
-  ['1024–1279', 4, 'space-lg', 230.6→293.2, '', ''],
-  ['1280', 6, 'space-lg 16', 184.9, '−36.9%', '<span class="tag tag-old">4→6 跳两档</span>'],
-  ['1281–1439', 6, 'hero-side-gap', 190.7→216.4', '', ''],
-  ['1440–1919', 6, 'hero-side-gap', 211.2→289.1', '', 'pad 32→48，−2.4%'],
-  ['1920–2199', 6, 'hero-side-gap', 278.6→324.6', '', 'pad 48→80，−3.6%'],
-  ['≥ 2400', 6, 'hero-side-gap', 351.1', '', '内容区封顶 2200，恒定']
+  ['< 480', 1, 'space-lg', '全宽（351@375）', '—', '单列'],
+  ['480–767', 2, 'space-lg', '221.1 → 362.0', '−37.0%', '1→2 列（移动端固有）'],
+  ['768–1023', 3, 'space-lg', '228.6 → 312.2', '−26.1%', '2→3 列'],
+  ['1024–1279', 4, 'space-lg', '230.6 → 293.2', '−26.1%', '3→4 列'],
+  ['1280–1919', 5, 'hero-side-gap', '225.1 → 349.4', '−23.2%', '<span class="tag tag-new">原恒 6 列 → 5 列</span> <span class="tag tag-old">原 −36.9%</span>'],
+  ['≥ 1920', 6, 'hero-side-gap', '278.6 → 351.1', '−20.2%', '<span class="tag tag-new">新增 6 列档</span>'],
+  ['≥ 2400', 6, 'hero-side-gap', '351.1（恒定）', '0.0%', '内容区封顶 2200']
 ];
 var t3 = [
-  ['历史页 history-grid', '1280', '4 → 6', '293.2 → 184.9', '−36.9%', '待拍板'],
+  ['历史页 history-grid', '1920', '5 → 6', '349.4 → 278.6', '−20.2%', '本次新增（1920→6 列）'],
+  ['历史页 history-grid', '1280', '4 → 5', '293.2 → 225.1', '−23.2%', '本次已修（原 4→6，−36.9%）'],
   ['主网格 card-cols', '1280', '5 → 6', '236.6 → 189.3', '−20.0%', '本次改善（原 −35.5%）'],
   ['主网格 card-cols', '1440', '6 → 7', '215.4 → 177.8', '−17.4%', '本次新增档'],
   ['主网格 card-cols', '768', '3 → 4', '236.6 → 174.1', '−26.4%', '未处理'],
