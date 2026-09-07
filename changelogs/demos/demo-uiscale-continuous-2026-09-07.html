@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN" data-page-node-id="fLkbPD5I7TnRUKXrGCFZGc">
+<head data-page-node-id="GgTdUpfUEjKGW6Oe4lqACv">
+<meta charset="utf-8" data-page-node-id="umVrbHMHQVLgVCR7Fyu2q8">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="3IGx6ilzcrSEXouYLFHzz0">
 <title>大屏 UI 缩放连续化 + 列数阈值 2200 对齐</title>
 <style>
   * { box-sizing: border-box; }
@@ -35,65 +35,65 @@
   .tag.old { background: #fceceb; color: #a32d2d; }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <h1>大屏适配两处修正 · 验证台</h1>
-  <p class="sub">2026-09-07 · 修改 <code>src/assets/styles/variables.css</code> · 下方舞台全部为真实 CSS 渲染（iframe 内视口宽度即标注宽度，外层仅视觉缩放，不影响媒体查询）</p>
+<body data-page-node-id="AAXk5rNhGOGnC2YcnZv85R">
+<div class="wrap" data-page-node-id="1W5EbTvs7lPkOPvInsQYnW">
+  <h1 data-page-node-id="MgAzFZK1hP02e3ylwXN9RU">大屏适配两处修正 · 验证台</h1>
+  <p class="sub" data-page-node-id="JzNMwT4nSuOIKlSZCTgGbI">2026-09-07 · 修改 <code data-page-node-id="n0E1BxWMQGmPk0jDRCIZlJ">src/assets/styles/variables.css</code> · 下方舞台全部为真实 CSS 渲染（iframe 内视口宽度即标注宽度，外层仅视觉缩放，不影响媒体查询）</p>
 
-  <div class="card">
-    <h2>空洞 1：--ui-scale 由离散两档改为连续曲线</h2>
-    <p class="note">旧实现 1920–2559 恒为 1.00，2560 处硬跳 +8%。新实现在 1920→2560 之间线性连续，≥2560 由 clamp 上限冻结 1.08（与旧终点一致）。</p>
-    <svg viewBox="0 0 1180 300" width="100%" role="img" aria-label="UI 缩放系数曲线对比">
+  <div class="card" data-page-node-id="UIU19corwe8u1TbKSejQYP">
+    <h2 data-page-node-id="HBJRVpzbACTHKra7d6mPlg">空洞 1：--ui-scale 由离散两档改为连续曲线</h2>
+    <p class="note" data-page-node-id="1JE0OoeijhAVReRLgUl4sR">旧实现 1920–2559 恒为 1.00，2560 处硬跳 +8%。新实现在 1920→2560 之间线性连续，≥2560 由 clamp 上限冻结 1.08（与旧终点一致）。</p>
+    <svg viewBox="0 0 1180 300" width="100%" role="img" aria-label="UI 缩放系数曲线对比" data-page-node-id="Rs7bY60dIs7FzOjIuRbEB8">
       <title>旧离散档与新连续曲线对比</title>
-      <line x1="90" y1="250" x2="1120" y2="250" stroke="#d4d4d4" stroke-width="1"/>
-      <line x1="90" y1="40" x2="90" y2="250" stroke="#d4d4d4" stroke-width="1"/>
-      <text x="82" y="254" font-size="12" fill="#888" text-anchor="end">1.00</text>
-      <text x="82" y="149" font-size="12" fill="#888" text-anchor="end">1.04</text>
-      <text x="82" y="44" font-size="12" fill="#888" text-anchor="end">1.08</text>
-      <line x1="90" y1="146" x2="1120" y2="146" stroke="#eee" stroke-width="1" stroke-dasharray="4 4"/>
-      <text x="90" y="272" font-size="12" fill="#888" text-anchor="middle">1920</text>
-      <text x="290" y="272" font-size="12" fill="#888" text-anchor="middle">2048</text>
-      <text x="400" y="272" font-size="12" fill="#888" text-anchor="middle">2200</text>
-      <text x="600" y="272" font-size="12" fill="#888" text-anchor="middle">2400</text>
-      <text x="700" y="272" font-size="12" fill="#888" text-anchor="middle">2560</text>
-      <text x="1090" y="272" font-size="12" fill="#888" text-anchor="middle">3840</text>
-      <line x1="700" y1="40" x2="700" y2="250" stroke="#bbb" stroke-width="1" stroke-dasharray="3 3"/>
-      <text x="700" y="32" font-size="12" fill="#999" text-anchor="middle">2560 旧跳变点</text>
-      <polyline points="90,250 700,250" fill="none" stroke="#e24b4a" stroke-width="2"/>
-      <line x1="700" y1="250" x2="700" y2="44" stroke="#e24b4a" stroke-width="2"/>
-      <polyline points="700,44 1120,44" fill="none" stroke="#e24b4a" stroke-width="2"/>
-      <text x="300" y="240" font-size="13" fill="#a32d2d">旧：全程 1.00，2560 一夕 +8%</text>
-      <line x1="90" y1="250" x2="700" y2="44" stroke="#378add" stroke-width="2.5"/>
-      <polyline points="700,44 1120,44" fill="none" stroke="#378add" stroke-width="2.5"/>
-      <text x="150" y="150" font-size="13" fill="#185fa5">新：1920→2560 线性连续 1.00 → 1.08</text>
-      <circle cx="400" cy="146" r="4" fill="#378add"/>
-      <text x="412" y="140" font-size="12" fill="#185fa5">2200 → 1.035</text>
+      <line x1="90" y1="250" x2="1120" y2="250" stroke="#d4d4d4" stroke-width="1" data-page-node-id="px5IrWQgj0wtv1dm2NFLuB"/>
+      <line x1="90" y1="40" x2="90" y2="250" stroke="#d4d4d4" stroke-width="1" data-page-node-id="fD22DcuWSvobCNzqBNMY5D"/>
+      <text x="82" y="254" font-size="12" fill="#888" text-anchor="end" data-page-node-id="utlncC5oEjEaYZVBbCb8rc">1.00</text>
+      <text x="82" y="149" font-size="12" fill="#888" text-anchor="end" data-page-node-id="eW5gJfKZYSsKburGwjKYOF">1.04</text>
+      <text x="82" y="44" font-size="12" fill="#888" text-anchor="end" data-page-node-id="SLgDMQk3eHWx1g02Y3Wi8D">1.08</text>
+      <line x1="90" y1="146" x2="1120" y2="146" stroke="#eee" stroke-width="1" stroke-dasharray="4 4" data-page-node-id="jTq3kaBvgfn46SyghcDekR"/>
+      <text x="90" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="L44QlUFDMfaXUt8OQZTtcY">1920</text>
+      <text x="290" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="pyU61pZNcezM6994b3CLMG">2048</text>
+      <text x="400" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="ilHUWdKpEgBcggCyL7OtCo">2200</text>
+      <text x="600" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="Ho546IIX3xKLarJnBQFiDt">2400</text>
+      <text x="700" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="vRT3pZCtX4vaalzd0rU59W">2560</text>
+      <text x="1090" y="272" font-size="12" fill="#888" text-anchor="middle" data-page-node-id="DcYCJKG1ODK4ThI1OBpbay">3840</text>
+      <line x1="700" y1="40" x2="700" y2="250" stroke="#bbb" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="jVQGPSGWYAXTmVczknpDCH"/>
+      <text x="700" y="32" font-size="12" fill="#999" text-anchor="middle" data-page-node-id="E3DelT2Gy1zlK9GykUNqcg">2560 旧跳变点</text>
+      <polyline points="90,250 700,250" fill="none" stroke="#e24b4a" stroke-width="2" data-page-node-id="E2pGxbkPVU15TFS0Jp9Xlj"/>
+      <line x1="700" y1="250" x2="700" y2="44" stroke="#e24b4a" stroke-width="2" data-page-node-id="WdEU6DKva0kNCJnubi62ab"/>
+      <polyline points="700,44 1120,44" fill="none" stroke="#e24b4a" stroke-width="2" data-page-node-id="rULE2z9A1Zdqv8Adh5CHep"/>
+      <text x="300" y="240" font-size="13" fill="#a32d2d" data-page-node-id="FqIkdVjJGh0Yz1AAgSZXfE">旧：全程 1.00，2560 一夕 +8%</text>
+      <line x1="90" y1="250" x2="700" y2="44" stroke="#378add" stroke-width="2.5" data-page-node-id="IY8AzH1gjWNPFGgn3dOzAZ"/>
+      <polyline points="700,44 1120,44" fill="none" stroke="#378add" stroke-width="2.5" data-page-node-id="FtvKP2JXnCPqCHApWBIWB7"/>
+      <text x="150" y="150" font-size="13" fill="#185fa5" data-page-node-id="rqrks36W9GpGMYe0hPJUU9">新：1920→2560 线性连续 1.00 → 1.08</text>
+      <circle cx="400" cy="146" r="4" fill="#378add" data-page-node-id="jat3wsVWZwgqaJC3p1xMFL"/>
+      <text x="412" y="140" font-size="12" fill="#185fa5" data-page-node-id="nOxePsx2PWHAdvifSFz5ZG">2200 → 1.035</text>
     </svg>
-    <p class="note" style="margin-top:14px">公式：<code>clamp(1, calc(0.76 + 0.000125 * tan(atan2(100vw, 1px))), 1.08)</code><br>
-    单位剥离技巧把 <code>100vw</code> 转成无单位数值；不支持 <code>tan()/atan2()</code> 的旧浏览器会丢弃该声明并沿用上一行 <code>--ui-scale: 1</code>，与改动前逐像素一致。</p>
+    <p class="note" style="margin-top:14px" data-page-node-id="nHvOkheThAJSXnsIkkfNO0">公式：<code data-page-node-id="nE0KX0IyD4q6ObQyO83QZw">clamp(1, calc(0.76 + 0.000125 * tan(atan2(100vw, 1px))), 1.08)</code><br data-page-node-id="4A2Pjsbtrs2sAhStX7sVp5">
+    单位剥离技巧把 <code data-page-node-id="OME6yPaAcIZgjR8MzZn5CH">100vw</code> 转成无单位数值；不支持 <code data-page-node-id="dXALn5QAgIpba1f87GOBQ3">tan()/atan2()</code> 的旧浏览器会丢弃该声明并沿用上一行 <code data-page-node-id="lxN2tSw3GuPzK47EM9wF6M">--ui-scale: 1</code>，与改动前逐像素一致。</p>
   </div>
 
-  <div class="card">
-    <h2>空洞 2：卡片列数阈值 2560 → 2200</h2>
-    <p class="note">与内容区 2200 封顶对齐。增列发生在内容区停止变宽的那一刻，消掉「视口变宽卡片反而缩小」。</p>
-    <table>
-      <thead><tr><th>视口</th><th>page-pad-x</th><th>内容区</th><th>旧列数 / 旧卡宽</th><th>新列数 / 新卡宽</th></tr></thead>
-      <tbody>
-        <tr><td>1920</td><td>80</td><td>1760</td><td>7 / 240px</td><td>7 / 240px</td></tr>
-        <tr><td>2199</td><td>80</td><td>2040</td><td>7 / 280px</td><td>7 / 280px</td></tr>
-        <tr class="hl2"><td>2200</td><td>80</td><td>2040</td><td>7 / 280px</td><td>8 / 243px</td></tr>
-        <tr><td>2400</td><td>80</td><td>2200（封顶）</td><td>7 / 317px</td><td>8 / 263px</td></tr>
-        <tr><td>2559</td><td>80</td><td>2200（封顶）</td><td>7 / 317px</td><td>8 / 263px</td></tr>
-        <tr class="hl"><td>2560</td><td>140</td><td>2200（封顶）</td><td>8 / 263px（−17% 跳变）</td><td>8 / 263px（无变化）</td></tr>
-        <tr><td>3840</td><td>140</td><td>2200（封顶）</td><td>8 / 263px</td><td>8 / 263px</td></tr>
+  <div class="card" data-page-node-id="oVXOeVrFX4EawSZqObkQsd">
+    <h2 data-page-node-id="X7z0gtcuvDpuOQH4sIICtZ">空洞 2：卡片列数阈值 2560 → 2200</h2>
+    <p class="note" data-page-node-id="Exczc2Cd2wCMFu9EoXjBp8">与内容区 2200 封顶对齐。增列发生在内容区停止变宽的那一刻，消掉「视口变宽卡片反而缩小」。</p>
+    <table data-page-node-id="SAHmxfn2uuM1dGWcKbbQJc">
+      <thead data-page-node-id="7epoKp97grPij8RiLiL1uD"><tr data-page-node-id="Y1G9HkJVn5MipgCHE0SzDm"><th data-page-node-id="PxvTMfDVz98fFqMtofgVD8">视口</th><th data-page-node-id="Z7CH4vEbZDpqNMEu5zGM9V">page-pad-x</th><th data-page-node-id="NlNGjjmL0Yc5hwOLl4eJU7">内容区</th><th data-page-node-id="t6lgeh1AZVAP6g26TJd423">旧列数 / 旧卡宽</th><th data-page-node-id="3hdqaxnLMfGBki8sPiMP54">新列数 / 新卡宽</th></tr></thead>
+      <tbody data-page-node-id="1QyZh1zMVE0ou9TXdF9SKz">
+        <tr data-page-node-id="jEmACcydboeypjHXyILVyT"><td data-page-node-id="hEs3WhwadgaJMeknfaRLwb">1920</td><td data-page-node-id="yyWBdaDc3Qk1LMXWoGxkcO">80</td><td data-page-node-id="IqkNXBq7g9QuHmdviVIH3s">1760</td><td data-page-node-id="o9R9EUaGmjjHghXYcpQyeL">7 / 240px</td><td data-page-node-id="0LphnhxtAUaXnFGHnigAZp">7 / 240px</td></tr>
+        <tr data-page-node-id="vvGxRKP37XBR6sXzkp953y"><td data-page-node-id="1BC7i4ghIk8CfaqjRqastW">2199</td><td data-page-node-id="DO8vE0el0WCbQKZbw96TQx">80</td><td data-page-node-id="51iqwsyjSyFaTE2yazgNfh">2040</td><td data-page-node-id="d4NbQRGjVuXmVAgfe3LIhv">7 / 280px</td><td data-page-node-id="GOjVykfWaqJk6Wkx7ypRgy">7 / 280px</td></tr>
+        <tr class="hl2" data-page-node-id="fkhJRnNcWWqn9GHLSf4hQE"><td data-page-node-id="lHJ5ANoOL6lmH1SPtwW9Se">2200</td><td data-page-node-id="En347kFoBQICXUbMq8ZkhB">80</td><td data-page-node-id="W75oiHGXD1HVy1FcHnRVU6">2040</td><td data-page-node-id="zvBqrHgEukIDHYaeECLH6P">7 / 280px</td><td data-page-node-id="hZuOINFVwVDRz4TmGenz5g">8 / 243px</td></tr>
+        <tr data-page-node-id="BhIjjFgdYE1elKVIqzKpVt"><td data-page-node-id="HEg2jfUjI0BpS9L391FvOU">2400</td><td data-page-node-id="6acrj0lW8CuNRppS0JVWaX">80</td><td data-page-node-id="jFpzSHANXhwjf8QtKQOzkX">2200（封顶）</td><td data-page-node-id="qokdglxl9y5y4V9NMvdWGZ">7 / 317px</td><td data-page-node-id="2cAozVCoH20djl5J1uzPPI">8 / 263px</td></tr>
+        <tr data-page-node-id="bx76MmQoD6xudQxH9zNcUF"><td data-page-node-id="4IXR2B74nla2tOO1f7Fsr2">2559</td><td data-page-node-id="4z8CHV8WhSGLjUSNR2MHIv">80</td><td data-page-node-id="ia7IOztpUXjrB1CeqqCtl7">2200（封顶）</td><td data-page-node-id="IhIQ97mHWJB2SrVYeNQAH0">7 / 317px</td><td data-page-node-id="mYM0i0OEwTcH3VOxYx32TS">8 / 263px</td></tr>
+        <tr class="hl" data-page-node-id="PFusrHQfHOXGGbza36mBrh"><td data-page-node-id="PZ3joLZWewpuyik8Hk9SYh">2560</td><td data-page-node-id="TtXHwZlIsOYYaOCdPkvj8U">140</td><td data-page-node-id="eN2fBSbtwDiBmi7DRHbcwM">2200（封顶）</td><td data-page-node-id="AVHe86v1OX3zKhFlXwmkKt">8 / 263px（−17% 跳变）</td><td data-page-node-id="8AEbDBtPnnryWqXMHA371e">8 / 263px（无变化）</td></tr>
+        <tr data-page-node-id="UUyGNLz53bro4XRdjCwysY"><td data-page-node-id="J3ddWhIB037RiBhbbRFKL6">3840</td><td data-page-node-id="Wa3PZLc7QAl4fgLPg3H4zN">140</td><td data-page-node-id="aezV9EtCz7gYhAWZCRFQPU">2200（封顶）</td><td data-page-node-id="Jkr5uEFKzE7EAPDaIOfzmB">8 / 263px</td><td data-page-node-id="pw0mzcy0UoTDZv5n2NHzJs">8 / 263px</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="card">
-    <h2>真实渲染验证台</h2>
-    <p class="note">每格是真实 iframe，内部视口宽度即标注值，媒体查询按该宽度生效；外层仅做视觉缩放。读数由 iframe 内脚本实测生成。</p>
-    <div class="stages" id="stages"></div>
+  <div class="card" data-page-node-id="8Yro930SLl8TBPUdSqyVgx">
+    <h2 data-page-node-id="cIqizmPrD2g14ZAA0FcopL">真实渲染验证台</h2>
+    <p class="note" data-page-node-id="J4ATDM3d3eHYdu8VqYyWHc">每格是真实 iframe，内部视口宽度即标注值，媒体查询按该宽度生效；外层仅做视觉缩放。读数由 iframe 内脚本实测生成。</p>
+    <div class="stages" id="stages" data-page-node-id="0Idk8uqnX0F3oqlADthWiP"></div>
   </div>
 </div>
 <script>
