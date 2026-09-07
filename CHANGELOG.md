@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.21.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.20.0...kinotv-v1.21.0) (2026-09-07)
+
+
+### Features
+
+* **browse:** BR-C 二次定稿——类型分段移至结果区头部、面板去 sticky/240px/3 列网格、模式 tabs 通栏、直链搜索单列 ([f50c4c8](https://github.com/ntc0728/video-warehouse/commit/f50c4c835edcac422e5064cf432ee39999eec844))
+* **browse:** CMS 本地筛选面板（直链搜索不调接口纯前端过滤）+ --full 左对齐；demos V3/V4 入库 ([2665514](https://github.com/ntc0728/video-warehouse/commit/2665514516ccedf52972e272a15e262d9c53f09b))
+* **browse:** 直链搜索源状态双态重构——搜索中折叠 pill 右置结果数旁 + 结束态 demo 同款逐源 badge 卡片行 + 删悬浮弹层 + 未搜索不渲染 badges + 新增语义底色 token(success/warning/error-bg) ([f120c0b](https://github.com/ntc0728/video-warehouse/commit/f120c0b596ff68d136a3760d388543a00d024e5e))
+* **browse:** 类型行升级为分类级 7 档（全部/电影/剧集/综艺/动漫/纪录片/排行榜），点击注入 CATEGORY_CONFIG 的 mediaType+默认genreIds ([ae3d502](https://github.com/ntc0728/video-warehouse/commit/ae3d5024ba7ff67bf3a9ac23368d42ed725ec6ac))
+* **history:** 记录卡网格 1280-&gt;5 列 / 1920-&gt;6 列独立分档 ([f197407](https://github.com/ntc0728/video-warehouse/commit/f1974076c19f9886cbd55feaf820a61a8c21432d))
+* **styles:** card-cols 梯度细化 5-6-7-8 + page-pad 渐进 32/48/80 ([76d8b09](https://github.com/ntc0728/video-warehouse/commit/76d8b0907989bd1f3d73095d4c5746d8f87be2e2))
+* **styles:** 大屏 UI 断点起点 1280 → 1440 统一右移（播放页除外） ([8be907d](https://github.com/ntc0728/video-warehouse/commit/8be907d9cb5cba913022d1551c37c64dac8ef430))
+* **styles:** 大屏 ui-scale 连续化 + 卡片列数阈值对齐内容区封顶 2200 ([4cf1c84](https://github.com/ntc0728/video-warehouse/commit/4cf1c84ea87ae7df375ed562b829737a26da621f))
+* **ultrawide:** BR-C Browse 侧栏筛选 @≥1440（search 卡 display:contents + grid-areas 重排 + filter-bar 面板化） ([ad3dd66](https://github.com/ntc0728/video-warehouse/commit/ad3dd66002df6139628fa783d3eb873797281f03))
+* **ultrawide:** G1 content-shell 统一根级宽度（IPTV/Detail/Chart 接入 2200 壳 + Detail hero ≥2200 全出血 break-out） ([fad98cd](https://github.com/ntc0728/video-warehouse/commit/fad98cd6e5204ad4dd83a050d90bb49f1e6d5972))
+* **ultrawide:** G2-A --ui-scale 1.08 字号补偿档 @≥2560 (variables.css U-1) ([ee62d66](https://github.com/ntc0728/video-warehouse/commit/ee62d664b39542df145c17d1c2d370ec1ce2f0b9))
+* **ultrawide:** G3 边框/文字对比度提档 @≥2560（U-2 浅色边框 token + U-3 tab-underline 未激活文字） ([020c89b](https://github.com/ntc0728/video-warehouse/commit/020c89bc3e9a7461e5170584716b27c5a8fc3ad0))
+* **ultrawide:** P-A 播放器封顶 1920 · 16:9 @≥2560 ([99ef3ce](https://github.com/ntc0728/video-warehouse/commit/99ef3ce289f70109cbae5943ecd760d3e81a0be3))
+
+
+### Bug Fixes
+
+* **breakpoint:** 修 CQA 上移扁平化 CSS 漏改(&gt;1440→&gt;1280, 与 JS 门控/HeroBili 对齐) + 清注释矛盾 + 修正命名误导注释 ([8b37442](https://github.com/ntc0728/video-warehouse/commit/8b37442d1e6af40c2eb7a981a36ff2228da96dc4))
+* **breakpoint:** 回退 HeroBili + CQA 导航/mega/热度榜断点 1440 → 1280（useIsWideDesktop 回 1281 + 3 处 CSS + 调用方注释同步） ([b5658a1](https://github.com/ntc0728/video-warehouse/commit/b5658a12c1674953b5ed17db8b48dbac9db72267))
+* **browse:** --full 阈值改为 &gt;4 字宽（FilterBar.tsx）+ 规则移至 chip 系列末尾（Browse.css） ([bc67495](https://github.com/ntc0728/video-warehouse/commit/bc674955fa1bebbf5736d1390f3828e1be5e3fc6))
+* **browse:** tabs 补分隔线/padding 对齐 demo + 新增对称柔影 token --shadow-soft 修选中态上下厚左右薄 + results 卡 align-self:stretch 占满剩余高度 ([0a051ba](https://github.com/ntc0728/video-warehouse/commit/0a051ba8e36459ef5aafef5e17aa9fb039196f21))
+* **card-cols:** 回退右移副作用——card-cols 保留 1280→6 / 1440→7，清理首页 4 处 &gt;1280 过期注释 ([388abaf](https://github.com/ntc0728/video-warehouse/commit/388abafe0655759733bb405427faee3f5119c565))
+* **home:** 超宽屏 hero/骨架收口 2200 与内容同宽对齐；cqa 封面 150×85 + overlay 宽度基准修复记录 ([5496f46](https://github.com/ntc0728/video-warehouse/commit/5496f46db3947b2053ff568859b65a2f2020db6a))
+* **ultrawide:** BR-C 间距修复（grid rows 1fr 吸收跨行剩余高度）+ 面板内选项去胶囊化改安静菜单样式 ([9f604eb](https://github.com/ntc0728/video-warehouse/commit/9f604ebf1959ea697f262a35e7c3b827c425b8de))
+
 ## [1.20.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.19.0...kinotv-v1.20.0) (2026-09-06)
 
 
