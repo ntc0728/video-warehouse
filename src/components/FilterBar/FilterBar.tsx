@@ -38,6 +38,9 @@ export interface FilterBarProps {
   /** 分类级类型选项（全部/电影/剧集/综艺/动漫/纪录片/排行榜）。
       传入后类型行恒显示并驱动 category；不传回落旧 3 档 mediaType 行。 */
   categoryOptions?: FilterBarCategoryOption[];
+  /** 隐藏类型行（2026-09-07 用户拍板：桌面侧栏面板不放类型，
+      类型移至结果区头部 browse-sort-bar；默认 false 零回归） */
+  hideType?: boolean;
 }
 
 // ── 组件 ────────────────────────────────────────────
@@ -52,6 +55,7 @@ export default function FilterBar({
   categoryLabel,
   hideFooter = false,
   categoryOptions,
+  hideType = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
 
@@ -110,10 +114,11 @@ export default function FilterBar({
 
   return (
     <div className={`filter-bar${isMobile ? ' filter-bar--mobile' : ''}`}>
-      {/* 类型 — 传入 categoryOptions 时为分类级 7 档（驱动 category，
-          切换即注入该分类的 mediaType + 默认 genreIds）；否则回落旧 3 档
-          mediaType 行（仅「全部」category 显示） */}
-      {categoryOptions ? (
+      {/* 类型 — hideType 时整行不渲染（类型已移至结果区头部）；
+          否则传入 categoryOptions 时为分类级 7 档（驱动 category，
+          切换即注入该分类的 mediaType + 默认 genreIds）；
+          都不传回落旧 3 档 mediaType 行（仅「全部」category 显示） */}
+      {!hideType && (categoryOptions ? (
         <div className="filter-bar__row filter-bar__row--scroll">
           <span className="filter-bar__label">类型</span>
           <div className="filter-bar__chips-scroll">
@@ -143,7 +148,7 @@ export default function FilterBar({
             ))}
           </div>
         </div>
-      )}
+      ))}
 
       {/* 分类（细分类型）— 多行 wrap 全展开 */}
       {visibleGenres.length > 0 && (

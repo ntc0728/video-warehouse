@@ -113,9 +113,53 @@
 /* ── 排序栏（Card 2 顶部） ────────────────────────── */
 .browse-sort-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--space-md);
   padding: 0 0 var(--space-sm) 0;
+}
+
+/* 类型分段控件（分类级 7 档：全部/电影/剧集/综艺/动漫/纪录片/排行榜）
+   2026-09-07 用户拍板：类型移出筛选面板，放结果区头部（对齐 demo type-seg） */
+.browse-sort-bar__types {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
+}
+
+.browse-sort-bar__type {
+  height: 32px;
+  padding: 0 var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.browse-sort-bar__type:hover {
+  color: var(--color-text);
+}
+
+.browse-sort-bar__type--active,
+.browse-sort-bar__type--active:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+}
+
+/* 类型 | 排序 分隔线（demo head-div） */
+.browse-sort-bar__divider {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  background: var(--color-border-light);
 }
 
 .browse-sort-bar__tabs {
@@ -146,6 +190,7 @@
 }
 
 .browse-sort-bar__count {
+  margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
 }
@@ -165,13 +210,29 @@
 
 
 /* ── 搜索模式切换 Tab（Card 1 顶部） ──────────────── */
+/* 胶囊 chrome 挂在 __pill 上：<1440 时 pill flex:1 拉满 = 旧观感不变；
+   ≥1440（BR-C 通栏）时 pill 收敛为内容宽 + 右侧模式提示（对齐 demo modbar） */
 .browse-search-tabs {
   display: flex;
-  gap: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.browse-search-tabs__pill {
+  display: flex;
+  flex: 1;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   overflow: hidden;
+}
+
+.browse-search-tabs__hint {
+  display: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
 }
 
 .browse-search-tab {
@@ -296,27 +357,32 @@
    BR-C（2026-09-07 超宽视口定稿 T5）：≥1440 侧栏筛选（用户拍板阈值）
    原理：.browse-card--search display:contents 解体，其两个子块
    （.browse-search-tabs / .filter-bar）由 .browse-page grid 重排；
-   .browse-card--results 整体占右列，筛选面板 sticky 左列 264px。
+   .browse-card--results 整体占右列，筛选面板左列 240px（随页滚动不 fixed）。
+   二次定稿（2026-09-07 用户四点反馈）：模式 tabs 通栏首行、类型移出面板
+   （→ 结果区头部 browse-sort-bar）、面板选项 3 列网格、面板去 sticky。
    契约：
    - 数据层零改动（URL ↔ FilterBarValue 双向同步仍在 useBrowseData.ts）；
    - TV / 移动双保险排除（设备前缀 + :not(--mobile/--tv)，且移动 <768
      根本不进本 media）；
    - display:contents 会丢掉 search 卡自身的卡片 chrome → filter-bar
      面板化补偿（results 卡 chrome 保留）；
+   - 直链搜索（browse-page--cms）整体退单列：面板不渲染，左列无内容；
    - 窗口 <1440 media 失效整体回落，现行布局零残留。
    ═════════════════════════════════════════════════════════════════════ */
 @media (width >= 1440px) {
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
     display: grid;
-    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-columns: 240px minmax(0, 1fr);
     /* 行高修复（2026-09-07 用户实测反馈）：两条隐式 auto 行 + results 跨行
        → 跨行项目剩余高度被平摊进所跨行，row1（tabs）从 46px 被撑到数百 px，
        筛选面板与顶部出现巨大间距。row2 用 1fr 吸收跨行剩余高度，
-       row1 恒为 tabs 原始高度；直链搜索模式（filter-bar 不渲染）同式成立。 */
+       row1 恒为 tabs 原始高度；直链搜索模式（filter-bar 不渲染）同式成立。
+       2026-09-07 二次定稿：模式 tabs 通栏（areas 首行双 cell），
+       results 不再跨行 → 分配 Bug 免疫，1fr 保留为防御。 */
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      'tabs    results'
+      'tabs    tabs'
       'filters results';
     gap: 0 24px;
     align-items: start;
@@ -330,6 +396,19 @@
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs {
     grid-area: tabs;
+    margin-bottom: var(--space-sm);
+  }
+
+  /* 通栏模式行：胶囊收敛内容宽 + 模式提示显形（对齐 demo modbar） */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-search-tabs__pill {
+    flex: 0 0 auto;
+    display: inline-flex;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-search-tabs__hint {
+    display: inline-flex;
   }
 
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
@@ -337,12 +416,21 @@
     grid-area: results;
   }
 
+  /* 直链搜索：整体退单列（面板不渲染，左列无内容空置 → 收敛为通栏结果流）
+     注：双类 + :not 提特异性压过上方主 grid 规则（(0,4,1) < (0,7,1) 会失效） */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-page.browse-page--cms:not(.browse-page--mobile):not(.browse-page--tv) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'tabs'
+      'results';
+  }
+
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar {
     grid-area: filters;
     align-self: start;
-    position: sticky;
-    top: calc(var(--header-height, 64px) + 20px);
+    /* 2026-09-07 用户拍板：面板不固定（去 sticky），随页面滚动 */
     /* 面板化：竖排 + 补回卡片 chrome */
     flex-direction: column;
     background: var(--color-surface);
@@ -352,7 +440,8 @@
     box-shadow: var(--shadow-card);
   }
 
-  /* 侧栏内禁横向滚动 → 竖排换行 */
+  /* 侧栏内禁横向滚动 → 选项 3 列网格（2026-09-07 用户拍板：
+     面板内每组选项最多 3 列，分类/地区/年份三组竖排 = 3 行 × 3 列） */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar__row {
     flex-direction: column;
@@ -360,11 +449,29 @@
   }
 
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
-    .filter-bar__row--scroll,
+    .filter-bar__chips-scroll,
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
-    .filter-bar__chips-scroll {
+    .filter-bar__chips-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px 4px;
     overflow-x: visible;
-    flex-wrap: wrap;
+  }
+
+  /* 菜单式左对齐（grid 拉伸后按钮文字居中会显得松散） */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip {
+    text-align: left;
+  }
+
+  /* 结果区头部卡片化（对齐 demo reshead：类型分段 | 分隔线 | 排序 tabs | 共 N 条） */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .browse-sort-bar {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    margin-bottom: var(--space-sm);
   }
 
   /* 面板内选项去「tab 胶囊」化（2026-09-07 用户反馈）：改安静菜单样式
