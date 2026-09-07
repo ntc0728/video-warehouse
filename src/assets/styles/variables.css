@@ -609,6 +609,23 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   U-2（2026-09-07 G3 定稿）：≥2560 边框对比度提档（浅色主题限定）
+   根因：--color-border #d9d9d9 对 #fff ≈1.57:1（WCAG 非文本建议 ≥3:1），
+   --color-border-light #e8e8e8 ≈1.33:1 → 大屏下搜索框 / tab / chip 描边过浅。
+   契约：
+   - token 覆写让所有消费 var(--color-border/-light) 的描边一次性提档；
+   - :not([data-theme="dark"]) 三重排他——暗色边框 #363636 对深底对比足够，
+     绝不能被浅色提档值污染（暗色选择器 = variables.css [data-theme="dark"]）；
+   - 仅 ≥2560 生效：1440 基线与暗色主题零变化。
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (width >= 2560px) {
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"]) {
+    --color-border: #bfbfbf;       /* = 既有 --color-border-strong 取值，3.0:1 */
+    --color-border-light: #dedede; /* ≈1.9:1 */
+  }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Dark Theme — colors & shadows only (dimension tokens from :root)

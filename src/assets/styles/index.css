@@ -644,6 +644,21 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   U-3（2026-09-07 G3 定稿）：≥2560 未激活 tab 文字对比度提档（浅色限定）
+   实施前核查结论：.browse-search-tab / .filter-bar__chip / .filter-bar__label
+   --clickable / .category-segmented__item 的未激活色已是 --color-text-secondary
+   （#666，5.7:1 达标），无需处理；真实的 tertiary(#999,≈2.85:1) 未激活文字
+   消费端是 .tab-underline（Detail / Person 页共用下划线式 tab，:598）。
+   提档 tertiary → secondary；暗色主题 tertiary=#666 本就达标，排他不变。
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width >= 2560px) {
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .tab-underline {
+    color: var(--color-text-secondary);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    全局设计规则 — 桌面端画布最小宽度 1024px（2026-09-03 用户拍板，写入全局规则）
    桌面 Web（视口 ≥768px，且非 App / 非 TV）的版式以 1024px 为最小画布宽度：
    窗口被压缩到 1024px 以下时不再收缩 / 挤扁布局，由浏览器出现横向滚动条承接。
