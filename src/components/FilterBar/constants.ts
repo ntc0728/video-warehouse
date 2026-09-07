@@ -70,3 +70,16 @@ export interface FilterBarValue {
   /** 选中「其他」时为 true，查询 2015 年之前的内容 */
   olderThan2015: boolean;
 }
+
+/**
+ * 分类级「类型」选项（2026-09-07）：调用方传入后，类型行由 3 档 mediaType
+ * 升级为全部分类（全部/电影/剧集/综艺/动漫/纪录片/排行榜）。
+ * 点击 = 切换 category 并按调用方（Browse CATEGORY_CONFIG）注入
+ * mediaType + 默认 genreIds；不传则回落旧 3 档 mediaType 行（其他调用方零回归）。
+ */
+export interface FilterBarCategoryOption {
+  key: CategoryKey;
+  label: string;
+  mediaType: 'all' | 'movie' | 'tv';
+  genreIds: number[];
+}

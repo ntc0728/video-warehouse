@@ -13,7 +13,7 @@
 import { useCallback, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
-import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue } from './constants';
+import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption } from './constants';
 import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
@@ -35,6 +35,9 @@ export interface FilterBarProps {
   categoryLabel?: string;
   /** 隐藏排序+结果数 footer（用于将 footer 移到父组件其他位置） */
   hideFooter?: boolean;
+  /** 分类级类型选项（全部/电影/剧集/综艺/动漫/纪录片/排行榜）。
+      传入后类型行恒显示并驱动 category；不传回落旧 3 档 mediaType 行。 */
+  categoryOptions?: FilterBarCategoryOption[];
 }
 
 // ── 组件 ────────────────────────────────────────────
@@ -48,6 +51,7 @@ export default function FilterBar({
   totalResults = 0,
   categoryLabel,
   hideFooter = false,
+  categoryOptions,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
 
@@ -106,8 +110,25 @@ export default function FilterBar({
 
   return (
     <div className={`filter-bar${isMobile ? ' filter-bar--mobile' : ''}`}>
-      {/* 类型 — 仅「全部」category 显示（全部/电影/剧集），只有 3 个选项，全展开 */}
-      {value.category === 'all' && (
+      {/* 类型 — 传入 categoryOptions 时为分类级 7 档（驱动 category，
+          切换即注入该分类的 mediaType + 默认 genreIds）；否则回落旧 3 档
+          mediaType 行（仅「全部」category 显示） */}
+      {categoryOptions ? (
+        <div className="filter-bar__row filter-bar__row--scroll">
+          <span className="filter-bar__label">类型</span>
+          <div className="filter-bar__chips-scroll">
+            {categoryOptions.map((o) => (
+              <button
+                key={o.key}
+                className={`filter-bar__chip${value.category === o.key ? ' filter-bar__chip--active' : ''}`}
+                onClick={() => onChange({ ...value, category: o.key, mediaType: o.mediaType, genreIds: o.genreIds })}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : value.category === 'all' && (
         <div className="filter-bar__row filter-bar__row--scroll">
           <span className="filter-bar__label">类型</span>
           <div className="filter-bar__chips-scroll">

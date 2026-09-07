@@ -10,7 +10,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import FilterBar, { type FilterBarValue } from '@/components/FilterBar';
+import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton, AppLoading } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
@@ -274,9 +274,20 @@ export default function BrowsePage() {
     }
   }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
+  // ── 分类级类型选项（类型行 7 档：全部/电影/剧集/综艺/动漫/纪录片/排行榜）──
+  // 点击即切换 category 并注入该分类的 mediaType + 默认 genreIds（CATEGORY_CONFIG）
+  const CATEGORY_OPTIONS = useMemo<FilterBarCategoryOption[]>(
+    () => (Object.keys(CATEGORY_CONFIG) as (keyof typeof CATEGORY_CONFIG)[]).map((key) => ({
+      key,
+      label: key === 'all' ? '全部' : CATEGORY_LABELS[key],
+      mediaType: CATEGORY_CONFIG[key].mediaType,
+      genreIds: CATEGORY_CONFIG[key].defaultGenreIds,
+    })),
+    [],
+  );
+
   // ── 当前分类下的可选类型 ────────────────────────
-  const currentGenres = useMemo<TMDBGenre[]>(() => {
-    const cfg = CATEGORY_CONFIG[filterValue.category];
+  const currentGenres = useMemo<TMDBGenre[]>(() => {    const cfg = CATEGORY_CONFIG[filterValue.category];
     if (cfg.genresSource === 'movie') return movieGenres;
     if (cfg.genresSource === 'tv') return tvGenres;
     const seen = new Set<string>();
@@ -344,6 +355,7 @@ export default function BrowsePage() {
           filterBarProps={{
             value: filterValue,
             onChange: handleFilterChange,
+            categoryOptions: CATEGORY_OPTIONS,
             genres: currentGenres,
             excludedGenreIds,
             totalResults: discoverPagination.totalResults,
@@ -378,6 +390,7 @@ export default function BrowsePage() {
             <FilterBar
               value={filterValue}
               onChange={handleFilterChange}
+              categoryOptions={CATEGORY_OPTIONS}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
               totalResults={discoverPagination.totalResults}
