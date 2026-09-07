@@ -104,6 +104,9 @@
   --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
   --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
+  --color-success-bg: #e8f5ec;             /* 成功底色（Browse 源状态 badge ok 档） */
+  --color-warning-bg: #fdf3e7;             /* 警告底色（Browse 源状态 badge warn 档） */
+  --color-error-bg: #fdecea;               /* 错误底色（Browse 源状态 badge bad 档） */
   /* 骨架屏动画 */
   --color-skeleton: #e8e8e8;               /* 骨架底色（深于 placeholder） */
   --color-skeleton-shine: #f5f5f5;         /* 骨架扫光高光 */
@@ -693,6 +696,9 @@
   --color-info: #177ddc;                  /* 暗色主题链接蓝 */
   --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */
   --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
+  --color-success-bg: rgba(73, 170, 25, 0.16);   /* 成功底色（暗色半透明档） */
+  --color-warning-bg: rgba(216, 150, 20, 0.16);  /* 警告底色（暗色半透明档） */
+  --color-error-bg: rgba(211, 32, 41, 0.16);     /* 错误底色（暗色半透明档） */
   --color-skeleton: #2a2a2a;
   --color-skeleton-shine: #3a3a3a;
 

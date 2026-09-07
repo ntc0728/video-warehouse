@@ -122,7 +122,6 @@ export default function BrowsePage() {
     hasMore: cmsHasMore,
     totalSources,
     completedSources,
-    succeededSources,
     failedSources,
     search: searchCMS,
     loadMore: loadMoreCMS,
@@ -400,13 +399,19 @@ export default function BrowsePage() {
       alive = false;
     };
   }, []);
-  const cmsSourceList = useMemo(() => {
+  // 逐源统计：结果数（原始值，不受本地筛选影响）+ 失败标记
+  // 供源状态 badge（demo 同款）展示；搜索中仍由 pill 显示进度
+  const cmsSourceStats = useMemo(() => {
+    const countMap = new Map<string, number>();
+    for (const v of cmsResults) {
+      countMap.set(v.cmsSourceName, (countMap.get(v.cmsSourceName) ?? 0) + 1);
+    }
     const ids = videoSourceIds && videoSourceIds.length > 0 ? videoSourceIds : [];
-    const nameMap = new Map(videoSources.map((s) => [s.id, s.name]));
-    return ids
-      .map((id) => nameMap.get(id) ?? `源${id}`)
-      .map((name) => ({ name, available: !failedSources.includes(name) }));
-  }, [videoSourceIds, videoSources, failedSources]);
+    return ids.map((id) => {
+      const name = videoSources.find((s) => s.id === id)?.name ?? `源${id}`;
+      return { name, count: countMap.get(name) ?? 0, failed: failedSources.includes(name) };
+    });
+  }, [videoSourceIds, videoSources, cmsResults, failedSources]);
 
   return (
     <div
@@ -528,19 +533,26 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* 源状态指示器（仅直链搜索）：左侧结果数 + 右侧源状态 badge */}
+        {/* 源状态行（仅直链搜索）：左侧结果数 + 右侧源状态。
+            搜索中 = 折叠 pill（UI 不变）；搜索结束 = demo 同款逐源 badge 卡片行 */}
         {searchMode === 'cms' && (
-          <div className="browse-source-status-row">
+          <div
+            className={[
+              'browse-source-status-row',
+              completedSources >= totalSources ? 'browse-source-status-row--done' : '',
+            ].filter(Boolean).join(' ')}
+          >
             <span className="browse-results-count">
               结果数 <b>{filteredCmsResults.length}</b>
             </span>
-            <SourceStatusIndicator
-              totalSources={totalSources}
-              totalCompleted={completedSources}
-              totalAvailable={succeededSources}
-              error={cmsError}
-              sources={cmsSourceList}
-            />
+            {/* 未搜索（totalSources=0）不渲染 badges，避免一排「源名 0」橙档空态 */}
+            {totalSources > 0 && (
+              <SourceStatusIndicator
+                totalSources={totalSources}
+                totalCompleted={completedSources}
+                stats={cmsSourceStats}
+              />
+            )}
           </div>
         )}
 

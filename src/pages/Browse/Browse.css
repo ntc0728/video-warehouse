@@ -75,13 +75,15 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* 源状态行：左侧结果数（左对齐）+ 右侧源状态 badge */
+/* 源状态行：左侧结果数 + 右侧紧随的源状态（pill/badge 均贴着结果数，可换行；
+   2026-09-07 用户拍板：搜索中 pill 也放结果数右侧，不再 space-between 顶到行尾） */
 .browse-source-status-row {
   position: relative;
   z-index: 2;
   display: flex;
-  gap: var(--space-sm);
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: var(--space-xs);
 }
@@ -94,6 +96,19 @@
 .browse-results-count b {
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
+}
+
+/* 源状态行·搜索结束态（2026-09-07 用户拍板「demo 同款」）：
+   结果数 + 逐源 badge 卡片化（对齐 demo .srcrow）；搜索中无卡片 chrome */
+.browse-source-status-row--done {
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.browse-source-status-row--done .browse-results-count {
+  font-size: var(--text-sm);
 }
 
 /* ── 结果网格容器（loading + grid + loadMore 统一在内） ── */
@@ -219,6 +234,7 @@
    ≥1440（BR-C 通栏）时 pill 收敛为内容宽 + 右侧模式提示（对齐 demo modbar） */
 .browse-search-tabs {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
@@ -471,8 +487,7 @@
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
     width: fit-content;
-    max-width: 100%;
-    padding: var(--space-xs);
+    padding: 0 var(--space-sm);
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
