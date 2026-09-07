@@ -72,7 +72,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
   // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
   const isMobile = useIsMobileLayout();
-  // 分类 chips 融合顶栏开关：宽屏桌面（>1440 非 TV）+ 当前在首页
+  // 分类 chips 融合顶栏开关：宽屏桌面（>1280 非 TV）+ 当前在首页
   const isWideDesktop = useIsWideDesktop();
   // 9.1：app 端导航由底部 TabBar 承担，汉堡菜单按钮（+ 移动 Sidebar）对 app 隐藏
   const isNative = isNativePlatform();
@@ -197,7 +197,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           </a>
         </div>
         <div className="sticky-header__center">
-          {/* 分类 chips 融合顶栏（2026-09-06）：宽屏桌面（>1440 非 TV）全页面渲染；
+          {/* 分类 chips 融合顶栏（2026-09-06）：宽屏桌面（>1280 非 TV）全页面渲染；
               首页 = hover 开 mega 面板（面板本体由 HeroBili 渲染）；
               其他页面 = 仅视觉常驻（点分类不改 URL），「首页」chip 回首页 */}
           {!isMobile && isWideDesktop && <CategoryQuickAccessNav />}
