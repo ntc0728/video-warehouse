@@ -64,6 +64,34 @@
   margin-bottom: var(--space-sm);
 }
 
+/* 超宽视口：hero 与下方内容同宽（2026-09-07 拍板）
+   HeroBanner 挂在 .home-page__content 之外（规避祖先 transform 动画层导致
+   的 GPU 合成闪烁），因此不受该层的 2200 硬上限约束 —— ≥2200 视口下 hero
+   会比「继续观看 / 分类热度榜 / 7 行」宽 2×pad 的一半（2560 下 2280 vs 2200，
+   左右各错位 40px）。此处补上同一封顶，全页统一 2200 居中对齐。
+   >1280 宽屏桌面 HeroBanner 内部委托 HeroBili（根类 .hero-bili），两分支
+   根元素均为 .home-page 直接子节点，一并封顶。TV 走 .home-page--tv 全宽
+   布局、无 2200 契约，红线上 :not(tv) 前缀隔离。
+   <768 视口 --layout-content-max-width = 100%，本规则无副作用。 */
+html:not([data-device="tv"]) .home-page > .hero-banner__card,
+html:not([data-device="tv"]) .home-page > .hero-bili {
+  /* width:100% 必须显式声明：.home-page 是 flex column，flex 子项若只写
+     margin-inline:auto + max-width 而 width:auto，会按 fit-content 收缩
+     （2560 下实测被压到 ~1117px）。width:100% 先撑满内容盒再被 max-width
+     封顶，margin auto 吸收封顶差值完成居中——与 .home-page__content 同构。 */
+  width: 100%;
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+}
+
+/* 骨架镜像（2026-09-07）：骨架行与最终布局同宽收口，避免超宽屏进入动画
+   期间骨架条比真实内容宽 2×pad 的一半（与上方 hero 封顶同一动机）。 */
+html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
+  width: 100%;
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+}
+
 /* 分类快捷入口 → 卡片模块 */
 .home-page .category-quick-access {
   margin-bottom: var(--space-sm);
