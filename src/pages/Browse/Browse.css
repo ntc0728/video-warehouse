@@ -151,7 +151,8 @@
   background: var(--color-surface);
   color: var(--color-text);
   font-weight: 600;
-  box-shadow: var(--shadow-card);
+  /* 对称柔影（0 1px 4px 的 y 偏移在小控件上呈「上下厚左右薄」→ 换无偏移档） */
+  box-shadow: var(--shadow-soft);
 }
 
 /* 类型 | 排序 分隔线（demo head-div） */
@@ -243,7 +244,7 @@
   display: flex;
   gap: var(--space-2xs);
   align-items: center;
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-xs) var(--space-lg);
   border: none;
   border-radius: 0;
   background: transparent;
@@ -251,6 +252,11 @@
   font-size: var(--text-sm);
   cursor: pointer;
   transition: all 0.2s;
+}
+
+/* 按钮间分隔线（demo .stab + .stab 同构） */
+.browse-search-tab + .browse-search-tab {
+  border-left: 1px solid var(--color-border-light);
 }
 
 .browse-search-tab.active {
@@ -418,6 +424,8 @@
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .browse-card--results {
     grid-area: results;
+    /* 占满 row2（1fr）剩余高度（容器 align-items:start 会压掉默认拉伸） */
+    align-self: stretch;
   }
 
   /* 直链搜索（2026-09-07 用户二次拍板）：面板不再隐藏/退单列——
