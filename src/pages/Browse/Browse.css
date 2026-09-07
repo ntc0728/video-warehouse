@@ -168,25 +168,29 @@
 }
 
 .browse-sort-bar__tab {
-  padding: var(--space-xs) var(--space-sm);
+  height: 32px;
+  padding: 0 var(--space-md);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .browse-sort-bar__tab:hover {
   color: var(--color-text);
 }
 
-.browse-sort-bar__tab--active {
-  color: var(--color-text);
+/* 激活 = primary 底 + 反白字（对齐 demo .s2.on 胶囊样式，2026-09-07 用户拍板） */
+.browse-sort-bar__tab--active,
+.browse-sort-bar__tab--active:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   font-weight: 600;
-  border-bottom: 2px solid var(--color-text);
 }
 
 .browse-sort-bar__count {
@@ -366,7 +370,7 @@
      根本不进本 media）；
    - display:contents 会丢掉 search 卡自身的卡片 chrome → filter-bar
      面板化补偿（results 卡 chrome 保留）；
-   - 直链搜索（browse-page--cms）整体退单列：面板不渲染，左列无内容；
+   - 直链搜索保留面板：本地过滤 CMS 返回值（type/year/region），不调接口；
    - 窗口 <1440 media 失效整体回落，现行布局零残留。
    ═════════════════════════════════════════════════════════════════════ */
 @media (width >= 1440px) {
@@ -416,15 +420,9 @@
     grid-area: results;
   }
 
-  /* 直链搜索：整体退单列（面板不渲染，左列无内容空置 → 收敛为通栏结果流）
-     注：双类 + :not 提特异性压过上方主 grid 规则（(0,4,1) < (0,7,1) 会失效） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
-    .browse-page.browse-page--cms:not(.browse-page--mobile):not(.browse-page--tv) {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'tabs'
-      'results';
-  }
+  /* 直链搜索（2026-09-07 用户二次拍板）：面板不再隐藏/退单列——
+     保留侧栏面板做本地筛选（对 CMS 返回值过滤，不调 TMDB 接口），
+     布局与智能检索同构（filter-bar 条件渲染，grid area 自然成立）。 */
 
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar {
@@ -454,15 +452,27 @@
     .filter-bar__chips-wrap {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2px 4px;
+    gap: 3px 4px;
+    justify-items: center;
     overflow-x: visible;
   }
 
-  /* 菜单式左对齐（grid 拉伸后按钮文字居中会显得松散） */
+  /* chip 收窄：贴内容宽（不再拉伸占满单元格）+ 文本居中（2026-09-07 用户反馈） */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
-    text-align: left;
+    width: fit-content;
+    max-width: 100%;
+    padding: 4px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    box-shadow: none;
+    text-align: center;
   }
+
+  /* 长文本选项独占一行规则移至 chip 系列末尾（--active 之后，2026-09-07 用户要求） */
 
   /* 结果区头部卡片化（对齐 demo reshead：类型分段 | 分隔线 | 排序 tabs | 共 N 条） */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
@@ -474,21 +484,8 @@
     margin-bottom: var(--space-sm);
   }
 
-  /* 面板内选项去「tab 胶囊」化（2026-09-07 用户反馈）：改安静菜单样式
-     （无边框、小圆角、激活 = 弱灰底 + 主文字），对齐 V2 demo 设计。
-     作用域限定面板内，FilterBar 其他调用方（移动命令栏等）零回归。 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
-    .filter-bar .filter-bar__chip {
-    height: auto;
-    padding: 6px 12px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-    box-shadow: none;
-  }
-
+  /* 面板内选项去「tab 胶囊」化（2026-09-07 用户反馈）：安静样式 hover/激活态
+     （激活 = 弱灰底 + 主文字）。作用域限定面板内，FilterBar 其他调用方零回归。 */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip:hover {
     background: var(--color-hover-bg);
@@ -503,5 +500,11 @@
     color: var(--color-text);
     font-weight: 600;
     box-shadow: none;
+  }
+
+  /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占一行 */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip--full {
+    grid-column: 1 / -1;
   }
 }
