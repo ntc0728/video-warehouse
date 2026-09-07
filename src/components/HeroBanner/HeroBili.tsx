@@ -1,5 +1,5 @@
 /**
- * HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用）
+ * HeroBili — 首页 Hero B 站风（>1440px 桌面专用，TV 不启用）
  *
  * 布局：左侧大 banner 轮播（1fr）+ 右侧 3×2 竖版卡（--hero-side-w）+ 脱标「换一换」浮层。
  * - banner 池固定前 6 张（BANNER_POOL），轮播（5s 自动 / 左右箭头 / 圆点）只在这 6 张内
