@@ -89,7 +89,10 @@ function preloadImage(url: string | null | undefined): void {
 
 /** 背景图预加载尺寸：移动端/窄视口用 w780（banner 实际渲染宽度即为视口宽），宽屏才用 w1280 */
 function bgPreloadSize(): string {
-  return window.innerWidth >= 1100 ? 'w1280' : 'w780';
+  // 阈值 1100 → 1024（2026-09-07）：1100 是全项目唯一不在断点体系内的野生阈值，
+  // 对齐移动端/桌面分界 1024（useIsMobile = max-width:1023px、--card-cols 5 列起点）。
+  // 影响：1024–1099 由 w780 升到 w1280（画质提升、不降级），其余视口逐像素不变。
+  return window.innerWidth >= 1024 ? 'w1280' : 'w780';
 }
 
 /**

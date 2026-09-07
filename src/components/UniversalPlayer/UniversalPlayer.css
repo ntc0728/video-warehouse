@@ -1438,7 +1438,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ===== Resposive: 3xl (2560) and 4xl (3840) handled by variables.css ===== */
+/* ===== Responsive: 超宽档由 variables.css 统一提供（≥2200 内容区封顶档；
+   2026-09-07 已清理 2560 / 3840 独立列数档——封顶后与 2200 档逐像素同值） ===== */
 
 /* ===== Fullscreen ===== */
 :fullscreen .up-universal-player {
