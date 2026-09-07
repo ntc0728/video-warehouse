@@ -69,7 +69,7 @@
    的 GPU 合成闪烁），因此不受该层的 2200 硬上限约束 —— ≥2200 视口下 hero
    会比「继续观看 / 分类热度榜 / 7 行」宽 2×pad 的一半（2560 下 2280 vs 2200，
    左右各错位 40px）。此处补上同一封顶，全页统一 2200 居中对齐。
-   >1440 宽屏桌面 HeroBanner 内部委托 HeroBili（根类 .hero-bili），两分支
+   >1280 宽屏桌面 HeroBanner 内部委托 HeroBili（根类 .hero-bili），两分支
    根元素均为 .home-page 直接子节点，一并封顶。TV 走 .home-page--tv 全宽
    布局、无 2200 契约，红线上 :not(tv) 前缀隔离。
    <768 视口 --layout-content-max-width = 100%，本规则无副作用。 */
