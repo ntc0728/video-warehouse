@@ -1196,3 +1196,28 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
   transition: none !important;
 }
 
+/* ═════════════════════════════════════════════════════════════════════
+   P-A（2026-09-07 超宽视口定稿 T4）：≥2560 播放器封顶 1920 · 16:9
+   根因：.player-page 100dvh 全宽（Player.css:1-17），2560 下视频面
+   ≈2280×1372 近满屏，侧栏（--layout-sidebar-width 契约，不动）相形过窄。
+   方案：无损等比（letterbox 底色同为 #000 不可见）+ 垂直居中。
+   契约：
+   - 仅 ≥2560 生效（1440 基线零变化）；TV / App 排除；
+   - margin-inline:auto 覆盖 :15 的负 margin → 两侧留白对称；
+   - 全屏不受影响：:fullscreen 作用于 .player-video-area 本身（:29），
+     全屏替换布局中 aspect-ratio 不生效。
+   ═════════════════════════════════════════════════════════════════════ */
+@media (width >= 2560px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .player-main {
+    width: 100%;
+    max-width: 1920px;
+    margin-inline: auto;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .player-video-area {
+    aspect-ratio: 16 / 9;
+    max-height: 1000px;
+    align-self: center;
+  }
+}
+
