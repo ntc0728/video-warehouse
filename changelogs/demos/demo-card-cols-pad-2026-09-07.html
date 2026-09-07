@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>卡片列数梯度 / page-pad 渐进 — 2026-09-07 改动验证</title>
+<link rel="stylesheet" href="../../src/assets/styles/variables.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; background: #fff; color: #1a1a1a;
+         font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 24px; }
+  h2 { font-size: 15px; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 0.5px solid #e3e3e3; }
+  table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; width: 100%; }
+  th, td { padding: 6px 10px; text-align: right; border-bottom: 0.5px solid #eee; white-space: nowrap; }
+  th { color: #888; font-weight: 500; text-align: right; background: #fafafa; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.jump td { background: #fff6f0; }
+  tr.jump.big td { background: #ffe8dc; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-left: 6px; }
+  .tag-old { background: #fdeaea; color: #b0342c; }
+  .tag-new { background: #e6f4ea; color: #1e7a3c; }
+  .note { font-size: 12.5px; color: #666; line-height: 1.7; margin: 8px 0 0; }
+  .note b { color: #333; }
+  code { background: #f4f4f5; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>卡片列数梯度 + page-pad 渐进</h1>
+<div class="sub">2026-09-07 · 实测（Playwright Chromium，dpr=1，读真实 computed 宽度）</div>
+
+<h2>一、主网格 <code>--card-cols</code>（Browse / 收藏 / 首页横滚行 / Detail 推荐 / Person / Player 侧栏）</h2>
+<table>
+  <thead><tr><th>视口</th><th>列数</th><th>page-pad</th><th>内容区</th><th>卡宽</th><th>Δ</th><th>说明</th></tr></thead>
+  <tbody id="t1"></tbody>
+</table>
+<p class="note">
+  <b>改了什么</b>：<code>≥1280</code> 7 列 → <b>6 列</b>；新增 <code>≥1440</code> → <b>7 列</b>。
+  梯度由 5→7→8 变成 5→6→7→8，每档只 +1。
+  <code>--page-pad-x</code>：1280 档 60 → <b>32</b>，新增 1440 档 <b>48</b>，1920 档 80 不变。
+  <br><b>1280 那个 −35.5% 的腰斩降到 −20.0%</b>（卡宽 236.6 → 189.3，改前是 236.6 → 153.5）。
+</p>
+
+<h2>二、历史页 <code>.history-grid</code>（独立体系，横版记录卡）</h2>
+<table>
+  <thead><tr><th>视口</th><th>列数</th><th>gap</th><th>卡宽</th><th>Δ</th><th>说明</th></tr></thead>
+  <tbody id="t2"></tbody>
+</table>
+<p class="note">
+  历史页不走 <code>--card-cols</code>，是自己的 minmax 阶梯；<code>≥1280</code> 恒 <b>6 列</b>（2026-09-06 拍板）。
+  容器 = <code>.history-group-body</code>（2200 封顶 + 算珠列 <code>padding-left</code> 占位）。
+  gap 在 <code>&gt;1280</code> 被 <code>index.css:1172</code> 覆盖为 <code>--hero-side-gap</code>。
+  <br><b>⚠️ 1280 处 4 列 → 6 列跳两档，卡宽 293 → 185（−36.9%）</b> —— 与主网格改前同病，性质更严重，待拍板。
+</p>
+
+<h2>三、现存「视口变宽卡片反而缩小」全量清单</h2>
+<table>
+  <thead><tr><th>体系</th><th>断点</th><th>列数</th><th>卡宽变化</th><th>降幅</th><th>状态</th></tr></thead>
+  <tbody id="t3"></tbody>
+</table>
+<p class="note">
+  分档列数的降幅下限是 <b>≈1/N</b>（N = 新列数）——增列瞬间卡片必然变小，这是数学必然，
+  分档只能把它摊薄到每档 −14% 左右，不能归零。
+  真正归零要靠固定轨道 <code>repeat(auto-fill, var(--card-size))</code> + <code>justify-content:center</code>。
+</p>
+
+<script>
+var t1 = [
+  ['< 768', 3, '—', '—', '—', '', '移动端硬约束（:root 默认）'],
+  ['768–1023', 4, 14.33, 739, 174.1, '−26.4%', ''],
+  ['1024–1279', 5, 15.2, 993.7, 186.6, '−21.2%', ''],
+  ['1280–1439', 6, 32, 1216→1375, 189.3→215.4, '−20.0%', '<span class="tag tag-new">新 6 列</span> <span class="tag tag-old">原 −35.5%</span>'],
+  ['1440–1919', 7, 48, 1344→1823, 177.8→244.9, '−17.4%', '<span class="tag tag-new">新增档</span>'],
+  ['1920–2199', 7, 80, 1760→2039, 235.9→274.4, '−3.7%', 'pad 48→80'],
+  ['2200–2559', 8, 80, 2040→2200, 237.8→257.4, '−13.4%', '与内容区封顶点对齐'],
+  ['≥ 2560', 8, 140, 2200, 257.1, '0.0%', '已封顶，pad 增不影响']
+];
+var t2 = [
+  ['< 480', 1, 'space-lg', '全宽', '', '单列'],
+  ['480–767', 2, 'space-lg', 221→362, '', ''],
+  ['768–1023', 3, 'space-lg', 228.6→312.2, '', ''],
+  ['1024–1279', 4, 'space-lg', 230.6→293.2, '', ''],
+  ['1280', 6, 'space-lg 16', 184.9, '−36.9%', '<span class="tag tag-old">4→6 跳两档</span>'],
+  ['1281–1439', 6, 'hero-side-gap', 190.7→216.4', '', ''],
+  ['1440–1919', 6, 'hero-side-gap', 211.2→289.1', '', 'pad 32→48，−2.4%'],
+  ['1920–2199', 6, 'hero-side-gap', 278.6→324.6', '', 'pad 48→80，−3.6%'],
+  ['≥ 2400', 6, 'hero-side-gap', 351.1', '', '内容区封顶 2200，恒定']
+];
+var t3 = [
+  ['历史页 history-grid', '1280', '4 → 6', '293.2 → 184.9', '−36.9%', '待拍板'],
+  ['主网格 card-cols', '1280', '5 → 6', '236.6 → 189.3', '−20.0%', '本次改善（原 −35.5%）'],
+  ['主网格 card-cols', '1440', '6 → 7', '215.4 → 177.8', '−17.4%', '本次新增档'],
+  ['主网格 card-cols', '768', '3 → 4', '236.6 → 174.1', '−26.4%', '未处理'],
+  ['主网格 card-cols', '1024', '4 → 5', '236.8 → 186.6', '−21.2%', '未处理'],
+  ['主网格 card-cols', '2200', '7 → 8', '274.4 → 237.8', '−13.4%', '09-07 已对齐封顶点'],
+  ['主网格 card-cols', '1920', '7 → 7', '244.9 → 235.9', '−3.7%', '仅 pad 跳变'],
+  ['继续观看 continue', '1280', '3 → 5', '405.0 → 230.4', '−43.1%', '未处理'],
+  ['IPTV 频道 iptv', '768 / 1024 / 1280', '2→3→4→5', '—', '−34.6% / −26.1% / −26.9%', '未处理']
+];
+function row(a, jump) {
+  return '<tr' + (jump ? ' class="jump' + (jump === 2 ? ' big' : '') + '"' : '') + '>' +
+    a.map(function (c, i) { return '<td' + (i === 0 ? ' style="text-align:left"' : '') + '>' + c + '</td>'; }).join('') + '</tr>';
+}
+document.getElementById('t1').innerHTML = t1.map(function (r) { return row(r, /−(2|3)\d/.test(r[5]) ? 2 : (r[5] ? 1 : 0)); }).join('');
+document.getElementById('t2').innerHTML = t2.map(function (r) { return row(r, /−3\d/.test(r[4]) ? 2 : (r[4] ? 1 : 0)); }).join('');
+document.getElementById('t3').innerHTML = t3.map(function (r) { return row(r, parseFloat(String(r[4]).replace(/[^0-9.\-]/g, '')) <= -20 ? 2 : 1); }).join('');
+</script>
+</body>
+</html>

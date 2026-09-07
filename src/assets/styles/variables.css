@@ -538,10 +538,22 @@
 
 @media (width >= 1280px) {
   html:not([data-device="app"]) {
-    --card-cols: 7;
-    --row-cols: 7;
+    /* 2026-09-07 用户拍板：7 → 6。旧实现 1024(5) → 1280(7) 一次跳两档，
+       叠加 --page-pad-x 16→60，内容区反而从 1247 缩到 1160，
+       卡宽 238 → 153.5px（−35.5%），是全站最大「视口变宽卡片缩小」源。 */
+    --card-cols: 6;
+    --row-cols: 6;
     /* 继续观看行：≥1280 桌面 5 列（原 6） */
     --continue-cols: 5;
+  }
+}
+
+@media (width >= 1440px) {
+  html:not([data-device="app"]) {
+    /* 2026-09-07 新增档：6 → 7。原 1280 档的 7 列下移到这里，
+       梯度由「5→7→8」改为「5→6→7→8」每档 +1，单档降幅收敛到 ≈1/N。 */
+    --card-cols: 7;
+    --row-cols: 7;
   }
 }
 
@@ -928,8 +940,10 @@ html[data-device="tv"] {
 /* ═══════════════════════════════════════════════════════════════════════════
    页面全局左右 padding 分档 --page-pad-x + 首页 Hero B 站风 token（2026-09-05）
    ---------------------------------------------------------------------------
-   --page-pad-x 分档（用户拍板）：<1280 沿用桌面既有 --space-lg；
-   ≥1280 且 <1920 = 60px；≥1920 且 <2560 = 80px；≥2560 = 140px。
+   --page-pad-x 分档（2026-09-07 用户拍板改渐进）：<1280 沿用桌面既有 --space-lg；
+   ≥1280 且 <1440 = 32px；≥1440 且 <1920 = 48px；≥1920 且 <2560 = 80px；≥2560 = 140px。
+   （旧值：1280=60 / 1920=80 / 2560=140 —— 1280 处 16→60 的 +44px 硬跳
+     与 --card-cols 5→7 叠加，内容区 1247 → 1160，卡宽 −35.5%。）
    替换 .page-padding 的桌面左右 padding（index.css），<768 移动端不受影响。
    TV 红线：分档 @media 必须 html:not([data-device="tv"]) 前缀，TV 恒 --space-lg。
    HeroBili token 纯比例驱动（无 clamp 档位）：
@@ -949,9 +963,17 @@ html[data-device="tv"] {
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
 
-@media (width >= 1280px) and (width < 1920px) {
+@media (width >= 1280px) and (width < 1440px) {
   html:not([data-device="tv"]) {
-    --page-pad-x: 60px;
+    /* 2026-09-07 用户拍板：60 → 32。旧值在 1280 处 +44px 硬跳，
+       是「视口 +1px、内容区 −87px」的元凶之一。 */
+    --page-pad-x: 32px;
+  }
+}
+
+@media (width >= 1440px) and (width < 1920px) {
+  html:not([data-device="tv"]) {
+    --page-pad-x: 48px;
   }
 }
 
