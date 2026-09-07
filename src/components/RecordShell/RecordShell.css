@@ -547,9 +547,10 @@ html[data-device="app"] .action-btn__label {
   }
 }
 
-/* >1280（与 index.css「卡片间距统一」块同断点）：空间充足，
-   清空按钮恢复直接显示、「⋯」菜单隐藏 */
-@media (width > 1280px) {
+/* >1440（与 index.css「卡片间距统一」块同断点；2026-09-07 断点 1280 → 1440）：
+   空间充足，清空按钮恢复直接显示、「⋯」菜单隐藏。
+   1280–1440 降级：空间不足，清空收进「⋯」溢出菜单。 */
+@media (width > 1440px) {
   html:not([data-device="app"]) .record-overflow-wrap {
     display: none;
   }

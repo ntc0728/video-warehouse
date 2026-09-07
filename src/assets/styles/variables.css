@@ -539,29 +539,24 @@
   }
 }
 
-@media (width >= 1280px) {
-  html:not([data-device="app"]) {
-    /* 2026-09-07 用户拍板：7 → 6。旧实现 1024(5) → 1280(7) 一次跳两档，
-       叠加 --page-pad-x 16→60，内容区反而从 1247 缩到 1160，
-       卡宽 238 → 153.5px（−35.5%），是全站最大「视口变宽卡片缩小」源。 */
-    --card-cols: 6;
-    --row-cols: 6;
-    /* 继续观看行：≥1280 桌面 5 列（原 6） */
-    --continue-cols: 5;
-  }
-}
-
 @media (width >= 1440px) {
   html:not([data-device="app"]) {
-    /* 2026-09-07 新增档：6 → 7。原 1280 档的 7 列下移到这里，
-       梯度由「5→7→8」改为「5→6→7→8」每档 +1，单档降幅收敛到 ≈1/N。 */
-    --card-cols: 7;
-    --row-cols: 7;
+    /* 2026-09-07 用户拍板：大屏起点由 1280 统一右移到 1440（播放页除外，后续整改）。
+       原 ≥1280 档（6 列）整段删除，1024 档的 5 列延续到 1439；原 ≥1440 档的 7 列下移到 1920。
+       梯度变「5(1024) → 6(1440) → 7(1920) → 8(2200)」每档 +1，单档降幅收敛 ≈1/N。
+       1280–1439（1366×768 主流段）保持 5 列 + pad 16：卡更宽、密度降（取舍用户定）。 */
+    --card-cols: 6;
+    --row-cols: 6;
+    /* 继续观看行（横版 16:9）：≥1440 桌面 5 列（原 ≥1280 的 5 列右移） */
+    --continue-cols: 5;
   }
 }
 
 @media (width >= 1920px) {
   html:not([data-device="app"]) {
+    /* 2K 起点：6 → 7（原 1440 档的 7 列下移到此） */
+    --card-cols: 7;
+    --row-cols: 7;
     /* 2K/4K 视口下适当放大 grid 间距（Detail 源网格等仍用 --grid-gap）。
     /* ▼ 已删除（阶段 A）：--grid-gap ≥1920 放大是 1919→1920 +96.7% 跳变源，由三段式统一接管 */
     --layout-searchbox-max-w: clamp(17.5rem, 50vw, 110rem);
@@ -957,23 +952,19 @@ html[data-device="tv"] {
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
 
-@media (width >= 1280px) and (width < 1440px) {
-  html:not([data-device="tv"]) {
-    /* 2026-09-07 用户拍板：60 → 32。旧值在 1280 处 +44px 硬跳，
-       是「视口 +1px、内容区 −87px」的元凶之一。 */
-    --page-pad-x: 32px;
-  }
-}
-
 @media (width >= 1440px) and (width < 1920px) {
   html:not([data-device="tv"]) {
-    --page-pad-x: 48px;
+    /* 2026-09-07 用户拍板：大屏起点由 1280 右移到 1440（播放页除外，后续整改）。
+       1280–1439 回到 :root 的 --space-lg（16px）；本档是新第一档 pad：32px。 */
+    --page-pad-x: 32px;
   }
 }
 
 @media (width >= 1920px) and (width < 2560px) {
   html:not([data-device="tv"]) {
-    --page-pad-x: 80px;
+    /* 2026-09-07：原 80px 整体右移一档至 1440 起点后，本档 pad 由 80 → 48。
+       右侧 pad 80 现下放给 ≥2560（超宽留白，与封顶后内容区无关）。 */
+    --page-pad-x: 48px;
   }
 }
 
