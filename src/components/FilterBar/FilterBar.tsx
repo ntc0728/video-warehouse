@@ -18,6 +18,15 @@ import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
 
+// ── 长文本识别（2026-09-07 用户拍板：文本大于 4 个字符才独占一行）──
+//    CJK 记 1 字宽、ASCII 记 0.5 → 「黑色五叶草/天然黑电影」独占一行，
+//    「中国大陆/中国香港/2026/电影」等 ≤4 字不受影响。
+const isWideLabel = (s: string): boolean =>
+  [...s].reduce((w, c) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(c) ? 1 : 0.5), 0) > 4;
+
+const chipCls = (label: string, active: boolean): string =>
+  `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}${isWideLabel(label) ? ' filter-bar__chip--full' : ''}`;
+
 // ── FilterBar Props ───────────────────────────────────
 
 export interface FilterBarProps {
@@ -125,7 +134,7 @@ export default function FilterBar({
             {categoryOptions.map((o) => (
               <button
                 key={o.key}
-                className={`filter-bar__chip${value.category === o.key ? ' filter-bar__chip--active' : ''}`}
+                className={chipCls(o.label, value.category === o.key)}
                 onClick={() => onChange({ ...value, category: o.key, mediaType: o.mediaType, genreIds: o.genreIds })}
               >
                 {o.label}
@@ -140,7 +149,7 @@ export default function FilterBar({
             {MEDIA_OPTIONS.map((m) => (
               <button
                 key={m.value}
-                className={`filter-bar__chip${value.mediaType === m.value ? ' filter-bar__chip--active' : ''}`}
+                className={chipCls(m.label, value.mediaType === m.value)}
                 onClick={() => selectMediaType(m.value)}
               >
                 {m.label}
@@ -167,7 +176,7 @@ export default function FilterBar({
             {visibleGenres.map((g) => (
               <button
                 key={g.id}
-                className={`filter-bar__chip${value.genreIds.includes(g.id) ? ' filter-bar__chip--active' : ''}`}
+                className={chipCls(g.name, value.genreIds.includes(g.id))}
                 onClick={() => selectGenre(g.id)}
               >
                 {g.name}
@@ -194,7 +203,7 @@ export default function FilterBar({
             {REGION_OPTIONS.map((r) => (
               <button
                 key={r.code ?? 'all'}
-                className={`filter-bar__chip${value.region === r.code ? ' filter-bar__chip--active' : ''}`}
+                className={chipCls(r.label, value.region === r.code)}
                 onClick={() => update({ region: r.code })}
               >
                 {r.label}
@@ -220,7 +229,7 @@ export default function FilterBar({
           {YEAR_OPTIONS.map((y) => (
             <button
               key={y.value}
-              className={`filter-bar__chip${value.year === y.value && !value.olderThan2015 ? ' filter-bar__chip--active' : ''}`}
+              className={chipCls(y.label, value.year === y.value && !value.olderThan2015)}
               onClick={() => update({ year: y.value, olderThan2015: false })}
             >
               {y.label}
@@ -228,7 +237,7 @@ export default function FilterBar({
           ))}
           <button
             type="button"
-            className={`filter-bar__chip${value.olderThan2015 ? ' filter-bar__chip--active' : ''}`}
+            className={chipCls(YEAR_OLDER_LABEL, value.olderThan2015)}
             onClick={() => update({ year: null, olderThan2015: true })}
           >
             {YEAR_OLDER_LABEL}
