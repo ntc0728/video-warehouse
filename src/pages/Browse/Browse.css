@@ -310,6 +310,11 @@
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
     display: grid;
     grid-template-columns: 264px minmax(0, 1fr);
+    /* 行高修复（2026-09-07 用户实测反馈）：两条隐式 auto 行 + results 跨行
+       → 跨行项目剩余高度被平摊进所跨行，row1（tabs）从 46px 被撑到数百 px，
+       筛选面板与顶部出现巨大间距。row2 用 1fr 吸收跨行剩余高度，
+       row1 恒为 tabs 原始高度；直链搜索模式（filter-bar 不渲染）同式成立。 */
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       'tabs    results'
       'filters results';
@@ -360,5 +365,36 @@
     .filter-bar__chips-scroll {
     overflow-x: visible;
     flex-wrap: wrap;
+  }
+
+  /* 面板内选项去「tab 胶囊」化（2026-09-07 用户反馈）：改安静菜单样式
+     （无边框、小圆角、激活 = 弱灰底 + 主文字），对齐 V2 demo 设计。
+     作用域限定面板内，FilterBar 其他调用方（移动命令栏等）零回归。 */
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip {
+    height: auto;
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    box-shadow: none;
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-text);
+  }
+
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip--active,
+  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip--active:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-text);
+    font-weight: 600;
+    box-shadow: none;
   }
 }
