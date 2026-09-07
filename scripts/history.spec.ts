@@ -228,7 +228,7 @@ test.describe('8.8 网格列数', () => {
     });
   };
 
-  test('HIS-062: 列数随视口变化（1280→4 列、900→3 列、600→2 列、375→1 列）', async ({ page }) => {
+  test('HIS-062: 列数随视口变化（1280→5 列、900→3 列、600→2 列、375→1 列）', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
@@ -246,7 +246,7 @@ test.describe('8.8 网格列数', () => {
         return matches ? matches.length : 0;
       });
 
-    expect(await cols()).toBe(4); // 桌面 ≥1024：4 列（2026-09-03 每档 +1）
+    expect(await cols()).toBe(5); // 桌面 ≥1280：5 列（2026-09-07 历史页独立分档 1280-1919=5 / ≥1920=6）
     await page.setViewportSize({ width: 900, height: 800 });
     await page.waitForTimeout(500);
     expect(await cols()).toBe(3); // 768–1023：3 列（2026-09-03 补档）

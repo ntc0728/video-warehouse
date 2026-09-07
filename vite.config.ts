@@ -67,16 +67,21 @@ export default defineConfig({
       ],
     },
   },
-  // 预打包重型/懒加载依赖：hls.js/dashjs/mpegts.js 仅在懒加载的播放器 chunk 中出现，
-  // 若不预打包，首次访问 /play 等路由会触发 Vite 重新 optimize + 整页 reload 的二次白屏
+  // 预打包依赖：仅包含首屏/核心路由必需的依赖
+  // 播放器依赖（hls.js/dashjs/mpegts.js）已排除——它们体积大（各 ~1MB）且仅在 /play 路由使用，
+  // 放入 include 会拖慢首次 optimizeDeps 预打包（~3.3MB 额外缓存生成）。
+  // 使用 exclude 显式排除后，Vite 不会预打包它们；访问播放页时按需预打包（触发一次 reload）。
   optimizeDeps: {
     include: [
-      'hls.js', 'dashjs', 'mpegts.js', 'axios', 'idb',
+      'axios', 'idb',
       'lucide-react', 'zustand', 'sonner',
       '@radix-ui/react-dialog', '@radix-ui/react-alert-dialog',
       '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover',
       '@radix-ui/react-progress', '@radix-ui/react-switch',
       '@radix-ui/react-tabs', '@radix-ui/react-tooltip',
+    ],
+    exclude: [
+      'hls.js', 'dashjs', 'mpegts.js',
     ],
   },
   build: {
