@@ -388,7 +388,7 @@
     grid-template-areas:
       'tabs    tabs'
       'filters results';
-    gap: 0 24px;
+    gap: 0 var(--space-2xl);
     align-items: start;
   }
 
@@ -452,17 +452,19 @@
     .filter-bar__chips-wrap {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 3px 4px;
+    gap: var(--space-xs) var(--space-xs-plus);
     justify-items: center;
     overflow-x: visible;
   }
 
-  /* chip 收窄：贴内容宽（不再拉伸占满单元格）+ 文本居中（2026-09-07 用户反馈） */
+  /* chip 收窄：贴内容宽 + 居中（2026-09-07 用户反馈）；
+     padding 4px 10px → var(--space-xs)（2026-09-07 用户拍板：原值太大，
+     xs=3→4.5 流体档，选项观感更紧凑） */
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
     width: fit-content;
     max-width: 100%;
-    padding: 4px 10px;
+    padding: var(--space-xs);
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -480,7 +482,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-md);
-    padding: 10px 16px;
+    padding: var(--space-md) var(--space-lg-xl); /* 10px 16px → token（md≈9.5 / lg-xl≈17 @1440） */
     margin-bottom: var(--space-sm);
   }
 
