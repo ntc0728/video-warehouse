@@ -124,6 +124,8 @@
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);   /* 超大投影（toast） */
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);  /* 轻量卡片投影（VideoCard/IPTV 等） */
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12); /* 卡片 hover 投影 */
+  --shadow-soft: 0 0 4px rgba(0, 0, 0, 0.08);    /* 对称柔影（无 y 偏移）：分段控件选中态等小控件，
+                                                    避免偏移型阴影在小尺寸上呈现「上下厚左右薄」（2026-09-07） */
   --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（键盘导航） */
 
   /* ── Easing ─────────────────────────────────────────────────────────── */
