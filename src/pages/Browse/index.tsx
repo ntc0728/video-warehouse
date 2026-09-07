@@ -343,6 +343,7 @@ export default function BrowsePage() {
       className={[
         'page-padding',
         'browse-page',
+        searchMode === 'cms' ? 'browse-page--cms' : '',
         isPhone ? 'browse-page--mobile' : '',
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
@@ -369,33 +370,36 @@ export default function BrowsePage() {
       {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
       {!isPhone && (
         <div className="browse-card--search">
-          {/* Tab 切换 */}
+          {/* Tab 切换 — ≥1440 通栏模式行（胶囊组靠左 + 模式提示靠右，对齐 demo） */}
           <div className="browse-search-tabs">
-            <button
-              className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
-              onClick={() => handleModeChange('smart')}
-            >
-              <Icon icon={Search} size="xs" />
-              <span>智能检索</span>
-            </button>
-            <button
-              className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
-              onClick={() => handleModeChange('cms')}
-            >
-              <span>直链搜索</span>
-            </button>
+            <div className="browse-search-tabs__pill">
+              <button
+                className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
+                onClick={() => handleModeChange('smart')}
+              >
+                <Icon icon={Search} size="xs" />
+                <span>智能检索</span>
+              </button>
+              <button
+                className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
+                onClick={() => handleModeChange('cms')}
+              >
+                <span>直链搜索</span>
+              </button>
+            </div>
+            <span className="browse-search-tabs__hint">跨源聚合 · 类型 / 地区 / 评分可组合筛选</span>
           </div>
-          {/* 智能检索模式：FilterBar（footer 移到 Card 2） */}
+          {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {searchMode === 'smart' && (
             <FilterBar
               value={filterValue}
               onChange={handleFilterChange}
-              categoryOptions={CATEGORY_OPTIONS}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter
+              hideType
             />
           )}
         </div>
@@ -403,9 +407,29 @@ export default function BrowsePage() {
 
       {/* Card 2：结果区域 */}
       <div className="browse-card--results">
-        {/* 智能检索模式：排序 + 结果数 */}
+        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1440 对齐 demo reshead） */}
         {searchMode === 'smart' && (
           <div className="browse-sort-bar">
+            <div className="browse-sort-bar__types" role="tablist" aria-label="类型">
+              {CATEGORY_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  className={`browse-sort-bar__type${filterValue.category === o.key ? ' browse-sort-bar__type--active' : ''}`}
+                  onClick={() =>
+                    handleFilterChange({
+                      ...filterValue,
+                      category: o.key,
+                      mediaType: o.mediaType,
+                      genreIds: o.genreIds,
+                    })
+                  }
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <span className="browse-sort-bar__divider" aria-hidden="true" />
             <div className="browse-sort-bar__tabs">
               {SORT_OPTIONS.map((s, i) => (
                 <button
