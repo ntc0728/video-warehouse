@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>UI 缩放舞台</title>
+<link rel="stylesheet" href="../../src/assets/styles/variables.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: #111;
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .page-padding { padding-inline: var(--page-pad-x); padding-top: 14px; }
+  .content-shell { width: 100%; max-width: var(--layout-content-max-width); margin-inline: auto; }
+  .readout { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: baseline;
+             font-size: 14px; margin-bottom: 14px; padding-bottom: 10px;
+             border-bottom: 0.5px solid #d9d9d9; }
+  .readout div { white-space: nowrap; }
+  .readout span { color: #666; margin-right: 6px; }
+  .readout b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .grid { display: grid; grid-template-columns: repeat(var(--card-cols), minmax(0, 1fr));
+          gap: var(--grid-gap); }
+  .card { aspect-ratio: 2 / 3; background: #eef1f5; border: 0.5px solid #d9d9d9;
+          border-radius: var(--radius-md); display: flex; align-items: flex-end;
+          padding: 8px; font-size: var(--text-xs); color: #666; }
+  .sample { margin-top: 16px; display: flex; gap: 24px; align-items: baseline;
+            padding: 12px 0; border-top: 0.5px solid #eee; }
+  .sample p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="page-padding">
+  <div class="content-shell">
+    <div class="readout" id="readout">…</div>
+    <div class="grid" id="grid"></div>
+    <div class="sample">
+      <p style="font-size: var(--text-xs)">xs 副文本</p>
+      <p style="font-size: var(--text-base)">base 正文</p>
+      <p style="font-size: var(--text-xl)">xl 标题</p>
+    </div>
+  </div>
+</div>
+<script>
+  var grid = document.getElementById('grid');
+  for (var i = 0; i < 16; i++) {
+    var d = document.createElement('div');
+    d.className = 'card';
+    grid.appendChild(d);
+  }
+  function px(v) { return Math.round(parseFloat(v) * 100) / 100; }
+  function render() {
+    var cs = getComputedStyle(document.documentElement);
+    var scale = px(cs.getPropertyValue('--ui-scale')) || 1;
+    var cols = parseInt(cs.getPropertyValue('--card-cols'), 10);
+    var pad = px(cs.getPropertyValue('--page-pad-x'));
+    var cardW = grid.firstElementChild
+      ? Math.round(grid.firstElementChild.getBoundingClientRect().width) : 0;
+    var shell = document.querySelector('.content-shell');
+    var contentW = Math.round(shell.getBoundingClientRect().width);
+    document.getElementById('readout').innerHTML =
+      '<div><span>视口</span><b>' + window.innerWidth + 'px</b></div>' +
+      '<div><span>--ui-scale</span><b>' + scale + '</b></div>' +
+      '<div><span>--card-cols</span><b>' + cols + '</b></div>' +
+      '<div><span>--page-pad-x</span><b>' + pad + 'px</b></div>' +
+      '<div><span>内容区</span><b>' + contentW + 'px</b></div>' +
+      '<div><span>单卡宽</span><b>' + cardW + 'px</b></div>' +
+      '<div><span>base 字号</span><b>' + px(cs.getPropertyValue('--text-base')) + 'px</b></div>';
+    for (var j = 0; j < grid.children.length; j++) {
+      grid.children[j].textContent = cardW + 'px';
+    }
+  }
+  render();
+  window.addEventListener('resize', render);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+</script>
+</body>
+</html>

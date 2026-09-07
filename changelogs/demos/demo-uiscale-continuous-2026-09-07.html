@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大屏 UI 缩放连续化 + 列数阈值 2200 对齐</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 24px 64px; background: #fafafa; color: #1a1a1a;
+         font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+         line-height: 1.7; }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 6px; }
+  .sub { color: #666; font-size: 13px; margin: 0 0 28px; }
+  .card { background: #fff; border: 0.5px solid #e3e3e3; border-radius: 12px;
+          padding: 20px 22px; margin-bottom: 20px; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .note { color: #666; font-size: 13px; margin: 0 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 7px 10px; border-bottom: 0.5px solid #eee; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: #666; font-weight: 500; }
+  tr.hl td { background: #fff6e5; }
+  tr.hl2 td { background: #eaf3ff; }
+  code { background: #f2f2f2; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .stages { display: flex; flex-wrap: wrap; gap: 18px 20px; }
+  .stage { }
+  .stage-label { font-size: 12px; color: #666; margin-bottom: 6px; display: flex;
+                 justify-content: space-between; gap: 8px; }
+  .stage-frame { border: 0.5px solid #ddd; border-radius: 8px; overflow: hidden;
+                 background: #fff; }
+  iframe { display: block; border: 0; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #eaf3ff; color: #185fa5; }
+  .tag.old { background: #fceceb; color: #a32d2d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>大屏适配两处修正 · 验证台</h1>
+  <p class="sub">2026-09-07 · 修改 <code>src/assets/styles/variables.css</code> · 下方舞台全部为真实 CSS 渲染（iframe 内视口宽度即标注宽度，外层仅视觉缩放，不影响媒体查询）</p>
+
+  <div class="card">
+    <h2>空洞 1：--ui-scale 由离散两档改为连续曲线</h2>
+    <p class="note">旧实现 1920–2559 恒为 1.00，2560 处硬跳 +8%。新实现在 1920→2560 之间线性连续，≥2560 由 clamp 上限冻结 1.08（与旧终点一致）。</p>
+    <svg viewBox="0 0 1180 300" width="100%" role="img" aria-label="UI 缩放系数曲线对比">
+      <title>旧离散档与新连续曲线对比</title>
+      <line x1="90" y1="250" x2="1120" y2="250" stroke="#d4d4d4" stroke-width="1"/>
+      <line x1="90" y1="40" x2="90" y2="250" stroke="#d4d4d4" stroke-width="1"/>
+      <text x="82" y="254" font-size="12" fill="#888" text-anchor="end">1.00</text>
+      <text x="82" y="149" font-size="12" fill="#888" text-anchor="end">1.04</text>
+      <text x="82" y="44" font-size="12" fill="#888" text-anchor="end">1.08</text>
+      <line x1="90" y1="146" x2="1120" y2="146" stroke="#eee" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="90" y="272" font-size="12" fill="#888" text-anchor="middle">1920</text>
+      <text x="290" y="272" font-size="12" fill="#888" text-anchor="middle">2048</text>
+      <text x="400" y="272" font-size="12" fill="#888" text-anchor="middle">2200</text>
+      <text x="600" y="272" font-size="12" fill="#888" text-anchor="middle">2400</text>
+      <text x="700" y="272" font-size="12" fill="#888" text-anchor="middle">2560</text>
+      <text x="1090" y="272" font-size="12" fill="#888" text-anchor="middle">3840</text>
+      <line x1="700" y1="40" x2="700" y2="250" stroke="#bbb" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="700" y="32" font-size="12" fill="#999" text-anchor="middle">2560 旧跳变点</text>
+      <polyline points="90,250 700,250" fill="none" stroke="#e24b4a" stroke-width="2"/>
+      <line x1="700" y1="250" x2="700" y2="44" stroke="#e24b4a" stroke-width="2"/>
+      <polyline points="700,44 1120,44" fill="none" stroke="#e24b4a" stroke-width="2"/>
+      <text x="300" y="240" font-size="13" fill="#a32d2d">旧：全程 1.00，2560 一夕 +8%</text>
+      <line x1="90" y1="250" x2="700" y2="44" stroke="#378add" stroke-width="2.5"/>
+      <polyline points="700,44 1120,44" fill="none" stroke="#378add" stroke-width="2.5"/>
+      <text x="150" y="150" font-size="13" fill="#185fa5">新：1920→2560 线性连续 1.00 → 1.08</text>
+      <circle cx="400" cy="146" r="4" fill="#378add"/>
+      <text x="412" y="140" font-size="12" fill="#185fa5">2200 → 1.035</text>
+    </svg>
+    <p class="note" style="margin-top:14px">公式：<code>clamp(1, calc(0.76 + 0.000125 * tan(atan2(100vw, 1px))), 1.08)</code><br>
+    单位剥离技巧把 <code>100vw</code> 转成无单位数值；不支持 <code>tan()/atan2()</code> 的旧浏览器会丢弃该声明并沿用上一行 <code>--ui-scale: 1</code>，与改动前逐像素一致。</p>
+  </div>
+
+  <div class="card">
+    <h2>空洞 2：卡片列数阈值 2560 → 2200</h2>
+    <p class="note">与内容区 2200 封顶对齐。增列发生在内容区停止变宽的那一刻，消掉「视口变宽卡片反而缩小」。</p>
+    <table>
+      <thead><tr><th>视口</th><th>page-pad-x</th><th>内容区</th><th>旧列数 / 旧卡宽</th><th>新列数 / 新卡宽</th></tr></thead>
+      <tbody>
+        <tr><td>1920</td><td>80</td><td>1760</td><td>7 / 240px</td><td>7 / 240px</td></tr>
+        <tr><td>2199</td><td>80</td><td>2040</td><td>7 / 280px</td><td>7 / 280px</td></tr>
+        <tr class="hl2"><td>2200</td><td>80</td><td>2040</td><td>7 / 280px</td><td>8 / 243px</td></tr>
+        <tr><td>2400</td><td>80</td><td>2200（封顶）</td><td>7 / 317px</td><td>8 / 263px</td></tr>
+        <tr><td>2559</td><td>80</td><td>2200（封顶）</td><td>7 / 317px</td><td>8 / 263px</td></tr>
+        <tr class="hl"><td>2560</td><td>140</td><td>2200（封顶）</td><td>8 / 263px（−17% 跳变）</td><td>8 / 263px（无变化）</td></tr>
+        <tr><td>3840</td><td>140</td><td>2200（封顶）</td><td>8 / 263px</td><td>8 / 263px</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>真实渲染验证台</h2>
+    <p class="note">每格是真实 iframe，内部视口宽度即标注值，媒体查询按该宽度生效；外层仅做视觉缩放。读数由 iframe 内脚本实测生成。</p>
+    <div class="stages" id="stages"></div>
+  </div>
+</div>
+<script>
+  var WIDTHS = [1440, 1920, 2048, 2200, 2400, 2560, 3440];
+  var SC = 0.17, H = 560;
+  var box = document.getElementById('stages');
+  WIDTHS.forEach(function (w) {
+    var item = document.createElement('div');
+    item.className = 'stage';
+    var label = document.createElement('div');
+    label.className = 'stage-label';
+    label.innerHTML = '<span>' + w + 'px 视口</span>' +
+      '<span class="tag' + (w === 2560 ? ' old' : '') + '">' +
+      (w < 2200 ? '7 列区' : '8 列区') + '</span>';
+    var frame = document.createElement('div');
+    frame.className = 'stage-frame';
+    frame.style.width = Math.round(w * SC) + 'px';
+    frame.style.height = Math.round(H * SC) + 'px';
+    var ifr = document.createElement('iframe');
+    ifr.src = 'demo-uiscale-stage-2026-09-07.html';
+    ifr.width = w;
+    ifr.height = H;
+    ifr.style.transform = 'scale(' + SC + ')';
+    ifr.style.transformOrigin = 'top left';
+    frame.appendChild(ifr);
+    item.appendChild(label);
+    item.appendChild(frame);
+    box.appendChild(item);
+  });
+</script>
+</body>
+</html>
