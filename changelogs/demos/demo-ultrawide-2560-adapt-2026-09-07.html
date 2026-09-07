@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="MfvDJN0Lj990trAcu5Glng">
+<head data-page-node-id="1tOnUlqRh57f2MZbpYVPTl">
+<meta charset="UTF-8" data-page-node-id="MFPAoAlmFebU5R8Xt57KeD">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="8L7n9iibxOJyNfFDHREKZx">
+<title>≥2560px 超宽视口 UI 适配方案 Demo（2026-09-07）</title>
+<style>
+/* ═══════════ Demo 页自身框架（浅色主题） ═══════════ */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #ececec; color: #1a1a1a;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 14px; line-height: 1.6;
+}
+.demo-header {
+  position: sticky; top: 0; z-index: 99; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 10px 20px; background: #fff; border-bottom: 1px solid #d0d0d0; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.demo-header h1 { margin: 0; font-size: 16px; }
+.demo-header .nav a { margin-right: 12px; color: #444; text-decoration: none; font-size: 13px; }
+.demo-header .nav a:hover { color: #000; }
+.zoom-bar { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 12px; color: #666; }
+.zoom-bar button {
+  padding: 4px 10px; border: 1px solid #bfbfbf; border-radius: 999px; background: #fff;
+  font-size: 12px; cursor: pointer;
+}
+.zoom-bar button.on { background: #000; color: #fff; border-color: #000; }
+main { padding: 18px; max-width: 1400px; margin: 0 auto; }
+section.block { margin-bottom: 44px; }
+section.block > h2 {
+  margin: 0 0 4px; font-size: 20px; padding-left: 10px; border-left: 4px solid #000;
+}
+section.block > p.lead { margin: 0 0 14px; color: #555; font-size: 13px; padding-left: 14px; }
+.card {
+  background: #fff; border: 1px solid #d9d9d9; border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; }
+.card .tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #f0f0f0; color: #666; font-size: 11px; vertical-align: 2px; }
+.tag.reco { background: #000; color: #fff; }
+.tag.warn { background: #fff2e8; color: #ad6800; }
+details { margin-top: 10px; border-top: 1px dashed #e0e0e0; padding-top: 8px; }
+details summary { cursor: pointer; font-size: 12px; color: #666; user-select: none; }
+pre {
+  margin: 8px 0 0; padding: 12px; background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 8px;
+  font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.55; overflow: auto; color: #222;
+}
+/* ═══════════ 2560 舞台（scale-to-fit）═══════════ */
+.stage-clip { position: relative; overflow: hidden; border: 1px solid #c8c8c8; border-radius: 10px; background: #fafafa; }
+.stage-clip .stage {
+  position: absolute; top: 0; left: 0; width: 2560px; transform-origin: top left;
+  background: #f5f5f5;
+}
+.stage-label {
+  position: absolute; right: 10px; bottom: 8px; z-index: 5; padding: 2px 10px; border-radius: 999px;
+  background: rgba(0,0,0,.55); color: #fff; font-size: 11px; pointer-events: none;
+}
+.stage-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.stage-toolbar button {
+  padding: 5px 14px; border: 1px solid #bfbfbf; border-radius: 999px; background: #fff; font-size: 12px; cursor: pointer;
+}
+.stage-toolbar button.on { background: #000; color: #fff; border-color: #000; }
+.stage-toolbar .hint { font-size: 12px; color: #888; }
+
+/* ═══════════ 项目 2560 冻结 token（与 variables.css 2200 档一致）═══════════ */
+.stage {
+  /* 字号（2200 冻结地板值） */
+  --t-2xs: 10.33px; --t-xs: 11px; --t-sm: 12px; --t-base: 13px;
+  --t-lg: 13.5px; --t-xl: 15px; --t-2xl: 19.75px; --t-3xl: 24.75px;
+  /* 间距 */
+  --s-xs: 4.5px; --s-sm: 9px; --s-md: 12.5px; --s-lg: 19px; --s-xl: 27px; --s-2xl: 37px; --s-3xl: 52px;
+  --grid-gap: 16px;
+  /* 控件 */
+  --comp-tab-h: 35.83px; --comp-input-h: 40.54px; --comp-btn-h: 48.21px;
+  --icon-sm: 15.6px; --icon-md: 18.6px;
+  --r-sm: 5px; --r-md: 10px; --r-lg: 18px; --r-full: 9999px;
+  /* 颜色（浅色主题） */
+  --bg: #f5f5f5; --surface: #fff;
+  --text: #000; --text-2: #666; --text-3: #999;
+  --border: #d9d9d9; --border-light: #e8e8e8; --border-strong: #bfbfbf;
+  --tab-active-bg: #000; --tab-active-text: #fff; --tab-inactive: #a0a0a0;
+  --page-pad-x: 140px;
+  font-size: var(--t-base); color: var(--text);
+}
+.stage .pad { padding-left: var(--page-pad-x); padding-right: var(--page-pad-x); }
+
+/* ── 通用 mock 元件 ── */
+.mock-header { display: flex; align-items: center; gap: 16px; height: 76px; padding: 0 28px; background: rgba(255,255,255,.7); border-bottom: 1px solid var(--border-light); }
+.mock-header .logo { font-weight: 700; font-size: 22px; }
+.mock-header .hsearch {
+  flex: 0 0 480px; display: flex; align-items: center; height: 48px; padding: 0 16px;
+  border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text-3); font-size: var(--t-sm);
+}
+.mock-header .spacer { flex: 1; }
+.mock-header .havatar { width: 40px; height: 40px; border-radius: 50%; background: #ddd; }
+.page-title { font-size: var(--t-xl); font-weight: 600; }
+.ph { background: linear-gradient(135deg,#e8e8e8,#dcdcdc); border-radius: var(--r-md); }
+.ph.dark { background: linear-gradient(135deg,#3a3a3a,#141414); }
+.ph.note { display: flex; align-items: center; justify-content: center; color: #888; font-size: 12px; }
+
+/* ═══════════ §G1 宽度断裂 ═══════════ */
+.width-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px var(--page-pad-x); }
+.width-compare .wc {
+  height: 240px; border: 1px dashed var(--border); border-radius: var(--r-md); position: relative; background: #fff;
+}
+.width-compare .wc .inner {
+  position: absolute; top: 20px; bottom: 20px; border-radius: 8px; background: #e0e0e0;
+  display: flex; align-items: center; justify-content: center; color: #666; font-size: 13px;
+}
+.width-compare .wc .cap { position: absolute; top: -10px; left: 12px; background: #fff; padding: 0 8px; font-size: 12px; color: #444; }
+
+/* ═══════════ §G3 辨识度对比（1:1 页面流内）═══════════ */
+.contrast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.contrast-cell { padding: 14px; border-radius: 10px; background: #fff; border: 1px solid #e5e5e5; }
+.contrast-cell .cap { font-size: 12px; color: #666; margin-bottom: 10px; }
+.contrast-cell.now { outline: 2px solid #ffd8a8; outline-offset: -2px; }
+.contrast-cell.prop { outline: 2px solid #b7eb8f; outline-offset: -2px; }
+.cbox {
+  display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px;
+  border-radius: 999px; background: #fff; color: #999; font-size: 13px;
+}
+.cbox input { border: none; outline: none; flex: 1; font-size: 13px; color: #000; background: transparent; }
+.chiprow { display: flex; gap: 9px; flex-wrap: wrap; }
+.chip { padding: 7px 16px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #f5f5f5; }
+.chip.on { background: #000; color: #fff; }
+
+/* ═══════════ §G2 字号方案对比 ═══════════ */
+.font-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.font-grid .fg { padding: 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; }
+.font-grid .fg .cap { font-size: 12px; color: #666; margin-bottom: 8px; }
+
+/* ═══════════ IPTV 舞台 ═══════════ */
+.st-iptv { padding: 20px var(--page-pad-x) 30px; }
+.st-card { border: 1px solid var(--border-light); border-radius: var(--r-lg); background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.05); padding: var(--s-md); margin-bottom: var(--s-sm); }
+.st-row { display: flex; flex-wrap: wrap; gap: var(--s-sm); align-items: center; padding: var(--s-xs) 0; }
+.st-label { font-size: var(--t-xs); color: var(--text-3); min-width: 64px; }
+/* 模板公共 chip */
+.tv-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: var(--r-full);
+  font-size: var(--t-sm); font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.tv-chip .cnt { font-weight: 400; opacity: .7; font-size: var(--t-xs); }
+/* T-A 胶囊描边（现风格收敛版：加深描边） */
+.tpl-a .tv-chip { height: 32px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+.tpl-a .tv-chip:hover { background: rgba(0,0,0,.05); }
+.tpl-a .tv-chip.on { border-color: #000; background: #000; color: #fff; }
+/* T-B 分段控件 */
+.tpl-b .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-full); background: #ececec; }
+.tpl-b .tv-chip { height: 30px; border: none; background: transparent; color: var(--text-2); }
+.tpl-b .tv-chip.on { background: #fff; color: #000; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+/* T-B 套用到 Browse 筛选行：整行变分段轨道 */
+.tpl-b .fbar-chips { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-full); background: #ececec; width: max-content; }
+/* T-C 下划线 */
+.tpl-c .tv-chip { height: 36px; padding: 0 6px; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--text-2); }
+.tpl-c .tv-chip.on { color: #000; border-bottom-color: #000; }
+.tpl-c .tv-chip:hover { color: #000; background: transparent; }
+/* T-D 卡片式 */
+.tpl-d .tv-chip { height: 44px; padding: 0 16px; border: 1px solid var(--border-light); border-radius: var(--r-md); background: #fafafa; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.tpl-d .tv-chip.on { border-color: #000; background: #000; color: #fff; }
+.tpl-d .tv-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #52c41a; }
+/* 按源分节 */
+.src-section { margin-top: var(--s-md); }
+.src-section-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 10px; }
+.src-section-head .t { font-size: var(--t-lg); font-weight: 700; }
+.src-section-head .c { font-size: var(--t-xs); color: var(--text-3); }
+.src-section-head .line { flex: 1; height: 1px; background: var(--border-light); }
+.ch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--grid-gap); }
+.ch-card { border: 1px solid var(--border-light); border-radius: var(--r-md); background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.ch-card .thumb { height: 118px; }
+.ch-card .meta { padding: 8px 10px; }
+.ch-card .name { font-size: var(--t-sm); font-weight: 600; }
+.ch-card .sub { font-size: var(--t-2xs); color: var(--text-3); margin-top: 2px; }
+
+/* ═══════════ Browse 舞台 ═══════════ */
+.st-browse { padding: 24px 0 30px; display: flex; justify-content: center; }
+.browse-shell { width: 2200px; }
+.bcard { border: 1px solid var(--border-light); background: #fff; border-radius: var(--r-lg); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.bcard.search { border-bottom: none; border-radius: var(--r-lg) var(--r-lg) 0 0; padding: var(--s-md) var(--s-lg); }
+.bcard.results { border-top: none; border-radius: 0 0 var(--r-lg) var(--r-lg); padding: var(--s-md) var(--s-lg); min-height: 380px; }
+.bsearch-tabs { display: flex; width: max-content; margin: 0 auto 14px; border: 1px solid var(--border-strong); border-radius: var(--r-full); overflow: hidden; }
+.bsearch-tab { padding: 8px 26px; font-size: var(--t-sm); color: var(--text-2); background: transparent; border: none; cursor: pointer; }
+.bsearch-tab.on { background: #000; color: #fff; }
+.fbar-row { display: flex; gap: var(--s-sm); align-items: flex-start; padding: 6px 0; }
+.fbar-row .lb { flex-shrink: 0; font-size: var(--t-sm); color: var(--text-3); font-weight: 600; line-height: 32px; min-width: 60px; }
+.fbar-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.poster-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--grid-gap); margin-top: 14px; }
+.poster { border-radius: var(--r-md); overflow: hidden; background: #fff; border: 1px solid var(--border-light); box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.poster .pimg { aspect-ratio: 2/3; }
+.poster .pname { padding: 7px 9px; font-size: var(--t-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.poster .psub { padding: 0 9px 8px; font-size: var(--t-2xs); color: var(--text-3); }
+
+/* ═══════════ Detail 舞台 ═══════════ */
+.st-detail { display: flex; flex-direction: column; height: 780px; }
+.st-detail .mock-header { flex-shrink: 0; }
+.dh { position: relative; border-radius: 0 0 var(--r-lg) var(--r-lg); overflow: hidden; flex-shrink: 0; }
+.dh .bgimg { position: absolute; inset: 0; }
+.dh .shade1 { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,.92) 0%, rgba(0,0,0,.55) 45%, rgba(0,0,0,.08) 100%); }
+.dh .shade2 { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.1) 55%, transparent 100%); }
+.dh .hcontent { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: var(--s-lg); color: #fff; }
+.dh .ht { font-size: var(--t-2xl); font-weight: 700; }
+.dh .hm { display: flex; gap: var(--s-md); font-size: var(--t-sm); color: rgba(255,255,255,.85); margin-top: 6px; }
+.dh .hb { display: flex; gap: var(--s-md); margin-top: 12px; }
+.dh .btn { height: 36px; padding: 0 20px; border-radius: var(--r-full); display: inline-flex; align-items: center; font-size: var(--t-sm); font-weight: 600; }
+.dh .btn.pri { background: #fff; color: #000; }
+.dh .btn.gho { border: 1px solid rgba(255,255,255,.4); color: #fff; background: rgba(255,255,255,.12); }
+.d-body { flex: 1; padding: var(--s-md) var(--page-pad-x); display: flex; gap: var(--s-md); }
+/* D-A */
+.dha { height: 330px; }
+/* D-B */
+.dh-b { height: 420px; display: grid; grid-template-columns: 1fr 620px; }
+.dh-b .info-side { position: relative; z-index: 2; background: #fff; padding: var(--s-lg); display: flex; flex-direction: column; justify-content: center; }
+.dh-b .info-side .ht { color: #000; font-size: var(--t-2xl); font-weight: 700; }
+.dh-b .info-side .hm { color: var(--text-2); }
+.dh-b .btn.pri { background: #000; color: #fff; }
+.dh-b .btn.gho { border: 1px solid var(--border-strong); color: #000; background: #fff; }
+.dh-b .poster { position: absolute; right: 40px; bottom: 24px; width: 250px; aspect-ratio: 2/3; border-radius: var(--r-md); box-shadow: 0 8px 28px rgba(0,0,0,.3); z-index: 3; }
+/* D-C */
+.dhc { height: 300px; border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.dhc-float { position: relative; margin-top: -170px; z-index: 4; padding: 0 var(--page-pad-x); display: flex; gap: var(--s-lg); align-items: flex-end; }
+.dhc-float .poster { width: 250px; aspect-ratio: 2/3; border-radius: var(--r-md); box-shadow: 0 8px 28px rgba(0,0,0,.35); flex-shrink: 0; }
+.dhc-float .info { color: #000; padding-bottom: 8px; }
+.dhc-float .info .ht { font-size: var(--t-2xl); font-weight: 700; }
+.dhc-float .info .hm { font-size: var(--t-sm); color: var(--text-2); margin-top: 4px; }
+.dhc-float .info .hb { margin-top: 10px; display: flex; gap: var(--s-sm); }
+.dhc-float .info .btn.pri { background: #000; color: #fff; }
+.dhc-float .info .btn.gho { border: 1px solid var(--border-strong); color: #000; background: #fff; }
+
+/* ═══════════ Play 舞台 ═══════════ */
+.st-play { display: flex; flex-direction: column; height: 1240px; background: var(--bg); }
+.st-play .mock-header { flex-shrink: 0; }
+.play-main { flex: 1; display: flex; gap: var(--s-sm); padding: var(--s-sm); min-height: 0; }
+.play-video { border-radius: var(--r-md); overflow: hidden; position: relative; }
+.play-video .ph.dark { position: absolute; inset: 0; border-radius: 0; }
+.play-video .ctrl { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: rgba(0,0,0,.55); display: flex; align-items: center; gap: 14px; padding: 0 18px; color: #eee; font-size: 12px; }
+.play-video .ctrl .bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); position: relative; }
+.play-video .ctrl .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: #2d8cf0; border-radius: 2px; }
+.play-side { flex: 0 0 320px; display: flex; flex-direction: column; gap: var(--s-sm); min-height: 0; }
+.play-panel { flex: 1; border: 1px solid var(--border-light); border-radius: var(--r-md); background: #fff; padding: 10px 12px; font-size: var(--t-sm); color: var(--text-2); overflow: hidden; }
+.play-panel .pt { font-weight: 700; color: #000; margin-bottom: 8px; }
+/* P-A/P-B */
+.pn-shell { width: 100%; max-width: 1920px; margin-inline: auto; display: flex; gap: var(--s-sm); flex: 1; min-height: 0; padding: var(--s-sm); }
+.pn-video { flex: 1; aspect-ratio: 16 / 9; max-height: calc(1240px - 76px - 16px); position: relative; border-radius: var(--r-md); overflow: hidden; align-self: flex-start; }
+.pn-under { padding: 0 var(--s-sm) 20px; display: flex; gap: var(--s-md); }
+.pn-under .uph { flex: 1; border: 1px solid var(--border-light); border-radius: var(--r-md); background: #fff; padding: 12px 14px; font-size: var(--t-sm); color: var(--text-2); }
+.pn-side2 { flex: 0 0 460px; border: 1px solid var(--border-light); border-radius: var(--r-md); background: #fff; padding: 12px 14px; font-size: var(--t-sm); color: var(--text-2); }
+
+/* ═══════════ Person 舞台 ═══════════ */
+.st-person { height: 760px; display: flex; flex-direction: column; }
+.phero { position: relative; background: rgba(0,0,0,.92); color: #fff; overflow: hidden; flex-shrink: 0; }
+.phero .noise { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 6px 6px; }
+.phero .pav { position: absolute; right: var(--s-xl); top: var(--s-xl); width: 176px; aspect-ratio: 2/3; border-radius: var(--r-lg); overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.5); }
+.phero .pc { position: relative; z-index: 2; padding: var(--s-xl); padding-right: 260px; }
+.phero .pn { font-size: var(--t-2xl); font-weight: 700; }
+.phero .pm { font-size: var(--t-sm); color: rgba(255,255,255,.8); margin-top: 6px; }
+.phero .pb { font-size: var(--t-sm); color: rgba(255,255,255,.85); margin-top: 12px; max-width: 1200px; }
+.pworks { flex: 1; padding: var(--s-md) var(--page-pad-x); }
+.pgrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--s-lg); margin-top: 12px; }
+/* PS-A 压缩 */
+.psa .phero { height: 440px; }
+/* PS-B 横幅悬浮 */
+.psb .phero { height: 280px; }
+.psb .pav { right: auto; left: var(--page-pad-x); top: 120px; width: 220px; }
+.psb-float { position: relative; z-index: 3; margin: -110px var(--page-pad-x) 0 calc(var(--page-pad-x) + 260px); background: #fff; border-radius: var(--r-lg); border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,.12); padding: var(--s-lg); color: #000; }
+.psb-float .pn { font-size: var(--t-2xl); font-weight: 700; }
+.psb-float .pm { color: var(--text-2); font-size: var(--t-sm); margin-top: 4px; }
+.psb-float .pb { color: var(--text-2); font-size: var(--t-sm); margin-top: 10px; max-width: 1500px; }
+/* PS-C 图片化 */
+.psc .phero { height: 560px; }
+.psc .bgimg { position: absolute; inset: 0; }
+.psc .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.95) 0%, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 100%); }
+</style>
+</head>
+<body data-page-node-id="7tFUNk0EkUmqC0owpb1fRH">
+
+<div class="demo-header" data-page-node-id="RzxeKw5rsUAmlof2vRSzoN">
+  <h1 data-page-node-id="UgKaV3OVXIfyxxU6KgHJw0">≥2560px 超宽视口适配方案 Demo <span style="color:#888;font-weight:400;font-size:12px" data-page-node-id="XCpum8ddQGxnuy21RDOMAN">2026-09-07 · 仅提案未改码</span></h1>
+  <span class="nav" data-page-node-id="MOd7wbfLTYbt0XkILzYtWV">
+    <a href="#g1" data-page-node-id="zAa3t4ztWUXHQKXXlXaFaX">全局·宽度</a><a href="#g2" data-page-node-id="Bxso4Aco4rA8WZKLjoVIAt">全局·字号</a><a href="#g3" data-page-node-id="re8GhJpYjySvyN1DqzxXvE">全局·辨识度</a><a href="#iptv" data-page-node-id="IwdO4dzPRYfm6mgZxfG8A6">IPTV</a><a href="#browse" data-page-node-id="5I3TmbGWlG2FoWNfge35Vy">Browse</a><a href="#detail" data-page-node-id="wgR87HZcERc7NJWu0qBeTS">Detail</a><a href="#play" data-page-node-id="hFrw1CQgQW7yLYSsWK02PH">Play</a><a href="#person" data-page-node-id="bnzFnATKk5PSvDGEX7oSrf">Person</a>
+  </span>
+  <span class="zoom-bar" data-page-node-id="saIItZqef10Rh7vpzv6unS">舞台缩放
+    <button data-zoom="fit" class="on" data-page-node-id="AGwmuqGthFDOlmZZtG5bFJ">适配</button>
+    <button data-zoom="0.75" data-page-node-id="628gwbImAu3Aq7uOO7V6kX">75%</button>
+    <button data-zoom="1" data-page-node-id="il3VEFAPeiVRT3t6MSi62F">100%（横向滚动）</button>
+  </span>
+</div>
+
+<main data-page-node-id="kks12EN9jbEKX79jkKCuIN">
+
+<!-- ═══════════════════ 全局 G1 ═══════════════════ -->
+<section class="block" id="g1" data-page-node-id="9dWa3oNO88pWRAehSlFB7u">
+  <h2 data-page-node-id="iATCBvbLVUCOxhEz0ZqgYt">【全局】G1 根级宽度不一致 → 内容壳 ContentShell</h2>
+  <p class="lead" data-page-node-id="satlficwlRREwlq9QBX1K2">左边=已接 2200 上限的页面（Browse/Person/Home/Collections/History），右边=未接的页面（IPTV/Detail/Player/Chart）。2560 视口下根宽 2200 vs 2280，且左右留白不一致。方案：新增 <b data-page-node-id="znHvhk5D3HC6bqFLSPYWqy">.content-shell</b> 公共类（2200 定义不动），Player 用更窄专属档。</p>
+  <div class="card" data-page-node-id="GrYswePYLe76nKhgSlmZex">
+    <div class="stage-clip" data-page-node-id="2Qu0ql6ObFUNXn5bHzCOO9"><div class="stage" style="height:300px" data-page-node-id="mq1nhemBpZWlag0u21CyaM">
+      <div class="width-compare" data-page-node-id="b5ENAGdjSpoI4IDjFRuCKL">
+        <div class="wc" data-page-node-id="xDzuPeoA6MmnLBCGI5xWc8">
+          <span class="cap" data-page-node-id="HWeH6gLAzWR3oGIoRnyfB6">已接入：max-width: min(100%, 2200px) → 根宽 2200</span>
+          <div class="inner" style="left:calc((100% - 2200px)/2); width:2200px;" data-page-node-id="FOAPxix5B6SjZ0Lj2eT9EA">2200px 居中</div>
+        </div>
+        <div class="wc" data-page-node-id="bwtNuQT6DFKHMmFyAhTIi9">
+          <span class="cap" data-page-node-id="PCVjSVyaXCc2ls85CKLr3Q">未接入：全宽 − padding 140×2 → 根宽 2280</span>
+          <div class="inner" style="left:0; width:calc(100% - 0px);" data-page-node-id="fLY7uJudyuB2zJ736TkaEU">2280px（占满）</div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="otHH21YB4TmPLHbSEnjhD3">2560 舞台</span></div>
+    <details data-page-node-id="Yq4VVH5uykfULJT5yF6Zym"><summary data-page-node-id="lN16QOsMgzow7bEmADGfVB">代码片段 · content-shell（index.css 新增，2200 不动）</summary>
+<pre data-page-node-id="HjuLvKbkoDY8GNOePKfdTO">/* 通用内容壳：未接入页面（IPTV/Detail/Chart/Player/Settings）根容器挂上 */
+.content-shell {
+  width: 100%;
+  max-width: var(--layout-content-max-width); /* min(100%, 2200px) —— 定义不动 */
+  margin-inline: auto;
+}
+/* 主题内容更窄的专属档（Player 等沉浸页建议 1920，可在 demo 评审后定值） */
+.content-shell--narrow { max-width: min(100%, 1920px); }
+
+/* Player.css 接入示例（P-A 前置步骤）：
+   .player-main { max-width: min(100%, 1920px); margin-inline: auto; } */</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ 全局 G3 辨识度 ═══════════════════ -->
+<section class="block" id="g3" data-page-node-id="zspYyUgNi6yf7GaTPwkv7Z">
+  <h2 data-page-node-id="LtOSkbY5YJNhuxZFFGFLVq">【全局】G3 搜索框 / Tab 边框过浅 · 文本不清晰归因</h2>
+  <p class="lead" data-page-node-id="IDzhQCrbLdPvNF8KDWaEDO">左列=现状（橙框），右列=提议（绿框）。结论：<b data-page-node-id="HIYziQ9yuPgtpc89ucrISf">边框过浅是颜色问题</b>（#d9d9d9 对白底仅 ≈1.57:1）；<b data-page-node-id="NW5rnWBYJfUh6ITAwYAzx8">文本不清晰主因是字号</b>（正文冻结在 12–13px @100% dpr），次要文字 #a0a0a0 ≈2.6:1 也偏低。两者独立修。</p>
+  <div class="card" data-page-node-id="5vnpGdcJGGCrHaUJRdUGh2">
+    <div class="contrast-grid" data-page-node-id="ZFwE7HPUUAlWTT2FNDvEFK">
+      <div class="contrast-cell now" data-page-node-id="MxSycqgVF45huLQQEAoHcg">
+        <div class="cap" data-page-node-id="lEcz0AKxDQ1uBlx9EUHCf4">现状 · 搜索框 border #d9d9d9（≈1.57:1）</div>
+        <div class="cbox" style="border:1px solid #d9d9d9" data-page-node-id="ScrGyOLBdss5fzSItCN0hA"><span data-page-node-id="MAl3hN8yGVEqbBq4TCKVty">🔍</span><input placeholder="搜索电影、剧集…" readonly data-page-node-id="aBdlZ5HInMcprhgHx40bgQ"></div>
+        <div class="cap" style="margin-top:12px" data-page-node-id="0qN47r6aonGGiyzqwKJvRR">现状 · Tab 未激活字 #a0a0a0（≈2.6:1）</div>
+        <div class="chiprow" data-page-node-id="irDK9txAprYYgN9MQrjHP8">
+          <span class="chip on" data-page-node-id="8qaJ0oMi94gyk6P3PjbpuD">全部</span>
+          <span class="chip" style="border:1px solid #d9d9d9;color:#a0a0a0" data-page-node-id="37k1qnkQNdADKc2EO1TKB0">电影</span>
+          <span class="chip" style="border:1px solid #d9d9d9;color:#a0a0a0" data-page-node-id="ouHCCuTYEws122g2nLitj9">电视剧</span>
+        </div>
+        <div class="cap" style="margin-top:12px" data-page-node-id="DVqeWXw330sqaCg9t6W4aG">现状 · 辅助文本 11px / 正文 12–13px</div>
+        <div style="font-size:12px;color:#000" data-page-node-id="CAgYi9vKUoL8WwWvaEUGxC">正文 12px —— 物理尺寸在 2560@100% 下偏小</div>
+        <div style="font-size:11px;color:#999" data-page-node-id="SsJjLjJMtQ4RM4Ekx0m2Jk">辅助 11px —— 更小，须贴近看</div>
+      </div>
+      <div class="contrast-cell prop" data-page-node-id="wgROFJVzQhS4fMQJBr3kwV">
+        <div class="cap" data-page-node-id="iu7Os7886P8lijh6X05xA6">提议 · border 提一档 #bfbfbf（≈2.4:1）</div>
+        <div class="cbox" style="border:1px solid #bfbfbf" data-page-node-id="X5HwTwBoIwMS5VuLGzSrm7"><span data-page-node-id="1braEiuFdyCohuLvciRTC4">🔍</span><input placeholder="搜索电影、剧集…" readonly data-page-node-id="CD5nYKHOqaxXVx6clJMoT0"></div>
+        <div class="cap" style="margin-top:12px" data-page-node-id="XuUGI8sh9aqYzVnS4E2YXM">提议 · 未激活字 #8c8c8c（≈3.5:1）</div>
+        <div class="chiprow" data-page-node-id="YAIuJWQL2zhOgMUo0a9IvD">
+          <span class="chip on" data-page-node-id="ohbTT4rFBwSqGcyRAD6s9Q">全部</span>
+          <span class="chip" style="border:1px solid #bfbfbf;color:#8c8c8c" data-page-node-id="phoxJvrDHzeDWjAStNwpC8">电影</span>
+          <span class="chip" style="border:1px solid #bfbfbf;color:#8c8c8c" data-page-node-id="Qhapjk7tYvIiEZRtLgRWAN">电视剧</span>
+        </div>
+        <div class="cap" style="margin-top:12px" data-page-node-id="orgXFGvIIpChtJkFXZWpaX">提议 · G2 方案 A：整体 ×1.08</div>
+        <div style="font-size:12.96px;color:#000" data-page-node-id="V3JP1ZSZtMs35kMbGeAC56">正文 13px（12×1.08）</div>
+        <div style="font-size:11.88px;color:#8c8c8c" data-page-node-id="86UoQDZTnyqKQTxGNxeISL">辅助 11.9px（11×1.08）</div>
+      </div>
+    </div>
+    <details data-page-node-id="hu9PoUlMynUNqYXZyY28kA"><summary data-page-node-id="EutoGwjZXF6fL3mmceznvJ">代码片段 · 边框/文字色（档1 全局生效 / 档2 仅 ≥2560，需拍板）</summary>
+<pre data-page-node-id="DQrbIijcZJnqYpPzangLnV">/* 档 1：全局提一档（1440 也生效——现值对比度本就不达标） */
+:root {
+  --color-border: #bfbfbf;            /* 原 #d9d9d9，1.57:1 → ≈2.4:1 */
+  --color-border-light: #dcdcdc;      /* 卡片/分组浅边框同步微提 */
+  --color-tab-inactive-text: #8c8c8c; /* 原 #a0a0a0，2.6:1 → ≈3.5:1 */
+}
+/* 档 2：仅 ≥2560 覆盖，1440 基线绝对零回归 */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]):not([data-device="app"]) {
+    /* 同上三行 */
+  }
+}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ 全局 G2 字号 ═══════════════════ -->
+<section class="block" id="g2" data-page-node-id="zPEUdGHB5k16SXHGaql9a4">
+  <h2 data-page-node-id="H5c11aAzlS5ZhViNwTjJ5I">【全局】G2 字号偏小 → 三选一</h2>
+  <p class="lead" data-page-node-id="IGmEAgFHGLFguX9owaaVdj">「一些字号偏大」实为未封顶容器（Detail/Person/Play 的 hero）继续变大 + 间距冻结在 MAX 造成的观感；字号本身是冻结在地板值偏小。三种修法（A 依赖阶段 D 真机校准结论，建议最后实施）。</p>
+  <div class="card" data-page-node-id="MAwArfbtDXJsGyk2MzlTcg">
+    <div class="font-grid" data-page-node-id="0mlJxTAAd0u9zXQVDXUEAj">
+      <div class="fg" data-page-node-id="73qmj2CodTixOBoauc26hC">
+        <div class="cap" data-page-node-id="TFSNgeumf7t8HdGeOgcAxg">方案 A（推荐）· ≥2560 时 --ui-scale: 1.08，文字/控件等比 +8%</div>
+        <div style="font-size:14.04px" data-page-node-id="CyeBrmveMTN5jA8EsjAiyI">标题 lg：13.5 → 14.6px</div>
+        <div style="font-size:14.04px" data-page-node-id="ah2pWBjhD2n8aWfGzuePT0">正文 base：13 → 14px</div>
+        <div style="font-size:12.96px" data-page-node-id="nZ7FyXJ3xvjA650gzhXI91">正文 sm：12 → 13px</div>
+        <div style="font-size:11.88px" data-page-node-id="xcT2EKfC4hxsqdxEHMaR1z">辅助 xs：11 → 11.9px</div>
+        <div style="font-size:12px;color:#666;margin-top:6px" data-page-node-id="YycJwQPYWXREJ1QQqMYXjD">⚠ 连带 --card-size 290→313px，8 列会回落 6~7 列，需真机确认。</div>
+      </div>
+      <div class="fg" data-page-node-id="9suTAn2FCMDhL36tTkgn5P">
+        <div class="cap" data-page-node-id="yeZBVhXPt4EzNEZ8Xm9MVg">方案 B（保守）· 仅最小几档 +1~1.5px，间距/控件不动</div>
+        <div style="font-size:13px" data-page-node-id="f6Oh2r06ey7TURIhlMadRS">正文 base：13 → 14.5px</div>
+        <div style="font-size:12px" data-page-node-id="CWgDE6vw8wvr5wfSnxpWNw">正文 sm：12 → 13.5px</div>
+        <div style="font-size:11px" data-page-node-id="FkPUGjVfDQgAbdaHM1Q6vU">辅助 xs：11 → 12.5px</div>
+        <div style="font-size:11px" data-page-node-id="ZiZG1O8LmQNa0X73D3wQiO">2xs：10.3 → 11.5px</div>
+        <div style="font-size:12px;color:#666;margin-top:6px" data-page-node-id="5IQ5FBCoYgd9D0GVXArLas">风险：字与 36px 控件比例轻微失配。</div>
+      </div>
+      <div class="fg" data-page-node-id="RyG9l9NqK1cYbA6fEx8EYp">
+        <div class="cap" data-page-node-id="7ZP0ENoXh9k8awUuAmfQSu">方案 C（最小）· 不动字号，仅做 G3 颜色</div>
+        <div style="font-size:13px" data-page-node-id="FDRN5DzxyVEJZTvvYdsDY3">正文维持 13px</div>
+        <div style="font-size:12px;color:#8c8c8c" data-page-node-id="iY3uGNVvAXumZy9d5TZY26">辅助维持 12px，但颜色提至 #8c8c8c</div>
+        <div style="font-size:12px;color:#666;margin-top:6px" data-page-node-id="AIWBnzuMCzP6trjY0V1CYo">适合「其实能看清、主要是灰字太淡」的判断。零布局风险。</div>
+      </div>
+    </div>
+    <details data-page-node-id="gLBotYo6y2PNcGzlA9v5rQ"><summary data-page-node-id="z3okulgY0m0pThTY01aAPZ">代码片段 · 方案 A（阶段 D 预留位已存在）</summary>
+<pre data-page-node-id="6ARHaecOyLuSPEePx7w2rq">/* variables.css —— 替换现有「默认 1.0 未校准」占位（variables.css:589-593） */
+@media (width >= 2560px) and (resolution < 1.5dppx) {
+  html:not([data-device="app"]):not([data-device="tv"]) {
+    --ui-scale: 1.08;   /* 阶段 D 真机校准值，禁两次连续跳变 → 一次到位小幅 */
+  }
+}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ IPTV ═══════════════════ -->
+<section class="block" id="iptv" data-page-node-id="31WnSssPrDv3J4k86lMv3g">
+  <h2 data-page-node-id="Gng0AgyUlacHqTPt7idRR9">【IPTV】Tab 组件 4 套模板 + 「全部」按源分组</h2>
+  <p class="lead" data-page-node-id="gPU93L4GRnEKZtZExLyiQo">点按钮切换模板（作用于下方 2560 舞台）。「type 筛选区偏大」的修正 = 统一模板 + 高度收敛到 32px 档。下半段演示「全部」分栏参考收藏页 section-head 的按源归类。</p>
+  <div class="card" data-page-node-id="7ChqowTTGbDAOZpUtYJeNN">
+    <div class="stage-toolbar" id="iptv-tpl-bar" data-page-node-id="RDYFCRDbKMxOgbD8XDdGpp">
+      模板：
+      <button data-tpl="tpl-a" class="on" data-page-node-id="u75e3TMarcB1Wvk9Cd0GEH">T-A 胶囊描边（现风格收敛版）</button>
+      <button data-tpl="tpl-b" data-page-node-id="9VzJ57YlHBMEgDwprWZRef">T-B 分段控件 Segmented</button>
+      <button data-tpl="tpl-c" data-page-node-id="8j0YuohqmBRYo0DT3jsEkT">T-C 下划线 Tabs</button>
+      <button data-tpl="tpl-d" data-page-node-id="8YO1y3zYG5f7U4GC9Mk9xY">T-D 卡片式 Tag</button>
+      <span class="hint" data-page-node-id="qYBMZPR254x8i8otvAzYPg">选中态 / 悬停态均可交互</span>
+    </div>
+    <div class="stage-clip" data-page-node-id="dC6k0BLf4yFzZMH3JuDwU8"><div class="stage tpl-a" id="iptv-stage" style="height:1180px" data-page-node-id="1auHAQICP86F0owOA4NNqP">
+      <div class="mock-header" data-page-node-id="jYhHFe7FrZDqk9XMyi5Jf3"><span class="logo" data-page-node-id="AA6jI39XvSDPMZZCjUhovH">KinoTV</span><div class="hsearch" data-page-node-id="9Sq4x0IO61xDWdux060v2s">🔍 搜索频道…</div><span class="spacer" data-page-node-id="1CQ0wh5TDH9U3zafKGpvyj"></span><span class="havatar" data-page-node-id="RFSa81kV2hhkt5A5cp1DwV"></span></div>
+      <div class="st-iptv" data-page-node-id="psYZWd7TlpzOjWln5TK9tn">
+        <div class="st-card" data-page-node-id="siFMWEBYt366sAESIGG0nw">
+          <div class="page-title" style="margin-bottom:8px" data-page-node-id="l1WvnS1CiaopA51LFYEsy8">IPTV 直播</div>
+          <div class="st-row" data-page-node-id="NdFcb2l4H7mXDpsafn2Erl"><span class="st-label" data-page-node-id="tm7XdmePmJcZ4xvxg0COPx">数据源</span>
+            <span class="tv-chip on" data-page-node-id="P7iADuT2t3pFdsiaGPkT4t">全部源 <span class="cnt" data-page-node-id="jw922icJEXBss1uNyQf2tF">3</span></span>
+            <span class="tv-chip" data-page-node-id="wgylExYxXH2ITbfLIOlvW0">聚合源A <span class="cnt" data-page-node-id="kBaMKjRqJJD4b8vOGmsuO2">412</span></span>
+            <span class="tv-chip" data-page-node-id="4rgcCTCHW6egDC0EASbfdD">聚合源B <span class="cnt" data-page-node-id="Ab27tTtGtCzGDZLPQNYlaf">286</span></span>
+            <span class="tv-chip" data-page-node-id="hQREiq3yjOxhWMQwH91I0s">聚合源C <span class="cnt" data-page-node-id="lw8ReZ2mTSHEB0gbcyWOYW">158</span></span>
+          </div>
+          <div class="st-row" data-page-node-id="JL6OfwdseBcRr913qEsf4D"><span class="st-label" data-page-node-id="tpKHDE2NdVKnFvEO0GuOkX">分组</span>
+            <span class="tv-chip on" data-page-node-id="MDBCuoRM8Q6tOA8HXLjP7n">全部 <span class="cnt" data-page-node-id="nXGCE2O5EGrC1CsU5eTIrK">856</span></span>
+            <span class="tv-chip" data-page-node-id="a4MNPN49AJe1Zm4k6yyadr">央视 <span class="cnt" data-page-node-id="HWUpRpm8g9vVA1u25Y6sJn">64</span></span>
+            <span class="tv-chip" data-page-node-id="Cllpx0AbfvNEdB39ZuNyE5">卫视 <span class="cnt" data-page-node-id="8TXuZxxEta6Kw2Twbc2hMP">132</span></span>
+            <span class="tv-chip" data-page-node-id="sOH6jm360l5E9tUlmnGhx2">电影 <span class="cnt" data-page-node-id="FfbMGlKAZM8cZudCw2ymHE">88</span></span>
+            <span class="tv-chip" data-page-node-id="UCXtctI618DiVmT63OKHdr">体育 <span class="cnt" data-page-node-id="oKSNL0WXCFeoYc4IMmkAHW">76</span></span>
+            <span class="tv-chip" data-page-node-id="MkbcICHErozafviLw0Di5A">纪录 <span class="cnt" data-page-node-id="Z6eOWQvzut1ffRBRCsh2ui">42</span></span>
+            <span class="tv-chip" data-page-node-id="4hpnQPboLgShdjW1Vu9Z9A">少儿 <span class="cnt" data-page-node-id="5aAD75XPGbFsiVwxTsl1lR">35</span></span>
+          </div>
+          <div class="st-row" style="justify-content:center" data-page-node-id="PRehBrCFFhhbeZyOGCgdBF">
+            <span class="tv-chip" style="border-radius:var(--r-full);background:#000;color:#fff;height:36px;padding:0 22px" data-page-node-id="s4Ce1FGaeRZ0pCKGBR8hkM">检测全部</span>
+            <span class="tv-chip" style="border-radius:var(--r-full);background:#000;color:#fff;height:36px;padding:0 22px" data-page-node-id="vlpCoxxUkW7t40RxhWBbTA">刷新</span>
+          </div>
+        </div>
+        <div class="st-card" data-page-node-id="LgAJXCNL7BanDHcsicU6Fw">
+          <div class="src-section" data-page-node-id="v6roklsAkYQHlbj109WSFY">
+            <div class="src-section-head" data-page-node-id="10rPtMwok16nNMC1UF7roU"><span class="t" data-page-node-id="1l64DRQ6MMzFmbD8aCvdWD">聚合源A</span><span class="c" data-page-node-id="dCdNXll7MOynB7OQB1DCAA">412 个频道 · 8 个分组</span><span class="line" data-page-node-id="qqybuYcWeXAkOOPEmwfogE"></span></div>
+            <div class="ch-grid" data-page-node-id="HjBhVPb2izQm7SHzOAiDGQ">
+              <div class="ch-card" data-page-node-id="ncHJI8tuy3MRi4C7sOhLAe"><div class="thumb ph" data-page-node-id="sN0OZ57fFhdVNVtmkE81rV"></div><div class="meta" data-page-node-id="JeoIZzEJ3Cz5Jqj5TCDAPd"><div class="name" data-page-node-id="wvoHn0Y13zvjGuJjkHCjxD">CCTV-1 综合</div><div class="sub" data-page-node-id="BJD19k501BzIdMIzbAyfR9">央视 · 高清 · 可用</div></div></div>
+              <div class="ch-card" data-page-node-id="CgVbnD6alGMwBzVGhQMvny"><div class="thumb ph" data-page-node-id="CCVWRAC97kA1ai2CmI5PzI"></div><div class="meta" data-page-node-id="i43tNQiUzPhqlxdtpadCDQ"><div class="name" data-page-node-id="mWRWFGn4roUOVvc2uigZQ3">CCTV-5 体育</div><div class="sub" data-page-node-id="SINuy8DdVGsUofrCITFvJZ">央视 · 高清 · 可用</div></div></div>
+              <div class="ch-card" data-page-node-id="daOF4mXb4SKqK1WyPM0ql3"><div class="thumb ph" data-page-node-id="8lMth2bheX4Cy4XBkRIR8y"></div><div class="meta" data-page-node-id="iwahbgvu1arHol0cXfLiEm"><div class="name" data-page-node-id="1bIyn8g7hgbuyOL0X6Cemg">湖南卫视</div><div class="sub" data-page-node-id="I6VwmHh3xENhp3ZKbTTdnC">卫视 · 可用</div></div></div>
+              <div class="ch-card" data-page-node-id="bC8Rw723KjWjWBPQd8CUJr"><div class="thumb ph" data-page-node-id="HnounYnK38FjrEpg88QrZp"></div><div class="meta" data-page-node-id="mAxuKDhOxpNgPTTllJ4TyM"><div class="name" data-page-node-id="vqxH3WzpBH0ovFmHDk9vfD">东方卫视</div><div class="sub" data-page-node-id="y28PGJIiY6d8YOaO22Z3q2">卫视 · 可用</div></div></div>
+              <div class="ch-card" data-page-node-id="rYQVHD7I9MCKDZSBaDLKDl"><div class="thumb ph" data-page-node-id="ZEWUIHmsA3XYW8JPnnP41e"></div><div class="meta" data-page-node-id="FjJMx3uhCfHs5cgnHTSRqe"><div class="name" data-page-node-id="m594JvaWhHqvWNbeyUEoAO">CHC电影</div><div class="sub" data-page-node-id="XIbtiX5oSfxHAS26PJVOqc">电影 · 不可用</div></div></div>
+              <div class="ch-card" data-page-node-id="n9NKVnHgKMpmfoqm7R0EmN"><div class="thumb ph" data-page-node-id="cfExqEzk5Qjls1r1SZC1Q7"></div><div class="meta" data-page-node-id="7JrAppsTgKC4kUAuURtj4x"><div class="name" data-page-node-id="j6vWSBWk9QPszzfDJ32vqE"> 更多…</div><div class="sub" data-page-node-id="Gy7qspl2BKKnogo9vS14SN">滚动加载</div></div></div>
+            </div>
+          </div>
+          <div class="src-section" data-page-node-id="d3GVXDEx1F6ESrovbuYGIx">
+            <div class="src-section-head" data-page-node-id="ymefqzciFFljA56GzjaKCX"><span class="t" data-page-node-id="XDxV1sad79MkR9FAUNdEts">聚合源B</span><span class="c" data-page-node-id="tMtgHtULVuzsJtH5f04Dzx">286 个频道 · 6 个分组</span><span class="line" data-page-node-id="tGAR1nnJd4AGGHtBtyl7VX"></span></div>
+            <div class="ch-grid" data-page-node-id="2QmxaUPX49vvCfevC0Hoya">
+              <div class="ch-card" data-page-node-id="2SYd6zq6GCqvMuPic7GWFY"><div class="thumb ph" data-page-node-id="eMRBCYj9iB3CmkUznx0MK8"></div><div class="meta" data-page-node-id="C2x9MGpXxlivxR5IZqKABy"><div class="name" data-page-node-id="7D6SdoFoGrqDrNrLKptX8k">CCTV-1 综合</div><div class="sub" data-page-node-id="AC00ZkJDFNGGAwDj1XrM1W">央视 · 备线</div></div></div>
+              <div class="ch-card" data-page-node-id="MB5adFxstIOHyIDqNP7FYW"><div class="thumb ph" data-page-node-id="cAxQO66NCaXD8JfTrf8tRz"></div><div class="meta" data-page-node-id="obHtKLA4bF1GN4FKzUYPsF"><div class="name" data-page-node-id="kuO8rsDtAAzOEu7m2XTO56">浙江卫视</div><div class="sub" data-page-node-id="FXYmNEmAtOpO9uDTcna5Zx">卫视</div></div></div>
+              <div class="ch-card" data-page-node-id="P93nGxbOPOBsgiBbfJdAL8"><div class="thumb ph" data-page-node-id="9E0lgmrGZrDOGvoqmCgEOi"></div><div class="meta" data-page-node-id="HEibyA2oCWIOlNtHbdMkPR"><div class="name" data-page-node-id="tputHVE9GePJZUmx1TlT4t">江苏卫视</div><div class="sub" data-page-node-id="u9ZGXICHh7OMwAcPtGPpTe">卫视</div></div></div>
+              <div class="ch-card" data-page-node-id="I1C1bnoeA5jl3R4Iban8uH"><div class="thumb ph" data-page-node-id="o6V3LIFTyFG13ps3qBg5Mp"></div><div class="meta" data-page-node-id="6vkNeZmpt4lzaCRE8QVQpj"><div class="name" data-page-node-id="Hu15S8SbRCPll3vGD9nAJv">金鹰纪实</div><div class="sub" data-page-node-id="7O73CE7mI93qqv3AY6sMim">纪录</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="5y8jZYTONDccAIBN9d7Jy7">2560 舞台 · IPTV</span></div>
+    <details data-page-node-id="PPqQtvow5EcMGzeGjy6i90"><summary data-page-node-id="V7AJMKMiJtbmD1Sv89gqPM">代码片段 · I2「全部」按源分节（index.tsx 渲染处 + CSS）</summary>
+<pre data-page-node-id="MqJ4yXtPb8dYO8v7hDVHh5">// index.tsx —— selectedSource === null 且未选分组时按源分节
+{selectedSource === null && !selectedGroup && !debouncedKeyword ? (
+  aggregatorUrls.map((_, i) =&gt; {
+    const list = displayedChannels.filter(ch =&gt; ch.sourceId === `source-${i}`);
+    if (!list.length) return null;
+    return (
+      &lt;section key={i} className="iptv-source-section"&gt;
+        &lt;div className="iptv-source-section__head"&gt;
+          &lt;span className="__title"&gt;{sourceNames?.[i] || `源 ${i+1}`}&lt;/span&gt;
+          &lt;span className="__count"&gt;{list.length} 个频道&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div className="iptv-channel-grid"&gt;{/* 现有卡片渲染 */}&lt;/div&gt;
+      &lt;/section&gt;
+    );
+  })
+) : ( /* 现状：单一网格 */ )}
+
+/* IPTV.css —— 对齐收藏页 collection-section 体系（Collections.css:18-35） */
+.iptv-source-section + .iptv-source-section { margin-top: var(--space-lg); }
+.iptv-source-section__head {
+  display: flex; gap: var(--space-sm); align-items: baseline; margin-bottom: var(--space-sm);
+}
+.iptv-source-section__head .__title { font-size: var(--text-lg); font-weight: 700; }
+.iptv-source-section__head .__count { color: var(--color-text-tertiary); font-size: var(--text-xs); }
+
+/* I1/I3 · 大屏尺寸收敛（≥2560 一档，全部模板通用） */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) .iptv-filter-tag,
+  html:not([data-device="tv"]) .grouppicker__hot-tag {
+    height: 32px; padding: 0 14px;  /* 高度档 36→32，收敛水平内距 */
+  }
+}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ Browse ═══════════════════ -->
+<section class="block" id="browse" data-page-node-id="jhIK3cgHkfJx0J4fCiCIHx">
+  <h2 data-page-node-id="9t325OPP6saxvZBDYTJLDR">【Browse】Tab 筛选区重构 + 大屏尺寸收敛</h2>
+  <p class="lead" data-page-node-id="qjdUR90eWjcCZWixuWg68W">现状三套视觉（搜索模式胶囊组 / FilterBar 胶囊 / 排序下划线）并存。重构 = 统一为 IPTV 同款模板（下方演示 T-A / T-B 两种套用效果，切按钮预览）。</p>
+  <div class="card" data-page-node-id="JliBKgH74pyaufa0upJhS5">
+    <div class="stage-toolbar" id="browse-tpl-bar" data-page-node-id="Ix8MAja1oS0qLh1lX8vgAK">
+      模板：
+      <button data-tpl="tpl-a" class="on" data-page-node-id="DHcNjNw50uRVwY0xkivxc7">T-A 胶囊描边</button>
+      <button data-tpl="tpl-b" data-page-node-id="A1GbLErWsHMFBvcpjBPuQs">T-B 分段控件（搜索模式）</button>
+      <button data-tpl="tpl-c" data-page-node-id="w0tLAmBjkwasSjus2u14fe">T-C 下划线（筛选行）</button>
+      <span class="hint" data-page-node-id="SWWz71HZBXk5JZ3azEA83E">2200 内容壳内演示</span>
+    </div>
+    <div class="stage-clip" data-page-node-id="UhhIkY0ny9UyYozH2wwz42"><div class="stage tpl-a" id="browse-stage" style="height:920px" data-page-node-id="CZ3oLJN7P2GjBv3XcNVkSQ">
+      <div class="mock-header" data-page-node-id="0VndFWkJSo5SQu1pyZwqvQ"><span class="logo" data-page-node-id="bhmwyc7RP445g70VVwJztO">KinoTV</span><div class="hsearch" data-page-node-id="CNEnkpTHKTclkCmD9JNtni">🔍 搜索电影、剧集…</div><span class="spacer" data-page-node-id="pAewLnU7KCFpC0mVPPwERC"></span><span class="havatar" data-page-node-id="DpVj2EnUHKkNS843WnWc6t"></span></div>
+      <div class="st-browse" data-page-node-id="APj8JjGB7IWpV3nNFGltSy"><div class="browse-shell" data-page-node-id="jk9EhbxuBNQBWyCAmqs9Et">
+        <div class="bcard search" data-page-node-id="vUq9UKf7a3CosA1QDJ8MQN">
+          <div class="bsearch-tabs" data-page-node-id="L4HObXw8sH09GJbFfX0Ua6">
+            <button class="bsearch-tab on" data-page-node-id="DTzLA5REZquCQSDkpPmMWf">智能检索</button>
+            <button class="bsearch-tab" data-page-node-id="8C6zS3wKUB8s7ZuDaEzXFn">资源检索</button>
+          </div>
+          <div style="display:flex;justify-content:center" data-page-node-id="TvccSzbHleqAkh0UIYYeTn"><div class="cbox" style="width:760px;border:1px solid var(--border-strong)" data-page-node-id="U19AgG5cajuNtnpRzX3bE1"><span data-page-node-id="YU9TkntAwXjuW4ef5Y2COd">🔍</span><input placeholder="在 28 个采集源中搜索…" readonly data-page-node-id="ofhBjHuVyNKz98Px7o1SGH"></div></div>
+          <div style="margin-top:14px" data-page-node-id="WF59xwBsGXb6zrWekzVRCq">
+            <div class="fbar-row" data-page-node-id="sbZeEDFNJdsXVpanAKrRqY"><span class="lb" data-page-node-id="cIAi0QJ03rIRYQB6l0uf2x">类型</span><div class="fbar-chips tv-chips" data-page-node-id="spxGnWYU3YC8Pcbgo3efT6">
+              <span class="tv-chip on" data-page-node-id="MFJWF1wBNg8TNoHKQkBgh0">全部</span><span class="tv-chip" data-page-node-id="WchStdNSydHRcsLpShHcGP">电影</span><span class="tv-chip" data-page-node-id="8zitG7TjytoplZaSw9l0s7">电视剧</span><span class="tv-chip" data-page-node-id="nrqFVT8oSAEiC4GhoI3Yav">动画</span><span class="tv-chip" data-page-node-id="1UaJ3zsFxvc16qd1OMYjVu">综艺</span><span class="tv-chip" data-page-node-id="3ParmISJQbaZ2oTlDoQEJe">纪录片</span>
+            </div></div>
+            <div class="fbar-row" data-page-node-id="c6n6sGrkhsVHSiUb37LMyX"><span class="lb" data-page-node-id="r1wM7vIWnJM0k77I8sLYnJ">地区</span><div class="fbar-chips tv-chips" data-page-node-id="GHlsmYTnLMz7wDByrHG6VG">
+              <span class="tv-chip on" data-page-node-id="0i7SMpKqn9JXqIIRwtUVUt">全部</span><span class="tv-chip" data-page-node-id="bLqFyJaSCQe3rqj3mGiUcz">华语</span><span class="tv-chip" data-page-node-id="ZVC1PXpI6rjicV78Xkdyhe">欧美</span><span class="tv-chip" data-page-node-id="rXO7BTNHRy93BFUBxLuory">日韩</span><span class="tv-chip" data-page-node-id="O8ugOvSAfVHr7hxr5XYA5K">其他</span>
+            </div></div>
+            <div class="fbar-row" data-page-node-id="Dt7vhFXT3MT6TKSoEZDWWk"><span class="lb" data-page-node-id="weVoh0aWddu0PHeH2kobEA">年份</span><div class="fbar-chips tv-chips" data-page-node-id="WGWvwtmwrSCaf0yApbr8x5">
+              <span class="tv-chip on" data-page-node-id="NWtrqq21yhM5BK0UjpG7kv">全部</span><span class="tv-chip" data-page-node-id="1oMjejuIBDwUyqfEbg4kXt">2026</span><span class="tv-chip" data-page-node-id="Hs2EW3IEtsB6AmHUpXKKWw">2025</span><span class="tv-chip" data-page-node-id="kHlG8uWsqUjMCo5Z7Cp7IX">2024</span><span class="tv-chip" data-page-node-id="x3ILe2b0gEQ4ttjfoxopOf">更早</span>
+            </div></div>
+          </div>
+        </div>
+        <div class="bcard results" data-page-node-id="57VzsYbsBoRpGqmuVbfMyM">
+          <div style="display:flex;justify-content:space-between;align-items:center" data-page-node-id="JLJfqDCUM8zvp1EPCl1AUu">
+            <div class="fbar-chips tv-chips" data-page-node-id="D9Pb8uyFxKJNTCliA4s58L"><span class="tv-chip on" data-page-node-id="afqVWBHiVHUcMMBY59wOoB">综合排序</span><span class="tv-chip" data-page-node-id="FwBz4LPTW1SoQ1vEMxBGr7">热度</span><span class="tv-chip" data-page-node-id="Rr4AJsczvhu5eEC23bIfFl">评分</span><span class="tv-chip" data-page-node-id="SDHUuaLPrctHRXH6VxcX0C">最新</span></div>
+            <span style="font-size:var(--t-xs);color:var(--text-3)" data-page-node-id="k0E6rkl6Qd0Fg4EWCz49S1">共 1,024 条结果</span>
+          </div>
+          <div class="poster-grid" data-page-node-id="qoL2dyirWwUFR5AtFpbgY6">
+            <div class="poster" data-page-node-id="OAdMTlYFpkgUWnUHHTACRK"><div class="pimg ph" data-page-node-id="oxk4IHrqsJVkJHVU97QktP"></div><div class="pname" data-page-node-id="UWNU2zQxd1IjM5jzEvL63Q">流浪地球3</div><div class="psub" data-page-node-id="6isyjRxYVyx7cyx8Y9QoUi">2027 · 科幻</div></div>
+            <div class="poster" data-page-node-id="DkUqrUseZHXPXyYJnmA2la"><div class="pimg ph" data-page-node-id="bAzscgH9Hl1fUdrmF2hBN2"></div><div class="pname" data-page-node-id="KE5Ds0UtmMPJ9cQe7gl0yo">沙丘：第三部</div><div class="psub" data-page-node-id="7xSloZ8ZjGC6E2DzZ7PTjx">2026 · 科幻</div></div>
+            <div class="poster" data-page-node-id="hWEKy6joiMxaQsM9WsJhTh"><div class="pimg ph" data-page-node-id="CMoC9j7pRiVk9ubwrWeRWV"></div><div class="pname" data-page-node-id="vBNTN86T5QY3TdqStOLit8">哪吒之魔童闹海</div><div class="psub" data-page-node-id="H8uTfOjVcQ0JaPReaevOCG">2025 · 动画</div></div>
+            <div class="poster" data-page-node-id="WVjDBE75wDoEen0bgX1Xxw"><div class="pimg ph" data-page-node-id="r6InBuOQBejTYzMAu9n6FQ"></div><div class="pname" data-page-node-id="5d0P4phBagO5pQB8c7e4M9">奥本海默</div><div class="psub" data-page-node-id="wXdpUTjZnFYgvxb0mxcMaV">2023 · 传记</div></div>
+            <div class="poster" data-page-node-id="1IgXmvZHL24bFKjcpikZIw"><div class="pimg ph" data-page-node-id="jiYp61J1Bl4FoyfCumDA07"></div><div class="pname" data-page-node-id="Vh9tRMALgeEaWnVjnE3CDl">星际穿越</div><div class="psub" data-page-node-id="uzNSM5dUqBg4kA93ffKQBr">2014 · 科幻</div></div>
+            <div class="poster" data-page-node-id="6DEp2DS91Pr3P1LOBmYjRx"><div class="pimg ph" data-page-node-id="fjNx8GDpaoBz8uuR7OzORm"></div><div class="pname" data-page-node-id="u797uw49ru3kBTLM28R85i">盗梦空间</div><div class="psub" data-page-node-id="34o0JoDHiqWki9V8ChwoOM">2010 · 科幻</div></div>
+            <div class="poster" data-page-node-id="5lTwb1pAKzdjjgAoNVbTDr"><div class="pimg ph" data-page-node-id="GZjnpLDrxDAUVtuVYQHp9U"></div><div class="pname" data-page-node-id="8j9tSfAxxCcSM87nY8grL4">降临</div><div class="psub" data-page-node-id="4XAFJkAVAZofh1Xb605kaU">2016 · 科幻</div></div>
+            <div class="poster" data-page-node-id="cStwfI7mN1OY01axjqx4cr"><div class="pimg ph" data-page-node-id="qLEQGUvx9VQ64bS2AEJ60T"></div><div class="pname" data-page-node-id="dOzLvAKP05aMI0HOC3eHTA">银翼杀手2049</div><div class="psub" data-page-node-id="X4VIkTDbYXv3CuI12RYADH">2017 · 科幻</div></div>
+          </div>
+        </div>
+      </div></div>
+    </div><span class="stage-label" data-page-node-id="MeXxVrVVY0qDEwrUMiwOTl">2560 舞台 · Browse</span></div>
+    <details data-page-node-id="YB5FLowroAE0HXlDw00p1u"><summary data-page-node-id="vFqMeoORELuwmQVHoHxD4m">代码片段 · 模板收敛（≥2560 一档，全部 Tab/筛选按钮通用）</summary>
+<pre data-page-node-id="RAKlY2eGWrhpQeNUXuhs2D">/* Browse.css + FilterBar.css —— 大屏收敛档（高度 36→32、图标降一档、间距收敛） */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) {
+    .browse-search-tab { padding: 7px 20px; height: 32px; }        /* 现 --space-xs/--space-md + 文字撑高 */
+    .filter-bar__chip,
+    .filter-bar__label--clickable { height: 32px; padding: 0 14px; }
+    .browse-sort-bar__tab { font-size: var(--text-sm); }            /* 与 chips 同字号，去孤立大字 */
+    .bsearch-tab .lucide, .filter-bar__chip .lucide { width: var(--icon-sm); height: var(--icon-sm); } /* --icon-md→--icon-sm */
+  }
+}
+/* 注：source-tag / grouppicker hot-tag 同款收敛见 IPTV 节代码。 */
+/* T-B 分段控件变体（搜索模式切换专用）：
+   轨道 background: var(--color-tag-bg); 内 chip 选中 background: var(--color-surface) + shadow-card */</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ Detail ═══════════════════ -->
+<section class="block" id="detail" data-page-node-id="A1XH161E3QJZI8z4hgQ96o">
+  <h2 data-page-node-id="DnUbBSDX4lzyQvdxjBNLnG">【Detail】顶部图片过高 → 3 套布局方案</h2>
+  <p class="lead" data-page-node-id="vyA2VwbDfOXN6aRSFFfMVM">根因：hero 16:9 + max-height min(65vh, 42.4vw曲线) → 2560×1440 下 ≈936px，占屏 65%。三案均假设已挂 2200 内容壳。</p>
+  <div class="card" data-page-node-id="4FzcepyegAneYYppZMOmBZ">
+    <h3 data-page-node-id="OT2yk8jbPj2X293tx2xS7m">D-A 高度封顶 <span class="tag reco" data-page-node-id="1SjY60skmbftVCxuSlTKtk">推荐 · 改动最小</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="cst9BZ1soqszrDvPsPO4Ee">hero 从 65vh 降到 52vh（≈700px），21:9 裁切；信息照旧压在图上。</p>
+    <div class="stage-clip" data-page-node-id="GCNs7knwBrgJ4tvdBAhXdM"><div class="stage" style="height:760px" data-page-node-id="8WG0PccexLasnSdrYfJNEE">
+      <div class="st-detail" data-page-node-id="TWUcSyhU4LogWweMCoYhiO">
+        <div class="mock-header" data-page-node-id="qpScZNyyIM21LB8EAky5Mf"><span class="logo" data-page-node-id="GymtjdbyXClB18zxq0FUbv">KinoTV</span><span class="spacer" data-page-node-id="UmduHQcbdR9TTHEvodykEr"></span><span class="havatar" data-page-node-id="3t4Z9HISOocPqn67UHsHp6"></span></div>
+        <div class="dh dha" style="margin:0 var(--page-pad-x)" data-page-node-id="WJ8R4iHid0MqB4J9q1xJ23">
+          <div class="bgimg ph dark" data-page-node-id="j4cYg9iUwb4o8RP3G7Ycbx"></div><div class="shade1" data-page-node-id="uiF0CLmNoBIfAtQyRMnVAU"></div><div class="shade2" data-page-node-id="IEI1HherKilxbJALKLfTnC"></div>
+          <div class="hcontent" data-page-node-id="guY8A2MEM1m3ruhBV2fRjx"><div class="ht" data-page-node-id="QD11Cgbix6f3X9lF0q45V5">流浪地球 3</div><div class="hm" data-page-node-id="603vsi0um50Pt6rh57DfXz"><span data-page-node-id="Y67pcWhHUACfCV8NK3ziOB">2027</span><span data-page-node-id="1kteyuZk79mSIGbl3ZI1DM">科幻 / 冒险</span><span data-page-node-id="Sg2d7cSiaCxpT959vWGvQx">★ 8.2</span></div>
+          <div class="hb" data-page-node-id="aCFlQ8Ub0CC87G8vGVbID2"><span class="btn pri" data-page-node-id="m5ivFNLdfAMGgKVFLC8hxC">▶ 立即播放</span><span class="btn gho" data-page-node-id="hbTrEM0PGr9ac04UWnkZ3E">＋收藏</span></div></div>
+        </div>
+        <div class="d-body" data-page-node-id="VAbkkA1PxsFk0j67xROxka"><div class="ph note" style="flex:1;height:200px" data-page-node-id="ewsoz5zyCVgLbhYXn5gUEW">选集 / 演职人员 / 详情 Tabs + 内容（hero 之下空间显著增加）</div></div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="pMo7ewCNwG3u2tFdPlfKKj">D-A · hero ≈52vh</span></div>
+    <details data-page-node-id="5PVTJ5c1nbb9MItvwtk18x"><summary data-page-node-id="secgNBT1dSyMYqXNAwVeLd">代码片段 · D-A</summary>
+<pre data-page-node-id="VcVYFksa7qcnjgJNQiEYg2">/* Detail.css —— ≥2560 覆盖（TV 已被 :not 排除） */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) .detail-hero {
+    aspect-ratio: auto;                       /* 解除 16:9 撑高 */
+    max-height: min(52vh, 700px);             /* 原 min(65vh, --layout-detail-hero-max-h) */
+    min-height: 420px;
+  }
+}</pre>
+    </details>
+  </div>
+
+  <div class="card" data-page-node-id="mGEJOJMKHVaIDO9FUGsdBW">
+    <h3 data-page-node-id="rxoGCjwqdpD3UEHblm3GQq">D-B 横向分栏 <span class="tag" data-page-node-id="XBoVv1qGH7GAe7i10bBG9E">信息出图</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="DRaaQ1sMLIPbKXj20Pssnw">hero 固定 420px 只做背景；标题/元信息/按钮移入右侧白色信息栏，海报浮于分界处。可读性最好。</p>
+    <div class="stage-clip" data-page-node-id="QIGWwpVlx4vxIPld38rNGO"><div class="stage" style="height:760px" data-page-node-id="TUBodG0s4MevITO33NJqpg">
+      <div class="st-detail" data-page-node-id="uqCDGYmrgha3No5XSUVloB">
+        <div class="mock-header" data-page-node-id="GWQv0xNIgDVW0H77qnNSHc"><span class="logo" data-page-node-id="vqnUYgwvGnQ57Yy8vhd5Tr">KinoTV</span><span class="spacer" data-page-node-id="W7t1kbS1NjOLCbLg3mKjEq"></span><span class="havatar" data-page-node-id="YWHJMOncwqWexSLKmfCFRK"></span></div>
+        <div class="dh dh-b" style="margin:0 var(--page-pad-x)" data-page-node-id="q0lye9aRLy30VWvth1piV5">
+          <div class="bgimg ph dark" data-page-node-id="UEXTVYP6d2OuDrnmrFJS4w"></div><div class="shade1" data-page-node-id="DP8RV9LANegX8um6qzacCI"></div><div class="shade2" data-page-node-id="YWLcD4DHMsC4xmzelAqNzl"></div>
+          <div class="poster ph" data-page-node-id="IkydbC7s6R93HnHnfpKgoZ"></div>
+          <div class="info-side" data-page-node-id="Eh9U7qRz7uZoH9fSFFEWkT">
+            <div class="ht" data-page-node-id="BVnQUwbFIo2SvjQhBLS5bQ">流浪地球 3</div>
+            <div class="hm" style="margin-top:6px" data-page-node-id="wqucl4jqhsl6XOSHQj5HXC"><span data-page-node-id="931mnNXKN5t2sifyS6weSJ">2027</span><span data-page-node-id="Ewzu9G7bHbTA8SPqGZlKA8">科幻 / 冒险</span><span data-page-node-id="1HiuuJFOrOGxCsguhrDFyR">★ 8.2</span></div>
+            <div style="font-size:var(--t-sm);color:var(--text-2);margin-top:10px;max-width:520px" data-page-node-id="UEwu6tRZuFGv0uTEmsyLEE">太阳即将毁灭，人类开启「流浪地球」计划的最后阶段——逃离太阳系。</div>
+            <div class="hb" data-page-node-id="WaB6C4RrmehWOksCMN940Z"><span class="btn pri" data-page-node-id="WEVTqWqjF99hwVx6NvqP5t">▶ 立即播放</span><span class="btn gho" data-page-node-id="Gvw8j6NZlGiRCGBHtLMoPo">＋收藏</span></div>
+          </div>
+        </div>
+        <div class="d-body" data-page-node-id="rx10vljo7nC8uD0eQbxrrw"><div class="ph note" style="flex:1;height:200px" data-page-node-id="v6wweWW7PA50vXvlxEZwAo">选集 / 演职人员 / 详情</div></div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="jVtPb1oFCfGDWWuvSARgM3">D-B · 图 60% + 信息栏 40%</span></div>
+  </div>
+
+  <div class="card" data-page-node-id="cme3RlgDgEjv664bu4LcbG">
+    <h3 data-page-node-id="9SSOsCHiBraARDhSd8XHRK">D-C 紧凑条幅 + 悬浮海报 <span class="tag" data-page-node-id="2xVMEIsP9FREUhbye8MQ2a">B站/豆瓣风</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="1a1u9C7olfwPgGoQnCXact">hero 压到 ≈300px 背景条；海报负 margin 悬浮跨越 hero 与内容区，标题信息落在浅色区。</p>
+    <div class="stage-clip" data-page-node-id="62nNIAVoHstAPHioinxEBx"><div class="stage" style="height:760px" data-page-node-id="WDUkavHsGGoRnbTvl1855X">
+      <div class="st-detail" data-page-node-id="2FH0F0wpBxcHfKYptUnuvK">
+        <div class="mock-header" data-page-node-id="t8ZpwMi2A4Rfr7chl3hhHI"><span class="logo" data-page-node-id="se8mSMODkF7DsVrbtezvpP">KinoTV</span><span class="spacer" data-page-node-id="4OtZoXuBBVeebzl6Y0Zxym"></span><span class="havatar" data-page-node-id="EVoDqqh55vR6TE2A8EYSjI"></span></div>
+        <div class="dh dhc" style="margin:0 var(--page-pad-x)" data-page-node-id="YfCSRTY8NEufLDyfQLemGF">
+          <div class="bgimg ph dark" data-page-node-id="4cv6C0uIdkUd6F0qlbnuFm"></div><div class="shade1" data-page-node-id="rE2nwpFUSTJZf7yuaGNi3J"></div><div class="shade2" data-page-node-id="zWfD9qZkIdAC6ME80ZdoKH"></div>
+        </div>
+        <div class="dhc-float" data-page-node-id="louBFgp9FHzyHQTbXyRJ5z">
+          <div class="poster ph" data-page-node-id="wMJSCirDmJly33cF7meLNa"></div>
+          <div class="info" data-page-node-id="y1gc7YBYeGIi2bIsx41Da8">
+            <div class="ht" data-page-node-id="WtnFAcHvNa1IFxoLqGK46P">流浪地球 3</div>
+            <div class="hm" data-page-node-id="KX9aRSvmQdlNozgB9tjMWQ">2027 · 科幻 / 冒险 · ★ 8.2</div>
+            <div class="hb" data-page-node-id="EQC4Vao6uWyJBDWqckBN8p"><span class="btn pri" data-page-node-id="eHCdsZz8W5aNZ7yMt1oAFM">▶ 立即播放</span><span class="btn gho" data-page-node-id="GeqscjaWWmoosbarNuDfq2">＋收藏</span></div>
+          </div>
+        </div>
+        <div class="d-body" style="padding-top:24px" data-page-node-id="l2jVOiVVjeQ77K0EYeZYxE"><div class="ph note" style="flex:1;height:180px" data-page-node-id="pFDLnP0pgxcSYBmvNCEgD7">选集 / 演职人员 / 详情</div></div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="IvZD1X4Af0JtC9sjUHFJbR">D-C · 悬浮海报</span></div>
+    <details data-page-node-id="DXFKGs12jJzu4aWizCz9Q6"><summary data-page-node-id="Hs59Wk7Hb0blBiNlbpJ3Rt">代码片段 · D-C 关键（负 margin 悬浮）</summary>
+<pre data-page-node-id="os9GFV7qiUdOW7rElXGEaD">@media (width >= 2560px) {
+  html:not([data-device="tv"]) .detail-hero {
+    aspect-ratio: auto; max-height: 300px; border-radius: var(--radius-lg);
+  }
+  .detail-hero-float {                       /* 新增包裹层：海报 + 标题信息 */
+    position: relative; z-index: 4;
+    margin: -180px var(--page-pad-x) 0;
+    display: flex; gap: var(--space-lg); align-items: flex-end;
+  }
+  .detail-hero-float .poster { width: var(--layout-detail-poster-w); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }
+}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════════ Play ═══════════════════ -->
+<section class="block" id="play" data-page-node-id="qzKeOQ41jRwCkXN8TADucr">
+  <h2 data-page-node-id="ufb9dDdMmmdfglV2HxS1BM">【Play】播放器占屏过大 → 3 套布局方案</h2>
+  <p class="lead" data-page-node-id="9TmW1dlKHjlQFQl0GWMjIQ">根因：.player-page 100dvh + video-area flex:1×height:100% → 2542×1422 满屏，侧栏固定 320px。</p>
+  <div class="card" data-page-node-id="M7UnUFRLRhN5PskvGlOUlK">
+    <h3 data-page-node-id="QLQb8diT7BTQIWG3f4hIzF">P-A 内容封顶 + 16:9 限高 <span class="tag reco" data-page-node-id="Mt3583HrVIvXNNWYKJfzBv">推荐先做</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="lPDHN5V8AXVkzM5ijJqwuY">主区封顶 1920 居中；视频区按 16:9 自适应高度（≈1050px @1920 宽），不再强行拉满。页面纵向出现留白属预期，可配合 P-B 填充。</p>
+    <div class="stage-clip" data-page-node-id="NrFdcxSyWGnxTJclkAyrSk"><div class="stage" style="height:1240px" data-page-node-id="4wTbGmZKoaOVgD2zlANnVO">
+      <div class="st-play" data-page-node-id="BzYusajATIFLOfw3oqwybK">
+        <div class="mock-header" data-page-node-id="bFTu535cWGnT5s3ivQ6G2t"><span class="logo" data-page-node-id="DA56ITXQqaQW9t56yWDnpK">KinoTV</span><span class="spacer" data-page-node-id="iUFJPMkYzrp8L9rUqck0jO"></span><span class="havatar" data-page-node-id="xcwHrpH4cxg2jTz9txuOlX"></span></div>
+        <div class="pn-shell" data-page-node-id="pZw4qfNYMWYbHjWM2eRm3e">
+          <div class="pn-video" data-page-node-id="6DcJKjAwL9psW7RXQ5ZYpV"><div class="ph dark" data-page-node-id="cqFHD5516VuhCiuMcHH4Ut"></div>
+            <div class="ctrl" data-page-node-id="pqddKQHjbuwoO2srYxXldk"><span data-page-node-id="tfqh37RQxvBQkEEkKelrPu">▶</span><span data-page-node-id="zWHbE9c8HHCQ4DfxFfLbMW">12:36 / 54:00</span><div class="bar" data-page-node-id="kOLAPjfUoKoFWSs1HBqTED"><i data-page-node-id="ltCtXP3jKKRFKiJ4e39z3t"></i></div><span data-page-node-id="FjvdBBclxxEelOXVauTBY1">音量</span><span data-page-node-id="QTmSYNgDA6pqhD1EXVsu6Y">倍速</span><span data-page-node-id="Xl456cCXmNBdsTi6L2EY4F">全屏</span></div>
+          </div>
+          <div class="play-side" data-page-node-id="qmwrnVaOS5EZWtnDTWNNRk">
+            <div class="play-panel" style="flex:2" data-page-node-id="qpu5su9DGCjYhbEvDvvt6e"><div class="pt" data-page-node-id="nIy0s7Gqx8eRaRRDrzOB8Y">播放源</div>聚合源A · 线路1<br data-page-node-id="9vW4F7G2VKGwlFVh6apKj6">聚合源A · 线路2<br data-page-node-id="ndfdFPJeUFDWWIJAJT3wFr">聚合源B · 线路1</div>
+            <div class="play-panel" style="flex:3" data-page-node-id="UHPaPgHbVfuXuKzV2U31A7"><div class="pt" data-page-node-id="4ArSDGd1VmYo5tsQ0HFLuo">季度</div>第一季 / 第二季 / 第三季</div>
+            <div class="play-panel" style="flex:5" data-page-node-id="OFpWs7TDKr6V0CNb5Hdq2A"><div class="pt" data-page-node-id="BlpcsNrtQdt2CuBqNVA0Ih">选集</div>01 · 02 · 03 · 04 · 05 · 06 · 07 · 08 …</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:#999;font-size:12px;padding-bottom:16px" data-page-node-id="JfNfh7lYQxK83VhjBEZi0z">← 视频区 1920×1080（16:9 自适应），不再拉满 2542×1422 →</div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="pQUGkayDyo7ImE11Vl3ymj">P-A · 封顶 1920 + 16:9</span></div>
+    <details data-page-node-id="H7rOtdmp4VSE6M5gCn2hop"><summary data-page-node-id="PHVaYgXCQPCJFNmAMHfkcq">代码片段 · P-A</summary>
+<pre data-page-node-id="mQlQWpNpbyIJeQOCpnZMNH">/* Player.css */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) .player-main {
+    max-width: min(100%, 1920px);       /* 内容壳专属档（G1），可调 */
+    margin-inline: auto;
+    height: auto;                        /* 解除 height:100% 拉满 */
+  }
+  html:not([data-device="tv"]) .player-video-area {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: calc(100dvh - var(--header-height) - 2 * var(--space-sm));
+  }
+  html:not([data-device="tv"]) .player-sidebar { height: auto; }
+}</pre>
+    </details>
+  </div>
+
+  <div class="card" data-page-node-id="QrFr2dYY4Rb0d10cGSpQSW">
+    <h3 data-page-node-id="DltoAnoz93zPvB1BlGMeW5">P-B 双列剧场（限高后利用纵向空间）</h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="pmfETZEKZEtpUavn2VPdqe">P-A 之上，把视频下方空间给「剧情简介 + 选集横排」，侧栏信息并入底部，整体一屏信息密度对齐 B 站大屏。</p>
+    <div class="stage-clip" data-page-node-id="0RND7FlVWuQ2kHRWJqaJb5"><div class="stage" style="height:1240px" data-page-node-id="PJzvsrsSXhK1RwBhRItdBA">
+      <div class="st-play" data-page-node-id="xSUITOEUckU1MenKncIMRG">
+        <div class="mock-header" data-page-node-id="AicbkZD6bEqf7ZCeXvStwf"><span class="logo" data-page-node-id="iyYZRbphxbiIUlRpiqTjTk">KinoTV</span><span class="spacer" data-page-node-id="PZdrgrFM07FP8gQYJCKBU2"></span><span class="havatar" data-page-node-id="4t7QhSMK8ViG1bJHNC1ANJ"></span></div>
+        <div class="pn-shell" data-page-node-id="4QBMFs8BEfQjL52RDfMoj2">
+          <div class="pn-video" data-page-node-id="VJEIz22oV4vsS7lSqTogbF"><div class="ph dark" data-page-node-id="msepqQBMwN79NtgePmCftz"></div>
+            <div class="ctrl" data-page-node-id="dXD1XLKBJs0QY4eGrsUr2w"><span data-page-node-id="aUETdQ1aN529rUlhhEPBkR">▶</span><span data-page-node-id="DaNX85FlwbDcYW3gCDApOR">12:36 / 54:00</span><div class="bar" data-page-node-id="iEEpswAR53j2XPYa9W9KfR"><i data-page-node-id="yaDzxz4Re5PtaHOgqANhEl"></i></div><span data-page-node-id="JJE1oWuHA8ERtDOdfZKwmF">音量</span><span data-page-node-id="dEFMHMocMZNSxBwJM6bBna">倍速</span><span data-page-node-id="Pe9iEHxR4DCFlpYEyLjO8T">全屏</span></div>
+          </div>
+          <div class="pn-side2" data-page-node-id="scBNNmAPY6aypRxFHTwXI9"><div class="pt" style="font-weight:700;color:#000;margin-bottom:8px" data-page-node-id="fJbKdPRYASsOHfZxx1oKvQ">选集 · 第三季</div>01 · 02 · 03 · 04 · 05<br data-page-node-id="vv6vUavA78FaiBz1O4blgB">06 · 07 · 08 · 09 · 10<br data-page-node-id="XRubKn0SjzGQlwr0eojrO5"><br data-page-node-id="UgWT0zAThRCdB86vKCfrqn"><div class="pt" style="font-weight:700;color:#000" data-page-node-id="pvFtoOIxV8ZzAy3euHeKOn">播放源</div>聚合源A · 线路1<br data-page-node-id="1idWSQ4sEyUOCOaJzHQZ6j">聚合源B · 线路1</div>
+        </div>
+        <div class="pn-under" data-page-node-id="UrCQwkkxx8AKSFNBfq7jVv">
+          <div class="uph" data-page-node-id="ji3SMp0uCDhMYrXTjTyaxq"><b style="color:#000" data-page-node-id="lr1FBp0dBC8Hy8skcmq5uI">剧情简介</b><br data-page-node-id="QiPVSDShMsYI22rowoREX7"><span style="font-size:12px" data-page-node-id="xcfl2n9hxfBhxpGX0hnDuz">太阳即将毁灭，人类开启「流浪地球」计划的最后阶段……</span></div>
+          <div class="uph" style="flex:0 0 560px" data-page-node-id="2zJp2qhls2N7ORVjumg1cA"><b style="color:#000" data-page-node-id="Z50WqGk8m51XNTISXLibu1">继续观看</b><br data-page-node-id="knljDatuXk8uk7KQ2Eu46Z"><span style="font-size:12px" data-page-node-id="Yg9s3EQ7KJWAliyZV0ECF9">最近播放的 4 部作品横排卡位</span></div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="BfNJC4L5BYnB96VjxN4Eoj">P-B · 双列 + 底部信息带</span></div>
+  </div>
+
+  <div class="card" data-page-node-id="7f5eG1MG5MKPwHDXRI5XMa">
+    <h3 data-page-node-id="8D19UMSMsoihqI3VdwzE1y">P-C 用户可切「适配 / 填充」<span class="tag warn" data-page-node-id="UncoxyNseQ4TlH1WmGuLTp">交互改动</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="0AwXctbnKkUQOdh2DloF4d">保留现满高为「填充」档；新增「适配」档（即 P-A），控制栏加切换按钮 + 设置持久化。demo 只示意不做交互。</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ Person ═══════════════════ -->
+<section class="block" id="person" data-page-node-id="T58FGX1FGhQxNdHlLQAE4B">
+  <h2 data-page-node-id="Q7hxL3nLKhXWz5x76FN2c2">【Person】纯色背景块过大 → 3 套方案</h2>
+  <p class="lead" data-page-node-id="9SbGEbH4SstPQTnE02WwdB">根因：hero min 448 / max min(50vh, 640px)，背景近纯黑 rgba(0,0,0,.92)，2560×1440 下 640px 空黑块。</p>
+  <div class="card" data-page-node-id="ZFVRt7uHUM2SMt8NWC4MDj">
+    <h3 data-page-node-id="2BmBFPgX7Cdcj7M3HAFxpA">PS-A 压缩高度 <span class="tag reco" data-page-node-id="kD5QJ2tx5DKX5E0WGBwWOf">改动最小</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="GbIsnGlGjLyaoBUy548PFE">min 320 / max min(40vh, 460px)，头像 clamp 上限 176→160。</p>
+    <div class="stage-clip" data-page-node-id="iNvq2x4Jp8nMVnAIhKvwrg"><div class="stage psa" style="height:700px" data-page-node-id="cTFJ4vtFpgxE7MoEN6vYop">
+      <div class="st-person" data-page-node-id="wwmpRbLGH75eOe2r8RPlMe">
+        <div class="mock-header" data-page-node-id="6njjmKO1Oh7MsaiOkLO0Jt"><span class="logo" data-page-node-id="VLJGuC58psaHSoVCvL7WC2">KinoTV</span><span class="spacer" data-page-node-id="PkE0zrD7ItN9HidU3ZZKDO"></span><span class="havatar" data-page-node-id="Doukms0ieAAS9ikvoFburM"></span></div>
+        <div class="phero" data-page-node-id="HacRVhl3IGCDYKStG9kpA5"><div class="noise" data-page-node-id="DZCWLmcG7rpyfb9x9QkcSw"></div><div class="pav ph" data-page-node-id="ud3Z6gdkrjc9tXmkekbAQ1"></div>
+          <div class="pc" data-page-node-id="BrQsqqxib43edFH171O6v9"><div class="pn" data-page-node-id="FVE5KW9E4EbwfP41ywVrT8">刘德华</div><div class="pm" data-page-node-id="GRsZ8nLV9FQLBZqPVjxqKk">1961 · 中国香港 · 演员 / 制片人</div>
+          <div class="pb" data-page-node-id="YlDXQFJxWkps4go8xBOJ7X">简介文本两行截断……（min 320 / max min(40vh,460px)，黑块高度下降约 30%）</div></div>
+        </div>
+        <div class="pworks" data-page-node-id="Ihe7CIwgGhmlXYgOhiAFAY"><div class="page-title" style="font-size:var(--t-lg)" data-page-node-id="FELvxWHQ1N2DqQt0k4zkIG">作品</div>
+          <div class="pgrid" data-page-node-id="B3sWgr9z4NQG4uGgSjFlWd">
+            <div class="poster" data-page-node-id="jppgIrhcda964agSJAEhW1"><div class="pimg ph" data-page-node-id="NBT8Yn7Bw7gFZtgQDe0D9I"></div><div class="pname" data-page-node-id="5vKHB6QQZEkDPJVEc0ZbbZ">流浪地球2</div></div>
+            <div class="poster" data-page-node-id="GYqfEoIaqR6TeoIYnH9AO8"><div class="pimg ph" data-page-node-id="2hsBYvW1pBSj5sA98PI6DK"></div><div class="pname" data-page-node-id="rF7By5WLc1yE3Kq6n9MbIs">无间道</div></div>
+            <div class="poster" data-page-node-id="AqbMekoToSMkpPC7QY6dSH"><div class="pimg ph" data-page-node-id="OTGSslOj2AYXvKCdxyHJ1u"></div><div class="pname" data-page-node-id="QBXE6yzVnw3hFTqMTanEJE">拆弹专家2</div></div>
+            <div class="poster" data-page-node-id="SDXPsZHSTewrOXJ7Xz8N3y"><div class="pimg ph" data-page-node-id="d45zfCrJm8w5QsoTZpQbLo"></div><div class="pname" data-page-node-id="5bTZkg5ubUocOZ2Jtv8atQ">扫毒2</div></div>
+            <div class="poster" data-page-node-id="GxBdm4t9zDUUtbPDkmo5OX"><div class="pimg ph" data-page-node-id="2PXoDqVrcsMYF15aHS9CgA"></div><div class="pname" data-page-node-id="xEQEPzxeE7HFZYdmt1uz9g">追龙</div></div>
+            <div class="poster" data-page-node-id="q3ZbY4Ny0FZUS8tX7K02ke"><div class="pimg ph" data-page-node-id="WKCOnWD0x1SDlNhY1Rq0PO"></div><div class="pname" data-page-node-id="9h036vc1DMZlwXzCeTA8uk">桃姐</div></div>
+            <div class="poster" data-page-node-id="UgX5rObfSuFwW943TC5gWY"><div class="pimg ph" data-page-node-id="jNzcStWaQ9WLpFYVgaSz9y"></div><div class="pname" data-page-node-id="czkjtrQV5RuKyaOYVU2DoO">失孤</div></div>
+            <div class="poster" data-page-node-id="irwpGL0qztuXc0O9oOTHXv"><div class="pimg ph" data-page-node-id="5GyICC8dsNDdBpQhbknvAQ"></div><div class="pname" data-page-node-id="6UJNJE4u65XfN6w3AhrLVu">更多…</div></div>
+          </div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="6DB2Tsbwjz61HFz7gFI69K">PS-A · hero ≤460px</span></div>
+    <details data-page-node-id="wPdiqHgWAPTMyAIi53pv6V"><summary data-page-node-id="jAHZTdUGJ8odIfHApOLgoM">代码片段 · PS-A</summary>
+<pre data-page-node-id="dUBvImBNs62KmiQMYyTHE6">/* Person.css —— 仅 ≥2560 生效 */
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) .person-hero {
+    min-height: clamp(288px, 256px + 6vw, 380px);
+    max-height: min(40vh, 460px);
+  }
+  html:not([data-device="tv"]) .person-avatar { width: clamp(128px, 10vw + 48px, 160px); }
+}</pre>
+    </details>
+  </div>
+
+  <div class="card" data-page-node-id="mf0ttCoVfbAs2HOF1Qtv1q">
+    <h3 data-page-node-id="aq4krF4iqERV2FFt3dazlt">PS-B 横幅 + 悬浮头像卡 <span class="tag" data-page-node-id="TOOVK4nFF6uzmGt5IacKUB">信息密度最优</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="cMdBqBEvysGl9HAkMBTQBK">hero 280px 条幅只留氛围；头像卡下沉悬浮，姓名/简介落回白色内容卡。</p>
+    <div class="stage-clip" data-page-node-id="0JxGZbyobaA1XixGm6KRDU"><div class="stage psb" style="height:760px" data-page-node-id="GFHeEC4u7WOB3j2DEteunB">
+      <div class="st-person" data-page-node-id="VGKHvCANCxKsdndZuRMnqG">
+        <div class="mock-header" data-page-node-id="5LLYDFER9tcevPPSMF4NhR"><span class="logo" data-page-node-id="JN4YAWKUavPQBo4p4BeCHH">KinoTV</span><span class="spacer" data-page-node-id="t0PGEv37cNWIzINJkATcPK"></span><span class="havatar" data-page-node-id="KksEdsWKg5Heu7P4wV4k0O"></span></div>
+        <div class="phero" data-page-node-id="UYP4fAMXyCcqVmHZeORp9H"><div class="noise" data-page-node-id="XtuQTpwCFz9kA0shw0Hpxg"></div></div>
+        <div class="psb-float" data-page-node-id="p7OxnqHS95wdYrLQjG1Sin">
+          <div style="display:flex;gap:24px" data-page-node-id="1uAeZE6mvO6zJ8Qja8qh99">
+            <div class="ph" style="width:180px;aspect-ratio:2/3;border-radius:var(--r-md);flex-shrink:0" data-page-node-id="DJA6zighZDrdrPsXVvSfQj"></div>
+            <div data-page-node-id="hYPO1QKEj8zgKro6vbJART"><div class="pn" data-page-node-id="xyKotzElOvDU57y1DTQegU">刘德华</div><div class="pm" data-page-node-id="ecGUUWnBBEhKQkimjHNeCE">1961 · 中国香港 · 演员 / 制片人</div>
+            <div class="pb" data-page-node-id="hP36ASSNo80BsbhJhgFpL8">简介文本……（白卡承载全部文字信息，黑条只做 280px 氛围横幅）</div></div>
+          </div>
+        </div>
+        <div class="pworks" data-page-node-id="aHW4ULG8dt1v7yGttHWBNP"><div class="page-title" style="font-size:var(--t-lg)" data-page-node-id="ClQfuLgDpGxbSZ80K4GBiW">作品</div>
+          <div class="pgrid" style="margin-top:16px" data-page-node-id="mOsxsD5eUTPAMFQXSMwA05">
+            <div class="poster" data-page-node-id="sI93kS477kyjanK7Acr2Cl"><div class="pimg ph" data-page-node-id="y7ZvvrkKQSQZnwjdcICJzK"></div><div class="pname" data-page-node-id="MJDyL6KGSIkbY03JL98YGr">流浪地球2</div></div>
+            <div class="poster" data-page-node-id="uErnULYcA7SD7x3WmHJEIT"><div class="pimg ph" data-page-node-id="vZA5XOqCho6Z7pWJ7pKHOA"></div><div class="pname" data-page-node-id="dRb0A8etJa6zndy3UX7d56">无间道</div></div>
+            <div class="poster" data-page-node-id="spMat4Kdvd15nA4TUyJ5TN"><div class="pimg ph" data-page-node-id="GezLc6m8z27pLz3w7EjfYz"></div><div class="pname" data-page-node-id="Q4aIV0TeBrKdK8Or6PR1nn">拆弹专家2</div></div>
+            <div class="poster" data-page-node-id="Zl6p8PE993CPNNzngAf8GZ"><div class="pimg ph" data-page-node-id="hTSuADOXwnsS0wBZojhPNG"></div><div class="pname" data-page-node-id="HufyCVJwRaqUe0AHLKzlW9">扫毒2</div></div>
+            <div class="poster" data-page-node-id="my80hgACBuLx9BNHHAckEL"><div class="pimg ph" data-page-node-id="WGIZ9hOS2q97bP25c7SjM5"></div><div class="pname" data-page-node-id="8junIy92FBAiO5n9iLzdS5">追龙</div></div>
+            <div class="poster" data-page-node-id="e46OZkxv6FjdDZyRAVjxEW"><div class="pimg ph" data-page-node-id="LSUinOHpewIBOICkOXoU5V"></div><div class="pname" data-page-node-id="rplZn1lBy1u83D1qXhi6Y1">桃姐</div></div>
+            <div class="poster" data-page-node-id="ha9Fw5K8g5xHMcZRd01K66"><div class="pimg ph" data-page-node-id="M8Q7BOnuT7Or3wPaDP691d"></div><div class="pname" data-page-node-id="KUTWCh3fGCenMySXQCdrhT">失孤</div></div>
+            <div class="poster" data-page-node-id="15xLM4sLpbZdx3OtBEmMvB"><div class="pimg ph" data-page-node-id="KpI2a7v60AvkTb5EzhRH2q"></div><div class="pname" data-page-node-id="ygbLGDv82oBHqcSrisLW1i">更多…</div></div>
+          </div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="YbX5v30ZCkmCmAqTAC0d6A">PS-B · 280px 条幅 + 悬浮卡</span></div>
+  </div>
+
+  <div class="card" data-page-node-id="SzyJ1IgZ1BmPGmhRjdDaQn">
+    <h3 data-page-node-id="UmR4B1uEAgR3Q3AHT6NFcP">PS-C 背景图片化 <span class="tag" data-page-node-id="xl2ZCAZpixPa66vaOhy19W">观感升级</span></h3>
+    <p style="margin:4px 0 10px;font-size:13px;color:#555" data-page-node-id="PPYth0wFq1C6j4k0aEETnQ">高度不动（560px 示意），纯色换 TMDB 人物照 + 双层渐变遮罩（复用 Detail hero 渐变体系），黑块变「有内容」。</p>
+    <div class="stage-clip" data-page-node-id="ieiQhP3NLK3xbKBAVKkyDM"><div class="stage psc" style="height:840px" data-page-node-id="ptunq5hnFXc4TdIHVWyroy">
+      <div class="st-person" data-page-node-id="nJEJ8hpmogeSl9Gu3ZcGop">
+        <div class="mock-header" data-page-node-id="AwtqjsrqsRRYUcH30BgLTy"><span class="logo" data-page-node-id="D1OxAb8ezGJAsUNiICGEhi">KinoTV</span><span class="spacer" data-page-node-id="z2uA93c8PLkdVWhVu1bEK9"></span><span class="havatar" data-page-node-id="iiZes9c5n4gNAIADjlKZf6"></span></div>
+        <div class="phero" data-page-node-id="JZTyIaNCJDolqcQChW41ka">
+          <div class="bgimg ph" style="background:linear-gradient(120deg,#4a3f35,#1c1712)" data-page-node-id="S3oMlatuKWH8p1sNWn1mbo"></div>
+          <div class="shade" data-page-node-id="1cFA5SPzajamCAKSeqmCrg"></div><div class="noise" data-page-node-id="BR83CWz32EZWsEc1IJzCVx"></div><div class="pav ph" data-page-node-id="ofyDxXbGtxX5xdLuMTxoP7"></div>
+          <div class="pc" data-page-node-id="xhRoXdztbNPLdWJ3pbbeNz"><div class="pn" data-page-node-id="pvpCREdGwLchlyU4az1xHt">刘德华</div><div class="pm" data-page-node-id="kPKgFqJeWy7AVKR8fqauu7">1961 · 中国香港 · 演员 / 制片人</div>
+          <div class="pb" data-page-node-id="2actCYxCsZhOzGyZzIHypf">简介文本……（背景有人物照 + 渐变压暗，信息可读性由 shade1/shade2 保证）</div></div>
+        </div>
+        <div class="pworks" data-page-node-id="oOjDVOiBqViJ09UXQLbVmG"><div class="page-title" style="font-size:var(--t-lg)" data-page-node-id="wcYX3ZXkPojFWXFSUzC9UM">作品</div>
+          <div class="pgrid" style="margin-top:16px" data-page-node-id="GSqNiVvVFLZExhzSeKPetv">
+            <div class="poster" data-page-node-id="tWQKk0myMCED7xNBCw00CM"><div class="pimg ph" data-page-node-id="NS6yXHjhjmYjCE5wGk6Zan"></div><div class="pname" data-page-node-id="THCnrf77W38agZ1tumcFD2">流浪地球2</div></div>
+            <div class="poster" data-page-node-id="tlJynlluPadjCYbU3VeFDX"><div class="pimg ph" data-page-node-id="xLHevODGsxdUYrmHXG6xzt"></div><div class="pname" data-page-node-id="zf3zebVlkzeNi8sIuq5Ovs">无间道</div></div>
+            <div class="poster" data-page-node-id="Pdf4NM1V3dDwILzsGiqTZj"><div class="pimg ph" data-page-node-id="44QXcID81kjg82RJZQPi3X"></div><div class="pname" data-page-node-id="U4xTICOtmhzHKp1y2O4OQK">拆弹专家2</div></div>
+            <div class="poster" data-page-node-id="4hjkFV442UkXL8NGSzR6HX"><div class="pimg ph" data-page-node-id="Q22aNGwupEN22Ce0NvcCzY"></div><div class="pname" data-page-node-id="uYPpgptO6w3TZ6bITpwR8p">扫毒2</div></div>
+            <div class="poster" data-page-node-id="E3YwMBvNjZPn9kV8M4Uy4P"><div class="pimg ph" data-page-node-id="IXPkO1bzruDv76u2mzhIoP"></div><div class="pname" data-page-node-id="Eof1aiK1jAlSYwZX5tv7JH">追龙</div></div>
+            <div class="poster" data-page-node-id="tfX2zdRnzOxZtQeeRwzryF"><div class="pimg ph" data-page-node-id="LLVjYFQH9XPwBx3CisQ5eI"></div><div class="pname" data-page-node-id="uJcYAhcf0rR486OdB69CHu">桃姐</div></div>
+            <div class="poster" data-page-node-id="XAhguyq2PKtrG65hFr1iYG"><div class="pimg ph" data-page-node-id="UwzYNO1hkOU4xqlQIzA0qZ"></div><div class="pname" data-page-node-id="WH7JTACNmv9FCSnUxJNeUp">失孤</div></div>
+            <div class="poster" data-page-node-id="L2262MRwbiWCDPyDg7BJ9i"><div class="pimg ph" data-page-node-id="wGIZDCTlOKE75hrHLQnudC"></div><div class="pname" data-page-node-id="5296qLEBvkbfr5Z73NPaGd">更多…</div></div>
+          </div>
+        </div>
+      </div>
+    </div><span class="stage-label" data-page-node-id="HGtuEsJRP11jxsuzxY6pSf">PS-C · 图片 + 渐变遮罩</span></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ── 2560 舞台 scale-to-fit ── */
+let zoomMode = 'fit';
+const clips = Array.from(document.querySelectorAll('.stage-clip'));
+
+function layout() {
+  clips.forEach(clip => {
+    const stage = clip.querySelector('.stage');
+    if (!stage) return;
+    const cw = clip.clientWidth;
+    const z = zoomMode === 'fit' ? Math.min(1, cw / 2560) : zoomMode;
+    stage.style.transform = 'scale(' + z + ')';
+    const left = Math.max(0, (cw - 2560 * z) / 2);
+    stage.style.left = left + 'px';
+    clip.style.height = (stage.offsetHeight * z) + 'px';
+  });
+}
+window.addEventListener('resize', layout);
+/* 字体加载后高度可能变化，双 rAF 兜底 */
+requestAnimationFrame(() => requestAnimationFrame(layout));
+setTimeout(layout, 300);
+
+document.querySelectorAll('.zoom-bar button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.zoom-bar button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    zoomMode = btn.dataset.zoom === 'fit' ? 'fit' : parseFloat(btn.dataset.zoom);
+    layout();
+  });
+});
+
+/* ── 模板切换（IPTV / Browse）── */
+function bindTplBar(barId, stageId) {
+  const bar = document.getElementById(barId);
+  if (!bar) return;
+  const stage = document.getElementById(stageId);
+  bar.querySelectorAll('button[data-tpl]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      stage.className = stage.className.replace(/tpl-[abcd]/g, '').trim() + ' ' + btn.dataset.tpl;
+    });
+  });
+}
+bindTplBar('iptv-tpl-bar', 'iptv-stage');
+bindTplBar('browse-tpl-bar', 'browse-stage');
+</script>
+</body>
+</html>
