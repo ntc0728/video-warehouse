@@ -38,6 +38,19 @@
   animation: skeletonShimmer 1.5s ease-in-out infinite;
 }
 
+/* ═ G1 break-out（2026-09-07 定稿 T1）：.detail-page 接入 content-shell 后，
+   仅在内容壳真实封顶的视口（≥2200）让 hero 背景扩为全出血，
+   避免 2560 下 hero 左右出现「底色留白 + 收窄」的割裂观感。
+   <2200 视口壳为 100%，calc(50% - 50vw) 不启用 → 1440 基线零变化。
+   顶图高度问题本期不改（用户暂缓），此处仅处理壳收窄的副作用。 */
+@media (width >= 2200px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-page > .detail-hero {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    border-radius: 0;
+  }
+}
+
 .detail-hero--skeleton .detail-hero-content {
   opacity: 0.4;
   transition: opacity 0.4s ease;

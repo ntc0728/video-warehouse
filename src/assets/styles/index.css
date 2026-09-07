@@ -629,6 +629,21 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   超宽视口内容壳（G1，2026-09-07 定稿方案 T1）
+   契约：--layout-content-max-width（:root=100%，段2=min(100%,2200px)）不修改。
+   ≤2200 视口 = 100%（与现状逐像素一致）；>2200 封顶居中，与 Browse/Home
+   既有接法同构（根节点 border-box 封顶，见 Browse.css:13）。
+   Player 专属窄档 1920 见 T4（Player.css，不用本类）。
+   消费端：IPTV / Detail / Chart 页根（Browse/Home/Person/Collections/History
+   已各自接入）。
+   ═══════════════════════════════════════════════════════════════════════ */
+.content-shell {
+  width: 100%;
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    全局设计规则 — 桌面端画布最小宽度 1024px（2026-09-03 用户拍板，写入全局规则）
    桌面 Web（视口 ≥768px，且非 App / 非 TV）的版式以 1024px 为最小画布宽度：
    窗口被压缩到 1024px 以下时不再收缩 / 挤扁布局，由浏览器出现横向滚动条承接。
