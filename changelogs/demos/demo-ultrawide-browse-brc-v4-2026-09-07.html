@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="aBod3fHJQDEUlHvw8CHerw">
+<head data-page-node-id="lJCUVOfMbf5X9FyB1LWH3h">
+<meta charset="UTF-8" data-page-node-id="2JwzOpkNSlxQra07yQ4Tnd">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="xoRdBbFiRGMUKSaPQ1E52a">
+<title>BR-C 侧栏筛选 · 终稿 V4 — 2026-09-07</title>
+<style>
+  :root {
+    --bg: #f5f6f7; --surface: #ffffff; --border: #d9d9d9; --border-light: #e8e8e8;
+    --text-1: #1a1a1a; --text-2: #555555; --text-3: #8c8c8c;
+    --accent: #111111; --accent-soft: rgba(0,0,0,.06);
+    --danger: #d4380d; --ok: #1f7a3d;
+    --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-full: 999px;
+    --shadow-card: 0 2px 12px rgba(0,0,0,.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #ececee; color: var(--text-1); }
+
+  /* ═══ 控制台 ═══ */
+  .console { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--border-light); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; box-shadow: 0 1px 8px rgba(0,0,0,.05); }
+  .console h1 { font-size: 14px; font-weight: 800; }
+  .console h1 em { font-style: normal; color: var(--text-3); font-weight: 500; font-size: 12px; margin-left: 8px; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
+  .ctl b { font-weight: 600; }
+  .seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--r-full); background: #ededed; }
+  .seg button { height: 26px; padding: 0 12px; border: none; border-radius: var(--r-full); background: transparent; color: var(--text-2); font-size: 12px; cursor: pointer; }
+  .seg button.on { background: #fff; color: #000; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .note { font-size: 11px; color: var(--text-3); max-width: 400px; line-height: 1.5; }
+
+  /* ═══ 滚动舞台 ═══ */
+  .vp { height: calc(100vh - 58px); overflow: auto; background: var(--bg); }
+  .stage { width: 2560px; zoom: .5; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; height: 72px; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 40px; padding: 0 80px; }
+  .logo { font-size: 22px; font-weight: 900; } .logo i { font-style: normal; color: #e23c3c; }
+  .nav { display: flex; gap: 6px; }
+  .nav a { text-decoration: none; color: var(--text-2); font-size: 15px; padding: 8px 16px; border-radius: var(--r-full); }
+  .nav a.on { color: #000; font-weight: 700; background: var(--accent-soft); }
+  .tsearch { margin-left: auto; width: 420px; height: 44px; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); display: flex; align-items: center; padding: 0 18px; gap: 10px; color: var(--text-3); font-size: 14px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f0a24b, #d4553a); }
+
+  .page { padding: 32px 80px 80px; max-width: 2200px; margin: 0 auto; }
+
+  /* ── V4 布局：tabs 通栏（模式行）→ 侧栏+结果（智能检索）/ 单列（直链搜索）── */
+  .modbar { display: flex; align-items: center; margin-bottom: 24px; }
+  .stabs { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); overflow: hidden; height: 48px; }
+  .stab { display: inline-flex; align-items: center; gap: 8px; padding: 0 26px; font-size: 15px; color: var(--text-2); cursor: pointer; border: none; background: transparent; }
+  .stab.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .stab + .stab { border-left: 1px solid var(--border-light); }
+  .stab .ico { width: 15px; height: 15px; border: 1.6px solid currentColor; border-radius: 50%; position: relative; }
+  .stab .ico::after { content: ''; position: absolute; width: 5px; height: 1.6px; background: currentColor; transform: rotate(45deg); right: -2px; bottom: -1px; }
+  .modhint { margin-left: 16px; font-size: 13px; color: var(--text-3); }
+
+  .bgrid { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 0 28px; align-items: start;
+           grid-template-areas: 'side results'; grid-template-rows: minmax(0, 1fr); }
+  /* 直链搜索：整体退单列（TSX 根节点加 browse-page--cms 后的 CSS 分支） */
+  .bgrid.single { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'results'; }
+  /* 真实实现中直链搜索不渲染 FilterBar（index.tsx:377），display:none 对齐真实行为 */
+  .bgrid.single .fpanel { display: none; }
+
+  /* ── 筛选侧栏（只剩分类/地区/评分三个真筛选维度）── */
+  .fpanel { grid-area: side; align-self: start; position: sticky; top: calc(72px + 20px);
+            background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
+            padding: 22px 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 24px; }
+  .frow { display: flex; flex-direction: column; gap: 10px; }
+  .frow .flabel { font-size: 13px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 6px; }
+  .frow .flabel .dot { width: 3px; height: 12px; border-radius: 2px; background: #e23c3c; }
+  .fchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fchip { height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); color: var(--text-2); font-size: 13px; display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap; }
+  .fchip:hover { border-color: var(--text-3); }
+  .fchip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  /* 类型留面板内的对比案：分段控件样式 + 与下方维度加分隔线 */
+  .typerow-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-full); background: #ededed; }
+  .typerow-seg button { height: 30px; padding: 0 16px; border: none; border-radius: var(--r-full); background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
+  .typerow-seg button.on { background: #fff; color: #000; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .fpanel .divider { height: 1px; background: var(--border-light); margin: -6px 0 2px; }
+
+  /* ── 结果区 ── */
+  .results { grid-area: results; min-width: 0; }
+  .reshead { display: flex; align-items: center; gap: 18px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-md); padding: 10px 16px; margin-bottom: 20px; }
+  .type-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-full); background: #ededed; }
+  .type-seg button { height: 32px; padding: 0 18px; border: none; border-radius: var(--r-full); background: transparent; color: var(--text-2); font-size: 13.5px; cursor: pointer; }
+  .type-seg button.on { background: #fff; color: #000; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .head-div { width: 1px; height: 22px; background: var(--border-light); }
+  .stabs2 { display: flex; gap: 2px; }
+  .s2 { height: 32px; padding: 0 15px; border: none; background: transparent; border-radius: var(--r-sm); color: var(--text-2); font-size: 13.5px; cursor: pointer; }
+  .s2.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .count { margin-left: auto; font-size: 13px; color: var(--text-3); }
+  .count b { color: var(--text-1); font-weight: 700; }
+  /* 直链搜索头部 */
+  .srcrow { display: none; }
+  body.cms .reshead { display: none; }
+  body.cms .srcrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-md); padding: 10px 16px; margin-bottom: 20px; }
+  .srcrow .cnt { font-size: 13px; color: var(--text-2); }
+  .srcrow .cnt b { font-size: 16px; color: #000; }
+  .srcbadge { height: 26px; padding: 0 12px; border-radius: var(--r-full); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+  .srcbadge i { width: 7px; height: 7px; border-radius: 50%; }
+  .srcbadge.ok { background: #e8f5ec; color: var(--ok); } .srcbadge.ok i { background: var(--ok); }
+  .srcbadge.warn { background: #fdf3e7; color: #b26a00; } .srcbadge.warn i { background: #e6a23c; }
+  .srcbadge.bad { background: #fdecea; color: var(--danger); } .srcbadge.bad i { background: var(--danger); }
+
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 22px 20px; }
+  body.cms .pgrid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .pcard { border-radius: var(--r-md); overflow: hidden; background: var(--surface); border: 1px solid var(--border-light); box-shadow: var(--shadow-card); }
+  .poster { aspect-ratio: 2/3; position: relative; display: flex; align-items: flex-end; padding: 12px; }
+  .poster .tt { color: #fff; font-size: 15px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .rate { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.65); color: #ffd04b; font-size: 12.5px; font-weight: 800; padding: 3px 8px; border-radius: var(--r-sm); }
+  .meta { padding: 10px 12px 12px; }
+  .meta .sub { font-size: 12px; color: var(--text-3); display: flex; justify-content: space-between; }
+  .cmscard { display: none; border-radius: var(--r-md); border: 1px solid var(--border-light); background: var(--surface); box-shadow: var(--shadow-card); }
+  body.cms .pcard { display: none; } body.cms .cmscard { display: block; }
+  .cmscard .cbody { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .cmscard .ct { font-size: 15px; font-weight: 700; }
+  .cmscard .cs { font-size: 12.5px; color: var(--text-3); display: flex; gap: 14px; }
+  .cmscard .csrc { font-size: 11.5px; color: #b26a00; background: #fdf3e7; align-self: flex-start; padding: 2px 10px; border-radius: var(--r-full); }
+
+  .p1{background:linear-gradient(160deg,#1c2e4a,#4a6fa5 60%,#8fb3d9)} .p2{background:linear-gradient(160deg,#3d1f2e,#8a3b5c 60%,#d98ba3)} .p3{background:linear-gradient(160deg,#1f3d2b,#3f7a52 60%,#93c9a4)} .p4{background:linear-gradient(160deg,#402a10,#8a6428 60%,#d9b96a)} .p5{background:linear-gradient(160deg,#241a3d,#5b4394 60%,#a793d9)} .p6{background:linear-gradient(160deg,#0f3a3a,#2e7a76 60%,#7fc4bd)} .p7{background:linear-gradient(160deg,#3d1408,#8a3a1c 60%,#d98a5c)} .p8{background:linear-gradient(160deg,#333,#5c5c5c 60%,#a3a3a3)} .p9{background:linear-gradient(160deg,#4a1030,#8a2b5c 60%,#d97fb0)} .p10{background:linear-gradient(160deg,#10304a,#2b5c8a 60%,#7fadd9)} .p11{background:linear-gradient(160deg,#3d3d0f,#7a7a2b 60%,#c9c97f)} .p12{background:linear-gradient(160deg,#2b0f0f,#6e2020 60%,#b56a6a)}
+
+  /* ═══ 文档区 ═══ */
+  .docs { max-width: 980px; margin: 28px auto 60px; background: #fff; border-radius: var(--r-lg); border: 1px solid var(--border-light); padding: 32px 40px; box-shadow: var(--shadow-card); }
+  .docs h2 { font-size: 18px; margin-bottom: 14px; }
+  .docs h3 { font-size: 14.5px; margin: 20px 0 8px; }
+  .docs p, .docs li { font-size: 13.5px; color: var(--text-2); line-height: 1.75; }
+  .docs code { background: #f2f2f2; padding: 2px 7px; border-radius: 5px; font-size: 12.5px; font-family: Consolas, monospace; color: #c0392b; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border-light); padding: 8px 12px; text-align: left; color: var(--text-2); }
+  th { background: #f7f7f8; color: var(--text-1); }
+</style>
+</head>
+<body data-page-node-id="P7NHTJn8scfCBo86mMtOGK">
+
+<div class="console" data-page-node-id="MfEUKPna4EuI44A2CV3MKr">
+  <h1 data-page-node-id="SjzIGCqebtXBGVU9ucnfnl">BR-C 终稿 V4<em data-page-node-id="iqqFfQPbBXvkFQtVRbl8As">tabs 通栏 · 类型出面板 · 直链搜索单列</em></h1>
+  <div class="ctl" data-page-node-id="WR4y8opwIkCmTdh0trb6p7"><b data-page-node-id="dLroMx9fmtdPADXT02vCnR">搜索模式</b>
+    <div class="seg" id="segMode" data-page-node-id="NaWi52Ld2cZNAOcpNMFSuy">
+      <button class="on" data-v="smart" data-page-node-id="chvjoMtdHtGUB5Crb8CdNP">智能检索</button>
+      <button data-v="cms" data-page-node-id="9wcFnBTFNFjrnucgCU6iKA">直链搜索</button>
+    </div>
+  </div>
+  <div class="ctl" data-page-node-id="eWpGxIA9xmiFMBKJ4v5USQ"><b data-page-node-id="cs0BvVZxSnQiBHh00qDNoa">类型位置</b>
+    <div class="seg" id="segType" data-page-node-id="QkvtfRXOrBa8vgqVR2s9Lo">
+      <button class="on" data-v="reshead" data-page-node-id="yoo4HXf3T4DvmXO6bongqk">结果区头部（推荐）</button>
+      <button data-v="panel" data-page-node-id="HLGtcOvyUH80resCAEqIsy">面板内（分段强化）</button>
+    </div>
+  </div>
+  <div class="note" data-page-node-id="cchQuV4SbCzeJQwFwsBhZk">智能检索：类型分段与排序同行置于结果区头部，侧栏只剩分类/地区/评分；直链搜索：整体退单列全宽，类型与面板自然消失。上下滚动验证面板 sticky。</div>
+</div>
+
+<div class="vp" id="vp" data-page-node-id="TlF5pP7DR3KRs1r0YdDQlL">
+  <div class="stage" data-page-node-id="rd9mm2foIvoEoRFENiyIjU">
+
+    <div class="topbar" data-page-node-id="EXkx3xQyK8QP0Y9zsnfqlE">
+      <div class="logo" data-page-node-id="790BTjcrQLbc96YOLYqyUm">Kino<i data-page-node-id="wwHl181VfIP58wRWMMBUPi">TV</i></div>
+      <div class="nav" data-page-node-id="B3Ha5w4WzKGNRZXAO3dPka"><a href="#" data-page-node-id="H5S6t9NLcSqFwSSmjzXZQo">首页</a><a class="on" href="#" data-page-node-id="I7Fu0aTam3sMLQCcMaaZJL">浏览</a><a href="#" data-page-node-id="630MYFOzUiOTWAPwIkpHN7">热度榜</a><a href="#" data-page-node-id="sTA2M94h0FVrM4gkSkXIAA">收藏</a><a href="#" data-page-node-id="KT1RsOXSJTooLFaxznZBar">历史</a></div>
+      <div class="tsearch" data-page-node-id="ZvIeHtsnQfyRtYbpCIsT7G">🔍 搜索电影、剧集、人物…</div>
+      <div class="avatar" data-page-node-id="0MdoHCVhU8fCnuk7BpTon3"></div>
+    </div>
+
+    <div class="page" data-page-node-id="LpZDvRqrBdvLRN082ydaoF">
+
+      <!-- 模式行：通栏 -->
+      <div class="modbar" data-page-node-id="nhGBg3hajmTfpcemH3xhDf">
+        <div class="stabs" id="stabs" data-page-node-id="2zUMRDk98PknlWNms43Y8M">
+          <button class="stab on" data-v="smart" data-page-node-id="K5YN4NGHVG9tlEs29gB4df"><span class="ico" data-page-node-id="PBCMQbKhZOLOpe0HoNf8Ch"></span>智能检索</button>
+          <button class="stab" data-v="cms" data-page-node-id="6DjuznH2dQU8pNuaKCCCB1">直链搜索</button>
+        </div>
+        <span class="modhint" data-page-node-id="bLRtYG5pmwOJ2CwfKqYHbS">跨源聚合 · 类型/地区/评分可组合筛选</span>
+      </div>
+
+      <div class="bgrid" id="bgrid" data-page-node-id="3rE3OwbUblQvFanR3GEgws">
+
+        <!-- 侧栏：三个真筛选维度（类型对比案时临时插入） -->
+        <aside class="fpanel" id="fpanel" data-page-node-id="0gtZ8kkIJVrge8HR0aGj8i">
+          <div class="frow" id="typeRowPanel" style="display:none" data-page-node-id="VWuE7USrbJDsR3lXRTJ8cv">
+            <span class="flabel" data-page-node-id="EFGFa5WJkKfgcWLZiHO5AH"><span class="dot" data-page-node-id="H6tUHv1rsKKKUASRQ3wPdH"></span>类型</span>
+            <div class="typerow-seg" data-page-node-id="yTtAjX8rIN7CDuiV9ePMLy">
+              <button class="on" data-page-node-id="SAE5VVR25rjxegXGqHv6HB">全部</button><button data-page-node-id="IKQsrknhgbIpJvH8G7jUp2">电影</button><button data-page-node-id="QwuAtTlhFvz3ZMgukx218O">剧集</button>
+            </div>
+          </div>
+          <div class="divider" id="typeDivider" style="display:none" data-page-node-id="3AtFcpxd3qv3FGvtGKpWYS"></div>
+          <div class="frow" data-page-node-id="LhlHiJcoIroIy1gUGx6laT">
+            <span class="flabel" data-page-node-id="YcMkbtoX77VnXDgsA3b9jN"><span class="dot" data-page-node-id="Pmu5xOAf5mEf6ho0uPHF5z"></span>分类</span>
+            <div class="fchips" data-page-node-id="lAAcGK8lp0mQwIlLyZeWub">
+              <button class="fchip" data-page-node-id="I6DpYyJJC2dHP3f4oY3BPh">动作</button><button class="fchip on" data-page-node-id="gW5JkdwSZxDpvdD3xz1ihE">科幻</button><button class="fchip" data-page-node-id="XXhySg7AXHAcdVNRo2pyeA">喜剧</button>
+              <button class="fchip" data-page-node-id="KvUrwvVHgIV4iTqkyYKK6i">爱情</button><button class="fchip" data-page-node-id="iaK0pstUzdhu9nbAb0Mdqi">惊悚</button><button class="fchip" data-page-node-id="qcaHbB0jKQwiE6skeor0u3">悬疑</button>
+              <button class="fchip" data-page-node-id="92r3zAkQC15AMgOkjGQ0Eo">犯罪</button><button class="fchip" data-page-node-id="ZMFachr4tOVaWmSJC2wyTn">冒险</button><button class="fchip" data-page-node-id="GHE65fXBpFMPZV50t9HpiF">奇幻</button>
+              <button class="fchip" data-page-node-id="4VxOjH3wmp9FjCJ8tS2S50">动画</button><button class="fchip" data-page-node-id="ItCHs94n4CTxB7UMBffnRZ">纪录片</button><button class="fchip" data-page-node-id="ODuuZekV8gsbD4S18i3KJC">剧情</button>
+              <button class="fchip" data-page-node-id="LVcNKNYqQC1NN2ui3uGeJc">家庭</button><button class="fchip" data-page-node-id="MoBEEDdEdHUhsHQkxbjryI">战争</button><button class="fchip" data-page-node-id="zYrpgMhNFDG5FBdHoAEZ8U">历史</button>
+              <button class="fchip" data-page-node-id="RF1EPxHeYWsCye8qtgZdqo">音乐</button><button class="fchip" data-page-node-id="nA1192zkP5UOf6MpXe7rVl">恐怖</button><button class="fchip" data-page-node-id="hCfYyAPmYvaLqLSOsQJ6Q8">西部</button>
+            </div>
+          </div>
+          <div class="frow" data-page-node-id="4BotElflK3Xygn9XC2VazW">
+            <span class="flabel" data-page-node-id="j15kPuPb6R8KP4kebXxxK3"><span class="dot" data-page-node-id="poKmwBADHeD72wo6v4jpXm"></span>地区</span>
+            <div class="fchips" data-page-node-id="6pGm1iuGeeEIqhNr1oJV97">
+              <button class="fchip on" data-page-node-id="xBQcivXGcvWJwMXW7FRfms">全部</button><button class="fchip" data-page-node-id="1Kz41fSzDlwx2FJMr4Axrb">中国大陆</button><button class="fchip" data-page-node-id="I2voCBGFULcdQVOF4sgq1N">中国香港</button>
+              <button class="fchip" data-page-node-id="bDgxEmUY6jUC2hi5eomxbL">中国台湾</button><button class="fchip" data-page-node-id="XjHpx4At5I736MaluN91gb">美国</button><button class="fchip" data-page-node-id="xYNA7kWACRm7pfT6SO0A9h">英国</button>
+              <button class="fchip" data-page-node-id="Sw0kEC1z0Dsf6QGNBhcLlY">韩国</button><button class="fchip" data-page-node-id="dpuGhEWcs4WccKifcwNBS7">日本</button><button class="fchip" data-page-node-id="H0laHuPizFPAQkwCXiEQCs">法国</button>
+              <button class="fchip" data-page-node-id="APedQsSkjJk4ePo9iO0gAq">德国</button><button class="fchip" data-page-node-id="Ei3SedeHrN7JCd41ybRz0c">印度</button><button class="fchip" data-page-node-id="uWsNdx3mC2dMmqtpaBegMQ">泰国</button>
+            </div>
+          </div>
+          <div class="frow" data-page-node-id="TQukhQDbo2kwrypaDuF7ZO">
+            <span class="flabel" data-page-node-id="Hw0MWZljr88X5HDCVlt69M"><span class="dot" data-page-node-id="5OJItjcuAftrUqZl1PL1Fj"></span>评分</span>
+            <div class="fchips" data-page-node-id="brN4bh8d2PovVTkFBPvwSL">
+              <button class="fchip on" data-page-node-id="QF7elBKkYIMfOXO29gDXwy">全部</button><button class="fchip" data-page-node-id="oFIB6BujYDDNNjiUTW7f9P">9+</button><button class="fchip" data-page-node-id="njFBwlZPd1DOTX7oCVr6d9">8~9</button>
+              <button class="fchip" data-page-node-id="nr9Ba370A1UQ8mJ0vCFtBa">7~8</button><button class="fchip" data-page-node-id="tBsWGjxkM8yzLnHfEPdpjO">6~7</button><button class="fchip" data-page-node-id="4Cl76jBZpvhJ0UFiHkNMsh">6 以下</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 结果区 -->
+        <div class="results" data-page-node-id="mGzd1imFTwW5p5E1MV96wJ">
+          <div class="reshead" id="reshead" data-page-node-id="Ec4wAXPhIWmbTKBHeinsEO">
+            <div class="type-seg" id="typeSegRes" data-page-node-id="KcdEHB1HhiR2jSyM1JfY2D">
+              <button class="on" data-page-node-id="stoRZ6daJCeWFXmyAXPE47">全部</button><button data-page-node-id="HaodAUL8Vzn8KGihLHhxAj">电影</button><button data-page-node-id="7JWWepnvNV06Q2EgLapwq7">剧集</button>
+            </div>
+            <span class="head-div" data-page-node-id="rsPbeQcbOF30TCNEaL5LKh"></span>
+            <div class="stabs2" data-page-node-id="weWhsi4HooWr4ZYFshM9xs">
+              <button class="s2 on" data-page-node-id="wqSTUEiW4v3Lj6iTa172SV">综合排序</button><button class="s2" data-page-node-id="Sg2NL2BBcQHCBjQXjrsNkc">最热</button><button class="s2" data-page-node-id="I21wbbnJcm8aykUS8eBblG">最新</button><button class="s2" data-page-node-id="NoVFpFvMBrlJbht0aCW59V">评分最高</button>
+            </div>
+            <span class="count" data-page-node-id="F4BCguNydDlJdTxkrjpD8P">共 <b data-page-node-id="ds4GG7Y8Kt9K8PpMRvGYRs">12,847</b> 条</span>
+          </div>
+          <div class="srcrow" data-page-node-id="DlT7vtOfxXRvFwjNf4Kf7o">
+            <span class="cnt" data-page-node-id="PmqcPOZULxDDitTWTEElww">结果数 <b data-page-node-id="6DSMLYf5AgLR9aCLwr1GUR">18</b></span>
+            <span class="srcbadge ok" data-page-node-id="zmCXZZHmDijtfENSnLW8Hy"><i data-page-node-id="8lg4ib8DtVrB2H3LqqSM0A"></i>暴风资源 6</span>
+            <span class="srcbadge ok" data-page-node-id="klMnBCMrnkYeFtuxKiO6BD"><i data-page-node-id="LmwmRGxhThtj2y7k6gdtDV"></i>飞速资源 5</span>
+            <span class="srcbadge warn" data-page-node-id="FuwfGI25Nq8ehBcECp9HmV"><i data-page-node-id="d15xFcr8iFUCTaMQIzU0c5"></i>闪电资源 4 · 3 条去重</span>
+            <span class="srcbadge bad" data-page-node-id="AVKsexIGpjAQR9OAGzd2i5"><i data-page-node-id="fxax3CXeujaOlQf6Auezcm"></i>如意资源 超时</span>
+          </div>
+          <div class="pgrid" id="pgrid" data-page-node-id="pw4ONZB6wg0DMNkgmMTwLB"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="docs" data-page-node-id="G1FJgZXpmgYa7YB3zZxLAa">
+  <h2 data-page-node-id="oMx0OZrXERo0uNDa9D0T6n">V4 相对 V3 的三处结构调整（均针对你提出的三个问题）</h2>
+  <table data-page-node-id="UOrDbFXtWqjuo60j76sI0g">
+    <tr data-page-node-id="9iQgG6MUhViejQjBqew2xc"><th data-page-node-id="cKc31kMzSl7heoynGcpyX3">问题</th><th data-page-node-id="2nECzqP0SqU5kFawuXQEdj">V4 结构</th><th data-page-node-id="pfQK7x3TEvMSaQKXoWgY3D">理由 / 代码成本</th></tr>
+    <tr data-page-node-id="wg3Fasc31H4nca2zResRdJ">
+      <td data-page-node-id="l1YGK9k7uy5MdH8KyFAP2E">tabs 放侧栏内是否好？</td>
+      <td data-page-node-id="OkVoV62nzmAotnD0klZsel"><b data-page-node-id="9vXcnBS4kwBPp4BEiwgZmI">通栏</b>：模式行独占一行，与内容区左右对齐</td>
+      <td data-page-node-id="dd3wxb25HckmIXRyWdHBPW">智能检索/直链搜索是页面级模式切换，塞 264px 窄列视觉与语义双降级；通栏后 results 不再跨行，V3 发现的 grid 行高分配 Bug <b data-page-node-id="OL3jf9U18eTltBjRDIyDVG">天然消失</b>（连 <code data-page-node-id="pbY3DMc75aEGmLGdMCyDKl">grid-template-rows</code> 修复都不再必需，仍建议保留防御）。成本：BR-C 块 areas 改 <code data-page-node-id="0jpCWakjlKzj841HjHMaOv">'tabs tabs' / 'side results'</code>，纯 CSS</td>
+    </tr>
+    <tr data-page-node-id="cycNrez85H62XLOeSBbVmv">
+      <td data-page-node-id="FaooWDIMiTZK0a4vkQLMLG">直链搜索下面板消失、左列空洞</td>
+      <td data-page-node-id="9k36ZIDFWzaQApcV6vZ7iu">直链搜索<b data-page-node-id="Gwol0Zzlq4VLmogYL8LsgB">整体退单列</b>：无侧栏，CMS 卡片全宽（minmax 300px）</td>
+      <td data-page-node-id="yY0f4R3hMkOmgPuYgSLlWi">直链搜索本就无筛选维度（CMS 全量搜索），左列空 264px 纯浪费。成本：TSX 根节点按 <code data-page-node-id="3EIYisXEIq0xi1pEi3cABo">searchMode</code> 加 <code data-page-node-id="elwIDZKNPdp1f4a60N2IVb">browse-page--cms</code> 类（一行）+ CSS 一条 <code data-page-node-id="jXnMub4fPDeWCG6DsfWU9z">grid-template-columns: 1fr</code> 分支</td>
+    </tr>
+    <tr data-page-node-id="VRGE2ddfcZk0FySkrz7BIQ">
+      <td data-page-node-id="VGoQI4BKDT8eqUzl8hUSGo">「类型」为何在面板内？</td>
+      <td data-page-node-id="uo5Te6TqtuSNmSWC63AgOy">推荐：<b data-page-node-id="8eYACBR4LXeEEzWCxw2v4c">类型出面板</b>，与排序同行置于结果区头部（<code data-page-node-id="pklLoJ4LcLBGY5A7BSbJHl">[全部|电影|剧集] | [排序 tabs] [共 N 条]</code>）；备选：留面板顶部但升级为分段控件 + 分隔线分层</td>
+      <td data-page-node-id="ZEdFC0fdFGoR4Ad0lAFrnC">类型决定 discover 查 movie/tv 与 genres 集合，是顶层维度，与分类/地区/评分平级是层级错误；且直链搜索无类型维度——类型随智能检索区走，切直链时自然消失，无层级矛盾。成本：FilterBar 加 <code data-page-node-id="4sfY7qMAWfjvt1YXI7N28E">hideType</code> prop，Browse 桌面自渲染类型分段（中等）</td>
+    </tr>
+  </table>
+  <h3 data-page-node-id="2mDVD1dHuIbi8pGaOO45e1">实施清单（确认后落地）</h3>
+  <p data-page-node-id="WiuRAa2ejyHbW5xC0Bk7MG">① Browse.css BR-C 块：areas 改通栏 + 保留 <code data-page-node-id="cAZvFTTWt89tfH1Efnw7uG">grid-template-rows: auto minmax(0,1fr)</code> 防御 + cms 单列分支；② Browse/index.tsx：根节点按 searchMode 加类；③ FilterBar：加 <code data-page-node-id="vbhPVaqptwHupLhLRnU0JX">hideType</code> prop（默认 false，历史页等调用方零回归），Browse 桌面端渲染类型分段进结果区头部；④ build + E2E。</p>
+</div>
+
+<script>
+  var body = document.body;
+  var bgrid = document.getElementById('bgrid');
+  var P = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+  var MOVIES = [
+    ['星际边界','2026 · 科幻','8.7'],['暗涌','2026 · 悬疑','8.2'],['长夜将尽','2025 · 剧情','8.9'],
+    ['蒸汽之城','2026 · 冒险','7.6'],['逆光而行','2025 · 爱情','7.9'],['深空信号','2026 · 科幻','8.4'],
+    ['双面证人','2026 · 犯罪','8.1'],['雪线','2025 · 剧情','8.8'],['迷航档案','2026 · 奇幻','7.4'],
+    ['无声证词','2026 · 惊悚','8.3'],['春日协议','2025 · 喜剧','7.2'],['铁翼苍穹','2026 · 战争','8.6']
+  ];
+  var CMS = [
+    ['星际边界 4K 国粤双语','暴风资源 · 38.2GB · 2160P'],['暗涌 HDR 杜比视界','飞速资源 · 12.6GB · 1080P'],
+    ['长夜将尽 全集','暴风资源 · 24.1GB · 1080P'],['蒸汽之城 导演剪辑版','闪电资源 · 31.7GB · 2160P'],
+    ['逆光而行','飞速资源 · 8.9GB · 1080P'],['深空信号 S01-S02','暴风资源 · 45.3GB · 1080P'],
+    ['双面证人','闪电资源 · 11.2GB · 1080P'],['雪线 4K REMUX','暴风资源 · 52.8GB · 2160P'],
+    ['迷航档案','飞速资源 · 9.4GB · 1080P'],['无声证词','如意资源 · 10.1GB · 1080P'],
+    ['春日协议','闪电资源 · 7.3GB · 1080P'],['铁翼苍穹 IMAX 版','暴风资源 · 41.5GB · 2160P']
+  ];
+  function build() {
+    var html = '';
+    if (body.classList.contains('cms')) {
+      for (var i = 0; i < 18; i++) {
+        var c = CMS[i % CMS.length];
+        html += '<div class="cmscard"><div class="cbody"><div class="ct">' + c[0] + '</div><div class="cs"><span>2026</span><span>' + (i % 3 + 1) + ' 集</span></div><span class="csrc">' + c[1] + '</span></div></div>';
+      }
+    } else {
+      for (var j = 0; j < 48; j++) {
+        var m = MOVIES[j % MOVIES.length];
+        html += '<div class="pcard"><div class="poster ' + P[j % 12] + '"><span class="rate">' + m[2] + '</span><span class="tt">' + m[0] + '</span></div><div class="meta"><div class="sub"><span>' + m[1] + '</span><span>' + (6 + j % 5) + '.' + (j % 10) + ' 万人在看</span></div></div></div>';
+      }
+    }
+    document.getElementById('pgrid').innerHTML = html;
+  }
+  function bindSeg(id, fn) {
+    var seg = document.getElementById(id);
+    seg.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      fn(btn.getAttribute('data-v'));
+    });
+  }
+  bindSeg('segMode', function (v) {
+    var isCms = v === 'cms';
+    body.classList.toggle('cms', isCms);
+    document.querySelectorAll('#stabs .stab').forEach(function (b) { b.classList.toggle('on', (b.getAttribute('data-v') === 'cms') === isCms); });
+    bgrid.classList.toggle('single', isCms);
+    build();
+  });
+  bindSeg('segType', function (v) {
+    var inPanel = v === 'panel';
+    document.getElementById('typeSegRes').style.display = inPanel ? 'none' : '';
+    document.getElementById('reshead').querySelector('.head-div').style.display = inPanel ? 'none' : '';
+    document.getElementById('typeRowPanel').style.display = inPanel ? '' : 'none';
+    document.getElementById('typeDivider').style.display = inPanel ? '' : 'none';
+  });
+  document.querySelectorAll('.frow, .typerow-seg, .type-seg').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      var chip = e.target.closest('.fchip, button'); if (!chip || chip.classList.contains('flabel')) return;
+      row.querySelectorAll('.fchip, button').forEach(function (c) { c.classList.remove('on'); });
+      chip.classList.add('on');
+    });
+  });
+  build();
+</script>
+</body>
+</html>

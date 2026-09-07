@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="WClj17eOFiT1w5M1AlrSle">
+<head data-page-node-id="s5nLXbLeFGeV0rfaYrHP6G">
+<meta charset="UTF-8" data-page-node-id="6ArQiYm0Idf4dAtYo3Lr1t">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="LEtqnYo2xDaoX43jOobH45">
+<title>BR-C 侧栏筛选 · 真实拟真 Demo V3 — 2026-09-07</title>
+<style>
+  :root {
+    --bg: #f5f6f7;
+    --surface: #ffffff;
+    --border: #d9d9d9;
+    --border-light: #e8e8e8;
+    --text-1: #1a1a1a;
+    --text-2: #555555;
+    --text-3: #8c8c8c;
+    --accent: #111111;
+    --accent-soft: rgba(0,0,0,.06);
+    --danger: #d4380d;
+    --ok: #1f7a3d;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-full: 999px;
+    --shadow-card: 0 2px 12px rgba(0,0,0,.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #ececee; color: var(--text-1); }
+
+  /* ═══ 顶部控制台 ═══ */
+  .console { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--border-light); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; box-shadow: 0 1px 8px rgba(0,0,0,.05); }
+  .console h1 { font-size: 14px; font-weight: 800; letter-spacing: .5px; }
+  .console h1 em { font-style: normal; color: var(--text-3); font-weight: 500; font-size: 12px; margin-left: 8px; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
+  .ctl b { font-weight: 600; }
+  .seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--r-full); background: #ededed; }
+  .seg button { height: 26px; padding: 0 12px; border: none; border-radius: var(--r-full); background: transparent; color: var(--text-2); font-size: 12px; cursor: pointer; }
+  .seg button.on { background: #fff; color: #000; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .note { font-size: 11px; color: var(--text-3); max-width: 420px; line-height: 1.5; }
+
+  /* ═══ 滚动舞台：内部为 2560px 宽的完整页面，zoom 0.5 缩放 ═══ */
+  .vp { height: calc(100vh - 58px); overflow: auto; background: var(--bg); }
+  .stage { width: 2560px; zoom: .5; }
+
+  /* ── 应用顶栏（sticky，供筛选面板 sticky 偏移参照）── */
+  .topbar { position: sticky; top: 0; z-index: 20; height: 72px; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 40px; padding: 0 80px; }
+  .logo { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+  .logo i { font-style: normal; color: #e23c3c; }
+  .nav { display: flex; gap: 6px; }
+  .nav a { text-decoration: none; color: var(--text-2); font-size: 15px; padding: 8px 16px; border-radius: var(--r-full); }
+  .nav a.on { color: #000; font-weight: 700; background: var(--accent-soft); }
+  .tsearch { margin-left: auto; width: 420px; height: 44px; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); display: flex; align-items: center; padding: 0 18px; gap: 10px; color: var(--text-3); font-size: 14px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f0a24b, #d4553a); }
+
+  /* ── 页面主体（复刻 .browse-page grid）── */
+  .page { padding: 32px 80px 80px; max-width: 2200px; margin: 0 auto; }
+  .bgrid { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 0 28px; align-items: start;
+           grid-template-areas: 'tabs results' 'filters results'; }
+  /* 修正版：row2 用 1fr 吸收跨行 results 的剩余高度，row1 保持 tabs 原始高度 */
+  .bgrid.fix { grid-template-rows: auto minmax(0, 1fr); }
+  /* 现状 Bug 复现：两条 auto 行 → results 跨行分配把 row1 撑爆 */
+  .bgrid.bug { grid-template-rows: auto auto; }
+  /* Tab 通栏变体 */
+  .bgrid.bartop { grid-template-areas: 'tabs tabs' 'filters results'; grid-template-rows: auto minmax(0, 1fr); }
+  .bgrid.bartop.bug { grid-template-rows: auto auto; }
+
+  /* ── 搜索模式 Tabs（复刻 .browse-search-tabs 胶囊组）── */
+  .stabs { grid-area: tabs; display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); overflow: hidden; height: 46px; align-self: start; width: max-content; }
+  .bgrid.bartop .stabs { width: 100%; justify-content: center; }
+  .stab { display: inline-flex; align-items: center; gap: 7px; padding: 0 24px; font-size: 14.5px; color: var(--text-2); cursor: pointer; border: none; background: transparent; }
+  .stab.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .stab + .stab { border-left: 1px solid var(--border-light); }
+  .stab .ico { width: 15px; height: 15px; border: 1.6px solid currentColor; border-radius: 50%; position: relative; }
+  .stab .ico::after { content: ''; position: absolute; width: 5px; height: 1.6px; background: currentColor; transform: rotate(45deg); right: -2px; bottom: -1px; }
+
+  /* ── 筛选侧栏面板（复刻 filter-bar 面板化）── */
+  .fpanel { grid-area: filters; align-self: start; position: sticky; top: calc(72px + 20px);
+            background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
+            padding: 22px 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 22px; }
+  .fpanel.hidden { display: none; }
+  .frow { display: flex; flex-direction: column; gap: 10px; }
+  .frow .flabel { font-size: 13px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 6px; }
+  .frow .flabel .dot { width: 3px; height: 12px; border-radius: 2px; background: #e23c3c; }
+  .frow .flabel.clickable { cursor: pointer; color: var(--text-2); }
+  .frow .flabel.clickable.all-on { color: #000; background: var(--accent-soft); border-radius: var(--r-full); padding: 3px 10px 3px 8px; }
+  .fchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fchip { height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); color: var(--text-2); font-size: 13px; display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap; }
+  .fchip:hover { border-color: var(--text-3); }
+  .fchip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .fchip .n { font-size: 11px; opacity: .55; margin-left: 4px; }
+
+  /* ── 结果区 ── */
+  .results { grid-area: results; min-width: 0; }
+  .sortbar { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-md); padding: 10px 16px; margin-bottom: 20px; }
+  .stabs2 { display: flex; gap: 2px; }
+  .s2 { height: 34px; padding: 0 16px; border: none; background: transparent; border-radius: var(--r-sm); color: var(--text-2); font-size: 13.5px; cursor: pointer; }
+  .s2.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .count { margin-left: auto; font-size: 13px; color: var(--text-3); }
+  .count b { color: var(--text-1); font-weight: 700; }
+  /* CMS 源状态行 */
+  .srcrow { display: none; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-md); padding: 10px 16px; margin-bottom: 20px; }
+  .srcrow .cnt { font-size: 13px; color: var(--text-2); }
+  .srcrow .cnt b { font-size: 16px; color: #000; }
+  .srcbadge { height: 26px; padding: 0 12px; border-radius: var(--r-full); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+  .srcbadge i { width: 7px; height: 7px; border-radius: 50%; }
+  .srcbadge.ok { background: #e8f5ec; color: var(--ok); } .srcbadge.ok i { background: var(--ok); }
+  .srcbadge.warn { background: #fdf3e7; color: #b26a00; } .srcbadge.warn i { background: #e6a23c; }
+  .srcbadge.bad { background: #fdecea; color: var(--danger); } .srcbadge.bad i { background: var(--danger); }
+  body.cms .sortbar { display: none; }
+  body.cms .srcrow { display: flex; }
+
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 22px 20px; }
+  .pcard { border-radius: var(--r-md); overflow: hidden; background: var(--surface); border: 1px solid var(--border-light); box-shadow: var(--shadow-card); }
+  .poster { aspect-ratio: 2/3; position: relative; display: flex; align-items: flex-end; padding: 12px; }
+  .poster .tt { color: #fff; font-size: 15px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .rate { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.65); color: #ffd04b; font-size: 12.5px; font-weight: 800; padding: 3px 8px; border-radius: var(--r-sm); backdrop-filter: blur(4px); }
+  .meta { padding: 10px 12px 12px; }
+  .meta .sub { font-size: 12px; color: var(--text-3); display: flex; justify-content: space-between; }
+  /* CMS 卡 */
+  .cmscard { display: none; border-radius: var(--r-md); border: 1px solid var(--border-light); background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
+  body.cms .pgrid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  body.cms .pcard { display: none; }
+  body.cms .cmscard { display: block; }
+  .cmscard .cbody { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .cmscard .ct { font-size: 15px; font-weight: 700; }
+  .cmscard .cs { font-size: 12.5px; color: var(--text-3); display: flex; gap: 14px; }
+  .cmscard .csrc { font-size: 11.5px; color: #b26a00; background: #fdf3e7; align-self: flex-start; padding: 2px 10px; border-radius: var(--r-full); }
+
+  /* 海报底色（拟真） */
+  .p1{background:linear-gradient(160deg,#1c2e4a,#4a6fa5 60%,#8fb3d9)} .p2{background:linear-gradient(160deg,#3d1f2e,#8a3b5c 60%,#d98ba3)} .p3{background:linear-gradient(160deg,#1f3d2b,#3f7a52 60%,#93c9a4)} .p4{background:linear-gradient(160deg,#402a10,#8a6428 60%,#d9b96a)} .p5{background:linear-gradient(160deg,#241a3d,#5b4394 60%,#a793d9)} .p6{background:linear-gradient(160deg,#0f3a3a,#2e7a76 60%,#7fc4bd)} .p7{background:linear-gradient(160deg,#3d1408,#8a3a1c 60%,#d98a5c)} .p8{background:linear-gradient(160deg,#333,#5c5c5c 60%,#a3a3a3)} .p9{background:linear-gradient(160deg,#4a1030,#8a2b5c 60%,#d97fb0)} .p10{background:linear-gradient(160deg,#10304a,#2b5c8a 60%,#7fadD9)} .p11{background:linear-gradient(160deg,#3d3d0f,#7a7a2b 60%,#c9c97f)} .p12{background:linear-gradient(160deg,#2b0f0f,#6e2020 60%,#b56a6a)}
+
+  /* ── Bug 标注层 ── */
+  .bgrid { position: relative; }
+  #rowmark { position: absolute; top: -6px; left: -6px; width: calc(100% + 12px); outline: 2px dashed var(--danger); outline-offset: 0; border-radius: 4px; pointer-events: none; z-index: 14; }
+  .bugmark { display: none; }
+  body.showbug #rowmark { display: block; }
+  .laynote { position: sticky; top: 104px; z-index: 18; width: max-content; max-width: 680px; font-size: 13px; line-height: 1.6; padding: 12px 18px; border-radius: var(--r-md); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+  .laynote.bad { background: #fff4f0; border: 1px solid #ffcfb8; color: var(--danger); box-shadow: 0 4px 16px rgba(212,56,13,.12); }
+  .laynote.good { background: #eff7f1; border: 1px solid #c4e2cd; color: var(--ok); box-shadow: 0 4px 16px rgba(31,122,61,.12); }
+  .laynote b { display: block; margin-bottom: 2px; }
+
+  /* ═══ 底部：根因与修复代码 ═══ */
+  .docs { max-width: 980px; margin: 28px auto 60px; background: #fff; border-radius: var(--r-lg); border: 1px solid var(--border-light); padding: 32px 40px; box-shadow: var(--shadow-card); }
+  .docs h2 { font-size: 18px; margin-bottom: 14px; }
+  .docs h3 { font-size: 14.5px; margin: 20px 0 8px; }
+  .docs p, .docs li { font-size: 13.5px; color: var(--text-2); line-height: 1.75; }
+  .docs code { background: #f2f2f2; padding: 2px 7px; border-radius: 5px; font-size: 12.5px; font-family: Consolas, monospace; color: #c0392b; }
+  pre { background: #1e1e28; color: #d8d8e8; border-radius: var(--r-md); padding: 18px 22px; font-size: 12.5px; line-height: 1.7; overflow-x: auto; font-family: Consolas, monospace; margin: 10px 0; }
+  pre .k { color: #82aaff; } pre .c { color: #6a737d; } pre .s { color: #c3e88d; } pre .del { color: #ff7b72; } pre .add { color: #4ade80; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border-light); padding: 8px 12px; text-align: left; color: var(--text-2); }
+  th { background: #f7f7f8; color: var(--text-1); }
+</style>
+</head>
+<body data-page-node-id="ZDN2RTWSnYGScIT9z0rGHA">
+
+<!-- ═══ 控制台 ═══ -->
+<div class="console" data-page-node-id="cptIUdmJOHdXowDz9yHxhJ">
+  <h1 data-page-node-id="Cf9K2zRK5dthjfFJpHl5Mt">BR-C 侧栏筛选 · 真实拟真 Demo<em data-page-node-id="HPoTOKeFVwelq0bEdufHLe">V3 · 2560×1440 · 可滚动验证 sticky</em></h1>
+  <div class="ctl" data-page-node-id="EE2uWzC899erZjXs10oZ7P"><b data-page-node-id="J4Y2d1rOr5y6HZCEreFYK1">搜索模式</b>
+    <div class="seg" id="segMode" data-page-node-id="A4EUSYHe3f7B10NOAo8KtJ">
+      <button class="on" data-v="smart" data-page-node-id="WT5HNz4Xppek2tEtwsw0Vs">智能检索</button>
+      <button data-v="cms" data-page-node-id="WErG9tdkwwedSOzY9X6Ipz">直链搜索</button>
+    </div>
+  </div>
+  <div class="ctl" data-page-node-id="ufwu1E7IVpmh6NEFXQi69j"><b data-page-node-id="LKXgahkmQvEEBGBF2lX6K6">Grid 修正</b>
+    <div class="seg" id="segFix" data-page-node-id="pNG2GixrOj8NhBhl7YBGGj">
+      <button class="on" data-v="fix" data-page-node-id="jHH0j8PFWQmN4DagE7F9SJ">修正版（1fr）</button>
+      <button data-v="bug" data-page-node-id="hq8Qleo1mP7e9muWHcPiot">现状 Bug 复现</button>
+    </div>
+  </div>
+  <div class="ctl" data-page-node-id="TuQ4uPNZfz3LN3U6h9uBGB"><b data-page-node-id="1qS50G1MskGikcuHU9ydtH">Tab 位置</b>
+    <div class="seg" id="segTab" data-page-node-id="nwrfwoCIAYa7yfN0l4vNIf">
+      <button class="on" data-v="side" data-page-node-id="qyF2ug2v7XFFeHhwOh7GcO">侧栏内</button>
+      <button data-v="bartop" data-page-node-id="FmwBUfAfAAVMt6p2fGcA4d">通栏</button>
+    </div>
+  </div>
+  <div class="note" data-page-node-id="ZoGFzSa7lpGQnw1RjmajeM">舞台内部为 2560px 宽的完整页面（zoom 0.5 缩放显示）。上下滚动可验证：顶栏吸顶、筛选面板 sticky、以及「现状 Bug」下 tabs 行被撑高导致的巨大间距。</div>
+</div>
+
+<!-- ═══ 滚动舞台 ═══ -->
+<div class="vp" id="vp" data-page-node-id="mzQMnmhgdy6i1AIMPyCxp0">
+  <div class="stage" data-page-node-id="YDt2dHqkSlTCy5z5FUD7vZ">
+
+    <div class="topbar" data-page-node-id="P22LMNyxLFTbB6aHecrot3">
+      <div class="logo" data-page-node-id="zjfwM2AabBmZUeEghuqQ4Q">Kino<i data-page-node-id="zofYp7FGpSg0Nt2352Ty7G">TV</i></div>
+      <div class="nav" data-page-node-id="FS7HObqLGEAgxulLE8viw9">
+        <a href="#" data-page-node-id="nnqwAdpDGmGGtF2Gtf1LhV">首页</a><a class="on" href="#" data-page-node-id="oIIUOb5S0PG1Qwwpi3uPbn">浏览</a><a href="#" data-page-node-id="5GOSxuE1NMypyYdbvZSkF2">热度榜</a><a href="#" data-page-node-id="7RZF7HvuDzFWEFnqDkNMts">收藏</a><a href="#" data-page-node-id="iinBMAQKYWFK885GVQC0nT">历史</a>
+      </div>
+      <div class="tsearch" data-page-node-id="49M4GAptDvhLapduLtixsQ">🔍 搜索电影、剧集、人物…</div>
+      <div class="avatar" data-page-node-id="83WLEkwDThJBP3aJQBKoyj"></div>
+    </div>
+
+    <div class="page" data-page-node-id="VDMDrLmO5LCLyOd6l8fTva">
+      <div class="bgrid fix" id="bgrid" data-page-node-id="IL6B5PEwT34kNy67tzBonZ">
+        <div id="rowmark" class="bugmark" data-page-node-id="dj8ofbnXJozi5wMhG6vjvF"></div>
+
+        <div class="stabs" id="stabs" data-page-node-id="DOcYG0Xn3PWGvACCTcGZL6">
+          <button class="stab on" data-v="smart" data-page-node-id="jARfA1meHVtaebQonIlkOF"><span class="ico" data-page-node-id="NsWO05hGDCAsD7hcHHEx3Y"></span>智能检索</button>
+          <button class="stab" data-v="cms" data-page-node-id="CrBcHKmNGEIWvHpLt1BD98">直链搜索</button>
+        </div>
+
+        <!-- 筛选侧栏：复刻 FilterBar 4 行结构（类型单行 / 分类 wrap / 地区 / 评分） -->
+        <aside class="fpanel" id="fpanel" data-page-node-id="QupEd6VMFouqLpEWl30X58">
+          <div class="frow" data-page-node-id="ykhBnkJZSrUF8z5QJnNxFo">
+            <span class="flabel" data-page-node-id="eoaOXLrVvkm3ebZEGWpotA"><span class="dot" data-page-node-id="L7QqeEsFHbFgZJlaSISIHt"></span>类型</span>
+            <div class="fchips" data-page-node-id="EpETxVeFAyRw5dqMsxKmf9">
+              <button class="fchip on" data-page-node-id="h6gmItb3OWbjZNiFt63KaS">全部</button>
+              <button class="fchip" data-page-node-id="qJn84qrGtDilHQ88oawxNM">电影</button>
+              <button class="fchip" data-page-node-id="DW9PcxFU08RWsgGJhZDvQG">剧集</button>
+            </div>
+          </div>
+          <div class="frow" data-page-node-id="RokEIio7MneTHX4dLsFYIO">
+            <span class="flabel clickable" data-page-node-id="zdYGLKGxEu7NsK0RFsFpoI">分类</span>
+            <div class="fchips" data-page-node-id="KwIjwCK0qjrZOWHoxMpOfl">
+              <button class="fchip" data-page-node-id="lMgDlSiWIE9msiCGhAKTVm">动作</button><button class="fchip on" data-page-node-id="jGU23fH8ehGzDaohvfNh6k">科幻</button><button class="fchip" data-page-node-id="nQPCgc9DisJP5YgJB2BYyY">喜剧</button>
+              <button class="fchip" data-page-node-id="RVSyNEx4tsWPS9vG4kEDSk">爱情</button><button class="fchip" data-page-node-id="j9OyOK9CbLBymLMTFW8fZW">惊悚</button><button class="fchip" data-page-node-id="ZZVP7aGAFpzeMNnzgzpYGN">悬疑</button>
+              <button class="fchip" data-page-node-id="sZAohtgFnFVfmUPyKoOfbA">犯罪</button><button class="fchip" data-page-node-id="WzlGB8rhKKleNpyO1SX6IJ">冒险</button><button class="fchip" data-page-node-id="MRjeCOz3MSDTD97UWu0rIR">奇幻</button>
+              <button class="fchip" data-page-node-id="PeoqQCCvoh1rIwz1ZWNfXc">动画</button><button class="fchip" data-page-node-id="LLn7A6SY6CHcHGd59XTeh3">纪录片</button><button class="fchip" data-page-node-id="bPSsLQ7ZWaAWyndczvPTUK">剧情</button>
+              <button class="fchip" data-page-node-id="SVDGnIhMG5DrY3ePDSkSFH">家庭</button><button class="fchip" data-page-node-id="BodaCQcqskRbnaMipA2Cyp">战争</button><button class="fchip" data-page-node-id="zh6x7FPSTTjSGNjPhoPrsd">历史</button>
+              <button class="fchip" data-page-node-id="jFS7tNerF2Olf9ECFzf78K">音乐</button><button class="fchip" data-page-node-id="2UnIHjHJ3qVzGjWPjMhnPi">恐怖</button><button class="fchip" data-page-node-id="Nlh8UjxzeLOE4VTKFYeyqr">西部</button>
+            </div>
+          </div>
+          <div class="frow" data-page-node-id="nYtA7I58u8EGrytkuOSDxc">
+            <span class="flabel clickable" data-page-node-id="ssVvpmQtE1buCJYxPbjuK9">地区</span>
+            <div class="fchips" data-page-node-id="fHSTJWN1FHuNwAKiGO1PzV">
+              <button class="fchip on" data-page-node-id="WpMINEDz6fyJD8pmPgBZYI">全部</button><button class="fchip" data-page-node-id="MprTFKWqHwKJvtvEbPmuNn">中国大陆</button><button class="fchip" data-page-node-id="S5ZYxwMagG1CCmEAzPKgMg">中国香港</button>
+              <button class="fchip" data-page-node-id="Q88VchyT0ZKw3qIWrbxYdr">中国台湾</button><button class="fchip" data-page-node-id="SOQtIiGtTZgUN5Cp3pyFH2">美国</button><button class="fchip" data-page-node-id="uC2RUudk8ourFxOtB0jWKH">英国</button>
+              <button class="fchip" data-page-node-id="81q4bYQZWL5BSTFd9jkJvy">韩国</button><button class="fchip" data-page-node-id="aIggN1nsz75Bibcc5HoPuH">日本</button><button class="fchip" data-page-node-id="jBS50iOR97TocT19lnJcFB">法国</button>
+              <button class="fchip" data-page-node-id="f0BKwNms65fpqekbGy13rm">德国</button><button class="fchip" data-page-node-id="RqC9OrFbCwMWGI0DzGlXKM">印度</button><button class="fchip" data-page-node-id="KQb0p3VOYEDEDbBwtG4VLU">泰国</button>
+            </div>
+          </div>
+          <div class="frow" data-page-node-id="Bbn1KT3ZM1QXRSUJ90QQZq">
+            <span class="flabel clickable" data-page-node-id="Q9Uy45CPLaGM2GqsMyuaIT">评分</span>
+            <div class="fchips" data-page-node-id="gTrIG2VTCpGGS9kZY0adzH">
+              <button class="fchip on" data-page-node-id="N56uRDkZ7vTDcBMwMKjDC8">全部</button><button class="fchip" data-page-node-id="nsmipvQLgXBbe1XMBECD1X">9+</button><button class="fchip" data-page-node-id="8w4Lq1BGJig0VAQ6aKsdCF">8~9</button>
+              <button class="fchip" data-page-node-id="IKFoCn6cbXf0CedgEDGvZX">7~8</button><button class="fchip" data-page-node-id="hzMLgLhx1Vem9VW7EDGDPp">6~7</button><button class="fchip" data-page-node-id="7sz5u5S4NVp3pRPub5FLL7">6 以下</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 结果区 -->
+        <div class="results" data-page-node-id="cCpChd73jU1ygoLDv6zCF3">
+          <div class="laynote good" id="laynote" data-page-node-id="rS2j0FaO0PFYxkn1vPmJ1Z"></div>
+          <div class="sortbar" data-page-node-id="21vZNBAHZBisbZm3bGr3Fq">
+            <div class="stabs2" data-page-node-id="Xv7DMTl9jfAl14zpNGzM3J">
+              <button class="s2 on" data-page-node-id="BTgchBaLTXWGCHMM14zZjF">综合排序</button><button class="s2" data-page-node-id="AqlPjgV1OxMHHWOdgOXpRH">最热</button><button class="s2" data-page-node-id="YTg4aPCFjAwuRIp4in76Zr">最新</button><button class="s2" data-page-node-id="rDskTHcaQZWBvlFwiymdud">评分最高</button>
+            </div>
+            <span class="count" data-page-node-id="kDWHLrkKCxT7odcbfoylGd">共 <b data-page-node-id="Hypc1QzGJUu64IPppM1VHR">12,847</b> 条</span>
+          </div>
+          <div class="srcrow" data-page-node-id="Vf6Yh2KBPDK4uX5gqoIuHg">
+            <span class="cnt" data-page-node-id="MTUlUkco3HDUVgBqtNDLPh">结果数 <b data-page-node-id="W97oABksQ6hDNJ48GG8V3E">18</b></span>
+            <span class="srcbadge ok" data-page-node-id="M1fqyOWzZlI6lXmw7q8k1L"><i data-page-node-id="PxT1yNu4hfzvNQ0ja5WwTq"></i>暴风资源 6</span>
+            <span class="srcbadge ok" data-page-node-id="XUGfEnbOkbC1cyE0sfbXwO"><i data-page-node-id="UGB4hkF98pVD7mSRfy5DSX"></i>飞速资源 5</span>
+            <span class="srcbadge warn" data-page-node-id="wOrXdlyMRZ4zi32pg8jBrZ"><i data-page-node-id="HTg9PVVscgA6dvD3uq9UEE"></i>闪电资源 4 · 3 条去重</span>
+            <span class="srcbadge bad" data-page-node-id="TFZAzSsQfEWP4YFF3k2hBm"><i data-page-node-id="ykYydvpN2eHdzt0aJQQXWF"></i>如意资源 超时</span>
+          </div>
+
+          <div class="pgrid" id="pgrid" data-page-node-id="zqSM8OWykgS5rvvAzGExx8"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 文档区 ═══ -->
+<div class="docs" data-page-node-id="GEByY5UJYCoY9uQxOiFyZM">
+  <h2 data-page-node-id="zmr965GmE8wnFkAGZmVGRF">根因与修复</h2>
+  <p data-page-node-id="tlySZSmgOtYFFxaFWZEs3k"><b data-page-node-id="k6H1wUYlu3Qp3HWmX8weWr">「filter-bar 与顶部元素巨大间距」根因</b>：现行实现（Browse.css BR-C 块）的 grid 两行轨道均为隐式 <code data-page-node-id="iwKsERQWD5BnDlXlRJovXi">auto</code>，而 <code data-page-node-id="t8nBhzjED3dcJuKHubdjZg">.browse-card--results</code> 通过 <code data-page-node-id="r0GY8suQ78lhBFrINyy79p">grid-template-areas</code> 横跨两行。CSS Grid 会把跨行项目的<b data-page-node-id="oyqLLnwwo7e3smOdgaBpgf">剩余高度平均分配进所跨的行</b>——结果区高约 2400px、筛选面板仅约 600px，多出的 ~1800px 被摊进 row1，tabs 行从 46px 被撑到 900px+，筛选面板被整体推下去。</p>
+  <h3 data-page-node-id="iSmOWp9e9DtNoOdGvdHwwO">修复（Browse.css BR-C 块内加一行）</h3>
+  <pre data-page-node-id="GvPdhqJuMLtgCsBEmkuMEB"><span class="c" data-page-node-id="29PGHCZG8vXybbvfizk22H">/* row2 用 1fr 吸收跨行 results 的全部剩余高度，row1 恒为 tabs 原始高度 */</span>
+<span class="k" data-page-node-id="eO9w8J1jwBssEUUyS0RyID">grid-template-rows</span>: <span class="del" data-page-node-id="3xHelYgrwl7Rm17wGbs3OM">auto auto</span><span class="add" data-page-node-id="3OkMoVAd2T9Dlvurab5khF">auto minmax(0, 1fr)</span>;</pre>
+  <p data-page-node-id="RZ41HE8AlooWzu4lEBTj3n">直链搜索模式（FilterBar 条件渲染不出现，<code data-page-node-id="xegxv6Ddgki6pCXFSGcuzR">index.tsx:377</code>）下 row2 无 filter-bar，同一修复同样成立：1fr 行吸收剩余高度，tabs 行不受影响。</p>
+  <h3 data-page-node-id="8CBfVGvYi6mqq9HBoT19PW">本版相对 V2 demo 的三处对齐真实结构</h3>
+  <table data-page-node-id="uwGOAv94hGB96td2HFaUTQ">
+    <tr data-page-node-id="xXVdX6qqWbeRr3yy1aSjs6"><th data-page-node-id="xETazjCl8eW9ja6cj250WV">V2 缺陷</th><th data-page-node-id="cOWXBA559fsYbdaoFFYD4x">V3 修正</th></tr>
+    <tr data-page-node-id="qoQpDQnQUuGEIoqjkxAkbB"><td data-page-node-id="HUkZA0p8WnHwkKCdkx0TIk">未考虑「智能检索 / 直链搜索」双模式</td><td data-page-node-id="hthckwgdMchiSlsQskCVp4">双 tab 可切换：智能检索 = 筛选面板 + 排序栏；直链搜索 = 无筛选面板 + 源状态行（结果数 / 逐源 badge），与 <code data-page-node-id="8QththusFI37PrRrP1hDzT">index.tsx:359-420</code> 真实渲染分支一一对应</td></tr>
+    <tr data-page-node-id="tOzJOEbTDsDNB9JSoI87rx"><td data-page-node-id="c0FOlKccMKlMklsCCBV4lO">「类型」未单独成行</td><td data-page-node-id="nFv7warRt2jgqbATITjHRW">严格复刻 FilterBar.tsx:111-205 四行结构：<b data-page-node-id="H8HqmLnPxoz4CMWrmJLcdq">类型</b>（全部/电影/剧集 单行）→ <b data-page-node-id="A9bW9jynM9CnbJGS5AZBMB">分类</b>（18 类 chips 多行 wrap）→ <b data-page-node-id="A7ghPyBsYaAjTzXNJy0yXu">地区</b>（12 地区）→ <b data-page-node-id="o8KxO6DkmELJYkw4G44uFR">评分</b>（6 档）</td></tr>
+    <tr data-page-node-id="VfVPPpdHnilCpDWRkMKTBW"><td data-page-node-id="VRnvQZVoLwqTd6hHJEYR5l">静态截图式，无法暴露间距 Bug</td><td data-page-node-id="OkoZ69S9PbWBYMjrJ6PZ6E">可滚动真实舞台：<b data-page-node-id="0dUDN3ztyAHXvu65SAuEU3">现状 Bug 复现</b>开关逐像素复现 auto 行分配问题（tabs 行被撑高 + 红色标注），与修正版一键对比</td></tr>
+  </table>
+  <h3 data-page-node-id="JoBmP5w6zxYra5Xw3amUMH">实施建议</h3>
+  <p data-page-node-id="xq4hioSGsgkaByVyHGl2Uk">① 仅改 Browse.css BR-C 块一行 <code data-page-node-id="rVH6f66dZVO816oJeLwqiF">grid-template-rows</code>，TSX 零改动；② Tab 位置两案（侧栏内 / 通栏）demo 内可切换预览，通栏案首屏更聚焦筛选面板；③ 直链搜索模式下侧栏列为空，修复后 1fr 行自然塌缩，无需额外处理。</p>
+</div>
+
+<script>
+  var body = document.body;
+  var bgrid = document.getElementById('bgrid');
+  var fpanel = document.getElementById('fpanel');
+  var P = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+  var MOVIES = [
+    ['星际边界','2026 · 科幻','8.7'],['暗涌','2026 · 悬疑','8.2'],['长夜将尽','2025 · 剧情','8.9'],
+    ['蒸汽之城','2026 · 冒险','7.6'],['逆光而行','2025 · 爱情','7.9'],['深空信号','2026 · 科幻','8.4'],
+    ['双面证人','2026 · 犯罪','8.1'],['雪线','2025 · 剧情','8.8'],['迷航档案','2026 · 奇幻','7.4'],
+    ['无声证词','2026 · 惊悚','8.3'],['春日协议','2025 · 喜剧','7.2'],['铁翼苍穹','2026 · 战争','8.6']
+  ];
+  var CMS = [
+    ['星际边界 4K 国粤双语','暴风资源 · 38.2GB · 2160P'],['暗涌 HDR 杜比视界','飞速资源 · 12.6GB · 1080P'],
+    ['长夜将尽 全集','暴风资源 · 24.1GB · 1080P'],['蒸汽之城 导演剪辑版','闪电资源 · 31.7GB · 2160P'],
+    ['逆光而行','飞速资源 · 8.9GB · 1080P'],['深空信号 S01-S02','暴风资源 · 45.3GB · 1080P'],
+    ['双面证人','闪电资源 · 11.2GB · 1080P'],['雪线 4K REMUX','暴风资源 · 52.8GB · 2160P'],
+    ['迷航档案','飞速资源 · 9.4GB · 1080P'],['无声证词','如意资源 · 10.1GB · 1080P'],
+    ['春日协议','闪电资源 · 7.3GB · 1080P'],['铁翼苍穹 IMAX 版','暴风资源 · 41.5GB · 2160P']
+  ];
+  function build() {
+    var html = '';
+    if (body.classList.contains('cms')) {
+      for (var i = 0; i < 18; i++) {
+        var c = CMS[i % CMS.length];
+        html += '<div class="cmscard"><div class="cbody"><div class="ct">' + c[0] + '</div><div class="cs"><span>2026</span><span>' + (i % 3 + 1) + ' 集</span></div><span class="csrc">' + c[1] + '</span></div></div>';
+      }
+    } else {
+      for (var j = 0; j < 48; j++) {
+        var m = MOVIES[j % MOVIES.length];
+        html += '<div class="pcard"><div class="poster ' + P[j % 12] + '"><span class="rate">' + m[2] + '</span><span class="tt">' + m[0] + '</span></div><div class="meta"><div class="sub"><span>' + m[1] + '</span><span>' + (6 + j % 5) + '.' + (j % 10) + ' 万人在看</span></div></div></div>';
+      }
+    }
+    document.getElementById('pgrid').innerHTML = html;
+  }
+  function bindSeg(id, fn) {
+    var seg = document.getElementById(id);
+    seg.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      fn(btn.getAttribute('data-v'));
+    });
+  }
+  bindSeg('segMode', function (v) {
+    body.classList.toggle('cms', v === 'cms');
+    document.querySelectorAll('#stabs .stab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); });
+    fpanel.classList.toggle('hidden', v === 'cms');
+    applyBug();
+    build();
+  });
+  bindSeg('segTab', function (v) {
+    bgrid.classList.toggle('bartop', v === 'bartop');
+    applyBug();
+  });
+  function applyBug() {
+    var isBug = document.getElementById('segFix').querySelector('button:nth-child(2)').classList.contains('on');
+    var isCms = body.classList.contains('cms');
+    bgrid.classList.toggle('bug', isBug);
+    // 用 computed gridTemplateRows 读 row1 实际轨道高度（逻辑 px，不受 zoom 影响）
+    var r1 = Math.round(parseFloat(getComputedStyle(bgrid).gridTemplateRows.split(/\s+/)[0]) || 0);
+    var mark = document.getElementById('rowmark');
+    mark.style.height = (r1 + 12) + 'px';
+    var note = document.getElementById('laynote');
+    if (isBug) {
+      note.className = 'laynote bad';
+      note.innerHTML = '<b>⚠ 现状 Bug 复现：row1 轨道实际高度 ' + r1 + 'px（正常 46px，红色虚线框 = row1 实际范围）</b>'
+        + 'grid 两条 auto 行 + results 跨行 → 剩余高度被平摊进 row1：tabs 元素本身保持 46px（align-self:start），但它下方的空隙把筛选面板推到 ' + (r1 + 20) + 'px 才开始——这就是「filter-bar 与顶部元素巨大间距」。切「修正版」对比。'
+        + (bgrid.classList.contains('bartop') ? '（通栏变体：results 不跨行，此 Bug 天然不存在——通栏布局可作为另一条修复路径）' : '');
+      body.classList.add('showbug');
+    } else {
+      note.className = 'laynote good';
+      note.innerHTML = '<b>✓ 修正版：grid-template-rows: auto minmax(0, 1fr) — row1 = ' + r1 + 'px</b>'
+        + 'row2 吸收跨行 results 的全部剩余高度，筛选面板紧跟 tabs（间距 20px）且 sticky 吸顶。上下滚动验证。' + (isCms ? '（直链搜索：无筛选面板，row2 由 1fr 自然吸收，同样成立）' : '');
+      body.classList.remove('showbug');
+    }
+  }
+  bindSeg('segFix', applyBug);
+  // chips 交互（单选组）
+  document.querySelectorAll('.frow').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      var chip = e.target.closest('.fchip'); if (!chip) return;
+      row.querySelectorAll('.fchip').forEach(function (c) { c.classList.remove('on'); });
+      chip.classList.add('on');
+    });
+  });
+  build(); applyBug();
+</script>
+</body>
+</html>

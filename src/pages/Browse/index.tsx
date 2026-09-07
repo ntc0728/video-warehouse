@@ -27,6 +27,8 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
 import { useBrowseData, toStoreFilter } from './useBrowseData';
+import { getDefaultFilterValue } from './urlState';
+import type { VideoType } from '@/types/video';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseLoadMore from './BrowseLoadMore';
@@ -127,6 +129,72 @@ export default function BrowsePage() {
     reset: resetCMS,
   } = useCMSSearch();
 
+  // ── CMS 本地筛选（直链搜索面板，2026-09-07 用户拍板）────────────
+  // CMS 返回值含 type(movie/tv/variety/anime)/year/region(vod_area)，
+  // 支持纯前端过滤——不调 TMDB 接口、不写 URL（与智能检索筛选互不影响）。
+  // CMS 无评分/热度字段 → 排序不可用（footer 隐藏）；纪录片/排行榜无对应
+  // CMS 类型 → 面板类型行仅 5 档。
+  const CMS_CATEGORY_OPTIONS = useMemo<FilterBarCategoryOption[]>(
+    () => [
+      { key: 'all', label: '全部', mediaType: 'all', genreIds: [] },
+      { key: 'movie', label: '电影', mediaType: 'movie', genreIds: [] },
+      { key: 'tv', label: '剧集', mediaType: 'tv', genreIds: [] },
+      { key: 'variety', label: '综艺', mediaType: 'tv', genreIds: [] },
+      { key: 'anime', label: '动漫', mediaType: 'tv', genreIds: [] },
+    ],
+    [],
+  );
+
+  const [cmsFilterValue, setCmsFilterValue] = useState<FilterBarValue>(() => getDefaultFilterValue());
+  const handleCmsFilterChange = useCallback((next: FilterBarValue) => setCmsFilterValue(next), []);
+
+  // vod_area 是自由文本（大陆/内地/中国大陆/香港…），REGION_OPTIONS 是 ISO 码 → 别名表匹配
+  const CMS_REGION_ALIASES: Record<string, string[]> = useMemo(
+    () => ({
+      CN: ['大陆', '内地', '中国'],
+      HK: ['香港'],
+      TW: ['台湾'],
+      US: ['美国'],
+      KR: ['韩国'],
+      JP: ['日本'],
+      EU: ['欧洲', '法国', '德国', '意大利', '西班牙', '英国'], // CMS 常无 EU 概念，兜进欧洲系
+      IN: ['印度'],
+      TH: ['泰国'],
+      DK: ['丹麦'],
+      GB: ['英国'],
+    }),
+    [],
+  );
+
+  const filteredCmsResults = useMemo(() => {
+    const f = cmsFilterValue;
+    const noFilter =
+      f.category === 'all' && f.region === null && f.year === null && !f.olderThan2015;
+    if (noFilter) return cmsResults;
+    return cmsResults.filter((v) => {
+      if (f.category !== 'all') {
+        const want: VideoType =
+          f.category === 'movie' ? 'movie'
+          : f.category === 'tv' ? 'tv'
+          : f.category === 'variety' ? 'variety'
+          : 'anime'; // documentary/top 不在 CMS 面板类型行内
+        if (v.type !== want) return false;
+      }
+      if (f.region !== null) {
+        if (!v.region) return false;
+        if (f.region === 'OTHER') {
+          if (Object.values(CMS_REGION_ALIASES).some((als) => als.some((a) => v.region!.includes(a)))) return false;
+        } else {
+          const aliases = CMS_REGION_ALIASES[f.region];
+          if (!aliases || !aliases.some((a) => v.region!.includes(a))) return false;
+        }
+      }
+      if (f.year !== null && v.year !== f.year) return false;
+      if (f.olderThan2015 && (v.year === undefined || v.year >= 2015)) return false;
+      return true;
+    });
+  }, [cmsResults, cmsFilterValue, CMS_REGION_ALIASES]);
+
   // ── 搜索触发 ────────────────────────────────────
   const lastCmsSearchedRef = useRef('');
   const lastSmartSearchedRef = useRef('');
@@ -149,6 +217,8 @@ export default function BrowsePage() {
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
     if (mode === 'cms') {
+      // 切入直链搜索：本地筛选复位（不写 URL、不影响智能检索的 filterValue）
+      setCmsFilterValue(getDefaultFilterValue());
       if (query) {
         triggerSearch(query, 'cms');
       } else {
@@ -315,7 +385,7 @@ export default function BrowsePage() {
     ? (isRefreshing || (isLoading && !smartHasData))
     : (isCmsLoading && !cmsHasData);
 
-  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0);
+  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
@@ -343,7 +413,6 @@ export default function BrowsePage() {
       className={[
         'page-padding',
         'browse-page',
-        searchMode === 'cms' ? 'browse-page--cms' : '',
         isPhone ? 'browse-page--mobile' : '',
         isTV ? 'browse-page--tv' : '',
       ].filter(Boolean).join(' ')}
@@ -402,6 +471,17 @@ export default function BrowsePage() {
               hideType
             />
           )}
+          {/* 直链搜索模式：FilterBar 本地筛选（纯前端过滤 CMS 结果，不调接口；
+              无 genres → 分类行自动隐藏；CMS 无评分/热度 → footer 排序隐藏） */}
+          {searchMode === 'cms' && (
+            <FilterBar
+              value={cmsFilterValue}
+              onChange={handleCmsFilterChange}
+              genres={[]}
+              categoryOptions={CMS_CATEGORY_OPTIONS}
+              hideFooter
+            />
+          )}
         </div>
       )}
 
@@ -452,7 +532,7 @@ export default function BrowsePage() {
         {searchMode === 'cms' && (
           <div className="browse-source-status-row">
             <span className="browse-results-count">
-              结果数 <b>{cmsResults.length}</b>
+              结果数 <b>{filteredCmsResults.length}</b>
             </span>
             <SourceStatusIndicator
               totalSources={totalSources}
@@ -486,8 +566,8 @@ export default function BrowsePage() {
               <BrowseGrid items={discoverResults} query={query} mode="smart" />
             ) : null
           ) : (
-            cmsResults.length > 0 ? (
-              <BrowseGrid cmsItems={cmsResults} query={query} mode="cms" />
+            filteredCmsResults.length > 0 ? (
+              <BrowseGrid cmsItems={filteredCmsResults} query={query} mode="cms" />
             ) : null
           ))}
 
