@@ -156,8 +156,8 @@
 /* ── >1280 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
    去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
    「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。
-   2026-09-07 断点 1280 → 1440。 */
-@media (width > 1440px) {
+   2026-09-07 曾 1280 → 1440，同日二次修正回退 1440 → 1280（CSS 与 JS 同步）。 */
+@media (width > 1280px) {
   html:not([data-device="tv"]) .category-quick-access__card {
     padding: 0;
   }

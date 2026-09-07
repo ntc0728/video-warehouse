@@ -19,7 +19,7 @@
   animation: video-card-grid-fade 0.3s ease both;
 }
 
-/* ≥1280 卡片间距与首页行统一为 --hero-side-gap（见 index.css「卡片间距统一」块，
+/* ≥1440 卡片间距与首页行统一为 --hero-side-gap（见 index.css「卡片间距统一」块，
    该覆盖也在那里）——列布局恒走上方 --card-cols 等分，与首页 VideoCard 行一致。
    （原「≥1280 auto-fill --card-size 固定轨道 + 居中」已撤销：收藏/Browse 卡片
    与首页行卡尺寸脱节，290px vs ~180px 差异过大，2026-09-06 用户拍板回归等分。）
