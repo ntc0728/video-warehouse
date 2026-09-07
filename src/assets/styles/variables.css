@@ -274,7 +274,7 @@
   --breakpoint-sm: 640px;     /* 小屏 */
   --breakpoint-md: 768px;     /* 平板 */
   --breakpoint-lg: 1024px;    /* 桌面 */
-  --breakpoint-xl: 1280px;    /* 大桌面 */
+  --breakpoint-xl: 1280px;    /* 列数/卡片起点（与 Tailwind xl=1280 一致；页面布局大屏起点为 1440，见各处 ≥1440 媒体查询） */
   --breakpoint-2xl: 1920px;   /* 2K */
   --breakpoint-3xl: 2560px;   /* 3K/TV */
   --breakpoint-4xl: 3840px;   /* 4K */
