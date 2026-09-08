@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.21.0...kinotv-v1.22.0) (2026-09-08)
+
+
+### Features
+
+* **iptv:** IPTV 页大改（iptv-org 主干化 + 左栏 rail）+ 播放器能力矩阵 P3/P4 + 断点 token 整改 ([71e2d4c](https://github.com/ntc0728/video-warehouse/commit/71e2d4c2bc11982cf8e43666b941eb83b7e42854))
+* **record:** 收藏/历史页桌面 rail 布局整改 + &lt;1024 面板只包 card ([020614a](https://github.com/ntc0728/video-warehouse/commit/020614a5ea294cbd7b782cf9bb43ba735888a1f8))
+
 ## [1.21.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.20.0...kinotv-v1.21.0) (2026-09-07)
 
 
