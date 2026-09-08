@@ -25,8 +25,6 @@ import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
 
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
-import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
-import type { EPGChannelIndex } from '@/services/epgService';
 import type { Video, VideoType } from '@/types/video';
 import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import './Collections.css';
@@ -81,7 +79,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 
 export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
-  const { channels: iptvChannels, toggleFavorite, clearFavorites, channelAvailability } = useIPTVStore();
+  const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   // CMS 源启用守卫：直链收藏点击跳转前校验所选源是否启用，未启用则拦截并弹窗
   const cmsSourceGuard = useCmsSourceGuard();
@@ -116,20 +114,6 @@ export default function CollectionsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<ConfirmType>('single');
   const [pendingDelete, setPendingDelete] = useState<{ id: string; kind: 'video' | 'iptv' } | null>(null);
-
-  // EPG 频道预索引（零网络读 IndexedDB 缓存）：IPTV 收藏卡台标二级回退（EPG XMLTV icon）
-  const [epgIndex, setEpgIndex] = useState<EPGChannelIndex | undefined>(undefined);
-  useEffect(() => {
-    let disposed = false;
-    getCachedEPGData()
-      .then((data) => {
-        if (!disposed && data.channels.length > 0) {
-          setEpgIndex(buildEPGChannelIndex(data.channels));
-        }
-      })
-      .catch(() => { /* 无 EPG 缓存时跳过，卡片走字母占位 */ });
-    return () => { disposed = true; };
-  }, []);
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections', undefined, true, { restoreFrom: ['detail', 'play'] });
@@ -265,21 +249,29 @@ export default function CollectionsPage() {
     return list;
   }, [iptvChannels, searchByTab, mainTab]);
 
+  // 2026-09-08 用户指令：综合 tab 下切「已观看/未观看」时不再混入 IPTV——
+  // IPTV 频道无观看进度概念，参与状态筛选只会产出误导性的直播分区。
+  // IPTV tab 本身恒显示频道（状态筛选不作用于直播，且 statusFilter 跨 tab 持久化，
+  // 若也受 statusFilter 约束，综合页切过状态后再进 IPTV tab 会整区分区消失）。
+  // 集中成单一标记，供「直播分区渲染 / 全选全集 / 计数 / 懒加载」四处复用。
+  const showChannels = mainTab === 'iptv' || (mainTab === 'all' && statusFilter === 'all');
+
   /** 视频收藏 ID 集合（综合 tab 批量删除时区分视频/IPTV 记录） */
   const videoIdSet = useMemo(() => new Set(collectedVideos.map((v) => v.id)), [collectedVideos]);
 
   /** 当前可见全集 ID（全选/批量栏计数用）：综合 = 视频 + IPTV 两类 id 全集 */
   const allIds = useMemo(
-    () => [...collectedVideos.map((v) => v.id), ...favoriteChannels.map((c) => c.id)],
-    [collectedVideos, favoriteChannels],
+    () => [...collectedVideos.map((v) => v.id), ...(showChannels ? favoriteChannels.map((c) => c.id) : [])],
+    [collectedVideos, favoriteChannels, showChannels],
   );
 
   /** 融合 Tab 计数：综合 = 视频 + IPTV（视频已应用状态过滤与搜索）；视频/IPTV = 各自项数 */
   const fusedCounts = useMemo(() => ({
-    all: collectedVideos.length + favoriteChannels.length,
+    // 直播分区不显示时「综合」计数不混入频道，避免计数比实际显示的多
+    all: collectedVideos.length + (showChannels ? favoriteChannels.length : 0),
     video: collectedVideos.length,
     iptv: favoriteChannels.length,
-  }), [collectedVideos, favoriteChannels]);
+  }), [collectedVideos, favoriteChannels, showChannels]);
 
   const fusedCategories = useMemo<{ tabs: RecordStatusTab[]; active: string; onChange: (k: string) => void }>(() => ({
     tabs: FUSED_TAB_META.map((t) => ({
@@ -300,9 +292,10 @@ export default function CollectionsPage() {
   // 综合下两分区各自懒加载分页；hasMore 取两区是否任一未加载完
   const displayedVideos = useMemo(() => collectedVideos.slice(0, visibleCount), [collectedVideos, visibleCount]);
   const displayedChannels = useMemo(() => favoriteChannels.slice(0, visibleCount), [favoriteChannels, visibleCount]);
-  const hasMore = visibleCount < collectedVideos.length || visibleCount < favoriteChannels.length;
+  // 直播分区隐藏时不参与「还有更多」判定，否则 sentinel 会空转到频道区
+  const hasMore = visibleCount < collectedVideos.length || (showChannels && visibleCount < favoriteChannels.length);
   const maxLenRef = useRef(0);
-  maxLenRef.current = Math.max(collectedVideos.length, favoriteChannels.length);
+  maxLenRef.current = Math.max(collectedVideos.length, showChannels ? favoriteChannels.length : 0);
   const loadMore = useCallback(() => {
     setVisibleCount((v) => Math.min(v + PAGE_SIZE, maxLenRef.current));
   }, []);
@@ -465,7 +458,7 @@ export default function CollectionsPage() {
               </div>
             </section>
           )}
-          {mainTab !== 'video' && favoriteChannels.length > 0 && (
+          {showChannels && favoriteChannels.length > 0 && (
             <section className="collection-section">
               <div className="collection-section-head">
                 <span className="collection-section-head__title">直播</span>
@@ -484,7 +477,7 @@ export default function CollectionsPage() {
                       </button>
                     )}
                     <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, 'iptv', e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                    <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} epgIndex={epgIndex} availability={channelAvailability[ch.id]} />
+                    <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} />
                   </div>
                 ))}
               </div>

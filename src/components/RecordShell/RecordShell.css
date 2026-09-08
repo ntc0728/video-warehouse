@@ -165,6 +165,25 @@
   min-width: 0;
 }
 
+/* ── 内容容器（2026-09-08 桌面端左栏 rail 改造新增）──
+   包住 {children}，使 .record-main 在 ≥1280 的 grid 中只有「aside / content」两 cell。
+   设为 flex 列是为了延续历史/收藏页既有的「父链 flex 拉伸」约定
+   （.empty-state-wrapper / .player-loading-wrap 依赖该链做整页垂直居中），
+   否则插入该层会打断拉伸链，导致空状态/加载态不再居中。 */
+.record-content {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 内容区标题（demo content__head 同款）：默认不显示，
+   仅 ≥1280 桌面 rail 布局展示——移动/app/TV 视觉保持原状不动 */
+.record-content-head {
+  display: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    移动端 M6 — 吸顶精简栏 + 滚动折叠
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -240,14 +259,25 @@
     justify-content: flex-end;
   }
 
-  /* 移动端卡片式布局（gap 与桌面端一致用 space-sm，内部子元素间距对齐） */
+  /* 移动端布局（2026-09-08 用户指令）：面板样式迁到 .record-content——
+     .record-aside 是 .record-main 的子元素（RecordShell.tsx:176），面板在 .record-main 上会
+     同时包住 rail + card，视觉拥挤。改为面板只包 card（.record-content），rail 裸露在外，
+     距离页面边由外层 .page-padding 提供。 */
   .record-main {
     gap: var(--space-sm);
+    padding: 0;
+  }
+  .record-content {
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
+    /* ⚠️ 必须 min-height:auto 覆盖基础定义 min-height:0——面板所在层若允许收缩
+       （min:0 + flex:1 1 0 = 只占剩余空间），card 会溢出面板底部「脱标」、
+       且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
+       时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
+    min-height: auto;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -323,14 +353,17 @@
     justify-content: flex-end;
   }
 
-  html[data-device="app"] /* 移动端卡片式布局（gap 与桌面端一致用 space-sm，内部子元素间距对齐） */
-  .record-main {
+  html[data-device="app"] .record-main {
     gap: var(--space-sm);
+    padding: 0;
+  }
+  html[data-device="app"] .record-content {
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
+    min-height: auto;
   }
 
 
@@ -366,14 +399,20 @@
     justify-content: flex-end;
   }
 
-  html:not([data-device="app"]) /* 右侧卡片区 → 卡片模块（滚动条在外层主页面，不在卡片内） */
-  .record-main {
+  /* 右侧 card 区 → 面板模块（滚动条在外层主页面，不在卡片内）。
+     2026-09-08 用户指令：面板只包 card（.record-content），不包 rail（.record-aside 裸露）。
+     与移动端同款改造——.record-main 仅布局，面板样式迁到 .record-content。 */
+  html:not([data-device="app"]) .record-main {
     gap: var(--space-sm);
+    padding: 0;
+  }
+  html:not([data-device="app"]) .record-content {
     padding: 0 var(--space-md) var(--space-md);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
+    min-height: auto;
   }
 
   html:not([data-device="app"]) .record-aside__title {
@@ -547,10 +586,11 @@ html[data-device="app"] .action-btn__label {
   }
 }
 
-/* >1440（与 index.css「卡片间距统一」块同断点；2026-09-07 断点 1280 → 1440）：
-   空间充足，清空按钮恢复直接显示、「⋯」菜单隐藏。
-   1280–1440 降级：空间不足，清空收进「⋯」溢出菜单。 */
-@media (width > 1440px) {
+/* ≥1280（2026-09-08 调整，原 >1440）：桌面 rail 布局起点对齐——
+   rail 里不放「⋯」溢出菜单（用户指令：删除 record-overflow-wrap 元素），
+   清空按钮在 rail 竖排中直接显示；768–1023 横排布局空间不足的
+   降级逻辑保持不变（清空仍收进「⋯」）。 */
+@media (width >= 1024px) {
   html:not([data-device="app"]) .record-overflow-wrap {
     display: none;
   }
@@ -650,4 +690,309 @@ html[data-device="app"] .action-btn__label {
 .record-pop-item--danger:hover {
   background: color-mix(in srgb, var(--color-danger, #dc2626) 8%, transparent);
   color: var(--color-danger, #dc2626);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   桌面端左栏 rail 布局（方案 A，2026-09-08）
+   断点严格 ≥1280px（用户拍板，不使用 1024/1440）。
+   把控制区从「卡片上方横向一行」改为页面左侧竖排 rail（200px）；
+   rail 不卡片化（不加 border / border-radius / background / box-shadow 四件套）。
+   历史页算珠时间轴保持在内容区左缘不动（rail + 时间轴 + 内容 三栏），
+   时间轴 CSS / JS（rAF 算珠）一律未改。
+   红线：新增 @media 尺寸规则必须加 html:not([data-device="tv"]) 前缀，
+   app 端恒保持现状横向一行（app 端逻辑未动）。
+   参考先例：Browse.css @media (width >= 1440px) 的 200px 左栏 grid 骨架。
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (width >= 1024px) {
+  /* 仅作用于非 app / 非 tv 的桌面端；前缀保证不影响 TV 与 app 恒移动布局 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-main {
+    /* 方案 A（demo-record-left-rail 2026-09-08）：外层 flex。
+       断点 2026-09-08 二改：≥1024 即启用（原 ≥1280）。
+       gap 2026-09-08 用户指令：--space-xl → --space-lg。 */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--space-lg);
+    align-items: flex-start;
+    /* 覆盖 ≥768 块给 .record-main 加的卡片化外观：rail 不卡片化，
+       故整条主区也去卡片 chrome（border/radius/background/shadow），
+       否则 200px 左列会被整块卡片边框包住，等同把 rail 卡片化。 */
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  /* 内容区：拉伸占满剩余宽度（.record-content wrapper 不得删，
+     依赖 Collections.css / History.css 的 .record-main > .record-content > ... 路径）。
+     ≥1024 rail 布局下去卡片 chrome——面板只留给 <1024 与移动端（用户指令）。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  /* 内容区标题（demo-record-left-rail 2026-09-08 content__head 同款规格） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-content-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-content-head__title {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 600;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-content-head__meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  /* 左侧 rail：sticky 常驻 + 竖排分组 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-aside {
+    position: sticky;
+    /* ⚠️ sticky top 的参照系是滚动容器（.app-shell__scroll）的 scrollport，
+       而该 scroller 本身已在固定 header 下方（Layout.css:324 的
+       padding-top: --header-height 挂在 .app-shell__scroll-wrapper 上）。
+       此前误写 --header-height + --space-md（≈92px）> rail 自然位置
+       （页面 padding-top --space-sm ≈12px）→ sticky 在 scroll=0 就把
+       rail 整体下推 ~80px（用户截图确认）。正确范式同 .history-timeline
+       （History.css:167 top:0）：小间距即可，滚动态也不会钻进 header。 */
+    top: var(--space-sm);
+    align-self: flex-start;
+    flex-shrink: 0;
+    /* 宽度不设固定 200px（用户 2026-09-08 指令）：由内容自适应。
+       ⚠️ 此前写成 `width: 200px minmax(0, 1fr)` 是非法 CSS——minmax() 只能用于
+       grid track 定义，作为 width 值整条被浏览器丢弃 → 回落到 ≥768 块的
+       width:100%，导致 rail 占满整行。必须显式覆盖它。 */
+    width: max-content;
+    /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
+       无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
+       排序 + 3 按钮 < 500px），不会超视口，故保持 visible。
+       若日后 rail 内容增长到会溢出，应先把 .record-pop 改成 portal 再恢复 auto。 */
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-sm);         /* 分组间距：保持 --space-sm（用户确认不动） */
+    margin-top: 0;
+    padding: 0;
+    /* 注意：rail 自身不加背景/圆角/阴影/四边边框（用户明确不卡片化） */
+  }
+
+  /* 融合筛选行容器：竖排堆叠（分类 / 状态+排序 / 管理 三段） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-filter-row--fused {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-lg);
+    width: 100%;
+  }
+
+  /* 顺序重置：≥768 块给 .record-segmented / .record-status-group / .record-actions
+     设了 order / margin-left:auto（横向栏右对齐用），竖排 rail 需按 DOM 顺序堆叠，
+     否则非融合页（收藏页）操作按钮会被 order 推到状态组之前。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-segmented,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status-group,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions {
+    order: 0;
+    margin-left: 0;
+  }
+
+  /* ── 分隔线（方案 A 位置：分类↔状态、排序↔管理）── */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter::before,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status-group::before,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions::before {
+    content: "";
+    display: block;
+    height: 1px;
+    background: var(--color-border-light);
+    margin: var(--space-sm) 0;
+  }
+
+  /* ── 分类 / 状态 / 排序 / 管理：统一成 demo 的 .rail-item 外观 ── */
+  /* 竖排堆叠 + 去胶囊背景（rail 不卡片化；融合胶囊组本身也去背景） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    width: 100%;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+  /* 分类分段（影视/IPTV）竖排，每项占满整行 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-segmented {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-2xs);
+  }
+  /* 内嵌筛选条：竖排堆叠（状态 chips + 排序按钮） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2xs);
+    width: 100%;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-inline-divider {
+    display: none;   /* 横排分隔线在竖排无意义 */
+  }
+  /* 操作按钮组：竖排，按钮撑满 rail 宽度 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2xs);
+    width: 100%;
+  }
+
+  /* 通用 rail-item 外观：覆盖状态 tab / 分段项 / 状态 chip / 排序 / 操作按钮
+     （严格照抄 demo .rail-item 视觉规格） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab,
+  html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-sort-btn,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    height: auto;
+    text-align: left;
+    padding: 8px var(--space-sm);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    transition: background var(--dur-fast) var(--ease-standard),
+                color var(--dur-fast) var(--ease-standard);
+  }
+
+  /* ⚠️ rail 布局下「更多筛选」按钮必须保持隐藏（桌面端改用内嵌筛选条 .record-inline-filter）。
+     上方 rail-item 通用规则（含 .record-actions .action-btn）特异性 (0,2,1) 与 ≥768 块
+     的隐藏规则相同但定义在后 → 同特异性后者胜，会把 display:none 覆盖成 flex。
+     此处以更高特异性 (0,3,1) 显式重申隐藏（COL-031 回归）。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn--filter {
+    display: none;
+  }
+
+  /* hover 态：--color-surface-hover 浅灰底 + 文字主色 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-sort-btn:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  /* 选中态：实心黑底白字 600（恢复 demo 原设计，改掉「左侧高亮条」改法） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active,
+  html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item.active,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn.is-active {
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item.active:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active:hover,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn.is-active:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 子元素：图标/圆点 slot（左侧居左，--icon-sm 尺寸） */
+  html:not([data-device="app"]):not([data-device="tv"]) .status-tab__dot,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip__dot {
+    width: var(--space-sm);
+    height: var(--space-sm);
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: var(--status-tab-color, var(--color-text-tertiary));
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip--status .record-filter-chip__dot {
+    background-color: var(--chip-dot-color, var(--color-text-tertiary));
+  }
+  /* 标签：flex:1 省略号（状态 tab 的未命名文本 span） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab > span:not(.status-tab__dot):not(.status-tab__count),
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab > span:not(.status-tab__dot):not(.status-tab__count) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .action-btn__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 图标 svg 统一 --icon-sm（状态 tab 走圆点，排序/操作图标走此尺寸） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-sort-btn svg,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn svg {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    flex-shrink: 0;
+  }
+
+  /* 计数徽标：照抄 demo .rail-item__cnt（右贴，选中态半透明白底白字） */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab__count,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab__count {
+    min-width: 0;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-background);
+    color: var(--color-text-secondary);
+    font-size: var(--text-2xs);
+    font-weight: 400;
+    line-height: 1.2;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active .status-tab__count,
+  html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active .status-tab__count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+  }
+
+  /* 排序下拉面板（2026-09-08 用户指令）：宽度不超过左栏（rail）宽度。
+     .record-sort-wrap 在竖排 rail 里被 stretch 成 rail 全宽，pop 以它为定位锚
+     → width:100% 严格锚定 rail 全宽，不再依赖 max-width 收敛；超长项省略号。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-sort-wrap .record-pop {
+    /* ⚠️ 必须同时归零 min-width：基础规则 .record-pop 的 min-width:160px
+       在 min>max 时压过 max-width:100%（rail 常 <160px），面板仍会溢出
+       到右侧内容区。width:100% 直接锚定 rail 全宽，不再依赖 max 收敛。 */
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-sort-wrap .record-pop .record-pop-item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

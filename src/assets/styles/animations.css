@@ -93,6 +93,18 @@
   animation: pt-enter-soft var(--dur-pt-enter) var(--ease-standard) none;
 }
 
+/* 收藏/历史页（2026-09-08 用户指令）：左栏（record-aside rail）不参与入场动画。
+   soft 转场打在页面根整体上，rail 会被卷进 6px 上移 + 淡入 —— 与 rail 的
+   sticky 常驻语义相悖（用户感知为「左栏在动」）。豁免方式：页面根不做动画，
+   入场感交由内容区自身的卡片 stagger（.video-card-grid / .history-grid 已有），
+   rail 静态即现。二次进入（revisit）同样豁免，保持首/次行为一致不闪烁。 */
+.page-transition[data-variant="soft"] > .record-page {
+  animation: none;
+}
+.page-transition[data-revisit="true"][data-variant="soft"] > .record-page {
+  animation: none;
+}
+
 /* 首页（data-variant="home"）：本文件刻意不写任何 [data-variant="home"] 规则。
    首页保留自己的专属过渡（Hero 不参与、.home-page__content 淡入、
    骨架屏 --delayed-enter 延迟淡入）—— 这套是专门调过的，容器一旦接管，

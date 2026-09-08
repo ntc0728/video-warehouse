@@ -14,7 +14,10 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-xs-plus);
-  padding: var(--space-sm);
+  /* 2026-09-08 用户指令：封面图上/左/右不受 padding 影响（通铺出血）——
+     卡片 padding 归零，内文区 .record-card__body 补回 padding；
+     顶部圆角由卡片 overflow:hidden 按卡片 radius 裁切。 */
+  padding: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -31,8 +34,14 @@
   box-shadow: var(--shadow-card-hover);
 }
 
-/* 选中态：边框 + 外发光 */
-.history-page .record-card--selected {
+/* 选中态：边框 + 外发光
+   ⚠️ 必须连 :hover 一起声明：触屏 tap 后卡片残留 :hover 状态，
+   `.history-page .record-card:hover`（0,3,0）会压过单独的
+   `.history-page .record-card--selected`（0,2,0），border-color 被
+   强改为 border-strong —— 表现为「移动端批量管理第一次选中，
+   card 边框未变成选中态颜色」（2026-09-08 修复） */
+.history-page .record-card--selected,
+.history-page .record-card--selected:hover {
   border: 2px solid var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-soft, rgba(99, 102, 241, 0.12));
 }
@@ -131,6 +140,10 @@
   flex-direction: column;
   gap: var(--space-xs);
   min-width: 0;
+  /* 2026-09-08 封面通铺配套：原卡片 padding 移到内文区。
+     上 padding 不补（2026-09-08 用户指令）：卡片 gap(--space-xs-plus)
+     已提供封面↔标题间距，再加 body padding-top 会双重间距。 */
+  padding: 0 var(--space-sm) var(--space-sm);
 }
 
 /* 第 1 行：标题独占整行（观看时间已并入第 2 行行尾），溢出时无缝跑马灯 */
