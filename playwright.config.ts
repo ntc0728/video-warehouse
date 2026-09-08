@@ -7,6 +7,7 @@ const STORAGE_STATE = resolve(__dirname, 'test-storage-state.json');
 
 export default defineConfig({
   globalSetup: resolve(__dirname, 'scripts/global-setup.ts'),
+  globalTeardown: resolve(__dirname, 'scripts/global-teardown.ts'),
   testDir: './scripts',
   timeout: 45000,
   expect: { timeout: 5000 },

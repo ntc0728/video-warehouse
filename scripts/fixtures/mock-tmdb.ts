@@ -67,6 +67,41 @@ export const test = base.extend({
 
     await use(page);
   },
+  // autouse 清理：每个 test 结束后释放页面级资源（媒体元素 / 应用暴露的销毁钩子），
+  // 缓解 worker teardown 挂起（HLS/DASH/Native 适配器持有的 <video> 与 BroadcastChannel 残留）。
+  _teardownCleanup: [
+    async ({ page }, use) => {
+      await use(page);
+      try {
+        await page.evaluate(() => {
+          // 停止并卸载所有媒体元素，断开 HLS/DASH/Native 适配器持有的 <video>/<audio>
+          document.querySelectorAll('video, audio').forEach((el) => {
+            const m = el as HTMLMediaElement;
+            try {
+              m.pause();
+              m.removeAttribute('src');
+              m.removeAttribute('srcObject');
+              m.load();
+            } catch {
+              /* noop */
+            }
+          });
+          // 若应用挂了 E2E 销毁钩子则调用（UniversalPlayer 等可借此 close BroadcastChannel / destroy 实例）
+          const w = window as unknown as { __e2eCleanup?: () => void };
+          if (typeof w.__e2eCleanup === 'function') {
+            try {
+              w.__e2eCleanup();
+            } catch {
+              /* noop */
+            }
+          }
+        });
+      } catch {
+        /* 页面可能已关闭，忽略 */
+      }
+    },
+    { auto: true },
+  ],
 });
 
 /**

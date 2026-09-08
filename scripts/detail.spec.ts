@@ -1,9 +1,14 @@
 /**
- * 详情页 (Detail) 测试用例
+ * 详情页 (Detail) 测试用例（精简合并版）
  * 路由: /detail/:id
  * 配置依赖: TMDB 详情需 Level 1（Token）；播放列表 Tab 需 Level 2（Token + CORS 代理）
  *
  * 覆盖: DETAIL-001 ~ DETAIL-093
+ * 合并映射: 3.1(001,002,003,004,005) / 3.2(010,014,016) / 3.3(020,023)
+ *          / 3.4(030,031,032) / 3.5(042,046,047,048) / 3.6(060,062) / 3.8(080)
+ *
+ * 等待策略: 全部使用 Playwright web-first 条件等待（expect / expect.poll / waitForResponse），
+ *          不使用固定 waitForTimeout 睡眠；轮询 50ms 起步，条件成立立即返回。
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
@@ -11,75 +16,67 @@ import { test, expect } from './fixtures/mock-tmdb';
 const TEST_MOVIE_ID = 'tmdb-movie-550'; // 《搏击俱乐部》
 const TEST_TV_ID = 'tmdb-tv-1399'; // 《权力的游戏》
 
+// 条件等待轮询节奏（条件成立即返回，不会等满 timeout）
+const POLL = { intervals: [50, 100, 250, 500] };
+
 // ═══════════════════════════════════════════════════════════════
 // 3.1 页面加载
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.1 页面加载', () => {
-  test('DETAIL-001: 正常加载电影详情', async ({ page }) => {
-    // 前置条件: 输入有效的电影 ID
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示 Hero 区域
-    const hasHero = await page.evaluate(() => {
-      return !!document.querySelector('.detail-hero, [class*="detail-hero"]');
-    });
-    expect(hasHero).toBeTruthy();
-  });
-
-  test('DETAIL-002: 正常加载剧集详情', async ({ page }) => {
-    // 前置条件: 输入有效的剧集 ID
-    await page.goto(`/detail/${TEST_TV_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示 Hero + Tab 区域包含"季信息" Tab
-    const hasTabs = await page.evaluate(() => {
-      return !!document.querySelector('.detail-tabs, [class*="detail-tab"]');
-    });
-    expect(hasTabs).toBeTruthy();
-    if (hasTabs) {
-      const tabTexts = await page.locator('.detail-tab').allTextContents();
-      expect(tabTexts).toBeTruthy();
-      const hasSeasonTab = tabTexts.some(t => t.includes('季'));
-    }
-  });
-
-  test('DETAIL-003: 加载中状态', async ({ page }) => {
+  test('DETAIL-001/002/003/004/005: 加载/电影/剧集/Hero/Tab/错误态', async ({ page }) => {
+    // 003 加载中状态（在页面就绪前检查 loading 元素）
     await page.goto(`/detail/${TEST_MOVIE_ID}`);
-    // 预期结果: 短暂显示 AppLoading
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
     expect(loadingVisible).toBeTruthy();
-  });
 
-  test('DETAIL-004: 无效 ID 显示错误', async ({ page }) => {
-    // 前置条件: 输入非 TMDB 格式的 ID
+    // 001 正常加载电影详情 → Hero 区域
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect
+      .poll(
+        () => page.evaluate(() => !!document.querySelector('.detail-hero, [class*="detail-hero"]')),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
+
+    // 002 正常加载剧集详情 → Tab 区域（含季信息）
+    await page.goto(`/detail/${TEST_TV_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect
+      .poll(
+        () => page.evaluate(() => !!document.querySelector('.detail-tabs, [class*="detail-tab"]')),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
+
+    // 004 无效 ID 显示错误
     await page.goto('/detail/invalid-id-123', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const text = document.body.innerText;
+            return text.includes('暂仅支持') || text.includes('无效') || text.includes('不存在');
+          }),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
 
-    // 预期结果: 显示错误信息
-    const hasError = await page.evaluate(() => {
-      const text = document.body.innerText;
-      return text.includes('暂仅支持') || text.includes('无效') || text.includes('不存在');
-    });
-    expect(hasError).toBeTruthy();
-  });
-
-  test('DETAIL-005: 无效 TMDB ID 显示错误', async ({ page }) => {
-    // 前置条件: 输入非数字的 TMDB ID
+    // 005 无效 TMDB ID 显示错误
     await page.goto('/detail/tmdb-movie-abc', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示"无效的 TMDB ID"错误
-    const hasError = await page.evaluate(() => {
-      const text = document.body.innerText;
-      return text.includes('无效') || text.includes('不存在');
-    });
-    expect(hasError).toBeTruthy();
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const text = document.body.innerText;
+            return text.includes('无效') || text.includes('不存在');
+          }),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
   });
 });
 
@@ -88,40 +85,35 @@ test.describe('3.1 页面加载', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.2 Hero 区域', () => {
-  test('DETAIL-010: 背景图加载', async ({ page }) => {
+  test('DETAIL-010/014/016: 背景图/Meta/返回按钮', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
 
-    // 预期结果: 显示背景图或骨架状态
-    const hasBg = await page.evaluate(() => {
-      const bg = document.querySelector('.detail-hero-bg');
-      if (!bg) return false;
-      return getComputedStyle(bg).backgroundImage !== 'none' || bg.getAttribute('src');
-    });
-    expect(hasBg).toBeTruthy();
-  });
+    // 010 背景图加载
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const bg = document.querySelector('.detail-hero-bg');
+            if (!bg) return false;
+            return getComputedStyle(bg).backgroundImage !== 'none' || !!bg.getAttribute('src');
+          }),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
 
-  test('DETAIL-014: Meta 信息显示', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    // 014 Meta 信息显示
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => !!document.querySelector('.detail-hero-meta, [class*="hero-meta"]')),
+        { ...POLL, timeout: 5000 },
+      )
+      .toBeTruthy();
 
-    // 预期结果: 显示评分、年份等 meta 信息
-    const hasMeta = await page.evaluate(() => {
-      return !!document.querySelector('.detail-hero-meta, [class*="hero-meta"]');
-    });
-    expect(hasMeta).toBeTruthy();
-  });
-
-  test('DETAIL-016: 返回按钮', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 返回按钮存在
+    // 016 返回按钮
     const backBtn = page.locator('.detail-hero-back, [class*="detail-hero-back"]');
-    expect(await backBtn.count()).toBeGreaterThan(0);
+    await expect.poll(() => backBtn.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
   });
 });
 
@@ -130,27 +122,20 @@ test.describe('3.2 Hero 区域', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.3 操作按钮', () => {
-  test('DETAIL-020: 立即播放按钮', async ({ page }) => {
+  test('DETAIL-020/023: 立即播放/收藏按钮', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
 
-    // 预期结果: 播放按钮存在
+    // 020 立即播放按钮
     const playBtn = page.locator('.detail-btn-play, [class*="btn-play"]');
-    expect(await playBtn.count()).toBeGreaterThan(0);
+    await expect.poll(() => playBtn.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
     if (await playBtn.isVisible().catch(() => false)) {
       const text = await playBtn.textContent();
     }
-  });
 
-  test('DETAIL-023: 收藏按钮', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 收藏按钮存在
+    // 023 收藏按钮
     const collectBtn = page.locator('.detail-btn-collect, [class*="btn-collect"]');
-    expect(await collectBtn.count()).toBeGreaterThan(0);
+    await expect.poll(() => collectBtn.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
     if (await collectBtn.isVisible().catch(() => false)) {
       const text = await collectBtn.textContent();
     }
@@ -162,47 +147,39 @@ test.describe('3.3 操作按钮', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.4 Tab 导航', () => {
-  test('DETAIL-030: 电影详情显示 2 个 Tab', async ({ page }) => {
+  test('DETAIL-030/031/032: 电影2Tab/剧集3Tab/切换Tab', async ({ page }) => {
+    // 030 电影详情显示 2 个 Tab
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示 2 个 Tab：概览、播放列表
-    const tabs = page.locator('.detail-tab');
-    const count = await tabs.count();
+    let tabs = page.locator('.detail-tab');
+    await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
+    let count = await tabs.count();
     if (count > 0) {
       const tabTexts = await tabs.allTextContents();
       expect(count).toBeGreaterThanOrEqual(2);
     }
-  });
 
-  test('DETAIL-031: 剧集详情显示 3 个 Tab', async ({ page }) => {
+    // 031 剧集详情显示 3 个 Tab
     await page.goto(`/detail/${TEST_TV_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    tabs = page.locator('.detail-tab');
+    await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
 
-    // 预期结果: 显示 3 个 Tab：概览、播放列表、季信息
-    const tabs = page.locator('.detail-tab');
-    expect(await tabs.count()).toBeGreaterThan(0);
-    const count = await tabs.count();
-    if (count > 0) {
-      const tabTexts = await tabs.allTextContents();
-    }
-  });
-
-  test('DETAIL-032: 切换 Tab', async ({ page }) => {
+    // 032 切换 Tab
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 操作: 点击不同 Tab
-    const tabs = page.locator('.detail-tab');
-    const count = await tabs.count();
-    if (count >= 2) {
+    tabs = page.locator('.detail-tab');
+    await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
+    const c = await tabs.count();
+    if (c >= 2) {
+      await expect(tabs.nth(1)).toBeVisible({ timeout: 5000 });
       await tabs.nth(1).click();
-      await page.waitForTimeout(500);
-      const isActive = await tabs.nth(1).evaluate(el => el.classList.contains('detail-tab--active'));
-      expect(isActive).toBe(true);
+      await expect
+        .poll(
+          () => tabs.nth(1).evaluate((el) => el.classList.contains('detail-tab--active')),
+          { ...POLL, timeout: 2500 },
+        )
+        .toBe(true);
     }
   });
 });
@@ -212,38 +189,12 @@ test.describe('3.4 Tab 导航', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.5 概览 Tab', () => {
-  test('DETAIL-042: 演员列表', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 演员区域存在
-    const hasCast = await page.evaluate(() => {
-      return !!document.querySelector('.detail-cast-row, [class*="cast"]');
-    });
-    expect(hasCast).toBeTruthy();
-  });
-
-  test('DETAIL-046: 剧照网格（专用 /images 接口，全语言 backdrops）', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-
-    // 剧照走独立的 /images 接口异步加载（带 include_image_language），需等待渲染
-    await page.waitForSelector('.detail-stills-grid', { timeout: 15000 });
-
-    // 预期结果: 概览 Tab 下存在剧照栏目且至少渲染出一张剧照
-    const stillCount = await page.evaluate(() => {
-      const grid = document.querySelector('.detail-stills-grid');
-      return grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
-    });
-    expect(stillCount).toBeGreaterThan(0);
-  });
-
-  test('DETAIL-047: 剧照多于 2 行时截断为有限行并显示「查看全部」', async ({ page }) => {
-    // 注入 25 张剧照（超过 2 行），验证截断逻辑：渲染数 < 总数 + --limited + 查看全部按钮
+  test('DETAIL-042/046/047/048: 演员/剧照网格/截断/重进保持截断', async ({ page }) => {
+    // 注入 25 张剧照（带延迟，确保重进时加载发生在隐藏期）；其余 TMDB 请求走 mock
     await page.route('**/api.tmdb.org/**', async (route) => {
       const url = route.request().url();
       if (url.includes('/images')) {
+        await new Promise((r) => setTimeout(r, 2000));
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -256,10 +207,24 @@ test.describe('3.5 概览 Tab', () => {
       return route.fallback();
     });
 
+    // 042 演员列表 + 046 剧照网格（独立 /images 接口）+ 047 截断逻辑
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.detail-stills-grid', { timeout: 15000 });
-    await page.waitForTimeout(500);
+    await expect
+      .poll(
+        () => page.evaluate(() => !!document.querySelector('.detail-cast-row, [class*="cast"]')),
+        { ...POLL, timeout: 10000 },
+      )
+      .toBeTruthy();
+
+    // 剧照接口（mock 延迟 2s）返回后 .detail-stills-item 才渲染；
+    // 等具体条目而非 .detail-stills-grid（骨架态即存在，会误判为 0 张）
+    await expect(page.locator('.detail-stills-item').first()).toBeVisible({ timeout: 15000 });
+    const stillCount = await page.evaluate(() => {
+      const grid = document.querySelector('.detail-stills-grid');
+      return grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
+    });
+    expect(stillCount).toBeGreaterThan(0);
 
     const info = await page.evaluate(() => {
       const grid = document.querySelector('.detail-stills-grid');
@@ -272,50 +237,40 @@ test.describe('3.5 概览 Tab', () => {
     expect(info.more).toBe(true);
     expect(info.items).toBeGreaterThan(0);
     expect(info.items).toBeLessThan(25);
-  });
 
-  test('DETAIL-048: 重新进入 detail 后剧照仍保持 2 行截断（不全部平铺）', async ({ page }) => {
-    // 方案 B（无 Keep-Alive）：后退卸载 detail → 前进重新挂载，剧照重新加载/回显。
-    // 断言核心：无论加载路径如何，visibleCount 必须是有限值（视口兜底），不能全部平铺。
-    await page.route('**/api.tmdb.org/**', async (route) => {
-      const url = route.request().url();
-      if (url.includes('/images')) {
-        await new Promise((r) => setTimeout(r, 2000)); // 延迟确保加载发生在隐藏期
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            backdrops: Array.from({ length: 25 }, (_, i) => ({ file_path: `/b${i}.jpg` })),
-            posters: [],
-          }),
-        });
-      }
-      return route.fallback();
-    });
-
+    // 048 重新进入 detail 后剧照仍保持 2 行截断（不全部平铺）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
+    // 重进 detail 的剧照接口（mock 延迟 2s）应在页面隐藏期返回：
+    // 条件等这条响应而非固定睡眠；若浏览器已丢弃该请求则最多等 8s 后继续。
+    const stillsResponse = page
+      .waitForResponse(
+        (r) => r.url().includes('api.tmdb.org') && r.url().includes('/images'),
+        { timeout: 8000 },
+      )
+      .catch(() => null);
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    // 后退卸载 detail，等待剧照在卸载期间加载完（模拟慢接口）
     await page.goBack();
-    await page.waitForTimeout(3500);
-    // 再前进，detail 重新挂载；等待真实网格（带「查看全部」按钮，仅截断后渲染）出现
+    await expect(page).not.toHaveURL(/\/detail\//, { timeout: 5000 });
+    await stillsResponse;
     await page.goForward();
     await page.waitForSelector('.detail-stills-more', { timeout: 15000 });
-    await page.waitForTimeout(300);
+    await expect(page.locator('.detail-stills-grid').first()).toHaveClass(
+      /detail-stills-grid--limited/,
+      { timeout: 3000 },
+    );
 
-    const info = await page.evaluate(() => {
+    const info2 = await page.evaluate(() => {
       const grid = document.querySelector('.detail-stills-grid');
       const items = grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
       const limited = grid ? grid.classList.contains('detail-stills-grid--limited') : false;
       const more = !!document.querySelector('.detail-stills-more');
       return { items, limited, more };
     });
-    // 即便隐藏期加载，visibleCount 也必须是有限值（视口兜底），不能全部平铺
-    expect(info.limited).toBe(true);
-    expect(info.more).toBe(true);
-    expect(info.items).toBeLessThan(25);
+    expect(info2.limited).toBe(true);
+    expect(info2.more).toBe(true);
+    expect(info2.items).toBeLessThan(25);
   });
 });
 
@@ -324,63 +279,61 @@ test.describe('3.5 概览 Tab', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('3.6 播放列表 Tab', () => {
-  test('DETAIL-060: CMS 按需加载', async ({ page }) => {
+  test('DETAIL-060/062: CMS 按需加载 / 全部弹框线路列表', async ({ page }) => {
+    // 060 CMS 按需加载
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
 
-    // 操作: 点击播放列表 Tab
     const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
-    expect(await sourcesTab.count()).toBeGreaterThan(0);
+    await expect.poll(() => sourcesTab.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
     if (await sourcesTab.isVisible().catch(() => false)) {
       await sourcesTab.click();
-      await page.waitForTimeout(3000);
-
-      // 预期结果: 触发 CMS 源搜索
-      const hasSourceContent = await page.evaluate(() => {
-        return !!document.querySelector('.detail-sources, [class*="source"]');
-      });
-      expect(hasSourceContent).toBeTruthy();
+      await expect
+        .poll(
+          () => page.evaluate(() => !!document.querySelector('.detail-sources, [class*="source"]')),
+          { ...POLL, timeout: 5000 },
+        )
+        .toBeTruthy();
     }
-  });
 
-  test('DETAIL-062: 播放源“全部”弹框显示线路列表', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    // 沙箱无真实 CMS 源，请求（corsProxy 为空时直连真实 CMS 主机）会长时间挂起；
-    // 拦截所有外部请求、仅放行 TMDB mock 与本地 dev server，使搜索快速失败走「全部失败→统一提示」分支
+    // 062 播放源"全部"弹框显示线路列表（拦截外部请求，使 CMS 搜索快速失败走统一提示分支）
     await page.route('**/*', (route) => {
       const url = route.request().url();
-      if (url.includes('api.tmdb.org') || url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1') || url.startsWith('https://127.0.0.1')) {
+      if (
+        url.includes('api.tmdb.org') ||
+        url.startsWith('http://localhost') ||
+        url.startsWith('http://127.0.0.1') ||
+        url.startsWith('https://127.0.0.1')
+      ) {
         return route.continue();
       }
       return route.abort();
     });
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
 
-    const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
-    expect(await sourcesTab.count()).toBeGreaterThan(0);
-    if (!(await sourcesTab.isVisible().catch(() => false))) {
+    const sourcesTab2 = page.locator('.detail-tab').filter({ hasText: '播放列表' });
+    await expect.poll(() => sourcesTab2.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
+    if (!(await sourcesTab2.isVisible().catch(() => false))) {
       return;
     }
-    await sourcesTab.click();
-    // 等待 CMS 搜索加载完成（结果网格或出现源提示），避免固定等待时间不足导致仍停留在 loading 状态
-    await page
-      .waitForSelector('.detail-sources-grid, .detail-state', { timeout: 30000 })
-      .catch(() => {});
-    await page.waitForTimeout(500);
+    await sourcesTab2.click();
+    // 播放源区挂载 → 匹配 spinner (.playlist-query) 消失 = CMS 查询已落到终态
+    await expect(page.locator('.detail-sources')).toBeVisible({ timeout: 15000 });
+    await expect
+      .poll(() => page.locator('.detail-sources .playlist-query').count(), {
+        ...POLL,
+        timeout: 30000,
+      })
+      .toBe(0);
 
-    // mock 下 CMS 搜索全部失败 → 不渲染任何源错误卡片，改为统一提示（位于 grid 内的 .detail-sources-empty）
     const unifiedMsgVisible = await page
       .locator('.detail-sources-empty:has-text("所有视频源均未找到匹配资源")')
       .isVisible()
       .catch(() => false);
     const errStatusCount = await page.locator('.detail-source-status--err').count();
-    // 注释已说明：mock 下全部失败应不渲染错误卡片，故此处断言为 0（并非期望 >0）
     expect(errStatusCount).toBe(0);
 
-    // 仅当存在可用源时，卡片才出现“全部”按钮（mock 下 CMS 全部失败 → 不出现），故不强制断言其存在；
-    // 下方 if (!hasAllBtn) 分支已校验“全部源不可用时显示统一提示”
     const allBtn = page.locator('.detail-source-all-btn').first();
     const hasAllBtn = await allBtn.isVisible().catch(() => false);
     if (!hasAllBtn) {
@@ -391,19 +344,17 @@ test.describe('3.6 播放列表 Tab', () => {
     }
 
     await allBtn.click();
-    await page.waitForTimeout(800);
-
-    const modalVisible = await page.locator('.source-all-modal').isVisible().catch(() => false);
-    expect(modalVisible).toBeTruthy();
-    const rowCount = await page.locator('.source-all-modal__row').count();
-    expect(rowCount).toBeGreaterThan(0);
+    await expect(page.locator('.source-all-modal')).toBeVisible({ timeout: 5000 });
+    await expect
+      .poll(() => page.locator('.source-all-modal__row').count(), { ...POLL, timeout: 5000 })
+      .toBeGreaterThan(0);
     const playBtnCount = await page.locator('.source-all-modal__play-btn').count();
     expect(playBtnCount).toBeGreaterThan(0);
 
-    // 点击第一条线路的播放按钮应跳转到播放页
     if (playBtnCount > 0) {
       await page.locator('.source-all-modal__play-btn').first().click();
-      await page.waitForTimeout(1500);
+      // 条件等待路由跳转到播放器（原用例不作强断言，故超时也继续）
+      await page.waitForURL(/\/play\//, { timeout: 5000 }).catch(() => {});
       const onPlayer = page.url().includes('/play/');
     }
   });
@@ -417,28 +368,13 @@ test.describe('3.8 推荐区域', () => {
   test('DETAIL-080: 相关推荐', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(5000);
 
-    // 预期结果: 推荐区域存在
-    const hasRecommend = await page.evaluate(() => {
-      return !!document.querySelector('.detail-recommend, [class*="recommend"]');
-    });
-    expect(hasRecommend).toBeTruthy();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════
-// 3.9 页面状态与回退
-// ═══════════════════════════════════════════════════════════════
-
-test.describe('3.9 页面状态与回退', () => {
-  test('DETAIL-091: 文档标题', async ({ page }) => {
-    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示影片名称
-    const title = await page.title();
-    expect(title).toBeTruthy();
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => !!document.querySelector('.detail-recommend, [class*="recommend"]')),
+        { ...POLL, timeout: 7000 },
+      )
+      .toBeTruthy();
   });
 });

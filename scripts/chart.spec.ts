@@ -71,10 +71,9 @@ test.describe('CHART 热度榜页', () => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.chart-card', { timeout: 15000 });
     await page.waitForSelector('.chart-row', { timeout: 15000 });
-    await page.waitForTimeout(500);
+    await expect(page.locator('.chart-row')).toHaveCount(20, { timeout: 5000 });
 
     expect(await page.locator('.chart-tabs__tab').count()).toBe(6);
-    expect(await page.locator('.chart-row').count()).toBe(20);
     // top3 排名强调 + 热度值 + 评分 + 封面（mock 1x1 像素走 LazyImage）
     expect(await page.locator('.chart-row--top').count()).toBe(3);
     expect(await page.locator('.chart-row__heat .n').count()).toBe(20);
@@ -83,23 +82,33 @@ test.describe('CHART 热度榜页', () => {
     expect(await page.locator('.chart-info-tip').count()).toBe(1);
   });
 
-  test('CHART-002: tab 切换——综艺走 discover/tv；趋势榜含今日/本周分段', async ({ page }) => {
+  test('CHART-002/005: tab 切换 + URL 直达参数', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.chart-row', { timeout: 15000 });
 
-    // 综艺 → discover/tv（fixture mock 命中）
+    // 002 综艺 → discover/tv（fixture mock 命中）
     await page.locator('.chart-tabs__tab', { hasText: '综艺' }).click();
-    await page.waitForTimeout(800);
-    expect(new URL(page.url()).searchParams.get('category')).toBe('variety');
+    await expect(page).toHaveURL(/category=variety/, { timeout: 3000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
 
-    // 趋势榜 → 今日/本周分段出现，切本周 URL 带 window=week
+    // 002 趋势榜 → 今日/本周分段出现，切本周 URL 带 window=week
     await page.locator('.chart-tabs__tab', { hasText: '趋势榜' }).click();
     await page.waitForSelector('.chart-tabs__window', { timeout: 15000 });
     await page.locator('.chart-tabs__window button', { hasText: '本周' }).click();
-    await page.waitForTimeout(800);
-    expect(new URL(page.url()).searchParams.get('window')).toBe('week');
+    await expect(page).toHaveURL(/window=week/, { timeout: 3000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
+
+    // 005 URL 直达参数生效——category=variety 选中综艺
+    await page.goto('/chart?category=variety', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/综艺/);
+
+    // 005 trend+window=week 选中本周
+    await page.goto('/chart?category=trend&window=week', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.chart-tabs__window', { timeout: 15000 });
+    await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/趋势榜/);
+    await expect(page.locator('.chart-tabs__window-btn--on')).toHaveText('本周');
+    await page.waitForSelector('.chart-row', { timeout: 15000 });
   });
 
   test('CHART-003: 无缝滚动——两页合并 40 行、排名连续、无新数据后显示到底', async ({ page }) => {
@@ -110,8 +119,7 @@ test.describe('CHART 热度榜页', () => {
 
     // 滚到底触发第 2 页加载（哨兵 + useInfiniteScroll）
     await page.locator('.chart-sentinel').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1200);
-    expect(await page.locator('.chart-row').count()).toBe(40);
+    await expect(page.locator('.chart-row')).toHaveCount(40, { timeout: 5000 });
 
     // 排名跨页连续（合并重排后仍为 1..40）
     const ranks = await page.locator('.chart-row__rank').allTextContents();
@@ -119,9 +127,7 @@ test.describe('CHART 热度榜页', () => {
 
     // 第 3 页返回重复数据 → 去重后 0 新增 → 到底提示（不无限请求）
     await page.locator('.chart-sentinel').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1500);
-    expect(await page.locator('.chart-row').count()).toBe(40);
-    await expect(page.locator('.chart-list__end')).toHaveText(/已加载全部 40 条/);
+    await expect(page.locator('.chart-list__end')).toHaveText(/已加载全部 40 条/, { timeout: 5000 });
   });
 
   test('CHART-004: 行点击跳详情 /detail/:id', async ({ page }) => {
@@ -129,20 +135,7 @@ test.describe('CHART 热度榜页', () => {
     await page.waitForSelector('.chart-row', { timeout: 15000 });
 
     await page.locator('.chart-row').first().click();
-    await page.waitForTimeout(1000);
-    expect(page.url()).toMatch(/\/detail\/tmdb-movie-\d+/);
-  });
-
-  test('CHART-005: URL 直达参数生效——category=variety 选中综艺、trend+window=week 选中本周', async ({ page }) => {
-    await page.goto('/chart?category=variety', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
-    await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/综艺/);
-
-    await page.goto('/chart?category=trend&window=week', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-tabs__window', { timeout: 15000 });
-    await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/趋势榜/);
-    await expect(page.locator('.chart-tabs__window-btn--on')).toHaveText('本周');
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await expect(page).toHaveURL(/\/detail\/tmdb-movie-\d+/, { timeout: 3000 });
   });
 
   test('CHART-006: 切 tab 刷新态——旧行降沉 + 居中「加载中」胶囊，完成后移除；缓存命中零遮罩', async ({ page }) => {
@@ -171,8 +164,7 @@ test.describe('CHART 热度榜页', () => {
 
     // 切回电影（已缓存）：零遮罩直接显示
     await page.locator('.chart-tabs__tab', { hasText: '电影' }).first().click();
-    await page.waitForTimeout(400);
-    expect(await page.locator('.chart-list--refreshing').count()).toBe(0);
+    await expect(page.locator('.chart-list--refreshing')).toHaveCount(0, { timeout: 3000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
   });
 });

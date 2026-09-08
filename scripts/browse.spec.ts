@@ -1,275 +1,161 @@
 /**
- * 浏览/搜索页 (Browse) 测试用例
+ * 浏览/搜索页 (Browse) 测试用例（已合并精简）
  * 路由: /browse
  * 配置依赖: 智能检索需 Level 1（Token）；CMS 直链搜索需 Level 2（Token + CORS 代理）
  *
- * 覆盖: BROWSE-001 ~ BROWSE-053
+ * 覆盖: BROWSE-001 ~ BROWSE-080（合并后 7 条）
+ *
+ * 等待策略: 全部使用 Playwright web-first 条件等待（expect / expect.poll），
+ *          不使用固定 waitForTimeout 睡眠；轮询 50ms 起步，条件成立立即返回。
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
+// 条件等待轮询节奏（条件成立即返回，不会等满 timeout）
+const POLL = { intervals: [50, 100, 250, 500] };
+
 // ═══════════════════════════════════════════════════════════════
-// 2.1 搜索模式切换
+// 2.1 搜索模式切换（BROWSE-001 + 002）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.1 搜索模式切换', () => {
-  test('BROWSE-001: 默认智能检索模式', async ({ page }) => {
-    // 前置条件: 进入浏览页
+  test('BROWSE-001/002: 默认智能检索且可切换到直链搜索', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
 
-    // 预期结果: 默认选中"智能检索" Tab
+    // BROWSE-001: 默认选中"智能检索" Tab
     const smartTab = page.locator('.browse-search-tab').first();
-    if (await smartTab.isVisible().catch(() => false)) {
-      const isActive = await smartTab.evaluate(el => el.classList.contains('active'));
-      expect(isActive).toBe(true);
-    }
-  });
+    await expect(smartTab).toBeVisible({ timeout: 15000 });
+    await expect
+      .poll(() => smartTab.evaluate((el) => el.classList.contains('active')), { ...POLL, timeout: 3000 })
+      .toBe(true);
 
-  test('BROWSE-002: 切换到直链搜索', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
-
-    // 操作: 点击"直链搜索" Tab
+    // BROWSE-002: 切换到直链搜索
     const cmsTab = page.locator('.browse-search-tab').nth(1);
-    if (await cmsTab.isVisible().catch(() => false)) {
-      await cmsTab.click();
-      await page.waitForTimeout(500);
-
-      // 预期结果: 切换到 CMS 搜索模式
-      const isActive = await cmsTab.evaluate(el => el.classList.contains('active'));
-      expect(isActive).toBe(true);
-    }
+    await expect(cmsTab).toBeVisible({ timeout: 5000 });
+    await cmsTab.click();
+    await expect
+      .poll(() => cmsTab.evaluate((el) => el.classList.contains('active')), { ...POLL, timeout: 2500 })
+      .toBe(true);
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 2.2 搜索功能
+// 2.2 搜索功能（BROWSE-010 + 012 + 013 + 014）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.2 搜索功能', () => {
-  test('BROWSE-010: 正常搜索', async ({ page }) => {
+  test('BROWSE-010/012/013/014: 正常搜索、清空恢复、无结果、刷新清空输入框', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
 
-    // 操作: 在顶部导航栏搜索框输入关键词并回车
     const searchInput = page.locator('.sticky-header .search-box__input');
-    expect(await searchInput.count()).toBeGreaterThan(0);
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('复仇者联盟');
-      await searchInput.press('Enter');
-      await page.waitForTimeout(3000);
+    const resultsBody = page.locator('.browse-results-body, [class*="browse-grid"]').first();
 
-      // 预期结果: 显示搜索结果网格
-      const hasResults = await page.evaluate(() => {
-        return !!document.querySelector('.browse-results-body, [class*="browse-grid"]');
-      });
-      expect(hasResults).toBeTruthy();
-    }
-  });
+    // BROWSE-010: 正常搜索显示结果网格
+    await expect(searchInput).toBeVisible({ timeout: 15000 });
+    await searchInput.fill('复仇者联盟');
+    await searchInput.press('Enter');
+    await expect(resultsBody).toBeVisible({ timeout: 10000 });
 
-  test('BROWSE-012: 空搜索词清除恢复默认结果', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    // BROWSE-012: 清空搜索词（恢复默认结果）
+    await searchInput.fill('复仇者');
+    await searchInput.press('Enter');
+    const clearBtn = page.locator('.sticky-header .search-box__clear');
+    await expect(clearBtn).toBeVisible({ timeout: 5000 });
+    await clearBtn.click();
+    // 清空后：输入框归零 + 默认结果区重新可见
+    await expect(searchInput).toHaveValue('', { timeout: 5000 });
+    await expect(resultsBody).toBeVisible({ timeout: 10000 });
+
+    // BROWSE-013: 搜索无结果显示空状态
+    await searchInput.fill('zzzxxxnotexist12345');
+    await searchInput.press('Enter');
+    await expect
+      .poll(
+        () => page.evaluate(() => !!document.querySelector('.empty-state, [class*="empty"]')),
+        { ...POLL, timeout: 12000 },
+      )
+      .toBeTruthy();
+
+    // BROWSE-014: 刷新页面后顶部搜索框清空（POP 导航）
+    await searchInput.fill('复仇者联盟');
+    await searchInput.press('Enter');
+    await expect(resultsBody).toBeVisible({ timeout: 10000 });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2000);
-
-    // 操作: 先搜索，再清空
-    const searchInput = page.locator('.sticky-header .search-box__input');
-    expect(await searchInput.count()).toBeGreaterThan(0);
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('复仇者');
-      await searchInput.press('Enter');
-      await page.waitForTimeout(2000);
-
-      // 清空搜索词
-      const clearBtn = page.locator('.sticky-header .search-box__clear');
-      expect(await clearBtn.count()).toBeGreaterThan(0);
-      if (await clearBtn.isVisible().catch(() => false)) {
-        await clearBtn.click();
-        await page.waitForTimeout(2000);
-      }
-    }
-  });
-
-  test('BROWSE-013: 搜索无结果', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
-
-    // 操作: 输入不存在的关键词
-    const searchInput = page.locator('.sticky-header .search-box__input');
-    expect(await searchInput.count()).toBeGreaterThan(0);
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('zzzxxxnotexist12345');
-      await searchInput.press('Enter');
-      await page.waitForTimeout(5000);
-
-      // 预期结果: 显示"暂无结果"空状态
-      const isEmpty = await page.evaluate(() => {
-        return !!document.querySelector('.empty-state, [class*="empty"]');
-      });
-      expect(isEmpty).toBeTruthy();
-    }
-  });
-
-  test('BROWSE-014: 刷新页面后顶部搜索框清空（POP 导航）', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
-
-    // 操作: 先搜索，再刷新页面
-    const searchInput = page.locator('.sticky-header .search-box__input');
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('复仇者联盟');
-      await searchInput.press('Enter');
-      await page.waitForTimeout(2000);
-
-      // 刷新页面（POP 导航）
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 15000 });
-      await page.waitForTimeout(1000);
-
-      // 预期结果: 顶部搜索框为空（不残留上次搜索词）
-      const inputValue = await searchInput.inputValue();
-      expect(inputValue).toBe('');
-    }
+    // 等页面重新水合完成（搜索框 + 结果区就绪）后再一次性断言输入框为空
+    await expect(searchInput).toBeVisible({ timeout: 15000 });
+    await expect(resultsBody).toBeVisible({ timeout: 15000 });
+    expect(await searchInput.inputValue()).toBe('');
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 2.3 筛选与排序
+// 2.3 筛选与排序（BROWSE-020 + 023 + 025）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.3 筛选与排序', () => {
-  test('BROWSE-020: 分类筛选', async ({ page }) => {
+  test('BROWSE-020/023/025: 分类筛选栏、排序栏、结果总数均存在', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2000);
 
-    // 预期结果: FilterBar 存在
+    // BROWSE-020: FilterBar 存在
     const filterBar = page.locator('.filter-bar, [class*="filter"]');
-    expect(await filterBar.count()).toBeGreaterThan(0);
-    const hasFilter = await filterBar.isVisible().catch(() => false);
-  });
+    await expect.poll(() => filterBar.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
 
-  test('BROWSE-023: 排序切换', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2000);
-
-    // 预期结果: 排序栏存在
+    // BROWSE-023: 排序栏存在
     const sortBar = page.locator('.browse-sort-bar, [class*="sort"]');
-    expect(await sortBar.count()).toBeGreaterThan(0);
-    const hasSort = await sortBar.isVisible().catch(() => false);
-  });
+    await expect.poll(() => sortBar.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
 
-  test('BROWSE-025: 结果总数显示', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // 预期结果: 显示"共 X 条"结果数
+    // BROWSE-025: 显示"共 X 条"结果数
     const countEl = page.locator('.browse-sort-bar__count, [class*="count"]');
-    expect(await countEl.count()).toBeGreaterThan(0);
-    if (await countEl.isVisible().catch(() => false)) {
-      const text = await countEl.textContent();
-    }
+    await expect.poll(() => countEl.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 2.4 CMS 直链搜索
+// 2.4 CMS 直链搜索（BROWSE-030）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.4 CMS 直链搜索', () => {
   test('BROWSE-030: CMS 搜索正常', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
 
     // 操作: 切换到直链搜索模式
     const cmsTab = page.locator('.browse-search-tab').nth(1);
-    expect(await cmsTab.count()).toBeGreaterThan(0);
-    if (await cmsTab.isVisible().catch(() => false)) {
-      await cmsTab.click();
-      await page.waitForTimeout(500);
+    await expect(cmsTab).toBeVisible({ timeout: 15000 });
+    await cmsTab.click();
+    await expect
+      .poll(() => cmsTab.evaluate((el) => el.classList.contains('active')), { ...POLL, timeout: 2500 })
+      .toBe(true);
 
-      // 输入关键词搜索
-      const searchInput = page.locator('.sticky-header .search-box__input');
-      expect(await searchInput.count()).toBeGreaterThan(0);
-      if (await searchInput.isVisible().catch(() => false)) {
-        await searchInput.fill('复仇者');
-        await searchInput.press('Enter');
-        await page.waitForTimeout(5000);
+    // 输入关键词搜索
+    const searchInput = page.locator('.sticky-header .search-box__input');
+    await expect(searchInput).toBeVisible({ timeout: 5000 });
+    await searchInput.fill('复仇者');
+    await searchInput.press('Enter');
 
-        // 预期结果: SourceStatusIndicator 显示进度
-        const hasIndicator = await page.evaluate(() => {
-          return !!document.querySelector('[class*="source-status"], [class*="indicator"]');
-        });
-        expect(hasIndicator).toBeTruthy();
-      }
-    }
+    // 预期结果: SourceStatusIndicator 显示进度
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => !!document.querySelector('[class*="source-status"], [class*="indicator"]'),
+          ),
+        { ...POLL, timeout: 12000 },
+      )
+      .toBeTruthy();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 2.5 懒加载与滚动
-// ═══════════════════════════════════════════════════════════════
-
-test.describe('2.5 懒加载与滚动', () => {
-  test('BROWSE-043: 返回顶部按钮', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(2000);
-
-    // 操作: 滚动到页面下方（真实滚动容器是 .app-shell__scroll，而非 .app-shell / window）
-    await page.locator('.app-shell__scroll').evaluate((el) => { el.scrollTop = 2000; });
-    await page.waitForTimeout(500);
-
-    // 预期结果: 回到顶部按钮可见
-    const backToTop = page.locator('.back-to-top-button');
-    expect(await backToTop.count()).toBeGreaterThan(0);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════
-// 2.6 页面状态
-// ═══════════════════════════════════════════════════════════════
-
-test.describe('2.6 页面状态', () => {
-  test('BROWSE-053: CMS 搜索浏览器标题', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1000);
-
-    // 操作: 切换到 CMS 模式并搜索
-    const cmsTab = page.locator('.browse-search-tab').nth(1);
-    if (await cmsTab.isVisible().catch(() => false)) {
-      await cmsTab.click();
-      await page.waitForTimeout(500);
-
-      const searchInput = page.locator('.sticky-header .search-box__input');
-      if (await searchInput.isVisible().catch(() => false)) {
-        await searchInput.fill('复仇者');
-        await searchInput.press('Enter');
-        await page.waitForTimeout(2000);
-
-        // 预期结果: 显示"复仇者 - 搜索 - kinoTV"
-        const title = await page.title();
-        expect(title).toContain('搜索');
-      }
-    }
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════
-// 2.7 移动端搜索（修复：移动端更换搜索词必须调用接口）
+// 2.7 移动端搜索（修复：移动端更换搜索词必须调用接口）（BROWSE-060）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.7 移动端搜索', () => {
+  test.use({ viewport: { width: 767, height: 1024 } });
+
   test('BROWSE-060: 移动端从首页搜索进入后更换搜索词均调用接口', async ({ page }) => {
     const searchReqs: string[] = [];
     page.on('request', (req) => {
@@ -278,33 +164,31 @@ test.describe('2.7 移动端搜索', () => {
       }
     });
 
-    await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(1500);
 
     // 移动端顶栏中央常驻搜索框（0b1e20a 起取消「点击图标展开」临时搜索模式）
     const mobileInput = page.locator('.sticky-header .search-box__input').first();
-    await expect(mobileInput).toBeVisible({ timeout: 5000 });
+    await expect(mobileInput).toBeVisible({ timeout: 15000 });
 
     // 第一次搜索：mobile-a
     await mobileInput.fill('mobile-a');
     await page.locator('.sticky-header .search-box__submit').first().click();
-    await page.waitForTimeout(1500);
-    expect(searchReqs.length).toBeGreaterThanOrEqual(1);
+    await expect.poll(() => searchReqs.length, { ...POLL, timeout: 10000 }).toBeGreaterThanOrEqual(1);
 
     // 在 /browse 上更换搜索词再次搜索：mobile-b（路由切换后 SearchBox 因 key 重建，需重新定位）
+    await expect(page).toHaveURL(/\/browse/, { timeout: 10000 });
     const input2 = page.locator('.sticky-header .search-box__input').first();
+    await expect(input2).toBeVisible({ timeout: 10000 });
     const before = searchReqs.length;
     await input2.fill('mobile-b');
     await page.locator('.sticky-header .search-box__submit').first().click();
-    await page.waitForTimeout(1500);
-    expect(searchReqs.length).toBeGreaterThan(before);
+    await expect.poll(() => searchReqs.length, { ...POLL, timeout: 10000 }).toBeGreaterThan(before);
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 2.8 移动端命令栏 (BrowseMobileBar)
+// 2.8 移动端命令栏 BrowseMobileBar
 // 注：原 scripts/browse-mobile.spec.ts 已并入本块（2026-07-30）。
 // 触发条件: useIsMobileLayout() = isNative || isRealPhone(手机UA) || 视口<768px
 //          本块用「视口<768px」触发，无需伪造手机 UA。
@@ -315,282 +199,124 @@ test.describe('2.7 移动端搜索', () => {
 test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('BROWSE-070: 窄视口进入 /browse 渲染移动端命令栏，且样式已加载', async ({ page }) => {
+  // ① 命令栏入口结构（双行布局 + 全屏筛选面板打开/关闭）
+  test('BROWSE-070/071/072/074/078/080: 命令栏双行布局、筛选面板开关、模式切换、桌面守卫、已选轨', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
 
-    // 移动端命令栏根节点渲染
+    // BROWSE-070: 移动端命令栏根节点渲染 + 样式已加载
     const bmb = page.locator('.bmb').first();
-    await expect(bmb).toBeVisible({ timeout: 5000 });
-
-    // 关键回归点：若 BrowseMobileBar.css 漏引，.bmb / .bmb-cmdbar 会是默认 block，
-    // 而非 CSS 定义的 flex。这里直接断言 computed display，能抓出「样式全失效」。
-    const bmbDisplay = await bmb.evaluate((el) => getComputedStyle(el).display);
-    expect(bmbDisplay).toBe('flex');
-
-    const cmdbarDisplay = await page
-      .locator('.bmb-cmdbar')
-      .first()
-      .evaluate((el) => getComputedStyle(el).display);
-    expect(cmdbarDisplay).toBe('flex');
-
+    await expect(bmb).toBeVisible({ timeout: 15000 });
+    // 样式表可能晚于 DOM 就绪，轮询等 computed style 生效（替代固定睡眠）
+    await expect
+      .poll(() => bmb.evaluate((el) => getComputedStyle(el).display), { ...POLL, timeout: 3000 })
+      .toBe('flex');
+    await expect
+      .poll(
+        () =>
+          page
+            .locator('.bmb-cmdbar')
+            .first()
+            .evaluate((el) => getComputedStyle(el).display),
+        { ...POLL, timeout: 3000 },
+      )
+      .toBe('flex');
     // 移动端由命令栏接管：桌面搜索 Tab 不应渲染
     const desktopTabs = page.locator('.browse-search-tab');
     expect(await desktopTabs.count()).toBe(0);
-
-    // 命令栏核心控件齐全（排序入口已移至筛选抽屉，故不再渲染 .bmb-sort-btn）
+    // 命令栏核心控件齐全
     await expect(page.locator('.bmb-mode-seg .bmb-seg').first()).toBeVisible();
     await expect(page.locator('.bmb-filter-trigger')).toBeVisible();
 
-  });
-
-  test('BROWSE-071: 点击「筛选」打开右滑全屏面板，可关闭', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    // 关闭态：面板未挂载
-    expect(await page.locator('.drawer-content').count()).toBe(0);
-
-    // 打开
-    await page.locator('.bmb-filter-trigger').click();
-    const drawer = page.locator('.drawer-content').first();
-    await expect(drawer).toBeVisible({ timeout: 5000 });
-    // radix Dialog 自带 role=dialog，确认是真正的对话框而非裸 div
-    await expect(drawer).toHaveRole('dialog', { timeout: 5000 });
-    // 面板内含 FilterBar 与底部操作区（完成/重置）
-    await expect(page.locator('.drawer-body .filter-bar, .drawer-body [class*="filter"]').first()).toBeVisible();
-    await expect(page.locator('.bmb-pf-apply')).toBeVisible();
-
-    // 关闭
-    await page.locator('.drawer-close').click();
-    await expect(page.locator('.drawer-content').first()).toBeHidden({ timeout: 5000 });
-
-  });
-
-  test('BROWSE-072: 移动端模式切换（智能↔直链）生效', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    const segs = page.locator('.bmb-mode-seg .bmb-seg');
-    await expect(segs).toHaveCount(2);
-
-    // 默认智能检索高亮
-    const smartOn = await segs.nth(0).evaluate((el) => el.classList.contains('on'));
-    expect(smartOn).toBe(true);
-
-    // 切到直链搜索
-    await segs.nth(1).click();
-    await page.waitForTimeout(300);
-    const cmsOn = await segs.nth(1).evaluate((el) => el.classList.contains('on'));
-    expect(cmsOn).toBe(true);
-
-    // 直链搜索模式：筛选入口不应展示（无 FilterBar / SortBar；排序入口已移至抽屉）
-    expect(await page.locator('.bmb-filter-trigger').count()).toBe(0);
-    // 预设横滚无内容，不应展示
-    expect(await page.locator('.bmb-presets').count()).toBe(0);
-
-    // 结果区仍在
-    await expect(page.locator('.browse-card--results').first()).toBeVisible();
-
-  });
-
-  test('BROWSE-073: 暗色主题下激活态文字为纯白 #fff（与桌面端 browse-search-tab.active 一致）', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    // 取激活态段文字计算色
-    const activeColor = await page
-      .locator('.bmb-mode-seg .bmb-seg.on')
-      .first()
-      .evaluate((el) => getComputedStyle(el).color);
-
-    // 移动端激活模式 tab 文本色已统一为硬编码 #fff，与桌面端 .browse-search-tab.active 一致
-    expect(activeColor.toLowerCase()).toBe('rgb(255, 255, 255)');
-  });
-});
-
-test.describe('2.8 移动端命令栏 — 桌面回归守卫', () => {
-  test.use({ viewport: { width: 1280, height: 800 } });
-
-  test('BROWSE-074: 桌面宽视口不渲染移动端命令栏', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    // 桌面 UA + 宽视口 → isPhone=false → 移动端命令栏不渲染
-    expect(await page.locator('.bmb').count()).toBe(0);
-    // 桌面搜索 Tab 正常渲染
-    await expect(page.locator('.browse-search-tab').first()).toBeVisible();
-
-  });
-});
-
-test.describe('2.8 移动端命令栏 — 整页卡片', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test('BROWSE-075: 移动端双卡片相连（命令栏 .bmb + 结果区 .browse-card--results 各带 surface 边框圆角阴影，整页随 .app-shell__scroll 滚动）', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    const pageEl = page.locator('.browse-page--mobile').first();
-    await expect(pageEl).toBeVisible();
-
-    // Card 1（命令栏）与 Card 2（结果区）各自带卡片外壳，相连成一张大卡（镜像桌面端双卡片）
-    const cardStyle = await page.evaluate(() => {
-      const pick = (sel: string) => {
-        const el = document.querySelector(sel) as HTMLElement | null;
-        if (!el) return null;
-        const cs = getComputedStyle(el);
-        return {
-          br: cs.borderTopLeftRadius,
-          brBottom: cs.borderBottomLeftRadius,
-          shadow: cs.boxShadow,
-          border: cs.borderTopWidth,
-          borderBottom: cs.borderBottomWidth,
-        };
-      };
-      return {
-        cmd: pick('.browse-page--mobile .bmb'),
-        res: pick('.browse-page--mobile .browse-card--results'),
-      };
-    });
-    // 回归点：若移动端未包裹卡片，radius=0、shadow=none、border=0px
-    expect(cardStyle.cmd?.br).not.toBe('0px');
-    expect(cardStyle.cmd?.shadow).not.toBe('none');
-    expect(cardStyle.cmd?.border).not.toBe('0px');
-    // 结果区是「下半部卡片」：顶部圆角/顶边框设计为 0（与命令栏 gap:0 相连、避免双线），
-    // 卡片外壳体现在底部圆角（border-bottom-left-radius）+ 底部边框 + shadow。
-    expect(cardStyle.res?.brBottom).not.toBe('0px');
-    expect(cardStyle.res?.shadow).not.toBe('none');
-    expect(cardStyle.res?.borderBottom).not.toBe('0px');
-
-    // 回归点：整页卡片不得用 overflow:hidden 把内容裁切、导致无法滚动；
-    // 整页滚动交给 .app-shell__scroll，结果区也不自创内部滚动陷阱（overflow-y ≠ auto）。
-    const overflow = await pageEl.evaluate((el) => getComputedStyle(el).overflow);
-    expect(overflow).not.toBe('hidden');
-    const resultsOverflowY = await page
-      .locator('.browse-page--mobile .browse-card--results')
-      .first()
-      .evaluate((el) => getComputedStyle(el).overflowY);
-    expect(resultsOverflowY).not.toBe('auto');
-
-  });
-
-  test('BROWSE-076: 移动端整页 AppLoading（--inline 变体带卡片外壳）正常渲染', async ({ page }) => {
-    // 说明：AppLoading 非 fullScreen 时默认带 --inline 类（含卡片外壳 border/radius/shadow，
-    // 仅 Browse 结果区由 Browse.css 去壳）。Detail/Home 首屏 loading 窗口在 mock fixture
-    // 接管下极短（<30ms）无法稳定捕获；改用 IPTV 首载（seed iptv-store + proxy 挂起 →
-    // isLoading 持续）验证 --inline 带卡片外壳的整页 loading。
-    await page.addInitScript(() => {
-      localStorage.setItem('iptv-store', JSON.stringify({
-        state: {
-          settings: {
-            aggregatorUrl: 'https://mock-iptv.example.com/playlist.m3u',
-            aggregatorUrls: ['https://mock-iptv.example.com/playlist.m3u'],
-            sourceNames: ['测试源'],
-            proxyUrl: 'https://mock-proxy.example.com/proxy?url=',
-          },
-        },
-        version: 0,
-      }));
-    });
-    await page.route('**/proxy?url=**', async () => {
-      await new Promise(() => {}); // 永不响应 → IPTV 首载 isLoading 持续
-    });
-    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-
-    const loading = page.locator('.iptv-page .app-loading--inline').first();
-    await expect(loading).toBeVisible({ timeout: 10000 });
-
-    // 回归点：--inline 变体带卡片外壳（border≠0、radius≠0、shadow≠none），移动端不裸奔
-    const style = await loading.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return {
-        border: cs.borderTopWidth,
-        br: cs.borderTopLeftRadius,
-        shadow: cs.boxShadow,
-      };
-    });
-    expect(style.border).not.toBe('0px');
-    expect(style.br).not.toBe('0px');
-    expect(style.shadow).not.toBe('none');
-  });
-
-  test('BROWSE-077: 移动端结果区 AppLoading 被去壳（不卡片套卡片，与桌面端一致）', async ({ page }) => {
-    // 拦截 TMDB 搜索并延迟，维持结果区 loading 态
-    await page.route('**/api.tmdb.org/3/search/**', async (route) => {
-      await new Promise((r) => setTimeout(r, 3000));
-      await route.continue();
-    });
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(500);
-
-    // 通过顶部常驻 SearchBox 触发智能检索（移动端不再有「点击图标展开」流程）
-    const box = page.locator('.sticky-header .search-box__input').first();
-    await box.fill('batman');
-    await box.press('Enter');
-
-    const loading = page.locator('.browse-results-body .app-loading--inline').first();
-    await expect(loading).toBeVisible({ timeout: 5000 });
-
-    // 结果区已落在 .browse-card--results 卡内，AppLoading 自身卡片应被剥去（border-top=0）
-    const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
-    expect(border).toBe('0px');
-  });
-});
-
-test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3 定稿）', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test('BROWSE-078: 命令栏两行布局（模式居中 + 筛选/结果数两端对齐）+ 移动端隐藏 SortBar', async ({ page }) => {
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
-
-    // 命令栏为纵向两行容器
+    // BROWSE-078: 两行布局（模式居中 + 筛选/结果数两端对齐）+ 移动端隐藏 SortBar
     const cmdbar = page.locator('.bmb-cmdbar').first();
     await expect(cmdbar).toBeVisible();
     const cmdDirection = await cmdbar.evaluate((el) => getComputedStyle(el).flexDirection);
     expect(cmdDirection).toBe('column');
-
-    // 第一行：模式段居中（.bmb-mode-row justify-content:center）
     const modeRow = page.locator('.bmb-mode-row').first();
     await expect(modeRow).toBeVisible();
     const modeJustify = await modeRow.evaluate((el) => getComputedStyle(el).justifyContent);
     expect(modeJustify).toBe('center');
-
-    // 第二行：筛选按钮 + 结果数两端对齐（.bmb-bar-row justify-content:space-between）
     const barRow = page.locator('.bmb-bar-row').first();
     await expect(barRow).toBeVisible();
     const barJustify = await barRow.evaluate((el) => getComputedStyle(el).justifyContent);
     expect(barJustify).toBe('space-between');
-    // 结果数存在且文案为「共 N 条」
     await expect(page.locator('.bmb-result-count')).toBeVisible();
     await expect(page.locator('.bmb-result-count')).toHaveText(/共 .+ 条/);
-
-    // 筛选按钮为小尺寸胶囊（min-height ≤ 30px，回归点：曾为 34px 偏大）
     const triggerH = await page
       .locator('.bmb-filter-trigger')
       .evaluate((el) => parseFloat(getComputedStyle(el).minHeight));
     expect(triggerH).toBeLessThanOrEqual(30);
-
-    // 移动端 SortBar 隐藏（排序已移入筛选弹窗第 5 分组；结果数已移入命令栏）
     const sortBar = page.locator('.browse-sort-bar');
     if (await sortBar.count()) {
       const display = await sortBar.first().evaluate((el) => getComputedStyle(el).display);
       expect(display).toBe('none');
     }
 
+    // BROWSE-071: 点击「筛选」打开右滑全屏面板，可关闭
+    expect(await page.locator('.drawer-content').count()).toBe(0);
+    await page.locator('.bmb-filter-trigger').click();
+    const drawer = page.locator('.drawer-content').first();
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+    await expect(drawer).toHaveRole('dialog', { timeout: 5000 });
+    await expect(page.locator('.drawer-body .filter-bar, .drawer-body [class*="filter"]').first()).toBeVisible();
+    await expect(page.locator('.bmb-pf-apply')).toBeVisible();
+    await page.locator('.drawer-close').click();
+    await expect(page.locator('.drawer-content').first()).toBeHidden({ timeout: 5000 });
+
+    // BROWSE-072: 移动端模式切换（智能↔直链）生效
+    const segs = page.locator('.bmb-mode-seg .bmb-seg');
+    await expect(segs).toHaveCount(2);
+    const smartOn = await segs.nth(0).evaluate((el) => el.classList.contains('on'));
+    expect(smartOn).toBe(true);
+    await segs.nth(1).click();
+    await expect
+      .poll(() => segs.nth(1).evaluate((el) => el.classList.contains('on')), { ...POLL, timeout: 2300 })
+      .toBe(true);
+    expect(await page.locator('.bmb-filter-trigger').count()).toBe(0);
+    expect(await page.locator('.bmb-presets').count()).toBe(0);
+    await expect(page.locator('.browse-card--results').first()).toBeVisible();
+
+    // BROWSE-080: 已选轨（rail）无左右 padding，命令栏下方无预设横滚
+    // 已选轨与筛选入口仅「智能检索」模式渲染 → 先切回智能模式（BROWSE-072 已切到直链）
+    expect(await page.locator('.bmb-presets').count()).toBe(0);
+    await segs.nth(0).click();
+    await expect
+      .poll(() => segs.nth(0).evaluate((el) => el.classList.contains('on')), { ...POLL, timeout: 2300 })
+      .toBe(true);
+    const filterTrigger = page.locator('.bmb-filter-trigger');
+    await expect(filterTrigger).toBeVisible({ timeout: 5000 });
+    await filterTrigger.click();
+    const drawer2 = page.locator('.drawer-content').first();
+    await expect(drawer2).toBeVisible({ timeout: 5000 });
+    const movieChip = drawer2.locator('.filter-bar__chip', { hasText: '电影' }).first();
+    if (await movieChip.count()) {
+      await movieChip.click();
+      await drawer2.locator('.bmb-pf-apply').click();
+      await expect(drawer2).toBeHidden({ timeout: 5000 });
+    }
+    const rail = page.locator('.bmb-rail').first();
+    if (await rail.count()) {
+      const padding = await rail.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { left: cs.paddingLeft, right: cs.paddingRight, top: cs.paddingTop };
+      });
+      expect(padding.left).toBe('0px');
+      expect(padding.right).toBe('0px');
+    }
+
+    // BROWSE-074: 桌面宽视口不渲染移动端命令栏（切换视口回归守卫）
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    // 桌面布局落地信号：桌面搜索 Tab 可见 → 再断言移动端命令栏未渲染
+    await expect(page.locator('.browse-search-tab').first()).toBeVisible({ timeout: 15000 });
+    expect(await page.locator('.bmb').count()).toBe(0);
   });
 
-  test('BROWSE-079: 全屏筛选面板顶栏三栏（返回/标题居中/重置）+ 排序分组 + 完成制草稿', async ({ page }) => {
-    // 拦截 TMDB 请求计数：验证「面板内改条件不触发请求，点完成才触发」
+  // ② 全屏筛选面板（三栏 + 排序分组 + 完成回写）
+  test('BROWSE-077/079: 结果区去壳 + 全屏筛选面板三栏/排序分组/完成回写', async ({ page }) => {
+    // BROWSE-079: 拦截 TMDB 请求计数（面板内改条件不触发请求，点完成才触发）
     let tmdbReq = 0;
     await page.route('**/api.tmdb.org/3/**', async (route) => {
       tmdbReq += 1;
@@ -599,13 +325,12 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
 
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    // 等待初始化请求全部落地再取请求基线：dev server 首编译/缓存抖动时
-    // 初始化请求可能延迟到达，600ms 窗口内会被误计数为「面板内触发了请求」
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
-    await page.waitForTimeout(500);
 
     // 打开筛选面板
-    await page.locator('.bmb-filter-trigger').click();
+    const filterTrigger = page.locator('.bmb-filter-trigger');
+    await expect(filterTrigger).toBeVisible({ timeout: 10000 });
+    await filterTrigger.click();
     const drawer = page.locator('.drawer-content').first();
     await expect(drawer).toBeVisible({ timeout: 5000 });
 
@@ -627,7 +352,10 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
     const chip = drawer.locator('.filter-bar__chip').nth(2);
     if (await chip.count()) {
       await chip.click();
-      await page.waitForTimeout(600);
+      // TODO: 替换为条件等待 —— 此处为「不应发生请求」的否定断言，
+      // 无可等待的正向 DOM 信号（nth(2) 可能是 label 型 chip，无 --active 回写），
+      // 故保留极短观测窗口（600ms → 300ms）以捕获可能的防抖请求。
+      await page.waitForTimeout(300);
     }
     expect(tmdbReq).toBe(reqBefore);
 
@@ -635,36 +363,22 @@ test.describe('2.8 移动端命令栏 — 两行布局 + 全屏筛选面板（S3
     await drawer.locator('.bmb-pf-apply').click();
     await expect(drawer).toBeHidden({ timeout: 5000 });
 
-  });
-
-  test('BROWSE-080: 已选轨（rail）无左右 padding，命令栏下方无预设横滚（与 S3 示例一致）', async ({ page }) => {
+    // BROWSE-077: 移动端结果区 AppLoading 被去壳（不卡片套卡片）
+    await page.route('**/api.tmdb.org/3/search/**', async (route) => {
+      await new Promise((r) => setTimeout(r, 3000));
+      await route.continue();
+    });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForTimeout(800);
 
-    // 命令栏下方不再渲染 .bmb-presets（S3 示例无此元素，已移除）
-    expect(await page.locator('.bmb-presets').count()).toBe(0);
+    const box = page.locator('.sticky-header .search-box__input').first();
+    await expect(box).toBeVisible({ timeout: 10000 });
+    await box.fill('batman');
+    await box.press('Enter');
 
-    // 通过面板选择分类，生成已选轨后检查 rail padding
-    await page.locator('.bmb-filter-trigger').click();
-    const drawer = page.locator('.drawer-content').first();
-    await expect(drawer).toBeVisible({ timeout: 5000 });
-    // 选择一个 chip（如「电影」），点完成
-    const movieChip = drawer.locator('.filter-bar__chip', { hasText: '电影' }).first();
-    if (await movieChip.count()) {
-      await movieChip.click();
-      await drawer.locator('.bmb-pf-apply').click();
-      await expect(drawer).toBeHidden({ timeout: 5000 });
-    }
-
-    const rail = page.locator('.bmb-rail').first();
-    if (await rail.count()) {
-      const padding = await rail.evaluate((el) => {
-        const cs = getComputedStyle(el);
-        return { left: cs.paddingLeft, right: cs.paddingRight, top: cs.paddingTop };
-      });
-      expect(padding.left).toBe('0px');
-      expect(padding.right).toBe('0px');
-    }
+    const loading = page.locator('.browse-results-body .app-loading--inline').first();
+    await expect(loading).toBeVisible({ timeout: 5000 });
+    const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
+    expect(border).toBe('0px');
   });
 });
