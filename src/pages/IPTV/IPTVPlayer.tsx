@@ -10,6 +10,7 @@ import { isNativePlatform } from '@/lib/platform';
 import { lockLandscape, unlockOrientation } from '@/lib/orientation';
 import { buildChannelPlayUrl } from '@/services/iptvService';
 import { dropCurtain } from '@/lib/pageTransition';
+import { buildCategoryGroups } from './categories';
 import type { IPTVChannel } from '@/types/iptv';
 import './IPTVPlayer.css';
 
@@ -20,7 +21,9 @@ export default function IPTVPlayerPage() {
   const rawQuery = searchParams.toString();
   const url = searchParams.get('url') || '';
   const navigate = useCustomNavigate();
-  const { channels, groups, isLoading, refreshChannels, settings } = useIPTVStore();
+  const { channels, isLoading, refreshChannels, settings } = useIPTVStore();
+  // 频道侧栏分类：与 IPTV 页左栏同款固定文本分类（不再用 M3U 的 group 字段）
+  const groups = useMemo(() => buildCategoryGroups(channels), [channels]);
   const pageRef = useRef<HTMLDivElement>(null);
 
   const isTV = useIsTV();

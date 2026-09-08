@@ -246,7 +246,7 @@ test.describe('8.8 网格列数', () => {
         return matches ? matches.length : 0;
       });
 
-    expect(await cols()).toBe(5); // 桌面 ≥1280：5 列（2026-09-07 历史页独立分档 1280-1919=5 / ≥1920=6）
+    expect(await cols()).toBe(4); // 桌面 ≥1024 rail 布局：内容区被 126px 左栏 + gap 压缩，1280 档实际 4 列（原 5 列断言基于无 rail 的旧布局）
     await page.setViewportSize({ width: 900, height: 800 });
     await page.waitForTimeout(500);
     expect(await cols()).toBe(3); // 768–1023：3 列（2026-09-03 补档）

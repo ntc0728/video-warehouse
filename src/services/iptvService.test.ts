@@ -11,6 +11,12 @@ let parseM3U8Content: (content: string, sourceUrl?: string) => IPTVChannel[];
 let unwrapProxy: (url: string, ownProxyUrl?: string) => string;
 let detectVideoSourceType: (url: string) => string;
 let detectTimeshiftSupport: (url: string, type: string) => boolean;
+let buildCatchupUrl: (
+  channel: { catchup?: string; catchupSource?: string; url: string; catchupDays?: number },
+  startTs: number,
+  endTs: number,
+  now?: number
+) => string | null;
 
 beforeAll(async () => {
   const mod = await import('./iptvService');
@@ -23,6 +29,7 @@ beforeAll(async () => {
   unwrapProxy = mod.unwrapProxy;
   detectVideoSourceType = mod.detectVideoSourceType;
   detectTimeshiftSupport = mod.detectTimeshiftSupport;
+  buildCatchupUrl = mod.buildCatchupUrl;
 });
 
 describe('detectSourceType', () => {
@@ -113,10 +120,15 @@ describe('shouldProxy 内置直连白名单（useIPTVStore 默认 proxyPattern�
     'http://iptv.4666888.xyz/FYTV.txt', // 项目内置源
   ];
   const proxyUrls = [
-    'http://47.97.20.1/live/1.m3u8', // 纯 IP 无白名单（需代理）
     'http://example.com/video.m3u8', // 普通域名
     'http://rihou.cc:555/x.m3u8', // 项目内置源（未在白名单）
     'http://ge.html-5.me/ii/y.txt', // 项目内置源（未在白名单）
+  ];
+
+  // 数字型域名（裸 IP:端口）2026-09-08 定稿：一律直连，不拼 IPTV 代理
+  const ipHostUrls = [
+    'http://47.97.20.1/live/1.m3u8',
+    'http://101.35.240.114:88/live.php?id=CCTV3',
   ];
 
   directUrls.forEach((url) => {
@@ -128,6 +140,12 @@ describe('shouldProxy 内置直连白名单（useIPTVStore 默认 proxyPattern�
   proxyUrls.forEach((url) => {
     it(`白名单未命中（走代理）: ${url.replace(/^https?:\/\//, '')}`, () => {
       expect(shouldProxy(url, PROXY, DEFAULT_PATTERN)).toBe(true);
+    });
+  });
+
+  ipHostUrls.forEach((url) => {
+    it(`数字型域名直连（不走代理）: ${url.replace(/^https?:\/\//, '')}`, () => {
+      expect(shouldProxy(url, PROXY, DEFAULT_PATTERN)).toBe(false);
     });
   });
 
@@ -413,6 +431,84 @@ describe('parseM3U8Content 预留属性解析（catchup / UA / Referer）', () =
     expect(ch.catchup).toBeUndefined();
     expect(ch.userAgent).toBeUndefined();
     expect(ch.referrer).toBeUndefined();
+  });
+});
+
+describe('buildCatchupUrl（M3U catchup 回看 URL 拼装，Gap G1 / §3.4）', () => {
+  // 固定时间基准，避免 Date.now() 抖动影响断言（函数 now 参数默认 Date.now()）
+  const NOW = 1_700_000_000_000; // 2023-11-14 左右，纯数值无语义
+  const BASE = 'http://example.com/live/ch01.m3u8';
+
+  it('无 catchup 属性返回 null', () => {
+    expect(buildCatchupUrl({ url: BASE }, NOW - 60_000, NOW, NOW)).toBeNull();
+  });
+
+  it('default 模式：替换 catchup-source 模板的 {utc}/{lutc}', () => {
+    const ch = {
+      url: BASE,
+      catchup: 'default',
+      catchupSource: 'http://example.com/play?utc={utc}&lutc={lutc}',
+    };
+    const start = NOW - 60_000; // 早于 now 60s → utc=1699999940
+    const out = buildCatchupUrl(ch, start, NOW, NOW);
+    expect(out).toBe('http://example.com/play?utc=1699999940&lutc=1699999940');
+  });
+
+  it('append 模式：参数追加到频道原始 URL 之后', () => {
+    const ch = { url: BASE, catchup: 'append' };
+    const out = buildCatchupUrl(ch, NOW - 60_000, NOW, NOW);
+    expect(out).toBe('http://example.com/live/ch01.m3u8?utc=1699999940&lutc=1699999940');
+  });
+
+  it('flussonic 模式：替换模板的 {start}/{end}（秒）', () => {
+    const ch = {
+      url: BASE,
+      catchup: 'flussonic',
+      catchupSource: 'http://example.com/timeshift?start={start}&stop={end}',
+    };
+    const start = NOW - 120_000; // startSec = 1699999880
+    const out = buildCatchupUrl(ch, start, NOW, NOW);
+    expect(out).toBe('http://example.com/timeshift?start=1699999880&stop=1700000000');
+  });
+
+  it('xtream 模式：原地址追加 ?timeshift=<起始秒>&duration=<时长秒>', () => {
+    const ch = { url: BASE, catchup: 'xtream' };
+    const start = NOW - 120_000; // 时长 120s
+    const out = buildCatchupUrl(ch, start, NOW, NOW);
+    expect(out).toBe('http://example.com/live/ch01.m3u8?timeshift=1699999880&duration=120');
+  });
+
+  it('catchup-days 越界：start 早于 now - catchupDays 返回 null', () => {
+    const ch = {
+      url: BASE,
+      catchup: 'default',
+      catchupSource: 'http://example.com/play?utc={utc}',
+      catchupDays: 3, // 仅允许回看 3 天
+    };
+    // 10 天前 → 超出窗口下界
+    const tooOld = NOW - 10 * 86400 * 1000;
+    expect(buildCatchupUrl(ch, tooOld, NOW, NOW)).toBeNull();
+    // 1 天前 → 在窗口内
+    const within = NOW - 1 * 86400 * 1000;
+    expect(buildCatchupUrl(ch, within, NOW, NOW)).not.toBeNull();
+  });
+
+  it('default/flussonic 缺 catchupSource 返回 null（必须依赖模板）', () => {
+    expect(buildCatchupUrl({ url: BASE, catchup: 'default' }, NOW - 1000, NOW, NOW)).toBeNull();
+    expect(buildCatchupUrl({ url: BASE, catchup: 'flussonic' }, NOW - 1000, NOW, NOW)).toBeNull();
+  });
+
+  it('append/xtream 缺 base URL 返回 null（必须依赖频道原始地址）', () => {
+    // 缺 url 字段 → 顶部 guard 拦截
+    expect(buildCatchupUrl({ url: '', catchup: 'append' }, NOW - 1000, NOW, NOW)).toBeNull();
+    expect(buildCatchupUrl({ url: '', catchup: 'xtream' }, NOW - 1000, NOW, NOW)).toBeNull();
+    // append 有 base 应正常出 URL
+    expect(buildCatchupUrl({ url: BASE, catchup: 'append' }, NOW - 1000, NOW, NOW)).not.toBeNull();
+  });
+
+  it('未知 catchup 模式返回 null', () => {
+    const ch = { url: BASE, catchup: 'weird', catchupSource: 'http://x/{utc}' };
+    expect(buildCatchupUrl(ch, NOW - 1000, NOW, NOW)).toBeNull();
   });
 });
 

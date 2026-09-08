@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="JvmBSTwirB3Zh31yOjE6sn">
+<head data-page-node-id="DH01cwxdRoMDdtR7ue2iSU">
+<meta charset="UTF-8" data-page-node-id="meaonKRH8DtxzGbHbZzK68" />
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="Gpc9RExptDRTxXV7MAFCyQ" />
+<title>IPTV 页左栏方案 B（终稿）Demo — 2026-09-08</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Demo token：取自 src/assets/styles/variables.css 真实读数（1440 视口段2）
+   落地时直接引用真实 token，勿复制字面量。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-background:#f5f5f5;
+  --color-surface:#fff;
+  --color-surface-hover:rgba(0,0,0,.05);
+  --color-text:#000;
+  --color-text-secondary:#666;
+  --color-text-tertiary:#999;
+  --color-border:#d9d9d9;
+  --color-border-light:#e8e8e8;
+  --color-primary:#000;
+  --color-primary-light:rgba(0,0,0,.05);
+  --color-text-inverse:#fff;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --radius-sm:5px; --radius-md:9.6px; --radius-lg:16.5px; --radius-full:9999px;
+  --text-2xs:10.8px; --text-xs:11.33px; --text-sm:12.22px; --text-base:13.2px;
+  --text-lg:13.83px; --text-xl:15.59px; --text-2xl:20.37px;
+  --icon-xs:15.1px; --icon-sm:15.9px; --icon-md:18.9px;
+  --space-2xs:2.2px; --space-xs:3.9px; --space-sm:7.9px; --space-md:9.1px;
+  --space-lg:16.5px; --space-xl:22.5px; --space-2xl:31.5px;
+  --grid-gap:14.3px;
+  --page-pad-x:32px;
+  --header-height:74px;
+  --ease-standard:cubic-bezier(.4,0,.2,1);
+  --dur-fast:150ms;
+  --vw:1440px;
+  --iptv-cols:4;              /* ≥1440 → 4 列；1024–1439 → 3 列（本次拍板） */
+  --rail-w:176px;             /* 方案 B 放宽版：168 + 内部留白，避免拥挤 */
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--color-background);
+  color:var(--color-text);
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:var(--text-base);
+}
+button{font:inherit;color:inherit;cursor:pointer;}
+
+/* ── Demo 外壳 ───────────────────────────────────────────────────────────── */
+.demo-topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap;
+  padding:var(--space-sm) var(--page-pad-x);
+  background:var(--color-surface);
+  border-bottom:1px solid var(--color-border-light);
+}
+.demo-brand{font-size:var(--text-xl);font-weight:700;margin-right:var(--space-lg);}
+.demo-switch{display:flex;align-items:center;gap:var(--space-xs);}
+.demo-switch__label{font-size:var(--text-xs);color:var(--color-text-tertiary);margin-right:var(--space-2xs);}
+.demo-seg{display:flex;background:var(--color-background);border-radius:var(--radius-md);padding:2px;gap:2px;}
+.demo-seg button{
+  border:none;background:transparent;border-radius:var(--radius-sm);
+  padding:5px 12px;font-size:var(--text-sm);color:var(--color-text-secondary);
+  transition:background var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
+}
+.demo-seg button.is-on{background:var(--color-surface);color:var(--color-text);font-weight:600;box-shadow:var(--shadow-sm);}
+.demo-note{
+  margin:0;padding:var(--space-md) var(--page-pad-x);
+  background:#fffbe6;border-bottom:1px solid #ffe58f;
+  font-size:var(--text-xs);color:#874d00;line-height:1.8;
+}
+.demo-note b{color:#ad4e00;}
+.demo-note code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;}
+.demo-stage{padding:var(--space-xl) var(--page-pad-x) var(--space-2xl);}
+.scheme{margin-bottom:var(--space-2xl);}
+.scheme-head{display:flex;align-items:baseline;gap:var(--space-md);margin:0 0 var(--space-sm);flex-wrap:wrap;}
+.scheme-head h2{margin:0;font-size:var(--text-xl);}
+.scheme-head .tag{
+  padding:2px 8px;border-radius:var(--radius-full);
+  background:var(--color-primary-light);font-size:var(--text-2xs);color:var(--color-text-secondary);
+}
+.scheme-head p{margin:0;font-size:var(--text-xs);color:var(--color-text-secondary);}
+.metric{margin-left:auto;font-size:var(--text-2xs);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;}
+
+/* ── 模拟视口框 ─────────────────────────────────────────────────────────── */
+.viewport-frame{
+  width:var(--vw);max-width:100%;
+  padding:var(--space-sm);
+  border:1px dashed var(--color-border);
+  border-radius:var(--radius-lg);
+  background:var(--color-background);
+  transition:width .2s var(--ease-standard);
+}
+.viewport-frame::before{
+  content:attr(data-label);
+  display:block;margin-bottom:var(--space-xs);
+  font-size:var(--text-2xs);color:var(--color-text-tertiary);
+}
+
+/* ═══ 改造前（现状 Baseline） ═══ */
+.now-top-card{
+  padding:var(--space-sm);margin-bottom:var(--space-sm);
+  border:1px solid var(--color-border-light);border-radius:var(--radius-lg);
+  background:var(--color-surface);box-shadow:var(--shadow-sm);
+}
+.now-row{display:flex;flex-wrap:wrap;gap:var(--space-xs);align-items:center;margin-bottom:var(--space-xs);}
+.now-chip{
+  height:28px;padding:0 12px;border:1px solid var(--color-border);border-radius:var(--radius-full);
+  background:var(--color-background);font-size:var(--text-sm);white-space:nowrap;
+}
+.now-chip.is-on{background:var(--color-primary);color:var(--color-text-inverse);border-color:var(--color-primary);font-weight:600;}
+.now-actions{display:flex;gap:var(--space-sm);align-items:center;}
+.btn{
+  min-width:5em;padding:var(--space-xs) var(--space-sm);border:none;border-radius:var(--radius-full);
+  background:var(--color-primary);color:var(--color-text-inverse);
+  font-size:var(--text-sm);font-weight:600;text-align:center;
+}
+.btn.ghost{background:var(--color-background);color:var(--color-text);border:1px solid var(--color-border);}
+.now-progress{
+  display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-xs);
+  padding:var(--space-sm) var(--space-md);border-radius:var(--radius-sm);background:var(--color-surface-hover);
+}
+.now-bar{flex:1;height:6px;border-radius:3px;background:var(--color-border-light);overflow:hidden;}
+.now-bar i{display:block;height:100%;width:42%;background:var(--color-primary);}
+.now-stats{display:flex;gap:var(--space-md);font-size:var(--text-sm);}
+.now-stats .ok{color:#389e0d;}
+.now-stats .bad{color:#cf1322;}
+.now-stats .all{color:var(--color-text-tertiary);}
+.now-toggle{display:flex;align-items:center;gap:var(--space-sm);margin:var(--space-xs) 0;font-size:var(--text-sm);}
+.now-toggle .hint{opacity:.65;font-size:var(--text-xs);}
+.switch{width:34px;height:18px;border-radius:999px;background:var(--color-border);position:relative;flex-shrink:0;}
+.switch i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s;}
+.switch.is-on{background:var(--color-primary);}
+.switch.is-on i{left:18px;}
+
+/* ═══ 方案 B 终稿：左栏 + 内容区 ═══ */
+.rail-layout{display:flex;gap:var(--space-xl);align-items:flex-start;}
+.rail{
+  width:var(--rail-w);flex-shrink:0;
+  position:sticky;top:var(--space-sm);align-self:flex-start;
+  padding:var(--space-sm) 0;
+  max-height:calc(100vh - var(--header-height) - var(--space-xl));
+  overflow:visible;
+}
+.rail-title{
+  display:block;margin:0 var(--space-sm) var(--space-sm);
+  font-size:var(--text-2xs);font-weight:600;color:var(--color-text-tertiary);
+}
+.rail-hint{
+  display:block;margin:0 var(--space-sm) var(--space-sm);
+  font-size:9.5px;line-height:1.5;color:var(--color-text-tertiary);opacity:.85;
+}
+.rail-sep{height:1px;margin:var(--space-lg) var(--space-md);background:var(--color-border-light);}
+.rail-list{display:flex;flex-direction:column;gap:3px;padding:0 var(--space-xs);}
+.rail-item{
+  display:flex;align-items:center;gap:var(--space-sm);
+  width:100%;min-height:30px;padding:6px 10px;
+  border:none;border-radius:var(--radius-md);background:transparent;
+  font-size:var(--text-sm);color:var(--color-text-secondary);text-align:left;
+  transition:background var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
+}
+.rail-item:hover{background:var(--color-surface-hover);color:var(--color-text);}
+.rail-item .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rail-item .cnt{
+  flex-shrink:0;padding:1px 6px;border-radius:var(--radius-full);
+  background:var(--color-background);color:var(--color-text-tertiary);
+  font-size:var(--text-2xs);font-variant-numeric:tabular-nums;
+}
+.rail-item.is-on,.rail-item.is-on:hover{background:var(--color-primary);color:var(--color-text-inverse);font-weight:600;}
+.rail-item.is-on .cnt{background:rgba(255,255,255,.22);color:var(--color-text-inverse);}
+.ico{width:var(--icon-sm);height:var(--icon-sm);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;opacity:.75;}
+.ico svg{width:100%;height:100%;}
+.rail-item.is-on .ico{opacity:1;}
+/* 多选复选框（更多台 = 设置页已启用的 IPTV 源） */
+.box{
+  width:14px;height:14px;flex-shrink:0;border:1.5px solid var(--color-border);border-radius:3px;
+  display:inline-flex;align-items:center;justify-content:center;background:var(--color-surface);
+}
+.box svg{width:10px;height:10px;opacity:0;color:#fff;}
+.rail-item.is-on .box{background:var(--color-primary);border-color:var(--color-primary);}
+.rail-item.is-on .box svg{opacity:1;}
+
+/* ── 内容区 ─────────────────────────────────────────────────────────────── */
+.content{flex:1;min-width:0;}
+.content-bar{
+  display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap;
+  margin-bottom:var(--space-md);
+}
+.content-bar .count{font-size:var(--text-xs);color:var(--color-text-tertiary);}
+.content-bar .spacer{flex:1;}
+.src-select{
+  height:30px;padding:0 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm);
+  background:var(--color-surface);font-size:var(--text-sm);
+}
+.bar-note{font-size:9.5px;color:var(--color-text-tertiary);}
+
+/* 分节 */
+.sec{margin-bottom:var(--space-xl);}
+.sec-head{display:flex;align-items:center;gap:var(--space-sm);margin:0 0 var(--space-sm);}
+.sec-head h3{margin:0;font-size:var(--text-lg);font-weight:600;}
+.sec-head .n{font-size:var(--text-2xs);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;}
+.sec-head .line{flex:1;height:1px;background:var(--color-border-light);}
+.sec-head .from{
+  padding:1px 7px;border-radius:var(--radius-full);background:var(--color-primary-light);
+  font-size:9.5px;color:var(--color-text-secondary);
+}
+.grid{
+  display:grid;grid-template-columns:repeat(var(--iptv-cols),minmax(0,1fr));
+  gap:var(--space-lg);align-content:start;width:100%;
+}
+.card{
+  display:flex;flex-direction:column;overflow:hidden;
+  border:1px solid var(--color-border-light);border-radius:var(--radius-md);
+  background:var(--color-surface);
+  transition:transform .15s var(--ease-standard),box-shadow .15s var(--ease-standard);
+}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm);}
+.cover{position:relative;width:100%;aspect-ratio:3/2;background:var(--color-surface-hover);overflow:hidden;}
+.cover img{width:100%;height:100%;object-fit:contain;padding:12%;}
+.cover .initial{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:var(--text-xl);font-weight:600;color:var(--color-text-tertiary);
+}
+.badges{position:absolute;top:var(--space-2xs);left:var(--space-2xs);display:flex;flex-direction:column;gap:2px;}
+.badge{padding:1px 5px;border-radius:var(--radius-sm);font-size:9.5px;line-height:1.5;color:#fff;background:rgba(0,0,0,.55);}
+.badge.fallback{background:#1677ff;}
+.badge.extra{background:#722ed1;}
+.info{padding:var(--space-xs) var(--space-sm);border-top:1px solid var(--color-border-light);}
+.nm{margin:0;font-size:var(--text-xs);font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sub{margin:1px 0 0;font-size:9.5px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.empty{padding:var(--space-xl);text-align:center;color:var(--color-text-tertiary);font-size:var(--text-sm);}
+</style>
+</head>
+<body data-page-node-id="8JEYbFzpbK5eLDkPGAaC1z">
+
+<div class="demo-topbar" data-page-node-id="enqhjhdTpooOncAWazWP7a">
+  <span class="demo-brand" data-page-node-id="Cfghw09CO9bjdKPAXXnlB9">IPTV 页左栏 · 方案 B 终稿</span>
+  <div class="demo-switch" data-page-node-id="eisdqmyPeyBlHtJwTcaBXU">
+    <span class="demo-switch__label" data-page-node-id="L5YQjU4K8rvZbf5i11AQVO">模拟视口</span>
+    <div class="demo-seg" id="segVw" data-page-node-id="lL7ENphKxdqbj1hITr1XMp">
+      <button data-v="1024" data-page-node-id="xkCq5xnLiviE1oyXdCRYDO">1024</button>
+      <button data-v="1280" data-page-node-id="Q8FrYalPio0W7bdgiLNdr2">1280</button>
+      <button data-v="1440" class="is-on" data-page-node-id="RBgU3d5A36GC2LMaFr1CNQ">1440</button>
+      <button data-v="1920" data-page-node-id="zZ53yZiNFS0c6d9HftoGEF">1920</button>
+    </div>
+  </div>
+  <div class="demo-switch" data-page-node-id="XnHJjBcxOvL2x9L0wO0kxr">
+    <span class="demo-switch__label" data-page-node-id="P0kRubgEhTPMDyshrKr4Vp">列数</span>
+    <div class="demo-seg" id="segCols" data-page-node-id="F7hCcEIccahp4LNUK6g29a">
+      <button data-v="auto" class="is-on" data-page-node-id="YbodMxExHijaPRg4oqZrIM">自动（1024–1439→3 / ≥1440→4）</button>
+      <button data-v="4" data-page-node-id="ftpoNYgxZN8Wb0kqpIZY2k">锁定 4</button>
+      <button data-v="5" data-page-node-id="NgLTWqZ03ArAmRzNRXXdaV">对比旧值 5</button>
+    </div>
+  </div>
+</div>
+
+<p class="demo-note" data-page-node-id="GU2ns3lnRY8PiIXUtBZusq">
+  <b data-page-node-id="Ende4h6swzCKXRvUACEmx9">本轮拍板：</b>方案 B（紧凑分区左栏，168 → <b data-page-node-id="P3H1Cte7czqAZPFLK26kV5">176px</b>，内部留白放宽不再拥挤）；
+  网格列数 <b data-page-node-id="4eumAQxhH84pUueKQPorFK">1024–1439 → 3 列、≥1440 → 4 列</b>（落地改 <code data-page-node-id="XzQeRHAGASgHhd4hHCUj8o">index.css</code> 的 <code data-page-node-id="vOIbfRV9hecOdZbubJtnpd">--iptv-cols</code> 断点）。
+  <br data-page-node-id="BAbUSthTMh3SmugpLnOKyY"><b data-page-node-id="X8mSLlwMrCyDNTmHIX6Yvr">左栏只有两段：</b>①「频道分类」（固定文本：全部 / 央视CCTV / 主流卫视 / 地方卫视 / 港澳台 / 体育 / 影视 / 少儿 / 新闻 / 我的收藏）
+  ②「更多台」（列出<b data-page-node-id="F69m8oVIO3OQFGbkGIkLlL">设置页已启用的 IPTV 源</b>，<b data-page-node-id="vZ6A6PDBYZK2X3DE6V6YoG">多选</b>，勾选的源作为额外频道按源分节追加）。<b data-page-node-id="2Wecl3ZDhGJEUp7CashWOa">不再显示数据源分区</b>。
+  <br data-page-node-id="MaR1sAszuBU2XVkVBvvMVG"><b data-page-node-id="yFGFo3TvEGGNrZIZHuVG21">内容区：</b>选中「全部频道」时按分类<b data-page-node-id="00S70USq4s7yF7HCGM7VCA">分节归类</b>（每节小标题 + 数量 + 网格）；选中具体分类时单节展示；勾选的更多台源各占一节，节标题带来源名与来源角标。
+  <br data-page-node-id="RTY9h2odJUVnh8HXFkO8j0"><b data-page-node-id="BJLgQXGPtEOgK9OGKPB4r7">右上角下拉框：</b><b data-page-node-id="Y0BPdlrAi14bOj08Amj8zZ">仅过滤</b>当前列表（按源），不改变播放源与主干聚合；刷新按钮保留。
+  <br data-page-node-id="R31pqSGh9FhO44kbv6stOl"><b data-page-node-id="zWvtEFTBhiE2v48uDDPnEH">已移除：</b>检测按钮 / 检测进度条 / 可用·不可用统计 / 卡片标灰与「无法观看」角标（移动端同步移除）。卡片仅保留蓝色「备用流」角标（iptv-org 兜底流）。
+</p>
+
+<div class="demo-stage" data-page-node-id="wTZoGpVeKCVQVgmblZNUH6">
+
+  <!-- ═══ 改造前对照 ═══ -->
+  <section class="scheme" data-page-node-id="dRmOUWwGP6PxudIxggEApI">
+    <div class="scheme-head" data-page-node-id="64EDy0wBrhXjzPSsWNiuS6">
+      <h2 data-page-node-id="QWXhN6EzTqjZdTwAVUD6qs">改造前（现状）</h2>
+      <span class="tag" data-page-node-id="uIRp1U39vjABM4eqA4wpnU">对照</span>
+      <p data-page-node-id="Ve6Hbgi6AjiMkLQCJbqipR">顶部卡片横排：数据源 chips + 分组选择器 + 检测/刷新 + 进度 + 统计 + 更多台开关</p>
+    </div>
+    <div class="viewport-frame" data-label="模拟视口 1440px" data-page-node-id="g9X5IIGBCkIFKDAxsKs431">
+      <div class="now-top-card" data-page-node-id="LO6t1Lca1CNnxHQPtp7ORQ">
+        <div class="now-row" data-page-node-id="ABnRzYFsWkhNNcSyXZDEBc">
+          <button class="now-chip is-on" data-page-node-id="2y1ZZFv8NgPKQRV1NAHeKl">全部源</button>
+          <button class="now-chip" data-page-node-id="szhEiChXWfySgT75yXtqLJ">IPTV</button>
+          <button class="now-chip" data-page-node-id="6B7F80w95KBd6cet6s8mL0">猫影视TV</button>
+          <button class="now-chip" data-page-node-id="ZdR9UDN1HH5Gp2vmwjMf9u">+3</button>
+        </div>
+        <div class="now-row" data-page-node-id="6wfTiCExSvumaS0JwWFm9e">
+          <button class="now-chip is-on" data-page-node-id="yepJYH8pm1bFHD9S9R3sFt">全部分组 (68)</button>
+          <button class="now-chip" data-page-node-id="qq0WvD3y3VuAHuDuTewSXj">央视 (20)</button>
+          <button class="now-chip" data-page-node-id="DmWopkWBeESWaBDknkxiGw">卫视 (31)</button>
+          <button class="now-chip" data-page-node-id="GkVnua4baQ5O0HDifA18FS">更多…</button>
+        </div>
+        <div class="now-actions" data-page-node-id="IQbPjs8tebUCfkd2yYF6aQ">
+          <button class="btn" data-page-node-id="Qz7IJKMVOAu3eCRmaS2SGG">检测全部</button>
+          <button class="btn ghost" data-page-node-id="6UDWoH4GyComdRL47QUmmB">刷新</button>
+        </div>
+        <div class="now-toggle" data-page-node-id="BZutQAJ6EVjGEyi8CdtfzM">
+          <span class="switch" data-page-node-id="nldUT06fadLOJdxtupx2lS"><i data-page-node-id="46NdlnYcRFqJYn1IVMhMoO"></i></span>
+          <span data-page-node-id="Q3AEwjSRnohGG0SUJcPypf">更多台</span>
+          <span class="hint" data-page-node-id="El8LAztIU9NmjRPiyZ8BW0">显示 iptv-org 提供的额外频道（仅 fallback 流）</span>
+        </div>
+        <div class="now-progress" data-page-node-id="kd4hYiloqNefanVdkLThMN">
+          <span style="font-size:var(--text-sm);color:var(--color-text-secondary)" data-page-node-id="h45TiHKwcyv6WkPsNptN1e">检测中</span>
+          <span class="now-bar" data-page-node-id="pyb6aGMA1XUj4amoUmRf7I"><i data-page-node-id="DgjxITy0E8rMIeR7CnnhK2"></i></span>
+          <span style="font-size:var(--text-sm)" data-page-node-id="XxXFy63zgv4odyZbgiSpGP">21/50</span>
+        </div>
+        <div class="now-stats" data-page-node-id="pgXzDPKRLOtWH5vvEXAKGn">
+          <span class="ok" data-page-node-id="Z9EtRk4p0oavecFuLj6P5x">可用 42</span><span class="bad" data-page-node-id="yPkjK3aldEL9qD1oDXMKiE">不可用 26</span><span class="all" data-page-node-id="eImLV6vC0khtWLwAzoQKG1">共 68 个</span>
+        </div>
+      </div>
+      <div class="grid" id="gridNow" data-page-node-id="CMyrGhAxHl7i3Hjfmc9NM5"></div>
+    </div>
+  </section>
+
+  <!-- ═══ 方案 B 终稿 ═══ -->
+  <section class="scheme" data-scheme="b" data-page-node-id="DlWjpNYg0PJBF7fAXiDYiv">
+    <div class="scheme-head" data-page-node-id="UwT5LVooAZztCI8NEuGQvP">
+      <h2 data-page-node-id="DbzjvglBsYAnWmI8uEyzXT">方案 B 终稿 · 紧凑分区左栏 176px</h2>
+      <span class="tag" data-page-node-id="aF3WzcbF7L4iGADKGTkKcX">已拍板</span>
+      <p data-page-node-id="iM0HNugFh99a9iD2L9yBfW">全部频道下按分类分节；左栏两段（分类 / 更多台多选源）；右侧下拉仅过滤</p>
+      <span class="metric" data-metric data-page-node-id="RAEEqxwavDn1n3lcSANOOE"></span>
+    </div>
+    <div class="viewport-frame" data-label="模拟视口" data-page-node-id="Mg2BV5uVqte7DxCWYDVDjp">
+      <div class="rail-layout" data-page-node-id="jBlg9rYpN6gkwS7DyTVkFB">
+        <aside class="rail" data-rail data-page-node-id="9hxTTAqJ92TBnGAM925dvM"></aside>
+        <div class="content" data-page-node-id="HnTaOcrRNRZEBBpqcwcsWB">
+          <div class="content-bar" data-bar data-page-node-id="lz0pWF3SEgzZJPXnyyeW7u"></div>
+          <div data-sections data-page-node-id="EfrBx1LM28BHPBOBWh0wo6"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ── 主干频道：本地源聚合结果（src = 来自哪个已启用源） ───────────────── */
+var RAW = [
+  ['CCTV-1 综合','CCTV1','CCTV','IPTV'], ['CCTV-2 财经','CCTV2','CCTV','IPTV'],
+  ['CCTV-3 综艺','CCTV3','CCTV','IPTV'], ['CCTV-4 中文国际','CCTV4','CCTV','IPTV'],
+  ['CCTV-5 体育','CCTV5','CCTV','IPTV'], ['CCTV-5+ 体育赛事','CCTV5+','CCTV','IPTV'],
+  ['CCTV-6 电影','CCTV6','CCTV','IPTV'], ['CCTV-7 国防军事','CCTV7','CCTV','IPTV'],
+  ['CCTV-8 电视剧','CCTV8','CCTV','IPTV'], ['CCTV-9 纪录','CCTV9','CCTV','IPTV'],
+  ['CCTV-10 科教','CCTV10','CCTV','IPTV'], ['CCTV-11 戏曲','CCTV11','CCTV','IPTV'],
+  ['CCTV-12 社会与法','CCTV12','CCTV','IPTV'], ['CCTV-13 新闻','CCTV13','CCTV','IPTV'],
+  ['CCTV-14 少儿','CCTV14','CCTV','IPTV'], ['CCTV-15 音乐','CCTV15','CCTV','IPTV'],
+  ['CCTV-16 奥林匹克','CCTV16','CCTV','IPTV'], ['CCTV-17 农业农村','CCTV17','CCTV','IPTV'],
+  ['CCTV-4K 超高清','CCTV4K','CCTV','IPTV'], ['CCTV-8K 超高清','CCTV8K','CCTV','IPTV'],
+  ['湖南卫视','湖南卫视','卫视','猫影视TV'], ['浙江卫视','浙江卫视','卫视','猫影视TV'],
+  ['江苏卫视','江苏卫视','卫视','猫影视TV'], ['东方卫视','东方卫视','卫视','猫影视TV'],
+  ['北京卫视','北京卫视','卫视','猫影视TV'], ['广东卫视','广东卫视','卫视','猫影视TV'],
+  ['山东卫视','山东卫视','卫视','猫影视TV'], ['深圳卫视','深圳卫视','卫视','猫影视TV'],
+  ['天津卫视','天津卫视','卫视','猫影视TV'], ['安徽卫视','安徽卫视','卫视','猫影视TV'],
+  ['东南卫视','东南卫视','卫视','猫影视TV'], ['河南卫视','河南卫视','卫视','猫影视TV'],
+  ['河北卫视','河北卫视','卫视','猫影视TV'], ['湖北卫视','湖北卫视','卫视','猫影视TV'],
+  ['江西卫视','江西卫视','卫视','猫影视TV'], ['辽宁卫视','辽宁卫视','卫视','猫影视TV'],
+  ['黑龙江卫视','黑龙江卫视','卫视','猫影视TV'], ['吉林卫视','吉林卫视','卫视','猫影视TV'],
+  ['陕西卫视','陕西卫视','卫视','猫影视TV'], ['山西卫视','山西卫视','卫视','猫影视TV'],
+  ['四川卫视','四川卫视','卫视','猫影视TV'], ['云南卫视','云南卫视','卫视','猫影视TV'],
+  ['贵州卫视','贵州卫视','卫视','猫影视TV'], ['广西卫视','广西卫视','卫视','猫影视TV'],
+  ['甘肃卫视','甘肃卫视','卫视','猫影视TV'], ['海南卫视','海南卫视','卫视','猫影视TV'],
+  ['内蒙古卫视','内蒙古卫视','卫视','猫影视TV'], ['宁夏卫视','宁夏卫视','卫视','猫影视TV'],
+  ['青海卫视','青海卫视','卫视','猫影视TV'], ['新疆卫视','新疆卫视','卫视','猫影视TV'],
+  ['西藏卫视','西藏卫视','卫视','猫影视TV'], ['重庆卫视','重庆卫视','卫视','猫影视TV'],
+  ['凤凰卫视中文台','凤凰卫视','港澳台','易发TV'], ['翡翠台','翡翠台','港澳台','易发TV'],
+  ['星空卫视','星空卫视','港澳台','易发TV'], ['TVBS 欢乐台','TVBS','港澳台','易发TV'],
+  ['五星体育','五星体育','体育','组播'], ['广东体育','广东体育','体育','组播'],
+  ['劲爆体育','劲爆体育','体育','组播'], ['CHC 家庭影院','CHC家庭影院','影视','酒店源'],
+  ['CHC 动作电影','CHC动作电影','影视','酒店源'], ['影迷电影','影迷电影','影视','酒店源'],
+  ['金鹰卡通','金鹰卡通','少儿','猫影视TV'], ['卡酷少儿','卡酷少儿','少儿','猫影视TV'],
+  ['炫动卡通','炫动卡通','少儿','猫影视TV'], ['凤凰资讯台','凤凰资讯台','新闻','IPTV']
+];
+var MAIN = RAW.map(function (r) {
+  return { name: r[0], logo: r[1], cat: r[2], src: r[3] };
+});
+
+/* 主干里带 iptv-org 兜底流的频道（本地源失效时可切备用流） */
+['CCTV-1 综合','CCTV-5 体育','湖南卫视','浙江卫视','江苏卫视','东方卫视','北京卫视',
+ '广东卫视','山东卫视','深圳卫视','翡翠台','凤凰卫视中文台'].forEach(function (n) {
+  var c = MAIN.filter(function (x) { return x.name === n; })[0];
+  if (c) c.fallback = true;
+});
+
+/* ── 更多台：设置页已启用的 IPTV 源（可多选）→ 各源的额外频道 ────────── */
+var EXTRA_SOURCES = [
+  { name: '猫影视TV', list: ['河北卫视','山西卫视','吉林卫视','甘肃卫视','宁夏卫视','青海卫视'] },
+  { name: '易发TV',   list: ['翡翠台','凤凰卫视中文台','TVBS 欢乐台','星空卫视','澳门卫视'] },
+  { name: '酒店源',   list: ['CCTV-5 体育','广东体育','五星体育','劲爆体育'] },
+  { name: '组播',     list: ['CHC 家庭影院','CHC 动作电影','影迷电影','金鹰卡通','卡酷少儿'] },
+  { name: '杰克TV3',  list: ['天津卫视','安徽卫视','东南卫视','河南卫视'] }
+];
+
+/* 固定文本分类（左栏顺序 = 分节顺序） */
+var MAINSTREAM = ['湖南卫视','浙江卫视','江苏卫视','东方卫视','北京卫视','广东卫视','山东卫视','深圳卫视'];
+var CATS = [
+  { key: '__all__', label: '全部频道' },
+  { key: 'CCTV', label: '央视 CCTV' },
+  { key: 'mainstream', label: '主流卫视' },
+  { key: 'local', label: '地方卫视' },
+  { key: '港澳台', label: '港澳台' },
+  { key: '体育', label: '体育' },
+  { key: '影视', label: '影视' },
+  { key: '少儿', label: '少儿' },
+  { key: '新闻', label: '新闻' },
+  { key: '__fav__', label: '我的收藏' }
+];
+var FAVS = ['CCTV-5 体育','湖南卫视','浙江卫视','东方卫视','翡翠台','CHC 家庭影院','金鹰卡通','广东体育','CCTV-6 电影'];
+
+function inCat(ch, key) {
+  if (key === '__all__') return true;
+  if (key === '__fav__') return FAVS.indexOf(ch.name) >= 0;
+  if (key === 'mainstream') return ch.cat === '卫视' && MAINSTREAM.indexOf(ch.name) >= 0;
+  if (key === 'local') return ch.cat === '卫视' && MAINSTREAM.indexOf(ch.name) < 0;
+  return ch.cat === key;
+}
+function catLabel(key) {
+  var c = CATS.filter(function (x) { return x.key === key; })[0];
+  return c ? c.label : key;
+}
+function countOf(key) {
+  return MAIN.filter(function (c) { return inCat(c, key); }).length;
+}
+
+var ICONS = {
+  all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+  tv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2L12 7l-5-5"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg>'
+};
+
+var state = { vw: 1440, cols: 'auto', cat: '__all__', filterSrc: '__all__', extra: ['猫影视TV'] };
+
+function logoUrl(k) { return 'https://live.fanmingming.cn/tv/' + encodeURIComponent(k) + '.png'; }
+
+function cardHtml(ch, extraFrom) {
+  var badges = '';
+  if (extraFrom) badges += '<span class="badge extra">' + extraFrom + '</span>';
+  else if (ch.fallback) badges += '<span class="badge fallback">备用流</span>';
+  return '<div class="card">' +
+    '<div class="cover">' +
+      '<img src="' + logoUrl(ch.logo) + '" alt="" loading="lazy" ' +
+        'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" />' +
+      '<span class="initial" style="display:none">' + ch.name.charAt(0) + '</span>' +
+      '<div class="badges">' + badges + '</div>' +
+    '</div>' +
+    '<div class="info"><p class="nm">' + ch.name + '</p></div></div>';
+}
+
+/** 当前过滤后的主干频道 */
+function mainFiltered() {
+  return MAIN.filter(function (c) {
+    if (state.filterSrc !== '__all__' && c.src !== state.filterSrc) return false;
+    return inCat(c, state.cat);
+  });
+}
+
+/** 组织分节：全部频道 → 按分类分节；具体分类 → 单节；更多台 → 每源一节 */
+function buildSections() {
+  var secs = [];
+  if (state.cat === '__all__') {
+    CATS.forEach(function (c) {
+      if (c.key === '__all__' || c.key === '__fav__') return;
+      var list = MAIN.filter(function (x) {
+        return inCat(x, c.key) && (state.filterSrc === '__all__' || x.src === state.filterSrc);
+      });
+      if (list.length) secs.push({ title: c.label, list: list });
+    });
+  } else {
+    var list = mainFiltered();
+    if (list.length) secs.push({ title: catLabel(state.cat), list: list });
+  }
+  state.extra.forEach(function (name) {
+    var src = EXTRA_SOURCES.filter(function (s) { return s.name === name; })[0];
+    if (!src) return;
+    var l = src.list.map(function (n) {
+      return { name: n, logo: n.replace(/\s/g, '') };
+    });
+    if (state.filterSrc !== '__all__' && state.filterSrc !== name) l = [];
+    if (l.length) secs.push({ title: '更多台 · ' + name, from: name, list: l });
+  });
+  return secs;
+}
+
+function railHtml() {
+  var h = '<div class="rail-title">频道分类</div><div class="rail-list">';
+  CATS.forEach(function (c) {
+    h += '<button class="rail-item' + (state.cat === c.key ? ' is-on' : '') + '" data-cat="' + c.key + '">' +
+      '<span class="ico">' + (c.key === '__all__' ? ICONS.all : c.key === '__fav__' ? ICONS.heart : ICONS.tv) + '</span>' +
+      '<span class="lbl">' + c.label + '</span><span class="cnt">' + countOf(c.key) + '</span></button>';
+  });
+  h += '</div>';
+
+  h += '<div class="rail-sep"></div><div class="rail-title">更多台</div>' +
+       '<span class="rail-hint">设置页已启用的 IPTV 源，可多选；勾选后作为额外频道按源分节追加</span>' +
+       '<div class="rail-list">';
+  EXTRA_SOURCES.forEach(function (s) {
+    var on = state.extra.indexOf(s.name) >= 0;
+    h += '<button class="rail-item' + (on ? ' is-on' : '') + '" data-extra="' + s.name + '">' +
+      '<span class="box">' + ICONS.check + '</span>' +
+      '<span class="lbl">' + s.name + '</span><span class="cnt">+' + s.list.length + '</span></button>';
+  });
+  h += '</div>';
+  return h;
+}
+
+function barHtml(total) {
+  var opts = '<option value="__all__"' + (state.filterSrc === '__all__' ? ' selected' : '') + '>全部源（' + MAIN.length + '）</option>';
+  ['IPTV', '猫影视TV', '易发TV', '酒店源', '组播', '杰克TV3'].forEach(function (s) {
+    var n = MAIN.filter(function (c) { return c.src === s; }).length;
+    opts += '<option value="' + s + '"' + (state.filterSrc === s ? ' selected' : '') + '>' + s + '（' + n + '）</option>';
+  });
+  return '<span class="count">共 ' + total + ' 个频道</span><span class="spacer"></span>' +
+    '<span class="bar-note">下拉框仅过滤当前列表，不切换播放源</span>' +
+    '<select class="src-select" data-filter>' + opts + '</select>' +
+    '<button class="btn ghost">刷新</button>';
+}
+
+function render() {
+  var cols = state.cols === 'auto' ? (state.vw >= 1440 ? 4 : 3) : Number(state.cols);
+  document.documentElement.style.setProperty('--vw', state.vw + 'px');
+  document.documentElement.style.setProperty('--iptv-cols', cols);
+
+  var sec = document.querySelector('.scheme[data-scheme]');
+  sec.querySelector('[data-rail]').innerHTML = railHtml();
+  var secs = buildSections();
+  var total = secs.reduce(function (n, s) { return n + s.list.length; }, 0);
+  sec.querySelector('[data-bar]').innerHTML = barHtml(total);
+  sec.querySelector('[data-sections]').innerHTML = secs.length
+    ? secs.map(function (s) {
+        return '<div class="sec"><div class="sec-head"><h3>' + s.title + '</h3>' +
+          '<span class="n">' + s.list.length + '</span>' +
+          (s.from ? '<span class="from">来自 ' + s.from + '</span>' : '') +
+          '<span class="line"></span></div>' +
+          '<div class="grid">' + s.list.map(function (c) {
+            return cardHtml(c, s.from);
+          }).join('') + '</div></div>';
+      }).join('')
+    : '<div class="empty">当前筛选下暂无频道</div>';
+
+  document.querySelectorAll('.viewport-frame').forEach(function (f) {
+    f.dataset.label = '模拟视口 ' + state.vw + 'px';
+  });
+
+  requestAnimationFrame(function () {
+    var grid = sec.querySelector('.grid');
+    var rail = sec.querySelector('[data-rail]');
+    var cw = Math.round(grid.getBoundingClientRect().width);
+    var card = Math.round((cw - 16.5 * (cols - 1)) / cols);
+    sec.querySelector('[data-metric]').textContent =
+      '左栏 ' + Math.round(rail.getBoundingClientRect().width) + 'px · 内容区 ' + cw +
+      'px · ' + cols + ' 列 · 单卡约 ' + card + 'px';
+  });
+}
+
+function renderNow() {
+  var list = MAIN.slice(0, 8).concat([{ name: '河北卫视', logo: '河北卫视' }, { name: '山西卫视', logo: '山西卫视' }]);
+  document.getElementById('gridNow').innerHTML = list.map(function (c) { return cardHtml(c); }).join('');
+}
+
+function bindSeg(id, key, cast) {
+  document.getElementById(id).addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    [].forEach.call(this.querySelectorAll('button'), function (x) { x.classList.remove('is-on'); });
+    b.classList.add('is-on');
+    state[key] = cast ? cast(b.dataset.v) : b.dataset.v;
+    render();
+  });
+}
+bindSeg('segVw', 'vw', Number);
+bindSeg('segCols', 'cols');
+
+document.querySelector('.demo-stage').addEventListener('click', function (e) {
+  var c = e.target.closest('[data-cat]');
+  if (c) { state.cat = c.dataset.cat; render(); return; }
+  var x = e.target.closest('[data-extra]');
+  if (x) {
+    var n = x.dataset.extra, i = state.extra.indexOf(n);
+    if (i >= 0) state.extra.splice(i, 1); else state.extra.push(n);
+    render();
+  }
+});
+document.querySelector('.demo-stage').addEventListener('change', function (e) {
+  var f = e.target.closest('[data-filter]');
+  if (f) { state.filterSrc = f.value; render(); }
+});
+
+renderNow();
+render();
+</script>
+</body>
+</html>

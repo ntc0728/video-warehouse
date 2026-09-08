@@ -3,7 +3,8 @@ import type { IPTVChannel } from '@/types/iptv';
 import type { ChannelProgramInfo, EPGChannelInfo } from '@/services/epgService';
 
 interface UseEPGDataOptions {
-  mode: string;
+  /** 是否加载 EPG（由能力矩阵 `hasEPG` 驱动；直播类模式为 true，点播为 false） */
+  enabled: boolean;
   channels: IPTVChannel[];
 }
 
@@ -18,7 +19,7 @@ interface UseEPGDataResult {
   epgChannels: EPGChannelInfo[];
 }
 
-export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataResult {
+export function useEPGData({ enabled, channels }: UseEPGDataOptions): UseEPGDataResult {
   const [epgReady, setEpgReady] = useState(false);
   const [epgStatus, setEpgStatus] = useState<EPGLoadStatus>('idle');
   const [epgError, setEpgError] = useState<string | null>(null);
@@ -27,7 +28,10 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
   const epgErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (mode !== 'iptv' || channels.length === 0) return;
+    // P4：mode 判断迁到能力矩阵，由调用方传入 `enabled`（= hasEPG）。
+    // 等价性：原 `mode !== 'iptv'` 对 video 为 true（早退），对 iptv/live 为 false；
+    // 现 `!enabled` 对 video（hasEPG=false）为 true（早退），对 iptv/live（hasEPG=true）为 false。逐字等价。
+    if (!enabled || channels.length === 0) return;
     let cancelled = false;
 
     const loadEPG = async () => {
@@ -89,7 +93,7 @@ export function useEPGData({ mode, channels }: UseEPGDataOptions): UseEPGDataRes
 
     loadEPG();
     return () => { cancelled = true; };
-  }, [mode, channels]);
+  }, [enabled, channels]);
 
   return { epgReady, epgProgramsRef, epgStatus, epgError, epgChannels };
 }

@@ -335,6 +335,60 @@
   50% { opacity: 0.3; }
 }
 
+/* ===== M3U catchup 时移进度条（与 DVR 时移行相互独立） ===== */
+.iptv-osd-catchup-row {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-2xs);
+}
+
+.iptv-osd-catchup-live {
+  display: flex;
+  gap: var(--space-3xs);
+  align-items: center;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: #ccc;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.iptv-osd-catchup-live:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--player-text);
+}
+
+.iptv-osd-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e74c3c;
+}
+
+.iptv-osd-catchup-slider {
+  flex: 1 1 auto;
+  min-width: 120px;
+  max-width: 320px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.iptv-osd-catchup-time {
+  flex-shrink: 0;
+  color: #eee;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  min-width: 64px;
+  text-align: right;
+}
+
 /* Right section: network speed + source line + time */
 .iptv-osd-right {
   display: flex;

@@ -43,6 +43,12 @@ interface VideoWarehouseDB extends DBSchema {
       sourceType: string;
       timestamp: number;
       sourceUrls: string[];
+      /** 「更多台」按源频道（仅 iptv-channels 记录使用） */
+      bySource?: Record<string, IPTVChannel[]>;
+      /** iptv-org 主干缓存专用：台标名称索引（仅 iptv-org-channels 记录使用） */
+      logoByName?: Record<string, string>;
+      /** iptv-org 中文名缓存专用：channel id → 中文名（仅 iptv-org-cn-names 记录使用） */
+      names?: Record<string, string>;
     };
   };
 }
@@ -53,6 +59,8 @@ export interface IPTVCacheData {
   sourceType: string;
   timestamp: number;
   sourceUrls: string[];
+  /** 每个源自身的频道（未跨源去重）：IPTV 页「更多台」按源追加额外频道 */
+  bySource?: Record<string, IPTVChannel[]>;
 }
 
 let dbInstance: IDBPDatabase<VideoWarehouseDB> | null = null;
@@ -284,6 +292,8 @@ export async function getCachedIPTVChannels(sourceUrls: string[]): Promise<IPTVC
       sourceType: cached.sourceType,
       timestamp: cached.timestamp,
       sourceUrls: cached.sourceUrls,
+      // 「更多台」按源频道：此前漏返回，导致缓存恢复后更多台恒为空
+      bySource: cached.bySource,
     };
   } catch { /* 缓存读取或数据格式异常时返回 null */ return null; }
 }
@@ -299,6 +309,102 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
       sourceType: data.sourceType,
       timestamp: data.timestamp,
       sourceUrls: data.sourceUrls,
+      bySource: data.bySource,
+    });
+  } catch { /* 缓存写入失败不影响主流程 */ }
+}
+
+// ── iptv-org 主干原始缓存 ──────────────────────────────────
+/**
+ * iptv-org API（channels/streams/logos 三 JSON，合计 ~17MB）代价高昂，
+ * 且接口超时上限定为 6s（2026-09-08 用户定稿），6s 拉不完即判失败。
+ * 因此把组装结果落盘：首屏/弱网先用缓存秒出，再后台刷新，
+ * 避免「接口一超时就整体回退本地 M3U 源」（用户反馈的“用 iptv 源兜底”现象）。
+ */
+const IPTV_ORG_CACHE_KEY = 'iptv-org-channels';
+const IPTV_ORG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 天
+
+export interface IptvOrgCacheData {
+  /** 组装好的 iptv-org 主干频道（未与本地源合并，url = iptv-org 流） */
+  channels: IPTVChannel[];
+  /** 台标名称索引（规范化频道名 → 台标 URL），供本地源频道按名匹配 */
+  logoByName: Record<string, string>;
+  timestamp: number;
+}
+
+/** 读取 iptv-org 主干缓存（过期/异常返回 null） */
+export async function getCachedIptvOrgChannels(): Promise<IptvOrgCacheData | null> {
+  try {
+    const db = await getDB();
+    const cached = await db.get('iptvChannels', IPTV_ORG_CACHE_KEY);
+    if (!cached?.channels?.length) return null;
+    return {
+      channels: cached.channels,
+      logoByName: cached.logoByName ?? {},
+      timestamp: cached.timestamp,
+    };
+  } catch { return null; }
+}
+
+/** 判断 iptv-org 主干缓存是否仍在有效期内 */
+export function isIptvOrgCacheFresh(timestamp: number): boolean {
+  return Date.now() - timestamp < IPTV_ORG_CACHE_TTL;
+}
+
+/** 写入 iptv-org 主干缓存 */
+export async function setCachedIptvOrgChannels(data: IptvOrgCacheData): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('iptvChannels', {
+      key: IPTV_ORG_CACHE_KEY,
+      channels: data.channels,
+      logoByName: data.logoByName,
+      timestamp: data.timestamp,
+      // 本仓库 value 为共用结构，以下三字段是频道缓存语义，iptv-org 记录填空占位
+      groups: [],
+      sourceType: 'unknown',
+      sourceUrls: [],
+    });
+  } catch { /* 缓存写入失败不影响主流程 */ }
+}
+
+// ── iptv-org 中文名缓存（方案 B：channels.json 7.5MB 解析 7 天只做一次）──
+
+const IPTV_ORG_CN_NAMES_KEY = 'iptv-org-cn-names';
+
+export interface IptvOrgCnNamesData {
+  /** iptv-org channel id → 中文名（alt_names 首个含中文的名字，仅存有中文名的频道） */
+  names: Record<string, string>;
+  timestamp: number;
+}
+
+/** 读取中文名缓存（异常返回 null） */
+export async function getCachedIptvOrgCnNames(): Promise<IptvOrgCnNamesData | null> {
+  try {
+    const db = await getDB();
+    const cached = await db.get('iptvChannels', IPTV_ORG_CN_NAMES_KEY);
+    if (!cached?.names) return null;
+    return { names: cached.names, timestamp: cached.timestamp };
+  } catch { return null; }
+}
+
+/** 判断中文名缓存是否仍在有效期内 */
+export function isIptvOrgCnNamesFresh(timestamp: number): boolean {
+  return Date.now() - timestamp < IPTV_ORG_CACHE_TTL;
+}
+
+/** 写入中文名缓存 */
+export async function setCachedIptvOrgCnNames(data: IptvOrgCnNamesData): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put('iptvChannels', {
+      key: IPTV_ORG_CN_NAMES_KEY,
+      names: data.names,
+      timestamp: data.timestamp,
+      channels: [],
+      groups: [],
+      sourceType: 'unknown',
+      sourceUrls: [],
     });
   } catch { /* 缓存写入失败不影响主流程 */ }
 }

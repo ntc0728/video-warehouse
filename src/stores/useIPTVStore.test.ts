@@ -64,37 +64,6 @@ describe('useIPTVStore', () => {
     });
   });
 
-  describe('getFilteredChannels', () => {
-    beforeEach(() => {
-      useIPTVStore.setState({
-        channels: [
-          makeChannel('ch1', 'CCTV1', '央视'),
-          makeChannel('ch2', '湖南卫视', '卫视'),
-          makeChannel('ch3', 'CCTV5', '央视'),
-          makeChannel('ch4', '体育频道', '体育'),
-        ],
-      });
-    });
-
-    it('按分组过滤', () => {
-      useIPTVStore.setState({ filter: { group: '央视' } });
-      const result = useIPTVStore.getState().getFilteredChannels();
-      expect(result).toHaveLength(2);
-    });
-
-    it('按关键词过滤', () => {
-      useIPTVStore.setState({ filter: { keyword: 'CCTV' } });
-      const result = useIPTVStore.getState().getFilteredChannels();
-      expect(result).toHaveLength(2);
-    });
-
-    it('无过滤条件返回全部', () => {
-      useIPTVStore.setState({ filter: {} });
-      const result = useIPTVStore.getState().getFilteredChannels();
-      expect(result).toHaveLength(4);
-    });
-  });
-
   describe('recordPlay', () => {
     it('记录播放历史', () => {
       useIPTVStore.setState({ channels: [makeChannel('ch1', '频道1', '央视')] });

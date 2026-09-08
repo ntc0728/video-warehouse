@@ -11,16 +11,20 @@ import { usePlayerStore } from '@/stores';
 import { isIOS } from '../lib/utils';
 
 interface UseIPTVTimeoutOptions {
-  mode: string;
+  /** 是否启用超时看门狗（由能力矩阵 `hasTimeoutWatchdog` 驱动；直播类模式为 true，点播为 false） */
+  enabled: boolean;
   currentUrl: string;
   onTimeout?: () => void;
 }
 
-export function useIPTVTimeout({ mode, currentUrl, onTimeout }: UseIPTVTimeoutOptions) {
+export function useIPTVTimeout({ enabled, currentUrl, onTimeout }: UseIPTVTimeoutOptions) {
   const iptvTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    if (mode !== 'iptv' || !currentUrl) return;
+    // P4：mode 判断迁到能力矩阵，由调用方传入 `enabled`（= hasTimeoutWatchdog）。
+    // 等价性：原 `mode !== 'iptv'` 对 video 早退、对 iptv 生效；
+    // 现 `!enabled` 对 video（hasTimeoutWatchdog=false）早退、对 iptv/live（true）生效。逐字等价。
+    if (!enabled || !currentUrl) return;
 
     clearTimeout(iptvTimeoutRef.current);
     iptvTimeoutRef.current = setTimeout(() => {
@@ -31,5 +35,5 @@ export function useIPTVTimeout({ mode, currentUrl, onTimeout }: UseIPTVTimeoutOp
     }, isIOS() ? 20000 : 15000);
 
     return () => clearTimeout(iptvTimeoutRef.current);
-  }, [mode, currentUrl, onTimeout]);
+  }, [enabled, currentUrl, onTimeout]);
 }

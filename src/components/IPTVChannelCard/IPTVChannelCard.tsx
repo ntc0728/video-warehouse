@@ -10,7 +10,6 @@ import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsTV } from '@/hooks/useMediaQuery';
 import { buildChannelPlayUrl } from '@/services/iptvService';
 import { resolveChannelLogoCandidates, markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
-import type { EPGChannelInfo, EPGChannelIndex } from '@/services/epgService';
 import LazyImage from '../LazyImage/LazyImage';
 import { isImageLoaded } from '../LazyImage/imageCache';
 import './IPTVChannelCard.css';
@@ -20,15 +19,11 @@ interface IPTVChannelCardProps {
   channel: IPTVChannel;
   hideFavorite?: boolean;
   batchMode?: boolean;
-  /** 当前 tab 该频道的检测结果（由 IPTV 页按组传入，独立于其他 tab）；undefined 表示未检测 */
-  availability?: boolean;
-  /** EPG 频道列表（含 XMLTV icon），用于台标二级回退来源；由 IPTV 页懒加载后传入 */
-  epgChannels?: EPGChannelInfo[];
-  /** EPG 频道预索引（O(1) 匹配，避免每卡片全量遍历数千 EPG 频道）；由页面层一次性构建 */
-  epgIndex?: EPGChannelIndex;
+  /** 「更多台」来源角标文本（设置页启用的 IPTV 源名）；undefined 表示主干频道不显示 */
+  sourceBadge?: string;
 }
 
-const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false, availability, epgChannels, epgIndex }: IPTVChannelCardProps) {
+const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = false, batchMode = false, sourceBadge }: IPTVChannelCardProps) {
   const toggleFavorite = useIPTVStore((s) => s.toggleFavorite);
   const setSelectedChannel = useIPTVStore((s) => s.setSelectedChannel);
   const recordPlay = useIPTVStore((s) => s.recordPlay);
@@ -48,10 +43,10 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   // 此 from 仅在深链直达 /iptv/play 时作为兜底。
   const location = useLocation();
 
-  /** 台标候选链（三级回退）：M3U tvg-logo → EPG icon → 在线台标库，全失败走字母占位 */
+  /** 台标候选（iptv-org logos.json 单一来源，见 channelLogo.ts）；无 logo 走字母占位 */
   const logoCandidates = useMemo(
-    () => resolveChannelLogoCandidates(channel, epgChannels, proxyUrl, epgIndex),
-    [channel, epgChannels, proxyUrl, epgIndex]
+    () => resolveChannelLogoCandidates(channel),
+    [channel]
   );
 
   /** 构建播放链接：根据代理规则生成最终 URL（统一入口，预留 UA/Referer 携带） */
@@ -101,7 +96,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     return () => ro.disconnect();
   }, [channel.name]);
 
-  const cardClassName = `iptv-channel-card ${availability === false ? 'unavailable' : ''} btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
+  const cardClassName = `iptv-channel-card btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:rounded-lg`;
 
   const cardBody = (
     <div className="card-body">
@@ -124,13 +119,14 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           }}
         />
         {/* 横向 cover 失败兜底：LazyImage fallbackVariant="tv" 渲染 lucide Tv 图标 + kinoTV 品牌字 */}
-        {/* 批量模式下隐藏封面角标。可用性单源（availability prop）：false → 卡片标灰 +
-            红色「无法观看」（.is-unavailable）；true/undefined → 绿色 LIVE。 */}
+        {/* 批量模式下隐藏封面角标。LIVE 绿色角标为常驻展示（可用性检测已移除）。 */}
         {!batchMode && (
           <div className="iptv-card-cover__badges">
-            <span className={`record-card__live-badge ${availability === false ? 'is-unavailable' : 'is-available'}`}>
-              {availability === false ? '无法观看' : 'LIVE'}
-            </span>
+            <span className="record-card__live-badge is-available">LIVE</span>
+            {/* 「更多台」来源角标（紫色）：勾选的设置页 IPTV 源名 */}
+            {sourceBadge && (
+              <span className="iptv-card-source-badge">{sourceBadge}</span>
+            )}
           </div>
         )}
         {!batchMode && channel.group ? (
@@ -153,6 +149,14 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
             )}
           </span>
         </div>
+        {/* P2 增强层：iptv-org 英文名（与中文台名不同时才展示，避免重复） */}
+        {channel.name_en && channel.name_en !== channel.name && (
+          <div className="iptv-card-subtitle">{channel.name_en}</div>
+        )}
+        {/* P2 增强层：iptv-org 分类（group-title），可能为空，做好条件渲染 */}
+        {channel.categories && channel.categories.length > 0 && (
+          <div className="iptv-card-categories">{channel.categories.join(' / ')}</div>
+        )}
       </div>
     </div>
   );

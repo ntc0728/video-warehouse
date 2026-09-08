@@ -620,7 +620,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 @media (width >= 768px) {
   /* 桌面端页面主体内容左右留白改由 --page-pad-x 分档驱动（2026-09-05）：
-     <1280 沿用 --space-lg；≥1280<1920=60px；≥1920<2560=80px；≥2560=140px（见 variables.css）。
+     <1440 沿用 --space-lg；≥1440<1920=60px；≥1920<2560=100px；≥2560=140px（见 variables.css）。
      上下与移动端保持一致。 */
   .page-padding {
     padding-right: var(--page-pad-x);
@@ -659,16 +659,13 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   全局设计规则 — 桌面端画布最小宽度 1024px（2026-09-03 用户拍板，写入全局规则）
-   桌面 Web（视口 ≥768px，且非 App / 非 TV）的版式以 1024px 为最小画布宽度：
-   窗口被压缩到 1024px 以下时不再收缩 / 挤扁布局，由浏览器出现横向滚动条承接。
-   真正移动端（<768px，手机布局）与 App / TV 形态不在本规则适用范围。
+   全局设计规则 — 桌面端画布最小宽度（2026-09-03 用户拍板写入；2026-09-08 用户判定
+   该设计毫无意义，删除）
+   原规则：桌面 Web（视口 ≥768px 且非 App/TV）body 设 min-width=1024px，
+   窗口压缩到 1024 以下时由浏览器横向滚动条承接、不收缩布局。
+   2026-09-08 用户拍板删除整套：取消该下限后，819px 以下窗口页内布局
+   自行收缩（受各页 grid / fluid token 约束），不再出现强制横向滚动。
    ═══════════════════════════════════════════════════════════════════════ */
-@media (width >= 768px) {
-  html:not([data-device="app"]):not([data-device="tv"]) body {
-    min-width: var(--layout-min-width-desktop, 1024px);
-  }
-}
 
 .empty-state-wrapper {
   display: flex;
@@ -880,10 +877,11 @@ main {
   margin-left: auto;
 }
 
-/* ── IPTV 频道网格列宽(全局可用,IPTV / 收藏 / 历史页共用) ──
+/* ── IPTV 频道网格列宽(全局可用,收藏 / 历史页共用) ──
    列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (≥1440px 恒定)
    （2026-09-06 用户定稿：≥1440 不再升 6；2026-09-07 断点由 1280 右移到 1440，1280–1439 回落 4 列）；TV 端恒 5（见文件末尾覆盖）
-   由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略 */
+   由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略
+   ⚠️ IPTV 页自 2026-09-08 起改用专用 --iptv-page-cols（见下方），不再使用本变量 */
 .iptv-channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
@@ -917,6 +915,45 @@ main {
   html:not([data-device="app"]) {
     --iptv-cols: 5;
   }
+}
+
+/* ── IPTV 页专用列数 --iptv-page-cols（2026-09-08 IPTV 页大改定稿）──
+   仅 IPTV 页网格使用；收藏页 IPTV 卡片与历史页记录卡继续走 --iptv-cols，不受影响。
+   桌面端（IPTV 页新增 176px 左栏吃掉内容区宽度）降一档：
+   1024–1439 → 3 列、≥1440 → 4 列；≤767 → 2、768–1023 → 3（与 --iptv-cols 低档一致）。
+   App 端沿用 --iptv-cols 低档（not(app) 排除，:root 兜底 2）；TV 端恒 5（文件末尾覆盖）。 */
+:root {
+  --iptv-page-cols: 2;
+}
+
+@media (width >= 768px) and (width <= 1023px) {
+  html:not([data-device="app"]) {
+    --iptv-page-cols: 3;
+  }
+}
+
+@media (width >= 1024px) and (width <= 1439px) {
+  html:not([data-device="app"]) {
+    --iptv-page-cols: 3;
+  }
+}
+
+@media (width >= 1440px) {
+  html:not([data-device="app"]) {
+    --iptv-page-cols: 4;
+  }
+}
+
+/* ≥2560 → 5 列（2026-09-08 用户定稿；2560 = 断点宪法「超宽收敛」档） */
+@media (width >= 2560px) {
+  html:not([data-device="app"]) {
+    --iptv-page-cols: 5;
+  }
+}
+
+/* IPTV 页网格改用专用列数变量（作用域限定 .iptv-page，其余页面不受影响） */
+.iptv-page .iptv-channel-grid {
+  grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));
 }
 
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
@@ -997,16 +1034,12 @@ main {
      badge-source）同尺寸，全站 iptv 状态徽标统一。 */
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  /* 可看 = 绿（默认）；不可看 = 红（见 .is-unavailable） */
+  /* 可看 = 绿（可用性检测已移除，LIVE 角标常驻绿色） */
   background: var(--color-success);
   color: #fff;
   font-size: var(--text-2xs);
   font-weight: 700;
   line-height: 1.4;
-}
-/* IPTV 无法观看：红色警示（历史页 / 收藏页 iptv-card-cover__badges 共用） */
-.record-card__live-badge.is-unavailable {
-  background: var(--color-danger);
 }
 
 .record-card__time {
@@ -1139,6 +1172,8 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
    ═══════════════════════════════════════════════════════════════════════ */
 html[data-device="tv"] {
   --iptv-cols: 5;
+  /* IPTV 页专用列数：TV 恒 5，与 --iptv-cols 同策略 */
+  --iptv-page-cols: 5;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

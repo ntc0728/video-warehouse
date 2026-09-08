@@ -25,6 +25,14 @@ export interface IPTVChannel {
   isFavorite?: boolean;
   lastPlayed?: number;
   tvgId?: string;
+  /** iptv-org 增强层：英文台名（nameEn） */
+  name_en?: string;
+  /** iptv-org 主干层：备用名（channels.json alt_names，多为中文；合并匹配 + 搜索辅助） */
+  altNames?: string[];
+  /** iptv-org 增强层：分类/分组（源自 cn.m3u 的 group-title） */
+  categories?: string[];
+  /** iptv-org 增强层：国家码，cn.m3u 固定 'CN' */
+  country?: string;
   sourceId?: string;
   noGuide?: boolean;
   supportTimeshift?: boolean;

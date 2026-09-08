@@ -22,7 +22,7 @@ import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
 import type { VideoSourceConfig } from '@/types/source';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
-import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
@@ -40,7 +40,10 @@ import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 type SearchMode = 'smart' | 'cms';
 
 export default function BrowsePage() {
-  const isPhone = useIsMobileLayout();
+  // 2026-09-08 用户拍板：新 UI（左栏筛选 + 右侧结果）只在 ≥1024 生效，
+  // <1024 一律走移动端命令栏（BrowseMobileBar + 筛选弹窗）。
+  // 组合判定：App 端 / 真实手机 UA / 视口 ≤767（useIsMobileLayout）+ 视口 ≤1023（useIsMobile）。
+  const isPhone = useIsMobileLayout() || useIsMobile();
   const isTV = useIsTV();
   const location = useLocation();
   const navigationType = useNavigationType();
@@ -444,7 +447,7 @@ export default function BrowsePage() {
       {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
       {!isPhone && (
         <div className="browse-card--search">
-          {/* Tab 切换 — ≥1440 通栏模式行（胶囊组靠左 + 模式提示靠右，对齐 demo） */}
+          {/* Tab 切换 — ≥1024 通栏模式行（胶囊组靠左 + 模式提示靠右，对齐 demo） */}
           <div className="browse-search-tabs">
             <div className="browse-search-tabs__pill">
               <button
@@ -492,7 +495,7 @@ export default function BrowsePage() {
 
       {/* Card 2：结果区域 */}
       <div className="browse-card--results">
-        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1440 对齐 demo reshead） */}
+        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1024 对齐 demo reshead） */}
         {searchMode === 'smart' && (
           <div className="browse-sort-bar">
             <div className="browse-sort-bar__types" role="tablist" aria-label="类型">

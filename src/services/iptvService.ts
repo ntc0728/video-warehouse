@@ -47,10 +47,9 @@ export function detectSourceType(content: string): SourceAnalysis {
 }
 
 async function fetchContent(url: string): Promise<string> {
-  // 20s 单次超时 + 不重试：M3U 列表对失效源重试收益极低；
-  // 超时不宜过紧（8s 会误杀经代理响应慢但健康的源），配合竞速窗口「首个成功即收尾」
-  // 与「零成功时等全部 settle 快速失败」，慢源不阻塞快源。
-  return getText(url, { timeout: 20000, retries: 0 });
+  // 6s 单次超时 + 不重试：IPTV 所有接口超时不得超过 6s（2026-09-08 用户定稿），
+  // 超过即判失败；配合竞速窗口「首个成功即收尾」与「零成功时等全部 settle 快速失败」。
+  return getText(url, { timeout: 6000, retries: 0 });
 }
 
 /**
@@ -160,6 +159,26 @@ export function unwrapProxy(url: string, ownProxyUrl?: string): string {
   return current;
 }
 
+/** 数字型域名（裸 IP，含 IPv4 / 括号 IPv6）判定：如 http://101.35.240.114:88/live.php?id=CCTV3 */
+const IPV4_HOST_RE = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+
+/**
+ * 是否「数字类型域名」（裸 IP 主机）。
+ * IPTV 源里大量 live.php 接口直接挂在 IP:端口 上（如 101.35.240.114:88）；
+ * 这类地址经 IPTV 代理转发反而更容易失败（代理侧拿不到源站 Host/端口策略），
+ * 因此 2026-09-08 定稿：IP 型地址一律直连，不拼 IPTV 代理。
+ */
+export function isIpHostUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    if (IPV4_HOST_RE.test(host)) return true;
+    if (host.startsWith('[') && host.endsWith(']')) return true; // [::1] 等 IPv6
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
   // 多值代理：统一取第一个（主代理）
   proxyUrl = getPrimaryIptvProxy(proxyUrl);
@@ -167,6 +186,8 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
   // 抽出真实地址改走我们配置的代理，绕开失效/被墙的中间代理。
   const target = unwrapProxy(url, proxyUrl);
   url = target;
+  // 数字型域名（IP:端口）直连，不拼 IPTV 代理
+  if (isIpHostUrl(url)) return false;
   if (!proxyUrl) {
     return false;
   }
@@ -226,6 +247,94 @@ export function buildChannelPlayUrl(
     if (channel.referrer) headers = { ...headers, 'Referer': channel.referrer };
   }
   return buildProxyUrl(channel.url, proxyUrl ?? '', headers);
+}
+
+/**
+ * 构建 M3U catchup 回看播放地址（Gap G1 / 方案 §3.4「时移与回看」）。
+ *
+ * why：IPTV 频道在 M3U 清单里用 `catchup` / `catchup-source` / `catchup-days` 声明回看能力
+ * （字段已解析进 `IPTVChannel`，见 `src/types/iptv.ts:36-44`）。本项目此前只解析不消费；
+ * P5 通过本函数把「过去某时刻」换算成可播放的回看 URL，供 IPTVOSDBar 的 catchup 进度条调用。
+ *
+ * 拼装规则（与 `docs/iptv-hybrid-plan.md` §3.4 一致，并贴合 M3U catchup 规范）：
+ * - `default`：用 `catchup-source` 模板，替换 `{utc}` / `{lutc}`（及 {start}/{end}/{r} 兜底）。
+ *   **必须依赖 `catchup-source`**，模板缺失则无法拼装 → 返回 null。
+ * - `append`：参数**追加到频道原始播放 URL** 之后（M3U append 语义，忽略 catchup-source），即 `url?utc=&lutc=`。
+ * - `flussonic`：用 `catchup-source` 模板，替换 `{start}` / `{end}`（秒）。**必须依赖模板**，缺失 → 返回 null。
+ * - `xtream`：Xtream-Codes timeshift，常见形态为原地址追加 `?timeshift=<起始秒>&duration=<时长秒>`。
+ *   因 Xtream 还需账号信息（本类型未承载），只能用频道 URL 拼常见形态；缺 base 时返回 null。
+ *
+ * 时间戳单位：M3U catchup 规范以**秒**计，故入参毫秒先 `/1000` 取整。
+ *
+ * @returns 回看播放 URL；以下情况返回 `null`（调用方据此禁用时移，保证「无 catchup 与今天行为一致」）：
+ *   - `channel.catchup` 缺失，或
+ *   - `default`/`flussonic` 模式却无 `catchupSource` 模板，或
+ *   - `append`/`xtream` 模式却无频道 `url` 可作基址，或
+ *   - 请求的 `startTs` 早于 `now - catchupDays` 窗口下界（服务端无该时点数据）。
+ */
+export function buildCatchupUrl(
+  channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays'>,
+  startTs: number,
+  endTs: number,
+  now: number = Date.now()
+): string | null {
+  const mode = channel.catchup;
+  const src = channel.catchupSource;
+  const base = channel.url;
+
+  if (!mode) return null;
+  // default/flussonic 必须依赖 catchup-source 模板；append/xtream 可仅凭 base 拼装。
+  if ((mode === 'default' || mode === 'flussonic') && !src) return null;
+  if ((mode === 'append' || mode === 'xtream') && !base) return null;
+
+  // 越界防护：start 早于「现在 - catchupDays」则服务端无回看数据 → 返回 null（禁用时移）。
+  if (channel.catchupDays != null) {
+    const windowStart = now - channel.catchupDays * 86400 * 1000;
+    if (startTs < windowStart) return null;
+  }
+
+  const startSec = Math.floor(startTs / 1000);
+  const endSec = Math.floor(endTs / 1000);
+
+  // 把 M3U 标准占位符替换为真实时间戳（catchup-source 模板通用这套占位符）。
+  const replacePlaceholders = (tpl: string): string =>
+    tpl
+      .replace(/\{utc\}/g, String(startSec))
+      .replace(/\{lutc\}/g, String(startSec))
+      .replace(/\{start\}/g, String(startSec))
+      .replace(/\{end\}/g, String(endSec))
+      .replace(/\{r\}/g, String(Math.max(0, endSec - startSec)));
+
+  switch (mode) {
+    case 'default':
+      // 必须依赖 catchup-source 模板（顶部 guard 已保证 src 非空，这里再兜底一次）
+      return src ? replacePlaceholders(src) : null;
+    case 'append':
+      // M3U append：参数追加到原始播放 URL 之后
+      return appendQuery(base, { utc: String(startSec), lutc: String(startSec) });
+    case 'flussonic':
+      // Flussonic timeshift：?start=<start>&stop=<end>（秒），必须依赖模板
+      return src ? replacePlaceholders(src) : null;
+    case 'xtream':
+      // Xtream-Codes timeshift：原地址追加 ?timeshift=<起始秒>&duration=<时长秒>
+      return appendQuery(base, {
+        timeshift: String(startSec),
+        duration: String(Math.max(0, endSec - startSec)),
+      });
+    default:
+      return null;
+  }
+}
+
+/**
+ * 向 URL 安全的追加查询参数（不依赖 `new URL`，避免相对/非标准地址抛错）。
+ * 已含 `?` 则追加 `&`，否则追加 `?`。
+ */
+function appendQuery(url: string, params: Record<string, string>): string {
+  const qs = Object.entries(params)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&');
+  return url.includes('?') ? `${url}&${qs}` : `${url}?${qs}`;
 }
 
 /**
@@ -380,6 +489,8 @@ export async function fetchAndParsePlaylist(
   channels: IPTVChannel[];
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
+  /** 每个源自身的频道（未跨源去重）：供 IPTV 页「更多台」按源追加额外频道 */
+  bySource: Record<string, IPTVChannel[]>;
 }> {
   const urls = settings?.aggregatorUrls?.length
     ? settings.aggregatorUrls
@@ -408,10 +519,11 @@ export async function fetchAndParsePlaylist(
       }));
     }),
     1500, // 首个成功源到达后的收尾窗口
-    20000 // 绝对上限（与单源超时一致）
+    8000 // 绝对上限（单源 6s 超时 + 1.5s 收尾窗口，8s 已足够覆盖全部 settle）
   );
 
   const allChannels: IPTVChannel[] = [];
+  const bySource: Record<string, IPTVChannel[]> = {};
   const sourceErrors: Array<{ index: number; url: string; error: string }> = [];
   let sourceType = PlaylistSourceType.UNKNOWN;
 
@@ -419,6 +531,8 @@ export async function fetchAndParsePlaylist(
     const result = results[i];
     if (result.status === 'fulfilled') {
       allChannels.push(...result.value);
+      // 「更多台」数据源：保留该源自身全部频道（仅源内去重），不做跨源去重
+      bySource[`source-${i}`] = dedupeByNameGroup(result.value);
       if (result.value.length > 0 && sourceType === PlaylistSourceType.UNKNOWN) {
         sourceType = PlaylistSourceType.MULTI_CHANNEL;
       }
@@ -446,7 +560,42 @@ export async function fetchAndParsePlaylist(
     channels: uniqueChannels,
     sourceType,
     sourceErrors,
+    bySource,
   };
+}
+
+/** 源内去重：同名同组只留第一个（与跨源去重同口径，避免单源内重复台刷屏） */
+function dedupeByNameGroup(channels: IPTVChannel[]): IPTVChannel[] {
+  const seen = new Set<string>();
+  return channels.filter((ch) => {
+    const key = `${ch.name}-${ch.group || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * 按需拉取单个源的频道列表（IPTV 页「更多台」勾选源时调用）。
+ * 与 fetchAndParsePlaylist 的单源分支同口径：源 M3U 走 IPTV 代理、
+ * id 加源前缀防冲突、标注 sourceId、源内去重（与 bySource 一致）。
+ * 供 store.ensureSourceChannels 使用：刷新时被竞速窗口放弃/失败、
+ * 或旧缓存无 bySource 的源，勾选时可补拉，不必整包刷新。
+ */
+export async function fetchSingleSourceChannels(
+  url: string,
+  index: number,
+  settings?: Partial<IPTVSettings>
+): Promise<IPTVChannel[]> {
+  const fetchUrl = buildSourceProxyUrl(url, settings?.proxyUrl);
+  const rawContent = await fetchContent(fetchUrl);
+  const channels = parseM3U8Content(rawContent, url);
+  const tagged = channels.map(ch => ({
+    ...ch,
+    id: `${index}-${ch.id}`,
+    sourceId: `source-${index}`,
+  }));
+  return dedupeByNameGroup(tagged);
 }
 
 /**
@@ -497,7 +646,9 @@ export function parseM3U8Content(content: string, sourceUrl?: string): IPTVChann
         name: parts[1]?.trim() || `Channel ${channels.length}`,
       };
 
-      // 从属性中提取 Logo、分组信息和 tvg-id
+      // 从属性中提取分组信息、tvg-id 与 tvg-logo。
+      // 台标一级来源 = iptv-org logos.json（store 合并时按名匹配覆盖）；
+      // 这里解析的 tvg-logo 仅作「匹配不到时的 iptv 源兜底」（2026-09-08 用户定稿）。
       const attributes = parts[0];
       const logoMatch = attributes.match(/tvg-logo="([^"]*)"/);
       const groupMatch = attributes.match(/group-title="([^"]*)"/);
@@ -562,110 +713,3 @@ export function parseM3U8Content(content: string, sourceUrl?: string): IPTVChann
   return channels;
 }
 
-/**
- * 检测单个频道的可用性
- * 通过创建隐藏的 video 元素尝试加载频道 URL
- * 优先使用 canplay / loadeddata 判定；iOS 上 canplay 可能因自动播放策略不触发，
- * 因此用 loadeddata 作为备用信号，loadedmetadata 后短暂等待作为最终兜底。
- */
-export async function checkChannelAvailability(url: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const video = document.createElement('video');
-    video.preload = 'auto';
-    video.muted = true;
-    video.volume = 0;
-
-    let metadataTimeoutId: ReturnType<typeof setTimeout>;
-    let resolved = false;
-
-    const cleanup = () => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeoutId);
-      clearTimeout(metadataTimeoutId);
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('loadeddata', onLoadedData);
-      video.removeEventListener('error', onError);
-      video.removeEventListener('loadedmetadata', onLoadedMetadata);
-      video.removeAttribute('src');
-      video.load();
-      video.src = '';
-    };
-
-    const onSuccess = () => {
-      cleanup();
-      resolve(true);
-    };
-
-    const onCanPlay = () => {
-      if (video.readyState >= 2) {
-        onSuccess();
-      }
-    };
-
-    const onLoadedData = () => {
-      onSuccess();
-    };
-
-    const onLoadedMetadata = () => {
-      // 元数据加载成功说明流可解析，给 3s 让数据到达
-      metadataTimeoutId = setTimeout(() => {
-        cleanup();
-        resolve(true);
-      }, 3000);
-    };
-
-    const onError = () => {
-      cleanup();
-      resolve(false);
-    };
-
-    video.addEventListener('canplay', onCanPlay, { once: true });
-    video.addEventListener('loadeddata', onLoadedData, { once: true });
-    video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
-    video.addEventListener('error', onError, { once: true });
-
-    // 全局超时保护，防止长时间无响应
-    const timeoutId = setTimeout(() => {
-      cleanup();
-      resolve(false);
-    }, 10000);
-
-    video.src = url;
-    video.load();
-  });
-}
-
-/**
- * 批量检测频道可用性
- * 逐个检测频道，每次检测间隔 100ms 以避免过度并发
- * 支持通过 AbortSignal 中断检测过程
- */
-export async function checkChannelsAvailability(
-  channels: Array<{ id: string; url: string }>,
-  onProgress?: (checked: number, total: number) => void,
-  signal?: AbortSignal
-): Promise<Map<string, boolean>> {
-  const results = new Map<string, boolean>();
-  const total = channels.length;
-  let checked = 0;
-
-  for (const channel of channels) {
-    if (signal?.aborted) break;
-
-    const available = signal?.aborted ? false : await checkChannelAvailability(channel.url);
-    results.set(channel.id, available);
-    checked++;
-    onProgress?.(checked, total);
-
-    // 检测间隔，避免过度并发占用带宽
-    if (checked < total && !signal?.aborted) {
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 100);
-        signal?.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
-      });
-    }
-  }
-
-  return results;
-}

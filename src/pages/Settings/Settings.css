@@ -398,40 +398,39 @@ body.skin-transitioning .skin-btn.active {
    设置页重构组件样式（TabBar / MenuList / SubPage）
    ════════════════════════════════════════ */
 
-/* 桌面端整体大卡片：左竖排导航 + 内容区放入同一张卡（仅桌面分支渲染）。
-   方案 B（2026-09-06 拍板）：导航移左栏竖排，内容区满宽自适应（不设固定 max-width）。 */
+/* 桌面端整体容器：左竖排导航 + 内容区（仅桌面分支渲染）。
+   方案 B（2026-09-06 拍板）：导航移左栏竖排，内容区满宽自适应（不设固定 max-width）。
+   2026-09-08 去卡片化：整卡不再有 border / border-radius / box-shadow / background，
+   左栏与内容区直接铺在页面底色上。
+   ⚠️ 仍不可加 overflow:hidden——会为 sticky 子元素（.settings-sidenav）创建独立
+      滚动上下文，导航将卡在页面顶部不再跟随滚动。 */
 .settings-desktop-card {
   display: flex;
   flex: 1;
   flex-direction: row;
   align-items: stretch;
   min-height: 0;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  /* ⚠️ 不可加 overflow:hidden——会为 sticky 子元素（.settings-sidenav）创建独立
-     滚动上下文，导航将卡在卡片顶部不再跟随页面滚动；左栏圆角由
-     .settings-sidenav 自身 radius 贴合，无需容器裁切。 */
 }
 
-/* 桌面端左侧竖排导航（方案 B 二调，2026-09-06）：去背景色与圆角，仅保留右缘分割线；
-   宽度流体 clamp 不锁固定值；sticky 跟随页面滚动。 */
+/* 桌面端左侧竖排导航（2026-09-08 三调：对齐收藏/历史页 rail UI，RecordShell.css ≥1024 方案 A）：
+   - 去 border-right（rail 无边框，分组分隔语言由 tab 列表上方 1px 分割线承担）；
+   - 横向 padding 归零（缩进由条目自身 8px 左右内边距提供，与 rail-item 一致）；
+   - sticky top 与 rail 同为 --space-sm（滚动容器已有 header padding-top，小间距即可）；
+   - 宽度保持本页流体 clamp 契约（rail 的 max-content 依赖短内容，此处不适用）。 */
 .settings-sidenav {
   position: sticky;
-  top: 0;
+  top: var(--space-sm);
   z-index: 10;
   align-self: flex-start;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  flex-basis: clamp(184px, 14vw, 224px);
-  gap: var(--space-md);
-  padding: var(--space-lg) var(--space-md) var(--space-xl);
-  border-right: 1px solid var(--color-border-light);
-  /* 视觉无背景色，但必须非透明：sticky 悬浮时滚动内容会从导航文字底下透过，
-     用与卡片同色的 surface 遮挡（观感 = 无色） */
-  background: var(--color-surface);
+  flex-basis: clamp(124px, 8.61vw, 224px);
+  gap: var(--space-sm);
+  padding: var(--space-lg) 0 var(--space-xl);
+  /* 2026-09-08 去卡片化：不再铺 surface 底色。此处透明是安全的——
+     左栏与内容区是并列的 flex 列，右侧内容横向不与左栏重叠，sticky 悬浮时
+     不存在「内容从导航底下透过」的问题（原注释的前提不成立）。 */
 }
 
 /* 桌面端内容主列：包住 settings-content，吃掉导航之外的剩余宽度（min-width:0 防撑破） */
@@ -442,25 +441,39 @@ body.skin-transitioning .skin-btn.active {
   min-width: 0;
 }
 
-/* TabBar 竖排化：仅作用于左栏内（移动端菜单/其他场景不受影响）；
-   项间距放宽（二调：原 --space-2xs 太挤）。图标/字号 token 与顶栏导航项一致
-   （实测同为 --text-sm 12.56px / --icon-sm 16.33px / 600），显式声明防漂移。 */
+/* TabBar 竖排化（2026-09-08 rail 化）：仅作用于左栏内（移动端菜单/其他场景不受影响）。
+   分组语义对齐 rail：标题 = 第一组（无线），tab 列表 = 第二组（上方 1px 分割线，
+   照抄 RecordShell.css 分组 ::before 分割线规格）。 */
 .settings-sidenav .settings-tabbar {
   flex: 1 1 auto;
   flex-direction: column;
   align-items: stretch;
   width: 100%;
-  gap: var(--space-xs);
+  gap: var(--space-2xs);
   overflow: visible;
   scroll-snap-type: none;
 }
 
+.settings-sidenav .settings-tabbar::before {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  height: 1px;
+  margin: var(--space-sm) 0;
+  background: var(--color-border-light);
+}
+
+/* tab 项 = rail-item 外观（严格照抄 RecordShell.css ≥1024 的 .status-tab 规格）：
+   左对齐整行、8px 上下内边距、md 圆角、透明底、--text-sm / 500 / secondary */
 .settings-sidenav .settings-tab {
   justify-content: flex-start;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
+  height: auto;
+  padding: 8px var(--space-sm);
   font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
 }
 
 .settings-sidenav .settings-tab__icon svg {
@@ -468,36 +481,35 @@ body.skin-transitioning .skin-btn.active {
   height: var(--icon-sm);
 }
 
-/* 去背景后 hover/激活改用 primary-light 浅灰（原 surface 白底在白卡上不可见） */
+/* hover 态：rail 同款浅灰底 + 主文字 */
 .settings-sidenav .settings-tab:hover {
-  background: var(--color-primary-light);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
+
+/* 选中态：rail 同款实心主色 + 反白字 + 600（用户 2026-09-08 拍板，替换原浅底+指示条） */
 .settings-sidenav .settings-tab--active,
 .settings-sidenav .settings-tab--active:hover {
-  background: var(--color-primary-light);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
 }
 
-/* 激活指示条：底部横条 → 左缘竖条（沿用收藏/历史页 tab 语言的旋转版） */
-.settings-sidenav .settings-tab::after {
-  top: 50%;
-  bottom: auto;
-  left: -1px;
-  width: 2px;
-  height: 0;
-  transform: translateY(-50%);
-  transition: height 0.22s var(--ease-standard);
-}
+/* rail 无指示条语言：激活态靠实心底区分，竖条/横条一律不渲染 */
+.settings-sidenav .settings-tab::after,
 .settings-sidenav .settings-tab--active::after {
-  width: 2px;
-  height: 60%;
+  display: none;
 }
 
-/* 「设置」标题（方案 B 2026-09-06 起位于左栏顶部，原顶部栏左侧标题沿用同名类） */
+/* 「设置」标题（方案 B 2026-09-06 起位于左栏顶部，原顶部栏左侧标题沿用同名类）。
+   2026-09-08 rail 化：sidenav 横向 padding 归零后，标题左缘补 --space-sm
+   与下方 tab 文字（rail-item 左内边距）对齐。 */
 .settings-desktop-title {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   gap: var(--space-xs);
+  padding-left: var(--space-sm);
   margin-right: var(--space-xs);
   font-size: var(--text-base);
   font-weight: 700;
@@ -1008,6 +1020,23 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
+/* ── ≥1024：左右两栏顶部 padding/margin 归零（2026-09-08 用户指令）──
+   两栏内容贴 .settings-desktop-card 顶边；后续 section 之间的间距不受影响。 */
+@media (width >= 1024px) {
+  html:not([data-device="app"]) .settings-sidenav {
+    padding-top: 0;
+  }
+  html:not([data-device="app"]) .settings-content__pane {
+    padding-top: 0;
+  }
+  /* pane 内首个 section 的顶部 margin/padding 一并归零，右栏内容真正贴顶 */
+  html:not([data-device="app"]) .settings-content__pane > section:first-child,
+  html:not([data-device="app"]) .settings-content__pane > *:first-child {
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
 /* ===== 设置弹窗统一卡片样式（修复样式错乱，与详情页一致） =====
    复用 .modal-content-animate 的 fixed 定位与 max-height，
    仅补充宽度/内边距/盒模型，使其不再是“无内边距、无宽度”的裸弹窗。 */
@@ -1284,12 +1313,15 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 关于页免责声明：靠页面底部（flex 容器内 margin-top:auto 推到底）、
-   上方分割线、占整行宽度、一行显示不全自动换行 */
+   上方分割线、占满内容主体整行宽度、以内容主体水平居中（2026-09-08：
+   块满宽 + 标题与正文均居中），一行显示不全自动换行 */
 .about-tab__disclaimer {
   width: 100%;
   margin-top: auto; /* 贴底 */
+  margin-inline: auto; /* 以内容主体水平居中 */
   padding: var(--space-lg) var(--space-md) var(--space-2xl);
   border-top: 1px solid var(--color-border-light);
+  text-align: center; /* 块内文字整体居中 */
 }
 
 .about-tab__disclaimer-title {
