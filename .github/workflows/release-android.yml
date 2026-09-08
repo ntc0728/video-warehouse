@@ -63,9 +63,23 @@ jobs:
       # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
       # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           api-level: 34
+
+      # Gradle 缓存：wrapper dists（gradle-8.2.1-all.zip 解压结果）+ 依赖 modules-2
+      # + transform cache。缓存 key 绑定 package.json 版本（依赖随版本漂移）+
+      # wrapper 版本（切版本时失效）；restore-keys 前缀命中可复用旧缓存。
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/android
+          key: ${{ runner.os }}-gradle-${{ hashFiles('package.json', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Install dependencies
         # --registry 覆盖提交的 .npmrc（本地用 npmmirror 加速，CI 用 npmjs 官方源更稳）
@@ -81,6 +95,15 @@ jobs:
         run: |
           pnpm exec cap add android
           pnpm exec cap sync android
+          # ★ CI 生成的模板默认 distributionUrl=services.gradle.org，
+          #   GitHub runner 拉 150MB+ gradle-8.2.1-all.zip 常 10s 超时。
+          #   强制切腾讯云镜像 + networkTimeout 10s→60s。
+          $w = 'android/gradle/wrapper/gradle-wrapper.properties'
+          (Get-Content $w | ForEach-Object {
+            if   ($_ -like 'distributionUrl=*') { 'distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.2.1-all.zip' }
+            elseif ($_ -like 'networkTimeout=*') { 'networkTimeout=60000' }
+            else { $_ }
+          }) | Set-Content $w
           # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
           Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
           # 应用 DLNA 投屏补丁（原生 Java 源码 + AndroidManifest 权限合并）
@@ -90,7 +113,11 @@ jobs:
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        # 命令行覆盖 gradle.properties 的默认 -Xmx1536m：
+        # -Xmx3g 给 R8/D8 minification 留够堆，避免 OutOfMemoryError
+        # -Xms1g 预热堆，减少 GC 抖动
+        # -XX:MaxMetaspaceSize=1g 防止元空间膨胀（Android Gradle Plugin 反射重载多）
+        run: ./gradlew assembleRelease -Dorg.gradle.jvmargs="-Xmx3g -Xms1g -XX:MaxMetaspaceSize=1g"
 
       # 签名策略：配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
       # ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD 四个 Secrets 用正式 keystore 签名；

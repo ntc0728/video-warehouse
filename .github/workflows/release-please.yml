@@ -65,6 +65,20 @@ jobs:
         with:
           api-level: 34
 
+      # Gradle 缓存：wrapper dists（gradle-8.2.1-all.zip 解压结果）+ 依赖 modules-2
+      # + transform cache。缓存 key 绑定 package.json 版本（依赖随版本漂移）+
+      # wrapper 版本（切版本时失效）；restore-keys 前缀命中可复用旧缓存。
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/android
+          key: ${{ runner.os }}-gradle-${{ hashFiles('package.json', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Install dependencies
         # --registry 覆盖提交的 .npmrc（本地用 npmmirror 加速，CI 用 npmjs 官方源更稳）
         run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
@@ -79,6 +93,15 @@ jobs:
         run: |
           pnpm exec cap add android
           pnpm exec cap sync android
+          # ★ CI 生成的模板默认 distributionUrl=services.gradle.org，
+          #   GitHub runner 拉 150MB+ gradle-8.2.1-all.zip 常 10s 超时。
+          #   强制切腾讯云镜像 + networkTimeout 10s→60s。
+          $w = 'android/gradle/wrapper/gradle-wrapper.properties'
+          (Get-Content $w | ForEach-Object {
+            if   ($_ -like 'distributionUrl=*') { 'distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.2.1-all.zip' }
+            elseif ($_ -like 'networkTimeout=*') { 'networkTimeout=60000' }
+            else { $_ }
+          }) | Set-Content $w
           # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
           Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
           node scripts/sync-android-version.mjs
