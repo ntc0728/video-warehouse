@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="7bb4C5zZXYeawjqg4TzN2C">
+<head data-page-node-id="v9EkcFkNFuuX4jnzqJWitL">
+<meta charset="UTF-8" data-page-node-id="RhYRUwDyQNmyWFR6tXrtgM" />
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="3bnvRGp1GicXhL44Zsjg0b" />
+<title>收藏页 / 历史页 桌面端左栏布局 Demo — 2026-09-08</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Demo 专用 token：取 src/assets/styles/variables.css 在 1440px 视口的真实读数
+   （段2 递减曲线），非杜撰值。落地时直接引用真实 token，不要复制这里的字面量。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-background:#f5f5f5;
+  --color-surface:#fff;
+  --color-surface-hover:rgba(0,0,0,.05);
+  --color-text:#000;
+  --color-text-secondary:#666;
+  --color-text-tertiary:#999;
+  --color-border:#d9d9d9;
+  --color-border-light:#e8e8e8;
+  --color-primary:#000;
+  --color-primary-light:rgba(0,0,0,.05);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);      /* variables.css:124 */
+  --radius-sm:5px; --radius-md:9.6px; --radius-lg:16.5px; --radius-full:9999px;
+  --text-2xs:10.8px; --text-xs:11.33px; --text-sm:12.22px; --text-base:13.2px;
+  --text-lg:13.83px; --text-xl:15.59px; --text-2xl:20.37px;
+  --icon-xs:15.1px; --icon-sm:15.9px; --icon-md:18.9px;
+  --space-2xs:2.2px; --space-xs:3.9px; --space-sm:7.9px; --space-md:9.1px;
+  --space-lg:16.5px; --space-xl:22.5px; --space-2xl:31.5px;
+  --grid-gap:14.3px;
+  --page-pad-x:32px;                           /* ≥1440 且 <1920 */
+  --header-height:74px;
+  --card-cols:7;                               /* ≥1440 */
+  --continue-cols:5;                           /* ≥1280 */
+  --ease-standard:cubic-bezier(.4,0,.2,1);
+  --dur-fast:150ms;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--color-background);
+  color:var(--color-text);
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:var(--text-base);
+}
+button{font:inherit;color:inherit;cursor:pointer;}
+
+/* ── Demo 外壳：顶部导航栏 + 切换器（不参与方案评估） ───────────────────── */
+.demo-topbar{
+  position:sticky;top:0;z-index:50;
+  height:var(--header-height);
+  display:flex;align-items:center;gap:var(--space-md);
+  padding:0 var(--page-pad-x);
+  background:var(--color-surface);
+  border-bottom:1px solid var(--color-border-light);
+}
+.demo-brand{font-size:var(--text-2xl);font-weight:700;letter-spacing:.5px;margin-right:var(--space-xl);}
+.demo-switch{display:flex;align-items:center;gap:var(--space-xs);}
+.demo-switch__label{font-size:var(--text-xs);color:var(--color-text-tertiary);margin-right:var(--space-2xs);}
+.demo-seg{display:flex;background:var(--color-background);border-radius:var(--radius-md);padding:2px;gap:2px;}
+.demo-seg button{
+  border:none;background:transparent;border-radius:var(--radius-sm);
+  padding:5px 12px;font-size:var(--text-sm);color:var(--color-text-secondary);
+  transition:background var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
+}
+.demo-seg button.is-on{background:var(--color-surface);color:var(--color-text);font-weight:600;box-shadow:var(--shadow-sm);}
+.demo-note{
+  margin:0;padding:var(--space-md) var(--page-pad-x);
+  background:#fffbe6;border-bottom:1px solid #ffe58f;
+  font-size:var(--text-xs);color:#874d00;line-height:1.7;
+}
+.demo-note b{color:#ad4e00;}
+.demo-stage{padding:var(--space-xl) var(--page-pad-x) var(--space-2xl);}
+.demo-scheme-head{
+  display:flex;align-items:baseline;gap:var(--space-md);
+  margin:0 0 var(--space-md);
+}
+.demo-scheme-head h2{font-size:var(--text-xl);margin:0;}
+.demo-scheme-head p{margin:0;font-size:var(--text-xs);color:var(--color-text-secondary);}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   现状（Baseline）：card 上方横向一行 .record-aside
+   ═══════════════════════════════════════════════════════════════════════════ */
+.layout-now .record-aside{
+  display:flex;align-items:center;gap:var(--space-md);
+  margin-bottom:var(--space-lg);
+  flex-wrap:wrap;
+}
+.tabs{display:flex;gap:var(--space-xs);align-items:center;}
+.tab{
+  display:flex;align-items:center;gap:var(--space-xs);
+  padding:6px 14px;border:none;background:transparent;border-radius:var(--radius-full);
+  font-size:var(--text-sm);color:var(--color-text-secondary);
+}
+.tab.is-on{background:var(--color-primary);color:#fff;font-weight:600;}
+.tab .cnt{
+  font-size:var(--text-2xs);padding:1px 6px;border-radius:var(--radius-full);
+  background:var(--color-background);color:var(--color-text-secondary);
+}
+.tab.is-on .cnt{background:rgba(255,255,255,.22);color:#fff;}
+.divider{width:1px;height:18px;background:var(--color-border-light);}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border:none;background:transparent;border-radius:var(--radius-full);
+  font-size:var(--text-sm);color:var(--color-text-secondary);
+}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--color-text-tertiary);}
+.chip.is-on{background:var(--color-primary-light);color:var(--color-text);font-weight:600;}
+.act{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 12px;border:none;background:var(--color-background);
+  border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--color-text-secondary);
+}
+.act.is-on{background:var(--color-primary);color:#fff;}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   四款左栏方案公共：.rail + .content 双列
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rail-layout{display:flex;gap:var(--space-xl);align-items:flex-start;}
+.rail{
+  flex-shrink:0;
+  position:sticky;top:calc(var(--header-height) + var(--space-md));
+  align-self:flex-start;
+  max-height:calc(100vh - var(--header-height) - var(--space-xl));
+  overflow:auto;
+}
+.rail__group{margin-bottom:var(--space-lg);}
+.rail__group:last-child{margin-bottom:0;}
+.rail__group-title{
+  font-size:var(--text-2xs);color:var(--color-text-tertiary);
+  letter-spacing:1px;margin:0 0 var(--space-xs);padding-left:var(--space-sm);
+}
+.rail__stack{display:flex;flex-direction:column;gap:var(--space-2xs);}
+.rail-item{
+  display:flex;align-items:center;gap:var(--space-sm);
+  width:100%;text-align:left;
+  padding:8px var(--space-sm);border:none;background:transparent;
+  border-radius:var(--radius-md);
+  font-size:var(--text-sm);color:var(--color-text-secondary);
+  transition:background var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
+}
+.rail-item:hover{background:var(--color-surface-hover);color:var(--color-text);}
+.rail-item.is-on{background:var(--color-primary);color:#fff;font-weight:600;}
+.rail-item.is-on:hover{background:var(--color-primary);color:#fff;}
+.rail-item__ico{width:var(--icon-sm);height:var(--icon-sm);flex-shrink:0;display:grid;place-items:center;}
+.rail-item__ico svg{width:100%;height:100%;}
+.rail-item__label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rail-item__cnt{
+  font-size:var(--text-2xs);padding:1px 6px;border-radius:var(--radius-full);
+  background:var(--color-background);color:var(--color-text-secondary);flex-shrink:0;
+}
+.rail-item.is-on .rail-item__cnt{background:rgba(255,255,255,.22);color:#fff;}
+.rail__sep{height:1px;background:var(--color-border-light);margin:var(--space-sm) 0;}
+.content{flex:1;min-width:0;}
+.content__head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:var(--space-md);
+}
+.content__title{font-size:var(--text-xl);font-weight:600;margin:0;}
+.content__meta{font-size:var(--text-xs);color:var(--color-text-tertiary);}
+
+/* ── 方案 A：单列竖排（rail 200px） ─────────────────────────────────────── */
+.scheme-a .rail{width:200px;}
+
+/* ── 方案 B：精简 rail 168px + 筛选留在内容顶栏 ─────────────────────────── */
+.scheme-b .rail{width:168px;}
+.scheme-b .content__filters{
+  display:flex;align-items:center;gap:var(--space-xs);
+  margin-bottom:var(--space-md);flex-wrap:wrap;
+}
+
+/* ── 方案 C：分组卡片式 rail 232px（设置页风格，唯一保留四件套的场景）────── */
+.scheme-c .rail{width:232px;}
+.scheme-c .rail__card{
+  background:var(--color-surface);
+  border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);      /* ← 与设置页 .settings-desktop-card 同源四件套 */
+  padding:var(--space-md) var(--space-sm);
+  margin-bottom:var(--space-md);
+}
+.scheme-c .rail__card:last-child{margin-bottom:0;}
+
+/* ── 方案 D：可折叠 rail 224px ↔ 56px ─────────────────────────────────── */
+.scheme-d .rail{
+  width:224px;
+  transition:width var(--dur-fast) var(--ease-standard);
+}
+.scheme-d .rail[data-collapsed="true"]{width:56px;}
+.scheme-d .rail[data-collapsed="true"] .rail-item__label,
+.scheme-d .rail[data-collapsed="true"] .rail-item__cnt,
+.scheme-d .rail[data-collapsed="true"] .rail__group-title{display:none;}
+.scheme-d .rail[data-collapsed="true"] .rail-item{justify-content:center;padding:8px 0;}
+.scheme-d .rail-toggle{
+  display:flex;align-items:center;justify-content:flex-end;
+  margin-bottom:var(--space-sm);
+}
+.scheme-d .rail-toggle button{
+  width:26px;height:26px;border:none;background:var(--color-background);
+  border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--color-text-secondary);
+}
+
+/* ── 历史页：算珠时间轴（现状在内容区左缘 sticky 72–96px）───────────────── */
+.history-body{display:flex;gap:var(--space-md);align-items:flex-start;}
+.timeline{
+  flex-shrink:0;position:sticky;top:calc(var(--header-height) + var(--space-md));
+  width:84px;height:420px;position:relative;align-self:flex-start;
+}
+.timeline__rail{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--color-border);transform:translateX(-50%);}
+.timeline__bead{
+  position:absolute;left:0;width:100%;height:24px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  border:none;background:transparent;font-size:var(--text-2xs);color:var(--color-text-tertiary);
+  padding:0;
+}
+.timeline__bead .dot{width:8px;height:8px;border-radius:50%;background:var(--color-border);flex-shrink:0;}
+.timeline__bead.is-on .dot{background:var(--color-primary);}
+.timeline__bead.is-on{color:var(--color-text);font-weight:600;}
+.timeline__bead .lbl{white-space:nowrap;}
+.group-head{
+  font-size:var(--text-sm);font-weight:600;margin:0 0 var(--space-sm);
+  display:flex;align-items:center;gap:var(--space-xs);
+}
+.group-head .n{font-size:var(--text-2xs);color:var(--color-text-tertiary);font-weight:400;}
+
+/* ── 卡片 ─────────────────────────────────────────────────────────────── */
+.grid{
+  display:grid;gap:var(--grid-gap);
+  grid-template-columns:repeat(var(--card-cols),minmax(0,1fr));
+}
+.grid--continue{grid-template-columns:repeat(var(--continue-cols),minmax(0,1fr));}
+.card{min-width:0;}
+.card__poster{
+  position:relative;width:100%;aspect-ratio:2/3;border-radius:var(--radius-md);
+  background:linear-gradient(150deg,#d8d8d8,#b4b4b4);overflow:hidden;
+}
+.card--wide .card__poster{aspect-ratio:16/9;background:linear-gradient(150deg,#cfd8e3,#a9b6c6);}
+.card__poster span{
+  position:absolute;left:8px;bottom:8px;color:#fff;font-size:var(--text-2xs);
+  text-shadow:0 1px 2px rgba(0,0,0,.5);
+}
+.card__title{
+  font-size:var(--text-sm);margin:var(--space-xs) 0 0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.card__meta{font-size:var(--text-2xs);color:var(--color-text-tertiary);margin-top:2px;}
+.card__bar{height:3px;border-radius:2px;background:var(--color-border-light);margin-top:5px;overflow:hidden;}
+.card__bar i{display:block;height:100%;background:var(--color-primary);}
+
+/* ── 方案说明脚注 ─────────────────────────────────────────────────────── */
+.demo-foot{
+  margin:var(--space-xl) 0 0;padding:var(--space-md) var(--space-lg);
+  background:var(--color-surface);border-radius:var(--radius-md);
+  font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.8;
+}
+.demo-foot ul{margin:var(--space-xs) 0 0;padding-left:1.4em;}
+.hidden{display:none !important;}
+</style>
+</head>
+<body data-page-node-id="QzEL48TDb0XRmhnR1mtVCY">
+
+<div class="demo-topbar" data-page-node-id="uonJlvozHDjfm1jal8aAKw">
+  <span class="demo-brand" data-page-node-id="Qzup97doRfJoscYJXgBg84">KinoTV</span>
+  <div class="demo-switch" data-page-node-id="N9fc6YeoUnvTDGOqRbhvSt">
+    <span class="demo-switch__label" data-page-node-id="gx2JOHw0wStMof54iJVaSE">方案</span>
+    <div class="demo-seg" id="segScheme" data-page-node-id="548vTEIzFGbR6rbzoTmsbq">
+      <button data-v="now" class="is-on" data-page-node-id="nAoAB53iCf5ntNiFb5gPGL">现状</button>
+      <button data-v="a" data-page-node-id="9Y8eyWaQHDppVhqnTjnbsa">A 单列竖排</button>
+      <button data-v="b" data-page-node-id="45M9XIxn020Bg3QGfu6JbV">B 精简双区</button>
+      <button data-v="c" data-page-node-id="lHn5q0rVYoB3nOHqxcjIC5">C 分组卡片</button>
+      <button data-v="d" data-page-node-id="ynIvuZlfsBfqLqHo31ngaH">D 可折叠</button>
+    </div>
+  </div>
+  <div class="demo-switch" data-page-node-id="xvKVuPVKeBvwYyjabfaNPs">
+    <span class="demo-switch__label" data-page-node-id="wAuPOJ4WAbIqplNUSq6nTY">页面</span>
+    <div class="demo-seg" id="segPage" data-page-node-id="HNkS51LknfHAFQ6FoIBS9H">
+      <button data-v="collections" class="is-on" data-page-node-id="6FeQQToo6GS0CmXtrZvavD">收藏页</button>
+      <button data-v="history" data-page-node-id="X3l3H0BNOvJ8NJJypqG2xS">历史页</button>
+    </div>
+  </div>
+</div>
+
+<p class="demo-note" data-page-node-id="QUp0t7cCwtDkDgBZUM2jl7">
+  <b data-page-node-id="bKLosN0DoqGa91eJXNEFLP">Demo 说明</b>：本页为桌面端（≥1440）「把卡片上方内容移到页面左侧」的四款候选布局，卡片尺寸、间距、字号均取
+  <b data-page-node-id="I5JUmyNY7MNw8wlaIKuewK">variables.css 在 1440px 视口的真实读数</b>（段2 递减曲线），非杜撰值。<br  data-page-node-id="UwStexQ1jexHnoxxrdf4Mv"/>
+  关键冲突点：<b data-page-node-id="i3yzbDNRD8HCYFsZOQCOQs">历史页已有一条 sticky 算珠时间轴</b>（<code data-page-node-id="RvJlTLCTE4E74QzHfLb9pQ">.history-timeline</code>，72–96px），
+  四款方案对它的安置方式各不相同——A/C 让时间轴退到内容区左缘保持现状，B/D 把它并入 rail 底部。历史页请重点看这一列。
+</p>
+
+<div class="demo-stage" id="stage" data-page-node-id="0nioTSEQwvHNyvTe3WgFEG"></div>
+
+<div class="demo-foot" data-page-node-id="6H6qVJjulgKTsbg2kDZv9V">
+  <b data-page-node-id="Lxux4jiJ2PGRYrZtguAKcq">四款方案速览</b>
+  <ul data-page-node-id="RLWUXkCC10Axw1Y96bq9e2">
+    <li data-page-node-id="tocL2irnrDQaeKvFtmgl14"><b data-page-node-id="lNPS0nPimmmFtJ3J7un8Uv">A 单列竖排</b>：rail 200px，分类 / 状态 / 排序 / 管理全部竖排堆叠。信息层级最扁平，改动最小，但 rail 高度随条目线性增长。</li>
+    <li data-page-node-id="jtWc5YDnIH0AUFRFrEhljX"><b data-page-node-id="kx3BcyDYt34Rjbq2R76AGh">B 精简双区</b>：rail 168px 只放分类 tab + 管理按钮；状态 chips 与排序留在内容区顶栏。rail 短、内容区宽，历史页时间轴并入 rail 底部。</li>
+    <li data-page-node-id="MizFuHiIS8HfzpgXmR5hRL"><b data-page-node-id="saPCuDsM1uSwVNuGHLPqNY">C 分组卡片</b>：rail 232px，分组标题 + 卡片容器（唯一沿用 border+radius+surface+shadow 四件套的场景，与设置页 <code data-page-node-id="iewb7IsQogS7TNBJJEy2nG">.settings-desktop-card</code> 同源）。层次最强，但 rail 最占宽。</li>
+    <li data-page-node-id="oALv5KkwBZd7lrCyFwuhJi"><b data-page-node-id="x031Suz0bhuWXyWEyHhJ0f">D 可折叠</b>：rail 224px ↔ 56px 图标条，用户可自行让位给内容区。灵活度最高，需要额外的状态持久化。</li>
+  </ul>
+</div>
+
+<script>
+/* ── 图标 ─────────────────────────────────────────────────────────────── */
+const I = {
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg>',
+  tv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 3l4 4 4-4"/></svg>',
+  slider:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="2" fill="currentColor" stroke="none"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 12l3 3 7-7"/></svg>',
+  sort:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4M17 20l-3-3M17 20l3-3"/></svg>',
+  chevron:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>',
+};
+
+/* ── 假数据 ───────────────────────────────────────────────────────────── */
+const TABS = [
+  {key:'all',   label:'综合',  icon:I.grid, count:88},
+  {key:'video', label:'视频',  icon:I.play, count:64},
+  {key:'iptv',  label:'IPTV',  icon:I.tv,   count:24},
+];
+const STATUS = [
+  {key:'all',       label:'全部'},
+  {key:'unwatched', label:'未观看', color:'#3b82f6'},
+  {key:'watching',  label:'正在看', color:'#d97706'},
+  {key:'watched',   label:'已看完', color:'#22c55e'},
+];
+const SORT = '排序：最近收藏';
+const ACTS = [
+  {key:'filter', label:'更多筛选', icon:I.slider},
+  {key:'clear',  label:'清空收藏', icon:I.trash},
+  {key:'batch',  label:'批量管理', icon:I.check},
+];
+const TITLES = ['沙丘','奥本海默','流浪地球','繁花','三体','教父','银翼杀手','千与千寻','星际穿越','疯狂麦克斯','寄生虫','爱乐之城','布达佩斯大饭店','蝙蝠侠','蜘蛛侠','罪夜之奔','风骚律师','切尔诺贝利','黑镜','瑞克和莫蒂'];
+const CHANNELS = ['CCTV-1 综合','CCTV-5 体育','湖南卫视','浙江卫视','江苏卫视','东方卫视','北京卫视','广东体育'];
+const GROUPS = [
+  {key:'今天', n:6}, {key:'昨天', n:9}, {key:'本周', n:14}, {key:'本月', n:21}, {key:'更早', n:14},
+];
+
+function posterCard(i){
+  const t = TITLES[i % TITLES.length];
+  const year = 2015 + (i % 10);
+  return `<div class="card">
+    <div class="card__poster"><span>${year}</span></div>
+    <p class="card__title">${t}</p>
+    <p class="card__meta">电影 · ★ ${(7 + (i % 30) / 10).toFixed(1)}</p>
+  </div>`;
+}
+function wideCard(i){
+  const t = i % 4 === 3 ? CHANNELS[i % CHANNELS.length] : TITLES[(i * 3) % TITLES.length];
+  const pct = 10 + (i * 13) % 85;
+  return `<div class="card card--wide">
+    <div class="card__poster"><span>${i % 4 === 3 ? '直播' : '第 ' + ((i % 12) + 1) + ' 集'}</span></div>
+    <p class="card__title">${t}</p>
+    <p class="card__meta">观看到 ${pct}%</p>
+    <div class="card__bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+function grid(n, wide){
+  const cells = [];
+  for (let i = 0; i < n; i++) cells.push(wide ? wideCard(i) : posterCard(i));
+  return `<div class="grid${wide ? ' grid--continue' : ''}">${cells.join('')}</div>`;
+}
+
+/* ── 现状：横向一行 ───────────────────────────────────────────────────── */
+function asideRow(){
+  return `<div class="record-aside">
+    <div class="tabs">
+      ${TABS.map(t => `<button class="tab${t.key === 'all' ? ' is-on' : ''}">
+        <span class="rail-item__ico">${t.icon}</span>${t.label}<span class="cnt">${t.count}</span>
+      </button>`).join('')}
+    </div>
+    <span class="divider"></span>
+    ${STATUS.map((s, i) => `<button class="chip${i === 0 ? ' is-on' : ''}">
+      <span class="dot" style="background:${s.color || 'var(--color-text-tertiary)'}"></span>${s.label}
+    </button>`).join('')}
+    <button class="chip">${I.sort.replace('<svg', '<svg style="width:13px;height:13px"')} ${SORT}</button>
+    <span style="flex:1"></span>
+    ${ACTS.map(a => `<button class="act"><span class="rail-item__ico" style="width:14px;height:14px">${a.icon}</span>${a.label}</button>`).join('')}
+  </div>`;
+}
+
+/* ── rail 片段构造 ────────────────────────────────────────────────────── */
+function railItem(icon, label, count, on){
+  return `<button class="rail-item${on ? ' is-on' : ''}">
+    <span class="rail-item__ico">${icon}</span>
+    <span class="rail-item__label">${label}</span>
+    ${count != null ? `<span class="rail-item__cnt">${count}</span>` : ''}
+  </button>`;
+}
+function railTabs(){
+  return `<div class="rail__stack">${TABS.map(t => railItem(t.icon, t.label, t.count, t.key === 'all')).join('')}</div>`;
+}
+function railStatus(){
+  return `<div class="rail__stack">${STATUS.map((s, i) => railItem(
+    `<span class="dot" style="width:8px;height:8px;border-radius:50%;background:${s.color || 'var(--color-text-tertiary)'}"></span>`,
+    s.label, null, i === 0)).join('')}</div>`;
+}
+function railSort(){
+  return `<div class="rail__stack">${railItem(
+    `<span style="width:14px;height:14px;display:block">${I.sort}</span>`, SORT, null, false)}</div>`;
+}
+function railActs(){
+  return `<div class="rail__stack">${ACTS.map(a => railItem(a.icon, a.label, null, false)).join('')}</div>`;
+}
+function railBeads(){
+  const step = 62;
+  return `<div class="rail__stack" style="gap:0">
+    ${GROUPS.map((g, i) => `<button class="rail-item${i === 0 ? ' is-on' : ''}" style="padding:6px var(--space-sm)">
+      <span class="dot" style="width:7px;height:7px;border-radius:50%;background:${i === 0 ? 'var(--color-primary)' : 'var(--color-border)'}"></span>
+      <span class="rail-item__label">${g.key}</span>
+      <span class="rail-item__cnt">${g.n}</span>
+    </button>`).join('')}
+  </div>`;
+}
+
+/* ── 内容区 ───────────────────────────────────────────────────────────── */
+function contentCollections(showTopFilters){
+  return `<div class="content">
+    ${showTopFilters ? `<div class="content__filters">
+      ${STATUS.map((s, i) => `<button class="chip${i === 0 ? ' is-on' : ''}"><span class="dot" style="background:${s.color || 'var(--color-text-tertiary)'}"></span>${s.label}</button>`).join('')}
+      <span class="divider"></span>
+      <button class="chip">${SORT}</button>
+    </div>` : ''}
+    <div class="content__head">
+      <h3 class="content__title">影视</h3>
+      <span class="content__meta">共 64 条</span>
+    </div>
+    ${grid(14, false)}
+    <div class="content__head" style="margin-top:var(--space-xl)">
+      <h3 class="content__title">直播</h3>
+      <span class="content__meta">共 24 个频道</span>
+    </div>
+    ${grid(8, false)}
+  </div>`;
+}
+function contentHistory(keepTimeline){
+  const groups = GROUPS.slice(0, 3).map(g => `
+    <div style="margin-bottom:var(--space-lg)">
+      <h4 class="group-head">${g.key}<span class="n">${g.n} 条</span></h4>
+      ${grid(Math.min(g.n, 5), true)}
+    </div>`).join('');
+  const timeline = `<div class="timeline">
+    <span class="timeline__rail"></span>
+    ${GROUPS.map((g, i) => `<button class="timeline__bead${i === 0 ? ' is-on' : ''}" style="top:${i * 62}px">
+      <span class="dot"></span><span class="lbl">${g.key}</span>
+    </button>`).join('')}
+  </div>`;
+  return `<div class="content">
+    <div class="content__head">
+      <h3 class="content__title">观看历史</h3>
+      <span class="content__meta">共 64 条</span>
+    </div>
+    ${keepTimeline
+      ? `<div class="history-body">${timeline}<div style="flex:1;min-width:0">${groups}</div></div>`
+      : groups}
+  </div>`;
+}
+
+/* ── 方案渲染 ─────────────────────────────────────────────────────────── */
+const DESCR = {
+  now:'现状基线：所有控制项挤在卡片上方一行，1440 下与 7 列网格争抢横向空间；切 tab / 改筛选都要横向扫视。',
+  a:'rail 200px：分类、状态、排序、管理全部竖排，一次扫视即可定位。历史页时间轴保持内容区左缘 sticky（三栏）。',
+  b:'rail 168px 只放分类 + 管理；状态 chips 与排序留在内容顶栏（改动最小）。历史页时间轴并入 rail 底部，消除第三栏。',
+  c:'rail 232px 分组卡片式：唯一沿用四件套（border+radius+surface+shadow）的方案，与设置页 .settings-desktop-card 同源。',
+  d:'rail 224px ↔ 56px 可折叠：用户自主让位给内容区。历史页时间轴并入 rail 底部。',
+};
+
+function render(){
+  const scheme = document.querySelector('#segScheme .is-on').dataset.v;
+  const page = document.querySelector('#segPage .is-on').dataset.v;
+  const isHistory = page === 'history';
+  const stage = document.getElementById('stage');
+  const body = isHistory ? contentHistory(scheme === 'a' || scheme === 'c' || scheme === 'now')
+                         : contentCollections(scheme === 'b');
+
+  let inner;
+  if (scheme === 'now') {
+    inner = `<div class="layout-now">${asideRow()}${body}</div>`;
+  } else if (scheme === 'a') {
+    inner = `<div class="rail-layout scheme-a">
+      <aside class="rail">
+        <div class="rail__group">${railTabs()}</div>
+        <span class="rail__sep"></span>
+        <div class="rail__group">${railStatus()}</div>
+        <div class="rail__group">${railSort()}</div>
+        <span class="rail__sep"></span>
+        <div class="rail__group">${railActs()}</div>
+      </aside>
+      ${body}
+    </div>`;
+  } else if (scheme === 'b') {
+    inner = `<div class="rail-layout scheme-b">
+      <aside class="rail">
+        <div class="rail__group">${railTabs()}</div>
+        <span class="rail__sep"></span>
+        <div class="rail__group">${railActs()}</div>
+        ${isHistory ? `<span class="rail__sep"></span>
+          <div class="rail__group"><p class="rail__group-title">时间轴</p>${railBeads()}</div>` : ''}
+      </aside>
+      ${body}
+    </div>`;
+  } else if (scheme === 'c') {
+    inner = `<div class="rail-layout scheme-c">
+      <aside class="rail">
+        <div class="rail__card">
+          <p class="rail__group-title">分类</p>
+          ${railTabs()}
+        </div>
+        <div class="rail__card">
+          <p class="rail__group-title">状态</p>
+          ${railStatus()}
+          <span class="rail__sep"></span>
+          <p class="rail__group-title">排序</p>
+          ${railSort()}
+        </div>
+        <div class="rail__card">
+          <p class="rail__group-title">管理</p>
+          ${railActs()}
+        </div>
+      </aside>
+      ${body}
+    </div>`;
+  } else {
+    inner = `<div class="rail-layout scheme-d">
+      <aside class="rail" id="railD" data-collapsed="false">
+        <div class="rail-toggle"><button id="railToggle" title="折叠/展开" style="width:26px;height:26px">${I.chevron.replace('<svg', '<svg style="width:14px;height:14px"')}</button></div>
+        <div class="rail__group">${railTabs()}</div>
+        <span class="rail__sep"></span>
+        <div class="rail__group">${railStatus()}</div>
+        <div class="rail__group">${railSort()}</div>
+        <span class="rail__sep"></span>
+        <div class="rail__group">${railActs()}</div>
+        ${isHistory ? `<span class="rail__sep"></span>
+          <div class="rail__group"><p class="rail__group-title">时间轴</p>${railBeads()}</div>` : ''}
+      </aside>
+      ${body}
+    </div>`;
+  }
+
+  stage.innerHTML = `
+    <div class="demo-scheme-head">
+      <h2>${scheme === 'now' ? '现状基线' : '方案 ' + scheme.toUpperCase()}</h2>
+      <p>${DESCR[scheme]}</p>
+    </div>
+    ${inner}`;
+
+  const tg = document.getElementById('railToggle');
+  if (tg) tg.onclick = () => {
+    const rail = document.getElementById('railD');
+    rail.dataset.collapsed = rail.dataset.collapsed === 'true' ? 'false' : 'true';
+    tg.style.transform = rail.dataset.collapsed === 'true' ? 'rotate(180deg)' : '';
+  };
+}
+
+document.querySelectorAll('.demo-seg').forEach(seg => {
+  seg.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    seg.querySelectorAll('button').forEach(b => b.classList.remove('is-on'));
+    btn.classList.add('is-on');
+    render();
+  });
+});
+render();
+</script>
+</body>
+</html>

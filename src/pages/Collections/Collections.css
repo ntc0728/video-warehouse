@@ -39,8 +39,9 @@
 }
 
 /* ── 加载态：player-loading-wrap 在 Player 页为 absolute 叠加层，
-    收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ──────── */
-.collection-page .record-main > .player-loading-wrap {
+    收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ────────
+    2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
+.collection-page .record-main > .record-content > .player-loading-wrap {
   position: static;
   display: flex;
   flex: 1 1 0;
@@ -50,9 +51,10 @@
   min-height: 0;
 }
 
-/* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ─────────────────────────── */
+/* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ───────────────────────────
+   2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
 .collection-page > .empty-state-wrapper,
-.collection-page .record-main > .empty-state-wrapper {
+.collection-page .record-main > .record-content > .empty-state-wrapper {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;

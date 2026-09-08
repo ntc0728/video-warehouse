@@ -21,9 +21,11 @@
   pointer-events: none;
 }
 
-/* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ─────────────────────────── */
+/* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ───────────────────────────
+   2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，
+   故 .empty-state-wrapper 不再是 .record-main 的直接子节点，路径需补 .record-content。 */
 .history-page > .empty-state-wrapper,
-.history-page .record-main > .empty-state-wrapper {
+.history-page .record-main > .record-content > .empty-state-wrapper {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -402,6 +404,23 @@ html[data-device="tv"] .history-content .history-group-body .history-grid {
   .history-body {
     padding: 0 var(--space-sm);
   }
+
+  /* 时间节点吸附（2026-09-08 用户指令）：向下滚动时，当前分组的时间节点行
+     固定在滚动容器顶部；滚出该分组范围后自动释放（下一组节点顶上）——
+     sticky 以最近滚动祖先为参照、在父级 .history-group 盒内滑动，天然满足
+     「滑到哪个时间点固定、滑出范围不固定」。
+     默认背景透明（未吸附时节点行与页面融为一体，无视觉作用）；
+     仅当 sticky 吸附态时（JS useLayoutEffect 检测加 .is-stuck class）才显示背景，
+     遮住滚过的卡片。 */
+  .history-page .history-node-col {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: transparent;
+  }
+  .history-page .history-node-col.is-stuck {
+    background: var(--color-background);
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -411,6 +430,17 @@ html[data-device="tv"] .history-content .history-group-body .history-grid {
   html[data-device="app"] .history-body {
     padding: 0 var(--space-sm);
   }
+
+/* app 端同款时间节点吸附（2026-09-08） */
+html[data-device="app"] .history-page .history-node-col {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: transparent;
+}
+html[data-device="app"] .history-page .history-node-col.is-stuck {
+  background: var(--color-background);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    融合 Tab（综合/视频/IPTV）+ 操作按钮组样式已迁至 RecordShell.css

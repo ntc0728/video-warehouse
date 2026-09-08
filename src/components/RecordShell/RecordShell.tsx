@@ -51,6 +51,11 @@ interface RecordShellProps {
   actions?: ReactNode;
   /** 页面类名（collection-page / history-page），承接页面级布局样式 */
   pageClassName?: string;
+  /** 内容区标题（demo-record-left-rail 2026-09-08 方案 A 同款 content__head）。
+   *  仅 ≥1280 桌面 rail 布局显示（移动/app/TV 不渲染视觉，保持原状） */
+  contentTitle?: string;
+  /** 标题右侧的条数元信息（如「共 64 条」），可省略 */
+  contentMeta?: string;
   /** 外部传入的容器 ref（用于 TV 空间导航） */
   containerRef?: Ref<HTMLDivElement>;
   /** 批量管理模式 */
@@ -153,6 +158,8 @@ export default function RecordShell({
   overflowActions,
   actions,
   pageClassName = '',
+  contentTitle,
+  contentMeta,
   containerRef,
   isBatchMode = false,
   children,
@@ -236,7 +243,22 @@ export default function RecordShell({
             )}
           </aside>
 
-          {children}
+          {/* 2026-09-08 桌面端左栏 rail 改造：把 {children} 包进 .record-content，
+              使 .record-main 在 ≥1280 用 grid 时只有「aside / content」两个 cell，
+              避免 RecordFilterPanel / sentinel / 批量栏 / 弹窗等元素各自占一个 grid cell 导致布局错乱。
+              该层同时延续「父链 flex 拉伸」约定（空状态/加载态依赖它整页居中）。 */}
+          <div className="record-content">
+            {/* demo 同款内容区标题（仅 ≥1280 rail 布局显示，见 RecordShell.css） */}
+            {contentTitle && (
+              <div className="record-content-head">
+                <h3 className="record-content-head__title">{contentTitle}</h3>
+                {contentMeta !== undefined && (
+                  <span className="record-content-head__meta">{contentMeta}</span>
+                )}
+              </div>
+            )}
+            {children}
+          </div>
         </div>
       </div>
     </div>

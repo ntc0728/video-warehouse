@@ -26,8 +26,6 @@ import { useCmsSourceGuard } from '@/hooks/useCmsSourceGuard';
 import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
 
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
-import { getCachedEPGData, buildEPGChannelIndex } from '@/services/epgService';
-import type { EPGChannelIndex } from '@/services/epgService';
 import { resolveChannelLogoCandidates } from '@/services/channelLogo';
 import { buildChannelPlayUrl } from '@/services/iptvService';
 import type { Video } from '@/types/video';
@@ -174,7 +172,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 
 export default function HistoryPage() {
   const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
-  const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord, channelAvailability } = useIPTVStore();
+  const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
@@ -213,20 +211,6 @@ export default function HistoryPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<ConfirmType>('single');
   const [pendingDelete, setPendingDelete] = useState<{ id: string; kind: 'video' | 'iptv' } | null>(null);
-
-  // EPG 频道预索引（零网络读 IndexedDB 缓存）：IPTV 历史卡台标二级回退（EPG XMLTV icon）
-  const [epgIndex, setEpgIndex] = useState<EPGChannelIndex | undefined>(undefined);
-  useEffect(() => {
-    let disposed = false;
-    getCachedEPGData()
-      .then((data) => {
-        if (!disposed && data.channels.length > 0) {
-          setEpgIndex(buildEPGChannelIndex(data.channels));
-        }
-      })
-      .catch(() => { /* 无 EPG 缓存时跳过，卡片走字母占位 */ });
-    return () => { disposed = true; };
-  }, []);
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('history', undefined, true, { restoreFrom: ['play'] });
@@ -382,10 +366,13 @@ export default function HistoryPage() {
 
   /** 当前列表：mainTab 混合视频 + IPTV（按 _histTime），或单类。排序：时间/名称/评分 */
   const currentList = useMemo<(HistoryVideoItem | HistoryChannelItem)[]>(() => {
+    // 2026-09-08 用户指令：综合 tab 下切「已观看/未观看」时不混入 IPTV 数据
+    // （IPTV 记录无观看进度概念，参与状态筛选只会产出误导性空态/错位计数）。
     const list: (HistoryVideoItem | HistoryChannelItem)[] =
       mainTab === 'video' ? [...historyVideos]
         : mainTab === 'iptv' ? [...iptvHistory]
-          : [...historyVideos, ...iptvHistory];
+          : statusFilter === 'all' ? [...historyVideos, ...iptvHistory]
+            : [...historyVideos];
     const titleOf = (item: HistoryVideoItem | HistoryChannelItem) =>
       ('title' in item ? (item as HistoryVideoItem).title : (item as HistoryChannelItem).name) || '';
     const ratingOf = (item: HistoryVideoItem | HistoryChannelItem) =>
@@ -410,7 +397,7 @@ export default function HistoryPage() {
         list.sort((a, b) => b._histTime - a._histTime);
     }
     return list;
-  }, [mainTab, historyVideos, iptvHistory, sortBy]);
+  }, [mainTab, historyVideos, iptvHistory, sortBy, statusFilter]);
 
   const currentListLenRef = useRef(currentList.length);
   currentListLenRef.current = currentList.length;
@@ -586,6 +573,47 @@ export default function HistoryPage() {
     };
   }, [updateBeadPositions, scheduleBeadUpdate, scrollContainerRef, location.pathname, groupedKeys]);
 
+  // 移动端时间节点吸附检测（2026-09-08 用户指令）：
+  // .history-node-col 默认背景透明（未吸附时与页面融为一体，无视觉作用），
+  // 仅当 sticky 处于吸附态（rect.top <= scrollerTop + 1）时才加 .is-stuck class 显示背景，
+  // 遮住滚过的卡片。CSS 只在 @media (width <= 767px) 和 html[data-device="app"] 块生效，
+  // 故非移动端加了 is-stuck 也无视觉影响，effect 挂载/卸载开销可忽略。
+  useLayoutEffect(() => {
+    if (location.pathname !== '/history') return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const nodes = Array.from(
+      document.querySelectorAll<HTMLElement>('.history-page .history-node-col')
+    );
+    if (!nodes.length) return;
+
+    let raf: number | null = null;
+    const update = () => {
+      raf = null;
+      const scrollerTop = container.getBoundingClientRect().top;
+      for (const n of nodes) {
+        const stuck = n.getBoundingClientRect().top <= scrollerTop + 1;
+        n.classList.toggle('is-stuck', stuck);
+      }
+    };
+    const schedule = () => {
+      if (raf != null) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    container.addEventListener('scroll', schedule, { passive: true });
+    const ro = new ResizeObserver(schedule);
+    ro.observe(container);
+
+    return () => {
+      if (raf != null) cancelAnimationFrame(raf);
+      container.removeEventListener('scroll', schedule);
+      ro.disconnect();
+    };
+  }, [scrollContainerRef, groupedKeys, location.pathname]);
+
   const toggleSelect = (id: string) => setSelected((p) => {
     const n = new Set(p);
     if (n.has(id)) n.delete(id);
@@ -597,16 +625,16 @@ export default function HistoryPage() {
   // ── RecordCard 数据组装 ───────────────────────────────────────────────
   const iptvChannelMap = useMemo(() => new Map(iptvChannels.map((c) => [c.id, c])), [iptvChannels]);
 
-  /** 台标候选链（三级回退）：M3U tvg-logo → EPG icon → 在线台标库 */
+  /** 台标候选（iptv-org logos.json 单一来源，见 channelLogo.ts）；无 logo 走字母占位 */
   const iptvLogoCandidates = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const item of iptvHistory) {
       const ch = iptvChannelMap.get(item.id);
       const base = ch ?? { name: item.name, logo: item.logo, tvgId: undefined };
-      map.set(item.id, resolveChannelLogoCandidates(base, undefined, undefined, epgIndex));
+      map.set(item.id, resolveChannelLogoCandidates(base));
     }
     return map;
-  }, [iptvHistory, iptvChannelMap, epgIndex]);
+  }, [iptvHistory, iptvChannelMap]);
 
   const buildIptvNav = useCallback((item: HistoryChannelItem): { to: string; state: Record<string, unknown> } => {
     const ch = iptvChannelMap.get(item.id);
@@ -650,15 +678,12 @@ export default function HistoryPage() {
       logoCandidates: candidates.slice(1),
       source: ch.group,
       status: undefined,
-      // 后台预检测结果（channelAvailability）：false → RecordCard 红色「无法观看」；
-      // undefined（未检测）→ 默认 LIVE。修复：此前漏传导致历史 iptv 卡恒显 LIVE（2026-09-03）
-      available: channelAvailability[ch.id],
       timeText,
       timeTitle,
       navigateTo: nav.to,
       navState: nav.state,
     };
-  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate, channelAvailability]);
+  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate]);
 
   // 根据确认类型执行删除
   const executeDelete = useCallback(() => {
@@ -741,6 +766,8 @@ export default function HistoryPage() {
     <RecordShell
       containerRef={pageRef}
       pageClassName="history-page"
+      contentTitle="观看历史"
+      contentMeta={`共 ${currentList.length} 条`}
       fusedCategories={fusedCategories}
       inlineFilter={{
         statusOptions: (['all', 'unfinished', 'finished'] as VideoStatus[]).map((k) => ({
