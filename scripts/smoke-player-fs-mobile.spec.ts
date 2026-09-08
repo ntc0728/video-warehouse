@@ -41,7 +41,8 @@ function playUrl(id: string) {
 /** 等播放器挂载并初始化 */
 async function waitPlayer(page: Page) {
   await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
-  await page.waitForTimeout(3500);
+  // 条件等待：播放器就绪（脱离 placeholder/loading 态）
+  await expect(page.locator('.up-universal-player:not(.up-placeholder)')).toBeVisible({ timeout: 10000 });
 }
 
 /** 让错误遮罩不拦截点击，使点击能落到播放器容器/视频层（用于点击交互测试） */
@@ -71,7 +72,8 @@ test.describe('PC 桌面 web 全屏 —— 整改不生效（需求①）', () =
     // 进入全屏（桌面底栏全屏按钮）。fullscreen prop 仅对真机移动端为真，
     // PC 桌面全屏应保留原桌面布局（不带移动端整改类）。
     await page.locator('.up-control-bar .up-header-fullscreen-btn').first().click();
-    await page.waitForTimeout(1000);
+    // 条件等待：PC 桌面全屏整改不生效（无移动端 fullscreen 类）
+    await expect(page.locator('.up-control-bar--fullscreen')).toHaveCount(0, { timeout: 1000 });
 
     // 核心回归：PC 桌面全屏不改 —— 无角落组、无右侧抽屉，且控制栏不带移动端整改类
     await expect(page.locator('.up-fs-corner')).toHaveCount(0);
@@ -163,13 +165,15 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });
 
-  test('PLAYER-FS-TOAST: 改子设置项后关抽屉 + 操作提示避让 header（需求①②）', async ({ page }) => {
+  test('PLAYER-FS-TOAST+M2: 改子项关抽屉+提示避让 + 点空白关抽屉+重进不自动开', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(playUrl(TEST_MOVIE_ID), { waitUntil: 'domcontentloaded' });
     await waitPlayer(page);
+    await allowClickThroughError(page);
 
     await enterFullscreen(page);
 
+    // —— TOAST 部分：改子设置项后关抽屉 + 操作提示避让 header ——
     // hasError 场景 header 常显（visible = isControlsVisible || hasError）
     const header = page.locator('.up-player-header');
     await expect(header).toHaveClass(/up-player-header-visible/);
@@ -195,10 +199,25 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     expect(headerBox).not.toBeNull();
     expect(toastBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 1);
 
-    // 遮挡锁定（真机回归：全屏下 toast portal 到 body 会被 top layer/伪全屏 z-index:9998 盖住）：
-    // fullscreen-api 档下 container 处于 top layer → center-toast 必须挂在 container 内部才可见
+    // 遮挡锁定：fullscreen-api 档下 container 处于 top layer → center-toast 必须挂在 container 内部才可见
     const inContainer = await toast.evaluate((el) => el.closest('.up-universal-player') != null);
     expect(inContainer).toBe(true);
+
+    // —— M2 部分：点空白关抽屉 + 重进全屏抽屉不自动开（需求④）——
+    await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
+    await page.waitForSelector('.up-fs-drawer', { state: 'visible', timeout: 5000 });
+    // 点播放器空白（视频区，避开右侧抽屉与右上角组）→ 抽屉关闭（force 穿透 .up-player-core 拦截层）
+    await page.locator('.up-player-video').click({ force: true });
+    // 条件等待：点空白关闭抽屉
+    await expect(page.locator('.up-fs-drawer')).toHaveCount(0, { timeout: 2300 });
+
+    // 退出全屏再进入：抽屉不应自动弹出（需手动点更多）
+    await page.locator('.up-control-bar--fullscreen .up-header-fullscreen-btn').click();
+    await expect(page.locator('.up-fs-corner')).toHaveCount(0);
+    await enterFullscreen(page);
+    await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
+    await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
+    await expect(page.locator('.up-fs-drawer')).toBeVisible();
 
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });
@@ -214,9 +233,8 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
 
     // 点 header 返回按钮 → 只退出全屏（角落组消失），URL 不变（不导航）
     await page.locator('.up-header-back').click();
-    await page.waitForTimeout(800);
-
-    await expect(page.locator('.up-fs-corner')).toHaveCount(0);
+    // 条件等待：退出全屏（角落组消失）
+    await expect(page.locator('.up-fs-corner')).toHaveCount(0, { timeout: 2800 });
     expect(page.url()).toBe(urlBefore);
 
     // 播放器仍在页面上（未离开播放页）
@@ -225,34 +243,6 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });
 
-  test('PLAYER-FS-M2: 点空白关抽屉 + 重进全屏抽屉不自动开（需求④）', async ({ page }) => {
-    const errors = collectErrors(page);
-    await page.goto(playUrl(TEST_MOVIE_ID), { waitUntil: 'domcontentloaded' });
-    await waitPlayer(page);
-    await allowClickThroughError(page);
-
-    await enterFullscreen(page);
-    await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
-    await page.waitForSelector('.up-fs-drawer', { state: 'visible', timeout: 5000 });
-
-    // 点播放器空白（视频区，避开右侧抽屉与右上角组）→ 抽屉关闭
-    // 用 force 穿透 .up-player-core 拦截层（仅绕过 Playwright actionability 检查，事件仍落到真实播放器处理器）
-    await page.locator('.up-player-video').click({ force: true });
-    await page.waitForTimeout(300);
-    await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
-
-    // 退出全屏再进入：抽屉不应自动弹出（需手动点更多）
-    await page.locator('.up-control-bar--fullscreen .up-header-fullscreen-btn').click();
-    await expect(page.locator('.up-fs-corner')).toHaveCount(0);
-    await enterFullscreen(page);
-    // 重进后抽屉默认关闭
-    await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
-    // 手动点更多才出现
-    await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
-    await expect(page.locator('.up-fs-drawer')).toBeVisible();
-
-    expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
-  });
 });
 
 test.describe('移动竖屏点击语义（需求④：已显→不隐藏，改暂停）', () => {
@@ -270,11 +260,9 @@ test.describe('移动竖屏点击语义（需求④：已显→不隐藏，改�
 
     // 单击播放器空白（视频区中心）；force 穿透 .up-player-core 拦截层
     await page.locator('.up-player-video').click({ force: true });
-    // 等待 click 处理器的 250ms 定时器结束
-    await page.waitForTimeout(450);
 
-    // 新逻辑：控制栏已显 → 切换播放/暂停，而非隐藏。故控制栏不应进入 hidden 态
-    await expect(bar).not.toHaveClass(/up-control-bar-hidden/);
+    // 新逻辑：控制栏已显 → 切换播放/暂停，而非隐藏。条件等待 250ms 定时器结束后控制栏不进入 hidden 态
+    await expect(bar).not.toHaveClass(/up-control-bar-hidden/, { timeout: 2450 });
 
     expect(errors, `页面存在报错：\n${errors.join('\n')}`).toEqual([]);
   });

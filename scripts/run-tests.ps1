@@ -25,7 +25,7 @@ if ($RealApi) {
 # ── UI 层：文件 → 测试文件（粗粒度，兜底） ──────────────────
 $uiTestMap = @{
     "src/pages/Home/**" = @("scripts/home.spec.ts")
-    "src/pages/Detail/**" = @("scripts/detail.spec.ts", "scripts/regression-detail.spec.ts")
+    "src/pages/Detail/**" = @("scripts/detail.spec.ts", "scripts/regression.spec.ts")
     "src/pages/Settings/**" = @("scripts/settings.spec.ts")
     "src/pages/Browse/**" = @("scripts/browse.spec.ts")
     "src/pages/Collections/**" = @("scripts/collections.spec.ts")
@@ -35,7 +35,7 @@ $uiTestMap = @{
     "src/pages/SourceChecker/**" = @("scripts/source-checker.spec.ts")
     "src/pages/Person/**" = @("scripts/person.spec.ts")
     "src/pages/Chart/**" = @("scripts/chart.spec.ts")
-    "src/pages/ProxySetup/**" = @("scripts/proxy-setup.spec.ts")
+    "src/pages/ProxySetup/**" = @("scripts/regression.spec.ts")
     "src/components/UniversalPlayer/**" = @("scripts/player.spec.ts", "scripts/iptv-player.spec.ts")
     "src/components/SearchBox/**" = @("scripts/browse.spec.ts")
     "src/components/RecordShell/**" = @("scripts/collections.spec.ts", "scripts/history.spec.ts")
@@ -51,11 +51,11 @@ $uiPrecisionMap = @{
     # ── Home 页面 ──
     "src/pages/Home/index.tsx" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-001|HOME-002|HOME-003|HOME-004|HOME-005|HOME-010|HOME-011|HOME-012|HOME-020|HOME-021|HOME-023|HOME-024|HOME-025|HOME-026|HOME-030|HOME-031|HOME-032|HOME-035|HOME-040|HOME-041|HOME-044|HOME-045|HOME-046|HOME-050|HOME-051|HOME-052|HOME-053|HOME-054|HOME-055|HOME-056|HOME-057|HOME-058"
+        grep = "HOME-001|HOME-002|HOME-003|HOME-004|HOME-005|HOME-010|HOME-011|HOME-012|HOME-020|HOME-022|HOME-030|HOME-031|HOME-035|HOME-040|HOME-041|HOME-045|HOME-046|HOME-055|HOME-056|HOME-057|HOME-058"
     }
     "src/pages/Home/Home.css" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-030|HOME-031|HOME-032|HOME-035|HOME-050|HOME-052|HOME-053|HOME-054|HOME-057|HOME-058"
+        grep = "HOME-030|HOME-031|HOME-035|HOME-057|HOME-058"
     }
     "src/pages/Home/continueItems.ts" = @{
         spec = @("scripts/home.spec.ts")
@@ -65,7 +65,7 @@ $uiPrecisionMap = @{
     # ── TMDBMovieRow ──
     "src/components/TMDBMovieRow/**" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-030|HOME-031|HOME-032|HOME-035|HOME-050|HOME-054|HOME-057|HOME-058"
+        grep = "HOME-030|HOME-031|HOME-035|HOME-057|HOME-058"
     }
 
     # ── UniversalPlayer ──
@@ -93,19 +93,19 @@ $uiPrecisionMap = @{
     }
     "src/pages/Browse/useBrowseData.ts" = @{
         spec = @("scripts/browse.spec.ts")
-        grep = "BROWSE-020|BROWSE-023|BROWSE-025|BROWSE-030|BROWSE-043|BROWSE-053|BROWSE-060"
+        grep = "BROWSE-020|BROWSE-023|BROWSE-025|BROWSE-030|BROWSE-060"
     }
     "src/pages/Browse/BrowseMobileBar.tsx" = @{
         spec = @("scripts/browse.spec.ts")
-        grep = "BROWSE-070|BROWSE-071|BROWSE-072|BROWSE-073|BROWSE-074|BROWSE-075|BROWSE-076|BROWSE-077"
+        grep = "BROWSE-070|BROWSE-071|BROWSE-072|BROWSE-074|BROWSE-077|BROWSE-078|BROWSE-079|BROWSE-080"
     }
     "src/pages/Browse/FilterBar/**" = @{
         spec = @("scripts/browse.spec.ts")
-        grep = "BROWSE-020|BROWSE-030|BROWSE-043|BROWSE-053|BROWSE-060|BROWSE-070|BROWSE-071"
+        grep = "BROWSE-020|BROWSE-030|BROWSE-060|BROWSE-070|BROWSE-071"
     }
     "src/pages/Browse/SortBar/**" = @{
         spec = @("scripts/browse.spec.ts")
-        grep = "BROWSE-025|BROWSE-030|BROWSE-043|BROWSE-053|BROWSE-060"
+        grep = "BROWSE-025|BROWSE-030|BROWSE-060"
     }
 
     # ── HeroBanner（轮播/缩略图/分类切换过渡 + 宽屏 HeroBili 卡）──
@@ -125,16 +125,16 @@ $uiPrecisionMap = @{
 
     # ── 全局壳（Layout/StickyHeader/SearchBox 影响所有页面首屏）──
     "src/components/Layout/**" = @{
-        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/cross-page.spec.ts", "scripts/regression-detail.spec.ts", "scripts/fix-2026-08.spec.ts", "scripts/ui-fixes.spec.ts")
+        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/cross-tab.spec.ts", "scripts/regression.spec.ts", "scripts/regression.spec.ts", "scripts/regression.spec.ts")
         grep = "1\.1|1\.3b|1\.5|2\.1|3\.1|4\.1|5\.1|6\.1|7\.1|8\.1|9\.1|10\.1|13\.1|13\.12|3\.17|桌面端|移动端"
     }
     "src/components/StickyHeader/**" = @{
-        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/ui-fixes.spec.ts")
+        spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/regression.spec.ts")
         grep = "1\.1|1\.5|2\.1|3\.1|4\.1|5\.1|6\.1|7\.1|8\.1|9\.1|10\.1|桌面端"
     }
     "src/components/SearchBox/**" = @{
-        spec = @("scripts/browse.spec.ts", "scripts/settings.spec.ts", "scripts/iptv.spec.ts", "scripts/cross-page.spec.ts", "scripts/ui-fixes.spec.ts")
-        grep = "2\.1|2\.2|6\.9|5\.9|13\.1|桌面端"
+        spec = @("scripts/browse.spec.ts", "scripts/settings.spec.ts", "scripts/iptv.spec.ts", "scripts/cross-tab.spec.ts", "scripts/regression.spec.ts")
+        grep = "2\.1|2\.2|6\.9|5\.9|跨页联动回归|桌面端"
     }
 
     # ── 卡片模块 ──
@@ -149,7 +149,7 @@ $uiPrecisionMap = @{
 
     # ── 收藏/历史共用 ──
     "src/components/RecordShell/**" = @{
-        spec = @("scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/global-fixes.spec.ts")
+        spec = @("scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/regression.spec.ts")
         grep = "7\.1|7\.6|8\.1|8\.5|收藏页动画"
     }
     "src/components/StatusTabs/**" = @{
@@ -165,7 +165,7 @@ $uiPrecisionMap = @{
 
     # ── IPTV ──
     "src/components/IPTVChannelCard/**" = @{
-        spec = @("scripts/iptv.spec.ts", "scripts/global-fixes.spec.ts")
+        spec = @("scripts/iptv.spec.ts", "scripts/regression.spec.ts")
         grep = "5\.1|5\.2|5\.10|IPTV 卡片"
     }
     "src/components/EPGProgramList/**" = @{
@@ -265,7 +265,7 @@ $testGroups = @{
     "regression" = @(
         "scripts/home.spec.ts",
         "scripts/detail.spec.ts",
-        "scripts/regression-detail.spec.ts",
+        "scripts/regression.spec.ts",
         "scripts/settings.spec.ts",
         "scripts/browse.spec.ts",
         "scripts/collections.spec.ts",
@@ -275,7 +275,7 @@ $testGroups = @{
         "scripts/source-checker.spec.ts",
         "scripts/iptv-player.spec.ts",
         "scripts/person.spec.ts",
-        "scripts/cross-page.spec.ts"
+        "scripts/cross-tab.spec.ts"
     )
 }
 
@@ -460,6 +460,8 @@ if ($matchedPlaywrightTests.Count -gt 0) {
         Write-Host "  grep filter: '$grepJoined'"
     }
 
+    # 绕过沙箱 delete-shim：清空注入的 NODE_OPTIONS（否则清理 outputDir 时 trash 失败假崩）
+    $env:NODE_OPTIONS = ""
     & pnpm exec playwright test @testArgs
 }
 
