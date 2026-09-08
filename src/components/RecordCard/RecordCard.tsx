@@ -40,8 +40,6 @@ export interface RecordCardItem {
   navState?: Record<string, unknown>;
   /** 跳转前拦截：返回 false 时阻止导航（如 CMS 源未启用） */
   onBeforeNavigate?: () => boolean;
-  /** IPTV 可看性（来自缓存）：true=可看 / false=无法观看 / undefined=未检测（默认按可看展示 LIVE） */
-  available?: boolean;
 }
 
 interface RecordCardProps {
@@ -110,11 +108,8 @@ const RecordCard = memo(function RecordCard({
     return () => io.disconnect();
   }, []);
 
-  // live 角标：可看=绿(LIVE) / 无法观看=红(无法观看)
-  const liveBadgeClass =
-    'record-card__live-badge ' +
-    (item.available === false ? 'is-unavailable' : 'is-available');
-  const liveBadgeText = item.available === false ? '无法观看' : 'LIVE';
+  // live 角标：常驻绿色 LIVE（可用性检测已移除）
+  const liveBadgeClass = 'record-card__live-badge is-available';
 
   const content = (
     <>
@@ -165,7 +160,7 @@ const RecordCard = memo(function RecordCard({
           />
         )}
         {/* LIVE 角标（仅 iptv 记录）：批量勾选框亦在左上角 → 批量模式隐藏本角标，避免重叠 */}
-        {!isVideo && !batchMode && <span className={liveBadgeClass}>{liveBadgeText}</span>}
+        {!isVideo && !batchMode && <span className={liveBadgeClass}>LIVE</span>}
         {hasProgress && (
           <div className="record-card__progress-overlay">
             <div className="record-card__progress-bar-wrap">

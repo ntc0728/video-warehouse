@@ -62,11 +62,14 @@ test.describe('5.2 频道分组筛选', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await page.waitForTimeout(5000);
 
-    // 预期结果: 分组标签存在
-    const hasGroups = await page.evaluate(() => {
-      return !!document.querySelector('.grouppicker__hot-tag, .grouppicker__hot-tags');
-    });
-    expect(hasGroups).toBeTruthy();
+    // 2026-09-08 IPTV 页大改：桌面端（默认 1280 视口）改为左栏固定分类 rail +
+    // 「更多台」多选源，GroupPicker（.grouppicker__hot-tag）仅保留在移动端/TV 分支
+    // → 桌面断言改为左栏分类条目存在（频道分类与更多台共用 .iptv-rail__item）。
+    // rail 在首屏 loading 门控（无数据全页 AppLoading）解除后渲染，
+    // 用 waitForSelector 代替固定等待保证数据就绪。
+    await page.waitForSelector('.iptv-rail__item', { timeout: 20000 });
+    const railItemCount = await page.locator('.iptv-rail__item').count();
+    expect(railItemCount).toBeGreaterThan(0);
   });
 
   test('IPTV-011: 分组折叠（超过 2 行折叠 + 展开/收起切换）', async ({ page }) => {

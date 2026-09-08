@@ -207,6 +207,16 @@
 
 /* ── Desktop & Large：放大品牌字 ─────────────────────────────── */
 @media (width >= 1024px) {
+  /* Inline 模式在桌面端不再套卡片外壳（边框/圆角/阴影/底色）：父容器已提供
+     卡片或页面底色，套壳会出现「卡中卡」。移动端保留（外壳是唯一视觉容器）。
+     TV 端（data-device="tv"）保持原状，避免大屏下 loading 失去边界感。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .app-loading--inline {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
   html:not([data-device="app"]) .app-loading {
   gap: var(--space-xl);
 }

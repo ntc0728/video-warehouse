@@ -701,7 +701,9 @@ html[data-device="app"] .action-btn__label {
    时间轴 CSS / JS（rAF 算珠）一律未改。
    红线：新增 @media 尺寸规则必须加 html:not([data-device="tv"]) 前缀，
    app 端恒保持现状横向一行（app 端逻辑未动）。
-   参考先例：Browse.css @media (width >= 1440px) 的 200px 左栏 grid 骨架。
+   参考先例：Browse.css @media (width >= 1024px) 的流体左栏 grid 骨架
+   （clamp(124px, 8.61vw, 224px)，2026-09-08 与设置页左栏同曲线）。
+   （2026-09-08 由 1440 下移到 1024，与 browse 新 UI 起点一致）。
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 1024px) {
   /* 仅作用于非 app / 非 tv 的桌面端；前缀保证不影响 TV 与 app 恒移动布局 */
@@ -773,6 +775,12 @@ html[data-device="app"] .action-btn__label {
        grid track 定义，作为 width 值整条被浏览器丢弃 → 回落到 ≥768 块的
        width:100%，导致 rail 占满整行。必须显式覆盖它。 */
     width: max-content;
+    /* 保底宽度：内容最多时（综合/视频 tab，含 3 状态 chip + 排序 + 3 操作按钮）
+       rail 自然宽度 ≈ 124px；IPTV tab 下 showInlineFilter=false 会让
+       record-inline-filter 整块不渲染（RecordShell.tsx:170），max-content 收缩到
+       ≈89px。加 min-width 锁定到内容多时的宽度，避免 rail 随 tab 切换宽度抖动。
+       内容更长时（如状态 chip 增加或 label 变长）rail 仍可扩张。 */
+    min-width: 124px;
     /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
        无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
        排序 + 3 按钮 < 500px），不会超视口，故保持 visible。

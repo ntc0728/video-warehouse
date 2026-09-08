@@ -1,20 +1,98 @@
 /**
  * IPTV 直播状态管理
- * 管理直播频道列表、分组、收藏、可用性检测、播放历史等核心功能
- * 支持从远程 M3U 播放列表加载频道，以及频道可用性批量检测
+ * 管理直播频道列表、分组、收藏、播放历史等核心功能
+ * 支持从远程 M3U 播放列表加载频道（多源聚合去重），以及「更多台」按源追加额外频道
+ *
+ * [2026-09-08] 可用性检测已整体移除（检测会真实拉流、产生大量无效请求），
+ * 相关字段/action 全部删除，卡片不再有「无法观看」标灰态。
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord } from '@/types/iptv';
-import { fetchAndParsePlaylist, checkChannelsAvailability } from '@/services/iptvService';
+import { fetchAndParsePlaylist, fetchSingleSourceChannels } from '@/services/iptvService';
+// iptv-org API 主干层（channels.json + streams.json + logos.json，2026-09-08 用户定稿）
+import { fetchIptvOrgChinaChannels, fetchCnDisplayNames, channelMatchKeys, matchLogoForChannel } from '@/services/iptvOrgService';
 import { PlaylistSourceType } from '@/types/iptv';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
+
+/**
+ * 本地源频道（「更多台」）台标补全：
+ * 一级 = logos.json 按名匹配（matchLogoForChannel）；匹配不到 → 二级 = iptv 源自带
+ * tvg-logo 兜底（2026-09-08 用户定稿）。无任一来源时 logo 为 undefined → 卡片字母占位。
+ */
+function withSourceLogo(list: IPTVChannel[]): IPTVChannel[] {
+  return list.map((ch) => ({ ...ch, logo: matchLogoForChannel(ch) ?? ch.logo }));
+}
+
+/** 逐源执行台标补全（bySource：源 id → 该源频道列表） */
+function withSourceLogoBySource(bySource: Record<string, IPTVChannel[]>): Record<string, IPTVChannel[]> {
+  const out: Record<string, IPTVChannel[]> = {};
+  for (const [id, list] of Object.entries(bySource)) out[id] = withSourceLogo(list);
+  return out;
+}
+
+/** 本地聚合源拉取结果类型（fetchAndParsePlaylist 返回值） */
+type LocalPlaylistResult = Awaited<ReturnType<typeof fetchAndParsePlaylist>>;
+
+/**
+ * iptv-org 主干 × 本地源合并（2026-09-08 方案 B）：
+ * 本地流命中同名 org 频道（normalizeName 双侧键匹配）→ 改用本地流（本地源优先）；
+ * 本地独有频道不进主干（只通过「更多台」按源展示）。
+ * 独立成纯函数：中文名后台增强（fetchCnDisplayNames）到达后用新 orgChannels 重放合并。
+ */
+function mergeOrgWithLocal(
+  orgChannels: IPTVChannel[],
+  localResult: LocalPlaylistResult | null
+): IPTVChannel[] {
+  if (!localResult) return orgChannels;
+  // 本地频道 → 匹配键索引（normalizeName 剥「卫视/台/综合」等冗余词后精确匹配）
+  const localIndex = new Map<string, IPTVChannel>();
+  for (const local of localResult.channels) {
+    for (const key of channelMatchKeys(local)) {
+      if (!localIndex.has(key)) localIndex.set(key, local);
+    }
+  }
+  return orgChannels.map((org) => {
+    // org 侧任一匹配键（中文名/英文名/备用名规范化）命中本地频道即视为同一频道
+    let local: IPTVChannel | undefined;
+    for (const key of channelMatchKeys(org)) {
+      local = localIndex.get(key);
+      if (local) break;
+    }
+    if (!local) return org;
+    // 本地流优先播放（本地源优先策略）；不写 fallbackUrl（备用源已移除）
+    return { ...org, url: local.url, sourceId: local.sourceId };
+  });
+}
+
+/** 频道按 group 字段分组归类（主干合并 / 中文名增强重放共用） */
+function groupChannels(channels: IPTVChannel[]): IPTVGroup[] {
+  const groupsMap = new Map<string, IPTVChannel[]>();
+  channels.forEach((channel) => {
+    const groupName = channel.group || '未分组';
+    if (!groupsMap.has(groupName)) groupsMap.set(groupName, []);
+    groupsMap.get(groupName)!.push(channel);
+  });
+  return Array.from(groupsMap.entries()).map(([name, channelList]) => ({
+    name,
+    count: channelList.length,
+    channels: channelList,
+  }));
+}
+
+/** 套收藏状态（isFavorite 来自 favoriteChannelIds） */
+function withFavorites(channels: IPTVChannel[], favoriteChannelIds: string[]): IPTVChannel[] {
+  return channels.map((ch) => ({ ...ch, isFavorite: favoriteChannelIds.includes(ch.id) }));
+}
 
 /**
  * zustand persist 落 localStorage 的键名。
  * clearCache（removeItem）/ persist name / 跨页签 storage 监听共用，防三处字面量漂移。
  */
 const IPTV_PERSIST_KEY = 'iptv-store';
+
+/** 「更多台」最多可勾选的源数量（与设置页 IPTV 源启用上限一致：最多 3 个） */
+export const MAX_EXTRA_SOURCES = 3;
 
 interface IPTVState {
   channels: IPTVChannel[];
@@ -26,25 +104,17 @@ interface IPTVState {
   error: string | null;
   lastRefresh: number | null;
   loadedUrl: string | null;
-  isCheckingAvailability: boolean;
-  checkingGroupId: string | null;
-  availabilityProgress: { checked: number; total: number } | null;
   /**
-   * 检测结果（按 tab/分组隔离）：key = groupId（'__all__' 表示全部），
-   * value = channelId → 是否可用。每个 tab 的检测结果独立存储、互不干扰。
+   * 每个已启用源自身的频道（未跨源去重）：key = `source-${index}`。
+   * 供 IPTV 页「更多台」勾选源后按源追加额外频道（同名台 = 备用线路）。
    */
-  availabilityResults: Record<string, Record<string, boolean>>;
-  /**
-   * 频道可用性预检测结果（后台静默检测，与手动检测的 availabilityResults 独立）：
-   * key = channelId，value = 是否可用。仅内存态，不持久化。
-   * 见 docs/player-iptv-frontend-refactor.md 整改4。
-   */
-  channelAvailability: Record<string, boolean>;
+  sourceChannels: Record<string, IPTVChannel[]>;
+  /** 「更多台」已勾选的源 id 集合（设置页最多启用 3 个 IPTV 源，故上限 3） */
+  extraSourceIds: string[];
   sourceType: PlaylistSourceType;
   sourceErrors: Array<{ index: number; url: string; error: string }>;
   playHistory: IPTVPlayRecord[];
   favoriteChannelIds: string[];
-  _abortController: AbortController | null;
 
   setChannels: (channels: IPTVChannel[]) => void;
   setGroups: (groups: IPTVGroup[]) => void;
@@ -56,18 +126,21 @@ interface IPTVState {
   setError: (error: string | null) => void;
   refreshChannels: () => Promise<void>;
   toggleFavorite: (channelId: string) => void;
-  getFilteredChannels: () => IPTVChannel[];
   /** 仅清空频道/分组（保留设置、播放历史、收藏频道），用于「清除全部缓存」 */
   clearChannelsCache: () => void;
   clearCache: () => void;
-  checkAvailability: (groupName?: string | null) => void;
-  abortAvailabilityCheck: () => void;
-  setChannelAvailability: (results: Record<string, boolean>) => void;
   recordPlay: (channelId: string) => void;
   clearPlayHistory: () => void;
   removePlayRecord: (channelId: string) => void;
   clearFavorites: () => void;
   loadFromCache: () => Promise<boolean>;
+  /** 勾选/取消「更多台」的额外频道源（最多 3 个，超出忽略） */
+  toggleExtraSource: (sourceId: string) => void;
+  /**
+   * 确保某源的频道数据就位：无数据（缓存无 bySource / 刷新时竞速被放弃 / 源失败）
+   * 时按需拉取该源单源 M3U 并写入 sourceChannels。已有数据（含空数组=已尝试过）不重复拉。
+   */
+  ensureSourceChannels: (sourceId: string) => Promise<void>;
 }
 
 const defaultSettings: IPTVSettings = {
@@ -98,16 +171,12 @@ export const useIPTVStore = create<IPTVState>()(
       error: null,
       lastRefresh: null,
       loadedUrl: null,
-      isCheckingAvailability: false,
-      checkingGroupId: null,
-      availabilityProgress: null,
-      availabilityResults: {},
-      channelAvailability: {},
+      sourceChannels: {},
+      extraSourceIds: [],
       sourceType: PlaylistSourceType.UNKNOWN,
       sourceErrors: [],
       playHistory: [],
       favoriteChannelIds: [],
-      _abortController: null,
 
       /**
        * 设置频道列表，同时同步收藏状态
@@ -140,86 +209,115 @@ export const useIPTVStore = create<IPTVState>()(
       setError: (error) => set({ error }),
 
       /**
-       * 从远程源刷新频道列表
-       * 获取频道后自动按分组归类，并同步收藏状态
-       *
-       * 注意:不再在开始时清空 channels/groups,避免触发 IPTVPage 一次额外的"全部清空"重渲染,
-       * 旧实现会让用户在切到 /iptv 标签时看到 1 次闪烁 (列表 → 空 → 完整列表)。
-       * UI 通过 isLoading 显示 AppLoading 占位即可,数据本身保留旧值。
+       * 从远程源刷新频道列表（2026-09-08 架构定稿）：
+       * 主干 = iptv-org API（channels/streams/logos 三 JSON 组装，台标精确匹配）；
+       * 本地 M3U 聚合源 = 补充：
+       *  - 本地名命中 iptv-org 频道 → 播放流改用本地流（本地优先）；不写任何兜底流字段；
+       *  - 本地频道【不进主干】：全部频道 = iptv-org 主干（~149 条），
+       *    本地独有频道只在「更多台」勾选对应源后出现（2026-09-08 用户定稿：不再混入主干）；
+       *  - iptv-org 拉取失败 → 回退纯本地主干（旧行为）；本地失败不影响 org 主干。
+       * 台标：主干按 channel id 精确匹配 logos.json；更多台本地频道按名匹配 logos.json，
+       * 匹配不到用 iptv 源自带台标兜底。
+       * 获取后自动按分组归类，并同步收藏状态；sourceChannels/bySource 供「更多台」。
        */
       refreshChannels: async () => {
-        const { settings, favoriteChannelIds } = get();
+        const { favoriteChannelIds } = get();
+        const settings = get().settings;
         // 已有频道数据时静默刷新：旧数据继续展示，不进入全屏 loading，
-        // 避免慢源拖尾（最坏 8s 竞速窗口）期间页面长时间空白/加载态
+        // 避免慢源拖尾（三 JSON ~17MB + 本地源竞速）期间页面长时间空白/加载态
         const hasChannels = get().channels.length > 0;
         set({ isLoading: !hasChannels, error: null });
 
-        try {
-          // 源 M3U 拉取与频道播放统一走 IPTV 代理（settings.proxyUrl），
-          // 不再拼接视频 CORS 代理（corsProxy）——IPTV 源接口只应使用 IPTV 代理地址
-          const result = await fetchAndParsePlaylist(
-            settings,
-          );
-          const { channels: rawChannels, sourceType, sourceErrors } = result;
+        // 并行：iptv-org 主干 + 本地源聚合（互不阻塞，各自动降级）
+        // proxyUrl：iptv-org 直连失败时经 IPTV 代理重试一次（接口内仅重试一次）
+        const [orgSettled, localSettled] = await Promise.allSettled([
+          fetchIptvOrgChinaChannels(settings.proxyUrl),
+          fetchAndParsePlaylist(settings),
+        ]);
 
-          const channels = rawChannels.map(ch => ({
-            ...ch,
-            isFavorite: favoriteChannelIds.includes(ch.id)
-          }));
-
-          // 按频道 group 字段分组归类
-          const groupsMap = new Map<string, IPTVChannel[]>();
-          channels.forEach((channel) => {
-            const groupName = channel.group || '未分组';
-            if (!groupsMap.has(groupName)) {
-              groupsMap.set(groupName, []);
-            }
-            groupsMap.get(groupName)!.push(channel);
-          });
-
-          const groups: IPTVGroup[] = Array.from(groupsMap.entries()).map(
-            ([name, channelList]) => ({
-              name,
-              count: channelList.length,
-              channels: channelList,
-            })
-          );
-
+        // 本地源结果：成功时产出 bySource（更多台）与频道全集；失败记 error
+        const localResult = localSettled.status === 'fulfilled' ? localSettled.value : null;
+        const sourceErrors = localResult?.sourceErrors ?? [];
+        // iptv-org 失败且本地也失败 → 整体失败；仅 org 失败 → 用本地并提示
+        if (orgSettled.status === 'rejected' && !localResult) {
           set({
-            channels,
-            groups,
-            sourceType,
-            sourceErrors,
-            lastRefresh: Date.now(),
-            loadedUrl: settings.aggregatorUrl,
+            error: orgSettled.reason instanceof Error ? orgSettled.reason.message : 'iptv-org 与本地源均加载失败',
             isLoading: false,
-            isCheckingAvailability: false,
-            checkingGroupId: null,
-            availabilityProgress: null,
-            error: sourceErrors.length > 0
-              ? `${sourceErrors.length} 个源加载失败`
+            lastRefresh: Date.now(),
+          });
+          return;
+        }
+
+        let merged: IPTVChannel[] = [];
+        // org 主干原始频道（中文名增强重放合并时复用）
+        const orgChannels =
+          orgSettled.status === 'fulfilled' && orgSettled.value.channels.length > 0
+            ? orgSettled.value.channels
+            : null;
+
+        if (orgChannels) {
+          // ── 主干：iptv-org 频道（url=cn.m3u 流；命中本地源同名频道则改用本地流）──
+          merged = mergeOrgWithLocal(orgChannels, localResult);
+        } else if (localResult) {
+          // iptv-org 不可用 → 回退纯本地主干（旧行为）
+          merged = localResult.channels;
+        }
+
+        const channels = withFavorites(merged, favoriteChannelIds);
+
+        // 按频道 group 字段分组归类
+        const groups = groupChannels(channels);
+
+        // 本地源（更多台）台标：logos.json 按名匹配 → iptv 源台标兜底
+        const bySource = localResult?.bySource
+          ? withSourceLogoBySource(localResult.bySource)
+          : get().sourceChannels;
+
+        set({
+          channels,
+          groups,
+          sourceChannels: bySource,
+          // 源集合变化后剔除已不存在的勾选（设置页最多启用 3 个源）
+          extraSourceIds: get().extraSourceIds.filter(id => !!localResult?.bySource?.[id]),
+          sourceType: localResult?.sourceType ?? get().sourceType,
+          sourceErrors,
+          lastRefresh: Date.now(),
+          loadedUrl: settings.aggregatorUrl,
+          isLoading: false,
+          error: sourceErrors.length > 0
+            ? `${sourceErrors.length} 个本地源加载失败`
+            : orgSettled.status === 'rejected'
+              ? 'iptv-org 主干加载失败，已回退本地源'
               : null,
-          });
+        });
 
-          // 保存到 IndexedDB 缓存
-          const sourceUrls = settings.aggregatorUrls?.length
-            ? settings.aggregatorUrls
-            : settings.aggregatorUrl
-              ? [settings.aggregatorUrl]
-              : [];
-          setCachedIPTVChannels({
-            channels,
-            groups,
-            sourceType,
-            timestamp: Date.now(),
-            sourceUrls,
-          }).catch(() => {});
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : '刷新频道列表失败',
-            isLoading: false,
-            lastRefresh: Date.now(),
-          });
+        // 保存到 IndexedDB 缓存（合并结果，含 bySource）
+        const sourceUrls = settings.aggregatorUrls?.length
+          ? settings.aggregatorUrls
+          : settings.aggregatorUrl
+            ? [settings.aggregatorUrl]
+            : [];
+        setCachedIPTVChannels({
+          channels,
+          groups,
+          sourceType: localResult?.sourceType ?? 'unknown',
+          timestamp: Date.now(),
+          sourceUrls,
+          bySource,
+        }).catch(() => {});
+
+        // 中文名增强（方案 B 后台层，fire-and-forget）：cn.m3u 主干已先行渲染（英文名），
+        // channels.json 的中文名后台拉取（IndexedDB 7 天缓存，只拉一次），到达后用
+        // 增强频道重放本地流合并并 set——分类（按频道名判定）随之自动更新。
+        if (orgChannels) {
+          void fetchCnDisplayNames(settings.proxyUrl)
+            .then(({ names, channels: orgChannelsZh }) => {
+              if (Object.keys(names).length === 0 || orgChannelsZh.length === 0) return;
+              const mergedZh = mergeOrgWithLocal(orgChannelsZh, localResult);
+              const channelsZh = withFavorites(mergedZh, get().favoriteChannelIds);
+              set({ channels: channelsZh, groups: groupChannels(channelsZh) });
+            })
+            .catch(() => { /* 中文名增强失败静默：主干保持英文名 */ });
         }
       },
 
@@ -242,22 +340,34 @@ export const useIPTVStore = create<IPTVState>()(
           };
         }),
 
-      /**
-       * 根据筛选条件过滤频道
-       * 支持按分组、地区、关键词和仅收藏进行筛选
-       */
-      getFilteredChannels: () => {
-        const { channels, filter } = get();
-        return channels.filter((channel) => {
-          if (filter.group && channel.group !== filter.group) return false;
-          if (filter.region && channel.region !== filter.region) return false;
-          if (filter.keyword) {
-            const keyword = filter.keyword.toLowerCase();
-            if (!channel.name.toLowerCase().includes(keyword)) return false;
-          }
-          if (filter.favoritesOnly && !channel.isFavorite) return false;
-          return true;
-        });
+      /** 勾选/取消「更多台」额外频道源：上限 3（设置页 IPTV 源最多启用 3 个） */
+      toggleExtraSource: (sourceId) => {
+        const { extraSourceIds } = get();
+        if (extraSourceIds.includes(sourceId)) {
+          set({ extraSourceIds: extraSourceIds.filter(id => id !== sourceId) });
+          return;
+        }
+        if (extraSourceIds.length >= MAX_EXTRA_SOURCES) return;
+        set({ extraSourceIds: [...extraSourceIds, sourceId] });
+      },
+
+      /** 按需补拉单源频道（更多台勾选时数据缺失的兜底），失败静默保持空数组 */
+      ensureSourceChannels: async (sourceId) => {
+        const { settings, sourceChannels } = get();
+        // 已有键（含空数组 = 曾拉取失败，不反复重试打失败源）→ 跳过
+        if (sourceChannels[sourceId] !== undefined) return;
+        const index = Number(sourceId.replace('source-', ''));
+        const url = settings.aggregatorUrls?.[index];
+        if (!url) return;
+        // 先占位空数组：防勾选连点/快速重入导致并发重复拉取
+        set({ sourceChannels: { ...get().sourceChannels, [sourceId]: [] } });
+        try {
+          const list = await fetchSingleSourceChannels(url, index, settings);
+          // 台标：logos.json 按名匹配优先，匹配不到保留 iptv 源自带台标
+          set({ sourceChannels: { ...get().sourceChannels, [sourceId]: withSourceLogo(list) } });
+        } catch {
+          // 拉取失败保持空数组：节不展示，避免报错打断页面
+        }
       },
 
       /**
@@ -273,8 +383,7 @@ export const useIPTVStore = create<IPTVState>()(
           loadedUrl: null,
           isLoading: false,
           error: null,
-          isCheckingAvailability: false,
-          availabilityProgress: null,
+          sourceChannels: {},
         });
       },
 
@@ -293,113 +402,13 @@ export const useIPTVStore = create<IPTVState>()(
           isLoading: false,
           error: null,
           lastRefresh: null,
-          isCheckingAvailability: false,
-          availabilityProgress: null,
+          sourceChannels: {},
+          extraSourceIds: [],
           playHistory: [],
           favoriteChannelIds: [],
         });
       },
 
-      /**
-       * 批量检测频道可用性
-       * 可指定分组仅检测该分组下的频道，支持通过 AbortController 中断检测
-       */
-      checkAvailability: (groupName) => {
-        const { channels, isCheckingAvailability, _abortController, availabilityResults } = get();
-        if (isCheckingAvailability || channels.length === 0) return;
-
-        // 中断上一次未完成的检测
-        if (_abortController) {
-          _abortController.abort();
-        }
-
-        const groupKey = groupName || '__all__';
-        const targetChannels = groupName
-          ? channels.filter(ch => ch.group === groupName)
-          : channels;
-
-        if (targetChannels.length === 0) return;
-
-        const newController = new AbortController();
-        const activeController = newController;
-        // 只清空「当前组」的旧检测结果，其他组的结果保留（每个 tab 独立、互不干扰）
-        set({
-          availabilityResults: { ...availabilityResults, [groupKey]: {} },
-          isCheckingAvailability: true,
-          checkingGroupId: groupKey,
-          availabilityProgress: { checked: 0, total: targetChannels.length },
-          _abortController: newController,
-        });
-
-        const channelsToCheck = targetChannels.map(ch => ({ id: ch.id, url: ch.url }));
-
-        checkChannelsAvailability(
-          channelsToCheck,
-          (checked, total) => {
-            set({ availabilityProgress: { checked, total } });
-          },
-          activeController.signal
-        ).then((results) => {
-          // controller 已被替换 → 丢弃结果
-          if (get()._abortController !== activeController) return;
-          // 将结果写入「当前组」的 availabilityResults（按 channelId），不写入频道自身、按组隔离
-          const groupResult: Record<string, boolean> = {};
-          results.forEach((available, channelId) => {
-            groupResult[channelId] = available;
-          });
-          const cur = get();
-          set({
-            availabilityResults: {
-              ...cur.availabilityResults,
-              [groupKey]: groupResult,
-            },
-            isCheckingAvailability: false,
-            checkingGroupId: null,
-            availabilityProgress: null,
-            _abortController: null,
-          });
-        }).catch(() => {
-          if (get()._abortController !== activeController) return;
-          // 检测失败：当前组所有频道标记为不可用
-          const cur = get();
-          const groupResult: Record<string, boolean> = {};
-          targetChannels.forEach(ch => { groupResult[ch.id] = false; });
-          set({
-            availabilityResults: {
-              ...cur.availabilityResults,
-              [groupKey]: groupResult,
-            },
-            isCheckingAvailability: false,
-            checkingGroupId: null,
-            availabilityProgress: null,
-            _abortController: null,
-          });
-        });
-      },
-
-      abortAvailabilityCheck: () => {
-        const { _abortController, checkingGroupId, availabilityResults } = get();
-        if (_abortController) {
-          _abortController.abort();
-        }
-        // 清除「当前检测分组」的 availabilityResults（其他组结果保留，互不干扰）
-        const nextResults = { ...availabilityResults };
-        if (checkingGroupId) {
-          delete nextResults[checkingGroupId];
-        }
-        set({
-          availabilityResults: nextResults,
-          isCheckingAvailability: false,
-          checkingGroupId: null,
-          availabilityProgress: null,
-          _abortController: null,
-        });
-      },
-
-      /** 写入后台预检测结果（与手动检测的 availabilityResults 独立存储） */
-      setChannelAvailability: (results) => {
-        set({ channelAvailability: { ...get().channelAvailability, ...results } });
-      },
 
       /**
        * 记录频道播放行为
@@ -462,6 +471,8 @@ export const useIPTVStore = create<IPTVState>()(
         set({
           channels,
           groups: cached.groups,
+          // 缓存里的本地源频道同样走「logos.json 按名匹配 → iptv 源兜底」
+          sourceChannels: withSourceLogoBySource(cached.bySource ?? {}),
           sourceType: cached.sourceType as PlaylistSourceType,
           lastRefresh: cached.timestamp,
           loadedUrl: settings.aggregatorUrl,
@@ -474,13 +485,13 @@ export const useIPTVStore = create<IPTVState>()(
     {
       name: IPTV_PERSIST_KEY,
       // 仅持久化配置和用户数据，运行时状态（频道列表、加载状态等）不持久化
-      partialize: ({ _abortController, ...state }: IPTVState) => ({
+      partialize: (state: IPTVState) => ({
         settings: state.settings,
         filter: state.filter,
         playHistory: state.playHistory,
         favoriteChannelIds: state.favoriteChannelIds,
-        // IPTV 可看性缓存：持久化到 localStorage，历史/收藏页进入时读取同步
-        channelAvailability: state.channelAvailability,
+        // 「更多台」已勾选的额外频道源（页面级偏好，跨会话保留）
+        extraSourceIds: state.extraSourceIds,
       }),
       /**
        * 合并持久化数据与当前默认值

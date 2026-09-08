@@ -1,9 +1,9 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import type { PlayerMode } from '@/types/player';
 import ThumbnailPreview, { type ThumbnailSource } from './ThumbnailPreview';
 
 interface ProgressBarProps {
-  mode: PlayerMode;
+  /** 是否允许拖动/seek（由能力矩阵 `canSeek` 驱动；不可 seek 时进度条退化为「直播」态：禁用拖拽、隐藏圆点/tooltip） */
+  canSeek: boolean;
   currentTime: number;
   duration: number;
   buffered: number;
@@ -24,7 +24,7 @@ function getClientX(e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchE
   return (e as MouseEvent).clientX;
 }
 
-export default function ProgressBar({ mode, currentTime, duration, buffered, onSeek, thumbnails, isBuffering = false }: ProgressBarProps) {
+export default function ProgressBar({ canSeek, currentTime, duration, buffered, onSeek, thumbnails, isBuffering = false }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -33,7 +33,11 @@ export default function ProgressBar({ mode, currentTime, duration, buffered, onS
   const [pendingTime, setPendingTime] = useState<number | null>(null);
   const [pendingPosition, setPendingPosition] = useState(0);
 
-  const isLive = mode === 'live';
+  // P4：原 `const isLive = mode === 'live'` 迁到能力矩阵 `canSeek`（统一口径）。
+  // 等价性（对当前可达模式 video / live 逐字等价）：
+  //   video → canSeek=true → isLive=false（可拖拽）；live（无 catchup）→ canSeek=false → isLive=true（禁拖拽）。
+  // 注：ControlBar 仅在 mode!=='iptv' 时渲染，故单此处不影响 IPTV OSD；P5 的直播回看走 IPTVOSDBar 专属进度条。
+  const isLive = !canSeek;
 
   const calcTime = useCallback((clientX: number): number => {
     if (!barRef.current || duration <= 0) return 0;

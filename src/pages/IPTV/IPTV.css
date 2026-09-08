@@ -175,68 +175,6 @@
   cursor: not-allowed;
 }
 
-.refresh-btn.checking {
-  background-color: var(--color-warning);
-}
-
-.availability-progress {
-  flex-shrink: 0;
-  margin-bottom: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--space-sm);
-  background-color: var(--color-placeholder);
-}
-
-.progress-bar {
-  height:var(--space-sm);
-  margin-bottom: var(--space-xs);
-  border-radius: var(--space-2xs);
-  background-color: var(--color-border-light);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--color-primary);
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.availability-stats {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-md);
-  margin-bottom: var(--space-xs);
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--space-sm);
-  background-color: var(--color-surface);
-}
-
-.availability-stats .stat {
-  display: inline-flex;
-  gap: var(--space-2xs);
-  align-items: center;
-  font-size: var(--text-sm);
-  font-weight: 500;
-}
-
-.availability-stats .stat.available {
-  color: var(--color-success);
-}
-
-.availability-stats .stat.unavailable {
-  color: var(--color-error);
-}
-
-.availability-stats .stat.total {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-}
-
 /* ── 筛选标签公共基类（数据源 chips 共用） ─────────────────────── */
 .iptv-filter-tag {
   padding: var(--space-xs) var(--space-sm);
@@ -338,11 +276,6 @@
     display: none;
   }
 
-  .availability-stats {
-    display: flex;
-    flex-wrap: nowrap;
-  }
-
   .iptv-toolbar {
     flex-wrap: wrap;
     gap: var(--space-xs);
@@ -393,11 +326,6 @@
 
   html[data-device="app"] .force-refresh-btn {
     display: none;
-  }
-
-  html[data-device="app"] .availability-stats {
-    display: flex;
-    flex-wrap: nowrap;
   }
 
   html[data-device="app"] .iptv-toolbar {
@@ -502,3 +430,218 @@
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
+
+/* ── P2 增强层「更多台」开关行（2026-09-08 已移除：新语义改为左栏按源勾选） ── */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   桌面端左栏布局（2026-09-08 demo 终稿方案 B：changelogs/demos/demo-iptv-rail-2026-09-08.html）
+   ≥1024 且非 TV/App 渲染（JS 分支控制 DOM，CSS 不写 media 尺寸规则）。
+   2026-09-08 二改：视觉规格对齐收藏/历史页 RecordShell 方案 A rail——
+   宽度流体 clamp(124px, 8.61vw, 224px)（2026-09-08 二改：原 max-content + 保底
+   124px → 与设置页/Browse 左栏同曲线；原固定 176px）、条目 8px var(--space-sm) 内距 +
+   500 字重（原 min-height 30px）、组间距 --space-lg、分隔线 --space-sm 上下距、
+   计数徽标 text-secondary + line-height 1.2。
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iptv-rail-layout {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: flex-start;
+}
+
+.iptv-rail {
+  position: sticky;
+  top: var(--space-sm);
+  align-self: flex-start;
+  flex-shrink: 0;
+  /* 2026-09-08 与设置页/Browse 左栏统一：流体曲线 clamp(124px, 8.61vw, 224px)
+     （1440 视口落到 124px 下限，约 2600 视口到 224px 上限），
+     替换原 max-content 内容自适应（原 min-width 保底不再需要）；
+     不设 max-height / overflow:auto——与 RecordShell 一致保持 visible，
+     避免未来加弹层时被裁切（rail 内容恒短，不会超视口） */
+  width: clamp(124px, 8.61vw, 224px);
+  padding: 0;
+}
+
+.iptv-rail__title {
+  display: block;
+  margin: 0 var(--space-sm) var(--space-sm);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+/* 分组分隔线：RecordShell 方案 A 同款（1px + --space-sm 上下距，通栏） */
+.iptv-rail__sep {
+  height: 1px;
+  margin: var(--space-sm) 0;
+  background: var(--color-border-light);
+}
+
+.iptv-rail__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: 0;
+}
+
+.iptv-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 8px var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  cursor: pointer;
+}
+
+.iptv-rail__item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* 选中态必须连 :hover 一起声明（同特异性 :hover 靠后即覆盖选中底色）；
+   选中字色用 #fff，与 RecordShell 方案 A rail 完全一致 */
+.iptv-rail__item.is-on,
+.iptv-rail__item.is-on:hover {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.iptv-rail__lbl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iptv-rail__cnt {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.iptv-rail__item.is-on .iptv-rail__cnt {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* 多选复选框（更多台 = 设置页已启用的 IPTV 源） */
+.iptv-rail__box {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-surface);
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+
+.iptv-rail__item.is-on .iptv-rail__box {
+  border-color: var(--color-primary);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12l6 6L20 6'/%3E%3C/svg%3E")
+    center / 10px 10px no-repeat,
+    var(--color-primary);
+}
+
+/* ── 内容区：过滤条 + 分节 ─────────────────────────────────────────────── */
+.iptv-rail-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 桌面左栏布局下网格容器去卡片化（2026-09-08 用户定稿）：无边框/圆角/底色/投影，
+   与页面背景融为一体；移动端/TV 走旧布局（无 .iptv-page--rail），保留原卡片外观 */
+.iptv-page--rail .iptv-grid-card {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.iptv-content-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.iptv-content-bar__count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.iptv-content-bar__spacer {
+  flex: 1;
+}
+
+.iptv-content-bar__note {
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 右上角源过滤下拉框：仅过滤当前列表，不切换播放源 */
+.iptv-src-select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.iptv-sec {
+  margin-bottom: var(--space-xl);
+}
+
+.iptv-sec__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-sm);
+  /* 吸顶时遮住滚过的卡片：背景取页面底色（桌面 .iptv-grid-card 已去卡片外观），
+     上下 padding 是吸顶态的呼吸空间；sticky 天生受限于 .iptv-sec 容器，
+     滚出该节范围即自动解除吸顶，无需 JS */
+  padding: var(--space-xs) 0;
+  background: var(--color-background);
+}
+
+.iptv-sec__head h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.iptv-sec__n {
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.iptv-sec__line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-light);
+}
+

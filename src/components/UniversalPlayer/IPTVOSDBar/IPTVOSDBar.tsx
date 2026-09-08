@@ -29,10 +29,20 @@ interface IPTVOSDBarProps {
   epgStatus?: 'idle' | 'loading' | 'success' | 'error';
   onRefreshEpg?: () => void;
   onOpenProgramGuide?: () => void;
-  /** Timeshift state */
+  /** Timeshift state（来自 HLS DVR 探测，见 hooks/useTimeshift.ts，与下方 catchup 独立） */
   isTimeshifted?: boolean;
   latencyLabel?: string;
   onReturnToLive?: () => void;
+  /**
+   * M3U catchup 时移（与 DVR 时移是两个独立概念，见 playerCapabilities.ts 头部「口径区分」）。
+   * catchupEnabled=true 时显示 catchup 专属拖拽进度条；catchupSeekTs 为正在回看的时间戳（null=直播）。
+   */
+  catchupEnabled?: boolean;
+  catchupSeekTs?: number | null;
+  /** 回看窗口天数（IPTVChannel.catchupDays，缺省兜底 7） */
+  catchupDays?: number;
+  /** 拖拽到历史时刻 → 请求回看该时刻（调用方用 buildCatchupUrl 拼地址并重载流） */
+  onSeekCatchup?: (ts: number) => void;
 }
 
 function getInitials(name: string): string {
@@ -73,6 +83,13 @@ function LogoFallback({ name }: { name: string }) {
 
 function formatTime(hhmm: string): string {
   return hhmm;
+}
+
+/** 把毫秒时间戳格式化为 HH:MM:SS（catchup 进度条与回看标签用） */
+function formatClock(ts: number): string {
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
 function formatCurrentTime(): string {
@@ -164,6 +181,10 @@ export default function IPTVOSDBar({
   isTimeshifted = false,
   latencyLabel = '',
   onReturnToLive,
+  catchupEnabled = false,
+  catchupSeekTs = null,
+  catchupDays = 7,
+  onSeekCatchup,
 }: IPTVOSDBarProps) {
   const [logoError, setLogoError] = useState(false);
   const [logoIndex, setLogoIndex] = useState(0);
@@ -182,6 +203,11 @@ export default function IPTVOSDBar({
   // tick 触发每秒重算当前时间；formatCurrentTime 内部读取 Date.now()，故依赖 tick 是必要的
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const currentTimeStr = useMemo(() => formatCurrentTime(), [tick]);
+  // catchup 进度条需要「直播边缘（现在）」作为拖拽上界，随 tick 每秒刷新
+  const nowMs = useMemo(() => Date.now(), [tick]);
+  // catchup 可拖拽下界：now - catchupDays 天；上界：现在（catchupDays 缺省兜底 7）
+  const catchupWindowStart = nowMs - catchupDays * 86400 * 1000;
+  const catchupCurrent = catchupSeekTs ?? nowMs;
 
   useEffect(() => {
     // 频道切换（channelLogo 变化）时重置候选下标与错误态
@@ -269,6 +295,30 @@ export default function IPTVOSDBar({
               <span>{latencyLabel}</span>
               <span className="iptv-osd-timeshift-hint">· 点击回到直播</span>
             </button>
+          </div>
+        )}
+        {/* M3U catchup 时移：与上方 DVR 时移独立。频道声明 catchup 时显示拖拽进度条，
+            下界由 catchupDays 决定，上界为直播边缘（now）。拖动 → 回看该历史时刻。 */}
+        {catchupEnabled && (
+          <div className="iptv-osd-catchup-row">
+            <button
+              className="iptv-osd-catchup-live"
+              onClick={onReturnToLive}
+              title="回到直播"
+            >
+              <span className="iptv-osd-live-dot" />
+              直播
+            </button>
+            <input
+              className="iptv-osd-catchup-slider"
+              type="range"
+              min={catchupWindowStart}
+              max={nowMs}
+              step={1000}
+              value={catchupCurrent}
+              onChange={(e) => onSeekCatchup?.(Number(e.target.value))}
+            />
+            <span className="iptv-osd-catchup-time">{formatClock(catchupCurrent)}</span>
           </div>
         )}
         <div

@@ -62,6 +62,8 @@ interface ControlBarProps {
     center?: React.ReactNode;
     right?: React.ReactNode;
   };
+  /** 是否允许拖动进度条（由能力矩阵 `canSeek` 驱动，透传给 ProgressBar） */
+  canSeek: boolean;
 }
 
 export default function ControlBar({
@@ -96,6 +98,7 @@ export default function ControlBar({
   onPrevEpisode,
   onNextEpisode,
   slots,
+  canSeek,
 }: ControlBarProps) {
   const isPlaying = usePlayerStore(s => s.isPlaying);
   const isPlayerLoading = usePlayerStore(s => s.isPlayerLoading);
@@ -132,7 +135,7 @@ export default function ControlBar({
         <div className="up-control-mobile-row">
           <PlayButton isPlaying={isPlaying} disabled={isPlayerLoading && !isReadyToPlay} onClick={onTogglePlay} />
           <ProgressBar
-            mode={mode}
+            canSeek={canSeek}
             currentTime={currentTime}
             duration={videoDuration}
             buffered={buffered}
@@ -146,7 +149,7 @@ export default function ControlBar({
       ) : (
         <>
           <ProgressBar
-            mode={mode}
+            canSeek={canSeek}
             currentTime={currentTime}
             duration={videoDuration}
             buffered={buffered}

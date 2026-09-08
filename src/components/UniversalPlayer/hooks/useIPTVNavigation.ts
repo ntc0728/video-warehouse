@@ -48,8 +48,11 @@ export function useIPTVNavigation({
     if (idx < allChannels.length - 1) handleChannelSelect(allChannels[idx + 1]);
   }, [currentChannelId, handleChannelSelect]);
 
-  const handleSourceSwitch = useCallback((index: number, mode: string, currentChannel: IPTVChannel | undefined, _channels: IPTVChannel[], sources: { url: string; type: string }[], toastOpts?: { content?: string; type?: PlayerToastType }) => {
-    if (mode === 'iptv' && currentChannel) {
+  const handleSourceSwitch = useCallback((index: number, switchByChannel: boolean, currentChannel: IPTVChannel | undefined, _channels: IPTVChannel[], sources: { url: string; type: string }[], toastOpts?: { content?: string; type?: PlayerToastType }) => {
+    // P4：原 `mode === 'iptv'` 分支判断迁到能力矩阵，由调用方传入 `switchByChannel`（= hasChannelList）。
+    // 等价性：原对 iptv/live（hasChannelList=true）走切频道、对 video（false）走切线路；
+    // 现对 switchByChannel=true 切频道、false 切线路。逐字等价。
+    if (switchByChannel && currentChannel) {
       const sameNameChannels = _channels.filter(
         ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
       );
