@@ -30,7 +30,7 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-09 二次激进合并后：116 条 / 16 个 spec；上轮 306→253，本轮 253→116。本轮仅合并不删断言：文件内同类用例聚合 + 4 个 cross-tab 单例合 1 + 6 个历史专项合 1 个 regression.spec.ts）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-09 晚：118 条 / 18 个 spec；此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。本轮新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）+ `verify-grid.spec.ts`（网格重构验证））。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
@@ -38,7 +38,7 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 | `src/pages/Browse/`                                  | `scripts/browse.spec.ts`                               | 19     |
 | `src/pages/Chart/`                                   | `scripts/chart.spec.ts`                                | 6      |
 | `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 20     |
-| `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` | 26 + 1 |
+| `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` + `scripts/player-cms-error.spec.ts` | 26 + 1 + 1 |
 | `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts`               | 7      |
 | `src/pages/IPTV/`                                    | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 10 + 6 |
 | `src/pages/Settings/`                                | `scripts/settings.spec.ts`                             | 25     |

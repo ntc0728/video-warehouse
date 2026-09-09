@@ -15,7 +15,7 @@
 }
 
 .home-page--loading {
-  min-height: 100%;
+  min-height: var(--layout-page-min-height);
 }
 
 /* 仅包裹「非 Hero 内容」的进入动画层（见 index.tsx）：
@@ -127,7 +127,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  min-height: var(--layout-loading-min-height);
   padding: var(--space-3xl) var(--space-md);
   color: var(--color-text-tertiary);
   text-align: center;
@@ -152,7 +152,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   justify-content: center;
   align-items: center;
   flex: 1 1 0;
-  min-height: 60vh;
+  min-height: var(--layout-loading-min-height);
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
 }

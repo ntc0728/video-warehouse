@@ -1,5 +1,6 @@
-import { Layers, ChevronDown } from 'lucide-react';
+import { Layers, ChevronDown, Loader2 } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { usePanelCollapse } from './hooks';
 
 interface SeasonInfo {
   season_number: number;
@@ -16,6 +17,8 @@ interface PlayerSeasonPanelProps {
   compact?: boolean;
   /** 非 TMDB 视频：从 video.title 提取的当前季名称，纯展示 */
   currentSeasonName?: string;
+  /** 切换 CMS / 选季时为 true：列表区显示加载态而非旧季列表 */
+  loading?: boolean;
 }
 
 export function PlayerSeasonPanel({
@@ -26,14 +29,20 @@ export function PlayerSeasonPanel({
   onToggle,
   compact = false,
   currentSeasonName,
+  loading = false,
 }: PlayerSeasonPanelProps) {
   const filtered = seasons.filter((s) => s.season_number > 0);
+
+  // App 端（compact）面板不可折叠 → collapsed 恒 false，不产生动画。
+  // ⚠️ 必须在下方 return 分支之前调用，保证 Hook 顺序稳定。
+  const collapsed = !compact && !expanded;
+  const collapseRef = usePanelCollapse<HTMLDivElement>(collapsed);
 
   // 多季模式：可切换
   if (filtered.length > 1) {
     const HeaderTag = compact ? 'div' : 'button';
     return (
-      <div className="player-panel player-panel--season">
+      <div ref={collapseRef} className={`player-panel player-panel--season${collapsed ? ' collapsed' : ''}`}>
         <HeaderTag
           className="player-panel-header"
           {...(!compact && onToggle ? { onClick: onToggle } : {})}
@@ -47,18 +56,25 @@ export function PlayerSeasonPanel({
             </span>
           )}
         </HeaderTag>
-        <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
-          <div className="player-season-list">
-            {filtered.map((s) => (
-              <button
-                key={s.season_number}
-                className={`player-season-item ${s.season_number === activeSeason ? 'active' : ''}`}
-                onClick={() => onSelectSeason(s.season_number)}
-              >
-                <span className="player-season-name">{s.name} · {s.episode_count}集</span>
-              </button>
-            ))}
-          </div>
+        <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
+          {loading ? (
+            <div className="player-panel-loading">
+              <Icon icon={Loader2} size="sm" className="spinning" />
+              <span>加载中...</span>
+            </div>
+          ) : (
+            <div className="player-season-list">
+              {filtered.map((s) => (
+                <button
+                  key={s.season_number}
+                  className={`player-season-item ${s.season_number === activeSeason ? 'active' : ''}`}
+                  onClick={() => onSelectSeason(s.season_number)}
+                >
+                  <span className="player-season-name">{s.name} · {s.episode_count}集</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

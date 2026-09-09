@@ -16,7 +16,7 @@
 .detail-page--loading {
   justify-content: center;
   align-items: center;
-  min-height: 100%;
+  min-height: var(--layout-page-min-height);
 }
 
 /* ── Hero 区 ───────────────────────────────────── */
@@ -1528,7 +1528,7 @@
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  min-height: var(--layout-loading-min-height);
   color: var(--color-text-tertiary);
 }
 .detail-not-found .detail-back {

@@ -74,7 +74,7 @@ async function reloadPlayer(page: import('@playwright/test').Page) {
 // 4.1 页面加载与布局稳定性（合并 4.1 加载 + 4.14/4.15 侧栏骨架/滚动槽位）
 // ═══════════════════════════════════════════════════════════════
 
-test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<1280 非滚动容器）', () => {
+test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<1024 非滚动容器）', () => {
   test('加载与布局稳定性：002 正常加载 / 003 首次 loading / 090 侧栏 tv 骨架恒定 / 091 滚动槽位 / 092 侧栏零跳动 / 093 窄屏非滚动容器', async ({ page }) => {
     // ── PLAYER-002: 正常加载 TMDB 视频 ──
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
@@ -128,7 +128,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
     expect(s2?.variant).toBe('tv');
     expect(s2?.panels).toBe(3);
 
-    // ── PLAYER-091: ≥1280 时 .player-page 是滚动容器且常驻预留滚动条槽位 ──
+    // ── PLAYER-091: ≥1024（分栏起点，ADR-023 rail 类布局）时 .player-page 是滚动容器且常驻预留滚动条槽位 ──
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.player-page', { timeout: 15000 });
@@ -141,8 +141,9 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
     expect(cs?.overflowY).toBe('auto');
     expect(cs?.scrollbarGutter).toBe('stable');
 
-    // ── PLAYER-093: <1280 时 .player-page 不是滚动容器（滚动交给外层 main） ──
-    await page.setViewportSize({ width: 1024, height: 768 });
+    // ── PLAYER-093: <1024 时 .player-page 不是滚动容器（滚动交给外层 main） ──
+    // ⚠️ 样本宽度必须 < 分栏起点 1024：1024 起 .player-page 即为桌面滚动容器。
+    await page.setViewportSize({ width: 900, height: 768 });
     await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.player-page', { timeout: 15000 });
     const overflowY93 = await page.evaluate(() => {

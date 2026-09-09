@@ -40,7 +40,23 @@ CMS API 和 IPTV M3U 请求必须通过 Video Proxy 代理（浏览器跨域限�
 ```
 src/
 ├── components/          # 通用组件（ui/ + common/ + Layout/ + UniversalPlayer/ + ...）
-├── pages/               # 页面组件（Home/ Browse/ Detail/ Player/ IPTV/ Settings/ ...）
+│   └── Layout/routeConfig.ts   # ⭐ 路由唯一事实源（routeComponentMap）
+├── pages/               # 页面组件（15 个目录 = 12 业务 + 3 调试 Demo）
+│   ├── Home/            # 首页；路由入口 HomeRoute.tsx（16 行壳）→ 逻辑在 index.tsx
+│   ├── Browse/          # 浏览 / 搜索
+│   ├── Chart/           # 热度榜
+│   ├── Detail/          # 详情（子件在 components/）
+│   ├── Player/          # 播放；路由是 /play 与 /player（双路由同页）
+│   ├── IPTV/            # IPTV 列表 index.tsx + 播放 IPTVPlayer.tsx（独立顶层路由）
+│   ├── Settings/        # 设置（tab 在 tabs/）
+│   ├── Collections/     # 收藏
+│   ├── History/         # 历史
+│   ├── SourceChecker/   # 源检测
+│   ├── Person/          # 人物
+│   ├── ProxySetup/      # 代理配置；入口 ProxySetup.tsx（⚠️ 无 index.tsx）
+│   ├── PullToRefreshDemo/   # 🚧 调试 Demo，不进正式导航
+│   ├── PlayerLab/           # 🚧 调试 Demo，不进正式导航
+│   └── PlayerMobileLab/     # 🚧 调试 Demo，不进正式导航
 ├── services/            # Service 层（tmdbService / videoService / iptvService / epgService / httpClient）
 ├── stores/              # Zustand Store（8 个）
 ├── types/               # TypeScript 类型定义
@@ -51,6 +67,9 @@ docs/page-diagrams/      # 页面原理图 + 流程图 + 真实数据
 scripts/                 # 构建脚本 + E2E 测试 + 数据获取脚本
 public/data/             # 数据源配置 JSON
 ```
+
+> 「路由 → 目录 → 该改哪个文件」的完整速查表见 [pages.md](./pages.md) → 「页面速查」。
+> ⚠️ `src/routes.tsx` 的 children 全是占位 `<div />`，真实组件映射在 `routeConfig.ts`，别改错文件。
 
 
 ### Android 原生代码（DLNA 投屏 / 启动屏补丁）

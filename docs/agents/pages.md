@@ -2,6 +2,50 @@
 
 > 本文件由 AGENTS.md 拆分而来（2026-09-09 文档瘦身）。精简版 AGENTS.md 仅保留红线与索引表，详情在此；修改时两处需同步更新。
 
+## 📌 页面速查（找页面文件前**先看这一节**）
+
+> 别猜文件名。下表是「路由 → 目录 → 该改哪个文件」的等价速查版。
+
+**路由唯一事实源**：`src/components/Layout/routeConfig.ts` → `routeComponentMap`（:46-65）
+> ⚠️ `src/routes.tsx` 的 children **全是占位 `<div />`**，真实组件映射不在这里，别被它误导。
+
+### 业务页面（13 条路由 / 12 个目录）
+
+| 页面 | 路由 | 目录 | 改哪个文件 | 核心组件 |
+| --- | --- | --- | --- | --- |
+| 首页 | `/` | `src/pages/Home/` | **`index.tsx`**（`HomeRoute.tsx` 只是 16 行包装壳，无逻辑） | HeroBanner + CategoryQuickAccess + TMDBMovieRow ×7 |
+| 浏览/搜索 | `/browse` | `src/pages/Browse/` | `index.tsx` | BrowseGrid + FilterBar + SortBar |
+| 热度榜 | `/chart` | `src/pages/Chart/` | `index.tsx` | 6 分类 tab + 排名榜行 |
+| 详情 | `/detail/:id` | `src/pages/Detail/` | `index.tsx`（子件在 `components/`） | DetailHeader + CastList + StillsLightbox |
+| 播放 | `/play/:id` **和** `/player/:id`（**双路由同页**） | `src/pages/Player/` | `index.tsx` | UniversalPlayer + PlayerSidebar |
+| IPTV 列表 | `/iptv` | `src/pages/IPTV/` | `index.tsx` | IPTVChannelList + EPGProgramList |
+| IPTV 播放 | `/iptv/play`（**独立顶层路由**，不走 AppLayout） | `src/pages/IPTV/` | `IPTVPlayer.tsx`（**同目录第二个入口**） | IPTVPlayer（全屏） |
+| 设置 | `/settings` | `src/pages/Settings/` | `index.tsx`（tab 在 `tabs/`） | SettingsTabBar + 6 个 Tab |
+| 收藏 | `/collections` | `src/pages/Collections/` | `index.tsx` | RecordShell + CollectionGrid |
+| 历史 | `/history` | `src/pages/History/` | `index.tsx` | 融合 Tab + RecordCard 横版 |
+| 源检测 | `/source-checker` | `src/pages/SourceChecker/` | `index.tsx` | SourceTable |
+| 人物 | `/person/:id` | `src/pages/Person/` | `index.tsx` | PersonHeader + MovieCredits |
+| 代理配置 | `/proxy-setup` | `src/pages/ProxySetup/` | **`ProxySetup.tsx`**（⚠️ **无 index.tsx**） | cloudflare.ts |
+
+### 调试 Demo（3 个，**不进正式导航**）
+
+| Demo | 路由 | 目录 | 入口 | 用途 |
+| --- | --- | --- | --- | --- |
+| 下拉刷新 | `/ptr-demo` | `src/pages/PullToRefreshDemo/` | `index.tsx` | PullToRefresh 组件验收 |
+| 播放器实验室 | `/player-lab` | `src/pages/PlayerLab/` | `index.tsx`（+ `engine/` `components/`） | 播放器整改方向对照 UniversalPlayer |
+| 移动端播放器实验室 | `/player-mobile-lab` | `src/pages/PlayerMobileLab/` | `index.tsx`（+ `lib/` `components/`） | 横屏/全屏/画中画多端策略验证 |
+
+### ⚠️ 三个命名陷阱（猜文件名的重灾区）
+
+1. **`/play` 的目录叫 `Player/`**，不是 `PlayPage.tsx` —— 路由用动词、目录用名词。
+2. **`Home` 的路由入口是 `HomeRoute.tsx`，但改首页逻辑要动 `index.tsx`** —— 前者只是 `<HomePage />` 的 16 行壳。
+3. **`IPTV/` 一个目录两个入口**：`index.tsx`（列表）+ `IPTVPlayer.tsx`（播放），后者是独立顶层路由。
+
+> 每个页面目录都配同名 `.css`（如 `Home/Home.css`、`IPTV/IPTVPlayer.css`），改样式去同名 CSS 找。
+> 下表（页面与路由）补充「数据源」视角，两表配合使用。
+
+---
+
 ## 页面原理图与流程图
 
 **位置**: `docs/page-diagrams/`

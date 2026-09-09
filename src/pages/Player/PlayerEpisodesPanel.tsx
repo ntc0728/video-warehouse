@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { VideoSource, Episode } from '@/types/video';
 import { ListVideo, ChevronDown, Play, Loader2, ArrowUpDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { usePanelCollapse } from './hooks';
 
 interface PlayerEpisodesPanelProps {
   episodes: Episode[];
@@ -36,6 +37,9 @@ export function PlayerEpisodesPanel({
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(0);
   const HeaderTag = compact ? 'div' : 'button';
+  // App 端（compact）面板不可折叠 → collapsed 恒 false，不产生动画
+  const collapsed = !compact && !expanded;
+  const collapseRef = usePanelCollapse<HTMLDivElement>(collapsed);
 
   const sorted = useMemo(() => {
     const copy = [...episodes];
@@ -78,7 +82,7 @@ export function PlayerEpisodesPanel({
       : '';
 
   return (
-    <div className="player-panel player-panel--episodes">
+    <div ref={collapseRef} className={`player-panel player-panel--episodes${collapsed ? ' collapsed' : ''}`}>
       <HeaderTag
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
@@ -92,8 +96,8 @@ export function PlayerEpisodesPanel({
           </span>
         )}
       </HeaderTag>
-      <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
-        {loading && episodes.length === 0 && sources.length === 0 ? (
+      <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
+        {loading ? (
           <div className="player-panel-loading">
             <Icon icon={Loader2} size="sm" className="spinning" />
             <span>加载中...</span>

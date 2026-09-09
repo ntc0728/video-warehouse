@@ -18,6 +18,12 @@ function firstKeyOf<T>(map: Map<number, T>, fallback: number): number {
   return it.done ? fallback : it.value;
 }
 
+/**
+ * CMS 请求超时兜底（ms）：接口 hang / 重试过久时强制中断并结束加载态。
+ * 没有它，切源失败会把播放器永久留在加载中。
+ */
+const CMS_FETCH_TIMEOUT_MS = 20_000;
+
 interface UseCMSSourceManagerOptions {
   id: string | undefined;
   video: Video | null;
@@ -73,6 +79,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
   const cmsAbortRef = useRef<AbortController | null>(null);
   const tmdbAbortRef = useRef<AbortController | null>(null);
+  // 请求序号：区分「被新请求取代的 abort」与「超时/失败的 abort」。
+  // 只有持有最新序号的请求才允许写状态与收尾——否则旧请求返回后回写，会把用户
+  // 刚点的新源选中态覆盖掉（表现为「接口没响应完就连点切源 → 选中态消失」）。
+  const reqSeqRef = useRef(0);
   const activeCmsSourceIndexRef = useRef<number | undefined>(undefined);
   const seasonMapsRef = useRef<Map<number, Map<number, Video>>>(new Map());
   const cmsSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,13 +98,28 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
     const isSwitching = targetSourceIndex !== undefined;
+    // 领取请求序号：后续所有状态写入只在「仍是最新请求」时生效
+    const reqId = ++reqSeqRef.current;
+    const isLatest = () => reqSeqRef.current === reqId;
     setCmsLoading(true);
     if (isSwitching) setCmsSwitching(true);
 
-    // 统一关闭 loading 的出口：无条件执行，避免 video 为空时 loading 永久卡死
+    // 超时兜底：接口不响应时强制中断并收尾，杜绝「切源失败后播放器一直加载」
+    const timeoutId = setTimeout(() => {
+      ctrl.abort();
+      if (isLatest()) {
+        setCmsLoading(false);
+        setCmsSwitching(false);
+      }
+    }, CMS_FETCH_TIMEOUT_MS);
+
+    // 统一关闭 loading 的出口：仅最新请求可收尾
     const finishLoading = () => {
-      setCmsLoading(false);
-      setCmsSwitching(false);
+      clearTimeout(timeoutId);
+      if (isLatest()) {
+        setCmsLoading(false);
+        setCmsSwitching(false);
+      }
     };
 
     if (isSwitching) {
@@ -105,9 +130,17 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       currentSourceNameRef.current = undefined;
     }
 
-    // 一次性获取视频源配置，后续所有位置复用
+    // 一次性获取视频源配置，后续所有位置复用。
+    // ⚠️ 必须捕获：这里抛错原本会变成未捕获的 Promise rejection，loading 永远关不掉
+    // （表现之一：切换 CMS 失败/超时后播放器一直转圈）。
     const { getVideoSources } = await import('@/services/sourceService');
-    const allSrc = await getVideoSources();
+    let allSrc: Awaited<ReturnType<typeof getVideoSources>>;
+    try {
+      allSrc = await getVideoSources();
+    } catch {
+      finishLoading();
+      return;
+    }
 
     let sourceIdx = targetSourceIndex;
 
@@ -184,7 +217,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     {
       const matchedId = allSrc[sourceIdx]?.id;
-      if (matchedId) setActiveSourceId(matchedId);
+      // 仅最新请求写选中态：旧请求回写会覆盖用户刚点的新源（连点切源 → 选中态丢失）
+      if (matchedId && isLatest()) setActiveSourceId(matchedId);
     }
 
     let videoTitle = '';
@@ -208,7 +242,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     videoYearRef.current = videoYear;
 
     if (!videoTitle) {
-      if (!ctrl.signal.aborted) finishLoading();
+      finishLoading();
       return;
     }
 
@@ -224,7 +258,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         const svc = await import('@/services/videoService');
         /** 通过 vodId 获取视频详情（传递 signal 支持取消） */
         const detailVideo = await svc.fetchVideoDetail(sourceIdx, histRecord.vodId, ctrl.signal);
-        if (ctrl.signal.aborted) return;
+        if (!isLatest()) return;
 
         if (detailVideo) {
           // 设置 CMS 源信息
@@ -244,15 +278,14 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               restoreLineIfNeeded(firstEp);
               // 异步加载季信息（传递 signal 支持取消）
               searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal).then(result => {
-                if (!ctrl.signal.aborted) {
-                  seasonMapsRef.current.set(sourceIdx, result.seasons);
-                  setCmsSeasons(buildCmsSeasons(result.seasons));
-                  if (histRecord?.vodId) {
-                    for (const [seasonNum, seasonVid] of result.seasons) {
-                      if (seasonVid.id === histRecord.vodId) {
-                        selectedSeasonRef.current = seasonNum;
-                        break;
-                      }
+                if (!isLatest()) return;
+                seasonMapsRef.current.set(sourceIdx, result.seasons);
+                setCmsSeasons(buildCmsSeasons(result.seasons));
+                if (histRecord?.vodId) {
+                  for (const [seasonNum, seasonVid] of result.seasons) {
+                    if (seasonVid.id === histRecord.vodId) {
+                      selectedSeasonRef.current = seasonNum;
+                      break;
                     }
                   }
                 }
@@ -308,7 +341,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           setCmsSeasons(buildCmsSeasons(seasonMap));
         }
 
-        if (!ctrl.signal.aborted) {
+        if (isLatest()) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
 
@@ -356,9 +389,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           finishLoading();
         }
       } catch {
-        if (!ctrl.signal.aborted) {
-          finishLoading();
-        }
+        finishLoading();
       }
       return;
     }
@@ -380,7 +411,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
       }
 
-      if (!ctrl.signal.aborted) {
+      if (isLatest()) {
         setCmsResults(prev => {
           const idx = prev.findIndex(r => r.sourceIndex === sourceIdx);
           if (idx >= 0) { const next = [...prev]; next[idx] = result; return next; }
@@ -426,9 +457,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         }
       }
     } catch {
-      if (!ctrl.signal.aborted) {
-        finishLoading();
-      }
+      finishLoading();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, videoSourceIds, routeSourceIndex, skipHistory, tmdbDetail, tmdbMediaType, video, setSelectedSeason, routePlayUrl, routeSeasonNumber]);
@@ -450,7 +479,14 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     if (cmsSwitchTimerRef.current) clearTimeout(cmsSwitchTimerRef.current);
     cmsSwitchTimerRef.current = setTimeout(() => { cmsSwitchTimerRef.current = null; }, 300);
 
-    setActiveSourceId(result.sourceName);
+    // 用户最新意图：领序号；后续状态写入与收尾仅在仍是最新意图时生效，
+    // 避免与更晚的切源/切季请求互相覆盖造成「选中态丢失 / 数据回滚」。
+    const reqId = ++reqSeqRef.current;
+    const isLatest = () => reqSeqRef.current === reqId;
+
+    // ⚠️ 此前写 result.sourceName → 永远对不上 activeSourceId（按 id 比较），
+    // 这是「CMS tab 选中态消失」的根因之一。
+    setActiveSourceId(result.sourceId || result.sourceName);
     activeCmsSourceIndexRef.current = result.sourceIndex;
 
     const activeEpId = video?.episodes?.length
@@ -461,9 +497,14 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     const currentEpNumber = currentEp?.number;
 
     const cleanup = () => {
-      setCmsLoading(false);
-      setCmsSwitching(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (isLatest()) {
+        setCmsLoading(false);
+        setCmsSwitching(false);
+      }
     };
+    // 超时兜底：避免接口 hang 时「切 CMS 后播放器一直加载」
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     // TV 剧集：优先用已缓存且对齐的该源季映射；缺失则重建该源季映射并按语义对齐
     const seasonMap = seasonMapsRef.current.get(result.sourceIndex);
@@ -475,11 +516,21 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         const matchedEp = currentEpNumber
           ? findEpisodeByNumber(cachedVideo.episodes, currentEpNumber)
           : undefined;
-        if (matchedEp?.sources.length) {
-          videoCache.set(id!, { video: cachedVideo, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
-          setVideo(cachedVideo);
-          onSwitchEpisode(matchedEp);
-        }
+        // 当前集号在新源该季不存在时回退首集；无论是否命中集号都写 video——
+        // 切源语义下禁止保留上一个源的数据（「失败不回退」）
+        const targetEp = matchedEp?.sources.length
+          ? matchedEp
+          : [...cachedVideo.episodes].sort((a, b) => a.number - b.number)[0];
+        videoCache.set(id!, { video: cachedVideo, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
+        setVideo(cachedVideo);
+        if (targetEp?.sources.length) onSwitchEpisode(targetEp);
+      } else {
+        // 该源该季无集数：清空播放状态落到空态（不回退旧源数据）
+        setVideo(null);
+        setSources([]);
+        setCurrentSrc(null);
+        setLocalEpisodeId(undefined);
+        currentSourceNameRef.current = undefined;
       }
       cleanup();
       return;
@@ -491,11 +542,18 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       const ctrl = new AbortController();
       cmsAbortRef.current = ctrl;
       setCmsLoading(true);
+      timeoutId = setTimeout(() => {
+        ctrl.abort();
+        if (isLatest()) {
+          setCmsLoading(false);
+          setCmsSwitching(false);
+        }
+      }, CMS_FETCH_TIMEOUT_MS);
       try {
         const seasonResult = await searchVideoSeasonsFromSingleSource(
           result.sourceIndex, videoTitleRef.current, videoYearRef.current, ctrl.signal,
         );
-        if (ctrl.signal.aborted) { cleanup(); return; }
+        if (!isLatest()) { cleanup(); return; }
         const sm = seasonResult.seasons;
         seasonMapsRef.current.set(result.sourceIndex, sm);
         setCmsSeasons(buildCmsSeasons(sm));
@@ -516,12 +574,25 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
             if (ep?.sources.length) onSwitchEpisode(ep);
           }
         } else {
+          // 该源没有当前季：清空全部播放状态（不回退旧源数据）
           setVideo(null);
+          setSources([]);
+          setCurrentSrc(null);
+          setLocalEpisodeId(undefined);
+          currentSourceNameRef.current = undefined;
         }
       } catch {
-        // 重建失败：保留当前状态，不静默清空
+        // 重建失败：切源语义下不回退上一个源的数据（用户定稿 2026-09-09），
+        // 清空播放状态落到「暂无数据」空态，由用户改选其他源。
+        if (isLatest()) {
+          setVideo(null);
+          setSources([]);
+          setCurrentSrc(null);
+          setLocalEpisodeId(undefined);
+          currentSourceNameRef.current = undefined;
+        }
       } finally {
-        if (!ctrl.signal.aborted) cleanup();
+        cleanup();
       }
       return;
     }
@@ -555,6 +626,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         setSource(firstSrc.url, firstSrc.type);
         currentSourceNameRef.current = firstSrc.name;
       }
+    } else {
+      // 无可用数据：清空播放状态，不回退上一个源
+      setVideo(null);
+      setSources([]);
+      setCurrentSrc(null);
+      setLocalEpisodeId(undefined);
+      currentSourceNameRef.current = undefined;
     }
     cleanup();
   }, [id, video, selectedSeason, videoCache, setVideo, setSources, setSource, setCurrentSrc, currentSourceNameRef, cmsSourceNameRef, seasonChangedRef, onSwitchEpisode, setSelectedSeason]);
@@ -565,12 +643,19 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     cmsAbortRef.current?.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
+    const reqId = ++reqSeqRef.current;
+    const isLatest = () => reqSeqRef.current === reqId;
+    // 超时兜底：避免「切季接口 hang → 选集面板 loading 永驻」
+    const timeoutId = setTimeout(() => {
+      ctrl.abort();
+      if (isLatest()) setCmsLoading(false);
+    }, CMS_FETCH_TIMEOUT_MS);
     setCmsLoading(true);
     try {
       const seasonResult = await searchVideoSeasonsFromSingleSource(
         sourceIdx, videoTitleRef.current, videoYearRef.current, ctrl.signal,
       );
-      if (ctrl.signal.aborted) return;
+      if (!isLatest()) return;
       const sm = seasonResult.seasons;
       seasonMapsRef.current.set(sourceIdx, sm);
       setCmsSeasons(buildCmsSeasons(sm));
@@ -602,7 +687,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     } catch {
       // 加载失败：保留当前状态，不静默清空
     } finally {
-      if (!ctrl.signal.aborted) setCmsLoading(false);
+      clearTimeout(timeoutId);
+      // isLatest=true 包含超时与正常失败：均清掉加载态（仅限最新请求）
+      if (isLatest()) setCmsLoading(false);
     }
   }, [id, videoCache, setVideo, setSources, setCurrentSrc, setLocalEpisodeId, onSwitchEpisode, setSelectedSeason]);
 

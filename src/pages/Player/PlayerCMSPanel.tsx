@@ -3,6 +3,7 @@ import { type VideoSource } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { usePanelCollapse } from './hooks';
 
 interface PlayerCMSPanelProps {
   selectedSourceIds: string[];
@@ -17,7 +18,7 @@ interface PlayerCMSPanelProps {
   compact?: boolean;
   /** 只读模式：源默认选中，点击无操作（直链搜索场景） */
   readOnly?: boolean;
-  /** 桌面端（>1280px）无选季面板模式：CMS tab 一行各占 1/3 空间（与选集面板等宽） */
+  /** 桌面端（≥1024px）无选季面板模式：CMS tab 一行各占 1/3 空间（与选集面板等宽） */
   seasonAvailable?: boolean;
 }
 
@@ -36,15 +37,18 @@ export function PlayerCMSPanel({
   seasonAvailable = true,
 }: PlayerCMSPanelProps) {
   const HeaderTag = compact ? 'div' : 'button';
+  // App 端（compact）面板不可折叠 → collapsed 恒 false，不产生动画
+  const collapsed = !compact && !expanded;
+  const collapseRef = usePanelCollapse<HTMLDivElement>(collapsed);
 
   // sourceId → VideoDetailResult 映射
   const resultMap = new Map(cmsResults.map(r => [r.sourceId, r]));
 
-  // ── 移动端（<1280px / app 恒移动）CMS tab 均分行布局 ──
+  // ── CMS tab 均分行布局（全端：窄屏 <1024px / app 恒移动 / 桌面 ≥1024px）──
   // 列数 = 一行能容下的最多 tab 数：列宽下限取「最宽 tab 的自然宽度」，
   // 保证任何 tab 都不会被列宽截断；所有行共用同一列网格 → 首行 tab 平均分配空间、
-  // 后续行与首行列对齐。列数写入 --cms-tab-cols（CSS 变量），仅移动端网格规则消费，
-  // 桌面端（≥1280px）仍为 flex-wrap 内容自适应宽度。
+  // 后续行与首行列对齐。列数写入 --cms-tab-cols（CSS 变量），窄屏与桌面两套网格规则
+  // 都消费它；侧栏宽度变化（断点切换 / 窗口缩放）由 ResizeObserver 自动重算，无断点硬编码。
   const listRef = useRef<HTMLDivElement>(null);
   // 内容签名：tab 文本（displayName）变化也会改变最宽 tab 宽度，需重算列数
   const nameSig = selectedSourceIds.map((id) => sourceNameMap.get(id) ?? id).join('|');
@@ -60,7 +64,9 @@ export function PlayerCMSPanel({
     const containerW = list.clientWidth;
     const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
     const maxItemW = Math.max(...widths);
-    const cols = Math.max(1, Math.min(items.length, Math.floor((containerW + gap) / (maxItemW + gap))));
+    // 下限 3：无论视口多窄，CMS 面板至少一行显示 3 列（侧栏最小宽度 240px 已兜底列宽可行）。
+    // 若源数不足 3 则退化为实际数量（Math.min(items.length)）。
+    const cols = Math.max(3, Math.min(items.length, Math.floor((containerW + gap) / (maxItemW + gap))));
     if (list.style.getPropertyValue('--cms-tab-cols') !== String(cols)) {
       list.style.setProperty('--cms-tab-cols', String(cols));
     }
@@ -94,7 +100,7 @@ export function PlayerCMSPanel({
   };
 
   return (
-    <div className={`player-panel player-panel--cms${!seasonAvailable ? ' player-panel--cms-movie' : ''}`}>
+    <div ref={collapseRef} className={`player-panel player-panel--cms${!seasonAvailable ? ' player-panel--cms-movie' : ''}${collapsed ? ' collapsed' : ''}`}>
       <HeaderTag
         className="player-panel-header"
         {...(!compact && onToggle ? { onClick: onToggle } : {})}
@@ -108,7 +114,7 @@ export function PlayerCMSPanel({
           </span>
         )}
       </HeaderTag>
-      <div className={`player-panel-body${!compact && !expanded ? ' collapsed' : ''}`}>
+      <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
         {selectedSourceIds.length > 0 ? (
           <div ref={listRef} className="player-cms-list">
             {selectedSourceIds.map((sourceId) => {

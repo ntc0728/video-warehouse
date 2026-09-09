@@ -129,6 +129,12 @@ Response: {
 }
 ```
 
+#### 2.4 业务错误码约定（2026-09-09）
+
+- MacCMS 规范：`code: 1` = 成功；其他值为**业务异常**（HTTP 仍 200）。实测例：`{ code: 1002, msg: "Current API forbids keyword search." }`（该源禁止关键词搜索）。
+- **客户端统一校验**：`src/services/videoService.ts` 的 `fetchCmsList()` = `getJSON` + `assertCmsOk`（`code` 非 1 直接抛 `Error(msg)`）。所有 `CMSListResponse` 请求必须走 `fetchCmsList`，禁止直接用 `getJSON`——否则业务异常会被当成「list 为空 → 未找到匹配资源」或按成功继续解析，播放页表现为面板骨架 / 永久加载。
+- 失败链路：`assertCmsOk` 抛错 → 搜索/季搜索函数 catch → 返回 `{ video: null, error: msg }` → 播放页落「暂无数据」空态（CMS tab 保留、选中态停留在新点的源，不回退旧源数据）。
+
 ### 3. IPTV API
 
 #### 3.1 IPTV 源配置

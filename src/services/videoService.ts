@@ -50,6 +50,34 @@ interface CMSListResponse {
   list?: CMSVideoItem[];
   page?: number;
   total?: number;
+  /** MacCMS 业务状态码：1=成功；其他值代表业务异常（如 1002=当前 API 禁止关键词搜索） */
+  code?: number;
+  /** 业务异常描述，与 code 配套返回 */
+  msg?: string;
+}
+
+/**
+ * CMS 业务错误码校验：HTTP 200 但 body.code 非 1 属于业务异常响应。
+ * ⚠️ 不能只看 HTTP 层：这类响应若不校验，会落到「list 为空 → 未找到匹配资源」
+ * 或更糟——把异常响应当成功继续走解析，表现为面板卡在加载态。
+ */
+function assertCmsOk(data: CMSListResponse): void {
+  if (data.code != null && data.code !== 1) {
+    throw new Error(data.msg?.trim() || `CMS 接口业务异常（code: ${data.code}）`);
+  }
+}
+
+/**
+ * CMS 列表/详情接口统一入口：getJSON + 业务错误码校验。
+ * 所有 CMSListResponse 请求必须走这里，禁止直接使用 getJSON。
+ */
+async function fetchCmsList(
+  url: string,
+  opts?: Parameters<typeof getJSON>[1],
+): Promise<CMSListResponse> {
+  const data = await getJSON<CMSListResponse>(url, opts);
+  assertCmsOk(data);
+  return data;
 }
 
 const VOD_TYPE_MAP: Record<number, VideoType> = {
@@ -106,7 +134,7 @@ export async function checkVideoSourceAvailability(
 
   try {
     /** 请求 CMS 列表接口（通过 CORS 代理；重试次数取自源配置） */
-    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout, retries: source.retries });
+    const data = await fetchCmsList(source.api, { useProxy: true, timeout, retries: source.retries });
     if (data && Array.isArray(data.list)) {
       return { index: sourceIndex, name: source.name, available: true };
     }
@@ -298,7 +326,7 @@ async function resolvePlaySources(
   // 2) 解析为空时，通过详情接口获取完整 vod_play_url
   try {
     const detailUrl = `${api}?ac=videolist&ids=${item.vod_id}`;
-    const detailData = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal });
+    const detailData = await fetchCmsList(detailUrl, { useProxy: true, signal });
     const detailItem = detailData.list?.[0];
     if (detailItem) {
       const parsed = parsePlaySources(detailItem.vod_play_url || '', vodType);
@@ -336,7 +364,7 @@ export async function fetchVideosBySource(
 
   try {
     /** 请求 CMS 列表接口（15 秒超时；重试次数取自源配置） */
-    const data = await getJSON<CMSListResponse>(source.api, { useProxy: true, timeout: 15000, retries: source.retries });
+    const data = await fetchCmsList(source.api, { useProxy: true, timeout: 15000, retries: source.retries });
     if (data.list && Array.isArray(data.list)) {
       return {
         videos: data.list.map(mapVideoItem),
@@ -382,7 +410,7 @@ export async function fetchVideoDetail(sourceIndex: number, videoId: string, sig
     /** CMS 详情接口 URL */
     const detailUrl = `${source.api}?ac=videolist&ids=${videoId}`;
     /** 请求 CMS 详情接口（传递 signal 支持取消；超时/重试取自源配置） */
-    const data = await getJSON<CMSListResponse>(detailUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(detailUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) return null;
     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
@@ -429,7 +457,7 @@ export async function searchVideoFromMultipleSources(
 
       try {
         const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}${year ? `&year=${year}` : ''}`;
-        const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+        const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
@@ -497,7 +525,7 @@ export async function searchVideoFromSingleSource(
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
     /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
@@ -557,7 +585,7 @@ export async function searchAllFromCMSSource(
 
   try {
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}&pg=${page}`;
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal: opts?.signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal: opts?.signal, timeout: source.timeoutMs, retries: source.retries });
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源' };
     }
@@ -595,7 +623,7 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
     if (!source) return null;
     try {
       const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-      const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, timeout: source.timeoutMs, retries: source.retries });
+      const data = await fetchCmsList(searchUrl, { useProxy: true, timeout: source.timeoutMs, retries: source.retries });
       if (!data.list || !Array.isArray(data.list) || data.list.length === 0) return null;
       const match = data.list.find((item: CMSVideoItem) => {
         const t = item.vod_name || '';
@@ -665,7 +693,7 @@ export async function searchVideoSeasonsFromSingleSource(
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
     /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
-    const data = await getJSON<CMSListResponse>(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
