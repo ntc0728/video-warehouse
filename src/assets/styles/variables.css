@@ -285,6 +285,7 @@
   --breakpoint-4xl: 3840px;   /* 4K */
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
+  --layout-page-min-height: 100%; /* 页面根最小高度：填满滚动区剩余空间。= 100dvh − header − tabbar − TV 安全区，自动跟随断点/顶栏折叠/TV overscan。**勿写 px 或 100dvh**：100dvh 在 AppLayout 内会溢出（多出 header+tabbar），固定 px 在 TV 4K 下失效。⚠️ Player 除外（高度由视频 16:9 派生，用本 token 会破坏比例）。 */
   --layout-loading-min-height: calc(clamp(300px, 185.496px + 30.534vw, 420px) * var(--ui-scale)); /* 加载态最小高度：300→480px 流体 */
   --layout-modal-max-width: calc(clamp(320px, 141.883px + 47.498vw, 506.667px) * var(--ui-scale)); /* 弹窗最大宽度 */
   /* IPTV OSD 控制栏最大宽度（桌面基线，保持原流式曲线不变）：1024→~627px / 1920→~896px / 2560→~1088px，封顶 1400px。
@@ -294,6 +295,11 @@
   /* 内容区最大宽度：移动端(<768)不约束（100%）——旧单条 clamp 曲线 375→320px 会把
      移动端内容钳到比视口还窄；桌面曲线移至段2（≥768）块，TV 由文件末 html[data-device="tv"] 恒 MIN 覆盖。 */
   --layout-content-max-width: 100%;
+  /* 内容区封顶「裸值」单一真源：--layout-content-max-width 是含 100% 的 min() 表达式，
+     无法再参与「先封顶后减两侧留白」的 calc（100% 的基准会变成父内容盒而非视口）。
+     需要「封顶值 − 2×留白」的页面（如播放页把滚动容器铺满视口、封顶下沉到内容块）
+     一律用本变量，不要另写 2200px 字面量。 */
+  --layout-content-cap: 2200px;
   --layout-hero-height: calc(clamp(200px, 9.16px + 50.891vw, 400px) * var(--ui-scale)); /* 首页 Hero 高度 */
   --layout-hero-height-mobile: calc(clamp(280px, 241.832px + 10.178vw, 320px) * var(--ui-scale)); /* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
@@ -430,7 +436,7 @@
     --layout-cast-avatar: calc(clamp(80px, 75.7095px + 0.55866vw, 88px) * var(--ui-scale));
     --layout-channel-num-w: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1195.1588px + 9.31096vw, 1400px) * var(--ui-scale));
-    --layout-content-max-width: min(100%, 2200px); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线 */
+    --layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
     --layout-datepicker-width: calc(clamp(420px, 398.54749px + 2.7933vw, 460px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 163.90391px + 1.27709vw, 192px) * var(--ui-scale));
     --layout-detail-poster-w: calc(clamp(128px, 32px + 8vw, 352px) * var(--ui-scale)); /* 详情页海报宽度：2026-09-06 恢复 868f4cb 前旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920，用户反馈 277→352 过大） */

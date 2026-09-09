@@ -117,6 +117,8 @@ scripts/*.mjs
 # changelog 合并机制脚本：跨会话累积改动片段，push 前合并
 !scripts/changelog-draft.mjs
 !scripts/changelog-collect.mjs
+# 最小环境自检脚本：按需跑 `node scripts/setup.mjs`，纳入版本控制
+!scripts/setup.mjs
 !scripts/global-setup.ts
 !scripts/global-teardown.ts
 # 测试 fixtures（mock 数据）纳入版本控制，保证 CI / 他人 clone 后

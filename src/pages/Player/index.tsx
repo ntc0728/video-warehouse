@@ -27,7 +27,7 @@ import { PlayerEpisodesPanel } from './PlayerEpisodesPanel';
 import { PlayerSidebar } from './PlayerSidebar';
 import { PlayerSidebarSkeleton } from './PlayerSidebarSkeleton';
 import { PlayerTVLoader } from './PlayerTVLoader';
-import { useDocumentTitle, useIsTV } from '@/hooks';
+import { useDocumentTitle, useIsTV, useIsMobile } from '@/hooks';
 import { useAutoPlay, useEpisodeSwitcher, useCMSSourceManager, useNextEpisodePreload } from './hooks';
 import './Player.css';
 import { Icon } from "@/components/ui/Icon";
@@ -116,6 +116,8 @@ export default function PlayerPage() {
   const isCompact = useMemo(() => isNativePlatform(), []);
   // TV 模式：用户在设置页强制开启，或 UA 自动检测为 TV 设备时启用遥控器交互
   const isTVDevice = useIsTV();
+  // 移动端检测：视口宽度 < 1024px 时面板展开不互斥
+  const isMobile = useIsMobile();
 
   const [video, setVideo] = useState<Video | null>(null);
   const [currentSrc, setCurrentSrc] = useState<{ url: string; type: VideoSource['type'] } | null>(null);
@@ -130,8 +132,8 @@ export default function PlayerPage() {
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
 
   const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({
-    cms: true,
-    season: true,
+    cms: false,
+    season: false,
     episodes: true,
   });
 
@@ -494,7 +496,19 @@ export default function PlayerPage() {
   const handleBack = useSmartBack(id ? `/detail/${id}` : undefined);
 
   const togglePanel = (key: string) => {
-    setExpandedPanels(prev => ({ ...prev, [key]: !prev[key] }));
+    setExpandedPanels(prev => {
+      const next = { ...prev };
+      if (prev[key]) {
+        next[key] = false;
+      } else if (isMobile) {
+        next[key] = true;
+      } else {
+        Object.keys(prev).forEach(k => {
+          next[k] = k === key;
+        });
+      }
+      return next;
+    });
   };
 
   // 切换选季：从内存中的季映射表查找对应集数
@@ -512,7 +526,9 @@ export default function PlayerPage() {
     const currentEpNumber = currentEp?.number;
 
     const seasonVideo = seasonMap?.get(seasonNumber);
-    // 缓存命中且集数有效：直接切换（保留当前集号）
+    // 缓存命中且集数有效：直接切换（保留当前集号）。
+    // 当前集号在新季不存在（季数集数不同）时回退首集，否则 video 不更新、
+    // 选集面板仍是上一季数据，且无线路可播。
     if (seasonMap && seasonVideo && seasonVideo.episodes?.length) {
       setLocalEpisodeId(undefined);
       setSources([]);
@@ -521,14 +537,18 @@ export default function PlayerPage() {
       const matchedEp = currentEpNumber
         ? findEpisodeByNumber(seasonVideo.episodes, currentEpNumber)
         : undefined;
+      const targetEp = matchedEp?.sources.length
+        ? matchedEp
+        : [...seasonVideo.episodes].sort((a, b) => a.number - b.number)[0];
 
-      if (matchedEp?.sources.length) {
-        videoCache.set(id!, { video: seasonVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
-        setVideo(seasonVideo);
-        switchToEpisode(matchedEp);
-      }
+      // 无论 targetEp 是否存在都先写 video：确保选集面板基于新季数据刷新
+      videoCache.set(id!, { video: seasonVideo, sourceIndex: sourceIdx, fetchedAt: Date.now() });
+      setVideo(seasonVideo);
+      if (targetEp?.sources.length) switchToEpisode(targetEp);
     } else {
-      // 缓存缺失或该季无集数：懒加载兜底——按需重建该源季映射，而非静默置空
+      // 缓存缺失或该季无集数：懒加载兜底——按需重建该源季映射，
+      // loadSeason 内部会调用 searchVideoSeasonsFromSingleSource（真实接口），
+      // 并在 season/episodes 面板显示 loading 状态。
       loadSeason(sourceIdx, seasonNumber, currentEpNumber);
     }
     // zustand actions 和 refs 引用稳定，不会导致重新执行
@@ -661,6 +681,10 @@ export default function PlayerPage() {
   const overview = (d?.overview || v?.description || '').replace(/<[^>]+>/g, '');
   const similarResults = d?.similar?.results?.slice(0, 12) || [];
   const recommendedResults = d?.recommendations?.results?.slice(0, 12) || [];
+
+  // 切换 CMS / 选季中的 loading 态（CMS 接口请求中、还未取得新数据）。
+  // 用于驱动选季/选集面板的 loading 展示与「无 currentSrc」分支的播放器加载动画。
+  const panelLoading = cmsLoading || cmsSwitching;
 
   // ── 公共详情区（所有 return 路径共用，保持播放器高度稳定）──
   // 提前到加载态分支之前声明：入场加载态分支（!video && !cmsLoading && !cmsSwitching）
@@ -803,7 +827,10 @@ export default function PlayerPage() {
   // 不再用全屏 AppLoading 覆盖播放器（播放器自身负责缓冲态；黑场占位与最终播放器
   // 同尺寸同底色，零跳动、零「白→黑」闪光）。右侧渲染骨架占位（PlayerSidebarSkeleton），
   // 数据就绪后由主分支渲染真实面板（播放器豁免进场动画见 animations.css [data-variant="player"]）。
-  if (!video && !cmsLoading && !cmsSwitching) {
+  // ⚠️ hasLoadedOnce 守卫：切源失败（接口异常 / 业务错误码）后 video 已被清空且
+  // loading 已结束，若不守卫会命中本分支 → 面板回退成骨架 + 播放器看起来永远在加载。
+  // 失败态必须落到下方「暂无数据」分支（真实面板 + 空态文案）。
+  if (!video && !cmsLoading && !cmsSwitching && !hasLoadedOnce) {
     return (
       <div className="page-padding player-page">
         <div className="player-main">
@@ -814,7 +841,7 @@ export default function PlayerPage() {
           </div>
           {/* 入场加载阶段：右侧显示骨架占位结构，数据就绪后由主分支渲染真实面板。
               变体与主分支同判据，骨架 → 真实面板时面板数量/高度比例不跳变。 */}
-          <PlayerSidebar variant={playerVariant}>
+          <PlayerSidebar variant={playerVariant} expanded={expandedPanels}>
             <PlayerSidebarSkeleton variant={playerVariant} />
           </PlayerSidebar>
         </div>
@@ -824,8 +851,11 @@ export default function PlayerPage() {
   }
 
 
-  // CMS 加载中且无视频数据：播放器区域显示加载动画，面板显示局部 loading
-  if (cmsLoading && !video) {
+  // CMS 加载中且无视频数据：
+  // - 首次入场（hasLoadedOnce=false）→ 骨架占位（保留原行为）；
+  // - 切源/切季等「已有过数据、正在拉新数据」→ 落到下方「无 currentSrc」分支：
+  //   CMS 面板保留 tab/选中态不被骨架替换，选季/选集面板显示 loading。
+  if (cmsLoading && !video && !hasLoadedOnce) {
     return (
       <div className="page-padding player-page">
         <div className="player-main">
@@ -835,7 +865,7 @@ export default function PlayerPage() {
             </div>
           </div>
           {/* 变体与主分支同判据，避免骨架 → 真实面板时面板数量/高度比例跳变 */}
-          <PlayerSidebar variant={playerVariant}>
+          <PlayerSidebar variant={playerVariant} expanded={expandedPanels}>
             <PlayerSidebarSkeleton variant={playerVariant} />
           </PlayerSidebar>
         </div>
@@ -883,7 +913,7 @@ export default function PlayerPage() {
               </div>
             </div>
           </div>
-          <PlayerSidebar variant={playerVariant}>
+          <PlayerSidebar variant={playerVariant} expanded={expandedPanels}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -906,13 +936,14 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('season')}
               compact={isCompact}
               currentSeasonName={currentSeasonName}
+              loading={panelLoading}
             />
             <PlayerEpisodesPanel
               episodes={episodes}
               sources={playerSources}
               currentSrc={currentSrc}
               activeEpisodeId={localEpisodeId}
-              loading={cmsLoading}
+              loading={panelLoading}
               onPlayEpisode={handlePlayEpisode}
               onPlaySource={handlePlaySource}
               expanded={expandedPanels.episodes}
@@ -928,34 +959,42 @@ export default function PlayerPage() {
   }
 
   if (!currentSrc) {
-    // 有 video 但未选中线路/选集时，显示空播放器区域（不提前 return，保留下方详情内容）
+    // 有 video 但未选中线路/选集（含切源过程中 video 被临时清空 + setCurrentSrc(null)）。
+    // 切源（panelLoading=true）→ 播放器区显示加载动画，不再展示空 placeholder；
+    // 面板始终保留真实结构，避免 CMS tab 被整体骨架替换。
     return (
       <div className="page-padding player-page">
         <div className="player-main">
           <div className="player-video-area">
-            <div className="up-universal-player up-mode-video up-player-placeholder">
-              <div className="up-player-core">
-                <video className="up-player-video" playsInline />
-                <div className="up-player-paused-overlay">
-                  <div className="up-player-play-button">
-                    <svg viewBox="0 0 80 80" className="up-player-play-icon" aria-hidden="true">
-                      <circle cx="40" cy="40" r="38" />
-                      <polygon points="28,24 28,56 58,40" />
-                    </svg>
+            {panelLoading ? (
+              <div className="player-loading-wrap">
+                <PlayerTVLoader />
+              </div>
+            ) : (
+              <div className="up-universal-player up-mode-video up-player-placeholder">
+                <div className="up-player-core">
+                  <video className="up-player-video" playsInline />
+                  <div className="up-player-paused-overlay">
+                    <div className="up-player-play-button">
+                      <svg viewBox="0 0 80 80" className="up-player-play-icon" aria-hidden="true">
+                        <circle cx="40" cy="40" r="38" />
+                        <polygon points="28,24 28,56 58,40" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
+                <div className="up-player-header up-player-header-visible">
+                  <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
+                    <Icon icon={ArrowLeft} size="sm" />
+                    <span>返回</span>
+                  </button>
+                  <span className="up-header-title">{title || video?.title || ''}</span>
+                </div>
               </div>
-              <div className="up-player-header up-player-header-visible">
-                <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
-                  <Icon icon={ArrowLeft} size="sm" />
-                  <span>返回</span>
-                </button>
-                <span className="up-header-title">{title || video?.title || ''}</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          <PlayerSidebar variant={playerVariant}>
+          <PlayerSidebar variant={playerVariant} expanded={expandedPanels}>
             <PlayerCMSPanel
               selectedSourceIds={selectedSourceIds}
               sourceNameMap={sourceNameMap}
@@ -978,13 +1017,14 @@ export default function PlayerPage() {
               onToggle={() => togglePanel('season')}
               compact={isCompact}
               currentSeasonName={currentSeasonName}
+              loading={panelLoading}
             />
             <PlayerEpisodesPanel
               episodes={episodes}
               sources={playerSources}
               currentSrc={currentSrc}
               activeEpisodeId={localEpisodeId}
-              loading={cmsLoading}
+              loading={panelLoading}
               onPlayEpisode={handlePlayEpisode}
               onPlaySource={handlePlaySource}
               expanded={expandedPanels.episodes}
@@ -1059,7 +1099,7 @@ export default function PlayerPage() {
           )}
         </div>
 
-        <PlayerSidebar variant={playerVariant}>
+        <PlayerSidebar variant={playerVariant} expanded={expandedPanels}>
           <PlayerCMSPanel
             selectedSourceIds={selectedSourceIds}
             sourceNameMap={sourceNameMap}
@@ -1076,20 +1116,18 @@ export default function PlayerPage() {
           <PlayerSeasonPanel
             seasons={seasons}
             activeSeason={selectedSeason}
-            onSelectSeason={(s) => {
-              seasonChangedRef.current = true;
-              setSelectedSeason(s);
-            }}
+            onSelectSeason={handleSelectSeason}
             expanded={expandedPanels.season}
             onToggle={() => togglePanel('season')}
             compact={isCompact}
+            loading={panelLoading}
           />
           <PlayerEpisodesPanel
             episodes={episodes}
             sources={playerSources}
             currentSrc={currentSrc}
             activeEpisodeId={localEpisodeId}
-            loading={cmsLoading}
+            loading={panelLoading}
             onPlayEpisode={handlePlayEpisode}
             onPlaySource={handlePlaySource}
             expanded={expandedPanels.episodes}
