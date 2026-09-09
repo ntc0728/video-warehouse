@@ -48,3 +48,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </Suspense>
   </ErrorBoundary>
 );
+
+// 摘除 index.html 的零依赖启动骨架。
+// 必须等 React 提交首帧之后 —— 否则会出现「splash 已消失、内容还没渲染」的新白屏空档。
+// 冷启动（路由 chunk 需网络拉取）时，此时 #root 里已是 Suspense 的 AppLoading，视觉连续。
+requestAnimationFrame(() => {
+  document.getElementById('boot-splash')?.remove();
+});

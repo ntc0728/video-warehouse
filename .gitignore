@@ -90,6 +90,10 @@ docs/*
 !docs/TEST-CASES.md
 !docs/KNOWN-ISSUES.md
 !docs/PRODUCTION-REVIEW-*.md
+# 文档瘦身分片（AGENTS.md 下沉 + 大文件拆分，2026-09-09）
+!docs/agents/
+!docs/test-cases/
+!docs/knowledge/
 
 # ── 研究文档（本地用，不入版本控制）────────────
 research/
@@ -108,6 +112,11 @@ scripts/*.mjs
 !scripts/*.spec.ts
 !scripts/fetch-diagram-data.mjs
 !scripts/sync-android-version.mjs
+# 冷启动诊断工具：需要跨会话复用，纳入版本控制
+!scripts/diag-coldstart.mjs
+# changelog 合并机制脚本：跨会话累积改动片段，push 前合并
+!scripts/changelog-draft.mjs
+!scripts/changelog-collect.mjs
 !scripts/global-setup.ts
 !scripts/global-teardown.ts
 # 测试 fixtures（mock 数据）纳入版本控制，保证 CI / 他人 clone 后
