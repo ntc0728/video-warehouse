@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.0...kinotv-v1.22.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **player:** 三面板折叠动画重做 + CMS 源管理失败态治理 ([4dcfa7c](https://github.com/ntc0728/video-warehouse/commit/4dcfa7c10acc533c048eb3fd68b425f1cd319b8e))
+
 ## [1.22.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.21.0...kinotv-v1.22.0) (2026-09-08)
 
 
