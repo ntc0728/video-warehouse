@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code when working with code in this repository.
 
 > **Full project guide: See [AGENTS.md](./AGENTS.md)** — architecture, page diagrams, flowcharts, proxy config, data sources, domain terminology, and key directories.
+> **AGENTS.md 已瘦身为索引**（2026-09-09）：架构/页面/模式/测试等详情按需读 `docs/agents/`；测试用例见 `docs/test-cases/`、知识库见 `docs/knowledge/`。
 
 ## Quick Reference
 

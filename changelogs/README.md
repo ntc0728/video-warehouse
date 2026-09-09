@@ -1,5 +1,8 @@
 # Changelogs — 每日改动记录
 
+> ⚠️ **新流程（2026-09-09 起）**：改动不再直接写当日文件，而是累积到 `changelogs/_pending/` 片段，push 前统一合并到 `changelogs/YYYY-MM-DD.md`。
+> 片段格式与合并命令见 `scripts/changelog-collect.mjs` / `scripts/changelog-draft.mjs` 文件头注释；合并由 `.git/hooks/pre-push` 阻断兜底。
+
 > 本目录记录每次 UI / 逻辑改动的「旧逻辑 ↔ 新逻辑」对照，并**永久留存配套 Demo**，
 > 用于跨会话追溯「为什么这么改、改之前长什么样」。
 

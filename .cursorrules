@@ -1,6 +1,7 @@
 You are an AI assistant working on the Video Warehouse (KinoTV) project.
 
 Full project guide: Read AGENTS.md for architecture, page diagrams, flowcharts, proxy config, data sources, and domain terminology.
+AGENTS.md is now a slim index (2026-09-09): read docs/agents/, docs/test-cases/, docs/knowledge/ on demand for details.
 
 Key facts:
 - React 18 + TypeScript + Vite 6 + Zustand + Tailwind CSS

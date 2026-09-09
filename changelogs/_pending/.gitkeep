@@ -1,0 +1,2 @@
+# 保留此目录：changelog 片段暂存区。
+# 每轮改动往此处写 <YYYY-MM-DD-HHmm>-<slug>.md 片段，push 前由 changelog-collect.mjs 合并进当日 changelogs/YYYY-MM-DD.md 并归档到 _archived/。

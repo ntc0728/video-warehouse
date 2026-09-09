@@ -36,7 +36,15 @@ export default defineConfig({
   base: process.env.CAPACITOR === 'true' ? './' : '/',
   server: {
     port: 3001,
-    host: '127.0.0.1',
+    // 双栈监听：Windows 下 localhost 优先解析为 IPv6 ::1，而只监听 127.0.0.1 时，
+    // 浏览器每次新建连接都要「先试 ::1 → 失败 → 回退 IPv4」，白付一个回退超时。
+    // 实测（同一台机器）：
+    //   curl    localhost connect 202ms  vs  127.0.0.1 1ms
+    //   Chromium 单栈下 document 372ms / 首屏图片 268ms，双栈下两者均 ~30ms
+    // 该回退超时随机器网络栈差异会显著放大（IPv6 黑洞时更久）。
+    // '::' 在 Node 下默认 dual-stack（ipv6Only=false），::1 与 127.0.0.1 均可直连。
+    // 注意：'::' 会同时监听 0.0.0.0，即局域网可访问（依赖系统防火墙拦截入站）。
+    host: '::',
     open: false,
     // 预热常用模块：dev server 启动后立即 transform 核心模块，
     // 消除「首次打开浏览器 → 逐模块编译」的慢路径（感知上的首屏慢）
