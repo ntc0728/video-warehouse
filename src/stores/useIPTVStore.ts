@@ -238,7 +238,7 @@ export const useIPTVStore = create<IPTVState>()(
         // 本地源结果：成功时产出 bySource（更多台）与频道全集；失败记 error
         const localResult = localSettled.status === 'fulfilled' ? localSettled.value : null;
         const sourceErrors = localResult?.sourceErrors ?? [];
-        // iptv-org 失败且本地也失败 → 整体失败；仅 org 失败 → 用本地并提示
+        // iptv-org 失败且本地也失败 → 整体失败
         if (orgSettled.status === 'rejected' && !localResult) {
           set({
             error: orgSettled.reason instanceof Error ? orgSettled.reason.message : 'iptv-org 与本地源均加载失败',
@@ -258,10 +258,9 @@ export const useIPTVStore = create<IPTVState>()(
         if (orgChannels) {
           // ── 主干：iptv-org 频道（url=cn.m3u 流；命中本地源同名频道则改用本地流）──
           merged = mergeOrgWithLocal(orgChannels, localResult);
-        } else if (localResult) {
-          // iptv-org 不可用 → 回退纯本地主干（旧行为）
-          merged = localResult.channels;
         }
+        // iptv-org 失败 → 主干为空数组（不回退本地源）；
+        // 本地源频道仍可通过「更多台」勾选后展示
 
         const channels = withFavorites(merged, favoriteChannelIds);
 
@@ -276,7 +275,7 @@ export const useIPTVStore = create<IPTVState>()(
         // 合并错误消息：本地源失败 + iptv-org 主干失败可能同时发生
         const errors: string[] = [];
         if (sourceErrors.length > 0) errors.push(`${sourceErrors.length} 个本地源加载失败`);
-        if (orgSettled.status === 'rejected') errors.push('iptv-org 主干加载失败，已回退本地源');
+        if (orgSettled.status === 'rejected') errors.push('iptv-org 主干加载失败，请勾选本地源查看本地频道');
 
         set({
           channels,
@@ -466,14 +465,24 @@ export const useIPTVStore = create<IPTVState>()(
         const cached = await getCachedIPTVChannels(sourceUrls);
         if (!cached) return false;
 
-        const channels = cached.channels.map(ch => ({
-          ...ch,
-          isFavorite: favoriteChannelIds.includes(ch.id)
-        }));
+        // 从 bySource 收集本地频道 id 集合，过滤主干中的本地独有频道
+        // （旧版缓存可能含 iptv-org 失败时回退的本地主干频道，需排除）
+        const localIds = new Set<string>();
+        if (cached.bySource) {
+          for (const list of Object.values(cached.bySource)) {
+            for (const ch of list) localIds.add(ch.id);
+          }
+        }
+        const channels = cached.channels
+          .filter(ch => !localIds.has(ch.id))
+          .map(ch => ({
+            ...ch,
+            isFavorite: favoriteChannelIds.includes(ch.id)
+          }));
 
         set({
           channels,
-          groups: cached.groups,
+          groups: groupChannels(channels),
           // 缓存里的本地源频道同样走「logos.json 按名匹配 → iptv 源兜底」
           sourceChannels: withSourceLogoBySource(cached.bySource ?? {}),
           sourceType: cached.sourceType as PlaylistSourceType,
