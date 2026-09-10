@@ -20,6 +20,14 @@ export interface LogoStateEntry {
 const LOGO_STATE_KEY = 'logo-state';
 const LOGO_STATE_TTL = 30 * 24 * 60 * 60 * 1000;  // 成败记忆 30 天
 
+/**
+ * 失败记忆的有效期（远短于成功记忆）。
+ * 网络抖动、DNS 波动、广告拦截插件都会让台标请求 404 / 连接重置；若按 30 天记忆，
+ * 一次偶发失败就被固化成「这张卡此后永远没有台标」（用户可见症状：整页卡片全无台标）。
+ * 失败 6 小时后重新尝试，成功则回写 ok 记忆。
+ */
+export const LOGO_FAIL_TTL = 6 * 60 * 60 * 1000;
+
 /** 读取 URL 级成败记忆；缺失/过期/异常返回 null */
 export async function loadLogoState(): Promise<Record<string, LogoStateEntry> | null> {
   try {

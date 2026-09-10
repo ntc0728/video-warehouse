@@ -11,7 +11,6 @@ import { useIsTV } from '@/hooks/useMediaQuery';
 import { buildChannelPlayUrl } from '@/services/iptvService';
 import { resolveChannelLogoCandidates, markLogoFailed, markLogoSucceeded } from '@/services/channelLogo';
 import LazyImage from '../LazyImage/LazyImage';
-import { isImageLoaded } from '../LazyImage/imageCache';
 import './IPTVChannelCard.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -30,10 +29,12 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const sourceNames = useIPTVStore((s) => s.settings.sourceNames);
-  const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(channel.logo || ''));
   const isTV = useIsTV();
-  // 无 logo 时使用字母占位，也应显示收藏按钮
-  const showFavorite = !batchMode && !hideFavorite && (imageLoaded || !channel.logo);
+  // 收藏按钮不依赖台标加载结果。此前是 (imageLoaded || !channel.logo)：台标 404、
+  // 被网络/广告拦截，或命中失败记忆（resolveChannelLogoCandidates 返回空数组）时
+  // onLoad 永不触发、imageLoaded 恒 false → 整颗红心不渲染。
+  // 实测 IPTV 页 60 张卡只有 3 颗红心，正是这条门控造成的（用户反馈「收藏图标被覆盖」）。
+  const showFavorite = !batchMode && !hideFavorite;
 
   const sourceName = channel.sourceId && sourceNames
     ? sourceNames[parseInt(channel.sourceId.replace('source-', ''), 10)]
@@ -109,7 +110,6 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
           // + kinoTV 品牌字，与视频兜底 MonitorPlay 图标区分（视频/IPTV 占位逻辑分离）。
           fallbackVariant="tv"
           onLoad={(url) => {
-            setImageLoaded(true);
             // 成功记忆：跨会话优先复用该 URL，避免下次重新走候选链
             if (url) markLogoSucceeded(url);
           }}

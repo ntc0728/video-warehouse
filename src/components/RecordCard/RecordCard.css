@@ -70,13 +70,20 @@
   object-fit: cover;
 }
 
-/* IPTV 台标：充满整个容器 */
+/* IPTV 台标：contain 完整装下（与 IPTVChannelCard 同一口径）。
+   台标不是海报，cover 会按容器比例把方图 / 宽图裁掉一大截；lazy-image-fallback
+   是 Tv 图标兜底节点，保持 cover 不受影响（内含矢量图标，无裁切语义）。 */
 .history-page .record-card__media--logo {
   background: var(--color-surface-hover);
 }
 .history-page .record-card__media--logo .lazy-image,
-.history-page .record-card__media--logo .lazy-image-fallback,
 .history-page .record-card__media--logo .record-card__media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: var(--space-2xs);
+}
+.history-page .record-card__media--logo .lazy-image-fallback {
   width: 100%;
   height: 100%;
   object-fit: cover;

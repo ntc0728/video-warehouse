@@ -15,6 +15,7 @@ import type { IPTVChannel } from '@/types/iptv';
 import {
   loadLogoState,
   saveLogoState,
+  LOGO_FAIL_TTL,
 } from './channelLogoCache';
 import type { LogoStateEntry } from './channelLogoCache';
 
@@ -73,10 +74,15 @@ export function preloadLogoCache(): void {
     try {
       const state = await loadLogoState();
       if (state) {
+        const now = Date.now();
         for (const [url, entry] of Object.entries(state)) {
           logoState.set(url, entry);
-          if (entry.ok) failedLogoUrls.delete(url);
-          else failedLogoUrls.add(url);
+          if (entry.ok) {
+            failedLogoUrls.delete(url);
+          } else if (now - entry.ts < LOGO_FAIL_TTL) {
+            // 只把「新鲜」的失败放进黑名单；过期失败不再拦截，本轮重新请求一次
+            failedLogoUrls.add(url);
+          }
         }
       }
     } catch { /* 状态恢复失败不影响主流程 */ }

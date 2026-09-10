@@ -114,7 +114,11 @@
 .iptv-card-cover img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* 台标不是海报：cover 会按封面比例（3/2 · 16/10 · 16/9 四档）把方图 / 宽图裁掉一大截
+     （1:1 方图放进 16:9 只剩约 56% 高度可见），表现为「台标显示有误 / 残缺」。
+     改用 contain 完整装下台标，四周留白交给封面底色承担。 */
+  object-fit: contain;
+  padding: var(--space-2xs);
   transition: transform 0.3s;
 }
 
@@ -343,6 +347,18 @@
 /* 已收藏（2026-09-06 统一定稿）：外圈底色不变，仅心形变红（--color-danger）实心 */
 .iptv-card-favorite.active {
   color: var(--color-danger);
+}
+
+/* 触屏设备（无 hover）常显兜底：>767px 的触屏（iPad / 折叠屏 / 触屏本）永远没有 hover，
+   hover-visible 的红心会一直 opacity:0 + pointer-events:none，看起来像「图标不见了」。
+   与 VideoCard.css 的 .video-card-fav-btn 同类规则对齐。
+   注意：≤767px / app 端靠上面的 display:none 隐藏，此规则不含 display，不会把它们复活。 */
+@media (hover: none) and (pointer: coarse) {
+  .iptv-channel-card-wrap .iptv-card-favorite.hover-visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
 }
 
 /* Mobile：完全隐藏收藏按钮 */
