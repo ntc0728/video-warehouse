@@ -8,8 +8,11 @@
   gap: 0;
   align-items: center;
   width: min(var(--layout-osd-max-width), 100%);
-  /* 边缘留白：左右各留 --space-md，避免 OSD 贴视口边缘（TV 端放大为 --space-lg） */
-  max-width: calc(100% - 2 * var(--space-md));
+  /* 边缘留白：左右各留 --space-lg，避免 OSD 贴视口边缘（TV 端不变，仍为 --space-lg）。
+     改因（2026-09-10）：原为 --space-md，配合旧的「1080p 锚点」两段式宽度曲线，
+     在 420–1158px 视口区间 token 恒大于可用宽度 → 被本行截断成「贴边」（1024 处左右各剩 10px）。
+     宽度曲线已改为单条比例 clamp(320px, 78vw, 1400px)，本行现在只是兜底。 */
+  max-width: calc(100% - 2 * var(--space-lg));
 
   min-height: var(--space-3xl);
   padding: var(--space-md) var(--space-lg);
@@ -219,11 +222,13 @@
   font-size: var(--text-sm);
 }
 
-/* Controls row: action buttons - horizontal layout, smallest font */
+/* Controls row: action buttons - horizontal layout, smallest font
+   2026-09-10：组间留白放大（--space-2xs 1.97px@1440 太挤）+ 禁止换行
+   ——原 flex-wrap: wrap 一旦换行会让 OSD 高度跳变 +≈18px，且数据/布局不稳定。 */
 .iptv-osd-controls-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2xs);
+  flex-wrap: nowrap;
+  gap: var(--space-sm);
   justify-content: center;
   align-items: center;
   margin-top: var(--space-xs);
@@ -231,7 +236,7 @@
 
 .iptv-osd-btn-group {
   display: flex;
-  gap: var(--space-3xs);
+  gap: var(--space-xs);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -389,15 +394,44 @@
   text-align: right;
 }
 
-/* Right section: network speed + source line + time */
+/* Right section: network speed + source line + time
+   内容靠右对齐、两行紧贴（2026-09-10）：本栏位于 OSD 最右，原「居中 + gap --space-2xs」
+   在窄栏里显得悬空；三行并两行后与左翼/中列的重心也更齐。 */
 .iptv-osd-right {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  gap: var(--space-2xs);
+  gap: 0;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   min-width: var(--layout-quality-badge-min-w);
+  text-align: right;
+}
+
+/* 网络速度 + 线路 并成一行（原为两行小字）。分隔点由 .iptv-osd-source-text::before 提供 ——
+   ≤639 隐藏 source-text 时连带分隔点一起消失，不会留下「- KB/S ·」这种悬空分隔符。 */
+.iptv-osd-meta-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.iptv-osd-source-text::before {
+  content: '·';
+  margin: 0 var(--space-2xs);
+  opacity: 0.6;
+}
+
+/* ── 左右翼等宽 → 中列真正居中（2026-09-10 用户拍板 v1）─────────────────────
+   根因：左翼 --layout-channel-num-w（120→180）恒大于右翼 --layout-quality-badge-min-w（84→120），
+   中列中心 ≠ OSD 中心 → 位于中列的控件行整体右偏。
+   1440 实测：左翼 169.4 / 右翼 113.6（差 55.8）→ 控件偏移 +27.9px；改后偏移 0（各视口实测）。
+   仅 ≥1024 生效：更窄视口里给右翼 120–163px 会把中列（节目名）挤到不可用，
+   那一档保留原「中列优先」的不等宽布局（代价是控件仍有 18–26px 偏移，已知取舍）。 */
+@media (width >= 1024px) {
+  .iptv-osd-left,
+  .iptv-osd-right {
+    flex: 0 0 var(--layout-channel-num-w);
+  }
 }
 
 .iptv-osd-network-speed {
@@ -680,6 +714,18 @@
   .iptv-osd-center {
     padding: 0 var(--space-xs);
   }
+
+  /* 窄屏控件只留图标：4 个按钮带文字共需 ~200px，而 375 下中列只有 ~163px，
+     文字版即使换行也会把中列挤空。去掉文字后 4 图标 + 放大后的间距仅需 ~100px，
+     一行放得下（功能语义由 title 属性保留）。图标放大到 --icon-md 保住触控热区。 */
+  .iptv-osd-control-btn span {
+    display: none;
+  }
+
+  .iptv-osd-control-btn svg {
+    width: var(--icon-md);
+    height: var(--icon-md);
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
 
@@ -716,5 +762,15 @@
   html[data-device="app"] /* 窄屏中间栏压缩：减少水平 padding，让 marquee 有更多空间 */
   .iptv-osd-center {
     padding: 0 var(--space-xs);
+  }
+
+  html[data-device="app"] /* 窄屏控件只留图标（与上方 ≤639 媒体查询同源） */
+  .iptv-osd-control-btn span {
+    display: none;
+  }
+
+  html[data-device="app"] .iptv-osd-control-btn svg {
+    width: var(--icon-md);
+    height: var(--icon-md);
   }
 

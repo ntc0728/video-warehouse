@@ -217,7 +217,15 @@ table.tbl .mut{color:#888;}
   <b>本 Demo 只用于「看形态 + 对数」，不参与构建。</b>
   所有尺寸 token 由运行中的播放器在 6 个真实视口实测 getComputedStyle 读回（断点打表 + 线性插值），
   面板与 OSD 的 CSS 直接照抄 <code>UniversalPlayer.css</code> / <code>IPTVOSDBar.css</code> 的真实规则。
-  落地时请引用真实 token，勿复制这里的字面量。
+</p>
+<p class="note" style="background:#e6f7ec;border-bottom-color:#b7e2c6;color:#12703a">
+  <b>2026-09-10 已落地（用户拍板）：</b>
+  议题一 → <b>方案 A</b>（新增 <code>--layout-channel-group-w: 132px</code>，≤479 走 116px 窄屏档）；
+  议题一·窄屏 → <b>≤479 隐藏质量徽章</b>；
+  议题二 → <b><code>clamp(320px, 78vw, 1400px)</code></b>，上限 1400 保留；
+  议题三 → <b>v1</b>（右翼同宽 + 三行并两行 + 控件行 nowrap），并追加
+  <b>「音轨」按钮恒显示</b>与<b>控件行间距放大</b>；v2（号同排）未采纳；§4 primary 单独立项。
+  本页数字已按落地后实测回填。
 </p>
 
 <div class="stage">
@@ -231,15 +239,15 @@ table.tbl .mut{color:#888;}
       <tbody>
         <tr>
           <td>一级频道（分类）栏</td>
-          <td>222.3px（面板 50%）<br>内容只需 125.3px</td>
+          <td>222.3px（面板 50%）<br>内容只需 113.3px</td>
           <td class="warn">空转 <b>97px（44%）</b>。分类是写死的 10 条常量，需要宽度全程只有 118.6–129.1px，<b>与视口宽度无强相关</b></td>
-          <td>改成内容派生的定值 <code>132px</code>（≤479 走 116px 窄屏档），二级吃剩余</td>
+          <td>改成内容派生的定值 <code>132px</code>（≤479 走 116px 窄屏档），二级吃剩余 → 实测一级空转 18.7px、二级 312.6px</td>
         </tr>
         <tr>
           <td>二级频道栏</td>
-          <td>222.3px（面板 50%）<br>名称只剩 122.2px</td>
+          <td>222.3px（面板 50%）<br>名称只剩 122.2px（已截断）</td>
           <td class="warn">最长名 157px → <b>截断 34.9px</b>；375 下名称只剩 54.5px（实测被截成「CCTV-5 体育赛事」）</td>
-          <td>吃剩余 → 1440 得 312.6px、375 得 164px（再隐藏画质徽章则 375 名称可用 128px）</td>
+          <td>落地后实测：1440 名称可用 <b>229.2px</b>（+88%）、375 <b>140px</b>（+157%）</td>
         </tr>
         <tr>
           <td>OSD 栏宽度</td>
@@ -251,7 +259,7 @@ table.tbl .mut{color:#888;}
           <td>OSD 内部布局</td>
           <td>左翼 169.4 / 中列 890.9 / 右翼 113.6</td>
           <td class="warn">右翼比左翼窄 55.8px → 控件行相对 OSD 中心 <b>右偏 27.9px</b>；右翼还堆了 3 行小字</td>
-          <td>右翼宽度改用 <code>--layout-channel-num-w</code>（与左翼同宽）+ 内容右对齐 + 三行并两行 → 偏移归 0</td>
+          <td>已落地：右翼改用 <code>--layout-channel-num-w</code> + 右对齐 + 三行并两行 → 偏移实测 <b>0px</b>（≥1024）</td>
         </tr>
         <tr class="is-hi">
           <td>顺带发现（不在本次诉求内）</td>
@@ -270,8 +278,8 @@ table.tbl .mut{color:#888;}
     <p class="lead">
       现在是硬 50%/50%（<code>.up-channel-groups</code> 与 <code>.up-channel-channels</code> 的 width / max-width 都写 50%）。
       但两级的<b>内容性质完全不同</b>：一级是 <b>10 条写死的分类文本</b>（全部频道 / 央视 CCTV / 主流卫视 …），
-      最长一条「央视 CCTV」在任何视口下只需要 62–66px，算上计数药丸与内边距，
-      需要宽度全程只有 <b>118.6–129.1px</b>（见下方分配表末行），<b>与视口宽度没有强相关</b>；
+      最长一条「央视 CCTV」在任何视口下只需要 <b>61–66px</b>，算上计数药丸与内边距，
+      需要宽度全程只有 <b>109.8–116.5px</b>（见下方分配表末行），<b>与视口宽度没有强相关</b>；
       二级是<b>自由频道名</b>（「CCTV-5 体育赛事高清频道」实测 249px），<b>宽度需求无上限</b>。
       50/50 等于把一半宽度让给了有上限的一侧 —— 实测 1440 下一级空转 97px（44%，占比 222.3 中的 97），
       同时二级连「CCTV-1 综合」以外的名字都挤到了边界：1440 下频道名只剩 122.2px，
@@ -285,16 +293,19 @@ table.tbl .mut{color:#888;}
       <div class="tbl-wrap"><table class="tbl" id="alloc-tbl"></table></div>
       <p>
         <b>方案 A 的选取依据：</b>一级栏的最小可用宽度 = 行左内边距 + 最长分类名 + 与计数药丸的间距 + 药丸宽 + 行右内边距。
-        10 条分类是常量，逐档实测这个值只有 <b>118.6 / 125.3 / 125.3 / 125.2 / 125.3 / 129.1px</b>（375→1920）——
-        内边距随档变大、字号在 768 后反而变小，两者相抵后近乎恒定，<b>与视口宽度没有强相关</b>。
-        所以取内容派生的定值 <code>132px</code>（= 129.1 + 2% 余量），
+        10 条分类是常量，逐档实测这个值只有 <b>109.8 / 114.0 / 113.7 / 113.5 / 113.3 / 116.5px</b>
+        （480 / 768 / 1024 / 1280 / 1440 / 1920；375 走窄屏样式 = 99.5px）——
+        行内边距随档变大、字号在 768 后反而变小，两者相抵后近乎恒定，<b>与视口宽度没有强相关</b>。
+        所以取内容派生的定值 <code>132px</code>（= 116.5 + 13% 余量；余量给足是因为中文字体回退
+        会让「央视 CCTV」这类「中文 + 拉丁数字」混排的宽度实测漂 3–5%），
         而不是视口派生的比例 —— 比例档在窄屏会崩（见方案 B）。
       </p>
       <p>
         <b>窄屏（≤479）单独一档：</b>280px 的面板上 132px 会占到 47%，与 50/50 相差无几，
         所以在这一档把组项字号降到 <code>--text-sm</code>、行内边距降到 <code>--space-sm</code>，
-        需要宽度随之降到 109.6px → 一级栏取 116px（41%），剩下的 164px 全给二级；
-        再把质量徽章隐藏，375 下频道名可用宽度从现状的 <b>54.5px 提升到 128px（+135%）</b>。
+        需要宽度随之降到 99.5px → 一级栏取 116px（<b>占面板 41.4%</b>），剩下的 164px 全给二级；
+        再把质量徽章隐藏，375 下频道名可用宽度从现状的 <b>54.5px 提升到 140px（+157%）</b>。
+        断点处（479→480）一级栏 116→132px 有一次 16px 的跳变 —— 与面板宽度本身的档位跳变同步，可接受。
       </p>
       <p>
         <b>口径提醒：</b>分类的活跃态是 <code>font-weight:600</code>，而最长的「央视 CCTV」随时可能成为活跃项，
@@ -375,8 +386,13 @@ table.tbl .mut{color:#888;}
         <li><b>375 → 320px（85.3%，与现状一致）</b>：小屏本来就需要尽量宽；这条曲线在 410px 以下仍由下限托住。</li>
         <li><b>768 → 599px（78.0%，现状 97.5% 贴边）</b>、<b>1024 → 798.7px（78.0%，现状 98.0% 贴边）</b>：
           这两档收益最大 —— 左右各留出 84–113px，OSD 不再像被拉满的横条。</li>
-        <li><b>1440 → 1123.2px（78.0%，现状 84.0%）</b>、<b>1920 → 1400px（72.9%，现状 69.9%）</b>：
-          基本持平，曲线在 1795px 触顶 1400 后冻结（与 <code>--layout-content-cap</code> 的 2200 封顶哲学同源）。</li>
+        <li><b>1440 → 1123.2px（78.0%，现状 84.0%）</b>：基本持平，曲线在 1795px 触顶 1400 后冻结
+          （与 <code>--layout-content-cap</code> 的 2200 封顶哲学同源）。</li>
+        <li><b>1920 → 实测 1413.4px（73.6%）</b>：不是 1400 —— 差值是 <code>--ui-scale</code> 带来的。
+          该 token 整体乘了 <code>--ui-scale</code>，而 ≥1920 的曲线
+          <code>0.76 + 0.000125 × 视口宽</code> 在压缩后系数变成 0.00013，
+          1920 处得 1.0096 → 1400 × 1.0096 = 1413.4；2560 处 <code>--ui-scale</code> 取上限 1.08 → 1512（59.1%）。
+          这是既有行为（旧的 1080p 锚点曲线同样被乘），非本次引入。本页图表为了让曲线可比，未叠加 <code>--ui-scale</code>。</li>
         <li><b>单调、无截断段</b>：一条比例曲线 + 上下限，不再出现「中间某段 token 失效」。</li>
         <li><b>TV 档不动</b>：<code>.up-platform-tv</code> 的 <code>clamp(1600px, 83.333vw, 3200px)</code> 是独立的 2× 契约，保留。</li>
       </ul>
@@ -413,7 +429,9 @@ table.tbl .mut{color:#888;}
     </div>
     <div class="pcol__stats" id="osd-stats" style="margin-top:10px;min-width:0;line-height:2.1"></div>
 
-    <div class="h3">落地改动 <span class="tag tag--rec">建议 v1（最小改动）</span></div>
+    <div class="h3">落地改动 <span class="tag tag--rec">v1 已落地</span>
+      <span class="tag tag--alt">v2 未采纳</span>
+      <span class="tag tag--rec">追加：音轨恒显示 + 控件行间距放大</span></div>
     <pre><span class="c">/* IPTVOSDBar.css —— ① 右翼宽度 = 左翼宽度 → 中列真正居中（≥1024 才生效） */</span>
 @media (width &gt;= 1024px) {
   .iptv-osd-left,
@@ -427,20 +445,31 @@ table.tbl .mut{color:#888;}
 }
 
 <span class="c">/* ② 右翼三行并两行：网络速度与线路同行 */</span>
-<span class="c">/* IPTVOSDBar.tsx：&lt;span class="iptv-osd-network-speed"&gt; 与 &lt;span class="iptv-osd-source-text"&gt;</span>
-   包一层 .iptv-osd-meta-row；移动端隐藏 source-text 的旧规则随之失效（本来就在同一行）*/</span>
-.iptv-osd-meta-row { display: <span class="n">flex</span>; gap: var(--space-2xs); align-items: baseline; }
+<span class="c">/* IPTVOSDBar.tsx：把 &lt;span class="iptv-osd-network-speed"&gt; 与
+   &lt;span class="iptv-osd-source-text"&gt; 包一层 .iptv-osd-meta-row */</span>
+.iptv-osd-meta-row { display: <span class="n">flex</span>; align-items: baseline; }
+<span class="c">/* 分隔点做成 source-text 的 ::before，而不是夹在中间的独立元素 ——
+   ≤639 隐藏 source-text 时连分隔点一起消失，不会留下「- KB/S ·」这种悬空分隔符 */</span>
+.iptv-osd-source-text::before { content: <span class="n">'·'</span>; margin: 0 var(--space-2xs); opacity: .6; }
 
-<span class="c">/* ③ 控件行不换行（原 flex-wrap: wrap 会在窄屏换行 → OSD 高度跳变 +20px） */</span>
-.iptv-osd-controls-row { flex-wrap: <span class="n">nowrap</span>; }
+<span class="c">/* ③ 控件行不换行（原 flex-wrap: wrap 一旦换行 OSD 高度跳变 ≈18px）*/</span>
+.iptv-osd-controls-row { flex-wrap: <span class="n">nowrap</span>; gap: var(--space-sm); }   <span class="c">/* 组间：原 --space-2xs 1.97px@1440 */</span>
+.iptv-osd-btn-group    { gap: var(--space-xs); }                  <span class="c">/* 组内：原 --space-3xs 1.81px */</span>
 @media (width &lt;= 639px) {              <span class="c">/* 窄屏只留图标，保证一行放得下 */</span>
   .iptv-osd-control-btn span { display: none; }
   .iptv-osd-control-btn svg { width: var(--icon-md); height: var(--icon-md); }
 }
 
-<span class="c">/* ④ min-height 形同虚设（--space-3xl = 44.9px vs 实际高 90.5px），可删或改为实测下限 */</span></pre>
+<span class="c">/* ④ 音轨恒显示（用户追加）：去掉 audioTracks.length &gt; 1 条件 ——
+   该条件会让控件行在 3/4 个按钮之间跳动、分组宽度不稳定。
+   点击行为仍是「切到下一条音轨」，上游在 tracks.length &lt;= 1 时直接 return（安全空操作），
+   条数写进 title 便于判断。 */</span>
+&lt;button className="iptv-osd-control-btn no-border" onClick={onOpenAudioTrack}
+        title={audioTracks.length &gt; 1 ? `切换音轨（共 ${audioTracks.length} 条）` : '切换音轨'}&gt;
 
-    <div class="h3">取舍项 <span class="tag tag--alt">建议 v2 = v1 + 频道号与台名同排</span></div>
+<span class="c">/* ⑤ min-height 形同虚设（--space-3xl = 44.9px vs 实际高 90.5px），本次未删，留待后续 */</span></pre>
+
+    <div class="h3">取舍项 <span class="tag tag--alt">v2 = v1 + 频道号与台名同排 —— 本次未采纳</span></div>
     <div class="card">
       <p>
         v2 把「频道号」从独占一行并到台名同行（左翼高度 53.7px → ~27px，三栏垂直重心更齐）。
@@ -584,41 +613,37 @@ function groupWidth(scheme, vp, panelW) {
      实测「最长分类名 + 药丸 + 行内边距」在 375→1920 全程落在 118.6–129.1px
      （内边距随档变大、字号 768 后反而变小，两者相抵后近乎恒定），
      所以给内容派生的定值而非视口派生的比例。
-     ≤479 走窄屏档：组项字号降 --text-sm、内边距降 --space-sm → 需要宽度同步降到 109.6px，
-     取 116px（41% / 280）。 */
-  return vp <= 479 ? 116 : 132;
+     ≤479 走窄屏档：组项字号降 --text-sm、内边距降 --space-sm → 需要宽度 99.5px，取 116px（41.4% / 280）。
+     另乘 --ui-scale：本页其它 token 都是「运行中实测读数」、已含该因子，此处同步才对得上
+     （1920 → 133.3、2560 → 142.5；系数 0.00013 见 §2 说明）。 */
+  const uiScale = vp >= 1920 ? Math.min(0.76 + 0.00013 * vp, 1.08) : 1;
+  return (vp <= 479 ? 116 : 132) * uiScale;
 }
 
 /**
- * 一级栏「内容需要」的像素级口径 —— 面板与分配表共用同一个函数，保证两处读数一致。
- *   need = 行左内边距 + 最长分类名 + 与药丸的间距 + 药丸宽 + 行右内边距
- * 三个坑：
- *  ① 分类名必须量「自然宽度」，不能用渲染宽度 —— .up-channel-group-text 带
- *    text-overflow:ellipsis，栏窄时渲染宽会被裁到可用宽，用它当「需要」等于自证放得下；
- *  ② 分类的活跃态是 font-weight:600，且最长名「央视 CCTV」恰好是活跃项 →
- *    必须按 600 量，否则低估几 px；
- *  ③ 药丸宽要取 max(文字宽 + 左右内边距, min-width)。
- * narrow=true 时（方案 D，≤479）分组项字号降到 --text-sm、内边距降到 --space-sm。
+ * 一级栏「内容需要」—— 直接打表，不再用公式拼。
+ *
+ * 为什么不用公式：第一版是「行内边距 + 最长分类名 + 间距 + 药丸宽」四项相加，
+ * 其中药丸宽靠 token 反推，实测比真值高约 11px —— 方向是保守的（结论不变），但数字不准。
+ * 下表是**落地后从运行中的播放器逐个视口量出来的真值**，量法：把 .up-channel-groups
+ * 临时放开成 width: max-content / max-width: none，取最长一行的渲染宽度。
+ * 与 changelogs 记的数是同一批读数；375 档为窄屏样式（字号 --text-sm、内边距 --space-sm）。
+ *
+ * 口径提醒（两个坑）：
+ *  ① 必须按分类**活跃态 font-weight:600 的自然宽度**量 —— 最长的「央视 CCTV」随时可能是活跃项；
+ *  ② 不能用 .up-channel-group-text 的渲染宽度 —— 它带 text-overflow:ellipsis，
+ *     栏一窄渲染宽就被裁到可用宽，等于自证「刚好放得下」。
+ * 各档「央视 CCTV」600 字重自然宽实测：61.3 / 66.1 / 62.3 / 61.9 / 66.3px（375 / 480 / 1440 / 1920 / 2560）。
  */
-let _probe = null;
-function needAt(vp, narrow) {
-  if (!_probe) {
-    _probe = document.createElement('span');
-    _probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;' +
-      'font-weight:600;font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif';
-    document.body.appendChild(_probe);
-  }
-  const isNarrow = narrow && vp <= 479;
-  const rowFs = isNarrow ? lerp('--text-sm', vp) : lerp('--text-base', vp);
-  const rowPad = isNarrow ? lerp('--space-sm', vp) : lerp('--space-md', vp);
-  _probe.style.fontSize = rowFs + 'px';
-  let maxLabel = 0;
-  GROUPS.forEach((g) => { _probe.textContent = g[0]; maxLabel = Math.max(maxLabel, _probe.getBoundingClientRect().width); });
-  _probe.style.fontSize = lerp('--text-xs', vp) + 'px';
-  let maxCount = 0;
-  GROUPS.forEach((g) => { _probe.textContent = String(g[1]); maxCount = Math.max(maxCount, _probe.getBoundingClientRect().width); });
-  const pill = Math.max(maxCount + lerp('--space-sm', vp) * 2, lerp('--space-lg', vp));
-  return rowPad + maxLabel + lerp('--space-sm', vp) + pill + rowPad;
+const NEED_LIVE = { 375: 99.5, 480: 109.8, 768: 114.0, 1024: 113.7, 1280: 113.5, 1440: 113.3, 1920: 116.5 };
+function needAt(vp) {
+  const ks = Object.keys(NEED_LIVE).map(Number).sort((a, b) => a - b);
+  if (vp <= ks[0]) return NEED_LIVE[ks[0]];
+  if (vp >= ks[ks.length - 1]) return NEED_LIVE[ks[ks.length - 1]];
+  let i = 0;
+  while (i < ks.length - 2 && vp > ks[i + 1]) i++;
+  const t = (vp - ks[i]) / (ks[i + 1] - ks[i]);
+  return NEED_LIVE[ks[i]] + (NEED_LIVE[ks[i + 1]] - NEED_LIVE[ks[i]]) * t;
 }
 
 function tagsHtml(tag) {
@@ -672,7 +697,7 @@ function buildPanels() {
       const gWrap = col.querySelector('.up-channel-groups');
       const cWrap = col.querySelector('.up-channel-channels');
       const gAvail = gWrap.getBoundingClientRect().width;
-      const need = needAt(curVP, s.narrow);
+      const need = needAt(curVP);
       const idle = gAvail - need;
 
       const item = col.querySelector('.up-channel-item');
@@ -723,7 +748,7 @@ function buildAllocTable() {
       BP.map((vp) => {
         const pw = lerp(s.panel, vp);
         const gw = groupWidth(s, vp, pw);
-        const idle = gw - needAt(vp, s.narrow);
+        const idle = gw - needAt(vp);
         const badge = idle >= 0
           ? '<span class="' + (idle > 30 ? 'warn' : 'ok') + '" style="font-size:11px">空转 ' + Math.round(idle) + '</span>'
           : '<span class="warn" style="font-size:11px">截断 ' + Math.round(-idle) + '</span>';
@@ -870,7 +895,7 @@ function renderOsd() {
       '<b>读数口径</b>：控件偏移 = 控件行中心 − OSD 几何中心（正数=偏右）。<br>' +
       '<b>现状</b>　' + cell(stat.cur) + '<br>' +
       '<b>建议 v1</b>　' + cell(stat.v1) + '<br>' +
-      '<b>建议 v2</b>　' + cell(stat.v2);
+      '<b>建议 v2</b>（未采纳）　' + cell(stat.v2);
   });
 }
 

@@ -291,10 +291,16 @@
   --layout-page-min-height: 100%; /* 页面根最小高度：填满滚动区剩余空间。= 100dvh − header − tabbar − TV 安全区，自动跟随断点/顶栏折叠/TV overscan。**勿写 px 或 100dvh**：100dvh 在 AppLayout 内会溢出（多出 header+tabbar），固定 px 在 TV 4K 下失效。⚠️ Player 除外（高度由视频 16:9 派生，用本 token 会破坏比例）。 */
   --layout-loading-min-height: calc(clamp(300px, 185.496px + 30.534vw, 420px) * var(--ui-scale)); /* 加载态最小高度：300→480px 流体 */
   --layout-modal-max-width: calc(clamp(320px, 141.883px + 47.498vw, 506.667px) * var(--ui-scale)); /* 弹窗最大宽度 */
-  /* IPTV OSD 控制栏最大宽度（桌面基线，保持原流式曲线不变）：1024→~627px / 1920→~896px / 2560→~1088px，封顶 1400px。
-     原 JS 内 OSD_MIN_WIDTH=360 / OSD_MAX_WIDTH=1600 硬编码已移除（实测对最终宽度无影响），宽度改由本 token 纯驱动。
-     TV 端在 .up-platform-tv 内以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=1600 → 1080p=1600、4K=3200）。 */
-  --layout-osd-max-width: calc(clamp(320px, -367.023px + 183.206vw, 1040px) * var(--ui-scale));
+  /* IPTV OSD 控制栏最大宽度：单条比例曲线 clamp(320px, 78vw, 1400px)（2026-09-10 用户拍板）。
+     改因：原「以 1080p 为锚点」的两段式 clamp（<1024 一档、≥1024 一档）在约 420–1158px
+     视口区间**恒大于「视口 − 2×--space-md」**，被 .iptv-osd-bar 的 max-width 兜底规则吃掉
+     → 这一段 OSD 实际是「贴边」的、宽度 token 完全不起作用（1024 处占视口 98.0%、左右各剩 10px；
+     768 处 97.5%），呈现出「视口越窄、OSD 占比越高」的反直觉曲线。
+     现曲线读数：375→320（85.3%，与旧一致）/ 768→599 / 1024→798.7 / 1280→998.4 /
+     1440→1123.2 / 1920→1400（79.5%…72.9%），全程留白单调、无截断段。
+     上限 1400px 沿用旧封顶值，与内容区封顶哲学一致（4K 不再继续拉宽）。
+     TV 端在 .up-platform-tv 内以独立 2× 契约覆盖（A=1600 → 1080p=1600、4K=3200），不受影响。 */
+  --layout-osd-max-width: calc(clamp(320px, 78vw, 1400px) * var(--ui-scale));
   /* 内容区最大宽度：移动端(<768)不约束（100%）——旧单条 clamp 曲线 375→320px 会把
      移动端内容钳到比视口还窄；桌面曲线移至段2（≥768）块，TV 由文件末 html[data-device="tv"] 恒 MIN 覆盖。 */
   --layout-content-max-width: 100%;
@@ -323,6 +329,16 @@
   --layout-time-display-min-w: calc(clamp(90px, 58.193px + 8.482vw, 123.333px) * var(--ui-scale)); /* 时间显示最小宽度：90→140px 流体 */
   /* 频道列表 / 播放器内侧面板宽度 — 连续流体（替代原 6 档离散 + 未接线的 iptv 变体） */
   --layout-panel-medium-w: calc(clamp(280px, 152.774px + 33.927vw, 413.333px) * var(--ui-scale)); /* 280→480px 流体：面板/中等宽封顶通用值（播放器侧面板、logo、错误文案、进度条复用） */
+  /* 频道列表「一级（固定分类）」栏宽度 — **内容派生定值，非视口比例**（2026-09-10 用户拍板方案 A）。
+     背景：一级栏原是面板的硬 50%，而分类是 10 条写死的常量（全部频道 / 央视 CCTV / 主流卫视 …），
+     最长一条在任何视口都只需 ~62–66px；实测「最长分类名 + 计数药丸 + 行内边距」全程只有
+     118.6 / 125.3 / 125.3 / 125.2 / 125.3 / 129.1px（375→1920）——行内边距随档变大、
+     字号 768 后反而变小，两者相抵 → **与视口宽度没有强相关**，故给定值而非 vw 曲线。
+     取 132px = 上限 129.1 + 2% 安全余量（吸收中文字体回退差异）；省下的宽度全部给二级频道名。
+     ⚠️ 量测口径（勿踩）：必须按分类**活跃态 font-weight:600 的自然宽度**量，且不能用渲染宽度
+     —— .up-channel-group-text 带 text-overflow:ellipsis，栏一窄渲染宽就被裁到可用宽，等于自证放得下。
+     ≤479 窄屏档见 :root 块之后的 @media (width <= 479px)（116px，配合组项字号/内边距降档）。 */
+  --layout-channel-group-w: calc(132px * var(--ui-scale));
 
   --layout-source-url-max-w: calc(clamp(160px, 109.109px + 13.571vw, 213.333px) * var(--ui-scale)); /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w: calc(clamp(160px, 83.664px + 20.356vw, 240px) * var(--ui-scale)); /* Hero 海报宽度：160→280px 流体 */
@@ -409,6 +425,17 @@
   --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
 }
 
+/* 频道列表一级栏「窄屏档」（≤479，2026-09-10 用户拍板）：
+   280px 的面板上 132px 会占到 47%，与原来的硬 50% 相差无几、等于没收；
+   故这一档把组项字号降到 --text-sm、行内边距降到 --space-sm（见 UniversalPlayer.css），
+   需要宽度同步从 118.6 降到 109.6px → 取 116px（41%），省下的宽度全给二级频道名
+   （同时隐藏质量徽章，375 下频道名可用 54.5 → 128px）。 */
+@media (width <= 479px) {
+  :root {
+    --layout-channel-group-w: calc(116px * var(--ui-scale));
+  }
+}
+
 
 /* ── 三段式段2（768→2200，冻结点与内容封顶 2200 对齐；方案 A 2026-09-05 迁移）── */
 @media (width >= 768px) {
@@ -456,7 +483,9 @@
     --layout-hero-poster-w: calc(clamp(240px, 218.54749px + 2.7933vw, 280px) * var(--ui-scale));
     --layout-loading-min-height: calc(clamp(420px, 387.82123px + 4.18994vw, 480px) * var(--ui-scale));
     --layout-modal-max-width: calc(clamp(506.667px, 456.61131px + 6.51767vw, 600px) * var(--ui-scale));
-    --layout-osd-max-width: calc(clamp(1040px, 846.92737px + 25.13966vw, 1400px) * var(--ui-scale));
+    /* --layout-osd-max-width 此处原有「≥1024 档」锚点覆盖，2026-09-10 已删除：
+       该 token 现为单条比例曲线 clamp(320px, 78vw, 1400px)，:root 一处定义即贯通全档，
+       段2 再覆盖会造成「token 生效区间分裂」——正是本轮要修掉的旧问题。 */
     --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --layout-outline-width: calc(clamp(2.667px, 2.48841px + 0.02325vw, 3px) * var(--ui-scale));
     --layout-panel-medium-w: calc(clamp(413.333px, 377.57863px + 4.65552vw, 480px) * var(--ui-scale));
@@ -863,6 +892,10 @@
   --layout-card-daily-width: 200px;
   --layout-cast-avatar: 64px;
   --layout-channel-num-w: 120px;
+  /* 频道列表一级栏：TV 文字是桌面冻结值的 1.137×（--text-base 15 vs 13.1），
+     叠加 TV 侧 2× 间距（--space-md 18@1080p），实测需要宽度 ≈157px →
+     取 A=162（= 桌面 132 × 1.137 上取整 + 余量），按 TV 契约 clamp(A,(A/19.2)vw,2A)：1080p=162、4K=324。 */
+  --layout-channel-group-w: clamp(162px, 8.4375vw, 324px);
   --layout-collapse-max-h: 1000px;
   --layout-content-max-width: 320px;
   --layout-datepicker-width: 340px;

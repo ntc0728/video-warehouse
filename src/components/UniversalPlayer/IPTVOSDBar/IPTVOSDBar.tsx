@@ -342,19 +342,26 @@ export default function IPTVOSDBar({
               <MdiSwapHorizontalVariantIcon size="xs" />
               <span>换源</span>
             </button>
-            {audioTracks.length > 1 && (
-              <button className="iptv-osd-control-btn no-border" onClick={onOpenAudioTrack} title="音轨">
-                <MdiAudioTrackIcon size="xs" />
-                <span>音轨</span>
-              </button>
-            )}
+            {/* 音轨恒显示（2026-09-10 用户拍板）：原条件 audioTracks.length > 1 会让控件行
+                在 3/4 个按钮之间跳动、分组宽度不稳定。点击行为仍是「切到下一条音轨」，
+                上游在 tracks.length <= 1 时直接 return（安全空操作）；条数写进 title 便于判断。 */}
+            <button
+              className="iptv-osd-control-btn no-border"
+              onClick={onOpenAudioTrack}
+              title={audioTracks.length > 1 ? `切换音轨（共 ${audioTracks.length} 条）` : '切换音轨'}
+            >
+              <MdiAudioTrackIcon size="xs" />
+              <span>音轨</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div className="iptv-osd-right">
-        <span className="iptv-osd-network-speed">{hasError ? '-- KB/S' : networkSpeed}</span>
-        <span className="iptv-osd-source-text">{sourceText}</span>
+        <span className="iptv-osd-meta-row">
+          <span className="iptv-osd-network-speed">{hasError ? '-- KB/S' : networkSpeed}</span>
+          <span className="iptv-osd-source-text">{sourceText}</span>
+        </span>
         <span className="iptv-osd-time">{currentTimeStr}</span>
       </div>
     </div>
