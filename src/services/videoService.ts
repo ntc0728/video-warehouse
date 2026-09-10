@@ -314,8 +314,17 @@ async function resolvePlaySources(
   /** 强制按剧集解析：跳过「多集误判为电影线路」的后置转换，确保集数保留 */
   forceSeries = false,
 ): Promise<{ sources: Video['sources']; episodes: Video['episodes'] | undefined; item: CMSVideoItem }> {
-  // 剧集搜索时 item 已按季号识别，强制以非 movie 类型解析，避免集数被转成线路
-  const vodType = forceSeries ? undefined : getCmsVodType(item);
+  // 剧集搜索时 item 已按季号识别，强制以非 movie 类型解析，避免集数被转成线路。
+  //
+  // ⚠️ 2026-09-10 修复「有线路却显示 1 集 / 0 条线路」：
+  // 各 CMS 的 type_id 编码互不统一，VOD_TYPE_MAP 只认 1/2/3/4，未命中时 mapVodType 返回
+  // undefined。实测 iqiyizyapi（海洋奇缘：启航）返回 type_id=11 / type_id_1=7，均不在表内
+  // → vodType undefined → parsePlaySources 的 isMovie=false → 单条「正片$https://….m3u8」
+  // 被当作「1 集」写进 episodes，sources 留空，详情页线路数显示为 0。
+  // 修法：非 forceSeries 时把「未知类型」收敛为 movie（按线路解析）。
+  // 注意不能直接把 undefined 全局当 movie —— forceSeries 正是用 undefined 表示
+  // 「强制按剧集解析」，那条路径必须保持不变。
+  const vodType = forceSeries ? undefined : (getCmsVodType(item) ?? 'movie');
   // 1) 先尝试直接解析搜索结果中的 vod_play_url
   if (item.vod_play_url) {
     const parsed = parsePlaySources(item.vod_play_url, vodType);

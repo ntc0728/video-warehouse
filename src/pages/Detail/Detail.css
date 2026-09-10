@@ -653,83 +653,9 @@
 
 .detail-stills-grid {
   display: grid;
-  /* 缩放：--stills-zoom 由剧照放大控件写入（0.75 / 1 / 1.25 / 1.5 / 2）。
-     列宽基准乘以该值 → 值越大列越少、单张越大（auto-fill + 1fr 下列宽始终由容器均分，
-     minmax 的 min 只决定「一行能塞几列」）。
-     ⚠️ 必须是乘法：写成除法会让 125% 反而多一列、图更小（已实测踩坑）。 */
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(calc(clamp(128px, 96px + 8vw, 256px) * var(--stills-zoom, 1)), 1fr)
-  );
+  grid-template-columns: repeat(auto-fill, minmax(clamp(128px, 96px + 8vw, 256px), 1fr));
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
-}
-
-/* ── 剧照标题行 + 放大控件（2026-09-10 用户要求）────────────
-   控件形态：放大镜图标居中，两侧各一个百分比档位按钮 ——
-   点击左/右即切换到相邻的缩小 / 放大档，到达边界自动禁用。 */
-.detail-stills-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.detail-stills-zoom {
-  display: inline-flex;
-  gap: var(--space-2xs);
-  align-items: center;
-  margin-left: auto;
-  padding: 2px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-}
-
-.detail-stills-zoom__step {
-  min-width: 3.4em;
-  padding: var(--space-2xs) var(--space-xs);
-  border: none;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--text-2xs);
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.detail-stills-zoom__step:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-.detail-stills-zoom__step:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-/* 放大镜图标：点击重置回 100% */
-.detail-stills-zoom__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--icon-lg, 22px);
-  height: var(--icon-lg, 22px);
-  border: none;
-  border-radius: 50%;
-  background: var(--color-background);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.detail-stills-zoom__icon:hover {
-  color: var(--color-text);
-  background: var(--color-surface-hover);
-}
-
-.detail-stills-grid--limited {
-  /* 行数由 JS visibleCount 控制，CSS 不再截断 */
 }
 
 .detail-stills-item {
@@ -2009,10 +1935,19 @@
 @media (width >= 1024px) {
   html:not([data-device="app"]):not([data-device="tv"]) .detail-top {
     display: grid;
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    /* 2026-09-10 用户要求：右栏改为「分行」呈现并加入简介 → 需要更多横向空间，
+       故左列由 1.55fr 收到 1.4fr（1440 下 hero 797 → 771px，右栏 515 → 551px）。
+       hero 随之略窄，.detail-hero-bg 是 inset:0 自动跟随列宽的，无需单独改。 */
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: var(--space-sm);
     align-items: stretch;
     margin-bottom: var(--space-sm);
+  }
+
+  /* hero 内的海报随 hero 变窄而缩小（用户要求「尺寸小一点」）：基准 ×0.78 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-top .detail-hero-poster {
+    flex: 0 0 calc(var(--layout-detail-poster-w) * 0.78);
+    width: calc(var(--layout-detail-poster-w) * 0.78);
   }
 
   /* 右栏：高度锁死为 hero 实际高度（--detail-hero-h 由 JS 测量写入），
@@ -2046,16 +1981,25 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* 右栏窄，info-card 保持「图标 + 标签 + 值」单行结构（值可自然折行），
-     并收紧上下内边距 —— 9 个字段总高约 380px < hero 高度，无需滚动。
-     若改成「标签一行、值一行」会翻倍到 450px+ 反而溢出。 */
+  /* 右栏窄，info-card 改为「标签一行、值一行」的分行结构（用户 2026-09-10 要求）：
+     图标 + 标签在第一行，值另起一行并与标签左对齐（padding-left = 图标宽 + gap）。
+     注意这会显著增加右栏高度（9 个字段约 500px）+ 简介，超出 hero 高度属预期，
+     由上面的 overflow-y 兜底为栏内滚动。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
+    flex-wrap: wrap;
     padding: var(--space-2xs) 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
-    margin-left: var(--space-xs);
-    min-width: 0;
+    flex-basis: 100%;
+    margin-left: 0;
+    padding-left: calc(var(--icon-sm) + var(--space-sm));
+  }
+
+  /* 右栏内的简介（随基础信息一起从 info tab 上提） */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-overview-full {
+    margin: 0;
+    font-size: var(--text-sm);
   }
 }
 
