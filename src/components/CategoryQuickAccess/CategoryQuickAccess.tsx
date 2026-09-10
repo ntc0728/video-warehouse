@@ -635,17 +635,22 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
   );
 }
 
-/** >1280：hero 下方常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单） */
-export function CategoryHeatRow() {
+/** >1280：常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单）。
+ *  variant='row'（默认）= hero 下方通栏横排 3 卡；
+ *  variant='rail'      = 首页大屏两栏布局的左侧栏（2026-09-10 方案 C）：单列竖排、条目去缩略图。 */
+export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' } = {}) {
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
   if (heatBuckets.length === 0) return null;
+  const isRail = variant === 'rail';
   return (
-    <section className="cqa-heat-row">
+    <section className={`cqa-heat-row${isRail ? ' cqa-heat-row--rail' : ''}`}>
       <div className="cqa-heat-row__head">
         <Icon icon={Flame} size="sm" />
         <span className="cqa-heat-row__title">分类热度榜</span>
+        {/* 副标题在 rail 变体里也保留（口径说明是 home.spec.ts 079 用例保护的 UI），
+            窄栏下由 CSS 的 flex-wrap 换行呈现 */}
         <span className="cqa-heat-row__sub">今日各分类最热 · 点分类卡进入</span>
         <InfoTip
           label="分类热度口径说明"
@@ -656,7 +661,7 @@ export function CategoryHeatRow() {
           onClick={() => navigate('/chart')}
           aria-label="查看完整热度榜"
         >
-          查看完整榜单
+          {isRail ? '完整榜单' : '查看完整榜单'}
           <Icon icon={ChevronRight} size="xs" />
         </button>
       </div>

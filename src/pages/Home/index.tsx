@@ -19,6 +19,7 @@ import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
+import HomeTopStrip from './HomeTopStrip';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -107,6 +108,8 @@ export default function HomePage() {
   // 继续观看行所需数据（必须在所有提前 return 之前调用，避免 hook 数随渲染分支变化而漂移）
   const history = useUserStore((s) => s.history);
   const userDataLoading = useUserStore((s) => s._loading);
+  // 顶部过渡带用：收藏条数（选择器返回原始值，引用稳定）
+  const collectionCount = useUserStore((s) => s.collections.length);
   const historyMap = useMemo(() => {
     const map = new Map<string, (typeof history)[0]>();
     for (const h of history) {
@@ -405,45 +408,104 @@ export default function HomePage() {
         </div>
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
-        <HeroBanner
-          items={trending}
-          onItemClick={handleBannerItemClick}
-          onContinuePlay={handleContinuePlay}
-          historyMap={historyMap}
-          loading={loading.trending}
-          initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
-        />
-        <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-          {!isWide && <CategoryQuickAccess onCategorySelect={handleCategorySelect} />}
-          {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
-          {(userDataLoading || continueItems.length > 0) && (
-            <div className="home-continue-row">
-              <TMDBMovieRow
-                title="继续观看"
-                items={[]}
-                continueMode
-                continueItems={continueItems}
-                isLoading={userDataLoading}
-                skipAnimations
+        {isWide ? (
+          /* ── 大屏两栏（2026-09-10 用户拍板「方案 C」）──────────────
+             过渡带通栏横跨两栏；左栏 = 分类热度榜（sticky）；右列 = Hero + 内容行。
+             ⚠️ HeroBanner 的祖先绝不能带 transform 动画（其缩略图/背景是 GPU 合成层，
+             祖先 transform 会触发重绘闪烁，见 docs/agents/patterns.md「页面进入过渡统一约定」）。
+             因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在 __main 内。 */
+          <>
+          <HomeTopStrip
+            continueCount={continueItems.length}
+            favoriteCount={collectionCount}
+          />
+          <div className="home-two-col">
+            <aside className="home-two-col__rail">
+              <CategoryHeatRow variant="rail" />
+            </aside>
+            <div className="home-two-col__main">
+              <HeroBanner
+                items={trending}
+                onItemClick={handleBannerItemClick}
+                onContinuePlay={handleContinuePlay}
+                historyMap={historyMap}
+                loading={loading.trending}
+                initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
               />
+              <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
+                {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
+                {(userDataLoading || continueItems.length > 0) && (
+                  <div className="home-continue-row">
+                    <TMDBMovieRow
+                      title="继续观看"
+                      items={[]}
+                      continueMode
+                      continueItems={continueItems}
+                      isLoading={userDataLoading}
+                      skipAnimations
+                    />
+                  </div>
+                )}
+                <div className="home-rows">
+                  {homeRows.map((row, i) => (
+                    <TMDBMovieRow
+                      key={i}
+                      title={row.title}
+                      items={row.items}
+                      isLoading={row.isLoading}
+                      error={row.error}
+                      scrollResetToken="home"
+                      crossfadeOnChange
+                    />
+                  ))}
+                </div>
+                <BackToTopButton />
+              </div>
             </div>
-          )}
-          {isWide && <CategoryHeatRow />}
-          <div className="home-rows">
-            {homeRows.map((row, i) => (
-              <TMDBMovieRow
-                key={i}
-                title={row.title}
-                items={row.items}
-                isLoading={row.isLoading}
-                error={row.error}
-                scrollResetToken="home"
-                crossfadeOnChange
-              />
-            ))}
           </div>
-          <BackToTopButton />
-        </div>
+          </>
+        ) : (
+          <>
+            <HeroBanner
+              items={trending}
+              onItemClick={handleBannerItemClick}
+              onContinuePlay={handleContinuePlay}
+              historyMap={historyMap}
+              loading={loading.trending}
+              initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
+            />
+            <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
+              <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
+              {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
+              {(userDataLoading || continueItems.length > 0) && (
+                <div className="home-continue-row">
+                  <TMDBMovieRow
+                    title="继续观看"
+                    items={[]}
+                    continueMode
+                    continueItems={continueItems}
+                    isLoading={userDataLoading}
+                    skipAnimations
+                  />
+                </div>
+              )}
+              <div className="home-rows">
+                {homeRows.map((row, i) => (
+                  <TMDBMovieRow
+                    key={i}
+                    title={row.title}
+                    items={row.items}
+                    isLoading={row.isLoading}
+                    error={row.error}
+                    scrollResetToken="home"
+                    crossfadeOnChange
+                  />
+                ))}
+              </div>
+              <BackToTopButton />
+            </div>
+          </>
+        )}
       </div>
     </>
   );
