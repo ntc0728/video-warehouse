@@ -153,11 +153,13 @@
 
 
 
-/* ── >1280 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
+/* ── >=1024 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
    去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
    「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。
-   2026-09-07 曾 1280 → 1440，同日二次修正回退 1440 → 1280（CSS 与 JS 同步）。 */
-@media (width >= 1280px) {
+   2026-09-07 曾 1280 → 1440，同日二次修正回退 1440 → 1280。
+   2026-09-10 用户要求「首页视口 ≥1024 就显示新的 UI 布局」：阈值 1280 → 1024
+   （JS useIsWideDesktop 同步为 (min-width: 1024px)，严格一致不再留 1px 缝）。 */
+@media (width >= 1024px) {
   html:not([data-device="tv"]) .category-quick-access__card {
     padding: 0;
   }
@@ -212,14 +214,15 @@
    全局左侧栏已删除，桌面 web 经顶栏 + 本卡片双入口可达分类。 */
 
 /* ══════════════════════════════════════════════════════════════════════
-   >1280 桌面宽屏分支（2026-09-06 方案 A2，设计文档见 changelogs/design-docs/）：
-   频道文字导航条 + 热门分类面板。JS 分支由 useIsWideDesktop（>1281px 且非 TV）
-   控制，≤1280 / TV / app 不会命中本块；此处 media 查询为双保险。
-   2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280（CSS 与 JS 同步）。
+   >=1024 桌面宽屏分支（2026-09-06 方案 A2，设计文档见 changelogs/design-docs/）：
+   频道文字导航条 + 热门分类面板。JS 分支由 useIsWideDesktop（>=1024px 且非 TV）
+   控制，<1024 / TV / app 不会命中本块；此处 media 查询为双保险。
+   2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280；
+   2026-09-10 用户要求「首页视口 ≥1024 就显示新的 UI 布局」：1280 → 1024（CSS 与 JS 同步）。
    token 全部取自 variables.css v2.2 密度契约；无降级媒体查询——
    本块内 catgrid/hotgrid 恒 3 列（v2.3 教训：降级规则会破坏 3×3 形态）。
    ══════════════════════════════════════════════════════════════════════ */
-@media (width >= 1280px) {
+@media (width >= 1024px) {
 
   /* ── 横版封面尺寸（overlay 面板 hotcard + 首页分类热度榜 catcard 共用）──
      2026-09-07 用户要求调大：120×68 → 150×85（等比 1.25×，16:9 比例不变）。
@@ -324,20 +327,23 @@
     margin-top: var(--space-sm);
     margin-bottom: var(--space-sm);
   }
-  /* ── 左栏变体（2026-09-10 方案 C：首页大屏两栏的左侧栏）──
-     3 卡由横排（repeat(3,1fr)）改为竖排单列，卡片自带 surface+border+radius，
-     左栏不再外包一层容器；封面由横版 150×85 改为竖版海报 32×48（2:3，用户要求）。 */
+  /* ── 左栏变体（2026-09-10 方案 B：首页大屏两栏的左侧栏）──
+     原方案 C 是「3 张分类卡竖排 + 每卡 5 条条目」，本变体改为单张连续榜单：
+     整个左栏 = /trending/all/day 的 TOP 20，排名 1→20 连续，不再按分类切分。
+     「左栏看全站趋势、面板按分类切片」——消灭同一作品在两处来源不一致的问题。 */
   html:not([data-device="tv"]) .cqa-heat-row--rail {
-    --cqa-poster-w: 32px;
-    --cqa-poster-h: 48px;
+    /* 竖版海报 2:3；左栏 260px 下卡片内容宽 ≈228px，海报 64×96 起点（用户要求「尽量大一点」），
+       ≥1920 档左栏 280px 时抬到 72×108（见文件末尾档位） */
+    --cqa-poster-w: 64px;
+    --cqa-poster-h: 96px;
+    /* 趋势榜热度值的火焰图标边长（亚像素常量走 custom-property 槽位，
+       与 --cqa-poster-* 同口径；10px 对齐文件内其它热度图标的既有视觉权重） */
+    --cqa-flame-size: 10px;
     margin-top: 0;
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
-  }
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-catgrid {
-    grid-template-columns: minmax(0, 1fr);
   }
   /* 头部恒单行（用户 2026-09-10：ⓘ 提示图标不得被挤到第二行）：
      重排为「🔥 标题 ⓘ 副标题」—— ⓘ 紧跟标题保证位置稳定不换行，
@@ -350,8 +356,8 @@
     order: 1;
     flex: 0 0 auto;
   }
-  /* ⚠️ 标题必须 flex:0 0 auto + nowrap：否则会被 flex 收缩（5 字需 ~66px，
-     空间不足时被压到 59px → 文字折成两行、head 高度翻倍到 40px，
+  /* ⚠️ 标题必须 flex:0 0 auto + nowrap：否则会被 flex 收缩（4 字需 ~53px，
+     空间不足时被压到折成两行、head 高度翻倍，
      连带 ⓘ 视觉上像被"挤到第二行"）。真正让出空间的是副标题。 */
   html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__title {
     flex: 0 0 auto;
@@ -491,33 +497,11 @@
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
   }
-  /* 刷新态：保留旧网格，仅网格内容降沉（包裹层不能整体降沉——会把「更新中」
-     小电视一起压暗导致看不清），徽标用实底胶囊悬浮居中，新数据到达后原位替换 */
+  /* 刷新态规则已删除（2026-09-10）：切分类/切子分类现在统一清空旧数据走
+     .cqa-panel__loading 居中态，不再有「保留旧网格 + 降沉遮罩」的分支，
+     故 .cqa-panel__grid--refreshing / .cqa-panel__refresh 成为死代码，一并移除。 */
   html:not([data-device="tv"]) .cqa-panel__grid {
     position: relative;
-  }
-  html:not([data-device="tv"]) .cqa-panel__grid--refreshing .cqa-hotgrid {
-    opacity: 0.45;
-    pointer-events: none;
-    transition: opacity var(--dur-fast) ease;
-  }
-  html:not([data-device="tv"]) .cqa-panel__refresh {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-full);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-md);
-    font-size: var(--text-xs);
-    color: var(--color-text-secondary);
-    pointer-events: none;
-    white-space: nowrap;
   }
   /* 分页条：面板右下角（上一页 / 页码 / 下一页，末页 = 查看更多） */
   html:not([data-device="tv"]) .cqa-panel__pager {
@@ -577,14 +561,15 @@
     min-height: var(--cqa-sub-h);
   }
   html:not([data-device="tv"]) .cqa-subgenres::-webkit-scrollbar { display: none; }
-  html:not([data-device="tv"]) .cqa-subgenres__loading {
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-  }
+  /* .cqa-subgenres__loading 已废弃（2026-09-10）：首次开面板不再显示「正在加载子分类…」，
+     统一由 .cqa-panel__loading 居中态承担，规则一并移除。 */
+  /* 子分类 chip：2026-09-10 用户两次要求「宽度再调小」——
+     第一轮 inline padding --space-sm → --space-xs；本轮再收为 --space-2xs + 字号降 --text-2xs，
+     chip 整行累计收窄约 6px/个（不改圆角--radius-full 与行高，保持 chip 手感）。 */
   html:not([data-device="tv"]) .cqa-subgenres__chip {
-    padding: var(--space-xs) var(--space-sm);
+    padding: var(--space-2xs) var(--space-xs);
     border-radius: var(--radius-full);
-    font-size: var(--text-xs);
+    font-size: var(--text-2xs);
     color: var(--color-text-secondary);
     background: var(--color-tag-bg);
     border: 1px solid transparent;
@@ -803,7 +788,11 @@
     flex: 1;
     min-width: 0;
   }
+  /* 标题（外层）：2026-09-10 改用历史页 RecordCard 范式 —— 在本层直接测溢出
+     （本层带 overflow:hidden + nowrap，scrollWidth 仍为未裁切文本宽），
+     is-overflow 时解除 ellipsis 并渲染双段轨道。 */
   html:not([data-device="tv"]) .cqa-hotcard__t {
+    display: block;
     font-size: var(--text-sm);
     font-weight: 500;
     color: var(--color-text);
@@ -811,13 +800,22 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* 标题跑马灯（2026-09-06）：溢出时悬浮 card 来回滚动展示全标题（非溢出不滚动） */
+  html:not([data-device="tv"]) .cqa-hotcard__t.is-overflow {
+    text-overflow: clip;
+  }
+  /* 无缝跑马灯轨道：标题复制两份等宽 + 各带尾间距 → 平移 -50% 恰好回第二份起点，
+     循环无跳变（范式同 .record-card__title-track / .chart-row__t-track）。 */
+  html:not([data-device="tv"]) .cqa-hotcard__t-track {
+    display: inline-flex;
+  }
   html:not([data-device="tv"]) .cqa-hotcard__t-text {
-    display: inline-block;
     white-space: nowrap;
   }
-  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-text.is-overflow {
-    animation: cqaHotMarquee 5s var(--ease-standard) infinite;
+  html:not([data-device="tv"]) .cqa-hotcard__t.is-overflow .cqa-hotcard__t-text {
+    margin-right: var(--space-lg);
+  }
+  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-track {
+    animation: cqaHotMarquee 7s linear infinite;
   }
   html:not([data-device="tv"]) .cqa-hotcard__m {
     font-size: var(--text-xs);
@@ -855,29 +853,183 @@
     color: var(--color-text-tertiary);
   }
 
-  /* prefers-reduced-motion：去掉过渡（与全站约定一致） */
+  /* ══ 左栏「今日趋势」连续榜（2026-09-10 方案 B）══════════════════════════
+     一整张 surface 卡包住 20 行；左栏自身有 sticky + overflow-y:auto，
+     故本块不给 max-height（避免双层滚动条），卡随内容自然增高。
+     行高 = 海报高 + 上下 padding。
+     2026-09-10 二改：**去掉行间分割线**（用户要求）—— 连续榜靠行距与 hover 底色
+     区分条目，不再用横线切割（20 条时横线过密、视觉偏表格化）。 */
+  html:not([data-device="tv"]) .cqa-trend {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+  }
+  html:not([data-device="tv"]) .cqa-trend__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-xs) var(--space-2xs);
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--dur-fast) ease;
+  }
+  html:not([data-device="tv"]) .cqa-trend__row:hover {
+    background: var(--color-surface-hover);
+  }
+  /* 排名：固定 20px 槽位保证 1 / 10 / 20 位数字右对齐不抖动；前 3 名走暖橙强调 */
+  html:not([data-device="tv"]) .cqa-trend__rank {
+    flex: 0 0 20px;
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  html:not([data-device="tv"]) .cqa-trend__rank--top {
+    color: var(--color-warning);
+  }
+  html:not([data-device="tv"]) .cqa-trend__poster {
+    flex: 0 0 var(--cqa-poster-w);
+    width: var(--cqa-poster-w);
+    height: var(--cqa-poster-h);
+    display: block;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    background: var(--color-placeholder);
+  }
+  html:not([data-device="tv"]) .cqa-trend__poster--empty {
+    border-radius: var(--radius-md);
+  }
+  html:not([data-device="tv"]) .cqa-trend__body {
+    display: flex;
+    flex-direction: column;
+    /* 2026-09-10 用户要求「gap 值调大一点」：2xs → sm，标题/元信息/热度三行呼吸感更足 */
+    gap: var(--space-sm);
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  /* 标题（外层）：2026-09-10 改用历史页 RecordCard 范式 —— 本层直接测溢出，
+     is-overflow 时解除 ellipsis + 渲染双段轨道，悬浮**整行**触发滚动。 */
+  html:not([data-device="tv"]) .cqa-trend__t {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html:not([data-device="tv"]) .cqa-trend__t.is-overflow {
+    text-overflow: clip;
+  }
+  html:not([data-device="tv"]) .cqa-trend__t-track {
+    display: inline-flex;
+  }
+  html:not([data-device="tv"]) .cqa-trend__t-text {
+    white-space: nowrap;
+  }
+  html:not([data-device="tv"]) .cqa-trend__t.is-overflow .cqa-trend__t-text {
+    margin-right: var(--space-lg);
+  }
+  html:not([data-device="tv"]) .cqa-trend__row:hover .cqa-trend__t-track {
+    animation: cqaHotMarquee 7s linear infinite;
+  }
+  html:not([data-device="tv"]) .cqa-trend__row:active .cqa-trend__t {
+    scale: 0.96;
+  }
+  html:not([data-device="tv"]) .cqa-trend__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+  /* 电影/剧集徽标：中性描边而非实色（左栏 20 行整片实色块会喧宾夺主） */
+  html:not([data-device="tv"]) .cqa-trend__badge {
+    flex: 0 0 auto;
+    padding: 0 var(--space-2xs);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
+    line-height: 1.6;
+    color: var(--color-text-tertiary);
+  }
+  html:not([data-device="tv"]) .cqa-trend__year {
+    flex: 0 0 auto;
+    font-size: var(--text-2xs);
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  /* 热度值：2026-09-10 用户要求从 .cqa-trend__meta 里移出、独立占第 3 行
+     （meta 承担「电影/剧集 + 年份」的元信息，热度是数值型指标，语义另起一行更清楚）。
+     移出后不再需要 margin-left:auto —— 块级行左对齐，与徽标列对齐。 */
+  html:not([data-device="tv"]) .cqa-trend__h {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3xs);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-warning);
+    font-variant-numeric: tabular-nums;
+  }
+  /* 火焰图标尺寸走自定义属性槽位（与 --cqa-poster-* 同规格口径）：
+     stylelint 的 declaration-property-unit-disallowed-list 只查顶层裸值，
+     custom-property 定义不在校验范围，因此这里可安全表达亚像素常数。 */
+  html:not([data-device="tv"]) .cqa-trend__h svg {
+    width: var(--cqa-flame-size);
+    height: var(--cqa-flame-size);
+  }
+
+  /* ⚠️ 2026-09-10 重要修复：「prefers-reduced-motion 停用」规则曾**误写在
+     @media (width >= 1024px) 主块内**（无 reduced-motion 条件包裹），
+     等于对全体桌面用户无条件 `animation: none` —— 直接抹掉了标题跑马灯动画
+     （实测：is-overflow 已正确注入、--marquee-x 也在，但 computed animationName 恒为 none）。
+     已整段移出到文件末尾独立的 @media (prefers-reduced-motion: reduce) 块。 */
+}
+
+/* ── prefers-reduced-motion：降低动效（与全站约定一致）──
+   必须单独成块并带 reduce 条件，切勿再写回上面的 @media (width >= 1024px) 内。 */
+@media (prefers-reduced-motion: reduce) {
   html:not([data-device="tv"]) .cqa-nav__item,
   html:not([data-device="tv"]) .cqa-subgenres__chip,
   html:not([data-device="tv"]) .cqa-catcard,
   html:not([data-device="tv"]) .cqa-catcard__name,
   html:not([data-device="tv"]) .cqa-catcard__t,
-  html:not([data-device="tv"]) .cqa-panel__grid--refreshing .cqa-hotgrid,
+  html:not([data-device="tv"]) .cqa-trend__row,
+  html:not([data-device="tv"]) .cqa-trend__t,
+  html:not([data-device="tv"]) .cqa-trend__t-text,
   html:not([data-device="tv"]) .cqa-panel__pager__btn,
   html:not([data-device="tv"]) .cqa-hotcard {
     transition: none;
   }
-  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-text.is-overflow {
+  /* 趋势榜 / 面板卡标题跑马灯同步停用（reduced-motion 下不滚动） */
+  html:not([data-device="tv"]) .cqa-trend__row:hover .cqa-trend__t-track,
+  html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-track {
     animation: none;
   }
   html:not([data-device="tv"]) .cqa-catcard:active .cqa-catcard__name,
-  html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t {
+  html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t,
+  html:not([data-device="tv"]) .cqa-trend__row:active .cqa-trend__t {
     scale: none;
   }
 }
 
-/* 标题跑马灯：去程停留 → 滚到尾 → 停留 → 滚回（--marquee-x 由 JS 注入溢出宽度） */
+/* 标题跑马灯：双段轨道平移 -50%（范式同历史页 RecordCard 的 rc-marquee）——
+   轨道宽 = 2×文本，位移一半恰好回到第二份起点，无缝循环，无需 JS 计算像素。 */
 @keyframes cqaHotMarquee {
-  0%, 12% { transform: translateX(0); }
-  46%, 58% { transform: translateX(var(--marquee-x, -100%)); }
-  92%, 100% { transform: translateX(0); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }

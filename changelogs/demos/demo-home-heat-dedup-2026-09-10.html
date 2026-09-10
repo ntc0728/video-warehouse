@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>首页「分类热度榜」× 顶栏 chip 面板 去重提案 — 2026-09-10</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   首页「分类热度榜」× 顶栏 chip 面板 内容重复 — 去重提案 Demo（2026-09-10）
+
+   本文件只用于「看形态」，不参与构建。落地时引用真实 token，勿复制字面量。
+
+   覆盖四态：
+     现状      —— 左栏分类热度榜 + 顶栏 chips + hover 面板（三处同源数据）
+     方案 A    —— 撤左栏，Hero 恢复通栏单列
+     方案 B    —— 左栏改「今日趋势 TOP 10」连续榜（推荐）
+     方案 C    —— 左栏只留分类导航卡（去条目列表）
+
+   真实读数来源：
+     · Home.css:647-706  --home-rail-w 260(≥1920: 280) / --home-rail-gap --space-lg
+     · Home.css:685-692  --hero-banner-h = (min(vw,2200) − 2×page-pad-x − rail-w − gap) × 0.2727
+     · variables.css     --page-pad-x 16 / 60(1440) / 100(1920) / 140(2560)
+     · CategoryQuickAccess.css:330-372  rail 变体：海报 32×48、head 恒单行
+   Demo 技术说明：用 CSS container query 模拟「视口宽度」（真实 @media 无法被外部宽度驱动），
+   项目里的 vw 在本文件写作 cqw。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-background:#f5f5f5;
+  --color-surface:#fff;
+  --color-surface-hover:rgba(0,0,0,.05);
+  --color-text:#000;
+  --color-text-secondary:#666;
+  --color-text-tertiary:#999;
+  --color-text-inverse:#fff;
+  --color-border:#d9d9d9;
+  --color-border-light:#e8e8e8;
+  --color-border-strong:#c4c4c4;
+  --color-primary:#000;
+  --color-warning:#fa8c16;
+  --color-placeholder:#e0e0e0;
+  --color-danger:#e5484d;
+  --color-ok:#2d7d46;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow-card:0 2px 8px rgba(0,0,0,.06);
+  --radius-sm:5px; --radius-md:9.6px; --radius-lg:16.5px; --radius-full:9999px;
+  --text-2xs:10.8px; --text-xs:11.33px; --text-sm:12.22px; --text-base:13.2px;
+  --text-lg:13.83px; --text-xl:15.59px; --text-2xl:20.37px;
+  --icon-xs:15.1px; --icon-sm:15.9px; --icon-md:18.9px;
+  --space-2xs:2.2px; --space-xs:3.9px; --space-sm:7.9px; --space-md:9.1px;
+  --space-lg:16.5px; --space-xl:22.5px; --space-2xl:31.5px; --space-3xl:45px;
+  --dur-fast:150ms;
+  --header-height:74px;
+  --sim-w:1440px;
+}
+body.is-dark{
+  --color-background:#131313;
+  --color-surface:#1e1e1e;
+  --color-surface-hover:rgba(255,255,255,.07);
+  --color-text:#fff;
+  --color-text-secondary:#a6a6a6;
+  --color-text-tertiary:#767676;
+  --color-text-inverse:#000;
+  --color-border:#3a3a3a;
+  --color-border-light:#2c2c2c;
+  --color-border-strong:#4d4d4d;
+  --color-primary:#fff;
+  --color-placeholder:#2e2e2e;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-card:0 2px 8px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:#eef0f2;color:#111;
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:0 0 60px;
+}
+body.is-dark{background:#0d0d0d;color:#e8e8e8;}
+
+/* ── 提案台外壳 ───────────────────────────────────────────── */
+.wrap{max-width:1360px;margin:0 auto;padding:0 24px;}
+.hero-hd{padding:34px 0 10px;}
+.hero-hd h1{margin:0 0 8px;font-size:24px;letter-spacing:.3px;}
+.hero-hd p{margin:0;color:#5a5f66;font-size:13.5px;line-height:1.85;}
+body.is-dark .hero-hd p{color:#a3a8ae;}
+.hero-hd code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:12.5px;}
+body.is-dark .hero-hd code{background:rgba(255,255,255,.1);}
+
+.bar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin:16px 0 6px;padding:12px 14px;border-radius:10px;
+  background:#fff;border:1px solid #e2e5e9;
+  position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+body.is-dark .bar{background:#17181a;border-color:#2b2d31;}
+.bar__lab{font-size:12px;color:#7a8087;font-weight:700;letter-spacing:.4px;}
+.seg{display:inline-flex;background:#f0f1f3;border-radius:8px;padding:3px;gap:2px;}
+body.is-dark .seg{background:#242629;}
+.seg button{
+  border:0;background:none;cursor:pointer;font:inherit;font-size:12.5px;
+  padding:5px 12px;border-radius:6px;color:#5a5f66;font-weight:600;white-space:nowrap;
+}
+body.is-dark .seg button{color:#a3a8ae;}
+.seg button.is-on{background:#fff;color:#111;box-shadow:0 1px 2px rgba(0,0,0,.08);}
+body.is-dark .seg button.is-on{background:#3a3d42;color:#fff;}
+.bar__sp{flex:1;}
+.btn-mini{
+  border:1px solid #d6dade;background:#fff;border-radius:8px;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;color:#333;
+}
+body.is-dark .btn-mini{background:#1e2023;border-color:#33363b;color:#ddd;}
+
+/* ── 方案说明块 ───────────────────────────────────────────── */
+.plan-desc{
+  margin:16px 0 14px;padding:12px 16px;border-radius:10px;
+  background:#fff;border:1px solid #e2e5e9;
+  font-size:13px;color:#4a4f56;line-height:1.9;
+}
+body.is-dark .plan-desc{background:#17181a;border-color:#2b2d31;color:#b9bec5;}
+.plan-desc h2{margin:0 0 8px;font-size:15.5px;color:#111;letter-spacing:.2px;}
+body.is-dark .plan-desc h2{color:#fff;}
+.plan-desc code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:12.5px;}
+body.is-dark .plan-desc code{background:rgba(255,255,255,.1);}
+.plan-desc b{color:#111;}
+body.is-dark .plan-desc b{color:#fff;}
+.plan-desc .up{color:var(--color-ok);font-weight:700;}
+.plan-desc .down{color:#c0392b;font-weight:700;}
+body.is-dark .plan-desc .down{color:#ff7b72;}
+.plan-desc ul{margin:8px 0 0;padding-left:20px;}
+.plan-desc li{margin:3px 0;}
+.tag-reco{
+  display:inline-block;background:#111;color:#fff;font-size:11px;font-weight:800;
+  padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:8px;letter-spacing:.5px;
+}
+body.is-dark .tag-reco{background:#fff;color:#111;}
+
+/* ── 模拟视口 ─────────────────────────────────────────────── */
+.sim-wrap{overflow-x:auto;padding-bottom:14px;}
+.sim-frame{
+  width:var(--sim-w);position:relative;
+  container-type:inline-size;
+  background:var(--color-background);color:var(--color-text);
+  outline:1px solid var(--color-border);outline-offset:-1px;
+  border-radius:8px;overflow:hidden;font-size:var(--text-base);
+}
+.sim-frame *{box-sizing:border-box;}
+
+.plan{
+  --page-pad-x:16px;
+  --home-rail-w:260px;
+  --home-rail-gap:var(--space-lg);
+  --rail-inner-w:calc(min(100cqw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap));
+  /* Hero 高度：单列 = 全内容宽；两栏 = 右列实际宽（Home.css:685-692 真实公式） */
+  --hero-h-single:calc((min(100cqw, 2200px) - 2 * var(--page-pad-x)) * 0.2727);
+  --hero-h-two:calc(var(--rail-inner-w) * 0.2727);
+  --hero-side-w:calc(var(--rail-inner-w) * 0.56);
+  --card-cols:6;
+}
+@container (min-width:1440px){ .plan{--page-pad-x:60px;--card-cols:7;} }
+@container (min-width:1920px){ .plan{--page-pad-x:100px;--card-cols:8;--home-rail-w:280px;} }
+@container (min-width:2560px){ .plan{--page-pad-x:140px;--card-cols:8;--home-rail-w:280px;} }
+
+/* ── 站点顶栏 ─────────────────────────────────────────────── */
+.site-hd{
+  height:var(--header-height);display:flex;align-items:center;gap:var(--space-lg);
+  padding:0 var(--page-pad-x);background:var(--color-surface);
+  border-bottom:1px solid var(--color-border-light);position:relative;z-index:5;
+}
+.site-hd__inner{display:flex;align-items:center;gap:var(--space-lg);width:100%;max-width:2200px;margin-inline:auto;}
+.site-logo{font-size:var(--text-2xl);font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.site-chips{display:flex;gap:var(--space-xs);flex:0 0 auto;}
+.site-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:6px 11px;border-radius:var(--radius-full);font-size:var(--text-sm);
+  color:var(--color-text-secondary);font-weight:600;white-space:nowrap;
+}
+.site-chip.is-on{background:var(--color-primary);color:var(--color-text-inverse);}
+.site-search{
+  flex:0 0 auto;width:230px;height:34px;border-radius:var(--radius-full);
+  background:var(--color-background);border:1px solid var(--color-border-light);
+  display:flex;align-items:center;padding:0 14px;color:var(--color-text-tertiary);
+  font-size:var(--text-sm);
+}
+.site-hd__right{margin-left:auto;display:flex;gap:var(--space-md);color:var(--color-text-secondary);font-size:var(--text-lg);}
+
+/* ── 重复标记 ─────────────────────────────────────────────── */
+.is-dupe{outline:2px dashed var(--color-danger);outline-offset:3px;border-radius:8px;}
+.dupe-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--color-danger);color:#fff;font-size:10.5px;font-weight:800;
+  padding:1px 7px;border-radius:999px;letter-spacing:.3px;vertical-align:middle;
+}
+.dupe-note{
+  position:absolute;right:10px;bottom:10px;z-index:20;
+  background:rgba(229,72,77,.95);color:#fff;font-size:11.5px;font-weight:700;
+  padding:6px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
+
+/* ── 顶部过渡带（HomeTopStrip 真实形态）───────────────────── */
+.topstrip{
+  display:flex;align-items:center;width:100%;max-width:2200px;margin-inline:auto;
+  margin-bottom:var(--space-sm);padding:var(--space-xs) var(--space-md);
+  border:1px solid var(--color-border-light);border-radius:var(--radius-lg);
+  background-color:var(--color-surface);box-shadow:var(--shadow-sm);
+  color:var(--color-text-secondary);font-size:var(--text-xs);
+}
+.topstrip__inner{display:flex;align-items:center;gap:var(--space-sm);width:100%;min-width:0;}
+.topstrip__sep{flex:0 0 auto;width:1px;height:12px;background:var(--color-border-light);}
+.topstrip__stat{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
+.topstrip__stat b{color:var(--color-text);}
+.topstrip__pill{padding:1px var(--space-sm);border-radius:var(--radius-full);background:var(--color-background);white-space:nowrap;}
+.topstrip__right{display:flex;align-items:center;gap:var(--space-xs);margin-left:auto;font-weight:700;color:var(--color-text);}
+
+/* ── 页面容器 ─────────────────────────────────────────────── */
+.page{padding:var(--space-sm) var(--page-pad-x) 0;position:relative;}
+.two-col{
+  display:grid;grid-template-columns:var(--home-rail-w) minmax(0,1fr);
+  gap:var(--home-rail-gap);align-items:start;
+  width:100%;max-width:2200px;margin-inline:auto;
+}
+.rail{position:sticky;top:8px;min-width:0;}
+.col{min-width:0;}
+
+/* ── HeroBili 形态 ────────────────────────────────────────── */
+.hb{width:100%;max-width:2200px;margin-inline:auto;margin-bottom:var(--space-sm);}
+.hb--single{--hero-h:var(--hero-h-single);}
+.hb--two{--hero-h:var(--hero-h-two);max-width:none;margin-inline:0;}
+.hb__grid{display:grid;grid-template-columns:minmax(0,1fr) var(--hero-side-w);gap:var(--space-sm);}
+.hb__grid--full{grid-template-columns:minmax(0,1fr) calc((min(100cqw,2200px) - 2*var(--page-pad-x)) * 0.56);}
+.hb__banner{
+  height:var(--hero-h);border-radius:var(--radius-lg);position:relative;overflow:hidden;
+  background:linear-gradient(115deg,#3b3f52,#6b7280 55%,#9aa3b2);
+  display:flex;align-items:flex-end;
+}
+.hb__cap{padding:var(--space-xl);color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5);}
+.hb__cap h3{margin:6px 0 4px;font-size:var(--text-2xl);}
+.hb__cap p{margin:0;font-size:var(--text-sm);opacity:.88;max-width:60ch;}
+.hb__meta{display:flex;gap:10px;font-size:var(--text-xs);opacity:.95;}
+.hb__right{display:flex;flex-direction:column;gap:var(--space-sm);min-width:0;}
+.hb__cards{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:var(--space-sm);flex:1;min-height:0;}
+.hb__card{
+  border-radius:var(--radius-md);background:linear-gradient(135deg,#4b5563,#8b93a1);
+  color:#fff;font-size:var(--text-xs);padding:8px;display:flex;align-items:flex-end;
+  text-shadow:0 1px 6px rgba(0,0,0,.5);overflow:hidden;
+}
+.hb__shuffle{font-size:var(--text-xs);color:var(--color-text-secondary);text-align:center;}
+
+/* ── 左栏：分类热度榜（现状 / 方案 C）────────────────────── */
+.rail-box{display:flex;flex-direction:column;gap:var(--space-sm);}
+.rail-head{display:flex;align-items:center;gap:var(--space-xs);margin-bottom:0;}
+.rail-head__title{flex:0 0 auto;white-space:nowrap;font-weight:700;font-size:var(--text-base);}
+.rail-head__sub{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--color-text-tertiary);font-size:var(--text-2xs);}
+.rail-head__tip{flex:0 0 auto;color:var(--color-text-tertiary);font-size:var(--text-xs);}
+.rail-head__more{flex:0 0 auto;font-size:var(--text-2xs);color:var(--color-text-secondary);white-space:nowrap;}
+
+.heat-card{
+  display:flex;flex-direction:column;border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);background:var(--color-surface);padding:var(--space-md);margin-bottom:var(--space-sm);
+}
+.heat-card__head{display:flex;align-items:center;gap:var(--space-xs);}
+.heat-card__rank{
+  width:18px;height:18px;border-radius:5px;background:var(--color-background);
+  color:var(--color-text-secondary);font-size:var(--text-2xs);font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.heat-card__name{font-weight:700;font-size:var(--text-base);white-space:nowrap;}
+.heat-card__heat{margin-left:auto;display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;}
+.heat-card__heat .n{font-weight:800;font-size:var(--text-lg);}
+.heat-card__heat .l{font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+.heat-card__bar{height:4px;border-radius:2px;background:var(--color-background);margin:var(--space-xs) 0 var(--space-sm);overflow:hidden;}
+.heat-card__bar i{display:block;height:100%;background:var(--color-warning);border-radius:2px;}
+.heat-item{display:flex;align-items:center;gap:var(--space-xs);padding:3px 0;}
+.heat-item__idx{width:12px;flex:0 0 auto;font-size:var(--text-2xs);color:var(--color-text-tertiary);font-weight:700;text-align:center;}
+.heat-item__poster{width:32px;height:48px;flex:0 0 auto;border-radius:4px;background:var(--color-placeholder);}
+.heat-item__t{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--text-sm);}
+.heat-item__h{flex:0 0 auto;font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+
+/* ── 左栏：今日趋势 TOP10（方案 B）───────────────────────── */
+.trend-card{
+  border:1px solid var(--color-border-light);border-radius:var(--radius-lg);
+  background:var(--color-surface);padding:var(--space-md);
+}
+.trend-row{display:flex;align-items:center;gap:var(--space-xs);padding:3px 0;}
+.trend-row__rank{
+  width:18px;flex:0 0 auto;text-align:center;font-weight:800;font-size:var(--text-sm);
+  color:var(--color-text-tertiary);
+}
+.trend-row__rank.is-top{color:var(--color-warning);}
+.trend-row__poster{width:32px;height:48px;flex:0 0 auto;border-radius:4px;background:var(--color-placeholder);}
+.trend-row__body{flex:1 1 0;min-width:0;}
+.trend-row__t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--text-sm);}
+.trend-row__m{display:flex;align-items:center;gap:5px;font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+.badge{
+  display:inline-block;padding:0 5px;border-radius:4px;font-size:var(--text-2xs);
+  border:1px solid var(--color-border);color:var(--color-text-secondary);
+}
+.badge--tv{border-color:#7c3aed;color:#7c3aed;}
+.badge--movie{border-color:#ff4757;color:#ff4757;}
+.trend-row__h{flex:0 0 auto;font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+
+/* ── 左栏：分类导航卡（方案 C）───────────────────────────── */
+.catnav-card{
+  display:flex;align-items:center;gap:var(--space-sm);
+  border:1px solid var(--color-border-light);border-radius:var(--radius-lg);
+  background:var(--color-surface);padding:var(--space-md);margin-bottom:var(--space-sm);
+}
+.catnav-card__dot{width:26px;height:26px;border-radius:8px;flex:0 0 auto;}
+.catnav-card__body{flex:1 1 0;min-width:0;}
+.catnav-card__name{display:block;font-weight:700;font-size:var(--text-base);}
+.catnav-card__meta{font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+.catnav-card__bar{height:3px;border-radius:2px;background:var(--color-background);margin-top:5px;overflow:hidden;}
+.catnav-card__bar i{display:block;height:100%;background:var(--color-warning);border-radius:2px;}
+
+/* ── hover 面板（ghost，仅现状演示）──────────────────────── */
+.panel-ghost{
+  position:absolute;left:0;right:0;top:0;z-index:12;
+  margin:0 var(--page-pad-x);max-width:2200px;
+  background:color-mix(in srgb, var(--color-surface) 94%, transparent);
+  border:1px solid var(--color-border-strong);border-radius:0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow:0 12px 30px rgba(0,0,0,.14);
+  padding:var(--space-md) var(--space-lg);backdrop-filter:blur(2px);
+}
+.panel-ghost__head{display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);}
+.panel-ghost__title{font-weight:700;}
+.panel-ghost__heat{display:inline-flex;align-items:center;gap:4px;font-weight:800;color:var(--color-warning);}
+.panel-ghost__sub{color:var(--color-text-tertiary);font-size:var(--text-2xs);margin-left:auto;}
+.panel-ghost__chips{display:flex;gap:var(--space-xs);margin-bottom:var(--space-sm);}
+.panel-ghost__chip{
+  padding:3px 10px;border-radius:var(--radius-full);border:1px solid var(--color-border-light);
+  font-size:var(--text-2xs);color:var(--color-text-secondary);
+}
+.panel-ghost__chip.is-on{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse);font-weight:700;}
+.panel-ghost__grid{display:grid;grid-template-columns:repeat(9,1fr);gap:var(--space-xs);}
+.panel-ghost__card{
+  border:1px solid var(--color-border-light);border-radius:var(--radius-md);overflow:hidden;
+  background:var(--color-surface);
+}
+.panel-ghost__img{height:52px;background:var(--color-placeholder);}
+.panel-ghost__t{font-size:var(--text-2xs);padding:3px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── 内容行 ───────────────────────────────────────────────── */
+.mrow{margin-bottom:var(--space-lg);}
+.mrow__head{display:flex;align-items:baseline;gap:var(--space-sm);margin-bottom:var(--space-sm);}
+.mrow__title{font-weight:700;font-size:var(--text-xl);}
+.mrow__more{margin-left:auto;font-size:var(--text-2xs);color:var(--color-text-tertiary);}
+.mrow__grid{display:grid;grid-template-columns:repeat(var(--card-cols),1fr);gap:var(--space-md);}
+.mcard{border-radius:var(--radius-md);overflow:hidden;}
+.mcard__img{aspect-ratio:2/3;background:var(--color-placeholder);border-radius:var(--radius-md);}
+.mcard__t{font-size:var(--text-xs);padding-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero-hd">
+    <h1>首页「分类热度榜」× 顶栏 chip 面板 —— 内容重复去重提案</h1>
+    <p>
+      议题：<b>首页分类热度榜模块与顶部导航 chip 面板内容重复</b>。本页给出 4 个候选形态（现状 + A/B/C），
+      只做「看形态」用。左栏宽度 <code>260px（≥1920: 280px）</code>、栏间 gap <code>--space-lg</code>、
+      Hero 高度公式 <code>--hero-banner-h</code> 全部照抄 <code>Home.css:647-706</code> 真实读数。
+    </p>
+  </div>
+
+  <div class="bar">
+    <span class="bar__lab">形态</span>
+    <span class="seg" id="planSeg">
+      <button data-p="now" class="is-on">现状（重复）</button>
+      <button data-p="A">方案 A</button>
+      <button data-p="B">方案 B · 推荐</button>
+      <button data-p="C">方案 C</button>
+    </span>
+    <span class="bar__sp"></span>
+    <span class="bar__lab">视口</span>
+    <span class="seg" id="wSeg">
+      <button data-w="1280">1280</button>
+      <button data-w="1440" class="is-on">1440</button>
+      <button data-w="1920">1920</button>
+      <button data-w="2560">2560</button>
+    </span>
+    <button class="btn-mini" id="themeBtn">深色</button>
+  </div>
+
+  <div class="plan-desc" id="desc"></div>
+
+  <div class="sim-wrap"><div class="sim-frame"><div class="plan is-on" id="mount"></div></div></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var $=function(s){return document.querySelector(s);};
+
+  /* ── 模拟数据 ─────────────────────────────────────────── */
+  var FILMS=[
+    '沙丘：第二部','流浪地球 3','奥本海默','繁花','漫长的季节','三体','狂飙','宇宙探索编辑部',
+    '蜘蛛侠：纵横宇宙','怒海战记','繁城之下','长安三万里','热辣滚烫','第二十条','飞驰人生 2','年会不能停'
+  ];
+  /* 现状：aggregateCategoryHeat(/trending/all/day 单页 20 条) 的真实后果——
+     电影/剧集桶各约 8~12 条，综艺/动漫/纪录片桶常只有 0~2 条，Σ 值抖动大。
+     方案 B 的 TOP10 直接用同一次 trending 结果（连续排名，无分类切分）。 */
+  var TREND=[
+    {t:'沙丘：第二部',k:'movie',h:4126.8},{t:'繁花',k:'tv',h:3184.2},
+    {t:'流浪地球 3',k:'movie',h:2907.5},{t:'漫长的季节',k:'tv',h:2540.9},
+    {t:'奥本海默',k:'movie',h:2318.4},{t:'三体',k:'tv',h:2087.1},
+    {t:'狂飙',k:'tv',h:1892.6},{t:'蜘蛛侠：纵横宇宙',k:'movie',h:1644.3},
+    {t:'宇宙探索编辑部',k:'movie',h:1421.7},{t:'繁城之下',k:'tv',h:1288.5}
+  ];
+  var CATS=[
+    {name:'电影',color:'linear-gradient(135deg,#ff4757,#ff6b81)',heat:12480,list:TREND.filter(function(x){return x.k==='movie';}).slice(0,5).map(function(x){return x.t;})},
+    {name:'剧集',color:'linear-gradient(135deg,#7c3aed,#a78bfa)',heat:9860,list:TREND.filter(function(x){return x.k==='tv';}).slice(0,5).map(function(x){return x.t;})},
+    {name:'综艺',color:'linear-gradient(135deg,#f97316,#fb923c)',heat:2140,list:['奔跑吧·天路篇','忘不了农场']}
+  ];
+
+  /* ── 片段 ─────────────────────────────────────────────── */
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+
+  function header(dupeChip){
+    var chips=['首页','电影','剧集','综艺','动漫','纪录片','排行榜','全部分类'];
+    return '<div class="site-hd"><div class="site-hd__inner">'
+      + '<span class="site-logo">KinoTV</span>'
+      + '<span class="site-chips">'+chips.map(function(c,i){
+          var cls='site-chip'+(i===0?' is-on':'');
+          /* 现状：chip「电影」与左栏分类卡「电影」指向同一分类 —— 标红 */
+          if(dupeChip && c==='电影') cls+=' is-dupe';
+          return '<span class="'+cls+'">'+c+'</span>';
+        }).join('')+'</span>'
+      + '<span class="site-search">搜索影视 / 演员…</span>'
+      + '<span class="site-hd__right"><span>♪</span><span>☆</span><span>⚙</span></span>'
+      + '</div></div>';
+  }
+
+  function topstrip(withTopCat){
+    return '<div class="topstrip"><div class="topstrip__inner">'
+      + '<span style="color:var(--color-text-tertiary)">首页</span>'
+      + '<span class="topstrip__sep"></span><span class="topstrip__stat">今日趋势 <b>20</b> 条</span>'
+      + (withTopCat
+          ? '<span class="topstrip__sep"></span><span class="topstrip__stat">'
+            +'<span style="color:var(--color-warning)">🔥</span> 最热分类 <b>电影</b></span>'
+          : '')
+      + '<span class="topstrip__right"><span class="topstrip__pill">继续观看 3</span>'
+      + '<span class="topstrip__pill">收藏 12</span>'
+      + '<span>完整热度榜 ›</span></span>'
+      + '</div></div>';
+  }
+
+  function hero(mode){
+    var cards='';
+    for(var i=0;i<6;i++) cards+='<div class="hb__card">'+esc(FILMS[i])+'</div>';
+    var grid='hb__grid'+(mode==='single'?' hb__grid--full':'');
+    return '<div class="hb '+(mode==='single'?'hb--single':'hb--two')+'"><div class="'+grid+'">'
+      + '<div class="hb__banner"><div class="hb__cap">'
+      +   '<div class="hb__meta"><span>★ 8.7</span><span>2024</span><span>电影</span></div>'
+      +   '<h3>沙丘：第二部</h3>'
+      +   '<p>保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。</p>'
+      + '</div></div>'
+      + '<div class="hb__right"><div class="hb__cards">'+cards+'</div>'
+      + '<div class="hb__shuffle">换一换</div></div>'
+      + '</div></div>';
+  }
+
+  function heatCards(dupe){
+    return CATS.map(function(c,i){
+      var w=(c.heat/CATS[0].heat*100).toFixed(1);
+      return '<div class="heat-card'+(dupe&&i===0?' is-dupe':'')+'">'
+        + '<div class="heat-card__head">'
+        +   '<span class="heat-card__rank">'+(i+1)+'</span>'
+        +   '<span class="heat-card__name">'+c.name+'</span>'
+        +   '<span class="heat-card__heat"><span class="n">'+c.heat+'</span><span class="l">分类热度 Σ</span></span>'
+        + '</div>'
+        + '<div class="heat-card__bar"><i style="width:'+w+'%"></i></div>'
+        + '<div class="heat-card__list">'+c.list.map(function(t,j){
+            return '<div class="heat-item"><span class="heat-item__idx">'+(j+1)+'</span>'
+              + '<span class="heat-item__poster"></span>'
+              + '<span class="heat-item__t">'+esc(t)+'</span>'
+              + '<span class="heat-item__h">'+(9.9-j*1.6).toFixed(1)+'</span></div>';
+          }).join('')+'</div>'
+        + (c.list.length<5
+            ? '<div style="font-size:var(--text-2xs);color:var(--color-text-tertiary);padding-top:4px">'
+              +'桶内不足 5 条（trending 单页 20 条内该分类命中 '+c.list.length+' 条）</div>'
+            : '')
+        + '</div>';
+    }).join('');
+  }
+
+  function railHeat(dupe){
+    return '<div class="rail-box">'
+      + '<div class="rail-head'+(dupe?' is-dupe':'')+'">'
+      +   '<span style="color:var(--color-warning)">🔥</span>'
+      +   '<span class="rail-head__title">分类热度榜</span>'
+      +   '<span class="rail-head__tip">ⓘ</span>'
+      +   '<span class="rail-head__sub">今日各分类最热 · 点分类卡进入</span>'
+      + '</div>'
+      + heatCards(dupe)
+      + '</div>';
+  }
+
+  /* 方案 B：左栏 = 今日趋势 TOP10 连续榜（无分类切分、无 Σ 指标） */
+  function railTrend(){
+    return '<div class="rail-box">'
+      + '<div class="rail-head">'
+      +   '<span style="color:var(--color-warning)">🔥</span>'
+      +   '<span class="rail-head__title">今日趋势 TOP 10</span>'
+      +   '<span class="rail-head__tip">ⓘ</span>'
+      +   '<span class="rail-head__sub">全站不分类型</span>'
+      + '</div>'
+      + '<div class="trend-card">'
+      + TREND.map(function(x,i){
+          return '<div class="trend-row">'
+            + '<span class="trend-row__rank'+(i<3?' is-top':'')+'">'+(i+1)+'</span>'
+            + '<span class="trend-row__poster"></span>'
+            + '<span class="trend-row__body">'
+            +   '<span class="trend-row__t">'+esc(x.t)+'</span>'
+            +   '<span class="trend-row__m">'
+            +     '<span class="badge badge--'+x.k+'">'+(x.k==='movie'?'电影':'剧集')+'</span>'
+            +     '<span>'+x.h.toFixed(1)+'</span>'
+            +   '</span>'
+            + '</span>'
+            + '<span class="trend-row__h">›</span>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '</div>';
+  }
+
+  /* 方案 C：左栏只留分类导航卡（去条目列表 → 与面板不再有内容级重复） */
+  function railCatNav(){
+    return '<div class="rail-box">'
+      + '<div class="rail-head">'
+      +   '<span style="color:var(--color-warning)">🔥</span>'
+      +   '<span class="rail-head__title">分类热度榜</span>'
+      +   '<span class="rail-head__tip">ⓘ</span>'
+      +   '<span class="rail-head__sub">点分类进完整榜单</span>'
+      + '</div>'
+      + CATS.map(function(c){
+          var w=(c.heat/CATS[0].heat*100).toFixed(1);
+          return '<div class="catnav-card">'
+            + '<span class="catnav-card__dot" style="background:'+c.color+'"></span>'
+            + '<span class="catnav-card__body">'
+            +   '<span class="catnav-card__name">'+c.name+'</span>'
+            +   '<span class="catnav-card__meta">今日趋势 '+ (c.list.length>=5? '12' : c.list.length) +' 条 · Σ '+c.heat+'</span>'
+            +   '<span class="catnav-card__bar"><i style="width:'+w+'%"></i></span>'
+            + '</span>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  /* 现状：hover 面板 ghost —— 与左栏同源同内容 */
+  function panelGhost(){
+    var cards='';
+    for(var i=0;i<9;i++) cards+='<div class="panel-ghost__card"><div class="panel-ghost__img"></div>'
+      +'<div class="panel-ghost__t">'+esc(FILMS[i])+'</div></div>';
+    return '<div class="panel-ghost">'
+      + '<div class="panel-ghost__head">'
+      +   '<span>🎬</span><span class="panel-ghost__title">电影 · 今日最热</span>'
+      +   '<span class="panel-ghost__heat">🔥 12480</span>'
+      +   '<span class="panel-ghost__sub">按热度排序 · 点卡片看详情 &#9432;</span>'
+      + '</div>'
+      + '<div class="panel-ghost__chips">'
+      +   ['全部','动作','冒险','动画','喜剧','犯罪','纪录','剧情'].map(function(c,i){
+            return '<span class="panel-ghost__chip'+(i===0?' is-on':'')+'">'+c+'</span>';
+          }).join('')
+      + '</div>'
+      + '<div class="panel-ghost__grid">'+cards+'</div>'
+      + '</div>';
+  }
+
+  function rows(){
+    function row(title,n,from){
+      var c='';
+      for(var i=0;i<n;i++) c+='<div class="mcard"><div class="mcard__img"></div>'
+        +'<div class="mcard__t">'+esc(FILMS[(i+from)%FILMS.length])+'</div></div>';
+      return '<div class="mrow"><div class="mrow__head"><span class="mrow__title">'+title+'</span>'
+        +'<span class="mrow__more">查看全部 ›</span></div><div class="mrow__grid">'+c+'</div></div>';
+    }
+    return row('继续观看',7,3)+row('正在热映',7,0)+row('热门电影',7,5);
+  }
+
+  /* ── 四种形态 ─────────────────────────────────────────── */
+  var PLANS={
+    now: function(){
+      return header(true)
+        + '<div class="page">'
+        + panelGhost()
+        + topstrip(true)
+        + '<div class="two-col"><div class="rail">'+railHeat(true)+'</div>'
+        + '<div class="col">'+hero('two')+rows()+'</div></div>'
+        + '<div class="dupe-note">① 同名分类两处入口 ② 同一 Σ 值三处 ③ 同为「分类→热榜列表」</div>'
+        + '</div>';
+    },
+    A: function(){
+      return header(false)
+        + '<div class="page">'
+        + topstrip(false)
+        + hero('single')
+        + '<div style="max-width:2200px;margin-inline:auto">'+rows()+'</div>'
+        + '</div>';
+    },
+    B: function(){
+      return header(false)
+        + '<div class="page">'
+        + topstrip(false)
+        + '<div class="two-col"><div class="rail">'+railTrend()+'</div>'
+        + '<div class="col">'+hero('two')+rows()+'</div></div>'
+        + '</div>';
+    },
+    C: function(){
+      return header(false)
+        + '<div class="page">'
+        + topstrip(false)
+        + '<div class="two-col"><div class="rail">'+railCatNav()+'</div>'
+        + '<div class="col">'+hero('two')+rows()+'</div></div>'
+        + '</div>';
+    }
+  };
+
+  var DESC={
+    now:
+      '<h2>现状 —— 三处同源、两种口径</h2>'
+      + '<b>重复的实体：</b>顶栏 chip「电影」的 hover 面板（红框）与左栏「分类热度榜」的电影卡（红框），'
+      + '是同一个分类的两份「今日最热」列表。同一个 Σ 值 <b>12480</b> 出现在面板头、左栏卡头，'
+      + '还以「最热分类 电影」出现在顶部过渡带 —— 三处。<br>'
+      + '<b>更麻烦的是口径不一致：</b>'
+      + '<ul>'
+      + '<li>左栏卡 5 条 ← <code>aggregateCategoryHeat(trending)</code>，数据是 <code>/trending/all/day</code> 的单页 20 条，'
+      + '按 <code>mediaType</code> / <code>genre</code> 过滤后再按 popularity 排序（<code>categoryPanelData.ts:106-130</code>）。</li>'
+      + '<li>面板「电影 · 全部」20 条 ← <code>/trending/movie/day</code>（<code>categoryPanelData.ts:195-199</code>）。</li>'
+      + '</ul>'
+      + '<span class="down">两个不同端点 → 同叫「电影今日最热」的两份列表内容不同，上下对不上。</span><br>'
+      + '<b>指标本身也不可信：</b>20 条样本里综艺/动漫/纪录片桶通常只有 0~2 条，'
+      + 'Σ 值随样本抖动、跨分类不可比；示意中综艺桶只有 <b>2 条</b>，卡片天然填不满 5 行。',
+    A:
+      '<h2>方案 A · 撤掉左栏，Hero 恢复通栏单列</h2>'
+      + '<b>做法：</b>删掉 <code>home-two-col</code> 分支里的 <code>&lt;CategoryHeatRow variant="rail" /&gt;</code>，'
+      + '首页回到 Hero 通栏 + 内容行单列；顶栏芯片与 mega 面板成为唯一的「分类 → 热榜预览」入口。<br>'
+      + '<b>得到：</b>完全无重复，一眼干净；Hero 宽度 1043 → <b>1320px（1440）、1423 → 1720px（1920）</b>，'
+      + '首屏主角回到该有的尺寸。<br>'
+      + '<span class="down">代价：</span>撤销 2026-09-10 刚拍板的「方案 C 两栏」，大屏左侧 260px 留白重新出现；'
+      + '且 Σ 指标问题在顶部过渡带里仍有残留（需一并删掉「最热分类」）。',
+    B:
+      '<h2>方案 B · 左栏改「今日趋势 TOP 10」连续榜<span class="tag-reco">推荐</span></h2>'
+      + '<b>做法：</b>左栏保留两栏结构，但内容换成 <code>/trending/all/day</code> 的<b>完整连续排名</b>'
+      + '（第 1~10 名，每行带 电影/剧集 类型徽标 + popularity），行点击进详情。'
+      + '不再做分类切分、不再算 Σ。<br>'
+      + '<b>为什么它能同时解决两个问题：</b>'
+      + '<ul>'
+      + '<li><b>去重：</b>面板负责「按分类切片」（hover 才出现、一次一个分类）；左栏负责「全站趋势一眼看完」（常驻、无需交互）。'
+      + '两者不再是同一份数据的两次渲染。</li>'
+      + '<li><b>修指标：</b>直接展示 trending 的真实顺序与真实热度值，删掉自造的 Σ —— 不再有「20 条样本求和」这种噪音指标。</li>'
+      + '<li><b>零新增请求：</b>数据就是 store 里已有的 <code>trending</code>，onboarding 成本 = 0，纯渲染改造。</li>'
+      + '<li><b>不推翻两栏：</b>用户昨天刚拍板的 <code>--home-rail-w 260/280</code>、sticky、hero 高度公式全部沿用，改动面最小。</li>'
+      + '</ul>'
+      + '<span class="up">连带处理：</span>顶部过渡带的「最热分类」删掉（它读的就是那个 Σ）；'
+      + '面板头的 Σ 改为「趋势 12 条」这类可验证的计数。<br>'
+      + '<span class="down">代价：</span>失去「分类热度排序」这个（本来就不准的）视角；'
+      + '综艺/动漫/纪录片不再在左栏出现，需要靠顶栏 chip 或 /browse 进入 —— 与面板定位一致，属预期行为。',
+    C:
+      '<h2>方案 C · 左栏只留分类导航卡（去条目列表）</h2>'
+      + '<b>做法：</b>左栏 3 张分类卡删掉 5 条条目列表，只保留「图标 + 分类名 + 今日条数 + 热度条」，'
+      + '点击进 <code>/chart?category=x</code>。重复度从「内容级」降到「入口级」。<br>'
+      + '<span class="up">优点：</span>改动比 B 更小（只删 JSX 一段 + 微调 CSS）；保留了分类维度这个入口。'
+      + '左栏总高从 ~700px 降到 ~300px。<br>'
+      + '<span class="down">没根治：</span>它仍是「分类导航」，与顶栏 8 个 chip 职责重叠，只是不再共享列表；'
+      + '且 <b>Σ 指标问题原样保留</b>（卡头仍要显示 Σ，除非改成真实计数，那就要为 5 个分类各发一次 discover 请求）。'
+  };
+
+  /* ── 渲染 ─────────────────────────────────────────────── */
+  var curPlan='now';
+  function render(){
+    $('#mount').innerHTML=PLANS[curPlan]();
+    $('#desc').innerHTML=DESC[curPlan];
+  }
+  $('#planSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    curPlan=b.dataset.p;
+    [].forEach.call(this.querySelectorAll('button'),function(x){x.classList.toggle('is-on',x===b);});
+    render();
+  });
+  $('#wSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    document.documentElement.style.setProperty('--sim-w',b.dataset.w+'px');
+    [].forEach.call(this.querySelectorAll('button'),function(x){x.classList.toggle('is-on',x===b);});
+  });
+  $('#themeBtn').addEventListener('click',function(){
+    var dark=document.body.classList.toggle('is-dark');
+    this.textContent=dark?'浅色':'深色';
+  });
+  render();
+})();
+</script>
+</body>
+</html>

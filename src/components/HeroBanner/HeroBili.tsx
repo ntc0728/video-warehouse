@@ -1,7 +1,13 @@
 /**
- * HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用；2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280）
+ * HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
+ * 断点演进：原 >1280 → 2026-09-07 曾 1280→1440、同日回退 → 2026-09-10 降为 ≥1024。
  *
- * 布局：左侧大 banner 轮播（1fr）+ 右侧 3×2 竖版卡（--hero-side-w）+ 脱标「换一换」浮层。
+ * 布局：左侧大 banner 轮播 + 右侧竖版卡（--hero-side-w）+ 脱标「换一换」浮层。
+ * 右卡为**满格矩形**、无跨列无空缺，列数随视口分档（JS = useHeroSideCols，CSS 同步）：
+ * - ≥1281           3 列 × 2 行 = 6 张（.hero-bili__cards 基础形态）
+ * - 1153–1280       2 列 × 2 行 = 4 张
+ * - 1024–1152       1 列 × 2 行 = 2 张（右栏窄，单列给足封面宽度）
+ * - ≤1023           2 列 × 2 行 = 4 张（网格 1:1）
  * - banner 池固定前 6 张（BANNER_POOL），轮播（5s 自动 / 左右箭头 / 圆点）只在这 6 张内
  *   推进 activeIndex，【绝不重建右侧卡片】
  * - 右侧卡片展示 banner 池之外的条目（第 7 张起）；「换一换」只推进 shuffleOffset、
@@ -15,6 +21,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
+import { useHeroSideCols } from '@/hooks';
 import { Icon } from '@/components/ui/Icon';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import './HeroBili.css';
@@ -46,10 +53,16 @@ interface HeroBiliProps {
   active?: boolean;
 }
 
-/** 右侧卡片数：3 列 × 2 行 */
-const SIDE_COLS = 3;
+/** 右侧卡片网格：行数恒为 2，列数随视口分档（2026-09-10 用户拍板）。
+ *
+ *  演进：原 6（3 列 × 2 行）→ 用户要求「减 1」改 5（末卡跨 2 列补位）→ 用户否决跨列
+ *  → 回到 6 满格 → **本轮（第五轮）用户要求按视口分档降列**：
+ *    1024–1152 → 1 列（2 张） / 1153–1280 → 2 列（4 张） / ≥1281 → 3 列（6 张）。
+ *  列数唯一 JS 真源 = `useHeroSideCols()`（`@/hooks`），CSS 侧 grid-template
+ *  必须按同一批断点同步（见 HeroBili.css）。
+ *  卡数 = 列数 × 行数，恒为完整矩形：**不跨列、不留空槽**。 */
 const SIDE_ROWS = 2;
-/** banner 轮播只取前 6 张，其余条目全部进右侧卡片 */
+/** banner 轮播池：前 6 张 */
 const BANNER_POOL = 6;
 /** 换一换动画锁时长（= 转圈动画时长，防抖窗口） */
 const SHUFFLE_LOCK_MS = 600;
@@ -104,6 +117,9 @@ export default function HeroBili({
   active = true,
 }: HeroBiliProps) {
   const total = items.length;
+  // 右栏列数（视口分档）：卡数 = 列数 × 2 行，恒为完整矩形
+  const sideCols = useHeroSideCols();
+  const sideCards = sideCols * SIDE_ROWS;
   // banner 池固定前 6 张；轮播只在这 6 张内推进，与右侧卡片完全解耦
   const bannerItems = useMemo(() => items.slice(0, BANNER_POOL), [items]);
   const bannerTotal = bannerItems.length;
@@ -164,17 +180,17 @@ export default function HeroBili({
     return () => window.clearInterval(timer);
   }, [paused, active, bannerTotal, go]);
 
-  // 池计算：banner 池（前 6 张）之外的条目；换一换一次整批 6 张，
-  // 轮数 = ceil(池大小 / 6)，新图耗尽后回到最初一轮
+  // 池计算：banner 池（前 6 张）之外的条目；换一换一次整批 = 右卡槽位数（随列数变化），
+  // 轮数 = ceil(池大小 / 批大小)，新图耗尽后回到最初一轮
   const cardPoolSize = Math.max(0, total - BANNER_POOL);
-  const shuffleBatch = SIDE_COLS * SIDE_ROWS;
+  const shuffleBatch = sideCards;
   const shuffleCycles = cardPoolSize > 0 ? Math.ceil(cardPoolSize / shuffleBatch) : 1;
 
   // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
   const handleShuffle = useCallback(() => {
     if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
     setSpinning(true);
-    // 一次整批推进（6 张）；新图耗尽后回到最初一轮（补位逻辑见 rightCards）
+    // 一次整批推进（= 当前列数 × 2 张）；新图耗尽后回到最初一轮（补位逻辑见 rightCards）
     setShuffleOffset((o) => (o + 1) % shuffleCycles);
     if (shuffleTimerRef.current) window.clearTimeout(shuffleTimerRef.current);
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
@@ -182,7 +198,7 @@ export default function HeroBili({
 
   // 右侧卡片：banner 池（前 6 张）之外的条目，取数循环也排除 banner 池——
   // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡。
-  // 换一换一次整批替换 6 张新图（cursor×6 起始）；池内新图不够一批时，
+  // 换一换一次整批替换「当前列数 × 2」张新图（cursor×批大小 起始）；池内新图不够一批时，
   // 用池首（最初的图片）补位，新图耗尽后整体回到最初一轮。
   const rightCards = useMemo(() => {
     if (cardPoolSize === 0) return [];

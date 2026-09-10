@@ -235,10 +235,13 @@
   --comp-tab-height: calc(clamp(28px, 17.822px + 2.714vw, 38.667px) * var(--ui-scale)); /* 28→44 筛选/标签 tab */
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
   --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale)); /* 40→48 输入框高度（2026-09-04 降 MAX：旧 58 为 R2 遗留，桌面渲染过大） */
-  /* 顶部导航 SearchBox 专用矮曲线（40→48，契约 375→1920）：宿主 --header-height 是 R3
+  /* 顶部导航 SearchBox 专用矮曲线（契约 375→1920）：宿主 --header-height 是 R3
      （60→76，不乘 --ui-scale），全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏。
-     同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。 */
-  --comp-input-height-header: clamp(40px, 38.058px + 0.5178vw, 48px);
+     同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。
+     2026-09-10 用户要求「搜索框高度减小一点」：曲线 40→48 → 36→42（各档 −4~6px）。
+     仍然只作用于 header 变体；browse / iptv 变体继续用 --comp-input-height / --comp-btn-min-height。
+     ⚠️ 该 token 不乘 ui-scale 是刻意豁免（见本文件顶部豁免清单注释），不要"顺手修正"。 */
+  --comp-input-height-header: clamp(36px, 34.832px + 0.3108vw, 42px);
   --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
   /* Switch 开关 */
@@ -976,14 +979,31 @@ html[data-device="tv"] {
      消费方：Browse.css / Settings.css / IPTV.css / RecordShell.css。 */
   --rail-w: clamp(148px, 10vw, 248px);
 
-  /* ── HeroBili 专用 ── */
-  --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.2727);
+  /* ── HeroBili 专用 ──
+     ⚠️ 2026-09-10 第七轮订正：--hero-banner-h 在此处只是**兜底默认值**。
+       真正的生效点是 Home.css 的 `html:not([data-device="tv"]) .home-two-col__main`
+       （特异性 0,2,1 > 本文件 `html:not([data-device="tv"])` 的 0,1,1），
+       因为 Hero 实际落在 .home-two-col__main 右列内，该处会按「右列宽」而非
+       「全视口宽」重算，并按列数分档（1024–1280 → 0.31、≥1281 → 0.24）。
+       第六轮曾把三档系数写在本文件的分段媒体查询里，因特异性不敌而被完全压过
+       （产物实测仍是旧的 0.2727）——教训：改 token 值前先 grep 有无更高特异性的覆盖。
+       本文件保留 0.24 作为 ≥1281 语义的兜底（与 Home.css 基础档一致）。
+       卡片封面恒 aspect-ratio:16/9，卡高 = 封面高 + 标题条 ≈27px。 */
+  --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.24);
   --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.56);
   --hero-main-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));      /* 10@1440 → 12@1920 */
   --hero-side-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));
   --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
+
+/* ── HeroBili --hero-banner-h 分档已移至 Home.css ──
+   2026-09-10 第七轮：原先在此处按列数写三段分档媒体查询，但 Hero 落在
+   .home-two-col__main 右列内，Home.css 中同 token 的覆盖（特异性 0,2,1）
+   高过本文件的 `html:not([data-device="tv"])`（0,1,1），故分档在此处永远不生效。
+   现统一由 Home.css 的 `html:not([data-device="tv"]) .home-two-col__main`
+   按列数分档（1024–1280 → 0.60、≥1281 → 0.40），本文件仅留 :root 兜底值。
+   ⚠️ 断点必须与 src/hooks/useHeroSideCols.ts 及 HeroBili.css 严格一致。 */
 
 @media (width >= 1440px) and (width < 1920px) {
   html:not([data-device="tv"]) {
