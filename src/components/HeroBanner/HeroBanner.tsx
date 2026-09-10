@@ -87,6 +87,22 @@ function preloadImage(url: string | null | undefined): void {
   }
 }
 
+/**
+ * 主图候选尺寸表。移动端封顶 w780：banner 实际渲染宽度 ≈ 视口宽（375~430px），
+ * 原候选表（w780, w1280）在 DPR ≥ 2.75 的手机会选到 w1280 —— 一张 1280×720 的解码开销
+ * 远超实际需要，而且与预加载的 w780 **不是同一张**，于是同一帧图下载两次、解码两次
+ * （移动端滑动卡顿的成因之一）。封顶 w780 后渲染口径与预加载（bgPreloadSize < 1024 → w780）
+ * 完全一致，只下载一次；2x 采样对手机屏幕足够。
+ */
+const MOBILE_BACKDROP_SIZES = ['w500', 'w780'];
+const DESKTOP_BACKDROP_SIZES = ['w780', 'w1280'];
+
+/** 主图候选尺寸表（与 bgPreloadSize 同口径：<1024 移动档 / ≥1024 桌面档）。
+ *  视口变化会经 useIsMobile 触发重渲染，因此渲染期调用即为最新值。 */
+function backdropSizes(): string[] {
+  return bgPreloadSize() === 'w780' ? MOBILE_BACKDROP_SIZES : DESKTOP_BACKDROP_SIZES;
+}
+
 /** 背景图预加载尺寸：移动端/窄视口用 w780（banner 实际渲染宽度即为视口宽），宽屏才用 w1280 */
 function bgPreloadSize(): string {
   // 阈值 1100 → 1024（2026-09-07）：1100 是全项目唯一不在断点体系内的野生阈值，
@@ -454,7 +470,7 @@ function HeroBannerClassic({
           if (cached) {
             setStaleSnapshot({
               url: oldUrl,
-              srcSet: buildImageSrcSet(oldPath, ['w780', 'w1280']) ?? undefined,
+              srcSet: buildImageSrcSet(oldPath, backdropSizes()) ?? undefined,
               id: String(oldItem.id),
             });
             switchLoadRef.current = url;
@@ -725,6 +741,9 @@ function HeroBannerClassic({
   // 非拖拽/滑动时回退为 absolute 堆叠 crossfade 渲染（保持现有逻辑）。
   const dragStartX = useRef(0);  // 防止 section onMouseUp 与 window mouseup 双触发导致 handleDragEnd 执行两次
   const dragEndedRef = useRef(false);
+  // 拖拽帧合并：touchmove 可能一帧内多次触发，用 rAF 合并成每帧一次 setDragOffset
+  const dragRafRef = useRef(0);
+  const dragPendingXRef = useRef(0);
   // 拖拽开始瞬间捕获的 banner 真实宽度（offsetWidth）：阈值取「当前状态下 banner 宽度的一半」，
   // 避免在 end 时读取（隐藏态 offsetWidth=0 会错误回退 600）。
   const bannerWidthRef = useRef(0);
@@ -776,27 +795,40 @@ function HeroBannerClassic({
   }, [activeIndex]);
   const handleDragMove = useCallback((x: number) => {
     if (!isDragging) return;
-    // 橡胶带阻尼：拖拽限制在一个 slide 宽（±mainW）内。到 ±mainW 时恰好显示上/下一张、不露空白；
-    // 超过 70% 后施加阻力形成「到边变重」手感，消除「拖过头露空白 / 过度滑动」的劣质观感。
-    // 之前 dragOffset 无上限，track 只有 [prev|current|next] 三张，拖过一屏便露出空白再回弹。
-    const mainW = bannerWidthRef.current
-      || mainRef.current?.offsetWidth
-      || bannerRef.current?.offsetWidth
-      || 1;
-    let offset = x - dragStartX.current;
-    const limit = mainW;
-    const resistStart = mainW * 0.7;
-    const abs = Math.abs(offset);
-    if (abs > resistStart) {
-      const over = abs - resistStart;
-      offset = Math.sign(offset) * (resistStart + over * 0.35);
-    }
-    if (Math.abs(offset) > limit) offset = Math.sign(offset) * limit;
-    setDragOffset(offset);
+    // 移动端 touchmove 每帧可触发多次（部分机型 >100Hz）。每次 setDragOffset 都会重跑整个
+    // HeroBanner 组件（文字 track ×3、缩略图窗口、内联 style 重建）→ 滑动掉帧。
+    // 用 rAF 合并成「每帧最多一次 setState」，只保留本帧最后一次坐标。
+    dragPendingXRef.current = x;
+    if (dragRafRef.current) return;
+    dragRafRef.current = requestAnimationFrame(() => {
+      dragRafRef.current = 0;
+      // 橡胶带阻尼：拖拽限制在一个 slide 宽（±mainW）内。到 ±mainW 时恰好显示上/下一张、不露空白；
+      // 超过 70% 后施加阻力形成「到边变重」手感，消除「拖过头露空白 / 过度滑动」的劣质观感。
+      // 之前 dragOffset 无上限，track 只有 [prev|current|next] 三张，拖过一屏便露出空白再回弹。
+      const mainW = bannerWidthRef.current
+        || mainRef.current?.offsetWidth
+        || bannerRef.current?.offsetWidth
+        || 1;
+      let offset = dragPendingXRef.current - dragStartX.current;
+      const limit = mainW;
+      const resistStart = mainW * 0.7;
+      const abs = Math.abs(offset);
+      if (abs > resistStart) {
+        const over = abs - resistStart;
+        offset = Math.sign(offset) * (resistStart + over * 0.35);
+      }
+      if (Math.abs(offset) > limit) offset = Math.sign(offset) * limit;
+      setDragOffset(offset);
+    });
   }, [isDragging]);
   const handleDragEnd = useCallback((x: number) => {
     if (!isDragging || dragEndedRef.current) return;
     dragEndedRef.current = true;
+    // 丢弃尚未执行的拖拽帧：否则松手后又补一次 setDragOffset，回弹起点会抖一下
+    if (dragRafRef.current) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = 0;
+    }
     const dx = x - dragStartX.current;
     const total = displayItems.length;
     // 阈值参照「主图区真实宽度」：旧的 50% 阈值过大（且参照的是整 banner 宽更离谱），
@@ -1012,7 +1044,7 @@ function HeroBannerClassic({
   const staleLayer = crossfadeSwitch
     ? {
         url: buildImageUrl(oldActivePath, 'w1280') || '',
-        srcSet: buildImageSrcSet(oldActivePath, ['w780', 'w1280']) ?? undefined,
+        srcSet: buildImageSrcSet(oldActivePath, backdropSizes()) ?? undefined,
         id: String(prevItems[prevDisplayIdxRef.current].id),
       }
     : staleSnapshot;
@@ -1129,7 +1161,8 @@ function HeroBannerClassic({
             if (!item) return null;
             const backdropPath = item.backdropPath || item.backdrop_path || '';
             const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
-            const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
+            // srcset 存在时浏览器只按候选表选图（忽略 src），故移动端封顶即生效
+            const backdropSrcSet = buildImageSrcSet(backdropPath, backdropSizes());
             const isActive = idx === displayIndex;
             // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
             if (isActive && hideNewLayer) return null;
@@ -1211,7 +1244,7 @@ function HeroBannerClassic({
               if (!item) return null;
               const backdropPath = item.backdropPath || item.backdrop_path || '';
               const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
-              const backdropSrcSet = buildImageSrcSet(backdropPath, ['w780', 'w1280']);
+              const backdropSrcSet = buildImageSrcSet(backdropPath, backdropSizes());
               return (
                 <div key={`${item.id}-${pos}`} className="hero-banner__slide">
                   <img

@@ -656,6 +656,13 @@
     margin-left: var(--space-sm);
     margin-bottom: var(--space-xs);
   }
+
+  /* 标题阴影收窄：桌面的大半径 60px 模糊阴影落在正在做 transform 动画的文字轨道内，
+     移动端每帧都要重新模糊整个文本层（合成器最贵的操作之一）。移动端标题本就压在
+     图的下缘暗部，去掉大半径光晕对可读性几乎无损。 */
+  .hero-banner__title {
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -674,6 +681,10 @@
   html[data-device="app"] .hero-banner__text {
     margin-left: var(--space-sm);
     margin-bottom: var(--space-xs);
+  }
+
+  html[data-device="app"] .hero-banner__title {
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
 
 
