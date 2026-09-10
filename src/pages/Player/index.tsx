@@ -1063,8 +1063,10 @@ export default function PlayerPage() {
             onBack={handleBack}
             onSkipIntro={handleSkipIntro}
             onSkipOutro={handleSkipOutro}
-            hasPrevEpisode={episodes.length > 0 ? !isFirstEpisode : undefined}
-            hasNextEpisode={episodes.length > 0 ? !isLastEpisode : undefined}
+            /* 选集/线路面板只有一条数据（单集 / 电影 / 仅一条线路）时，
+               播放按钮两侧不出现上一集、下一集 */
+            hasPrevEpisode={episodes.length > 1 ? !isFirstEpisode : undefined}
+            hasNextEpisode={episodes.length > 1 ? !isLastEpisode : undefined}
             onPrevEpisode={handlePrevEpisode}
             onNextEpisode={handleNextEpisode}
             onError={handlePlayerError}

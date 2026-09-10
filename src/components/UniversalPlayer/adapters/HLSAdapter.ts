@@ -14,7 +14,10 @@ function getQualityLabel(level: { width: number; height: number; bitrate: number
   if (h >= 720) return '720P';
   if (h >= 480) return '480P';
   if (h >= 360) return '360P';
-  return `${h}P`;
+  if (h > 0) return `${h}P`;
+  // 高度缺失（manifest 未标 RESOLUTION / 纯音频轨）：不能产出「0P」这种非法档位。
+  // 返回空串，由上层（getSelectableLevels）把该档过滤出清晰度菜单。
+  return '';
 }
 
 /**

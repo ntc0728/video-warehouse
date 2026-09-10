@@ -2,12 +2,13 @@ import { useCallback } from 'react';
 import { Monitor, MonitorPlay } from 'lucide-react';
 import type { PlayerLevel } from '@/types/player';
 import { DuoIcon } from '@/components/ui/DuoIcon';
-import { getResolutionLabel } from '../lib/utils';
+import { getResolutionLabel, getSelectableLevels } from '../lib/utils';
 
 function getCurrentLabel(levels: PlayerLevel[], currentLevel: number): string {
   if (currentLevel === -1) return '自动';
   const level = levels[currentLevel];
-  if (!level) return '自动';
+  // 无有效分辨率的档位不展示（会被 getSelectableLevels 过滤掉），按钮标签退回「自动」
+  if (!level || level.height <= 0) return '自动';
   return getResolutionLabel(level);
 }
 
@@ -41,6 +42,8 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
   if (!visible || levels.length === 0) return null;
 
   const label = getCurrentLabel(levels, currentLevel);
+  // 过滤掉 height 缺失的档位：全部无效时菜单只剩「自动」（用户可见的「0P」即来自这些档位）
+  const selectableLevels = getSelectableLevels(levels);
 
   return (
     <div
@@ -63,7 +66,7 @@ export default function ResolutionSwitch({ levels, currentLevel, onChange, visib
           >
             自动
           </button>
-          {levels.map((level, index) => (
+          {selectableLevels.map(({ index, level }) => (
             <button
               key={index}
               className={`up-popover-item ${index === currentLevel ? 'up-popover-item-active' : ''}`}

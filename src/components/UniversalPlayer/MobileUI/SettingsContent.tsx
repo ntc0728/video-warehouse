@@ -6,7 +6,7 @@ import {
 import Switch from '@/components/ui/Switch';
 import { Icon } from '@/components/ui/Icon';
 import { mobileSettingsToast } from '../PlayerToast';
-import { getResolutionLabel } from '../lib/utils';
+import { getResolutionLabel, getSelectableLevels } from '../lib/utils';
 import { getIOSBackgroundAudioCapability } from '@/services/backgroundAudioService';
 import type { DecoderMode, LoopMode, PlayerLevel } from '@/types/player';
 
@@ -153,7 +153,8 @@ export default function SettingsContent({
             <ChipRow
               options={[
                 { value: -1, label: '自动' },
-                ...levels.map((l, i) => ({ value: i, label: getResolutionLabel(l) })),
+                // 过滤 height 缺失的档位（否则会出现「0P」这种非法档位）；选项值仍是 adapter 原始索引
+                ...getSelectableLevels(levels).map(({ index, level }) => ({ value: index, label: getResolutionLabel(level) })),
               ]}
               value={currentLevel}
               onChange={(v) => applySetting(

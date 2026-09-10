@@ -21,15 +21,12 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
   const { show } = usePlayerToast();
   const prevVolume = useRef(usePlayerStore.getState().volume);
   const prevSource = useRef(usePlayerStore.getState().currentSrc);
-  const prevPlaying = useRef(usePlayerStore.getState().isPlaying);
   const prevPlaybackRate = useRef(usePlayerStore.getState().playbackRate);
   const prevLoopMode = useRef(usePlayerStore.getState().loopMode);
   const prevIsPiP = useRef(usePlayerStore.getState().isPiP);
   const prevMirror = useRef(usePlayerStore.getState().mirror);
   const prevAspectRatio = useRef(usePlayerStore.getState().aspectRatio);
   const prevDecoderMode = useRef(usePlayerStore.getState().decoderMode);
-  /** 「自动播放」的『播放』提示是否已展示过（首次进入显示，后续缓冲/切集自动播不重复提示） */
-  const autoPlayToastShownRef = useRef(false);
 
   useEffect(() => {
     // 移动端/App 端 /play 点播页：右上角不显示任何点播类操作提示（由 disabled 控制，
@@ -41,7 +38,6 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
     const unsub = usePlayerStore.subscribe((state) => {
       const vol = state.volume;
       const src = state.currentSrc;
-      const playing = state.isPlaying;
       const rate = state.playbackRate;
       const loop = state.loopMode;
       const pip = state.isPiP;
@@ -70,33 +66,8 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
         }
       }
 
-      // 播放/暂停
-      if (playing !== prevPlaying.current) {
-        prevPlaying.current = playing;
-        if (playing) {
-          // 区分「播放」提示来源：
-          //  - userPlayRequested（用户手动点击播放）→ 始终提示『播放』
-          //  - 自动播放（首次进入）→ 提示『播放』一次；后续缓冲/切集自动播 → 不提示
-          const userPlay = state.userPlayRequested;
-          if (userPlay) {
-            show('播放');
-            // 手动播放后清除标记，避免下一次自动缓冲播放误判为手动
-            usePlayerStore.getState().setUserPlayRequested(false);
-          } else if (!autoPlayToastShownRef.current) {
-            autoPlayToastShownRef.current = true;
-            show('播放');
-          }
-        } else {
-          // 仅「用户手动点击暂停」显示『暂停』提示；
-          // 拖拽进度条触发的自动 pause（未标记 userPauseRequested）不提示『暂停』，
-          // 由 seek 的『已跳转 mm:ss』进度提示代替。
-          const userPause = state.userPauseRequested;
-          if (userPause) {
-            show('暂停');
-            usePlayerStore.getState().setUserPauseRequested(false);
-          }
-        }
-      }
+      // 播放/暂停不再提示：播放与暂停是最高频的两个操作，每次点击都弹一次提示
+      // 属于噪声（用户 2026-09-10 明确要求去掉）。播放态的其它反馈由画面本身给出。
 
       // 倍速变化
       if (rate !== prevPlaybackRate.current) {
