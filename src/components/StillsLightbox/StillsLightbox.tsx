@@ -276,39 +276,6 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
         {currentIndex + 1} / {urls.length}
       </div>
 
-      {/* 缩放控件（2026-09-10 用户要求从 Detail 剧照标题行移入灯箱）：
-          − / + 按钮（符号显示），每级 5%，范围 50%~200%；
-          单击主图或点击百分比数字复位到 100%。 */}
-      <div className="stills-lightbox__zoom" role="group" aria-label="剧照缩放">
-        <button
-          type="button"
-          className="stills-lightbox__zoom-btn"
-          onClick={() => zoomBy(-ZOOM_STEP)}
-          disabled={zoom <= ZOOM_MIN}
-          aria-label="缩小"
-        >
-          <Icon icon={Minus} size="sm" />
-        </button>
-        <button
-          type="button"
-          className="stills-lightbox__zoom-value"
-          onClick={resetZoom}
-          aria-label={`当前缩放 ${zoom}%，点击复位`}
-          title="点击复位到 100%（也可单击图片）"
-        >
-          {zoom}%
-        </button>
-        <button
-          type="button"
-          className="stills-lightbox__zoom-btn"
-          onClick={() => zoomBy(ZOOM_STEP)}
-          disabled={zoom >= ZOOM_MAX}
-          aria-label="放大"
-        >
-          <Icon icon={Plus} size="sm" />
-        </button>
-      </div>
-
       {currentIndex > 0 && (
         <button className="stills-lightbox__nav stills-lightbox__nav--prev" onClick={goPrev} aria-label="上一张">
           <Icon icon={ChevronLeft} size="2xl" />
@@ -349,6 +316,40 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
             </div>
           );
         })}
+      </div>
+
+      {/* 缩放控件（2026-09-10 从 Detail 剧照标题行移入灯箱；同日晚些时候按用户要求
+          从右下角浮层改为「当前显示图片的正下方」一行——三行流式布局：
+          主图区 → 缩放条 → 缩略图条，主图区吃掉剩余高度因此图片整体上移）。
+          − / + 按钮每级 5%，范围 50%~200%；单击主图或点击百分比数字复位到 100%。 */}
+      <div className="stills-lightbox__zoom" role="group" aria-label="剧照缩放">
+        <button
+          type="button"
+          className="stills-lightbox__zoom-btn"
+          onClick={() => zoomBy(-ZOOM_STEP)}
+          disabled={zoom <= ZOOM_MIN}
+          aria-label="缩小"
+        >
+          <Icon icon={Minus} size="sm" />
+        </button>
+        <button
+          type="button"
+          className="stills-lightbox__zoom-value"
+          onClick={resetZoom}
+          aria-label={`当前缩放 ${zoom}%，点击复位`}
+          title="点击复位到 100%（也可单击图片）"
+        >
+          {zoom}%
+        </button>
+        <button
+          type="button"
+          className="stills-lightbox__zoom-btn"
+          onClick={() => zoomBy(ZOOM_STEP)}
+          disabled={zoom >= ZOOM_MAX}
+          aria-label="放大"
+        >
+          <Icon icon={Plus} size="sm" />
+        </button>
       </div>
 
       {/* 缩略图条 */}
