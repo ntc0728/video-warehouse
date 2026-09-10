@@ -355,6 +355,54 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ============================================================
+   ≥1024：Hero 改左右布局（2026-09-10 用户拍板「方案 C」）
+   背景：原 hero 是纯色块（无剧照）+ 绝对定位头像贴右上角 + 文字右对齐，
+   靠 min/max-height 锁高（实测 386/402/450/450px，内容只有头像+姓名+简介），
+   大屏下是一整块占屏近半的黑色空区。
+   改法：头像由绝对定位改为左列、信息右列，高度改由内容撑开（约 290px），
+   与 Detail 页「上半部两栏」同一套设计语言。
+   ⚠️ 移动端（<1024）与 TV 端保持原竖排 + 绝对定位头像，不进本块。
+   ============================================================ */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .person-hero {
+    min-height: 0;
+    max-height: none;
+  }
+
+  /* 解封展开态（原 max-height:none 是为长简介准备的，横排后高度本就自适应） */
+  html:not([data-device="app"]):not([data-device="tv"]) .person-hero.person-hero--expanded {
+    max-height: none;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .person-hero-content {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xl);
+    margin-top: 0;
+    /* 顶部留出返回按钮（absolute top: --space-md + 自身高）的让位空间 */
+    padding: calc(var(--space-3xl) + var(--space-xs)) var(--space-xl) var(--space-lg);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .person-avatar {
+    position: static;
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    width: clamp(120px, 9vw, 150px);
+    box-shadow: none;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .person-info {
+    margin-left: 0;
+    padding-right: 0;
+    text-align: left;
+  }
+
+  /* 无简介时的 margin-top 补偿是为「绝对定位头像」留位的，横排后不再需要 */
+  html:not([data-device="app"]):not([data-device="tv"]) .person-info--no-bio {
+    margin-top: 0;
+  }
+}
+
 /* Tab + 作品网格 卡片 */
 .person-grid-card {
   padding: 0 var(--space-sm);

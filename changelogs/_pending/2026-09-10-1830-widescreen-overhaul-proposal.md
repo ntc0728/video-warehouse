@@ -60,11 +60,16 @@ demo: changelogs/demos/demo-widescreen-overhaul-2026-09-10.html
   - RecordShell.css / IPTV.css 选中态硬编码 `color:#fff` → `var(--color-text-inverse)`
     （暗色下 `--color-primary` 是 #fff，原写法 = 白底白字不可读）；
     选中态计数徽标底色改 `color-mix(in srgb, var(--color-text-inverse) 22%, transparent)`。
-- **④ Detail / Person = C，但右栏装什么待拍板**：Demo 给出 C1~C4 四个排列候选 ——
+- **④ Detail / Person = C**：Person 已落地（见下），Detail 的「右栏装什么」待拍板 ——
+  Demo 给出 C1~C4 四个排列候选：
   C1★ 右栏只放文本类（类型标签 + 基础信息 KV + 发行），实测**恰好填满 hero 高、无需滚动**，
   演员（横滚）/ 简介 / 剧照保持通栏；C2 右栏+简介（截断）；C3 右栏+剧照 2×2 小图；
   C4 右栏全文 + 栏内滚动。C2~C4 内容均超出 hero 高，需靠右栏滚动兜底。
-  **等用户选定后再改 Detail / Person 代码。**
+  **等用户选定后再改 Detail 代码。**
+  - Person 页落地：`.person-hero` 在 ≥1024 改左右布局（头像由绝对定位右上角改左列、
+    信息右列、高度改内容撑开），实测 1440 下 hero 402 → **262px（−35%）**；
+    移动端 / 平板（<1024）与 TV 端保持原竖排 + 绝对定位头像不变。
+    与 Detail 页「上半部两栏」同一套设计语言。
 
 ### 预览
 
