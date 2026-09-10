@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { usePlayerStore } from '@/stores';
 import { playerToast } from '../PlayerToast';
 import type { PlayerToastType } from '../PlayerToast';
@@ -23,6 +23,8 @@ export function useIPTVNavigation({
   const [currentChannelName, setCurrentChannelName] = useState<string | undefined>(undefined);
   const [currentUrl, setCurrentUrl] = useState('');
   const [currentType, setCurrentType] = useState('');
+  // 记录 handleChannelSelect 最近设置的 URL，供 useIPTVChannelInit 比对避免双重加载
+  const lastSetUrlRef = useRef<string>('');
 
   const handleChannelSelect = useCallback((channel: IPTVChannel) => {
     usePlayerStore.setState({ isPlaying: false });
@@ -30,6 +32,7 @@ export function useIPTVNavigation({
     setCurrentChannelName(channel.name);
     // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
     const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
+    lastSetUrlRef.current = playUrl;
     setCurrentUrl(playUrl);
     setCurrentType(detectVideoSourceType(channel.url));
     setChannelListVisible(false);
@@ -48,12 +51,12 @@ export function useIPTVNavigation({
     if (idx < allChannels.length - 1) handleChannelSelect(allChannels[idx + 1]);
   }, [currentChannelId, handleChannelSelect]);
 
-  const handleSourceSwitch = useCallback((index: number, switchByChannel: boolean, currentChannel: IPTVChannel | undefined, _channels: IPTVChannel[], sources: { url: string; type: string }[], toastOpts?: { content?: string; type?: PlayerToastType }) => {
+  const handleSourceSwitch = useCallback((index: number, switchByChannel: boolean, currentChannel: IPTVChannel | undefined, channels: IPTVChannel[], sources: { url: string; type: string }[], toastOpts?: { content?: string; type?: PlayerToastType }) => {
     // P4：原 `mode === 'iptv'` 分支判断迁到能力矩阵，由调用方传入 `switchByChannel`（= hasChannelList）。
     // 等价性：原对 iptv/live（hasChannelList=true）走切频道、对 video（false）走切线路；
     // 现对 switchByChannel=true 切频道、false 切线路。逐字等价。
     if (switchByChannel && currentChannel) {
-      const sameNameChannels = _channels.filter(
+      const sameNameChannels = channels.filter(
         ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
       );
       if (sameNameChannels.length === 0) return;
@@ -62,6 +65,7 @@ export function useIPTVNavigation({
       if (nextChannel) {
         // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
         const playUrl = buildChannelPlayUrl(nextChannel, proxyUrl, proxyPattern);
+        lastSetUrlRef.current = playUrl;
         setCurrentUrl(playUrl);
         setCurrentType(detectVideoSourceType(nextChannel.url));
         setCurrentChannelId(nextChannel.id);
@@ -74,6 +78,7 @@ export function useIPTVNavigation({
     }
     const source = sources[index];
     if (source) {
+      lastSetUrlRef.current = source.url;
       setCurrentUrl(source.url);
       setCurrentType(source.type);
       usePlayerStore.getState().setSource(source.url, source.type as SourceType);
@@ -89,6 +94,7 @@ export function useIPTVNavigation({
     setCurrentUrl,
     currentType,
     setCurrentType,
+    lastSetUrlRef,
     handleChannelSelect,
     handleChannelUp,
     handleChannelDown,

@@ -30,7 +30,8 @@ export default function IPTVPlayerPage() {
   const isMobile = useIsMobile();
   const platform: 'tv' | 'mobile' | 'desktop' = isTV ? 'tv' : isMobile ? 'mobile' : 'desktop';
 
-  const videoUrl = decodeURIComponent(url);
+  // searchParams.get 已自动解码，不再需要额外 decodeURIComponent
+  const videoUrl = url;
 
   /** 从 URL 参数提取频道 ID 和名称 */
   const urlParams = useMemo(() => ({
@@ -130,8 +131,8 @@ export default function IPTVPlayerPage() {
     const { proxyUrl, proxyPattern } = settings;
     // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
     const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
-    const encodedUrl = encodeURIComponent(playUrl);
-    const params = new URLSearchParams({ url: encodedUrl });
+    // URLSearchParams 自动编码，不需要手动 encodeURIComponent（否则双重编码）
+    const params = new URLSearchParams({ url: playUrl });
     if (channel.id) params.set('id', channel.id);
     if (channel.name) params.set('name', channel.name);
     navigate(`/iptv/play?${params.toString()}`, { replace: true, state: { from: '/iptv' } });
