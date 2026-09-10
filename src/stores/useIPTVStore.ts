@@ -42,7 +42,8 @@ type LocalPlaylistResult = Awaited<ReturnType<typeof fetchAndParsePlaylist>>;
  */
 function mergeOrgWithLocal(
   orgChannels: IPTVChannel[],
-  localResult: LocalPlaylistResult | null
+  localResult: LocalPlaylistResult | null,
+  extraSourceIds: string[] = []
 ): IPTVChannel[] {
   if (!localResult) return orgChannels;
   // 本地频道 → 匹配键索引（normalizeName 剥「卫视/台/综合」等冗余词后精确匹配）
@@ -52,6 +53,7 @@ function mergeOrgWithLocal(
       if (!localIndex.has(key)) localIndex.set(key, local);
     }
   }
+  const extraSet = new Set(extraSourceIds);
   return orgChannels.map((org) => {
     // org 侧任一匹配键（中文名/英文名/备用名规范化）命中本地频道即视为同一频道
     let local: IPTVChannel | undefined;
@@ -60,7 +62,9 @@ function mergeOrgWithLocal(
       if (local) break;
     }
     if (!local) return org;
-    // 本地流优先播放（本地源优先策略）；不写 fallbackUrl（备用源已移除）
+    // 仅当该本地源已被用户在「更多台」勾选时，才替换为本地流播放；
+    // 未勾选则保留 iptv-org 原始流（sourceId='iptvorg'，直连不拼代理）
+    if (!extraSet.has(local.sourceId ?? '')) return org;
     return { ...org, url: local.url, sourceId: local.sourceId };
   });
 }
@@ -93,6 +97,14 @@ const IPTV_PERSIST_KEY = 'iptv-store';
 
 /** 「更多台」最多可勾选的源数量（与设置页 IPTV 源启用上限一致：最多 3 个） */
 export const MAX_EXTRA_SOURCES = 3;
+
+/**
+ * 模块级合并输入缓存：最近一次 refreshChannels 拉取的 org 频道 + 本地源结果。
+ * toggleExtraSource 勾选/取消勾选时用这两项重新合并（无需重新拉网络）。
+ * 不持久化——页面刷新后需重新 refreshChannels 才有数据。
+ */
+let lastOrgChannels: IPTVChannel[] | null = null;
+let lastLocalResult: LocalPlaylistResult | null = null;
 
 interface IPTVState {
   channels: IPTVChannel[];
@@ -256,8 +268,11 @@ export const useIPTVStore = create<IPTVState>()(
             : null;
 
         if (orgChannels) {
-          // ── 主干：iptv-org 频道（url=cn.m3u 流；命中本地源同名频道则改用本地流）──
-          merged = mergeOrgWithLocal(orgChannels, localResult);
+          // ── 主干：iptv-org 频道（url=cn.m3u 流；命中且已勾选本地源则改用本地流）──
+          merged = mergeOrgWithLocal(orgChannels, localResult, get().extraSourceIds);
+          // 缓存合并输入供 toggleExtraSource 重新合并
+          lastOrgChannels = orgChannels;
+          lastLocalResult = localResult;
         }
         // iptv-org 失败 → 主干为空数组（不回退本地源）；
         // 本地源频道仍可通过「更多台」勾选后展示
@@ -315,7 +330,7 @@ export const useIPTVStore = create<IPTVState>()(
           void fetchCnDisplayNames(settings.proxyUrl)
             .then(({ names, channels: orgChannelsZh }) => {
               if (Object.keys(names).length === 0 || orgChannelsZh.length === 0) return;
-              const mergedZh = mergeOrgWithLocal(orgChannelsZh, localResult);
+              const mergedZh = mergeOrgWithLocal(orgChannelsZh, localResult, get().extraSourceIds);
               const channelsZh = withFavorites(mergedZh, get().favoriteChannelIds);
               set({ channels: channelsZh, groups: groupChannels(channelsZh) });
             })
@@ -344,13 +359,22 @@ export const useIPTVStore = create<IPTVState>()(
 
       /** 勾选/取消「更多台」额外频道源：上限 3（设置页 IPTV 源最多启用 3 个） */
       toggleExtraSource: (sourceId) => {
-        const { extraSourceIds } = get();
+        const { extraSourceIds, favoriteChannelIds } = get();
+        let nextIds: string[];
         if (extraSourceIds.includes(sourceId)) {
-          set({ extraSourceIds: extraSourceIds.filter(id => id !== sourceId) });
-          return;
+          nextIds = extraSourceIds.filter(id => id !== sourceId);
+        } else {
+          if (extraSourceIds.length >= MAX_EXTRA_SOURCES) return;
+          nextIds = [...extraSourceIds, sourceId];
         }
-        if (extraSourceIds.length >= MAX_EXTRA_SOURCES) return;
-        set({ extraSourceIds: [...extraSourceIds, sourceId] });
+        // 重新合并：勾选状态变化后，org 频道的播放链接需在 org 原始流和本地流间切换
+        if (lastOrgChannels) {
+          const remerged = mergeOrgWithLocal(lastOrgChannels, lastLocalResult, nextIds);
+          const channels = withFavorites(remerged, favoriteChannelIds);
+          set({ extraSourceIds: nextIds, channels, groups: groupChannels(channels) });
+        } else {
+          set({ extraSourceIds: nextIds });
+        }
       },
 
       /** 按需补拉单源频道（更多台勾选时数据缺失的兜底），失败静默保持空数组 */
@@ -377,6 +401,8 @@ export const useIPTVStore = create<IPTVState>()(
        * 用于「清除全部缓存」：页面挂载时会因缓存未命中自动重新拉取
        */
       clearChannelsCache: () => {
+        lastOrgChannels = null;
+        lastLocalResult = null;
         set({
           channels: [],
           groups: [],
@@ -394,6 +420,8 @@ export const useIPTVStore = create<IPTVState>()(
        */
       clearCache: () => {
         localStorage.removeItem(IPTV_PERSIST_KEY);
+        lastOrgChannels = null;
+        lastLocalResult = null;
         const { settings } = get();
         set({
           channels: [],
