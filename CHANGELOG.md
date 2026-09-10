@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.23.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.1...kinotv-v1.23.0) (2026-09-10)
+
+
+### Features
+
+* **detail:** 上半部两栏（C1）+ 演员折叠裁切修复 + 剧照缩放控件 ([f561f56](https://github.com/ntc0728/video-warehouse/commit/f561f56467c83366e0bdff175ba0a228556f79b4))
+* **home:** 大屏两栏布局（方案 C）+ 顶栏对齐 + 顶部过渡带 ([8fa3646](https://github.com/ntc0728/video-warehouse/commit/8fa36465b6f58981c429857045a70e7bb8eb8bf0))
+* **home:** 宽屏起点 1024 + 首页 rail 改「今日趋势」榜（落地并行会话在途工作） ([d3a5d69](https://github.com/ntc0728/video-warehouse/commit/d3a5d69ef960b78d51b209d728f9dc1d057bc6a7))
+* **home:** 宽屏起点改为 ≥1280 + 热度榜左栏 6 项调整 ([aaaf1b2](https://github.com/ntc0728/video-warehouse/commit/aaaf1b257482ce624d3f263327d21a94defa7a54))
+* **iptv:** 频道列表一/二级宽度改内容派生 + OSD 宽度单曲线 + OSD 内部布局 v1 ([450dd3d](https://github.com/ntc0728/video-warehouse/commit/450dd3d825a27701429400571274df87fcf55c6c))
+* **person:** Hero 改左右布局（方案 C） ([fc99aaf](https://github.com/ntc0728/video-warehouse/commit/fc99aafa784f9b08323f5458e4fccd6ccd1b21e5))
+
+
+### Bug Fixes
+
+* **badges:** 评分角标星标收到字号同档 + hero-bili 右栏角标收 10%；附 IPTV chrome 提案 demo ([3580e49](https://github.com/ntc0728/video-warehouse/commit/3580e49d04ee60a87801436d82587660b34c935f))
+* **browse:** 筛选面板底部按钮改为 Drawer footer 插槽（真固定）+ 层级 token 化 + 滚动/模糊开销收敛 ([443a827](https://github.com/ntc0728/video-warehouse/commit/443a827644b82a8c85c94057cc982feb220442ce))
+* **detail:** 两栏 banner 重叠修复（aspect-ratio 反算宽度）+ 右栏信息改一行两列；测试断言同步 ([610ed09](https://github.com/ntc0728/video-warehouse/commit/610ed092f85cb86dc047437a9316de8b3ece3b74))
+* **detail:** 剧照灯箱缩放控件改为主图正下方一行（三行流式布局），修移动端与缩略图条重叠 ([61895d3](https://github.com/ntc0728/video-warehouse/commit/61895d399d9e8ea930dbac86511bb17b595fb74e))
+* **detail:** 右栏分行+简介上提 / 剧照缩放迁入灯箱 / 线路数取值修复 / Person 返回键上移 ([f40f0b1](https://github.com/ntc0728/video-warehouse/commit/f40f0b19ac211eac0062ad0e664fad9989f5ce0d))
+* **detail:** 右栏高度强制与 banner 一致 + 简介移回 info tab 原位 ([74a9718](https://github.com/ntc0728/video-warehouse/commit/74a9718b68103dbd5cd69248a2818ca5fdc4fb23))
+* **home:** Hero banner 主图/缩略图加载失败改走公共 LazyImage 品牌兜底 ([3102aca](https://github.com/ntc0728/video-warehouse/commit/3102acab29b8c0fa6913f63bd0a235137dd35ad3))
+* **iptv:** mergeOrgWithLocal 按勾选状态决定是否替换本地流 ([a628d6c](https://github.com/ntc0728/video-warehouse/commit/a628d6cde036cd5b45418cb5ebf5d7858e5be081))
+* **iptv:** 修复 IPTV 播放逻辑 13 项问题 ([5c9d132](https://github.com/ntc0728/video-warehouse/commit/5c9d13223a3425eca2eeeebbdd686bcc63adca64))
+* **iptv:** 修复缓存过滤/更多台勾选/IP域名代理/iptv-org直连 4 项问题 ([2034933](https://github.com/ntc0728/video-warehouse/commit/2034933dec789d4842281f88bcff52cf9a2a9420))
+* **iptv:** 收藏按钮去掉台标加载态门控 + 台标改 contain + 失败记忆 6h 复试 + 触屏常显兜底 ([b134cea](https://github.com/ntc0728/video-warehouse/commit/b134cea20b27ea5518a990a2c8141a0fd25b52ae))
+* **iptv:** 本地独有频道不进主干，iptv-org 失败显示空状态而非回退本地 ([a496fd2](https://github.com/ntc0728/video-warehouse/commit/a496fd238ad3372c04a1fb26e4451da74a52e3f3))
+* **player:** HLS 加载路径改为 hls.js 优先，修复原生分支 + zstd 响应必然失败 ([8d843f6](https://github.com/ntc0728/video-warehouse/commit/8d843f605b7f6d291548251447d56f7f43553b7f))
+* **player:** 切源在 hls.js 初始化未落定时不得落回原生分支 ([54eb1ee](https://github.com/ntc0728/video-warehouse/commit/54eb1eec2740b59b97ba438470a45efe44f038c4))
+* **player:** 播放器作用域内覆写 primary 家族，修活跃态与填充按钮不可见（KNOWN-ISSUES [#14](https://github.com/ntc0728/video-warehouse/issues/14)） ([154bcb3](https://github.com/ntc0728/video-warehouse/commit/154bcb31bd25bac69671324e97daae8caa69b5ce))
+* **player:** 清晰度过滤非法档位/灰条跟随播放位置/暂停态 seek 落位/单集隐藏上下集/去掉播放暂停提示/移动端提示跟随播放器 ([45bea2b](https://github.com/ntc0728/video-warehouse/commit/45bea2bff801f3b7672ea530aaa40af1d478f2b4))
+* **ui:** 左栏视觉语言统一（方案 B）+ Browse 左栏紧凑化（B+C）+ 暗色选中态修复 ([91dbf0a](https://github.com/ntc0728/video-warehouse/commit/91dbf0a10ae4e5e3e5a0e893dea0b8d7547369a9))
+
+
+### Performance Improvements
+
+* **home:** 移动端 banner 拖拽 rAF 合并 + 主图候选封顶 w780 + 标题阴影收窄；fix(player): 居中提示区分视口兜底锚定 ([fa90a60](https://github.com/ntc0728/video-warehouse/commit/fa90a60c4bdc17a1137c29a96284397a6c9f8efa))
+
 ## [1.22.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.0...kinotv-v1.22.1) (2026-09-09)
 
 
