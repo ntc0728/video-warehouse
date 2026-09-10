@@ -51,3 +51,18 @@ hero 带 `aspect-ratio: 16/9`，在高度已定后浏览器**反过来用 ratio 
 ### 验证
 
 `pnpm run build` 通过；e2e `home + detail + person + chart + browse + settings` 共 **45/45 全通过**。
+
+### 补充（同日后续两轮微调，commit `74a9718`）
+
+**右栏高度强制与 banner 一致**：原 `max-height: var(--detail-hero-h)` 只封顶不撑高，
+右栏内容少于 banner 时会缩到内容高度、下沿不齐 → 改为 `height: var(--detail-hero-h)`
+（变量仍由 ResizeObserver 把 `.detail-hero` 实测高度写到 `.detail-top`），
+超出部分由 `overflow-y` 栏内滚动兜底，高度锁死不撑破对齐。
+实测 1024/1280/1920/2560：高度差 ≤0.5px（subpixel）、无重叠；1280 起不再需要滚动，
+1024 档（右栏仅 411px 宽）仍需栏内滚动。
+
+**简介移回 info tab 原位**：从 `infoCoreNode` 移除 `{isWideDetail && overviewNode}`，
+info tab 内恢复为无条件 `{overviewNode}`，顺序回到「演员 → 简介 → 剧照」；
+同时删除已失效的 `.detail-hero-side .detail-overview-full` 规则。
+
+验证：`pnpm run build` 通过；e2e `detail 7/7 + person 4/4 + home 12/12` = **23/23 全通过**。
