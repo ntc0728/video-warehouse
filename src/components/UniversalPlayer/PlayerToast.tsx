@@ -41,6 +41,12 @@ export function playerToastCenter(msg: string, duration?: number, type?: PlayerT
   playerToastCenterRef.current?.(msg, duration, type);
 }
 
+/** 居中提示与可见播放器边缘的最小留白（提示半高约 18px + 间距） */
+const EDGE_MARGIN = 48;
+
+/** 播放器可见高度低于该值时不再显示居中提示——播放器已滚出视口就不要再悬停着提示 */
+const MIN_TOAST_ROOM = 96;
+
 const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIcon; color: string }> = {
   success: { icon: CheckCircle2, color: 'var(--color-success)' },
   warning: { icon: AlertTriangle, color: 'var(--color-warning)' },
@@ -78,6 +84,8 @@ export function ToastProvider({
     x: window.innerWidth / 2,
     y: window.innerHeight / 2,
   }));
+  /** 播放器是否还有足够可见区域承载居中提示（滚走后为 false，提示不再渲染） */
+  const [centerVisible, setCenterVisible] = useState(true);
 
   /**
    * 测量居中提示的目标位置：
@@ -90,10 +98,20 @@ export function ToastProvider({
   const measureCenterPos = useCallback(() => {
     const el = containerRef?.current;
     if (!el) {
+      setCenterVisible(true);
       setCenterPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
       return;
     }
     const rect = el.getBoundingClientRect();
+    // 提示必须落在「播放器 ∩ 视口」的可见交集内。只按视口夹取会让播放器滚走之后提示
+    // 仍停在视口顶部（用户反馈：移动端下滑后提示像跟着浏览器顶部定位，且 fixed 层级
+    // 反而浮在播放器上方）。可见高度不足时直接不显示，而不是硬塞回视口。
+    const visibleTop = Math.max(rect.top, 0);
+    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+    if (visibleBottom - visibleTop < MIN_TOAST_ROOM) {
+      setCenterVisible(false);
+      return;
+    }
     // 居中靠上：播放器高度 30% 处
     let y = rect.top + rect.height * 0.3;
     // 避让 up-player-header（返回栏 + 右上角操作组）：仅 header 可见时；
@@ -106,11 +124,12 @@ export function ToastProvider({
         y = Math.max(y, rect.top + headerH + 36);
       }
     }
-    // 兜底：容器滚出视口时（如用户滚到剧集列表后触发错误提示），
-    // rect.top 为负会把提示带到视口外（曾实测 centerY=-422 不可见），
-    // 夹取到视口内保证任何滚动状态下提示都可见
-    const EDGE_MARGIN = 48;
-    y = Math.min(Math.max(y, EDGE_MARGIN), window.innerHeight - EDGE_MARGIN);
+    // 夹取到可见交集内：容器滚到只剩一条时（如用户滚到剧集列表后触发错误提示）
+    // rect.top 为负，不夹取会把提示带到视口外（曾实测 centerY=-422 不可见）
+    const minY = visibleTop + EDGE_MARGIN;
+    const maxY = visibleBottom - EDGE_MARGIN;
+    y = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;
+    setCenterVisible(true);
     setCenterPos({
       x: rect.left + rect.width / 2,
       y,
@@ -233,7 +252,7 @@ export function ToastProvider({
           <span className="up-player-toast__text">{item.msg}</span>
         </div>
       )}
-      {centerItem && renderCenterToast(centerItem.msg, centerItem.type, centerIsExiting)}
+      {centerItem && centerVisible && renderCenterToast(centerItem.msg, centerItem.type, centerIsExiting)}
     </ToastContext.Provider>
   );
 }

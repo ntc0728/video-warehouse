@@ -17,6 +17,27 @@ export function getResolutionLabel(level: PlayerLevel): string {
   return level.name || '未知';
 }
 
+/** 档位是否可用于展示：manifest 未标 RESOLUTION / 纯音频轨的 level 高度为 0，对用户没有意义 */
+export function isSelectableLevel(level: PlayerLevel): boolean {
+  return level.height > 0;
+}
+
+/**
+ * 清晰度菜单的可选项：过滤掉无有效分辨率的档位。
+ *
+ * 不过滤时 manifest 里 height=0 的档位会以「0P」这类非法标签混进菜单（用户可见 bug）。
+ * 返回项带上 level 在 adapter levels 中的原始索引——选中后仍按原始索引提交给 setCurrentLevel，
+ * 不能重新编号（hls.js 的 currentLevel 就是原始下标）。
+ * 全部档位都无分辨率时返回空数组，菜单只剩「自动」。
+ */
+export function getSelectableLevels(levels: PlayerLevel[]): Array<{ index: number; level: PlayerLevel }> {
+  const selectable: Array<{ index: number; level: PlayerLevel }> = [];
+  levels.forEach((level, index) => {
+    if (isSelectableLevel(level)) selectable.push({ index, level });
+  });
+  return selectable;
+}
+
 // 切集/切线路时的操作提示抑制窗口（毫秒）
 let sourceToastSuppressUntil = 0;
 

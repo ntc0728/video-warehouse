@@ -16,6 +16,28 @@ import { useMediaSession } from './useMediaSession';
 import type { MediaSessionInfo } from './useMediaSession';
 
 /**
+ * 把当前已缓冲末端写入 store。
+ *
+ * 灰条原先只监听 video 的 `progress` 事件，而暂停 / 加载中不会有新的下载推进，
+ * 该事件不触发 → seek 之后灰条一直停在旧位置（用户反馈：无论加载中还是暂停中，
+ * 灰条都应以最新播放位置为准）。因此 seek 即时、seeked、timeupdate 也各同步一次。
+ */
+function syncBufferedProgress(video: HTMLVideoElement | null): void {
+  if (!video || video.buffered.length === 0) return;
+  const end = video.buffered.end(video.buffered.length - 1);
+  if (end > 0) usePlayerStore.getState().setBufferedProgress(end);
+}
+
+/** 目标时间点是否已落在某个已缓冲区间内（端点留 0.5s 容差） */
+function isTimeBuffered(video: HTMLVideoElement, time: number): boolean {
+  const buffered = video.buffered;
+  for (let i = 0; i < buffered.length; i++) {
+    if (time >= buffered.start(i) - 0.5 && time <= buffered.end(i) + 0.5) return true;
+  }
+  return false;
+}
+
+/**
  * 解冻切后台后冻结的视频画面（Issue2）。
  *
  * 旧实现失效原因（实测）：
@@ -409,8 +431,11 @@ useEffect(() => {
       const s = getStore();
       s.setProgress(ct);
       s.setDuration(dur);
+      // 已缓冲末端随播放位置重算：seek 到已缓冲区间后，灰条不应停留在 seek 前的旧末端
+      syncBufferedProgress(video);
       onProgress?.(ct, dur);
     };
+    const handleSeeked = () => { syncBufferedProgress(video); };
     const handleEnded = () => { getStore().setPlaying(false); onEnded?.(); };
     const handleVolumeChange = () => { getStore().setVolume(video.volume); };
     const handleRateChange = () => { getStore().setPlaybackRate(video.playbackRate); };
@@ -454,10 +479,7 @@ useEffect(() => {
     let lastDecodedAt = Date.now();
 
     const handleProgress = () => {
-      if (video.buffered.length > 0) {
-        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-        getStore().setBufferedProgress(bufferedEnd);
-      }
+      syncBufferedProgress(video);
 
       // 上报解码字节增量给 estimator（不依赖 bitrate，避免循环论证）
       const v = video as HTMLVideoElement & { webkitVideoDecodedByteCount?: number };
@@ -517,6 +539,7 @@ useEffect(() => {
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('error', handleNativeError);
     video.addEventListener('progress', handleProgress);
+    video.addEventListener('seeked', handleSeeked);
 
     // 每秒读取 adapter 估算值写入 store；adapter 内部已聚合 hls.js/PO/解码字节三路数据源
     const bandwidthTimer = setInterval(() => {
@@ -538,6 +561,7 @@ useEffect(() => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('error', handleNativeError);
       video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('seeked', handleSeeked);
       video.removeEventListener('canplay', handleCanPlay);
 
       clearInterval(bandwidthTimer);
@@ -649,7 +673,7 @@ useEffect(() => {
   const seek = useCallback((time: number) => {
     const video = videoRef.current;
     if (!video || video.error) return;
-    video.currentTime = time;
+
     // 提示在 seek 生效（seeked 事件）后再显示，避免「提示先于生效」的误导（审查报告 1.6）；
     // 目标与当前位置一致时不触发 seeked，用超时兜底保证提示不丢失。
     // 连续 seek（拖拽/连按方向键）时清理上一 pending 通知，防止监听器/定时器堆积。
@@ -674,6 +698,28 @@ useEffect(() => {
         if (timer) clearTimeout(timer);
       },
     };
+
+    // 元数据未就绪（加载中 / 刚切源）时写 currentTime 可能被浏览器丢弃或在 load() 时清零，
+    // 等 loadedmetadata 再落位——保证「加载中点击进度条也真的跳到该进度」。
+    if (video.readyState < 1 /* HAVE_METADATA */) {
+      const onMeta = () => {
+        video.removeEventListener('loadedmetadata', onMeta);
+        if (video.error) return;
+        video.currentTime = time;
+        syncBufferedProgress(video);
+      };
+      video.addEventListener('loadedmetadata', onMeta);
+      return;
+    }
+
+    video.currentTime = time;
+    // 立即同步灰条：暂停/加载中 seek 不触发 progress 事件，否则灰条会停在旧位置
+    syncBufferedProgress(video);
+    // 暂停中跳到未缓冲区间时没有播放推进驱动浏览器取数——显式唤醒加载引擎继续请求该进度。
+    // 全程不调用 play()：跳转后保持暂停。
+    if (video.paused && !isTimeBuffered(video, time)) {
+      adapterRef.current?.resume();
+    }
   }, []);
 
   const setVideoVolume = useCallback((vol: number) => {

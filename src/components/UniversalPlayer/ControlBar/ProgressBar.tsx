@@ -174,7 +174,10 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   };
 
   const progress = duration > 0 && Number.isFinite(duration) ? (currentTime / duration) * 100 : 0;
-  const bufferedPercent = duration > 0 && Number.isFinite(duration) ? (buffered / duration) * 100 : 0;
+  const rawBufferedPercent = duration > 0 && Number.isFinite(duration) ? (buffered / duration) * 100 : 0;
+  // 灰条不短于已播放位置：向前 seek（尤其暂停中）后 store 里的缓冲末端可能还没跟上，
+  // 圆点跑到灰条之外会看起来像「灰条没跟随最新播放位置」
+  const bufferedPercent = Math.min(100, Math.max(rawBufferedPercent, progress));
   // 拖动中或松手后的过渡期内保持显示目标位置，不跳回旧值
   const showPending = isDragging || pendingTime !== null;
   const displayPercent = showPending
