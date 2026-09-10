@@ -780,11 +780,16 @@
   overflow: hidden;
 }
 
-/* 分组面板 - 完全隐藏滚动条但保留滚动能力 */
+/* 分组面板 - 完全隐藏滚动条但保留滚动能力
+   ⚠️ 宽度不再与二级栏 50/50（2026-09-10 用户拍板方案 A）：
+   一级是 10 条写死的固定分类，长度有确定上限（实测需要 118.6–129.1px，与视口无强相关），
+   二级是自由频道名、宽度需求无上限 → 一级按内容定宽，省下的全给二级。
+   原 width/max-width 均为 50%，1440 实测一级空转 97px（44%）、二级名称仅剩 122.2px
+   导致最长名截断 34.9px。 */
 .up-channel-groups {
-  flex-shrink: 0;
-  width: 50%;
-  max-width: 50%;
+  flex: 0 0 auto;
+  width: var(--layout-channel-group-w);
+  max-width: 44%;
   padding: var(--space-xs) 0;
   overflow-y: auto;
   scrollbar-width: none;
@@ -881,9 +886,11 @@
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
-/* 频道面板 - 完全隐藏滚动条 */
+/* 频道面板 - 完全隐藏滚动条；吃一级栏之外的剩余宽度（2026-09-10 方案 A）
+   min-width: 0 必需：否则内部 marquee 的 max-content 会把本栏撑开、挤回一级栏。 */
 .up-channel-channels {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--space-xs) 0;
   overflow-y: auto;
   scrollbar-width: none;
@@ -1054,6 +1061,36 @@
 .up-channel-item-active .marquee-track.marquee-scrolling {
   animation-play-state: running;
 }
+
+/* ── 频道列表窄屏档（≤479，2026-09-10 用户拍板）─────────────────────────
+   一级栏宽度已由 --layout-channel-group-w 收到 116px（见 variables.css），
+   这里同步把组项「内容侧」也收一档（字号 --text-sm、行内边距 --space-sm），
+   否则 14px 字号下最长分类名「央视 CCTV」需要 ~118px、仍会截断。
+   再把质量徽章（1080P / 720P）隐藏，把宽度让给频道名 ——
+   375 实测二级名称可用宽度 54.5 → 128px（+135%），且频道名的信息价值高于画质标签。 */
+@media (width <= 479px) {
+  .up-channel-group-item {
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .up-channel-item-quality {
+    display: none;
+  }
+}
+/* 9.1 app 恒移动：@media (width <= 479px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .up-channel-group-item {
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  html[data-device="app"] .up-channel-item-quality {
+    display: none;
+  }
+
 
 /* ===== Platform: TV ===== */
 .up-platform-tv .up-control-bar button {
