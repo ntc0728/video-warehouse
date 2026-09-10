@@ -26,11 +26,7 @@ export function detectSourceType(content: string): SourceAnalysis {
   const channelMatches = content.match(/#EXTINF:/g) || [];
   const channelCount = channelMatches.length;
 
-  if (channelCount > 1) {
-    return { type: PlaylistSourceType.MULTI_CHANNEL, channelCount, rawContent: content };
-  }
-
-  if (channelCount === 1) {
+  if (channelCount >= 1) {
     return { type: PlaylistSourceType.MULTI_CHANNEL, channelCount, rawContent: content };
   }
 
@@ -271,12 +267,15 @@ export function buildChannelPlayUrl(
  *   - `default`/`flussonic` 模式却无 `catchupSource` 模板，或
  *   - `append`/`xtream` 模式却无频道 `url` 可作基址，或
  *   - 请求的 `startTs` 早于 `now - catchupDays` 窗口下界（服务端无该时点数据）。
+ *   拼出的 rawUrl 再走 shouldProxy/buildProxyUrl 代理决策（与频道播放链接一致）。
  */
 export function buildCatchupUrl(
-  channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays'>,
+  channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays' | 'userAgent' | 'referrer'>,
   startTs: number,
   endTs: number,
-  now: number = Date.now()
+  now: number = Date.now(),
+  proxyUrl?: string,
+  pattern?: string
 ): string | null {
   const mode = channel.catchup;
   const src = channel.catchupSource;
@@ -305,25 +304,38 @@ export function buildCatchupUrl(
       .replace(/\{end\}/g, String(endSec))
       .replace(/\{r\}/g, String(Math.max(0, endSec - startSec)));
 
+  // 拼出原始回看 URL 后，统一走代理决策（与 buildChannelPlayUrl 一致）
+  let rawUrl: string | null = null;
+
   switch (mode) {
     case 'default':
       // 必须依赖 catchup-source 模板（顶部 guard 已保证 src 非空，这里再兜底一次）
-      return src ? replacePlaceholders(src) : null;
+      rawUrl = src ? replacePlaceholders(src) : null;
+      break;
     case 'append':
       // M3U append：参数追加到原始播放 URL 之后
-      return appendQuery(base, { utc: String(startSec), lutc: String(startSec) });
+      rawUrl = appendQuery(base, { utc: String(startSec), lutc: String(startSec) });
+      break;
     case 'flussonic':
       // Flussonic timeshift：?start=<start>&stop=<end>（秒），必须依赖模板
-      return src ? replacePlaceholders(src) : null;
+      rawUrl = src ? replacePlaceholders(src) : null;
+      break;
     case 'xtream':
       // Xtream-Codes timeshift：原地址追加 ?timeshift=<起始秒>&duration=<时长秒>
-      return appendQuery(base, {
+      rawUrl = appendQuery(base, {
         timeshift: String(startSec),
         duration: String(Math.max(0, endSec - startSec)),
       });
+      break;
     default:
-      return null;
+      rawUrl = null;
+      break;
   }
+
+  if (!rawUrl) return null;
+
+  // 回看 URL 同样需要走代理决策（CORS 等问题与直播流一致）
+  return buildChannelPlayUrl({ url: rawUrl, userAgent: channel.userAgent, referrer: channel.referrer }, proxyUrl, pattern);
 }
 
 /**
@@ -439,6 +451,7 @@ function settleWithWindow<T>(
       promise
         .then(
           (value) => {
+            if (done) return; // finish 后 late-fulfill 不覆写 results
             results[i] = { status: 'fulfilled', value };
             if (firstFulfilledAt === 0) {
               firstFulfilledAt = Date.now();
@@ -447,6 +460,7 @@ function settleWithWindow<T>(
             }
           },
           (reason) => {
+            if (done) return; // finish 后 late-reject 不覆写 results
             results[i] = { status: 'rejected', reason };
           }
         )
@@ -649,7 +663,7 @@ export function parseM3U8Content(content: string, sourceUrl?: string): IPTVChann
       // 从属性中提取分组信息、tvg-id 与 tvg-logo。
       // 台标一级来源 = iptv-org logos.json（store 合并时按名匹配覆盖）；
       // 这里解析的 tvg-logo 仅作「匹配不到时的 iptv 源兜底」（2026-09-08 用户定稿）。
-      const attributes = parts[0];
+      const attributes = parts[0] ?? '';
       const logoMatch = attributes.match(/tvg-logo="([^"]*)"/);
       const groupMatch = attributes.match(/group-title="([^"]*)"/);
       const tvgIdMatch = attributes.match(/tvg-id="([^"]*)"/);

@@ -273,6 +273,11 @@ export const useIPTVStore = create<IPTVState>()(
           ? withSourceLogoBySource(localResult.bySource)
           : get().sourceChannels;
 
+        // 合并错误消息：本地源失败 + iptv-org 主干失败可能同时发生
+        const errors: string[] = [];
+        if (sourceErrors.length > 0) errors.push(`${sourceErrors.length} 个本地源加载失败`);
+        if (orgSettled.status === 'rejected') errors.push('iptv-org 主干加载失败，已回退本地源');
+
         set({
           channels,
           groups,
@@ -282,13 +287,11 @@ export const useIPTVStore = create<IPTVState>()(
           sourceType: localResult?.sourceType ?? get().sourceType,
           sourceErrors,
           lastRefresh: Date.now(),
-          loadedUrl: settings.aggregatorUrl,
+          loadedUrl: settings.aggregatorUrls?.length
+            ? settings.aggregatorUrls.join(';')
+            : settings.aggregatorUrl ?? null,
           isLoading: false,
-          error: sourceErrors.length > 0
-            ? `${sourceErrors.length} 个本地源加载失败`
-            : orgSettled.status === 'rejected'
-              ? 'iptv-org 主干加载失败，已回退本地源'
-              : null,
+          error: errors.length > 0 ? errors.join('；') : null,
         });
 
         // 保存到 IndexedDB 缓存（合并结果，含 bySource）
@@ -475,7 +478,9 @@ export const useIPTVStore = create<IPTVState>()(
           sourceChannels: withSourceLogoBySource(cached.bySource ?? {}),
           sourceType: cached.sourceType as PlaylistSourceType,
           lastRefresh: cached.timestamp,
-          loadedUrl: settings.aggregatorUrl,
+          loadedUrl: settings.aggregatorUrls?.length
+            ? settings.aggregatorUrls.join(';')
+            : settings.aggregatorUrl ?? null,
           error: null,
         });
 

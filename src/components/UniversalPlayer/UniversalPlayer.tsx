@@ -317,6 +317,7 @@ export default function UniversalPlayer({
     currentChannelName, setCurrentChannelName,
     currentUrl, setCurrentUrl,
     currentType, setCurrentType,
+    lastSetUrlRef,
     handleChannelSelect: baseHandleChannelSelect,
     handleSourceSwitch,
   } = useIPTVNavigation({
@@ -679,14 +680,14 @@ skipHistory,
       returnFromCatchup();
       return;
     }
-    const url = buildCatchupUrl(currentChannel, ts, now);
+    const url = buildCatchupUrl(currentChannel, ts, now, now, proxyUrl, proxyPattern);
     if (!url) {
       returnFromCatchup();
       return;
     }
     setCatchupSeekTs(ts);
     setCurrentUrl(url);
-  }, [currentChannel, returnFromCatchup, setCurrentUrl]);
+  }, [currentChannel, returnFromCatchup, setCurrentUrl, proxyUrl, proxyPattern]);
 
   // 合并「回到直播」入口：catchup 时移激活时走 returnFromCatchup，否则走 DVR 的 timeshift.returnToLive。
   const handleReturnToLive = useCallback(() => {
@@ -720,6 +721,7 @@ skipHistory,
     setCurrentChannelId, setCurrentChannelName,
     setCurrentUrl, setCurrentType,
     setTvFocusGroupIndex, setTvFocusChannelIndex,
+    lastSetUrlRef,
   });
 
   // URL 匹配失败时的兜底：用 channelName prop 反查频道

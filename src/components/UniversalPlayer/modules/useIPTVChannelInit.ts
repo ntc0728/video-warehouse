@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { MutableRefObject } from 'react';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { buildChannelPlayUrl, detectVideoSourceType } from '@/services/iptvService';
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
@@ -15,6 +16,8 @@ interface UseIPTVChannelInitOptions {
   setCurrentType: (type: string) => void;
   setTvFocusGroupIndex: (i: number) => void;
   setTvFocusChannelIndex: (i: number) => void;
+  /** useIPTVNavigation 记录的最近设置的 URL，用于跳过重复的 setCurrentUrl 调用（防止双重加载） */
+  lastSetUrlRef?: MutableRefObject<string>;
 }
 
 export function useIPTVChannelInit({
@@ -22,10 +25,19 @@ export function useIPTVChannelInit({
   setCurrentChannelId, setCurrentChannelName,
   setCurrentUrl, setCurrentType,
   setTvFocusGroupIndex, setTvFocusChannelIndex,
+  lastSetUrlRef,
 }: UseIPTVChannelInitOptions) {
   // 从 URL 初始化 IPTV 频道
   useEffect(() => {
     if (mode !== 'iptv' || !url) return;
+
+    // URL 去重防护：如果 playUrl 已由 handleChannelSelect 设置（lastSetUrlRef 记录），
+    // 跳过 setCurrentUrl 调用以避免 hls.js 重复 loadSource 造成的画面闪烁。
+    const setUrlIfChanged = (playUrl: string) => {
+      if (lastSetUrlRef && playUrl === lastSetUrlRef.current) return;
+      if (lastSetUrlRef) lastSetUrlRef.current = playUrl;
+      setCurrentUrl(playUrl);
+    };
 
     let urlId = '';
     let urlName = '';
@@ -65,7 +77,7 @@ export function useIPTVChannelInit({
           setCurrentChannelId(matched.id);
           setCurrentChannelName(matched.name);
           // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
-          setCurrentUrl(buildChannelPlayUrl(matched, pUrl, pPattern));
+          setUrlIfChanged(buildChannelPlayUrl(matched, pUrl, pPattern));
           setCurrentType(detectVideoSourceType(matched.url));
           setTvFocus(matched.id);
           return;
@@ -84,7 +96,7 @@ export function useIPTVChannelInit({
       // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
       const playUrl = buildChannelPlayUrl(matched ?? { url: targetUrl }, pUrl, pPattern);
 
-      setCurrentUrl(playUrl);
+      setUrlIfChanged(playUrl);
       setCurrentType(detectVideoSourceType(targetUrl));
 
       if (matched) {
@@ -104,7 +116,7 @@ export function useIPTVChannelInit({
     // 频道列表尚未加载（如直接深链到 /iptv/play 的首访场景）：
     // 仍按 URL 参数直接播放，等频道列表加载后再做一次精匹配。
     const playUrl = buildChannelPlayUrl({ url: lookupUrl }, pUrl, pPattern);
-    setCurrentUrl(playUrl);
+    setUrlIfChanged(playUrl);
     setCurrentType(detectVideoSourceType(lookupUrl));
     if (urlName) setCurrentChannelName(urlName);
   }, [url, channels, groups, mode, setCurrentChannelId, setCurrentChannelName, setCurrentType, setCurrentUrl, setTvFocusGroupIndex, setTvFocusChannelIndex]);

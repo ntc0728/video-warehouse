@@ -52,6 +52,8 @@ export class HLSAdapter extends BasePlayerAdapter {
   private onError?: (error: Error) => void;
   private errorCount: number = 0;
   private lastErrorTime: number = 0;
+  /** initHls 异步初始化的 Promise：play() 会先 await 它，避免 hls.js 尚未 attachMedia 时空转 */
+  private initPromise: Promise<void> | null = null;
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -63,7 +65,8 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   attach(video: HTMLVideoElement): void {
     super.attach(video);
-    this.initHls().catch(() => {});
+    this.initPromise = this.initHls();
+    this.initPromise.catch(() => {});
   }
 
   private async initHls(): Promise<void> {
@@ -85,6 +88,9 @@ export class HLSAdapter extends BasePlayerAdapter {
     // hls.js 走 XHR，由浏览器网络栈解压，无此短板；清晰度切换/音轨/时移/错误恢复也更完整。
     try {
       const { default: HlsJs } = await import('hls.js');
+
+      // 防止 destroy() 在异步 import 期间被调用：video 已置空 → 不创建 HlsJs 实例
+      if (!this.video) return;
 
       if (!HlsJs.isSupported()) {
         // hls.js 不可用（无 MSE 的旧环境）→ 回退原生 HLS 兜底
@@ -238,6 +244,11 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   async play(): Promise<void> {
+    // 等待 hls.js 初始化完成（动态 import 可能耗时数十毫秒），
+    // 避免 video.play() 在 hls.js 尚未 attachMedia 时空转
+    if (this.initPromise) {
+      await this.initPromise.catch(() => {});
+    }
     await this.video?.play();
   }
 
@@ -378,6 +389,8 @@ export class HLSAdapter extends BasePlayerAdapter {
   switchSource(url: string, options?: Record<string, unknown>): void {
     super.switchSource(url, options);
     this.currentLevel = -1;
+    // 切源时重置错误计数，避免前一个频道积累的错误计数导致新频道过早判定为不可用
+    this.resetErrorCount();
     if (this.hls) {
       this.hls.loadSource(url);
       this.hls.startLoad();
@@ -394,6 +407,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       this.hls.destroy();
       this.hls = null;
     }
+    this.initPromise = null;
     this.detach();
   }
 }
