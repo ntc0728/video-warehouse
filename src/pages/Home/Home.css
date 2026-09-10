@@ -639,15 +639,17 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   大屏两栏（2026-09-10 用户拍板「方案 C」，仅 >1280 宽屏桌面）
-   左栏 = 分类热度榜（sticky）；右列 = Hero + 内容行。
-   断点与 HeroBili / useIsWideDesktop 一致（>1280），TV 与 ≤1280 不进入本块。
+   大屏两栏（2026-09-10 用户拍板「方案 C」结构 + 方案 B 左栏内容）
+   左栏 = 今日趋势 TOP 20 连续榜（sticky）；右列 = Hero + 内容行。
+   断点与 HeroBili / useIsWideDesktop 一致（≥1024），TV 与 <1024 不进入本块。
    ═══════════════════════════════════════════════════════════════════════ */
 
-@media (width >= 1280px) {
+@media (width >= 1024px) {
   html:not([data-device="tv"]) .home-two-col {
-    /* 左栏宽度（2026-09-10 用户要求「稍微调小」：280 → 260，≥1920 档 300 → 280） */
-    --home-rail-w: 260px;
+    /* 左栏宽度。2026-09-10 三次收敛：300 → 280 → 260 → **240**（用户要求「适当减小一点」）。
+       240px 下左栏内容宽 ≈ 240 − 2×(--space-xs 行内距) ≈ 210px，
+       竖版海报 64×96 仍放得下且标题区余 ~130px（够 8~9 个中文字 + 省略号）。 */
+    --home-rail-w: 240px;
     /* 栏间 gap（用户要求收紧：原 --space-2xl ≈31.5px 偏大 → --space-lg ≈16.5px）。
        ⚠️ 下方 --hero-banner-h / --hero-side-w 的公式里也引用了同一档位，必须同步。 */
     --home-rail-gap: var(--space-lg);
@@ -664,8 +666,9 @@ html[data-device="app"] .home-disclaimer {
     position: sticky;
     /* 与 RecordShell / IPTV / 设置页 rail 同规格（参照系是滚动容器 scrollport，
        header 的占位已在 .app-shell__scroll-wrapper 的 padding-top 里，小间距即可）。
-       2026-09-10：每张分类卡由 3 条增至 5 条 + 竖版海报后，左栏总高可达 ~900px，
-       视口不足时锁高内部滚动，避免 sticky 元素高于 scrollport 导致底部内容永远看不到。 */
+       2026-09-10 方案 B：左栏改「今日趋势 TOP 20」单榜，总高 ≈ 20 × (96 + 2×pad) ≈ 2100px，
+       必然高于 scrollport → 锁高内部滚动为必需项（不锁则 sticky 元素比滚动区还高，
+       底部内容永远滚不到，历史 bug 形态）。 */
     top: var(--space-sm);
     min-width: 0;
     max-height: calc(100vh - var(--header-height) - var(--space-lg));
@@ -681,15 +684,59 @@ html[data-device="app"] .home-disclaimer {
     min-width: 0;
     /* ⚠️ HeroBili 的 --hero-banner-h / --hero-side-w 默认按「全视口宽」算，
        Hero 落到右列后必须按「右列实际宽度」重算，否则主图会被算高、
-       右侧 3×2 卡按超宽比例布局而溢出列宽。 */
+       右侧卡片按超宽比例布局而溢出列宽。
+
+       ⚠️ 2026-09-10 第七轮：**本处才是 --hero-banner-h 的生效点**。
+       它是 `html:not(tv) .home-two-col__main`（特异性 0,2,1），高于
+       variables.css 里 `html:not(tv)`（0,1,1）的 :root/分段定义
+       —— 第六轮把三档系数写进 variables.css 的分段媒体查询，
+       因特异性被本规则压过而**完全未生效**（实测产物仍是 0.2727）。
+       故系数改在本处按列数分档（与 useHeroSideCols 同批断点）：
+         · ≥1281（3 列）→ bannerH 系数 0.24、sideW 0.56
+         · 1024–1280（2 列）→ bannerH 系数 0.31、sideW 0.48（见下方 2 列档块）
+       系数来源：卡片封面恒 aspect-ratio:16/9（卡高 = 封面高 + 标题条 ≈27px），
+       令 2 行卡片总高 + 行间 gap 与 banner 高度严格相等反推：
+         3 列档 0.2332–0.2485（w1281 0.2485 / w1440 0.2459 / w1920 0.2364 / w2560 0.2332）→ 取 0.24
+         2 列档 0.3013–0.3122 → 取 0.31
+       分母为「右列宽」(= 内容宽 − rail − gap)，与本规则的公式一致。
+       ⚠️ 0.24 在全档偏高（w1281 需 0.2485），偏差 ~10px，可接受。 */
     --hero-banner-h: calc(
       (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-      * 0.2727
+      * 0.24
     );
     --hero-side-w: calc(
       (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
       * 0.56
     );
+  }
+
+  /* ── 2 列档（1024–1280）专用参数 ──────────────────────────────────────
+     ⚠️ 本档必须**同时**调 sideW 与 bannerH，只调 bannerH 会出竖条 banner。
+     若沿用 56% 右栏，要让 banner 与 2 行 16:9 卡齐平需 bannerH ≈ 595px，
+     而 banner 宽仅 420px（66% 被右栏吃掉）→ banner 变成 0.70:1 的竖长方形。
+
+     解法：本档把右栏收窄到 **48%**（原 56%），把横向空间让给 banner。
+     联立（令右栏宽为 x，约束「2 行卡总高 + 行gap = banner 高」）：
+       2×(x−shuffle−gap−sideGap)/2×9/16 + 2×titleH + sideGap = R×系数
+     先由「banner 保持 ~1.6:1」解出 x ≈ 47.9–49.1% of R，取 **48%**；
+     再回代求系数得 0.3122/0.3059/0.3013 → 取 **0.31**。
+     实测结果（齐平差 ≤ 6px，banner 1.59–1.67:1）：
+       w1024 banner 366×230 / 单卡 145×109 ｜ w1152 433×264 / 176×126 ｜ w1280 499×299 / 207×143
+     ⚠️ 断点必须与 useHeroSideCols.ts / HeroBili.css 的 A 档（1024–1280）严格一致。 */
+  @media (width <= 1280px) {
+    html:not([data-device="tv"]) .home-two-col__main {
+      --hero-side-w: calc(
+        (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
+        * 0.48
+      );
+      /* 由齐平条件反推：bannerH = 2×卡高 + 行gap，卡高随 sideW=48% 派生
+         → 各档 0.3122(w1024) / 0.3059(w1152) / 0.3013(w1280)，取 0.31。
+         校验：banner 宽高比 1.59–1.67:1，与 ≥1281 档及历史设计同形。 */
+      --hero-banner-h: calc(
+        (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
+        * 0.31
+      );
+    }
   }
 
   /* 右列内的内容层：外层 .home-two-col 已做 2200 封顶，此处解除二次限宽/居中 */
@@ -701,7 +748,14 @@ html[data-device="app"] .home-disclaimer {
 
 @media (width >= 1920px) {
   html:not([data-device="tv"]) .home-two-col {
-    --home-rail-w: 280px;
+    /* 2K 档左栏 280 → 260（与 1024 档同步收 20px，保持两档差值恒定） */
+    --home-rail-w: 260px;
+  }
+  /* 2K 档左栏 260px（内容宽 ≈228px）：竖版海报 64×96 → 72×108（用户要求「尽量大一点」，
+     2:3 比例不变）。行高随之 +12px，20 行总高 ≈2250px，仍在 rail 内部滚动内。 */
+  html:not([data-device="tv"]) .cqa-heat-row--rail {
+    --cqa-poster-w: 72px;
+    --cqa-poster-h: 108px;
   }
 }
 

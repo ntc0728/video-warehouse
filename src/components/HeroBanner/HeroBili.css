@@ -1,8 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   HeroBili — 首页 Hero B 站风（>1280px 桌面专用，TV 不启用；2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280）
-   布局：左 banner（minmax(0,1fr)）+ 右 3×2 竖版卡（--hero-side-w）+ 脱标换一换浮层
+   HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
+   2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280。
+   2026-09-10 用户要求「首页视口 ≥1024 就显示新的 UI 布局」：1280 → 1024。
+   布局：左 banner（minmax(0,1fr)）+ 右竖版卡（--hero-side-w，1024–1280 为 2 列、
+   ≥1281 为 3 列）+ 脱标换一换浮层
    全部尺寸走 token（variables.css「--page-pad-x 分档 + HeroBili token」节）：
-   banner-h = 内容宽 × 27.27%、右栏 = 内容宽 × 56%，比例恒定、无断点档位。
+   右栏 = 内容宽 × 56%；banner 高度 = 内容宽 × 系数，**系数按右栏列数分档**
+   （2026-09-10 第七轮简化为两档：2 列档 0.60 / 3 列档 0.40，
+   实际由 Home.css 的 .home-two-col__main 覆盖，见该处注释）。
+   卡片封面恒 16:9，卡高由列宽派生 → 列数变化时卡片比例不变。
+   ⚠️ ≤1023 档例外：网格改 1:1（各 50%）、右卡降为 2 列 × 2 行，见下方分档块。
    ═══════════════════════════════════════════════════════════════════════ */
 
 .hero-bili {
@@ -10,7 +17,7 @@
   margin-bottom: var(--space-sm);
 }
 
-@media (width >= 1280px) {
+@media (width >= 1024px) {
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
     /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
@@ -193,12 +200,58 @@
 .hero-bili__cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
   gap: var(--hero-side-gap);
-  height: var(--hero-banner-h);
+  /* ⚠️ 2026-09-10 第六轮：原为 `height: var(--hero-banner-h)` + `rows: repeat(2, minmax(0,1fr))`
+     —— 行高恒 = bannerH/2、与列数解耦，列数一减卡片就变宽而高度不动 →
+     宽高比失控（实测 w1152 1 列 443×113.6 = 3.9:1、w1280 2 列 252×130.6 = 1.93:1）。
+     现改为：**高度由卡片自身 16:9 比例派生**（见 .hero-side-card__cover），
+     cards 区高度 = 2 行卡片实际高度之和；--hero-banner-h 已按列数分档反推
+     （Home.css 覆盖），使 banner 与右栏下沿仍严格齐平。 */
+  height: auto;
 }
 
-/* 单张竖版卡：封面满铺在上、标题条在下，无卡片内边距。
+/* ── 右卡排列的视口分档（2026-09-10 三次拍板：满格矩形，不跨列不留空槽）─────────
+   卡数恒为「列数 × 2 行」，改列数即改卡数（JS 真源 = useHeroSideCols）。
+   ⚠️ 本段断点必须与 `src/hooks/useHeroSideCols.ts` 严格一致，否则卡片数与网格列数
+   不一致 → 出现空槽或第 3 行：
+
+   · ≥1281      → 3 列 × 2 行 = 6 张 —— 即 .hero-bili__cards 基础形态，本段无需规则
+   · 1024–1280  → 2 列 × 2 行 = 4 张 —— 见下 A 档
+   · ≤1023      → 2 列 × 2 行 = 4 张 —— 见下移动端块
+
+   ⚠️ 2026-09-10 第七轮：**删去原 1024–1152 的「1 列」B 档**。卡片持
+   `aspect-ratio: 16/9` 后卡高由列宽派生，1 列会使单卡宽 685–813px → 2 行卡总高
+   837–981px，比任何合理 banner 都高出 636–745px；若把 banner 拉到齐平则其宽高比
+   跌到 0.88:1（竖条）。即「降列数」与「封面保持比例」在 1 列下无法共存，
+   故 1024–1280 统一 2 列，banner 得以维持 ~1.66:1 的正常横幅形状。
+   banner 系数随之由三档简化为两档（见 Home.css 的 --hero-banner-h 覆盖）。
+   ⚠️ 移动端块用 `(width <= 1023px)` 而非 `<= 1024px` —— 1024 属桌面 2 列档，
+   若用 `<=1024` 会让 1024 落进移动块，与需求冲突。 */
+
+/* A 档：1024–1280 → 2 列（右栏较窄，降列换宽卡，避免 3 列把封面与标题挤死） */
+@media (width >= 1024px) and (width <= 1280px) {
+  html:not([data-device="tv"]) .hero-bili__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 1023px) {
+  /* 网格左右 1:1（用户要求）：原为 minmax(0,1fr) / --hero-side-w(=内容宽 56%)，
+     实际约 44% : 56%；本档改为两列等宽 50% : 50%。 */
+  html:not([data-device="tv"]) .hero-bili__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  html:not([data-device="tv"]) .hero-bili__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 移动端 2 列 × 2 行 = 4 张（JS 已按 ≤1023 渲染 4 张，此处 nth-child 为双保险） */
+  html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+/* 单张横版卡：封面 16:9 满铺在上、标题条在下，无卡片内边距。
    边框对齐卡片模块规范（surface + 1px border-light，与 VideoCard 同语言） */
 .hero-side-card {
   position: relative;
@@ -222,10 +275,13 @@
   outline-offset: 2px;
 }
 
+/* 封面：16:9 横版（与卡片本身的横幅语义一致 —— 封面数据源本就是 backdrop 横图，
+   见 HeroBili.tsx itemCardCoverUrl）。高度随列宽派生，宽度撑满卡片。
+   ⚠️ 本行是「列数变化时卡片不被压扁」的根因修复：卡高改为由**列宽**派生，
+   而非旧版的 `flex: 1 1 0` 弹性拉伸（旧法会让卡片宽度变了高度不变 → 比例失控）。 */
 .hero-side-card__cover {
   position: relative;
-  flex: 1 1 0;
-  min-height: 0;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
 }
 

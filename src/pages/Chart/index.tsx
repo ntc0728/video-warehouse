@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { TMDBVideoItem } from '@/types/tmdb';
-import { AppLoading, BackToTopButton } from '@/components/common';
+import { BackToTopButton } from '@/components/common';
 import { Icon } from '@/components/ui/Icon';
 import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import LazyImage from '@/components/LazyImage/LazyImage';
@@ -41,6 +41,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import './Chart.css';
 
 type ChartCategoryKey = 'movie' | 'tv' | 'variety' | 'anime' | 'documentary' | 'trend';
@@ -146,9 +147,9 @@ export default function ChartPage() {
   const [feed, setFeed] = useState<ChartFeed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // 切 tab/时间窗刷新态：旧榜单降沉 + 居中「加载中」胶囊（与 CQA 面板刷新同款视觉）。
-  // 与 loadMore（底部骨架追加）区分：只有「fetch 期间 state 里还是旧 key 的 feed」才算切 tab。
-  const [refreshing, setRefreshing] = useState(false);
+  // 2026-09-10 用户要求：切 tab / 时间窗时**不显示旧图与遮罩**，直接清空数据走
+  // 居中「小电视 + 加载中」。原实现保留旧榜单降沉（chart-list--refreshing + 胶囊），
+  // 观感上「旧图还挂在那里」，已按需求改为清空。
   const curFeedKeyRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -162,7 +163,6 @@ export default function ChartPage() {
       if (cached && !reset) {
         curFeedKeyRef.current = key;
         setFeed(cached);
-        setRefreshing(false);
         setError(null);
         return;
       }
@@ -171,8 +171,8 @@ export default function ChartPage() {
       const tab = CHART_TABS.find((t) => t.key === tabKey)!;
       setLoading(true);
       setError(null);
-      // state 中仍是其他 key 的 feed（旧榜单可见）= 切 tab 刷新；首次加载（无 feed）走整块 AppLoading
-      setRefreshing(curFeedKeyRef.current !== null && curFeedKeyRef.current !== key);
+      // 切 tab/时间窗 → 立即清空旧榜单（不保留降沉残影），由 showInitialLoading 接管居中态
+      setFeed(null);
       fetchChartPage(tab, window, 1, ctrl.signal)
         .then((items) => {
           if (ctrl.signal.aborted) return;
@@ -187,12 +187,10 @@ export default function ChartPage() {
           feedCache.set(key, next);
           curFeedKeyRef.current = key;
           setFeed(next);
-          setRefreshing(false);
         })
         .catch(() => {
           if (ctrl.signal.aborted) return;
           setError('榜单数据加载失败，请检查网络后重试');
-          setRefreshing(false);
         })
         .finally(() => {
           if (!ctrl.signal.aborted) setLoading(false);
@@ -276,18 +274,6 @@ export default function ChartPage() {
   return (
     <div className="page-padding chart-page content-shell">
       <section className="chart-card">
-        {/* 切 tab 刷新态「加载中」胶囊：零高度 sticky 钉在滚动视口中部（40dvh）。
-            不能放进 .chart-list 里——grid item 的 sticky 只能在自身 row track 内移动，
-            排在榜单行之后会落到折叠线以下永远不可见；放卡片首位（flex 容器）可随
-            整卡移动，榜单多长都居中可见。非刷新态不渲染、零布局占位。 */}
-        {refreshing && (
-          <div className="chart-refresh-sticky" role="status">
-            <div className="chart-list__refresh">
-              <TvMascot className="is-shaking" blink size={30} />
-              <span>加载中…</span>
-            </div>
-          </div>
-        )}
         <div className="chart-head">
           <h1 className="chart-head__title">热度榜</h1>
           <InfoTip
@@ -331,18 +317,25 @@ export default function ChartPage() {
         </nav>
 
         {showInitialLoading ? (
-          <div className="chart-loading"><AppLoading /></div>
+          /* 首次加载与切 tab / 切时间窗共用：数据已清空 → 居中「小电视 + 加载中」
+             （2026-09-10 用户要求：切换 chart-tabs 按钮时下方不显示旧图与遮罩）。 */
+          <div className="chart-loading">
+            <div className="chart-loading__inner" role="status">
+              <TvMascot blink size={44} />
+              <span>加载中…</span>
+            </div>
+          </div>
         ) : error && items.length === 0 ? (
           <div className="chart-error">
             <p>{error}</p>
             <button className="chart-error__retry" onClick={retry}>重试</button>
           </div>
         ) : (
-          <div className={`chart-list${refreshing ? ' chart-list--refreshing' : ''}`} role="list">
+          <div className="chart-list" role="list">
             {items.map((item, i) => (
               <ChartRow key={item.id} item={item} rank={i + 1} showBadge={isTrend} />
             ))}
-            {!refreshing && loading && items.length > 0 && (
+            {loading && items.length > 0 && (
               <div className="chart-list__loading" aria-live="polite">
                 <div className="chart-list__skeleton" aria-hidden="true">
                   <i className="a" /><i className="b" /><i className="c" /><i className="d" />
@@ -365,11 +358,58 @@ export default function ChartPage() {
   );
 }
 
-/** 榜单行：排名（top3 暖橙强调）+ 横版封面 + 标题/年份/类型徽标 + 热度值/评分 */
+/** 榜单行标题：溢出检测 + 悬浮该行时跑马灯展示全标题。
+ *  范式与历史页 `RecordCard`（`src/components/RecordCard`）一致、也与
+ *  CategoryQuickAccess 的 HotCardTitle / TrendTitle 统一（用户 2026-09-10 指定参考）：
+ *  ① 同一元素上测 `scrollWidth > clientWidth + 1`（自身 overflow:hidden + nowrap，
+ *     注意**不能** `text-overflow:ellipsis` 之外的额外裁切干扰）；
+ *  ② 溢出时渲染**双段轨道**（标题复制两份、各带尾间距），动画平移 `-50%` 无缝循环。 */
+function ChartRowTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [title]);
+
+  return (
+    <div ref={ref} className={`chart-row__t${overflow ? ' is-overflow' : ''}`}>
+      {overflow ? (
+        <span className="chart-row__t-track">
+          <span className="chart-row__t-text">{title}</span>
+          <span className="chart-row__t-text" aria-hidden="true">
+            {title}
+          </span>
+        </span>
+      ) : (
+        <span className="chart-row__t-text">{title}</span>
+      )}
+    </div>
+  );
+}
+
+/** 榜单行：排名（top3 暖橙强调）+ 封面 + 标题/年份/类型徽标 + 热度值/评分
+ *
+ * 封面 2026-09-10 用户要求分两态：
+ *  · ≥1024：横版 16:9，取 backdropPath
+ *  · <1024：**竖版 2:3**，取 posterPath（112×168，见 Chart.css 的 @media (width <= 1023px)）
+ * 数据源必须跟着切——横图裁成竖版会有构图问题，故用 useIsMobile（max-width:1023px，
+ * 与 CSS 断点严格一致）在 JS 侧选图。 */
 function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number; showBadge: boolean }) {
   const navigate = useCustomNavigate();
+  const isMobile = useIsMobile();
   const openDetail = useCallback(() => navigate(`/detail/${item.id}`), [navigate, item.id]);
   const top = rank <= 3;
+  // 竖版态取 posterPath；缺失时回退 backdropPath（避免整块空图），CSS 侧 object-fit:cover 兜底
+  const coverPath = isMobile
+    ? (item.posterPath ?? item.backdropPath ?? null)
+    : (item.backdropPath ?? item.posterPath ?? null);
   return (
     <div
       className={`chart-row${top ? ' chart-row--top' : ''}`}
@@ -380,12 +420,12 @@ function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number
     >
       <span className="chart-row__rank">{rank}</span>
       <LazyImage
-        src={buildImageUrl(item.backdropPath ?? null, 'w300') ?? ''}
+        src={buildImageUrl(coverPath, isMobile ? 'w154' : 'w300') ?? ''}
         alt={item.title}
-        className="chart-row__cover"
+        className={`chart-row__cover${isMobile ? ' chart-row__cover--poster' : ''}`}
       />
       <div className="chart-row__body">
-        <div className="chart-row__t">{item.title}</div>
+        <ChartRowTitle title={item.title} />
         <div className="chart-row__m">
           {showBadge && <span className="chart-row__badge">{item.type === 'movie' ? '电影' : '剧集'}</span>}
           <span>{item.year ?? '—'}</span>

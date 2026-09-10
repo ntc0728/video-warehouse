@@ -102,24 +102,46 @@ interface CategoryOverlayState {
   scheduleClose: () => void;
   /** 鼠标进入导航/面板时取消延迟收起 */
   cancelClose: () => void;
+  /** 延迟展开（2026-09-10 用户反馈「chip hover 过于灵敏」）：滑过 chip 不立刻弹面板，
+   *  停留 ≥ HOVER_OPEN_DELAY_MS 才展开；移出即取消（见 cancelPendingOpen） */
+  scheduleOpen: (key: WideCategoryKey) => void;
+  /** 取消尚未触发的延迟展开（chip 移出 / 点击 / 切到别的 chip 时调用） */
+  cancelPendingOpen: () => void;
 }
 let closeTimer: ReturnType<typeof setTimeout> | null = null;
+let openTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** chip hover 展开延迟：鼠标扫过一排 chips 时不再连续弹面板（用户 2026-09-10 反馈）。
+ *  200ms 取「比 120ms 收起延迟更长」——扫过即走不会打断，停留即有响应；
+ *  上限不宜超 300ms（体感变迟钝）。 */
+export const HOVER_OPEN_DELAY_MS = 200;
+
 export const useCategoryOverlayStore = create<CategoryOverlayState>((set) => ({
   activeKey: null,
   open: (key) => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    if (openTimer) { clearTimeout(openTimer); openTimer = null; }
     set({ activeKey: key });
   },
   close: () => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    if (openTimer) { clearTimeout(openTimer); openTimer = null; }
     set({ activeKey: null });
   },
   scheduleClose: () => {
     if (closeTimer) clearTimeout(closeTimer);
+    if (openTimer) { clearTimeout(openTimer); openTimer = null; }
     closeTimer = setTimeout(() => { closeTimer = null; set({ activeKey: null }); }, 120);
   },
   cancelClose: () => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+  },
+  scheduleOpen: (key) => {
+    if (openTimer) clearTimeout(openTimer);
+    openTimer = setTimeout(() => { openTimer = null; set({ activeKey: key }); }, HOVER_OPEN_DELAY_MS);
+  },
+  cancelPendingOpen: () => {
+    if (openTimer) { clearTimeout(openTimer); openTimer = null; }
   },
 }));
 
@@ -212,18 +234,22 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
   }, [activeCat, genreSubs]);
 
   // 面板数据：切换分类/子分类即取。
-  // 切子分类保留旧网格（降沉 + 更新中徽标，视觉连续）；切分类清空走首载文案（避免闪现上一分类内容）。
-  const prevCatKeyRef = useRef<string | null>(null);
+  // 2026-09-10 用户要求：切子分类也**清空旧网格**（不再保留降沉态）。
+  // 原逻辑「切子分类保留旧网格 + 更新中徽标」会让用户看到旧图与新 chip 不匹配，
+  // 属于「下方显示旧图与遮罩」的观感问题；现统一改为清空 → 走居中「小电视 + 加载中」。
+  const prevSubKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!activeCat || activeCat.key === 'home' || !currentSubs) return;
     const sub = currentSubs.find((s) => s.id === currentSubId) ?? currentSubs[0];
     if (!sub) return;
-    const catChanged = prevCatKeyRef.current !== activeCat.key;
-    prevCatKeyRef.current = activeCat.key;
+    const subKey = `${activeCat.key}:${sub.id}`;
+    const changed = prevSubKeyRef.current !== subKey;
+    prevSubKeyRef.current = subKey;
     const ctrl = new AbortController();
     abortRef.current?.abort();
     abortRef.current = ctrl;
-    if (catChanged) setPanelItems(null);
+    // 分类或子分类变化 → 清空旧数据（切分页不算：分页由 setPanelPage 客户端切片，不重取）
+    if (changed) setPanelItems(null);
     setPanelPage(1);
     setPanelLoading(true);
     fetchCategoryPanel(activeCat, sub.id, ctrl.signal)
@@ -266,6 +292,8 @@ export function CategoryQuickAccessNav() {
   const close = useCategoryOverlayStore((s) => s.close);
   const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
   const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
+  const scheduleOpen = useCategoryOverlayStore((s) => s.scheduleOpen);
+  const cancelPendingOpen = useCategoryOverlayStore((s) => s.cancelPendingOpen);
   const scrollContainerRef = useScrollContainer();
 
   // 页面滚动 → 面板立即收起（AppLayout 滚动容器，全页面生效）
@@ -296,9 +324,22 @@ export function CategoryQuickAccessNav() {
 
   const handleChipEnter = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
     cancelClose();
-    if (cat.key === 'home') { close(); return; }
-    open(cat.key);
-  }, [cancelClose, close, open]);
+    if (cat.key === 'home') { cancelPendingOpen(); close(); return; }
+    // 已有展开的面板时切换 chip 立即跟随（已展开状态下的横向扫动应当即时）；
+    // 尚未展开时走延迟，避免「鼠标扫过一排 chips」连续弹面板（用户 2026-09-10 反馈过于灵敏）。
+    if (useCategoryOverlayStore.getState().activeKey !== null) {
+      open(cat.key);
+      return;
+    }
+    scheduleOpen(cat.key);
+  }, [cancelClose, cancelPendingOpen, close, open, scheduleOpen]);
+
+  /** chip 移出即取消未触发的延迟展开（否则扫过 chip A 后停在 chip B 上会弹出 A） */
+  const handleChipLeave = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
+    // 已展开该 chip 时不取消（交给 nav 的 scheduleClose 走 120ms 收起缓冲）
+    if (useCategoryOverlayStore.getState().activeKey !== cat.key) cancelPendingOpen();
+  }, [cancelPendingOpen]);
+
 
   const isChipOn = (key: WideCategoryKey) =>
     key === 'home' ? isHome && activeKey === null : activeKey === key;
@@ -316,7 +357,9 @@ export function CategoryQuickAccessNav() {
           className={`cqa-nav__item${isChipOn(cat.key) ? ' cqa-nav__item--on' : ''}`}
           aria-expanded={activeKey === cat.key}
           onMouseEnter={() => handleChipEnter(cat)}
+          onMouseLeave={() => handleChipLeave(cat)}
           onClick={() => {
+            cancelPendingOpen();
             if (cat.key !== 'home') { open(cat.key); return; }
             // 「首页」chip：首页 = 收起面板；其他页 = 回首页
             close();
@@ -363,7 +406,9 @@ export function CategoryQuickAccessPanel() {
   const close = useCategoryOverlayStore((s) => s.close);
   const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
   const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
-  const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelLoading, panelPage, setPanelPage } =
+  // 注：panelLoading 已不需要 —— 面板加载态判定改为 `panelItems === null`
+  // （切分类/切子分类都清空数据，见 useWideCategoryPanel 内的注释）。
+  const { activeCat, currentSubs, currentSubId, selectSub, panelItems, panelPage, setPanelPage } =
     useWideCategoryPanel(activeKey);
 
   // ⚠️ Rules of Hooks：useCallback 必须在所有提前 return 之前——
@@ -410,6 +455,9 @@ export function CategoryQuickAccessPanel() {
         <InfoTip label="热度口径说明" text="热度基于 TMDB 每日趋势数据（/trending/day 的 popularity 值）聚合，定期更新，非实时数值。" />
       </div>
       <div className="cqa-subgenres">
+        {/* 2026-09-10 用户要求：首次打开面板时不再显示「正在加载子分类…」文案。
+            子分类未就绪时本行留空（只占 --cqa-sub-h 高度，保持面板高度锁定不跳动），
+            加载态统一由下方居中的「小电视 + 正在获取 XX 数据…」承担。 */}
         {currentSubs
           ? currentSubs.map((s) => (
               <button
@@ -420,23 +468,24 @@ export function CategoryQuickAccessPanel() {
                 {s.label}
               </button>
             ))
-          : <span className="cqa-subgenres__loading">正在加载子分类…</span>}
+          : null}
       </div>
-      {panelItems === null && panelLoading ? (
+      {panelItems === null ? (
+        /* 首载与切分类/切子分类共用：清空旧数据后统一走居中「小电视 + 文案」，
+           不再保留旧网格降沉遮罩（用户 2026-09-10：「下方不要显示旧图与遮罩」）。
+           文案按是否已有活跃子分类区分，给出更具体的加载对象。 */
         <div className="cqa-panel__loading">
           <TvMascot blink size={44} />
-          <span>正在获取 {activeCat.label} 数据…</span>
+          <span>
+            {currentSub
+              ? `正在获取 ${activeCat.label} · ${currentSub.label} 数据…`
+              : `正在获取 ${activeCat.label} 数据…`}
+          </span>
         </div>
       ) : (
         <>
-          <div className={`cqa-panel__grid${panelLoading ? ' cqa-panel__grid--refreshing' : ''}`}>
+          <div className="cqa-panel__grid">
             <CategoryHotGrid items={pageItems} rankOffset={(panelPage - 1) * PANEL_PAGE_SIZE} />
-            {panelLoading && (
-              <div className="cqa-panel__refresh" role="status">
-                <TvMascot className="is-shaking" blink size={30} />
-                <span>加载中…</span>
-              </div>
-            )}
           </div>
           {panelTotal > 0 && (
             <div className="cqa-panel__pager">
@@ -530,15 +579,24 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
   );
 }
 
-/** 卡片标题：溢出检测（ResizeObserver）+ 悬浮跑马灯（--marquee-x = 溢出宽度，非溢出不滚动） */
+/** 卡片标题：溢出检测（ResizeObserver）+ 悬浮跑马灯。
+ *
+ * 范式对齐历史页 `RecordCard`（`src/components/RecordCard`）——用户 2026-09-10 指定的基准：
+ *  ① 在同一元素上测 `scrollWidth > clientWidth + 1`（该元素自身 `overflow:hidden` +
+ *     `white-space:nowrap`，scrollWidth 仍为未裁切文本宽，可直接比较）；
+ *  ② 溢出时渲染**双段轨道**（标题复制两份，各带尾间距），动画平移 `-50%` ——
+ *     轨道宽 = 2×文本，位移一半恰好回到第二份起点，**无缝循环且无需计算像素**；
+ *  ③ 非溢出时只渲染单份文本，不挂轨道。
+ * 动画在 CSS 侧由 `.cqa-hotcard__row:hover .cqa-hotcard__t.is-overflow .cqa-hotcard__t-track`
+ * 触发，`is-overflow` 仅用于解除 `text-overflow:ellipsis`。 */
 function HotCardTitle({ title }: { title: string }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [overflowX, setOverflowX] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
 
   useEffect(() => {
-    const el = wrapRef.current;
+    const el = ref.current;
     if (!el) return;
-    const check = () => setOverflowX(Math.max(0, el.scrollWidth - el.clientWidth));
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 1);
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);
@@ -546,13 +604,17 @@ function HotCardTitle({ title }: { title: string }) {
   }, [title]);
 
   return (
-    <div className="cqa-hotcard__t" ref={wrapRef}>
-      <span
-        className={`cqa-hotcard__t-text${overflowX > 0 ? ' is-overflow' : ''}`}
-        style={overflowX > 0 ? { '--marquee-x': `-${overflowX}px` } as React.CSSProperties : undefined}
-      >
-        {title}
-      </span>
+    <div ref={ref} className={`cqa-hotcard__t${overflow ? ' is-overflow' : ''}`}>
+      {overflow ? (
+        <span className="cqa-hotcard__t-track">
+          <span className="cqa-hotcard__t-text">{title}</span>
+          <span className="cqa-hotcard__t-text" aria-hidden="true">
+            {title}
+          </span>
+        </span>
+      ) : (
+        <span className="cqa-hotcard__t-text">{title}</span>
+      )}
     </div>
   );
 }
@@ -635,41 +697,142 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
   );
 }
 
-/** >1280：常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单）。
- *  variant='row'（默认）= hero 下方通栏横排 3 卡；
- *  variant='rail'      = 首页大屏两栏布局的左侧栏（2026-09-10 方案 C）：单列竖排、条目去缩略图。 */
+/** 左栏「今日趋势」榜条目数上限 = TMDB 单页上限（2026-09-10 用户拍板显示 20 条） */
+const TREND_MAX_ITEMS = 20;
+
+/** >1024：常驻「分类热度榜」内容行（加载即显示；点分类卡进 /chart 对应分类榜单）。
+ *  variant='row'（默认）= hero 下方通栏横排 3 卡（分类桶聚合形态，未变）；
+ *  variant='rail'      = 首页大屏两栏布局的左侧栏（2026-09-10 用户拍板「方案 B」）：
+ *    不再做分类桶切分，直接展示 /trending/all/day 的完整连续排名 TOP 20。
+ *    分工：顶栏 chip 管「按分类切片浏览」，左栏管「全站趋势一眼看完」，
+ *    消灭原方案里「左栏分类卡（单页 20 条内聚合）↔ 面板分类榜单（独立端点）」的来源分裂。 */
 export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' } = {}) {
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
-  if (heatBuckets.length === 0) return null;
+  // 左栏榜 = 原始趋势序（TMDB /trending 自带趋势排名，不再按 popularity 重排——
+  // 面板里按 popularity 排序是为了让「热度数字」单调；趋势榜展示的就是排名语义）
+  const trendItems = useMemo(() => trending.slice(0, TREND_MAX_ITEMS), [trending]);
+
   const isRail = variant === 'rail';
+  if (isRail) {
+    if (trendItems.length === 0) return null;
+    return (
+      <section className="cqa-heat-row cqa-heat-row--rail">
+        <div className="cqa-heat-row__head">
+          <Icon icon={Flame} size="sm" />
+          <span className="cqa-heat-row__title">今日趋势</span>
+          {/* 副标题保留（口径说明，home.spec.ts 用例保护的 UI），窄栏下由 CSS 截断 */}
+          <span className="cqa-heat-row__sub">TMDB 实时趋势排名</span>
+          <InfoTip
+            label="今日趋势口径说明"
+            text="取自 TMDB /trending/all/day 的每日趋势榜，按 TMDB 趋势算法排名（非 popularity 数值排序），每 6 小时更新。完整分类榜单见顶部导航分类入口。"
+          />
+        </div>
+        <CategoryTrendList items={trendItems} />
+      </section>
+    );
+  }
+
+  if (heatBuckets.length === 0) return null;
   return (
-    <section className={`cqa-heat-row${isRail ? ' cqa-heat-row--rail' : ''}`}>
+    <section className="cqa-heat-row">
       <div className="cqa-heat-row__head">
         <Icon icon={Flame} size="sm" />
         <span className="cqa-heat-row__title">分类热度榜</span>
-        {/* 副标题在 rail 变体里也保留（口径说明是 home.spec.ts 079 用例保护的 UI），
-            窄栏下由 CSS 的 flex-wrap 换行呈现 */}
         <span className="cqa-heat-row__sub">今日各分类最热 · 点分类卡进入</span>
         <InfoTip
           label="分类热度口径说明"
           text="分类热度 = 该分类下今日 TMDB 趋势条目的 popularity 之和（多分类命中重复计入），基于每日趋势数据聚合，定期更新。"
         />
-        {/* 「查看完整榜单」入口：仅通栏横排（row）形态显示。
-            rail（首页左栏）形态下用户要求删除 —— 窄栏放不下，且 ⓘ 两侧入口过密。 */}
-        {!isRail && (
-          <button
-            className="cqa-heat-row__more"
-            onClick={() => navigate('/chart')}
-            aria-label="查看完整热度榜"
-          >
-            查看完整榜单
-            <Icon icon={ChevronRight} size="xs" />
-          </button>
-        )}
+        <button
+          className="cqa-heat-row__more"
+          onClick={() => navigate('/chart')}
+          aria-label="查看完整热度榜"
+        >
+          查看完整榜单
+          <Icon icon={ChevronRight} size="xs" />
+        </button>
       </div>
       <CategoryHeatCards buckets={heatBuckets} />
     </section>
+  );
+}
+
+/** 左栏连续趋势榜（方案 B）：排名 + 2:3 竖版海报 + 标题 + 电影/剧集徽标 + 热度，点行进详情页 */
+function CategoryTrendList({ items }: { items: TMDBVideoItem[] }) {
+  const navigate = useCustomNavigate();
+  return (
+    <ol className="cqa-trend">
+      {items.map((item, i) => {
+        const poster = buildImageUrl(item.posterPath ?? null, 'w154');
+        return (
+          <li key={item.id} className="cqa-trend__item">
+            <button
+              type="button"
+              className="cqa-trend__row"
+              onClick={() => navigate(`/detail/${item.id}`)}
+              aria-label={`${item.title} 详情`}
+            >
+              <span
+                className={`cqa-trend__rank${i < 3 ? ' cqa-trend__rank--top' : ''}`}
+                aria-hidden="true"
+              >
+                {i + 1}
+              </span>
+              {poster ? (
+                <LazyImage src={poster} alt={item.title} className="cqa-trend__poster" />
+              ) : (
+                <span className="cqa-trend__poster cqa-trend__poster--empty thumbnail-skeleton-bg" />
+              )}
+              <span className="cqa-trend__body">
+                <TrendTitle title={item.title} />
+                <span className="cqa-trend__meta">
+                  <span className="cqa-trend__badge">{item.mediaType === 'movie' ? '电影' : '剧集'}</span>
+                  {item.year ? <span className="cqa-trend__year">{item.year}</span> : null}
+                </span>
+                <span className="cqa-trend__h">
+                  <Icon icon={Flame} size="xs" />
+                  {(item.popularity || 0).toFixed(1)}
+                </span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** 趋势榜行标题：溢出检测 + 悬浮该行时跑马灯展示全标题。
+ *  与同文件 `HotCardTitle` 同一套「历史页 RecordCard 范式」：同元素测溢出 + 双段轨道 + 平移 -50%。
+ *  悬浮触发挂在**整行按钮**上（`.cqa-trend__row:hover`），鼠标落卡即滚，不必精确压到文字。 */
+function TrendTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [title]);
+
+  return (
+    <span ref={ref} className={`cqa-trend__t${overflow ? ' is-overflow' : ''}`}>
+      {overflow ? (
+        <span className="cqa-trend__t-track">
+          <span className="cqa-trend__t-text">{title}</span>
+          <span className="cqa-trend__t-text" aria-hidden="true">
+            {title}
+          </span>
+        </span>
+      ) : (
+        <span className="cqa-trend__t-text">{title}</span>
+      )}
+    </span>
   );
 }

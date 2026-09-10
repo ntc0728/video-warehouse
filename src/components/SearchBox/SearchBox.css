@@ -21,16 +21,31 @@
 /* ── Variant wrap（外层容器） ───────────────────── */
 
 .search-box-wrap--header {
-  /* 流体宽度：视口越窄搜索框越小 */
+  /* 流体宽度：视口越窄搜索框越小。
+     ⚠️ 本行是 1024–1440 档的生效值（header 变体未使用 --layout-searchbox-header-max-w）。 */
   max-width: var(--layout-searchbox-max-w);
+}
+
+/* ≤1280 窄桌面：搜索框宽度再收一档（2026-09-10 用户要求「搜索框宽度减小一点」）。
+   ≤1280 顶栏已切纯文本（图标隐藏，见 StickyHeader.css 同名断点块），
+   但左右两组文本 + logo 仍占宽，中央搜索框被挤 → 封顶到 --comp-input-min-w 上一档，
+   实测桌面值 280×(ui-scale) 档。1441+ 档另有 440px 封顶（见下块），
+   故本块只在 1024–1440 区间实际生效，两者不重叠。 */
+@media (width >= 1024px) and (width <= 1280px) {
+  .search-box-wrap--header {
+    max-width: min(var(--layout-searchbox-max-w), calc(420px * var(--ui-scale, 1)));
+  }
 }
 
 /* 大屏封顶（2026-09-06 顶栏融合配套，2026-09-07 断点 1281 → 1441）：
    ≥1441 header 搜索框不再随视口增长到 627~800px，
-   与 YouTube（~560px）/B 站（~500px）的大屏搜索框宽度对齐 */
+   与 YouTube（~560px）/B 站（~500px）的大屏搜索框宽度对齐。
+   2026-09-10 用户要求「顶部导航栏搜索框宽度稍微减小一点」：480 → 440（-8.3%）。
+   只动 header 变体，browse 变体不受影响；≤1023 的 max-width:none 分支在下方，
+   故 1024–1440 档的流式宽度（--layout-searchbox-max-w）保持原曲线不受本次影响。 */
 @media (width >= 1441px) {
   .search-box-wrap--header {
-    max-width: min(var(--layout-searchbox-max-w), calc(480px * var(--ui-scale, 1)));
+    max-width: min(var(--layout-searchbox-max-w), calc(440px * var(--ui-scale, 1)));
   }
 }
 

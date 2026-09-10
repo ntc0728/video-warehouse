@@ -198,13 +198,42 @@
   flex: 1 1 0;
   min-width: 0;
 }
+/* 标题（外层）：2026-09-10 改用历史页 RecordCard 范式 —— 本层直接测溢出
+   （本层 overflow:hidden + nowrap，scrollWidth 仍为未裁切文本宽），
+   is-overflow 时解除 ellipsis 并渲染双段轨道；悬浮**整行**触发滚动。 */
 .chart-row__t {
+  display: block;
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.chart-row__t.is-overflow {
+  text-overflow: clip;
+}
+/* 无缝跑马灯轨道：标题复制两份等宽 + 各带尾间距 → 平移 -50% 循环无跳变
+   （范式同 RecordCard.css 的 .record-card__title-track / rc-marquee）。 */
+.chart-row__t-track {
+  display: inline-flex;
+}
+.chart-row__t-text {
+  white-space: nowrap;
+}
+.chart-row__t.is-overflow .chart-row__t-text {
+  margin-right: var(--space-lg);
+}
+.chart-row:hover .chart-row__t-track {
+  animation: chartTitleMarquee 7s linear infinite;
+}
+@keyframes chartTitleMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 .chart-row__m {
   display: flex;
@@ -306,46 +335,27 @@
 .chart-list__skeleton .d { flex: 0 0 84px; height: 18px; }
 @keyframes chart-shimmer { to { background-position: -200% 0; } }
 
-/* ── 切 tab 刷新态：旧榜单降沉 + 居中「加载中」胶囊（与 CQA 面板刷新同款视觉）── */
-.chart-list--refreshing .chart-row,
-.chart-list--refreshing .chart-list__end {
-  opacity: 0.45;
-  pointer-events: none;
-  transition: opacity var(--dur-fast) ease;
-}
-/* 零高度 sticky 载体：chart-card 首个子元素，钉在滚动视口 40dvh 处；
-   height:0 + pointer-events:none 保证不占布局、不拦交互 */
-.chart-refresh-sticky {
-  position: sticky;
-  top: 40dvh;
-  z-index: 5;
-  height: 0;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-.chart-list__refresh {
-  /* translateY(-50%)：载体高 0，胶囊以载体线为轴垂直居中 */
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-md);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
+/* ── 切 tab / 切时间窗：旧数据已清空，统一走居中「小电视 + 加载中」──
+   （2026-09-10 用户要求：切换 chart-tabs 按钮时下方不显示旧图与遮罩，
+   故原来的 chart-list--refreshing 降沉态 + chart-refresh-sticky 胶囊已删除，
+   改为整块 chart-loading 居中态复用图表首载。） */
 
+/* 首载 / 切 tab 共用居中态：竖向排列的小电视 + 文案，撑满卡片剩余高度 */
 .chart-loading {
   min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1 1 auto;
+}
+.chart-loading__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
 }
 .chart-error {
   min-height: 320px;
@@ -370,31 +380,46 @@
 }
 .chart-error__retry:hover { background: var(--color-surface-hover); }
 
-/* ── 移动端：单列 + 封面缩为 120×68，简介隐藏 ── */
+/* ── <1024：单列 + **竖版封面 112×168（2:3）** ──
+   2026-09-10 用户要求「chart 页视口小于 1024，下方 card 封面显示竖版图」。
+   数据源同步切 posterPath（JS 见 ChartRow 的 useIsMobile 分支），
+   纯 CSS 无法换图，故两处必须成对改动。
+   2026-09-10 第五轮用户反馈「竖版封面加大一点」：96×144 → **112×168**（保持 2:3，
+   单列布局下横向余量充足）；封面色块与骨架（.chart-list__skeleton .b）同尺寸，
+   避免加载跳变。 */
+@media (width <= 1023px) {
+  .chart-list { grid-template-columns: 1fr; }
+  .chart-list__loading { grid-template-columns: 1fr; }
+  .chart-row__cover,
+  .chart-row__cover--poster {
+    flex-basis: 112px;
+    width: 112px;
+    height: 168px;
+  }
+  .chart-list__skeleton .b { flex-basis: 112px; height: 168px; }
+}
+/* 桌面横版基准尺寸的显式声明（>.chart-row__cover 已在上方定义 160×90，此处仅注释锚点） */
+
+/* 移动端细粒度：窄屏再收一档（保持 2:3 比例）；简介隐藏 */
 @media (width <= 639px) {
   .chart-head { padding: var(--space-md) var(--space-md) 0; }
   .chart-tabs { padding: var(--space-sm) var(--space-md); }
-  .chart-list { grid-template-columns: 1fr; padding: var(--space-xs) var(--space-xs) var(--space-sm); }
-  .chart-list__loading { grid-template-columns: 1fr; }
-  .chart-row__cover {
-    flex-basis: 120px;
-    width: 120px;
-    height: 68px;
-  }
+  .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
   .chart-row__desc { display: none; }
   .chart-row__rank { flex-basis: 32px; }
   .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
-  .chart-list__skeleton .b { flex-basis: 120px; height: 68px; }
 }
 html[data-device="app"] .chart-head { padding: var(--space-md) var(--space-md) 0; }
 html[data-device="app"] .chart-tabs { padding: var(--space-sm) var(--space-md); }
 html[data-device="app"] .chart-list { grid-template-columns: 1fr; padding: var(--space-xs) var(--space-xs) var(--space-sm); }
 html[data-device="app"] .chart-list__loading { grid-template-columns: 1fr; }
-html[data-device="app"] .chart-row__cover {
-  flex-basis: 120px;
-  width: 120px;
-  height: 68px;
+html[data-device="app"] .chart-row__cover,
+html[data-device="app"] .chart-row__cover--poster {
+  flex-basis: 112px;
+  width: 112px;
+  height: 168px;
 }
+html[data-device="app"] .chart-list__skeleton .b { flex-basis: 112px; height: 168px; }
 html[data-device="app"] .chart-row__desc { display: none; }
 html[data-device="app"] .chart-row__rank { flex-basis: 32px; }
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
@@ -402,6 +427,6 @@ html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .chart-list__skeleton i { animation: none; }
-  .chart-list--refreshing .chart-row,
-  .chart-list--refreshing .chart-list__end { transition: none; }
+  /* 标题跑马灯同步停用（reduced-motion 下不滚动） */
+  .chart-row:hover .chart-row__t-track { animation: none; }
 }
