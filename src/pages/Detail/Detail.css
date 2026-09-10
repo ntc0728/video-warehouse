@@ -1979,7 +1979,11 @@
     flex-direction: column;
     gap: var(--space-md);
     min-width: 0;
-    max-height: var(--detail-hero-h, 520px);
+    /* 高度强制等于 banner（用户 2026-09-10 要求「与 banner 高度保持一致」）：
+       变量由 JS 用 ResizeObserver 把 .detail-hero 的实测高度写到 .detail-top 上。
+       用 height 而非 max-height —— 后者在内容较少时会让右栏比 banner 矮、下沿不齐；
+       内容超出时由 overflow-y 兜底为栏内滚动（高度仍锁死，不撑破对齐）。 */
+    height: var(--detail-hero-h, 520px);
     padding: var(--space-lg);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -2020,12 +2024,6 @@
     margin-left: 0;
     padding-left: calc(var(--icon-sm) + var(--space-sm));
     overflow-wrap: anywhere;
-  }
-
-  /* 右栏内的简介（随基础信息一起从 info tab 上提） */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-overview-full {
-    margin: 0;
-    font-size: var(--text-sm);
   }
 }
 
