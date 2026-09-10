@@ -138,7 +138,7 @@ test.describe('CHART 热度榜页', () => {
     await expect(page).toHaveURL(/\/detail\/tmdb-movie-\d+/, { timeout: 3000 });
   });
 
-  test('CHART-006: 切 tab 刷新态——旧行降沉 + 居中「加载中」胶囊，完成后移除；缓存命中零遮罩', async ({ page }) => {
+  test('CHART-006: 切 tab 清空旧榜单走居中「加载中」；缓存命中零遮罩', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.chart-row', { timeout: 15000 });
 
@@ -149,22 +149,20 @@ test.describe('CHART 热度榜页', () => {
     });
 
     await page.locator('.chart-tabs__tab', { hasText: '综艺' }).click();
-    await page.waitForSelector('.chart-list--refreshing', { timeout: 5000 });
-    // 旧行降沉（opacity 0.45）且不可交互
-    await expect(page.locator('.chart-list--refreshing .chart-row').first()).toHaveCSS('opacity', '0.45');
-    // 「加载中」胶囊可见（小电视 + 文案，sticky 于视口中部）——不能是旧文案「更新中」
-    const pill = page.locator('.chart-refresh-sticky .chart-list__refresh');
-    await expect(pill).toBeVisible();
-    await expect(pill).toContainText('加载中…');
+    // 2026-09-10 重构：切 tab / 切时间窗立即清空旧榜单（不再保留「旧行降沉 + 胶囊」），
+    // 统一由居中「小电视 + 加载中」接管；.chart-list--refreshing / .chart-refresh-sticky 已移除。
+    await page.waitForSelector('.chart-loading', { timeout: 5000 });
+    await expect(page.locator('.chart-loading')).toContainText('加载中…');
+    expect(await page.locator('.chart-list--refreshing').count()).toBe(0);
+    expect(await page.locator('.chart-refresh-sticky').count()).toBe(0);
 
-    // 刷新完成：遮罩与胶囊移除，新榜单渲染
-    await page.waitForSelector('.chart-list:not(.chart-list--refreshing)', { timeout: 15000 });
-    await expect(page.locator('.chart-refresh-sticky')).toHaveCount(0);
+    // 刷新完成：加载态移除，新榜单渲染
+    await page.waitForSelector('.chart-loading', { state: 'detached', timeout: 15000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
 
     // 切回电影（已缓存）：零遮罩直接显示
     await page.locator('.chart-tabs__tab', { hasText: '电影' }).first().click();
-    await expect(page.locator('.chart-list--refreshing')).toHaveCount(0, { timeout: 3000 });
+    await expect(page.locator('.chart-loading')).toHaveCount(0, { timeout: 3000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
   });
 });

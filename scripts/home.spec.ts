@@ -206,9 +206,9 @@ test.describe('1.3 分类快捷入口', () => {
 
 test.describe('1.3b 桌面端分类入口', () => {
   test('桌面端分类快选跳转 /browse + 顶栏 IPTV/设置入口（060/061）', async ({ page }) => {
-    // 2026-09-10：宽屏起点由 >1280 改为 ≥1280（用户要求），圆卡形态的回退区间
-    // 收窄为 1024–1279 —— 故本用例改用 1024 视口验证「桌面非宽屏」的圆卡入口。
-    await page.setViewportSize({ width: 1024, height: 800 });
+    // 2026-09-10 用户拍板：宽屏起点定为 1024（含端点），圆卡形态的回退区间为 768–1023，
+    // 故本用例用 900 视口验证「桌面非宽屏」的圆卡入口。
+    await page.setViewportSize({ width: 900, height: 800 });
 
     // 060: 分类快选可见且点击跳转 /browse
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -430,17 +430,17 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(await page.locator('.cqa-nav__heat').count()).toBe(0);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
 
-    // 071: hero 下方常驻「分类热度榜」行
-    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
-    await expect(page.locator('.cqa-heat-row .cqa-catcard')).toHaveCount(3, { timeout: 8000 });
-    // 2026-09-10：每张分类卡的条目由 3 条增至 5 条（用户要求）。
-    // 单个分类桶可能不足 5 条（取决于当日 trending 数据分布），故断言「每卡 1~5 条」+「总数确实增加」。
-    const heatRowCounts = await page
-      .locator('.cqa-heat-row .cqa-catcard')
-      .evaluateAll((cards) => cards.map((c) => c.querySelectorAll('.cqa-catcard__row').length));
-    expect(heatRowCounts.every((n) => n > 0 && n <= 5)).toBe(true);
-    expect(heatRowCounts.reduce((a, b) => a + b, 0)).toBeGreaterThan(9);
-    expect(await page.locator('.cqa-heat-row__title').count()).toBe(1);
+    // 071: 首页左栏常驻「今日趋势」榜
+    // 2026-09-10 用户拍板：rail 变体由「分类热度榜 3 卡」改为「今日趋势 TOP 榜」（.cqa-trend）——
+    // 趋势序取自 TMDB /trending/all/day，不按 popularity 数值重排，故断言排名自 1 起连续。
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
+    expect(await page.locator('.cqa-heat-row .cqa-trend__item').count()).toBeGreaterThan(0);
+    await expect(page.locator('.cqa-heat-row__title')).toHaveText('今日趋势');
+    const trendRanks = await page
+      .locator('.cqa-heat-row .cqa-trend__rank')
+      .evaluateAll((els) => els.map((e) => Number(e.textContent?.trim())));
+    expect(trendRanks[0]).toBe(1);
+    expect(trendRanks.every((n, i) => n === i + 1)).toBe(true);
 
     // 074: 「全部分类」跳转 /browse
     await page.locator('.cqa-nav__more').click();
@@ -449,14 +449,13 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(url1.pathname).toBe('/browse');
     expect(url1.searchParams.get('category')).toBe('all');
 
-    // 083: 2026-09-10 用户要求删除首页左栏的「查看完整榜单」入口 →
-    // 断言 rail 形态下该按钮不存在；/chart 的入口改由「点分类卡头部」承担
+    // 083: 首页左栏为趋势榜（无「查看完整榜单」入口）；点条目前往影片详情
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row', { timeout: 15000 });
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__row', { timeout: 15000 });
     expect(await page.locator('.cqa-heat-row__more').count()).toBe(0);
-    await page.locator('.cqa-heat-row .cqa-catcard__head').first().click();
-    await expect(page).toHaveURL(/\/chart/, { timeout: 5000 });
-    await page.waitForSelector('.chart-card', { timeout: 15000 });
+    await page.locator('.cqa-trend__row').first().click();
+    await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
+    await page.waitForSelector('.detail-hero', { timeout: 15000 });
   });
 
   test('mega 展开/子分类切换/跳转/tooltip（072/073/077/079/087）', async ({ page }) => {
@@ -480,22 +479,20 @@ test.describe('1.3c 宽屏分类面板', () => {
     await expect(page.locator('.cqa-overlay')).toBeVisible({ timeout: 8000 });
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
 
-    // 077: 热度榜分类卡跳转 /chart
+    // 077: 趋势条目跳转影片详情
+    // （原为「分类卡跳 /chart」，随首页 rail 形态改为趋势榜而调整 —— 趋势榜无 /chart 入口）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
-    await expect(page.locator('.cqa-heat-row .cqa-catcard').first()).toBeVisible({ timeout: 8000 });
-    await page.locator('.cqa-heat-row .cqa-catcard').first().locator('.cqa-catcard__head').click();
-    await expect(page).toHaveURL(/\/chart/, { timeout: 5000 });
-    const url2 = new URL(page.url());
-    expect(url2.pathname).toBe('/chart');
-    expect(['tv', 'movie', 'variety', 'anime', 'documentary']).toContain(url2.searchParams.get('category'));
-    await page.waitForSelector('.chart-card', { timeout: 15000 });
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__row', { timeout: 15000 });
+    await expect(page.locator('.cqa-heat-row .cqa-trend__row').first()).toBeVisible({ timeout: 8000 });
+    await page.locator('.cqa-trend__row').first().click();
+    await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
+    await page.waitForSelector('.detail-hero', { timeout: 15000 });
 
-    // 079: 热度口径 tooltip
+    // 079: 趋势口径 tooltip
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
     await expect(page.locator('.cqa-heat-row__sub')).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.cqa-heat-row__sub')).toHaveText(/今日各分类最热/);
+    await expect(page.locator('.cqa-heat-row__sub')).toHaveText(/TMDB 实时趋势排名/);
     const rowTip = page.locator('.cqa-heat-row .cqa-info-tip');
     await expect(rowTip).toHaveCount(1);
     await rowTip.hover();
@@ -506,7 +503,9 @@ test.describe('1.3c 宽屏分类面板', () => {
     await expect(page.locator('.cqa-panel__heat')).toBeVisible();
     await expect(page.locator('.cqa-overlay .cqa-info-tip')).toHaveCount(1);
 
-    // 087: 子分类切换显示「加载中」胶囊（不得是「更新中」）
+    // 087: 切子分类 → 清空旧网格、走居中「小电视 + 加载中」态
+    // 2026-09-10 面板改为「切分类/子分类统一清空」（原「保留旧网格 + 降沉遮罩」的
+    // .cqa-panel__refresh 已成死代码被移除），故断言改为 .cqa-panel__loading 的文案。
     await page.route('**/api.tmdb.org/3/discover/movie**', async (route) => {
       await new Promise((r) => setTimeout(r, 600));
       await route.fallback();
@@ -515,17 +514,16 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await openPanel(page, 1);
     await page.locator('.cqa-subgenres__chip').nth(1).click();
-    await page.waitForSelector('.cqa-panel__refresh', { timeout: 5000 });
-    await expect(page.locator('.cqa-panel__refresh')).toContainText('加载中…');
-    await page.waitForSelector('.cqa-panel__refresh', { state: 'detached', timeout: 15000 });
+    await page.waitForSelector('.cqa-panel__loading', { timeout: 5000 });
+    await expect(page.locator('.cqa-panel__loading')).toContainText('正在获取');
+    await page.waitForSelector('.cqa-panel__loading', { state: 'detached', timeout: 15000 });
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
   });
 
   test('面板交互稳定性（075 1280回归/076 点击外部收起/080 旧网格/081 分页/082 竖排/084 滚动收起/085 跨页/086 browse）', async ({ page }) => {
-    // 075: 1024 视口回归——仍渲染圆卡分支，不命中宽屏面板
-    //（2026-09-10 宽屏起点由 >1280 改为 ≥1280：1280 现在命中宽屏 chips，
-    //  圆卡分支的回退区间收窄为 1024–1279，故用 1024 验证回退）
-    await page.setViewportSize({ width: 1024, height: 800 });
+    // 075: 900 视口回归——仍渲染圆卡分支，不命中宽屏面板
+    //（2026-09-10 用户拍板宽屏起点为 1024（含端点），圆卡回退区间 768–1023）
+    await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
