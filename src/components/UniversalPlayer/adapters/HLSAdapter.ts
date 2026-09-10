@@ -18,11 +18,27 @@ function getQualityLabel(level: { width: number; height: number; bitrate: number
 }
 
 /**
- * 检测是否可通过原生 HLS 播放（iOS Safari）。
+ * 检测浏览器是否「声称」支持原生 HLS。
+ *
+ * ⚠️ 只能当 hls.js 不可用时的兜底探针，不能作为「原生优先」的依据：
+ * 桌面 Chrome 与 Android WebView 对该 MIME 同样返回 'maybe'，但它们的媒体加载
+ * 管道处理不了带 Content-Encoding 的响应（详见 initHls 的路径选择说明）。
  */
 function canUseNativeHls(): boolean {
   return typeof window !== 'undefined' &&
     document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
+}
+
+/**
+ * 是否为 iOS / iPadOS 环境。
+ * iPadOS 13+ 桌面模式 UA 与 macOS 一致，需用触摸点数区分。
+ */
+function isIOSPlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
 }
 
 export class HLSAdapter extends BasePlayerAdapter {
@@ -53,19 +69,33 @@ export class HLSAdapter extends BasePlayerAdapter {
   private async initHls(): Promise<void> {
     if (!this.video) return;
 
-    // iOS Safari 原生 HLS
-    if (canUseNativeHls()) {
+    // iOS/iPadOS 保留原生 HLS 优先：Apple 的系统实现完整，且支持 AirPlay / 系统画中画，
+    // 不存在下方 Chromium 媒体管道的 Content-Encoding 短板。
+    if (isIOSPlatform() && canUseNativeHls()) {
       this.video.src = this.url;
       return;
     }
 
-    // 动态加载 hls.js
+    // 动态加载 hls.js —— 其余平台（桌面 Chrome/Edge、Android WebView）一律以 hls.js 为主路径。
+    // why 不再按 canPlayType 判定原生优先：这些平台的 canPlayType 对
+    // application/vnd.apple.mpegurl 也返回 'maybe'，但其媒体加载管道无法解压带
+    // Content-Encoding（br/zstd）的 manifest 响应——请求以 net::ERR_CONTENT_DECODING_FAILED
+    // 失败（DevTools 中类型为 media、0 字节），video.error 最终落到
+    // DEMUXER_ERROR_COULD_NOT_PARSE，界面只剩「源不可用」。
+    // hls.js 走 XHR，由浏览器网络栈解压，无此短板；清晰度切换/音轨/时移/错误恢复也更完整。
     try {
       const { default: HlsJs } = await import('hls.js');
 
-      if (!HlsJs.isSupported() && !('ManagedMediaSource' in window)) {
-        this.onError?.(new Error('当前浏览器不支持 HLS 播放'));
-        return;
+      if (!HlsJs.isSupported()) {
+        // hls.js 不可用（无 MSE 的旧环境）→ 回退原生 HLS 兜底
+        if (canUseNativeHls()) {
+          this.video.src = this.url;
+          return;
+        }
+        if (!('ManagedMediaSource' in window)) {
+          this.onError?.(new Error('当前浏览器不支持 HLS 播放'));
+          return;
+        }
       }
 
       const config: Record<string, unknown> = {
