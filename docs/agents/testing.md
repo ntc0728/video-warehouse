@@ -23,6 +23,27 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 >    这样播放页测试不再依赖沙箱不可达的 CORS 代理 / CMS 源，消除 M04/M09/M12/M15 等移动端 flake。
 
 
+### IPTV 频道数据种子（`scripts/fixtures/iptv-seed.ts`）
+
+播放页的「频道列表」断言需要 `channels` 非空才会渲染 `.up-channel-list-body`，
+但 e2e 不应依赖真实 IPTV 源。该 fixture 用**注入缓存**喂数据（零网络请求）：
+
+```ts
+await page.goto('/', { waitUntil: 'domcontentloaded' });   // 必须先访问一次同源页
+await page.waitForSelector('.app-shell');
+await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-5 体育赛事高清']);
+await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
+```
+
+三个**不能错**的细节（详细根因写在 fixture 头注释里，改前先读）：
+① 必须先访问一次同源页面 —— 否则 `indexedDB.open` 会开出一个没有任何 store 的空库，
+应用随后按 v8 升级时 upgrade 已被跳过；
+② localStorage `iptv-store` 必须 `version: 0`（zustand persist 版本号）且
+`settings.aggregatorUrls` **非空**（为空时 `loadFromCache` 直接 return false）；
+③ IndexedDB 记录的 `sourceUrls` 必须与 `aggregatorUrls` 逐元素、保持顺序相等
+（`getCachedIPTVChannels` 刻意不做 sort 比较，源顺序决定频道 `sourceId`）；
+另外频道不要带 `sourceId: 'source-N'` 前缀，`loadFromCache` 会把这类本地源频道过滤掉。
+
 ## 测试依赖映射（精准跑测试，不要全量跑）
 
 > 修改源文件后，只跑对应列的测试文件。共享组件变更才会影响多个测试文件。
@@ -30,7 +51,7 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（2026-09-09 晚：118 条 / 18 个 spec；此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。本轮新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）+ `verify-grid.spec.ts`（网格重构验证））。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-10 晚：122 条 / 18 个 spec**；2026-09-09 晚为 118 条 / 18 spec，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~023（播放页 chrome 尺寸契约））。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
@@ -40,7 +61,8 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 | `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 20     |
 | `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` + `scripts/player-cms-error.spec.ts` | 26 + 1 + 1 |
 | `src/components/UniversalPlayer/`（全屏整改/移动端 toast 专项） | `scripts/smoke-player-fs-mobile.spec.ts`               | 7      |
-| `src/pages/IPTV/`                                    | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 10 + 6 |
+| `src/pages/IPTV/`                                    | `scripts/iptv.spec.ts` + `scripts/iptv-player.spec.ts` | 10 + 10 |
+| `src/components/UniversalPlayer/IPTVOSDBar/`、`…/IPTVChannelList/`（chrome 尺寸契约） | `scripts/iptv-player.spec.ts`（`-g "IPTVP-02"`） | 4 |
 | `src/pages/Settings/`                                | `scripts/settings.spec.ts`                             | 25     |
 | `src/pages/Collections/`                             | `scripts/collections.spec.ts`                          | 5      |
 | 跨页签 IDB 一致性（收藏收敛 `col-{videoId}` 主键）              | `scripts/collection-cross-tab.spec.ts`                 | 1      |
@@ -64,7 +86,7 @@ Mock 覆盖：trending / search / discover / movie detail / tv detail / person /
 
 | 修改的源文件                                        | 影响的测试文件                                                                        | 合计 test 数     |
 | --------------------------------------------- | ------------------------------------------------------------------------------ | ------------- |
-| `src/components/UniversalPlayer/`             | player + iptv + iptv-player + smoke-player-fs-mobile                           | 57            |
+| `src/components/UniversalPlayer/`             | player + iptv + iptv-player + smoke-player-fs-mobile                           | 61            |
 | `src/components/VideoCard/`                   | home + browse + detail + collections + history + person                        | 110           |
 | `src/components/SearchBox/`                   | browse + cross-page                                                            | 40            |
 | `src/components/RecordShell/`                 | collections + history                                                          | 17            |

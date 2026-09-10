@@ -113,6 +113,81 @@
 - **遥控器跳过**：`useTVInput` 在 `mode === 'iptv'` 时遥控器播放/暂停键不触发 `togglePlay`。
 - **裸流降级识别（D1）**：`HLSAdapter` 对 `manifestParsingError`（拿到内容但解析失败）上报带 `code='BARE_STREAM'` 的错误，与 `manifestLoadError`（网络层失败，维持「频道源不可用」走 A3）区分。`UniversalPlayer` 在 `mode==='iptv'` 且未对当前 URL 降级过时，用 `degradedType` state 临时将播放器类型覆盖为 `flv`，重建 `MPEGTSAdapter` 重试**同一 URL**（每 URL 仅 1 次，URL 变化时复位）。worker `m3u8-proxy` 对非 `#EXTM3U` 内容（`isM3U8Content` 判断）直接透传源站二进制（不重写、不缓存），使 mpegts.js 能拉裸 TS/FLV 流——**零额外请求识别裸流**。
 
+### IPTV 播放页 chrome（频道列表 / OSD 栏）尺寸契约
+
+> 2026-09-10 落地（commit `450dd3d`）。提案与全部实测读数见
+> `changelogs/demos/demo-iptv-channel-list-osd-2026-09-10.html`；
+> 防回归断言在 `scripts/iptv-player.spec.ts` 的 11.4 段（IPTVP-020 ~ 023）。
+
+**① 频道列表一/二级宽度 = 内容派生，不是面板 50%**
+
+`.up-channel-groups` / `.up-channel-channels` 原为硬 50/50。但一级是 **10 条写死的固定分类**
+（长度有上限），二级是**自由频道名**（无上限）—— 50/50 等于把一半宽度让给有上限的一侧，
+1440 实测一级空转 109px（占 49%），二级名称只剩 122.2px、最长名截断 34.9px。
+
+- `--layout-channel-group-w`（`variables.css`）= **132px 定值，不是 vw 曲线**。
+  逐档实测「最长分类名 + 计数药丸 + 行内边距」只有 **109.8 / 114.0 / 113.7 / 113.5 / 113.3 / 116.5px**
+  （480 / 768 / 1024 / 1280 / 1440 / 1920）——行内边距随档变大、字号 768 后反而变小，两者相抵 →
+  **与视口宽度没有强相关**，故用内容派生的定值而非比例。
+- `.up-channel-groups` = `flex: 0 0 auto; width: var(--layout-channel-group-w); max-width: 44%`（兜底）；
+  `.up-channel-channels` = `flex: 1 1 auto; min-width: 0`。**`min-width: 0` 必需** ——
+  否则二级栏内 marquee 的 max-content 会把它撑开、挤回一级栏。
+- **≤479 窄屏档**：`--layout-channel-group-w: 116px` + 组项字号降 `--text-sm`、
+  行内边距降 `--space-sm`（需要宽度随之降到 99.5px）+ **隐藏质量徽章**
+  （`.up-channel-item-quality`，含 `html[data-device="app"]` 副本）。
+- 落地实测：一级栏占面板 50% → **41.4%（375）/ 29.7%（1440）/ 27.5%（2560）**，全程仍正向空转；
+  二级名称可用 1440 → 229.2px（+88%）、375 → 140px（+157%）。
+
+**② OSD 栏宽度 = 单条比例曲线**
+
+`--layout-osd-max-width` 原为「以 1080p 为锚点」的两段式 clamp（`:root` 一段 +
+`@media (width >= 768px)` 块内 ≥1024 一段覆盖）。该曲线在**约 420–1158px 视口区间
+恒大于「视口 − 2×--space-md」**，被 `.iptv-osd-bar` 的 `max-width` 兜底规则吃掉 →
+这一段 OSD 实际是**贴边**的、宽度 token 完全不起作用（1024 占 98.0%、768 占 97.5%），
+呈现「视口越窄、OSD 占比越高」的反直觉曲线。
+
+现为单条 `clamp(320px, 78vw, 1400px)`，**段2 里的 ≥1024 覆盖已删除** —— 留着会造成
+「token 生效区间分裂」，正是要修的问题。兜底留白 `--space-md` → `--space-lg`。
+TV 档 `clamp(1600px, 83.333vw, 3200px)` 是独立 2× 契约，不受影响。
+
+**③ OSD 内部：左右翼等宽 → 中列与控件行真正居中**
+
+左翼固定 `--layout-channel-num-w`（120→180）恒大于右翼 `--layout-quality-badge-min-w`（84→120）
+→ 中列中心 ≠ OSD 中心 → 位于中列的控件行整体右偏（1440 实测 **+27.9px**）。
+修法：`@media (width >= 1024px)` 下 `.iptv-osd-left, .iptv-osd-right { flex: 0 0 var(--layout-channel-num-w) }`
+→ 偏移归 0（1024/1280/1440/1920/2560 实测均为 0）。
+**<1024 刻意不生效**：给右翼 120–163px 会把中列节目名挤到不可用，那一档保留「中列优先」的
+不等宽布局，代价是控件仍有 18–24px 偏移（已知取舍）。
+
+右翼三行并两行（`.iptv-osd-meta-row` 包住「网络速度 + 线路」）。分隔点**必须**做成
+`.iptv-osd-source-text::before { content: '·' }`，而不是夹在中间的独立元素 ——
+≤639 隐藏 `source-text` 时连分隔点一起消失，否则会留下「- KB/S ·」这种悬空分隔符。
+
+**④ 控件行：nowrap + 窄屏图标化 + 间距档**
+
+`.iptv-osd-controls-row` 由 `flex-wrap: wrap` 改 `nowrap`（一旦换行 OSD 高度跳变 ≈18px）。
+间距：组间 `--space-2xs` → `--space-sm`、组内 `--space-3xs` → `--space-xs`。
+≤639 去掉按钮文字（`span { display: none }`）并把图标放大到 `--icon-md` ——
+4 个带文字按钮共需 ~200px，而 375 下中列只有 ~163px；去文字后仅需 ~157px。
+
+> ⚠️ **`nowrap` 的安全网**：控件行 `scrollWidth − clientWidth = 0` 且必须**窄于中列**
+> （7 个视口实测 −6 ~ −27px）。以后往这行加按钮必须重跑 IPTVP-021/022，否则会被裁切。
+
+**⑤ 「音轨」恒显示**
+
+去掉 `audioTracks.length > 1` 条件 —— 该条件会让控件行在 3/4 个按钮之间跳动、分组宽度不稳定。
+点击行为仍是「切到下一条音轨」，上游 `handleAudioTrackSelect` 在 `tracks.length <= 1` 时
+直接 return（安全空操作）；条数写进 `title`（`切换音轨（共 N 条）`）便于判断。
+
+**⚠️ 量测口径（两个坑）**
+
+1. 分类「需要宽度」必须按**活跃态 `font-weight: 600` 的自然宽度**量 ——
+   最长的「央视 CCTV」随时可能成为活跃项。
+2. **不能**用 `.up-channel-group-text` 的**渲染宽度**当需要宽度 —— 它带 `text-overflow: ellipsis`，
+   栏一窄渲染宽就被裁到可用宽，等于自证「刚好放得下」。
+   正确量法：把 `.up-channel-groups` 临时放开成 `width: max-content / max-width: none`，
+   取最长一行的渲染宽度。
+
 ### Browse 懒加载
 
 - 哨兵节点 `<div ref={sentinelRef}>` **无条件渲染**（不用 searchMode 条件包裹），跨状态持久
