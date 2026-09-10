@@ -8,6 +8,9 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  /* 三行流式布局：主图区（吃掉剩余高度）→ 缩放条 → 缩略图条。
+     缩放条 2026-09-10 从右下角浮层改为主图正下方，因此不再用绝对定位。 */
+  gap: var(--space-sm);
   justify-content: center;
   align-items: center;
 }
@@ -111,11 +114,15 @@
   position: relative;
   z-index: 5;
   display: flex;
+  /* 吃掉缩放条 / 缩略图条之外的全部剩余高度（原先固定 height:100% 会挤掉下面两行） */
+  flex: 1 1 auto;
   gap: var(--space-sm);
   width: 100%;
-  height: 100%;
+  min-height: 0;
+  /* 底部不再留 clamp 内边距：缩放条与缩略图条已进入文档流，行距由 .stills-lightbox 的 gap 承担。
+     下内边距去掉后主图区变矮、图片随之上移（用户要求「图片稍微上移一点」） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  padding: clamp(64px, 48px + 2vw, 96px) clamp(24px, 16px + 3vw, 64px);
+  padding: clamp(64px, 48px + 2vw, 96px) clamp(24px, 16px + 3vw, 64px) 0;
   overflow: hidden;
 }
 
@@ -158,13 +165,15 @@
 /* ── 缩放控件（2026-09-10 由 Detail 剧照标题行移入灯箱）─────
    形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
 .stills-lightbox__zoom {
-  position: absolute;
-  right: var(--space-md);
-  bottom: var(--space-md);
+  /* 流内第二行：水平居中于当前显示的图片（用户 2026-09-10 要求「放到当前显示图片的下方」）。
+     保留 position:relative + z-index 是为了仍绘制在 .stills-lightbox__scroll（z-index:5）之上 */
+  position: relative;
   z-index: 20;
   display: flex;
+  flex: none;
   gap: var(--space-2xs);
   align-items: center;
+  align-self: center;
   padding: var(--space-2xs);
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.55);
@@ -214,12 +223,14 @@
 /* ── 缩略图条 ──────────────────────────────── */
 
 .stills-lightbox__thumbs {
-  position: absolute;
-  bottom: var(--space-md);
-  left: 50%;
+  /* 流内第三行（原为贴视口底部的绝对定位浮层；改为流内后与缩放条同属底部区域，
+     也顺手修掉了 <768px 下缩放条与缩略图条底部带重叠的老问题） */
+  position: relative;
   z-index: 20;
   display: flex;
+  flex: none;
   gap: var(--space-2xs);
+  align-self: center;
   width: 80vw;
   max-width: 60rem;
   padding: var(--space-2xs);
@@ -227,7 +238,6 @@
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   overflow: scroll hidden;
-  transform: translateX(-50%);
   cursor: grab;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -323,7 +333,6 @@
   }
 
   .stills-lightbox__thumbs {
-    bottom: var(--space-sm);
     width: 90vw;
   }
 }
@@ -354,7 +363,6 @@
   }
 
   html[data-device="app"] .stills-lightbox__thumbs {
-    bottom: var(--space-sm);
     width: 90vw;
   }
 
