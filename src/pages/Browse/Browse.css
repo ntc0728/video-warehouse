@@ -405,10 +405,13 @@
      media 失效整体回落，现行布局零残留。
    ═════════════════════════════════════════════════════════════════════ */
 @media (width >= 1024px) {
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
     display: grid;
-    grid-template-columns: clamp(124px, 8.61vw, 224px) minmax(0, 1fr);
+    /* 2026-09-10 用户拍板 B+C：栏宽由硬编码 clamp(124px, 8.61vw, 224px) 提为共享 token
+       --rail-w = clamp(148px, 10vw, 248px)（1440 → 148、1920 → 192、2560 → 248），
+       与设置页 / IPTV / 收藏·历史 左栏同源。 */
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
     /* 行高修复（2026-09-07 用户实测反馈）：两条隐式 auto 行 + results 跨行
        → 跨行项目剩余高度被平摊进所跨行，row1（tabs）从 46px 被撑到数百 px，
        筛选面板与顶部出现巨大间距。row2 用 1fr 吸收跨行剩余高度，
@@ -423,30 +426,30 @@
     align-items: start;
   }
 
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-card--search {
     display: contents;
   }
 
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs {
     grid-area: tabs;
     margin-bottom: var(--space-sm);
   }
 
   /* 通栏模式行：胶囊收敛内容宽 + 模式提示显形（对齐 demo modbar） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs__pill {
     flex: 0 0 auto;
     display: inline-flex;
   }
 
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs__hint {
     display: inline-flex;
   }
 
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-card--results {
     grid-area: results;
     /* 占满 row2（1fr）剩余高度（容器 align-items:start 会压掉默认拉伸） */
@@ -455,7 +458,7 @@
 
   /* 2026-09-08 去卡片化：右侧结果卡同样拆掉四件套（border / radius / background / shadow），
      与左栏一起铺在页面底色上。排除 --mobile（移动端结果卡仍保留卡片观感）。 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) .browse-card--results {
     border: none;
     border-radius: 0;
@@ -470,39 +473,50 @@
   /* 2026-09-08 二次调整：左栏 rail 化（对齐收藏/历史页 rail UI，RecordShell.css ≥1024 方案 A）
      ——去卡片 chrome + padding 归零 + 组间 1px 分割线 + 条目 rail-item 外观。
      分隔：组间靠分割线（--space-sm 上下 margin），栏与结果区靠 grid 列间距 --space-2xl。 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar {
     grid-area: filters;
     align-self: start;
-    /* 2026-09-07 用户拍板：面板不固定（去 sticky），随页面滚动 */
+    /* 2026-09-07 用户拍板：面板不固定（去 sticky），随页面滚动。
+       2026-09-10 用户拍板 B：组间 gap 由 --space-sm 收到 --space-2xs
+       （组距靠下方 ::before 分割线的 6px margin 提供，不再靠 gap 堆叠）。 */
     flex-direction: column;
-    gap: var(--space-sm);
-    padding: 0;
+    gap: var(--space-2xs);
+    padding: 0 var(--space-sm) 0 0;
+    /* 2026-09-10 用户拍板「左栏视觉语言统一 = 方案 B」：全站四处左栏统一右侧 1px 边框
+       （--color-border-light），给左栏一个明确边界锚点（原先无边框无底，大屏下与
+       右主区的 --space-2xl 空白分离，左栏像「飘」在页面底色上）。 */
+    border-right: 1px solid var(--color-border-light);
   }
 
   /* 侧栏内禁横向滚动 → 选项 3 列网格（2026-09-07 用户拍板：
      面板内每组选项最多 3 列，分类/地区/年份三组竖排 = 3 行 × 3 列） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  /* 侧栏内组内竖排：label 在上、chips 在下（--space-xs ≈3.9px 为「组标题 → 首行」间距，
+     2026-09-10 用户拍板 B 收紧，原为继承 --space-sm 的 8px） */
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__row {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-xs);
   }
 
   /* 组间分割线（rail 分组语言：第一组无线，其余组上方 1px 线，
-     照抄 RecordShell.css ≥1024 的 .record-status-group::before 规格） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+     照抄 RecordShell.css ≥1024 的 .record-status-group::before 规格）。
+     2026-09-10 用户拍板 B：上下 margin 由 --space-sm(7.9) 收到 ≈5.7px 收紧组距
+     （calc 而非裸 px，避开 stylelint 的 gap/margin px 禁用规则）。 */
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__row + .filter-bar__row::before {
     content: "";
     display: block;
     flex-shrink: 0;
     height: 1px;
-    margin: var(--space-sm) 0;
+    margin: calc(var(--space-sm) - var(--space-2xs)) 0;
     background: var(--color-border-light);
   }
 
   /* 行 label = 组标题小字（2026-09-08 用户拍板）：text-xs / tertiary，
      去 base 的右 margin 与 600 字重（--as-chip 的 600 同被本规则覆盖） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__label {
     min-width: 0;
     margin-right: 0;
@@ -510,26 +524,29 @@
     font-weight: 500;
   }
 
-  /* 侧栏内禁横向滚动 → 选项 2 列网格（2026-09-08 用户拍板：竖排两列） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  /* 侧栏内禁横向滚动 → 自适应列数（2026-09-10 用户拍板 B+C，取代 2026-09-08 的固定 2 列）：
+     短词（全部 / 2024 / 美国）自动多排一列，长词由 FilterBar 打 --full 独占整行。
+     同一规则同时作用于 chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-wrap {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
     gap: var(--space-2xs);
     justify-items: stretch;
+    padding: 0;
     overflow-x: visible;
   }
 
-  /* chip = rail-item 外观（2026-09-08 用户拍板，严格照抄 RecordShell.css ≥1024
-     的 .status-tab 规格）：整行占满格子、8px 上下内边距、md 圆角、透明底、
-     --text-sm / 500 / secondary、左对齐 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  /* chip = rail-item 外观（照抄 RecordShell.css ≥1024 的 .status-tab 规格）。
+     2026-09-10 用户拍板 B：整行占满格子、上下内边距由 8px 收到 ≈5.7px
+     （chip 高 32 → 26px），字号/圆角/左对齐不变，仅压缩纵向占位。 */
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
     width: 100%;
     height: auto;
-    padding: 8px var(--space-sm);
+    padding: calc(var(--space-sm) - var(--space-2xs)) var(--space-sm);
     border: none;
     border-radius: var(--radius-md);
     background: transparent;
@@ -542,7 +559,7 @@
   /* 长文本选项独占一行规则移至 chip 系列末尾（--active 之后，2026-09-07 用户要求） */
 
   /* 结果区头部卡片化（对齐 demo reshead：类型分段 | 分隔线 | 排序 tabs | 共 N 条） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .browse-sort-bar {
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
@@ -552,16 +569,16 @@
   }
 
   /* rail 同款 hover：浅灰底 + 主文字。作用域限定面板内，FilterBar 其他调用方零回归。 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip:hover {
     background: var(--color-surface-hover);
     color: var(--color-text);
   }
 
   /* rail 同款选中态：实心主色 + 反白字 + 600（含 :hover） */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--active,
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--active:hover {
     background: var(--color-primary);
     color: var(--color-text-inverse);
@@ -570,7 +587,7 @@
   }
 
   /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占整行 + 左对齐 */
-  html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
+  html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
     justify-self: stretch;

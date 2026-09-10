@@ -453,13 +453,15 @@
   top: var(--space-sm);
   align-self: flex-start;
   flex-shrink: 0;
-  /* 2026-09-08 与设置页/Browse 左栏统一：流体曲线 clamp(124px, 8.61vw, 224px)
-     （1440 视口落到 124px 下限，约 2600 视口到 224px 上限），
+  /* 2026-09-08 与设置页/Browse 左栏统一：流体曲线；
+     2026-09-10 四页统一改用共享 token --rail-w（clamp(148px, 10vw, 248px)），
+     并加右侧 1px 边框（左栏视觉语言统一 = 方案 B，用户拍板）；
      替换原 max-content 内容自适应（原 min-width 保底不再需要）；
      不设 max-height / overflow:auto——与 RecordShell 一致保持 visible，
      避免未来加弹层时被裁切（rail 内容恒短，不会超视口） */
-  width: clamp(124px, 8.61vw, 224px);
-  padding: 0;
+  width: var(--rail-w);
+  padding: 0 var(--space-sm) 0 0;
+  border-right: 1px solid var(--color-border-light);
 }
 
 .iptv-rail__title {
@@ -507,11 +509,13 @@
 }
 
 /* 选中态必须连 :hover 一起声明（同特异性 :hover 靠后即覆盖选中底色）；
-   选中字色用 #fff，与 RecordShell 方案 A rail 完全一致 */
+   2026-09-10 修复：选中字色由硬编码 #fff 改为 --color-text-inverse ——
+   暗色主题下 --color-primary 是 #fff（variables.css:677 一带），
+   硬编码白字会变成「白底白字」完全不可读。 */
 .iptv-rail__item.is-on,
 .iptv-rail__item.is-on:hover {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -535,9 +539,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 选中态下的计数徽标：底色跟随选中字色（浅色主题=白/暗色主题=黑），
+   避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见（2026-09-10 修复） */
 .iptv-rail__item.is-on .iptv-rail__cnt {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
+  color: var(--color-text-inverse);
 }
 
 /* 多选复选框（更多台 = 设置页已启用的 IPTV 源） */
