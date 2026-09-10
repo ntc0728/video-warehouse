@@ -200,6 +200,8 @@ export function toIPTVChannelFromApi(ch: OrgChinaChannel): IPTVChannel {
     categories: [ch.group],
     country: 'CN',
     quality: ch.quality,
+    // 标记 iptv-org 主干来源：播放链接一律直连不拼代理（cn.m3u 原始流）
+    sourceId: 'iptvorg',
   };
 }
 

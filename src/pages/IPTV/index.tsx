@@ -168,11 +168,14 @@ export default function IPTVPage() {
   }, [toggleExtraSource]);
 
   /**
-   * 主干频道过滤：源过滤（两端共用）+ 关键词。
-   * 桌面端分类过滤在分节时应用（inCategory）；移动端叠加 selectedGroup。
+   * 主干频道过滤：源过滤（两端共用）+ 关键词 + 勾选的「更多台」源频道合并。
+   * 勾选本地源后，该源频道追加到主干列表一并参与分类计数、搜索和 card 渲染；
+   * 取消勾选则移除。桌面端分类过滤在分节时应用（inCategory）；移动端叠加 selectedGroup。
    */
   const mainChannels = useMemo(() => {
-    let result = channels;
+    // 把勾选的「更多台」源频道拼接到主干后面（sourceChannels 已按源去重）
+    const extra = extraSourceIds.flatMap(id => sourceChannels[id] ?? []);
+    let result = [...channels, ...extra];
     if (selectedSource) {
       result = result.filter(ch => ch.sourceId === selectedSource);
     }
@@ -181,7 +184,7 @@ export default function IPTVPage() {
       result = result.filter(ch => ch.name.toLowerCase().includes(keyword));
     }
     return result;
-  }, [channels, selectedSource, debouncedKeyword]);
+  }, [channels, extraSourceIds, sourceChannels, selectedSource, debouncedKeyword]);
 
   /** 移动端：按分组、数据源和关键词筛选频道（保留原逻辑） */
   const filteredChannels = useMemo(() => {
@@ -213,21 +216,21 @@ export default function IPTVPage() {
     });
   }, [aggregatorUrls, channels]);
 
-  /** 左栏分类计数：基于全部主干频道（不受源过滤/搜索影响，稳定锚点） */
+  /** 左栏分类计数：基于主干 + 勾选的「更多台」源频道（不受搜索影响，受源勾选影响） */
   const catCounts = useMemo(() => {
     const counts = new Map<IptvCategoryKey, number>();
     IPTV_CATEGORIES.forEach((c) => {
-      counts.set(c.key, channels.filter((ch) => inCategory(ch, c.key)).length);
+      counts.set(c.key, mainChannels.filter((ch) => inCategory(ch, c.key)).length);
     });
-    counts.set('__other__', channels.filter((ch) => inCategory(ch, '__other__')).length);
+    counts.set('__other__', mainChannels.filter((ch) => inCategory(ch, '__other__')).length);
     return counts;
-  }, [channels]);
+  }, [mainChannels]);
 
   /**
-   * 桌面端分节结构（demo 终稿 buildSections）：
-   * - 全部频道：按固定分类分节（空分类跳过）+「其他」兜底节（保证无频道被藏起来）
+   * 桌面端分节结构：
+   * - 全部频道：按固定分类分节（空分类跳过）+「其他」兜底节
    * - 具体分类 / 我的收藏：单节
-   * - 更多台：勾选的源各占一节，节标题「更多台 · 源名」，卡片带紫色来源角标
+   * - 勾选的「更多台」源频道已并入 mainChannels 参与分类渲染
    */
   const sections = useMemo(() => {
     if (!isDesktopRail) return [];
@@ -247,18 +250,9 @@ export default function IPTVPage() {
       const list = mainChannels.filter((ch) => inCategory(ch, selectedCat));
       if (list.length) secs.push({ title: label, channels: list });
     }
-    // 更多台：勾选源按序分节；下拉框选了具体源时只保留该源节
-    extraSourceIds.forEach((id) => {
-      if (selectedSource && selectedSource !== id) return;
-      const list = (sourceChannels[id] ?? []).filter((ch) =>
-        !debouncedKeyword || ch.name.toLowerCase().includes(debouncedKeyword.toLowerCase())
-      );
-      if (list.length) {
-        secs.push({ title: `更多台 · ${sourceNameOf(id)}`, badge: sourceNameOf(id), channels: list });
-      }
-    });
+    // 勾选的「更多台」源频道已并入 mainChannels 参与分类渲染，不再单独追加分节
     return secs;
-  }, [isDesktopRail, selectedCat, mainChannels, extraSourceIds, sourceChannels, selectedSource, debouncedKeyword, sourceNameOf]);
+  }, [isDesktopRail, selectedCat, mainChannels, selectedSource, debouncedKeyword, sourceNameOf]);
 
   /** 分节总频道数（分页配额基准） */
   const sectionsTotal = useMemo(

@@ -3,7 +3,7 @@ import { usePlayerStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { playerToast } from './PlayerToast';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
-import { buildProxyUrl, buildChannelPlayUrl, buildCatchupUrl } from '@/services/iptvService';
+import { buildProxyUrl, buildChannelPlayUrl, buildCatchupUrl, shouldProxy } from '@/services/iptvService';
 import { getCastMode } from '@/services/castService';
 import { usePlayerCore } from './hooks/usePlayerCore';
 import { usePlayerControls } from './hooks/usePlayerControls';
@@ -577,6 +577,8 @@ const handleAdapterError = useCallback((error: Error) => {
       if (capabilities.hasProxyInjection && proxyUrl && !currentUrl.includes('/m3u8-proxy') && !currentUrl.includes('/ts-proxy')) {
         if (!proxyRetriedRef.current) {
           proxyRetriedRef.current = true;
+          // IP 型数字域名等 shouldProxy=false 的链接不自动拼接代理
+          if (!shouldProxy(currentUrl, proxyUrl, proxyPattern)) return;
           const proxied = buildProxyUrl(currentUrl, proxyUrl);
           playerToast('直连失败，自动切换代理播放…', 3000, 'warning');
           setCurrentUrl(proxied);
@@ -601,7 +603,7 @@ const handleAdapterError = useCallback((error: Error) => {
       setHasError(true);
       usePlayerStore.getState().setErrorMessage(error.message);
       onError?.(error);
-    }, [currentUrl, onError, mode, proxyUrl, buildProxyUrl, setCurrentUrl]);
+    }, [currentUrl, onError, mode, proxyUrl, proxyPattern, buildProxyUrl, setCurrentUrl]);
 
 // 返回前台 flush 挂起错误：usePlayerCore 的可见性恢复链（resume + play）若已救活
 // 流（无媒体错误且处于播放态），误报错误直接丢弃；仍异常则补走完整错误处理链

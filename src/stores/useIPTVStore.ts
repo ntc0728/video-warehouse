@@ -465,16 +465,11 @@ export const useIPTVStore = create<IPTVState>()(
         const cached = await getCachedIPTVChannels(sourceUrls);
         if (!cached) return false;
 
-        // 从 bySource 收集本地频道 id 集合，过滤主干中的本地独有频道
-        // （旧版缓存可能含 iptv-org 失败时回退的本地主干频道，需排除）
-        const localIds = new Set<string>();
-        if (cached.bySource) {
-          for (const list of Object.values(cached.bySource)) {
-            for (const ch of list) localIds.add(ch.id);
-          }
-        }
+        // 过滤主干中的本地频道：本地频道 sourceId 为 `source-${index}`，
+        // iptv-org 主干频道 sourceId 不带 `source-` 前缀。
+        // 旧版缓存可能含 iptv-org 失败时回退的本地主干频道，需排除。
         const channels = cached.channels
-          .filter(ch => !localIds.has(ch.id))
+          .filter(ch => !ch.sourceId?.startsWith('source-'))
           .map(ch => ({
             ...ch,
             isFavorite: favoriteChannelIds.includes(ch.id)

@@ -230,12 +230,15 @@ const IPTV_CHANNEL_HEADERS_ENABLED = false;
  * 构建频道播放地址（统一入口：频道列表点击 / IPTVPlayer 切频道 / 播放页初始化）。
  * 默认行为与「shouldProxy + buildProxyUrl」完全一致；预留开关开启后，
  * 代理路径额外携带频道的 UA/Referer 属性（M3U http-user-agent/http-referrer）。
+ * iptv-org 主干频道（sourceId='iptvorg'）一律直连不拼代理。
  */
 export function buildChannelPlayUrl(
-  channel: Pick<IPTVChannel, 'url' | 'userAgent' | 'referrer'>,
+  channel: Pick<IPTVChannel, 'url' | 'userAgent' | 'referrer' | 'sourceId'>,
   proxyUrl?: string,
   pattern?: string
 ): string {
+  // iptv-org 主干频道（未被本地源替换的）直连不拼代理
+  if (channel.sourceId === 'iptvorg') return channel.url;
   if (!shouldProxy(channel.url, proxyUrl, pattern)) return channel.url;
   let headers: Record<string, string> | undefined;
   if (IPTV_CHANNEL_HEADERS_ENABLED) {
@@ -270,7 +273,7 @@ export function buildChannelPlayUrl(
  *   拼出的 rawUrl 再走 shouldProxy/buildProxyUrl 代理决策（与频道播放链接一致）。
  */
 export function buildCatchupUrl(
-  channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays' | 'userAgent' | 'referrer'>,
+  channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays' | 'userAgent' | 'referrer' | 'sourceId'>,
   startTs: number,
   endTs: number,
   now: number = Date.now(),
@@ -335,7 +338,7 @@ export function buildCatchupUrl(
   if (!rawUrl) return null;
 
   // 回看 URL 同样需要走代理决策（CORS 等问题与直播流一致）
-  return buildChannelPlayUrl({ url: rawUrl, userAgent: channel.userAgent, referrer: channel.referrer }, proxyUrl, pattern);
+  return buildChannelPlayUrl({ url: rawUrl, userAgent: channel.userAgent, referrer: channel.referrer, sourceId: channel.sourceId }, proxyUrl, pattern);
 }
 
 /**
