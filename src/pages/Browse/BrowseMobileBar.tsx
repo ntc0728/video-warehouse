@@ -177,6 +177,18 @@ export default function BrowseMobileBar({
         title="筛选"
         fullscreen
         onReset={resetDraft}
+        /* 「重置/完成」走 footer 插槽：渲染为 .drawer-body 的兄弟节点（不参与滚动）。
+           放在 children 里时会落进滚动容器，sticky 内容不足一屏即失效、滚到底又被顶开。 */
+        footer={
+          <div className="bmb-foot">
+            <button type="button" className="bmb-pf-reset" onClick={resetDraft}>
+              重置
+            </button>
+            <button type="button" className="bmb-pf-apply" onClick={applyDraft}>
+              完成
+            </button>
+          </div>
+        }
       >
         <FilterBar
           {...filterBarProps}
@@ -184,14 +196,6 @@ export default function BrowseMobileBar({
           onChange={setDraft}
           hideFooter={false}
         />
-        <div className="bmb-foot">
-          <button type="button" className="bmb-pf-reset" onClick={resetDraft}>
-            重置
-          </button>
-          <button type="button" className="bmb-pf-apply" onClick={applyDraft}>
-            完成
-          </button>
-        </div>
       </Drawer>
     </div>
   )

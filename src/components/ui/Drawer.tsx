@@ -15,11 +15,18 @@ interface DrawerProps {
   fullscreen?: boolean
   /** 顶栏「重置」按钮（仅 fullscreen 下渲染：顶栏三栏布局——左返回箭头、中标题、右重置） */
   onReset?: () => void
+  /**
+   * 固定在面板底部、**不参与滚动**的操作区。
+   * 必须走这个插槽而不是当 children 传：children 会落进 `.drawer-body`（滚动容器），
+   * 用 sticky 只能「粘」在滚动容器末端——内容不足一屏时 sticky 完全不生效，
+   * 滚到底时又会被 body 的 padding-bottom 顶开（用户反馈「重置/完成没有真正固定」）。
+   */
+  footer?: React.ReactNode
 }
 
 const DRAWER_EXIT_MS = 260; // 与 CSS drawer-slide-out 时长一致
 
-const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscreen, onReset }) => {
+const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscreen, onReset, footer }) => {
   const isClosingRef = useRef(false);
 
   const handleOpenChange = useCallback(
@@ -71,6 +78,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
             )}
           </div>
           <div className="drawer-body">{children}</div>
+          {footer && <div className="drawer-footer">{footer}</div>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

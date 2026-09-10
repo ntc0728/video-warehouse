@@ -142,10 +142,11 @@
   color: var(--color-text-tertiary);
 }
 
-/* 面板底部：紧贴面板底部（sticky bottom:0 + 无上下额外间距，按钮直接贴底） */
+/* 面板底部操作区：由 Drawer 的 footer 插槽承载（.drawer-body 的兄弟节点），
+   因此不需要 sticky —— 它本来就不在滚动容器里，永远贴在面板底部。
+   旧实现写 position: sticky; bottom: 0 且位于滚动容器内部，内容不足一屏时完全不生效、
+   滚到底时又被 .drawer-body 的 padding-bottom 顶开（用户反馈「没有真正固定」）。 */
 .bmb-foot {
-  position: sticky;
-  bottom: 0;
   display: flex;
   gap: var(--space-sm);
   padding: var(--space-md);

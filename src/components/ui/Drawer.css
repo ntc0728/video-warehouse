@@ -1,10 +1,13 @@
 /* Drawer — 右滑全屏面板（移动端筛选使用） */
 
+/* 层级走全局 token（1000/1001）。此前硬编码 60/61 低于「返回顶部」玻璃圆钮的
+   z-index: 90 —— 全屏筛选面板打开时那个圆钮会画在面板之上，正好压住底部「完成」按钮
+   并抢走点击（用户反馈「重置与完成按钮没有真正固定」的可见症状之一）。 */
 .drawer-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 60;
+  z-index: var(--z-modal-overlay);
   animation: drawer-fade 0.2s ease;
 }
 
@@ -20,7 +23,7 @@
   width: min(420px, 88vw);
   max-width: 100vw;
   background: var(--color-surface);
-  z-index: 61;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
@@ -62,8 +65,29 @@
 
 .drawer-body {
   flex: 1;
+  /* min-height:0 必须显式给：flex 项默认 min-height:auto 会被内容撑开，
+     滚动容器就不是「剩余高度」而是内容高度，footer 会被挤出视口外 */
+  min-height: 0;
+  /* 面板内滚动不再把惯性 / 橡皮筋传导给 body（与 BottomSheet 的容器口径一致） */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   overflow-y: auto;
   padding: var(--space-md);
+}
+
+/* 固定在面板底部的操作区（.drawer-body 的兄弟节点，不参与滚动） */
+.drawer-footer {
+  flex: none;
+  /* 移动端底部安全区：避免「完成」压在 Home 指示条区域 */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 面板打开期间隐藏「返回顶部」玻璃圆钮：
+   它是 position:fixed + backdrop-filter: blur(8px)，固定在视口右下、不随面板滚动，
+   于是每帧都要对背后变化的内容重新做模糊采样（移动端 GPU 上最贵的常见项之一），
+   而它此刻完全被不透明面板盖住、用户看不到也点不到。 */
+body:has(.drawer-content) .back-to-top-button {
+  display: none;
 }
 
 @keyframes drawer-slide-in {
@@ -203,7 +227,9 @@
 }
 
 .drawer-content--fullscreen .drawer-body {
-  padding: 0 0 var(--space-2xl);
+  /* 底部不再垫 --space-2xl：「重置/完成」已移到 .drawer-footer（滚动容器之外），
+     原先那 24px 是为了给 sticky 按钮留位，现在只会变成内容底部的死空白 */
+  padding: 0 0 var(--space-md);
 }
 
 /* 全屏面板内 FilterBar：对齐 S3 示例分组卡样式
