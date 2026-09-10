@@ -1,4 +1,43 @@
 .up-universal-player {
+  /* ── 播放器强调色：作用域内覆写 primary 家族（2026-09-10）────────────────────
+     播放器 chrome 恒为深色底（视频 + rgba(0,0,0,.6) 半透明面板），而 --color-primary
+     在**浅色主题**是 #000 → 所有「用 primary 做强调」的规则在这里退化成黑色、压在黑面板上。
+
+     修前实测（浅色主题）不可见清单：
+     · 频道列表一级活跃左竖条  .up-channel-group-active::before   → rgb(0,0,0)
+     · 频道列表二级活跃左边框  .up-channel-item-active            → 3px rgb(0,0,0)
+     · 二级活跃序号           .up-channel-item-active …-num      → color(srgb 0 0 0/.65)
+     · 一级活跃计数药丸        color-mix(in srgb, primary 12%)    → 比未选中的白 6% **更暗**
+     · TV 焦点描边（3 处）与电视端焦点底色 color-mix(primary 15~20%)
+     · 手势指示条填充、进度条/时移滑块 accent-color、时移按钮描边与文字
+     另有一类「primary 作填充 + color:#fff」的消费点在**暗色主题**同样坏（primary = #fff
+     → 白底白字）：错误态主按钮 `.up-error-actions-btn-primary`、音效预设
+     `.up-settings-preset.is-active`、移动端抽屉 chip `.up-fs-drawer .up-ms-chip--on`、
+     投屏核心圆 `.up-cast-core`。
+
+     故把 primary 家族整体切到亮色强调蓝 #3b82f6。选它的依据是仓里已有的三处线索：
+     ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary, #3b82f6) }` 的**兜底就是
+        #3b82f6** —— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
+     ② `.up-gesture-indicator__fill { background: var(--color-primary, #fff) }` 同款写法；
+     ③ `.video-card-status.status--unwatched` 已用 rgba(59,130,246,.85)。
+
+     同时补 --color-primary-rgb：IPTVOSDBar 的时移按钮写作
+     `rgba(var(--color-primary-rgb, 22, 119, 255), .15/.25)`，而该 token **全仓从未定义** →
+     一直在走 #1677ff 兜底；补齐后与 primary 同源（视觉几乎无变化，但不再是「碰巧像」）。
+
+     ⚠️ 刻意**不按主题分叉**（不写 html:not([data-theme="dark"])）：播放器底恒深色，
+     强调色也应恒定；分叉会让暗色主题下「填充 + #fff 文字」那四类继续白底白字。
+     由此产生的唯一行为变化：暗色主题下播放器的强调色由白转蓝（见同日 changelog）。
+     ⚠️ 作用域选 .up-universal-player 而非 body:has(…) —— 后者的变量会漏到 AppLayout
+     外壳（/play/:id 的播放器是覆盖在应用之上的一层），页面里其它 body 级元素也会被染蓝。
+     已核对：播放器内所有 live 的 primary 消费点都在本子树内（两个 portaled 菜单
+     MoreMenu/ContextMenu 不消费 primary；.up-popover-item-check 全仓无 tsx 引用，是死规则）。 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-rgb: 59, 130, 246;
+  --color-primary-light: rgba(59, 130, 246, 0.16);
+  --color-primary-bg: rgba(59, 130, 246, 0.22);
+  --color-primary-shadow: rgba(59, 130, 246, 0.35);
   position: relative;
   width: 100%;
   height: 100%;

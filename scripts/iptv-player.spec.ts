@@ -140,6 +140,30 @@ function readChannelList(page: Page) {
   });
 }
 
+/** 读播放器强调色与频道列表活跃态的实际渲染色（两主题都跑） */
+function readPrimary(page: Page) {
+  return page.evaluate(() => {
+    const q = (s: string) => document.querySelector(s) as HTMLElement | null;
+    const root = q('.up-universal-player');
+    const bar = q('.up-channel-group-active');
+    const item = q('.up-channel-item-active');
+    if (!root || !bar || !item) return null;
+    const barBg = getComputedStyle(bar, '::before').backgroundColor;
+    const m = barBg.match(/rgba?\(([^)]+)\)/);
+    const parts = m ? m[1].split(',').map((x) => parseFloat(x)) : [];
+    return {
+      theme: document.documentElement.getAttribute('data-theme') ?? 'light',
+      primary: getComputedStyle(root).getPropertyValue('--color-primary').trim(),
+      primaryRgb: getComputedStyle(root).getPropertyValue('--color-primary-rgb').trim(),
+      // 一级活跃左竖条：alpha 应接近 1（透明=不可见），且不能是黑/白（与深色面板同色）
+      barAlpha: parts.length >= 4 ? parts[3] : 1,
+      barMax: parts.length >= 3 ? Math.max(parts[0], parts[1], parts[2]) : 0,
+      barMin: parts.length >= 3 ? Math.min(parts[0], parts[1], parts[2]) : 0,
+      itemBorder: getComputedStyle(item).borderLeftColor,
+    };
+  });
+}
+
 test.describe('11.4 播放页 chrome 尺寸契约', () => {
   test('IPTVP-020: OSD 宽度走 78vw 单曲线，且左右留白不低于 --space-lg', async ({ page }) => {
     // 1024 / 1280 / 1440 三档都落在 78vw 段（上限 1400 要到 ≈1795px 才触顶）
@@ -234,5 +258,48 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     expect(m!.groupW).toBeLessThan(118);
     expect(m!.channelW).toBeGreaterThan(m!.groupW);
     expect(m!.qualityShown).toBe(false);
+  });
+
+  test('IPTVP-024: 播放器强调色不随主题退化为黑/白（频道列表活跃态可见）', async ({ page }) => {
+    // 播放器 chrome 恒深色底，而 --color-primary 在浅色主题是 #000、暗色主题是 #fff ——
+    // 两种情况都会让「用 primary 做强调」的规则与面板同色。实测修前：一级活跃左竖条
+    // rgb(0,0,0)、二级活跃左边框 3px rgb(0,0,0)、计数药丸比未选中态更暗。
+    // 断言刻意不锁死具体色值（只排除黑/白 + 要求近不透明），改配色时不会误红。
+    for (const theme of ['light', 'dark'] as const) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.app-shell', { timeout: 20000 });
+      // 先落 localStorage 让应用自己带上主题，再注入频道
+      await page.evaluate((t) => {
+        const raw = localStorage.getItem('app-settings');
+        if (!raw) return;
+        const o = JSON.parse(raw);
+        o.state = { ...o.state, theme: t };
+        localStorage.setItem('app-settings', JSON.stringify(o));
+      }, theme);
+      await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-5 体育赛事高清', 'CCTV-6 电影', 'CCTV-13 新闻']);
+      await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88', {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+      // 兜底：应用若未按 storage 应用主题，直接改 html 属性（CSS 立即重算）
+      await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+      await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
+
+      await expect.poll(async () => (await readPrimary(page))?.primary ?? '', { timeout: 10000 }).not.toBe('');
+      const p = await readPrimary(page);
+      expect(p).not.toBeNull();
+      expect(p!.theme).toBe(theme);
+      // 强调色不能与深色面板同色（黑）或与白字同色（白）
+      expect(p!.primary).not.toBe('#000');
+      expect(p!.primary).not.toBe('#fff');
+      // 时移/换源那类 rgba(var(--color-primary-rgb), …) 消费点依赖这个 token，不能为空
+      expect(p!.primaryRgb).not.toBe('');
+      // 一级活跃左竖条：必须画出来（近不透明）且不是黑/白
+      expect(p!.barAlpha).toBeGreaterThan(0.9);
+      expect(p!.barMax).toBeGreaterThan(80);
+      expect(p!.barMin).toBeLessThan(200);
+      expect(p!.itemBorder).not.toBe('rgb(0, 0, 0)');
+    }
   });
 });
