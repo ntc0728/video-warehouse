@@ -86,32 +86,33 @@ export function ToastProvider({
   }));
   /** 播放器是否还有足够可见区域承载居中提示（滚走后为 false，提示不再渲染） */
   const [centerVisible, setCenterVisible] = useState(true);
+  /** 当前提示是否为「视口兜底锚定」（触发时播放器就已在视口外）——这类提示不随滚动隐藏 */
+  const viewportAnchoredRef = useRef(false);
 
   /**
-   * 测量居中提示的目标位置：
-   * - 水平：播放器容器水平居中
-   * - 垂直：播放器高度约 30% 处（居中靠上，不遮挡视频主体）
-   * - 避让 up-player-header（header 可见时）：提示完整落在 header 下方。
+   * 测量居中提示的目标锚点：
+   * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
+   * - 播放器可见时：锚到「播放器 ∩ 视口」的可见交集内 —— 水平居中于播放器，
+   *   垂直在播放器高度 30% 处（居中靠上，不遮挡视频主体），并避让 up-player-header。
    *   ⚠️ 提示以 top 为中心（translate(-50%,-50%)），余量必须 ≥ 提示半高（~18px）
    *   才不会与 header 重叠（历史 bug：余量 12px 时提示上半截伸进 header 区域）。
+   * - 播放器完全滚出视口时：退回视口定位（居中靠上），由调用方决定是否显示。
    */
-  const measureCenterPos = useCallback(() => {
+  const resolveCenterAnchor = useCallback((): { x: number; y: number; roomy: boolean } => {
     const el = containerRef?.current;
-    if (!el) {
-      setCenterVisible(true);
-      setCenterPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-      return;
-    }
+    const viewportFallback = {
+      x: window.innerWidth / 2,
+      y: Math.min(Math.max(window.innerHeight * 0.3, EDGE_MARGIN), window.innerHeight - EDGE_MARGIN),
+      roomy: false,
+    };
+    if (!el) return viewportFallback;
     const rect = el.getBoundingClientRect();
     // 提示必须落在「播放器 ∩ 视口」的可见交集内。只按视口夹取会让播放器滚走之后提示
     // 仍停在视口顶部（用户反馈：移动端下滑后提示像跟着浏览器顶部定位，且 fixed 层级
-    // 反而浮在播放器上方）。可见高度不足时直接不显示，而不是硬塞回视口。
+    // 反而浮在播放器上方）。
     const visibleTop = Math.max(rect.top, 0);
     const visibleBottom = Math.min(rect.bottom, window.innerHeight);
-    if (visibleBottom - visibleTop < MIN_TOAST_ROOM) {
-      setCenterVisible(false);
-      return;
-    }
+    if (visibleBottom - visibleTop < MIN_TOAST_ROOM) return viewportFallback;
     // 居中靠上：播放器高度 30% 处
     let y = rect.top + rect.height * 0.3;
     // 避让 up-player-header（返回栏 + 右上角操作组）：仅 header 可见时；
@@ -129,17 +130,31 @@ export function ToastProvider({
     const minY = visibleTop + EDGE_MARGIN;
     const maxY = visibleBottom - EDGE_MARGIN;
     y = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;
-    setCenterVisible(true);
-    setCenterPos({
-      x: rect.left + rect.width / 2,
-      y,
-    });
+    return { x: rect.left + rect.width / 2, y, roomy: true };
   }, [containerRef]);
+
+  /** 滚动 / 尺寸变化时重测：播放器一旦滚出视口，跟随播放器的提示就不再显示 */
+  const measureCenterPos = useCallback(() => {
+    const anchor = resolveCenterAnchor();
+    if (!anchor.roomy && !viewportAnchoredRef.current) {
+      setCenterVisible(false);
+      return;
+    }
+    setCenterVisible(true);
+    setCenterPos({ x: anchor.x, y: anchor.y });
+  }, [resolveCenterAnchor]);
 
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
     // 显示前重新测量：header 可见性/尺寸可能刚变化（如触摸后控制栏弹出），
     // 确保提示位置避让最新的 up-player-header
-    measureCenterPos();
+    const anchor = resolveCenterAnchor();
+    // 触发时播放器已在视口外（典型：设置弹窗 / 抽屉把页面滚下去了）——这是本次操作的
+    // 直接反馈，不能因为播放器不在视野里就吞掉，退回视口定位显示。
+    // 这种「视口兜底锚定」的提示此后不随滚动自动隐藏；而播放器可见时锚定的提示，
+    // 一旦被滚走就隐藏（用户反馈：下滑后提示不该悬在已滑过去的播放器上方）。
+    viewportAnchoredRef.current = !anchor.roomy;
+    setCenterVisible(true);
+    setCenterPos({ x: anchor.x, y: anchor.y });
     if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
     // 去重：与当前提示内容相同时只重置定时器，不触发 setCenterItem 重渲染，
     // 避免 ToastTrigger（store 订阅）与 mobileSettingsToast 连续调用相同内容导致动画重播/闪烁
@@ -156,9 +171,11 @@ export function ToastProvider({
         setCenterIsExiting(false);
         centerItemRef.current = null;
         centerTimerRef.current = null;
+        // 提示结束后复位锚定模式，避免影响下一条提示的滚动隐藏判定
+        viewportAnchoredRef.current = false;
       }, 180);
     }, duration);
-  }, [measureCenterPos]);
+  }, [resolveCenterAnchor]);
 
   const show = useCallback((msg: string, duration = 3000, type: PlayerToastType = 'default') => {
     if (mobileCenter) {
