@@ -599,7 +599,7 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
               <i style={{ width: `${((bucket.heat / maxHeat) * 100).toFixed(1)}%` }} />
             </div>
             <div className="cqa-catcard__list">
-              {bucket.top3.map((item, j) => (
+              {bucket.top5.map((item, j) => (
                 <div
                   key={item.id}
                   className="cqa-catcard__row"
@@ -656,14 +656,18 @@ export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' 
           label="分类热度口径说明"
           text="分类热度 = 该分类下今日 TMDB 趋势条目的 popularity 之和（多分类命中重复计入），基于每日趋势数据聚合，定期更新。"
         />
-        <button
-          className="cqa-heat-row__more"
-          onClick={() => navigate('/chart')}
-          aria-label="查看完整热度榜"
-        >
-          {isRail ? '完整榜单' : '查看完整榜单'}
-          <Icon icon={ChevronRight} size="xs" />
-        </button>
+        {/* 「查看完整榜单」入口：仅通栏横排（row）形态显示。
+            rail（首页左栏）形态下用户要求删除 —— 窄栏放不下，且 ⓘ 两侧入口过密。 */}
+        {!isRail && (
+          <button
+            className="cqa-heat-row__more"
+            onClick={() => navigate('/chart')}
+            aria-label="查看完整热度榜"
+          >
+            查看完整榜单
+            <Icon icon={ChevronRight} size="xs" />
+          </button>
+        )}
       </div>
       <CategoryHeatCards buckets={heatBuckets} />
     </section>

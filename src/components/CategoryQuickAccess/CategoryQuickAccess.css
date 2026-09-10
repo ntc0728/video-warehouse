@@ -157,7 +157,7 @@
    去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
    「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。
    2026-09-07 曾 1280 → 1440，同日二次修正回退 1440 → 1280（CSS 与 JS 同步）。 */
-@media (width > 1280px) {
+@media (width >= 1280px) {
   html:not([data-device="tv"]) .category-quick-access__card {
     padding: 0;
   }
@@ -219,7 +219,7 @@
    token 全部取自 variables.css v2.2 密度契约；无降级媒体查询——
    本块内 catgrid/hotgrid 恒 3 列（v2.3 教训：降级规则会破坏 3×3 形态）。
    ══════════════════════════════════════════════════════════════════════ */
-@media (width > 1280px) {
+@media (width >= 1280px) {
 
   /* ── 横版封面尺寸（overlay 面板 hotcard + 首页分类热度榜 catcard 共用）──
      2026-09-07 用户要求调大：120×68 → 150×85（等比 1.25×，16:9 比例不变）。
@@ -326,10 +326,10 @@
   }
   /* ── 左栏变体（2026-09-10 方案 C：首页大屏两栏的左侧栏）──
      3 卡由横排（repeat(3,1fr)）改为竖排单列，卡片自带 surface+border+radius，
-     左栏不再外包一层容器；条目缩略图由 150×85 收到 56×32 适配窄栏。 */
+     左栏不再外包一层容器；封面由横版 150×85 改为竖版海报 32×48（2:3，用户要求）。 */
   html:not([data-device="tv"]) .cqa-heat-row--rail {
-    --cqa-poster-w: 56px;
-    --cqa-poster-h: 32px;
+    --cqa-poster-w: 32px;
+    --cqa-poster-h: 48px;
     margin-top: 0;
     margin-bottom: 0;
     display: flex;
@@ -339,11 +339,36 @@
   html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-catgrid {
     grid-template-columns: minmax(0, 1fr);
   }
-  /* 头部在窄栏内换行：标题 + ⓘ 一行，更多链接可落到第二行；副标题隐藏（放不下） */
+  /* 头部恒单行（用户 2026-09-10：ⓘ 提示图标不得被挤到第二行）：
+     重排为「🔥 标题 ⓘ 副标题」—— ⓘ 紧跟标题保证位置稳定不换行，
+     副标题 flex:1 + ellipsis 吸收剩余宽度（超长截断而非换行）。 */
   html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__head {
-    flex-wrap: wrap;
-    row-gap: var(--space-2xs);
+    flex-wrap: nowrap;
     margin-bottom: 0;
+  }
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-info-tip {
+    order: 1;
+    flex: 0 0 auto;
+  }
+  /* ⚠️ 标题必须 flex:0 0 auto + nowrap：否则会被 flex 收缩（5 字需 ~66px，
+     空间不足时被压到 59px → 文字折成两行、head 高度翻倍到 40px，
+     连带 ⓘ 视觉上像被"挤到第二行"）。真正让出空间的是副标题。 */
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__title {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__head > svg {
+    flex: 0 0 auto;
+  }
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__sub {
+    order: 2;
+    /* flex-basis 必须为 0：写成 auto 时只有真正溢出才收缩，
+       title 会先被压扁换行（上面那条坑）。basis:0 让副标题优先让位。 */
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   html:not([data-device="tv"]) .cqa-heat-row__head {
     display: flex;

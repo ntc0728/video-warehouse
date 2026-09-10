@@ -10,7 +10,7 @@
   margin-bottom: var(--space-sm);
 }
 
-@media (width > 1280px) {
+@media (width >= 1280px) {
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
     /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
