@@ -64,6 +64,20 @@ video.error = { code: 4, message: "PipelineStatus::DEMUXER_ERROR_COULD_NOT_PARSE
 | 直播兜底 | 直播类 `hasProxyInjection = true`（playerCapabilities），A3 逻辑「直连失败自动切代理」仍生效；点播无该兜底，依赖 CMS 多源故障转移 |
 | 点播直链 | 点播源多为 CMS 采集站，普遍带 `Access-Control-Allow-Origin`（本次验证源为 `*`） |
 
+### 后续修复：切换源竞态（同日补）
+
+上面把 Chrome 从「同步走原生」改成「先 `await import('hls.js')` 再决定路径」之后，
+出现了一个新的窗口期：动态 import 返回前 `this.hls` 仍为 `null`，此时若调用
+`switchSource()`，原实现会落到末尾的 `this.video.src = url` —— **正是本次要修的那条原生失败路径**。
+IPTV 切频道（`useIPTVNavigation`）与点播换线路都会走这个方法。
+
+修复：新增 `usingNativeHls` 记录本次实际选中的路径；`switchSource` 在路径未落定时
+等 `initPromise` 后按实际选中的路径换源，不再落回原生分支。
+
+回归防护：`HLSAdapter.test.ts` 新增「initHls 未落定期间切源不得落回原生分支」与
+「初始化落定后切源由 hls.js 接管」两例。已验证前者在修复前会失败
+（`AssertionError: expected 'http://example.com/b.m3u8' to be ''`），修复后通过 —— 用例确实能捕获该缺陷。
+
 ### 验证
 
 - 修复前复现（同一链接、完整播放链路）：`media` 类型请求失败 + 「源不可用」；
@@ -74,3 +88,9 @@ video.error = { code: 4, message: "PipelineStatus::DEMUXER_ERROR_COULD_NOT_PARSE
 - E2E：`iptv-player` + `player-failover` + `player` 13/13 通过；`iptv` + `regression` 35 通过。
   `regression` 有 2 项失败（首页 Hero banner `.hero-banner__bg-layer.is-active[src]` 超时），
   已 `git stash` 比对确认**基线同样失败**，与本次改动无关。
+- 补修后复验：`npm run build` 通过；`vitest run` 32 文件 / 383 用例全过；
+  `iptv-player` + `player` + `player-failover` 14/14 通过；真实 Chrome 152 下目标链接仍为
+  `readyState=4`、`duration=4948.38`、请求类型 `xhr`、无错误覆盖层。
+- 与并行会话 `5c9d132`（fix(iptv) 13 项，同样改了 HLSAdapter 的 `initPromise` 守卫）合并后复验通过，两者不冲突。
+- 真实 CMS 链路另观察到一个**源站侧**现象：播放的 `.../20250119/678c…/205a5a/index.m3u8` 返回 404（资源已失效），
+  与加载路径无关，属采集源自身问题。

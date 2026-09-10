@@ -104,3 +104,31 @@ describe('HLSAdapter D1 裸流识别', () => {
     adapter.destroy();
   });
 });
+
+describe('HLSAdapter 切源与初始化竞态', () => {
+  it('initHls 未落定（动态 import 期间）切源不得落回原生分支', async () => {
+    hls.instance.loadSource.mockClear();
+    const adapter = new HLSAdapter('http://example.com/a.m3u8', { onError: vi.fn() });
+    const video = document.createElement('video');
+    adapter.attach(video);
+
+    // 此刻动态 import 尚未 resolve，this.hls 仍为 null
+    adapter.switchSource('http://example.com/b.m3u8');
+    // 关键断言：不能走原生分支给 video.src 赋值——桌面 Chrome / Android WebView 上
+    // 原生分支正是 net::ERR_CONTENT_DECODING_FAILED 的失败路径
+    expect(video.src).toBe('');
+
+    // 等动态 import 与事件注册完成，新源应已交给 hls.js
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(hls.instance.loadSource).toHaveBeenCalledWith('http://example.com/b.m3u8');
+    adapter.destroy();
+  });
+
+  it('初始化落定后切源由 hls.js 接管', async () => {
+    const adapter = await mountAdapter(vi.fn());
+    hls.instance.loadSource.mockClear();
+    adapter.switchSource('http://example.com/c.m3u8');
+    expect(hls.instance.loadSource).toHaveBeenCalledWith('http://example.com/c.m3u8');
+    adapter.destroy();
+  });
+});
