@@ -179,6 +179,9 @@ test.describe('跨页联动回归', () => {
     }
 
     // X-003: 首页分类 → 浏览页
+    // 2026-09-10：宽屏起点改为 1024（含端点），≥1024 首页分类入口是顶栏 chips（打开 mega 面板），
+    // 圆卡 .category-quick-access__card 的回退区间为 768–1023，故本段改用 900 视口。
+    await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     const chips = page.locator('.category-quick-access__card');
@@ -387,6 +390,10 @@ test.describe('跨页联动回归', () => {
     }
 
     // X-121: 首页切走再切回 banner 不闪烁（方案 B 重挂载归单层）
+    // 2026-09-10：宽屏起点改为 1024（含端点）后，1280 视口会渲染 HeroBili
+    // （.hero-bili__banner-img），不再有 .hero-banner__bg-layer 图层；
+    // 故改用 900 视口验证经典 HeroBanner 分支的分层行为。
+    await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 15000 });
     // 等当前活动 banner 图层真正带 src（图片就绪），替代固定 6000ms 睡眠
