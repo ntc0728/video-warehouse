@@ -768,9 +768,6 @@ export default function DetailPage() {
           </strong>
         </div>
       )}
-
-      {/* 简介（仅 ≥1024 两栏时随基础信息进右栏；窄屏由 info tab 内渲染同一变量） */}
-      {isWideDetail && overviewNode}
     </>
   );
 
@@ -972,8 +969,8 @@ export default function DetailPage() {
               </>
             )}
 
-            {/* 简介：≥1024 时已随 infoCoreNode 一起渲染在 hero 右侧，此处不重复 */}
-            {!isWideDetail && overviewNode}
+            {/* 简介：保持原位（演员之后、剧照之前）——2026-09-10 用户要求从右栏移回 */}
+            {overviewNode}
 
             {(stills.length > 0 || stillsLoading) && (
               <>
