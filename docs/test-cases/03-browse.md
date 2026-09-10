@@ -82,6 +82,8 @@
 | BROWSE-075 | 移动端双卡片相连（镜像桌面端） | 窄视口（390×844）进入 /browse | 读取 `.bmb` 与 `.browse-card--results` 计算样式 | 两张卡各自圆角≠0、阴影≠none、边框宽度≠0（命令栏 .bmb 当 Card1 上半部、结果区当 Card2 下半部，gap:0 相连成一张大卡，与桌面端 `.browse-card--search`+`.browse-card--results` 一致）；另断言根容器 `.browse-page--mobile` 的 `overflow≠hidden`、结果区 `overflow-y≠auto`（整页由 `.app-shell__scroll` 滚动，不裁切、不自创内部滚动陷阱） |
 | BROWSE-076 | 移动端全局 AppLoading 带卡片式布局 | 窄视口（390×844）进入 /detail/:id（TMDB 详情接口延迟） | 读取 `.app-loading--inline` 计算样式 | 圆角≠0、边框宽度≠0、背景≠透明（全视口带卡，与桌面端 ≥1024px 卡片模块一致，移动端不再裸奔） |
 | BROWSE-077 | 移动端结果区 AppLoading 被去壳（不双卡） | 窄视口（390×844）顶栏搜索触发 loading（TMDB 搜索接口延迟） | 读取 `.browse-results-body .app-loading--inline` 计算样式 | 边框宽度=0（AppLoading 自身卡片被剥去，落在 `.browse-card--results` 结果卡内，避免卡片套卡片，与桌面端一致） |
+| BROWSE-081 | 底部操作区真固定（不随面板滚动） | 窄视口（390×844）进入 /browse 并滚过 280px（让返回顶部圆钮可见），打开筛选面板 | 断言 `.drawer-body .bmb-foot` 数为 0 / `.drawer-footer .bmb-foot` 为 1；记录 `.bmb-foot` 位置 → 把 `.drawer-body` 滚到底 → 再记录 | 底部操作区是滚动容器的**兄弟节点**；滚动前后 y 坐标完全不变，且底边与 `.drawer-content` 底边差 ≤2px（旧实现 sticky 内容不足一屏即失效、滚到底被 padding 顶开） |
+| BROWSE-082 | 面板层级高于返回顶部圆钮 | 同上（圆钮已可见） | 读取 `.drawer-content` 的 z-index 与 `.back-to-top-button` 的 display | 面板 z-index ≥1000（走 `--z-modal` token）；面板打开期间圆钮 `display: none`（它是 `fixed` + `backdrop-filter` 玻璃钮，坐标正压「完成」并抢点击） |
 
 ---
 

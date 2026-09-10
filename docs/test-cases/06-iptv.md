@@ -71,6 +71,7 @@
 | IPTV-050 | 频道卡片显示 | 有频道数据 | 查看频道网格 | 显示频道名称、logo、分组、EPG 节目信息 |
 | IPTV-051 | 点击频道播放 | 有频道数据 | 点击某频道卡片 | 跳转到 IPTV 播放页 |
 | IPTV-052 | 频道收藏 | 有频道数据 | 点击收藏图标 | 频道添加到收藏列表 |
+| IPTV-090 | 收藏按钮不依赖台标加载结果 | 有频道数据；拦截 `i.imgur.com` 台标全部 404 | 进入 /iptv，统计 `.iptv-channel-card-wrap` 与 `.iptv-card-favorite` 数量 | 两者数量相等（台标失败时 `onLoad` 不触发，旧实现 `showFavorite = imageLoaded || !channel.logo` 会让整颗红心不渲染） |
 
 ### 5.7 懒加载与滚动
 

@@ -54,6 +54,24 @@
   - 清理 effect（switchReady 后 1.2s，不依赖动画事件，reduced-motion 同样清理）移除滞留层。
   - **⚠️ 过渡期判断 = `itemsChanged || !switchReady`**：渲染期派生只覆盖切换那一帧，后续过渡帧由 state 维持；**绝不可**用「effect setState 标记过渡」——img 挂载时闭包陈旧 + load 事件早发会永久卡在透明层（首版实现实测踩坑）。
   - **⚠️ 轮播回归教训（2026-08-13）**：主 `useLayoutEffect` 依赖**只允许 `[displayItems]`**——曾误加 `displayIndex`，导致轮播/悬停/拖拽（displayIndex 变化）每次都触发 `setActiveIndex(0)/setBgIndices([0])/setSlideDir(null)`，自动轮播被永久重置回第一张。`prevItemsRef/prevDisplayIdxRef` 的同步移入**独立无副作用** `useLayoutEffect([displayItems, displayIndex])`（只写 refs，声明在主页 effect 之后保证先读旧值）。
+- **主图加载失败走公共品牌兜底（2026-09-10）**：Hero 主图这条链**全程手写 `<img>` + `new Image()` 预加载**，
+  绕过了 `LazyImage`（原因是它自带 crossfade/track/滞留层状态机）。因此失败兜底必须自己接：
+  `failedBackdrops: Set<string>` 登记失败的 backdrop URL（crossfade 层 / track 层 / 分类切换滞留层
+  的 `onError` 都登记），当前显示项命中时渲染与 `LazyImage` 同构的节点
+  `<div className="lazy-image-fallback lazy-image-fallback--brand">MonitorPlay + kinoTV</div>`
+  外加 `.hero-banner__fallback` / `.hero-bili__banner-fallback` 负责 `position:absolute; inset:0; z-index:1`。
+  ⚠️ 只写 `onError` 驱动内部状态机（`bannerReady` / `scheduleStaleClear`）**不算兜底**——
+  失败时用户只会看到 `#0b0b0e` 深色底。护栏：`scripts/home.spec.ts` **HOME-089**（HeroBili + Classic 两条路径）。
+  另注：缩略图 `HeroThumb` 的 `switching`（`opacity: 0` 淡入起始态）原先只能由 `onLoad` 清除，
+  图失败时会永久不可见 → 必须补 `onError` 清 `switching` 并回退 `ready=false` 保留骨架。
+- **移动端滑动性能（2026-09-10）**：三条已落地的约束，别改回去 ——
+  ① `handleDragMove` **必须 rAF 合并**（只保留本帧最后一次坐标，每帧最多一次 `setState`）。
+  移动端 `touchmove` 一帧可触发多次，每次 `setDragOffset` 都会重跑整个组件（文字 track ×3、缩略图窗口、内联 style 重建）；
+  `handleDragEnd` 里要 `cancelAnimationFrame` 丢弃未执行的帧，否则松手后又补一次、回弹起点会抖。
+  ② 主图候选尺寸表**移动端封顶 `w780`**（`MOBILE_BACKDROP_SIZES = ['w500','w780']`，`backdropSizes()` 统一出口）。
+  原本 `src` 恒 w1280 + `sizes="100vw"`，DPR ≥ 2.75 的手机必选 w1280，而预加载 `bgPreloadSize()` 在 `<1024` 用 w780
+  → 同一张图下载两次、解码两次。移动端封顶后两边口径一致、只下载一次。
+  ③ `<768px` 标题阴影收成 `0 1px 6px`：`0 0 60px` 大半径模糊落在正在做 transform 的文字轨道内，每帧都要重新模糊整个文本层。
 - **无障碍**：`prefers-reduced-motion: reduce` 时禁用所有动画
 
 ### Toast 系统
@@ -64,24 +82,69 @@
 - `toast.replace(opts)` — 清空队列立即显示新 toast（快速连续提示场景，如版本号连续点击）
 - ToastProvider 只渲染 `items[0]`（队列首项），`ToastContainer` 因 `item.id` 变化触发 useEffect 重跑
 
+**播放器内提示（`UniversalPlayer/PlayerToast.tsx`，另一套系统，勿与上面混）**：
 
-### IPTV 频道台标回退链（三级）
+- 三个入口：`show`（桌面右上角 / 移动端转居中）、`mobileSettingsToast` + `playerToastCenter`（恒居中）。
+- **移动端居中提示的锚定规则（2026-09-10 定稿，两条必须区分）**：
+  | 情形 | 行为 |
+  | --- | --- |
+  | 提示**触发时**播放器可见（`roomy`） | 锚到「播放器 ∩ 视口」的**可见交集**内（跟随播放器）；此后被滚走 → **隐藏** |
+  | 提示**触发时**播放器已在视口外 | 退回视口定位显示，并记 `viewportAnchoredRef` → 此后**不随滚动隐藏** |
+  为什么必须分两条：只按视口夹取会让播放器滚走后提示钉在视口顶部浮在播放器上方（用户反馈）；
+  但一律「不可见就不渲染」又会吞掉设置弹窗自身的反馈——二级字幕设置弹窗打开时播放器已被滚到
+  `top: -653`，`mobileSettingsToast` 是当次操作的直接反馈，不能吞。护栏：`scripts/player.spec.ts` **PLAYER-M01/M02**。
+- **播放 / 暂停不再弹提示**（`ToastTrigger`）：这两个操作最高频，每次弹一次属噪声，用户 2026-09-10 明确要求去掉。
+  相关的 `userPlayRequested` / `userPauseRequested` 标记与 `autoPlayToastShownRef` 闸门一并删除，勿再引入。
+- 提示的 portal 目标见 `lib/overlayPortal.ts`：非全屏 → `document.body`，全屏 → 播放器容器。
 
-频道卡片/播放器台标按**三级回退链**生成候选 URL 列表，按序尝试，全部失败才走字母占位（`LazyImage` letter / `ChannelLogoCell` / `LogoFallback`）：
 
-1. **一级**：M3U 自带 `tvg-logo`（`channel.logo`，候选链首项）
-2. **二级**：EPG XMLTV `<icon>` —— `parseXMLTV` 提取 `<channel>` 子节点 `<icon src>`（`EPGChannelInfo.icon`），经 `matchEPGChannel` 匹配后入链
-3. **三级**：在线台标库按规范化名拼 URL —— `https://live.fanmingming.cn/tv/{name}.png`、`https://raw.githubusercontent.com/wanglindl/TVlogo/main/img/{name}.png`
+### IPTV 频道台标（单一来源 + 失败记忆）
+
+> ⚠️ **2026-09-10 更正**：本节原描述的是「三级回退链」（M3U tvg-logo → EPG `<icon>` → 在线台标库），
+> 该链路**已于 2026-09-08 定稿下线**。当前实现与下文一致，勿再按三级链理解代码。
+> 旧链路的两条测试（IPTV-080/081）保留为条件式用例，环境不触发时走「跳过」分支。
+
+台标**只来自 iptv-org 的 logos.json**（经 `iptvOrgService.fetchIptvOrgChinaChannels` 按频道 id 精确匹配后
+写入 `channel.logo`）；本地 IPTV 源的 `tvg-logo`、EPG XMLTV `<icon>`、在线台标库猜测**均已退出台标逻辑**。
 
 核心实现 `src/services/channelLogo.ts`：
 
-- `toLogoName(name)`：去括号注释（`[蓝光]`）→ 去清晰度标记（高清/HD/超清/标清/极致/极速/流畅/蓝光，**保留 4K/8K**）→ 循环去尾部频道定位词（综合/新闻/文艺/体育/影视/财经/纪录/科教/戏曲/少儿/音乐/国防军事/农业农村/社会与法/频道）→ 去分隔符（空格/连字符/下划线/点号/间隔号），**保留 `+` 号**（`CCTV5+` 不变）；与 EPG 匹配用的 `normalizeName` 不同——不能去掉「卫视」等品牌词
-- `resolveChannelLogoCandidates(channel, epgChannels?, proxyUrl?, epgIndex?)`：返回去重候选列表；第 4 参 `epgIndex`（EPG 预索引）存在时 EPG 匹配 O(1) 查表，否则回退全量遍历；**http 台标在 https 部署下会被混合内容拦截**，经主代理 `/file-proxy?url=` 转 https，无代理则丢弃
-- session 级 `failedLogoUrls` 失败记忆：已 404/挂起的 URL 不再进入候选链，避免无台标频道（数百张卡片）对在线库重复 404 请求
+- `toSafeLogoUrl(url)`：**只放行 `http:` / `https:`**，协议相对 URL、`data:` 等一律丢弃；丢弃后候选链为空，
+  `LazyImage` 直接进兜底态。
+- `resolveChannelLogoCandidates(channel, _proxyUrl?)`：单候选（第 2 参已废弃，保留仅为兼容历史调用点）；
+  命中 `failedLogoUrls` 时返回 `[]`。调用点：`IPTVChannelCard` / `UniversalPlayer`（OSD）/
+  `IPTVChannelList`（侧栏）/ `History` 页卡片。
+- **台标不走代理**（设计定稿）：`http` 台标原样直连，失败自然走兜底。因此 **https 部署下 http 台标会被
+  混合内容拦截**、**无法直连托管域时整页卡片都没有台标**——见下条。
 
-接入点：`LazyImage` 新增可选 `srcCandidates` prop（`src` 失败后依次尝试，链尽才 error 态，不传时行为与原来完全一致）；`IPTVChannelCard` 用 `resolveChannelLogoCandidates` 结果渲染；IPTV 页复用现有 `fetchAndParseEPG()`（IndexedDB TTL 缓存 + in-flight 合并，**不增加 EPG 请求量**）取 `data.channels` 传给卡片；播放器 `UniversalPlayer` 经 `useEPGData` 的 `epgChannels` 组装候选传入 OSD，侧栏 `ChannelLogoCell` 手动循环候选。新增台标相关测试：`scripts/iptv.spec.ts`（IPTV-080/081 条件式用例，mock 在线库与 EPG 请求）。
+#### 两个必须知道的坑（2026-09-10 实测）
 
-**EPG 预索引（性能关键）**：`matchEPGChannel` 原实现每频道全量遍历数千 EPG 频道（数百卡片 × 数千频道 = 百万次 `normalizeName`），EPG 就绪瞬间主线程卡顿。`epgService.ts` 新增 `buildEPGChannelIndex(channels)` 一次性构建（`EPGChannelIndex`：tvg-id / 规范化名 / 原始名三张 Map），`matchEPGChannelIndexed` 精确匹配 O(1)、模糊包含兜底线性（触发率低）；`matchEPGChannel` 内部改走索引（向后兼容），`matchAllChannels` 批量匹配也复用索引。**页面层必须一次性构建索引传给卡片**：IPTV 页 `useMemo` 构建（依赖 `epgChannels`）；收藏/历史页经 `getCachedEPGData()`（**零网络**，仅读 IndexedDB 缓存，无缓存直接跳过）读 `data.channels` 构建后传 `epgIndex` prop——收藏/历史页的 IPTV 卡台标因此受益于 EPG icon 二级回退。
+1. **台标图片实际托管在 `i.imgur.com`**（iptv-org logos.json 里就是 imgur 链接）。国内网络通常不可达
+   （实测 `net::ERR_CONNECTION_RESET`）。叠加「台标不走代理」→ **整个 IPTV 页的卡片全部落到 Tv 兜底**。
+   排查顺序应是「请求有没有发出 → 发出后成不成功 → 成功了是不是被 CSS 裁掉」，**不要一上来就怀疑 CSS**。
+   是否让台标走 worker 代理是待用户拍板的产品取舍。
+2. **失败记忆失败侧的 TTL 是短的**：`channelLogoCache` 整块 blob 的 TTL 是 30 天（成功记忆沿用），
+   另加 `LOGO_FAIL_TTL = 6h` —— 恢复时只把「6 小时内的失败」放进 `failedLogoUrls`，
+   否则一次网络抖动就被固化成「这张卡此后永远没台标」。
+
+#### 卡片侧的三条渲染约定
+
+- **收藏按钮不依赖台标加载结果**：`showFavorite = !batchMode && !hideFavorite`。
+  严禁再写成 `&& (imageLoaded || !channel.logo)` —— 台标失败时 `onLoad` 永不触发，
+  会让整颗红心不渲染（2026-09-10 实测 60 张卡只剩 3 颗）。护栏：`scripts/iptv.spec.ts` **IPTV-090**。
+- **台标图用 `object-fit: contain`**（`.iptv-card-cover img` 与历史页 `.record-card__media--logo`）：
+  封面比例是海报思维（3/2 · 16/10 · 16/9 四档），`cover` 会把 1:1 方图裁到只剩约 56% 高度可见。
+- **红心需要触屏常显兜底**：`.iptv-card-favorite.hover-visible` 默认 `opacity: 0; pointer-events: none`，
+  >767px 的触屏设备（iPad / 折叠屏 / 触屏本）永远没有 hover → 必须补
+  `@media (hover: none) and (pointer: coarse)` 常显规则（`VideoCard.css` 是同类范例）。
+  ≤767px / app 端仍是 `display: none`，该规则不含 `display`，不会把它们复活。
+
+**EPG 预索引（性能关键，仍作用于节目单而非台标）**：`matchEPGChannel` 原实现每频道全量遍历数千 EPG 频道
+（数百卡片 × 数千频道 = 百万次 `normalizeName`），EPG 就绪瞬间主线程卡顿。`epgService.ts` 的
+`buildEPGChannelIndex(channels)` 一次性构建（tvg-id / 规范化名 / 原始名三张 Map），
+`matchEPGChannelIndexed` 精确匹配 O(1)、模糊包含兜底线性（触发率低）；`matchAllChannels` 批量匹配复用索引
+（`useEPGData` 消费，用于节目单）。新增台标相关测试：`scripts/iptv.spec.ts`（IPTV-090 硬断言 +
+IPTV-080/081 条件式用例）。
 
 
 ### IPTV 频道列表加载（竞速窗口，防慢源拖尾）
@@ -220,6 +283,44 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
 - **筛选切换清空搜索词**：切换 FilterBar 筛选/排序时清空 `query`，让 discover 接管（`useBrowseData` 的 `filterSig` effect 在有 `urlQ` 时跳过 fetch）
 - **TMDB search reset**：`search()` 和 `fetchDiscover()` 在 `forceReset=true` 时立即清空旧结果，UI 才能显示 loading 而非停留在旧数据上
 - **合并结果排序**：`mediaType=all` 合并 movie + tv 后按用户选择的 `sortBy`/`sortOrder` 重排（评分相同时按投票数降序兜底）
+
+### 全屏抽屉（Drawer）底部操作区
+
+`src/components/ui/Drawer.tsx` 的 `footer?: React.ReactNode` 插槽 —— **固定在面板底部、不参与滚动的操作区
+只能走这个插槽**，不能当 `children` 传。
+
+- 走 children 会落进 `.drawer-body`（`overflow-y: auto` 的滚动容器）。此时 `position: sticky; bottom: 0`
+  只是「粘」而非「固定」：**内容不足一屏时完全没有可粘空间**（按钮停在最后一组 chip 后面、面板下半截空白），
+  **滚到底又会被 `.drawer-body` 自身的 `padding-bottom` 顶开**。
+- `.drawer-body` 必须显式 `min-height: 0`：flex 项默认 `min-height: auto` 会被内容撑开，
+  滚动容器就不是「剩余高度」，footer 会被挤出视口。
+- `.drawer-footer` 负责 `padding-bottom: env(safe-area-inset-bottom)`（移动端 Home 指示条避让）。
+- **层级走全局 token `var(--z-modal-overlay)` / `var(--z-modal)`（1000 / 1001），不要硬编码 60/61**。
+  曾经的 60/61 低于「返回顶部」玻璃圆钮的 `z-index: 90`，而该圆钮 `position: fixed` 且 portal 到 body →
+  画在面板之上、坐标正好压住「完成」按钮并抢走点击。
+- 面板打开期间用 `body:has(.drawer-content) .back-to-top-button { display: none }` 关掉那个
+  `backdrop-filter: blur(8px)` 玻璃钮：它固定不随面板滚动，每帧都要对背后变化的内容重新做模糊采样
+  （移动端 GPU 上最贵的常见项之一），而此刻它完全被不透明面板盖住。
+- 护栏：`scripts/browse.spec.ts` **BROWSE-081/082**（结构 + 滚动前后几何不变 + 贴住面板底边 + 层级 + 圆钮不绘制）。
+
+### 播放器进度条与控制栏（2026-09-10 定稿）
+
+- **已缓冲灰条（`.up-progress-buffered`）不能只依赖 video 的 `progress` 事件**：暂停 / 加载中没有新的下载推进，
+  该事件不触发 → seek 之后灰条停在旧位置。`usePlayerCore` 的 `syncBufferedProgress()` 在
+  **`seek()` 即时 / `seeked` / `timeupdate`** 三处都要补同步；`ProgressBar` 渲染时
+  `bufferedPercent = min(100, max(raw, progress))`，灰条不短于已播放位置（否则圆点跑到灰条之外）。
+- **暂停 / 加载中 seek 必须真的落位**：元数据未就绪（`readyState < HAVE_METADATA`）时直接写 `currentTime`
+  可能被浏览器丢弃或在 `load()` 时清零 → 暂存到 `loadedmetadata` 后补做；
+  暂停且目标不在已缓冲区间内时调用 `adapter.resume()` 唤醒加载引擎（没有播放推进就没有取数驱动）；
+  **全程不调 `play()`**，跳转后保持暂停。
+- **上一集 / 下一集按钮的显示条件是 `episodes.length > 1`**，不是 `> 0`。
+  `ControlBar` 只要 `hasPrevEpisode !== undefined` 就渲染按钮、`false` 仅置灰；
+  单集 / 电影 / 仅一条线路时旧写法传入 `false` → 多出两颗灰按钮，应改传 `undefined` 即完全不渲染。
+- **清晰度菜单必须过滤 `height <= 0` 的档位**（`getSelectableLevels()`，`ResolutionSwitch` 与
+  `SettingsContent` 共用）：manifest 未标 RESOLUTION / 纯音频轨的 level 高度为 0，
+  `HLSAdapter.getQualityLabel` 会给出空串，不过滤就会显示成「0P」这种非法档位。
+  过滤后**必须携带 adapter 原始索引**——hls.js 的 `currentLevel` 就是原始下标，不能重新编号。
+  护栏：`src/components/UniversalPlayer/lib/utils.test.ts`。
 
 ### 搜索词传递（Keep-Alive 兼容）
 

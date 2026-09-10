@@ -259,3 +259,92 @@ OSD 按钮 hover、错误态主按钮、TV 焦点描边、时移按钮、进度�
 `color: var(--color-primary)` 变成蓝字压白底（`#3b82f6` 对白 ≈3.68:1，略低于小字号 AA 的 4.5:1）。
 它是一个白底药丸按钮的**瞬时 hover 态**；若日后要收紧，把这条规则的 hover 文字色改回
 `--color-text`、只保留 `border-color` 染蓝即可。
+
+---
+
+## 15. [待决策 · 2026-09-10] IPTV 台标托管域不可达 + 「台标不走代理」→ 整页无台标
+
+**状态**：⚠️ 待用户拍板（代码侧只做了止损，未改网络策略）。
+
+**现象**：IPTV 页几乎全部频道卡片显示 Tv + kinoTV 兜底，看不到台标。
+
+**根因**（实测）：`channel.logo` 只来自 iptv-org 的 logos.json，**图片实际托管在 `i.imgur.com`**；
+国内网络通常不可达（实测 6 个台标请求全部 `net::ERR_CONNECTION_RESET`）。
+而 `channelLogo.ts` 的设计定稿是「台标不走代理（http 台标原样直连，减少 worker 请求消耗）」。
+两条叠加 → 所有卡片都落兜底。
+
+**已做的止损**（不改网络策略）：
+
+- 失败记忆的失败侧 TTL 由「跟整块 blob 的 30 天」改为 `LOGO_FAIL_TTL = 6h`（成功记忆仍 30 天），
+  避免一次网络抖动把某张卡永久钉死；
+- 卡片封面 `object-fit` 由 `cover` 改 `contain`（`cover` 会按海报比例裁掉台标一大半）。
+
+**待决策**：是否让台标走 worker 代理（代理请求消耗 vs 台标可见性）。**未获明确许可前不要改**。
+
+**排查顺序（教训）**：先分清「请求有没有发出 → 发出后成不成功 → 成功了是不是被 CSS 裁掉」，
+不要一上来就怀疑 CSS —— `cover` 确实也会裁台标，但本例的可见性瓶颈在网络可达性。
+
+---
+
+## 16. [已知 · 未修 · 2026-09-10] 移动端 Hero banner 拖拽期 5 张全宽大图同时驻留
+
+**状态**：⚠️ 已知（未处理，收益与风险不确定）。
+
+**现象**：移动端首页 banner 拖拽/滑动时峰值内存与栅格化压力偏高（已修掉三个更主要的成因，见下）。
+
+**根因**：`HeroBannerClassic` 的 crossfade 背景层**常驻不卸载**（最多 2 层），
+track 模式再叠 3 张 → 拖拽期间峰值 5 张全宽大图同时在 DOM 中。
+
+**为何没改**：`HeroBanner.tsx` 内有明确注释说明 crossfade 常驻是为了避免
+track→crossfade 切换时 `<img>` 重挂载、WebView 首帧解码延迟闪白（历史修复，见
+`HeroBanner.css` 的 `--no-anim` 与 `.is-dragging` 规则）。
+「拖拽期不渲染 crossfade 层」曾用过，后来为这个闪白问题改回常驻，收益与风险不确定。
+
+**同批已修的三条**（勿回退，详见 `docs/agents/patterns.md`「HeroBanner 组件」）：
+
+1. `handleDragMove` 的 rAF 合并（原每个 touchmove 一次全量重渲染）；
+2. 移动端主图候选封顶 `w780`（原 DPR≥2.75 选 w1280，且与预加载的 w780 不一致 → 同图下载解码两次）；
+3. `<768px` 标题阴影由 `0 0 60px` 收成 `0 1px 6px`（大半径模糊落在做 transform 的文字轨道内）。
+
+---
+
+## 17. [已知 · 未修 · 依赖库行为] Radix Dialog 打开期间挂非 passive touchmove → 面板内滑动卡顿
+
+**状态**：⚠️ 已知（依赖库行为，未擅自动）。
+
+**现象**：移动端 Browse 全屏筛选面板（`Drawer`，基于 `@radix-ui/react-dialog`）内滑动偏卡。
+
+**根因**：Radix Dialog 打开期间 `react-remove-scroll` 会在 `document` 上挂
+**非 passive** 的 `touchmove` / `touchstart` / `wheel` 监听，每次 touchmove 还会向上走一遍祖先链判断
+（`locationCouldBeScrolled`）→ 合成器无法直接滚动、每帧都要等 JS。这是面板内滑动最系统性的卡顿源。
+
+**已做的收敛**：`.drawer-body` 补 `overscroll-behavior: contain` + `touch-action: pan-y`（与 `BottomSheet` 口径一致）；
+面板层级改走 `--z-modal-overlay` / `--z-modal`（1000/1001）并在面板打开期间
+`body:has(.drawer-content) .back-to-top-button { display: none }`，去掉那个
+`position: fixed` + `backdrop-filter: blur(8px)` 玻璃钮的逐帧模糊采样。
+
+**若要继续优化**：评估放弃 Radix 的 scroll-lock（自实现 `overflow: hidden` 锁）或换 BottomSheet 方案。
+
+---
+
+## 18. [工具链坑 · 2026-09-10] Vite dev 转换缓存不失效 → e2e 打到旧代码
+
+**状态**：⚠️ 已文档化（`docs/agents/testing.md`、`docs/knowledge/03-dev-guide.md`）。
+
+**现象**：改完源码跑 e2e，用例稳定失败但代码看起来没错、失败点像是「没渲染新结构」。
+
+**根因**：`playwright.config.ts` 的 `reuseExistingServer: true` 会复用机器上已在跑的 3001 dev server，
+而 Vite 对**部分**被修改文件仍返回改动前的模块（实测：`Drawer.tsx` 改动后普通 URL 返回旧模块，
+加 `?t=<时间戳>` 才拿到新的）。本轮为此白跑了一整轮完整 e2e。
+
+**判据**：
+
+```bash
+curl -s "http://127.0.0.1:3001/src/<路径>"            | grep <新写的标识>   # 空
+curl -s "http://127.0.0.1:3001/src/<路径>?t=$(date +%s)" | grep <新写的标识>   # 有
+```
+
+两者不一致即确认缓存陈旧。
+
+**处置**：杀掉 3001 的 PID 后用原命令 `npm run dev` 重起（跑完保持运行）；
+或先用带查询串的 curl 确认新鲜度再跑测试。**遇到「e2e 稳定失败但代码看着没错」时，先做这一步。**

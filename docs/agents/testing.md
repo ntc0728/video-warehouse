@@ -51,7 +51,13 @@ await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-10 晚：123 条 / 18 个 spec**；2026-09-09 晚为 118 条 / 18 spec，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色））。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-10 晚：127 条 / 18 个 spec**；同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+>
+> ⚠️ **表中「test 数」列的数字多为 2026-09 之前的历史快照，与 `--list` 枚举数口径不一致**（例如 home 列 46、实际 13 个 `test()`）。**需要精确数字时以 `--list` 为准，别直接引用本列**：
+> ```bash
+> npx playwright test --list | grep -oE "› [a-z0-9-]+\.spec\.ts" | sort | uniq -c | sort -rn
+> ```
+> 全量跑建议加 `--workers=2`：默认并发下 `player.spec.ts` 4.11 首个用例常在挂载播放器时超时（多并发把真实 CMS 代理打满，spec 内有注释），且该 describe 是 `serial`，失败会连带 2 条不执行。`--workers=2` 全量 = 127 条中 `126 passed / 1 skipped`（约 3.2 分钟）。
 
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
@@ -93,20 +99,23 @@ await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
 | `src/components/RecordFilterPanel/`           | collections + history                                                          | 17            |
 | `src/components/StatusTabs/`                  | collections + history                                                          | 17            |
 | `src/components/FilterBar/`                   | browse                                                                         | 24            |
-| `src/components/HeroBanner/`                  | home + cross-page                                                              | 57            |
+| `src/components/HeroBanner/`                  | home + cross-page（主图失败兜底 HOME-089 / 移动端滑动性能）                                | 57            |
+| `src/components/StillsLightbox/`              | detail（缩放控件位置契约 DETAIL-090）                                                 | 8             |
+| `src/components/ui/Drawer.tsx` / `Drawer.css` | browse（footer 插槽真固定 BROWSE-081/082；另会连带命中 `ui/**` 的 settings 6.6，属已知轻微过度覆盖）     | 8 + 10        |
 | `src/components/Layout/`                      | 全部页面加载测试（home/browse/detail/...各首屏用例）                                          | 逐个 spec 首屏用例  |
 | `src/components/StickyHeader/`                | 全部页面加载测试                                                                       | 逐个 spec 首屏用例  |
 | `src/components/ui/Toast.tsx` / `toastBus.ts` | settings (版本号点击)                                                               | 24            |
 | `src/services/tmdbService.ts`                 | home + browse + detail + person                                                | 93            |
 | `src/services/videoService.ts`                | browse + player + source-checker                                               | 36            |
 | `src/services/iptvService.ts`                 | iptv + iptv-player                                                             | 19            |
-| `src/services/channelLogo.ts`                 | iptv + iptv-player（台标候选链用例 IPTV-080/081）+ collections + history（EPG icon 台标渲染） | 33            |
+| `src/services/channelLogo.ts`                 | iptv（收藏按钮渲染护栏 IPTV-090 + 台标候选链 IPTV-080/081）+ iptv-player + collections + history | 33            |
 | `src/services/epgService.ts`                  | iptv + iptv-player + collections + history（EPG 匹配/缓存读取）                        | 各 spec EPG 用例 |
 | `src/components/LazyImage/`                   | home + browse + detail + collections + history + person + iptv（台标/海报图片加载用例）    | 各 spec 图片用例   |
 | `src/stores/useTMDBStore.ts`                  | home + browse + detail                                                         | 85            |
 | `src/stores/useSettingsStore.ts`              | settings + source-checker                                                      | 29            |
 | `src/stores/useUserStore.ts`                  | collections + history                                                          | 12            |
 | `src/components/ui/PullToRefresh/`            | (vitest 单元测试) `src/components/ui/PullToRefresh/PullToRefresh.test.tsx`         | 4             |
+| `src/components/UniversalPlayer/lib/utils.ts`（清晰度档位标签/过滤） | (vitest 单元测试) `src/components/UniversalPlayer/lib/utils.test.ts`（护栏：`height=0` 不得产出「0P」、`getSelectableLevels` 必须保留 adapter 原始索引） | 6             |
 
 > 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已彻底删除（原归档目录 `scripts/backup-specs/` 于 2026-08-29 连同 8 个一次性 `.mjs` 工具脚本一并清理，已备份至 `backups/scripts-untracked-20260829/`），映射表中不再引用。`playwright.config.ts` 的 `testIgnore` 规则已随之移除。
 

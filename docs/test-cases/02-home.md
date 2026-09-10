@@ -28,6 +28,7 @@
 | HOME-012 | Banner 继续播放 | 有观看历史记录 | 点击"继续播放"按钮 | 跳转到 `/play/{id}`，恢复上次播放进度 |
 | HOME-013 | Banner 显示"继续播放"标签 | 观看历史中 progress > 0 | 查看 Banner | 对应影片卡片显示"继续播放"标签 |
 | HOME-014 | Banner 数据为空 | trending 为空 | 查看 HeroBanner | 显示骨架加载状态，不显示"暂无推荐" |
+| HOME-089 | 主图加载失败走公共兜底 | 拦截 `test-backdrop-0.jpg` 返回 404 | 宽屏 ≥1024 看 HeroBili，窄屏 <1024 看 Classic | 两条路径都在主图位渲染公共品牌兜底（`.hero-bili__banner-fallback` / `.hero-banner__fallback`，含 `kinoTV`），不是只露 `#0b0b0e` 深色底 |
 
 ### 1.3 分类快捷入口
 

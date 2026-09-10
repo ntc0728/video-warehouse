@@ -378,3 +378,48 @@ test.describe('3.8 推荐区域', () => {
       .toBeTruthy();
   });
 });
+
+test.describe('3.11 剧照灯箱', () => {
+  test('DETAIL-090: 缩放控件位于当前显示图片正下方（三行流式布局）', async ({ page }) => {
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.detail-stills-item', { timeout: 15000 });
+    await page.locator('.detail-stills-item').first().click();
+
+    const lightbox = page.locator('.stills-lightbox').first();
+    await expect(lightbox).toBeVisible({ timeout: 10000 });
+
+    const geo = await lightbox.evaluate((el) => {
+      const box = (sel: string) => {
+        const n = el.querySelector(sel);
+        if (!n) return null;
+        const r = n.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, centerX: r.left + r.width / 2 };
+      };
+      const zoomEl = el.querySelector('.stills-lightbox__zoom');
+      const thumbsEl = el.querySelector('.stills-lightbox__thumbs');
+      return {
+        scroll: box('.stills-lightbox__scroll'),
+        zoom: box('.stills-lightbox__zoom'),
+        thumbs: box('.stills-lightbox__thumbs'),
+        zoomPosition: zoomEl ? getComputedStyle(zoomEl).position : null,
+        thumbsPosition: thumbsEl ? getComputedStyle(thumbsEl).position : null,
+        viewportCenterX: window.innerWidth / 2,
+      };
+    });
+
+    // 旧形态是 position:absolute 的视口右下角浮层；现为文档流内第二行
+    expect(geo.zoom).not.toBeNull();
+    expect(geo.zoomPosition).toBe('relative');
+    expect(geo.scroll).not.toBeNull();
+
+    // 竖向次序：主图区 → 缩放条 → 缩略图条
+    expect(geo.zoom!.top).toBeGreaterThanOrEqual(geo.scroll!.bottom - 1);
+    if (geo.thumbs) {
+      expect(geo.thumbsPosition).toBe('relative');
+      expect(geo.thumbs.top).toBeGreaterThanOrEqual(geo.zoom!.bottom - 1);
+    }
+
+    // 水平居中于当前显示图片（= 视口水平中心）
+    expect(Math.abs(geo.zoom!.centerX - geo.viewportCenterX)).toBeLessThanOrEqual(2);
+  });
+});

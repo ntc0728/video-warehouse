@@ -671,3 +671,31 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     ).toContainText('kinoTV');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 1.3e Hero 主图加载失败兜底
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('1.3e Hero 主图加载失败兜底', () => {
+  test('HOME-089: banner 主图 404 → kinoTV 品牌兜底（HeroBili / Classic 两条路径）', async ({ page }) => {
+    // trending[0].backdrop_path = /test-backdrop-0.jpg，即 banner 池首图。
+    // 拦截它即可命中「主图加载失败」；侧栏卡片用 items[6..]，不受影响。
+    await page.route('**/test-backdrop-0.jpg**', (route) => route.fulfill({ status: 404, body: '' }));
+
+    // 宽屏 ≥1024：HeroBili 主图
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-bili__banner', { timeout: 15000 });
+    const biliFallback = page.locator('.hero-bili__banner-fallback');
+    await expect(biliFallback).toHaveCount(1, { timeout: 8000 });
+    await expect(biliFallback).toContainText('kinoTV');
+
+    // 窄屏 <1024：HeroBannerClassic 主图（同一套公共品牌兜底）
+    await page.setViewportSize({ width: 900, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-banner__main', { timeout: 15000 });
+    const classicFallback = page.locator('.hero-banner__fallback');
+    await expect(classicFallback).toHaveCount(1, { timeout: 8000 });
+    await expect(classicFallback).toContainText('kinoTV');
+  });
+});

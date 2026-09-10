@@ -75,8 +75,8 @@ npm run test:regression # 回归组（全量 spec 集合）
 
 - **TMDB Mock 策略**：`scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求返回本地 mock 数据；默认模式无 Token 风险。真实 API 模式：`TMDB_MOCK=false npx playwright test`（发版前回归用）。
 - **增量映射**：改 `src/pages/Xxx/` 只跑对应 spec；改共享组件（VideoCard/HeroBanner/Layout/StickyHeader/UniversalPlayer/RecordShell/StatusTabs/SearchBox/FilterBar/Toast 等）按 AGENTS.md 映射表跑所有受影响 spec；改 `src/stores/**` / `src/hooks/**` 跑 vitest。**详情页改动需同时跑 `detail.spec.ts` + `regression-detail.spec.ts`**。
-- **测试基建约定**：`playwright.config.ts` 配置 `testIgnore: '**/backup-specs/**'` 排除 gitignore 的旧测试备份（308 用例不参与 E2E）；主目录 13 个 spec 共 181 用例应零失败。
-- **跑前须知**：需要 dev server（`npm run dev`，端口 3001）；Playwright 配置 `reuseExistingServer: true`。
+- **测试基建约定**：E2E 用例数以 `npx playwright test --list` 枚举为准（**2026-09-10：127 条 / 18 个 spec**，`--workers=2` 全量 = 126 passed / 1 skipped）。`scripts/backup-specs/` 旧测试备份已不在 `testDir` 覆盖范围内，无需再靠 `testIgnore` 排除。**精确数字与逐文件分布见 `docs/agents/testing.md` 的口径说明，勿引用历史快照**。
+- **跑前须知**：需要 dev server（`npm run dev`，端口 3001）；Playwright 配置 `reuseExistingServer: true`。⚠️ **该服务对部分被改动文件可能返回改动前的模块（Vite 转换缓存未失效）→ e2e 会打到旧代码**；改完源码先验证新鲜度（`curl -s "http://127.0.0.1:3001/src/<路径>?t=$(date +%s)" | grep <新标识>`），必要时重启 3001。全量跑建议 `--workers=2`（默认并发下 `player.spec.ts` 4.11 首条会因 CMS 代理打满而挂载超时）。
 
 #### 2.4 构建
 

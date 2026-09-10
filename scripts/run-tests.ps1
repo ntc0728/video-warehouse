@@ -97,7 +97,7 @@ $uiPrecisionMap = @{
     }
     "src/pages/Browse/BrowseMobileBar.tsx" = @{
         spec = @("scripts/browse.spec.ts")
-        grep = "BROWSE-070|BROWSE-071|BROWSE-072|BROWSE-074|BROWSE-077|BROWSE-078|BROWSE-079|BROWSE-080"
+        grep = "BROWSE-070|BROWSE-071|BROWSE-072|BROWSE-074|BROWSE-077|BROWSE-078|BROWSE-079|BROWSE-080|BROWSE-081|BROWSE-082"
     }
     "src/pages/Browse/FilterBar/**" = @{
         spec = @("scripts/browse.spec.ts")
@@ -108,13 +108,26 @@ $uiPrecisionMap = @{
         grep = "BROWSE-025|BROWSE-030|BROWSE-060"
     }
 
+    # ── 通用全屏抽屉（footer 插槽 / 层级 token）──
+    # 注：uiPrecisionMap 的匹配是「全部命中即累积」而非首个命中即停，
+    # 因此改 ui/Drawer* 也会连带命中下面的 "src/components/ui/**"（settings 6.6），属已知的
+    # 轻微过度覆盖，换取不必为排除它而给匹配循环加特例。
+    "src/components/ui/Drawer.tsx" = @{
+        spec = @("scripts/browse.spec.ts")
+        grep = "2\.8|2\.9"
+    }
+    "src/components/ui/Drawer.css" = @{
+        spec = @("scripts/browse.spec.ts")
+        grep = "2\.8|2\.9"
+    }
+
     # ── HeroBanner（轮播/缩略图/分类切换过渡 + 宽屏 HeroBili 卡）──
     # grep 用 describe 段号（1.2 交互 + 1.3b 切换过渡 + 1.3d HeroBili 卡）而非逐个编号：
     # 段内新增用例自动涵盖，映射无需随用例增减维护。
     # ⚠️ 段号是正则：1.2 的 "." 必须转义为 1\.2（否则 "1023px" 等含 1?2 的标题误命中）
     "src/components/HeroBanner/**" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "1\.2|1\.3b|1\.3d"
+        grep = "1\.2|1\.3b|1\.3d|1\.3e"
     }
 
     # ── 首页组件 ──
@@ -160,13 +173,13 @@ $uiPrecisionMap = @{
     # ── Detail ──
     "src/components/StillsLightbox/**" = @{
         spec = @("scripts/detail.spec.ts")
-        grep = "3\.5|3\.6"
+        grep = "3\.5|3\.6|3\.11"
     }
 
     # ── IPTV ──
     "src/components/IPTVChannelCard/**" = @{
         spec = @("scripts/iptv.spec.ts", "scripts/regression.spec.ts")
-        grep = "5\.1|5\.2|5\.10|IPTV 卡片"
+        grep = "5\.1|5\.2|5\.10|5\.11|IPTV 卡片"
     }
     "src/components/EPGProgramList/**" = @{
         spec = @("scripts/iptv.spec.ts")
@@ -211,7 +224,7 @@ $logicTestMap = @{
     }
     "src/services/channelLogo.ts" = @{
         spec = @("vitest", "scripts/iptv.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts")
-        grep = "5\.10|7\.2|8\.2"
+        grep = "5\.10|5\.11|7\.2|8\.2"
     }
     "src/services/castService.ts" = @{
         spec = @("vitest", "scripts/player.spec.ts")
