@@ -653,9 +653,79 @@
 
 .detail-stills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(128px, 96px + 8vw, 256px), 1fr));
+  /* 缩放：--stills-zoom 由剧照放大控件写入（0.75 / 1 / 1.25 / 1.5 / 2）。
+     列宽基准乘以该值 → 值越大列越少、单张越大（auto-fill + 1fr 下列宽始终由容器均分，
+     minmax 的 min 只决定「一行能塞几列」）。
+     ⚠️ 必须是乘法：写成除法会让 125% 反而多一列、图更小（已实测踩坑）。 */
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(calc(clamp(128px, 96px + 8vw, 256px) * var(--stills-zoom, 1)), 1fr)
+  );
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
+}
+
+/* ── 剧照标题行 + 放大控件（2026-09-10 用户要求）────────────
+   控件形态：放大镜图标居中，两侧各一个百分比档位按钮 ——
+   点击左/右即切换到相邻的缩小 / 放大档，到达边界自动禁用。 */
+.detail-stills-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.detail-stills-zoom {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.detail-stills-zoom__step {
+  min-width: 3.4em;
+  padding: var(--space-2xs) var(--space-xs);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.detail-stills-zoom__step:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.detail-stills-zoom__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* 放大镜图标：点击重置回 100% */
+.detail-stills-zoom__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-lg, 22px);
+  height: var(--icon-lg, 22px);
+  border: none;
+  border-radius: 50%;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.detail-stills-zoom__icon:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
 }
 
 .detail-stills-grid--limited {
@@ -755,6 +825,22 @@
   flex-shrink: 0;
   color: var(--color-primary);
   opacity: 0.7;
+}
+/* 语义化彩色图标（2026-09-10 用户要求「新增一些有颜色的图标」）：
+   只在三处高辨识度字段上着色 —— 评分（暖橙，与全站热度语义同色）、
+   金额类（绿，金钱语义）、季/集（蓝，结构信息）；其余保持主色，避免整栏花掉。
+   暗色主题下三个语义色在 variables.css 暗色段有独立取值，自动适配。 */
+.detail-info-card--rating svg {
+  color: var(--color-warning);
+  opacity: 1;
+}
+.detail-info-card--money svg {
+  color: var(--color-success);
+  opacity: 1;
+}
+.detail-info-card--media svg {
+  color: var(--color-info);
+  opacity: 1;
 }
 .detail-info-card span {
   flex-shrink: 0;
@@ -886,9 +972,14 @@
   text-overflow: ellipsis;
 }
 
-/* 折叠（全视口统一）：限制 2 行高度，超出隐藏（11.4 放大后 2 行高度 ≈ 16rem） */
+/* 折叠（全视口统一）：限制 2 行高度，超出隐藏。
+   ⚠️ 2026-09-10 修复「第二行被裁一半」：原 `max-height: 16rem` 是硬编码，
+   而头像尺寸 --layout-cast-avatar 是流体值（桌面 clamp(80px→88px) × --ui-scale），
+   条目行高随视口/UI 缩放变化 —— 实测 1440 下 2 行实际需 279px > 16rem(256px)，
+   第二行底部被裁掉 23px。现改为由 JS 按「首行条目实际高度 × 2 + grid 行间距」
+   写入 --cast-collapsed-h，任何视口/缩放档位都精确等于两行高度。 */
 .detail-cast-row--collapsed {
-  max-height: 16rem;
+  max-height: var(--cast-collapsed-h, 16rem);
   overflow: hidden;
 }
 
@@ -1891,5 +1982,80 @@
   height: var(--comp-btn-min-width);
   padding: 0 var(--space-lg);
   font-size: var(--text-base);
+}
+
+/* 上半部两栏容器：默认 display:contents —— <1024 / TV / app 下对布局零影响
+   （子元素直接提升到 .detail-page 的 flex 上下文，与改造前结构完全等价），
+   仅 ≥1024 切换为 grid 两栏（见下方 media 块）。 */
+.detail-top {
+  display: contents;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   上半部两栏 — C1 排列（2026-09-10 用户拍板，Demo 见
+   changelogs/demos/demo-widescreen-overhaul-2026-09-10.html 议题④）
+
+   为什么是「右栏只放文本类信息」：
+   详情「概览」tab 的内容分两种形态 ——
+     · 纵向 KV 文本（类型标签 / 基础信息 / 发行公司）→ 适合窄栏竖排；
+     · 横向铺开的内容（演员横滚条、剧照大图网格）→ 放窄栏会严重缩水、
+       甚至失去横滚语义，必须保持通栏。
+   实测 C1 右栏内容恰好填满 hero 高度（1440/1920/2560 均为 378/397/422px），
+   不需要滚动；字段更多的影片/剧集由下面的 overflow 兜底。
+
+   ⚠️ 断点 ≥1024 与 isWideDetail（!isMobile && !isTV）一致 ——
+   移动端/平板竖屏/ TV 端不进入本块，基础信息仍渲染在 info tab 内（行为不变）。
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: var(--space-sm);
+    align-items: stretch;
+    margin-bottom: var(--space-sm);
+  }
+
+  /* 右栏：高度锁死为 hero 实际高度（--detail-hero-h 由 JS 测量写入），
+     内容超出时栏内滚动，保证两栏下沿始终齐平、不把 grid 行撑高。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-width: 0;
+    max-height: var(--detail-hero-h, 520px);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 右栏内的 section 标题与卡片网格按窄栏重排 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-section-title {
+    margin-bottom: var(--space-sm);
+    font-size: var(--text-base);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 右栏窄，info-card 保持「图标 + 标签 + 值」单行结构（值可自然折行），
+     并收紧上下内边距 —— 9 个字段总高约 380px < hero 高度，无需滚动。
+     若改成「标签一行、值一行」会翻倍到 450px+ 反而溢出。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
+    padding: var(--space-2xs) 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
+    margin-left: var(--space-xs);
+    min-width: 0;
+  }
 }
 

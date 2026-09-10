@@ -19,6 +19,7 @@ import { AppLoading, BackToTopButton } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useIsMobile, useIsTV as useIsTVDevice } from '@/hooks/useMediaQuery';
 import { VideoCard } from '@/components/VideoCard';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import TokenRequired from '@/components/TokenRequired';
@@ -28,7 +29,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar, ArrowLeft,
   Info, ListVideo, Layers, AlertTriangle, WifiOff,
-  RefreshCw, Server, ExternalLink,
+  RefreshCw, Server, ExternalLink, ZoomIn,
 } from 'lucide-react';
 import './Detail.css';
 import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
@@ -37,6 +38,13 @@ import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 // ── 常量 ──────────────────────────────────────────────
 
 const CMS_DEBOUNCE_MS = 2000;
+
+/** 剧照缩放档位（放大控件：放大镜两侧按档切换）；默认下标 1 = 100%。
+ *  档位刻意拉开间隔（0.75 / 1 / 1.5 / 2）：剧照网格是 auto-fill + 1fr，
+ *  列宽由容器均分、只随「列数」跳变，相邻档位间隔太小会出现
+ *  「点了没反应」（两档落到同一列数）——实测 1.25 与 1.5 在 1440 下同列。 */
+const STILLS_ZOOM_STEPS = [0.75, 1, 1.5, 2] as const;
+const STILLS_ZOOM_DEFAULT_IDX = 1;
 
 /**
  * 模块级 Detail 缓存（方案 B：无 Keep-Alive）
@@ -171,6 +179,14 @@ export default function DetailPage() {
 
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
+  // 上半部两栏（C1）：断点与 Detail.css 的 @media (width >= 1024px) 一致
+  const isMobileLayout = useIsMobile();
+  const isTVDevice = useIsTVDevice();
+  const isWideDetail = !isMobileLayout && !isTVDevice;
+  /** 剧照缩放档位下标 */
+  const [stillsZoomIdx, setStillsZoomIdx] = useState(STILLS_ZOOM_DEFAULT_IDX);
+  /** hero 元素 ref：用于把 hero 实际高度写入 --detail-hero-h，锁死右栏高度 */
+  const heroRef = useRef<HTMLElement>(null);
   const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
   // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）
   const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
@@ -588,17 +604,45 @@ export default function DetailPage() {
   const companies = d?.production_companies?.slice(0, 3) || [];
   const cast: TMDBCastMember[] = d?.credits?.cast || [];
 
-  // 演员行溢出检测：折叠态下 scrollHeight > clientHeight 即超过 2 行，显示展开按钮。
+  // 演员行折叠高度测量（2026-09-10 修复「第二行被裁一半」）：
+  // 折叠高度不再硬编码 16rem —— 头像尺寸 --layout-cast-avatar 是流体值
+  // （桌面 80→88px × --ui-scale），条目行高随视口变化，固定 16rem 在大屏档
+  // 会把第二行裁掉一部分。这里用「首行条目实际高度 × 2 + grid 行间距」精确写入
+  // --cast-collapsed-h（CSS 消费），再据此判断内容是否真的超过两行。
   // ResizeObserver 覆盖窗口缩放与布局尺寸变化的纠正场景。
   useEffect(() => {
     const el = castRowRef.current;
     if (!el) return;
-    const measure = () => setCastOverflow(el.scrollHeight > el.clientHeight + 1);
+    const measure = () => {
+      const first = el.querySelector<HTMLElement>('.detail-cast-item');
+      if (!first) {
+        setCastOverflow(false);
+        return;
+      }
+      const rowGap = parseFloat(getComputedStyle(el).rowGap) || 0;
+      const twoRowH = first.offsetHeight * 2 + rowGap;
+      el.style.setProperty('--cast-collapsed-h', `${twoRowH}px`);
+      setCastOverflow(el.scrollHeight > twoRowH + 1);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [cast.length]);
+
+  // hero 实际高度 → --detail-hero-h：两栏布局下右栏用它锁死 max-height，
+  // 保证「hero 与右栏下沿齐平」且右栏内容溢出时栏内滚动而不撑高整行。
+  useEffect(() => {
+    if (!isWideDetail) return;
+    const el = heroRef.current;
+    const host = el?.parentElement;
+    if (!el || !host) return;
+    const sync = () => host.style.setProperty('--detail-hero-h', `${el.offsetHeight}px`);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isWideDetail, d]);
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const genres = d?.genres || [];
   const status = d?.status || '';
@@ -669,12 +713,72 @@ export default function DetailPage() {
     );
   }
 
+  /* ── C1 排列（≥1024，2026-09-10 用户拍板）─────────────────────────
+     右栏只承载「文本类」信息：类型标签 / 基础信息 KV 网格 / 发行公司。
+     演员（横滚条）、简介、剧照属于「横向铺开」的内容，放窄栏会严重缩水，
+     保持通栏（理由与实测数据见 Detail.css 的「上半部两栏」注释块）。
+     同一份 JSX 由 isWideDetail 决定落在 hero 右侧（.detail-hero-side）
+     还是 info tab 内（原位置）—— 只渲染一处，不产生重复 DOM。 */
+  const infoCoreNode = (
+    <>
+      <h2 className="detail-section-title">基础信息</h2>
+      {/* 类型标签 */}
+      {genres.length > 0 && (
+        <div className="detail-genres">
+          {genres.map((g) => (
+            <span key={g.id} className="detail-genre-tag">{g.name}</span>
+          ))}
+        </div>
+      )}
+      <div className="detail-info-grid">
+        {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
+        {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
+        {runtime && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
+        {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
+        {voteAverage > 0 && (
+          <div className="detail-info-card detail-info-card--rating">
+            <Icon icon={Star} size="sm" />
+            <span>TMDB 评分</span>
+            <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
+          </div>
+        )}
+        {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
+        {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
+        {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size="sm" /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
+        {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
+        {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
+        {isTV && <div className="detail-info-card detail-info-card--media"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
+        {isTV && inProduction !== undefined && <div className="detail-info-card"><Icon icon={RefreshCw} size="sm" /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
+        {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
+      </div>
+
+      {/* 发行公司 — 独立一行 */}
+      {companies.length > 0 && (
+        <div className="detail-info-row">
+          <FilmIcon size="sm" />
+          <span>发行</span>
+          <strong className="detail-companies">
+            {companies.map((c) => (
+              <span key={c.id} className="detail-company">
+                {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
+                {c.name}
+              </span>
+            ))}
+          </strong>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div ref={pageRef} className="page-padding detail-page content-shell" key={id}>
       {/* ══════════════════════════════════════════════
           HERO：全屏 backdrop + 双层渐变
           ══════════════════════════════════════════════ */}
-      <section className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
+      {/* 上半部两栏容器（C1）：<1024 / TV 下 display:contents（零布局影响，与改造前一致）；
+          ≥1024 时 grid 两栏，右栏由下方 aside 提供 */}
+      <div className="detail-top">
+      <section ref={heroRef} className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
         {backdropUrl && (
           <img className="detail-hero-bg" src={backdropUrl} alt="" width={1920} height={1080} onLoad={() => setBgLoaded(true)} />
         )}
@@ -788,6 +892,10 @@ export default function DetailPage() {
           )}
         </div>
       </section>
+      {isWideDetail && (
+        <aside className="detail-hero-side">{infoCoreNode}</aside>
+      )}
+      </div>
 
       {/* ══════════════════════════════════════════════
           Tab 导航（-mt-px 与 hero 重叠）
@@ -825,52 +933,8 @@ export default function DetailPage() {
         {/* 概览 */}
         {activeTab === 'info' && (
           <div className="detail-info">
-            <h2 className="detail-section-title">基础信息</h2>
-            {/* 类型标签 */}
-            {genres.length > 0 && (
-              <div className="detail-genres">
-                {genres.map((g) => (
-                  <span key={g.id} className="detail-genre-tag">{g.name}</span>
-                ))}
-              </div>
-            )}
-            <div className="detail-info-grid">
-              {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
-              {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
-              {runtime && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
-              {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
-              {voteAverage > 0 && (
-                <div className="detail-info-card">
-                  <Icon icon={Star} size="sm" />
-                  <span>TMDB 评分</span>
-                  <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
-                </div>
-              )}
-              {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
-              {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
-              {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size="sm" /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
-              {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card"><DollarIcon size="sm" /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
-              {isTV && <div className="detail-info-card"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
-              {isTV && inProduction !== undefined && <div className="detail-info-card"><Icon icon={RefreshCw} size="sm" /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
-              {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
-            </div>
-
-            {/* 发行公司 — 独立一行 */}
-            {companies.length > 0 && (
-              <div className="detail-info-row">
-                <FilmIcon size="sm" />
-                <span>发行</span>
-                <strong className="detail-companies">
-                  {companies.map((c) => (
-                    <span key={c.id} className="detail-company">
-                      {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
-                      {c.name}
-                    </span>
-                  ))}
-                </strong>
-              </div>
-            )}
+            {/* 基础信息：≥1024 时已在 hero 右侧的 .detail-hero-side 渲染，此处不重复 */}
+            {!isWideDetail && infoCoreNode}
 
             {cast.length > 0 && (
               <>
@@ -913,7 +977,42 @@ export default function DetailPage() {
 
             {(stills.length > 0 || stillsLoading) && (
               <>
-                <h3 className="detail-section-subtitle">剧照</h3>
+                <div className="detail-stills-head">
+                  <h3 className="detail-section-subtitle">剧照</h3>
+                  {/* 剧照放大控件（2026-09-10 用户要求）：放大镜居中、两侧为相邻档位百分比，
+                      点左缩小 / 点右放大、点图标重置回 100%。移动端不渲染（窄屏无意义）。 */}
+                  {!stillsLoading && stills.length > 0 && !isMobileLayout && (
+                    <div className="detail-stills-zoom" role="group" aria-label="剧照缩放">
+                      <button
+                        type="button"
+                        className="detail-stills-zoom__step"
+                        onClick={() => setStillsZoomIdx((i) => Math.max(0, i - 1))}
+                        disabled={stillsZoomIdx === 0}
+                        aria-label="缩小剧照"
+                      >
+                        {Math.round(STILLS_ZOOM_STEPS[Math.max(0, stillsZoomIdx - 1)] * 100)}%
+                      </button>
+                      <button
+                        type="button"
+                        className="detail-stills-zoom__icon"
+                        onClick={() => setStillsZoomIdx(STILLS_ZOOM_DEFAULT_IDX)}
+                        aria-label="重置剧照缩放为 100%"
+                        title={`当前 ${Math.round(STILLS_ZOOM_STEPS[stillsZoomIdx] * 100)}%，点击重置`}
+                      >
+                        <Icon icon={ZoomIn} size="sm" />
+                      </button>
+                      <button
+                        type="button"
+                        className="detail-stills-zoom__step"
+                        onClick={() => setStillsZoomIdx((i) => Math.min(STILLS_ZOOM_STEPS.length - 1, i + 1))}
+                        disabled={stillsZoomIdx === STILLS_ZOOM_STEPS.length - 1}
+                        aria-label="放大剧照"
+                      >
+                        {Math.round(STILLS_ZOOM_STEPS[Math.min(STILLS_ZOOM_STEPS.length - 1, stillsZoomIdx + 1)] * 100)}%
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {stillsLoading ? (
                   <div className="detail-stills-grid">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -924,6 +1023,7 @@ export default function DetailPage() {
                    <div
                     ref={setStillsGridRef}
                     className={`detail-stills-grid${visibleCount != null ? ' detail-stills-grid--limited' : ''}`}
+                    style={{ '--stills-zoom': STILLS_ZOOM_STEPS[stillsZoomIdx] } as React.CSSProperties}
                   >
                     {stills.slice(0, visibleCount != null ? visibleCount : undefined).map((url, i) => {
                       const isLast = visibleCount != null && i === visibleCount - 1 && stills.length > visibleCount;
