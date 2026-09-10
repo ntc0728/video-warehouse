@@ -1940,8 +1940,30 @@
        hero 随之略窄，.detail-hero-bg 是 inset:0 自动跟随列宽的，无需单独改。 */
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: var(--space-sm);
-    align-items: stretch;
+    /* ⚠️ 不能用 stretch（默认）：hero 带 aspect-ratio 16/9，一旦高度被行高拉伸确定，
+       浏览器会反过来用 ratio 反算宽度（实测高 453 → 宽 805 > 轨道 765），
+       hero 因此溢出到右栏与 .detail-hero-side 重叠。改为 start —— 让 hero 自己按
+       「轨道宽 × 9/16」定高，右栏再用 JS 写入的 --detail-hero-h 对齐下沿。 */
+    align-items: start;
     margin-bottom: var(--space-sm);
+  }
+
+  /* hero 宽度显式取满轨道（防 aspect-ratio 反算 / 内容撑开） */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-top > .detail-hero {
+    width: 100%;
+  }
+
+  /* ⚠️ 两栏子项必须显式 min-width: 0：
+     grid item 默认 `min-width: auto` = 内容的 min-content 宽度，而 .detail-hero 内部
+     是 flex row（左信息区 + 右侧海报 + nowrap 的按钮行），实测 min-content 达 805px。
+     注意外层 grid-template-columns 的 minmax(0,…) 只管轨道，管不到子项自身的 min-width。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-top > * {
+    min-width: 0;
+  }
+
+  /* 左信息区同样要可收缩，否则标题 / meta / 按钮行会把 hero 重新顶宽 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-top .detail-hero-left {
+    min-width: 0;
   }
 
   /* hero 内的海报随 hero 变窄而缩小（用户要求「尺寸小一点」）：基准 ×0.78 */
@@ -1977,23 +1999,27 @@
     font-size: var(--text-base);
   }
 
+  /* 右栏基础信息：一行两列（用户 2026-09-10 要求）。
+     单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2xs) var(--space-md);
   }
 
-  /* 右栏窄，info-card 改为「标签一行、值一行」的分行结构（用户 2026-09-10 要求）：
-     图标 + 标签在第一行，值另起一行并与标签左对齐（padding-left = 图标宽 + gap）。
-     注意这会显著增加右栏高度（9 个字段约 500px）+ 简介，超出 hero 高度属预期，
-     由上面的 overflow-y 兜底为栏内滚动。 */
+  /* 每张卡内部仍是「标签一行、值一行」的分行结构（用户要求）：
+     图标 + 标签在第一行，值另起一行并与标签左对齐（padding-left = 图标宽 + gap）。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
     flex-wrap: wrap;
     padding: var(--space-2xs) 0;
+    min-width: 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
     flex-basis: 100%;
+    min-width: 0;
     margin-left: 0;
     padding-left: calc(var(--icon-sm) + var(--space-sm));
+    overflow-wrap: anywhere;
   }
 
   /* 右栏内的简介（随基础信息一起从 info tab 上提） */
