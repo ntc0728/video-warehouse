@@ -53,6 +53,21 @@
   /* 滚动条已隐藏，不需要补偿 */
 }
 
+/* ── 顶栏与内容区对齐（2026-09-10 大屏整改「补强之一」）─────────────
+   背景：页面内容统一受 --layout-content-max-width（2200）封顶居中，并由
+   .page-padding 用 --page-pad-x 内缩（≥1440 为 60 / 100 / 140px）；
+   而顶栏 inner 原只有 --space-md(≈9px) 内边距、且无封顶 → 大屏下 logo 与
+   内容区左边缘最多错位约 130px，导航与内容「不在同一条竖线上」。
+   改法：inner 复用同一套 --page-pad-x + 2200 封顶居中，与内容区左右边缘严格对齐。
+   TV 端走全宽契约（无 2200 封顶），排除；<768 移动端保持原 --space-sm 内距。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__inner {
+    max-width: var(--layout-content-max-width);
+    margin-inline: auto;
+    padding-inline: var(--page-pad-x);
+  }
+}
+
 /* ── Left / Right groups ───────────────────────────── */
 
 .sticky-header__left {

@@ -324,6 +324,27 @@
     margin-top: var(--space-sm);
     margin-bottom: var(--space-sm);
   }
+  /* ── 左栏变体（2026-09-10 方案 C：首页大屏两栏的左侧栏）──
+     3 卡由横排（repeat(3,1fr)）改为竖排单列，卡片自带 surface+border+radius，
+     左栏不再外包一层容器；条目缩略图由 150×85 收到 56×32 适配窄栏。 */
+  html:not([data-device="tv"]) .cqa-heat-row--rail {
+    --cqa-poster-w: 56px;
+    --cqa-poster-h: 32px;
+    margin-top: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-catgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* 头部在窄栏内换行：标题 + ⓘ 一行，更多链接可落到第二行；副标题隐藏（放不下） */
+  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__head {
+    flex-wrap: wrap;
+    row-gap: var(--space-2xs);
+    margin-bottom: 0;
+  }
   html:not([data-device="tv"]) .cqa-heat-row__head {
     display: flex;
     align-items: center;
