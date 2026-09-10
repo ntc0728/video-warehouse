@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IPTV 播放页频道列表 + OSD 栏 整改提案 Demo — 2026-09-10</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   IPTV 播放页「频道列表一/二级宽度」+「OSD 栏宽度与内部布局」提案 Demo
+   2026-09-10 · 只用于「看形态 + 对数」，不参与构建。落地时引用真实 token。
+
+   ▍数据来源
+   本文件里所有尺寸 token 都从运行中的播放器（/iptv/play）在 6 个真实视口
+   （375 / 768 / 1024 / 1280 / 1440 / 1920）下实测 getComputedStyle 读回，
+   按断点打表、演示时在相邻两档间线性插值 —— 断点处与线上逐像素一致，
+   断点之间有一两 px 误差。面板/OSD 的 CSS 直接照抄
+   UniversalPlayer.css / IPTVOSDBar.css 的真实规则。
+
+   ▍为什么不用 @media / @container
+   要在同一页里并排对比 6 个真实视口，@media 无法被外部宽度驱动；@container
+   又盖不住 vh 与「视口」语义（前几轮 demo 已踩过坑）。这些值全部与视口宽度
+   绑定，直接由 JS 打表写入 CSS 变量最忠实。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-background:#f5f5f5;
+  --color-surface:#fff;
+  --color-text:#000;
+  --color-text-secondary:#666;
+  --color-text-tertiary:#999;
+  --color-border:#d9d9d9;
+  --color-border-light:#e8e8e8;
+  --color-primary:#000;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --radius-full:9999px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--color-background);color:var(--color-text);
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  font-size:14px;line-height:1.6;
+}
+button{font:inherit;color:inherit;cursor:pointer;}
+code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;}
+pre{margin:8px 0 0;padding:12px 14px;border-radius:8px;background:#1c1c1c;color:#e8e8e8;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.65;overflow-x:auto;}
+pre .c{color:#7d8590;}
+pre .k{color:#ff9d5c;}
+pre .n{color:#7ee2b8;}
+
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 28px;background:var(--color-surface);border-bottom:1px solid var(--color-border-light);}
+.brand{font-size:17px;font-weight:700;margin-right:8px;}
+.sw{display:flex;align-items:center;gap:6px;}
+.sw__lb{font-size:12px;color:var(--color-text-tertiary);}
+.seg{display:flex;background:var(--color-background);border-radius:8px;padding:2px;gap:2px;}
+.seg button{border:none;background:transparent;border-radius:6px;padding:5px 11px;font-size:13px;color:var(--color-text-secondary);transition:all .15s var(--ease);}
+.seg button.is-on{background:var(--color-surface);color:var(--color-text);font-weight:600;box-shadow:var(--shadow-sm);}
+.seg button:hover{color:var(--color-text);}
+.note{margin:0;padding:10px 28px;background:#fffbe6;border-bottom:1px solid #ffe58f;font-size:12.5px;color:#874d00;line-height:1.85;}
+.note b{color:#ad4e00;}
+.stage{padding:24px 28px 64px;max-width:2260px;}
+.sec{margin-bottom:46px;}
+.sec>h2{margin:0 0 4px;font-size:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sec>h2 .no{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:#111;color:#fff;font-size:14px;font-weight:700;}
+.sec>p.lead{margin:0 0 18px;font-size:13.5px;color:var(--color-text-secondary);max-width:1180px;line-height:1.9;}
+.sec>p.lead b{color:var(--color-text);}
+.h3{margin:26px 0 10px;font-size:15px;font-weight:700;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.tag{display:inline-block;padding:1px 8px;border-radius:var(--radius-full);font-size:11.5px;font-weight:600;line-height:1.7;white-space:nowrap;}
+.tag--rec{background:#e6f7ec;color:#12703a;border:1px solid #b7e2c6;}
+.tag--cur{background:#fdecec;color:#a3251c;border:1px solid #f5c2bd;}
+.tag--alt{background:#eef2fb;color:#2b4c8c;border:1px solid #c6d4ef;}
+.card{border:1px solid var(--color-border-light);border-radius:12px;background:var(--color-surface);padding:14px 16px;margin-bottom:14px;}
+.card h4{margin:0 0 6px;font-size:13.5px;}
+.card p{margin:0 0 6px;font-size:12.5px;color:var(--color-text-secondary);line-height:1.9;}
+.card ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--color-text-secondary);line-height:1.95;}
+.card ul b{color:var(--color-text);}
+table.tbl{border-collapse:collapse;width:100%;font-size:12.5px;margin:6px 0 14px;}
+table.tbl th,table.tbl td{border:1px solid var(--color-border-light);padding:5px 9px;text-align:right;white-space:nowrap;}
+table.tbl th{background:#fafafa;font-weight:600;color:var(--color-text-secondary);}
+table.tbl td:first-child,table.tbl th:first-child{text-align:left;}
+table.tbl tr.is-hi td{background:#fffdf3;}
+table.tbl .warn{color:#a3251c;font-weight:600;}
+table.tbl .ok{color:#12703a;font-weight:600;}
+table.tbl .mut{color:#888;}
+.tbl-wrap{overflow-x:auto;}
+.sim-wrap{overflow-x:auto;padding:2px 0 10px;}
+.sim{width:var(--sim-w);background:#0b0b0e;color:#fff;outline:1px solid var(--color-border);outline-offset:-1px;border-radius:8px;overflow:hidden;position:relative;}
+.sim--fill{width:100%;min-width:0;}
+
+/* ── 议题一 面板 ────────────────────────────────────────────────────── */
+.panels{display:flex;gap:20px;align-items:flex-start;}
+.pcol{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;}
+.pcol__hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.pcol__hd h4{margin:0;font-size:13px;}
+.pcol__stats{border:1px solid var(--color-border-light);border-radius:8px;background:var(--color-surface);padding:8px 10px;font-size:11.5px;color:var(--color-text-secondary);line-height:1.95;min-width:196px;}
+.pcol__stats b{color:var(--color-text);font-variant-numeric:tabular-nums;}
+.pcol__stats .bad{color:#a3251c;font-weight:600;}
+.pcol__stats .good{color:#12703a;font-weight:600;}
+.pcol__stats .mut{color:#999;}
+
+.up-channel-list{display:flex;flex-direction:column;width:var(--panel-w);height:330px;background:rgba(0,0,0,.60);backdrop-filter:blur(12px);font-size:var(--text-base);}
+.up-channel-list-header{display:flex;flex-shrink:0;gap:var(--space-sm);align-items:center;padding:var(--space-sm);color:#fff;font-size:var(--text-lg);font-weight:600;border-bottom:1px solid rgba(255,255,255,.1);}
+.up-channel-list-body{display:flex;flex:1;overflow:hidden;}
+.up-channel-groups{flex:0 0 auto;width:var(--g-w);max-width:var(--g-max);padding:var(--space-xs) 0;overflow-y:auto;border-right:1px solid rgba(255,255,255,.08);scrollbar-width:none;}
+.up-channel-groups::-webkit-scrollbar{display:none;}
+.up-channel-group-item{position:relative;display:flex;align-items:center;width:100%;padding:var(--space-sm) var(--space-md);border:none;border-radius:0;background:transparent;color:rgba(255,255,255,.7);font-size:var(--text-base);text-align:left;overflow:hidden;}
+.up-channel-group-active{background:rgba(255,255,255,.12);color:#fff;font-weight:600;}
+.up-channel-group-active::before{content:'';position:absolute;top:50%;left:0;width:var(--space-2xs);height:var(--space-lg);border-radius:0 var(--space-2xs) var(--space-2xs) 0;background:var(--color-primary);transform:translateY(-50%);}
+.up-channel-group-name{display:flex;flex:1;gap:var(--space-sm);align-items:center;min-width:0;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.up-channel-group-text{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.up-channel-group-count{flex-shrink:0;min-width:var(--space-lg);padding:var(--space-3xs) var(--space-sm);border-radius:var(--radius-md);background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);font-size:var(--text-xs);line-height:1.4;text-align:center;}
+.up-channel-group-active .up-channel-group-count{background:color-mix(in srgb, var(--color-primary) 12%, transparent);}
+.up-channel-channels{flex:1 1 auto;min-width:0;padding:var(--space-xs) 0;overflow-y:auto;scrollbar-width:none;}
+.up-channel-channels::-webkit-scrollbar{display:none;}
+.up-channel-item{position:relative;display:flex;gap:var(--space-sm);align-items:center;width:100%;padding:var(--space-sm) 0;border:none;border-radius:0;background:transparent;color:rgba(255,255,255,.75);font-size:var(--text-base);text-align:left;}
+.up-channel-item-active{border-left:3px solid var(--color-primary);background:rgba(255,255,255,.12);color:#fff;font-weight:500;}
+.up-channel-item-num{flex-shrink:0;min-width:var(--space-lg);color:rgba(255,255,255,.4);font-size:var(--text-base);text-align:right;font-variant-numeric:tabular-nums;}
+.up-channel-item-active .up-channel-item-num{color:color-mix(in srgb, var(--color-primary) 65%, transparent);}
+.up-channel-item-logo-cell{position:relative;flex-shrink:0;width:var(--space-lg);height:var(--space-lg);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:var(--text-base);font-weight:700;color:#fff;}
+.up-channel-item-name{display:flex;flex:1;align-items:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.up-channel-item-quality{flex-shrink:0;padding:var(--space-3xs) var(--space-xs);border:1px solid rgba(255,255,255,.12);border-radius:var(--space-2xs);color:rgba(255,255,255,.35);font-size:var(--text-xs);text-transform:uppercase;}
+.up-channel-list.is-narrow .up-channel-item-quality{display:none;}
+.up-channel-list.is-narrow .up-channel-group-item{font-size:var(--text-sm);padding-left:var(--space-sm);padding-right:var(--space-sm);}/* 标尺：把「内容需要宽度」画在一级栏下面 */
+.ruler{position:relative;height:16px;margin-top:6px;}
+.ruler i{position:absolute;top:6px;height:4px;border-radius:2px;}
+.ruler i.need{background:#2f8f5b;}
+.ruler i.idle{background:#e0a92b;}
+.ruler__cap{font-size:10.5px;color:var(--color-text-tertiary);margin-top:2px;display:block;}
+
+/* ── 议题二 图表 ────────────────────────────────────────────────────── */
+.chart{border:1px solid var(--color-border-light);border-radius:12px;background:var(--color-surface);padding:16px 18px;}
+.chart__row{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:center;padding:5px 0;}
+.chart__vplb{font-size:12px;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;text-align:right;}
+.chart__bars{display:flex;flex-direction:column;gap:3px;}
+.chart__bar{display:flex;align-items:center;gap:8px;}
+.chart__bar span{font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.chart__bar .fill{height:13px;border-radius:3px;}
+.fill--cur{background:#d9534f;}
+.fill--new{background:#2f8f5b;}
+.fill--avail{background:#dadde3;}
+.chart__legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;line-height:2;}
+.chart__legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+
+/* ── 议题三 OSD ────────────────────────────────────────────────────── */
+.osd-stage{position:relative;padding:22px 0 26px;background:#0b0b0e;}
+.osd-stage__video{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 15%,rgba(255,255,255,.05),transparent 70%),repeating-linear-gradient(90deg,#111 0 38px,#141414 38px 76px);opacity:.85;}
+.osd-stage__inner{position:relative;display:flex;justify-content:center;padding:0 14px;}
+.osd-row{position:relative;margin-bottom:18px;}
+.osd-row__cap{position:relative;display:flex;justify-content:center;gap:10px;align-items:baseline;font-size:11.5px;color:#8d939c;padding-bottom:6px;flex-wrap:wrap;}
+.osd-row__cap b{color:#dfe3e8;}
+.osd-row__cap .bad{color:#ff8a80;}
+.osd-row__cap .good{color:#79d99a;}
+
+.osd{position:relative;display:flex;gap:0;align-items:center;width:min(var(--osd-w),100%);max-width:calc(100% - 2 * var(--space-md));min-height:var(--space-3xl);padding:var(--space-md) var(--space-lg);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-lg);background:rgba(0,0,0,.6);backdrop-filter:blur(12px);color:#fff;font-size:var(--text-base);margin:0 auto;}
+.osd-left{display:flex;flex-direction:column;flex-shrink:0;gap:var(--space-sm);justify-content:center;align-items:center;width:var(--num-w);text-align:center;}
+.osd-num{flex-shrink:0;color:#fff;font-size:var(--text-xl);font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;}
+.osd-chanrow{display:flex;gap:var(--space-sm);justify-content:center;align-items:center;width:100%;min-width:0;}
+.osd-logo{flex-shrink:0;width:var(--icon-xl);height:var(--icon-xl);border-radius:50%;background:#16a085;display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:700;color:#fff;}
+.osd-name{flex:0 1 auto;min-width:0;font-size:var(--text-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.osd-center{display:flex;flex:1;flex-direction:column;gap:var(--space-xs);justify-content:center;min-width:0;padding:0 var(--space-md);overflow:hidden;}
+.osd-prow{display:flex;gap:var(--space-xs);align-items:center;min-width:0;font-size:var(--text-sm);white-space:nowrap;overflow:hidden;}
+.osd-prefix{flex-shrink:0;color:#fff;font-weight:500;opacity:.7;}
+.osd-ptxt{color:#eee;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.osd-controls{display:flex;flex-wrap:wrap;gap:var(--space-2xs);justify-content:center;align-items:center;margin-top:var(--space-xs);}
+.osd-btn-group{display:flex;gap:var(--space-3xs);}
+.osd-btn{display:flex;gap:var(--space-3xs);justify-content:center;align-items:center;padding:var(--space-3xs);border:none;background:transparent;color:#aaa;font-size:var(--text-xs);}
+.osd-btn i{display:inline-block;width:var(--icon-sm);height:var(--icon-sm);background:currentColor;border-radius:2px;opacity:.9;}
+.osd-right{display:flex;flex-direction:column;flex-shrink:0;gap:var(--space-2xs);justify-content:center;align-items:center;min-width:var(--qmin-w);}
+.osd-right span{white-space:nowrap;}
+.osd-spd,.osd-line{color:#bbb;font-size:var(--text-xs);}
+.osd-time{color:#fff;font-size:var(--text-sm);font-weight:500;font-variant-numeric:tabular-nums;}
+
+/* 建议 v1：右翼 = 左翼宽（--layout-channel-num-w）→ 中列真正居中；右翼两行右对齐 */
+.osd--v1 .osd-right{flex:0 0 var(--num-w);align-items:flex-end;text-align:right;gap:0;}
+.osd--v1 .osd-meta{color:#bbb;font-size:var(--text-xs);white-space:nowrap;}
+.osd--v1 .osd-left{flex:0 0 var(--num-w);}
+.osd--v1 .osd-controls{flex-wrap:nowrap;}
+/* 建议 v2：在 v1 基础上再把频道号并到台名同行（取舍项） */
+.osd--v2 .osd-left{flex-direction:row;gap:var(--space-sm);align-items:center;justify-content:center;}
+.osd--v2 .osd-num{font-size:var(--text-lg);}
+.osd--v2 .osd-chanrow{width:auto;justify-content:flex-start;}
+/* 两条建议都不允许 OSD 内换行 */
+.osd--v2 .osd-controls{flex-wrap:nowrap;}
+
+@media (max-width:900px){
+  .stage{padding:18px 14px 48px;}
+  .topbar{padding:8px 14px;gap:10px;}
+  .note{padding:10px 14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">IPTV 播放页 chrome 提案</span>
+  <div class="sw">
+    <span class="sw__lb">模拟视口</span>
+    <div class="seg" id="seg-vp">
+      <button data-vp="375">375</button>
+      <button data-vp="768">768</button>
+      <button data-vp="1024">1024</button>
+      <button data-vp="1280">1280</button>
+      <button data-vp="1440" class="is-on">1440</button>
+      <button data-vp="1920">1920</button>
+    </div>
+  </div>
+  <div class="sw">
+    <span class="sw__lb">频道名数据</span>
+    <div class="seg" id="seg-data">
+      <button data-data="normal" class="is-on">常规</button>
+      <button data-data="stress">压力（超长名）</button>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <b>本 Demo 只用于「看形态 + 对数」，不参与构建。</b>
+  所有尺寸 token 由运行中的播放器在 6 个真实视口实测 getComputedStyle 读回（断点打表 + 线性插值），
+  面板与 OSD 的 CSS 直接照抄 <code>UniversalPlayer.css</code> / <code>IPTVOSDBar.css</code> 的真实规则。
+  落地时请引用真实 token，勿复制这里的字面量。
+</p>
+
+<div class="stage">
+
+  <!-- ══════════════ 0 结论速览 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">0</span>结论速览</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>议题</th><th>现状读数（1440 实测）</th><th>问题定性</th><th>建议</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>一级频道（分类）栏</td>
+          <td>222.3px（面板 50%）<br>内容只需 125.3px</td>
+          <td class="warn">空转 <b>97px（44%）</b>。分类是写死的 10 条常量，需要宽度全程只有 118.6–129.1px，<b>与视口宽度无强相关</b></td>
+          <td>改成内容派生的定值 <code>132px</code>（≤479 走 116px 窄屏档），二级吃剩余</td>
+        </tr>
+        <tr>
+          <td>二级频道栏</td>
+          <td>222.3px（面板 50%）<br>名称只剩 122.2px</td>
+          <td class="warn">最长名 157px → <b>截断 34.9px</b>；375 下名称只剩 54.5px（实测被截成「CCTV-5 体育赛事」）</td>
+          <td>吃剩余 → 1440 得 312.6px、375 得 164px（再隐藏画质徽章则 375 名称可用 128px）</td>
+        </tr>
+        <tr>
+          <td>OSD 栏宽度</td>
+          <td>1208.9px（84.0% 视口）</td>
+          <td class="warn"><b>420–1158px 视口区间 token 恒大于可用宽度 → 恒贴边</b>：1024 占 98.0%（左右各 10px）、768 占 99.1%</td>
+          <td>换比例曲线 <code>clamp(320px, 78vw, 1400px)</code>，全程留白单调</td>
+        </tr>
+        <tr>
+          <td>OSD 内部布局</td>
+          <td>左翼 169.4 / 中列 890.9 / 右翼 113.6</td>
+          <td class="warn">右翼比左翼窄 55.8px → 控件行相对 OSD 中心 <b>右偏 27.9px</b>；右翼还堆了 3 行小字</td>
+          <td>右翼宽度改用 <code>--layout-channel-num-w</code>（与左翼同宽）+ 内容右对齐 + 三行并两行 → 偏移归 0</td>
+        </tr>
+        <tr class="is-hi">
+          <td>顺带发现（不在本次诉求内）</td>
+          <td>活跃指示条算出来是 <code>rgb(0,0,0)</code></td>
+          <td class="warn">播放器跑在浅色主题下 → <code>--color-primary</code> 是 <b>#000</b>，在黑色 60% 面板上完全不可见；计数药丸选中态比未选中态更暗</td>
+          <td>播放器作用域内覆写 primary（见 §4）</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ 1 议题一 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">1</span>议题一 · 频道列表「一级 / 二级」宽度</h2>
+    <p class="lead">
+      现在是硬 50%/50%（<code>.up-channel-groups</code> 与 <code>.up-channel-channels</code> 的 width / max-width 都写 50%）。
+      但两级的<b>内容性质完全不同</b>：一级是 <b>10 条写死的分类文本</b>（全部频道 / 央视 CCTV / 主流卫视 …），
+      最长一条「央视 CCTV」在任何视口下只需要 62–66px，算上计数药丸与内边距，
+      需要宽度全程只有 <b>118.6–129.1px</b>（见下方分配表末行），<b>与视口宽度没有强相关</b>；
+      二级是<b>自由频道名</b>（「CCTV-5 体育赛事高清频道」实测 249px），<b>宽度需求无上限</b>。
+      50/50 等于把一半宽度让给了有上限的一侧 —— 实测 1440 下一级空转 97px（44%，占比 222.3 中的 97），
+      同时二级连「CCTV-1 综合」以外的名字都挤到了边界：1440 下频道名只剩 122.2px，
+      而最长名 157px 已经 <b>截断 34.9px</b>。
+    </p>
+
+    <div class="sim-wrap"><div class="panels" id="panels"></div></div>
+
+    <div class="card">
+      <h4>各方案的实际分配（一级 / 二级，单位 px；每格下方标注一级空转 / 截断量）</h4>
+      <div class="tbl-wrap"><table class="tbl" id="alloc-tbl"></table></div>
+      <p>
+        <b>方案 A 的选取依据：</b>一级栏的最小可用宽度 = 行左内边距 + 最长分类名 + 与计数药丸的间距 + 药丸宽 + 行右内边距。
+        10 条分类是常量，逐档实测这个值只有 <b>118.6 / 125.3 / 125.3 / 125.2 / 125.3 / 129.1px</b>（375→1920）——
+        内边距随档变大、字号在 768 后反而变小，两者相抵后近乎恒定，<b>与视口宽度没有强相关</b>。
+        所以取内容派生的定值 <code>132px</code>（= 129.1 + 2% 余量），
+        而不是视口派生的比例 —— 比例档在窄屏会崩（见方案 B）。
+      </p>
+      <p>
+        <b>窄屏（≤479）单独一档：</b>280px 的面板上 132px 会占到 47%，与 50/50 相差无几，
+        所以在这一档把组项字号降到 <code>--text-sm</code>、行内边距降到 <code>--space-sm</code>，
+        需要宽度随之降到 109.6px → 一级栏取 116px（41%），剩下的 164px 全给二级；
+        再把质量徽章隐藏，375 下频道名可用宽度从现状的 <b>54.5px 提升到 128px（+135%）</b>。
+      </p>
+      <p>
+        <b>口径提醒：</b>分类的活跃态是 <code>font-weight:600</code>，而最长的「央视 CCTV」随时可能成为活跃项，
+        所以设计宽度必须按 <b>600 字重的自然宽度</b>算。用渲染宽度算会自证「刚好放得下」
+        （<code>.up-channel-group-text</code> 带 <code>text-overflow:ellipsis</code>，栏窄时渲染宽被裁到可用宽）。
+        本 Demo 面板与分配表共用同一个量测函数，两处读数必然一致。
+      </p>
+      <p>
+        <b>方案 C 只对 ≥768 有效</b>：<code>--layout-episode-panel-w</code> 的下限是 420px，
+        375 视口下会<b>超出屏幕</b>。而且它治标不治本 —— 一级空转从 44% 涨到 53%。
+      </p>
+    </div>
+
+    <div class="h3">落地改动 <span class="tag tag--rec">方案 A</span></div>
+    <pre><span class="c">/* variables.css —— 新增 token（放在 --layout-panel-medium-w 附近）
+   定值而非 vw 曲线：一级栏宽度由「最长分类名 + 计数药丸 + 行内边距」决定，
+   而分类是写死的 10 条常量 → 需要宽度与视口无强相关（实测 375→1920 仅 118.6→129.1px）。
+   取 132px = 上限 129.1 + 2% 安全余量（吸收中文字体回退差异）。 */</span>
+<span class="k">--layout-channel-group-w</span>: calc(132px * var(--ui-scale));
+<span class="c">/* 窄屏：组项字号/内边距各降一档，需要宽度同步降到 109.6px → 116px */</span>
+@media (width &lt;= 479px) {
+  :root { <span class="k">--layout-channel-group-w</span>: calc(116px * var(--ui-scale)); }
+}
+
+<span class="c">/* UniversalPlayer.css —— .up-channel-groups 原 width / max-width 均为 50% */</span>
+.up-channel-groups {
+  flex: <span class="n">0 0 auto</span>;
+  width: <span class="n">var(--layout-channel-group-w)</span>;
+  max-width: <span class="n">44%</span>;            <span class="c">/* 仅作越界兜底 */</span>
+}
+.up-channel-channels {
+  flex: <span class="n">1 1 auto</span>;
+  min-width: <span class="n">0</span>;               <span class="c">/* 必要：否则 marquee 会把栏撑开 */</span>
+}
+<span class="c">/* 窄屏（≤479）：组项收一档 + 质量徽章让位给频道名
+   （375 下频道名可用 54.5 → 128px，+135%） */</span>
+@media (width &lt;= 479px) {
+  .up-channel-group-item {
+    font-size: var(--text-sm);
+    padding-left: var(--space-sm);
+    padding-right: var(--space-sm);
+  }
+  .up-channel-item-quality { display: none; }
+}</pre>
+    <p class="lead" style="margin:10px 0 0">
+      方案 B（<code>clamp(96px, 32%, 148px)</code>）作为「不想引入新 token 语义」的保守替代：
+      1440 下一级 142.3px（比 A 多 10.3px 空转），768 及以上都不截断，
+      但 <b>375 下只有 96px、分类名被截断 22.6px</b> —— 比例档在极窄屏必然崩，
+      要么接受截断、要么再补一条窄屏例外（那就等于又回到 A 的复杂度，却少了内容派生的依据）。
+      切到「压力（超长名）」可看到：常规站名 A 全程不截断；249px 的极端名没有任何
+      固定栏宽能容下，只能靠二级吃满剩余宽度 + 继续走 marquee —— 这正是 A 的设计前提。
+    </p>
+  </div>
+
+  <!-- ══════════════ 2 议题二 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">2</span>议题二 · OSD 栏宽度合理性</h2>
+    <p class="lead">
+      <code>--layout-osd-max-width</code> 是「以 1080p 为锚点」的两段式 clamp（&lt;1024 一段、≥1024 一段，
+      1440 落点 1208.94px）。问题是：这条曲线在 <b>约 420–1158px 视口区间恒大于「视口 − 2×--space-md」</b>，
+      于是被 <code>max-width</code> 兜底规则截断 —— 这一段 OSD 实际是<b>贴边</b>的，宽度 token 完全不起作用。
+      表现为「视口越窄、OSD 占比越高」这条反直觉的曲线：1024 时占 98.0%（左右各只剩 10px），768 时占 99.1%，
+      而 1920 反而只有 69.9%。
+    </p>
+    <div class="chart">
+      <div class="chart__legend">
+        <span><i class="fill--avail"></i>可用宽度上限 <code>100% − 2×--space-md</code></span>
+        <span><i class="fill--cur"></i>现状 <code>--layout-osd-max-width</code>（红字 = 被 max-width 吃掉）</span>
+        <span><i class="fill--new"></i>建议 <code>clamp(320px, 78vw, 1400px)</code></span>
+      </div>
+      <div id="osd-chart"></div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:14px"><table class="tbl" id="osd-tbl"></table></div>
+
+    <div class="card">
+      <h4>建议曲线 <code>clamp(320px, 78vw, 1400px)</code> 的取值</h4>
+      <ul>
+        <li><b>375 → 320px（85.3%，与现状一致）</b>：小屏本来就需要尽量宽；这条曲线在 410px 以下仍由下限托住。</li>
+        <li><b>768 → 599px（78.0%，现状 97.5% 贴边）</b>、<b>1024 → 798.7px（78.0%，现状 98.0% 贴边）</b>：
+          这两档收益最大 —— 左右各留出 84–113px，OSD 不再像被拉满的横条。</li>
+        <li><b>1440 → 1123.2px（78.0%，现状 84.0%）</b>、<b>1920 → 1400px（72.9%，现状 69.9%）</b>：
+          基本持平，曲线在 1795px 触顶 1400 后冻结（与 <code>--layout-content-cap</code> 的 2200 封顶哲学同源）。</li>
+        <li><b>单调、无截断段</b>：一条比例曲线 + 上下限，不再出现「中间某段 token 失效」。</li>
+        <li><b>TV 档不动</b>：<code>.up-platform-tv</code> 的 <code>clamp(1600px, 83.333vw, 3200px)</code> 是独立的 2× 契约，保留。</li>
+      </ul>
+    </div>
+    <pre><span class="c">/* variables.css —— 删掉 &lt;1024 与 ≥1024 两段锚点曲线，合并为一条比例曲线 */</span>
+<span class="k">--layout-osd-max-width</span>: calc(clamp(320px, 78vw, 1400px) * var(--ui-scale));
+
+<span class="c">/* IPTVOSDBar.css —— 边缘留白随档位放大（原为固定 --space-md） */</span>
+.iptv-osd-bar {
+  max-width: calc(100% - 2 * var(--space-lg));
+}</pre>
+  </div>
+
+  <!-- ══════════════ 3 议题三 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">3</span>议题三 · OSD 栏内部布局</h2>
+    <p class="lead">
+      当前是「左翼固定宽 + 中列吃剩余 + 右翼最小宽」的三段 flex。因为
+      <b>左翼（<code>--layout-channel-num-w</code> 120→180px）恒大于右翼（<code>--layout-quality-badge-min-w</code> 84→120px）</b>，
+      中列的中心并不等于 OSD 的中心 —— 1440 实测左翼 169.4 / 右翼 113.6，相差 55.8px，
+      于是位于中列的控件行<b>整体右偏 27.9px</b>（OSD 中心 719.95，控件中心 747.85）。
+      下面的对比里，三个 bar 都是真的 DOM，读数取实时 getBoundingClientRect。
+    </p>
+
+    <div class="sim sim--fill">
+      <div class="osd-stage">
+        <div class="osd-stage__video"></div>
+        <div class="osd-stage__inner" style="flex-direction:column;padding:0 14px">
+          <div class="osd-row" id="row-cur"></div>
+          <div class="osd-row" id="row-v1"></div>
+          <div class="osd-row" id="row-v2"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pcol__stats" id="osd-stats" style="margin-top:10px;min-width:0;line-height:2.1"></div>
+
+    <div class="h3">落地改动 <span class="tag tag--rec">建议 v1（最小改动）</span></div>
+    <pre><span class="c">/* IPTVOSDBar.css —— ① 右翼宽度 = 左翼宽度 → 中列真正居中（≥1024 才生效） */</span>
+@media (width &gt;= 1024px) {
+  .iptv-osd-left,
+  .iptv-osd-right { flex: <span class="n">0 0 var(--layout-channel-num-w)</span>; }
+}
+<span class="c">/* 右翼内容随之改为右对齐（原来居中在 113.6px 的窄栏里） */</span>
+.iptv-osd-right {
+  align-items: <span class="n">flex-end</span>;
+  text-align: <span class="n">right</span>;
+  gap: <span class="n">0</span>;                      <span class="c">/* 两行紧贴，原 --space-2xs */</span>
+}
+
+<span class="c">/* ② 右翼三行并两行：网络速度与线路同行 */</span>
+<span class="c">/* IPTVOSDBar.tsx：&lt;span class="iptv-osd-network-speed"&gt; 与 &lt;span class="iptv-osd-source-text"&gt;</span>
+   包一层 .iptv-osd-meta-row；移动端隐藏 source-text 的旧规则随之失效（本来就在同一行）*/</span>
+.iptv-osd-meta-row { display: <span class="n">flex</span>; gap: var(--space-2xs); align-items: baseline; }
+
+<span class="c">/* ③ 控件行不换行（原 flex-wrap: wrap 会在窄屏换行 → OSD 高度跳变 +20px） */</span>
+.iptv-osd-controls-row { flex-wrap: <span class="n">nowrap</span>; }
+@media (width &lt;= 639px) {              <span class="c">/* 窄屏只留图标，保证一行放得下 */</span>
+  .iptv-osd-control-btn span { display: none; }
+  .iptv-osd-control-btn svg { width: var(--icon-md); height: var(--icon-md); }
+}
+
+<span class="c">/* ④ min-height 形同虚设（--space-3xl = 44.9px vs 实际高 90.5px），可删或改为实测下限 */</span></pre>
+
+    <div class="h3">取舍项 <span class="tag tag--alt">建议 v2 = v1 + 频道号与台名同排</span></div>
+    <div class="card">
+      <p>
+        v2 把「频道号」从独占一行并到台名同行（左翼高度 53.7px → ~27px，三栏垂直重心更齐）。
+        但它是<b>有代价的取舍</b>，不是纯改善：号进入同一行后会吃掉 ~27px，
+        台名可用宽度从 <b>134.8px 降到 ~104px</b>，「CCTV-5 体育赛事高清」这类长台名会更早开始跑马灯。
+        现状左翼 53.7px 高与中列 66.7px 本就不齐，但三栏都垂直居中，观感问题不大 ——
+        所以 <b>这一项建议由你裁决</b>：要「更紧凑的垂直节奏」还是「更长的台名可见宽度」。
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════ 4 顺带发现 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">4</span>顺带发现 · 频道列表活跃态在播放器里不可见</h2>
+    <p class="lead">
+      排查宽度时实测到的既有缺陷，不在本次诉求内，一并留痕：播放器页面跑在应用默认的<b>浅色主题</b>下，
+      <code>--color-primary</code> 在浅色主题是 <code>#000</code>；而频道列表面板本身是
+      <code>rgba(0,0,0,.60)</code> 压在视频黑场上 —— 于是所有「用 primary 做强调」的规则全部退化成黑色。
+    </p>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>规则</th><th>实际算出的值</th><th>实际效果</th></tr></thead>
+        <tbody>
+          <tr><td><code>.up-channel-group-active::before</code>（一级活跃左竖条）</td><td>rgb(0, 0, 0)</td><td class="warn">完全不可见（1.84 × 16.5px 的黑条压在黑面板上）</td></tr>
+          <tr><td><code>.up-channel-item-active</code>（二级活跃左边框）</td><td>3px rgb(0, 0, 0)</td><td class="warn">完全不可见</td></tr>
+          <tr><td><code>.up-channel-group-active .up-channel-group-count</code></td><td>color(srgb 0 0 0 / 0.12)</td><td class="warn">比未选中态的 <code>rgba(255,255,255,.06)</code> <b>更暗</b> —— 选中反而更弱</td></tr>
+          <tr><td><code>.up-channel-item-active .up-channel-item-num</code></td><td>color(srgb 0 0 0 / 0.65)</td><td class="warn">不可见（序号本该高亮）</td></tr>
+          <tr><td>目前唯一生效的活跃线索</td><td colspan="2"><code>rgba(255,255,255,.12)</code> 行底色 + 字重加粗（见 §1 面板截图里「央视 CCTV」那行）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><span class="c">/* 播放器作用域内覆写 primary（放进 .up-universal-player 块） */</span>
+.up-universal-player {
+  <span class="k">--color-primary</span>: <span class="n">#3b82f6</span>;          <span class="c">/* 播放器恒深色底，用亮色 primary */</span>
+  <span class="k">--color-primary-hover</span>: <span class="n">#60a5fa</span>;
+}</pre>
+    <p class="lead" style="margin:10px 0 0">
+      涉及播放器内所有 <code>var(--color-primary)</code> 消费点（OSD 按钮 hover、错误态主按钮、
+      TV 焦点描边、时移按钮、进度条等约 10 处），<b>建议单独立项、逐个回归后再提交</b>。
+    </p>
+  </div>
+
+  <!-- ══════════════ 5 待裁决 ══════════════ -->
+  <div class="sec">
+    <h2><span class="no">5</span>待裁决 / 落地清单</h2>
+    <div class="card">
+      <ul>
+        <li><b>议题一</b>：选 A（内容派生定值 132px / ≤479 档 116px，需新增 <code>--layout-channel-group-w</code> token）还是 B（32% 比例档，改动最小但 375 下分类名截断 22.6px）？</li>
+        <li><b>议题一 · 窄屏</b>：≤479 隐藏质量徽章（<code>1080P</code>）是否可接受？不隐藏则 375 下频道名可用 78.5px（方案 A 的 164px 二级栏减去徽章 ~45px）。</li>
+        <li><b>议题二</b>：比例取 78vw 是否合适，还是希望更宽（80–84%）？上限 1400px 是否与 4K 屏匹配。</li>
+        <li><b>议题三</b>：v1 是否直接落地？v2（号同排）这一取舍项选哪边（台名可见宽 130.6 → 101px）？</li>
+        <li><b>§4</b>：播放器 primary 是否单独立项修（影响面约 10 处，建议独立提交）。</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   1) 真实 token 打表 —— 6 个断点，运行中播放器实测 getComputedStyle 读数
+   ═══════════════════════════════════════════════════════════════════════════ */
+const BP = [375, 768, 1024, 1280, 1440, 1920];
+const T = {
+  '--text-2xs':  [9, 10.3281, 10.4375, 10.5625, 10.6406, 10.9688],
+  '--text-xs':   [12, 12.6562, 12.1562, 11.6406, 11.3281, 11.0938],
+  '--text-sm':   [13, 13.6562, 13.1094, 12.5625, 12.2188, 12.1094],
+  '--text-base': [14, 13.9844, 13.6875, 13.375, 13.1875, 13.1094],
+  '--text-lg':   [14, 15.3281, 14.75, 14.1875, 13.8281, 13.625],
+  '--text-xl':   [16, 17.3281, 16.6562, 16, 15.5781, 15.1406],
+  '--space-3xs': [1, 1.6563, 1.7188, 1.7813, 1.8125, 1.9531],
+  '--space-2xs': [1, 1.5, 1.6719, 1.8438, 1.9688, 2.3125],
+  '--space-xs':  [3, 3.5, 3.6719, 3.8438, 3.9688, 4.3438],
+  '--space-sm':  [6, 7, 7.3438, 7.7031, 7.9375, 8.6875],
+  '--space-md':  [8, 9.5, 10.0312, 10.5625, 10.9062, 12.0156],
+  '--space-lg':  [12, 14.3281, 15.1562, 16, 16.5156, 18.25],
+  '--space-xl':  [16, 19.6562, 20.9688, 22.2812, 23.0938, 25.7969],
+  '--space-3xl': [32, 38.6562, 41.0469, 43.4219, 44.9219, 49.8594],
+  '--icon-sm':   [16.8906, 17.7656, 17.0469, 16.3281, 15.875, 15.7344],
+  '--icon-md':   [20.0156, 20.0156, 19.5781, 19.1406, 18.875, 18.7656],
+  '--icon-xl':   [26.5938, 30.1406, 28.9688, 27.8125, 27.0781, 26.5156],
+  '--radius-sm': [3, 4.3281, 4.4375, 4.5625, 4.6406, 4.9063],
+  '--radius-md': [6, 8.6563, 8.8906, 9.1406, 9.2813, 9.8281],
+  '--radius-lg': [10, 15.3281, 15.7969, 16.2812, 16.5781, 17.6406],
+  '--layout-panel-medium-w':  [280, 413.328, 425.25, 437.156, 444.609, 471.438],
+  '--layout-episode-panel-w': [420, 513.328, 521.672, 530.016, 535.219, 556.156],
+  '--layout-osd-max-width':   [320, 1040, 1104.34, 1168.7, 1208.94, 1342.36],
+  '--layout-channel-num-w':   [120, 160, 163.562, 167.141, 169.375, 177.766],
+  '--layout-quality-badge-min-w': [84, 108, 110.141, 112.281, 113.625, 118.781],
+};
+function lerp(name, vp) {
+  const a = T[name];
+  if (!a) return 0;
+  if (vp <= BP[0]) return a[0];
+  if (vp >= BP[BP.length - 1]) return a[a.length - 1];
+  let i = 0;
+  while (i < BP.length - 2 && vp > BP[i + 1]) i++;
+  const t = (vp - BP[i]) / (BP[i + 1] - BP[i]);
+  return a[i] + (a[i + 1] - a[i]) * t;
+}
+function px(v) { return (Math.round(v * 10) / 10) + 'px'; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2) 数据
+   ═══════════════════════════════════════════════════════════════════════════ */
+const GROUPS = [
+  ['全部频道', 17], ['央视 CCTV', 6], ['主流卫视', 4], ['地方卫视', 2], ['港澳台', 2],
+  ['体育', 2], ['影视', 1], ['少儿', 1], ['新闻', 1], ['我的收藏', 0],
+];
+const ACTIVE_GROUP = 1;
+const CH_BASE = [
+  ['CCTV-1 综合', ''], ['CCTV-5 体育赛事高清', '1080P'], ['CCTV-6 电影', ''],
+  ['CCTV-13 新闻', '1080P'], ['CCTV-4 中文国际高清频道', ''], ['CCTV-2 财经', '720P'],
+];
+const CH_STRESS = [
+  ['CCTV-5 体育赛事高清频道（超长压力名）', '1080P'], ['CCTV-1 综合', ''],
+  ['CCTV-5 体育赛事高清', '1080P'], ['CCTV-6 电影', ''], ['CCTV-13 新闻', '1080P'],
+  ['CCTV-4 中文国际高清频道', ''],
+];
+const LOGO_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#16a085'];
+function firstChar(n) { for (const c of n) if (/[\u4e00-\u9fff]/.test(c)) return c; return n[0].toUpperCase(); }
+/* OSD 演示用的台名（取中长名，便于看出左翼宽度差异） */
+const OSD_CH = 'CCTV-5 体育赛事高清';
+
+let curVP = 1440;
+let curData = 'normal';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3) 议题一：5 个方案面板
+   ═══════════════════════════════════════════════════════════════════════════ */
+const SCHEMES = [
+  { id: 'now', tag: 'cur', label: '当前实现', panel: '--layout-panel-medium-w', split: '50/50', rule: 'width / max-width: 50%' },
+  { id: 'A', tag: 'rec', label: '方案 A（推荐）', panel: '--layout-panel-medium-w', split: 'group', rule: '一级 132px（≤479 → 116px + 窄屏档），二级吃剩余', narrow: true },
+  { id: 'B', tag: 'alt', label: '方案 B（保守）', panel: '--layout-panel-medium-w', split: '32%', rule: '一级 clamp(96px, 32%, 148px)，二级吃剩余' },
+  { id: 'C', tag: 'alt', label: '方案 C（面板加宽）', panel: '--layout-episode-panel-w', split: '50/50', rule: 'panel → episode-panel-w 后仍 50/50' },
+];
+function groupWidth(scheme, vp, panelW) {
+  if (scheme.split === '50/50') return panelW * 0.5;
+  if (scheme.split === '32%') return Math.min(Math.max(96, panelW * 0.32), 148);
+  /* 方案 A：一级栏恒 132px —— 见 needAt() 的口径说明：
+     实测「最长分类名 + 药丸 + 行内边距」在 375→1920 全程落在 118.6–129.1px
+     （内边距随档变大、字号 768 后反而变小，两者相抵后近乎恒定），
+     所以给内容派生的定值而非视口派生的比例。
+     ≤479 走窄屏档：组项字号降 --text-sm、内边距降 --space-sm → 需要宽度同步降到 109.6px，
+     取 116px（41% / 280）。 */
+  return vp <= 479 ? 116 : 132;
+}
+
+/**
+ * 一级栏「内容需要」的像素级口径 —— 面板与分配表共用同一个函数，保证两处读数一致。
+ *   need = 行左内边距 + 最长分类名 + 与药丸的间距 + 药丸宽 + 行右内边距
+ * 三个坑：
+ *  ① 分类名必须量「自然宽度」，不能用渲染宽度 —— .up-channel-group-text 带
+ *    text-overflow:ellipsis，栏窄时渲染宽会被裁到可用宽，用它当「需要」等于自证放得下；
+ *  ② 分类的活跃态是 font-weight:600，且最长名「央视 CCTV」恰好是活跃项 →
+ *    必须按 600 量，否则低估几 px；
+ *  ③ 药丸宽要取 max(文字宽 + 左右内边距, min-width)。
+ * narrow=true 时（方案 D，≤479）分组项字号降到 --text-sm、内边距降到 --space-sm。
+ */
+let _probe = null;
+function needAt(vp, narrow) {
+  if (!_probe) {
+    _probe = document.createElement('span');
+    _probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;' +
+      'font-weight:600;font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif';
+    document.body.appendChild(_probe);
+  }
+  const isNarrow = narrow && vp <= 479;
+  const rowFs = isNarrow ? lerp('--text-sm', vp) : lerp('--text-base', vp);
+  const rowPad = isNarrow ? lerp('--space-sm', vp) : lerp('--space-md', vp);
+  _probe.style.fontSize = rowFs + 'px';
+  let maxLabel = 0;
+  GROUPS.forEach((g) => { _probe.textContent = g[0]; maxLabel = Math.max(maxLabel, _probe.getBoundingClientRect().width); });
+  _probe.style.fontSize = lerp('--text-xs', vp) + 'px';
+  let maxCount = 0;
+  GROUPS.forEach((g) => { _probe.textContent = String(g[1]); maxCount = Math.max(maxCount, _probe.getBoundingClientRect().width); });
+  const pill = Math.max(maxCount + lerp('--space-sm', vp) * 2, lerp('--space-lg', vp));
+  return rowPad + maxLabel + lerp('--space-sm', vp) + pill + rowPad;
+}
+
+function tagsHtml(tag) {
+  if (tag === 'cur') return '<span class="tag tag--cur">现状</span>';
+  if (tag === 'rec') return '<span class="tag tag--rec">推荐</span>';
+  return '<span class="tag tag--alt">备选</span>';
+}
+
+function buildPanels() {
+  const host = document.getElementById('panels');
+  host.innerHTML = '';
+  const channels = curData === 'stress' ? CH_STRESS : CH_BASE;
+
+  SCHEMES.forEach((s) => {
+    const pw = lerp(s.panel, curVP);
+    const gw = +groupWidth(s, curVP, pw).toFixed(1);
+
+    const col = document.createElement('div');
+    col.className = 'pcol';
+    col.innerHTML =
+      '<div class="pcol__hd"><h4>' + s.label + '</h4>' + tagsHtml(s.tag) + '</div>' +
+      '<div class="sim sim--fill" style="width:' + px(pw) + '">' +
+        '<div class="up-channel-list' + (s.narrow ? ' is-narrow' : '') + '" style="--panel-w:' + px(pw) + ';--g-w:' + px(gw) + ';--g-max:' + (s.split === '50/50' ? '50%' : (s.split === '32%' ? '40%' : '44%')) + '">' +
+          '<div class="up-channel-list-header"><span>◉</span><span>频道列表</span><span style="margin-left:auto">✕</span></div>' +
+          '<div class="up-channel-list-body">' +
+            '<div class="up-channel-groups">' +
+              GROUPS.map((g, i) =>
+                '<button class="up-channel-group-item' + (i === ACTIVE_GROUP ? ' up-channel-group-active' : '') + '">' +
+                  '<span class="up-channel-group-name"><span class="up-channel-group-text">' + g[0] + '</span>' +
+                  '<span class="up-channel-group-count">' + g[1] + '</span></span>' +
+                '</button>').join('') +
+            '</div>' +
+            '<div class="up-channel-channels">' +
+              channels.map((c, i) =>
+                '<button class="up-channel-item' + (i === 0 ? ' up-channel-item-active' : '') + '">' +
+                  '<span class="up-channel-item-num">' + (i + 1) + '</span>' +
+                  '<span class="up-channel-item-logo-cell" style="background:' + LOGO_COLORS[i % LOGO_COLORS.length] + '">' + firstChar(c[0]) + '</span>' +
+                  '<span class="up-channel-item-name">' + c[0] + '</span>' +
+                  (c[1] ? '<span class="up-channel-item-quality">' + c[1] + '</span>' : '') +
+                '</button>').join('') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ruler"></div>' +
+      '<div class="pcol__stats"></div>';
+    host.appendChild(col);
+
+    requestAnimationFrame(() => {
+      const list = col.querySelector('.up-channel-list');
+      const gWrap = col.querySelector('.up-channel-groups');
+      const cWrap = col.querySelector('.up-channel-channels');
+      const gAvail = gWrap.getBoundingClientRect().width;
+      const need = needAt(curVP, s.narrow);
+      const idle = gAvail - need;
+
+      const item = col.querySelector('.up-channel-item');
+      const ic = getComputedStyle(item);
+      const itemGap = parseFloat(ic.columnGap) || 0;
+      const numW = col.querySelector('.up-channel-item-num').getBoundingClientRect().width;
+      const logoQ = col.querySelector('.up-channel-item-logo-cell');
+      const logoW = logoQ.getBoundingClientRect().width;
+      const q = col.querySelector('.up-channel-item-quality');
+      const qShown = q && getComputedStyle(q).display !== 'none';
+      const qW = qShown ? q.getBoundingClientRect().width : 0;
+      const cAvail = cWrap.getBoundingClientRect().width;
+      const nameAvail = cAvail - numW - logoW - qW - itemGap * (qShown ? 3 : 2);
+
+      const probe2 = document.createElement('span');
+      probe2.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;' +
+        'font:' + ic.fontWeight + ' ' + ic.fontSize + '/' + ic.lineHeight + ' ' + ic.fontFamily;
+      list.appendChild(probe2);
+      let maxName = 0;
+      channels.forEach((c) => { probe2.textContent = c[0]; maxName = Math.max(maxName, probe2.getBoundingClientRect().width); });
+      probe2.remove();
+      const cut = maxName - nameAvail;
+
+      /* 一级栏下的标尺：绿色 = 内容需要，黄色 = 空转 */
+      col.querySelector('.ruler').innerHTML =
+        '<i class="need" style="left:0;width:' + (need / gAvail * 100) + '%"></i>' +
+        '<i class="idle" style="left:' + (need / gAvail * 100) + '%;width:' + (Math.max(0, idle) / gAvail * 100) + '%"></i>';
+
+      col.querySelector('.pcol__stats').innerHTML =
+        '面板 <b>' + px(pw) + '</b>　<span class="mut">' + s.rule + '</span><br>' +
+        '一级 <b>' + px(gAvail) + '</b>　内容需要 <b>' + px(need) + '</b><br>' +
+        (idle >= 0
+          ? '<span class="' + (idle > 30 ? 'bad' : 'good') + '">空转 ' + px(idle) + '（' + Math.round(idle / gAvail * 100) + '%）</span>'
+          : '<span class="bad">不够，分类名被截断 ' + px(-idle) + '</span>') + '<br>' +
+        '二级 <b>' + px(cAvail) + '</b>　名称可用 <b>' + px(nameAvail) + '</b><br>' +
+        '最长频道名 <b>' + px(maxName) + '</b>　' +
+        (cut > 0 ? '<span class="bad">→ 截断 ' + px(cut) + '</span>' : '<span class="good">→ 不截断</span>');
+    });
+  });
+  buildAllocTable();
+}
+
+/* 分配表：与面板共用 needAt() / groupWidth() —— 两处读数必然一致 */
+function buildAllocTable() {
+  let html = '<thead><tr><th>方案（一级 / 二级）</th>' + BP.map((v) => '<th>' + v + 'px</th>').join('') + '</tr></thead><tbody>';
+  SCHEMES.forEach((s) => {
+    html += '<tr' + (s.id === 'A' ? ' class="is-hi"' : '') + '><td>' + s.label + '</td>' +
+      BP.map((vp) => {
+        const pw = lerp(s.panel, vp);
+        const gw = groupWidth(s, vp, pw);
+        const idle = gw - needAt(vp, s.narrow);
+        const badge = idle >= 0
+          ? '<span class="' + (idle > 30 ? 'warn' : 'ok') + '" style="font-size:11px">空转 ' + Math.round(idle) + '</span>'
+          : '<span class="warn" style="font-size:11px">截断 ' + Math.round(-idle) + '</span>';
+        return '<td>' + Math.round(gw) + ' / ' + Math.round(pw - gw) + '<br>' + badge + '</td>';
+      }).join('') + '</tr>';
+  });
+  html += '<tr><td class="mut">一级「内容需要」</td>' +
+    BP.map((v) => '<td class="mut">' + Math.round(needAt(v)) + '</td>').join('') + '</tr>';
+  html += '<tr><td class="mut">面板宽（panel-medium-w）</td>' +
+    BP.map((v) => '<td class="mut">' + Math.round(lerp('--layout-panel-medium-w', v)) + '</td>').join('') + '</tr>';
+  html += '<tr><td class="mut">最长频道名</td>' +
+    BP.map((v) => '<td class="mut">' + Math.round(chNameWidth(v, curData)) + '</td>').join('') + '</tr>';
+  html += '</tbody>';
+  document.getElementById('alloc-tbl').innerHTML = html;
+}
+
+/* 频道名在断点处的自然宽度（换算：同字号下宽度与 --text-base 成正比） */
+const NAME_BASE_1440 = { normal: 157, stress: 249.4 };
+function chNameWidth(vp, kind) {
+  return NAME_BASE_1440[kind || 'normal'] * (lerp('--text-base', vp) / lerp('--text-base', 1440));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4) 议题二：OSD 宽度曲线对比
+   ═══════════════════════════════════════════════════════════════════════════ */
+function osdNewWidth(vp) { return Math.max(320, Math.min(0.78 * vp, 1400)); }
+function buildOsdChart() {
+  const maxW = 1920, w = (x) => (x / maxW * 100).toFixed(2) + '%';
+  let html = '';
+  BP.forEach((vp) => {
+    const avail = vp - 2 * lerp('--space-md', vp);
+    const curTok = lerp('--layout-osd-max-width', vp);
+    const cur = Math.min(curTok, avail);
+    const nw = osdNewWidth(vp);
+    const truncated = curTok > avail + 0.5;
+    html +=
+      '<div class="chart__row"><div class="chart__vplb">' + vp + 'px</div><div class="chart__bars">' +
+        '<div class="chart__bar"><div class="fill fill--avail" style="width:' + w(avail) + '"></div>' +
+          '<span style="color:#999">可用上限 ' + Math.round(avail) + '（' + (avail / vp * 100).toFixed(1) + '%）</span></div>' +
+        '<div class="chart__bar"><div class="fill fill--cur" style="width:' + w(cur) + '"></div>' +
+          '<span>现状 ' + Math.round(cur) + '（' + (cur / vp * 100).toFixed(1) + '%）' +
+          (truncated ? ' <b style="color:#a3251c">← token ' + Math.round(curTok) + ' 被吃掉</b>' : '') + '</span></div>' +
+        '<div class="chart__bar"><div class="fill fill--new" style="width:' + w(nw) + '"></div>' +
+          '<span>建议 ' + Math.round(nw) + '（' + (nw / vp * 100).toFixed(1) + '%）</span></div>' +
+      '</div></div>';
+  });
+  document.getElementById('osd-chart').innerHTML = html;
+
+  let tbl = '<thead><tr><th>视口</th><th>现状 OSD 宽</th><th>占视口</th><th>现状左右留白</th><th>token 状态</th>' +
+    '<th>建议 OSD 宽</th><th>建议占视口</th><th>建议左右留白</th></tr></thead><tbody>';
+  BP.forEach((vp) => {
+    const avail = vp - 2 * lerp('--space-md', vp);
+    const curTok = lerp('--layout-osd-max-width', vp);
+    const cur = Math.min(curTok, avail);
+    const nw = osdNewWidth(vp);
+    tbl += '<tr><td>' + vp + '</td><td>' + Math.round(cur) + '</td><td>' + (cur / vp * 100).toFixed(1) + '%</td><td>' +
+      px((vp - cur) / 2) + '</td><td>' + (curTok > avail + 0.5
+        ? '<span class="warn">被 max-width 截断（贴边）</span>'
+        : '<span class="ok">token 生效</span>') +
+      '</td><td>' + Math.round(nw) + '</td><td>' + (nw / vp * 100).toFixed(1) + '%</td><td>' +
+      px((vp - nw) / 2) + '</td></tr>';
+  });
+  document.getElementById('osd-tbl').innerHTML = tbl + '</tbody>';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5) 议题三：现状 / 建议 v1 / 建议 v2
+   ═══════════════════════════════════════════════════════════════════════════ */
+const CTRL_GROUPS = [['列表', '节目单'], ['换源', '音轨']];
+function ctrlHtml() {
+  return CTRL_GROUPS.map((g) =>
+    '<span class="osd-btn-group">' + g.map((l) => '<button class="osd-btn"><i></i><span>' + l + '</span></button>').join('') + '</span>'
+  ).join('');
+}
+function osdHtml(kind) {
+  const channels = curData === 'stress' ? 'CCTV-5 体育赛事高清频道（超长压力名）' : OSD_CH;
+  const numW = px(lerp('--layout-channel-num-w', curVP));
+  const qmin = px(lerp('--layout-quality-badge-min-w', curVP));
+  const osdW = kind === 'cur'
+    ? px(Math.min(lerp('--layout-osd-max-width', curVP), curVP - 2 * lerp('--space-md', curVP)))
+    : px(osdNewWidth(curVP));
+  const left = kind === 'v2'
+    ? '<div class="osd-left"><span class="osd-num">001</span>' +
+        '<div class="osd-chanrow"><span class="osd-logo">综</span><span class="osd-name">' + channels + '</span></div></div>'
+    : '<div class="osd-left"><span class="osd-num">001</span>' +
+        '<div class="osd-chanrow"><span class="osd-logo">综</span><span class="osd-name">' + channels + '</span></div></div>';
+  const right = kind === 'cur'
+    ? '<div class="osd-right"><span class="osd-spd">- KB/S</span><span class="osd-line">线路 1</span><span class="osd-time">19:46:46</span></div>'
+    : '<div class="osd-right"><span class="osd-meta">- KB/S · 线路 1</span><span class="osd-time">19:46:46</span></div>';
+  return left +
+    '<div class="osd-center">' +
+      '<div class="osd-prow"><span class="osd-prefix">正在播放：</span><span class="osd-ptxt">焦点访谈</span></div>' +
+      '<div class="osd-prow"><span class="osd-prefix">下一节目：</span><span class="osd-ptxt">前情提要-生涯其时 10/26 20:01 - 20:05</span></div>' +
+      '<div class="osd-controls">' + ctrlHtml() + '</div>' +
+    '</div>' + right;
+}
+function renderOsd() {
+  const defs = [
+    { id: 'row-cur', kind: 'cur', cls: 'osd', cap: '现状' },
+    { id: 'row-v1', kind: 'v1', cls: 'osd osd--v1', cap: '建议 v1（最小改动）' },
+    { id: 'row-v2', kind: 'v2', cls: 'osd osd--v1 osd--v2', cap: '建议 v2 = v1 + 号同排（取舍项）' },
+  ];
+  defs.forEach((d) => {
+    const host = document.getElementById(d.id);
+    const numW = lerp('--layout-channel-num-w', curVP);
+    const osdW = d.kind === 'cur'
+      ? Math.min(lerp('--layout-osd-max-width', curVP), curVP - 2 * lerp('--space-md', curVP))
+      : osdNewWidth(curVP);
+    host.innerHTML =
+      '<div class="osd-row__cap"><b>' + d.cap + '</b><span class="cap-stat" data-kind="' + d.kind + '"></span></div>' +
+      '<div class="' + d.cls + '" style="--num-w:' + px(numW) + ';--qmin-w:' + px(lerp('--layout-quality-badge-min-w', curVP)) + ';--osd-w:' + px(osdW) + '">' +
+        osdHtml(d.kind) + '</div>';
+  });
+
+  requestAnimationFrame(() => {
+    const stat = {};
+    ['cur', 'v1', 'v2'].forEach((k) => {
+      const bar = document.querySelector('#row-' + k + ' .osd');
+      const rc = bar.getBoundingClientRect();
+      const rl = bar.querySelector('.osd-left').getBoundingClientRect();
+      const rr = bar.querySelector('.osd-right').getBoundingClientRect();
+      const rctrl = bar.querySelector('.osd-controls').getBoundingClientRect();
+      const rname = bar.querySelector('.osd-name').getBoundingClientRect();
+      stat[k] = {
+        w: rc.width,
+        left: rl.width,
+        right: rr.width,
+        offset: (rctrl.left + rctrl.width / 2) - (rc.left + rc.width / 2),
+        leftH: rl.height,
+        nameW: rname.width,
+        nameClipped: rname.scrollWidth > rname.clientWidth,
+      };
+    });
+    const f = (v) => px(v);
+    const cell = (s) =>
+      'OSD ' + f(s.w) + '（' + (s.w / curVP * 100).toFixed(1) + '%）· ' +
+      '翼 ' + f(s.left) + '/' + f(s.right) + '（差 ' + f(Math.abs(s.left - s.right)) + '）· ' +
+      '控件偏移 <span class="' + (Math.abs(s.offset) > 3 ? 'bad' : 'good') + '">' + f(s.offset) + '</span> · ' +
+      '左翼高 ' + f(s.leftH) + ' · 台名可见 ' + f(s.nameW) + (s.nameClipped ? ' <span class="bad">（截断中）</span>' : ' <span class="good">（完整）</span>');
+    document.querySelectorAll('.cap-stat').forEach((el) => {
+      el.innerHTML = cell(stat[el.dataset.kind]);
+    });
+    document.getElementById('osd-stats').innerHTML =
+      '<b>读数口径</b>：控件偏移 = 控件行中心 − OSD 几何中心（正数=偏右）。<br>' +
+      '<b>现状</b>　' + cell(stat.cur) + '<br>' +
+      '<b>建议 v1</b>　' + cell(stat.v1) + '<br>' +
+      '<b>建议 v2</b>　' + cell(stat.v2);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6) 应用 / 交互
+   ═══════════════════════════════════════════════════════════════════════════ */
+function applyTokens(vp) {
+  const root = document.documentElement;
+  for (const k in T) root.style.setProperty(k, px(lerp(k, vp)));
+  root.style.setProperty('--sim-w', vp + 'px');
+}
+function rerender() { applyTokens(curVP); buildPanels(); buildOsdChart(); renderOsd(); }
+document.getElementById('seg-vp').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#seg-vp button').forEach((x) => x.classList.toggle('is-on', x === b));
+  curVP = +b.dataset.vp; rerender();
+});
+document.getElementById('seg-data').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#seg-data button').forEach((x) => x.classList.toggle('is-on', x === b));
+  curData = b.dataset.data; rerender();
+});
+rerender();
+</script>
+</body>
+</html>

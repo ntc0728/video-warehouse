@@ -154,6 +154,12 @@
 /* ── 评分 — 左上角 ────────────────────────────── */
 
 .video-card-rating {
+  /* 星标档位就地覆写：Icon 的 xs 档取 --icon-xs（= --text-2xs × 1.40 ≈ 12.6–15.4px），
+     比数字（--text-xs ≈ 11–12.7px）大一圈，且因 flex 行高取「最高子项」把胶囊顶到
+     ≈19px（字高仅 11.3px）——视觉上「星比数字抢眼、胶囊偏厚」。
+     改为与角标字号同档；Icon 仍按 SIZE_VAR 注入 width/height，故用 token 覆写而非
+     直接写 svg 尺寸（inline style 会赢过样式表规则）。 */
+  --icon-xs: var(--text-xs);
   position: absolute;
   top: var(--space-xs);
   left: var(--space-xs);
