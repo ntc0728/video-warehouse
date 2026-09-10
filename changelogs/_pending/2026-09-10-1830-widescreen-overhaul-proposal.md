@@ -60,16 +60,25 @@ demo: changelogs/demos/demo-widescreen-overhaul-2026-09-10.html
   - RecordShell.css / IPTV.css 选中态硬编码 `color:#fff` → `var(--color-text-inverse)`
     （暗色下 `--color-primary` 是 #fff，原写法 = 白底白字不可读）；
     选中态计数徽标底色改 `color-mix(in srgb, var(--color-text-inverse) 22%, transparent)`。
-- **④ Detail / Person = C**：Person 已落地（见下），Detail 的「右栏装什么」待拍板 ——
-  Demo 给出 C1~C4 四个排列候选：
-  C1★ 右栏只放文本类（类型标签 + 基础信息 KV + 发行），实测**恰好填满 hero 高、无需滚动**，
-  演员（横滚）/ 简介 / 剧照保持通栏；C2 右栏+简介（截断）；C3 右栏+剧照 2×2 小图；
-  C4 右栏全文 + 栏内滚动。C2~C4 内容均超出 hero 高，需靠右栏滚动兜底。
-  **等用户选定后再改 Detail 代码。**
-  - Person 页落地：`.person-hero` 在 ≥1024 改左右布局（头像由绝对定位右上角改左列、
-    信息右列、高度改内容撑开），实测 1440 下 hero 402 → **262px（−35%）**；
-    移动端 / 平板（<1024）与 TV 端保持原竖排 + 绝对定位头像不变。
-    与 Detail 页「上半部两栏」同一套设计语言。
+- **④ Detail / Person = C，均已落地**（commit `fc99aaf` / `f561f56`）
+  - 排列选定 **C1**：右栏只承载「文本类」信息（类型标签 + 基础信息 KV + 发行公司），
+    演员（横滚条）/ 简介 / 剧照保持通栏 —— 横向铺开的内容放窄栏会严重缩水。
+    实现要点：`.detail-top` 默认 `display: contents`（<1024 / TV / app 零布局影响），
+    ≥1024 切 grid；同一份 JSX 由 `isWideDetail` 决定落在 hero 右侧还是 info tab 内；
+    右栏 `max-height` 锁死为 hero 实测高度（`--detail-hero-h`），两栏下沿严格齐平。
+    实测 1440：hero 449 / side 449，9 个字段无需滚动。
+  - 追加要求①「右栏带上原图标 + 新增有颜色的图标」：保留原 `detail-info-card` 图标体系，
+    另加语义化彩色 —— 评分=暖橙、预算/票房=绿、季/集=蓝（其余保持主色避免整栏花掉）。
+  - 追加要求②修复「演员折叠第二行被裁一半」：原 `max-height: 16rem` 硬编码，
+    而头像 `--layout-cast-avatar` 是流体值（桌面 80→88px × `--ui-scale`），
+    实测 1440 下两行需 304.9px > 256px → 第二行被裁约 49px。
+    改为 JS 按「首行条目高度 × 2 + grid row-gap」写入 `--cast-collapsed-h`。
+  - 追加要求③剧照放大控件：放大镜居中、两侧为相邻档位百分比（点左缩小 / 点右放大，
+    点图标重置），档位 0.75 / 1 / 1.5 / 2；列宽基准**乘以** `--stills-zoom`
+    （写成除法会反向：125% 反而多一列、图更小，已实测）。
+  - Person 页：`.person-hero` ≥1024 改左右布局（头像由绝对定位右上角改左列、信息右列、
+    高度改内容撑开），实测 1440 下 402 → **262px（−35%）**；
+    移动端 / 平板（<1024）与 TV 端保持原竖排不变。
 
 ### 预览
 
