@@ -18,7 +18,7 @@
  * - 「换一换」防抖 = 动画锁：is-spinning（0.6s 转圈）未结束前点击直接 return
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play, MonitorPlay } from 'lucide-react';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
 import { useHeroSideCols } from '@/hooks';
@@ -132,6 +132,12 @@ export default function HeroBili({
   const shuffleTimerRef = useRef<number | null>(null);
 
   const safeActiveIndex = bannerTotal > 0 ? Math.min(activeIndex, bannerTotal - 1) : 0;
+  // 主图加载失败的 backdrop URL 集合 → 渲染公共 LazyImage 品牌兜底（MonitorPlay + kinoTV）
+  const [failedBackdrops, setFailedBackdrops] = useState<Set<string>>(() => new Set());
+  const markBackdropFailed = useCallback((url: string) => {
+    if (!url) return;
+    setFailedBackdrops((prev) => (prev.has(url) ? prev : new Set(prev).add(url)));
+  }, []);
 
   // items 变化（切分类）：重置轮播与换一换状态
   useEffect(() => {
@@ -234,18 +240,29 @@ export default function HeroBili({
             const it = items[idx];
             if (!it) return null;
             const isActive = pos === layers.length - 1;
+            const url = itemBackdropUrl(it);
             return (
               <img
                 key={`${it.id}-${idx}`}
                 className={`hero-bili__banner-img${isActive ? ' is-active' : ''}`}
-                src={itemBackdropUrl(it)}
+                src={url}
                 alt={itemTitle(it)}
                 loading="eager"
                 decoding="async"
                 draggable={false}
+                onError={() => markBackdropFailed(url)}
               />
             );
           })}
+
+          {/* 主图加载失败兜底：与 HeroBanner / VideoCard / IPTV 卡共用公共品牌样式
+              （此前失败只露 .hero-bili__banner 的 #0b0b0e 深色底） */}
+          {bannerItems[safeActiveIndex] && failedBackdrops.has(itemBackdropUrl(bannerItems[safeActiveIndex])) && (
+            <div className="lazy-image-fallback lazy-image-fallback--brand hero-bili__banner-fallback">
+              <Icon icon={MonitorPlay} size="2xl" className="lazy-image-fallback__icon" />
+              <span className="lazy-image-fallback__brand">kinoTV</span>
+            </div>
+          )}
 
           {bannerTotal > 1 && (
             <>
