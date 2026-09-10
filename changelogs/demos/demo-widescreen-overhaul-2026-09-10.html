@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>大屏 UI 整改提案 Demo — 2026-09-10</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   大屏 UI 整改提案 Demo — 2026-09-10
+   覆盖四个议题：① 首页大屏布局 ② Browse 左栏紧凑 ③ 左栏样式统一 ④ Detail/Person 大屏
+   本文件只用于「看形态」，不参与构建。落地时引用真实 token，勿复制这里的字面量。
+
+   Demo 技术说明：
+   - 用 CSS container query（@container）模拟「视口宽度」，因为 Demo 需要在一个页面里
+     并排演示 1440 / 1920 / 2560 三种视口，真实 @media 无法被外部宽度驱动。
+   - 项目里的 vw 单位在本 Demo 中写作 cqw（容器宽度百分比），数值与真实公式一一对应。
+   所有尺寸 token 取自 src/assets/styles/variables.css 与各页 CSS 的真实读数。
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* ——— 浅色主题（variables.css 真实读数，1440 档） ——— */
+  --color-background:#f5f5f5;
+  --color-surface:#fff;
+  --color-surface-hover:rgba(0,0,0,.05);
+  --color-hover-bg:rgba(0,0,0,.04);
+  --color-text:#000;
+  --color-text-secondary:#666;
+  --color-text-tertiary:#999;
+  --color-text-inverse:#fff;
+  --color-border:#d9d9d9;
+  --color-border-light:#e8e8e8;
+  --color-border-strong:#c4c4c4;
+  --color-primary:#000;
+  --color-warning:#fa8c16;
+  --color-placeholder:#e0e0e0;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow-card:0 2px 8px rgba(0,0,0,.06);
+  --shadow-soft:0 0 0 1px rgba(0,0,0,.04);
+  --radius-sm:5px; --radius-md:9.6px; --radius-lg:16.5px; --radius-full:9999px;
+  --text-2xs:10.8px; --text-xs:11.33px; --text-sm:12.22px; --text-base:13.2px;
+  --text-lg:13.83px; --text-xl:15.59px; --text-2xl:20.37px;
+  --icon-xs:15.1px; --icon-sm:15.9px; --icon-md:18.9px;
+  --space-2xs:2.2px; --space-xs:3.9px; --space-sm:7.9px; --space-md:9.1px;
+  --space-lg:16.5px; --space-xl:22.5px; --space-2xl:31.5px; --space-3xl:45px;
+  --dur-fast:150ms;
+  --ease-standard:cubic-bezier(.4,0,.2,1);
+  --header-height:74px;
+  /* 模拟视口宽度（JS 控制）；高度固定 1080（1080p 屏），用于换算原先的 vh 值 */
+  --sim-w:1920px;
+  --sim-h:1080px;
+}
+body.is-dark{
+  --color-background:#131313;
+  --color-surface:#1e1e1e;
+  --color-surface-hover:rgba(255,255,255,.07);
+  --color-hover-bg:rgba(255,255,255,.06);
+  --color-text:#fff;
+  --color-text-secondary:#a6a6a6;
+  --color-text-tertiary:#767676;
+  --color-text-inverse:#000;
+  --color-border:#3a3a3a;
+  --color-border-light:#2c2c2c;
+  --color-border-strong:#4d4d4d;
+  --color-primary:#fff;
+  --color-placeholder:#2e2e2e;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-card:0 2px 8px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:#f0f0f0;color:#000;
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:13.2px;
+}
+button{font:inherit;color:inherit;cursor:pointer;}
+
+/* ═══════════ Demo 外壳（不参与方案评估） ═══════════ */
+.demo-topbar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:10px 20px;
+  background:#1f1f1f;color:#fff;
+}
+.demo-brand{font-weight:700;font-size:15px;letter-spacing:.4px;margin-right:6px;}
+.demo-issues{display:flex;gap:4px;flex-wrap:wrap;}
+.demo-issues button{
+  border:none;background:rgba(255,255,255,.1);color:#ccc;
+  border-radius:6px;padding:6px 12px;font-size:12.5px;transition:.15s;
+}
+.demo-issues button.is-on{background:#fff;color:#111;font-weight:600;}
+.demo-controls{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:#aaa;}
+.demo-seg{display:flex;background:rgba(255,255,255,.1);border-radius:6px;padding:2px;gap:2px;}
+.demo-seg button{border:none;background:transparent;color:#bbb;border-radius:4px;padding:4px 10px;font-size:12px;}
+.demo-seg button.is-on{background:#fff;color:#111;font-weight:600;}
+.demo-toggle{border:none;background:rgba(255,255,255,.1);color:#ccc;border-radius:6px;padding:6px 12px;font-size:12px;}
+
+.demo-note{
+  padding:12px 20px;background:#fffbe6;border-bottom:1px solid #ffe58f;
+  font-size:12.5px;color:#874d00;line-height:1.75;
+}
+.demo-note b{color:#613400;}
+body.is-dark .demo-note{background:#3a2c0a;border-bottom-color:#5c450f;color:#f2cf7a;}
+body.is-dark .demo-note b{color:#ffdf9e;}
+
+.issue{display:none;padding:18px 20px 60px;}
+.issue.is-on{display:block;}
+
+.issue-bar{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding-bottom:14px;border-bottom:2px solid #ddd;margin-bottom:16px;
+}
+.issue-bar h2{margin:0;font-size:16px;}
+.issue-bar .hint{font-size:12px;color:#888;}
+.plan-seg{display:flex;background:#e4e4e4;border-radius:8px;padding:3px;gap:3px;flex-wrap:wrap;}
+.plan-seg button{
+  border:none;background:transparent;border-radius:6px;padding:7px 14px;
+  font-size:12.5px;color:#555;transition:.15s;
+}
+.plan-seg button.is-on{background:#fff;color:#000;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.plan-seg button .tag{
+  display:inline-block;margin-left:6px;font-size:10px;font-weight:600;
+  padding:1px 5px;border-radius:4px;background:#000;color:#fff;vertical-align:1px;
+}
+.plan-seg button.is-on .tag{background:#2d7d46;}
+
+.flag{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#555;}
+body.is-dark .flag{color:#bbb;}
+
+.plan-desc{
+  margin:0 0 14px;padding:10px 14px;border-radius:8px;
+  background:#f7f7f7;border:1px solid #e6e6e6;
+  font-size:12.5px;color:#555;line-height:1.8;
+}
+body.is-dark .plan-desc{background:#1c1c1c;border-color:#333;color:#b9b9b9;}
+.plan-desc code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:12px;}
+body.is-dark .plan-desc code{background:rgba(255,255,255,.1);}
+.plan-desc .up{color:#2d7d46;font-weight:600;}
+.plan-desc .down{color:#c0392b;font-weight:600;}
+
+/* 模拟视口：横向可滚 */
+.sim-wrap{overflow-x:auto;padding-bottom:12px;}
+.sim-frame{
+  width:var(--sim-w);
+  container-type:inline-size;
+  background:var(--color-background);
+  color:var(--color-text);
+  /* 用 outline 而非 border：border 会吃掉内容盒宽度，导致 container query
+     的 min-width:1920 在 1920px 视口下判定为 1918px 而不匹配 */
+  outline:1px solid var(--color-border);
+  outline-offset:-1px;
+  border-radius:6px;
+  overflow:hidden;
+  font-size:var(--text-base);
+}
+.sim-frame *{box-sizing:border-box;}
+.plan{display:none;}
+.plan.is-on{display:block;}
+
+/* ── 响应式尺寸档位（用 container query 驱动，等价于项目的 @media 视口档）─────
+   hero 高度与右栏宽度照抄 variables.css:973-974 的真实公式
+   hero-banner-h = (min(视口,2200) − 2×page-pad-x) × 0.2727
+   hero-side-w   = 同式 × 0.56
+   左栏宽度照抄 Browse.css:411 的 clamp(124px, 8.61vw, 224px)。            */
+.plan{
+  --page-pad-x:16px;   /* <1440 = --space-lg（桌面基础档） */
+  --card-cols:6;
+  --grid-gap:12px;
+  --rail-w:124px;
+  --home-rail-w:240px;
+  --hero-banner-h:calc((min(100cqw, 2200px) - 2 * var(--page-pad-x)) * 0.2727);
+  --hero-side-w:calc((min(100cqw, 2200px) - 2 * var(--page-pad-x)) * 0.56);
+}
+@container (min-width:1440px){
+  .plan{--page-pad-x:60px;--card-cols:7;--grid-gap:14.3px;--home-rail-w:280px;}
+}
+@container (min-width:1920px){
+  .plan{--page-pad-x:100px;--card-cols:8;--grid-gap:16px;--home-rail-w:300px;}
+}
+@container (min-width:2560px){
+  .plan{--page-pad-x:140px;--card-cols:8;--grid-gap:16px;--home-rail-w:300px;}
+}
+/* 左栏宽度：Browse.css:411 的真实曲线 clamp(124px, 8.61vw, 224px)（vw → cqw） */
+.plan{--rail-w:clamp(124px, 8.61cqw, 224px);}
+
+/* ═══════════ 模拟站点通用（首页 / 通用页壳） ═══════════ */
+.site-hd{
+  height:var(--header-height);
+  display:flex;align-items:center;gap:var(--space-lg);
+  padding:0 var(--page-pad-x);
+  background:var(--color-surface);
+  border-bottom:1px solid var(--color-border-light);
+  position:relative;z-index:5;
+}
+.site-hd__inner{display:flex;align-items:center;gap:var(--space-lg);width:100%;}
+.sim-frame[data-align="1"] .site-hd__inner{
+  max-width:2200px;margin-inline:auto;
+}
+.site-logo{font-size:var(--text-2xl);font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.site-chips{display:flex;gap:var(--space-xs);}
+.site-chip{
+  padding:6px 11px;border-radius:var(--radius-full);font-size:var(--text-sm);
+  color:var(--color-text-secondary);font-weight:600;white-space:nowrap;
+}
+.site-chip.is-on{background:var(--color-primary);color:var(--color-text-inverse);}
+.site-search{
+  flex:1;min-width:0;max-width:340px;height:34px;border-radius:var(--radius-full);
+  background:var(--color-background);border:1px solid var(--color-border-light);
+  display:flex;align-items:center;padding:0 14px;color:var(--color-text-tertiary);
+  font-size:var(--text-sm);
+}
+.site-hd__right{margin-left:auto;display:flex;gap:var(--space-sm);}
+.site-hd__btn{
+  height:34px;padding:0 14px;border-radius:var(--radius-full);
+  border:1px solid var(--color-border-light);background:transparent;
+  font-size:var(--text-sm);color:var(--color-text-secondary);white-space:nowrap;
+}
+.site-main{
+  padding:var(--space-sm) var(--page-pad-x) 40px;
+}
+.site-main__inner{width:100%;max-width:2200px;margin-inline:auto;}
+
+/* ── HeroBili 形态（>1280 桌面）──────────────────────────────
+   真实公式：banner-h = (min(视口,2200) − 2×page-pad-x) × 0.2727
+             side-w   = 同式 × 0.56                          */
+.hb{
+  background:var(--color-surface);
+  border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+}
+.hb__grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) var(--hero-side-w);
+  gap:10px;
+  padding:var(--space-sm) var(--space-md) var(--space-md);
+}
+.hb__banner{
+  height:var(--hero-banner-h);
+  border-radius:10px;
+  background:linear-gradient(135deg,#2b3350,#4a3b63 55%,#7a4a52);
+  position:relative;overflow:hidden;
+  display:flex;align-items:flex-end;
+}
+.hb__banner::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(0,0,0,.72),transparent 62%),
+             linear-gradient(0deg,rgba(0,0,0,.72),transparent 55%);
+}
+.hb__cap{position:relative;z-index:2;padding:var(--space-xl);color:#fff;}
+.hb__cap h3{margin:0 0 6px;font-size:22px;font-weight:800;}
+.hb__cap p{margin:0;font-size:var(--text-sm);opacity:.82;max-width:60%;line-height:1.6;}
+.hb__meta{display:flex;gap:10px;margin-bottom:8px;font-size:var(--text-xs);opacity:.9;}
+.hb__right{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  column-gap:var(--space-sm);align-items:start;
+}
+.hb__cards{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:8px;height:var(--hero-banner-h);
+}
+.hb__card{
+  border:1px solid var(--color-border-light);border-radius:8px;
+  background:var(--color-placeholder);overflow:hidden;position:relative;
+}
+.hb__card span{
+  position:absolute;left:5px;bottom:5px;font-size:10px;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap;
+}
+.hb__shuffle{
+  writing-mode:vertical-rl;height:var(--hero-banner-h);
+  border:1px solid var(--color-border-light);border-radius:8px;
+  background:var(--color-background);color:var(--color-text-secondary);
+  font-size:var(--text-xs);display:flex;align-items:center;justify-content:center;
+  padding:10px 8px;white-space:nowrap;
+}
+
+/* ── 内容行 / 卡片模块 ──────────────────────────────────── */
+.mrow{
+  background:var(--color-surface);
+  border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);
+  padding:var(--space-sm);
+  margin-bottom:var(--space-sm);
+}
+.mrow__head{display:flex;align-items:center;gap:10px;margin-bottom:var(--space-sm);}
+.mrow__title{font-size:var(--text-base);font-weight:700;}
+.mrow__more{margin-left:auto;font-size:var(--text-xs);color:var(--color-text-tertiary);}
+.mrow__grid{
+  display:grid;
+  grid-template-columns:repeat(var(--card-cols),minmax(0,1fr));
+  gap:var(--grid-gap,#14.3px);
+}
+.mcard__img{
+  width:100%;aspect-ratio:2/3;border-radius:var(--radius-md);
+  background:linear-gradient(160deg,var(--color-placeholder),rgba(0,0,0,.08));
+}
+.mcard__t{
+  margin-top:6px;font-size:var(--text-xs);color:var(--color-text-secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ── 首页「分类热度榜」两形态 ────────────────────────────
+   A 现状：hero 下方横排 3 张卡（.cqa-catgrid 恒 3 列）
+   B/C/D 提案：作为左栏竖排（单列堆叠）                     */
+.heat-row{
+  margin:var(--space-sm) 0;
+}
+.heat-row__head{display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-md);}
+.heat-row__title{font-size:var(--text-base);font-weight:700;}
+.heat-row__sub{font-size:var(--text-xs);color:var(--color-text-tertiary);}
+.heat-row__more{margin-left:auto;font-size:var(--text-xs);color:var(--color-text-secondary);}
+.heat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md);}
+
+.heat-card{
+  display:flex;flex-direction:column;gap:var(--space-sm);
+  border:1px solid var(--color-border-light);border-radius:var(--radius-lg);
+  background:var(--color-surface);padding:var(--space-md);
+}
+.heat-card__head{display:flex;align-items:center;gap:var(--space-sm);}
+.heat-card__rank{font-size:var(--text-lg);font-weight:800;font-style:italic;color:var(--color-text-tertiary);}
+.heat-card__name{font-size:var(--text-base);font-weight:700;}
+.heat-card__heat{margin-left:auto;text-align:right;}
+.heat-card__heat .n{display:block;font-size:var(--text-base);font-weight:800;color:var(--color-warning);}
+.heat-card__heat .l{font-size:10px;color:var(--color-text-tertiary);}
+.heat-card__bar{height:5px;border-radius:99px;background:var(--color-background);overflow:hidden;}
+.heat-card__bar i{display:block;height:100%;background:var(--color-warning);border-radius:99px;}
+.heat-card__list{display:flex;flex-direction:column;gap:6px;}
+.heat-item{display:flex;align-items:center;gap:8px;min-width:0;}
+.heat-item__idx{flex:0 0 14px;text-align:center;font-size:var(--text-xs);font-weight:700;font-style:italic;color:var(--color-text-tertiary);}
+.heat-item__poster{
+  flex:0 0 150px;width:150px;height:85px;border-radius:6px;
+  background:linear-gradient(140deg,var(--color-placeholder),rgba(0,0,0,.1));
+}
+.heat-item__t{flex:1;min-width:0;font-size:var(--text-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.heat-item__h{flex:0 0 auto;font-size:var(--text-xs);font-weight:700;color:var(--color-warning);}
+
+/* 左栏竖排版本：窄栏内压缩条目（海报缩到 56×32） */
+.heat-rail{display:flex;flex-direction:column;gap:var(--space-sm);}
+.heat-rail .heat-card{padding:var(--space-sm);}
+.heat-rail .heat-item__poster{flex:0 0 56px;width:56px;height:32px;}
+/* 极窄/限高场景（首页 Hero 右栏）：条目再去缩略图，只留 序号 + 标题 + 热度 */
+.heat-rail--tight .heat-item__poster{display:none;}
+.heat-rail--tight .heat-item{gap:6px;}
+/* D 方案专用：Hero 右栏内高度被 --hero-banner-h 锁死，整块需再压紧一档才能不裁切 */
+.hero-heat{
+  height:var(--hero-banner-h);
+  overflow-y:auto;scrollbar-width:none;
+  display:flex;flex-direction:column;gap:2px;
+  padding:var(--space-sm);
+  background:var(--color-surface);
+  border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);
+}
+.hero-heat::-webkit-scrollbar{display:none;}
+.hero-heat .rail-box__head{margin-bottom:2px;}
+.hero-heat .heat-card{padding:4px 8px;gap:3px;}
+.hero-heat .heat-card__head{min-height:0;}
+.hero-heat .heat-card__bar{margin:2px 0;}
+.hero-heat .heat-card__list{gap:0;}
+.hero-heat .heat-rail{gap:2px;}
+
+/* ── 首页大屏两栏骨架 ─────────────────────────────────── */
+.home-two-col{
+  display:grid;
+  grid-template-columns:var(--home-rail-w) minmax(0,1fr);
+  gap:var(--space-2xl);
+  align-items:start;
+}
+.home-rail{position:sticky;top:var(--space-sm);}
+.home-col{min-width:0;}
+/* C 方案：Hero 落在右列内，高度/右栏宽度按「右列实际宽度」重算（B 方案无 hero 在列内，不受影响） */
+.home-two-col > .home-col{
+  --hero-banner-h:calc((min(100cqw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-2xl)) * 0.2727);
+  --hero-side-w:calc((min(100cqw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-2xl)) * 0.56);
+}
+.rail-box{
+  background:var(--color-surface);
+  border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);
+  padding:var(--space-md);
+}
+.rail-box__head{display:flex;align-items:center;gap:8px;margin-bottom:var(--space-sm);}
+.rail-box__title{font-size:var(--text-base);font-weight:700;}
+.rail-box__more{margin-left:auto;font-size:var(--text-xs);color:var(--color-text-tertiary);}
+
+/* ── 顶部过渡带（所有方案可叠加的补强）────────────────── */
+.topstrip{
+  height:44px;display:flex;align-items:center;gap:var(--space-md);
+  padding:0 var(--page-pad-x);
+  background:var(--color-surface);
+  border-bottom:1px solid var(--color-border-light);
+  font-size:var(--text-xs);color:var(--color-text-secondary);
+}
+.sim-frame[data-align="1"] .topstrip{padding-inline:0;justify-content:center;}
+.topstrip__inner{
+  display:flex;align-items:center;gap:var(--space-md);width:100%;max-width:2200px;
+}
+.topstrip__crumb{color:var(--color-text-tertiary);}
+.topstrip__stat b{color:var(--color-warning);}
+.topstrip__sep{width:1px;height:14px;background:var(--color-border-light);}
+.topstrip__right{margin-left:auto;display:flex;gap:var(--space-sm);}
+.topstrip__pill{
+  padding:3px 9px;border-radius:99px;background:var(--color-background);
+  font-size:10.8px;color:var(--color-text-secondary);
+}
+.mark-flag{outline:2px dashed #2d7d46;outline-offset:3px;position:relative;}
+.flag-badge{
+  position:absolute;top:-9px;left:-9px;z-index:20;
+  background:#2d7d46;color:#fff;font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:99px;white-space:nowrap;
+}
+
+/* ═══════════ 议题 ②③：Browse / 通用左栏 ═══════════ */
+/* 结构照抄 Browse.css:408-424 的真实 grid（areas 是必须的：
+   缺 grid-template-areas 时 .rail 的 grid-area:filters 会生成隐式命名列，
+   把 2 列模板撑成 4 列 —— 真实项目里也踩过同类坑） */
+.bw{
+  display:grid;
+  grid-template-columns:var(--rail-w) minmax(0,1fr);
+  grid-template-areas:'tabs tabs' 'filters results';
+  gap:0 var(--space-2xl);align-items:start;
+  padding:var(--space-sm) var(--page-pad-x) 40px;
+}
+.bw__results{grid-area:results;min-width:0;}
+.bw__tabs{grid-area:tabs;display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-sm);}
+.bw__pill{display:inline-flex;border:1px solid var(--color-border);border-radius:99px;overflow:hidden;}
+.bw__tab{padding:7px 20px;font-size:var(--text-sm);color:var(--color-text-secondary);background:transparent;border:none;}
+.bw__tab.is-on{background:var(--color-primary);color:var(--color-text-inverse);}
+.bw__hint{font-size:var(--text-sm);color:var(--color-text-tertiary);}
+
+.rail{grid-area:filters;display:flex;flex-direction:column;}
+.rail__group{padding:0;}
+.rail__group+.rail__group::before{
+  content:"";display:block;height:1px;background:var(--color-border-light);
+  margin:var(--rail-sep-m) 0;
+}
+.rail__label{font-size:var(--text-xs);font-weight:500;color:var(--color-text-tertiary);margin-bottom:var(--chips-gap);}
+.rail__chips{
+  display:grid;grid-template-columns:repeat(var(--chip-cols,2),minmax(0,1fr));
+  gap:var(--chips-gap);
+}
+.rail__chip{
+  width:100%;text-align:left;border:none;background:transparent;
+  border-radius:var(--radius-md);
+  padding:var(--chip-py) var(--space-sm);
+  font-size:var(--text-sm);font-weight:500;color:var(--color-text-secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
+}
+.rail__chip:hover{background:var(--color-surface-hover);color:var(--color-text);}
+.rail__chip.is-on{background:var(--color-primary);color:var(--color-text-inverse);font-weight:600;}
+.rail__chip--full{grid-column:1/-1;}
+
+.bw__head{
+  background:var(--color-surface);border:1px solid var(--color-border-light);
+  border-radius:var(--radius-md);padding:var(--space-md) var(--space-lg);
+  margin-bottom:var(--space-sm);
+  display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap;
+}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:99px;background:var(--color-hover-bg);}
+.seg button{height:32px;padding:0 16px;border:none;border-radius:99px;background:transparent;font-size:var(--text-sm);color:var(--color-text-secondary);}
+.seg button.is-on{background:var(--color-surface);color:var(--color-text);font-weight:600;box-shadow:var(--shadow-soft);}
+.bw__count{margin-left:auto;font-size:var(--text-sm);color:var(--color-text-tertiary);}
+.bw__grid{display:grid;grid-template-columns:repeat(var(--card-cols),minmax(0,1fr));gap:var(--grid-gap,#14.3px);}
+
+/* 栏样式变体 */
+.rail--line{border-right:1px solid var(--color-border-light);padding-right:var(--space-2xl);}
+.rail--panel{
+  background:var(--color-surface);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);
+  padding:var(--space-md);
+}
+/* 面板变体本身不带四边框（靠底色+阴影成形），加 --line 才补一条右侧分隔线 */
+.rail--panel.rail--line{border-right:1px solid var(--color-border-strong);}
+.rail--divider-left{position:relative;}
+.rail--divider-left::after{
+  content:"";position:absolute;top:0;bottom:0;right:calc(-1 * var(--space-2xl) / 2);
+  width:1px;background:var(--color-border-light);
+}
+
+/* ═══════════ 议题 ④：Detail / Person ═══════════ */
+.dt{padding:var(--space-sm) var(--page-pad-x) 40px;}
+.dt__inner{width:100%;max-width:2200px;margin-inline:auto;display:flex;flex-direction:column;gap:var(--space-sm);}
+.dt-hero{
+  position:relative;border-radius:var(--radius-lg);overflow:hidden;
+  background:#111;display:flex;align-items:flex-end;
+}
+.dt-hero__bg{
+  position:absolute;inset:0;
+  background:linear-gradient(140deg,#1d2740,#3b2c4d 55%,#6b3b45);
+}
+.dt-hero__grad{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(0,0,0,.92),rgba(0,0,0,.45) 50%,rgba(0,0,0,.1)),
+             linear-gradient(0deg,rgba(0,0,0,.9),transparent 55%);
+}
+.dt-hero__content{
+  position:relative;z-index:2;width:100%;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:var(--space-xl);padding:var(--space-xl) var(--space-lg);
+  color:#fff;
+}
+.dt-hero__left{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+.dt-hero__title{font-size:34px;font-weight:800;margin:0;}
+.dt-hero__meta{display:flex;gap:14px;font-size:var(--text-sm);opacity:.9;}
+.dt-hero__tag{padding:2px 9px;border-radius:99px;background:rgba(255,255,255,.16);font-size:var(--text-xs);}
+.dt-hero__desc{margin:0;font-size:var(--text-sm);line-height:1.7;opacity:.82;max-width:78%;}
+.dt-hero__actions{display:flex;gap:10px;margin-top:6px;}
+.dt-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 20px;border-radius:99px;border:none;font-size:var(--text-sm);font-weight:600;
+}
+.dt-btn--primary{background:#fff;color:#000;}
+.dt-btn--ghost{background:rgba(255,255,255,.16);color:#fff;}
+.dt-hero__poster{
+  flex:0 0 var(--dt-poster-w);width:var(--dt-poster-w);aspect-ratio:2/3;
+  border-radius:var(--radius-md);
+  background:linear-gradient(150deg,#4a5570,#2a3040);
+}
+.dt-hero--sm{align-items:stretch;}
+.dt-hero--sm .dt-hero__content{align-items:center;padding:var(--space-lg);}
+
+.dt-tabs{
+  display:flex;gap:4px;background:var(--color-surface);
+  border:1px solid var(--color-border-light);border-radius:var(--radius-md);padding:4px;
+}
+.dt-tab{padding:9px 18px;border:none;background:transparent;border-radius:var(--radius-sm);font-size:var(--text-sm);color:var(--color-text-secondary);}
+.dt-tab.is-on{background:var(--color-primary);color:var(--color-text-inverse);font-weight:600;}
+.dt-card{
+  background:var(--color-surface);border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-lg);
+}
+.dt-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;font-size:var(--text-sm);}
+.dt-info-grid span{color:var(--color-text-tertiary);}
+.dt-stills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:var(--space-md);}
+.dt-still{aspect-ratio:16/9;border-radius:var(--radius-md);background:linear-gradient(150deg,var(--color-placeholder),rgba(0,0,0,.08));}
+.dt-cast{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:var(--space-md);}
+.dt-cast__row{display:flex;align-items:center;gap:10px;font-size:var(--text-sm);}
+.dt-cast__avatar{width:36px;height:36px;border-radius:50%;background:var(--color-placeholder);flex:0 0 36px;}
+
+/* ── 详情「概览」tab 的真实内容块（供各排列候选自由组合）── */
+.dt-sec{margin:var(--space-md) 0 var(--space-sm);font-size:var(--text-base);font-weight:700;}
+.dt-sec:first-child{margin-top:0;}
+.dt-genres{display:flex;flex-wrap:wrap;gap:6px;}
+.dt-genre{
+  padding:2px 10px;border-radius:99px;font-size:var(--text-xs);
+  background:var(--color-background);color:var(--color-text-secondary);
+  border:1px solid var(--color-border-light);
+}
+.dt-kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.dt-kv__item{
+  display:flex;flex-direction:column;gap:1px;
+  padding:6px 9px;border-radius:var(--radius-md);background:var(--color-background);
+  font-size:var(--text-xs);min-width:0;
+}
+.dt-kv__item span{color:var(--color-text-tertiary);}
+.dt-kv__item strong{
+  font-size:var(--text-sm);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.dt-company{
+  display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:var(--radius-md);
+  background:var(--color-background);font-size:var(--text-xs);color:var(--color-text-tertiary);
+}
+.dt-company strong{
+  color:var(--color-text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.dt-cast-row{display:flex;gap:10px;overflow:hidden;}
+.dt-cast-item{
+  flex:0 0 auto;width:72px;display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.dt-cast-item .dt-cast__avatar{width:72px;height:96px;border-radius:var(--radius-md);flex:none;}
+.dt-cast-name{
+  font-size:var(--text-xs);text-align:center;width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.dt-cast-toggle{
+  margin-top:6px;border:none;background:none;color:var(--color-text-secondary);
+  font-size:var(--text-xs);cursor:pointer;
+}
+.dt-overview{
+  margin:0;font-size:var(--text-sm);line-height:1.8;color:var(--color-text-secondary);
+}
+.dt-overview--clamp{
+  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;
+}
+.dt-stills-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+/* 右栏：高度锁死为 hero 高（--dt-side-h 由 JS 写入），保证两栏下沿齐平；
+   内容超出时栏内滚动（隐藏滚动条），不裁切字段 —— C1 恰好放满、无需滚动，
+   C2/C3/C4 越往后内容越多就越依赖这条滚动兜底。 */
+.dt-side{
+  max-height:var(--dt-side-h,420px);
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.dt-side::-webkit-scrollbar{display:none;}
+
+/* 详情页「上半部两栏」 */
+.dt-top{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:var(--space-sm);align-items:stretch;}
+.dt-side{
+  background:var(--color-surface);border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);
+  padding:var(--space-lg);display:flex;flex-direction:column;gap:var(--space-md);
+}
+.dt-side h4{margin:0;font-size:var(--text-base);font-weight:700;}
+.dt-side__stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.dt-side__stat{background:var(--color-background);border-radius:var(--radius-md);padding:10px 12px;}
+.dt-side__stat .k{display:block;font-size:var(--text-xs);color:var(--color-text-tertiary);}
+.dt-side__stat .v{display:block;font-size:var(--text-lg);font-weight:700;}
+
+/* Person */
+.pe{padding:var(--space-sm) var(--page-pad-x) 40px;}
+.pe__inner{width:100%;max-width:2200px;margin-inline:auto;}
+.pe-hero{
+  position:relative;border-radius:var(--radius-lg);overflow:hidden;
+  background:#0d0d0d;color:#fff;
+  border:1px solid #222;
+  display:flex;
+}
+.pe-hero__noise{position:absolute;inset:0;background:radial-gradient(circle at 78% 22%,rgba(255,255,255,.07),transparent 55%);}
+.pe-hero__content{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;padding:var(--space-xl);}
+.pe-info{margin-left:auto;text-align:right;max-width:64%;display:flex;flex-direction:column;gap:10px;}
+.pe-name{margin:0;font-size:34px;font-weight:800;}
+.pe-aka{margin:0;font-size:var(--text-sm);opacity:.6;}
+.pe-meta{display:flex;gap:18px;justify-content:flex-end;font-size:var(--text-sm);opacity:.8;}
+.pe-bio{margin:0;font-size:var(--text-sm);line-height:1.8;opacity:.7;}
+.pe-avatar{
+  position:absolute;top:var(--space-xl);right:var(--space-xl);
+  width:176px;aspect-ratio:2/3;border-radius:var(--radius-lg);
+  background:linear-gradient(150deg,#4a5570,#252a35);
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+}
+.pe-hero--row{align-items:center;}
+.pe-hero--row .pe-hero__content{flex-direction:row;align-items:center;gap:var(--space-xl);}
+.pe-hero--row .pe-avatar{
+  position:static;width:150px;flex:0 0 150px;box-shadow:none;
+}
+.pe-hero--row .pe-info{margin-left:0;text-align:left;max-width:none;flex:1;}
+.pe-hero--row .pe-meta{justify-content:flex-start;}
+.pe-work{margin-top:var(--space-sm);}
+</style>
+</head>
+<body>
+
+<header class="demo-topbar">
+  <div class="demo-brand">KinoTV · 大屏 UI 整改提案</div>
+  <nav class="demo-issues" id="issueNav">
+    <button class="is-on" data-issue="home">① 首页大屏</button>
+    <button data-issue="browse">② Browse 左栏</button>
+    <button data-issue="rail">③ 左栏样式统一</button>
+    <button data-issue="detail">④ Detail / Person</button>
+  </nav>
+  <div class="demo-controls">
+    <span>模拟视口</span>
+    <div class="demo-seg" id="widthSeg">
+      <button data-w="1280">1280</button>
+      <button data-w="1440">1440</button>
+      <button class="is-on" data-w="1920">1920</button>
+      <button data-w="2560">2560</button>
+    </div>
+    <button class="demo-toggle" id="themeBtn">切暗色</button>
+  </div>
+</header>
+
+<div class="demo-note" id="demoNote"></div>
+
+<main>
+
+<!-- ══════════════════════════ ① 首页大屏 ══════════════════════════ -->
+<section class="issue is-on" data-issue="home" data-plan="A">
+  <div class="issue-bar">
+    <h2>① 首页大屏布局</h2>
+    <span class="hint">Hero 高度 / 内容列宽随模拟视口变化；切换方案对比形态</span>
+    <div class="plan-seg" data-seg>
+      <button class="is-on" data-plan="A">A 现状</button>
+      <button data-plan="B">B 内容区两栏</button>
+      <button data-plan="C">C 通体两栏</button>
+      <button data-plan="D">D Hero 右栏承载<span class="tag">推荐</span></button>
+    </div>
+    <label class="flag"><input type="checkbox" data-flag="align"> 顶栏与内容区对齐</label>
+    <label class="flag" style="margin-left:14px"><input type="checkbox" data-flag="strip"> 顶部过渡带</label>
+  </div>
+
+  <div class="sim-wrap"><div class="sim-frame" data-align="0">
+   <div class="plan is-on">
+    <div class="site-hd">
+      <div class="site-hd__inner">
+        <div class="site-logo">KinoTV</div>
+        <div class="site-chips">
+          <span class="site-chip is-on">电影</span><span class="site-chip">剧集</span>
+          <span class="site-chip">综艺</span><span class="site-chip">动漫</span>
+          <span class="site-chip">纪录片</span><span class="site-chip">排行榜</span>
+        </div>
+        <div class="site-search">搜索影片、剧集…</div>
+        <div class="site-hd__right">
+          <button class="site-hd__btn">IPTV</button><button class="site-hd__btn">设置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 顶部过渡带（可选） -->
+    <div class="topstrip" data-strip hidden>
+      <div class="topstrip__inner">
+        <span class="topstrip__crumb">首页</span>
+        <span class="topstrip__sep"></span>
+        <span class="topstrip__stat">今日趋势 <b>20</b> 条</span>
+        <span class="topstrip__sep"></span>
+        <span class="topstrip__stat">最热分类 <b>动作片</b></span>
+        <span class="topstrip__right">
+          <span class="topstrip__pill">继续观看 3</span>
+          <span class="topstrip__pill">收藏 12</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="site-main"><div class="site-main__inner" id="homeMount"></div></div>
+   </div>
+  </div></div>
+
+  <p class="plan-desc" data-desc></p>
+</section>
+
+<!-- ══════════════════════════ ② Browse 左栏 ══════════════════════════ -->
+<section class="issue" data-issue="browse" data-plan="A">
+  <div class="issue-bar">
+    <h2>② Browse 页左栏紧凑度</h2>
+    <span class="hint">同一个模拟视口下对比左栏的列数 / 行高 / 分组间距</span>
+    <div class="plan-seg" data-seg>
+      <button class="is-on" data-plan="A">A 现状</button>
+      <button data-plan="B">B 紧凑 2 列<span class="tag">推荐</span></button>
+      <button data-plan="C">C 自适应列数</button>
+      <button data-plan="D">D 分组可折叠</button>
+    </div>
+  </div>
+  <div class="sim-wrap"><div class="sim-frame" data-align="0">
+    <div class="plan is-on"><div class="bw" id="browseMount"></div></div>
+  </div></div>
+  <p class="plan-desc" data-desc></p>
+</section>
+
+<!-- ══════════════════════════ ③ 左栏样式统一 ══════════════════════════ -->
+<section class="issue" data-issue="rail" data-plan="A">
+  <div class="issue-bar">
+    <h2>③ 左栏视觉语言统一</h2>
+    <span class="hint">样本为「左栏筛选 + 右主区卡片网格」的通用形态（Browse / 收藏 / 历史 / 设置 / IPTV 共用）</span>
+    <div class="plan-seg" data-seg>
+      <button class="is-on" data-plan="A">A 现状（无边框无底）</button>
+      <button data-plan="B">B 右侧 1px 边框<span class="tag">推荐</span></button>
+      <button data-plan="C">C 浅底面板</button>
+      <button data-plan="D">D 浅底 + 右边框</button>
+    </div>
+  </div>
+  <div class="sim-wrap"><div class="sim-frame" data-align="0">
+    <div class="plan is-on"><div class="bw" id="railMount"></div></div>
+  </div></div>
+  <p class="plan-desc" data-desc></p>
+</section>
+
+<!-- ══════════════════════════ ④ Detail / Person ══════════════════════════ -->
+<section class="issue" data-issue="detail" data-plan="A">
+  <div class="issue-bar">
+    <h2>④ Detail / Person 大屏上半部</h2>
+    <span class="hint">两个页面在同一个模拟视口下的高度收敛与两栏化</span>
+    <div class="plan-seg" data-seg>
+      <button class="is-on" data-plan="A">A 现状</button>
+      <button data-plan="B">B 降高</button>
+      <button data-plan="C1">C1 右栏=文本信息<span class="tag">推荐</span></button>
+      <button data-plan="C2">C2 右栏+简介</button>
+      <button data-plan="C3">C3 右栏+剧照</button>
+      <button data-plan="C4">C4 右栏可滚动</button>
+    </div>
+  </div>
+  <div class="sim-wrap"><div class="sim-frame" data-align="0">
+    <div class="plan is-on" id="detailMount"></div>
+  </div></div>
+  <p class="plan-desc" data-desc></p>
+</section>
+
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   数据 & 渲染工具
+   ═══════════════════════════════════════════════════════════════════ */
+const FILMS=['沙丘：第二部','流浪地球 3','奥本海默','繁花','漫长的季节','三体','狂飙','宇宙探索编辑部',
+  '蜘蛛侠：纵横宇宙','怒海战记','繁城之下','长安三万里','热辣滚烫','第二十条','飞驰人生 2','年会不能停'];
+const G=document.createElement('template');
+function cards(n,from=0){
+  let h='';
+  for(let i=0;i<n;i++){
+    const t=FILMS[(i+from)%FILMS.length];
+    h+=`<div class="mcard"><div class="mcard__img"></div><div class="mcard__t">${t}</div></div>`;
+  }
+  return h;
+}
+function mrow(title,n,from=0){
+  return `<div class="mrow"><div class="mrow__head"><span class="mrow__title">${title}</span><span class="mrow__more">查看全部 ›</span></div>
+  <div class="mrow__grid">${cards(n,from)}</div></div>`;
+}
+const CATS=[
+  {name:'动作片',heat:1284,top:['沙丘：第二部','怒海战记','飞驰人生 2']},
+  {name:'科幻片',heat:1042,top:['流浪地球 3','奥本海默','蜘蛛侠：纵横宇宙']},
+  {name:'剧集',heat:876,top:['繁花','漫长的季节','三体']},
+];
+function heatCard(c,i,{rail=false}={}){
+  const w=(c.heat/CATS[0].heat*100).toFixed(1);
+  return `<div class="heat-card${rail?'':' '}">
+    <div class="heat-card__head">
+      <span class="heat-card__rank">${i+1}</span>
+      <span class="heat-card__name">${c.name}</span>
+      <span class="heat-card__heat"><span class="n">${c.heat}</span><span class="l">分类热度 Σ</span></span>
+    </div>
+    <div class="heat-card__bar"><i style="width:${w}%"></i></div>
+    <div class="heat-card__list">
+      ${c.top.map((t,j)=>`<div class="heat-item"><span class="heat-item__idx">${j+1}</span>
+        <span class="heat-item__poster"></span><span class="heat-item__t">${t}</span>
+        <span class="heat-item__h">${(9.9-j*1.7).toFixed(1)}</span></div>`).join('')}
+    </div></div>`;
+}
+function heroBili(){
+  let c='';
+  for(let i=0;i<6;i++) c+=`<div class="hb__card"><span>${FILMS[i]}</span></div>`;
+  return `<div class="hb"><div class="hb__grid">
+    <div class="hb__banner"><div class="hb__cap">
+      <div class="hb__meta"><span>★ 8.7</span><span>2024</span><span>电影</span></div>
+      <h3>沙丘：第二部</h3>
+      <p>保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。</p>
+    </div></div>
+    <div class="hb__right"><div class="hb__cards">${c}</div><div class="hb__shuffle">换一换</div></div>
+  </div></div>`;
+}
+function heatRow(){
+  return `<div class="heat-row"><div class="heat-row__head">
+    <span class="heat-row__title">分类热度榜</span>
+    <span class="heat-row__sub">今日各分类最热 · 点分类卡进入</span>
+    <span class="heat-row__more">查看完整榜单 ›</span></div>
+    <div class="heat-grid">${CATS.map((c,i)=>heatCard(c,i)).join('')}</div></div>`;
+}
+function heatRail(){
+  return `<div class="rail-box"><div class="rail-box__head">
+    <span class="rail-box__title">分类热度榜</span>
+    <span class="rail-box__more">完整榜单 ›</span></div>
+    <div class="heat-rail">${CATS.map((c,i)=>heatCard(c,i,{rail:true})).join('')}</div></div>`;
+}
+
+/* ═══════════════ 议题 ① 四个方案的页面内容 ═══════════════ */
+const HOME_PLANS={
+  A:`${heroBili()}
+     ${mrow('继续观看',7,3)}
+     ${heatRow()}
+     ${mrow('正在热映',7,0)}${mrow('热门电影',7,5)}`,
+
+  B:`${heroBili()}
+     <div class="home-two-col">
+       <div class="home-rail">${heatRail()}</div>
+       <div class="home-col">${mrow('继续观看',7,3)}${mrow('正在热映',7,0)}${mrow('热门电影',7,5)}</div>
+     </div>`,
+
+  C:`<div class="home-two-col">
+       <div class="home-rail">${heatRail()}</div>
+       <div class="home-col">${heroBili()}${mrow('继续观看',7,3)}${mrow('正在热映',7,0)}${mrow('热门电影',7,5)}</div>
+     </div>`,
+
+  D:`<div class="hb" style="margin-bottom:var(--space-sm)"><div class="hb__grid" style="grid-template-columns:minmax(0,1fr) var(--hero-side-w)">
+       <div class="hb__banner"><div class="hb__cap">
+         <div class="hb__meta"><span>★ 8.7</span><span>2024</span><span>电影</span></div>
+         <h3>沙丘：第二部</h3>
+         <p>保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。</p>
+       </div></div>
+       <div style="min-width:0"><div class="hero-heat">
+         <div class="rail-box__head"><span class="rail-box__title">分类热度榜</span>
+           <span class="rail-box__more">完整榜单 ›</span></div>
+         <div class="heat-rail heat-rail--tight">${CATS.map((c,i)=>heatCard(c,i,{rail:true})).join('')}</div>
+       </div></div>
+     </div></div>
+     ${mrow('继续观看',7,3)}
+     ${mrow('正在热映',7,0)}${mrow('热门电影',7,5)}`,
+};
+const HOME_DESC={
+  A:`<b>现状</b>：Hero 通栏（≤2200 居中）→ 继续观看 → <code>分类热度榜</code>横排 3 卡 → 7 行。
+     问题：大屏下内容全部堆在单列里，hero 与内容区没有横向锚点，顶栏（通栏）与内容（2200 居中）边缘错位。`,
+  B:`<b>B · 内容区两栏</b>：Hero 保持全宽不动；<span class="up">下方内容区</span>拆成
+     <code>[左栏 280～300px 分类热度榜 sticky] + [右主区 继续观看 + 7 行]</code>。
+     左栏实测高 603px（3 张分类卡），页面内容总高 <b>1799 → 1223px（−32%）</b>。
+     Hero 完全不受影响，是四项里对现有 Hero 逻辑改动最小的一档。`,
+  C:`<b>C · 通体两栏</b>：左栏从 Hero 顶部开始（sticky），Hero 与内容行一起落在右列。
+     左栏与顶栏下沿齐平，形成「左导航 + 右内容」的完整骨架，纵向连续感最强，
+     页面总高进一步降到 <b>1138px</b>；
+     代价是 Hero 宽度被吃掉 280px（1440 下 551 → <b>414px</b>，<span class="down">−25%</span>），
+     B 站式 3×2 右栏卡在窄容器里也会明显拥挤。`,
+  D:`<b>D · Hero 右栏承载热度榜（推荐）</b>：把 Hero 右侧原本的 <code>3×2 竖版卡</code>换成
+     「分类热度榜」竖排列表，与左 banner 同高（<code>--hero-banner-h</code>；
+     1280 / 1440 / 1920 / 2560 下分别为 332 / 360 / 469 / 524px）。
+     同时删掉下方独立的「分类热度榜」横排行 —— 实测该行高 <b>368px</b>，
+     <span class="up">整页内容总高 1799 → 1431px（−20%）</span>。
+     效果：顶栏 → Hero → 内容行形成一条纵向信息脊柱，hero 高度不变但内容密度翻倍。
+     <i>注：HeroBili 形态本身仅在 &gt;1280 启用，1280 档的超高右栏可直接忽略。</i>`,
+};
+const HOME_FLAG={
+  align:`<b>顶栏对齐</b>：把 StickyHeader 的内容包一层 <code>max-width:2200px; margin-inline:auto</code>
+    （与 <code>.home-page__content</code> 同宽），消除 2560 下 logo 与 hero 左边缘错位 ~180px 的割裂感。`,
+  strip:`<b>顶部过渡带</b>：在 header 与 Hero 之间插入一条 44px 通栏条（内容同样 2200 居中），
+    承载面包屑 / 今日趋势统计 / 继续观看·收藏入口。它是「导航 → 内容」的缓冲层，滚动时可 sticky 吸附在 header 下沿。`,
+};
+
+/* ═══════════════ 议题 ② Browse 左栏 ═══════════════ */
+const RAIL_GROUPS=[
+  {label:'分类',items:['全部','电影','剧集','综艺','动漫','纪录片','排行榜']},
+  {label:'类型',items:['动作','喜剧','科幻','爱情','悬疑','恐怖','动画','犯罪','战争','冒险','奇幻']},
+  {label:'地区',items:['全部','中国大陆','美国','日本','韩国','英国','法国','中国香港','中国台湾','泰国','印度']},
+  {label:'年份',items:['不限','2026','2025','2024','2023','2022','2021','2020','2019','更早']},
+];
+function railHTML(cfg){
+  const {cols=2,sep=8,chipPy=8,labelGap=4,active={}}={};
+  return RAIL_GROUPS.map((g,gi)=>{
+    const items=cfg.fold&&gi>0&&!cfg.openAll
+      ? g.items.slice(0,0)
+      : g.items;
+    const chips=(cfg.fold&&gi>0&&!cfg.openAll)?[]:g.items;
+    return `<div class="rail__group">
+      <div class="rail__label">${g.label}${cfg.fold?' ▾':''}</div>
+      <div class="rail__chips" style="--chip-cols:${cols};--chips-gap:${cfg.chipGap||2.2}px">
+        ${chips.map((it,i)=>{
+          const isLong=it.length>4;
+          const cls=['rail__chip'];
+          if(i===(active[gi]??0)) cls.push('is-on');
+          if(cfg.autoCols&&isLong) cls.push('rail__chip--full');
+          return `<button class="${cls.join(' ')}">${it}</button>`;
+        }).join('')}
+      </div></div>`;
+  }).join('');
+}
+function browsePage({railStyle='',railCfg={},railInner='',tight=false}={}){
+  return `
+  <div class="bw__tabs">
+    <div class="bw__pill"><button class="bw__tab is-on">智能检索</button><button class="bw__tab">直链搜索</button></div>
+    <span class="bw__hint">跨源聚合 · 类型 / 地区 / 评分可组合筛选</span>
+  </div>
+  <div class="rail ${railStyle}" style="--rail-sep-m:${railCfg.sep??8}px;--chips-gap:${railCfg.labelGap??4}px;--chip-py:${railCfg.chipPy??8}px">
+    ${railInner||railHTML(railCfg)}
+  </div>
+  <div class="bw__results">
+    <div class="bw__head">
+      <div class="seg"><button class="is-on">全部</button><button>电影</button><button>剧集</button></div>
+      <span style="width:1px;height:18px;background:var(--color-border-light)"></span>
+      <div class="seg"><button>热度</button><button class="is-on">评分</button><button>最新</button></div>
+      <span class="bw__count">共 1,284 条</span>
+    </div>
+    <div class="bw__grid">${cards(14)}</div>
+  </div>`;
+}
+const BROWSE_DESC={
+  A:`<b>现状</b>：左栏 <code>clamp(124px, 8.61vw, 224px)</code> —— 1440 视口只有 <b>124px</b>。
+     组内 chip 2 列网格，chip <code>padding: 8px var(--space-sm)</code>，单 chip 实测 <b>61 × 32px</b>；
+     4 组共 39 个 chip → 左栏垂直总长 <b>≈ 836px</b>，比右侧结果区还长，滚动时一半屏幕在筛选项上。`,
+  B:`<b>B · 紧凑 2 列</b>：<span class="up">栏宽上调</span> <code>clamp(148px, 10vw, 248px)</code>（1440 → 148px）；
+     chip 上下 <code>8px → 5px</code>（实测高度 32 → <b>26px</b>，chip 宽 61 → 73px，长词不再折行）；
+     组间 <code>--space-sm → 6px</code>；组标题与首行间距收紧。
+     左栏总长 <b>836 → 694px</b>（<span class="up">−17%</span>），字号与圆角保持 rail 语言不变，是四项里改动最小的一档。`,
+  C:`<b>C · 自适应列数</b>：<code>repeat(auto-fill, minmax(56px, 1fr))</code> ——
+     短词（全部 / 2024 / 美国）排 3 列，长词（中国大陆 / 中国香港）独占整行。
+     实测左栏总长 <b>836 → 742px</b>（<span class="up">−11%</span>），chip 高 28px。
+     收益不如 B，但「长词不再被压成省略号」这一点是 B 解决不了的。`,
+  D:`<b>D · 分组可折叠</b>：每组标题变成带箭头的按钮，<span class="up">默认只展开第一组</span>，其余收起为标题行（可多开）。
+     左栏初始总长 <b>836 → 248px</b>（只渲染 7 个 chip）。
+     缺点：每次筛选都要先展开一次，多一次点击；适合选项极多的场景（本页类型 11 项 + 地区 11 项）。`,
+};
+const BROWSE_RAIL={A:{},B:{sep:6,chipPy:5,labelGap:3},C:{sep:7,chipPy:6,labelGap:3},D:{fold:true,sep:7,chipPy:7,labelGap:3}};
+
+/* ═══════════════ 议题 ③ 左栏样式统一 ═══════════════ */
+const RAIL_DESC={
+  A:`<b>现状</b>：四处左栏（收藏/历史 <code>RecordShell</code>、Browse、设置 <code>settings-sidenav</code>、IPTV <code>iptv-rail</code>）
+     全部「无背景 + 无边框」，只靠组间 1px 分割线 + 右列 <code>--space-2xl</code>(约 37px) 空白与结果区分离。
+     大屏下空白拉大，左栏像「飘」在页面底色上，边界感最弱 —— 这正是「内容分散」的观感来源之一。`,
+  B:`<b>B · 右侧 1px 边框</b>：<code>border-right: 1px solid var(--color-border-light)</code> + 右内边距。
+     <span class="up">成本最低</span>（一行 CSS），边界明确；不引入新底色，与「卡片模块」规范不冲突。
+     建议同时把右主区左内边距对齐，避免线与内容贴太近。`,
+  C:`<b>C · 浅底面板</b>：左栏改为 <code>background: var(--color-surface)</code> + 圆角 + 轻阴影 + 内边距，
+     右主区保持页面底色。<span class="up">面板感最强</span>；但左栏会与右主区里的卡片模块「同底色」，
+     层次靠阴影区分，暗色主题下对比度偏弱。`,
+  D:`<b>D · 浅底 + 右边框</b>：C + B 的组合，边界与面板感兼备。
+     代价是左栏变成一张「卡片」，与项目「区块即卡片」的既有规范一致，但会比现在的 rail 观感重一档。`,
+};
+
+/* ═══════════════ 议题 ④ Detail / Person ═══════════════ */
+
+/* 详情「概览」tab 的真实内容块 —— 各排列候选由这些块自由组合，
+   保证对比的是「同样的内容、不同的排布」而不是「不同的内容量」 */
+const DT_GENRES=`<div class="dt-genres">${['动作','科幻','冒险','剧情'].map(g=>`<span class="dt-genre">${g}</span>`).join('')}</div>`;
+const DT_KV=`<div class="dt-kv">${
+  [['发行年份','2024'],['状态','已上映'],['时长','166 分钟'],['语言','EN / 英语'],
+   ['TMDB 评分','8.7（12,483 人）'],['导演','丹尼斯·维伦纽瓦'],
+   ['国家','美国 / 加拿大'],['预算','$165,000,000'],['票房','$711,844,000']]
+    .map(([k,v])=>`<div class="dt-kv__item"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div>`;
+const DT_COMPANY=`<div class="dt-company"><span>发行</span><strong>Legendary Pictures · Warner Bros. Pictures</strong></div>`;
+const DT_CAST=`<h3 class="dt-sec">演员</h3><div class="dt-cast-row">${
+  ['提莫西·查拉梅','赞达亚','丽贝卡·弗格森','奥斯汀·巴特勒','弗洛伦丝·皮尤','乔什·布洛林'].map(n=>
+    `<div class="dt-cast-item"><span class="dt-cast__avatar"></span><span class="dt-cast-name">${n}</span></div>`).join('')}</div>
+  <button class="dt-cast-toggle">展开全部 26 位演员</button>`;
+const DT_OVERVIEW=`<h3 class="dt-sec">简介</h3><p class="dt-overview">保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。他必须在挚爱与已知宇宙的命运之间做出抉择，并努力阻止只有他能预见的可怕未来。</p>`;
+const DT_STILLS=`<h3 class="dt-sec">剧照</h3><div class="dt-stills-grid">${'<div class="dt-still"></div>'.repeat(8)}</div>`;
+
+function detailPage(mode){
+  /* 模拟视口高度固定 1080px（1080p 屏）：项目里的 vh 在此演示中写作 --sim-h 的比例，
+     否则高度会被浏览器真实窗口的 65vh 截断，看不出「大屏下 hero 有多高」 */
+  const isTwoCol = mode.charAt(0) === 'C';
+  const maxH='min(calc(var(--sim-h) * 0.65), clamp(450px, 423px + 7.22cqw, 700px))';
+  const heroH=(isTwoCol || mode==='B')
+    ? 'min(calc(var(--sim-h) * 0.46), clamp(340px, 320px + 4cqw, 520px))'
+    : maxH;
+  const hero=`<div class="dt-hero${isTwoCol?' dt-hero--sm':''}" style="height:${heroH}">
+      <div class="dt-hero__bg"></div><div class="dt-hero__grad"></div>
+      <div class="dt-hero__content">
+        <div class="dt-hero__left">
+          <h1 class="dt-hero__title" style="font-size:${isTwoCol?'26px':'34px'}">沙丘：第二部</h1>
+          <div class="dt-hero__meta"><span>★ 8.7</span><span>2024-03-01</span><span>166 分钟</span></div>
+          <div class="dt-hero__meta"><span class="dt-hero__tag">动作</span><span class="dt-hero__tag">科幻</span><span class="dt-hero__tag">冒险</span></div>
+          <p class="dt-hero__desc">保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。</p>
+          <div class="dt-hero__actions">
+            <button class="dt-btn dt-btn--primary">▶ 立即播放</button>
+            <button class="dt-btn dt-btn--ghost">♡ 收藏</button>
+          </div>
+        </div>
+        <div class="dt-hero__poster" style="--dt-poster-w:clamp(128px, 32px + 8cqw, 352px)"></div>
+      </div></div>`;
+  const tabs=`<div class="dt-tabs" style="margin:0">
+      <button class="dt-tab is-on">详情</button><button class="dt-tab">播放列表</button><button class="dt-tab">季信息</button></div>`;
+
+  /* A 现状 / B 降高：单栏，概览七块顺次堆叠（现状结构） */
+  if(!isTwoCol){
+    return `<div class="dt"><div class="dt__inner">
+      ${hero}${tabs}
+      <div class="dt-card">
+        <h2 class="dt-sec">基础信息</h2>${DT_GENRES}${DT_KV}${DT_COMPANY}
+        ${DT_CAST}${DT_OVERVIEW}${DT_STILLS}
+      </div>
+      ${mrow('相似推荐',8,6)}
+    </div></div>`;
+  }
+
+  /* C1~C4：上半部两栏，差别只在「右栏装什么、剩余内容如何下移」 */
+  const OVERVIEW_CLAMP=`<h4 class="dt-sec">简介</h4>
+    <p class="dt-overview dt-overview--clamp">保罗·厄崔迪与契妮和弗雷曼人联手，踏上复仇之路，对抗那些毁灭其家族的阴谋者。他必须在挚爱与已知宇宙的命运之间做出抉择，并努力阻止只有他能预见的可怕未来。</p>
+    <button class="dt-cast-toggle">展开全文</button>`;
+  const STILLS_MINI=`<h4 class="dt-sec">剧照</h4>
+    <div class="dt-stills" style="grid-template-columns:repeat(2,1fr);margin:0">
+      <div class="dt-still"></div><div class="dt-still"></div>
+      <div class="dt-still"></div><div class="dt-still"></div>
+    </div>
+    <button class="dt-cast-toggle">查看全部 24 张 ›</button>`;
+
+  let sideHTML='', restHTML='', sideCls='';
+  if(mode==='C1'){            // 右栏 = 类型 + KV + 发行；演员/简介/剧照全部下移通栏
+    sideHTML = `${DT_GENRES}${DT_KV}${DT_COMPANY}`;
+    restHTML = `${DT_CAST}${DT_OVERVIEW}${DT_STILLS}`;
+  } else if(mode==='C2'){     // 右栏 = 类型 + KV + 简介(6 行截断)；演员/剧照下移
+    sideHTML = `${DT_GENRES}${DT_KV}${OVERVIEW_CLAMP}`;
+    restHTML = `${DT_CAST}${DT_STILLS}`;
+  } else if(mode==='C3'){     // 右栏 = KV + 剧照 2×2；演员/简介下移
+    sideHTML = `${DT_KV}${STILLS_MINI}`;
+    restHTML = `${DT_CAST}${DT_OVERVIEW}`;
+  } else {                    // C4：右栏 = 全部文本信息（含简介全文），超出部分栏内滚动
+    sideHTML = `${DT_GENRES}${DT_KV}${DT_COMPANY}${DT_OVERVIEW}`;
+    restHTML = `${DT_CAST}${DT_STILLS}`;
+    sideCls = ' dt-side--scroll';
+  }
+
+  return `<div class="dt"><div class="dt__inner">
+    <div class="dt-top">
+      ${hero}
+      <div class="dt-side${sideCls}" style="--dt-side-h:${heroH}">${sideHTML}</div>
+    </div>
+    ${tabs}
+    <div class="dt-card">${restHTML}</div>
+    ${mrow('相似推荐',8,6)}
+  </div></div>`;
+}
+function personPage(mode){
+  const H=mode==='A'
+    ? 'min-height:clamp(288px, 256px + 10cqw, 448px);max-height:min(calc(var(--sim-h) * 0.5), clamp(448px, 416px + 10cqw, 640px))'
+    : 'min-height:0';
+  const hero=`<div class="pe-hero${mode!=='A'?' pe-hero--row':''}" style="${H}">
+    <div class="pe-hero__noise"></div>
+    ${mode==='A'?'<div class="pe-avatar"></div>':''}
+    <div class="pe-hero__content" style="${mode==='A'?'min-height:clamp(288px, 256px + 10cqw, 448px)':''}">
+      ${mode!=='A'?'<div class="pe-avatar"></div>':''}
+      <div class="pe-info">
+        <h1 class="pe-name" style="font-size:${mode==='A'?'34px':'28px'}">提莫西·查拉梅</h1>
+        <p class="pe-aka">Timothée Chalamet</p>
+        <div class="pe-meta"><span>男</span><span>1995-12-27</span><span>美国</span><span>作品 42</span></div>
+        <p class="pe-bio">美国演员，生于纽约。以《请以你的名字呼唤我》成名，后主演《沙丘》系列、《旺卡》等。
+          凭借《沙丘：第二部》获得广泛好评，是当代最受瞩目的年轻演员之一。</p>
+      </div>
+    </div></div>`;
+  return `<div class="pe"><div class="pe__inner">
+    ${hero}
+    <div class="pe-work dt-card" style="margin-top:var(--space-sm)">
+      <div class="dt-tabs" style="border:none;padding:0;margin-bottom:var(--space-md)">
+        <button class="dt-tab is-on">全部作品</button><button class="dt-tab">电影</button><button class="dt-tab">剧集</button></div>
+      <div class="bw__grid">${cards(8,4)}</div>
+    </div>
+  </div></div>`;
+}
+const DETAIL_DESC={
+  A:`<b>现状</b>：Detail hero <code>aspect-ratio 16/9</code> + <code>max-height: min(65vh, clamp(450px, 423px + 7.22vw, 700px))</code>
+     → 实测 1920 视口 <b>562px</b>、2560 视口 <b>608px</b>（1080p 屏；4K 屏可达上限 700px），
+     即 1080p 下 hero 独占屏幕高度的 <b>56%～65%</b>，首屏几乎看不到任何内容行。
+     Person hero 是纯色块（无剧照），实测 1920 视口 <b>450px</b>，内容只有头像 + 姓名 + 简介，大量留空。`,
+  B:`<b>B · 降高</b>：Detail hero 的 <code>max-height</code> 收敛到 <code>min(46vh, clamp(340px, 320px + 4vw, 520px))</code>
+     （1920 视口 562 → <b>397px</b>，<span class="up">−29%</span>）；Person hero 去掉 min/max-height，
+     改由内容撑开（实测 <b>272px</b>）。改动只碰两行高度声明，页面结构完全不变，风险最低。`,
+  C1:`<b>C1 · 右栏只放「文本类」信息（推荐）</b>：右栏 = 类型标签 + 基础信息 KV 网格（2 列）+ 发行公司；
+     <span class="up">演员 / 简介 / 剧照全部下移通栏</span>，保持现有顺序。
+     理由：详情「概览」tab 的内容分两类 ——
+     <b>纵向 KV 文本</b>（类型标签、基础信息、发行）适合窄栏，实测恰好填满 hero 高度、<b>不需要滚动</b>；
+     <b>横向铺开的内容</b>（演员横滚条、剧照大图网格）放窄栏会严重缩水甚至失去横滚语义，必须通栏。`,
+  C2:`<b>C2 · 右栏 = 文本信息 + 简介</b>：在 C1 基础上把「简介」提到右栏（6 行截断 + 「展开全文」）；
+     演员 / 剧照下移。
+     代价：右栏内容<u>超出 hero 高度</u>，必须靠栏内滚动兜底（滚动条已隐藏，但滚轮会被右栏劫持）；
+     且原本「简介全文直读」的体验变成折叠 + 点击。`,
+  C3:`<b>C3 · 右栏 = 基础信息 + 剧照小图</b>：右栏放 KV + 剧照 2×2 缩略（+「查看全部 24 张」）；
+     演员 / 简介下移。
+     代价：右栏同样<u>超出 hero 高度</u>需滚动，且窄栏里 16:9 剧照只剩约 180×100，
+     信息量远不如通栏的大图网格 —— 属于「为了对称而牺牲内容」。`,
+  C4:`<b>C4 · 右栏全文 + 栏内滚动</b>：右栏 = 类型 + KV + 发行 + 简介全文，高度锁死 hero 高，
+     <span class="down">超出部分栏内滚动</span>。
+     优点：不裁剪任何字段，信息零丢失；缺点：这是四个里内容最长的，
+     「页面滚动 + 右栏滚动」双滚动条的冲突在它身上最明显。`,
+};
+
+/* ═══════════════ 挂载与交互 ═══════════════ */
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
+/* 首页 */
+function renderHome(plan){
+  $('#homeMount').innerHTML=HOME_PLANS[plan];
+  $('.issue[data-issue="home"] [data-desc]').innerHTML=HOME_DESC[plan];
+}
+/* Browse */
+function renderBrowse(plan){
+  const mount=$('#browseMount');
+  mount.innerHTML=browsePage({railCfg:BROWSE_RAIL[plan]});
+  mount.style.setProperty('--rail-w',
+    plan==='B' ? 'clamp(148px, 10cqw, 248px)' : 'clamp(124px, 8.61cqw, 224px)');
+  $('.issue[data-issue="browse"] [data-desc]').innerHTML=BROWSE_DESC[plan];
+}
+/* 左栏统一 */
+function renderRail(plan){
+  const style=plan==='B'?'rail--line':plan==='C'?'rail--panel':plan==='D'?'rail--panel rail--line':'';
+  const mount=$('#railMount');
+  mount.innerHTML=browsePage({railStyle:style,railCfg:{sep:7,chipPy:6,labelGap:3}});
+  mount.style.setProperty('--rail-w','clamp(140px, 9.2cqw, 236px)');
+  $('.issue[data-issue="rail"] [data-desc]').innerHTML=RAIL_DESC[plan];
+}
+/* Detail / Person */
+function renderDetail(plan){
+  const peMode = plan === 'A' ? 'A' : 'B';
+  $('#detailMount').innerHTML = detailPage(plan) + personPage(peMode);
+  $('.issue[data-issue="detail"] [data-desc]').innerHTML = DETAIL_DESC[plan];
+}
+
+/* 通用：方案切换 */
+$$('.issue').forEach(issue=>{
+  const seg=issue.querySelector('[data-seg]');
+  const key=issue.dataset.issue;
+  const render={home:renderHome,browse:renderBrowse,rail:renderRail,detail:renderDetail}[key];
+  seg?.addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-plan]');
+    if(!btn)return;
+    seg.querySelectorAll('button').forEach(b=>b.classList.toggle('is-on',b===btn));
+    issue.dataset.plan=btn.dataset.plan;
+    render(btn.dataset.plan);
+  });
+  render(issue.dataset.plan);
+});
+
+/* 议题切换 */
+$('#issueNav').addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-issue]');
+  if(!btn)return;
+  $$('#issueNav button').forEach(b=>b.classList.toggle('is-on',b===btn));
+  $$('.issue').forEach(s=>s.classList.toggle('is-on',s.dataset.issue===btn.dataset.issue));
+  NOTE[btn.dataset.issue] && ($('#demoNote').innerHTML=NOTE[btn.dataset.issue]);
+});
+
+/* 视口宽度 */
+$('#widthSeg').addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-w]');
+  if(!btn)return;
+  $$('#widthSeg button').forEach(b=>b.classList.toggle('is-on',b===btn));
+  document.documentElement.style.setProperty('--sim-w',btn.dataset.w+'px');
+});
+
+/* 主题 */
+$('#themeBtn').addEventListener('click',()=>{
+  const d=document.body.classList.toggle('is-dark');
+  $('#themeBtn').textContent=d?'切浅色':'切暗色';
+});
+
+/* 首页两个开关 */
+$$('.issue[data-issue="home"] [data-flag]').forEach(cb=>{
+  cb.addEventListener('change',()=>{
+    const f=cb.dataset.flag;
+    $$('.issue[data-issue="home"] .sim-frame').forEach(fr=>{
+      if(f==='align') fr.dataset.align=cb.checked?'1':'0';
+      if(f==='strip'){
+        const el=fr.querySelector('.topstrip');
+        if(el) el.hidden=!cb.checked;
+      }
+    });
+  });
+});
+
+const NOTE={
+  home:`<b>议题 ①</b>：用右上角「模拟视口」切换 1280 / 1440 / 1920 / 2560，可以看清大屏下内容如何被 2200px 硬上限居中、
+    两侧留白如何放大。两个勾选框（顶栏对齐 / 顶部过渡带）是<em>可独立叠加</em>的补强项，可与任意方案组合。`,
+  browse:`<b>议题 ②</b>：左栏宽度随模拟视口变化（<code>clamp(124px, 8.61vw, 224px)</code>）。
+    切到 <b>1920</b> 或 <b>2560</b> 时左栏达到 224px 上限，能看出「2 列 + 8px 内边距」在大屏下依然松散。`,
+  rail:`<b>议题 ③</b>：四种视觉语言跑在同一个样本页上。注意 B/C/D 都<em>不改结构</em>，只是加视觉锚点；
+    落地时四处左栏（Browse / RecordShell / Settings / IPTV）统一引用同一个宽度 token 与同一套分割线规格。`,
+  detail:`<b>议题 ④</b>：上半屏同时演示 Detail 与 Person 两页。
+    切到 <b>2560</b> 看现状的高度有多夸张（Detail 700px / Person 540px）；方案 C 是「降高 + 上半部两栏」。`,
+};
+$('#demoNote').innerHTML=NOTE.home;
+</script>
+</body>
+</html>
