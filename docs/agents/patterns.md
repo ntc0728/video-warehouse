@@ -179,6 +179,29 @@ TV 档 `clamp(1600px, 83.333vw, 3200px)` 是独立 2× 契约，不受影响。
 点击行为仍是「切到下一条音轨」，上游 `handleAudioTrackSelect` 在 `tracks.length <= 1` 时
 直接 return（安全空操作）；条数写进 `title`（`切换音轨（共 N 条）`）便于判断。
 
+**⑥ 播放器强调色：作用域内覆写 primary 家族**
+
+播放器 chrome 恒深色底，而 `--color-primary` 是**主题相关**的（浅色 `#000` / 暗色 `#fff`）——
+两种情况都会让「用 primary 做强调」的规则与面板同色。修前浅色主题实测：
+一级活跃左竖条 `rgb(0,0,0)`、二级活跃左边框 `3px rgb(0,0,0)`、二级活跃序号
+`color(srgb 0 0 0/.65)`、一级活跃计数药丸 `color-mix(primary 12%)`（比未选中的白 6% **更暗**）、
+TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移按钮描边与文字。
+另有一类「primary 作填充 + `color:#fff`」的消费点在**暗色主题**同样坏（白底白字）：
+`.up-error-actions-btn-primary`、`.up-settings-preset.is-active`、
+`.up-fs-drawer .up-ms-chip--on`、`.up-cast-core`。
+
+修法：在 `.up-universal-player` 上覆写 primary 家族为亮色蓝
+`#3b82f6` / hover `#60a5fa` / `--color-primary-rgb: 59,130,246`（+ light/bg/shadow）。
+`--color-primary-rgb` 此前**全仓从未定义**，而 IPTVOSDBar 的时移按钮写作
+`rgba(var(--color-primary-rgb, 22, 119, 255), …)` —— 一直在走 #1677ff 兜底，补齐后同源。
+
+⚠️ **不按主题分叉**是刻意的：分叉会让暗色主题下白底白字那四类继续坏。代价是暗色主题下
+播放器强调色由白转蓝（已记录在 `docs/KNOWN-ISSUES.md` 第 14 条）。
+⚠️ **作用域用 `.up-universal-player` 而非 `body:has(…)`** —— 后者会漏到 AppLayout 外壳
+（`/play/:id` 的播放器是覆盖在应用之上的一层而非独立路由）。
+新增 primary 消费点前请确认它在本子树内（portaled 到 body 的元素**不会**继承），
+`/iptv` 浏览页与 `GroupPicker` 是正确的 `#000`，勿动。
+
 **⚠️ 量测口径（两个坑）**
 
 1. 分类「需要宽度」必须按**活跃态 `font-weight: 600` 的自然宽度**量 ——

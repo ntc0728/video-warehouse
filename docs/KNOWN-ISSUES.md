@@ -206,9 +206,10 @@
 
 ---
 
-## 14. [已知 · 未修 · 待办] 播放器内 `--color-primary` = #000 → 频道列表活跃态不可见（2026-09-10）
+## 14. [已修复 · 2026-09-10] 播放器内 `--color-primary` 退化 → 频道列表活跃态不可见
 
-**状态**：⚠️ 已知（2026-09-10 排查频道列表宽度时实测发现；用户指示**单独立项修**，本轮未动）。
+**状态**：✅ 已修复（2026-09-10 单独立项落地；防回归断言 `scripts/iptv-player.spec.ts` **IPTVP-024**，
+浅色 + 暗色两主题都跑）。
 
 **现象**：IPTV 播放页的频道列表里，所有「用 primary 做强调」的活跃态提示全部不可见：
 
@@ -230,3 +231,31 @@
 （播放器恒深色底，用亮色 primary）。**影响面约 10 处** `var(--color-primary)` 消费点：
 OSD 按钮 hover、错误态主按钮、TV 焦点描边、时移按钮、进度条等，需逐个回归 ——
 这也是用户要求「单独立项」而非顺手改的原因。
+
+**修复（2026-09-10）**：`.up-universal-player` 作用域内覆写 primary 家族 →
+`--color-primary: #3b82f6` / `--color-primary-hover: #60a5fa` / `--color-primary-rgb: 59,130,246`
+（+ light/bg/shadow 三档同源色）。选蓝的依据是仓里已有的三处线索：
+① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary, #3b82f6) }` 的**兜底就是 #3b82f6**
+—— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
+② `.up-gesture-indicator__fill { background: var(--color-primary, #fff) }` 同款写法（同一病灶的另一处）；
+③ `.video-card-status.status--unwatched` 已用 `rgba(59,130,246,.85)`。
+
+两个必须知道的取舍 / 边界：
+
+- **刻意不按主题分叉**（没有写 `html:not([data-theme="dark"])`）。播放器底恒深色，强调色也应恒定；
+  ⚠️ 这带来一个行为变化：**暗色主题下播放器的强调色由白转蓝**。这是必要的 —— 暗色主题
+  `primary = #fff` 时，「primary 作填充 + `color:#fff`」那一类消费点同样是坏的（白底白字）：
+  `.up-error-actions-btn-primary`（错误态主按钮，文字继承 `--player-text: #fff`）、
+  `.up-settings-preset.is-active`、`.up-fs-drawer .up-ms-chip--on`、`.up-cast-core`。
+  统一成蓝色后这两类问题（浅色黑底 / 白色白底）一起消失。
+- **作用域选 `.up-universal-player` 而不是 `body:has(.up-universal-player)`**：后者的变量会漏到
+  AppLayout 外壳（`/play/:id` 的播放器是覆盖在应用之上的一层，不是独立路由），页面里其它
+  body 级元素也会被染蓝。已核对播放器内**所有 live 的 primary 消费点都在该子树内** ——
+  唯二 portaled 到 body 的菜单（MoreMenu / ContextMenu）不消费 primary，
+  `.up-popover-item-check` 全仓无 tsx 引用（死规则）。`/iptv` 浏览页与 `GroupPicker` 的
+  primary 保持 `#000`（浅色页面，正确）。
+
+已知的**一处轻微代价**（可接受，未处理）：`.up-player-error-retry:hover` 的
+`color: var(--color-primary)` 变成蓝字压白底（`#3b82f6` 对白 ≈3.68:1，略低于小字号 AA 的 4.5:1）。
+它是一个白底药丸按钮的**瞬时 hover 态**；若日后要收紧，把这条规则的 hover 文字色改回
+`--color-text`、只保留 `border-color` 染蓝即可。
