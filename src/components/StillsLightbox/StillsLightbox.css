@@ -138,11 +138,77 @@
   -webkit-user-drag: none;
   background: rgba(255, 255, 255, 0.05);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.18s ease;
 }
 
 .stills-lightbox__slide img.is-loaded {
   opacity: 1;
+}
+
+/* 放大后可拖拽平移：抓取光标；拖拽过程中去掉 transform 过渡，避免跟手延迟 */
+.stills-lightbox__slide img.is-zoomed {
+  cursor: grab;
+}
+
+.stills-lightbox__slide img.is-panning {
+  cursor: grabbing;
+  transition: none;
+}
+
+/* ── 缩放控件（2026-09-10 由 Detail 剧照标题行移入灯箱）─────
+   形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
+.stills-lightbox__zoom {
+  position: absolute;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  z-index: 20;
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.stills-lightbox__zoom-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--icon-lg, 22px);
+  height: var(--icon-lg, 22px);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.stills-lightbox__zoom-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.stills-lightbox__zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stills-lightbox__zoom-value {
+  min-width: 3.6em;
+  padding: 0 var(--space-2xs);
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.stills-lightbox__zoom-value:hover {
+  color: #fff;
 }
 
 /* ── 缩略图条 ──────────────────────────────── */

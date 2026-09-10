@@ -58,7 +58,8 @@
 
 .person-hero-back {
   position: absolute;
-  top: var(--space-md);
+  /* 2026-09-10 用户要求「向上移动一点」：--space-md(≈9px) → --space-xs(≈4px) */
+  top: var(--space-xs);
   left: var(--space-md);
   z-index: 20;
   display: inline-flex;

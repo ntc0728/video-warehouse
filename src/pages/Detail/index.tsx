@@ -29,7 +29,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, Star, Calendar, ArrowLeft,
   Info, ListVideo, Layers, AlertTriangle, WifiOff,
-  RefreshCw, Server, ExternalLink, ZoomIn,
+  RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
 import './Detail.css';
 import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
@@ -39,12 +39,6 @@ import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 const CMS_DEBOUNCE_MS = 2000;
 
-/** 剧照缩放档位（放大控件：放大镜两侧按档切换）；默认下标 1 = 100%。
- *  档位刻意拉开间隔（0.75 / 1 / 1.5 / 2）：剧照网格是 auto-fill + 1fr，
- *  列宽由容器均分、只随「列数」跳变，相邻档位间隔太小会出现
- *  「点了没反应」（两档落到同一列数）——实测 1.25 与 1.5 在 1440 下同列。 */
-const STILLS_ZOOM_STEPS = [0.75, 1, 1.5, 2] as const;
-const STILLS_ZOOM_DEFAULT_IDX = 1;
 
 /**
  * 模块级 Detail 缓存（方案 B：无 Keep-Alive）
@@ -183,8 +177,6 @@ export default function DetailPage() {
   const isMobileLayout = useIsMobile();
   const isTVDevice = useIsTVDevice();
   const isWideDetail = !isMobileLayout && !isTVDevice;
-  /** 剧照缩放档位下标 */
-  const [stillsZoomIdx, setStillsZoomIdx] = useState(STILLS_ZOOM_DEFAULT_IDX);
   /** hero 元素 ref：用于把 hero 实际高度写入 --detail-hero-h，锁死右栏高度 */
   const heroRef = useRef<HTMLElement>(null);
   const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
@@ -719,6 +711,15 @@ export default function DetailPage() {
      保持通栏（理由与实测数据见 Detail.css 的「上半部两栏」注释块）。
      同一份 JSX 由 isWideDetail 决定落在 hero 右侧（.detail-hero-side）
      还是 info tab 内（原位置）—— 只渲染一处，不产生重复 DOM。 */
+  /* 简介块：2026-09-10 用户要求随基础信息一起上提到右栏（窄屏仍在 info tab 原位置）。
+     抽成变量保证只渲染一处。 */
+  const overviewNode = overview ? (
+    <>
+      <h3 className="detail-section-subtitle">简介</h3>
+      <p className="detail-overview-full">{overview}</p>
+    </>
+  ) : null;
+
   const infoCoreNode = (
     <>
       <h2 className="detail-section-title">基础信息</h2>
@@ -767,6 +768,9 @@ export default function DetailPage() {
           </strong>
         </div>
       )}
+
+      {/* 简介（仅 ≥1024 两栏时随基础信息进右栏；窄屏由 info tab 内渲染同一变量） */}
+      {isWideDetail && overviewNode}
     </>
   );
 
@@ -968,51 +972,12 @@ export default function DetailPage() {
               </>
             )}
 
-            {overview && (
-              <>
-                <h3 className="detail-section-subtitle">简介</h3>
-                <p className="detail-overview-full">{overview}</p>
-              </>
-            )}
+            {/* 简介：≥1024 时已随 infoCoreNode 一起渲染在 hero 右侧，此处不重复 */}
+            {!isWideDetail && overviewNode}
 
             {(stills.length > 0 || stillsLoading) && (
               <>
-                <div className="detail-stills-head">
-                  <h3 className="detail-section-subtitle">剧照</h3>
-                  {/* 剧照放大控件（2026-09-10 用户要求）：放大镜居中、两侧为相邻档位百分比，
-                      点左缩小 / 点右放大、点图标重置回 100%。移动端不渲染（窄屏无意义）。 */}
-                  {!stillsLoading && stills.length > 0 && !isMobileLayout && (
-                    <div className="detail-stills-zoom" role="group" aria-label="剧照缩放">
-                      <button
-                        type="button"
-                        className="detail-stills-zoom__step"
-                        onClick={() => setStillsZoomIdx((i) => Math.max(0, i - 1))}
-                        disabled={stillsZoomIdx === 0}
-                        aria-label="缩小剧照"
-                      >
-                        {Math.round(STILLS_ZOOM_STEPS[Math.max(0, stillsZoomIdx - 1)] * 100)}%
-                      </button>
-                      <button
-                        type="button"
-                        className="detail-stills-zoom__icon"
-                        onClick={() => setStillsZoomIdx(STILLS_ZOOM_DEFAULT_IDX)}
-                        aria-label="重置剧照缩放为 100%"
-                        title={`当前 ${Math.round(STILLS_ZOOM_STEPS[stillsZoomIdx] * 100)}%，点击重置`}
-                      >
-                        <Icon icon={ZoomIn} size="sm" />
-                      </button>
-                      <button
-                        type="button"
-                        className="detail-stills-zoom__step"
-                        onClick={() => setStillsZoomIdx((i) => Math.min(STILLS_ZOOM_STEPS.length - 1, i + 1))}
-                        disabled={stillsZoomIdx === STILLS_ZOOM_STEPS.length - 1}
-                        aria-label="放大剧照"
-                      >
-                        {Math.round(STILLS_ZOOM_STEPS[Math.min(STILLS_ZOOM_STEPS.length - 1, stillsZoomIdx + 1)] * 100)}%
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <h3 className="detail-section-subtitle">剧照</h3>
                 {stillsLoading ? (
                   <div className="detail-stills-grid">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -1023,7 +988,6 @@ export default function DetailPage() {
                    <div
                     ref={setStillsGridRef}
                     className={`detail-stills-grid${visibleCount != null ? ' detail-stills-grid--limited' : ''}`}
-                    style={{ '--stills-zoom': STILLS_ZOOM_STEPS[stillsZoomIdx] } as React.CSSProperties}
                   >
                     {stills.slice(0, visibleCount != null ? visibleCount : undefined).map((url, i) => {
                       const isLast = visibleCount != null && i === visibleCount - 1 && stills.length > visibleCount;
@@ -1140,6 +1104,12 @@ export default function DetailPage() {
                     const v = result.video!;
                     const playable = isPlayable(v);
                     const lineCount = v.sources.length;
+                    // ⚠️ 取值兜底（2026-09-10 修复「有数据却显示 0 条线路」）：
+                    // 部分 CMS 源的 vod_play_url 是按「集」拆分的，parsePlaySources 会把它们
+                    // 放进 episodes 而 sources 留空（videoService.resolvePlaySources:322）。
+                    // 原实现只读 sources.length → 这类源在播放列表里明明有数据
+                    // （弹窗、「全部」按钮都能看到），meta 行却显示「0 条线路」。
+                    const episodeCount = v.episodes?.length ?? 0;
                     const isSeries = result.isSeries;
                     const groupTitle = tmdbMediaType === 'tv' ? stripSeasonLabel(v.title) : v.title;
                     // 年份角标跟随 CMS（v.year），缺失时兜底 TMDB 年份（与海报「CMS 优先、TMDB 兜底」一致）
@@ -1165,13 +1135,17 @@ export default function DetailPage() {
                             <span className="detail-source-meta">
                               {isSeries
                                 ? `共 ${result.seasons.length} 季`
-                                : lineCount === 1
-                                  ? (v.sources[0]?.name || '线路 1')
-                                  : `${lineCount} 条线路`}
+                                : lineCount > 0
+                                  ? (lineCount === 1
+                                    ? (v.sources[0]?.name || '线路 1')
+                                    : `${lineCount} 条线路`)
+                                  : episodeCount > 0
+                                    ? `${episodeCount} 集`
+                                    : '暂无线路'}
                             </span>
                           </div>
                           <div className="detail-source-actions">
-                            {(isSeries || lineCount > 1) && (
+                            {(isSeries || lineCount > 1 || episodeCount > 1) && (
                               <button
                                 type="button"
                                 className="detail-source-all-btn"
