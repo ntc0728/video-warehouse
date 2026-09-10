@@ -228,3 +228,31 @@ test.describe('5.10 频道台标回退链', () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 5.11 频道卡片收藏按钮
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('5.11 频道卡片收藏按钮', () => {
+  test('IPTV-090: 收藏按钮不依赖台标加载结果（每张卡都渲染）', async ({ page }) => {
+    // 台标整体 404：复现「台标加载失败」。旧实现 showFavorite 是
+    // `imageLoaded || !channel.logo`，此时 onLoad 永不触发 → imageLoaded 恒 false
+    // 而 channel.logo 非空 → 整颗红心不渲染（实测 60 张卡只有 3 颗）。
+    await page.route('**/i.imgur.com/**', (route) => route.fulfill({ status: 404, body: '' }));
+
+    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect
+      .poll(() => page.locator('.iptv-channel-card-wrap').count(), { timeout: 25000 })
+      .toBeGreaterThan(0);
+
+    const counts = await page.evaluate(() => ({
+      cards: document.querySelectorAll('.iptv-channel-card-wrap').length,
+      favorites: document.querySelectorAll('.iptv-card-favorite').length,
+    }));
+
+    expect(counts.cards).toBeGreaterThan(0);
+    // 收藏按钮与卡片一一对应（≤767px / app 端只是 display:none，仍在 DOM 中）
+    expect(counts.favorites).toBe(counts.cards);
+  });
+});

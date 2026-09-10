@@ -382,3 +382,61 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     expect(border).toBe('0px');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 2.9 移动端筛选面板底部操作区
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('2.9 移动端筛选面板底部操作区', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('BROWSE-081/082: 底部操作区真固定（不随面板滚动）+ 挡住它的返回顶部圆钮不参与绘制', async ({ page }) => {
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+
+    // 前置：先滚过返回顶部圆钮的显示阈值，让它进入可见态（复现「圆钮盖住完成按钮」的场景）
+    const scroller = page.locator('.app-shell__scroll');
+    await expect(scroller).toBeVisible({ timeout: 5000 });
+    await scroller.evaluate((el) => { el.scrollTop = 2000; });
+    await expect.poll(() => page.locator('.back-to-top-button').count(), { timeout: 2500 }).toBeGreaterThan(0);
+
+    const trigger = page.locator('.bmb-filter-trigger');
+    await expect(trigger).toBeVisible({ timeout: 10000 });
+    await trigger.click();
+    const drawer = page.locator('.drawer-content').first();
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+
+    // 081a 结构：底部操作区必须是滚动容器 .drawer-body 的兄弟节点，不能落在它内部
+    // （旧实现写在 children 里 → sticky 内容不足一屏即失效、滚到底又被 padding 顶开）
+    expect(await drawer.locator('.drawer-body .bmb-foot').count()).toBe(0);
+    await expect(drawer.locator('.drawer-footer .bmb-foot')).toHaveCount(1);
+
+    // 081b 几何：滚动面板内容前后，底部操作区位置不变，且贴住面板底边
+    const measure = async () => {
+      const foot = await drawer.locator('.bmb-foot').boundingBox();
+      const content = await drawer.boundingBox();
+      return {
+        footY: foot?.y ?? -1,
+        footBottom: (foot?.y ?? 0) + (foot?.height ?? 0),
+        contentBottom: (content?.y ?? 0) + (content?.height ?? 0),
+      };
+    };
+    const before = await measure();
+    expect(before.footY).toBeGreaterThan(0);
+    await drawer.locator('.drawer-body').evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    const after = await measure();
+    expect(after.footY).toBe(before.footY);
+    expect(Math.abs(after.footBottom - after.contentBottom)).toBeLessThanOrEqual(2);
+
+    // 082a 层级：面板走 --z-modal token（1000+），不再硬编码 60/61
+    const zIndex = await drawer.evaluate((el) => Number(getComputedStyle(el).zIndex));
+    expect(zIndex).toBeGreaterThanOrEqual(1000);
+
+    // 082b 面板打开期间返回顶部玻璃圆钮（fixed + backdrop-filter，坐标正压「完成」）不参与绘制
+    const backToTopDisplay = await page
+      .locator('.back-to-top-button')
+      .evaluate((el) => getComputedStyle(el).display);
+    expect(backToTopDisplay).toBe('none');
+  });
+});
