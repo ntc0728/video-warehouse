@@ -206,7 +206,9 @@ test.describe('1.3 分类快捷入口', () => {
 
 test.describe('1.3b 桌面端分类入口', () => {
   test('桌面端分类快选跳转 /browse + 顶栏 IPTV/设置入口（060/061）', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
+    // 2026-09-10：宽屏起点由 >1280 改为 ≥1280（用户要求），圆卡形态的回退区间
+    // 收窄为 1024–1279 —— 故本用例改用 1024 视口验证「桌面非宽屏」的圆卡入口。
+    await page.setViewportSize({ width: 1024, height: 800 });
 
     // 060: 分类快选可见且点击跳转 /browse
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -431,7 +433,13 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 071: hero 下方常驻「分类热度榜」行
     await page.waitForSelector('.cqa-heat-row .cqa-catcard', { timeout: 15000 });
     await expect(page.locator('.cqa-heat-row .cqa-catcard')).toHaveCount(3, { timeout: 8000 });
-    expect(await page.locator('.cqa-heat-row .cqa-catcard__row').count()).toBe(9);
+    // 2026-09-10：每张分类卡的条目由 3 条增至 5 条（用户要求）。
+    // 单个分类桶可能不足 5 条（取决于当日 trending 数据分布），故断言「每卡 1~5 条」+「总数确实增加」。
+    const heatRowCounts = await page
+      .locator('.cqa-heat-row .cqa-catcard')
+      .evaluateAll((cards) => cards.map((c) => c.querySelectorAll('.cqa-catcard__row').length));
+    expect(heatRowCounts.every((n) => n > 0 && n <= 5)).toBe(true);
+    expect(heatRowCounts.reduce((a, b) => a + b, 0)).toBeGreaterThan(9);
     expect(await page.locator('.cqa-heat-row__title').count()).toBe(1);
 
     // 074: 「全部分类」跳转 /browse
@@ -441,11 +449,12 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(url1.pathname).toBe('/browse');
     expect(url1.searchParams.get('category')).toBe('all');
 
-    // 083: 「查看完整榜单」入口跳 /chart
+    // 083: 2026-09-10 用户要求删除首页左栏的「查看完整榜单」入口 →
+    // 断言 rail 形态下该按钮不存在；/chart 的入口改由「点分类卡头部」承担
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.cqa-heat-row', { timeout: 15000 });
-    await expect(page.locator('.cqa-heat-row__more')).toBeVisible({ timeout: 8000 });
-    await page.locator('.cqa-heat-row__more').click();
+    expect(await page.locator('.cqa-heat-row__more').count()).toBe(0);
+    await page.locator('.cqa-heat-row .cqa-catcard__head').first().click();
     await expect(page).toHaveURL(/\/chart/, { timeout: 5000 });
     await page.waitForSelector('.chart-card', { timeout: 15000 });
   });
@@ -513,8 +522,10 @@ test.describe('1.3c 宽屏分类面板', () => {
   });
 
   test('面板交互稳定性（075 1280回归/076 点击外部收起/080 旧网格/081 分页/082 竖排/084 滚动收起/085 跨页/086 browse）', async ({ page }) => {
-    // 075: 1280 视口回归——仍渲染圆卡分支，不命中宽屏面板
-    await page.setViewportSize({ width: 1280, height: 800 });
+    // 075: 1024 视口回归——仍渲染圆卡分支，不命中宽屏面板
+    //（2026-09-10 宽屏起点由 >1280 改为 ≥1280：1280 现在命中宽屏 chips，
+    //  圆卡分支的回退区间收窄为 1024–1279，故用 1024 验证回退）
+    await page.setViewportSize({ width: 1024, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });

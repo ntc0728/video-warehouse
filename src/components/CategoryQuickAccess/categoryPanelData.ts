@@ -98,7 +98,8 @@ export interface CategoryHeatBucket {
   key: CategoryKey;
   count: number;
   heat: number;
-  top3: TMDBVideoItem[];
+  /** 该分类下热度前 N 条（2026-09-10 用户要求首页左栏每卡显示 5 条，由 3 提升为 5） */
+  top5: TMDBVideoItem[];
 }
 
 /** 桶规则（拍板：多分类命中重复计入） */
@@ -123,7 +124,7 @@ export function aggregateCategoryHeat(items: TMDBVideoItem[]): CategoryHeatBucke
       key,
       count: list.length,
       heat: list.reduce((sum, it) => sum + (it.popularity || 0), 0),
-      top3: [...list].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 3),
+      top5: [...list].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 5),
     }))
     .sort((a, b) => b.heat - a.heat);
 }

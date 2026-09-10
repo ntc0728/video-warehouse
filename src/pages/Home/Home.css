@@ -644,13 +644,16 @@ html[data-device="app"] .home-disclaimer {
    断点与 HeroBili / useIsWideDesktop 一致（>1280），TV 与 ≤1280 不进入本块。
    ═══════════════════════════════════════════════════════════════════════ */
 
-@media (width > 1280px) {
+@media (width >= 1280px) {
   html:not([data-device="tv"]) .home-two-col {
-    /* 左栏宽度：与右列内容密度平衡（2560 下封顶 300px） */
-    --home-rail-w: 280px;
+    /* 左栏宽度（2026-09-10 用户要求「稍微调小」：280 → 260，≥1920 档 300 → 280） */
+    --home-rail-w: 260px;
+    /* 栏间 gap（用户要求收紧：原 --space-2xl ≈31.5px 偏大 → --space-lg ≈16.5px）。
+       ⚠️ 下方 --hero-banner-h / --hero-side-w 的公式里也引用了同一档位，必须同步。 */
+    --home-rail-gap: var(--space-lg);
     display: grid;
     grid-template-columns: var(--home-rail-w) minmax(0, 1fr);
-    gap: var(--space-2xl);
+    gap: var(--home-rail-gap);
     align-items: start;
     width: 100%;
     max-width: var(--layout-content-max-width);
@@ -660,9 +663,18 @@ html[data-device="app"] .home-disclaimer {
   html:not([data-device="tv"]) .home-two-col__rail {
     position: sticky;
     /* 与 RecordShell / IPTV / 设置页 rail 同规格（参照系是滚动容器 scrollport，
-       header 的占位已在 .app-shell__scroll-wrapper 的 padding-top 里，小间距即可） */
+       header 的占位已在 .app-shell__scroll-wrapper 的 padding-top 里，小间距即可）。
+       2026-09-10：每张分类卡由 3 条增至 5 条 + 竖版海报后，左栏总高可达 ~900px，
+       视口不足时锁高内部滚动，避免 sticky 元素高于 scrollport 导致底部内容永远看不到。 */
     top: var(--space-sm);
     min-width: 0;
+    max-height: calc(100vh - var(--header-height) - var(--space-lg));
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  html:not([data-device="tv"]) .home-two-col__rail::-webkit-scrollbar {
+    display: none;
   }
 
   html:not([data-device="tv"]) .home-two-col__main {
@@ -671,11 +683,11 @@ html[data-device="app"] .home-disclaimer {
        Hero 落到右列后必须按「右列实际宽度」重算，否则主图会被算高、
        右侧 3×2 卡按超宽比例布局而溢出列宽。 */
     --hero-banner-h: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-2xl))
+      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
       * 0.2727
     );
     --hero-side-w: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-2xl))
+      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
       * 0.56
     );
   }
@@ -689,7 +701,7 @@ html[data-device="app"] .home-disclaimer {
 
 @media (width >= 1920px) {
   html:not([data-device="tv"]) .home-two-col {
-    --home-rail-w: 300px;
+    --home-rail-w: 280px;
   }
 }
 
