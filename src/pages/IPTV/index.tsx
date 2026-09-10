@@ -456,7 +456,7 @@ export default function IPTVPage() {
                   {channels.length === 0 ? (
                     <Empty
                       title="暂无频道数据"
-                      description={error || '请点击刷新按钮加载频道列表'}
+                      description={error || '请点击刷新按钮加载频道列表，或在左侧「更多台」勾选本地源'}
                     />
                   ) : sectionsTotal === 0 ? (
                     <Empty title="暂无频道" description="尝试切换分类或清空搜索关键词" />
