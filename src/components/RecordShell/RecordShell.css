@@ -770,17 +770,11 @@ html[data-device="app"] .action-btn__label {
     top: var(--space-sm);
     align-self: flex-start;
     flex-shrink: 0;
-    /* 宽度不设固定 200px（用户 2026-09-08 指令）：由内容自适应。
-       ⚠️ 此前写成 `width: 200px minmax(0, 1fr)` 是非法 CSS——minmax() 只能用于
-       grid track 定义，作为 width 值整条被浏览器丢弃 → 回落到 ≥768 块的
-       width:100%，导致 rail 占满整行。必须显式覆盖它。 */
-    width: max-content;
-    /* 保底宽度：内容最多时（综合/视频 tab，含 3 状态 chip + 排序 + 3 操作按钮）
-       rail 自然宽度 ≈ 124px；IPTV tab 下 showInlineFilter=false 会让
-       record-inline-filter 整块不渲染（RecordShell.tsx:170），max-content 收缩到
-       ≈89px。加 min-width 锁定到内容多时的宽度，避免 rail 随 tab 切换宽度抖动。
-       内容更长时（如状态 chip 增加或 label 变长）rail 仍可扩张。 */
-    min-width: 124px;
+    /* 2026-09-10 用户拍板：宽度改用共享 token --rail-w（clamp(148px, 10vw, 248px)），
+       替换原 max-content + min-width:124px —— 四处左栏统一宽度曲线后，
+       rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。 */
+    width: var(--rail-w);
+    min-width: 0;
     /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
        无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
        排序 + 3 按钮 < 500px），不会超视口，故保持 visible。
@@ -792,8 +786,11 @@ html[data-device="app"] .action-btn__label {
     align-items: stretch;
     gap: var(--space-sm);         /* 分组间距：保持 --space-sm（用户确认不动） */
     margin-top: 0;
-    padding: 0;
-    /* 注意：rail 自身不加背景/圆角/阴影/四边边框（用户明确不卡片化） */
+    padding: 0 var(--space-sm) 0 0;
+    /* 2026-09-10 用户拍板「左栏视觉语言统一 = 方案 B」：右侧 1px 边框。
+       原「rail 自身不加背景/圆角/阴影/四边边框（不卡片化）」的决策保留 ——
+       只加一条右边框作为边界锚点，不铺底色、不加圆角/阴影。 */
+    border-right: 1px solid var(--color-border-light);
   }
 
   /* 融合筛选行容器：竖排堆叠（分类 / 状态+排序 / 管理 三段） */
@@ -911,14 +908,16 @@ html[data-device="app"] .action-btn__label {
     color: var(--color-text);
   }
 
-  /* 选中态：实心黑底白字 600（恢复 demo 原设计，改掉「左侧高亮条」改法） */
+  /* 选中态：实心底 + 反色字 600（恢复 demo 原设计，改掉「左侧高亮条」改法）。
+     2026-09-10 修复：字色由硬编码 #fff 改为 --color-text-inverse ——
+     暗色主题下 --color-primary 是 #fff，硬编码白字会变成「白底白字」不可读。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active,
   html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item.active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn.is-active {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-text-inverse);
     font-weight: 600;
     border: none;
   }
@@ -928,7 +927,7 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active:hover,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn.is-active:hover {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-text-inverse);
   }
 
   /* 子元素：图标/圆点 slot（左侧居左，--icon-sm 尺寸） */
@@ -981,10 +980,12 @@ html[data-device="app"] .action-btn__label {
     text-align: center;
     flex-shrink: 0;
   }
+  /* 选中态计数徽标：底色跟随选中字色（浅色主题=白 / 暗色主题=黑），
+     避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见（2026-09-10 修复） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active .status-tab__count,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active .status-tab__count {
-    background: rgba(255, 255, 255, 0.22);
-    color: #fff;
+    background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
+    color: var(--color-text-inverse);
   }
 
   /* 排序下拉面板（2026-09-08 用户指令）：宽度不超过左栏（rail）宽度。

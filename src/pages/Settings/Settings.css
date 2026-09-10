@@ -412,11 +412,12 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
-/* 桌面端左侧竖排导航（2026-09-08 三调：对齐收藏/历史页 rail UI，RecordShell.css ≥1024 方案 A）：
-   - 去 border-right（rail 无边框，分组分隔语言由 tab 列表上方 1px 分割线承担）；
+/* 桌面端左侧竖排导航（2026-09-08 三调、2026-09-10 四调：统一左栏视觉语言 = 方案 B）：
+   - 右侧 1px 边框回归（--color-border-light）：与 Browse / IPTV / 收藏·历史 左栏一致，
+     作为「左栏边界」的统一锚点（原「rail 无边框」的决策由用户 2026-09-10 拍板推翻）；
    - 横向 padding 归零（缩进由条目自身 8px 左右内边距提供，与 rail-item 一致）；
    - sticky top 与 rail 同为 --space-sm（滚动容器已有 header padding-top，小间距即可）；
-   - 宽度保持本页流体 clamp 契约（rail 的 max-content 依赖短内容，此处不适用）。 */
+   - 宽度改用共享 token --rail-w（2026-09-10 统一四处左栏宽度曲线）。 */
 .settings-sidenav {
   position: sticky;
   top: var(--space-sm);
@@ -425,9 +426,10 @@ body.skin-transitioning .skin-btn.active {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  flex-basis: clamp(124px, 8.61vw, 224px);
+  flex-basis: var(--rail-w);
   gap: var(--space-sm);
-  padding: var(--space-lg) 0 var(--space-xl);
+  padding: var(--space-lg) var(--space-sm) var(--space-xl) 0;
+  border-right: 1px solid var(--color-border-light);
   /* 2026-09-08 去卡片化：不再铺 surface 底色。此处透明是安全的——
      左栏与内容区是并列的 flex 列，右侧内容横向不与左栏重叠，sticky 悬浮时
      不存在「内容从导航底下透过」的问题（原注释的前提不成立）。 */

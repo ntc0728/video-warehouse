@@ -969,6 +969,13 @@ html[data-device="tv"] {
 :root {
   --page-pad-x: var(--space-lg);
 
+  /* ── 桌面左栏（rail）统一宽度 ──
+     2026-09-10：收藏/历史（RecordShell）、Browse、设置、IPTV 四处左栏原先各写各的
+     （三处硬编码 clamp(124px, 8.61vw, 224px) + RecordShell 的 max-content/min-width:124px），
+     统一收敛到本 token。1440 → 148px、1920 → 192px、≥2560 → 248px（封顶）。
+     消费方：Browse.css / Settings.css / IPTV.css / RecordShell.css。 */
+  --rail-w: clamp(148px, 10vw, 248px);
+
   /* ── HeroBili 专用 ── */
   --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.2727);
   --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.56);
