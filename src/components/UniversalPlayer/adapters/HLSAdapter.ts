@@ -54,6 +54,8 @@ export class HLSAdapter extends BasePlayerAdapter {
   private lastErrorTime: number = 0;
   /** initHls 异步初始化的 Promise：play() 会先 await 它，避免 hls.js 尚未 attachMedia 时空转 */
   private initPromise: Promise<void> | null = null;
+  /** 本次是否选中了原生 HLS 路径（iOS 优先 / hls.js 不可用兜底）：switchSource 据此决定换源方式 */
+  private usingNativeHls = false;
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
@@ -75,6 +77,7 @@ export class HLSAdapter extends BasePlayerAdapter {
     // iOS/iPadOS 保留原生 HLS 优先：Apple 的系统实现完整，且支持 AirPlay / 系统画中画，
     // 不存在下方 Chromium 媒体管道的 Content-Encoding 短板。
     if (isIOSPlatform() && canUseNativeHls()) {
+      this.usingNativeHls = true;
       this.video.src = this.url;
       return;
     }
@@ -95,6 +98,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       if (!HlsJs.isSupported()) {
         // hls.js 不可用（无 MSE 的旧环境）→ 回退原生 HLS 兜底
         if (canUseNativeHls()) {
+          this.usingNativeHls = true;
           this.video.src = this.url;
           return;
         }
@@ -396,7 +400,27 @@ export class HLSAdapter extends BasePlayerAdapter {
       this.hls.startLoad();
       return;
     }
-    // 原生 HLS 路径：直接换 src
+    if (this.usingNativeHls) {
+      // 原生 HLS 路径（iOS 优先 / hls.js 不可用兜底）：直接换 src
+      if (this.video) this.video.src = url;
+      return;
+    }
+    // 路径尚未确定（hls.js 动态 import 还没回来就切源）：绝不能落回原生分支——
+    // 桌面 Chrome / Android WebView 的原生分支正是 net::ERR_CONTENT_DECODING_FAILED 的失败路径。
+    // 等初始化落定后按实际选中的路径换源。
+    const pending = this.initPromise;
+    if (pending) {
+      void pending.then(() => {
+        if (this.initPromise !== pending) return; // 期间已 destroy / 重新 attach，丢弃本次
+        if (this.hls) {
+          this.hls.loadSource(url);
+          this.hls.startLoad();
+        } else if (this.video) {
+          this.video.src = url;
+        }
+      });
+      return;
+    }
     if (this.video) {
       this.video.src = url;
     }
@@ -408,6 +432,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       this.hls = null;
     }
     this.initPromise = null;
+    this.usingNativeHls = false;
     this.detach();
   }
 }
