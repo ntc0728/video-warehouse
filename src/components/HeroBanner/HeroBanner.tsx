@@ -8,7 +8,7 @@
  * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
  */
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 'react';
-import { Play } from 'lucide-react';
+import { Play, MonitorPlay } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { useScreenTier } from '@/hooks/useScreenTier';
@@ -327,6 +327,22 @@ function HeroBannerClassic({
   // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
   // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
   const [bannerReady, setBannerReady] = useState(false);
+  // 背景图加载失败的 backdrop URL 集合：命中时渲染公共 LazyImage 品牌兜底
+  // （.lazy-image-fallback--brand：MonitorPlay + kinoTV），与 VideoCard / IPTV 卡同一套。
+  // 此前 onError 只驱动内部状态机（bannerReady / scheduleStaleClear），失败时用户
+  // 只看到 .hero-banner__main 的 #0b0b0e 深色底，不符合「图片加载失败统一兜底」的约定。
+  const [failedBackdrops, setFailedBackdrops] = useState<Set<string>>(() => new Set());
+  const markBackdropFailed = useCallback((url: string) => {
+    if (!url) return;
+    setFailedBackdrops((prev) => (prev.has(url) ? prev : new Set(prev).add(url)));
+  }, []);
+  // 当前主图 URL / 是否加载失败（失败时渲染公共 LazyImage 品牌兜底）
+  const activeBackdropUrl = (() => {
+    const item = displayItems[displayIndex];
+    const path = item ? (item.backdropPath || item.backdrop_path || '') : '';
+    return path ? (buildImageUrl(path, 'w1280') || '') : '';
+  })();
+  const activeBackdropFailed = !!activeBackdropUrl && failedBackdrops.has(activeBackdropUrl);
   // 同步显示索引：驱动「文字 + 缩略图窗口 + 缩略图高亮」，在切换【开始】时即更新
   // （与 bg track 的 activeIndex 解耦——track 需在切换结束才更新 activeIndex 以保证
   // 滑动方向正确）。这样文字/缩略图与 banner 滑动几乎同时出现，消除「切换后才延迟显示」的滞后。
@@ -1105,6 +1121,7 @@ function HeroBannerClassic({
               loading="eager"
               decoding="async"
               draggable={false}
+              onError={() => markBackdropFailed(staleLayer.url)}
             />
           )}
           {bgIndices.map((idx) => {
@@ -1136,6 +1153,8 @@ function HeroBannerClassic({
                   }
                 }}
                 onError={() => {
+                  // 记入失败集合 → 当前主图渲染公共品牌兜底（不再只露 #0b0b0e 深色底）
+                  markBackdropFailed(backdropUrl);
                   if (isActive) {
                     setBannerReady(true);
                     scheduleStaleClear();
@@ -1204,10 +1223,19 @@ function HeroBannerClassic({
                     loading="eager"
                     decoding="async"
                     draggable={false}
+                    onError={() => markBackdropFailed(backdropUrl)}
                   />
                 </div>
               );
             })}
+          </div>
+        )}
+        {/* 主图加载失败兜底：复用公共 LazyImage 品牌样式（MonitorPlay + kinoTV）。
+            层叠：背景层(auto) < track(z-index 1) < 本兜底(z-index 1, DOM 在后) < 渐变遮罩(z-index 1, DOM 在后) */}
+        {activeBackdropFailed && (
+          <div className="lazy-image-fallback lazy-image-fallback--brand hero-banner__fallback">
+            <Icon icon={MonitorPlay} size="2xl" className="lazy-image-fallback__icon" />
+            <span className="lazy-image-fallback__brand">kinoTV</span>
           </div>
         )}
         <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
@@ -1397,6 +1425,12 @@ const HeroThumb = memo(
             // 确保起始帧（opacity:0）已绘制后再淡入，避免浏览器缓存命中时
             // onLoad 过早触发、缺少起始帧导致「无过渡直接硬切」
             requestAnimationFrame(() => setSwitching(false));
+          }}
+          onError={() => {
+            // 加载失败时 switching 只能由 onLoad 清除 → 图会永久停在 opacity:0（骨架已移除，
+            // 该格只剩标题条）。这里兜底清掉淡入态，并保留骨架占位而不是留一个空洞。
+            setSwitching(false);
+            setReady(false);
           }}
         />
       ) : null}

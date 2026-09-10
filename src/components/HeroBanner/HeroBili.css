@@ -70,6 +70,14 @@
   to { opacity: 1; }
 }
 
+/* 主图加载失败：公共品牌兜底（MonitorPlay + kinoTV），
+   压在 banner 图（z-index auto）之上、箭头 / 圆点（z-index 2~3）之下 */
+.hero-bili__banner-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
 /* 左右箭头：悬浮 banner 时显现 */
 .hero-bili__arrow {
   position: absolute;

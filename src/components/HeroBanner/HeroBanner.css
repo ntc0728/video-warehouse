@@ -194,6 +194,14 @@
   z-index: 1;
 }
 
+/* 主图加载失败：复用公共 .lazy-image-fallback--brand（MonitorPlay 图标 + kinoTV 品牌字）。
+   绘制在背景层（z-index auto）与 track（z-index 1）之上、渐变遮罩与内容叠加之下。 */
+.hero-banner__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
 /* ── Content 叠加（左下） ────────────────────────────────────────────── */
 
 .hero-banner__content {
