@@ -103,6 +103,10 @@
   --color-rating: #f5c518;                 /* 评分星色（IMDb 黄） */
   --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
+  /* 首页右侧浮层动作按钮（刷新，2026-09-11 用户截图指定）：
+     截图为青蓝强调色，与 --color-info 的靛蓝不同，单独成 token 便于后续统一换肤。 */
+  --color-action-blue: #00aeef;
+  --color-action-blue-hover: #16b8f2;
   --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
   --color-success-bg: #e8f5ec;             /* 成功底色（Browse 源状态 badge ok 档） */
   --color-warning-bg: #fdf3e7;             /* 警告底色（Browse 源状态 badge warn 档） */
@@ -732,6 +736,9 @@
   --color-rating: #ffd54a;                 /* 评分星色（暗底提亮） */
   --color-info: #177ddc;                  /* 暗色主题链接蓝 */
   --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */
+  /* 首页右侧浮层「刷新」按钮强调蓝：暗色下保持同一青蓝（按钮自带白图标，对比度足够） */
+  --color-action-blue: #00aeef;
+  --color-action-blue-hover: #16b8f2;
   --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
   --color-success-bg: rgba(73, 170, 25, 0.16);   /* 成功底色（暗色半透明档） */
   --color-warning-bg: rgba(216, 150, 20, 0.16);  /* 警告底色（暗色半透明档） */

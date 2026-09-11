@@ -509,6 +509,7 @@ function TMDBMovieRow({
                     navigateTo={`/play/${item.id}`}
                     skipAnimations={skipAnimations}
                     imageDisabled={!isHeaderVisible}
+                    imageRootRef={rowRef}
                   />
               </div>
             ))
@@ -543,6 +544,7 @@ function TMDBMovieRow({
                       crossfadeOnChange={crossfadeOnChange}
                       skipAnimations={skipAnimations}
                       imageDisabled={!isHeaderVisible}
+                      imageRootRef={rowRef}
                     />
                 </div>
               );

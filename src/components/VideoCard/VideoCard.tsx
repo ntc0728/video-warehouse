@@ -56,6 +56,9 @@ interface VideoCardProps {
   /** 禁用图片懒加载：为 true 时跳过 IntersectionObserver，不加载图片。
    *  用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。 */
   imageDisabled?: boolean;
+  /** 自定义 IO root（横向滚动行用）：透传给 LazyImage，使相交判定以行滚动容器为根，
+   *  横向屏外的卡片不再发请求（2026-09-11 首屏并发优化）。竖向网格不传，行为不变。 */
+  imageRootRef?: React.RefObject<HTMLElement | null>;
   /** 跳转前拦截：返回 false 时阻止 Link 导航（如 CMS 源未启用） */
   onBeforeNavigate?: () => boolean;
 }
@@ -120,6 +123,7 @@ const VideoCard = memo(function VideoCard({
   crossfadeOnChange = false,
   skipAnimations = false,
   imageDisabled = false,
+  imageRootRef,
   onBeforeNavigate,
 }: VideoCardProps) {
   const location = useLocation();
@@ -329,6 +333,7 @@ const VideoCard = memo(function VideoCard({
           onLoad={() => setImageLoaded(true)}
           crossfadeOnChange={crossfadeOnChange}
           disabled={imageDisabled}
+          rootRef={imageRootRef}
         />
 
         {/* 光泽扫光层（hover 时触发 glowSweep 动画） */}

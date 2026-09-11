@@ -79,6 +79,16 @@ export default defineConfig({
   // 播放器依赖（hls.js/dashjs/mpegts.js）已排除——它们体积大（各 ~1MB）且仅在 /play 路由使用，
   // 放入 include 会拖慢首次 optimizeDeps 预打包（~3.3MB 额外缓存生成）。
   // 使用 exclude 显式排除后，Vite 不会预打包它们；访问播放页时按需预打包（触发一次 reload）。
+  //
+  // [2026-09-11 冷启动整改]
+  // 实测本机（win11 / AMD H365 / pnpm）强制冷启动预打包 = ~5.0s，22 个 dep：
+  //   scanner（爬 index.html + entries）实际发现 22 个，但只有 18 个在 include 里，
+  //   @capacitor/screen-orientation 属「运行时才发现」→ 这里补进 include，
+  //   让 include 覆盖 scanner 的全部发现（holdUntilCrawlEnd=false 的前提条件）。
+  // holdUntilCrawlEnd=false：不再 hold 首个 optimized deps 结果直到静态 import 爬完，
+  //   浏览器可并行处理更多请求，缩短首开 TTFB（Vite 官方注释明确推荐在 include 完备时关闭）。
+  //   ⚠️ 代价：若仍存在 include 未覆盖的运行时新依赖，会触发一次 re-optimize + 整页 reload。
+  //   首屏已被 index.html 的启动骨架覆盖，reload 期间不再白屏。
   optimizeDeps: {
     include: [
       'axios', 'idb',
@@ -87,10 +97,12 @@ export default defineConfig({
       '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover',
       '@radix-ui/react-progress', '@radix-ui/react-switch',
       '@radix-ui/react-tabs', '@radix-ui/react-tooltip',
+      '@capacitor/screen-orientation',
     ],
     exclude: [
       'hls.js', 'dashjs', 'mpegts.js',
     ],
+    holdUntilCrawlEnd: false,
   },
   build: {
     outDir: 'dist',

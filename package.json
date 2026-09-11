@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "postinstall": "node scripts/optimize-deps.mjs",
     "build": "tsc -b && vite build",
     "build:fast": "tsc -b && cross-env VITE_COMPRESS=false vite build",
     "sync:capacitor-version": "node scripts/sync-capacitor-version.mjs",

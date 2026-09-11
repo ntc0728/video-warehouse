@@ -1,7 +1,8 @@
-import { useMediaQuery, useIsTV } from './useMediaQuery';
+import { isNativePlatform } from '@/lib/platform';
+import { useMediaQuery, useIsTV, useIsRealPhone } from './useMediaQuery';
 
 /**
- * 宽屏桌面检测（≥1024px 且非 TV）。
+ * 宽屏桌面检测（≥1024px 且非 TV 且非手机）。
  *
  * 同时服务两类首页宽屏特性：
  *  · HeroBili 分支（HeroBanner）：≥1024px 渲染 B 站风 HeroBili，<1024px 走 HeroBannerClassic；
@@ -17,9 +18,21 @@ import { useMediaQuery, useIsTV } from './useMediaQuery';
  *   HeroBili / HeroBanner / StickyHeader / SearchBox 六处），否则 JS 已切分支而样式未生效。
  *   ⚠️ 与既有 hook 的边界：useIsMobile=1023 / useIsMobileLayout=767 取的是「上界」语义，
  *   本 hook 的 1024 恰好与 useIsMobile(1023) 互补无缝；1024–1279 段由本 hook 接管。
+ *
+ * 2026-09-11（用户要求）：**补 !isPhoneWeb 守卫**，消除「手机横屏 ≥1024」的 JS/CSS 混搭
+ *   （宽度命中桌面档 → 渲染 HeroBili，但设备仍是手机、data-mobile-layout 已置 true）。
+ *   isPhoneWeb = !isNative(非 Capacitor 原生) && !isTV && useIsRealPhone(UA 命中**手机**)
+ *   —— 刻意用 useIsRealPhone 而非 useIsRealMobile：与 useIsMobileLayout 同口径，
+ *   **iPad / Android 平板 UA 不算手机 → 平板走桌面 UI**（用户 2026-09-11 明确要求；
+ *   useIsRealMobile 的 UA 正则含 ipad，会把平板横屏也挡掉，故不采用）。
+ *   CSS 侧无需同步：≥1024 的媒体查询块全部只作用于宽屏分支独有类名
+ *   （.home-two-col* / .hero-bili* / .home-skeleton-*），窄屏分支不渲染这些节点 → 规则天然失效。
  */
 export function useIsWideDesktop(): boolean {
   const isWide = useMediaQuery('(min-width: 1024px)');
   const isTV = useIsTV();
-  return isWide && !isTV;
+  const isRealPhone = useIsRealPhone();
+  const isNative = isNativePlatform();
+  const isPhoneWeb = !isNative && !isTV && isRealPhone;
+  return isWide && !isTV && !isPhoneWeb;
 }

@@ -1,17 +1,19 @@
 /**
- * HeroBanner — 首页 Hero 横幅
+ * HeroBanner — 首页 Hero 横幅（Classic 分支：≤1023 / TV）
  *
- * 布局：左侧主背景图（active item）+ 右侧竖排缩略图列（海报+标题）。
+ * 布局：单张全宽主背景图（16:9，crossfade / 三联 track 滑动切换）+ 左下文字叠加。
  * - 主图随 activeIndex 切换，采用左右滑动动画（所有客户端一致）；自动轮播也走滑动切换
- * - 桌面端悬停缩略图时预览主图（crossfade），不改变 activeIndex，不触发滑动
- * - 右侧缩略图自动轮播（5s），鼠标悬停切换主图并暂停轮播
- * - 移动端隐藏右侧缩略图列，仅保留主图 + 内容
+ * - 【2026-09-11】右侧缩略图列（HeroThumb / .hero-banner__thumbs）已整体删除：
+ *   主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
+ * - 【2026-09-11】接口数据只取前 BANNER_MAX(6) 张驱动轮播；主图背景与标题 logo
+ *   在列表就绪时一次性全部取回（≤6 张，量小），不再做「当前 ± 动态 range 预加载」
+ *   与「logo 窗口预取 + 空闲递进补齐」分段推进。
+ * - ≥1024 桌面由 index.ts 分流到 HeroBili，本组件不渲染。
  */
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { Play, MonitorPlay } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
-import { useScreenTier } from '@/hooks/useScreenTier';
 import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
 import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
 import HeroBili from './HeroBili';
@@ -59,6 +61,13 @@ interface HeroBannerProps {
 }
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
+/**
+ * 首页 banner 轮播池上限（2026-09-11 用户要求）。
+ * 接口返回的 trending 动辄 20 条，但 banner 只承载「首屏几张主推图」：
+ * 取前 6 张驱动轮播 + 主图/logo 预取，其余条目交给内容行 / HeroBili 右侧卡片。
+ * 与 HeroBili 的 BANNER_POOL(6) 同口径，保证两种布局的 banner 池一致。
+ */
+const BANNER_MAX = 6;
 /**
  * 分类切换滞留层清除延迟：新层真实绘制完成（onLoad/onError/ref-complete）后，
  * 等其 is-active 淡入（0.8s）播完再加余量再移除滞留层（旧图垫底防露底）。
@@ -135,20 +144,14 @@ function recordSwipeData(data: { mainWidth: number; dx: number; threshold: numbe
 /* ── 首页 banner 标题 logo ──────────────────────────────────────────────
    Detail 页标题位用 TMDB 详情的 images.logos（.detail-hero-logo 元素）；
    首页 banner 的数据源是 trending 列表，不含 logo，需要额外请求
-   /movie|tv/{id}/images 才能拿到。为「滑到即显示、不卡顿不闪变」：
-   - 窗口预取：焦点项（displayIndex，含悬停预览）± HERO_LOGO_WINDOW 内的条目在
-     滑入可视前就请求决策（与背景图预取同理）——判断提前，滑动期零请求零 setState；
-   - 空闲补齐：窗口就绪后按固定间隔缓慢递进补全剩余条目（每步一项、焦点滑动期静默），
-     任何滑法都不遇「未决」；不密集拉取，避免剩余条目请求/解码撞上滑动轮播；
-   - 像素文件预热：fetchHeroLogo 拿到 file_path 即 preloadImage 同 URL（渲染 <img>
-     直接命中缓存，无「滑到才下载/解码」卡顿）；
-   - 模块级缓存 + 进行中去重：同一条目整个会话只请求一次（含「确认无 logo」的 null）；
-   - 拿不到 logo 就回落文字标题，不阻塞渲染。 */
-const HERO_LOGO_WINDOW = 3;
-/** 空闲补齐步进最小间隔：缓慢递进、每步一项，避免短时密集请求/解码 */
-const HERO_LOGO_IDLE_STEP_MS = 2000;
-/** 焦点（滑动/轮播切换）变化后的静默期：期间不推进补齐，保证动画期零干扰 */
-const HERO_LOGO_IDLE_COOLDOWN_MS = 1200;
+   /movie|tv/{id}/images 才能拿到。
+
+   2026-09-11（用户要求「banner 图片与 hero-logo 图片一次性全部获取，去掉之前冗余逻辑」）：
+   本列表已被截取到前 6 张，量很小 → 列表就绪即**一次性批量发出全部 logo 请求**
+   （Promise 并发，模块级缓存 + inflight 去重保证同一条目整会话只请求一次），
+   拿到 file_path 即预热同 URL 像素（渲染 <img> 挂载即命中缓存，无现下载/解码）。
+   已删除：窗口预取（focus ± N）、空闲递进补齐（setTimeout 链 + 静默期）、
+   以及随之而来的 HERO_LOGO_WINDOW / _IDLE_STEP_MS / _IDLE_COOLDOWN_MS 三个常量。 */
 /** key → logo 文件路径；值为 null 表示该条目确认无 logo，不再重试 */
 const heroLogoCache = new Map<string, string | null>();
 const heroLogoInflight = new Set<string>();
@@ -184,104 +187,42 @@ async function fetchHeroLogo(key: string): Promise<string | null> {
 }
 
 /**
- * 窗口预取 + 空闲补齐 hero logo 决策，返回 key → logo 文件路径映射（只含已确认存在；
- * 未决 / 确认无 logo / 文件加载失败的 key 不在映射里 → 渲染回退文字标题）。
- * @param focusIndex 当前显示 / 正滑向的条目索引（displayIndex，含悬停预览）
+ * 批量获取本列表全部条目的标题 logo，返回 key → logo 文件路径映射（只含已确认存在；
+ * 确认无 logo / 文件加载失败 / 未决的 key 不在映射里 → 渲染回退文字标题）。
+ * @param active Keep-Alive 激活信号：非激活（首页不可见）时不发请求
  */
-function useHeroLogos(items: HeroItem[], focusIndex: number, active: boolean) {
+function useHeroLogos(items: HeroItem[], active: boolean) {
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const [logos, setLogos] = useState<Record<string, string>>({});
 
-  const ensure = useCallback(async (item: HeroItem | undefined) => {
-    const key = heroLogoKey(item);
-    if (!key || heroLogoInflight.has(key)) return;
-    const cached = heroLogoCache.get(key);
-    if (cached !== undefined) {
-      if (cached) setLogos((prev) => (prev[key] ? prev : { ...prev, [key]: cached as string }));
-      return;
-    }
-    heroLogoInflight.add(key);
-    try {
-      const path = await fetchHeroLogo(key);
-      heroLogoCache.set(key, path);
-      if (path) setLogos((prev) => (prev[key] ? prev : { ...prev, [key]: path }));
-    } catch {
-      // 失败也记 null：本次会话不再重试，标题回落文字
-      heroLogoCache.set(key, null);
-    } finally {
-      heroLogoInflight.delete(key);
-    }
+  const applyPath = useCallback((key: string, path: string | null) => {
+    heroLogoCache.set(key, path);
+    if (path) setLogos((prev) => (prev[key] ? prev : { ...prev, [key]: path }));
   }, []);
 
-  // 内容签名：items 内容变化（刷新 / 换列表）时两个预取 effect 重新对齐
+  // 内容签名：items 内容变化（刷新 / 换列表）时重新对齐批量请求
   const contentSig = items.map((i) => heroLogoKey(i) ?? '').join('|');
 
-  // ① 窗口预取：焦点 ± WINDOW（含两侧即将滑入的 prev/next），滑入前决策已落地 → 判断提前。
-  //    未决项并发发起（窗口内通常 1~3 个，inflight 去重后量很小，不会打爆 TMDB）；
-  //    已决项幂等跳过，故滑动过程中 effect 重跑仅 O(窗口) 次缓存查询，无请求无 setState。
+  // 一次性批量：列表（≤6 条）全部条目并发请求，已决项幂等跳过（缓存命中只做一次 state 补齐）
   useEffect(() => {
     if (!active) return;
-    const total = itemsRef.current.length;
-    if (total === 0) return;
-    const center = Math.min(focusIndex, total - 1);
-    const targets = new Set<number>();
-    for (let off = -HERO_LOGO_WINDOW; off <= HERO_LOGO_WINDOW; off++) {
-      targets.add(((center + off) % total + total) % total);
+    for (const item of itemsRef.current) {
+      const key = heroLogoKey(item);
+      if (!key || heroLogoInflight.has(key)) continue;
+      const cached = heroLogoCache.get(key);
+      if (cached !== undefined) {
+        applyPath(key, cached);
+        continue;
+      }
+      heroLogoInflight.add(key);
+      void fetchHeroLogo(key)
+        .then((path) => applyPath(key, path))
+        // 失败也记 null：本次会话不再重试，标题回落文字
+        .catch(() => applyPath(key, null))
+        .finally(() => { heroLogoInflight.delete(key); });
     }
-    const pending = [...targets]
-      .map((i) => itemsRef.current[i])
-      .filter((it) => {
-        const k = heroLogoKey(it);
-        return !!k && heroLogoCache.get(k) === undefined && !heroLogoInflight.has(k);
-      });
-    if (pending.length > 0) void Promise.allSettled(pending.map((it) => ensure(it)));
-  }, [focusIndex, contentSig, active, ensure]);
-
-  // ② 空闲补齐：窗口外剩余条目「缓慢递进」补齐——固定间隔 setTimeout 链式、每步一项。
-  //    不用 requestIdleCallback+timeout 逼迫空闲帧密集推进（那会让剩余条目的 /images 与
-  //    像素预热在几秒内全部打出，撞上轮播/滑动抢主线程与带宽 = 卡）。
-  //    focusIndex 每次变化（滑动/轮播切换）都重建本 effect：间隔被重置 → 静默
-  //    HERO_LOGO_IDLE_COOLDOWN_MS 后才可能推进，滑动活跃期天然零请求零 setState，
-  //    列表静止后按 HERO_LOGO_IDLE_STEP_MS 节奏缓慢补完剩余条目。
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-    let handle: number | null = null;
-    // 本 effect 重建时刻 = 焦点/内容刚变化 → 从此刻起先进入静默期
-    const focusAt = Date.now();
-    const clearHandle = () => {
-      if (handle !== null) {
-        window.clearTimeout(handle);
-        handle = null;
-      }
-    };
-    const schedule = (ms: number) => {
-      if (cancelled) return;
-      handle = window.setTimeout(() => { handle = null; step(); }, ms);
-    };
-    const step = () => {
-      if (cancelled) return;
-      // 距最近一次焦点变化不足静默期 → 再推迟，滑动/轮播动画期间不发补齐请求
-      if (Date.now() - focusAt < HERO_LOGO_IDLE_COOLDOWN_MS) {
-        schedule(HERO_LOGO_IDLE_COOLDOWN_MS);
-        return;
-      }
-      const item = itemsRef.current.find((it) => {
-        const k = heroLogoKey(it);
-        return !!k && heroLogoCache.get(k) === undefined && !heroLogoInflight.has(k);
-      });
-      if (!item) return; // 全部已决（含确认无 logo / 文件失败）
-      void ensure(item).then(() => {
-        if (!cancelled) schedule(HERO_LOGO_IDLE_STEP_MS);
-      });
-    };
-    schedule(HERO_LOGO_IDLE_STEP_MS);
-    return () => {
-      cancelled = true;
-      clearHandle();
-    };
-  }, [focusIndex, contentSig, active, ensure]);
+  }, [contentSig, active, applyPath]);
 
   // 文件加载失败（URL 404 / 网络）→ 永久回落该条目文字标题：缓存记 null（不重试），
   // 并从就绪映射移除（一次 state 更新触发回落渲染）。
@@ -310,39 +251,28 @@ function HeroBannerClassic({
 }: HeroBannerProps) {
   const isMobile = useIsMobile();
   const isTV = useIsTV();
-  const { tier } = useScreenTier();
-  const isWide = tier === 'large' || tier === 'xlarge';
-  // 不截取接口数据：使用全部 items 驱动轮播；主图仅渲染当前+上一张（见 bgIndices）避免加载全部背景图
-  const displayItems = items;
+  // 2026-09-11：接口数据只取前 6 张驱动轮播（用户要求「<1024 / 移动端只取前 6 张」）。
+  // ⚠️ 必须 useMemo：裸 slice() 每次渲染产生新数组引用，会让下方依赖 [displayItems]
+  // 的 useLayoutEffect 每轮都执行，其中 setBgIndices([0]) 传新数组永不 Object.is 相等
+  // → setState → 再渲染 → 再 effect ……「Maximum update depth exceeded」死循环
+  // （2026-09-11 实测报错；HeroBili 的 bannerItems 同款 slice 一直是 useMemo，本处补齐）。
+  const displayItems = useMemo(() => items.slice(0, BANNER_MAX), [items]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  // 悬停预览态：鼠标悬停缩略图时主图预览该项，但不改变 activeIndex（缩略图窗口不移动）
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  // 模块级 hoveredIndexRef：渲染阶段同步最新 hoveredIndex，
-  // 供 handleDragStart 在 mousedown 闭包内读取（state 闭包会陈旧）。
-  const hoveredIndexRef = useRef<number | null>(null);
-  hoveredIndexRef.current = hoveredIndex;
-  // 主图实际显示项：悬停时预览 hoveredIndex，否则显示 activeIndex。
-  // ⚠️ 越界保护：items 变化（切换分类）时 activeIndex 仅在下方 useEffect 中重置，
+  // 主图实际显示项 = safeActiveIndex（悬停预览缩略图的能力随缩略图列一并删除）。
+  // ⚠️ 越界保护：items 变化（切换分类）时 activeIndex 仅在下方 effect 中重置，
   // 其间的渲染会用「旧 activeIndex + 新 items」——若新 items 更短则越界，
-  // displayItems[displayIndex] 为 undefined，后续读取 .name 等抛错导致整页白屏。
-  // 故 displayIndex / activeIndex 一律钳制到当前 items 长度范围内。
+  // displayItems[activeIndex] 为 undefined，后续读取 .name 等抛错导致整页白屏。
+  // 故 activeIndex 一律钳制到当前 items 长度范围内。
   const safeActiveIndex = displayItems.length > 0
     ? Math.min(activeIndex, displayItems.length - 1)
     : 0;
-  const safeHoveredIndex = hoveredIndex !== null && hoveredIndex < displayItems.length
-    ? hoveredIndex
-    : null;
-  const displayIndex = safeHoveredIndex !== null ? safeHoveredIndex : safeActiveIndex;
   // 标题位 logo（TMDB /images）：优先展示 logo，取不到时回落文字标题（见 renderText）。
-  // 决策由窗口预取 + 空闲补齐提前就绪，滑入即稳定显示、不闪变。
-  const { logos: heroLogos, dropLogo } = useHeroLogos(displayItems, displayIndex, active);
+  // 列表就绪即一次性批量请求，滑入即稳定显示、不闪变。
+  const { logos: heroLogos, dropLogo } = useHeroLogos(displayItems, active);
   // 主图背景层：仅渲染当前 + 上一张（最多 2 层），支持无限数据而不预加载全部背景图
   const [bgIndices, setBgIndices] = useState<number[]>([0]);
-  // 主 banner 图是否已渲染完成（首张背景图 onLoad 后置 true）。
-  // 用于控制右侧缩略图列：渲染完成前显示骨架占位，完成后才揭示真实缩略图。
-  const [bannerReady, setBannerReady] = useState(false);
   // 背景图加载失败的 backdrop URL 集合：命中时渲染公共 LazyImage 品牌兜底
   // （.lazy-image-fallback--brand：MonitorPlay + kinoTV），与 VideoCard / IPTV 卡同一套。
   // 此前 onError 只驱动内部状态机（bannerReady / scheduleStaleClear），失败时用户
@@ -354,14 +284,14 @@ function HeroBannerClassic({
   }, []);
   // 当前主图 URL / 是否加载失败（失败时渲染公共 LazyImage 品牌兜底）
   const activeBackdropUrl = (() => {
-    const item = displayItems[displayIndex];
+    const item = displayItems[safeActiveIndex];
     const path = item ? (item.backdropPath || item.backdrop_path || '') : '';
     return path ? (buildImageUrl(path, 'w1280') || '') : '';
   })();
   const activeBackdropFailed = !!activeBackdropUrl && failedBackdrops.has(activeBackdropUrl);
-  // 同步显示索引：驱动「文字 + 缩略图窗口 + 缩略图高亮」，在切换【开始】时即更新
+  // 同步显示索引：驱动「文字 + 主图淡入」，在切换【开始】时即更新
   // （与 bg track 的 activeIndex 解耦——track 需在切换结束才更新 activeIndex 以保证
-  // 滑动方向正确）。这样文字/缩略图与 banner 滑动几乎同时出现，消除「切换后才延迟显示」的滞后。
+  // 滑动方向正确）。这样文字与 banner 滑动几乎同时出现，消除「切换后才延迟显示」的滞后。
   const [switchIndex, setSwitchIndex] = useState(0);
   // ── 分类切换图片过渡（2026-08-13）──
   // 分类切换（items 引用变化）时主图不再硬切：切换渲染当帧起「不渲染新层」，
@@ -399,40 +329,32 @@ function HeroBannerClassic({
   useEffect(() => () => {
     if (staleClearTimerRef.current) clearTimeout(staleClearTimerRef.current);
   }, []);
-  // 缩略图数量自适应：大屏 4 个，普通桌面 3 个
-  const maxCount = isWide ? 4 : 3;
-  const visibleCount = Math.min(maxCount, displayItems.length);
 
-  // items 变化时重置 activeIndex、预览态与背景层
-  // 仅在 items 从空变为有时重置 bannerReady（骨架→真实），
-  // 已有数据时保持 bannerReady 不变，避免骨架图闪烁。
+  // items 变化时重置 activeIndex 与背景层。
+  // 已有数据时保持原状态，避免骨架图闪烁。
   const prevItemsLenRef = useRef(displayItems.length);
   // 分类切换滞留层快照用：上一 committed 的 items 引用 + 活跃索引
   // （useLayoutEffect 在每个 commit 后同步更新，渲染期读到的即「上一 commit」的值）
   const prevItemsRef = useRef<HeroItem[]>(displayItems);
-  const prevDisplayIdxRef = useRef(displayIndex);
-  // banner 根元素 ref：仅用于 DOM 挂载锚点（aspect-ratio 由 CSS 通过 --hero-thumb-count
-  // 计算，缩略图列宽改为百分比，不再依赖 JS 注入的高度变量）。
+  const prevActiveIdxRef = useRef(safeActiveIndex);
+  // banner 根元素 ref：仅用于 DOM 挂载锚点。
   const bannerRef = useRef<HTMLElement>(null);
   // hero-banner__main 真实宽度引用：松手时读取会丢（隐藏态 offsetWidth=0），
-  // 故拖拽开始时即捕获。滑动阈值参照物必须是「主图区真实宽度」而非整张 banner
-  // （主图区只占桌面端 ~80%，用整宽会让 50% 阈值大得几乎永远触发不了切换）。
+  // 故拖拽开始时即捕获。主图区此时独占 banner 全宽，阈值参照物仍是它自己。
   const mainRef = useRef<HTMLDivElement>(null);
+  // 滑动冷却起点 / 上一次滑动时间：自动轮播与手动滑动共用，防止两者在同一时间窗内
+  // 各推一次（冷却期 1000ms 内自动轮播让位），也用于分类切换后重置计时。
+  const swipeCooldownRef = useRef(0);
+  const lastSlideTimeRef = useRef(0);
   // 滑行动画时长（自动轮播 / 手动翻页 / 遥控器 统一使用，保证三处切换逻辑一致）
   // 600ms（原为 400ms，自动轮播「滚动太快」）：配合平缓缓动，滑动更从容
   const SLIDE_MS = 600;
   // 回弹动画时长：比翻页略长，缓动无过冲（问题 #3：原 520ms + 过冲曲线显得「咔一下瞬回」）
   const BOUNCE_MS = 700;
-  // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：bannerReady 重置必须在「浏览器 paint 之前」
-  // 同步完成，否则会出现以下闪烁序列——React 先按旧的 bannerReady=true 渲染出「新分类的真实
-  // 缩略图」并绘制一帧，useEffect（paint 之后）才把它重渲染成骨架，再等背景图加载后又变回真实
-  // 缩略图，表现为「右侧缩略图闪一下」。useLayoutEffect 会在那一帧被绘制前就重渲染为骨架，
-  // 用户只看到干净的「骨架 → 真实」过渡，从根本上消除切换分类/进入首页时的缩略图闪烁。
-  // 注意：仅该重置逻辑用 useLayoutEffect；正向下「背景图加载完成 → bannerReady=true」的揭示
-  // 仍留在下方普通 useEffect，避免任何时序回归，缩略图骨架→真实的 loading 反馈保持不变。
+  // ⚠️ 必须用 useLayoutEffect（而非 useEffect）：切换重置必须在「浏览器 paint 之前」
+  // 同步完成，否则会出现「先按旧状态绘制一帧、再重渲染」的闪烁序列。
   useLayoutEffect(() => {
     setActiveIndex(0);
-    setHoveredIndex(null);
     setSwitchIndex(0);
     setBgIndices([0]);
 
@@ -442,7 +364,6 @@ function HeroBannerClassic({
     // 避免切回/切换后沿用旧阈值与预加载范围导致动画异常或预加载失准。
     swipeCooldownRef.current = 0;
     lastSlideTimeRef.current = 0;
-    preloadRangeRef.current = 3;
 
     // 分类切换图片过渡（切换帧提交后同步执行）：
     // 新首项图预加载就绪前不渲染新层（滞留层旧图垫底），就绪后 switchReady=true 恢复渲染。
@@ -450,7 +371,7 @@ function HeroBannerClassic({
     // switchLoadRef 防快速连点：仅最近一次预加载的结果生效。
     const itemsChanged = prevItemsRef.current !== displayItems;
     if (itemsChanged) {
-      const oldItem = prevItemsRef.current[prevDisplayIdxRef.current];
+      const oldItem = prevItemsRef.current[prevActiveIdxRef.current];
       const oldPath = oldItem?.backdropPath || oldItem?.backdrop_path;
       const newPath = displayItems[0]?.backdropPath || displayItems[0]?.backdrop_path;
       if (curLen > 0 && oldPath && newPath) {
@@ -500,42 +421,28 @@ function HeroBannerClassic({
     }
 
     if (curLen > 0 && prevLen === 0) {
-      // 从空变为有数据：重置 bannerReady，等待背景图加载
-      setBannerReady(false);
-      const t = window.setTimeout(() => setBannerReady(true), 3000);
       prevItemsLenRef.current = curLen;
-      return () => window.clearTimeout(t);
     } else if (curLen > 0) {
-      // 已有数据且 items 变化（如切换分类）：
-      // ⚠️ 不再重置 bannerReady 为骨架占位（此前这行是「缩略图闪一下」的根因：
-      //   切换瞬间真实图→骨架→真实图的硬切换）。改为保持 true，交由各 HeroThumb 自身的
-      //   「预加载完成再换图」机制在新/旧海报间做平滑交叉淡入（旧图持续显示直到新图就绪），
-      //   实现图片参与动画、无延迟无闪烁。主图背景层 key=item.id（见下方渲染）：新类目首项
-      //   id 不同 → 新建 <img>；配合上方 staleSnapshot 滞留层做「旧图垫底 → 新图就绪淡入」，
-      //   也不会出现「仍显示上一个类目图片」的滞留（滞留层在新图淡入完成后移除）。
-      //   整页切换过渡由 Home 页级 SWR 渲染层负责（旧内容保留 + 首屏卡片预加载后再
-      //   原位替换，不再做亮度凹陷），见 Home/index.tsx。
+      // 已有数据且 items 变化（如切换分类）：保持原状态，
+      // 新旧图交叉淡入交由上方 staleSnapshot 机制完成。
       prevItemsLenRef.current = curLen;
     } else {
-      // 变为空：重置
-      setBannerReady(false);
       prevItemsLenRef.current = curLen;
     }
-    // ⚠️ 依赖必须仅 [displayItems]（不含 displayIndex）：
-    // 轮播/悬停/拖拽会改变 displayIndex，若被本 effect 捕获会执行上方的
-    // setActiveIndex(0)/setHoveredIndex(null)/setBgIndices([0]) 重置，
+    // ⚠️ 依赖必须仅 [displayItems]（不含索引）：
+    // 轮播/拖拽会改变索引，若被本 effect 捕获会执行上方的 setActiveIndex(0) 重置，
     // 导致「轮播切到下一张立刻被重置回 0」的轮播失效（2026-08-13 回归教训）。
-    // refs（prevItemsRef/prevDisplayIdxRef）的同步已移入下方独立 useLayoutEffect。
+    // refs（prevItemsRef/prevActiveIdxRef）的同步已移入下方独立 useLayoutEffect。
   }, [displayItems]);
 
   // ── Keep-Alive 可见性守卫（离开/切回首页时重置过渡状态）──
   // AppLayout 用 display:none 隐藏离开页面（组件不卸载）。display:none 会中断
   // CSS animation，恢复 display:block 时浏览器**从 from 帧重播** is-active 层的
-  // heroBgFadeIn/slide 动画。若此时 bgIndices 是 2 层（轮播/悬停/拖拽过），
+  // heroBgFadeIn/slide 动画。若此时 bgIndices 是 2 层（轮播/拖拽过），
   // 底层旧图（opacity:1 常显）会在重播淡入期间透出 →「先闪一下上一张图再淡入当前图」。
   // 处理：
   //  - 切回（active false→true）：归单层 bgIndices（底层无旧图可透出）+ 清 slideDir
-  //    （不重播滑动动画）+ 清 hovered/滞留层/switchReady 过渡态 + 恢复轮播。
+  //    （不重播滑动动画）+ 清滞留层/switchReady 过渡态 + 恢复轮播。
   //  - 离开（active true→false）：暂停轮播（interval 由 active 守卫控制）+ 清过渡态，
   //    避免隐藏期间状态残留、切回时被重播。
   const prevActiveRef = useRef(active);
@@ -546,8 +453,7 @@ function HeroBannerClassic({
     prevActiveRef.current = active;
     if (wasActive === active) return;
     if (active) {
-      // 切回首页：归单层 + 清滑动方向/悬停/过渡态，防止 display:none→block 重播动画
-      setHoveredIndex(null);
+      // 切回首页：归单层 + 清滑动方向/过渡态，防止 display:none→block 重播动画
       setPaused(false);
       setSwitchIndex(Math.min(activeIndexRef.current, Math.max(0, displayItems.length - 1)));
       setBgIndices([Math.min(activeIndexRef.current, Math.max(0, displayItems.length - 1))]);
@@ -559,14 +465,12 @@ function HeroBannerClassic({
       // 离开首页：暂停轮播 + 清过渡态，但【保留当前轮播位置】（activeIndex/bgIndices 不变）。
       // 仅重置轮播计时/滑动状态：不记录上一次轮播的时间，切回时从当前位置继续、计时归零。
       setPaused(true);
-      setHoveredIndex(null);
       setSlideAnim(null);
       setBounceBack(false);
       setIsDragging(false);
       setDragOffset(0);
       swipeCooldownRef.current = 0;
       lastSlideTimeRef.current = 0;
-      preloadRangeRef.current = 3;
       switchLoadRef.current = null;
       if (staleClearTimerRef.current) { clearTimeout(staleClearTimerRef.current); staleClearTimerRef.current = null; }
       setStaleSnapshot(null);
@@ -575,78 +479,33 @@ function HeroBannerClassic({
   }, [active]);
 
   // 渲染期派生（分类切换过渡）读的 refs 同步：每个 commit 后（paint 前）更新，
-  // 使渲染期读到的 prevItemsRef/prevDisplayIdxRef 恒为「上一 commit」的值。
-  // 独立 effect（无 setState 副作用）：displayIndex 频繁变化（轮播/悬停）也不会
-  // 触发上方的重置逻辑（那是轮播失效根因）。
+  // 使渲染期读到的 prevItemsRef/prevActiveIdxRef 恒为「上一 commit」的值。
+  // 独立 effect（无 setState 副作用）：索引频繁变化（轮播）也不会触发上方的重置逻辑。
   useLayoutEffect(() => {
     prevItemsRef.current = displayItems;
-    prevDisplayIdxRef.current = displayIndex;
-  }, [displayItems, displayIndex]);
+    prevActiveIdxRef.current = safeActiveIndex;
+  }, [displayItems, safeActiveIndex]);
 
-  // 当前主图无背景图时（无图可等），直接视为已就绪，避免缩略图列一直卡在骨架
-  useEffect(() => {
-    const item = displayItems[displayIndex];
-    const hasBackdrop = !!(item?.backdropPath || item?.backdrop_path);
-    if (!hasBackdrop) setBannerReady(true);
-  }, [displayIndex, displayItems]);
-
-  // displayIndex 变化时（含悬停预览），背景层保留上一张用于 crossfade / slide
+  // 索引变化时，背景层保留上一张用于 crossfade / slide
   useEffect(() => {
     setBgIndices((prev) => {
       const last = prev[prev.length - 1];
-      if (last === displayIndex) return prev;
-      return [last, displayIndex];
+      if (last === safeActiveIndex) return prev;
+      return [last, safeActiveIndex];
     });
-  }, [displayIndex]);
+  }, [safeActiveIndex]);
 
-  // 分类切换过渡收尾：滞留层移除改由「新层 is-active img 真实绘制事件」
-  // （onLoad/onError/ref-complete）驱动 scheduleStaleClear（见新层 <img> 事件绑定），
-  // 不再在 switchReady 变化即起算 1200ms 定时器——消除预加载就绪与新层实际绘制
-  // 之间的间隙导致「旧层提前清、新层未就绪露深色」的可能（D 项收尾）。
-
-  // 滑动冷却期：滑动后 1000ms 内暂停自动轮播，避免动画冲突
-  const swipeCooldownRef = useRef(0);
-  // 滑动速度检测：记录上次滑动时间，快速滑动时扩大预加载范围
-  const lastSlideTimeRef = useRef(0);
-  // 动态预加载范围：默认 3，快速滑动时扩大到 6
-  const preloadRangeRef = useRef(3);
-
-  // 预加载背景图 + 即将出现的缩略图，保证轮播切换时图片已就绪
+  // ── 主图一次性全部预取（2026-09-11）──
+  // 列表已截取到前 6 张 → 列表就绪即把 6 张主图全部预热（按当前视口档位尺寸），
+  // 切到任意一张都命中缓存。已删除原「当前索引 ± 动态 range（3~6）」的分段预加载
+  // 与随之而来的 preloadRangeRef / 滑动速度探测。
   useEffect(() => {
-    if (displayItems.length <= 1) return;
-    const total = displayItems.length;
-
-    // 动态预加载范围：根据滑动速度调整
-    // 快速连续滑动（<300ms 间隔）→ 扩大到 6，否则保持 3
-    const now = Date.now();
-    const timeSinceLastSlide = now - lastSlideTimeRef.current;
-    if (timeSinceLastSlide < 300 && timeSinceLastSlide > 0) {
-      preloadRangeRef.current = Math.min(6, total);
-    } else if (timeSinceLastSlide >= 500) {
-      // 500ms 无滑动 → 恢复默认范围
-      preloadRangeRef.current = 3;
+    const size = bgPreloadSize();
+    for (const item of displayItems) {
+      const p = item.backdropPath || item.backdrop_path;
+      if (p) preloadImage(buildImageUrl(p, size));
     }
-    lastSlideTimeRef.current = now;
-
-    const bgSize = bgPreloadSize();
-    const range = preloadRangeRef.current;
-
-    // 预加载当前索引 ± range 范围内的所有背景图
-    for (let offset = -range; offset <= range; offset++) {
-      const idx = ((activeIndex + offset) % total + total) % total;
-      const p = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
-      if (p) preloadImage(buildImageUrl(p, bgSize));
-    }
-
-    // 预加载即将出现在缩略图窗口中的图片（窗口大小 3，提前预加载前后各 1 张）
-    const n = Math.min(3, total);
-    const half = Math.floor(n / 2);
-    for (let offset = -half; offset < n - half; offset++) {
-      const idx = ((activeIndex + offset + 1) % total + total) % total;
-      const thumbPath = displayItems[idx]?.backdropPath || displayItems[idx]?.backdrop_path;
-      if (thumbPath) preloadImage(buildImageUrl(thumbPath, bgSize));
-    }
-  }, [activeIndex, displayItems]);
+  }, [displayItems]);
 
   // 轮播/拖拽进行中的实时态引用：供自动轮播定时器读取最新值（闭包问题），
   // 防止「动画仍在进行却因读到陈旧 null 而重复触发」导致的轮播错乱/失效。
@@ -661,7 +520,7 @@ function HeroBannerClassic({
     const total = displayItems.length;
     if (total <= 1) return;
     const newIdx = (activeIndexRef.current + dir + total) % total;
-    setSwitchIndex(newIdx); // 切换开始即同步背景图/缩略图
+    setSwitchIndex(newIdx); // 切换开始即同步背景图
     setSlideAnim(dir > 0 ? 'forward' : 'backward');
     if (!fromDrag) {
       // 非拖拽（自动轮播 / 遥控器）：track 是全新挂载，先挂引导帧(-100%)再过渡
@@ -678,7 +537,6 @@ function HeroBannerClassic({
       setTextRiseEnabled(false); // 落定一拍内关闭当前槽入场，避免新文字二次重播
       setSuppressFadeInId(displayItems[newIdx]?.id ?? null);
     }, SLIDE_MS);
-    setHoveredIndex(null);
   }, [displayItems]);
 
   // 分类切换 / 首屏数据就绪：重置「当前文字入场」开关，让新分类文字播一次自下而上出场
@@ -711,28 +569,6 @@ function HeroBannerClassic({
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isTV, active, displayItems.length, triggerSlide]);
-
-  // 悬停缩略图：预览主图 + 暂停轮播 + 预加载背景图
-  const handleThumbEnter = useCallback((idx: number) => {
-    setSuppressFadeInId(null);
-    setHoveredIndex(idx);
-    setPaused(true);
-    const item = displayItems[idx];
-    const p = item?.backdropPath || item?.backdrop_path;
-    if (p) preloadImage(buildImageUrl(p, 'w1280'));
-  }, [displayItems]);
-
-  // 移出整个 hero-banner：将 activeIndex 同步到当前预览项，再取消预览 + 恢复轮播
-  const handleBannerLeave = useCallback(() => {
-    setHoveredIndex((h) => {
-      if (h !== null) {
-        setActiveIndex(h);
-        setSwitchIndex(h);
-      }
-      return null;
-    });
-    setPaused(false);
-  }, []);
 
   // 拖拽/滑动切换图片：桌面端鼠标拖拽 + 移动端触摸滑动
   // 三联 track 模式：拖拽/滑动动画期间渲染 [prev | current | next] 三张并排，
@@ -774,29 +610,19 @@ function HeroBannerClassic({
   // 避免「切走后移除类重新触发淡入」导致的闪一下。随每次切换被新 id 覆盖，无需定时器。
   const [suppressFadeInId, setSuppressFadeInId] = useState<string | number | null>(null);
   const handleDragStart = useCallback((x: number) => {
-    // 预览态 mousedown：先提交 hoveredIndex 为 activeIndex，使 track 中心 = 当前显示项，
-    // 避免「主图先复位到中间图再离开」的视觉跳变。ref 在渲染阶段同步，闭包读到最新值。
-    const hovered = hoveredIndexRef.current;
-    if (hovered !== null && hovered !== activeIndex) {
-      setActiveIndex(hovered);
-      setSwitchIndex(hovered);
-    }
-    setHoveredIndex(null);
     dragEndedRef.current = false;
     dragStartX.current = x;
-    // 参照物必须是「主图区真实宽度」(hero-banner__main)，不是整张 banner。
-    // 桌面端主图区只占整 banner 的 ~80%（其余是缩略图列），用整宽会让 50% 阈值
-    // 大得几乎永远触发不了切换；故拖拽开始即捕获主图区宽度。
+    // 参照物 = 主图区真实宽度（hero-banner__main，此时独占 banner 全宽）。
     bannerWidthRef.current = mainRef.current?.offsetWidth ?? bannerRef.current?.offsetWidth ?? 0;
     recordSwipeData({ mainWidth: bannerWidthRef.current, dx: 0, threshold: 0, switched: false });
     setIsDragging(true);
     setSlideAnim(null);
     setPaused(true);
-  }, [activeIndex]);
+  }, []);
   const handleDragMove = useCallback((x: number) => {
     if (!isDragging) return;
     // 移动端 touchmove 每帧可触发多次（部分机型 >100Hz）。每次 setDragOffset 都会重跑整个
-    // HeroBanner 组件（文字 track ×3、缩略图窗口、内联 style 重建）→ 滑动掉帧。
+    // HeroBanner 组件（文字 track ×3、内联 style 重建）→ 滑动掉帧。
     // 用 rAF 合并成「每帧最多一次 setState」，只保留本帧最后一次坐标。
     dragPendingXRef.current = x;
     if (dragRafRef.current) return;
@@ -874,7 +700,7 @@ function HeroBannerClassic({
 
   // 拖拽期间在 window 级监听移动/松手/失焦：解决「指针移出 <section> 后松手，
   // section 的 onMouseUp 不触发 → handleDragEnd 不执行 → isDragging 卡死、无法切换」。
-  // 阈值现为主图区宽度的 15%（最小 60px），轻扫即翻；跨过阈值必然移出 section，
+  // 阈值现为主图区宽度的 20%（最小 40px），轻扫即翻；跨过阈值必然移出 section，
   // 故「在 section 外松手」是翻页拖拽的常态，必须由 window 兜底。
   useEffect(() => {
     if (!isDragging) return;
@@ -902,11 +728,10 @@ function HeroBannerClassic({
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   // 空状态：加载中只显示骨架（无文字），加载完成且无数据才显示"暂无推荐"。
-  // 注意：即使 items 为空，也立即渲染右侧缩略图骨架列，避免骨架"出现太慢"。
   if (!displayItems.length) {
     return (
       <div className="hero-banner__card">
-        <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} style={{ ['--hero-thumb-count' as string]: maxCount, aspectRatio: isMobile ? '16 / 9' : (maxCount === 4 ? '20 / 9' : '64 / 27') } as React.CSSProperties} aria-label="热门推荐">
+        <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
           <div className="hero-banner__bg-wrapper">
             <div className="hero-banner__bg-placeholder" />
             <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
@@ -925,15 +750,6 @@ function HeroBannerClassic({
               <div className="hero-banner__text">
                 <h1 className="hero-banner__title hero-banner__title--placeholder">暂无推荐</h1>
               </div>
-            </div>
-          )}
-          {!isMobile && (
-            <div className="hero-banner__thumbs" aria-hidden="true" style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}>
-              {Array.from({ length: maxCount }).map((_, i) => (
-                <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton">
-                  <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
-                </div>
-              ))}
             </div>
           )}
         </section>
@@ -955,9 +771,7 @@ function HeroBannerClassic({
     ? safeActiveIndex
     : bounceBack
       ? safeActiveIndex
-      : safeHoveredIndex !== null
-        ? safeHoveredIndex
-        : safeSwitchIndex;
+      : safeSwitchIndex;
   const textPrev = textTotal > 1 ? (textCenter - 1 + textTotal) % textTotal : 0;
   const textNext = textTotal > 1 ? (textCenter + 1) % textTotal : 0;
   const textTrackIndices = [textPrev, textCenter, textNext];
@@ -975,7 +789,7 @@ function HeroBannerClassic({
     const ov = item.overview || '';
     const mt = d.mediaType || d.media_type;
     // 标题位：有 TMDB logo 时用 logo（Detail 页同款 .detail-hero-logo 元素），
-    // 无 logo / 决策未决 / 文件加载失败时回落文字标题。heroLogos 只含已确认的
+    // 无 logo / 未决 / 文件加载失败时回落文字标题。heroLogos 只含已确认的
     // path（fetchHeroLogo 已预热同 URL 像素 → <img> 挂载即命中缓存，无现下载解码）。
     const logoKey = heroLogoKey(d);
     const logoPath = (logoKey && heroLogos[logoKey]) || undefined;
@@ -1030,7 +844,7 @@ function HeroBannerClassic({
   const prevItems = prevItemsRef.current;
   const itemsChanged = prevItems !== displayItems;
   const oldActivePath = (() => {
-    const it = prevItems[prevDisplayIdxRef.current];
+    const it = prevItems[prevActiveIdxRef.current];
     return it?.backdropPath || it?.backdrop_path;
   })();
   const newFirstPath = displayItems[0]?.backdropPath || displayItems[0]?.backdrop_path;
@@ -1045,12 +859,12 @@ function HeroBannerClassic({
     ? {
         url: buildImageUrl(oldActivePath, 'w1280') || '',
         srcSet: buildImageSrcSet(oldActivePath, backdropSizes()) ?? undefined,
-        id: String(prevItems[prevDisplayIdxRef.current].id),
+        id: String(prevItems[prevActiveIdxRef.current].id),
       }
     : staleSnapshot;
   // 保留 `|| !switchReady`：已缓存分类切换时，itemsChanged 在首个 effect 后即翻 false，
   // 仅靠 crossfadeSwitch 无法在「预加载未完成」窗口继续隐藏新层；!switchReady 负责该间隙。
-  // 未缓存分类切换时主图区短暂透明由 .hero-banner__main 的深色渐变底色承接，不再透出卡片浅色（白隙）。
+  // 未缓存分类切换时主图区短暂透明由 .hero-banner__main 的深色渐变底色承接（白隙）。
   const hideNewLayer = crossfadeSwitch || !switchReady;
 
   // 三联 track 索引：拖拽/滑动动画期间渲染 [prev | current | next]
@@ -1087,21 +901,9 @@ function HeroBannerClassic({
         transition: `transform ${BOUNCE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
       };
     }
-    // 静止 / 悬停预览：钉在中心
+    // 静止：钉在中心
     return { transform: 'translateX(-100%)' };
   })();
-
-  // 缩略图窗口：选中项始终居中，循环显示相邻项。基于「同步显示索引」switchIndex（切换开始即更新），
-  // 使缩略图窗口与 banner 滑动同步移动，而非等 activeIndex（切换结束）才动。
-  const thumbSlots: number[] = [];
-  if (displayItems.length > 0) {
-    const total = displayItems.length;
-    const n = Math.min(visibleCount, total);
-    const half = Math.floor(n / 2);
-    for (let offset = -half; offset < n - half; offset++) {
-      thumbSlots.push(((safeSwitchIndex + offset) % total + total) % total);
-    }
-  }
 
   return (
     <div className="hero-banner__card">
@@ -1109,12 +911,12 @@ function HeroBannerClassic({
         ref={bannerRef}
         className={`hero-banner${isTV ? ' hero-banner--tv' : ''}`}
         style={initialEnterDelay > 0
-          ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms`, ['--hero-thumb-count' as string]: maxCount, aspectRatio: isMobile ? '16 / 9' : (maxCount === 4 ? '20 / 9' : '64 / 27') } as React.CSSProperties
-          : { ['--hero-thumb-count' as string]: maxCount, aspectRatio: isMobile ? '16 / 9' : (maxCount === 4 ? '20 / 9' : '64 / 27') } as React.CSSProperties}
+          ? { ['--hero-bg-fadein-delay' as string]: `${initialEnterDelay}ms`, aspectRatio: '16 / 9' } as React.CSSProperties
+          : { aspectRatio: '16 / 9' } as React.CSSProperties}
         aria-roledescription="carousel"
       aria-label="热门推荐"
         onMouseEnter={() => setPaused(true)}
-        onMouseLeave={handleBannerLeave}
+        onMouseLeave={() => setPaused(false)}
         onMouseDown={(e) => handleDragStart(e.clientX)}
         onMouseMove={(e) => { if (isDragging) handleDragMove(e.clientX); }}
         onMouseUp={(e) => handleDragEnd(e.clientX)}
@@ -1126,8 +928,7 @@ function HeroBannerClassic({
           两种渲染模式：
           A) track 模式（拖拽中 / 滑动动画中）：渲染 [prev | current | next] 三张并排，
              track translateX(-100%) 居中当前图，拖拽时偏移跟随，松手后动画滑出。
-          B) crossfade 模式（默认/悬停/分类切换）：absolute 堆叠 + stale 滞留层，
-             保持现有分类切换过渡逻辑。 */}
+          B) crossfade 模式（默认/分类切换）：absolute 堆叠 + stale 滞留层。 */}
       <div
         ref={mainRef}
         className={`hero-banner__main${isDragging ? ' is-dragging' : ''}`}
@@ -1147,7 +948,7 @@ function HeroBannerClassic({
               className="hero-banner__bg-layer hero-banner__bg-layer--stale"
               src={staleLayer.url}
               srcSet={staleLayer.srcSet || undefined}
-              sizes="(max-width: 767px) 100vw, 80vw"
+              sizes="100vw"
               alt=""
               aria-hidden="true"
               loading="eager"
@@ -1163,7 +964,7 @@ function HeroBannerClassic({
             const backdropUrl = buildImageUrl(backdropPath, 'w1280') || '';
             // srcset 存在时浏览器只按候选表选图（忽略 src），故移动端封顶即生效
             const backdropSrcSet = buildImageSrcSet(backdropPath, backdropSizes());
-            const isActive = idx === displayIndex;
+            const isActive = idx === safeActiveIndex;
             // 分类切换过渡期（切换帧派生或新图未就绪）：不渲染新层，滞留层旧图继续垫底
             if (isActive && hideNewLayer) return null;
             return (
@@ -1172,7 +973,7 @@ function HeroBannerClassic({
                 className={`hero-banner__bg-layer${isActive ? ' is-active' : ''}${isActive && suppressFadeInId === item.id ? ' hero-banner__bg-layer--no-anim' : ''}`}
                 src={backdropUrl}
                 srcSet={backdropSrcSet || undefined}
-                sizes="(max-width: 767px) 100vw, 80vw"
+                sizes="100vw"
                 alt=""
                 aria-hidden="true"
                 loading="eager"
@@ -1180,26 +981,17 @@ function HeroBannerClassic({
                 draggable={false}
                 onLoad={() => {
                   if (backdropUrl) markImageLoaded(backdropUrl);
-                  if (isActive) {
-                    setBannerReady(true);
-                    scheduleStaleClear();
-                  }
+                  if (isActive) scheduleStaleClear();
                 }}
                 onError={() => {
                   // 记入失败集合 → 当前主图渲染公共品牌兜底（不再只露 #0b0b0e 深色底）
                   markBackdropFailed(backdropUrl);
-                  if (isActive) {
-                    setBannerReady(true);
-                    scheduleStaleClear();
-                  }
+                  if (isActive) scheduleStaleClear();
                 }}
                 ref={(el) => {
                   if (el && el.complete && el.naturalWidth > 0) {
                     if (backdropUrl) markImageLoaded(backdropUrl);
-                    if (isActive) {
-                      setBannerReady(true);
-                      scheduleStaleClear();
-                    }
+                    if (isActive) scheduleStaleClear();
                   }
                 }}
               />
@@ -1250,7 +1042,7 @@ function HeroBannerClassic({
                   <img
                     src={backdropUrl}
                     srcSet={backdropSrcSet || undefined}
-                    sizes="(max-width: 767px) 100vw, 80vw"
+                    sizes="100vw"
                     alt=""
                     aria-hidden="true"
                     loading="eager"
@@ -1302,192 +1094,16 @@ function HeroBannerClassic({
           </div>
         </div>
       </div>
-
-      {/* ── 右侧缩略图列（桌面端，横图 + 悬浮标题；窗口化，选中居中） ──
-          banner 未就绪时显示固定数量骨架占位（立即出现），
-          banner 渲染完成后揭示真实缩略图（每个缩略图自身也有加载骨架）。
-          ⚠️ 不挂 key={categoryId}（2026-08-13）：分类切换时列不重挂载，
-          HeroThumb 组件按 key={pos} 复用 → item 引用变化走「预加载完成再换图 +
-          双层交叉淡入」，旧海报保持显示直至新海报就绪淡入（平滑过渡动画），
-          不再「骨架→图」硬切换。同分类窗口滑动逻辑不受影响。 */}
-      {!isMobile && (
-        <div
-          className="hero-banner__thumbs"
-          style={{ ['--hero-thumb-count' as string]: maxCount } as React.CSSProperties}
-        >
-          {!bannerReady ? (
-            Array.from({ length: maxCount }).map((_, i) => (
-              <div key={`sk-${i}`} className="hero-banner__thumb hero-banner__thumb--skeleton" aria-hidden="true">
-                <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" />
-              </div>
-            ))
-          ) : (
-            <>
-              {thumbSlots.map((idx, pos) => (
-                <HeroThumb
-                  key={pos}
-                  item={displayItems[idx]}
-                  active={idx === (safeHoveredIndex !== null ? safeHoveredIndex : safeSwitchIndex)}
-                  onEnter={() => handleThumbEnter(idx)}
-                  onClick={() => onItemClick?.(displayItems[idx])}
-                />
-              ))}
-            </>
-          )}
-        </div>
-      )}
       </section>
     </div>
   );
 }
 
 /**
- * HeroThumb — 单个右侧缩略图（自包含）
- * - 图片加载完成前显示骨架占位（shimmer），加载完成后淡入图片与标题
- * - 用 ref 检查 img.complete 兜底，避免已缓存图片不触发 onLoad 而永久卡在骨架
- * - memo 化：窗口滑动一格时仅「新进入窗口」的缩略图重渲染，其余（item 引用 + active 未变）
- *   跳过渲染，减少快速滑动时的无谓重渲染与换图预加载
- */
-const HeroThumb = memo(
-  function HeroThumb({
-    item,
-    active,
-    onEnter,
-    onClick,
-  }: {
-    item: HeroItem;
-    active: boolean;
-    onEnter: () => void;
-    onClick: () => void;
-  }) {
-  const thumbPath = item.backdropPath || item.backdrop_path || '';
-  // 复用主图 URL（w1280），通过 CSS 缩放显示，减少 HTTP 请求数
-  // 主图加载后缩略图可直接使用已缓存的资源，提升切换流畅度
-  const thumbUrl = thumbPath ? buildImageUrl(thumbPath, 'w1280') : '';
-  const title = item.name || item.title || '';
-
-  // 双层 + 预加载就绪再换图（2026-08-13 增强为交叉淡入）：
-  // 切换目标 url 时先用 new Image() 预加载，完成（已进缓存）才更新 img.src；
-  // 旧图快照进 prevSrc 垫底层，新图（cur 层）先置 --switching（opacity 0）再
-  // onLoad 后淡入（opacity transition 0.3s）→ 淡入完成清理 prev 层。
-  // 加载期间旧图持续显示，从根上避免露白闪烁与突变跳变。
-  const [currentSrc, setCurrentSrc] = useState(thumbUrl);
-  const [prevSrc, setPrevSrc] = useState<string | null>(null);
-  const [switching, setSwitching] = useState(false);
-  const [ready, setReady] = useState(false);
-  const currentSrcRef = useRef(thumbUrl);
-  currentSrcRef.current = currentSrc;
-  const loadingRef = useRef<string | null>(null);
-  // 上次 thumbUrl 变化时间戳：识别「快速连续切换」以跳过淡入避免闪烁
-  const thumbLastChangeRef = useRef(0);
-
-  useEffect(() => {
-    if (!thumbUrl) {
-      currentSrcRef.current = '';
-      setCurrentSrc('');
-      setPrevSrc(null);
-      setSwitching(false);
-      setReady(false);
-      loadingRef.current = null;
-      return;
-    }
-    // 已是当前显示图：无需切换
-    if (thumbUrl === currentSrcRef.current) {
-      loadingRef.current = null;
-      return;
-    }
-    const now = Date.now();
-    const rapid = now - thumbLastChangeRef.current < 250;
-    thumbLastChangeRef.current = now;
-    // 统一用「旧图垫底 + 新图淡入」：无论是否命中缓存，旧图持续显示直到新图就绪，
-    // 再走 0.3s 交叉淡入。消除「未缓存路径落到骨架灰白图、无过渡直接硬切」的问题。
-    const oldSrc = currentSrcRef.current;
-    loadingRef.current = thumbUrl;
-    setPrevSrc(oldSrc || null);
-    setCurrentSrc(thumbUrl);
-    setSwitching(true);
-    setReady(true); // 旧图已垫底，无需骨架占位（灰白闪烁根源）
-    if (rapid) {
-      // 快速连续切换：跳过旧图垫底淡入、直接落底，避免连续淡入叠加闪烁
-      setPrevSrc(null);
-      const cached = isImageLoaded(thumbUrl);
-      setSwitching(!cached);
-    }
-  }, [thumbUrl]);
-
-  // 新图淡入完成后清理垫底层（不依赖动画事件，延时兜底）
-  // 注：switching 状态由 onLoad 清除，不用超时——未缓存图片加载期间 switching 保持 true，
-  // 骨架持续显示，避免快速滑动时骨架提前消失导致闪烁。
-  useEffect(() => {
-    if (!prevSrc) return;
-    const t = window.setTimeout(() => setPrevSrc(null), 320);
-    return () => window.clearTimeout(t);
-  }, [prevSrc, currentSrc]);
-
-  return (
-    <button
-      type="button"
-      className={`hero-banner__thumb${active ? ' is-active' : ''}`}
-      onMouseEnter={onEnter}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      aria-label={title}
-      aria-current={active ? 'true' : undefined}
-    >
-      {prevSrc && (
-        <img
-          className="hero-banner__thumb-img hero-banner__thumb-img--prev"
-          src={prevSrc}
-          alt=""
-          loading="eager"
-          draggable={false}
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-        />
-      )}
-      {currentSrc ? (
-        <img
-          key={currentSrc}
-          className={`hero-banner__thumb-img${switching ? ' hero-banner__thumb-img--switching' : ''}`}
-          src={currentSrc}
-          alt=""
-          loading="eager"
-          draggable={false}
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-          onLoad={() => {
-            if (currentSrc) markImageLoaded(currentSrc);
-            setReady(true);
-            // 确保起始帧（opacity:0）已绘制后再淡入，避免浏览器缓存命中时
-            // onLoad 过早触发、缺少起始帧导致「无过渡直接硬切」
-            requestAnimationFrame(() => setSwitching(false));
-          }}
-          onError={() => {
-            // 加载失败时 switching 只能由 onLoad 清除 → 图会永久停在 opacity:0（骨架已移除，
-            // 该格只剩标题条）。这里兜底清掉淡入态，并保留骨架占位而不是留一个空洞。
-            setSwitching(false);
-            setReady(false);
-          }}
-        />
-      ) : null}
-      {!ready && <span className="hero-banner__thumb-skeleton thumbnail-skeleton-bg" aria-hidden="true" />}
-      <span className="hero-banner__thumb-title">{title}</span>
-    </button>
-  );
-},
-heroThumbPropsEqual,
-);
-
-/** memo 比较：仅 item 引用与激活态变化才重渲染（onEnter/onClick 为稳定闭包捕获 idx，item 不变时 idx 不变） */
-function heroThumbPropsEqual(
-  prev: { item: HeroItem; active: boolean },
-  next: { item: HeroItem; active: boolean },
-): boolean {
-  return prev.item === next.item && prev.active === next.active;
-}
-
-/**
  * HeroBanner — 首页 Hero 分支入口
  *
- * >1280px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右 3×2 竖版卡 + 换一换）；
- * ≤1280px / TV / 空数据：走原 HeroBannerClassic 渲染路径（原结构逐行未动）。
+ * ≥1024px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右竖版卡 + 换一换）；
+ * <1024px / TV / 空数据：走 HeroBannerClassic 渲染路径。
  * 空数据回落 Classic：Classic 的空态骨架/「暂无推荐」文案保持原行为，
  * HeroBili 不重复实现空态（宽屏整页骨架由 Home 的 home-skeleton-hero 承接）。
  */

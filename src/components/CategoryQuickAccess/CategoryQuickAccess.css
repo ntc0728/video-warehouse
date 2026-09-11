@@ -345,37 +345,10 @@
     flex-direction: column;
     gap: var(--space-sm);
   }
-  /* 头部恒单行（用户 2026-09-10：ⓘ 提示图标不得被挤到第二行）：
-     重排为「🔥 标题 ⓘ 副标题」—— ⓘ 紧跟标题保证位置稳定不换行，
-     副标题 flex:1 + ellipsis 吸收剩余宽度（超长截断而非换行）。 */
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__head {
-    flex-wrap: nowrap;
-    margin-bottom: 0;
-  }
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-info-tip {
-    order: 1;
-    flex: 0 0 auto;
-  }
-  /* ⚠️ 标题必须 flex:0 0 auto + nowrap：否则会被 flex 收缩（4 字需 ~53px，
-     空间不足时被压到折成两行、head 高度翻倍，
-     连带 ⓘ 视觉上像被"挤到第二行"）。真正让出空间的是副标题。 */
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__title {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__head > svg {
-    flex: 0 0 auto;
-  }
-  html:not([data-device="tv"]) .cqa-heat-row--rail .cqa-heat-row__sub {
-    order: 2;
-    /* flex-basis 必须为 0：写成 auto 时只有真正溢出才收缩，
-       title 会先被压扁换行（上面那条坑）。basis:0 让副标题优先让位。 */
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  /* ⚠️ 2026-09-11：原 rail 榜头（`.cqa-heat-row__head` + title/sub/ⓘ 的一整套
+     nowrap / order / flex 让位规则）随元素一并删除 —— 榜单头已上移到
+     HomeTopStrip，左栏只剩 `.cqa-trend` 本体。以下保留的 `.cqa-heat-row__head`
+     规则只服务 `variant='row'`（分类热度榜横排形态）。 */
   html:not([data-device="tv"]) .cqa-heat-row__head {
     display: flex;
     align-items: center;
@@ -862,12 +835,15 @@
   html:not([data-device="tv"]) .cqa-trend {
     list-style: none;
     margin: 0;
+    /* 行间距（2026-09-11 用户要求补 gap）：去掉分割线后靠行距区分条目，
+       gap = --space-xs 与卡片内边距同档，20 行连续榜节奏均匀。 */
     padding: var(--space-xs) var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     display: flex;
     flex-direction: column;
+    gap: var(--space-xs);
   }
   html:not([data-device="tv"]) .cqa-trend__row {
     display: flex;
@@ -987,6 +963,45 @@
   html:not([data-device="tv"]) .cqa-trend__h svg {
     width: var(--cqa-flame-size);
     height: var(--cqa-flame-size);
+  }
+
+  /* ── 左栏「今日趋势」加载骨架填充块（2026-09-11）──
+     CategoryTrendSkeleton 复用真实类名（.cqa-trend__row/__poster/__body）承载几何，
+     这里只定义「真实元素没有的」灰条；shimmer 配方与 Home.css 整页骨架同源。
+     ⚠️ 缺了这组规则骨架就是 0 高度（rank/line 是空 span）→ 用户看到「左栏没骨架」。 */
+  html:not([data-device="tv"]) .cqa-trend__rank-skel {
+    flex: 0 0 20px;
+    height: var(--text-2xs);
+    border-radius: var(--radius-sm);
+    background: var(--color-skeleton);
+  }
+  html:not([data-device="tv"]) .cqa-trend__poster--skeleton {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--card-shimmer-duration) infinite;
+  }
+  html:not([data-device="tv"]) .cqa-trend__line-skel {
+    display: block;
+    height: var(--text-2xs);
+    border-radius: var(--radius-sm);
+    background: var(--color-skeleton);
+  }
+  html:not([data-device="tv"]) .cqa-trend__line-skel--title {
+    width: 72%;
+  }
+  html:not([data-device="tv"]) .cqa-trend__line-skel--meta {
+    width: 45%;
+  }
+  /* 骨架只做静态占位：不参与 hover / 点击（真实行是 button 语义带 cursor/hover） */
+  html:not([data-device="tv"]) .cqa-trend__row--skeleton {
+    cursor: default;
+    pointer-events: none;
   }
 
   /* ⚠️ 2026-09-10 重要修复：「prefers-reduced-motion 停用」规则曾**误写在

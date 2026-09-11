@@ -1,6 +1,16 @@
 /**
  * CMS 直链搜索 Hook
- * 管理多源并行搜索、逐源加载、滚动分页、源状态追踪
+ * 管理多源并行搜索、源状态追踪、**替换式分页**
+ *
+ * 分页模型（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）：
+ * - 旧实现是「追加式」：loadMore 让每个源各自 page+1 后 push 进 results，
+ *   于是第 N 页显示的是 1~N 页的累积 —— 语义上是无限滚动不是分页，且无法回退。
+ * - 现改为「替换式」：goToPage(query, n) 并发拉所有源的 pg=n，聚合后整体替换
+ *   results。MacCMS 的 `?ac=videolist&wd=..&pg=n` 天然支持任意页码，所以「上一页」
+ *   不需要快照栈，直接重新拉即可（代价是回退要重新请求，可接受）。
+ * - 总页数不可知：接口返回体只有 `total`（该源该关键词总条数），没有 `limit` /
+ *   `pagecount`，无法换算 totalPages → 只能做「上一页 / 下一页 + 第 N 页」，
+ *   做不出数字页码条。hasMore 退化为「本页有内容，故下一页可能还有」。
  */
 import { useState, useCallback, useRef } from 'react';
 import { searchAllFromCMSSource } from '@/services/videoService';
@@ -23,22 +33,27 @@ interface CMSSearchState {
   succeededSources: number;
   /** 所有源是否都已完成 */
   sourcesDone: boolean;
+  /** 当前页码（1 起）。替换式分页下 = 所有源共同的页码。 */
+  page: number;
 }
 
-export function useCMSSearch() {
-  const [state, setState] = useState<CMSSearchState>({
-    results: [],
-    loading: false,
-    error: null,
-    hasMore: false,
-    failedSources: [],
-    totalSources: 0,
-    completedSources: 0,
-    succeededSources: 0,
-    sourcesDone: true,
-  });
+const EMPTY_STATE: CMSSearchState = {
+  results: [],
+  loading: false,
+  error: null,
+  hasMore: false,
+  failedSources: [],
+  totalSources: 0,
+  completedSources: 0,
+  succeededSources: 0,
+  sourcesDone: true,
+  page: 1,
+};
 
-  // 每个源的当前页码追踪
+export function useCMSSearch() {
+  const [state, setState] = useState<CMSSearchState>(EMPTY_STATE);
+
+  /** 每个源的当前页码追踪（替换式分页下所有源同页码，保留 Map 以兼容多源异步完成） */
   const sourcePagesRef = useRef<Map<number, number>>(new Map());
   const abortRef = useRef<AbortController | null>(null);
 
@@ -48,173 +63,121 @@ export function useCMSSearch() {
     return getEnabledVideoSourceIndices();
   }, []);
 
-  /** 搜索指定关键词（重置状态） */
-  const search = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setState({
-        results: [], loading: false, error: null, hasMore: false, failedSources: [],
-        totalSources: 0, completedSources: 0, succeededSources: 0, sourcesDone: true,
-      });
-      return;
-    }
-
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    const sourceIndices = await getSourceIndices();
-    sourcePagesRef.current.clear();
-    sourceIndices.forEach(idx => sourcePagesRef.current.set(idx, 1));
-
-    setState({
-      results: [], loading: true, error: null, hasMore: false, failedSources: [],
-      totalSources: sourceIndices.length, completedSources: 0, succeededSources: 0, sourcesDone: false,
-    });
-
-    const failed: string[] = [];
-    let firstSourceResponded = false;
-
-    const searchSource = async (sourceIdx: number) => {
-      try {
-        const result = await searchAllFromCMSSource(sourceIdx, query, 1, { signal: ctrl.signal });
-        if (ctrl.signal.aborted) return;
-      if (result.error) {
-        failed.push(result.sourceName);
-        // 关键：返回错误结果的源也视为「已完成」，否则 completedSources 永远到不了 totalSources，
-        // 导致检测已结束但 pill 仍停留在 loading/scanning 状态
-        setState(prev => ({
-          ...prev,
-          completedSources: prev.completedSources + 1,
-        }));
+  /**
+   * 跳到第 page 页（替换式）：清空当前结果 → 并发拉所有源 pg=page → 整体替换。
+   * 首个源响应即收起 loading（保留原有的渐进反馈），其余源在后台继续追加到本页。
+   */
+  const goToPage = useCallback(
+    async (query: string, page: number) => {
+      if (!query.trim()) {
+        setState(EMPTY_STATE);
         return;
-      } else if (result.items.length > 0) {
-          const items = result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex }));
-          // 第一个源响应后关闭 loading
-          if (!firstSourceResponded) {
-            firstSourceResponded = true;
-            setState(prev => ({
-              ...prev,
-              results: [...prev.results, ...items],
-              loading: false,
-              hasMore: result.total > result.items.length,
-              completedSources: prev.completedSources + 1,
-              succeededSources: prev.succeededSources + 1,
-            }));
-          } else {
-            setState(prev => ({
-              ...prev,
-              results: [...prev.results, ...items],
-              hasMore: result.total > result.items.length,
-              completedSources: prev.completedSources + 1,
-              succeededSources: prev.succeededSources + 1,
-            }));
-          }
-        } else {
-          // 有响应但无结果，也算完成
-          setState(prev => ({
-            ...prev,
-            completedSources: prev.completedSources + 1,
-          }));
-        }
-      } catch {
-        if (!ctrl.signal.aborted) {
-          const sources = await import('@/services/sourceService').then(m => m.getVideoSources());
-          failed.push(sources[sourceIdx]?.name ?? `源${sourceIdx}`);
-          setState(prev => ({
-            ...prev,
-            completedSources: prev.completedSources + 1,
-          }));
-        }
       }
-    };
+      if (!Number.isFinite(page) || page < 1) return;
 
-    await Promise.allSettled(sourceIndices.map(searchSource));
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
 
-    if (!ctrl.signal.aborted) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        failedSources: failed,
-        sourcesDone: true,
-        // 兜底：全部 settled 后 completedSources 与总数一致，避免个别异常路径漏计数
-        completedSources: sourceIndices.length,
-        error: failed.length === sourceIndices.length ? '所有源搜索失败' : null,
-      }));
-    }
-  }, [getSourceIndices]);
+      const sourceIndices = await getSourceIndices();
+      sourcePagesRef.current.clear();
+      sourceIndices.forEach((idx) => sourcePagesRef.current.set(idx, page));
 
-  /** 加载更多（当前源优先，其余源后台追加） */
-  const loadMore = useCallback(async (query: string) => {
-    if (!query.trim() || state.loading) return;
+      setState({
+        results: [],
+        loading: true,
+        error: null,
+        hasMore: false,
+        failedSources: [],
+        totalSources: sourceIndices.length,
+        completedSources: 0,
+        succeededSources: 0,
+        sourcesDone: false,
+        page,
+      });
 
-    // 取消之前的 loadMore 请求
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
+      // 按 sourceIndices 顺序预置槽位：并发响应顺序不定，落位固定 → 源间顺序稳定
+      const slots: (CMSResultItem[] | null)[] = sourceIndices.map(() => null);
+      const failed: string[] = [];
+      let firstResponded = false;
 
-    const sourceIndices = await getSourceIndices();
-    const loadingSources = sourceIndices.filter(idx => {
-      const currentPage = sourcePagesRef.current.get(idx) ?? 1;
-      return currentPage >= 1;
-    });
-
-    if (loadingSources.length === 0) {
-      setState(prev => ({ ...prev, hasMore: false }));
-      return;
-    }
-
-    setState(prev => ({ ...prev, loading: true }));
-
-    const newResults: CMSResultItem[] = [];
-
-    // 先加载第一个源的下一页（用户可见）
-    const firstIdx = loadingSources[0];
-    const firstPage = (sourcePagesRef.current.get(firstIdx) ?? 1) + 1;
-    try {
-      const result = await searchAllFromCMSSource(firstIdx, query, firstPage, { signal: ctrl.signal });
-      if (!ctrl.signal.aborted && result.items.length > 0) {
-        sourcePagesRef.current.set(firstIdx, firstPage);
-        newResults.push(...result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex })));
-      }
-    } catch { /* ignore */ }
-
-    if (ctrl.signal.aborted) return;
-
-    // 其余源在后台加载
-    const restIndices = loadingSources.slice(1);
-    await Promise.allSettled(restIndices.map(async idx => {
-      const nextPage = (sourcePagesRef.current.get(idx) ?? 1) + 1;
-      try {
-        const result = await searchAllFromCMSSource(idx, query, nextPage, { signal: ctrl.signal });
-        if (!ctrl.signal.aborted && result.items.length > 0) {
-          sourcePagesRef.current.set(idx, nextPage);
-          newResults.push(...result.items.map(v => ({ ...v, cmsSourceName: result.sourceName, sourceIndex: result.sourceIndex })));
-        }
-      } catch { /* ignore */ }
-    }));
-
-    if (!ctrl.signal.aborted) {
-      if (newResults.length > 0) {
-        setState(prev => ({
+      const flush = () => {
+        setState((prev) => ({
           ...prev,
-          results: [...prev.results, ...newResults],
-          loading: false,
+          results: slots.filter(Boolean).flat() as CMSResultItem[],
         }));
-      } else {
-        setState(prev => ({ ...prev, loading: false, hasMore: false }));
+      };
+
+      const searchSource = async (sourceIdx: number, slot: number) => {
+        try {
+          const result = await searchAllFromCMSSource(sourceIdx, query, page, {
+            signal: ctrl.signal,
+          });
+          if (ctrl.signal.aborted) return;
+          if (result.error) {
+            failed.push(result.sourceName);
+          } else if (result.items.length > 0) {
+            slots[slot] = result.items.map((v) => ({
+              ...v,
+              cmsSourceName: result.sourceName,
+              sourceIndex: result.sourceIndex,
+            }));
+            setState((prev) => ({ ...prev, succeededSources: prev.succeededSources + 1 }));
+            flush();
+          }
+          if (!firstResponded) {
+            firstResponded = true;
+            setState((prev) => ({ ...prev, loading: false }));
+          }
+          setState((prev) => ({ ...prev, completedSources: prev.completedSources + 1 }));
+        } catch {
+          if (!ctrl.signal.aborted) {
+            const sources = await import('@/services/sourceService').then((m) => m.getVideoSources());
+            failed.push(sources[sourceIdx]?.name ?? `源${sourceIdx}`);
+            setState((prev) => ({ ...prev, completedSources: prev.completedSources + 1 }));
+          }
+        }
+      };
+
+      await Promise.allSettled(sourceIndices.map((idx, i) => searchSource(idx, i)));
+
+      if (!ctrl.signal.aborted) {
+        const merged = slots.filter(Boolean).flat() as CMSResultItem[];
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          failedSources: failed,
+          sourcesDone: true,
+          // 兜底：全部 settled 后与总数对齐，避免个别异常路径漏计数
+          completedSources: sourceIndices.length,
+          // 本页有内容 → 下一页大概率还有（无 totalPages 可用，只能探测式）
+          hasMore: merged.length > 0,
+          error: failed.length === sourceIndices.length ? '所有源搜索失败' : null,
+        }));
       }
-    }
-  }, [state.loading, getSourceIndices]);
+    },
+    [getSourceIndices],
+  );
+
+  /** 搜索指定关键词（= 跳到第 1 页） */
+  const search = useCallback(
+    (query: string) => goToPage(query, 1),
+    [goToPage],
+  );
 
   /** 重置搜索状态 */
   const reset = useCallback(() => {
     abortRef.current?.abort();
     sourcePagesRef.current.clear();
-    setState({
-      results: [], loading: false, error: null, hasMore: false, failedSources: [],
-      totalSources: 0, completedSources: 0, succeededSources: 0, sourcesDone: true,
-    });
+    setState(EMPTY_STATE);
   }, []);
 
-  return { ...state, search, loadMore, reset };
+  return {
+    ...state,
+    search,
+    goToPage,
+    reset,
+    /** 上一页是否可用（替换式分页下页码即真相，无需快照栈） */
+    canGoBack: state.page > 1,
+  };
 }

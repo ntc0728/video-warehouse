@@ -825,7 +825,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           discoverPagination: {
             page: data.page,
             totalPages: hasMore ? data.total_pages : data.page,
-            totalResults: mergedResults.length,
+            // 真实命中总数（不再用当前页条数，避免「共 40 条」误导）
+            totalResults: data.total_results,
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
@@ -862,6 +863,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     try {
       let results: TMDBVideoItem[] = [];
       let totalPages = 0;
+      // 真实命中总数（接口 total_results），用于右上角「共 N 条」展示
+      let totalResults = 0;
 
       if (filterOptions.mediaType === 'all') {
         const [movieData, tvData] = await Promise.all([
@@ -898,14 +901,18 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         if (results.length < TMDB_PAGE_SIZE * 2 && page >= totalPages) {
           totalPages = page;
         }
+        // 真实命中总数 = movie + tv 两路之和
+        totalResults = movieData.total_results + tvData.total_results;
       } else if (filterOptions.mediaType === 'tv') {
         const data = await discoverTV(filterOptions, page);
         results = data.results.map(mapTVToVideoItem);
         totalPages = data.total_pages;
+        totalResults = data.total_results;
       } else {
         const data = await discoverMovie(filterOptions, page);
         results = data.results.map(mapMovieToVideoItem);
         totalPages = data.total_pages;
+        totalResults = data.total_results;
       }
 
       if (seq !== _discoverSeq) return; // 过期响应（更新的筛选/搜索已发起）丢弃
@@ -920,8 +927,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           discoverPagination: {
             page,
             totalPages,
-            // 使用合并后的实际数据量
-            totalResults: mergedResults.length,
+            // 真实命中总数（接口 total_results），而非当前页条数
+            totalResults,
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',

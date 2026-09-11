@@ -186,8 +186,11 @@
 .browse-sort-bar__tab {
   height: 32px;
   padding: 0 var(--space-md);
+  /* 2026-09-12 用户拍板：选中态要有可见圆角 —— 原 --radius-sm（1440 仅 ≈4.3px）
+     在 32px 高的实心 primary 底上几乎看不出来，提为 --radius-md（6→10），
+     与左栏 .filter-bar__chip 选中态同款圆角，视觉语言统一。 */
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -232,7 +235,7 @@
 
 /* ── 搜索模式切换 Tab（Card 1 顶部） ──────────────── */
 /* 胶囊 chrome 挂在 __pill 上：<1024 时 pill flex:1 拉满 = 旧观感不变；
-   ≥1024（BR-C 通栏）时 pill 收敛为内容宽 + 右侧模式提示（对齐 demo modbar） */
+   ≥1024（BR-C）时 pill 宽度 = 左栏 --rail-w（2026-09-11 用户拍板：与左栏同宽） */
 .browse-search-tabs {
   display: flex;
   width: 100%;
@@ -248,13 +251,6 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   overflow: hidden;
-}
-
-.browse-search-tabs__hint {
-  display: none;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
 }
 
 .browse-search-tab {
@@ -349,6 +345,71 @@
   }
 }
 
+/* ── 分页器（BrowsePagination，2026-09-12 无限滚动 → 分页切换）────────
+   视觉语言对齐 .browse-sort-bar__tab：常态无边框/无底（设计 token 收敛——
+   非设置页元素不保留 border+background+shadow+radius 四件套），仅激活态
+   用主色底 + 反白字表达状态。 */
+.browse-pagination {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-lg) 0 var(--space-sm);
+}
+
+/* 高度不写死：由 padding + 行高决定（项目禁用裸 px，故 min-width 用 em）。 */
+.browse-pagination__step,
+.browse-pagination__page {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  justify-content: center;
+  align-items: center;
+  min-width: 2em;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.browse-pagination__step:hover:not(:disabled),
+.browse-pagination__page:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.browse-pagination__page--active,
+.browse-pagination__page--active:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+}
+
+.browse-pagination__step:disabled,
+.browse-pagination__page:disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.browse-pagination__pages {
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: center;
+}
+
+.browse-pagination__gap,
+.browse-pagination__label {
+  padding: 0 var(--space-2xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  user-select: none;
+}
+
 /* ── 搜索词高亮（highlight.tsx） ──────────────────── */
 .search-highlight {
   padding: 0 var(--space-2xs);
@@ -397,7 +458,9 @@
      面板化补偿（results 卡 chrome 保留）；
      2026-09-08 二次调整：左栏 .filter-bar 与右侧 .browse-card--results
      一并去卡片化（border / border-radius / box-shadow / background 全拆），
-     结果区头部 .browse-sort-bar 保留卡片 chrome；
+     2026-09-11 四次调整（用户拍板）：结果区头部 .browse-sort-bar 去卡片 chrome，
+     并从结果卡提到首行右列 —— 与模式胶囊同行（栅格 areas 首行 tabs | head）；
+     模式提示 .browse-search-tabs__hint 删除；胶囊宽度 = 左栏 --rail-w。
      2026-09-08 三次调整：左栏整体 rail 化（对齐 RecordShell rail 方案 A）——
      padding 归零、组间 1px 分割线、label 组标题小字、条目 2 列 rail-item 外观。
    - 直链搜索保留面板：本地过滤 CMS 返回值（type/year/region），不调接口；
@@ -419,9 +482,15 @@
        2026-09-07 二次定稿：模式 tabs 通栏（areas 首行双 cell），
        results 不再跨行 → 分配 Bug 免疫，1fr 保留为防御。 */
     grid-template-rows: auto minmax(0, 1fr);
+    /* 2026-09-11 用户拍板：首行不再「tabs 通栏」—— 左列给模式胶囊（宽度 = 左栏），
+       右列给结果区头部（.browse-sort-bar / .browse-source-status-row，二者互斥各占其一），
+       即「胶囊 + 结果头」同一行。右列与下方结果栅格同列，左边缘对齐。 */
     grid-template-areas:
-      'tabs    tabs'
+      'tabs    head'
       'filters results';
+    /* 2026-09-12 二次修正：首行下间距不再由 row-gap 统一给 —— tabs 与 head 各自带
+       padding-bottom(--space-sm)，与 .browse-sort-bar 原有的下间距同值（两者下方留白相同）。
+       若再加 row-gap 会变成 2×7.9，故行 gap 保持 0。 */
     gap: 0 var(--space-2xl);
     align-items: start;
   }
@@ -434,32 +503,115 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs {
     grid-area: tabs;
-    margin-bottom: var(--space-sm);
+    /* 2026-09-12 二次修正：等高对象 = .browse-sort-bar 主体（内容）高，不是它的盒高。
+       sort-bar 盒高 45.9 含 padding-bottom(--space-sm≈7.9)，主体 = 38；
+       故本元素同样 stretch 到行高后减掉同值 padding-bottom，pill 自然 = 38，
+       与 sort-bar 主体等高、顶边齐平、下间距相同。 */
+    align-items: stretch;
+    align-self: stretch;
+    padding-bottom: var(--space-sm);
   }
 
-  /* 通栏模式行：胶囊收敛内容宽 + 模式提示显形（对齐 demo modbar） */
+  /* 首行左列：胶囊宽度 = 左栏 --rail-w（2026-09-11 用户拍板，与下方 .filter-bar 同宽同列） */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs__pill {
-    flex: 0 0 auto;
-    display: inline-flex;
+    flex: 0 0 var(--rail-w);
+    width: var(--rail-w);
+  }
+
+  /* 胶囊内两枚按钮等分栏宽：栏宽下限 148px（1440）装不下原 --space-lg 左右内距，
+     收到 --space-2xs（≈1.5–2.5px）+ 居中 + nowrap，避免换行/裁字。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-search-tabs__pill .browse-search-tab {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: var(--space-xs) var(--space-2xs);
+    white-space: nowrap;
+  }
+
+  /* 首行右列：结果区头部（智能检索 = 排序栏 / 直链搜索 = 源状态行，二者互斥）。
+     左内距沿用原结果卡的 --space-sm，保证与下方结果栅格左边缘对齐。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-sort-bar,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-source-status-row {
+    grid-area: head;
+    /* 2026-09-12：与左侧模式胶囊等高对齐（同 stretch 到行高）。
+       align-items:start 让主体顶边与胶囊顶边齐平（不因内容矮于主体而垂直居中）；
+       padding-bottom 与 sort-bar 原值同（--space-sm），两者下间距一致。
+       .browse-source-status-row 本无下间距，一并由本规则补齐。 */
+    align-items: start;
+    align-self: stretch;
+    padding-bottom: var(--space-sm);
+    padding-left: var(--space-sm);
   }
 
   html:not([data-device="app"]):not([data-device="tv"])
-    .browse-search-tabs__hint {
-    display: inline-flex;
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-card--results {
+    .browse-results-body {
     grid-area: results;
     /* 占满 row2（1fr）剩余高度（容器 align-items:start 会压掉默认拉伸） */
     align-self: stretch;
+    min-height: 0;
+    /* 结果卡解体后，其 --space-sm 内缩转移到本元素上，保持原有留白。
+       2026-09-12 用户拍板：padding-top 归零 —— 首行（模式胶囊 / 结果头）与
+       本行的间距已由 grid row-gap 提供，去掉后右侧内容顶边与左栏 .filter-bar
+       顶边齐平（原差 ≈7.9px 的 padding）。 */
+    padding: 0 var(--space-sm) var(--space-sm);
+  }
+
+  /* ── 空态：垂直相对「视口」居中（2026-09-12 用户拍板）────────────────
+     results-body 顶边落在「header + 首行」之下，其内部居中会整体下移
+     (header + 首行)/2 —— 1440 实测中心 506.9 vs 视口中心 450，偏下 ≈57px。
+     修法：fixed 锚定视口。⚠️ 不能用 top:0 —— 祖先 .custom-scrollbar-container
+     带 contain:layout，fixed 会退化成相对内容区（实测 top:0 → [60,900]）；
+     用 bottom:0 + height:100dvh 实测精确落在 [0,900]，且页面不产生滚动。
+     水平 = 页面内容区（left/right = --page-pad-x，中心 = 视口中心 720 @1440）。
+     ⚠️ 组件层 .app-loading--inline 的 width:100% 若混入会把 left/right 撑掉
+     （探针实测 w=1440、中心 780），故 width:auto 保留在此。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv)
+    .browse-results-body > .empty-state-wrapper {
+    position: fixed;
+    right: var(--page-pad-x);
+    bottom: 0;
+    left: var(--page-pad-x);
+    width: auto;
+    height: 100dvh;
+    pointer-events: none;
+  }
+
+  /* ── loading：在 results-body 可视范围内居中（2026-09-12 用户拍板）─────
+     results-body 高 = 视口剩余（1fr 行）且空态/加载态下页面无滚动，
+     其内部居中 = 可视范围居中，无需 fixed。
+     ⚠️ :has 限定仅在含 loading 时把 body 变 flex —— 常驻 flex 会让网格掉进
+     flex 语境，触发 Chromium 对 auto-fill grid 的 1 列内在高度假设
+     （此前行距被撑到 41px 的同一根因，见 .filter-bar__row 注释）。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv)
+    .browse-results-body:has(> .app-loading) {
+    display: flex;
+    flex-direction: column;
+    /* 仅 padding-bottom 不对称（无 padding-top）会让 loading 中心比可视范围
+       中心高半个 padding（实测 503 vs 506.9）→ loading 态下归零，精确居中。 */
+    padding-bottom: 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv)
+    .browse-results-body > .app-loading {
+    flex: 1 1 auto;
+    width: auto;
+    height: auto;
   }
 
   /* 2026-09-08 去卡片化：右侧结果卡同样拆掉四件套（border / radius / background / shadow），
-     与左栏一起铺在页面底色上。排除 --mobile（移动端结果卡仍保留卡片观感）。 */
+     与左栏一起铺在页面底色上。排除 --mobile（移动端结果卡仍保留卡片观感）。
+     2026-09-11：结果卡 display:contents 解体 —— 其子项（结果区头部 / 结果主体）直接落进
+     页面 grid，才能把结果区头部提到首行右列、与模式胶囊同行；chrome 已在本档位清空，
+     解体无视觉损失。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) .browse-card--results {
+    display: contents;
     border: none;
     border-radius: 0;
     background: transparent;
@@ -478,6 +630,8 @@
     grid-area: filters;
     align-self: start;
     /* 2026-09-07 用户拍板：面板不固定（去 sticky），随页面滚动。
+       注：2026-09-12 因右栏改分页（页面不再无限增长）已翻案为 sticky，
+       实现独立成下方单独规则块，不在此处混排（避免触发 stylelint 属性顺序）。
        2026-09-10 用户拍板 B：组间 gap 由 --space-sm 收到 --space-2xs
        （组距靠下方 ::before 分割线的 6px margin 提供，不再靠 gap 堆叠）。 */
     flex-direction: column;
@@ -489,15 +643,42 @@
     border-right: 1px solid var(--color-border-light);
   }
 
+  /* 2026-09-12 用户拍板：右栏由无限滚动改为分页切换后，页面长度不再无限增长，
+     「左栏固定会一直挡着」的前提消失 → 左栏改回 sticky 常驻（翻页/换筛选时始终可见）。
+     （2026-09-07 曾拍板去 sticky，该决策的前提已失效。）
+
+     top:0 = 贴滚动容器 .app-shell__scroll 的视口顶 —— header 在容器之外
+     （wrapper 用 padding-top:var(--header-height) 让位），故 0 即「header 下沿」。
+
+     max-height + overflow-y：左栏内容超高（年份/地区全展开）时自身滚动，
+     否则会被视口截断、底部选项永远滚不到。
+
+     独立成块的原因：与上方 .filter-bar 既有属性混排会触发 stylelint
+     order/properties-order（position 需早于 grid-area / top 需早于 align-self …），
+     拆块后既有规则零改动，本块四条属性自身顺序合规。
+     选择器带 .browse-page 前缀：① 与上方 .filter-bar 规则文本不同，
+     避免 stylelint no-duplicate-selectors；② 作用域收窄到 Browse 页左栏，
+     不波及其他调用 FilterBar 的页面。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .filter-bar {
+    position: sticky;
+    top: 0;
+    max-height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+  }
+
   /* 侧栏内禁横向滚动 → 选项 3 列网格（2026-09-07 用户拍板：
      面板内每组选项最多 3 列，分类/地区/年份三组竖排 = 3 行 × 3 列） */
   /* 侧栏内组内竖排：label 在上、chips 在下（--space-xs ≈3.9px 为「组标题 → 首行」间距，
-     2026-09-10 用户拍板 B 收紧，原为继承 --space-sm 的 8px） */
+     2026-09-10 用户拍板 B 收紧，原为继承 --space-sm 的 8px）。
+     2026-09-12 playwright 实测改 display:block（原 flex column）：Chromium 对
+     repeat(auto-fill,…) 的 grid 作为 flex 子项参与内在高度计算时按 1 列假设
+     （13 chip 算出 13 行 = 285.7px 虚高），行距被撑到 20.9px、组间多出 ≈130px 空白。
+     flex column 是污染链源头（row 内 flex 试验：display:flex=285.7 / block=152.9），
+     改 block 后 grid 高度回归真实内容高。label↔chips 间距由 chips 容器 margin-top 补回。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-xs);
+    display: block;
   }
 
   /* 组间分割线（rail 分组语言：第一组无线，其余组上方 1px 线，
@@ -532,41 +713,56 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-wrap {
     display: grid;
+    flex: 0 0 auto;
     grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
-    gap: var(--space-2xs);
+    /* 2026-09-12 行距回补：row-gap 由 --space-2xs(≈2px) 提到 --space-xs(≈4px)
+       （行距 22.2 → 24.2px）。column-gap 刻意保持 2xs——列间距变大会挤压
+       auto-fill 列数（1920 档 3 列可能塌成 2 列）。 */
+    gap: var(--space-xs) var(--space-2xs);
     justify-items: stretch;
+    align-content: start;
+    /* label↔chips 间距（row 改 block 后原 gap 失效，补回 ≈3.9px） */
+    margin-top: var(--space-xs);
     padding: 0;
     overflow-x: visible;
   }
 
   /* chip = rail-item 外观（照抄 RecordShell.css ≥1024 的 .status-tab 规格）。
-     2026-09-10 用户拍板 B：整行占满格子、上下内边距由 8px 收到 ≈5.7px
-     （chip 高 32 → 26px），字号/圆角/左对齐不变，仅压缩纵向占位。 */
+     2026-09-10 用户拍板 B：上下内边距由 8px 收到 ≈5.7px（chip 高 32 → 26px）。
+     2026-09-12 用户追根因 + 拍板「宽度、高度都收」：
+       宽度 — 原来 width:100% 被 grid 1fr 拉伸，两字选项也被撑成 ≈65px 色块，
+             与文字完全脱钩；改 justify-self:start + width:auto 后色块宽 = 文字 + padding。
+       高度 — 2026-09-12 二轮：padding+line-height 推导不可控，改显式高度 + flex 居中。
+             三轮：padding 用 --space-2xs(≈2px) 太少、且系数由 1.5→1.3 抵消了增量，
+             净增仅 1.5px = 肉眼无感。四轮改用「字高 + 上下 padding × 2」：
+             padding 加倍到 --space-xs(≈4px)，总高仍锁在 ≈20px。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
-    width: 100%;
-    height: auto;
-    padding: calc(var(--space-sm) - var(--space-2xs)) var(--space-sm);
+    display: flex;
+    justify-self: start;
+    align-items: center;
+    width: auto;
+    /* ⚠️ 全局 border-box（index.css:255）→ padding 已含在 height 内，
+       垂直 padding 必须计入高度公式，否则只挤压文字、色块不变高。
+       高度 = 字高(--text-sm) + 上下 padding(--space-xs) × 2：
+       1280 ≈20.3px / 1440 ≈20.2px / 1920 ≈19.8px。 */
+    height: calc(var(--text-sm) + var(--space-xs) * 2);
+    padding: var(--space-xs) var(--space-sm);
     border: none;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--color-text-secondary);
     font-weight: 500;
     box-shadow: none;
+    /* line-height 收到 1：内容区高度刚好 = 字高，避免继承行高把文字挤出 padding 区 */
+    line-height: 1;
     text-align: left;
   }
 
   /* 长文本选项独占一行规则移至 chip 系列末尾（--active 之后，2026-09-07 用户要求） */
 
-  /* 结果区头部卡片化（对齐 demo reshead：类型分段 | 分隔线 | 排序 tabs | 共 N 条） */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-sort-bar {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    padding: var(--space-md) var(--space-lg-xl); /* 10px 16px → token（md≈9.5 / lg-xl≈17 @1440） */
-    margin-bottom: var(--space-sm);
-  }
+  /* 结果区头部去卡片 chrome（2026-09-11 用户拍板）：background / border / border-radius 全拆，
+     与左栏、结果栅格一样直接铺在页面底色上；位置（首行右列）与左内距见上方 head 规则。 */
 
   /* rail 同款 hover：浅灰底 + 主文字。作用域限定面板内，FilterBar 其他调用方零回归。 */
   html:not([data-device="app"]):not([data-device="tv"])
@@ -586,11 +782,70 @@
     box-shadow: none;
   }
 
-  /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占整行 + 左对齐 */
+  /* 长文本选项（FilterBar 按 CJK>4 字宽识别打 --full）：独占整行 + 左对齐。
+     2026-09-12：justify-self 由 stretch 改 start —— 独占行的同时色块宽度贴合文字，
+     不再横跨整栏（≈132px）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
-    justify-self: stretch;
+    justify-self: start;
     text-align: left;
   }
+}
+
+/* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
+
+/* 新搜索落位前：总数位置显示转圈（替代「共 0 条」闪现） */
+.browse-count-spin {
+  animation: spin 0.9s linear infinite;
+}
+
+/* 数字页码形态的「页码输入 + 跳转」：与页码按钮同高，输入窄框 */
+.browse-pagination__jump {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin-left: var(--space-sm);
+}
+
+.browse-pagination__jump-input {
+  width: 4.5em;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  text-align: center;
+  /* 隐藏 number 输入的上下箭头（窄框里挤） */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.browse-pagination__jump-input::-webkit-outer-spin-button,
+.browse-pagination__jump-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.browse-pagination__jump-btn {
+  padding: var(--space-3xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.browse-pagination__jump-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.browse-pagination__jump-btn:disabled,
+.browse-pagination__jump-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

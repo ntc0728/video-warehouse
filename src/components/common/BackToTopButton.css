@@ -295,3 +295,165 @@
     transform: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   右侧浮层动作组（2026-09-11，用户截图指定）
+   仅当 ≥1024 且非 TV 时由 JS 渲染（组件级开关，全部页面生效）：
+     上 = 方形刷新按钮（青蓝半透明玻璃底 + 白色循环箭头，点击 = 软刷新：
+         派发 kino:content-refresh，由 AppLayout 重挂载当前页，主体结构不重载）
+     下 = 方形「顶部」按钮（半透明白底 + 深色 ▲ + 「顶部」文字）
+   尺寸统一走 --fab-size = --space-3xl（32→52px），与既有圆形按钮同档观感。
+   滚动进行中整组淡出，停止 800ms 后淡入（.fab-stack--scrolling）。
+   <1024 / TV 时本组不存在，仍是上面的圆形玻璃按钮。
+   ═══════════════════════════════════════════════════════════════ */
+
+.fab-stack {
+  /* 2026-09-11 用户反馈（四次）：再右移一档（lg→md，12-14→8-9.5px），更贴近视口右缘 */
+  --fab-size: var(--space-3xl);
+  position: fixed;
+  right: var(--space-md);
+  bottom: var(--space-2xl);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  /* 默认（即将退场）：低不透明 + 下移，与圆形按钮同一套进出场语言 */
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s var(--ease-standard);
+  /* 整组进出场由本容器承载（两枚按钮不再各自位移，避免观感割裂） */
+  pointer-events: none;
+}
+
+/* ── 滚动中隐藏（2026-09-11 用户拍板）：滚动进行时淡出，停止 800ms 后淡入；
+      停止后的常态本身也是半透明化显示（见两枚按钮的 background） ── */
+.fab-stack--scrolling {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fab-stack--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.fab-stack--exiting {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+/* ── 刷新：青蓝方形 + 白色图标（2026-09-11：加圆角 radius-md + 半透明玻璃化） ── */
+.fab-stack__refresh {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: var(--radius-md);
+  /* 半透明化显示（用户拍板）：停止后常态即半透明，hover 恢复实色 */
+  background: color-mix(in srgb, var(--color-action-blue) 82%, transparent);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 18%),
+    0 1px 3px rgb(0 0 0 / 12%);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fab-stack__refresh:hover {
+  border-color: transparent;
+  background: var(--color-action-blue);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 20px rgb(0 0 0 / 26%),
+    0 2px 6px rgb(0 0 0 / 18%);
+}
+
+.fab-stack__refresh:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.fab-stack__refresh:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--focus-ring),
+    0 4px 12px rgb(0 0 0 / 18%);
+}
+
+/* ── 「顶部」方形：覆盖 .back-to-top-button 的 fixed / 圆形 / 自带进出场 ──
+   之所以仍复用 .back-to-top-button 基类：home.spec.ts 的「回到顶部」用例按该类名定位。
+   视觉上由本修饰类全量改写（方形、上下排布、无自身动画，随 .fab-stack 一起进出场）。 */
+.back-to-top-button--square {
+  position: static;
+  flex-direction: column;
+  /* 2026-09-11 用户反馈：按钮调大到 3xl 档后纵内空间充裕，图标/文字保持零间隙竖排 */
+  gap: 0;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  /* 2026-09-11 用户拍板：适当加一点圆角（不用原来的 0 / radius-full），取 radius-md 档 */
+  border-radius: var(--radius-md);
+  /* 半透明化显示（用户拍板）：96% → 78%，毛玻璃由基类 backdrop-filter 提供 */
+  background: rgb(255 255 255 / 78%);
+  opacity: 1;
+  transform: none;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+  animation: none;
+  pointer-events: auto;
+}
+
+.back-to-top-button--square:hover {
+  transform: translateY(-2px);
+}
+
+.back-to-top-button--square:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* 方形形态下图标不再占 60%：与文字上下排布（2026-09-11：按钮调大到 3xl，图标 xs→sm 匹配） */
+.back-to-top-button--square .back-to-top-button__icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  /* 截图里是实心三角；lucide ArrowUp 为描边线稿，加粗笔画近似观感 */
+  stroke-width: 3;
+}
+
+.back-to-top-button__label {
+  /* 2026-09-11 用户反馈：按钮调大到 3xl 档，文字恢复 2xs 基准（去掉 0.85 缩放） */
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* ── Dark theme：白底方形在暗色下换深色玻璃（与圆形按钮同语言，同步半透明化） ── */
+[data-theme="dark"] .back-to-top-button--square {
+  border-color: var(--color-border);
+  background: rgb(20 20 20 / 72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab-stack,
+  .back-to-top-button--square {
+    transition: none;
+  }
+
+  .back-to-top-button--square:hover,
+  .back-to-top-button--square:active,
+  .fab-stack__refresh:hover,
+  .fab-stack__refresh:active {
+    transform: none;
+  }
+}

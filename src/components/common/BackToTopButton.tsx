@@ -13,9 +13,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, RefreshCw } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useScrollContainer, type ScrollContainerRef } from '@/hooks/useScrollContext';
+import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import './BackToTopButton.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -31,6 +32,8 @@ interface BackToTopButtonProps {
 }
 
 const EXIT_DURATION_MS = 250;
+/** 滚动停止多少毫秒后 FAB 才淡入（2026-09-11 用户拍板：滚动中隐藏，停止后淡入并半透明化显示） */
+const SCROLL_IDLE_MS = 800;
 
 export default function BackToTopButton({
   threshold = 280,
@@ -41,6 +44,10 @@ export default function BackToTopButton({
   const location = useLocation();
   const defaultScrollRef = useScrollContainer();
   const scrollContainerRef = customScrollRef ?? defaultScrollRef;
+  // ≥1024 且非 TV：全部页面统一「方形刷新 + 方形顶部」浮层（2026-09-11 用户拍板：
+  // 刷新 = 页面刷新，且不应只在首页出现 —— 组件级开关，使用方零改动自动获得）
+  const isWideDesktop = useIsWideDesktop();
+  const showActionStack = isWideDesktop;
 
   /** 用户意图：是否应该可见（基于滚动 + 路径切换） */
   const [shouldShow, setShouldShow] = useState(false);
@@ -48,6 +55,9 @@ export default function BackToTopButton({
   const [shouldRender, setShouldRender] = useState(false);
   /** 退出动画定时器 ref */
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 滚动中标记（滚动进行时 FAB 淡出，停止 SCROLL_IDLE_MS 后淡入） */
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** 清理退出定时器 */
   const clearExitTimer = useCallback(() => {
@@ -57,7 +67,8 @@ export default function BackToTopButton({
     }
   }, []);
 
-  // 滚动监听：超过阈值显示，否则隐藏
+  // 滚动监听：超过阈值显示，否则隐藏；滚动进行中标记 isScrolling（FAB 淡出），
+  // 停止 SCROLL_IDLE_MS 后取消标记（FAB 淡入）——避免按钮压在滚动中的内容上
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -66,11 +77,23 @@ export default function BackToTopButton({
       const v = el.scrollTop > threshold;
       setShouldShow(v);
       onVisibilityChange?.(v);
+      setIsScrolling(true);
+      if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current);
+      scrollIdleTimerRef.current = setTimeout(() => {
+        scrollIdleTimerRef.current = null;
+        setIsScrolling(false);
+      }, SCROLL_IDLE_MS);
     };
 
     onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (scrollIdleTimerRef.current) {
+        clearTimeout(scrollIdleTimerRef.current);
+        scrollIdleTimerRef.current = null;
+      }
+    };
   }, [scrollContainerRef, threshold, onVisibilityChange]);
 
   // 路径切换 → 强制隐藏（避免"幽灵显示"）
@@ -102,7 +125,54 @@ export default function BackToTopButton({
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [scrollContainerRef]);
 
+  /**
+   * 刷新 = 软刷新（2026-09-11 用户二次拍板：只刷新页面内容——图片、文本等重新请求，
+   * 页面主体结构（Layout 壳/侧栏/顶栏/滚动容器）不重载）。
+   * 由 AppLayout 监听 kino:content-refresh 后给当前路由组件换 key 重挂载实现。
+   */
+  const handleRefresh = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('kino:content-refresh'));
+  }, []);
+
   if (!shouldRender) return null;
+
+  // ── ≥1024 全页面形态：方形刷新（上）+ 方形「顶部」（下）（用户 2026-09-11 截图样式）──
+  // 进出场动画挂在容器上（原圆形按钮挂在按钮自身），避免两枚按钮各自 translate 观感割裂。
+  if (showActionStack) {
+    return createPortal(
+      <div
+        className={[
+          'fab-stack',
+          shouldShow ? 'fab-stack--visible' : 'fab-stack--exiting',
+          isScrolling ? 'fab-stack--scrolling' : '',
+          className,
+        ].filter(Boolean).join(' ')}
+      >
+        <button
+          type="button"
+          className="fab-stack__refresh"
+          onClick={handleRefresh}
+          aria-label="刷新"
+          title="刷新"
+        >
+          <Icon icon={RefreshCw} size="sm" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          /* 复用 .back-to-top-button 基类：home.spec.ts 的「回到顶部」用例按该类名定位，
+             方形形态只加修饰类，避免断言失配。 */
+          className="back-to-top-button back-to-top-button--square"
+          onClick={handleClick}
+          aria-label="返回顶部"
+          title="返回顶部"
+        >
+          <Icon icon={ArrowUp} size="sm" className="back-to-top-button__icon" aria-hidden="true" />
+          <span className="back-to-top-button__label">顶部</span>
+        </button>
+      </div>,
+      document.body,
+    );
+  }
 
   // 通过 Portal 挂到 document.body 顶层：
   // 滚动容器 .app-shell__scroll 带 `contain: layout`，会作为 fixed 后代的包含块，

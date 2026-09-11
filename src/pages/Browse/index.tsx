@@ -9,14 +9,13 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
@@ -32,7 +31,8 @@ import type { VideoType } from '@/types/video';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseSkeleton from './BrowseSkeleton';
-import BrowseLoadMore from './BrowseLoadMore';
+import BrowsePagination from './BrowsePagination';
+import { useCardCols, useCompleteRowsPage } from './useCompleteRows';
 import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
 import { Icon } from "@/components/ui/Icon";
@@ -92,7 +92,7 @@ export default function BrowsePage() {
     updateFilter,
     isRefreshing,
     refreshNow,
-    loadMore: loadMoreTMDB,
+    goToPage: goToPageTMDB,
     hasMore,
     isLoadingMore,
     discoverResults,
@@ -124,11 +124,13 @@ export default function BrowsePage() {
     loading: cmsLoading,
     error: cmsError,
     hasMore: cmsHasMore,
+    page: cmsPage,
+    canGoBack: cmsCanGoBack,
     totalSources,
     completedSources,
     failedSources,
     search: searchCMS,
-    loadMore: loadMoreCMS,
+    goToPage: goToPageCMS,
     reset: resetCMS,
   } = useCMSSearch();
 
@@ -320,22 +322,51 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, location.pathname]);
 
-  // ── 懒加载触发 ──────────────────────────────────
-  const loadMore = useCallback(() => {
-    if (searchMode === 'cms') {
-      loadMoreCMS(query);
-    } else {
-      loadMoreTMDB(query || undefined);
-    }
-  }, [searchMode, query, loadMoreCMS, loadMoreTMDB]);
+  // ── TMDB 页数硬顶（2026-09-12 用户反馈「点最后一页显示空结果且分页组件消失」）──
+  // TMDB discover/search 实际最多返回 500 页：total_pages 会报 2124 这类数字，
+  // 但请求 >500 页一律返回空 results → 空态 + 分页器随之消失。统一钳制到 500。
+  const effectiveTotalPages = Math.min(discoverPagination.totalPages, 500);
 
-  const { sentinelRef } = useInfiniteScroll({
-    hasMore: searchMode === 'cms' ? cmsHasMore : hasMore,
-    isLoading: searchMode === 'cms' ? cmsLoading : isLoadingMore,
-    onLoadMore: loadMore,
-    rootMargin: '100px',
-    scrollContainerRef,
-  });
+  // ── 右上角总数钉定（2026-09-12 用户反馈「翻页/跳页后总数会变」）──
+  // TMDB total_results 是逐页波动的估计值。同一「模式+关键词+筛选」上下文内，
+  // 以第一次请求落地的非零总数为准；上下文变化（换词/换筛选/切模式）时重钉。
+  // 只在请求落地后结算（isRefreshing/isLoading 中不钉），避免旧上下文的总数抢先钉入新 key。
+  const totalKey = `${searchMode}:${query}:${JSON.stringify(searchMode === 'smart' ? filterValue : cmsFilterValue)}`;
+  const [pinnedTotal, setPinnedTotal] = useState(0);
+  useEffect(() => { setPinnedTotal(0); }, [totalKey]);
+  useEffect(() => {
+    if (searchMode !== 'smart') return;
+    if (isRefreshing || isLoading) return;
+    if (discoverPagination.totalResults > 0) {
+      setPinnedTotal((p) => p || discoverPagination.totalResults);
+    }
+  }, [searchMode, isRefreshing, isLoading, discoverPagination.totalResults]);
+
+  // ── 分页切换（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）────────
+  // 翻页语义 = 替换 + loading + 滚回顶部：
+  //  - 数据侧两个 hook 都是「替换式」（TMDB 带 reset 重拉；CMS 并发拉 pg=n 后整体替换），
+  //    不再是 loadMore 的追加语义，所以第 N 页只含第 N 页内容；
+  //  - 滚动位置在此归零 —— 否则翻页后视口停在新页末尾几行，观感很怪。
+  //    滚动容器是全局 .app-shell__scroll（useScrollContainer 提供 ref）。
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (searchMode === 'cms') {
+        void goToPageCMS(query, page);
+      } else {
+        goToPageTMDB(Math.min(page, effectiveTotalPages), query || undefined);
+      }
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [searchMode, query, goToPageCMS, goToPageTMDB, effectiveTotalPages, scrollContainerRef],
+  );
+
+  /** 分页器是否值得渲染：TMDB 有 totalPages 可判；CMS 总页数不可知，
+      退化为「已翻过页」或「本页有内容（下一页可能还有）」。
+      2026-09-12：结果为空（如钳制边界外的页）时也保留分页器，让用户能翻回去。 */
+  const showPagination =
+    searchMode === 'smart'
+      ? effectiveTotalPages > 1 || discoverResults.length > 0
+      : cmsPage > 1 || cmsHasMore;
 
   // ── genres & countries 兜底拉取（精确选择器） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
@@ -376,6 +407,25 @@ export default function BrowsePage() {
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
   const isSmartLoading = isRefreshing || isLoading;
   const isCmsLoading = cmsLoading;
+
+  // ── 整行收整（2026-09-12）：单页条数固定（TMDB 20 / CMS 各源 pg=n）而列数随视口
+  //    3~8 列变化（--card-cols），按列数展示 cols 整数倍前缀，余量结转下一页前置，
+  //    末页全量——消除「最后一行占不满」。 ──
+  const cardCols = useCardCols();
+  const smartRows = useCompleteRowsPage(
+    discoverResults,
+    cardCols,
+    discoverPagination.page,
+    hasMore,
+    `smart:${query}:${JSON.stringify(filterValue)}`,
+  );
+  const cmsRows = useCompleteRowsPage(
+    filteredCmsResults,
+    cardCols,
+    cmsPage,
+    cmsHasMore,
+    `cms:${query}:${JSON.stringify(cmsFilterValue)}`,
+  );
 
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
   // 切换筛选/排序 tab 时，store 的 reset 会同步清空 discoverResults，
@@ -448,7 +498,7 @@ export default function BrowsePage() {
       {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
       {!isPhone && (
         <div className="browse-card--search">
-          {/* Tab 切换 — ≥1024 通栏模式行（胶囊组靠左 + 模式提示靠右，对齐 demo） */}
+          {/* Tab 切换 — ≥1024 首行左列（胶囊宽度 = 左栏 --rail-w；右侧同行由结果区头部占用） */}
           <div className="browse-search-tabs">
             <div className="browse-search-tabs__pill">
               <button
@@ -465,7 +515,6 @@ export default function BrowsePage() {
                 <span>直链搜索</span>
               </button>
             </div>
-            <span className="browse-search-tabs__hint">跨源聚合 · 类型 / 地区 / 评分可组合筛选</span>
           </div>
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {searchMode === 'smart' && (
@@ -531,8 +580,18 @@ export default function BrowsePage() {
                 </button>
               ))}
             </div>
-            <span className="browse-sort-bar__count">
-              共 {discoverPagination.totalResults.toLocaleString('zh-CN')} 条
+            <span className="browse-sort-bar__count" role="status">
+              {/* 2026-09-12：新搜索落位前显示转圈而非「共 0 条」；翻页期间保持钉定总数不闪变 */}
+              {showResultsLoading && !smartHasData ? (
+                <>
+                  <Icon icon={Loader2} size="xs" className="browse-count-spin" />
+                  搜索中…
+                </>
+              ) : (
+                <>
+                  共 {(pinnedTotal || discoverPagination.totalResults).toLocaleString('zh-CN')} 条
+                </>
+              )}
             </span>
           </div>
         )}
@@ -581,24 +640,26 @@ export default function BrowsePage() {
 
           {!showResultsLoading && (searchMode === 'smart' ? (
             discoverResults.length > 0 ? (
-              <BrowseGrid items={discoverResults} query={query} mode="smart" />
+              <BrowseGrid items={smartRows} query={query} mode="smart" />
             ) : null
           ) : (
             filteredCmsResults.length > 0 ? (
-              <BrowseGrid cmsItems={filteredCmsResults} query={query} mode="cms" />
+              <BrowseGrid cmsItems={cmsRows} query={query} mode="cms" />
             ) : null
           ))}
 
-          {!showResultsLoading && (searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0) && (
-            <BrowseLoadMore
-              hasMore={searchMode === 'smart' ? hasMore : cmsHasMore}
-              isLoading={searchMode === 'smart' ? isLoadingMore : cmsLoading}
-              hasItems={searchMode === 'smart' ? discoverResults.length > 0 : cmsResults.length > 0}
-              isRefreshing={isRefreshing}
+          {showPagination && (
+            <BrowsePagination
+              variant={searchMode === 'smart' ? 'numbered' : 'simple'}
+              page={searchMode === 'smart' ? discoverPagination.page : cmsPage}
+              totalPages={searchMode === 'smart' ? effectiveTotalPages : 0}
+              canGoBack={searchMode === 'smart' ? discoverPagination.page > 1 : cmsCanGoBack}
+              hasNext={searchMode === 'smart' ? discoverPagination.page < effectiveTotalPages : cmsHasMore}
+              disabled={showResultsLoading || (searchMode === 'smart' ? isLoadingMore : cmsLoading)}
+              onChange={handlePageChange}
             />
           )}
 
-          <div ref={sentinelRef} aria-hidden="true" />
         </div>
       </div>
 

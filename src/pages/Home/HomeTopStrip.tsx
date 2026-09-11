@@ -20,6 +20,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { useTMDBStore } from '@/stores';
 import {
   aggregateCategoryHeat,
+  InfoTip,
   WIDE_CATEGORIES,
 } from '@/components/CategoryQuickAccess';
 
@@ -52,6 +53,12 @@ export default function HomeTopStrip({ continueCount, favoriteCount }: HomeTopSt
             <span className="home-topstrip__sep" aria-hidden="true" />
             <span className="home-topstrip__stat">
               今日趋势 <b>{trending.length}</b> 条
+              {/* 2026-09-11（用户要求）：原左栏榜头 `.cqa-heat-row__head` 的口径说明 ⓘ
+                  迁到这里 —— 左栏榜单头已删除，趋势榜的「排名口径」提示随标题一起上移。 */}
+              <InfoTip
+                label="今日趋势口径说明"
+                text="取自 TMDB /trending/all/day 的每日趋势榜，按 TMDB 趋势算法排名（非 popularity 数值排序），每 6 小时更新。左栏「今日趋势」榜即此排名前 20 条；完整分类榜单见顶部导航分类入口。"
+              />
             </span>
           </>
         )}
