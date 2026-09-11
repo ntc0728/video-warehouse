@@ -91,26 +91,38 @@ export function useLogicalPage<T>({ cols, mergedPageSize, contextKey, fetchPage,
           cache = new Map();
           cacheRef.current.set(ctxRef.current, cache);
         }
-        const start = (target - 1) * P;
-        let t = Math.floor(start / mergedPageSize) + 1;
-        let offset = start - (t - 1) * mergedPageSize;
-        const collected: T[] = [];
-        // P ≤ 40 = M 时至多 2 页；guard=3 兜底（响应短页时向后多走一页）
-        for (let guard = 0; guard < 3; guard++) {
-          let buf = cache.get(t);
-          if (!buf) {
-            buf = await fetchPage(t);
-            if (seq !== seqRef.current) return; // 期间用户又切换了目标页：本次作废
-            cache.set(t, buf);
-          }
-          collected.push(...buf.slice(offset));
-          offset = 0;
-          if (buf.length === 0 || collected.length >= P) break;
-          t += 1;
+    const start = (target - 1) * P;
+    let t = Math.floor(start / mergedPageSize) + 1;
+    let offset = start - (t - 1) * mergedPageSize;
+    // 逐条消费 + 按 id 去重：真实 TMDB 按流行度排序，相邻页请求间序会漂移，
+    // 两个缓冲区可能出现相同条目（mock 静态数据测不出）——去重避免 duplicate key。
+    const seen = new Set<unknown>();
+    const collected: T[] = [];
+    // P ≤ 40 = M 时至多 2 页；guard=4 兜底（短页/漂移去重时向后多走）
+    for (let guard = 0; guard < 4; guard++) {
+      let buf = cache.get(t);
+      if (!buf) {
+        buf = await fetchPage(t);
+        if (seq !== seqRef.current) return; // 期间用户又切换了目标页：本次作废
+        cache.set(t, buf);
+      }
+      for (let i = offset; i < buf.length; i++) {
+        const item = buf[i];
+        const key = (item as { id?: unknown })?.id;
+        if (key !== undefined && key !== null) {
+          if (seen.has(key)) continue;
+          seen.add(key);
         }
-        if (seq !== seqRef.current) return;
-        setItems(collected.slice(0, P));
-        setPage(target);
+        collected.push(item);
+        if (collected.length >= P) break;
+      }
+      offset = 0;
+      if (collected.length >= P || buf.length === 0) break;
+      t += 1;
+    }
+    if (seq !== seqRef.current) return;
+    setItems(collected.slice(0, P));
+    setPage(target);
       } finally {
         if (seq === seqRef.current) setLoading(false);
       }

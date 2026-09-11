@@ -16,6 +16,7 @@ import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useTMDBStore, useSettingsStore } from '@/stores';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
@@ -124,13 +125,11 @@ export default function BrowsePage() {
     loading: cmsLoading,
     error: cmsError,
     hasMore: cmsHasMore,
-    page: cmsPage,
-    canGoBack: cmsCanGoBack,
     totalSources,
     completedSources,
     failedSources,
     search: searchCMS,
-    goToPage: goToPageCMS,
+    loadMore: loadMoreCMS,
     reset: resetCMS,
   } = useCMSSearch();
 
@@ -351,13 +350,12 @@ export default function BrowsePage() {
   //  - TMDB 侧翻的是「逻辑页」（useLogicalPage，见下方组装层），不是 TMDB 原生页；
   //    handlePageChange 的声明位置在其之后（deps 引用 logicalGoto）。
 
-  /** 分页器是否值得渲染：TMDB 有 totalPages 可判；CMS 总页数不可知，
-      退化为「已翻过页」或「本页有内容（下一页可能还有）」。
-      2026-09-12：结果为空（如钳制边界外的页）时也保留分页器，让用户能翻回去。 */
+  /** 分页器是否值得渲染：仅智能检索（TMDB 数字页码）。直链搜索已改为
+      滚动追加（useCMSSearch.loadMore + 无限滚动哨兵），不再渲染分页器。 */
   const showPagination =
     searchMode === 'smart'
       ? effectiveTotalPages > 1 || discoverResults.length > 0
-      : cmsPage > 1 || cmsHasMore;
+      : false;
 
   // ── genres & countries 兜底拉取（精确选择器） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
@@ -404,21 +402,45 @@ export default function BrowsePage() {
   //    TMDB 合并页（至多 2 个请求 + offset 切片）；TMDB 硬顶 500 页 → 可达条目
   //    上限 = 500×合并页大小，一并钳进总页数。 ──
   const cardCols = useCardCols();
+  // ⚠️ 取页三段等待（顺序敏感）：
+  //  1. 等 filterSig 防抖把新筛选写入 store（filterOptions 与本组件 filterValue 对齐）——
+  //     否则请求带旧筛选参数，拉回上一轮上下文的数据（用户看到的「切筛选后内容不对/空」）；
+  //  2. 等 store 既有 discover 请求落地（防 goToPage 的 loading.discover 守卫静默 no-op）；
+  //  3. 取页后校验落地页号（其它触发器的更新请求会经 store seq 丢弃本页响应，
+  //     discoverPagination.page ≠ t 即快照被覆盖 → 等对方落地后重试一次）。
   const fetchTmdbPage = useCallback(async (t: number) => {
-    // 先等 store 上既有 discover 请求落地（上下文切换会自带一次 page=1 拉取），
-    // 否则 goToPage 会因 loading.discover 守卫静默 no-op，拿到的是别页数据
+    const store = () => useTMDBStore.getState();
+    const wantFilter = JSON.stringify(toStoreFilter(filterValue));
     let guard = 0;
-    while (useTMDBStore.getState().loading.discover && guard < 100) {
+    while (
+      JSON.stringify(store().filterOptions) !== wantFilter && guard < 40
+    ) {
       await new Promise<void>((r) => setTimeout(r, 100));
       guard += 1;
     }
-    await goToPageTMDB(t, query || undefined);
-    return useTMDBStore.getState().discoverResults;
-  }, [goToPageTMDB, query]);
+    while (store().loading.discover && guard < 100) {
+      await new Promise<void>((r) => setTimeout(r, 100));
+      guard += 1;
+    }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await goToPageTMDB(t, query || undefined);
+      const s = store();
+      if (s.discoverPagination.page === t) return s.discoverResults;
+      await new Promise<void>((r) => setTimeout(r, 350));
+      let g3 = 0;
+      while (store().loading.discover && g3 < 100) {
+        await new Promise<void>((r) => setTimeout(r, 100));
+        g3 += 1;
+      }
+    }
+    return store().discoverResults;
+  }, [goToPageTMDB, query, filterValue]);
   const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
   const logical = useLogicalPage({
     cols: cardCols,
-    mergedPageSize: query ? 20 : 40,
+    // 合并页大小随媒体类型：all = 电影 20 + 剧集 20 = 40；单类型/搜索 = 单路 20。
+    // ⚠️ 偏移算术依赖此值与真实拉取条数一致，切分类后 M 变 20 时若仍按 40 定位会错位空页。
+    mergedPageSize: query || filterValue.mediaType !== 'all' ? 20 : 40,
     contextKey: logicalContext,
     fetchPage: fetchTmdbPage,
     total: pinnedTotal || discoverPagination.totalResults,
@@ -432,16 +454,24 @@ export default function BrowsePage() {
     void logicalGotoRef.current(1);
   }, [logicalContext]);
 
+  // ── 直链搜索滚动追加（2026-09-12 用户拍板：CMS 不做分页）──
+  // CMS 恢复 append 语义（useCMSSearch.loadMore，滚动触底自动拉下一页拼接）；
+  // smart 模式走逻辑分页，hasMore 恒 false 让哨兵闲置。
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore: searchMode === 'cms' && cmsHasMore,
+    isLoading: cmsLoading,
+    onLoadMore: () => { void loadMoreCMS(query); },
+    scrollContainerRef,
+    rootMargin: '200px',
+  });
+
+  /** 页码变更（仅智能检索数字分页；直链搜索已改滚动追加，不渲染分页器） */
   const handlePageChange = useCallback(
     (page: number) => {
-      if (searchMode === 'cms') {
-        void goToPageCMS(query, page);
-      } else {
-        void logicalGoto(page);
-      }
+      void logicalGoto(page);
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [searchMode, query, goToPageCMS, logicalGoto, scrollContainerRef],
+    [logicalGoto, scrollContainerRef],
   );
 
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
@@ -601,8 +631,8 @@ export default function BrowsePage() {
               {/* 2026-09-12：新搜索落位前显示转圈而非「共 0 条」；翻页期间保持钉定总数不闪变 */}
               {showResultsLoading && !smartHasData ? (
                 <>
-                  <Icon icon={Loader2} size="xs" className="browse-count-spin" />
                   搜索中…
+                  <Icon icon={Loader2} size="xs" className="browse-count-spin" />
                 </>
               ) : (
                 <>
@@ -667,15 +697,18 @@ export default function BrowsePage() {
 
           {showPagination && (
             <BrowsePagination
-              variant={searchMode === 'smart' ? 'numbered' : 'simple'}
-              page={searchMode === 'smart' ? logical.page : cmsPage}
-              totalPages={searchMode === 'smart' ? logical.totalPages : 0}
-              canGoBack={searchMode === 'smart' ? logical.page > 1 : cmsCanGoBack}
-              hasNext={searchMode === 'smart' ? logical.page < logical.totalPages : cmsHasMore}
-              disabled={showResultsLoading || (searchMode === 'smart' ? isLoadingMore : cmsLoading)}
+              variant="numbered"
+              page={logical.page}
+              totalPages={logical.totalPages}
+              canGoBack={logical.page > 1}
+              hasNext={logical.page < logical.totalPages}
+              disabled={showResultsLoading || isLoadingMore}
               onChange={handlePageChange}
             />
           )}
+
+          {/* 直链搜索滚动追加哨兵（smart 分页模式下 hasMore 恒 false，不触发） */}
+          <div ref={sentinelRef} aria-hidden="true" />
 
         </div>
       </div>

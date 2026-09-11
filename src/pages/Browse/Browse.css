@@ -213,6 +213,10 @@
 }
 
 .browse-sort-bar__count {
+  /* 内联排布：文字 + 转圈图标同行（图标在右侧，2026-09-12 用户反馈） */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
