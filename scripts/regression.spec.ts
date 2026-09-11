@@ -667,7 +667,8 @@ test.describe('详情页回归', () => {
       await new Promise(() => {});
     });
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.iptv-page .app-loading', { timeout: 15000 });
+    // 2026-09-12 骨架整改：整页 AppLoading → IPTV 页专属骨架（rail/移动两套）
+    await page.waitForSelector('.iptv-page .iptv-skeleton', { timeout: 15000 });
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
   });
 

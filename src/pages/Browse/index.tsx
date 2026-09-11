@@ -11,7 +11,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useCallback, useState } fr
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
-import { Empty, BackToTopButton, AppLoading } from '@/components/common';
+import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
@@ -31,6 +31,7 @@ import { getDefaultFilterValue } from './urlState';
 import type { VideoType } from '@/types/video';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
+import BrowseSkeleton from './BrowseSkeleton';
 import BrowseLoadMore from './BrowseLoadMore';
 import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
@@ -561,8 +562,10 @@ export default function BrowsePage() {
 
         {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}
         <div className="browse-results-body">
+          {/* 结果区专属骨架：结构对齐真实「类型/排序行 + 卡片网格」，
+              列数随 --card-cols 视口分档（不再用全站统一 AppLoading 菊花） */}
           {showResultsLoading && (
-            <AppLoading tip="搜索中…" showTip />
+            <BrowseSkeleton />
           )}
 
           {!showResultsLoading && currentError && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0) && (

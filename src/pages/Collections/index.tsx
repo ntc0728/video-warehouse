@@ -11,7 +11,7 @@ import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
 import IPTVChannelCard from '@/components/IPTVChannelCard';
-import { Empty, BackToTopButton, AppLoading } from '@/components/common';
+import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { Trash2, CheckSquare, Square, LayoutGrid, PlayCircle, Tv, ListChecks, SlidersHorizontal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -28,6 +28,7 @@ import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import type { Video, VideoType } from '@/types/video';
 import type { CollectionRecord, HistoryRecord } from '@/types/store';
 import './Collections.css';
+import CollectionsSkeleton from './CollectionsSkeleton';
 import { Icon } from "@/components/ui/Icon";
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
@@ -428,9 +429,8 @@ export default function CollectionsPage() {
       {/* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发卡片 stagger 出场动画重放；
          搜索/筛选/排序不重挂载、不误触发动画。综合 tab 下两分区各用原生网格，动画各自保留。 */}
       {userLoading ? (
-        <div className="player-loading-wrap">
-          <AppLoading tip="加载中…" showTip />
-        </div>
+        // 收藏页专属骨架：结构对齐真实「分区头 + 网格」（不再用全站统一 AppLoading）
+        <CollectionsSkeleton />
       ) : allIds.length > 0 ? (
         <div key={mainTab} className="collection-content animate-fade-in">
           {mainTab !== 'iptv' && collectedVideos.length > 0 && (

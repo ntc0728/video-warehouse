@@ -1,0 +1,171 @@
+/* 人物页专属骨架 — 几何对齐真实 .person-hero / .person-work-grid（Person.css） */
+
+.person-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.person-skeleton__hero {
+  position: relative;
+  min-height: 17rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.person-skeleton__back {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  width: 5em;
+  height: 2em;
+  border-radius: var(--radius-full);
+}
+
+.person-skeleton__hero-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-3xl);
+  padding: var(--space-xl);
+  /* 右侧让位给绝对定位头像（与 .person-hero-content 同款曲线） */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  padding-right: clamp(160px, 14vw + 48px, 224px);
+}
+
+.person-skeleton__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  align-items: flex-end;
+}
+
+.person-skeleton__avatar {
+  position: absolute;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B)：与 .person-avatar 同款流体曲线 */
+  width: clamp(144px, 12vw + 48px, 176px);
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-lg);
+}
+
+.person-skeleton__name {
+  width: 9em;
+  height: 1.6em;
+  border-radius: var(--radius-sm);
+}
+
+.person-skeleton__meta {
+  width: 14em;
+  height: 0.875em;
+}
+
+.person-skeleton__meta--short {
+  width: 10em;
+}
+
+.person-skeleton__bio {
+  width: 32em;
+  max-width: 100%;
+  height: 0.875em;
+}
+
+.person-skeleton__card {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.person-skeleton__tabs {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.person-skeleton__tab {
+  width: 5.5em;
+  height: 1.25em;
+  border-radius: var(--radius-sm);
+}
+
+/* 作品网格：列数与真实 .person-work-grid 同源（--card-cols 等分） */
+.person-skeleton__work-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.person-skeleton__work {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.person-skeleton__work-cover {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+}
+
+.person-skeleton__work-title {
+  width: 76%;
+  height: 0.875em;
+}
+
+/* ── ≤767 / App 端：与 Person.css 移动档同构 ── */
+@media (width <= 767px) {
+  .person-skeleton__hero {
+    min-height: 0;
+  }
+
+  .person-skeleton__hero-content {
+    align-items: center;
+    margin-top: 0;
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .person-skeleton__avatar {
+    position: static;
+    order: -1;
+    width: 6rem;
+    margin: 0 auto;
+  }
+
+  .person-skeleton__info {
+    align-items: center;
+  }
+
+  .person-skeleton__work-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .person-skeleton__hero {
+  min-height: 0;
+}
+
+html[data-device="app"] .person-skeleton__hero-content {
+  align-items: center;
+  margin-top: 0;
+  padding: var(--space-lg) var(--space-md);
+}
+
+html[data-device="app"] .person-skeleton__avatar {
+  position: static;
+  order: -1;
+  width: 6rem;
+  margin: 0 auto;
+}
+
+html[data-device="app"] .person-skeleton__info {
+  align-items: center;
+}
+
+html[data-device="app"] .person-skeleton__work-grid {
+  grid-template-columns: repeat(3, 1fr);
+}

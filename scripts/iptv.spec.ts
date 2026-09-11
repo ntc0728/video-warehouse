@@ -29,7 +29,8 @@ test.describe('5.1 页面加载', () => {
         () =>
           page.evaluate(
             () =>
-              !!document.querySelector('.iptv-channel-grid, [class*="channel"]') ||
+              // 只认真实网格（骨架 .iptv-skeleton__channel-* 也含 "channel"，不能放宽到 [class*="channel"]）
+              !!document.querySelector('.iptv-channel-grid') ||
               !!document.querySelector('.empty-state, [class*="empty"]'),
           ),
         { timeout: 7000 },
@@ -129,7 +130,8 @@ test.describe('5.7 懒加载与滚动', () => {
         () =>
           page.evaluate(
             () =>
-              !!document.querySelector('.iptv-channel-grid, [class*="channel"]') ||
+              // 只认真实网格（骨架 .iptv-skeleton__channel-* 也含 "channel"，不能放宽到 [class*="channel"]）
+              !!document.querySelector('.iptv-channel-grid') ||
               !!document.querySelector('.empty-state, [class*="empty"]'),
           ),
         { timeout: 7000 },

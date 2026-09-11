@@ -15,7 +15,7 @@ import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, build
 import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
-import { AppLoading, BackToTopButton } from '@/components/common';
+import { BackToTopButton } from '@/components/common';
 import { useDocumentTitle } from '@/hooks';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -32,6 +32,7 @@ import {
   RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
 import './Detail.css';
+import DetailSkeleton from './DetailSkeleton';
 import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
@@ -691,7 +692,8 @@ export default function DetailPage() {
     );
   }
 
-  if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading"><AppLoading /></div>;
+  // 详情页专属骨架：≥1024 两栏（banner + 信息卡）/ 窄屏堆叠，随视口分档
+  if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading"><DetailSkeleton /></div>;
 
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
