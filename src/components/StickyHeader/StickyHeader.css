@@ -53,20 +53,21 @@
   /* 滚动条已隐藏，不需要补偿 */
 }
 
-/* ── 顶栏内容封顶居中（2026-09-10 大屏整改）─────────────────────────
-   背景：页面内容统一受 --layout-content-max-width（2200）封顶居中；
-   顶栏 inner 无封顶 → 大屏下导航与内容「不在同一条竖线上」。
-   改法：inner 复用同一套 2200 封顶居中。
-   ⚠️ 2026-09-10 用户明确要求「不需要设置 padding-inline: var(--page-pad-x)」——
-   顶栏左右内距回归基础档 `padding: 0 var(--space-md)`（见 .sticky-header__inner），
-   仅保留 max-width 封顶 + 居中；不再与 .page-padding 的 --page-pad-x 强对齐。
-   TV 端走全宽契约（无 2200 封顶），排除；<768 移动端保持原内距。 */
-@media (width >= 768px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__inner {
-    max-width: var(--layout-content-max-width);
-    margin-inline: auto;
-  }
-}
+/* ── 2026-09-11（用户请求 8）：**移除顶栏内容封顶居中** ────────────────────
+   原实现（2026-09-10）：
+     @media (width >= 768px) {
+       html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__inner {
+         max-width: var(--layout-content-max-width);   // 2200
+         margin-inline: auto;
+       }
+     }
+   效果是「大屏下 logo 与右侧导航被收到 2200 内容带内、左右各留 (视口−2200)/2 的空档」。
+   用户要求「无论什么视口，顶部导航栏都要不受 margin、padding、内容主体宽度等限制，
+   两端紧贴页面左右两侧」→ 整段删除。
+
+   删除后 .sticky-header__inner 保持基础档：width:100% + padding: 0 var(--space-md)，
+   左右两端贴页面两侧，仅保留 --space-md 的最小呼吸内距（顶栏背景本身始终 100% 通栏）。
+   注：TV 端原本就排除在本媒体查询外（全宽契约），删除后行为不变。 */
 
 /* ── Left / Right groups ───────────────────────────── */
 

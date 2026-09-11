@@ -3,6 +3,7 @@ export {
   CategoryQuickAccessNav,
   CategoryQuickAccessPanel,
   CategoryHeatRow,
+  InfoTip,
   useCategoryOverlayStore,
 } from './CategoryQuickAccess';
 export type { CategoryKey } from './CategoryQuickAccess';

@@ -76,12 +76,11 @@ test.describe('1.2 HeroBanner 交互', () => {
     });
     expect(heroExists).toBeTruthy();
 
-    // 012: 缩略图点击跳转详情页
-    const thumb = page.locator('.hero-banner__thumb').first();
-    if (await thumb.isVisible().catch(() => false)) {
-      await thumb.click();
-      await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
-    }
+    // 012（2026-09-11 同步）：首页 banner 右侧缩略图列已整体删除（用户请求 1），
+    // 原 `.hero-banner__thumb` 断言失去对象 → 改为校验「当前视口下的 Hero 主图区」存在：
+    //   ≥1024 非 TV → HeroBili 的 .hero-bili__banner；<1024 / TV → .hero-banner__main。
+    const heroStage = page.locator('.hero-bili__banner, .hero-banner__main');
+    expect(await heroStage.count()).toBeGreaterThan(0);
 
     // 011: Banner CTA 点击跳转详情页（重新回首页，避免坐标命中已卸载节点）
     await page.goto('/', { waitUntil: 'domcontentloaded' });

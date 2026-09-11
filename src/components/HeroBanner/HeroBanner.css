@@ -1,7 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   HeroBanner — 首页 Hero 横幅
-   布局：卡片容器 + 内部左侧主背景图（crossfade，16:9）+ 右侧竖排缩略图列（16:9）
-   桌面端：主图区 flex:1 + 缩略图列自适应；移动端：仅主图区
+   HeroBanner — 首页 Hero 横幅（Classic 分支：<1024 / TV）
+   布局：卡片容器 + 全宽主背景图（crossfade / 三联 track 滑动切换），16:9。
+   2026-09-11（用户要求「删除缩略图相关所有逻辑」）：右侧竖排缩略图列
+   （.hero-banner__thumbs / HeroThumb / .hero-banner__thumb*）已整体删除，
+   主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
+   ≥1024 桌面（非 TV）由 HeroBanner/index.tsx 分流到 HeroBili，本组样式只服务 <1024 / TV。
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── 卡片容器 ── */
@@ -13,8 +16,6 @@
   padding: var(--space-sm);
   overflow: hidden;
   /* 不与下方分类区的间距由 Home.css 控制，避免重复 */
-  /* 不使用 container-type：由 JS useEffect 实测 bannerRef.current.clientHeight
-     并注入 --hero-banner-h，缩略图列宽直接引用该变量，避免 cqh 依赖容器上下文的不可靠性。 */
 }
 
 .hero-banner {
@@ -23,17 +24,9 @@
   flex-direction: row;
   gap: 0;
   width: 100%;
-  /*
-     几何由 aspect-ratio 统一驱动（不再依赖 JS 注入高度 + 固定 height clamp）：
-     设缩略图张数 N（= --hero-thumb-count，普通桌面 3 / 大屏 4）。
-     每张缩略图 16:9 → 列宽 = 列高 × 16/9 ÷ N；banner 与列等高、同为 16:9。
-     整体宽高比 = (banner宽 + 列宽) / 列高 = 16(N+1)/(9N)：
-       N=3 → 64/27；N=4 → 80/36 = 20/9。
-     缩略图列宽 = 100% / (N+1)（banner 占 N/(N+1)）。
-     于是「任意视口宽度」下 banner 与各缩略图均严格 16:9，且全程纯 CSS、
-     响应式，无 JS 量高时序 → 切分类/拖拽视口不再出现白隙或比例漂移。
-   */
-  aspect-ratio: 64 / 27; /* 默认 3 张缩略图（N=3 → 16(N+1)/(9N) = 64/27）；4 张由内联 style 覆盖为 20/9 */
+  /* 几何：右侧缩略图列已删除（2026-09-11）→ 主图区独占整宽，比例退化为纯 16:9。
+     仍由 aspect-ratio 驱动（不依赖 JS 注入高度），任何视口下都无白隙/比例漂移。 */
+  aspect-ratio: 16 / 9;
   user-select: none;
   -webkit-user-drag: none;
   touch-action: pan-y;
@@ -392,148 +385,6 @@
   filter: brightness(0.9);
 }
 
-/* ── 右侧缩略图列（桌面端） ──
-    列宽 = 容器高 × 16/27（3 张缩略图 × 16/9 = 16/27） */
-
-.hero-banner__thumbs {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  justify-content: flex-start;
-  flex-shrink: 0;
-  /* 空态/骨架态下无 .hero-banner__main（flex:1）兄弟元素，缩略图列会被排到最左；
-     margin-left:auto 将该列推回右侧，与真实态（main 撑满后无剩余空间、auto 无副作用）完全一致 */
-  margin-left: auto;
-  /* 列宽 = 整体宽度的 1/(N+1)，与 aspect-ratio 联动保证每张 16:9（N = --hero-thumb-count） */
-  width: calc(100% / (var(--hero-thumb-count, 3) + 1));
-  overflow: hidden;
-}
-
-/* 缩略图：flex:1 1 0 始终拉伸填满列高（无论真实渲染几张都撑满 banner，
-   数量不足时仅单张略变高、绝不底部留空）；width:100% 铺满列宽（列宽由上方
-   calc 基于列自身高度给出，骨架/真实图宽度恒等）；min-height:0 允许 flex 列内压缩。 */
-.hero-banner__thumb {
-  position: relative;
-  display: block;
-  flex: 1 1 0;
-  min-height: 0;
-  width: 100%;
-  /* 不设 aspect-ratio：flex:1 已定高，宽度由列宽 calc 给出，自然形成 16:9 */
-  /* 去掉半透明白色描边：它与 gap 共同构成「缩略图之间间隙」的视觉，
-      无间隙需求下移除；其余属性（尺寸/圆角/背景/hover 缩放等）保持不变。
-      border-radius 现已取消统一四角 --radius-md，改由桌面端媒体查询按
-      「外侧圆角（列首右上 / 列尾右下）」精确设置，内侧拼接边保持直角。 */
-  border: none;
-  background: rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-  transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
-  cursor: pointer;
-}
-
-/* 激活态：仅发光，不缩放盒子宽度（避免与骨架/非激活缩略图宽度不一致）；
-   图片内层仍由 .hero-banner__thumb.is-active .hero-banner__thumb-img 的
-   scale(1.03) 提供放大手感，不影响布局宽度 */
-.hero-banner__thumb.is-active {
-  box-shadow: 0 0 18px var(--color-primary-shadow);
-}
-
-/* 缩略图图片：底图常显（opacity:1）。切换时由组件先预加载新图、
-   就绪后再替换 src，加载期间保持显示旧图，避免露白/闪 */
-.hero-banner__thumb-img {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 1;
-  transition: transform 0.3s ease, opacity 0.2s ease;
-}
-
-/* 缩略图换图交叉淡入（2026-08-13）：旧图垫底（--prev，DOM 先渲染）、
-   新图置 --switching（opacity 0）待加载，onLoad 后类移除 → opacity 0→1
-   走上方 transition 淡入；首帧挂载无切换类 → opacity 1 常显（原行为不变） */
-.hero-banner__thumb-img--prev {
-  opacity: 1;
-}
-
-.hero-banner__thumb-img--switching {
-  opacity: 0;
-}
-
-/* 骨架占位（shimmer）：覆盖整张缩略图，加载完成后随 is-loaded 移除。
-   视觉背景 + 扫光由公共类 .thumbnail-skeleton-bg 提供（与首页外部骨架
-   .home-skeleton-hero__thumb 共用，防分叉）；此处仅保留覆盖层定位。
-   注：公共类含 rgba(0,0,0,0.25) 暗底，与本元素（thumb 背景同色）叠加后略深，
-   但两处骨架配色同源，不再出现「亮白块」。 */
-.hero-banner__thumb-skeleton {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* banner 未就绪时整列骨架：去掉黑色遮罩，仅保留 shimmer */
-.hero-banner__thumb--skeleton::before {
-  content: none;
-}
-
-.hero-banner__thumb:hover .hero-banner__thumb-img {
-  transform: scale(1.04);
-}
-
-.hero-banner__thumb.is-active .hero-banner__thumb-img {
-  transform: scale(1.03);
-}
-
-/* 未选中缩略图：黑色透明遮罩（选中/悬停时移除） */
-.hero-banner__thumb::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: rgba(0, 0, 0, 0.65);
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.hero-banner__thumb.is-active::before,
-.hero-banner__thumb:hover::before {
-  opacity: 0;
-}
-
-/* 标题悬浮叠加在图片底部（渐变蒙版保证可读）— 全部缩略图均显示标题，激活态加粗高亮 */
-.hero-banner__thumb-title {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  display: -webkit-box;
-  padding: var(--space-lg) var(--space-xs) var(--space-2xs);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 65%, transparent 100%);
-  color: #fff;
-  font-size: var(--text-xs);
-  font-weight: 500;
-  line-height: 1.3;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  pointer-events: none;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-
-/* 激活态高亮标题 */
-.hero-banner__thumb.is-active .hero-banner__thumb-title {
-  font-weight: 700;
-  opacity: 1;
-}
-
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
 .hero-banner--tv .hero-banner__title {
@@ -541,22 +392,13 @@
   font-size: clamp(var(--text-3xl), 3vw + 16px, 40px);
 }
 
-/* ── 桌面端（缩略图列可见）：外框圆角 ──
-   仅在缩略图列显示时（≥1024px）生效：banner 左缘（上/下）圆角 +
-   缩略图列首右上 / 列尾右下圆角，内侧拼接边保持直角，构成整体外框圆角。
-   注：列尾 = :last-child，3 张布局下即第 3 张，4 张布局下即第 4 张（外框右下角）。
-   标题全部显示（非激活态 opacity 0.7、激活态 opacity 1 加粗，见 .hero-banner__thumb-title 规则）。 */
+/* ── ≥1024 主图区外框圆角（缩略图列删除后，主图独占整宽）──
+   此档只剩 TV 走到本组件（≥1024 非 TV 分流到 HeroBili）。
+   外层 .hero-banner__card 已有 radius-lg + overflow:hidden，此处给出统一内圆角，
+   与卡片外框同形，避免 TV 端出现直角内块。 */
 @media (width >= 1024px) {
   .hero-banner__main {
-    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  }
-
-  .hero-banner__thumbs > .hero-banner__thumb:first-child {
-    border-top-right-radius: var(--radius-lg);
-  }
-
-  .hero-banner__thumbs > .hero-banner__thumb:last-child {
-    border-bottom-right-radius: var(--radius-lg);
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -577,34 +419,14 @@
     animation: none !important;
   }
 
-  .hero-banner__thumb {
-    animation: none !important;
-  }
-
-  .hero-banner__thumb-skeleton {
-    animation: none !important;
-  }
-
   .hero-banner__bg-placeholder {
     animation: none !important;
   }
 }
 
-/* ── Mobile / 平板：隐藏右侧缩略图列，仅主图，banner 退回 16:9 ─── */
+/* ── Mobile / 平板：banner 已是纯 16:9（几何随缩略图列删除而统一），
+   此档只保留卡片自身的移动端外观（更小的圆角 + 底部间距）。 ─── */
 @media (width <= 1023px) {
-  .hero-banner__thumbs {
-    display: none;
-  }
-
-  .hero-banner {
-    height: auto;
-    aspect-ratio: 16 / 9;
-  }
-
-  .hero-banner__main {
-    height: auto;
-  }
-
   .hero-banner__card {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
@@ -612,29 +434,14 @@
 }
 /* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
 
-  html[data-device="app"] .hero-banner__thumbs {
-    display: none;
-  }
-
   html[data-device="app"] .hero-banner__card {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
 
-  /* app 端无需 height/aspect-ratio 副本：@media (width <= 1023px) 已覆盖 */
-
 
 
 @media (width <= 767px) {
-  .hero-banner {
-    height: auto;
-    aspect-ratio: 16 / 9;
-  }
-
-  .hero-banner__main {
-    height: auto;
-  }
-
   .hero-banner__content {
     padding: var(--space-md);
   }

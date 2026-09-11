@@ -150,8 +150,10 @@ interface CategoryQuickAccessProps {
 }
 
 /** 口径说明 tooltip（Info 图标悬停/聚焦显示；内容经 Portal 渲染且 pointer-events:none，
- *  不拦截 mousedown → 不会触发 overlay 的「点击外部收起」） */
-function InfoTip({ label, text }: { label: string; text: string }) {
+ *  不拦截 mousedown → 不会触发 overlay 的「点击外部收起」）。
+ *  2026-09-11：改为具名导出 —— 首页左栏「今日趋势」的榜头已删除，
+ *  该口径说明迁到 HomeTopStrip 的 `home-topstrip__stat` 内（用户要求），两处复用本组件。 */
+export function InfoTip({ label, text }: { label: string; text: string }) {
   return (
     <Tooltip.Provider delayDuration={150}>
       <Tooltip.Root>
@@ -705,10 +707,50 @@ const TREND_MAX_ITEMS = 20;
  *  variant='rail'      = 首页大屏两栏布局的左侧栏（2026-09-10 用户拍板「方案 B」）：
  *    不再做分类桶切分，直接展示 /trending/all/day 的完整连续排名 TOP 20。
  *    分工：顶栏 chip 管「按分类切片浏览」，左栏管「全站趋势一眼看完」，
- *    消灭原方案里「左栏分类卡（单页 20 条内聚合）↔ 面板分类榜单（独立端点）」的来源分裂。 */
+ *    消灭原方案里「左栏分类卡（单页 20 条内聚合）↔ 面板分类榜单（独立端点）」的来源分裂。
+ *    2026-09-11：榜单头（`.cqa-heat-row__head`）删除 —— 标题/口径说明上移到
+ *    HomeTopStrip（`home-topstrip__stat`），左栏只剩榜单本体，顶部与 banner 齐平。 */
+/**
+ * 左栏「今日趋势」榜的加载骨架（2026-09-11）。
+ *
+ * 背景：`CategoryHeatRow variant="rail"` 在 trending 为空时直接 `return null`。
+ * 首屏 `isInitialLoading` 整页骨架只在「几乎啥都没有」时命中；一旦其它区块先到
+ * （SearchBox 会独立拉 trending 之外的区块）`hasAnyData` 就为真 → 渲染真实页面 →
+ * 右列 Hero / 各行都有骨架，**左栏空白**。用户反馈的「视口 ≥1024 左栏没有骨架」即此。
+ *
+ * 实现：**复用真实类名**（.cqa-trend / __row / __poster / __body）承载几何，
+ * 只把文字节点换成灰条 —— 不引入第二套几何模型（历史教训：骨架/真实两套尺寸漂移）。
+ * 外层同样套 `.cqa-heat-row--rail`，让 `--cqa-poster-w/--cqa-poster-h` 的
+ * 1024 / 1920 两档定义天然生效（含 Home.css 里的 2K 档 72×108）。
+ */
+const TREND_SKELETON_ROWS = 6;
+
+export function CategoryTrendSkeleton() {
+  return (
+    <section className="cqa-heat-row cqa-heat-row--rail" aria-hidden="true">
+      <ol className="cqa-trend cqa-trend--skeleton">
+        {Array.from({ length: TREND_SKELETON_ROWS }).map((_, i) => (
+          <li key={i} className="cqa-trend__item">
+            <div className="cqa-trend__row cqa-trend__row--skeleton">
+              <span className="cqa-trend__rank-skel" />
+              <span className="cqa-trend__poster cqa-trend__poster--skeleton" />
+              <span className="cqa-trend__body">
+                <span className="cqa-trend__line-skel cqa-trend__line-skel--title" />
+                <span className="cqa-trend__line-skel cqa-trend__line-skel--meta" />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' } = {}) {
   const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
+  // （2026-09-12）原 isLoadingTrending 选择器已随「空态恒渲染骨架」收敛删除——
+  // 骨架不再区分加载中/失败，空即占位。
   const heatBuckets = useMemo(() => aggregateCategoryHeat(trending), [trending]);
   // 左栏榜 = 原始趋势序（TMDB /trending 自带趋势排名，不再按 popularity 重排——
   // 面板里按 popularity 排序是为了让「热度数字」单调；趋势榜展示的就是排名语义）
@@ -716,19 +758,16 @@ export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' 
 
   const isRail = variant === 'rail';
   if (isRail) {
-    if (trendItems.length === 0) return null;
+    // 未就绪：加载中 → 骨架；加载结束仍为空（失败/无数据）→ **保持骨架占位而非空白**。
+    // 2026-09-12（用户反馈「左栏一直不显示骨架」）：原「失败 → 不渲染」在 trending
+    // 请求快速失败（网络/域名不可达）时表现为整列空白，右列有内容而左栏洞穿；
+    // 改为空态恒渲染骨架，数据由 fetchAllHomeData 的 I1 失败冷却（10min）自动重试补齐。
+    if (trendItems.length === 0) return <CategoryTrendSkeleton />;
+    // 2026-09-11（用户要求）：删掉原 `.cqa-heat-row__head`（🔥 今日趋势 + 副标题 + ⓘ）。
+    // 榜单标题与口径说明移至首页顶部过渡带（HomeTopStrip 的 `home-topstrip__stat`），
+    // 左栏只留连续榜单本体 —— 这样 `.cqa-trend` 卡片顶边与右列 banner 顶边天然齐平。
     return (
       <section className="cqa-heat-row cqa-heat-row--rail">
-        <div className="cqa-heat-row__head">
-          <Icon icon={Flame} size="sm" />
-          <span className="cqa-heat-row__title">今日趋势</span>
-          {/* 副标题保留（口径说明，home.spec.ts 用例保护的 UI），窄栏下由 CSS 截断 */}
-          <span className="cqa-heat-row__sub">TMDB 实时趋势排名</span>
-          <InfoTip
-            label="今日趋势口径说明"
-            text="取自 TMDB /trending/all/day 的每日趋势榜，按 TMDB 趋势算法排名（非 popularity 数值排序），每 6 小时更新。完整分类榜单见顶部导航分类入口。"
-          />
-        </div>
         <CategoryTrendList items={trendItems} />
       </section>
     );

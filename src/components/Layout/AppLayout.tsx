@@ -287,6 +287,17 @@ export default function AppLayout() {
   // （lazyWithRetry 缓存 Promise），Suspense 同步解析，不闪 fallback。
   const Component = activeRouteKey ? routeComponentMap[activeRouteKey] : null;
 
+  // ── FAB「刷新」软刷新（2026-09-11 用户拍板：只刷新页面内容，主体结构不重载）──
+  // BackToTopButton 派发 kino:content-refresh → 给 RouteRenderer 换 key：
+  // 当前页面组件整体重挂载（图片重新走 LazyImage IO、文本数据随组件重新请求/revalidate），
+  // Layout 壳（侧栏/顶栏/滚动容器/page-transition 容器）不卸载，进场动画也不重放。
+  const [contentRefreshCount, setContentRefreshCount] = useState(0);
+  useEffect(() => {
+    const onContentRefresh = () => setContentRefreshCount((c) => c + 1);
+    window.addEventListener('kino:content-refresh', onContentRefresh);
+    return () => window.removeEventListener('kino:content-refresh', onContentRefresh);
+  }, []);
+
   return (
     <Tooltip.Provider delayDuration={200}>
       <ScrollContainerContext.Provider value={scrollContainerRef}>
@@ -325,7 +336,7 @@ export default function AppLayout() {
               >
                 {Component ? (
                   <Suspense fallback={<LoadingFallback />}>
-                    <RouteRenderer Component={Component} />
+                    <RouteRenderer key={contentRefreshCount} Component={Component} />
                   </Suspense>
                 ) : null}
                 <div id="load-more-portal" />

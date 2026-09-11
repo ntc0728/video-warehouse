@@ -50,8 +50,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 // 摘除 index.html 的零依赖启动骨架。
-// 必须等 React 提交首帧之后 —— 否则会出现「splash 已消失、内容还没渲染」的新白屏空档。
-// 冷启动（路由 chunk 需网络拉取）时，此时 #root 里已是 Suspense 的 AppLoading，视觉连续。
-requestAnimationFrame(() => {
-  document.getElementById('boot-splash')?.remove();
+// 必须等 React **真正提交首帧**之后 —— 否则会出现「splash 已消失、内容还没渲染」的新白屏空档。
+// 原实现是单个 requestAnimationFrame：React 18 createRoot().render() 走 Scheduler（MessageChannel
+// 宏任务）提交，rAF 有可能先于该宏任务触发 → 冷启动时 main.tsx 图很重，空档被放大到肉眼可见。
+// 改为轮询「#root 有子节点」：Suspense fallback（BootLoading）/ 内容二选一，谁先到都算已提交。
+// 另加 10s 兜底：模块顶层抛错导致 render 从未发生时，不让 splash 永久盖屏。
+function dropBootSplash() {
+  const root = document.getElementById('root');
+  if (root && root.childElementCount > 0) {
+    document.getElementById('boot-splash')?.remove();
+    return true;
+  }
+  return false;
+}
+requestAnimationFrame(function waitFirstCommit() {
+  if (!dropBootSplash()) requestAnimationFrame(waitFirstCommit);
 });
+window.setTimeout(dropBootSplash, 10_000);

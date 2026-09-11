@@ -119,6 +119,9 @@ scripts/*.mjs
 !scripts/changelog-collect.mjs
 # 最小环境自检脚本：按需跑 `node scripts/setup.mjs`，纳入版本控制
 !scripts/setup.mjs
+# postinstall 依赖预打包包装：`pnpm install` 后自动执行，**必须入库**
+# （否则他人 clone 后 postinstall 找不到文件，反而阻断安装）
+!scripts/optimize-deps.mjs
 !scripts/global-setup.ts
 !scripts/global-teardown.ts
 # 测试 fixtures（mock 数据）纳入版本控制，保证 CI / 他人 clone 后

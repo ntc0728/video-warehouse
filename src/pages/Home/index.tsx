@@ -309,55 +309,109 @@ export default function HomePage() {
   }
 
   // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
-  // home-skeleton-hero 刻意与 HeroBanner 同构：左侧主图 + 右侧缩略图列，
-  // 保证加载期缩略图骨架与 banner 同时出现（修复「缩略图骨架不和 banner 一起出现」）。
-  const homeSkeletonBody = (
+  // 2026-09-11（用户请求 6「不同视口显示相应的 UI 骨架」）：骨架按视口分两套——
+  //   · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
+  //     （缩略图列已删除，骨架不再有缩略图槽）。
+  //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + 两栏（左「今日趋势」榜卡 +
+  //     右 HeroBili「banner + 右卡网格 + 换一换」）+ 7 行卡片。
+  // 大屏骨架**直接复用真实布局类名**（.home-two-col / .hero-bili / .cqa-trend /
+  // .hero-side-card），几何全部由既有 token 派生，杜绝「骨架与真实两套几何漂移」。
+  const homeSkeletonRows = (
+    <div className="home-skeleton-rows">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div key={i} className="home-skeleton-row">
+          <div className="home-skeleton-row-title" />
+          <div className="home-skeleton-row-cards">
+            {Array.from({ length: 7 }).map((_, j) => (
+              <div key={j} className="home-skeleton-card">
+                <div className="home-skeleton-card-img">
+                  {/* 四角标占位：镜像 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
+                  <span className="home-skeleton-card-badge home-skeleton-card-badge--tl" />
+                  <span className="home-skeleton-card-badge home-skeleton-card-badge--tr" />
+                  <span className="home-skeleton-card-badge home-skeleton-card-badge--bl" />
+                  <span className="home-skeleton-card-badge home-skeleton-card-badge--br" />
+                </div>
+                <div className="home-skeleton-card-title" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+  // banner 内容占位（标题 / 评分·年份·类型 / 简介），两条骨架分支共用
+  const homeSkeletonHeroContent = (
+    <div className="home-skeleton-hero__content">
+      <div className="home-skeleton-hero__title" />
+      <div className="home-skeleton-hero__meta">
+        <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+        <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
+        <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--xs" />
+      </div>
+      <div className="home-skeleton-hero__desc" />
+      <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
+    </div>
+  );
+  const homeSkeletonBody = isWide ? (
+    <>
+      {/* 顶部过渡带骨架（镜像 HomeTopStrip） */}
+      <div className="home-skeleton-topstrip">
+        <span className="home-skeleton-topstrip__item" />
+        <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
+        <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
+      </div>
+      <div className="home-two-col">
+        {/* 左栏：今日趋势榜卡（复用真实 .cqa-trend 卡壳，只换行内容为骨架条） */}
+        <aside className="home-two-col__rail">
+          <div className="cqa-trend">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="home-skeleton-trend__row">
+                <span className="home-skeleton-trend__rank" />
+                <span className="home-skeleton-trend__poster" />
+                <span className="home-skeleton-trend__body">
+                  <span className="home-skeleton-trend__t" />
+                  <span className="home-skeleton-trend__m" />
+                </span>
+              </div>
+            ))}
+          </div>
+        </aside>
+        {/* 右列：HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位） */}
+        <div className="home-two-col__main">
+          <section className="hero-bili">
+            <div className="hero-bili__grid">
+              <div className="hero-bili__banner home-skeleton-bili__banner">
+                {homeSkeletonHeroContent}
+              </div>
+              <div className="hero-bili__right">
+                <div className="hero-bili__cards">
+                  {/* 渲染 6 张：≥1281 为 3 列 × 2 行；1024–1280 由 HeroBili.css 的
+                      2 列档 + 本骨架的 nth-child 隐藏规则降到 4 张 */}
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="hero-side-card">
+                      <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg" />
+                      <span className="hero-side-card__title hero-side-card__title--skeleton thumbnail-skeleton-bg" />
+                    </div>
+                  ))}
+                </div>
+                <span className="hero-bili__shuffle home-skeleton-bili__shuffle" />
+              </div>
+            </div>
+          </section>
+          {homeSkeletonRows}
+        </div>
+      </div>
+    </>
+  ) : (
     <>
       <div className="hero-banner__card">
         <div className="home-skeleton-hero">
           <div className="home-skeleton-hero__banner">
-            {/* 内容占位：镜像 hero-banner__text — 标题 / 评分·年份·类型 / 简介（桌面端） */}
-            <div className="home-skeleton-hero__content">
-              <div className="home-skeleton-hero__title" />
-              <div className="home-skeleton-hero__meta">
-                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
-                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--short" />
-                <span className="home-skeleton-hero__meta-item home-skeleton-hero__meta-item--xs" />
-              </div>
-              <div className="home-skeleton-hero__desc" />
-              <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
-            </div>
-          </div>
-          <div className="home-skeleton-hero__thumbs">
-            {/* 渲染 4 个，第 4 个由 CSS 控制：默认隐藏（3 张），大屏媒体查询显示（4 张），
-                与 HeroBanner 的 maxCount（isWide ? 4 : 3）对齐 */}
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="home-skeleton-hero__thumb thumbnail-skeleton-bg" />
-            ))}
+            {homeSkeletonHeroContent}
           </div>
         </div>
       </div>
-      <div className="home-skeleton-rows">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="home-skeleton-row">
-            <div className="home-skeleton-row-title" />
-            <div className="home-skeleton-row-cards">
-              {Array.from({ length: 7 }).map((_, j) => (
-                <div key={j} className="home-skeleton-card">
-                  <div className="home-skeleton-card-img">
-                    {/* 四角标占位：镜像 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
-                    <span className="home-skeleton-card-badge home-skeleton-card-badge--tl" />
-                    <span className="home-skeleton-card-badge home-skeleton-card-badge--tr" />
-                    <span className="home-skeleton-card-badge home-skeleton-card-badge--bl" />
-                    <span className="home-skeleton-card-badge home-skeleton-card-badge--br" />
-                  </div>
-                  <div className="home-skeleton-card-title" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {homeSkeletonRows}
     </>
   );
   const homeSkeleton = (

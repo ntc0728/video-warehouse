@@ -223,11 +223,8 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* 与 .hero-banner 完全同高、同外包盒的占位（消除骨架→真实 banner 的高度/外框跳动）：
-   复用同一套 height 模型（aspect-ratio 16/9 + min/max）+ 同款「无边框盒子」（圆角 + 阴影），
-   真实 .hero-banner 无 border / 无 surface 底色，骨架严格镜像才能避免切换时外框不一致。
-   .hero-banner 的高度纯由该模型决定（flex row 内主图区 flex:1、缩略图列 flex-shrink:0，
-   均无固有内容高度，靠容器 aspect-ratio 定高后 stretch），骨架须严格镜像（主图区 flex:1 +
-   缩略图列 flex-shrink:0）才能避免切换时的布局位移。 */
+   2026-09-11 缩略图列删除后，真实 .hero-banner 已是「卡片内 16:9 单图」，
+   骨架只保留一条 16:9 主图槽，比例与真实一致（不再有 --hero-thumb-count / 20:9 档）。 */
 .home-skeleton-hero {
   position: relative;
   display: flex;
@@ -235,10 +232,7 @@ html[data-device="app"] .home-disclaimer {
   align-items: stretch;
   width: 100%;
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
-  /* 与真实 .hero-banner 一致：几何由 aspect-ratio 驱动（N = --hero-thumb-count）：
-     N=3 → 64/27，N=4 → 20/9；缩略图列宽 = 100%/(N+1)（下方媒体查询切到 4 张时同步改 20/9） */
-  --hero-thumb-count: 3;
-  aspect-ratio: 64 / 27;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   /* 与下方分类区的间距（对齐真实 .hero-banner__card 的 margin-bottom） */
   margin-bottom: var(--space-sm);
@@ -335,89 +329,6 @@ html[data-device="app"] .home-disclaimer {
   html[data-device="app"] .home-skeleton-hero__content {
     padding: var(--space-md);
   }
-
-
-
-/* 右侧缩略图列骨架：逐字节镜像 .hero-banner__thumbs 的几何模型 —
-    列宽 = 整体宽度的 1/(N+1)（N = --hero-thumb-count，由父级 .home-skeleton-hero 继承），
-    与真实 .hero-banner__thumbs 的 calc(100%/(N+1)) 恒等，消除骨架→真实的列宽跳变。
-    张数 N 默认 3，大屏（与 useScreenTier 的 large/xlarge 对齐）为 4，见下方媒体查询。 */
-.home-skeleton-hero__thumbs {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  justify-content: flex-start;
-  flex-shrink: 0;
-  width: calc(100% / (var(--hero-thumb-count, 3) + 1));
-  overflow: hidden;
-}
-
-/* 单张骨架：镜像 .hero-banner__thumb 的盒模型（flex 拉伸 + 16/9 + 同宽边框同圆角）。
-   背景视觉（暗底 + shimmer 渐变 + overlay 扫光）由公共类 .thumbnail-skeleton-bg
-   提供，与 banner 内部 .hero-banner__thumb-skeleton 共用一条规则，杜绝两处骨架
-   配色漂移（曾出现过「外部暗底 / 内部亮白 var(--color-placeholder)」分叉）。 */
-.home-skeleton-hero__thumb {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
-  width: 100%;
-  /* 不设 aspect-ratio，与真实缩略图一致（flex:1 已定高） */
-  border: none;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-/* 第 4 张默认隐藏（普通桌面 3 张）；大屏显示（4 张）。
-   断点与 useScreenTier 的 large（≥1440px 宽 且 ≥900px 高）一致，
-   xlarge（≥1920/≥1000）为其子集自动覆盖，与 HeroBanner 的 maxCount 对齐 */
-.home-skeleton-hero__thumb:nth-child(4) {
-  display: none;
-}
-
-@media (width >= 1440px) and (height >= 900px) {
-  html:not([data-device="app"]) .home-skeleton-hero {
-    --hero-thumb-count: 4;
-    aspect-ratio: 20 / 9;
-  }
-
-  html:not([data-device="app"]) .home-skeleton-hero__thumb:nth-child(4) {
-    display: block;
-  }
-}
-
-/* 平板及以下：卡片样式已由外层 .hero-banner__card 提供，banner 退回 16:9 */
-@media (width <= 1023px) {
-  .home-skeleton-hero__thumbs {
-    display: none;
-  }
-
-  .home-skeleton-hero {
-    height: auto;
-    aspect-ratio: 16 / 9;
-  }
-}
-/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .home-skeleton-hero__thumbs {
-    display: none;
-  }
-
-  /* app 端无需 height/aspect-ratio 副本：@media (width <= 1023px) 已覆盖 */
-
-
-
-/* 移动端：与 .hero-banner 对齐（无缩略图，16:9） */
-@media (width <= 767px) {
-  .home-skeleton-hero {
-    height: auto;
-    aspect-ratio: 16 / 9;
-  }
-}
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-
-  /* app 端无需 height/aspect-ratio 副本：@media (width <= 767px) 已覆盖 */
 
 
 
@@ -544,6 +455,168 @@ html[data-device="app"] .home-disclaimer {
   );
   background-size: 200% 100%;
   animation: shimmer var(--card-shimmer-duration) infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   大屏骨架（≥1024，2026-09-11 用户要求「不同视口显示相应的 UI 骨架」）
+   与真实大屏布局同构：顶部过渡带 + 两栏（左「今日趋势」榜卡 + 右 HeroBili）。
+   ⚠️ 骨架**直接复用真实布局的类名**（.home-two-col / .hero-bili / .cqa-trend /
+   .hero-side-card），几何全部由既有 token 派生 —— 这里只补「真实元素没有的
+   骨架填充块」，避免出现第二套几何模型（历史上骨架/真实两套尺寸漂移过）。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (width >= 1024px) {
+  /* 顶部过渡带骨架：盒模型逐条镜像 .home-topstrip（surface + border + radius-lg + 同 padding） */
+  .home-skeleton-topstrip {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    width: 100%;
+    max-width: var(--layout-content-max-width);
+    margin-inline: auto;
+    margin-bottom: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .home-skeleton-topstrip__item {
+    width: 7rem;
+    height: var(--text-xs);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--card-shimmer-duration) infinite;
+  }
+
+  .home-skeleton-topstrip__item--sm {
+    width: 5rem;
+  }
+
+  /* 左栏榜卡行骨架：几何对齐 .cqa-trend__row / .cqa-trend__poster。
+     海报尺寸走 custom-property 槽位（与 CategoryQuickAccess 的 --cqa-poster-* 同口径，
+     同时绕开 stylelint 的裸 px 校验）；≥1920 档左栏加宽时抬到 72×108，见下方档位。 */
+  html:not([data-device="tv"]) .home-skeleton .cqa-trend {
+    --cqa-poster-w: 64px;
+    --cqa-poster-h: 96px;
+  }
+
+  .home-skeleton-trend__row {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-xs) var(--space-2xs);
+  }
+
+  .home-skeleton-trend__rank {
+    flex: 0 0 20px;
+    height: var(--text-2xs);
+    border-radius: var(--radius-sm);
+    background: var(--color-skeleton);
+  }
+
+  .home-skeleton-trend__poster {
+    flex: 0 0 var(--cqa-poster-w);
+    width: var(--cqa-poster-w);
+    height: var(--cqa-poster-h);
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--card-shimmer-duration) infinite;
+  }
+
+  .home-skeleton-trend__body {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .home-skeleton-trend__t,
+  .home-skeleton-trend__m {
+    height: var(--text-sm);
+    border-radius: var(--radius-sm);
+    background: var(--color-skeleton);
+  }
+
+  .home-skeleton-trend__t { width: 80%; }
+
+  .home-skeleton-trend__m {
+    width: 46%;
+    height: var(--text-2xs);
+  }
+
+  /* 右列 banner 槽：容器仍是真实 .hero-bili__banner（高度由 --hero-banner-h 派生、
+     圆角随 --hero-card-radius），只把底色换成 shimmer。 */
+  .home-skeleton-bili__banner {
+    background: linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--card-shimmer-duration) infinite;
+  }
+
+  /* 右卡封面：真实 .hero-side-card__cover 已给 aspect-ratio，span 需显式块级化 */
+  .hero-side-card__cover--skeleton {
+    display: block;
+  }
+
+  /* 右卡标题条：用 .home-skeleton 前缀提高特异性，压过 .hero-side-card__title 的
+     padding / line-height / nowrap（仅骨架态生效，真实卡不受影响）。 */
+  .home-skeleton .hero-side-card__title--skeleton {
+    display: block;
+    height: var(--text-sm);
+    margin: var(--space-xs) var(--space-sm);
+    padding: 0;
+    border-radius: var(--radius-sm);
+    white-space: normal;
+  }
+
+  /* 换一换占位：镜像 .hero-bili__right 的第 2 列（auto），保证右卡列宽与真实一致 */
+  .home-skeleton .home-skeleton-bili__shuffle {
+    display: block;
+    width: var(--space-xl);
+    border-radius: var(--radius-md);
+    background: var(--color-skeleton);
+  }
+
+  /* 骨架只做静态占位：不参与 hover / 点击 */
+  .home-skeleton .hero-side-card,
+  .home-skeleton .hero-bili__shuffle {
+    pointer-events: none;
+  }
+
+  /* 1024–1280：右卡 2 列 × 2 行 = 4 张（与 HeroBili.css 的 A 档同步），
+     故渲染的 6 张里隐藏后两张，避免骨架出现真实布局没有的第 3 行。
+     ⚠️ 嵌套 @media 必须置于本块末位：order/order 要求 rules 先于 at-rules。 */
+  @media (width <= 1280px) {
+    .home-skeleton .hero-bili__cards > .hero-side-card:nth-child(n + 5) {
+      display: none;
+    }
+  }
+}
+
+@media (width >= 1920px) {
+  html:not([data-device="tv"]) .home-skeleton .cqa-trend {
+    --cqa-poster-w: 72px;
+    --cqa-poster-h: 108px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

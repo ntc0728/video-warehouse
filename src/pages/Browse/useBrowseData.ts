@@ -253,6 +253,50 @@ export function useBrowseData(query?: string) {
   }, [loading.discover, filterValue, setFilter, fetchDiscover, fetchTopRated]);
 
   /**
+   * 分页跳转（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）。
+   *
+   * 与 loadMore 的本质区别：带 `reset: true` → store 同步清空 results，
+   * 新页是「替换」而非「追加」，UI 整页 loading（旧数据不残留）。
+   * 滚动回顶由调用方负责（本 hook 不碰 DOM）。
+   *
+   * @param page 目标页码（1 起）
+   * @param searchQuery 有搜索词时走 /search/multi 端点
+   */
+  const goToPage = useCallback(
+    (page: number, searchQuery?: string) => {
+      if (loading.discover) return; // 已有请求在飞，避免叠加
+      if (!Number.isFinite(page) || page < 1) return;
+      const totalPages = discoverPagination.totalPages;
+      if (totalPages > 0 && page > totalPages) return;
+
+      setIsRefreshing(true);
+      hadOldDataRef.current = false;
+
+      const p = searchQuery
+        ? useTMDBStore.getState().search(searchQuery, page, { reset: true })
+        : filterValue.category === 'top'
+          ? fetchTopRated(page, { reset: true })
+          : fetchDiscover(page, { reset: true });
+
+      void (async () => {
+        try {
+          await p;
+        } finally {
+          if (isMountedRef.current) {
+            // 与 refreshNow 一致：等新内容渲染完再收 loading（150ms 防闪）
+            await new Promise<void>((r) => setTimeout(r, 150));
+            if (isMountedRef.current) {
+              setIsRefreshing(false);
+              hadOldDataRef.current = false;
+            }
+          }
+        }
+      })();
+    },
+    [loading.discover, discoverPagination.totalPages, filterValue.category, fetchDiscover, fetchTopRated],
+  );
+
+  /**
    * 分类导航进入（Home CategoryQuickAccess → /browse?category=...）时的立即刷新。
    *
    * 背景：Keep-Alive 下 Browse 常驻挂载，URL 的 filterSig 变化本应走 filterSig
@@ -300,6 +344,7 @@ export function useBrowseData(query?: string) {
     isRefreshing,
     hadOldData: hadOldDataRef.current,
     loadMore,
+    goToPage,
     retry,
     refreshNow,
     hasMore,

@@ -54,6 +54,7 @@
 | `close.ps1` | 关闭 agent-browser 进程 |
 | `backup-target-files.mjs` | 批量备份指定源文件 |
 | `split-single-line-decls.mjs` | CSS 单行声明拆分为多行 |
+| `optimize-deps.mjs` | postinstall 钩子：把 Vite 首次「依赖预打包」前移到安装阶段，消除 dev 冷启动白屏（`VITE_SKIP_OPTIMIZE=1` 跳过；CI/CAPACITOR 自动跳过） |
 
 ### 备份
 
