@@ -43,10 +43,24 @@ npm run test         # Vitest 单元测试
 npx playwright test  # E2E 测试（TMDB Mock 默认启用）
 ```
 
-## 改动留痕（changelogs）
+## 改动留痕与知识沉淀（changelogs → 知识分层）
 
-每轮改动往 `changelogs/_pending/<YYYY-MM-DD-HHmm>-<slug>.md` 写片段（front-matter: date/module/type/build/files/demo + 旧↔新对照）；**不要直接写当日 `changelogs/YYYY-MM-DD.md`**。push 前跑 `node scripts/changelog-collect.mjs` 合并并归档；`node scripts/changelog-draft.mjs --since <ref>` 可从 git 改动生成骨架。pre-push 钩子会阻断未合并的片段。机制详 `changelogs/README.md`。
+**三层各司其职，别一股脑往长期文档里塞。** 当天改动只落片段；**push 前**才做提炼。
 
-## 本地记忆
+| 层 | 写什么 | 时机 |
+| --- | --- | --- |
+| `changelogs/_pending/<YYYY-MM-DD-HHmm>-<slug>.md` | **每日改动流水**（front-matter: date/module/type/build/files/demo + 旧↔新对照） | 改完当天，**唯一指定出口** |
+| 共享知识库：`docs/agents/*.md`、`docs/KNOWLEDGE.md`（ADR） | 跨会话仍成立的**架构 / 约定 / 根因** | **push 前**提炼 |
+| 本地长期记忆：`.workbuddy/memory/ref-*.md`（细则）、`MEMORY.md`（**只放不变量**） | 个人上下文的细则与不变量 | **push 前**提炼 |
 
-AI 本地记忆在 `.workbuddy/memory/`（不进仓库，个人上下文）。**共享事实以本文件 + `docs/KNOWLEDGE.md` 为准**，冲突时信提交文档。知识库/文档变动走 PR + review。
+1. **改完当天只写 `changelogs/_pending/` 片段**；**不要直接写当日 `changelogs/YYYY-MM-DD.md`**，也**不要把当日流水直接塞进 `AGENTS.md` / `MEMORY.md`**。push 前跑 `node scripts/changelog-collect.mjs` 合并并归档；`node scripts/changelog-draft.mjs --since <ref>` 可从 git 改动生成骨架。pre-push 钩子会阻断未合并的片段。机制详 `changelogs/README.md`。
+2. **push 前必须提炼一次**：把当日片段里「跨会话仍然成立」的结论按主题归位——团队共享的进 `docs/`，个人细则进 `.workbuddy/memory/ref-*.md`，**只有「不可协商的不变量」才进 `AGENTS.md` / `MEMORY.md`**。散会前留痕（写清了哪些文件）。
+3. **内容准入（防膨胀）**：一次性细节、实测数值表、代码片段、历史演变过程、只对单一模块有用的细则，**不得**进 `AGENTS.md` / `MEMORY.md` → 下沉到 `docs/` 分片或 `ref-*.md`。自查：若某条只有「这次才想得起来」的细节才会用到，说明放错位置。
+4. **待办清单更新**：以新清单**整段替换**、不保留旧版本、不建并行待办文件；**替换前必须先与用户确认上一版待办是否已完成**；移出项只在末尾「> 移出：」一行留痕。
+5. **知识库变更走 PR + review**：改 `AGENTS.md` / `docs/` 等同改代码，小步提交。细则见 `docs/agents/docs-protocol.md`。
+
+## 本地记忆（个人上下文，不进仓库）
+
+- 位置 `.workbuddy/memory/`（已在 `.gitignore`）。结构：**索引层 `MEMORY.md`（自动注入）+ 按需 Read 的 `ref-*.md` 细则 + 每日 `YYYY-MM-DD.md` 工作日志（append-only）**。
+- **`MEMORY.md` 只放「每会话必用的不变量 + 指向 ref 的指针」**：踩坑细节 / 根因 / 数值表 / 代码片段一律进 `ref-*.md`。完整文件地图、读取规则、写入规则与准入清单见 `MEMORY.md` 顶部「🗂 记忆体系」。
+- **共享事实以本文件 + `docs/KNOWLEDGE.md` 为准**，冲突时信提交文档。

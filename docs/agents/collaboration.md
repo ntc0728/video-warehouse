@@ -57,6 +57,7 @@
   - **每轮改动往 `changelogs/_pending/<YYYY-MM-DD-HHmm>-<slug>.md` 写片段**（front-matter: date/module/type/build/files/demo + 旧逻辑↔新逻辑对照），**不要直接写当日 `changelogs/YYYY-MM-DD.md`**。
   - **push 前统一合并**：跑 `node scripts/changelog-collect.mjs`，把 `_pending/` 按 date 合并进 `changelogs/YYYY-MM-DD.md` 并归档到 `_pending/_archived/`（同文件名幂等）。可用 `node scripts/changelog-draft.mjs --since <ref>` 从 git 改动自动生成片段骨架，agent 再补「为什么」。
   - **pre-push 阻断**：`.git/hooks/pre-push` 检测到未合并的 `_pending` 片段会拦下 push，提醒先合并（临时跳过：`git push --no-verify`）。
+  - **push 前提炼归位（2026-09-11 起）**：把片段里「跨会话仍然成立」的结论按主题归位——团队共享的进 `docs/`，个人细则进 `.workbuddy/memory/ref-*.md`，**只有「不可协商的不变量」才进 `AGENTS.md` / `MEMORY.md`**。**当日流水不得直接塞进长期文档。**
   - **Demo 永久留存**，统一放 `changelogs/demos/`，并在 `changelogs/README.md` 的「Demo 索引」登记。
 
 ---

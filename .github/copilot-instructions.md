@@ -29,5 +29,5 @@ React 18 + TypeScript + Vite 6 + Zustand 影视聚合平台。
 
 ## Doc sync protocol
 
-After code changes, check AGENTS.md "文档同步协议" section for required updates to:
-tests (same commit) / memory (after session) / knowledge base (if architecture changed) / page diagrams (if layout changed) / flowchart (if navigation changed)
+After code changes, write a `changelogs/_pending/` fragment first; before push, follow the "文档同步协议" in `docs/agents/docs-protocol.md` for required updates to:
+tests (same commit) / memory (distill before push) / knowledge base (if architecture changed) / page diagrams (if layout changed) / flowchart (if navigation changed)

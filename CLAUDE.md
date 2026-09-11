@@ -18,4 +18,4 @@ This file provides guidance to Claude Code when working with code in this reposi
 - **Dev server**: `npm run dev` → http://127.0.0.1:3001
 - **Lint**: `npm run lint:all`
 - **Test**: `npm run test` (Vitest) / `npx playwright test` (E2E)
-- **文档同步**: 完成代码变更后，必须按 AGENTS.md "文档同步协议" 检查是否需要更新测试/记忆/知识库/原理图/流程图
+- **文档同步**: 改完先写 `changelogs/_pending/` 片段；push 前按 `docs/agents/docs-protocol.md` 的「文档同步协议」提炼归位到 测试/知识库/原理图/流程图/本地记忆
