@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.24.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.23.0...kinotv-v1.24.0) (2026-09-11)
+
+
+### Features
+
+* **browse,home:** 代并行会话入库——分页制/左栏骨架/首页视口骨架/FAB 软刷新等 + 本会话增补 ([bd9101c](https://github.com/ntc0728/video-warehouse/commit/bd9101c9cef00753278301634d0643dcf6e2a26f))
+* **browse:** 逻辑分页组装层——每页恒定 cols×5 行、总页数按每页条数折算 ([3882ab2](https://github.com/ntc0728/video-warehouse/commit/3882ab203906a30c7ca0e625ea2901ff5feaff51))
+* **loading:** 五页专属视口自适应骨架替换统一 AppLoading + 首页≥2560 banner 收窄加高 ([3dd091f](https://github.com/ntc0728/video-warehouse/commit/3dd091f5f8ad1c302d99601bd93752623c655738))
+
+
+### Bug Fixes
+
+* **browse:** 切筛选空页/重复 key + 转圈同行 + 直链搜索恢复滚动追加 ([625140c](https://github.com/ntc0728/video-warehouse/commit/625140c06204778e81f06e549cbdb5da8c77a704))
+* **detail:** 加载骨架与顶栏间 ~166px 空隙——loading 宿主沿用菊花时代垂直居中，改顶对齐 ([f60f398](https://github.com/ntc0728/video-warehouse/commit/f60f39830da7282cccae898ea8c4cc490ddb4670))
+
+
+### Performance Improvements
+
+* **drawer:** modal={false} 绕开 react-remove-scroll 的 document 级非 passive 监听 ([a8bd1de](https://github.com/ntc0728/video-warehouse/commit/a8bd1defe64d468cb24cbb0f86d254ab812a1772))
+
 ## [1.23.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.1...kinotv-v1.23.0) (2026-09-10)
 
 
