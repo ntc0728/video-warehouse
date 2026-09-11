@@ -376,7 +376,9 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     await box.fill('batman');
     await box.press('Enter');
 
-    const loading = page.locator('.browse-results-body .app-loading--inline').first();
+    // BROWSE-077: 移动端结果区专属骨架被去壳（不卡片套卡片）
+    // 2026-09-12 骨架整改：结果区 loading 由 AppLoading 换为页面专属 BrowseSkeleton
+    const loading = page.locator('.browse-results-body .browse-skeleton').first();
     await expect(loading).toBeVisible({ timeout: 5000 });
     const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
     expect(border).toBe('0px');

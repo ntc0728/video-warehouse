@@ -8,7 +8,7 @@ import { useParams } from 'react-router-dom';
 import { fetchPersonDetail, fetchPersonMovieCredits, fetchPersonTVCredits, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { TMDBPersonDetail, TMDBMovie, TMDBTVShow } from '@/types/tmdb';
-import { AppLoading } from '@/components/common';
+import PersonSkeleton from './PersonSkeleton';
 import { useDocumentTitle } from '@/hooks';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -175,7 +175,7 @@ export default function PersonPage() {
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);
 
-  if (loading) return <div className="page-padding person-page person-page--loading"><AppLoading /></div>;
+  if (loading) return <div className="page-padding person-page person-page--loading"><PersonSkeleton /></div>;
   if (error || !person) {
     return (
       <div className="page-padding person-page">

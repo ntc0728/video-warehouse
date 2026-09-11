@@ -1,0 +1,145 @@
+/* 详情页专属骨架 — 几何对齐真实 .detail-hero / .detail-hero-side（Detail.css） */
+
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  /* 宿主 .detail-page--loading 是 align-items:center 的 flex 列（为居中旧 AppLoading 设计），
+     骨架必须显式撑满，否则整块收缩到内容宽（右侧信息卡定值宽），hero 会塌成 0 宽。 */
+  width: 100%;
+}
+
+.detail-skeleton__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* hero：16:9 + 同款 max-height 曲线（.detail-hero 基础规则） */
+.detail-skeleton__hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: min(65vh, var(--layout-detail-hero-max-h));
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.detail-skeleton__hero-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.detail-skeleton__hero-content {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.detail-skeleton__title {
+  width: 14em;
+  max-width: 70%;
+  height: 1.75em;
+  border-radius: var(--radius-sm);
+}
+
+.detail-skeleton__meta {
+  width: 18em;
+  max-width: 60%;
+  height: 0.875em;
+}
+
+.detail-skeleton__meta--short {
+  width: 12em;
+}
+
+/* 右侧信息卡：仅 ≥1024 两栏档渲染（与 .detail-hero-side 同视觉） */
+.detail-skeleton__side {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.detail-skeleton__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.detail-skeleton__chip {
+  width: 4em;
+  height: 1.5em;
+  border-radius: var(--radius-full);
+}
+
+.detail-skeleton__info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.detail-skeleton__info-card {
+  height: 3.25em;
+  border-radius: var(--radius-md);
+}
+
+.detail-skeleton__side-line {
+  height: 0.875em;
+}
+
+.detail-skeleton__side-line--short {
+  width: 62%;
+}
+
+.detail-skeleton__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.detail-skeleton__section-title {
+  width: 6em;
+  height: 1.25em;
+  margin-top: var(--space-xs);
+}
+
+.detail-skeleton__overview {
+  height: 0.875em;
+}
+
+.detail-skeleton__overview--short {
+  width: 55%;
+}
+
+/* ── ≥1024 桌面两栏（非 App/TV，与 Detail.css 上半部两栏同门控同列公式） ── */
+@media (width >= 1024px) {
+  /* 与真实 .detail-top 完全同款：1.4fr/1fr 网格 + align-items:start
+     （不能用 stretch 拉 hero——aspect-ratio 会被行高反算宽度而溢出轨道，见 Detail.css 注释） */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: var(--space-sm);
+    align-items: start;
+  }
+
+  /* hero 宽度显式取满轨道（防 aspect-ratio 反算 / 内容撑开），高度 = 轨道宽 × 9/16 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__hero {
+    width: 100%;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__side {
+    display: flex;
+    /* 拉伸到行高（= hero 高）：真实页右栏高度由 JS 写 --detail-hero-h 对齐 hero，
+       骨架态无 JS 量测，用 stretch 达成同样的「右栏高 = banner 高」视觉 */
+    align-self: stretch;
+  }
+}

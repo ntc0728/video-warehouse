@@ -759,6 +759,30 @@ html[data-device="app"] .home-disclaimer {
   }
 }
 
+@media (width >= 2560px) {
+  html:not([data-device="tv"]) .home-two-col__main {
+    /* ── ≥2560（内容已 2200 封顶居中）banner 收窄 + 加高 ──────────────────
+       2026-09-12 用户反馈：封顶档 banner 实测 959×393（≈2.4:1），比 1920 档
+       （596×346 ≈1.7:1）明显过宽过扁——高度公式的 min(100vw,2200px) 封顶后
+       高度冻结、宽度却随右列继续放大。
+       本档双 token 联动（⚠️ 必须同时改，只改一个会破坏「banner 底边与右栏
+       两行卡片底边齐平」契约，或把 banner 拉成竖条）：
+         · sideW 0.56 → 0.66：右栏三列卡变宽变高，banner 让出横向空间；
+         · bannerH 系数 0.24 → 0.277：按齐平条件反推（banner 高 = 右栏两行
+           卡总高，实测 w2560 卡跨度 454px / 分母 1640.7px = 0.2767 → 0.277）。
+       实测（w2560/3440/3840，content 2200 封顶）：banner 795×454（≈1.75:1，
+       与 1920 档 1.72:1 同形；改动前 959×393 ≈2.44:1），底边与右栏两行卡齐平。 */
+    --hero-side-w: calc(
+      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
+      * 0.66
+    );
+    --hero-banner-h: calc(
+      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
+      * 0.277
+    );
+  }
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 
 /* 9.1：取消移动端 token 区 50vh 固定高度的旧设计（让声明悬在中部），

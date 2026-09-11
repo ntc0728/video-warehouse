@@ -1,0 +1,67 @@
+/* 收藏页专属骨架 — 几何对齐真实 .collection-section / .video-card-grid / .iptv-channel-grid */
+
+.collections-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-md) 0;
+}
+
+.collections-skeleton__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.collections-skeleton__head {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: baseline;
+}
+
+.collections-skeleton__head-title {
+  width: 4.5em;
+  height: 1.1em;
+  border-radius: var(--radius-sm);
+}
+
+.collections-skeleton__head-count {
+  width: 3.5em;
+  height: 0.875em;
+}
+
+/* 竖版影视卡网格：列数与真实 .video-card-grid 同源（--card-cols 等分） */
+.collections-skeleton__video-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+/* IPTV 频道网格：列数与真实 .iptv-channel-grid 同源（--iptv-cols） */
+.collections-skeleton__iptv-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.collections-skeleton__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.collections-skeleton__video-cover {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+}
+
+.collections-skeleton__iptv-cover {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+}
+
+.collections-skeleton__line {
+  width: 72%;
+  height: 0.875em;
+}

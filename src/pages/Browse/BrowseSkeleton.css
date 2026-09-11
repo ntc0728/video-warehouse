@@ -1,0 +1,60 @@
+/* Browse 结果区专属骨架 — 几何对齐真实 .browse-sort-bar / .video-card-grid */
+
+.browse-skeleton__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0 var(--space-sm);
+}
+
+.browse-skeleton__types,
+.browse-skeleton__sorts {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.browse-skeleton__type {
+  width: 3.5em;
+  height: var(--comp-tab-height, 2.25rem);
+  border-radius: var(--radius-full);
+}
+
+.browse-skeleton__sort {
+  width: 2.75em;
+  height: var(--comp-tab-height, 2.25rem);
+  border-radius: var(--radius-full);
+}
+
+.browse-skeleton__count {
+  width: 5em;
+  height: 1em;
+}
+
+/* 列数与真实网格 .video-card-grid 同源（--card-cols 等分），间距同 --space-lg */
+.browse-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
+  gap: var(--space-lg);
+  padding: var(--space-md) 0;
+}
+
+.browse-skeleton__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+/* 竖版海报（2:3），与 VideoCard .video-card-cover 同比例 */
+.browse-skeleton__cover {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+}
+
+.browse-skeleton__title {
+  width: 78%;
+  height: 0.875em;
+}

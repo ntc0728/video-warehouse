@@ -1,0 +1,108 @@
+/* IPTV 频道页专属骨架 — 几何对齐真实 .iptv-rail / .iptv-channel-grid（IPTV.css） */
+
+.iptv-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+/* ── rail 模式（桌面）：左栏 + 内容卡，flex 与 .iptv-rail-layout 同构 ── */
+.iptv-skeleton--rail {
+  flex-direction: row;
+  gap: var(--space-lg);
+  align-items: flex-start;
+}
+
+.iptv-skeleton__rail {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+  width: var(--rail-w);
+  padding-right: var(--space-sm);
+  border-right: 1px solid var(--color-border-light);
+}
+
+.iptv-skeleton__rail-title {
+  width: 4em;
+  height: 0.875em;
+  margin-bottom: var(--space-xs);
+}
+
+.iptv-skeleton__rail-row {
+  height: 1.75em;
+  border-radius: var(--radius-sm);
+}
+
+.iptv-skeleton__content {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.iptv-skeleton__bar {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.iptv-skeleton__bar-count {
+  width: 7em;
+  height: 0.875em;
+}
+
+.iptv-skeleton__bar-btn {
+  width: 4em;
+  height: 1.75em;
+  border-radius: var(--radius-full);
+}
+
+.iptv-skeleton__sec-head {
+  width: 9em;
+  height: 1.1em;
+  margin-top: var(--space-xs);
+}
+
+/* 局部刷新骨架：宿主 .iptv-content-loading 是 flex 居中容器，需显式撑满 */
+.iptv-content-loading .iptv-skeleton__channel-grid {
+  width: 100%;
+}
+
+/* 频道网格：列数与真实 .iptv-channel-grid 同源（--iptv-cols） */
+.iptv-skeleton__channel-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.iptv-skeleton__channel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+/* 频道封面 3:2，与 IPTVChannelCard .iptv-card-cover 同比例 */
+.iptv-skeleton__channel-cover {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+}
+
+.iptv-skeleton__channel-title {
+  width: 64%;
+  height: 0.875em;
+}
+
+/* ── 移动模式顶栏（对应 .iptv-top-card 筛选条） ── */
+.iptv-skeleton__topbar {
+  height: 2.75em;
+  border-radius: var(--radius-lg);
+}
