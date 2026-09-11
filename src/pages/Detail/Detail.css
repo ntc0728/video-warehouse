@@ -14,7 +14,10 @@
 }
 
 .detail-page--loading {
-  justify-content: center;
+  /* 2026-09-12：骨架整改后此处渲染整页 DetailSkeleton（内容高 ~500px+），
+     沿用旧 AppLoading 菊花时代的 justify-content:center 会把骨架垂直居中，
+     与顶栏之间空出 ~160px（实测 1440：顶栏底 60 / 骨架顶 226）→ 改顶对齐。 */
+  justify-content: flex-start;
   align-items: center;
   min-height: var(--layout-page-min-height);
 }
