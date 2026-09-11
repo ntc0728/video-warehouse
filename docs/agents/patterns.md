@@ -276,13 +276,38 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
 
 ### Browse 懒加载
 
+> ⚠️ 2026-09-12 起本节大部分已被「逻辑分页」取代，见下节；CMS 直链搜索仍走本节的
+> 懒加载哨兵（append 式 `useCMSSearch.loadMore`，smart 模式哨兵 hasMore 恒 false 闲置）。
+
 - 哨兵节点 `<div ref={sentinelRef}>` **无条件渲染**（不用 searchMode 条件包裹），跨状态持久
 - 整页 loading 仅在首屏无数据时显示：`initialLoading = isLoading && results.length === 0`，与 `loading` 布尔区分
 - 避免加载更多时卸载网格导致滚动跳顶
-- **双卡片结构**：Card 1（搜索区：搜索 tabs + FilterBar，`hideFooter` 隐藏排序 footer）+ Card 2（结果区：排序栏 + SourceStatusIndicator + 结果网格 + 懒加载哨兵）
+- **双卡片结构**：Card 1（搜索区：搜索 tabs + FilterBar，`hideFooter` 隐藏排序 footer）+ Card 2（结果区：排序栏 + SourceStatusIndicator + 结果网格 + 分页器/懒加载哨兵）
 - **筛选切换清空搜索词**：切换 FilterBar 筛选/排序时清空 `query`，让 discover 接管（`useBrowseData` 的 `filterSig` effect 在有 `urlQ` 时跳过 fetch）
 - **TMDB search reset**：`search()` 和 `fetchDiscover()` 在 `forceReset=true` 时立即清空旧结果，UI 才能显示 loading 而非停留在旧数据上
 - **合并结果排序**：`mediaType=all` 合并 movie + tv 后按用户选择的 `sortBy`/`sortOrder` 重排（评分相同时按投票数降序兜底）
+
+### Browse 逻辑分页（2026-09-12 定稿，替换智能检索的懒加载）
+
+`src/pages/Browse/useLogicalPage.ts` —— 用户拍板「每页恒定 cols×5 行、行行完整、页数按每页条数折算」。
+
+- **为什么不是「按列数传参取数」**：TMDB/MacCMS 均不支持自定义每页条数（TMDB 恒 20/页，
+  movie+tv 合并 40）。逻辑页 L 覆盖全局条目 `[(L-1)·P, L·P)`，P = cols×5（15~40）；
+  按算术定位所需 TMDB 合并页（`tStart = floor(start/M)+1` + offset），P ≤ M → 每页至多 2 请求。
+- **合并页大小 M 必须与真实拉取条数一致**：all=40（电影 20+剧集 20）、单媒体类型/搜索=20。
+  曾写死 40：切「电影」分类后偏移算术错位 → 切筛选后空页（只剩分页组件）。
+- **跨页漂移去重**：真实 TMDB 按流行度排序，相邻页请求之间序会漂移（页 N 尾 = 页 N+1 头
+  出现相同条目；mock 静态数据测不出！）→ 组装消费必须逐条按 id 去重（seen Set）。
+- **取页三段等待**（`fetchTmdbPage`）：① 等 filterSig 防抖把新筛选写入 store
+  （对比 `toStoreFilter(filterValue)` 与 store `filterOptions`）——否则带旧筛选参数拉上一轮数据；
+  ② 等 store 既有 discover 请求落地（`goToPage` 的 loading.discover 守卫会静默 no-op）；
+  ③ 落地页号 ≠ 请求页号（其它触发器的响应被 store seq 丢弃）时等对方落地后重试一次。
+- **TMDB 页缓存按 (contextKey, t)**：翻回上一页零请求；上下文（模式+关键词+筛选）变化清缓存回页 1。
+- **总页数 = ceil(钉定总数/P) 并钳到 ceil(500·M/P)**：TMDB discover/search 硬顶 500 页
+  （total_pages 会报 2124 但 >500 页返回空 results——「点最后一页显示无结果」的根源）。
+- **总数钉定**：TMDB `total_results` 是逐页波动的估计值；同一上下文内以第一次落地非零值为准
+  （pinnedTotal），换词/换筛选/切模式重钉；新搜索落位前计数位显示「搜索中…⟳」（转圈在右侧）。
+- **跳页**：BrowsePagination 数字形态带「页码输入 + 跳转」，输入钳制 [1, totalPages]（输 9999 跳末页）。
 
 ### 全屏抽屉（Drawer）底部操作区
 
@@ -363,3 +388,36 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
 - AGENTS.md / CLAUDE.md / .cursorrules / .github/copilot-instructions.md — **提交**（团队共享）
 
 
+
+### 页面骨架占位（2026-09-12 定稿）
+
+**红线：每个页面骨架各不相同，禁止跨页复用整套骨架。** 早前整改被误做成「全站统一 AppLoading
+菊花」，2026-09-12 已恢复各页专属骨架：
+
+- 共享原语只有 `components/common/Skeleton`（单块 shimmer），页面骨架由各页自行组合：
+  Browse（类型/排序行+竖版卡网格）/ Collections（影视+IPTV 分区）/ Person（hero+作品网格）/
+  IPTV（rail/移动两套）/ Detail（≥1024 两栏 1.4fr/1fr + 窄屏堆叠）/ Home（视口两套分支）。
+- **骨架与真实元素尺寸一致是硬约束**：列数直接消费真实网格同源 token
+  （`--card-cols` / `--iptv-cols`），结构复用真实布局类名，杜绝第二套几何真源。
+  实测基线：Detail 1440 骨架 765×431/547×431 与真实一致；Browse/Collections 逐像素相同。
+- **loading 宿主的居中样式会整块继承给骨架**：`.detail-page--loading` 的
+  `justify-content:center`（旧菊花时代）曾把骨架垂直顶到容器中部、与顶栏空出 ~166px——
+  骨架化后此类宿主要改顶对齐。
+- 首页左栏趋势榜骨架：trending **空态恒渲染骨架**（失败/无数据不返回 null——快速失败时
+  整列空白比骨架更糟），数据由 I1 失败冷却自动重试补齐。
+- e2e 断言骨架时**别用宽松的 `[class*="xxx"]` 选择器**：骨架类名（如
+  `.iptv-skeleton__channel-grid`）会命中 `[class*="channel"]`，让「等真实网格」的用例在骨架态
+  提前放行（IPTV-062 曾因此挂）。
+
+### Radix Dialog 非 passive 监听规避（modal={false} 模式）
+
+Radix 模态链上 `react-remove-scroll` 会在打开期间往 `document` 挂非 passive
+wheel/touchmove/touchstart（每帧触摸滚动都得过主线程）；Radix 写死传参无 props 出路。
+规避模式（Drawer 已落地，BottomSheet/Modal/ConfirmDialog 可同法跟进）：
+
+1. `Dialog.Root modal={false}` → RemoveScroll 整个不挂载（DialogOverlay 非模态恒 null）；
+2. 遮罩自绘：`<div class="drawer-overlay" data-state={open?'open':'closed'}>`——Portal 给每个
+   子节点单独包 Presence，`[data-state='closed']` 退出动画播完才卸载，时序与原 Overlay 一致；
+3. 滚动锁自理（零监听）：打开期间 `html/body overflow:hidden`（useEffect 恢复）+
+   面板容器 `overscroll-behavior: contain`；
+4. 代价：焦点不再 trap、背景不再 aria-hidden——移动全屏面板可接受，桌面弹窗迁移前需评估读屏。

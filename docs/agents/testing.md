@@ -44,6 +44,17 @@ await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
 （`getCachedIPTVChannels` 刻意不做 sort 比较，源顺序决定频道 `sourceId`）；
 另外频道不要带 `sourceId: 'source-N'` 前缀，`loadFromCache` 会把这类本地源频道过滤掉。
 
+## TMDB 跨页漂移 mock（逻辑分页护栏）
+
+真实 TMDB 按流行度排序，**相邻页请求之间序会漂移**（页 N 尾 = 页 N+1 头出现相同条目）。
+`fixtures/mock-tmdb` 的静态 mock 复现不了——`useLogicalPage` 的跨缓冲区去重、切筛选空页等
+bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 discover 两路改成
+`startId = base + pg * (PAGE_SIZE - 2)`（人为 2 条重叠）再断言：
+
+- 每页卡片数恒 `cols × 5`（1440 → 35）、console 零 `same key` 警告；
+- 切「电影/剧集/全部」后网格仍 35 张（合并页大小 M 随媒体类型变 20/40 的护栏）；
+- 跳页输入 9999 → 落到 `ceil(500·M/P)` 钳制末页（不是接口报的 total_pages）。
+
 ## 测试依赖映射（精准跑测试，不要全量跑）
 
 > 修改源文件后，只跑对应列的测试文件。共享组件变更才会影响多个测试文件。
@@ -62,7 +73,7 @@ await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
 | 修改的源文件                                               | 跑这个测试                                                  | test 数 |
 | ---------------------------------------------------- | ------------------------------------------------------ | ------ |
 | `src/pages/Home/`                                    | `scripts/home.spec.ts`                                 | 46     |
-| `src/pages/Browse/`                                  | `scripts/browse.spec.ts`                               | 19     |
+| `src/pages/Browse/`（含 `useLogicalPage.ts` 逻辑分页） | `scripts/browse.spec.ts`                               | 22     |
 | `src/pages/Chart/`                                   | `scripts/chart.spec.ts`                                | 6      |
 | `src/pages/Detail/`                                  | `scripts/detail.spec.ts`                               | 20     |
 | `src/pages/Player/`                                  | `scripts/player.spec.ts` + `scripts/player-failover.spec.ts` + `scripts/player-cms-error.spec.ts` | 26 + 1 + 1 |

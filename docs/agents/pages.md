@@ -14,7 +14,7 @@
 | 页面 | 路由 | 目录 | 改哪个文件 | 核心组件 |
 | --- | --- | --- | --- | --- |
 | 首页 | `/` | `src/pages/Home/` | **`index.tsx`**（`HomeRoute.tsx` 只是 16 行包装壳，无逻辑） | HeroBanner + CategoryQuickAccess + TMDBMovieRow ×7 |
-| 浏览/搜索 | `/browse` | `src/pages/Browse/` | `index.tsx` | BrowseGrid + FilterBar + SortBar |
+| 浏览/搜索 | `/browse` | `src/pages/Browse/` | `index.tsx`（分页组装在 `useLogicalPage.ts`） | BrowseGrid + FilterBar + SortBar + BrowsePagination |
 | 热度榜 | `/chart` | `src/pages/Chart/` | `index.tsx` | 6 分类 tab + 排名榜行 |
 | 详情 | `/detail/:id` | `src/pages/Detail/` | `index.tsx`（子件在 `components/`） | DetailHeader + CastList + StillsLightbox |
 | 播放 | `/play/:id` **和** `/player/:id`（**双路由同页**） | `src/pages/Player/` | `index.tsx` | UniversalPlayer + PlayerSidebar |
@@ -82,7 +82,7 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | 页面      | 路由                | 核心组件                                                                                         | 数据源                                                                                 |
 | ------- | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | 首页      | `/`               | HeroBanner（缩略图覆盖式布局 + 移动端滑动动画） + CategoryQuickAccess（**全端显示**，点击跳 /browse） + TMDBMovieRow ×7 | TMDB trending/nowPlaying/popular/topRated/upcoming/popularTv/topRatedTv/airingToday |
-| 浏览/搜索   | `/browse`         | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供）                    | TMDB discover/search + CMS searchAll                                                |
+| 浏览/搜索   | `/browse`         | 搜索 tabs + FilterBar + SortBar + BrowseGrid（双卡片布局，搜索框统一由顶部导航 SearchBox 提供）；**智能检索走逻辑分页（每页恒 cols×5 行 + 数字页码/跳页），直链搜索走滚动追加** | TMDB discover/search + CMS searchAll |
 | 热度榜    | `/chart`          | Chart：6 分类 tab + 排名榜行（top3 暖橙）+ useInfiniteScroll 无缝滚动（按 id 去重 + popularity 重排）+ 口径 tooltip + 切 tab 刷新态（旧行降沉 + 零高度 sticky「加载中」胶囊，⚠️ sticky 不能放 grid 内——grid item 只能在自身 row track 内移动）+ flex 链满容器高度；入口 = 首页热度榜分类卡与「查看完整榜单」 | TMDB discover popularity.desc 分页 + trending（趋势榜） |
 | 详情      | `/detail/:id`     | DetailHeader + TabBar + CastList + StillsLightbox                                            | TMDB movie/tv detail + CMS searchVideoByTitle                                       |
 | 播放      | `/play/:id`       | UniversalPlayer + Sidebar (PlayLineList + EpisodeList)                                       | CMS vod_play_url 解析 → HLS/DASH/Native Adapter                                       |

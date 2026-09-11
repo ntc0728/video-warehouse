@@ -288,12 +288,14 @@ test.describe('1.5 全局交互', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await expect.poll(async () => {
-      // 仅当未滚动时设置（已=2000 再设是 no-op，不触发 scroll 事件 → 监听器收不到）
+      // ⚠️ 每轮都必须产生「变化后」的滚动位置：固定值重复设置是 no-op、不派发 scroll，
+      // 若首轮设置时 React 滚动监听尚未挂载（并发慢环境下更易命中），事件丢失后
+      // 旧写法（仅 top<100 时设置）会永远等不到第二次机会 → 死锁超时。
+      // 改为在 2000 / 900 间交替，保证每轮都触发一次 scroll 事件。
       const el = page.locator('.app-shell__scroll');
-      const top = await el.evaluate((n) => n.scrollTop).catch(() => 0);
-      if (top < 100) await el.evaluate((n) => { n.scrollTop = 2000; });
+      await el.evaluate((n) => { n.scrollTop = n.scrollTop > 1000 ? 900 : 2000; }).catch(() => {});
       return page.locator('.back-to-top-button').count();
-    }, { timeout: 8000 }).toBeGreaterThan(0);
+    }, { timeout: 12000 }).toBeGreaterThan(0);
     const backToTop = page.locator('.back-to-top-button');
     if (await backToTop.isVisible().catch(() => false)) {
       await backToTop.click();
@@ -434,7 +436,9 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 趋势序取自 TMDB /trending/all/day，不按 popularity 数值重排，故断言排名自 1 起连续。
     await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
     expect(await page.locator('.cqa-heat-row .cqa-trend__item').count()).toBeGreaterThan(0);
-    await expect(page.locator('.cqa-heat-row__title')).toHaveText('今日趋势');
+    // 2026-09-11 行为变更：左栏榜头 `.cqa-heat-row__head`（标题/副标题/ⓘ）整块删除，
+    // 标题（今日趋势 N 条）与口径说明上移到首页顶部过渡带 `.home-topstrip__stat`。
+    await expect(page.locator('.home-topstrip__stat').first()).toContainText('今日趋势');
     const trendRanks = await page
       .locator('.cqa-heat-row .cqa-trend__rank')
       .evaluateAll((els) => els.map((e) => Number(e.textContent?.trim())));
@@ -490,9 +494,9 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 079: 趋势口径 tooltip
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
-    await expect(page.locator('.cqa-heat-row__sub')).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.cqa-heat-row__sub')).toHaveText(/TMDB 实时趋势排名/);
-    const rowTip = page.locator('.cqa-heat-row .cqa-info-tip');
+    // 2026-09-11：副标题 `.cqa-heat-row__sub` 已随榜头删除，口径 ⓘ 迁至 `.home-topstrip__stat`
+    await expect(page.locator('.home-topstrip__stat .cqa-info-tip')).toBeVisible({ timeout: 8000 });
+    const rowTip = page.locator('.home-topstrip__stat .cqa-info-tip');
     await expect(rowTip).toHaveCount(1);
     await rowTip.hover();
     await expect(page.locator('.cqa-info-tip__content')).toBeVisible();
@@ -537,7 +541,8 @@ test.describe('1.3c 宽屏分类面板', () => {
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanelOverlay(page, 1);
-    await page.locator('.cqa-heat-row__title').click();
+    // 2026-09-11：原点击目标 `.cqa-heat-row__title` 已随榜头删除，改点顶部过渡带（同为面板外）
+    await page.locator('.home-topstrip__inner').click();
     await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
     await page.locator('.cqa-nav__item').first().hover();
     await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
@@ -664,7 +669,9 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     expect(border.style).toBe('solid');
     expect(border.width).toBe('1px');
     expect(await page.locator('.hero-side-card__img.lazy-image-container').count()).toBeGreaterThan(0);
-    expect(await page.locator('.hero-side-card .lazy-image-container.error').count()).toBe(1);
+    // 2026-09-11 LazyImage 引入 S4 有界重试（1.2s/2.4s 指数退避）后才落 exhausted/error 终态；
+    // 一次性 count() 会在重试等待期读到 0 → 必须用 web-first 断言（内部轮询等待）
+    await expect(page.locator('.hero-side-card .lazy-image-container.error')).toHaveCount(1, { timeout: 15000 });
     await expect(
       page.locator('.hero-side-card .lazy-image-container.error .lazy-image-fallback--brand'),
     ).toContainText('kinoTV');
