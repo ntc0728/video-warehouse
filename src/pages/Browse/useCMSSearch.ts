@@ -165,6 +165,89 @@ export function useCMSSearch() {
     [goToPage],
   );
 
+  /**
+   * 加载下一页并**追加**（2026-09-12 用户拍板：直链搜索不做分页，恢复滚动追加）。
+   * 与 goToPage 的区别：不清空已有结果、计数从零重计；本页 slots 落位结果
+   * 拼在进入本页前的结果快照（base）之后，flush 幂等可重复。
+   * hasMore 沿用探测式：本页有内容 → 下一页可能还有。
+   */
+  const loadMore = useCallback(
+    async (query: string) => {
+      if (state.loading || !state.hasMore || !query.trim()) return;
+      const nextPage = state.page + 1;
+      const base = state.results;
+      const baseFailed = state.failedSources;
+
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+
+      const sourceIndices = await getSourceIndices();
+      sourceIndices.forEach((idx) => sourcePagesRef.current.set(idx, nextPage));
+
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        page: nextPage,
+        completedSources: 0,
+        succeededSources: 0,
+        failedSources: [],
+      }));
+
+      const slots: (CMSResultItem[] | null)[] = sourceIndices.map(() => null);
+      const failed: string[] = [];
+
+      const flush = () => {
+        setState((prev) => ({
+          ...prev,
+          results: [...base, ...(slots.filter(Boolean).flat() as CMSResultItem[])],
+        }));
+      };
+
+      const searchSource = async (sourceIdx: number, slot: number) => {
+        try {
+          const result = await searchAllFromCMSSource(sourceIdx, query, nextPage, {
+            signal: ctrl.signal,
+          });
+          if (ctrl.signal.aborted) return;
+          if (result.error) {
+            failed.push(result.sourceName);
+          } else if (result.items.length > 0) {
+            slots[slot] = result.items.map((v) => ({
+              ...v,
+              cmsSourceName: result.sourceName,
+              sourceIndex: result.sourceIndex,
+            }));
+            setState((prev) => ({ ...prev, succeededSources: prev.succeededSources + 1 }));
+            flush();
+          }
+          setState((prev) => ({ ...prev, completedSources: prev.completedSources + 1 }));
+        } catch {
+          if (!ctrl.signal.aborted) {
+            const sources = await import('@/services/sourceService').then((m) => m.getVideoSources());
+            failed.push(sources[sourceIdx]?.name ?? `源${sourceIdx}`);
+            setState((prev) => ({ ...prev, completedSources: prev.completedSources + 1 }));
+          }
+        }
+      };
+
+      await Promise.allSettled(sourceIndices.map((idx, i) => searchSource(idx, i)));
+
+      if (!ctrl.signal.aborted) {
+        const merged = slots.filter(Boolean).flat() as CMSResultItem[];
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          failedSources: [...baseFailed, ...failed],
+          sourcesDone: true,
+          completedSources: sourceIndices.length,
+          hasMore: merged.length > 0,
+        }));
+      }
+    },
+    [state, getSourceIndices],
+  );
+
   /** 重置搜索状态 */
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -176,6 +259,7 @@ export function useCMSSearch() {
     ...state,
     search,
     goToPage,
+    loadMore,
     reset,
     /** 上一页是否可用（替换式分页下页码即真相，无需快照栈） */
     canGoBack: state.page > 1,
