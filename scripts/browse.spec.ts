@@ -442,3 +442,127 @@ test.describe('2.9 移动端筛选面板底部操作区', () => {
     expect(backToTopDisplay).toBe('none');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 2.10 逻辑分页（BROWSE-090~093）
+// ═══════════════════════════════════════════════════════════════
+// 护栏背景：真实 TMDB 按流行度排序，相邻页请求之间序会漂移（页 N 尾 = 页 N+1 头出现
+// 相同条目）；静态 mock 复现不了，useLogicalPage 的跨缓冲区去重与「合并页大小随媒体
+// 类型变 20/40」都只在漂移数据下暴露——本组用漂移 mock 固定住这两个行为。
+test.describe('2.10 逻辑分页', () => {
+  /** 漂移 mock：页间 2 条重叠，单路 20 条/页 */
+  const PAGE_SIZE = 20;
+  const OVERLAP = 2;
+  const mkItems = (kind: 'movie' | 'tv', startId: number, n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: startId + i,
+      title: `${kind}-${startId + i}`,
+      name: `${kind}-${startId + i}`,
+      release_date: '2024-01-01',
+      first_air_date: '2024-01-01',
+      vote_average: 7,
+      vote_count: 100,
+      popularity: 100 - i,
+      genre_ids: [],
+      poster_path: null,
+      overview: '',
+      media_type: kind,
+    }));
+
+  async function mockDriftDiscover(page: import('@playwright/test').Page, totalPerKind = 8000) {
+    const routeFor = (kind: 'movie' | 'tv', base: number) =>
+      page.route(`**/api.tmdb.org/3/discover/${kind}**`, async (route) => {
+        const pg = Number(new URL(route.request().url()).searchParams.get('page') ?? 1);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            page: pg,
+            results: mkItems(kind, base + pg * (PAGE_SIZE - OVERLAP), PAGE_SIZE),
+            total_pages: 400,
+            total_results: totalPerKind,
+          }),
+        });
+      });
+    await routeFor('movie', 10000);
+    await routeFor('tv', 50000);
+  }
+
+  test('BROWSE-090/091: 每页恒 cols×5 行 + 跨页漂移不产生重复 key', async ({ page }) => {
+    const dupKeys: string[] = [];
+    page.on('console', (m) => {
+      if (m.text().includes('same key')) dupKeys.push(m.text());
+    });
+    await mockDriftDiscover(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+
+    // 1440 → --card-cols 7 → 每页 35 张（7×5），两页都不得有余量波动
+    const expectFullRows = async (label: string) => {
+      const count = await page.locator('.browse-card-grid .video-card').count();
+      const cols = await page.evaluate(() =>
+        parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-cols').trim(), 10));
+      expect(count, `${label}: 应为整数行（${count} / ${cols}）`).toBe(cols * 5);
+    };
+    await expectFullRows('第 1 页');
+    await page.locator('.browse-pagination button:has-text("下一页")').click();
+    await expect.poll(async () => page.locator('.browse-pagination__page--active').innerText(), POLL).toBe('2');
+    await expectFullRows('第 2 页');
+    await page.locator('.browse-pagination button:has-text("下一页")').click();
+    await expect.poll(async () => page.locator('.browse-pagination__page--active').innerText(), POLL).toBe('3');
+    await expectFullRows('第 3 页');
+
+    // 漂移去重：全程零 duplicate key 警告
+    expect(dupKeys).toEqual([]);
+  });
+
+  test('BROWSE-092: 切分类（合并页大小 40→20）后网格不空、行数仍满', async ({ page }) => {
+    await mockDriftDiscover(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+
+    const cols = await page.evaluate(() =>
+      parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-cols').trim(), 10));
+
+    // 切「电影」：store 只拉单路 20 条/页；若 M 仍按 40 定位会偏移错位成空页
+    await page.locator('.browse-sort-bar__type:has-text("电影")').click();
+    await expect.poll(async () => page.locator('.browse-card-grid .video-card').count(), POLL).toBe(cols * 5);
+    await expect.poll(async () => page.locator('.browse-pagination__page--active').innerText(), POLL).toBe('1');
+
+    await page.locator('.browse-sort-bar__type:has-text("剧集")').click();
+    await expect.poll(async () => page.locator('.browse-card-grid .video-card').count(), POLL).toBe(cols * 5);
+
+    await page.locator('.browse-sort-bar__type:has-text("全部")').first().click();
+    await expect.poll(async () => page.locator('.browse-card-grid .video-card').count(), POLL).toBe(cols * 5);
+  });
+
+  test('BROWSE-093: 跳页输入钳制到 500 页硬顶（不是接口报的 total_pages）', async ({ page }) => {
+    // 两路各 50000 条 → total_results 合计 100000（远超 500 页可达量 500×40=20000）
+    await mockDriftDiscover(page, 50000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 20000 });
+
+    // 逻辑末页 = min(ceil(100000/35)=2858, ceil(500×40/35)=572) → 572（硬顶生效）
+    const cols = await page.evaluate(() =>
+      parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-cols').trim(), 10));
+    const P = cols * 5;
+    const capped = Math.ceil((500 * 40) / P);
+    expect(capped).toBeLessThan(Math.ceil(100000 / P)); // 前置：本例确实由硬顶决定
+
+    const input = page.locator('.browse-pagination__jump-input');
+    await input.fill('9999');
+    await input.press('Enter');
+    await expect.poll(async () => Number(await page.locator('.browse-pagination__page--active').innerText()), POLL)
+      .toBe(capped);
+    // 末页有内容、不打满整行以外的余量（≤ P）
+    const lastCount = await page.locator('.browse-card-grid .video-card').count();
+    expect(lastCount).toBeGreaterThan(0);
+    expect(lastCount).toBeLessThanOrEqual(P);
+  });
+});
