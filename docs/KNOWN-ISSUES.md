@@ -308,9 +308,9 @@ track→crossfade 切换时 `<img>` 重挂载、WebView 首帧解码延迟闪白
 
 ---
 
-## 17. [已知 · 未修 · 依赖库行为] Radix Dialog 打开期间挂非 passive touchmove → 面板内滑动卡顿
+## 17. [已修复 · 2026-09-12] Radix Dialog 打开期间挂非 passive touchmove → 面板内滑动卡顿
 
-**状态**：⚠️ 已知（依赖库行为，未擅自动）。
+**状态**：✅ 已修复（`ui/Drawer` 改 `modal={false}`，commit a8bd1de）。
 
 **现象**：移动端 Browse 全屏筛选面板（`Drawer`，基于 `@radix-ui/react-dialog`）内滑动偏卡。
 
@@ -318,12 +318,13 @@ track→crossfade 切换时 `<img>` 重挂载、WebView 首帧解码延迟闪白
 **非 passive** 的 `touchmove` / `touchstart` / `wheel` 监听，每次 touchmove 还会向上走一遍祖先链判断
 （`locationCouldBeScrolled`）→ 合成器无法直接滚动、每帧都要等 JS。这是面板内滑动最系统性的卡顿源。
 
-**已做的收敛**：`.drawer-body` 补 `overscroll-behavior: contain` + `touch-action: pan-y`（与 `BottomSheet` 口径一致）；
-面板层级改走 `--z-modal-overlay` / `--z-modal`（1000/1001）并在面板打开期间
-`body:has(.drawer-content) .back-to-top-button { display: none }`，去掉那个
-`position: fixed` + `backdrop-filter: blur(8px)` 玻璃钮的逐帧模糊采样。
-
-**若要继续优化**：评估放弃 Radix 的 scroll-lock（自实现 `overflow: hidden` 锁）或换 BottomSheet 方案。
+**修复**：`Drawer` 改 `Dialog.Root modal={false}`——Radix 源码里 RemoveScroll 整个包在
+`DialogOverlayImpl` 内，非模态下 `DialogOverlay` 恒 null → 三个 document 监听根本不挂载
+（CDP 实测打开期间 wheel/touchmove = 0）。遮罩自绘（Portal Presence 保退出动画时序）；
+滚动锁自理：打开期间 `html/body overflow:hidden`（无监听）+ `.drawer-content` `overscroll-behavior: contain`。
+Radix 写死 `<RemoveScroll allowPinchZoom shards={[contentRef]}>`，`noIsolation` 未透传，props 无解——这是当初只能绕的原因。
+**未跟进**：`BottomSheet` / `Modal` / `ConfirmDialog` 同为 Radix Dialog 仍有此监听，有滑动诉求时可同法迁移
+（注意非模态下焦点不再 trap、背景不再 aria-hidden，桌面弹窗需评估读屏）。
 
 ---
 
@@ -348,3 +349,26 @@ curl -s "http://127.0.0.1:3001/src/<路径>?t=$(date +%s)" | grep <新写的标�
 
 **处置**：杀掉 3001 的 PID 后用原命令 `npm run dev` 重起（跑完保持运行）；
 或先用带查询串的 curl 确认新鲜度再跑测试。**遇到「e2e 稳定失败但代码看着没错」时，先做这一步。**
+
+---
+
+## 19. [预期行为 · 2026-09-12] DevTools 手机 UA + 宽视口 → 顶栏变汉堡/导航抽屉、「图标消失」
+
+**状态**：✅ 预期行为（非缺陷，不修）。排查耗时一轮，留档防重查。
+
+**现象**：27 寸显示器上打开 Chrome DevTools「toggle device toolbar」，顶栏左侧出现汉堡按钮 +
+导航侧边抽屉，桌面导航一排图标「消失」。
+
+**根因**：device toolbar 选中具体手机设备（或勾选 mobile UA）后 Chrome **持续覆写 UA**，
+此后即使把响应式视口拉到 2560 宽，UA 仍是手机。`useIsMobileLayout()`（`useMediaQuery.ts`）
+判定链为「App 端恒真 / **真实手机 UA 恒真** / 视口 <768」——手机 UA 命中 → 整站走移动布局：
+顶栏左侧渲染汉堡（`.sticky-header__menu-btn`）、桌面导航排被替换（即「图标没显示」），
+点击滑出 `Sidebar` 导航抽屉。已在 2560×1440 手机 UA 下复现并逐项核对（抽屉 6 项图标零破损）。
+
+**规避**：DevTools 只想模拟尺寸时，设备下拉选「Responsive」（不要选具体机型——选中即覆写
+视口/UA/触摸三项）；选过手机后切回 Responsive 并强刷即可恢复桌面布局。
+
+**为什么不改**：手机 UA 恒走移动布局是 9.1 既定决策（Android App 真机 / 手机横屏依赖，
+`useIsWideDesktop` 注释有完整决策链）；DevTools 伪装 UA 与真机在代码层不可区分。
+若未来想支持「手机 UA + ≥1024 宽视口走桌面」（折叠屏内屏/DevTools 友好），
+属布局判定产品决策，需用户拍板并同步 `useIsWideDesktop` 的 `!isPhoneWeb` 守卫口径。
