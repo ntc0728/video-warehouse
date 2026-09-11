@@ -259,15 +259,19 @@ export function useBrowseData(query?: string) {
    * 新页是「替换」而非「追加」，UI 整页 loading（旧数据不残留）。
    * 滚动回顶由调用方负责（本 hook 不碰 DOM）。
    *
+   * 2026-09-12 逻辑分页组装层：返回 Promise（loading 收尾后 resolve），
+   * 调用方（useLogicalPage）按逻辑页需要串行取多个 TMDB 页后切片。
+   *
    * @param page 目标页码（1 起）
    * @param searchQuery 有搜索词时走 /search/multi 端点
+   * @returns 数据落地 + loading 收尾后 resolve 的 Promise
    */
   const goToPage = useCallback(
-    (page: number, searchQuery?: string) => {
-      if (loading.discover) return; // 已有请求在飞，避免叠加
-      if (!Number.isFinite(page) || page < 1) return;
+    (page: number, searchQuery?: string): Promise<void> => {
+      if (loading.discover) return Promise.resolve(); // 已有请求在飞，避免叠加
+      if (!Number.isFinite(page) || page < 1) return Promise.resolve();
       const totalPages = discoverPagination.totalPages;
-      if (totalPages > 0 && page > totalPages) return;
+      if (totalPages > 0 && page > totalPages) return Promise.resolve();
 
       setIsRefreshing(true);
       hadOldDataRef.current = false;
@@ -278,7 +282,7 @@ export function useBrowseData(query?: string) {
           ? fetchTopRated(page, { reset: true })
           : fetchDiscover(page, { reset: true });
 
-      void (async () => {
+      return (async () => {
         try {
           await p;
         } finally {

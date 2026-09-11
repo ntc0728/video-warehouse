@@ -32,7 +32,7 @@ import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseSkeleton from './BrowseSkeleton';
 import BrowsePagination from './BrowsePagination';
-import { useCardCols, useCompleteRowsPage } from './useCompleteRows';
+import { useCardCols, useLogicalPage } from './useLogicalPage';
 import BrowseMobileBar from './BrowseMobileBar';
 import './Browse.css';
 import { Icon } from "@/components/ui/Icon";
@@ -93,7 +93,7 @@ export default function BrowsePage() {
     isRefreshing,
     refreshNow,
     goToPage: goToPageTMDB,
-    hasMore,
+    // hasMore 不再直接消费：逻辑分页层的 hasNext = 逻辑页 < ceil(钉定总数 / 每页条数)
     isLoadingMore,
     discoverResults,
     discoverPagination,
@@ -348,17 +348,8 @@ export default function BrowsePage() {
   //    不再是 loadMore 的追加语义，所以第 N 页只含第 N 页内容；
   //  - 滚动位置在此归零 —— 否则翻页后视口停在新页末尾几行，观感很怪。
   //    滚动容器是全局 .app-shell__scroll（useScrollContainer 提供 ref）。
-  const handlePageChange = useCallback(
-    (page: number) => {
-      if (searchMode === 'cms') {
-        void goToPageCMS(query, page);
-      } else {
-        goToPageTMDB(Math.min(page, effectiveTotalPages), query || undefined);
-      }
-      scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    [searchMode, query, goToPageCMS, goToPageTMDB, effectiveTotalPages, scrollContainerRef],
-  );
+  //  - TMDB 侧翻的是「逻辑页」（useLogicalPage，见下方组装层），不是 TMDB 原生页；
+  //    handlePageChange 的声明位置在其之后（deps 引用 logicalGoto）。
 
   /** 分页器是否值得渲染：TMDB 有 totalPages 可判；CMS 总页数不可知，
       退化为「已翻过页」或「本页有内容（下一页可能还有）」。
@@ -408,23 +399,49 @@ export default function BrowsePage() {
   const isSmartLoading = isRefreshing || isLoading;
   const isCmsLoading = cmsLoading;
 
-  // ── 整行收整（2026-09-12）：单页条数固定（TMDB 20 / CMS 各源 pg=n）而列数随视口
-  //    3~8 列变化（--card-cols），按列数展示 cols 整数倍前缀，余量结转下一页前置，
-  //    末页全量——消除「最后一行占不满」。 ──
+  // ── 逻辑分页组装层（2026-09-12 用户拍板）：每页恒定 cols×5 行、行行完整、
+  //    总页数按每页条数折算。逻辑页 L 覆盖全局条目 [(L-1)P, LP)，按算术定位所需
+  //    TMDB 合并页（至多 2 个请求 + offset 切片）；TMDB 硬顶 500 页 → 可达条目
+  //    上限 = 500×合并页大小，一并钳进总页数。 ──
   const cardCols = useCardCols();
-  const smartRows = useCompleteRowsPage(
-    discoverResults,
-    cardCols,
-    discoverPagination.page,
-    hasMore,
-    `smart:${query}:${JSON.stringify(filterValue)}`,
-  );
-  const cmsRows = useCompleteRowsPage(
-    filteredCmsResults,
-    cardCols,
-    cmsPage,
-    cmsHasMore,
-    `cms:${query}:${JSON.stringify(cmsFilterValue)}`,
+  const fetchTmdbPage = useCallback(async (t: number) => {
+    // 先等 store 上既有 discover 请求落地（上下文切换会自带一次 page=1 拉取），
+    // 否则 goToPage 会因 loading.discover 守卫静默 no-op，拿到的是别页数据
+    let guard = 0;
+    while (useTMDBStore.getState().loading.discover && guard < 100) {
+      await new Promise<void>((r) => setTimeout(r, 100));
+      guard += 1;
+    }
+    await goToPageTMDB(t, query || undefined);
+    return useTMDBStore.getState().discoverResults;
+  }, [goToPageTMDB, query]);
+  const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
+  const logical = useLogicalPage({
+    cols: cardCols,
+    mergedPageSize: query ? 20 : 40,
+    contextKey: logicalContext,
+    fetchPage: fetchTmdbPage,
+    total: pinnedTotal || discoverPagination.totalResults,
+  });
+  // 首次挂载 / 上下文变化（换词/换筛选/切分类）→ 装载第 1 页。
+  // goto 走 ref 转发：total 钉定会使 logicalGoto 换身份，若直接进 deps 会多拉一次页 1。
+  const logicalGotoRef = useRef(logical.goto);
+  logicalGotoRef.current = logical.goto;
+  const logicalGoto = logical.goto;
+  useEffect(() => {
+    void logicalGotoRef.current(1);
+  }, [logicalContext]);
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (searchMode === 'cms') {
+        void goToPageCMS(query, page);
+      } else {
+        void logicalGoto(page);
+      }
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [searchMode, query, goToPageCMS, logicalGoto, scrollContainerRef],
   );
 
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
@@ -435,7 +452,7 @@ export default function BrowsePage() {
   const smartHasData = discoverResults.length > 0;
   const cmsHasData = cmsResults.length > 0;
   const showResultsLoading = searchMode === 'smart'
-    ? (isRefreshing || (isLoading && !smartHasData))
+    ? (logical.loading || isRefreshing || (isLoading && !smartHasData))
     : (isCmsLoading && !cmsHasData);
 
   const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : filteredCmsResults.length === 0);
@@ -639,22 +656,22 @@ export default function BrowsePage() {
           )}
 
           {!showResultsLoading && (searchMode === 'smart' ? (
-            discoverResults.length > 0 ? (
-              <BrowseGrid items={smartRows} query={query} mode="smart" />
+            logical.items.length > 0 ? (
+              <BrowseGrid items={logical.items} query={query} mode="smart" />
             ) : null
           ) : (
             filteredCmsResults.length > 0 ? (
-              <BrowseGrid cmsItems={cmsRows} query={query} mode="cms" />
+              <BrowseGrid cmsItems={filteredCmsResults} query={query} mode="cms" />
             ) : null
           ))}
 
           {showPagination && (
             <BrowsePagination
               variant={searchMode === 'smart' ? 'numbered' : 'simple'}
-              page={searchMode === 'smart' ? discoverPagination.page : cmsPage}
-              totalPages={searchMode === 'smart' ? effectiveTotalPages : 0}
-              canGoBack={searchMode === 'smart' ? discoverPagination.page > 1 : cmsCanGoBack}
-              hasNext={searchMode === 'smart' ? discoverPagination.page < effectiveTotalPages : cmsHasMore}
+              page={searchMode === 'smart' ? logical.page : cmsPage}
+              totalPages={searchMode === 'smart' ? logical.totalPages : 0}
+              canGoBack={searchMode === 'smart' ? logical.page > 1 : cmsCanGoBack}
+              hasNext={searchMode === 'smart' ? logical.page < logical.totalPages : cmsHasMore}
               disabled={showResultsLoading || (searchMode === 'smart' ? isLoadingMore : cmsLoading)}
               onChange={handlePageChange}
             />
