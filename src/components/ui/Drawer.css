@@ -26,6 +26,9 @@
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
+  /* 2026-09-12 方案B：非模态（modal={false}）后无 react-remove-scroll 的 document 级锁，
+     面板层滚动链隔离自理——body 已 contain，这里兜横滑/边缘橡皮筋。 */
+  overscroll-behavior: contain;
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
   animation: drawer-slide-in 0.26s var(--ease-out-expo, ease);
 }
