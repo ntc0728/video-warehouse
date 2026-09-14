@@ -704,6 +704,13 @@
 .detail-stills-more {
   position: absolute;
   inset: 0;
+  /* 2026-09-14：剧照改用 LazyImage 后必须显式抬高，否则「+N 查看更多」会被盖住。
+     原因：.lazy-image-container 是 position:relative 但 z-index:auto，
+     **不创建层叠上下文** → 其子节点 .lazy-image(z=2) / .lazy-image-placeholder(z=1)
+     与本遮罩同处一个层叠上下文里直接比较。本遮罩 z-index:auto(=0) 且虽在 DOM 里
+     排在 LazyImage 之后，仍会被 z=2 的图压在下面 → 遮罩不可见。
+     取 3 以稳定高于 LazyImage 内部所有层（占位层 1 / 图片 2）。 */
+  z-index: 3;
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);

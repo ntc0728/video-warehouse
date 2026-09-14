@@ -2,13 +2,15 @@
 date: 2026-09-14 21:16
 module: 图片懒加载（Detail 剧照 / Person 头像）+ Browse 组合搜索审计
 type: fix
-build: npx tsc -b 通过；npx vite build --emptyOutDir false 通过
+build: |
+  npx tsc -b 通过；npx vite build --emptyOutDir false 通过；
+  Playwright 冒烟（1440×600 / 390×844 双视口，tmdb-movie-872585）4 项断言全过
 files:
   - src/pages/Detail/index.tsx（剧照裸 <img> → LazyImage）
-  - src/pages/Detail/Detail.css（补 .detail-stills-img 容器撑满规则）
+  - src/pages/Detail/Detail.css（补 .detail-stills-img 容器撑满规则 + .detail-stills-more z-index）
   - src/pages/Person/index.tsx（头像裸 <img> → LazyImage）
   - src/pages/Person/Person.css（补 .person-avatar-img 容器撑满规则）
-demo: 无（视觉改动，需浏览器验证）
+demo: .pw-shots-final/stills-verify.png（gitignored）
 ---
 
 ## 背景：用户两条诉求
@@ -126,3 +128,61 @@ CMS 直链搜索走自己的 `useCMSSearch`（并发多源 + 滚动追加），�
 处置：`git checkout --` 回退 4 个文件后重做，最终 diff 只保留「裸 img → LazyImage」这一件事。
 **教训**：「每次只加载可视范围内的图片，滚动到一定距离再加载一部分」在本项目的既有架构下
 （分页/分批渲染已普遍存在）**指的是图片下载层，不是列表渲染层**——先审计再动手，别默认要新造机制。
+
+---
+
+## 四、补记：改造引入的 z-index 回归（已修 + 已验证）
+
+改完后我做冒烟测试，发现**自己引入了一个视觉回归**，差点漏掉。
+
+### 现象
+
+剧照最后一张的「+N 查看更多」半透明遮罩**被图片盖住、不可见**。
+
+### 根因
+
+`.lazy-image-container` 是 `position: relative` 但 **`z-index: auto` → 不创建层叠上下文**。
+于是它的子节点与遮罩处在同一层叠上下文里直接比 z-index：
+
+| 元素 | z-index |
+| --- | --- |
+| `.lazy-image-placeholder`（骨架） | 1 |
+| `.lazy-image`（图片） | 2 |
+| `.detail-stills-more`（+N 遮罩，DOM 里在 LazyImage **之后**） | auto(=0) |
+
+即便遮罩在 DOM 中排后，`z=0` 仍被 `z=2` 的图压住。
+改造前裸 `<img>` 无 z-index（auto），遮罩靠 DOM 顺序盖在上面 —— **所以这是改造引入的**。
+
+### 修复
+
+```css
+.detail-stills-more {
+  position: absolute;
+  inset: 0;
+  z-index: 3;   /* 高于 LazyImage 内部所有层（占位 1 / 图片 2） */
+  ...
+}
+```
+
+### Playwright 验证（1440×600 与 390×844 双视口，`tmdb-movie-872585`）
+
+```
+[1] 网格行数 = 2.00                        → ✓ 恒 2 行（未追加）
+[2] +N 遮罩命中测试: 顶层="detail-stills-more__count" → ✓ 在最上层
+    遮罩文案: "+120 | 查看更多"
+[3] 1440×600 初始: 视口内 5 挂载 5 | 视口外 5 挂载 0  → ✓ 视口外未发请求
+    滚动 350px 后: 挂载 10/10，新增 5                → ✓ 滚动触发加载
+    390×844: 4 格(2列×2行)全部在视口内，全挂载         → ✓ 一致
+```
+
+用 `document.elementFromPoint(center)` 做命中测试（而非 `isVisible`），
+因为 `isVisible` 只判 CSS 可见性、**不判遮挡** —— 这个 bug 用 `isVisible` 会**漏检**（它返回 true）。
+
+### 可复用经验（两条）
+
+1. **裸 `<img>` → `LazyImage` 必查两件事**：① 父容器是否有确定尺寸（否则格子塌陷）；
+   ② **同格内是否有 absolute 覆盖层**（否则被 `z-index:2` 的 `.lazy-image` 压住）。
+2. **验证遮挡必须用 `elementFromPoint`**，`isVisible()` / `toBeVisible()` 只判 CSS 可见性，不判层叠覆盖。
+3. **本项目滚动容器是 `.app-shell__scroll`，不是 `window`** —— 冒烟脚本里 `window.scrollTo` 无效，
+   必须 `document.querySelector('.app-shell__scroll').scrollTo(...)`，否则会得出「图片从没加载」的错误结论
+   （我第一轮脚本就踩了这个坑，误报成「视口内 0 个」）。
