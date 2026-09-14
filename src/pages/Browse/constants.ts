@@ -57,3 +57,12 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
 // ── 列表分页配置 ────────────────────────────────────────
 /** 防抖：用户点击 chip 后等待多久发起 API 请求 */
 export const FILTER_DEBOUNCE_MS = 300;
+
+// ── 慢取页反馈（2026-09-14 用户拍板 A′）──────────────────
+/**
+ * 「旧内容顶住」的取页（翻页 / 下拉刷新 / 列数跨档）超过本时长才显示反馈。
+ * 低于本时长的取页视为瞬时完成、静默直接换图（内存页缓存与浏览器 HTTP 缓存
+ * 命中时 T 可能只有几十毫秒，立刻挂反馈只会闪 1~2 帧）。
+ * 消费方：index.tsx 的 `showLateFeedback`（useDelayedFlag）。
+ */
+export const PENDING_FEEDBACK_DELAY_MS = 400;

@@ -118,6 +118,23 @@
   flex-direction: column;
 }
 
+/* ── 慢取页反馈：旧内容变淡（2026-09-14 用户拍板 A′）────────────────
+   「有旧内容顶住」的取页（翻页 / 下拉刷新 / 列数跨档）超过 400ms 才挂本类，
+   表示「这块正在被替换」。阈值见 constants.ts PENDING_FEEDBACK_DELAY_MS，
+   判定见 index.tsx showLateFeedback。快网 / 缓存命中下本类不出现，旧图直接
+   换新图，零闪烁。
+   设计取舍：
+   - 不加 transition —— 反馈出现时已进入慢网档，瞬时变淡比动画更明确；且动画
+     若在 400~560ms 之间被数据落地打断，会留下半透明残影。
+   - 不复用 .app-loading 承载转圈 —— 桌面档的 :has(> .app-loading) 会把 body
+     切成 flex 且 padding-bottom 归零（见下方该规则），连带布局跳动。
+     加载指示复用右上角 .browse-sort-bar__count 的「搜索中… + 转圈」。
+   - pointer-events: none —— 等待期间旧卡片不可点，否则会点进旧页详情。 */
+.browse-results-body--pending .browse-card-grid {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .browse-results-body .app-loading--inline {
   border: none;
   border-radius: 0;

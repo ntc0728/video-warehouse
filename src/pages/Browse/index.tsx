@@ -12,6 +12,7 @@ import { useLocation, useNavigationType, useSearchParams } from 'react-router-do
 import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
+import { toast } from '@/components/ui';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
@@ -24,9 +25,10 @@ import type { VideoSourceConfig } from '@/types/source';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import type { TMDBGenre } from '@/types/tmdb';
-import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants';
-import { useBrowseData, toStoreFilter } from './useBrowseData';
+import { CATEGORY_CONFIG, CATEGORY_LABELS, PENDING_FEEDBACK_DELAY_MS } from './constants';
+import { useBrowseData, toStoreFilter, DISCOVER_CACHE_TTL_MS } from './useBrowseData';
 import { getDefaultFilterValue } from './urlState';
 import type { VideoType } from '@/types/video';
 import { useCMSSearch } from './useCMSSearch';
@@ -45,7 +47,11 @@ export default function BrowsePage() {
   // 2026-09-08 用户拍板：新 UI（左栏筛选 + 右侧结果）只在 ≥1024 生效，
   // <1024 一律走移动端命令栏（BrowseMobileBar + 筛选弹窗）。
   // 组合判定：App 端 / 真实手机 UA / 视口 ≤767（useIsMobileLayout）+ 视口 ≤1023（useIsMobile）。
-  const isPhone = useIsMobileLayout() || useIsMobile();
+  // ⚠️ 必须分别求值再取或：写成 `useIsMobileLayout() || useIsMobile()` 会短路掉右侧
+  //    hook，使 hook 调用数随渲染变化，违反 rules-of-hooks（ESLint 已拦）。
+  const isMobileLayout = useIsMobileLayout();
+  const isNarrowViewport = useIsMobile();
+  const isPhone = isMobileLayout || isNarrowViewport;
   const isTV = useIsTV();
   const location = useLocation();
   const navigationType = useNavigationType();
@@ -88,26 +94,28 @@ export default function BrowsePage() {
   }, [searchMode, query]);
 
   // ── TMDB 数据（智能检索）─────────────────────────
+  // endRefresh = 取页收尾（逻辑分页层装载完成后关闭 loading 遮罩）。
+  // 本 hook 不再自行取页：取页唯一出口 = 下方的 runGoto（见其注释）。
   const {
     filterValue,
     updateFilter,
     isRefreshing,
     refreshNow,
-    // hasMore 不再直接消费：逻辑分页层的 hasNext = 逻辑页 < ceil(钉定总数 / 每页条数)。
-    // goToPage 亦不再消费（fetchTmdbPage 直调 store，见其注释）。
+    endRefresh,
     isLoadingMore,
     discoverResults,
     discoverPagination,
     isLoading,
     error,
-  } = useBrowseData(query);
+  } = useBrowseData();
 
-  // 下拉刷新：智能检索重跑当前筛选；直链搜索重跑当前关键词；meta 记录当前搜索/分类参数
+  // 下拉刷新：智能检索强制重取第 1 页（force 绕过 store 缓存回显）；
+  // 直链搜索重跑当前关键词；meta 记录当前搜索/分类参数
   usePullToRefresh(() => {
     if (searchMode === 'cms') {
       searchCMS(query);
     } else {
-      refreshNow();
+      hardRefresh();
     }
   }, {
     meta: () => {
@@ -201,73 +209,75 @@ export default function BrowsePage() {
 
   // ── 搜索触发 ────────────────────────────────────
   const lastCmsSearchedRef = useRef('');
-  const lastSmartSearchedRef = useRef('');
-  const filterSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const triggerSearch = useCallback((q: string, mode: SearchMode) => {
+  /**
+   * **仅直链搜索（CMS）** 在此直接发起查询 —— CMS 走自己的并发搜索 + 滚动追加，
+   * 不进逻辑分页层。
+   *
+   * ⚠️ 智能检索一律不在这里发请求：它的取页唯一出口是下方的 runGoto
+   * （两条路径同时发请求 = 同一页被请求 2~3 次，即本次整改的重复请求根因）。
+   */
+  const triggerCmsSearch = useCallback((q: string) => {
     if (!q) return;
-    if (mode === 'cms') {
-      // 搜索词未变化时不重复调用 CMS 查询接口（如切换"直链搜索"tab）
-      if (lastCmsSearchedRef.current === q) return;
-      lastCmsSearchedRef.current = q;
-      searchCMS(q);
-    } else {
-      lastSmartSearchedRef.current = q;
-      void useTMDBStore.getState().search(q, 1, { reset: true });
-    }
+    // 搜索词未变化时不重复调用 CMS 查询接口（如切换"直链搜索"tab）
+    if (lastCmsSearchedRef.current === q) return;
+    lastCmsSearchedRef.current = q;
+    searchCMS(q);
   }, [searchCMS]);
+
+  /**
+   * 直链搜索「重试」（错误态按钮）。
+   * 必须绕过 triggerCmsSearch 的「同词不重发」短路：失败时关键词没变，
+   * 走 triggerCmsSearch 会被 lastCmsSearchedRef 当帧挡回，用户点重试等于没点。
+   */
+  const retryCmsSearch = useCallback(() => {
+    if (!query) return;
+    lastCmsSearchedRef.current = query;
+    searchCMS(query);
+  }, [query, searchCMS]);
 
   // ── 搜索模式切换 ────────────────────────────────
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
     if (mode === 'cms') {
+      // 智能检索可能还有取页在飞：切走时收掉它的 loading 遮罩（CMS 有自己的 loading 态）
+      endRefresh();
       // 切入直链搜索：本地筛选复位（不写 URL、不影响智能检索的 filterValue）
       setCmsFilterValue(getDefaultFilterValue());
       if (query) {
-        triggerSearch(query, 'cms');
+        triggerCmsSearch(query);
       } else {
         // 搜索词已清空时切到「直链搜索」：无关键词可搜，清空残留的 CMS 结果
         lastCmsSearchedRef.current = '';
         resetCMS();
       }
-    } else if (query) {
-      triggerSearch(query, 'smart');
     }
-  }, [query, triggerSearch, resetCMS]);
+    // 切回智能检索：searchMode 变 → logicalContext 变 → 逻辑分页层自动重新取页
+  }, [query, triggerCmsSearch, resetCMS, endRefresh]);
 
-  // ── 筛选条件变更：保留搜索词，重新触发搜索 ──────────
+  // ── 筛选条件变更 ────────────────────────────────
+  // 只写 URL。store.filterOptions 的对齐交给 useBrowseData 的 filterSig 防抖分支，
+  // 取页交给逻辑分页层（runGoto）—— 这里不再同步 setFilter、也不再防抖触发搜索，
+  // 否则会与逻辑分页层撞成同一页 2~3 次请求。
   const handleFilterChange = useCallback((next: FilterBarValue) => {
     updateFilter(next);
-    // 同步更新 store 的 filterOptions，确保搜索结果按新筛选条件过滤
-    useTMDBStore.getState().setFilter(toStoreFilter(next));
-    // 有搜索词时防抖触发搜索，快速切换筛选时避免请求抖动
-    if (query) {
-      if (filterSearchTimerRef.current) clearTimeout(filterSearchTimerRef.current);
-      filterSearchTimerRef.current = setTimeout(() => {
-        triggerSearch(query, searchMode);
-      }, 300);
-    }
-  }, [query, updateFilter, triggerSearch, searchMode]);
+  }, [updateFilter]);
 
   // ── 注册顶部导航栏搜索回调 ──────────────────────
   const handlePageSearch = useCallback((q: string) => {
     setQuery(q);
-    if (q) {
-      triggerSearch(q, searchMode);
-    } else {
-      if (searchMode === 'smart') {
-        lastSmartSearchedRef.current = '';
-        if (filterValue.category === 'top') {
-          void useTMDBStore.getState().fetchTopRated(1, { reset: true });
-        } else {
-          void useTMDBStore.getState().fetchDiscover(1, { reset: true });
-        }
+    if (searchMode === 'cms') {
+      if (q) {
+        triggerCmsSearch(q);
       } else {
         lastCmsSearchedRef.current = '';
         resetCMS();
       }
+      return;
     }
-  }, [searchMode, triggerSearch, filterValue.category, resetCMS]);
+    // 智能检索：只写搜索词 —— query 变 → logicalContext 变 → 逻辑分页层取页。
+    // 这里不再直发 store 请求（否则与逻辑分页层重复）。
+  }, [searchMode, triggerCmsSearch, resetCMS]);
 
   // [2026-08-13] 惰性 bootstrap video 场景：浏览页需要 video-sources.json（CMS 采集站配置）。
   // 不再由 main.tsx 全局拉取，改为场景级幂等触发（bootstrapScene 每场景仅执行一次）。
@@ -283,28 +293,29 @@ export default function BrowsePage() {
     return () => { store.clearPageSearch(); };
   }, [query, handlePageSearch, location.pathname, fromCategory]);
 
-  // 从顶部导航搜索进入：用 location.state 或 ?q= 中的最新搜索词触发搜索
+  // 从顶部导航搜索进入：用 location.state 或 ?q= 中的最新搜索词触发
   // 注意：必须读 stateQ/urlQ（同步变量）而非 query（异步 state）——
   // location.key 变化时 setQuery 尚未生效，query 仍是上一次的旧值。
   useEffect(() => {
     // POP 导航（刷新/后退）不触发搜索
     if (isPop) return;
     const q = stateQ || urlQ;
-    if (q) {
-      if (searchMode === 'smart') {
-        void useTMDBStore.getState().search(q, 1, { reset: true });
-        lastSmartSearchedRef.current = q;
-      } else {
-        searchCMS(q);
-        lastCmsSearchedRef.current = q;
-      }
+    if (!q) return;
+    if (searchMode === 'cms') {
+      searchCMS(q);
+      lastCmsSearchedRef.current = q;
+      return;
     }
+    // 智能检索：搜索词与当前已生效的词相同 → logicalContext 不变、逻辑分页层不会自动
+    // 重取，此时才需要显式强制刷新一次（「再搜一次同一个词」）。词变了则交给
+    // logicalContext 变化驱动取页，避免两条路径同时发请求。
+    if (q === query) hardRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, isPop]);
 
   // ── 分类导航进入：清空残留搜索词 + 立即刷新（跳过 filterSig 300ms debounce）──
   // useLayoutEffect 保证绘制前完成：清空 query 后顶部搜索框首帧即为空、
-  // refreshNow 同步清空 store 旧结果并置 loading，首帧即显示 loading 遮罩，
+  // hardRefresh 同步置 loading 并在同一帧发起 force 取页，首帧即显示 loading 遮罩，
   // 不再出现「显示上一次数据 → 闪烁 → 才加载」。
   // handledRef 只消费「本次导航首次进入」：从 browse 进详情再返回时
   // location.state.fromCategory 随 history 恢复为 true，但不应再次触发刷新。
@@ -315,9 +326,8 @@ export default function BrowsePage() {
     if (!fc || fromCategoryHandledRef.current) return;
     fromCategoryHandledRef.current = true;
     setQuery('');
-    lastSmartSearchedRef.current = '';
     resetCMS();
-    refreshNow();
+    hardRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, location.pathname]);
 
@@ -343,7 +353,7 @@ export default function BrowsePage() {
   //  - 滚动位置在此归零 —— 否则翻页后视口停在新页末尾几行，观感很怪。
   //    滚动容器是全局 .app-shell__scroll（useScrollContainer 提供 ref）。
   //  - TMDB 侧翻的是「逻辑页」（useLogicalPage，见下方组装层），不是 TMDB 原生页；
-  //    handlePageChange 的声明位置在其之后（deps 引用 logicalGoto）。
+  //    handlePageChange 的声明位置在 runGoto 之后（deps 引用它）。
 
   // ── genres & countries 兜底拉取（精确选择器） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
@@ -390,15 +400,34 @@ export default function BrowsePage() {
   //    TMDB 合并页（至多 2 个请求 + offset 切片）；TMDB 硬顶 500 页 → 可达条目
   //    上限 = 500×合并页大小，一并钳进总页数。 ──
   const cardCols = useCardCols();
-  // ⚠️ 取页三段等待（顺序敏感）：
+  // ⚠️ 本函数是全页**唯一**的 TMDB 取页出口（2026-09-14 收敛）：
+  //    useBrowseData 侧已不再发任何 discover / top_rated / search 请求，
+  //    所有「装载第 N 逻辑页 / 强制刷新第 1 页」的意图都经 useLogicalPage.goto 走到这里。
+  // 取页两段等待（顺序敏感）：
   //  1. 等 filterSig 防抖把新筛选写入 store（filterOptions 与本组件 filterValue 对齐）——
   //     否则请求带旧筛选参数，拉回上一轮上下文的数据（用户看到的「切筛选后内容不对/空」）；
-  //  2. 等 store 既有 discover 请求落地（防 goToPage 的 loading.discover 守卫静默 no-op）；
-  //  3. 取页后校验落地页号（其它触发器的更新请求会经 store seq 丢弃本页响应，
+  //  2. 等 store 既有 discover 请求落地（防重置与在途请求互相覆盖）。
+  //  3. 取页后校验落地页号（用户快速翻页会让 store seq 丢弃本页响应，
   //     discoverPagination.page ≠ t 即快照被覆盖 → 等对方落地后重试一次）。
-  const fetchTmdbPage = useCallback(async (t: number) => {
+  // 缓存回显：非 force 且 t=1 时，store 已有「当前筛选 + 未超 TTL」的结果 → 零请求复用
+  //   （从详情页返回、切回刚看过的同一筛选时命中；下拉刷新/分类导航走 force 绕过）。
+  const fetchTmdbPage = useCallback(async (t: number, force = false) => {
     const store = () => useTMDBStore.getState();
     const wantFilter = JSON.stringify(toStoreFilter(filterValue));
+
+    if (!force && t === 1) {
+      const s0 = store();
+      if (
+        s0.discoverResults.length > 0 &&
+        s0.discoverFetchedFilter != null &&
+        s0.discoverFetchedAt > 0 &&
+        Date.now() - s0.discoverFetchedAt < DISCOVER_CACHE_TTL_MS &&
+        JSON.stringify(s0.discoverFetchedFilter) === wantFilter
+      ) {
+        return s0.discoverResults;
+      }
+    }
+
     let guard = 0;
     while (
       JSON.stringify(store().filterOptions) !== wantFilter && guard < 40
@@ -411,11 +440,7 @@ export default function BrowsePage() {
       guard += 1;
     }
     for (let attempt = 0; attempt < 2; attempt++) {
-      // 2026-09-14：不经 useBrowseData.goToPage 取页 —— 其 loading.discover /
-      // totalPages 守卫读的是 useCallback 渲染快照，慢网下以「陈旧 loading=true」
-      // 短路 no-op，随后 page===t 校验误命中、把别的流程（如初始 discover）的
-      // store 数据当本页返回 → 搜索结果被 discover 覆盖。改为直接调 store
-      // （_discoverSeq 已保证仅最新请求可写结果），上方等待循环读的也是 live state。
+      // 直调 store（_discoverSeq 已保证仅最新请求可写结果）；上方等待循环读的也是 live state。
       const p = query
         ? store().search(query, t, { reset: true })
         : filterValue.category === 'top'
@@ -424,6 +449,13 @@ export default function BrowsePage() {
       await p;
       const s = store();
       if (s.discoverPagination.page === t) return s.discoverResults;
+      // 2026-09-14：store 的 catch 只写 errors.discover，**不 rethrow**、也不恢复
+      // pagination（page 归 0）→ 这里显式识别失败态并抛出。否则会继续往下走
+      // 「重试一次 → 仍失败 → return []」，goto 拿到空数组后 setItems([]) 清空旧页、
+      // 还把 [] 写进页缓存 → 该页被永久记为空（切走再翻回来仍是空）。
+      if (s.discoverLastStatus === 'error') {
+        throw new Error(s.errors.discover ?? '加载失败');
+      }
       await new Promise<void>((r) => setTimeout(r, 350));
       let g3 = 0;
       while (store().loading.discover && g3 < 100) {
@@ -442,14 +474,55 @@ export default function BrowsePage() {
     contextKey: logicalContext,
     fetchPage: fetchTmdbPage,
     total: pinnedTotal || discoverPagination.totalResults,
+    // 列数跨档的隐式重切由 hook 内部发起：它若抢占了在飞取页（对方返回 false 后
+    // 放弃收尾），必须由这条回调接管 loading 收尾，否则 isRefreshing 永驻 →
+    // 卡片永久变淡 + 分页器永久禁用。
+    onCommit: endRefresh,
   });
   // 首次挂载 / 上下文变化（换词/换筛选/切分类）→ 装载第 1 页。
-  // goto 走 ref 转发：total 钉定会使 logicalGoto 换身份，若直接进 deps 会多拉一次页 1。
+  // goto 走 ref 转发：total 钉定会使 goto 换身份，若直接进 deps 会多拉一次页 1；
+  // 同时让 runGoto / hardRefresh 能稳定引用它。
   const logicalGotoRef = useRef(logical.goto);
   logicalGotoRef.current = logical.goto;
-  const logicalGoto = logical.goto;
+
+  /**
+   * **取页唯一出口**（所有「装载 / 刷新逻辑页」的意图都走这里）：
+   * - 收尾走 goto 的 onCommit：与 setItems 同一批更新里关 loading 遮罩，
+   *   避免「内容已就位、遮罩还没关」的一帧空窗；
+   * - 返回 false（本次被更晚的 goto 取代）→ 不收尾，交给接管者收尾，
+   *   否则旧请求会把新请求的 loading 提前关掉；
+   * - 抛错（网络层已由 store 兜成 error 态）→ 仍必须收尾，否则 loading 永驻。
+   */
+  // 失败提示节流时间戳：连点分页 / 反复点重试时避免 toast 刷屏
+  const lastErrorToastRef = useRef(0);
+  const runGoto = useCallback(async (page: number, opts?: { force?: boolean }) => {
+    try {
+      await logicalGotoRef.current(page, { force: opts?.force, onCommit: endRefresh });
+    } catch {
+      // goto 抛错 = 本次取页失败（store 已把原因写进 errors.discover），且它
+      // 没提交任何状态 → 旧 items 原样保留、旧页缓存未被污染（2026-09-14 起）。
+      // 必须收尾 loading（否则遮罩永驻），并给出显式提示：旧页还在时错误态
+      // （Empty）不渲染（fixed 全屏空态会盖住网格），没有提示就只剩「点了没反应」。
+      endRefresh();
+      const now = Date.now();
+      if (now - lastErrorToastRef.current > 1500) {
+        lastErrorToastRef.current = now;
+        toast.error('加载失败，请检查网络后重试');
+      }
+    }
+  }, [endRefresh]);
+
+  /** 强制刷新第 1 页（下拉刷新 / 从首页分类导航进入 / 重复提交同一搜索词） */
+  const hardRefresh = useCallback(() => {
+    refreshNow();
+    void runGoto(1, { force: true });
+  }, [refreshNow, runGoto]);
+
   useEffect(() => {
-    void logicalGotoRef.current(1);
+    // 直链搜索（CMS）不进逻辑分页层（它自带并发搜索 + 滚动追加），不在此取页
+    if (searchMode !== 'smart') return;
+    void runGoto(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logicalContext]);
 
   /** 分页器是否值得渲染（2026-09-14 用户拍板，取代旧条件 effectiveTotalPages>1
@@ -475,10 +548,10 @@ export default function BrowsePage() {
   /** 页码变更（仅智能检索数字分页；直链搜索已改滚动追加，不渲染分页器） */
   const handlePageChange = useCallback(
     (page: number) => {
-      void logicalGoto(page);
+      void runGoto(page);
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [logicalGoto, scrollContainerRef],
+    [runGoto, scrollContainerRef],
   );
 
   // 结果区局部 loading：搜索中且无数据时（有数据时不覆盖网格）
@@ -497,6 +570,21 @@ export default function BrowsePage() {
   // 骨架若同时渲染会叠在旧网格之上（骨架为文档流块，非遮罩）。
   const showSkeleton = showResultsLoading &&
     (searchMode === 'smart' ? logical.items.length === 0 : true);
+
+  // ── 慢取页反馈（2026-09-14 用户拍板 A′）────────────────────────────
+  // 骨架只覆盖「无内容可显示」；反过来「有旧内容顶着」的取页（翻页 / 下拉刷新 /
+  // 列数跨档 / 重复搜同一词）需要另一条反馈通道，否则旧图静止、全程零反馈，
+  // 用户会以为点击没生效。
+  // 但不能一置 loading 就反馈：内存页缓存与浏览器 HTTP 缓存命中时取页耗时
+  // 可能只有几十毫秒，反馈只存在 1~2 帧 → 视觉抽搐（flash of loading state）。
+  // 故压一个 400ms 阈值：阈值内视为瞬时完成、静默直接换图；超过才把旧内容变淡
+  // （.browse-results-body--pending）。
+  // CMS 分支 showSkeleton ≡ showResultsLoading → 本标志恒 false，
+  // 直链搜索的滚动追加（append 语义，旧结果本就不该变淡）不受影响。
+  const showLateFeedback = useDelayedFlag(
+    showResultsLoading && !showSkeleton,
+    PENDING_FEEDBACK_DELAY_MS,
+  );
 
   // 空态与骨架/网格互斥（2026-09-14）：智能检索以逻辑层 items 为准——
   // items 非空（含慢网下保留的旧页）时不显示「暂无结果」，
@@ -686,27 +774,64 @@ export default function BrowsePage() {
         )}
 
         {/* 结果主体：loading / 空状态 / 网格 / 懒加载 */}
-        <div className="browse-results-body">
+        <div
+          className={[
+            'browse-results-body',
+            showLateFeedback ? 'browse-results-body--pending' : '',
+          ].filter(Boolean).join(' ')}
+        >
           {/* 结果区专属骨架：结构对齐真实「类型/排序行 + 卡片网格」，
               列数随 --card-cols 视口分档（不再用全站统一 AppLoading 菊花） */}
           {showSkeleton && (
             <BrowseSkeleton />
           )}
 
+          {/* 加载失败 —— 与「搜不到」彻底分开（2026-09-14）：
+              旧版两者共用「暂无结果」+ waiting 时钟图标，用户分不清「没有这个
+              内容」与「没加载出来」；且没有恢复入口（此时 items 为空、分页器也
+              不渲染），等于卡死在这一页。现补 error 语义 + 重试按钮。 */}
           {!showResultsLoading && currentError && (searchMode === 'smart'
             ? (discoverResults.length === 0 && logical.items.length === 0)
             : cmsResults.length === 0) && (
-            <Empty title="暂无结果" description="尝试换个关键词搜索" />
-          )}
-
-          {!showResultsLoading && isEmpty && !currentError && (
             <Empty
-              title="暂无结果"
-              description={query ? '尝试换个关键词搜索' : '请输入关键词搜索'}
+              status="error"
+              title={searchMode === 'smart' ? '加载失败' : '搜索失败'}
+              description={searchMode === 'smart'
+                ? '网络或影视库暂时不可用，请稍后重试'
+                : '数据源均未响应，请稍后重试'}
+              onRetry={searchMode === 'smart' ? hardRefresh : retryCmsSearch}
+              retryText="重试"
+              isRetrying={searchMode === 'smart' ? showResultsLoading : cmsLoading}
             />
           )}
 
-          {!showResultsLoading && (searchMode === 'smart' ? (
+          {/* 空态 = 请求成功但没有内容（与上面的失败态语义互斥）。
+              三档细分（2026-09-14）：源没返回 / 本地筛选筛空 / 还没输入搜索词
+              —— 旧版三档共用「尝试换个关键词搜索」，浏览态（无词 + 筛选空）时
+              提示去搜索属于误导，本地筛选筛空时又指错方向。 */}
+          {!showResultsLoading && isEmpty && !currentError && (
+            <Empty
+              title={searchMode === 'cms' && !query ? '搜索影视内容' : '暂无结果'}
+              description={
+                searchMode === 'cms'
+                  ? (query
+                    ? (cmsResults.length > 0
+                      ? '没有符合当前筛选的结果，试试放宽条件'
+                      : '没有数据源返回该关键词的结果')
+                    : '请输入关键词后开始搜索')
+                  : (query
+                    ? '试试更换关键词或筛选条件'
+                    : '当前筛选条件下暂无内容')
+              }
+            />
+          )}
+
+          {/* 网格门禁 = !showSkeleton（2026-09-14 用户拍板 A′），不是 !showResultsLoading：
+              取页飞行中若 items 仍有旧页，网格必须继续渲染顶住 —— 旧版用
+              !showResultsLoading 时旧页被挡、骨架又因 items 非空不渲染，内容区
+              只剩分页器裸露在顶部。骨架与网格判定同源（互斥且互补）即不会叠字。
+              CMS 分支 showSkeleton ≡ showResultsLoading，行为与旧版一致。 */}
+          {!showSkeleton && (searchMode === 'smart' ? (
             logical.items.length > 0 ? (
               <BrowseGrid items={logical.items} query={query} mode="smart" />
             ) : null
