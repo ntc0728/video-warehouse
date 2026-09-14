@@ -321,11 +321,6 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, location.pathname]);
 
-  // ── TMDB 页数硬顶（2026-09-12 用户反馈「点最后一页显示空结果且分页组件消失」）──
-  // TMDB discover/search 实际最多返回 500 页：total_pages 会报 2124 这类数字，
-  // 但请求 >500 页一律返回空 results → 空态 + 分页器随之消失。统一钳制到 500。
-  const effectiveTotalPages = Math.min(discoverPagination.totalPages, 500);
-
   // ── 右上角总数钉定（2026-09-12 用户反馈「翻页/跳页后总数会变」）──
   // TMDB total_results 是逐页波动的估计值。同一「模式+关键词+筛选」上下文内，
   // 以第一次请求落地的非零总数为准；上下文变化（换词/换筛选/切模式）时重钉。
@@ -349,13 +344,6 @@ export default function BrowsePage() {
   //    滚动容器是全局 .app-shell__scroll（useScrollContainer 提供 ref）。
   //  - TMDB 侧翻的是「逻辑页」（useLogicalPage，见下方组装层），不是 TMDB 原生页；
   //    handlePageChange 的声明位置在其之后（deps 引用 logicalGoto）。
-
-  /** 分页器是否值得渲染：仅智能检索（TMDB 数字页码）。直链搜索已改为
-      滚动追加（useCMSSearch.loadMore + 无限滚动哨兵），不再渲染分页器。 */
-  const showPagination =
-    searchMode === 'smart'
-      ? effectiveTotalPages > 1 || discoverResults.length > 0
-      : false;
 
   // ── genres & countries 兜底拉取（精确选择器） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
@@ -454,6 +442,15 @@ export default function BrowsePage() {
     void logicalGotoRef.current(1);
   }, [logicalContext]);
 
+  /** 分页器是否值得渲染（2026-09-14 用户拍板，取代旧条件 effectiveTotalPages>1
+      || discoverResults.length>0）：智能检索且「逻辑层有内容 + 总页数 > 1」。
+      - 数据不足一页（totalPages=1）不再渲染分页器；
+      - 骨架/空态/错误态下 items 为空，也不渲染——Empty 为 fixed 全屏视口居中，
+        与分页器同帧渲染必然叠字（慢网下旧分页条件用陈旧 totalPages 时正踩中）。
+      直链搜索为滚动追加，恒不渲染。 */
+  const showPagination =
+    searchMode === 'smart' && logical.items.length > 0 && logical.totalPages > 1;
+
   // ── 直链搜索滚动追加（2026-09-12 用户拍板：CMS 不做分页）──
   // CMS 恢复 append 语义（useCMSSearch.loadMore，滚动触底自动拉下一页拼接）；
   // smart 模式走逻辑分页，hasMore 恒 false 让哨兵闲置。
@@ -485,7 +482,19 @@ export default function BrowsePage() {
     ? (logical.loading || isRefreshing || (isLoading && !smartHasData))
     : (isCmsLoading && !cmsHasData);
 
-  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) && (searchMode === 'smart' ? discoverResults.length === 0 : filteredCmsResults.length === 0);
+  // 骨架只在「无内容可显示」时渲染（2026-09-14 用户反馈慢网叠字）：
+  // 翻页飞行中逻辑层 items 保留旧页原地展示（分页器禁用兜底），
+  // 骨架若同时渲染会叠在旧网格之上（骨架为文档流块，非遮罩）。
+  const showSkeleton = showResultsLoading &&
+    (searchMode === 'smart' ? logical.items.length === 0 : true);
+
+  // 空态与骨架/网格互斥（2026-09-14）：智能检索以逻辑层 items 为准——
+  // items 非空（含慢网下保留的旧页）时不显示「暂无结果」，
+  // 否则 fixed 全屏居中的空态会盖在内容与分页器上。
+  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) &&
+    (searchMode === 'smart'
+      ? (discoverResults.length === 0 && logical.items.length === 0)
+      : filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
@@ -670,11 +679,13 @@ export default function BrowsePage() {
         <div className="browse-results-body">
           {/* 结果区专属骨架：结构对齐真实「类型/排序行 + 卡片网格」，
               列数随 --card-cols 视口分档（不再用全站统一 AppLoading 菊花） */}
-          {showResultsLoading && (
+          {showSkeleton && (
             <BrowseSkeleton />
           )}
 
-          {!showResultsLoading && currentError && (searchMode === 'smart' ? discoverResults.length === 0 : cmsResults.length === 0) && (
+          {!showResultsLoading && currentError && (searchMode === 'smart'
+            ? (discoverResults.length === 0 && logical.items.length === 0)
+            : cmsResults.length === 0) && (
             <Empty title="暂无结果" description="尝试换个关键词搜索" />
           )}
 
