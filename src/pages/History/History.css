@@ -31,7 +31,9 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 0;
+  /* 2026-09-14 修复：同 Collections.css ——原 min-height:0 覆盖了全局底线，
+     导致 ≥1024 rail 布局下空状态贴顶。改为显式继承同一变量。 */
+  min-height: var(--layout-loading-min-height);
 }
 
 /* ── 时间轴 + 卡片 布局 ────────────────── */
