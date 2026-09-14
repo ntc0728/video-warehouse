@@ -332,28 +332,57 @@ html[data-device="app"] .home-disclaimer {
 
 
 
+/* 骨架行列表容器：只负责「行与行之间的纵向节奏」，不再自带横向/纵向 padding。
+   ⚠️ 2026-09-14 修复：原先这里有 padding: var(--space-md) var(--space-xs)，其横向值
+   对齐的是**旧版**真实行 .tmdb-movierow 的 `padding: 0 var(--space-xs)`；真实行现已改为
+   四向 `padding: var(--space-sm)` + 卡片模块外壳，该注释与取值均已过时。
+   横向内边距改由每行 .home-skeleton-row 自带的模块外壳承担（与真实行同一套盒模型），
+   避免「容器 padding + 行 padding」叠加成双份边距。 */
 .home-skeleton-rows {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
-  /* 横向内边距必须与真实电影行 .tmdb-movierow (padding: 0 var(--space-xs)) 对齐，
-     否则骨架行的 100% 基准宽度（视口 - 2*space-md）与真实行（视口 - 2*space-xs）
-     不同，即便卡片公式相同，骨架卡片也会比真实卡片窄，造成"骨架宽度与真实不一致"。
-     纵向保留 space-md 以分隔多行骨架。 */
-  padding: var(--space-md) var(--space-xs);
+  /* gap 必须与真实行 .home-page .tmdb-movierow 的 margin-bottom (--space-sm) 取同档：
+     真实行间距 = margin-bottom(--space-sm)；骨架若沿用 --space-xl 会让行距偏大，
+     且与每行新增的 margin-bottom 叠加成双份间距。 */
+  gap: 0;
 }
 
+/* 骨架行 = 「卡片模块」外壳，逐条镜像真实行 .home-page .tmdb-movierow 的盒模型
+   （Home.css 上方该规则）：padding --space-sm / border 1px / radius-lg / surface /
+   shadow-sm / margin-bottom --space-sm。
+   ⚠️ 缺这层外壳会让骨架行比真实行矮约 26.6px（padding 上下 16.4 + border 2 +
+   margin-bottom 8.2），骨架→真实切换时每行纵向跳 27px、7 行累计 189px，
+   违反项目不变量「骨架必须与真实元素同尺寸」。 */
 .home-skeleton-row {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  /* ⚠️ 2026-09-14 修复：gap 必须为 0，不能再用 --space-md。
+     真实行 .tmdb-movierow 的「标题→卡片区」间距**只由** .tmdb-movierow-header
+     的 margin-bottom(--space-sm) 提供；骨架这边这段间距也已由
+     .home-skeleton-row-title 自身的 margin-bottom(--space-sm) 承担。
+     若这里再给 gap，就会变成「gap(--space-md) + margin-bottom(--space-sm)」
+     双份间距，实测骨架行反比真实行高 11px（312.45 vs 301.47）。 */
+  gap: 0;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .home-skeleton-row-title {
+  /* 宽度对齐真实行标题 .tmdb-movierow-title 的观感尺度（标题文本约 4~6 字 + 左侧色条） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
   width: clamp(120px, 106.672px + 1.667vw, 200px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  height: clamp(24px, 21.328px + 0.333vw, 36px);
+  /* 高度 = 真实行标题的**单行行高**：真实 .tmdb-movierow-title 是
+     font-size var(--text-lg) × line-height 1.3（≥768 升为 --text-xl）。
+     不能凭空取 clamp —— 否则色条比真实标题高一截（实测 1440 档 26.1px vs 20.3px）。 */
+  height: calc(var(--text-lg) * 1.3);
+  /* 下方留白 = 真实 .tmdb-movierow-header 的 margin-bottom（卡片区起点）。
+     骨架这里用同一个元素承担「标题条 + 标题区下间距」，故必须补上这段间距，
+     否则骨架行整体比真实行矮 7.9px。 */
+  margin-bottom: var(--space-sm);
   border-radius: var(--radius-sm);
   background: linear-gradient(
     90deg,
@@ -365,11 +394,25 @@ html[data-device="app"] .home-disclaimer {
   animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
+/* ≥768 真实标题字号升档（.tmdb-movierow-title 的 Tablet 档），骨架同步。
+   ⚠️ App 端恒移动，不参与该升档（与 .tmdb-movierow-title 的 html:not([data-device="app"]) 门控一致）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .home-skeleton-row-title {
+    height: calc(var(--text-xl) * 1.3);
+  }
+}
+
 .home-skeleton-row-cards {
   display: flex;
   /* 与真实电影行 .tmdb-movierow-scroll 的 gap 保持一致（var(--space-md)，2026-09-04 调整），
      否则骨架行与真实行的卡片间距不同，视觉上"骨架比真实稀疏" */
   gap: var(--space-md);
+  /* ⚠️ 2026-09-14 修复：必须镜像 .tmdb-movierow-scroll 的 padding。
+     真实横滚容器的 `padding: var(--space-md) var(--space-xs)` 是给 TV 聚焦放大 +
+     焦点方框留缓冲用的上下留白（实测 1440 档 10.91px 上/下 = 21.82px）。
+     骨架原先 padding 为 0，导致骨架行的卡片区比真实行矮 20px、整行矮 9.1px，
+     骨架→真实切换时每行纵向跳 9px、7 行累计 64px，违反「骨架与真实同尺寸」不变量。 */
+  padding: var(--space-md) var(--space-xs);
   overflow: hidden;
 }
 

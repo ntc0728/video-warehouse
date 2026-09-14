@@ -149,3 +149,8 @@ ehthumbs.db
 
 # ── git 仓库损坏备份（重建后不应提交） ─────────
 .git.broken-*/
+
+# 骨架诊断截图（临时产物，不入库）
+.pw-shots-final/
+.pw-shots/
+.pw-*.mjs
