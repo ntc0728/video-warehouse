@@ -1,10 +1,11 @@
 ---
 date: 2026-09-14 01:00
-module: Browse 慢网互斥渲染 + 不足一页隐藏分页器
+module: Browse 慢网互斥渲染 + 不足一页隐藏分页器 + 取页直连 store
 type: fix
-build: npm run build 通过；browse.spec 11 条全过；Playwright 三场景（单页数据/慢网/失败）实测通过
+build: npm run build 通过；browse.spec 13 条全过（含新增 BROWSE-094/095）；全量 E2E 127 passed
 files:
-  - src/pages/Browse/index.tsx（showPagination 条件重写 + 骨架/空态/分页器互斥门控）
+  - src/pages/Browse/index.tsx（showPagination 条件重写 + 骨架/空态/分页器互斥门控 + fetchTmdbPage 直调 store）
+  - scripts/browse.spec.ts（新增 2.11 护栏 BROWSE-094/095）
 demo: 无（临时 Playwright 脚本验证后即删）
 ---
 
@@ -16,8 +17,7 @@ demo: 无（临时 Playwright 脚本验证后即删）
 
 - **空态**是 `position:fixed` 全屏视口居中（empty-state-wrapper），任何同帧元素都会被它压上；
 - **分页器**旧条件 `effectiveTotalPages>1 || discoverResults.length>0`：后半句在有任意结果时
-  恒真（单页数据也渲染），前半句会消费**陈旧 totalPages**（搜索 reset 清了 results 但
-  分页/失败路径不清 pagination）；
+  恒真（单页数据也渲染），前半句会消费**陈旧 totalPages**；
 - **骨架**是文档流块非遮罩，翻页飞行中旧 items 保留 → 骨架叠在旧网格之上。
 
 修复（互斥门控，以「逻辑层 items 是否有内容」为准绳）：
@@ -25,19 +25,39 @@ demo: 无（临时 Playwright 脚本验证后即删）
 - 骨架仅在 `items.length === 0` 时渲染（翻页飞行中旧页原地保留 + 分页器 disabled）；
 - 两个 Empty（错误/空态）都加 `logical.items.length === 0` 门控。
 
-### 2. 搜索结果不足一页时不应显示分页器
+### 2. 搜索结果「不足一页」时不应显示分页器
 
 旧条件的 `|| discoverResults.length > 0` 让单页数据也渲染分页器。
 新条件 `logical.totalPages > 1`：不足一页（总页数 = 1）不渲染。
 500 页硬顶原由 `effectiveTotalPages = min(totalPages, 500)` 承担，现由
 useLogicalPage 的 `TMDB_PAGE_CAP` 统一钳制，`effectiveTotalPages` 随之删除。
 
+### 3. 【数据侧根因】慢网下搜索结果被初始 discover 数据整体覆盖
+
+写 BROWSE-094 护栏时暴露的真 bug（插桩 useLogicalPage 抓到）：
+新上下文（`smart:单页剧:*`）的 `fetchPage` 返回了 **40 条 discover 默认数据**，
+写进网格 → 搜「掌舵少女」看到的是「测试电影 20」，与用户截图现象一致。
+
+链路：`fetchTmdbPage → useBrowseData.goToPage` 的守卫读的是 **useCallback 渲染快照**
+（`loading.discover` / `totalPages`），慢网下快照里 `loading=true` 已过时 →
+goToPage 直接 `Promise.resolve()` 静默 no-op → 回到 fetchTmdbPage 后
+`s.discoverPagination.page === t`（t=1，store 里是初始 discover 的 page=1）
+**误命中** → 把别的流程的 store 数据当成「本页」返回。
+
+修复：`fetchTmdbPage` 不再经 `goToPage`，直接调 store
+（`store().search/fetchDiscover/fetchTopRated(t, {reset})`）——
+store 侧 `_discoverSeq` 已保证仅最新请求可写结果；上方等待循环读的也是 live state。
+`goToPage` 随之在 Browse 不再被消费（仍保留在 useBrowseData 供他处使用）。
+
 ### 验证
 
-Playwright 三场景：单页数据（1 卡片 + 无分页器 + 无空态）；慢网 3s（飞行中骨架
-显示、分页器/空态不出现，落地后分页器出现）；搜索失败 500（空态出现、分页器不出现）。
-注意：直接 `goto('/browse?q=x')` 是 POP 导航、按设计忽略搜索词，测试须走首页
-搜索框 PUSH 进入。
+- 插桩复现：修复前 `fetchPage t=1 bufLen=40`（discover 数据）→ 修复后卡片数 = 1；
+- BROWSE-094/095：单页数据（1 卡片 + 无分页器 + 无空态）；慢网 3s（飞行中骨架独占、
+  分页器/空态不出现，落地后分页器出现，空态始终不出现）；
+- browse.spec 13 条全过；全量 E2E 127 passed / 1 skipped，IPTV-040/041 与 PLAYER-M01/M07/M08
+  两条为 4-worker 并行下的既有 flaky（单独跑 15/15 全过，且本次只碰 Browse，无因果）。
+- ⚠️ 测试姿势：直接 `goto('/browse?q=x')` 是 POP 导航、按设计忽略搜索词，
+  必须走顶部搜索框（PUSH）进入。
 
 ### 顺带发现（未修）
 

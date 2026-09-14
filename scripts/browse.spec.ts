@@ -3,7 +3,7 @@
  * 路由: /browse
  * 配置依赖: 智能检索需 Level 1（Token）；CMS 直链搜索需 Level 2（Token + CORS 代理）
  *
- * 覆盖: BROWSE-001 ~ BROWSE-080（合并后 7 条）
+ * 覆盖: BROWSE-001 ~ BROWSE-095（合并后 13 条）
  *
  * 等待策略: 全部使用 Playwright web-first 条件等待（expect / expect.poll），
  *          不使用固定 waitForTimeout 睡眠；轮询 50ms 起步，条件成立立即返回。
@@ -564,5 +564,81 @@ test.describe('2.10 逻辑分页', () => {
     const lastCount = await page.locator('.browse-card-grid .video-card').count();
     expect(lastCount).toBeGreaterThan(0);
     expect(lastCount).toBeLessThanOrEqual(P);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 2.11 分页器渲染门控（BROWSE-094~095，2026-09-14 慢网叠字 + 单页隐藏修复）
+// ═══════════════════════════════════════════════════════════════
+// 护栏背景：空态是 fixed 全屏视口居中、骨架是文档流块（非遮罩），
+// 三者（骨架/空态/分页器）任一与内容同帧渲染即叠字。门控以「逻辑层 items
+// 是否有内容」为准绳：items 空 → 只允许骨架；items 有内容且 totalPages>1
+// → 才渲染分页器。搜索须走顶部搜索框 PUSH 进入 —— POP 直接访问 ?q=
+// 按设计忽略搜索词（刷新防 history.state 残留）。
+test.describe('2.11 分页器渲染门控', () => {
+  /** 顶部搜索框 PUSH 进入搜索（等价用户真实操作；直接 goto ?q= 是 POP 不触发搜索） */
+  async function searchFromHeader(page: import('@playwright/test').Page, q: string) {
+    const input = page.locator('.sticky-header .search-box__input');
+    await input.fill(q);
+    await input.press('Enter');
+  }
+
+  test('BROWSE-094: 结果不足一页（totalPages=1）不渲染分页器、不误渲染空态', async ({ page }) => {
+    await page.route('**/api.tmdb.org/3/search/multi**', async (route) => {
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+          page: 1, total_pages: 1, total_results: 1,
+          results: [{
+            id: 94001, media_type: 'tv', name: '单页剧', title: '单页剧',
+            first_air_date: '2026-01-01', release_date: '2026-01-01',
+            vote_average: 8, vote_count: 10, popularity: 99,
+            genre_ids: [], poster_path: null, overview: '',
+          }],
+        }),
+      });
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await searchFromHeader(page, '单页剧');
+
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.browse-card-grid .video-card')).toHaveCount(1);
+    await expect(page.locator('.browse-pagination')).toHaveCount(0);
+    await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
+  });
+
+  test('BROWSE-095: 慢网飞行中骨架独占（无分页器/空态叠加），落地后分页器出现', async ({ page }) => {
+    await page.route('**/api.tmdb.org/3/search/multi**', async (route) => {
+      await new Promise((r) => setTimeout(r, 3000));
+      const pg = Number(new URL(route.request().url()).searchParams.get('page') ?? 1);
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+          page: pg, total_pages: 5, total_results: 100,
+          results: Array.from({ length: 20 }, (_, i) => ({
+            id: 95000 + (pg - 1) * 20 + i, media_type: 'movie',
+            title: `慢网-${pg}-${i}`, name: `慢网-${pg}-${i}`,
+            release_date: '2024-01-01', first_air_date: '2024-01-01',
+            vote_average: 7, vote_count: 100, popularity: 100 - i,
+            genre_ids: [], poster_path: null, overview: '',
+          })),
+        }),
+      });
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await searchFromHeader(page, '慢网剧');
+
+    // 飞行中：骨架显示，分页器与空态都不得渲染（fixed 空态/分页器与骨架同帧 = 叠字）
+    await expect(page.locator('.browse-skeleton').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.browse-pagination')).toHaveCount(0);
+    await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
+
+    // 落地后：分页器出现（多页数据），空态仍不出现
+    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
   });
 });

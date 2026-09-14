@@ -93,8 +93,8 @@ export default function BrowsePage() {
     updateFilter,
     isRefreshing,
     refreshNow,
-    goToPage: goToPageTMDB,
-    // hasMore 不再直接消费：逻辑分页层的 hasNext = 逻辑页 < ceil(钉定总数 / 每页条数)
+    // hasMore 不再直接消费：逻辑分页层的 hasNext = 逻辑页 < ceil(钉定总数 / 每页条数)。
+    // goToPage 亦不再消费（fetchTmdbPage 直调 store，见其注释）。
     isLoadingMore,
     discoverResults,
     discoverPagination,
@@ -411,7 +411,17 @@ export default function BrowsePage() {
       guard += 1;
     }
     for (let attempt = 0; attempt < 2; attempt++) {
-      await goToPageTMDB(t, query || undefined);
+      // 2026-09-14：不经 useBrowseData.goToPage 取页 —— 其 loading.discover /
+      // totalPages 守卫读的是 useCallback 渲染快照，慢网下以「陈旧 loading=true」
+      // 短路 no-op，随后 page===t 校验误命中、把别的流程（如初始 discover）的
+      // store 数据当本页返回 → 搜索结果被 discover 覆盖。改为直接调 store
+      // （_discoverSeq 已保证仅最新请求可写结果），上方等待循环读的也是 live state。
+      const p = query
+        ? store().search(query, t, { reset: true })
+        : filterValue.category === 'top'
+          ? store().fetchTopRated(t, { reset: true })
+          : store().fetchDiscover(t, { reset: true });
+      await p;
       const s = store();
       if (s.discoverPagination.page === t) return s.discoverResults;
       await new Promise<void>((r) => setTimeout(r, 350));
@@ -422,7 +432,7 @@ export default function BrowsePage() {
       }
     }
     return store().discoverResults;
-  }, [goToPageTMDB, query, filterValue]);
+  }, [query, filterValue]);
   const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
   const logical = useLogicalPage({
     cols: cardCols,
