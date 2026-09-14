@@ -3,18 +3,21 @@
  *
  * 职责：
  * 1. URL ↔ FilterBarValue 双向同步
- * 2. 筛选条件变化触发 fetch（debounced）
- * 3. 懒加载（loadMore）
- * 4. 维护 isUpdating 状态（debounce 期间为 true，UI 可显示 spinner）
+ * 2. 筛选条件变化的 debounce 处理（只「对齐」store.filterOptions + 置 loading）
+ * 3. 维护 loading 语义（isRefreshing / isUpdating）
  *
  * 设计：
  * - 单一来源：URL 是筛选状态的真相（refresh / 分享 / 前进后退 全部恢复）
  * - store 仅作为内存缓存层：discoverResults / discoverPagination 由 store 持有
- * - 重置语义：filterSig 变化 → fetchDiscover(1, { reset: true }) 强制覆盖旧数据
+ * - **取页唯一出口 = 逻辑分页层**（`useLogicalPage.goto` → `Browse/index.tsx` 的
+ *   `fetchTmdbPage`）。本 hook 一律不直接发起 discover / top_rated / search 请求：
+ *   本 hook 一拍、逻辑分页层又一拍，会让同一页被请求 2~3 次（重复请求的根因）。
+ *   filterSig 变化时本 hook 只把新筛选「延迟写进」store.filterOptions，
+ *   逻辑分页层的第一段等待（轮询 filterOptions 对齐）自然形成防抖。
  *
- * v5:移除 skeletonBatches 计数与相关 effect（v3+v4 引入的内联骨架占位图已废弃）。
- *   懒加载 loading 态由 `isLoadingMore` 布尔直接驱动 UI spinner,
- *   不再有 "在飞批次数" 概念,加载成功/失败都同帧结束(spinner 消失)。
+ * v6(2026-09-14)：移除本 hook 内的全部取页逻辑（mount 立即拉取 / filterSig 重置拉取 /
+ *   refreshNow 立即拉取 / goToPage / loadMore / retry），收拢到逻辑分页层。
+ * v5：移除骨架批次计数相关 effect（v3+v4 的内联骨架占位图已废弃）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -29,8 +32,9 @@ import { parseFromUrl, serializeToUrl } from './urlState';
  * discover 缓存回显 TTL（方案 B：无 Keep-Alive）
  * Browse 重新挂载时，若 store 已有「当前筛选条件」的成功结果且未超 TTL，直接回显、
  * 跳过重新请求；超过 TTL 则重新拉取（数据保鲜）。
+ * 判定函数在 Browse/index.tsx 的 fetchTmdbPage 内共用（回显决策归取页方）。
  */
-const DISCOVER_CACHE_TTL_MS = 10 * 60 * 1000;
+export const DISCOVER_CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** 把 FilterBarValue 转成 store 需要的 TMDBFilterOptions */
 export function toStoreFilter(value: FilterBarValue) {
@@ -48,7 +52,7 @@ export function toStoreFilter(value: FilterBarValue) {
   };
 }
 
-export function useBrowseData(query?: string) {
+export function useBrowseData() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ── 1. URL → FilterBarValue ─────────────────────────
@@ -58,11 +62,6 @@ export function useBrowseData(query?: string) {
   );
   const filterSig = useMemo(() => buildFilterSig(filterValue), [filterValue]);
 
-  // ── 1b. 搜索词（从参数传入，不再从 URL 读取） ───────────
-  // TMDB discover 端点不支持 query 文本搜索；q 不为空时调 /search/multi，
-  // 走 store.search() 把结果写入 discoverResults。
-  const urlQ = query?.trim() ?? '';
-
   // ── 2. store 状态（精确选择器，避免首页轮播更新触发无关重渲染） ──
   const discoverResults = useTMDBStore(s => s.discoverResults);
   const discoverPagination = useTMDBStore(s => s.discoverPagination);
@@ -70,8 +69,6 @@ export function useBrowseData(query?: string) {
   const loading = useTMDBStore(s => s.loading);
   const errors = useTMDBStore(s => s.errors);
   const setFilter = useTMDBStore(s => s.setFilter);
-  const fetchDiscover = useTMDBStore(s => s.fetchDiscover);
-  const fetchTopRated = useTMDBStore(s => s.fetchTopRated);
 
   // ── 3. debounce + 重置 fetch ────────────────────────
   const lastSigRef = useRef<string>(filterSig);
@@ -91,22 +88,20 @@ export function useBrowseData(query?: string) {
     };
   }, []);
 
-  // 首次 mount：立即发起一次查询，让"从首页进入"也能直接看到数据
-  // 搜索模式（urlQ 非空）由父组件 Browse/index.tsx 统一触发 search()，
-  // 此处仅处理 discover / top-rated 场景。
+  // 首次 mount：只做「filterOptions 对齐 + loading 置位」，**不再自行取页** ——
+  // 取页唯一出口是逻辑分页层的 fetchTmdbPage（useLogicalPage.goto(1)）。
+  // 这里若也发一次请求，会与 goto(1) 撞成「同一页 2 次请求」。
   // 方案 B（无 Keep-Alive）：重新挂载时若 store 已有「当前筛选条件」的成功结果
-  // 且未超 TTL，直接回显缓存、跳过重新请求（避免切回 Browse 重复拉取）。
+  // 且未超 TTL，首帧直接回显不置 loading（避免切回 Browse 时骨架闪一下）。
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
     initialFetchDoneRef.current = true;
 
     // 同步 store 中的 filterOptions（确保与 URL 一致）
+    // ⚠️ 必须同步写：fetchTmdbPage 第一段在轮询 filterOptions 对齐，首屏若不对齐会空等。
     setFilter(toStoreFilter(filterValue));
 
-    // 有搜索词时跳过：由父组件 search() 处理
-    if (urlQ) return;
-
-    // 缓存回显判断：store 结果对应当前筛选条件且未过期 → 直接渲染，不重新请求
+    // 缓存回显判断：store 结果对应当前筛选条件且未过期 → 不置 loading，首帧直接回显
     const st = useTMDBStore.getState();
     const cachedFilter = st.discoverFetchedFilter;
     const cacheHit =
@@ -120,40 +115,19 @@ export function useBrowseData(query?: string) {
       return;
     }
 
-    // 首次进入页面，无论有无旧数据都显示 loading
+    // 无可用缓存：置 loading，等逻辑分页层取回第 1 页后由 endRefresh 收尾
     setIsRefreshing(true);
     hadOldDataRef.current = false;
-
-    // 立即发起 page=1 查询（无 debounce）
-    const fetchPromise = (() => {
-      if (filterValue.category === 'top') {
-        return fetchTopRated(1, { reset: true });
-      } else {
-        return fetchDiscover(1, { reset: true });
-      }
-    })();
-
-    void fetchPromise.then(() => {
-      if (isMountedRef.current) {
-        setIsRefreshing(false);
-      }
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── 3b. 搜索词变化 ──────────────────────────────
-  // q 变化时由父组件 Browse/index.tsx 的 useEffect 统一调用 search()，
-  // 此处不再重复调用（避免两处独立 search 互相覆盖导致数据丢失）。
-  // q 清空（undefined → ''）时由 filterSig effect 接管 discover。
-
-
-
-
-  // 筛选签名变化：debounce → 强制重置 fetch（首次 mount 由上方独立 effect 处理）
-  // 有搜索词时（urlQ 不为空）跳过本 effect，由 3b 的 q effect 接管（避免重复请求）。
+  // 筛选签名变化：debounce 后只把新筛选写进 store.filterOptions，**不发请求**。
+  // 取页由逻辑分页层统一负责：contextKey 变化 → goto(1) → fetchTmdbPage 第一段
+  // 轮询 filterOptions 对齐后才发请求 —— 这里「延迟对齐」等价于「延迟取页」，
+  // 连点筛选只会有最后一次对齐生效，请求自然只发一次。
+  // 搜索模式（关键词非空）同样走本分支：/search/multi 也由逻辑分页层发起。
   useEffect(() => {
     if (!initialFetchDoneRef.current) return;
-    if (urlQ) return; // 有 q：走 /search/multi 端点，不走 discover
     if (filterSig === lastSigRef.current) return;
     lastSigRef.current = filterSig;
 
@@ -163,30 +137,12 @@ export function useBrowseData(query?: string) {
     setIsRefreshing(true);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
-    debounceTimerRef.current = setTimeout(async () => {
+    debounceTimerRef.current = setTimeout(() => {
       if (!isMountedRef.current) return;
       setIsUpdating(false);
-
-      // 先同步 store 的 filterOptions，再发起第一页请求
+      // 对齐筛选参数：逻辑分页层此刻正卡在第一段轮询上等这一步。
+      // loading 收尾不在本 hook —— 逻辑分页层装载完成后调 endRefresh()。
       setFilter(toStoreFilter(filterValue));
-
-      try {
-        if (filterValue.category === 'top') {
-          // 排行榜：topUserFilterRef 已在 useBrowseData 内合并为 filterSig 变化即可重置
-          await fetchTopRated(1, { reset: true });
-        } else {
-          await fetchDiscover(1, { reset: true });
-        }
-      } finally {
-        if (isMountedRef.current) {
-          // 等待新内容渲染完成后再隐藏 loading（至少 150ms 避免闪烁）
-          await new Promise<void>((r) => setTimeout(r, 150));
-          if (isMountedRef.current) {
-            setIsRefreshing(false);
-            hadOldDataRef.current = false;
-          }
-        }
-      }
     }, FILTER_DEBOUNCE_MS);
 
     return () => {
@@ -196,7 +152,7 @@ export function useBrowseData(query?: string) {
   // 导致 effect 重跑、触发 reset 重拉第一页覆盖已有数据。
   // hadOldDataRef.current 通过下方 guard 前读取最新值即可。
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterSig, urlQ, filterValue, setFilter, fetchDiscover, fetchTopRated]);
+  }, [filterSig, filterValue, setFilter]);
 
   // ── 4. 写回 URL（由调用方触发）─────────────────────
   const updateFilter = useCallback(
@@ -207,8 +163,7 @@ export function useBrowseData(query?: string) {
     [setSearchParams],
   );
 
-  // ── 5. 懒加载 ──────────────────────────────────────
-  const hasMore = discoverPagination.page < discoverPagination.totalPages;
+  // ── 5. 取页状态 ────────────────────────────────────
   /**
    * "正在加载更多"的判定(v5):
    * - loading.discover && discoverResults.length > 0  → 仍处于请求飞行中
@@ -222,124 +177,34 @@ export function useBrowseData(query?: string) {
   const isLoadingMore =
     loading.discover && discoverResults.length > 0 && discoverLastStatus !== 'success';
 
-  const loadMore = useCallback((searchQuery?: string) => {
-    if (loading.discover) return;
-    if (!hasMore) return;
-
-    const nextPage = discoverPagination.page + 1;
-    if (searchQuery) {
-      useTMDBStore.getState().search(searchQuery, nextPage);
-    } else if (filterValue.category === 'top') {
-      fetchTopRated(nextPage);
-    } else {
-      fetchDiscover(nextPage);
-    }
-  }, [loading.discover, hasMore, discoverPagination.page, filterValue.category, fetchDiscover, fetchTopRated]);
-
   /**
-   * 重试当前筛选条件下的首次加载（清空错误、强制 reset 拉 page=1）
-   * 用于错误页"重试"按钮。无副作用,可在任意时刻调用,内部走 store 异步流程。
+   * 取页收尾：逻辑分页层装载完成（或本次取页被更晚的 goto 取代）后调用，关闭 loading 遮罩。
+   *
+   * ⚠️ 不做 150ms 缓冲（v6 变更）：原缓冲是为了等「fetch resolve → React 渲染新内容」
+   * 两拍对齐；现在收尾紧跟在逻辑分页层的 setItems 之后（同一批状态更新、同帧渲染），
+   * 缓冲只会白白多留一段「无骨架又无卡片」的空窗。
    */
-  const retry = useCallback((searchQuery?: string) => {
-    if (loading.discover) return;
-    setFilter(toStoreFilter(filterValue));
-    if (searchQuery) {
-      void useTMDBStore.getState().search(searchQuery, 1, { reset: true });
-    } else if (filterValue.category === 'top') {
-      void fetchTopRated(1, { reset: true });
-    } else {
-      void fetchDiscover(1, { reset: true });
-    }
-  }, [loading.discover, filterValue, setFilter, fetchDiscover, fetchTopRated]);
+  const endRefresh = useCallback(() => {
+    if (!isMountedRef.current) return;
+    setIsRefreshing(false);
+    hadOldDataRef.current = false;
+  }, []);
 
   /**
-   * 分页跳转（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）。
+   * 显式刷新（下拉刷新 / 从首页分类导航进入 → /browse?category=...）。
    *
-   * 与 loadMore 的本质区别：带 `reset: true` → store 同步清空 results，
-   * 新页是「替换」而非「追加」，UI 整页 loading（旧数据不残留）。
-   * 滚动回顶由调用方负责（本 hook 不碰 DOM）。
-   *
-   * 2026-09-12 逻辑分页组装层：返回 Promise（loading 收尾后 resolve），
-   * 调用方（useLogicalPage）按逻辑页需要串行取多个 TMDB 页后切片。
-   *
-   * @param page 目标页码（1 起）
-   * @param searchQuery 有搜索词时走 /search/multi 端点
-   * @returns 数据落地 + loading 收尾后 resolve 的 Promise
-   */
-  const goToPage = useCallback(
-    (page: number, searchQuery?: string): Promise<void> => {
-      if (loading.discover) return Promise.resolve(); // 已有请求在飞，避免叠加
-      if (!Number.isFinite(page) || page < 1) return Promise.resolve();
-      const totalPages = discoverPagination.totalPages;
-      if (totalPages > 0 && page > totalPages) return Promise.resolve();
-
-      setIsRefreshing(true);
-      hadOldDataRef.current = false;
-
-      const p = searchQuery
-        ? useTMDBStore.getState().search(searchQuery, page, { reset: true })
-        : filterValue.category === 'top'
-          ? fetchTopRated(page, { reset: true })
-          : fetchDiscover(page, { reset: true });
-
-      return (async () => {
-        try {
-          await p;
-        } finally {
-          if (isMountedRef.current) {
-            // 与 refreshNow 一致：等新内容渲染完再收 loading（150ms 防闪）
-            await new Promise<void>((r) => setTimeout(r, 150));
-            if (isMountedRef.current) {
-              setIsRefreshing(false);
-              hadOldDataRef.current = false;
-            }
-          }
-        }
-      })();
-    },
-    [loading.discover, discoverPagination.totalPages, filterValue.category, fetchDiscover, fetchTopRated],
-  );
-
-  /**
-   * 分类导航进入（Home CategoryQuickAccess → /browse?category=...）时的立即刷新。
-   *
-   * 背景：Keep-Alive 下 Browse 常驻挂载，URL 的 filterSig 变化本应走 filterSig
-   * effect 的 300ms debounce —— 但 debounce 期间旧分类数据仍可见（「显示上一次数据
-   * + 闪烁」）；且若残留搜索词，urlQ 非空会让 filterSig effect 直接 return、永不
-   * 重新拉取（残留词导致数据定格）。
-   *
-   * refreshNow()：
-   * - 同步 lastSigRef = 当前 filterSig → 清空 query 后 filterSig effect 重跑时命中
-   *   `filterSig === lastSigRef` 直接 return，不会与本次刷新重复请求；
-   * - setIsRefreshing(true) → UI 的 showResultsLoading 立即显示 loading 遮罩，
-   *   旧数据被遮挡（无「旧数据闪现」）；
-   * - 立即 fetchDiscover/TopRated(reset)（store 的 reset 同步清空 results + 置
-   *   loading，paint 前即生效）。
+   * 只做三件事，**不发请求**（请求由调用方紧接的 `goto(1, { force: true })` 发出）：
+   * - 同步 lastSigRef = 当前 filterSig：避免 filterSig effect 再走一遍防抖分支；
+   * - 立即对齐 filterOptions（调用方的 goto 会跳过防抖路径，这里同步写保证第一段等待
+   *   立刻通过，无需再等 300ms）；
+   * - setIsRefreshing(true) → UI 的 showResultsLoading 立即生效，旧数据被遮挡（无闪现）。
    */
   const refreshNow = useCallback(() => {
-    if (loading.discover) return; // 已有请求在飞，避免叠加
     lastSigRef.current = filterSig;
     hadOldDataRef.current = false;
     setIsRefreshing(true);
     setFilter(toStoreFilter(filterValue));
-    const p = filterValue.category === 'top'
-      ? fetchTopRated(1, { reset: true })
-      : fetchDiscover(1, { reset: true });
-    void (async () => {
-      try {
-        await p;
-      } finally {
-        if (isMountedRef.current) {
-          // 与 filterSig effect 一致：等待新内容渲染完成后再隐藏 loading（150ms 防闪）
-          await new Promise<void>((r) => setTimeout(r, 150));
-          if (isMountedRef.current) {
-            setIsRefreshing(false);
-            hadOldDataRef.current = false;
-          }
-        }
-      }
-    })();
-  }, [loading.discover, filterSig, filterValue, setFilter, fetchDiscover, fetchTopRated]);
+  }, [filterSig, filterValue, setFilter]);
 
   return {
     filterValue,
@@ -347,11 +212,8 @@ export function useBrowseData(query?: string) {
     isUpdating,
     isRefreshing,
     hadOldData: hadOldDataRef.current,
-    loadMore,
-    goToPage,
-    retry,
     refreshNow,
-    hasMore,
+    endRefresh,
     isLoadingMore,
     discoverResults,
     discoverPagination,
