@@ -125,6 +125,13 @@
   object-fit: cover;
 }
 
+/* 2026-09-14：头像改用 LazyImage 后多了一层 .lazy-image-container，
+   需显式撑满 .person-avatar（否则容器无尺寸 → 骨架占位塌陷、兜底不显示）。 */
+.person-avatar .lazy-image-container.person-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
 .person-name {
   margin: 0 0 var(--space-sm);
   color: #fff;

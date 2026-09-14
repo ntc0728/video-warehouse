@@ -683,6 +683,14 @@
   object-fit: cover;
 }
 
+/* 2026-09-14：剧照改用 LazyImage 后，图外多包了一层 .lazy-image-container。
+   .detail-stills-item img 仍能命中内层 <img>，但容器本身没有尺寸 ——
+   aspect-ratio 撑不起格子、骨架占位会塌。故让容器 100% 撑满格子。 */
+.detail-stills-item .lazy-image-container.detail-stills-img {
+  width: 100%;
+  height: 100%;
+}
+
 /* ── 查看更多占位 ──────────────────────────────── */
 
 .detail-stills-item--more {
