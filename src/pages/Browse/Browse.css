@@ -709,19 +709,20 @@
     font-weight: 500;
   }
 
-  /* 侧栏内禁横向滚动 → 自适应列数（2026-09-10 用户拍板 B+C，取代 2026-09-08 的固定 2 列）：
-     短词（全部 / 2024 / 美国）自动多排一列，长词由 FilterBar 打 --full 独占整行。
-     同一规则同时作用于 chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
+  /* 侧栏内禁横向滚动 → 固定 2 列（2026-09-14 用户拍板，再度取代 2026-09-10 B+C 的
+     auto-fill 自适应列数）：auto-fill 在大视口下随 --rail-w 增宽自动多排列
+     （1920 档 3 列、2560 档 4 列），用户要求任何视口下恒为两列。
+     长词仍由 FilterBar 打 --full 独占整行。同一规则同时作用于
+     chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-wrap {
     display: grid;
     flex: 0 0 auto;
-    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     /* 2026-09-12 行距回补：row-gap 由 --space-2xs(≈2px) 提到 --space-xs(≈4px)
-       （行距 22.2 → 24.2px）。column-gap 刻意保持 2xs——列间距变大会挤压
-       auto-fill 列数（1920 档 3 列可能塌成 2 列）。 */
+       （行距 22.2 → 24.2px）。列数已固定，column-gap 保持 2xs 不再影响列数。 */
     gap: var(--space-xs) var(--space-2xs);
     justify-items: stretch;
     align-content: start;
