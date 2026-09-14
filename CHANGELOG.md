@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.25.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.24.0...kinotv-v1.25.0) (2026-09-14)
+
+
+### Features
+
+* **browse:** 慢取页反馈 A′ + 取页出口收拢到逻辑分页层 ([29f7fbc](https://github.com/ntc0728/video-warehouse/commit/29f7fbc0d2a67df50e108f03adfdcf45aa1f51bc))
+
+
+### Bug Fixes
+
+* **browse:** 取页直连 store——慢网下搜索被初始 discover 覆盖；补 BROWSE-094/095 门控护栏 ([540840d](https://github.com/ntc0728/video-warehouse/commit/540840dfb021c2d56a8d3adcb71bdc21376eb590))
+* **browse:** 左栏 chips 恒两列——auto-fill 随 rail 增宽多排列（1920 档 3 列/2560 档 4 列）改固定 2 列 ([c21674c](https://github.com/ntc0728/video-warehouse/commit/c21674cd4b96f3a5388cf5133aacf347b1611cda))
+* **browse:** 慢网互斥渲染——空态/骨架/分页器不再同帧叠加；数据不足一页隐藏分页器 ([8f4c826](https://github.com/ntc0728/video-warehouse/commit/8f4c826ff8acd62d412b3b03e60818f8ade4b82d))
+* **detail:** 剧照 +N 遮罩被 LazyImage 图片层压住（z-index 回归） ([b613405](https://github.com/ntc0728/video-warehouse/commit/b6134050a4ede1b43d5b20dc8227a91ce913f03d))
+* **home:** 首页骨架行补「卡片模块」外壳——骨架/真实切换不再纵向跳 27px ([4d0d176](https://github.com/ntc0728/video-warehouse/commit/4d0d17616a5bd343326f27d7013b5419bb895fb0))
+* **layout:** 修复收藏/历史页空状态在 ≥1024 断点贴顶不居中 ([99d55fd](https://github.com/ntc0728/video-warehouse/commit/99d55fd49ff30d56a43fe3fb8511fc8d1a7fd577))
+* **tooling:** changelog-collect 不再让残留片段永久阻断 push，并防重复合并 ([55f0461](https://github.com/ntc0728/video-warehouse/commit/55f04613c0152b92af5e4da06164edfe8ec46aa2))
+
+
+### Performance Improvements
+
+* **images:** Detail 剧照 / Person 头像改用 LazyImage，只加载进入视口的图片 ([d8bf86a](https://github.com/ntc0728/video-warehouse/commit/d8bf86a6d5c55b283846e37fd0339a0c96da1689))
+
 ## [1.24.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.23.0...kinotv-v1.24.0) (2026-09-11)
 
 
