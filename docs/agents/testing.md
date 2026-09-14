@@ -77,7 +77,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-10 晚：127 条 / 18 个 spec**；同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-14：132 条 / 18 个 spec**；2026-09-10 晚为 127 条、同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**、**BROWSE-090~093（逻辑分页）与 BROWSE-094/095（分页器渲染门控）**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 >
 > ⚠️ **表中「test 数」列的数字多为 2026-09 之前的历史快照，与 `--list` 枚举数口径不一致**（例如 home 列 46、实际 13 个 `test()`）。**需要精确数字时以 `--list` 为准，别直接引用本列**：
 > ```bash
