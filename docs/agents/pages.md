@@ -95,6 +95,23 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs     # 同时获取 TMDB 数�
 | IPTV 播放 | `/iptv/play`      | IPTVPlayer (独立全屏)                                                                            | IPTV channel stream                                                                 |
 
 
+## Browse 逻辑分页契约（2026-09-14 门控定稿）
+
+写/改 Browse 分页相关代码前先读这三条，均为实测踩过的坑：
+
+1. **渲染门控三者互斥**：`showPagination = smart && logical.items.length > 0 && logical.totalPages > 1`。
+   - 空态 `.empty-state-wrapper` 是 `position:fixed` **全屏视口居中**，任何同帧元素都会被它压上
+     （慢网叠字截图就是这么来的）；骨架是**文档流块、不是遮罩**，翻页飞行中会叠在保留的旧网格上。
+   - 故：骨架仅在 `items.length === 0` 时渲染；两个 Empty 都加 `items.length === 0` 门控。
+   - 不足一页（`totalPages === 1`）不渲染分页器。500 页硬顶由 `useLogicalPage` 的
+     `TMDB_PAGE_CAP` 统一钳制，页面层不再自己算 `effectiveTotalPages`。
+2. **取页直连 store**，不经 `useBrowseData.goToPage`（其守卫是渲染快照，慢网会静默 no-op +
+   页号校验误命中 → 搜索结果被 discover 覆盖）。根因与通用教训见
+   [architecture.md](architecture.md) 的「异步守卫与竞态」。
+3. **左栏筛选 chips 恒 2 列**（`repeat(2, minmax(0,1fr))`）。不要改回 `auto-fill`——
+   `--rail-w` 随视口增宽（1440→148 / 1920→192 / 2560→248），auto-fill 会跟着变成 3~4 列，
+   用户明确要求任何视口都是两列。长词由 FilterBar 打 `--full` 独占整行。
+
 ## Keep-Alive 路由
 
 AppLayout 使用 Keep-Alive 模式：所有已访问页面保持挂载，通过 CSS `display` 切换可见性。  

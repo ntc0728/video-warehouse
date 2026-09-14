@@ -23,6 +23,26 @@ Layer 4: 外部数据源               → TMDB API / CMS 采集站 / IPTV M3U /
 | useSourceManagerStore | sourceService            | 视频/IP/EPG 三源统一管理（启用+顺序+聚合 URL 回写）      | 本地文件        |
 | useNavStore           | —                        | 页面导航状态                                 | 内存          |
 
+### 异步守卫与竞态：读 live state，不读渲染快照
+
+**跨层取数时，所有守卫/校验必须走 `store.getState()`（live），不能用组件里 useCallback 闭包
+捕获的那份 store 字段**。渲染快照只在「本次 render 那一帧」是真的，慢网下必然过时。
+
+2026-09-14 Browse 实测的完整失败链（搜「掌舵少女」→ 页面显示 discover 默认数据）：
+
+1. `useBrowseData.goToPage` 开头的 `if (loading.discover) return` 读的是 **渲染快照**；
+   慢网下快照里 `loading=true` 早已过时 → 静默 `Promise.resolve()`，请求根本没发；
+2. 调用方 `fetchTmdbPage` 随后校验 `store().discoverPagination.page === t`（t=1）——
+   store 里躺着的是上一轮**初始 discover** 的 page=1，**校验误命中**；
+3. 于是把别的流程写进 store 的数据当作「本页结果」返回，污染当前上下文。
+
+修法：取页函数直接调 store（`store().search/fetchDiscover/fetchTopRated(t, {reset})`），
+等待循环也读 live state。竞态由 store 侧请求序号（`_discoverSeq`）统一兜底，
+调用方不再自行用快照做守卫——「守卫 + 序号」两层叠加反而制造了静默 no-op。
+
+推论：**慢网/并发场景下「没报错但数据不对」先怀疑陈旧闭包守卫**；
+写这类守卫时同步检查 `const { x } = useStore()` 是否被拿去做了 if 判断。
+
 
 ## 代理配置
 
