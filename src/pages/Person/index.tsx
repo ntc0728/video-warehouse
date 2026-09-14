@@ -14,6 +14,7 @@ import { useDocumentTitle } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { VideoCard } from '@/components/VideoCard';
+import LazyImage from '@/components/LazyImage/LazyImage';
 import { ArrowLeft, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import './Person.css';
 import { Icon } from "@/components/ui/Icon";
@@ -209,7 +210,15 @@ export default function PersonPage() {
         <div className="person-hero-content">
           {avatarUrl && (
             <div className="person-avatar">
-              <img src={avatarUrl} alt={person.name} />
+              {/* 2026-09-14：裸 <img> → LazyImage。
+                  头像是 hero 首屏元素（必然在视口内），懒加载收益为零，
+                  换来的是原先缺失的两项能力：加载期骨架占位（原白块）、
+                  失败时品牌兜底（原裂图 + alt 文本）。 */}
+              <LazyImage
+                src={avatarUrl}
+                alt={person.name}
+                className="person-avatar-img"
+              />
             </div>
           )}
           <div className={`person-info${!person.biography ? ' person-info--no-bio' : ''}`}>

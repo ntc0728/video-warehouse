@@ -21,6 +21,7 @@ import { useDocumentTitle } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useIsMobile, useIsTV as useIsTVDevice } from '@/hooks/useMediaQuery';
 import { VideoCard } from '@/components/VideoCard';
+import LazyImage from '@/components/LazyImage/LazyImage';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import TokenRequired from '@/components/TokenRequired';
 import PlaylistModal from './components/PlaylistModal';
@@ -1008,12 +1009,18 @@ export default function DetailPage() {
                             }
                           }}
                         >
-                          <img
+                          {/* 2026-09-14：裸 <img> → LazyImage（用户拍板「外面始终两行，别追加」）。
+                              网格仍是固定 2 行窗口（visibleCount 逻辑不变），
+                              只在「图片下载」这一层做滑动窗口：
+                              LazyImage 用 IntersectionObserver 判定，只有进入视口的剧照才
+                              真正挂载 <img> 并发请求；横向/纵向滚出视口的格子不发请求。
+                              附带收益：加载期有骨架占位、失败有品牌兜底（原先是白块/裂图）。
+                              原始 <img> 的 width/height=1280/720 由 .detail-stills-item 的
+                              aspect-ratio: 16/9 + 容器 100% 尺寸等价承接，无 CLS 回退。 */}
+                          <LazyImage
                             src={url}
                             alt={`剧照 ${i + 1}`}
-                            loading="lazy"
-                            width={1280}
-                            height={720}
+                            className="detail-stills-img"
                           />
                           {isLast && (
                             <div className="detail-stills-more">
