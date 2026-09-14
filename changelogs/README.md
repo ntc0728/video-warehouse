@@ -3,6 +3,19 @@
 > ⚠️ **新流程（2026-09-09 起）**：改动不再直接写当日文件，而是累积到 `changelogs/_pending/` 片段，push 前统一合并到 `changelogs/YYYY-MM-DD.md`。
 > 片段格式与合并命令见 `scripts/changelog-collect.mjs` / `scripts/changelog-draft.mjs` 文件头注释；合并由 `.git/hooks/pre-push` 阻断兜底。
 
+### 合并脚本行为（2026-09-14 修复后）
+
+`node scripts/changelog-collect.mjs`：
+
+- **正常**：把 `_pending/*.md` 按 front-matter 的 `date` 分组，追加到 `changelogs/YYYY-MM-DD.md`，源片段 `rename` 进 `_pending/_archived/`。
+- **已合并的片段**：无论判据来自「归档区已有同名文件」还是「目标 changelog 正文已含该片段」，
+  都会**同时把 `_pending/` 下的源片段清掉**——否则残留会让 pre-push 钩子（检测 `_pending/*.md` 数量）
+  **永久阻断 push**，且反复运行也清不掉。
+- **归档缺失兜底**：若 `_archived/` 丢失（换机 / 误删 / 分支未带过来），正文级比对会拦住重复追加，
+  并顺手把归档补回去。
+- **`--dry-run`**：只打印将做什么，不写文件、不删源、不建归档。
+- **无 `date` 字段的片段**：打印警告并**保留**在 `_pending/`（需人工补 front-matter，脚本不擅自吞掉）。
+
 > 本目录记录每次 UI / 逻辑改动的「旧逻辑 ↔ 新逻辑」对照，并**永久留存配套 Demo**，
 > 用于跨会话追溯「为什么这么改、改之前长什么样」。
 
