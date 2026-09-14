@@ -60,7 +60,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 0;
+  /* 2026-09-14 修复：原为 min-height:0，会反向覆盖全局 .empty-state-wrapper 的
+     min-height: var(--layout-loading-min-height)（≥1024 实算 480px），
+     令空状态在 rail 断点连安全垫都失去。改为显式继承同一变量。 */
+  min-height: var(--layout-loading-min-height);
 }
 
 /* Video Card Grid 和 IPTV Channel Grid 使用全局默认列数（与 Browse / IPTV 页一致） */

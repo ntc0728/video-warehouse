@@ -715,7 +715,13 @@ html[data-device="app"] .action-btn__label {
     flex-direction: row;
     flex-wrap: nowrap;
     gap: var(--space-lg);
-    align-items: flex-start;
+    /* 2026-09-14 修复：原为 flex-start —— 交叉轴（纵向）不拉伸，
+       导致 .record-content 高度退化为内容自然高（153px），空状态/加载态在
+       收藏、历史页贴顶不居中（800px 以下为 column 主轴故正常）。
+       改 stretch 后纵向拉伸链恢复；rail 不受影响：.record-aside 在下文已显式
+       声明 align-self:flex-start + width:var(--rail-w)，两轴尺寸均自锁，
+       不依赖父级 align-items。 */
+    align-items: stretch;
     /* 覆盖 ≥768 块给 .record-main 加的卡片化外观：rail 不卡片化，
        故整条主区也去卡片 chrome（border/radius/background/shadow），
        否则 200px 左列会被整块卡片边框包住，等同把 rail 卡片化。 */
