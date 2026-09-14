@@ -408,6 +408,17 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
 - e2e 断言骨架时**别用宽松的 `[class*="xxx"]` 选择器**：骨架类名（如
   `.iptv-skeleton__channel-grid`）会命中 `[class*="channel"]`，让「等真实网格」的用例在骨架态
   提前放行（IPTV-062 曾因此挂）。
+- **骨架必须镜像真实行的「盒模型树」，不只是卡宽公式**（2026-09-14 首页骨架行修复）：
+  首页骨架行 `.home-skeleton-row` 曾只对齐了卡片宽度公式，却漏掉真实行
+  `.home-page .tmdb-movierow` 的四层盒模型，累计矮 27px/行、7 行 189px，骨架→真实
+  切换时整页纵向跳动。四层缺口：①行外壳（padding/border/radius/surface/shadow）
+  ②标题条高（`--text-lg × 1.3`，≥768 升 `--text-xl`，勿用固定 clamp）③标题区下间距
+  ④卡片区 padding（`.tmdb-movierow-scroll` 为 TV 聚焦放大预留的上下留白）。
+  **联动陷阱**：行的 `gap` 与标题条的 `margin-bottom` 只能二选一 —— 两者都给会让骨架
+  反比真实**高** 11px。收敛后全档残留 ≤±3.5px、1440 档 +0.08px。
+- 首页骨架双分支由 `useIsWideDesktop`（`min-width:1024px && !isTV`）单点决定：
+  ≥1024 非 TV → 顶部过渡带 + 左栏趋势榜 + HeroBili + 7 行；否则 → 单图 banner + 7 行。
+  左栏骨架**只在 ≥1024 非 TV 存在属设计预期**，<1024 报「缺左栏」不是缺陷。
 
 ### Radix Dialog 非 passive 监听规避（modal={false} 模式）
 
