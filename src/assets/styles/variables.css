@@ -269,8 +269,14 @@
   --dot-gap: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6   圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  --comp-btn-min-height: calc(clamp(34px, 17.461px + 4.411vw, 51.333px) * var(--ui-scale)); /* 34→60 封面/海报按钮 */
-  --comp-tab-height: calc(clamp(28px, 17.822px + 2.714vw, 38.667px) * var(--ui-scale)); /* 28→44 筛选/标签 tab */
+  /* 封面/海报按钮（2026-09-15 B6）：390 处实测 34.66px → 44px
+     （HIG 44×44pt / WCAG 2.5.5 AAA）。段1 起点 34→44，768 处仍 51.333（连续），
+     段2 递减曲线不变（48.212 仍 ≥44）。校验：390 → 36.434+1.94×3.9 = 44.00 ✅ */
+  --comp-btn-min-height: calc(clamp(44px, 36.434px + 1.94vw, 51.333px) * var(--ui-scale));
+  /* 筛选/标签 tab（2026-09-15 B6）：390 处实测 ≈28px → 36px
+     （WCAG 2.5.8 AA 要 24px，标签 chip 取 36 折中并保证行间距 ≥8px；HIG 44 对 chip 过重）。
+     768 处封顶 38.667 与现曲线相同，连续无跳变。校验：390 → 18.545+4.479×3.9 = 36.01 ✅ */
+  --comp-tab-height: calc(clamp(36px, 18.545px + 4.479vw, 38.667px) * var(--ui-scale));
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
   --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale)); /* 40→48 输入框高度（2026-09-04 降 MAX：旧 58 为 R2 遗留，桌面渲染过大） */
   /* 顶部导航 SearchBox 专用矮曲线（契约 375→1920）：宿主 --header-height 是 R3
