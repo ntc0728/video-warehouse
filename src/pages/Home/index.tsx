@@ -22,6 +22,8 @@ import { buildContinueItems } from './continueItems';
 import HomeTopStrip from './HomeTopStrip';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
+import { useGridCols } from '@/hooks/useGridCols';
+import { useHeroSideCols } from '@/hooks/useHeroSideCols';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
@@ -121,6 +123,14 @@ export default function HomePage() {
     return map;
   }, [history]);
   const continueItems = useMemo(() => buildContinueItems(history), [history]);
+
+  // 骨架占位张数所需的列数（须在提前 return 之前调用，保持 hook 数恒定）：
+  //  - 横滚行骨架每行张数 = ceil(列数 × 1.5)：「填满一屏」的列数 + 半屏溢出，
+  //    镜像真实行「一屏整卡 + 可横向滚」的观感；容器 overflow: hidden 会裁掉多余部分。
+  //  - HeroBili 右栏卡 = 列数 × 2 行（useHeroSideCols 已是该区列数的 JS 真源）。
+  const skeletonRowCols = useGridCols('--row-cols', 7);
+  const heroSideCols = useHeroSideCols();
+  const skeletonCardsPerRow = Math.ceil(skeletonRowCols * 1.5);
 
   // 事件 handler（同样须在提前 return 之前，保持 hook 数恒定）
   const handleBannerItemClick = useCallback((item: { id: string | number }) => {
@@ -322,7 +332,7 @@ export default function HomePage() {
         <div key={i} className="home-skeleton-row">
           <div className="home-skeleton-row-title" />
           <div className="home-skeleton-row-cards">
-            {Array.from({ length: 7 }).map((_, j) => (
+            {Array.from({ length: skeletonCardsPerRow }).map((_, j) => (
               <div key={j} className="home-skeleton-card">
                 <div className="home-skeleton-card-img">
                   {/* 四角标占位：镜像 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
@@ -385,9 +395,9 @@ export default function HomePage() {
               </div>
               <div className="hero-bili__right">
                 <div className="hero-bili__cards">
-                  {/* 渲染 6 张：≥1281 为 3 列 × 2 行；1024–1280 由 HeroBili.css 的
-                      2 列档 + 本骨架的 nth-child 隐藏规则降到 4 张 */}
-                  {Array.from({ length: 6 }).map((_, i) => (
+                  {/* 张数 = useHeroSideCols() × 2 行（≥1281 为 3 列 = 6 张；
+                      1024–1280 为 2 列 = 4 张），与真实 HeroBili 右栏列数同源 */}
+                  {Array.from({ length: heroSideCols * 2 }).map((_, i) => (
                     <div key={i} className="hero-side-card">
                       <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg" />
                       <span className="hero-side-card__title hero-side-card__title--skeleton thumbnail-skeleton-bg" />
@@ -415,7 +425,7 @@ export default function HomePage() {
     </>
   );
   const homeSkeleton = (
-    <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
+    <div className="page-padding home-page home-skeleton skeleton-scope">{homeSkeletonBody}</div>
   );
 
   // 首屏骨架（仅 home 初始加载/整页无数据时使用）
@@ -458,7 +468,7 @@ export default function HomePage() {
           position: fixed 以覆盖整个视口，不受 home-page relative 约束。 */}
       {enterPhase !== 'done' && (
         <div className={`home-enter-skeleton${enterPhase === 'fading' ? ' home-enter-skeleton--fading' : ''}`}>
-          <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
+          <div className="page-padding home-page home-skeleton skeleton-scope">{homeSkeletonBody}</div>
         </div>
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>

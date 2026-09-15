@@ -13,7 +13,7 @@ import './DetailSkeleton.css';
 
 export default function DetailSkeleton() {
   return (
-    <div className="detail-skeleton" role="status" aria-label="加载中">
+    <div className="detail-skeleton skeleton-scope" role="status" aria-label="加载中">
       <div className="detail-skeleton__top">
         <div className="detail-skeleton__hero">
           <Skeleton className="detail-skeleton__hero-bg" />

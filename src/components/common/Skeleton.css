@@ -17,3 +17,35 @@
     animation: none;
   }
 }
+
+/* 骨架延迟淡入（2026-09-15）：页级骨架根容器加 .skeleton-scope 即生效。
+   目的：过滤「请求 <150ms」的瞬时加载 —— 一置 loading 就挂骨架时，快请求下
+   骨架只存在 1~2 帧，视觉抽搐（flash of skeleton）。延迟 150ms 才淡入，
+   慢请求仍有骨架兜底，快请求直接出内容。
+   实现要点：animation-fill-mode: both 让 150ms 内停在 from(opacity 0) ——
+   DOM 与布局占位始终存在（不影响 CLS / 不触发重排），只是不可见。
+   零 JS、零分支改动，故不依赖 useDelayedFlag（那需要每页额外处理「延迟期间显示什么」）。 */
+@keyframes skeleton-scope-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.skeleton-scope {
+  animation: skeleton-scope-in var(--dur-sm) var(--ease-standard) both;
+  /* 延迟一个「微交互时长」(150ms)：值借用 --dur-2xs，语义是「等待多久才认为值得显示骨架」，
+     与 duration 无关，故用独立属性而非写进 animation 简写（也避免 timing-literal 把
+     这个延迟误判为「动多快」的时长字面量）。 */
+  animation-delay: var(--dur-2xs);
+}
+
+/* 减少动画：不做延迟（否则前 150ms 空白失去意义），骨架立即可见 */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-scope {
+    animation: none;
+  }
+}
