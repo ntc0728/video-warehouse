@@ -182,12 +182,13 @@
        changelogs/demos/demo-fluid-endpoints-2026-09-05.html）：
         · 间距族 space-2xs~3xl + grid-gap = E2 紧凑端点：375 处 MIN 与旧契约相同（手机零回归），
           768 处 = MIN + (MAX_v2 − MIN)/3（预载 1/3），2200 处 MAX ≈ 旧 × 0.65~0.75；
-        · 字号 = v2.1 段2 递减曲线（2026-09-05 用户拍板「移动端不变，段2 必须调小」）：
-          段1 字号（含 text-base 恒 14 的 D7/B3 契约）与 text-2xs 完全不动 → 移动端零回归；
-          段2 从 768 处=段1 末值出发【递减】，1440 处命中 E2/B站锚点，随后冻结在下限
-          （base 14→13.2@1440→13 / sm 13.667→12.22→12 / xs →11.33→11 / lg →13.83→13.5 /
-          xl →15.59→15 / 2xl →20.37→19.75 / 3xl →25.46→24.75，冻结点均 ≥1536）。
-          递减曲线写法：clamp(下限, PREF − |C|vw, 768锚点)，小值放 MIN 位；
+        · 字号 = 【2026-09-15 阶梯重构，取代原 v2.1 段2 递减曲线】：
+          小四档 2xs/xs/sm/base = 11 / 12 / 13 / 14 **恒定**（不随视口流动，仅乘 --ui-scale）；
+          大四档段1 流体、段2 从 768 处=段1 末值出发【递增】，1440 命中行业标准档
+          （lg 16 / xl 18 / 2xl 22 / 3xl 28，对齐 M3 title-large 22 + headline-medium 28），随后冻结。
+          契约：**大屏字号不得小于小屏**——原递减曲线令桌面 1920 正文 13px < 平板 768 的 14px，
+          属反向优化，已取消；相邻档位差恒 ≥1px（含 ui-scale 放大后），杜绝 2560 处 xs = 2xs 塌缩。
+          间距族不受本次重构影响，仍为下方 E2 紧凑端点；
         · 控件族 v2.2 校准（comp-btn/tab/input/thumb + switch-* + vol-* + radio-* + badge，
           共 15 条段2 曲线）：同字号比例 ×0.8835 递减——768 处=段1 末值（连续），
           1440 处 = 旧值 ×0.8835，下限 = 1440 目标 ×0.985（同 base 冻结深度）。
@@ -202,20 +203,25 @@
         · 任意段2 token 768 处=A(连续无跳变)、2200 处=MAX(冻结)，1920 处仍流动。
      非 TV 的 4K 桌面：≥2200 后 token 冻结（与内容区同步封顶），TV 模式经
         [data-device="tv"] 把整条曲线 2×，无失衡。 */
-  --text-2xs: calc(clamp(9px, 7.728px + 0.339vw, 10.333px) * var(--ui-scale)); /* 9→11 超小标注 */
-  --text-xs: calc(clamp(12px, 11.364px + 0.17vw, 12.667px) * var(--ui-scale)); /* 12→13 */
-  --text-sm: calc(clamp(13px, 12.364px + 0.17vw, 13.667px) * var(--ui-scale)); /* 13→14 */
-  /* 基准字号（D7/B3 契约）：段1（<768）恒 14px——html { font-size: var(--text-base) }
-     原 clamp(14px, 0.8154rem + 0.0025vw, 15px) 含 rem → 形成 rem 解析循环（不动点 14px），
-     显式 px 消除隐式依赖。段2（≥768）为递减曲线 14→13.2@1440→13 冻结（密度契约 v2.1：
-     移动端不动、段2 命中 E2/B站锚点；768 处 14px 连续，rem 流动仅发生在 768→~1608，
-     移动端零回归。rem 消费端（header/logo/sidebar 等 rem 式 token）随根字号收窄 ≤7%，
-     属 v2 已接受偏差）。TV 模式由下方 [data-device="tv"] 块覆盖为动态曲线（15→30px），不受影响。 */
-  --text-base: calc(14px * var(--ui-scale)); /* <768 恒 14；≥768 见段2：14→13.2@1440→13 递减；TV 覆盖 15→30px */
-  --text-lg: calc(clamp(14px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 14→16 */
-  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→18 */
-  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24 */
-  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale)); /* 26→30 */
+  /* 小四档恒定（2026-09-15 字号阶梯重构）：不随视口流动，仅随 --ui-scale。
+     依据：HIG caption2 11pt / 行业最小 11px；正文取 Ant Design 5 / TDesign / B 站口径 14px。
+     原曲线的问题：390 处 --text-2xs 实测 9.05px（不可读）、2560 处 xs 与 2xs 同为 11.88px
+     （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
+     恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
+  --text-2xs: calc(11px * var(--ui-scale)); /* 恒定 11（原 clamp(9px,…,10.333px)） */
+  --text-xs:  calc(12px * var(--ui-scale)); /* 恒定 12（原 clamp(12px,…,12.667px)） */
+  --text-sm:  calc(13px * var(--ui-scale)); /* 恒定 13（原 clamp(13px,…,13.667px)） */
+  --text-base: calc(14px * var(--ui-scale)); /* 恒定 14（正文字号契约；段2 递减已取消）。
+        ⚠️ 本 token 不再是 rem 基准——rem 基准已独立为 --root-font-size（见下）。 */
+  /* 大四档：段1（375→768）保持流体，段2 见 @media (width >= 768px)：
+     768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 16/18/22/28 → 冻结。 */
+  /* 段1 MIN 取 15（非原 14）：原 MIN 14 令移动端 lg(14.05) ≈ base(14.00)，相邻档位差仅
+     0.05px → 违反「相邻档差 ≥1px」契约（lg 档在移动端等同虚设）。取 15 后移动端差恒 ≥1px，
+     768 处仍精确续接段2 的 15.333（连续无跳变）。 */
+  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 15→15.333 */
+  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→17.333 */
+  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→22.667 */
+  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale)); /* 26→28.667 */
 
   /* ── Root Font Size（rem 基准）— 2026-09-15 从 --text-base 解耦 ────────────
      原 `html { font-size: var(--text-base) }` 让「最常用的正文 token」同时充当
@@ -564,16 +570,14 @@
     --switch-thumb-size: calc(clamp(19.346px, 21.83957px - 0.15268vw, 20.667px) * var(--ui-scale)); /* 递减：20.667@768 → 19.641@1440 → 19.346 */
     --switch-track-height: calc(clamp(19.962px, 23.98171px - 0.25804vw, 22px) * var(--ui-scale)); /* 递减：22@768 → 20.266@1440 → 19.962 */
     --switch-track-width: calc(clamp(39.308px, 45.82129px - 0.41071vw, 42.667px) * var(--ui-scale)); /* 递减：42.667@768 → 39.907@1440 → 39.308 */
-    /* 字号段2 为【递减曲线】（v2.1：段1 不动 → 768 处=段1 末值，1440 命中 E2/B站锚点，随后
-       冻结在下限；递减时 clamp 小值必须放 MIN 位，MAX=768 锚点，斜率为负 vw 系数） */
-    --text-2xl: calc(clamp(19.75px, 25.29214px - 0.34182vw, 22.667px) * var(--ui-scale)); /* 递减：22.667@768 → 20.37@1440 → 19.75 冻结 */
-    --text-2xs: calc(clamp(10.333px, 9.97528px + 0.04658vw, 11px) * var(--ui-scale)); /* 唯一保留递增的超小标注档 */
-    --text-3xl: calc(clamp(24.75px, 32.33214px - 0.47723vw, 28.667px) * var(--ui-scale)); /* 递减：28.667@768 → 25.46@1440 → 24.75 */
-    --text-base: calc(clamp(13px, 14.91429px - 0.11905vw, 14px) * var(--ui-scale)); /* 递减：14@768 连续 → 13.2@1440（E2/B站锚点）→ 13 冻结；rem 消费端随根字号收窄 ≤7% */
-    --text-lg: calc(clamp(13.5px, 17.05071px - 0.22366vw, 15.333px) * var(--ui-scale)); /* 递减：15.333@768 → 13.83@1440 → 13.5 */
-    --text-sm: calc(clamp(12px, 15.32071px - 0.21533vw, 13.667px) * var(--ui-scale)); /* 递减：13.667@768 → 12.22@1440 → 12 */
-    --text-xl: calc(clamp(15px, 19.325px - 0.25937vw, 17.333px) * var(--ui-scale)); /* 递减：17.333@768 → 15.59@1440 → 15 */
-    --text-xs: calc(clamp(11px, 14.195px - 0.19896vw, 12.667px) * var(--ui-scale)); /* 递减：12.667@768 → 11.33@1440 → 11 */
+    /* 字号段2（2026-09-15 重构）：小四档已在 :root 恒定，此处不再覆盖；
+       大四档从段1 末值续接 —— 768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 → 冻结。
+       斜率校验：lg 14.5707 + 0.09926×7.68 = 15.333 ✅ ／ +0.09926×14.4 = 16.000 ✅
+                3xl 29.4293 − 0.09926×7.68 = 28.667 ✅ ／ −0.09926×14.4 = 28.000 ✅ */
+    --text-lg:  calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale)); /* 15.333@768 → 16@1440 → 16 冻结 */
+    --text-xl:  calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale)); /* 17.333@768 → 18@1440 → 18 */
+    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale));  /* 22.667@768 → 22@1440 → 22 */
+    --text-3xl: calc(clamp(28px, 29.4293px - 0.09926vw, 28.667px) * var(--ui-scale));  /* 28.667@768 → 28@1440 → 28 */
     --vol-track-radius: calc(clamp(1.587px, 1.731px - 0.00833vw, 1.667px) * var(--ui-scale)); /* 递减：1.667@768 → 1.611@1440 → 1.587 */
     --vol-track-width: calc(clamp(3.327px, 3.99729px - 0.04301vw, 3.667px) * var(--ui-scale)); /* 递减：3.667@768 → 3.378@1440 → 3.327 */
   }
