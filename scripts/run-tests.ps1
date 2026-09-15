@@ -48,6 +48,11 @@ $uiTestMap = @{
 # grep 是正则，匹配「describe 名 + 测试标题」拼接串，用编号前缀段最精准。
 # 待整改：后续扩展为「文件级 → 多层映射」（每个文件精确到测试编号）。
 $uiPrecisionMap = @{
+    # ── 启动骨架（index.html 内联脚本） ──
+    "index.html" = @{
+        spec = @("scripts/boot-splash.spec.ts")
+    }
+
     # ── Home 页面 ──
     "src/pages/Home/index.tsx" = @{
         spec = @("scripts/home.spec.ts")
