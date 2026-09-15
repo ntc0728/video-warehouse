@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
 import viteCompression from 'vite-plugin-compression'
 
 /**
@@ -17,7 +18,22 @@ import viteCompression from 'vite-plugin-compression'
  * - CAPACITOR=true 时 base 设为 './'，确保 Android WebView 中本地资源路径正确
  * - Web 端保持 base='/'，部署到 Cloudflare Pages / 任何静态服务器不受影响
  */
+
+/**
+ * root 规范化（2026-09-15）：
+ * Vite/Rollup 内部路径比较对 Windows 盘符大小写敏感（normalizePath 不归一
+ * 大小写）。部分执行环境（WorkBuddy Bash shim）会把 cwd 设为小写盘符
+ * `f:\video-warehouse`：模块 id 以 cwd 派生（小写 f:），而 realpath / esbuild
+ * 解析出的 id 是磁盘真实大小写（大写 F:）→ 两边对不上，build 确定性报
+ * 「html-inline-proxy No matching HTML proxy module found」，产物路径还会
+ * 出现 `dist/f:/video-warehouse/...` 的绝对路径命名。
+ * 这里把 root 钉到 realpathSync.native 的磁盘真实大小写，任何 shell 下
+ * 模块 id 全部一致，不再依赖「先 cd 大写盘符」的手工规避。
+ */
+const projectRoot = fs.realpathSync.native(__dirname)
+
 export default defineConfig({
+  root: projectRoot,
   plugins: [
     react(),
     // Capacitor 构建不需要预压缩（Android WebView 直接读本地文件）
@@ -29,7 +45,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      // 必须从 projectRoot（磁盘真实大小写）派生：小写 cwd 下 __dirname 也是
+      // 小写，alias 派生的模块 id 会与 root/realpath 派生的大小写不一致，
+      // 复现同款 html-proxy 错。详见上方 projectRoot 注释。
+      '@': path.resolve(projectRoot, './src'),
     },
   },
   // Capacitor 原生打包使用相对路径，Web 部署使用绝对路径
