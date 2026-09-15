@@ -12,24 +12,24 @@
 
 .cms-blocked-modal__actions {
   display: flex;
-  justify-content: flex-end;
   gap: var(--space-sm);
+  justify-content: flex-end;
   margin-top: var(--space-lg);
 }
 
 .cms-blocked-modal__btn {
   padding: var(--space-xs) var(--space-lg);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
   transition: background-color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
 }
 
 .cms-blocked-modal__btn--ghost {
-  background: transparent;
   border-color: var(--color-border);
+  background: transparent;
   color: var(--color-text-secondary);
 }
 

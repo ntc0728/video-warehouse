@@ -749,9 +749,9 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
    尺寸/圆角与 .sdp-pill(idle) 对齐：相同 padding(5px 11px)、font-size(text-xs)、1px 边框、999px 圆角，
    并清除 .retry-btn 基类自带的 margin-top，使其在工具栏内与源检测 pill 垂直居中对齐、高度一致。 */
 .retry-btn--tab {
+  gap: 6px;
   margin-top: 0;
   padding: 5px 11px;
-  gap: 6px;
   border: 1px solid var(--color-border-light);
   border-radius: 999px;
   background: var(--color-surface);
@@ -799,11 +799,11 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 /* 带文字变体：桌面设置页 topbar 等需要「← 返回」明确语义处使用。
    复用 .back-btn 基础，仅修改圆角/宽度/内含 glyph + 文字间隔。 */
 .back-btn--with-text {
+  gap: var(--space-xs);
   width: auto;
   height: auto;
   padding: var(--space-2xs) var(--space-md);
   border-radius: var(--radius-full);
-  gap: var(--space-xs);
   font-size: var(--text-base);
   font-weight: 500;
 }
@@ -1175,8 +1175,8 @@ body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][da
 @media (width >= 768px) {
   html:not([data-mobile-layout="true"]) body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
     top: calc(var(--player-toast-top, 0px) + var(--space-sm)) !important;
-    left: var(--player-toast-left, 0px) !important;
     right: auto !important;
+    left: var(--player-toast-left, 0) !important;
     width: var(--player-toast-width, 100vw) !important;
   }
 }
@@ -1189,17 +1189,17 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
-  width: fit-content;
-  min-width: 10rem;
-  max-width: min(22rem, calc(100vw - 2rem));
+  right: 0;
   /* 水平居中：absolute + left/right:0 + margin:0 auto；
      覆盖 sonner 默认 left:0 + width:var(--width)，不动 transform 以保留滑入动画 */
   left: 0;
-  right: 0;
-  margin: 0 auto;
+  justify-content: center;
   /* padding 由 App.tsx inline style 统一（space-sm space-md），此处不重复设置 */
   align-items: center;
-  justify-content: center;
+  width: fit-content;
+  min-width: 10rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  margin: 0 auto;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-content] {
@@ -1209,16 +1209,16 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-title] {
-  text-align: center;
   font-size: var(--text-sm);
   line-height: 1.5;
+  text-align: center;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-icon] {
-  width: auto;
-  height: auto;
   display: flex;
   align-items: center;
+  width: auto;
+  height: auto;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

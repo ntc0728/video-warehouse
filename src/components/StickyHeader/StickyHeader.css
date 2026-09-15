@@ -271,9 +271,9 @@
   width: var(--comp-btn-min-height);
   height: var(--comp-btn-min-height);
   border-radius: 50%;
-  overflow: hidden;
   background: var(--color-surface-hover);
   color: var(--color-text-secondary);
+  overflow: hidden;
 }
 
 .sticky-header__profile-avatar img {
@@ -283,11 +283,11 @@
 }
 
 .sticky-header__profile-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: var(--text-sm);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── TV ────────────────────────────────────────────── */
@@ -465,8 +465,8 @@
      gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
   .sticky-header__center > .search-box-wrap--header {
     flex: 1;
-    max-width: none;
     min-width: 0;
+    max-width: none;
   }
 
   .sticky-header__inner {
@@ -528,8 +528,8 @@
      gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
   .sticky-header__center > .search-box-wrap--header {
     flex: 1;
-    max-width: none;
     min-width: 0;
+    max-width: none;
   }
 
   html[data-device="app"] .sticky-header__inner {

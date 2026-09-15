@@ -145,8 +145,8 @@
 /* ── 排序栏（Card 2 顶部） ────────────────────────── */
 .browse-sort-bar {
   display: flex;
-  align-items: center;
   gap: var(--space-md);
+  align-items: center;
   padding: 0 0 var(--space-sm) 0;
 }
 
@@ -169,9 +169,9 @@
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  cursor: pointer;
-  transition: all 0.2s;
   white-space: nowrap;
+  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .browse-sort-bar__type:hover {
@@ -212,9 +212,9 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
   white-space: nowrap;
+  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .browse-sort-bar__tab:hover {
@@ -232,8 +232,8 @@
 .browse-sort-bar__count {
   /* 内联排布：文字 + 转圈图标同行（图标在右侧，2026-09-12 用户反馈） */
   display: inline-flex;
-  align-items: center;
   gap: var(--space-2xs);
+  align-items: center;
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
@@ -259,10 +259,10 @@
    ≥1024（BR-C）时 pill 宽度 = 左栏 --rail-w（2026-09-11 用户拍板：与左栏同宽） */
 .browse-search-tabs {
   display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--space-md);
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .browse-search-tabs__pill {
@@ -648,15 +648,15 @@
      分隔：组间靠分割线（--space-sm 上下 margin），栏与结果区靠 grid 列间距 --space-2xl。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar {
-    grid-area: filters;
-    align-self: start;
     /* 2026-09-07 用户拍板：面板不固定（去 sticky），随页面滚动。
        注：2026-09-12 因右栏改分页（页面不再无限增长）已翻案为 sticky，
        实现独立成下方单独规则块，不在此处混排（避免触发 stylelint 属性顺序）。
        2026-09-10 用户拍板 B：组间 gap 由 --space-sm 收到 --space-2xs
        （组距靠下方 ::before 分割线的 6px margin 提供，不再靠 gap 堆叠）。 */
     flex-direction: column;
+    grid-area: filters;
     gap: var(--space-2xs);
+    align-self: start;
     padding: 0 var(--space-sm) 0 0;
     /* 2026-09-10 用户拍板「左栏视觉语言统一 = 方案 B」：全站四处左栏统一右侧 1px 边框
        （--color-border-light），给左栏一个明确边界锚点（原先无边框无底，大屏下与
@@ -825,8 +825,8 @@
 /* 数字页码形态的「页码输入 + 跳转」：与页码按钮同高，输入窄框 */
 .browse-pagination__jump {
   display: inline-flex;
-  align-items: center;
   gap: var(--space-2xs);
+  align-items: center;
   margin-left: var(--space-sm);
 }
 
@@ -841,7 +841,6 @@
   text-align: center;
   /* 隐藏 number 输入的上下箭头（窄框里挤） */
   appearance: textfield;
-  -moz-appearance: textfield;
 }
 
 .browse-pagination__jump-input::-webkit-outer-spin-button,
@@ -862,8 +861,8 @@
 }
 
 .browse-pagination__jump-btn:hover {
-  background: var(--color-primary-light);
   border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .browse-pagination__jump-btn:disabled,

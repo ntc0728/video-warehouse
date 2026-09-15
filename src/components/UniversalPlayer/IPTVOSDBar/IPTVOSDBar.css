@@ -344,8 +344,8 @@
 .iptv-osd-catchup-row {
   display: flex;
   gap: var(--space-xs);
-  align-items: center;
   justify-content: center;
+  align-items: center;
   margin-top: var(--space-2xs);
 }
 
@@ -387,11 +387,11 @@
 
 .iptv-osd-catchup-time {
   flex-shrink: 0;
+  min-width: 64px;
   color: #eee;
   font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  min-width: 64px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Right section: network speed + source line + time

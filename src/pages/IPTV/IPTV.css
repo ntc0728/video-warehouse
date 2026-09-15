@@ -451,8 +451,8 @@
 .iptv-rail {
   position: sticky;
   top: var(--space-sm);
-  align-self: flex-start;
   flex-shrink: 0;
+  align-self: flex-start;
   /* 2026-09-08 与设置页/Browse 左栏统一：流体曲线；
      2026-09-10 四页统一改用共享 token --rail-w（clamp(148px, 10vw, 248px)），
      并加右侧 1px 边框（左栏视觉语言统一 = 方案 B，用户拍板）；
@@ -467,9 +467,9 @@
 .iptv-rail__title {
   display: block;
   margin: 0 var(--space-sm) var(--space-sm);
+  color: var(--color-text-tertiary);
   font-size: var(--text-2xs);
   font-weight: 600;
-  color: var(--color-text-tertiary);
 }
 
 /* 分组分隔线：RecordShell 方案 A 同款（1px + --space-sm 上下距，通栏） */
@@ -488,16 +488,16 @@
 
 .iptv-rail__item {
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   width: 100%;
   padding: 8px var(--space-sm);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--color-text-secondary);
   text-align: left;
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
   cursor: pointer;
@@ -522,9 +522,9 @@
 .iptv-rail__lbl {
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .iptv-rail__cnt {
@@ -548,9 +548,9 @@
 
 /* 多选复选框（更多台 = 设置页已启用的 IPTV 源） */
 .iptv-rail__box {
+  flex-shrink: 0;
   width: 14px;
   height: 14px;
-  flex-shrink: 0;
   border: 1.5px solid var(--color-border);
   border-radius: 3px;
   background: var(--color-surface);
@@ -582,15 +582,15 @@
 
 .iptv-content-bar {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
   flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
   margin-bottom: var(--space-md);
 }
 
 .iptv-content-bar__count {
-  font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
 }
 
 .iptv-content-bar__spacer {
@@ -598,8 +598,8 @@
 }
 
 .iptv-content-bar__note {
-  font-size: var(--text-2xs);
   color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
 }
 
 /* 右上角源过滤下拉框：仅过滤当前列表，不切换播放源 */
@@ -623,8 +623,8 @@
   top: 0;
   z-index: 2;
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   margin: 0 0 var(--space-sm);
   /* 吸顶时遮住滚过的卡片：背景取页面底色（桌面 .iptv-grid-card 已去卡片外观），
      上下 padding 是吸顶态的呼吸空间；sticky 天生受限于 .iptv-sec 容器，
@@ -640,8 +640,8 @@
 }
 
 .iptv-sec__n {
-  font-size: var(--text-2xs);
   color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
   font-variant-numeric: tabular-nums;
 }
 

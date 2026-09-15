@@ -385,8 +385,8 @@
 
   html:not([data-device="app"]):not([data-device="tv"]) .person-hero-content {
     flex-direction: row;
-    align-items: center;
     gap: var(--space-xl);
+    align-items: center;
     margin-top: 0;
     /* 顶部留出返回按钮（absolute top: --space-md + 自身高）的让位空间 */
     padding: calc(var(--space-3xl) + var(--space-xs)) var(--space-xl) var(--space-lg);

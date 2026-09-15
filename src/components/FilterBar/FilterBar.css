@@ -174,9 +174,9 @@
 
 .filter-bar__footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--space-md);
+  justify-content: space-between;
+  align-items: center;
   padding-top: var(--space-xs);
 }
 
@@ -188,14 +188,14 @@
 .filter-bar__sort-btn {
   position: relative;
   padding-bottom: var(--space-2xs);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-text-tertiary);
-  background: transparent;
-  border: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .filter-bar__sort-btn:hover {
@@ -208,8 +208,8 @@
 }
 
 .filter-bar__count {
-  font-size: var(--text-sm);
   color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
 

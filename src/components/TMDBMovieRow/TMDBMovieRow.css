@@ -136,9 +136,9 @@
     var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
+  overflow: hidden;
   animation: shimmer var(--card-shimmer-duration) infinite;
   aspect-ratio: 2 / 3;
-  overflow: hidden;
 }
 
 /* 角标占位：对齐 .video-card-rating（左上）/ .video-card-fav-btn（右上）/
@@ -174,8 +174,8 @@
 }
 
 .tmdb-movierow-skeleton-badge--br {
-  bottom: var(--space-3xs);
   right: var(--space-3xs);
+  bottom: var(--space-3xs);
   width: var(--space-xl);
   height: var(--icon-2xs, 10px);
 }

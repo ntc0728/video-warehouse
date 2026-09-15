@@ -54,8 +54,8 @@
   bottom: var(--space-lg);
   z-index: 60;
   display: inline-flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: var(--icon-xl);
   height: var(--icon-xl);
   border-radius: 50%;

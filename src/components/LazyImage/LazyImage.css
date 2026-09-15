@@ -41,8 +41,8 @@
     var(--color-placeholder-shimmer-b) 50%,
     var(--color-placeholder-shimmer-a) 75%
   );
-  background-size: 200% 100%;
   background-color: var(--color-placeholder-shimmer-a);
+  background-size: 200% 100%;
   animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 
@@ -88,10 +88,10 @@
    base 恒为最终态（opacity:1，无 blur/scale）；pending 由 opacity 0→1 过渡，
    加载完成加 .is-loaded 后显现，过渡结束由 JS 提交为新底图。 */
 .lazy-image--base {
-  opacity: 1;
-  filter: blur(0);
-  transform: none;
   z-index: 1;
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
 }
 .lazy-image--pending {
   z-index: 2;

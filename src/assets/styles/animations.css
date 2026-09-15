@@ -49,8 +49,8 @@
    只取消动画会让内容永久透明，因此必须显式复位 opacity:1。
    HeroBanner 是 .home-page__content 的兄弟节点，不受本条影响，其专属过渡保留。 */
 .page-transition[data-revisit="true"] .home-page__content--delayed-enter {
-  animation: none;
   opacity: 1;
+  animation: none;
 }
 
 /* 尊重系统「减少动态效果」偏好 */

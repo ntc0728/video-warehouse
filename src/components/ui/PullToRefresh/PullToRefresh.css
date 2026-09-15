@@ -51,7 +51,7 @@
    1) 小电视整体套一层 SVG filter 光晕（#ptr-halo，见 PullToRefreshOverlay 注入的 <defs>）；
    2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。 */
 .ptr-overlay__indicator--default .ptr-tv {
-  filter: url(#ptr-halo);
+  filter: url("#ptr-halo");
 }
 .ptr-overlay__indicator--default .ptr-indicator__text {
   color: #1a1a1a;                   /* 深色填充 */
@@ -109,9 +109,9 @@
 }
 .ptr-indicator__meta {
   color: var(--color-on-image);
-  opacity: 0.8;                  /* 次级文本略降透明，仍保持白字层级 */
   font-size: var(--text-2xs);
   white-space: nowrap;
+  opacity: 0.8;                  /* 次级文本略降透明，仍保持白字层级 */
 }
 
 /* ---------- 小电视角色 ---------- */
@@ -146,9 +146,9 @@
 }
 .ptr-indicator--settings .ptr-indicator__meta {
   padding: 0 var(--space-xs);
-  color: var(--color-text-tertiary);
-  background: var(--color-surface);
   border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
   box-shadow: var(--shadow-card-hover);
 }
 

@@ -501,8 +501,14 @@
 }
 
 @keyframes player-tv-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
-  40%           { opacity: 1;   transform: translateY(-4px); }
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
 }
 
 /* ── 右侧侧栏骨架占位（入场加载阶段，数据就绪后由真实面板替换） ──────────
@@ -544,12 +550,32 @@
   animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
-.player-skeleton-block--icon  { flex-shrink: 0; width: 18px; height: 18px; border-radius: var(--radius-sm); }
-.player-skeleton-block--title { width: 40%; height: 14px; }
+.player-skeleton-block--icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+}
+.player-skeleton-block--title {
+  width: 40%;
+  height: 14px;
+}
 /* 头部右侧计数位（对齐真实 .player-panel-info 的 "N个源" / "N季"） */
-.player-skeleton-block--info  { width: 30%; height: 12px; margin-left: auto; }
-.player-skeleton-block--thumb { flex-shrink: 0; width: 56px; height: 32px; border-radius: var(--radius-sm); }
-.player-skeleton-block--line  { flex: 1; height: 12px; }
+.player-skeleton-block--info {
+  width: 30%;
+  height: 12px;
+  margin-left: auto;
+}
+.player-skeleton-block--thumb {
+  flex-shrink: 0;
+  width: 56px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+.player-skeleton-block--line {
+  flex: 1;
+  height: 12px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .player-tv-loader__icon,
@@ -1129,6 +1155,12 @@
     --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
+    /* 内容块封顶 = 「封顶值 − 2×横向留白」，与旧「壳 2200 居中 + padding」逐像素等价：
+       视口 2400(留白100) → min(2200, 2000)=2000；2560(留白140) → min(2280, 1920)=1920；
+       <2200 → 100%（满宽，与旧壳未封顶时一致）。
+       ⚠️ 100% 在此处基准是「本元素内容盒」（已减去留白），故必须写成
+       min(100%, cap − 2×pad) 而不是 calc(min(100%,cap) − 2×pad) —— 后者会重复减留白。 */
+    --player-content-max: min(100%, calc(var(--layout-content-cap) - var(--page-pad-x) * 2));
     /* ⚠️ 滚动容器必须铺满视口：本元素是播放页桌面端真正的滚动容器（外层
        .app-shell__scroll 的原生滚动条已被 display:none 隐藏），原生滚动条画在
        本元素 border-box 的右边缘。旧实现让 .player-page 直接吃 --layout-content-max-width
@@ -1136,12 +1168,6 @@
        右边 180px），与其他页面（滚动条贴视口右侧）不一致。
        现在封顶下沉到两个内容块（--player-content-max），本层只负责滚动与留白。 */
     max-width: none;
-    /* 内容块封顶 = 「封顶值 − 2×横向留白」，与旧「壳 2200 居中 + padding」逐像素等价：
-       视口 2400(留白100) → min(2200, 2000)=2000；2560(留白140) → min(2280, 1920)=1920；
-       <2200 → 100%（满宽，与旧壳未封顶时一致）。
-       ⚠️ 100% 在此处基准是「本元素内容盒」（已减去留白），故必须写成
-       min(100%, cap − 2×pad) 而不是 calc(min(100%,cap) − 2×pad) —— 后者会重复减留白。 */
-    --player-content-max: min(100%, calc(var(--layout-content-cap) - var(--page-pad-x) * 2));
     height: calc(100dvh - var(--header-height));
     min-height: 0;
     padding-top: 0;
@@ -1165,15 +1191,14 @@
      播放器 16:9 高度通常更高 → 侧栏自动同高，不再靠旧 flex stretch 猜测。 */
   html:not([data-device="app"]) .player-main {
     display: grid;
-    grid-template-columns: 1fr var(--player-sidebar-w, var(--layout-sidebar-width));
-    gap: var(--space-sm);
-    height: auto;
     /* ⚠️ flex-shrink:0 必须显式写：.player-page 在桌面端是「固定高度 + overflow-y:auto」
        的 flex column 容器，flex item 默认可收缩 → 播放器区会先被压缩到 min-content
        高度（16:9 派生高度被压没，侧栏 min-height:100% 随之归零 → 播放器与三面板一起
        消失），而「压缩」优先于「滚动」。视口越窄（1024–1439）下方详情区越高、溢出越大，
        压缩越狠，故该区间症状最明显。禁止收缩后总高超出容器 → 正常滚动。 */
     flex-shrink: 0;
+    grid-template-columns: 1fr var(--player-sidebar-w, var(--layout-sidebar-width));
+    gap: var(--space-sm);
     /* ⚠️ width:100% 必须显式写：本元素是 .player-page（flex column）的 item，
        交叉轴靠 stretch 撑满；一旦用 margin-inline:auto 居中而宽度仍是 auto，
        auto 外边距会吃掉剩余空间、使 stretch 失效 → 宽度退化成 fit-content
@@ -1182,8 +1207,9 @@
     width: 100%;
     /* 封顶值见 --player-content-max（定义在 .player-page） */
     max-width: var(--player-content-max, none);
-    margin-inline: auto;
+    height: auto;
     padding: var(--space-sm) 0 0;
+    margin-inline: auto;
   }
 
   /* 详情区与播放区同口径封顶居中，保证上下两块左右边缘对齐 */
@@ -1262,10 +1288,10 @@
        平分剩余高度 → 三面板变成「header + 大片空白」而不是三条收起态。
      有面板展开时行模板含 1fr，剩余空间被 1fr 吸收，auto 行不会被拉伸，故无此症状。 */
   html:not([data-device="app"]) .player-sidebar--all-collapsed {
-    align-self: start;
     align-content: start;
-    min-height: auto;
+    align-self: start;
     height: auto;
+    min-height: auto;
   }
 
   /* 面板折叠动画：body 用 max-height 过渡（demo 方式），不用 grid-template-rows。

@@ -9,20 +9,20 @@
 
 .sdp-pill {
   display: inline-flex;
-  align-items: center;
   gap: 6px;
-  cursor: pointer;
-  font-size: var(--text-xs);
+  align-items: center;
   padding: 5px 11px;
-  border-radius: 999px;
   border: 1px solid var(--color-border-light);
+  border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
+  font-size: var(--text-xs);
   transition: background var(--dur-fast), border-color var(--dur-fast);
+  cursor: pointer;
 }
 .sdp-pill:hover {
-  background: var(--color-surface-2);
   border-color: var(--color-border);
+  background: var(--color-surface-2);
 }
 .sdp-pill.running,
 .sdp-pill.idle {
@@ -63,29 +63,31 @@
 
 /* 状态点 / 旋转器 */
 .sdp-dot {
+  flex: 0 0 auto;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--color-text-tertiary);
-  flex: 0 0 auto;
 }
 .sdp-dot.is-ok {
   background: var(--color-success, #2bbf6a);
 }
 .sdp-spin {
+  flex: 0 0 auto;
   width: 11px;
   height: 11px;
-  border-radius: 50%;
   border: 2px solid var(--color-border-light);
-  border-top-color: var(--color-primary);
+  border-radius: 50%;
   animation: sdp-spin 0.7s linear infinite;
-  flex: 0 0 auto;
+  border-top-color: var(--color-primary);
 }
+
 @keyframes sdp-spin {
   to {
     transform: rotate(360deg);
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .sdp-spin {
     animation-duration: 1.4s;
@@ -99,24 +101,24 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: var(--shadow-lg);
-  opacity: 0;
   visibility: hidden;
+  opacity: 0;
   transition: opacity var(--dur-fast), visibility var(--dur-fast);
+  box-shadow: var(--shadow-lg);
 }
 .sdp-pop.is-open {
-  opacity: 1;
   visibility: visible;
+  opacity: 1;
 }
 
 .sdp-pop-summary {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  font-size: var(--text-2xs);
-  color: var(--color-text-tertiary);
-  padding-bottom: var(--space-xs);
   margin-bottom: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
   border-bottom: 1px solid var(--color-border-light);
 }
 .sdp-pop-summary b {
@@ -133,33 +135,33 @@
 
 .sdp-pop-grid {
   display: grid;
-  gap: 4px;
   grid-template-columns: repeat(auto-fill, minmax(var(--src-det-grid-min), 1fr));
+  gap: 4px;
   max-height: var(--src-det-popup-max-h);
   overflow: auto;
 }
 .sdp-cell {
   display: flex;
-  align-items: center;
   gap: 6px;
-  font-size: var(--text-2xs);
+  align-items: center;
   padding: 4px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-surface-2);
+  font-size: var(--text-2xs);
 }
 .sdp-cell-dot {
+  flex: 0 0 auto;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  flex: 0 0 auto;
   background: var(--color-error, #e5534b);
 }
 .sdp-cell.is-ok .sdp-cell-dot {
   background: var(--color-success, #2bbf6a);
 }
 .sdp-cell-name {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }

@@ -2035,8 +2035,8 @@
      图标 + 标签在第一行，值另起一行并与标签左对齐（padding-left = 图标宽 + gap）。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
     flex-wrap: wrap;
-    padding: var(--space-2xs) 0;
     min-width: 0;
+    padding: var(--space-2xs) 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
