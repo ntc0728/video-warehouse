@@ -31,13 +31,21 @@
          硬约束（勿改）：
          1. 必须零依赖 —— 此刻 index.css 与 JS 都还没加载，CSS 变量不可用，
             故颜色硬编码对齐 variables.css：浅色 bg #f5f5f5 / surface #fff /
-            border #e8e8e8 / skeleton #e8e8e8；深色 bg #141414 / surface #1f1f1f /
-            border #2b2b2b / skeleton #2a2a2a。
-         2. 列数分档对齐真实网格的三套 token（勿凭感觉改）：
+            border #e8e8e8(=--color-border-light) / skeleton #f0f0f0；深色 bg #141414 /
+            surface #1f1f1f / border #2b2b2b / skeleton #2a2a2a。
+            ⚠️ 骨架填充色与描边色分开维护：填充对齐页面骨架 shimmer 的亮端
+            （浅色 --color-placeholder-shimmer-a #f0f0f0；深色取深色 shimmer
+            #1f1f1f↔#303030 的中值 #2a2a2a），描边恒 #e8e8e8 / #2b2b2b。
+            两者曾经共用 #e8e8e8，导致启动骨架比页面骨架明显偏深（#f0f0f0 ↔ #e6e6e6
+            扫光），交接时出现一次「由深变浅」的跳变。
+         2. 列数分档对齐真实网格的四套真源（勿凭感觉改）：
             海报网格 3 →4(768) →5(1024) →6(1280) →7(1440) →8(1920)  = --card-cols（variables.css）
-            频道/记录 2 →3(768) →4(1024) →5(1440)                     = --iptv-cols（index.css，收藏页 IPTV 卡 / 历史页记录卡）
+            频道网格 2 →3(768) →4(1024) →5(1440)                     = --iptv-cols（index.css，收藏页 IPTV 卡）
+            记录网格 1 →2(480) →3(768) →4(1024) →5(1440) →6(1920)    = .history-grid（History.css，历史页记录卡）
             IPTV 页  2 →3(768) →3(1024) →4(1440) →5(2560)            = --iptv-page-cols（IPTV 页专用，左栏吃宽降一档）
-            设备档由脚本写入 data-cols 覆盖：TV 恒 8/5/5，App 停基础档 3/2/2（与 [data-device] 门控同源）。
+            设备档由脚本写入 data-cols 覆盖：TV 恒 8/5/5/5，App 停基础档 3/2/2
+            （与 [data-device] 门控同源；记录网格无 app 门控，故 App 仍走视口阶梯）。
+            每种网格各自持有完整阶梯，勿写通用 .bs-row 档（会串档 / 抬特异性，详见下方）。
          3. pointer-events:none 保证即使移除失败也不拦点击（防 E2E 误判遮挡）。
          4. 尺寸全用 vh / % / rem，不引 token、不用 100dvh（App 内会溢出）。
          5. 只做「轮廓级同构」：区块数量/方位/卡片比例对齐，不追逐像素 —— 真源仍是
@@ -73,26 +81,31 @@
         width: 32px;
         height: 32px;
         overflow: hidden;
-        background: #e8e8e8;
+        background: #f0f0f0;
         border-radius: 8px;
       }
       .bs-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
       .bs-nav { display: flex; gap: 12px; align-items: center; margin-left: auto; }
-      .bs-nav i { display: block; width: 3.5rem; height: 0.75rem; background: #e8e8e8; border-radius: 6px; }
+      .bs-nav i { display: block; width: 3.5rem; height: 0.75rem; background: #f0f0f0; border-radius: 6px; }
       .bs-nav i:first-child { width: 9rem; }
 
       /* 内容骨架 */
       .bs-body { display: flex; flex-direction: column; gap: 16px; padding: 16px; }
-      .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #e8e8e8; border-radius: 12px; }
+      .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #f0f0f0; border-radius: 12px; }
 
-      /* 卡片网格：--poster 竖版海报 2:3（--card-cols）/ --channel 频道 3:2、
-         --record 记录卡 16:9（两者 --iptv-cols）/ --iptvpage IPTV 页频道 3:2（--iptv-page-cols，左栏吃宽故降一档） */
-      .bs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      /* 卡片网格：--poster 竖版海报 2:3（--card-cols）/ --channel 频道 3:2（--iptv-cols）/
+         --record 记录卡 16:9（.history-grid，独立阶梯）/ --iptvpage IPTV 页频道 3:2
+         （--iptv-page-cols，左栏吃宽故降一档）
+         ⚠️ 每种网格必须持有自己的完整阶梯，勿把 .bs-row 当海报档复用 —— 元素同时带
+         bs-row + bs-row--xxx 两个类，任何写 .bs-row 的档位都会串到其它网格；而带 :not()
+         的通用档会抬升特异性，反过来压过 .bs-row--xxx 的专属档（App 档曾被压成 3 列）。 */
+      .bs-row { display: grid; gap: 12px; }
+      .bs-row--poster { grid-template-columns: repeat(3, 1fr); }
       .bs-row--channel,
-      .bs-row--record,
       .bs-row--iptvpage { grid-template-columns: repeat(2, 1fr); }
+      .bs-row--record { grid-template-columns: repeat(1, 1fr); }
       .bs-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-      .bs-cover, .bs-line { display: block; background: #e8e8e8; border-radius: 8px; }
+      .bs-cover, .bs-line { display: block; background: #f0f0f0; border-radius: 8px; }
       .bs-cover { aspect-ratio: 2 / 3; }
       .bs-line { width: 76%; height: 0.75rem; border-radius: 6px; }
       .bs-line--short { width: 52%; }
@@ -111,16 +124,16 @@
         border: 1px solid #e8e8e8;
         border-radius: 12px;
       }
-      .bs-chip { display: block; width: 3.5rem; height: 1.5rem; background: #e8e8e8; border-radius: 999px; }
+      .bs-chip { display: block; width: 3.5rem; height: 1.5rem; background: #f0f0f0; border-radius: 999px; }
       .bs-chip--wide { width: 7rem; }
       .bs-chip--end { margin-left: auto; width: 5.5rem; }
 
       /* 分区头 / 榜单行 / 文本行 */
-      .bs-sec { display: block; width: 4.5rem; height: 1rem; background: #e8e8e8; border-radius: 6px; }
+      .bs-sec { display: block; width: 4.5rem; height: 1rem; background: #f0f0f0; border-radius: 6px; }
       .bs-list { display: flex; flex-direction: column; gap: 12px; }
-      .bs-list i { display: block; height: 3.5rem; background: #e8e8e8; border-radius: 8px; }
+      .bs-list i { display: block; height: 3.5rem; background: #f0f0f0; border-radius: 8px; }
       .bs-lines { display: flex; flex-direction: column; gap: 10px; }
-      .bs-lines i { display: block; height: 1rem; background: #e8e8e8; border-radius: 6px; }
+      .bs-lines i { display: block; height: 1rem; background: #f0f0f0; border-radius: 6px; }
       .bs-lines i:nth-child(1) { width: 14rem; height: 1.75rem; }
       .bs-lines i:nth-child(2) { width: 9rem; }
       .bs-lines i:nth-child(3) { width: 100%; }
@@ -136,32 +149,44 @@
 
       @keyframes boot-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 
-      @media (width >= 768px)  { .bs-row { grid-template-columns: repeat(4, 1fr); } }
-      @media (width >= 1024px) { .bs-row { grid-template-columns: repeat(5, 1fr); } }
-      @media (width >= 1280px) { .bs-row { grid-template-columns: repeat(6, 1fr); } }
-      @media (width >= 1440px) { .bs-row { grid-template-columns: repeat(7, 1fr); } }
-      @media (width >= 1920px) { .bs-row { grid-template-columns: repeat(8, 1fr); } }
+      /* 海报网格（--card-cols 真源）：3 →4(768) →5(1024) →6(1280) →7(1440) →8(1920) */
+      @media (width >= 768px)  { .bs-row--poster { grid-template-columns: repeat(4, 1fr); } }
+      @media (width >= 1024px) { .bs-row--poster { grid-template-columns: repeat(5, 1fr); } }
+      @media (width >= 1280px) { .bs-row--poster { grid-template-columns: repeat(6, 1fr); } }
+      @media (width >= 1440px) { .bs-row--poster { grid-template-columns: repeat(7, 1fr); } }
+      @media (width >= 1920px) { .bs-row--poster { grid-template-columns: repeat(8, 1fr); } }
 
-      /* 频道 / 记录网格（--iptv-cols 真源）：2 →3(768) →4(1024) →5(1440) */
-      @media (width >= 768px)  { .bs-row--channel, .bs-row--record { grid-template-columns: repeat(3, 1fr); } }
-      @media (width >= 1024px) { .bs-row--channel, .bs-row--record { grid-template-columns: repeat(4, 1fr); } }
-      @media (width >= 1440px) { .bs-row--channel, .bs-row--record { grid-template-columns: repeat(5, 1fr); } }
+      /* 频道网格（--iptv-cols 真源）：2 →3(768) →4(1024) →5(1440) */
+      @media (width >= 768px)  { .bs-row--channel { grid-template-columns: repeat(3, 1fr); } }
+      @media (width >= 1024px) { .bs-row--channel { grid-template-columns: repeat(4, 1fr); } }
+      @media (width >= 1440px) { .bs-row--channel { grid-template-columns: repeat(5, 1fr); } }
+
+      /* 记录网格（.history-grid 真源，与 --iptv-cols 不同源，独立阶梯）：
+         1 →2(480) →3(768) →4(1024) →5(1440) →6(1920)；App 视口走同一阶梯（.history-grid 无
+         app 门控），TV 由下方 data-cols 档恒 5 列覆盖。 */
+      @media (width >= 480px)  { .bs-row--record { grid-template-columns: repeat(2, 1fr); } }
+      @media (width >= 768px)  { .bs-row--record { grid-template-columns: repeat(3, 1fr); } }
+      @media (width >= 1024px) { .bs-row--record { grid-template-columns: repeat(4, 1fr); } }
+      @media (width >= 1440px) { .bs-row--record { grid-template-columns: repeat(5, 1fr); } }
+      @media (width >= 1920px) { .bs-row--record { grid-template-columns: repeat(6, 1fr); } }
 
       /* IPTV 页网格（--iptv-page-cols 真源，左栏占宽故 1024 档不升）：2 →3(768) →3(1024) →4(1440) →5(2560) */
       @media (width >= 768px)  { .bs-row--iptvpage { grid-template-columns: repeat(3, 1fr); } }
       @media (width >= 1440px) { .bs-row--iptvpage { grid-template-columns: repeat(4, 1fr); } }
       @media (width >= 2560px) { .bs-row--iptvpage { grid-template-columns: repeat(5, 1fr); } }
 
-      /* 设备档覆盖（与 variables.css / index.css 的 [data-device] 同源，由脚本写入 data-cols）：
-         TV：--card-cols 恒 8、--iptv-cols 恒 5、--iptv-page-cols 恒 5，不随视口变；
-         App：真源 html:not([data-device="app"]) 的门控使各 token 停在基础档 → 3 / 2 / 2。 */
-      #boot-splash[data-cols="tv"] .bs-row { grid-template-columns: repeat(8, 1fr); }
+      /* 设备档覆盖（与 variables.css / index.css 的 [data-device] 同源，由脚本写入 data-cols）。
+         每种网格都给全自己的档，不写通用 .bs-row —— 否则会串档（见上方卡片网格注释）：
+         TV：--card-cols 8 / --iptv-cols 5 / --iptv-page-cols 5 / .history-grid 5，不随视口变；
+         App：真源 html:not([data-device="app"]) 的门控使 --card-cols / --iptv-cols /
+         --iptv-page-cols 停在基础档 → 海报 3 / 频道 2 / IPTV 页 2；记录网格无 app 门控，
+         故不给 app 档，继续走视口阶梯（1/2/3/4/5/6）。 */
+      #boot-splash[data-cols="tv"] .bs-row--poster { grid-template-columns: repeat(8, 1fr); }
       #boot-splash[data-cols="tv"] .bs-row--channel,
       #boot-splash[data-cols="tv"] .bs-row--record,
       #boot-splash[data-cols="tv"] .bs-row--iptvpage { grid-template-columns: repeat(5, 1fr); }
-      #boot-splash[data-cols="app"] .bs-row { grid-template-columns: repeat(3, 1fr); }
+      #boot-splash[data-cols="app"] .bs-row--poster { grid-template-columns: repeat(3, 1fr); }
       #boot-splash[data-cols="app"] .bs-row--channel,
-      #boot-splash[data-cols="app"] .bs-row--record,
       #boot-splash[data-cols="app"] .bs-row--iptvpage { grid-template-columns: repeat(2, 1fr); }
 
       /* IPTV 左栏：≥1024 才出现（与 .iptv-skeleton--rail 同构） */
@@ -175,7 +200,7 @@
           padding-right: 8px;
           border-right: 1px solid #e8e8e8;
         }
-        .bs-rail i { display: block; height: 1.75rem; background: #e8e8e8; border-radius: 6px; }
+        .bs-rail i { display: block; height: 1.75rem; background: #f0f0f0; border-radius: 6px; }
         .bs-rail i.bs-rail__title { width: 4rem; height: 0.875rem; margin-bottom: 6px; }
         html[data-theme="dark"] .bs-rail { border-right-color: #2b2b2b; }
       }
@@ -233,7 +258,7 @@
       </div>
       <div class="bs-body" id="bs-body">
         <div class="bs-hero"></div>
-        <div class="bs-row"><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i></div>
+        <div class="bs-row bs-row--poster"><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i></div>
       </div>
       <div class="bs-tip" id="bs-tip">正在启动…</div>
     </div>
