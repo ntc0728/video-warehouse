@@ -581,13 +581,31 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   box-shadow: none !important;
 }
 
-/* 非 TV：严格零焦点框（TV 焦点框由上面的 [data-device="tv"] 规则提供）。
-   data-device 为 ''（桌面）/ 'mobile-web' / 'app' 时均无 TV 大纲框；此处清掉浏览器默认的
-   :focus-visible outline 及组件自带的 box-shadow 焦点环，确保键盘导航下任何非 TV 设备
-   都不显示焦点边框。.no-interaction-visual 自身已 !important 无框，此处不冲突。 */
-:root:not([data-device="tv"]) :focus-visible {
-  outline: none !important;
+/* 非 TV：恢复键盘焦点指示（2026-09-15，WCAG 2.4.7 AA / 2.4.11 / 2.4.13）
+   原实现把非 TV 的 :focus-visible 全局熄灭（outline 与 box-shadow 同时 none），
+   等于让键盘 / 开关控制 / 语音输入用户**完全失去位置感知** —— 违反 WCAG 2.4.7。
+   为什么可以安全恢复：:focus-visible 只在「键盘或辅助技术」触发时命中，鼠标点击
+   不会命中，故历史上担心的「点一下留下焦点框」本就不会出现（旧屏蔽是过度防御）。
+   用 outline 而非 box-shadow：box-shadow 会被 overflow:hidden / border-radius 祖先裁切。
+   规则形态与上方 TV 块同源，仅参数不同（TV 3px 固定 / 非 TV 2px 流体）。
+   例外：.no-interaction-visual（logo / 品牌名）保持无框（其自身已 !important）。 */
+:root:not([data-device="tv"]) :focus-visible:not(.no-interaction-visual) {
+  outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
+  outline-offset: 2px !important;
   box-shadow: none !important;
+}
+
+/* 分段控件（收藏/历史 category-segmented、browse search-tabs）：容器 overflow:hidden
+   会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。与 TV 侧同源。 */
+:root:not([data-device="tv"]) .category-segmented__item:focus-visible,
+:root:not([data-device="tv"]) .browse-search-tab:focus-visible {
+  outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
+  outline-offset: calc(-1 * var(--layout-outline-width, 2px) - 2px) !important;
+  box-shadow: none !important;
+}
+:root:not([data-device="tv"]) .category-segmented__item.active:focus-visible,
+:root:not([data-device="tv"]) .browse-search-tab.active:focus-visible {
+  outline-color: var(--color-text-inverse) !important;
 }
 
 /* ── Tab 通用基类（下划线式） ─────────────────────────────
@@ -1220,13 +1238,13 @@ html[data-device="tv"] {
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (width > 1440px) {
   /* ── 功能性描边守护（特异性高于组件默认规则，确保焦点/选中态可见） ── */
-  /* 键盘焦点环 */
-  html:not([data-device="tv"]) .video-card:focus-visible {
-    box-shadow: 0 0 0 3px var(--color-primary);
-  }
-
+  /* 键盘焦点环（2026-09-15：改用 outline 口径，与全局规则同源同形，
+     消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切） */
+  html:not([data-device="tv"]) .video-card:focus-visible,
   html:not([data-device="tv"]) .iptv-channel-card:focus-visible {
-    box-shadow: var(--focus-ring);
+    outline: var(--layout-outline-width, 2px) solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   /* History 批量管理选中态 */
