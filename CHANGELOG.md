@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.26.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.25.0...kinotv-v1.26.0) (2026-09-15)
+
+
+### Features
+
+* **design:** B1 色彩四档 + 状态色双档 + 角标统一口径 ([bfa295e](https://github.com/ntc0728/video-warehouse/commit/bfa295e8c43aa102e892b3ee99c8427afa6b0e9f))
+* **design:** B3 字号阶梯重构（取消段2 逆视口递减） ([65b0ada](https://github.com/ntc0728/video-warehouse/commit/65b0ada35636699d9b7cd628f94d9b91b9a66fc1))
+* **design:** B5 TV 字号对齐 10-foot UI 基线 ([023b8e6](https://github.com/ntc0728/video-warehouse/commit/023b8e6cbd11a53e19c4914cbda359a333d3ce75))
+* **design:** B6 移动端触摸目标 / 视口安全区 / 缩放合规 ([efed48b](https://github.com/ntc0728/video-warehouse/commit/efed48bd30ea016c7b4734b973021ef3f7ec94e5))
+* **design:** B7 工程化收口（z-index 阶梯 / 设计护栏 / 一致性修复） ([bfcb237](https://github.com/ntc0728/video-warehouse/commit/bfcb237a900170712be63a9cba3ecae69abcaec8))
+* **skeleton:** 启动骨架全 shape 按视口填满首屏 + 页级骨架测量式续行 ([c51aab8](https://github.com/ntc0728/video-warehouse/commit/c51aab822b53eef69775aff87f50b1ae70e9243f))
+* **skeleton:** 骨架张数改为「列数 x 行数」派生 + 页级骨架延迟 150ms 淡入 ([c00d9d1](https://github.com/ntc0728/video-warehouse/commit/c00d9d1744d21bfc2ebfe7dd2c6a64c1c2022687))
+
+
+### Bug Fixes
+
+* **a11y:** B2 恢复非 TV 键盘焦点环（WCAG 2.4.7 AA） ([feb9da3](https://github.com/ntc0728/video-warehouse/commit/feb9da3b175309c4e95c336f2f2524f3250a3473))
+* **boot-splash:** 历史页列数对齐 .history-grid 真源 + 骨架底色统一为 #f0f0f0 ([f78c0ce](https://github.com/ntc0728/video-warehouse/commit/f78c0ce4644af4b3a6ac3aba4e61914e9652f740))
+* **build:** vite root 规范化到磁盘真实盘符大小写，修复 Bash 环境确定性构建失败 ([7251759](https://github.com/ntc0728/video-warehouse/commit/7251759f243b199fb05b3b4dc6d0044a8f3d4d8d))
+* **build:** 修复 @types/node 污染导致 setTimeout 类型不匹配（TS2322） ([00662e4](https://github.com/ntc0728/video-warehouse/commit/00662e4b310cbd0cbe711dec5264f240bdffe66b))
+* **e2e:** 切换 Playwright 浏览器通道，修复会话内 E2E 完全不可执行 ([cdbea81](https://github.com/ntc0728/video-warehouse/commit/cdbea816400426535706e7b8fa9dc69f49b24cdb))
+
 ## [1.25.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.24.0...kinotv-v1.25.0) (2026-09-14)
 
 
