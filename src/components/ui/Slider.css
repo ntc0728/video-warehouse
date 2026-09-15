@@ -1,5 +1,4 @@
 .ui-slider {
-  -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: var(--switch-thumb-size, 20px);
@@ -39,29 +38,28 @@
 
 /* ── Thumb（共享 WebKit / Firefox）───────────────────────────── */
 .ui-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
+  width: var(--switch-thumb-size, 20px);
+  height: var(--switch-thumb-size, 20px);
   /* 垂直居中：margin-top = (轨道高 - 拇指尺寸) / 2。
      不能写死 -7px——--switch-thumb-size 为 clamp(14→24px，TV 24→48px)，
      写死会在较大拇指时让圆点偏上（"过扫描安全区圆点位置偏高"的根因）。 */
   margin-top: calc((var(--slider-track-h, 6px) - var(--switch-thumb-size, 20px)) / 2);
-  width: var(--switch-thumb-size, 20px);
-  height: var(--switch-thumb-size, 20px);
+  border: 2px solid var(--color-primary);
   border-radius: 999px;
   background: var(--color-text-inverse);
-  border: 2px solid var(--color-primary);
-  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.15s ease-out;
+  appearance: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .ui-slider::-moz-range-thumb {
   width: var(--switch-thumb-size, 20px);
   height: var(--switch-thumb-size, 20px);
+  border: 2px solid var(--color-primary);
   border-radius: 999px;
   background: var(--color-text-inverse);
-  border: 2px solid var(--color-primary);
-  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.15s ease-out;
+  box-shadow: var(--shadow-sm);
 }
 
 .ui-slider:focus-visible::-webkit-slider-thumb {

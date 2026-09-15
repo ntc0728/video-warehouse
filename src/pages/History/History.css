@@ -314,27 +314,32 @@
   grid-template-columns: repeat(1, minmax(0, 1fr)); /* <480px：1 列 */
   gap: var(--space-lg); /* 卡片间距（--space-lg：三段式流体） */
 }
-@media (min-width: 480px) {
+
+@media (width >= 480px) {
   .history-content .history-group-body .history-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)); /* 480–767：2 列 */
   }
 }
-@media (min-width: 768px) {
+
+@media (width >= 768px) {
   .history-content .history-group-body .history-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr)); /* 768–1023：3 列（2026-09-03 补档） */
   }
 }
-@media (min-width: 1024px) {
+
+@media (width >= 1024px) {
   .history-content .history-group-body .history-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)); /* 1024–1439：4 列 */
   }
 }
-@media (min-width: 1440px) {
+
+@media (width >= 1440px) {
   .history-content .history-group-body .history-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr)); /* 1440–1919：5 列（仅 app 宽视口生效；桌面 ≥1280 由下方 auto-fill 接管） */
   }
 }
-@media (min-width: 1920px) {
+
+@media (width >= 1920px) {
   .history-content .history-group-body .history-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr)); /* ≥1920：6 列（同上，仅 app 宽视口生效） */
   }

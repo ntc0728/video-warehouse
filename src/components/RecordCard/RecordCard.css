@@ -12,8 +12,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: var(--space-xs-plus);
+  align-items: stretch;
   /* 2026-09-08 用户指令：封面图上/左/右不受 padding 影响（通铺出血）——
      卡片 padding 归零，内文区 .record-card__body 补回 padding；
      顶部圆角由卡片 overflow:hidden 按卡片 radius 裁切。 */
@@ -155,6 +155,8 @@
 
 /* 第 1 行：标题独占整行（观看时间已并入第 2 行行尾），溢出时无缝跑马灯 */
 .history-page .record-card__title {
+  width: 100%;
+  min-width: 0;
   margin: 0;
   color: var(--color-text);
   font-size: var(--text-base);
@@ -163,8 +165,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
-  width: 100%;
 }
 .history-page .record-card__title.is-overflow {
   text-overflow: clip;
@@ -184,6 +184,7 @@
 .history-page .record-card__title-text {
   white-space: nowrap;
 }
+
 @keyframes rc-marquee {
   from {
     transform: translateX(0);
@@ -198,8 +199,8 @@
    链中段过长仅 episode 允许收缩省略（source 徽标固定不缩）。 */
 .history-page .record-card__meta-row {
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   min-width: 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
@@ -281,23 +282,23 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
 @media (width < 480px) {
   .history-page .record-card {
     flex-direction: row; /* 竖版 column → 横版 row：封面左、信息右 */
-    align-items: stretch;
     gap: var(--space-sm);
+    align-items: stretch;
   }
 
   .history-page .record-card__media {
     --record-card-media-w: 124px;
     flex: 0 0 var(--record-card-media-w);
+    align-self: center;
     width: var(--record-card-media-w);
     aspect-ratio: 132 / 92; /* 比例沿用旧横版（非 16:9，历史观感） */
-    align-self: center;
   }
 
   .history-page .record-card__body {
     flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
     gap: var(--space-sm);
+    justify-content: center;
+    min-width: 0;
   }
 
   /* 宽屏单行 meta 隐藏，切换窄屏信息列 */
@@ -307,8 +308,8 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
   .history-page .record-card__meta-col {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* 关键：列向子项不被交叉轴 stretch 拉成整行横条 */
     gap: var(--space-sm);
+    align-items: flex-start; /* 关键：列向子项不被交叉轴 stretch 拉成整行横条 */
     min-width: 0;
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
@@ -316,9 +317,9 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
   /* 集数 + 时间同行两端对齐（IPTV 无集数 → 行内仅时间，margin-left:auto 贴右） */
   .history-page .record-card__meta-bottom {
     display: flex;
+    gap: var(--space-sm);
     align-items: center;
     width: 100%; /* 占满 col 宽，使 time margin-left:auto 推到 col 右缘（两端对齐） */
-    gap: var(--space-sm);
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;

@@ -5,10 +5,10 @@
    主提示经 justify-content:center 垂直居中。 */
 .token-required {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex: 1 1 0;
   min-height: var(--layout-loading-min-height);
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
@@ -18,8 +18,8 @@
 .token-required__main {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-lg);
+  align-items: center;
 }
 
 .token-required-icon {

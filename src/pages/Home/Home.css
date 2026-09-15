@@ -5,13 +5,13 @@
    ============================================================ */
 
 .home-page {
+  position: relative;
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   width: 100%;
   min-width: 0;
   background-color: var(--color-background);
-  position: relative;
 }
 
 .home-page--loading {
@@ -24,8 +24,8 @@
    依赖 .home-page > .home-page__content > .home-token-required 每层都撑满（高度链）。 */
 .home-page__content {
   display: flex;
-  flex-direction: column;
   flex: 1 1 0;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
   /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
@@ -148,10 +148,10 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
    免责声明（本容器兄弟节点）位于其下方自然贴底。 */
 .home-token-required {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex: 1 1 0;
   min-height: var(--layout-loading-min-height);
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
@@ -161,8 +161,8 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
 .home-token-required__main {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-lg);
+  align-items: center;
 }
 
 .home-token-required-icon {
@@ -231,11 +231,11 @@ html[data-device="app"] .home-disclaimer {
   flex-direction: row;
   align-items: stretch;
   width: 100%;
-  /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
   /* 与下方分类区的间距（对齐真实 .hero-banner__card 的 margin-bottom） */
   margin-bottom: var(--space-sm);
+  overflow: hidden;
+  /* 卡片样式已由外层 .hero-banner__card 提供，此处仅保留布局属性 */
+  aspect-ratio: 16 / 9;
 }
 
 .home-skeleton-hero__banner {
@@ -243,7 +243,6 @@ html[data-device="app"] .home-disclaimer {
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
-  overflow: hidden;
   /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾） */
   background: linear-gradient(
     90deg,
@@ -252,6 +251,7 @@ html[data-device="app"] .home-disclaimer {
     var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
+  overflow: hidden;
   animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
@@ -263,13 +263,13 @@ html[data-device="app"] .home-disclaimer {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: var(--space-sm);
+  justify-content: flex-end;
   width: 100%;
   max-width: 60%;
   padding: var(--space-xl);
-  pointer-events: none;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent);
+  pointer-events: none;
 }
 
 .home-skeleton-hero__title {
@@ -283,8 +283,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-hero__meta {
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
 }
 
 .home-skeleton-hero__meta-item {
@@ -418,8 +418,6 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-card {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
   /* 关键：宽度必须与真实电影行卡片 .tmdb-movierow-card 使用同一套公式
      calc((100% - (var(--card-cols)-1)*var(--space-md)) / var(--card-cols))，
      否则骨架卡片（固定 clamp 宽度）与真实卡片（按 --card-cols 计算宽度）宽度不一致，
@@ -429,12 +427,13 @@ html[data-device="app"] .home-disclaimer {
     (100% - (var(--card-cols, 7) - 1) * var(--space-md))
     / var(--card-cols, 7)
   );
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .home-skeleton-card-img {
   position: relative;
   width: 100%;
-  aspect-ratio: 2 / 3;
   border-radius: var(--radius-md);
   background: linear-gradient(
     90deg,
@@ -443,8 +442,9 @@ html[data-device="app"] .home-disclaimer {
     var(--color-placeholder-shimmer-a) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
   overflow: hidden;
+  animation: shimmer var(--card-shimmer-duration) infinite;
+  aspect-ratio: 2 / 3;
 }
 
 /* 卡片角标占位 — 镜像 VideoCard 四角（评分/收藏/年份/类型） */
@@ -479,8 +479,8 @@ html[data-device="app"] .home-disclaimer {
 }
 
 .home-skeleton-card-badge--br {
-  bottom: var(--space-3xs);
   right: var(--space-3xs);
+  bottom: var(--space-3xs);
   width: var(--space-xl);
   height: var(--icon-2xs, 10px);
 }
@@ -686,8 +686,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-topstrip__inner {
   display: flex;
-  align-items: center;
   gap: var(--space-sm);
+  align-items: center;
   width: 100%;
   min-width: 0;
 }
@@ -705,8 +705,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-topstrip__stat {
   display: inline-flex;
-  align-items: center;
   gap: 2px;
+  align-items: center;
   white-space: nowrap;
 }
 
@@ -721,8 +721,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-topstrip__right {
   display: flex;
-  align-items: center;
   gap: var(--space-xs);
+  align-items: center;
   margin-left: auto;
 }
 
@@ -736,8 +736,8 @@ html[data-device="app"] .home-disclaimer {
 
 .home-topstrip__more {
   display: inline-flex;
-  align-items: center;
   gap: 2px;
+  align-items: center;
   padding: var(--space-2xs) var(--space-xs);
   border: none;
   border-radius: var(--radius-md);
@@ -745,13 +745,13 @@ html[data-device="app"] .home-disclaimer {
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   white-space: nowrap;
-  cursor: pointer;
   transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  cursor: pointer;
 }
 
 .home-topstrip__more:hover {
-  color: var(--color-text);
   background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -797,7 +797,6 @@ html[data-device="app"] .home-disclaimer {
   }
 
   html:not([data-device="tv"]) .home-two-col__main {
-    min-width: 0;
     /* ⚠️ HeroBili 的 --hero-banner-h / --hero-side-w 默认按「全视口宽」算，
        Hero 落到右列后必须按「右列实际宽度」重算，否则主图会被算高、
        右侧卡片按超宽比例布局而溢出列宽。
@@ -824,6 +823,13 @@ html[data-device="app"] .home-disclaimer {
       (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
       * 0.56
     );
+    min-width: 0;
+  }
+
+  /* 右列内的内容层：外层 .home-two-col 已做 2200 封顶，此处解除二次限宽/居中 */
+  html:not([data-device="tv"]) .home-two-col__main > .home-page__content {
+    max-width: none;
+    margin-inline: 0;
   }
 
   /* ── 2 列档（1024–1280）专用参数 ──────────────────────────────────────
@@ -853,12 +859,6 @@ html[data-device="app"] .home-disclaimer {
         * 0.31
       );
     }
-  }
-
-  /* 右列内的内容层：外层 .home-two-col 已做 2200 封顶，此处解除二次限宽/居中 */
-  html:not([data-device="tv"]) .home-two-col__main > .home-page__content {
-    max-width: none;
-    margin-inline: 0;
   }
 }
 
@@ -926,18 +926,18 @@ html[data-device="app"] .home-disclaimer {
   z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background: var(--color-background);
-  pointer-events: none;
+  overflow: hidden;
   transition: opacity 0.6s ease;
+  pointer-events: none;
 }
 .home-enter-skeleton--fading {
   opacity: 0;
 }
 .home-enter-skeleton .home-skeleton {
   display: flex;
-  flex-direction: column;
   flex: 1 1 0;
+  flex-direction: column;
 }
 
 /* ── 内容延迟进入动画（与骨架覆盖层淡出同步交叉淡化） ── */
@@ -956,9 +956,9 @@ html[data-device="app"] .home-disclaimer {
    「从其他页进入首页闪一下」）。现 delay 200ms 与覆盖层 fading（200ms 起
    0.6s 淡出）同步开始——骨架淡出的同时内容淡入，无缝过渡，无空白帧。 */
 .home-page__content--delayed-enter {
+  opacity: 0;
   animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
   animation-delay: 200ms;
-  opacity: 0;
 }
 /* ── 「继续观看」行进入动画（2026-08-26） ──
    分类切回首页时该行全新挂载（isCat 翻转），挂载即触发淡入上移，
@@ -966,6 +966,6 @@ html[data-device="app"] .home-disclaimer {
    animate-card-enter（避免卡片闪烁），故仅在行容器层做整体进入过渡。
    reduced-motion 由 animations.css 全局规则覆盖。 */
 .home-continue-row {
-  animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
   opacity: 0;
+  animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
 }

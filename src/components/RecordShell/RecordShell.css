@@ -268,16 +268,16 @@
     padding: 0;
   }
   .record-content {
-    padding: 0 var(--space-sm);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
     /* ⚠️ 必须 min-height:auto 覆盖基础定义 min-height:0——面板所在层若允许收缩
        （min:0 + flex:1 1 0 = 只占剩余空间），card 会溢出面板底部「脱标」、
        且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
        时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
     min-height: auto;
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -358,12 +358,12 @@
     padding: 0;
   }
   html[data-device="app"] .record-content {
+    min-height: auto;
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
-    min-height: auto;
   }
 
 
@@ -407,12 +407,12 @@
     padding: 0;
   }
   html:not([data-device="app"]) .record-content {
+    min-height: auto;
     padding: 0 var(--space-md) var(--space-md);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
-    min-height: auto;
   }
 
   html:not([data-device="app"]) .record-aside__title {
@@ -637,9 +637,10 @@ html[data-device="app"] .action-btn__label {
   animation: record-pop-in 0.16s var(--ease-standard) both;
 }
 .record-pop--right {
-  left: auto;
   right: 0;
+  left: auto;
 }
+
 @keyframes record-pop-in {
   from {
     opacity: 0;
@@ -650,6 +651,7 @@ html[data-device="app"] .action-btn__label {
     transform: none;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .record-pop {
     animation: none;
@@ -659,8 +661,8 @@ html[data-device="app"] .action-btn__label {
 .record-pop-item {
   display: flex;
   gap: var(--space-md);
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: var(--space-xs) var(--space-sm);
   border: none;
   border-radius: var(--radius-sm);
@@ -668,8 +670,8 @@ html[data-device="app"] .action-btn__label {
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   white-space: nowrap;
-  cursor: pointer;
   transition: background-color 0.12s ease, color 0.12s ease;
+  cursor: pointer;
 }
 .record-pop-item:hover {
   background: var(--color-hover-bg);
@@ -712,8 +714,7 @@ html[data-device="app"] .action-btn__label {
        断点 2026-09-08 二改：≥1024 即启用（原 ≥1280）。
        gap 2026-09-08 用户指令：--space-xl → --space-lg。 */
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
+    flex-flow: row nowrap;
     gap: var(--space-lg);
     /* 2026-09-14 修复：原为 flex-start —— 交叉轴（纵向）不拉伸，
        导致 .record-content 高度退化为内容自然高（153px），空状态/加载态在
@@ -749,8 +750,8 @@ html[data-device="app"] .action-btn__label {
   /* 内容区标题（demo-record-left-rail 2026-09-08 content__head 同款规格） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-content-head {
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: var(--space-md);
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-content-head__title {
@@ -759,8 +760,8 @@ html[data-device="app"] .action-btn__label {
     font-weight: 600;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-content-head__meta {
-    font-size: var(--text-xs);
     color: var(--color-text-tertiary);
+    font-size: var(--text-xs);
   }
 
   /* 左侧 rail：sticky 常驻 + 竖排分组 */
@@ -774,25 +775,24 @@ html[data-device="app"] .action-btn__label {
        rail 整体下推 ~80px（用户截图确认）。正确范式同 .history-timeline
        （History.css:167 top:0）：小间距即可，滚动态也不会钻进 header。 */
     top: var(--space-sm);
-    align-self: flex-start;
+    display: flex;
+    flex-flow: column nowrap;
     flex-shrink: 0;
+    gap: var(--space-sm);         /* 分组间距：保持 --space-sm（用户确认不动） */
+    align-items: stretch;
+    align-self: flex-start;
     /* 2026-09-10 用户拍板：宽度改用共享 token --rail-w（clamp(148px, 10vw, 248px)），
        替换原 max-content + min-width:124px —— 四处左栏统一宽度曲线后，
        rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。 */
     width: var(--rail-w);
     min-width: 0;
+    margin-top: 0;
+    padding: 0 var(--space-sm) 0 0;
     /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
        无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
        排序 + 3 按钮 < 500px），不会超视口，故保持 visible。
        若日后 rail 内容增长到会溢出，应先把 .record-pop 改成 portal 再恢复 auto。 */
     overflow: visible;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: var(--space-sm);         /* 分组间距：保持 --space-sm（用户确认不动） */
-    margin-top: 0;
-    padding: 0 var(--space-sm) 0 0;
     /* 2026-09-10 用户拍板「左栏视觉语言统一 = 方案 B」：右侧 1px 边框。
        原「rail 自身不加背景/圆角/阴影/四边边框（不卡片化）」的决策保留 ——
        只加一条右边框作为边界锚点，不铺底色、不加圆角/阴影。 */
@@ -803,8 +803,8 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-row--fused {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: var(--space-lg);
+    align-items: stretch;
     width: 100%;
   }
 
@@ -826,8 +826,8 @@ html[data-device="app"] .action-btn__label {
     content: "";
     display: block;
     height: 1px;
-    background: var(--color-border-light);
     margin: var(--space-sm) 0;
+    background: var(--color-border-light);
   }
 
   /* ── 分类 / 状态 / 排序 / 管理：统一成 demo 的 .rail-item 外观 ── */
@@ -847,15 +847,15 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-segmented {
     display: flex;
     flex-direction: column;
-    width: 100%;
     gap: var(--space-2xs);
+    width: 100%;
   }
   /* 内嵌筛选条：竖排堆叠（状态 chips + 排序按钮） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: var(--space-2xs);
+    align-items: stretch;
     width: 100%;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-inline-divider {
@@ -865,8 +865,8 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: var(--space-2xs);
+    align-items: stretch;
     width: 100%;
   }
 
@@ -879,18 +879,18 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-sort-btn,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn {
     display: flex;
-    align-items: center;
     gap: var(--space-sm);
+    align-items: center;
     width: 100%;
     height: auto;
-    text-align: left;
     padding: 8px var(--space-sm);
     border: none;
-    background: transparent;
     border-radius: var(--radius-md);
-    font-size: var(--text-sm);
+    background: transparent;
     color: var(--color-text-secondary);
+    font-size: var(--text-sm);
     font-weight: 500;
+    text-align: left;
     transition: background var(--dur-fast) var(--ease-standard),
                 color var(--dur-fast) var(--ease-standard);
   }
@@ -922,10 +922,10 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item.active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn.is-active {
+    border: none;
     background: var(--color-primary);
     color: var(--color-text-inverse);
     font-weight: 600;
-    border: none;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active:hover,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active:hover,
@@ -939,10 +939,10 @@ html[data-device="app"] .action-btn__label {
   /* 子元素：图标/圆点 slot（左侧居左，--icon-sm 尺寸） */
   html:not([data-device="app"]):not([data-device="tv"]) .status-tab__dot,
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip__dot {
+    flex-shrink: 0;
     width: var(--space-sm);
     height: var(--space-sm);
     border-radius: 50%;
-    flex-shrink: 0;
     background-color: var(--status-tab-color, var(--color-text-tertiary));
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip--status .record-filter-chip__dot {
@@ -953,28 +953,29 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab > span:not(.status-tab__dot):not(.status-tab__count) {
     flex: 1;
     min-width: 0;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .action-btn__label {
     flex: 1;
     min-width: 0;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
   /* 图标 svg 统一 --icon-sm（状态 tab 走圆点，排序/操作图标走此尺寸） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-sort-btn svg,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn svg {
+    flex-shrink: 0;
     width: var(--icon-sm);
     height: var(--icon-sm);
-    flex-shrink: 0;
   }
 
   /* 计数徽标：照抄 demo .rail-item__cnt（右贴，选中态半透明白底白字） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab__count,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab__count {
+    flex-shrink: 0;
     min-width: 0;
     padding: 1px 6px;
     border-radius: var(--radius-full);
@@ -984,7 +985,6 @@ html[data-device="app"] .action-btn__label {
     font-weight: 400;
     line-height: 1.2;
     text-align: center;
-    flex-shrink: 0;
   }
   /* 选中态计数徽标：底色跟随选中字色（浅色主题=白 / 暗色主题=黑），
      避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见（2026-09-10 修复） */
@@ -1006,8 +1006,8 @@ html[data-device="app"] .action-btn__label {
     max-width: 100%;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-sort-wrap .record-pop .record-pop-item {
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }

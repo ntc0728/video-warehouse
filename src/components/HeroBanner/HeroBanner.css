@@ -9,12 +9,12 @@
 
 /* ── 卡片容器 ── */
 .hero-banner__card {
-  background: var(--color-surface);
+  padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-sm);
+  background: var(--color-surface);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
   /* 不与下方分类区的间距由 Home.css 控制，避免重复 */
 }
 
@@ -39,11 +39,11 @@
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
-  overflow: hidden;
   /* 兜底深色（与空态占位同源）：banner 始终为照片，任何图片未就绪/重新解码的
      透明窗口都应露出深色而非白底，避免「切回页签先闪一下灰白再出图」。
      此前用浅色渐变，亮色主题下渲染为灰白 → 问题 #3 的根因之一。 */
   background: #0b0b0e;
+  overflow: hidden;
   /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
       图片用 object-fit: cover 视觉保持 16:9 */
 }
@@ -77,8 +77,8 @@
 
 /* track→crossfade 切换瞬间跳过淡入动画（track 已显示该图，crossfade 层以 opacity 1 静态挂载，无缝衔接） */
 .hero-banner__bg-layer--no-anim {
-  animation: none !important;
   opacity: 1 !important;
+  animation: none !important;
 }
 
 /* 分类切换滞留层（旧图垫底）：opacity 1 常驻底层，直至新图淡入完成后由组件移除 */
@@ -216,12 +216,12 @@
   flex-direction: column;
   gap: var(--space-sm);
   max-width: 60%;
+  margin-bottom: var(--space-md);
   /* 左 / 下边距：叠在 .hero-banner__text-slide 的 padding（--space-xl）之上，
      避免文字贴 banner 左下角。写在 .hero-banner__text 本身而非 slide 上，
      是因为 slide 只负责「随 track 位移」，文字块的边距跟着文字走，
      无论 track 怎么平移、无论空态（无 slide 包裹）都一致。 */
   margin-left: var(--space-lg);
-  margin-bottom: var(--space-md);
   /* 始终可见：文本不再有出场/垂直入场动画（问题 #1）；滑动期间随 banner 一起水平位移，
      由 .hero-banner__text-track 的 transform 驱动（见 textTrackStyle / textTrackIndices）。 */
   opacity: 1;
@@ -238,11 +238,11 @@
 }
 
 .hero-banner__text-slide {
+  display: flex;
   flex: 0 0 100%;
+  align-items: flex-end;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: flex-end;
   /* 边距下沉到每张 slide：无论 track 怎么 translateX 位移，文本始终自带
      左/下边距，下一张 banner 落定或滑入时都不会出现「左下角贴边、缺少边距」。 */
   padding: var(--space-md);
@@ -263,23 +263,23 @@
 /* 高度对齐「标题位」：有 logo 时是 logo（max-height --space-3xl，见下方
    .hero-banner__text .detail-hero-logo），无 logo 时是文字标题。 */
 .hero-banner__skeleton--title {
-  height: var(--space-2xl);
   width: min(60%, 26rem);
+  height: var(--space-2xl);
 }
 
 .hero-banner__skeleton--meta {
-  height: 1.125rem;
   width: min(38%, 15rem);
+  height: 1.125rem;
 }
 
 .hero-banner__skeleton--desc {
-  height: 0.875rem;
   width: min(52%, 22rem);
+  height: 0.875rem;
 }
 
 .hero-banner__skeleton--btn {
-  height: 2.75rem;
   width: 8rem;
+  height: 2.75rem;
   border-radius: var(--radius-full);
 }
 
@@ -460,8 +460,8 @@
   }
 
   .hero-banner__text {
-    margin-left: var(--space-sm);
     margin-bottom: var(--space-xs);
+    margin-left: var(--space-sm);
   }
 
   /* 标题阴影收窄：桌面的大半径 60px 模糊阴影落在正在做 transform 动画的文字轨道内，
@@ -486,8 +486,8 @@
   }
 
   html[data-device="app"] .hero-banner__text {
-    margin-left: var(--space-sm);
     margin-bottom: var(--space-xs);
+    margin-left: var(--space-sm);
   }
 
   html[data-device="app"] .hero-banner__title {

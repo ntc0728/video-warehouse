@@ -522,7 +522,7 @@ html[data-skin="mechanical"][data-theme="light"] {
   --color-primary: #0091a7;
   --color-primary-hover: #007688;
   --color-background: #e8edf1;
-  --color-surface: #ffffff;
+  --color-surface: #fff;
   --color-surface-hover: rgba(0, 145, 167, 0.08);
   --color-text: #0f1923;
   --color-text-secondary: #41505f;
@@ -561,7 +561,7 @@ html[data-skin="retro"][data-theme="light"] {
   --color-primary: #c000c0;
   --color-primary-hover: #a000a0;
   --color-background: #f3e9ff;
-  --color-surface: #ffffff;
+  --color-surface: #fff;
   --color-surface-hover: rgba(192, 0, 192, 0.1);
   --color-text: #2a0033;
   --color-text-secondary: #6a1b8a;

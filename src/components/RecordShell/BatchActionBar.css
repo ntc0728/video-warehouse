@@ -9,18 +9,18 @@
   bottom: var(--space-xl);
   z-index: var(--z-fixed);
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-xs);
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: fit-content;
   max-width: 100%;
-  flex-wrap: wrap;
   margin: var(--space-md) auto 0; /* 水平 auto = 居中；上边距与正文拉开 */
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--color-surface);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
   animation: batchBarSlideUp 0.2s var(--ease-standard);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
 }
 
 .batch-action-bar--exiting {
@@ -55,14 +55,20 @@
 }
 
 @keyframes batchCheckFadeIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 批量模式下禁用封面扫光，避免选中态视觉干扰 */
 .batch-mode .video-card:hover .video-card-glow::after {
-  animation: none;
   opacity: 0;
+  animation: none;
 }
 
 /* 批量操作按钮 */

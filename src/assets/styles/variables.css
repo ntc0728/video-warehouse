@@ -35,7 +35,6 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  color-scheme: light;
   /* ── UI 全局缩放（2026-09-04 三段式×大屏整合，阶段 A）── */
   --ui-scale: 1;
   /* 卡片固定宽度（阶段 C 消费，≥1280 auto-fill 轨道）：290 设计基 × scale */
@@ -436,7 +435,6 @@
      1440→127.2 / 1920→131.1 / 2560→139.3（含 ui-scale 1.08）。
      量测口径：最长分类名「央视 CCTV」+ 计数药丸「999」（font-weight 600 活跃态）。 */
   --layout-channel-group-w: calc(136px * var(--ui-scale));
-
   --layout-source-url-max-w: calc(clamp(160px, 109.109px + 13.571vw, 213.333px) * var(--ui-scale)); /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w: calc(clamp(160px, 83.664px + 20.356vw, 240px) * var(--ui-scale)); /* Hero 海报宽度：160→280px 流体 */
   --layout-searchbox-header-max-w: calc(clamp(480px, 352.774px + 33.927vw, 613.333px) * var(--ui-scale)); /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
@@ -520,6 +518,7 @@
   --scrollbar-color: rgba(0, 0, 0, 0.15); /* 滚动条默认色（极淡） */
   --scrollbar-color-hover: rgba(0, 0, 0, 0.3);   /* hover 态加深 */
   --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
+  color-scheme: light;
 }
 
 /* 频道列表一级栏「窄屏档」（≤479，2026-09-10 用户拍板）：
@@ -796,7 +795,6 @@
    Dark Theme — colors & shadows only (dimension tokens from :root)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
-  color-scheme: dark;
   /* 暗色主题 — primary 反转为白色，背景/表面整体加深 */
   --color-primary: #fff;
   --color-primary-hover: #e5e5e5;
@@ -880,6 +878,7 @@
   --scrollbar-color: rgba(255, 255, 255, 0.18);
   --scrollbar-color-hover: rgba(255, 255, 255, 0.35);
   --scrollbar-color-active: rgba(255, 255, 255, 0.55);
+  color-scheme: dark;
 }
 
 
@@ -972,7 +971,6 @@
 
   /* ── Grid Gap（TV 基数=桌面冻结值，4K=2×）────────────────────────────────────── */
   --grid-gap: clamp(24px, 1.25vw, 48px);  /* 24→48 (桌面24, 4K=48) */
-
   --safe-area-x: 5vw;
   --safe-area-y: 5vh;
 

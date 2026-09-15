@@ -24,9 +24,9 @@
        banner/右栏网格；overlay 面板绝对定位锚定本卡（CategoryQuickAccess.css） */
     position: relative;
     display: block;
-    background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
+    background: var(--color-surface);
     box-shadow: var(--shadow-card);
   }
   html:not([data-device="tv"]) .hero-bili__grid {
@@ -42,10 +42,10 @@
 .hero-bili__banner {
   position: relative;
   height: var(--hero-banner-h);
-  overflow: hidden;
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
   background: #0b0b0e;
+  overflow: hidden;
 }
 
 .hero-bili__banner-img {
@@ -84,17 +84,17 @@
   top: 50%;
   z-index: 3;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   padding: var(--space-2xs);
   border: none;
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  cursor: pointer;
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.25s ease, background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .hero-bili__arrow:hover {
@@ -117,8 +117,8 @@
 .hero-bili__dots {
   display: flex;
   gap: var(--dot-gap);
-  align-items: center;
   justify-content: center;
+  align-items: center;
   margin-top: var(--space-xs);
   pointer-events: auto;
 }
@@ -196,13 +196,13 @@
 
 .hero-bili__right {
   position: relative;
-  min-width: 0;
   /* 融合卡内布局：卡网格 + 换一换占位列（2026-09-06，替代绝对定位外挂，
      避免按钮贴/溢出 hero 卡右缘） */
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start; /* 换一换与第一行 card 顶对齐（用户拍板） */
   column-gap: var(--space-sm);
+  align-items: start; /* 换一换与第一行 card 顶对齐（用户拍板） */
+  min-width: 0;
 }
 
 .hero-bili__cards {
@@ -271,12 +271,12 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   border: 1px solid var(--color-border-light);
   border-radius: var(--hero-card-radius);
   background: var(--color-surface-elevated);
-  cursor: pointer;
+  overflow: hidden;
   transition: box-shadow 0.25s ease, transform 0.25s ease;
+  cursor: pointer;
 }
 
 .hero-side-card:hover {
@@ -348,8 +348,8 @@
   right: var(--space-sm);
   z-index: 3;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: var(--hero-corner-fav);
   height: var(--hero-corner-fav);
   padding: 0;
@@ -357,9 +357,9 @@
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
-  cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
 }
 
 .hero-side-card:hover .hero-side-card__fav,
@@ -380,12 +380,12 @@
 /* 标题条：不换行，溢出悬浮跑马灯（双段等长无缝循环） */
 .hero-side-card__title {
   padding: var(--space-xs) var(--space-sm);
-  overflow: hidden;
   color: var(--color-text);
   font-size: var(--hero-title-size);
   font-weight: 500;
   line-height: 1.4;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .hero-side-card__title-track {
@@ -412,16 +412,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  align-items: center;
   justify-content: center;
+  align-items: center;
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text-secondary);
-  cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 
 .hero-bili__shuffle:hover {
@@ -456,7 +456,7 @@
   .hero-side-card__img,
   .hero-side-card__title.is-marquee .hero-side-card__title-track,
   .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
-    animation: none !important;
     transition: none !important;
+    animation: none !important;
   }
 }

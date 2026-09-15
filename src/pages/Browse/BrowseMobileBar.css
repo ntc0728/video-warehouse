@@ -25,9 +25,9 @@
 /* 第二行：筛选按钮居左、结果数居右 */
 .bmb-bar-row {
   display: flex;
+  gap: var(--space-sm);
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-sm);
 }
 .bmb-result-count {
   color: var(--color-text-tertiary);
@@ -104,9 +104,9 @@
   flex-shrink: 0;
   gap: var(--space-sm);
   padding: var(--space-sm) 0;
+  background: var(--color-surface);
   overflow-x: auto;
   scrollbar-width: none;
-  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
 }
 .bmb-rail::-webkit-scrollbar {
@@ -114,6 +114,7 @@
 }
 .bmb-chip {
   display: inline-flex;
+  flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
   height: 26px;
@@ -124,7 +125,6 @@
   color: var(--color-primary);
   font-size: var(--text-xs);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 .bmb-chip .bmb-x {
   padding: 0;
