@@ -445,8 +445,8 @@
   }
   /* 移动端：弹出层占满（避免贴边） */
   .source-manager__popover {
-    right: auto;
-    left: 0;
+    right: 0;
+    left: auto;
     min-width: 10rem;
   }
   /* 移动端：item 内容紧凑 */
@@ -465,10 +465,6 @@
     width: 2.25rem;
     height: 2.25rem;
   }
-  .source-manager__popover {
-    right: 0;
-    left: auto;
-  }
   .source-manager__item-drag {
     margin-left: calc(-1 * var(--space-2xs));
   }
@@ -482,10 +478,10 @@
     padding: var(--space-xs) var(--space-sm);
     font-size: var(--text-xs);
   }
-  html[data-device="app"] /* 移动端：弹出层占满（避免贴边） */
+  html[data-device="app"] /* 移动端：弹出层贴右对齐（其后的 right/left 覆写块已由 D7 合并至此，计算值不变） */
   .source-manager__popover {
-    right: auto;
-    left: 0;
+    right: 0;
+    left: auto;
     min-width: 10rem;
   }
   html[data-device="app"] /* 移动端：item 内容紧凑 */
@@ -503,10 +499,6 @@
   html[data-device="app"] .source-manager__icon-btn {
     width: 2.25rem;
     height: 2.25rem;
-  }
-  html[data-device="app"] .source-manager__popover {
-    right: 0;
-    left: auto;
   }
   html[data-device="app"] .source-manager__item-drag {
     margin-left: calc(-1 * var(--space-2xs));

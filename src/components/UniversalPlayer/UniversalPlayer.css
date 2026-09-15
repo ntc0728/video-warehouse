@@ -243,7 +243,8 @@
   left: 0;
   z-index: 20;
   padding: var(--space-sm) var(--space-md) var(--space-md);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  /* 0.88：P2-3 控制栏对比度增强（原 0.8 白字压 0.8 黑渐变，亮画面下对比不足）。D7 合并自文件尾部覆写块 */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
   transition: opacity var(--dur-lg) ease, transform var(--dur-lg) ease;
 }
 
@@ -259,7 +260,8 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
+  /* 0.92：P2-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
+  color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-base);
   font-weight: 600;
   white-space: nowrap;
@@ -650,7 +652,8 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
+  /* 0.92：P2-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
+  color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-base);
   text-align: left;
   white-space: nowrap;
@@ -791,7 +794,8 @@
   left: 0;
   display: flex;
   flex-direction: column;
-  width: var(--layout-episode-panel-w);
+  /* 统一取中面板宽（原 --layout-episode-panel-w 已被文件尾部覆写块覆盖；D7 合并计算值不变）。TV 由 .up-platform-tv 变体以更高特异性覆盖 */
+  width: var(--layout-panel-medium-w);
   background: rgba(0, 0, 0, 0.60);
   transition: transform var(--dur-lg) ease;
   backdrop-filter: blur(12px);
@@ -1208,8 +1212,9 @@
 
 /* ===== Platform: Mobile ===== */
 .up-platform-mobile .up-control-bar button {
-  min-width: var(--icon-sm);
-  min-height: var(--icon-sm);
+  /* P2-4 触摸目标：--icon-xl ≈32px（border-box）不足 WCAG 44px，移动平台提到 --tap-target（原 --icon-sm；D7 合并自文件尾部覆写块） */
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
   padding: var(--space-2xs);
 }
 
@@ -1246,10 +1251,6 @@
 
 .up-platform-mobile .up-popover {
   min-width: var(--layout-time-display-min-w);
-}
-
-.up-channel-list {
-  width: var(--layout-panel-medium-w);
 }
 
 .up-platform-mobile .up-universal-player {
@@ -2579,29 +2580,6 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   height: 1px;
   margin: var(--space-xs) var(--space-sm);
   background: rgba(255, 255, 255, 0.12);
-}
-
-/* ============ P2-3 控制栏对比度增强 ============ */
-/* 播放器 UI 固定深底白字（--player-text 恒 #fff，与 B站/YouTube 一致），但 0.8 透明度的
-   白字压在 0.8 透明度的黑渐变上，亮画面场景对比度不足。统一提升到 0.92 / 0.88。 */
-.up-control-bar {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
-}
-
-.up-control-bar button {
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.up-popover-item {
-  color: rgba(255, 255, 255, 0.92);
-}
-
-/* ============ P2-4 移动端触摸目标 ≥44px ============ */
-/* --icon-xl ≈ 32px（border-box），移动端点击热区不足 WCAG 44px 建议。
-   移动平台布局下控制栏按钮提到 --tap-target；桌面端不受影响。 */
-.up-platform-mobile .up-control-bar button {
-  min-width: var(--tap-target);
-  min-height: var(--tap-target);
 }
 
 /* ============ Issue4 色彩/音效调整弹窗 ============ */

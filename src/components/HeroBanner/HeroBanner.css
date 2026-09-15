@@ -448,6 +448,8 @@
 
   .hero-banner__text {
     max-width: 100%;
+    margin-bottom: var(--space-xs);
+    margin-left: var(--space-sm);
   }
 
   /* 移动端文本距图左/下缘过远根因：slide.padding(--space-xl) 与 text 自身的
@@ -459,10 +461,6 @@
     padding: var(--space-md);
   }
 
-  .hero-banner__text {
-    margin-bottom: var(--space-xs);
-    margin-left: var(--space-sm);
-  }
 
   /* 标题阴影收窄：桌面的大半径 60px 模糊阴影落在正在做 transform 动画的文字轨道内，
      移动端每帧都要重新模糊整个文本层（合成器最贵的操作之一）。移动端标题本就压在
@@ -479,16 +477,14 @@
 
   html[data-device="app"] .hero-banner__text {
     max-width: 100%;
+    margin-bottom: var(--space-xs);
+    margin-left: var(--space-sm);
   }
 
   html[data-device="app"] .hero-banner__text-slide {
     padding: var(--space-md);
   }
 
-  html[data-device="app"] .hero-banner__text {
-    margin-bottom: var(--space-xs);
-    margin-left: var(--space-sm);
-  }
 
   html[data-device="app"] .hero-banner__title {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);

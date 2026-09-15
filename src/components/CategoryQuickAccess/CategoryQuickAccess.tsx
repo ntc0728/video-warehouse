@@ -493,7 +493,7 @@ export function CategoryQuickAccessPanel() {
             <div className="cqa-panel__pager">
               <button
                 type="button"
-                className="cqa-panel__pager__btn"
+                className="cqa-panel__pager-btn"
                 disabled={panelPage <= 1}
                 aria-label="上一页"
                 onClick={() => setPanelPage((p) => Math.max(1, p - 1))}
@@ -501,11 +501,11 @@ export function CategoryQuickAccessPanel() {
                 <Icon icon={ChevronLeft} size="xs" />
                 上一页
               </button>
-              <span className="cqa-panel__pager__ind">{panelPage} / {panelTotalPages}</span>
+              <span className="cqa-panel__pager-ind">{panelPage} / {panelTotalPages}</span>
               {panelPage < panelTotalPages ? (
                 <button
                   type="button"
-                  className="cqa-panel__pager__btn"
+                  className="cqa-panel__pager-btn"
                   aria-label="下一页"
                   onClick={() => setPanelPage((p) => Math.min(panelTotalPages, p + 1))}
                 >
@@ -515,7 +515,7 @@ export function CategoryQuickAccessPanel() {
               ) : (
                 <button
                   type="button"
-                  className="cqa-panel__pager__btn cqa-panel__pager__btn--more"
+                  className="cqa-panel__pager-btn cqa-panel__pager-btn--more"
                   onClick={goBrowseMore}
                 >
                   查看更多

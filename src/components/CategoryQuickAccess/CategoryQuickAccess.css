@@ -151,8 +151,6 @@
     scroll-snap-align: start;
   }
 
-
-
 /* ── >=1024 桌面：入口上移到 hero 上方（Home.tsx 条件渲染），扁平化 + 小一号 ──
    去卡片式：card 内边距清零；圆形底盘随图标缩一号（icon-lg × 2，与 TV 的
    「icon × 系数」派生法同源）；文字 --text-sm → --text-xs。TV 走 --tv 专属规则不受影响。
@@ -398,22 +396,18 @@
   }
   html:not([data-device="tv"]) .cqa-panel__title {
     flex: 0 0 auto;
-  }
-  html:not([data-device="tv"]) .cqa-panel__sub {
-    flex: 1 1 auto;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  html:not([data-device="tv"]) .cqa-panel__title {
     color: var(--color-text);
     font-size: var(--text-base);
     font-weight: 600;
   }
   html:not([data-device="tv"]) .cqa-panel__sub {
+    flex: 1 1 auto;
+    min-width: 0;
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* 面板头热度 Σ 值（「今日最热」右侧）：全模块唯一语义强调色（暖橙） */
   html:not([data-device="tv"]) .cqa-panel__heat {
@@ -489,7 +483,7 @@
     /* 与网格拉开一档（--space-sm）：贴太近显得分页条挤在内容上 */
     margin-top: var(--space-sm);
   }
-  html:not([data-device="tv"]) .cqa-panel__pager__btn {
+  html:not([data-device="tv"]) .cqa-panel__pager-btn {
     display: inline-flex;
     gap: var(--space-2xs);
     align-items: center;
@@ -504,19 +498,19 @@
     transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
     cursor: pointer;
   }
-  html:not([data-device="tv"]) .cqa-panel__pager__btn:hover:not(:disabled) {
+  html:not([data-device="tv"]) .cqa-panel__pager-btn:hover:not(:disabled) {
     border-color: var(--color-border-strong);
     color: var(--color-text);
   }
-  html:not([data-device="tv"]) .cqa-panel__pager__btn:disabled {
+  html:not([data-device="tv"]) .cqa-panel__pager-btn:disabled {
     opacity: 0.4;
     cursor: default;
   }
-  html:not([data-device="tv"]) .cqa-panel__pager__btn--more {
+  html:not([data-device="tv"]) .cqa-panel__pager-btn--more {
     color: var(--color-text);
     font-weight: 600;
   }
-  html:not([data-device="tv"]) .cqa-panel__pager__ind {
+  html:not([data-device="tv"]) .cqa-panel__pager-ind {
     min-width: calc(3 * var(--text-xs));
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
@@ -595,14 +589,25 @@
      缩放视觉过重）——仅分类名 / 榜单行标题文本缩放 0.96，卡框/海报/热度条静止 */
   html:not([data-device="tv"]) .cqa-catcard__name {
     width: fit-content;
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-weight: 600;
     transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
   }
   html:not([data-device="tv"]) .cqa-catcard:active .cqa-catcard__name {
     scale: 0.96;
   }
   html:not([data-device="tv"]) .cqa-catcard__t {
-    transform-origin: left center;
+    flex: 1;
+    min-width: 0;
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
     transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
+    transform-origin: left center;
+    text-overflow: ellipsis;
   }
   html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t {
     scale: 0.96;
@@ -619,11 +624,6 @@
     font-size: var(--text-lg);
     font-weight: 700;
     font-style: italic;
-  }
-  html:not([data-device="tv"]) .cqa-catcard__name {
-    color: var(--color-text);
-    font-size: var(--text-base);
-    font-weight: 600;
   }
   html:not([data-device="tv"]) .cqa-catcard__heat {
     margin-left: auto;
@@ -687,16 +687,6 @@
     border-radius: var(--radius-md);
     background: var(--color-placeholder);
     object-fit: cover;
-  }
-  html:not([data-device="tv"]) .cqa-catcard__t {
-    flex: 1;
-    min-width: 0;
-    color: var(--color-text);
-    font-size: var(--text-xs);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   html:not([data-device="tv"]) .cqa-catcard__row:hover {
     background: var(--color-surface-hover);
@@ -1034,7 +1024,7 @@
   html:not([data-device="tv"]) .cqa-trend__row,
   html:not([data-device="tv"]) .cqa-trend__t,
   html:not([data-device="tv"]) .cqa-trend__t-text,
-  html:not([data-device="tv"]) .cqa-panel__pager__btn,
+  html:not([data-device="tv"]) .cqa-panel__pager-btn,
   html:not([data-device="tv"]) .cqa-hotcard {
     transition: none;
   }

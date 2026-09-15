@@ -1743,9 +1743,6 @@
   grid-template-columns: 1fr;
 }
 
-  html[data-device="app"] .detail-sources-grid {
-  grid-template-columns: minmax(0, 1fr);
-  }
 
   html[data-device="app"] .detail-seasons {
   grid-template-columns: 1fr;
