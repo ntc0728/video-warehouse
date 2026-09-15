@@ -253,7 +253,7 @@
   padding: var(--space-3xs) var(--space-3xs);
   border: none;
   background: transparent;
-  color: #aaa;
+  color: var(--player-text-tertiary);
   font-family: inherit;
   font-size: var(--text-xs);
   transition: all 0.2s ease;
@@ -435,13 +435,13 @@
 }
 
 .iptv-osd-network-speed {
-  color: #bbb;
+  color: var(--player-text-secondary);
   font-size: var(--text-xs);
   white-space: nowrap;
 }
 
 .iptv-osd-source-text {
-  color: #bbb;
+  color: var(--player-text-secondary);
   font-size: var(--text-xs);
   white-space: nowrap;
 }

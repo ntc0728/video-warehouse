@@ -90,7 +90,9 @@ html[data-skin="cartoon"] {
   --color-surface-hover: rgba(255, 107, 107, 0.08);
   --color-text: #2d2a32;
   --color-text-secondary: #6a6570;
-  --color-text-tertiary: #9a94a0;
+  /* 2026-09-15 提档：#9a94a0（surface 2.91:1）→ #6c6672（5.47:1 / 页面底 4.61:1） */
+  --color-text-tertiary: #6c6672;
+  --color-text-disabled: #bfbfbf;
   --color-border: #ecd9bf;
   --color-border-light: #f0e3ce;
   --color-tab-active-bg: #ff6b6b;
@@ -174,7 +176,16 @@ html[data-skin="mechanical"] {
   --color-surface-hover: rgba(0, 229, 255, 0.08);
   --color-text: #e0e6ed;
   --color-text-secondary: #8892a0;
-  --color-text-tertiary: #5a6370;
+  /* 2026-09-15 提档：#5a6370（surface 2.93:1）→ #7b8593（4.77:1 / 页面底 5.17:1） */
+  --color-text-tertiary: #7b8593;
+  --color-text-disabled: #5a5a5a;
+  /* 暗底皮肤：语义色必须用「亮档」，否则会继承 :root 的浅色深档（≈3:1 不可读） */
+  --color-success-text: #73d13d;
+  --color-warning-text: #d89614;
+  --color-error-text: #ff7875;
+  --color-info-text: #3c9ae8;
+  --color-error: #ff7875;
+  --color-info: #3c9ae8;
   --color-border: #1e2a36;
   --color-border-light: #253040;
   --color-tab-active-bg: #00e5ff;
@@ -554,7 +565,9 @@ html[data-skin="retro"][data-theme="light"] {
   --color-surface-hover: rgba(192, 0, 192, 0.1);
   --color-text: #2a0033;
   --color-text-secondary: #6a1b8a;
-  --color-text-tertiary: #9b4dca;
+  /* 2026-09-15 提档：#9b4dca（页面底 4.16:1）→ #8b3fbb（surface 5.96:1 / 页面底 5.08:1） */
+  --color-text-tertiary: #8b3fbb;
+  --color-text-disabled: #bfbfbf;
   --color-border: #e0c0f0;
   --color-border-light: #ecd9f5;
   --color-tab-active-bg: #c000c0;

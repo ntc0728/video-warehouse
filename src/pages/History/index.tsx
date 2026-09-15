@@ -150,8 +150,8 @@ const STATUS_CONFIG: Record<VideoStatus, { label: string }> = {
 
 /** 状态 chip 圆点颜色（RecordFilterPanel 用）：全部=黑（默认，不传）、未看完=橙、已看完=绿 */
 const STATUS_DOT: Partial<Record<VideoStatus, string>> = {
-  unfinished: '#d97706',
-  finished: 'var(--color-success)',
+  unfinished: 'var(--color-warning-text)',
+  finished: 'var(--color-success-text)',
 };
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -167,7 +167,7 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: string }[] = [
   { key: 'all', label: '综合', icon: LayoutGrid, color: 'var(--color-primary)' },
   { key: 'video', label: '视频', icon: PlayCircle, color: 'var(--color-primary)' },
-  { key: 'iptv', label: 'IPTV', icon: Tv, color: '#22c55e' },
+  { key: 'iptv', label: 'IPTV', icon: Tv, color: 'var(--color-success)' },
 ];
 
 export default function HistoryPage() {
