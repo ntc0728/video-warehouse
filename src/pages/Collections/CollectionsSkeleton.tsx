@@ -5,23 +5,29 @@
  *
  * 视口差异化：影视网格列数消费与真实网格同源的 --card-cols，
  * IPTV 网格消费 --iptv-cols，随视口自动分档，不引入第二套断点。
+ * 张数 = 列数 × ROWS（列数运行时读 token，见 useGridCols）—— 不写死张数，
+ * 保证视口内始终填满且末行完整，且永远随列数分档同步。
  */
 import Skeleton from '@/components/common/Skeleton';
+import { useGridCols } from '@/hooks/useGridCols';
 import './CollectionsSkeleton.css';
 
-const VIDEO_COUNT = 8;
-const IPTV_COUNT = 6;
+/** 每个网格渲染几行占位（行数是策略，张数由列数 × 本值派生） */
+const ROWS = 3;
 
 export default function CollectionsSkeleton() {
+  const videoCols = useGridCols('--card-cols', 6);
+  const iptvCols = useGridCols('--iptv-cols', 2);
+
   return (
-    <div className="collections-skeleton" role="status" aria-label="加载中">
+    <div className="collections-skeleton skeleton-scope" role="status" aria-label="加载中">
       <section className="collections-skeleton__section">
         <div className="collections-skeleton__head">
           <Skeleton className="collections-skeleton__head-title" />
           <Skeleton className="collections-skeleton__head-count" />
         </div>
         <div className="collections-skeleton__video-grid">
-          {Array.from({ length: VIDEO_COUNT }, (_, i) => (
+          {Array.from({ length: videoCols * ROWS }, (_, i) => (
             <div key={i} className="collections-skeleton__card">
               <Skeleton className="collections-skeleton__video-cover" />
               <Skeleton className="collections-skeleton__line" />
@@ -35,7 +41,7 @@ export default function CollectionsSkeleton() {
           <Skeleton className="collections-skeleton__head-count" />
         </div>
         <div className="collections-skeleton__iptv-grid">
-          {Array.from({ length: IPTV_COUNT }, (_, i) => (
+          {Array.from({ length: iptvCols * ROWS }, (_, i) => (
             <div key={i} className="collections-skeleton__card">
               <Skeleton className="collections-skeleton__iptv-cover" />
               <Skeleton className="collections-skeleton__line" />

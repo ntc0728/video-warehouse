@@ -15,6 +15,7 @@ import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
+import { useGridCols } from '@/hooks/useGridCols';
 import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
@@ -122,11 +123,17 @@ function getVideo(item: {
 /** 骨架卡片（错开动画延迟，避免同步闪烁）
  *  - 默认竖版（2:3）：镜像 .video-card portrait 结构 — 封面 + 左上评分角标 + 右上收藏点 + 左下年份 + 右下类型 + 底部标题
  *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + 底部标题
+ *
+ * 张数默认按「列数 × 1.5」派生（覆盖一屏 + 半屏溢出，镜像真实横滚行
+ * 「一屏整卡 + 可横向滚」的观感）；列数读 CSS token（--row-cols / --continue-cols），
+ * 不写死张数。显式传 count 时以 count 为准。
  */
-function SkeletonCards({ count = 12, landscape = false }: { count?: number; landscape?: boolean }) {
+function SkeletonCards({ count, landscape = false }: { count?: number; landscape?: boolean }) {
+  const cols = useGridCols(landscape ? '--continue-cols' : '--row-cols', 7);
+  const skeletonCount = count ?? Math.ceil(cols * 1.5);
   return (
     <>
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: skeletonCount }).map((_, i) => (
         <div
           key={i}
           className={`tmdb-movierow-card tmdb-movierow-skeleton${landscape ? ' tmdb-movierow-skeleton--landscape' : ''}`}

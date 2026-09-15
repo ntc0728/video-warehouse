@@ -7,3 +7,4 @@ export { useHeroSideCols, type HeroSideCols } from './useHeroSideCols';
 export { useDocumentTitle, useRouteTitleImmediate, getRouteTitle, APP_NAME } from './useDocumentTitle';
 export { useCollapseOnScroll } from './useCollapseOnScroll';
 export { useDelayedFlag } from './useDelayedFlag';
+export { useGridCols } from './useGridCols';

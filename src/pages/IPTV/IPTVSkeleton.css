@@ -76,10 +76,13 @@
   width: 100%;
 }
 
-/* 频道网格：列数与真实 .iptv-channel-grid 同源（--iptv-cols） */
+/* 频道网格：列数与真实网格同源。
+   注意真实网格是 `.iptv-page .iptv-channel-grid` → --iptv-page-cols
+   （IPTV 页专用，左栏吃宽故比全局 --iptv-cols 降一档），骨架此前误用
+   --iptv-cols，桌面档多一列（2026-09-15 修正）。 */
 .iptv-skeleton__channel-grid {
   display: grid;
-  grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));
   gap: var(--space-lg);
 }
 
