@@ -84,12 +84,15 @@ agent-browser.json
 public/db-inspector.html
 public/debug-source.html
 
-# ── 文档（仅提交 KNOWLEDGE.md / TEST-CASES.md / KNOWN-ISSUES.md / PRODUCTION-REVIEW）──
+# ── 文档（仅提交 KNOWLEDGE.md / TEST-CASES.md / KNOWN-ISSUES.md / PRODUCTION-REVIEW / DESIGN-* / design/）──
 docs/*
 !docs/KNOWLEDGE.md
 !docs/TEST-CASES.md
 !docs/KNOWN-ISSUES.md
 !docs/PRODUCTION-REVIEW-*.md
+!docs/DESIGN-REVIEW-*.md
+!docs/DESIGN-PLAN-*.md
+!docs/design/
 # 文档瘦身分片（AGENTS.md 下沉 + 大文件拆分，2026-09-09）
 !docs/agents/
 !docs/test-cases/
