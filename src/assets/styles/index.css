@@ -259,7 +259,11 @@
 }
 
 html {
-  font-size: var(--text-base);
+  /* 根字号（rem 基准）— 2026-09-15 从 --text-base 解耦：
+     原写法让「最常用的正文 token」同时充当 rem 基准，改字号会连带移动全仓
+     ≈200 处 rem 消费点（组件 rem 字面量 + Tailwind 数字档工具类）。
+     --root-font-size 逐字节复刻改前实测曲线（8 组视口偏差 0.000%）。 */
+  font-size: var(--root-font-size);
 }
 
 /* 滚动条 — 极简 6px 淡色，全局规则（应用所有 overflow 元素）
