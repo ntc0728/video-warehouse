@@ -8,26 +8,30 @@
  * 张数 = 列数 × ROWS（列数运行时读 token，见 useGridCols）—— 不写死张数，
  * 保证视口内始终填满且末行完整，且永远随列数分档同步。
  */
+import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
-import { useGridCols } from '@/hooks/useGridCols';
+import { useGridCols, useFillRows } from '@/hooks';
 import './CollectionsSkeleton.css';
 
-/** 每个网格渲染几行占位（行数是策略，张数由列数 × 本值派生） */
+/** 每个网格渲染几行占位（行数是策略，张数由列数 × 本值派生；不足首屏由 useFillRows 续行） */
 const ROWS = 3;
 
 export default function CollectionsSkeleton() {
   const videoCols = useGridCols('--card-cols', 6);
   const iptvCols = useGridCols('--iptv-cols', 2);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const extraRows = useFillRows(rootRef, videoCols);
+  const videoRows = ROWS + extraRows;
 
   return (
-    <div className="collections-skeleton skeleton-scope" role="status" aria-label="加载中">
+    <div ref={rootRef} className="collections-skeleton skeleton-scope" role="status" aria-label="加载中">
       <section className="collections-skeleton__section">
         <div className="collections-skeleton__head">
           <Skeleton className="collections-skeleton__head-title" />
           <Skeleton className="collections-skeleton__head-count" />
         </div>
         <div className="collections-skeleton__video-grid">
-          {Array.from({ length: videoCols * ROWS }, (_, i) => (
+          {Array.from({ length: videoCols * videoRows }, (_, i) => (
             <div key={i} className="collections-skeleton__card">
               <Skeleton className="collections-skeleton__video-cover" />
               <Skeleton className="collections-skeleton__line" />
