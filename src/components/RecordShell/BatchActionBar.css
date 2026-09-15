@@ -7,7 +7,7 @@
 .batch-action-bar {
   position: sticky;
   bottom: var(--space-xl);
-  z-index: 50;
+  z-index: var(--z-fixed);
   display: flex;
   gap: var(--space-xs);
   align-items: center;

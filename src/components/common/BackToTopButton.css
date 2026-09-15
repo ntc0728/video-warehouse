@@ -15,7 +15,7 @@
   position: fixed;
   right: var(--space-lg);
   bottom: var(--space-2xl);
-  z-index: 90;
+  z-index: var(--z-float);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -189,7 +189,7 @@
   position: fixed;
   right: var(--space-lg);
   bottom: calc(var(--space-2xl) + var(--space-2xl) + var(--space-sm));
-  z-index: 90;
+  z-index: var(--z-float);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -313,7 +313,7 @@
   position: fixed;
   right: var(--space-md);
   bottom: var(--space-2xl);
-  z-index: 90;
+  z-index: var(--z-float);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);

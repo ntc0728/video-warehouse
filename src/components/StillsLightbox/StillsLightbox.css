@@ -311,7 +311,7 @@
   .stills-lightbox__close {
     top: var(--space-sm);
     right: var(--space-sm);
-    z-index: 100;
+    z-index: var(--z-overlay);
     width: 2.25rem;
     height: 2.25rem;
     background: rgba(255, 255, 255, 0.85);
@@ -341,7 +341,7 @@
   html[data-device="app"] .stills-lightbox__close {
     top: var(--space-sm);
     right: var(--space-sm);
-    z-index: 100;
+    z-index: var(--z-overlay);
     width: 2.25rem;
     height: 2.25rem;
     background: rgba(255, 255, 255, 0.85);

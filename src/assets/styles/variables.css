@@ -54,16 +54,38 @@
   --color-bili-light: #ffc4d6;  /* 腮红/浅粉 */
   --color-bili-deep: #e85a8a;   /* 深粉（投影/描边加重） */
 
-  /* ── Z-index 层级体系 ─────────────────────────────────────────────────
+  /* ── Z-index 层级体系（2026-09-15 B7.3 全量成梯）───────────────────────
      浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
-       固定导航  sticky header 55 / sidebar-overlay 90 / sidebar 100
-       局部浮层  --z-popover (200)   ← Select / Popover / Tooltip 等页面级浮层
-       弹窗遮罩  --z-modal-overlay 1000 / --z-modal 1001
-     局部浮层落在 200 档：高于固定导航（不被侧边栏遮挡），
-     且低于 Modal（弹窗打开时浮层被正常压住，不冲突）。 */
+
+       token                 值      档位与用途
+       --z-base              1      常规内容层叠（相对定位的子元素）
+       --z-fixed             50     固定 / 吸顶 UI（移动底部 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊）
+       --z-fixed-header      55     固定吸顶导航（Layout 的 fixed sticky-header，压住 tab bar 与内容）
+       --z-float             90     局部轻浮层（悬浮按钮、遮罩 scrim、播放器局部菜单/局部 toast）
+       --z-overlay           100    页级覆盖层（侧边栏 / 抽屉 / 全屏 loading / 进入过渡 / 灯箱控件 / 搜索下拉 / 全屏滚动条）
+       --z-popover           200    页面级浮层（Select / Popover / Tooltip）
+       --z-modal-overlay     1000   弹窗遮罩
+       --z-modal             1001   弹窗
+       --z-toast             1500   全局提示（含播放器居中 toast）
+       --z-player-fs         9998   播放器伪全屏容器（JS 加的 .up-fs-css-pseudo）
+       --z-fullscreen        9999   全屏页面（IPTV / 播放器实验室）
+       --z-splash            10000  转场幕布 / 启动骨架（必须压住一切）
+
+     ★契约：① 新增浮层必须用 token，禁止裸数字；
+             ② 局部浮层落 --z-popover(200)：高于固定导航（不被侧边栏遮挡）、低于 Modal；
+             ③ 组件内部「相对定位子元素」的局部层叠（值 <50）不属于本体系，可写字面量。 */
+  --z-base: 1;
+  --z-fixed: 50;
+  --z-fixed-header: 55;
+  --z-float: 90;
+  --z-overlay: 100;
   --z-popover: 200;
   --z-modal-overlay: 1000;
   --z-modal: 1001;
+  --z-toast: 1500;
+  --z-player-fs: 9998;
+  --z-fullscreen: 9999;
+  --z-splash: 10000;
   /* 页面/卡片/文字 — 三级灰阶体系 */
   --color-background: #f5f5f5;             /* 页面底色 */
   --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
@@ -230,6 +252,26 @@
      连带改变。现独立成 token，**逐字节复刻**改前实测曲线，零渲染变化。
      段2 覆盖见下方 @media (width >= 768px)，TV 覆盖见文件末尾 [data-device="tv"]。 */
   --root-font-size: 14px;                  /* <768：恒 14（= 原 --text-base 段1 值） */
+
+  /* ── Font Weight（2026-09-15 新增）────────────────────────────────────────
+     背景：全仓字重为字面量，含 800×6 / 900×2 等跨档写法，缺少语义约束。
+     契约：只允许 regular/medium/semibold/bold 四档；800/900 在组件替换时
+     一次性收敛到 --fw-bold（700）。**先定义 + 文档化，组件分批替换**，
+     不做全站批量改写（避免一次性改变大量观感）。 */
+  --fw-regular: 400;                       /* 正文 */
+  --fw-medium: 500;                        /* 次要强调 / 元信息 */
+  --fw-semibold: 600;                      /* 小标题 / 激活态 */
+  --fw-bold: 700;                          /* 大标题 / 强强调（收敛 800/900） */
+
+  /* ── Line Height（2026-09-15 新增）────────────────────────────────────────
+     背景：无行高 token，组件内写成字面数（1.2 / 1.4 / 1.5 / 1.6 混用）。
+     取值依据：中文正文行高下限 1.5（无衬线）；单元格控件 1.25。
+     ⚠️ 必须单位数（stylelint 的 declaration-property-value-disallowed-list 禁 px 行高）。
+     落地节奏：先用于信息密集组件（榜单简介 / 设置说明 / 详情简介），
+     **不做全局 body { line-height }**（会一次性改变全站行高、大面积位移）。 */
+  --lh-tight: 1.25;                        /* 标题 / 单行控件 / 徽标 */
+  --lh-base: 1.5;                          /* 中文正文下限 */
+  --lh-relaxed: 1.75;                      /* 长文本段落 */
 
   /* ── Spacing（密度契约 v2 · E2 紧凑端点 2026-09-05）──────────────────
      段1 375→768：MIN（375 处）与旧契约逐字节相同（手机零回归），768 处值 =
@@ -882,8 +924,9 @@
   --space-3xl: clamp(5rem, 4.1667vw, 10rem);    /* 80→160 */
 
   /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
-  /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 0–10，单位 vw/vh）写入
-     <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值（与滑块默认 3 对齐）。 */
+  /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 预设 0/5/10/15/20，单位 vw/vh）
+     写入 <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值
+     （与 useSettingsStore 的 tvOverscan 默认 5 对齐 —— 2026-09-15 B7.4 修正，原写 3 不一致）。 */
   /* 间距补全（小档，TV 基数=桌面冻结值，4K=2×） */
   --space-3xs:     clamp(0.125rem, 0.1042vw, 0.25rem);   /* 2→4     (桌面 2, 4K=4) */
   --space-2xs:     clamp(0.1875rem, 0.1563vw, 0.375rem); /* 3→6     (桌面 3, 4K=6) */
@@ -915,8 +958,8 @@
   /* ── Grid Gap（TV 基数=桌面冻结值，4K=2×）────────────────────────────────────── */
   --grid-gap: clamp(1.5rem, 1.25vw, 3rem);  /* 24→48 (桌面24, 4K=48) */
 
-  --safe-area-x: 3vw;
-  --safe-area-y: 3vh;
+  --safe-area-x: 5vw;
+  --safe-area-y: 5vh;
 
   /* A. 导航栏高度：TV 基线=桌面 76px（1.00× 桌面），4K=2×=152px，统一 clamp(A,(A/19.2)vw,2A)。 */
   --header-height: clamp(4.75rem, 0.2474vw, 9.5rem);   /* 76→152 (桌面76, 4K=152) */
