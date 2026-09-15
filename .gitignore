@@ -123,6 +123,9 @@ scripts/*.mjs
 # （基线棘轮依赖提交在仓库里的 design-audit-baseline.json 才能跨机器生效）
 !scripts/design-audit.mjs
 !scripts/design-audit-baseline.json
+# lint:all 总闸（全跑不短路）+ JSON 重复 key 检查（护栏 §5.2），**必须入库**
+!scripts/lint-all.mjs
+!scripts/json-dup-key-check.mjs
 # 最小环境自检脚本：按需跑 `node scripts/setup.mjs`，纳入版本控制
 !scripts/setup.mjs
 # postinstall 依赖预打包包装：`pnpm install` 后自动执行，**必须入库**

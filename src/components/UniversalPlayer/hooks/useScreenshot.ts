@@ -49,7 +49,7 @@ export function useScreenshot({ title }: UseScreenshotOptions = {}) {
     const pad = (n: number) => String(n).padStart(2, '0');
     const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timeStr = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const safeTitle = (title || 'video').replace(/[<>:\"/\\|?*]/g, '_').slice(0, 50);
+    const safeTitle = (title || 'video').replace(/[<>:"/\\|?*]/g, '_').slice(0, 50);
     const filename = `screenshot_${safeTitle}_${dateStr}_${timeStr}.png`;
 
     try {

@@ -433,7 +433,6 @@ function settleWithWindow<T>(
     let settledCount = 0;
     let firstFulfilledAt = 0;
     let done = false;
-    let maxTimer: ReturnType<typeof setTimeout> | undefined;
 
     const finish = () => {
       if (done) return;
@@ -448,7 +447,9 @@ function settleWithWindow<T>(
       resolve(results as PromiseSettledResult<T>[]);
     };
 
-    maxTimer = setTimeout(finish, maxWaitMs);
+    // maxTimer 仅赋值一次（prefer-const）：声明移到唯一赋值点改 const；
+    // finish 只在定时器/承诺回调期被调用，此时 maxTimer 已同步初始化，无 TDZ 风险
+    const maxTimer = setTimeout(finish, maxWaitMs);
 
     promises.forEach((promise, i) => {
       promise

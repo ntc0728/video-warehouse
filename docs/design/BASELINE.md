@@ -193,9 +193,10 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 12. **护栏命令**（详见 [a11y-CHECKLIST.md](./a11y-CHECKLIST.md) §A）：
 
    ```bash
-   pnpm run lint:all      # 一次跑完：design-audit → stylelint → ESLint → build
+   pnpm run lint:all      # 总闸：design-audit → stylelint → json-dup-key → ESLint → build，全跑不短路，末尾汇总
    pnpm run lint:design   # design-audit：CSS 裸 hex / fill 档误用 / 裸 z-index / 字重 800-900 / 时长字面量（基线棘轮）
-   pnpm run lint:css      # stylelint：设计规则集（D7 后全量 0）
+   pnpm run lint:css      # stylelint：设计规则集（D7 后全量 0；即最严格棘轮，任何新增当场报错）
+   pnpm run lint:json     # JSON 配置重复 key 检测（JSON.parse 静默保留最后一个，须护栏拦截）
    pnpm run lint          # ESLint：className / style={{}} / 颜色常量里的裸 hex、Tailwind 默认调色板
    ```
 

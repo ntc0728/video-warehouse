@@ -564,11 +564,11 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 > 字距的 3 处 value 违规实际是靠 `skins.css` 归入 token 定义层豁免解决的，与 `--ls-*` 无关。
 > `BASELINE.md` §五 已改为显式警示，避免有人写 `var(--ls-*)` 导致整条声明静默失效（同 A1/A3 家族）。
 
-### 5.2 护栏演进
+### 5.2 护栏演进（✅ 2026-09-15 已落地）
 
-1. **stylelint 加基线棘轮**：与 `design-audit` 同机制（存量快照、只拦新增），让 CI 从"D0 起就可守门"
-2. **`lint:all` 改为全跑不短路**：当前 stylelint 先失败会短路后续检查
-3. **新增 CI 检查**：JSON 配置重复 key 检测（B7 与 A1 同类 bug 的根因）
+1. **stylelint 加基线棘轮** → **不做（有意的决策，非遗漏）**。原动机是「D0 时 240 处存量只拦新增」；D4–D7 把存量清零后，`lint:css` 本身就是最严格的棘轮（0 容忍），再加一层快照机制是纯冗余、只增加维护面。若未来某批改动需要临时豁免存量，届时再启用 design-audit 同款机制。
+2. **`lint:all` 改为全跑不短路** ✅ `scripts/lint-all.mjs`：顺序跑完 design-audit / stylelint / json-dup-key / ESLint / build 五个门（失败也继续），末尾汇总、任一失败 exit 1。原 `&&` 链前面的门一失败，后面的根本不执行，一次只能看一个门的结果。
+3. **JSON 配置重复 key 检测** ✅ `scripts/json-dup-key-check.mjs`（`pnpm run lint:json`）：字符级扫描 git 跟踪的全部 JSON（支持 tsconfig 的 JSONC 注释），同一对象层级重复 key 即报错。**不能用 JSON.parse + reviver 实现**——reviver 在解析后才被调用，重复 key 已被折叠，检不出来。已做阳性自测（构造 3 处重复全中，含嵌套层级区分）。背景：`JSON.parse` 对重复 key 静默保留最后一个，与 A1（`--ui-scale` 同块重复定义）同属「静默失效」家族根因。
 
 ### 5.3 明确不做
 
@@ -580,7 +580,7 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 | 把 stylelint 的 px 规则扩到盒尺寸 / 定位类 | 「细线 1px / 圆点 / 媒体比例盒 / 运行时变量兜底」这类**刻意固定值**会被大面积误伤，只会逼出成片无意义豁免 → 移交 design-audit 的 `raw-px-box-size` 以 observe 模式度量 |
 | 合并 `variables.css` 第二个顶层 `:root` | 该块是「布局尺寸契约」独立小节（自带 banner 说明宽度公式），8 条 token 与前块**零重叠**，属分节追加 → 定点豁免而非合并 |
 | 引用 `var(--ls-*)` 字距 token | **该 token 族从未落地**（只存在于文档）。要用请先补进 `variables.css`，否则整条 `letter-spacing` 会静默失效 |
-| 顺带整改 ESLint 的 11 处历史 error | 与本次设计债无关（测试文件 `any`、`prefer-const`、`no-restricted-imports` 等）；混进设计批次会污染 diff 可审性，应独立立项 |
+| 顺带整改 ESLint 的 11 处历史 error | ~~与本次设计债无关~~ → 已独立立项并于 2026-09-15 完成（见 §6 注） |
 | 触碰值 <50 的 z-index（102 处） | BASELINE 已明确允许（局部 stacking context） |
 | 强行统一 TV 块 10 处"碰巧正确"的 rem | 无收益；随 D2 一并改是顺路，不单独立项 |
 
@@ -597,11 +597,15 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 并按「真债 / 刻意固定值 / 分节追加」三分法把误报清出规则。实测数字见 §5.1，勘误见 §5.4。
 
 > `lint:css`（stylelint）与 `lint:design`（design-audit）均已**无新增违规**；
-> 但 `lint`（ESLint）仍有 **11 处历史 error**（测试文件 `any`、`prefer-const`、`no-restricted-imports`），
-> 与设计债无关，见 §5.3 —— 因此 `lint:all` 仍非全绿，需独立立项。
+> ESLint 的 **11 处历史 error 已于 2026-09-15 独立批次清零**——其中 `UniversalPlayer.tsx`
+> 的 `react-hooks/rules-of-hooks`（`isNativePlatform() || useIsRealPhone()` 短路导致 Hook
+> 条件调用）属真 bug 类，修复为无条件调用后取或；其余为 `prefer-const` ×3、
+> 测试 `any` ×5（以结构化 `RawDB` 类型替代 disable 注释）、`no-useless-escape` ×1、
+> `no-restricted-imports` ×1（改走 `useCustomNavigate` 统一入口）。
+> **`lint:all` 现已全绿**（经不短路总闸验证）。
 
-护栏演进（§5.2）三项建议**仍待办**：stylelint 基线棘轮、`lint:all` 不短路、JSON 重复 key 检查。
-其中第一项已因 stylelint 归零而**优先级下降**（当前无存量可快照）。
+护栏演进（§5.2）三项已于 2026-09-15 落地：`lint:all` 不短路总闸、JSON 重复 key 检查、
+stylelint 棘轮经评估**不做**（存量已归零，`lint:css` 本身即最严格棘轮，理由见 §5.2）。
 
 ---
 
