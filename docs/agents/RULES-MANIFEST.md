@@ -39,15 +39,17 @@
 | `scripts/optimize-deps.mjs` | 脚本 | ✅ | postinstall 依赖预打包 |
 | `scripts/global-setup.ts` / `scripts/global-teardown.ts` | 脚本 | ✅ | 测试全局钩子 |
 | `scripts/fixtures/**` | 测试 fixtures | ✅ | mock 数据（含 HLS 流） |
-| `skills/**` | 协同 skills 归档 | ✅ | 本项目自研 skill（原始目录 + `project-skills.zip`），协作者解压即用；清单见下节 |
+| `skills/**` | 协同 skills 归档 | ✅ | 7 个 skill（自研 2 + 协同工作流第三方 5；原始目录 + `project-skills.zip`），协作者解压即用；清单见 `skills/README.md` |
 
 > 其他 AI 工具规则（如 Windsurf 的 `.windsurfrules`、Trae 的 `.trae/rules/`）若项目使用，也应一并入库；其中 `.trae/` 当前在 `.gitignore` 中被忽略，如需共享需调整忽略规则或在 `docs/agents/` 下另存。
 
 > **本地记忆（`.workbuddy/memory/`）的提炼**：个人记忆层里「跨会话仍成立」的结论应提炼进 `docs/agents/*.md`
 > （如 CSS/布局/断点细则 → `css-layout-conventions.md`，播放器/跨页签/竞态/E2E 细则 → `runtime-conventions.md`），
 > **不得**为共享而入库 `.workbuddy/`（含个人 MEMORY.md / 每日日志）。
-> **协同 skills 归档**：本项目自研 skill 放 `skills/<name>/`，并生成 `skills/project-skills.zip`，
-> 协作者解压后放入自己的 `~/.workbuddy/skills/` 或项目 `.workbuddy/skills/` 即可复用。
+> **协同 skills 归档**：本项目自研 skill（`fullscreen-overlay-portal`、`check-environment`）与协同工作流第三方 skill
+> （`playwright-cli`、`frontend-design`、`tdd`、`grill-me`、`handoff`）统一放 `skills/<name>/`，并生成 `skills/project-skills.zip`，
+> 协作者解压后放入自己的 `~/.workbuddy/skills/` 或项目 `.workbuddy/skills/` 即可复用。目录名以 `SKILL.md` 的 `name` 字段为准，
+> 安装元数据（`_meta.json` / `_user_meta.json` / `_skillhub_meta.json` / `_icon.png`）不入库。金融数据类第三方 skill 不予收录。
 
 ---
 
@@ -159,3 +161,6 @@ git push origin master
 - 已 tracked 并推送的核心规则：`AGENTS.md` `CLAUDE.md` `CONTEXT.md` `.cursorrules` `.github/copilot-instructions.md` `eslint.config.js` `.gitattributes`。
 - `.workbuddy/`（含个人 `memory/MEMORY.md`）正确被 `.gitignore:41` 排除，未跟踪。
 - 结论：GitHub 远端**不缺**本机已知的公共规则；若另一台设备有更新未推送，缺口只在那台设备本地。
+- **2026-09-15 追加**：本地记忆（`ref-css-layout.md` / `ref-code-runtime.md`）已提炼为共享文档
+  `docs/agents/css-layout-conventions.md` + `docs/agents/runtime-conventions.md`；
+  `skills/` 归档扩至 7 个（自研 2 + 协同工作流第三方 5）。此两批改动即本节基线之后的新增内容。
