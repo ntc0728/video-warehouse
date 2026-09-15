@@ -110,7 +110,7 @@
 
 .filter-bar__label--active:hover {
   background: var(--color-primary-hover);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 

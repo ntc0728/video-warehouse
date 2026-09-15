@@ -76,10 +76,10 @@
   flex-shrink: 0;
   margin-bottom: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-warning-border, #ffe58f);
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--space-sm);
-  background-color: var(--color-warning-bg, #fffbe6);
-  color: var(--color-warning-text, #ad6800);
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
   font-size: var(--text-sm);
 }
 
@@ -94,7 +94,7 @@
 
 .iptv-proxy-warning-inline svg {
   flex-shrink: 0;
-  color: var(--color-warning-text, #d48806);
+  color: var(--color-warning-text);
 }
 
 .iptv-proxy-warning-link {
@@ -394,12 +394,6 @@
 .error-info .hint {
   color: var(--color-text-tertiary);
   font-size: var(--text-base);
-}
-
-[data-theme="dark"] .local-fallback-notice {
-  border-color: #594214;
-  background-color: #332b00;
-  color: #d89614;
 }
 
 /* ── 网格 div 本身不需要入场动画 ─────────────────────

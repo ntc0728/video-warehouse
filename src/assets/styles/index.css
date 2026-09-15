@@ -815,7 +815,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 .back-btn.on-dark {
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .back-btn.on-dark:hover {
@@ -1021,7 +1021,7 @@ main {
   border: none;
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  color: var(--color-on-image);
   cursor: pointer;
 }
 
@@ -1047,7 +1047,7 @@ main {
 }
 
 .record-card__delete:hover {
-  color: #ff4d4f;
+  color: var(--color-error-text);
 }
 
 /* ── 封面角标基类 .badge-chip（2026-09-15 新增）─────────────────────────
@@ -1062,8 +1062,8 @@ main {
   align-items: center;
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  background: var(--color-media-scrim);
+  color: var(--color-on-image);
   font-size: var(--text-2xs);
   font-weight: 700;
   line-height: 1.4;
@@ -1092,7 +1092,7 @@ main {
      2026-09-15：底由填充档 --color-success(#52c41a, 白字仅 2.27:1) 换为文字档
      --color-success-text(#237804, 白字 5.59:1)；绿色语义保留，仅提对比。 */
   background: var(--color-success-text);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-2xs);
   font-weight: 700;
   line-height: 1.4;

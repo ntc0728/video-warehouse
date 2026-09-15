@@ -78,7 +78,7 @@
 }
 
 .person-hero-back:hover {
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .person-hero-content {
@@ -134,7 +134,7 @@
 
 .person-name {
   margin: 0 0 var(--space-sm);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-2xl);
   font-weight: 700;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);

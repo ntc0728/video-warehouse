@@ -42,7 +42,7 @@
   /* 兜底深色（与空态占位同源）：banner 始终为照片，任何图片未就绪/重新解码的
      透明窗口都应露出深色而非白底，避免「切回页签先闪一下灰白再出图」。
      此前用浅色渐变，亮色主题下渲染为灰白 → 问题 #3 的根因之一。 */
-  background: #0b0b0e;
+  background: var(--color-media-surface);
   overflow: hidden;
   /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
       图片用 object-fit: cover 视觉保持 16:9 */
@@ -171,7 +171,7 @@
   position: absolute;
   inset: 0;
   /* 兜底深色，与 .hero-banner__main 一致（问题 #3） */
-  background: #0b0b0e;
+  background: var(--color-media-surface);
   animation: heroPlaceholderPulse 4s ease-in-out infinite;
   transform-origin: center center;
 }
@@ -295,7 +295,7 @@
 
 .hero-banner__title {
   margin: 0;
-  color: #fff;
+  color: var(--color-on-image);
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
   font-size: clamp(var(--text-2xl), 3.2vw + 8px, var(--text-3xl));
   font-weight: 800;
@@ -317,7 +317,7 @@
 }
 
 .hero-banner__rating {
-  color: #ffc107;
+  color: var(--color-on-image-rating);
   font-size: var(--text-base);
   font-weight: 600;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);

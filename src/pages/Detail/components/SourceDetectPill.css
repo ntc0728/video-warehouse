@@ -52,7 +52,7 @@
   transition: width 0.25s var(--ease-out-expo);
 }
 .sdp.done .sdp-mini > i {
-  background: var(--color-success, #2bbf6a);
+  background: var(--color-success);
 }
 
 .sdp-count {
@@ -70,7 +70,7 @@
   background: var(--color-text-tertiary);
 }
 .sdp-dot.is-ok {
-  background: var(--color-success, #2bbf6a);
+  background: var(--color-success);
 }
 .sdp-spin {
   flex: 0 0 auto;
@@ -126,10 +126,10 @@
   font-variant-numeric: tabular-nums;
 }
 .sdp-pop-summary .ok b {
-  color: var(--color-success, #2bbf6a);
+  color: var(--color-success-text);
 }
 .sdp-pop-summary .fail b {
-  color: var(--color-error, #e5534b);
+  color: var(--color-error-text);
 }
 
 
@@ -155,10 +155,10 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-error, #e5534b);
+  background: var(--color-error);
 }
 .sdp-cell.is-ok .sdp-cell-dot {
-  background: var(--color-success, #2bbf6a);
+  background: var(--color-success);
 }
 .sdp-cell-name {
   white-space: nowrap;

@@ -100,7 +100,18 @@
   --color-text-tertiary: #6b6b6b;          /* 辅助文字（≥4.5:1） */
   --color-text-disabled: #bfbfbf;          /* 禁用态/占位符/纯装饰图标（唯一允许 <4.5:1 的文字档） */
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
-  --color-on-image: #fff;                  /* 图片/彩色渐变上的前景，不随主题翻转（始终白） */
+  /* ── 媒体上下文族（2026-09-15 新增）──────────────────────────────────
+     叠在图片 / 视频帧 / 固定深底上的颜色**必须与主题解耦**：浅色主题下
+     视频画面上的白字也得是白的，不能随主题翻转为深色。与 .badge-chip
+     「中性深玻璃底 + 白字」同一原理。本族**只在 :root 定义一次**，
+     不在暗色块里重复（重复即意味着它会翻转，那就不是媒体上下文了）。 */
+  --color-on-image: #fff;                  /* 媒体上的浅色前景（主） */
+  --color-on-image-dark: #1a1a1a;          /* 媒体上的深色前景（半透明白底控件） */
+  --color-on-image-rating: #ffc107;        /* 媒体上的评分星色（Hero 评分） */
+  --color-media-surface: #0b0b0e;          /* 媒体承载面底色（Hero 固定深底） */
+  --color-media-scrim: rgba(0, 0, 0, 0.6); /* 媒体遮罩 / 中性角标底（同 .badge-chip） */
+  --color-progress-fill: #e11d48;          /* 观看进度条填充（品红，叠封面图用） */
+  --color-source-accent: #722ed1;          /* IPTV「更多台」来源角标（紫） */
   --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
   --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
@@ -145,6 +156,7 @@
   --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
   --color-success-bg: #e8f5ec;             /* 成功底色（Browse 源状态 badge ok 档） */
   --color-warning-bg: #fdf3e7;             /* 警告底色（Browse 源状态 badge warn 档） */
+  --color-warning-border: #ffe58f;         /* 警告描边（2026-09-15 补：IPTV 曾只写 var() fallback，token 从未定义） */
   --color-error-bg: #fdecea;               /* 错误底色（Browse 源状态 badge bad 档） */
   /* 骨架屏动画 */
   --color-skeleton: #e8e8e8;               /* 骨架底色（深于 placeholder） */
@@ -164,6 +176,24 @@
   --player-progress-bg: #fff;             /* 进度条轨道（始终白色） */
   --player-accent: #2d8cf0;               /* 进度条/控制按钮高亮色（蓝色） */
   --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏/弹层半透明遮罩 */
+  /* 播放器「主色」：组件层曾在 .up-universal-player 内直接重定义 --color-primary: #3b82f6。
+     组件层不定义视觉常量（ITCSS），故提到 token 层，由组件引用。 */
+  --player-primary: #3b82f6;              /* 播放器内 primary（蓝） */
+  --player-primary-hover: #60a5fa;        /* 播放器内 primary hover */
+
+  /* ── 控制台（代理设置日志）──────────────────────────────────────────────
+     固定 GitHub-Dark 终端外观，**不随主题翻转**（浅色主题下也是深色终端）。 */
+  --console-bg: #0d1117;                  /* 终端底 */
+  --console-border: #30363d;              /* 终端描边 */
+  --console-text: #e6edf3;                /* 终端正文 */
+  --console-muted: #8b949e;               /* 终端时间戳 */
+  --console-ok: #3fb950;                  /* 终端成功行 */
+  --console-err: #f85149;                 /* 终端错误行 */
+  --console-warn: #d29922;                /* 终端警告行 */
+
+  /* 品牌字金属渐变（暗色主题专用：浅灰→白→灰，抠图质感）。
+     浅色主题用的是 --color-text/-secondary/-tertiary 组合，不走本 token。 */
+  --brand-gradient-dark: linear-gradient(180deg, #e0e0e0 0%, #fff 50%, #888 100%);
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);    /* 卡片默认投影 */
@@ -848,6 +878,10 @@
   --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
   --color-success-bg: rgba(73, 170, 25, 0.16);   /* 成功底色（暗色半透明档） */
   --color-warning-bg: rgba(216, 150, 20, 0.16);  /* 警告底色（暗色半透明档） */
+  /* 警告描边暗色档：与 --color-warning-bg 同 rgb 三元组，仅提高不透明度到可辨识描边级别。
+     注：补此 token 前 IPTV 的 var(--color-warning-border, #ffe58f) 在暗色下取的是
+     浅色档 #ffe58f（浅黄描边压深底），属「token 缺失 → fallback 静默接管」型 bug。 */
+  --color-warning-border: rgba(216, 150, 20, 0.4);
   --color-error-bg: rgba(211, 32, 41, 0.16);     /* 错误底色（暗色半透明档） */
   --color-skeleton: #2a2a2a;
   --color-skeleton-shine: #3a3a3a;

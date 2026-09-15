@@ -40,7 +40,7 @@
 
 .cms-blocked-modal__btn--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 .cms-blocked-modal__btn--primary:hover {

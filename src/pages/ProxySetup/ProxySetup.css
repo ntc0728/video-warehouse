@@ -90,9 +90,9 @@
   display: flex; flex-direction: column; gap: var(--space-2xs);
   min-height: 10rem; max-height: 16rem;
   padding: var(--space-md);
-  border: 1px solid #30363d;
+  border: 1px solid var(--console-border);
   border-radius: var(--radius-md);
-  background: #0d1117;
+  background: var(--console-bg);
   font-family: "SF Mono", Consolas, "Courier New", monospace;
   font-size: var(--text-xs);
   line-height: 1.7;
@@ -101,12 +101,12 @@
 .proxy-setup__log { display: block; }
 .proxy-setup__log-time {
   margin-right: var(--space-2xs);
-  color: #8b949e;
+  color: var(--console-muted);
 }
-.proxy-setup__log--info { color: #e6edf3; }
-.proxy-setup__log--success { color: #3fb950; }
-.proxy-setup__log--error { color: #f85149; }
-.proxy-setup__log--warn { color: #d29922; }
+.proxy-setup__log--info { color: var(--console-text); }
+.proxy-setup__log--success { color: var(--console-ok); }
+.proxy-setup__log--error { color: var(--console-err); }
+.proxy-setup__log--warn { color: var(--console-warn); }
 
 /* 面板 */
 .proxy-setup__panel {

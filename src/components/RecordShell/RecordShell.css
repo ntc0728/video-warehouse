@@ -687,11 +687,11 @@ html[data-device="app"] .action-btn__label {
 }
 /* 溢出菜单内的危险操作项（清空收藏/清空历史，仅 768–1280 断点可见） */
 .record-pop-item--danger {
-  color: var(--color-danger, #dc2626);
+  color: var(--color-danger);
 }
 .record-pop-item--danger:hover {
-  background: color-mix(in srgb, var(--color-danger, #dc2626) 8%, transparent);
-  color: var(--color-danger, #dc2626);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  color: var(--color-danger);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

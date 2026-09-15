@@ -268,12 +268,7 @@
    Dark Theme —— 文字渐变 + 投影微调，保持抠图质感
    ═══════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] .app-loading__brand-name {
-  background: linear-gradient(
-    180deg,
-    #e0e0e0 0%,
-    #fff 50%,
-    #888 100%
-  );
+  background: var(--brand-gradient-dark);
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.06))

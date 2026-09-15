@@ -54,13 +54,13 @@
   filter: url("#ptr-halo");
 }
 .ptr-overlay__indicator--default .ptr-indicator__text {
-  color: #1a1a1a;                   /* 深色填充 */
-  -webkit-text-stroke: 1.5px #fff;  /* 白色描边兜底 */
+  color: var(--color-on-image-dark);                   /* 深色填充 */
+  -webkit-text-stroke: 1.5px var(--color-on-image);  /* 白色描边兜底 */
   paint-order: stroke fill;
 }
 .ptr-overlay__indicator--default .ptr-indicator__meta {
-  color: #1a1a1a;
-  -webkit-text-stroke: 1px #fff;
+  color: var(--color-on-image-dark);
+  -webkit-text-stroke: 1px var(--color-on-image);
   paint-order: stroke fill;
 }
 
