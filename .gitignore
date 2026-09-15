@@ -90,8 +90,7 @@ docs/*
 !docs/TEST-CASES.md
 !docs/KNOWN-ISSUES.md
 !docs/PRODUCTION-REVIEW-*.md
-!docs/DESIGN-REVIEW-*.md
-!docs/DESIGN-PLAN-*.md
+!docs/DESIGN-*.md
 !docs/design/
 # 文档瘦身分片（AGENTS.md 下沉 + 大文件拆分，2026-09-09）
 !docs/agents/
