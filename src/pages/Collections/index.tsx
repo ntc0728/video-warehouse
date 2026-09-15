@@ -63,19 +63,21 @@ interface CollectionVideoItem extends Video {
 
 type ConfirmType = 'single' | 'batch' | 'clearAll';
 
-/** 状态配置：label（面板 chips 文案）+ color（圆点色；全部=黑，不传走默认） */
+/** 状态配置：label（面板 chips 文案）+ color（圆点色；全部=黑，不传走默认）
+    2026-09-15：原为 Tailwind 硬编码色（#3b82f6 / #d97706 / #22c55e），
+    改为语义 token —— 圆点属「图标」角色，用 *-text 档（浅底上 ≥4.5:1）。 */
 const STATUS_CONFIG: Record<VideoStatus, { label: string; color?: string }> = {
   all: { label: '全部' },
-  unwatched: { label: '未观看', color: '#3b82f6' },
-  watching: { label: '正在看', color: '#d97706' },
-  watched: { label: '已看完', color: '#22c55e' },
+  unwatched: { label: '未观看', color: 'var(--color-info-text)' },
+  watching: { label: '正在看', color: 'var(--color-warning-text)' },
+  watched: { label: '已看完', color: 'var(--color-success-text)' },
 };
 
 /** 融合 Tab 元数据：综合 / 视频 / IPTV（彩色圆点 + 计数，与历史页一致） */
 const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: string }[] = [
   { key: 'all', label: '综合', icon: LayoutGrid, color: 'var(--color-primary)' },
   { key: 'video', label: '视频', icon: PlayCircle, color: 'var(--color-primary)' },
-  { key: 'iptv', label: 'IPTV', icon: Tv, color: '#22c55e' },
+  { key: 'iptv', label: 'IPTV', icon: Tv, color: 'var(--color-success)' },
 ];
 
 export default function CollectionsPage() {

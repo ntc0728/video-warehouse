@@ -1027,6 +1027,34 @@ main {
   color: #ff4d4f;
 }
 
+/* ── 封面角标基类 .badge-chip（2026-09-15 新增）─────────────────────────
+   所有叠在封面图/视频帧上的角标统一引用本类：**中性深玻璃底 + 白字**。
+   根因：任何「半透明彩底 + 白字」的对比度都取决于封面图（不可控），
+   浅色封面上白字可低至 2.04:1。中性底 α=0.6 时，最坏（纯白封面）仍有
+   5.74:1，浅灰 8.06 / 中灰 12.63 / 深灰 21.00 —— 全档达标且不随主题翻转。
+   色义（成功/警告/危险）改由 __dot 圆点或图标颜色承载，不再用整块底色。 */
+.badge-chip {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  line-height: 1.4;
+  backdrop-filter: blur(4px);
+}
+
+.badge-chip__dot {
+  flex-shrink: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
 /* LIVE 角标（IPTV 卡）：全局视觉（历史页 RecordCard 与 IPTVChannelCard 共用），
    定位由各自容器决定——历史页 media 内 absolute（RecordCard.css），
    IPTVChannelCard 封面 badges 容器内 static（IPTVChannelCard.css） */
@@ -1037,8 +1065,10 @@ main {
      badge-source）同尺寸，全站 iptv 状态徽标统一。 */
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  /* 可看 = 绿（可用性检测已移除，LIVE 角标常驻绿色） */
-  background: var(--color-success);
+  /* 可看 = 绿（可用性检测已移除，LIVE 角标常驻绿色）。
+     2026-09-15：底由填充档 --color-success(#52c41a, 白字仅 2.27:1) 换为文字档
+     --color-success-text(#237804, 白字 5.59:1)；绿色语义保留，仅提对比。 */
+  background: var(--color-success-text);
   color: #fff;
   font-size: var(--text-2xs);
   font-weight: 700;

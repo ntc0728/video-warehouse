@@ -71,8 +71,13 @@
   --color-hover-bg: rgba(0, 0, 0, 0.05);   /* 通用悬浮背景（与 surface-hover 同值） */
   --color-surface-elevated: #fff;           /* 浮层背景（HelpTooltip/Popover） */
   --color-text: #000;                      /* 主文字 */
-  --color-text-secondary: #666;            /* 次要文字 */
-  --color-text-tertiary: #999;             /* 辅助/占位文字 */
+  --color-text-secondary: #666;            /* 次要文字（白底 5.74:1） */
+  /* 辅助/说明文字（2026-09-15 提档：#999 → #6b6b6b）
+     原 #999 仅 2.85:1（WCAG AA 正文需 ≥4.5:1），却全站消费 167 处、且多用于
+     承载信息（榜单简介 / 设置说明 / 时长）→ 呈现「灰蒙蒙」。新值白底 5.33:1、
+     #f5f5f5 底 4.89:1，达标。契约：只有「禁用 / 占位 / 纯装饰」可低于 4.5:1。 */
+  --color-text-tertiary: #6b6b6b;          /* 辅助文字（≥4.5:1） */
+  --color-text-disabled: #bfbfbf;          /* 禁用态/占位符/纯装饰图标（唯一允许 <4.5:1 的文字档） */
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
   --color-on-image: #fff;                  /* 图片/彩色渐变上的前景，不随主题翻转（始终白） */
   --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
@@ -94,15 +99,24 @@
   --color-input-border: #d9d9d9;           /* 输入框边框 */
   --color-tab-active-bg: #000;             /* Tab 激活背景 */
   --color-tab-active-text: #fff;           /* Tab 激活文字 */
-  --color-tab-inactive-text: #a0a0a0;      /* Tab 未激活文字 */
-  /* 语义色 — 状态反馈 */
-  --color-success: #52c41a;                /* 成功/可用 */
-  --color-error: #ff4d4f;                  /* 错误/不可用 */
-  --color-danger: #ef4444;                 /* 危险/角标红（LIVE 角标、收藏页年份类型徽标） */
-  --color-warning: #fa8c16;                /* 警告 */
+  --color-tab-inactive-text: #6b6b6b;      /* Tab 未激活文字（2026-09-15：#a0a0a0→#6b6b6b，与 tertiary 同档） */
+  /* 语义色 — 状态反馈
+     ★双档契约（2026-09-15）：下面 4 个 fill 档仅供**填充/描边**（色块、圆点底、进度），
+       在浅底上对比不足（success 2.27 / warning 2.38 / error 3.27 / info 4.10），
+       **不得**直接用于文字或承载信息的图标；承载信息一律用下方 *-text 档。 */
+  --color-success: #52c41a;                /* 成功/可用（填充档） */
+  --color-error: #ff4d4f;                  /* 错误/不可用（填充档） */
+  --color-danger: #cf1322;                 /* 危险红（2026-09-15：#ef4444→#cf1322，白字 5.57:1） */
+  --color-warning: #fa8c16;                /* 警告（填充档） */
   --color-rating: #f5c518;                 /* 评分星色（IMDb 黄） */
-  --color-info: #1677ff;                   /* 链接/信息提示蓝色 */
+  --color-info: #1677ff;                   /* 链接/信息提示蓝色（填充档） */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
+  /* 语义色「文字/图标档」（2026-09-15 新增）：一个值同时满足
+     「浅底上的文字/图标」与「白字角标的底色」两种角色。 */
+  --color-success-text: #237804;           /* 白底 5.59:1 ／ #f5f5f5 5.12:1 ／ 白字 on it 5.59:1 */
+  --color-warning-text: #a05c00;           /* 5.22 ／ 4.78 ／ 5.22 */
+  --color-error-text:   #cf1322;           /* 5.57 ／ 5.11 ／ 5.57（原 error #ff4d4f 仅 3.27） */
+  --color-info-text:    #0958d9;           /* 6.16 ／ 5.65（原 info #1677ff 仅 4.10） */
   /* 首页右侧浮层动作按钮（刷新，2026-09-11 用户截图指定）：
      截图为青蓝强调色，与 --color-info 的靛蓝不同，单独成 token 便于后续统一换肤。 */
   --color-action-blue: #00aeef;
@@ -120,6 +134,12 @@
   /* ── Player overlay colors (always dark context) ────────────────────── */
   --player-bg: #000;                      /* 播放器底色 */
   --player-text: #fff;                    /* 播放器文字 */
+  /* 播放器 OSD 文字档（2026-09-15 新增）：播放器是**常暗上下文**，不随主题翻转，
+     故不能复用 --color-text-secondary/tertiary（浅色主题下会变深、在 OSD 上不可读）。
+     取值依据：叠在 rgba(0,0,0,.6) 遮罩上，最坏（纯白画面）合成底 ≈ #666 —— 
+     #d9d9d9 对其 4.07:1、对纯黑 12.6:1；#b8b8b8 对纯黑 8.0:1。 */
+  --player-text-secondary: #d9d9d9;       /* OSD 次要文字（网络速度/源文本/回看按钮） */
+  --player-text-tertiary:  #b8b8b8;       /* OSD 弱化文字（控制按钮默认态） */
   --player-progress-bg: #fff;             /* 进度条轨道（始终白色） */
   --player-accent: #2d8cf0;               /* 进度条/控制按钮高亮色（蓝色） */
   --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏/弹层半透明遮罩 */
@@ -709,7 +729,8 @@
   --color-surface-elevated: #262626;
   --color-text: #fff;
   --color-text-secondary: #a0a0a0;
-  --color-text-tertiary: #666;
+  --color-text-tertiary: #8c8c8c;          /* 2026-09-15 提档：#666(2.87:1)→#8c8c8c（#1f1f1f 上 4.90:1） */
+  --color-text-disabled: #5a5a5a;          /* 禁用/占位/纯装饰（暗色档） */
   --color-text-inverse: #141414;
   --color-border: #363636;
   --color-border-light: #2b2b2b;
@@ -730,12 +751,17 @@
   --color-tab-active-text: #000;
   --color-tab-inactive-text: #a0a0a0;
   --color-success: #49aa19;
-  --color-error: #d32029;
-  --color-danger: #ef4444;                 /* 危险/角标红（亮红在暗色下同样醒目） */
+  --color-error: #ff7875;                  /* 2026-09-15 提档：#d32029(3.15:1)→#ff7875(6.43:1) */
+  --color-danger: #cf1322;                 /* 与浅色同值：白字 5.57:1（原 #ef4444 仅 3.76） */
   --color-warning: #d89614;
   --color-rating: #ffd54a;                 /* 评分星色（暗底提亮） */
-  --color-info: #177ddc;                  /* 暗色主题链接蓝 */
-  --color-info-hover: #3c9ae8;            /* 暗色主题链接 hover */
+  --color-info: #3c9ae8;                   /* 暗色主题链接蓝（2026-09-15 提档：#177ddc 3.93→5.48） */
+  --color-info-hover: #69b1ff;             /* 暗色主题链接 hover（比 info 更亮一档） */
+  /* 语义色文字/图标档（暗底需「亮档」而非「深档」，与浅色档互为镜像） */
+  --color-success-text: #73d13d;           /* #1f1f1f 上 8.57:1 */
+  --color-warning-text: #d89614;           /* 6.51:1 */
+  --color-error-text:   #ff7875;           /* 6.43:1 */
+  --color-info-text:    #3c9ae8;           /* 5.48:1 */
   /* 首页右侧浮层「刷新」按钮强调蓝：暗色下保持同一青蓝（按钮自带白图标，对比度足够） */
   --color-action-blue: #00aeef;
   --color-action-blue-hover: #16b8f2;
