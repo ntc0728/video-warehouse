@@ -133,11 +133,11 @@
    悬停预览无 slideDir → 回退为上方的 crossfade（.is-active 默认 heroBgFadeIn）。
    .slide-* 选择器特异性更高，设置方向时覆盖 crossfade。 */
 .hero-banner__main.slide-left .hero-banner__bg-layer.is-active {
-  animation: heroBgSlideLeft 0.5s var(--ease-out-expo);
+  animation: heroBgSlideLeft var(--dur-slow) var(--ease-out-expo);
 }
 
 .hero-banner__main.slide-right .hero-banner__bg-layer.is-active {
-  animation: heroBgSlideRight 0.5s var(--ease-out-expo);
+  animation: heroBgSlideRight var(--dur-slow) var(--ease-out-expo);
 }
 
 /* 拖拽中：crossfade 层不渲染（由 track 接管），此规则仅保留防御 */
@@ -369,7 +369,7 @@
   font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: background-color var(--dur-sm), opacity var(--dur-sm);
 }
 
 .hero-banner__cta:hover {

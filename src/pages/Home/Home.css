@@ -278,7 +278,7 @@ html[data-device="app"] .home-disclaimer {
   height: clamp(24px, 2.5vw, 40px);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.2));
-  animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
+  animation: tmdb-skeleton-pulse var(--dur-pulse) ease-in-out infinite;
 }
 
 .home-skeleton-hero__meta {
@@ -291,7 +291,7 @@ html[data-device="app"] .home-disclaimer {
   height: var(--icon-md);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.18));
-  animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
+  animation: tmdb-skeleton-pulse var(--dur-pulse) ease-in-out infinite;
 }
 
 .home-skeleton-hero__meta-item--short { width: var(--space-3xl); }
@@ -302,7 +302,7 @@ html[data-device="app"] .home-disclaimer {
   height: var(--text-sm);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.14));
-  animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
+  animation: tmdb-skeleton-pulse var(--dur-pulse) ease-in-out infinite;
 }
 
 .home-skeleton-hero__desc--short {
@@ -453,7 +453,7 @@ html[data-device="app"] .home-disclaimer {
   display: block;
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
-  animation: tmdb-skeleton-pulse 1.6s ease-in-out infinite;
+  animation: tmdb-skeleton-pulse var(--dur-pulse) ease-in-out infinite;
 }
 
 .home-skeleton-card-badge--tl {

@@ -1,6 +1,6 @@
 /* Select Dropdown 动画 */
 .select-dropdown-content {
-  animation: select-dropdown-fade-in 0.18s ease both;
+  animation: select-dropdown-fade-in var(--dur-xs) ease both;
 }
 
 @keyframes select-dropdown-fade-in {

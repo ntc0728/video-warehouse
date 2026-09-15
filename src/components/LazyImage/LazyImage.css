@@ -170,7 +170,7 @@
 
 .lazy-image-bg-container {
   position: relative;
-  transition: background-image 0.3s ease;
+  transition: background-image var(--dur-lg) ease;
 }
 
 .lazy-image-bg-loading {
@@ -210,7 +210,7 @@
   .lazy-image-bg-loading {
     transform: none !important;
     filter: none !important;
-    transition: opacity 0.15s linear;
+    transition: opacity var(--dur-2xs) linear;
     animation: none;
   }
 }

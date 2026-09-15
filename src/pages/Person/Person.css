@@ -73,7 +73,7 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
   cursor: pointer;
 }
 
@@ -194,7 +194,7 @@
   color: rgba(255, 255, 255, 0.6);
   font-size: var(--text-xs);
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
 }
 
 .person-bio-toggle:hover {

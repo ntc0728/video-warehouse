@@ -19,12 +19,12 @@
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--color-surface);
-  animation: batchBarSlideUp 0.2s var(--ease-standard);
+  animation: batchBarSlideUp var(--dur-sm) var(--ease-standard);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
 }
 
 .batch-action-bar--exiting {
-  animation: batchBarSlideDown 0.18s ease-in forwards;
+  animation: batchBarSlideDown var(--dur-xs) ease-in forwards;
 }
 
 @keyframes batchBarSlideUp {
@@ -51,7 +51,7 @@
 
 /* 批量模式进入时：卡片选中标记同步淡入，避免与底部操作栏出现时间差造成闪烁感 */
 .batch-mode .record-card__check {
-  animation: batchCheckFadeIn 0.2s var(--ease-standard) both;
+  animation: batchCheckFadeIn var(--dur-sm) var(--ease-standard) both;
 }
 
 @keyframes batchCheckFadeIn {
@@ -85,7 +85,7 @@
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-2xs);
 }
 
 .batch-action-btn:hover:not(:disabled) {

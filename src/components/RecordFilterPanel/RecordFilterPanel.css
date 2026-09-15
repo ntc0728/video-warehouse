@@ -47,7 +47,7 @@
   font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
 }
 .record-filter-chip:hover {
   background: var(--color-surface-hover);

@@ -140,7 +140,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 .search-box__icon {
   flex-shrink: 0;
   color: var(--color-text-tertiary);
-  transition: color 0.15s ease;
+  transition: color var(--dur-2xs) ease;
 }
 
 .search-box:focus-within .search-box__icon {
@@ -198,7 +198,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   background: transparent;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .search-box__clear:hover {
@@ -229,7 +229,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+  transition: background var(--dur-2xs) ease, opacity var(--dur-2xs) ease, transform var(--dur-2xs) ease;
 }
 
 .search-box__submit:hover:not(:disabled) {
@@ -268,7 +268,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   box-shadow: var(--shadow-lg);
   overflow-y: auto;
   overscroll-behavior: contain;
-  animation: search-dropdown-fade-in 0.15s ease both;
+  animation: search-dropdown-fade-in var(--dur-2xs) ease both;
 }
 
 /* ── Above placement ──────────────────────────────── */
@@ -283,7 +283,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 }
 
 .search-box-dropdown--exiting {
-  animation: search-dropdown-fade-out 0.15s ease-in forwards;
+  animation: search-dropdown-fade-out var(--dur-2xs) ease-in forwards;
 }
 
 @keyframes search-dropdown-fade-out {
@@ -394,7 +394,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   color: var(--color-text-tertiary);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: opacity var(--dur-2xs) ease, background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .search-box-dropdown__item:hover .search-box-dropdown__remove {
@@ -484,7 +484,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .search-box-dropdown__clear:hover {

@@ -45,7 +45,7 @@
   border: none;
   border-radius: var(--radius-md);
   background: none;
-  transition: transform 0.15s ease;
+  transition: transform var(--dur-2xs) ease;
   cursor: pointer;
   scroll-snap-align: start;
 }
@@ -79,7 +79,7 @@
   height: var(--comp-btn-min-width);
   border-radius: 50%;
   color: var(--color-on-image);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  transition: transform var(--dur-md) cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow var(--dur-md) ease;
   box-shadow: var(--shadow-md);
 }
 
@@ -595,14 +595,14 @@
      缩放视觉过重）——仅分类名 / 榜单行标题文本缩放 0.96，卡框/海报/热度条静止 */
   html:not([data-device="tv"]) .cqa-catcard__name {
     width: fit-content;
-    transition: scale 0.18s var(--ease-out-expo, ease-out);
+    transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
   }
   html:not([data-device="tv"]) .cqa-catcard:active .cqa-catcard__name {
     scale: 0.96;
   }
   html:not([data-device="tv"]) .cqa-catcard__t {
     transform-origin: left center;
-    transition: scale 0.18s var(--ease-out-expo, ease-out);
+    transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
   }
   html:not([data-device="tv"]) .cqa-catcard__row:active .cqa-catcard__t {
     scale: 0.96;
@@ -794,7 +794,7 @@
     margin-right: var(--space-lg);
   }
   html:not([data-device="tv"]) .cqa-hotcard:hover .cqa-hotcard__t-track {
-    animation: cqaHotMarquee 7s linear infinite;
+    animation: cqaHotMarquee var(--dur-marquee) linear infinite;
   }
   html:not([data-device="tv"]) .cqa-hotcard__m {
     display: flex;
@@ -930,7 +930,7 @@
     margin-right: var(--space-lg);
   }
   html:not([data-device="tv"]) .cqa-trend__row:hover .cqa-trend__t-track {
-    animation: cqaHotMarquee 7s linear infinite;
+    animation: cqaHotMarquee var(--dur-marquee) linear infinite;
   }
   html:not([data-device="tv"]) .cqa-trend__row:active .cqa-trend__t {
     scale: 0.96;

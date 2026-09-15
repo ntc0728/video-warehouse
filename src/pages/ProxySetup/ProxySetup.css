@@ -62,7 +62,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   text-align: left;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
 .proxy-setup__card:hover { border-color: var(--color-primary); }
@@ -175,7 +175,7 @@
   color: var(--color-text);
   font-size: var(--text-sm);
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-2xs), border-color var(--dur-2xs);
   cursor: pointer;
 }
 .proxy-setup__btn--lg {
@@ -206,7 +206,7 @@
 .proxy-setup__card-head,
 .proxy-setup__btn-label {
   transform-origin: center;
-  transition: scale 0.18s var(--ease-out-expo, ease-out);
+  transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
 }
 .proxy-setup__card:active:not(:disabled) .proxy-setup__card-head,
 .proxy-setup__btn--link:active:not(:disabled) .proxy-setup__btn-label {

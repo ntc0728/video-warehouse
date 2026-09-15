@@ -50,7 +50,7 @@
   inset: 0 auto 0 0;
   width: 0;
   background: var(--color-primary);
-  transition: width 0.25s var(--ease-out-expo);
+  transition: width var(--dur-md) var(--ease-out-expo);
 }
 .sdp.done .sdp-mini > i {
   background: var(--color-success);

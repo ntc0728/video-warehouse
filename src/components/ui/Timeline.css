@@ -70,7 +70,7 @@
   font-size: var(--text-sm);
   font-weight: 400;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .timeline--vertical .timeline-node-btn:hover {
@@ -132,7 +132,7 @@
   font-weight: 400;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .timeline--horizontal .timeline-node-btn:hover {
@@ -151,7 +151,7 @@
   border-radius: 50%;
   background: var(--timeline-node-color);
   transform: translate(-50%, -50%);
-  transition: background 0.18s ease;
+  transition: background var(--dur-xs) ease;
   pointer-events: none;
 }
 

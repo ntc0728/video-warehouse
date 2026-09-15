@@ -33,7 +33,7 @@
   transition: transform 0.14s ease;
 }
 .ptr-tv__eyes.is-blink circle {
-  animation: ptr-blink 0.5s ease-in-out infinite;
+  animation: ptr-blink var(--dur-slow) ease-in-out infinite;
 }
 .ptr-tv__mouth {
   fill: none;

@@ -170,7 +170,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -213,7 +213,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -285,7 +285,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
 }
 
 /* 按钮间分隔线（demo .stab + .stab 同构） */
@@ -395,7 +395,7 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
 }
 
 .browse-pagination__step:hover:not(:disabled),
@@ -858,7 +858,7 @@
   color: var(--color-text);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
 }
 
 .browse-pagination__jump-btn:hover {

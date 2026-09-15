@@ -143,7 +143,7 @@
   color: var(--player-text);
   font-size: var(--text-base);
   pointer-events: auto;
-  transition: background 0.2s;
+  transition: background var(--dur-sm);
   cursor: pointer;
 }
 
@@ -163,7 +163,7 @@
   align-items: center;
   padding: var(--space-md) var(--space-md);
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity var(--dur-lg) ease, transform var(--dur-lg) ease;
 }
 
 /* header 内按钮：白色图标，无背景 */
@@ -201,7 +201,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
   cursor: pointer;
 }
 
@@ -244,7 +244,7 @@
   z-index: 20;
   padding: var(--space-sm) var(--space-md) var(--space-md);
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity var(--dur-lg) ease, transform var(--dur-lg) ease;
 }
 
 /* 控制栏内所有按钮的基础样式 */
@@ -263,7 +263,7 @@
   font-size: var(--text-base);
   font-weight: 600;
   white-space: nowrap;
-  transition: color 0.2s, background 0.2s;
+  transition: color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
 
@@ -320,7 +320,7 @@
   background: transparent;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-lg) ease;
 }
 .up-mobile-progress-edge-visible {
   opacity: 1;
@@ -344,7 +344,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: opacity 0.18s ease, transform 0.18s var(--ease-standard);
+  transition: opacity var(--dur-xs) ease, transform var(--dur-xs) var(--ease-standard);
 }
 .up-icon-duo__secondary {
   opacity: 0;
@@ -421,7 +421,7 @@
   border-radius: var(--space-2xs);
   background: rgba(255, 255, 255, 0.2);
   touch-action: none;
-  transition: height 0.15s;
+  transition: height var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -474,7 +474,7 @@
   background: var(--player-progress-bg);
   opacity: 0;
   transform: translate(-50%, -50%);
-  transition: opacity 0.15s;
+  transition: opacity var(--dur-2xs);
   pointer-events: none;
 }
 
@@ -654,7 +654,7 @@
   font-size: var(--text-base);
   text-align: left;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-2xs), color var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -758,7 +758,7 @@
   height: var(--space-sm);
   border-radius: 50%;
   background: var(--color-error);
-  animation: up-live-pulse 1.5s ease-in-out infinite;
+  animation: up-live-pulse var(--dur-shimmer) ease-in-out infinite;
 }
 
 @keyframes up-live-pulse {
@@ -771,7 +771,7 @@
   position: absolute;
   inset: 0;
   z-index: 30;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-lg) ease;
 }
 
 .up-channel-list-visible {
@@ -793,7 +793,7 @@
   flex-direction: column;
   width: var(--layout-episode-panel-w);
   background: rgba(0, 0, 0, 0.60);
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-lg) ease;
   backdrop-filter: blur(12px);
 }
 
@@ -855,7 +855,7 @@
   font-size: var(--text-base);
   text-align: left;
   overflow: hidden;
-  transition: background 0.15s, color 0.15s, padding-left 0.2s;
+  transition: background var(--dur-2xs), color var(--dur-2xs), padding-left var(--dur-sm);
   cursor: pointer;
 }
 
@@ -955,7 +955,7 @@
   /* 与分组项文本大小保持一致（组项为 --text-base） */
   font-size: var(--text-base);
   text-align: left;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
+  transition: background var(--dur-2xs), color var(--dur-2xs), transform var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -1314,7 +1314,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+  transition: background var(--dur-2xs), transform 0.1s, border-color var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -1430,11 +1430,11 @@
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform var(--dur-sm);
 }
 
 .up-player-play-button--click {
-  animation: up-play-click 0.3s ease-out forwards;
+  animation: up-play-click var(--dur-lg) ease-out forwards;
 }
 
 @keyframes up-play-click {
@@ -1463,7 +1463,7 @@
 
 .up-player-play-icon circle {
   fill: rgba(255, 255, 255, 0.9);
-  transition: fill 0.2s;
+  transition: fill var(--dur-sm);
 }
 
 .up-player-play-button:hover .up-player-play-icon circle {
@@ -1562,7 +1562,7 @@
   pointer-events: none;
   transform: translateY(-50%);
   backdrop-filter: blur(8px);
-  animation: up-seek-pulse 0.5s ease-in-out infinite alternate;
+  animation: up-seek-pulse var(--dur-slow) ease-in-out infinite alternate;
 }
 
 .up-seek-indicator-left {
@@ -1715,7 +1715,7 @@
   justify-content: center;
   align-items: center;
   background: rgba(0, 0, 0, 0.5);
-  animation: up-fade-in 0.2s ease;
+  animation: up-fade-in var(--dur-sm) ease;
 }
 
 .up-program-guide-panel {
@@ -1753,7 +1753,7 @@
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background var(--dur-sm) ease, color var(--dur-sm) ease;
 }
 
 .up-program-guide-close:hover {
@@ -1806,7 +1806,7 @@
   font-size: var(--text-sm);
   line-height: 1.4;
   white-space: nowrap;
-  animation: toast-fade-in 0.2s ease;
+  animation: toast-fade-in var(--dur-sm) ease;
   pointer-events: none;
   /* 亮色主题也保持黑色透明背景（统一播放器内 toast 视觉） */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -1857,7 +1857,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   white-space: nowrap;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   transform: translate(-50%, -50%);
-  animation: toast-center-fade-in 0.2s ease;
+  animation: toast-center-fade-in var(--dur-sm) ease;
   pointer-events: none;
 }
 .up-player-center-toast__icon {
@@ -1896,7 +1896,7 @@ html[data-player-header-controls="true"] .up-player-toast {
 }
 
 .up-player-toast--exiting {
-  animation: toast-fade-out 0.18s ease-in forwards;
+  animation: toast-fade-out var(--dur-xs) ease-in forwards;
 }
 
 @keyframes toast-center-fade-in {
@@ -1912,7 +1912,7 @@ html[data-player-header-controls="true"] .up-player-toast {
 
 /* 居中提示退出：单元素切换类名（不卸载重挂载），避免淡入动画重播导致闪烁 */
 .up-player-center-toast--exiting {
-  animation: toast-center-fade-out 0.18s ease-in forwards;
+  animation: toast-center-fade-out var(--dur-xs) ease-in forwards;
 }
 
 @keyframes toast-center-fade-out {
@@ -1946,7 +1946,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   border-radius: var(--radius-full);
   background: transparent;
   color: rgba(255, 255, 255, 0.9);
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--dur-sm), color var(--dur-sm);
   cursor: pointer;
 }
 
@@ -2013,7 +2013,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border-radius: var(--radius-full);
   background: var(--color-surface-hover);
   color: var(--color-text-secondary);
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--dur-sm), color var(--dur-sm);
   cursor: pointer;
 }
 
@@ -2120,7 +2120,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -2227,7 +2227,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   inset: 0;
   border: 2px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
   border-radius: 50%;
-  animation: up-cast-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: up-cast-ping var(--dur-pulse) cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 .up-cast-ring:nth-child(2) {
@@ -2272,7 +2272,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border-radius: var(--radius-md);
   background: var(--color-surface);
   text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -2352,7 +2352,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border-radius: 50%;
   background: transparent;
   color: var(--color-text);
-  transition: background 0.15s ease;
+  transition: background var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -2379,7 +2379,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  transition: all 0.15s ease;
+  transition: all var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -2520,7 +2520,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   font-size: var(--text-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
 }
 
 .up-resume-card__action:hover {
@@ -2556,7 +2556,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-2xs), color var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -2713,7 +2713,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: rgba(255, 255, 255, 0.85);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-2xs), border-color var(--dur-2xs);
 }
 .up-settings-preset:hover { background: rgba(255, 255, 255, 0.08); }
 .up-settings-preset.is-active {
