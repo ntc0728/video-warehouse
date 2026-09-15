@@ -217,6 +217,14 @@
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24 */
   --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale)); /* 26→30 */
 
+  /* ── Root Font Size（rem 基准）— 2026-09-15 从 --text-base 解耦 ────────────
+     原 `html { font-size: var(--text-base) }` 让「最常用的正文 token」同时充当
+     rem 基准：改字号会连带移动全仓 ≈200 处 rem 消费点（组件内 rem 字面量 +
+     Tailwind 数字档工具类 p-4 / gap-3 / w-6 等），且 TV 块的 rem 式 token 会被
+     连带改变。现独立成 token，**逐字节复刻**改前实测曲线，零渲染变化。
+     段2 覆盖见下方 @media (width >= 768px)，TV 覆盖见文件末尾 [data-device="tv"]。 */
+  --root-font-size: 14px;                  /* <768：恒 14（= 原 --text-base 段1 值） */
+
   /* ── Spacing（密度契约 v2 · E2 紧凑端点 2026-09-05）──────────────────
      段1 375→768：MIN（375 处）与旧契约逐字节相同（手机零回归），768 处值 =
      MIN + (MAX_v2 − MIN)/3（预载 1/3，平板/小桌面随全局密度收紧）；
@@ -534,6 +542,8 @@
     --radius-lg: calc(clamp(15.333px, 13.90265px + 0.18624vw, 18px) * var(--ui-scale));
     --radius-md: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --radius-sm: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
+    /* 根字号段2：与改前 --text-base 段2 曲线逐字节一致（14@768 → 13.2@1440 → 13 冻结） */
+    --root-font-size: calc(clamp(13px, 14.91429px - 0.11905vw, 14px) * var(--ui-scale));
     --scrollbar-width: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --scrollbar-width-thin: calc(clamp(6.667px, 5.95209px + 0.09309vw, 8px) * var(--ui-scale));
     --source-meta-min-width: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
@@ -823,6 +833,11 @@
   --text-xl:   clamp(1.125rem, 0.9375vw, 2.25rem);     /* 18→36  (桌面, 4K=2×) */
   --text-2xl:  clamp(1.5rem, 1.25vw, 3rem);            /* 24→48  (桌面, 4K=2×) */
   --text-3xl:  clamp(1.875rem, 1.5625vw, 3.75rem);     /* 30→60  (桌面, 4K=2×) */
+  /* 根字号（rem 基准）：复刻 TV 下原 --text-base 的 rem 式解析结果 ——
+     rem 用在根元素 font-size 上时以「属性初始值 16px」为基准（CSS Values 3），
+     故原 clamp(0.9375rem, 0.78125vw, 1.875rem) ≡ clamp(15px, 0.78125vw, 30px)：
+     1080p = 15px、4K = 30px，与改前逐值一致。勿改回 rem（会重新引入循环依赖）。 */
+  --root-font-size: clamp(15px, 0.78125vw, 30px);
   /* 图标派生自 TV 文字 token × 固定系数 → 随文字比例化曲线同步放大，比例恒定。 */
   --icon-xs:  calc(var(--text-xs)  * 1.40);
   --icon-sm:  calc(var(--text-sm)  * 1.30);
