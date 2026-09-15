@@ -485,18 +485,45 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 
 ### 5.1 量级目标与实测回填
 
-> **状态：D0–D3 已完成**（commit `2f54d8e` + `d35b0f8`，tag `design-debt-d3`）。下表「实测」列为脚本/探针真实数字。
+> **状态：D0–D7 全部完成**。D0–D3：commit `2f54d8e` + `d35b0f8`（tag **`design-debt-d3`**）；D4 `0bb2c6e`；D5 `6fa6082`；D6 `99d6eaf`；D7 `33f631d`（tag **`design-debt-d7`**）。下表「实测」列为脚本 / 探针真实数字。
 
-| 指标 | D0 前（现状） | D1 后 计划/实测 | D3 后 计划/**实测** | D4-D7 目标 |
-| --- | ---: | ---: | ---: | ---: |
-| stylelint 违规 | 1617 | ~901 / **899** ✅ | ~250 / **240** ✅ | **0** |
-| ├ `number-max-precision` | 186 | 0 / **0** | 0 | 0 |
-| ├ `order/properties-order` | 665 | 550 / **550** | 0 / **0** | 0 |
-| ├ 沙盒贡献 | 637 | 530 / **530** | 0 | 0 |
-| └ 剩余（D5/D7 归属） | — | — | — | 见 §5.4 |
-| design-audit 违规（各检查 hits 合计） | 897 | 784 / **753** | 784 / **753** | ~10 |
-| 真 bug | 8 | 4 / **4** | **0** / **0** ✅ | 0 |
-| `lint:css` 状态 | 🔴 全红 | 🟡 | 🟡 | **🟢 绿** |
+| 指标 | D0 前（现状） | D3 后 计划/**实测** | D4–D7 前 | D4–D7 后 **实测** | 目标 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| stylelint 违规 | 1617 | ~250 / **240** ✅ | 240 | **0** ✅ | **0** |
+| ├ `number-max-precision` | 186 | 0 / **0** | 0 | **0** | 0 |
+| ├ `order/properties-order` | 665 | 0 / **0** | 0 | **0** | 0 |
+| ├ 沙盒贡献（PlayerLab / PlayerMobileLab） | 637 | 0 | 0 | **0** | 0 |
+| ├ `declaration-property-unit-disallowed-list`（裸 px） | — | — / **203** | 203 | **0** ✅ | 0 |
+| ├ `no-duplicate-selectors` | — | — / **20** | 20 | **0** ✅ | 0 |
+| ├ `selector-class-pattern` | — | — / **6** | 6 | **0** ✅ | 0 |
+| └ 其余（value 7 / keyword 3 / redundant-longhand 1） | — | — / **11** | 11 | **0** ✅ | 0 |
+| design-audit 基线（唯一 key 条数） | 689 | — / **565** | 565 | **286** ✅ | 收紧 |
+| ├ 裸 hex · fill 档误用 · 裸 z-index · 字重字面量 | 161 · 48 · 23 · 8 | — / — | **161 · 32 · 109 · 7**（实际采集） | **0 · 0 · 0 · 0** ✅ | 0 |
+| └ 时长字面量（`timing-literal`，D6 起 enforce） | — | — | 426 | **156**（余为刻意保留）✅ | 供给补齐 |
+| 真 bug | 8 | **0** / **0** ✅ | 0 | **0**（D5 另挖出 `--icon-2xs` 从未定义，已修） | 0 |
+| `lint:css` 状态 | 🔴 全红 | 🟡 | 🟡 | 🟢 **绿** ✅ | **🟢 绿** |
+| 业务视觉变化 | — | 无 | — | **无**（D5 探针验对比度、D7 由声明表比对证明零语义差异） | 零观感变化 |
+
+**D4–D7 实证记录**
+
+| 批 | 项 | 结果 |
+| --- | --- | --- |
+| D4 | 裸 hex 收敛 | 161 → **0**（全部改走 `--color-*`）；`css-hardcoded-hex` 转 enforce |
+| D5 | 双档语义色 | `--color-{success,warning,error,info}` 只作填充 / 描边；承载文字图标的必须 `--color-*-text`。32 处 fill→text 后对比度 2.27–4.10 → **5.22–6.16**（双主题全达 WCAG AA） |
+| D5 | 排版 px → token | 61 处真债 token 化；**128 处**定性后移出规则（细线 / 圆点 / 媒体比例盒 / 运行时变量兜底 / 装饰微尺寸） |
+| D5 | 规则收窄 | `declaration-property-unit-disallowed-list` 属性表 24 → 15 项（盒尺寸与定位类移交 `raw-px-box-size` observe）。实测 `ignore: ["inside-function"]` **无效**（构造探针两次 JSON 逐字节相同）→ 故改用收窄属性表而非 ignore |
+| D5 | 新 token | `--icon-2xs`（修复未定义真 bug）、`--comp-chart-cover-land-w/h`（Chart 横版 16:9）、`--z-subpage: 60` |
+| D5 | 页级 z 收敛 | 109 处 → 0；`raw-z-index` 阈值定为 **≥100**（50–99 为组件局部层梯过渡带） |
+| D6 | 时长 token 化 | 426 → **156**；新增 `--dur-2xs/xs/sm/md/lg` 五档（值取自既有字面量频次前 5 名）+ `--dur-shimmer/pulse/marquee` 三个装饰循环档 |
+| D6 | 口径说明 | 五档与既有 `--dur-fast/base/slow/spring/theme/pt-*` **刻意不合并**，留作量级别名；剩余 156 处为 `animation-delay` 错峰值与一次性循环 |
+| D7 | 重复选择器 | 20 → **0**：13 处真冗余删除 + 6 处覆写型合并回规范块 + 1 处分节追加定点豁免 |
+| D7 | 类名合规 | `cqa-panel__pager__btn` → `cqa-panel__pager-btn`（双 `__`），同步 CSS / TSX / e2e spec |
+| D7 | **等价性验证器** | 对 9 个受影响文件做 HEAD↔现状的「选择器 + at-rule 上下文」声明表比对（last-wins 建模）。该比对**发现并修正了上一轮按行号 splice 造成的 2 处真实回归**：`.cqa-panel__sub` 丢失 `text-overflow` 且误加 `font-weight`、`.cqa-catcard__head` 丢失 `min-height` 且 `.cqa-catcard__rank` 整条规则被误删 |
+
+**D4–D7 的工程教训：不要按行号 splice 批量改 CSS。** 同一文件内前一次编辑会让后续区间漂移，
+行号锚点在多编辑批量脚本里不可靠。改用 AST：按「at-rule 上下文 + 选择器」分组、声明并集 last-wins、
+删除后续块 —— 与 stylelint 的 `no-duplicate-selectors` 默认口径（**不**把选择器列表内的重复算违规）严格对齐。
+另：预算行号锚点必须含**唯一性校验**（单行片段在一文件内可能出现多次）。
 
 **D0–D3 实证记录**
 
@@ -521,16 +548,21 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 | A3 | TV `--header-height` / `--layout-logo-size` clamp 系数错 | 实测 71.25px（意图 76）/ 60px（意图 64） |
 | A4 | TV 块 34 处 rem 按 16px 基数书写，而 TV 根字号是 15px | min/max 静默缩水 6.25%，被 mid 主导掩盖 |
 
-### 5.4 D0–D3 后剩余 240 处的归属
+### 5.4 D0–D3 后剩余 240 处的归属（D4–D7 已全部归零）
 
-| 规则 | 处数 | 归属 |
-| --- | ---: | --- |
-| `declaration-property-unit-disallowed-list` | 203 | D5 逐页一致性（裸 px 真债） |
-| `no-duplicate-selectors` | 20 | D7 冗余清理（需逐条甄别真冗余 vs 分节追加） |
-| `declaration-property-value-disallowed-list` | 7 | D5（4 处 100vw/100vh + 3 处字距，`--ls-*` 已就绪） |
-| `selector-class-pattern` | 6 | D7（`cqa-panel__pager__btn` 双 `__`，需同步 TSX） |
-| `declaration-property-value-keyword-no-deprecated` | 3 | D5（`word-break: break-word` → `overflow-wrap`，需语义判断） |
-| `declaration-block-no-redundant-longhand-properties` | 1 | D5（`grid-template` 简写会重置 `grid-template-areas`，**故意不自动修**） |
+| 规则 | 处数 | 归属 | 结果 |
+| --- | ---: | --- | --- |
+| `declaration-property-unit-disallowed-list` | 203 | D5 逐页一致性（裸 px 真债） | **0**（61 处 token 化 + 128 处定性后移出规则 + 属性表 24→15） |
+| `no-duplicate-selectors` | 20 | D7 冗余清理（需逐条甄别真冗余 vs 分节追加） | **0**（13 真冗余删除 / 6 覆写合并回规范块 / 1 分节追加定点豁免） |
+| `declaration-property-value-disallowed-list` | 7 | D5（4 处 100vw/100vh + 3 处字距） | **0**（100vw→`100%`、100vh→`100dvh`，正当全出血场景加点定豁免；字距落 `skins.css` 豁免层） |
+| `selector-class-pattern` | 6 | D7（`cqa-panel__pager__btn` 双 `__`，需同步 TSX） | **0** ✅ |
+| `declaration-property-value-keyword-no-deprecated` | 3 | D5（`word-break: break-word` → `overflow-wrap`，需语义判断） | **0** ✅ |
+| `declaration-block-no-redundant-longhand-properties` | 1 | D5（`grid-template` 简写会重置 `grid-template-areas`，**故意不自动修**） | **0**（加点定豁免注释，保持三行长写） |
+
+> **§5.4 原文勘误（D7 补）**：上表曾写「`--ls-*` 已就绪」，**不成立** —— D7 全量核对确认该 5 个 token
+> **从未在 `src/` 定义或消费**，只活在文档里（`git log -S'--ls-tight'` 命中的全是文档提交 `8c8791cf` / `6f09d319`）。
+> 字距的 3 处 value 违规实际是靠 `skins.css` 归入 token 定义层豁免解决的，与 `--ls-*` 无关。
+> `BASELINE.md` §五 已改为显式警示，避免有人写 `var(--ls-*)` 导致整条声明静默失效（同 A1/A3 家族）。
 
 ### 5.2 护栏演进
 
@@ -544,7 +576,11 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 | --- | --- |
 | 整改 PlayerLab / PlayerMobileLab 的色板 | 刻意偏离的沙盒，隔离即可 |
 | 把 `60-95` 的 z-index 强行归入现有档位 | 需先判语义，否则改变层叠行为 |
-| 让 442 处时长全部走 3 个现有 token | 会改变全站动效节奏 |
+| 让**全部** 426 处时长字面量走 token | D6 只覆盖高频交互与装饰循环（426→**156**）；余下是 `animation-delay` 错峰值（「第几个出场」而非「动多快」）与一次性微调 / 特定循环，归档会改变全站动效节奏 |
+| 把 stylelint 的 px 规则扩到盒尺寸 / 定位类 | 「细线 1px / 圆点 / 媒体比例盒 / 运行时变量兜底」这类**刻意固定值**会被大面积误伤，只会逼出成片无意义豁免 → 移交 design-audit 的 `raw-px-box-size` 以 observe 模式度量 |
+| 合并 `variables.css` 第二个顶层 `:root` | 该块是「布局尺寸契约」独立小节（自带 banner 说明宽度公式），8 条 token 与前块**零重叠**，属分节追加 → 定点豁免而非合并 |
+| 引用 `var(--ls-*)` 字距 token | **该 token 族从未落地**（只存在于文档）。要用请先补进 `variables.css`，否则整条 `letter-spacing` 会静默失效 |
+| 顺带整改 ESLint 的 11 处历史 error | 与本次设计债无关（测试文件 `any`、`prefer-const`、`no-restricted-imports` 等）；混进设计批次会污染 diff 可审性，应独立立项 |
 | 触碰值 <50 的 z-index（102 处） | BASELINE 已明确允许（局部 stacking context） |
 | 强行统一 TV 块 10 处"碰巧正确"的 rem | 无收益；随 D2 一并改是顺路，不单独立项 |
 
@@ -554,13 +590,18 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 
 **D0 → D1 → D2 → D3** ✅ **已完成**（commit `2f54d8e` + `d35b0f8`，tag **`design-debt-d3`**）
 全部是配置调整 + 自动修复 + 4 处人工修复，**未动业务视觉**：违规 1617 → **240**，真 bug 8 → **0**。
-实测数字见 §5.1。
 
-**D4 → D5 → D6 → D7** ⏳ 待办（视觉敏感段，需逐页 review 与对照 demo）。
-剩余 240 处违规的批次归属见 §5.4。
+**D4 → D5 → D6 → D7** ✅ **已完成**（commit `0bb2c6e` / `6fa6082` / `99d6eaf` / `33f631d`，tag **`design-debt-d7`**）
+视觉敏感段，逐批对照验证：违规 240 → **0**，`lint:css` 由 🟡 转 **🟢 绿**；
+设计 token 供给补齐三处缺口（`--icon-2xs` 真 bug 修复、`--comp-chart-cover-land-*`、`--dur-*` 8 档），
+并按「真债 / 刻意固定值 / 分节追加」三分法把误报清出规则。实测数字见 §5.1，勘误见 §5.4。
 
-护栏演进（§5.2）三项建议**尚未实施**，可在 D4 前落地，让 CI 从下一批起就能守门：
-stylelint 基线棘轮、`lint:all` 不短路、JSON 重复 key 检查（B7 与 A1 同类 bug 的根因）。
+> `lint:css`（stylelint）与 `lint:design`（design-audit）均已**无新增违规**；
+> 但 `lint`（ESLint）仍有 **11 处历史 error**（测试文件 `any`、`prefer-const`、`no-restricted-imports`），
+> 与设计债无关，见 §5.3 —— 因此 `lint:all` 仍非全绿，需独立立项。
+
+护栏演进（§5.2）三项建议**仍待办**：stylelint 基线棘轮、`lint:all` 不短路、JSON 重复 key 检查。
+其中第一项已因 stylelint 归零而**优先级下降**（当前无存量可快照）。
 
 ---
 

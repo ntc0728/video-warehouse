@@ -96,7 +96,7 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 
 ## 五、字重 / 行高 / 圆角 / 层级 / 时长
 
-**字重**（原为字面量，含 800×6 / 900×2）：
+**字重**（D5 收敛：`800`×6 / `900`×2 字面量 → **0**，全部走 `--fw-bold`；护栏 `font-weight-literal` 已 enforce）：
 
 | token | 值 | 用途 |
 | --- | --- | --- |
@@ -113,25 +113,21 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 | `--lh-base` | 1.5 | 中文正文下限 |
 | `--lh-relaxed` | 1.75 | 长文本段落 |
 
-**字距**（D0 新增；此前组件/皮肤层直接写 px 字距，被 value 禁令命中却无 token 可换 —— 规则合理、供给缺失）：
+**字距**（现状：**全部为字面量**；`skins.css` 的 `0.2px` / `0.5px` 属 token 定义层豁免，其余约 30 处均为 `em` 微调 —— value 禁令只针对 px，故不受约束）：
 
-| token | 值 | 用途 |
-| --- | --- | --- |
-| `--ls-tight` | -0.2px | 大字标题收紧（中文标题避免末字孤行） |
-| `--ls-normal` | 0 | 默认 |
-| `--ls-wide` | 0.2px | 小号标签 / 药丸轻微放大 |
-| `--ls-wider` | 0.5px | 皮肤标题字距（装饰 / 科技感） |
-| `--ls-widest` | 1px | 全大写 / 品牌文字大幅字距 |
+> ⚠️ **不存在 `--ls-*` token**。方案 §「字距」与本文档早期版本曾写「`--ls-*` 已就绪」，D7 全量核对后确认：该 5 个 token 只在**文档**里出现过，`src/` 从未定义、也从未消费
+> （`git log -S'--ls-tight'` 命中的全是文档提交）。
+> **不要写 `var(--ls-*)`** —— 引用未定义的自定义属性会让**整条声明失效**，`letter-spacing` 静默回退到 `normal`（这正是 A1/A3 那类「静默失效」家族）。
+> 后续若确需 px 字距供给，再按需补进 `variables.css` 并回来更新本节；届时为何用 px 而非 em 的理由是：`0.2px` 在 `--text-xs`(12px) 下 = 0.0167em，无法用整数 em 表达，且属「感知微调」，不参与 `--ui-scale` 缩放。
 
-> 字距**必须**用 px 而非 em：`0.2px` 在 `--text-xs`(12px) 下 = 0.0167em，无法用整数 em 表达；且属「感知微调」，不参与 `--ui-scale` 缩放。
-
-**层级**（原 154 处裸字面量）：完整阶梯定义在 `variables.css` 顶部「Z-index 层级体系」，禁止裸数字。
+**层级**（D5 收敛：页级裸 z-index ≥100 → **0**；`raw-z-index` 阈值定为 ≥100 —— 50–99 属组件局部层梯过渡带，不参与页级判定）：完整阶梯定义在 `variables.css` 顶部「Z-index 层级体系」，禁止裸数字。
 
 | token | 值 | 用途 |
 | --- | --- | --- |
 | `--z-base` | 1 | 常规内容层叠 |
 | `--z-fixed` | 50 | 固定 / 吸顶 UI（移动 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊） |
 | `--z-fixed-header` | 55 | 固定吸顶导航（Layout 的 fixed sticky-header） |
+| `--z-subpage` | 60 | 全屏二级页（SubPage / 设置子页）——高于吸顶导航、低于局部浮层（D5 新增档） |
 | `--z-float` | 90 | 局部轻浮层（悬浮按钮、遮罩 scrim、播放器局部菜单 / 局部 toast） |
 | `--z-overlay` | 100 | 页级覆盖层（侧边栏 / 抽屉 / 全屏 loading / 进入过渡 / 灯箱控件 / 搜索下拉） |
 | `--z-popover` | 200 | 页面级浮层（Select / Popover / Tooltip） |
@@ -144,7 +140,25 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 
 > 组件内部「相对定位子元素」的局部层叠（值 <50）不属于本体系，可写字面量。
 
-**其他**：圆角 `--radius-sm/md/lg`（3→5 / 6→10 / 10→18 流体）+ `--radius-full`；时长 `--dur-fast 150ms` / `--dur-base 250ms` / `--dur-slow 500ms`（**原 transition 内联时长字面量 ≈250 处**，0.15s×74 / 0.2s×74 …，新代码用 token）。
+**圆角**：`--radius-sm/md/lg`（3→5 / 6→10 / 10→18 流体）+ `--radius-full`。
+
+**时长**（D6 补齐供给：内联字面量 **426 → 156**，护栏 `timing-literal` 已 enforce）：
+
+| token | 值 | 用途 |
+| --- | --- | --- |
+| `--dur-2xs` | 150ms | 微交互：hover / press / 颜色与背景过渡 |
+| `--dur-xs` | 180ms | 快速：小控件位移 / 透明度 |
+| `--dur-sm` | 200ms | 短：图标与遮罩渐变（全站最高频） |
+| `--dur-md` | 250ms | 中：卡片 / 面板变换 |
+| `--dur-lg` | 300ms | 长：展开 / 收起 / 较大位移 |
+| `--dur-shimmer` | 1.5s | 扫光 / 骨架微光循环 |
+| `--dur-pulse` | 1.6s | 呼吸 / 脉冲标记 |
+| `--dur-marquee` | 7s | 跑马灯循环 |
+| `--dur-fast` / `--dur-base` / `--dur-slow`（+ `--dur-spring` / `--dur-theme` / `--dur-pt-*`） | 150 / 250 / 500ms … | 量级别名，与上表并存 |
+
+> 上表前 5 档值取自既有字面量频次前 5 名 → **零观感变化**。
+> 剩余 156 处字面量为**刻意保留**两类：① `animation-delay` 错峰值（表达「第几个出场」而非「动多快」）；
+> ② 一次性微调与特定循环（30/60/88ms、1s/1.4s/2.4s/8s/25s 等），归档会改变动效节奏。
 
 **触摸目标**：`--tap-target: 44px`（恒定）；`--comp-btn-min-height` 移动端 = 44px（HIG 44×44pt）、`--comp-tab-height` 移动端 = 36px（WCAG 2.5.8 AA 需 24px）。
 
@@ -167,7 +181,7 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 
 1. 颜色**只能**来自 token；新颜色先进 `variables.css` 并核算对比度（见第八节脚本）。
 2. 封面角标一律 `.badge-chip`；不能用彩色底 + 白字承担语义。
-3. 字号只用 `--text-*`；**禁止裸 px**（stylelint 已强制）。
+3. 字号只用 `--text-*`；**禁止裸 px**（stylelint 强制）。D5 起 stylelint 只管**排版类** px（`font-size` / `padding*` / `margin*` / `gap*` / `border-radius`）；**盒尺寸与定位类**（`width` / `height` / `inset*` / `flex-basis`）移交 `design-audit` 的 `raw-px-box-size`（observe 度量，不阻塞提交）—— 这类 px 多为承载细线 / 圆点 / 媒体比例盒 / 运行时变量兜底的**刻意固定值**，硬性禁止只会逼出成片无意义豁免。
 4. 布局尺寸**禁止 100vw / 100vh**（改 `100%` / `100dvh`；全出血场景需 `stylelint-disable-next-line` 显式豁免并说明理由）。
 5. 新增桌面样式默认放 `@media (width >= 1024px)`；TV 覆盖集中在 `[data-device="tv"]` 块。
 6. 观感类改动必须附可双击打开的对照 demo（`changelogs/demos/`）。
@@ -175,11 +189,14 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 8. **lint 范围分层**（D0/D1）：`variables.css` / `skins.css` 是 **token 定义层**，豁免「禁裸值」三类规则（该层职责就是定义原始值）；其余文件是**消费层**，必须走 token。`PlayerLab` / `PlayerMobileLab` 是调研 demo 沙盒（`routeConfig.ts:62,64` 明示「不进入正式导航」），已从 stylelint `ignoreFiles` 与 design-audit `EXCLUDE_DIRS` 双双排除 —— **不参与规范验收，转正时需先补齐规范**。
 9. **禁止手写厂商前缀**（D3）：`package.json` 已声明 `browserslist`，前缀由 autoprefixer 按目标浏览器产出，源码不写 `-webkit-` / `-moz-`。
 10. **同块内不得重复声明同一自定义属性**（A1 教训）：CSS 同一声明块内后者**无条件覆盖**前者，不存在「上一条兜底」语义。需要条件回退请用 `@supports` 分流。
-11. **护栏命令**（详见 [a11y-CHECKLIST.md](./a11y-CHECKLIST.md) §A）：
+11. **同一上下文内同一选择器不得重复定义**（D7）：真冗余（声明被完全覆盖）→ 直接删除；覆写型重复 → **合并回规范块**（保留最终值，并把原设计理由注释一并带上）；确属**分节追加**（新增型、与前块零重叠）→ 可 `/* stylelint-disable-next-line no-duplicate-selectors -- <理由> */` 定点豁免。
+12. **护栏命令**（详见 [a11y-CHECKLIST.md](./a11y-CHECKLIST.md) §A）：
 
    ```bash
+   pnpm run lint:all      # 一次跑完：design-audit → stylelint → ESLint → build
+   pnpm run lint:design   # design-audit：CSS 裸 hex / fill 档误用 / 裸 z-index / 字重 800-900 / 时长字面量（基线棘轮）
+   pnpm run lint:css      # stylelint：设计规则集（D7 后全量 0）
    pnpm run lint          # ESLint：className / style={{}} / 颜色常量里的裸 hex、Tailwind 默认调色板
-   pnpm run lint:design   # design-audit：CSS 层裸 hex / fill 档误用 / 裸 z-index / 字重 800-900（基线棘轮）
    ```
 
    `lint:design` 用**基线棘轮**：存量违规快照在 `scripts/design-audit-baseline.json`，只拦新增。
