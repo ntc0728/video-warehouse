@@ -9,18 +9,29 @@
     <meta name="theme-color" content="#1890ff" />
     <title>kinoTv</title>
     <style>
-      /* 启动骨架（2026-09-11 升级）：HTML 一到浏览器就可见，消除「JS 请求/解析期间纯白屏」。
-         原版只有 logo + 「正在启动…」，冷启动（依赖预打包 ~5s + 首屏 133 模块 transform）
-         期间被感知为白屏；现改为**与首页同构的首屏骨架**：顶栏 + Hero + 卡片行。
+      /* 启动骨架（2026-09-11 建立；2026-09-15 升级为「按路由分支」）：
+         HTML 一到浏览器就可见，消除「JS 请求/解析期间纯白屏」。
+
+         为什么按路由分支：全站只有这一份 index.html（Vite 单入口 + SPA fallback，
+         任意路径都返回它），静态 DOM 无法按路由拆分 —— 于是「刷新 /collections 也看到
+         首页同构骨架」，再被目标页自身骨架替换，形成结构错构跳变。现在由下方内联脚本
+         读 location 判定页型，就地换成本页同构的骨架：
+           首页 hero+卡片行 / IPTV 左栏+频道网格 / 收藏·历史 筛选卡+网格 /
+           Browse 筛选条+海报网格 / Chart 标签条+榜单行 / Detail·Person hero+文本行 /
+           其余路由 顶栏+提示；/iptv/play 无顶栏（真实页是全屏播放器，不走 AppLayout）。
 
          硬约束（勿改）：
          1. 必须零依赖 —— 此刻 index.css 与 JS 都还没加载，CSS 变量不可用，
             故颜色硬编码对齐 variables.css：浅色 bg #f5f5f5 / surface #fff /
             border #e8e8e8 / skeleton #e8e8e8；深色 bg #141414 / surface #1f1f1f /
             border #2b2b2b / skeleton #2a2a2a。
-         2. 列数分档对齐 --card-cols：3 →4(768) →5(1024) →6(1280) →7(1440) →8(1920)。
+         2. 列数分档对齐真实网格：海报网格 3 →4(768) →5(1024) →6(1280) →7(1440) →8(1920)
+            （--card-cols）；频道网格 2 →3(768) →4(1024) →5(1440)（--iptv-cols）。
          3. pointer-events:none 保证即使移除失败也不拦点击（防 E2E 误判遮挡）。
-         4. 尺寸全用 vh / % / rem，不引 token、不用 100dvh（App 内会溢出）。 */
+         4. 尺寸全用 vh / % / rem，不引 token、不用 100dvh（App 内会溢出）。
+         5. 只做「轮廓级同构」：区块数量/方位/卡片比例对齐，不追逐像素 —— 真源仍是
+            各页自己的骨架组件（Browse/Collections/IPTV/Person/Detail 的 *Skeleton）。
+            新增路由页型时，同步在此补一条 shape 与构建分支。 */
       #boot-splash {
         position: fixed;
         inset: 0;
@@ -62,10 +73,50 @@
       /* 内容骨架 */
       .bs-body { display: flex; flex-direction: column; gap: 16px; padding: 16px; }
       .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #e8e8e8; border-radius: 12px; }
+
+      /* 卡片网格：--poster 竖版海报 2:3 / --channel 频道 3:2 / --record 记录卡 16:9 + 两行文字 */
       .bs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-      .bs-row i { display: block; aspect-ratio: 2 / 3; background: #e8e8e8; border-radius: 8px; }
+      .bs-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .bs-cover, .bs-line { display: block; background: #e8e8e8; border-radius: 8px; }
+      .bs-cover { aspect-ratio: 2 / 3; }
+      .bs-line { width: 76%; height: 0.75rem; border-radius: 6px; }
+      .bs-line--short { width: 52%; }
+      .bs-row--channel .bs-cover { aspect-ratio: 3 / 2; }
+      .bs-row--record .bs-cover { aspect-ratio: 16 / 9; }
+
+      /* 筛选条（Browse 结果条 / 收藏·历史顶部筛选卡 / IPTV 计数条） */
+      .bs-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 16px;
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-radius: 12px;
+      }
+      .bs-chip { display: block; width: 3.5rem; height: 1.5rem; background: #e8e8e8; border-radius: 999px; }
+      .bs-chip--wide { width: 7rem; }
+      .bs-chip--end { margin-left: auto; width: 5.5rem; }
+
+      /* 分区头 / 榜单行 / 文本行 */
+      .bs-sec { display: block; width: 4.5rem; height: 1rem; background: #e8e8e8; border-radius: 6px; }
+      .bs-list { display: flex; flex-direction: column; gap: 12px; }
+      .bs-list i { display: block; height: 3.5rem; background: #e8e8e8; border-radius: 8px; }
+      .bs-lines { display: flex; flex-direction: column; gap: 10px; }
+      .bs-lines i { display: block; height: 1rem; background: #e8e8e8; border-radius: 6px; }
+      .bs-lines i:nth-child(1) { width: 14rem; height: 1.75rem; }
+      .bs-lines i:nth-child(2) { width: 9rem; }
+      .bs-lines i:nth-child(3) { width: 100%; }
+      .bs-lines i:nth-child(4) { width: 68%; }
+
+      /* 左栏（IPTV 频道分类）：<1024 不显示，与真实页「移动端换成顶部筛选卡」同构 */
+      .bs-split { display: flex; flex-direction: column; gap: 16px; }
+      .bs-rail { display: none; }
+      .bs-split__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
       .bs-tip { padding: 4px 0 20px; text-align: center; animation: boot-pulse 1.4s ease-in-out infinite; }
+      .bs-body:empty + .bs-tip { padding-top: 32px; }
 
       @keyframes boot-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 
@@ -75,12 +126,44 @@
       @media (width >= 1440px) { .bs-row { grid-template-columns: repeat(7, 1fr); } }
       @media (width >= 1920px) { .bs-row { grid-template-columns: repeat(8, 1fr); } }
 
+      /* 频道网格列数少于海报网格（卡更宽，对齐 --iptv-cols） */
+      @media (width >= 768px)  { .bs-row--channel { grid-template-columns: repeat(3, 1fr); } }
+      @media (width >= 1024px) { .bs-row--channel { grid-template-columns: repeat(4, 1fr); } }
+      @media (width >= 1440px) { .bs-row--channel { grid-template-columns: repeat(5, 1fr); } }
+
+      /* IPTV 左栏：≥1024 才出现（与 .iptv-skeleton--rail 同构） */
+      @media (width >= 1024px) {
+        .bs-split { flex-direction: row; gap: 24px; align-items: flex-start; }
+        .bs-rail {
+          display: flex;
+          flex: 0 0 clamp(148px, 10vw, 248px);
+          flex-direction: column;
+          gap: 6px;
+          padding-right: 8px;
+          border-right: 1px solid #e8e8e8;
+        }
+        .bs-rail i { display: block; height: 1.75rem; background: #e8e8e8; border-radius: 6px; }
+        .bs-rail i.bs-rail__title { width: 4rem; height: 0.875rem; margin-bottom: 6px; }
+        html[data-theme="dark"] .bs-rail { border-right-color: #2b2b2b; }
+      }
+
+      /* /iptv/play 真实页是全屏播放器（顶层路由，不走 AppLayout）→ 无顶栏，提示居中 */
+      #boot-splash[data-shape="play"] .bs-header { display: none; }
+      #boot-splash[data-shape="play"] .bs-body { flex: 1; align-items: center; justify-content: center; }
+
       html[data-theme="dark"] #boot-splash { background: #141414; color: #666; }
       html[data-theme="dark"] .bs-header { background: #1f1f1f; border-bottom-color: #2b2b2b; }
+      html[data-theme="dark"] .bs-filter { background: #1f1f1f; border-color: #2b2b2b; }
       html[data-theme="dark"] .bs-logo,
       html[data-theme="dark"] .bs-nav i,
       html[data-theme="dark"] .bs-hero,
-      html[data-theme="dark"] .bs-row i { background: #2a2a2a; }
+      html[data-theme="dark"] .bs-cover,
+      html[data-theme="dark"] .bs-line,
+      html[data-theme="dark"] .bs-chip,
+      html[data-theme="dark"] .bs-sec,
+      html[data-theme="dark"] .bs-list i,
+      html[data-theme="dark"] .bs-lines i,
+      html[data-theme="dark"] .bs-rail i { background: #2a2a2a; }
 
       @media (prefers-reduced-motion: reduce) { .bs-tip { animation: none; } }
     </style>
@@ -108,19 +191,123 @@
     </script>
   </head>
   <body>
-    <div id="boot-splash" aria-hidden="true">
+    <div id="boot-splash" aria-hidden="true" data-shape="home">
       <div class="bs-header">
         <div class="bs-logo">
           <img src="/src/assets/icon/KinoTV.webp" alt="" onerror="this.style.display='none'" />
         </div>
         <div class="bs-nav"><i></i><i></i><i></i><i></i></div>
       </div>
-      <div class="bs-body">
+      <div class="bs-body" id="bs-body">
         <div class="bs-hero"></div>
-        <div class="bs-row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="bs-row"><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i><i class="bs-cover"></i></div>
       </div>
-      <div class="bs-tip">正在启动…</div>
+      <div class="bs-tip" id="bs-tip">正在启动…</div>
     </div>
+    <script>
+      /* 启动骨架的「按路由分支」：静态默认是首页形态（无 JS 时的兜底），
+         这里按当前 location 就地换成本页同构的骨架。脚本同步执行且位于 #root 之前，
+         赶在首帧绘制前完成，不会出现「先闪首页骨架、再换成目标页骨架」。
+         路由判定与 src/routes.tsx 对齐；App 端走 HashRouter，故同时读 hash。 */
+      (function () {
+        var splash = document.getElementById('boot-splash');
+        var body = document.getElementById('bs-body');
+        var tip = document.getElementById('bs-tip');
+        if (!splash || !body || !tip) return;
+
+        var path = location.pathname;
+        if (location.hash.charAt(0) === '#' && location.hash.charAt(1) === '/') {
+          path = location.hash.slice(1);
+        }
+        path = path.replace(/\/+$/, '') || '/';
+
+        var shape = 'plain';
+        if (path === '/') shape = 'home';
+        else if (path === '/iptv/play') shape = 'play';
+        else if (path === '/iptv') shape = 'iptv';
+        else if (path === '/browse') shape = 'browse';
+        else if (path === '/chart') shape = 'chart';
+        else if (path === '/collections') shape = 'collections';
+        else if (path === '/history') shape = 'history';
+        else if (path.indexOf('/detail/') === 0) shape = 'detail';
+        else if (path.indexOf('/person/') === 0) shape = 'person';
+
+        /* 首页形态就是静态 HTML，无需重建 */
+        if (shape === 'home') return;
+
+        function el(cls, tag) {
+          var node = document.createElement(tag || 'i');
+          if (cls) node.className = cls;
+          return node;
+        }
+        function grid(kind, count) {
+          var row = el('bs-row bs-row--' + kind, 'div');
+          for (var i = 0; i < count; i++) {
+            var card = el('bs-card', 'div');
+            card.appendChild(el('bs-cover'));
+            card.appendChild(el('bs-line'));
+            if (kind === 'record') card.appendChild(el('bs-line bs-line--short'));
+            row.appendChild(card);
+          }
+          return row;
+        }
+        function filterBar() {
+          var bar = el('bs-filter', 'div');
+          bar.appendChild(el('bs-chip bs-chip--wide'));
+          for (var i = 0; i < 4; i++) bar.appendChild(el('bs-chip'));
+          bar.appendChild(el('bs-chip bs-chip--end'));
+          return bar;
+        }
+        function rail() {
+          var aside = el('bs-rail', 'div');
+          aside.appendChild(el('bs-rail__title'));
+          for (var i = 0; i < 9; i++) aside.appendChild(el(''));
+          return aside;
+        }
+        function listRows(count) {
+          var list = el('bs-list', 'div');
+          for (var i = 0; i < count; i++) list.appendChild(el(''));
+          return list;
+        }
+        function lines(count) {
+          var box = el('bs-lines', 'div');
+          for (var i = 0; i < count; i++) box.appendChild(el(''));
+          return box;
+        }
+        function hero() { return el('bs-hero', 'div'); }
+        var sec = function () { return el('bs-sec'); };
+        var BUILD = {
+          plain: function () { return []; },
+          browse: function () { return [filterBar(), grid('poster', 16)]; },
+          chart: function () { return [filterBar(), listRows(8)]; },
+          collections: function () { return [filterBar(), sec(), grid('poster', 8), sec(), grid('channel', 6)]; },
+          history: function () { return [filterBar(), grid('record', 8)]; },
+          iptv: function () {
+            var split = el('bs-split', 'div');
+            split.appendChild(rail());
+            var main = el('bs-split__main', 'div');
+            main.appendChild(filterBar());
+            main.appendChild(sec());
+            main.appendChild(grid('channel', 12));
+            split.appendChild(main);
+            return [split];
+          },
+          detail: function () { return [hero(), lines(4)]; },
+          person: function () { return [hero(), lines(4)]; },
+        };
+
+        splash.setAttribute('data-shape', shape);
+        if (shape === 'play') tip.textContent = '正在打开播放器…';
+
+        var build = BUILD[shape];
+        if (!build) return;
+        var blocks = build();
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < blocks.length; i++) frag.appendChild(blocks[i]);
+        body.textContent = '';
+        body.appendChild(frag);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
