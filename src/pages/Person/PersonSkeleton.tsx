@@ -11,18 +11,22 @@
  * 已知遗留：Person.css 在 768–1023 把真实网格锁 5 列（跳过 --card-cols 的 4），
  * 骨架无法在「不改真实页面列数」的前提下同源，故该档骨架仍按 --card-cols 取 4 列。
  */
+import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
-import { useGridCols } from '@/hooks/useGridCols';
+import { useGridCols, useFillRows } from '@/hooks';
 import './PersonSkeleton.css';
 
-/** 作品网格渲染几行占位（行数是策略，张数由列数 × 本值派生） */
+/** 作品网格渲染几行占位（行数是策略，张数由列数 × 本值派生；不足首屏由 useFillRows 续行） */
 const ROWS = 3;
 
 export default function PersonSkeleton() {
   const cols = useGridCols('--card-cols', 7);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const extraRows = useFillRows(rootRef, cols);
+  const rows = ROWS + extraRows;
 
   return (
-    <div className="person-skeleton skeleton-scope" role="status" aria-label="加载中">
+    <div ref={rootRef} className="person-skeleton skeleton-scope" role="status" aria-label="加载中">
       <section className="person-skeleton__hero">
         <Skeleton className="person-skeleton__back" />
         <div className="person-skeleton__hero-content">
@@ -41,7 +45,7 @@ export default function PersonSkeleton() {
           <Skeleton className="person-skeleton__tab" />
         </div>
         <div className="person-skeleton__work-grid">
-          {Array.from({ length: cols * ROWS }, (_, i) => (
+          {Array.from({ length: cols * rows }, (_, i) => (
             <div key={i} className="person-skeleton__work">
               <Skeleton className="person-skeleton__work-cover" />
               <Skeleton className="person-skeleton__work-title" />

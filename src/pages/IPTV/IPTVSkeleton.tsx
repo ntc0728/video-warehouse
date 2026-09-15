@@ -11,11 +11,12 @@
  * IPTV 页专用；此前骨架误用全局 --iptv-cols，桌面档多一列），随视口自动分档。
  * 张数 = 列数 × ROWS（列数运行时读 token，见 useGridCols），不写死。
  */
+import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
-import { useGridCols } from '@/hooks/useGridCols';
+import { useGridCols, useFillRows } from '@/hooks';
 import './IPTVSkeleton.css';
 
-/** 网格渲染几行占位（行数是策略，张数由列数 × 本值派生） */
+/** 网格渲染几行占位（行数是策略，张数由列数 × 本值派生；不足首屏由 useFillRows 续行） */
 const ROWS = 3;
 /**
  * 左栏分类行数：填的是「左栏高度」而非网格宽度，与列数无关，
@@ -25,10 +26,13 @@ const RAIL_ROW_COUNT = 9;
 
 function ChannelGridSkeleton() {
   const cols = useGridCols('--iptv-page-cols', 2);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const extraRows = useFillRows(gridRef, cols);
+  const rows = ROWS + extraRows;
 
   return (
-    <div className="iptv-skeleton__channel-grid">
-      {Array.from({ length: cols * ROWS }, (_, i) => (
+    <div ref={gridRef} className="iptv-skeleton__channel-grid">
+      {Array.from({ length: cols * rows }, (_, i) => (
         <div key={i} className="iptv-skeleton__channel">
           <Skeleton className="iptv-skeleton__channel-cover" />
           <Skeleton className="iptv-skeleton__channel-title" />

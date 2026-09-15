@@ -8,18 +8,22 @@
  * 同帧同宽，不引入第二套断点真源。
  * 张数 = 列数 × ROWS（列数运行时读 token，见 useGridCols），不写死。
  */
+import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
-import { useGridCols } from '@/hooks/useGridCols';
+import { useGridCols, useFillRows } from '@/hooks';
 import './BrowseSkeleton.css';
 
-/** 网格渲染几行占位（行数是策略，张数由列数 × 本值派生） */
+/** 网格渲染几行占位（行数是策略，张数由列数 × 本值派生；不足首屏由 useFillRows 续行） */
 const ROWS = 3;
 
 export default function BrowseSkeleton() {
   const cols = useGridCols('--card-cols', 6);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const extraRows = useFillRows(rootRef, cols);
+  const rows = ROWS + extraRows;
 
   return (
-    <div className="browse-skeleton skeleton-scope" role="status" aria-label="搜索中">
+    <div ref={rootRef} className="browse-skeleton skeleton-scope" role="status" aria-label="搜索中">
       <div className="browse-skeleton__bar">
         <div className="browse-skeleton__types">
           {Array.from({ length: 5 }, (_, i) => (
@@ -34,7 +38,7 @@ export default function BrowseSkeleton() {
         </div>
       </div>
       <div className="browse-skeleton__grid">
-        {Array.from({ length: cols * ROWS }, (_, i) => (
+        {Array.from({ length: cols * rows }, (_, i) => (
           <div key={i} className="browse-skeleton__card">
             <Skeleton className="browse-skeleton__cover" />
             <Skeleton className="browse-skeleton__title" />

@@ -144,7 +144,17 @@
       .bs-rail { display: none; }
       .bs-split__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
-      .bs-tip { padding: 4px 0 20px; text-align: center; animation: boot-pulse 1.4s ease-in-out infinite; }
+      /* 提示改为绝对定位钉在视口底：内容按视口填满后仍可见（若留在文档流，
+         填满后的溢出会把提示推出 overflow:hidden 的裁剪区） */
+      .bs-tip {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 4px 0 20px;
+        text-align: center;
+        animation: boot-pulse 1.4s ease-in-out infinite;
+      }
       .bs-body:empty + .bs-tip { padding-top: 32px; }
 
       @keyframes boot-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
@@ -305,9 +315,6 @@
         } catch (e) {}
         splash.setAttribute('data-cols', cols);
 
-        /* 首页形态就是静态 HTML，无需重建 */
-        if (shape === 'home') return;
-
         function el(cls, tag) {
           var node = document.createElement(tag || 'i');
           if (cls) node.className = cls;
@@ -369,16 +376,50 @@
           person: function () { return [hero(), lines(4)]; },
         };
 
+        /* 填满首屏：按当前视口高度逐行补占位块，直到骨架内容高度到达
+           「视口高 − 底部提示区预留」。宁多不缺 —— 超出部分由 overflow:hidden
+           裁掉，与真实页「网格自然溢出首屏」同观感；上限 24 次防异常视口
+           （0 高 / 缩放极端值）死循环。home / collections 补分区头（.bs-sec），
+           对齐真实页「分区标题 + 卡片行」的节奏。高度全部量渲染结果
+           （body.scrollHeight），不在 JS 里另估行高，列数仍由 CSS 档位唯一决定。 */
+        function fillRows(host, maker, withSec) {
+          var header = splash.querySelector('.bs-header');
+          var target = window.innerHeight - (header ? header.offsetHeight : 0) - 48;
+          var guard = 0;
+          while (guard++ < 24 && body.scrollHeight < target) {
+            if (withSec) host.appendChild(sec());
+            host.appendChild(maker());
+          }
+        }
+        var FILL = {
+          home: function () { fillRows(body, function () { return grid('poster', 8); }, true); },
+          browse: function () { fillRows(body, function () { return grid('poster', 8); }); },
+          chart: function () { fillRows(body, function () { return listRows(8); }); },
+          collections: function () { fillRows(body, function () { return grid('channel', 6); }, true); },
+          history: function () { fillRows(body, function () { return grid('record', 8); }); },
+          iptv: function () {
+            fillRows(body.querySelector('.bs-split__main') || body, function () { return grid('iptvpage', 6); });
+          },
+          detail: function () { fillRows(body, function () { return lines(4); }); },
+          person: function () { fillRows(body, function () { return lines(4); }); },
+        };
+
         splash.setAttribute('data-shape', shape);
         if (shape === 'play') tip.textContent = '正在打开播放器…';
 
         var build = BUILD[shape];
-        if (!build) return;
-        var blocks = build();
-        var frag = document.createDocumentFragment();
-        for (var i = 0; i < blocks.length; i++) frag.appendChild(blocks[i]);
-        body.textContent = '';
-        body.appendChild(frag);
+        if (build) {
+          var blocks = build();
+          var frag = document.createDocumentFragment();
+          for (var i = 0; i < blocks.length; i++) frag.appendChild(blocks[i]);
+          body.textContent = '';
+          body.appendChild(frag);
+        }
+
+        /* home 形态的静态 HTML 也在此时按视口补行（首轮 hero + 1 行是
+           无 JS 时的兜底，绘制前这里已补齐，不会先闪「单行」再变高） */
+        var fill = FILL[shape];
+        if (fill) fill();
       })();
     </script>
     <div id="root"></div>

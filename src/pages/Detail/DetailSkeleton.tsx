@@ -8,12 +8,19 @@
  * 视口差异化走 CSS 断点（width >= 1024px + html[data-device] 门控，
  * 与 Detail.css 同口径），不用 JS。
  */
+import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
+import { useFillRows } from '@/hooks';
 import './DetailSkeleton.css';
 
 export default function DetailSkeleton() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  // 简介行补齐首屏：每步 +2 行（行高小，1 行/步收敛太慢），量的是渲染结果
+  const extraRows = useFillRows(rootRef, 1, 6, 24);
+  const overviewRows = 2 + extraRows * 2;
+
   return (
-    <div className="detail-skeleton skeleton-scope" role="status" aria-label="加载中">
+    <div ref={rootRef} className="detail-skeleton skeleton-scope" role="status" aria-label="加载中">
       <div className="detail-skeleton__top">
         <div className="detail-skeleton__hero">
           <Skeleton className="detail-skeleton__hero-bg" />
@@ -40,9 +47,12 @@ export default function DetailSkeleton() {
       </div>
       <div className="detail-skeleton__body">
         <Skeleton className="detail-skeleton__section-title" />
-        <Skeleton className="detail-skeleton__overview" />
-        <Skeleton className="detail-skeleton__overview" />
-        <Skeleton className="detail-skeleton__overview detail-skeleton__overview--short" />
+        {Array.from({ length: overviewRows }, (_, i) => (
+          <Skeleton
+            key={i}
+            className={`detail-skeleton__overview${i === overviewRows - 1 ? ' detail-skeleton__overview--short' : ''}`}
+          />
+        ))}
       </div>
     </div>
   );
