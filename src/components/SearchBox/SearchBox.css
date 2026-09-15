@@ -403,7 +403,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 
 .search-box-dropdown__remove:hover {
   background: var(--color-surface-hover);
-  color: var(--color-error);
+  color: var(--color-error-text);
 }
 
 /* ── Hot Rank Badge ───────────────────────────────── */
@@ -489,7 +489,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 
 .search-box-dropdown__clear:hover {
   background: var(--color-surface-hover);
-  color: var(--color-error);
+  color: var(--color-error-text);
 }
 
 /* ── Divider ──────────────────────────────────────── */

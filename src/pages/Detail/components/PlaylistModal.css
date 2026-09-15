@@ -69,7 +69,7 @@
 .playlist-title {
   margin: 0;
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   line-height: 1.25;
 }
 
@@ -309,7 +309,7 @@
 .playlist-cell--ep .playlist-cell-num {
   color: var(--color-text);
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   line-height: 1;
 }
 
@@ -506,7 +506,7 @@
 .playlist-drawer {
   position: fixed;
   inset: 0;
-  z-index: 1001; /* 必须高于遮罩(1000)与导航栏(55)，否则会被遮罩/导航栏覆盖 */
+  z-index: var(--z-modal); /* 必须高于遮罩(1000)与导航栏(55)，否则会被遮罩/导航栏覆盖 */
   width: 100%;
   max-width: 100%;
   height: 100%;

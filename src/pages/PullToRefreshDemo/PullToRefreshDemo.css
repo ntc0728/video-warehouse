@@ -122,12 +122,12 @@
 
 .ptr-demo__badge--refreshing {
   background: var(--color-primary-light);
-  color: var(--color-info);
+  color: var(--color-info-text);
 }
 
 .ptr-demo__badge--success {
   background: var(--color-surface-hover);
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 
 .ptr-demo__meta { white-space: nowrap; }

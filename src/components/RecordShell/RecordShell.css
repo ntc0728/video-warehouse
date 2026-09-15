@@ -627,7 +627,7 @@ html[data-device="app"] .action-btn__label {
   z-index: 40;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2xs);
   min-width: 160px;
   padding: var(--space-2xs);
   border: 1px solid var(--color-border);
@@ -883,7 +883,7 @@ html[data-device="app"] .action-btn__label {
     align-items: center;
     width: 100%;
     height: auto;
-    padding: 8px var(--space-sm);
+    padding: var(--space-md) var(--space-sm);
     border: none;
     border-radius: var(--radius-md);
     background: transparent;
@@ -977,7 +977,7 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab__count {
     flex-shrink: 0;
     min-width: 0;
-    padding: 1px 6px;
+    padding: var(--space-3xs) var(--space-sm);
     border-radius: var(--radius-full);
     background: var(--color-background);
     color: var(--color-text-secondary);

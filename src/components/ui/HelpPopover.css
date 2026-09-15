@@ -50,7 +50,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.4;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .help-popover-close {

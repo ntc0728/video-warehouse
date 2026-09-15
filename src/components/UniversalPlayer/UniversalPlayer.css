@@ -748,7 +748,7 @@
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   background: rgba(255, 77, 79, 0.15);
-  color: var(--color-error);
+  color: var(--color-error-text);
   font-size: var(--text-sm);
   font-weight: 700;
 }
@@ -1677,7 +1677,7 @@
 .up-shortcut-help__row kbd {
   flex-shrink: 0;
   min-width: 5.5rem;
-  padding: 2px var(--space-2xs);
+  padding: var(--space-2xs);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.08);
@@ -2808,7 +2808,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4px;
+  padding: var(--space-xs-plus);
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.7);

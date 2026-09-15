@@ -479,7 +479,8 @@
 
 .player-tv-loader__dots {
   display: inline-flex;
-  gap: 5px;
+  /* 圆点间距走 --dot-gap（与分页圆点同一节奏 3→6px）；桌面/TV 档恰为 5px，与原有固定值一致 */
+  gap: var(--dot-gap);
 }
 
 .player-tv-loader__dots > span {

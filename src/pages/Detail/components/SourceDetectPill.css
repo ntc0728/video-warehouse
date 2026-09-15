@@ -9,11 +9,12 @@
 
 .sdp-pill {
   display: inline-flex;
-  gap: 6px;
+  gap: var(--space-sm);
   align-items: center;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 紧凑胶囊尺寸契约：与 .retry-btn--tab / SourceStatusIndicator 共用 5px/11px 固定内边距（无对应 --space-* 档） */
   padding: 5px 11px;
   border: 1px solid var(--color-border-light);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-xs);
@@ -40,7 +41,7 @@
   position: relative;
   width: var(--src-det-progress-w);
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-border-light);
   overflow: hidden;
 }
@@ -136,14 +137,15 @@
 .sdp-pop-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--src-det-grid-min), 1fr));
-  gap: 4px;
+  gap: var(--space-xs-plus);
   max-height: var(--src-det-popup-max-h);
   overflow: auto;
 }
 .sdp-cell {
   display: flex;
-  gap: 6px;
+  gap: var(--space-sm);
   align-items: center;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 单元格紧凑内边距：7px 无对应 --space-* 档，流体化会破坏与 .sdp-pill 的行高对齐 */
   padding: 4px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);

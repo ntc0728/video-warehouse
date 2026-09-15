@@ -68,7 +68,7 @@
   color: var(--color-text);
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
   font-size: clamp(var(--text-2xl), 8.4px + 1.083vw, var(--text-3xl));
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.03em;
   animation: app-loading-fade-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   background-clip: text;
@@ -244,7 +244,7 @@
 
 .app-loading--tv .app-loading__brand-name {
   font-size: var(--text-3xl);
-  font-weight: 900;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.04em;
 }
 

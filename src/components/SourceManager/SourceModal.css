@@ -181,7 +181,7 @@
 .source-modal__switch-track {
   position: absolute;
   inset: 0;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--color-border);
   transition: background 0.2s;
   cursor: pointer;
@@ -216,7 +216,7 @@
   /* 胶囊样式：圆形两端 + 较宽水平内边距 */
   padding: var(--space-xs) var(--space-xl);
   border: 1px solid var(--color-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-sm);

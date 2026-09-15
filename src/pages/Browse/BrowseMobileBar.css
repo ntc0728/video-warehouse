@@ -118,6 +118,7 @@
   gap: var(--space-xs);
   align-items: center;
   height: 26px;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 移动端紧凑工具条固定横距：10px 无对应 --space-* 档；本组件仅 <768px 生效，无流体化需求 */
   padding: 0 10px;
   border: none;
   border-radius: var(--radius-full);
