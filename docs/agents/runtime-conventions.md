@@ -129,3 +129,16 @@ Browse 逻辑分页（算术定位 + 多触发器等值 + 跨页去重 + 三段�
   `npx tsc -b && npx vite build --emptyOutDir false` 绕行，**tsc 门槛不降**。
 - **产物断言前必须先递归清空 `dist/`**，否则 `--emptyOutDir false` 留旧 chunk → **假 FAIL/PASS**；
   断言**勿按书写顺序拼选择器串**（minifier 会重排 selector 顺序）→ 用宽松正则或分段匹配。
+- **Windows 盘符大小写打崩 vite build**（2026-09-15 根治，commit 7251759）：某些 shell 环境（Git Bash shim）
+  把 cwd 设为**小写盘符** `f:\...`，而 Vite/Rollup 路径比较对盘符大小写敏感（`normalizePath` 不归一大小写）：
+  模块 id 一边由 cwd 派生（小写），一边由 realpath/esbuild 派生（大写）→ html-inline-proxy 等按 id 注册的
+  模块查不到，报 `No matching HTML proxy module found`；产物路径也会退化成 `dist/f:/...` 绝对路径命名。
+  **修法在 `vite.config.ts`**：`projectRoot = fs.realpathSync.native(__dirname)`，`root` 与 `resolve.alias['@']`
+  一律从它派生 —— 任何 shell/cwd 大小写下模块 id 一致。其他项目遇到「某些 shell 下 build 报路径对不上」先对号入座。
+- **沙箱/受限环境 Chromium 跑不了本应用**（2026-09-15 实测）：渲染进程在应用 JS 执行阶段确定性
+  `Page crashed`（dev 必崩；`vite preview` 的 dist 产物能过 `domcontentloaded`，1~2s 内仍崩）；
+  `--disable-gpu` / `--no-sandbox` / `--single-process` 等参数均无效，纯静态页/data URL 正常。
+  → **E2E 只能开发机/CI 跑**；agent 会话里降级为 `--list` 枚举校验 + Vitest 单测。
+- **E2E 观察 `#boot-splash`（React 首帧前的死 DOM）**：直接 goto 有「断言时骨架已被摘除」竞态。
+  手法见 `scripts/boot-splash.spec.ts`：route 拦截**主入口模块**（dev=`**/src/main.tsx*`，dist=`**/assets/index-*.js`）
+  延迟 2.5s 放行，`goto(..., { waitUntil: 'commit' })` 后骨架窗口稳定可观测；收尾放行主模块断言骨架 detached。

@@ -1,3 +1,10 @@
+---
+date: 2026-09-15 22:50
+module: build
+type: fix
+build: 小写 cwd 复现验证 + Bash 直跑 built in 22.49s
+---
+
 # 2026-09-15 22:50 修复 Bash 环境下 vite build 确定性失败（盘符大小写）
 
 ## 现象

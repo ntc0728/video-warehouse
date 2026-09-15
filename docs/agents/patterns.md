@@ -419,6 +419,15 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
 - 首页骨架双分支由 `useIsWideDesktop`（`min-width:1024px && !isTV`）单点决定：
   ≥1024 非 TV → 顶部过渡带 + 左栏趋势榜 + HeroBili + 7 行；否则 → 单图 banner + 7 行。
   左栏骨架**只在 ≥1024 非 TV 存在属设计预期**，<1024 报「缺左栏」不是缺陷。
+- **骨架必须填满首屏视口**（2026-09-15 定稿）：
+  - 页级骨架（React）接 `hooks/useFillRows.ts`：首帧渲染后量根容器底边，不足视口就续行
+    （渲染 `cols × (ROWS + extra)`），`useLayoutEffect` 同步收敛不闪屏，跨断点按新列数重新收敛。
+    张数仍是「列数 token × 行数」派生（`useGridCols` 同哲学：只量渲染结果，不估行高）。
+    已接入 Browse / Collections / IPTV / Person / Detail；首页骨架（hero + 7 横滚行）本就超视口不接。
+  - 启动骨架 `index.html` 内联脚本 `fillRows`：按 `body.scrollHeight` 逐行补块至
+    「视口高 − header − 48」，宁多不缺（溢出被 `overflow:hidden` 裁掉），guard 24 防死循环；
+    九种 shape 除 play/plain 外全部接入，home 的静态 HTML 是无 JS 兜底、脚本赶在首帧前补行。
+    E2E 护栏 `scripts/boot-splash.spec.ts`（观察手法见 `runtime-conventions.md` §7）。
 
 ### Radix Dialog 非 passive 监听规避（modal={false} 模式）
 

@@ -110,6 +110,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | UI 整改专项（移动端头像/抽屉/触摸越界/browse 刷新/设置动画/modal 宽度）       | `scripts/ui-fixes.spec.ts`                             | 7      |
 | 全局问题专项（字体自托管/IPTV 台标兜底/跟随系统/空数据不挂载）                  | `scripts/global-fixes.spec.ts`                         | 5      |
 | 代理配置页专项                                               | `scripts/proxy-setup.spec.ts`                          | 3      |
+| `index.html`（启动骨架：路由感知 + 视口填充）                  | `scripts/boot-splash.spec.ts`                          | 13     |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（冷启动/汉堡/横屏/IPTV 全屏/免责声明 各页共通的修复验证；原封面兜底/TabBar 间距两条像素快照已删）。
 

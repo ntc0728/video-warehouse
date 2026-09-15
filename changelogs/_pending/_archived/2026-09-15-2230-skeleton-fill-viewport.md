@@ -1,3 +1,10 @@
+---
+date: 2026-09-15 22:30
+module: skeleton
+type: feat
+build: tsc 0 err / eslint 0 err 0 warn / vite build 过
+---
+
 # 2026-09-15 22:30 骨架视口填满：启动骨架全 shape + 页级骨架续行
 
 ## 背景
