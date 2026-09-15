@@ -39,7 +39,7 @@
    放大按钮会锚定到 header 盒（右上）而非视口（右下）。
    改用 top 动画维持同样的滑入/滑出观感，不引入 transform。 */
 .iptv-player-page .up-player-header {
-  transition: opacity 0.3s ease, top 0.3s ease;
+  transition: opacity var(--dur-lg) ease, top var(--dur-lg) ease;
 }
 .iptv-player-page .up-player-header-visible,
 .iptv-player-page .up-player-header-hidden {

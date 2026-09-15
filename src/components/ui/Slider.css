@@ -47,7 +47,7 @@
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-full);
   background: var(--color-text-inverse);
-  transition: box-shadow 0.15s ease-out;
+  transition: box-shadow var(--dur-2xs) ease-out;
   appearance: none;
   box-shadow: var(--shadow-sm);
 }
@@ -58,7 +58,7 @@
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-full);
   background: var(--color-text-inverse);
-  transition: box-shadow 0.15s ease-out;
+  transition: box-shadow var(--dur-2xs) ease-out;
   box-shadow: var(--shadow-sm);
 }
 

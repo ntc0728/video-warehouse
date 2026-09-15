@@ -8,11 +8,11 @@
   inset: 0;
   z-index: var(--z-modal-overlay);
   background: rgba(0, 0, 0, 0.45);
-  animation: drawer-fade 0.2s ease;
+  animation: drawer-fade var(--dur-sm) ease;
 }
 
 .drawer-overlay[data-state='closed'] {
-  animation: drawer-fade-out 0.2s ease-in forwards;
+  animation: drawer-fade-out var(--dur-sm) ease-in forwards;
 }
 
 .drawer-content {
@@ -58,7 +58,7 @@
   border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-text-secondary);
-  transition: background-color 0.15s ease;
+  transition: background-color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -181,7 +181,7 @@ body:has(.drawer-content) .back-to-top-button {
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text);
-  transition: background-color 0.15s ease;
+  transition: background-color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -221,7 +221,7 @@ body:has(.drawer-content) .back-to-top-button {
   font-size: var(--text-xs);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .drawer-reset:hover {
@@ -329,7 +329,7 @@ body:has(.drawer-content) .back-to-top-button {
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.5;
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
 }
 .drawer-content--fullscreen .drawer-body .filter-bar__sort-btn--active {
   border-color: var(--color-primary);

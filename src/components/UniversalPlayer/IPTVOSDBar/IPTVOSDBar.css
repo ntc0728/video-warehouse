@@ -20,7 +20,7 @@
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.60);
   transform: translateX(-50%);
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: opacity var(--dur-sm) ease, transform var(--dur-sm) ease;
   backdrop-filter: blur(12px);
 }
 
@@ -256,7 +256,7 @@
   color: var(--player-text-tertiary);
   font-family: inherit;
   font-size: var(--text-xs);
-  transition: all 0.2s ease;
+  transition: all var(--dur-sm) ease;
   cursor: pointer;
 }
 
@@ -316,7 +316,7 @@
   font-family: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background var(--dur-sm) ease;
 }
 
 .iptv-osd-timeshift-btn:hover {
@@ -328,7 +328,7 @@
   height: var(--layout-osd-timeshift-dot);
   border-radius: 50%;
   background: var(--color-primary);
-  animation: timeshift-pulse 1.5s ease-in-out infinite;
+  animation: timeshift-pulse var(--dur-shimmer) ease-in-out infinite;
 }
 
 .iptv-osd-timeshift-hint {
@@ -362,7 +362,7 @@
   font-size: var(--text-xs);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all var(--dur-sm) ease;
 }
 
 .iptv-osd-catchup-live:hover {
@@ -470,7 +470,7 @@
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.55);
   transform: translateY(-50%);
-  transition: opacity 200ms ease;
+  transition: opacity var(--dur-sm) ease;
   backdrop-filter: blur(8px);
 }
 

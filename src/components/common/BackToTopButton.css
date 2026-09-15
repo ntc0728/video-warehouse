@@ -47,12 +47,12 @@
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
-  animation: back-to-top-button-slide-in 0.25s var(--ease-spring) both;
+  animation: back-to-top-button-slide-in var(--dur-md) var(--ease-spring) both;
 }
 
 .back-to-top-button--exiting {
   /* 不显式写 transition：让默认样式生效，自动从 visible → 默认 */
-  animation: back-to-top-button-slide-out 0.25s ease both;
+  animation: back-to-top-button-slide-out var(--dur-md) ease both;
 }
 
 .back-to-top-button:hover {

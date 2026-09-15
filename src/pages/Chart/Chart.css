@@ -227,7 +227,7 @@
   margin-right: var(--space-lg);
 }
 .chart-row:hover .chart-row__t-track {
-  animation: chartTitleMarquee 7s linear infinite;
+  animation: chartTitleMarquee var(--dur-marquee) linear infinite;
 }
 
 @keyframes chartTitleMarquee {

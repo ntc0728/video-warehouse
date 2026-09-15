@@ -160,7 +160,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   text-align: left;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-2xs), color var(--dur-2xs);
   cursor: pointer;
 }
 
@@ -290,7 +290,7 @@
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s;
+  transition: border-color var(--dur-2xs), box-shadow var(--dur-2xs), transform var(--dur-2xs), background var(--dur-2xs);
 }
 
 .playlist-cell:hover {
@@ -444,7 +444,7 @@
   display: block;
   height: 100%;
   background: var(--color-primary);
-  transition: width 0.25s ease;
+  transition: width var(--dur-md) ease;
 }
 
 .playlist-cell-progress-bar.is-complete {
@@ -518,7 +518,7 @@
 }
 
 .playlist-drawer[data-state='closed'] {
-  animation: playlist-drawer-out 0.2s ease-in forwards;
+  animation: playlist-drawer-out var(--dur-sm) ease-in forwards;
 }
 
 @media (width <= 767px) {
@@ -531,11 +531,11 @@
     max-height: 82vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: translateY(100%);
-    animation: modalSlideUp 0.3s var(--ease-out-expo) both;
+    animation: modalSlideUp var(--dur-lg) var(--ease-out-expo) both;
   }
 
   .playlist-modal.playlist-modal--sheet[data-state='closed'] {
-    animation: modalSlideDown 0.2s ease-in forwards;
+    animation: modalSlideDown var(--dur-sm) ease-in forwards;
   }
 
   .playlist-header {
@@ -587,11 +587,11 @@
     max-height: 82vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: translateY(100%);
-    animation: modalSlideUp 0.3s var(--ease-out-expo) both;
+    animation: modalSlideUp var(--dur-lg) var(--ease-out-expo) both;
   }
 
   html[data-device="app"] .playlist-modal.playlist-modal--sheet[data-state='closed'] {
-    animation: modalSlideDown 0.2s ease-in forwards;
+    animation: modalSlideDown var(--dur-sm) ease-in forwards;
   }
 
   html[data-device="app"] .playlist-header {

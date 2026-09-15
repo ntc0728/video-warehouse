@@ -157,8 +157,19 @@ const CHECKS = [
   },
   {
     id: 'timing-literal',
-    enforce: false,
+    enforce: true,
     desc: 'transition/animation 内联时长字面量（新代码应走 --dur-* token）',
+    /**
+     * 2026-09-15 D6 起由 observe 转 enforce：
+     * 新增 --dur-2xs/xs/sm/md/lg 五档交互阶梯（值取自既有字面量频次前 5 名）
+     * 与 --dur-shimmer/pulse/marquee 三个装饰循环档后，存量 426 处已降 156 处，
+     * 其余为**刻意保留**的两类（见 docs/design/BASELINE.md §时长）：
+     *   ① animation-delay 的错峰值（列表逐项进场 0.15/0.18/0.20s…）——是「第几个出场」，
+     *      不是「动多快」，套 --dur-* 会把节奏语义搞混；
+     *   ② 一次性微调与特定循环（30/60/88/…/390ms 与 1s/1.4s/2.4s/8s/25s 等）——
+     *      归档会改变观感节奏（§5.3 明确不做）。
+     * 现在的 enforce 语义 = 「不许再新增字面量」：存量已快照进基线，只拦新增。
+     */
     match: (raw) => {
       const m = raw.match(/(?:transition|animation)[^:]*:\s*[^;]*?\b\d*\.?\d+m?s\b/);
       return m ? [m[0].trim().slice(0, 48)] : null;

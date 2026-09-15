@@ -127,7 +127,7 @@
 .history-page .record-card__progress-bar {
   height: 100%;
   background: var(--color-progress-fill);
-  transition: width 0.3s ease;
+  transition: width var(--dur-lg) ease;
 }
 .history-page .record-card__progress-text {
   position: absolute;
@@ -179,7 +179,7 @@
 }
 /* 悬浮整卡即触发跑马灯（不只标题文字，避免"悬浮到 card 上却没反应"） */
 .history-page .record-card:hover .record-card__title.is-overflow .record-card__title-track {
-  animation: rc-marquee 7s linear infinite;
+  animation: rc-marquee var(--dur-marquee) linear infinite;
 }
 .history-page .record-card__title-text {
   white-space: nowrap;
@@ -258,7 +258,7 @@
   }
   /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动） */
   .history-page .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
-    animation: rc-marquee 7s linear infinite;
+    animation: rc-marquee var(--dur-marquee) linear infinite;
   }
 }
 /* app / 移动端（data-device=app）：同样「进入视口」才播放 */
@@ -266,7 +266,7 @@ html[data-device='app'] .history-page .record-card__delete {
   opacity: 1;
 }
 html[data-device='app'] .history-page .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
-  animation: rc-marquee 7s linear infinite;
+  animation: rc-marquee var(--dur-marquee) linear infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

@@ -265,7 +265,7 @@
   font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -308,7 +308,7 @@
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -348,7 +348,7 @@
   font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -423,7 +423,7 @@
   font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
   cursor: pointer;
 }
 
@@ -715,7 +715,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-sm);
 }
 
 .player-detail-fav-btn:hover {
@@ -1062,7 +1062,7 @@
   justify-content: center;
   align-items: center;
   background: rgba(0, 0, 0, 0.3);
-  animation: autoplay-fade-in 0.3s ease;
+  animation: autoplay-fade-in var(--dur-lg) ease;
 }
 
 .player-autoplay-card {
@@ -1085,7 +1085,7 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
 }
 
 .player-autoplay-nav-btn:hover:not(:disabled) {
@@ -1121,7 +1121,7 @@
   color: var(--player-text);
   font-size: var(--text-xs);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background var(--dur-sm) ease;
 }
 
 .player-autoplay-cancel:hover {

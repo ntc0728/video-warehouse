@@ -38,7 +38,7 @@
 .detail-hero--skeleton {
   background: linear-gradient(135deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
   background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
 /* ═ G1 break-out（2026-09-07 定稿 T1）：.detail-page 接入 content-shell 后，
@@ -143,7 +143,7 @@
   color: rgba(255,255,255,0.9);
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
   cursor: pointer;
 }
 .detail-back:hover {
@@ -167,7 +167,7 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
   cursor: pointer;
 }
 .detail-hero-back:hover {
@@ -191,7 +191,7 @@
   color: rgba(255,255,255,0.9);
   font-size: var(--text-sm);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--dur-sm);
   cursor: pointer;
 }
 .detail-official-link:hover {
@@ -336,7 +336,7 @@
   /* 中文 4 字（"立即播放" / "加入收藏"）默认 normal 在窄容器下会被按字换行，
      显式 nowrap 保证按钮内文字始终在同一行。 */
   white-space: nowrap;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+  transition: transform var(--dur-md) cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.2s ease,
               box-shadow 0.2s ease,
               border-color 0.2s ease;
@@ -447,7 +447,7 @@
   height: 100%;
   border-radius: inherit;
   background: var(--color-accent);
-  transition: width 0.3s ease;
+  transition: width var(--dur-lg) ease;
 }
 
 /* ── Tab 导航 ──────────────────────────────────── */
@@ -600,7 +600,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   font-weight: 500;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--dur-sm), color var(--dur-sm);
 }
 
 .detail-genre-tag:hover {
@@ -639,7 +639,7 @@
   max-height: var(--space-xl);
   object-fit: contain;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-sm);
 }
 
 .detail-company-logo:hover {
@@ -671,7 +671,7 @@
   background: var(--color-placeholder);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  transition: transform var(--dur-md) cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow var(--dur-sm) ease;
 }
 
 .detail-stills-item:hover {
@@ -721,7 +721,7 @@
   align-items: center;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(2px);
-  transition: background 0.2s;
+  transition: background var(--dur-sm);
 }
 
 .detail-stills-item--more:hover .detail-stills-more {
@@ -752,7 +752,7 @@
     var(--color-skeleton) 75%
   );
   background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
 .detail-info-grid {
@@ -837,7 +837,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-background);
-  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform var(--dur-sm) cubic-bezier(0.34,1.56,0.64,1), box-shadow var(--dur-sm) ease, border-color var(--dur-sm) ease;
 }
 .detail-info-item:hover {
   border-color: var(--color-primary);
@@ -874,7 +874,7 @@
   color: inherit;
   text-align: center;
   text-decoration: none;
-  transition: transform 0.2s;
+  transition: transform var(--dur-sm);
   cursor: pointer;
 }
 .detail-cast-item:hover {
@@ -941,7 +941,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: color var(--dur-2xs);
 }
 
 .detail-cast-toggle:hover {
@@ -1189,7 +1189,7 @@
   font-size: var(--text-xs);
   font-weight: 500;
   white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition: border-color var(--dur-sm), color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
 
@@ -1213,7 +1213,7 @@
   font-size: var(--text-xs);
   font-weight: 500;
   white-space: nowrap;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-sm);
   cursor: pointer;
 }
 
@@ -1309,7 +1309,7 @@
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-2xs) ease, background var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
@@ -1394,7 +1394,7 @@
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-sm);
 }
 
 .source-all-modal__play-btn:hover:not(:disabled) {
@@ -1415,11 +1415,11 @@
     max-height: min(85dvh, var(--layout-bottomsheet-max-h));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: none;
-    animation: bottomsheet-slide-in 0.3s var(--ease-out-expo) both;
+    animation: bottomsheet-slide-in var(--dur-lg) var(--ease-out-expo) both;
   }
 
   .source-all-modal.modal-content-animate[data-state="closed"] {
-    animation: bottomsheet-slide-out 0.2s ease-in forwards;
+    animation: bottomsheet-slide-out var(--dur-sm) ease-in forwards;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -1431,11 +1431,11 @@
     max-height: min(85dvh, var(--layout-bottomsheet-max-h));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: none;
-    animation: bottomsheet-slide-in 0.3s var(--ease-out-expo) both;
+    animation: bottomsheet-slide-in var(--dur-lg) var(--ease-out-expo) both;
   }
 
   html[data-device="app"] .source-all-modal.modal-content-animate[data-state="closed"] {
-    animation: bottomsheet-slide-out 0.2s ease-in forwards;
+    animation: bottomsheet-slide-out var(--dur-sm) ease-in forwards;
   }
 
 

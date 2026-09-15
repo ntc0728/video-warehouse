@@ -283,7 +283,7 @@
 }
 
 .animate-card-enter {
-  animation: cardFadeIn 0.18s var(--ease-standard) both;
+  animation: cardFadeIn var(--dur-xs) var(--ease-standard) both;
 }
 
 /* 卡片出场：淡入 + 上移 12px（与收藏页视频 tab 的 .video-card-grid > * fadeInUp
@@ -305,7 +305,7 @@
 }
 
 .animate-pop-bounce {
-  animation: popBounce 0.5s var(--ease-standard) both;
+  animation: popBounce var(--dur-slow) var(--ease-standard) both;
 }
 
 .animate-icon-bounce {
@@ -336,7 +336,7 @@
   color: var(--color-text-tertiary);
   font-size: var(--text-base);
   text-align: center;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-lg) ease;
 }
 
 @keyframes slideUp {
@@ -374,7 +374,7 @@
     transparent
   );
   background-size: 20px 20px;
-  animation: progress-bar-slide 1.5s var(--ease-out-expo) infinite, progress-bar-stripes 0.75s linear infinite;
+  animation: progress-bar-slide var(--dur-shimmer) var(--ease-out-expo) infinite, progress-bar-stripes 0.75s linear infinite;
 }
 
 /* ── 新增 keyframes ──────────────────────────────────────────────────── */

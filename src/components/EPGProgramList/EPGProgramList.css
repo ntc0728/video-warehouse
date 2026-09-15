@@ -30,7 +30,7 @@
   align-items: flex-start;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-sm) ease;
 }
 
 .epg-program-item--clickable {

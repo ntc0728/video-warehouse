@@ -73,7 +73,7 @@
 .history-node:active .history-dot {
   background: var(--color-primary);
   transform: translate(-50%, -50%) scale(1.4);
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform var(--dur-2xs) cubic-bezier(0.2, 0, 0, 1);
 }
 
 .history-rail {
@@ -101,7 +101,7 @@
   border-radius: 50%;
   background: var(--color-text-tertiary);
   transform: translate(-50%, -50%);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.18s ease;
+  transition: transform var(--dur-sm) cubic-bezier(0.2, 0, 0, 1), background var(--dur-xs) ease;
 }
 
 .history-group--active .history-dot {
@@ -211,7 +211,7 @@
     white-space: nowrap;
     cursor: pointer;
     will-change: transform;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
   }
 
   /* 时间、圆点、数量三者间距用 var(--space-sm)，绝对定位保证不重叠 */
@@ -248,7 +248,7 @@
     border-radius: 50%;
     background: var(--color-text-tertiary);
     transform: translate(-50%, -50%);
-    transition: background 0.18s ease;
+    transition: background var(--dur-xs) ease;
     pointer-events: none;
   }
 

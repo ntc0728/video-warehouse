@@ -20,7 +20,7 @@
   position: absolute;
   will-change: transform, opacity;
   /* 入场/位移动画：松手归位、刷新/成功态走此过渡 */
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease;
+  transition: transform var(--dur-xs) cubic-bezier(0.22, 1, 0.36, 1), opacity var(--dur-xs) ease;
 }
 /* 拖拽中关闭过渡：让指示器 1:1 跟手，避免 0.18s 缓动导致「拖手指时指示器滞后」 */
 .ptr-overlay__indicator[data-drag="true"] {
