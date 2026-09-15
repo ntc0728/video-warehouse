@@ -113,6 +113,18 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 | `--lh-base` | 1.5 | 中文正文下限 |
 | `--lh-relaxed` | 1.75 | 长文本段落 |
 
+**字距**（D0 新增；此前组件/皮肤层直接写 px 字距，被 value 禁令命中却无 token 可换 —— 规则合理、供给缺失）：
+
+| token | 值 | 用途 |
+| --- | --- | --- |
+| `--ls-tight` | -0.2px | 大字标题收紧（中文标题避免末字孤行） |
+| `--ls-normal` | 0 | 默认 |
+| `--ls-wide` | 0.2px | 小号标签 / 药丸轻微放大 |
+| `--ls-wider` | 0.5px | 皮肤标题字距（装饰 / 科技感） |
+| `--ls-widest` | 1px | 全大写 / 品牌文字大幅字距 |
+
+> 字距**必须**用 px 而非 em：`0.2px` 在 `--text-xs`(12px) 下 = 0.0167em，无法用整数 em 表达；且属「感知微调」，不参与 `--ui-scale` 缩放。
+
 **层级**（原 154 处裸字面量）：完整阶梯定义在 `variables.css` 顶部「Z-index 层级体系」，禁止裸数字。
 
 | token | 值 | 用途 |
@@ -160,7 +172,10 @@ color: #fff;                      /* 任意封面图下最坏 5.74:1（纯白底
 5. 新增桌面样式默认放 `@media (width >= 1024px)`；TV 覆盖集中在 `[data-device="tv"]` 块。
 6. 观感类改动必须附可双击打开的对照 demo（`changelogs/demos/`）。
 7. `npm run build` 必须通过（本地沙箱清 dist 撞批量删除保护时用 `npx tsc -b && npx vite build --emptyOutDir false`）。
-8. **护栏命令**（详见 [a11y-CHECKLIST.md](./a11y-CHECKLIST.md) §A）：
+8. **lint 范围分层**（D0/D1）：`variables.css` / `skins.css` 是 **token 定义层**，豁免「禁裸值」三类规则（该层职责就是定义原始值）；其余文件是**消费层**，必须走 token。`PlayerLab` / `PlayerMobileLab` 是调研 demo 沙盒（`routeConfig.ts:62,64` 明示「不进入正式导航」），已从 stylelint `ignoreFiles` 与 design-audit `EXCLUDE_DIRS` 双双排除 —— **不参与规范验收，转正时需先补齐规范**。
+9. **禁止手写厂商前缀**（D3）：`package.json` 已声明 `browserslist`，前缀由 autoprefixer 按目标浏览器产出，源码不写 `-webkit-` / `-moz-`。
+10. **同块内不得重复声明同一自定义属性**（A1 教训）：CSS 同一声明块内后者**无条件覆盖**前者，不存在「上一条兜底」语义。需要条件回退请用 `@supports` 分流。
+11. **护栏命令**（详见 [a11y-CHECKLIST.md](./a11y-CHECKLIST.md) §A）：
 
    ```bash
    pnpm run lint          # ESLint：className / style={{}} / 颜色常量里的裸 hex、Tailwind 默认调色板

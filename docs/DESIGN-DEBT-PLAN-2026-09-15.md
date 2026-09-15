@@ -483,14 +483,54 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 
 ## 5. 目标与验收
 
-### 5.1 量级目标
+### 5.1 量级目标与实测回填
 
-| 指标 | 现状 | D0-D1 后 | D2-D3 后 | D4-D7 后 |
+> **状态：D0–D3 已完成**（commit `2f54d8e` + `d35b0f8`，tag `design-debt-d3`）。下表「实测」列为脚本/探针真实数字。
+
+| 指标 | D0 前（现状） | D1 后 计划/实测 | D3 后 计划/**实测** | D4-D7 目标 |
 | --- | ---: | ---: | ---: | ---: |
-| stylelint 违规 | 1617 | ~901 | ~250 | **0** |
-| design-audit 违规 | 897 | 784 | 784 | **~10** |
-| 真 bug | 8 | 4 | **0** | 0 |
+| stylelint 违规 | 1617 | ~901 / **899** ✅ | ~250 / **240** ✅ | **0** |
+| ├ `number-max-precision` | 186 | 0 / **0** | 0 | 0 |
+| ├ `order/properties-order` | 665 | 550 / **550** | 0 / **0** | 0 |
+| ├ 沙盒贡献 | 637 | 530 / **530** | 0 | 0 |
+| └ 剩余（D5/D7 归属） | — | — | — | 见 §5.4 |
+| design-audit 违规（各检查 hits 合计） | 897 | 784 / **753** | 784 / **753** | ~10 |
+| 真 bug | 8 | 4 / **4** | **0** / **0** ✅ | 0 |
 | `lint:css` 状态 | 🔴 全红 | 🟡 | 🟡 | **🟢 绿** |
+
+**D0–D3 实证记录**
+
+| 项 | 结果 |
+| --- | --- |
+| `number-max-precision: 4 → 5` | 186 处清零（残留 1 处系 `--ui-scale` 的 6 位小数，已在 D2 用 `V/8000` 等值改写） |
+| 沙盒隔离 | stylelint 实测贡献 **530** 处（297 + 233），与预估 637 的差额为格式类违规已被 `--fix` 覆盖 |
+| `--fix` 实际消除 | 550 + 20 + 6 + 5 + 2 + 2 + 3 + 1(hex) + 1(零单位) = 约 590 处 |
+| 单行多声明展开 | 58 处（原估 141，差额为沙盒页贡献，已隔离） |
+| 手写前缀删除 | 8 处（`-webkit-appearance` ×2、`-webkit-backdrop-filter` ×5、`-moz-appearance` ×1） |
+| **TVA token 实测** | Playwright 注入源 CSS：**29/29** 在 1080p/4K 精确命中（偏差 <0.05px） |
+| **`--ui-scale` 实测** | 1920/2240/2560/3200 四视口：1.00000 / 1.04000 / 1.08000 / 1.08000，全部符合契约 |
+| **`--fix` 语义等价** | postcss AST 声明多重集比对：差异仅 `flex-flow` 合并（3）与手写前缀删除（8），均为等价变换 |
+| 构建 | `tsc -b` ✅ / `vite build` ✅ / `design-audit --strict` ✅ |
+
+**D0–D2 挖出的 4 个真 bug（全是「静默失效」家族）**
+
+| # | bug | 实测证据 |
+| --- | --- | --- |
+| A1 | `--ui-scale` 同声明块重复定义，回退从未生效 | `variables.css` 同块内先 `1` 后 `clamp(...)`，后者无条件覆盖 |
+| A2 | `tap-highlight-color` 无标准属性名 | 该属性从未进入标准，只有 `-webkit-` 形式 |
+| A3 | TV `--header-height` / `--layout-logo-size` clamp 系数错 | 实测 71.25px（意图 76）/ 60px（意图 64） |
+| A4 | TV 块 34 处 rem 按 16px 基数书写，而 TV 根字号是 15px | min/max 静默缩水 6.25%，被 mid 主导掩盖 |
+
+### 5.4 D0–D3 后剩余 240 处的归属
+
+| 规则 | 处数 | 归属 |
+| --- | ---: | --- |
+| `declaration-property-unit-disallowed-list` | 203 | D5 逐页一致性（裸 px 真债） |
+| `no-duplicate-selectors` | 20 | D7 冗余清理（需逐条甄别真冗余 vs 分节追加） |
+| `declaration-property-value-disallowed-list` | 7 | D5（4 处 100vw/100vh + 3 处字距，`--ls-*` 已就绪） |
+| `selector-class-pattern` | 6 | D7（`cqa-panel__pager__btn` 双 `__`，需同步 TSX） |
+| `declaration-property-value-keyword-no-deprecated` | 3 | D5（`word-break: break-word` → `overflow-wrap`，需语义判断） |
+| `declaration-block-no-redundant-longhand-properties` | 1 | D5（`grid-template` 简写会重置 `grid-template-areas`，**故意不自动修**） |
 
 ### 5.2 护栏演进
 
@@ -512,11 +552,15 @@ D0 规则校准 ──┬─→ D1 沙盒隔离 ──┬─→ D3 格式自动�
 
 ## 6. 建议执行顺序
 
-**D0 → D1 → D2 → D3** 是"低风险高收益"的一段：全部是配置调整 + 自动修复 + 4 处人工修复，**不动业务视觉**，却能把违规从 1617 压到 ~250、并把 4 个真 bug 清零。
+**D0 → D1 → D2 → D3** ✅ **已完成**（commit `2f54d8e` + `d35b0f8`，tag **`design-debt-d3`**）
+全部是配置调整 + 自动修复 + 4 处人工修复，**未动业务视觉**：违规 1617 → **240**，真 bug 8 → **0**。
+实测数字见 §5.1。
 
-**D4 → D5 → D6 → D7** 是"视觉敏感"的一段，需要逐页 review 与对照 demo。
+**D4 → D5 → D6 → D7** ⏳ 待办（视觉敏感段，需逐页 review 与对照 demo）。
+剩余 240 处违规的批次归属见 §5.4。
 
-两步之间建议**打 tag**（如 `design-debt-d3`），便于回滚与对照。
+护栏演进（§5.2）三项建议**尚未实施**，可在 D4 前落地，让 CI 从下一批起就能守门：
+stylelint 基线棘轮、`lint:all` 不短路、JSON 重复 key 检查（B7 与 A1 同类 bug 的根因）。
 
 ---
 
