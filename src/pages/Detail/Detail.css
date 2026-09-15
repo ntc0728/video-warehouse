@@ -48,6 +48,9 @@
    顶图高度问题本期不改（用户暂缓），此处仅处理壳收窄的副作用。 */
 @media (width >= 2200px) {
   html:not([data-device="app"]):not([data-device="tv"]) .detail-page > .detail-hero {
+    /* 全出血（full-bleed）必须用视口单位：父容器已封顶 2200px，100% 无法撑到视口边缘。
+       stylelint 的 100vw 禁令针对「易致横向溢出」的常规场景，本处为正当豁免。 */
+    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
     width: 100vw;
     margin-inline: calc(50% - 50vw);
     border-radius: 0;

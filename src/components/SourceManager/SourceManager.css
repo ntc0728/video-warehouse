@@ -164,7 +164,7 @@
   top: calc(100% + var(--space-2xs));
   right: 0;
   left: auto;
-  z-index: 50;
+  z-index: var(--z-fixed);
   display: flex;
   flex-direction: column;
   min-width: 9rem;

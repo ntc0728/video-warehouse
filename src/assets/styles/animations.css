@@ -171,7 +171,7 @@
 .pt-curtain {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-splash);
   display: none;
   background: #000;
   opacity: 0;
@@ -410,19 +410,30 @@
   }
 }
 
-/* ── 无障碍：减少动画偏好 ── */
+/* ── 无障碍：减少动画偏好 ──
+   实现口径（2026-09-15 B7.4 修正注释与选择器）：
+   ① `*` 把一切 animation/transition 压到 0.01ms、只跑 1 次 → 装饰性动画（卡fade、
+      骨架扫光、弹层入场、页面过渡）全部失效；
+   ② 再「白名单」恢复**功能性**无限旋转指示器 —— 这些是唯一必须保留动画的元素
+      （不转用户会以为卡死）。原实现用 [class*="spinner"] / [class*="loading"] 子串匹配，
+      会把 .app-loading__brand-name 这类**装饰性 fade-in** 也强制成 infinite 循环，
+      与①「禁用装饰性动画」的意图相反，故改为显式列举。
+   ③ .app-loading__progress-bar 不在此列：AppLoading.tsx 自判 reduced-motion 并停在 90%，
+      其 CSS 亦有独立 animation:none 分支，交由组件自理。 */
 @media (prefers-reduced-motion: reduce) {
-  /* 禁用装饰性动画，保留功能性动画（loading spinner 等） */
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* 恢复功能性动画（显式设置时长，避免 inherit 继承 0.01ms） */
+  /* 功能性无限旋转指示器白名单（显式设置时长，避免继承 0.01ms） */
   .spinning,
-  [class*="spinner"],
-  [class*="loading"] {
+  .checking-spinner,
+  .browse-loadmore-spinner,
+  .player-loading-spinner,
+  .playlist-query-spinner,
+  .up-channel-loading-icon {
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }

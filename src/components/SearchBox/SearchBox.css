@@ -255,7 +255,7 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   width: 100%;

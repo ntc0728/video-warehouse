@@ -233,7 +233,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 50;
+  z-index: var(--z-fixed);
   background-color: var(--color-surface);
   transition: background-color 0.4s var(--ease-standard);
   border-top: 1px solid var(--color-border-light);
@@ -253,7 +253,7 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-float);
   background: rgb(0 0 0 / 40%);
   animation: fadeIn 0.2s ease;
 }
@@ -262,7 +262,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   height: 100dvh;
   transform: translateX(-100%);
   transition: transform 0.25s var(--ease-standard);
@@ -311,7 +311,7 @@
     top: 0;
     right: 0;
     left: 0;
-    z-index: 55;
+    z-index: var(--z-fixed-header);
     border: none;
     border-radius: 0;
     background-color: var(--color-surface);

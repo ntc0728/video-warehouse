@@ -11,7 +11,7 @@
 .ptr-overlay {
   position: absolute;
   inset: 0;                /* 撑满可视区，使 top:50% 落到真正的垂直中点（而非 0 高盒子的 0） */
-  z-index: 50;              /* 高于内容，低于 StickyHeader（header 在 scroll-wrapper 之外） */
+  z-index: var(--z-fixed);              /* 高于内容，低于 StickyHeader（header 在 scroll-wrapper 之外） */
   overflow: visible;
   pointer-events: none;     /* 浮层不拦截任何触摸/点击 */
 }

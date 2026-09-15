@@ -3,7 +3,7 @@
   position: relative;
   /* 建立独立堆叠上下文，确保悬浮弹窗稳定盖在下方「匹配结果」网格之上，
      不被 DOM 中位于其后的兄弟元素（结果卡片背景）遮挡 */
-  z-index: 50;
+  z-index: var(--z-fixed);
   display: inline-block;
 }
 

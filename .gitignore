@@ -120,6 +120,10 @@ scripts/*.mjs
 # changelog 合并机制脚本：跨会话累积改动片段，push 前合并
 !scripts/changelog-draft.mjs
 !scripts/changelog-collect.mjs
+# 设计基线护栏：`pnpm run lint:design` 的执行体 + 基线快照，**必须入库**
+# （基线棘轮依赖提交在仓库里的 design-audit-baseline.json 才能跨机器生效）
+!scripts/design-audit.mjs
+!scripts/design-audit-baseline.json
 # 最小环境自检脚本：按需跑 `node scripts/setup.mjs`，纳入版本控制
 !scripts/setup.mjs
 # postinstall 依赖预打包包装：`pnpm install` 后自动执行，**必须入库**
