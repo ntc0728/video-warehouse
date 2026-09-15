@@ -39,8 +39,15 @@
 | `scripts/optimize-deps.mjs` | 脚本 | ✅ | postinstall 依赖预打包 |
 | `scripts/global-setup.ts` / `scripts/global-teardown.ts` | 脚本 | ✅ | 测试全局钩子 |
 | `scripts/fixtures/**` | 测试 fixtures | ✅ | mock 数据（含 HLS 流） |
+| `skills/**` | 协同 skills 归档 | ✅ | 本项目自研 skill（原始目录 + `project-skills.zip`），协作者解压即用；清单见下节 |
 
 > 其他 AI 工具规则（如 Windsurf 的 `.windsurfrules`、Trae 的 `.trae/rules/`）若项目使用，也应一并入库；其中 `.trae/` 当前在 `.gitignore` 中被忽略，如需共享需调整忽略规则或在 `docs/agents/` 下另存。
+
+> **本地记忆（`.workbuddy/memory/`）的提炼**：个人记忆层里「跨会话仍成立」的结论应提炼进 `docs/agents/*.md`
+> （如 CSS/布局/断点细则 → `css-layout-conventions.md`，播放器/跨页签/竞态/E2E 细则 → `runtime-conventions.md`），
+> **不得**为共享而入库 `.workbuddy/`（含个人 MEMORY.md / 每日日志）。
+> **协同 skills 归档**：本项目自研 skill 放 `skills/<name>/`，并生成 `skills/project-skills.zip`，
+> 协作者解压后放入自己的 `~/.workbuddy/skills/` 或项目 `.workbuddy/skills/` 即可复用。
 
 ---
 

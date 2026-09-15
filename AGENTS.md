@@ -25,6 +25,8 @@
 | 页面与路由 / Keep-Alive / 搜索传递 | [docs/agents/pages.md](docs/agents/pages.md) | 改页面、路由、导航时 |
 | 数据格式 / CMS 解析 / 领域术语 | [docs/agents/data-formats.md](docs/agents/data-formats.md) | 解析 vod_play_url、对接数据源时 |
 | 关键模式（Hero/RecordShell/Toast/回退链/过渡/TvMascot…） | [docs/agents/patterns.md](docs/agents/patterns.md) | 写组件、动画、播放器时 |
+| CSS / 布局 / 断点细则（断点宪法/流体 token/高度体系/列数梯度/CSS 陷阱/跑马灯/基线隔离法） | [docs/agents/css-layout-conventions.md](docs/agents/css-layout-conventions.md) | 改样式、布局、骨架、断点时 |
+| 运行时细则（播放器自愈/跨页签同步/reqSeqRef 竞态/E2E 断言/工具链陷阱） | [docs/agents/runtime-conventions.md](docs/agents/runtime-conventions.md) | 改播放器、跨页签、异步、测试、构建时 |
 | 测试依赖映射 / 快速跑法 / 增量测试 | [docs/agents/testing.md](docs/agents/testing.md) | 改完代码跑对应测试时 |
 | 文档同步协议 / 协同开发 / .gitignore | [docs/agents/docs-protocol.md](docs/agents/docs-protocol.md) | 完成改动同步文档时 |
 | 人机协作约定（UI/观感类必读） | [docs/agents/collaboration.md](docs/agents/collaboration.md) | UI/动画/布局任务前 |

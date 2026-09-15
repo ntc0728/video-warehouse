@@ -8,6 +8,8 @@
 | 页面与路由/Keep-Alive/搜索传递 | [pages.md](./pages.md) | 改页面、路由、导航、Keep-Alive 时 |
 | 数据格式/CMS 解析/领域术语 | [data-formats.md](./data-formats.md) | 解析 vod_play_url、对接数据源时 |
 | 关键模式（Hero/RecordShell/Toast/回退链/过渡/TvMascot…） | [patterns.md](./patterns.md) | 写组件、动画、播放器、卡片时 |
+| **CSS/布局/断点细则**（断点宪法/流体 token/高度体系/列数梯度/CSS 陷阱/跑马灯/基线隔离法/stylelint） | [css-layout-conventions.md](./css-layout-conventions.md) | 改样式、布局、骨架、断点、动画尺寸时 |
+| **运行时细则**（播放器自愈/跨页签同步/reqSeqRef 竞态/逻辑分页/E2E 断言/工具链陷阱） | [runtime-conventions.md](./runtime-conventions.md) | 改播放器、跨页签、异步、测试、构建时 |
 | 测试映射/快速跑法/增量测试 | [testing.md](./testing.md) | 改完代码跑对应测试时 |
 | 文档同步协议/协同/.gitignore | [docs-protocol.md](./docs-protocol.md) | 完成改动同步文档、处理冲突时 |
 | 人机协作约定（UI/观感类必读） | [collaboration.md](./collaboration.md) | UI/动画/布局任务前 |
