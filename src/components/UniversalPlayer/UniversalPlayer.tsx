@@ -203,7 +203,10 @@ export default function UniversalPlayer({
   const isMobileLayout = useIsMobileLayout();
   // 操作类提示的「移动端居中」仅针对真实移动设备（App / 真实手机 UA）：
   // 桌面浏览器窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast（与桌面一致）。
-  const isMobileDevice = isNativePlatform() || useIsRealPhone();
+  // Hook 必须无条件调用（rules-of-hooks）：isNativePlatform() 是常量级判定，
+  // 但写在 || 左侧会让 useIsRealPhone 在 App 端整条渲染周期缺席，Hook 链跨端不一致。
+  const realPhone = useIsRealPhone();
+  const isMobileDevice = isNativePlatform() || realPhone;
   // 严格「桌面 Web」判定：platform=desktop 且非真实移动设备（排除了原生 App / 真实手机 UA）。
   // 用于隐藏仅在触摸设备有意义的 UI：手势亮度/音量条、右侧 iptv-volume-popup 音量条。
   // 桌面浏览器即使把窗口调窄（isMobileLayout 命中）也属于 desktop web，不应出现这些触摸向 UI。

@@ -132,7 +132,7 @@ export function aggregateCategoryHeat(items: TMDBVideoItem[]): CategoryHeatBucke
 // ── 缓存（面板数据 + genre list；Keep-Alive 下二次展开零请求）─────────
 const panelCache = new Map<string, TMDBVideoItem[]>();
 const panelInflight = new Map<string, Promise<TMDBVideoItem[]>>();
-let genreListCache: Partial<Record<'movie' | 'tv', WideSubCategory[]>> = {};
+const genreListCache: Partial<Record<'movie' | 'tv', WideSubCategory[]>> = {};
 
 /** 电影/剧集子分类 = 全量 genre list（首 chip「全部」= 当日 trending） */
 export async function getGenreSubcategories(type: 'movie' | 'tv'): Promise<WideSubCategory[]> {

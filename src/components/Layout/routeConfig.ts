@@ -20,6 +20,7 @@ function lazyWithRetry(factory: () => Promise<{ default: React.ComponentType<any
   // 同一个 Promise。这样 main.tsx 在 render 前 await 该 Promise 后，React.lazy 拿到的是
   // 已 resolved 的同一实例 → Suspense 直接同步渲染，绝不闪 fallback（消除首屏双重 AppLoading）。
   // 若不缓存，React.lazy 会另起一个全新 pending Promise，await 也救不了首屏 fallback。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let loadPromise: Promise<{ default: React.ComponentType<any> }> | null = null;
   const load = () => {
     if (!loadPromise) {

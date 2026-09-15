@@ -138,7 +138,7 @@ export function useBackdropLoader(
 
     // 每个 videoId 找到最新一条的索引
     const targetIdxByVideoId = new Map<string, number>();
-    let latestAtByVideoId = new Map<string, number>();
+    const latestAtByVideoId = new Map<string, number>();
     storeHistory.forEach((h, i) => {
       const cur = latestAtByVideoId.get(h.videoId);
       if (cur === undefined || (h.updatedAt ?? 0) > cur) {

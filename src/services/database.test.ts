@@ -29,11 +29,22 @@ beforeEach(async () => {
   });
 });
 
+/** 低层 IDBDatabase 视图：测试需要绕过 idb 包装层的归一化，直接断言原始 API 形状。 */
+interface RawDB {
+  transaction(store: string, mode: 'readwrite'): {
+    store: { put(value: unknown): Promise<unknown> };
+    done: Promise<unknown>;
+  };
+  getAll(store: string): Promise<unknown[]>;
+  get(store: string, key: string): Promise<unknown>;
+  close(): void;
+}
+
 /** 用独立连接绕过写入层归一化，直接播种「旧 bug」形态的原始数据。
  *  先调 getCollections 让模块按 DB_VERSION 建好库（删库后裸 openDB 会建出 v1 空库）。 */
 async function seedRawCollections(rows: Array<{ id: string; videoId: string; addedAt: number; title?: string }>): Promise<void> {
   await getCollections();
-  const raw = await openDB('video-warehouse') as any;
+  const raw = (await openDB('video-warehouse')) as unknown as RawDB;
   const tx = raw.transaction('collections', 'readwrite');
   for (const r of rows) await tx.store.put(r);
   await tx.done;
@@ -42,7 +53,7 @@ async function seedRawCollections(rows: Array<{ id: string; videoId: string; add
 
 async function seedRawHistory(rows: Array<{ id: string; videoId: string; progress: number; updatedAt: number }>): Promise<void> {
   await getCollections();
-  const raw = await openDB('video-warehouse') as any;
+  const raw = (await openDB('video-warehouse')) as unknown as RawDB;
   const tx = raw.transaction('history', 'readwrite');
   for (const r of rows) await tx.store.put(r);
   await tx.done;
@@ -50,14 +61,14 @@ async function seedRawHistory(rows: Array<{ id: string; videoId: string; progres
 }
 
 async function rawCollectionsCount(): Promise<number> {
-  const raw = await openDB('video-warehouse') as any;
+  const raw = (await openDB('video-warehouse')) as unknown as RawDB;
   const all = await raw.getAll('collections');
   raw.close();
   return all.length;
 }
 
 async function rawHistoryGet(id: string): Promise<HistoryRecord | undefined> {
-  const raw = await openDB('video-warehouse') as any;
+  const raw = (await openDB('video-warehouse')) as unknown as RawDB;
   const cur = await raw.get('history', id);
   raw.close();
   return cur as HistoryRecord | undefined;

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useCustomNavigate } from '@/lib/navigation';
 import Modal from '@/components/ui/Modal';
 import './CmsSourceBlockedModal.css';
 
@@ -13,7 +13,7 @@ interface CmsSourceBlockedModalProps {
  * 历史/收藏页点击未启用 CMS 源的记录时弹出，引导用户去设置启用。
  */
 export default function CmsSourceBlockedModal({ visible, sourceName, onClose }: CmsSourceBlockedModalProps) {
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate();
 
   return (
     <Modal visible={visible} title="视频源未启用" onClose={onClose}>
