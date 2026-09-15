@@ -1241,9 +1241,21 @@
   /* 面板栏：第二列宽度固定；align-self: stretch 让侧栏自动填满 grid row 高度，
      与播放器同高，不再需要 height:100% 循环依赖。 */
   html:not([data-device="app"]) .player-sidebar {
+    display: grid;
     flex: 0 0 var(--player-sidebar-w, var(--layout-sidebar-width));
+    grid-template-columns: minmax(0, 1fr);
+    /* 行模板由 PlayerSidebar 按各面板展开态注入（值集合：1fr / auto） */
+    grid-template-rows: var(--panel-rows, 1fr);
     grid-column: 2;
+    gap: var(--space-sm);
     min-width: var(--player-sidebar-min-w, 220px);
+    /* 高度契约：height:0 → 侧栏（含骨架/面板内容）不参与 .player-main 行高计算，
+       行高只由播放器 16:9 决定；行高确定后 min-height:100% 撑满 == 与播放器同高。
+       旧 height:100% 在不定行高下退化为内容高 → 骨架内容（14 行扫光块）撑出
+       高于播放器的行 → 骨架侧栏比播放器高一截。overflow:hidden 裁掉超出部分。 */
+    height: 0;
+    min-height: 100%;
+    overflow: hidden;
   }
 
   html:not([data-device="app"]) .player-panel-arrow {
@@ -1251,6 +1263,7 @@
   }
 
   html:not([data-device="app"]) .player-panel-header {
+    min-width: 0;
     pointer-events: auto;
     cursor: pointer;
   }
@@ -1264,20 +1277,6 @@
    （展开面板行 1fr、折叠面板行 auto=只头部）：
    · grid 容器高度恒定，fr 只在恒定高度内分配 → 无内容↔容器互耦 → 无过冲；
    · 折叠动画由面板 body 的 max-height 过渡驱动（demo 方式），sidebar 行只管布局分配；
-   · header 顶部由上方 auto 行决定，展开时上方行不变 → header 纹丝不动。 */
-  html:not([data-device="app"]) .player-sidebar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    /* 行模板由 PlayerSidebar 按各面板展开态注入（值集合：1fr / auto） */
-    grid-template-rows: var(--panel-rows, 1fr);
-    gap: var(--space-sm);
-    /* 高度契约：height:0 → 侧栏（含骨架/面板内容）不参与 .player-main 行高计算，
-       行高只由播放器 16:9 决定；行高确定后 min-height:100% 撑满 == 与播放器同高。
-       旧 height:100% 在不定行高下退化为内容高 → 骨架内容（14 行扫光块）撑出
-       高于播放器的行 → 骨架侧栏比播放器高一截。overflow:hidden 裁掉超出部分。 */
-    height: 0;
-    min-height: 100%;
-    overflow: hidden;
   }
 
   /* 所有面板收起时：sidebar 高度由各面板 header 内容决定，不再撑满播放器高度。
@@ -1308,9 +1307,6 @@
     grid-template-rows: auto auto;
   }
 
-  html:not([data-device="app"]) .player-panel-header {
-    min-width: 0;
-  }
 
   html:not([data-device="app"]) .player-panel-body {
     min-height: 0;

@@ -270,8 +270,10 @@ html {
    说明：thumb 默认极淡色，hover/active 渐深以提供可发现性。
    横滚容器通过下方白名单例外永久隐藏。 */
 * {
+  /* 原独立 `* {}` 空块（仅注释）已由 D7 合并至此 */
   /* scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-color) transparent; */
+  -webkit-tap-highlight-color: transparent;
 }
 *::-webkit-scrollbar {
   width: var(--space-xs);
@@ -413,9 +415,6 @@ body {
    ⚠️ 2026-09-15 D2（A2）：只保留 -webkit- 形式。该属性**从未进入标准**，
    无前缀的 `tap-highlight-color` 是死代码（stylelint property-no-unknown 已报出）。
    Chrome/Safari/WebView 全部只认 -webkit-tap-highlight-color。 */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
 
 /* 主题切换（2026-08-04 终修）：完全瞬切——transition:none。
    根因：此前 theme-transitioning 对 `*` 全量元素做颜色过渡（即使仅 3 属性、200ms），
@@ -921,6 +920,8 @@ main {
 
 :root {
   --iptv-cols: 2;
+  /* 与 --iptv-cols 同档兜底；D7 由独立 :root 块合并至此（块间媒体查询只覆盖 --iptv-cols） */
+  --iptv-page-cols: 2;
 }
 
 @media (width >= 768px) and (width <= 1023px) {
@@ -949,9 +950,6 @@ main {
    桌面端（IPTV 页新增 176px 左栏吃掉内容区宽度）降一档：
    1024–1439 → 3 列、≥1440 → 4 列；≤767 → 2、768–1023 → 3（与 --iptv-cols 低档一致）。
    App 端沿用 --iptv-cols 低档（not(app) 排除，:root 兜底 2）；TV 端恒 5（文件末尾覆盖）。 */
-:root {
-  --iptv-page-cols: 2;
-}
 
 @media (width >= 768px) and (width <= 1023px) {
   html:not([data-device="app"]) {

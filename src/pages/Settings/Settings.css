@@ -1793,7 +1793,7 @@ body.skin-transitioning .skin-btn.active {
   font-weight: 700;
 }
 .cl-p {
-  margin: var(--space-2xs) 0;
+  margin: var(--space-xs) 0;
 }
 .cl-note {
   margin: var(--space-xs) 0;
@@ -1802,7 +1802,6 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
 }
-.cl-p { margin: var(--space-xs) 0; }
 
 /* ============================================================
    方案 F：设置项「紧凑双行卡」卡片化（桌面端 ≥768px）

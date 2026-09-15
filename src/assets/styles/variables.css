@@ -1213,6 +1213,7 @@ html[data-device="tv"] {
      1920(pad80) 480 / 986，≥2560 524 / 1075）→ banner 宽高比恒 ~1.59:1、43:56 恒定。
      min(100vw, 2200px) 与 --layout-content-max-width 的 2200 硬上限契约对齐。
    ═══════════════════════════════════════════════════════════════════════════ */
+/* stylelint-disable-next-line no-duplicate-selectors -- 分节追加：本块是「布局尺寸契约」独立小节（见上方 banner），与顶部基础 token 块刻意分离；已核实 8 条 token 与前块零重叠，D7 甄别为分节追加而非真冗余，不做合并 */
 :root {
   --page-pad-x: var(--space-lg);
 
