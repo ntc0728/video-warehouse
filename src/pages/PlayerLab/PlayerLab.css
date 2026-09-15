@@ -262,13 +262,13 @@
 }
 .pl-progress:hover .pl-progress-hit,
 .pl-progress--dragging .pl-progress-hit { height: 7px; }
-/* 扩展热区到 44px 触摸目标 */
+/* 扩展热区到触摸目标下限（走 --tap-target token，勿写死 44px） */
 .pl-progress::before {
   content: '';
   position: absolute;
   left: 0; right: 0;
   top: 0; bottom: 0;
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 .pl-progress-track { position: relative; height: 100%; }
 .pl-progress-buffered {
