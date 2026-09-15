@@ -170,7 +170,10 @@ export default function LazyImage({
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const prevSrcRef = useRef(src);
   // 交叉淡入过渡定时器（提交 pending → committed 用），切换更快时用于取消在途过渡
-  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* 显式声明为 number：@types/node 会把全局 setTimeout 声明成返回 NodeJS.Timeout，
+     与下方 window.setTimeout 的返回值（number）不匹配（TS2322，构建阻断）。
+     锚定到浏览器侧语义即可，无需依赖全局类型。 */
+  const transitionTimerRef = useRef<number | null>(null);
   // 上次 src 变化时间戳：用于识别「快速连续切换」并跳过淡入动画避免叠加闪烁
   const lastCrossfadeRef = useRef(0);
 
