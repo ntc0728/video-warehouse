@@ -90,6 +90,21 @@
     "vite-plugin-compression": "^0.5.1",
     "vitest": "^4.1.9"
   },
+  "browserslist": {
+    "production": [
+      "chrome >= 87",
+      "and_chr >= 87",
+      "edge >= 88",
+      "firefox >= 78",
+      "safari >= 14",
+      "ios_saf >= 14"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",

@@ -330,6 +330,12 @@
   --comp-input-height-header: clamp(36px, 34.832px + 0.3108vw, 42px);
   --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
+  /* 榜单页（Chart）封面 / 骨架尺寸（2026-09-15 D0 补供给）：此前在移动端 media query
+     与 html[data-device="app"] 块内直接写 px，被 value 禁令命中且无 token 可换。
+     竖版海报 112×168（2:3），排名列 32。两处共用同一组 token，避免双份字面量漂移。 */
+  --comp-chart-cover-w: 112px;
+  --comp-chart-cover-h: 168px;
+  --comp-chart-rank-w:  32px;
   /* Switch 开关 */
   --switch-track-height: calc(clamp(18px, 14.183px + 1.018vw, 22px) * var(--ui-scale)); /* 18→24 轨道高度 */
   --switch-track-width: calc(clamp(32px, 21.822px + 2.714vw, 42.667px) * var(--ui-scale)); /* 32→48 轨道宽度 */
@@ -735,15 +741,24 @@
    现改为 1920→2560 线性连续：1.00 → 1.08（斜率 0.000125/px），≥2560 由
    clamp 上限冻结 1.08（与旧 2560 档终点完全一致）。
 
-   数学：--ui-scale = 0.76 + 0.000125 × V（V = 视口宽 px 数值）
+   数学：--ui-scale = 0.76 + V / 8000（V = 视口宽 px 数值）
      1920 → 1.000 │ 2048 → 1.016 │ 2200 → 1.035 │ 2400 → 1.060 │ 2560 → 1.080
      ≥2560 → clamp 上限 1.08（4K 同样 1.08，不再累加）
-   单位剥离技巧：tan(atan2(100vw, 1px)) = 视口宽的 px 数值（无单位 <number>），
-   属 CSS Values 4 标准行为；消费端 calc(x * var(--ui-scale)) 一行不用改。
+    单位剥离技巧：tan(atan2(100vw, 1px)) = 视口宽的 px 数值（无单位 <number>），
+    属 CSS Values 4 标准行为；消费端 calc(x * var(--ui-scale)) 一行不用改。
+    ⚠️ 2026-09-15 D2：斜率原写作 `0.000125 * V`，0.000125 是 6 位小数，会触发
+    stylelint `number-max-precision`（上限 5）。等值改写为 `V / 8000`（8000 为整数，
+    1920/8000 = 0.24 与 0.000125×1920 逐位相同），既清违规又不牺牲精度。
 
    降级安全：不支持 tan()/atan2() 的浏览器（Chrome <111 / 老 Android WebView）
-   在解析阶段即丢弃第二条声明，沿用第一条 --ui-scale: 1 —— 与改动前逐像素
-   一致，零回归。
+   由外层 @supports 特性检测拦截，整块不应用 → --ui-scale 保持 :root 默认值 1，
+   与改动前逐像素一致，零回归。
+   ⚠️ 2026-09-15 D2 修正（A1）：此前写作同一声明块内两条 --ui-scale（先 1 后 clamp）
+   企图做「表达式解析失败则回退」。但 CSS 自定义属性在同一声明块内**后者无条件
+   覆盖**前者——不存在「上一条兜底」的语义，所谓静态回退从未生效
+   （stylelint declaration-block-no-duplicate-custom-properties 已报出）。
+   正解是 @supports 分流。与 B7 挖出的 .stylelintrc.json 重复 key 属同一
+   「静默失效」bug 家族：不报错、不崩溃，只是没按意图工作。
 
    契约（沿用 U-1）：
    - resolution < 1.5dppx：系统缩放 ≥150% 的高分屏 CSS px 密度已足够，不补偿；
@@ -751,11 +766,11 @@
    - 手动档（AppSettings.uiScale 内联，AppLayout.tsx:137）始终最高优先；
    - R3 契约 token 不乘 --ui-scale → 不受影响。
    ═══════════════════════════════════════════════════════════════════════════ */
-@media (width >= 1920px) and (resolution < 1.5dppx) {
-  html:not([data-device="app"]):not([data-device="tv"]) {
-    /* 静态回退：见上方「降级安全」说明，勿删 */
-    --ui-scale: 1;
-    --ui-scale: clamp(1, calc(0.76 + 0.000125 * tan(atan2(100vw, 1px))), 1.08);
+@supports (width: calc(1px * tan(atan2(1, 1)))) {
+  @media (width >= 1920px) and (resolution < 1.5dppx) {
+    html:not([data-device="app"]):not([data-device="tv"]) {
+      --ui-scale: clamp(1, calc(0.76 + tan(atan2(100vw, 1px)) / 8000), 1.08);
+    }
   }
 }
 
@@ -916,55 +931,55 @@
   --dot-gap:      clamp(3px, 0.1563vw, 6px);    /* 3→6   圆点间距（=桌面 3→6，4K=2×） */
 
   /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A=桌面冻结值、4K=2A。 */
-  --space-sm:  clamp(0.75rem, 0.625vw, 1.5rem);   /* 12→24  */
-  --space-md:  clamp(1.125rem, 0.9375vw, 2.25rem);     /* 18→36 */
-  --space-lg:  clamp(1.75rem, 1.4583vw, 3.5rem);   /* 28→56 */
-  --space-xl:  clamp(2.5rem, 2.0833vw, 5rem);    /* 40→80 */
-  --space-2xl: clamp(3.5rem, 2.9167vw, 7rem);          /* 56→112 */
-  --space-3xl: clamp(5rem, 4.1667vw, 10rem);    /* 80→160 */
+  --space-sm:  clamp(12px, 0.625vw, 24px);   /* 12→24  */
+  --space-md:  clamp(18px, 0.9375vw, 36px);     /* 18→36 */
+  --space-lg:  clamp(28px, 1.4583vw, 56px);   /* 28→56 */
+  --space-xl:  clamp(40px, 2.0833vw, 80px);    /* 40→80 */
+  --space-2xl: clamp(56px, 2.9167vw, 112px);          /* 56→112 */
+  --space-3xl: clamp(80px, 4.1667vw, 160px);    /* 80→160 */
 
   /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 预设 0/5/10/15/20，单位 vw/vh）
      写入 <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值
      （与 useSettingsStore 的 tvOverscan 默认 5 对齐 —— 2026-09-15 B7.4 修正，原写 3 不一致）。 */
   /* 间距补全（小档，TV 基数=桌面冻结值，4K=2×） */
-  --space-3xs:     clamp(0.125rem, 0.1042vw, 0.25rem);   /* 2→4     (桌面 2, 4K=4) */
-  --space-2xs:     clamp(0.1875rem, 0.1563vw, 0.375rem); /* 3→6     (桌面 3, 4K=6) */
-  --space-xs:      clamp(0.375rem, 0.3125vw, 0.75rem);   /* 6→12    (桌面 6, 4K=12) */
-  --space-xs-plus: clamp(0.5rem, 0.4167vw, 1rem);        /* 8→16    (桌面 8, 4K=16) */
+  --space-3xs:     clamp(2px, 0.1042vw, 4px);   /* 2→4     (桌面 2, 4K=4) */
+  --space-2xs:     clamp(3px, 0.1563vw, 6px); /* 3→6     (桌面 3, 4K=6) */
+  --space-xs:      clamp(6px, 0.3125vw, 12px);   /* 6→12    (桌面 6, 4K=12) */
+  --space-xs-plus: clamp(8px, 0.4167vw, 16px);        /* 8→16    (桌面 8, 4K=16) */
 
   /* ── Component Sizes（TV 基数=桌面冻结值，4K=2×，统一 clamp(A, (A/19.2)vw, 2A)）── */
-  --comp-btn-min-height: clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
-  --comp-tab-height:     clamp(2.75rem, 2.2917vw, 5.5rem);     /* 44→88   (桌面44, 4K=88) */
-  --comp-btn-min-width:  clamp(3.75rem, 3.125vw, 7.5rem);      /* 60→120  (桌面60, 4K=120) */
-  --comp-input-height:   clamp(3.625rem, 3.0208vw, 7.25rem);   /* 58→116 (TV 自有契约，与桌面 40→48 解耦；TV 导航栏 200px 级) */
-  --comp-input-min-w:    clamp(18.75rem, 15.625vw, 37.5rem);   /* 300→600 (桌面300, 4K=600) */
-  --comp-thumb-size:     clamp(1.75rem, 1.4583vw, 3.5rem);     /* 28→56   (桌面28, 4K=56) */
-  --switch-track-height: clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
-  --switch-track-width:  clamp(3rem, 2.5vw, 6rem);             /* 48→96   (桌面48, 4K=96) */
-  --switch-thumb-size:   clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
-  --switch-thumb-offset: clamp(1.5rem, 1.25vw, 3rem);          /* 24→48   (桌面24, 4K=48) */
-  --vol-track-width:     clamp(0.25rem, 0.2083vw, 0.5rem);     /* 4→8     (桌面4, 4K=8) */
-  --vol-track-radius:    clamp(0.125rem, 0.1042vw, 0.25rem);   /* 2→4     (桌面2, 4K=4) */
-  --radio-size:          clamp(1.75rem, 1.4583vw, 3.5rem);     /* 28→56   (桌面28, 4K=56) */
-  --radio-dot-size:      clamp(0.875rem, 0.7292vw, 1.75rem);   /* 14→28   (桌面14, 4K=28) */
-  --badge-size:          clamp(1.375rem, 1.1458vw, 2.75rem);   /* 22→44   (桌面22, 4K=44) */
+  --comp-btn-min-height: clamp(60px, 3.125vw, 120px);      /* 60→120  (桌面60, 4K=120) */
+  --comp-tab-height:     clamp(44px, 2.2917vw, 88px);     /* 44→88   (桌面44, 4K=88) */
+  --comp-btn-min-width:  clamp(60px, 3.125vw, 120px);      /* 60→120  (桌面60, 4K=120) */
+  --comp-input-height:   clamp(58px, 3.0208vw, 116px);   /* 58→116 (TV 自有契约，与桌面 40→48 解耦；TV 导航栏 200px 级) */
+  --comp-input-min-w:    clamp(300px, 15.625vw, 600px);   /* 300→600 (桌面300, 4K=600) */
+  --comp-thumb-size:     clamp(28px, 1.4583vw, 56px);     /* 28→56   (桌面28, 4K=56) */
+  --switch-track-height: clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
+  --switch-track-width:  clamp(48px, 2.5vw, 96px);             /* 48→96   (桌面48, 4K=96) */
+  --switch-thumb-size:   clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
+  --switch-thumb-offset: clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
+  --vol-track-width:     clamp(4px, 0.2083vw, 8px);     /* 4→8     (桌面4, 4K=8) */
+  --vol-track-radius:    clamp(2px, 0.1042vw, 4px);   /* 2→4     (桌面2, 4K=4) */
+  --radio-size:          clamp(28px, 1.4583vw, 56px);     /* 28→56   (桌面28, 4K=56) */
+  --radio-dot-size:      clamp(14px, 0.7292vw, 28px);   /* 14→28   (桌面14, 4K=28) */
+  --badge-size:          clamp(22px, 1.1458vw, 44px);   /* 22→44   (桌面22, 4K=44) */
 
   /* ── Border Radius（TV 基数=桌面冻结值，4K=2×）─────────────────────────────── */
-  --radius-sm: clamp(0.3125rem, 0.2604vw, 0.625rem);  /* 5→10   (桌面5, 4K=10) */
-  --radius-md: clamp(0.625rem, 0.5208vw, 1.25rem);    /* 10→20  (桌面10, 4K=20) */
-  --radius-lg: clamp(1.125rem, 0.9375vw, 2.25rem);    /* 18→36  (桌面18, 4K=36) */
+  --radius-sm: clamp(5px, 0.2604vw, 10px);  /* 5→10   (桌面5, 4K=10) */
+  --radius-md: clamp(10px, 0.5208vw, 20px);    /* 10→20  (桌面10, 4K=20) */
+  --radius-lg: clamp(18px, 0.9375vw, 36px);    /* 18→36  (桌面18, 4K=36) */
 
   /* ── Grid Gap（TV 基数=桌面冻结值，4K=2×）────────────────────────────────────── */
-  --grid-gap: clamp(1.5rem, 1.25vw, 3rem);  /* 24→48 (桌面24, 4K=48) */
+  --grid-gap: clamp(24px, 1.25vw, 48px);  /* 24→48 (桌面24, 4K=48) */
 
   --safe-area-x: 5vw;
   --safe-area-y: 5vh;
 
   /* A. 导航栏高度：TV 基线=桌面 76px（1.00× 桌面），4K=2×=152px，统一 clamp(A,(A/19.2)vw,2A)。 */
-  --header-height: clamp(4.75rem, 0.2474vw, 9.5rem);   /* 76→152 (桌面76, 4K=152) */
+  --header-height: clamp(76px, 3.9583vw, 152px);   /* 76→152 (桌面76, 4K=152) */
   /* B. Logo：TV 基线=桌面 64px（1.00× 桌面），4K=2×=128px，统一 clamp(A,(A/19.2)vw,2A)。 */
-  --layout-logo-size: clamp(4rem, 0.2083vw, 8rem);     /* 64→128 (桌面64, 4K=128) */
+  --layout-logo-size: clamp(64px, 3.3333vw, 128px);     /* 64→128 (桌面64, 4K=128) */
   /* C. 品牌文字（2026-09-15 B5）：改 px 书写 —— 原 rem 式在 TV 根字号 15px 下渲染为
      22.5→45px（文档值 ≠ 实测值）。现 1080p=24（与改前一致，零回归）、4K=48。 */
   --layout-brand-font-size: clamp(24px, 1.25vw, 48px);
@@ -973,12 +988,14 @@
      关键修复：SearchBox TV 原用 calc(var(--comp-input-height) * 1.4)，而基础
      --comp-input-height 自身几乎不随 vw 放大（40→58px），导致大屏导航栏已 200px 高、
      搜索框却仍 ~81px → 导航栏显空旷、"高度大出一截"。改为跟随同一比例化曲线修复该错乱。 */
-  --comp-input-height-tv: clamp(3.625rem, 3.0208vw, 7.25rem);  /* 58→116 (桌面58, 4K=116，与 comp-input-height 一致) */
+  --comp-input-height-tv: clamp(58px, 3.0208vw, 116px);  /* 58→116 (桌面58, 4K=116，与 comp-input-height 一致) */
 
   /* E. 搜索下拉最大高度：TV 比例化标准契约 clamp(A,(A/19.2)vw,2A)，
      1080p 基线=A=桌面 374px（与桌面 1080p 下拉等高）、4K=2×=748px。
-     历史反例：旧版 TV 用 432→876（A≠桌面 1080p、且 2A=864≠876，不满足契约），现修正为标准形态。 */
-  --layout-dropdown-max-h: clamp(23.375rem, 19.5vw, 46.75rem);  /* 374→748 (桌面374, 4K=748) */
+     历史反例：旧版 TV 用 432→876（A≠桌面 1080p、且 2A=864≠876，不满足契约），现修正为标准形态。
+     ⚠️ D2 修复：旧 rem 式斜率 19.5vw 反算 A = 374.4（契约应为 374/19.2 = 19.4792vw），
+     实测 1080p 374.39 / 4K 748.80 —— 各偏 +0.39 / +0.80px。 */
+  --layout-dropdown-max-h: clamp(374px, 19.4792vw, 748px);  /* 374→748 (桌面374, 4K=748) */
 
 
 
@@ -1085,7 +1102,7 @@
     --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */
     --layout-epg-max-height:      clamp(36rem,     30vw,     72rem);     /* 576→1152px（配合 60vh 上限） */
     --layout-bottomsheet-max-h:   clamp(50rem,     41.67vw,  100rem);    /* 800→1600px */
-    --layout-dropdown-max-h:      clamp(23.375rem, 19.5vw,  46.75rem);   /* 374→748 (桌面374, 4K=748) */
+    --layout-dropdown-max-h:      clamp(374px, 19.4792vw, 748px);   /* 374→748 (桌面374, 4K=748) */
 
   }
 }

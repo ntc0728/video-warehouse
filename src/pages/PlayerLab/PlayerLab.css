@@ -1,6 +1,11 @@
 /**
  * 播放器整改 Demo 样式
  * 播放器本体采用深色表面（与主流播放器一致），页面容器走浅色主题。
+ *
+ * ⚠️ 调研 demo 沙盒：本文件不参与设计规范验收（routeConfig.ts:62「不进入正式导航」）。
+ *   - 已被 `.stylelintrc.json` 的 ignoreFiles 与 `scripts/design-audit.mjs` 的 EXCLUDE_DIRS 排除；
+ *   - 色板刻意偏离正式规范（B 站青蓝 #00aeec / TDesign 灰阶），属预期，不要"顺手整改"；
+ *   - 若将来转正，需先移除两处排除并补齐 BASELINE 规范。
  */
 
 .pl-page {

@@ -160,3 +160,6 @@ ehthumbs.db
 .pw-shots-final/
 .pw-shots/
 .pw-*.mjs
+
+# 一次性分析/探针脚本与中间产物（临时，不入库）
+.tmp-*
