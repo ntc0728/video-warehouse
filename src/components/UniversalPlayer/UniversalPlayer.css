@@ -1167,6 +1167,14 @@
   width: var(--layout-episode-panel-w-alt);
 }
 
+/* 一级栏占面板比例（2026-09-15 B5）：TV 组项字号对齐 10-foot 基线后用 --text-lg（1080p=22px），
+   --layout-channel-group-w 由 162 → 208（4K 416），占 TV 面板基宽 440/880 的 47.3% ——
+   超过通用规则 .up-channel-groups 的 max-width:44%（1080p 下会钳到 193.6px、仍截断）。
+   此处放开到 52%：一级栏 208、二级仍剩 232px（4K 416 / 463px），足够容纳频道名。 */
+.up-platform-tv .up-channel-groups {
+  max-width: 52%;
+}
+
 .up-platform-tv .up-channel-group-item {
   min-height: var(--space-3xl);
   padding: var(--space-md) var(--space-md);
