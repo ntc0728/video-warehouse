@@ -410,10 +410,11 @@ body {
 
 /* 全局去除移动端点击的灰色高亮方块（原生 web 廉价感来源之一）；
    改由 index.css 已有的 :active 内容缩放反馈提供「按下」感知。
-   -webkit- 前缀覆盖 iOS Safari/WebView，标准属性覆盖其余。 */
+   ⚠️ 2026-09-15 D2（A2）：只保留 -webkit- 形式。该属性**从未进入标准**，
+   无前缀的 `tap-highlight-color` 是死代码（stylelint property-no-unknown 已报出）。
+   Chrome/Safari/WebView 全部只认 -webkit-tap-highlight-color。 */
 * {
   -webkit-tap-highlight-color: transparent;
-  tap-highlight-color: transparent;
 }
 
 /* 主题切换（2026-08-04 终修）：完全瞬切——transition:none。

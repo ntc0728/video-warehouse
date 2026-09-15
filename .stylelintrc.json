@@ -81,6 +81,13 @@
     ],
     "value-keyword-case": null,
 
+    "number-max-precision": [
+      5,
+      {
+        "message": "数值精度上限 5 位（stylelint 官方默认）。流体 clamp 公式的分段系数天然是 5 位（如 0.52289），收紧到 4 位只会制造无意义的违规。"
+      }
+    ],
+
     "order/order": [
       [
         "custom-properties",
@@ -251,6 +258,21 @@
     "node_modules/**/*",
     "dist/**/*",
     "build/**/*",
-    "**/*.min.css"
+    "**/*.min.css",
+    "src/pages/PlayerLab/**",
+    "src/pages/PlayerMobileLab/**"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/assets/styles/variables.css",
+        "src/assets/styles/skins.css"
+      ],
+      "rules": {
+        "declaration-property-unit-disallowed-list": null,
+        "declaration-property-value-disallowed-list": null,
+        "number-max-precision": null
+      }
+    }
   ]
 }

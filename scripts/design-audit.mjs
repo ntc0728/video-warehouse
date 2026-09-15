@@ -39,6 +39,18 @@ const TOKEN_FILES = [
   'src/assets/styles/skins.css',
 ];
 
+/**
+ * 沙盒（调研 demo）目录：排除出规范验收范围，与 .stylelintrc.json 的 ignoreFiles 同源。
+ *
+ * PlayerLab / PlayerMobileLab 在 routeConfig.ts:62,64 明确标注「不进入正式导航」，
+ * 其存在价值是验证播放器交互方向，色板刻意偏离正式规范（B 站青蓝 / TDesign 灰阶）。
+ * 行业通用做法是**隔离**而非整改——转正时再补齐规范（排除 ≠ 豁免债务）。
+ */
+const EXCLUDE_DIRS = [
+  'src/pages/PlayerLab',
+  'src/pages/PlayerMobileLab',
+];
+
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
@@ -82,11 +94,13 @@ function codeLines(src) {
   return out;
 }
 
-const files = walk(SRC).map((abs) => ({
-  abs,
-  rel: path.relative(ROOT, abs).replace(/\\/g, '/'),
-  code: codeLines(fs.readFileSync(abs, 'utf8')),
-}));
+const files = walk(SRC)
+  .map((abs) => ({
+    abs,
+    rel: path.relative(ROOT, abs).replace(/\\/g, '/'),
+  }))
+  .filter((f) => !EXCLUDE_DIRS.some((d) => f.rel === d || f.rel.startsWith(d + '/')))
+  .map((f) => ({ ...f, code: codeLines(fs.readFileSync(f.abs, 'utf8')) }));
 
 /** 语义色 fill 档 token 名（不得直接当文字色）。 */
 const FILL_ONLY = ['success', 'warning', 'error', 'info'];
