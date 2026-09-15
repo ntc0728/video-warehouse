@@ -77,7 +77,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-14：132 条 / 18 个 spec**；2026-09-10 晚为 127 条、同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**、**BROWSE-090~093（逻辑分页）与 BROWSE-094/095（分页器渲染门控）**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-15：145 条 / 19 个 spec**（+ `boot-splash.spec.ts` 13 条）；2026-09-14：132 条 / 18 个 spec；2026-09-10 晚为 127 条、同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**、**BROWSE-090~093（逻辑分页）与 BROWSE-094/095（分页器渲染门控）**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 >
 > ⚠️ **表中「test 数」列的数字多为 2026-09 之前的历史快照，与 `--list` 枚举数口径不一致**（例如 home 列 46、实际 13 个 `test()`）。**需要精确数字时以 `--list` 为准，别直接引用本列**：
 > ```bash
@@ -159,6 +159,18 @@ pnpm exec playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/de
 pnpm exec playwright test
 ```
 
+
+> **无 `.env.local` 时的既有失败基线**（2026-09-15 实测，worktree @ c114c867 对照同条件）：
+本机无 `.env.local`（global-setup 写入占位 TMDB token / 占位代理地址）且无外网，
+下列用例**环境性必败**，非代码回归：`BROWSE-010/012/013/014`、`BROWSE-081/082`、`DETAIL-060/062`、
+`IPTVP-023`、`HIS-050/051`（基线单车复跑 3/3 全败），以及 `smoke-player-fs-mobile` 全 7 条（依赖真实流）。
+另有 2 条**并发 flaky**（全量 `--workers=2` 时挂、单跑即过）：`BROWSE-094`、`BROWSE-095`。
+判定回归的正确姿势：`worktree` 拉改动前 commit + 同端口/同 GOOGLE chrome 通道复跑对照，别只看单端失败数。
+
+**跑不动时先看这条**（2026-09-15）：若报 `page.goto: Page crashed`（默认跑 `chrome-headless-shell`，
+> 部分环境加载本应用会以 0xC0000409 整体崩出）——**别去改 GPU 参数**，直接
+> `PW_BROWSER_CHANNEL=chromium npx playwright test` 切到完整 chromium 的 headless=new。
+> 详情与「`chromium.launch()` 不继承 `use.channel`」的坑见 `runtime-conventions.md` §7。
 
 ### 增量测试（推荐日常使用）
 

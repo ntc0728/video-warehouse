@@ -95,7 +95,10 @@ const IPTV_STORE = {
 };
 
 export default async function globalSetup(_config: FullConfig) {
-  const browser = await chromium.launch();
+  // 与 playwright.config.ts 的 use.channel 同源：受限环境（chrome-headless-shell
+  // 以 0xC0000409 崩溃）下用 PW_BROWSER_CHANNEL=chromium 切到完整 chromium。
+  const launchChannel = process.env.PW_BROWSER_CHANNEL || undefined;
+  const browser = await chromium.launch({ channel: launchChannel });
   const context = await browser.newContext();
   const page = await context.newPage();
 
