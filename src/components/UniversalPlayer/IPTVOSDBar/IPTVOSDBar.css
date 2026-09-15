@@ -186,13 +186,13 @@
 .iptv-osd-label-prefix {
   flex-shrink: 0;
   /* 提亮标签颜色：原 --color-primary-hover (#333) 在深色 OSD 背景上几乎不可见 */
-  color: var(--color-text-inverse);
+  color: var(--color-on-image);
   font-weight: 500;
   opacity: 0.7;
 }
 
 .iptv-osd-label-title {
-  color: #eee;
+  color: var(--player-text-secondary);
 }
 
 /* 空节目信息占位：EPG 加载完成但匹配到空标题时显示，颜色弱化以区别真实数据 */
@@ -218,7 +218,7 @@
 }
 
 .iptv-osd-program-marquee .marquee-text {
-  color: #eee;
+  color: var(--player-text-secondary);
   font-size: var(--text-sm);
 }
 
@@ -357,7 +357,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-full);
   background: transparent;
-  color: #ccc;
+  color: var(--player-text-tertiary);
   font-family: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
@@ -374,7 +374,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #e74c3c;
+  background: var(--color-error);
 }
 
 .iptv-osd-catchup-slider {
@@ -388,7 +388,7 @@
 .iptv-osd-catchup-time {
   flex-shrink: 0;
   min-width: 64px;
-  color: #eee;
+  color: var(--player-text-secondary);
   font-size: var(--text-xs);
   text-align: right;
   font-variant-numeric: tabular-nums;

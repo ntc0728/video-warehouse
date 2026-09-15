@@ -384,7 +384,7 @@
   position: absolute;
   right: 0.5rem;
   bottom: 0.5rem;
-  color: var(--color-error, #e5534b);
+  color: var(--color-error-text);
   font-size: 0.625rem;
   font-weight: 700;
 }
@@ -420,7 +420,7 @@
    嵌套 .is-watched 提升特异性，确保带已看背景的 cell 完成态仍显示绿色（不被下方 primary 色覆盖） */
 .playlist-cell-check.is-complete,
 .playlist-cell.is-watched .playlist-cell-check.is-complete {
-  color: var(--color-success, #3ecf8e);
+  color: var(--color-success-text);
 }
 
 /* 失效 / 无源 */
@@ -448,7 +448,7 @@
 }
 
 .playlist-cell-progress-bar.is-complete {
-  background: var(--color-success, #3ecf8e);
+  background: var(--color-success);
 }
 
 .playlist-cell-pct {
@@ -462,7 +462,7 @@
 }
 
 .playlist-cell-pct.is-complete {
-  color: var(--color-success, #3ecf8e);
+  color: var(--color-success-text);
 }
 
 /* 搜索定位高亮脉冲 */

@@ -44,7 +44,7 @@
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--color-on-image);
   backdrop-filter: blur(8px);
   transition: background 0.2s;
   cursor: pointer;
@@ -90,7 +90,7 @@
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--color-on-image);
   backdrop-filter: blur(8px);
   transition: background 0.2s;
   cursor: pointer;
@@ -195,7 +195,7 @@
 
 .stills-lightbox__zoom-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .stills-lightbox__zoom-btn:disabled {
@@ -217,7 +217,7 @@
 }
 
 .stills-lightbox__zoom-value:hover {
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 /* ── 缩略图条 ──────────────────────────────── */
@@ -272,7 +272,7 @@
 }
 
 .stills-lightbox__thumb--active {
-  border-color: #fff;
+  border-color: var(--color-on-image);
   opacity: 1;
 }
 
@@ -315,7 +315,7 @@
     width: 2.25rem;
     height: 2.25rem;
     background: rgba(255, 255, 255, 0.85);
-    color: #000;
+    color: var(--color-on-image-dark);
   }
 
   .stills-lightbox__close svg {
@@ -345,7 +345,7 @@
     width: 2.25rem;
     height: 2.25rem;
     background: rgba(255, 255, 255, 0.85);
-    color: #000;
+    color: var(--color-on-image-dark);
   }
 
   html[data-device="app"] .stills-lightbox__close svg {

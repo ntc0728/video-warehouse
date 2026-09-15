@@ -16,9 +16,9 @@
      投屏核心圆 `.up-cast-core`。
 
      故把 primary 家族整体切到亮色强调蓝 #3b82f6。选它的依据是仓里已有的三处线索：
-     ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary, #3b82f6) }` 的**兜底就是
+     ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary) }` 的**兜底就是
         #3b82f6** —— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
-     ② `.up-gesture-indicator__fill { background: var(--color-primary, #fff) }` 同款写法；
+     ② `.up-gesture-indicator__fill { background: var(--color-primary) }` 同款写法；
      ③ `.video-card-status.status--unwatched` 已用 rgba(59,130,246,.85)。
 
      同时补 --color-primary-rgb：IPTVOSDBar 的时移按钮写作
@@ -32,8 +32,8 @@
      外壳（/play/:id 的播放器是覆盖在应用之上的一层），页面里其它 body 级元素也会被染蓝。
      已核对：播放器内所有 live 的 primary 消费点都在本子树内（两个 portaled 菜单
      MoreMenu/ContextMenu 不消费 primary；.up-popover-item-check 全仓无 tsx 引用，是死规则）。 */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #60a5fa;
+  --color-primary: var(--player-primary);
+  --color-primary-hover: var(--player-primary-hover);
   --color-primary-rgb: 59, 130, 246;
   --color-primary-light: rgba(59, 130, 246, 0.16);
   --color-primary-bg: rgba(59, 130, 246, 0.22);
@@ -597,7 +597,7 @@
 .up-volume-slider::-webkit-slider-thumb {
   width: var(--icon-sm);
   height: var(--icon-sm);
-  border: 2px solid #fff;
+  border: 2px solid var(--color-on-image);
   border-radius: 50%;
   /* stylelint-disable-next-line property-no-vendor-prefix -- WebKit 兼容 */
   -webkit-appearance: none;
@@ -616,7 +616,7 @@
 .up-volume-slider::-moz-range-thumb {
   width: var(--icon-sm);
   height: var(--icon-sm);
-  border: 2px solid #fff;
+  border: 2px solid var(--color-on-image);
   border-radius: 50%;
   background: var(--player-accent);
   cursor: pointer;
@@ -667,7 +667,7 @@
   position: relative;
   padding-left: calc(var(--space-md) + var(--layout-spinner-border));
   background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: var(--color-on-image);
   font-weight: 600;
 }
 
@@ -679,7 +679,7 @@
   width: var(--layout-spinner-border);
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
-  background: #fff;
+  background: var(--color-on-image);
 }
 
 .up-more-popover {
@@ -1471,7 +1471,7 @@
 }
 
 .up-player-play-icon polygon {
-  fill: #1a1a20;
+  fill: var(--color-on-image-dark);
 }
 
 /* ===== IPTV buffering overlay - shows during stream buffering ===== */
@@ -1496,14 +1496,14 @@
 }
 
 .up-iptv-buffering-text {
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .up-iptv-buffering-reason {
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-xs);
   font-weight: 600;
   text-align: center;
@@ -1516,7 +1516,7 @@
 }
 
 .up-iptv-buffering-metric {
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1802,7 +1802,7 @@
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.72);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-sm);
   line-height: 1.4;
   white-space: nowrap;
@@ -1820,7 +1820,7 @@
 }
 [data-theme="light"] .up-player-toast {
   background: rgba(0, 0, 0, 0.72);
-  color: #fff;
+  color: var(--color-on-image);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -1851,7 +1851,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   padding: 0.5625rem 1rem;
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.78);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: 0.8125rem;
   line-height: 1.4;
   white-space: nowrap;
@@ -1869,7 +1869,7 @@ html[data-player-header-controls="true"] .up-player-toast {
 }
 [data-theme="light"] .up-player-center-toast {
   background: rgba(0, 0, 0, 0.78);
-  color: #fff;
+  color: var(--color-on-image);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -1952,7 +1952,7 @@ html[data-player-header-controls="true"] .up-player-toast {
 
 .up-header-actions button:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 /* 投屏中：图标常亮高亮提示连接中 */
@@ -2127,7 +2127,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 .up-ms-chip--on {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-ms-group-label {
@@ -2219,7 +2219,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   height: var(--icon-2xl);
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-cast-ring {
@@ -2365,7 +2365,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   height: calc(var(--comp-btn-min-height) * 1.2);
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-cast-btn {
@@ -2386,7 +2386,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 .up-cast-btn--primary {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-cast-note {
@@ -2417,7 +2417,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.65);
-  color: #fff;
+  color: var(--color-on-image);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -2437,7 +2437,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   left: 0;
   width: 100%;
   border-radius: var(--radius-full);
-  background: var(--color-primary, #fff);
+  background: var(--color-primary);
   transition: height 0.08s linear;
 }
 
@@ -2465,7 +2465,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 /* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式（P1-9 批次4） */
 .up-player-core video::cue {
   background: rgba(0, 0, 0, 0.65);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: 1rem;
   line-height: 1.5;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
@@ -2516,7 +2516,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius-full);
   background: transparent;
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-sm);
   cursor: pointer;
   white-space: nowrap;
@@ -2562,7 +2562,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 
 .up-context-menu__item:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-context-menu__kbd {
@@ -2636,7 +2636,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 
 .up-settings-panel__title {
   flex: 1;
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-base);
   font-weight: 600;
   text-align: center;
@@ -2657,7 +2657,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 .up-settings-panel__close:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-settings-panel__body {
@@ -2719,7 +2719,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 .up-settings-preset.is-active {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .up-settings-panel__footer {
@@ -2732,7 +2732,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-full);
   background: transparent;
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-sm);
   cursor: pointer;
 }
@@ -2750,7 +2750,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   width: 100%;
   height: 100dvh;
   border-radius: 0;
-  background: #000;
+  background: var(--player-bg);
 }
 
 /* 全屏常驻右上角操作组（画中画·投屏·更多设置）：与控制栏自动隐藏解耦，
@@ -2799,7 +2799,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-md) var(--space-md) var(--space-sm);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-lg);
   font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
@@ -2814,7 +2814,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
 }
-.up-fs-drawer-close:hover { color: #fff; }
+.up-fs-drawer-close:hover { color: var(--color-on-image); }
 .up-fs-drawer-body {
   display: flex;
   flex: 1;
@@ -2852,8 +2852,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   color: rgba(255, 255, 255, 0.85);
 }
 .up-fs-drawer .up-ms-chip--on {
-  background: var(--color-primary, #3b82f6);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-on-image);
 }
 
 @keyframes up-fs-drawer-in {

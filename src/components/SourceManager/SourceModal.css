@@ -194,7 +194,7 @@
   width: calc(1.4rem - 4px);
   height: calc(1.4rem - 4px);
   border-radius: 50%;
-  background: var(--color-text-inverse, #fff);
+  background: var(--color-text-inverse);
   transition: transform 0.2s;
 }
 .source-modal__switch input:checked + .source-modal__switch-track {

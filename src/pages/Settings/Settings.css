@@ -248,7 +248,7 @@ body.skin-transitioning .skin-btn.active {
 
 .settings-required {
   margin-left: var(--space-2xs);
-  color: var(--color-error, #ef4444);
+  color: var(--color-error-text);
 }
 
 .settings-help {
@@ -259,12 +259,12 @@ body.skin-transitioning .skin-btn.active {
 }
 
 .settings-help--success {
-  color: var(--color-success, #22c55e);
+  color: var(--color-success-text);
 }
 
 .settings-error {
   margin: 0;
-  color: var(--color-error, #ef4444);
+  color: var(--color-error-text);
   font-size: var(--text-xs);
   line-height: 1.4;
 }
@@ -296,7 +296,7 @@ body.skin-transitioning .skin-btn.active {
 
 .settings-input--error,
 .settings-input--error:focus {
-  border-color: var(--color-error, #ef4444) !important;
+  border-color: var(--color-error) !important;
   box-shadow: 0 0 0 3px var(--color-error-shadow, rgba(239, 68, 68, 0.18));
 }
 
@@ -761,7 +761,7 @@ body.skin-transitioning .skin-btn.active {
   height: var(--icon-lg);
   margin-right: var(--space-md);
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--color-on-image);
 }
 
 .settings-menu-item__icon svg {
@@ -1470,7 +1470,7 @@ body.skin-transitioning .skin-btn.active {
   height: var(--avatar-xs);
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-variant));
-  color: #fff;
+  color: var(--color-on-image);
   overflow: hidden;
 }
 .settings-row__avatar img {
@@ -1543,13 +1543,13 @@ body.skin-transitioning .skin-btn.active {
 }
 /* 危险操作的方形 tab 按钮：红色描边 */
 .settings-action-btn--inline.settings-action-btn--danger {
-  border-color: var(--color-danger, #ef4444);
-  color: var(--color-danger, #ef4444);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 .settings-action-btn--inline.settings-action-btn--danger:hover {
-  border-color: var(--color-danger, #ef4444);
-  background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
-  color: var(--color-danger, #ef4444);
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
 }
 /* 移动端：标题换行，胶囊按钮落到标题下方靠右 */
 @media (width <= 767px) {

@@ -55,7 +55,7 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-sm);
-  background: var(--color-placeholder, #111);
+  background: var(--color-placeholder);
   overflow: hidden;
 }
 .history-page .record-card__media .lazy-image-container,
@@ -126,7 +126,7 @@
 }
 .history-page .record-card__progress-bar {
   height: 100%;
-  background: #e11d48;
+  background: var(--color-progress-fill);
   transition: width 0.3s ease;
 }
 .history-page .record-card__progress-text {
@@ -236,7 +236,7 @@
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--text-2xs);
   line-height: 1.5;
 }

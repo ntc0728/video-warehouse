@@ -173,7 +173,7 @@
   inset: 0;
   z-index: var(--z-splash);
   display: none;
-  background: #000;
+  background: var(--player-bg);
   opacity: 0;
   pointer-events: none;
   transition-property: opacity;

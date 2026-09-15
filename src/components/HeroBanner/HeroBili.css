@@ -44,7 +44,7 @@
   height: var(--hero-banner-h);
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
-  background: #0b0b0e;
+  background: var(--color-media-surface);
   overflow: hidden;
 }
 
@@ -90,7 +90,7 @@
   border: none;
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.45);
-  color: #fff;
+  color: var(--color-on-image);
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.25s ease, background-color 0.2s ease;
@@ -136,7 +136,7 @@
 
 .hero-bili__dot.is-active {
   width: var(--dot-active-w);
-  background: #fff;
+  background: var(--color-on-image);
 }
 
 /* 底部渐变字幕：标题 + meta + 双按钮 */
@@ -148,7 +148,7 @@
   z-index: 2;
   padding: var(--space-2xl) var(--space-lg) var(--space-md);
   background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
-  color: #fff;
+  color: var(--color-on-image);
   pointer-events: none;
 }
 
@@ -171,7 +171,7 @@
 }
 
 .hero-bili__rating {
-  color: #ffc107;
+  color: var(--color-on-image-rating);
   font-weight: 600;
 }
 
@@ -316,7 +316,7 @@
 .hero-side-card__corner {
   position: absolute;
   z-index: 2;
-  color: #fff;
+  color: var(--color-on-image);
   font-size: var(--hero-corner-fs);
   font-weight: 500;
   line-height: 1.3;
@@ -327,7 +327,7 @@
 .hero-side-card__corner--rating {
   top: var(--space-sm);
   left: var(--space-sm);
-  color: #ffc107;
+  color: var(--color-on-image-rating);
 }
 
 .hero-side-card__corner--year {
@@ -356,7 +356,7 @@
   border: none;
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  color: var(--color-on-image);
   opacity: 0;
   transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
   cursor: pointer;

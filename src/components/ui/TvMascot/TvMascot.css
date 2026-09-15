@@ -60,18 +60,18 @@
    之前机身近白 + 五官全白 = 白色剪影，五官完全看不见，已修正。 */
 .ptr-tv--on-dark .ptr-tv__body {
   fill: rgba(28, 28, 34, 0.92);
-  stroke: #fff;
+  stroke: var(--color-on-image);
 }
 .ptr-tv--on-dark .ptr-tv__ear line,
 .ptr-tv--on-dark .ptr-tv__ear circle,
 .ptr-tv--on-dark .ptr-tv__eyes circle,
 .ptr-tv--on-dark .ptr-tv__mouth,
 .ptr-tv--on-dark .ptr-tv__wave path {
-  stroke: #fff;
+  stroke: var(--color-on-image);
 }
 .ptr-tv--on-dark .ptr-tv__ear circle,
 .ptr-tv--on-dark .ptr-tv__eyes circle {
-  fill: #fff;
+  fill: var(--color-on-image);
 }
 .ptr-tv--on-dark .ptr-tv__cheek {
   fill: rgba(255, 255, 255, 0.22);

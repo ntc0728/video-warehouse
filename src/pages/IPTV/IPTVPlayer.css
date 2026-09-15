@@ -6,7 +6,7 @@
   z-index: var(--z-fullscreen);
   display: flex;
   flex-direction: column;
-  background-color: #000;
+  background-color: var(--player-bg);
   color: var(--color-text);
   overflow: hidden;
 }
@@ -18,7 +18,7 @@
   justify-content: center;
   align-items: center;
   min-height: 480px;
-  background: #000;
+  background: var(--player-bg);
   overflow: hidden;
 }
 
