@@ -485,7 +485,7 @@
   gap: var(--space-sm);
   align-items: center;
   width: 100%;
-  padding: 8px var(--space-sm);
+  padding: var(--space-md) var(--space-sm);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -523,7 +523,7 @@
 
 .iptv-rail__cnt {
   flex-shrink: 0;
-  padding: 1px 6px;
+  padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--color-background);
   color: var(--color-text-secondary);
@@ -546,7 +546,7 @@
   width: 14px;
   height: 14px;
   border: 1.5px solid var(--color-border);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
@@ -599,7 +599,7 @@
 /* 右上角源过滤下拉框：仅过滤当前列表，不切换播放源 */
 .iptv-src-select {
   height: 30px;
-  padding: 0 8px;
+  padding: 0 var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);

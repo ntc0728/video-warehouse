@@ -129,10 +129,19 @@ const CHECKS = [
   {
     id: 'raw-z-index',
     enforce: true,
-    desc: '裸 z-index 数字（应走 --z-* token）',
+    desc: '页级裸 z-index（≥100 必须走 --z-* token；50–99 为组件局部抬升过渡带）',
+    /**
+     * 阈值口径（2026-09-15 D5 校准）：
+     *   ≥100  = 页级覆盖层起点（--z-overlay），必检 —— 落在这一带的裸数字会与
+     *           侧边栏 / 抽屉 / 弹窗 / toast / 幕布等页级浮层互相打架，必须走 token。
+     *   <100  = 组件自身 stacking context 内的相对层梯（播放器 chrome 的 20/25/60/70/95，
+     *           图表的 flex 子项等），只在本组件内部比较大小，不参与页级层叠。
+     *           契约与 §5.3「触碰 <50 的 z-index 无收益」一致，故不再逐条报警，
+     *           否则 93 处合法局部值会淹没真正的页级冲突（原实现连 1/2/3 也报）。
+     */
     match: (raw) => {
       const m = raw.match(/z-index\s*:\s*(-?\d+)/);
-      return m && Number(m[1]) !== 0 && Number(m[1]) !== -1 ? [m[0]] : null;
+      return m && Number(m[1]) >= 100 ? [m[0]] : null;
     },
     tokens: TOKEN_FILES,
   },
@@ -141,6 +150,10 @@ const CHECKS = [
     enforce: true,
     desc: '字重 800/900 字面量（应收敛到 --fw-bold 700）',
     match: (raw) => raw.match(/font-weight\s*:\s*(?:800|900)\b/),
+    /* 主题/令牌层排除：skins.css 与 variables.css 属于主题层，其字重是**皮肤自身契约**
+       （如 cartoon 皮肤统一 700）与 @font-face 资源声明（orbitron-900 的 weight 描述符，
+       并非文字粗细），不属于组件级字重债。组件层出现 800/900 仍会被拦下。 */
+    tokens: TOKEN_FILES,
   },
   {
     id: 'timing-literal',
@@ -148,6 +161,30 @@ const CHECKS = [
     desc: 'transition/animation 内联时长字面量（新代码应走 --dur-* token）',
     match: (raw) => {
       const m = raw.match(/(?:transition|animation)[^:]*:\s*[^;]*?\b\d*\.?\d+m?s\b/);
+      return m ? [m[0].trim().slice(0, 48)] : null;
+    },
+  },
+  /**
+   * 盒尺寸 / 定位类裸 px —— 2026-09-15 D5 从 stylelint 的 unit-disallowed 规则移出后，
+   * 在此以 observe 模式保留度量（不阻塞提交）。
+   *
+   * 移出理由：这些属性承载的是**刻意固定**的尺寸，而非流体语言：
+   *   ① 结构细线 1–2px（分隔线 / 进度轨 / 负 margin 描边）
+   *   ② 装饰圆点 ≤12px（token 文档已明确豁免「圆点 / 圆角 / 滚动条」）
+   *   ③ 媒体比例盒（封面 160×90 / 112×168，尺寸由比例与网格决定，流体化会让行高跳动）
+   *   ④ 运行时变量兜底 var(--js 注入, Npx)（如 --player-toast-top / --detail-hero-h）
+   * 改成 token 会引入无收益的观感漂移；而在 stylelint 里逐行 disable 会生成
+   * 上百条注释噪音（该规则的 ignore:["inside-function"] 在 17.x 实测无效）。
+   * 故：enforce 交给「间距/字号/圆角」，盒尺寸保留本 observe 指标，便于后续收紧。
+   */
+  {
+    id: 'raw-px-box-size',
+    enforce: false,
+    desc: '盒尺寸/定位类属性里的裸 px（多为刻意固定值，见上方说明）',
+    match: (raw) => {
+      const m = raw.match(
+        /^\s*(?:width|min-width|max-width|height|min-height|max-height|flex-basis|top|right|bottom|left|inset|inset-block|inset-inline)\s*:\s*[^;]*\d+(?:\.\d+)?px/,
+      );
       return m ? [m[0].trim().slice(0, 48)] : null;
     },
   },

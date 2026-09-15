@@ -778,15 +778,15 @@
    金额类（绿，金钱语义）、季/集（蓝，结构信息）；其余保持主色，避免整栏花掉。
    暗色主题下三个语义色在 variables.css 暗色段有独立取值，自动适配。 */
 .detail-info-card--rating svg {
-  color: var(--color-warning);
+  color: var(--color-warning-text);
   opacity: 1;
 }
 .detail-info-card--money svg {
-  color: var(--color-success);
+  color: var(--color-success-text);
   opacity: 1;
 }
 .detail-info-card--media svg {
-  color: var(--color-info);
+  color: var(--color-info-text);
   opacity: 1;
 }
 .detail-info-card span {

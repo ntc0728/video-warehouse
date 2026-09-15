@@ -100,7 +100,7 @@
 /* 批量操作危险按钮（删除/清除） */
 .batch-action-btn--danger {
   background: rgba(255, 77, 79, 0.1);
-  color: var(--color-error);
+  color: var(--color-error-text);
 }
 
 .batch-action-btn--danger:hover:not(:disabled) {

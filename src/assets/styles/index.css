@@ -57,7 +57,7 @@
 .modal-overlay-animate {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal-overlay);
   background-color: rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.2s ease forwards;
 }
@@ -79,7 +79,7 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  z-index: 1001;
+  z-index: var(--z-modal);
   max-height: min(60vh, var(--layout-modal-max-h));
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -176,7 +176,7 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  z-index: 1001;
+  z-index: var(--z-modal);
   width: min(var(--layout-modal-max-width), 90vw);
   max-height: min(60vh, var(--layout-modal-max-h));
   padding: var(--space-lg);
@@ -197,7 +197,7 @@
   position: fixed;
   bottom: 0;
   left: 0;
-  z-index: 1001;
+  z-index: var(--z-modal);
   width: 100%;
   max-height: min(70dvh, var(--layout-bottomsheet-max-h));
   padding: var(--space-sm) var(--space-md) var(--space-lg);
@@ -749,11 +749,12 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
    尺寸/圆角与 .sdp-pill(idle) 对齐：相同 padding(5px 11px)、font-size(text-xs)、1px 边框、999px 圆角，
    并清除 .retry-btn 基类自带的 margin-top，使其在工具栏内与源检测 pill 垂直居中对齐、高度一致。 */
 .retry-btn--tab {
-  gap: 6px;
+  gap: var(--space-sm);
   margin-top: 0;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 紧凑胶囊固定内边距：5px/11px 无对应 --space-* 档（space-xs=3 / xs-plus=4 / sm=6），流体化会破坏与 .sdp-pill 的等高对齐契约（见上方注释） */
   padding: 5px 11px;
   border: 1px solid var(--color-border-light);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text-secondary);
 }
@@ -878,7 +879,7 @@ main {
 .toolbar-btn--danger {
   border-color: transparent;
   background: rgba(255,77,79,0.08);
-  color: var(--color-error);
+  color: var(--color-error-text);
 }
 .toolbar-btn--danger:hover {
   background: rgba(255,77,79,0.15);

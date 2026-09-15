@@ -170,14 +170,14 @@
   bottom: var(--space-3xs);
   left: var(--space-3xs);
   width: var(--space-lg);
-  height: var(--icon-2xs, 10px);
+  height: var(--icon-2xs);
 }
 
 .tmdb-movierow-skeleton-badge--br {
   right: var(--space-3xs);
   bottom: var(--space-3xs);
   width: var(--space-xl);
-  height: var(--icon-2xs, 10px);
+  height: var(--icon-2xs);
 }
 
 .tmdb-movierow-skeleton-title {

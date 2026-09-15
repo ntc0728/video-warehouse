@@ -155,8 +155,8 @@
 .browse-sort-bar__types {
   display: inline-flex;
   flex: none;
-  gap: 2px;
-  padding: 3px;
+  gap: var(--space-2xs);
+  padding: var(--space-xs);
   border-radius: var(--radius-full);
   background: var(--color-hover-bg);
 }
@@ -506,6 +506,7 @@
     /* 2026-09-11 用户拍板：首行不再「tabs 通栏」—— 左列给模式胶囊（宽度 = 左栏），
        右列给结果区头部（.browse-sort-bar / .browse-source-status-row，二者互斥各占其一），
        即「胶囊 + 结果头」同一行。右列与下方结果栅格同列，左边缘对齐。 */
+    /* stylelint-disable-next-line declaration-block-no-redundant-longhand-properties -- grid-template 简写会重置 grid-template-areas，本处三行长写是有意的（见上注释），不做简写合并 */
     grid-template-areas:
       'tabs    head'
       'filters results';

@@ -121,15 +121,16 @@
 .chart-tabs__window {
   display: inline-flex;
   flex: 0 0 auto;
-  gap: 2px;
+  gap: var(--space-2xs);
   align-items: center;
   margin-left: auto;
-  padding: 2px;
+  padding: var(--space-2xs);
   border-radius: var(--radius-full);
   background: var(--color-tag-bg);
 }
 .chart-tabs__window-btn,
 .chart-tabs__window-btn--on {
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 1px 光学补偿：与下方 2px 选中描边配平，保持按钮视觉等高；--space-* 无更细档可表达 */
   padding: calc(var(--space-2xs) + 1px) var(--space-md);
   border: none;
   border-radius: var(--radius-full);
@@ -183,14 +184,14 @@
   font-variant-numeric: tabular-nums;
 }
 .chart-row--top .chart-row__rank {
-  color: var(--color-warning);
+  color: var(--color-warning-text);
   font-size: var(--text-xl);
 }
 .chart-row__cover {
   flex: 0 0 160px;
   flex-shrink: 0;
-  width: 160px;
-  height: 90px;
+  width: var(--comp-chart-cover-land-w);
+  height: var(--comp-chart-cover-land-h);
   border-radius: var(--radius-md);
   background: var(--color-placeholder);
   overflow: hidden;
@@ -241,7 +242,7 @@
   display: flex;
   gap: var(--space-xs);
   align-items: center;
-  margin-top: 2px;
+  margin-top: var(--space-2xs);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
 }
@@ -252,7 +253,7 @@
   background: var(--color-tag-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  line-height: 18px;
+  line-height: var(--lh-base);
   white-space: nowrap;
 }
 .chart-row__desc {
@@ -269,9 +270,9 @@
 }
 .chart-row__heat .n {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-2xs);
   align-items: center;
-  color: var(--color-warning);
+  color: var(--color-warning-text);
   font-size: var(--text-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -282,15 +283,15 @@
 }
 .chart-row__heat .l {
   display: block;
-  margin-top: 2px;
+  margin-top: var(--space-2xs);
   color: var(--color-text-tertiary);
-  font-size: 10px;
+  font-size: var(--text-2xs);
 }
 .chart-row__heat .v {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-2xs);
   align-items: center;
-  margin-top: 2px;
+  margin-top: var(--space-2xs);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
@@ -346,7 +347,7 @@
 }
 .chart-list__skeleton .b {
   flex: 0 0 160px;
-  height: 90px;
+  height: var(--comp-chart-cover-land-h);
 }
 .chart-list__skeleton .c {
   flex: 1;
@@ -416,13 +417,13 @@
   .chart-list__loading { grid-template-columns: 1fr; }
   .chart-row__cover,
   .chart-row__cover--poster {
-    flex-basis: 112px;
-    width: 112px;
-    height: 168px;
+    flex-basis: var(--comp-chart-cover-w);
+    width: var(--comp-chart-cover-w);
+    height: var(--comp-chart-cover-h);
   }
   .chart-list__skeleton .b {
-    flex-basis: 112px;
-    height: 168px;
+    flex-basis: var(--comp-chart-cover-w);
+    height: var(--comp-chart-cover-h);
   }
 }
 /* 桌面横版基准尺寸的显式声明（>.chart-row__cover 已在上方定义 160×90，此处仅注释锚点） */
@@ -433,7 +434,7 @@
   .chart-tabs { padding: var(--space-sm) var(--space-md); }
   .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
   .chart-row__desc { display: none; }
-  .chart-row__rank { flex-basis: 32px; }
+  .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
   .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 }
 html[data-device="app"] .chart-head { padding: var(--space-md) var(--space-md) 0; }
@@ -445,16 +446,16 @@ html[data-device="app"] .chart-list {
 html[data-device="app"] .chart-list__loading { grid-template-columns: 1fr; }
 html[data-device="app"] .chart-row__cover,
 html[data-device="app"] .chart-row__cover--poster {
-  flex-basis: 112px;
-  width: 112px;
-  height: 168px;
+  flex-basis: var(--comp-chart-cover-w);
+  width: var(--comp-chart-cover-w);
+  height: var(--comp-chart-cover-h);
 }
 html[data-device="app"] .chart-list__skeleton .b {
-  flex-basis: 112px;
-  height: 168px;
+  flex-basis: var(--comp-chart-cover-w);
+  height: var(--comp-chart-cover-h);
 }
 html[data-device="app"] .chart-row__desc { display: none; }
-html[data-device="app"] .chart-row__rank { flex-basis: 32px; }
+html[data-device="app"] .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 
 /* ── Reduced motion ── */

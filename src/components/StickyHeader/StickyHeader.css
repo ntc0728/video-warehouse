@@ -127,7 +127,7 @@
 .sticky-header__brand-name {
   color: var(--color-text);
   font-size: var(--layout-brand-font-size);
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.03em;
   white-space: nowrap;
 }

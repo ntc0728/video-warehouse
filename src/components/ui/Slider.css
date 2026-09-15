@@ -1,7 +1,7 @@
 .ui-slider {
   appearance: none;
   width: 100%;
-  height: var(--switch-thumb-size, 20px);
+  height: var(--switch-thumb-size);
   background: transparent;
   cursor: pointer;
   outline: none;
@@ -14,8 +14,8 @@
 
 /* ── WebKit track ─────────────────────────────────────────────── */
 .ui-slider::-webkit-slider-runnable-track {
-  height: var(--slider-track-h, 6px);
-  border-radius: 999px;
+  height: var(--slider-track-h);
+  border-radius: var(--radius-full);
   background: linear-gradient(
     to right,
     var(--color-primary) var(--slider-pct),
@@ -25,27 +25,27 @@
 
 /* ── Firefox track ───────────────────────────────────────────── */
 .ui-slider::-moz-range-track {
-  height: var(--slider-track-h, 6px);
-  border-radius: 999px;
+  height: var(--slider-track-h);
+  border-radius: var(--radius-full);
   background: var(--color-border);
 }
 
 .ui-slider::-moz-range-progress {
-  height: var(--slider-track-h, 6px);
-  border-radius: 999px;
+  height: var(--slider-track-h);
+  border-radius: var(--radius-full);
   background: var(--color-primary);
 }
 
 /* ── Thumb（共享 WebKit / Firefox）───────────────────────────── */
 .ui-slider::-webkit-slider-thumb {
-  width: var(--switch-thumb-size, 20px);
-  height: var(--switch-thumb-size, 20px);
+  width: var(--switch-thumb-size);
+  height: var(--switch-thumb-size);
   /* 垂直居中：margin-top = (轨道高 - 拇指尺寸) / 2。
      不能写死 -7px——--switch-thumb-size 为 clamp(14→24px，TV 24→48px)，
      写死会在较大拇指时让圆点偏上（"过扫描安全区圆点位置偏高"的根因）。 */
-  margin-top: calc((var(--slider-track-h, 6px) - var(--switch-thumb-size, 20px)) / 2);
+  margin-top: calc((var(--slider-track-h) - var(--switch-thumb-size)) / 2);
   border: 2px solid var(--color-primary);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-text-inverse);
   transition: box-shadow 0.15s ease-out;
   appearance: none;
@@ -53,10 +53,10 @@
 }
 
 .ui-slider::-moz-range-thumb {
-  width: var(--switch-thumb-size, 20px);
-  height: var(--switch-thumb-size, 20px);
+  width: var(--switch-thumb-size);
+  height: var(--switch-thumb-size);
   border: 2px solid var(--color-primary);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-text-inverse);
   transition: box-shadow 0.15s ease-out;
   box-shadow: var(--shadow-sm);

@@ -60,6 +60,7 @@
        --z-base              1      常规内容层叠（相对定位的子元素）
        --z-fixed             50     固定 / 吸顶 UI（移动底部 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊）
        --z-fixed-header      55     固定吸顶导航（Layout 的 fixed sticky-header，压住 tab bar 与内容）
+       --z-subpage           60     全屏二级页（SubPage / settings-subpage）：高于吸顶导航、低于局部浮层
        --z-float             90     局部轻浮层（悬浮按钮、遮罩 scrim、播放器局部菜单/局部 toast）
        --z-overlay           100    页级覆盖层（侧边栏 / 抽屉 / 全屏 loading / 进入过渡 / 灯箱控件 / 搜索下拉 / 全屏滚动条）
        --z-popover           200    页面级浮层（Select / Popover / Tooltip）
@@ -72,10 +73,16 @@
 
      ★契约：① 新增浮层必须用 token，禁止裸数字；
              ② 局部浮层落 --z-popover(200)：高于固定导航（不被侧边栏遮挡）、低于 Modal；
-             ③ 组件内部「相对定位子元素」的局部层叠（值 <50）不属于本体系，可写字面量。 */
+             ③ **组件内部局部层叠可写字面量**：组件在自身 stacking context 内维持的
+                相对层梯（如播放器 chrome 的 20(控制栏) / 25(seek) / 60(角标/面板) /
+                70(全屏抽屉) / 95(更多菜单)，见 UniversalPlayer.css 内联注释）不属于
+                本体系——它们只在本组件内部比较大小，不参与页级层叠。
+                design-audit 的 raw-z-index 检查因此只拦 **≥100**（页级覆盖层起点）；
+                50–99 的裸值是「组件局部抬升」的过渡带，按需逐条评审，不强制 token 化。 */
   --z-base: 1;
   --z-fixed: 50;
   --z-fixed-header: 55;
+  --z-subpage: 60;
   --z-float: 90;
   --z-overlay: 100;
   --z-popover: 200;
@@ -324,6 +331,12 @@
      系数使各档 ≈ 原值并保留层次；:root 补齐 --icon-2xl/--icon-3xl
      （原仅 TV 定义，桌面引用 size="2xl/3xl" 会 undefined）。 */
   --icon-xs:  calc(var(--text-2xs)  * 1.40);   /* 9→11 ×1.40 = 12.6→15.4 */
+  /* 最小图标档（2026-09-15 D5 补：此前 Home / TMDBMovieRow 的骨架角标写
+     `var(--icon-2xs, 10px)` 而本 token **从未定义** → 兜底静默接管，实际恒为 10px。
+     属「引用了不存在的 token」家族（同 A1 的 --ui-scale 重复定义）。
+     与 --text-2xs（恒定 11px）同属「小尺寸恒定」哲学：装饰性骨架角标不该随视口放大，
+     故写成恒定 10px × --ui-scale（ui-scale=1 时与兜底值逐像素一致 → 零观感变化）。 */
+  --icon-2xs: calc(10px * var(--ui-scale));    /* 恒定 10（骨架角标高度） */
   --icon-sm:  calc(var(--text-sm)   * 1.30);   /* 13→14 ×1.30 = 16.9→18.2 */
   --icon-md:  calc(var(--text-base) * 1.43);   /* 14→15 ×1.43 = 20.0→21.5 */
   --icon-lg:  calc(var(--text-xl)   * 1.50);   /* 16→18 ×1.50 = 24.0→27.0 */
@@ -365,6 +378,11 @@
   --comp-chart-cover-w: 112px;
   --comp-chart-cover-h: 168px;
   --comp-chart-rank-w:  32px;
+  /* 横版封面（列表行内 16:9 缩略盒）：160×90。与上方竖版同族——固定值而非流体，
+     理由同 D0：封面为「媒体比例盒」，尺寸由 2:3 / 16:9 比例与网格决定，
+     不随视口流体（流体会让行高跳动）。桌面与移动端共用同一组值。 */
+  --comp-chart-cover-land-w: 160px;
+  --comp-chart-cover-land-h:  90px;
   /* Switch 开关 */
   --switch-track-height: calc(clamp(18px, 14.183px + 1.018vw, 22px) * var(--ui-scale)); /* 18→24 轨道高度 */
   --switch-track-width: calc(clamp(32px, 21.822px + 2.714vw, 42.667px) * var(--ui-scale)); /* 32→48 轨道宽度 */

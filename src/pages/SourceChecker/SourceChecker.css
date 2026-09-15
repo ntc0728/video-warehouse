@@ -56,7 +56,7 @@
 }
 
 .last-check-time.expired {
-  color: var(--color-warning);
+  color: var(--color-warning-text);
 }
 
 .check-all-btn {
@@ -414,11 +414,11 @@
 }
 
 .point-status.available {
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 
 .point-status.error {
-  color: var(--color-error);
+  color: var(--color-error-text);
 }
 
 /* 源列表 */
@@ -501,7 +501,7 @@
 }
 
 .error-msg {
-  color: var(--color-error);
+  color: var(--color-error-text);
   font-size: var(--text-2xs);
   word-break: break-all;
   line-height: 1.4;

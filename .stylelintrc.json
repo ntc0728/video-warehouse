@@ -206,22 +206,12 @@
         "gap": ["px"],
         "row-gap": ["px"],
         "column-gap": ["px"],
-        "width": ["px"],
-        "min-width": ["px"],
-        "max-width": ["px"],
-        "height": ["px"],
-        "min-height": ["px"],
-        "max-height": ["px"],
-        "top": ["px"],
-        "right": ["px"],
-        "bottom": ["px"],
-        "left": ["px"],
-        "border-radius": ["px"],
-        "inset": ["px"],
-        "inset-block": ["px"],
-        "inset-inline": ["px"]
+        "border-radius": ["px"]
       },
-      { "severity": "error" }
+      {
+        "severity": "error",
+        "message": "间距 / 字号 / 圆角是本项目『流体语言』的核心，必须走 token（--space-* / --text-* / --radius-*）。盒尺寸与定位（width/height/min-*/max-*/top/right/bottom/left/inset*）已移出本规则：它们承载细线(1-2px)、圆点(≤12px)、媒体比例盒、运行时变量兜底等**刻意固定**的尺寸（见 docs/design/BASELINE.md §令牌边界），改由 design-audit 的 raw-px-box-size（observe）持续度量，不阻塞提交。"
+      }
     ],
 
     "declaration-property-value-disallowed-list": [
