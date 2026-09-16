@@ -9,10 +9,18 @@ import { getVideoSources, getIPTVSources, getEnabledVideoSourceIndices, getEnabl
 import { getJSON } from './httpClient';
 import { extractSeasonNumber } from './seasonMatcher';
 import { parsePlaySources } from './vodParser';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export { getVideoSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndices };
 export { parsePlaySources } from './vodParser';
+
+/**
+ * 季条目解析的并发上限（2026-09-16）。
+ * 每个「第X季」条目都要经 `resolvePlaySources` 可能再打一次详情接口；原实现串行
+ * → 5 季 = 5 次串行 RTT。取 4 是折中：能压掉瀑布，又不会把自建 CMS 站一次打满。
+ */
+const SEASON_RESOLVE_CONCURRENCY = 4;
 
 interface SourceStatus {
   index: number;
@@ -709,13 +717,24 @@ export async function searchVideoSeasonsFromSingleSource(
       return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: '未找到匹配资源' };
     }
 
-    /** 季号 → Video 映射（用于切换选季时快速查找） */
-    const seasons = new Map<number, Video>();
-    /** 无季号条目候选：CMS 常见「单条目收录全集」或「第一季直接以裸剧名收录」 */
+    /**
+     * ── 阶段 1：同步筛选（不发请求）────────────────────────────
+     * 把 data.list 拆成「待解析的季条目」：同一季号只取**首个**（原 `seasons.has` 去重的语义），
+     * 无季号条目仍是第 1 季回退候选（名称与标题完全一致的优先）。
+     * 先同步跑完，才能在阶段 2 一次性并发解析，而不是边判断边 await。
+     */
+    interface SeasonResolveTask {
+      /** 目标季号（回退条目恒为 1） */
+      seasonNumber: number;
+      item: CMSVideoItem;
+      /** 是否为「无季号条目补位第 1 季」——只有真解析出内容才入表 */
+      isFallback?: boolean;
+    }
+    const tasks: SeasonResolveTask[] = [];
+    const claimedSeasons = new Set<number>();
     let fallbackItem: CMSVideoItem | undefined;
     let fallbackExact = false;
     for (const item of data.list) {
-      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const vodName = item.vod_name ?? '';
       const seasonNumber = extractSeasonNumber(vodName);
       if (seasonNumber === undefined) {
@@ -727,23 +746,46 @@ export async function searchVideoSeasonsFromSingleSource(
         }
         continue;
       }
-      if (seasons.has(seasonNumber)) continue;
-
-      // 先尝试解析搜索结果，若为空再通过详情接口回退（forceSeries：季条目按剧集解析，保留集数）
-      const resolved = await resolvePlaySources(source.api, item, signal, true);
-      seasons.set(seasonNumber, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
+      if (claimedSeasons.has(seasonNumber)) continue;
+      claimedSeasons.add(seasonNumber);
+      tasks.push({ seasonNumber, item });
+    }
+    // 第 1 季缺失时用无季号条目补位（原逻辑在循环后判定，此处提前同步判定即可，
+    // 结果等价：claimedSeasons 已收齐全部季号）
+    if (fallbackItem && !claimedSeasons.has(1)) {
+      tasks.push({ seasonNumber: 1, item: fallbackItem, isFallback: true });
     }
 
-    // 第 1 季缺失时用无季号条目补位，避免整个映射为空（单条目多集）
-    // 或第一季永远缺失（第一季裸剧名、后续季带"第X季"的收录习惯）
-    if (fallbackItem && !seasons.has(1)) {
-      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      const resolved = await resolvePlaySources(source.api, fallbackItem, signal, true);
-      if ((resolved.episodes?.length ?? 0) > 0 || resolved.sources.length > 0) {
-        seasons.set(1, { ...mapVideoItem(resolved.item), sources: resolved.sources, episodes: resolved.episodes });
-      }
-    }
+    /**
+     * ── 阶段 2：受限并发解析 ───────────────────────────────────
+     * 原实现是 `for + await`：N 个季就 N 次串行详情请求（总耗时 = N × RTT）。
+     * 改为并发上限 4（`SEASON_RESOLVE_CONCURRENCY`）：既压掉串行瀑布，又避免
+     * 把自建 CMS 站一次性打满而被限流。结果顺序由 mapWithConcurrency 保证，
+     * 因此「第 1 季是谁」与写入 Map 的顺序都不变。
+     */
+    const resolvedList = await mapWithConcurrency(
+      tasks,
+      SEASON_RESOLVE_CONCURRENCY,
+      async (task) => {
+        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+        return resolvePlaySources(source.api, task.item, signal, true);
+      },
+    );
 
+    /** 季号 → Video 映射（用于切换选季时快速查找） */
+    const seasons = new Map<number, Video>();
+    resolvedList.forEach((resolved, i) => {
+      const task = tasks[i];
+      // 回退条目空结果不占位（保持原行为：宁可没有第 1 季，也不要一个空壳季）
+      if (task.isFallback && (resolved.episodes?.length ?? 0) === 0 && resolved.sources.length === 0) return;
+      seasons.set(task.seasonNumber, {
+        ...mapVideoItem(resolved.item),
+        sources: resolved.sources,
+        episodes: resolved.episodes,
+      });
+    });
+
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };
   } catch (error) {
     if (signal?.aborted) throw error;

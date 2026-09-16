@@ -171,7 +171,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 ];
 
 export default function HistoryPage() {
-  const { history: watchHistory, removeHistoryByVideo, clearHistory } = useUserStore();
+  const { history: watchHistory, removeHistoryByVideo, clearHistory, loadError } = useUserStore();
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
@@ -882,10 +882,21 @@ export default function HistoryPage() {
         ) : null}
       </div>
       {currentList.length === 0 && (
-        <Empty
-          title={statusFilter === 'all' ? '暂无观看记录' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
-          description="看一部影片，记录从这里开始"
-        />
+        loadError ? (
+          // 读库失败（2026-09-16）：与「真没看过任何片」区分开——否则用户以为记录被清空了，
+          // 且原实现下没有任何重试入口。
+          <Empty
+            status="error"
+            title="观看记录读取失败"
+            description={loadError}
+            onRetry={() => { void useUserStore.getState().reload().catch(() => { /* 失败态已写入 loadError */ }); }}
+          />
+        ) : (
+          <Empty
+            title={statusFilter === 'all' ? '暂无观看记录' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
+            description="看一部影片，记录从这里开始"
+          />
+        )
       )}
 
       {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}

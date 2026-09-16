@@ -8,8 +8,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { toast } from '@/components/ui/toastBus';
 
 export type PullPhase = 'idle' | 'pulling' | 'armed' | 'refreshing' | 'success';
+
+/** 刷新失败时的默认提示文案（页面可用 toastOnError 覆盖或关闭） */
+export const PTR_DEFAULT_ERROR_TEXT = '刷新失败，请稍后重试';
 
 export interface PTRHandler {
   /** 触发刷新：返回 Promise，resolve 后浮层自动回弹 */
@@ -124,7 +128,25 @@ export function usePullPhase(): PTRPhaseState {
  */
 export function usePullToRefresh(
   onRefresh: () => void | Promise<void>,
-  options?: { enabled?: boolean; meta?: () => string | undefined; variant?: 'default' | 'settings' },
+  options?: {
+    enabled?: boolean;
+    meta?: () => string | undefined;
+    variant?: 'default' | 'settings';
+    /**
+     * 刷新失败（onRefresh 抛错/返回 rejected Promise）时的用户提示。
+     * - 不传（默认）：用通用文案 `PTR_DEFAULT_ERROR_TEXT` 弹 error toast
+     * - 传字符串：用自定义文案
+     * - 传 false：不提示（页面已有自己的错误 UI，避免重复提示）
+     *
+     * 背景（2026-09-16）：浮层 `settle` 同时挂 fulfilled/rejected（`PullToRefreshOverlay.tsx:157-160`），
+     * 无论成败都进 success 态并回弹 → 刷新失败对用户完全不可见。这里保持浮层视觉语义不变，
+     * 只在失败路径补一条 toast，属于「反馈闭环」而非视觉变更。
+     *
+     * 注意：只有「会 reject」的回调才走这条路径。若 store 内部把错误吞掉后正常 resolve
+     * （如 `useUserStore.reload` / `fetchAllHomeData`），调用方需自行探测并把失败翻译成 reject。
+     */
+    toastOnError?: string | false;
+  },
 ) {
   const actions = useContext(PTRActionsContext);
   const onRefreshRef = useRef(onRefresh);
@@ -138,7 +160,16 @@ export function usePullToRefresh(
     if (!actions) return;
     const handler: PTRHandler = {
       get onRefresh() {
-        return () => onRefreshRef.current();
+        return async () => {
+          try {
+            await onRefreshRef.current();
+          } catch (err) {
+            const text = optsRef.current?.toastOnError;
+            if (text === false) return;
+            console.error('[PTR] refresh failed:', err);
+            toast.error(typeof text === 'string' ? text : PTR_DEFAULT_ERROR_TEXT);
+          }
+        };
       },
       get enabled() {
         return optsRef.current?.enabled ?? true;

@@ -57,6 +57,7 @@ export default function IPTVPage() {
     channels,
     groups,
     isLoading,
+    isRefreshing,
     error,
     lastRefresh,
     refreshChannels,
@@ -71,6 +72,7 @@ export default function IPTVPage() {
       channels: s.channels,
       groups: s.groups,
       isLoading: s.isLoading,
+      isRefreshing: s.isRefreshing,
       error: s.error,
       lastRefresh: s.lastRefresh,
       refreshChannels: s.refreshChannels,
@@ -103,7 +105,15 @@ export default function IPTVPage() {
   useScrollRestore('iptv');
 
   // 下拉刷新：重新拉取 IPTV 频道列表
-  usePullToRefresh(() => useIPTVStore.getState().refreshChannels());
+  usePullToRefresh(async () => {
+    await useIPTVStore.getState().refreshChannels();
+    // 2026-09-16：refreshChannels 把源错误写进 store.error 后正常 resolve；而 error 只在
+    // 「channels 为空」时的 Empty 里展示（下方两处），有数据时刷新失败会被完全吞掉
+    // （浮层照样回弹「刷新成功」）。这里把「彻底失败（无频道 + 有错误）」翻译成 reject
+    // 交由浮层 toast；部分源失败不提示，避免多源聚合场景下的噪音。
+    const s = useIPTVStore.getState();
+    if (s.channels.length === 0 && s.error) throw new Error(s.error);
+  });
 
   useEffect(() => {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
@@ -116,12 +126,20 @@ export default function IPTVPage() {
   useEffect(() => {
     const sm = useSourceManagerStore.getState();
     const run = async () => {
-      await Promise.all([sm.bootstrapScene('iptv'), sm.bootstrapScene('epg')]);
-      const loaded = await useIPTVStore.getState().loadFromCache();
-      if (!loaded) await useIPTVStore.getState().refreshChannels();
-      // 首屏引导完成：在此之前 channels 为空且未加载，应显示整页 loading 而非 <Empty>，
-      // 避免首访先闪「暂无频道数据」再被数据/loading 替换的视觉跳变（方案 E）。
-      setBootstrapped(true);
+      try {
+        await Promise.all([sm.bootstrapScene('iptv'), sm.bootstrapScene('epg')]);
+        const loaded = await useIPTVStore.getState().loadFromCache();
+        if (!loaded) await useIPTVStore.getState().refreshChannels();
+      } catch (err) {
+        // 首屏引导失败必须放行 bootstrapped：否则渲染门控
+        // `(isLoading || !bootstrapped) && channels.length === 0` 会永久为真 → 整页骨架永驻，
+        // 用户既看不到错误也没有重试入口（store 侧 refreshChannels 内部已把失败写进 error）。
+        console.error('[IPTV] 首屏引导失败:', err);
+      } finally {
+        // 首屏引导完成（成功或失败）：在此之前 channels 为空且未加载，应显示整页 loading
+        // 而非 <Empty>，避免首访先闪「暂无频道数据」再被数据/loading 替换的视觉跳变（方案 E）。
+        setBootstrapped(true);
+      }
     };
     void run();
   }, []);
@@ -444,15 +462,18 @@ export default function IPTVPage() {
                         <span className="iptv-content-bar__note">仅过滤当前列表</span>
                       </>
                     )}
-                    <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
+                    <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading || isRefreshing}>
                       刷新
                     </button>
                   </div>
 
                   {channels.length === 0 ? (
                     <Empty
+                      status={error ? 'error' : 'waiting'}
                       title="暂无频道数据"
                       description={error || '请点击刷新按钮加载频道列表，或在左侧「更多台」勾选本地源'}
+                      onRetry={() => refreshChannels()}
+                      isRetrying={isRefreshing || isLoading}
                     />
                   ) : sectionsTotal === 0 ? (
                     <Empty title="暂无频道" description="尝试切换分类或清空搜索关键词" />
@@ -553,7 +574,7 @@ export default function IPTVPage() {
         {/* ── 操作行：刷新按钮 ── */}
         <div className="iptv-actions-row">
           <div className="iptv-actions-buttons">
-            <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading}>
+            <button className="refresh-btn" onClick={() => refreshChannels()} disabled={isLoading || isRefreshing}>
               刷新
             </button>
           </div>
@@ -584,8 +605,11 @@ export default function IPTVPage() {
             )}
             {channels.length === 0 ? (
               <Empty
+                status={error ? 'error' : 'waiting'}
                 title="暂无频道数据"
                 description={error || '请点击上方刷新按钮加载频道列表'}
+                onRetry={() => refreshChannels()}
+                isRetrying={isRefreshing || isLoading}
               />
             ) : filteredChannels.length === 0 ? (
               <Empty title="暂无频道" description="尝试切换分组或清空搜索关键词" />

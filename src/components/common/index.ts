@@ -3,3 +3,5 @@ export { default as AppLoading } from './AppLoading';
 export { default as Empty } from './Empty';
 export { default as BackToTopButton } from './BackToTopButton';
 export { default as CustomScrollbar } from './CustomScrollbar';
+export { default as LazyBlock } from './LazyBlock';
+export type { LazyBlockProps } from './LazyBlock';

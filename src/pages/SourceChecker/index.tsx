@@ -9,12 +9,22 @@ import SubPage from '@/components/common/SubPage/SubPage';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { getIPTVSources, getVideoSources } from '@/services/sourceService';
 import { getText, getJSON } from '@/services/httpClient';
+import { buildSourceProxyUrl } from '@/services/iptvService';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import type { VideoSourceConfig, IPTVSourceConfig } from '@/types/source';
 
 import './SourceChecker.css';
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
+
+/**
+ * 源探测并发上限（2026-09-16）。
+ * 原实现逐个 `for + await` 探测，N 个源 = N × 单次超时，最坏情况（全部不可达）
+ * IPTV 10 源 × 8s ≈ 80s、视频源同理 → 页面像卡死。取 4 并行后最坏耗时降到约 1/4，
+ * 同时避免瞬时对自建 CMS/IPTV 站开满连接被限流。
+ */
+const SOURCE_CHECK_CONCURRENCY = 4;
 
 type TabKey = 'network' | 'iptv' | 'video' | 'iptvProxy' | 'videoProxy';
 
@@ -206,52 +216,76 @@ export default function SourceCheckerPage() {
     return { latency, speed, error: null, nodes };
   }, []);
 
+  // 探测口径统一（2026-09-16）：原实现直接 `getText(source.url)` 直连，而实际拉取频道
+  // 列表走的是 `fetchAndParsePlaylist` → `buildSourceProxyUrl(url, proxyUrl)`（iptvService.ts:530）。
+  // 两条路径口径不一致 → 用户配了代理时，播放/列表能用的源在检测页被判「不可用」（假红），
+  // 反之亦然。此处复用同一个 URL 构造函数，让检测结果与真实取流一致。
   const checkIPTVSources = useCallback(async (): Promise<SourceCheckItem[]> => {
     const sources = iptvSources;
-    const results: SourceCheckItem[] = [];
-    for (let i = 0; i < sources.length; i++) {
-      const source = sources[i];
-      setIptvProgress({ current: i + 1, total: sources.length });
+    const proxyUrl = iptvSettings?.proxyUrl;
+    /** 完成即追加（保持「边测边出」的观感），返回值为有序数组 */
+    const arrived: SourceCheckItem[] = [];
+    let done = 0;
+
+    const results = await mapWithConcurrency(sources, SOURCE_CHECK_CONCURRENCY, async (source) => {
       const start = performance.now();
+      let item: SourceCheckItem;
       try {
-        await getText(source.url, { timeout: 8000 });
-        results.push({ name: source.name, url: source.url, available: true, latency: Math.round(performance.now() - start) });
+        await getText(buildSourceProxyUrl(source.url, proxyUrl), { timeout: 8000 });
+        item = { name: source.name, url: source.url, available: true, latency: Math.round(performance.now() - start) };
       } catch (error) {
-        results.push({ name: source.name, url: source.url, available: false, latency: Math.round(performance.now() - start), error: error instanceof Error ? error.message : '请求失败' });
+        item = {
+          name: source.name,
+          url: source.url,
+          available: false,
+          latency: Math.round(performance.now() - start),
+          error: error instanceof Error ? error.message : '请求失败',
+        };
       }
-      setIptvResults([...results]);
-    }
+      done += 1;
+      setIptvProgress({ current: done, total: sources.length });
+      arrived.push(item);
+      setIptvResults([...arrived]);
+      return item;
+    });
+
     return results;
-  }, [iptvSources]);
+  }, [iptvSources, iptvSettings?.proxyUrl]);
 
   const checkVideoSources = useCallback(async (): Promise<SourceCheckItem[]> => {
     const sources = videoSources;
-    const results: SourceCheckItem[] = [];
-    for (let i = 0; i < sources.length; i++) {
-      const source = sources[i];
-      setVideoProgress({ current: i + 1, total: sources.length });
+    const arrived: SourceCheckItem[] = [];
+    let done = 0;
+
+    const results = await mapWithConcurrency(sources, SOURCE_CHECK_CONCURRENCY, async (source) => {
       const start = performance.now();
+      let item: SourceCheckItem;
       try {
         const data = await getJSON<{ list?: unknown[] }>(source.api, { useProxy: true, timeout: 10000 });
         const videoCount = data?.list?.length;
-        results.push({
+        item = {
           name: source.name,
           url: source.api,
           available: true,
           latency: Math.round(performance.now() - start),
           details: videoCount !== undefined ? `${videoCount} 个视频` : undefined,
-        });
+        };
       } catch (error) {
-        results.push({
+        item = {
           name: source.name,
           url: source.api,
           available: false,
           latency: Math.round(performance.now() - start),
           error: error instanceof Error ? error.message : '请求失败',
-        });
+        };
       }
-      setVideoResults([...results]);
-    }
+      done += 1;
+      setVideoProgress({ current: done, total: sources.length });
+      arrived.push(item);
+      setVideoResults([...arrived]);
+      return item;
+    });
+
     return results;
   }, [videoSources]);
 

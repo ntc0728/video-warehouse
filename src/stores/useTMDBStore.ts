@@ -136,15 +136,22 @@ interface TMDBStoreState {
   };
 
   // ---- 操作 ----
-  fetchTrending: (timeWindow?: 'day' | 'week') => Promise<void>;
-  fetchNowPlaying: () => Promise<void>;
-  fetchPopularMovies: () => Promise<void>;
-  fetchTopRatedMovies: () => Promise<void>;
-  fetchUpcomingMovies: () => Promise<void>;
-  fetchPopularTv: () => Promise<void>;
-  fetchTopRatedTv: () => Promise<void>;
-  fetchAiringTodayTv: () => Promise<void>;
-  fetchAllHomeData: () => Promise<void>;
+  fetchTrending: (timeWindow?: 'day' | 'week', signal?: AbortSignal) => Promise<void>;
+  fetchNowPlaying: (signal?: AbortSignal) => Promise<void>;
+  fetchPopularMovies: (signal?: AbortSignal) => Promise<void>;
+  fetchTopRatedMovies: (signal?: AbortSignal) => Promise<void>;
+  fetchUpcomingMovies: (signal?: AbortSignal) => Promise<void>;
+  fetchPopularTv: (signal?: AbortSignal) => Promise<void>;
+  fetchTopRatedTv: (signal?: AbortSignal) => Promise<void>;
+  fetchAiringTodayTv: (signal?: AbortSignal) => Promise<void>;
+  /** @param opts.force=true 时忽略 60min TTL，强制重新拉取（下拉刷新/手动刷新用） */
+  fetchAllHomeData: (opts?: { force?: boolean }) => Promise<void>;
+  /**
+   * 单区块懒加载取数（视口懒加载用）：**数据为空** 或 **区块 TTL 过期** 才请求，
+   * 已在飞 / 数据齐全且未过期时直接返回（幂等，可被 IO 反复触发）。
+   * 只影响该区块，不触碰其它区块（与 fetchAllHomeData 的整批语义相对）。
+   */
+  ensureHomeBlock: (key: HomeBlockKey, opts?: { force?: boolean }) => Promise<void>;
 
   search: (query: string, page?: number, opts?: { reset?: boolean }) => Promise<void>;
   fetchDiscover: (page?: number, opts?: { reset?: boolean }) => Promise<void>;
@@ -302,6 +309,28 @@ function mapSearchToVideoItem(item: TMDBMultiSearchResult): TMDBVideoItem {
 // 首页 8 区块内存缓存 TTL：60 分钟（数据全满时仍会过期静默刷新）
 export const HOME_TTL_MS = 60 * 60 * 1000;
 
+/** 首页 8 个内容区块的键（Hero 用 trending，其余为内容行） */
+export type HomeBlockKey =
+  | 'trending'
+  | 'nowPlaying'
+  | 'popularMovies'
+  | 'topRatedMovies'
+  | 'upcomingMovies'
+  | 'popularTv'
+  | 'topRatedTv'
+  | 'airingTodayTv';
+
+export const HOME_BLOCK_KEYS: readonly HomeBlockKey[] = [
+  'trending',
+  'nowPlaying',
+  'popularMovies',
+  'topRatedMovies',
+  'upcomingMovies',
+  'popularTv',
+  'topRatedTv',
+  'airingTodayTv',
+];
+
 // ── 首页 8 区块 localStorage 持久化 ───────────────────────────
 // 冷启动（刷新页面）时先读 LS 立即展示旧数据（stale-while-revalidate），
 // 再按内存 TTL（60min）决定何时静默刷新。LS 本身带 24h 新鲜度校验，
@@ -358,6 +387,13 @@ const _homeLSData = readHomeLS();
 
 // 首页数据批量获取的 AbortController：重复调用时自动取消上一轮
 let _homeFetchAbort: AbortController | null = null;
+
+// 区块级「最近一次成功取数时间」（0/缺省 = 从未取过）。
+// 2026-09-16 视口懒加载：区块不再总是随整批一起取，全局 homeFetchedAt 无法表达
+// 「这一排是刚才滚到才取的」；TTL 刷新改按区块判定（见 ensureHomeBlock）。
+// 仅内存态：不持久化、不参与渲染（LS 恢复的区块时间戳为 0 = 不触发 TTL 刷新，
+// 与其旧行为一致——旧代码用 homeFetchedAt=0 表达同一语义）。
+const _homeBlockFetchedAt: Partial<Record<HomeBlockKey, number>> = {};
 
 // discover 流（search / fetchDiscover / fetchTopRated）的请求序号：
 // 快速连续换词/换筛选时，仅「最新一次」请求允许写结果，过期响应（慢返回的旧请求）
@@ -429,10 +465,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
   // ---- 操作 ----
 
-  fetchTrending: async (timeWindow = 'day') => {
+  fetchTrending: async (timeWindow = 'day', signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, trending: true } }));
     try {
-      const data = await fetchTrending('all', timeWindow);
+      const data = await fetchTrending('all', timeWindow, { signal });
       const items = data.results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .map(mapTrendingToVideoItem);
@@ -449,6 +485,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           errors: { ...s.errors, trending: null },
         }));
     } catch (err) {
+      // 被取消（新一轮刷新抢占 / 页面卸载）不算失败：只复位 loading，不写错误、不残留错误态
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, trending: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, trending: false },
         errors: { ...s.errors, trending: err instanceof Error ? err.message : '获取热门内容失败' },
@@ -456,7 +497,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchNowPlaying: async () => {
+  fetchNowPlaying: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, nowPlaying: true } }));
     const items: TMDBVideoItem[] = [];
     let sectionError: string | null = null;
@@ -464,9 +505,15 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     // 电影和 TV 并行请求，互不影响
     const [movieResult, tvResult] = await Promise.allSettled([
-      fetchNowPlaying(),
-      fetchPopularTV(),
+      fetchNowPlaying({ signal }),
+      fetchPopularTV({ signal }),
     ]);
+
+    // 被取消（新一轮刷新抢占 / 页面卸载）不算失败：只复位 loading
+    if (signal?.aborted) {
+      set((s) => ({ loading: { ...s.loading, nowPlaying: false } }));
+      return;
+    }
 
     if (movieResult.status === 'fulfilled') {
       items.push(...movieResult.value.results.map(mapMovieToVideoItem));
@@ -501,16 +548,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchPopularMovies: async () => {
+  fetchPopularMovies: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, popularMovies: true } }));
     try {
-      const data = await fetchPopularMovies();
+      const data = await fetchPopularMovies({ signal });
       set((s) => ({
           popularMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, popularMovies: false },
           errors: { ...s.errors, popularMovies: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, popularMovies: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, popularMovies: false },
         errors: { ...s.errors, popularMovies: err instanceof Error ? err.message : '获取热门电影失败' },
@@ -518,16 +570,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchTopRatedMovies: async () => {
+  fetchTopRatedMovies: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, topRatedMovies: true } }));
     try {
-      const data = await fetchTopRatedMovies();
+      const data = await fetchTopRatedMovies(1, { signal });
       set((s) => ({
           topRatedMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, topRatedMovies: false },
           errors: { ...s.errors, topRatedMovies: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, topRatedMovies: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, topRatedMovies: false },
         errors: { ...s.errors, topRatedMovies: err instanceof Error ? err.message : '获取高分电影失败' },
@@ -535,16 +592,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchUpcomingMovies: async () => {
+  fetchUpcomingMovies: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, upcomingMovies: true } }));
     try {
-      const data = await fetchUpcomingMovies();
+      const data = await fetchUpcomingMovies({ signal });
       set((s) => ({
           upcomingMovies: data.results.map(mapMovieToVideoItem),
           loading: { ...s.loading, upcomingMovies: false },
           errors: { ...s.errors, upcomingMovies: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, upcomingMovies: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, upcomingMovies: false },
         errors: { ...s.errors, upcomingMovies: err instanceof Error ? err.message : '获取即将上映电影失败' },
@@ -552,16 +614,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchPopularTv: async () => {
+  fetchPopularTv: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, popularTv: true } }));
     try {
-      const data = await fetchPopularTV();
+      const data = await fetchPopularTV({ signal });
       set((s) => ({
           popularTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, popularTv: false },
           errors: { ...s.errors, popularTv: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, popularTv: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, popularTv: false },
         errors: { ...s.errors, popularTv: err instanceof Error ? err.message : '获取热门剧集失败' },
@@ -569,16 +636,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchTopRatedTv: async () => {
+  fetchTopRatedTv: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, topRatedTv: true } }));
     try {
-      const data = await fetchTopRatedTV();
+      const data = await fetchTopRatedTV(1, { signal });
       set((s) => ({
           topRatedTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, topRatedTv: false },
           errors: { ...s.errors, topRatedTv: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, topRatedTv: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, topRatedTv: false },
         errors: { ...s.errors, topRatedTv: err instanceof Error ? err.message : '获取高分剧集失败' },
@@ -586,16 +658,21 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }
   },
 
-  fetchAiringTodayTv: async () => {
+  fetchAiringTodayTv: async (signal?: AbortSignal) => {
     set((s) => ({ loading: { ...s.loading, airingTodayTv: true } }));
     try {
-      const data = await fetchAiringTodayTV();
+      const data = await fetchAiringTodayTV({ signal });
       set((s) => ({
           airingTodayTv: data.results.map(mapTVToVideoItem),
           loading: { ...s.loading, airingTodayTv: false },
           errors: { ...s.errors, airingTodayTv: null },
       }));
     } catch (err) {
+      // 被取消不算失败：只复位 loading
+      if (signal?.aborted) {
+        set((s) => ({ loading: { ...s.loading, airingTodayTv: false } }));
+        return;
+      }
       set((s) => ({
         loading: { ...s.loading, airingTodayTv: false },
         errors: { ...s.errors, airingTodayTv: err instanceof Error ? err.message : '获取今日播出剧集失败' },
@@ -623,6 +700,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   /** 仅清空首页 8 区块（保留 genres/countries 分类配置），不触发重新请求 */
   clearHomeData: () => {
     clearHomeLS();
+    // 区块级时间戳一并清零：否则「清除缓存」后懒加载区块会因时间戳未过期而不重新取数
+    for (const k of HOME_BLOCK_KEYS) delete _homeBlockFetchedAt[k];
     set(() => ({
       trending: [],
       nowPlaying: [],
@@ -637,18 +716,61 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     }));
   },
 
-  fetchAllHomeData: async () => {
+  /**
+   * 单区块懒加载取数 —— 首页「视口懒加载」的 store 侧入口（2026-09-16）。
+   *
+   * 与 fetchAllHomeData 的区别：只判定并请求**一个**区块，其余区块（尤其是尚未滚入
+   * 视口的）一律不碰 —— 这是懒加载收益能保住的前提（若在这里顺手 fetchAllHomeData，
+   * 首次滚入视口就会把剩下所有区块的请求一次性打出去，等于没做）。
+   *
+   * 幂等：数据已在且区块 TTL 未过期 → 直接返回；正在请求 → 直接返回。
+   * 因此可以被 IO 反复触发、被 60min 定时器轮询，都不会产生重复请求。
+   */
+  ensureHomeBlock: async (key, opts) => {
+    const s = get();
+    const force = opts?.force === true;
+    const fetchedAt = _homeBlockFetchedAt[key] ?? 0;
+    const ttlExpired = fetchedAt > 0 && Date.now() - fetchedAt > HOME_TTL_MS;
+    const empty = s[key].length === 0;
+    if (!force && !empty && !ttlExpired) return;
+    if (s.loading[key]) return;
+
+    switch (key) {
+      case 'trending': await get().fetchTrending('day'); break;
+      case 'nowPlaying': await get().fetchNowPlaying(); break;
+      case 'popularMovies': await get().fetchPopularMovies(); break;
+      case 'topRatedMovies': await get().fetchTopRatedMovies(); break;
+      case 'upcomingMovies': await get().fetchUpcomingMovies(); break;
+      case 'topRatedTv': await get().fetchTopRatedTv(); break;
+      case 'airingTodayTv': await get().fetchAiringTodayTv(); break;
+      case 'popularTv':
+        // /tv/popular 由 fetchNowPlaying 内部并行拉取并写入 popularTv（见 fetchAllHomeData 注释），
+        // 它正在飞时直接复用，避免同一接口被请求两次。
+        if (get().loading.nowPlaying) return;
+        await get().fetchPopularTv();
+        break;
+    }
+
+    // 只有真拿到数据才记时间戳：失败保持原值（0）→ 下次触发（重新滚入视口 / 下拉刷新）会重试
+    if (get()[key].length > 0) _homeBlockFetchedAt[key] = Date.now();
+  },
+
+  fetchAllHomeData: async (opts?: { force?: boolean }) => {
     const state = get();
+    const force = opts?.force === true;
 
     // 取消上一轮未完成的批量获取，避免重复请求叠加
+    // 注：signal 会透传给各区块请求（见下方 fetches），上一轮是真正被中断，
+    //     而不是像旧实现那样只置位一个没人读取的 aborted 标志。
     _homeFetchAbort?.abort();
     const ctrl = new AbortController();
     _homeFetchAbort = ctrl;
+    const signal = ctrl.signal;
 
     // TTL 过期：距离上次 fetchAllHomeData 完成超过 60min（homeFetchedAt=0 视为从未拉取，不属于过期）
     const ttlExpired = state.homeFetchedAt > 0 && Date.now() - state.homeFetchedAt > HOME_TTL_MS;
-    // 判断每个区块是否需要刷新（数据为空 或 全局 TTL 过期）
-    const shouldFetch = (arr: unknown[]): boolean => arr.length === 0 || ttlExpired;
+    // 判断每个区块是否需要刷新（force 强制刷新 / 数据为空 / 全局 TTL 过期）
+    const shouldFetch = (arr: unknown[]): boolean => force || arr.length === 0 || ttlExpired;
     // loading 置位仅针对空区块：TTL 过期时区块已有数据，保持旧数据展示（静默刷新），避免整页闪骨架
     const isEmpty = (arr: unknown[]): boolean => arr.length === 0;
 
@@ -724,18 +846,24 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     // popularTv 单独为空（如单独失败过）时，popularTv 仍能通过 fetchNowPlaying 补齐
     // （其内部有 s.popularTv.length === 0 写入保护，不会覆盖已有数据）。
     const fetches = [
-      shouldFetch(state.trending) ? state.fetchTrending() : null,
-      (shouldFetch(state.nowPlaying) || shouldFetch(state.popularTv)) ? state.fetchNowPlaying() : null,
-      shouldFetch(state.popularMovies) ? state.fetchPopularMovies() : null,
-      shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies() : null,
-      shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies() : null,
-      shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv() : null,
-      shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv() : null,
+      shouldFetch(state.trending) ? state.fetchTrending('day', signal) : null,
+      (shouldFetch(state.nowPlaying) || shouldFetch(state.popularTv)) ? state.fetchNowPlaying(signal) : null,
+      shouldFetch(state.popularMovies) ? state.fetchPopularMovies(signal) : null,
+      shouldFetch(state.topRatedMovies) ? state.fetchTopRatedMovies(signal) : null,
+      shouldFetch(state.upcomingMovies) ? state.fetchUpcomingMovies(signal) : null,
+      shouldFetch(state.topRatedTv) ? state.fetchTopRatedTv(signal) : null,
+      shouldFetch(state.airingTodayTv) ? state.fetchAiringTodayTv(signal) : null,
     ];
     await Promise.all(fetches.filter((p): p is Promise<void> => p !== null));
+    // 本轮已被新一次刷新/卸载抢占：不再写完成时间与 localStorage，避免旧数据盖掉新一轮
+    if (ctrl.signal.aborted) return;
     // 记录本次批量拉取的完成时间：TTL 刷新窗口从此刻重新计时
     const next = get();
     set({ homeFetchedAt: Date.now() });
+    // 区块级时间戳同步刷新（整批已把所有区块都拉过一遍）
+    for (const k of HOME_BLOCK_KEYS) {
+      if (next[k].length > 0) _homeBlockFetchedAt[k] = Date.now();
+    }
     // 持久化到 localStorage（24h 新鲜度校验）：冷启动可秒开旧数据
     writeHomeLS({
       trending: next.trending,

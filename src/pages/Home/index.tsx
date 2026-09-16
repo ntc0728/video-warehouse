@@ -9,8 +9,8 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
-import { HOME_TTL_MS } from '@/stores/useTMDBStore';
-import { BackToTopButton, AppLoading } from '@/components/common';
+import type { HomeBlockKey } from '@/stores/useTMDBStore';
+import { BackToTopButton, AppLoading, LazyBlock } from '@/components/common';
 import TMDBMovieRow from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -42,6 +42,24 @@ const HOME_BLOCKS = [
 const HOME_RETRY_COOLDOWN_MS = 10 * 60 * 1000;
 const homeRetryCooldown = new Map<string, number>();
 
+// ── 视口懒加载（2026-09-16）─────────────────────────────────────────
+// 首屏档：Hero 用的 trending + 第一排「正在热映」(nowPlaying) —— 进页面即取，保证首屏不闪骨架。
+// 视口档：其余 6 排等滚动接近才取（见 <LazyBlock>），进入视口前连接口都不发。
+const HOME_FIRST_SCREEN_BLOCKS = ['trending', 'nowPlaying'] as const satisfies readonly HomeBlockKey[];
+/** 行区块懒加载起始下标（homeRows[0] = 正在热映，属首屏档） */
+const HOME_LAZY_FROM_ROW = 1;
+
+type TMDBHomeState = ReturnType<typeof useTMDBStore.getState>;
+
+/** 首页任一区块是否在加载中（原多处重复表达式收敛为单一判定） */
+function anyHomeLoading(s: TMDBHomeState): boolean {
+  return (
+    s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
+    s.loading.topRatedMovies || s.loading.upcomingMovies ||
+    s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv
+  );
+}
+
 export default function HomePage() {
   const navigate = useCustomNavigate();
   const location = useLocation();
@@ -53,24 +71,37 @@ export default function HomePage() {
 
   useScrollRestore('home');
 
-  // 下拉刷新：拉取全部首页数据
-  usePullToRefresh(() => {
-    void useTMDBStore.getState().fetchAllHomeData();
-  });
+  // 下拉刷新：强制重新拉取全部首页数据
+  // 必须传 force：否则 fetchAllHomeData 内部按「数据空 或 60min TTL 过期」判定，
+  // 数据齐全时整批请求都不会发出，用户看到「刷新成功」却零请求（伪刷新）。
+  // 返回 Promise 让下拉浮层等到真实结束。
+  usePullToRefresh(
+    async () => {
+      await useTMDBStore.getState().fetchAllHomeData({ force: true });
+      // 2026-09-16：fetchAllHomeData 把各区块失败写进 errors 后**正常 resolve**（不 reject），
+      // 且 TMDBMovieRow 只在 items 为空时才渲染错误行（TMDBMovieRow/index.tsx:437-448）——
+      // 于是「已有旧数据 + 刷新整批失败」时用户完全看不到失败（浮层照样回弹「刷新成功」）。
+      // 这里把「8 个区块全部失败」（典型场景：断网 / Token 失效）翻译成 reject，交由浮层统一 toast。
+      // 只判全失败：局部失败在区块为空时已有行内错误文案，重复提示反而噪音。
+      const errs = useTMDBStore.getState().errors;
+      const failedAll = HOME_BLOCKS.every((k) => !!errs[k]);
+      if (failedAll) throw new Error(errs.trending ?? '首页数据刷新失败');
+    },
+    { toastOnError: '刷新失败，请检查网络后重试' },
+  );
 
   // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景）
+  // 2026-09-16 视口懒加载：只对「已加载（有数据）」的区块做 TTL 刷新（ensureHomeBlock 内部
+  // 按区块 TTL 判定），未滚入视口的区块保持空白、由 <LazyBlock> 触发 —— 否则整批刷新会把
+  // 懒加载省下的请求立刻补回来。
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') return;
       const s = useTMDBStore.getState();
-      if (s.homeFetchedAt <= 0) return; // 从未拉取：交给「按需兜底」effect
-      if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
-      const anyLoading =
-        s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
-        s.loading.topRatedMovies || s.loading.upcomingMovies ||
-        s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
-      if (anyLoading) return;
-      void s.fetchAllHomeData();
+      if (anyHomeLoading(s)) return;
+      for (const k of HOME_BLOCKS) {
+        if (s[k].length > 0) void s.ensureHomeBlock(k);
+      }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
@@ -103,9 +134,8 @@ export default function HomePage() {
       errors: s.errors,
     })),
   );
-  // I2：首页数据 TTL 过期信号（订阅 homeFetchedAt，每次拉取完成后变化；
-  // 定时器 effect 用它在「停留 60min 后」触发兜底刷新）
-  const homeFetchedAt = useTMDBStore((s) => s.homeFetchedAt);
+  // 注：不再订阅 homeFetchedAt —— 视口懒加载后 TTL 判定下沉到 store 的 ensureHomeBlock
+  //（区块级时间戳），页面侧的定时器/visibility 只需遍历「已加载」区块触发即可。
 
   // 继续观看行所需数据（必须在所有提前 return 之前调用，避免 hook 数随渲染分支变化而漂移）
   const history = useUserStore((s) => s.history);
@@ -159,55 +189,44 @@ export default function HomePage() {
     (loading.trending || loading.nowPlaying) &&
     !hasAnyData;
 
-  // 按需兜底拉取首页数据：处于 home 视图、且任一区块为空时触发。
-  // 注意：不能用 hasAnyData（含 trending）作为门槛——SearchBox 会独立拉取 trending
-  // 并使其先加载，若据此跳过则其余 7 个「行区块」永远拿不到数据（banner 在、行不在）。
-  // fetchAllHomeData 内部用 shouldFetch 只拉空区块，因此重复触发是安全的；
-  // 仅当任一区块正在加载时跳过，避免叠加请求。
-  // I1（2026-08-04）：追加「失败冷却」——刚失败的区块 10min 内不计入 anyEmpty，
-  // 避免其它区块数据变化时把失败区块反复重拉（见模块顶部 HOME_RETRY_COOLDOWN_MS）。
-  // I2（2026-08-06）：追加 TTL——数据全满但距上次拉取 > 60min 时也触发 fetchAllHomeData
-  // （内部 shouldFetch 会对过期区块重新拉取；loading 仅空区块置位，不会闪骨架）。
+  // 按需兜底拉取（**仅首屏档**）：trending / nowPlaying 为空时补齐，保证进页面必有 Hero + 第一排。
+  // 注意：不能用 hasAnyData（含 trending）作为门槛——SearchBox 会独立拉取 trending 并使其先加载，
+  // 若据此跳过则第一排永远拿不到数据（banner 在、行不在）。
+  // I1（2026-08-04）：「失败冷却」——刚失败的区块 10min 内不再重拉，避免其它区块数据变化时
+  // 把失败区块反复重试（见模块顶部 HOME_RETRY_COOLDOWN_MS）。
+  // 2026-09-16 视口懒加载：**范围收窄到首屏档**。原来「任一区块为空就 fetchAllHomeData」会让
+  // 尚未滚入视口的 6 排被立即整批拉取，懒加载收益归零；这些行改由 <LazyBlock> 进入视口时
+  // 各自 ensureHomeBlock。TTL 刷新也不再走这里（见下方定时器 / visibility 处理）。
   useEffect(() => {
     if (!hasToken) return;
     const s = useTMDBStore.getState();
     // 更新冷却表：区块有数据 = 恢复成功，清除冷却；有错误且无记录 = 写入冷却起始时间
-    for (const k of HOME_BLOCKS) {
+    for (const k of HOME_FIRST_SCREEN_BLOCKS) {
       if (s[k].length > 0) homeRetryCooldown.delete(k);
       else if (s.errors[k] && !homeRetryCooldown.has(k)) homeRetryCooldown.set(k, Date.now());
     }
-    const inCooldown = (k: (typeof HOME_BLOCKS)[number]) => {
+    const inCooldown = (k: HomeBlockKey) => {
       const t = homeRetryCooldown.get(k);
       return t != null && Date.now() - t < HOME_RETRY_COOLDOWN_MS;
     };
-    // 任一「空且不在冷却中」的区块需要拉取
-    const anyEmpty = HOME_BLOCKS.some((k) => s[k].length === 0 && !inCooldown(k));
-    // 数据全满但 TTL 过期（homeFetchedAt>0 表示已成功拉取过）
-    const ttlExpired = s.homeFetchedAt > 0 && Date.now() - s.homeFetchedAt > HOME_TTL_MS;
-    if (!anyEmpty && !ttlExpired) return;
-    const anyLoading =
-      s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
-      s.loading.topRatedMovies || s.loading.upcomingMovies ||
-      s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
-    if (anyLoading) return;
-    void s.fetchAllHomeData();
-  }, [hasToken, trending, nowPlaying, popularMovies, topRatedMovies, upcomingMovies, popularTv, topRatedTv, airingTodayTv, homeFetchedAt]);
+    const need = HOME_FIRST_SCREEN_BLOCKS.filter((k) => s[k].length === 0 && !inCooldown(k));
+    if (need.length === 0) return;
+    if (s.loading.trending || s.loading.nowPlaying) return;
+    for (const k of need) void s.ensureHomeBlock(k);
+  }, [hasToken, trending, nowPlaying, errors.trending, errors.nowPlaying]);
 
   // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
-  // 依赖 s 由组件订阅的 ttlExpiredSig 驱动；使用 store 模块级定时器避免每次渲染重建。
+  // 2026-09-16 视口懒加载：只遍历「已加载（有数据）」区块，TTL 判定在 ensureHomeBlock 内
+  // 按区块时间戳进行；不再整批 fetchAllHomeData（那会把未进视口的懒加载区块一并请求掉）。
   useEffect(() => {
     if (!hasToken) return;
     const check = () => {
       const s = useTMDBStore.getState();
-      if (s.homeFetchedAt <= 0) return;
-      if (Date.now() - s.homeFetchedAt <= HOME_TTL_MS) return;
-      const anyLoading =
-        s.loading.trending || s.loading.nowPlaying || s.loading.popularMovies ||
-        s.loading.topRatedMovies || s.loading.upcomingMovies ||
-        s.loading.popularTv || s.loading.topRatedTv || s.loading.airingTodayTv;
-      if (anyLoading) return;
-      void s.fetchAllHomeData();
+      if (anyHomeLoading(s)) return;
+      for (const k of HOME_BLOCKS) {
+        if (s[k].length > 0) void s.ensureHomeBlock(k);
+      }
     };
     // 挂载时立即补查一次，不依赖下一轮定时器
     check();
@@ -277,6 +296,10 @@ export default function HomePage() {
     const t2 = window.setTimeout(() => setEnterPhase('done'), SHOW_MS + FADE_MS);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
   }, []);
+
+  // 视口懒加载 + TV 焦点预加载：记录当前获得焦点的内容行下标（null = 尚未聚焦任何行）。
+  // TV 端用方向键导航，焦点可能直接跳到尚未加载的行 → 按「焦点行 ±1 行」预加载（见 renderHomeRows）。
+  const [tvFocusRow, setTvFocusRow] = useState<number | null>(null);
 
   if (!hasToken) {
     return (
@@ -452,14 +475,45 @@ export default function HomePage() {
   // hook 已上移至组件顶部（所有提前 return 之前），此处仅复用，避免 hook 数随分支漂移。
 
   const homeRows = [
-    { title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
-    { title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
-    { title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
-    { title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
-    { title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
-    { title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
-    { title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
+    { key: 'nowPlaying' as const, title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
+    { key: 'popularMovies' as const, title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
+    { key: 'topRatedMovies' as const, title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
+    { key: 'upcomingMovies' as const, title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
+    { key: 'popularTv' as const, title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
+    { key: 'topRatedTv' as const, title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
+    { key: 'airingTodayTv' as const, title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
   ];
+
+  // ── 行区块渲染（大屏两栏 / 单栏两条分支共用）───────────────────────
+  // 视口懒加载：首屏档（homeRows[0] = 正在热映）立即渲染；其余 6 排等 <LazyBlock> 进入视口
+  // 才解锁 —— 未解锁时传「空 items + isLoading」，由 TMDBMovieRow 渲染**等高**的
+  // SkeletonCards（骨架卡与真卡同一 class，高度一致），避免滚动恢复时高度塌陷错位。
+  // TV 端例外：方向键焦点可能直接跳到未加载行（骨架不可聚焦 → 焦点丢失），
+  // 故按「焦点行 ±1 行」预加载（2026-09-16 拍板）。
+  const renderHomeRows = () => (
+    <div className="home-rows">
+      {homeRows.map((row, i) => (
+        <LazyBlock
+          key={row.key}
+          enabled={i >= HOME_LAZY_FROM_ROW}
+          preload={isTV && tvFocusRow !== null && Math.abs(i - tvFocusRow) <= 1}
+          onFocusRow={() => setTvFocusRow(i)}
+          onEnter={() => void useTMDBStore.getState().ensureHomeBlock(row.key)}
+        >
+          {(entered) => (
+            <TMDBMovieRow
+              title={row.title}
+              items={entered ? row.items : []}
+              isLoading={entered ? row.isLoading : hasToken}
+              error={entered ? row.error : null}
+              scrollResetToken="home"
+              crossfadeOnChange
+            />
+          )}
+        </LazyBlock>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -510,19 +564,7 @@ export default function HomePage() {
                     />
                   </div>
                 )}
-                <div className="home-rows">
-                  {homeRows.map((row, i) => (
-                    <TMDBMovieRow
-                      key={i}
-                      title={row.title}
-                      items={row.items}
-                      isLoading={row.isLoading}
-                      error={row.error}
-                      scrollResetToken="home"
-                      crossfadeOnChange
-                    />
-                  ))}
-                </div>
+                {renderHomeRows()}
                 <BackToTopButton />
               </div>
             </div>
@@ -553,19 +595,7 @@ export default function HomePage() {
                   />
                 </div>
               )}
-              <div className="home-rows">
-                {homeRows.map((row, i) => (
-                  <TMDBMovieRow
-                    key={i}
-                    title={row.title}
-                    items={row.items}
-                    isLoading={row.isLoading}
-                    error={row.error}
-                    scrollResetToken="home"
-                    crossfadeOnChange
-                  />
-                ))}
-              </div>
+              {renderHomeRows()}
               <BackToTopButton />
             </div>
           </>

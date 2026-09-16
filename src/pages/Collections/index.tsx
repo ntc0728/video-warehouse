@@ -81,7 +81,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 ];
 
 export default function CollectionsPage() {
-  const { collections, history, removeCollection, _loading: userLoading } = useUserStore();
+  const { collections, history, removeCollection, _loading: userLoading, loadError } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
   const { getState, saveState } = useNavStore();
   // CMS 源启用守卫：直链收藏点击跳转前校验所选源是否启用，未启用则拦截并弹窗
@@ -433,6 +433,16 @@ export default function CollectionsPage() {
       {userLoading ? (
         // 收藏页专属骨架：结构对齐真实「分区头 + 网格」（不再用全站统一 AppLoading）
         <CollectionsSkeleton />
+      ) : loadError && allIds.length === 0 ? (
+        // 读库失败且无可展示数据（2026-09-16）：必须与「真的没有收藏」区分开，
+        // 否则用户会以为收藏丢了，而且没有任何重试入口。
+        // 有数据时读失败不切错误态（保留旧数据），失败反馈由下拉刷新 toast 承担。
+        <Empty
+          status="error"
+          title="收藏数据读取失败"
+          description={loadError}
+          onRetry={() => { void useUserStore.getState().reload().catch(() => { /* 失败态已写入 loadError */ }); }}
+        />
       ) : allIds.length > 0 ? (
         <div key={mainTab} className="collection-content animate-fade-in">
           {mainTab !== 'iptv' && collectedVideos.length > 0 && (
