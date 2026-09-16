@@ -1,0 +1,75 @@
+---
+date: 2026-09-17 03:00
+module: docs+test
+type: docs
+build: tsc -b 通过 / vitest 33 files·389 tests 全过 / E2E 受影响 14 spec 跑到大半后外链中断（见「验证」）
+---
+
+# 2026-09-17 03:00 受影响 E2E 验证 + 懒加载/并发结论入库（文档收尾）
+
+## 改动
+
+### 知识沉淀（push 前提炼，无业务代码改动）
+
+- `docs/agents/patterns.md` 新增两节：
+  - **「视口懒加载（接口侧，2026-09-16 定稿）」**——L1 `src/hooks/useInViewport.ts` /
+    L2 `src/components/common/LazyBlock.tsx` / L3 `useTMDBStore.ensureHomeBlock(key)` 三层分工；
+    L1 五个不可动设计（回调式 ref 而非 useRef、滚动 root 取 `.app-shell__scroll`、rAF 首帧判定、
+    `clientHeight===0` 跳过、deps 只放结构参数）；`LazyBlock` 契约（`enabled=false` 立即渲染 /
+    触发一次永久保持 / `children` 是渲染函数 / 未解锁时给真实组件传空 items 由它出等高骨架）；
+    「收益必须三处同步收窄，漏一处即归零」；门控 effect 两个陷阱（`stillsInView` 必须进 deps、
+    哨兵不能绑条件渲染元素）。
+  - **「并发控制与「同口径」原则（2026-09-16）」**——`mapWithConcurrency` 作为唯一并发入口；
+    串行改并发的「语义等价改造法」；**探测类代码必须与真实取流同口径**（SourceChecker 假红根因）；
+    多代理轮换用模块级活跃代理、轮换记录不能放在会被复位的 effect 里；切源不复用旧源 `vod_id`
+    （靠「归属证明」而非 `isSwitching`）；会话级 LRU + `loadPerson` 返回真 Promise；跨挂载缓存
+    连负结果一起缓存、取名额前按业务主键去重。
+- 本轮**未改任何业务代码**（E2E 未暴露出属于本批的回归，见下）。
+
+## 验证
+
+### Vitest / 类型
+
+- `vitest run`：33 files / **389 tests 全过**（26s）。
+- `tsc -b` 通过（提交前复检）。
+
+### E2E（受影响 14 spec：13 spec 批次 + home）
+
+网络可用窗口内跑出的结果：
+
+| 用例 | 首轮 | 复跑 | 判定 |
+| --- | --- | --- | --- |
+| DETAIL-060/062（CMS 按需加载） | ✘ | ✅ 4.4s | 网络抖动假红 |
+| regression 深链返回链（详情→首页 / 播放→详情 / 人物→首页） | ✘ | ✅ 7.5s | 网络抖动假红 |
+| BROWSE-010/012/013/014 | ✘ | ✘ BROWSE-013 | 真实 CMS 搜索，无结果空状态未出现 |
+| IPTVP-023（频道列表一级栏按内容定宽） | ✘ | ✘ | `groupW=136`，断言 `<135`（差 1px） |
+| player.spec.ts 全量 | 中断 | ✅ 9/9（58.7s） | 首轮中断是外链卡死，非用例问题 |
+
+其余 9 个 spec（browse 其余 / detail 其余 / regression 其余 / iptv / iptv-player 其余 /
+collections / history / person / source-checker / cross-tab / player-failover /
+player-cms-error）**全绿**。
+
+**两条红不属于本批回归（文件级证据）**：
+
+- `544f820..HEAD` 只含本批 2 个提交 + release-please merge + 版本号：
+  **零 `*.css` 改动、零 `src/pages/IPTVPlayer/**`、零 `src/pages/Browse/**` 改动**。
+- `IPTVPlayer` **不引用**本批任何改动模块（`git grep` 无 iptvService / useIPTVStore /
+  httpClient / videoService / concurrency 命中）→ IPTVP-023 的量值与本批无因果路径。
+- `Browse` 只引用 `videoService.searchAllFromCMSSource`；本批在 videoService 里只改了
+  `searchVideoSeasonsFromSingleSource`（季解析并发化），两个函数无共享改动。
+
+**未能补跑的部分与原因**：
+
+- 18:35 UTC 后 `api.themoviedb.org` 出网中断（TIMEOUT / ECONNRESET），Playwright globalSetup 卡死，
+  home.spec 与两条红的多次复跑全部 0 输出挂起（此时 CORS 代理 `video-warehouse.nmziptv.top`
+  仍 404 可达、`api.github.com` 403 可达，仅 TMDB 不可达）。
+- 基线对照尝试：`git archive 544f820` 导出到临时目录 + `node_modules` junction，
+  vite 卡在 `Re-optimizing dependencies` 不绑端口（且污染了共享的 `node_modules/.vite`
+  → 已删除缓存恢复），遂改用上面的文件级归因。
+- home.spec 本轮**未取得结果**（上一会话窗口内跑过，本轮补跑时外链已断）。
+
+## 后续（待用户拍板，未动手）
+
+- IPTVP-023 阈值 130~135 与实测 136：要么放宽阈值，要么回头看频道列表一级栏的定宽来源
+  （属视觉尺寸改动，需先确认）。
+- BROWSE-013 无结果空状态：需在 CMS 可用网络下复现，确认是空状态分支没走到还是搜索结果非空。

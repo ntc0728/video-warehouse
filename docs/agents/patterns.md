@@ -309,6 +309,85 @@ TV 焦点描边、手势指示条填充、时移滑块 `accent-color`、时移�
   （pinnedTotal），换词/换筛选/切模式重钉；新搜索落位前计数位显示「搜索中…⟳」（转圈在右侧）。
 - **跳页**：BrowsePagination 数字形态带「页码输入 + 跳转」，输入钳制 [1, totalPages]（输 9999 跳末页）。
 
+### 视口懒加载（接口侧，2026-09-16 定稿）
+
+> 背景：图片侧早已达标（`LazyImage` + `TMDBMovieRow` 标题 IO，视口外 100+ 张海报零请求）；
+> 真正的浪费在**接口侧**——Home 进入即打 9~16 个请求（Hero + 7 排）、Detail 挂载即拉剧照。
+> 所以「懒加载」在本项目 = **让接口调用随视口发生**，不是给 `<img>` 补 `loading="lazy"`。
+
+三层结构：
+
+| 层 | 文件 | 职责 |
+| --- | --- | --- |
+| L1 | `src/hooks/useInViewport.ts` | 通用 IntersectionObserver，返回 `[ref 回调, inView]` |
+| L2 | `src/components/common/LazyBlock.tsx` | 区块包装器（解锁/骨架/预加载） |
+| L3 | `useTMDBStore.ensureHomeBlock(key, {force})` | 区块级取数（幂等，不连带全量） |
+
+**L1 的五个不可动设计**（每条都有踩坑来源）：
+
+- **回调式 ref**（`useState<Element|null>` + `useCallback`），**不用 `useRef` 对象**：待观察元素
+  常晚于 hook 挂载（Detail 剧照哨兵在 tab 内），`useRef` 版本 effect 只在挂载那刻读 `ref.current`，
+  为 null 就**永不建 observer**。
+- 滚动 root 默认取 `useScrollContainer()` 的 `.app-shell__scroll`，**不是 `window`**。
+- rAF 首帧主动判定（覆盖首屏区块 / 滚动恢复落点）。
+- 容器 `clientHeight === 0`（隐藏期）跳过判定。
+- **deps 只放结构性参数**——`inView` 与任何业务布尔量绝不进 deps（与 `useInfiniteScroll` 的
+  `hasMore` 同一个坑：deps 含业务布尔量 → observer 反复重建 → 自放大）。
+
+**L2 `LazyBlock` 契约**：
+
+- `enabled=false` → 立即渲染且不触发（首屏档不懒加载）；触发一次**永久保持**（不回退，避免
+  滚回去变骨架 / 滚动恢复高度反复）。
+- `preload` 不依赖视口直接触发 → **TV 端策略 = 焦点行 ±1 行预加载**。
+- `children` 是**渲染函数** `(entered) => ReactNode`：只有调用方知道骨架怎么写。
+- 未解锁时给真实卡片组件传「空 items + `isLoading=true`」，由它自己渲染 **等高** SkeletonCards
+  ——**禁止为懒加载另写一套骨架几何**（骨架与真实内容等高是本项目铁律，见「页面骨架占位」）。
+
+**L3 区块级取数**：`_homeBlockFetchedAt`（模块级，全局 `homeFetchedAt` 表达不了「这一排是刚滚到
+才取的」）；`ensureHomeBlock` 幂等（有数据且区块 TTL 未过 / 正在 loading → 直接 return），
+**绝不顺手调 `fetchAllHomeData`**——否则首次滚入视口就把剩下全部打出去，等于没做懒加载。
+
+**收益必须三处同步收窄，漏一处即归零**：
+
+1. 「任一区块为空就 `fetchAllHomeData`」的兜底 effect **只覆盖首屏档**；
+2. TTL 定时器 / `visibilitychange` **只遍历已加载（有数据）区块**；
+3. 首屏档 `HOME_FIRST_SCREEN_BLOCKS = ['trending','nowPlaying']` **不懒加载**（保 LCP）。
+
+**门控 effect 的两个陷阱**：
+
+- Detail 剧照用 `if (!stillsInView && pullRefreshNonce === 0) return;` 作 effect 首行 →
+  **`stillsInView` 必须进 deps**，否则哨兵命中后 effect 不重跑（首屏永远没有剧照）。
+- **哨兵不能绑在条件渲染的元素上**：Detail 剧照区本身条件渲染 → 另放常驻零高
+  `<div ref={stillsSentinelRef} aria-hidden />` 在简介与剧照区之间。
+
+### 并发控制与「同口径」原则（2026-09-16）
+
+- **统一用 `src/lib/concurrency.ts` 的 `mapWithConcurrency(items, limit, mapper)`**（本项目此前
+  没有任何并发控制工具，`asyncPool` 只是 `useBackdropLoader` 内的私有实现）。要点：
+  **结果顺序 = 输入顺序**（调用方常按结果序写 Map，如「第一季是谁」）、快速失败、limit 规整到 [1,n]。
+- **语义等价改造法**（把 `for + await` 改成并发时）：拆「阶段 1 同步筛选（零请求）→ 阶段 2
+  `mapWithConcurrency` → 按任务序写回」，`signal.aborted` 检查点保留在任务入口与批次后；
+  改前逐条对照原语义（首个同名季号胜出 / 空结果不占位 / 写入顺序不变）。
+- **探测类代码必须与真实取流同口径**：SourceChecker 曾用 `getText(source.url)` **直连**探测，
+  而真实拉频道走 `fetchAndParsePlaylist` → `buildSourceProxyUrl(url, proxy)` → 配了代理时
+  **能播的源被判「不可用」（假红）**。禁止为探测另写一套 URL 构造。
+- **多代理轮换用模块级「活跃代理」**：`buildChannelPlayUrl` 有 7+ 调用点，逐层透传 proxy 会污染
+  所有签名，而「代理可用性」本就是全局事实 → `_activeProxyOffset` / `getActiveIptvProxy()` /
+  `advanceIptvProxy()`。播放侧轮换上限用 **URL 集合** `proxyRotationTriedRef`（候选命中集合即停
+  = 天然「最多试完所有代理」）；⚠️ **别把轮换记录放进 `currentUrl` 变化会复位的 effect**
+  （`UniversalPlayer` 里那个 `proxyRetriedRef` 复位点），否则会被无限重置。
+- **切源不复用旧源 `vod_id`**：`vod_id` 是**源内主键**、跨源不通用。放行必须靠「id 归属证明」
+  （`videoCache` 的 `sourceIndex === 目标源` / 历史记录的 `cmsSourceId` 匹配），**不能靠 `isSwitching`**
+  ——`Player` 主 effect 会 `fetchCMSSources(routeSourceIndex)`，而 Collections 跳播传的
+  `sourceIndex` 是「匹配结果所属源」，未必等于 id 的来源，误判会打断正常快路径。
+- **会话级 LRU 缓存**（Person）：Map 插入序当 LRU（命中 delete+set 移末尾），仅内存不落库；
+  配套把取数抽成 `loadPerson(id, {force})` useCallback，让下拉刷新拿到**真 Promise**
+  （原实现只 bump nonce → 浮层立即判「刷新成功」、失败不可见）。⚠️ 失败会 re-throw → 挂载处必须
+  `.catch(() => {})`，否则未处理 rejection。
+- **跨挂载缓存要连负结果一起缓存**（`useBackdropLoader.backdropCache`，TTL 6h；网络错误不缓存
+  以便重试）：只缓存正结果 + `processedRef` 是 per-mount 的 → 回一次页面重发一轮、负结果无限重试。
+  另：取名额前**按业务主键去重**（否则一部 10 集的剧会吃掉 10 个背景图名额，实际只补到 2~3 部片）。
+
 ### 全屏抽屉（Drawer）底部操作区
 
 `src/components/ui/Drawer.tsx` 的 `footer?: React.ReactNode` 插槽 —— **固定在面板底部、不参与滚动的操作区
