@@ -61,7 +61,7 @@ jobs:
       # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
       # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           api-level: 34
 
