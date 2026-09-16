@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.26.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.1...kinotv-v1.26.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **ci:** setup-android v4 显式 packages + 双 workflow 一致性补齐 ([a30002f](https://github.com/ntc0728/video-warehouse/commit/a30002f94bb1d836dd20aae1ce6bd484a2375899))
+* 页面接口调用审查整改（刷新反馈 / 视口懒加载 / 竞态与并发） ([b4cfe83](https://github.com/ntc0728/video-warehouse/commit/b4cfe837422e1ea22ee2d4478e217b606e3cad63))
+
 ## [1.26.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.0...kinotv-v1.26.1) (2026-09-16)
 
 
