@@ -60,10 +60,17 @@ jobs:
       # 必须安装 Android SDK：compileSdk 34 + build-tools（含 apksigner）。
       # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
       # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
+      # ⚠️ 2026-09-16（run 35065794865 实证）：setup-android **v4 已无 api-level 入参**
+      #   （有效入参仅 cmdline-tools-version / accept-android-sdk-licenses /
+      #   log-accepted-android-sdk-licenses / packages），必须用 packages 显式声明；
+      #   且其默认 packages=`tools platform-tools` 里的 legacy `tools` 已被 Google
+      #   从 SDK 仓库下架 → sdkmanager 报 "Failed to find package 'tools'" 并 exit 1，
+      #   本步骤直接失败（连带 gradle/build/sign 全部 skipped）。故改为显式包列表，
+      #   版本与 android/variables.gradle 的 compileSdkVersion=34 + AGP 8.2.1 对齐。
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          api-level: 34
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
       # Gradle 缓存：wrapper dists（gradle-8.2.1-all.zip 解压结果）+ 依赖 modules-2
       # + transform cache。缓存 key 绑定 package.json 版本（依赖随版本漂移）+
@@ -75,8 +82,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/android
-          key: ${{ runner.os }}-gradle-${{ hashFiles('package.json', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          # ⚠️ android/ 已被 .gitignore 忽略（CI checkout 时该目录不存在），
+          #   hashFiles 对不存在的路径恒返回空 → 原 key 实际只随 package.json 变化，
+          #   wrapper 换版本时缓存永不失效。故 wrapper 版本改用显式常量
+          #   （当前 gradle-8.2.1，与下方 distributionUrl 一致），
+          #   依赖漂移交给 lockfile + capacitor.config.ts 兜住。
+          key: ${{ runner.os }}-gradle-8.2.1-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'capacitor.config.ts') }}
           restore-keys: |
+            ${{ runner.os }}-gradle-8.2.1-
             ${{ runner.os }}-gradle-
 
       - name: Install dependencies
@@ -104,12 +117,19 @@ jobs:
           }) | Set-Content $w
           # 应用自定义 res 补丁（values-v31 启动屏 + colors.xml），cap add 模板不含
           Copy-Item -Recurse -Force scripts/android-res-patch/* android/app/src/main/res/
+          # 应用 DLNA 投屏补丁（原生 Java 源码 + AndroidManifest 权限合并）
+          ./scripts/patch-android-dlna.ps1
           node scripts/sync-android-version.mjs
         shell: pwsh
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        # 命令行覆盖 gradle.properties 的默认 -Xmx1536m：
+        # -Xmx3g 给 R8/D8 minification 留够堆，避免 OutOfMemoryError
+        # -Xms1g 预热堆，减少 GC 抖动
+        # -XX:MaxMetaspaceSize=1g 防止元空间膨胀（Android Gradle Plugin 反射重载多）
+        # ⚠️ 与 release-android.yml 的 build 步骤保持完全一致，勿单侧修改。
+        run: ./gradlew assembleRelease -Dorg.gradle.jvmargs="-Xmx3g -Xms1g -XX:MaxMetaspaceSize=1g"
 
       # 签名策略：配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
       # ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD 四个 Secrets 用正式 keystore 签名；
