@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.0...kinotv-v1.26.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **ci:** bump android-actions/setup-android to v4 ([544f820](https://github.com/ntc0728/video-warehouse/commit/544f820497d86afee5aec6c8e4816d92abb5197d))
+
 ## [1.26.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.25.0...kinotv-v1.26.0) (2026-09-15)
 
 
