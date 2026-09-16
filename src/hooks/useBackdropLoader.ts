@@ -10,12 +10,44 @@
  * [2026-08-13] 批量提交：原先每条成功都调一次 useUserStore.setState（全量 map history
  * + 写 IndexedDB），20 条陆续返回 = 最多 20 次连锁重渲染（历史页所有卡片重渲染）→
  * 进入历史页明显卡顿。改为收集 pending，全部完成后一次性 setState + 批量写库。
+ *
+ * [2026-09-16] 消除 N+1 与重复重试（评审 P1「History 背景图 N+1」）：
+ * 1. **按 videoId 去重后再取前 20 个名额**——同一影片会有多条记录（多集/多线路），
+ *    原实现未去重，一部 10 集的剧能吃掉 10 个名额，实际只补到几部片子。
+ * 2. **新增跨挂载结果缓存**（`backdropCache`，含「查过但没有」的负结果）——
+ *    原 `processedRef` 是 per-mount 的，每次回到历史页都会对同一批影片重发请求；
+ *    负结果还会因 `processedRef.delete` 被无限重试。缓存后同一次会话内零重复请求。
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { useUserStore } from '@/stores';
 import { useTMDBStore } from '@/stores/useTMDBStore';
 import { fetchMovieBasic, fetchTVBasic, buildImageUrl } from '@/services/tmdbService';
 import type { HistoryRecord } from '@/types/store';
+
+/**
+ * backdrop 查询结果缓存：`videoId → url | null`。
+ * - `url` 为 null 表示「已查过、TMDB 确实没有 backdrop」——负结果同样要缓存，
+ *   否则每次进入历史页都会对这批无图影片重发一轮请求（原实现的真实行为）。
+ * - TTL 6h：TMDB 的图不会频繁变，但保留过期重查的口子。
+ * - 与 `processedRef` 的分工：processedRef 管「本次挂载内不重复排队」，
+ *   本缓存管「跨挂载不重复请求」。
+ */
+const BACKDROP_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const backdropCache = new Map<string, { url: string | null; at: number }>();
+
+function readBackdropCache(videoId: string): { hit: boolean; url: string | null } {
+  const entry = backdropCache.get(videoId);
+  if (!entry) return { hit: false, url: null };
+  if (Date.now() - entry.at > BACKDROP_CACHE_TTL_MS) {
+    backdropCache.delete(videoId);
+    return { hit: false, url: null };
+  }
+  return { hit: true, url: entry.url };
+}
+
+function writeBackdropCache(videoId: string, url: string | null) {
+  backdropCache.set(videoId, { url, at: Date.now() });
+}
 
 /** TMDB store 中所有 TMDBVideoItem 的 section key */
 const TMDB_SECTION_KEYS = [
@@ -94,11 +126,20 @@ export function useBackdropLoader(
     const { videoId } = record;
     if (processedRef.current.has(videoId)) return;
 
+    // 0. 跨挂载缓存（含负结果）：命中直接出结果，零请求
+    const cached = readBackdropCache(videoId);
+    if (cached.hit) {
+      processedRef.current.add(videoId);
+      if (cached.url) pendingRef.current.push({ videoId, backdrop: cached.url });
+      return;
+    }
+
     // 1. 尝试从内存查找
     const backdropFromStore = findBackdropInStore(videoId);
     if (backdropFromStore) {
       processedRef.current.add(videoId);
       pendingRef.current.push({ videoId, backdrop: backdropFromStore });
+      writeBackdropCache(videoId, backdropFromStore);
       return;
     }
 
@@ -113,14 +154,16 @@ export function useBackdropLoader(
         : await fetchMovieBasic(parsed.tmdbId);
 
       const backdropUrl = detail.backdrop_path
-        ? buildImageUrl(detail.backdrop_path, 'w780') || undefined
-        : undefined;
+        ? buildImageUrl(detail.backdrop_path, 'w780') || null
+        : null;
 
+      // 负结果也缓存：该片 TMDB 确实没有 backdrop，避免每次进页重查
+      writeBackdropCache(videoId, backdropUrl);
       if (backdropUrl) {
         pendingRef.current.push({ videoId, backdrop: backdropUrl });
       }
     } catch {
-      // API 失败不影响主流程，下次进入页面会重试
+      // API 失败不影响主流程；**不写缓存**，下次进入页面会重试
       processedRef.current.delete(videoId);
     }
   }, []);
@@ -172,10 +215,19 @@ export function useBackdropLoader(
   useEffect(() => {
     if (!enabled) return;
 
-    // 筛选需要补全的记录
-    const needsBackdrop = historyRecords.filter(
-      (r) => r.videoId.startsWith('tmdb-') && !r.backdrop && !processedRef.current.has(r.videoId),
-    );
+    // 筛选需要补全的记录。
+    // ⚠️ 必须**按 videoId 去重**后再取前 20：同一部影片会存在多条记录
+    // （剧集每集一条、电影每条线路一条），不去重的话一部 10 集的剧就吃掉 10 个名额，
+    // 20 个名额可能只覆盖 2~3 部片子（2026-09-16 评审 P1）。
+    const seenVideoIds = new Set<string>();
+    const needsBackdrop = historyRecords.filter((r) => {
+      if (!r.videoId.startsWith('tmdb-')) return false;
+      if (r.backdrop) return false;
+      if (processedRef.current.has(r.videoId)) return false;
+      if (seenVideoIds.has(r.videoId)) return false;
+      seenVideoIds.add(r.videoId);
+      return true;
+    });
 
     if (needsBackdrop.length === 0) return;
 

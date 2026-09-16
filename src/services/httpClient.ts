@@ -162,13 +162,21 @@ function withTimeout(signal?: AbortSignal, ms = 10000): AbortSignal {
   return signal ?? timeoutSignal;
 }
 
-/** GET JSON 数据 */
+/**
+ * GET JSON 数据
+ *
+ * 超时口径：axios 侧 timeout 与下方 AbortSignal 双保险。
+ * ⚠️ withTimeout 必须跟随调用方传入的 timeout（opts.timeout），否则它会用默认 10s
+ *    抢先中止请求，把 videoService 的 15s 等业务超时配置变成摆设。
+ *    （getText 不做 signal 注入，其超时完全由 axios timeout 控制。）
+ */
 export async function getJSON<T = unknown>(url: string, options?: RequestOptions): Promise<T> {
   const opts = (options ?? {}) as AxiosRequestConfig;
+  const signalTimeoutMs = (opts.timeout as number | undefined) ?? 10000;
   const response = await httpClient.get<T>(url, {
-    timeout: 10000,
+    timeout: signalTimeoutMs,
     ...opts,
-    signal: withTimeout(opts.signal as AbortSignal | undefined),
+    signal: withTimeout(opts.signal as AbortSignal | undefined, signalTimeoutMs),
   });
   return response.data as T;
 }

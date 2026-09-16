@@ -106,6 +106,13 @@ export const MAX_EXTRA_SOURCES = 3;
 let lastOrgChannels: IPTVChannel[] | null = null;
 let lastLocalResult: LocalPlaylistResult | null = null;
 
+/**
+ * refreshChannels 单飞锁：刷新在飞时后到者直接返回，不重复拉取
+ * （iptv-org 三 JSON ≈17MB + 本地源），也避免慢的那次覆盖快的那次。
+ * 对应 store 内的 isRefreshing（用于刷新按钮禁用/转圈，语义不同于 isLoading）。
+ */
+let _iptvRefreshing = false;
+
 interface IPTVState {
   channels: IPTVChannel[];
   groups: IPTVGroup[];
@@ -113,6 +120,12 @@ interface IPTVState {
   filter: IPTVFilter;
   settings: IPTVSettings;
   isLoading: boolean;
+  /**
+   * 刷新进行中（真正的「请求在飞」语义）。
+   * ⚠️ 与 isLoading 不同：isLoading 仅在「无频道」时置位（用于整页骨架），
+   * 有数据时恒为 false，不能拿来禁用刷新按钮 —— 否则有数据时按钮永不禁用，可连点并发刷新。
+   */
+  isRefreshing: boolean;
   error: string | null;
   lastRefresh: number | null;
   loadedUrl: string | null;
@@ -180,6 +193,7 @@ export const useIPTVStore = create<IPTVState>()(
       filter: {},
       settings: defaultSettings,
       isLoading: false,
+      isRefreshing: false,
       error: null,
       lastRefresh: null,
       loadedUrl: null,
@@ -233,12 +247,16 @@ export const useIPTVStore = create<IPTVState>()(
        * 获取后自动按分组归类，并同步收藏状态；sourceChannels/bySource 供「更多台」。
        */
       refreshChannels: async () => {
+        // 单飞去重：已有刷新在飞时后到者直接返回（连点按钮 / 多入口并发：
+        // 页面 bootstrap、syncConsumers、自动刷新、下拉刷新都会走到这里）。
+        if (_iptvRefreshing) return;
+        _iptvRefreshing = true;
         const { favoriteChannelIds } = get();
         const settings = get().settings;
         // 已有频道数据时静默刷新：旧数据继续展示，不进入全屏 loading，
         // 避免慢源拖尾（三 JSON ~17MB + 本地源竞速）期间页面长时间空白/加载态
         const hasChannels = get().channels.length > 0;
-        set({ isLoading: !hasChannels, error: null });
+        set({ isLoading: !hasChannels, isRefreshing: true, error: null });
 
         // 并行：iptv-org 主干 + 本地源聚合（互不阻塞，各自动降级）
         // proxyUrl：iptv-org 直连失败时经 IPTV 代理重试一次（接口内仅重试一次）
@@ -255,8 +273,10 @@ export const useIPTVStore = create<IPTVState>()(
           set({
             error: orgSettled.reason instanceof Error ? orgSettled.reason.message : 'iptv-org 与本地源均加载失败',
             isLoading: false,
+            isRefreshing: false,
             lastRefresh: Date.now(),
           });
+          _iptvRefreshing = false;
           return;
         }
 
@@ -305,8 +325,11 @@ export const useIPTVStore = create<IPTVState>()(
             ? settings.aggregatorUrls.join(';')
             : settings.aggregatorUrl ?? null,
           isLoading: false,
+          isRefreshing: false,
           error: errors.length > 0 ? errors.join('；') : null,
         });
+        // 主链路落地即释放单飞锁（后续缓存写入与中文名增强都是后台任务，不应挡住下一次刷新）
+        _iptvRefreshing = false;
 
         // 保存到 IndexedDB 缓存（合并结果，含 bySource）
         const sourceUrls = settings.aggregatorUrls?.length

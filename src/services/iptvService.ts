@@ -67,9 +67,46 @@ export function getIptvProxyList(proxyConfig?: string): string[] {
 
 /**
  * 取第一个代理（多值配置的"主代理"）。IPTV 代理本期"解析 + 取第一个"。
+ *
+ * @deprecated 2026-09-16 起 URL 构造统一走 {@link getActiveIptvProxy}（支持失败轮换）。
+ * 本函数保留「恒取第一个」的语义供调用方显式表达「就是要主代理」时使用。
  */
 export function getPrimaryIptvProxy(proxyConfig?: string): string {
   return getIptvProxyList(proxyConfig)[0] ?? '';
+}
+
+/**
+ * 多代理轮换状态（2026-09-16）。
+ *
+ * 背景：代理配置支持英文 `;` 分隔多个（`getIptvProxyList`），但改造前**所有** URL 构造
+ * 都在取 `getPrimaryIptvProxy`，即第 2 个起的代理配置完全不生效（死配置）。
+ *
+ * 方案：引入「活跃代理」下标——默认 0（= 原来的主代理），当某代理被确认不可用时调
+ * {@link advanceIptvProxy} 推进到下一个（列表内循环）。URL 形状不变（仍只嵌一个代理），
+ * 改变的是「第一个挂了之后还有第二个顶上」。
+ *
+ * 为什么是模块级状态而不是参数：调用点遍布 service / 播放器 / 页面（`buildChannelPlayUrl`
+ * 有 7+ 个调用点），逐个透传「当前选哪个代理」会污染所有签名；而「代理可用性」本身就是
+ * 全局事实（一个代理挂了对所有请求都挂了）。
+ */
+let _activeProxyOffset = 0;
+
+/** 当前生效的 IPTV 代理（多代理配置下由轮换状态决定；无配置返回 ''） */
+export function getActiveIptvProxy(proxyConfig?: string): string {
+  const list = getIptvProxyList(proxyConfig);
+  if (list.length === 0) return '';
+  return list[_activeProxyOffset % list.length] ?? list[0];
+}
+
+/**
+ * 推进到下一个已配置代理并返回它（单代理/无配置时为 no-op，返回当前值）。
+ * 仅在「确认当前代理不可用」时调用（取流失败 / 播放器报错）。
+ */
+export function advanceIptvProxy(proxyConfig?: string): string {
+  const list = getIptvProxyList(proxyConfig);
+  if (list.length <= 1) return list[0] ?? '';
+  _activeProxyOffset = (_activeProxyOffset + 1) % list.length;
+  return list[_activeProxyOffset];
 }
 
 /**
@@ -176,8 +213,8 @@ export function isIpHostUrl(url: string): boolean {
 }
 
 function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean {
-  // 多值代理：统一取第一个（主代理）
-  proxyUrl = getPrimaryIptvProxy(proxyUrl);
+  // 多值代理：用「当前活跃代理」（失败可轮换，见 getActiveIptvProxy）
+  proxyUrl = getActiveIptvProxy(proxyUrl);
   // 解包第三方代理前缀（如 gh-proxy.com/m3u8-proxy?url=<内层>）：
   // 抽出真实地址改走我们配置的代理，绕开失效/被墙的中间代理。
   const target = unwrapProxy(url, proxyUrl);
@@ -206,8 +243,8 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
 /** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传）
  *  可选 headers 追加为 &headers=<JSON> 参数（worker 代理层原生合并到源站请求头，覆盖默认 UA/Referer） */
 function buildProxyUrl(url: string, proxyUrl: string, headers?: Record<string, string>): string {
-  // 多值代理：统一取第一个
-  proxyUrl = getPrimaryIptvProxy(proxyUrl);
+  // 多值代理：用当前活跃代理（失败可轮换）
+  proxyUrl = getActiveIptvProxy(proxyUrl);
   url = unwrapProxy(url, proxyUrl);
   const type = detectVideoSourceType(url);
   const path = type === 'm3u8' ? 'm3u8-proxy' : type === 'dash' ? 'dash-proxy' : 'file-proxy';
@@ -356,12 +393,42 @@ function appendQuery(url: string, params: Record<string, string>): string {
  * 拼接 IPTV 源接口代理 URL —— 强制走 /m3u8-proxy 端点（源拉取的就是 M3U 文本播放列表）。
  * 与频道播放链接不同：源接口【无条件走代理】，不经过 shouldProxy 的直连白名单/proxyPattern 判断。
  * 未配置代理时返回原 URL（直连兜底）。
+ *
+ * 多代理：使用**指定代理**（不读全局活跃态），供 `fetchWithProxyFallback` 逐个试。
  */
+export function buildSourceProxyUrlWith(url: string, proxy: string): string {
+  if (!proxy) return url;
+  const target = unwrapProxy(url, proxy);
+  return `${proxy}/m3u8-proxy?url=${encodeURIComponent(target)}`;
+}
+
 export function buildSourceProxyUrl(url: string, proxyUrl?: string): string {
-  const primary = getPrimaryIptvProxy(proxyUrl);
-  if (!primary) return url;
-  const target = unwrapProxy(url, primary);
-  return `${primary}/m3u8-proxy?url=${encodeURIComponent(target)}`;
+  const active = getActiveIptvProxy(proxyUrl);
+  return buildSourceProxyUrlWith(url, active);
+}
+
+/**
+ * 多代理兜底取流：按配置顺序**依次尝试**每个代理，首个成功即返回。
+ *
+ * 动机（2026-09-16）：多代理配置此前只生效第一个，第二个起是死配置；主代理挂掉时
+ * 整个 IPTV 表现为「全部源加载失败」。改为顺序兜底后，主代理不可用仍能靠备用代理工作。
+ * 单代理/未配置 = 原行为（只有一条候选）。全部失败抛最后一个错误（保留原始错误语义）。
+ */
+async function fetchWithProxyFallback(rawUrl: string, proxyConfig?: string): Promise<string> {
+  const proxies = getIptvProxyList(proxyConfig);
+  const candidates = proxies.length > 0
+    ? proxies.map((p) => buildSourceProxyUrlWith(rawUrl, p))
+    : [rawUrl];
+
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      return await fetchContent(candidate);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('源加载失败');
 }
 
 export { shouldProxy, buildProxyUrl };
@@ -526,9 +593,8 @@ export async function fetchAndParsePlaylist(
     urls.map(async (url, index) => {
       // 源 M3U 接口【无条件走 IPTV 代理】（settings.proxyUrl，/m3u8-proxy 端点）：
       // 不经过 shouldProxy 的直连白名单/proxyPattern 判断——只有频道播放链接才走代理规则逻辑。
-      // 未配置代理时直连兜底。
-      const fetchUrl = buildSourceProxyUrl(url, settings?.proxyUrl);
-      const rawContent = await fetchContent(fetchUrl);
+      // 未配置代理时直连兜底。多代理配置按顺序兜底（主挂 → 备用顶上）。
+      const rawContent = await fetchWithProxyFallback(url, settings?.proxyUrl);
       const channels = parseM3U8Content(rawContent, url);
       return channels.map(ch => ({
         ...ch,
@@ -605,8 +671,8 @@ export async function fetchSingleSourceChannels(
   index: number,
   settings?: Partial<IPTVSettings>
 ): Promise<IPTVChannel[]> {
-  const fetchUrl = buildSourceProxyUrl(url, settings?.proxyUrl);
-  const rawContent = await fetchContent(fetchUrl);
+  // 多代理：按配置顺序兜底（与 fetchAndParsePlaylist 同口径）
+  const rawContent = await fetchWithProxyFallback(url, settings?.proxyUrl);
   const channels = parseM3U8Content(rawContent, url);
   const tagged = channels.map(ch => ({
     ...ch,

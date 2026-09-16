@@ -43,6 +43,81 @@ function toVideo(item: TMDBMovie | TMDBTVShow, mediaType: 'movie' | 'tv') {
   };
 }
 
+/**
+ * 会话级人物数据缓存（2026-09-16）。
+ *
+ * 背景：原实现每次进入人物页都发 3 个 TMDB 请求（detail + movie credits + tv credits），
+ * 「人物页 → 作品详情 → 返回」也要重打一遍，且返回时先闪一帧骨架。
+ * 命中缓存后直接同步回显：零请求、零骨架。
+ *
+ * - TTL 30min：人物作品列表变化极慢，30min 内复用足够新。
+ * - 上限 20 条，按 LRU 淘汰（`Map` 插入序天然可当 LRU 用：命中后 delete+set 移到末尾）。
+ * - 仅内存态，不落 IndexedDB/localStorage：人物页属「看过即走」，没必要持久化。
+ * - 下拉刷新（force）绕过缓存强制重拉，并回写缓存。
+ */
+const PERSON_CACHE_TTL_MS = 30 * 60 * 1000;
+const PERSON_CACHE_MAX = 20;
+
+interface PersonCacheEntry {
+  person: TMDBPersonDetail;
+  movies: TMDBMovie[];
+  tvShows: TMDBTVShow[];
+  fetchedAt: number;
+}
+
+const personCache = new Map<number, PersonCacheEntry>();
+
+/** 读缓存（过期即删并返回 null；命中则 touch 到 LRU 末尾） */
+function readPersonCache(personId: number): PersonCacheEntry | null {
+  const hit = personCache.get(personId);
+  if (!hit) return null;
+  if (Date.now() - hit.fetchedAt > PERSON_CACHE_TTL_MS) {
+    personCache.delete(personId);
+    return null;
+  }
+  personCache.delete(personId);
+  personCache.set(personId, hit);
+  return hit;
+}
+
+function writePersonCache(personId: number, entry: Omit<PersonCacheEntry, 'fetchedAt'>) {
+  personCache.delete(personId);
+  personCache.set(personId, { ...entry, fetchedAt: Date.now() });
+  while (personCache.size > PERSON_CACHE_MAX) {
+    const oldest = personCache.keys().next().value;
+    if (oldest === undefined) break;
+    personCache.delete(oldest);
+  }
+}
+
+/**
+ * 年份倒序排序：电影用 release_date、剧集用 first_air_date；
+ * 无年份的排最后，同年份按 popularity 降序兜底。
+ *
+ * 放模块作用域（不依赖组件状态）：一是避免与 `loadPerson` 的 useCallback 产生
+ * 「定义顺序 / 依赖数组」纠缠，二是每次渲染不再重建函数。
+ */
+function sortByYearDesc(
+  a: { release_date?: string; first_air_date?: string; popularity?: number },
+  b: { release_date?: string; first_air_date?: string; popularity?: number },
+): number {
+  const yearOf = (x: { release_date?: string; first_air_date?: string }): number => {
+    const d = x.release_date || x.first_air_date;
+    if (!d) return NaN;
+    const y = new Date(d).getFullYear();
+    return Number.isFinite(y) ? y : NaN;
+  };
+  const ay = yearOf(a);
+  const by = yearOf(b);
+  const pa = a.popularity ?? 0;
+  const pb = b.popularity ?? 0;
+  if (Number.isNaN(ay) && Number.isNaN(by)) return pb - pa;
+  if (Number.isNaN(ay)) return 1;
+  if (Number.isNaN(by)) return -1;
+  if (ay !== by) return by - ay;
+  return pb - pa;
+}
+
 export default function PersonPage() {
   const { id } = useParams<{ id: string }>();
   const handleBack = useSmartBack();
@@ -51,9 +126,6 @@ export default function PersonPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // 下拉刷新：通过 nonce 重新触发人物详情/作品拉取
-  const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
-  usePullToRefresh(() => setPullRefreshNonce((n) => n + 1));
   const [person, setPerson] = useState<TMDBPersonDetail | null>(null);
   const [movies, setMovies] = useState<TMDBMovie[]>([]);
   const [tvShows, setTVShows] = useState<TMDBTVShow[]>([]);
@@ -115,6 +187,80 @@ export default function PersonPage() {
     }
   }, [person?.biography]);
 
+  // ── 人物数据加载（2026-09-16 重构：抽成可复用 callback + 缓存）──────
+  // 抽出来的三个动机：
+  //   1. 缓存命中时**不发请求**，直接同步回显（零骨架、零请求）；
+  //   2. 下拉刷新可以拿到真 Promise（旧实现只 bump nonce，浮层立即判成功，
+  //      失败对用户不可见，也不等真实结束）；
+  //   3. 竞态守卫：快速切换人物时旧响应不得覆盖新数据（reqSeq + AbortController 双保险）。
+  const personAbortRef = useRef<AbortController | null>(null);
+  const personReqSeqRef = useRef(0);
+
+  const loadPerson = useCallback(async (personId: number, opts?: { force?: boolean }): Promise<void> => {
+    const force = opts?.force === true;
+    const reqId = ++personReqSeqRef.current;
+    const isLatest = () => personReqSeqRef.current === reqId;
+
+    if (!force) {
+      const cached = readPersonCache(personId);
+      if (cached) {
+        // 命中：取消在飞的旧请求，直接回显（不置 loading，避免骨架闪现）
+        personAbortRef.current?.abort();
+        personAbortRef.current = null;
+        setError(null);
+        setLoading(false);
+        setPerson(cached.person);
+        setMovies(cached.movies);
+        setTVShows(cached.tvShows);
+        if (cached.movies.length === 0 && cached.tvShows.length > 0) handleTabChange('tv');
+        return;
+      }
+    }
+
+    personAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    personAbortRef.current = ctrl;
+
+    setError(null);
+    // 首次加载（无缓存）才清空并显示骨架；force 刷新保留旧内容静默替换，避免整页闪骨架
+    if (!force) { setPerson(null); setLoading(true); }
+
+    try {
+      const [detail, movieCredits, tvCredits] = await Promise.all([
+        fetchPersonDetail(personId, { signal: ctrl.signal }),
+        fetchPersonMovieCredits(personId, { signal: ctrl.signal }),
+        fetchPersonTVCredits(personId, { signal: ctrl.signal }),
+      ]);
+      if (!isLatest() || ctrl.signal.aborted) return;
+      // 去重（同一人物可能以 cast + guest 重复出现）+ 年份倒序
+      const nextMovies = Array.from(new Map(movieCredits.cast.sort(sortByYearDesc).map(m => [m.id, m])).values());
+      const nextTvShows = Array.from(new Map(tvCredits.cast.sort(sortByYearDesc).map(t => [t.id, t])).values());
+      writePersonCache(personId, { person: detail, movies: nextMovies, tvShows: nextTvShows });
+      setPerson(detail);
+      setMovies(nextMovies);
+      setTVShows(nextTvShows);
+      // 如果没有电影但有剧集，默认切到剧集 tab
+      if (movieCredits.cast.length === 0 && tvCredits.cast.length > 0) {
+        handleTabChange('tv');
+      }
+    } catch (err) {
+      if (!isLatest() || ctrl.signal.aborted) return;
+      setError(err instanceof Error ? err.message : '加载失败');
+      // 失败必须向上抛：否则下拉刷新/手动重试的调用方拿不到「失败」信号，
+      // 浮层照样回弹「刷新成功」（2026-09-16 刷新反馈闭环）
+      throw err;
+    } finally {
+      if (isLatest() && !ctrl.signal.aborted) setLoading(false);
+    }
+  }, [handleTabChange]);
+
+  // 下拉刷新：force 绕过缓存重拉；返回 Promise 让浮层等到真实结束并可感知失败
+  usePullToRefresh(() => {
+    const personId = id ? parseInt(id, 10) : NaN;
+    if (isNaN(personId)) return Promise.resolve();
+    return loadPerson(personId, { force: true });
+  });
+
   // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 Keep-Alive 复用
   // 同一实例时人物 hero 先以「上一个人物」内容绘制一帧（头像/姓名闪旧内容）。
   useLayoutEffect(() => {
@@ -122,56 +268,12 @@ export default function PersonPage() {
     const personId = parseInt(id, 10);
     if (isNaN(personId)) { setError('无效的人物 ID'); setLoading(false); return; }
 
-    const ctrl = new AbortController();
-    setLoading(true); setError(null); setPerson(null);
+    // loadPerson 失败时会向上抛（让下拉刷新能感知），此处必须接住，否则成为未处理的
+    // Promise rejection（页面本身已由 loadPerson 内部 setError 呈现错误态）。
+    void loadPerson(personId).catch(() => { /* 错误态已在 loadPerson 内 setError */ });
 
-    (async () => {
-      try {
-        const [detail, movieCredits, tvCredits] = await Promise.all([
-          fetchPersonDetail(personId, { signal: ctrl.signal }),
-          fetchPersonMovieCredits(personId, { signal: ctrl.signal }),
-          fetchPersonTVCredits(personId, { signal: ctrl.signal }),
-        ]);
-        if (ctrl.signal.aborted) return;
-        setPerson(detail);
-        setMovies(Array.from(new Map(movieCredits.cast.sort(sortByYearDesc).map(m => [m.id, m])).values()));
-        setTVShows(Array.from(new Map(tvCredits.cast.sort(sortByYearDesc).map(t => [t.id, t])).values()));
-        // 如果没有电影但有剧集，默认切到剧集 tab
-        if (movieCredits.cast.length === 0 && tvCredits.cast.length > 0) {
-          handleTabChange('tv');
-        }
-      } catch (err) {
-        if (!ctrl.signal.aborted) setError(err instanceof Error ? err.message : '加载失败');
-      } finally {
-        if (!ctrl.signal.aborted) setLoading(false);
-      }
-    })();
-
-    return () => ctrl.abort();
-  }, [id, pullRefreshNonce]);
-
-  // 年份倒序排序：电影用 release_date、剧集用 first_air_date；
-  // 无年份的排最后，同年份按 popularity 降序兜底。
-  const sortByYearDesc = (
-    a: { release_date?: string; first_air_date?: string; popularity?: number },
-    b: { release_date?: string; first_air_date?: string; popularity?: number },
-  ): number => {
-    const yearOf = (x: { release_date?: string; first_air_date?: string }): number => {
-      const d = x.release_date || x.first_air_date;
-      if (!d) return NaN;
-      const y = new Date(d).getFullYear();
-      return Number.isFinite(y) ? y : NaN;
-    };
-    const ay = yearOf(a);
-    const by = yearOf(b);
-    const pa = a.popularity ?? 0;
-    const pb = b.popularity ?? 0;
-    if (Number.isNaN(ay) && Number.isNaN(by)) return pb - pa;
-    if (Number.isNaN(ay)) return 1;
-    if (Number.isNaN(by)) return -1;
-    if (ay !== by) return by - ay;
-    return pb - pa;
-  };
+    return () => personAbortRef.current?.abort();
+  }, [id, loadPerson]);
 
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);

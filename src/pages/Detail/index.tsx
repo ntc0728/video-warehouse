@@ -16,7 +16,7 @@ import { useSmartBack } from '@/lib/navigation';
 import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { BackToTopButton } from '@/components/common';
-import { useDocumentTitle } from '@/hooks';
+import { useDocumentTitle, useInViewport } from '@/hooks';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useIsMobile, useIsTV as useIsTVDevice } from '@/hooks/useMediaQuery';
@@ -196,6 +196,13 @@ export default function DetailPage() {
   const [stills, setStills] = useState<string[]>([]);
   const [stillsLoading, setStillsLoading] = useState(false);
 
+  // 剧照区视口懒加载（2026-09-16）：剧照在页面下部（首屏之外），只有接近视口时才请求
+  // /images 接口。哨兵节点常驻（与剧照区是否已渲染无关），命中后 once 断开、不再回退。
+  const { ref: stillsSentinelRef, inView: stillsInView } = useInViewport<HTMLDivElement>({
+    rootMargin: '300px',
+    disabled: !id?.startsWith('tmdb-'),
+  });
+
   // 剧照灯箱
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -353,6 +360,10 @@ export default function DetailPage() {
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null); setTmdbDetail(null); setBgLoaded(false);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
+    // 重置 CMS 去抖时间戳：否则「切 id / 下拉刷新」触发重新匹配时会撞上 2s 防抖被静默
+    // 丢弃（fetchCMSSources 直接 return，既不置 cmsLoading 也不置 cmsLoaded）→ 页面
+    // 永久停在「暂无匹配的播放资源」，只能手点「重新获取」。
+    cmsLastFetchRef.current = 0;
     if (prevDetailIdRef.current !== id) { setActiveTab('info'); prevDetailIdRef.current = id; }
 
     const cached = pullRefreshNonce === 0 && id.startsWith('tmdb-') ? readDetailCache(id) : null;
@@ -498,6 +509,10 @@ export default function DetailPage() {
       setStillsLoading(false);
       return;
     }
+    // 视口懒加载：剧照区未接近视口前不发请求。两条放行通道：
+    // ① stillsInView —— 滚动到剧照区附近（哨兵命中）；
+    // ② pullRefreshNonce > 0 —— 用户显式下拉刷新，语义上必须重新拉（不受视口限制）。
+    if (!stillsInView && pullRefreshNonce === 0) return;
     const parts = id.replace('tmdb-', '').split('-');
     const mt = parts[0] as 'movie' | 'tv';
     const tid = parseInt(parts.slice(1).join('-'), 10);
@@ -532,7 +547,8 @@ export default function DetailPage() {
       });
 
     return () => ctrl.abort();
-  }, [id, pullRefreshNonce]);
+    // stillsInView 必须进 deps：哨兵命中后本 effect 需重跑才会真正发请求（懒加载的关键跳变）。
+  }, [id, pullRefreshNonce, stillsInView]);
 
   // ── 收藏 ──────────────────────────────────────
   const collected = id ? isCollected(id) : false;
@@ -974,6 +990,11 @@ export default function DetailPage() {
 
             {/* 简介：保持原位（演员之后、剧照之前）——2026-09-10 用户要求从右栏移回 */}
             {overviewNode}
+
+            {/* 剧照懒加载哨兵（2026-09-16）：常驻零高节点，不参与布局。
+                放在剧照区之前，元素接近视口（rootMargin 300px）时才触发 /images 请求；
+                剧照区本身是条件渲染（stills.length>0 || stillsLoading），不能承担哨兵职责。 */}
+            <div ref={stillsSentinelRef} aria-hidden="true" />
 
             {(stills.length > 0 || stillsLoading) && (
               <>

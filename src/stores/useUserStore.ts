@@ -70,6 +70,15 @@ interface UserState {
   history: HistoryRecord[];
   _initialized: boolean;
   _loading: boolean;
+  /**
+   * 读库失败信息（2026-09-16）。
+   *
+   * 动机：`_loadFromDB` / `reload` 原先失败只 `console.error`，页面拿到的就是「空数组」，
+   * 于是「IndexedDB 读失败」与「用户真的没有收藏/记录」在 UI 上完全无法区分 —— 永久空态、
+   * 无重试入口。现在把失败原因暴露出来，页面据此分流成 `status="error"` + 重试按钮。
+   * null = 没有已知错误（不等于「已成功读过」，读成功的语义仍由 `_initialized` 表达）。
+   */
+  loadError: string | null;
 
   addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number; sourceIndex?: number; cmsSourceId?: string; cmsSourceName?: string }) => void;
   removeCollection: (videoId: string) => void;
@@ -234,6 +243,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
   history: [],
   _initialized: false,
   _loading: true,
+  loadError: null,
 
   /** 从 IndexedDB 加载所有数据 */
   _loadFromDB: async () => {
@@ -247,7 +257,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
         getHistory(),
       ]);
 
-      set({ collections, history, _initialized: true, _loading: false });
+      set({ collections, history, _initialized: true, _loading: false, loadError: null });
 
       // 建立跨页签广播频道（只建一次；此后其它页签的写操作会广播触发本页签静默 reload）
       initCrossTabSync();
@@ -256,8 +266,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
       cleanupLegacyHistoryRecords();
     } catch (err) {
       console.error('Failed to load user data from IndexedDB:', err);
-      // 允许重试：不清除 _initialized 标记
-      set({ _loading: false });
+      // 允许重试：不清除 _initialized 标记。失败原因写入 loadError，供页面渲染错误态 + 重试。
+      set({ _loading: false, loadError: err instanceof Error ? err.message : '本地数据读取失败' });
     }
   },
 
@@ -281,9 +291,16 @@ export const useUserStore = create<UserState>()((set, get) => ({
           if (!mergedHistory.some((h) => h.id === r.id)) mergedHistory = [...mergedHistory, r];
         });
       }
-      set({ collections, history: mergedHistory });
+      set({ collections, history: mergedHistory, loadError: null });
     } catch (err) {
       console.error('[useUserStore] reload failed:', err);
+      // 2026-09-16：① 记下失败原因（页面据此渲染错误态 + 重试入口，与「真的没有数据」区分）；
+      // ② 向上抛，让调用方（Collections / History 的下拉刷新）能感知失败。
+      // 原先只 console.error 便返回 → 读库失败与「真的没有数据」在 UI 上无法区分，
+      // 下拉刷新失败对用户零反馈。现有调用点均已处理：:54 有 .catch(() => {})，
+      // 两处 usePullToRefresh 由 hook 统一 catch + toast。
+      set({ loadError: err instanceof Error ? err.message : '本地数据读取失败' });
+      throw err;
     }
   },
 

@@ -3,7 +3,7 @@ import { usePlayerStore, useSettingsStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { playerToast } from './PlayerToast';
 import { useNetworkSpeed, useNetworkQuality } from '@/hooks';
-import { buildProxyUrl, buildChannelPlayUrl, buildCatchupUrl, shouldProxy } from '@/services/iptvService';
+import { buildProxyUrl, buildChannelPlayUrl, buildCatchupUrl, shouldProxy, advanceIptvProxy } from '@/services/iptvService';
 import { getCastMode } from '@/services/castService';
 import { usePlayerCore } from './hooks/usePlayerCore';
 import { usePlayerControls } from './hooks/usePlayerControls';
@@ -55,6 +55,13 @@ import SubtitleSettingsModal from './MobileUI/SubtitleSettingsModal';
 const CastSheet = lazy(() => import('./MobileUI/CastSheet'));
 
 const VOLUME_POPUP_DELAY = 3000;
+
+/**
+ * 「已走代理」的 URL 判定：命中本应用 buildProxyUrl 拼出的端点
+ * （/m3u8-proxy、/ts-proxy、/dash-proxy、/file-proxy 且带 ?url=）。
+ * 用于多代理轮换的前置判断（见 handleAdapterError 的 A3+ 分支）。
+ */
+const PROXIED_URL_RE = /\/(?:m3u8|ts|dash|file)-proxy\?/i;
 
 /** P0-1：滑动 seek HUD 的时间偏移格式化（h:mm:ss / m:ss） */
 function formatSeekHudTime(seconds: number): string {
@@ -488,6 +495,11 @@ export default function UniversalPlayer({
   // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
   const proxyRetriedRef = useRef(false);
 
+  // A3+ 多代理轮换（2026-09-16）：已走代理仍失败时换下一个已配置代理。
+  // 用「已尝试 URL 集合」做上限（与 bareStreamRetriedRef 同一策略）：每个代理的 URL
+  // 只进集合一次，轮回到已试过的 URL 即停 —— 天然等于「最多试完所有代理」。
+  const proxyRotationTriedRef = useRef<Set<string>>(new Set());
+
   // 后台错误挂起：页签不可见或浏览器窗口失焦（切到其他软件）时，定时器节流/媒体
   // 管线背压会让 hls.js 误报 fatal。若直接走故障转移（自动切线路/切源）→ usePlayerCore
   // effect 会 pause 视频 → 用户返回时遇到「莫名其妙被暂停/切了线路」。改为失焦期间只
@@ -588,6 +600,23 @@ const handleAdapterError = useCallback((error: Error) => {
           return;
         }
       }
+      // A3+ 多代理轮换（2026-09-16）：当前 URL 已走我们配置的代理、但流仍失败时，
+      // 切换到**下一个已配置代理**重试。
+      // 背景：代理配置支持英文 `;` 分隔多个（getIptvProxyList），但改造前所有 URL 构造都只
+      // 取第一个 → 第二个起是死配置，主代理挂掉 = IPTV 全站不可播。这里补上播放侧的兜底
+      // （数据侧兜底见 iptvService.fetchWithProxyFallback）。
+      // 上限：proxyRotationTriedRef（每 URL 只试一次，轮回即停），与上方 D1/A3 同一防循环策略。
+      if (capabilities.hasProxyInjection && proxyUrl && PROXIED_URL_RE.test(currentUrl)) {
+        proxyRotationTriedRef.current.add(currentUrl);
+        const nextProxy = advanceIptvProxy(proxyUrl);
+        // 单代理配置时 nextProxy === 当前代理，重建出的 URL 与 currentUrl 相同 → 不重试
+        const rebuilt = nextProxy ? buildProxyUrl(currentUrl, proxyUrl) : currentUrl;
+        if (rebuilt !== currentUrl && !proxyRotationTriedRef.current.has(rebuilt)) {
+          playerToast('当前代理不可用，切换备用代理重试…', 3000, 'warning');
+          setCurrentUrl(rebuilt);
+          return;
+        }
+      }
       // If video is already playing (e.g. audio works but video decode fails),
       // show non-blocking toast instead of the full error overlay
       if (videoElementRef.current && !videoElementRef.current.paused) {
@@ -607,7 +636,6 @@ const handleAdapterError = useCallback((error: Error) => {
       usePlayerStore.getState().setErrorMessage(error.message);
       onError?.(error);
     }, [currentUrl, onError, mode, proxyUrl, proxyPattern, buildProxyUrl, setCurrentUrl]);
-
 // 返回前台 flush 挂起错误：usePlayerCore 的可见性恢复链（resume + play）若已救活
 // 流（无媒体错误且处于播放态），误报错误直接丢弃；仍异常则补走完整错误处理链
 // （IPTV 切线路/切代理、VOD 故障转移、错误覆盖层）。
@@ -1251,6 +1279,10 @@ skipHistory,
           onPrevEpisode={onPrevEpisode}
           onNextEpisode={onNextEpisode}
           hasError={hasError}
+          /* 直播重载：与下方 PlayerCore.onRetry 同一语义 —— 递增 retryCount 会让
+             usePlayerCore 的主 effect（deps: [url, type, decoderMode, retryCount]）重建
+             适配器并按当前 URL 重新拉流。仅直播/时移（ControlBar 内部 isLiveLike）渲染该按钮。 */
+          onRefresh={() => { setHasError(false); setRetryCount(c => c + 1); }}
         />
       )}
 

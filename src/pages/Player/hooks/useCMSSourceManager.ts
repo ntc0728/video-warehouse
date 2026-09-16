@@ -401,11 +401,38 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     try {
       let result: VideoDetailResult;
       if (!id?.startsWith('tmdb-')) {
-        // CMS 源视频：通过 vod_id 获取详情（传递 signal 支持取消）
-        const { fetchVideoDetail } = await import('@/services/videoService');
-        const detailVideo = await fetchVideoDetail(sourceIdx, id, ctrl.signal);
-        const sourceName = allSrc[sourceIdx]?.name ?? '未知';
-        result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
+        // ── CMS 源视频（id 即某源的 vod_id）──────────────────────────
+        // ⚠️ vod_id 是**源内主键，跨源不通用**（见本文件 :249-255 注释）。切源时若仍拿
+        // 旧源的 vod_id 去请求新源详情，新源要么返回空、要么返回**同 id 的另一部片子**
+        // → 播放器播错片 / 黑屏（2026-09-16 评审 P0-4）。
+        // 放行条件（任一成立即可）：
+        //   ① 非「显式指定源」（isSwitching=false）——首次进入，id 天然来自本次导航的目标源；
+        //   ② 本会话缓存证明该 id 就在目标源取过详情（Collections/History 二次进入最常见）；
+        //   ③ 历史记录证明该 vod_id 属于目标源（含「切回原源」= 合法快路径）。
+        // 反例（必须走标题重搜）：跨源切换时 id 属于旧源；用户从详情页「立即播放」传的
+        // sourceIndex 是**匹配结果所属源**，未必等于 id 的来源。
+        const cachedEntry = id ? videoCache.get(id) : undefined;
+        const idBelongsToTargetSource =
+          (!isSwitching) ||
+          (!!cachedEntry && cachedEntry.sourceIndex === sourceIdx) ||
+          (!!histRecord?.vodId && histRecord.vodId === id &&
+            ((!!histRecord.cmsSourceId && histRecord.cmsSourceId === allSrc[sourceIdx]?.id) ||
+              (!!histRecord.cmsSourceName && histRecord.cmsSourceName === allSrc[sourceIdx]?.name)));
+        if (idBelongsToTargetSource) {
+          // CMS 源视频：通过 vod_id 获取详情（传递 signal 支持取消）
+          const { fetchVideoDetail } = await import('@/services/videoService');
+          const detailVideo = await fetchVideoDetail(sourceIdx, id, ctrl.signal);
+          const sourceName = allSrc[sourceIdx]?.name ?? '未知';
+          result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
+        } else if (videoTitle) {
+          // 切源 + vod_id 不可移植：改用「标题 + 年份」在新源重搜（与 TMDB 分支同一路径）
+          result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+        } else {
+          // 无标题可用（直接进 /play/<vod_id> 且无任何元数据）：宁可留空也不发错请求，
+          // 避免把别的片子的线路写进播放器。
+          finishLoading();
+          return;
+        }
       } else {
         // TMDB 视频：通过标题搜索（传递 signal 支持取消）
         result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);

@@ -154,7 +154,13 @@ export function useInfiniteScroll({
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [disabled, hasMore, rootMargin, scrollContainerRef]);
+    // deps 只允许「结构性」参数：observer 在这几项变化时才重建。
+    // ⚠️ 绝不能把 hasMore / canLoadMore / isLoading 等业务布尔量放进 deps：
+    //    re-observe 后下方 rAF 会立即判定哨兵是否在视口内，若在则 triggerLoad →
+    //    visibleCount 变 → hasMore 变 → observer 重建 → 再次触发，形成自放大循环，
+    //    配合同步切片场景的 resetLoading() 会在一次滚动内把列表推满全量。
+    //    业务侧的最新值一律通过 ref（hasMoreRef / triggerLoadRef）在回调内读取。
+  }, [disabled, rootMargin, scrollContainerRef]);
 
   // ── 2) scroll 事件兜底 ──
   // 快速滚动/wheel 惯性下 IO 可能来不及触发；额外监听 scroll，
