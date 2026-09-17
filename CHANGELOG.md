@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.2...kinotv-v1.26.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **android:** 修复 MediaService 引用废弃 support.v4.media 致 APK 构建失败 ([81861c0](https://github.com/ntc0728/video-warehouse/commit/81861c0a19fe9b7e788f7aa7d79d4382205a8103))
+
 ## [1.26.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.1...kinotv-v1.26.2) (2026-09-16)
 
 
