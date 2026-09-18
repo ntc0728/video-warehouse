@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.4...kinotv-v1.26.5) (2026-09-18)
+
+
+### Bug Fixes
+
+* **android:** 移除 MediaService 中类型不兼容的 MediaStyle 死代码 ([879763a](https://github.com/ntc0728/video-warehouse/commit/879763a78e04a62f05bd5748265c20a56bb91c30))
+
 ## [1.26.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.3...kinotv-v1.26.4) (2026-09-18)
 
 
