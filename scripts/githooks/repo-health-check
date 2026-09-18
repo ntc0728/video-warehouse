@@ -34,45 +34,52 @@ transport_probe() {
 
 	proxy=$(git config --get http.proxy 2>/dev/null || true)
 
-	# 1) SSH 通道实测（BatchMode 禁交互，ConnectTimeout 防挂起）
+	# 1) HTTPS 通道实测（2026-09-18 用户定稿：默认 HTTPS，SSH 仅兜底；走 http.proxy=clash，低速超时防挂起）
+	if [ -z "$https_url" ]; then
+		echo "[transport-probe] ❌ remote 非 github HTTPS/SSH 形态，无法推导 HTTPS 地址" >&2
+	else
+		echo "[transport-probe] 测试 HTTPS 通道: $https_url (proxy=${proxy:-无}) ..." >&2
+		if [ -n "$proxy" ]; then
+			GIT_TERMINAL_PROMPT=0 \
+			GIT_HTTP_LOW_SPEED_LIMIT=1000 \
+			GIT_HTTP_LOW_SPEED_TIME=10 \
+				git -c "http.proxy=$proxy" ls-remote "$https_url" HEAD >/dev/null 2>&1
+		else
+			GIT_TERMINAL_PROMPT=0 \
+			GIT_HTTP_LOW_SPEED_LIMIT=1000 \
+			GIT_HTTP_LOW_SPEED_TIME=10 \
+				git ls-remote "$https_url" HEAD >/dev/null 2>&1
+		fi
+		https_rc=$?
+		if [ "$https_rc" -eq 0 ]; then
+			case "$remote_url" in
+			https://*|http://*)
+				echo "[transport-probe] ✓ HTTPS 通 → remote 本身即 HTTPS，直接原样执行" >&2
+				;;
+			*)
+				echo "[transport-probe] ✓ HTTPS 通 → 默认用 HTTPS，单次重写执行（不动 remote 配置）：" >&2
+				echo "[transport-probe]   git -c url.https://github.com/.insteadOf=git@github.com: <fetch|push|pull> origin" >&2
+				;;
+			esac
+			return 0
+		fi
+		echo "[transport-probe] ✗ HTTPS 不通 (exit=$https_rc)，转测 SSH 兜底 ..." >&2
+	fi
+
+	# 2) SSH 兜底实测（BatchMode 禁交互，ConnectTimeout 防挂起）
 	echo "[transport-probe] 测试 SSH 通道: $remote_url ..." >&2
 	GIT_TERMINAL_PROMPT=0 \
 	GIT_SSH_COMMAND="ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
 		git ls-remote "$remote_url" HEAD >/dev/null 2>&1
 	ssh_rc=$?
 	if [ "$ssh_rc" -eq 0 ]; then
-		echo "[transport-probe] ✓ SSH 通 → 直接用 remote 原样执行（无需任何改写）" >&2
+		echo "[transport-probe] ✓ SSH 通（HTTPS 已不通时的兜底）→ 直接用 remote 原样执行" >&2
 		return 0
 	fi
 	echo "[transport-probe] ✗ SSH 不通 (exit=$ssh_rc)" >&2
 
-	# 2) HTTPS 通道实测（走 http.proxy=clash；低速超时防挂起）
-	if [ -z "$https_url" ]; then
-		echo "[transport-probe] ❌ 无法推导 HTTPS 地址，且 SSH 不通 → 立即停止" >&2
-		return 1
-	fi
-	echo "[transport-probe] 测试 HTTPS 通道: $https_url (proxy=${proxy:-无}) ..." >&2
-	if [ -n "$proxy" ]; then
-		GIT_TERMINAL_PROMPT=0 \
-		GIT_HTTP_LOW_SPEED_LIMIT=1000 \
-		GIT_HTTP_LOW_SPEED_TIME=10 \
-			git -c "http.proxy=$proxy" ls-remote "$https_url" HEAD >/dev/null 2>&1
-	else
-		GIT_TERMINAL_PROMPT=0 \
-		GIT_HTTP_LOW_SPEED_LIMIT=1000 \
-		GIT_HTTP_LOW_SPEED_TIME=10 \
-			git ls-remote "$https_url" HEAD >/dev/null 2>&1
-	fi
-	https_rc=$?
-	if [ "$https_rc" -eq 0 ]; then
-		echo "[transport-probe] ✓ HTTPS 通 → 用下面命令执行（单次重写，不动 remote 配置）：" >&2
-		echo "[transport-probe]   git -c url.https://github.com/.insteadOf=git@github.com: <fetch|push|pull> origin" >&2
-		return 0
-	fi
-	echo "[transport-probe] ✗ HTTPS 不通 (exit=$https_rc)" >&2
-
 	# 3) 都不通 → 立即停止
-	echo "[transport-probe] ❌❌ SSH 与 HTTPS(proxy) 均不通，已停止。请勿执行任何 git 网络操作；" >&2
+	echo "[transport-probe] ❌❌ HTTPS(proxy) 与 SSH 均不通，已停止。请勿执行任何 git 网络操作；" >&2
 	echo "[transport-probe]    先检查 clash 是否在跑（http.proxy=$proxy）与网络再重试。" >&2
 	return 1
 }

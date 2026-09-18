@@ -5,7 +5,28 @@
 # 本机病史：git 输出 "[new branch] master -> origin/master" 但磁盘无文件（写成功是假象）。
 # 机制：stdin 逐行 "<old-value> <new-value> <ref-name>"，仅在 committed 阶段校验。
 #
-# 约定：只告警不阻断（恒 exit 0；committed 阶段事务已不可回滚）。
+# 自愈（2026-09-18 起）：校验失败时不再只告警等人救——按事务期望值当场补写 loose ref
+# 文件（.git/<ref>，内容 = new SHA；loose 文件优先级高于 packed-refs，覆盖安全），
+# 写后复验；复验仍失败才降级为告警。若整个对象库/refs 目录被清（09-18 大事故），
+# 单靠补写引用救不了，仍需 .git 换血恢复流程。
+#
+# 约定：恒 exit 0（committed 阶段事务已不可回滚）。
+
+# 自愈补写：direct write loose ref（不走 git 引擎，避免递归触发本钩子；
+# 与 2026-09-18 事故恢复流程同一手法——该手法已实战验证）。
+heal_ref() {
+	ref="$1"; sha="$2"
+	case "$ref" in
+	*/*) refdir=".git/${ref%/*}" ;;
+	*) refdir=".git" ;;
+	esac
+	mkdir -p "$refdir" 2>/dev/null || return 1
+	printf '%s\n' "$sha" > ".git/$ref" || return 1
+	# 复验：值一致 **且对象真实存在**（rev-parse 对「40位hex但对象缺失」不校验会假绿，
+	# 必须 cat-file -e 兜底，2026-09-18 实测踩坑）
+	[ "$(git rev-parse --verify --quiet "$ref" 2>/dev/null)" = "$sha" ] || return 1
+	git cat-file -e "$sha" 2>/dev/null
+}
 
 [ "$1" = "committed" ] || exit 0
 
@@ -22,13 +43,22 @@ while read -r old new ref; do
 		0000000000000000000000000000000000000000000000000000000000000000) continue ;;
 	esac
 	actual=$(git rev-parse --verify --quiet "$ref" 2>/dev/null) || actual=""
-	if [ "$actual" != "$new" ]; then
-		echo "[repo-health] ⚠ 引用未落盘: $ref 期望 ${new}，实际 ${actual:-<缺失>}" >&2
+	if [ "$actual" = "$new" ] && ! git cat-file -e "$new" 2>/dev/null; then
+		# 引用值一致但对象缺失（09-18 事故形态之一：松散对象被清）——补写引用救不了
+		echo "[repo-health] ⚠ 引用 $ref 值一致但对象缺失（对象库受损），自动补写无效" >&2
 		bad=1
+	elif [ "$actual" != "$new" ]; then
+		if heal_ref "$ref" "$new"; then
+			echo "[repo-health] ⚡ 已自动补写未落盘引用: $ref -> ${new}" >&2
+		else
+			echo "[repo-health] ⚠ 引用未落盘且自动补写失败: $ref 期望 ${new}，实际 ${actual:-<缺失>}" >&2
+			bad=1
+		fi
 	fi
 done
 
 if [ -n "$bad" ]; then
-	echo "[repo-health] ❌ 检测到 git 引用写入未持久化（本机已知病）。请勿继续任何 git 写操作，立即用 node 手工补写引用或联系 AI 助手。" >&2
+	echo "[repo-health] ❌ 自动补写未能修复全部引用（可能 refs/ 或对象库整体受损）。" >&2
+	echo "[repo-health]    请勿继续任何 git 写操作，立即联系 AI 助手按 2026-09-18 .git 换血流程处理。" >&2
 fi
 exit 0
