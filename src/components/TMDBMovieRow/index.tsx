@@ -127,8 +127,12 @@ function getVideo(item: {
  * 张数默认按「列数 × 1.5」派生（覆盖一屏 + 半屏溢出，镜像真实横滚行
  * 「一屏整卡 + 可横向滚」的观感）；列数读 CSS token（--row-cols / --continue-cols），
  * 不写死张数。显式传 count 时以 count 为准。
+ *
+ * 导出供首页首屏骨架复用（2026-09-18）：骨架直接渲染真实行组件，
+ * 「继续观看」行因 continueMode + 空列表会 return null，由首页骨架手搭同结构外壳
+ * 并复用本组件 —— 卡片几何仍只有这一处真源。
  */
-function SkeletonCards({ count, landscape = false }: { count?: number; landscape?: boolean }) {
+export function SkeletonCards({ count, landscape = false }: { count?: number; landscape?: boolean }) {
   const cols = useGridCols(landscape ? '--continue-cols' : '--row-cols', 7);
   const skeletonCount = count ?? Math.ceil(cols * 1.5);
   return (

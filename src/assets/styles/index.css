@@ -33,12 +33,14 @@
    使用方（共用一条规则，杜绝配色各自漂移）：
    - .cqa-trend__poster--empty / .cqa-hotcard__poster--empty （热度榜缺失封面占位）
    - .hero-side-card__cover--skeleton / __title--skeleton    （首页大屏骨架的右卡槽）
-   - .home-skeleton-card-img                                 （首页行骨架海报）
+   （原 .home-skeleton-card-img「首页行骨架海报」已于 2026-09-18 删除 —— 首页骨架行
+     改为直接渲染真实 <TMDBMovieRow>，其骨架卡走 TMDBMovieRow.css 自己的骨架类。）
    背景 = 项目级 shimmer 渐变（--color-placeholder-shimmer-*）+ rgba(0,0,0,0.25)
    暗底 + overlay 混合；扫光动画走 --card-shimmer-duration。
    各处的布局（定位/边框/比例）由各自类提供，本类只负责「视觉背景 + 扫光」。
    注：2026-09-11 首页 banner 右侧缩略图列删除后，原 .hero-banner__thumb-skeleton /
-   .home-skeleton-hero__thumb 两个使用方已不存在。 */
+   .home-skeleton-hero__thumb 已**连同类定义一起删除**（2026-09-18 复核：全仓 grep
+   仅剩本注释，无定义、无使用方）。保留此行仅为避免后人凭旧文档再把它们加回来。 */
 .thumbnail-skeleton-bg {
   background:
     linear-gradient(
@@ -922,6 +924,12 @@ main {
   --iptv-cols: 2;
   /* 与 --iptv-cols 同档兜底；D7 由独立 :root 块合并至此（块间媒体查询只覆盖 --iptv-cols） */
   --iptv-page-cols: 2;
+  /* ── 页面专用列数默认档（2026-09-18，说明见下方「页面专用网格列数 token」段）──
+     人物页作品网格默认跟随 --card-cols（惰性引用：--card-cols 分档一变它就跟）；
+     历史记录网格 1 列（<480）；榜单布局 2 列（桌面基准，≤1023 与 App 见下方覆盖）。 */
+  --person-work-cols: var(--card-cols);
+  --history-cols: 1;
+  --chart-cols: 2;
 }
 
 @media (width >= 768px) and (width <= 1023px) {
@@ -979,6 +987,68 @@ main {
 /* IPTV 页网格改用专用列数变量（作用域限定 .iptv-page，其余页面不受影响） */
 .iptv-page .iptv-channel-grid {
   grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));
+}
+
+/* ── 页面专用网格列数 token（2026-09-18 骨架整改 P0/P2）─────────────────
+   动机：「页级骨架必须与真实网格同列数」这条约束此前无法自动满足 ——
+   Person 作品网格 / History 记录网格 / Chart 榜单的列数只写在各自页面 CSS 的
+   @media 里，而骨架的 JS 侧（useGridCols）只能读 :root 的计算值
+   （getComputedStyle(documentElement)），读不到页面类上的声明，
+   于是骨架被迫另抄一套断点 —— PersonSkeleton 的 768–1023 档就是这样抄错的
+   （真实锁 5 列、骨架按 --card-cols 取 4 列）。
+   现把三处列数提到 :root 级 token，**页面 CSS 与骨架同读一处**：
+     · --person-work-cols  人物页作品网格（768–1023 锁 5 列，其余等同 --card-cols）
+     · --history-cols      历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5）
+     · --chart-cols        榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列）
+   断点阶梯逐条对齐改前行为，视觉效果零变化；TV/App 覆盖靠 html[data-device] /
+   :root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols 同一套做法。
+   默认档（三处 token 的初值）声明在上方已有的 `:root` 块里（--iptv-cols 同一块），
+   不另开 :root 选择器 —— 同文件重复选择器会被 stylelint no-duplicate-selectors 拦。 */
+
+/* 人物页作品网格：768–1023 锁 5 列（原 Person.css 硬编码档，4→5 的例外；
+   app 端不适用，故带 not(app) 门控与前身完全一致） */
+@media (width >= 768px) and (width <= 1023px) {
+  html:not([data-device="app"]) {
+    --person-work-cols: 5;
+  }
+}
+
+/* 历史页记录网格阶梯（原 .history-grid 的 6 条 @media + TV 覆盖，逐档等价搬运） */
+@media (width >= 480px) {
+  :root { --history-cols: 2; }
+}
+
+@media (width >= 768px) {
+  :root { --history-cols: 3; }
+}
+
+@media (width >= 1024px) {
+  :root { --history-cols: 4; }
+}
+
+@media (width >= 1440px) {
+  :root { --history-cols: 5; }
+}
+
+@media (width >= 1920px) {
+  :root { --history-cols: 6; }
+}
+
+/* 榜单页布局列：≤1023 与 App 单列（原 Chart.css 两处硬编码 grid-template-columns）。
+   ⚠️ App 覆盖用 :root[data-device] 形式：本文件已有 html[data-device="app"] 块（9.1 恒移动
+   副本），复用同名选择器会撞 stylelint no-duplicate-selectors；两种写法特异性等价、
+   都高于 :root，效果一致。 */
+@media (width <= 1023px) {
+  :root { --chart-cols: 1; }
+}
+
+:root[data-device="app"] {
+  --chart-cols: 1;
+}
+
+/* TV 端历史记录网格恒 5 列（原 .history-grid 的 (0,1,1) 覆盖，不随视口变；同上用 :root 形式） */
+:root[data-device="tv"] {
+  --history-cols: 5;
 }
 
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
@@ -1277,17 +1347,6 @@ html[data-device="tv"] {
   }
 
   html:not([data-device="tv"]) .tmdb-movierow-card {
-    flex: 0 0 calc(
-      (100% - (var(--card-cols, 7) - 1) * var(--hero-side-gap))
-      / var(--card-cols, 7)
-    );
-  }
-
-  html:not([data-device="tv"]) .home-skeleton-row-cards {
-    gap: var(--hero-side-gap);
-  }
-
-  html:not([data-device="tv"]) .home-skeleton-card {
     flex: 0 0 calc(
       (100% - (var(--card-cols, 7) - 1) * var(--hero-side-gap))
       / var(--card-cols, 7)

@@ -332,172 +332,15 @@ html[data-device="app"] .home-disclaimer {
 
 
 
-/* 骨架行列表容器：只负责「行与行之间的纵向节奏」，不再自带横向/纵向 padding。
-   ⚠️ 2026-09-14 修复：原先这里有 padding: var(--space-md) var(--space-xs)，其横向值
-   对齐的是**旧版**真实行 .tmdb-movierow 的 `padding: 0 var(--space-xs)`；真实行现已改为
-   四向 `padding: var(--space-sm)` + 卡片模块外壳，该注释与取值均已过时。
-   横向内边距改由每行 .home-skeleton-row 自带的模块外壳承担（与真实行同一套盒模型），
-   避免「容器 padding + 行 padding」叠加成双份边距。 */
+/* 骨架行列表容器：只负责「行与行之间的纵向节奏」。
+   2026-09-18：骨架行已改为直接渲染真实 <TMDBMovieRow>（见 Home/index.tsx），
+   行距由真实行自身的 margin-bottom(--space-sm) 提供 —— 本容器 gap 恒 0，
+   不再复制真实行的任何盒模型（原 .home-skeleton-row / -card 系列已删除，
+   那套手抄几何曾累积到 150 行补偿注释）。 */
 .home-skeleton-rows {
   display: flex;
   flex-direction: column;
-  /* gap 必须与真实行 .home-page .tmdb-movierow 的 margin-bottom (--space-sm) 取同档：
-     真实行间距 = margin-bottom(--space-sm)；骨架若沿用 --space-xl 会让行距偏大，
-     且与每行新增的 margin-bottom 叠加成双份间距。 */
   gap: 0;
-}
-
-/* 骨架行 = 「卡片模块」外壳，逐条镜像真实行 .home-page .tmdb-movierow 的盒模型
-   （Home.css 上方该规则）：padding --space-sm / border 1px / radius-lg / surface /
-   shadow-sm / margin-bottom --space-sm。
-   ⚠️ 缺这层外壳会让骨架行比真实行矮约 26.6px（padding 上下 16.4 + border 2 +
-   margin-bottom 8.2），骨架→真实切换时每行纵向跳 27px、7 行累计 189px，
-   违反项目不变量「骨架必须与真实元素同尺寸」。 */
-.home-skeleton-row {
-  display: flex;
-  flex-direction: column;
-  /* ⚠️ 2026-09-14 修复：gap 必须为 0，不能再用 --space-md。
-     真实行 .tmdb-movierow 的「标题→卡片区」间距**只由** .tmdb-movierow-header
-     的 margin-bottom(--space-sm) 提供；骨架这边这段间距也已由
-     .home-skeleton-row-title 自身的 margin-bottom(--space-sm) 承担。
-     若这里再给 gap，就会变成「gap(--space-md) + margin-bottom(--space-sm)」
-     双份间距，实测骨架行反比真实行高 11px（312.45 vs 301.47）。 */
-  gap: 0;
-  margin-bottom: var(--space-sm);
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.home-skeleton-row-title {
-  /* 宽度对齐真实行标题 .tmdb-movierow-title 的观感尺度（标题文本约 4~6 字 + 左侧色条） */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(120px, 106.672px + 1.667vw, 200px);
-  /* 高度 = 真实行标题的**单行行高**：真实 .tmdb-movierow-title 是
-     font-size var(--text-lg) × line-height 1.3（≥768 升为 --text-xl）。
-     不能凭空取 clamp —— 否则色条比真实标题高一截（实测 1440 档 26.1px vs 20.3px）。 */
-  height: calc(var(--text-lg) * 1.3);
-  /* 下方留白 = 真实 .tmdb-movierow-header 的 margin-bottom（卡片区起点）。
-     骨架这里用同一个元素承担「标题条 + 标题区下间距」，故必须补上这段间距，
-     否则骨架行整体比真实行矮 7.9px。 */
-  margin-bottom: var(--space-sm);
-  border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
-}
-
-/* ≥768 真实标题字号升档（.tmdb-movierow-title 的 Tablet 档），骨架同步。
-   ⚠️ App 端恒移动，不参与该升档（与 .tmdb-movierow-title 的 html:not([data-device="app"]) 门控一致）。 */
-@media (width >= 768px) {
-  html:not([data-device="app"]) .home-skeleton-row-title {
-    height: calc(var(--text-xl) * 1.3);
-  }
-}
-
-.home-skeleton-row-cards {
-  display: flex;
-  /* 与真实电影行 .tmdb-movierow-scroll 的 gap 保持一致（var(--space-md)，2026-09-04 调整），
-     否则骨架行与真实行的卡片间距不同，视觉上"骨架比真实稀疏" */
-  gap: var(--space-md);
-  /* ⚠️ 2026-09-14 修复：必须镜像 .tmdb-movierow-scroll 的 padding。
-     真实横滚容器的 `padding: var(--space-md) var(--space-xs)` 是给 TV 聚焦放大 +
-     焦点方框留缓冲用的上下留白（实测 1440 档 10.91px 上/下 = 21.82px）。
-     骨架原先 padding 为 0，导致骨架行的卡片区比真实行矮 20px、整行矮 9.1px，
-     骨架→真实切换时每行纵向跳 9px、7 行累计 64px，违反「骨架与真实同尺寸」不变量。 */
-  padding: var(--space-md) var(--space-xs);
-  overflow: hidden;
-}
-
-.home-skeleton-card {
-  display: flex;
-  /* 关键：宽度必须与真实电影行卡片 .tmdb-movierow-card 使用同一套公式
-     calc((100% - (var(--card-cols)-1)*var(--space-md)) / var(--card-cols))，
-     否则骨架卡片（固定 clamp 宽度）与真实卡片（按 --card-cols 计算宽度）宽度不一致，
-     尤其在移动端差距可达 ~44px。原先的 clamp 写法是"缩略图骨架宽度与真实不一致"的
-     首页根因之一。 */
-  flex: 0 0 calc(
-    (100% - (var(--card-cols, 7) - 1) * var(--space-md))
-    / var(--card-cols, 7)
-  );
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.home-skeleton-card-img {
-  position: relative;
-  width: 100%;
-  border-radius: var(--radius-md);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  overflow: hidden;
-  animation: shimmer var(--card-shimmer-duration) infinite;
-  aspect-ratio: 2 / 3;
-}
-
-/* 卡片角标占位 — 镜像 VideoCard 四角（评分/收藏/年份/类型） */
-.home-skeleton-card-badge {
-  position: absolute;
-  display: block;
-  border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
-  animation: tmdb-skeleton-pulse var(--dur-pulse) ease-in-out infinite;
-}
-
-.home-skeleton-card-badge--tl {
-  top: var(--space-3xs);
-  left: var(--space-3xs);
-  width: var(--space-2xl);
-  height: var(--icon-xs);
-}
-
-.home-skeleton-card-badge--tr {
-  top: var(--space-3xs);
-  right: var(--space-3xs);
-  width: var(--icon-md);
-  height: var(--icon-md);
-  border-radius: 50%;
-}
-
-.home-skeleton-card-badge--bl {
-  bottom: var(--space-3xs);
-  left: var(--space-3xs);
-  width: var(--space-lg);
-  height: var(--icon-2xs);
-}
-
-.home-skeleton-card-badge--br {
-  right: var(--space-3xs);
-  bottom: var(--space-3xs);
-  width: var(--space-xl);
-  height: var(--icon-2xs);
-}
-
-.home-skeleton-card-title {
-  width: 80%;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  height: clamp(16px, 14.224px + 0.222vw, 24px);
-  border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    var(--color-placeholder-shimmer-a) 25%,
-    var(--color-placeholder-shimmer-b) 50%,
-    var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -541,65 +384,6 @@ html[data-device="app"] .home-disclaimer {
 
   .home-skeleton-topstrip__item--sm {
     width: 5rem;
-  }
-
-  /* 左栏榜卡行骨架：几何对齐 .cqa-trend__row / .cqa-trend__poster。
-     海报尺寸走 custom-property 槽位（与 CategoryQuickAccess 的 --cqa-poster-* 同口径，
-     同时绕开 stylelint 的裸 px 校验）；≥1920 档左栏加宽时抬到 72×108，见下方档位。 */
-  html:not([data-device="tv"]) .home-skeleton .cqa-trend {
-    --cqa-poster-w: 64px;
-    --cqa-poster-h: 96px;
-  }
-
-  .home-skeleton-trend__row {
-    display: flex;
-    gap: var(--space-sm);
-    align-items: center;
-    padding: var(--space-xs) var(--space-2xs);
-  }
-
-  .home-skeleton-trend__rank {
-    flex: 0 0 20px;
-    height: var(--text-2xs);
-    border-radius: var(--radius-sm);
-    background: var(--color-skeleton);
-  }
-
-  .home-skeleton-trend__poster {
-    flex: 0 0 var(--cqa-poster-w);
-    width: var(--cqa-poster-w);
-    height: var(--cqa-poster-h);
-    border-radius: var(--radius-md);
-    background: linear-gradient(
-      90deg,
-      var(--color-placeholder-shimmer-a) 25%,
-      var(--color-placeholder-shimmer-b) 50%,
-      var(--color-placeholder-shimmer-a) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer var(--card-shimmer-duration) infinite;
-  }
-
-  .home-skeleton-trend__body {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: var(--space-sm);
-    min-width: 0;
-  }
-
-  .home-skeleton-trend__t,
-  .home-skeleton-trend__m {
-    height: var(--text-sm);
-    border-radius: var(--radius-sm);
-    background: var(--color-skeleton);
-  }
-
-  .home-skeleton-trend__t { width: 80%; }
-
-  .home-skeleton-trend__m {
-    width: 46%;
-    height: var(--text-2xs);
   }
 
   /* 右列 banner 槽：容器仍是真实 .hero-bili__banner（高度由 --hero-banner-h 派生、
@@ -655,12 +439,6 @@ html[data-device="app"] .home-disclaimer {
   }
 }
 
-@media (width >= 1920px) {
-  html:not([data-device="tv"]) .home-skeleton .cqa-trend {
-    --cqa-poster-w: 72px;
-    --cqa-poster-h: 108px;
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    顶部过渡带（2026-09-10 大屏整改「补强之二」，仅 >1280 渲染）

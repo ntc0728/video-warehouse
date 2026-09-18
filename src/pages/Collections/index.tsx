@@ -431,8 +431,13 @@ export default function CollectionsPage() {
       {/* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发卡片 stagger 出场动画重放；
          搜索/筛选/排序不重挂载、不误触发动画。综合 tab 下两分区各用原生网格，动画各自保留。 */}
       {userLoading ? (
-        // 收藏页专属骨架：结构对齐真实「分区头 + 网格」（不再用全站统一 AppLoading）
-        <CollectionsSkeleton />
+        // 收藏页专属骨架：结构对齐真实「分区头 + 网格」（不再用全站统一 AppLoading）。
+        // 分区数与真实内容同判定：影视区 = mainTab !== 'iptv'，直播区 = showChannels
+        // （2026-09-18：此前骨架恒渲染 2 个分区，切到「视频」tab 时交接会凭空少一块）
+        <CollectionsSkeleton
+          showVideo={mainTab !== 'iptv'}
+          showChannels={showChannels}
+        />
       ) : loadError && allIds.length === 0 ? (
         // 读库失败且无可展示数据（2026-09-16）：必须与「真的没有收藏」区分开，
         // 否则用户会以为收藏丢了，而且没有任何重试入口。

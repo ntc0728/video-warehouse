@@ -42,6 +42,7 @@ import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import ChartSkeleton, { ChartRowSkeleton } from './ChartSkeleton';
 import './Chart.css';
 
 type ChartCategoryKey = 'movie' | 'tv' | 'variety' | 'anime' | 'documentary' | 'trend';
@@ -147,6 +148,10 @@ export default function ChartPage() {
   const [feed, setFeed] = useState<ChartFeed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* 2026-09-18：本次会话是否已成功加载过任意榜单 —— 区分「首载」与「切 tab/时间窗」。
+     首载 → 页级骨架 ChartSkeleton（与 Browse/Collections 同流派）；
+     之后 → 居中「小电视 + 加载中…」（2026-09-10 用户要求的切 tab 观感，不推翻）。 */
+  const [everLoaded, setEverLoaded] = useState(false);
   // 2026-09-10 用户要求：切 tab / 时间窗时**不显示旧图与遮罩**，直接清空数据走
   // 居中「小电视 + 加载中」。原实现保留旧榜单降沉（chart-list--refreshing + 胶囊），
   // 观感上「旧图还挂在那里」，已按需求改为清空。
@@ -187,6 +192,7 @@ export default function ChartPage() {
           feedCache.set(key, next);
           curFeedKeyRef.current = key;
           setFeed(next);
+          setEverLoaded(true);
         })
         .catch(() => {
           if (ctrl.signal.aborted) return;
@@ -269,6 +275,8 @@ export default function ChartPage() {
 
   const items = feed?.items ?? [];
   const showInitialLoading = loading && items.length === 0 && !error;
+  /** 仅「本次会话首载」走骨架；切 tab / 时间窗仍走下方居中态（见 everLoaded 注释） */
+  const showInitialSkeleton = showInitialLoading && !everLoaded;
   const isTrend = activeTab === 'trend';
 
   return (
@@ -316,8 +324,13 @@ export default function ChartPage() {
           )}
         </nav>
 
-        {showInitialLoading ? (
-          /* 首次加载与切 tab / 切时间窗共用：数据已清空 → 居中「小电视 + 加载中」
+        {showInitialSkeleton ? (
+          /* 首载（本次会话尚无任何榜单数据）：与 Browse / Collections 同流派的
+             页级骨架 —— 结构对齐下方 .chart-list，列数读 --chart-cols，张数随视口。
+             2026-09-18 用户拍板恢复骨架；切 tab / 时间窗不进本分支（见 showInitialSkeleton）。 */
+          <ChartSkeleton />
+        ) : showInitialLoading ? (
+          /* 切 tab / 切时间窗共用（数据已清空）：居中「小电视 + 加载中」
              （2026-09-10 用户要求：切换 chart-tabs 按钮时下方不显示旧图与遮罩）。 */
           <div className="chart-loading">
             <div className="chart-loading__inner" role="status">
@@ -337,12 +350,8 @@ export default function ChartPage() {
             ))}
             {loading && items.length > 0 && (
               <div className="chart-list__loading" aria-live="polite">
-                <div className="chart-list__skeleton" aria-hidden="true">
-                  <i className="a" /><i className="b" /><i className="c" /><i className="d" />
-                </div>
-                <div className="chart-list__skeleton" aria-hidden="true">
-                  <i className="a" /><i className="b" /><i className="c" /><i className="d" />
-                </div>
+                <ChartRowSkeleton />
+                <ChartRowSkeleton />
                 <span className="chart-list__loading-text">正在加载更多…</span>
               </div>
             )}

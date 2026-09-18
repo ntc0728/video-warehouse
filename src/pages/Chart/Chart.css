@@ -152,11 +152,22 @@
   display: grid;
   /* 撑满卡片剩余高度（.chart-card 已 flex column） */
   flex: 1 1 auto;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* 列数真源 = :root 的 --chart-cols（index.css：桌面 2 / ≤1023 与 App 单列）。
+     2026-09-18 起骨架 ChartSkeleton 读同一 token 生成张数，两处不再各自写死。 */
+  grid-template-columns: repeat(var(--chart-cols, 2), minmax(0, 1fr));
   gap: var(--space-xs) var(--space-md);
   min-height: 200px;
   padding: var(--space-xs) var(--space-md) var(--space-md);
 }
+
+/* ── 首屏骨架容器（ChartSkeleton，2026-09-18）──────────────────────────────
+   骨架直接挂 .chart-list（网格列数 / gap / flex 撑满 / padding 全部复用），
+   本类只补一条：loading 期间不抢占点击（与 #boot-splash 的 pointer-events:none
+   同口径，防 E2E 误判遮挡、防用户在骨架期误点）。 */
+.chart-skeleton {
+  pointer-events: none;
+}
+
 .chart-row {
   display: flex;
   gap: var(--space-md);
@@ -301,10 +312,10 @@
   height: 10px;
 }
 
-/* 加载/到底/错误（跨 2 列占满整行） */
+/* 加载/到底/错误（跨整行占满） */
 .chart-list__loading {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--chart-cols, 2), minmax(0, 1fr));
   grid-column: 1 / -1;
   gap: var(--space-xs) var(--space-md);
 }
@@ -413,8 +424,8 @@
    单列布局下横向余量充足）；封面色块与骨架（.chart-list__skeleton .b）同尺寸，
    避免加载跳变。 */
 @media (width <= 1023px) {
-  .chart-list { grid-template-columns: 1fr; }
-  .chart-list__loading { grid-template-columns: 1fr; }
+  /* .chart-list / .chart-list__loading 的列数已由 --chart-cols token 接管
+     （index.css 的 ≤1023 档），此处只剩封面尺寸切换 */
   .chart-row__cover,
   .chart-row__cover--poster {
     flex-basis: var(--comp-chart-cover-w);
@@ -439,11 +450,10 @@
 }
 html[data-device="app"] .chart-head { padding: var(--space-md) var(--space-md) 0; }
 html[data-device="app"] .chart-tabs { padding: var(--space-sm) var(--space-md); }
+/* .chart-list 列数由 --chart-cols 的 app 档（index.css）接管，此处只补 padding */
 html[data-device="app"] .chart-list {
-  grid-template-columns: 1fr;
   padding: var(--space-xs) var(--space-xs) var(--space-sm);
 }
-html[data-device="app"] .chart-list__loading { grid-template-columns: 1fr; }
 html[data-device="app"] .chart-row__cover,
 html[data-device="app"] .chart-row__cover--poster {
   flex-basis: var(--comp-chart-cover-w);

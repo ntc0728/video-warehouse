@@ -1,58 +1,85 @@
 /**
- * 收藏页专属骨架 — 与真实内容区逐层同构：
- * 「影视」分区头 + 竖版卡片网格 →「IPTV」分区头 + 频道网格
- * （对应 .collection-section / .video-card-grid / .iptv-channel-grid）。
+ * 收藏页专属骨架 — 与真实内容区逐层同构，且**分区数跟随当前 tab**。
  *
- * 视口差异化：影视网格列数消费与真实网格同源的 --card-cols，
- * IPTV 网格消费 --iptv-cols，随视口自动分档，不引入第二套断点。
- * 张数 = 列数 × ROWS（列数运行时读 token，见 useGridCols）—— 不写死张数，
- * 保证视口内始终填满且末行完整，且永远随列数分档同步。
+ * 真实内容区（Collections/index.tsx:446-497）：
+ *   .collection-content
+ *     [mainTab ≠ 'iptv']  section.collection-section → .collection-section-head（影视 / 共 N 条）
+ *                                                     + 竖版卡网格（--card-cols）
+ *     [showChannels]      section.collection-section → .collection-section-head（直播 / 共 N 个频道）
+ *                                                     + 频道网格（--iptv-cols）
+ *
+ * 「已知常量不当未知」（2026-09-18 用户要求）：**分区数量不是固定的 2**，而是由
+ * 真实页同一个判定量决定 —— `mainTab !== 'iptv'`（影视区）与 `showChannels`
+ * （直播区，= mainTab==='iptv' || (mainTab==='all' && statusFilter==='all')）→ 由页面
+ * 以 props 传入。切到「视频」tab 时骨架只剩 1 个分区，与真实内容一致；不再恒渲染 2 个
+ * 分区导致交接时凭空少掉一整块（旧实现的问题）。
+ *
+ * 行数（非固定）：影视网格按滚动容器可视高度实测填充（useFillRows）；
+ * 直播网格位于首屏之下，按 2–3 行渲染（其真实高度由收藏数据决定，骨架不虚构）。
+ *
+ * 网格容器用本文件的类（不用 .video-card-grid / .iptv-channel-grid —— 那两个类带
+ * 入场动画），但列数 token / 间距与真实网格同值。
  */
 import { useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
 import { useGridCols, useFillRows } from '@/hooks';
 import './CollectionsSkeleton.css';
 
-/** 每个网格渲染几行占位（行数是策略，张数由列数 × 本值派生；不足首屏由 useFillRows 续行） */
-const ROWS = 3;
+export interface CollectionsSkeletonProps {
+  /** 渲染「影视」分区（真实条件：mainTab !== 'iptv'） */
+  showVideo?: boolean;
+  /** 渲染「直播」分区（真实条件：showChannels） */
+  showChannels?: boolean;
+}
 
-export default function CollectionsSkeleton() {
+export default function CollectionsSkeleton({
+  showVideo = true,
+  showChannels = true,
+}: CollectionsSkeletonProps) {
   const videoCols = useGridCols('--card-cols', 6);
   const iptvCols = useGridCols('--iptv-cols', 2);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const extraRows = useFillRows(rootRef, videoCols);
-  const videoRows = ROWS + extraRows;
+  const videoGridRef = useRef<HTMLDivElement>(null);
+  const iptvGridRef = useRef<HTMLDivElement>(null);
+  // 影视区在首屏：填满可视高度；直播区在首屏之下：2–3 行即可
+  const videoRows = useFillRows(videoGridRef, videoCols, { minRows: 2, reserve: 48 });
+  const iptvRows = useFillRows(iptvGridRef, iptvCols, { minRows: 2, maxRows: 3, reserve: 48 });
 
   return (
-    <div ref={rootRef} className="collections-skeleton skeleton-scope" role="status" aria-label="加载中">
-      <section className="collections-skeleton__section">
-        <div className="collections-skeleton__head">
-          <Skeleton className="collections-skeleton__head-title" />
-          <Skeleton className="collections-skeleton__head-count" />
-        </div>
-        <div className="collections-skeleton__video-grid">
-          {Array.from({ length: videoCols * videoRows }, (_, i) => (
-            <div key={i} className="collections-skeleton__card">
-              <Skeleton className="collections-skeleton__video-cover" />
-              <Skeleton className="collections-skeleton__line" />
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="collections-skeleton__section">
-        <div className="collections-skeleton__head">
-          <Skeleton className="collections-skeleton__head-title" />
-          <Skeleton className="collections-skeleton__head-count" />
-        </div>
-        <div className="collections-skeleton__iptv-grid">
-          {Array.from({ length: iptvCols * ROWS }, (_, i) => (
-            <div key={i} className="collections-skeleton__card">
-              <Skeleton className="collections-skeleton__iptv-cover" />
-              <Skeleton className="collections-skeleton__line" />
-            </div>
-          ))}
-        </div>
-      </section>
+    <div className="collection-content collections-skeleton skeleton-scope" role="status" aria-label="加载中">
+      {showVideo && (
+        <section className="collection-section">
+          {/* 分区头复用真实类：标题 / 计数两段，"影视 / 共 N 条" 同结构 */}
+          <div className="collection-section-head">
+            <Skeleton className="collections-skeleton__head-title" />
+            <Skeleton className="collections-skeleton__head-count" />
+          </div>
+          <div ref={videoGridRef} className="collections-skeleton__video-grid">
+            {Array.from({ length: videoCols * videoRows }, (_, i) => (
+              <div key={i} className="collections-skeleton__card">
+                <Skeleton className="collections-skeleton__video-cover" />
+                <Skeleton className="collections-skeleton__line" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showChannels && (
+        <section className="collection-section">
+          <div className="collection-section-head">
+            <Skeleton className="collections-skeleton__head-title" />
+            <Skeleton className="collections-skeleton__head-count" />
+          </div>
+          <div ref={iptvGridRef} className="collections-skeleton__iptv-grid">
+            {Array.from({ length: iptvCols * iptvRows }, (_, i) => (
+              <div key={i} className="collections-skeleton__card">
+                <Skeleton className="collections-skeleton__iptv-cover" />
+                <Skeleton className="collections-skeleton__line" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

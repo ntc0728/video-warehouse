@@ -1,5 +1,17 @@
-/* Browse 结果区专属骨架 — 几何对齐真实 .browse-sort-bar / .video-card-grid */
+/* Browse 结果区专属骨架 — 几何对齐真实 .browse-sort-bar / VideoCard。
+   卡片壳（.video-card / .video-card-cover / .video-card-info / .video-card-title-wrap）
+   直接复用 VideoCard.css 的真实类，故本文件只写「骨架私有」的部分：
+   排序条几何、灰块尺寸、角标位置、以及关掉真实卡的交互态。 */
 
+/* 骨架层不可交互：真实 .video-card 是 <a>，带 hover 位移 / 描边 / 光泽扫光，
+   骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
+.browse-skeleton,
+.browse-skeleton .video-card {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ── 排序条：镜像 .browse-sort-bar 的四块 ── */
 .browse-skeleton__bar {
   display: flex;
   flex-wrap: wrap;
@@ -16,45 +28,89 @@
   align-items: center;
 }
 
-.browse-skeleton__type {
-  width: 3.5em;
+.browse-skeleton__divider {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.browse-skeleton__type,
+.browse-skeleton__sort {
   height: var(--comp-tab-height, 2.25rem);
   border-radius: var(--radius-full);
+}
+
+.browse-skeleton__type {
+  width: 3.5em;
 }
 
 .browse-skeleton__sort {
   width: 2.75em;
-  height: var(--comp-tab-height, 2.25rem);
-  border-radius: var(--radius-full);
 }
 
+/* 计数文本（真实 .browse-sort-bar__count 为一行小字）→ 灰条高度对齐 --text-xs 行盒 */
 .browse-skeleton__count {
   width: 5em;
-  height: 1em;
+  height: 1.5em;
+  font-size: var(--text-xs);
 }
 
-/* 列数与真实网格 .video-card-grid 同源（--card-cols 等分），间距同 --space-lg */
+/* ── 卡片网格：列数 / 间距 / 纵向 padding 与真实 .video-card-grid 同值，
+      但不复用其类（该类带 fade + 子项 stagger 入场动画，骨架有自己的 .skeleton-scope 淡入） ── */
 .browse-skeleton__grid {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
   gap: var(--space-lg);
+  width: 100%;
   padding: var(--space-md) 0;
 }
 
-.browse-skeleton__card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  min-width: 0;
-}
-
-/* 竖版海报（2:3），与 VideoCard .video-card-cover 同比例 */
+/* 封面：铺满真实 .video-card-cover（2:3 由真实类给出） */
 .browse-skeleton__cover {
-  aspect-ratio: 2 / 3;
-  border-radius: var(--radius-md);
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
 }
 
+/* 四角标：位置与真实 .video-card-rating / -fav-btn / -year-badge / -type 同为 --space-xs 内缩 */
+.browse-skeleton__badge {
+  position: absolute;
+  z-index: 4;
+  border-radius: var(--radius-sm);
+}
+
+.browse-skeleton__badge--tl {
+  top: var(--space-xs);
+  left: var(--space-xs);
+  width: 2.5em;
+  height: 1.4em;
+}
+
+.browse-skeleton__badge--tr {
+  top: var(--space-xs);
+  right: var(--space-xs);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  border-radius: var(--radius-full);
+}
+
+.browse-skeleton__badge--bl {
+  bottom: var(--space-xs);
+  left: var(--space-xs);
+  width: 2.2em;
+  height: 1.4em;
+}
+
+.browse-skeleton__badge--br {
+  right: var(--space-xs);
+  bottom: var(--space-xs);
+  width: 2.2em;
+  height: 1.4em;
+}
+
+/* 标题行：与真实 .video-card-title 同字体档与行高（--text-sm × 1.5），
+   保证标题区高度一致，交接无纵向跳动。 */
 .browse-skeleton__title {
   width: 78%;
-  height: 0.875em;
+  height: 1.5em;
+  font-size: var(--text-sm);
 }

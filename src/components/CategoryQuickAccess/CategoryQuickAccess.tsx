@@ -35,7 +35,7 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useTMDBStore } from '@/stores/useTMDBStore';
 import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
-import { useIsWideDesktop } from '@/hooks';
+import { useIsWideDesktop, useFillRows } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
@@ -726,10 +726,19 @@ const TREND_MAX_ITEMS = 20;
 const TREND_SKELETON_ROWS = 6;
 
 export function CategoryTrendSkeleton() {
+  const listRef = useRef<HTMLOListElement>(null);
+  // 行数按左栏可视高度推导（2026-09-18）：真实榜是「今日趋势 TOP 20」，
+  // 栏高由 .home-two-col__rail 的 max-height 决定，骨架行数必须与之匹配 ——
+  // 固定 6 行时骨架只填到栏高的一半，trending 到达后整栏高度突变。
+  const rows = useFillRows(listRef, 1, {
+    minRows: TREND_SKELETON_ROWS,
+    maxRows: TREND_MAX_ITEMS,
+    reserve: 48,
+  });
   return (
     <section className="cqa-heat-row cqa-heat-row--rail" aria-hidden="true">
-      <ol className="cqa-trend cqa-trend--skeleton">
-        {Array.from({ length: TREND_SKELETON_ROWS }).map((_, i) => (
+      <ol ref={listRef} className="cqa-trend cqa-trend--skeleton">
+        {Array.from({ length: rows }).map((_, i) => (
           <li key={i} className="cqa-trend__item">
             <div className="cqa-trend__row cqa-trend__row--skeleton">
               <span className="cqa-trend__rank-skel" />

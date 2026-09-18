@@ -92,10 +92,11 @@
   border-radius: var(--radius-sm);
 }
 
-/* 作品网格：列数与真实 .person-work-grid 同源（--card-cols 等分） */
+/* 作品网格：列数与真实 .person-work-grid 同源（--person-work-cols 等分；
+   该 token 已含 768–1023 锁 5 列的例外档，见 index.css） */
 .person-skeleton__work-grid {
   display: grid;
-  grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--person-work-cols, 7), minmax(0, 1fr));
   gap: var(--space-lg);
 }
 

@@ -1,29 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { TOAST_DURATION } from './components/ui/toastBus';
 import AppLayout from './components/Layout/AppLayout';
 import { HeaderProvider } from './components/Layout/HeaderContext';
-import AppLoading from './components/common/AppLoading';
 import { useUserStore } from './stores';
 
 function App() {
   // 首页 TMDB 数据不再在 App 层无条件预取（避免非首页刷新时也调用首页接口），
   // 改由 HomePage 挂载/显示时按需拉取（store 内有空数据判断 + in-flight 去重）。
 
-  // 初始化用户数据（从 IndexedDB 加载），加载完成前显示全屏 loading
-  const [dbReady, setDbReady] = useState(false);
+  // 初始化用户数据（从 IndexedDB 加载）。
+  //
+  // ⚠️ 2026-09-18 用户拍板「gate 下沉」：App 层不再整页阻塞等待本地库。
+  // 旧实现（9.1）在 dbReady 前 `return <AppLoading fullScreen tip="正在加载本地数据…"/>`，
+  // 带来两个问题：
+  //  1. 收藏 / 历史页的**页级骨架永远没有可见窗口** —— App 层已经把等待吃掉了，
+  //     页面挂载时 store._loading 已是 false，骨架被跳过（用户实测「整改过但始终未实现」）；
+  //  2. 整站（含完全不依赖本地数据的首页 / Browse / IPTV）白等 IndexedDB 最长 6s。
+  // 现在恒定渲染 AppLayout，把「本地数据是否就绪」交给各自的消费方：
+  //  - Collections / History：`useUserStore._loading` → 骨架 → 内容；
+  //  - Home 的「继续观看」行：`userDataLoading || continueItems.length > 0`；
+  //  - 其余页面不消费本地数据，直接渲染自身骨架 / 内容。
   const loadFromDB = useUserStore((s) => s._loadFromDB);
   useEffect(() => {
-    // 用 finally 保证无论 DB 加载成功/失败，dbReady 都会置 true，
-    // 避免数据库异常（如升级被旧连接阻塞）导致整页永久卡在 loading
-    loadFromDB().finally(() => setDbReady(true));
+    // _loadFromDB 内部已 try/catch（失败写入 store.loadError，由页面渲染错误态 + 重试），
+    // 这里只需吞掉可能的上游 rejection，避免 unhandled rejection。
+    void loadFromDB().catch(() => { /* 失败态见 useUserStore.loadError */ });
   }, [loadFromDB]);
-
-  // 9.1：dbReady 前不再 return null（白屏窗口）—— 改为全屏 AppLoading 兜底，
-  // IndexedDB 慢（database.ts 最长 6s 超时）时用户看到「正在加载本地数据」而非空白。
-  if (!dbReady) {
-    return <AppLoading fullScreen showProgress={false} tip="正在加载本地数据…" />;
-  }
 
   return (
     <>

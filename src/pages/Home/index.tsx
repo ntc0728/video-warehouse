@@ -11,7 +11,7 @@ import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
 import type { HomeBlockKey } from '@/stores/useTMDBStore';
 import { BackToTopButton, AppLoading, LazyBlock } from '@/components/common';
-import TMDBMovieRow from '@/components/TMDBMovieRow';
+import TMDBMovieRow, { SkeletonCards } from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import CategoryQuickAccess, { CategoryHeatRow } from '@/components/CategoryQuickAccess';
@@ -22,7 +22,6 @@ import { buildContinueItems } from './continueItems';
 import HomeTopStrip from './HomeTopStrip';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
-import { useGridCols } from '@/hooks/useGridCols';
 import { useHeroSideCols } from '@/hooks/useHeroSideCols';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useShallow } from 'zustand/react/shallow';
@@ -154,13 +153,10 @@ export default function HomePage() {
   }, [history]);
   const continueItems = useMemo(() => buildContinueItems(history), [history]);
 
-  // 骨架占位张数所需的列数（须在提前 return 之前调用，保持 hook 数恒定）：
-  //  - 横滚行骨架每行张数 = ceil(列数 × 1.5)：「填满一屏」的列数 + 半屏溢出，
-  //    镜像真实行「一屏整卡 + 可横向滚」的观感；容器 overflow: hidden 会裁掉多余部分。
-  //  - HeroBili 右栏卡 = 列数 × 2 行（useHeroSideCols 已是该区列数的 JS 真源）。
-  const skeletonRowCols = useGridCols('--row-cols', 7);
+  // HeroBili 右栏卡张数 = 列数 × 2 行（useHeroSideCols 已是该区列数的 JS 真源）。
+  // 横滚行骨架不再自己算张数：2026-09-18 起骨架直接渲染真实 <TMDBMovieRow>，
+  // 其内部 SkeletonCards 已按 --row-cols / --continue-cols 派生张数。
   const heroSideCols = useHeroSideCols();
-  const skeletonCardsPerRow = Math.ceil(skeletonRowCols * 1.5);
 
   // 事件 handler（同样须在提前 return 之前，保持 hook 数恒定）
   const handleBannerItemClick = useCallback((item: { id: string | number }) => {
@@ -341,34 +337,42 @@ export default function HomePage() {
     );
   }
 
+  // ── 首页内容行定义（顺序 = 真实渲染顺序）─────────────────────────────
+  // 骨架与真实行**共用这一份定义**（2026-09-18）：骨架取 title 渲染真实的
+  // <TMDBMovieRow isLoading>，真实分支取 items / isLoading / error。
+  // 七行标题与顺序从此只有一处真源，不再出现「骨架写死 7 行、真实改了行数」的漂移。
+  const homeRows = [
+    { key: 'nowPlaying' as const, title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
+    { key: 'popularMovies' as const, title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
+    { key: 'topRatedMovies' as const, title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
+    { key: 'upcomingMovies' as const, title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
+    { key: 'popularTv' as const, title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
+    { key: 'topRatedTv' as const, title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
+    { key: 'airingTodayTv' as const, title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
+  ];
+
   // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
   // 2026-09-11（用户请求 6「不同视口显示相应的 UI 骨架」）：骨架按视口分两套——
   //   · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
   //     （缩略图列已删除，骨架不再有缩略图槽）。
   //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + 两栏（左「今日趋势」榜卡 +
   //     右 HeroBili「banner + 右卡网格 + 换一换」）+ 7 行卡片。
-  // 大屏骨架**直接复用真实布局类名**（.home-two-col / .hero-bili / .cqa-trend /
-  // .hero-side-card），几何全部由既有 token 派生，杜绝「骨架与真实两套几何漂移」。
+  //
+  // ⚠️ 2026-09-18（用户「骨架必须与页面正常显示的元素结构一致」）—— 三条收敛：
+  //  ① 7 行**直接渲染真实组件** <TMDBMovieRow isLoading>：卡片模块外壳（padding /
+  //     border / radius / surface / shadow / margin-bottom）、标题行、横滚容器的
+  //     gap + padding、卡片 flex 宽度公式全部由 TMDBMovieRow.css / Home.css 唯一决定。
+  //     旧实现把这整套手抄成 .home-skeleton-row / -card 系列（Home.css 里甚至写着
+  //     「缺这层外壳会矮 26.6px」这类补偿注释）—— 第二套几何真源，改了真实行就漂移。
+  //  ② 左栏榜卡**直接渲染真实组件** <CategoryHeatRow variant="rail" />：trending 为空时
+  //     它自身渲染 CategoryTrendSkeleton（真实 .cqa-heat-row--rail > .cqa-trend 结构）。
+  //  ③ 补上「继续观看」行（此前骨架完全没有）：真实页在
+  //     (userDataLoading || continueItems.length > 0) 时渲染，首屏必然存在，
+  //     原骨架漏掉它 → 数据到达时凭空多出一整行。
   const homeSkeletonRows = (
     <div className="home-skeleton-rows">
-      {Array.from({ length: 7 }).map((_, i) => (
-        <div key={i} className="home-skeleton-row">
-          <div className="home-skeleton-row-title" />
-          <div className="home-skeleton-row-cards">
-            {Array.from({ length: skeletonCardsPerRow }).map((_, j) => (
-              <div key={j} className="home-skeleton-card">
-                <div className="home-skeleton-card-img">
-                  {/* 四角标占位：镜像 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
-                  <span className="home-skeleton-card-badge home-skeleton-card-badge--tl" />
-                  <span className="home-skeleton-card-badge home-skeleton-card-badge--tr" />
-                  <span className="home-skeleton-card-badge home-skeleton-card-badge--bl" />
-                  <span className="home-skeleton-card-badge home-skeleton-card-badge--br" />
-                </div>
-                <div className="home-skeleton-card-title" />
-              </div>
-            ))}
-          </div>
-        </div>
+      {homeRows.map((row) => (
+        <TMDBMovieRow key={row.key} title={row.title} items={[]} isLoading skipAnimations />
       ))}
     </div>
   );
@@ -385,6 +389,25 @@ export default function HomePage() {
       <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
     </div>
   );
+  // 「继续观看」行骨架（2026-09-18 补）：真实结构 = .home-continue-row >
+  // .tmdb-movierow--continue > header + wrapper > scroll > 横版骨架卡。
+  // 不能直接复用 <TMDBMovieRow>：它在 continueMode 且列表为空时会 return null
+  // （组件内 early return），而首屏正是「列表为空 + 正在读本地库」。故按同结构手搭外壳，
+  // 卡片仍复用 TMDBMovieRow 导出的 SkeletonCards（几何唯一来源不变）。
+  const homeSkeletonContinueRow = (
+    <div className="home-continue-row">
+      <div className="tmdb-movierow tmdb-movierow--continue">
+        <div className="tmdb-movierow-header">
+          <h2 className="tmdb-movierow-title">继续观看</h2>
+        </div>
+        <div className="tmdb-movierow-wrapper">
+          <div className="tmdb-movierow-scroll">
+            <SkeletonCards landscape />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
   const homeSkeletonBody = isWide ? (
     <>
       {/* 顶部过渡带骨架（镜像 HomeTopStrip） */}
@@ -394,20 +417,11 @@ export default function HomePage() {
         <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
       </div>
       <div className="home-two-col">
-        {/* 左栏：今日趋势榜卡（复用真实 .cqa-trend 卡壳，只换行内容为骨架条） */}
+        {/* 左栏：今日趋势榜卡 —— 直接渲染真实组件（trending 为空时它自身渲染
+            CategoryTrendSkeleton：真实 .cqa-heat-row--rail > .cqa-trend 结构，
+            行数由该骨架按栏高推导），不再手搓 6 行假结构 */}
         <aside className="home-two-col__rail">
-          <div className="cqa-trend">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="home-skeleton-trend__row">
-                <span className="home-skeleton-trend__rank" />
-                <span className="home-skeleton-trend__poster" />
-                <span className="home-skeleton-trend__body">
-                  <span className="home-skeleton-trend__t" />
-                  <span className="home-skeleton-trend__m" />
-                </span>
-              </div>
-            ))}
-          </div>
+          <CategoryHeatRow variant="rail" />
         </aside>
         {/* 右列：HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位） */}
         <div className="home-two-col__main">
@@ -431,6 +445,7 @@ export default function HomePage() {
               </div>
             </div>
           </section>
+          {homeSkeletonContinueRow}
           {homeSkeletonRows}
         </div>
       </div>
@@ -444,6 +459,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      {homeSkeletonContinueRow}
       {homeSkeletonRows}
     </>
   );
@@ -473,16 +489,7 @@ export default function HomePage() {
   // 分类切换已移除：点击 CategoryQuickAccess 卡片直接跳 /browse，不再在首页内切类目。
   // 注：history / userDataLoading / historyMap / continueItems 及三个事件 handler 的
   // hook 已上移至组件顶部（所有提前 return 之前），此处仅复用，避免 hook 数随分支漂移。
-
-  const homeRows = [
-    { key: 'nowPlaying' as const, title: '正在热映', items: nowPlaying, isLoading: loading.nowPlaying, error: errors.nowPlaying },
-    { key: 'popularMovies' as const, title: '热门电影', items: popularMovies, isLoading: loading.popularMovies, error: errors.popularMovies },
-    { key: 'topRatedMovies' as const, title: '高分电影', items: topRatedMovies, isLoading: loading.topRatedMovies, error: errors.topRatedMovies },
-    { key: 'upcomingMovies' as const, title: '即将上映', items: upcomingMovies, isLoading: loading.upcomingMovies, error: errors.upcomingMovies },
-    { key: 'popularTv' as const, title: '热门剧集', items: popularTv, isLoading: loading.popularTv, error: errors.popularTv },
-    { key: 'topRatedTv' as const, title: '高分剧集', items: topRatedTv, isLoading: loading.topRatedTv, error: errors.topRatedTv },
-    { key: 'airingTodayTv' as const, title: '今日播出', items: airingTodayTv, isLoading: loading.airingTodayTv, error: errors.airingTodayTv },
-  ];
+  // homeRows 定义已上移到骨架之前（骨架与真实行共用一份标题真源）。
 
   // ── 行区块渲染（大屏两栏 / 单栏两条分支共用）───────────────────────
   // 视口懒加载：首屏档（homeRows[0] = 正在热映）立即渲染；其余 6 排等 <LazyBlock> 进入视口
