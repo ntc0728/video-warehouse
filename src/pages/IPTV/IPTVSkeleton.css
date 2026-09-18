@@ -1,4 +1,17 @@
-/* IPTV 频道页专属骨架 — 几何对齐真实 .iptv-rail / .iptv-channel-grid（IPTV.css） */
+/* IPTV 频道页专属骨架 — 几何尽量继承 IPTV.css 的真实类
+   （.iptv-rail-layout / .iptv-rail / .iptv-rail__item / .iptv-rail__title /
+     .iptv-rail__sep / .iptv-rail__box / .iptv-grid-card / .iptv-content /
+     .iptv-content-bar / .iptv-sec / .iptv-sec__head / .iptv-sec__line /
+     .iptv-top-card / .iptv-source-filter / .iptv-actions-row）。
+   本文件只写：① 骨架私有容器的排布；② 灰块尺寸；③ 交互态静默。 */
+
+/* ── 骨架层静默：真实 .iptv-rail__item 有 hover / cursor:pointer ── */
+.iptv-skeleton,
+.iptv-skeleton--rail,
+.iptv-skeleton__rail-item {
+  pointer-events: none;
+  cursor: default;
+}
 
 .iptv-skeleton {
   display: flex;
@@ -7,56 +20,48 @@
   padding: var(--space-sm) 0;
 }
 
-/* ── rail 模式（桌面）：左栏 + 内容卡，flex 与 .iptv-rail-layout 同构 ── */
+/* rail 布局：flex 行 + 间距由真实 .iptv-rail-layout 给出，这里只补满宽 */
 .iptv-skeleton--rail {
-  flex-direction: row;
-  gap: var(--space-lg);
-  align-items: flex-start;
+  width: 100%;
 }
 
-.iptv-skeleton__rail {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: var(--space-xs);
-  width: var(--rail-w);
-  padding-right: var(--space-sm);
-  border-right: 1px solid var(--color-border-light);
-}
-
-.iptv-skeleton__rail-title {
-  width: 4em;
-  height: 0.875em;
-  margin-bottom: var(--space-xs);
-}
-
-.iptv-skeleton__rail-row {
-  height: 1.75em;
+/* ── 左栏灰块 ── */
+.iptv-skeleton__rail-lbl {
+  width: 68%;
+  height: 1.2em;
   border-radius: var(--radius-sm);
 }
 
-.iptv-skeleton__content {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 0;
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+.iptv-skeleton__rail-cnt {
+  width: 2em;
+  height: 1.2em;
+  border-radius: var(--radius-full);
 }
 
-.iptv-skeleton__bar {
-  display: flex;
-  gap: var(--space-sm);
-  justify-content: space-between;
-  align-items: center;
-}
-
+/* ── 内容条灰块（对齐真实 .iptv-content-bar__count / .last-refresh /
+      .iptv-src-select / .iptv-content-bar__note / .refresh-btn 的行盒） ── */
 .iptv-skeleton__bar-count {
   width: 7em;
-  height: 0.875em;
+  height: 1.5em;
+  font-size: var(--text-xs);
+}
+
+.iptv-skeleton__bar-meta {
+  width: 6em;
+  height: 1.5em;
+  font-size: var(--text-xs);
+}
+
+.iptv-skeleton__bar-select {
+  width: 9em;
+  height: 2em;
+  border-radius: var(--radius-md);
+}
+
+.iptv-skeleton__bar-note {
+  width: 5em;
+  height: 1.5em;
+  font-size: var(--text-2xs);
 }
 
 .iptv-skeleton__bar-btn {
@@ -65,21 +70,27 @@
   border-radius: var(--radius-full);
 }
 
-.iptv-skeleton__sec-head {
-  width: 9em;
-  height: 1.1em;
-  margin-top: var(--space-xs);
+/* ── 分节头灰块（真实 h3 = --text-lg，计数 = --text-2xs） ── */
+.iptv-skeleton__sec-title {
+  width: 4.5em;
+  height: 1.4em;
+  font-size: var(--text-lg);
 }
 
+.iptv-skeleton__sec-n {
+  width: 1.5em;
+  height: 1.5em;
+  font-size: var(--text-2xs);
+}
+
+/* ── 频道网格 ── */
 /* 局部刷新骨架：宿主 .iptv-content-loading 是 flex 居中容器，需显式撑满 */
 .iptv-content-loading .iptv-skeleton__channel-grid {
   width: 100%;
 }
 
-/* 频道网格：列数与真实网格同源。
-   注意真实网格是 `.iptv-page .iptv-channel-grid` → --iptv-page-cols
-   （IPTV 页专用，左栏吃宽故比全局 --iptv-cols 降一档），骨架此前误用
-   --iptv-cols，桌面档多一列（2026-09-15 修正）。 */
+/* 列数与真实网格同源。真实网格是 `.iptv-page .iptv-channel-grid` → --iptv-page-cols
+   （IPTV 页专用，左栏吃宽故比全局 --iptv-cols 降一档）。 */
 .iptv-skeleton__channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));
@@ -93,19 +104,73 @@
   min-width: 0;
 }
 
-/* 频道封面 3:2，与 IPTVChannelCard .iptv-card-cover 同比例 */
+/* 频道封面比例与真实 .iptv-card-cover 同档：基础 3/2 → ≥768 16/10 → ≥1024 16/9 */
 .iptv-skeleton__channel-cover {
+  position: relative;
   aspect-ratio: 3 / 2;
   border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--color-placeholder-shimmer-a) 25%,
+    var(--color-placeholder-shimmer-b) 50%,
+    var(--color-placeholder-shimmer-a) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
+}
+
+@media (width >= 768px) {
+  .iptv-skeleton__channel-cover {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (width >= 1024px) {
+  .iptv-skeleton__channel-cover {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* 左上 LIVE 角标（真实 .iptv-card-cover__badges 常驻） */
+.iptv-skeleton__channel-live {
+  position: absolute;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  width: 2.4em;
+  height: 1.3em;
+  border-radius: var(--radius-sm);
+  background: var(--color-placeholder-shimmer-b);
+  opacity: 0.75;
 }
 
 .iptv-skeleton__channel-title {
   width: 64%;
-  height: 0.875em;
+  height: 1.4em;
+  font-size: var(--text-sm);
 }
 
-/* ── 移动模式顶栏（对应 .iptv-top-card 筛选条） ── */
-.iptv-skeleton__topbar {
-  height: 2.75em;
-  border-radius: var(--radius-lg);
+/* 副标题（真实 .iptv-card-subtitle 条件渲染，中文台名存在时出现） */
+.iptv-skeleton__channel-sub {
+  width: 42%;
+  height: 1.5em;
+  font-size: var(--text-xs);
+}
+
+/* ── 移动模式顶栏（对应 .iptv-top-card：源过滤 tags + 操作行） ── */
+.iptv-skeleton__top-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.iptv-skeleton__filter-tag {
+  width: 4.5em;
+  height: 2em;
+  border-radius: var(--radius-full);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iptv-skeleton__channel-cover {
+    animation: none;
+  }
 }

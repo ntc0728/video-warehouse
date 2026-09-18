@@ -26,7 +26,8 @@
          读 location 判定页型，就地换成本页同构的骨架：
            首页 hero+卡片行 / IPTV 左栏+频道网格 / 收藏·历史 筛选卡+网格 /
            Browse 筛选条+海报网格 / Chart 标签条+榜单行 / Detail·Person hero+文本行 /
-           其余路由 顶栏+提示；/iptv/play 无顶栏（真实页是全屏播放器，不走 AppLayout）。
+           播放页 16:9 黑场+右侧面板列 / 其余路由 顶栏+提示；
+           /iptv/play 无顶栏（真实页是全屏播放器，不走 AppLayout）。
 
          硬约束（勿改）：
          1. 必须零依赖 —— 此刻 index.css 与 JS 都还没加载，CSS 变量不可用，
@@ -46,6 +47,11 @@
             设备档由脚本写入 data-cols 覆盖：TV 恒 8/5/5/5，App 停基础档 3/2/2
             （与 [data-device] 门控同源；记录网格无 app 门控，故 App 仍走视口阶梯）。
             每种网格各自持有完整阶梯，勿写通用 .bs-row 档（会串档 / 抬特异性，详见下方）。
+            ⚠️ mobile-web 档（真实手机 UA 的非 Capacitor 形态）**故意不单列**：2026-09-18
+            核查确认 variables.css / index.css 的列数覆盖（--card-cols / --iptv-cols /
+            --iptv-page-cols / --history-cols）全部只做 not([data-device="app"]) 门控，
+            mobile-web 与 web 走同一条视口阶梯 —— 故 data-cols="web" 已与之等价，
+            此项由「待实测」升级为已核实结论，勿再凭感觉补档。
          3. pointer-events:none 保证即使移除失败也不拦点击（防 E2E 误判遮挡）。
          4. 尺寸全用 vh / % / rem，不引 token、不用 100dvh（App 内会溢出）。
          5. 只做「轮廓级同构」：区块数量/方位/卡片比例对齐，不追逐像素 —— 真源仍是
@@ -215,6 +221,31 @@
         html[data-theme="dark"] .bs-rail { border-right-color: #2b2b2b; }
       }
 
+      /* 播放页（/play、/play/:id、/player，2026-09-18 补齐）：主播放区（16:9 黑场）
+         + 右侧面板列，与真实 .player-main（flex row：.player-video-area + .player-sidebar）
+         同构。侧栏骨架由 React 侧 PlayerSidebarSkeleton 承担，此处只做「有一列面板」的轮廓。
+         ⚠️ 与 data-shape="play"（/iptv/play 全屏播放器）是两种页型：那个无顶栏、提示居中，
+         本档保留顶栏（播放页在 AppLayout 内）。 */
+      .bs-player { display: flex; flex-direction: column; gap: 16px; }
+      .bs-player__stage {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: 12px;
+      }
+      .bs-player__side { display: none; flex-direction: column; gap: 12px; }
+      .bs-player__panel { height: 7rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
+      .bs-player__panel--tall { height: 13rem; }
+
+      /* 桌面（≥1024，与 AppLayout 的 wide 起点一致）：播放区吃满剩余宽，右侧出现面板列 */
+      @media (width >= 1024px) {
+        .bs-player { flex-direction: row; align-items: flex-start; }
+        .bs-player__stage { flex: 1 1 auto; min-width: 0; }
+        .bs-player__side { display: flex; flex: 0 0 clamp(220px, 18vw, 320px); }
+      }
+
+      html[data-theme="dark"] .bs-player__panel { background: #1f1f1f; border-color: #2b2b2b; }
+
       /* /iptv/play 真实页是全屏播放器（顶层路由，不走 AppLayout）→ 无顶栏，提示居中 */
       #boot-splash[data-shape="play"] .bs-header { display: none; }
       #boot-splash[data-shape="play"] .bs-body { flex: 1; align-items: center; justify-content: center; }
@@ -299,6 +330,10 @@
         else if (path === '/history') shape = 'history';
         else if (path.indexOf('/detail/') === 0) shape = 'detail';
         else if (path.indexOf('/person/') === 0) shape = 'person';
+        /* 播放页两条路径都覆盖（2026-09-18 补）：/play 与 /player 是同一页的两条路由，
+           /play/:id 是详情/历史进入播放的实际形态（此前三条全部落 plain —— 无顶栏无内容），
+           故 indexOf 判定必须排在 /iptv/play 之后（后者不以 /play 开头，不冲突）。 */
+        else if (path === '/play' || path === '/player' || path.indexOf('/play/') === 0) shape = 'player';
 
         /* 设备档（决定列数分档，与真源 [data-device] 覆盖同源）：
            TV 恒 8 / 5 / 5 列，App 停在基础档 3 / 2 / 2，Web 走视口断点。
@@ -374,6 +409,18 @@
           },
           detail: function () { return [hero(), lines(4)]; },
           person: function () { return [hero(), lines(4)]; },
+          /* 播放页：主播放区（16:9 黑场）+ 桌面右面板列。
+             用 div 而非默认的 i（`<i>` 是 inline，aspect-ratio / 高度不生效，
+             同款的 .bs-cover / .bs-line 都是显式 display:block 才成立）。 */
+          player: function () {
+            var wrap = el('bs-player', 'div');
+            wrap.appendChild(el('bs-player__stage', 'div'));
+            var side = el('bs-player__side', 'div');
+            side.appendChild(el('bs-player__panel', 'div'));
+            side.appendChild(el('bs-player__panel bs-player__panel--tall', 'div'));
+            wrap.appendChild(side);
+            return [wrap];
+          },
         };
 
         /* 填满首屏：按当前视口高度逐行补占位块，直到骨架内容高度到达
@@ -406,6 +453,7 @@
 
         splash.setAttribute('data-shape', shape);
         if (shape === 'play') tip.textContent = '正在打开播放器…';
+        else if (shape === 'player') tip.textContent = '正在加载影片…';
 
         var build = BUILD[shape];
         if (build) {

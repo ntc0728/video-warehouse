@@ -24,6 +24,7 @@ import { useBackdropLoader } from '@/hooks/useBackdropLoader';
 import { useDocumentTitle } from '@/hooks';
 import { useCmsSourceGuard } from '@/hooks/useCmsSourceGuard';
 import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
+import HistorySkeleton from './HistorySkeleton';
 
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { resolveChannelLogoCandidates } from '@/services/channelLogo';
@@ -171,7 +172,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 ];
 
 export default function HistoryPage() {
-  const { history: watchHistory, removeHistoryByVideo, clearHistory, loadError } = useUserStore();
+  const { history: watchHistory, removeHistoryByVideo, clearHistory, _loading: userLoading, loadError } = useUserStore();
   const { playHistory, channels: iptvChannels, clearPlayHistory, removePlayRecord } = useIPTVStore();
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
@@ -805,8 +806,16 @@ export default function HistoryPage() {
         />
       )}
       <div className="history-body">
-        {/* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载 */}
-        {currentList.length > 0 ? (
+        {userLoading ? (
+          /* 历史页专属骨架（2026-09-18 新增，补齐「12 个非 demo 页里唯一完全无骨架」的缺口）：
+             结构对齐真实内容区（桌面 = 左侧算珠时间轴槽 + 右侧分组节点行 + 记录卡网格；
+             移动/app 由 History.css 同款门控自动收起时间轴），列数读 --history-cols
+             与真实 .history-grid 同源。
+             判定条件与收藏页 Collections（_loading）完全一致 —— 同类页面同一套加载语言；
+             加载期间不再闪「暂无观看记录」空态。 */
+          <HistorySkeleton />
+        ) : currentList.length > 0 ? (
+          /* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载 */
           <div key={`${mainTab}-${statusFilter}-${sortBy}`} className="history-content animate-fade-in">
             {/* 左侧算珠时间轴（桌面端 sticky 常驻，算珠随滚动逐颗累加；移动端隐藏，保留内联节点） */}
             <div className="history-timeline" ref={timelineRef}>
@@ -881,7 +890,7 @@ export default function HistoryPage() {
           </div>
         ) : null}
       </div>
-      {currentList.length === 0 && (
+      {!userLoading && currentList.length === 0 && (
         loadError ? (
           // 读库失败（2026-09-16）：与「真没看过任何片」区分开——否则用户以为记录被清空了，
           // 且原实现下没有任何重试入口。

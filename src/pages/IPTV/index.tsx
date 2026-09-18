@@ -341,8 +341,20 @@ export default function IPTVPage() {
   // 保持下方 .iptv-grid-card 内局部骨架语义不变。
   if ((isLoading || !bootstrapped) && channels.length === 0) {
     return (
-      <div ref={pageRef} className="page-padding iptv-page content-shell">
-        <IPTVSkeleton rail={isDesktopRail} />
+      <div
+        ref={pageRef}
+        className={`page-padding iptv-page content-shell${isDesktopRail ? ' iptv-page--rail' : ''}`}
+      >
+        {/* 已知量直接取真实真源（2026-09-18）：
+            - 分类行数 = IPTV_CATEGORIES 常量 + 「其他」是否非空（首屏无数据时恒为 0）；
+            - 「更多台」行数 = 已启用 IPTV 源数（本地设置，同步可得，不是未知量）；
+            - 源下拉的出现条件与真实页同一表达式。 */}
+        <IPTVSkeleton
+          rail={isDesktopRail}
+          categoryCount={IPTV_CATEGORIES.length + ((catCounts.get('__other__') ?? 0) > 0 ? 1 : 0)}
+          extraSourceCount={aggregatorUrls?.length ?? 0}
+          sourceFilter={(aggregatorUrls?.length ?? 0) > 1}
+        />
       </div>
     );
   }

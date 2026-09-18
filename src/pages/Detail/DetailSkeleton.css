@@ -1,4 +1,9 @@
-/* 详情页专属骨架 — 几何对齐真实 .detail-hero / .detail-hero-side（Detail.css） */
+/* 详情页专属骨架 — 几何尽量继承 Detail.css / VideoCard.css 的真实类
+   （.detail-content / .detail-tabs-wrap / .detail-tabs / .tab-underline / .detail-tab /
+     .detail-cast-row / .detail-cast-row--collapsed / .detail-cast-item / .detail-stills-grid /
+     .detail-stills-skeleton / .detail-recommend / .detail-recommend-title /
+     .detail-recommend-row / .detail-recommend-card / .video-card 系列）。
+   本文件只写「骨架私有」的部分：hero/侧栏几何、灰块尺寸、交互态静默。 */
 
 .detail-skeleton {
   display: flex;
@@ -7,6 +12,15 @@
   /* 宿主 .detail-page--loading 是 align-items:center 的 flex 列（为居中旧 AppLoading 设计），
      骨架必须显式撑满，否则整块收缩到内容宽（右侧信息卡定值宽），hero 会塌成 0 宽。 */
   width: 100%;
+}
+
+/* 骨架层不可交互：真实 .detail-cast-item / .video-card / .detail-tab 都带 hover 位移 */
+.detail-skeleton,
+.detail-skeleton .detail-cast-item,
+.detail-skeleton .video-card,
+.detail-skeleton .detail-skeleton__tab {
+  pointer-events: none;
+  cursor: default;
 }
 
 .detail-skeleton__top {
@@ -100,6 +114,26 @@
   width: 62%;
 }
 
+/* ── Tab 灰块：外壳复用 .tab-underline / .detail-tab，行盒天然一致 ── */
+.detail-skeleton__tab {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  cursor: default;
+}
+
+.detail-skeleton__tab-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: var(--radius-sm);
+}
+
+.detail-skeleton__tab-label {
+  width: 2.5em;
+  height: 1em;
+}
+
+/* ── 概览：演员 / 简介 / 剧照 ── */
 .detail-skeleton__body {
   display: flex;
   flex-direction: column;
@@ -112,12 +146,62 @@
   margin-top: var(--space-xs);
 }
 
+.detail-skeleton__cast {
+  cursor: default;
+}
+
+/* 演员头像：与真实 .detail-cast-avatar 同尺寸（圆形），但用骨架灰块 */
+.detail-skeleton__cast-avatar {
+  width: var(--layout-cast-avatar);
+  height: var(--layout-cast-avatar);
+  border-radius: 50%;
+}
+
+.detail-skeleton__cast-name {
+  width: 72%;
+  height: 1.2em;
+  font-size: var(--text-sm);
+}
+
+.detail-skeleton__cast-role {
+  width: 56%;
+  height: 1.3em;
+  font-size: var(--text-xs);
+}
+
+.detail-skeleton__overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
 .detail-skeleton__overview {
   height: 0.875em;
 }
 
 .detail-skeleton__overview--short {
   width: 55%;
+}
+
+/* ── 推荐区：外壳与网格复用真实类，只补标题与卡内灰块 ── */
+.detail-skeleton__recommend-title {
+  width: 6em;
+  height: 1.4em;
+  margin: 0 0 var(--space-sm);
+  padding: 0 var(--space-md);
+  font-size: var(--text-lg);
+}
+
+.detail-skeleton__rec-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.detail-skeleton__rec-title {
+  width: 78%;
+  height: 1.5em;
+  font-size: var(--text-sm);
 }
 
 /* ── ≥1024 桌面两栏（非 App/TV，与 Detail.css 上半部两栏同门控同列公式） ── */

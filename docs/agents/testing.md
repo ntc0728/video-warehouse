@@ -77,7 +77,9 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 ### 页面代码 → 测试文件（1:1）
 
-> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-15：145 条 / 19 个 spec**（+ `boot-splash.spec.ts` 13 条）；2026-09-14：132 条 / 18 个 spec；2026-09-10 晚为 127 条、同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**、**BROWSE-090~093（逻辑分页）与 BROWSE-094/095（分页器渲染门控）**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
+> test 数：playwright 用例为 `npx playwright test --list` 实际枚举数（**2026-09-18：163 条 / 20 个 spec**
+> —— 新增 `scripts/skeleton.spec.ts` 18 条：色源唯一 2 / 列数三方同源 6（PAIRS 动态生成，逐断点）/
+> 结构同构 + 视口填充 7 / 启动骨架 shape 3；**2026-09-15：145 条 / 19 个 spec**（+ `boot-splash.spec.ts` 13 条）；2026-09-14：132 条 / 18 个 spec；2026-09-10 晚为 127 条、同日晚些时候为 123 条、2026-09-09 晚为 118 条，此前二次激进合并后为 116 条 / 16 spec，306→253→116 仅合并不删断言。新增：`player-cms-error.spec.ts` PLAYER-095（CMS 业务错误码失败态）、`verify-grid.spec.ts`（网格重构验证）、`iptv-player.spec.ts` 11.4 的 IPTVP-020~024（播放页 chrome 尺寸契约 + 播放器强调色）、**走读反馈批次的 4 条硬断言护栏 IPTV-090 / DETAIL-090 / BROWSE-081+082 / HOME-089**、**BROWSE-090~093（逻辑分页）与 BROWSE-094/095（分页器渲染门控）**）。沙箱真实 CMS 源常加载不出、无法复现「真实播放」类问题，可用 ffmpeg 本地 HLS + Playwright `page.route` 冒充流（详见记忆库「本地 HLS 冒充流范式」）。「A + B」写法 = 静态 `test(` 数 + 动态生成用例数，合计等于 `--list` 总数。表中标注「(vitest 单元测试)」的行为 Vitest 单元测（`npm run test`），不计入 playwright 枚举数。
 >
 > ⚠️ **表中「test 数」列的数字多为 2026-09 之前的历史快照，与 `--list` 枚举数口径不一致**（例如 home 列 46、实际 13 个 `test()`）。**需要精确数字时以 `--list` 为准，别直接引用本列**：
 > ```bash
@@ -111,6 +113,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | 全局问题专项（字体自托管/IPTV 台标兜底/跟随系统/空数据不挂载）                  | `scripts/global-fixes.spec.ts`                         | 5      |
 | 代理配置页专项                                               | `scripts/proxy-setup.spec.ts`                          | 3      |
 | `index.html`（启动骨架：路由感知 + 视口填充）                  | `scripts/boot-splash.spec.ts`                          | 13     |
+| 骨架体系契约（色源唯一 / 列数三方同源 / 结构同构 + 视口填充 / 启动骨架 shape） | `scripts/skeleton.spec.ts`（跑批走 `scripts/e2e-skeleton.mjs`） | 18 |
 
 > 注：`+N` 为 9.1 修复专项 `fix-2026-08.spec.ts` 中涉及该页的用例数（冷启动/汉堡/横屏/IPTV 全屏/免责声明 各页共通的修复验证；原封面兜底/TabBar 间距两条像素快照已删）。
 
@@ -171,6 +174,24 @@ pnpm exec playwright test
 > 部分环境加载本应用会以 0xC0000409 整体崩出）——**别去改 GPU 参数**，直接
 > `PW_BROWSER_CHANNEL=chromium npx playwright test` 切到完整 chromium 的 headless=new。
 > 详情与「`chromium.launch()` 不继承 `use.channel`」的坑见 `runtime-conventions.md` §7。
+
+**「跑起来卡死 / 十几分钟没日志」先看这条**（2026-09-18）：这是**僵尸 dev server**，不是用例慢。
+3001 上的 Vite 会进入「TCP 仍 LISTENING、HTTP 永不响应」状态，`webServer.reuseExistingServer`
+既判不出可复用、又起不来新的（端口被占 / 受限环境 npm shim 失效），于是 `baseURL` 指向死端口 →
+**每条 `page.goto` 都把单测 45s 超时耗干**；`globalSetup` 的首次 goto 就挂住 ⇒ reporter 一个字都不吐。
+18 条用例 ≈ 13.5 分钟。别重试，直接：
+
+```bash
+node scripts/e2e-skeleton.mjs          # 清场 + vite preview(dist) + HTTP 健康轮询 + 双超时封顶 + 收尾
+node scripts/e2e-skeleton.mjs --dev    # 改了 src 还没 build 时退回 dev server
+node scripts/e2e-skeleton.mjs -g SKEL-011
+```
+
+该脚本默认跑 **`vite preview`（构建产物）**：页面加载由「秒级模块图」降到百毫秒，且生产包把
+全部页面 CSS 打进同一 bundle —— **注入探针型断言不再依赖路由 chunk 是否加载**，比 dev 更稳。
+代价是要求 `dist` 是最新构建（脚本会拿 src 最新 mtime 比 dist/index.html 并告警）。
+`playwright.config.ts` 的 `webServer.command` 同时由 `npm run dev` 改为
+`"${process.execPath}" node_modules/vite/bin/vite.js`（绕开 npm shim，避免静默换端口）。
 
 ### 增量测试（推荐日常使用）
 
