@@ -1,0 +1,4 @@
+#!/bin/sh
+# post-merge —— pull/merge 后健康快检
+dir=${0%/*}
+exec "$dir/repo-health-check"

@@ -1,0 +1,42 @@
+#!/bin/sh
+# repo-health-check —— git 写操作后的仓库健康快检（本仓库专用）
+#
+# 背景：本机存在「git 写引用报成功但不落盘 / refs 目录整体消失」的病史
+# （2026-09-18 事故：refs/ 整目录消失 + 松散对象被清，详见 .workbuddy/memory/2026-09-18.md）。
+# 本脚本 = 事后两道快检，由 post-commit / post-merge / post-rewrite 钩子调用：
+#   1) 引用在位：当前分支引用 + 上游引用（refs/remotes 病变征兆）
+#   2) 对象库连通性：git fsck --connectivity-only（快速版，全量 fsck 请手动跑）
+#
+# 约定：只告警不阻断（exit 恒 0），避免把仓库卡在更复杂的中间态。
+
+fail=0
+
+# 1) 当前分支引用必须在位
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || branch=""
+if [ -n "$branch" ]; then
+	if ! git rev-parse --verify --quiet "refs/heads/$branch" >/dev/null 2>&1; then
+		echo "[repo-health] ❌ 当前分支引用丢失: refs/heads/$branch（勿继续 git 写操作，先修复引用）" >&2
+		fail=1
+	fi
+
+	# 2) 已配置上游的分支，上游引用必须在位
+	if git config --get "branch.$branch.merge" >/dev/null 2>&1; then
+		if ! git rev-parse --verify --quiet "@{u}" >/dev/null 2>&1; then
+			echo "[repo-health] ⚠ 上游引用缺失: $branch@{u}（refs/remotes 病变征兆）" >&2
+			fail=1
+		fi
+	fi
+fi
+
+# 3) 对象库连通性快检（失败才输出；dangling 提示属正常，不告警）
+ferr=$(git fsck --connectivity-only --no-progress 2>&1)
+if [ $? -ne 0 ]; then
+	echo "$ferr" >&2
+	echo "[repo-health] ❌ 对象库完整性受损（立即停止 git 写操作，联系 AI 助手按 2026-09-18 恢复流程处理）" >&2
+	fail=1
+fi
+
+if [ "$fail" -eq 0 ]; then
+	echo "[repo-health] ✓ ok" >&2
+fi
+exit 0

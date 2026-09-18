@@ -1,0 +1,4 @@
+#!/bin/sh
+# post-commit —— commit 后健康快检
+dir=${0%/*}
+exec "$dir/repo-health-check"

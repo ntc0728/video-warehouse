@@ -1,0 +1,5 @@
+#!/bin/sh
+# post-rewrite —— rebase / commit --amend / filter-branch 后健康快检
+# （rebase 中断正是 2026-09-18 refs 消失事故的直接诱因）
+dir=${0%/*}
+exec "$dir/repo-health-check"
