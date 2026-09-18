@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.27.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.5...kinotv-v1.27.0) (2026-09-18)
+
+
+### Features
+
+* **githooks:** git 写操作后自动仓库健康自检 ([f5f3d67](https://github.com/ntc0728/video-warehouse/commit/f5f3d67938ccc243f0afd100e07f00ce7e238201))
+* **githooks:** repo-health-check 增加 transport-probe 写前传输预检 ([09d564d](https://github.com/ntc0728/video-warehouse/commit/09d564d890d0eb51f182484deccd37f38f30852b))
+* **githooks:** 引用未落盘自愈补写 + 预检默认 HTTPS ([521e1dd](https://github.com/ntc0728/video-warehouse/commit/521e1dd741dde5f76fdfba7bd1187c71b4983a67))
+
 ## [1.26.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.4...kinotv-v1.26.5) (2026-09-18)
 
 
