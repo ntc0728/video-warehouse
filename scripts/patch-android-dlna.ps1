@@ -92,22 +92,7 @@ if ($changed) {
     Write-Host "[patch-android-dlna] AndroidManifest.xml 无需变更（已包含）" -ForegroundColor DarkGray
 }
 
-# 3. 注入 androidx.media:media 依赖（MediaService 用 MediaSessionCompat / NotificationCompat.MediaStyle）
-#    ⚠️ android/app/build.gradle 由 cap sync 重建（android/ 被 gitignore），手动改会被覆盖，
-#    故在本脚本（cap sync 之后、gradle 之前）注入，确保依赖随平台重建后仍存在。
-$BuildGradle = Join-Path $AndroidDir "app\build.gradle"
-if (Test-Path $BuildGradle) {
-    $bg = [System.IO.File]::ReadAllText($BuildGradle)
-    if ($bg -notmatch 'androidx\.media:media') {
-        # 锚定 androidx.appcompat 依赖行（cap sync 模板固定生成），在其后插入 media 依赖
-        $bg = $bg -replace '(implementation "androidx.appcompat:appcompat:\$androidxAppCompatVersion")', "`$1`r`n    implementation `"androidx.media:media:1.7.0`""
-        [System.IO.File]::WriteAllText($BuildGradle, $bg)
-        Write-Host "[patch-android-dlna] build.gradle 已注入 androidx.media:media:1.7.0" -ForegroundColor Cyan
-    } else {
-        Write-Host "[patch-android-dlna] build.gradle 已含 androidx.media:media，跳过" -ForegroundColor DarkGray
-    }
-} else {
-    Write-Host "[patch-android-dlna] 未找到 build.gradle，跳过依赖注入" -ForegroundColor Yellow
-}
+# 3.（已移除）曾注入 androidx.media:media:1.7.0 —— MediaService 现改用 framework MediaSession，
+#    androidx.media 在补丁内已无消费者；通知 MediaStyle 需 MediaSessionCompat，属旧命名空间不可用。
 
 Write-Host "[patch-android-dlna] 完成" -ForegroundColor Green

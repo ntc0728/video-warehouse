@@ -20,7 +20,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.core.app.NotificationCompat;
-import androidx.media.app.NotificationCompat.MediaStyle;
 
 import com.videowarehouse.app.R;
 
@@ -32,7 +31,7 @@ import com.videowarehouse.app.R;
  * - 用 {@link MediaPlayer} 直播 URL（与 WebView 的 video 元素解耦，避免 WebView 后台限制）。
  * - MediaSession（android.media.session framework，API 21+，minSdk 22 满足）兼容锁屏卡片 + 耳机键 play/pause/seek。
  *   不依赖已废弃且 AndroidX 命名空间不可见的 media-compat（androidx.media:media 仅含旧命名空间 android.support.v4.media.*），
- *   故直接用 framework MediaSession；NotificationCompat.MediaStyle 仍来自 androidx.media:media（已确认存在）。
+ *   故直接用 framework MediaSession，通知构建零 androidx.media 依赖。
  * - 前台通知：API 34 需声明 foregroundServiceType=specialUse + 对应权限。
  *
  * 启停由 MediaBridgePlugin 驱动：startForegroundService → start(metadata) → play/pause/seek → stop。
@@ -282,8 +281,9 @@ public class MediaService extends Service {
                 .setOngoing(true)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
-        // 锁屏媒体控制：MediaStyle 绑定 MediaSession
-        new MediaStyle(mediaSession).setShowActionsInCompactView(0, 1, 2);
+        // 锁屏媒体卡片由 framework MediaSession（setActive + PlaybackState）系统级提供，
+        // 不依赖通知 style。通知上的紧凑媒体按钮（MediaStyle）需 MediaSessionCompat，
+        // 如后续要做属新 feature，另行决策。
         return builder.build();
     }
 
