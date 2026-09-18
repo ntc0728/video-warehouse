@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.3...kinotv-v1.26.4) (2026-09-18)
+
+
+### Bug Fixes
+
+* **android:** MediaService 改用 framework MediaSession 修复 APK 构建 ([49eb39c](https://github.com/ntc0728/video-warehouse/commit/49eb39c6e9219b686870dffb6f997372449a3684))
+
 ## [1.26.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.2...kinotv-v1.26.3) (2026-09-17)
 
 
