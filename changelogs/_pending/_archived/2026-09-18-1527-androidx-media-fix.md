@@ -1,0 +1,54 @@
+---
+date: 2026-09-18
+module: android / dlna-patch
+type: fix
+build: apk
+files:
+  - scripts/android-dlna-patch/java/com/videowarehouse/app/media/MediaService.java
+demo: CI build-apk (release-please.yml) 验证
+---
+
+# 修复 MediaService 编译失败（media-compat 命名空间陷阱）
+
+## 背景
+Run #133 / #135（release-please.yml → build-apk）`compileReleaseJavaWithJavac` 失败：
+`package androidx.media does not exist`（MediaSessionCompat / MediaMetadataCompat /
+PlaybackStateCompat 全部找不到符号）。
+
+## 根因（已用 AAR 实证）
+`androidx.media:media:1.7.0` 这个 artifact **不含** AndroidX 命名空间的 media-compat 类。
+其 classes.jar 里这些类只存在于**旧命名空间** `android/support/v4/media/*`：
+- `android/support/v4/media/session/MediaSessionCompat.class`
+- `android/support/v4/media/MediaMetadataCompat.class`
+- `android/support/v4/media/session/PlaybackStateCompat.class`
+
+而 `android/` 项目的 `gradle.properties` 仅 `android.useAndroidX=true`、**未开启 jetifier**
+（现代 AGP 默认关闭）。无 jetifier 时，旧命名空间 `android.support.*` 类不会被重映射到
+`androidx.*`，因此代码里 `import androidx.media.session.MediaSessionCompat` 永远解析不到 →
+报「package androidx.media does not exist」。
+
+> 验证手法：下载 `androidx.media:media` 各版本 AAR（1.0.0–1.7.0），解 `classes.jar` 比对，
+> 确认 `androidx/media/session/MediaSessionCompat.class` 在所有 1.x 中均缺失；
+> `androidx.media:media:1.7.0` 仅含 `androidx/media/AudioAttributesCompat` 等新 Media2 类 +
+> 旧命名空间 compat 类。
+
+## 改动
+`scripts/android-dlna-patch/java/com/videowarehouse/app/media/MediaService.java`：
+- import 由 `androidx.media.MediaMetadataCompat` / `androidx.media.session.MediaSessionCompat` /
+  `androidx.media.session.PlaybackStateCompat` 改为 framework 类
+  `android.media.MediaMetadata` / `android.media.session.MediaSession` / `android.media.session.PlaybackState`
+  （API 21+，minSdk=22 满足，常驻 classpath，零新依赖）。
+- 全文对应引用改名（`MediaSessionCompat.Callback` → `MediaSession.Callback`、
+  `MediaMetadataCompat.Builder` → `MediaMetadata.Builder`、
+  `PlaybackStateCompat.Builder` → `PlaybackState.Builder` 及 `STATE_*` / `ACTION_*` 常量）。
+- `androidx.media.app.NotificationCompat.MediaStyle` 保留——该类**确实存在于**
+  `androidx.media:media:1.7.0`（`androidx/media/app/NotificationCompat.class` 已确认），
+  故 `patch-android-dlna.ps1` 注入的 `androidx.media:media:1.7.0` 依赖**仍需保留**。
+
+## 验证
+- grep 全仓：MediaService.java 已无 `MediaSessionCompat` / `MediaMetadataCompat` /
+  `PlaybackStateCompat` 残留（仅剩 `androidx.core.app.NotificationCompat` 与
+  `androidx.media.app.NotificationCompat.MediaStyle`，均正确）。
+- 本地无 Android SDK，无法跑 gradle；交由下一次 release-please 发版 merge 触发 build-apk 验证。
+- 关键认知：新增 Gradle 依赖必须走 `patch-android-dlna.ps1` 注入（android/ 被 gitignore +
+  cap sync 重建，直接改 build.gradle 会被覆盖）。

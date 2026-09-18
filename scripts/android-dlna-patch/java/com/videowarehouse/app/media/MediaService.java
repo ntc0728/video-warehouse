@@ -13,9 +13,9 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.IBinder;
-import androidx.media.MediaMetadataCompat;
-import androidx.media.session.MediaSessionCompat;
-import androidx.media.session.PlaybackStateCompat;
+import android.media.MediaMetadata;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -30,7 +30,9 @@ import com.videowarehouse.app.R;
  * 设计要点：
  * - 仅 Android App（WebView 后台会被系统暂停媒体）需要此服务；Web 端靠浏览器默认行为 + P1 MediaSession。
  * - 用 {@link MediaPlayer} 直播 URL（与 WebView 的 video 元素解耦，避免 WebView 后台限制）。
- * - MediaSessionCompat（androidx）兼容 API 22+，锁屏卡片 + 耳机键 play/pause/seek。
+ * - MediaSession（android.media.session framework，API 21+，minSdk 22 满足）兼容锁屏卡片 + 耳机键 play/pause/seek。
+ *   不依赖已废弃且 AndroidX 命名空间不可见的 media-compat（androidx.media:media 仅含旧命名空间 android.support.v4.media.*），
+ *   故直接用 framework MediaSession；NotificationCompat.MediaStyle 仍来自 androidx.media:media（已确认存在）。
  * - 前台通知：API 34 需声明 foregroundServiceType=specialUse + 对应权限。
  *
  * 启停由 MediaBridgePlugin 驱动：startForegroundService → start(metadata) → play/pause/seek → stop。
@@ -51,7 +53,7 @@ public class MediaService extends Service {
     private static final String EXTRA_SEEK_MS = "seekMs";
 
     private MediaPlayer mediaPlayer;
-    private MediaSessionCompat mediaSession;
+    private MediaSession mediaSession;
     private String currentUrl;
     private String currentTitle = "";
     private String currentArtist = "";
@@ -95,10 +97,10 @@ public class MediaService extends Service {
         createNotificationChannel();
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         // 用 STREAM_MUSIC 通道，与 WebView video 一致，避免与通话等冲突
-        mediaSession = new MediaSessionCompat(this, TAG);
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
-                | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+        mediaSession = new MediaSession(this, TAG);
+        mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS
+                | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession.setCallback(new MediaSession.Callback() {
             @Override
             public void onPlay() { play(); }
             @Override
@@ -166,17 +168,17 @@ public class MediaService extends Service {
                 isPrepared = true;
                 updateMetadata();
                 mp.start();
-                setPlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                setPlaybackState(PlaybackState.STATE_PLAYING);
                 updateNotification();
             });
             mediaPlayer.setOnCompletionListener(mp -> {
-                setPlaybackState(PlaybackStateCompat.STATE_STOPPED);
+                setPlaybackState(PlaybackState.STATE_STOPPED);
                 updateNotification();
             });
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                 Log.w(TAG, "MediaPlayer error: what=" + what + " extra=" + extra);
                 isPrepared = false;
-                setPlaybackState(PlaybackStateCompat.STATE_ERROR);
+                setPlaybackState(PlaybackState.STATE_ERROR);
                 return false;
             });
             mediaPlayer.prepareAsync();
@@ -189,7 +191,7 @@ public class MediaService extends Service {
     private void play() {
         if (mediaPlayer != null && isPrepared && !mediaPlayer.isPlaying()) {
             mediaPlayer.start();
-            setPlaybackState(PlaybackStateCompat.STATE_PLAYING);
+            setPlaybackState(PlaybackState.STATE_PLAYING);
             updateNotification();
         }
     }
@@ -197,7 +199,7 @@ public class MediaService extends Service {
     private void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-            setPlaybackState(PlaybackStateCompat.STATE_PAUSED);
+            setPlaybackState(PlaybackState.STATE_PAUSED);
             updateNotification();
         }
     }
@@ -213,7 +215,7 @@ public class MediaService extends Service {
             mediaPlayer.stop();
         }
         releasePlayer();
-        setPlaybackState(PlaybackStateCompat.STATE_STOPPED);
+        setPlaybackState(PlaybackState.STATE_STOPPED);
         stopForeground(true);
         stopSelf();
     }
@@ -233,14 +235,14 @@ public class MediaService extends Service {
     }
 
     private void updateMetadata() {
-        MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "KinoTV");
+        MediaMetadata.Builder mb = new MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, currentTitle)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, currentArtist)
+                .putString(MediaMetadata.METADATA_KEY_ALBUM, "KinoTV");
         if (mediaPlayer != null && isPrepared) {
             long dur = mediaPlayer.getDuration();
             if (dur > 0) {
-                mb.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+                mb.putLong(MediaMetadata.METADATA_KEY_DURATION, dur);
             }
         }
         mediaSession.setMetadata(mb.build());
@@ -248,15 +250,15 @@ public class MediaService extends Service {
 
     private void setPlaybackState(int state) {
         long pos = (mediaPlayer != null && isPrepared) ? mediaPlayer.getCurrentPosition() : 0;
-        PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE
-                        | PlaybackStateCompat.ACTION_STOP | PlaybackStateCompat.ACTION_SEEK_TO)
+        PlaybackState.Builder b = new PlaybackState.Builder()
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE
+                        | PlaybackState.ACTION_STOP | PlaybackState.ACTION_SEEK_TO)
                 .setState(state, pos, 1.0f);
         mediaSession.setPlaybackState(b.build());
     }
 
     private void startForegroundWithNotification() {
-        Notification n = buildNotification(PlaybackStateCompat.STATE_PLAYING);
+        Notification n = buildNotification(PlaybackState.STATE_PLAYING);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // API 34+ 需显式声明 foregroundServiceType + specialUse 权限
             startForeground(NOTIFICATION_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
@@ -266,7 +268,7 @@ public class MediaService extends Service {
     }
 
     private Notification buildNotification(int state) {
-        boolean playing = state == PlaybackStateCompat.STATE_PLAYING;
+        boolean playing = state == PlaybackState.STATE_PLAYING;
         // PendingIntent 打开 App（MainActivity）
         Intent openIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
         PendingIntent openPi = PendingIntent.getActivity(this, 0, openIntent,
@@ -290,8 +292,8 @@ public class MediaService extends Service {
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (nm != null) {
             int state = (mediaPlayer != null && mediaPlayer.isPlaying())
-                    ? PlaybackStateCompat.STATE_PLAYING
-                    : (isPrepared ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_BUFFERING);
+                    ? PlaybackState.STATE_PLAYING
+                    : (isPrepared ? PlaybackState.STATE_PAUSED : PlaybackState.STATE_BUFFERING);
             nm.notify(NOTIFICATION_ID, buildNotification(state));
         }
     }
