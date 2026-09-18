@@ -1,13 +1,89 @@
 #!/bin/sh
-# repo-health-check —— git 写操作后的仓库健康快检（本仓库专用）
+# repo-health-check —— git 传输预检 + 写操作后的仓库健康快检（本仓库专用）
 #
-# 背景：本机存在「git 写引用报成功但不落盘 / refs 目录整体消失」的病史
-# （2026-09-18 事故：refs/ 整目录消失 + 松散对象被清，详见 .workbuddy/memory/2026-09-18.md）。
-# 本脚本 = 事后两道快检，由 post-commit / post-merge / post-rewrite 钩子调用：
-#   1) 引用在位：当前分支引用 + 上游引用（refs/remotes 病变征兆）
-#   2) 对象库连通性：git fsck --connectivity-only（快速版，全量 fsck 请手动跑）
+# 两种用法：
+#   repo-health-check                 写后健康快检（由 post-commit / post-merge / post-rewrite 调用）
+#   repo-health-check transport-probe 写前传输预检（fetch/push/pull 之前手动调用）
 #
-# 约定：只告警不阻断（exit 恒 0），避免把仓库卡在更复杂的中间态。
+# 背景 A（写后）：本机存在「git 写引用报成功但不落盘 / refs 目录整体消失」的病史
+#   （2026-09-18 事故，详见 .workbuddy/memory/2026-09-18.md）。
+# 背景 B（写前）：本机 SSH 传输（数据阶段）会被静默挂起/杀掉，HTTPS+http.proxy(clash) 是已验证可靠通道。
+#   transport-probe 会实测两条通道（端到端 ls-remote），报出哪条可用：
+#     - SSH 通 → 用 remote 原样（不改任何配置）
+#     - 仅 HTTPS 通 → 用单次重写执行，remote 配置不动：
+#         git -c url.https://github.com/.insteadOf=git@github.com: <fetch|push|pull> ...
+#     - 都不通 → exit 1，立即停止，勿执行任何 git 网络写操作。
+
+set -u
+
+# ---------- 写前：传输预检 ----------
+# 只依赖 git 本身与 POSIX sh（本机沙箱缺 curl/grep/timeout，git 永远在）。
+transport_probe() {
+	remote_url=$(git remote get-url origin 2>/dev/null) || {
+		echo "[transport-probe] ❌ 读取 origin 失败，停止" >&2
+		return 1
+	}
+
+	# 由 remote 推导 HTTPS 等价地址（纯 sh 字符串处理，不用 sed/grep）
+	case "$remote_url" in
+	git@github.com:*) path=${remote_url#git@github.com:}; https_url="https://github.com/$path" ;;
+	ssh://git@github.com/*) path=${remote_url#ssh://git@github.com/}; https_url="https://github.com/$path" ;;
+	https://*|http://*) https_url=$remote_url ;;
+	*) https_url="" ;;
+	esac
+
+	proxy=$(git config --get http.proxy 2>/dev/null || true)
+
+	# 1) SSH 通道实测（BatchMode 禁交互，ConnectTimeout 防挂起）
+	echo "[transport-probe] 测试 SSH 通道: $remote_url ..." >&2
+	GIT_TERMINAL_PROMPT=0 \
+	GIT_SSH_COMMAND="ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
+		git ls-remote "$remote_url" HEAD >/dev/null 2>&1
+	ssh_rc=$?
+	if [ "$ssh_rc" -eq 0 ]; then
+		echo "[transport-probe] ✓ SSH 通 → 直接用 remote 原样执行（无需任何改写）" >&2
+		return 0
+	fi
+	echo "[transport-probe] ✗ SSH 不通 (exit=$ssh_rc)" >&2
+
+	# 2) HTTPS 通道实测（走 http.proxy=clash；低速超时防挂起）
+	if [ -z "$https_url" ]; then
+		echo "[transport-probe] ❌ 无法推导 HTTPS 地址，且 SSH 不通 → 立即停止" >&2
+		return 1
+	fi
+	echo "[transport-probe] 测试 HTTPS 通道: $https_url (proxy=${proxy:-无}) ..." >&2
+	if [ -n "$proxy" ]; then
+		GIT_TERMINAL_PROMPT=0 \
+		GIT_HTTP_LOW_SPEED_LIMIT=1000 \
+		GIT_HTTP_LOW_SPEED_TIME=10 \
+			git -c "http.proxy=$proxy" ls-remote "$https_url" HEAD >/dev/null 2>&1
+	else
+		GIT_TERMINAL_PROMPT=0 \
+		GIT_HTTP_LOW_SPEED_LIMIT=1000 \
+		GIT_HTTP_LOW_SPEED_TIME=10 \
+			git ls-remote "$https_url" HEAD >/dev/null 2>&1
+	fi
+	https_rc=$?
+	if [ "$https_rc" -eq 0 ]; then
+		echo "[transport-probe] ✓ HTTPS 通 → 用下面命令执行（单次重写，不动 remote 配置）：" >&2
+		echo "[transport-probe]   git -c url.https://github.com/.insteadOf=git@github.com: <fetch|push|pull> origin" >&2
+		return 0
+	fi
+	echo "[transport-probe] ✗ HTTPS 不通 (exit=$https_rc)" >&2
+
+	# 3) 都不通 → 立即停止
+	echo "[transport-probe] ❌❌ SSH 与 HTTPS(proxy) 均不通，已停止。请勿执行任何 git 网络操作；" >&2
+	echo "[transport-probe]    先检查 clash 是否在跑（http.proxy=$proxy）与网络再重试。" >&2
+	return 1
+}
+
+# ---------- 子命令分发 ----------
+if [ "${1:-}" = "transport-probe" ]; then
+	transport_probe
+	exit $?
+fi
+
+# ---------- 写后：仓库健康快检（原有逻辑，只告警不阻断） ----------
 
 fail=0
 
