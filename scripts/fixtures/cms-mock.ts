@@ -92,8 +92,11 @@ export function setCmsSearchResponse(response: unknown): void {
 
 export const test = tmdbTest.extend({
   page: async ({ page }, use) => {
-    // 1) CMS 搜索请求（ac=videolist，可能经代理编码为 ac%3Dvideolist）→ 固定返回可解析的电影条目
+    // 1) CMS 搜索请求（ac=videolist，可能经代理编码为 ac%3Dvideolist）→ 固定返回可解析的电影条目。
+    //    600ms 模拟时延：即时返回会让播放器「首次 loading」形态（PLAYER-003）一闪而过，
+    //    与 iptv mock 延迟同理——真实世界没有 0ms 响应。
     await page.route(isCmsSearchRequest, async (route) => {
+      await new Promise((r) => setTimeout(r, 600));
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

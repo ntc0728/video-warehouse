@@ -78,11 +78,20 @@ export const MOCK_IPTV_PLAYLIST = [
  * 40 条保证网格超视口高度（懒加载/返回顶部等滚动用例依赖长列表）。
  * group-title 必须用 iptvOrgService CATEGORY_ZH 的真实英文键（news/sports/movies…），
  * 未知键会原样透传英文拉长一级栏宽，破坏「按内容定宽」类像素契约（IPTVP-023）。
+ * 前三条对齐 iptv.spec 5.10 台标链的桩数据（id + tvg-logo 指向 fanmingming/wanglindl，
+ * 与真实 cn.m3u「台标内联、logos.json 已退役」形态一致），否则该功能用例在
+ * hermetic 环境下被条件跳过掏空（2026-09-20 取舍纠偏）。
  */
 export const MOCK_ORG_PLAYLIST = [
   '#EXTM3U',
-  ...Array.from({ length: 40 }, (_, i) => {
-    const n = i + 1;
+  '#EXTINF:-1 tvg-id="CCTV-1" tvg-logo="https://live.fanmingming.cn/tv/CCTV1.png" group-title="general",CCTV-1 综合',
+  'http://127.0.0.1:1/live/cctv1.m3u8',
+  '#EXTINF:-1 tvg-id="CCTV-13" group-title="news",CCTV-13 新闻',
+  'http://127.0.0.1:1/live/cctv13.m3u8',
+  '#EXTINF:-1 tvg-id="hunantv" tvg-logo="https://raw.githubusercontent.com/wanglindl/TVlogo/main/img/hunantv.png" group-title="general",湖南卫视',
+  'http://127.0.0.1:1/live/hunan.m3u8',
+  ...Array.from({ length: 37 }, (_, i) => {
+    const n = i + 4;
     const [group, name] =
       n <= 10
         ? ['general', `CCTV-${n} 综合`]

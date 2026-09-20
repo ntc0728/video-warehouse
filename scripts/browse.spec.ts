@@ -584,6 +584,12 @@ test.describe('2.11 分页器渲染门控', () => {
   }
 
   test('BROWSE-094: 结果不足一页（totalPages=1）不渲染分页器、不误渲染空态', async ({ page }) => {
+    // 智能检索会把 TMDB 结果与 CMS 聚合源合并渲染；只 mock TMDB 时，配了真实
+    // CORS 代理的环境（.env.local）会混入几十条 CMS 卡 → toHaveCount(1) 恒红
+    // （2026-09-20 BROWSE-094 真因，此前被误标「并发 flaky」）。CMS 通道封成空列表。
+    await page.route(/ac=videolist/, (route) =>
+      route.fulfill({ json: { code: 1, msg: 'ok', page: 1, limit: 20, total: 1, pagecount: 1, list: [] } }),
+    );
     await page.route('**/api.tmdb.org/3/search/multi**', async (route) => {
       await route.fulfill({
         status: 200, contentType: 'application/json',

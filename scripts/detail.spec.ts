@@ -353,9 +353,10 @@ test.describe('3.6 播放列表 Tab', () => {
 
     if (playBtnCount > 0) {
       await page.locator('.source-all-modal__play-btn').first().click();
-      // 条件等待路由跳转到播放器（原用例不作强断言，故超时也继续）
-      await page.waitForURL(/\/play\//, { timeout: 5000 }).catch(() => {});
-      const onPlayer = page.url().includes('/play/');
+      // 2026-09-20 纠偏：原 waitForURL().catch(()=>{}) + 未使用的 onPlayer = 零断言悬挂段。
+      // 「弹框播放按钮 → 进播放器」是产品契约（CMS 数据已被 hermetic mock 固定），改为硬断言。
+      await expect(page).toHaveURL(/\/play\//, { timeout: 10000 });
+      await expect(page.locator('.up-universal-player, [class*="player"]')).toBeVisible({ timeout: 15000 });
     }
   });
 });

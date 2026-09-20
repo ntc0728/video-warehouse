@@ -1,4 +1,11 @@
-import { test, expect, type Page } from './fixtures/mock-tmdb';
+// 2026-09-20：改用 cms-mock fixture（CMS 本地假数据 + 本地 HLS）。原 mock-tmdb 下
+// 播放器挂载要等真实代理的 CMS 聚合，代理抖动 = waitPlayer 30s 贴边 flaky 的真根因。
+import { test, expect } from './fixtures/cms-mock';
+import type { Page } from '@playwright/test';
+
+// 本族 7 条共享「移动端播放器挂载」重路径：dev 阶段并发跑会互相挤 vite 的
+// hls/dash vendor 冷编译窗口（waitPlayer 30s 贴边 flaky），串行消化（2026-09-20）。
+test.describe.configure({ mode: 'serial' });
 
 /**
  * 真实播放器（UniversalPlayer）移动端全屏整改冒烟测试

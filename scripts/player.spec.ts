@@ -85,10 +85,18 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
       { timeout: 7000 },
     ).toBeTruthy();
 
-    // ── PLAYER-003: 首次 loading ──
-    await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    const loadingVisible = await page.evaluate(() =>
-      !!document.querySelector('.app-loading, [class*="loading"]'));
+    // ── PLAYER-003: 首次加载入场形态 ──
+    // 产品事实（src/pages/Player/index.tsx:34/827）：播放页全屏 AppLoading 已在入场加载态
+    // 重构中移除，现行形态是播放器区黑场占位（player-stage-placeholder / up-player-placeholder）。
+    // 旧断言 `[class*="loading"]` 在 dev 靠启动慢偶然命中 = 僵尸断言，preview 下必假红。
+    await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'commit' });
+    const loadingVisible = await page
+      .waitForSelector('.app-loading, .player-stage-placeholder, .up-player-placeholder, [class*="loading"]', {
+        state: 'attached',
+        timeout: 5000,
+      })
+      .then(() => true)
+      .catch(() => false);
     expect(loadingVisible).toBeTruthy();
 
     // ── PLAYER-090: tmdb-tv 无缓存进入，骨架入场即 tv 变体，TMDB 响应前不突变 ──

@@ -314,18 +314,9 @@ test.describe('跨页联动回归', () => {
     }
   });
 
-  test('IPTV 代理警告→设置页 / 设置页版本号彩蛋→源检测页', async ({ page }) => {
-    // X-052: IPTV 代理警告 → 设置页
-    await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    const configLink = page.locator('.iptv-proxy-warning-link, [class*="proxy-warning"] button');
-    // IPTV 代理警告为条件渲染（仅在代理未配置/源检测失败时），测试环境可能不出现 → 软断言：
-    // 出现则验证跳转设置页，不出现则跳过（替代原固定 2000ms 睡眠 + 硬等待的假红）
-    const warningVisible = await configLink.first().isVisible({ timeout: 10000 }).catch(() => false);
-    if (warningVisible) {
-      await configLink.first().click();
-      await expect.poll(() => page.url(), { timeout: 1000 }).toContain('/settings');
-    }
+  test('设置页版本号彩蛋→源检测页', async ({ page }) => {
+    // 原 X-052（IPTV 代理警告→设置）已删：代理未配置才渲染的警告在注入代理的
+    // storageState 下恒不出现（整段空跑），该功能的活体覆盖在 iptv.spec IPTV-004。
 
     // X-060: 设置页 → 源检测页（版本号彩蛋）
     await page.goto('/settings?tab=about', { waitUntil: 'domcontentloaded' });
@@ -623,7 +614,7 @@ test.describe('详情页回归', () => {
 
     // REG-012: 首屏 loading 不叠加、进度条不满格卡死
     await mockCms(page);
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 首屏 loading 完成后内容区渲染即为「不叠加 / 不卡死」的稳定信号（进度条转瞬即逝，固定采样不可靠）
     await expect(page.locator('.home-page__content')).toBeVisible({ timeout: 10000 });
   });
@@ -666,9 +657,16 @@ test.describe('详情页回归', () => {
     await page.route('**/proxy?url=**', async () => {
       await new Promise(() => {});
     });
+    // 2026-09-20：iptv-org 主干已改为 fixture 级确定性 mock（600ms 即返回），
+    // 「无数据 → 骨架持续」的前提要求主干同样挂起 —— 本用例内覆写为永不响应。
+    await page.route(/iptv-org\.github\.io/, async () => {
+      await new Promise(() => {});
+    });
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    // 2026-09-12 骨架整改：整页 AppLoading → IPTV 页专属骨架（rail/移动两套）
-    await page.waitForSelector('.iptv-page .iptv-skeleton', { timeout: 15000 });
+    // 2026-09-12 骨架整改：整页 AppLoading → IPTV 页专属骨架（rail/移动两套）。
+    // 2026-09-20 修正：≥1280 走 rail 档，其根类名是 `.iptv-skeleton--rail`（无 `.iptv-skeleton`
+    // token），旧选择器只匹配移动档 → rail 视口下永不命中（卡死年代没人跑全量漏检的存量缺陷）。
+    await page.waitForSelector('.iptv-page .iptv-skeleton, .iptv-page .iptv-skeleton--rail', { timeout: 15000 });
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
   });
 
@@ -729,7 +727,9 @@ test.describe('9.1 修复', () => {
   test.describe('9.1 冷启动与首屏', () => {
     test('FIX-101: 冷启动 #root 立即有内容（无白屏）', async ({ page }) => {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('#root > *').first()).toBeVisible({ timeout: 15000 });
+      // 2026-09-20：mock 下 React 挂载变快，#root 首个子节点可能是 react-hot-toast 的
+      // aria-live 容器（常驻 hidden）；契约本意是「有可见内容、不白屏」→ 限定可见子节点。
+      await expect(page.locator('#root > *:visible').first()).toBeVisible({ timeout: 15000 });
       const html = await page.evaluate(() => document.querySelector('#root')?.innerHTML ?? '');
       expect(html.length).toBeGreaterThan(0);
     });
@@ -782,7 +782,7 @@ test.describe('9.1 修复', () => {
   test.describe('9.1 布局一致性', () => {
     test('FIX-108: 首页免责声明贴视口底（web 手机端）', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto('/');
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => localStorage.removeItem('app-settings'));
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.home-disclaimer', { timeout: 15000 });
@@ -813,7 +813,7 @@ test.describe('UI 整改', () => {
         localStorage.setItem('app-settings', JSON.stringify(settings));
       } catch { /* ignore */ }
     });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const profile = page.locator('.sticky-header__profile');
     // 等头部头像入口渲染，替代固定 1500ms 睡眠
     await expect(profile).toBeVisible({ timeout: 2000 });
@@ -825,7 +825,7 @@ test.describe('UI 整改', () => {
     await expect(page.locator('.settings-subpage')).toBeVisible({ timeout: 2000 });
 
     // UI-004
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等菜单按钮渲染，替代固定 1500ms 睡眠
     await expect(page.locator('.sticky-header__menu-btn')).toBeVisible({ timeout: 2000 });
     await page.locator('.sticky-header__menu-btn').click();
@@ -847,7 +847,7 @@ test.describe('UI 整改', () => {
 
   test('hover/搜索: 分类图标不越界 + 回首页分类清旧数据', async ({ page }) => {
     // UI-005
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等分类卡片渲染，替代固定 2500ms 睡眠
     await expect(page.locator('.category-quick-access__card').nth(1)).toBeVisible({ timeout: 3000 });
     const card = page.locator('.category-quick-access__card').nth(1);
@@ -880,7 +880,7 @@ test.describe('UI 整改', () => {
     expect(m!.iconBottomVsCard).toBeLessThanOrEqual(0);
 
     // UI-006
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等搜索框渲染，替代固定 2500ms 睡眠
     await expect(page.locator('.sticky-header__search .search-box__input')).toBeVisible({ timeout: 3000 });
     const input = page.locator('.sticky-header__search .search-box__input');
@@ -908,7 +908,7 @@ test.describe('UI 整改', () => {
 
   test('过渡/modal: 设置子页过渡 + source/settings modal 全宽', async ({ page }) => {
     // UI-007
-    await page.goto('/settings');
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     // 等设置菜单渲染，替代固定 1500ms 睡眠
     await expect(page.locator('.settings-menu-item').first()).toBeVisible({ timeout: 2000 });
     await page.locator('.settings-menu-item').first().click();
@@ -924,7 +924,7 @@ test.describe('UI 整改', () => {
     expect(anim).toBe('settings-subpage-in');
 
     // UI-008
-    await page.goto('/settings');
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.settings-menu-item', { hasText: '视频设置' }).first()).toBeVisible({ timeout: 2000 });
     await page.locator('.settings-menu-item', { hasText: '视频设置' }).first().click();
     // 等子页（视频设置面板）就绪，替代固定 600ms 睡眠
@@ -954,7 +954,7 @@ test.describe('UI 整改', () => {
     expect(m8!.gapRight).toBeLessThanOrEqual(1);
 
     // UI-009
-    await page.goto('/settings');
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.settings-menu-item', { hasText: '视频设置' }).first()).toBeVisible({ timeout: 2000 });
     await page.locator('.settings-menu-item', { hasText: '视频设置' }).first().click();
     await expect(page.locator('.settings-subpage')).toBeVisible({ timeout: 2000 });
@@ -985,7 +985,7 @@ test.describe('全局问题', () => {
       if (u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com')) googleFontsRequests.push(u);
     });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等中文字体栈生效（body font-family 含 PingFang SC），替代固定 2500ms 睡眠
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).fontFamily),
       { timeout: 3000 }).toContain('PingFang SC');
@@ -1002,7 +1002,7 @@ test.describe('全局问题', () => {
       if (u.includes('fonts.gstatic.com')) remoteFontRequests.push(u);
     });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/?skin=cartoon');
+    await page.goto('/?skin=cartoon', { waitUntil: 'domcontentloaded' });
     // 等 cartoon 皮肤 Fredoka @font-face 注入（含本地 /fonts/fredoka），替代固定 2500ms 睡眠
     await expect.poll(() => page.evaluate(() => {
       for (const sheet of document.styleSheets) {
@@ -1064,7 +1064,7 @@ test.describe('全局问题', () => {
       } catch { /* ignore */ }
     });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等初始主题（system）应用，替代固定 2000ms 睡眠
     await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')),
       { timeout: 3000 }).toBeTruthy();
@@ -1087,7 +1087,7 @@ test.describe('全局问题', () => {
   test('收藏空态: 空数据时内容容器不挂载', async ({ page }) => {
     // G-09
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/collections');
+    await page.goto('/collections', { waitUntil: 'domcontentloaded' });
     // 等收藏页渲染（数据容器或空态出现）：空态组件根为 .empty-state-wrapper，非空才有 .collection-content
     await expect.poll(() => page.evaluate(() =>
       !!document.querySelector('.collection-content, .empty-state-wrapper')),
