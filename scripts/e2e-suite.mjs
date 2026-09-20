@@ -82,8 +82,8 @@ const PREVIEW_SPECS = [
 const A_EXCLUDE = ['skeleton', 'boot-splash-shots', 'player', 'player-failover', 'player-cms-error', 'iptv-player'].join(',');
 
 const results = [];
-// 阶段 A：播放器系已迁出，dev 争用大头消失 → 4 worker 换预算余量
-results.push(await stage('A-dev-behavior', ['--all', '--dev', '--workers', '4'], { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE }));
+// 实测 4 worker dev 下失败集合逐轮漂移（编译争用挤爆时序敏感断言）且总时长不降；稳定档 3
+results.push(await stage('A-dev-behavior', ['--all', '--dev', '--workers', '3'], { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE }));
 results.push(await stage('B-preview-contract-player', ['--all', '--budget', '150', '--retries', '1', ...PREVIEW_SPECS]));
 
 clearTimeout(watchdog);
