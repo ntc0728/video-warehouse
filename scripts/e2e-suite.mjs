@@ -84,7 +84,7 @@ const A_EXCLUDE = ['skeleton', 'boot-splash-shots', 'player', 'player-failover',
 const results = [];
 // 阶段 A：播放器系已迁出，dev 争用大头消失 → 4 worker 换预算余量
 results.push(await stage('A-dev-behavior', ['--all', '--dev', '--workers', '4'], { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE }));
-results.push(await stage('B-preview-contract-player', ['--all', ...PREVIEW_SPECS]));
+results.push(await stage('B-preview-contract-player', ['--all', '--budget', '150', '--retries', '1', ...PREVIEW_SPECS]));
 
 clearTimeout(watchdog);
 const wall = ((Date.now() - T0) / 1000).toFixed(1);
