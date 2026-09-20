@@ -748,6 +748,18 @@ skipHistory,
     showVolumePopup: showVolumePopupWithTimer,
   });
 
+  // 修复（2026-09-21，E2E TV-001 诊断出）：IPTVChannelList 的「打开自动定位」effect
+  // deps 含 onTvFocusChange；原实现是内联箭头函数（每次 render 新引用）→ 每次父渲染
+  // 都把遥控器焦点重置回当前播放频道，遥控器换台实际不可用。useCallback 稳定引用。
+  const handleTvFocusChange = useCallback(
+    (focus: { groupIndex: number; channelIndex: number; activeSection: 'groups' | 'channels' }) => {
+      setTvFocusGroupIndex(focus.groupIndex);
+      setTvFocusChannelIndex(focus.channelIndex);
+      setTvFocusSection(focus.activeSection);
+    },
+    [setTvFocusGroupIndex, setTvFocusChannelIndex, setTvFocusSection],
+  );
+
   // IPTV 频道初始化
   useIPTVChannelInit({
     mode, url, channels: _channels, groups, channelName,
@@ -1386,11 +1398,7 @@ skipHistory,
           onSelectChannel={handleChannelSelect}
           onClose={() => setChannelListVisible(false)}
           tvFocus={platform === 'tv' ? { groupIndex: tvFocusGroupIndex, channelIndex: tvFocusChannelIndex, activeSection: tvFocusSection } : undefined}
-          onTvFocusChange={platform === 'tv' ? (focus) => {
-            setTvFocusGroupIndex(focus.groupIndex);
-            setTvFocusChannelIndex(focus.channelIndex);
-            setTvFocusSection(focus.activeSection);
-          } : undefined}
+          onTvFocusChange={platform === 'tv' ? handleTvFocusChange : undefined}
         />
       )}
 

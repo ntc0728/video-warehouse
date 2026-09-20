@@ -71,25 +71,33 @@ const val = (n, d) => {
 const USE_DEV = flag('--dev');
 const ALL = flag('--all');
 const GREP = val('-g', val('--grep', ''));
-// 与 playwright.config workers 稳定档一致（4 会在 dev 编译争用下挤出时序 flaky）
-const WORKERS = val('--workers', '3');
-const TEST_TIMEOUT = val('--test-timeout', ALL ? '45000' : '30000');
-const GLOBAL_TIMEOUT = val('--global-timeout', ALL ? '1200000' : '420000');
 
-/** --all 之后到结尾的所有参数原样透传给 playwright（如 --grep / spec 路径 / --project） */
-function passthroughArgs() {
-  const i = argv.indexOf('--all');
-  if (i < 0) return [];
-  const rest = [];
-  for (let j = i + 1; j < argv.length; j++) {
-    const a = argv[j];
-    if (a === '--dev') continue;
-    if (a === '--workers' || a === '--grep' || a === '-g') { j++; continue; }
-    if (a === '--test-timeout' || a === '--global-timeout') { j++; continue; }
-    rest.push(a);
+/** 位置参数 = 调试目标 spec 文件（-g/--workers 等旗标的值不在此列） */
+function collectSpecFiles() {
+  const flagWithValue = new Set(['-g', '--grep', '--workers', '--test-timeout', '--global-timeout', '--budget', '--retries']);
+  const out = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('-')) {
+      if (flagWithValue.has(a)) i++;
+      continue;
+    }
+    out.push(a);
   }
-  return rest;
+  return out;
 }
+const SPEC_FILES = collectSpecFiles();
+// 全量档 = `--all` 且未指定任何文件；其余（-g 过滤 / 指定文件 / 默认骨架）都是 ad-hoc 调试档
+const FULL = ALL && SPEC_FILES.length === 0;
+
+// ── 临时跑批硬规矩（2026-09-21 用户拍板，AGENTS 红线）──
+// 单轮墙钟预算：全量默认 300s；ad-hoc 调试默认 120s，到点击杀并退码 2。
+// 调试默认 retries=0：重试是套件概念，诊断场景只会双倍烧时间与稀释信号。
+const WORKERS = val('--workers', '3');
+const TEST_TIMEOUT = val('--test-timeout', FULL ? '45000' : '30000');
+const GLOBAL_TIMEOUT = val('--global-timeout', FULL ? '1200000' : '420000');
+const BUDGET_S = Number(val('--budget', FULL ? '300' : '120'));
+const RETRIES = val('--retries', FULL ? (process.env.CI ? '2' : '1') : '0');
 
 const T0 = Date.now();
 const say = (msg) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(3)}s] ${msg}`);
@@ -289,31 +297,37 @@ const outDir = process.env.E2E_SUITE_STAGE ? `.pw-out-${process.env.E2E_SUITE_ST
 const pwArgs = [
   resolve(ROOT, 'node_modules/@playwright/test/cli.js'),
   'test',
-  // --all：跑全部 spec 且不覆盖 reporter（保留 config 的 html，供 localize-report 用）；
-  // 否则只跑骨架 spec 并用 list 拿即时输出
-  ...(ALL ? [] : ['scripts/skeleton.spec.ts', '--reporter=list']),
+  // 全量档：跑全部 spec 且不覆盖 reporter（保留 config 的 html，供 localize-report 用）；
+  // ad-hoc：指定文件（无则默认骨架 spec）+ list 拿即时输出
+  ...(FULL ? [] : [...(SPEC_FILES.length ? SPEC_FILES : ['scripts/skeleton.spec.ts']), '--reporter=list']),
   `--workers=${WORKERS}`,
   `--timeout=${TEST_TIMEOUT}`,
   `--global-timeout=${GLOBAL_TIMEOUT}`,
+  `--retries=${RETRIES}`,
   `--output=${outDir}`,
 ];
 if (GREP) pwArgs.push('-g', GREP);
-if (ALL) pwArgs.push(...passthroughArgs());
 
-say(`playwright 开跑：${pwArgs.slice(2).join(' ')}`);
+say(`playwright 开跑：${pwArgs.slice(2).join(' ')}（预算 ${BUDGET_S}s）`);
 // 把本轮动态端口传给 playwright：config 会复用同一端口（webServer.reuseExistingServer
 // 命中已探活的自建 server），不再自己起第二个 server；
 // dev 全量时排除骨架契约 spec（它要生产单包 CSS，dev 分 chunk 会假失败，
 // 契约由本脚本 preview 模式专属执行）
 const childEnv = { ...process.env, E2E_PORT: String(PORT), PW_OUTPUT_DIR: outDir };
-if (ALL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
+if (FULL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
 const res = spawnSync(process.execPath, pwArgs, {
   cwd: ROOT,
   stdio: 'inherit',
   windowsHide: true,
   env: childEnv,
+  timeout: BUDGET_S * 1000,
+  killSignal: 'SIGKILL',
 });
-const code = res.status ?? 1;
+// 预算击杀：spawnSync 超时后 status 为 null / error 带 ETIMEDOUT —— 明确报错而非静默
+if (res.error || res.status === null) {
+  console.error(`✗ 超出单轮预算 ${BUDGET_S}s，已强制击杀（硬规矩：ad-hoc ≤120s、--all ≤300s，--budget 显式放宽需在结论中说明理由）`);
+}
+const code = res.status === null ? 2 : (res.status ?? 1);
 
 // ─── e. 收尾 ────────────────────────────────────────────
 await killZombieE2EServers();

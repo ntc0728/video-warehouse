@@ -5,7 +5,7 @@
  *
  * 覆盖: PLAYER-001 ~ PLAYER-092（由 26 条激进合并为 9 条，断言并集不弱化）
  */
-import { test, expect } from './fixtures/cms-mock';
+import { test, expect, setCmsSearchResponse } from './fixtures/cms-mock';
 
 const TEST_MOVIE_ID = 'tmdb-movie-550';
 
@@ -735,5 +735,70 @@ test.describe('4.12 移动端布局判定', () => {
     const centerToast = page.locator('.up-player-center-toast');
     await expect(centerToast).toContainText('音量');
     await expect(page.locator('.up-player-toast')).toHaveCount(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 4.14 PiP 行为契约（backlog 第一波补测：只测行为，不测系统窗口）
+//   链路：PiPButton → playerCore.togglePiP → pipController → video.requestPictureInPicture
+//   headless 下真实 PiP 窗口不可靠，契约=「支持环境有入口且点击真的调用了 API；
+//   不支持环境入口必须隐藏（不出现死按钮）」。
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('4.14 PiP 行为契约', () => {
+  test('PIP-001: 支持环境下入口可见且点击真实进入画中画', async ({ page }) => {
+    // 断言用黑盒副作用（documentPictureInPicture 挂载/卸载）而非原型 spy：
+    // 本仓运行环境中 addInitScript 与应用/e2e evaluate 不在同一 world，spy 计数不可见。
+    // 默认 cms-mock 流是无 RESOLUTION 的纯媒体列表（hls.js level 宽高 0 → 产品按
+    // 「仅含音频」拒 PiP，行为正确）。PiP 契约需真视频轨样本 → 换 stream-pip 主列表夹具。
+    // cmsSearchOverride 是 worker 进程级模块全局，必须 finally 复位防泄漏。
+    try {
+      setCmsSearchResponse({
+        code: 1, msg: 'ok', page: 1, pagecount: 1, limit: 20, total: 1,
+        list: [{
+          vod_id: '550', vod_name: 'Fight Club', vod_type: 'movie', type_id: '1',
+          type_name: '电影', vod_en: 'Fight Club', vod_pic: '', vod_remarks: 'HD',
+          vod_play_url: '默认线路$第1集$https://cms-mock.local/stream-pip/index.m3u8',
+        }],
+      });
+      await reloadPlayer(page);
+      // pipController 对未加载媒体直接短路提示，须先让流真正播起来
+      await page.evaluate(() => {
+        const v = document.querySelector('video');
+        void v?.play().catch(() => undefined);
+      });
+      await expect
+        .poll(
+          () => page.evaluate(() => {
+            const v = document.querySelector('video');
+            return !!v && !v.paused && v.readyState >= 2 && v.videoWidth > 0;
+          }),
+          { timeout: 10000 },
+        )
+        .toBe(true);
+
+      const pipBtn = page.locator('button[title^="画中画"]').first();
+      await expect(pipBtn).toBeVisible({ timeout: 5000 });
+      await pipBtn.click();
+      // <documentpictureinpicture> 位于 video 的 shadow root，用页面实时状态断言
+      await expect
+        .poll(() => page.evaluate(() => !!document.pictureInPictureElement), { timeout: 5000 })
+        .toBe(true);
+      // 收尾退出，避免 PiP 窗口影响后续用例
+      await pipBtn.click();
+      await expect
+        .poll(() => page.evaluate(() => !document.pictureInPictureElement), { timeout: 5000 })
+        .toBe(true);
+    } finally {
+      setCmsSearchResponse(null);
+    }
+  });
+
+  test('PIP-002: 环境不支持时入口隐藏（无死按钮）', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(document, 'pictureInPictureEnabled', { value: false, configurable: true });
+    });
+    await reloadPlayer(page);
+    await expect(page.locator('button[title^="画中画"]')).toHaveCount(0);
   });
 });

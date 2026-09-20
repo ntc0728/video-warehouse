@@ -305,3 +305,145 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 11.5 EPG 节目单（backlog 第一波补测：产品有功能、此前 E2E 零覆盖）
+//   UI：OSD「节目单」→ UniversalPlayer up-program-guide-panel → EPGProgramList
+//   数据：测试内 route e.xml（覆盖 fixture 空 EPG mock，后注册优先），三态节目
+//   匹配：epgService normalizeName(display-name ↔ 频道名)
+// ═══════════════════════════════════════════════════════════════
+
+const fmtXmltv = (d: Date) =>
+  `${d.toISOString().replace(/[-:]/g, '').replace('T', '').slice(0, 14)} +0000`;
+
+function buildEpgXml(now = Date.now()): string {
+  const at = (min: number) => fmtXmltv(new Date(now + min * 60000));
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="cctv1.epg"><display-name>CCTV-1 综合</display-name></channel>
+  <programme start="${at(-90)}" stop="${at(-30)}" channel="cctv1.epg"><title>已播晨报</title></programme>
+  <programme start="${at(-30)}" stop="${at(30)}" channel="cctv1.epg"><title>当红直播秀</title></programme>
+  <programme start="${at(30)}" stop="${at(90)}" channel="cctv1.epg"><title>未来剧场</title></programme>
+</tv>`;
+}
+
+async function openIptvPlay(page: Page, id: string, name: string) {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.app-shell', { timeout: 20000 });
+  await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-13 新闻', '湖南卫视', 'CCTV-6 电影']);
+  await page.goto(`/iptv/play?url=test&id=${id}&name=${encodeURIComponent(name)}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+}
+
+test.describe('11.5 EPG 节目单', () => {
+  test('EPG-001/002: 三态节目 + 直播中徽标 + 关闭；无匹配频道空态', async ({ page }) => {
+    await page.route('**/*e.xml*', (route) =>
+      route.fulfill({ contentType: 'application/xml', body: buildEpgXml() }),
+    );
+    await openIptvPlay(page, 'ch-1', 'CCTV-1 综合');
+
+    await page.locator('.iptv-osd-control-btn[title="节目单"]').first().click({ force: true });
+    const panel = page.locator('.up-program-guide-panel');
+    await expect(panel).toBeVisible({ timeout: 10000 });
+    const items = panel.locator('.epg-program-item');
+    await expect.poll(async () => items.count(), { timeout: 10000 }).toBe(3);
+    // 时间排序 + 三态标记（当前时间落在第二条窗口内）
+    await expect(items.nth(0)).toHaveClass(/epg-program-item--past/);
+    await expect(items.nth(1)).toHaveClass(/epg-program-item--current/);
+    await expect(items.nth(1).locator('.epg-program-item__badge--live')).toBeVisible();
+    await expect(items.nth(2)).toHaveClass(/epg-program-item--future/);
+    // 时移回看默认关闭（catchup 开关未启用）→ 过去条目不可点击、无回看徽标
+    await expect(items.nth(0).locator('.epg-program-item__badge--replay')).toHaveCount(0);
+
+    await page.locator('.up-program-guide-close').click();
+    await expect(panel).toHaveCount(0);
+  });
+
+  test('EPG-002: EPG 未覆盖的频道 → 节目单空态而非挂死', async ({ page }) => {
+    await page.route('**/*e.xml*', (route) =>
+      route.fulfill({ contentType: 'application/xml', body: buildEpgXml() }),
+    );
+    // 湖南卫视与 mock EPG 任意频道名都不构成模糊匹配（CCTV-13 会被模糊匹配到 CCTV-1，勿用作无数据样本）
+    await openIptvPlay(page, 'ch-3', '湖南卫视');
+    await page.locator('.iptv-osd-control-btn[title="节目单"]').first().click({ force: true });
+    await expect(page.locator('.up-program-guide-panel .epg-program-list--empty')).toBeVisible({ timeout: 10000 });
+    // 空态形态存在即契约；文案节点随 epg 状态翻转可能重建，不追断避免引入新竞态
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 11.6 TV 遥控器焦点（backlog 补测：useTVRemote platform=tv 键链）
+//   判定链：TV UA → useIsTV → IPTVPlayer platform='tv' → useTVRemote 生效
+//   契约：列表开=方向键移焦点/右键切栏/Enter 选台；ContextMenu 键开关列表
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('11.6 TV 遥控器焦点', () => {
+  test('TV-001/002: 方向键焦点移动 + Enter 选台 + ContextMenu 开关列表', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 (SMART-TV; Linux) AppleWebKit/537.36 Tizen/7.0',
+        configurable: true,
+      });
+    });
+    await openIptvPlay(page, 'ch-1', 'CCTV-1 综合');
+    await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
+    const groups = page.locator('.up-channel-group-item');
+    await expect(groups.first()).toBeVisible({ timeout: 20000 });
+
+    const groupFocusIndex = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.up-channel-group-item')].findIndex((e) =>
+          e.classList.contains('up-channel-group-focused'),
+        ),
+      );
+    const channelFocusIndex = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.up-channel-item')].findIndex((e) =>
+          e.classList.contains('up-channel-item-focused'),
+        ),
+      );
+
+    // 产品语义（IPTVChannelList 打开自动定位当前播放频道，isTvMode 时 activeSection
+    // 直接落在 'channels'）：列表打开 → 焦点在**当前播放频道**上，而非组栏 0。
+    await expect(page.locator('.up-channel-item-focused')).toHaveCount(1, { timeout: 5000 });
+    const c0 = await channelFocusIndex();
+    expect(c0).toBeGreaterThanOrEqual(0);
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(channelFocusIndex, { timeout: 5000 }).toBe(c0 + 1);
+
+    // 左键回组栏 → 组间下移 → 右键回频道栏
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('.up-channel-group-focused')).toHaveCount(1, { timeout: 5000 });
+    const before = await groupFocusIndex();
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(groupFocusIndex, { timeout: 5000 }).toBeGreaterThan(before);
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.up-channel-item-focused')).toHaveCount(1, { timeout: 5000 });
+
+    // TV-002：Escape 收起列表 → ContextMenu 再开（同一 toggle 键两向）。
+    // 必须在 Enter 选台前做：选台触发 URL replace 重挂载，列表状态会被重置。
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.up-channel-group-item')).toHaveCount(0, { timeout: 5000 });
+    await page.keyboard.press('ContextMenu');
+    await expect(page.locator('.up-channel-group-item').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.up-channel-item-focused')).toHaveCount(1, { timeout: 5000 });
+
+    // Enter 选台：onChannelSelect → IPTVPlayer 以 name 参数 replace 导航
+    // （.up-channel-item-name 是纯文本节点，MarqueeText 不复制文本）
+    const focusedName = ((await page.locator('.up-channel-item-focused .up-channel-item-name').textContent()) ?? '').trim();
+    expect(focusedName.length).toBeGreaterThan(0);
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const m = location.search.match(/name=([^&]*)/);
+            return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+          }),
+        { timeout: 10000 },
+      )
+      .toBe(focusedName);
+  });
+});

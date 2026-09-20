@@ -80,19 +80,15 @@ test.describe('6.3 视频源配置', () => {
     await page.waitForSelector('.app-shell', { timeout: 15000 });
     await expect(page.locator('.source-manager-block[data-scene="video"]')).toBeVisible({ timeout: 5000 });
 
-    // SET-020: 面板与条目存在
+    // SET-020: 面板与条目存在（条目来自 bootstrapScene('video') 异步水合，
+    // 一次性 count 在 4 worker 负载下会抢跑 → 轮询；面板可见性上方已硬断言，
+    // 不再用 if(isVisible) 条件跳过防掏空）
     const panel = page.locator('.source-manager-block[data-scene="video"]');
-    if (await panel.isVisible().catch(() => false)) {
-      const title = await panel.locator('.source-manager__title').textContent();
-      const itemCount = await panel.locator('.source-manager__item').count();
-      const badge = await panel.locator('.source-manager__badge').textContent();
-      expect(itemCount).toBeGreaterThan(0);
-    }
+    await expect
+      .poll(async () => panel.locator('.source-manager__item').count(), { timeout: 8000 })
+      .toBeGreaterThan(0);
 
-    // SET-021: 自定义 switch 切换改变 checked 状态
-    if (!(await panel.isVisible().catch(() => false))) {
-      return;
-    }
+    // SET-021: 自定义 switch 切换改变 checked 状态（面板可见性已硬断言，不再条件 return）
     const switchLabels = panel.locator('.source-manager__switch');
     const input = switchLabels.first().locator('input[type="checkbox"]');
     if ((await switchLabels.count()) > 0) {

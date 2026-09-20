@@ -51,11 +51,17 @@ const CMS_SEARCH_RESPONSE = {
   ],
 };
 
-/** 读取 HLS 文件并 fulfill */
+/** 读取 HLS 文件并 fulfill（支持 stream/ 与带 RESOLUTION 主列表的 stream-pip/） */
 async function fulfillHls(route: import('@playwright/test').Route) {
   const url = route.request().url();
-  const after = url.split('/stream/')[1] || 'index.m3u8';
-  const file = path.join(HLS_DIR, after);
+  const m = url.match(/\/(stream(?:-pip)?)\/([^?#]+)/);
+  // HLS_DIR 本身就是 .../hls/stream：命中 'stream' 直接拼文件，'stream-pip' 回到 hls 父级再拼
+  const file = m
+    ? m[1] === 'stream'
+      ? path.join(HLS_DIR, m[2])
+      : path.join(HLS_DIR, '..', m[1], m[2])
+    : path.join(HLS_DIR, 'index.m3u8');
+  const after = m ? `${m[1]}/${m[2]}` : 'index.m3u8';
   try {
     const buf = fs.readFileSync(file);
     const isM3u8 = after.endsWith('.m3u8');

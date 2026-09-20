@@ -207,6 +207,9 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
   **mock 数据形态必须支撑功能断言**：hermetic mock 若让条件断言用例如 5.10 台标链、G-05 封面回退
   恒走 skip 分支，等于砍掉覆盖——org 主干 mock 已按真实 cn.m3u 形态补 tvg-logo/tvg-id
   （含一条无 logo 频道支撑 EPG icon 二级回退）。加/改 mock 数据后必须 grep「跳过」日志确认可疑空转。
+- **临时/调试跑批硬规矩（2026-09-21）**：带 spec 文件位置参数或 `-g` 过滤即 ad-hoc 档——单轮
+  预算 120s（e2e-skeleton `spawnSync timeout` 硬击杀、退码 2）、`retries=0`；只有裸 `--all`
+  才是 300s 全量档。诊断循环烧时间的主因是「全量档 + 重试翻倍」，改代码前先想清楚用哪档。
 - **端口与进程边界（2026-09-20 用户定稿，二次强化）**：E2E 端口由 **OS 动态分配**（不固定占任何端口；
   `E2E_PORT` 仅供显式指定，如对着自己 dev server 测：`E2E_PORT=3001`，也只是连接复用）。
   **绝不按端口占用者杀进程**：测试自建 server 由 `scripts/e2e-vite-server.cjs` wrapper 拉起（命令行即标记），
