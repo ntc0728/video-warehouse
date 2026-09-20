@@ -19,7 +19,7 @@ test.describe('1.1 页面加载与初始状态', () => {
   test('首屏初始态与加载（001 无Token提示 / 002 跳设置 / 003 loading / 004 完整首页 / 005 超时收起）', async ({ page }) => {
     // ── 有 Token：003 加载中 / 004 数据就绪 / 005 超时边界 ──
     // 003: 有 Token 但数据加载中显示 loading
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
@@ -35,14 +35,14 @@ test.describe('1.1 页面加载与初始状态', () => {
     expect(hasHomeContent).toBe(true);
 
     // 005: 首页 loading 最大超时 10 秒（无论数据是否就绪，最多 10s 内收敛）
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => {
       const loading = document.querySelector('.app-loading');
       return loading ? getComputedStyle(loading).display !== 'none' : false;
     }), { timeout: 13000 }).toBe(false);
 
     // ── 无 Token：001 配置提示 / 002 点击跳转设置页 ──
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => localStorage.removeItem('app-settings'));
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
@@ -311,7 +311,7 @@ test.describe('1.5 全局交互', () => {
     const errCtx = await browser.newContext();
     const errPage = await errCtx.newPage();
     await errPage.route('**/api.tmdb.org/**', (route) => route.abort());
-    await errPage.goto('/');
+    await errPage.goto('/', { waitUntil: 'domcontentloaded' });
     await expect.poll(
       () => errPage.evaluate(() => !!document.querySelector('.home-empty, .home-token-required')),
       { timeout: 20000 },
@@ -434,13 +434,16 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 071: 首页左栏常驻「今日趋势」榜
     // 2026-09-10 用户拍板：rail 变体由「分类热度榜 3 卡」改为「今日趋势 TOP 榜」（.cqa-trend）——
     // 趋势序取自 TMDB /trending/all/day，不按 popularity 数值重排，故断言排名自 1 起连续。
-    await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
-    expect(await page.locator('.cqa-heat-row .cqa-trend__item').count()).toBeGreaterThan(0);
+    // 2026-09-20：进入过渡覆盖层（09-18 特性）挂载本身有竞态，等它卸载不可靠；
+    // 作用域直接排除骨架页（.home-skeleton 内复用真实 rail 组件，会出现双份 1..20）。
+    const liveTrend = page.locator('.home-page:not(.home-skeleton) .cqa-heat-row');
+    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__item', { timeout: 15000 });
+    expect(await liveTrend.locator('.cqa-trend__item').count()).toBeGreaterThan(0);
     // 2026-09-11 行为变更：左栏榜头 `.cqa-heat-row__head`（标题/副标题/ⓘ）整块删除，
     // 标题（今日趋势 N 条）与口径说明上移到首页顶部过渡带 `.home-topstrip__stat`。
     await expect(page.locator('.home-topstrip__stat').first()).toContainText('今日趋势');
     const trendRanks = await page
-      .locator('.cqa-heat-row .cqa-trend__rank')
+      .locator('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__rank')
       .evaluateAll((els) => els.map((e) => Number(e.textContent?.trim())));
     expect(trendRanks[0]).toBe(1);
     expect(trendRanks.every((n, i) => n === i + 1)).toBe(true);
@@ -453,10 +456,11 @@ test.describe('1.3c 宽屏分类面板', () => {
     expect(url1.searchParams.get('category')).toBe('all');
 
     // 083: 首页左栏为趋势榜（无「查看完整榜单」入口）；点条目前往影片详情
+    // （作用域排除 .home-skeleton：进入过渡覆盖层内复用真实 rail，见 071 注释）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row .cqa-trend__row', { timeout: 15000 });
+    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__row', { timeout: 15000 });
     expect(await page.locator('.cqa-heat-row__more').count()).toBe(0);
-    await page.locator('.cqa-trend__row').first().click();
+    await page.locator('.home-page:not(.home-skeleton) .cqa-trend__row').first().click();
     await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
     await page.waitForSelector('.detail-hero', { timeout: 15000 });
   });
@@ -468,8 +472,9 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    // 等趋势数据就绪（.cqa-heat-row 渲染 = 首页异步数据稳定），避免 hover 过早触发后 re-render 误收起面板
-    await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
+    // 等趋势数据就绪（正文 rail 渲染 = 首页异步数据稳定），避免 hover 过早触发后 re-render 误收起面板。
+    // 作用域排除 .home-skeleton：进入过渡覆盖层短暂双挂载会让无界 `.cqa-heat-row` 双命中（strict violation）
+    await expect(page.locator('.home-page:not(.home-skeleton) .cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanel(page, 1);
     expect(await page.locator('.cqa-overlay').count()).toBe(1);
     expect(await page.locator('.cqa-panel__heat').count()).toBe(1);

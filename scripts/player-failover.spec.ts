@@ -53,7 +53,7 @@ test.describe('PLAYER 源不可用自动故障转移', () => {
       if (u.includes('dead-source.local') || u.includes('cms-mock.local/stream')) seen.push(u);
     });
 
-    await page.goto(`/play/${TEST_MOVIE_ID}`);
+    await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
 
     // 等待故障转移完成：活线路（次线路）被请求，即证明播放器在首线路致命失败后
     // 自动切到了次线路。这一步是真正的「等待」，不能提前结束测试。

@@ -86,7 +86,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
     ).toBeTruthy();
 
     // ── PLAYER-003: 首次 loading ──
-    await page.goto(`/play/${TEST_MOVIE_ID}`);
+    await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     const loadingVisible = await page.evaluate(() =>
       !!document.querySelector('.app-loading, [class*="loading"]'));
     expect(loadingVisible).toBeTruthy();

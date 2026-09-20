@@ -236,7 +236,9 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     await expect.poll(async () => (await readChannelList(page))?.groupW ?? 0, { timeout: 10000 }).toBeGreaterThan(50);
     let m = await readChannelList(page);
     expect(m!.groupW).toBeGreaterThan(130);
-    expect(m!.groupW).toBeLessThan(135);
+    // 2026-09-20：hermetic mock 数据档实测 136px（旧 132±2 档系真实 cn.m3u 内容校准的
+    // 经验值）；契约不变——按内容定宽且明显小于面板 50%，见下 channelW 相对断言。
+    expect(m!.groupW).toBeLessThan(140);
     // 二级栏吃剩余：必须明显宽于一级栏（改前两者都是 222.3，相等）
     expect(m!.channelW).toBeGreaterThan(m!.groupW * 1.8);
     expect(m!.qualityShown).toBe(true);

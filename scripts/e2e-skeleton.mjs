@@ -13,28 +13,49 @@
  *      更容易触发 (1)。
  *
  * ── 对策（本脚本按序做完，跑完自动收尾）
- *   a. 先强杀 :3001 的持有者 + 遗留 chrome —— 从根上消灭「僵尸被复用」；
+ *   a. **动态端口**：向 OS 申请当下空闲的端口，不固定占任何端口（3001/3101 都不写死），
+ *      因此永不需要、也绝不会去杀「端口占用者」；清场只按命令行标记
+ *      （scripts/e2e-vite-server.cjs / ms-playwright 特征）**精确击杀测试自己拉起的进程**；
  *   b. 默认用 **`vite preview` 跑已构建的 dist**：页面加载从「秒级模块图」降到百毫秒级整包；
  *      且生产构建把全部页面 CSS 打进同一个 bundle，**契约 B 的注入探针不再依赖路由 chunk 是否加载**；
  *   c. HTTP 健康轮询（3s/次、最多 60s）**确认 200 之后**才开跑 —— 杜绝「TCP 通但 HTTP 不通」的假就绪；
- *   d. 传 `--timeout` / `--global-timeout`：单测封顶 30s、整轮封顶 7min，最坏情况也必然退出；
- *   e. 无论成败：杀 server 进程树 + 清 `.pw-out-skel`（该目录**未被 .gitignore 覆盖**）+ 清理 chrome。
+ *   d. 传 `--timeout` / `--global-timeout`：单测封顶、整轮封顶，最坏情况也必然退出；
+ *   e. 无论成败：杀本轮自建 server + 测试浏览器 + 清 `.pw-out-skel`（该目录**未被 .gitignore 覆盖**）。
  *
  * ── 用法
  *   node scripts/e2e-skeleton.mjs                 # 默认 preview（快；要求 dist 是最新构建）
+ *   node scripts/e2e-skeleton.mjs --all           # 全量 E2E（21 个 spec；配 --reporter 走 config 的 html+list）
  *   node scripts/e2e-skeleton.mjs --dev           # 退回 dev server（改了 src 还没 build 时）
  *   node scripts/e2e-skeleton.mjs -g SKEL-015     # 只跑匹配用例（开发新断言时最省时间）
- *   node scripts/e2e-skeleton.mjs --workers 2     # 覆盖并发（默认 4）
+ *   node scripts/e2e-skeleton.mjs --workers 2     # 覆盖并发（骨架默认 4，--all 默认 2）
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, openSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
+import net from 'node:net';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
-const PORT = 3001;
+
+/** 向 OS 申请一个当前空闲的端口（bind 0 再释放），绝不与任何在跑的服务抢端口 */
+function getFreePort() {
+  return new Promise((done, fail) => {
+    const srv = net.createServer();
+    srv.once('error', fail);
+    srv.listen(0, '127.0.0.1', () => {
+      const { port } = srv.address();
+      srv.close(() => done(port));
+    });
+  });
+}
+
+/**
+ * E2E 端口：默认动态分配。E2E_PORT 仅供显式指定（例如对着自己正跑的
+ * dev server 测：E2E_PORT=3001 —— 此时测试只会「连接复用」，同样不会杀它）。
+ */
+const PORT = process.env.E2E_PORT ? Number(process.env.E2E_PORT) : await getFreePort();
 const BASE = `http://127.0.0.1:${PORT}`;
 const SERVER_LOG = resolve(ROOT, '.pw-server.log');
 /** 早期脚本用的输出目录，**未被 .gitignore 覆盖**（会污染 `git add -A`），每轮必清 */
@@ -48,37 +69,97 @@ const val = (n, d) => {
 };
 
 const USE_DEV = flag('--dev');
+const ALL = flag('--all');
 const GREP = val('-g', val('--grep', ''));
-const WORKERS = val('--workers', '4');
-const TEST_TIMEOUT = val('--test-timeout', '30000');
-const GLOBAL_TIMEOUT = val('--global-timeout', '420000');
+// 与 playwright.config workers 稳定档一致（4 会在 dev 编译争用下挤出时序 flaky）
+const WORKERS = val('--workers', '3');
+const TEST_TIMEOUT = val('--test-timeout', ALL ? '45000' : '30000');
+const GLOBAL_TIMEOUT = val('--global-timeout', ALL ? '1200000' : '420000');
+
+/** --all 之后到结尾的所有参数原样透传给 playwright（如 --grep / spec 路径 / --project） */
+function passthroughArgs() {
+  const i = argv.indexOf('--all');
+  if (i < 0) return [];
+  const rest = [];
+  for (let j = i + 1; j < argv.length; j++) {
+    const a = argv[j];
+    if (a === '--dev') continue;
+    if (a === '--workers' || a === '--grep' || a === '-g') { j++; continue; }
+    if (a === '--test-timeout' || a === '--global-timeout') { j++; continue; }
+    rest.push(a);
+  }
+  return rest;
+}
 
 const T0 = Date.now();
 const say = (msg) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(3)}s] ${msg}`);
 
-/** 强杀占用指定端口的 LISTENING 进程（含进程树） */
-function killPort(port) {
-  let raw = '';
+/**
+ * 只清理「测试自己拉起的、且已失去响应的 vite server」：
+ * 识别 = 命令行含 scripts/e2e-vite-server.cjs 标记（本跑批器/config webServer 唯一起服务入口，
+ * 正常服务不可能带它）；再加一道 HTTP 探活 —— 还能响应 200 的跳过（可能是并发跑批或你手动起的），
+ * 无响应（TCP 通 HTTP 死的僵尸 / 进程残骸）才杀。
+ * **禁止**回到按端口占用者乱杀的老路（2026-09-20 用户红线：别的服务占任何端口都不能被测试杀）。
+ */
+async function killZombieE2EServers() {
+  // suite 多阶段下跳过：无法区分「兄弟阶段刚起还没 200 的 server」，会误杀；
+  // 各自只清理自己的 server.pid（cleanup 内），孤儿僵尸由单跑模式负责回收。
+  if (process.env.E2E_SUITE_STAGE) return 0;
+  const ps =
+    "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -like '*e2e-vite-server.cjs*' } | ForEach-Object { \"$($_.ProcessId)||$($_.CommandLine)\" }";
+  let out = '';
   try {
-    raw = spawnSync('netstat', ['-ano', '-p', 'tcp'], { encoding: 'utf8', windowsHide: true }).stdout || '';
+    out = spawnSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf8', windowsHide: true }).stdout || '';
   } catch {
     return 0;
   }
-  const pids = new Set();
-  for (const line of raw.split(/\r?\n/)) {
-    if (!line.includes('LISTENING')) continue;
-    const m = line.match(/:(\d+)\s+\S+\s+LISTENING\s+(\d+)\s*$/);
-    if (m && Number(m[1]) === port) pids.add(m[2]);
-  }
-  for (const pid of pids) {
+  let killed = 0;
+  for (const line of out.split(/\r?\n/)) {
+    const sep = line.indexOf('||');
+    if (sep < 0) continue;
+    const pid = line.slice(0, sep).trim();
+    const cmd = line.slice(sep + 2);
+    if (!pid || pid === String(process.pid)) continue;
+    const pm = cmd.match(/--port\s+(\d+)/);
+    if (pm) {
+      const status = await probe(`http://127.0.0.1:${pm[1]}/`, 1500);
+      if (status === 200) continue; // 仍健康：可能是并发跑批/用户显式复用，绝不杀
+    }
     spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-    say(`清理占用 :${port} 的僵尸进程 PID ${pid}`);
+    say(`清理无响应的测试自建 server PID ${pid}`);
+    killed++;
   }
-  return pids.size;
+  return killed;
 }
 
-function killChrome() {
-  spawnSync('taskkill', ['/IM', 'chrome.exe', '/F'], { stdio: 'ignore', windowsHide: true });
+/**
+ * 只清理「测试自己拉起的浏览器」进程（含子进程树）。
+ * 识别特征（两者满足其一即杀，否则一律放过用户浏览器）：
+ *   a) 可执行文件在 Playwright 浏览器缓存目录（ms-playwright）下；
+ *   b) 命令行带 Playwright 注入的临时 profile 参数 `--user-data-dir=...\Temp\...`。
+ * 历史教训：旧版 `taskkill /IM chrome.exe /F` 会连带杀死用户日常使用的 Chrome，禁止回退。
+ * 多阶段并行（e2e-suite 设置了 E2E_SUITE_STAGE）时跳过：范围过滤无法区分「兄弟阶段」的
+ * 测试浏览器，会互杀；各阶段交由 Playwright 自身收尾 + suite 的 SIGKILL 兜底。
+ */
+function killTestBrowsers() {
+  if (process.env.E2E_SUITE_STAGE) return 0;
+  const ps = [
+    "$ps = Get-CimInstance Win32_Process | Where-Object {",
+    "  ($_.Name -eq 'chrome.exe' -or $_.Name -eq 'chromium.exe' -or $_.Name -eq 'chrome-headless-shell.exe') -and",
+    "  (($_.ExecutablePath -like '*ms-playwright*') -or ($_.CommandLine -like '*--user-data-dir=*' -and $_.CommandLine -like '*Temp*'))",
+    "}; if ($ps) { $ps.ProcessId }",
+  ].join(' ');
+  let out = '';
+  try {
+    out = spawnSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf8', windowsHide: true }).stdout || '';
+  } catch {
+    return 0;
+  }
+  const pids = out.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  for (const pid of pids) {
+    spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+  }
+  return pids.length;
 }
 
 /** 单次 HTTP 探针：返回状态码，任何失败（含超时）返回 0 */
@@ -120,8 +201,7 @@ function cleanup() {
     spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
     server = null;
   }
-  killPort(PORT);
-  killChrome();
+  killTestBrowsers();
   try {
     rmSync(STALE_OUT, { recursive: true, force: true });
   } catch {
@@ -138,11 +218,15 @@ process.on('exit', () => {
   if (server) cleanup();
 });
 
-// ─── a. 清场 ─────────────────────────────────────────────
-say(`跑批开始（模式：${USE_DEV ? 'dev server' : 'preview(dist)'}）`);
-killPort(PORT);
-killChrome();
+// ─── a. 前置检查 ─────────────────────────────────────────
+say(`跑批开始（模式：${USE_DEV ? 'dev server' : 'preview(dist)'}，端口：:${PORT}${process.env.E2E_PORT ? '（E2E_PORT 指定）' : '（OS 动态分配）'}）`);
+if (PORT === 3001) {
+  console.warn('ℹ E2E_PORT=3001：将连接复用你正跑着的 dev server（不会杀它）；确认这是你的意图。');
+}
+await killZombieE2EServers();
+killTestBrowsers();
 
+const viteWrapper = resolve(ROOT, 'scripts/e2e-vite-server.cjs');
 const viteBin = resolve(ROOT, 'node_modules/vite/bin/vite.js');
 if (!existsSync(viteBin)) {
   console.error(`✗ 找不到 ${viteBin}，先安装依赖`);
@@ -176,9 +260,10 @@ if (!USE_DEV) {
 }
 
 // ─── b. 起 server ───────────────────────────────────────
+// 经 e2e-vite-server.cjs wrapper 起：命令行自带测试标记，收尾能精确识别自建/僵尸 server
 const serverArgs = USE_DEV
-  ? [viteBin, '--port', String(PORT), '--strictPort', '--clearScreen', 'false']
-  : [viteBin, 'preview', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'];
+  ? [viteWrapper, '--port', String(PORT), '--strictPort', '--clearScreen', 'false']
+  : [viteWrapper, 'preview', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'];
 
 const logFd = openSync(SERVER_LOG, 'w');
 server = spawn(process.execPath, serverArgs, {
@@ -199,22 +284,39 @@ if (readyMs < 0) {
 say(`:${PORT} HTTP 就绪（${readyMs}ms）`);
 
 // ─── d. 跑 Playwright（封顶，必退）───────────────────────
+// 多阶段并行时产物目录按阶段隔离（防 globalTeardown rm -rf 互清附件）
+const outDir = process.env.E2E_SUITE_STAGE ? `.pw-out-${process.env.E2E_SUITE_STAGE}` : 'test-results';
 const pwArgs = [
   resolve(ROOT, 'node_modules/@playwright/test/cli.js'),
   'test',
-  'scripts/skeleton.spec.ts',
-  '--reporter=list',
+  // --all：跑全部 spec 且不覆盖 reporter（保留 config 的 html，供 localize-report 用）；
+  // 否则只跑骨架 spec 并用 list 拿即时输出
+  ...(ALL ? [] : ['scripts/skeleton.spec.ts', '--reporter=list']),
   `--workers=${WORKERS}`,
   `--timeout=${TEST_TIMEOUT}`,
   `--global-timeout=${GLOBAL_TIMEOUT}`,
+  `--output=${outDir}`,
 ];
 if (GREP) pwArgs.push('-g', GREP);
+if (ALL) pwArgs.push(...passthroughArgs());
 
 say(`playwright 开跑：${pwArgs.slice(2).join(' ')}`);
-const res = spawnSync(process.execPath, pwArgs, { cwd: ROOT, stdio: 'inherit', windowsHide: true });
+// 把本轮动态端口传给 playwright：config 会复用同一端口（webServer.reuseExistingServer
+// 命中已探活的自建 server），不再自己起第二个 server；
+// dev 全量时排除骨架契约 spec（它要生产单包 CSS，dev 分 chunk 会假失败，
+// 契约由本脚本 preview 模式专属执行）
+const childEnv = { ...process.env, E2E_PORT: String(PORT), PW_OUTPUT_DIR: outDir };
+if (ALL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
+const res = spawnSync(process.execPath, pwArgs, {
+  cwd: ROOT,
+  stdio: 'inherit',
+  windowsHide: true,
+  env: childEnv,
+});
 const code = res.status ?? 1;
 
 // ─── e. 收尾 ────────────────────────────────────────────
+await killZombieE2EServers();
 cleanup();
 say(`playwright 退出码 ${code}；总耗时 ${Math.round((Date.now() - T0) / 1000)}s`);
 if (code !== 0) {
