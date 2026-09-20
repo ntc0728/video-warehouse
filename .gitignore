@@ -59,6 +59,8 @@ output/
 epg_test.xml
 data/iptv.m3u
 test-results/
+.pw-out-*/
+.pw-out-*
 test-storage-state.json
 playwright-report/
 .playwright-cli/
@@ -131,6 +133,7 @@ scripts/*.mjs
 # 骨架 E2E 跑批器：清场 + preview + 健康轮询 + 超时封顶，防「僵尸 :3001 → 每条 goto 耗干 45s」，
 # 需跨会话复用（骨架断言一旦新增就要重跑），纳入版本控制
 !scripts/e2e-skeleton.mjs
+!scripts/e2e-suite.mjs
 # postinstall 依赖预打包包装：`pnpm install` 后自动执行，**必须入库**
 # （否则他人 clone 后 postinstall 找不到文件，反而阻断安装）
 !scripts/optimize-deps.mjs

@@ -13,7 +13,8 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default async function globalTeardown(_config: FullConfig) {
-  const outputDir = resolve(__dirname, '..', 'test-results');
+  // 产物目录与 e2e-skeleton 的 --output 同源（多阶段并行时按阶段隔离，防互删附件）
+  const outputDir = resolve(__dirname, '..', process.env.PW_OUTPUT_DIR || 'test-results');
   try {
     if (existsSync(outputDir)) rmSync(outputDir, { recursive: true, force: true });
   } catch {

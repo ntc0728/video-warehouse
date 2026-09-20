@@ -31,7 +31,10 @@
     "test:smart": "pwsh scripts/run-tests.ps1 -AutoDetect",
     "test:smoke": "pwsh scripts/run-tests.ps1 -AutoDetect -Group smoke",
     "test:regression": "pwsh scripts/run-tests.ps1 -AutoDetect -Group regression",
-    "test:e2e": "pnpm exec playwright test && node scripts/localize-report.mjs",
+    "test:e2e": "node scripts/e2e-suite.mjs && node scripts/localize-report.mjs",
+    "test:e2e:shots": "node scripts/e2e-skeleton.mjs --all --dev scripts/boot-splash-shots.spec.ts",
+    "test:e2e:preview": "node scripts/e2e-skeleton.mjs --all && node scripts/localize-report.mjs",
+    "test:e2e:raw": "pnpm exec playwright test && node scripts/localize-report.mjs",
     "test:e2e:report": "pnpm exec playwright show-report"
   },
   "dependencies": {

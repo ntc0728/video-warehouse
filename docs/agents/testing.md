@@ -193,6 +193,29 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 `playwright.config.ts` 的 `webServer.command` 同时由 `npm run dev` 改为
 `"${process.execPath}" node_modules/vite/bin/vite.js`（绕开 npm shim，避免静默换端口）。
 
+- **全量预算 ≤5 分钟（2026-09-20 用户硬性规定，不可协商）**：默认入口 `npm run test:e2e`
+  = `scripts/e2e-suite.mjs`（阶段 A dev 行为全套 + 阶段 B preview 骨架契约 B，串行，
+  300s 看门狗到点击杀并判失败）。超预算的合规解法按此优先级取舍：
+  ① 取证/截图类脚本不进默认套（`test:e2e:shots` 按需）；② 同构断言合并为参数化循环；
+  ③ 缩短 mock 侧不必要的人为延迟；④ 复核 `waitForTimeout` 固定睡眠改条件等待。
+  **禁止**用「删断言 / 降断言精度 / 加 skip」凑时间。新增用例先本地跑 `npm run test:e2e` 确认总时长仍在预算内。
+- **端口与进程边界（2026-09-20 用户定稿，二次强化）**：E2E 端口由 **OS 动态分配**（不固定占任何端口；
+  `E2E_PORT` 仅供显式指定，如对着自己 dev server 测：`E2E_PORT=3001`，也只是连接复用）。
+  **绝不按端口占用者杀进程**：测试自建 server 由 `scripts/e2e-vite-server.cjs` wrapper 拉起（命令行即标记），
+  收尾只杀「带该标记且 HTTP 探活无响应」的僵尸；浏览器只杀带 ms-playwright 路径 / 临时 `--user-data-dir`
+  特征的。禁止 `taskkill /IM chrome.exe`——那会连带杀死用户日常浏览器（已犯过事故，见 changelog 09-20）。
+- **卡死根治（2026-09-20，永久化）**：上述防卡死机制已从「仅骨架」扩展到全量——
+- `npm run test:e2e` = `e2e-skeleton.mjs --all --dev`（清场 + 健康轮询 + 封顶 + 收尾）；
+  `test:e2e:preview` 走 dist（更快，但 boot-splash 静态骨架与 1.3c 面板用例存在双
+  `.cqa-heat-row` 同屏冲突，属已知不兼容，待修）；`test:e2e:raw` 保留裸跑入口。
+- `globalSetup` 前置 HTTP 探针：死端口 8s 内 fail-fast 并指向 skeleton，不再整轮零输出。
+- config `globalTimeout`（CI 40min / 本地 30min）+ 本地 `workers=2`。
+- **网络守卫**（fixtures/mock-tmdb）：mock 模式下任何未命中专用拦截、且不属于
+  本地/测试桩域/`.env.local` 配置代理主机的公网请求**立即 abort**；TMDB mock 未命中
+  返回 404 不再逃逸；注入源与 iptv-org 主干由 `scripts/fixtures/test-env.ts` 提供
+  确定性 mock（源下标单一事实源）。断网环境跑 E2E 从此与有网同速同结果。
+  逃生门仍是 `TMDB_MOCK=false`（真实网络回归）。
+
 ### 增量测试（推荐日常使用）
 
 `scripts/run-tests.ps1` 支持**文件级精粒度映射**（`$uiPrecisionMap`：改哪个文件只跑其相关 describe 段，而非整个 spec）：

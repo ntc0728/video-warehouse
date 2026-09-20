@@ -21,7 +21,7 @@ const MAIN_BUNDLE_PATTERNS = ['**/src/main.tsx*', '**/assets/index-*.js'];
 async function holdSplash(page: Page, path: string) {
   for (const pattern of MAIN_BUNDLE_PATTERNS) {
     await page.route(pattern, async (route) => {
-      await new Promise((r) => setTimeout(r, 2500));
+      await new Promise((r) => setTimeout(r, 1200));
       await route.continue();
     });
   }
@@ -30,15 +30,24 @@ async function holdSplash(page: Page, path: string) {
   await page.waitForSelector('#boot-splash', { state: 'attached' });
 }
 
-/** 读取骨架关键几何：shape / bs-body 底边 / 视口高 / 占位块数 */
+/** 读取骨架关键几何：shape / 内容底边（末子元素）/ 视口高 / 占位块数。
+ *  ⚠️ .bs-body 是 flex:1 撑满容器，其底边恒等于视口底，量它无意义；
+ *  内容是否填满首屏要量「末子元素底边」。 */
 async function splashMetrics(page: Page) {
   return page.evaluate(() => {
     const splash = document.getElementById('boot-splash');
     const body = document.getElementById('bs-body');
+    // 填充 host 下钻：home / split 形态的内容在 .bs-home__main / .bs-split__main 内，
+    // body 末子元素是撑满的包裹层，量它无意义
+    const host =
+      body?.querySelector('.bs-home__main') ??
+      body?.querySelector('.bs-split__main') ??
+      body;
+    const last = host?.lastElementChild ?? null;
     return {
       shape: splash?.getAttribute('data-shape') ?? null,
       cols: splash?.getAttribute('data-cols') ?? null,
-      bottom: body?.getBoundingClientRect().bottom ?? 0,
+      bottom: last ? last.getBoundingClientRect().bottom : 0,
       vh: window.innerHeight,
       blocks: document.querySelectorAll(
         '#boot-splash .bs-row, #boot-splash .bs-list, #boot-splash .bs-lines, #boot-splash .bs-sec',
@@ -79,6 +88,85 @@ test.describe('启动骨架：视口填充与路由感知', () => {
     expect(m.bottom).toBeGreaterThanOrEqual(m.vh - 60);
   });
 
+  test('BOOT: home ≥1024 带左栏（镜像 .home-two-col，栏宽 240）', async ({ page }) => {
+    await holdSplash(page, '/');
+    const rail = page.locator('#boot-splash .bs-home .bs-rail');
+    await expect(rail).toBeVisible();
+    const box = (await rail.boundingBox())!;
+    expect(Math.round(box.width)).toBe(240);
+  });
+
+  test('BOOT: home 1920 档栏宽 260（--home-rail-w 真源断点是 ≥1920 非 ≥2560）', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await holdSplash(page, '/');
+    const box = (await page.locator('#boot-splash .bs-home .bs-rail').boundingBox())!;
+    expect(Math.round(box.width)).toBe(260);
+  });
+
+  test('BOOT: home ≥1024 hero 带右卡网格（1024–1280 → 2 列×2 行 = 4 张）', async ({ page }) => {
+    // 默认视口 1280×720 落在 2 列档（useHeroSideCols 同源断点）
+    await holdSplash(page, '/');
+    const right = page.locator('#boot-splash .bs-herobili__right');
+    await expect(right).toBeVisible();
+    await expect(page.locator('#boot-splash .bs-herocard')).toHaveCount(4);
+    await expect(page.locator('#boot-splash .bs-shuffle')).toBeVisible();
+  });
+
+  test('BOOT: home ≥1281 右卡升 3 列×2 行 = 6 张', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await holdSplash(page, '/');
+    await expect(page.locator('#boot-splash .bs-herocard')).toHaveCount(6);
+  });
+
+  test('BOOT: browse / collections / history ≥1024 带左栏（RecordShell / Browse grid 同构）', async ({ page }) => {
+    for (const path of ['/browse', '/collections', '/history']) {
+      await holdSplash(page, path);
+      await expect(
+        page.locator('#boot-splash .bs-split .bs-rail'),
+        `${path} 应有左栏`,
+      ).toBeVisible();
+    }
+  });
+
+  test('BOOT: detail ≥1024 两栏 top（1.4fr/1fr，镜像 DetailSkeleton）', async ({ page }) => {
+    await holdSplash(page, '/detail/27205');
+    const top = page.locator('#boot-splash .bs-detail__top');
+    await expect(top).toBeVisible();
+    const display = await top.evaluate((node) => getComputedStyle(node).display);
+    expect(display).toBe('grid');
+    // 结构块就位：tabs 2 枚 / 演员 12 槽 / 剧照 6 张（DetailSkeleton 同源常量）
+    await expect(page.locator('#boot-splash .bs-detail__tabs i')).toHaveCount(2);
+    await expect(page.locator('#boot-splash .bs-castitem')).toHaveCount(12);
+    await expect(page.locator('#boot-splash .bs-detail__stills i')).toHaveCount(6);
+  });
+
+  test('BOOT: home TV 档隐藏左栏（data-cols=tv 回单列）', async ({ page }) => {
+    for (const pattern of MAIN_BUNDLE_PATTERNS) {
+      await page.route(pattern, async (route) => {
+        await new Promise((r) => setTimeout(r, 1200));
+        await route.continue();
+      });
+    }
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 (SMART-TV; Linux) AppleWebKit/537.36 Tizen/7.0',
+        configurable: true,
+      });
+    });
+    await page.goto('/', { waitUntil: 'commit' });
+    await page.waitForSelector('#boot-splash', { state: 'attached' });
+    await expect(page.locator('#boot-splash .bs-home .bs-rail')).toBeHidden();
+  });
+
+  test('BOOT: 静态默认是中性形态（脚本未跑时无首页轮廓）', async ({ page }) => {
+    // commit 时刻不可靠（evaluate 派发耗时比解析长，脚本早已跑完）→
+    // 直接拉 HTML 源码断言静态标记：splash 区内不得预置任何首页轮廓节点
+    const html = await (await page.request.get('/collections')).text();
+    const splashHtml = html.slice(html.indexOf('id="boot-splash"'), html.indexOf('id="bs-tip"'));
+    expect(splashHtml).not.toContain('bs-hero');
+    expect(splashHtml).not.toContain('bs-row');
+  });
+
   test('BOOT: play 形态不填充，提示文案就位', async ({ page }) => {
     await holdSplash(page, '/iptv/play?url=x&id=y&name=z');
     const m = await splashMetrics(page);
@@ -95,7 +183,7 @@ test.describe('启动骨架：视口填充与路由感知', () => {
   test('BOOT: TV UA → data-cols=tv（列数恒 8/5 档）', async ({ page }) => {
     for (const pattern of MAIN_BUNDLE_PATTERNS) {
       await page.route(pattern, async (route) => {
-        await new Promise((r) => setTimeout(r, 2500));
+        await new Promise((r) => setTimeout(r, 1200));
         await route.continue();
       });
     }

@@ -13,7 +13,12 @@ import { chromium, type FullConfig } from '@playwright/test';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
+import http from 'http';
 import { config } from 'dotenv';
+import {
+  VIDEO_SOURCE_INDICES as TEST_VIDEO_SOURCE_INDICES,
+  IPTV_SOURCE_INDICES as TEST_IPTV_SOURCE_INDICES,
+} from './fixtures/test-env';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -23,21 +28,16 @@ config({ path: resolve(__dirname, '..', '.env.local') });
 const STORAGE_STATE_PATH = resolve(__dirname, '..', 'test-storage-state.json');
 
 // ─── 测试环境配置 ────────────────────────────────────────────
-// 使用环境变量传入私人配置，本地开发时在 .env.local 中设置
-// 示例值仅供参考，实际部署时通过 CI/CD 或环境变量注入
-const TMDB_TOKEN = process.env.TMDB_TOKEN || 'your_tmdb_token_here';
-const CORS_PROXY = process.env.CORS_PROXY || 'https://your-cors-proxy.example.com';
-const IPTV_PROXY = process.env.IPTV_PROXY || 'https://your-iptv-proxy.example.com';
+// 使用环境变量传入私人配置，本地开发时在 .env.local 中设置。
+// 缺省占位值刻意用 127.0.0.1:1（必然 ECONNREFUSED 的本地端口）而不是公网占位域名：
+// 未配 .env.local 时请求毫秒级失败，不会挂在 DNS/超时上拖慢整轮 E2E。
+const TMDB_TOKEN = process.env.TMDB_TOKEN || 'test_placeholder_token';
+const CORS_PROXY = process.env.CORS_PROXY || 'http://127.0.0.1:1/cors-proxy';
+const IPTV_PROXY = process.env.IPTV_PROXY || 'http://127.0.0.1:1/iptv-proxy';
 
-// ─── 视频数据源（5 个，覆盖不同类型） ───────────────────────
-// video-sources.json 下标：
-//   0=爱奇艺  1=豆瓣  6=猫眼  11=非凡  21=光速
-const VIDEO_SOURCE_INDICES = [0, 1, 6, 11, 21];
-
-// ─── IPTV 数据源（3 个，覆盖不同 CDN） ──────────────────────
-// iptv-sources.json 下标：
-//   0=IPTV(GitHub)  2=猫影视TV  7=风云TV4
-const IPTV_SOURCE_INDICES = [0, 2, 7];
+// ─── 视频 / IPTV 数据源下标（与 scripts/fixtures/test-env.ts 单一事实源同步） ─
+const VIDEO_SOURCE_INDICES = TEST_VIDEO_SOURCE_INDICES;
+const IPTV_SOURCE_INDICES = TEST_IPTV_SOURCE_INDICES;
 
 // ID 持久化：从配置文件解析内置源 ID（video = api_site key；iptv = url）
 const videoSourcesJson = JSON.parse(
@@ -94,7 +94,45 @@ const IPTV_STORE = {
   version: 0,
 };
 
+// 防卡死探针（2026-09-20）：E2E 端口上的 Vite 可能处于「TCP 通、HTTP 永不响应」的
+// 僵尸态，webServer.reuseExistingServer 判不出来 → 后续每条 goto 白耗 45s，
+// 全量跑变成十几分钟无输出的「卡死」。这里用带超时的 HTTP 探测提前 fail-fast。
+function probeHttp(url: string, timeoutMs = 3000): Promise<boolean> {
+  return new Promise((done) => {
+    const req = http.get(url, { timeout: timeoutMs }, (res) => {
+      res.resume();
+      done((res.statusCode || 0) === 200);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      done(false);
+    });
+    req.on('error', () => done(false));
+  });
+}
+
 export default async function globalSetup(_config: FullConfig) {
+  const baseURL = _config.projects[0].use.baseURL!;
+
+  // fail-fast：8 秒内拿不到 200 就明确报错退出，绝不带着死端口往下跑
+  const deadline = Date.now() + 8000;
+  let healthy = false;
+  while (Date.now() < deadline) {
+    if (await probeHttp(baseURL)) {
+      healthy = true;
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!healthy) {
+    throw new Error(
+      `✗ ${baseURL} 在 8s 内未返回 HTTP 200 —— 端口上大概率是僵尸 dev server` +
+        `（TCP 通但 HTTP 不响应）。请勿重试本命令，改用带清场+健康轮询的跑批器：\n` +
+        `    node scripts/e2e-skeleton.mjs            # 全量/预览模式\n` +
+        `    npm run test:e2e                          # 已委托 e2e-skeleton --all`,
+    );
+  }
+
   // 与 playwright.config.ts 的 use.channel 同源：受限环境（chrome-headless-shell
   // 以 0xC0000409 崩溃）下用 PW_BROWSER_CHANNEL=chromium 切到完整 chromium。
   const launchChannel = process.env.PW_BROWSER_CHANNEL || undefined;
@@ -103,31 +141,33 @@ export default async function globalSetup(_config: FullConfig) {
   const page = await context.newPage();
 
   // 先加载应用页面，使 localStorage 域生效
-  const baseURL = _config.projects[0].use.baseURL || 'http://127.0.0.1:3001';
   await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
 
-  // 时序竞态修复（2026-08-11）：应用启动后会有「异步写回」覆盖注入值——
-  // ① useSettingsStore 的加密持久化是异步写盘（setItem 里 void async 加密后
-  //    localStorage.setItem），rehydrate 完成后可能基于「旧内存状态」异步写回；
-  // ② main.tsx 的 useSourceManagerStore.bootstrap() 会把全量内置源索引同步回
-  //    app-settings（videoSourceIndices: [28] 即全量源数）。
-  // 若直接 evaluate 注入后立即 storageState，最终落盘可能是应用写回的空 Token。
-  // 对策：先等初始化写回风暴结束 → 注入 → 再等 → 再注入（最后写入者胜）。
-  await page.waitForTimeout(2500);
-
-  // 注入应用设置
-  await page.evaluate(({ appSettings, iptvStore }) => {
-    localStorage.setItem('app-settings', JSON.stringify(appSettings));
-    localStorage.setItem('iptv-store', JSON.stringify(iptvStore));
-  }, { appSettings: APP_SETTINGS, iptvStore: IPTV_STORE });
-
-  // 等注入后可能残留的异步写回（加密写盘）落盘，再覆盖一次确保注入值生效
-  await page.waitForTimeout(800);
-  await page.evaluate(({ appSettings, iptvStore }) => {
-    localStorage.setItem('app-settings', JSON.stringify(appSettings));
-    localStorage.setItem('iptv-store', JSON.stringify(iptvStore));
-  }, { appSettings: APP_SETTINGS, iptvStore: IPTV_STORE });
-  await page.waitForTimeout(300);
+  // 时序竞态修复（2026-08-11 根因不变；2026-09-20 由固定 sleep 3.6s 改为收敛轮询）：
+  // 应用启动后有「异步写回风暴」（settingsStore 加密落盘重放 + sourceManager bootstrap
+  // 回写全量索引），最终写入者胜。轮询判据 = 连续两次读到「存储值 === 注入值」才放行，
+  // 风暴期最多回推重注，上限 4s；正常 1s 内收敛，比固定 sleep 快且更可靠。
+  const write = () =>
+    page.evaluate(({ appSettings, iptvStore }) => {
+      localStorage.setItem('app-settings', JSON.stringify(appSettings));
+      localStorage.setItem('iptv-store', JSON.stringify(iptvStore));
+    }, { appSettings: APP_SETTINGS, iptvStore: IPTV_STORE });
+  const isSettled = () =>
+    page.evaluate(
+      ({ appJson, iptvJson }) =>
+        localStorage.getItem('app-settings') === appJson && localStorage.getItem('iptv-store') === iptvJson,
+      { appJson: JSON.stringify(APP_SETTINGS), iptvJson: JSON.stringify(IPTV_STORE) },
+    );
+  const deadlineInject = Date.now() + 4000;
+  let stableHits = 0;
+  await write();
+  while (Date.now() < deadlineInject && stableHits < 2) {
+    await page.waitForTimeout(250);
+    stableHits = (await isSettled()) ? stableHits + 1 : 0;
+    if (!stableHits) await write();
+  }
+  // 未完全收敛也最后强制注一次：此刻起 worker 们读到的 storageState 以注入值为准
+  await write();
 
   // 保存 storageState（包含 cookies + localStorage）
   await context.storageState({ path: STORAGE_STATE_PATH });

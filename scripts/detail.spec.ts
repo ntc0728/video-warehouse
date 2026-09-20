@@ -26,7 +26,7 @@ const POLL = { intervals: [50, 100, 250, 500] };
 test.describe('3.1 页面加载', () => {
   test('DETAIL-001/002/003/004/005: 加载/电影/剧集/Hero/Tab/错误态', async ({ page }) => {
     // 003 加载中状态（在页面就绪前检查 loading 元素）
-    await page.goto(`/detail/${TEST_MOVIE_ID}`);
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     const loadingVisible = await page.evaluate(() => {
       return !!document.querySelector('.app-loading, [class*="loading"]');
     });
