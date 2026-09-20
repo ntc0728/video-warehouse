@@ -199,6 +199,14 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
   ① 取证/截图类脚本不进默认套（`test:e2e:shots` 按需）；② 同构断言合并为参数化循环；
   ③ 缩短 mock 侧不必要的人为延迟；④ 复核 `waitForTimeout` 固定睡眠改条件等待。
   **禁止**用「删断言 / 降断言精度 / 加 skip」凑时间。新增用例先本地跑 `npm run test:e2e` 确认总时长仍在预算内。
+- **取舍必须对功能地图，不对脚本秒数**（2026-09-20 用户纠偏）：默认套覆盖 = 13 业务路由全部有
+  spec（首页/浏览/榜/详情/播放双路由/IPTV 列表+播放/设置/收藏/历史/源检测/人物/代理入口）+
+  横切能力（跨页签同步、启动骨架行为、主题皮肤字体、app 端 UA、台标回退链、播放故障转移/错误码）。
+  不进默认套的判据：① 纯像素取证（boot-splash-shots → `test:e2e:shots`）；② 无断言手工脚本
+  （verify-grid，作者已 skip）；③ 调试 demo 路由（player-lab / mobile-lab / ptr-demo，产品不进正式导航）。
+  **mock 数据形态必须支撑功能断言**：hermetic mock 若让条件断言用例如 5.10 台标链、G-05 封面回退
+  恒走 skip 分支，等于砍掉覆盖——org 主干 mock 已按真实 cn.m3u 形态补 tvg-logo/tvg-id
+  （含一条无 logo 频道支撑 EPG icon 二级回退）。加/改 mock 数据后必须 grep「跳过」日志确认可疑空转。
 - **端口与进程边界（2026-09-20 用户定稿，二次强化）**：E2E 端口由 **OS 动态分配**（不固定占任何端口；
   `E2E_PORT` 仅供显式指定，如对着自己 dev server 测：`E2E_PORT=3001`，也只是连接复用）。
   **绝不按端口占用者杀进程**：测试自建 server 由 `scripts/e2e-vite-server.cjs` wrapper 拉起（命令行即标记），

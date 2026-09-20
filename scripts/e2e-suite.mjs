@@ -68,11 +68,23 @@ const watchdog = setTimeout(() => {
 
 say(`E2E 套件开跑（预算 ${(BUDGET_MS / 1000).toFixed(0)}s，两阶段并行）`);
 
-// 实测（2026-09-20）：并行时两阶段抢 CPU，时序敏感契约用例（SKEL-014/015 骨架可见性）
-// 被挤挂；串行 A(≈180s)+B(≈40s) 仍远在预算内 → 选串行换确定性。
+// 播放器系 spec 归 preview：dev 下 hls/dash vendor 按需编译 + 3 worker 并发会把
+// 「播放器挂载 30s 窗口」挤到极限（PLAYER-M01/FS-* 实测贴边 flaky）；生产单包挂载快且稳。
+// 例外：smoke-player-fs-mobile 留 dev —— `.up-fs-corner` 等横屏全屏 UI 在生产 bundle
+// 下不出现（preview 实测整族挂），属构建形态差异，该族以 dev 形态为准（2026-09-20）。
+const PREVIEW_SPECS = [
+  'scripts/skeleton.spec.ts',
+  'scripts/player.spec.ts',
+  'scripts/player-failover.spec.ts',
+  'scripts/player-cms-error.spec.ts',
+  'scripts/iptv-player.spec.ts',
+];
+const A_EXCLUDE = ['skeleton', 'boot-splash-shots', 'player', 'player-failover', 'player-cms-error', 'iptv-player'].join(',');
+
 const results = [];
-results.push(await stage('A-dev-behavior', ['--all', '--dev'], { E2E_SKIP_CONTRACT: '1', E2E_SKIP_SHOTS: '1' }));
-results.push(await stage('B-preview-contract', [])); // skeleton 默认 = skeleton.spec + preview
+// 阶段 A：播放器系已迁出，dev 争用大头消失 → 4 worker 换预算余量
+results.push(await stage('A-dev-behavior', ['--all', '--dev', '--workers', '4'], { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE }));
+results.push(await stage('B-preview-contract-player', ['--all', ...PREVIEW_SPECS]));
 
 clearTimeout(watchdog);
 const wall = ((Date.now() - T0) / 1000).toFixed(1);

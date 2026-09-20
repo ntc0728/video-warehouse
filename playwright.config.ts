@@ -64,9 +64,15 @@ export default (async () => {
     // 模式/预算开关（由 scripts/e2e-suite.mjs 组合使用）：
     //   E2E_SKIP_CONTRACT=1  排除骨架契约 B（需要生产单包 CSS，dev 下假失败，preview 专属）
     //   E2E_SKIP_SHOTS=1     排除 boot-splash-shots（截图取证脚本，非行为断言，移出 5min 预算默认套）
+    //   E2E_EXCLUDE_SPECS=a,b,c  按文件名整词排除（播放器系 spec 走 preview 阶段的迁移开关）
     testIgnore: [
       ...(process.env.E2E_SKIP_CONTRACT ? [/skeleton\.spec\.ts$/] : []),
       ...(process.env.E2E_SKIP_SHOTS ? [/boot-splash-shots\.spec\.ts$/] : []),
+      ...(process.env.E2E_EXCLUDE_SPECS
+        ? process.env.E2E_EXCLUDE_SPECS.split(',').map(
+            (n) => new RegExp(`[\\\\/]${String(n).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.spec\\.ts$`),
+          )
+        : []),
     ],
     projects: [
       {

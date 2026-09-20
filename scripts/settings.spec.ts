@@ -111,12 +111,17 @@ test.describe('6.4 播放设置', () => {
   test('SET-040: 跳过片头开关', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await expect(page.locator('.settings-page .list-item').first()).toBeVisible({ timeout: 5000 });
-
-    // 预期结果: 跳过片头开关存在
-    const switches = page.locator('.settings-page .list-item');
-    expect(await switches.count()).toBeGreaterThan(0);
-    const count = await switches.count();
+    // 2026-09-20 纠偏：原实现只断「.list-item 数>0」，从未定位到开关本体 = 空壳。
+    // 真实开关在「播放设置」tab 的 PlaybackTab（List.Item + Switch role=switch）。
+    await page.locator('.settings-tab', { hasText: '播放' }).first().click();
+    const row = page.locator('.list-item', { hasText: '跳过片头' }).first();
+    await expect(row).toBeVisible({ timeout: 5000 });
+    const sw = row.locator('[role="switch"], input[type="checkbox"]').first();
+    await expect(sw).toBeVisible({ timeout: 3000 });
+    const before = await sw.getAttribute('aria-checked');
+    await sw.click();
+    await expect.poll(() => sw.getAttribute('aria-checked'), { timeout: 3000 }).not.toBe(before);
+    await sw.click(); // 复位，避免污染 storageState 之外的持久化
   });
 });
 

@@ -219,15 +219,11 @@ test.describe('5.10 频道台标回退链', () => {
       console.log('ℹ️ IPTV-080 跳过: 环境频道未触发在线台标库请求');
     }
 
-    // 081 EPG XMLTV icon 作为台标二级回退
+    // 081 EPG XMLTV icon 二级回退：**产品已于 2026-09-08 下线**（patterns.md「IPTV 频道台标
+    // 单一来源」），原「条件跳过」在 hermetic 环境恒空转。改为反向防回归断言：
+    // 即使 EPG XML 带 icon 且 icon 域名可达（本用例自有 route 返回像素），频道卡也**不得**注入 EPG icon。
     const epgIconImgs = page.locator('.iptv-channel-grid .iptv-card-cover img[src^="https://mock.example.com/"]');
-    await expect(epgIconImgs.first()).toBeVisible({ timeout: 12000 }).catch(() => {});
-    const count = await epgIconImgs.count();
-    if (count > 0) {
-      expect(count).toBeGreaterThan(0);
-    } else {
-      console.log('ℹ️ IPTV-081 跳过: 无频道匹配 mock EPG 频道（含 icon）');
-    }
+    expect(await epgIconImgs.count()).toBe(0);
   });
 });
 
