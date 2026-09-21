@@ -149,18 +149,20 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 > 注：`search-features.spec.ts`、`mobile-web-sidebar.spec.ts` 等旧测试已彻底删除（原归档目录 `scripts/backup-specs/` 于 2026-08-29 连同 8 个一次性 `.mjs` 工具脚本一并清理，已备份至 `backups/scripts-untracked-20260829/`），映射表中不再引用。`playwright.config.ts` 的 `testIgnore` 规则已随之移除。
 
-### 快速跑法
+### E2E 指令（本地基准 — 认准这几种，别裸跑）
 
-```bash
-# 单个页面（最常见）
-pnpm exec playwright test scripts/player.spec.ts
+| 命令 | 覆盖内容 | 说明 |
+| --- | --- | --- |
+| `npm run test:e2e` | 默认全量两阶段（串行，≤300s 预算） | **唯一默认入口** = e2e-suite（A dev 行为 + B preview 播放器） |
+| `npm run test:e2e:skeleton` | 骨架契约（skeleton / boot-splash-iso / boot-splash） | preview、按需；验证骨架↔真实页同构 |
+| `npm run test:e2e:subpages` | 设置页子页（source-checker / proxy-setup） | preview、按需 |
+| `npm run test:e2e:shots` | 启动骨架截图取证 | dev、人工核查用（不进默认套） |
+| `npm run test:e2e:report` | 打开上次 HTML 报告 | — |
+| `node scripts/e2e-suite.mjs --only <spec> [-g 子串] [--dev]` | 调试**单个** spec | 默认 preview（需最新 dist），`--dev` 走源码态；自带清场+健康轮询 |
 
-# 共享组件（如 VideoCard）
-pnpm exec playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/detail.spec.ts scripts/collections.spec.ts scripts/history.spec.ts
-
-# 全量（仅 CI 或发版前）
-pnpm exec playwright test
-```
+> 底层跑批器：`node scripts/e2e-skeleton.mjs [spec… | -g 过滤]`（preview 默认，`--dev`/`--all` 可切）。
+> **禁止**裸 `pnpm exec playwright test`（无清场/健康轮询 → 僵尸 dev server 会把每条 goto 耗满超时）。
+> 旧 `test:e2e:raw` / `test:e2e:preview` 已删除（2026-09-21）。
 
 
 > **无 `.env.local` 时的既有失败基线**（2026-09-15 实测，worktree @ c114c867 对照同条件）：
@@ -199,16 +201,23 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
   **全量 E2E（`test:e2e` / `e2e-suite.mjs` / `e2e-skeleton.mjs --all` 及任何等效方式）未经用户明确允许不得运行**；
   需要全量时向用户申请，由用户放行。新增/改动用例的时长核算也走 ad-hoc 档，不借全量验证。
 - **全量预算 ≤5 分钟（2026-09-20 用户硬性规定，不可协商；仅在用户放行全量时适用）**：默认入口 `npm run test:e2e`
-  = `scripts/e2e-suite.mjs`（阶段 A dev 行为全套 + 阶段 B preview 骨架契约 B，串行，
+  = `scripts/e2e-suite.mjs`（阶段 A dev 行为全套 + 阶段 B preview 播放器系，串行，
   300s 看门狗到点击杀并判失败）。超预算的合规解法按此优先级取舍：
   ① 取证/截图类脚本不进默认套（`test:e2e:shots` 按需）；② 同构断言合并为参数化循环；
   ③ 缩短 mock 侧不必要的人为延迟；④ 复核 `waitForTimeout` 固定睡眠改条件等待。
   **禁止**用「删断言 / 降断言精度 / 加 skip」凑时间。
 - **取舍必须对功能地图，不对脚本秒数**（2026-09-20 用户纠偏）：默认套覆盖 = 13 业务路由全部有
   spec（首页/浏览/榜/详情/播放双路由/IPTV 列表+播放/设置/收藏/历史/源检测/人物/代理入口）+
-  横切能力（跨页签同步、启动骨架行为、主题皮肤字体、app 端 UA、台标回退链、播放故障转移/错误码）。
+  横切能力（跨页签同步、主题皮肤字体、app 端 UA、台标回退链、播放故障转移/错误码）。
+  （注 2026-09-21 用户拍板：骨架类——启动骨架行为 boot-splash / 骨架契约 A/B/C skeleton /
+  七视口同构 boot-splash-iso——整体移出默认套，改按需 `npm run test:e2e:skeleton`（preview
+  三者皆绿）。骨架类不是业务路由覆盖，故 13 路由默认覆盖不受影响；仅默认套不再守护骨架同构。）
   不进默认套的判据：① 纯像素取证（boot-splash-shots → `test:e2e:shots`）；② 无断言手工脚本
-  （verify-grid，作者已 skip）；③ 调试 demo 路由（player-lab 等三个已于 2026-09-21 整体删除）。
+  （verify-grid 曾属此类，已于 2026-09-21 删除）；③ 调试 demo 路由（player-lab 等三个已于 2026-09-21 整体删除）；
+  ④⑤ 设置页**子页**专属用例（source-checker 源检测 CHK-* / proxy-setup 代理配置 PROXY-*），
+  2026-09-21 移出默认套→按需 `npm run test:e2e:subpages`。其中 /source-checker 路由仍由默认套内
+  settings SET-073 守护（连点版本 3 次→进入+页面可见），/proxy-setup 代理入口子页则默认不再守护。
+  设置页本体 settings + 顶级路由 chart/person 均保留默认套（用户明确：只移子页，不移顶级路由）。
   **mock 数据形态必须支撑功能断言**：hermetic mock 若让条件断言用例如 5.10 台标链、G-05 封面回退
   恒走 skip 分支，等于砍掉覆盖——org 主干 mock 已按真实 cn.m3u 形态补 tvg-logo/tvg-id
   （含一条无 logo 频道支撑 EPG icon 二级回退）。加/改 mock 数据后必须 grep「跳过」日志确认可疑空转。

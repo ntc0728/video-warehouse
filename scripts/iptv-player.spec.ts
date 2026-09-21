@@ -430,9 +430,11 @@ test.describe('11.6 TV 遥控器焦点', () => {
     await expect(page.locator('.up-channel-group-item').first()).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.up-channel-item-focused')).toHaveCount(1, { timeout: 5000 });
 
-    // Enter 选台：onChannelSelect → IPTVPlayer 以 name 参数 replace 导航
-    // （.up-channel-item-name 是纯文本节点，MarqueeText 不复制文本）
-    const focusedName = ((await page.locator('.up-channel-item-focused .up-channel-item-name').textContent()) ?? '').trim();
+    // Enter 选台：onChannelSelect → IPTVPlayer 以 name 参数 replace 导航。
+    // 频道名经 MarqueeText 渲染：溢出时会克隆第二个 .marquee-text 做无缝滚动
+    // （IPTVChannelList.tsx:44）→ 读 .up-channel-item-name 的聚合 textContent 会得到
+    // "名字名字" 双份。故只取首个 .marquee-text 的文本（恒单份），不依赖是否溢出。
+    const focusedName = ((await page.locator('.up-channel-item-focused .up-channel-item-name .marquee-text').first().textContent()) ?? '').trim();
     expect(focusedName.length).toBeGreaterThan(0);
     await page.keyboard.press('Enter');
     await expect

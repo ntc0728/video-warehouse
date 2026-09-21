@@ -33,8 +33,8 @@
     "test:regression": "pwsh scripts/run-tests.ps1 -AutoDetect -Group regression",
     "test:e2e": "node scripts/e2e-suite.mjs && node scripts/localize-report.mjs",
     "test:e2e:shots": "node scripts/e2e-skeleton.mjs --all --dev scripts/boot-splash-shots.spec.ts",
-    "test:e2e:preview": "node scripts/e2e-skeleton.mjs --all && node scripts/localize-report.mjs",
-    "test:e2e:raw": "pnpm exec playwright test && node scripts/localize-report.mjs",
+    "test:e2e:skeleton": "node scripts/e2e-skeleton.mjs scripts/skeleton.spec.ts scripts/boot-splash-iso.spec.ts scripts/boot-splash.spec.ts",
+    "test:e2e:subpages": "node scripts/e2e-skeleton.mjs scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts",
     "test:e2e:report": "pnpm exec playwright show-report"
   },
   "dependencies": {

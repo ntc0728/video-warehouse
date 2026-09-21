@@ -635,8 +635,13 @@ test.describe('详情页回归', () => {
     await page.locator('.detail-source-all-btn').first().click();
     await page.waitForSelector('.playlist-modal .lazy-image-container', { timeout: 10000 });
     await page.waitForSelector('.playlist-modal .lazy-image', { timeout: 10000 });
+    // LazyImage 挂起→兜底须走完「有界重试」全链（S4 2026-09-11 起，LazyImage.tsx:24,36-39,296-317）：
+    //   首轮 timeoutMs 8s → 退避 1.2s → 重试轮 5s → 退避 2.4s → 重试轮 5s → 额度用尽置 exhausted
+    //   才渲染 .lazy-image-fallback。最坏 ≈ 8+1.2+5+2.4+5 = 21.6s。等待须覆盖该确定性计时预算，
+    //   故放宽到 26s（这是「等一个有上限的产品重试链」，非「≤10s 单步」防盲轮询经验值所指的场景；
+    //   waitForSelector 在兜底一出现即返回，不空耗满 26s）。
     await page.locator('.playlist-modal .lazy-image-fallback').first()
-      .waitFor({ state: 'attached', timeout: 10000 });
+      .waitFor({ state: 'attached', timeout: 26000 });
     expect(await page.locator('.playlist-modal .lazy-image-placeholder').count()).toBe(0);
 
     // REG-015: IPTV 首载无数据时显示整页 AppLoading（不渲染筛选卡）
@@ -1100,42 +1105,6 @@ test.describe('全局问题', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 代理配置（原 proxy-setup.spec.ts：3 条 → 2 条）
+// 代理配置（设置页子页）—— 用例已移出默认套
 // ═══════════════════════════════════════════════════════════════
-test.describe('代理配置', () => {
-  test('PROXY-001: 路由可访问，页面结构完整', async ({ page }) => {
-    await page.goto('/proxy-setup', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.proxy-setup', { timeout: 10000 });
-    // 等标题渲染，替代固定 800ms 睡眠
-    await expect(page.locator('.proxy-setup__title')).toBeVisible({ timeout: 2000 });
-    const title = await page.locator('.proxy-setup__title').textContent();
-    expect(title).toContain('一键配置代理');
-    const cardCount = await page.locator('.proxy-setup__card').count();
-    expect(cardCount).toBe(2);
-    const consoleVisible = await page.locator('.proxy-setup__console').isVisible().catch(() => false);
-    expect(consoleVisible).toBe(true);
-  });
-
-  test('PROXY-002/003: 选择高亮 + 未填 Token 报错', async ({ page }) => {
-    await page.goto('/proxy-setup', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.proxy-setup', { timeout: 10000 });
-    // 等卡片渲染，替代固定 800ms 睡眠
-    const corsCard = page.locator('.proxy-setup__card').first();
-    await expect(corsCard).toBeVisible({ timeout: 2000 });
-    await corsCard.click();
-    // 等选中态 class 生效，替代固定 300ms 睡眠
-    await expect.poll(() => corsCard.evaluate((el) => el.classList.contains('is-selected')),
-      { timeout: 2000 }).toBe(true);
-    expect(await corsCard.evaluate((el) => el.classList.contains('is-selected'))).toBe(true);
-    const logText = await page.locator('.proxy-setup__console').textContent();
-    expect(logText).toContain('已选择');
-
-    // PROXY-003
-    await page.getByRole('button', { name: /开始一键配置 Worker/ }).click();
-    // 等控制台输出「请填写 Cloudflare API Token」，替代固定 300ms 睡眠
-    await expect.poll(async () => (await page.locator('.proxy-setup__console').textContent()) ?? '',
-      { timeout: 2000 }).toContain('请填写 Cloudflare API Token');
-    const logText2 = await page.locator('.proxy-setup__console').textContent();
-    expect(logText2).toContain('请填写 Cloudflare API Token');
-  });
-});
+//   → 见 scripts/proxy-setup.spec.ts（按需 npm run test:e2e:subpages）

@@ -25,9 +25,11 @@ async function holdSplash(page: Page, path: string) {
       await route.continue();
     });
   }
-  // commit：HTML 响应即返回，内联脚本已在解析时同步执行完填充
+  // commit：HTML 响应即返回；但需再等就绪标记确保内联脚本已写完 data-shape（见下）
   await page.goto(path, { waitUntil: 'commit' });
-  await page.waitForSelector('#boot-splash', { state: 'attached' });
+  /* 等就绪标记而非裸 attached：#boot-splash 一被解析就 attached，但写 data-shape 的内联
+     脚本可能尚未执行（分块解析竞态，会读到 HTML 静态默认档）。[data-shape-ready] 由脚本末尾挂上。 */
+  await page.waitForSelector('#boot-splash[data-shape-ready]', { state: 'attached' });
 }
 
 /** 读取骨架关键几何：shape / 内容底边（末子元素）/ 视口高 / 占位块数。
@@ -154,7 +156,7 @@ test.describe('启动骨架：视口填充与路由感知', () => {
       });
     });
     await page.goto('/', { waitUntil: 'commit' });
-    await page.waitForSelector('#boot-splash', { state: 'attached' });
+    await page.waitForSelector('#boot-splash[data-shape-ready]', { state: 'attached' });
     await expect(page.locator('#boot-splash .bs-home .bs-rail')).toBeHidden();
   });
 
@@ -195,14 +197,14 @@ test.describe('启动骨架：视口填充与路由感知', () => {
       });
     });
     await page.goto('/', { waitUntil: 'commit' });
-    await page.waitForSelector('#boot-splash', { state: 'attached' });
+    await page.waitForSelector('#boot-splash[data-shape-ready]', { state: 'attached' });
     expect(await page.locator('#boot-splash').getAttribute('data-cols')).toBe('tv');
   });
 
   test('BOOT: 主模块放行后骨架被摘除（不残留）', async ({ page, baseURL }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     // React 首帧提交后摘除骨架；等待其 detached
-    await page.waitForSelector('#boot-splash', { state: 'detached', timeout: 20000 });
+    await page.waitForSelector('#boot-splash', { state: 'detached', timeout: 10000 });
     expect(page.url()).toBe(`${baseURL}/`);
   });
 });

@@ -307,6 +307,8 @@ const pwArgs = [
   `--output=${outDir}`,
 ];
 if (GREP) pwArgs.push('-g', GREP);
+// 透传额外 playwright 旗标（供 e2e-suite 并行分片注入 --reporter=blob --blob-report=…）
+if (process.env.E2E_PW_EXTRA) pwArgs.push(...process.env.E2E_PW_EXTRA.trim().split(/\s+/).filter(Boolean));
 
 say(`playwright 开跑：${pwArgs.slice(2).join(' ')}（预算 ${BUDGET_S}s）`);
 // 把本轮动态端口传给 playwright：config 会复用同一端口（webServer.reuseExistingServer
