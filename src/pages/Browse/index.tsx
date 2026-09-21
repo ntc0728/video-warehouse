@@ -415,7 +415,10 @@ export default function BrowsePage() {
     const store = () => useTMDBStore.getState();
     const wantFilter = JSON.stringify(toStoreFilter(filterValue));
 
-    if (!force && t === 1) {
+    // 缓存回显只服务「浏览态」（discover/top，与 query 无关）：query 非空 = 搜索态，
+    // 缓存里是上一轮的浏览/搜索快照，filter 相同也会命中 → 搜索结果被旧浏览结果顶替
+    // （store.search 根本不触发）。故搜索态一律跳过缓存，强制走 store.search。
+    if (!force && t === 1 && !query) {
       const s0 = store();
       if (
         s0.discoverResults.length > 0 &&
