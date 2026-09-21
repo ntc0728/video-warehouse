@@ -73,10 +73,8 @@ src/
 │   ├── History/         # 历史
 │   ├── SourceChecker/   # 源检测
 │   ├── Person/          # 人物
-│   ├── ProxySetup/      # 代理配置；入口 ProxySetup.tsx（⚠️ 无 index.tsx）
-│   ├── PullToRefreshDemo/   # 🚧 调试 Demo，不进正式导航
-│   ├── PlayerLab/           # 🚧 调试 Demo，不进正式导航
-│   └── PlayerMobileLab/     # 🚧 调试 Demo，不进正式导航
+│   └── ProxySetup/      # 代理配置；入口 ProxySetup.tsx（⚠️ 无 index.tsx）
+│   （2026-09-21：PlayerLab / PlayerMobileLab / PullToRefreshDemo 三个调试 demo 已删除）
 ├── services/            # Service 层（tmdbService / videoService / iptvService / epgService / httpClient）
 ├── stores/              # Zustand Store（8 个）
 ├── types/               # TypeScript 类型定义

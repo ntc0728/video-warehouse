@@ -27,13 +27,12 @@
 | 人物 | `/person/:id` | `src/pages/Person/` | `index.tsx` | PersonHeader + MovieCredits |
 | 代理配置 | `/proxy-setup` | `src/pages/ProxySetup/` | **`ProxySetup.tsx`**（⚠️ **无 index.tsx**） | cloudflare.ts |
 
-### 调试 Demo（3 个，**不进正式导航**）
+### 调试 Demo
 
-| Demo | 路由 | 目录 | 入口 | 用途 |
-| --- | --- | --- | --- | --- |
-| 下拉刷新 | `/ptr-demo` | `src/pages/PullToRefreshDemo/` | `index.tsx` | PullToRefresh 组件验收 |
-| 播放器实验室 | `/player-lab` | `src/pages/PlayerLab/` | `index.tsx`（+ `engine/` `components/`） | 播放器整改方向对照 UniversalPlayer |
-| 移动端播放器实验室 | `/player-mobile-lab` | `src/pages/PlayerMobileLab/` | `index.tsx`（+ `lib/` `components/`） | 横屏/全屏/画中画多端策略验证 |
+> 2026-09-21：原 `ptr-demo` / `player-lab` / `player-mobile-lab` 三个不进正式导航的
+> 调试 demo 页已整体删除（含路由注册与 lint/设计审计隔离配置）。播放器移动端多端
+> 策略验收改由 E2E 承担（`scripts/smoke-player-fs-mobile.spec.ts`），下拉刷新组件
+> （`src/components/ui/PullToRefresh/`，业务在用）保留其 Vitest 单测。
 
 ### ⚠️ 三个命名陷阱（猜文件名的重灾区）
 
