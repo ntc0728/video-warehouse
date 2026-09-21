@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.27.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.0...kinotv-v1.27.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **boot-splash:** 骨架 5 处与真实页错构修正 + 深色换一换白底 ([f02bf4d](https://github.com/ntc0728/video-warehouse/commit/f02bf4d28b7ca28bd8a80897fbfa335514301216))
+* **browse:** 搜索态不再误命中 discover 缓存回显，store.search 正常触发 ([99de6b3](https://github.com/ntc0728/video-warehouse/commit/99de6b36e0727b38d2fd943a776e6490dfd20c48))
+* **e2e:** 根治卡死——端口/进程安全红线 + hermetic 网络 + 5 分钟硬预算 ([14bfcfb](https://github.com/ntc0728/video-warehouse/commit/14bfcfb0f6f8661d6b0230d92d656fa9b245a93b))
+
 ## [1.27.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.5...kinotv-v1.27.0) (2026-09-18)
 
 
