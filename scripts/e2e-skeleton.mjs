@@ -39,6 +39,12 @@ import net from 'node:net';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 
+// 同 e2e-suite.mjs 顶部：剥离沙箱经 NODE_OPTIONS 注入的 delete-shim。
+// 否则 Playwright 的启动清理（上一轮 --output 目录，数百文件）会被
+// SAFE_DELETE_BULK_CONFIRM_REQUIRED 拒掉 → 整轮异常退出；global-teardown 的 rmSync 也会
+// 被静默拦截（表现为「产物已清理」但目录还在）。既定解法见 scripts/run-tests.ps1:481-482。
+delete process.env.NODE_OPTIONS;
+
 /** 向 OS 申请一个当前空闲的端口（bind 0 再释放），绝不与任何在跑的服务抢端口 */
 function getFreePort() {
   return new Promise((done, fail) => {

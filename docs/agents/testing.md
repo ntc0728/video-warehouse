@@ -163,6 +163,9 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 > 底层跑批器：`node scripts/e2e-skeleton.mjs [spec… | -g 过滤]`（preview 默认，`--dev`/`--all` 可切）。
 > **禁止**裸 `pnpm exec playwright test`（无清场/健康轮询 → 僵尸 dev server 会把每条 goto 耗满超时）。
 > 旧 `test:e2e:raw` / `test:e2e:preview` 已删除（2026-09-21）。
+> **报告**：两阶段各只写 blob（`.pw-blob`），跑完由 `merge-reports` 汇总成**一份**含 A+B 全量的
+> `playwright-report/`（html + list）。2026-09-22 前是两阶段各写同一 html outputFolder → Stage B
+> 覆盖 Stage A，默认套最终只剩 24 条 player 系用例、Stage A 那 108 条明细全丢。
 
 
 > **无 `.env.local` 时的既有失败基线**（2026-09-15 实测，worktree @ c114c867 对照同条件）：

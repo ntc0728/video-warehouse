@@ -63,6 +63,8 @@ test-results/
 .pw-out-*
 test-storage-state.json
 playwright-report/
+.pw-blob/
+.pw-blob-*/
 .playwright-cli/
 iptv-verify/
 
