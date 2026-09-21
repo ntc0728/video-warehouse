@@ -35,6 +35,25 @@ const projectRoot = fs.realpathSync.native(__dirname)
 export default defineConfig({
   root: projectRoot,
   plugins: [
+    /**
+     * 注入布局 token 单真源（2026-09-21）：
+     * 把 src/assets/styles/layout-tokens.css 全文填入 index.html 的 <!--@layout-tokens--> 占位。
+     * 为什么必需：启动骨架（index.html 内联）在 React 挂载前首屏即可见，此刻 bundle CSS
+     * （含 --card-cols 等定义）尚未加载 —— 骨架要读到 var(--card-cols) 并与真实页在任意视口
+     * 同构，token 必须随 index.html 一起到达。单真源 = layout-tokens.css（见其头注）；
+     * variables.css 另 @import 同一文件供 bundle，两路同源、值恒同。dev / build 均生效。
+     */
+    {
+      name: 'inject-layout-tokens',
+      transformIndexHtml(html) {
+        const tokensPath = path.resolve(projectRoot, 'src/assets/styles/layout-tokens.css')
+        const tokens = fs.readFileSync(tokensPath, 'utf-8')
+        return html.replace(
+          '<!--@layout-tokens-->',
+          `<style id="layout-tokens">\n${tokens}\n</style>`,
+        )
+      },
+    },
     react(),
     // Capacitor 构建不需要预压缩（Android WebView 直接读本地文件）
     // VITE_COMPRESS=false 可跳过压缩（本地开发/CI 加速）

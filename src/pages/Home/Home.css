@@ -540,10 +540,8 @@ html[data-device="app"] .home-disclaimer {
 
 @media (width >= 1024px) {
   html:not([data-device="tv"]) .home-two-col {
-    /* 左栏宽度。2026-09-10 三次收敛：300 → 280 → 260 → **240**（用户要求「适当减小一点」）。
-       240px 下左栏内容宽 ≈ 240 − 2×(--space-xs 行内距) ≈ 210px，
-       竖版海报 64×96 仍放得下且标题区余 ~130px（够 8~9 个中文字 + 省略号）。 */
-    --home-rail-w: 240px;
+    /* 左栏宽度 --home-rail-w 已移至 layout-tokens.css（单真源，2026-09-21；≥1024→240px）。
+       .home-two-col 靠继承读取；下方 grid-template-columns 的 var(--home-rail-w) 不变。 */
     /* 栏间 gap（用户要求收紧：原 --space-2xl ≈31.5px 偏大 → --space-lg ≈16.5px）。
        ⚠️ 下方 --hero-banner-h / --hero-side-w 的公式里也引用了同一档位，必须同步。 */
     --home-rail-gap: var(--space-lg);
@@ -641,12 +639,8 @@ html[data-device="app"] .home-disclaimer {
 }
 
 @media (width >= 1920px) {
-  html:not([data-device="tv"]) .home-two-col {
-    /* 2K 档左栏 280 → 260（与 1024 档同步收 20px，保持两档差值恒定） */
-    --home-rail-w: 260px;
-  }
-  /* 2K 档左栏 260px（内容宽 ≈228px）：竖版海报 64×96 → 72×108（用户要求「尽量大一点」，
-     2:3 比例不变）。行高随之 +12px，20 行总高 ≈2250px，仍在 rail 内部滚动内。 */
+  /* --home-rail-w 2K→260px 已移至 layout-tokens.css（单真源，2026-09-21）。
+     左栏 260px（内容宽 ≈228px）：竖版海报 64×96 → 72×108，行高 +12px，20 行 ≈2250px。 */
   html:not([data-device="tv"]) .cqa-heat-row--rail {
     --cqa-poster-w: 72px;
     --cqa-poster-h: 108px;
