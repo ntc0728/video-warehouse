@@ -624,7 +624,9 @@ test.describe('2.11 分页器渲染门控', () => {
 
   test('BROWSE-095: 慢网飞行中骨架独占（无分页器/空态叠加），落地后分页器出现', async ({ page }) => {
     await page.route('**/api.tmdb.org/3/search/multi**', async (route) => {
-      await new Promise((r) => setTimeout(r, 3000));
+      // 慢网 mock：本例会「等骨架独占→落地出分页器」，故该延迟占墙钟。1.5s 仍足以
+      // 稳定观测飞行中骨架（远大于渲染帧），属 testing.md ③「缩不必要的人为延迟」。
+      await new Promise((r) => setTimeout(r, 1500));
       const pg = Number(new URL(route.request().url()).searchParams.get('page') ?? 1);
       await route.fulfill({
         status: 200, contentType: 'application/json',
