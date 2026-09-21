@@ -40,16 +40,10 @@ const TOKEN_FILES = [
 ];
 
 /**
- * 沙盒（调研 demo）目录：排除出规范验收范围，与 .stylelintrc.json 的 ignoreFiles 同源。
- *
- * PlayerLab / PlayerMobileLab 在 routeConfig.ts:62,64 明确标注「不进入正式导航」，
- * 其存在价值是验证播放器交互方向，色板刻意偏离正式规范（B 站青蓝 / TDesign 灰阶）。
- * 行业通用做法是**隔离**而非整改——转正时再补齐规范（排除 ≠ 豁免债务）。
+ * 沙盒（调研 demo）目录排除钩子：与 .stylelintrc.json 的 ignoreFiles 同源。
+ * 2026-09-21：PlayerLab / PlayerMobileLab demo 已整体删除，当前无排除对象。
  */
-const EXCLUDE_DIRS = [
-  'src/pages/PlayerLab',
-  'src/pages/PlayerMobileLab',
-];
+const EXCLUDE_DIRS = [];
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

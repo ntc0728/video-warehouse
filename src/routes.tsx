@@ -30,12 +30,7 @@ const routes = [
       { path: 'browse', element: <div /> },
       { path: 'chart', element: <div /> },
       { path: 'person/:id', element: <div /> },
-      { path: 'ptr-demo', element: <div /> },
       { path: 'proxy-setup', element: <div /> },
-      // 播放器整改调研 demo 入口（实际渲染映射见 routeConfig.ts 的 routeComponentMap）
-      { path: 'player-lab', element: <div /> },
-      // 移动端横屏/全屏/画中画整改 demo 入口
-      { path: 'player-mobile-lab', element: <div /> },
     ],
   },
   {
