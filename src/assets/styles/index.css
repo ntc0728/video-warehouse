@@ -921,68 +921,16 @@ main {
 }
 
 :root {
-  --iptv-cols: 2;
-  /* 与 --iptv-cols 同档兜底；D7 由独立 :root 块合并至此（块间媒体查询只覆盖 --iptv-cols） */
-  --iptv-page-cols: 2;
-  /* ── 页面专用列数默认档（2026-09-18，说明见下方「页面专用网格列数 token」段）──
-     人物页作品网格默认跟随 --card-cols（惰性引用：--card-cols 分档一变它就跟）；
-     历史记录网格 1 列（<480）；榜单布局 2 列（桌面基准，≤1023 与 App 见下方覆盖）。 */
+  /* --iptv-cols / --iptv-page-cols / --history-cols 基值与断点阶梯已移至 layout-tokens.css（单真源，2026-09-21） */
+  /* ── 页面专用列数默认档（2026-09-18）──
+     人物页作品网格默认跟随 --card-cols（惰性引用：定义在 layout-tokens.css，分档一变它就跟）；
+     榜单布局 2 列（桌面基准，≤1023 与 App 见下方覆盖）。 */
   --person-work-cols: var(--card-cols);
-  --history-cols: 1;
   --chart-cols: 2;
 }
 
-@media (width >= 768px) and (width <= 1023px) {
-  html:not([data-device="app"]) {
-    --iptv-cols: 3;
-  }
-}
-
-/* 1024–1279 → 4 列（IPTV 卡比影视海报宽，列数少于 --card-cols 的 6 列） */
-@media (width >= 1024px) {
-  html:not([data-device="app"]) {
-    --iptv-cols: 4;
-  }
-}
-
-/* ≥1440 → 恒 5 列（2026-09-07 大屏起点由 1280 右移到 1440，播放页除外后续整改）。
-   1280–1439 回落到上一档（1024 → 4 列）。 */
-@media (width >= 1440px) {
-  html:not([data-device="app"]) {
-    --iptv-cols: 5;
-  }
-}
-
-/* ── IPTV 页专用列数 --iptv-page-cols（2026-09-08 IPTV 页大改定稿）──
-   仅 IPTV 页网格使用；收藏页 IPTV 卡片与历史页记录卡继续走 --iptv-cols，不受影响。
-   桌面端（IPTV 页新增 176px 左栏吃掉内容区宽度）降一档：
-   1024–1439 → 3 列、≥1440 → 4 列；≤767 → 2、768–1023 → 3（与 --iptv-cols 低档一致）。
-   App 端沿用 --iptv-cols 低档（not(app) 排除，:root 兜底 2）；TV 端恒 5（文件末尾覆盖）。 */
-
-@media (width >= 768px) and (width <= 1023px) {
-  html:not([data-device="app"]) {
-    --iptv-page-cols: 3;
-  }
-}
-
-@media (width >= 1024px) and (width <= 1439px) {
-  html:not([data-device="app"]) {
-    --iptv-page-cols: 3;
-  }
-}
-
-@media (width >= 1440px) {
-  html:not([data-device="app"]) {
-    --iptv-page-cols: 4;
-  }
-}
-
-/* ≥2560 → 5 列（2026-09-08 用户定稿；2560 = 断点宪法「超宽收敛」档） */
-@media (width >= 2560px) {
-  html:not([data-device="app"]) {
-    --iptv-page-cols: 5;
-  }
-}
+/* --iptv-cols / --iptv-page-cols 的基值与全部断点阶梯已移至 layout-tokens.css（单真源，2026-09-21）。
+   --iptv-cols：收藏页 IPTV 卡 / 历史页记录卡；--iptv-page-cols：仅 IPTV 页网格（下方 .iptv-page 消费）。 */
 
 /* IPTV 页网格改用专用列数变量（作用域限定 .iptv-page，其余页面不受影响） */
 .iptv-page .iptv-channel-grid {
@@ -1013,26 +961,7 @@ main {
   }
 }
 
-/* 历史页记录网格阶梯（原 .history-grid 的 6 条 @media + TV 覆盖，逐档等价搬运） */
-@media (width >= 480px) {
-  :root { --history-cols: 2; }
-}
-
-@media (width >= 768px) {
-  :root { --history-cols: 3; }
-}
-
-@media (width >= 1024px) {
-  :root { --history-cols: 4; }
-}
-
-@media (width >= 1440px) {
-  :root { --history-cols: 5; }
-}
-
-@media (width >= 1920px) {
-  :root { --history-cols: 6; }
-}
+/* 历史页记录网格阶梯（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
 
 /* 榜单页布局列：≤1023 与 App 单列（原 Chart.css 两处硬编码 grid-template-columns）。
    ⚠️ App 覆盖用 :root[data-device] 形式：本文件已有 html[data-device="app"] 块（9.1 恒移动
@@ -1046,10 +975,7 @@ main {
   --chart-cols: 1;
 }
 
-/* TV 端历史记录网格恒 5 列（原 .history-grid 的 (0,1,1) 覆盖，不随视口变；同上用 :root 形式） */
-:root[data-device="tv"] {
-  --history-cols: 5;
-}
+/* TV 端历史记录网格恒 5 列（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
 
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
 .record-card {
@@ -1291,15 +1217,10 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TV 端 IPTV 频道网格列数 — 恒定 5 列，不随视口断点变化（2026-09-03）
-   与 variables.css 末尾的 html[data-device="tv"]（--card-cols/--continue-cols）
-   同源策略：同为 (0,1,1) 特异性，靠源码顺序覆盖上方 @media 断点。
+   TV 端 IPTV 列数（--iptv-cols / --iptv-page-cols 恒 5）已移至 layout-tokens.css（单真源，2026-09-21）
+   原 html[data-device="tv"] 覆盖块（靠源码顺序取胜）一并迁出；消费方读注入的 token。
    ═══════════════════════════════════════════════════════════════════════ */
-html[data-device="tv"] {
-  --iptv-cols: 5;
-  /* IPTV 页专用列数：TV 恒 5，与 --iptv-cols 同策略 */
-  --iptv-page-cols: 5;
-}
+/* 原 html[data-device="tv"] { --iptv-cols:5; --iptv-page-cols:5; } 已移至 layout-tokens.css 的 TV 覆盖块 */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    >1440 桌面：卡片间距统一（2026-09-05 用户决策，2026-09-07 断点 1280 → 1440）

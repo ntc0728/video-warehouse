@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Layout Tokens — 网格列数 / 左栏宽度 单真源（2026-09-21 收敛建立）
+   ---------------------------------------------------------------------------
+   本文件是以下 6 个布局 token 的**唯一定义处**：
+     --card-cols / --iptv-cols / --iptv-page-cols / --history-cols / --rail-w / --home-rail-w
+
+   由来：这些定义原先散落在 variables.css（--card-cols 基值+断点阶梯+TV、--rail-w）、
+   index.css（--iptv-cols / --iptv-page-cols / --history-cols 基值+阶梯+TV）、
+   Home.css（--home-rail-w，原 scoped 在 .home-two-col）。启动骨架（index.html 内联，
+   React 挂载前首屏）读不到打包后的 bundle CSS，只能用 JS 手抄一份断点表（colCount()）——
+   那是第二真源，与本文件必然漂移（项目已多次发生「骨架列数与真实网格差一档」，
+   约定见 src/hooks/useGridCols.ts：列数真源只读 CSS token，不在 JS 里另刻断点表）。
+
+   治理：收敛到本单文件 → 被两路消费，结构由「视口 + 设备档」纯 CSS 决定，与接口数据无关：
+     ① vite 插件 transformIndexHtml 在 build/dev 期把本文件全文注入 index.html <head> 的
+        <style>，启动骨架首帧即可读到 var(--card-cols) 等（见 vite.config.ts）；
+     ② variables.css 顶部 @import 本文件 → React bundle CSS 自带一份（防御性冗余，
+        与注入值恒同；真实页组件读到的 token 名不变）。
+   ⚠️ 搬运后请勿在 variables.css / index.css / Home.css 里再次定义这 6 个 token（会重新
+     制造第二真源）。改列数 / 栏宽只改本文件。
+
+   下列媒体查询与选择器逐行等价搬自原三文件（值未改），保留原相对顺序
+   （层叠顺序 = 源码顺序，TV / 设备覆盖依赖此顺序取胜）。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 基值档（移动优先默认值） ─────────────────────────────────────────────── */
+:root {
+  --card-cols: 3;                       /* 影视卡网格：默认移动端 (<768) */
+  --iptv-cols: 2;                       /* IPTV 频道卡（收藏/历史 IPTV 卡也走它）：默认 */
+  --iptv-page-cols: 2;                  /* IPTV 页专用网格：默认 */
+  --history-cols: 1;                    /* 历史记录网格：默认 (<480) */
+  --rail-w: clamp(148px, 10vw, 248px);  /* 桌面左栏统一宽：1440→148 / 1920→192 / ≥2560→248 封顶 */
+}
+
+/* ── --card-cols 断点阶梯（驱动首页横滚行 / 收藏 / Browse / Detail 多列网格） ── */
+@media (width >= 768px) {
+  html:not([data-device="app"]) { --card-cols: 4; }
+}
+@media (width >= 1024px) {
+  html:not([data-device="app"]) { --card-cols: 5; }
+}
+@media (width >= 1280px) {
+  html:not([data-device="app"]) { --card-cols: 6; }
+}
+@media (width >= 1440px) {
+  html:not([data-device="app"]) { --card-cols: 7; }
+}
+@media (width >= 1920px) {
+  html:not([data-device="app"]) { --card-cols: 8; }
+}
+/* 2200 = 内容区封顶点：增列发生在内容停止变宽那一刻，避免「视口变宽卡片反缩小」跳变 */
+@media (width >= 2200px) {
+  html:not([data-device="app"]):not([data-device="tv"]) { --card-cols: 8; }
+}
+
+/* ── --iptv-cols 断点阶梯（IPTV 卡比影视海报宽，列数少于 --card-cols） ──────── */
+@media (width >= 768px) and (width <= 1023px) {
+  html:not([data-device="app"]) { --iptv-cols: 3; }
+}
+@media (width >= 1024px) {
+  html:not([data-device="app"]) { --iptv-cols: 4; }
+}
+@media (width >= 1440px) {
+  html:not([data-device="app"]) { --iptv-cols: 5; }
+}
+
+/* ── --iptv-page-cols 断点阶梯（仅 IPTV 页；桌面新增左栏吃掉宽度，比 --iptv-cols 降一档） ── */
+@media (width >= 768px) and (width <= 1023px) {
+  html:not([data-device="app"]) { --iptv-page-cols: 3; }
+}
+@media (width >= 1024px) and (width <= 1439px) {
+  html:not([data-device="app"]) { --iptv-page-cols: 3; }
+}
+@media (width >= 1440px) {
+  html:not([data-device="app"]) { --iptv-page-cols: 4; }
+}
+@media (width >= 2560px) {
+  html:not([data-device="app"]) { --iptv-page-cols: 5; }
+}
+
+/* ── --history-cols 断点阶梯（历史记录网格；用 :root 形式，与原 index.css 一致） ── */
+@media (width >= 480px) { :root { --history-cols: 2; } }
+@media (width >= 768px) { :root { --history-cols: 3; } }
+@media (width >= 1024px) { :root { --history-cols: 4; } }
+@media (width >= 1440px) { :root { --history-cols: 5; } }
+@media (width >= 1920px) { :root { --history-cols: 6; } }
+
+/* ── --home-rail-w：Home 左栏宽 ──────────────────────────────────────────────
+   原 scoped 在 Home.css 的 `html:not([data-device="tv"]) .home-two-col`，启动骨架
+   （无 .home-two-col 祖先）读不到。现提升为 html 级全局：值不变，.home-two-col 仍
+   靠继承照拿，骨架首屏也能读。仅 Home 两栏与骨架 home 档消费，全局化无副作用。 */
+@media (width >= 1024px) {
+  html:not([data-device="tv"]) { --home-rail-w: 240px; }
+}
+@media (width >= 1920px) {
+  html:not([data-device="tv"]) { --home-rail-w: 260px; }
+}
+
+/* ── TV 端覆盖（恒定，不随视口变；靠源码顺序 / 特异性取胜，必须置于文件末尾） ──
+   card/iptv 用 html[data-device="tv"]（0,1,1，与上方 @media 的 html:not(app) 同特异性，
+   靠后置源码顺序覆盖）；history 用 :root[data-device="tv"]（0,2,0，特异性即高于 @media
+   的 :root 0,1,0）。两种写法与原文件逐一对应，勿合并。 */
+html[data-device="tv"] {
+  --card-cols: 8;
+  --iptv-cols: 5;
+  --iptv-page-cols: 5;
+}
+:root[data-device="tv"] {
+  --history-cols: 5;
+}
