@@ -924,9 +924,8 @@ main {
   /* --iptv-cols / --iptv-page-cols / --history-cols 基值与断点阶梯已移至 layout-tokens.css（单真源，2026-09-21） */
   /* ── 页面专用列数默认档（2026-09-18）──
      人物页作品网格默认跟随 --card-cols（惰性引用：定义在 layout-tokens.css，分档一变它就跟）；
-     榜单布局 2 列（桌面基准，≤1023 与 App 见下方覆盖）。 */
+     榜单 --chart-cols 基值与全部覆盖已移至 layout-tokens.css（单真源，2026-09-21）。 */
   --person-work-cols: var(--card-cols);
-  --chart-cols: 2;
 }
 
 /* --iptv-cols / --iptv-page-cols 的基值与全部断点阶梯已移至 layout-tokens.css（单真源，2026-09-21）。
@@ -946,8 +945,8 @@ main {
    （真实锁 5 列、骨架按 --card-cols 取 4 列）。
    现把三处列数提到 :root 级 token，**页面 CSS 与骨架同读一处**：
      · --person-work-cols  人物页作品网格（768–1023 锁 5 列，其余等同 --card-cols）
-     · --history-cols      历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5）
-     · --chart-cols        榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列）
+     · --history-cols      历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5；已迁 layout-tokens.css）
+     · --chart-cols        榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列；已迁 layout-tokens.css）
    断点阶梯逐条对齐改前行为，视觉效果零变化；TV/App 覆盖靠 html[data-device] /
    :root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols 同一套做法。
    默认档（三处 token 的初值）声明在上方已有的 `:root` 块里（--iptv-cols 同一块），
@@ -963,17 +962,7 @@ main {
 
 /* 历史页记录网格阶梯（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
 
-/* 榜单页布局列：≤1023 与 App 单列（原 Chart.css 两处硬编码 grid-template-columns）。
-   ⚠️ App 覆盖用 :root[data-device] 形式：本文件已有 html[data-device="app"] 块（9.1 恒移动
-   副本），复用同名选择器会撞 stylelint no-duplicate-selectors；两种写法特异性等价、
-   都高于 :root，效果一致。 */
-@media (width <= 1023px) {
-  :root { --chart-cols: 1; }
-}
-
-:root[data-device="app"] {
-  --chart-cols: 1;
-}
+/* 榜单页布局列（--chart-cols：基值 2 / ≤1023 与 App 单列）已移至 layout-tokens.css（单真源，2026-09-21） */
 
 /* TV 端历史记录网格恒 5 列（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
 

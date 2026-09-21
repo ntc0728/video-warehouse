@@ -28,9 +28,10 @@
            首页 TopStrip+左趋势榜栏+HeroBili 融合卡（banner+右卡网格+换一换）+海报行
              （左栏与右卡仅 ≥1024 非 TV，与 .home-two-col / HeroBili 启用条件同构）/
            IPTV·Browse·收藏·历史 左栏+筛选条+网格（左栏仅 ≥1024，与真实页
-             RecordShell / Browse grid 同构）/ Chart 标签条+榜单行 /
-           Detail hero+右侧信息栏+tabs+内容卡（镜像 DetailSkeleton）/ Person hero+文本行 /
-           播放页 16:9 黑场+右侧面板列 / 其余路由 顶栏+提示（垂直居中）；
+             RecordShell / Browse grid 同构；Browse 左栏 = FilterBar 筛选组「label + 2 列 chips + 组间分割线」，
+             非频道列表条，2026-09-21 用户反馈修正）/ Chart 标签条+榜单行（--chart-cols 单真源，桌面 2 列）/
+           Detail hero（含真实页同款 max-height 曲线）+右侧信息栏+tabs+内容卡（镜像 DetailSkeleton）/ Person hero+文本行 /
+           播放页 16:9 黑场+右侧面板列（面板总高与播放器等高，镜像 .player-sidebar 比例分配）/ 其余路由 顶栏+提示（垂直居中）；
            /iptv/play 无顶栏（真实页是全屏播放器，不走 AppLayout）。
            静态默认（无 JS / 内联脚本失败的降级态）是**中性形态**（仅顶栏+提示）：
            home 形态也由脚本构建 —— 保证任何降级场景下非首页路由都不会
@@ -106,7 +107,8 @@
       .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #f0f0f0; border-radius: 12px; }
 
       /* 卡片网格：--poster 竖版海报 2:3（读 --card-cols）/ --channel 频道 3:2（--iptv-cols）/
-         --record 记录卡 16:9（--history-cols）/ --iptvpage IPTV 页频道 3:2（--iptv-page-cols）。
+         --record 记录卡 16:9（--history-cols）/ --iptvpage IPTV 页频道 3:2（--iptv-page-cols）/
+         --chart 榜单行块（--chart-cols，2026-09-21 迁入单真源：桌面 2 / ≤1023 与 App 单列）。
          列数一律读注入的 layout-tokens.css token（见约束 2），勿在此手写阶梯。
          ⚠️ 勿把 .bs-row 当某档复用 —— 元素同时带 bs-row + bs-row--xxx 两个类，写 .bs-row
          的列数会串到其它网格。 */
@@ -117,6 +119,10 @@
       .bs-row--channel { grid-template-columns: repeat(var(--iptv-cols, 2), 1fr); }
       .bs-row--iptvpage { grid-template-columns: repeat(var(--iptv-page-cols, 2), 1fr); }
       .bs-row--record { grid-template-columns: repeat(var(--history-cols, 1), 1fr); }
+      .bs-row--chart { grid-template-columns: repeat(var(--chart-cols, 1), minmax(0, 1fr)); }
+      /* 榜单行块：与 .bs-list i（Chart.css .chart-list__skeleton 四块几何）同高，
+         只是从单列换到 --chart-cols 列网格（与真实 .chart-list 同构） */
+      .bs-row--chart i { display: block; height: 3.5rem; background: #f0f0f0; border-radius: 8px; }
       .bs-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       .bs-cover, .bs-line { display: block; background: #f0f0f0; border-radius: 8px; }
       .bs-cover { aspect-ratio: 2 / 3; }
@@ -156,6 +162,11 @@
       .bs-split { display: flex; flex-direction: column; gap: 16px; }
       .bs-rail { display: none; }
       .bs-split__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+      /* Browse 左栏筛选组（镜像真实 FilterBar rail 化，2026-09-21 用户反馈修正）：
+         每组 = 组标题小字 + 固定 2 列 chips（2026-09-14 拍板恒两列），组间 1px 分割线 */
+      .bs-fgroup { display: flex; flex-direction: column; gap: 6px; }
+      .bs-fgroup + .bs-fgroup { margin-top: 6px; padding-top: 10px; border-top: 1px solid #e8e8e8; }
+      .bs-fgroup__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; }
 
       /* 提示绝对定位钉在视口底：内容按视口填满后仍可见（若留在文档流，
          填满后的溢出会把提示推出 overflow:hidden 的裁剪区） */
@@ -200,7 +211,11 @@
         .bs-split__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
         .bs-split .bs-rail i { display: block; height: 1.75rem; background: #f0f0f0; border-radius: 6px; }
         .bs-split .bs-rail i.bs-rail__title { width: 4rem; height: 0.875rem; margin-bottom: 6px; }
+        /* Browse 筛选组尺寸（需带 .bs-split .bs-rail 前缀压过上方裸 i 规则 0,2,1） */
+        .bs-split .bs-rail .bs-fgroup__label { width: 2.5rem; height: 0.75rem; border-radius: 4px; }
+        .bs-split .bs-rail .bs-fgroup__chips i { height: 1.5rem; border-radius: 999px; }
         html[data-theme="dark"] .bs-split .bs-rail { border-right-color: #2b2b2b; }
+        html[data-theme="dark"] .bs-fgroup + .bs-fgroup { border-top-color: #2b2b2b; }
       }
 
       /* 首页（2026-09-20 二次重构，用户要求与真实宽屏首页同构）：
@@ -309,19 +324,28 @@
       html[data-theme="dark"] .bs-shuffle i { background: #2a2a2a; }
       html[data-theme="dark"] .bs-home__railcard,
       html[data-theme="dark"] .bs-herobili,
-      html[data-theme="dark"] .bs-herocard,
-      html[data-theme="dark"] .bs-shuffle { background: #1f1f1f; border-color: #2b2b2b; }
+      html[data-theme="dark"] .bs-herocard { background: #1f1f1f; border-color: #2b2b2b; }
+      /* ⚠️ 换一换必须单独提高特异性（2026-09-22 修复深色白底）：它的浅色规则写在
+         ≥1024 media 里且带 #boot-splash ID 前缀（1,2,1），普通 dark 规则（0,2,1）被压回白色 */
+      html[data-theme="dark"] #boot-splash:not([data-cols="tv"]) .bs-shuffle { background: #1f1f1f; border-color: #2b2b2b; }
 
-      /* Detail 形态（2026-09-20 重构，镜像 DetailSkeleton.tsx 真实结构）：
+      /* Detail 形态（2026-09-20 重构，镜像 DetailSkeleton.tsx 真实结构；2026-09-21 用户反馈修正：
+         hero 补真实页同款 max-height 曲线、信息卡改镜像 .detail-skeleton__info-card 的 3.25em 块，
+         不再用细条导致 banner 占比过大、右栏显空）：
          top（hero 16:9 + 右侧 chips/信息网格；≥1024 非 app/tv 两栏 1.4fr/1fr，
          与 .detail-skeleton__top 同构）→ tabs（2 枚）→ 内容卡（演员圆头像行 +
          简介行 + 剧照网格）→ 推荐行（FILL 补，复用 poster 网格）。 */
       .bs-detail__top { display: flex; flex-direction: column; gap: 16px; }
-      .bs-detail__hero { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #f0f0f0; border-radius: 12px; }
+      /* max-height 镜像 .detail-hero / DetailSkeleton：min(65vh, --layout-detail-hero-max-h)
+         基值档 clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem)（variables.css 同值硬编码，骨架读不到 bundle token）。
+         ⚠️ 它只在矮视口卡住超高 banner，1280×720 下 banner 自然高 404 < 上限 468 不生效——
+         「banner 显大」的真因是右栏不齐平（见下方 align-self: stretch，2026-09-22 二次修正） */
+      .bs-detail__hero { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: min(65vh, clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem)); background: #f0f0f0; border-radius: 12px; }
       .bs-detail__side { display: flex; flex-direction: column; gap: 10px; }
       .bs-detail__chips { display: flex; flex-wrap: wrap; gap: 8px; }
       .bs-detail__infogrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-      .bs-detail__infogrid i { display: block; height: 1.25rem; background: #f0f0f0; border-radius: 6px; }
+      /* 卡高固定 3.25rem（镜像 .detail-skeleton__info-card 的 3.25em）：信息卡不拉伸（2026-09-22 用户反馈） */
+      .bs-detail__infogrid i { display: block; height: 3.25rem; background: #f0f0f0; border-radius: 8px; }
       .bs-detail__tabs { display: flex; gap: 24px; padding: 4px 2px; border-bottom: 1px solid #e8e8e8; }
       .bs-detail__tabs i { display: block; width: 5rem; height: 1rem; background: #f0f0f0; border-radius: 6px; }
       .bs-detail__content { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
@@ -339,6 +363,19 @@
           gap: 16px;
           align-items: start;
         }
+        /* 右栏高 = banner 高 + 白卡壳（2026-09-22 实测对齐：真实页 .detail-hero-side
+           724×407 与骨架 hero 719×404 同尺寸，banner 无需缩；视觉差异真源是真实右栏
+           有 surface 卡壳（bg+border+radius+padding）且下沿与 banner 齐平，
+           骨架旧版无壳 → 上半截读起来像「一大块灰 banner」。镜像 Detail.css ≥1024 的
+           .detail-hero-side chrome；栏内信息卡固定高不拉伸（用户反馈）。 */
+        #boot-splash:not([data-cols="tv"]):not([data-cols="app"]) .bs-detail__side {
+          align-self: stretch;
+          padding: 16px;
+          background: #fff;
+          border: 1px solid #e8e8e8;
+          border-radius: 12px;
+        }
+        html[data-theme="dark"] #boot-splash:not([data-cols="tv"]):not([data-cols="app"]) .bs-detail__side { background: #1f1f1f; border-color: #2b2b2b; }
       }
       html[data-theme="dark"] .bs-detail__hero,
       html[data-theme="dark"] .bs-detail__infogrid i,
@@ -364,11 +401,16 @@
       .bs-player__panel { height: 7rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
       .bs-player__panel--tall { height: 13rem; }
 
-      /* 桌面（≥1024，与 AppLayout 的 wide 起点一致）：播放区吃满剩余宽，右侧出现面板列 */
+      /* 桌面（≥1024，与 AppLayout 的 wide 起点一致）：播放区吃满剩余宽，右侧出现面板列。
+         面板总高 = 播放器高（2026-09-21 用户反馈修正）：side 随 row 交叉轴 stretch
+         吃到 stage 高，面板改按真实 .player-panel 的 movie 变体比例 3:7 分配，
+         不再用固定 7rem/13rem 导致总高与播放器脱钩 */
       @media (width >= 1024px) {
         .bs-player { flex-direction: row; align-items: flex-start; }
         .bs-player__stage { flex: 1 1 auto; min-width: 0; }
-        .bs-player__side { display: flex; flex: 0 0 clamp(220px, 18vw, 320px); }
+        .bs-player__side { display: flex; flex: 0 0 clamp(220px, 18vw, 320px); align-self: stretch; }
+        .bs-player__panel { flex: 3 1 0; height: auto; min-height: 0; }
+        .bs-player__panel--tall { flex: 7 1 0; }
       }
 
       html[data-theme="dark"] .bs-player__panel { background: #1f1f1f; border-color: #2b2b2b; }
@@ -388,6 +430,7 @@
       html[data-theme="dark"] .bs-chip,
       html[data-theme="dark"] .bs-sec,
       html[data-theme="dark"] .bs-list i,
+      html[data-theme="dark"] .bs-row--chart i,
       html[data-theme="dark"] .bs-lines i,
       html[data-theme="dark"] .bs-rail i { background: #2a2a2a; }
 
@@ -511,6 +554,7 @@
           channel: __tokInt('--iptv-cols', 2),
           record: __tokInt('--history-cols', 1),
           iptvpage: __tokInt('--iptv-page-cols', 2),
+          chart: __tokInt('--chart-cols', 1),
         };
         function colCount(kind) { return COLS[kind] || 3; }
         /* 满行网格：卡数向上取整到列数整数倍 */
@@ -531,10 +575,36 @@
           for (var i = 0; i < 9; i++) aside.appendChild(el(''));
           return aside;
         }
+        /* Browse 专属左栏（2026-09-21 用户反馈修正）：真实页 ≥1024 左栏是 FilterBar
+           rail 化的筛选组（类型/分类/地区/年份，每组 label + 2 列 chips，组间分割线），
+           不是 IPTV 那种频道列表条 —— 旧的通用 rail() 用在这里属结构错构。
+           组数/顺序镜像 FilterBar.tsx；chips 数为轮廓级近似（真实随数据变），
+           取偶数保证 2 列满行。 */
+        function filterRail() {
+          var aside = el('bs-rail', 'div');
+          var counts = [6, 8, 6, 8];
+          for (var g = 0; g < counts.length; g++) {
+            var group = el('bs-fgroup', 'div');
+            group.appendChild(el('bs-fgroup__label'));
+            var chips = el('bs-fgroup__chips', 'div');
+            for (var i = 0; i < counts[g]; i++) chips.appendChild(el(''));
+            group.appendChild(chips);
+            aside.appendChild(group);
+          }
+          return aside;
+        }
         function listRows(count) {
           var list = el('bs-list', 'div');
           for (var i = 0; i < count; i++) list.appendChild(el(''));
           return list;
+        }
+        /* 榜单行网格（chart 专用）：行块直接铺在 --chart-cols 列网格里，
+           与真实 .chart-list（ChartSkeleton  cols×rows）同构；
+           区别于 listRows（单列 flex，现已无调用方——勿用作榜单行） */
+        function chartRows(count) {
+          var row = el('bs-row bs-row--chart', 'div');
+          for (var i = 0; i < count; i++) row.appendChild(el(''));
+          return row;
         }
         function lines(count) {
           var box = el('bs-lines', 'div');
@@ -542,21 +612,23 @@
           return box;
         }
         function hero() { return el('bs-hero', 'div'); }
-        /* 首页左栏：今日趋势榜卡（标题 + 海报行列表，行数取轮廓级 8 行；
-           真实榜 20 行内部滚动，启动骨架不追逐） */
+        /* 首页左栏：今日趋势榜卡（标题 + 海报行列表，行数镜像真实栏 TOP 20——
+           「已知常量不当未知」2026-09-21：旧 8 行在 1920×1080 下填不满视口；
+           真实榜 20 行总高本就超出首屏，骨架同观感，溢出由 overflow 裁剪） */
         function heatRail() {
           var card = el('bs-home__railcard', 'div');
           card.appendChild(el('bs-sec'));
-          for (var i = 0; i < 8; i++) {
-            var item = el('bs-heat', 'div');
-            item.appendChild(el('bs-heat__poster', 'div'));
-            var text = el('bs-heat__text', 'div');
-            text.appendChild(el(''));
-            text.appendChild(el(''));
-            item.appendChild(text);
-            card.appendChild(item);
-          }
+          for (var i = 0; i < 20; i++) card.appendChild(heatItem());
           return card;
+        }
+        function heatItem() {
+          var item = el('bs-heat', 'div');
+          item.appendChild(el('bs-heat__poster', 'div'));
+          var text = el('bs-heat__text', 'div');
+          text.appendChild(el(''));
+          text.appendChild(el(''));
+          item.appendChild(text);
+          return item;
         }
         /* HeroBili 融合卡：banner（提示居中区）+ 右卡网格（列数×2 行，
            useHeroSideCols 同源断点：1024–1280 → 2 列，≥1281 → 3 列）+ 换一换竖条 */
@@ -584,11 +656,11 @@
           card.appendChild(gridBox);
           return card;
         }
-        /* 通用左栏+主列包裹（browse / collections / history / iptv 共用）：
-           <1024 CSS 自动堆叠，榜栏隐藏 */
-        function withRail(mainBlocks) {
+        /* 通用左栏+主列包裹（collections / history / iptv 走默认频道式 rail；
+           browse 传入 filterRail）：<1024 CSS 自动堆叠，榜栏隐藏 */
+        function withRail(mainBlocks, railNode) {
           var split = el('bs-split', 'div');
-          split.appendChild(rail());
+          split.appendChild(railNode || rail());
           var main = el('bs-split__main', 'div');
           for (var i = 0; i < mainBlocks.length; i++) main.appendChild(mainBlocks[i]);
           split.appendChild(main);
@@ -670,10 +742,10 @@
             home.appendChild(two);
             return [home];
           },
-          /* browse：≥1024 真实页是「左栏 rail + 右结果区」（Browse.css grid
-             var(--rail-w) minmax(0,1fr)）—— 骨架同构带左栏 */
-          browse: function () { return [withRail([filterBar(), fullGrid('poster', 2)])]; },
-          chart: function () { return [filterBar(), listRows(8)]; },
+          /* browse：≥1024 真实页是「左栏 FilterBar 筛选组 + 右结果区」（Browse.css grid
+             var(--rail-w) minmax(0,1fr)）—— 骨架左栏用 filterRail 同构 */
+          browse: function () { return [withRail([filterBar(), fullGrid('poster', 2)], filterRail())]; },
+          chart: function () { return [filterBar(), chartRows(colCount('chart') * 4)]; },
           /* collections / history：真实页走 RecordShell，≥1024 非 app/tv 出左栏
              （.record-aside，--rail-w + 右 1px 边框线）—— 骨架同构带左栏 */
           collections: function () { return [withRail([filterBar(), sec(), fullGrid('poster', 1), sec(), fullGrid('channel', 1)])]; },
@@ -732,7 +804,7 @@
             fillRows(host, function () { return fullGrid('poster', 1); }, true);
           },
           browse: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('poster', 1); }); },
-          chart: function () { fillRows(body, function () { return listRows(8); }); },
+          chart: function () { fillRows(body, function () { return chartRows(colCount('chart')); }); },
           collections: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('channel', 1); }, true); },
           history: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('record', 1); }); },
           iptv: function () {
