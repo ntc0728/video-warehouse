@@ -14,7 +14,7 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('6.1 主题切换', () => {
   test('SET-001/002/003: 浅色 / 深色 / 跟随系统三种主题均可激活', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.theme-btn').first()).toBeVisible({ timeout: 5000 });
 
     // 浅色（太阳图标）
@@ -48,7 +48,7 @@ test.describe('6.2 TMDB 配置', () => {
   test('SET-010/015: TMDB Token 状态显示且可打开配置弹窗', async ({ page }) => {
     // TMDB Token 配置入口在「视频设置」tab（源码 VideoTab），需深链直达
     await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-content, .settings-tab').first()).toBeVisible({ timeout: 5000 });
 
     // SET-015: 已配置 / 未配置 状态文本
@@ -77,7 +77,7 @@ test.describe('6.3 视频源配置', () => {
     // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
     // 用 ?tab=video 深链直达「视频设置」tab。
     await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.source-manager-block[data-scene="video"]')).toBeVisible({ timeout: 5000 });
 
     // SET-020: 面板与条目存在（条目来自 bootstrapScene('video') 异步水合，
@@ -106,7 +106,7 @@ test.describe('6.3 视频源配置', () => {
 test.describe('6.4 播放设置', () => {
   test('SET-040: 跳过片头开关', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 2026-09-20 纠偏：原实现只断「.list-item 数>0」，从未定位到开关本体 = 空壳。
     // 真实开关在「播放设置」tab 的 PlaybackTab（List.Item + Switch role=switch）。
     await page.locator('.settings-tab', { hasText: '播放' }).first().click();
@@ -130,7 +130,7 @@ test.describe('6.5 IPTV 配置', () => {
     // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
     // 用 ?tab=iptv 深链直达「IPTV 设置」tab。
     await page.goto('/settings?tab=iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.source-manager-block[data-scene="iptv"]')).toBeVisible({ timeout: 5000 });
 
     // SET-050: 面板与条目存在
@@ -170,7 +170,7 @@ test.describe('6.6 关于与彩蛋', () => {
   test('SET-071/073/074: 版本号彩蛋提示、跳转源检测页、KinoTV 跳转代理页', async ({ page }) => {
     // SET-071: 桌面端「关于」tab 点击版本号 1 次出现 Toast
     await page.goto('/settings?tab=about', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('[class*="version"]').first()).toBeVisible({ timeout: 5000 });
 
     const versionItem = page.locator('[class*="version"]').first();
@@ -183,7 +183,7 @@ test.describe('6.6 关于与彩蛋', () => {
     // 以下移动端子页进入，portal 不遮挡（SET-073 / SET-074）
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-menu-item').first()).toBeVisible({ timeout: 5000 });
 
     // SET-073: 连续点击版本号 3 次 → 跳转 /source-checker
@@ -210,7 +210,7 @@ test.describe('6.6 关于与彩蛋', () => {
 
     // SET-074: 从 /settings 重新进入「关于」，连续点击 KinoTV 3 次 → 跳转 /proxy-setup
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-menu-item').first()).toBeVisible({ timeout: 5000 });
     await page.locator('.settings-menu-item', { hasText: '关于' }).first().click();
     await page.waitForSelector('.settings-subpage', { timeout: 5000 });
@@ -243,7 +243,7 @@ test.describe('6.7 个人资料（头像与昵称）', () => {
   test('SET-080/081/082/083: 资料项可见、编辑弹窗、昵称保存、恢复默认', async ({ page }) => {
     // 个人资料在「个人设置」tab（源码 PersonalTab），深链直达避免依赖 TabBar 查找
     await page.goto('/settings?tab=personal', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-profile').first()).toBeVisible({ timeout: 5000 });
 
     // SET-080: 个人资料 banner（头像 + 昵称）可见
@@ -308,7 +308,7 @@ test.describe('6.8 移动端设置主页菜单项', () => {
 
   test('SET-090/091/093: 菜单项标题副标题、资料区进个人页、子页顶栏+双行卡', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-menu-item').first()).toBeVisible({ timeout: 5000 });
 
     // SET-090: 每个菜单项显示标题与关联副标题
@@ -382,7 +382,7 @@ test.describe('6.9 顶部搜索框', () => {
 
   test('SET-085/086/087: 下拉无热门搜索、搜索过滤菜单、历史与全局独立', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.sticky-header__search input')).toBeVisible({ timeout: 5000 });
 
     const searchInput = page.locator('.sticky-header__search input');
@@ -424,7 +424,7 @@ test.describe('6.11 桌面端左栏竖排导航（方案 B）', () => {
   test('SET-095/096: 左栏竖排导航布局 + tab 点击切换内容', async ({ page }) => {
     // 用 video tab（外观 tab 内容不足一屏、无法验证滚动行为）
     await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.settings-sidenav')).toBeVisible({ timeout: 5000 });
 
     // SET-095: 左栏可见，含「设置」标题与 6 个竖排 tab，激活态为「视频设置」

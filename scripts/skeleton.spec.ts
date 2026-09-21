@@ -123,7 +123,7 @@ const PAIRS: GridPair[] = [
 /** 打开页面（等 CSS chunk 就位）并注入探针 DOM */
 async function gotoAndProbe(page: Page, pair: GridPair) {
   await page.goto(pair.url, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await page.evaluate(
     ({ id, html }) => {
       document.getElementById(id)?.remove();
@@ -231,7 +231,7 @@ async function holdIndexedDB(page: Page) {
 test.describe('骨架契约 A：色源唯一', () => {
   test('SKEL-001: 浅色下 --color-skeleton 与 --color-placeholder-shimmer-* 同值', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const v = await page.evaluate(() => {
       const cs = getComputedStyle(document.documentElement);
       const g = (n: string) => cs.getPropertyValue(n).trim();
@@ -248,7 +248,7 @@ test.describe('骨架契约 A：色源唯一', () => {
 
   test('SKEL-002: 深色下同样同值（别名在主题块内也成立）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const v = await page.evaluate(() => {
       document.documentElement.setAttribute('data-theme', 'dark');
       const cs = getComputedStyle(document.documentElement);

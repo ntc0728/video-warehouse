@@ -13,12 +13,12 @@ const PROBE_PORT = process.env.GRID_PROBE_PORT ?? '3002';
 test.skip(`网格重构后：展开面板 header 不动、body 平滑（手工调试，需 :${PROBE_PORT} 起服务）`, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`http://127.0.0.1:${PROBE_PORT}/`, { waitUntil: 'domcontentloaded' });
-  await page.locator('a[href^="/detail/"]').first().waitFor({ timeout: 30000 });
+  await page.locator('a[href^="/detail/"]').first().waitFor({ timeout: 10000 });
   const href = await page.locator('a[href^="/detail/"]').first().getAttribute('href') || '';
   await page.goto(`http://127.0.0.1:${PROBE_PORT}/play/${href.replace('/detail/', '')}`, {
     waitUntil: 'domcontentloaded',
   });
-  await page.locator('.player-panel--cms').first().waitFor({ timeout: 30000 });
+  await page.locator('.player-panel--cms').first().waitFor({ timeout: 10000 });
   await page.waitForTimeout(1500);
 
   const body = page.locator('.player-panel--cms .player-panel-body').first();

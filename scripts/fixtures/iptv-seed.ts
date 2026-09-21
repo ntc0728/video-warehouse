@@ -8,7 +8,7 @@
  * 用法（顺序不能反）：
  * ```ts
  * await page.goto('/', { waitUntil: 'domcontentloaded' });
- * await page.waitForSelector('.app-shell', { timeout: 20000 });
+ * await page.waitForSelector('.app-shell', { timeout: 10000 });
  * await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-5 体育赛事高清']);
  * await page.goto('/iptv/play?url=...&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88');
  * ```

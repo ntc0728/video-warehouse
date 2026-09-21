@@ -84,7 +84,7 @@ function countRowsByVideoIndex(videoId: string): Promise<number> {
 test('COL-CROSS-001: 两页签并发收藏同一视频 → DB 仅一条记录', async ({ page, context }) => {
   // 1. 主 page 建会话 + 清残留
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await page.evaluate(deleteRowsByVideoIndex, MOVIE_ID);
 
   // 2. 第二页签（同 context 共享 IndexedDB），补挂与 fixture 相同的 mock 路由
@@ -97,8 +97,8 @@ test('COL-CROSS-001: 两页签并发收藏同一视频 → DB 仅一条记录', 
 
   const collectBtn1 = page.locator('.detail-btn-collect, [class*="btn-collect"]').first();
   const collectBtn2 = page2.locator('.detail-btn-collect, [class*="btn-collect"]').first();
-  await collectBtn1.waitFor({ state: 'visible', timeout: 20000 });
-  await collectBtn2.waitFor({ state: 'visible', timeout: 20000 });
+  await collectBtn1.waitFor({ state: 'visible', timeout: 10000 });
+  await collectBtn2.waitFor({ state: 'visible', timeout: 10000 });
 
   // 内存都为空 → 按钮均显示可收藏（未「已收藏」）；若显示已收藏说明残留未清干净，测试前提不成立
   await expect.poll(async () => (await collectBtn1.textContent()) ?? '').not.toContain('已收藏');
@@ -131,7 +131,7 @@ const VID_HISTORY = 'xcc-u1-history';
 /** 挂载 useUserStore 到 window.__us 并确保 DB 已加载 */
 async function mountUserStore(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await page.evaluate(async () => {
     const mod = await import('/src/stores/useUserStore.ts');
     (window as unknown as { __us: unknown }).__us = mod.useUserStore;
@@ -271,7 +271,7 @@ const CH_HIST = 'iptv-cross-ch-2';
 /** 挂载 useIPTVStore 到 window.__iptv */
 async function mountIptvStore(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await page.evaluate(async () => {
     const mod = await import('/src/stores/useIPTVStore.ts');
     (window as unknown as { __iptv: unknown }).__iptv = mod.useIPTVStore;
@@ -362,7 +362,7 @@ const ST_TOKEN = 'st-crosstab-token-123456';
 /** 挂载 useSettingsStore 到 window.__ss */
 async function mountSettingsStore(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await page.evaluate(async () => {
     const mod = await import('/src/stores/useSettingsStore.ts');
     (window as unknown as { __ss: unknown }).__ss = mod.useSettingsStore;

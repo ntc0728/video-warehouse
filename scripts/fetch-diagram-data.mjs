@@ -409,7 +409,7 @@ async function fetchAllIPTVData() {
 
   for (const source of sourcesToFetch) {
     console.log(`    获取: ${source.name}...`);
-    const text = await fetchTextViaProxy(source.url, { timeout: 20000 });
+    const text = await fetchTextViaProxy(source.url, { timeout: 10000 });
     if (!text) {
       sourceStatus.push({ name: source.name, url: source.url, status: 'failed', channelCount: 0 });
       continue;

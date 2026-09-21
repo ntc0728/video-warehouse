@@ -15,7 +15,7 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('9.1 网速检测', () => {
   test('CHK-001/004: 检测按钮 + 检测中状态', async ({ page }) => {
     await page.goto('/source-checker', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 001 检测按钮存在
     const checkBtn = page.locator('.btn-small, [class*="btn-small"]').first();
@@ -42,7 +42,7 @@ test.describe('9.1 网速检测', () => {
 test.describe('9.6 Tab 与统计', () => {
   test('CHK-050/051/052: Tab 切换 + 默认 Tab + 统计卡片', async ({ page }) => {
     await page.goto('/source-checker', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 050 5 个 Tab 存在
     const tabs = page.locator('.tab-btn, [class*="tab-btn"]');

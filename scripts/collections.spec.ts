@@ -15,7 +15,7 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('7.1 Tab 切换', () => {
   test('COL-001/002: 默认影视 Tab + 切换到 IPTV Tab', async ({ page }) => {
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 001 默认选中"影视" Tab
     await expect
@@ -44,7 +44,7 @@ test.describe('7.1 Tab 切换', () => {
 test.describe('7.2 影视收藏', () => {
   test('COL-011: 收藏为空时显示空状态', async ({ page }) => {
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 预期结果: 有收藏数据或显示空状态（二者其一必然存在）
     await expect
@@ -68,7 +68,7 @@ test.describe('7.2 影视收藏', () => {
 test.describe('7.4 批量管理', () => {
   test('COL-030/031: 批量管理按钮 + 桌面内嵌筛选条', async ({ page }) => {
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 030 批量管理按钮存在
     const editBtn = page.locator('.action-btn--batch');

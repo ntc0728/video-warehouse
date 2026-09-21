@@ -16,7 +16,7 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('5.1 页面加载', () => {
   test('IPTV-001/003/004: 正常加载 / 空状态 / 代理警告', async ({ page }) => {
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 001 正常加载
     await expect
@@ -53,10 +53,10 @@ test.describe('5.1 页面加载', () => {
 test.describe('5.2 频道分组筛选', () => {
   test('IPTV-010/011: 分组标签显示 + 分组折叠', async ({ page }) => {
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 010 分组标签（桌面左栏分类条目）— waitForSelector 已是条件等待，无需额外睡眠
-    await expect(page.locator('.iptv-rail__item').first()).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.iptv-rail__item').first()).toBeVisible({ timeout: 10000 });
     const railItemCount = await page.locator('.iptv-rail__item').count();
     expect(railItemCount).toBeGreaterThan(0);
 
@@ -88,7 +88,7 @@ test.describe('5.2 频道分组筛选', () => {
 test.describe('5.5 频道检测', () => {
   test('IPTV-040/041: 检测按钮 + 可用性 badge', async ({ page }) => {
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 040 检测按钮存在
     const checkBtn = page.locator('.refresh-btn').first();
@@ -122,7 +122,7 @@ test.describe('5.7 懒加载与滚动', () => {
   test('IPTV-062: 返回顶部', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 等频道网格（或空状态）渲染完成，容器才具备可滚动高度
     await expect
@@ -186,8 +186,8 @@ test.describe('5.10 频道台标回退链', () => {
     });
 
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 20000 }).catch(() => {});
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 10000 }).catch(() => {});
     // 台标回退链依赖真实频道数据：轮询等首张台标 img 挂载 + 在线台标库请求落地；
     // 无频道数据的环境轮询超时后照旧走下方「跳过」分支（与原固定睡眠语义一致）
     await page
@@ -239,9 +239,9 @@ test.describe('5.11 频道卡片收藏按钮', () => {
     await page.route('**/i.imgur.com/**', (route) => route.fulfill({ status: 404, body: '' }));
 
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect
-      .poll(() => page.locator('.iptv-channel-card-wrap').count(), { timeout: 25000 })
+      .poll(() => page.locator('.iptv-channel-card-wrap').count(), { timeout: 10000 })
       .toBeGreaterThan(0);
 
     const counts = await page.evaluate(() => ({

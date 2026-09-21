@@ -65,7 +65,7 @@ async function injectMockCastSdk(page: import('@playwright/test').Page) {
 // 重新挂载播放器（/play 依赖真实 CMS 源加载，串行执行避免代理打满）
 async function reloadPlayer(page: import('@playwright/test').Page) {
   await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+  await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 10000 });
   // 等播放器就绪（脱离 placeholder/loading 态，控制栏可用）
   await expect(page.locator('.up-universal-player:not(.up-placeholder)')).toBeVisible({ timeout: 10000 });
 }
@@ -78,7 +78,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
   test('加载与布局稳定性：002 正常加载 / 003 首次 loading / 090 侧栏 tv 骨架恒定 / 091 滚动槽位 / 092 侧栏零跳动 / 093 窄屏非滚动容器', async ({ page }) => {
     // ── PLAYER-002: 正常加载 TMDB 视频 ──
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 条件等待：.player-page 渲染完成
     await expect.poll(
       async () => page.evaluate(() => !!document.querySelector('.player-page, [class*="player-page"]')),
@@ -118,7 +118,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
       });
     });
     await page.goto('/play/tmdb-tv-123', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.player-sidebar-skeleton', { timeout: 15000 });
+    await page.waitForSelector('.player-sidebar-skeleton', { timeout: 10000 });
     const readSkeleton = () => page.evaluate(() => {
       const sb = document.querySelector('.player-sidebar');
       if (!sb) return null;
@@ -139,7 +139,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
     // ── PLAYER-091: ≥1024（分栏起点，ADR-023 rail 类布局）时 .player-page 是滚动容器且常驻预留滚动条槽位 ──
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.player-page', { timeout: 15000 });
+    await page.waitForSelector('.player-page', { timeout: 10000 });
     const cs = await page.evaluate(() => {
       const el = document.querySelector('.player-page');
       if (!el) return null;
@@ -153,7 +153,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
     // ⚠️ 样本宽度必须 < 分栏起点 1024：1024 起 .player-page 即为桌面滚动容器。
     await page.setViewportSize({ width: 900, height: 768 });
     await page.goto('/play/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.player-page', { timeout: 15000 });
+    await page.waitForSelector('.player-page', { timeout: 10000 });
     const overflowY93 = await page.evaluate(() => {
       const el = document.querySelector('.player-page');
       return el ? getComputedStyle(el).overflowY : null;
@@ -201,7 +201,7 @@ test.describe('4.1 页面加载与布局稳定性（含侧栏滚动不跳动、<
 test.describe('4.5 CMS 源管理', () => {
   test('PLAYER-040/045: CMS 面板显示与折叠/展开', async ({ page }) => {
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 条件等待：CMS 面板渲染完成
     await expect.poll(
       async () => page.evaluate(() => !!document.querySelector('.player-panel, [class*="cms"]')),
@@ -221,7 +221,7 @@ test.describe('4.5 CMS 源管理', () => {
 test.describe('4.8 收藏与详情', () => {
   test('PLAYER-070/071: 收藏按钮与详情区域', async ({ page }) => {
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 条件等待：详情区域渲染完成
     await expect.poll(
       async () => page.evaluate(() => !!document.querySelector('.player-detail-section, [class*="player-detail"]')),
@@ -511,7 +511,7 @@ test.describe('4.13 投屏能力分端（Web Cast / iOS 隐藏）', () => {
       await page.waitForFunction(() => {
         const el = document.querySelector('.up-header-actions');
         return !!el && el.getBoundingClientRect().width > 0;
-      }, { timeout: 15000 });
+      }, { timeout: 10000 });
       await expect(page.locator('.up-header-actions button[aria-label="投屏到电视"]')).toHaveCount(0);
       await expect(page.locator('.up-header-actions button[aria-label="更多设置"]')).toBeVisible();
     });

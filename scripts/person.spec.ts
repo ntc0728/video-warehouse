@@ -19,7 +19,7 @@ test.describe('10.1 页面加载', () => {
   test('PER-001/003: 正常加载人物详情 + 无效 ID 显示错误', async ({ page }) => {
     // 001 正常加载
     await page.goto(`/person/${TEST_PERSON_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect
       .poll(async () => page.evaluate(() => !!document.querySelector('.person-page, [class*="person"]')), { timeout: 5000 })
       .toBeTruthy();
@@ -46,7 +46,7 @@ test.describe('10.1 页面加载', () => {
 test.describe('10.2 Hero 区域', () => {
   test('PER-010/012/018: 头像 + 又名 + 返回按钮', async ({ page }) => {
     await page.goto(`/person/${TEST_PERSON_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 010 头像显示
     await expect
@@ -72,7 +72,7 @@ test.describe('10.2 Hero 区域', () => {
 test.describe('10.3 作品列表 Tab', () => {
   test('PER-020: 电影 Tab', async ({ page }) => {
     await page.goto(`/person/${TEST_PERSON_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     const tabs = page.locator('.person-tab, [class*="person-tab"]');
     await expect.poll(async () => tabs.count(), { timeout: 5000 }).toBeGreaterThan(0);
@@ -90,7 +90,7 @@ test.describe('10.3 作品列表 Tab', () => {
 test.describe('10.4 作品卡片与懒加载', () => {
   test('PER-030: 作品卡片显示', async ({ page }) => {
     await page.goto(`/person/${TEST_PERSON_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     await expect
       .poll(async () => page.evaluate(() => !!document.querySelector('.person-work-grid, [class*="work-grid"]')), { timeout: 5000 })

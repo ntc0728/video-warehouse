@@ -59,7 +59,7 @@ test.describe('PLAYER 源不可用自动故障转移', () => {
     // 自动切到了次线路。这一步是真正的「等待」，不能提前结束测试。
     await expect
       .poll(() => seen.some((u) => u.includes('cms-mock.local/stream')), {
-        timeout: 30000,
+        timeout: 10000,
         message: '应自动切到次线路并请求活 HLS（故障转移生效）',
       })
       .toBeTruthy();
