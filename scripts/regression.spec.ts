@@ -136,10 +136,10 @@ async function seedHistory(page: Page, records: SeedRecord[]) {
 // ── 通用：打开 Detail 并等待 CMS 源出现 ───────────────────────
 async function openDetail(page: Page, id: string) {
   await page.goto(`/detail/${id}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 15000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   const playlistTab = page.locator('.detail-tab', { hasText: /播放列表/ });
   await playlistTab.click();
-  await page.waitForSelector('.detail-source-group, .detail-source-all-btn', { timeout: 15000 });
+  await page.waitForSelector('.detail-source-group, .detail-source-all-btn', { timeout: 10000 });
   // 等播放列表内容稳定（源分组 / 全部按钮可见），替代固定 500ms 睡眠
   await expect(page.locator('.detail-source-group, .detail-source-all-btn').first()).toBeVisible({ timeout: 5000 });
 }
@@ -169,7 +169,7 @@ test.describe('跨页联动回归', () => {
   test('首页导航链: Banner→详情 / 分类→浏览 / 卡片→详情 / 侧边栏→首页', async ({ page }) => {
     // X-001: 首页 Banner → 详情页
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const ctaBtn = page.locator('.hero-banner__cta, [class*="hero-banner__cta"]').first();
     await expect(ctaBtn).toBeVisible({ timeout: 3000 });
     if (await ctaBtn.isVisible().catch(() => false)) {
@@ -183,7 +183,7 @@ test.describe('跨页联动回归', () => {
     // 圆卡 .category-quick-access__card 的回退区间为 768–1023，故本段改用 900 视口。
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const chips = page.locator('.category-quick-access__card');
     await expect(chips.first()).toBeVisible({ timeout: 3000 });
     if (await chips.first().isVisible().catch(() => false)) {
@@ -193,7 +193,7 @@ test.describe('跨页联动回归', () => {
 
     // X-004: 首页卡片 → 详情页
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const card = page.locator('.video-card a, .video-card').first();
     await expect(card).toBeVisible({ timeout: 3000 });
     if (await card.isVisible().catch(() => false)) {
@@ -204,7 +204,7 @@ test.describe('跨页联动回归', () => {
     // X-010: 侧边栏 → 首页
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const homeLink = page.locator('.sticky-header__logo-group').first();
     await expect(homeLink).toBeVisible({ timeout: 5000 });
     if (await homeLink.isVisible().catch(() => false)) {
@@ -216,7 +216,7 @@ test.describe('跨页联动回归', () => {
   test('详情页 → 播放页（继续播放）', async ({ page }) => {
     // X-030
     await page.goto(`/detail/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const playBtn = page.locator('.detail-btn-play, [class*="btn-play"]').first();
     await expect(playBtn).toBeVisible({ timeout: 3000 });
     if (await playBtn.isVisible().catch(() => false)) {
@@ -228,7 +228,7 @@ test.describe('跨页联动回归', () => {
   test('详情页 → 首页（来源返回 / 深链兜底返回）', async ({ page }) => {
     // X-036: 从首页进入详情再返回
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const card = page.locator('.video-card a, .video-card').first();
     await expect(card).toBeVisible({ timeout: 3000 });
     if (await card.isVisible().catch(() => false)) {
@@ -244,7 +244,7 @@ test.describe('跨页联动回归', () => {
 
     // X-037: 深链详情页（无 state）返回兜底首页
     await page.goto(`/detail/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const backBtn2 = page.locator('.detail-hero-back, [class*="hero-back"]').first();
     await expect(backBtn2).toBeVisible({ timeout: 3000 });
     if (await backBtn2.isVisible().catch(() => false)) {
@@ -256,7 +256,7 @@ test.describe('跨页联动回归', () => {
   test('播放页 → 详情页（深链返回）', async ({ page }) => {
     // X-041
     await page.goto(`/play/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const backBtn = page.locator('.up-header-back, [class*="header-back"]').first();
     await expect(backBtn).toBeVisible({ timeout: 8000 });
     if (await backBtn.isVisible().catch(() => false)) {
@@ -269,9 +269,9 @@ test.describe('跨页联动回归', () => {
     // X-042
     await mockCms(page); // 播放页依赖 CMS 代理数据；不 mock 时沙箱真实代理偶发失败 → 错误态不渲染返回按钮
     await page.goto(`/play/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    // 等播放页头部（返回按钮）挂载完成，替代固定 3000ms 睡眠（mock CMS 加载偏慢，放宽到 15s）
-    await expect(page.locator('.up-header-back, [class*="header-back"]').first()).toBeVisible({ timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    // 等播放页头部（返回按钮）挂载完成，替代固定 3000ms 睡眠（上限 10s，硬规矩：单步等待 ≤10s）
+    await expect(page.locator('.up-header-back, [class*="header-back"]').first()).toBeVisible({ timeout: 10000 });
     const initialUrl = page.url();
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 5000 });
@@ -283,7 +283,7 @@ test.describe('跨页联动回归', () => {
   test('深链返回链: 详情→首页 / 播放→详情 / 人物→首页', async ({ page }) => {
     // X-090: 深链 → 详情页 → 返回首页
     await page.goto(`/detail/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const back1 = page.locator('.detail-hero-back, [class*="hero-back"]').first();
     await expect(back1).toBeVisible({ timeout: 3000 });
     if (await back1.isVisible().catch(() => false)) {
@@ -293,7 +293,7 @@ test.describe('跨页联动回归', () => {
 
     // X-091: 深链 → 播放页 → 返回详情页
     await page.goto(`/play/${MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const back2 = page.locator('.up-header-back, [class*="header-back"]').first();
     await expect(back2).toBeVisible({ timeout: 8000 });
     if (await back2.isVisible().catch(() => false)) {
@@ -303,7 +303,7 @@ test.describe('跨页联动回归', () => {
 
     // X-093: 深链 → 人物页 → 返回（无 fallback 时行为取决于浏览器历史，不硬断言）
     await page.goto('/person/128', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const back3 = page.locator('.person-hero-back, [class*="hero-back"]').first();
     await expect(back3).toBeVisible({ timeout: 3000 });
     expect(await back3.count()).toBeGreaterThan(0);
@@ -320,7 +320,7 @@ test.describe('跨页联动回归', () => {
 
     // X-060: 设置页 → 源检测页（版本号彩蛋）
     await page.goto('/settings?tab=about', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const versionItem = page.locator('[class*="version"]').first();
     await expect(versionItem).toBeVisible({ timeout: 1000 });
     expect(await versionItem.count()).toBeGreaterThan(0);
@@ -338,7 +338,7 @@ test.describe('跨页联动回归', () => {
   test('设置修改主题 → 全局生效', async ({ page }) => {
     // X-106
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     const moonBtn = page.locator('.theme-btn').nth(1);
     await expect(moonBtn).toBeVisible({ timeout: 1000 });
     expect(await moonBtn.count()).toBeGreaterThan(0);
@@ -362,7 +362,7 @@ test.describe('跨页联动回归', () => {
     // X-120: 首页 → 详情 → 首页（滚动位置恢复，无硬断言）
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.video-card a, .video-card').first()).toBeVisible({ timeout: 3000 });
     await page.evaluate(() => window.scrollTo(0, 2000));
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 2000 });
@@ -386,7 +386,7 @@ test.describe('跨页联动回归', () => {
     // 故改用 900 视口验证经典 HeroBanner 分支的分层行为。
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 15000 });
+    await page.waitForSelector('.hero-banner__bg-layer.is-active[src]', { timeout: 10000 });
     // 等当前活动 banner 图层真正带 src（图片就绪），替代固定 6000ms 睡眠
     await expect.poll(() => page.evaluate(() => {
       const el = document.querySelector('.hero-banner__bg-layer.is-active') as HTMLElement | null;
@@ -464,7 +464,7 @@ test.describe('详情页回归', () => {
       title: '权利的游戏',
     }]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await openDetail(page, TV_ID);
     await page.locator('.detail-source-all-btn').first().click();
     await page.waitForSelector('.playlist-modal .playlist-cell--ep', { timeout: 10000 });
@@ -495,7 +495,7 @@ test.describe('详情页回归', () => {
       },
     ]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await openDetail(page, MOVIE_ID);
     await page.locator('.detail-source-all-btn').first().click();
     await page.waitForSelector('.playlist-modal .playlist-cell--line', { timeout: 10000 });
@@ -526,7 +526,7 @@ test.describe('详情页回归', () => {
       },
     ]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.record-card', { timeout: 10000 });
     const cardCountBefore = await page.locator('.record-card').count();
@@ -554,8 +554,8 @@ test.describe('详情页回归', () => {
       title: '测试影片 1',
     }]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.hero-banner__cta--continue', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await page.waitForSelector('.hero-banner__cta--continue', { timeout: 10000 });
     const text = await page.locator('.hero-banner__cta--continue').first().innerText();
     expect(text).toContain('继续播放');
   });
@@ -576,7 +576,7 @@ test.describe('详情页回归', () => {
       title: '权利的游戏',
     }]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await openDetail(page, TV_ID);
     await page.locator('.detail-source-all-btn').first().click();
     await page.waitForSelector('.playlist-modal .playlist-cell--ep', { timeout: 10000 });
@@ -634,9 +634,9 @@ test.describe('详情页回归', () => {
     await openDetail(page, MOVIE_ID);
     await page.locator('.detail-source-all-btn').first().click();
     await page.waitForSelector('.playlist-modal .lazy-image-container', { timeout: 10000 });
-    await page.waitForSelector('.playlist-modal .lazy-image', { timeout: 15000 });
+    await page.waitForSelector('.playlist-modal .lazy-image', { timeout: 10000 });
     await page.locator('.playlist-modal .lazy-image-fallback').first()
-      .waitFor({ state: 'attached', timeout: 25000 });
+      .waitFor({ state: 'attached', timeout: 10000 });
     expect(await page.locator('.playlist-modal .lazy-image-placeholder').count()).toBe(0);
 
     // REG-015: IPTV 首载无数据时显示整页 AppLoading（不渲染筛选卡）
@@ -666,14 +666,14 @@ test.describe('详情页回归', () => {
     // 2026-09-12 骨架整改：整页 AppLoading → IPTV 页专属骨架（rail/移动两套）。
     // 2026-09-20 修正：≥1280 走 rail 档，其根类名是 `.iptv-skeleton--rail`（无 `.iptv-skeleton`
     // token），旧选择器只匹配移动档 → rail 视口下永不命中（卡死年代没人跑全量漏检的存量缺陷）。
-    await page.waitForSelector('.iptv-page .iptv-skeleton, .iptv-page .iptv-skeleton--rail', { timeout: 15000 });
+    await page.waitForSelector('.iptv-page .iptv-skeleton, .iptv-page .iptv-skeleton--rail', { timeout: 10000 });
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
   });
 
   test('体验修复: Person 页电影按年份倒序', async ({ page }) => {
     // REG-017
     await page.goto('/person/128', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.person-work-card .video-card', { timeout: 15000 });
+    await page.waitForSelector('.person-work-card .video-card', { timeout: 10000 });
     // 等按年份倒序排序完成：首张作品年份就绪为 2023，替代固定 500ms 睡眠
     await expect.poll(async () =>
       /\b(19|20)\d{2}\b/.exec(await page.locator('.person-work-card .video-card').first().innerText())?.[0] ?? '',
@@ -686,7 +686,7 @@ test.describe('详情页回归', () => {
   test('SearchBox 实时搜索: 结果 / 失败 / 无数据', async ({ page }) => {
     const openHome = async (p: Page) => {
       await p.goto('/', { waitUntil: 'domcontentloaded' });
-      await p.waitForSelector('.search-box__input', { timeout: 15000 });
+      await p.waitForSelector('.search-box__input', { timeout: 10000 });
     };
 
     // REG-021: 实时显示 TMDB 结果（防抖 + 名称 + 类型标签）
@@ -729,7 +729,7 @@ test.describe('9.1 修复', () => {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       // 2026-09-20：mock 下 React 挂载变快，#root 首个子节点可能是 react-hot-toast 的
       // aria-live 容器（常驻 hidden）；契约本意是「有可见内容、不白屏」→ 限定可见子节点。
-      await expect(page.locator('#root > *:visible').first()).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('#root > *:visible').first()).toBeVisible({ timeout: 10000 });
       const html = await page.evaluate(() => document.querySelector('#root')?.innerHTML ?? '');
       expect(html.length).toBeGreaterThan(0);
     });
@@ -741,14 +741,14 @@ test.describe('9.1 修复', () => {
       await mockNativeApp(page);
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.sticky-header', { timeout: 15000 });
+      await page.waitForSelector('.sticky-header', { timeout: 10000 });
       expect(await page.locator('.sticky-header__menu-btn').count()).toBe(0);
 
       // FIX-104
       await mockNativeApp(page);
       await page.setViewportSize({ width: 812, height: 375 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForSelector('.app-shell', { timeout: 10000 });
       // 等横屏移动布局计算完成：--card-cols 收敛为 '3'，替代固定 1500ms 睡眠
       await expect.poll(() => page.evaluate(() =>
         getComputedStyle(document.documentElement).getPropertyValue('--card-cols').trim()),
@@ -785,7 +785,7 @@ test.describe('9.1 修复', () => {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => localStorage.removeItem('app-settings'));
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.home-disclaimer', { timeout: 15000 });
+      await page.waitForSelector('.home-disclaimer', { timeout: 10000 });
       // 等免责声明布局稳定（可见），替代固定 500ms 睡眠
       await expect(page.locator('.home-disclaimer')).toBeVisible({ timeout: 2000 });
       const box = await page.locator('.home-disclaimer').boundingBox();
@@ -1044,8 +1044,8 @@ test.describe('全局问题', () => {
     });
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 20000 }).catch(() => {});
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await page.waitForSelector('.iptv-channel-grid .iptv-channel-card', { timeout: 10000 }).catch(() => {});
     // 等 IPTV 频道卡片加载完成，替代固定 3000ms 睡眠
     await expect.poll(async () => page.locator('.iptv-channel-card').count(), { timeout: 5000 }).toBeGreaterThan(0);
     const letterCount = await page.evaluate(() =>
@@ -1105,7 +1105,7 @@ test.describe('全局问题', () => {
 test.describe('代理配置', () => {
   test('PROXY-001: 路由可访问，页面结构完整', async ({ page }) => {
     await page.goto('/proxy-setup', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.proxy-setup', { timeout: 15000 });
+    await page.waitForSelector('.proxy-setup', { timeout: 10000 });
     // 等标题渲染，替代固定 800ms 睡眠
     await expect(page.locator('.proxy-setup__title')).toBeVisible({ timeout: 2000 });
     const title = await page.locator('.proxy-setup__title').textContent();
@@ -1118,7 +1118,7 @@ test.describe('代理配置', () => {
 
   test('PROXY-002/003: 选择高亮 + 未填 Token 报错', async ({ page }) => {
     await page.goto('/proxy-setup', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.proxy-setup', { timeout: 15000 });
+    await page.waitForSelector('.proxy-setup', { timeout: 10000 });
     // 等卡片渲染，替代固定 800ms 睡眠
     const corsCard = page.locator('.proxy-setup__card').first();
     await expect(corsCard).toBeVisible({ timeout: 2000 });

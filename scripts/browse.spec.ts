@@ -20,11 +20,11 @@ const POLL = { intervals: [50, 100, 250, 500] };
 test.describe('2.1 搜索模式切换', () => {
   test('BROWSE-001/002: 默认智能检索且可切换到直链搜索', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // BROWSE-001: 默认选中"智能检索" Tab
     const smartTab = page.locator('.browse-search-tab').first();
-    await expect(smartTab).toBeVisible({ timeout: 15000 });
+    await expect(smartTab).toBeVisible({ timeout: 10000 });
     await expect
       .poll(() => smartTab.evaluate((el) => el.classList.contains('active')), { ...POLL, timeout: 3000 })
       .toBe(true);
@@ -45,14 +45,20 @@ test.describe('2.1 搜索模式切换', () => {
 
 test.describe('2.2 搜索功能', () => {
   test('BROWSE-010/012/013/014: 正常搜索、清空恢复、无结果、刷新清空输入框', async ({ page }) => {
+    // hermetic 化（2026-09-21）：本组唯一真实外网依赖是默认视图的 CMS 聚合（经 CORS
+    // 代理，代理抖动=全组假红）。TMDB 走 fixture mock 直连（含 zzz→空 规则），不动；
+    // 这里只把 CMS 通道封成确定性空集——搜索态/空态判定完全由 TMDB mock 决定。
+    await page.route(/ac=videolist|ac%3Dvideolist/, (route) =>
+      route.fulfill({ json: { code: 1, msg: 'ok', page: 1, limit: 20, total: 1, pagecount: 1, list: [] } }),
+    );
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     const searchInput = page.locator('.sticky-header .search-box__input');
     const resultsBody = page.locator('.browse-results-body, [class*="browse-grid"]').first();
 
     // BROWSE-010: 正常搜索显示结果网格
-    await expect(searchInput).toBeVisible({ timeout: 15000 });
+    await expect(searchInput).toBeVisible({ timeout: 10000 });
     await searchInput.fill('复仇者联盟');
     await searchInput.press('Enter');
     await expect(resultsBody).toBeVisible({ timeout: 10000 });
@@ -70,10 +76,11 @@ test.describe('2.2 搜索功能', () => {
     // BROWSE-013: 搜索无结果显示空状态
     await searchInput.fill('zzzxxxnotexist12345');
     await searchInput.press('Enter');
+    // 上限 10s（硬规矩：单步等待 ≤10s）：空态需等「全部源集齐且都为空」才渲染（mock 延迟确定性）
     await expect
       .poll(
         () => page.evaluate(() => !!document.querySelector('.empty-state, [class*="empty"]')),
-        { ...POLL, timeout: 12000 },
+        { ...POLL, timeout: 10000 },
       )
       .toBeTruthy();
 
@@ -82,10 +89,10 @@ test.describe('2.2 搜索功能', () => {
     await searchInput.press('Enter');
     await expect(resultsBody).toBeVisible({ timeout: 10000 });
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 等页面重新水合完成（搜索框 + 结果区就绪）后再一次性断言输入框为空
-    await expect(searchInput).toBeVisible({ timeout: 15000 });
-    await expect(resultsBody).toBeVisible({ timeout: 15000 });
+    await expect(searchInput).toBeVisible({ timeout: 10000 });
+    await expect(resultsBody).toBeVisible({ timeout: 10000 });
     expect(await searchInput.inputValue()).toBe('');
   });
 });
@@ -97,19 +104,19 @@ test.describe('2.2 搜索功能', () => {
 test.describe('2.3 筛选与排序', () => {
   test('BROWSE-020/023/025: 分类筛选栏、排序栏、结果总数均存在', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // BROWSE-020: FilterBar 存在
     const filterBar = page.locator('.filter-bar, [class*="filter"]');
-    await expect.poll(() => filterBar.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
+    await expect.poll(() => filterBar.count(), { ...POLL, timeout: 10000 }).toBeGreaterThan(0);
 
     // BROWSE-023: 排序栏存在
     const sortBar = page.locator('.browse-sort-bar, [class*="sort"]');
-    await expect.poll(() => sortBar.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
+    await expect.poll(() => sortBar.count(), { ...POLL, timeout: 10000 }).toBeGreaterThan(0);
 
     // BROWSE-025: 显示"共 X 条"结果数
     const countEl = page.locator('.browse-sort-bar__count, [class*="count"]');
-    await expect.poll(() => countEl.count(), { ...POLL, timeout: 15000 }).toBeGreaterThan(0);
+    await expect.poll(() => countEl.count(), { ...POLL, timeout: 10000 }).toBeGreaterThan(0);
   });
 });
 
@@ -120,11 +127,11 @@ test.describe('2.3 筛选与排序', () => {
 test.describe('2.4 CMS 直链搜索', () => {
   test('BROWSE-030: CMS 搜索正常', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 操作: 切换到直链搜索模式
     const cmsTab = page.locator('.browse-search-tab').nth(1);
-    await expect(cmsTab).toBeVisible({ timeout: 15000 });
+    await expect(cmsTab).toBeVisible({ timeout: 10000 });
     await cmsTab.click();
     await expect
       .poll(() => cmsTab.evaluate((el) => el.classList.contains('active')), { ...POLL, timeout: 2500 })
@@ -143,7 +150,7 @@ test.describe('2.4 CMS 直链搜索', () => {
           page.evaluate(
             () => !!document.querySelector('[class*="source-status"], [class*="indicator"]'),
           ),
-        { ...POLL, timeout: 12000 },
+        { ...POLL, timeout: 10000 },
       )
       .toBeTruthy();
   });
@@ -165,11 +172,11 @@ test.describe('2.7 移动端搜索', () => {
     });
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 移动端顶栏中央常驻搜索框（0b1e20a 起取消「点击图标展开」临时搜索模式）
     const mobileInput = page.locator('.sticky-header .search-box__input').first();
-    await expect(mobileInput).toBeVisible({ timeout: 15000 });
+    await expect(mobileInput).toBeVisible({ timeout: 10000 });
 
     // 第一次搜索：mobile-a
     await mobileInput.fill('mobile-a');
@@ -202,11 +209,11 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
   // ① 命令栏入口结构（双行布局 + 全屏筛选面板打开/关闭）
   test('BROWSE-070/071/072/074/078/080: 命令栏双行布局、筛选面板开关、模式切换、桌面守卫、已选轨', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // BROWSE-070: 移动端命令栏根节点渲染 + 样式已加载
     const bmb = page.locator('.bmb').first();
-    await expect(bmb).toBeVisible({ timeout: 15000 });
+    await expect(bmb).toBeVisible({ timeout: 10000 });
     // 样式表可能晚于 DOM 就绪，轮询等 computed style 生效（替代固定睡眠）
     await expect
       .poll(() => bmb.evaluate((el) => getComputedStyle(el).display), { ...POLL, timeout: 3000 })
@@ -308,9 +315,9 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     // BROWSE-074: 桌面宽视口不渲染移动端命令栏（切换视口回归守卫）
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 桌面布局落地信号：桌面搜索 Tab 可见 → 再断言移动端命令栏未渲染
-    await expect(page.locator('.browse-search-tab').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.browse-search-tab').first()).toBeVisible({ timeout: 10000 });
     expect(await page.locator('.bmb').count()).toBe(0);
   });
 
@@ -324,7 +331,7 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     });
 
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
 
     // 打开筛选面板
@@ -369,7 +376,7 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
       await route.continue();
     });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     const box = page.locator('.sticky-header .search-box__input').first();
     await expect(box).toBeVisible({ timeout: 10000 });
@@ -394,7 +401,7 @@ test.describe('2.9 移动端筛选面板底部操作区', () => {
 
   test('BROWSE-081/082: 底部操作区真固定（不随面板滚动）+ 挡住它的返回顶部圆钮不参与绘制', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
 
     // 前置：先滚过返回顶部圆钮的显示阈值，让它进入可见态（复现「圆钮盖住完成按钮」的场景）
@@ -496,8 +503,8 @@ test.describe('2.10 逻辑分页', () => {
     await mockDriftDiscover(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 10000 });
 
     // 1440 → --card-cols 7 → 每页 35 张（7×5），两页都不得有余量波动
     const expectFullRows = async (label: string) => {
@@ -522,8 +529,8 @@ test.describe('2.10 逻辑分页', () => {
     await mockDriftDiscover(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 10000 });
 
     const cols = await page.evaluate(() =>
       parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-cols').trim(), 10));
@@ -545,8 +552,8 @@ test.describe('2.10 逻辑分页', () => {
     await mockDriftDiscover(page, 50000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
-    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 20000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
+    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 10000 });
 
     // 逻辑末页 = min(ceil(100000/35)=2858, ceil(500×40/35)=572) → 572（硬顶生效）
     const cols = await page.evaluate(() =>
@@ -606,10 +613,10 @@ test.describe('2.11 分页器渲染门控', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await searchFromHeader(page, '单页剧');
 
-    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.browse-card-grid .video-card').first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.browse-card-grid .video-card')).toHaveCount(1);
     await expect(page.locator('.browse-pagination')).toHaveCount(0);
     await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
@@ -635,7 +642,7 @@ test.describe('2.11 分页器渲染门控', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await searchFromHeader(page, '慢网剧');
 
     // 飞行中：骨架显示，分页器与空态都不得渲染（fixed 空态/分页器与骨架同帧 = 叠字）
@@ -644,7 +651,7 @@ test.describe('2.11 分页器渲染门控', () => {
     await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
 
     // 落地后：分页器出现（多页数据），空态仍不出现
-    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.browse-pagination__jump-input')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.empty-state-wrapper')).toHaveCount(0);
   });
 });

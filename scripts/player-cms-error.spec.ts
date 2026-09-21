@@ -23,13 +23,13 @@ test.describe('PLAYER CMS 业务错误码', () => {
     });
 
     await page.goto(`/play/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 等待失败态落定：「暂无数据，请尝试切换其他 CMS 源」空态出现
     await expect
       .poll(
         async () => page.evaluate(() => !!document.querySelector('.player-empty-state')),
-        { timeout: 20000, message: '业务错误码应落入「暂无数据」空态而非永久加载' },
+        { timeout: 10000, message: '业务错误码应落入「暂无数据」空态而非永久加载' },
       )
       .toBeTruthy();
 

@@ -27,7 +27,7 @@ test.describe('1.1 页面加载与初始状态', () => {
 
     // 004: 有 Token 且数据就绪显示完整首页
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect.poll(() => page.evaluate(() => !!document.querySelector('.home-page, [class*="home"]')), { timeout: 8000 }).toBeTruthy();
     const hasHomeContent = await page.evaluate(() => {
       return !!document.querySelector('.home-page, [class*="home"]');
@@ -39,7 +39,7 @@ test.describe('1.1 页面加载与初始状态', () => {
     await expect.poll(() => page.evaluate(() => {
       const loading = document.querySelector('.app-loading');
       return loading ? getComputedStyle(loading).display !== 'none' : false;
-    }), { timeout: 13000 }).toBe(false);
+    }), { timeout: 10000 }).toBe(false);
 
     // ── 无 Token：001 配置提示 / 002 点击跳转设置页 ──
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -67,7 +67,7 @@ test.describe('1.1 页面加载与初始状态', () => {
 test.describe('1.2 HeroBanner 交互', () => {
   test('Banner/缩略图点击跳转详情（010 Banner存在 / 012 缩略图 / 011 CTA）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.home-hero, [class*="hero"]').first()).toBeVisible({ timeout: 8000 });
 
     // 010: Banner 存在且可显示
@@ -84,7 +84,7 @@ test.describe('1.2 HeroBanner 交互', () => {
 
     // 011: Banner CTA 点击跳转详情页（重新回首页，避免坐标命中已卸载节点）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.hero-banner__cta').first()).toBeVisible({ timeout: 8000 });
     let ok = false;
     for (let i = 0; i < 12 && !ok; i += 1) {
@@ -126,7 +126,7 @@ test.describe('1.3 分类快捷入口', () => {
 
     // ── 020: 点击首个分类跳转浏览页 ──
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
     const chips = page.locator('.category-quick-access__card');
     const count = await chips.count();
@@ -139,7 +139,7 @@ test.describe('1.3 分类快捷入口', () => {
     for (const tc of CATEGORY_TEST_CASES) {
       await page.setViewportSize({ width: 767, height: 1024 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 15000 });
+      await page.waitForSelector('.app-shell', { timeout: 10000 });
       await expect(page.locator('.category-quick-access')).toBeVisible({ timeout: 8000 });
 
       const categoryBtn = page.locator(
@@ -169,7 +169,7 @@ test.describe('1.3 分类快捷入口', () => {
     // ── 024b: 分类跳转后搜索框输入验证 ──
     await page.setViewportSize({ width: 767, height: 1024 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access')).toBeVisible({ timeout: 8000 });
 
     const categoryBtn = page.locator('.category-quick-access__card[aria-label="分类：电影"]');
@@ -211,7 +211,7 @@ test.describe('1.3b 桌面端分类入口', () => {
 
     // 060: 分类快选可见且点击跳转 /browse
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access').first()).toBeVisible({ timeout: 8000 });
     const qa = page.locator('.category-quick-access').first();
     await expect(qa).toBeVisible();
@@ -225,7 +225,7 @@ test.describe('1.3b 桌面端分类入口', () => {
 
     // 061: 顶栏提供 IPTV 与设置入口
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header__nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header__nav', { timeout: 10000 });
     await expect(page.locator('.sticky-header__nav-item').first()).toBeVisible({ timeout: 8000 });
     const titles = await page.evaluate(() =>
       [...document.querySelectorAll('.sticky-header__nav-item')].map(
@@ -244,7 +244,7 @@ test.describe('1.3b 桌面端分类入口', () => {
 test.describe('1.4 TMDBMovieRow 行数据', () => {
   test('行标题+水平滚动+卡片点击跳转（030/031/035）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.home-rows, [class*="home-row"]').first()).toBeVisible({ timeout: 8000 });
 
     // 030: 行标题正确显示
@@ -286,7 +286,7 @@ test.describe('1.5 全局交互', () => {
     // 真实滚动容器是 .app-shell__scroll（非 window）。scroll 监听在 React effect 挂载后才生效，
     // 若滚动过早事件会丢失 → 用轮询反复滚动，直到监听器就绪、按钮渲染。
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect.poll(async () => {
       // ⚠️ 每轮都必须产生「变化后」的滚动位置：固定值重复设置是 no-op、不派发 scroll，
       // 若首轮设置时 React 滚动监听尚未挂载（并发慢环境下更易命中），事件丢失后
@@ -295,7 +295,7 @@ test.describe('1.5 全局交互', () => {
       const el = page.locator('.app-shell__scroll');
       await el.evaluate((n) => { n.scrollTop = n.scrollTop > 1000 ? 900 : 2000; }).catch(() => {});
       return page.locator('.back-to-top-button').count();
-    }, { timeout: 12000 }).toBeGreaterThan(0);
+    }, { timeout: 10000 }).toBeGreaterThan(0);
     const backToTop = page.locator('.back-to-top-button');
     if (await backToTop.isVisible().catch(() => false)) {
       await backToTop.click();
@@ -314,7 +314,7 @@ test.describe('1.5 全局交互', () => {
     await errPage.goto('/', { waitUntil: 'domcontentloaded' });
     await expect.poll(
       () => errPage.evaluate(() => !!document.querySelector('.home-empty, .home-token-required')),
-      { timeout: 20000 },
+      { timeout: 10000 },
     ).toBeTruthy();
     await errCtx.close();
   });
@@ -324,7 +324,7 @@ test.describe('1.5 全局交互', () => {
 
     // 045: logo 右侧不显示 kinoTV，顶栏中央为常驻搜索框
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.sticky-header')).toBeVisible({ timeout: 8000 });
     await expect(
       page.locator('.sticky-header__logo-group .sticky-header__brand'),
@@ -336,7 +336,7 @@ test.describe('1.5 全局交互', () => {
 
     // 046: 打开侧边栏后头部显示 logo 与品牌字
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.sticky-header__menu-btn').first()).toBeVisible({ timeout: 8000 });
     const menuBtn = page.locator('.sticky-header__menu-btn').first();
     await expect(menuBtn).toBeVisible({ timeout: 5000 });
@@ -356,7 +356,7 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
   test('小视口(800×900)分类快选渲染 6 项 + 桌面搜索框（055/056）', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access').first()).toBeVisible({ timeout: 8000 });
 
     // 055: 分类快选渲染（桌面隐藏规则已解禁），800px 仍属 mobile → 6 项精简集
@@ -391,7 +391,7 @@ test.describe('1.3c 宽屏分类面板', () => {
   const waitPageReady = async (page: import('@playwright/test').Page) => {
     await expect.poll(
       async () => page.locator('.tmdb-movierow, .browse-results-body, .browse-card--results, .settings-page, .cqa-heat-row, .category-quick-access__card').first().count(),
-      { timeout: 15000 },
+      { timeout: 10000 },
     ).toBeGreaterThan(0);
   };
   // hover 开面板：反复 hover 直到面板出现。数据刷新导致 re-render 瞬间收起时，poll 发现面板消失会重新 hover 撑住，
@@ -405,7 +405,7 @@ test.describe('1.3c 宽屏分类面板', () => {
         await page.locator('.cqa-nav__item').nth(n).hover();
       }
       return page.locator('.cqa-overlay .cqa-hotcard').count();
-    }, { timeout: 15000 }).toBeGreaterThan(0);
+    }, { timeout: 10000 }).toBeGreaterThan(0);
   };
   const openPanelOverlay = async (page: import('@playwright/test').Page, n: number) => {
     await waitPageReady(page);
@@ -416,14 +416,14 @@ test.describe('1.3c 宽屏分类面板', () => {
         await page.locator('.cqa-nav__item').nth(n).hover();
       }
       return page.locator('.cqa-overlay').count();
-    }, { timeout: 15000 }).toBeGreaterThan(0);
+    }, { timeout: 10000 }).toBeGreaterThan(0);
   };
   test('面板入口与常驻布局（070 chips/071 热度榜/074 全部分类/083 完整榜单）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // 070: chips 融合顶栏、8 入口、热度徽标移除、默认 overlay 收起
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     const navItems = page.locator('.cqa-nav__item');
     expect(await navItems.count()).toBe(8); // 7 分类 chip + 全部分类
@@ -437,7 +437,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 2026-09-20：进入过渡覆盖层（09-18 特性）挂载本身有竞态，等它卸载不可靠；
     // 作用域直接排除骨架页（.home-skeleton 内复用真实 rail 组件，会出现双份 1..20）。
     const liveTrend = page.locator('.home-page:not(.home-skeleton) .cqa-heat-row');
-    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__item', { timeout: 15000 });
+    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__item', { timeout: 10000 });
     expect(await liveTrend.locator('.cqa-trend__item').count()).toBeGreaterThan(0);
     // 2026-09-11 行为变更：左栏榜头 `.cqa-heat-row__head`（标题/副标题/ⓘ）整块删除，
     // 标题（今日趋势 N 条）与口径说明上移到首页顶部过渡带 `.home-topstrip__stat`。
@@ -458,11 +458,11 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 083: 首页左栏为趋势榜（无「查看完整榜单」入口）；点条目前往影片详情
     // （作用域排除 .home-skeleton：进入过渡覆盖层内复用真实 rail，见 071 注释）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__row', { timeout: 15000 });
+    await page.waitForSelector('.home-page:not(.home-skeleton) .cqa-heat-row .cqa-trend__row', { timeout: 10000 });
     expect(await page.locator('.cqa-heat-row__more').count()).toBe(0);
     await page.locator('.home-page:not(.home-skeleton) .cqa-trend__row').first().click();
     await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
-    await page.waitForSelector('.detail-hero', { timeout: 15000 });
+    await page.waitForSelector('.detail-hero', { timeout: 10000 });
   });
 
   test('mega 展开/子分类切换/跳转/tooltip（072/073/077/079/087）', async ({ page }) => {
@@ -470,7 +470,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 072: 悬停「电影」chip → mega 面板展开
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     // 等趋势数据就绪（正文 rail 渲染 = 首页异步数据稳定），避免 hover 过早触发后 re-render 误收起面板。
     // 作用域排除 .home-skeleton：进入过渡覆盖层短暂双挂载会让无界 `.cqa-heat-row` 双命中（strict violation）
@@ -490,15 +490,15 @@ test.describe('1.3c 宽屏分类面板', () => {
     // 077: 趋势条目跳转影片详情
     // （原为「分类卡跳 /chart」，随首页 rail 形态改为趋势榜而调整 —— 趋势榜无 /chart 入口）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row .cqa-trend__row', { timeout: 15000 });
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__row', { timeout: 10000 });
     await expect(page.locator('.cqa-heat-row .cqa-trend__row').first()).toBeVisible({ timeout: 8000 });
     await page.locator('.cqa-trend__row').first().click();
     await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
-    await page.waitForSelector('.detail-hero', { timeout: 15000 });
+    await page.waitForSelector('.detail-hero', { timeout: 10000 });
 
     // 079: 趋势口径 tooltip
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 15000 });
+    await page.waitForSelector('.cqa-heat-row .cqa-trend__item', { timeout: 10000 });
     // 2026-09-11：副标题 `.cqa-heat-row__sub` 已随榜头删除，口径 ⓘ 迁至 `.home-topstrip__stat`
     await expect(page.locator('.home-topstrip__stat .cqa-info-tip')).toBeVisible({ timeout: 8000 });
     const rowTip = page.locator('.home-topstrip__stat .cqa-info-tip');
@@ -519,12 +519,12 @@ test.describe('1.3c 宽屏分类面板', () => {
       await route.fallback();
     });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await openPanel(page, 1);
     await page.locator('.cqa-subgenres__chip').nth(1).click();
     await page.waitForSelector('.cqa-panel__loading', { timeout: 5000 });
     await expect(page.locator('.cqa-panel__loading')).toContainText('正在获取');
-    await page.waitForSelector('.cqa-panel__loading', { state: 'detached', timeout: 15000 });
+    await page.waitForSelector('.cqa-panel__loading', { state: 'detached', timeout: 10000 });
     expect(await page.locator('.cqa-hotcard').count()).toBe(9);
   });
 
@@ -533,7 +533,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     //（2026-09-10 用户拍板宽屏起点为 1024（含端点），圆卡回退区间 768–1023）
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
     expect(await page.locator('.cqa-nav').count()).toBe(0);
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible();
@@ -542,7 +542,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 076: 点击面板以外区域收起；「首页」chip 不展开面板
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanelOverlay(page, 1);
@@ -554,7 +554,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 080: 子分类切换保留旧网格
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanel(page, 1);
@@ -565,7 +565,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 081: 面板分页 → 末页「查看更多」跳 browse
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanel(page, 1);
@@ -591,7 +591,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 082: 面板网格竖向排列
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanel(page, 1);
@@ -608,7 +608,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 084: 页面向下滚动 → 面板立即收起
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.cqa-heat-row')).toBeVisible({ timeout: 10000 });
     await openPanelOverlay(page, 1);
@@ -621,7 +621,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 085: 其他页面 hover/点 chip 开面板；「首页」chip 收起+回首页
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     // /browse 数据就绪后再 hover，避免早期 re-render 误收起面板
     await expect(page.locator('.browse-results-body, .browse-card--results').first()).toBeVisible({ timeout: 10000 });
@@ -631,7 +631,7 @@ test.describe('1.3c 宽屏分类面板', () => {
     await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
     expect(new URL(page.url()).pathname).toBe('/');
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     const urlBefore = page.url();
     await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
     await openPanel(page, 2);
@@ -644,7 +644,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 
     // 086: browse 页 hover chip 开面板且 URL 不变
     await page.goto('/browse?category=movie', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 15000 });
+    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
     await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.browse-results-body, .browse-card--results').first()).toBeVisible({ timeout: 10000 });
     const urlBefore2 = page.url();
@@ -665,7 +665,7 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.route('**/test-backdrop-6.jpg**', (route) => route.fulfill({ status: 404, body: '' }));
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-side-card', { timeout: 15000 });
+    await page.waitForSelector('.hero-side-card', { timeout: 10000 });
     await expect(page.locator('.hero-side-card')).toHaveCount(6, { timeout: 8000 });
     const border = await page.locator('.hero-side-card').first().evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -676,7 +676,7 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     expect(await page.locator('.hero-side-card__img.lazy-image-container').count()).toBeGreaterThan(0);
     // 2026-09-11 LazyImage 引入 S4 有界重试（1.2s/2.4s 指数退避）后才落 exhausted/error 终态；
     // 一次性 count() 会在重试等待期读到 0 → 必须用 web-first 断言（内部轮询等待）
-    await expect(page.locator('.hero-side-card .lazy-image-container.error')).toHaveCount(1, { timeout: 15000 });
+    await expect(page.locator('.hero-side-card .lazy-image-container.error')).toHaveCount(1, { timeout: 10000 });
     await expect(
       page.locator('.hero-side-card .lazy-image-container.error .lazy-image-fallback--brand'),
     ).toContainText('kinoTV');
@@ -696,7 +696,7 @@ test.describe('1.3e Hero 主图加载失败兜底', () => {
     // 宽屏 ≥1024：HeroBili 主图
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-bili__banner', { timeout: 15000 });
+    await page.waitForSelector('.hero-bili__banner', { timeout: 10000 });
     const biliFallback = page.locator('.hero-bili__banner-fallback');
     await expect(biliFallback).toHaveCount(1, { timeout: 8000 });
     await expect(biliFallback).toContainText('kinoTV');
@@ -704,7 +704,7 @@ test.describe('1.3e Hero 主图加载失败兜底', () => {
     // 窄屏 <1024：HeroBannerClassic 主图（同一套公共品牌兜底）
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.hero-banner__main', { timeout: 15000 });
+    await page.waitForSelector('.hero-banner__main', { timeout: 10000 });
     const classicFallback = page.locator('.hero-banner__fallback');
     await expect(classicFallback).toHaveCount(1, { timeout: 8000 });
     await expect(classicFallback).toContainText('kinoTV');

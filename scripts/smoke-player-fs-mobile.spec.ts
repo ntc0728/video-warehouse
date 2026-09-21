@@ -1,5 +1,6 @@
 // 2026-09-20：改用 cms-mock fixture（CMS 本地假数据 + 本地 HLS）。原 mock-tmdb 下
-// 播放器挂载要等真实代理的 CMS 聚合，代理抖动 = waitPlayer 30s 贴边 flaky 的真根因。
+// 播放器挂载要等真实代理的 CMS 聚合，代理抖动 = waitPlayer 贴边 flaky 的真根因
+// （waitPlayer 曾放宽到 30s；2026-09-21 起硬规矩：单步等待 ≤10s，现上限 10s）。
 import { test, expect } from './fixtures/cms-mock';
 import type { Page } from '@playwright/test';
 
@@ -47,7 +48,7 @@ function playUrl(id: string) {
 
 /** 等播放器挂载并初始化 */
 async function waitPlayer(page: Page) {
-  await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 30000 });
+  await page.waitForSelector('.up-universal-player', { state: 'attached', timeout: 10000 });
   // 条件等待：播放器就绪（脱离 placeholder/loading 态）
   await expect(page.locator('.up-universal-player:not(.up-placeholder)')).toBeVisible({ timeout: 10000 });
 }

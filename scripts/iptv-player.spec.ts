@@ -170,7 +170,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     for (const [w, h] of [[1024, 768], [1280, 800], [1440, 900]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+      await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
 
       await expect
         .poll(async () => (await readOsd(page))?.osdW ?? 0, { timeout: 10000 })
@@ -188,7 +188,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
   test('IPTVP-021: ≥1024 左右翼等宽 → 控件行真正居中；控件行不裁切', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
     await expect.poll(async () => (await readOsd(page))?.osdW ?? 0, { timeout: 10000 }).toBeGreaterThan(200);
 
     const m = await readOsd(page);
@@ -205,7 +205,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     // 桌面：4 个控件按钮（列表 / 节目单 / 换源 / 音轨）
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
     await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(4);
     // 桌面显示文字标签
     expect((await readOsd(page))!.ctrlLabelShown).toBe(true);
@@ -213,7 +213,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     // 375：控件收成纯图标（4 个带文字按钮需 ~200px，中列只有 ~163px）
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
     await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(4);
     const m = await readOsd(page);
     expect(m!.ctrlLabelShown).toBe(false);
@@ -225,12 +225,12 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     // 1440：一级 132px、二级吃剩余；质量徽章保留
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 20000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-5 体育赛事高清', 'CCTV-6 电影', 'CCTV-13 新闻']);
     await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
     await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
 
     await expect.poll(async () => (await readChannelList(page))?.groupW ?? 0, { timeout: 10000 }).toBeGreaterThan(50);
@@ -246,12 +246,12 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     // 375：窄屏档 一级 116px + 质量徽章让位给频道名
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 20000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-5 体育赛事高清', 'CCTV-6 电影', 'CCTV-13 新闻']);
     await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+    await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
     await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
 
     await expect.poll(async () => (await readChannelList(page))?.groupW ?? 0, { timeout: 10000 }).toBeGreaterThan(50);
@@ -270,7 +270,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     for (const theme of ['light', 'dark'] as const) {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 20000 });
+      await page.waitForSelector('.app-shell', { timeout: 10000 });
       // 先落 localStorage 让应用自己带上主题，再注入频道
       await page.evaluate((t) => {
         const raw = localStorage.getItem('app-settings');
@@ -283,7 +283,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
       await page.goto('/iptv/play?url=test&id=ch-1&name=CCTV-1%20%E7%BB%BC%E5%90%88', {
         waitUntil: 'domcontentloaded',
       });
-      await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+      await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
       // 兜底：应用若未按 storage 应用主题，直接改 html 属性（CSS 立即重算）
       await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
       await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
@@ -329,12 +329,12 @@ function buildEpgXml(now = Date.now()): string {
 
 async function openIptvPlay(page: Page, id: string, name: string) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.app-shell', { timeout: 20000 });
+  await page.waitForSelector('.app-shell', { timeout: 10000 });
   await seedIptvChannels(page, ['CCTV-1 综合', 'CCTV-13 新闻', '湖南卫视', 'CCTV-6 电影']);
   await page.goto(`/iptv/play?url=test&id=${id}&name=${encodeURIComponent(name)}`, {
     waitUntil: 'domcontentloaded',
   });
-  await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 20000 });
+  await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
 }
 
 test.describe('11.5 EPG 节目单', () => {
@@ -390,7 +390,7 @@ test.describe('11.6 TV 遥控器焦点', () => {
     await openIptvPlay(page, 'ch-1', 'CCTV-1 综合');
     await page.locator('.iptv-osd-control-btn[title="频道列表"]').first().click({ force: true });
     const groups = page.locator('.up-channel-group-item');
-    await expect(groups.first()).toBeVisible({ timeout: 20000 });
+    await expect(groups.first()).toBeVisible({ timeout: 10000 });
 
     const groupFocusIndex = () =>
       page.evaluate(() =>

@@ -193,23 +193,34 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 `playwright.config.ts` 的 `webServer.command` 同时由 `npm run dev` 改为
 `"${process.execPath}" node_modules/vite/bin/vite.js`（绕开 npm shim，避免静默换端口）。
 
-- **全量预算 ≤5 分钟（2026-09-20 用户硬性规定，不可协商）**：默认入口 `npm run test:e2e`
+- **分级门禁（2026-09-21 用户定稿）**：按改动类型决定 E2E 验证档位——
+  **删除/文档/纯脚本类**改动：`npm run build` + `npm run lint:all` + **受影响 spec（ad-hoc 档）** 即可；
+  **行为类**改动（src 业务代码、播放链、布局/动画）才需要全量。
+  **全量 E2E（`test:e2e` / `e2e-suite.mjs` / `e2e-skeleton.mjs --all` 及任何等效方式）未经用户明确允许不得运行**；
+  需要全量时向用户申请，由用户放行。新增/改动用例的时长核算也走 ad-hoc 档，不借全量验证。
+- **全量预算 ≤5 分钟（2026-09-20 用户硬性规定，不可协商；仅在用户放行全量时适用）**：默认入口 `npm run test:e2e`
   = `scripts/e2e-suite.mjs`（阶段 A dev 行为全套 + 阶段 B preview 骨架契约 B，串行，
   300s 看门狗到点击杀并判失败）。超预算的合规解法按此优先级取舍：
   ① 取证/截图类脚本不进默认套（`test:e2e:shots` 按需）；② 同构断言合并为参数化循环；
   ③ 缩短 mock 侧不必要的人为延迟；④ 复核 `waitForTimeout` 固定睡眠改条件等待。
-  **禁止**用「删断言 / 降断言精度 / 加 skip」凑时间。新增用例先本地跑 `npm run test:e2e` 确认总时长仍在预算内。
+  **禁止**用「删断言 / 降断言精度 / 加 skip」凑时间。
 - **取舍必须对功能地图，不对脚本秒数**（2026-09-20 用户纠偏）：默认套覆盖 = 13 业务路由全部有
   spec（首页/浏览/榜/详情/播放双路由/IPTV 列表+播放/设置/收藏/历史/源检测/人物/代理入口）+
   横切能力（跨页签同步、启动骨架行为、主题皮肤字体、app 端 UA、台标回退链、播放故障转移/错误码）。
   不进默认套的判据：① 纯像素取证（boot-splash-shots → `test:e2e:shots`）；② 无断言手工脚本
-  （verify-grid，作者已 skip）；③ 调试 demo 路由（player-lab / mobile-lab / ptr-demo，产品不进正式导航）。
+  （verify-grid，作者已 skip）；③ 调试 demo 路由（player-lab 等三个已于 2026-09-21 整体删除）。
   **mock 数据形态必须支撑功能断言**：hermetic mock 若让条件断言用例如 5.10 台标链、G-05 封面回退
   恒走 skip 分支，等于砍掉覆盖——org 主干 mock 已按真实 cn.m3u 形态补 tvg-logo/tvg-id
   （含一条无 logo 频道支撑 EPG icon 二级回退）。加/改 mock 数据后必须 grep「跳过」日志确认可疑空转。
 - **临时/调试跑批硬规矩（2026-09-21）**：带 spec 文件位置参数或 `-g` 过滤即 ad-hoc 档——单轮
   预算 120s（e2e-skeleton `spawnSync timeout` 硬击杀、退码 2）、`retries=0`；只有裸 `--all`
   才是 300s 全量档。诊断循环烧时间的主因是「全量档 + 重试翻倍」，改代码前先想清楚用哪档。
+- **单步等待/超时 ≤10s（2026-09-21 用户定稿，不可协商）**：spec 内任何单步等待
+  （`waitForSelector` / `toBeVisible` / `expect.poll` / `waitFor({timeout})` / `waitForTimeout`）
+  上限一律 10000ms（存量 ~300 处 12s~45s 已全量清扫）。hermetic mock 下正常步骤 1~3s 成立，
+  10s 上限只让真失败更快暴露。**封顶机制除外**（用例级 `testTimeout` 45s/30s、`test.setTimeout`、
+  整轮 `globalTimeout`、webServer 就绪 60s、跑批看门狗 120s/300s——它们是防挂死的 kill-switch，
+  压到 10s 会让脚本无法继续执行）。若某步必须 >10s 才能过：**立即停止、向用户说明原因**，禁止自行放宽。
 - **端口与进程边界（2026-09-20 用户定稿，二次强化）**：E2E 端口由 **OS 动态分配**（不固定占任何端口；
   `E2E_PORT` 仅供显式指定，如对着自己 dev server 测：`E2E_PORT=3001`，也只是连接复用）。
   **绝不按端口占用者杀进程**：测试自建 server 由 `scripts/e2e-vite-server.cjs` wrapper 拉起（命令行即标记），

@@ -69,8 +69,8 @@ async function routeTwoPageDiscover(page: Page) {
 test.describe('CHART 热度榜页', () => {
   test('CHART-001: 直达 /chart——6 分类 tab、默认电影 20 行、top3 排名强调', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-card', { timeout: 15000 });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-card', { timeout: 10000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
     await expect(page.locator('.chart-row')).toHaveCount(20, { timeout: 5000 });
 
     expect(await page.locator('.chart-tabs__tab').count()).toBe(6);
@@ -84,7 +84,7 @@ test.describe('CHART 热度榜页', () => {
 
   test('CHART-002/005: tab 切换 + URL 直达参数', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
 
     // 002 综艺 → discover/tv（fixture mock 命中）
     await page.locator('.chart-tabs__tab', { hasText: '综艺' }).click();
@@ -93,28 +93,28 @@ test.describe('CHART 热度榜页', () => {
 
     // 002 趋势榜 → 今日/本周分段出现，切本周 URL 带 window=week
     await page.locator('.chart-tabs__tab', { hasText: '趋势榜' }).click();
-    await page.waitForSelector('.chart-tabs__window', { timeout: 15000 });
+    await page.waitForSelector('.chart-tabs__window', { timeout: 10000 });
     await page.locator('.chart-tabs__window button', { hasText: '本周' }).click();
     await expect(page).toHaveURL(/window=week/, { timeout: 3000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
 
     // 005 URL 直达参数生效——category=variety 选中综艺
     await page.goto('/chart?category=variety', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
     await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/综艺/);
 
     // 005 trend+window=week 选中本周
     await page.goto('/chart?category=trend&window=week', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-tabs__window', { timeout: 15000 });
+    await page.waitForSelector('.chart-tabs__window', { timeout: 10000 });
     await expect(page.locator('.chart-tabs__tab--on')).toHaveText(/趋势榜/);
     await expect(page.locator('.chart-tabs__window-btn--on')).toHaveText('本周');
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
   });
 
   test('CHART-003: 无缝滚动——两页合并 40 行、排名连续、无新数据后显示到底', async ({ page }) => {
     await routeTwoPageDiscover(page);
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
     expect(await page.locator('.chart-row').count()).toBe(20);
 
     // 滚到底触发第 2 页加载（哨兵 + useInfiniteScroll）
@@ -132,7 +132,7 @@ test.describe('CHART 热度榜页', () => {
 
   test('CHART-004: 行点击跳详情 /detail/:id', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
 
     await page.locator('.chart-row').first().click();
     await expect(page).toHaveURL(/\/detail\/tmdb-movie-\d+/, { timeout: 3000 });
@@ -140,7 +140,7 @@ test.describe('CHART 热度榜页', () => {
 
   test('CHART-006: 切 tab 清空旧榜单走居中「加载中」；缓存命中零遮罩', async ({ page }) => {
     await page.goto('/chart', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.chart-row', { timeout: 15000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
 
     // discover/tv（综艺）延迟 800ms 后 fallback 到 fixture mock：观察刷新中间态
     await page.route('**/api.tmdb.org/3/discover/tv**', async (route) => {
@@ -157,7 +157,7 @@ test.describe('CHART 热度榜页', () => {
     expect(await page.locator('.chart-refresh-sticky').count()).toBe(0);
 
     // 刷新完成：加载态移除，新榜单渲染
-    await page.waitForSelector('.chart-loading', { state: 'detached', timeout: 15000 });
+    await page.waitForSelector('.chart-loading', { state: 'detached', timeout: 10000 });
     await expect(page.locator('.chart-row').first()).toBeVisible();
 
     // 切回电影（已缓存）：零遮罩直接显示

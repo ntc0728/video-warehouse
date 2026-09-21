@@ -42,7 +42,7 @@ const waitForHistoryStore = async (page: import('@playwright/test').Page) => {
 test.describe('8.1 Tab 切换 + 8.2 影视历史', () => {
   test('HIS-001/011: 默认影视 Tab 与空状态', async ({ page }) => {
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 001 默认影视 Tab 渲染
     await expect
@@ -74,7 +74,7 @@ test.describe('8.3 时间分组', () => {
   test('HIS-020/022: 分组正确性 + 时间轴导航', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 020 分组存在
     await expect
@@ -103,7 +103,7 @@ test.describe('8.3 时间分组', () => {
 test.describe('8.4 去重显示 + 8.5 批量管理', () => {
   test('HIS-025/040: 切换 tab 不重复 + 批量管理按钮', async ({ page }) => {
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 040 批量管理按钮存在
     const editBtn = page.locator('.action-btn--batch');
@@ -181,11 +181,11 @@ test.describe('8.6 桌面算珠时间轴', () => {
   test('HIS-050/051: 面板渲染/移动端隐藏 + 滚动累加与回弹', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await waitForHistoryStore(page);
     await seedHistory(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.history-timeline', { timeout: 15000 });
+    await page.waitForSelector('.history-timeline', { timeout: 10000 });
 
     // 050 桌面：面板可见、珠数 = 分组数（3）、内联节点行隐藏
     // 等三颗算珠渲染齐（种子数据跨今天/昨天/更早三组）后再取样式快照
@@ -301,7 +301,7 @@ test.describe('8.6 桌面算珠时间轴', () => {
 test.describe('8.7 融合 Tab 与筛选面板', () => {
   test('HIS-060/061: 融合 Tab 渲染 + 内嵌筛选条开关', async ({ page }) => {
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 060 融合 Tab：综合/视频/IPTV，默认激活综合
     const tabs = page.locator('.record-status--fused .status-tab');
@@ -388,11 +388,11 @@ test.describe('8.8 网格列数', () => {
   test('HIS-062: 列数随视口变化（1280→4 列、900→3 列、600→2 列、375→1 列）', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/history', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await waitForHistoryStore(page);
     await seedGrid(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.history-grid', { timeout: 15000 });
+    await page.waitForSelector('.history-grid', { timeout: 10000 });
 
     const cols = () =>
       page.evaluate(() => {

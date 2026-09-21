@@ -34,7 +34,7 @@ test.describe('3.1 页面加载', () => {
 
     // 001 正常加载电影详情 → Hero 区域
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect
       .poll(
         () => page.evaluate(() => !!document.querySelector('.detail-hero, [class*="detail-hero"]')),
@@ -44,7 +44,7 @@ test.describe('3.1 页面加载', () => {
 
     // 002 正常加载剧集详情 → Tab 区域（含季信息）
     await page.goto(`/detail/${TEST_TV_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect
       .poll(
         () => page.evaluate(() => !!document.querySelector('.detail-tabs, [class*="detail-tab"]')),
@@ -87,7 +87,7 @@ test.describe('3.1 页面加载', () => {
 test.describe('3.2 Hero 区域', () => {
   test('DETAIL-010/014/016: 背景图/Meta/返回按钮', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 010 背景图加载
     await expect
@@ -124,7 +124,7 @@ test.describe('3.2 Hero 区域', () => {
 test.describe('3.3 操作按钮', () => {
   test('DETAIL-020/023: 立即播放/收藏按钮', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     // 020 立即播放按钮
     const playBtn = page.locator('.detail-btn-play, [class*="btn-play"]');
@@ -150,7 +150,7 @@ test.describe('3.4 Tab 导航', () => {
   test('DETAIL-030/031/032: 电影2Tab/剧集3Tab/切换Tab', async ({ page }) => {
     // 030 电影详情显示 2 个 Tab
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     let tabs = page.locator('.detail-tab');
     await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
     let count = await tabs.count();
@@ -161,13 +161,13 @@ test.describe('3.4 Tab 导航', () => {
 
     // 031 剧集详情显示 3 个 Tab
     await page.goto(`/detail/${TEST_TV_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     tabs = page.locator('.detail-tab');
     await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
 
     // 032 切换 Tab
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     tabs = page.locator('.detail-tab');
     await expect.poll(() => tabs.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
     const c = await tabs.count();
@@ -209,7 +209,7 @@ test.describe('3.5 概览 Tab', () => {
 
     // 042 演员列表 + 046 剧照网格（独立 /images 接口）+ 047 截断逻辑
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect
       .poll(
         () => page.evaluate(() => !!document.querySelector('.detail-cast-row, [class*="cast"]')),
@@ -219,7 +219,7 @@ test.describe('3.5 概览 Tab', () => {
 
     // 剧照接口（mock 延迟 2s）返回后 .detail-stills-item 才渲染；
     // 等具体条目而非 .detail-stills-grid（骨架态即存在，会误判为 0 张）
-    await expect(page.locator('.detail-stills-item').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.detail-stills-item').first()).toBeVisible({ timeout: 10000 });
     const stillCount = await page.evaluate(() => {
       const grid = document.querySelector('.detail-stills-grid');
       return grid ? grid.querySelectorAll('.detail-stills-item, img').length : 0;
@@ -240,7 +240,7 @@ test.describe('3.5 概览 Tab', () => {
 
     // 048 重新进入 detail 后剧照仍保持 2 行截断（不全部平铺）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     // 重进 detail 的剧照接口（mock 延迟 2s）应在页面隐藏期返回：
     // 条件等这条响应而非固定睡眠；若浏览器已丢弃该请求则最多等 8s 后继续。
     const stillsResponse = page
@@ -250,12 +250,12 @@ test.describe('3.5 概览 Tab', () => {
       )
       .catch(() => null);
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
     await page.goBack();
     await expect(page).not.toHaveURL(/\/detail\//, { timeout: 5000 });
     await stillsResponse;
     await page.goForward();
-    await page.waitForSelector('.detail-stills-more', { timeout: 15000 });
+    await page.waitForSelector('.detail-stills-more', { timeout: 10000 });
     await expect(page.locator('.detail-stills-grid').first()).toHaveClass(
       /detail-stills-grid--limited/,
       { timeout: 3000 },
@@ -282,7 +282,7 @@ test.describe('3.6 播放列表 Tab', () => {
   test('DETAIL-060/062: CMS 按需加载 / 全部弹框线路列表', async ({ page }) => {
     // 060 CMS 按需加载
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     const sourcesTab = page.locator('.detail-tab').filter({ hasText: '播放列表' });
     await expect.poll(() => sourcesTab.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
@@ -310,7 +310,7 @@ test.describe('3.6 播放列表 Tab', () => {
       return route.abort();
     });
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     const sourcesTab2 = page.locator('.detail-tab').filter({ hasText: '播放列表' });
     await expect.poll(() => sourcesTab2.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
@@ -319,11 +319,11 @@ test.describe('3.6 播放列表 Tab', () => {
     }
     await sourcesTab2.click();
     // 播放源区挂载 → 匹配 spinner (.playlist-query) 消失 = CMS 查询已落到终态
-    await expect(page.locator('.detail-sources')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.detail-sources')).toBeVisible({ timeout: 10000 });
     await expect
       .poll(() => page.locator('.detail-sources .playlist-query').count(), {
         ...POLL,
-        timeout: 30000,
+        timeout: 10000,
       })
       .toBe(0);
 
@@ -356,7 +356,7 @@ test.describe('3.6 播放列表 Tab', () => {
       // 2026-09-20 纠偏：原 waitForURL().catch(()=>{}) + 未使用的 onPlayer = 零断言悬挂段。
       // 「弹框播放按钮 → 进播放器」是产品契约（CMS 数据已被 hermetic mock 固定），改为硬断言。
       await expect(page).toHaveURL(/\/play\//, { timeout: 10000 });
-      await expect(page.locator('.up-universal-player, [class*="player"]')).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('.up-universal-player, [class*="player"]')).toBeVisible({ timeout: 10000 });
     }
   });
 });
@@ -368,7 +368,7 @@ test.describe('3.6 播放列表 Tab', () => {
 test.describe('3.8 推荐区域', () => {
   test('DETAIL-080: 相关推荐', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 15000 });
+    await page.waitForSelector('.app-shell', { timeout: 10000 });
 
     await expect
       .poll(
@@ -383,7 +383,7 @@ test.describe('3.8 推荐区域', () => {
 test.describe('3.11 剧照灯箱', () => {
   test('DETAIL-090: 缩放控件位于当前显示图片正下方（三行流式布局）', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.detail-stills-item', { timeout: 15000 });
+    await page.waitForSelector('.detail-stills-item', { timeout: 10000 });
     await page.locator('.detail-stills-item').first().click();
 
     const lightbox = page.locator('.stills-lightbox').first();
