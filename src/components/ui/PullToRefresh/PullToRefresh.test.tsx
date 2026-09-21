@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, screen, act } from '@testing-library/react';
 import { createRef, type RefObject } from 'react';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
@@ -26,9 +26,16 @@ function firePtr(el: EventTarget, type: string, init: Record<string, unknown> = 
   return evt;
 }
 
+/** 页面刷新回调替身：计数「是否真的触发了刷新」 */
+const refreshSpy = vi.fn(() => Promise.resolve());
+
+beforeEach(() => {
+  refreshSpy.mockClear();
+});
+
 /** 只注册刷新回调、不渲染任何 DOM 的页面替身（模拟真实页面仅注册 hook） */
-function Harness({ variant }: { variant?: 'default' | 'settings' }) {
-  usePullToRefresh(() => Promise.resolve(), { variant, enabled: true });
+function Harness({ variant, enabled = true }: { variant?: 'default' | 'settings'; enabled?: boolean }) {
+  usePullToRefresh(refreshSpy, { variant, enabled });
   return null;
 }
 
@@ -36,9 +43,11 @@ function Harness({ variant }: { variant?: 'default' | 'settings' }) {
 function Tree({
   variant,
   scrollRef,
+  enabled,
 }: {
   variant: 'default' | 'settings';
   scrollRef: RefObject<HTMLDivElement>;
+  enabled?: boolean;
 }) {
   return (
     <>
@@ -50,16 +59,16 @@ function Tree({
       >
         <PullToRefreshProvider>
           <PullToRefreshOverlay />
-          <Harness variant={variant} />
+          <Harness variant={variant} enabled={enabled} />
         </PullToRefreshProvider>
       </ScrollContainerContext.Provider>
     </>
   );
 }
 
-function mount(variant: 'default' | 'settings' = 'settings') {
+function mount(variant: 'default' | 'settings' = 'settings', enabled = true) {
   const scrollRef = createRef<HTMLDivElement>();
-  const utils = render(<Tree variant={variant} scrollRef={scrollRef} />);
+  const utils = render(<Tree variant={variant} scrollRef={scrollRef} enabled={enabled} />);
   return {
     ...utils,
     scroll: screen.getByTestId('scroll') as HTMLDivElement,
@@ -127,5 +136,69 @@ describe('PullToRefreshOverlay', () => {
       expect(indicator().className).toContain('ptr-overlay__indicator--default');
     });
     expect(indicator().className).not.toContain('ptr-overlay__indicator--settings');
+  });
+});
+
+/**
+ * 接管条件（PullToRefreshOverlay.tsx:96-137 的放行守卫）。
+ * 这些守卫的用意是「不干扰正常交互」：只有「滚动容器在顶部 + 按住 + 明确向下拖」才接管。
+ * 任一守卫失效都会被用户感知为误吞点击 / 莫名刷新，故此处分条钉死。
+ */
+describe('PullToRefreshOverlay · 接管条件', () => {
+  const phase = () => document.querySelector('.ptr-indicator')!.getAttribute('data-phase');
+
+  const drag = (target: EventTarget, clientY: number, init: Record<string, unknown> = {}) => {
+    firePtr(target, 'pointerdown', { clientY: 0 });
+    firePtr(target, 'pointermove', { clientY, ...init });
+  };
+
+  it('页面注册 enabled:false 时不接管', () => {
+    const { scroll } = mount('settings', false);
+    drag(scroll, 120);
+    expect(phase()).toBe('idle');
+    firePtr(window, 'pointerup');
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('滚动容器不在顶部（scrollTop > 0）时不接管', () => {
+    const { scroll } = mount();
+    scroll.scrollTop = 40;
+    drag(scroll, 120);
+    expect(phase()).toBe('idle');
+  });
+
+  it('位移未超过 6px 的微移不接管（避免误吞轻触）', () => {
+    const { scroll } = mount();
+    drag(scroll, 5);
+    expect(phase()).toBe('idle');
+    firePtr(window, 'pointerup');
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('无按键的指针移动（buttons=0）不接管', () => {
+    const { scroll } = mount();
+    drag(scroll, 120, { buttons: 0 });
+    expect(phase()).toBe('idle');
+  });
+
+  it('桌面端鼠标非左键拖动不接管', () => {
+    const { scroll } = mount();
+    drag(scroll, 120, { pointerType: 'mouse', buttons: 2 });
+    expect(phase()).toBe('idle');
+  });
+
+  it('已进入 armed 后向上回移：进度归零回 idle，松手也不触发刷新', () => {
+    const { scroll } = mount();
+    firePtr(scroll, 'pointerdown', { clientY: 0 });
+    firePtr(scroll, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('armed');
+    expect(document.querySelector('.ptr-overlay__indicator')!.getAttribute('data-drag')).toBe('true');
+
+    firePtr(scroll, 'pointermove', { clientY: -20 }); // 回移到起点之上 → dy <= 0
+    expect(phase()).toBe('idle');
+
+    firePtr(window, 'pointerup');
+    expect(phase()).toBe('idle');
+    expect(refreshSpy).not.toHaveBeenCalled();
   });
 });
