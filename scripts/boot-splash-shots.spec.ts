@@ -33,9 +33,9 @@ async function holdSplash(page: Page, path_: string) {
   // 拖住 document.fonts.ready → 截图 hang；直接 abort（真实场景有 onerror 隐藏兜底）
   await page.route('**/src/assets/icon/KinoTV.webp', (route) => route.abort());
   await page.goto(path_, { waitUntil: 'commit' });
-  /* 等就绪标记而非裸 attached：#boot-splash 一被解析就 attached，但 body 末尾写 data-shape
-     的内联脚本可能尚未执行（分块解析竞态，曾致 /no-such-route 偶发读成静态默认 home）。
-     [data-shape-ready] 由脚本末尾挂上，精确同步到「脚本跑完、React 未摘除」窗口。 */
+  /* 等就绪标记而非裸 attached：两段式（2026-09-22）下第一段 plain 从解析即存在，
+     第二段同构换形延迟 PLAIN_MS 才发生。[data-shape-ready] 由换形/构建/填充完成后挂，
+     精确同步到「第二段已就位、React 未摘除」窗口（本脚本拦主模块 3s ≫ 换形延时）。 */
   await page.waitForSelector('#boot-splash[data-shape-ready]', { state: 'attached' });
 }
 

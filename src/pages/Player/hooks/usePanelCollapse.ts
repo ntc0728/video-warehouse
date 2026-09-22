@@ -86,7 +86,7 @@ export function usePanelCollapse<T extends HTMLElement>(collapsed: boolean) {
         stableH.current = el.offsetHeight;
       })
       .catch(() => { /* cancel 导致的 reject，忽略 */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [collapsed]);
 
   return ref;

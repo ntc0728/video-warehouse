@@ -130,7 +130,7 @@ export function useMediaSession({ videoRef, info, streamUrl, onPrev, onNext }: U
     setHandler('previoustrack', onPrev ?? null);
     setHandler('nexttrack', onNext ?? null);
     return clearAll;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [enabled, info, onPrev, onNext, videoRef]);
 
   // 播放状态同步（锁屏卡片的播放/暂停按钮态）

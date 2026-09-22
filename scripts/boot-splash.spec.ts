@@ -160,13 +160,15 @@ test.describe('启动骨架：视口填充与路由感知', () => {
     await expect(page.locator('#boot-splash .bs-home .bs-rail')).toBeHidden();
   });
 
-  test('BOOT: 静态默认是中性形态（脚本未跑时无首页轮廓）', async ({ page }) => {
+  test('BOOT: 静态默认是中性形态（第一段 plain 启动页，无首页轮廓）', async ({ page }) => {
     // commit 时刻不可靠（evaluate 派发耗时比解析长，脚本早已跑完）→
-    // 直接拉 HTML 源码断言静态标记：splash 区内不得预置任何首页轮廓节点
+    // 直接拉 HTML 源码断言静态标记：splash 区内不得预置任何首页轮廓节点，
+    // 且静态 data-shape 必须是 plain（两段式：同构换形只发生在脚本里）
     const html = await (await page.request.get('/collections')).text();
     const splashHtml = html.slice(html.indexOf('id="boot-splash"'), html.indexOf('id="bs-tip"'));
     expect(splashHtml).not.toContain('bs-hero');
     expect(splashHtml).not.toContain('bs-row');
+    expect(splashHtml).toContain('data-shape="plain"');
   });
 
   test('BOOT: play 形态不填充，提示文案就位', async ({ page }) => {

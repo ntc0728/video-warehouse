@@ -35,12 +35,8 @@ const visitedRoutes = new Set<string>();
 function LoadingFallback() {
   // 8.3B：chunk fallback 不显示进度条——进度条只由「页面自身 loading」播放一次，
   // 避免 fallback 与页面 loading 两个 AppLoading 实例各播一遍进度条（进度条重放 = 「加载两次」感知）。
-  // 8.3C：记录 fallback 发生时刻（时间戳），供首页判断「刚经历过 chunk fallback」，
-  // 从而跳过其固定 500ms 整页 loading（避免叠加第二次 AppLoading）。
-  // 用时间戳而非布尔值：fallback 后若 1s 内未消费则视为过期（残留不影响后续页面）。
-  useEffect(() => {
-    window.__kinoSuspenseFallback = Date.now();
-  }, []);
+  // 2026-09-22：启动期间本元素会被 #boot-splash 盖住（dropBootSplash 检测到
+  // `.page-loading .app-loading` 时不摘骨架）；导航切页时才可见。
   return (
     <div className="page-padding page-loading">
       <AppLoading showProgress={false} />

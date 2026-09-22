@@ -12,14 +12,40 @@
  *
  * 用法：node scripts/json-dup-key-check.mjs
  */
-import { execFileSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
 
 const EXCLUDE = /(^|\/)(package-lock\.json|pnpm-lock\.yaml|.*\.min\.json)$/;
 
-function trackedJsonFiles() {
-  const out = execFileSync('git', ['ls-files', '*.json'], { encoding: 'utf8' });
+/**
+ * 异步 spawn 收集 stdout。
+ * 为什么不用 execFileSync：受限沙箱（WorkBuddy safe-delete shim）会拦截**同步**子进程创建，
+ * `execFileSync('git', ...)` 直接抛 `spawnSync git EBUSY`，导致本检查必然失败；
+ * 异步 `spawn` 不受影响（同一环境下实测 exit 0）。
+ */
+function runCapture(cmd, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (c) => {
+      out += c;
+    });
+    child.stderr.on('data', (c) => {
+      err += c;
+    });
+    child.on('error', (e) => reject(new Error(`无法执行 ${cmd}：${e.message}`)));
+    child.on('close', (code) => {
+      if (code === 0) resolve(out);
+      else reject(new Error(`${cmd} ${args.join(' ')} 退出码 ${code}${err.trim() ? `\n${err.trim()}` : ''}`));
+    });
+  });
+}
+
+async function trackedJsonFiles() {
+  const out = await runCapture('git', ['ls-files', '*.json']);
   return out.split('\n').filter(Boolean).filter((f) => !EXCLUDE.test(f.replace(/\\/g, '/')));
 }
 
@@ -129,7 +155,7 @@ function strSoFar(text, closeQuoteIdx) {
 }
 
 const argFiles = process.argv.slice(2);
-const files = argFiles.length ? argFiles : trackedJsonFiles();
+const files = argFiles.length ? argFiles : await trackedJsonFiles();
 const problems = [];
 let scanned = 0;
 

@@ -360,7 +360,7 @@ export default function LazyImage({
       }
       return prev;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [src, imageSrc, crossfadeOnChange]);
 
   return (

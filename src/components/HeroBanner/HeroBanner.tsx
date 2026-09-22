@@ -128,7 +128,7 @@ function bgPreloadSize(): string {
  */
 function recordSwipeData(data: { mainWidth: number; dx: number; threshold: number; switched: boolean }): void {
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
+     
     console.info('[HeroBanner][swipe]', data);
   }
   try {

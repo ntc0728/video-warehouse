@@ -14,9 +14,8 @@
   background-color: var(--color-background);
 }
 
-.home-page--loading {
-  min-height: var(--layout-page-min-height);
-}
+/* 旧 .home-page--loading（首进 500ms 整页 AppLoading 容器）已随 plain loading
+   一并删除（2026-09-22：启动骨架 → 页级骨架直接衔接，不再插 plain）。 */
 
 /* 仅包裹「非 Hero 内容」的进入动画层（见 index.tsx）：
    HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。
@@ -370,7 +369,10 @@ html[data-device="app"] .home-disclaimer {
 
   .home-skeleton-topstrip__item {
     width: 7rem;
-    height: var(--text-xs);
+    /* 高度镜像真实最高子元素（pill：text-xs × 正文行高 + 上下 space-3xs 内边距）；
+       旧用 var(--text-xs) 纯字号高 → 骨架带比真实带矮 ≈10px，骨架→内容纵向抖动
+       （2026-09-22 三态实测审计，lh-base 1.5 与真实行高同档） */
+    height: calc(var(--text-xs) * var(--lh-base) + 2 * var(--space-3xs));
     border-radius: var(--radius-sm);
     background: linear-gradient(
       90deg,
@@ -543,7 +545,8 @@ html[data-device="app"] .home-disclaimer {
     /* 左栏宽度 --home-rail-w 已移至 layout-tokens.css（单真源，2026-09-21；≥1024→240px）。
        .home-two-col 靠继承读取；下方 grid-template-columns 的 var(--home-rail-w) 不变。 */
     /* 栏间 gap（用户要求收紧：原 --space-2xl ≈31.5px 偏大 → --space-lg ≈16.5px）。
-       ⚠️ 下方 --hero-banner-h / --hero-side-w 的公式里也引用了同一档位，必须同步。 */
+       ⚠️ layout-tokens.css 的 --hero-banner-h/--hero-side-w 公式里引用同档 space-lg，
+       改本档位需与那边同步（2026-09-22 token 已迁至单真源）。 */
     --home-rail-gap: var(--space-lg);
     display: grid;
     grid-template-columns: var(--home-rail-w) minmax(0, 1fr);
@@ -573,32 +576,11 @@ html[data-device="app"] .home-disclaimer {
   }
 
   html:not([data-device="tv"]) .home-two-col__main {
-    /* ⚠️ HeroBili 的 --hero-banner-h / --hero-side-w 默认按「全视口宽」算，
-       Hero 落到右列后必须按「右列实际宽度」重算，否则主图会被算高、
-       右侧卡片按超宽比例布局而溢出列宽。
-
-       ⚠️ 2026-09-10 第七轮：**本处才是 --hero-banner-h 的生效点**。
-       它是 `html:not(tv) .home-two-col__main`（特异性 0,2,1），高于
-       variables.css 里 `html:not(tv)`（0,1,1）的 :root/分段定义
-       —— 第六轮把三档系数写进 variables.css 的分段媒体查询，
-       因特异性被本规则压过而**完全未生效**（实测产物仍是 0.2727）。
-       故系数改在本处按列数分档（与 useHeroSideCols 同批断点）：
-         · ≥1281（3 列）→ bannerH 系数 0.24、sideW 0.56
-         · 1024–1280（2 列）→ bannerH 系数 0.31、sideW 0.48（见下方 2 列档块）
-       系数来源：卡片封面恒 aspect-ratio:16/9（卡高 = 封面高 + 标题条 ≈27px），
-       令 2 行卡片总高 + 行间 gap 与 banner 高度严格相等反推：
-         3 列档 0.2332–0.2485（w1281 0.2485 / w1440 0.2459 / w1920 0.2364 / w2560 0.2332）→ 取 0.24
-         2 列档 0.3013–0.3122 → 取 0.31
-       分母为「右列宽」(= 内容宽 − rail − gap)，与本规则的公式一致。
-       ⚠️ 0.24 在全档偏高（w1281 需 0.2485），偏差 ~10px，可接受。 */
-    --hero-banner-h: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-      * 0.24
-    );
-    --hero-side-w: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-      * 0.56
-    );
+    /* ⚠️ 2026-09-22：--hero-banner-h / --hero-side-w 分档公式已移至 layout-tokens.css
+       （单真源）。旧实现在此按「右列宽」覆盖（特异性 0,2,1 压过 variables.css :root
+       兜底），但 Home.css 随 HomeRoute 懒 chunk 加载 → 骨架首帧吃全视口宽兜底 →
+       banner 瞬时超大闪跳（用户报障根因）。收敛后主 CSS / 骨架注入双路首帧可得。
+       断点/系数推导（齐平契约）见 layout-tokens.css 注释。改值请改那边。 */
     min-width: 0;
   }
 
@@ -608,34 +590,8 @@ html[data-device="app"] .home-disclaimer {
     margin-inline: 0;
   }
 
-  /* ── 2 列档（1024–1280）专用参数 ──────────────────────────────────────
-     ⚠️ 本档必须**同时**调 sideW 与 bannerH，只调 bannerH 会出竖条 banner。
-     若沿用 56% 右栏，要让 banner 与 2 行 16:9 卡齐平需 bannerH ≈ 595px，
-     而 banner 宽仅 420px（66% 被右栏吃掉）→ banner 变成 0.70:1 的竖长方形。
-
-     解法：本档把右栏收窄到 **48%**（原 56%），把横向空间让给 banner。
-     联立（令右栏宽为 x，约束「2 行卡总高 + 行gap = banner 高」）：
-       2×(x−shuffle−gap−sideGap)/2×9/16 + 2×titleH + sideGap = R×系数
-     先由「banner 保持 ~1.6:1」解出 x ≈ 47.9–49.1% of R，取 **48%**；
-     再回代求系数得 0.3122/0.3059/0.3013 → 取 **0.31**。
-     实测结果（齐平差 ≤ 6px，banner 1.59–1.67:1）：
-       w1024 banner 366×230 / 单卡 145×109 ｜ w1152 433×264 / 176×126 ｜ w1280 499×299 / 207×143
-     ⚠️ 断点必须与 useHeroSideCols.ts / HeroBili.css 的 A 档（1024–1280）严格一致。 */
-  @media (width <= 1280px) {
-    html:not([data-device="tv"]) .home-two-col__main {
-      --hero-side-w: calc(
-        (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-        * 0.48
-      );
-      /* 由齐平条件反推：bannerH = 2×卡高 + 行gap，卡高随 sideW=48% 派生
-         → 各档 0.3122(w1024) / 0.3059(w1152) / 0.3013(w1280)，取 0.31。
-         校验：banner 宽高比 1.59–1.67:1，与 ≥1281 档及历史设计同形。 */
-      --hero-banner-h: calc(
-        (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-        * 0.31
-      );
-    }
-  }
+  /* 2 列档（1024–1280）/ ≥1281 / ≥2560 的 --hero-banner-h / --hero-side-w 分档
+     已全部移至 layout-tokens.css（2026-09-22 单真源收敛，见上方生效点注释）。 */
 }
 
 @media (width >= 1920px) {
@@ -647,29 +603,8 @@ html[data-device="app"] .home-disclaimer {
   }
 }
 
-@media (width >= 2560px) {
-  html:not([data-device="tv"]) .home-two-col__main {
-    /* ── ≥2560（内容已 2200 封顶居中）banner 收窄 + 加高 ──────────────────
-       2026-09-12 用户反馈：封顶档 banner 实测 959×393（≈2.4:1），比 1920 档
-       （596×346 ≈1.7:1）明显过宽过扁——高度公式的 min(100vw,2200px) 封顶后
-       高度冻结、宽度却随右列继续放大。
-       本档双 token 联动（⚠️ 必须同时改，只改一个会破坏「banner 底边与右栏
-       两行卡片底边齐平」契约，或把 banner 拉成竖条）：
-         · sideW 0.56 → 0.66：右栏三列卡变宽变高，banner 让出横向空间；
-         · bannerH 系数 0.24 → 0.277：按齐平条件反推（banner 高 = 右栏两行
-           卡总高，实测 w2560 卡跨度 454px / 分母 1640.7px = 0.2767 → 0.277）。
-       实测（w2560/3440/3840，content 2200 封顶）：banner 795×454（≈1.75:1，
-       与 1920 档 1.72:1 同形；改动前 959×393 ≈2.44:1），底边与右栏两行卡齐平。 */
-    --hero-side-w: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-      * 0.66
-    );
-    --hero-banner-h: calc(
-      (min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--home-rail-gap))
-      * 0.277
-    );
-  }
-}
+/* ≥2560 档的 --hero-side-w(0.66) / --hero-banner-h(0.277) 已移至 layout-tokens.css
+   （2026-09-22 单真源收敛；齐平契约推导注释见该文件）。 */
 
 /* ── Mobile ──────────────────────────────────────────── */
 
@@ -740,4 +675,15 @@ html[data-device="app"] .home-disclaimer {
 .home-continue-row {
   opacity: 0;
   animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
+}
+
+/* ── 冷启动骨架接替（2026-09-22 用户报「标题/继续观看显示两次、动画触发两次」）──
+   整屏骨架（isInitialLoading 分支）已经把标题/行位置预告过一遍，数据到达后
+   page-transition-enter / 延迟档 / 继续观看行的淡入若再播 = 同位置第二次入场 → 抖动。
+   骨架→内容的替换处直接硬现（位置本来就对齐，无闪跳）。类由 Home/index.tsx
+   coldSkeletonShownRef 挂。 */
+.home-page--from-skeleton .home-page__content,
+.home-page--from-skeleton .home-continue-row {
+  opacity: 1;
+  animation: none;
 }

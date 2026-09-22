@@ -50,7 +50,7 @@ vi.mock('hls.js', () => ({ default: hls.ctor }));
 /* ─── Mock PerformanceObserver（BasePlayerAdapter estimator.start 依赖） ─── */
 
 beforeEach(() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (globalThis as unknown as { PerformanceObserver: unknown }).PerformanceObserver = class {
     observe(): void {}
     disconnect(): void {}
