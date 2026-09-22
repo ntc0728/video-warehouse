@@ -54,23 +54,20 @@ $uiPrecisionMap = @{
     }
 
     # ── Home 页面 ──
+    # grep 用 describe 段号（1.3 子串覆盖 1.3b/c/d/e；首页激进合并后旧 HOME-0xx 前缀已死）
     "src/pages/Home/index.tsx" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-001|HOME-002|HOME-003|HOME-004|HOME-005|HOME-010|HOME-011|HOME-012|HOME-020|HOME-022|HOME-030|HOME-031|HOME-035|HOME-040|HOME-041|HOME-045|HOME-046|HOME-055|HOME-056|HOME-057|HOME-058"
+        grep = "1\.1|1\.2|1\.3|1\.4|1\.5|1\.7"
     }
     "src/pages/Home/Home.css" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-030|HOME-031|HOME-035|HOME-057|HOME-058"
-    }
-    "src/pages/Home/continueItems.ts" = @{
-        spec = @("scripts/home.spec.ts")
-        grep = "HOME-057|HOME-058"
+        grep = "1\.[1-7]"
     }
 
     # ── TMDBMovieRow ──
     "src/components/TMDBMovieRow/**" = @{
         spec = @("scripts/home.spec.ts")
-        grep = "HOME-030|HOME-031|HOME-035|HOME-057|HOME-058"
+        grep = "1\.4"
     }
 
     # ── UniversalPlayer ──
@@ -80,7 +77,7 @@ $uiPrecisionMap = @{
     }
     "src/components/UniversalPlayer/ControlBar/**" = @{
         spec = @("scripts/player.spec.ts")
-        grep = "PLAYER-040|PLAYER-045|PLAYER-070|PLAYER-071|PLAYER-090|PLAYER-002|PLAYER-003"
+        grep = "4\.1[^0-9]|4\.5|4\.8"
     }
     "src/components/UniversalPlayer/ToastTrigger.tsx" = @{
         spec = @("scripts/player.spec.ts", "scripts/iptv-player.spec.ts")
@@ -271,6 +268,11 @@ $logicTestMap = @{
         spec = @("vitest", "scripts/settings.spec.ts", "scripts/source-checker.spec.ts")
         grep = "6\.3|6\.4|9\.6"
     }
+    # continue 行数据纯函数：单测 continueItems.test.ts，无独立 E2E 段
+    "src/pages/Home/continueItems.ts" = @{
+        spec = @("vitest")
+        grep = ""
+    }
 }
 
 # 测试分组定义
@@ -423,7 +425,12 @@ if ($grepPairs.Count -gt 0 -and -not $Grep) {
     $staleFound = $false
     foreach ($pair in $grepPairs) {
         if (-not (Test-Path $pair.spec)) { continue }
+        if ([string]::IsNullOrWhiteSpace($pair.grep)) { continue }
         $specContent = Get-Content $pair.spec -Raw -Encoding UTF8
+        # 剥离块注释与行注释后再匹配：旧编号常残留在头注释/行内注释里造成假阳性
+        # （如 home.spec 头注释 "HOME-001~005" 曾让已死的 HOME-001 映射误判为有效）
+        $specContent = [regex]::Replace($specContent, '(?s)/\*.*?\*/', '')
+        $specContent = [regex]::Replace($specContent, '(?m)//.*$', '')
         # 该 grep 对某 spec 可能只有部分子模式适用（如 VideoCard 在 detail 只命中 3.8）——
         # 任一子模式存在即视为该映射对该 spec 有效；全部零命中才报失效
         $anyMatch = $false
