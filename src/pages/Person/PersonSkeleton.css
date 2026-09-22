@@ -8,6 +8,8 @@
 
 .person-skeleton__hero {
   position: relative;
+  /* 桌面档：真实 hero 高度随「有无头像」变化（有图 ≈224，无图 ≈119），
+     17rem 是主流有图档的合理近似，不动（2026-09-22 审计曾误改 9rem，已回滚） */
   min-height: 17rem;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -120,7 +122,8 @@
 /* ── ≤767 / App 端：与 Person.css 移动档同构 ── */
 @media (width <= 767px) {
   .person-skeleton__hero {
-    min-height: 0;
+    /* 真实移动档内容驱动高实测 ≈293px（头像 + 信息区），旧 min-height:0 使骨架比真实矮 ≈58px */
+    min-height: 21.2rem;
   }
 
   .person-skeleton__hero-content {
@@ -147,7 +150,7 @@
 
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 html[data-device="app"] .person-skeleton__hero {
-  min-height: 0;
+  min-height: 21.2rem;
 }
 
 html[data-device="app"] .person-skeleton__hero-content {

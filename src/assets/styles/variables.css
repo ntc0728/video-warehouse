@@ -1190,60 +1190,20 @@ html[data-device="tv"] {
      1920(pad80) 480 / 986，≥2560 524 / 1075）→ banner 宽高比恒 ~1.59:1、43:56 恒定。
      min(100vw, 2200px) 与 --layout-content-max-width 的 2200 硬上限契约对齐。
    ═══════════════════════════════════════════════════════════════════════════ */
-/* stylelint-disable-next-line no-duplicate-selectors -- 分节追加：本块是「布局尺寸契约」独立小节（见上方 banner），与顶部基础 token 块刻意分离；已核实 8 条 token 与前块零重叠，D7 甄别为分节追加而非真冗余，不做合并 */
+/* stylelint-disable-next-line no-duplicate-selectors -- 分节追加：本块是「布局尺寸契约」独立小节（见上方 banner），与顶部基础 token 块刻意分离；已核实与前块零重叠，D7 甄别为分节追加而非真冗余，不做合并 */
 :root {
-  --page-pad-x: var(--space-lg);
+  /* ── --page-pad-x / --hero-banner-h / --hero-side-w 已移至 layout-tokens.css ──
+     （2026-09-22 单真源收敛：修复懒 chunk CSS 竞态导致的 banner 骨架超大闪跳；
+     改这些值请改 layout-tokens.css，勿在此重定义） */
 
   /* ── 桌面左栏（rail）统一宽度 --rail-w ──
      ⚠️ 已移至 layout-tokens.css（单真源，2026-09-21）。消费方：Browse.css / Settings.css /
      IPTV.css / RecordShell.css / 启动骨架。改栏宽请改 layout-tokens.css，勿在此重定义。 */
 
-  /* ── HeroBili 专用 ──
-     ⚠️ 2026-09-10 第七轮订正：--hero-banner-h 在此处只是**兜底默认值**。
-       真正的生效点是 Home.css 的 `html:not([data-device="tv"]) .home-two-col__main`
-       （特异性 0,2,1 > 本文件 `html:not([data-device="tv"])` 的 0,1,1），
-       因为 Hero 实际落在 .home-two-col__main 右列内，该处会按「右列宽」而非
-       「全视口宽」重算，并按列数分档（1024–1280 → 0.31、≥1281 → 0.24）。
-       第六轮曾把三档系数写在本文件的分段媒体查询里，因特异性不敌而被完全压过
-       （产物实测仍是旧的 0.2727）——教训：改 token 值前先 grep 有无更高特异性的覆盖。
-       本文件保留 0.24 作为 ≥1281 语义的兜底（与 Home.css 基础档一致）。
-       卡片封面恒 aspect-ratio:16/9，卡高 = 封面高 + 标题条 ≈27px。 */
-  --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.24);
-  --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x, 0px)) * 0.56);
+  /* ── HeroBili 其余专用 token（不依赖右列宽公式，留本文件）── */
   --hero-main-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));      /* 10@1440 → 12@1920 */
   --hero-side-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));
   --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
 
-/* ── HeroBili --hero-banner-h 分档已移至 Home.css ──
-   2026-09-10 第七轮：原先在此处按列数写三段分档媒体查询，但 Hero 落在
-   .home-two-col__main 右列内，Home.css 中同 token 的覆盖（特异性 0,2,1）
-   高过本文件的 `html:not([data-device="tv"])`（0,1,1），故分档在此处永远不生效。
-   现统一由 Home.css 的 `html:not([data-device="tv"]) .home-two-col__main`
-   按列数分档（1024–1280 → 0.60、≥1281 → 0.40），本文件仅留 :root 兜底值。
-   ⚠️ 断点必须与 src/hooks/useHeroSideCols.ts 及 HeroBili.css 严格一致。 */
-
-@media (width >= 1440px) and (width < 1920px) {
-  html:not([data-device="tv"]) {
-    /* 2026-09-07 用户拍板：大屏起点由 1280 右移到 1440（播放页除外，后续整改）。
-       1280–1439 回到 :root 的 --space-lg（16px）。2026-09-08 用户拍板本档 pad 32 → 60
-       （回归注释历史基准值，1440 下 hero-banner 恢复 360 / 739）。 */
-    --page-pad-x: 60px;
-  }
-}
-
-@media (width >= 1920px) and (width < 2560px) {
-  html:not([data-device="tv"]) {
-    /* 2026-09-07：原 80px 整体右移一档至 1440 起点后，本档 pad 由 80 → 48。
-       右侧 pad 80 现下放给 ≥2560（超宽留白，与封顶后内容区无关）。
-       2026-09-08 用户拍板本档 pad 48 → 100px（与 1440 档 60px 拉开梯度，保持单调递增）。 */
-    --page-pad-x: 100px;
-  }
-}
-
-@media (width >= 2560px) {
-  html:not([data-device="tv"]) {
-    --page-pad-x: 140px;
-  }
-}

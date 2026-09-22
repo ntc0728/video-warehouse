@@ -10,7 +10,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useTMDBStore, useSettingsStore, useUserStore } from '@/stores';
 import type { HomeBlockKey } from '@/stores/useTMDBStore';
-import { BackToTopButton, AppLoading, LazyBlock } from '@/components/common';
+import { BackToTopButton, LazyBlock } from '@/components/common';
 import TMDBMovieRow, { SkeletonCards } from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -152,6 +152,11 @@ export default function HomePage() {
     return map;
   }, [history]);
   const continueItems = useMemo(() => buildContinueItems(history), [history]);
+  // 「继续观看」行存在条件（单真源，骨架与真实页共用）：骨架此前无条件预告该行，
+  // 无观看历史的用户 DB 读完后真实页无此行 → 骨架→真实切换时整行消失、下方内容
+  // 上移约一行高（2026-09-22 用户确认的同构缺口）。镜像同一条件后：有历史恒在；
+  // 无历史在骨架期提前收行，切换时几何与真实页逐像素一致，零位移。
+  const showContinueRow = userDataLoading || continueItems.length > 0;
 
   // HeroBili 右栏卡张数 = 列数 × 2 行（useHeroSideCols 已是该区列数的 JS 真源）。
   // 横滚行骨架不再自己算张数：2026-09-18 起骨架直接渲染真实 <TMDBMovieRow>，
@@ -181,9 +186,30 @@ export default function HomePage() {
     topRatedMovies.length > 0 || upcomingMovies.length > 0 ||
     popularTv.length > 0 || topRatedTv.length > 0 || airingTodayTv.length > 0;
 
+  // ⚠️ 2026-09-22 用户报「banner 骨架异常超大纯黑块占满视口剩余高」的根因：
+  //   hero 主体是 trending，旧条件只看 !hasAnyData——nowPlaying 先到就提前切主树，
+  //   此时 trending 仍空 → HeroBanner 宽屏「空数据回落 Classic」渲染**全宽 16:9 纯黑块**
+  //   （@1440 高 ≈742 / @1920 ≈967），trending 到达后切回 HeroBili（≈255）瞬间回缩。
+  //   修正：trending 未落地前维持整屏骨架（hero 槽同构小尺寸），切主树时 HeroBanner
+  //   必有数据；后台刷新（trending 已有数据重拉）不受影响。
+  //
+  // ⚠️ 2026-09-22 用户报「首页骨架显示之后会立即消失然后显示真实页面结构，闪烁」的根因：
+  //   旧条件 (loading.trending || loading.nowPlaying) && ... 依赖 loading 标志，但 React
+  //   首帧 useEffect 还没跑，loading.trending/nowPlaying 都是 false（store 初始态）→
+  //   首帧 isInitialLoading=false 走主树空态（HeroBannerClassic「暂无推荐」）→ useEffect
+  //   触发 fetch 后 loading=true 切骨架 → 数据到达切主树，造成「boot-splash 骨架 →
+  //   主树空态（一帧）→ homeSkeleton → 主树真实」的闪烁。
+  //   修正：不依赖 loading 标志，改为「trending 空 且 未失败」即骨架，首帧即进骨架分支，
+  //   与 boot-splash 同构骨架无缝衔接。例外：有其他区块数据且首屏档不在加载（trending
+  //   请求成功但返回空数组的极罕见情况）→ 主树，避免卡骨架。
+  const anyLoading =
+    loading.trending || loading.nowPlaying || loading.popularMovies ||
+    loading.topRatedMovies || loading.upcomingMovies ||
+    loading.popularTv || loading.topRatedTv || loading.airingTodayTv;
   const isInitialLoading =
-    (loading.trending || loading.nowPlaying) &&
-    !hasAnyData;
+    trending.length === 0 &&
+    !errors.trending &&
+    !(hasAnyData && !anyLoading);
 
   // 按需兜底拉取（**仅首屏档**）：trending / nowPlaying 为空时补齐，保证进页面必有 Hero + 第一排。
   // 注意：不能用 hasAnyData（含 trending）作为门槛——SearchBox 会独立拉取 trending 并使其先加载，
@@ -245,41 +271,25 @@ export default function HomePage() {
     return msgs.length > 0 ? [...new Set(msgs)][0] : null;
   })();
 
-  // ── 首页自定义整页 loading（显示在骨架图之前） ──────────────
-  // 目的：避免只靠骨架图占位——因数据常来自缓存/预取而瞬间就绪，骨架往往一闪而过甚至不出现。
-  // 行为：首次进入首页时固定显示 MIN_MS 后放行——数据已就绪则直接显示内容，
-  //       未就绪则交给后续可滚动的骨架屏分支接管。
-  // 注意：不能等待接口返回才放行——无缓存时整页会被 AppLoading 阻塞
-  //       （内容矮、无滚动条、下方行不渲染），详见问题修复记录。
-  // 8.3C：若「刚经历过 Suspense chunk fallback」（LoadingFallback 记录的时间戳，
-  // 1s 内有效），则跳过固定 500ms 整页 loading——fallback 已提供过 loading，
-  // 再叠加一次整页 AppLoading 即「加载两次」。无 fallback 时保持原 500ms 保证
-  // loading 出现（避免骨架一闪而过）。时间戳超 1s 视为过期（不误跳过），
-  // 消费后即清除，不影响后续进入。
-  const [pageLoading, setPageLoading] = useState(() => {
-    // 方案 B（无 Keep-Alive）：页面重新挂载时若 store 已有缓存数据，直接渲染，
-    // 不再走固定 500ms 整页 loading（否则每次切回首页都闪一次整页 loading）。
-    const marked = window.__kinoSuspenseFallback;
-    window.__kinoSuspenseFallback = 0;
-    const recentlyFellBack = typeof marked === 'number' && marked > 0 && Date.now() - marked < 1000;
-    if (recentlyFellBack) return false;
-    return !hasAnyData;
-  });
-
-  useEffect(() => {
-    const MIN_MS = 500;
-    const timer = window.setTimeout(() => setPageLoading(false), MIN_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
+  // ── 首页整页 plain loading 已删除（2026-09-22 用户反馈「plain 骨架覆盖」）────
+  // 旧机制：首进无数据时固定显示 500ms AppLoading（纯文字+进度条）再进骨架，
+  // 初衷是防「数据秒回时骨架一闪而过」；现启动骨架 #boot-splash（home 同构）→
+  // homeSkeleton / enterPhase 骨架覆盖已无缝衔接，plain 插在中间反而把同构骨架
+  // 拦腰打断。配套的 8.3C（Suspense fallback 时间戳跳过 500ms）一并退役。
 
   // ── 进入过渡相位控制：骨架覆盖 → 淡出 → 完成 ──
   // 目的：缓存数据场景下，进入首页时用骨架覆盖层遮挡内容，避免内容瞬间硬现。
   // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出，同时内容/hero 以
   // 200ms 延迟同步淡入——交叉淡化，无空白窗口）→ done（覆盖层卸载，内容自由渲染）。
-  // 冷加载路径（pageLoading=true）由上方 isInitialLoading 分支直接返回，本段不生效。
+  // ⚠️ 冷启动（先渲染过 isInitialLoading 整屏骨架）不适用本覆盖层：数据到达时内容位置
+  //   已被骨架预告，再叠一层 = 标题/继续观看行渲染两遍、入场动画播两遍（用户 2026-09-22
+  //   报「显示两次 → 抖动」根因）。coldSkeletonShownRef 命中时：不渲染覆盖层、
+  //   hero 不再延迟淡入、根容器加 --from-skeleton 禁用层动画（见 Home.css）。
   const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>(
     () => (hasAnyData ? 'done' : 'skeleton'),
   );
+  // 冷启动是否渲染过整屏骨架（isInitialLoading 分支）——命中则禁用 enterPhase 覆盖层与层入场动画
+  const coldSkeletonShownRef = useRef(false);
   useEffect(() => {
     // 方案 B 二次进入（已访问路由，AppLayout data-revisit）：初始即 done，
     // 跳过 800ms 骨架覆盖层，内容立即呈现；t1 因函数式守卫直接 no-op。
@@ -322,17 +332,6 @@ export default function HomePage() {
           免责声明：本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。
         </p>
       </div>
-      </div>
-    );
-  }
-
-  // 首页自定义 loading：内联居中于 home-page 容器内，显示在骨架图「之前」。
-  // pageLoading 进入 '/' 即触发（含 keep-alive 切回），且至少停留 MIN_MS，
-  // 故不会因缓存/预取秒回而只闪一次或不出现。
-  if (pageLoading) {
-    return (
-      <div className="page-padding home-page home-page--loading">
-        <AppLoading tip="精彩内容加载中…" />
       </div>
     );
   }
@@ -445,7 +444,7 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-          {homeSkeletonContinueRow}
+          {showContinueRow && homeSkeletonContinueRow}
           {homeSkeletonRows}
         </div>
       </div>
@@ -459,16 +458,23 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      {homeSkeletonContinueRow}
+      {showContinueRow && homeSkeletonContinueRow}
       {homeSkeletonRows}
     </>
   );
+  // 不加 skeleton-scope（150ms 延迟淡入）：冷启动路径下 boot-splash 同构骨架已经显示，
+  // homeSkeleton 接替时应立即可见，否则 boot-splash 摘除后会有 150ms 空白窗口
+  // （骨架刚露头就消失的闪烁）。enterPhase 覆盖层里的 homeSkeletonBody 仍保留
+  // skeleton-scope（那是「缓存数据场景下从其他页切回」的覆盖层，150ms 延迟过滤快切换合理）。
   const homeSkeleton = (
-    <div className="page-padding home-page home-skeleton skeleton-scope">{homeSkeletonBody}</div>
+    <div className="page-padding home-page home-skeleton">{homeSkeletonBody}</div>
   );
 
   // 首屏骨架（仅 home 初始加载/整页无数据时使用）
-  if (isInitialLoading) return homeSkeleton;
+  if (isInitialLoading) {
+    coldSkeletonShownRef.current = true;
+    return homeSkeleton;
+  }
 
   // ── 所有请求失败：只显示错误提示，不渲染 Hero/Categories/Rows ──
   if (!hasAnyData && allFailed) {
@@ -513,6 +519,10 @@ export default function HomePage() {
               items={entered ? row.items : []}
               isLoading={entered ? row.isLoading : hasToken}
               error={entered ? row.error : null}
+              /* 行卡逐个弹入与逐块到达叠加 = 首页行骨架「严重抖动」主因（2026-09-22
+                 用户反馈）；首页已有整层 page-transition-enter 淡入，行级入场动画
+                 冗余，恒 skip（分类切回等场景同样由层动画承担进入感）。 */
+              skipAnimations
               scrollResetToken="home"
               crossfadeOnChange
             />
@@ -525,14 +535,15 @@ export default function HomePage() {
   return (
     <>
       {/* 进入过渡覆盖层：缓存数据场景下，首页从其他页切回时显示骨架覆盖 → 淡出 → 内容。
-          仅在 enterPhase !== 'done' 时渲染（skeleton/fading），done 后自动卸载。
+          仅在 enterPhase !== 'done' 且非冷启动骨架接替时渲染（冷启动已由整屏骨架
+          预告位置，再叠层 = 双渲染双动画，2026-09-22 用户反馈）。
           position: fixed 以覆盖整个视口，不受 home-page relative 约束。 */}
-      {enterPhase !== 'done' && (
+      {enterPhase !== 'done' && !coldSkeletonShownRef.current && (
         <div className={`home-enter-skeleton${enterPhase === 'fading' ? ' home-enter-skeleton--fading' : ''}`}>
           <div className="page-padding home-page home-skeleton skeleton-scope">{homeSkeletonBody}</div>
         </div>
       )}
-      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}`}>
+      <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}${coldSkeletonShownRef.current ? ' home-page--from-skeleton' : ''}`}>
         {isWide ? (
           /* ── 大屏两栏（2026-09-10 用户拍板「方案 C」）──────────────
              过渡带通栏横跨两栏；左栏 = 分类热度榜（sticky）；右列 = Hero + 内容行。
@@ -555,11 +566,11 @@ export default function HomePage() {
                 onContinuePlay={handleContinuePlay}
                 historyMap={historyMap}
                 loading={loading.trending}
-                initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
+                initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
               />
               <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
                 {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
-                {(userDataLoading || continueItems.length > 0) && (
+                {showContinueRow && (
                   <div className="home-continue-row">
                     <TMDBMovieRow
                       title="继续观看"
@@ -585,12 +596,12 @@ export default function HomePage() {
               onContinuePlay={handleContinuePlay}
               historyMap={historyMap}
               loading={loading.trending}
-              initialEnterDelay={enterPhase !== 'done' ? 200 : 0}
+              initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
             />
             <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
               <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
               {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
-              {(userDataLoading || continueItems.length > 0) && (
+              {showContinueRow && (
                 <div className="home-continue-row">
                   <TMDBMovieRow
                     title="继续观看"

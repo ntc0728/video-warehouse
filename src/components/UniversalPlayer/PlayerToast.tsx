@@ -18,7 +18,7 @@ export function usePlayerToast() {
 }
 
 /** 命令式 API（供组件顶层 hooks 使用——hooks 在 ToastProvider 外，无法 useContext） */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const playerToastRef: { current: ((msg: string, duration?: number, type?: PlayerToastType) => void) | null } = { current: null };
 
 export function playerToast(msg: string, duration?: number, type?: PlayerToastType) {
@@ -26,7 +26,7 @@ export function playerToast(msg: string, duration?: number, type?: PlayerToastTy
 }
 
 /** 命令式 API（移动端更多设置操作提示——顶部居中，与 HTML demo 定位一致） */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const mobileSettingsToastRef: { current: ((msg: string, duration?: number, type?: PlayerToastType) => void) | null } = { current: null };
 
 export function mobileSettingsToast(msg: string, duration?: number, type?: PlayerToastType) {
@@ -34,7 +34,7 @@ export function mobileSettingsToast(msg: string, duration?: number, type?: Playe
 }
 
 /** 命令式 API（播放器内重要提示——屏幕居中，独立于全局 sonner 的视口级居中） */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const playerToastCenterRef: { current: ((msg: string, duration?: number, type?: PlayerToastType) => void) | null } = { current: null };
 
 export function playerToastCenter(msg: string, duration?: number, type?: PlayerToastType) {

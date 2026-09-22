@@ -104,6 +104,32 @@
       /* 内容骨架。flex:1 + min-height:0 —— 撑满顶栏以下的剩余视口高（2026-09-20
          用户反馈「内容未撑满容器高度」）：填充行溢出由 overflow:hidden 裁剪。 */
       .bs-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 16px; min-height: 0; padding: 16px; }
+      /* 内容盒对齐（2026-09-22 全站三态实测审计，非仅 home）：镜像 .page-padding 的
+         --page-pad-x 分档（≥768 起 ≈14.333px（space-lg clamp 顶）/ 60 / 100 / 140）与
+         主流页内容 2200 封顶居中。旧固定 16px 不封顶 → 各页主列宽普遍比真实页宽
+         30–250px，React 挂载瞬间横缩抖动。play 形态（全屏播放器，不走 AppLayout）除外。
+         ui-scale 自动档骨架读不到（bundle token），残余偏差为已知取舍。 */
+      @media (width >= 768px) {
+        #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 14.333px; }
+      }
+      @media (width >= 1440px) {
+        #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 60px; }
+      }
+      @media (width >= 1920px) {
+        #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 100px; }
+      }
+      @media (width >= 2560px) {
+        #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 140px; }
+      }
+      #boot-splash:not([data-shape="play"]) .bs-body > * {
+        width: 100%;
+        max-width: 2200px;
+        margin-inline: auto;
+        /* 块高防压（2026-09-22 实测）：bs-body 是 flex column，内容超视口时默认
+           shrink 会等比压扁各块（person hero 17rem 实测被压到 171px）——骨架宁多不缺，
+           溢出由 overflow:hidden 裁剪，块高必须自洽 */
+        flex-shrink: 0;
+      }
       .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #f0f0f0; border-radius: 12px; }
 
       /* 卡片网格：--poster 竖版海报 2:3（读 --card-cols）/ --channel 频道 3:2（--iptv-cols）/
@@ -119,10 +145,22 @@
       .bs-row--channel { grid-template-columns: repeat(var(--iptv-cols, 2), 1fr); }
       .bs-row--iptvpage { grid-template-columns: repeat(var(--iptv-page-cols, 2), 1fr); }
       .bs-row--record { grid-template-columns: repeat(var(--history-cols, 1), 1fr); }
-      .bs-row--chart { grid-template-columns: repeat(var(--chart-cols, 1), minmax(0, 1fr)); }
-      /* 榜单行块：与 .bs-list i（Chart.css .chart-list__skeleton 四块几何）同高，
-         只是从单列换到 --chart-cols 列网格（与真实 .chart-list 同构） */
-      .bs-row--chart i { display: block; height: 3.5rem; background: #f0f0f0; border-radius: 8px; }
+      .bs-row--chart { grid-template-columns: repeat(var(--chart-cols, 1), minmax(0, 1fr)); gap: 5px; }
+      /* 榜单行块（2026-09-22 实测修正）：镜像 .chart-list__skeleton 行卡几何 ——
+         行高 桌面 ≈17.5rem×13.2 基 ≈ 231px / 移动 ≈213px，内含 16:9 缩略图槽 + 两行文本；
+         旧单块 3.5rem 与真实差 5 倍，数据到达时榜单区高度跳变一整屏 */
+      .bs-chartitem { display: flex; gap: 10px; align-items: center; height: 17.5rem; padding: 12px; background: #f0f0f0; border-radius: 12px; }
+      @media (width <= 767px) { .bs-chartitem { height: 16.1rem; } }
+      .bs-chartitem__img { flex: 0 0 12.1rem; aspect-ratio: 16 / 9; background: #e4e4e4; border-radius: 8px; }
+      .bs-chartitem__lines { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-width: 0; }
+      .bs-chartitem__lines i { display: block; height: 0.9rem; background: #e4e4e4; border-radius: 4px; }
+      .bs-chartitem__lines i:last-child { width: 45%; }
+      /* person 形态（2026-09-22 实测新增）：hero 对齐 PersonSkeleton 同档高
+         （桌面 17rem≈224 有图档近似；移动真实内容驱动 ≈293px=21.2rem）；
+         作品网格读 --person-work-cols（与真实/页骨架三方同源） */
+      .bs-person-hero { width: 100%; height: 17rem; background: #f0f0f0; border-radius: 12px; }
+      @media (width <= 767px) { .bs-person-hero { height: 21.2rem; } }
+      .bs-row--work { grid-template-columns: repeat(var(--person-work-cols, 4), minmax(0, 1fr)); }
       .bs-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       .bs-cover, .bs-line { display: block; background: #f0f0f0; border-radius: 8px; }
       .bs-cover { aspect-ratio: 2 / 3; }
@@ -223,62 +261,80 @@
          右主列 = HeroBili 融合卡（banner + 右卡网格 + 换一换）+ 海报行。
          栏宽镜像 --home-rail-w 真源：240（1024–1919）/ 260（≥1920，此前误写 ≥2560）。
          <1024 / TV：回单列经典 hero（与 HeroBannerClassic 同构），榜栏隐藏。 */
-      .bs-home { display: flex; flex: 1 1 auto; flex-direction: column; gap: 12px; min-height: 0; }
-      .bs-home__strip { display: flex; gap: 8px; }
+      .bs-home { display: flex; flex: 1 1 auto; flex-direction: column; gap: 14.333px; min-height: 0; }
+      /* 过渡带：镜像真实 .home-topstrip 卡片壳（surface + border + radius + 同 padding），
+         此前只有三根裸条 → 高度差 10px，B→C 纵向抖动 */
+      .bs-home__strip { display: flex; gap: 8px; align-items: center; padding: 5px 7px; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
       .bs-home__strip i { display: block; width: 7rem; height: 1.5rem; background: #f0f0f0; border-radius: 999px; }
       .bs-home__strip i:first-child { width: 10rem; }
-      .bs-home__cols { display: flex; flex: 1 1 auto; flex-direction: column; gap: 16px; min-height: 0; }
+      .bs-home__cols { display: flex; flex: 1 1 auto; flex-direction: column; gap: 14.333px; min-height: 0; }
       .bs-home .bs-rail { display: none; }
       .bs-home__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
 
       /* 左栏：今日趋势榜卡（镜像 .cqa-trend rail 变体：卡壳 + 标题 + 海报行列表） */
       .bs-home__railcard { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
-      .bs-heat { display: flex; gap: 8px; align-items: center; }
-      .bs-heat__poster { flex: 0 0 40px; aspect-ratio: 2 / 3; background: #f0f0f0; border-radius: 6px; }
+      /* 左栏榜行：海报镜像真实 --cqa-poster-w/h 64×96（≥1920 → 72×108，Home.css 同源）；
+         旧 40×60 行高差 44px，左栏密度与真实页不一致 */
+      .bs-heat { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+      .bs-heat__poster { flex: 0 0 64px; aspect-ratio: 2 / 3; background: #f0f0f0; border-radius: 6px; }
+      @media (width >= 1920px) { #boot-splash .bs-heat__poster { flex-basis: 72px; } }
       .bs-heat__text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-width: 0; }
       .bs-heat__text i { display: block; height: 0.75rem; background: #f0f0f0; border-radius: 6px; }
       .bs-heat__text i:last-child { width: 55%; }
 
-      /* HeroBili 融合卡：--bs-main-w 镜像 .home-two-col__main 的真源公式分母
-         （min(100vw,2200) − 2×page-pad − rail − gap；page-pad 阶梯 16/60/100/140
-         与 variables.css 同源）；sideW 0.48（1024–1280）/ 0.56（≥1281）/ 0.66（≥2560），
-         bannerH 系数 0.31 / 0.24 / 0.277 —— 全部与 Home.css 生效点同值。 */
+      /* 「继续观看」行占位（2026-09-22 审计补）：真实页首屏恒有此行
+         （userDataLoading || continueItems 非空时渲染），旧骨架漏掉 → React 挂载时
+         凭空多出一整行（≈200–320px）纵向抖动。轮廓级镜像 .home-continue-row：
+         标题条 + 5 张 16:9 横版卡（真实为横滚，可视张数近似） */
+      .bs-cont { display: flex; flex-direction: column; }
+      /* 标题占位镜像 .tmdb-movierow-header 占高（标题行 + margin-bottom） */
+      .bs-cont__head { display: block; width: 8rem; height: 2.5rem; margin-bottom: 2.5rem; background: #f0f0f0; border-radius: 6px; }
+      .bs-cont__cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+      .bs-contcard { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+      .bs-contcard__cover { display: block; aspect-ratio: 16 / 9; background: #f0f0f0; border-radius: 8px; }
+      .bs-contcard__bar { display: block; width: 76%; height: 0.75rem; background: #f0f0f0; border-radius: 6px; }
+      /* 真实续看卡文字区是标题 + meta 两行（三态实测：单行会比真实矮 ≈40px） */
+      .bs-contcard__bar--sm { width: 45%; }
+
+      /* HeroBili 融合卡（2026-09-22 单真源收敛）：banner 高 / 右栏宽直接消费
+         注入的 layout-tokens.css --hero-banner-h / --hero-side-w（与真实页同一份
+         分档公式，不再手抄第二套）；<1024 非宽屏档 banner 走 aspect-ratio，
+         不读这两个 token。卡壳 padding 镜像真实 .hero-bili（space-sm/md clamp 顶）。 */
       .bs-herobili {
-        --bs-main-w: calc(min(100vw, 2200px) - 32px);
-        --bs-side-w: calc(var(--bs-main-w) * 0.48);
-        --bs-banner-h: calc(var(--bs-main-w) * 0.31);
-        padding: 12px 16px 16px;
+        padding: 7px 9.5px 9.5px;
         background: #fff;
         border: 1px solid #e8e8e8;
         border-radius: 12px;
       }
-      .bs-herobili__grid { display: flex; flex-direction: column; gap: 10px; }
+      /* 栏间 gap 镜像 --hero-main-gap / --hero-side-gap（ui-scale 因子略，同上注） */
+      .bs-herobili__grid { display: flex; flex-direction: column; gap: clamp(7.2px, calc(4px + 0.4167vw), 12px); }
       .bs-herobili__banner {
         position: relative;
         width: 100%;
         aspect-ratio: 16 / 9;
-        max-height: 42vh;
-        overflow: hidden;
         background: #f0f0f0;
         border-radius: 8px;
       }
-      /* 「正在启动」提示在 home 形态下垂直居中（用户要求）：视口中线 + translateY 归位 */
-      #boot-splash[data-shape="home"] .bs-tip { top: 50%; bottom: auto; transform: translateY(-50%); padding: 4px 0; }
+      /* home 形态不再显示「正在启动」提示（2026-09-22 用户反馈：骨架已铺满视口，
+         居中文本叠在 hero 上显冗余；旧「垂直居中」规则服务于未填充的早期形态）。
+         仅脚本就绪（data-shape-ready）后隐藏——无 JS / 脚本失败的兜底仍留提示。 */
+      #boot-splash[data-shape="home"][data-shape-ready] .bs-tip { display: none; }
       .bs-herobili__right { display: none; }
-      .bs-herocards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .bs-herocards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(7.2px, calc(4px + 0.4167vw), 12px); }
       .bs-herocard { display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; }
       .bs-herocard__cover { display: block; aspect-ratio: 16 / 9; background: #f0f0f0; }
       .bs-herocard__title { display: block; height: 0.75rem; margin: 8px 10px; background: #f0f0f0; border-radius: 6px; }
       .bs-shuffle { display: none; }
 
       @media (width >= 1024px) {
-        #boot-splash:not([data-cols="tv"]) .bs-home__cols { flex-direction: row; gap: 16px; align-items: flex-start; }
+        #boot-splash:not([data-cols="tv"]) .bs-home__cols { flex-direction: row; gap: 14.333px; align-items: flex-start; }
         #boot-splash:not([data-cols="tv"]) .bs-home .bs-rail { display: block; flex: 0 0 var(--home-rail-w, 240px); }
-        /* 宽屏档 hero 真源：高度/右栏宽改由 token 派生，不再用 aspect-ratio */
+        /* 宽屏档 hero：直接消费注入的 layout-tokens 分档 token（与真实页同一真源） */
         #boot-splash:not([data-cols="tv"]) .bs-herobili {
-          --bs-main-w: calc(min(100vw, 2200px) - 2 * var(--bs-pad, 16px) - var(--home-rail-w, 240px) - 16px);
+          --bs-side-w: var(--hero-side-w);
+          --bs-banner-h: var(--hero-banner-h);
         }
-        #boot-splash:not([data-cols="tv"]) .bs-herobili__grid { flex-direction: row; gap: 10px; }
+        #boot-splash:not([data-cols="tv"]) .bs-herobili__grid { flex-direction: row; }
         #boot-splash:not([data-cols="tv"]) .bs-herobili__banner { flex: 1 1 0; min-width: 0; height: var(--bs-banner-h); max-height: none; aspect-ratio: auto; }
         #boot-splash:not([data-cols="tv"]) .bs-herobili__right {
           display: grid;
@@ -302,15 +358,10 @@
         .bs-shuffle i { display: block; width: 0.875rem; height: 0.875rem; background: #f0f0f0; border-radius: 4px; }
         .bs-shuffle i:last-child { width: 0.625rem; height: 2.5rem; border-radius: 3px; }
       }
-      /* page-pad 阶梯（variables.css 同源）：1440 → 60、1920 → 100、2560 → 140 */
-      @media (width >= 1440px) { #boot-splash:not([data-cols="tv"]) .bs-herobili { --bs-pad: 60px; } }
-      @media (width >= 1281px) { #boot-splash:not([data-cols="tv"]) .bs-herobili { --bs-side-w: calc(var(--bs-main-w) * 0.56); --bs-banner-h: calc(var(--bs-main-w) * 0.24); } }
+      /* page-pad 阶梯已随 --bs-main-w 公式退役（token 消费后由 layout-tokens 分档接管）；
+         本块只剩 ≥1920 的榜栏 flex-basis 兜底覆盖 */
       @media (width >= 1920px) {
         #boot-splash:not([data-cols="tv"]) .bs-home .bs-rail { flex-basis: var(--home-rail-w, 260px); }
-        #boot-splash:not([data-cols="tv"]) .bs-herobili { --bs-pad: 100px; --bs-main-w: calc(min(100vw, 2200px) - 2 * var(--bs-pad) - var(--home-rail-w, 260px) - 16px); }
-      }
-      @media (width >= 2560px) {
-        #boot-splash:not([data-cols="tv"]) .bs-herobili { --bs-pad: 140px; --bs-side-w: calc(var(--bs-main-w) * 0.66); --bs-banner-h: calc(var(--bs-main-w) * 0.277); }
       }
       /* 右卡列数（useHeroSideCols 同源断点）：1024–1280 → 2 列×2 行；≥1281 → 3 列×2 行 */
       @media (width >= 1281px) { #boot-splash:not([data-cols="tv"]) .bs-herocards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -321,8 +372,12 @@
       html[data-theme="dark"] .bs-herobili__banner,
       html[data-theme="dark"] .bs-herocard__cover,
       html[data-theme="dark"] .bs-herocard__title,
+      html[data-theme="dark"] .bs-contcard__cover,
+      html[data-theme="dark"] .bs-contcard__bar,
+      html[data-theme="dark"] .bs-cont__head,
       html[data-theme="dark"] .bs-shuffle i { background: #2a2a2a; }
       html[data-theme="dark"] .bs-home__railcard,
+      html[data-theme="dark"] .bs-home__strip,
       html[data-theme="dark"] .bs-herobili,
       html[data-theme="dark"] .bs-herocard { background: #1f1f1f; border-color: #2b2b2b; }
       /* ⚠️ 换一换必须单独提高特异性（2026-09-22 修复深色白底）：它的浅色规则写在
@@ -412,12 +467,20 @@
         .bs-player__panel { flex: 3 1 0; height: auto; min-height: 0; }
         .bs-player__panel--tall { flex: 7 1 0; }
       }
+      /* 移动档（2026-09-22 实测）：真实舞台高/宽 ≈226.9/363 = 16:10（非 16:9），
+         旧档使骨架矮真实 ≈34px，挂载时纵向跳变 */
+      @media (width <= 767px) {
+        .bs-player__stage { aspect-ratio: 16 / 10; }
+      }
 
       html[data-theme="dark"] .bs-player__panel { background: #1f1f1f; border-color: #2b2b2b; }
 
       /* /iptv/play 真实页是全屏播放器（顶层路由，不走 AppLayout）→ 无顶栏，提示居中 */
       #boot-splash[data-shape="play"] .bs-header { display: none; }
       #boot-splash[data-shape="play"] .bs-body { flex: 1; align-items: center; justify-content: center; }
+
+      html[data-theme="dark"] .bs-chartitem__img,
+      html[data-theme="dark"] .bs-chartitem__lines i { background: #1f1f1f; }
 
       html[data-theme="dark"] #boot-splash { background: #141414; color: #666; }
       html[data-theme="dark"] .bs-header { background: #1f1f1f; border-bottom-color: #2b2b2b; }
@@ -430,6 +493,8 @@
       html[data-theme="dark"] .bs-chip,
       html[data-theme="dark"] .bs-sec,
       html[data-theme="dark"] .bs-list i,
+      html[data-theme="dark"] .bs-chartitem,
+      html[data-theme="dark"] .bs-person-hero,
       html[data-theme="dark"] .bs-row--chart i,
       html[data-theme="dark"] .bs-lines i,
       html[data-theme="dark"] .bs-rail i { background: #2a2a2a; }
@@ -460,23 +525,26 @@
     </script>
   </head>
   <body>
-    <div id="boot-splash" aria-hidden="true" data-shape="home">
+    <div id="boot-splash" aria-hidden="true" data-shape="plain">
       <div class="bs-header">
         <div class="bs-logo">
           <img src="/src/assets/icon/KinoTV.webp" alt="" onerror="this.style.display='none'" />
         </div>
         <div class="bs-nav"><i></i><i></i><i></i><i></i></div>
       </div>
-      <!-- 静态默认 = 中性形态（空 body + 提示）：home 形态由下方脚本 BUILD.home 构建。
-           不再写死首页轮廓 —— 无 JS / 脚本失败 / 解析早期窗口下，非首页路由
-           都不会漏出首页骨架（2026-09-20 用户要求）。 -->
+      <!-- 启动链两段式（2026-09-22 用户定稿：plain 在前、同构骨架在后，顺序不覆盖）：
+           第一段 = plain 启动页（本静态中性形态：顶栏 + 居中「正在启动…」）；
+           第二段 = 目标页同构轮廓（由下方脚本延迟 PLAIN_MS 后换形，非叠层）。
+           无 JS / 脚本失败时停在第一段中性形态，不漏首页轮廓（2026-09-20 要求）。 -->
       <div class="bs-body" id="bs-body"></div>
       <div class="bs-tip" id="bs-tip">正在启动…</div>
     </div>
     <script>
-      /* 启动骨架的「按路由分支」：静态默认是中性形态（仅顶栏+提示，无 JS 时的兜底），
-         这里按当前 location 就地换成本页同构的骨架（含 home）。脚本同步执行且位于
-         #root 之前，赶在首帧绘制前完成，不会出现「先闪默认形态、再换成目标页骨架」。
+      /* 启动骨架的「两段式 + 按路由分支」：
+         第一段 plain 启动页从首帧即显示（静态中性形态）；脚本同步执行但**不立即换形**，
+         固定 PLAIN_MS 后才按当前 location 换成本页同构骨架（含 home）并挂 data-shape-ready——
+         换形是就地重建 body，plain 与同构永不叠层（用户 2026-09-22 硬要求：「绝对不是覆盖」）。
+         若 React 在换形前已提交首帧，dropBootSplash 直接摘除启动页，第二段自然跳过。
          路由判定与 src/routes.tsx 对齐；App 端走 HashRouter，故同时读 hash。 */
       (function () {
         var splash = document.getElementById('boot-splash');
@@ -555,6 +623,7 @@
           record: __tokInt('--history-cols', 1),
           iptvpage: __tokInt('--iptv-page-cols', 2),
           chart: __tokInt('--chart-cols', 1),
+          work: __tokInt('--person-work-cols', 4),
         };
         function colCount(kind) { return COLS[kind] || 3; }
         /* 满行网格：卡数向上取整到列数整数倍 */
@@ -598,12 +667,20 @@
           for (var i = 0; i < count; i++) list.appendChild(el(''));
           return list;
         }
-        /* 榜单行网格（chart 专用）：行块直接铺在 --chart-cols 列网格里，
-           与真实 .chart-list（ChartSkeleton  cols×rows）同构；
-           区别于 listRows（单列 flex，现已无调用方——勿用作榜单行） */
+        /* 榜单行网格（chart 专用）：行卡镜像 .chart-list__skeleton（16:9 图槽 + 两行文本，
+           行高由 CSS .bs-chartitem 控制），区别于旧单灰块（与真实差 5 倍高）；
+           铺在 --chart-cols 列网格里与真实 .chart-list 同构 */
         function chartRows(count) {
           var row = el('bs-row bs-row--chart', 'div');
-          for (var i = 0; i < count; i++) row.appendChild(el(''));
+          for (var i = 0; i < count; i++) {
+            var item = el('bs-chartitem', 'div');
+            item.appendChild(el('bs-chartitem__img'));
+            var linesBox = el('bs-chartitem__lines', 'div');
+            linesBox.appendChild(el(''));
+            linesBox.appendChild(el(''));
+            item.appendChild(linesBox);
+            row.appendChild(item);
+          }
           return row;
         }
         function lines(count) {
@@ -629,6 +706,21 @@
           text.appendChild(el(''));
           item.appendChild(text);
           return item;
+        }
+        /* 继续观看行（镜像 .home-continue-row，CSS 见上方 .bs-cont 块） */
+        function contRow() {
+          var wrap = el('bs-cont', 'div');
+          wrap.appendChild(el('bs-cont__head'));
+          var cards = el('bs-cont__cards', 'div');
+          for (var i = 0; i < 5; i++) {
+            var c = el('bs-contcard', 'div');
+            c.appendChild(el('bs-contcard__cover'));
+            c.appendChild(el('bs-contcard__bar'));
+            c.appendChild(el('bs-contcard__bar bs-contcard__bar--sm'));
+            cards.appendChild(c);
+          }
+          wrap.appendChild(cards);
+          return wrap;
         }
         /* HeroBili 融合卡：banner（提示居中区）+ 右卡网格（列数×2 行，
            useHeroSideCols 同源断点：1024–1280 → 2 列，≥1281 → 3 列）+ 换一换竖条 */
@@ -737,6 +829,7 @@
             }
             var main = el('bs-home__main', 'div');
             main.appendChild(heroBili(wide));
+            main.appendChild(contRow());
             main.appendChild(fullGrid('poster', 1));
             two.appendChild(main);
             home.appendChild(two);
@@ -746,10 +839,12 @@
              var(--rail-w) minmax(0,1fr)）—— 骨架左栏用 filterRail 同构 */
           browse: function () { return [withRail([filterBar(), fullGrid('poster', 2)], filterRail())]; },
           chart: function () { return [filterBar(), chartRows(colCount('chart') * 4)]; },
-          /* collections / history：真实页走 RecordShell，≥1024 非 app/tv 出左栏
-             （.record-aside，--rail-w + 右 1px 边框线）—— 骨架同构带左栏 */
-          collections: function () { return [withRail([filterBar(), sec(), fullGrid('poster', 1), sec(), fullGrid('channel', 1)])]; },
-          history: function () { return [withRail([filterBar(), fullGrid('record', 2)])]; },
+          /* collections / history（2026-09-22 实测修正）：真实页（RecordShell + 页骨架）
+             顶部**没有筛选条**，旧 filterBar 属结构错构 → 删除；
+             collections = 影视收藏区 + IPTV 收藏区双分区（随数据判定，骨架恒显）；
+             history = 单组记录网格（真实另有时间轴，轮廓级以 rail 对应） */
+          collections: function () { return [withRail([sec(), fullGrid('poster', 1), sec(), fullGrid('channel', 1)])]; },
+          history: function () { return [withRail([sec(), fullGrid('record', 2)])]; },
           iptv: function () {
             return [withRail([filterBar(), sec(), fullGrid('iptvpage', 2)])];
           },
@@ -761,7 +856,15 @@
             tabs.appendChild(el(''));
             return [detailTop(), tabs, detailContent()];
           },
-          person: function () { return [hero(), lines(4)]; },
+          /* person（2026-09-22 实测重构）：旧「16:9 hero + 文本行」与真实页不符——
+             真实 = hero（有图档 ≈224）+ tabs + 作品网格（--person-work-cols）；
+             旧文本行代替作品网格属结构错构 */
+          person: function () {
+            var tabs = el('bs-detail__tabs', 'div');
+            tabs.appendChild(el(''));
+            tabs.appendChild(el(''));
+            return [el('bs-person-hero', 'div'), tabs, fullGrid('work', 2)];
+          },
           /* 播放页：主播放区（16:9 黑场）+ 桌面右面板列。
              用 div 而非默认的 i（`<i>` 是 inline，aspect-ratio / 高度不生效，
              同款的 .bs-cover / .bs-line 都是显式 display:block 才成立）。 */
@@ -813,34 +916,40 @@
           /* detail：推荐区 = 标题 + poster 行（镜像真实页底部两个推荐行，
              宁多不缺由 overflow 裁剪） */
           detail: function () { fillRows(body, recommendBlock); },
-          person: function () { fillRows(body, function () { return lines(4); }); },
+          person: function () { fillRows(body, function () { return fullGrid('work', 1); }); },
         };
 
-        splash.setAttribute('data-shape', shape);
-        if (shape === 'play') tip.textContent = '正在打开播放器…';
-        else if (shape === 'player') tip.textContent = '正在加载影片…';
+        /* ── 第二段：PLAIN_MS 后才换入目标页同构轮廓（两段顺序式，非叠层）──
+           换形前 splash 一直是静态 plain 启动页；若 React 先提交并摘除了骨架，
+           此处检测到元素已不在则直接放弃（第二段自然跳过，不复活启动页）。 */
+        var PLAIN_MS = 400;
+        function revealShape() {
+          if (!document.getElementById('boot-splash')) return;
+          splash.setAttribute('data-shape', shape);
+          if (shape === 'play') tip.textContent = '正在打开播放器…';
+          else if (shape === 'player') tip.textContent = '正在加载影片…';
 
-        var build = BUILD[shape];
-        if (build) {
-          var blocks = build();
-          var frag = document.createDocumentFragment();
-          for (var i = 0; i < blocks.length; i++) frag.appendChild(blocks[i]);
-          body.textContent = '';
-          body.appendChild(frag);
+          var build = BUILD[shape];
+          if (build) {
+            var blocks = build();
+            var frag = document.createDocumentFragment();
+            for (var i = 0; i < blocks.length; i++) frag.appendChild(blocks[i]);
+            body.textContent = '';
+            body.appendChild(frag);
+          }
+
+          /* home 形态完全由 BUILD.home 构建（静态 HTML 已是中性空 body），
+             此处按视口补行填满首屏 */
+          var fill = FILL[shape];
+          if (fill) fill();
+
+          /* 就绪标记：换形 / 构建 / 填充全部完成后才挂。E2E 用
+             waitForSelector('#boot-splash[data-shape-ready]') 精确同步到「第二段已就位、
+             React 尚未摘除」窗口 —— 两段式后更早的 readyState / attached 信号读到的都是
+             第一段 plain，禁止用作换形完成依据。 */
+          splash.setAttribute('data-shape-ready', '1');
         }
-
-        /* home 形态完全由 BUILD.home 构建（静态 HTML 已是中性空 body），
-           此处按视口补行填满首屏 */
-        var fill = FILL[shape];
-        if (fill) fill();
-
-        /* 就绪标记：data-shape / body 构建 / 填充全部完成后才挂。E2E 用
-           waitForSelector('#boot-splash[data-shape-ready]') 精确同步到「内联脚本已跑完、
-           但被延迟的 main.tsx 尚未执行（React 未挂载摘除骨架）」这段窗口 —— 既不会在
-           分块解析竞态下读到 HTML 静态默认 data-shape，也不会等到 React 摘除后截空。
-           ⚠️ 不能用 waitForFunction(readyState!=='loading') 替代：那要等被拦延迟的
-           main.tsx（deferred module）执行完，届时 React 已挂载、骨架可能已被摘除。 */
-        splash.setAttribute('data-shape-ready', '1');
+        window.setTimeout(revealShape, PLAIN_MS);
       })();
     </script>
     <div id="root"></div>

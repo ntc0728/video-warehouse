@@ -48,9 +48,10 @@ export default function CollectionsSkeleton({
     <div className="collection-content collections-skeleton skeleton-scope" role="status" aria-label="加载中">
       {showVideo && (
         <section className="collection-section">
-          {/* 分区头复用真实类：标题 / 计数两段，"影视 / 共 N 条" 同结构 */}
+          {/* 分区头复用真实类：标题为静态常量 → 直接渲染真实文字（2026-09-22 方向 A），
+              计数为动态数据 → 保持灰条 */}
           <div className="collection-section-head">
-            <Skeleton className="collections-skeleton__head-title" />
+            <span className="collection-section-head__title">影视</span>
             <Skeleton className="collections-skeleton__head-count" />
           </div>
           <div ref={videoGridRef} className="collections-skeleton__video-grid">
@@ -67,7 +68,7 @@ export default function CollectionsSkeleton({
       {showChannels && (
         <section className="collection-section">
           <div className="collection-section-head">
-            <Skeleton className="collections-skeleton__head-title" />
+            <span className="collection-section-head__title">直播</span>
             <Skeleton className="collections-skeleton__head-count" />
           </div>
           <div ref={iptvGridRef} className="collections-skeleton__iptv-grid">

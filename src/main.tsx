@@ -1,5 +1,5 @@
 // 应用入口文件，挂载 React 根组件并初始化路由
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import Routes from './routes';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -12,14 +12,10 @@ import { preloadLogoCache } from './services/channelLogo';
 // 移动端阻止双指缩放
 preventPinchZoom();
 
-// 首屏加载兜底：路由 chunk 拉取期间显示全屏 AppLoading，替代「render 前空白」。
-// 与 AppLayout 的 LoadingFallback 一致写入 __kinoSuspenseFallback 时间戳，
-// 供首页判断「刚经历过 chunk fallback」从而跳过自身固定 500ms loading，
-// 避免 fallback 与页面 loading 两次 AppLoading 叠加（8.3C 机制）。
+// 首屏加载兜底：路由 chunk 拉取期间渲染全屏 AppLoading。2026-09-22 起它只是
+// 「占位」——启动骨架 #boot-splash（index.html 内联、与目标页同构）在其上方便
+// 可见，dropBootSplash 会等这份 plain 退场才摘骨架，plain 不再盖住同构骨架。
 function BootLoading() {
-  useEffect(() => {
-    window.__kinoSuspenseFallback = Date.now();
-  }, []);
   return <AppLoading fullScreen showProgress={false} tip="正在启动…" />;
 }
 
@@ -50,20 +46,29 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 // 摘除 index.html 的零依赖启动骨架。
-// 必须等 React **真正提交首帧**之后 —— 否则会出现「splash 已消失、内容还没渲染」的新白屏空档。
-// 原实现是单个 requestAnimationFrame：React 18 createRoot().render() 走 Scheduler（MessageChannel
-// 宏任务）提交，rAF 有可能先于该宏任务触发 → 冷启动时 main.tsx 图很重，空档被放大到肉眼可见。
-// 改为轮询「#root 有子节点」：Suspense fallback（BootLoading）/ 内容二选一，谁先到都算已提交。
-// 另加 10s 兜底：模块顶层抛错导致 render 从未发生时，不让 splash 永久盖屏。
-function dropBootSplash() {
+// 两个条件（2026-09-22 整改）：
+//  1. React 真正提交首帧（#root 有子节点）——否则会出现「splash 已消失、内容还没渲染」
+//     的新白屏空档（原单 rAF 实现会抢在 React Scheduler 宏任务提交前触发）；
+//  2. 首帧不是 plain AppLoading——chunk 冷加载时首帧提交的是 BootLoading
+//     （`.app-loading--fullscreen`）或 AppLayout 的 LoadingFallback（`.page-loading .app-loading`），
+//     若此时摘骨架，同构启动骨架会被 plain loading 盖脸（用户 2026-09-22 反馈），
+//     故让骨架继续撑到真实页/页级骨架提交。
+// 另加 10s 兜底强制摘除：模块顶层抛错 render 从未发生、或 chunk 迟迟不落地时，
+// 不让 splash 永久盖屏。
+function dropBootSplash(force = false) {
+  const splash = document.getElementById('boot-splash');
   const root = document.getElementById('root');
-  if (root && root.childElementCount > 0) {
-    document.getElementById('boot-splash')?.remove();
+  if (!splash) return true;
+  if (force) {
+    splash.remove();
     return true;
   }
-  return false;
+  if (!root || root.childElementCount === 0) return false;
+  if (root.querySelector('.app-loading--fullscreen, .page-loading .app-loading')) return false;
+  splash.remove();
+  return true;
 }
 requestAnimationFrame(function waitFirstCommit() {
   if (!dropBootSplash()) requestAnimationFrame(waitFirstCommit);
 });
-window.setTimeout(dropBootSplash, 10_000);
+window.setTimeout(() => dropBootSplash(true), 10_000);

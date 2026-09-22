@@ -71,16 +71,10 @@
   width: 12em;
 }
 
-/* 右侧信息卡：仅 ≥1024 两栏档渲染（与 .detail-hero-side 同视觉） */
+/* 右侧信息卡：外壳复用真实 .detail-hero-side（padding/边框/圆角/底色/阴影单真源），
+   本类只承担「<1024 隐藏」与「≥1024 取消定高改 stretch」两点差异 */
 .detail-skeleton__side {
   display: none;
-  flex-direction: column;
-  gap: var(--space-md);
-  min-width: 0;
-  padding: var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
 }
 
 .detail-skeleton__chips {
@@ -114,37 +108,10 @@
   width: 62%;
 }
 
-/* ── Tab 灰块：外壳复用 .tab-underline / .detail-tab，行盒天然一致 ── */
-.detail-skeleton__tab {
-  display: flex;
-  gap: var(--space-xs);
-  align-items: center;
-  cursor: default;
-}
+/* ── Tab：外壳与图标/文字全部复用真实类（.tab-underline / .detail-tab + Icon + span），
+   骨架私有零规则；不可交互由上方 .detail-skeleton 组选择器承担 ── */
 
-.detail-skeleton__tab-icon {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  border-radius: var(--radius-sm);
-}
-
-.detail-skeleton__tab-label {
-  width: 2.5em;
-  height: 1em;
-}
-
-/* ── 概览：演员 / 简介 / 剧照 ── */
-.detail-skeleton__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.detail-skeleton__section-title {
-  width: 6em;
-  height: 1.25em;
-  margin-top: var(--space-xs);
-}
+/* ── 概览：演员 / 简介 / 剧照（内壳 .detail-info 真实类，块级流 + 标题 margin 单真源）── */
 
 .detail-skeleton__cast {
   cursor: default;
@@ -183,14 +150,7 @@
   width: 55%;
 }
 
-/* ── 推荐区：外壳与网格复用真实类，只补标题与卡内灰块 ── */
-.detail-skeleton__recommend-title {
-  width: 6em;
-  height: 1.4em;
-  margin: 0 0 var(--space-sm);
-  padding: 0 var(--space-md);
-  font-size: var(--text-lg);
-}
+/* ── 推荐区：外壳 / 网格 / 标题全部复用真实类，只补卡内灰块 ── */
 
 .detail-skeleton__rec-cover {
   position: absolute;
@@ -220,10 +180,11 @@
     width: 100%;
   }
 
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__side {
+  /* 复合选择器压过真实 .detail-hero-side 的 height: var(--detail-hero-h, 520px)：
+     骨架态无 JS 量测，用 stretch 达成同样的「右栏高 = banner 高」视觉 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side.detail-skeleton__side {
     display: flex;
-    /* 拉伸到行高（= hero 高）：真实页右栏高度由 JS 写 --detail-hero-h 对齐 hero，
-       骨架态无 JS 量测，用 stretch 达成同样的「右栏高 = banner 高」视觉 */
     align-self: stretch;
+    height: auto;
   }
 }

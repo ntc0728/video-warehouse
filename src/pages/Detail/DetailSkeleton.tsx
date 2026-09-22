@@ -20,14 +20,26 @@
  * 唯一在数据到达前不可知的是「条件项是否出现」（真实基础信息有 13 个条件项，
  * 单部作品典型命中 6–9 个）→ 取典型值 INFO_CARD_COUNT 并在此注明。
  *
+ * 静态标签真实文字（2026-09-22 全站统一方向 A，用户拍板）：tabs（概览/播放列表）、
+ * 侧栏「基础信息」、区块标题（演员/简介/剧照）、推荐区标题都是静态配置而非接口数据，
+ * 骨架直接渲染真实文字 + 真实类（.detail-tab / .detail-section-title /
+ * .detail-section-subtitle / .detail-recommend-title）——与 Home 行标题、IPTV 左栏标题
+ * 同口径；数据到达时标题零替换闪烁。灰条只留给动态数据（片名/genres/信息值/卡封面）。
+ *
  * 视口差异化走 CSS 断点（width >= 1024px + html[data-device] 门控，与 Detail.css 同口径），不用 JS。
  */
 import Skeleton from '@/components/common/Skeleton';
+import { Icon } from '@/components/ui/Icon';
+import { Info, ListVideo } from 'lucide-react';
 import { useGridCols } from '@/hooks';
 import './DetailSkeleton.css';
 
-/** tab 数：真实 = 2（概览 / 播放列表），TV 作品多一个「季信息」→ 取公共最小 2 */
-const TAB_COUNT = 2;
+/** tabs：真实前两项恒为概览/播放列表（TV 多一个「季信息」，骨架取公共最小 2，同旧 TAB_COUNT）；
+    图标与文字都是静态配置，骨架直接渲染真实态 */
+const TAB_ITEMS = [
+  { icon: Info, label: '概览' },
+  { icon: ListVideo, label: '播放列表' },
+] as const;
 /** 类型 chips：真实 = genres.length（TMDB 典型 2–5） */
 const GENRE_CHIP_COUNT = 4;
 /** 基础信息卡：真实最多 13 个条件项，单部作品典型命中 6–9 → 取 8 */
@@ -73,8 +85,8 @@ export default function DetailSkeleton() {
             <Skeleton className="detail-skeleton__meta detail-skeleton__meta--short" />
           </div>
         </div>
-        <aside className="detail-skeleton__side">
-          <Skeleton className="detail-skeleton__section-title" />
+        <aside className="detail-hero-side detail-skeleton__side">
+          <h2 className="detail-section-title">基础信息</h2>
           <div className="detail-skeleton__chips">
             {Array.from({ length: GENRE_CHIP_COUNT }, (_, i) => (
               <Skeleton key={i} className="detail-skeleton__chip" />
@@ -90,54 +102,57 @@ export default function DetailSkeleton() {
         </aside>
       </div>
 
-      {/* ── Tab 导航（复用真实 .detail-tabs-wrap / .detail-tabs 类，含与 hero 的重叠定位） ── */}
+      {/* ── Tab 导航（复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab 类，含与 hero 的重叠定位；
+           图标与标签为静态配置，渲染真实态）── */}
       <div className="detail-tabs-wrap">
         <div className="detail-tabs">
-          {Array.from({ length: TAB_COUNT }, (_, i) => (
-            // 复用真实 .tab-underline / .detail-tab：padding / 下边框 / 行盒完全一致
-            <span key={i} className="tab-underline detail-tab detail-skeleton__tab">
-              <Skeleton className="detail-skeleton__tab-icon" />
-              <Skeleton className="detail-skeleton__tab-label" />
+          {TAB_ITEMS.map((tab) => (
+            <span key={tab.label} className="tab-underline detail-tab detail-skeleton__tab">
+              <Icon icon={tab.icon} size="sm" />
+              <span>{tab.label}</span>
             </span>
           ))}
         </div>
       </div>
 
-      {/* ── 概览 tab：演员 → 简介 → 剧照 ── */}
-      <div className="detail-content detail-skeleton__body">
-        <Skeleton className="detail-skeleton__section-title" />
-        <div className="detail-cast-row detail-cast-row--collapsed detail-skeleton__cast">
-          {Array.from({ length: CAST_SLOTS }, (_, i) => (
-            <div key={i} className="detail-cast-item detail-skeleton__cast-item">
-              <Skeleton className="detail-skeleton__cast-avatar" />
-              <Skeleton className="detail-skeleton__cast-name" />
-              <Skeleton className="detail-skeleton__cast-role" />
-            </div>
-          ))}
-        </div>
+      {/* ── 概览 tab：演员 → 简介 → 剧照（内层 .detail-info 复用真实页内壳：
+           padding / 块级流 / 标题 margin 全部单真源，骨架不再自己搭 flex 间距）── */}
+      <div className="detail-content">
+        <div className="detail-info">
+          <h3 className="detail-section-subtitle">演员</h3>
+          <div className="detail-cast-row detail-cast-row--collapsed detail-skeleton__cast">
+            {Array.from({ length: CAST_SLOTS }, (_, i) => (
+              <div key={i} className="detail-cast-item detail-skeleton__cast-item">
+                <Skeleton className="detail-skeleton__cast-avatar" />
+                <Skeleton className="detail-skeleton__cast-name" />
+                <Skeleton className="detail-skeleton__cast-role" />
+              </div>
+            ))}
+          </div>
 
-        <Skeleton className="detail-skeleton__section-title" />
-        <div className="detail-skeleton__overview-list">
-          {Array.from({ length: OVERVIEW_LINES }, (_, i) => (
-            <Skeleton
-              key={i}
-              className={`detail-skeleton__overview${i === OVERVIEW_LINES - 1 ? ' detail-skeleton__overview--short' : ''}`}
-            />
-          ))}
-        </div>
+          <h3 className="detail-section-subtitle">简介</h3>
+          <div className="detail-skeleton__overview-list">
+            {Array.from({ length: OVERVIEW_LINES }, (_, i) => (
+              <Skeleton
+                key={i}
+                className={`detail-skeleton__overview${i === OVERVIEW_LINES - 1 ? ' detail-skeleton__overview--short' : ''}`}
+              />
+            ))}
+          </div>
 
-        <Skeleton className="detail-skeleton__section-title" />
-        <div className="detail-stills-grid">
-          {Array.from({ length: STILL_COUNT }, (_, i) => (
-            <div key={i} className="detail-stills-skeleton" />
-          ))}
+          <h3 className="detail-section-subtitle">剧照</h3>
+          <div className="detail-stills-grid">
+            {Array.from({ length: STILL_COUNT }, (_, i) => (
+              <div key={i} className="detail-stills-skeleton" />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── 两个推荐行（真实位于页面最底部，各 slice(0,12)） ── */}
+      {/* ── 两个推荐行（真实位于页面最底部，各 slice(0,12)；标题为静态配置，渲染真实文字）── */}
       {RECOMMEND_SECTIONS.map((label) => (
         <section key={label} className="detail-recommend detail-skeleton__recommend">
-          <Skeleton className="detail-skeleton__recommend-title" />
+          <h2 className="detail-recommend-title">{label}</h2>
           <div className="detail-recommend-row detail-skeleton__recommend-row">
             {Array.from({ length: Math.min(RECOMMEND_MAX_ITEMS, cols * 2) }, (_, i) => (
               <div key={i} className="detail-recommend-card">

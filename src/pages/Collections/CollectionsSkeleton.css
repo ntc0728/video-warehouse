@@ -1,14 +1,8 @@
 /* 收藏页专属骨架 — 几何对齐真实 .collection-section / .video-card-grid / .iptv-channel-grid。
    分区外壳与分区头复用 Collections.css 的真实类（.collection-content /
-   .collection-section / .collection-section-head），故本文件只写：
-   ① 网格容器（真实网格类带入场动画，骨架不用）；② 灰块尺寸。 */
-
-.collections-skeleton__head-title {
-  width: 4.5em;
-  height: 1.1em;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-}
+   .collection-section / .collection-section-head）；分区头标题为静态常量，
+   直接渲染真实文字 + 真实类 __title（2026-09-22 方向 A），故本文件只写：
+   ① 网格容器（真实网格类带入场动画，骨架不用）；② 动态数据灰块尺寸。 */
 
 .collections-skeleton__head-count {
   width: 3.5em;

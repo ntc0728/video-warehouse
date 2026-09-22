@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>骨架静态标签统一真实文字 — before/after（2026-09-22 方向 A）</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #181b22;
+    --border: #262a33;
+    --text: #e8eaf0;
+    --text-secondary: #a6adbd;
+    --text-tertiary: #6f7787;
+    --primary: #4f8cff;
+    --skel-a: #232733;
+    --skel-b: #2c3140;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --radius-full: 999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    padding: 24px;
+  }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .sub { color: var(--text-secondary); font-size: 12px; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 20px; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 10; }
+  .toolbar button {
+    height: 32px; padding: 0 18px; border: 1px solid var(--border); border-radius: var(--radius-full);
+    background: var(--surface); color: var(--text-secondary); cursor: pointer; font-size: 13px;
+  }
+  .toolbar button.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+  .panel h2 { font-size: 14px; margin-bottom: 2px; }
+  .panel .note { font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: var(--radius-full); margin-left: 6px; vertical-align: 1px; }
+  .tag.before { background: #3a2530; color: #ff9db1; }
+  .tag.after { background: #1e3326; color: #8ce0a5; }
+
+  /* 灰条（骨架占位）通用 shimmer */
+  .sk {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(90deg, var(--skel-a) 25%, var(--skel-b) 50%, var(--skel-a) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* ── Detail ───────────────────────────── */
+  .d-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+  .d-tab { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; }
+  .d-tab.active { color: var(--text); font-weight: 600; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: -11px; }
+  .d-ico { width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 3px; flex: none; }
+  .d-wrap { display: flex; gap: 16px; }
+  .d-side { flex: 0 0 34%; }
+  .d-side .sec-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .d-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .d-chip { width: 52px; height: 20px; border-radius: var(--radius-full); }
+  .d-main { flex: 1; min-width: 0; }
+  .d-sub { font-size: 13px; font-weight: 600; color: var(--text); margin: 10px 0 6px; }
+  .d-line { height: 12px; margin-bottom: 6px; }
+  .d-rec-title { font-size: 15px; font-weight: 700; margin: 14px 0 8px; }
+  .d-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .d-card .cover { aspect-ratio: 2/3; border-radius: var(--radius-sm); }
+  .d-card .line { height: 10px; margin-top: 5px; width: 80%; }
+
+  /* ── Browse ───────────────────────────── */
+  .b-sortbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .b-types { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--radius-full); background: #1f232c; }
+  .b-type { height: 28px; padding: 0 12px; border-radius: var(--radius-full); background: transparent; color: var(--text-secondary); font-size: 12px; display: inline-flex; align-items: center; border: none; }
+  .b-type.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .b-div { width: 1px; height: 16px; background: var(--border); }
+  .b-tab { height: 28px; padding: 0 12px; border-radius: 8px; background: transparent; color: var(--text-secondary); font-size: 12px; display: inline-flex; align-items: center; border: none; }
+  .b-tab.active { background: var(--primary); color: #fff; font-weight: 600; }
+  .b-count { margin-left: auto; color: var(--text-tertiary); font-size: 12px; }
+  .b-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .b-card .cover { aspect-ratio: 2/3; border-radius: var(--radius-sm); }
+  .b-card .line { height: 10px; margin-top: 5px; width: 75%; }
+  .dup-hint { outline: 2px dashed #ff9db1; outline-offset: 3px; border-radius: 4px; }
+  .dup-label { color: #ff9db1; font-size: 11px; margin: 4px 0 10px; }
+
+  /* ── Collections ──────────────────────── */
+  .c-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .c-title { font-size: 15px; font-weight: 700; }
+  .c-count-t { font-size: 12px; color: var(--text-tertiary); }
+  .c-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .c-card .cover { aspect-ratio: 2/3; border-radius: var(--radius-sm); }
+  .c-card .line { height: 10px; margin-top: 5px; width: 70%; }
+  .c-section + .c-section { margin-top: 18px; }
+
+  .legend { margin-top: 20px; font-size: 12px; color: var(--text-tertiary); }
+  .legend b { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<h1>骨架静态标签统一真实文字 — before/after</h1>
+<p class="sub">2026-09-22 用户拍板方向 A：静态配置（tab 名 / 分区头标题 / 排序 pills）渲染真实文字 + 真实类；灰条只留给动态数据。boot-splash 维持轮廓级不动。</p>
+<div class="toolbar">
+  <button id="btn-before">Before（旧：灰条 / 重复镜像条）</button>
+  <button id="btn-after" class="on">After（新：真实文字）</button>
+</div>
+
+<div class="grid">
+  <!-- ═══ Detail ═══ -->
+  <div class="panel">
+    <h2>Detail 详情页骨架 <span class="tag before" id="tag-d-before" hidden>before</span><span class="tag after" id="tag-d-after">after</span></h2>
+    <p class="note" id="note-d">tabs「概览/播放列表」、侧栏「基础信息」、区块「演员/简介/剧照」、推荐「相关推荐」全部真实文字 + 真实类</p>
+    <!-- before -->
+    <div id="detail-before" hidden>
+      <div class="d-tabs">
+        <span class="sk" style="width:64px;height:16px"></span>
+        <span class="sk" style="width:76px;height:16px"></span>
+      </div>
+      <div class="d-wrap">
+        <div class="d-side">
+          <span class="sk d-line" style="width:60%;height:16px;display:block;margin-bottom:10px"></span>
+          <div class="d-meta"><span class="sk d-chip"></span><span class="sk d-chip"></span><span class="sk d-chip"></span></div>
+          <span class="sk d-line" style="width:100%;display:block"></span>
+          <span class="sk d-line" style="width:90%;display:block"></span>
+        </div>
+        <div class="d-main">
+          <span class="sk d-line" style="width:30%;height:14px;display:block;margin-bottom:8px"></span>
+          <span class="sk d-line" style="width:100%;display:block"></span>
+          <span class="sk d-line" style="width:96%;display:block"></span>
+          <span class="sk d-line" style="width:30%;height:14px;display:block;margin:12px 0 8px"></span>
+          <span class="sk d-line" style="width:100%;display:block"></span>
+          <span class="sk d-line" style="width:70%;display:block"></span>
+          <span class="sk d-line" style="width:34%;height:16px;display:block;margin:14px 0 8px"></span>
+          <div class="d-cards">
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- after -->
+    <div id="detail-after">
+      <div class="d-tabs">
+        <span class="d-tab active"><span class="d-ico"></span>概览</span>
+        <span class="d-tab"><span class="d-ico"></span>播放列表</span>
+      </div>
+      <div class="d-wrap">
+        <div class="d-side">
+          <div class="sec-title">基础信息</div>
+          <div class="d-meta"><span class="sk d-chip"></span><span class="sk d-chip"></span><span class="sk d-chip"></span></div>
+          <span class="sk d-line" style="width:100%;display:block"></span>
+          <span class="sk d-line" style="width:90%;display:block"></span>
+        </div>
+        <div class="d-main">
+          <div class="d-sub">演员</div>
+          <span class="sk d-line" style="width:100%;display:block"></span>
+          <div class="d-sub">简介</div>
+          <span class="sk d-line" style="width:96%;display:block"></span>
+          <span class="sk d-line" style="width:88%;display:block"></span>
+          <div class="d-sub">剧照</div>
+          <span class="sk d-line" style="width:100%;height:40px;display:block"></span>
+          <div class="d-rec-title">相关推荐</div>
+          <div class="d-cards">
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+            <div class="d-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Browse ═══ -->
+  <div class="panel">
+    <h2>Browse 浏览页骨架 <span class="tag before" id="tag-b-before" hidden>before</span><span class="tag after" id="tag-b-after">after</span></h2>
+    <p class="note" id="note-b">真实排序条加载期恒在渲染 → 骨架不再镜像第二条排序条（before 的红框即重复渲染 bug），只保留结果网格</p>
+    <!-- before：真实条 + 骨架镜像条 叠现 -->
+    <div id="browse-before" hidden>
+      <div class="b-sortbar">
+        <div class="b-types">
+          <span class="b-type active">全部</span><span class="b-type">电影</span><span class="b-type">剧集</span><span class="b-type">综艺</span>
+        </div>
+        <span class="b-div"></span>
+        <span class="b-tab active">默认</span><span class="b-tab">评分</span><span class="b-tab">热度</span>
+        <span class="b-count">搜索中…</span>
+      </div>
+      <div class="dup-hint">
+        <div class="b-sortbar" style="margin-bottom:8px">
+          <div class="b-types">
+            <span class="sk" style="width:36px;height:20px;border-radius:99px"></span>
+            <span class="sk" style="width:36px;height:20px;border-radius:99px"></span>
+            <span class="sk" style="width:36px;height:20px;border-radius:99px"></span>
+            <span class="sk" style="width:36px;height:20px;border-radius:99px"></span>
+          </div>
+          <span class="b-div"></span>
+          <span class="sk" style="width:44px;height:24px;border-radius:8px"></span>
+          <span class="sk" style="width:44px;height:24px;border-radius:8px"></span>
+          <span class="sk" style="width:70px;height:14px;margin-left:auto"></span>
+        </div>
+      </div>
+      <p class="dup-label">↑ 骨架镜像排序条与上方真实条重复（桌面加载期两条叠现）</p>
+      <div class="b-grid">
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+      </div>
+    </div>
+    <!-- after：只有真实条 + 网格 -->
+    <div id="browse-after">
+      <div class="b-sortbar">
+        <div class="b-types">
+          <span class="b-type active">全部</span><span class="b-type">电影</span><span class="b-type">剧集</span><span class="b-type">综艺</span>
+        </div>
+        <span class="b-div"></span>
+        <span class="b-tab active">默认</span><span class="b-tab">评分</span><span class="b-tab">热度</span>
+        <span class="b-count">搜索中…</span>
+      </div>
+      <p class="dup-label" style="color:#8ce0a5">↑ 真实排序条（加载期恒在，可交互）— 骨架不再镜像</p>
+      <div class="b-grid">
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        <div class="b-card"><div class="sk cover"></div><div class="sk line"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Collections ═══ -->
+  <div class="panel">
+    <h2>Collections 收藏页骨架 <span class="tag before" id="tag-c-before" hidden>before</span><span class="tag after" id="tag-c-after">after</span></h2>
+    <p class="note" id="note-c">分区头标题「影视 / 直播」为静态常量 → 真实文字 + 真实类 __title；计数「共 N 条」为动态数据 → 保持灰条</p>
+    <!-- before -->
+    <div id="coll-before" hidden>
+      <div class="c-section">
+        <div class="c-head">
+          <span class="sk" style="width:4.5em;height:1.1em"></span>
+          <span class="sk" style="width:3.5em;height:1.2em"></span>
+        </div>
+        <div class="c-grid">
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        </div>
+      </div>
+      <div class="c-section">
+        <div class="c-head">
+          <span class="sk" style="width:4.5em;height:1.1em"></span>
+          <span class="sk" style="width:3.5em;height:1.2em"></span>
+        </div>
+        <div class="c-grid">
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+        </div>
+      </div>
+    </div>
+    <!-- after -->
+    <div id="coll-after">
+      <div class="c-section">
+        <div class="c-head">
+          <span class="c-title">影视</span>
+          <span class="sk" style="width:3.5em;height:1.2em"></span>
+        </div>
+        <div class="c-grid">
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover"></div><div class="sk line"></div></div>
+        </div>
+      </div>
+      <div class="c-section">
+        <div class="c-head">
+          <span class="c-title">直播</span>
+          <span class="sk" style="width:3.5em;height:1.2em"></span>
+        </div>
+        <div class="c-grid">
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+          <div class="c-card"><div class="sk cover" style="aspect-ratio:16/9"></div><div class="sk line"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="legend">
+  <b>规则（改后全站一致）：</b>静态配置 → 真实文字 + 真实类（Home「继续观看/正在热映」、IPTV、Detail、Browse、Collections 同一规则）；动态数据（封面/评分/计数/简介）→ 灰条；boot-splash → 轮廓级灰条不变。<br />
+  <b>改动文件：</b>DetailSkeleton.tsx/.css（tabs/侧栏/区块/推荐标题 + 死规则清理）、BrowseSkeleton.tsx/.css（删镜像排序条）、CollectionsSkeleton.tsx/.css（分区头标题 + 死规则清理）。
+</p>
+
+<script>
+  const pages = ['detail', 'browse', 'coll'];
+  function setMode(mode) {
+    for (const p of pages) {
+      document.getElementById(p + '-before').hidden = mode !== 'before';
+      document.getElementById(p + '-after').hidden = mode !== 'after';
+      document.getElementById('tag-' + p[0] + '-before').hidden = mode !== 'before';
+      document.getElementById('tag-' + p[0] + '-after').hidden = mode !== 'after';
+    }
+    document.getElementById('btn-before').classList.toggle('on', mode === 'before');
+    document.getElementById('btn-after').classList.toggle('on', mode === 'after');
+  }
+  document.getElementById('btn-before').addEventListener('click', () => setMode('before'));
+  document.getElementById('btn-after').addEventListener('click', () => setMode('after'));
+  setMode('after');
+</script>
+</body>
+</html>

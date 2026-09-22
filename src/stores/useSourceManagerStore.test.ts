@@ -79,7 +79,7 @@ function reset(scene: 'video' | 'iptv' | 'epg' = 'video') {
     epg: [],
     _bootstrapped: { video: false, iptv: false, epg: false },
   } as never);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   void scene;
 }
 

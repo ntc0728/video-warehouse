@@ -1,7 +1,8 @@
-/* Browse 结果区专属骨架 — 几何对齐真实 .browse-sort-bar / VideoCard。
+/* Browse 结果区专属骨架 — 几何对齐真实 VideoCard。
    卡片壳（.video-card / .video-card-cover / .video-card-info / .video-card-title-wrap）
    直接复用 VideoCard.css 的真实类，故本文件只写「骨架私有」的部分：
-   排序条几何、灰块尺寸、角标位置、以及关掉真实卡的交互态。 */
+   灰块尺寸、角标位置、以及关掉真实卡的交互态。
+   排序条不在本文件：真实 .browse-sort-bar 加载期恒在渲染，骨架不镜像（见 tsx 注释）。 */
 
 /* 骨架层不可交互：真实 .video-card 是 <a>，带 hover 位移 / 描边 / 光泽扫光，
    骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
@@ -9,49 +10,6 @@
 .browse-skeleton .video-card {
   pointer-events: none;
   cursor: default;
-}
-
-/* ── 排序条：镜像 .browse-sort-bar 的四块 ── */
-.browse-skeleton__bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-xs) 0 var(--space-sm);
-}
-
-.browse-skeleton__types,
-.browse-skeleton__sorts {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: center;
-}
-
-.browse-skeleton__divider {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.browse-skeleton__type,
-.browse-skeleton__sort {
-  height: var(--comp-tab-height, 2.25rem);
-  border-radius: var(--radius-full);
-}
-
-.browse-skeleton__type {
-  width: 3.5em;
-}
-
-.browse-skeleton__sort {
-  width: 2.75em;
-}
-
-/* 计数文本（真实 .browse-sort-bar__count 为一行小字）→ 灰条高度对齐 --text-xs 行盒 */
-.browse-skeleton__count {
-  width: 5em;
-  height: 1.5em;
-  font-size: var(--text-xs);
 }
 
 /* ── 卡片网格：列数 / 间距 / 纵向 padding 与真实 .video-card-grid 同值，
