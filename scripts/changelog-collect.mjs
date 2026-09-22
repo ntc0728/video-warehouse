@@ -31,7 +31,10 @@ const PENDING = join(ROOT, 'changelogs/_pending');
 const ARCHIVED = join(PENDING, '_archived');
 const dryRun = process.argv.includes('--dry-run');
 
-function parseFrontMatter(raw) {
+function parseFrontMatter(rawIn) {
+  // 兼容 CRLF：Windows 写出的片段若带 \r\n，旧正则只认 \n 会解析不到 front-matter，
+  // 误报「无 date 字段」并跳过合并（2026-09-22 实测 10 个片段全中）。
+  const raw = rawIn.replace(/\r\n/g, '\n');
   const m = raw.match(/^---\n([\s\S]*?)\n---/);
   if (!m) return { meta: {}, body: raw };
   const meta = {};
