@@ -481,6 +481,12 @@ if ($matchedPlaywrightTests.Count -gt 0) {
     # 绕过沙箱 delete-shim：清空注入的 NODE_OPTIONS（否则清理 outputDir 时 trash 失败假崩）
     $env:NODE_OPTIONS = ""
     & pnpm exec playwright test @testArgs
+    # 透传 playwright 退出码：否则失败用例仍 exit 0，调用方无法感知（2026-09-22 修复）
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
+if ($runVitest) {
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 if (-not $runVitest -and $matchedPlaywrightTests.Count -eq 0) {

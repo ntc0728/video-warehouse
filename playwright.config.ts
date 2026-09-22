@@ -14,7 +14,7 @@ const STORAGE_STATE = resolve(__dirname, 'test-storage-state.json');
  */
 async function resolveE2EPort(): Promise<number> {
   if (process.env.E2E_PORT) return Number(process.env.E2E_PORT);
-  return new Promise((done, fail) => {
+  const port = await new Promise<number>((done, fail) => {
     const srv = net.createServer();
     srv.once('error', fail);
     srv.listen(0, '127.0.0.1', () => {
@@ -22,6 +22,12 @@ async function resolveE2EPort(): Promise<number> {
       srv.close(() => done(port));
     });
   });
+  // 关键：本 config 是 async IIFE，主进程与每个 worker 都会各自 import 执行一次。
+  // 若不回写 env，worker 会再申请一个新端口 → baseURL 与 webServer 端口不一致 →
+  // 用例全部 ERR_CONNECTION_REFUSED（2026-09-22 实测复现）。
+  // worker 作为子进程继承主进程 env，回写后即可拿到同一端口。
+  process.env.E2E_PORT = String(port);
+  return port;
 }
 
 export default (async () => {
