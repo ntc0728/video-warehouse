@@ -392,7 +392,6 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
-  const isSmartLoading = isRefreshing || isLoading;
   const isCmsLoading = cmsLoading;
 
   // ── 逻辑分页组装层（2026-09-12 用户拍板）：每页恒定 cols×5 行、行行完整、
@@ -400,6 +399,12 @@ export default function BrowsePage() {
   //    TMDB 合并页（至多 2 个请求 + offset 切片）；TMDB 硬顶 500 页 → 可达条目
   //    上限 = 500×合并页大小，一并钳进总页数。 ──
   const cardCols = useCardCols();
+  const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
+  // 在飞取页的上下文代际：渲染期同步更新，供 fetchTmdbPage 中途弃权——
+  // 旧上下文的 fetchDiscover/search 若在换词后才落地写 store，会把
+  // discoverResults 盖成旧/错数据（逻辑层 items 已按新上下文清空 → 空态被压住）。
+  const liveCtxRef = useRef(logicalContext);
+  liveCtxRef.current = logicalContext;
   // ⚠️ 本函数是全页**唯一**的 TMDB 取页出口（2026-09-14 收敛）：
   //    useBrowseData 侧已不再发任何 discover / top_rated / search 请求，
   //    所有「装载第 N 逻辑页 / 强制刷新第 1 页」的意图都经 useLogicalPage.goto 走到这里。
@@ -413,6 +418,8 @@ export default function BrowsePage() {
   //   （从详情页返回、切回刚看过的同一筛选时命中；下拉刷新/分类导航走 force 绕过）。
   const fetchTmdbPage = useCallback(async (t: number, force = false) => {
     const store = () => useTMDBStore.getState();
+    const startCtx = logicalContext;
+    const isStale = () => liveCtxRef.current !== startCtx;
     const wantFilter = JSON.stringify(toStoreFilter(filterValue));
 
     // 缓存回显只服务「浏览态」（discover/top，与 query 无关）：query 非空 = 搜索态，
@@ -435,14 +442,17 @@ export default function BrowsePage() {
     while (
       JSON.stringify(store().filterOptions) !== wantFilter && guard < 40
     ) {
+      if (isStale()) return [];
       await new Promise<void>((r) => setTimeout(r, 100));
       guard += 1;
     }
     while (store().loading.discover && guard < 100) {
+      if (isStale()) return [];
       await new Promise<void>((r) => setTimeout(r, 100));
       guard += 1;
     }
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (isStale()) return [];
       // 直调 store（_discoverSeq 已保证仅最新请求可写结果）；上方等待循环读的也是 live state。
       const p = query
         ? store().search(query, t, { reset: true })
@@ -450,6 +460,7 @@ export default function BrowsePage() {
           ? store().fetchTopRated(t, { reset: true })
           : store().fetchDiscover(t, { reset: true });
       await p;
+      if (isStale()) return [];
       const s = store();
       if (s.discoverPagination.page === t) return s.discoverResults;
       // 2026-09-14：store 的 catch 只写 errors.discover，**不 rethrow**、也不恢复
@@ -462,13 +473,14 @@ export default function BrowsePage() {
       await new Promise<void>((r) => setTimeout(r, 350));
       let g3 = 0;
       while (store().loading.discover && g3 < 100) {
+        if (isStale()) return [];
         await new Promise<void>((r) => setTimeout(r, 100));
         g3 += 1;
       }
     }
+    if (isStale()) return [];
     return store().discoverResults;
-  }, [query, filterValue]);
-  const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
+  }, [query, filterValue, logicalContext]);
   const logical = useLogicalPage({
     cols: cardCols,
     // 合并页大小随媒体类型：all = 电影 20 + 剧集 20 = 40；单类型/搜索 = 单路 20。
@@ -592,10 +604,12 @@ export default function BrowsePage() {
   // 空态与骨架/网格互斥（2026-09-14）：智能检索以逻辑层 items 为准——
   // items 非空（含慢网下保留的旧页）时不显示「暂无结果」，
   // 否则 fixed 全屏居中的空态会盖在内容与分页器上。
-  const isEmpty = !(searchMode === 'smart' ? isSmartLoading : isCmsLoading) &&
-    (searchMode === 'smart'
-      ? (discoverResults.length === 0 && logical.items.length === 0)
-      : filteredCmsResults.length === 0);
+  // ⚠️ 不再 conjunct discoverResults：store 可能被旧上下文在飞请求盖写
+  //  （与逻辑层不同拍），渲染真源是 logical.items；loading 由
+  //  !showResultsLoading 在渲染处把关（骨架与空态互斥）。
+  const isEmpty = searchMode === 'smart'
+    ? logical.items.length === 0
+    : (!isCmsLoading && filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
@@ -794,7 +808,7 @@ export default function BrowsePage() {
               内容」与「没加载出来」；且没有恢复入口（此时 items 为空、分页器也
               不渲染），等于卡死在这一页。现补 error 语义 + 重试按钮。 */}
           {!showResultsLoading && currentError && (searchMode === 'smart'
-            ? (discoverResults.length === 0 && logical.items.length === 0)
+            ? logical.items.length === 0
             : cmsResults.length === 0) && (
             <Empty
               status="error"

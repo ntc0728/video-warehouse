@@ -410,11 +410,14 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     const skeleton = page.locator('.browse-skeleton');
     await expect(skeleton).toBeVisible({ timeout: 10000 });
 
-    /* 已知常量不当未知（真源：Browse/constants.ts CATEGORY_CONFIG = 7 个、
-       FilterBar/constants SORT_OPTIONS = 3 个）—— 骨架直接读同一份常量渲染。 */
-    await expect(page.locator('.browse-skeleton__type')).toHaveCount(7);
-    await expect(page.locator('.browse-skeleton__sort')).toHaveCount(3);
-    await expect(page.locator('.browse-skeleton__count')).toHaveCount(1);
+    /* 2026-09-22 方向 A：排序条不再由骨架镜像——真实 .browse-sort-bar 加载期恒在渲染
+       （BrowseSkeleton.tsx 注释），骨架只覆盖数据网格。pill 数仍取同一份常量真源：
+       CATEGORY_CONFIG = 7、SORT_OPTIONS = 3。 */
+    await expect(page.locator('.browse-sort-bar__type')).toHaveCount(7);
+    await expect(page.locator('.browse-sort-bar__tab')).toHaveCount(3);
+    await expect(page.locator('.browse-sort-bar__count')).toHaveCount(1);
+    // 骨架不得再渲染旧镜像排序条（防止双条叠现回归）
+    await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
     // 卡壳复用真实 .video-card：封面 + 四角标 + 标题行
     const cards = await page.locator('.browse-skeleton__card.video-card').count();
@@ -464,12 +467,11 @@ test.describe('启动骨架：播放页 shape（2026-09-18 新增）', () => {
       });
     }
     await page.goto(path, { waitUntil: 'commit' });
-    /* `waitUntil:'commit'` 只保证「响应开始」，此时文档还没解析完：body 末尾那段经典内联
-       脚本（负责写 data-shape / bs-tip）尚未执行，读到的是 HTML 里的静态默认
-       data-shape="home" —— SKEL-017 曾因此假红（/play、/play/:id 只是碰巧在 evaluate 之前
-       跑完了脚本）。经典脚本在解析期同步执行，故等 readyState 离开 'loading' 即可确保已执行。 */
-    await page.waitForFunction(() => document.readyState !== 'loading');
-    await page.waitForSelector('#boot-splash', { state: 'attached' });
+    /* 两段式启动骨架（2026-09-22）：第一段 plain 启动页是静态 HTML，readyState 离开
+       'loading' 时第二段（延迟 PLAIN_MS 换形）尚未发生，读到的是 data-shape="plain" ——
+       SKEL-016~018 曾靠「经典脚本同步执行」的时序假绿，现改等 [data-shape-ready]（第二段
+       换形/构建/填充全完成才挂）；主模块被拦 ≥2.5s，覆盖 400ms 换形窗口无竞态。 */
+    await page.waitForSelector('#boot-splash[data-shape-ready]', { state: 'attached' });
   }
 
   const playerPaths = ['/play', '/player', '/play/tmdb-550'];
