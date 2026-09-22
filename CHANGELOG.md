@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.27.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.1...kinotv-v1.27.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* **browse:** 修复清空再搜无结果词时空态不渲染 + E2E 断言漂移 ([0f7d1b2](https://github.com/ntc0728/video-warehouse/commit/0f7d1b2ad125cfd60a2621e1eab62f49dffa0dcb))
+* **changelog-collect:** 解析 front-matter 兼容 CRLF 并合并剩余 10 篇片段 ([70a6552](https://github.com/ntc0728/video-warehouse/commit/70a655272cba2c9cfd78398e2d1701393b2b2a87))
+* **e2e:** 动态端口多进程不一致导致全量 CONNECTION_REFUSED ([1199f9e](https://github.com/ntc0728/video-warehouse/commit/1199f9ec73795f80d276ca4fe32537854fd54928))
+* **testing:** 修复 run-tests.ps1 Home 段 grep 映射漂移 ([a0903c4](https://github.com/ntc0728/video-warehouse/commit/a0903c466451d18fb6ff8076742479cf22ca941a))
+* **versioning:** 修复 sync-capacitor-version 断链引用 ([7d699c2](https://github.com/ntc0728/video-warehouse/commit/7d699c2eccc7a5feb8344886b5eace410ad593db))
+
 ## [1.27.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.0...kinotv-v1.27.1) (2026-09-21)
 
 
