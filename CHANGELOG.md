@@ -988,4 +988,4 @@
 ## 当前状态
 
 - `package.json` 版本：`0.0.0`（尚未发布首个稳定版）
-- Android 端 `versionCode` 由 `scripts/sync-capacitor-version.mjs` 在 `build:android` 时从版本号自动派生
+- Android 端 `versionCode` 由 `scripts/sync-android-version.mjs` 在 `build:android` 时从版本号自动派生

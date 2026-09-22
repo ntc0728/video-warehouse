@@ -39,9 +39,9 @@
 
 ### 3. 双端版本同步（Capacitor Android）
 
-- 脚本 `scripts/sync-capacitor-version.mjs` 在 `build:android` 时从 `package.json` 读 SemVer，写入 `capacitor.config.ts` 的 `version`（含通道）并派生 `android.versionCode`。
-- **versionCode 公式**：`major*100000 + minor*1000 + patch*10 + 通道序`（release=3 / rc=2 / beta=1 / alpha=0），保证 `rc < 正式`、跨版本严格递增，且要求 `patch < 100`。
-- 独立命令：`npm run sync:capacitor-version`。
+- 脚本 `scripts/sync-android-version.mjs` 在 `build:android` 时从 `package.json` 读 SemVer，写入 `capacitor.config.ts`（`version` / `versionCode`）与 `android/app/build.gradle`（`versionCode` / `versionName`）。
+- **versionCode 公式**：`major*100000 + minor*1000 + patch*10`（1.4.0 → 104000，无通道序；要求 `patch < 100`），保证随版本号单调递增。
+- 独立命令：`npm run sync:android-version`。
 
 ### 4. 应用内展示
 

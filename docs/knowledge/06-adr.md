@@ -43,7 +43,7 @@
   CMS / EPG 请求走 Video Proxy（`/proxy?url=`）；IPTV 直播流走 IPTV Proxy（`/m3u8-proxy?url=`）；TS 分片走 TS Proxy（`/ts-proxy?url=`）；TMDB API 原生 CORS 直连。理由：不同源对重写 / 跨域的需求不同，分层后各自独立可维护。
 
 - **ADR-004 版本号：SemVer + release-please 自动维护 + Capacitor 双端派生**（2026-07-30）
-  版本号唯一可信源 = `package.json.version`；由 release-please 依据 Conventional Commits 自动算版并打 `vX.Y.Z` tag、维护 `CHANGELOG.md`。Capacitor Android 端 `android.versionCode` 由版本号派生（公式 `major*100000+minor*1000+patch*10+通道序`，release=3/rc=2/beta=1/alpha=0），在 `build:android` 时经 `scripts/sync-capacitor-version.mjs` 写入 `capacitor.config.ts`。理由：避免手工改版本导致 Web/Android 版本漂移、CHANGELOG 与 tag 不同步。后果：提交信息须遵循 Conventional Commits 才能正确算版；0.x 阶段破坏性变更升 MINOR，首个稳定版定为 `1.0.0`。
+  版本号唯一可信源 = `package.json.version`；由 release-please 依据 Conventional Commits 自动算版并打 `vX.Y.Z` tag、维护 `CHANGELOG.md`。Capacitor Android 端 `android.versionCode` 由版本号派生（公式 `major*100000+minor*1000+patch*10`，无通道序；写入 `capacitor.config.ts` 与 `android/app/build.gradle`），在 `build:android` 时经 `scripts/sync-android-version.mjs` 执行。理由：避免手工改版本导致 Web/Android 版本漂移、CHANGELOG 与 tag 不同步。后果：提交信息须遵循 Conventional Commits 才能正确算版；0.x 阶段破坏性变更升 MINOR，首个稳定版定为 `1.0.0`。
 
 - **ADR-005 死代码与依赖收敛约定**（2026-07-31）
   全仓扫描发现大量零引用 hooks、未挂载组件、CSS 死类/重复 `@keyframes`、过时注释，长期累积增加维护负担与回归风险。
