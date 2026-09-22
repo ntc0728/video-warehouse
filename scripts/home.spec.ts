@@ -18,10 +18,11 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('1.1 页面加载与初始状态', () => {
   test('首屏初始态与加载（001 无Token提示 / 002 跳设置 / 003 loading / 004 完整首页 / 005 超时收起）', async ({ page }) => {
     // ── 有 Token：003 加载中 / 004 数据就绪 / 005 超时边界 ──
-    // 003: 有 Token 但数据加载中显示 loading
+    // 003: 首屏必有加载占位。2026-09-22 plain 整改后启动链为：#boot-splash（home 同构骨架）
+    //      → homeSkeleton（无 plain AppLoading 盖脸），故断言两者任一在位。
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     const loadingVisible = await page.evaluate(() => {
-      return !!document.querySelector('.app-loading, [class*="loading"]');
+      return !!document.querySelector('#boot-splash, .home-skeleton, .app-loading, [class*="loading"]');
     });
     expect(loadingVisible).toBeTruthy();
 
@@ -34,7 +35,8 @@ test.describe('1.1 页面加载与初始状态', () => {
     });
     expect(hasHomeContent).toBe(true);
 
-    // 005: 首页 loading 最大超时 10 秒（无论数据是否就绪，最多 10s 内收敛）
+    // 005: 首页 plain loading 最大超时 10 秒（整改后启动链本不应出现 .app-loading，
+    // 若因异常出现也须在 10s 内收敛）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => {
       const loading = document.querySelector('.app-loading');
@@ -68,7 +70,8 @@ test.describe('1.2 HeroBanner 交互', () => {
   test('Banner/缩略图点击跳转详情（010 Banner存在 / 012 缩略图 / 011 CTA）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.home-hero, [class*="hero"]').first()).toBeVisible({ timeout: 8000 });
+    // 等真实 Hero 挂载：home-skeleton-hero 也含 "hero" 子串，不能用 [class*="hero"] 提前放行
+    await expect(page.locator('.hero-bili__banner, .hero-banner__main').first()).toBeVisible({ timeout: 15000 });
 
     // 010: Banner 存在且可显示
     const heroExists = await page.evaluate(() => {
