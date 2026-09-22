@@ -263,7 +263,7 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 
 # 手动按 describe 段号/测试编号精准过滤（Grep 透传 playwright --grep）
 .\scripts\run-tests.ps1 -Grep "1\.2"
-.\scripts\run-tests.ps1 -Grep "HOME-010|HOME-011|HOME-012"
+.\scripts\run-tests.ps1 -Grep "1\.4|1\.5"
 
 # 发版前真实 API 回归
 .\scripts\run-tests.ps1 -Group regression -RealApi
@@ -275,7 +275,7 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 - **grep 优先用 describe 段号**（如 `1\.2` 覆盖整个 HeroBanner 段）：段内新增用例自动涵盖，映射无需随用例增减维护
 - ⚠️ **段号是正则**：`.` 必须转义（`1.2` 的 `.` 会通配任意字符，误命中含 `1023px` 等 1?2 序列的其他段标题），写 `1\.2`
 - **映射覆盖范围**：`$uiPrecisionMap` 已覆盖所有共享组件（HeroBanner/CategoryQuickAccess/Layout/StickyHeader/SearchBox/VideoCard/LazyImage/RecordShell/StatusTabs/StillsLightbox/IPTVChannelCard/EPGProgramList/SourceManager/TokenRequired/ui/UniversalPlayer）+ 各页面文件；`$logicTestMap` 统一 `{spec, grep}` 结构，`spec` 含 `"vitest"` 标记触发单测，关键服务/Store 文件联动对应页面 E2E 段；未覆盖的组件落 `$uiTestMap` 粗粒度兜底
-- **映射失效检测（自动）**：每次运行时校验 grep 段号在对应 spec 中是否仍存在——describe 段被删除/重命名导致零命中时输出黄色警告「映射可能过时，请更新映射」，防止改代码后旧映射静默失效
+- **映射失效检测（自动）**：每次运行时校验 grep 段号在对应 spec 中是否仍存在——先剥离 `/* */` 与 `//` 注释再匹配（防旧编号残留在头注释里假阳性），describe 段被删除/重命名导致零命中时输出黄色警告「映射可能过时，请更新映射」，防止改代码后旧映射静默失效
 - 未匹配到映射的变更文件会输出黄色警告并**不跑对应测试**——提示补映射或用 `-Grep` 手动指定
 
 **判断规则**：
