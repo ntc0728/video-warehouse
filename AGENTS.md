@@ -14,8 +14,8 @@
 3. **子代理操作前必须 commit / stash 保护**当前状态（子代理可能重写非指定文件）。
 4. **CSS/恢复类改动必须 grep 所有 `display:none` / `visibility:hidden`**，确认无遗漏；恢复代码后不能说"全部恢复"，只能说"已验证的改动"。
 5. **临时服务/进程用完立即关闭**，收尾用 `tasklist` + `netstat` 双确认零遗留；自己的测试残留不得算到用户头上。
-6. **E2E 分级门禁**：按改动类型决定验证档位——**删除/文档/纯脚本类**改动：`npm run build` + `npm run lint:all` + 受影响 spec（临时档）即可；**行为类**改动（src 业务代码、播放链、布局/动画）才需要全量。**全量 E2E（`test:e2e` / `e2e-suite.mjs` / `e2e-skeleton.mjs --all` 及任何等效方式）未经用户明确允许不得运行**。全量硬预算仍为 ≤5 分钟（300s 看门狗超时即失败），超预算按 testing.md「预算取舍优先级」处理，禁止删断言凑时间。测试服务禁占用户端口（OS 动态分配）、禁按端口/镜像名杀进程（只杀带测试标记的自建进程）。
-7. **临时/调试跑批硬规矩**（`e2e-skeleton.mjs` 已机制化）：ad-hoc 单轮墙钟 **≤120s**（`spawnSync timeout` 到点击杀退码 2）、`retries=0`、指定 spec 文件即调试档（不带 `--all`）；放宽只允许 `--budget/--retries` 显式声明且须在结论说明理由。诊断期间禁止反复跑全量。
+6. **E2E 分级门禁**：按改动类型决定验证档位——**删除/文档/纯脚本类**改动：`npm run build` + `npm run lint:all` + 受影响 spec（临时档）即可；**行为类**改动（src 业务代码、播放链、布局/动画）才需要全量。**全量 E2E（`test:e2e` / `e2e-suite.mjs` / `e2e-skeleton.mjs --all` 及任何等效方式）未经用户明确允许不得运行**。全量硬预算仍为 ≤5 分钟（300s 看门狗超时即失败），超预算按 testing.md「预算取舍优先级」处理，禁止删断言凑时间。测试服务禁占用户端口（OS 动态分配）、禁按端口/镜像名杀进程（只杀带测试标记的自建进程）。**改动 `run-tests.ps1` 映射 / 加删用例后必须跑 `npm run test:count`**（`-- --write` 同步 `testing.md` 生成块）——它逐条校验「引用的 spec 存在 / pattern 基路径存在 / grep 片段真命中 / 档位恒等式」，已作为 `lint:all` 第 7 门（`lint:test-map`）；靠人眼维护映射会静默腐化（2026-09-23 一次查出 21 个死 grep 片段 + 2 个失效 pattern）。
+7. **临时/调试跑批硬规矩**（`e2e-skeleton.mjs` 已机制化）：ad-hoc 单轮墙钟 **≤120s**（跑批器看门狗到点按**进程树**击杀、退码 2）、`retries=0`、指定 spec 文件即调试档（不带 `--all`）；放宽只允许 `--budget/--retries` 显式声明且须在结论说明理由。诊断期间禁止反复跑全量。**凡要跑 playwright 都走 `e2e-skeleton.mjs`**（`test:e2e:*` / `e2e-suite.mjs` / `run-tests.ps1` 增量档共用），别裸调 `playwright test`——config 的 `webServer.command` 是字符串，Windows 下经 shell 启动，收尾只杀到 shell、vite 成孤儿占端口（2026-09-23 实测进程 632s 不返回）。
 8. **单步等待/超时 ≤10s（2026-09-21 用户定稿）**：脚本内任何单步等待（`waitForSelector` / `toBeVisible` / `expect.poll` / `waitForTimeout` 等）不得超过 10s；若某处必须 >10s 才能继续执行，**立即停止操作并向用户说明原因**，禁止自行放宽。封顶机制不在此列（用例级 testTimeout 45s/30s、整轮 globalTimeout、webServer 就绪 60s、跑批看门狗 120s/300s 属预算封顶，保留现值）。
 
 > 全站/多页面改动（视觉尺寸 · UX · 动画）未经明确许可不得擅自动手；提案需附可运行 demo。
@@ -43,9 +43,11 @@
 ```bash
 npm run dev          # 开发服务器（127.0.0.1:3001，双栈监听，localhost 直连 ::1 无 IPv6 回退）
 npm run build        # 生产构建（tsc -b && vite build）；沙箱清 dist 撞批量删除保护时用 npx tsc -b && npx vite build --emptyOutDir false
-npm run lint:all     # ESLint + Stylelint
+npm run lint:all     # 7 门总闸：design / css / json / version-sync / test-map / eslint / build
 npm run test         # Vitest 单元测试
-npx playwright test  # E2E 测试（TMDB Mock 默认启用）
+npm run test:changed # E2E 增量（按「未提交改动」跑相关 spec；命中 >3 spec 会 exit 2 拦下，-Full 放行）
+npm run test:count   # 用例计数/映射一致性报告（不跑浏览器，1–2s）；`-- --write` 同步 testing.md
+npx playwright test  # ⚠️ 只用于 --list 校准；实跑一律走 npm run test:e2e / e2e-skeleton.mjs
 ```
 
 ## 改动留痕与知识沉淀（changelogs → 知识分层）

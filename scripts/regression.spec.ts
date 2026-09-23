@@ -1,16 +1,20 @@
 /**
- * 历史专项回归合并 spec（2026-09-09）
+ * 历史专项回归合并 spec（2026-09-09 合并；2026-09-23 校正头注释）
  *
- * 合并来源（共 55 条 → 32 条）：
- *   scripts/cross-page.spec.ts        → describe '跨页联动回归'（9 条）
+ * 合并来源（共 55 条 → 30 条）：
+ *   scripts/cross-page.spec.ts         → describe '跨页联动回归'（9 条）
  *   scripts/regression-detail.spec.ts  → describe '详情页回归'（10 条）
- *   scripts/fix-2026-08.spec.ts        → describe '9.1 修复'（4 条）
- *   scripts/ui-fixes.spec.ts          → describe 'UI 整改'（3 条）
+ *   scripts/fix-2026-08.spec.ts        → describe '9.1 修复'（4 条：冷启动与首屏 / app 端适配 / 布局一致性）
+ *   scripts/ui-fixes.spec.ts           → describe 'UI 整改'（3 条）
  *   scripts/global-fixes.spec.ts       → describe '全局问题'（4 条）
- *   scripts/proxy-setup.spec.ts        → describe '代理配置'（2 条）
+ *
+ * ⚠️ 原先并入的 `scripts/proxy-setup.spec.ts`（describe '代理配置' 2 条）已于 2026-09-21 随
+ *    「设置页子页移出默认套」拆回独立文件 `scripts/proxy-setup.spec.ts`（按需 `test:e2e:subpages`），
+ *    所以本文件的用例数是 **30 条**（旧注释写的 32 条 = 含已拆出的 2 条）。
  *
  * 约束：只合并、不弱化断言；保留全部核心回归断言。
  * TMDB 走 fixtures/mock-tmdb（默认 mock）。
+ * 计数事实源：`npm run test:count`（本文件 30 条，默认套 Stage A）。
  */
 import { test, expect } from './fixtures/mock-tmdb';
 import { devices, type Page } from '@playwright/test';

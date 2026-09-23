@@ -6,6 +6,16 @@
  * 一次只能看到一个门的结果，修完再跑才能发现下一个门还有问题。
  * 本脚本顺序跑完全部检查（每步失败也继续），最后汇总报告，任一失败 exit 1。
  *
+ * 门禁清单（**7 门**，2026-09-23）：
+ *   lint:design / lint:css / lint:json / lint:version-sync / **lint:test-map** / lint(eslint) / build。
+ * - `lint:version-sync`（2026-09-23 新增）= `sync-android-version.mjs --check`，拦 `capacitor.config.ts`
+ *   版本号漂移（CI 只在临时 checkout 里 sync、不回写仓库，故仓库副本会长期落后）。
+ * - `lint:test-map`（2026-09-23 新增）= `test-count-report.mjs --check`，拦**测试映射腐化**：
+ *   run-tests.ps1 里引用了不存在的 spec / pattern 基路径不存在（改了目录却没改映射）/
+ *   grep 的某个 `|` 片段永远不命中（编号合并成 `BROWSE-020/023/025` 后写 `BROWSE-023` 即此）/
+ *   档位恒等式被破坏 / `docs/agents/testing.md` 的生成块过期。它只跑 `playwright --list`（1–2s），
+ *   不起浏览器。补映射或加删用例后跑 `npm run test:count -- --write` 同步文档即可。
+ *
  * ── 受限沙箱（WorkBuddy / CodeBuddy）适配，2026-09-22 ─────────────────────────
  * 1. 子进程一律走**异步 `spawn`**：沙箱 node 语言 shim 会拦截同步子进程创建，
  *    `execFileSync('git', …)` 这类调用直接抛 `spawnSync git EBUSY`，把检查打成假失败。
@@ -28,6 +38,8 @@ const steps = [
   { name: 'lint:design', cmd: 'pnpm run lint:design' },
   { name: 'lint:css', cmd: 'pnpm run lint:css' },
   { name: 'lint:json (重复 key)', cmd: 'node scripts/json-dup-key-check.mjs' },
+  { name: 'lint:version-sync (版本漂移)', cmd: 'pnpm run lint:version-sync' },
+  { name: 'lint:test-map (测试映射/计数漂移)', cmd: 'pnpm run lint:test-map' },
   { name: 'lint (eslint)', cmd: 'pnpm run lint' },
   {
     name: 'build',

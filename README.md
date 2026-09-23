@@ -314,7 +314,11 @@ npm run lint:css:fix  # 修复 CSS 问题
 npm run test           # Vitest 单元测试（单次运行）
 npm run test:watch     # Vitest 监听模式
 npm run test:coverage  # Vitest + 覆盖率报告
-npx playwright test    # Playwright E2E 测试
+npm run test:e2e       # E2E 默认套（两阶段 A dev 行为 + B preview 播放器；自建 server，无需先起 dev）
+npm run test:changed   # E2E 增量（按「未提交改动」跑相关 spec）
+npm run test:count     # 用例计数 / 测试映射一致性报告（不跑浏览器，1–2s）
+# ⚠️ 只有 `npx playwright test --list`（校准用例数）可以裸跑；
+#    实跑一律走 npm run test:e2e / e2e-skeleton.mjs / e2e-suite.mjs，否则会留孤儿 vite 且进程不返回。
 ```
 
 ### 构建与预览

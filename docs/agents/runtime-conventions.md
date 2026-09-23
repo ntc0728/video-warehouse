@@ -84,8 +84,14 @@ Browse 逻辑分页（算术定位 + 多触发器等值 + 跨页去重 + 三段�
   另：慢网 mock 必须按请求的 `page` 参数返回对应数据（id 随页偏移），否则逻辑分页层反复重取、末态超时。
 - **广播 / storage 类行为**用同 context 双 page 真实 Chromium；E2E 并发点击用同步 DOM `.click()`；
   移动端显式 viewport `390×844`。
-- **基线：116 条 / 16 spec**。新增删改用例须同步 `AGENTS.md` 计数表
-  （`npx playwright test --list` 校准），新用例必须带真实 `expect`。
+- **计数事实源（2026-09-23 收敛为单一来源）**：数字只认 `docs/agents/testing.md` 的
+  **「📊 口径与映射总表」生成块**——由 `npm run test:count -- --write` 从
+  `run-tests.ps1` 映射表 + `e2e-suite.mjs` 阶段名单 + `playwright test --list` 实算生成，
+  由 `lint:test-map`（`lint:all` 第 7 门）校验不过期。**别在任何文档里手写这些数字**
+  （历史教训：同一份「116 条 / 16 spec」在 4 处各写一份，早已漂移；`home 列 46` 实际只有 13）。
+  现况：默认套 `test:e2e` = 132 条 / 16 spec（A dev 108/12 + B preview 24/4）、
+  回归组 `test:regression` = 121 条 / 13 spec、全仓 `--list` = 246 条 / 22 spec。
+  新增删改用例必须带真实 `expect`。
 - **两个坑已根治**：
   1. 沙箱 delete-shim 使 Playwright 清理 outputDir 时 trash 失败假崩 →
      命令前缀 `NODE_OPTIONS= ` 绕开（`run-tests.ps1` 已固化）。

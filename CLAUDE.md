@@ -16,6 +16,6 @@ This file provides guidance to Claude Code when working with code in this reposi
 - **Proxies**: Video Proxy `https://your-video-proxy.example.com/proxy?url=` (CORS), IPTV Proxy `https://your-iptv-proxy.example.com/m3u8-proxy?url=` (M3U8 stream)
 - **Keep-Alive**: AppLayout keeps all visited pages mounted, switches visibility via CSS `display`
 - **Dev server**: `npm run dev` → http://127.0.0.1:3001
-- **Lint**: `npm run lint:all`
-- **Test**: `npm run test` (Vitest) / `npx playwright test` (E2E)
+- **Lint**: `npm run lint:all`（7 门：design / css / json / version-sync / test-map / eslint / build）
+- **Test**: `npm run test`（Vitest）/ `npm run test:e2e`（E2E 默认套；**别裸跑 `npx playwright test`**）/ `npm run test:changed`（增量）/ `npm run test:count`（计数与映射一致性）
 - **文档同步**: 改完先写 `changelogs/_pending/` 片段；push 前按 `docs/agents/docs-protocol.md` 的「文档同步协议」提炼归位到 测试/知识库/原理图/流程图/本地记忆

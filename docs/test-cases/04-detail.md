@@ -109,10 +109,14 @@
 | DETAIL-092 | 返回按钮智能回退 | 从首页进入详情 | 点击返回 | 回到首页 |
 | DETAIL-093 | 回到顶部按钮 | 详情页已加载，滚动到底部 | 点击回到顶部 | 平滑滚动到顶部 |
 
-### 3.10 详情页回归（regression-detail.spec.ts，2026-08-04 起）
+### 3.10 详情页回归（`scripts/regression.spec.ts` 的 `详情页回归` 段）
 
-> 对应测试文件 `scripts/regression-detail.spec.ts`（22 用例，编号 REG-001~023，其中 REG-019 未使用）。
-> 依赖：TMDB 走 mock-tmdb；CMS 代理请求在本 spec 内构造 mock（电影《搏击俱乐部》/剧集《权利的游戏》多季）；历史经 IndexedDB seed 后 reload。
+> **2026-09-23 位置更正**：原 `scripts/regression-detail.spec.ts`（22 用例）已于 **2026-09-09** 与
+> `cross-page` / `fix-2026-08` / `ui-fixes` / `global-fixes` 合并进 **`scripts/regression.spec.ts`**
+> 的 `详情页回归` describe（合并后 **10 条**；编号 REG-001~023 中的有效子集，本次合并只合并、不删断言，
+> 部分编号随历史收敛不再单独成例）。用例数事实源 = `npm run test:count`（`regression.spec.ts` 现共 30 条）。
+> 依赖：TMDB 走 mock-tmdb；CMS 代理请求在 spec 内构造 mock（电影《搏击俱乐部》/剧集《权力的游戏》多季）；
+> 历史经 IndexedDB seed 后 reload。
 
 | 编号 | 用例名称 | 前置条件 | 操作步骤 | 预期结果 |
 |------|---------|---------|---------|---------|

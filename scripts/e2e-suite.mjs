@@ -10,7 +10,9 @@
  *
  * 已移出默认套、改按需跑（保留覆盖，非删除）：
  *   - 取证截图 boot-splash-shots                       → npm run test:e2e:shots
- *   - 骨架三兄弟 skeleton / boot-splash-iso / boot-splash → npm run test:e2e:skeleton
+ *   - 骨架：skeleton / boot-splash                     → npm run test:e2e:skeleton
+ *           boot-splash-iso（七视口同构）               → npm run test:e2e:boot-iso
+ *     （2026-09-23 由「三兄弟一档」拆开：合跑 110–128s 卡 120s 看门狗边界）
  *   - 设置页子页 source-checker / proxy-setup           → npm run test:e2e:subpages
  *
  * 报告：两阶段各只写一份 **blob**（`.pw-blob`），跑完 merge 成一份含 A+B 全量的

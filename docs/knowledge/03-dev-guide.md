@@ -63,20 +63,33 @@ npm run test:watch     # 监听模式
 npm run test:coverage  # 覆盖率报告
 
 # E2E 测试（mock 模式，默认）
-npx playwright test    # 运行所有测试
+npm run test:e2e       # 唯一默认入口（e2e-suite 两阶段，A dev 行为 + B preview 播放器，串行 ≤300s）
+npm run test:count     # 用例计数 / 测试映射一致性报告（不跑浏览器，1–2s）
 
-# E2E 增量测试（按 git diff 自动匹配 spec）
-npm run test:smart     # run-tests.ps1 -AutoDetect
-npm run test:smoke     # 冒烟组（home/browse/player）
-npm run test:regression # 回归组（全量 spec 集合）
+# E2E 增量测试（按「未提交改动」自动匹配 spec；相对 ref 用 -Since HEAD~1）
+npm run test:changed    # run-tests.ps1（默认侦测未提交改动；命中 >3 spec 会 exit 2 拦下）
+npm run test:smoke     # 冒烟组（home/browse/player，与改动侦测取交集）
+npm run test:regression # 回归组（13 个 spec / 121 条，含 -Full -Retries 2）
 ```
 
-**测试策略要点**（详见 `scripts/README.md` 与 `AGENTS.md`「测试依赖映射」）：
+**测试策略要点**（详见 `scripts/README.md` 与 `docs/agents/testing.md`）：
 
-- **TMDB Mock 策略**：`scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求返回本地 mock 数据；默认模式无 Token 风险。真实 API 模式：`TMDB_MOCK=false npx playwright test`（发版前回归用）。
-- **增量映射**：改 `src/pages/Xxx/` 只跑对应 spec；改共享组件（VideoCard/HeroBanner/Layout/StickyHeader/UniversalPlayer/RecordShell/StatusTabs/SearchBox/FilterBar/Toast 等）按 AGENTS.md 映射表跑所有受影响 spec；改 `src/stores/**` / `src/hooks/**` 跑 vitest。**详情页改动需同时跑 `detail.spec.ts` + `regression-detail.spec.ts`**。
-- **测试基建约定**：E2E 用例数以 `npx playwright test --list` 枚举为准（**2026-09-10：127 条 / 18 个 spec**，`--workers=2` 全量 = 126 passed / 1 skipped）。`scripts/backup-specs/` 旧测试备份已不在 `testDir` 覆盖范围内，无需再靠 `testIgnore` 排除。**精确数字与逐文件分布见 `docs/agents/testing.md` 的口径说明，勿引用历史快照**。
-- **跑前须知**：需要 dev server（`npm run dev`，端口 3001）；Playwright 配置 `reuseExistingServer: true`。⚠️ **该服务对部分被改动文件可能返回改动前的模块（Vite 转换缓存未失效）→ e2e 会打到旧代码**；改完源码先验证新鲜度（`curl -s "http://127.0.0.1:3001/src/<路径>?t=$(date +%s)" | grep <新标识>`），必要时重启 3001。全量跑建议 `--workers=2`（默认并发下 `player.spec.ts` 4.11 首条会因 CMS 代理打满而挂载超时）。
+- **TMDB Mock 策略**：`scripts/fixtures/mock-tmdb.ts` 拦截 `api.tmdb.org` 请求返回本地 mock 数据；默认模式无 Token 风险。真实 API 模式：`TMDB_MOCK=false npm run test:e2e`（发版前回归用）。
+- **不要裸跑 `npx playwright test`**：只有 `--list` 校准用例数可以裸跑；实跑一律走 `test:e2e*` /
+  `e2e-skeleton.mjs` / `e2e-suite.mjs`（自建 server + 探活 + 预算封顶 + 进程树收尾）。裸跑会因
+  `webServer.command` 经 shell 启动而留孤儿 vite，进程不返回。
+- **增量映射**：改 `src/pages/Xxx/` 只跑对应 spec；改共享组件按 `run-tests.ps1` 的 `$uiPrecisionMap` /
+  `$uiTestMap` 跑受影响 spec；改 `src/stores/**` / `src/services/**` / `src/hooks/**` / `src/lib/**` 会额外跑 vitest。
+  **详情页改动** = `detail.spec.ts` + `regression.spec.ts`（其「详情页回归」段）；**代理配置子页** = `proxy-setup.spec.ts`。
+  完整「源文件 → spec → 用例数」事实表见 `docs/agents/testing.md` 的生成块（`npm run test:count` 产出）。
+- **计数与映射一律不手写**：`npm run test:count -- --write` 生成 `testing.md` 的口径总表；
+  `npm run lint:test-map`（`lint:all` 第 7 门）校验「引用的 spec 存在 / pattern 基路径存在 /
+  grep 片段真命中 / 档位恒等式 / 文档未过期」。当前口径：全仓 246 条 / 22 spec，默认套 132 条 / 16 spec，
+  回归组 121 条 / 13 spec（2026-09-23 `--list` 实测）。`scripts/backup-specs/` 旧测试备份不在 `testDir` 覆盖内。
+- **跑前须知**：E2E 端口由 **OS 动态分配**，跑批器自建 server 并做 HTTP 200 探活，**不需要你先起 `npm run dev`**
+  （`E2E_PORT=3001` 只是显式复用你自己那个 dev server 的逃生门）。并发由套件固定（Stage A `--workers=3` /
+  Stage B `--workers=5`），**不要手加 `--workers`**。⚠️ 若显式复用 3001 的 dev server，Vite 转换缓存可能
+  返回改动前的模块 → e2e 打到旧代码；改完源码先验新鲜度或直接让跑批器自建 server。
 
 #### 2.4 构建
 
