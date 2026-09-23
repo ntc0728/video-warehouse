@@ -43,7 +43,7 @@ const TAB_ITEMS = [
 /** 类型 chips：真实 = genres.length（TMDB 典型 2–5） */
 const GENRE_CHIP_COUNT = 4;
 /** 基础信息卡（仅 grid 内；评分/国家/发行已改全宽 side-line）：
-    真实条件项最多 13，单部电影 grid 典型 7（年份/状态/时长/语言/导演/预算/票房）→ 取 7 */
+    真实条件项最多 13，单部电影 grid 典型 7（发行时间/状态/时长/语言/导演/预算/票房）→ 取 7 */
 const INFO_CARD_COUNT = 7;
 /** 全宽 side-line：评分 + 国家 + 发行（与真实 .detail-info-row 三条对齐） */
 const INFO_ROW_COUNT = 3;

@@ -92,7 +92,8 @@
 .detail-skeleton__info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-sm);
+  /* 与真实 .detail-hero-side .detail-info-grid 同值：行距 sm / 列距 md */
+  gap: var(--space-sm) var(--space-md);
 }
 
 .detail-skeleton__info-card {
@@ -102,6 +103,8 @@
 
 .detail-skeleton__side-line {
   height: 0.875em;
+  /* 纵向间距由父级 .detail-hero-side flex gap --space-sm 提供（与真实 info-row 同源），
+     此处不叠 margin —— 避免旧「gap md + margin sm」两套叠加 */
 }
 
 .detail-skeleton__side-line--short {

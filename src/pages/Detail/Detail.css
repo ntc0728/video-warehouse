@@ -2011,11 +2011,14 @@
   }
 
   /* 右栏：高度锁死为 hero 实际高度（--detail-hero-h 由 JS 测量写入），
-     内容超出时栏内滚动，保证两栏下沿始终齐平、不把 grid 行撑高。 */
+     内容超出时栏内滚动，保证两栏下沿始终齐平、不把 grid 行撑高。
+     行距单一真源 = flex gap --space-sm（与 grid row-gap 同值）：
+     旧 gap md 与子元素 margin sm 叠加 → grid 内 sm、grid 下全宽行 md+sm 不一致；
+     子元素纵向 margin 在右栏一律清零，间距只由 gap 提供。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     min-width: 0;
     /* 高度强制等于 banner（用户 2026-09-10 要求「与 banner 高度保持一致」）：
        变量由 JS 用 ResizeObserver 把 .detail-hero 的实测高度写到 .detail-top 上。
@@ -2035,15 +2038,24 @@
     display: none;
   }
 
-  /* 右栏内的 section 标题与卡片网格按窄栏重排 */
+  /* 右栏内的 section 标题与卡片网格按窄栏重排；
+     纵向 margin 清零 —— 行距只由父级 flex gap --space-sm 提供（见上方单一真源注释） */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-section-title {
-    margin-bottom: var(--space-sm);
+    margin-bottom: 0;
     font-size: var(--text-base);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-genres {
+    margin-bottom: 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row {
+    margin-top: 0;
   }
 
   /* 右栏基础信息：一行两列（用户 2026-09-10 要求）。
      单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。
-     行距与全宽行 margin 同为 --space-sm（列距 --space-md），不再叠加卡片纵向 padding。 */
+     行距 = 父级 flex gap --space-sm（列距 --space-md），不再叠加卡片纵向 padding。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-sm) var(--space-md);

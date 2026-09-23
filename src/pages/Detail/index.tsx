@@ -589,12 +589,15 @@ export default function DetailPage() {
   const isTV = d ? 'name' in d : false;
   const logoPath = d?.images?.logos?.find((l) => l.iso_639_1 === 'zh' || l.iso_639_1 === 'en')?.file_path;
   let year: number | undefined;
+  let releaseDateStr = '';
   if (d && tmdbMediaType === 'tv') {
     const dateStr = (d as TMDBTVShowDetail).first_air_date;
     year = dateStr ? new Date(dateStr).getFullYear() || undefined : undefined;
+    releaseDateStr = year ? dateStr : '';
   } else if (d && tmdbMediaType === 'movie') {
     const dateStr = (d as TMDBMovieDetail).release_date;
     year = dateStr ? new Date(dateStr).getFullYear() || undefined : undefined;
+    releaseDateStr = year ? dateStr : '';
   }
   const backdropUrl = d?.backdrop_path ? buildImageUrl(d.backdrop_path, 'w1280') || '' : '';
   const posterUrl = d?.poster_path ? buildImageUrl(d.poster_path, 'w342') || '' : '';
@@ -806,7 +809,7 @@ export default function DetailPage() {
         </div>
       )}
       <div className="detail-info-grid" ref={infoGridRef}>
-        {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
+        {releaseDateStr && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行时间</span><strong>{releaseDateStr}</strong></div>}
         {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
         {(runtime ?? 0) > 0 && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
         {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
