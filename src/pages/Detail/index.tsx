@@ -211,6 +211,7 @@ export default function DetailPage() {
   const [castExpanded, setCastExpanded] = useState(false);
   const [castOverflow, setCastOverflow] = useState(false);
   const castRowRef = useRef<HTMLDivElement>(null);
+  const infoGridRef = useRef<HTMLDivElement>(null);
 
   // CMS
   const [cmsResults, setCmsResults] = useState<DetailSourceResult[]>([]);
@@ -653,6 +654,60 @@ export default function DetailPage() {
     ro.observe(el);
     return () => ro.disconnect();
   }, [isWideDetail, d]);
+
+  // 基础信息半宽格：值在半列放不下（单行自然宽 > 半列可用宽）→ 独占整行
+  // （grid-column: 1/-1）。判定恒用「半列基准宽」而非当前格宽，避免 span 后
+  // RO 再触发时判据漂移来回抖动；只在 class 真变化时写 DOM，稳定后零写入。
+  useEffect(() => {
+    const grid = infoGridRef.current;
+    if (!grid) return;
+    const probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;left:-99999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
+    document.body.appendChild(probe);
+    const measure = () => {
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>('.detail-info-card'));
+      if (cards.length === 0) return;
+      const gs = getComputedStyle(grid);
+      const colCount = gs.gridTemplateColumns.split(' ').filter(Boolean).length;
+      if (colCount < 2) {
+        cards.forEach((c) => c.classList.remove('detail-info-card--span'));
+        return;
+      }
+      const colGap = parseFloat(gs.columnGap) || 0;
+      const halfW = (grid.clientWidth - colGap) / 2;
+      cards.forEach((card) => {
+        const strong = card.querySelector<HTMLElement>('strong');
+        if (!strong) return;
+        const label = card.querySelector<HTMLElement>(':scope > span');
+        const icon = card.querySelector<HTMLElement>(':scope > svg');
+        const cardGap = parseFloat(getComputedStyle(card).columnGap) || 0;
+        const iconW = icon ? icon.getBoundingClientRect().width : 0;
+        const labelW = label ? label.getBoundingClientRect().width : 0;
+        const strongMargin = parseFloat(getComputedStyle(strong).marginLeft) || 0;
+        // flex 间隙：icon | label | strong → 2 个 gap
+        const avail = halfW - iconW - labelW - strongMargin - cardGap * 2;
+        // probe 必须继承 strong 的字号/字族，否则自然宽量不准
+        const ss = getComputedStyle(strong);
+        probe.style.font = ss.font;
+        probe.style.letterSpacing = ss.letterSpacing;
+        probe.style.fontWeight = ss.fontWeight;
+        probe.replaceChildren(...Array.from(strong.childNodes).map((n) => n.cloneNode(true)));
+        const needed = probe.getBoundingClientRect().width;
+        const wantSpan = needed > avail + 1;
+        if (card.classList.contains('detail-info-card--span') !== wantSpan) {
+          card.classList.toggle('detail-info-card--span', wantSpan);
+        }
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(grid);
+    void document.fonts?.ready.then(measure).catch(() => undefined);
+    return () => {
+      ro.disconnect();
+      probe.remove();
+    };
+  }, [d, isWideDetail]);
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const genres = d?.genres || [];
   const status = d?.status || '';
@@ -750,18 +805,11 @@ export default function DetailPage() {
           ))}
         </div>
       )}
-      <div className="detail-info-grid">
+      <div className="detail-info-grid" ref={infoGridRef}>
         {year && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行年份</span><strong>{year}</strong></div>}
         {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
-        {runtime && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
+        {(runtime ?? 0) > 0 && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
         {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
-        {voteAverage > 0 && (
-          <div className="detail-info-card detail-info-card--rating">
-            <Icon icon={Star} size="sm" />
-            <span>TMDB 评分</span>
-            <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
-          </div>
-        )}
         {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
         {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
         {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
@@ -771,7 +819,14 @@ export default function DetailPage() {
         {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
       </div>
 
-      {/* 国家 / 发行 — 各独占一行放末尾（2026-09-23 用户要求） */}
+      {/* 评分 / 国家 / 发行 — 各独占一行放末尾（2026-09-23 用户要求；半宽放不下的字段由 measure 脚本加 --span） */}
+      {voteAverage > 0 && (
+        <div className="detail-info-row detail-info-card--rating">
+          <Icon icon={Star} size="sm" />
+          <span>TMDB 评分</span>
+          <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
+        </div>
+      )}
       {countries.length > 0 && (
         <div className="detail-info-row">
           <GlobeIcon size="sm" />
@@ -849,7 +904,7 @@ export default function DetailPage() {
               {tmdbMediaType === 'tv' && totalSeasons > 0 && (
                 <span className="detail-hero-meta-item">{totalSeasons} 季 / {totalEpisodes} 集</span>
               )}
-              {runtime && <span className="detail-hero-meta-item">{runtime} 分钟</span>}
+              {(runtime ?? 0) > 0 && <span className="detail-hero-meta-item">{runtime} 分钟</span>}
               {popularity > 0 && (
                 <span className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</span>
               )}

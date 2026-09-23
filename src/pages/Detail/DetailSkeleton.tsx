@@ -42,8 +42,11 @@ const TAB_ITEMS = [
 ] as const;
 /** 类型 chips：真实 = genres.length（TMDB 典型 2–5） */
 const GENRE_CHIP_COUNT = 4;
-/** 基础信息卡：真实最多 13 个条件项，单部作品典型命中 6–9 → 取 8 */
-const INFO_CARD_COUNT = 8;
+/** 基础信息卡（仅 grid 内；评分/国家/发行已改全宽 side-line）：
+    真实条件项最多 13，单部电影 grid 典型 7（年份/状态/时长/语言/导演/预算/票房）→ 取 7 */
+const INFO_CARD_COUNT = 7;
+/** 全宽 side-line：评分 + 国家 + 发行（与真实 .detail-info-row 三条对齐） */
+const INFO_ROW_COUNT = 3;
 /** 演员卡槽：真实 `.detail-cast-row--collapsed`（auto-fill minmax(6rem,1fr)，折叠 2 行） */
 const CAST_SLOTS = 12;
 /** 简介行数：真实为一段文本，桌面典型 3 行 */
@@ -97,8 +100,9 @@ export default function DetailSkeleton() {
               <Skeleton key={i} className="detail-skeleton__info-card" />
             ))}
           </div>
-          <Skeleton className="detail-skeleton__side-line" />
-          <Skeleton className="detail-skeleton__side-line detail-skeleton__side-line--short" />
+          {Array.from({ length: INFO_ROW_COUNT }, (_, i) => (
+            <Skeleton key={i} className="detail-skeleton__side-line" />
+          ))}
         </aside>
       </div>
 

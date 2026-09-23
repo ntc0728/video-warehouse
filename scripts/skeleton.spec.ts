@@ -385,7 +385,9 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(page.locator('.detail-skeleton__hero')).toHaveCount(1);
     await expect(page.locator('.detail-skeleton__side')).toHaveCount(1);
     await expect(page.locator('.detail-skeleton__chip')).toHaveCount(4);
-    await expect(page.locator('.detail-skeleton__info-card')).toHaveCount(8);
+    // grid 内 7 卡（评分已改全宽行）+ 3 条 side-line（评分/国家/发行）
+    await expect(page.locator('.detail-skeleton__info-card')).toHaveCount(7);
+    await expect(page.locator('.detail-skeleton__side .detail-skeleton__side-line')).toHaveCount(3);
 
     // tab 条复用真实 .tab-underline / .detail-tab（行盒与真实一致）
     await expect(page.locator('.detail-skeleton .tab-underline.detail-tab')).toHaveCount(2);

@@ -115,15 +115,16 @@
   .info-card .media .ico { color: var(--info); opacity: 1; }
   .vote { margin-left: 4px; color: var(--text-3); font-size: 12px; font-weight: 400; }
 
-  /* 全宽行：国家 / 发行 */
+  /* 全宽行：评分 / 国家 / 发行 — margin 与 grid row-gap 同为 8px */
   .info-row {
-    display: flex; gap: 8px; align-items: center; margin-top: 8px; color: var(--text);
+    display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; color: var(--text);
   }
-  .info-row .ico { flex-shrink: 0; width: 14px; height: 14px; color: var(--primary); opacity: .7; }
+  .info-row .ico { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; color: var(--primary); opacity: .7; }
   .info-row > span:first-of-type {
-    flex-shrink: 0; color: var(--text-2); font-size: 13px; white-space: nowrap;
+    flex-shrink: 0; margin-top: 2px; color: var(--text-2); font-size: 13px; white-space: nowrap;
   }
-  .info-row strong { margin-left: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
+  .info-row strong { flex: 1 1 0; min-width: 0; margin-left: 8px; color: var(--text); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+  .info-row.rating .ico { color: var(--warning); opacity: 1; }
   .companies { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .company { display: inline-flex; gap: 4px; align-items: center; }
   .company-logo {
@@ -131,8 +132,9 @@
     background: var(--bg); opacity: .7;
   }
 
-  /* ═══ OLD（旧逻辑复刻）：值另起一行 + 国家在 grid 内 ═══ */
-  .old .info-card { flex-wrap: wrap; }
+  /* ═══ OLD（旧逻辑复刻）：值另起一行 + 国家/评分在 grid 内 + 三套行距 ═══ */
+  .old .info-grid { gap: 3px 16px; }
+  .old .info-card { flex-wrap: wrap; padding: 3px 0; }
   .old .info-card strong {
     flex-basis: 100%;
     min-width: 0;
@@ -140,19 +142,18 @@
     padding-left: 22px; /* 图标宽 + gap */
     overflow-wrap: anywhere;
   }
-  .old .info-row { align-items: center; }
+  .old .info-row { align-items: center; margin-top: 10px; }
   .old .info-row strong { flex: 0 1 auto; min-width: 0; }
 
-  /* ═══ NEW（新逻辑）：数据同行右 + flex-start 首行对齐 ═══ */
-  .new .info-card { align-items: flex-start; min-width: 0; }
+  /* ═══ NEW（新逻辑）：同行右 + flex-start + 半宽放不下 span 整行 + 行距同源 ═══ */
+  .new .info-grid { gap: 8px 16px; }
+  .new .info-card { align-items: flex-start; min-width: 0; padding: 0; }
   .new .info-card .ico,
   .new .info-card span { margin-top: 2px; }
   .new .info-card strong { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
-  .new .info-row { align-items: flex-start; }
-  .new .info-row .ico,
-  .new .info-row > span:first-of-type { margin-top: 2px; }
-  .new .info-row strong { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
-  /* NEW：国家移到 grid 后末尾（与发行并列）——结构差异由 JS 重排演示 */
+  .new .info-card.span { grid-column: 1 / -1; }
+  .new .info-row { align-items: flex-start; margin-top: 8px; }
+  /* NEW：评分/国家/发行 → grid 后全宽行；半宽放不下的导演/语言自动 span */
 
   /* ── 演员头像对照 ── */
   .cast-block { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
@@ -192,7 +193,7 @@
 </head>
 <body>
   <h1>Detail 右栏基础信息：同行布局 + 末尾全宽行 + 演员头像调小</h1>
-  <p class="sub">旧 = 标签一行·值一行（国家夹在 grid 中间）｜新 = 数据在标题右侧、国家/发行末尾全宽、头像 ×0.875。窄屏 info-tab 共用同一份 JSX，新逻辑同步生效。</p>
+  <p class="sub">旧 = 标签行·值行 + 评分/国家在 grid + 三套行距｜新 = 同行右 + 评分/国家/发行全宽 + 半宽放不下自动 span + 行距统一 --space-sm + 头像 ×0.875。</p>
 
   <div class="toolbar">
     <label>视图：</label>
@@ -207,7 +208,7 @@
   <div class="stage" id="stage">
     <!-- ═══ OLD ═══ -->
     <section class="panel old" id="panel-old">
-      <div class="panel-head"><span>旧逻辑</span><span class="tag">标签行 + 值行 · 国家在 grid 内</span></div>
+      <div class="panel-head"><span>旧逻辑</span><span class="tag">标签行+值行 · 评分/国家在 grid 内 · 三套行距</span></div>
       <div class="panel-body">
         <div class="hero-side">
           <h2 class="section-title">基础信息</h2>
@@ -240,7 +241,7 @@
 
     <!-- ═══ NEW ═══ -->
     <section class="panel new" id="panel-new">
-      <div class="panel-head"><span>新逻辑 ★已落地</span><span class="tag new">数据同行右 · 国家/发行末尾 · 头像 ×0.875</span></div>
+      <div class="panel-head"><span>新逻辑 ★已落地</span><span class="tag new">同行右 · 评分/国家/发行全宽 · 放不下自动 span · 行距同源</span></div>
       <div class="panel-body">
         <div class="hero-side">
           <h2 class="section-title">基础信息</h2>
@@ -248,7 +249,12 @@
             <span class="genre">剧情</span><span class="genre">科幻</span><span class="genre">冒险</span>
           </div>
           <div class="info-grid" id="new-grid">
-            <!-- cards injected（不含国家） -->
+            <!-- cards injected（不含评分/国家）；半宽放不下由 JS 加 .span -->
+          </div>
+          <div class="info-row rating" id="new-rating">
+            <svg class="ico" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span>TMDB 评分</span>
+            <strong id="new-rating-val">8.1 / 10<span class="vote">（214,567 人评价）</span></strong>
           </div>
           <div class="info-row" id="new-country">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -278,47 +284,78 @@
   </div>
 
   <div class="note">
-    <b>【问题】</b>右栏基础信息值堆在标签下面占两行，国家夹在字段中间，演员头像偏大。<br/>
-    <b>【旧逻辑】</b><code>Detail.css</code> hero-side 覆写 <code>strong{flex-basis:100%}</code> 强制值另起一行；国家是 grid 内第 7 卡；<code>--layout-cast-avatar</code> 桌面 80→88px。<br/>
-    <b>【新逻辑】</b>值在标签同行右侧（<code>flex:1 1 0</code> 吃满、<code>flex-start</code> 首行对齐、过长 <code>overflow-wrap:anywhere</code> 换行）；国家移出 grid，与发行一起在末尾各独占一行；头像 token ×0.875（桌面 70→77 / 基 56→70 / TV 56px），grid 列宽不动。<br/>
-    <b>【预览】</b>本页并排对照；「长数据」开关可看语言/国家多值换行时首行是否仍贴标签。
+    <b>【问题】</b>右栏基础信息值堆标签下占两行、评分/国家夹在 grid 中间、导演/语言半宽放不下、标签上下间距三套值不一致、演员头像偏大。<br/>
+    <b>【旧逻辑】</b>hero-side <code>strong{flex-basis:100%}</code> 强制分行；评分/国家在 grid 内；行距 = 卡 padding(2xs) + grid gap(2xs) + 全宽行 margin(sm) 三套；头像桌面 80→88px。<br/>
+    <b>【新逻辑】</b>① 值同行右（<code>flex:1 1 0</code>+<code>flex-start</code> 首行对齐）；② <b>评分/国家/发行</b>末尾全宽行；③ JS 按半列基准宽测自然宽，放不下自动 <code>--span</code>（导演/语言等）；④ 行距单一真源 <code>--space-sm</code>（卡去 padding、grid row-gap = 行 margin）；⑤ 头像 ×0.875。<br/>
+    <b>【预览】</b>本页并排；「长数据」开关看导演/语言是否自动独占整行、间距是否均匀。
   </div>
 
 <script>
+  // kind: '' 普通 | 'rating' 评分(旧在grid/新全宽) | 'country' 国家(旧在grid/新全宽) | 'money'
   const cardsShort = [
-    ['📅','发行年份','2024', ''],
-    ['ℹ','状态','Released', ''],
-    ['⏱','时长','166 分钟', ''],
-    ['🌐','语言','EN / English / 中文', ''],
-    ['★','TMDB 评分','8.1 / 10<span class="vote">（21,456 人评价）</span>', 'star'],
-    ['👥','导演','Denis Villeneuve', ''],
-    ['🌍','国家','美国 / 英国 / 法国', 'country'], // 旧有、新移出 grid
-    ['💲','预算','$190,000,000', 'money'],
-    ['💲','票房','$714,444,358', 'money'],
+    ['发行年份','2024',''],
+    ['状态','Released',''],
+    ['时长','166 分钟',''],
+    ['语言','EN / English / 中文',''],
+    ['TMDB 评分','8.1 / 10<span class="vote">（21,456 人评价）</span>','rating'],
+    ['导演','Denis Villeneuve',''],
+    ['国家','美国 / 英国 / 法国','country'],
+    ['预算','$190,000,000','money'],
+    ['票房','$714,444,358','money'],
   ];
   const cardsLong = [
-    ['📅','发行年份','2024', ''],
-    ['ℹ','状态','Released', ''],
-    ['⏱','时长','166 分钟', ''],
-    ['🌐','语言','EN / English (United States) / 中文（简体） / 日本語 / Français / Deutsch / Español / Italiano / 한국어 / Português', ''],
-    ['★','TMDB 评分','8.1 / 10<span class="vote">（214,567 人评价）</span>', 'star'],
-    ['👥','导演','Denis Villeneuve<span class="vote">（Victorville, California, USA）</span>', ''],
-    ['🌍','国家','美国 / 英国 / 法国 / 德国 / 日本 / 加拿大 / 澳大利亚 / 中国 / 韩国 / 印度 / 意大利 / 西班牙 / 巴西 / 墨西哥', 'country'],
-    ['💲','预算','$190,000,000', 'money'],
-    ['💲','票房','$714,444,358', 'money'],
+    ['发行年份','2024',''],
+    ['状态','Released',''],
+    ['时长','166 分钟',''],
+    ['语言','EN / English (United States) / 中文（简体） / 日本語 / Français / Deutsch / Español / Italiano / 한국어 / Português',''],
+    ['TMDB 评分','8.1 / 10<span class="vote">（214,567 人评价）</span>','rating'],
+    ['导演','Denis Villeneuve<span class="vote">（Victorville, California, USA · 获奥斯卡金像奖提名）</span>',''],
+    ['国家','美国 / 英国 / 法国 / 德国 / 日本 / 加拿大 / 澳大利亚 / 中国 / 韩国 / 印度 / 意大利 / 西班牙 / 巴西 / 墨西哥','country'],
+    ['预算','$190,000,000','money'],
+    ['票房','$714,444,358','money'],
   ];
 
-  function rowHTML(c) {
-    const [label, val] = [c[1], c[2]];
-    return `<div class="info-card"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><span>${label}</span><strong>${val}</strong></div>`;
+  const ICON = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+
+  function gridCard(label, val) {
+    return `<div class="info-card">${ICON}<span>${label}</span><strong>${val}</strong></div>`;
+  }
+
+  /** 半宽放不下 → .span（复刻真实 measure：用 nowrap 探针测自然宽 vs 半列可用宽） */
+  function applySpan(grid) {
+    const cards = [...grid.querySelectorAll('.info-card')];
+    cards.forEach(c => c.classList.remove('span'));
+    const probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;left:-99999px;white-space:nowrap;visibility:hidden;font:600 13px system-ui,sans-serif;';
+    document.body.appendChild(probe);
+    const gs = getComputedStyle(grid);
+    const colGap = parseFloat(gs.columnGap) || 0;
+    const halfW = (grid.clientWidth - colGap) / 2;
+    cards.forEach(card => {
+      const strong = card.querySelector('strong');
+      const label = card.querySelector(':scope > span');
+      const icon = card.querySelector(':scope > svg');
+      const cardGap = parseFloat(getComputedStyle(card).columnGap) || 0;
+      const avail = halfW - (icon ? icon.offsetWidth : 0) - (label ? label.offsetWidth : 0)
+        - (parseFloat(getComputedStyle(strong).marginLeft) || 0) - cardGap * 2;
+      probe.innerHTML = strong.innerHTML;
+      if (probe.getBoundingClientRect().width > avail + 1) card.classList.add('span');
+    });
+    probe.remove();
   }
 
   function render(long) {
     const src = long ? cardsLong : cardsShort;
-    const country = src.find(c => c[3] === 'country');
-    document.getElementById('old-grid').innerHTML = src.map(rowHTML).join('');
-    document.getElementById('new-grid').innerHTML = src.filter(c => c[3] !== 'country').map(rowHTML).join('');
-    document.getElementById('new-country-val').innerHTML = country ? country[2] : '美国 / 英国 / 法国';
+    const country = src.find(c => c[2] === 'country');
+    const rating = src.find(c => c[2] === 'rating');
+    // OLD：评分/国家都留在 grid
+    document.getElementById('old-grid').innerHTML = src.filter(c => c[2] !== 'country').map(c => gridCard(c[0], c[1])).join('');
+    // NEW：评分/国家移出 grid → 全宽行；其余进 grid，再测 span
+    const newGrid = document.getElementById('new-grid');
+    newGrid.innerHTML = src.filter(c => c[2] !== 'country' && c[2] !== 'rating').map(c => gridCard(c[0], c[1])).join('');
+    document.getElementById('new-rating-val').innerHTML = rating ? rating[1] : '8.1 / 10';
+    document.getElementById('new-country-val').innerHTML = country ? country[1] : '美国 / 英国 / 法国';
+    applySpan(newGrid);
   }
 
   document.querySelectorAll('.toolbar [data-view]').forEach(btn => {
@@ -329,6 +366,7 @@
       document.getElementById('panel-old').classList.toggle('hide', v === 'new');
       document.getElementById('panel-new').classList.toggle('hide', v === 'old');
       document.getElementById('stage').style.gridTemplateColumns = v === 'both' ? '' : '1fr';
+      render(!document.getElementById('btn-short').classList.contains('active'));
     });
   });
   document.getElementById('btn-long').addEventListener('click', () => {
@@ -342,6 +380,7 @@
     render(false);
   });
   render(true);
+  window.addEventListener('resize', () => render(!document.getElementById('btn-short').classList.contains('active')));
 </script>
 </body>
 </html>
