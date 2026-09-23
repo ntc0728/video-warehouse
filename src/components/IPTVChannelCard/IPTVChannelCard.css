@@ -114,11 +114,9 @@
 .iptv-card-cover img {
   width: 100%;
   height: 100%;
-  /* 台标不是海报：cover 会按封面比例（3/2 · 16/10 · 16/9 四档）把方图 / 宽图裁掉一大截
-     （1:1 方图放进 16:9 只剩约 56% 高度可见），表现为「台标显示有误 / 残缺」。
-     改用 contain 完整装下台标，四周留白交给封面底色承担。 */
-  object-fit: contain;
-  padding: var(--space-2xs);
+  /* 台标占满容器（2026-09-23 用户定稿）：cover 铺满，异形台标宁裁边不四周留白。
+     原 contain + padding 会把台标缩在中间、封面四周大面积底色（用户反馈「没占满」）。 */
+  object-fit: cover;
   transition: transform var(--dur-lg);
 }
 
