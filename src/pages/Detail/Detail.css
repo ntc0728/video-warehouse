@@ -755,6 +755,9 @@
   animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
+/* ── 基础信息：行距单一真源 ─────────────────────
+   卡片不再自带纵向 padding；行间距 = grid row-gap = 全宽行 margin-top = --space-sm，
+   避免「2xs padding + 2xs gap + sm margin」三套值导致标签上下间距不一致。 */
 .detail-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -765,8 +768,12 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
-  padding: var(--space-xs) 0;
+  min-width: 0;
   color: var(--color-text);
+}
+/* 半宽放不下 → 整行（JS measure 依据半列基准宽打 class；单列断点下 1/-1 无感） */
+.detail-info-card--span {
+  grid-column: 1 / -1;
 }
 .detail-info-card svg {
   flex-shrink: 0;
@@ -778,6 +785,11 @@
    金额类（绿，金钱语义）、季/集（蓝，结构信息）；其余保持主色，避免整栏花掉。
    暗色主题下三个语义色在 variables.css 暗色段有独立取值，自动适配。 */
 .detail-info-card--rating svg {
+  color: var(--color-warning-text);
+  opacity: 1;
+}
+/* 评分改为全宽 .detail-info-row 后，需压过 .detail-info-row svg 的主色（同特异度、后写覆盖） */
+.detail-info-row.detail-info-card--rating svg {
   color: var(--color-warning-text);
   opacity: 1;
 }
@@ -802,13 +814,15 @@
   font-weight: 600;
 }
 
-/* ── 全宽信息行（国家 / 发行公司，末尾各独占一行） ──
-   数据在标题右侧同行显示；过长换行时 flex-start 保证值首行与标签对齐。 */
+/* ── 全宽信息行（评分 / 国家 / 发行公司，末尾各独占一行） ──
+   数据在标题右侧同行显示；过长换行时 flex-start 保证值首行与标签对齐。
+   margin-top = grid row-gap = --space-sm（与卡间行距同源）。 */
 
 .detail-info-row {
   display: flex;
   gap: var(--space-sm);
   align-items: flex-start;
+  min-width: 0;
   margin-top: var(--space-sm);
   color: var(--color-text);
 }
@@ -2028,10 +2042,11 @@
   }
 
   /* 右栏基础信息：一行两列（用户 2026-09-10 要求）。
-     单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。 */
+     单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。
+     行距与全宽行 margin 同为 --space-sm（列距 --space-md），不再叠加卡片纵向 padding。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2xs) var(--space-md);
+    gap: var(--space-sm) var(--space-md);
   }
 
   /* 每张卡：数据在标签同行右侧（2026-09-23 用户要求，替换旧「标签一行、值一行」）。
@@ -2039,7 +2054,6 @@
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
     align-items: flex-start;
     min-width: 0;
-    padding: var(--space-2xs) 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card svg,
@@ -2053,8 +2067,9 @@
     overflow-wrap: anywhere;
   }
 
-  /* 末尾全宽行（国家/发行）在右栏同样首行对齐、吃满剩余宽度 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row strong {
+  /* 全宽行 / --span 卡在右栏同样首行对齐、吃满剩余宽度 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row strong,
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card--span strong {
     flex: 1 1 0;
     min-width: 0;
   }

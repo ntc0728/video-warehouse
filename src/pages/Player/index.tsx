@@ -739,7 +739,7 @@ export default function PlayerPage() {
               {isTV && totalSeasons > 0 && (
                 <div className="detail-hero-meta-item">{totalSeasons} 季 / {totalEpisodes} 集</div>
               )}
-              {runtime && (
+              {(runtime ?? 0) > 0 && (
                 <div className="detail-hero-meta-item">{runtime} 分钟</div>
               )}
               {popularity > 0 && (
