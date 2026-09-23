@@ -698,6 +698,7 @@ export default function BrowsePage() {
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter
               hideType
+              showGenreRowShell
             />
           )}
           {/* 直链搜索模式：FilterBar 本地筛选（纯前端过滤 CMS 结果，不调接口；

@@ -672,12 +672,13 @@
      top:0 = 贴滚动容器 .app-shell__scroll 的视口顶 —— header 在容器之外
      （wrapper 用 padding-top:var(--header-height) 让位），故 0 即「header 下沿」。
 
-     max-height + overflow-y：左栏内容超高（年份/地区全展开）时自身滚动，
-     否则会被视口截断、底部选项永远滚不到。
+     2026-09-23 用户拍板：左栏不允许出现滚动条，对齐收藏/历史页 rail
+     （RecordShell.css .record-aside overflow:visible）——去掉 max-height +
+     overflow-y:auto，内容随 sticky 自然增高；不截断、不出栏内滚动条。
 
      独立成块的原因：与上方 .filter-bar 既有属性混排会触发 stylelint
      order/properties-order（position 需早于 grid-area / top 需早于 align-self …），
-     拆块后既有规则零改动，本块四条属性自身顺序合规。
+     拆块后既有规则零改动，本块属性自身顺序合规。
      选择器带 .browse-page 前缀：① 与上方 .filter-bar 规则文本不同，
      避免 stylelint no-duplicate-selectors；② 作用域收窄到 Browse 页左栏，
      不波及其他调用 FilterBar 的页面。 */
@@ -685,8 +686,7 @@
     .browse-page .filter-bar {
     position: sticky;
     top: 0;
-    max-height: calc(100dvh - var(--header-height));
-    overflow-y: auto;
+    overflow: visible;
   }
 
   /* 侧栏内禁横向滚动 → 选项 3 列网格（2026-09-07 用户拍板：

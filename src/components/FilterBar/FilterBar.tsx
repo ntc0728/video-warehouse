@@ -50,6 +50,10 @@ export interface FilterBarProps {
   /** 隐藏类型行（2026-09-07 用户拍板：桌面侧栏面板不放类型，
       类型移至结果区头部 browse-sort-bar；默认 false 零回归） */
   hideType?: boolean;
+  /** genres 尚未拉取时仍渲染「分类」行壳（仅 label + 全部），
+      避免首次进入 Browse 左栏整行后到（2026-09-23 用户反馈）。
+      chips 仍等 visibleGenres 落地后逐个出现。 */
+  showGenreRowShell?: boolean;
 }
 
 // ── 组件 ────────────────────────────────────────────
@@ -65,6 +69,7 @@ export default function FilterBar({
   hideFooter = false,
   categoryOptions,
   hideType = false,
+  showGenreRowShell = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
 
@@ -159,8 +164,9 @@ export default function FilterBar({
         </div>
       ))}
 
-      {/* 分类（细分类型）— 多行 wrap 全展开 */}
-      {visibleGenres.length > 0 && (
+      {/* 分类（细分类型）— 多行 wrap 全展开；
+          showGenreRowShell：genres 未返回时先渲染行壳（label+全部），消除首进左栏“过一会才出现”的空洞 */}
+      {(visibleGenres.length > 0 || showGenreRowShell) && (
         <div className="filter-bar__row filter-bar__row--wrap">
           <span className="filter-bar__label filter-bar__chip filter-bar__label--as-chip">
             {categoryLabel || '分类'}
