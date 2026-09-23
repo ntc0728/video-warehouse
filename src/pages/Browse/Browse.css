@@ -151,19 +151,20 @@
 }
 
 /* 类型分段控件（分类级 7 档：全部/电影/剧集/综艺/动漫/纪录片/排行榜）
-   2026-09-07 用户拍板：类型移出筛选面板，放结果区头部（对齐 demo type-seg） */
+   2026-09-07 用户拍板：类型移出筛选面板，放结果区头部（对齐 demo type-seg）
+   2026-09-23 用户拍板方案 A：去 height:32 硬等高，高度由「字高 + 上下 pad」推导，
+   行内 align-items:center 光学居中；排序 3 档 (__tabs/__tab) 同步改本分段语言。 */
 .browse-sort-bar__types {
   display: inline-flex;
   flex: none;
   gap: var(--space-2xs);
-  padding: var(--space-xs);
+  padding: var(--space-2xs);
   border-radius: var(--radius-full);
   background: var(--color-hover-bg);
 }
 
 .browse-sort-bar__type {
-  height: 32px;
-  padding: 0 var(--space-md);
+  padding: var(--space-xs) var(--space-md);
   border: none;
   border-radius: var(--radius-full);
   background: transparent;
@@ -195,19 +196,21 @@
   background: var(--color-border-light);
 }
 
+/* 排序 3 档：2026-09-23 用户拍板改与 __types 同款分段（灰底 track + 选中 surface+柔影），
+   不再是「无底 + primary 实心选中」的另一套语言。 */
 .browse-sort-bar__tabs {
-  display: flex;
-  gap: var(--space-sm);
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-full);
+  background: var(--color-hover-bg);
 }
 
 .browse-sort-bar__tab {
-  height: 32px;
-  padding: 0 var(--space-md);
-  /* 2026-09-12 用户拍板：选中态要有可见圆角 —— 原 --radius-sm（1440 仅 ≈4.3px）
-     在 32px 高的实心 primary 底上几乎看不出来，提为 --radius-md（6→10），
-     与左栏 .filter-bar__chip 选中态同款圆角，视觉语言统一。 */
+  padding: var(--space-xs) var(--space-md);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -221,16 +224,18 @@
   color: var(--color-text);
 }
 
-/* 激活 = primary 底 + 反白字（对齐 demo .s2.on 胶囊样式，2026-09-07 用户拍板） */
+/* 激活 = surface 底 + 柔影（与 .browse-sort-bar__type--active 同款分段选中态） */
 .browse-sort-bar__tab--active,
 .browse-sort-bar__tab--active:hover {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-weight: 600;
+  box-shadow: var(--shadow-soft);
 }
 
 .browse-sort-bar__count {
-  /* 内联排布：文字 + 转圈图标同行（图标在右侧，2026-09-12 用户反馈） */
+  /* 内联排布：文字 + 转圈图标同行（图标在右侧，2026-09-12 用户反馈）。
+     2026-09-23 方案 A：总数保持右对齐（margin-left:auto），不参与等高。 */
   display: inline-flex;
   gap: var(--space-2xs);
   align-items: center;
@@ -369,7 +374,8 @@
 /* ── 分页器（BrowsePagination，2026-09-12 无限滚动 → 分页切换）────────
    视觉语言对齐 .browse-sort-bar__tab：常态无边框/无底（设计 token 收敛——
    非设置页元素不保留 border+background+shadow+radius 四件套），仅激活态
-   用主色底 + 反白字表达状态。 */
+   用底色 + 字重表达状态（2026-09-23 起 sort-tab 选中态为 surface+柔影，
+   分页器仍可保留独立的淡色高亮语义，不强制同款）。 */
 .browse-pagination {
   display: flex;
   gap: var(--space-sm);
@@ -525,12 +531,10 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs {
     grid-area: tabs;
-    /* 2026-09-12 二次修正：等高对象 = .browse-sort-bar 主体（内容）高，不是它的盒高。
-       sort-bar 盒高 45.9 含 padding-bottom(--space-sm≈7.9)，主体 = 38；
-       故本元素同样 stretch 到行高后减掉同值 padding-bottom，pill 自然 = 38，
-       与 sort-bar 主体等高、顶边齐平、下间距相同。 */
-    align-items: stretch;
-    align-self: stretch;
+    /* 2026-09-23 方案 A：去 stretch 假等高 —— 模式胶囊按自身 pad 推导自然高，
+       与右侧 sort-bar 顶对齐即可，不再硬拉到同一行高。 */
+    align-items: flex-start;
+    align-self: start;
     padding-bottom: var(--space-sm);
   }
 
@@ -558,12 +562,12 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-source-status-row {
     grid-area: head;
-    /* 2026-09-12：与左侧模式胶囊等高对齐（同 stretch 到行高）。
-       align-items:start 让主体顶边与胶囊顶边齐平（不因内容矮于主体而垂直居中）；
-       padding-bottom 与 sort-bar 原值同（--space-sm），两者下间距一致。
-       .browse-source-status-row 本无下间距，一并由本规则补齐。 */
-    align-items: start;
-    align-self: stretch;
+    /* 2026-09-23 方案 A：行内 align-items:center 光学居中（type/tab/分隔线/计数
+       按各自 pad 高度在行内对齐）；align-self:start 不再 stretch 假等高 ——
+       与左侧模式胶囊顶对齐，两者允许不等高。
+       padding-bottom 仍与 sort-bar 原值同（--space-sm），下间距一致。 */
+    align-items: center;
+    align-self: start;
     padding-bottom: var(--space-sm);
     padding-left: var(--space-sm);
   }
