@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 /**
- * 骨架 E2E 专用跑批器（2026-09-18）
+ * 单轮 E2E 跑批器 —— **本仓唯一的「自建 server + 健康轮询 + 预算封顶 + 收尾」实现**。
+ * （文件名保留 e2e-skeleton：它的默认 spec 是骨架，但被 package.json 的 test:e2e:*、
+ *   e2e-suite.mjs 各阶段、以及 run-tests.ps1 增量档共用；改名会牵动多处引用，不值得。）
+ *
+ * **谁在用它**：`test:e2e:skeleton` / `test:e2e:boot-iso` / `test:e2e:subpages` / `test:e2e:shots`
+ *   / `e2e-suite.mjs`（Stage A --dev、Stage B preview）/ `run-tests.ps1`（增量档，`--dev` 传具体 spec）。
+ *   → 凡是要跑 playwright 的地方都应走这里，**不要**裸调 `playwright test`：
+ *     config 的 `webServer.command` 是字符串，Windows 下经 shell 启动，收尾只杀到 shell、
+ *     vite 成孤儿继续占端口，playwright 等不到 webServer 关闭（2026-09-23 实测 632s 不返回）。
  *
  * ── 为什么需要它：直接 `playwright test scripts/skeleton.spec.ts` 会「卡死 / 至少 10 分钟」
  *
@@ -28,6 +36,8 @@
  *   node scripts/e2e-skeleton.mjs --dev           # 退回 dev server（改了 src 还没 build 时）
  *   node scripts/e2e-skeleton.mjs -g SKEL-015     # 只跑匹配用例（开发新断言时最省时间）
  *   node scripts/e2e-skeleton.mjs --workers 2     # 覆盖并发（骨架默认 4，--all 默认 2）
+ *   node scripts/e2e-skeleton.mjs --dev --budget 180 scripts/home.spec.ts -g "1\.2"
+ *                                                 # 单轮增量档（run-tests.ps1 就是这么调的）
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, openSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
@@ -209,12 +219,19 @@ function tailServerLog(lines = 15) {
   }
 }
 
+/** 按**进程树**击杀（Windows 上 SIGKILL 只杀直接子进程，worker/浏览器会成孤儿继续跑） */
+function killTree(pid) {
+  if (!pid) return;
+  spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+}
+
 let server = null;
+let pwChild = null;
 function cleanup() {
-  if (server && server.pid) {
-    spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-    server = null;
-  }
+  killTree(server && server.pid);
+  server = null;
+  killTree(pwChild && pwChild.pid);
+  pwChild = null;
   killTestBrowsers();
   try {
     rmSync(STALE_OUT, { recursive: true, force: true });
@@ -229,7 +246,7 @@ process.on('SIGINT', () => {
   process.exit(130);
 });
 process.on('exit', () => {
-  if (server) cleanup();
+  if (server || pwChild) cleanup();
 });
 
 // ─── a. 前置检查 ─────────────────────────────────────────
@@ -323,19 +340,39 @@ say(`playwright 开跑：${pwArgs.slice(2).join(' ')}（预算 ${BUDGET_S}s）`)
 // 契约由本脚本 preview 模式专属执行）
 const childEnv = { ...process.env, E2E_PORT: String(PORT), PW_OUTPUT_DIR: outDir };
 if (FULL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
-const res = spawnSync(process.execPath, pwArgs, {
+
+// 用**异步 spawn + 自建看门狗**，而非 `spawnSync(..., { timeout })`：
+// 预算到点必须按**进程树**击杀 —— Windows 上 SIGKILL 只杀 playwright CLI 本身，
+// worker / 浏览器成孤儿继续跑（占 CPU、拖住后续轮次、残留产物）。
+pwChild = spawn(process.execPath, pwArgs, {
   cwd: ROOT,
   stdio: 'inherit',
   windowsHide: true,
   env: childEnv,
-  timeout: BUDGET_S * 1000,
-  killSignal: 'SIGKILL',
 });
-// 预算击杀：spawnSync 超时后 status 为 null / error 带 ETIMEDOUT —— 明确报错而非静默
-if (res.error || res.status === null) {
-  console.error(`✗ 超出单轮预算 ${BUDGET_S}s，已强制击杀（硬规矩：ad-hoc ≤120s、--all ≤300s，--budget 显式放宽需在结论中说明理由）`);
+const res = await new Promise((done) => {
+  const killer = setTimeout(() => {
+    say(`⛔ 超出单轮预算 ${BUDGET_S}s —— 按进程树击杀 playwright`);
+    killTree(pwChild && pwChild.pid);
+    done({ timedOut: true, code: null });
+  }, BUDGET_S * 1000);
+  pwChild.on('error', (err) => {
+    clearTimeout(killer);
+    done({ error: err, code: null });
+  });
+  pwChild.on('exit', (code) => {
+    clearTimeout(killer);
+    done({ timedOut: false, code });
+  });
+});
+if (res.error) {
+  console.error(`✗ 无法启动 playwright：${res.error.message}`);
+} else if (res.timedOut) {
+  console.error(
+    `✗ 超出单轮预算 ${BUDGET_S}s，已强制击杀（硬规矩：ad-hoc ≤120s、--all ≤300s，--budget 显式放宽需在结论中说明理由）`,
+  );
 }
-const code = res.status === null ? 2 : (res.status ?? 1);
+const code = res.timedOut ? 2 : (res.code ?? 1);
 
 // ─── e. 收尾 ────────────────────────────────────────────
 await killZombieE2EServers();
