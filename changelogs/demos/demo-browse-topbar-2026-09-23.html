@@ -204,6 +204,28 @@
     white-space: nowrap; cursor: pointer; transition: all .15s;
   }
   .stab.on { background: var(--primary); color: var(--primary-inv); font-weight: 600; }
+
+  /* 方案 A 已拍板（2026-09-23）：排序 tab 改与 .types 同款分段（灰底 track + surface 选中），
+     总数保持右对齐。覆盖写在公共 .stab 之后，仅 .vA 生效。 */
+  .vA .stabs {
+    gap: var(--space-2xs);
+    padding: var(--space-2xs);
+    border-radius: var(--r-full);
+    background: var(--hover-bg);
+  }
+  .vA .stab {
+    padding: 5px 12px;
+    border-radius: var(--r-full);
+    background: transparent;
+    font-weight: 500;
+  }
+  .vA .stab.on {
+    background: var(--surface);
+    color: var(--text-1);
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  }
+
   .count {
     margin-left: auto;
     display: inline-flex; align-items: center; gap: 4px;
@@ -243,16 +265,16 @@
   /* 现状：tabs/head 都被 stretch 到同一行高，再减 padding-bottom 假等高 */
   .v0 .mode-pill { align-self: stretch; height: auto; }
 
-  /* ═══ 方案 A — 光学居中：各控件自有高度，行内按视觉中心对齐 ★推荐 ═══ */
+  /* ═══ 方案 A — 光学居中：各控件自有高度，行内按视觉中心对齐 ★已拍板 ═══ */
   .vA .mode-tab { padding: var(--space-xs) var(--space-sm); }          /* ~28–30 高，靠 padding */
-  .vA .types { padding: 3px; }                                         /* 分段底座略高于内按钮 */
-  .vA .type-btn { padding: 5px 12px; }                                 /* 高度由字+pad 推导 ≈26 */
-  .vA .stab { padding: 5px 12px; }                                     /* 同上，不写死 32 */
-  .vA .count { padding-top: 1px; }                                     /* 纯文字光学沉 1px，不参与等高 */
+  .vA .types { padding: var(--space-2xs); }                            /* 分段底座（与真代码一致） */
+  .vA .type-btn { padding: 5px 12px; }                                 /* 高度由字+pad 推导，不写死 32 */
+  .vA .stab { padding: 5px 12px; }                                     /* 高度 pad 推导；分段 chrome 见上方 .vA .stabs/.stab 覆盖 */
+  .vA .count { padding-top: 1px; }                                     /* 纯文字光学沉 1px，不参与等高；仍 margin-left:auto 右对齐 */
   .vA .vdiv { height: 16px; align-self: center; }
   .vA .sortbar { align-items: center; }                                /* 整行光学居中，不 stretch */
   .vA .tabs-cell { align-items: flex-start; }
-  .vA .mode-pill { align-self: flex-start; }                           /* 胶囊自然高，顶边与 sortbar 顶对齐即可 */
+  .vA .mode-pill { align-self: flex-start; }                           /* 胶囊自然高，与 sortbar 顶对齐，允许不等高 */
 
   /* ═══ 方案 B — 分组松弛：左中 / 右各自独立高度，用间距分组而不是等高 ═══ */
   .vB .mode-tab { padding: var(--space-xs) var(--space-md); }
@@ -304,14 +326,14 @@
 <body>
 
 <div class="console">
-  <h1>Browse 顶栏方案 <em>2026-09-23 · 待拍板</em></h1>
+  <h1>Browse 顶栏方案 <em>2026-09-23 · 方案 A 已拍板并落地</em></h1>
   <div class="seg" id="modeSeg" role="tablist">
     <button type="button" data-mode="smart" class="on">智能检索</button>
     <button type="button" data-mode="cms">直链搜索</button>
   </div>
   <div class="note">
     真实首行元素：左=模式胶囊（智能检索｜直链搜索）；右=类型 7 档分段 · 分隔线 · 排序 3 档 · 共 N 条。<br />
-    红字 = 控件实高。问题：现状用 <b>height:32px 硬等高 + stretch 对齐</b>，与模式胶囊/计数各自 padding 脱节。
+    <b>已拍板 = 方案 A</b>：去 height:32/stretch；排序 tab 与 types 同款分段；总数右对齐不参与等高。0/B/C 仅作对照存档。
   </div>
 </div>
 
@@ -382,9 +404,9 @@
   <!-- ═══ 方案 A ═══ -->
   <section class="variant" data-v="A">
     <div class="variant__head">
-      <span class="variant__tag rec">方案 A · ★推荐</span>
-      <span class="variant__title">光学居中 — 各控件自有 padding 高度</span>
-      <span class="variant__desc">去掉 height:32 与 stretch；类型分段/排序胶囊高度由「字高 + 上下 pad」推导，整行 align-items:center 光学对齐；计数保持纯文字、微沉 1px 不参与等高。</span>
+      <span class="variant__tag rec">方案 A · ★已拍板 · 已落地</span>
+      <span class="variant__title">光学居中 — 排序 tab 改分段同款，总数右对齐</span>
+      <span class="variant__desc">去掉 height:32 与 stretch；类型分段高度由「字高+上下 pad」推导，整行 align-items:center 光学对齐；排序 3 档改为与 .browse-sort-bar__types 同款灰底分段（选中 surface+柔影）；计数保持 margin-left:auto 右对齐、不参与等高。2026-09-23 拍板并已写入 Browse.css。</span>
     </div>
     <div class="variant__body">
       <div class="bpage vA">
@@ -434,10 +456,11 @@
       </div>
     </div>
     <div class="spec">
-      <span><b>type/tab</b> <span class="ok">pad 推导 ≈26</span></span>
-      <span><b>pill</b> pad ≈30（允许不等高）</span>
+      <span><b>type</b> <span class="ok">pad 推导，无 height:32</span></span>
+      <span><b>stab</b> <span class="ok">与 types 同款分段</span></span>
+      <span><b>pill</b> pad 推导（允许不等高）</span>
+      <span><b>count</b> <span class="ok">右对齐 · 不参与等高</span></span>
       <span><b>对齐</b> <span class="ok">行内 center 光学居中</span></span>
-      <span><b>风格</b> <span class="ok">保留三语言但高度解耦，只统一 gap/字号</span></span>
     </div>
   </section>
 
