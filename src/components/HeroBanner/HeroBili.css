@@ -41,7 +41,11 @@
 
 .hero-bili__banner {
   position: relative;
-  height: var(--hero-banner-h);
+  /* 2026-09-23：1440 实测右栏两行卡 ≈266px > token 恒定值 ≈255px → banner 矮 ~11px。
+     height:100% 撑满网格行（行高取右栏内容高），token 降级为 min-height 兜底
+     （骨架 .hero-bili__banner 同类共用，boot-splash 同步 min-height 防交接跳变） */
+  height: 100%;
+  min-height: var(--hero-banner-h);
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
   background: var(--color-media-surface);
@@ -119,7 +123,8 @@
   gap: var(--dot-gap);
   justify-content: center;
   align-items: center;
-  margin-top: var(--space-xs);
+  /* caption 底锚：加大此值 → 按钮与圆点间距 4→8px，文案/按钮整体上移 */
+  margin-top: var(--space-sm);
   pointer-events: auto;
 }
 
@@ -154,8 +159,8 @@
 
 .hero-bili__title {
   margin: 0;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  font-size: clamp(var(--text-2xl), 3.2vw + 8px, var(--text-3xl));
+  /* 桌面端收一档（1440 原 clamp 恒命中 --text-3xl 上限 28px，vw 项死代码已删） */
+  font-size: calc(var(--text-3xl) * 0.9);
   font-weight: var(--fw-bold);
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -187,10 +192,10 @@
   pointer-events: auto;
 }
 
-/* banner 双按钮：较 Classic 缩小一档（padding/字号收窄），仅作用于本组件 */
+/* banner 双按钮：较 Classic 再收一档（2026-09-23 padding/字号微调，仅本组件） */
 .hero-bili__caption .hero-banner__cta {
-  padding: var(--space-xs) var(--space-md);
-  font-size: var(--text-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
 }
 
 /* ── 右：3×2 竖版卡 + 脱标换一换 ────────────────────────────────────── */
@@ -313,7 +318,7 @@
   transform: scale(1.04);
 }
 
-/* 四角标：与封面边界保持 --space-sm 距离 */
+/* 四角标：与封面边界保持 --space-xs 距离 */
 .hero-side-card__corner {
   position: absolute;
   z-index: 2;
@@ -326,27 +331,27 @@
 }
 
 .hero-side-card__corner--rating {
-  top: var(--space-sm);
-  left: var(--space-sm);
+  top: var(--space-xs);
+  left: var(--space-xs);
   color: var(--color-on-image-rating);
 }
 
 .hero-side-card__corner--year {
-  bottom: var(--space-sm);
-  left: var(--space-sm);
+  bottom: var(--space-xs);
+  left: var(--space-xs);
 }
 
 .hero-side-card__corner--type {
-  right: var(--space-sm);
-  bottom: var(--space-sm);
+  right: var(--space-xs);
+  bottom: var(--space-xs);
 }
 
 /* 收藏按钮：与其他卡片统一定稿——圆形黑底 --icon-lg、图标 xs 档；
    hover = 加深底色 + 放大；已收藏外圈不变、仅心形变红（--color-danger）实心 */
 .hero-side-card__fav {
   position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
+  top: var(--space-xs);
+  right: var(--space-xs);
   z-index: 3;
   display: flex;
   justify-content: center;
