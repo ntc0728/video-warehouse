@@ -14,7 +14,6 @@ import type { Video } from '@/types/video';
 import { searchMulti, buildImageUrl } from '@/services/tmdbService';
 import { getVideoSources } from '@/services/sourceService';
 import LazyImage from '../LazyImage/LazyImage';
-import { isImageLoaded } from '../LazyImage/imageCache';
 import './VideoCard.css';
 import { Icon } from "@/components/ui/Icon";
 
@@ -140,7 +139,6 @@ const VideoCard = memo(function VideoCard({
   const isCollected = useUserStore(
     (s) => s.collections.some((c) => c.videoId === video.id),
   );
-  const [imageLoaded, setImageLoaded] = useState(() => isImageLoaded(video.cover));
 
   // ── 封面 TMDB 搜索兜底（CMS 源 vod_pic 缺失时） ──
   // 仅竖版卡片、video.cover 为空且已配置 token 时启用；横版用 backdrop，不参与。
@@ -330,7 +328,8 @@ const VideoCard = memo(function VideoCard({
           className={`video-card-cover-img ${variant === 'landscape' ? 'video-card-cover-img--landscape' : ''}`}
           // 加载失败走 LazyImage 品牌兜底（lucide MonitorPlay 图标 + kinoTV，亮暗同款），
           // 与 IPTV/历史等卡统一；不传 fallbackSrc 即沿用该默认。
-          onLoad={() => setImageLoaded(true)}
+          // 收藏钮显隐改由 CSS .cover:has(.lazy-image-placeholder) 门控（失败态也须可见），
+          // 不再挂 onLoad→imageLoaded（旧 JS 门控失败恒 false → 红心永不渲染）。
           crossfadeOnChange={crossfadeOnChange}
           disabled={imageDisabled}
           rootRef={imageRootRef}
@@ -350,8 +349,9 @@ const VideoCard = memo(function VideoCard({
           </span>
         )}
 
-        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻红底（批量模式下隐藏） */}
-        {!batchMode && !hideFavorite && imageLoaded && (
+        {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻红底（批量模式下隐藏）。
+            扫光中由 CSS 门控隐藏，加载成功/失败/空源均渲染（失败态须可收藏） */}
+        {!batchMode && !hideFavorite && (
           <button
             className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'}`}
             onClick={handleFavorite}
