@@ -75,9 +75,9 @@
   }
   .panel-body { padding: 16px; }
 
-  /* ── 共用右栏壳（与 Detail.css 真实 hero-side 同源：gap 即行距单一真源 sm） ── */
+  /* ── 共用右栏壳（与 Detail.css 真实 hero-side 同源：gap 即行距单一真源 md） ── */
   .hero-side {
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 12px;
     min-width: 0;
     height: 420px;
     padding: 16px;
@@ -95,11 +95,11 @@
     background: var(--bg); border: 1px solid var(--border); color: var(--text-2);
   }
 
-  /* ── 基类信息卡（数据同行，与项目 Detail.css:764 一致） ── */
+  /* ── 基类信息卡（数据同行；标题卡之间 gap md，与项目 Detail.css 一致） ── */
   .info-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 16px;
+    gap: 12px 16px;
   }
   .info-card {
     display: flex; gap: 8px; align-items: center;
@@ -146,7 +146,7 @@
   .old .info-row strong { flex: 0 1 auto; min-width: 0; }
 
   /* ═══ NEW（新逻辑）：同行右 + flex-start + 半宽放不下 span 整行 + 行距同源 ═══ */
-  .new .info-grid { gap: 8px 16px; }
+  .new .info-grid { gap: 12px 16px; }
   .new .info-card { align-items: flex-start; min-width: 0; padding: 0; }
   .new .info-card .ico,
   .new .info-card span { margin-top: 2px; }
@@ -154,7 +154,7 @@
   .new .info-card.span { grid-column: 1 / -1; }
   .new .info-row { align-items: flex-start; margin-top: 0; }
   /* NEW：评分/国家/发行 → grid 后全宽行；半宽放不下的导演/语言自动 span；
-     行距只由 hero-side flex gap 8px 提供（与 grid row-gap 同值） */
+     行距只由 hero-side flex gap 12px 提供（与 grid row-gap 同值，标题卡之间同距） */
 
   /* ── 演员头像对照 ── */
   .cast-block { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
@@ -194,7 +194,7 @@
 </head>
 <body>
   <h1>Detail 右栏基础信息：同行布局 + 末尾全宽行 + 演员头像调小</h1>
-  <p class="sub">旧 = 标签行·值行 + 评分/国家在 grid + 两套行距（grid 内外不一致）+ 发行只有年份｜新 = 同行右 + 评分/国家/发行全宽 + 半宽放不下自动 span + 行距统一 flex gap sm + 发行时间 YYYY-MM-DD + 头像 ×0.875。</p>
+  <p class="sub">旧 = 标签行·值行 + 评分/国家在 grid + 两套行距（grid 内外不一致）+ 发行只有年份｜新 = 同行右 + 评分/国家/发行全宽 + 半宽放不下自动 span + 行距统一 flex gap md（标题卡之间 --space-md）+ 发行时间 YYYY-MM-DD + 头像 ×0.875。</p>
 
   <div class="toolbar">
     <label>视图：</label>
@@ -287,7 +287,7 @@
   <div class="note">
     <b>【问题】</b>右栏基础信息值堆标签下占两行、评分/国家夹在 grid 中间、导演/语言半宽放不下、标签上下间距不一致（grid 内 sm / grid 下全宽行 md+sm 叠加）、发行只有年份、演员头像偏大。<br/>
     <b>【旧逻辑】</b>hero-side <code>strong{flex-basis:100%}</code> 强制分行；评分/国家在 grid 内；行距 = 卡 padding(2xs) + grid gap(2xs) + 全宽行 margin(sm)，且 hero-side flex gap(md) 再叠一层 → grid 内外不一致；发行只显示年；头像桌面 80→88px。<br/>
-    <b>【新逻辑】</b>① 值同行右（<code>flex:1 1 0</code>+<code>flex-start</code> 首行对齐）；② <b>评分/国家/发行</b>末尾全宽行；③ JS 按半列基准宽测自然宽，放不下自动 <code>--span</code>（导演/语言等）；④ <b>行距单一真源 = hero-side flex gap --space-sm</b>（子元素纵向 margin 清零，与 grid row-gap 同值，grid 内外一致）；⑤ <b>发行时间</b>精确到 <code>YYYY-MM-DD</code>；⑥ 头像 ×0.875。<br/>
+    <b>【新逻辑】</b>① 值同行右（<code>flex:1 1 0</code>+<code>flex-start</code> 首行对齐）；② <b>评分/国家/发行</b>末尾全宽行；③ JS 按半列基准宽测自然宽，放不下自动 <code>--span</code>（导演/语言等）；④ <b>行距单一真源 = hero-side flex gap --space-md</b>（标题卡之间同距；子元素纵向 margin 清零，与 grid row-gap 同值，grid 内外一致）；⑤ <b>发行时间</b>精确到 <code>YYYY-MM-DD</code>；⑥ 头像 ×0.875。<br/>
     <b>【预览】</b>本页并排；「长数据」开关看导演/语言是否自动独占整行、grid 内外行距是否均匀、发行时间是否为完整日期。
   </div>
 

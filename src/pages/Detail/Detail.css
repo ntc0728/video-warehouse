@@ -756,12 +756,13 @@
 }
 
 /* ── 基础信息：行距单一真源 ─────────────────────
-   卡片不再自带纵向 padding；行间距 = grid row-gap = 全宽行 margin-top = --space-sm，
-   避免「2xs padding + 2xs gap + sm margin」三套值导致标签上下间距不一致。 */
+   卡片不再自带纵向 padding；行间距 = grid row-gap = 全宽行 margin-top = --space-md，
+   避免「2xs padding + 2xs gap + sm margin」三套值导致标签上下间距不一致。
+   标题（字段卡）之间 gap = --space-md（用户 2026-09-23 要求）。 */
 .detail-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 
 .detail-info-card {
@@ -816,14 +817,14 @@
 
 /* ── 全宽信息行（评分 / 国家 / 发行公司，末尾各独占一行） ──
    数据在标题右侧同行显示；过长换行时 flex-start 保证值首行与标签对齐。
-   margin-top = grid row-gap = --space-sm（与卡间行距同源）。 */
+   margin-top = grid row-gap = --space-md（与卡间标题行距同源）。 */
 
 .detail-info-row {
   display: flex;
   gap: var(--space-sm);
   align-items: flex-start;
   min-width: 0;
-  margin-top: var(--space-sm);
+  margin-top: var(--space-md);
   color: var(--color-text);
 }
 .detail-info-row svg {
@@ -2012,13 +2013,13 @@
 
   /* 右栏：高度锁死为 hero 实际高度（--detail-hero-h 由 JS 测量写入），
      内容超出时栏内滚动，保证两栏下沿始终齐平、不把 grid 行撑高。
-     行距单一真源 = flex gap --space-sm（与 grid row-gap 同值）：
-     旧 gap md 与子元素 margin sm 叠加 → grid 内 sm、grid 下全宽行 md+sm 不一致；
+     行距单一真源 = flex gap --space-md（与 grid row-gap 同值，标题卡之间同距）：
+     旧 gap 与子元素 margin 叠加 → grid 内外不一致；
      子元素纵向 margin 在右栏一律清零，间距只由 gap 提供。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     min-width: 0;
     /* 高度强制等于 banner（用户 2026-09-10 要求「与 banner 高度保持一致」）：
        变量由 JS 用 ResizeObserver 把 .detail-hero 的实测高度写到 .detail-top 上。
@@ -2039,7 +2040,7 @@
   }
 
   /* 右栏内的 section 标题与卡片网格按窄栏重排；
-     纵向 margin 清零 —— 行距只由父级 flex gap --space-sm 提供（见上方单一真源注释） */
+     纵向 margin 清零 —— 行距只由父级 flex gap --space-md 提供（见上方单一真源注释） */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-section-title {
     margin-bottom: 0;
     font-size: var(--text-base);
@@ -2055,10 +2056,10 @@
 
   /* 右栏基础信息：一行两列（用户 2026-09-10 要求）。
      单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。
-     行距 = 父级 flex gap --space-sm（列距 --space-md），不再叠加卡片纵向 padding。 */
+     行距 = 父级 flex gap --space-md = grid row-gap（标题卡之间同距；列距 --space-md），不再叠加卡片纵向 padding。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-sm) var(--space-md);
+    gap: var(--space-md);
   }
 
   /* 每张卡：数据在标签同行右侧（2026-09-23 用户要求，替换旧「标签一行、值一行」）。
