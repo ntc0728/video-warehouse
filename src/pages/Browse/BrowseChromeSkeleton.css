@@ -1,0 +1,45 @@
+/* Browse 首屏 chrome 骨架 — 左栏筛选 + 顶栏排序条。
+   根类复用真实 .filter-bar / .browse-sort-bar（继承 grid-area 与行布局），
+   本文件只写骨架私有灰块：chips / type·tab pill / 计数占位。
+   骨架层不可交互（与 .browse-skeleton 同口径 pointer-events:none）。 */
+
+.browse-chrome-skeleton,
+.browse-chrome-skeleton * {
+  pointer-events: none;
+}
+
+/* ── 左栏 chips：高度/圆角对齐真实 .filter-bar__chip ── */
+.browse-chrome-skeleton__chip {
+  width: 100%;
+  height: var(--comp-tab-height);
+  border-radius: var(--radius-full);
+}
+
+/* ── 顶栏类型/排序 pill：对齐真实 __type/__tab 的 pad 推导高（text-sm × 1.5）── */
+.browse-chrome-skeleton__pill {
+  display: block;
+  height: 1.5em;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+}
+
+.browse-chrome-skeleton__pill--type {
+  width: 3.2em;
+}
+
+.browse-chrome-skeleton__pill--type:nth-child(2n) {
+  width: 2.6em;
+}
+
+.browse-chrome-skeleton__pill--tab {
+  width: 2.8em;
+}
+
+/* ── 计数位：短条替代「共 X 条」/「搜索中…」── */
+.browse-chrome-skeleton__count {
+  display: block;
+  width: 5.5em;
+  height: 1.2em;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}

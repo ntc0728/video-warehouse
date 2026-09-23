@@ -34,6 +34,7 @@ import type { VideoType } from '@/types/video';
 import { useCMSSearch } from './useCMSSearch';
 import BrowseGrid from './BrowseGrid';
 import BrowseSkeleton from './BrowseSkeleton';
+import { BrowseFilterChromeSkeleton, BrowseSortChromeSkeleton } from './BrowseChromeSkeleton';
 import BrowsePagination from './BrowsePagination';
 import { useCardCols, useLogicalPage } from './useLogicalPage';
 import BrowseMobileBar from './BrowseMobileBar';
@@ -612,6 +613,33 @@ export default function BrowsePage() {
     : (!isCmsLoading && filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
 
+  // ── 首屏 chrome 骨架（2026-09-23 用户需求）──────────────────────────
+  // 首次进入 Browse，在本模式首轮接口响应结束前：左栏筛选 + 顶栏排序条
+  // 不渲染真实筛选项，改渲染骨架；模式 tab（智能检索/直链搜索）不属筛选项，
+  // 始终真实渲染。chromeSettled 一次锁死 —— 终态后后续筛选/翻页不再回骨架。
+  // 终态 = 看过一拍 loading 后结束，或已有数据/错误，或直链模式（无词时无请求）。
+  const [chromeSettled, setChromeSettled] = useState(false);
+  const sawChromeLoading = useRef(false);
+  useEffect(() => {
+    if (chromeSettled) return;
+    if (showResultsLoading) {
+      sawChromeLoading.current = true;
+      return;
+    }
+    if (
+      sawChromeLoading.current ||
+      smartHasData ||
+      cmsHasData ||
+      currentError ||
+      searchMode === 'cms'
+    ) {
+      setChromeSettled(true);
+    }
+  }, [chromeSettled, showResultsLoading, smartHasData, cmsHasData, currentError, searchMode]);
+  // 有数据/错误时当帧换真（不等 effect），避免缓存命中或多一帧骨架闪烁
+  const showChromeSkeleton =
+    !chromeSettled && !smartHasData && !cmsHasData && !currentError;
+
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
   const { videoSourceIds } = useSettingsStore();
   const [videoSources, setVideoSources] = useState<VideoSourceConfig[]>([]);
@@ -687,8 +715,10 @@ export default function BrowsePage() {
               </button>
             </div>
           </div>
+          {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项（模式 tab 在上方恒真实） */}
+          {showChromeSkeleton && <BrowseFilterChromeSkeleton />}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
-          {searchMode === 'smart' && (
+          {!showChromeSkeleton && searchMode === 'smart' && (
             <FilterBar
               value={filterValue}
               onChange={handleFilterChange}
@@ -703,7 +733,7 @@ export default function BrowsePage() {
           )}
           {/* 直链搜索模式：FilterBar 本地筛选（纯前端过滤 CMS 结果，不调接口；
               无 genres → 分类行自动隐藏；CMS 无评分/热度 → footer 排序隐藏） */}
-          {searchMode === 'cms' && (
+          {!showChromeSkeleton && searchMode === 'cms' && (
             <FilterBar
               value={cmsFilterValue}
               onChange={handleCmsFilterChange}
@@ -717,8 +747,10 @@ export default function BrowsePage() {
 
       {/* Card 2：结果区域 */}
       <div className="browse-card--results">
-        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1024 对齐 demo reshead） */}
-        {searchMode === 'smart' && (
+        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1024 对齐 demo reshead）
+            首屏 chrome 骨架期由 BrowseSortChromeSkeleton 占位，接口响应后换真 */}
+        {searchMode === 'smart' && showChromeSkeleton && <BrowseSortChromeSkeleton />}
+        {searchMode === 'smart' && !showChromeSkeleton && (
           <div className="browse-sort-bar">
             <div className="browse-sort-bar__types" role="tablist" aria-label="类型">
               {CATEGORY_OPTIONS.map((o) => (

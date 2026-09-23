@@ -405,21 +405,36 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     );
   });
 
-  test('SKEL-014: Browse 结果区骨架结构（类型/排序 pill 数 == 真实常量 + 卡壳同构）', async ({ page }) => {
+  test('SKEL-014: Browse 首屏 chrome 骨架（左栏/顶栏）+ 结果网格骨架', async ({ page }) => {
     await holdTmdb(page);
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
 
+    /* 2026-09-23 用户需求：首次进入、接口未响应前，左栏筛选 + 顶栏排序条
+       渲染 chrome 骨架（BrowseChromeSkeleton），真实筛选项不渲染；
+       模式 tab（智能检索/直链搜索）不属筛选项，恒真实。 */
+    await expect(page.locator('.browse-search-tab')).toHaveCount(2);
+
+    const filterChrome = page.locator('.browse-chrome-skeleton--filters');
+    const sortChrome = page.locator('.browse-chrome-skeleton--sort');
+    await expect(filterChrome).toBeVisible({ timeout: 10000 });
+    await expect(sortChrome).toBeVisible();
+
+    // 真实筛选项在 chrome 骨架期不渲染（防「骨架 + 真实项」叠现回归）
+    await expect(page.locator('.browse-sort-bar__type')).toHaveCount(0);
+    await expect(page.locator('.browse-sort-bar__tab')).toHaveCount(0);
+    await expect(page.locator('button.filter-bar__chip')).toHaveCount(0);
+
+    // chrome 骨架 pill 数仍取同一份常量真源：CATEGORY_CONFIG = 7、SORT_OPTIONS = 3
+    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(7);
+    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--tab')).toHaveCount(3);
+    await expect(sortChrome.locator('.browse-sort-bar__count')).toHaveCount(1);
+    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(6 + 8 + 8);
+    // 旧镜像类不得复活
+    await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
+
+    // 结果网格骨架与 chrome 骨架同帧并存（不同 grid-area）
     const skeleton = page.locator('.browse-skeleton');
     await expect(skeleton).toBeVisible({ timeout: 10000 });
-
-    /* 2026-09-22 方向 A：排序条不再由骨架镜像——真实 .browse-sort-bar 加载期恒在渲染
-       （BrowseSkeleton.tsx 注释），骨架只覆盖数据网格。pill 数仍取同一份常量真源：
-       CATEGORY_CONFIG = 7、SORT_OPTIONS = 3。 */
-    await expect(page.locator('.browse-sort-bar__type')).toHaveCount(7);
-    await expect(page.locator('.browse-sort-bar__tab')).toHaveCount(3);
-    await expect(page.locator('.browse-sort-bar__count')).toHaveCount(1);
-    // 骨架不得再渲染旧镜像排序条（防止双条叠现回归）
-    await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
     // 卡壳复用真实 .video-card：封面 + 四角标 + 标题行
     const cards = await page.locator('.browse-skeleton__card.video-card').count();
