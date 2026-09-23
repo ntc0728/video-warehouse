@@ -192,9 +192,10 @@
   pointer-events: auto;
 }
 
-/* banner 双按钮：较 Classic 再收一档（2026-09-23 padding/字号微调，仅本组件） */
+/* banner 双按钮：较 Classic 再收一档（2026-09-23 padding/字号微调，仅本组件）。
+   纵向用 xs 非 2xs——2xs 桌面仅 ~2px，胶囊会被压扁；横/字号维持收窄 */
 .hero-bili__caption .hero-banner__cta {
-  padding: var(--space-2xs) var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   font-size: var(--text-xs);
 }
 

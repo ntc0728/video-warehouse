@@ -27,8 +27,10 @@ demo: （无独立 demo，真实页 1440 直接预览）
   28px 上限，vw 项死代码）；CTA `padding --space-xs --space-md` + `--text-sm`；
   dots `margin-top --space-xs`（按钮↔圆点仅 4px）。
 - **新逻辑**：title `calc(--text-3xl * 0.9)`（25.2px，删 stylelint px-disable）；
-  CTA `padding --space-2xs --space-sm` + `--text-xs`；dots `margin-top --space-sm`
+  CTA `padding --space-xs --space-sm` + `--text-xs`；dots `margin-top --space-sm`
   （caption 底锚 → 按钮↔圆点 4→8px，文案/按钮整体上移）。meta 不动。
+  **追修**：首版 CTA 纵向用 `--space-2xs`（桌面仅 ~2px）被反馈「按钮扁」，
+  纵向回 `--space-xs`（~4px）、横/字号维持收窄——胶囊高宽比复原。
 
 ## ③ 右卡四角标间距
 
