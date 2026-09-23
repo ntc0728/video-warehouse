@@ -802,31 +802,37 @@
   font-weight: 600;
 }
 
-/* ── 全宽信息行（发行公司） ───────────────────── */
+/* ── 全宽信息行（国家 / 发行公司，末尾各独占一行） ──
+   数据在标题右侧同行显示；过长换行时 flex-start 保证值首行与标签对齐。 */
 
 .detail-info-row {
   display: flex;
   gap: var(--space-sm);
-  align-items: center;
+  align-items: flex-start;
   margin-top: var(--space-sm);
   color: var(--color-text);
 }
 .detail-info-row svg {
   flex-shrink: 0;
+  margin-top: 0.125em;
   color: var(--color-primary);
   opacity: 0.7;
 }
 .detail-info-row > span:first-of-type {
   flex-shrink: 0;
+  margin-top: 0.125em;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   white-space: nowrap;
 }
 .detail-info-row strong {
+  flex: 1 1 0;
+  min-width: 0;
   margin-left: var(--space-sm);
   color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .detail-info-item {
@@ -921,7 +927,7 @@
 
 /* 折叠（全视口统一）：限制 2 行高度，超出隐藏。
    ⚠️ 2026-09-10 修复「第二行被裁一半」：原 `max-height: 16rem` 是硬编码，
-   而头像尺寸 --layout-cast-avatar 是流体值（桌面 clamp(80px→88px) × --ui-scale），
+   而头像尺寸 --layout-cast-avatar 是流体值（桌面 clamp(70px→77px) × --ui-scale），
    条目行高随视口/UI 缩放变化 —— 实测 1440 下 2 行实际需 279px > 16rem(256px)，
    第二行底部被裁掉 23px。现改为由 JS 按「首行条目实际高度 × 2 + grid 行间距」
    写入 --cast-collapsed-h，任何视口/缩放档位都精确等于两行高度。 */
@@ -2028,20 +2034,29 @@
     gap: var(--space-2xs) var(--space-md);
   }
 
-  /* 每张卡内部仍是「标签一行、值一行」的分行结构（用户要求）：
-     图标 + 标签在第一行，值另起一行并与标签左对齐（padding-left = 图标宽 + gap）。 */
+  /* 每张卡：数据在标签同行右侧（2026-09-23 用户要求，替换旧「标签一行、值一行」）。
+     flex-start 保证值过长换行时，值的首行仍与标签/图标顶线对齐。 */
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
-    flex-wrap: wrap;
+    align-items: flex-start;
     min-width: 0;
     padding: var(--space-2xs) 0;
   }
 
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card svg,
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card span {
+    margin-top: 0.125em;
+  }
+
   html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
-    flex-basis: 100%;
+    flex: 1 1 0;
     min-width: 0;
-    margin-left: 0;
-    padding-left: calc(var(--icon-sm) + var(--space-sm));
     overflow-wrap: anywhere;
+  }
+
+  /* 末尾全宽行（国家/发行）在右栏同样首行对齐、吃满剩余宽度 */
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row strong {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 
