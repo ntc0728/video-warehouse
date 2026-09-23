@@ -4,10 +4,10 @@
  * 结构镜像（对应 Browse/index.tsx 结果区与 VideoCard）：
  *   卡片网格 → 每格 = a.video-card（.video-card-cover 2:3 + 四角标 + .video-card-info > 标题行）
  *
- * ⚠️ 排序条（类型 pills / 排序 tabs / 结果数）不由骨架镜像（2026-09-22 全站静态标签
- *   统一方向 A 审计发现）：真实 .browse-sort-bar 在 smart 模式**加载期恒在渲染**
- *   （Browse/index.tsx 结果卡顶部，计数位自带「搜索中…」态），旧骨架再镜像一条灰条
- *   = 加载期上下两条排序条叠现。静态 chrome 由真实页自己渲染，骨架只覆盖数据区（网格）。
+ * ⚠️ 排序条/左栏筛选的**首屏 chrome 骨架**由 BrowseChromeSkeleton 单独负责
+ *   （2026-09-23：首次进入、接口未响应前，真实 sort-bar / FilterBar 不渲染）。
+ *   本组件仍只覆盖数据网格；首屏 chrome 骨架与网格骨架同帧并存（不同 grid-area），
+ *   不会叠现 —— chrome 骨架终态后真实 sort-bar 接管，网格骨架由 showSkeleton 独占。
  *
  * 行数（非固定）：由 useFillRows 按 AppLayout 滚动容器可视高度实测推导 ——
  * 视口能放几行就渲染几行，末行完整，数据到达时页面高度不跳。
