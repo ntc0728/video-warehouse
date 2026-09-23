@@ -649,3 +649,53 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
+
+/* ── 封面加载门控（2026-09-23）────────────────────────────────────────
+   扫光中（LazyImage 仍挂 .lazy-image-placeholder）隐藏四角标/收藏/进度；
+   成功(.loaded)、重试用尽失败(.error)、空源（无 placeholder）均显示。
+   以 placeholder 是否存在为真源：空源/失败不再走 JS imageLoaded（失败恒 false 的缺陷）。
+   放在文件末尾：fav 需压过 hover(0,4,0) / TV focus(0,5,0) / touch 常显。 */
+.video-card-source-badge,
+.video-card-rating,
+.video-card-year-badge,
+.video-card-type,
+.video-card-badges-bl,
+.video-card-status,
+.video-card-landscape__source-badge,
+.video-card-landscape__progress-overlay {
+  transition: opacity var(--dur-base) var(--ease-out-expo);
+}
+
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-source-badge,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-rating,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-year-badge,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-type,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-badges-bl,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-status,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-landscape__source-badge,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-landscape__progress-overlay,
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn,
+.video-card:hover .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn,
+.video-card:focus-within .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn {
+  transform: scale(0.8);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+  }
+}
+
+[data-device="tv"] .video-card:focus-within .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible,
+[data-device="tv"] .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible:focus-visible {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+}

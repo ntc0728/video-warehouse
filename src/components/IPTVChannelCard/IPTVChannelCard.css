@@ -545,3 +545,39 @@
   box-shadow: none;
   outline: none;
 }
+
+/* ── 封面加载门控（2026-09-23）────────────────────────────────────────
+   扫光中隐藏 LIVE/来源/分组/台标角标与红心；成功/失败兜底/空源显示。
+   红心挂在 wrap（封面兄弟）→ 用 wrap:has(.lazy-image-placeholder) 上溯。
+   放末尾压过 hover/focus/touch/TV 各档显形规则（IPTV-090 失败态仍须可见）。 */
+.iptv-card-cover__badges,
+.iptv-card-group,
+.iptv-card-source {
+  transition: opacity var(--dur-base) var(--ease-out-expo);
+}
+
+.iptv-card-cover:has(.lazy-image-placeholder) > .iptv-card-cover__badges,
+.iptv-card-cover:has(.lazy-image-placeholder) > .iptv-card-group,
+.iptv-card-cover:has(.lazy-image-placeholder) > .iptv-card-source,
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite,
+.iptv-channel-card-wrap:hover:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:focus-within:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.visible,
+[data-device="tv"] .iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-channel-card-wrap:focus-within:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible:focus-visible {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite,
+.iptv-channel-card-wrap:hover:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:focus-within:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+.iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.visible,
+[data-device="tv"] .iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-channel-card-wrap:focus-within:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible,
+[data-device="tv"] .iptv-channel-card-wrap:has(.lazy-image-placeholder) .iptv-card-favorite.hover-visible:focus-visible {
+  transform: scale(0.8);
+}
