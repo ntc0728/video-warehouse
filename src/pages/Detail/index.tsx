@@ -764,7 +764,6 @@ export default function DetailPage() {
         )}
         {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
         {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
-        {countries.length > 0 && <div className="detail-info-card"><GlobeIcon size="sm" /><span>国家</span><strong>{countries.join(' / ')}</strong></div>}
         {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
         {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
         {isTV && <div className="detail-info-card detail-info-card--media"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
@@ -772,7 +771,14 @@ export default function DetailPage() {
         {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
       </div>
 
-      {/* 发行公司 — 独立一行 */}
+      {/* 国家 / 发行 — 各独占一行放末尾（2026-09-23 用户要求） */}
+      {countries.length > 0 && (
+        <div className="detail-info-row">
+          <GlobeIcon size="sm" />
+          <span>国家</span>
+          <strong>{countries.join(' / ')}</strong>
+        </div>
+      )}
       {companies.length > 0 && (
         <div className="detail-info-row">
           <FilmIcon size="sm" />

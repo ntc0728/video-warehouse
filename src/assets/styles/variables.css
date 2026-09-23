@@ -564,7 +564,7 @@
   --src-det-grid-min: calc(clamp(150px, 105.471px + 11.874vw, 196.667px) * var(--ui-scale)); /* 弹层网格单元最小宽：150→220px 流体 */
   --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
   --layout-tabbar-height: calc(clamp(56px, 45.822px + 2.714vw, 66.667px) * var(--ui-scale)); /* 移动端底部 TabBar 高度：56→72px 流体 */
-  --layout-cast-avatar: calc(clamp(64px, 48.733px + 4.071vw, 80px) * var(--ui-scale)); /* Detail 演员头像：64→88px 流体（11.4） */
+  --layout-cast-avatar: calc(clamp(56px, 42.641px + 3.562vw, 70px) * var(--ui-scale)); /* Detail 演员头像：56→70px 流体（2026-09-23 用户反馈 64→80 略大，×0.875） */
   --layout-datepicker-width: calc(clamp(340px, 263.664px + 20.356vw, 420px) * var(--ui-scale)); /* 日期选择器宽度：340→460px 流体 */
   --layout-collapse-max-h: calc(clamp(1000px, 745.547px + 67.854vw, 1266.667px) * var(--ui-scale)); /* 折叠面板最大高度：1000→1400px 流体 */
   --layout-detail-poster-w: calc(clamp(128px, -14.494px + 37.998vw, 277.333px) * var(--ui-scale)); /* 详情页海报宽度 */
@@ -647,7 +647,7 @@
     --layout-brand-font-size-lg: calc(clamp(26.667px, 25.95209px + 0.09309vw, 28px) * var(--ui-scale));
     --layout-brand-font-size-sm: calc(clamp(18.667px, 17.95209px + 0.09309vw, 20px) * var(--ui-scale));
     --layout-card-daily-width: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
-    --layout-cast-avatar: calc(clamp(80px, 75.7095px + 0.55866vw, 88px) * var(--ui-scale));
+    --layout-cast-avatar: calc(clamp(70px, 66.246px + 0.48883vw, 77px) * var(--ui-scale)); /* 70→77：80→88 ×0.875（2026-09-23） */
     --layout-channel-num-w: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1195.1588px + 9.31096vw, 1400px) * var(--ui-scale));
     --layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
@@ -1076,7 +1076,7 @@
   --layout-brand-font-size-lg: clamp(28px, 1.45833vw, 56px);
   --layout-brand-font-size-sm: clamp(20px, 1.04167vw, 40px);
   --layout-card-daily-width: 200px;
-  --layout-cast-avatar: 64px;
+  --layout-cast-avatar: 56px; /* 64×0.875（2026-09-23） */
   --layout-channel-num-w: 120px;
   /* 频道列表一级栏（2026-09-15 B5 重标定）：旧值 A=162 是基于「TV 组项文字 16px」标定的，
      本次 TV 字号对齐 10-foot 基线后组项改用 --text-lg = 22px（1080p）→ 原宽度不再够用。

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Demo — Detail 右栏基础信息同行布局 + 演员头像调小（2026-09-23）</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #fff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --text-2: #6b7280;
+    --text-3: #9ca3af;
+    --primary: #3b82f6;
+    --warning: #d97706;
+    --success: #059669;
+    --info: #2563eb;
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --surface: #1a1d24; --border: #2a2f3a;
+      --text: #e5e7eb; --text-2: #9ca3af; --text-3: #6b7280;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: var(--text-2); margin: 0 0 20px; font-size: 13px; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 16px;
+  }
+  .toolbar label { font-size: 13px; color: var(--text-2); }
+  .toolbar button {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface); color: var(--text); cursor: pointer; font-size: 13px;
+  }
+  .toolbar button.active {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 16px;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600;
+  }
+  .panel-head .tag {
+    font-size: 11px; font-weight: 500; padding: 2px 8px;
+    border-radius: 999px; background: var(--border); color: var(--text-2);
+  }
+  .panel-head .tag.new { background: #dbeafe; color: #1d4ed8; }
+  @media (prefers-color-scheme: dark) {
+    .panel-head .tag.new { background: #1e3a5f; color: #93c5fd; }
+  }
+  .panel-body { padding: 16px; }
+
+  /* ── 共用右栏壳 ── */
+  .hero-side {
+    display: flex; flex-direction: column; gap: 12px;
+    min-width: 0;
+    height: 420px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .hero-side::-webkit-scrollbar { display: none; }
+  .section-title { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+  .genres { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .genre {
+    font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text-2);
+  }
+
+  /* ── 基类信息卡（数据同行，与项目 Detail.css:764 一致） ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 16px;
+  }
+  .info-card {
+    display: flex; gap: 8px; align-items: center;
+    padding: 4px 0; color: var(--text); font-size: 13px;
+  }
+  .info-card .ico { flex-shrink: 0; width: 14px; height: 14px; opacity: .7; color: var(--primary); }
+  .info-card span {
+    flex-shrink: 0; color: var(--text-2); font-size: 13px; white-space: nowrap;
+  }
+  .info-card strong { margin-left: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
+  .info-card .star { color: var(--warning); }
+  .info-card .money .ico { color: var(--success); opacity: 1; }
+  .info-card .media .ico { color: var(--info); opacity: 1; }
+  .vote { margin-left: 4px; color: var(--text-3); font-size: 12px; font-weight: 400; }
+
+  /* 全宽行：国家 / 发行 */
+  .info-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px; color: var(--text);
+  }
+  .info-row .ico { flex-shrink: 0; width: 14px; height: 14px; color: var(--primary); opacity: .7; }
+  .info-row > span:first-of-type {
+    flex-shrink: 0; color: var(--text-2); font-size: 13px; white-space: nowrap;
+  }
+  .info-row strong { margin-left: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
+  .companies { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .company { display: inline-flex; gap: 4px; align-items: center; }
+  .company-logo {
+    width: 22px; height: 22px; border-radius: 4px; object-fit: contain;
+    background: var(--bg); opacity: .7;
+  }
+
+  /* ═══ OLD（旧逻辑复刻）：值另起一行 + 国家在 grid 内 ═══ */
+  .old .info-card { flex-wrap: wrap; }
+  .old .info-card strong {
+    flex-basis: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding-left: 22px; /* 图标宽 + gap */
+    overflow-wrap: anywhere;
+  }
+  .old .info-row { align-items: center; }
+  .old .info-row strong { flex: 0 1 auto; min-width: 0; }
+
+  /* ═══ NEW（新逻辑）：数据同行右 + flex-start 首行对齐 ═══ */
+  .new .info-card { align-items: flex-start; min-width: 0; }
+  .new .info-card .ico,
+  .new .info-card span { margin-top: 2px; }
+  .new .info-card strong { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+  .new .info-row { align-items: flex-start; }
+  .new .info-row .ico,
+  .new .info-row > span:first-of-type { margin-top: 2px; }
+  .new .info-row strong { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+  /* NEW：国家移到 grid 后末尾（与发行并列）——结构差异由 JS 重排演示 */
+
+  /* ── 演员头像对照 ── */
+  .cast-block { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .cast-block h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .cast-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: 12px;
+  }
+  .cast-item {
+    display: flex; flex-direction: column; gap: 4px;
+    align-items: center; min-width: 0; text-align: center;
+  }
+  .avatar {
+    border: 2px solid var(--border); border-radius: 50%;
+    background: linear-gradient(135deg, #c7d2fe, #fbcfe8);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #6b7280;
+  }
+  .old .avatar { width: 84px; height: 84px; }   /* 旧桌面 80–88 取中值 */
+  .new .avatar { width: 73px; height: 73px; }   /* 新桌面 70–77 取中值 ×0.875 */
+  .cast-name {
+    font-size: 13px; font-weight: 500; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cast-role { font-size: 12px; color: var(--text-3); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .note {
+    margin-top: 20px; padding: 12px 14px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text-2); line-height: 1.7;
+  }
+  .note code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .note b { color: var(--text); }
+  .hide { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>Detail 右栏基础信息：同行布局 + 末尾全宽行 + 演员头像调小</h1>
+  <p class="sub">旧 = 标签一行·值一行（国家夹在 grid 中间）｜新 = 数据在标题右侧、国家/发行末尾全宽、头像 ×0.875。窄屏 info-tab 共用同一份 JSX，新逻辑同步生效。</p>
+
+  <div class="toolbar">
+    <label>视图：</label>
+    <button type="button" data-view="both" class="active">并排对照</button>
+    <button type="button" data-view="old">仅旧</button>
+    <button type="button" data-view="new">仅新</button>
+    <label style="margin-left:12px">长数据：</label>
+    <button type="button" id="btn-long" class="active">开</button>
+    <button type="button" id="btn-short">关</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <!-- ═══ OLD ═══ -->
+    <section class="panel old" id="panel-old">
+      <div class="panel-head"><span>旧逻辑</span><span class="tag">标签行 + 值行 · 国家在 grid 内</span></div>
+      <div class="panel-body">
+        <div class="hero-side">
+          <h2 class="section-title">基础信息</h2>
+          <div class="genres">
+            <span class="genre">剧情</span><span class="genre">科幻</span><span class="genre">冒险</span>
+          </div>
+          <div class="info-grid" id="old-grid">
+            <!-- cards injected -->
+          </div>
+          <div class="info-row" id="old-release">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            <span>发行</span>
+            <strong class="companies">
+              <span class="company"><span class="company-logo"></span>华纳兄弟</span>
+              <span class="company"><span class="company-logo"></span>传奇影业</span>
+            </strong>
+          </div>
+        </div>
+        <div class="cast-block">
+          <h3>演员头像（旧 80–88px 流体，此处取 84px 示意）</h3>
+          <div class="cast-row">
+            <div class="cast-item"><div class="avatar">🙂</div><span class="cast-name">提莫西·查拉梅</span><span class="cast-role">Paul Atreides</span></div>
+            <div class="cast-item"><div class="avatar">👩</div><span class="cast-name">赞达亚</span><span class="cast-role">Chani</span></div>
+            <div class="cast-item"><div class="avatar">🧑</div><span class="cast-name">丽贝卡·弗格森</span><span class="cast-role">Jessica</span></div>
+            <div class="cast-item"><div class="avatar">🧔</div><span class="cast-name">奥斯汀·巴特勒</span><span class="cast-role">Feyd-Rautha</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ NEW ═══ -->
+    <section class="panel new" id="panel-new">
+      <div class="panel-head"><span>新逻辑 ★已落地</span><span class="tag new">数据同行右 · 国家/发行末尾 · 头像 ×0.875</span></div>
+      <div class="panel-body">
+        <div class="hero-side">
+          <h2 class="section-title">基础信息</h2>
+          <div class="genres">
+            <span class="genre">剧情</span><span class="genre">科幻</span><span class="genre">冒险</span>
+          </div>
+          <div class="info-grid" id="new-grid">
+            <!-- cards injected（不含国家） -->
+          </div>
+          <div class="info-row" id="new-country">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>国家</span>
+            <strong id="new-country-val">美国 / 英国 / 法国</strong>
+          </div>
+          <div class="info-row" id="new-release">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            <span>发行</span>
+            <strong class="companies">
+              <span class="company"><span class="company-logo"></span>华纳兄弟</span>
+              <span class="company"><span class="company-logo"></span>传奇影业</span>
+            </strong>
+          </div>
+        </div>
+        <div class="cast-block">
+          <h3>演员头像（新 70–77px 流体，此处取 73px 示意 · 列宽 minmax(6rem,1fr) 不变）</h3>
+          <div class="cast-row">
+            <div class="cast-item"><div class="avatar">🙂</div><span class="cast-name">提莫西·查拉梅</span><span class="cast-role">Paul Atreides</span></div>
+            <div class="cast-item"><div class="avatar">👩</div><span class="cast-name">赞达亚</span><span class="cast-role">Chani</span></div>
+            <div class="cast-item"><div class="avatar">🧑</div><span class="cast-name">丽贝卡·弗格森</span><span class="cast-role">Jessica</span></div>
+            <div class="cast-item"><div class="avatar">🧔</div><span class="cast-name">奥斯汀·巴特勒</span><span class="cast-role">Feyd-Rautha</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="note">
+    <b>【问题】</b>右栏基础信息值堆在标签下面占两行，国家夹在字段中间，演员头像偏大。<br/>
+    <b>【旧逻辑】</b><code>Detail.css</code> hero-side 覆写 <code>strong{flex-basis:100%}</code> 强制值另起一行；国家是 grid 内第 7 卡；<code>--layout-cast-avatar</code> 桌面 80→88px。<br/>
+    <b>【新逻辑】</b>值在标签同行右侧（<code>flex:1 1 0</code> 吃满、<code>flex-start</code> 首行对齐、过长 <code>overflow-wrap:anywhere</code> 换行）；国家移出 grid，与发行一起在末尾各独占一行；头像 token ×0.875（桌面 70→77 / 基 56→70 / TV 56px），grid 列宽不动。<br/>
+    <b>【预览】</b>本页并排对照；「长数据」开关可看语言/国家多值换行时首行是否仍贴标签。
+  </div>
+
+<script>
+  const cardsShort = [
+    ['📅','发行年份','2024', ''],
+    ['ℹ','状态','Released', ''],
+    ['⏱','时长','166 分钟', ''],
+    ['🌐','语言','EN / English / 中文', ''],
+    ['★','TMDB 评分','8.1 / 10<span class="vote">（21,456 人评价）</span>', 'star'],
+    ['👥','导演','Denis Villeneuve', ''],
+    ['🌍','国家','美国 / 英国 / 法国', 'country'], // 旧有、新移出 grid
+    ['💲','预算','$190,000,000', 'money'],
+    ['💲','票房','$714,444,358', 'money'],
+  ];
+  const cardsLong = [
+    ['📅','发行年份','2024', ''],
+    ['ℹ','状态','Released', ''],
+    ['⏱','时长','166 分钟', ''],
+    ['🌐','语言','EN / English (United States) / 中文（简体） / 日本語 / Français / Deutsch / Español / Italiano / 한국어 / Português', ''],
+    ['★','TMDB 评分','8.1 / 10<span class="vote">（214,567 人评价）</span>', 'star'],
+    ['👥','导演','Denis Villeneuve<span class="vote">（Victorville, California, USA）</span>', ''],
+    ['🌍','国家','美国 / 英国 / 法国 / 德国 / 日本 / 加拿大 / 澳大利亚 / 中国 / 韩国 / 印度 / 意大利 / 西班牙 / 巴西 / 墨西哥', 'country'],
+    ['💲','预算','$190,000,000', 'money'],
+    ['💲','票房','$714,444,358', 'money'],
+  ];
+
+  function rowHTML(c) {
+    const [label, val] = [c[1], c[2]];
+    return `<div class="info-card"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><span>${label}</span><strong>${val}</strong></div>`;
+  }
+
+  function render(long) {
+    const src = long ? cardsLong : cardsShort;
+    const country = src.find(c => c[3] === 'country');
+    document.getElementById('old-grid').innerHTML = src.map(rowHTML).join('');
+    document.getElementById('new-grid').innerHTML = src.filter(c => c[3] !== 'country').map(rowHTML).join('');
+    document.getElementById('new-country-val').innerHTML = country ? country[2] : '美国 / 英国 / 法国';
+  }
+
+  document.querySelectorAll('.toolbar [data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toolbar [data-view]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const v = btn.dataset.view;
+      document.getElementById('panel-old').classList.toggle('hide', v === 'new');
+      document.getElementById('panel-new').classList.toggle('hide', v === 'old');
+      document.getElementById('stage').style.gridTemplateColumns = v === 'both' ? '' : '1fr';
+    });
+  });
+  document.getElementById('btn-long').addEventListener('click', () => {
+    document.getElementById('btn-long').classList.add('active');
+    document.getElementById('btn-short').classList.remove('active');
+    render(true);
+  });
+  document.getElementById('btn-short').addEventListener('click', () => {
+    document.getElementById('btn-short').classList.add('active');
+    document.getElementById('btn-long').classList.remove('active');
+    render(false);
+  });
+  render(true);
+</script>
+</body>
+</html>
