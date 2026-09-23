@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.28.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.2...kinotv-v1.28.0) (2026-09-23)
+
+
+### Features
+
+* **browse:** 顶栏四方案 Demo + 左栏去滚动条 + 分类行壳 ([7918340](https://github.com/ntc0728/video-warehouse/commit/7918340a0c51d7ab7e3c694a81617755adb08948))
+* **browse:** 顶栏方案A落地 — 排序tab改types分段 + 总数右对齐 ([9fc52f5](https://github.com/ntc0728/video-warehouse/commit/9fc52f5562750892f3df29fffd6fa2b36638f541))
+* **browse:** 首屏接口未返回时左栏/顶栏筛选项渲染骨架 ([3240ea4](https://github.com/ntc0728/video-warehouse/commit/3240ea44fca8fc00d66b4cc727e4371e5bf97091))
+* **cards:** 四卡封面角标/收藏/进度按 LazyImage 加载态 CSS 门控 ([dcb481c](https://github.com/ntc0728/video-warehouse/commit/dcb481cf700e5d624db3fc1933ae3015361ba50d))
+* **detail:** 右栏基础信息同行布局 + 国家/发行末尾全宽 + 演员头像调小 ([71a2de0](https://github.com/ntc0728/video-warehouse/commit/71a2de0b4d01f62f59655f13b52731d3523d0dcd))
+* **detail:** 基础信息三轮 — 行距 gap 同源（grid 内外一致）+ 发行时间到日 ([f1bd689](https://github.com/ntc0728/video-warehouse/commit/f1bd6899a6c33ee7fb2030ac8a28905acbe7ce2a))
+* **detail:** 基础信息二轮 — 评分全宽 + 半宽自动 span + 行距同源 + 时长0不显示 ([9004040](https://github.com/ntc0728/video-warehouse/commit/9004040e011f20b40e1892a361ecd524332f0639))
+* **detail:** 基础信息标题卡之间 gap 改为 var(--space-md) ([13ebb1d](https://github.com/ntc0728/video-warehouse/commit/13ebb1dd8ae8e8e1f9256f260995bcac605179a9))
+
+
+### Bug Fixes
+
+* **hero-bili:** banner 撑满行高 + 桌面文案收档 + 右卡角标间距收窄 ([822dd26](https://github.com/ntc0728/video-warehouse/commit/822dd26c5d3fc27d4db339ea4ba69cfc6734fe5d))
+* **hero-bili:** CTA 纵向 padding 2xs→xs 修按钮压扁 ([49270fa](https://github.com/ntc0728/video-warehouse/commit/49270fa328e78633a4aeffb724e473d195cdd206))
+
 ## [1.27.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.1...kinotv-v1.27.2) (2026-09-22)
 
 
