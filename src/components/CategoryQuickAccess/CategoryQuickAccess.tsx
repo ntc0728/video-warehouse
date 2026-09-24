@@ -573,13 +573,14 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
                 {item.voteAverage.toFixed(1)}
               </span>
             </div>
-          </div>
-          <div className="cqa-hotcard__heat">
-            <span className="n">
-              <Icon icon={Flame} size="xs" />
-              {(item.popularity || 0).toFixed(1)}
-            </span>
-            <span className="l">热度</span>
+            {/* 2026-09-24 用户要求：热度从卡片右侧列移入 body，置于年份下方 */}
+            <div className="cqa-hotcard__heat">
+              <span className="n">
+                <Icon icon={Flame} size="xs" />
+                {(item.popularity || 0).toFixed(1)}
+              </span>
+              <span className="l">热度</span>
+            </div>
           </div>
         </Link>
       ))}
