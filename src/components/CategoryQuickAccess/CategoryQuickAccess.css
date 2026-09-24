@@ -281,7 +281,7 @@
     color: var(--color-text);
   }
 
-  /* ── mega 面板（AppLayout 全局挂载：fixed 于 header 正下方 = 跨页 mega-menu）── */
+  /* ── mega 面板（锚定 popover：left 对齐触发 chip，宽度封顶）── */
   html:not([data-device="tv"]) .cqa-overlay {
     /* hotcard 行高 = 横版封面高 + 上下内边距（封面尺寸见上方 --cqa-poster-*） */
     --cqa-row-h: calc(var(--cqa-poster-h) + 2 * var(--space-xs));
@@ -289,19 +289,27 @@
     --cqa-grid-h: calc(3 * var(--cqa-row-h) + 2 * var(--space-md));
     /* 分页条（右下角 上一页/页码/下一页·查看更多） */
     --cqa-pager-h: calc(1.2 * var(--text-xs) + 2 * var(--space-xs));
+    /* 面板宽：1000 封顶，两侧至少留 page-pad-x；再与内容 max-width 取小 */
+    --cqa-panel-w: min(
+      1000px,
+      calc(100vw - 2 * var(--page-pad-x)),
+      var(--layout-content-max-width)
+    );
     position: fixed;
     top: var(--header-height);
-    right: var(--page-pad-x);
-    /* ⚠️ 必须按 --page-pad-x 内缩，不能用 left/right:0：
-       本元素是 fixed，max-width 里的 100% 按「视口」解析，而页面内容的
-       min(100%, 2200px) 里的 100% 是「减去 page-pad-x 的内容盒」。
-       用 0 会导致 <2280 视口下面板反而比内容宽 2×pad（1920 下面板 1920、
-       内容 1760，直接顶到屏幕边、网格与下方卡片错开）。内缩后
-       面板宽度 ≡ 内容宽度（≥2560 仍为 2200 封顶居中），全宽度段对齐。 */
-    left: var(--page-pad-x);
+    /* 锚定触发 chip 左缘（--cqa-anchor-left 由 Nav 打开时写入），
+       并 clamp 在 [page-pad-x, 视口右缘-面板宽- page-pad-x] 内防溢出 */
+    left: max(
+      var(--page-pad-x),
+      min(
+        var(--cqa-anchor-left, var(--page-pad-x)),
+        calc(100vw - var(--page-pad-x) - var(--cqa-panel-w))
+      )
+    );
+    width: var(--cqa-panel-w);
+    max-width: none;
     /* header z-50 之下、页面内容之上 */
     z-index: 49;
-    max-width: var(--layout-content-max-width);
     min-height: calc(
       1.5 * var(--text-base)
       + var(--space-md)
@@ -312,10 +320,8 @@
       + var(--cqa-pager-h)
     );
     padding: var(--space-md) var(--space-lg) var(--space-lg);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border-radius: var(--radius-lg);
     background: var(--color-surface);
-    margin-inline: auto;
-    border-bottom: 1px solid var(--color-border-light);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   }
 
