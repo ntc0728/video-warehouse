@@ -1,7 +1,5 @@
-# 2026-09-24 2100 Detail 骨架：tab 改骨架方框 + info-card 对齐真实行高
-
 ---
-date: 2026-09-24
+date: 2026-09-24 21:00
 module: detail
 type: fix
 build: pass
@@ -10,6 +8,8 @@ files:
   - src/pages/Detail/DetailSkeleton.css
 demo: none
 ---
+
+# 2026-09-24 2100 Detail 骨架：tab 改骨架方框 + info-card 对齐真实行高
 
 ## 改动
 

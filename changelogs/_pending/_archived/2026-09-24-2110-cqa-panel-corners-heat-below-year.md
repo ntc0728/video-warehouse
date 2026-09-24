@@ -1,7 +1,5 @@
-# 2026-09-24 2110 CQA 面板顶角直角 + 热度值移入年份下方
-
 ---
-date: 2026-09-24
+date: 2026-09-24 21:10
 module: home
 type: fix
 build: pass
@@ -10,6 +8,8 @@ files:
   - src/components/CategoryQuickAccess/CategoryQuickAccess.tsx
 demo: none
 ---
+
+# 2026-09-24 2110 CQA 面板顶角直角 + 热度值移入年份下方
 
 ## 改动
 
