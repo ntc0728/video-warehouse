@@ -97,7 +97,9 @@ function formatHeatSum(v: number | undefined): string {
 //    模块级 store 让两个组件共享开合，跨 Keep-Alive 复进保持）──
 interface CategoryOverlayState {
   activeKey: WideCategoryKey | null;
-  open: (key: WideCategoryKey) => void;
+  /** 触发 chip 的视口 left（px）：面板 left 锚定用；null 时退回 --page-pad-x */
+  anchorLeft: number | null;
+  open: (key: WideCategoryKey, anchorLeft?: number | null) => void;
   close: () => void;
   /** 鼠标移出导航/面板时延迟收起（穿越 nav↔panel 的空隙缓冲） */
   scheduleClose: () => void;
@@ -105,7 +107,7 @@ interface CategoryOverlayState {
   cancelClose: () => void;
   /** 延迟展开（2026-09-10 用户反馈「chip hover 过于灵敏」）：滑过 chip 不立刻弹面板，
    *  停留 ≥ HOVER_OPEN_DELAY_MS 才展开；移出即取消（见 cancelPendingOpen） */
-  scheduleOpen: (key: WideCategoryKey) => void;
+  scheduleOpen: (key: WideCategoryKey, anchorLeft?: number | null) => void;
   /** 取消尚未触发的延迟展开（chip 移出 / 点击 / 切到别的 chip 时调用） */
   cancelPendingOpen: () => void;
 }
@@ -119,27 +121,28 @@ export const HOVER_OPEN_DELAY_MS = 200;
 
 export const useCategoryOverlayStore = create<CategoryOverlayState>((set) => ({
   activeKey: null,
-  open: (key) => {
+  anchorLeft: null,
+  open: (key, anchorLeft = null) => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
     if (openTimer) { clearTimeout(openTimer); openTimer = null; }
-    set({ activeKey: key });
+    set({ activeKey: key, anchorLeft });
   },
   close: () => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
     if (openTimer) { clearTimeout(openTimer); openTimer = null; }
-    set({ activeKey: null });
+    set({ activeKey: null, anchorLeft: null });
   },
   scheduleClose: () => {
     if (closeTimer) clearTimeout(closeTimer);
     if (openTimer) { clearTimeout(openTimer); openTimer = null; }
-    closeTimer = setTimeout(() => { closeTimer = null; set({ activeKey: null }); }, 120);
+    closeTimer = setTimeout(() => { closeTimer = null; set({ activeKey: null, anchorLeft: null }); }, 120);
   },
   cancelClose: () => {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
   },
-  scheduleOpen: (key) => {
+  scheduleOpen: (key, anchorLeft = null) => {
     if (openTimer) clearTimeout(openTimer);
-    openTimer = setTimeout(() => { openTimer = null; set({ activeKey: key }); }, HOVER_OPEN_DELAY_MS);
+    openTimer = setTimeout(() => { openTimer = null; set({ activeKey: key, anchorLeft }); }, HOVER_OPEN_DELAY_MS);
   },
   cancelPendingOpen: () => {
     if (openTimer) { clearTimeout(openTimer); openTimer = null; }
@@ -326,16 +329,17 @@ export function CategoryQuickAccessNav() {
     };
   }, [activeKey, close]);
 
-  const handleChipEnter = useCallback((cat: (typeof WIDE_CATEGORIES)[number]) => {
+  const handleChipEnter = useCallback((cat: (typeof WIDE_CATEGORIES)[number], el: HTMLElement | null) => {
     cancelClose();
     if (cat.key === 'home') { cancelPendingOpen(); close(); return; }
+    const anchorLeft = el ? Math.round(el.getBoundingClientRect().left) : null;
     // 已有展开的面板时切换 chip 立即跟随（已展开状态下的横向扫动应当即时）；
     // 尚未展开时走延迟，避免「鼠标扫过一排 chips」连续弹面板（用户 2026-09-10 反馈过于灵敏）。
     if (useCategoryOverlayStore.getState().activeKey !== null) {
-      open(cat.key);
+      open(cat.key, anchorLeft);
       return;
     }
-    scheduleOpen(cat.key);
+    scheduleOpen(cat.key, anchorLeft);
   }, [cancelClose, cancelPendingOpen, close, open, scheduleOpen]);
 
   /** chip 移出即取消未触发的延迟展开（否则扫过 chip A 后停在 chip B 上会弹出 A） */
@@ -358,13 +362,15 @@ export function CategoryQuickAccessNav() {
       {WIDE_CATEGORIES.map((cat) => (
         <button
           key={cat.key}
+          data-cqa-chip={cat.key}
           className={`cqa-nav__item${isChipOn(cat.key) ? ' cqa-nav__item--on' : ''}`}
           aria-expanded={activeKey === cat.key}
-          onMouseEnter={() => handleChipEnter(cat)}
+          onMouseEnter={(e) => handleChipEnter(cat, e.currentTarget)}
           onMouseLeave={() => handleChipLeave(cat)}
-          onClick={() => {
+          onClick={(e) => {
             cancelPendingOpen();
-            if (cat.key !== 'home') { open(cat.key); return; }
+            const anchorLeft = Math.round(e.currentTarget.getBoundingClientRect().left);
+            if (cat.key !== 'home') { open(cat.key, anchorLeft); return; }
             // 「首页」chip：首页 = 收起面板；其他页 = 回首页
             close();
             if (!isHome) navigate('/');
@@ -407,6 +413,7 @@ export function CategoryQuickAccessPanel() {
   }, [trending]);
 
   const activeKey = useCategoryOverlayStore((s) => s.activeKey);
+  const anchorLeft = useCategoryOverlayStore((s) => s.anchorLeft);
   const close = useCategoryOverlayStore((s) => s.close);
   const scheduleClose = useCategoryOverlayStore((s) => s.scheduleClose);
   const cancelClose = useCategoryOverlayStore((s) => s.cancelClose);
@@ -443,6 +450,11 @@ export function CategoryQuickAccessPanel() {
       className="cqa-overlay"
       role="dialog"
       aria-label={`${activeCat.label}面板`}
+      style={
+        anchorLeft != null
+          ? ({ '--cqa-anchor-left': `${anchorLeft}px` } as React.CSSProperties)
+          : undefined
+      }
       onMouseEnter={cancelClose}
       onMouseLeave={scheduleClose}
     >
