@@ -320,7 +320,9 @@
       + var(--cqa-pager-h)
     );
     padding: var(--space-md) var(--space-lg) var(--space-lg);
-    border-radius: var(--radius-lg);
+    /* 2026-09-24 用户要求：mega 面板贴 header 下缘展开，左上/右上直角（不圆角），
+       仅保留底部两角 radius-lg（对齐站内其它挂顶 sheet / modal 的 top-radius 范式） */
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     background: var(--color-surface);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   }
@@ -764,8 +766,15 @@
     object-fit: cover;
     background: var(--color-placeholder);
   }
+
   html:not([data-device="tv"]) .cqa-hotcard__body {
+    display: flex;
     flex: 1;
+    flex-direction: column;
+    /* 2026-09-24 用户要求：文本上下 gap 稍调大（title / 年份行 / 热度行 三行呼吸感）；
+       热度已移入 body 年份下方（不再是右侧独立列），行距由本 gap 统一承担 */
+    gap: var(--space-xs);
+    justify-content: center;
     min-width: 0;
   }
   /* 标题（外层）：2026-09-10 改用历史页 RecordCard 范式 —— 在本层直接测溢出
@@ -801,7 +810,7 @@
     display: flex;
     gap: var(--space-xs);
     align-items: center;
-    margin-top: var(--space-2xs);
+    /* 纵向间距改由 .cqa-hotcard__body 的 flex gap 统一承担（去掉旧 margin-top 叠加） */
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
   }
@@ -816,9 +825,13 @@
     width: 10px;
     height: 10px;
   }
+  /* 热度：2026-09-24 从卡片右侧列移入 body，置于年份下方；
+     n/l 改同行（值 + 「热度」标签），避免三行堆叠撑破 --cqa-row-h（= 流体 poster 高） */
   html:not([data-device="tv"]) .cqa-hotcard__heat {
-    flex: 0 0 auto;
-    text-align: right;
+    display: flex;
+    gap: var(--space-2xs);
+    align-items: center;
+    min-width: 0;
   }
   html:not([data-device="tv"]) .cqa-hotcard__heat .n {
     display: inline-flex;
@@ -834,7 +847,6 @@
     height: 10px;
   }
   html:not([data-device="tv"]) .cqa-hotcard__heat .l {
-    display: block;
     color: var(--color-text-tertiary);
     font-size: var(--text-2xs);
   }
