@@ -9,7 +9,9 @@ import { fetchPersonDetail, fetchPersonMovieCredits, fetchPersonTVCredits, build
 import { useSmartBack } from '@/lib/navigation';
 import type { TMDBPersonDetail, TMDBMovie, TMDBTVShow } from '@/types/tmdb';
 import PersonSkeleton from './PersonSkeleton';
-import { useDocumentTitle } from '@/hooks';
+import { useDocumentTitle, useHasTmdbToken } from '@/hooks';
+import TokenRequired from '@/components/TokenRequired';
+import { useSettingsStore } from '@/stores';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -195,8 +197,11 @@ export default function PersonPage() {
   //   3. 竞态守卫：快速切换人物时旧响应不得覆盖新数据（reqSeq + AbortController 双保险）。
   const personAbortRef = useRef<AbortController | null>(null);
   const personReqSeqRef = useRef(0);
+  const hasToken = useHasTmdbToken();
 
   const loadPerson = useCallback(async (personId: number, opts?: { force?: boolean }): Promise<void> => {
+    // token 未配置：不发 TMDB 请求（整页已由 render 层 TokenRequired 拦截）
+    if (!useSettingsStore.getState().tmdbAccessToken?.trim()) return;
     const force = opts?.force === true;
     const reqId = ++personReqSeqRef.current;
     const isLatest = () => personReqSeqRef.current === reqId;
@@ -265,6 +270,7 @@ export default function PersonPage() {
   // 同一实例时人物 hero 先以「上一个人物」内容绘制一帧（头像/姓名闪旧内容）。
   useLayoutEffect(() => {
     if (!id) return;
+    if (!hasToken) return;
     const personId = parseInt(id, 10);
     if (isNaN(personId)) { setError('无效的人物 ID'); setLoading(false); return; }
 
@@ -273,10 +279,19 @@ export default function PersonPage() {
     void loadPerson(personId).catch(() => { /* 错误态已在 loadPerson 内 setError */ });
 
     return () => personAbortRef.current?.abort();
-  }, [id, loadPerson]);
+  }, [id, loadPerson, hasToken]);
 
   // ── 动态页签标题 ──────────────────────────────
   useDocumentTitle(person?.name || null);
+
+  // ── TMDB Access Token 未配置：整页提示 ──
+  if (!hasToken) {
+    return (
+      <div className="page-padding person-page content-shell">
+        <TokenRequired />
+      </div>
+    );
+  }
 
   if (loading) return <div className="page-padding person-page person-page--loading"><PersonSkeleton /></div>;
   if (error || !person) {

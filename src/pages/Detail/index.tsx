@@ -366,6 +366,11 @@ export default function DetailPage() {
     // 永久停在「暂无匹配的播放资源」，只能手点「重新获取」。
     cmsLastFetchRef.current = 0;
     if (prevDetailIdRef.current !== id) { setActiveTab('info'); prevDetailIdRef.current = id; }
+    // token 未配置：不发 TMDB 请求（整页已由 render 层 TokenRequired 拦截，此处防在飞请求）
+    if (id.startsWith('tmdb-') && !hasToken) {
+      setTmdbLoading(false);
+      return () => ctrl.abort();
+    }
 
     const cached = pullRefreshNonce === 0 && id.startsWith('tmdb-') ? readDetailCache(id) : null;
     if (cached?.tmdbDetail) {

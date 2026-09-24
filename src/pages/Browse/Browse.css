@@ -142,6 +142,13 @@
   background: transparent;
 }
 
+/* TMDB Access Token 未配置：智能检索结果区整块提示（TokenRequired 居中撑满） */
+.browse-results-body__token {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 240px;
+}
+
 /* ── 排序栏（Card 2 顶部） ────────────────────────── */
 .browse-sort-bar {
   display: flex;
