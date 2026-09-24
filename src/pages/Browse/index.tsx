@@ -26,6 +26,8 @@ import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
+import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
+import TokenRequired from '@/components/TokenRequired';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS, PENDING_FEEDBACK_DELAY_MS } from './constants';
 import { useBrowseData, toStoreFilter, DISCOVER_CACHE_TTL_MS } from './useBrowseData';
@@ -345,15 +347,17 @@ export default function BrowsePage() {
   //  - TMDB 侧翻的是「逻辑页」（useLogicalPage，见下方组装层），不是 TMDB 原生页；
   //    handlePageChange 的声明位置在 runGoto 之后（deps 引用它）。
 
-  // ── genres & countries 兜底拉取（精确选择器） ──────────
+  // ── genres & countries 兜底拉取（精确选择器；token 未配置跳过） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
   const tvGenres = useTMDBStore(s => s.tvGenres);
   const fetchGenresAndCountries = useTMDBStore(s => s.fetchGenresAndCountries);
+  const hasToken = useHasTmdbToken();
   useEffect(() => {
+    if (!hasToken) return;
     if (movieGenres.length === 0 && tvGenres.length === 0) {
       fetchGenresAndCountries();
     }
-  }, [movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
+  }, [hasToken, movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
   // ── 分类级类型选项（类型行 7 档：全部/电影/剧集/综艺/动漫/纪录片/排行榜）──
   // 点击即切换 category 并注入该分类的 mediaType + 默认 genreIds（CATEGORY_CONFIG）
@@ -823,6 +827,13 @@ export default function BrowsePage() {
               列数随 --card-cols 视口分档（不再用全站统一 AppLoading 菊花） */}
           {showSkeleton && (
             <BrowseSkeleton />
+          )}
+
+          {/* TMDB Access Token 未配置：智能检索结果区整块提示（配置后无需刷新即可搜） */}
+          {searchMode === 'smart' && !hasToken && (
+            <div className="browse-results-body__token">
+              <TokenRequired />
+            </div>
           )}
 
           {/* 加载失败 —— 与「搜不到」彻底分开（2026-09-14 语义分家；

@@ -722,9 +722,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
   // ── Effects ──────────────────────────────
 
-  // 加载 TMDB 详情
+  // 加载 TMDB 详情（token 未配置时短路，避免 401 在飞请求）
   useEffect(() => {
     if (!id || !id.startsWith('tmdb-')) return;
+    if (!useSettingsStore.getState().tmdbAccessToken?.trim()) return;
     tmdbAbortRef.current?.abort();
     const ctrl = new AbortController();
     tmdbAbortRef.current = ctrl;

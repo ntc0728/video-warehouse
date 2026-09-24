@@ -26,6 +26,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Search, X, Clock, Trash2 } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import { useTMDBStore } from '@/stores';
 import { searchMulti } from '@/services/tmdbService';
 import type { TMDBMultiSearchResult } from '@/types/tmdb';
@@ -90,14 +91,17 @@ export default function SearchBox({
   // ── 搜索历史 ─────────────────────────────────────
   const { history, addHistory, removeHistory, clearHistory } = useSearchHistory(scope);
 
-  // ── 热门搜索（从 trending 数据取标题） ──────────────
+  // ── 热门搜索（从 trending 数据取标题；token 未配置不拉/不展示） ──────────────
+  const hasToken = useHasTmdbToken();
   const trending = useTMDBStore((s) => s.trending);
   const trendingLoading = useTMDBStore((s) => s.loading.trending);
   const trendingError = useTMDBStore((s) => s.errors.trending);
   const fetchTrending = useTMDBStore((s) => s.fetchTrending);
-  const hotItems = trending
-    .filter((item) => item.title)
-    .slice(0, MAX_HOT_IN_DROPDOWN);
+  const hotItems = hasToken
+    ? trending
+      .filter((item) => item.title)
+      .slice(0, MAX_HOT_IN_DROPDOWN)
+    : [];
 
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -108,14 +112,14 @@ export default function SearchBox({
   // SearchBox 常驻顶栏，若在挂载时无条件拉取，会导致「非首页刷新即请求
   // /trending/all/day」；改为按需触发，首页数据仍由 fetchAllHomeData 负责。
   useEffect(() => {
-    if (isDropdownOpen && showHotSearch && trending.length === 0 && !trendingLoading) {
+    if (hasToken && isDropdownOpen && showHotSearch && trending.length === 0 && !trendingLoading) {
       void fetchTrending('day');
     }
-  }, [isDropdownOpen, showHotSearch, trending.length, trendingLoading, fetchTrending]);
+  }, [hasToken, isDropdownOpen, showHotSearch, trending.length, trendingLoading, fetchTrending]);
   // 热门搜索加载中 / 加载失败占位（11.2）：无历史 + 热门加载中时下拉也要渲染，
   // 否则用户点开搜索框看到「空白」——加载失败时展示失败提示，下次打开下拉自动重试。
-  const hotLoading = showHotSearch && trending.length === 0 && trendingLoading;
-  const hotError = showHotSearch && trending.length === 0 && !trendingLoading && !!trendingError;
+  const hotLoading = hasToken && showHotSearch && trending.length === 0 && trendingLoading;
+  const hotError = hasToken && showHotSearch && trending.length === 0 && !trendingLoading && !!trendingError;
 
   // ── 实时搜索建议（输入词后防抖调 /search/multi） ──────────
   // 输入非空词时，下拉切换为「实时搜索结果」：请求前显示「搜索中」、成功展示结果
@@ -130,7 +134,7 @@ export default function SearchBox({
   useEffect(() => {
     const q = value.trim();
     if (suggestDebounceRef.current) window.clearTimeout(suggestDebounceRef.current);
-    if (!q) {
+    if (!q || !hasToken) {
       setSuggestStatus('idle');
       setSuggestions([]);
       return;
@@ -148,7 +152,7 @@ export default function SearchBox({
         setSuggestStatus('error');
       }
     }, 300);
-  }, [value]);
+  }, [value, hasToken]);
 
   // 卸载清理防抖定时器
   useEffect(() => {

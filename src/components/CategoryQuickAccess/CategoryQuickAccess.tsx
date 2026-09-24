@@ -35,7 +35,7 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useTMDBStore } from '@/stores/useTMDBStore';
 import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
-import { useIsWideDesktop, useFillRows } from '@/hooks';
+import { useIsWideDesktop, useFillRows, useHasTmdbToken } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -208,6 +208,7 @@ export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickA
 
 /** 宽屏面板通用数据钩子：子分类 + 面板内容（缓存命中零请求；AbortController 防连点竞态） */
 function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
+  const hasToken = useHasTmdbToken();
   const activeCat = useMemo(
     () => WIDE_CATEGORIES.find((c) => c.key === activeKey) ?? null,
     [activeKey],
@@ -225,16 +226,16 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
   }, [activeCat, genreSubs]);
   const currentSubId = subSel[activeCat?.key ?? ''] ?? currentSubs?.[0]?.id ?? 0;
 
-  // 电影/剧集：懒加载全量 genre 子分类
+  // 电影/剧集：懒加载全量 genre 子分类（token 未配置时跳过，避免无谓 401）
   useEffect(() => {
     const type = activeCat?.genreListType;
-    if (!type || genreSubs[type]) return;
+    if (!type || genreSubs[type] || !hasToken) return;
     let cancelled = false;
     getGenreSubcategories(type)
       .then((list) => { if (!cancelled) setGenreSubs((prev) => ({ ...prev, [type]: list })); })
       .catch(() => { /* 子分类加载失败保持空 chips */ });
     return () => { cancelled = true; };
-  }, [activeCat, genreSubs]);
+  }, [activeCat, genreSubs, hasToken]);
 
   // 面板数据：切换分类/子分类即取。
   // 2026-09-10 用户要求：切子分类也**清空旧网格**（不再保留降沉态）。
@@ -242,7 +243,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
   // 属于「下方显示旧图与遮罩」的观感问题；现统一改为清空 → 走居中「小电视 + 加载中」。
   const prevSubKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeCat || activeCat.key === 'home' || !currentSubs) return;
+    if (!activeCat || activeCat.key === 'home' || !currentSubs || !hasToken) return;
     const sub = currentSubs.find((s) => s.id === currentSubId) ?? currentSubs[0];
     if (!sub) return;
     const subKey = `${activeCat.key}:${sub.id}`;
@@ -267,7 +268,7 @@ function useWideCategoryPanel(activeKey: WideCategoryKey | null) {
         setPanelLoading(false);
       });
     return () => ctrl.abort();
-  }, [activeCat, currentSubs, currentSubId]);
+  }, [activeCat, currentSubs, currentSubId, hasToken]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
