@@ -12,6 +12,7 @@ import { PullToRefreshProvider, PullToRefreshOverlay } from '@/components/ui/Pul
 import './Layout.css';
 import { useSettingsStore, useNavStore } from '@/stores';
 import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
+import { useVirtualKeyboardInset } from '@/hooks/useVirtualKeyboardInset';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
 import { setCurrentPathname, recordPopPrevious } from '@/lib/navigation';
@@ -66,6 +67,7 @@ export default function AppLayout() {
   // 移动端布局判断（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
   // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面端。
   const isCompactViewport = useIsMobileLayout();
+  useVirtualKeyboardInset();
   const theme = useSettingsStore((s) => s.theme);
   const getEffectiveTheme = useSettingsStore((s) => s.getEffectiveTheme);
   const skin = useSettingsStore((s) => s.skin);

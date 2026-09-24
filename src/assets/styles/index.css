@@ -108,10 +108,11 @@
   }
 }
 
-/* 移动端：弹窗从底部滑出（bottom-sheet） */
+/* 移动端：弹窗从底部滑出（bottom-sheet）
+   bottom 读 --kb-inset：虚拟键盘弹起且 interactive-widget 不支持时抬离遮挡（见 useVirtualKeyboardInset）。 */
 @media (width <= 767px) {
   .modal-content-animate {
-    inset: auto 0 0;
+    inset: auto 0 var(--kb-inset, 0px);
     width: 100%;
     max-width: 100%;
     max-height: 90vh;
@@ -126,7 +127,7 @@
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .modal-content-animate {
-    inset: auto 0 0;
+    inset: auto 0 var(--kb-inset, 0px);
     width: 100%;
     max-width: 100%;
     max-height: 90vh;
@@ -194,10 +195,10 @@
   animation: modalFadeScaleOut var(--dur-2xs) ease-in forwards;
 }
 
-/* BottomSheet animation */
+/* BottomSheet animation（bottom 读 --kb-inset：键盘遮挡抬升，见 useVirtualKeyboardInset） */
 .bottomsheet-content-animate {
   position: fixed;
-  bottom: 0;
+  bottom: var(--kb-inset, 0px);
   left: 0;
   z-index: var(--z-modal);
   width: 100%;
