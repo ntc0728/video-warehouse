@@ -137,8 +137,10 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 
 /* 排除全局粗焦点框（assets/styles/index.css :focus-visible 2px 主色 outline）：
    搜索框已有 :focus-within 细高亮（border-color → primary），input 再叠一圈粗 outline
-   会形成「黑框/双框」。TV 保留全局焦点框（遥控器需要），非 TV 关闭 input 自身 outline。 */
-:root:not([data-device="tv"]) .search-box__input:focus-visible {
+   会形成「黑框/双框」。TV 保留全局焦点框（遥控器需要），非 TV 关闭 input 自身 outline。
+   ⚠️ 必须经 .search-box 中缀抬特异性至 (0,5,0)：与全局规则同为 (0,4,0)+!important 时
+   胜负只看打包后 CSS 顺序，实测构建产物里全局规则在后（150001 > 20272），排除会被反超。 */
+:root:not([data-device="tv"]) .search-box .search-box__input:focus-visible {
   outline: none !important;
 }
 
