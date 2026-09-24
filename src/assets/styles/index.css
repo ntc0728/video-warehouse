@@ -112,7 +112,7 @@
    bottom 读 --kb-inset：虚拟键盘弹起且 interactive-widget 不支持时抬离遮挡（见 useVirtualKeyboardInset）。 */
 @media (width <= 767px) {
   .modal-content-animate {
-    inset: auto 0 var(--kb-inset, 0px);
+    inset: auto 0 var(--kb-inset, 0);
     width: 100%;
     max-width: 100%;
     max-height: 90vh;
@@ -127,7 +127,7 @@
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .modal-content-animate {
-    inset: auto 0 var(--kb-inset, 0px);
+    inset: auto 0 var(--kb-inset, 0);
     width: 100%;
     max-width: 100%;
     max-height: 90vh;
@@ -198,7 +198,7 @@
 /* BottomSheet animation（bottom 读 --kb-inset：键盘遮挡抬升，见 useVirtualKeyboardInset） */
 .bottomsheet-content-animate {
   position: fixed;
-  bottom: var(--kb-inset, 0px);
+  bottom: var(--kb-inset, 0);
   left: 0;
   z-index: var(--z-modal);
   width: 100%;

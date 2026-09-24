@@ -306,10 +306,10 @@
         calc(100vw - var(--page-pad-x) - var(--cqa-panel-w))
       )
     );
-    width: var(--cqa-panel-w);
-    max-width: none;
     /* header z-50 之下、页面内容之上 */
     z-index: 49;
+    width: var(--cqa-panel-w);
+    max-width: none;
     min-height: calc(
       1.5 * var(--text-base)
       + var(--space-md)
