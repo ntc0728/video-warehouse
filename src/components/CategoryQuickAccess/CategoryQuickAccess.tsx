@@ -754,7 +754,6 @@ export function CategoryTrendSkeleton() {
 }
 
 export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' } = {}) {
-  const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
   // （2026-09-12）原 isLoadingTrending 选择器已随「空态恒渲染骨架」收敛删除——
   // 骨架不再区分加载中/失败，空即占位。
@@ -791,14 +790,14 @@ export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' 
           label="分类热度口径说明"
           text="分类热度 = 该分类下今日 TMDB 趋势条目的 popularity 之和（多分类命中重复计入），基于每日趋势数据聚合，定期更新。"
         />
-        <button
+        <Link
+          to="/chart"
           className="cqa-heat-row__more"
-          onClick={() => navigate('/chart')}
           aria-label="查看完整热度榜"
         >
           查看完整榜单
           <Icon icon={ChevronRight} size="xs" />
-        </button>
+        </Link>
       </div>
       <CategoryHeatCards buckets={heatBuckets} />
     </section>
