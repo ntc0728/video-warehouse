@@ -97,8 +97,10 @@
 }
 
 .detail-skeleton__info-card {
-  height: 3.25em;
-  border-radius: var(--radius-md);
+  /* 2026-09-24 用户要求：对齐真实 .detail-info-card 单行高（icon-sm/text-sm 行高量级），
+     旧 height 3.25em 远超真实（真实无固定 height，内容撑一行）→ 改为 --text-sm 行高 */
+  height: calc(var(--text-sm) * 1.5);
+  border-radius: var(--radius-sm);
 }
 
 .detail-skeleton__side-line {
@@ -111,8 +113,27 @@
   width: 62%;
 }
 
-/* ── Tab：外壳与图标/文字全部复用真实类（.tab-underline / .detail-tab + Icon + span），
-   骨架私有零规则；不可交互由上方 .detail-skeleton 组选择器承担 ── */
+/* ── Tab：外壳复用真实 .tab-underline / .detail-tab（padding-sm/lg + 2px 下划线几何单真源）；
+    内部图标槽 + 标签槽为骨架方框，不渲染真实文字（2026-09-24 用户要求）。
+    槽高取真实内容行高：图标 = --icon-sm；标签 = text-sm 行高，保证 tab 总高与真实一致 ── */
+.detail-skeleton__tab-icon {
+  flex-shrink: 0;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: var(--radius-sm);
+}
+
+.detail-skeleton__tab-label {
+  width: 2.25em;
+  height: calc(var(--text-sm) * 1.2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+/* 「播放列表」4 字 vs「概览」2 字：宽度档区分，避免两槽等宽失真 */
+.detail-skeleton__tab-label--wide {
+  width: 4.5em;
+}
 
 /* ── 概览：演员 / 简介 / 剧照（内壳 .detail-info 真实类，块级流 + 标题 margin 单真源）── */
 
