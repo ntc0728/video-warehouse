@@ -384,6 +384,7 @@
     background: none;
     color: var(--color-text-secondary);
     font-size: var(--text-xs);
+    text-decoration: none;
     white-space: nowrap;
     transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
     cursor: pointer;

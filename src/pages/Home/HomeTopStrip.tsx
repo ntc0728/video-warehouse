@@ -14,9 +14,9 @@
  *       （与「顶栏对齐」补强同一契约）。
  */
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Flame, ChevronRight } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
-import { useCustomNavigate } from '@/lib/navigation';
 import { useTMDBStore } from '@/stores';
 import {
   aggregateCategoryHeat,
@@ -32,7 +32,6 @@ interface HomeTopStripProps {
 }
 
 export default function HomeTopStrip({ continueCount, favoriteCount }: HomeTopStripProps) {
-  const navigate = useCustomNavigate();
   const trending = useTMDBStore((s) => s.trending);
 
   // 最热分类：复用「分类热度榜」同一套桶聚合口径，避免两处热度算法漂移
@@ -82,14 +81,14 @@ export default function HomeTopStrip({ continueCount, favoriteCount }: HomeTopSt
               )}
             </>
           )}
-          <button
+          <Link
+            to="/chart"
             className="home-topstrip__more"
-            onClick={() => navigate('/chart')}
             aria-label="查看完整热度榜"
           >
             完整热度榜
             <Icon icon={ChevronRight} size="xs" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

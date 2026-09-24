@@ -350,7 +350,6 @@ export default function HeroBili({
             <HeroSideCard
               key={String(item.id)}
               item={item}
-              onItemClick={onItemClick}
             />
           ))}
         </div>
@@ -372,16 +371,11 @@ export default function HeroBili({
 /**
  * HeroSideCard — 单张竖版卡（封面在上标题在下，四角信息）
  * - 左上评分 / 右上收藏（悬浮显现）/ 左下年份 / 右下类型
- * - 点击整卡跳详情；收藏命中时 toggle + stopPropagation + 不进入跳转
+ * - 整卡为 <Link>（支持右键新标签页打开详情）；收藏命中时 toggle + preventDefault 不跳转
  * - 标题 nowrap，溢出时悬浮跑马灯（is-marquee，双段等长无缝 4.5s）
  */
-function HeroSideCard({
-  item,
-  onItemClick,
-}: {
-  item: HeroBiliItem;
-  onItemClick?: (item: HeroBiliItem) => void;
-}) {
+function HeroSideCard({ item }: { item: HeroBiliItem }) {
+  const location = useLocation();
   const videoId = String(item.id);
   const title = itemTitle(item);
   const posterUrl = itemPosterUrl(item);
@@ -401,7 +395,8 @@ function HeroSideCard({
   const handleTitleLeave = useCallback(() => setMarquee(false), []);
 
   const handleFav = useCallback((e: React.MouseEvent) => {
-    // 收藏不冒泡：命中收藏按钮 → toggle + 阻止冒泡，绝不进入跳转分支
+    // 收藏不跳转：整卡是 <Link>，必须 preventDefault（仅 stopPropagation 挡不住浏览器默认跟 href）
+    e.preventDefault();
     e.stopPropagation();
     // 鼠标点击后主动移除焦点：与 VideoCard 收藏按钮行为统一
     if (e.detail > 0) (e.currentTarget as HTMLElement).blur();
@@ -419,14 +414,10 @@ function HeroSideCard({
   }, [collected, removeCollection, addCollection, videoId, title, posterUrl, item]);
 
   return (
-    <div
+    <Link
+      to={`/detail/${item.id}`}
+      state={{ from: location.pathname + location.search }}
       className="hero-side-card"
-      role="button"
-      tabIndex={0}
-      onClick={() => onItemClick?.(item)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onItemClick?.(item);
-      }}
       aria-label={title}
     >
       <div className="hero-side-card__cover">
@@ -477,6 +468,6 @@ function HeroSideCard({
           )}
         </span>
       </div>
-    </div>
+    </Link>
   );
 }
