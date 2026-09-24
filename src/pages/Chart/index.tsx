@@ -16,7 +16,7 @@
  * 入口：首页「分类热度榜」三张分类卡 + 行标题「查看完整榜单」；面板「查看更多」仍跳 browse。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Camera,
@@ -411,21 +411,16 @@ function ChartRowTitle({ title }: { title: string }) {
  * 数据源必须跟着切——横图裁成竖版会有构图问题，故用 useIsMobile（max-width:1023px，
  * 与 CSS 断点严格一致）在 JS 侧选图。 */
 function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number; showBadge: boolean }) {
-  const navigate = useCustomNavigate();
   const isMobile = useIsMobile();
-  const openDetail = useCallback(() => navigate(`/detail/${item.id}`), [navigate, item.id]);
   const top = rank <= 3;
   // 竖版态取 posterPath；缺失时回退 backdropPath（避免整块空图），CSS 侧 object-fit:cover 兜底
   const coverPath = isMobile
     ? (item.posterPath ?? item.backdropPath ?? null)
     : (item.backdropPath ?? item.posterPath ?? null);
   return (
-    <div
+    <Link
+      to={{ pathname: `/detail/${item.id}` }}
       className={`chart-row${top ? ' chart-row--top' : ''}`}
-      role="link"
-      tabIndex={0}
-      onClick={openDetail}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openDetail(); }}
     >
       <span className="chart-row__rank">{rank}</span>
       <LazyImage
@@ -446,6 +441,6 @@ function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number
         <span className="l">热度值</span>
         <span className="v"><Icon icon={Star} size="xs" />{(item.voteAverage || 0).toFixed(1)}</span>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -5,7 +5,7 @@
  * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
  */
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigationType } from 'react-router-dom';
+import { useParams, useNavigationType, Link } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -564,14 +564,9 @@ export default function DetailPage() {
   // ── 播放 ──────────────────────────────────────
   // 方案 B（无 Keep-Alive）：detail 进入 /play 时组件卸载，返回时重新挂载，
   // 由模块级 detail 缓存（readDetailCache）回显 TMDB detail + 剧照，避免重新请求。
-  const handlePlay = () => {
-    if (!id) return;
-    navigate(`/play/${id}`, { state: { from: `/detail/${id}` } });
-  };
-  const handlePlayFromBeginning = () => {
-    if (!id) return;
-    navigate(`/play/${id}`, { state: { from: `/detail/${id}`, skipHistory: true } });
-  };
+  // 2026-09-24 改 <Link>：支持右键/中键新开页签；state 供同标签导航，
+  // fresh=1 query 供新开页签时 Player 兜底（state 在新页签会丢）。
+  const playFrom = id ? `/detail/${id}` : '';
 
   // ── 派生数据 ──────────────────────────────────
   const d = tmdbDetail;
@@ -918,14 +913,22 @@ export default function DetailPage() {
 
             {/* 操作按钮 */}
             <div className="detail-hero-actions">
-              <button className="detail-btn detail-btn-play" onClick={handlePlay}>
+              <Link
+                to={{ pathname: `/play/${id}`, search: '' }}
+                state={{ from: playFrom }}
+                className="detail-btn detail-btn-play"
+              >
                 <Icon icon={Play} size="sm" fill="currentColor" />
                 {hasWatchingHistory ? '继续播放' : '立即播放'}
-              </button>
+              </Link>
               {hasWatchingHistory && (
-                <button className="detail-btn detail-btn-play-from-start" onClick={handlePlayFromBeginning}>
+                <Link
+                  to={{ pathname: `/play/${id}`, search: '?fresh=1' }}
+                  state={{ from: playFrom, skipHistory: true }}
+                  className="detail-btn detail-btn-play-from-start"
+                >
                   从头播放
-                </button>
+                </Link>
               )}
               <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect} aria-pressed={collected}>
                 <Icon icon={Heart} size="sm" fill={collected ? 'var(--color-favorite-active)' : 'none'}
@@ -1025,14 +1028,11 @@ export default function DetailPage() {
                 <h3 className="detail-section-subtitle">演员</h3>
                 <div ref={castRowRef} className={`detail-cast-row${!castExpanded ? ' detail-cast-row--collapsed' : ''}`}>
                   {cast.map((c) => (
-                    <a
+                    <Link
                       key={c.id}
-                      href={`/person/${c.id}`}
+                      to={{ pathname: `/person/${c.id}` }}
+                      state={{ from: `/detail/${id}` }}
                       className="detail-cast-item"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(`/person/${c.id}`, { state: { from: `/detail/${id}` } });
-                      }}
                     >
                       {c.profile_path ? (
                         <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} width={200} height={300} />
@@ -1041,7 +1041,7 @@ export default function DetailPage() {
                       )}
                       <span className="detail-cast-name">{c.name}</span>
                       <span className="detail-cast-role">{c.character}</span>
-                    </a>
+                    </Link>
                   ))}
                 </div>
                 {(castOverflow || castExpanded) && (
@@ -1245,13 +1245,22 @@ export default function DetailPage() {
                                 <Icon icon={ListVideo} size="xs" /> 全部
                               </button>
                             )}
-                            <button
-                              className="detail-source-play-btn"
-                              disabled={!playable}
-                              onClick={() => { if (id) navigate(`/play/${id}`, { state: { from: `/detail/${id}`, sourceIndex: result.sourceIndex } }); }}
-                            >
-                              <Icon icon={Play} size="xs" fill="currentColor" /> {playable ? '立即播放' : '无可用线路'}
-                            </button>
+                            {playable && id ? (
+                              <Link
+                                to={{ pathname: `/play/${id}`, search: `?src=${result.sourceIndex}` }}
+                                state={{ from: `/detail/${id}`, sourceIndex: result.sourceIndex }}
+                                className="detail-source-play-btn"
+                              >
+                                <Icon icon={Play} size="xs" fill="currentColor" /> 立即播放
+                              </Link>
+                            ) : (
+                              <button
+                                className="detail-source-play-btn"
+                                disabled
+                              >
+                                <Icon icon={Play} size="xs" fill="currentColor" /> 无可用线路
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1267,27 +1276,28 @@ export default function DetailPage() {
                     progressMap={progressMap}
                     onClose={() => setPlayModal(null)}
                     onPlayEpisode={(ep) => {
+                      // 鼠标路径由选集格 <Link> 承担导航；此回调仍服务键盘（Enter 走 playItem）
+                      // 与 state 兜底（同标签），query 由 Link href 携带供新开页签。
                       if (id) navigate(`/play/${id}`, {
                         state: {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,
                           seasonNumber: ep.seasonNumber,
                           playUrl: ep.episode.sources[0]?.url,
-                          playType: ep.episode.sources[0]?.type,
                         },
                       });
                       setPlayModal(null);
                     }}
-                    onPlayLine={(_lineIndex, seasonNumber, playUrl, playType) => {
+                    onPlayLine={(_lineIndex, seasonNumber, playUrl) => {
                       // _lineIndex 是线路在 video.sources 中的下标；Player 的 state.sourceIndex
                       // 语义是 CMS 采集源索引，故取 playModal.sourceIndex，线路由 playUrl 精确匹配。
+                      // playType 已从 state 移除（Player 不读取）。
                       if (id) navigate(`/play/${id}`, {
                         state: {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,
                           seasonNumber: seasonNumber ?? undefined,
                           playUrl,
-                          playType,
                         },
                       });
                       setPlayModal(null);

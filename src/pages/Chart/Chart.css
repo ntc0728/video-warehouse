@@ -175,6 +175,8 @@
   min-width: 0;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 

@@ -18,6 +18,7 @@
  * - 「换一换」防抖 = 动画锁：is-spinning（0.6s 转圈）未结束前点击直接 return
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play, MonitorPlay } from 'lucide-react';
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
@@ -116,6 +117,7 @@ export default function HeroBili({
   historyMap,
   active = true,
 }: HeroBiliProps) {
+  const location = useLocation();
   const total = items.length;
   // 右栏列数（视口分档）：卡数 = 列数 × 2 行，恒为完整矩形
   const sideCols = useHeroSideCols();
@@ -300,24 +302,26 @@ export default function HeroBili({
             {(onItemClick || onContinuePlay) && (
               <div className="hero-banner__actions">
                 {hasHistory && onContinuePlay && (
-                  <button
-                    type="button"
+                  <Link
+                    to={{ pathname: `/play/${activeItem.id}` }}
+                    state={{ from: location.pathname + location.search }}
                     className="hero-banner__cta hero-banner__cta--continue"
-                    onClick={(e) => { e.stopPropagation(); onContinuePlay(activeItem); }}
+                    onClick={(e) => { e.stopPropagation(); }}
                   >
                     <Icon icon={Play} size="sm" fill="currentColor" />
                     <span>继续播放</span>
-                  </button>
+                  </Link>
                 )}
                 {onItemClick && (
-                  <button
-                    type="button"
+                  <Link
+                    to={{ pathname: `/detail/${activeItem.id}` }}
+                    state={{ from: location.pathname + location.search }}
                     className="hero-banner__cta"
-                    onClick={(e) => { e.stopPropagation(); onItemClick(activeItem); }}
+                    onClick={(e) => { e.stopPropagation(); }}
                   >
                     <Icon icon={Play} size="sm" fill="currentColor" />
                     <span>查看详情</span>
-                  </button>
+                  </Link>
                 )}
               </div>
             )}
