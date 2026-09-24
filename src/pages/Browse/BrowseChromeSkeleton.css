@@ -8,11 +8,33 @@
   pointer-events: none;
 }
 
-/* ── 左栏 chips：高度/圆角对齐真实 .filter-bar__chip ── */
+/* ── 左栏 chips：高度/圆角对齐真实 .filter-bar__chip ──
+   基础档（<1024 / 移动）：胶囊占满 2 列格宽。
+   桌面 ≥1024 非 app/tv：真实 chip 被 Browse.css 覆盖为
+   高 ≈ text-sm+space-xs×2、radius-md、贴文字宽 + justify-self:start；
+   骨架无文字，用 em 宽模拟 2 字 chip 形态，与真实并排观感一致。 */
 .browse-chrome-skeleton__chip {
   width: 100%;
   height: var(--comp-tab-height);
   border-radius: var(--radius-full);
+}
+
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-chrome-skeleton .browse-chrome-skeleton__chip {
+    display: block;
+    width: 3.2em;
+    height: calc(var(--text-sm) + var(--space-xs) * 2);
+    padding: 0;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    justify-self: start;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-chrome-skeleton .browse-chrome-skeleton__chip:nth-child(2n) {
+    width: 2.6em;
+  }
 }
 
 /* ── 顶栏类型/排序 pill：对齐真实 __type/__tab 的 pad 推导高（text-sm × 1.5）── */

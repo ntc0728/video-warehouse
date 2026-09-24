@@ -226,17 +226,6 @@ export default function BrowsePage() {
     searchCMS(q);
   }, [searchCMS]);
 
-  /**
-   * 直链搜索「重试」（错误态按钮）。
-   * 必须绕过 triggerCmsSearch 的「同词不重发」短路：失败时关键词没变，
-   * 走 triggerCmsSearch 会被 lastCmsSearchedRef 当帧挡回，用户点重试等于没点。
-   */
-  const retryCmsSearch = useCallback(() => {
-    if (!query) return;
-    lastCmsSearchedRef.current = query;
-    searchCMS(query);
-  }, [query, searchCMS]);
-
   // ── 搜索模式切换 ────────────────────────────────
   const handleModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
@@ -836,10 +825,9 @@ export default function BrowsePage() {
             <BrowseSkeleton />
           )}
 
-          {/* 加载失败 —— 与「搜不到」彻底分开（2026-09-14）：
-              旧版两者共用「暂无结果」+ waiting 时钟图标，用户分不清「没有这个
-              内容」与「没加载出来」；且没有恢复入口（此时 items 为空、分页器也
-              不渲染），等于卡死在这一页。现补 error 语义 + 重试按钮。 */}
+          {/* 加载失败 —— 与「搜不到」彻底分开（2026-09-14 语义分家；
+              2026-09-24 拍板：结构对齐收藏/历史空态 Empty——保留 error 红叉
+              区分「加载失败 vs 暂无数据」，去掉重试按钮，不再提供页内恢复入口）。 */}
           {!showResultsLoading && currentError && (searchMode === 'smart'
             ? logical.items.length === 0
             : cmsResults.length === 0) && (
@@ -849,9 +837,6 @@ export default function BrowsePage() {
               description={searchMode === 'smart'
                 ? '网络或影视库暂时不可用，请稍后重试'
                 : '数据源均未响应，请稍后重试'}
-              onRetry={searchMode === 'smart' ? hardRefresh : retryCmsSearch}
-              retryText="重试"
-              isRetrying={searchMode === 'smart' ? showResultsLoading : cmsLoading}
             />
           )}
 
