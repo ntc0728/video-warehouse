@@ -135,6 +135,25 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   outline: none;
 }
 
+/* 排除全局粗焦点框（assets/styles/index.css :focus-visible 2px 主色 outline）：
+   搜索框已有 :focus-within 细高亮（border-color → primary），input 再叠一圈粗 outline
+   会形成「黑框/双框」。TV 保留全局焦点框（遥控器需要），非 TV 关闭 input 自身 outline。 */
+:root:not([data-device="tv"]) .search-box__input:focus-visible {
+  outline: none !important;
+}
+
+/* 移动端 / app 端全局对 input 强制 16px（防 iOS 聚焦缩放）会把搜索框字号顶到 16，
+   与 .search-box 的 --text-sm 设计字号不一致 → 搜索框排除，保持 inherit → --text-sm。 */
+@media (width <= 767px) {
+  .search-box__input {
+    font-size: inherit;
+  }
+}
+
+html[data-device="app"] .search-box__input {
+  font-size: inherit;
+}
+
 /* ── Icon ──────────────────────────────────────────── */
 
 .search-box__icon {
