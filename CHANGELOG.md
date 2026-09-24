@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.29.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.28.0...kinotv-v1.29.0) (2026-09-24)
+
+
+### Features
+
+* **cqa:** 分类面板改锚定 popover（对齐触发 chip） ([c5f3b83](https://github.com/ntc0728/video-warehouse/commit/c5f3b83709ea639281238f5dd34632eef2d47341))
+* **nav:** hero-bili 右卡与热度榜入口改 Link 支持右键新标签页 ([af4211d](https://github.com/ntc0728/video-warehouse/commit/af4211d52c019a362a0d9a5290cc4de861876d33))
+* **nav:** 播放/详情入口改 Link 支持新开页签 + Player query 兜底 ([4ba1e7f](https://github.com/ntc0728/video-warehouse/commit/4ba1e7fd391a6e04e6f24fdf9e399704b6a330d3))
+* **tmdb:** TMDB token 未配置全站门控 ([ddea17f](https://github.com/ntc0728/video-warehouse/commit/ddea17f782cf3bba9c06b92a3966a3739c4536fe))
+
+
+### Bug Fixes
+
+* **browse:** 左栏骨架 chip 尺寸对齐真实 tab + 失败态去重试 ([8609147](https://github.com/ntc0728/video-warehouse/commit/8609147fa95c7dd4b75b57693445f4b88ebebd43))
+* **cqa:** 面板顶角直角 + 热度值移入年份下方 ([84e7737](https://github.com/ntc0728/video-warehouse/commit/84e773783c95887d490344893672f731dd47402d))
+* **detail:** 骨架 tab 改方框 + info-card 对齐真实行高 ([ec10d68](https://github.com/ntc0728/video-warehouse/commit/ec10d681aa60a3a97b976f8356c1618e9d9d15fa))
+* **lint:** 修 stylelint 属性顺序/0px 回退 + 同步 Android 版本至 1.28.0 ([d5bbc71](https://github.com/ntc0728/video-warehouse/commit/d5bbc71aa48b19289b4109e17bc7a8a994555c6c))
+* **searchbox:** 顶栏搜索框聚焦黑框——排除规则抬特异性压过全局 focus outline ([fb64534](https://github.com/ntc0728/video-warehouse/commit/fb64534a8080d4c1a83c3a77cde1ec390cbe1605))
+* **search:** 搜索框去全局粗焦点框 + 移动端 16px 字号排除 + 虚拟键盘 inset ([6e2b245](https://github.com/ntc0728/video-warehouse/commit/6e2b24584409129105141f849da62915e5e50cec))
+
 ## [1.28.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.2...kinotv-v1.28.0) (2026-09-23)
 
 
