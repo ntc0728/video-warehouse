@@ -1,5 +1,6 @@
 /**
- * 详情页专属骨架 — 与真实页面**逐区块**同构（2026-09-18 补齐缺失区块）。
+ * 详情页专属骨架 — 与真实页面**逐区块**同构（2026-09-18 补齐缺失区块；2026-09-24 按用户要求
+ * 把 tab 标签也改回骨架方框、右栏 info-card 高度对齐真实单行）。
  *
  * 旧实现只镜像了 `.detail-top` + 一段简介，缺 tabs / 演员 / 剧照 / 两个推荐行 →
  * 骨架高度远小于真实页，数据到达时整页高度突变（明显 CLS）。
@@ -8,7 +9,8 @@
  *   .detail-top（≥1024 两栏 1.4fr/1fr；<1024 / App / TV 堆叠，右栏隐藏）
  *     section.detail-hero      16:9 + 底部标题/元信息/简介行
  *     aside.detail-hero-side   类型 chips + 基础信息网格（2 列）
- *   .detail-tabs-wrap          2 个 tab（movie：概览 / 播放列表；TV 多一个「季信息」）
+ *   .detail-tabs-wrap          2 个 tab 槽（图标 + 标签均为骨架方框，不渲染真实文字；
+ *                              外壳仍用真实 .detail-tab / .tab-underline 保证 padding/下划线几何）
  *   .detail-content
  *     演员        .detail-cast-row--collapsed（右侧默认折叠 2 行，与真实首屏一致）
  *     简介        若干行（末行短）
@@ -20,25 +22,22 @@
  * 唯一在数据到达前不可知的是「条件项是否出现」（真实基础信息有 13 个条件项，
  * 单部作品典型命中 6–9 个）→ 取典型值 INFO_CARD_COUNT 并在此注明。
  *
- * 静态标签真实文字（2026-09-22 全站统一方向 A，用户拍板）：tabs（概览/播放列表）、
- * 侧栏「基础信息」、区块标题（演员/简介/剧照）、推荐区标题都是静态配置而非接口数据，
- * 骨架直接渲染真实文字 + 真实类（.detail-tab / .detail-section-title /
- * .detail-section-subtitle / .detail-recommend-title）——与 Home 行标题、IPTV 左栏标题
- * 同口径；数据到达时标题零替换闪烁。灰条只留给动态数据（片名/genres/信息值/卡封面）。
+ * 2026-09-24 用户修正：① tab「概览/播放列表」**不要直接显示真实文字**，改用方框（图标槽 +
+ * 标签槽两块 skeleton），但外壳仍复用 .detail-tab 使上下 padding/下划线与真实元素一致；
+ * ② 右栏 .detail-skeleton__info-card 旧 height 3.25em 远大于真实单行 info-card，
+ * 改为与真实 .detail-info-card 同行高（--text-sm 行高量级）。
  *
  * 视口差异化走 CSS 断点（width >= 1024px + html[data-device] 门控，与 Detail.css 同口径），不用 JS。
  */
 import Skeleton from '@/components/common/Skeleton';
-import { Icon } from '@/components/ui/Icon';
-import { Info, ListVideo } from 'lucide-react';
 import { useGridCols } from '@/hooks';
 import './DetailSkeleton.css';
 
-/** tabs：真实前两项恒为概览/播放列表（TV 多一个「季信息」，骨架取公共最小 2，同旧 TAB_COUNT）；
-    图标与文字都是静态配置，骨架直接渲染真实态 */
+/** tabs：真实前两项恒为概览/播放列表（TV 多一个「季信息」，骨架取公共最小 2）；
+    图标/标签均改骨架方框（2026-09-24），wide 区分标签槽宽度档（2 字 vs 4 字） */
 const TAB_ITEMS = [
-  { icon: Info, label: '概览' },
-  { icon: ListVideo, label: '播放列表' },
+  { key: 'info', wide: false },
+  { key: 'sources', wide: true },
 ] as const;
 /** 类型 chips：真实 = genres.length（TMDB 典型 2–5） */
 const GENRE_CHIP_COUNT = 4;
@@ -106,14 +105,21 @@ export default function DetailSkeleton() {
         </aside>
       </div>
 
-      {/* ── Tab 导航（复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab 类，含与 hero 的重叠定位；
-           图标与标签为静态配置，渲染真实态）── */}
+      {/* ── Tab 导航：外壳复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab /
+           .tab-underline（padding / 下划线 / gap 几何与真实一致）；
+           图标槽 + 标签槽均为骨架方框，不渲染「概览/播放列表」真实文字（2026-09-24 用户要求）── */}
       <div className="detail-tabs-wrap">
         <div className="detail-tabs">
           {TAB_ITEMS.map((tab) => (
-            <span key={tab.label} className="tab-underline detail-tab detail-skeleton__tab">
-              <Icon icon={tab.icon} size="sm" />
-              <span>{tab.label}</span>
+            <span
+              key={tab.key}
+              className="tab-underline detail-tab detail-skeleton__tab"
+              aria-hidden="true"
+            >
+              <Skeleton className="detail-skeleton__tab-icon" />
+              <Skeleton
+                className={`detail-skeleton__tab-label${tab.wide ? ' detail-skeleton__tab-label--wide' : ''}`}
+              />
             </span>
           ))}
         </div>
