@@ -5,8 +5,10 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
 } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { Link } from 'react-router-dom';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
@@ -44,7 +46,6 @@ interface PlaylistModalProps {
     sourceIndex: number,
     seasonNumber: number | null,
     playUrl: string,
-    playType: string,
   ) => void;
 }
 
@@ -343,7 +344,7 @@ export default function PlaylistModal({
           episode: item.episode,
         });
       } else {
-        onPlayLine(item.origIndex, null, item.line.url, item.line.type);
+        onPlayLine(item.origIndex, null, item.line.url);
       }
     },
     [onPlayEpisode, onPlayLine],
@@ -554,19 +555,28 @@ export default function PlaylistModal({
             ]
               .filter(Boolean)
               .join(' ');
-            return (
-              <button
-                key={it.kind === 'ep' ? it.episode.id : `line-${it.origIndex}`}
-                type="button"
-                className={cls}
-                title={it.title}
-                data-cell={flatIdx}
-                onClick={() => {
-                  setSelectedIdx(flatIdx);
-                  playItem(it);
-                }}
-              >
-                {it.kind === 'ep' ? (
+            return (() => {
+              // 新开页签用 href（state 在新页签会丢，Player 读 query 兜底）；
+              // 同标签点击 preventDefault 后走 playItem 原副作用（navigate state + 关弹窗）。
+              const playUrl = it.kind === 'ep'
+                ? it.episode.sources[0]?.url
+                : it.line.url;
+              const sp = new URLSearchParams();
+              sp.set('src', String(data.sourceIndex));
+              if (playUrl) sp.set('play', playUrl);
+              if (it.kind === 'ep') sp.set('season', String(it.seasonNumber));
+              const to = videoId
+                ? { pathname: `/play/${videoId}`, search: `?${sp.toString()}` }
+                : null;
+              const handleCellClick = (e: ReactMouseEvent) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                e.preventDefault();
+                setSelectedIdx(flatIdx);
+                playItem(it);
+              };
+              const inner = (
+                <>
+                  {it.kind === 'ep' ? (
                   <>
                     {showAll && (
                       <span className="playlist-cell-season">S{it.seasonNumber}</span>
@@ -634,8 +644,35 @@ export default function PlaylistModal({
                     )}
                   </>
                 )}
-              </button>
-            );
+              </>
+              );
+              if (!to) {
+                return (
+                  <button
+                    key={it.kind === 'ep' ? it.episode.id : `line-${it.origIndex}`}
+                    type="button"
+                    className={cls}
+                    title={it.title}
+                    data-cell={flatIdx}
+                    onClick={handleCellClick}
+                  >
+                    {inner}
+                  </button>
+                );
+              }
+              return (
+                <Link
+                  key={it.kind === 'ep' ? it.episode.id : `line-${it.origIndex}`}
+                  to={to}
+                  className={cls}
+                  title={it.title}
+                  data-cell={flatIdx}
+                  onClick={handleCellClick}
+                >
+                  {inner}
+                </Link>
+              );
+            })();
           })}
         </div>
         {visibleCount < filtered.length && (

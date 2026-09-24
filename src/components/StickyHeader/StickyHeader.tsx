@@ -152,7 +152,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         key={item.key}
         href={item.path}
         className={`sticky-header__nav-item hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
-        onClick={(e) => { e.preventDefault(); onClick(); }}
+        onClick={(e) => {
+          // 修饰键 / 中键放行（新标签打开），普通点击走应用内导航
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+          e.preventDefault();
+          onClick();
+        }}
         title={item.title}
       >
         <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
@@ -187,7 +192,16 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
             </button>
           )}
-          <a href="/" className="sticky-header__logo-group no-interaction-visual" onClick={(e) => { e.preventDefault(); goHome(); }} aria-label="kinoTv — 返回首页">
+          <a
+            href="/"
+            className="sticky-header__logo-group no-interaction-visual"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
+              goHome();
+            }}
+            aria-label="kinoTv — 返回首页"
+          >
             <div className="sticky-header__logo-wrap">
               <img className="sticky-header__logo" src={KinoTVLogo} alt="kinoTv" draggable={false} />
             </div>

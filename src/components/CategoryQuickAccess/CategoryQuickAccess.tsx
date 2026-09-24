@@ -38,6 +38,7 @@ import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop, useFillRows } from '@/hooks';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import {
@@ -532,21 +533,13 @@ export function CategoryQuickAccessPanel() {
 
 /** 面板 3×3 内容卡（rankOffset：分页时排名跨页续号） */
 function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; rankOffset?: number }) {
-  const navigate = useCustomNavigate();
-  const navigateDetail = useCallback(
-    (id: string) => navigate(`/detail/${id}`),
-    [navigate],
-  );
   return (
     <div className="cqa-hotgrid">
       {items.map((item, i) => (
-        <div
+        <Link
           key={item.id}
+          to={{ pathname: `/detail/${item.id}` }}
           className="cqa-hotcard"
-          role="link"
-          tabIndex={0}
-          onClick={() => navigateDetail(item.id)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateDetail(item.id); }}
         >
           <span className="cqa-hotcard__rank">{i + 1 + rankOffset}</span>
           {buildImageUrl(item.backdropPath ?? null, 'w300') ? (
@@ -575,7 +568,7 @@ function CategoryHotGrid({ items, rankOffset = 0 }: { items: TMDBVideoItem[]; ra
             </span>
             <span className="l">热度</span>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
@@ -624,10 +617,6 @@ function HotCardTitle({ title }: { title: string }) {
 /** 热度榜前 3 分类卡（常驻行）：分类卡 = 榜单入口（v2 起跳 /chart 热度榜页对应分类，沉浸看完整榜单）；条目行 = 跳详情 */
 function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCategoryHeat> }) {
   const navigate = useCustomNavigate();
-  const navigateDetail = useCallback(
-    (id: string) => navigate(`/detail/${id}`),
-    [navigate],
-  );
   const navigateChart = useCallback(
     (key: CategoryKey) => navigate(`/chart?category=${key}`),
     [navigate],
@@ -664,15 +653,11 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
             </div>
             <div className="cqa-catcard__list">
               {bucket.top5.map((item, j) => (
-                <div
+                <Link
                   key={item.id}
+                  to={{ pathname: `/detail/${item.id}` }}
                   className="cqa-catcard__row"
-                  role="link"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); navigateDetail(item.id); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); navigateDetail(item.id); }
-                  }}
+                  onClick={(e) => { e.stopPropagation(); }}
                 >
                   <span className="cqa-catcard__idx">{j + 1}</span>
                   {buildImageUrl(item.backdropPath ?? null, 'w300') ? (
@@ -685,11 +670,11 @@ function CategoryHeatCards({ buckets }: { buckets: ReturnType<typeof aggregateCa
                     <span className="cqa-catcard__poster cqa-catcard__poster--empty thumbnail-skeleton-bg" />
                   )}
                   <span className="cqa-catcard__t">{item.title}</span>
-                  <span className="cqa-catcard__h">
-                    <Icon icon={Flame} size="xs" />
-                    {(item.popularity || 0).toFixed(1)}
-                  </span>
-                </div>
+                    <span className="cqa-catcard__h">
+                      <Icon icon={Flame} size="xs" />
+                      {(item.popularity || 0).toFixed(1)}
+                    </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -809,17 +794,15 @@ export function CategoryHeatRow({ variant = 'row' }: { variant?: 'row' | 'rail' 
 
 /** 左栏连续趋势榜（方案 B）：排名 + 2:3 竖版海报 + 标题 + 电影/剧集徽标 + 热度，点行进详情页 */
 function CategoryTrendList({ items }: { items: TMDBVideoItem[] }) {
-  const navigate = useCustomNavigate();
   return (
     <ol className="cqa-trend">
       {items.map((item, i) => {
         const poster = buildImageUrl(item.posterPath ?? null, 'w154');
         return (
           <li key={item.id} className="cqa-trend__item">
-            <button
-              type="button"
+            <Link
+              to={{ pathname: `/detail/${item.id}` }}
               className="cqa-trend__row"
-              onClick={() => navigate(`/detail/${item.id}`)}
               aria-label={`${item.title} 详情`}
             >
               <span
@@ -844,7 +827,7 @@ function CategoryTrendList({ items }: { items: TMDBVideoItem[] }) {
                   {(item.popularity || 0).toFixed(1)}
                 </span>
               </span>
-            </button>
+            </Link>
           </li>
         );
       })}

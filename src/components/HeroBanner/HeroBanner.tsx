@@ -11,6 +11,7 @@
  * - ≥1024 桌面由 index.ts 分流到 HeroBili，本组件不渲染。
  */
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Play, MonitorPlay } from 'lucide-react';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
@@ -249,6 +250,7 @@ function HeroBannerClassic({
   active = true,
   initialEnterDelay = 0,
 }: HeroBannerProps) {
+  const location = useLocation();
   const isMobile = useIsMobile();
   const isTV = useIsTV();
   // 2026-09-11：接口数据只取前 6 张驱动轮播（用户要求「<1024 / 移动端只取前 6 张」）。
@@ -821,15 +823,25 @@ function HeroBannerClassic({
         {onItemClick && (
           <div className="hero-banner__actions">
             {historyMap?.has(String(item.id)) && onContinuePlay && (
-              <button className="hero-banner__cta hero-banner__cta--continue" onClick={(e) => { e.stopPropagation(); onContinuePlay(item); }}>
+              <Link
+                to={{ pathname: `/play/${item.id}` }}
+                state={{ from: location.pathname + location.search }}
+                className="hero-banner__cta hero-banner__cta--continue"
+                onClick={(e) => { e.stopPropagation(); }}
+              >
                 <Icon icon={Play} size="sm" fill="currentColor" />
                 <span>继续播放</span>
-              </button>
+              </Link>
             )}
-            <button className="hero-banner__cta" onClick={(e) => { e.stopPropagation(); onItemClick(item); }}>
+            <Link
+              to={{ pathname: `/detail/${item.id}` }}
+              state={{ from: location.pathname + location.search }}
+              className="hero-banner__cta"
+              onClick={(e) => { e.stopPropagation(); }}
+            >
               <Icon icon={Play} size="sm" fill="currentColor" />
               <span>查看详情</span>
-            </button>
+            </Link>
           </div>
         )}
       </>

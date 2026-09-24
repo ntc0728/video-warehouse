@@ -368,6 +368,7 @@
   color: var(--color-text);
   font-size: var(--text-base);
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   transition: background-color var(--dur-sm), opacity var(--dur-sm);
 }

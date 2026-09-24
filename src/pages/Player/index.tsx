@@ -100,12 +100,29 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 export default function PlayerPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const skipHistory = (location.state as Record<string, unknown>)?.skipHistory === true;
-  const routeSourceIndex = (location.state as Record<string, unknown>)?.sourceIndex as number | undefined;
+  // state 优先、query 兜底：右键/中键新开页签时 location.state 丢失，深链仅剩 URL。
+  // 对照：sourceIndex→src、playUrl→play、seasonNumber→season、skipHistory→fresh=1。
+  // from 仅同标签导航需要，不进 query（新开页签无历史可回，靠 useSmartBack fallback）。
+  const routeState = (location.state ?? null) as Record<string, unknown> | null;
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const skipHistory = routeState?.skipHistory === true || searchParams.get('fresh') === '1';
+  const srcFromQuery = searchParams.has('src') ? Number(searchParams.get('src')) : undefined;
+  const routeSourceIndex = typeof routeState?.sourceIndex === 'number'
+    ? routeState.sourceIndex
+    : srcFromQuery !== undefined && Number.isFinite(srcFromQuery)
+      ? srcFromQuery
+      : undefined;
   // 来自详情页“全部”弹框：直接跳转到指定线路/选集（按精确播放地址匹配）
-  const routePlayUrl = (location.state as Record<string, unknown>)?.playUrl as string | undefined;
+  const routePlayUrl = typeof routeState?.playUrl === 'string'
+    ? routeState.playUrl
+    : searchParams.get('play') ?? undefined;
   // 来自详情页“全部”弹框：剧集跳转时携带的季号，用于正确回显选季面板
-  const routeSeasonNumber = (location.state as Record<string, unknown>)?.seasonNumber as number | undefined;
+  const seasonFromQuery = searchParams.has('season') ? Number(searchParams.get('season')) : undefined;
+  const routeSeasonNumber = typeof routeState?.seasonNumber === 'number'
+    ? routeState.seasonNumber
+    : seasonFromQuery !== undefined && Number.isFinite(seasonFromQuery)
+      ? seasonFromQuery
+      : undefined;
   const appliedRoutePlayRef = useRef(false);
 
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
