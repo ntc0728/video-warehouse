@@ -29,6 +29,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：桌面（非手机 web / 非 app / 非 TV）移除四件套，
+   移动端与 app 副本、TV 保留卡片（基础规则全端生效，故用覆盖块）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .chart-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
 /* ── 页头 ── */
 .chart-head {
   display: flex;

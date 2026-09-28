@@ -219,6 +219,21 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：本页四张卡（页头 / 统计卡 / 分类 tab 条 / 检测面板）
+   桌面（非手机 web / 非 app / 非 TV）移除四件套；基础规则无 media 全端生效，故用覆盖块。
+   按钮 / spinner / 结果状态 tint 是控件与语义色，不属于卡片，保留。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .source-checker-header,
+  html:not([data-device="app"]):not([data-device="tv"]) .stat-card,
+  html:not([data-device="app"]):not([data-device="tv"]) .source-checker-tabs,
+  html:not([data-device="app"]):not([data-device="tv"]) .check-panel {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
