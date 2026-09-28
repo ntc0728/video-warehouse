@@ -14,9 +14,11 @@
     - 首页元素融合映射（结构照搬、皮肤换报刊）：
       ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 主题 + 搜索，无底线）
         （搜索按 SearchBox 逻辑：点击「就地展开」成输入条 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起）
+        （移动端 ≤767：☰ 常驻左侧（原项目 sticky-header__menu-btn 同款）+ 品牌居中，版次/搜索并入 nav 右列，
+          栏目链接与收藏/历史/设置/夜刊隐藏——由原项目移动 Sidebar/TabBar 承担导航）
       ② HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池；历史命中 CTA=「继续播放」）
       ③ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换：图标转圈 0.6s 锁 + 整批推进，HeroBili 同款）
-      ④ rail 今日趋势榜     → 02 今日趋势榜（trending 10 条 + 海报 + 热度）
+      ④ rail 今日趋势榜     → 02 今日趋势榜（trending 桌面 10 条 · 移动 5 条 + 横图 backdrop + 热度）
       ⑤ 继续观看行           → 01 继续观看（横版 16:9 + 进度条 + hover ▶ 继续播放，单行横滚 6 卡恒一行，进度为演示值）
       ⑥ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚 + 封面四角标：★评分/收藏心/年份/类型，镜像 .video-card）
       ⑦ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」
@@ -69,6 +71,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mast-nav .theme-btn{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-2);border:1px solid var(--rule);
   border-radius:99px;padding:3px 12px;transition:.2s;white-space:nowrap}
 .mast-nav .theme-btn:hover{color:var(--ink);border-color:var(--ink)}
+/* 移动端报头：☰ 菜单（原项目 sticky-header__menu-btn 同款位置，仅 ≤767 由 JS 解除 hidden）+ nav 右列容器 */
+.menu-btn{display:flex;align-items:center;justify-content:center;padding:8px;margin-left:-8px;
+  border:0;background:none;color:var(--ink);cursor:pointer}
+.nav-aside{display:flex;flex-direction:column;align-items:flex-end;gap:5px}  /* 版次右对齐 + 搜索图标在其下方 */
+.menu-btn[hidden],.nav-aside[hidden],.nav-fn[hidden]{display:none}   /* 恢复 hidden 属性（作者 display:flex 会压过 UA） */
 
 /* ---------- 搜索（对齐 SearchBox：点击「就地展开」成输入条 → 建议下拉 → 回车/放大镜出结果） ---------- */
 .mast-nav .search{color:var(--ink-3);cursor:pointer;transition:.2s;border:0;background:none;font:inherit;padding:0}
@@ -197,15 +204,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 趋势表格（融合左栏 rail 今日趋势：排名 + 海报 + 热度，10 条报刊双栏） ---------- */
+/* ---------- 趋势表格（融合左栏 rail 今日趋势：排名 + 横图 + 热度，桌面 10 条 / 移动 5 条报刊双栏） ---------- */
 .trend-table{border-top:2px solid var(--ink)}
-.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(34px,2.6vw,46px) minmax(0,1fr) clamp(110px,9vw,180px);
+.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(56px,4.4vw,86px) minmax(0,1fr) clamp(110px,9vw,180px);
   gap:clamp(12px,1.2vw,24px);align-items:center;padding:clamp(9px,1.2vh,15px) 4px;
   border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s}
 .trow:hover{background:var(--band)}
 .trow .rank{font-family:var(--serif);font-size:clamp(20px,1.8vw,32px);font-weight:900;color:var(--ink-3);line-height:1}
 .trow:nth-child(-n+3) .rank{color:var(--accent)}
-.trow .th{aspect-ratio:2/3;overflow:hidden;border-radius:3px;position:relative;background:var(--fill)}
+.trow .th{aspect-ratio:16/9;overflow:hidden;border-radius:3px;position:relative;background:var(--fill)}  /* 横图（backdrop w1280） */
 .trow .th .kpic{position:absolute;inset:0}
 .trow .ti{min-width:0}
 .trow .ti b{font-size:clamp(14.5px,1vw,18px);font-weight:700;display:block;
@@ -318,12 +325,16 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
 }
 @media (width<=767px){
   :root{--poster-n:3}
-  .mast-row{flex-wrap:wrap;gap:6px}          /* 品牌 + 版次双行 */
-  .brand{font-size:clamp(22px,6vw,30px)}
+  .mast-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:0}  /* ☰ 左 / 品牌居中 / 右留白对称 */
+  .mast-row .menu-btn{grid-column:1;justify-self:start}
+  .mast-row .brand{grid-column:2;justify-self:center;font-size:clamp(22px,6vw,30px)}
+  .mast-row .edition{grid-column:3}      /* JS 搬入 nav-aside 前的占位（搬走后该格留空保持对称） */
+  .mast-nav{justify-content:flex-end}    /* 版次 + 搜索图标右列靠右 */
+  .nav-aside .edition{white-space:nowrap} /* 版次单行（· 串联日期与周次） */
   .hl-side-track{grid-auto-columns:minmax(132px,46%)}
   .hl-actions{flex-wrap:wrap;gap:14px}
   .trend-table{display:block}
-  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr)}
+  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(64px,17vw,76px) minmax(0,1fr)}
   .trow .heat{display:none}
   .cont-grid{gap:10px}
   .search-wrap.open .search-form{max-width:min(80vw,320px)}  /* 手机展开条更宽可输入（须覆盖 .search-wrap.open 特异性） */
@@ -359,7 +370,10 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
 <div class="page">
 
   <header class="masthead">
-    <div class="mast-row">
+    <div class="mast-row" id="mast-row">
+      <button class="menu-btn" id="menu-btn" type="button" hidden aria-label="导航菜单" title="导航菜单">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
       <div class="brand">Kino<em>TV</em> 影视日报</div>
       <div class="edition" id="edition"></div>
     </div>
@@ -378,6 +392,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
           <div class="search-drop" id="search-drop" hidden></div>
         </span>
       </span>
+      <span class="nav-aside" id="nav-aside" hidden></span>   <!-- 移动端右列：版次 + 搜索图标（JS 搬入） -->
     </nav>
   </header>
 
@@ -405,16 +420,16 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   <!-- 01 继续观看（首页继续观看行） -->
   <section class="sec">
     <div class="sec-head">
-      <span class="no">01</span><h2>继续观看</h2><span class="sub">进度为演示值</span>
+      <span class="no">01</span><h2>继续观看</h2>
       <a class="more" href="#">全部记录 →</a>
     </div>
     <div class="cont-grid" id="cont-grid"></div>
   </section>
 
-  <!-- 02 今日趋势榜（左栏 rail 趋势榜 · 报刊双栏 10 条） -->
+  <!-- 02 今日趋势榜（左栏 rail 趋势榜 · 报刊双栏横图，桌面 10 条 / 移动 5 条） -->
   <section class="sec" id="sec-trend">
     <div class="sec-head">
-      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub">TMDB /trending/all/day · 10 条 · 热度为演示值</span>
+      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub" id="trend-sub">TMDB /trending/all/day · 10 条</span>
       <a class="more" href="#">完整榜单 →</a>
     </div>
     <div class="trend-table" id="trend-table"></div>
@@ -424,7 +439,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   <div id="home-rows"></div>
 
   <footer>
-    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏搜索/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据 = 真实 TMDB 快照（demos/_data-e-tmdb.js，与首页同口径），快照缺失回退 demos/_data.js CMS；进度与热度为演示值</span>
+    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏搜索/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据 = 真实 TMDB 快照（demos/_data-e-tmdb.js，与首页同口径），快照缺失回退 demos/_data.js CMS</span>
     <span id="foot-stats"></span>
     <span>仅供风格评审</span>
   </footer>
@@ -449,7 +464,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
 const uniq = (arr) => { const s = new Set(); return arr.filter((x) => x && x.title && !s.has(x.title) && s.add(x.title)); };
-const pic = (it, w, inner) => `<div class="kpic" data-raw="${esc(it.pic)}" data-w="${w}" data-alt="${esc(it.title)}">${inner || ""}</div>`;
+const pic = (it, w, inner, raw) => `<div class="kpic" data-raw="${esc(raw || it.pic)}" data-w="${w}" data-alt="${esc(it.title)}">${inner || ""}</div>`;
 
 let DATA = null, POOL = [], SIDE_POOL = [], SIDE_OFF = 0;
 
@@ -490,9 +505,33 @@ function renderMasthead() {
   const d = new Date();
   const week = Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 864e5 + 1) / 7);
   const weekCN = "日一二三四五六"[d.getDay()];
-  $("edition").innerHTML =
-    `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}<br>第 ${week} 周 · 总第 1,204 期`;
+  const l1 = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}`;
+  const l2 = `第 ${week} 周 · 总第 1,204 期`;
+  // 移动端（nav 右列）单行显示；桌面保持右上两行
+  $("edition").innerHTML = mqHead.matches ? `${l1} · ${l2}` : `${l1}<br>${l2}`;
 }
+
+/* ---------- 移动端报头同步（≤767：☰ 常驻左侧 + 品牌居中；版次/搜索搬入 nav 右列；栏目与功能项隐藏） ---------- */
+const mqHead = window.matchMedia("(max-width:767px)");
+const searchBtnHTML = $("search-btn").innerHTML;      // 保存桌面文案「搜索 ⌘K」供还原
+function syncMobileHead() {
+  const m = mqHead.matches;
+  $("menu-btn").hidden = !m;
+  $("nav-aside").hidden = !m;
+  document.querySelectorAll(".mast-nav > a").forEach((a) => { a.hidden = m; });   // 栏目链接
+  if (m) {
+    $("nav-aside").append($("edition"), $("search-wrap"));   // 版次右对齐 + 搜索图标在其下方
+    $("search-btn").textContent = "⌕";
+    $("nav-fn").hidden = true;                                // 收藏/历史/设置/夜刊（search-wrap 已先搬出）
+  } else {
+    $("nav-fn").hidden = false;
+    $("nav-fn").append($("search-wrap"));
+    $("mast-row").append($("edition"));
+    $("search-btn").innerHTML = searchBtnHTML;
+  }
+}
+syncMobileHead();
+mqHead.addEventListener("change", () => { syncMobileHead(); renderMasthead(); if (DATA && DATA.rows) renderTrend(); });
 
 /* ---------- 头条轮播（HeroBili banner 融合：5s 自动 + 箭头 + 圆点 + 双 CTA） ---------- */
 const BANNER_N = 6, BANNER_MS = 5000;
@@ -648,14 +687,16 @@ function renderFootStats() {
 
 /* ---------- 02 今日趋势榜（融合左栏 rail 趋势榜：海报 + 热度，10 条报刊双栏） ---------- */
 function renderTrend() {
+  const n = mqHead.matches ? 5 : 10;                       // 移动端 ≤767 只显示 5 条
   const pool = (DATA.trending && DATA.trending.length
     ? DATA.trending
-    : uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL])).slice(0, 10);
+    : uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL])).slice(0, n);
+  $("trend-sub").textContent = `TMDB /trending/all/day · ${n} 条`;
   $("trend-table").innerHTML = pool.map((t, i) => {
     const heat = (98.4 - i * 1.1 - (hash(t.title) % 10) / 10).toFixed(1);
     return `<div class="trow">
       <span class="rank">${i + 1}</span>
-      <div class="th">${pic(t, 154)}</div>
+      <div class="th">${pic(t, 342, "", t.backdrop || t.pic)}</div>
       <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || "影视")} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
       <span class="heat">${heat}</span>
     </div>`;
