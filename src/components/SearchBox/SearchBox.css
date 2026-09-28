@@ -144,12 +144,14 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   outline: none !important;
 }
 
-/* 移动端 / app 端全局对 input 强制 16px（防 iOS 聚焦缩放）会把搜索框字号顶到 16，
-   与 .search-box 的 --text-sm 设计字号不一致 → 搜索框排除，保持 inherit → --text-sm。 */
-@media (width <= 767px) {
-  .search-box__input {
-    font-size: inherit;
-  }
+/* iOS/Android Safari 聚焦字号 <16px 的 input 会局部放大视口（viewport meta 已为
+   WCAG 1.4.4 移除 user-scalable=no，只能靠字号挡）。此前为保 --text-sm(13px) 设计字号
+   把全局 input 16px 豁免掉 → 移动端 web 点搜索框放大回归。现按 data-device 收窄：
+   仅 mobile-web 抬到 16px（任意视口宽度，覆盖横屏 >767px 场景）；app 端保持豁免
+   （data-device 值互斥互不干扰，WebView 沿用既有决策）；桌面走 base 的 inherit → --text-sm。 */
+html[data-device="mobile-web"] .search-box__input {
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list */
+  font-size: 16px;
 }
 
 html[data-device="app"] .search-box__input {
