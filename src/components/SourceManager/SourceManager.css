@@ -273,6 +273,18 @@
   box-shadow: 0 -2px 0 var(--color-primary);
 }
 
+/* 2026-09-28 去卡片化（用户拍板：source-manager 面板不用卡片式布局，
+   但 .source-manager__item 条目保留卡片）：
+   桌面仅 popover 属浮层（例外）：只删 border/radius/shadow，保留底色防与底层内容重叠；
+   条目卡片、拖拽 is-dragging/is-drop-target 指示均为原生规则，不进本块。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .source-manager__popover {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 .source-manager__item-main {
   display: flex;
   flex: 1 1 0;
