@@ -1,26 +1,41 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="day">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KinoTV Demo E — 报刊排版式 · 真实接口数据版</title>
+<title>KinoTV Demo E — 报刊排版式 · 融合现有首页元素版</title>
+<script>try{var t=localStorage.getItem('kino-demo-theme');if(t==='night')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
 <style>
 /* ============================================================
-   Demo E · 报刊排版式（真实接口数据版）
-   - 数据源：项目内置 CMS 源（public/data/video-sources.json）中
-     两个允许浏览器直连的源：豆瓣资源(caiji.dbzy5.com) / 茅台资源(caiji.maotaizy.cc)
-   - 接口：MacCMS ac=videolist（与 src/services/videoService.ts 同口径）
-   - 标题 / 海报 / 年份 / 备注 / 简介 均为真实数据；播放进度 / 热度值为演示值
+   Demo E · 报刊排版式 · 融合现有首页元素版
+   - 数据源：demos/_data.js 共享数据层（kinoLoad：项目内置 CMS 源
+     豆瓣资源 dbzy5 / 茅台资源 maotaizy，浏览器直连 + weserv 缩图链路）
+   - 首页元素融合映射（结构照搬、皮肤换报刊）：
+     ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 搜索 + 主题）
+     ② HomeTopStrip 公告带 → .topstrip（公告/今日趋势N/最热分类/继续观看·收藏 pill/完整热度榜›）
+     ③ HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA）
+     ④ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换）
+     ⑤ rail 今日趋势 TOP20 → 03 本周新声（TOP20 + 缩略海报 + 热度/升降）
+     ⑥ 继续观看行           → 01 继续观看（进度条格）
+     ⑦ 7 行横滚             → 04–10 七行（分区编号 + 横滚 + 分页箭头）
+     ⑧ 分类快捷入口         → 02 分类索引（真实 total）
+     ⑨ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
    - 全模块零卡片；大屏规则沿用：首屏预算制 / hero ≤48vh / 列数梯度 / 封顶 2200
+   - 演示值口径不变：播放进度 / 热度值 / 收藏种子为演示；标题/海报/简介/计数为真实
    ============================================================ */
 :root{
   --paper:#fbfaf7; --ink:#141416; --ink-2:#57575f; --ink-3:#98989f;
-  --rule:#d8d5cd; --accent:#b03a1e;
+  --rule:#d8d5cd; --accent:#b03a1e; --band:#f3f1ea; --fill:#eceade;
   --serif:"Noto Serif SC","Source Han Serif SC","STSong",serif;
   --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   --content-max:2200px;
   --pad-x:clamp(16px,2.4vw,44px); --gap:clamp(12px,1vw,20px);
   --poster-n:6; --cont-n:4;
+}
+/* 夜刊模式（顶栏「夜刊」按钮切换，演示用日/夜双刊形态） */
+html[data-theme="night"]{
+  --paper:#16161a; --ink:#f2efe8; --ink-2:#b5b2aa; --ink-3:#7b7873;
+  --rule:#33333a; --accent:#e0653f; --band:#1d1d22; --fill:#232329;
 }
 @media (width>=1440px){ :root{--pad-x:60px; --poster-n:7; --cont-n:5} }
 @media (width>=1920px){ :root{--pad-x:100px; --poster-n:8; --cont-n:6} }
@@ -29,9 +44,10 @@
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 img{display:block;width:100%;height:100%;object-fit:cover}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .page{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x)}
 
-/* ---------- 报头 ---------- */
+/* ---------- 报头（融合 StickyHeader：品牌 + 分类导航 + 功能导航 + 搜索 + 主题） ---------- */
 .masthead{padding-top:clamp(16px,2.4vh,28px)}
 .mast-row{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
   border-bottom:3px solid var(--ink);padding-bottom:clamp(8px,1.2vh,14px)}
@@ -42,10 +58,30 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   border-bottom:1px solid var(--rule);font-size:clamp(13px,.85vw,15px);align-items:center;flex-wrap:wrap}
 .mast-nav a{color:var(--ink-2);transition:.2s}
 .mast-nav a.on,.mast-nav a:hover{color:var(--ink);font-weight:700}
-.mast-nav .search{margin-left:auto;color:var(--ink-3)}
+.mast-nav .nav-fn{margin-left:auto;display:flex;gap:clamp(14px,1.3vw,26px);align-items:center;flex-wrap:wrap}
+.mast-nav .search{color:var(--ink-3)}
+.mast-nav .theme-btn{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-2);border:1px solid var(--rule);
+  border-radius:99px;padding:3px 12px;transition:.2s;white-space:nowrap}
+.mast-nav .theme-btn:hover{color:var(--ink);border-color:var(--ink)}
 .data-badge{font-size:clamp(10.5px,.68vw,12px);color:var(--ink-3);border:1px solid var(--rule);
   border-radius:99px;padding:2px 10px;white-space:nowrap}
 .data-badge b{color:var(--accent);font-weight:700}
+
+/* ---------- 公告过渡带（融合 HomeTopStrip） ---------- */
+.topstrip{background:var(--band);border-bottom:1px solid var(--rule);
+  margin-top:clamp(6px,1vh,10px);font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-2)}
+.topstrip .ts-inner{display:flex;align-items:center;gap:clamp(10px,1vw,18px);
+  padding:clamp(7px,1vh,11px) clamp(10px,1vw,16px);flex-wrap:wrap}
+.ts-crumb{font-weight:800;color:var(--ink);letter-spacing:.14em;flex:none}
+.ts-sep{width:1px;height:.9em;background:var(--rule);flex:none}
+.ts-stat b{color:var(--ink);font-weight:800}
+.ts-stat .flame{color:var(--accent)}
+.ts-info{cursor:help;color:var(--ink-3);font-weight:700}
+.ts-right{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,.8vw,14px)}
+.ts-pill{border:1px solid var(--rule);border-radius:99px;padding:2px 11px;color:var(--ink-2);
+  background:var(--paper);white-space:nowrap}
+.ts-more{color:var(--ink);font-weight:700;white-space:nowrap}
+.ts-more:hover{color:var(--accent)}
 
 /* ---------- 分区头 ---------- */
 .sec{margin-top:clamp(24px,4vh,48px)}
@@ -57,9 +93,9 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .sec-head .more{margin-left:auto;font-size:clamp(12px,.8vw,14px);color:var(--ink-2)}
 .sec-head .more:hover{color:var(--ink)}
 
-/* ---------- 首屏 ①：头条对开 ---------- */
+/* ---------- 头条对开（融合 HeroBili：轮播 banner + 圆点 + 箭头 + 双 CTA） ---------- */
 .headline{display:grid;grid-template-columns:minmax(0,11fr) minmax(0,9fr);gap:clamp(24px,2.6vw,52px);
-  height:clamp(340px,48vh,560px);margin-top:clamp(16px,2.4vh,28px)}
+  height:clamp(320px,44vh,540px);margin-top:clamp(16px,2.4vh,28px)}
 .hl-text{display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:clamp(6px,1.4vh,18px);min-width:0}
 .hl-text .kick{font-size:clamp(11.5px,.76vw,13.5px);letter-spacing:.28em;text-transform:uppercase;color:var(--accent);
   font-weight:800;margin-bottom:clamp(8px,1.2vh,14px)}
@@ -72,25 +108,59 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .hl-actions .play{font-weight:800;font-size:clamp(13.5px,.9vw,16px);border-bottom:2px solid var(--accent);padding-bottom:3px;cursor:pointer}
 .hl-actions .ghost{font-size:clamp(12.5px,.82vw,14.5px);color:var(--ink-2);cursor:pointer}
 .hl-actions .ghost:hover{color:var(--ink)}
-.hl-pic{position:relative;overflow:hidden;border-radius:clamp(6px,.5vw,10px);background:#eceade}
-.hl-pic img{position:absolute;inset:0;transition:transform 6s}
-.hl-pic:hover img{transform:scale(1.025)}
-.hl-pic .cap{position:absolute;left:0;right:0;bottom:0;padding:38px 16px 12px;color:#fff;
+.hl-pic{position:relative;overflow:hidden;border-radius:clamp(6px,.5vw,10px);background:var(--fill)}
+.hl-slide{position:absolute;inset:0;opacity:0;transition:opacity .7s ease;pointer-events:none}
+.hl-slide.on{opacity:1;pointer-events:auto}
+.hl-slide .kpic{position:absolute;inset:0}
+.hl-slide .cap{position:absolute;left:0;right:0;bottom:0;padding:38px 16px 12px;color:#fff;z-index:2;
   background:linear-gradient(180deg,transparent,rgba(12,12,14,.82));font-size:clamp(11.5px,.74vw,13px)}
-.hl-side-notes{display:flex;gap:clamp(14px,1.6vw,30px);margin-top:clamp(10px,1.6vh,18px)}
-.hl-side-notes a{flex:1;font-size:clamp(12px,.8vw,14px);line-height:1.6;color:var(--ink-2);
-  border-top:2px solid var(--ink);padding-top:clamp(6px,1vh,10px);transition:.2s;min-width:0}
-.hl-side-notes a:hover{color:var(--ink)}
-.hl-side-notes a b{display:block;color:var(--ink);font-weight:700;margin-bottom:2px;font-size:clamp(12.5px,.85vw,15px);
+.hl-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:clamp(30px,2.4vw,40px);height:clamp(30px,2.4vw,40px);
+  display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-size:20px;
+  background:rgba(12,12,14,.42);transition:.2s;opacity:0}
+.hl-pic:hover .hl-arr{opacity:1}
+.hl-arr:hover{background:rgba(12,12,14,.7)}
+.hl-arr.prev{left:clamp(8px,1vw,14px)}
+.hl-arr.next{right:clamp(8px,1vw,14px)}
+.hl-dots{position:absolute;left:0;right:0;bottom:10px;z-index:3;display:flex;justify-content:center;gap:7px}
+.hl-dots button{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);transition:.25s;padding:0}
+.hl-dots button.on{background:#fff;width:18px;border-radius:99px}
+
+/* ---------- 图片索引条（融合 HeroSideCard：16:9 × 6 + 收藏心 + 换一换） ---------- */
+.hl-side{margin-top:clamp(10px,1.6vh,18px);border-top:2px solid var(--ink);padding-top:clamp(8px,1.2vh,13px)}
+.hl-side-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:clamp(8px,1.2vh,13px)}
+.hl-side-head .t{font-size:clamp(11px,.72vw,13px);letter-spacing:.26em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.hl-side-head .shuffle{font-size:clamp(12px,.8vw,14px);color:var(--ink-2);transition:.2s}
+.hl-side-head .shuffle:hover{color:var(--accent)}
+.hl-side-head .shuffle.spinning{animation:spin .6s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hl-side-track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 5*var(--gap)) / 6);gap:var(--gap);
+  transition:opacity .3s}
+.hl-side-track.fading{opacity:0}
+.hl-card{cursor:pointer;min-width:0}
+.hl-card .cov{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);background:var(--fill)}
+.hl-card .cov .kpic{position:absolute;inset:0}
+.hl-card .cov .kpic img{transition:transform .5s}
+.hl-card:hover .cov .kpic img{transform:scale(1.05)}
+.hl-card .fav{position:absolute;top:6px;right:7px;z-index:2;font-size:14px;line-height:1;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);opacity:.75;transition:.2s;padding:2px}
+.hl-card .fav:hover{opacity:1;transform:scale(1.15)}
+.hl-card .fav.on{color:var(--accent);opacity:1}
+.hl-card .noimg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:clamp(15px,1.3vw,22px);font-weight:900;color:var(--ink-3)}
+.hl-card h5{font-size:clamp(12px,.8vw,14.5px);font-weight:700;margin-top:clamp(5px,.8vh,9px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hl-card p{font-size:clamp(10.5px,.68vw,12px);color:var(--ink-3);margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 首屏 ②：继续观看 ---------- */
+/* ---------- 继续观看（融合首页继续观看行：进度条格） ---------- */
 .cont-grid{display:grid;grid-template-columns:repeat(var(--cont-n),minmax(0,1fr));gap:var(--gap)}
 .cont-cell{cursor:pointer;min-width:0}
-.cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);position:relative;background:#eceade}
-.cont-cell .th img{position:absolute;inset:0;transition:transform .5s}
-.cont-cell:hover .th img{transform:scale(1.05)}
-.cont-cell .th .time{position:absolute;right:7px;bottom:7px;font-size:clamp(10px,.66vw,11.5px);color:#fff;background:rgba(12,12,14,.6);padding:2px 7px;border-radius:4px}
+.cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);position:relative;background:var(--fill)}
+.cont-cell .th .kpic{position:absolute;inset:0}
+.cont-cell .th .kpic img{transition:transform .5s}
+.cont-cell:hover .th .kpic img{transform:scale(1.05)}
+.cont-cell .th .time{position:absolute;right:7px;bottom:7px;z-index:2;font-size:clamp(10px,.66vw,11.5px);color:#fff;
+  background:rgba(12,12,14,.6);padding:2px 7px;border-radius:4px}
 .cont-cell .prog{height:2px;background:var(--rule);position:relative;margin-top:clamp(6px,.9vh,10px)}
 .cont-cell .prog b{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
 .cont-cell h4{font-family:var(--serif);font-size:clamp(14px,.95vw,17px);font-weight:900;margin-top:clamp(6px,1vh,11px);
@@ -98,7 +168,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 首屏 ③：分类索引 ---------- */
+/* ---------- 分类索引（融合窄屏分类快捷入口：真实 total 计数） ---------- */
 .cat-index{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:clamp(8px,1.4vh,14px);
   font-family:var(--serif);font-size:clamp(15px,1.2vw,24px);font-weight:900}
 .cat-index a{transition:.2s;white-space:nowrap}
@@ -106,28 +176,60 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .cat-index .n{font-family:var(--sans);font-weight:500;font-size:clamp(11px,.72vw,13px);color:var(--ink-3);margin-left:6px;vertical-align:baseline}
 .cat-index .slash{color:var(--rule);margin:0 clamp(10px,1vw,20px);font-weight:400}
 
-/* ---------- 趋势表格 ---------- */
+/* ---------- 趋势表格（融合左栏 rail 今日趋势 TOP20：排名 + 海报 + 热度 + 升降） ---------- */
 .trend-table{border-top:2px solid var(--ink)}
-.trow{display:grid;grid-template-columns:clamp(44px,3.4vw,70px) minmax(0,1fr) clamp(120px,10vw,200px) clamp(110px,9vw,180px);
-  gap:clamp(14px,1.4vw,28px);align-items:baseline;padding:clamp(11px,1.4vh,18px) 4px;
+.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(34px,2.6vw,46px) minmax(0,1fr) clamp(110px,9vw,180px) clamp(100px,8vw,160px);
+  gap:clamp(12px,1.2vw,24px);align-items:center;padding:clamp(9px,1.2vh,15px) 4px;
   border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s}
-.trow:hover{background:#f3f1ea}
-.trow .rank{font-family:var(--serif);font-size:clamp(20px,1.8vw,32px);font-weight:900;color:var(--ink-3)}
+.trow:hover{background:var(--band)}
+.trow .rank{font-family:var(--serif);font-size:clamp(20px,1.8vw,32px);font-weight:900;color:var(--ink-3);line-height:1}
 .trow:nth-child(-n+3) .rank{color:var(--accent)}
+.trow .th{aspect-ratio:2/3;overflow:hidden;border-radius:3px;position:relative;background:var(--fill)}
+.trow .th .kpic{position:absolute;inset:0}
+.trow .ti{min-width:0}
 .trow .ti b{font-size:clamp(14.5px,1vw,18px);font-weight:700;display:block;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.trow .ti span{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3)}
+.trow .ti span{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .trow .heat{text-align:right;font-size:clamp(13px,.9vw,16px);font-weight:800}
 .trow .delta{text-align:right;font-size:clamp(11.5px,.76vw,13px);color:#1c7a44}
 .trow .delta.down{color:var(--accent)}
+html[data-theme="night"] .trow .delta{color:#5cba85}
+@media (width>=1440px){
+  .trend-table{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(10,auto);
+    column-gap:clamp(28px,3vw,64px);border-top:2px solid var(--ink)}
+}
 
-/* ---------- 引语带 ---------- */
-.quote-band{margin-top:clamp(28px,5vh,56px);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  padding:clamp(18px,3vh,36px) 0;display:flex;gap:clamp(24px,3vw,64px);align-items:baseline}
-.quote-band .q{font-family:var(--serif);font-size:clamp(16px,1.5vw,26px);font-weight:900;line-height:1.5;min-width:0}
-.quote-band .q small{display:block;font-family:var(--sans);font-weight:500;font-size:clamp(11px,.72vw,13px);color:var(--ink-3);margin-top:clamp(6px,1vh,12px)}
+/* ---------- 七行横滚（融合首页 .home-rows：分区编号 + 横滚 + 分页箭头） ---------- */
+.hrow-wrap{position:relative}
+.hrow-wrap:hover .hrw-arrow{opacity:1}
+.hrow-track{display:flex;gap:var(--gap);overflow-x:auto;scroll-behavior:smooth;
+  scrollbar-width:none;padding-bottom:2px}
+.hrow-track::-webkit-scrollbar{display:none}
+.hrw-arrow{position:absolute;top:32%;transform:translateY(-50%);z-index:5;
+  width:clamp(30px,2.2vw,38px);height:clamp(30px,2.2vw,38px);display:flex;align-items:center;justify-content:center;
+  background:var(--paper);border:1px solid var(--ink);border-radius:50%;font-size:19px;line-height:1;
+  opacity:0;transition:.2s;pointer-events:none}
+.hrow-wrap:hover .hrw-arrow{pointer-events:auto}
+.hrw-arrow:hover{background:var(--ink);color:var(--paper)}
+.hrw-arrow.left{left:clamp(-6px,-.5vw,-2px)}
+.hrw-arrow.right{right:clamp(-6px,-.5vw,-2px)}
+.hrw-arrow[disabled]{opacity:0!important;pointer-events:none}
+.rcard{flex:0 0 calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));
+  scroll-snap-align:start;cursor:pointer;min-width:0}
+.rc-cover{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);background:var(--fill)}
+.rc-cover .kpic{position:absolute;inset:0}
+.rc-cover .kpic img{transition:transform .5s}
+.rcard:hover .rc-cover .kpic img{transform:scale(1.05)}
+.rc-cover .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);z-index:2;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:800;background:#fff;color:#141416;padding:2px 7px;border-radius:4px;
+  max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard h4{font-family:var(--serif);font-size:clamp(13.5px,.92vw,16.5px);font-weight:900;margin-top:clamp(6px,.9vh,10px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard p{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 推荐区 ---------- */
+/* ---------- 推荐区（融合首页行卡形态：tabs 聚合 + 海报行） ---------- */
 .rec-tabs{display:flex;gap:clamp(14px,1.4vw,28px);margin-bottom:clamp(12px,1.8vh,20px);flex-wrap:wrap}
 .rec-tabs a{font-size:clamp(13px,.9vw,16px);color:var(--ink-2);padding-bottom:4px;border-bottom:2px solid transparent;cursor:pointer;transition:.2s}
 .rec-tabs a.on{color:var(--ink);font-weight:800;border-bottom-color:var(--accent)}
@@ -136,27 +238,61 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   grid-auto-columns:calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));gap:var(--gap);
   transition:opacity .25s}
 .poster-row.fading{opacity:0}
-.poster-row .p{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);cursor:pointer;background:#eceade}
-.poster-row .p img{position:absolute;inset:0;transition:transform .5s}
-.poster-row .p:hover img{transform:scale(1.05)}
-.poster-row .p .lab{position:absolute;left:0;right:0;bottom:0;padding:40px 11px 9px;color:#fff;
+.poster-row .p{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);cursor:pointer;background:var(--fill)}
+.poster-row .p .kpic{position:absolute;inset:0}
+.poster-row .p .kpic img{transition:transform .5s}
+.poster-row .p:hover .kpic img{transform:scale(1.05)}
+.poster-row .p .lab{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:40px 11px 9px;color:#fff;
   background:linear-gradient(180deg,transparent,rgba(12,12,14,.85));opacity:0;transition:.3s}
 .poster-row .p:hover .lab{opacity:1}
 .poster-row .p .lab h4{font-size:clamp(12.5px,.88vw,15.5px);font-weight:700}
 .poster-row .p .lab p{font-size:clamp(10.5px,.68vw,12px);opacity:.75}
-.poster-row .p .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);font-size:clamp(10.5px,.7vw,12px);font-weight:800;
-  background:#fff;color:var(--ink);padding:2px 7px;border-radius:4px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.poster-row .p .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);z-index:2;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:800;
+  background:#fff;color:#141416;padding:2px 7px;border-radius:4px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 骨架 ---------- */
-.skl{position:relative;overflow:hidden;background:#eceade}
+/* ---------- 图片容器（_data.js kinoBindPics：IO 懒渲染 + 淡入 + 占位） ---------- */
+.kpic{position:relative;overflow:hidden;background:var(--fill)}
+.kpic img{position:relative;z-index:1;opacity:0;transition:opacity .45s}
+.kpic.is-loaded img{opacity:1}
+.kpic.is-empty::after,.kpic.is-broken::after{content:"无封面";position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+
+/* ---------- 骨架（与真实布局同尺寸） ---------- */
+.skl{position:relative;overflow:hidden;background:var(--fill)}
 .skl::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.4s infinite}
+html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
 @keyframes shimmer{to{transform:translateX(100%)}}
 .skl-line{height:13px;border-radius:4px;margin-top:8px}
+
+/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新） ---------- */
+.fab{position:fixed;right:clamp(14px,1.6vw,28px);bottom:clamp(14px,2vh,26px);z-index:9000;
+  display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.28s}
+.fab.on{opacity:1;transform:none;pointer-events:auto}
+.fab button{width:clamp(38px,2.6vw,46px);height:clamp(38px,2.6vw,46px);display:flex;align-items:center;justify-content:center;
+  background:var(--paper);border:2px solid var(--ink);border-radius:clamp(4px,.4vw,8px);font-size:17px;
+  box-shadow:3px 3px 0 var(--ink);transition:.15s}
+.fab button:hover{background:var(--ink);color:var(--paper)}
+.fab button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.fab button.spinning{animation:spin .7s linear}
 
 footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px,1.6vh,20px);
   border-top:3px solid var(--ink);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
   font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3)}
+
+@media (width<=1023px){
+  .headline{grid-template-columns:1fr;height:auto}
+  .hl-pic{aspect-ratio:16/9}
+  .hl-side-track{overflow-x:auto;grid-auto-columns:minmax(150px,38%)}
+  .trow .delta{display:none}
+}
+@media (width<=767px){
+  .hl-side-track{grid-auto-columns:minmax(132px,46%)}
+  .trend-table{display:block}
+  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr) clamp(72px,17vw,110px)}
+  .trow .heat{display:none}
+}
 </style>
 <style id="xdev-css">
 /* ==== 设备适配层：TV 10-foot / 投影仪 / 超宽（?device= 或真实视口触发） ==== */
@@ -186,15 +322,31 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
     </div>
     <nav class="mast-nav" id="mast-nav">
       <a class="on" href="#">首页</a><a href="#">剧集</a><a href="#">电影</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">榜单</a><a href="#">IPTV</a>
-      <span class="data-badge" id="data-badge">真实接口拉取中…</span>
-      <span class="search">搜索 ⌘K</span>
+      <span class="nav-fn">
+        <span class="data-badge" id="data-badge">真实接口拉取中…</span>
+        <a href="#">收藏</a><a href="#">历史</a><a href="#">设置</a>
+        <button class="theme-btn" id="theme-btn" type="button">夜刊</button>
+        <span class="search">搜索 ⌘K</span>
+      </span>
     </nav>
   </header>
 
-  <!-- 首屏 ①：头条对开 -->
+  <!-- 公告过渡带（HomeTopStrip） -->
+  <div class="topstrip" id="topstrip"></div>
+
+  <!-- 头条对开（HeroBili：轮播 banner + 双 CTA） -->
   <section class="headline" id="headline"></section>
 
-  <!-- 首屏 ②：继续观看 -->
+  <!-- 图片索引条（HeroSideCard × 6 + 换一换） -->
+  <section class="hl-side" id="hl-side">
+    <div class="hl-side-head">
+      <span class="t">图片索引 · IMAGE INDEX</span>
+      <button class="shuffle" id="shuffle" type="button">换一换 ↻</button>
+    </div>
+    <div class="hl-side-track" id="hl-side-track"></div>
+  </section>
+
+  <!-- 01 继续观看（首页继续观看行） -->
   <section class="sec">
     <div class="sec-head">
       <span class="no">01</span><h2>继续观看</h2><span class="sub">真实片源 · 进度为演示值</span>
@@ -203,7 +355,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
     <div class="cont-grid" id="cont-grid"></div>
   </section>
 
-  <!-- 首屏 ③：分类索引 -->
+  <!-- 02 分类索引（窄屏分类快捷入口 · 真实 total） -->
   <section class="sec">
     <div class="sec-head">
       <span class="no">02</span><h2>分类索引</h2><span class="sub" id="cat-sub">真实收录统计</span>
@@ -212,19 +364,22 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
     <nav class="cat-index" id="cat-index"></nav>
   </section>
 
-  <!-- 折叠线下：趋势表格 -->
-  <section class="sec">
+  <!-- 03 本周新声（左栏 rail 今日趋势 TOP20 · 报刊双栏表） -->
+  <section class="sec" id="sec-trend">
     <div class="sec-head">
-      <span class="no">03</span><h2>本周新声</h2><span class="sub">近 7 日真实收录 · 热度值为演示值</span>
+      <span class="no">03</span><h2>本周新声</h2><span class="sub">今日趋势 TOP20 · 近 7 日真实收录 · 热度/升降为演示值</span>
       <a class="more" href="#">完整榜单 →</a>
     </div>
     <div class="trend-table" id="trend-table"></div>
   </section>
 
-  <!-- 推荐区 -->
+  <!-- 04–10 七行横滚（首页 .home-rows 同标题同序） -->
+  <div id="home-rows"></div>
+
+  <!-- 11 为你推荐（tabs 聚合 + 海报行） -->
   <section class="sec">
     <div class="sec-head">
-      <span class="no">04</span><h2>为你推荐</h2><span class="sub">真实片库按分类抽取</span>
+      <span class="no">11</span><h2>为你推荐</h2><span class="sub">真实片库跨行聚合抽取</span>
       <a class="more" href="#">更多 →</a>
     </div>
     <div class="rec-tabs" id="rec-tabs"></div>
@@ -232,79 +387,41 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   </section>
 
   <footer>
-    <span>KinoTV — Demo E · 报刊排版式 · 标题/海报/简介来自项目内置 CMS 源（豆瓣资源 dbzy5 / 茅台资源 maotaizy，浏览器直连）；进度与热度为演示值</span>
+    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏/公告带/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/分类索引/FAB）；数据经 demos/_data.js（豆瓣资源 dbzy5 / 茅台资源 maotaizy 浏览器直连）；进度与热度为演示值</span>
     <span>仅供风格评审</span>
   </footer>
 
 </div>
 
+<!-- FAB：返回顶部 + 刷新（融合 BackToTopButton） -->
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
 <script>
 /* ============================================================
-   数据层：与 src/services/videoService.ts 同口径的 MacCMS 调用
-   源 = public/data/video-sources.json 内置源中实测允许 CORS 直连的两个
+   数据层：demos/_data.js 共享数据层（kinoLoad / kinoBindPics / kinoImg）
+   - kinoLoad：项目内置 CMS 源拉取 + 7 行组装 + 离线兜底（永不 reject）
+   - kinoBindPics：IO 懒渲染 data-raw 容器（weserv 缩图 → 失败回退原图）
    ============================================================ */
-const SOURCES = [
-  { name: "豆瓣资源", api: "https://caiji.dbzy5.com/api.php/provide/vod" },
-  { name: "茅台资源", api: "https://caiji.maotaizy.cc/api.php/provide/vod" }
-];
-const TYPE_NAME = { 1: "电影", 2: "剧集", 3: "综艺", 4: "动漫" };
-
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const stripHtml = (s) => String(s ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+const uniq = (arr) => { const s = new Set(); return arr.filter((x) => x && x.title && !s.has(x.title) && s.add(x.title)); };
+const pic = (it, w, inner) => `<div class="kpic" data-raw="${esc(it.pic)}" data-w="${w}" data-alt="${esc(it.title)}">${inner || ""}</div>`;
 
-/** 单次 CMS 列表请求（10s 超时，业务码校验对齐 assertCmsOk） */
-async function cms(api, params) {
-  const url = api + "?" + new URLSearchParams(params).toString();
-  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  const j = await res.json();
-  if (j.code != null && j.code !== 1) throw new Error(j.msg || "CMS 业务异常");
-  return j;
-}
+let DATA = null, POOL = [], SIDE_POOL = [], SIDE_OFF = 0;
+let recTab = "全部";
 
-/** CMS 条目 → 展示模型（对齐 mapVideoItem 字段） */
-function mapItem(x, srcName) {
-  return {
-    id: x.vod_id,
-    title: x.vod_name || "未命名",
-    pic: x.vod_pic || "",
-    type: TYPE_NAME[x.type_id_1 ?? x.type_id] || "影视",
-    year: x.vod_year || "",
-    remarks: x.vod_remarks || "",
-    cls: (x.vod_class || "").split(",")[0] || "",
-    score: parseFloat(x.vod_score) > 0 ? x.vod_score : null,
-    content: stripHtml(x.vod_content),
-    src: srcName
-  };
-}
+/* ---------- 收藏（融合 HeroSideCard 收藏心：localStorage 持久 + 顶栏 pill 联动） ---------- */
+const FAV_KEY = "kino-demo-favs";
+let FAVS = new Set();
+try { FAVS = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]")); } catch (e) { /* ignore */ }
+const favSave = () => { try { localStorage.setItem(FAV_KEY, JSON.stringify([...FAVS])); } catch (e) { /* ignore */ } };
 
-/** 并行请求两源按分类拉取 + 去重合并 */
-async function fetchAll() {
-  const jobs = [
-    cms(SOURCES[0].api, { ac: "videolist", pg: 1, h: 168 }),
-    cms(SOURCES[1].api, { ac: "videolist", pg: 1, h: 168 }),
-    ...[1, 2, 3, 4].flatMap((t) => SOURCES.map((s) => cms(s.api, { ac: "videolist", t, pg: 1 })))
-  ];
-  const [latestDb, latestMt, ...byType] = await Promise.allSettled(jobs);
-  const pick = (r) => (r.status === "fulfilled" ? r.value.list ?? [] : []);
-  const latest = [...pick(latestDb), ...pick(latestMt)]
-    .map((x) => mapItem(x, x.vod_pic?.includes("dbzy") ? SOURCES[0].name : SOURCES[1].name));
-  const seen = new Set();
-  const uniq = (arr) => { const s = new Set(); return arr.filter((x) => !s.has(x.title) && s.add(x.title)); };
-  return {
-    latest: uniq(latest),
-    byType: {
-      1: uniq([...pick(byType[0]), ...pick(byType[1])].map((x) => mapItem(x, SOURCES[0].name))),
-      2: uniq([...pick(byType[2]), ...pick(byType[3])].map((x) => mapItem(x, SOURCES[0].name))),
-      3: uniq([...pick(byType[4]), ...pick(byType[5])].map((x) => mapItem(x, SOURCES[1].name))),
-      4: uniq([...pick(byType[6]), ...pick(byType[7])].map((x) => mapItem(x, SOURCES[1].name)))
-    }
-  };
-}
-
-/* ---------- 骨架（与真实布局同尺寸） ---------- */
+/* ---------- 骨架（与真实布局同尺寸，含新增块） ---------- */
 function renderSkeletons() {
   $("headline").innerHTML = `
     <div class="hl-text">
@@ -313,11 +430,19 @@ function renderSkeletons() {
       <div class="skl skl-line"></div><div class="skl skl-line" style="width:70%"></div>
     </div>
     <div class="hl-pic"><div class="skl" style="position:absolute;inset:0"></div></div>`;
+  $("hl-side-track").innerHTML = Array(6).fill(0).map(() =>
+    `<div class="hl-card"><div class="cov skl"></div><div class="skl skl-line" style="width:70%"></div></div>`).join("");
   $("cont-grid").innerHTML = Array(4).fill(0).map(() =>
     `<div class="cont-cell"><div class="th skl"></div><div class="skl skl-line" style="width:60%"></div><div class="skl skl-line" style="width:40%"></div></div>`).join("");
   $("trend-table").innerHTML = Array(6).fill(0).map(() =>
-    `<div class="trow"><div class="skl skl-line" style="width:32px"></div><div class="skl skl-line"></div><div class="skl skl-line"></div><div class="skl skl-line"></div></div>`).join("");
+    `<div class="trow"><div class="skl skl-line" style="width:32px"></div><div class="th skl"></div><div class="skl skl-line"></div><div class="skl skl-line"></div><div class="skl skl-line"></div></div>`).join("");
   $("cat-index").innerHTML = Array(4).fill(0).map(() => `<span class="skl skl-line" style="width:90px;display:inline-block"></span>`).join('<span class="slash">/</span>');
+  $("home-rows").innerHTML = Array(7).fill(0).map((_, i) => `
+    <section class="sec">
+      <div class="sec-head"><span class="no">${String(i + 4).padStart(2, "0")}</span>
+        <div class="skl skl-line" style="width:140px"></div><div class="skl skl-line" style="width:90px"></div></div>
+      <div class="hrow-track">${Array(12).fill(0).map(() => `<div class="rcard"><div class="rc-cover skl"></div><div class="skl skl-line" style="width:70%"></div></div>`).join("")}</div>
+    </section>`).join("");
   renderPosterSkeleton();
 }
 function renderPosterSkeleton() {
@@ -325,102 +450,262 @@ function renderPosterSkeleton() {
   $("poster-row").innerHTML = Array(+n).fill(0).map(() => `<div class="p skl"></div>`).join("");
 }
 
-/* ---------- 报头 ---------- */
-function renderMasthead(ok, fail) {
+/* ---------- 报头 + 顶栏（StickyHeader 融合：日期版次 + 数据徽章 + 主题） ---------- */
+function renderMasthead() {
   const d = new Date();
   const week = Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 864e5 + 1) / 7);
   const weekCN = "日一二三四五六"[d.getDay()];
   $("edition").innerHTML =
     `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}<br>第 ${week} 周 · 总第 1,204 期`;
-  $("data-badge").innerHTML = ok
-    ? `真实数据 · <b>${esc(SOURCES.map((s) => s.name).join("/"))}</b>${fail ? ` · ${fail} 类请求失败` : ""}`
-    : `离线演示数据（接口不可达）`;
+  $("data-badge").innerHTML = DATA.offline
+    ? `离线演示数据（接口不可达）`
+    : `真实数据 · <b>${esc(DATA.sourceName)}</b>`;
 }
 
-/* ---------- 头条：最新收录第一条 ---------- */
-function renderHeadline(items) {
-  const h = items[0];
-  if (!h) { $("headline").innerHTML = ""; return; }
-  const side = items.slice(1, 4);
-  $("headline").innerHTML = `
-    <div class="hl-text">
-      <div class="kick">今日头条 · ${esc(h.src)} 最新收录</div>
-      <h1>${esc(h.title)}</h1>
-      <p class="deck">${esc(h.content || `${h.cls || h.type} · ${h.year} 年作品，已更新至「${h.remarks || "正片"}」。本条来自项目内置 CMS 源实时接口，简介为原始 vod_content。`)}</p>
-      <div class="meta">
-        <span>${esc(h.year)}</span><span>${esc(h.type)}</span>
-        ${h.cls ? `<span>${esc(h.cls)}</span>` : ""}
-        ${h.remarks ? `<span>${esc(h.remarks)}</span>` : ""}
-        ${h.score ? `<span class="star">★ ${esc(h.score)}</span>` : ""}
-        <span>来源：${esc(h.src)}</span>
-      </div>
-      <div class="hl-actions">
-        <a class="play">▶ 立即播放</a><a class="ghost">＋ 加入待看</a><a class="ghost">查看详情</a>
-      </div>
-      <div class="hl-side-notes">${side.map((s) =>
-        `<a href="#"><b>${esc(s.title)}</b>${esc(s.remarks || s.cls || s.type)} · ${esc(s.src)}</a>`).join("")}</div>
-    </div>
-    <div class="hl-pic"><img src="${esc(h.pic)}" alt="${esc(h.title)}" loading="eager" onerror="this.remove()">
-      <div class="cap">《${esc(h.title)}》· ${esc(h.remarks || h.cls || h.type)}</div>
+/* ---------- 公告过渡带（HomeTopStrip 融合） ---------- */
+function renderTopstrip() {
+  const cnt = DATA.counts || {};
+  const labelMap = { movie: "电影", series: "剧集", variety: "综艺", anime: "动漫" };
+  const top = Object.entries(cnt).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])[0];
+  const continueCount = (DATA.continue_ || []).length;
+  const sep = '<span class="ts-sep" aria-hidden="true"></span>';
+  $("topstrip").innerHTML = `
+    <div class="ts-inner">
+      <span class="ts-crumb">公告</span>
+      ${POOL.length ? `${sep}<span class="ts-stat">今日趋势 <b>${POOL.length}</b> 条<span class="ts-info" title="Demo 口径：项目 CMS 源近 7 日收录按标题去重条数（首页真实口径为 TMDB /trending/all/day 每日趋势榜 20 条，每 6 小时更新）"> ⓘ</span></span>` : ""}
+      ${top ? `${sep}<span class="ts-stat"><span class="flame">🔥</span> 最热分类 <b>${labelMap[top[0]]}</b></span>` : ""}
+      <span class="ts-right">
+        ${continueCount > 0 ? `<span class="ts-pill">继续观看 ${continueCount}</span>` : ""}
+        ${FAVS.size > 0 ? `<span class="ts-pill">收藏 ${FAVS.size}</span>` : ""}
+        <a class="ts-more" href="#sec-trend">完整热度榜 ›</a>
+      </span>
     </div>`;
 }
 
-/* ---------- 继续观看：最新收录 2–7 条（进度为演示值） ---------- */
-function renderContinue(items) {
-  const picks = items.slice(1, 7);
-  $("cont-grid").innerHTML = picks.map((c, i) => {
+/* ---------- 头条轮播（HeroBili banner 融合：5s 自动 + 箭头 + 圆点 + 双 CTA） ---------- */
+const BANNER_N = 6, BANNER_MS = 5000;
+let bannerIdx = 0, bannerTimer = null, bannerHover = false;
+
+function renderHeadline() {
+  const pool = POOL.slice(0, BANNER_N);
+  if (!pool.length) { $("headline").innerHTML = ""; return; }
+  $("headline").innerHTML = `
+    <div class="hl-text" id="hl-text"></div>
+    <div class="hl-pic" id="hl-pic">
+      ${pool.map((h, i) => `
+        <div class="hl-slide${i === 0 ? " on" : ""}" data-slide="${i}">
+          ${pic(h, 1024)}
+          <div class="cap">《${esc(h.title)}》· ${esc(h.remarks || h.cls || "")}</div>
+        </div>`).join("")}
+      <button class="hl-arr prev" type="button" aria-label="上一条">‹</button>
+      <button class="hl-arr next" type="button" aria-label="下一条">›</button>
+      <div class="hl-dots" id="hl-dots">${pool.map((_, i) =>
+        `<button type="button" data-dot="${i}" class="${i === 0 ? "on" : ""}" aria-label="第 ${i + 1} 条"></button>`).join("")}</div>
+    </div>`;
+  setSlide(0, true);
+}
+
+function setSlide(i, force) {
+  const pool = POOL.slice(0, BANNER_N);
+  if (!pool.length) return;
+  const n = pool.length;
+  const next = ((i % n) + n) % n;
+  if (next === bannerIdx && !force) return;
+  bannerIdx = next;
+  const h = pool[bannerIdx];
+  $("hl-text").innerHTML = `
+    <div class="kick">今日头条 · ${esc(DATA.sourceName)} 最新收录</div>
+    <h1>${esc(h.title)}</h1>
+    <p class="deck">${esc(h.content || `${h.cls || "影视"} · ${h.year} 年作品${h.remarks ? "，已更新至「" + h.remarks + "」" : ""}。本条来自项目内置 CMS 源实时接口，简介为原始 vod_content。`)}</p>
+    <div class="meta">
+      <span>${esc(h.year)}</span><span>${esc(h.cls || "")}</span>
+      ${h.remarks ? `<span>${esc(h.remarks)}</span>` : ""}
+      ${h.score ? `<span class="star">★ ${esc(h.score)}</span>` : ""}
+      <span>来源：${esc(DATA.sourceName)}</span>
+    </div>
+    <div class="hl-actions">
+      <a class="play">▶ 立即播放</a><a class="ghost">＋ 加入待看</a><a class="ghost">查看详情</a>
+    </div>`;
+  document.querySelectorAll(".hl-slide").forEach((el) =>
+    el.classList.toggle("on", +el.dataset.slide === bannerIdx));
+  document.querySelectorAll("#hl-dots button").forEach((el) =>
+    el.classList.toggle("on", +el.dataset.dot === bannerIdx));
+}
+
+function bannerStep(dir) { setSlide(bannerIdx + dir); restartBanner(); }
+function restartBanner() {
+  clearInterval(bannerTimer);
+  bannerTimer = setInterval(() => {
+    if (bannerHover || document.hidden) return;
+    setSlide(bannerIdx + 1);
+  }, BANNER_MS);
+}
+function initCarousel() {
+  const hl = $("headline");
+  hl.addEventListener("click", (e) => {
+    if (e.target.closest(".hl-arr.prev")) return bannerStep(-1);
+    if (e.target.closest(".hl-arr.next")) return bannerStep(1);
+    const dot = e.target.closest("[data-dot]");
+    if (dot) { setSlide(+dot.dataset.dot); restartBanner(); }
+  });
+  hl.addEventListener("mouseenter", () => { bannerHover = true; });
+  hl.addEventListener("mouseleave", () => { bannerHover = false; });
+  restartBanner();
+}
+
+/* ---------- 图片索引条（HeroSideCard 融合：16:9 × 6 + 收藏心 + 换一换） ---------- */
+const SIDE_N = 6;
+function renderSide() {
+  const cards = Array.from({ length: SIDE_N }, (_, i) => SIDE_POOL[(SIDE_OFF + i) % SIDE_POOL.length]).filter(Boolean);
+  $("hl-side-track").innerHTML = cards.map((it) => {
+    const faved = FAVS.has(String(it.id));
+    return `
+    <div class="hl-card">
+      <div class="cov">${pic(it, 640, `<span class="noimg">${esc((it.title || "?").slice(0, 1))}</span>`)}
+        <button class="fav${faved ? " on" : ""}" type="button" data-fav="${esc(it.id)}" aria-label="收藏">${faved ? "♥" : "♡"}</button>
+      </div>
+      <h5>${esc(it.title)}</h5>
+      <p>${esc(it.cls || "影视")} · ${esc(it.year)}${it.remarks ? " · " + esc(it.remarks) : ""}</p>
+    </div>`;
+  }).join("");
+  window.kinoBindPics($("hl-side-track"));
+}
+function initSide() {
+  $("shuffle").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    if (btn.classList.contains("spinning")) return;          // 动画锁 0.6s 防抖（对齐 HeroBili）
+    btn.classList.add("spinning");
+    setTimeout(() => btn.classList.remove("spinning"), 600);
+    const track = $("hl-side-track");
+    track.classList.add("fading");
+    setTimeout(() => {
+      SIDE_OFF = (SIDE_OFF + SIDE_N) % Math.max(SIDE_POOL.length, 1);
+      renderSide();
+      track.classList.remove("fading");
+    }, 300);
+  });
+  $("hl-side-track").addEventListener("click", (e) => {
+    const f = e.target.closest("[data-fav]");
+    if (!f) return;
+    e.stopPropagation();
+    const id = f.dataset.fav;
+    FAVS.has(id) ? FAVS.delete(id) : FAVS.add(id);
+    favSave();
+    f.classList.toggle("on", FAVS.has(id));
+    f.textContent = FAVS.has(id) ? "♥" : "♡";
+    renderTopstrip();
+  });
+}
+
+/* ---------- 01 继续观看（进度为演示值，与原口径一致） ---------- */
+function renderContinue() {
+  const picks = (DATA.continue_ || []).slice(0, 6);
+  $("cont-grid").innerHTML = picks.map((c) => {
     const prog = 20 + (hash(c.title) % 70);
     return `
     <div class="cont-cell">
-      <div class="th"><img src="${esc(c.pic)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
-        <span class="time">${esc(c.remarks || c.cls || c.type)}</span></div>
+      <div class="th">${pic(c, 480)}
+        <span class="time">${esc(c.remarks || c.cls || "HD")}</span></div>
       <div class="prog"><b style="width:${prog}%"></b></div>
-      <h4>${esc(c.title)}</h4><p>${esc(c.cls || c.type)} · ${esc(c.year)} · ${esc(c.src)}</p>
+      <h4>${esc(c.title)}</h4><p>${esc(c.cls || "")} · ${esc(c.year)} · ${esc(DATA.sourceName)}</p>
     </div>`;
   }).join("");
 }
 
-/* ---------- 分类索引：真实 total 求和 ---------- */
-function renderCategories(totals) {
+/* ---------- 02 分类索引（真实 total 求和，融合窄屏分类快捷入口） ---------- */
+function renderCategories() {
+  const c = DATA.counts || {};
   const cats = [
-    { name: "电影", n: totals[1] }, { name: "剧集", n: totals[2] },
-    { name: "综艺", n: totals[3] }, { name: "动漫", n: totals[4] }
+    { name: "电影", n: c.movie || 0 }, { name: "剧集", n: c.series || 0 },
+    { name: "综艺", n: c.variety || 0 }, { name: "动漫", n: c.anime || 0 }
   ];
-  $("cat-index").innerHTML = cats.map((c, i) =>
-    `${i ? '<span class="slash">/</span>' : ""}<a href="#">${esc(c.name)}<span class="n">${c.n.toLocaleString()} 部真实收录</span></a>`).join("")
+  $("cat-index").innerHTML = cats.map((x, i) =>
+    `${i ? '<span class="slash">/</span>' : ""}<a href="#">${esc(x.name)}<span class="n">${x.n.toLocaleString()} 部真实收录</span></a>`).join("")
     + '<span class="slash">/</span><a href="#">IPTV 直播<span class="n">126 频道（演示）</span></a>';
 }
 
-/* ---------- 趋势表：最新收录前 10（热度演示值，由标题哈希稳定生成） ---------- */
-function renderTrend(items) {
-  $("trend-table").innerHTML = items.slice(0, 10).map((t, i) => {
-    const heat = (98.4 - i * 1.8 - (hash(t.title) % 10) / 10).toFixed(1);
+/* ---------- 03 本周新声（融合左栏 rail 今日趋势 TOP20：海报 + 热度 + 升降，双栏报刊排） ---------- */
+function renderTrend() {
+  const pool = uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL]).slice(0, 20);
+  $("trend-table").innerHTML = pool.map((t, i) => {
+    const heat = (98.4 - i * 1.1 - (hash(t.title) % 10) / 10).toFixed(1);
     const dv = (hash(t.title) % 7) - 3;
     const delta = dv > 0 ? `↑ ${dv} 位` : dv < 0 ? `↓ ${-dv} 位` : "— 持平";
     return `<div class="trow">
       <span class="rank">${i + 1}</span>
-      <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || t.type)} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
+      <div class="th">${pic(t, 154)}</div>
+      <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || "影视")} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
       <span class="heat">${heat}</span>
       <span class="delta${dv < 0 ? " down" : ""}">${delta}</span>
     </div>`;
   }).join("");
 }
 
-/* ---------- 推荐区：真实分类数据 + tab 切换 ---------- */
-let recTab = "全部", DATA = null;
-const TYPE_KEY = { "电影": 1, "剧集": 2, "综艺": 3, "动漫": 4 };
+/* ---------- 04–10 七行横滚（首页 .home-rows 同序同标题：横滚 + 分页箭头） ---------- */
+function renderRows() {
+  $("home-rows").innerHTML = DATA.rows.map((r, i) => `
+    <section class="sec">
+      <div class="sec-head">
+        <span class="no">${String(i + 4).padStart(2, "0")}</span><h2>${esc(r.title)}</h2>
+        <span class="sub">${esc(r.en || "")} · ${r.items.length} 条真实收录</span>
+        <a class="more" href="#">更多 →</a>
+      </div>
+      <div class="hrow-wrap">
+        <button class="hrw-arrow left" type="button" aria-label="上一页" disabled>‹</button>
+        <div class="hrow-track" data-track>
+          ${r.items.map((it) => `
+            <div class="rcard">
+              <div class="rc-cover">${pic(it, 342)}<span class="sc">${esc(it.remarks || it.score || it.year)}</span></div>
+              <h4>${esc(it.title)}</h4>
+              <p>${esc(it.cls || "影视")}${it.year ? " · " + esc(it.year) : ""}</p>
+            </div>`).join("")}
+        </div>
+        <button class="hrw-arrow right" type="button" aria-label="下一页">›</button>
+      </div>
+    </section>`).join("");
+  window.kinoBindPics($("home-rows"));
+  initRowScroll();
+}
+
+function initRowScroll() {
+  document.querySelectorAll(".hrow-wrap").forEach((wrap) => {
+    const track = wrap.querySelector("[data-track]");
+    const prev = wrap.querySelector(".hrw-arrow.left");
+    const next = wrap.querySelector(".hrw-arrow.right");
+    const sync = () => {
+      prev.disabled = track.scrollLeft <= 4;
+      next.disabled = track.scrollLeft >= track.scrollWidth - track.clientWidth - 4;
+    };
+    const page = (dir) => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: "smooth" });
+    prev.addEventListener("click", () => page(-1));
+    next.addEventListener("click", () => page(1));
+    track.addEventListener("scroll", sync, { passive: true });
+    sync();
+  });
+}
+
+/* ---------- 11 为你推荐（tabs 聚合 7 行池 + 海报行） ---------- */
+const TABS = ["全部", "电影", "剧集", "高分", "最新"];
+const TAB_POOL = {
+  "全部": () => POOL,
+  "电影": () => uniq(DATA.rows.filter((r) => ["now", "hotmovie", "scoremovie", "soon"].includes(r.key)).flatMap((r) => r.items)),
+  "剧集": () => uniq(DATA.rows.filter((r) => ["hotseries", "scoreseries"].includes(r.key)).flatMap((r) => r.items)),
+  "高分": () => POOL.filter((x) => +x.score > 0).sort((a, b) => +b.score - +a.score),
+  "最新": () => DATA.rows.find((r) => r.key === "today")?.items || [],
+};
 function renderRecTabs() {
-  $("rec-tabs").innerHTML = ["全部", "电影", "剧集", "综艺", "动漫"].map((t) =>
+  $("rec-tabs").innerHTML = TABS.map((t) =>
     `<a class="${t === recTab ? "on" : ""}" data-tab="${esc(t)}">${esc(t)}</a>`).join("");
 }
 function renderRecRow() {
   const n = +(getComputedStyle(document.documentElement).getPropertyValue("--poster-n").trim() || 6);
-  const pool = recTab === "全部" ? DATA.latest : DATA.byType[TYPE_KEY[recTab]];
+  const pool = (TAB_POOL[recTab] || TAB_POOL["全部"])();
   $("poster-row").innerHTML = pool.slice(0, n).map((it) => `
-    <div class="p"><img src="${esc(it.pic)}" alt="${esc(it.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+    <div class="p">${pic(it, 342)}
       <span class="sc">${esc(it.remarks || it.score || it.year)}</span>
-      <div class="lab"><h4>${esc(it.title)}</h4><p>${esc(it.cls || it.type)} · ${esc(it.year)} · ${esc(it.src)}</p></div>
+      <div class="lab"><h4>${esc(it.title)}</h4><p>${esc(it.cls || "影视")} · ${esc(it.year)} · ${esc(DATA.sourceName)}</p></div>
     </div>`).join("");
+  window.kinoBindPics($("poster-row"));
 }
 function initRecTabs() {
   $("rec-tabs").addEventListener("click", (e) => {
@@ -434,47 +719,81 @@ function initRecTabs() {
   });
 }
 
-/* ---------- 离线兜底（接口全部不可达时） ---------- */
-const FALLBACK = {
-  latest: Array.from({ length: 10 }, (_, i) => ({
-    title: "演示条目 " + (i + 1), pic: "", type: "剧集", year: "2026",
-    remarks: "更新至第 " + (i + 3) + " 集", cls: "演示", score: null, src: "离线", content: ""
-  }))
-};
-function useFallback() { DATA = { latest: FALLBACK.latest, byType: { 1: [], 2: [], 3: [], 4: [] } }; }
+/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新，滚动 >280 显示） ---------- */
+function initFab() {
+  let hideT = null;
+  addEventListener("scroll", () => {
+    const fab = $("fab");
+    clearTimeout(hideT);
+    if (scrollY > 280) {
+      fab.classList.remove("on");                       // 滚动中淡出
+      hideT = setTimeout(() => fab.classList.add("on"), 800);   // 停止 800ms 后淡入（首页同口径）
+    } else fab.classList.remove("on");
+  }, { passive: true });
+  $("fab-top").addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
+  $("fab-refresh").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.classList.add("spinning");
+    await boot(false);
+    setTimeout(() => btn.classList.remove("spinning"), 700);
+  });
+}
 
-/* ---------- 启动 ---------- */
-(async () => {
-  renderSkeletons();
+/* ---------- 夜刊主题切换（StickyHeader 主题按钮融合） ---------- */
+function initTheme() {
+  const btn = $("theme-btn");
+  const sync = () => { btn.textContent = document.documentElement.getAttribute("data-theme") === "night" ? "日刊" : "夜刊"; };
+  btn.addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "night" ? "day" : "night";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("kino-demo-theme", next); } catch (e) { /* ignore */ }
+    sync();
+  });
+  sync();
+}
+
+/* ---------- 渲染总装 ---------- */
+function renderAll() {
+  renderMasthead();
+  renderTopstrip();
+  renderHeadline();
+  renderSide();
+  renderContinue();
+  renderCategories();
+  renderTrend();
+  renderRows();
   renderRecTabs();
+  renderRecRow();
+}
+
+/* ---------- 启动（kinoLoad 永不 reject，内部已带离线兜底） ---------- */
+async function boot(skeleton) {
+  if (skeleton) renderSkeletons();
   try {
-    DATA = await fetchAll();
-    if (!DATA.latest.length) throw new Error("empty");
-    renderMasthead(true);
-    renderHeadline(DATA.latest);
-    renderContinue(DATA.latest);
-    renderTrend(DATA.latest);
-    renderRecRow();
-    // 分类计数：单独拉 total（轻量，两源 × 4 类）
-    Promise.all([1, 2, 3, 4].flatMap((t) => SOURCES.map(async (s) => {
-      try { return { t, total: (await cms(s.api, { ac: "videolist", t, pg: 1 })).total || 0 }; }
-      catch { return { t, total: 0 }; }
-    }))).then((rs) => {
-      const sum = {};
-      rs.forEach(({ t, total }) => { sum[t] = (sum[t] || 0) + total; });
-      renderCategories(sum);
-    });
+    DATA = await window.kinoLoad();
   } catch (e) {
-    useFallback();
-    renderMasthead(false);
-    renderHeadline(DATA.latest);
-    renderContinue(DATA.latest);
-    renderTrend(DATA.latest);
-    renderRecRow();
-    renderCategories({ 1: 0, 2: 0, 3: 0, 4: 0 });
+    DATA = { offline: true, sourceName: "离线", featured: { title: "演示条目" }, heroSide: [], continue_: [], rows: [], counts: {} };
   }
-  initRecTabs();
-})();
+  const all = DATA.rows.flatMap((r) => r.items);
+  POOL = uniq([DATA.featured, ...(DATA.heroSide || []), ...(DATA.continue_ || []), ...all]);
+  SIDE_POOL = POOL.slice(6, 42);
+  // 收藏种子（演示值，让「收藏 N」pill 首次即可评审到形态）
+  if (SIDE_POOL.length && !FAVS.size && !localStorage.getItem("kino-demo-fav-seeded")) {
+    SIDE_POOL.slice(0, 2).forEach((x) => FAVS.add(String(x.id)));
+    favSave();
+    try { localStorage.setItem("kino-demo-fav-seeded", "1"); } catch (e) { /* ignore */ }
+  }
+  renderAll();
+  window.kinoBindPics(document);
+}
+
+/* 事件绑定挂静态容器（与数据无关），启动即挂；renderAll 只换 innerHTML */
+initCarousel();
+initSide();
+initRecTabs();
+initFab();
+initTheme();
+boot(true);
 </script>
 <script id="xdev-js">
 (function(){
