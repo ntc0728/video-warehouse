@@ -12,14 +12,15 @@
      豆瓣资源 dbzy5 / 茅台资源 maotaizy，浏览器直连 + weserv 缩图链路）
    - 首页元素融合映射（结构照搬、皮肤换报刊）：
      ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 搜索 + 主题）
-     ② HomeTopStrip 公告带 → .topstrip（公告/今日趋势N/最热分类/继续观看·收藏 pill/完整热度榜›）
-     ③ HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA）
-     ④ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换）
-     ⑤ rail 今日趋势 TOP20 → 03 本周新声（TOP20 + 缩略海报 + 热度/升降）
-     ⑥ 继续观看行           → 01 继续观看（进度条格）
-     ⑦ 7 行横滚             → 04–10 七行（分区编号 + 横滚 + 分页箭头）
-     ⑧ 分类快捷入口         → 02 分类索引（真实 total）
-     ⑨ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
+      ② HomeTopStrip 公告带 → .topstrip（公告/今日趋势N/最热分类/继续观看·收藏 pill/今日趋势榜›）
+      ③ HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA）
+      ④ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换）
+      ⑤ rail 今日趋势榜     → 02 今日趋势榜（10 条 + 缩略海报 + 热度，与公告带同名同物）
+      ⑥ 继续观看行           → 01 继续观看（进度条格，--cont-n 单行截断）
+      ⑦ 7 行横滚             → 03–09 七行（分区编号 + 横滚 + 分页箭头）
+      ⑧ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」+ 公告带 pill
+      ⑨ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
+      ⑩ 分类真实 total 计数 → footer 行内「收录统计」（区块降级，见 2026-09-29 精简评审）
    - 全模块零卡片；大屏规则沿用：首屏预算制 / hero ≤48vh / 列数梯度 / 封顶 2200
    - 演示值口径不变：播放进度 / 热度值 / 收藏种子为演示；标题/海报/简介/计数为真实
    ============================================================ */
@@ -168,17 +169,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- 分类索引（融合窄屏分类快捷入口：真实 total 计数） ---------- */
-.cat-index{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:clamp(8px,1.4vh,14px);
-  font-family:var(--serif);font-size:clamp(15px,1.2vw,24px);font-weight:900}
-.cat-index a{transition:.2s;white-space:nowrap}
-.cat-index a:hover{color:var(--accent)}
-.cat-index .n{font-family:var(--sans);font-weight:500;font-size:clamp(11px,.72vw,13px);color:var(--ink-3);margin-left:6px;vertical-align:baseline}
-.cat-index .slash{color:var(--rule);margin:0 clamp(10px,1vw,20px);font-weight:400}
-
-/* ---------- 趋势表格（融合左栏 rail 今日趋势 TOP20：排名 + 海报 + 热度 + 升降） ---------- */
+/* ---------- 趋势表格（融合左栏 rail 今日趋势：排名 + 海报 + 热度，10 条报刊双栏） ---------- */
 .trend-table{border-top:2px solid var(--ink)}
-.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(34px,2.6vw,46px) minmax(0,1fr) clamp(110px,9vw,180px) clamp(100px,8vw,160px);
+.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(34px,2.6vw,46px) minmax(0,1fr) clamp(110px,9vw,180px);
   gap:clamp(12px,1.2vw,24px);align-items:center;padding:clamp(9px,1.2vh,15px) 4px;
   border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s}
 .trow:hover{background:var(--band)}
@@ -192,11 +185,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .trow .ti span{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .trow .heat{text-align:right;font-size:clamp(13px,.9vw,16px);font-weight:800}
-.trow .delta{text-align:right;font-size:clamp(11.5px,.76vw,13px);color:#1c7a44}
-.trow .delta.down{color:var(--accent)}
-html[data-theme="night"] .trow .delta{color:#5cba85}
 @media (width>=1440px){
-  .trend-table{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(10,auto);
+  .trend-table{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(5,auto);
     column-gap:clamp(28px,3vw,64px);border-top:2px solid var(--ink)}
 }
 
@@ -228,28 +218,6 @@ html[data-theme="night"] .trow .delta{color:#5cba85}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rcard p{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* ---------- 推荐区（融合首页行卡形态：tabs 聚合 + 海报行） ---------- */
-.rec-tabs{display:flex;gap:clamp(14px,1.4vw,28px);margin-bottom:clamp(12px,1.8vh,20px);flex-wrap:wrap}
-.rec-tabs a{font-size:clamp(13px,.9vw,16px);color:var(--ink-2);padding-bottom:4px;border-bottom:2px solid transparent;cursor:pointer;transition:.2s}
-.rec-tabs a.on{color:var(--ink);font-weight:800;border-bottom-color:var(--accent)}
-.rec-tabs a:hover{color:var(--ink)}
-.poster-row{display:grid;grid-auto-flow:column;
-  grid-auto-columns:calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));gap:var(--gap);
-  transition:opacity .25s}
-.poster-row.fading{opacity:0}
-.poster-row .p{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);cursor:pointer;background:var(--fill)}
-.poster-row .p .kpic{position:absolute;inset:0}
-.poster-row .p .kpic img{transition:transform .5s}
-.poster-row .p:hover .kpic img{transform:scale(1.05)}
-.poster-row .p .lab{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:40px 11px 9px;color:#fff;
-  background:linear-gradient(180deg,transparent,rgba(12,12,14,.85));opacity:0;transition:.3s}
-.poster-row .p:hover .lab{opacity:1}
-.poster-row .p .lab h4{font-size:clamp(12.5px,.88vw,15.5px);font-weight:700}
-.poster-row .p .lab p{font-size:clamp(10.5px,.68vw,12px);opacity:.75}
-.poster-row .p .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);z-index:2;
-  font-size:clamp(10.5px,.7vw,12px);font-weight:800;
-  background:#fff;color:#141416;padding:2px 7px;border-radius:4px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- 图片容器（_data.js kinoBindPics：IO 懒渲染 + 淡入 + 占位） ---------- */
 .kpic{position:relative;overflow:hidden;background:var(--fill)}
@@ -285,12 +253,11 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
   .headline{grid-template-columns:1fr;height:auto}
   .hl-pic{aspect-ratio:16/9}
   .hl-side-track{overflow-x:auto;grid-auto-columns:minmax(150px,38%)}
-  .trow .delta{display:none}
 }
 @media (width<=767px){
   .hl-side-track{grid-auto-columns:minmax(132px,46%)}
   .trend-table{display:block}
-  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr) clamp(72px,17vw,110px)}
+  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr)}
   .trow .heat{display:none}
 }
 </style>
@@ -355,39 +322,21 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
     <div class="cont-grid" id="cont-grid"></div>
   </section>
 
-  <!-- 02 分类索引（窄屏分类快捷入口 · 真实 total） -->
-  <section class="sec">
-    <div class="sec-head">
-      <span class="no">02</span><h2>分类索引</h2><span class="sub" id="cat-sub">真实收录统计</span>
-      <a class="more" href="#">管理分类 →</a>
-    </div>
-    <nav class="cat-index" id="cat-index"></nav>
-  </section>
-
-  <!-- 03 本周新声（左栏 rail 今日趋势 TOP20 · 报刊双栏表） -->
+  <!-- 02 今日趋势榜（左栏 rail 趋势榜 · 报刊双栏 10 条，与公告带「今日趋势榜」同名同物） -->
   <section class="sec" id="sec-trend">
     <div class="sec-head">
-      <span class="no">03</span><h2>本周新声</h2><span class="sub">今日趋势 TOP20 · 近 7 日真实收录 · 热度/升降为演示值</span>
+      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub">近 7 日真实收录 10 条 · 热度为演示值</span>
       <a class="more" href="#">完整榜单 →</a>
     </div>
     <div class="trend-table" id="trend-table"></div>
   </section>
 
-  <!-- 04–10 七行横滚（首页 .home-rows 同标题同序） -->
+  <!-- 03–09 七行横滚（首页 .home-rows 同序） -->
   <div id="home-rows"></div>
 
-  <!-- 11 为你推荐（tabs 聚合 + 海报行） -->
-  <section class="sec">
-    <div class="sec-head">
-      <span class="no">11</span><h2>为你推荐</h2><span class="sub">真实片库跨行聚合抽取</span>
-      <a class="more" href="#">更多 →</a>
-    </div>
-    <div class="rec-tabs" id="rec-tabs"></div>
-    <div class="poster-row" id="poster-row"></div>
-  </section>
-
   <footer>
-    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏/公告带/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/分类索引/FAB）；数据经 demos/_data.js（豆瓣资源 dbzy5 / 茅台资源 maotaizy 浏览器直连）；进度与热度为演示值</span>
+    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏/公告带/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据经 demos/_data.js（豆瓣资源 dbzy5 / 茅台资源 maotaizy 浏览器直连）；进度与热度为演示值</span>
+    <span id="foot-stats"></span>
     <span>仅供风格评审</span>
   </footer>
 
@@ -413,7 +362,6 @@ const uniq = (arr) => { const s = new Set(); return arr.filter((x) => x && x.tit
 const pic = (it, w, inner) => `<div class="kpic" data-raw="${esc(it.pic)}" data-w="${w}" data-alt="${esc(it.title)}">${inner || ""}</div>`;
 
 let DATA = null, POOL = [], SIDE_POOL = [], SIDE_OFF = 0;
-let recTab = "全部";
 
 /* ---------- 收藏（融合 HeroSideCard 收藏心：localStorage 持久 + 顶栏 pill 联动） ---------- */
 const FAV_KEY = "kino-demo-favs";
@@ -435,19 +383,13 @@ function renderSkeletons() {
   $("cont-grid").innerHTML = Array(4).fill(0).map(() =>
     `<div class="cont-cell"><div class="th skl"></div><div class="skl skl-line" style="width:60%"></div><div class="skl skl-line" style="width:40%"></div></div>`).join("");
   $("trend-table").innerHTML = Array(6).fill(0).map(() =>
-    `<div class="trow"><div class="skl skl-line" style="width:32px"></div><div class="th skl"></div><div class="skl skl-line"></div><div class="skl skl-line"></div><div class="skl skl-line"></div></div>`).join("");
-  $("cat-index").innerHTML = Array(4).fill(0).map(() => `<span class="skl skl-line" style="width:90px;display:inline-block"></span>`).join('<span class="slash">/</span>');
+    `<div class="trow"><div class="skl skl-line" style="width:32px"></div><div class="th skl"></div><div class="skl skl-line"></div><div class="skl skl-line"></div></div>`).join("");
   $("home-rows").innerHTML = Array(7).fill(0).map((_, i) => `
     <section class="sec">
-      <div class="sec-head"><span class="no">${String(i + 4).padStart(2, "0")}</span>
+      <div class="sec-head"><span class="no">${String(i + 3).padStart(2, "0")}</span>
         <div class="skl skl-line" style="width:140px"></div><div class="skl skl-line" style="width:90px"></div></div>
       <div class="hrow-track">${Array(12).fill(0).map(() => `<div class="rcard"><div class="rc-cover skl"></div><div class="skl skl-line" style="width:70%"></div></div>`).join("")}</div>
     </section>`).join("");
-  renderPosterSkeleton();
-}
-function renderPosterSkeleton() {
-  const n = getComputedStyle(document.documentElement).getPropertyValue("--poster-n").trim() || 6;
-  $("poster-row").innerHTML = Array(+n).fill(0).map(() => `<div class="p skl"></div>`).join("");
 }
 
 /* ---------- 报头 + 顶栏（StickyHeader 融合：日期版次 + 数据徽章 + 主题） ---------- */
@@ -477,7 +419,7 @@ function renderTopstrip() {
       <span class="ts-right">
         ${continueCount > 0 ? `<span class="ts-pill">继续观看 ${continueCount}</span>` : ""}
         ${FAVS.size > 0 ? `<span class="ts-pill">收藏 ${FAVS.size}</span>` : ""}
-        <a class="ts-more" href="#sec-trend">完整热度榜 ›</a>
+        <a class="ts-more" href="#sec-trend">今日趋势榜 ›</a>
       </span>
     </div>`;
 }
@@ -524,7 +466,9 @@ function setSlide(i, force) {
       <span>来源：${esc(DATA.sourceName)}</span>
     </div>
     <div class="hl-actions">
-      <a class="play">▶ 立即播放</a><a class="ghost">＋ 加入待看</a><a class="ghost">查看详情</a>
+      <a class="play">▶ 立即播放</a>
+      <a class="ghost" data-fav-hero="${esc(h.id)}">${FAVS.has(String(h.id)) ? "♥ 已收藏" : "＋ 收藏"}</a>
+      <a class="ghost">查看详情</a>
     </div>`;
   document.querySelectorAll(".hl-slide").forEach((el) =>
     el.classList.toggle("on", +el.dataset.slide === bannerIdx));
@@ -545,6 +489,15 @@ function initCarousel() {
   hl.addEventListener("click", (e) => {
     if (e.target.closest(".hl-arr.prev")) return bannerStep(-1);
     if (e.target.closest(".hl-arr.next")) return bannerStep(1);
+    const fh = e.target.closest("[data-fav-hero]");
+    if (fh) {
+      const id = String(fh.dataset.favHero);
+      FAVS.has(id) ? FAVS.delete(id) : FAVS.add(id);
+      favSave();
+      fh.textContent = FAVS.has(id) ? "♥ 已收藏" : "＋ 收藏";
+      renderTopstrip();
+      return;
+    }
     const dot = e.target.closest("[data-dot]");
     if (dot) { setSlide(+dot.dataset.dot); restartBanner(); }
   });
@@ -599,7 +552,8 @@ function initSide() {
 
 /* ---------- 01 继续观看（进度为演示值，与原口径一致） ---------- */
 function renderContinue() {
-  const picks = (DATA.continue_ || []).slice(0, 6);
+  const n = +(getComputedStyle(document.documentElement).getPropertyValue("--cont-n").trim() || 4);
+  const picks = (DATA.continue_ || []).slice(0, n);
   $("cont-grid").innerHTML = picks.map((c) => {
     const prog = 20 + (hash(c.title) % 70);
     return `
@@ -612,41 +566,35 @@ function renderContinue() {
   }).join("");
 }
 
-/* ---------- 02 分类索引（真实 total 求和，融合窄屏分类快捷入口） ---------- */
-function renderCategories() {
+/* ---------- 收录统计（footer 行内降级版分类计数：真实 total） ---------- */
+function renderFootStats() {
   const c = DATA.counts || {};
-  const cats = [
-    { name: "电影", n: c.movie || 0 }, { name: "剧集", n: c.series || 0 },
-    { name: "综艺", n: c.variety || 0 }, { name: "动漫", n: c.anime || 0 }
-  ];
-  $("cat-index").innerHTML = cats.map((x, i) =>
-    `${i ? '<span class="slash">/</span>' : ""}<a href="#">${esc(x.name)}<span class="n">${x.n.toLocaleString()} 部真实收录</span></a>`).join("")
-    + '<span class="slash">/</span><a href="#">IPTV 直播<span class="n">126 频道（演示）</span></a>';
+  const L = { movie: "电影", series: "剧集", variety: "综艺", anime: "动漫" };
+  $("foot-stats").innerHTML = DATA.offline
+    ? "收录统计 —"
+    : `收录统计 · ${Object.entries(c).map(([k, v]) => `${L[k] || k} ${(+v || 0).toLocaleString()}`).join(" · ")}`;
 }
 
-/* ---------- 03 本周新声（融合左栏 rail 今日趋势 TOP20：海报 + 热度 + 升降，双栏报刊排） ---------- */
+/* ---------- 02 今日趋势榜（融合左栏 rail 趋势榜：海报 + 热度，10 条报刊双栏） ---------- */
 function renderTrend() {
-  const pool = uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL]).slice(0, 20);
+  const pool = uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL]).slice(0, 10);
   $("trend-table").innerHTML = pool.map((t, i) => {
     const heat = (98.4 - i * 1.1 - (hash(t.title) % 10) / 10).toFixed(1);
-    const dv = (hash(t.title) % 7) - 3;
-    const delta = dv > 0 ? `↑ ${dv} 位` : dv < 0 ? `↓ ${-dv} 位` : "— 持平";
     return `<div class="trow">
       <span class="rank">${i + 1}</span>
       <div class="th">${pic(t, 154)}</div>
       <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || "影视")} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
       <span class="heat">${heat}</span>
-      <span class="delta${dv < 0 ? " down" : ""}">${delta}</span>
     </div>`;
   }).join("");
 }
 
-/* ---------- 04–10 七行横滚（首页 .home-rows 同序同标题：横滚 + 分页箭头） ---------- */
+/* ---------- 03–09 七行横滚（首页 .home-rows 同序同标题：横滚 + 分页箭头） ---------- */
 function renderRows() {
   $("home-rows").innerHTML = DATA.rows.map((r, i) => `
     <section class="sec">
       <div class="sec-head">
-        <span class="no">${String(i + 4).padStart(2, "0")}</span><h2>${esc(r.title)}</h2>
+        <span class="no">${String(i + 3).padStart(2, "0")}</span><h2>${esc(r.title)}</h2>
         <span class="sub">${esc(r.en || "")} · ${r.items.length} 条真实收录</span>
         <a class="more" href="#">更多 →</a>
       </div>
@@ -681,41 +629,6 @@ function initRowScroll() {
     next.addEventListener("click", () => page(1));
     track.addEventListener("scroll", sync, { passive: true });
     sync();
-  });
-}
-
-/* ---------- 11 为你推荐（tabs 聚合 7 行池 + 海报行） ---------- */
-const TABS = ["全部", "电影", "剧集", "高分", "最新"];
-const TAB_POOL = {
-  "全部": () => POOL,
-  "电影": () => uniq(DATA.rows.filter((r) => ["now", "hotmovie", "scoremovie", "soon"].includes(r.key)).flatMap((r) => r.items)),
-  "剧集": () => uniq(DATA.rows.filter((r) => ["hotseries", "scoreseries"].includes(r.key)).flatMap((r) => r.items)),
-  "高分": () => POOL.filter((x) => +x.score > 0).sort((a, b) => +b.score - +a.score),
-  "最新": () => DATA.rows.find((r) => r.key === "today")?.items || [],
-};
-function renderRecTabs() {
-  $("rec-tabs").innerHTML = TABS.map((t) =>
-    `<a class="${t === recTab ? "on" : ""}" data-tab="${esc(t)}">${esc(t)}</a>`).join("");
-}
-function renderRecRow() {
-  const n = +(getComputedStyle(document.documentElement).getPropertyValue("--poster-n").trim() || 6);
-  const pool = (TAB_POOL[recTab] || TAB_POOL["全部"])();
-  $("poster-row").innerHTML = pool.slice(0, n).map((it) => `
-    <div class="p">${pic(it, 342)}
-      <span class="sc">${esc(it.remarks || it.score || it.year)}</span>
-      <div class="lab"><h4>${esc(it.title)}</h4><p>${esc(it.cls || "影视")} · ${esc(it.year)} · ${esc(DATA.sourceName)}</p></div>
-    </div>`).join("");
-  window.kinoBindPics($("poster-row"));
-}
-function initRecTabs() {
-  $("rec-tabs").addEventListener("click", (e) => {
-    const a = e.target.closest("[data-tab]");
-    if (!a || a.dataset.tab === recTab) return;
-    recTab = a.dataset.tab;
-    renderRecTabs();
-    const row = $("poster-row");
-    row.classList.add("fading");
-    setTimeout(() => { renderRecRow(); row.classList.remove("fading"); }, 250);
   });
 }
 
@@ -759,11 +672,9 @@ function renderAll() {
   renderHeadline();
   renderSide();
   renderContinue();
-  renderCategories();
+  renderFootStats();
   renderTrend();
   renderRows();
-  renderRecTabs();
-  renderRecRow();
 }
 
 /* ---------- 启动（kinoLoad 永不 reject，内部已带离线兜底） ---------- */
@@ -790,7 +701,6 @@ async function boot(skeleton) {
 /* 事件绑定挂静态容器（与数据无关），启动即挂；renderAll 只换 innerHTML */
 initCarousel();
 initSide();
-initRecTabs();
 initFab();
 initTheme();
 boot(true);
