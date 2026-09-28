@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.29.0...kinotv-v1.29.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **searchbox:** iOS web 点搜索框聚焦局部放大——mobile-web 字号抬回 16px ([78ce6e2](https://github.com/ntc0728/video-warehouse/commit/78ce6e2639c517d60fdda398336cb9944bcd37fe))
+
 ## [1.29.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.28.0...kinotv-v1.29.0) (2026-09-24)
 
 
