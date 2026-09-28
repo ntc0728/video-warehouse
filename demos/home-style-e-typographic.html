@@ -33,9 +33,12 @@
   --serif:"Noto Serif SC","Source Han Serif SC","STSong",serif;
   --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   --content-max:2200px;
-  --pad-x:clamp(16px,2.4vw,44px); --gap:clamp(12px,1vw,20px);
+  /* 左右留白对齐项目 --page-pad-x：768–1439 = --space-lg 公式；≥1440 见下方分档；<768 见移动端覆盖 */
+  --pad-x:clamp(12px, 9.77385px + 0.59364vw, 14.333px);
+  --gap:clamp(12px,1vw,20px);
   --poster-n:6; --cont-n:4;
 }
+@media (width<768px){ :root{--pad-x:clamp(6px, 5.04581px + 0.25445vw, 7px)} }   /* 项目 --space-sm 档 */
 /* 夜刊模式（顶栏「夜刊」按钮切换，演示用日/夜双刊形态） */
 html[data-theme="night"]{
   --paper:#16161a; --ink:#f2efe8; --ink-2:#b5b2aa; --ink-3:#7b7873;
@@ -305,14 +308,14 @@ html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparen
 .booting #foot-stats::before{content:"";display:inline-block;width:200px;height:13px;
   background:var(--fill);border-radius:4px;vertical-align:-2px}
 
-/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新） ---------- */
-.fab{position:fixed;right:clamp(14px,1.6vw,28px);bottom:clamp(14px,2vh,26px);z-index:9000;
-  display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.28s}
+/* ---------- FAB（融合 BackToTopButton + fab-stack：回顶 + 刷新，右下留出呼吸边距） ---------- */
+.fab{position:fixed;right:clamp(24px,2.6vw,48px);bottom:clamp(28px,3.6vh,52px);z-index:9000;
+  display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.28s}
 .fab.on{opacity:1;transform:none;pointer-events:auto}
 .fab button{width:clamp(38px,2.6vw,46px);height:clamp(38px,2.6vw,46px);display:flex;align-items:center;justify-content:center;
   background:var(--paper);border:2px solid var(--ink);border-radius:clamp(4px,.4vw,8px);font-size:17px;
-  box-shadow:3px 3px 0 var(--ink);transition:.15s}
-.fab button:hover{background:var(--ink);color:var(--paper)}
+  box-shadow:3px 3px 0 var(--ink);transition:background .18s,transform .18s,box-shadow .18s}
+.fab button:hover{background:var(--band);transform:translateY(-2px);box-shadow:4px 5px 0 var(--ink)}
 .fab button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .fab button.spinning{animation:spin .7s linear}
 
@@ -320,16 +323,34 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
   border-top:3px solid var(--ink);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
   font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3)}
 
+/* ---------- 小视口适配（对齐项目断点：≤1023 平板 / ≤767 手机） ---------- */
 @media (width<=1023px){
+  :root{--poster-n:4; --cont-n:3}
   .headline{grid-template-columns:1fr;height:auto}
   .hl-pic{aspect-ratio:16/9}
   .hl-side-track{overflow-x:auto;grid-auto-columns:minmax(150px,38%)}
+  .sec-head{flex-wrap:wrap}                /* 标题+sub+more 换行防溢出 */
+  .search-drop{width:clamp(260px,42vw,340px)}
+  .hrow-wrap .hrw-arrow{opacity:1;pointer-events:auto}   /* 平板无 hover 常显 */
 }
 @media (width<=767px){
+  :root{--poster-n:3; --cont-n:2}
+  .mast-row{flex-wrap:wrap;gap:6px}          /* 品牌 + 版次双行 */
+  .brand{font-size:clamp(22px,6vw,30px)}
   .hl-side-track{grid-auto-columns:minmax(132px,46%)}
+  .hl-actions{flex-wrap:wrap;gap:14px}
   .trend-table{display:block}
   .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr)}
   .trow .heat{display:none}
+  .cont-grid{gap:10px}
+  .search-wrap.open .search-form{max-width:min(80vw,320px)}  /* 手机展开条更宽可输入（须覆盖 .search-wrap.open 特异性） */
+  .fab{right:16px;bottom:20px;gap:8px}
+  .fab button{width:44px;height:44px}        /* 触屏点击区 ≥44px */
+  footer{flex-direction:column;gap:8px}
+}
+@media (hover:none){                          /* 触屏无 hover：收藏心常显 */
+  .rc-cover .b-tr{opacity:1;transform:scale(1)}
+  .hrw-arrow{opacity:1;pointer-events:auto}
 }
 </style>
 <style id="xdev-css">
