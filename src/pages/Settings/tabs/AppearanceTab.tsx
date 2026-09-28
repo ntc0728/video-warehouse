@@ -1,4 +1,4 @@
-import { List, Switch, Slider } from '@/components/ui';
+import { List, Switch, Slider, Select } from '@/components/ui';
 import { Sun, Moon, Monitor, Palette } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
 
@@ -95,18 +95,19 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
             title="界面缩放"
             description="大屏（≥1920px 且系统缩放 <150%）默认自动适配；可手动覆盖"
             extra={
-              <select
-                value={uiScale}
-                onChange={(e) => setUiScale(Number(e.target.value))}
-                aria-label="界面缩放"
-              >
-                <option value={0}>自动</option>
-                <option value={1}>100%（不缩放）</option>
-                <option value={1.1}>110%</option>
-                <option value={1.15}>115%</option>
-                <option value={1.3}>130%</option>
-                <option value={1.5}>150%</option>
-              </select>
+              /* 2026-09-28：原生 <select> 样式突兀 → 换项目 Select 组件（与 TMDB 语言下拉一致） */
+              <Select
+                options={[
+                  { value: '0', label: '自动' },
+                  { value: '1', label: '100%（不缩放）' },
+                  { value: '1.1', label: '110%' },
+                  { value: '1.15', label: '115%' },
+                  { value: '1.3', label: '130%' },
+                  { value: '1.5', label: '150%' },
+                ]}
+                value={String(uiScale)}
+                onChange={(v) => setUiScale(Number(v))}
+              />
             }
           />
         )}

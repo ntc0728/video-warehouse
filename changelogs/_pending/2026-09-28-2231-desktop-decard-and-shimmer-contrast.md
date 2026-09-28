@@ -35,7 +35,7 @@ demo: demo/card-removal-demo.html
 
 1. 去掉桌面端（首页 / 设置 / 元素 / 模块）的卡片式布局：移除四件套 `border + border-radius + surface 背景 + shadow`；移动端与 `html[data-device="app"]` 副本不改，TV 端保留卡片。
 2. 卡片封面三态（加载扫光 / 失败 / 缓存等待）背景色与页面背景色相似度过高（`--color-placeholder` 亮色 `#f5f5f5` 与 `--color-background` 同值，ΔE=0；shimmer ΔL≈3–6 不可见）。
-3. 设置页反馈（2026-09-28 晚，多轮拍板）：① source-manager 面板**去卡**、`.source-manager__item` 条目**保留卡片**（先「三源恢复卡片」→ 再「面板不要卡片」→ 最终「条目保留」）；② 设置项之间间距太大收紧；③ 子项标题左侧的「黑点」移除（移动端同样处理）；④ 鼠标悬浮设置项不出现背景色变化；⑤ 设置页各个字体、图标尺寸有点大 → 整体缩档；⑥ 按钮、图标、tab、方型按钮尺寸过大 → 控件尺寸族续缩；⑦ 第三轮修正：左栏完全不改（字号/图标/tab 内边距回原值），只改右侧内容区，按钮系数 0.93 加码到 0.8（7% 不可感知）。
+3. 设置页反馈（2026-09-28 晚，多轮拍板）：① source-manager 面板**去卡**、`.source-manager__item` 条目**保留卡片**（先「三源恢复卡片」→ 再「面板不要卡片」→ 最终「条目保留」）；② 设置项之间间距太大收紧；③ 子项标题左侧的「黑点」移除（移动端同样处理）；④ 鼠标悬浮设置项不出现背景色变化；⑤ 设置页各个字体、图标尺寸有点大 → 整体缩档；⑥ 按钮、图标、tab、方型按钮尺寸过大 → 控件尺寸族续缩；⑦ 第三轮修正：左栏完全不改（字号/图标/tab 内边距回原值），只改右侧内容区，按钮系数 0.93 加码到 0.8（7% 不可感知）；⑧ 第四轮：界面缩放下拉换 Select 组件（原生 select 样式突兀，对齐 TMDB 语言下拉）、个人设置行标题字号对齐 list-item__title（原 inherit 16px vs 13px）、一键导入/恢复按钮方框 44.7-52→40.6px。
 
 ## 修法
 
@@ -56,6 +56,7 @@ demo: demo/card-removal-demo.html
 - ⑤ 字号/图标缩档：`html .settings-page` 作用域重定义 `--text-2xs…3xl` 为全站值 ×0.93（≥768 档同步乘系数保持大屏 clamp 形态）；`--icon-*` 的 `calc(var(--text-*)×系数)` 在元素处延迟解析 → 图标连锁缩 ~7%。`--space-*`/`--card-size` 不动，作用域外全站不受影响。实测：tab 文字 13→12.09、图标 18.2→16.89；source-manager 标题 18→16.74、图标 21.5→20.02。
 - ⑥ 控件尺寸族缩档（第二轮，第三轮加码 ×0.8）：同块追加 `--comp-btn-min-height/-width`、`--comp-tab-height`、`--comp-input-height`、`--comp-thumb-size` 全站式 ×0.8（base + ≥768 桌面递减档双覆盖，`--ui-scale` 用户缩放相乘保留；二轮 0.93 视觉不可感知 → 加码）→ theme-btn/back-btn 方块、counter-btn ±、Button min-h、settings-input、settings-btn-mini、滑块手柄全连锁；`--comp-input-min-w`（宽度类）不缩。`.skin-btn__swatch` 定点 `calc(var(--layout-logo-size)*0.8)`（不动全局 logo/TV）。实测@1280：theme-btn 49.5→39.61、swatch→38.39。
 - ⑦ 第三轮「左栏不改，只改右侧内容区」：`html .settings-page .settings-sidenav` 豁免 `--text-*` 回全站原式（特异性 0,2,1；icon 经 calc 延迟解析自动回原值；base + 桌面档双豁免，必须与缩档块**平级**——嵌套会展开成永不匹配的 `html…html…` 选择器）；sidenav tab 与横排 tab 内边距均回原档（md/sm、xs/md）。右侧内容区 text ×0.93 保留。实测@1280：左栏 tab 13px/padT 10.57/h 42.63（原值），右侧 section 标题 16.59（×0.93）。
+- ⑧ 第四轮三处：界面缩放 `<select>`（原生样式突兀）→ 项目 `Select` 组件（options value 转 string、onChange 转 number，与 TMDB 语言下拉同款）；`.settings-row__title` 补 `font-size: var(--text-base)`（原无声明 inherit 16px，其他 tab 的 list-item__title 是 tailwind text-base=13.02px → 对齐）；`.settings-action-btn--inline` `min-height --avatar-xs(44.7-52)` → `--comp-btn-min-width`（×0.8 ≈40.6px，随按钮族系数联动）。
 
 **三态区分（改 token 色源，59 处引用自动生效）**
 
@@ -75,4 +76,5 @@ demo: demo/card-removal-demo.html
 - 设置页反馈修正 E2E：`settings.spec` 两遍 **10/10 全过**。其中 SET-050 的 `count()` 一次性读取异步源列表属测试缺陷（stash 原版对照同样失败）→ 改 web-first `toBeAttached`（同 home.spec LazyImage 教训），两遍复跑均过。playwright 实探复核：`list-styleType=none`（黑点消）、hover 背景前后均 `transparent`、项高 117→97px、面板 `border 0 + transparent` 而条目 `1px border + 16.6px radius + 白底`（面板去卡/条目卡片并存）、字号图标 ×0.93 连锁生效。
 - 控件缩档第二轮验证：build 后 probe 实测 computed（`--comp-*` 均 `*1*.93`、theme-btn 46.05、swatch 44.63、tab 高 35.55）+ 截图目检；`lint:all` 7 门全绿；`settings.spec` 10/10。注：e2e-skeleton 跑 dist 产物，改 CSS 后须先 build 再 probe 才读到新值。
 - 第三轮验证：probe 复核左栏 `--text-sm=calc(13px*1)`（原值）/右侧 `×.93`、theme-btn 39.61、swatch 38.39、左栏 tab padT 10.57 h 42.63；截图目检左栏复原/右侧缩档；`lint:all` 7 门全绿；`settings.spec` 10/10。
+- 第四轮验证：probe 复核界面缩放 `nativeSelect=false`（Select 组件 trigger h 29.53）、个人页 `rowTitle=13.02=listTitle`（对齐）、一键按钮 h 40.56；双页截图目检；`lint:all` 7 门全绿；`settings.spec` 10/10。
 - 对比 demo：`demo/card-removal-demo.html`（亮/暗切换 + before/after 布局 + 三态旧新对比）。

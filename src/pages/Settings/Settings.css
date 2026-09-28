@@ -1513,6 +1513,13 @@ body.skin-transitioning .skin-btn.active {
   scale: none !important;
   transform: none !important;
 }
+/* 2026-09-28（用户拍板「个人设置项内容字体比其他设置项大」）：
+   .settings-row__title 原无 font-size → inherit 16px，而其他 tab 的
+   list-item__title 是 tailwind text-base（= var(--text-base)，14×0.93≈13px）
+   → 对齐同值。副标题 small（0.8em）与 desc（text-sm）本就协调，不动。 */
+.settings-page .settings-row__title {
+  font-size: var(--text-base);
+}
 .settings-action-btn {
   width: 100%;
   margin-top: var(--space-lg);
@@ -1540,10 +1547,12 @@ body.skin-transitioning .skin-btn.active {
 .settings-card__header .settings-action-btn--inline {
   flex-shrink: 0;
 }
-/* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调 */
+/* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调。
+   2026-09-28：原 min-height --avatar-xs（44.7→52px）方框过大 → 改
+   --comp-btn-min-width（×0.8 后 ≈40px），与设置页按钮族系数联动。 */
 .settings-action-btn--inline {
   width: auto;
-  min-height: var(--avatar-xs);
+  min-height: var(--comp-btn-min-width);
   margin-top: 0;
   margin-left: auto;
   padding: var(--space-2xs) var(--space-lg);
