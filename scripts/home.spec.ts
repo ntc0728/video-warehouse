@@ -664,7 +664,7 @@ test.describe('1.3c 宽屏分类面板', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.3d 宽屏 HeroBili 卡', () => {
-  test('HOME-088: hero 卡 1px 边框；封面加载失败走 kinoTV 品牌兜底', async ({ page }) => {
+  test('HOME-088: hero 卡已去卡片化（无边框）；封面加载失败走 kinoTV 品牌兜底', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.route('**/test-backdrop-6.jpg**', (route) => route.fulfill({ status: 404, body: '' }));
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -674,8 +674,9 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
       const cs = getComputedStyle(el);
       return { style: cs.borderStyle, width: cs.borderWidth };
     });
-    expect(border.style).toBe('solid');
-    expect(border.width).toBe('1px');
+    // 2026-09-28 去卡片化：桌面端 hero-side-card 四件套（border/radius/surface/shadow）已移除。
+    // border-style 恒为 solid 是 Tailwind preflight 的全局值（width 才是可见性判据），只断 width。
+    expect(border.width).toBe('0px');
     expect(await page.locator('.hero-side-card__img.lazy-image-container').count()).toBeGreaterThan(0);
     // 2026-09-11 LazyImage 引入 S4 有界重试（1.2s/2.4s 指数退避）后才落 exhausted/error 终态；
     // 一次性 count() 会在重试等待期读到 0 → 必须用 web-first 断言（内部轮询等待）

@@ -566,7 +566,10 @@
 }
 
 /* 桌面左栏布局下网格容器去卡片化（2026-09-08 用户定稿）：无边框/圆角/底色/投影，
-   与页面背景融为一体；移动端/TV 走旧布局（无 .iptv-page--rail），保留原卡片外观 */
+   与页面背景融为一体；移动端/TV 走旧布局（无 .iptv-page--rail），保留原卡片外观
+   2026-09-28：top-card 同批并入去卡（原「仅桌面 >=1024」注释有误——
+   移动/App/TV 也渲染 top-card，故必须挂 .iptv-page--rail 前缀隔离）。 */
+.iptv-page--rail .iptv-top-card,
 .iptv-page--rail .iptv-grid-card {
   border: none;
   border-radius: 0;

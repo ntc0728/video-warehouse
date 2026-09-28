@@ -89,6 +89,26 @@
   border-radius: var(--radius-md);
 }
 
+/* 2026-09-28 去卡片化：桌面端移除卡片四件套（border/radius/surface/shadow），
+   海报直接铺页面底色；hover 保留上浮微交互（阴影随卡删除），
+   :focus-visible 焦点环为可访问性必需，保留。<=767 / app 保持上方卡片样式。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .video-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html:not([data-device="app"]) .video-card:hover {
+    box-shadow: none;
+  }
+
+  html:not([data-device="app"]) .video-card-glow {
+    border-radius: 0;
+  }
+}
+
 /* VideoCard 光泽扫光层 */
 .video-card-glow {
   position: absolute;
@@ -125,7 +145,10 @@
 .video-card-cover {
   position: relative;
   width: 100%;
-  background-color: transparent;
+  /* 2026-09-28：封面容器自带占位底（原 transparent → 露卡片 surface）。
+     去卡后卡片 surface 在桌面消失，透明会直接露页面底 --color-background，
+     与等待/失败态同色 → 隐形。改 --color-placeholder（对页面底 ΔE≥8）。 */
+  background-color: var(--color-placeholder);
   overflow: hidden;
   aspect-ratio: 2 / 3;
 }

@@ -409,10 +409,12 @@
   html:not([data-device="app"]) .record-content {
     min-height: auto;
     padding: 0 var(--space-md) var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    /* 2026-09-28 去卡片化：桌面端面板四件套移除，内容区直接铺页面底色；
+       <=767 / app 恒移动（上方与 data-device=app 副本）保留卡片外观。 */
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
   }
 
   html:not([data-device="app"]) .record-aside__title {

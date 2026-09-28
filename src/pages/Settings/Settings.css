@@ -1114,6 +1114,22 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-card-hover);
 }
 
+/* 2026-09-28 去卡片化：桌面端移除资料卡四件套（上方基础规则即「移动端卡片」样式源，
+   <=767 与 app 恒移动继续沿用；桌面仅保留内边距与 hover 背景反馈）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .settings-profile-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  html:not([data-device="app"]) .settings-profile-card:hover {
+    border-color: transparent;
+    box-shadow: none;
+    background: var(--color-surface-hover);
+  }
+}
+
 /* 个人资料卡标题行（图标 + 文字）— 已移至卡片外部，仅保留兼容选择器 */
 .settings-profile-card__title {
   display: none;
@@ -1647,6 +1663,17 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：桌面端菜单组卡四件套移除（移动端入口菜单保留上方卡片）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .settings-menu-group__card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+    box-shadow: none;
+  }
+}
+
 /* 与页面切换过渡一致：尊重 prefers-reduced-motion，关闭子页面过渡动画 */
 @media (prefers-reduced-motion: reduce) {
   .settings-subpage {
@@ -1813,22 +1840,22 @@ body.skin-transitioning .skin-btn.active {
      （见下方「移动端子页双行卡」覆盖块）
    ============================================================ */
 @media (width >= 768px) {
+  /* 2026-09-28 去卡片化：方案 F 的 list-item 边框/圆角/底色整体移除，
+     恢复行式排布（padding/margin 留白节奏不变，几何零跳动）。 */
   html:not([data-device="app"]) .settings-content .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    overflow: hidden;
-    transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: background var(--dur-xs) ease;
   }
 
   html:not([data-device="app"]) .settings-content .list-item + .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item + .list-item {
     margin-top: calc(var(--space-sm) * 2);
   }
 
-  html:not([data-device="app"]) /* hover 反馈：边框加深 + 阴影（对齐 html 示例 .fcard:hover：border-strong + shadow-card-hover） */
-  .settings-content .list-item:hover, html:not([data-device="app"]) .settings-subpage__body .list-item:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
+  /* 去卡后 hover 反馈改背景高亮（原「边框加深 + 阴影」随卡删除） */
+  html:not([data-device="app"]) .settings-content .list-item:hover, html:not([data-device="app"]) .settings-subpage__body .list-item:hover {
+    background: var(--color-surface-hover);
   }
 
   html:not([data-device="app"]) /* 无描述项（如主题模式）：标题行垂直居中 + 底部补齐内边距，保持卡片观感均衡 */
@@ -1837,19 +1864,17 @@ body.skin-transitioning .skin-btn.active {
   }
 
   html:not([data-device="app"]) /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
-     settings-card__body（header 操作按钮 + desc + 行）整体一张 list-item 风格大卡片。
-     hover 边框加深 + 阴影，与 .list-item 卡片反馈一致。 */
+     settings-card__body（header 操作按钮 + desc + 行）整体一块内容区。
+     2026-09-28 去卡片化：边框/圆角/底色移除，hover 改背景高亮。 */
   .settings-content .settings-personal-section .settings-card__body, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body {
     padding: var(--space-md) var(--space-xl);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    overflow: hidden;
-    transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: background var(--dur-xs) ease;
   }
   html:not([data-device="app"]) .settings-content .settings-personal-section .settings-card__body:hover, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
+    background: var(--color-surface-hover);
   }
 
   html:not([data-device="app"]) /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
@@ -1869,32 +1894,21 @@ body.skin-transitioning .skin-btn.active {
   }
 
   html:not([data-device="app"]) /* ============================================================
-     源管理（视频源 / IPTV 源 / EPG 源）面板：与 .list-item 同样的卡片化
-     - .source-manager 卡片化（边框/圆角/背景/hover/transition）
-     - .source-manager__item 桌面端 hover 反馈与 .list-item 一致
-       （基础边框/圆角/transition 已在 SourceManager.css 全局统一）
-     - 折叠时（.source-manager-block.is-collapsed）边框一并隐藏，
-       折叠后仅剩标题行；展开/收起时 padding 随 grid-rows 一起过渡
-     - 移动端（≤767px）：入口菜单保持行式；**子页内（.settings-subpage__body .source-manager）
-       卡片化，与桌面端一致**（见下方「移动端子页源管理卡片化」覆盖块）
+     源管理（视频源 / IPTV 源 / EPG 源）面板
+     2026-09-28 去卡片化：桌面端面板边框/圆角/底色与 hover 阴影整体移除，
+     仅保留折叠 grid-rows 过渡所需的 gap transition。
      ============================================================ */
   .settings-content .source-manager, html:not([data-device="app"]) .settings-subpage__body .source-manager {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease,
-      gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: gap var(--dur-lg) var(--ease-in-out-quart);
   }
 
-  html:not([data-device="app"]) .settings-content .source-manager:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
-  }
-
-  html:not([data-device="app"]) /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
+  html:not([data-device="app"]) /* 面板内 item hover：随卡片化一并移除（item 基础样式见 SourceManager.css） */
   .settings-content .source-manager .source-manager__item:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager .source-manager__item:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
+    border-color: transparent;
+    box-shadow: none;
   }
 
   html:not([data-device="app"]) /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */

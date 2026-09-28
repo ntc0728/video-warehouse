@@ -44,6 +44,24 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：桌面端（非 app / 非 tv / 非移动命令栏模式）双卡 chrome
+   整体移除，筛选与结果区直接铺页面底色。
+   - 移动命令栏（.browse-page--mobile）与 TV 走各自分支，卡片原样保留；
+   - >=1024 侧栏档已有 display:contents / 去卡规则（BR-C），本块与其同向、无冲突。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv)
+    .browse-card--search,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv)
+    .browse-card--results {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
 /* ── 移动端（isPhone，含视口 < 768px）：与桌面端「双卡片相连」语义一致 ──
    命令栏 .bmb 当作 Card 1（上半部），结果区 .browse-card--results 当作 Card 2（下半部），
    中间 gap:0 相连合成一张大卡；卡片本身不施加 overflow，整页由 .app-shell__scroll 自然滚动，

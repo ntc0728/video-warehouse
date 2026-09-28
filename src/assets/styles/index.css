@@ -92,6 +92,16 @@
   outline: none;
 }
 
+/* 2026-09-28 去卡片化：桌面端弹窗移除圆角 + 投影（卡片视觉）。
+   background 保留 —— 浮层压在页面内容之上，无底色会与底层文字重叠不可读。
+   <=767 / app 底部抽屉（上圆角 + 贴底滑出）不受影响。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .modal-content-animate {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 /* Modal 退出动画 */
 .modal-content-animate[data-state="closed"] {
   animation: modalFadeScaleOut var(--dur-2xs) ease-in forwards;

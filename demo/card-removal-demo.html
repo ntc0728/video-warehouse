@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>去卡片化 + 封面三态背景 Demo</title>
+<style>
+  :root{
+    --bg:#f5f5f5; --surface:#fff; --border:#e8e8e8;
+    /* 旧：与页面底几乎同色 → 隐形 */
+    --placeholder-old:#f5f5f5;
+    --shimmer-a-old:#f0f0f0; --shimmer-b-old:#e6e6e6;
+    /* 新：媒体占位色阶 */
+    --placeholder-new:#e9e9e9;
+    --shimmer-a-new:#ececec; --shimmer-b-new:#dcdcdc;
+    --text:#1a1a1a; --text-dim:#888;
+  }
+  [data-theme="dark"]{
+    --bg:#141414; --surface:#1f1f1f; --border:#2b2b2b;
+    --placeholder-old:#262626;
+    --shimmer-a-old:#1f1f1f; --shimmer-b-old:#303030;
+    --placeholder-new:#242424;
+    --shimmer-a-new:#262626; --shimmer-b-new:#333333;
+    --text:#e8e8e8; --text-dim:#777;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui;padding:24px;transition:background .3s}
+  h1{font-size:18px;margin-bottom:4px} h2{font-size:14px;margin:20px 0 8px;color:var(--text-dim)}
+  .bar{display:flex;gap:8px;margin:12px 0 20px}
+  button{padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:6px;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .lbl{font-size:11px;color:var(--text-dim);margin-bottom:4px}
+  .card{border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.05);padding:10px}
+  .card.flat{border:none;background:none;box-shadow:none;padding:0}
+  .poster{aspect-ratio:2/3;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);text-align:center;padding:4px}
+  /* 三态 */
+  .state-load{background:var(--shimmer-a-old);
+    background-image:linear-gradient(90deg,var(--shimmer-a-old) 25%,var(--shimmer-b-old) 50%,var(--shimmer-a-old) 75%);
+    background-size:200% 100%;animation:sh 3s infinite}
+  .state-load.new{background:var(--shimmer-a-new);
+    background-image:linear-gradient(90deg,var(--shimmer-a-new) 25%,var(--shimmer-b-new) 50%,var(--shimmer-a-new) 75%)}
+  .state-wait{background:var(--placeholder-old)} .state-wait.new{background:var(--placeholder-new)}
+  .state-fail{background:var(--placeholder-old);color:var(--text-dim)} .state-fail.new{background:var(--placeholder-new);box-shadow:inset 0 0 0 1px var(--border)}
+  @keyframes sh{to{background-position:-200% 0}}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;background:var(--placeholder-new);color:var(--text-dim);margin-top:6px}
+  .note{font-size:11px;color:var(--text-dim);margin-top:16px;border-left:3px solid var(--border);padding-left:10px}
+</style>
+</head>
+<body data-theme="light">
+<h1>去卡片化 · 封面三态背景对比 Demo</h1>
+<div class="bar">
+  <button onclick="document.body.dataset.theme='light'">亮色</button>
+  <button onclick="document.body.dataset.theme='dark'">暗色</button>
+</div>
+
+<h2>A. 布局：左=去卡前（卡片浮层） / 右=去卡后（桌面去卡，移动端保持 A 样式）</h2>
+<div class="col">
+  <div>
+    <div class="lbl">Before：surface #fff + border + shadow</div>
+    <div class="card"><div class="poster state-load new">扫光中</div><span class="tag">模块卡片</span></div>
+  </div>
+  <div>
+    <div class="lbl">After：透明容器，直接压页面底色</div>
+    <div class="card flat"><div class="poster state-load new">扫光中</div><span class="tag">无卡片</span></div>
+  </div>
+</div>
+
+<h2>B. 三态背景：左=旧 token（相似度过高） / 右=新 media 色阶</h2>
+<div class="grid">
+  <div><div class="lbl">① 扫光加载中</div>
+    <div class="col">
+      <div class="poster state-load">旧 ΔL≈3</div>
+      <div class="poster state-load new">新 ΔL≈11</div>
+    </div></div>
+  <div><div class="lbl">② 等待/缓存占位</div>
+    <div class="col">
+      <div class="poster state-wait">旧=页面色 隐形</div>
+      <div class="poster state-wait new">新可见</div>
+    </div></div>
+  <div><div class="lbl">③ 加载失败</div>
+    <div class="col">
+      <div class="poster state-fail">旧 无区分</div>
+      <div class="poster state-fail new">新+描边</div>
+    </div></div>
+</div>
+
+<div class="note">
+理由：去卡后封面底色直接压在页面底色上，旧 token 与页面色 ΔE≈0（等待态隐形）或 ΔL&lt;6（扫光不可见）。
+新色阶保证 ΔE≥8、亮暗主题一致；三态收敛到 --color-media-* 一套 token，失败态额外加描边与加载态区分。
+亮/暗切换可验证 #141414 页面底上的新色阶可见性。
+</div>
+</body>
+</html>

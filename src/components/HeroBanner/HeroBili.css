@@ -21,13 +21,11 @@
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
     /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
-       banner/右栏网格；overlay 面板绝对定位锚定本卡（CategoryQuickAccess.css） */
+       banner/右栏网格；overlay 面板绝对定位锚定本卡（CategoryQuickAccess.css）
+       2026-09-28 去卡片化：本组件仅 >=1024 桌面渲染，四件套整体移除，
+       banner/右栏直接铺页面底色（间距由 --hero-main-gap / grid padding 提供）。 */
     position: relative;
     display: block;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-card);
   }
   html:not([data-device="tv"]) .hero-bili__grid {
     display: grid;
@@ -267,7 +265,8 @@
 }
 
 /* 单张横版卡：封面 16:9 满铺在上、标题条在下，无卡片内边距。
-   边框对齐卡片模块规范（surface + 1px border-light，与 VideoCard 同语言） */
+   2026-09-28 去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
+   （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
 .hero-side-card {
   /* 角标尺寸档（2026-09-10）：右栏卡片封面只有 ~100px 高（16:9 × 178px 宽），
      --text-xs（12.66→11.09）的四角文字与 --icon-lg（圆形收藏钮）相对封面偏重，
@@ -278,18 +277,14 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--hero-card-radius);
-  background: var(--color-surface-elevated);
   color: inherit;
   text-decoration: none;
   overflow: hidden;
-  transition: box-shadow var(--dur-md) ease, transform var(--dur-md) ease;
+  transition: transform var(--dur-md) ease;
   cursor: pointer;
 }
 
 .hero-side-card:hover {
-  box-shadow: 0 0 16px var(--color-primary-shadow);
   transform: translateY(-2px);
 }
 

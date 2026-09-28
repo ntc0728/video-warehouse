@@ -47,10 +47,10 @@
   padding-bottom: 0;
 }
 
-/* ── 首页模块卡片化（仅桌面端 >=1024px，移动端保持原样） ───────
-   每个区域作为独立卡片模块，样式镜像设置页 section：
-     surface 背景 + 1px border(--color-border-light) + radius-lg + shadow-sm
-   模块之间间距统一为 var(--space-sm)。
+/* ── 首页模块卡片化 → 2026-09-28 去卡片化（桌面端；移动端保持卡片） ─────
+   原「全端四件套：surface 背景 + 1px border(--color-border-light) + radius-lg
+   + shadow-sm」现仅在 <=767 / app 恒移动生效；>=768 桌面端删除四件套，
+   模块直接铺 --color-background，改用留白间隔（--space-sm）区分模块。
    仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
 
 .home-page .hero-banner {
@@ -116,6 +116,24 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
      真实高度，避免滚动条跳动。行内横滚不受影响（行在视口内时正常渲染）。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 360px;
+}
+
+/* ── 桌面去卡片化（2026-09-28）──────────────────────────────────────
+   上方规则是「移动端保持卡片」的样式源（原全端生效，现由本块在桌面覆盖移除）。
+   覆盖四件套 → 透明容器；padding/margin 留白节奏不变，模块几何零跳动。
+   <=767 与 html[data-device=app]（恒移动）不吃本块 → 卡片原样保留；
+   TV 走独立布局，按 TV 红线 :not(tv) 隔离。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .category-quick-access,
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .tmdb-movierow,
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .hero-banner__card,
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .home-topstrip,
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .home-skeleton-topstrip {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
 }
 
 /* ── Empty / Error ──────────────────────────────────── */
@@ -509,7 +527,9 @@ html[data-device="app"] .home-disclaimer {
 .home-topstrip__pill {
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--color-background);
+  /* 2026-09-28 去卡后 topstrip 透出页面底 --color-background，
+     pill 底色同值会隐形 → 改 surface（白）保持胶囊可辨 */
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
