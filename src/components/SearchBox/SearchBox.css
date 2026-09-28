@@ -309,6 +309,18 @@ html[data-device="app"] .search-box__input {
   animation: search-dropdown-fade-out var(--dur-2xs) ease-in forwards;
 }
 
+/* 2026-09-28 去卡片化（浮层）：桌面端搜索下拉移除边框/圆角/投影，
+   仅保留 surface 底色（浮层无底色会与页面内容重叠不可读）；
+   <=767 / app 恒移动保持上方连接式卡角。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .search-box-dropdown,
+  html:not([data-device="app"]) .search-box-dropdown--above {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 @keyframes search-dropdown-fade-out {
   from {
     opacity: 1;

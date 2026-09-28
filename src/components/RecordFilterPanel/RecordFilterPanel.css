@@ -16,6 +16,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：桌面端筛选面板四件套移除，直接铺页面底色；
+   <=767 / app 恒移动保持上方卡片。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .record-filter-panel {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
 .record-filter-row {
   display: flex;
   gap: var(--space-sm);

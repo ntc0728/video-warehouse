@@ -128,10 +128,14 @@
   --color-border: #d9d9d9;                 /* 主边框（输入框/分割线） */
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
   --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
-  /* 骨架屏 / 占位 — 两色交替扫光 */
-  --color-placeholder: #f5f5f5;            /* 骨架底色 */
-  --color-placeholder-shimmer-a: #f0f0f0;  /* 扫光起始色 */
-  --color-placeholder-shimmer-b: #e6e6e6;  /* 扫光终止色 */
+  /* 骨架屏 / 占位 — 两色交替扫光
+     2026-09-28 去卡片化配套提档：卡片 surface 底被移除后，占位色直接压页面底
+     --color-background(#f5f5f5)。旧值 placeholder 与页面底同值(ΔE=0 → 等待/失败态
+     隐形)、shimmer ΔL≈3~6(扫光不可见)。新值对页面底 ΔE≥8，三态肉眼可辨；
+     改本组三行即可全站生效（消费方见 --color-skeleton 注释「唯一色源」）。 */
+  --color-placeholder: #e9e9e9;            /* 等待/失败占位底（比页面底深一档） */
+  --color-placeholder-shimmer-a: #ececec;  /* 扫光起始色 */
+  --color-placeholder-shimmer-b: #dcdcdc;  /* 扫光终止色（ΔL≈11，扫光可见） */
   /* 标签 / 收藏 / 分页 / 输入框 / Tab */
   --color-tag-bg: #f5f5f5;                 /* 筛选 tag 背景 */
   --color-favorite-bg: #f5f5f5;            /* 收藏按钮底色 */
@@ -867,8 +871,10 @@
   --color-border-light: #2b2b2b;
   --color-border-strong: #4a4a4a;
   --color-placeholder: #262626;
-  --color-placeholder-shimmer-a: #1f1f1f;
-  --color-placeholder-shimmer-b: #303030;
+  /* 暗色三态（2026-09-28 同批提档）：对页面底 #141414 拉开到 ΔE≥8，
+     a 提亮与 placeholder 同档、b 微升，扫光在深底上仍可辨。 */
+  --color-placeholder-shimmer-a: #262626;
+  --color-placeholder-shimmer-b: #333;
   --color-tag-bg: #262626;
   --color-favorite-bg: #303030;
   --color-favorite-active-bg: #3a2000;

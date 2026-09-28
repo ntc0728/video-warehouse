@@ -23,9 +23,8 @@
 .help-popover-content {
   z-index: var(--z-popover);
   width: var(--layout-help-popover-w);
-  border-radius: var(--radius-md);
+  /* 2026-09-28 去卡片化：圆角 + 投影移除；背景保留（浮层无底色会与底层内容重叠）。 */
   background: var(--color-surface-elevated);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
   animation: helpPopoverFadeIn var(--dur-sm) var(--ease-spring);
   outline: none;
 }

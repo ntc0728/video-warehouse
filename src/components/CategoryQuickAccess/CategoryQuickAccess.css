@@ -584,15 +584,17 @@
     display: flex;
     flex-direction: column;
     padding: var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    transition: border-color var(--dur-fast) ease;
+    /* 2026-09-28 去卡片化：本块仅 >=1024 桌面渲染（TV 前缀排除），
+       卡片四件套移除，hover/focus 反馈改背景色表达。 */
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: background var(--dur-fast) ease;
     cursor: pointer;
   }
   html:not([data-device="tv"]) .cqa-catcard:hover,
   html:not([data-device="tv"]) .cqa-catcard:focus-visible {
-    border-color: var(--color-border-strong);
+    background: var(--color-surface-hover);
   }
   /* 按压反馈（对齐设置页「个人设置可点项」范式）：已从全局方案6 排除（整卡内容
      缩放视觉过重）——仅分类名 / 榜单行标题文本缩放 0.96，卡框/海报/热度条静止 */
@@ -865,9 +867,11 @@
     /* 行间距（2026-09-11 用户要求补 gap）：去掉分割线后靠行距区分条目，
        gap = --space-xs 与卡片内边距同档，20 行连续榜节奏均匀。 */
     padding: var(--space-xs) var(--space-sm);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
+    /* 2026-09-28 去卡片化：surface 卡四件套移除，榜单直接铺左栏/页面底色
+       （本元素仅 >=1024 大屏两栏左栏渲染，TV 已由前缀排除）。 */
+    border: none;
+    border-radius: 0;
+    background: transparent;
     list-style: none;
   }
   html:not([data-device="tv"]) .cqa-trend__row {

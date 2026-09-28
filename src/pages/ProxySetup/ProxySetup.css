@@ -70,6 +70,31 @@
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
 }
+
+/* 2026-09-28 去卡片化：桌面端选项卡/面板四件套移除，
+   hover 与选中态改由背景色表达（选中 color-mix 底保留）；
+   <=767 / app 恒移动保持上方卡片。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .proxy-setup__card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: background var(--dur-sm);
+  }
+  html:not([data-device="app"]) .proxy-setup__card:hover {
+    border-color: transparent;
+    background: var(--color-surface-hover);
+  }
+  html:not([data-device="app"]) .proxy-setup__card.is-selected {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  }
+  html:not([data-device="app"]) .proxy-setup__panel {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+}
 .proxy-setup__card-head {
   display: flex;
   gap: var(--space-2xs);
