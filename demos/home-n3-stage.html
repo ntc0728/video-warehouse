@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo N3 — 宽幅舞台 · 选台放映</title>
+<style>
+/* ============================================================
+   Demo N3 · 宽幅舞台（Stage + Channel Picker）
+   大胆方向：hero = 放映厅舞台（宽幅银幕 + 底部缩略图「选台」切换，
+   切换时氛围色温同步过渡）；内容行带「章节色条」（每行一个色相），
+   标题带装饰时间码，营造放映叙事。深色。
+   模块对齐现有首页：Hero(trending 选台) / 继续观看 / 7 行 / 分类入口
+   零卡片 · 首屏预算制 hero≤46vh · 列数梯度 · 封顶 2200 · 真实 CMS 数据
+   ============================================================ */
+:root{
+  --bg:#0e0e13; --bg-2:#15151c; --fg:#f4f2ec; --fg-2:#a9a7b2; --fg-3:#6e6c7a;
+  --line:#282832; --hot:#ffb84d;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --content-max:2200px;
+  --pad-x:clamp(16px,2.4vw,44px); --gap:clamp(12px,1vw,20px);
+  --poster-n:6; --cont-n:4;
+}
+@media (width>=1440px){ :root{--pad-x:60px; --poster-n:7; --cont-n:5} }
+@media (width>=1920px){ :root{--pad-x:100px; --poster-n:8; --cont-n:6} }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;width:100%;height:100%;object-fit:cover}
+.page{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x)}
+
+/* ---------- 顶栏 ---------- */
+.top{display:flex;align-items:center;gap:clamp(16px,1.8vw,36px);padding:clamp(16px,2.6vh,30px) 0 0;flex-wrap:wrap}
+.logo{font-weight:900;letter-spacing:.04em;font-size:clamp(16px,1.3vw,22px)}
+.logo em{color:var(--hot);font-style:normal}
+.top nav{display:flex;gap:clamp(14px,1.4vw,30px);flex-wrap:wrap}
+.top nav a{font-size:clamp(13px,.86vw,15px);color:var(--fg-2);transition:.2s}
+.top nav a.on,.top nav a:hover{color:var(--fg)}
+.data-badge{margin-left:auto;font-size:clamp(10.5px,.68vw,12px);color:var(--fg-3);border:1px solid var(--line);
+  border-radius:99px;padding:2px 10px;white-space:nowrap}
+.data-badge b{color:var(--hot);font-weight:700}
+
+/* ---------- 舞台银幕 + 选台器 ---------- */
+.stage-wrap{position:relative;margin-top:clamp(14px,2.6vh,28px)}
+.stage{position:relative;height:clamp(300px,42vh,500px);border-radius:clamp(12px,1vw,20px);overflow:hidden;background:var(--bg-2)}
+.stage .art{position:absolute;inset:0;transition:opacity .5s}
+.stage .art img{position:absolute;inset:0;opacity:.9;transition:transform 8s}
+.stage .art::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(14,14,19,.9) 0%,rgba(14,14,19,.4) 48%,transparent 75%),
+             linear-gradient(0deg,rgba(14,14,19,.95) 2%,transparent 42%)}
+.stage .info{position:absolute;left:clamp(16px,2.4vw,44px);bottom:clamp(14px,3.4vh,36px);max-width:min(700px,60%);z-index:2}
+.stage .timecode{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:clamp(10.5px,.7vw,12.5px);
+  letter-spacing:.22em;color:var(--hot);margin-bottom:clamp(8px,1.4vh,16px)}
+.stage h1{font-size:clamp(28px,5vh,58px);font-weight:800;line-height:1.1;margin-bottom:clamp(8px,1.4vh,16px)}
+.stage .meta{display:flex;gap:clamp(10px,1vw,20px);flex-wrap:wrap;font-size:clamp(12px,.8vw,14.5px);color:var(--fg-2);margin-bottom:clamp(10px,1.8vh,20px)}
+.stage .meta .star{color:var(--hot);font-weight:800}
+.stage .actions{display:flex;gap:clamp(10px,1vw,18px)}
+.stage .btn{border-radius:8px;padding:clamp(8px,1.2vh,12px) clamp(18px,1.8vw,32px);
+  font-size:clamp(13px,.86vw,15.5px);font-weight:800;cursor:pointer;transition:.2s}
+.stage .btn.hot{background:var(--hot);color:#181205}
+.stage .btn.hot:hover{filter:brightness(1.08)}
+.stage .btn.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+.stage .btn.ghost:hover{background:rgba(255,255,255,.16)}
+/* 选台器 */
+.picker{display:grid;grid-template-columns:repeat(var(--cont-n),minmax(0,1fr));gap:var(--gap);
+  margin-top:calc(var(--gap) * -1);position:relative;z-index:3;padding:0 var(--pad-x);transform:translateY(50%)}
+.picker .ch{aspect-ratio:16/7;border-radius:clamp(8px,.7vw,12px);overflow:hidden;cursor:pointer;
+  position:relative;background:var(--bg-2);border:2px solid transparent;transition:border-color .25s, transform .25s;
+  outline:3px solid var(--bg)}
+.picker .ch img{position:absolute;inset:0;opacity:.55;transition:.25s}
+.picker .ch:hover img{opacity:.85}
+.picker .ch.on{border-color:var(--hot);transform:translateY(-4px)}
+.picker .ch.on img{opacity:1}
+.picker .ch .cn{position:absolute;left:8px;top:7px;font-family:ui-monospace,monospace;
+  font-size:clamp(9.5px,.62vw,11px);letter-spacing:.14em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+
+/* ---------- 章节色条行 ---------- */
+.sec{margin-top:clamp(34px,6vh,68px)}
+.sec-head{display:flex;align-items:baseline;gap:clamp(12px,1.2vw,24px);margin-bottom:clamp(12px,2vh,24px)}
+.sec-head .bar{width:4px;align-self:stretch;border-radius:2px}
+.sec-head .tc{font-family:ui-monospace,monospace;font-size:clamp(10px,.66vw,12px);letter-spacing:.2em;color:var(--fg-3)}
+.sec-head h2{font-size:clamp(20px,2vw,34px);font-weight:800;letter-spacing:.02em}
+.sec-head .cnt{font-size:clamp(11px,.72vw,13px);color:var(--fg-3)}
+.sec-head .more{margin-left:auto;font-size:clamp(12px,.8vw,14px);color:var(--fg-3);transition:.2s}
+.sec-head .more:hover{color:var(--fg)}
+
+/* ---------- 分类入口 ---------- */
+.cats{display:flex;gap:clamp(10px,1vw,20px);flex-wrap:wrap;margin-top:clamp(10px,3.4vh,36px)}
+.cats a{border:1px solid var(--line);border-radius:10px;padding:clamp(7px,1vh,11px) clamp(16px,1.6vw,28px);
+  font-size:clamp(13px,.86vw,15.5px);color:var(--fg-2);transition:.2s;cursor:pointer}
+.cats a:hover{border-color:var(--hot);color:var(--fg)}
+.cats a .n{color:var(--fg-3);font-size:.8em;margin-left:6px}
+
+/* ---------- 继续观看 ---------- */
+.cont-grid{display:grid;grid-template-columns:repeat(var(--cont-n),minmax(0,1fr));gap:var(--gap)}
+.cont-cell{cursor:pointer;min-width:0}
+.cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(8px,.6vw,12px);position:relative;background:var(--bg-2)}
+.cont-cell .th img{position:absolute;inset:0;transition:transform .5s}
+.cont-cell:hover .th img{transform:scale(1.06)}
+.cont-cell .th .time{position:absolute;right:9px;bottom:9px;font-size:clamp(10px,.66vw,11.5px);color:#fff;
+  background:rgba(0,0,0,.55);padding:2px 8px;border-radius:5px}
+.cont-cell .prog{height:3px;border-radius:2px;background:rgba(255,255,255,.12);position:relative;margin-top:clamp(7px,1vh,11px);overflow:hidden}
+.cont-cell .prog b{position:absolute;left:0;top:0;bottom:0;background:var(--hot);border-radius:2px}
+.cont-cell h4{font-size:clamp(14px,.95vw,17px);font-weight:700;margin-top:clamp(7px,1.1vh,12px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--fg-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 海报横滚 ---------- */
+.row-scroll{display:grid;grid-auto-flow:column;
+  grid-auto-columns:calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));gap:var(--gap);
+  overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px;scrollbar-width:none}
+.row-scroll::-webkit-scrollbar{height:0}
+.row-scroll .p{scroll-snap-align:start;position:relative;aspect-ratio:2/3;overflow:hidden;
+  border-radius:clamp(8px,.6vw,12px);cursor:pointer;background:var(--bg-2);transition:transform .3s}
+.row-scroll .p:hover{transform:translateY(-4px)}
+.row-scroll .p img{position:absolute;inset:0;transition:transform .5s}
+.row-scroll .p:hover img{transform:scale(1.06)}
+.row-scroll .p .lab{position:absolute;left:0;right:0;bottom:0;padding:46px 12px 10px;color:#fff;
+  background:linear-gradient(180deg,transparent,rgba(14,14,19,.9));opacity:0;transition:.3s}
+.row-scroll .p:hover .lab{opacity:1}
+.row-scroll .p .lab h4{font-size:clamp(13px,.9vw,15.5px);font-weight:700}
+.row-scroll .p .lab p{font-size:clamp(10.5px,.68vw,12px);color:var(--fg-2)}
+.row-scroll .p .sc{position:absolute;top:9px;right:9px;font-size:clamp(10.5px,.7vw,12px);font-weight:800;
+  background:rgba(0,0,0,.55);color:#fff;padding:2px 8px;border-radius:6px;
+  max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 骨架 ---------- */
+.skl{position:relative;overflow:hidden;background:var(--bg-2)}
+.skl::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:shimmer 1.4s infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.skl-line{height:13px;border-radius:4px;margin-top:8px}
+
+footer{margin:clamp(34px,6vh,68px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px,1.6vh,20px);
+  border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:clamp(11.5px,.76vw,13.5px);color:var(--fg-3)}
+</style>
+<style id="xdev-css">
+/* ==== 设备适配层：TV 10-foot / 投影仪 / 超宽 ==== */
+html[data-device="tv"]{--poster-n:6;--cont-n:4;--content-max:2200px}
+html[data-device="tv"] body{zoom:1.5;padding:3.5vh 3.5vw!important;box-sizing:border-box}
+html[data-device="tv"] :focus{outline:3px solid #d4a24e!important;outline-offset:3px;border-radius:4px}
+html[data-device="beamer"]{--poster-n:7;--cont-n:5}
+html[data-device="beamer"] body{zoom:1.4}
+html[data-device="beamer"][data-invert="1"] body{filter:invert(1) hue-rotate(180deg);background:#fff}
+html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-invert="1"] video{filter:invert(1) hue-rotate(180deg)}
+@media (width>=2560px){:root{--content-max:2600px;--pad-x:120px;--poster-n:9;--cont-n:7}}
+@media (min-aspect-ratio:21/9){:root{--content-max:min(3000px,92vw);--pad-x:140px;--poster-n:10;--cont-n:8}}
+.xdev-badge{position:fixed;right:14px;bottom:12px;z-index:99999;font:600 11px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.12em;color:#d4a24e;background:rgba(16,16,20,.82);border:1px solid rgba(212,162,78,.5);border-radius:999px;padding:6px 12px;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <span class="logo">Kino<em>TV</em> · 放映厅</span>
+    <nav>
+      <a class="on" href="#">首页</a><a href="#">电影</a><a href="#">剧集</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">IPTV</a>
+    </nav>
+    <span class="data-badge" id="data-badge">真实接口拉取中…</span>
+  </header>
+
+  <!-- 舞台银幕 + 选台器 -->
+  <div class="stage-wrap">
+    <section class="stage" id="stage"></section>
+    <div class="picker" id="picker" style="--cont-n:5"></div>
+  </div>
+
+  <!-- 分类入口 -->
+  <nav class="cats" id="cats"></nav>
+
+  <!-- 继续观看 -->
+  <section class="sec" style="--hue:28">
+    <div class="sec-head">
+      <span class="bar" style="background:hsl(28 90% 55%)"></span>
+      <span class="tc">CH·00 RESUME</span><h2>继续观看</h2><span class="cnt" id="cont-cnt"></span>
+      <a class="more" href="#">全部记录 →</a>
+    </div>
+    <div class="cont-grid" id="cont-grid"></div>
+  </section>
+
+  <!-- 7 行 -->
+  <div id="rows"></div>
+
+  <footer>
+    <span>KinoTV — Demo N3 · 宽幅舞台 · 标题/海报/简介来自内置 CMS 源（豆瓣 dbzy5 / 茅台 maotaizy），选台切换实时换幕</span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<script>
+/* ============ 数据层：与 E 基准同口径 ============ */
+const SOURCES = [
+  { name: "豆瓣资源", api: "https://caiji.dbzy5.com/api.php/provide/vod" },
+  { name: "茅台资源", api: "https://caiji.maotaizy.cc/api.php/provide/vod" }
+];
+const TYPE_NAME = { 1: "电影", 2: "剧集", 3: "综艺", 4: "动漫" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const stripHtml = (s) => String(s ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+
+async function cms(api, params) {
+  const url = api + "?" + new URLSearchParams(params).toString();
+  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const j = await res.json();
+  if (j.code != null && j.code !== 1) throw new Error(j.msg || "CMS 业务异常");
+  return j;
+}
+function mapItem(x, srcName) {
+  return {
+    id: x.vod_id, title: x.vod_name || "未命名", pic: x.vod_pic || "",
+    type: TYPE_NAME[x.type_id_1 ?? x.type_id] || "影视", year: x.vod_year || "",
+    remarks: x.vod_remarks || "", cls: (x.vod_class || "").split(",")[0] || "",
+    score: parseFloat(x.vod_score) > 0 ? x.vod_score : null,
+    content: stripHtml(x.vod_content), src: srcName
+  };
+}
+async function fetchAll() {
+  const jobs = [
+    cms(SOURCES[0].api, { ac: "videolist", pg: 1, h: 168 }),
+    cms(SOURCES[1].api, { ac: "videolist", pg: 1, h: 168 }),
+    ...[1, 2, 3, 4].flatMap((t) => SOURCES.map((s) => cms(s.api, { ac: "videolist", t, pg: 1 })))
+  ];
+  const r = (await Promise.allSettled(jobs)).map((x) => x.status === "fulfilled" ? x.value.list ?? [] : []);
+  const uniq = (arr) => { const s = new Set(); return arr.filter((x) => !s.has(x.title) && s.add(x.title)); };
+  const byType = (i) => uniq([...r[2 + i * 2], ...r[3 + i * 2]].map((x) => mapItem(x, SOURCES[0].name)));
+  return {
+    latest: uniq([...r[0], ...r[1]].map((x) => mapItem(x, x.vod_pic?.includes("dbzy") ? SOURCES[0].name : SOURCES[1].name))),
+    byType: { 1: byType(0), 2: byType(1), 3: byType(2), 4: byType(3) },
+    totals: {}
+  };
+}
+
+const ROT = (arr, k) => arr.length ? [...arr.slice(k % arr.length), ...arr.slice(0, k % arr.length)] : arr;
+const byScore = (arr) => [...arr].sort((a, b) => (b.score || 0) - (a.score || 0));
+let DATA = null, ROWS = [], chIdx = 0, POOL = [];
+const ROW_HUE = [210, 32, 268, 158, 6, 286, 92];
+
+function buildRows(D) {
+  return [
+    { title: "正在热映", tc: "CH·01 21:00", items: D.byType[1].slice(0, 14) },
+    { title: "热门电影", tc: "CH·02 21:30", items: ROT(D.byType[1], 5) },
+    { title: "高分电影", tc: "CH·03 22:00", items: byScore(D.byType[1]) },
+    { title: "即将上映", tc: "CH·04 22:30", items: ROT(D.byType[1], 9) },
+    { title: "热门剧集", tc: "CH·05 23:00", items: D.byType[2].slice(0, 14) },
+    { title: "高分剧集", tc: "CH·06 23:30", items: byScore(D.byType[2]) },
+    { title: "今日播出", tc: "CH·07 24:00", items: D.latest.slice(0, 14) }
+  ];
+}
+
+function renderSkeletons() {
+  $("stage").innerHTML = `<div class="skl" style="position:absolute;inset:0"></div>
+    <div class="info"><div class="skl skl-line" style="width:110px"></div>
+    <div class="skl skl-line" style="height:40px;width:48%"></div><div class="skl skl-line" style="width:34%"></div></div>`;
+  $("picker").innerHTML = Array(5).fill(0).map(() => `<div class="ch skl"></div>`).join("");
+  $("cont-grid").innerHTML = Array(4).fill(0).map(() =>
+    `<div class="cont-cell"><div class="th skl"></div><div class="skl skl-line" style="width:60%"></div></div>`).join("");
+  $("rows").innerHTML = Array(3).fill(0).map(() => `
+    <section class="sec"><div class="sec-head"><span class="skl skl-line" style="width:160px;margin:0"></span></div>
+      <div class="row-scroll">${Array(6).fill(0).map(() => `<div class="p skl"></div>`).join("")}</div></section>`).join("");
+}
+
+function renderBadge(ok) {
+  $("data-badge").innerHTML = ok
+    ? `真实数据 · <b>${esc(SOURCES.map((s) => s.name).join("/"))}</b>`
+    : `离线演示数据（接口不可达）`;
+}
+
+/* 舞台：POOL[chIdx] 渲染银幕 */
+function renderStage() {
+  const h = POOL[chIdx];
+  if (!h) { $("stage").innerHTML = ""; return; }
+  const mm = String(21 + (chIdx % 3)).padStart(2, "0") + ":" + String((hash(h.title) % 60)).padStart(2, "0");
+  $("stage").innerHTML = `
+    <div class="art"><img src="${esc(h.pic)}" alt="${esc(h.title)}" loading="eager" onerror="this.remove()"></div>
+    <div class="info">
+      <div class="timecode">NOW SCREENING · ${esc(mm)} · ${esc(h.src)}</div>
+      <h1>${esc(h.title)}</h1>
+      <div class="meta">
+        ${h.score ? `<span class="star">★ ${esc(h.score)}</span>` : ""}
+        <span>${esc(h.year)}</span><span>${esc(h.type)}</span>
+        ${h.cls ? `<span>${esc(h.cls)}</span>` : ""}${h.remarks ? `<span>${esc(h.remarks)}</span>` : ""}
+      </div>
+      <div class="actions"><a class="btn hot">▶ 立即放映</a><a class="btn ghost">详情</a><a class="btn ghost">＋ 待看</a></div>
+    </div>`;
+}
+function renderPicker() {
+  $("picker").innerHTML = POOL.slice(0, 5).map((h, i) => `
+    <div class="ch ${i === chIdx ? "on" : ""}" data-ch="${i}">
+      <img src="${esc(h.pic)}" alt="${esc(h.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+      <span class="cn">CH ${String(i + 1).padStart(2, "0")}</span>
+    </div>`).join("");
+  $("picker").querySelectorAll(".ch").forEach((el) => {
+    el.addEventListener("click", () => {
+      chIdx = +el.dataset.ch;
+      $("picker").querySelectorAll(".ch").forEach((x) => x.classList.remove("on"));
+      el.classList.add("on");
+      renderStage();
+    });
+  });
+}
+
+function renderCats(totals) {
+  const cats = [["电影", totals[1]], ["剧集", totals[2]], ["综艺", totals[3]], ["动漫", totals[4]], ["IPTV 直播", 126]];
+  $("cats").innerHTML = cats.map(([n, c]) =>
+    `<a href="#">${esc(n)}${c != null ? `<span class="n">${(+c).toLocaleString()}</span>` : ""}</a>`).join("");
+}
+
+function renderContinue(items) {
+  $("cont-cnt").textContent = items.length - 1 + " IN PROGRESS";
+  $("cont-grid").innerHTML = items.slice(1, 7).map((c) => {
+    const prog = 20 + (hash(c.title) % 70);
+    return `<div class="cont-cell">
+      <div class="th"><img src="${esc(c.pic)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+        <span class="time">${esc(c.remarks || c.cls || c.type)}</span></div>
+      <div class="prog"><b style="width:${prog}%"></b></div>
+      <h4>${esc(c.title)}</h4><p>${esc(c.cls || c.type)} · ${esc(c.year)}</p></div>`;
+  }).join("");
+}
+
+function renderRows() {
+  $("rows").innerHTML = ROWS.map((r, i) => {
+    const hue = ROW_HUE[i % ROW_HUE.length];
+    return `<section class="sec">
+      <div class="sec-head">
+        <span class="bar" style="background:hsl(${hue} 85% 58%)"></span>
+        <span class="tc">${esc(r.tc)}</span><h2>${esc(r.title)}</h2><span class="cnt">${r.items.length} 部</span>
+        <a class="more" href="#">更多 →</a></div>
+      <div class="row-scroll">${r.items.slice(0, 12).map((it) => `
+        <div class="p"><img src="${esc(it.pic)}" alt="${esc(it.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+          <span class="sc">${esc(it.remarks || it.score || it.year)}</span>
+          <div class="lab"><h4>${esc(it.title)}</h4><p>${esc(it.cls || it.type)} · ${esc(it.year)}</p></div>
+        </div>`).join("")}</div>
+    </section>`;
+  }).join("");
+}
+
+function useFallback() {
+  const mk = (n, t) => Array.from({ length: n }, (_, i) => ({
+    title: t + " " + (i + 1), pic: "", type: "剧集", year: "2026",
+    remarks: "更新至第 " + (i + 3) + " 集", cls: "演示", score: null, src: "离线", content: ""
+  }));
+  DATA = { latest: mk(12, "演示条目"), byType: { 1: mk(12, "演示电影"), 2: mk(12, "演示剧集"), 3: [], 4: [] } };
+}
+
+(async () => {
+  renderSkeletons();
+  let ok = true;
+  try {
+    DATA = await fetchAll();
+    if (!DATA.latest.length) throw new Error("empty");
+  } catch (e) { useFallback(); ok = false; }
+  renderBadge(ok);
+  ROWS = buildRows(DATA);
+  POOL = DATA.latest;
+  renderStage();
+  renderPicker();
+  renderCats(DATA.totals);
+  renderContinue(DATA.latest);
+  renderRows();
+  Promise.all([1, 2, 3, 4].flatMap((t) => SOURCES.map(async (s) => {
+    try { return { t, total: (await cms(s.api, { ac: "videolist", t, pg: 1 })).total || 0 }; }
+    catch { return { t, total: 0 }; }
+  }))).then((rs) => {
+    const sum = {};
+    rs.forEach(({ t, total }) => { sum[t] = (sum[t] || 0) + total; });
+    DATA.totals = sum;
+    renderCats(sum);
+  });
+})();
+</script>
+<script id="xdev-js">
+(function(){
+  var d=new URLSearchParams(location.search).get("device");
+  if(!d)return;
+  document.documentElement.setAttribute("data-device",d);
+  var b=document.createElement("div");
+  b.className="xdev-badge";
+  b.textContent=d==="tv"?"TV · 10-FOOT MODE":d==="beamer"?"PROJECTOR MODE":"";
+  if(b.textContent)document.body.appendChild(b);
+  if(d==="beamer"){
+    addEventListener("load",function(){setTimeout(function(){
+      var lum=function(a){if(!a)return 1;var m=a.match(/[\d.]+/g);if(!m||m.length<3)return 1;if(m.length>3&&+m[3]===0)return 1;return .2126*(+m[0]/255)+.7152*(+m[1]/255)+.0722*(+m[2]/255)};
+      var lv=lum(getComputedStyle(document.body).backgroundColor);
+      if(lv>=1)lv=lum(getComputedStyle(document.documentElement).backgroundColor);
+      if(lv>.5)document.documentElement.setAttribute("data-invert","1");
+    },300)});
+  }
+})();
+</script>
+</body>
+</html>

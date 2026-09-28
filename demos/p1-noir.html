@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P1 · NOIR — KinoTV 首页概念稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75,500;75,700;75,900&display=swap" rel="stylesheet">
+<style>
+/* ================= P1 NOIR =================
+   概念：午夜影院的黑，加一道电光青柠。
+   记忆点：非对称海报堆叠 hero + 超大编号行标题 + grain 质感 */
+:root{
+  --bg:#0B0C10; --bg-2:#111319; --ink:#F2F3F0; --ink-2:rgba(242,243,240,.62); --ink-3:rgba(242,243,240,.38);
+  --acc:#D8F34E; --acc-ink:#10120A;
+  --hair:rgba(242,243,240,.09);
+  --content-max:2200px; --pad-x:32px;
+  --cols:6;           /* 海报行列数 6→7→8 */
+  --hero-h:clamp(420px,50vh,620px);
+  --card-r:10px;
+  --f-disp:"Archivo","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+  --f-body:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+}
+@media(min-width:1440px){:root{--cols:7;--pad-x:60px}}
+@media(min-width:1920px){:root{--cols:8;--pad-x:100px}}
+@media(min-width:2560px){:root{--pad-x:140px}}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow-x:hidden}
+::selection{background:var(--acc);color:var(--acc-ink)}
+/* grain 噪点（记忆点之一） */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+.shell{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x)}
+/* ---------- 顶栏 ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;transition:.3s;
+  background:linear-gradient(to bottom,rgba(11,12,16,.92),rgba(11,12,16,.55) 70%,transparent)}
+.nav.scrolled{background:rgba(11,12,16,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--hair)}
+.nav-in{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x);height:64px;display:flex;align-items:center;gap:28px}
+.brand{font-family:var(--f-disp);font-weight:900;font-stretch:75%;font-size:22px;letter-spacing:.02em}
+.brand em{font-style:normal;color:var(--acc)}
+.nav-links{display:flex;gap:22px;font-size:14px;color:var(--ink-2)}
+.nav-links a{color:inherit;text-decoration:none;transition:.2s;padding:6px 0;position:relative}
+.nav-links a:hover,.nav-links a.on{color:var(--ink)}
+.nav-links a.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--acc)}
+.nav-src{margin-left:auto;font-size:12px;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+/* ---------- HERO：非对称堆叠 ---------- */
+.hero{position:relative;padding-top:64px;min-height:var(--hero-h);display:flex;align-items:stretch;overflow:hidden}
+.hero-glow{position:absolute;inset:0;pointer-events:none;opacity:.75;transition:1.5s;
+  background:radial-gradient(52% 68% at 72% 30%,hsl(var(--h,140) 85% 55% / .30),transparent 65%),
+             radial-gradient(40% 50% at 15% 85%,hsl(calc(var(--h,140) + 60) 75% 45% / .16),transparent 60%)}
+.hero-in{position:relative;display:grid;grid-template-columns:minmax(0,46fr) minmax(0,54fr);gap:48px;width:100%;
+  max-width:var(--content-max);margin:0 auto;padding:40px var(--pad-x) 44px;align-items:center}
+.kicker{display:flex;align-items:center;gap:10px;font-family:var(--f-disp);font-weight:700;font-size:12px;
+  letter-spacing:.34em;text-transform:uppercase;color:var(--acc)}
+.kicker::before{content:"";width:34px;height:2px;background:var(--acc)}
+.hero-title{font-family:var(--f-disp);font-weight:900;font-size:clamp(30px,3.6vw,58px);line-height:1.12;
+  letter-spacing:.005em;margin:18px 0 14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--ink-2);font-size:14px;margin-bottom:10px}
+.hero-meta b{color:var(--acc);font-weight:600}
+.hero-desc{color:var(--ink-2);font-size:14.5px;line-height:1.75;max-width:52ch;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hero-cta{display:flex;gap:14px;margin-top:26px}
+.btn{display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 26px;border-radius:999px;
+  font-size:14.5px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:.2s}
+.btn-acc{background:var(--acc);color:var(--acc-ink)}
+.btn-acc:hover{transform:translateY(-2px);box-shadow:0 12px 30px -8px rgba(216,243,78,.45)}
+.btn-ghost{background:rgba(242,243,240,.08);color:var(--ink);backdrop-filter:blur(6px)}
+.btn-ghost:hover{background:rgba(242,243,240,.14)}
+/* 右侧：主海报 + 侧列错位堆叠（记忆点） */
+.hero-visual{position:relative;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:end;height:100%}
+.hero-poster{position:relative;width:min(30vw,420px);aspect-ratio:2/3;border-radius:var(--card-r);overflow:hidden;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.75);transform:rotate(-1.6deg);transition:.4s;z-index:2}
+.hero-poster:hover{transform:rotate(0) scale(1.015)}
+.hero-side{display:grid;gap:12px;padding-bottom:6px}
+.mini{display:flex;gap:12px;align-items:center;width:250px;padding:8px;border-radius:12px;
+  background:rgba(242,243,240,.045);border:1px solid var(--hair);cursor:pointer;transition:.25s;backdrop-filter:blur(8px)}
+.mini:hover{background:rgba(242,243,240,.09);transform:translateX(-6px)}
+.mini:nth-child(1){transform:translateX(26px)}.mini:nth-child(2){transform:translateX(10px)}
+.mini:nth-child(3){transform:translateX(-4px)}.mini:hover{transform:translateX(-6px)}
+.mini .kpic{width:44px;height:62px;border-radius:6px;flex:none}
+.mini-t{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-m{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.hero-swap{position:absolute;right:0;top:0;z-index:3}
+.swap{font-size:12.5px;color:var(--ink-2);background:rgba(242,243,240,.07);border:1px solid var(--hair);
+  padding:8px 16px;border-radius:999px;cursor:pointer;transition:.2s;backdrop-filter:blur(8px)}
+.swap:hover{color:var(--acc);border-color:rgba(216,243,78,.4)}
+/* ---------- 跑马灯分隔带 ---------- */
+.marquee{border-block:1px solid var(--hair);overflow:hidden;padding:13px 0;background:var(--bg-2)}
+.mq-track{display:flex;gap:54px;width:max-content;animation:mq 46s linear infinite}
+.mq-track span{font-family:var(--f-disp);font-weight:700;font-stretch:75%;font-size:15px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.mq-track span i{font-style:normal;color:var(--acc);margin-right:14px}
+@keyframes mq{to{transform:translateX(-50%)}}
+/* ---------- 行 ---------- */
+main{padding-bottom:90px}
+.row{padding-top:52px}
+.row-head{display:flex;align-items:baseline;gap:18px;margin-bottom:22px}
+.row-no{font-family:var(--f-disp);font-weight:900;font-stretch:75%;font-size:clamp(26px,2.4vw,40px);
+  color:transparent;-webkit-text-stroke:1.2px rgba(216,243,78,.55);letter-spacing:.02em}
+.row-title{font-family:var(--f-disp);font-size:clamp(19px,1.5vw,26px);font-weight:700;letter-spacing:.02em}
+.row-en{font-family:var(--f-disp);font-weight:500;font-stretch:75%;font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ink-3)}
+.row-more{margin-left:auto;font-size:13px;color:var(--ink-3);text-decoration:none;transition:.2s}
+.row-more:hover{color:var(--acc)}
+.strip{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:18px}
+.card{cursor:pointer}
+.kpic{position:relative;aspect-ratio:2/3;border-radius:var(--card-r);overflow:hidden;background:var(--bg-2)}
+.kpic::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(242,243,240,.13) 50%,transparent 70%);
+  translate:-100% 0;animation:sh 1.6s infinite}
+.kpic.is-loaded::before,.kpic.is-broken::before{display:none}
+@keyframes sh{to{translate:100% 0}}
+.kpic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s,transform .45s}
+.kpic.is-loaded img{opacity:1}
+.kpic.is-broken::after{content:"◇";position:absolute;inset:0;display:grid;place-items:center;font-size:22px;color:var(--ink-3)}
+.card:hover .kpic img{transform:scale(1.06)}
+.card:hover .kpic::after{opacity:1}
+/* 卡片底部信息渐显 + 强调条 */
+.kpic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc);
+  transform:scaleX(0);transform-origin:left;transition:.3s}
+.card-info{padding:12px 2px 0}
+.card-t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-m{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-3);margin-top:5px}
+.card-m .tag{padding:1px 7px;border:1px solid var(--hair);border-radius:4px;font-size:10.5px;letter-spacing:.05em}
+/* ---------- 加载骨架 ---------- */
+.loading .hero-title{color:var(--bg-2);border-radius:6px;background:var(--bg-2);user-select:none}
+.loading .strip .kpic{opacity:.4}
+/* ---------- reveal 动效 ---------- */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+</style>
+</head>
+<body class="loading">
+
+<nav class="nav" id="nav"><div class="nav-in">
+  <div class="brand">Kino<em>TV</em></div>
+  <div class="nav-links">
+    <a class="on" href="#">首页</a><a href="#">电影</a><a href="#">剧集</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">IPTV</a>
+  </div>
+  <div class="nav-src" id="srcName">CONNECTING…</div>
+</div></nav>
+
+<header class="hero" id="hero">
+  <div class="hero-glow" id="glow"></div>
+  <div class="hero-in">
+    <div>
+      <div class="kicker">Featured · 今日主打</div>
+      <h1 class="hero-title rv" id="hTitle">加载中……</h1>
+      <div class="hero-meta rv" id="hMeta"></div>
+      <p class="hero-desc rv" id="hDesc"></p>
+      <div class="hero-cta rv">
+        <button class="btn btn-acc">▶ 立即播放</button>
+        <button class="btn btn-ghost">详情</button>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-swap"><button class="swap" id="swapBtn">↻ 换一换</button></div>
+      <div class="hero-poster kpic" id="hPic" data-w="800"></div>
+      <div class="hero-side" id="hSide"></div>
+    </div>
+  </div>
+</header>
+
+<div class="marquee"><div class="mq-track" id="mq"></div></div>
+
+<main class="shell" id="rows"></main>
+
+<script src="./_data.js"></script>
+<script>
+(function(){
+  'use strict';
+  let DB = null, pool = [], cursor = 0;
+
+  const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+  const esc = s=>String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+  function card(v){
+    const c = el('div','card rv');
+    c.appendChild(el('div','kpic'));
+    c.lastChild.setAttribute('data-raw', v.pic||'');
+    c.lastChild.setAttribute('data-alt', esc(v.title));
+    c.appendChild(el('div','card-info',
+      '<div class="card-t">'+esc(v.title)+'</div>'+
+      '<div class="card-m">'+(v.remarks?'<span class="tag">'+esc(v.remarks)+'</span>':'')+
+      '<span>'+esc(v.year)+'</span>'+(+v.score>0?'<span>★ '+esc(v.score)+'</span>':'')+'</div>'));
+    return c;
+  }
+
+  function renderHero(v){
+    document.documentElement.style.setProperty('--h', v.hue||140);
+    document.getElementById('hTitle').textContent = v.title;
+    document.getElementById('hMeta').innerHTML =
+      '<b>'+(+v.score>0?'★ '+esc(v.score):'NEW')+'</b><span>'+esc(v.year)+'</span><span>'+esc(v.cls||'影视')+'</span>'+
+      (v.remarks?'<span>'+esc(v.remarks)+'</span>':'');
+    document.getElementById('hDesc').textContent = v.content || '暂无简介。';
+    const p = document.getElementById('hPic');
+    p.setAttribute('data-raw', v.pic||''); p.classList.remove('is-loaded');
+    p.querySelectorAll('img').forEach(i=>i.remove());
+    document.getElementById('hSide').innerHTML = '';
+    DB.heroSide.forEach((m,i)=>{
+      const d = el('div','mini');
+      d.innerHTML = '<div class="kpic" data-raw="'+esc(m.pic)+'" data-w="160"></div>'+
+        '<div style="min-width:0"><div class="mini-t">'+esc(m.title)+'</div><div class="mini-m">'+esc(m.remarks||m.year)+'</div></div>';
+      d.onclick = ()=>{ cursor = (pool.indexOf(m)>=0?pool.indexOf(m):cursor); renderHero(m); bind(); };
+      document.getElementById('hSide').appendChild(d);
+    });
+    window.kinoBindPics(document.getElementById('hSide'));
+  }
+
+  function swap(){
+    if(!pool.length) return;
+    cursor = (cursor + 1) % Math.max(1, pool.length - 4);
+    renderHero(pool[cursor]); window.kinoBindPics();
+  }
+
+  function renderRows(){
+    const wrap = document.getElementById('rows'); wrap.innerHTML='';
+    DB.rows.forEach((r,ri)=>{
+      const sec = el('section','row');
+      sec.appendChild(el('div','row-head',
+        '<span class="row-no">'+String(ri+1).padStart(2,'0')+'</span>'+
+        '<span class="row-title">'+esc(r.title)+'</span>'+
+        '<span class="row-en">'+esc(r.en)+'</span>'+
+        '<a class="row-more" href="#">更多 →</a>'));
+      const st = el('div','strip');
+      r.items.slice(0, 12).forEach(v=>st.appendChild(card(v)));
+      sec.appendChild(st); wrap.appendChild(sec);
+    });
+    window.kinoBindPics(wrap);
+    requestAnimationFrame(()=>wrap.querySelectorAll('.rv').forEach((e,i)=>setTimeout(()=>e.classList.add('in'), (i%12)*45)));
+  }
+
+  function renderMarquee(){
+    const mq = document.getElementById('mq'); mq.innerHTML='';
+    const seg = ()=> pool.slice(0,10).map(v=>'<span><i>◆</i>'+esc(v.title)+'</span>').join('');
+    mq.innerHTML = seg()+seg();
+  }
+
+  function bind(){
+    document.getElementById('swapBtn').onclick = swap;
+  }
+
+  window.kinoLoad().then(db=>{
+    DB = db; pool = [db.featured, ...db.heroSide, ...db.continue_, ...db.rows[0].items].filter(v=>v&&v.title);
+    document.body.classList.remove('loading');
+    document.getElementById('srcName').textContent = (db.offline?'OFFLINE · ':'') + 'SOURCE · ' + db.sourceName.toUpperCase();
+    renderHero(db.featured); renderRows(); renderMarquee(); bind();
+    // hero 内图片绑定
+    const hp = document.getElementById('hPic');
+    window.kinoBindPics(hp.parentElement);
+    requestAnimationFrame(()=>document.querySelectorAll('.hero .rv').forEach((e,i)=>setTimeout(()=>e.classList.add('in'), 120+i*90)));
+  });
+
+  window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled', scrollY>10),{passive:true});
+})();
+</script>
+</body>
+</html>

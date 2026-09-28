@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E — 报刊排版式 · 真实接口数据版</title>
+<style>
+/* ============================================================
+   Demo E · 报刊排版式（真实接口数据版）
+   - 数据源：项目内置 CMS 源（public/data/video-sources.json）中
+     两个允许浏览器直连的源：豆瓣资源(caiji.dbzy5.com) / 茅台资源(caiji.maotaizy.cc)
+   - 接口：MacCMS ac=videolist（与 src/services/videoService.ts 同口径）
+   - 标题 / 海报 / 年份 / 备注 / 简介 均为真实数据；播放进度 / 热度值为演示值
+   - 全模块零卡片；大屏规则沿用：首屏预算制 / hero ≤48vh / 列数梯度 / 封顶 2200
+   ============================================================ */
+:root{
+  --paper:#fbfaf7; --ink:#141416; --ink-2:#57575f; --ink-3:#98989f;
+  --rule:#d8d5cd; --accent:#b03a1e;
+  --serif:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --content-max:2200px;
+  --pad-x:clamp(16px,2.4vw,44px); --gap:clamp(12px,1vw,20px);
+  --poster-n:6; --cont-n:4;
+}
+@media (width>=1440px){ :root{--pad-x:60px; --poster-n:7; --cont-n:5} }
+@media (width>=1920px){ :root{--pad-x:100px; --poster-n:8; --cont-n:6} }
+@media (width>=2560px){ :root{--pad-x:140px} }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;width:100%;height:100%;object-fit:cover}
+.page{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x)}
+
+/* ---------- 报头 ---------- */
+.masthead{padding-top:clamp(16px,2.4vh,28px)}
+.mast-row{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+  border-bottom:3px solid var(--ink);padding-bottom:clamp(8px,1.2vh,14px)}
+.brand{font-family:var(--serif);font-size:clamp(26px,2.2vw,42px);font-weight:900;letter-spacing:.04em}
+.brand em{color:var(--accent);font-style:normal}
+.edition{font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-2);text-align:right;line-height:1.7}
+.mast-nav{display:flex;gap:clamp(16px,1.6vw,32px);padding:clamp(8px,1.2vh,12px) 0;
+  border-bottom:1px solid var(--rule);font-size:clamp(13px,.85vw,15px);align-items:center;flex-wrap:wrap}
+.mast-nav a{color:var(--ink-2);transition:.2s}
+.mast-nav a.on,.mast-nav a:hover{color:var(--ink);font-weight:700}
+.mast-nav .search{margin-left:auto;color:var(--ink-3)}
+.data-badge{font-size:clamp(10.5px,.68vw,12px);color:var(--ink-3);border:1px solid var(--rule);
+  border-radius:99px;padding:2px 10px;white-space:nowrap}
+.data-badge b{color:var(--accent);font-weight:700}
+
+/* ---------- 分区头 ---------- */
+.sec{margin-top:clamp(24px,4vh,48px)}
+.sec-head{display:flex;align-items:baseline;gap:clamp(12px,1.1vw,20px);
+  border-bottom:1px solid var(--rule);padding-bottom:clamp(8px,1.2vh,14px);margin-bottom:clamp(14px,2vh,24px)}
+.sec-head .no{font-family:var(--serif);font-size:clamp(22px,2vw,38px);font-weight:900;color:var(--accent);line-height:1}
+.sec-head h2{font-family:var(--serif);font-size:clamp(20px,1.9vw,34px);font-weight:900}
+.sec-head .sub{font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3)}
+.sec-head .more{margin-left:auto;font-size:clamp(12px,.8vw,14px);color:var(--ink-2)}
+.sec-head .more:hover{color:var(--ink)}
+
+/* ---------- 首屏 ①：头条对开 ---------- */
+.headline{display:grid;grid-template-columns:minmax(0,11fr) minmax(0,9fr);gap:clamp(24px,2.6vw,52px);
+  height:clamp(340px,48vh,560px);margin-top:clamp(16px,2.4vh,28px)}
+.hl-text{display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:clamp(6px,1.4vh,18px);min-width:0}
+.hl-text .kick{font-size:clamp(11.5px,.76vw,13.5px);letter-spacing:.28em;text-transform:uppercase;color:var(--accent);
+  font-weight:800;margin-bottom:clamp(8px,1.2vh,14px)}
+.hl-text h1{font-family:var(--serif);font-size:clamp(26px,4.6vh,54px);font-weight:900;line-height:1.18;margin-bottom:clamp(8px,1.4vh,16px)}
+.hl-text .deck{font-size:clamp(13px,.92vw,16.5px);line-height:1.8;color:var(--ink-2);max-width:56ch;margin-bottom:clamp(10px,1.8vh,20px);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hl-text .meta{font-size:clamp(12px,.8vw,14px);color:var(--ink-3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:clamp(12px,2vh,22px)}
+.hl-text .meta .star{color:var(--accent);font-weight:800}
+.hl-actions{display:flex;gap:clamp(14px,1.4vw,26px);align-items:center}
+.hl-actions .play{font-weight:800;font-size:clamp(13.5px,.9vw,16px);border-bottom:2px solid var(--accent);padding-bottom:3px;cursor:pointer}
+.hl-actions .ghost{font-size:clamp(12.5px,.82vw,14.5px);color:var(--ink-2);cursor:pointer}
+.hl-actions .ghost:hover{color:var(--ink)}
+.hl-pic{position:relative;overflow:hidden;border-radius:clamp(6px,.5vw,10px);background:#eceade}
+.hl-pic img{position:absolute;inset:0;transition:transform 6s}
+.hl-pic:hover img{transform:scale(1.025)}
+.hl-pic .cap{position:absolute;left:0;right:0;bottom:0;padding:38px 16px 12px;color:#fff;
+  background:linear-gradient(180deg,transparent,rgba(12,12,14,.82));font-size:clamp(11.5px,.74vw,13px)}
+.hl-side-notes{display:flex;gap:clamp(14px,1.6vw,30px);margin-top:clamp(10px,1.6vh,18px)}
+.hl-side-notes a{flex:1;font-size:clamp(12px,.8vw,14px);line-height:1.6;color:var(--ink-2);
+  border-top:2px solid var(--ink);padding-top:clamp(6px,1vh,10px);transition:.2s;min-width:0}
+.hl-side-notes a:hover{color:var(--ink)}
+.hl-side-notes a b{display:block;color:var(--ink);font-weight:700;margin-bottom:2px;font-size:clamp(12.5px,.85vw,15px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 首屏 ②：继续观看 ---------- */
+.cont-grid{display:grid;grid-template-columns:repeat(var(--cont-n),minmax(0,1fr));gap:var(--gap)}
+.cont-cell{cursor:pointer;min-width:0}
+.cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);position:relative;background:#eceade}
+.cont-cell .th img{position:absolute;inset:0;transition:transform .5s}
+.cont-cell:hover .th img{transform:scale(1.05)}
+.cont-cell .th .time{position:absolute;right:7px;bottom:7px;font-size:clamp(10px,.66vw,11.5px);color:#fff;background:rgba(12,12,14,.6);padding:2px 7px;border-radius:4px}
+.cont-cell .prog{height:2px;background:var(--rule);position:relative;margin-top:clamp(6px,.9vh,10px)}
+.cont-cell .prog b{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+.cont-cell h4{font-family:var(--serif);font-size:clamp(14px,.95vw,17px);font-weight:900;margin-top:clamp(6px,1vh,11px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 首屏 ③：分类索引 ---------- */
+.cat-index{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:clamp(8px,1.4vh,14px);
+  font-family:var(--serif);font-size:clamp(15px,1.2vw,24px);font-weight:900}
+.cat-index a{transition:.2s;white-space:nowrap}
+.cat-index a:hover{color:var(--accent)}
+.cat-index .n{font-family:var(--sans);font-weight:500;font-size:clamp(11px,.72vw,13px);color:var(--ink-3);margin-left:6px;vertical-align:baseline}
+.cat-index .slash{color:var(--rule);margin:0 clamp(10px,1vw,20px);font-weight:400}
+
+/* ---------- 趋势表格 ---------- */
+.trend-table{border-top:2px solid var(--ink)}
+.trow{display:grid;grid-template-columns:clamp(44px,3.4vw,70px) minmax(0,1fr) clamp(120px,10vw,200px) clamp(110px,9vw,180px);
+  gap:clamp(14px,1.4vw,28px);align-items:baseline;padding:clamp(11px,1.4vh,18px) 4px;
+  border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s}
+.trow:hover{background:#f3f1ea}
+.trow .rank{font-family:var(--serif);font-size:clamp(20px,1.8vw,32px);font-weight:900;color:var(--ink-3)}
+.trow:nth-child(-n+3) .rank{color:var(--accent)}
+.trow .ti b{font-size:clamp(14.5px,1vw,18px);font-weight:700;display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .ti span{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3)}
+.trow .heat{text-align:right;font-size:clamp(13px,.9vw,16px);font-weight:800}
+.trow .delta{text-align:right;font-size:clamp(11.5px,.76vw,13px);color:#1c7a44}
+.trow .delta.down{color:var(--accent)}
+
+/* ---------- 引语带 ---------- */
+.quote-band{margin-top:clamp(28px,5vh,56px);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:clamp(18px,3vh,36px) 0;display:flex;gap:clamp(24px,3vw,64px);align-items:baseline}
+.quote-band .q{font-family:var(--serif);font-size:clamp(16px,1.5vw,26px);font-weight:900;line-height:1.5;min-width:0}
+.quote-band .q small{display:block;font-family:var(--sans);font-weight:500;font-size:clamp(11px,.72vw,13px);color:var(--ink-3);margin-top:clamp(6px,1vh,12px)}
+
+/* ---------- 推荐区 ---------- */
+.rec-tabs{display:flex;gap:clamp(14px,1.4vw,28px);margin-bottom:clamp(12px,1.8vh,20px);flex-wrap:wrap}
+.rec-tabs a{font-size:clamp(13px,.9vw,16px);color:var(--ink-2);padding-bottom:4px;border-bottom:2px solid transparent;cursor:pointer;transition:.2s}
+.rec-tabs a.on{color:var(--ink);font-weight:800;border-bottom-color:var(--accent)}
+.rec-tabs a:hover{color:var(--ink)}
+.poster-row{display:grid;grid-auto-flow:column;
+  grid-auto-columns:calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));gap:var(--gap);
+  transition:opacity .25s}
+.poster-row.fading{opacity:0}
+.poster-row .p{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);cursor:pointer;background:#eceade}
+.poster-row .p img{position:absolute;inset:0;transition:transform .5s}
+.poster-row .p:hover img{transform:scale(1.05)}
+.poster-row .p .lab{position:absolute;left:0;right:0;bottom:0;padding:40px 11px 9px;color:#fff;
+  background:linear-gradient(180deg,transparent,rgba(12,12,14,.85));opacity:0;transition:.3s}
+.poster-row .p:hover .lab{opacity:1}
+.poster-row .p .lab h4{font-size:clamp(12.5px,.88vw,15.5px);font-weight:700}
+.poster-row .p .lab p{font-size:clamp(10.5px,.68vw,12px);opacity:.75}
+.poster-row .p .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);font-size:clamp(10.5px,.7vw,12px);font-weight:800;
+  background:#fff;color:var(--ink);padding:2px 7px;border-radius:4px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 骨架 ---------- */
+.skl{position:relative;overflow:hidden;background:#eceade}
+.skl::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.4s infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.skl-line{height:13px;border-radius:4px;margin-top:8px}
+
+footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px,1.6vh,20px);
+  border-top:3px solid var(--ink);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3)}
+</style>
+<style id="xdev-css">
+/* ==== 设备适配层：TV 10-foot / 投影仪 / 超宽（?device= 或真实视口触发） ==== */
+/* TV：zoom 1.5 使正文 ≥22px@1080p 等效；列数锁低档（少列大卡）；overscan 3.5% 安全区；D-pad 焦点高亮 */
+html[data-device="tv"]{--n:6;--cn:4;--poster-n:6;--cont-n:4;--coll-n:5;--content-max:2200px}
+html[data-device="tv"] body{zoom:1.5;padding:3.5vh 3.5vw!important;box-sizing:border-box}
+html[data-device="tv"] :focus{outline:3px solid #d4a24e!important;outline-offset:3px;border-radius:4px}
+/* 投影仪：zoom 1.4 字号放大；浅色底自动转深（JS 亮度自检后置 data-invert），img 二次反色还原海报 */
+html[data-device="beamer"]{--n:7;--cn:5;--poster-n:7;--cont-n:5;--coll-n:6}
+html[data-device="beamer"] body{zoom:1.4}
+html[data-device="beamer"][data-invert="1"] body{filter:invert(1) hue-rotate(180deg);background:#fff}
+html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-invert="1"] video{filter:invert(1) hue-rotate(180deg)}
+/* 超宽：真机 2560+/21:9 列数继续升档、封顶放宽，避免大屏只剩巨图 */
+@media (width>=2560px){:root{--content-max:2600px;--pad-x:120px;--n:9;--cn:7;--poster-n:9;--cont-n:7;--coll-n:8}}
+@media (min-aspect-ratio:21/9){:root{--content-max:min(3000px,92vw);--pad-x:140px;--n:10;--cn:8;--poster-n:10;--cont-n:8}}
+/* 模式徽章 */
+.xdev-badge{position:fixed;right:14px;bottom:12px;z-index:99999;font:600 11px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.12em;color:#d4a24e;background:rgba(16,16,20,.82);border:1px solid rgba(212,162,78,.5);border-radius:999px;padding:6px 12px;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="mast-row">
+      <div class="brand">Kino<em>TV</em> 影视日报</div>
+      <div class="edition" id="edition"></div>
+    </div>
+    <nav class="mast-nav" id="mast-nav">
+      <a class="on" href="#">首页</a><a href="#">剧集</a><a href="#">电影</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">榜单</a><a href="#">IPTV</a>
+      <span class="data-badge" id="data-badge">真实接口拉取中…</span>
+      <span class="search">搜索 ⌘K</span>
+    </nav>
+  </header>
+
+  <!-- 首屏 ①：头条对开 -->
+  <section class="headline" id="headline"></section>
+
+  <!-- 首屏 ②：继续观看 -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="no">01</span><h2>继续观看</h2><span class="sub">真实片源 · 进度为演示值</span>
+      <a class="more" href="#">全部记录 →</a>
+    </div>
+    <div class="cont-grid" id="cont-grid"></div>
+  </section>
+
+  <!-- 首屏 ③：分类索引 -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="no">02</span><h2>分类索引</h2><span class="sub" id="cat-sub">真实收录统计</span>
+      <a class="more" href="#">管理分类 →</a>
+    </div>
+    <nav class="cat-index" id="cat-index"></nav>
+  </section>
+
+  <!-- 折叠线下：趋势表格 -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="no">03</span><h2>本周新声</h2><span class="sub">近 7 日真实收录 · 热度值为演示值</span>
+      <a class="more" href="#">完整榜单 →</a>
+    </div>
+    <div class="trend-table" id="trend-table"></div>
+  </section>
+
+  <!-- 推荐区 -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="no">04</span><h2>为你推荐</h2><span class="sub">真实片库按分类抽取</span>
+      <a class="more" href="#">更多 →</a>
+    </div>
+    <div class="rec-tabs" id="rec-tabs"></div>
+    <div class="poster-row" id="poster-row"></div>
+  </section>
+
+  <footer>
+    <span>KinoTV — Demo E · 报刊排版式 · 标题/海报/简介来自项目内置 CMS 源（豆瓣资源 dbzy5 / 茅台资源 maotaizy，浏览器直连）；进度与热度为演示值</span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   数据层：与 src/services/videoService.ts 同口径的 MacCMS 调用
+   源 = public/data/video-sources.json 内置源中实测允许 CORS 直连的两个
+   ============================================================ */
+const SOURCES = [
+  { name: "豆瓣资源", api: "https://caiji.dbzy5.com/api.php/provide/vod" },
+  { name: "茅台资源", api: "https://caiji.maotaizy.cc/api.php/provide/vod" }
+];
+const TYPE_NAME = { 1: "电影", 2: "剧集", 3: "综艺", 4: "动漫" };
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const stripHtml = (s) => String(s ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+
+/** 单次 CMS 列表请求（10s 超时，业务码校验对齐 assertCmsOk） */
+async function cms(api, params) {
+  const url = api + "?" + new URLSearchParams(params).toString();
+  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const j = await res.json();
+  if (j.code != null && j.code !== 1) throw new Error(j.msg || "CMS 业务异常");
+  return j;
+}
+
+/** CMS 条目 → 展示模型（对齐 mapVideoItem 字段） */
+function mapItem(x, srcName) {
+  return {
+    id: x.vod_id,
+    title: x.vod_name || "未命名",
+    pic: x.vod_pic || "",
+    type: TYPE_NAME[x.type_id_1 ?? x.type_id] || "影视",
+    year: x.vod_year || "",
+    remarks: x.vod_remarks || "",
+    cls: (x.vod_class || "").split(",")[0] || "",
+    score: parseFloat(x.vod_score) > 0 ? x.vod_score : null,
+    content: stripHtml(x.vod_content),
+    src: srcName
+  };
+}
+
+/** 并行请求两源按分类拉取 + 去重合并 */
+async function fetchAll() {
+  const jobs = [
+    cms(SOURCES[0].api, { ac: "videolist", pg: 1, h: 168 }),
+    cms(SOURCES[1].api, { ac: "videolist", pg: 1, h: 168 }),
+    ...[1, 2, 3, 4].flatMap((t) => SOURCES.map((s) => cms(s.api, { ac: "videolist", t, pg: 1 })))
+  ];
+  const [latestDb, latestMt, ...byType] = await Promise.allSettled(jobs);
+  const pick = (r) => (r.status === "fulfilled" ? r.value.list ?? [] : []);
+  const latest = [...pick(latestDb), ...pick(latestMt)]
+    .map((x) => mapItem(x, x.vod_pic?.includes("dbzy") ? SOURCES[0].name : SOURCES[1].name));
+  const seen = new Set();
+  const uniq = (arr) => { const s = new Set(); return arr.filter((x) => !s.has(x.title) && s.add(x.title)); };
+  return {
+    latest: uniq(latest),
+    byType: {
+      1: uniq([...pick(byType[0]), ...pick(byType[1])].map((x) => mapItem(x, SOURCES[0].name))),
+      2: uniq([...pick(byType[2]), ...pick(byType[3])].map((x) => mapItem(x, SOURCES[0].name))),
+      3: uniq([...pick(byType[4]), ...pick(byType[5])].map((x) => mapItem(x, SOURCES[1].name))),
+      4: uniq([...pick(byType[6]), ...pick(byType[7])].map((x) => mapItem(x, SOURCES[1].name)))
+    }
+  };
+}
+
+/* ---------- 骨架（与真实布局同尺寸） ---------- */
+function renderSkeletons() {
+  $("headline").innerHTML = `
+    <div class="hl-text">
+      <div class="skl skl-line" style="width:90px"></div>
+      <div class="skl skl-line" style="height:34px;margin-top:14px"></div>
+      <div class="skl skl-line"></div><div class="skl skl-line" style="width:70%"></div>
+    </div>
+    <div class="hl-pic"><div class="skl" style="position:absolute;inset:0"></div></div>`;
+  $("cont-grid").innerHTML = Array(4).fill(0).map(() =>
+    `<div class="cont-cell"><div class="th skl"></div><div class="skl skl-line" style="width:60%"></div><div class="skl skl-line" style="width:40%"></div></div>`).join("");
+  $("trend-table").innerHTML = Array(6).fill(0).map(() =>
+    `<div class="trow"><div class="skl skl-line" style="width:32px"></div><div class="skl skl-line"></div><div class="skl skl-line"></div><div class="skl skl-line"></div></div>`).join("");
+  $("cat-index").innerHTML = Array(4).fill(0).map(() => `<span class="skl skl-line" style="width:90px;display:inline-block"></span>`).join('<span class="slash">/</span>');
+  renderPosterSkeleton();
+}
+function renderPosterSkeleton() {
+  const n = getComputedStyle(document.documentElement).getPropertyValue("--poster-n").trim() || 6;
+  $("poster-row").innerHTML = Array(+n).fill(0).map(() => `<div class="p skl"></div>`).join("");
+}
+
+/* ---------- 报头 ---------- */
+function renderMasthead(ok, fail) {
+  const d = new Date();
+  const week = Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 864e5 + 1) / 7);
+  const weekCN = "日一二三四五六"[d.getDay()];
+  $("edition").innerHTML =
+    `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}<br>第 ${week} 周 · 总第 1,204 期`;
+  $("data-badge").innerHTML = ok
+    ? `真实数据 · <b>${esc(SOURCES.map((s) => s.name).join("/"))}</b>${fail ? ` · ${fail} 类请求失败` : ""}`
+    : `离线演示数据（接口不可达）`;
+}
+
+/* ---------- 头条：最新收录第一条 ---------- */
+function renderHeadline(items) {
+  const h = items[0];
+  if (!h) { $("headline").innerHTML = ""; return; }
+  const side = items.slice(1, 4);
+  $("headline").innerHTML = `
+    <div class="hl-text">
+      <div class="kick">今日头条 · ${esc(h.src)} 最新收录</div>
+      <h1>${esc(h.title)}</h1>
+      <p class="deck">${esc(h.content || `${h.cls || h.type} · ${h.year} 年作品，已更新至「${h.remarks || "正片"}」。本条来自项目内置 CMS 源实时接口，简介为原始 vod_content。`)}</p>
+      <div class="meta">
+        <span>${esc(h.year)}</span><span>${esc(h.type)}</span>
+        ${h.cls ? `<span>${esc(h.cls)}</span>` : ""}
+        ${h.remarks ? `<span>${esc(h.remarks)}</span>` : ""}
+        ${h.score ? `<span class="star">★ ${esc(h.score)}</span>` : ""}
+        <span>来源：${esc(h.src)}</span>
+      </div>
+      <div class="hl-actions">
+        <a class="play">▶ 立即播放</a><a class="ghost">＋ 加入待看</a><a class="ghost">查看详情</a>
+      </div>
+      <div class="hl-side-notes">${side.map((s) =>
+        `<a href="#"><b>${esc(s.title)}</b>${esc(s.remarks || s.cls || s.type)} · ${esc(s.src)}</a>`).join("")}</div>
+    </div>
+    <div class="hl-pic"><img src="${esc(h.pic)}" alt="${esc(h.title)}" loading="eager" onerror="this.remove()">
+      <div class="cap">《${esc(h.title)}》· ${esc(h.remarks || h.cls || h.type)}</div>
+    </div>`;
+}
+
+/* ---------- 继续观看：最新收录 2–7 条（进度为演示值） ---------- */
+function renderContinue(items) {
+  const picks = items.slice(1, 7);
+  $("cont-grid").innerHTML = picks.map((c, i) => {
+    const prog = 20 + (hash(c.title) % 70);
+    return `
+    <div class="cont-cell">
+      <div class="th"><img src="${esc(c.pic)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+        <span class="time">${esc(c.remarks || c.cls || c.type)}</span></div>
+      <div class="prog"><b style="width:${prog}%"></b></div>
+      <h4>${esc(c.title)}</h4><p>${esc(c.cls || c.type)} · ${esc(c.year)} · ${esc(c.src)}</p>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- 分类索引：真实 total 求和 ---------- */
+function renderCategories(totals) {
+  const cats = [
+    { name: "电影", n: totals[1] }, { name: "剧集", n: totals[2] },
+    { name: "综艺", n: totals[3] }, { name: "动漫", n: totals[4] }
+  ];
+  $("cat-index").innerHTML = cats.map((c, i) =>
+    `${i ? '<span class="slash">/</span>' : ""}<a href="#">${esc(c.name)}<span class="n">${c.n.toLocaleString()} 部真实收录</span></a>`).join("")
+    + '<span class="slash">/</span><a href="#">IPTV 直播<span class="n">126 频道（演示）</span></a>';
+}
+
+/* ---------- 趋势表：最新收录前 10（热度演示值，由标题哈希稳定生成） ---------- */
+function renderTrend(items) {
+  $("trend-table").innerHTML = items.slice(0, 10).map((t, i) => {
+    const heat = (98.4 - i * 1.8 - (hash(t.title) % 10) / 10).toFixed(1);
+    const dv = (hash(t.title) % 7) - 3;
+    const delta = dv > 0 ? `↑ ${dv} 位` : dv < 0 ? `↓ ${-dv} 位` : "— 持平";
+    return `<div class="trow">
+      <span class="rank">${i + 1}</span>
+      <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || t.type)} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
+      <span class="heat">${heat}</span>
+      <span class="delta${dv < 0 ? " down" : ""}">${delta}</span>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- 推荐区：真实分类数据 + tab 切换 ---------- */
+let recTab = "全部", DATA = null;
+const TYPE_KEY = { "电影": 1, "剧集": 2, "综艺": 3, "动漫": 4 };
+function renderRecTabs() {
+  $("rec-tabs").innerHTML = ["全部", "电影", "剧集", "综艺", "动漫"].map((t) =>
+    `<a class="${t === recTab ? "on" : ""}" data-tab="${esc(t)}">${esc(t)}</a>`).join("");
+}
+function renderRecRow() {
+  const n = +(getComputedStyle(document.documentElement).getPropertyValue("--poster-n").trim() || 6);
+  const pool = recTab === "全部" ? DATA.latest : DATA.byType[TYPE_KEY[recTab]];
+  $("poster-row").innerHTML = pool.slice(0, n).map((it) => `
+    <div class="p"><img src="${esc(it.pic)}" alt="${esc(it.title)}" loading="lazy" onerror="this.parentElement.classList.add('skl');this.remove()">
+      <span class="sc">${esc(it.remarks || it.score || it.year)}</span>
+      <div class="lab"><h4>${esc(it.title)}</h4><p>${esc(it.cls || it.type)} · ${esc(it.year)} · ${esc(it.src)}</p></div>
+    </div>`).join("");
+}
+function initRecTabs() {
+  $("rec-tabs").addEventListener("click", (e) => {
+    const a = e.target.closest("[data-tab]");
+    if (!a || a.dataset.tab === recTab) return;
+    recTab = a.dataset.tab;
+    renderRecTabs();
+    const row = $("poster-row");
+    row.classList.add("fading");
+    setTimeout(() => { renderRecRow(); row.classList.remove("fading"); }, 250);
+  });
+}
+
+/* ---------- 离线兜底（接口全部不可达时） ---------- */
+const FALLBACK = {
+  latest: Array.from({ length: 10 }, (_, i) => ({
+    title: "演示条目 " + (i + 1), pic: "", type: "剧集", year: "2026",
+    remarks: "更新至第 " + (i + 3) + " 集", cls: "演示", score: null, src: "离线", content: ""
+  }))
+};
+function useFallback() { DATA = { latest: FALLBACK.latest, byType: { 1: [], 2: [], 3: [], 4: [] } }; }
+
+/* ---------- 启动 ---------- */
+(async () => {
+  renderSkeletons();
+  renderRecTabs();
+  try {
+    DATA = await fetchAll();
+    if (!DATA.latest.length) throw new Error("empty");
+    renderMasthead(true);
+    renderHeadline(DATA.latest);
+    renderContinue(DATA.latest);
+    renderTrend(DATA.latest);
+    renderRecRow();
+    // 分类计数：单独拉 total（轻量，两源 × 4 类）
+    Promise.all([1, 2, 3, 4].flatMap((t) => SOURCES.map(async (s) => {
+      try { return { t, total: (await cms(s.api, { ac: "videolist", t, pg: 1 })).total || 0 }; }
+      catch { return { t, total: 0 }; }
+    }))).then((rs) => {
+      const sum = {};
+      rs.forEach(({ t, total }) => { sum[t] = (sum[t] || 0) + total; });
+      renderCategories(sum);
+    });
+  } catch (e) {
+    useFallback();
+    renderMasthead(false);
+    renderHeadline(DATA.latest);
+    renderContinue(DATA.latest);
+    renderTrend(DATA.latest);
+    renderRecRow();
+    renderCategories({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  }
+  initRecTabs();
+})();
+</script>
+<script id="xdev-js">
+(function(){
+  var d=new URLSearchParams(location.search).get("device");
+  if(!d)return;
+  document.documentElement.setAttribute("data-device",d);
+  var b=document.createElement("div");
+  b.className="xdev-badge";
+  b.textContent=d==="tv"?"TV · 10-FOOT MODE":d==="beamer"?"PROJECTOR MODE":"";
+  if(b.textContent)document.body.appendChild(b);
+  if(d==="beamer"){
+    addEventListener("load",function(){setTimeout(function(){
+      var lum=function(a){if(!a)return 1;var m=a.match(/[\d.]+/g);if(!m||m.length<3)return 1;if(m.length>3&&+m[3]===0)return 1;return .2126*(+m[0]/255)+.7152*(+m[1]/255)+.0722*(+m[2]/255)};
+      var lv=lum(getComputedStyle(document.body).backgroundColor);
+      if(lv>=1)lv=lum(getComputedStyle(document.documentElement).backgroundColor);
+      if(lv>.5)document.documentElement.setAttribute("data-invert","1");
+    },300)});
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS-2 · 修正方案 —— 借手法，不借皮肤（统一演示）</title>
+<style>
+/* ============================================================
+   DS-2 · 同样三页，但只借 skill 的「手法」，不借它的皮肤。
+     首页   ← 借 impeccable 的构图手法（kicker + 超大标题 + 分区节奏）
+     详情   ← 借 editorial 的排版手法（两栏栅格 + 8pt 基线 + 首字下沉）
+     播放器 ← 借 glassmorphism 的材质手法（blur + 半透明 + 发光描边）
+   三栏共用同一套项目 token（variables.css 暗色档），因此
+   「主色/字体/底色/圆角/间距基线」五项的复用率全部 = 1。
+   ============================================================ */
+:root{
+  /* —— shell —— */
+  --sh-bg:#0f0f13; --sh-fg:#e9e7e2; --sh-dim:#8b8983; --sh-line:#2a2a32;
+  --sh-ok:#3ddc97; --sh-warn:#ffb44d; --sh-mono:"JetBrains Mono","Consolas",monospace;
+
+  /* —— 项目 token（取自 src/assets/styles/variables.css [data-theme="dark"]） —— */
+  --color-background:#141414;
+  --color-surface:#1f1f1f;
+  --color-surface-elevated:#262626;
+  --color-text:#ffffff;
+  --color-text-secondary:#a0a0a0;
+  --color-text-tertiary:#8c8c8c;
+  --color-border:#363636;
+  --color-border-light:#2b2b2b;
+  --color-primary:#ffffff;          /* 暗色档 primary = 白（单色系统，无品牌色） */
+  --color-text-inverse:#141414;
+
+  --radius-sm:5px; --radius-md:8px; --radius-lg:14px; --radius-full:9999px;
+  --sp-xs:4px; --sp-sm:8px; --sp-md:12px; --sp-lg:16px; --sp-xl:24px; --sp-2xl:32px;
+  --fs-xs:12px; --fs-sm:13px; --fs-base:14px; --fs-lg:16px; --fs-xl:18px; --fs-2xl:22px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--sh-bg);color:var(--sh-fg);
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:22px clamp(14px,2vw,32px) 40px}
+
+/* ---------- 页头 ---------- */
+.hd{max-width:1720px;margin:0 auto 18px}
+.hd h1{font-size:clamp(19px,1.6vw,26px);font-weight:700;letter-spacing:.01em}
+.hd h1 em{font-style:normal;color:var(--sh-ok)}
+.hd p{margin-top:8px;font-size:13px;line-height:1.7;color:var(--sh-dim);max-width:1150px}
+.hd p b{color:var(--sh-fg);font-weight:600}
+.reuse{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.reuse span{font-family:var(--sh-mono);font-size:11.5px;color:#a6f0cf;
+  background:rgba(61,220,151,.09);border:1px solid rgba(61,220,151,.32);
+  border-radius:999px;padding:5px 12px}
+.reuse span i{font-style:normal;font-weight:700;color:var(--sh-ok)}
+
+/* ---------- 三栏 ---------- */
+.stage{max-width:1720px;margin:0 auto;display:grid;gap:clamp(12px,1.2vw,20px);
+  grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1100px){.stage{grid-template-columns:1fr}}
+.panel{background:#15151b;border:1px solid var(--sh-line);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column}
+.panel>.tag{display:flex;align-items:center;gap:9px;padding:11px 14px;
+  border-bottom:1px solid var(--sh-line);background:#1a1a21;flex-wrap:wrap}
+.panel>.tag b{font-size:13px;font-weight:600}
+.panel>.tag code{font-family:var(--sh-mono);font-size:11px;color:var(--sh-dim);
+  background:#22222b;border-radius:5px;padding:3px 8px}
+.panel>.tag .only{margin-left:auto;font-family:var(--sh-mono);font-size:10.5px;
+  color:var(--sh-warn);border:1px solid rgba(255,180,77,.35);border-radius:999px;padding:3px 9px}
+.viewport{padding:14px;flex:1 1 auto;background:#0d0d12}
+.facts{padding:11px 14px;border-top:1px solid var(--sh-line);background:#1a1a21;
+  font-family:var(--sh-mono);font-size:11px;line-height:1.85;color:var(--sh-dim)}
+.facts b{color:var(--sh-fg);font-weight:500}
+
+/* ============================================================
+   迷你页面骨骼 —— 三栏共用同一套项目 token
+   ============================================================ */
+.mini{background:var(--color-background);color:var(--color-text);
+  border-radius:var(--radius-md);overflow:hidden;position:relative;isolation:isolate;
+  font-size:var(--fs-base)}
+.m-nav{display:flex;align-items:center;gap:12px;padding:10px 13px;font-size:var(--fs-xs);
+  border-bottom:1px solid var(--color-border-light);color:var(--color-text-secondary)}
+.m-nav .logo{font-weight:700;color:var(--color-text)}
+.m-nav .sp{margin-left:auto}
+.m-kick{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:10px}
+.m-kick::before{content:"";width:20px;height:1px;background:var(--color-text-tertiary)}
+.m-h1{font-size:clamp(21px,2vw,31px);font-weight:700;line-height:1.14;color:var(--color-text)}
+.m-orig{margin-top:5px;font-size:11.5px;letter-spacing:.06em;color:var(--color-text-tertiary)}
+.m-meta{display:flex;flex-wrap:wrap;gap:12px;margin:11px 0 15px;font-size:var(--fs-xs);
+  color:var(--color-text-secondary)}
+.m-acts{display:flex;gap:var(--sp-sm);flex-wrap:wrap}
+.m-btn{font-size:12px;font-weight:600;padding:7px 15px;border-radius:var(--radius-md);
+  cursor:default;white-space:nowrap}
+.m-btn.hot{background:var(--color-primary);color:var(--color-text-inverse)}
+.m-btn.ghost{background:transparent;color:var(--color-text);border:1px solid var(--color-border)}
+.m-sec{padding:var(--sp-lg) 15px 4px}
+.m-sec-h{display:flex;align-items:baseline;gap:9px;margin-bottom:11px}
+.m-sec-h h3{font-size:var(--fs-lg);font-weight:700;color:var(--color-text)}
+.m-sec-h s{text-decoration:none;font-size:10px;font-family:var(--sh-mono);
+  letter-spacing:.14em;color:var(--color-text-tertiary)}
+.m-sec-h .more{margin-left:auto;font-size:11px;color:var(--color-text-tertiary)}
+.m-cats{display:flex;flex-wrap:wrap;gap:7px;padding:14px 15px 2px}
+.m-cats span{font-size:12px;padding:6px 13px;border-radius:var(--radius-md);
+  border:1px solid var(--color-border);color:var(--color-text-secondary)}
+.m-cats span.on{background:var(--color-primary);color:var(--color-text-inverse);border-color:transparent}
+.m-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.m-poster{aspect-ratio:2/3;border-radius:var(--radius-sm);position:relative;overflow:hidden;
+  background:linear-gradient(155deg,hsl(var(--h) 16% 42%),hsl(var(--h) 12% 15%))}
+.m-poster::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(0deg,rgba(0,0,0,.5),transparent 55%)}
+.m-poster em{position:absolute;left:7px;right:7px;bottom:6px;font-style:normal;
+  font-size:10px;font-weight:600;color:#fff;line-height:1.3;z-index:2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-ep{aspect-ratio:16/10;border-radius:var(--radius-sm);border:1px solid var(--color-border);
+  display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--color-text-secondary)}
+.m-ep.on{background:var(--color-primary);color:var(--color-text-inverse);border-color:transparent}
+.m-cast{display:flex;gap:10px}
+.m-cast div{flex:1;text-align:center;font-size:10px;color:var(--color-text-tertiary)}
+.m-cast i{display:block;width:100%;aspect-ratio:1;border-radius:50%;margin-bottom:5px;
+  background:linear-gradient(150deg,hsl(var(--h) 14% 44%),hsl(var(--h) 10% 20%))}
+
+/* ============================================================
+   栏 1 手法：impeccable 的「构图」
+   —— kicker 细线 + 超大标题 + 抬高的分区节奏（间距全部来自 --sp-*）
+   ============================================================ */
+.h-compo .m-hero{padding:26px 15px 24px;border-bottom:1px solid var(--color-border-light)}
+.h-compo .m-h1{font-size:clamp(26px,2.6vw,40px);letter-spacing:-.01em}
+.h-compo .m-meta{margin:15px 0 20px}
+.h-compo .m-sec{padding-top:var(--sp-2xl)}
+.h-compo .m-sec-h{margin-bottom:var(--sp-lg)}
+.h-compo .m-sec-h h3{font-size:var(--fs-xl)}
+/* 热点色插槽：项目当前是单色系统，此处留空等语义 token 决策 */
+.slot{border:1px dashed rgba(255,180,77,.6);border-radius:var(--radius-sm);
+  padding:3px 10px;font-size:11px;color:var(--sh-warn);
+  font-family:var(--sh-mono);letter-spacing:.02em}
+
+/* ============================================================
+   栏 2 手法：editorial 的「排版」
+   —— 两栏栅格 + 8pt 基线（间距全为 8 的倍数）+ 首字下沉 + 细线分区
+   ============================================================ */
+.h-grid .m-head{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--sp-xl);
+  padding:var(--sp-2xl) 16px var(--sp-xl);
+  border-bottom:1px solid var(--color-border-light)}
+@media (max-width:520px){.h-grid .m-head{grid-template-columns:1fr;gap:var(--sp-lg)}}
+.h-grid .m-h1{font-size:clamp(24px,2.3vw,36px);line-height:1.1}
+.h-grid .m-facts{display:grid;grid-template-columns:auto 1fr;gap:var(--sp-sm) var(--sp-lg);
+  font-size:12px;align-content:start}
+.h-grid .m-facts dt{color:var(--color-text-tertiary)}
+.h-grid .m-facts dd{color:var(--color-text)}
+.h-grid .m-body{padding:var(--sp-xl) 16px;font-size:13px;line-height:1.85;
+  color:var(--color-text-secondary);
+  font-family:"Songti SC","SimSun",Georgia,serif}   /* ← editorial 的衬线手法，以中文宋体落地 */
+.h-grid .m-body .drop::first-letter{font-size:42px;font-weight:700;float:left;
+  line-height:.86;padding:3px 9px 0 0;color:var(--color-text);font-family:inherit}
+.h-grid .m-sec{padding:var(--sp-xl) 16px 0}
+.h-grid .m-sec-h{padding-bottom:var(--sp-sm);border-bottom:1px solid var(--color-border-light)}
+.h-grid .m-eps{grid-template-columns:repeat(6,minmax(0,1fr))}
+.h-grid .m-cast{padding-top:var(--sp-sm)}
+
+/* ============================================================
+   栏 3 手法：glassmorphism 的「材质」
+   —— 半透明 + blur + 发光描边；材质无色，主色仍走 --color-primary
+   ============================================================ */
+.h-glass .m-screen{aspect-ratio:16/9;position:relative;overflow:hidden;
+  background:linear-gradient(140deg,#1a1a1a,#0c0c0c 62%,#1d1a14)}
+.h-glass .m-screen .vt{position:absolute;left:14px;top:12px;font-size:11px;
+  color:rgba(255,255,255,.45);letter-spacing:.04em}
+.h-glass .m-screen .vb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-size:clamp(17px,1.7vw,26px);font-weight:700;color:rgba(255,255,255,.14);
+  letter-spacing:.06em;white-space:nowrap}
+.glass{background:rgba(255,255,255,.07);
+  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 8px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.03) inset}
+.h-glass .m-osd{position:absolute;left:10px;right:10px;bottom:10px;
+  border-radius:var(--radius-md);padding:10px 12px 9px;color:#fff}
+.h-glass .m-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.26);
+  position:relative;margin-bottom:9px;overflow:hidden}
+.h-glass .m-bar b{position:absolute;inset:0 auto 0 0;width:42%;background:var(--color-primary)}
+.h-glass .m-bar i{position:absolute;top:50%;left:42%;width:9px;height:9px;border-radius:50%;
+  transform:translate(-50%,-50%);background:#fff}
+.h-glass .m-ctl{display:flex;align-items:center;gap:11px;font-size:11px}
+.h-glass .m-ctl .t{font-family:var(--sh-mono);font-size:10.5px;opacity:.9}
+.h-glass .m-ctl .right{margin-left:auto;display:flex;gap:9px;opacity:.92}
+.h-glass .m-toast{position:absolute;left:50%;top:38%;transform:translateX(-50%);
+  border-radius:var(--radius-full);padding:7px 17px;font-size:11.5px;color:#fff;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.h-glass .m-pill{font-size:11px;padding:5px 11px;border-radius:var(--radius-full);color:#fff}
+.h-glass .m-body-pad{padding:12px 13px 14px;background:var(--color-background)}
+.h-glass .m-drawer{border-radius:var(--radius-md);padding:11px 13px;color:#fff}
+.h-glass .m-drawer h4{font-size:11.5px;margin-bottom:8px;font-weight:600}
+.h-glass .m-drawer .line{font-size:11px;color:rgba(255,255,255,.72);padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.09)}
+.h-glass .m-drawer .line:last-child{border-bottom:0}
+
+/* ---------- 结论条 ---------- */
+.concl{max-width:1720px;margin:22px auto 0;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.concl div{background:#15151b;border:1px solid var(--sh-line);border-left:2px solid var(--sh-ok);
+  border-radius:10px;padding:13px 15px}
+.concl h4{font-size:12.5px;font-weight:600;color:#a6f0cf;margin-bottom:7px}
+.concl p{font-size:12px;line-height:1.75;color:var(--sh-dim)}
+.concl p b{color:var(--sh-fg);font-weight:600}
+.concl code{font-family:var(--sh-mono);font-size:11px;color:#ffd9a0;
+  background:rgba(255,217,160,.08);border-radius:4px;padding:1px 5px}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <h1>DS-2 · 修正方案 —— <em>借手法，不借皮肤</em></h1>
+  <p>和 DS-1 是<b>同样的三页、同样的结构</b>，区别只有一个：三栏共用项目自己的 token（<code>variables.css</code> 暗色档），skill 只贡献「怎么排」而不是「长什么样」。首页用 impeccable 的构图节奏，详情用 editorial 的栅格与衬线手法，播放器用 glassmorphism 的材质。</p>
+  <div class="reuse">
+    <span>主色复用 <i>1</i> 套</span>
+    <span>字体复用 <i>1</i> 套</span>
+    <span>底色复用 <i>1</i> 套</span>
+    <span>圆角复用 <i>1</i> 套</span>
+    <span>间距基线复用 <i>1</i> 套</span>
+    <span>新增色值 <i>0</i> 个</span>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- ════════ 栏 1：首页 · 借 impeccable 构图 ════════ -->
+  <article class="panel">
+    <div class="tag">
+      <b>首页 / 大屏</b><code>impeccable · 构图</code>
+      <span class="only">借结构</span>
+    </div>
+    <div class="viewport">
+      <div class="mini h-compo">
+        <div class="m-nav">
+          <span class="logo">KinoTV</span><span>电影</span><span>剧集</span><span>综艺</span>
+          <span class="sp">搜索 ⌘K</span>
+        </div>
+        <div class="m-hero">
+          <div class="m-kick">Trending · 豆瓣收录</div>
+          <h1 class="m-h1">沙丘：第二部</h1>
+          <div class="m-orig">DUNE: PART TWO</div>
+          <div class="m-meta"><span>★ 8.6</span><span>2024</span><span>科幻 / 冒险</span><span>166 分钟</span></div>
+          <div class="m-acts"><span class="m-btn hot">▶ 立即播放</span><span class="m-btn ghost">查看详情</span><span class="m-btn ghost">＋ 待看</span></div>
+        </div>
+        <div class="m-cats">
+          <span class="on">电影</span><span>剧集</span><span>综艺</span><span>动漫</span><span>IPTV 直播</span>
+        </div>
+        <div class="m-sec">
+          <div class="m-sec-h"><h3>正在热映</h3><span class="slot">热点色插槽</span><span class="more">更多 →</span></div>
+          <div class="m-row">
+            <div class="m-poster" style="--h:212"><em>奥本海默</em></div>
+            <div class="m-poster" style="--h:28"><em>繁花</em></div>
+            <div class="m-poster" style="--h:280"><em>三体</em></div>
+            <div class="m-poster" style="--h:150"><em>周处除三害</em></div>
+          </div>
+        </div>
+        <div class="m-sec">
+          <div class="m-sec-h"><h3>高分电影</h3><s>TOP RATED</s><span class="more">更多 →</span></div>
+          <div class="m-row">
+            <div class="m-poster" style="--h:40"><em>教父</em></div>
+            <div class="m-poster" style="--h:320"><em>花样年华</em></div>
+            <div class="m-poster" style="--h:190"><em>星际穿越</em></div>
+            <div class="m-poster" style="--h:96"><em>疯狂的石头</em></div>
+          </div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+    <div class="facts">
+      <b>借到的手法：</b>细线 kicker + 超大标题 + 加大分区呼吸（<code>--sp-2xl</code> 分段）<br>
+      <b>未采纳：</b>奶油/焦橙分区、琥珀主色 <code>#CC8800</code>、Chakra Petch<br>
+      <b>差异来源：</b>只剩「构图与密度」
+    </div>
+  </article>
+
+  <!-- ════════ 栏 2：详情 · 借 editorial 排版 ════════ -->
+  <article class="panel">
+    <div class="tag">
+      <b>详情 / 人物</b><code>editorial · 栅格</code>
+      <span class="only">借结构</span>
+    </div>
+    <div class="viewport">
+      <div class="mini h-grid">
+        <div class="m-nav">
+          <span class="logo">KinoTV</span><span>详情</span><span>剧集</span>
+          <span class="sp">返回</span>
+        </div>
+        <div class="m-head">
+          <div>
+            <div class="m-kick">Detail · 剧集详情</div>
+            <h1 class="m-h1">繁花</h1>
+            <div class="m-orig">Blossoms Shanghai</div>
+            <div class="m-meta" style="margin-bottom:14px"><span>★ 8.1</span><span>2023</span><span>剧情 / 年代</span></div>
+            <div class="m-acts"><span class="m-btn hot">▶ 播放第 1 集</span><span class="m-btn ghost">＋ 加入片单</span></div>
+          </div>
+          <dl class="m-facts">
+            <dt>导演</dt><dd>王家卫</dd>
+            <dt>主演</dt><dd>胡歌 / 马伊琍</dd>
+            <dt>集数</dt><dd>30 集 · 45 分钟</dd>
+            <dt>状态</dt><dd>已完结</dd>
+          </dl>
+        </div>
+        <div class="m-body">
+          <p class="drop">九十年代的上海，阿宝在黄河路上一路走来。霓虹与弄堂交错，机遇与算计并存。</p>
+        </div>
+        <div class="m-sec">
+          <div class="m-sec-h"><h3>选集</h3><s>EPISODES · 30</s><span class="more">全部 →</span></div>
+          <div class="m-eps" style="display:grid;gap:8px">
+            <span class="m-ep on">01</span><span class="m-ep">02</span><span class="m-ep">03</span>
+            <span class="m-ep">04</span><span class="m-ep">05</span><span class="m-ep">06</span>
+          </div>
+        </div>
+        <div class="m-sec">
+          <div class="m-sec-h"><h3>主要演员</h3><s>CAST</s></div>
+          <div class="m-cast">
+            <div><i style="--h:20"></i>胡歌</div>
+            <div><i style="--h:200"></i>马伊琍</div>
+            <div><i style="--h:340"></i>唐嫣</div>
+            <div><i style="--h:120"></i>辛芷蕾</div>
+          </div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+    <div class="facts">
+      <b>借到的手法：</b>两栏栅格（标题｜信息表）+ 8pt 基线 + 首字下沉 + 细线分区<br>
+      <b>衬线落地：</b>中文场景改用<b>宋体</b>（Gelasio 无 CJK，直接套会静默回退）<br>
+      <b>未采纳：</b>纯黑主色 <code>#111111</code>、白底、Gelasio
+    </div>
+  </article>
+
+  <!-- ════════ 栏 3：播放器 · 借 glassmorphism 材质 ════════ -->
+  <article class="panel">
+    <div class="tag">
+      <b>播放器 / OSD</b><code>glassmorphism · 材质</code>
+      <span class="only">借材质</span>
+    </div>
+    <div class="viewport">
+      <div class="mini h-glass">
+        <div class="m-screen">
+          <span class="vt">繁花 · 第 12 集 · 1080P</span>
+          <span class="vb">繁 花</span>
+          <div class="m-toast">已切换至 4K 超清</div>
+          <div class="m-osd glass">
+            <div class="m-bar"><b></b><i></i></div>
+            <div class="m-ctl">
+              <span>▶</span><span>⏮</span><span class="t">18:42 / 45:10</span>
+              <span class="right">
+                <span class="m-pill glass">1080P</span>
+                <span class="m-pill glass">音轨</span>
+                <span class="m-pill glass">字幕</span>
+                <span>⛶</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="m-body-pad">
+          <div class="m-drawer glass">
+            <h4>选集 · 30</h4>
+            <div class="line">第 12 集 · 正在播放</div>
+            <div class="line">第 13 集 · 待更新</div>
+          </div>
+          <div class="m-drawer glass" style="margin-top:8px">
+            <h4>播放设置</h4>
+            <div class="line">清晰度 · 4K 超清</div>
+            <div class="line">倍速 · 1.0×</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="facts">
+      <b>借到的手法：</b><code>backdrop-filter: blur(14px)</code> + 半透明层 + 1px 发光描边 + 内阴影<br>
+      <b>未采纳：</b>亮蓝主色 <code>#1856FF</code>、Plus Jakarta Sans — 材质本身无色，主色仍走 <code>--color-primary</code><br>
+      <b>落地现状：</b>项目 OSD 已在用同款手法，属「加固」而非「新增」
+    </div>
+  </article>
+
+</main>
+
+<section class="concl">
+  <div>
+    <h4>① 跨页跳转不再换品牌</h4>
+    <p>三页的主色、字体、底色、圆角、间距基线全部来自同一份 token，跳转时用户感知到的差异只剩<b>构图密度</b>（首页疏、详情密、播放器覆在画面上），这才是「同一个 App 的不同房间」。</p>
+  </div>
+  <div>
+    <h4>② 中文终于吃到设计</h4>
+    <p>editorial 的衬线气质改由<b>中文宋体</b>承载，而不是让 Gelasio 静默回退成系统黑体。任何一个借来的手法，都要先回答「中文字形谁来做」。</p>
+  </div>
+  <div>
+    <h4>③ 不新造第四个品牌色</h4>
+    <p>项目是单色 token 系统（暗色档 <code>primary = #fff</code>）。三个 skill 各自带的橙/黑/蓝一律不引入；首页「正在热映」这类<b>确实需要颜色</b>的位置，留成显式插槽，由项目侧新增语义 token 决定（见 DS-3）。</p>
+  </div>
+  <div>
+    <h4>④ 与 BASELINE v1 天然兼容</h4>
+    <p>本页所有间距、圆角、字号都直接取自 <code>variables.css</code>，stylelint 的禁裸色值 / 禁裸 px 护栏<b>零冲突</b>。skill 提供的是「怎么排」，护栏管的是「用哪些值」，两者不打架。</p>
+  </div>
+</section>
+
+</body>
+</html>
