@@ -1548,11 +1548,12 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
 }
 /* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调。
-   2026-09-28：原 min-height --avatar-xs（44.7→52px）方框过大 → 改
-   --comp-btn-min-width（×0.8 后 ≈40px），与设置页按钮族系数联动。 */
+   2026-09-28：原 min-height --avatar-xs（44.7→52px）方框过大 → 第四轮先改
+   --comp-btn-min-width（40.5，仍偏大）→ 第五轮对齐同页 Select trigger 高度
+   --comp-tab-height（×0.8 ≈29.5px），与设置页下拉/mini 按钮统一。 */
 .settings-action-btn--inline {
   width: auto;
-  min-height: var(--comp-btn-min-width);
+  min-height: var(--comp-tab-height);
   margin-top: 0;
   margin-left: auto;
   padding: var(--space-2xs) var(--space-lg);

@@ -85,9 +85,9 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 | 档位 | 命令 | 用例数 | spec 数 |
 | --- | --- | --- | --- |
-| 全仓枚举 | `npx playwright test --list` | **246** | 22 |
-| 默认套 | `npm run test:e2e` | **132** | 16 |
-| ├ Stage A（dev 行为套） | `e2e-suite.mjs` 阶段 A | 108 | 12 |
+| 全仓枚举 | `npx playwright test --list` | **247** | 23 |
+| 默认套 | `npm run test:e2e` | **133** | 17 |
+| ├ Stage A（dev 行为套） | `e2e-suite.mjs` 阶段 A | 109 | 13 |
 | └ Stage B（preview 播放器系） | `e2e-suite.mjs` 阶段 B | 24 | 4 |
 | 发版回归组 | `npm run test:regression` | **121** | 13 |
 | 冒烟组（与改动侦测取交集） | `npm run test:smoke` | 37 | 3 |
@@ -124,6 +124,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | `scripts/source-checker.spec.ts` | 2 | 按需 `test:e2e:subpages` |
 | `scripts/player-cms-error.spec.ts` | 1 | 默认套 B（preview 播放器系） |
 | `scripts/player-failover.spec.ts` | 1 | 默认套 B（preview 播放器系） |
+| `scripts/tmp-demo-snap.spec.ts` | 1 | 默认套 A（dev 行为套） |
 
 #### ③ 源文件 → 跑的 spec（`scripts/run-tests.ps1` 映射事实表）
 
