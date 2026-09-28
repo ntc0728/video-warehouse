@@ -12,14 +12,12 @@
      banner/右卡/趋势榜 = /trending/all/day，7 行 = 首页 7 端点，行间跨行去重）；
      快照缺失时回退 demos/_data.js（kinoLoad CMS 源 + 离线兜底）
     - 首页元素融合映射（结构照搬、皮肤换报刊）：
-      ① StickyHeader 顶栏   → mast-nav（分类 chip 行 8 项 CategoryQuickAccess 方案 B + IPTV/收藏/历史/设置 + 主题 + 搜索，无底线）
-        （chip 点击/hover 弹「栏目」子分类面板：锚定 chip 左缘 + 200ms 首开延迟 + 120ms 收起缓冲 + 外点/Esc/滚动关；
-          点子分类 → 结果面板按 genre/popularity 排序展示，无 3×3 内容网格）
+      ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 主题 + 搜索，无底线）
         （搜索按 SearchBox 逻辑：点击「就地展开」成输入条 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起）
       ② HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池；历史命中 CTA=「继续播放」）
       ③ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换：图标转圈 0.6s 锁 + 整批推进，HeroBili 同款）
       ④ rail 今日趋势榜     → 02 今日趋势榜（trending 10 条 + 海报 + 热度）
-      ⑤ 继续观看行           → 01 继续观看（横版 16:9 + 进度条 + hover ▶ 继续播放，--cont-n 列，进度为演示值）
+      ⑤ 继续观看行           → 01 继续观看（横版 16:9 + 进度条 + hover ▶ 继续播放，单行横滚 6 卡恒一行，进度为演示值）
       ⑥ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚 + 封面四角标：★评分/收藏心/年份/类型，镜像 .video-card）
       ⑦ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」
       ⑧ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
@@ -36,7 +34,7 @@
   /* 左右留白对齐项目 --page-pad-x：768–1439 = --space-lg 公式；≥1440 见下方分档；<768 见移动端覆盖 */
   --pad-x:clamp(12px, 9.77385px + 0.59364vw, 14.333px);
   --gap:clamp(12px,1vw,20px);
-  --poster-n:6; --cont-n:4;
+  --poster-n:6;
 }
 @media (width<768px){ :root{--pad-x:clamp(6px, 5.04581px + 0.25445vw, 7px)} }   /* 项目 --space-sm 档 */
 /* 夜刊模式（顶栏「夜刊」按钮切换，演示用日/夜双刊形态） */
@@ -44,8 +42,8 @@ html[data-theme="night"]{
   --paper:#16161a; --ink:#f2efe8; --ink-2:#b5b2aa; --ink-3:#7b7873;
   --rule:#33333a; --accent:#e0653f; --band:#1d1d22; --fill:#232329;
 }
-@media (width>=1440px){ :root{--pad-x:60px; --poster-n:7; --cont-n:5} }
-@media (width>=1920px){ :root{--pad-x:100px; --poster-n:8; --cont-n:6} }
+@media (width>=1440px){ :root{--pad-x:60px; --poster-n:7} }
+@media (width>=1920px){ :root{--pad-x:100px; --poster-n:8} }
 @media (width>=2560px){ :root{--pad-x:140px} }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
@@ -67,36 +65,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mast-nav a.on,.mast-nav a:hover{color:var(--ink);font-weight:700}
 .mast-nav .nav-fn{margin-left:auto;display:flex;gap:clamp(14px,1.3vw,26px);align-items:center;flex-wrap:wrap}
 .mast-nav .nav-fn.searching{flex-wrap:nowrap}   /* 搜索就地展开期间防换行（收起后恢复 wrap） */
-/* 分类 chip 行（CategoryQuickAccess 方案 B：8 chip，点击/hover 弹子分类面板） */
-.cqa{display:flex;gap:clamp(4px,.45vw,9px);align-items:center;flex-wrap:wrap}
-.cqa-chip{font-size:clamp(12.5px,.8vw,14.5px);color:var(--ink-2);padding:3px 11px;
-  border:1px solid transparent;border-radius:99px;transition:color .18s,background .18s;white-space:nowrap}
-.cqa-chip:hover{color:var(--ink);background:var(--band)}
-.cqa-chip.on{background:var(--ink);color:var(--paper);font-weight:700}
-.cqa-chip.more{color:var(--ink-3);border-color:var(--rule)}
-.cqa-chip.more:hover{color:var(--ink);border-color:var(--ink)}
-/* 子分类面板：报刊「栏目」抽屉，贴 nav 下缘、锚定 chip 左缘、上直角下圆角 */
-.cqa-panel{position:fixed;z-index:60;width:min(720px,calc(100vw - 2*var(--pad-x)));
-  background:var(--paper);border:1px solid var(--ink);border-top-width:2px;border-bottom-width:2px;
-  border-radius:0 0 clamp(8px,.6vw,12px) clamp(8px,.6vw,12px);
-  box-shadow:0 16px 44px rgba(12,12,14,.2);padding:clamp(12px,1.4vh,18px) clamp(14px,1.4vw,22px) clamp(14px,1.6vh,20px)}
-.cqa-panel__head{display:flex;align-items:baseline;gap:10px;margin-bottom:clamp(10px,1.2vh,14px);
-  padding-bottom:8px;border-bottom:1px solid var(--rule)}
-.cqa-panel__head b{font-family:var(--serif);font-size:clamp(15px,1vw,18px);font-weight:900}
-.cqa-panel__head .sep{color:var(--ink-3)}
-.cqa-panel__head .hint{margin-left:auto;font-size:clamp(11px,.7vw,12.5px);color:var(--ink-3)}
-.cqa-panel__subs{display:flex;flex-wrap:wrap;gap:clamp(6px,.6vw,10px)}
-.cqa-sub{font-size:clamp(12.5px,.8vw,14px);color:var(--ink-2);padding:4px 13px;
-  border:1px solid var(--rule);border-radius:99px;transition:.16s;white-space:nowrap;cursor:pointer}
-.cqa-sub:hover{border-color:var(--ink);color:var(--ink)}
-.cqa-sub.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .mast-nav .search{color:var(--ink-3)}
 .mast-nav .theme-btn{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-2);border:1px solid var(--rule);
   border-radius:99px;padding:3px 12px;transition:.2s;white-space:nowrap}
 .mast-nav .theme-btn:hover{color:var(--ink);border-color:var(--ink)}
-.data-badge{font-size:clamp(10.5px,.68vw,12px);color:var(--ink-3);border:1px solid var(--rule);
-  border-radius:99px;padding:2px 10px;white-space:nowrap}
-.data-badge b{color:var(--accent);font-weight:700}
 
 /* ---------- 搜索（对齐 SearchBox：点击「就地展开」成输入条 → 建议下拉 → 回车/放大镜出结果） ---------- */
 .mast-nav .search{color:var(--ink-3);cursor:pointer;transition:.2s;border:0;background:none;font:inherit;padding:0}
@@ -205,8 +177,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- 继续观看（融合首页继续观看行：进度条格） ---------- */
-.cont-grid{display:grid;grid-template-columns:repeat(var(--cont-n),minmax(0,1fr));gap:var(--gap)}
-.cont-cell{cursor:pointer;min-width:0}
+.cont-grid{display:flex;gap:var(--gap);overflow-x:auto;scroll-snap-type:x proximity;
+  scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px}
+.cont-grid::-webkit-scrollbar{display:none}
+.cont-cell{flex:0 0 calc((100% - 5*var(--gap)) / 6);scroll-snap-align:start;cursor:pointer;min-width:0}
 .cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);position:relative;background:var(--fill)}
 .cont-cell .th .kpic{position:absolute;inset:0}
 .cont-cell .th .kpic img{transition:transform .5s}
@@ -302,21 +276,21 @@ html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparen
 .skl-line{height:13px;border-radius:4px;margin-top:8px}
 /* 骨架期（<html class="booting">，boot 完成移除）：功能元素不显真身 → 横条占位且禁点 */
 .booting #edition::before{content:"";display:block;width:150px;height:30px;background:var(--fill);border-radius:4px}
-.booting .mast-nav a,.booting .theme-btn,.booting .search,.booting #data-badge,
-.booting .cqa-chip,.booting .hl-side-head .t,.booting .sec-head .sub,.booting .sec-head .more{
+.booting .mast-nav a,.booting .theme-btn,.booting .search,.booting .hl-side-head .t,.booting .sec-head .sub,.booting .sec-head .more{
   color:transparent;background:var(--fill);border-color:transparent;border-radius:4px;pointer-events:none}
 .booting #foot-stats::before{content:"";display:inline-block;width:200px;height:13px;
   background:var(--fill);border-radius:4px;vertical-align:-2px}
 
-/* ---------- FAB（融合 BackToTopButton + fab-stack：回顶 + 刷新，右下留出呼吸边距） ---------- */
-.fab{position:fixed;right:clamp(24px,2.6vw,48px);bottom:clamp(28px,3.6vh,52px);z-index:9000;
-  display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.28s}
+/* ---------- FAB（融合 BackToTopButton + fab-stack：回顶 + 刷新，贴视口缘恒显 + 玻璃半透弱化压内容） ---------- */
+.fab{position:fixed;right:clamp(8px,1vw,14px);bottom:clamp(10px,1.6vh,22px);z-index:9000;
+  display:flex;flex-direction:column;gap:8px;opacity:1;transform:none;pointer-events:auto;transition:.28s}
 .fab.on{opacity:1;transform:none;pointer-events:auto}
-.fab button{width:clamp(38px,2.6vw,46px);height:clamp(38px,2.6vw,46px);display:flex;align-items:center;justify-content:center;
-  background:var(--paper);border:2px solid var(--ink);border-radius:clamp(4px,.4vw,8px);font-size:17px;
-  box-shadow:3px 3px 0 var(--ink);transition:background .18s,transform .18s,box-shadow .18s}
-.fab button:hover{background:var(--band);transform:translateY(-2px);box-shadow:4px 5px 0 var(--ink)}
-.fab button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.fab button{width:clamp(36px,2.3vw,42px);height:clamp(36px,2.3vw,42px);display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb, var(--paper) 80%, transparent);border:2px solid var(--ink);border-radius:clamp(4px,.4vw,8px);font-size:16px;
+  box-shadow:0 3px 12px rgba(12,12,14,.16);backdrop-filter:blur(8px) saturate(160%);
+  transition:background .18s,transform .18s,box-shadow .18s}
+.fab button:hover{background:color-mix(in srgb, var(--band) 94%, transparent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(12,12,14,.22)}
+.fab button:active{transform:translateY(0);box-shadow:0 1px 4px rgba(12,12,14,.16)}
 .fab button.spinning{animation:spin .7s linear}
 
 footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px,1.6vh,20px);
@@ -325,16 +299,25 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
 
 /* ---------- 小视口适配（对齐项目断点：≤1023 平板 / ≤767 手机） ---------- */
 @media (width<=1023px){
-  :root{--poster-n:4; --cont-n:3}
+  :root{--poster-n:4}
+  .masthead{padding-top:12px}                                  /* 移动/平板头部整体收紧 */
+  .mast-nav{gap:10px 14px;padding:6px 0}                       /* 行距 10 / 项距 14：换行分组清晰不挤压 */
   .headline{grid-template-columns:1fr;height:auto}
-  .hl-pic{aspect-ratio:16/9}
+  .hl-pic{aspect-ratio:16/9;order:-1}                  /* 头版图提到最上（移动端：图上文下） */
+  .hl-text{padding-top:10px;padding-bottom:6px}
+  .hl-text .kick{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:6px}                                   /* 眉批长串防折行孤字 */
+  .hl-text h1{font-size:clamp(25px,5vw,34px);margin-bottom:8px}   /* 原 4.6vh 在高视口冲 54px：改 vw 驱动封顶 34 */
+  .hl-text .deck{-webkit-line-clamp:2;line-height:1.65;margin-bottom:10px}  /* 导语收 2 行 + 紧行高 */
+  .hl-text .meta{margin-bottom:12px;gap:10px}
   .hl-side-track{overflow-x:auto;grid-auto-columns:minmax(150px,38%)}
   .sec-head{flex-wrap:wrap}                /* 标题+sub+more 换行防溢出 */
   .search-drop{width:clamp(260px,42vw,340px)}
+  .cont-cell{flex-basis:calc((100% - 3*var(--gap)) / 4)}   /* 可视 4 张横滚 */
   .hrow-wrap .hrw-arrow{opacity:1;pointer-events:auto}   /* 平板无 hover 常显 */
 }
 @media (width<=767px){
-  :root{--poster-n:3; --cont-n:2}
+  :root{--poster-n:3}
   .mast-row{flex-wrap:wrap;gap:6px}          /* 品牌 + 版次双行 */
   .brand{font-size:clamp(22px,6vw,30px)}
   .hl-side-track{grid-auto-columns:minmax(132px,46%)}
@@ -344,8 +327,9 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
   .trow .heat{display:none}
   .cont-grid{gap:10px}
   .search-wrap.open .search-form{max-width:min(80vw,320px)}  /* 手机展开条更宽可输入（须覆盖 .search-wrap.open 特异性） */
-  .fab{right:16px;bottom:20px;gap:8px}
+  .fab{right:8px;bottom:12px;gap:6px}
   .fab button{width:44px;height:44px}        /* 触屏点击区 ≥44px */
+  .cont-cell{flex-basis:calc((100% - 2*var(--gap)) / 3)}   /* 可视 3 张横滚 */
   footer{flex-direction:column;gap:8px}
 }
 @media (hover:none){                          /* 触屏无 hover：收藏心常显 */
@@ -356,17 +340,17 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
 <style id="xdev-css">
 /* ==== 设备适配层：TV 10-foot / 投影仪 / 超宽（?device= 或真实视口触发） ==== */
 /* TV：zoom 1.5 使正文 ≥22px@1080p 等效；列数锁低档（少列大卡）；overscan 3.5% 安全区；D-pad 焦点高亮 */
-html[data-device="tv"]{--n:6;--cn:4;--poster-n:6;--cont-n:4;--coll-n:5;--content-max:2200px}
+html[data-device="tv"]{--n:6;--cn:4;--poster-n:6;--coll-n:5;--content-max:2200px}
 html[data-device="tv"] body{zoom:1.5;padding:3.5vh 3.5vw!important;box-sizing:border-box}
 html[data-device="tv"] :focus{outline:3px solid #d4a24e!important;outline-offset:3px;border-radius:4px}
 /* 投影仪：zoom 1.4 字号放大；浅色底自动转深（JS 亮度自检后置 data-invert），img 二次反色还原海报 */
-html[data-device="beamer"]{--n:7;--cn:5;--poster-n:7;--cont-n:5;--coll-n:6}
+html[data-device="beamer"]{--n:7;--cn:5;--poster-n:7;--coll-n:6}
 html[data-device="beamer"] body{zoom:1.4}
 html[data-device="beamer"][data-invert="1"] body{filter:invert(1) hue-rotate(180deg);background:#fff}
 html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-invert="1"] video{filter:invert(1) hue-rotate(180deg)}
 /* 超宽：真机 2560+/21:9 列数继续升档、封顶放宽，避免大屏只剩巨图 */
-@media (width>=2560px){:root{--content-max:2600px;--pad-x:120px;--n:9;--cn:7;--poster-n:9;--cont-n:7;--coll-n:8}}
-@media (min-aspect-ratio:21/9){:root{--content-max:min(3000px,92vw);--pad-x:140px;--n:10;--cn:8;--poster-n:10;--cont-n:8}}
+@media (width>=2560px){:root{--content-max:2600px;--pad-x:120px;--n:9;--cn:7;--poster-n:9;--coll-n:8}}
+@media (min-aspect-ratio:21/9){:root{--content-max:min(3000px,92vw);--pad-x:140px;--n:10;--cn:8;--poster-n:10}}
 /* 模式徽章 */
 .xdev-badge{position:fixed;right:14px;bottom:12px;z-index:99999;font:600 11px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.12em;color:#d4a24e;background:rgba(16,16,20,.82);border:1px solid rgba(212,162,78,.5);border-radius:999px;padding:6px 12px;pointer-events:none}
 </style>
@@ -380,19 +364,8 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
       <div class="edition" id="edition"></div>
     </div>
     <nav class="mast-nav" id="mast-nav">
-      <span class="cqa" id="cqa">
-        <button class="cqa-chip on" id="chip-home" type="button" data-cat="home">首页</button>
-        <button class="cqa-chip" id="chip-movie" type="button" data-cat="movie">电影</button>
-        <button class="cqa-chip" id="chip-tv" type="button" data-cat="tv">剧集</button>
-        <button class="cqa-chip" id="chip-variety" type="button" data-cat="variety">综艺</button>
-        <button class="cqa-chip" id="chip-anime" type="button" data-cat="anime">动漫</button>
-        <button class="cqa-chip" id="chip-documentary" type="button" data-cat="documentary">纪录片</button>
-        <button class="cqa-chip" id="chip-top" type="button" data-cat="top">排行榜</button>
-        <button class="cqa-chip more" id="chip-all" type="button" data-cat="all">全部分类 ›</button>
-      </span>
-      <a href="#">IPTV</a>
+      <a class="on" href="#">首页</a><a href="#">剧集</a><a href="#">电影</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">榜单</a><a href="#">IPTV</a>
       <span class="nav-fn" id="nav-fn">
-        <span class="data-badge" id="data-badge">真实接口拉取中…</span>
         <a href="#">收藏</a><a href="#">历史</a><a href="#">设置</a>
         <button class="theme-btn" id="theme-btn" type="button">夜刊</button>
         <span class="search-wrap" id="search-wrap">
@@ -407,9 +380,6 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
       </span>
     </nav>
   </header>
-
-  <!-- 分类子面板（方案 B：chip 行 + 子分类列表，无内容网格；fixed 贴 nav 下缘锚定 chip 左缘） -->
-  <div class="cqa-panel" id="cqa-panel" hidden></div>
 
   <!-- 搜索结果面板（对齐 SearchBox → browse 页语义；默认 hidden） -->
   <section class="sec" id="search-panel" hidden>
@@ -493,7 +463,6 @@ const favSave = () => { try { localStorage.setItem(FAV_KEY, JSON.stringify([...F
 function renderSkeletons() {
   document.documentElement.classList.add("booting");
   ["shuffle", "search-btn", "theme-btn",
-    "chip-home", "chip-movie", "chip-tv", "chip-variety", "chip-anime", "chip-documentary", "chip-top", "chip-all",
   ].forEach((id) => { const b = $(id); if (b) b.disabled = true; });
   $("headline").innerHTML = `
     <div class="hl-text">
@@ -516,16 +485,13 @@ function renderSkeletons() {
     </section>`).join("");
 }
 
-/* ---------- 报头 + 顶栏（StickyHeader 融合：日期版次 + 数据徽章 + 主题） ---------- */
+/* ---------- 报头 + 顶栏（StickyHeader 融合：日期版次 + 主题） ---------- */
 function renderMasthead() {
   const d = new Date();
   const week = Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 864e5 + 1) / 7);
   const weekCN = "日一二三四五六"[d.getDay()];
   $("edition").innerHTML =
     `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}<br>第 ${week} 周 · 总第 1,204 期`;
-  $("data-badge").innerHTML = DATA.offline
-    ? `离线演示数据（接口不可达）`
-    : `真实数据 · <b>${esc(DATA.sourceName)}</b>`;
 }
 
 /* ---------- 头条轮播（HeroBili banner 融合：5s 自动 + 箭头 + 圆点 + 双 CTA） ---------- */
@@ -651,8 +617,7 @@ function initSide() {
 
 /* ---------- 01 继续观看（进度为演示值，与原口径一致） ---------- */
 function renderContinue() {
-  const n = +(getComputedStyle(document.documentElement).getPropertyValue("--cont-n").trim() || 4);
-  const picks = (DATA.continue_ || []).slice(0, n);
+  const picks = (DATA.continue_ || []).slice(0, 6);   // 恒 6 条 = 单行横滚（视口只改可视列）
   $("cont-grid").innerHTML = picks.map((c) => {
     const prog = 20 + (hash(c.title) % 70);
     return `
@@ -850,135 +815,8 @@ function initSearch() {
   });
 }
 
-/* ---------- 分类 chip + 子分类面板（CategoryQuickAccess 方案 B：chip 行 + 子分类列表） ---------- */
-const CAT_SUBS = {   // 综艺/动漫/纪录片/排行榜：静态子分类表（与项目 categoryPanelData 同值）
-  variety: [
-    { label: "全部", genreIds: [10764], type: "tv" },
-    { label: "家庭亲子", genreIds: [10764, 10751], type: "tv" },
-    { label: "谈话", genreIds: [10764, 10767], type: "tv" },
-    { label: "新闻", genreIds: [10764, 10763], type: "tv" },
-  ],
-  anime: [
-    { label: "全部", genreIds: [16], type: "tv" },
-    { label: "动作冒险", genreIds: [16, 10759], type: "tv" },
-    { label: "喜剧", genreIds: [16, 35], type: "tv" },
-    { label: "科幻&奇幻", genreIds: [16, 10765], type: "tv" },
-    { label: "儿童", genreIds: [16, 10762], type: "tv" },
-  ],
-  documentary: [
-    { label: "全部", genreIds: [99], type: "movie" },
-    { label: "历史", genreIds: [99, 36], type: "movie" },
-    { label: "犯罪", genreIds: [99, 80], type: "movie" },
-    { label: "音乐", genreIds: [99, 10402], type: "movie" },
-    { label: "战争", genreIds: [99, 10752], type: "movie" },
-  ],
-  top: [
-    { label: "日榜", trending: { mediaType: "all", timeWindow: "day" } },
-    { label: "周榜", trending: { mediaType: "all", timeWindow: "day" } },   // 快照仅 day 窗口
-    { label: "电影榜", trending: { mediaType: "movie", timeWindow: "week" } },
-    { label: "剧集榜", trending: { mediaType: "tv", timeWindow: "week" } },
-  ],
-};
-function catSubs(key) {
-  if (CAT_SUBS[key]) return CAT_SUBS[key];
-  if (key === "movie" || key === "tv") {                       // 电影/剧集 = 全量 genre（快照 genres 表）
-    const g = (DATA.genres || {})[key] || {};
-    return [{ label: "全部", genreIds: [], type: key },
-      ...Object.entries(g).map(([id, label]) => ({ label, genreIds: [+id], type: key }))];
-  }
-  return [];
-}
-function catList(key, sub) {
-  if (sub.trending) {                                          // 排行榜：trending 池按 mediaType 过滤 + popularity 降序
-    let t = (DATA.trending || []).slice();
-    if (sub.trending.mediaType !== "all") t = t.filter((x) => x.mediaType === sub.trending.mediaType);
-    return t.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 20);
-  }
-  const ids = sub.genreIds || [];
-  return POOL.filter((x) =>
-    (!sub.type || x.mediaType === sub.type) &&
-    ids.every((g) => (x.genreIds || []).includes(g)))
-    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-}
-function initCat() {
-  const panel = $("cqa-panel");
-  const CHIPS = ["home", "movie", "tv", "variety", "anime", "documentary", "top", "all"];
-  const LABEL = { home: "首页", movie: "电影", tv: "剧集", variety: "综艺", anime: "动漫", documentary: "纪录片", top: "排行榜", all: "全部分类" };
-  let openKey = null, hoverT = null, closeT = null;
-  const setChip = (key) => CHIPS.forEach((k) => $("chip-" + k).classList.toggle("on", k === key));
-  function pos(chipEl) {                                       // 锚定 chip 左缘 + clamp 防溢出（项目契约）
-    const r = chipEl.getBoundingClientRect();
-    const navR = $("mast-nav").getBoundingClientRect();
-    const pad = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pad-x")) || 20;
-    const w = panel.offsetWidth;
-    const vw = window.innerWidth || 1280;
-    panel.style.left = Math.max(pad, Math.min(r.left, vw - pad - w)) + "px";
-    panel.style.top = navR.bottom + 4 + "px";
-  }
-  function open(key, chipEl) {
-    if (key === "home" || key === "all") { closeCat(); return; }   // 首页/全部分类：关面板（项目同款）
-    const subs = catSubs(key);
-    panel.innerHTML = `
-      <div class="cqa-panel__head"><b>${esc(LABEL[key])}</b><span class="sep">· 栏目</span>
-        <span class="hint">点子分类 → 下方结果面板</span></div>
-      <div class="cqa-panel__subs">${subs.map((s, i) =>
-        `<button class="cqa-sub${i === 0 ? " on" : ""}" type="button" data-ci="${i}">${esc(s.label)}</button>`).join("")}</div>`;
-    panel._subs = subs; panel._key = key;
-    panel.hidden = false;
-    pos(chipEl);
-    openKey = key;
-    setChip(key);
-  }
-  function closeCat() {
-    panel.hidden = true;
-    if (openKey) setChip("home");                              // 关闭回首页高亮（项目：home 默认）
-    openKey = null;
-  }
-  function scheduleClose() { clearTimeout(closeT); closeT = setTimeout(closeCat, 120); }   // 120ms 收起缓冲
-  function cancelClose() { clearTimeout(closeT); }
-
-  CHIPS.forEach((k) => {
-    const chip = $("chip-" + k);
-    chip.addEventListener("click", () => {                     // 点击 = 立即开/关
-      clearTimeout(hoverT);
-      if (openKey === k) closeCat(); else open(k, chip);
-    });
-    chip.addEventListener("mouseenter", () => {                // hover 首开 200ms 延迟；面板已开时横移即时
-      clearTimeout(closeT); clearTimeout(hoverT);
-      hoverT = setTimeout(() => open(k, chip), openKey ? 0 : 200);
-    });
-    chip.addEventListener("mouseleave", () => { clearTimeout(hoverT); scheduleClose(); });
-  });
-  panel.addEventListener("mouseenter", cancelClose);
-  panel.addEventListener("mouseleave", scheduleClose);
-  panel.addEventListener("click", (e) => {                     // 子分类 → 排序结果进结果面板（复用 showPanel）
-    const b = e.target.closest("[data-ci]");
-    if (!b) return;
-    const sub = panel._subs[+b.dataset.ci];
-    showPanel(`${LABEL[panel._key]} · ${sub.label}`, catList(panel._key, sub));
-    closeCat();
-  });
-  document.addEventListener("mousedown", (e) => {              // 点外部关闭
-    if (panel.hidden) return;
-    if (e.target.closest(".cqa-panel, .cqa")) return;
-    closeCat();
-  });
-  addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) closeCat(); });
-  addEventListener("scroll", () => { if (!panel.hidden) closeCat(); }, { passive: true });   // 滚动立即关（项目契约）
-  addEventListener("resize", () => { if (!panel.hidden) closeCat(); });
-}
-
-/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新，滚动 >280 显示） ---------- */
+/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新，右下恒显——原「>280 且停 800ms 淡入」被用户判为「看不到」） ---------- */
 function initFab() {
-  let hideT = null;
-  addEventListener("scroll", () => {
-    const fab = $("fab");
-    clearTimeout(hideT);
-    if (scrollY > 280) {
-      fab.classList.remove("on");                       // 滚动中淡出
-      hideT = setTimeout(() => fab.classList.add("on"), 800);   // 停止 800ms 后淡入（首页同口径）
-    } else fab.classList.remove("on");
-  }, { passive: true });
   $("fab-top").addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
   $("fab-refresh").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
@@ -1072,7 +910,6 @@ async function boot(skeleton) {
   window.kinoBindPics(document);
   document.documentElement.classList.remove("booting");
   ["shuffle", "search-btn", "theme-btn",
-    "chip-home", "chip-movie", "chip-tv", "chip-variety", "chip-anime", "chip-documentary", "chip-top", "chip-all",
   ].forEach((id) => { const b = $(id); if (b) b.disabled = false; });
 }
 
@@ -1081,7 +918,6 @@ initCarousel();
 initSide();
 initSearch();
 initRowFav();
-initCat();
 initFab();
 initTheme();
 boot(true);
