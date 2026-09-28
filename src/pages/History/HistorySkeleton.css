@@ -92,7 +92,7 @@
 }
 
 /* ── 记录卡内部：封面（16:9 由 .record-card__media 提供）+ 标题 + 元信息 ──
-   ⚠️ 三个块的高度取真实文本行盒：标题 font-size --text-base / line-height 1.3，
+   ⚠️ 三个块的高度取真实文本行盒：标题 font-size --text-sm / line-height 1.5，
    元信息行 --text-xs / line-height 1.5 —— 与 .record-card__title / __meta-row 对齐，
    保证卡片等高、交接无纵向跳动。 */
 .history-skeleton__media {
@@ -103,7 +103,11 @@
 
 .history-skeleton__title {
   width: 72%;
-  height: 1.3em;
+  height: 1.5em; /* 相对自身 font-size，TV 抬号时行盒自动跟随 */
+  font-size: var(--text-sm);
+}
+/* TV 端真实标题抬到 --text-base，骨架同步（否则 TV 下骨架比真卡矮一行） */
+[data-device="tv"] .history-skeleton__title {
   font-size: var(--text-base);
 }
 
