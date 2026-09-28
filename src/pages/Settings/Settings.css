@@ -1115,7 +1115,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 2026-09-28 去卡片化：桌面端移除资料卡四件套（上方基础规则即「移动端卡片」样式源，
-   <=767 与 app 恒移动继续沿用；桌面仅保留内边距与 hover 背景反馈）。 */
+   <=767 与 app 恒移动继续沿用；hover 屏蔽基础规则的边框/阴影反馈，不加背景变化）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .settings-profile-card {
     border: none;
@@ -1126,7 +1126,6 @@ body.skin-transitioning .skin-btn.active {
   html:not([data-device="app"]) .settings-profile-card:hover {
     border-color: transparent;
     box-shadow: none;
-    background: var(--color-surface-hover);
   }
 }
 
@@ -1830,6 +1829,15 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-xs);
 }
 
+/* 2026-09-28 修「设置子项标题左侧黑点」（全端，含移动端）：
+   List.tsx 的 tailwind `list-item` 类 = display:list-item + UA 默认
+   list-style-type:disc → 标题左侧渲染 disc marker。置 none 即消；
+   display 不动（布局零影响）。 */
+.settings-page .list-item,
+.settings-subpage .list-item {
+  list-style: none;
+}
+
 /* ============================================================
    方案 F：设置项「紧凑双行卡」卡片化（桌面端 ≥768px）
    - 每个 List.Item 变为独立卡片（边框 + 圆角 + hover 阴影）
@@ -1841,40 +1849,31 @@ body.skin-transitioning .skin-btn.active {
    ============================================================ */
 @media (width >= 768px) {
   /* 2026-09-28 去卡片化：方案 F 的 list-item 边框/圆角/底色整体移除，
-     恢复行式排布（padding/margin 留白节奏不变，几何零跳动）。 */
+     恢复行式排布；间距较卡片态收紧（项间 16→8、行内上下留白减半），
+     hover 不做任何视觉反馈（2026-09-28 用户拍板）。 */
   html:not([data-device="app"]) .settings-content .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item {
     border: none;
     border-radius: 0;
     background: transparent;
-    transition: background var(--dur-xs) ease;
   }
 
   html:not([data-device="app"]) .settings-content .list-item + .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item + .list-item {
-    margin-top: calc(var(--space-sm) * 2);
+    margin-top: var(--space-sm);
   }
 
-  /* 去卡后 hover 反馈改背景高亮（原「边框加深 + 阴影」随卡删除） */
-  html:not([data-device="app"]) .settings-content .list-item:hover, html:not([data-device="app"]) .settings-subpage__body .list-item:hover {
-    background: var(--color-surface-hover);
-  }
-
-  html:not([data-device="app"]) /* 无描述项（如主题模式）：标题行垂直居中 + 底部补齐内边距，保持卡片观感均衡 */
+  html:not([data-device="app"]) /* 无描述项（如主题模式）：标题行底部补齐内边距，与有描述项节奏一致 */
   .settings-content .list-item:not(:has(.list-item__desc)) .list-item__row, html:not([data-device="app"]) .settings-subpage__body .list-item:not(:has(.list-item__desc)) .list-item__row {
-    padding-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
   }
 
   html:not([data-device="app"]) /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
      settings-card__body（header 操作按钮 + desc + 行）整体一块内容区。
-     2026-09-28 去卡片化：边框/圆角/底色移除，hover 改背景高亮。 */
+     2026-09-28 去卡片化：边框/圆角/底色移除，hover 无反馈。 */
   .settings-content .settings-personal-section .settings-card__body, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body {
     padding: var(--space-md) var(--space-xl);
     border: none;
     border-radius: 0;
     background: transparent;
-    transition: background var(--dur-xs) ease;
-  }
-  html:not([data-device="app"]) .settings-content .settings-personal-section .settings-card__body:hover, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body:hover {
-    background: var(--color-surface-hover);
   }
 
   html:not([data-device="app"]) /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
@@ -1882,33 +1881,39 @@ body.skin-transitioning .skin-btn.active {
      否则卡片内部文字/控件水平贴边，与草图的「内容在卡片内有呼吸感」不符。
      特异性 (0,3,0) > 清零规则 (0,2,1)，可正常覆盖。 */
   .settings-content .list-item .list-item__row, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__row {
-    padding: var(--space-md) var(--space-xl) var(--space-sm);
+    padding: var(--space-sm) var(--space-xl) var(--space-xs);
   }
 
-  html:not([data-device="app"]) /* 第二行：描述整行，与标题同卡片色（无分割线，标题+内容统一包裹在一张卡内）。
-     background 与 .list-item 一致（surface），水平 padding 与标题行对齐，加大留白。 */
+  html:not([data-device="app"]) /* 第二行：描述整行，与标题同行式底（无分割线）。
+     水平 padding 与标题行对齐；垂直留白收紧（去卡后属项间留白，过大显散）。 */
   .settings-content .list-item .list-item__desc, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__desc {
-    padding: var(--space-sm) var(--space-xl) var(--space-lg);
+    padding: var(--space-xs) var(--space-xl) var(--space-sm);
     background: transparent;
     line-height: 1.6;
   }
 
   html:not([data-device="app"]) /* ============================================================
      源管理（视频源 / IPTV 源 / EPG 源）面板
-     2026-09-28 去卡片化：桌面端面板边框/圆角/底色与 hover 阴影整体移除，
-     仅保留折叠 grid-rows 过渡所需的 gap transition。
+     2026-09-28：恢复卡片样式（边框/圆角/背景/hover/transition）——
+     三个源面板保留卡片感（用户拍板），与去卡前规则逐字一致。
      ============================================================ */
   .settings-content .source-manager, html:not([data-device="app"]) .settings-subpage__body .source-manager {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    transition: gap var(--dur-lg) var(--ease-in-out-quart);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease,
+      gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
-  html:not([data-device="app"]) /* 面板内 item hover：随卡片化一并移除（item 基础样式见 SourceManager.css） */
+  html:not([data-device="app"]) .settings-content .source-manager:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  html:not([data-device="app"]) /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
   .settings-content .source-manager .source-manager__item:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager .source-manager__item:hover {
-    border-color: transparent;
-    box-shadow: none;
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
   }
 
   html:not([data-device="app"]) /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */
