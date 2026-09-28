@@ -273,6 +273,28 @@
   box-shadow: 0 -2px 0 var(--color-primary);
 }
 
+/* 2026-09-28 去卡片化：桌面（非手机 web / 非 app / 非 TV）条目移除四件套，
+   移动端与 app 副本、TV 保留卡片。拖拽落点顶线是功能指示非卡片阴影，特异性抬高保留；
+   popover 属浮层（例外）：只删 border/radius/shadow，保留底色防与底层内容重叠。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .source-manager__item {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .source-manager__item.is-drop-target {
+    box-shadow: 0 -2px 0 var(--color-primary);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .source-manager__popover {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 .source-manager__item-main {
   display: flex;
   flex: 1 1 0;

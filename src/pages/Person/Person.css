@@ -419,6 +419,24 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 2026-09-28 去卡片化：桌面（≥1024 非 app 非 TV）移除 hero 与网格卡的
+   卡片四件套（hero 的深色底 rgba(0,0,0,.92) 是 hero 语义底，非 surface，保留）；
+   移动端 / app 副本 / TV 保留卡片。上方两处选择器无 media 包裹全端生效，故用覆盖块。 */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .person-hero {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .person-grid-card {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
 /* stylelint-disable-next-line no-duplicate-selectors */
 .person-tabs {
   margin-top: 0;

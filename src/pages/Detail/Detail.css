@@ -2029,10 +2029,8 @@
        内容超出时由 overflow-y 兜底为栏内滚动（高度仍锁死，不撑破对齐）。 */
     height: var(--detail-hero-h, 520px);
     padding: var(--space-lg);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    /* 2026-09-28 去卡片化：右栏四件套（border/radius/surface/shadow）移除，
+       内容直接落页底；height/padding/overflow-y 是布局与滚动所需，保留。 */
     overflow-y: auto;
     scrollbar-width: none;
   }
