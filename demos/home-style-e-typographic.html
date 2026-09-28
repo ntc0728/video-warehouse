@@ -8,21 +8,22 @@
 <style>
 /* ============================================================
    Demo E · 报刊排版式 · 融合现有首页元素版
-   - 数据源：demos/_data.js 共享数据层（kinoLoad：项目内置 CMS 源
-     豆瓣资源 dbzy5 / 茅台资源 maotaizy，浏览器直连 + weserv 缩图链路）
+   - 数据源：demos/_data-e-tmdb.js 真实 TMDB 快照（与首页同口径：
+     banner/右卡/趋势榜 = /trending/all/day，7 行 = 首页 7 端点，行间跨行去重）；
+     快照缺失时回退 demos/_data.js（kinoLoad CMS 源 + 离线兜底）
    - 首页元素融合映射（结构照搬、皮肤换报刊）：
-     ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 搜索 + 主题）
-      ② HomeTopStrip 公告带 → .topstrip（公告/今日趋势N/最热分类/继续观看·收藏 pill/今日趋势榜›）
-      ③ HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA）
+      ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 搜索 + 主题）
+      ② HomeTopStrip 公告带 → .topstrip（公告/今日趋势N/最热类型/继续观看·收藏 pill/今日趋势榜›）
+      ③ HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池）
       ④ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换）
-      ⑤ rail 今日趋势榜     → 02 今日趋势榜（10 条 + 缩略海报 + 热度，与公告带同名同物）
-      ⑥ 继续观看行           → 01 继续观看（进度条格，--cont-n 单行截断）
-      ⑦ 7 行横滚             → 03–09 七行（分区编号 + 横滚 + 分页箭头）
+      ⑤ rail 今日趋势榜     → 02 今日趋势榜（trending 10 条 + 海报 + 热度，与公告带同名同物）
+      ⑥ 继续观看行           → 01 继续观看（进度条格，--cont-n 单行截断，进度为演示值）
+      ⑦ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚）
       ⑧ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」+ 公告带 pill
       ⑨ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
-      ⑩ 分类真实 total 计数 → footer 行内「收录统计」（区块降级，见 2026-09-29 精简评审）
+      ⑩ 收录统计计数         → footer 行内（TMDB 快照口径；见 2026-09-29 精简评审）
    - 全模块零卡片；大屏规则沿用：首屏预算制 / hero ≤48vh / 列数梯度 / 封顶 2200
-   - 演示值口径不变：播放进度 / 热度值 / 收藏种子为演示；标题/海报/简介/计数为真实
+   - 演示值口径：播放进度 / 热度值 / 收藏种子为演示；标题/海报/类型/年份/评分为真实 TMDB
    ============================================================ */
 :root{
   --paper:#fbfaf7; --ink:#141416; --ink-2:#57575f; --ink-3:#98989f;
@@ -316,7 +317,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   <!-- 01 继续观看（首页继续观看行） -->
   <section class="sec">
     <div class="sec-head">
-      <span class="no">01</span><h2>继续观看</h2><span class="sub">真实片源 · 进度为演示值</span>
+      <span class="no">01</span><h2>继续观看</h2><span class="sub">进度为演示值</span>
       <a class="more" href="#">全部记录 →</a>
     </div>
     <div class="cont-grid" id="cont-grid"></div>
@@ -325,7 +326,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   <!-- 02 今日趋势榜（左栏 rail 趋势榜 · 报刊双栏 10 条，与公告带「今日趋势榜」同名同物） -->
   <section class="sec" id="sec-trend">
     <div class="sec-head">
-      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub">近 7 日真实收录 10 条 · 热度为演示值</span>
+      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub">TMDB /trending/all/day · 10 条 · 热度为演示值</span>
       <a class="more" href="#">完整榜单 →</a>
     </div>
     <div class="trend-table" id="trend-table"></div>
@@ -335,7 +336,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
   <div id="home-rows"></div>
 
   <footer>
-    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏/公告带/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据经 demos/_data.js（豆瓣资源 dbzy5 / 茅台资源 maotaizy 浏览器直连）；进度与热度为演示值</span>
+    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏/公告带/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据 = 真实 TMDB 快照（demos/_data-e-tmdb.js，与首页同口径），快照缺失回退 demos/_data.js CMS；进度与热度为演示值</span>
     <span id="foot-stats"></span>
     <span>仅供风格评审</span>
   </footer>
@@ -349,6 +350,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
 </div>
 
 <script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
 <script>
 /* ============================================================
    数据层：demos/_data.js 共享数据层（kinoLoad / kinoBindPics / kinoImg）
@@ -409,13 +411,24 @@ function renderTopstrip() {
   const cnt = DATA.counts || {};
   const labelMap = { movie: "电影", series: "剧集", variety: "综艺", anime: "动漫" };
   const top = Object.entries(cnt).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])[0];
+  // TMDB 快照：最热类型 = trending 各条 genreIds[0] 频次最高者
+  let hotLabel = top ? labelMap[top[0]] : "";
+  if (!hotLabel && DATA.tmdb && (DATA.trending || []).length) {
+    const m = new Map();
+    DATA.trending.forEach((x) => {
+      const gid = (x.genreIds || [])[0];
+      if (gid) { const k = `${x.mediaType}-${gid}`; m.set(k, (m.get(k) || 0) + 1); }
+    });
+    const best = [...m.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (best) { const [mt, gid] = best[0].split("-"); hotLabel = (DATA.genres || {})[mt]?.[gid] || ""; }
+  }
   const continueCount = (DATA.continue_ || []).length;
   const sep = '<span class="ts-sep" aria-hidden="true"></span>';
   $("topstrip").innerHTML = `
     <div class="ts-inner">
       <span class="ts-crumb">公告</span>
-      ${POOL.length ? `${sep}<span class="ts-stat">今日趋势 <b>${POOL.length}</b> 条<span class="ts-info" title="Demo 口径：项目 CMS 源近 7 日收录按标题去重条数（首页真实口径为 TMDB /trending/all/day 每日趋势榜 20 条，每 6 小时更新）"> ⓘ</span></span>` : ""}
-      ${top ? `${sep}<span class="ts-stat"><span class="flame">🔥</span> 最热分类 <b>${labelMap[top[0]]}</b></span>` : ""}
+      ${POOL.length ? `${sep}<span class="ts-stat">今日趋势 <b>${DATA.trending ? DATA.trending.length : POOL.length}</b> 条<span class="ts-info" title="TMDB /trending/all/day 每日趋势榜，按 TMDB 趋势算法排名（非 popularity 数值排序），每 6 小时更新；本 demo 为拉取时点快照"> ⓘ</span></span>` : ""}
+      ${hotLabel ? `${sep}<span class="ts-stat"><span class="flame">🔥</span> 最热类型 <b>${esc(hotLabel)}</b></span>` : ""}
       <span class="ts-right">
         ${continueCount > 0 ? `<span class="ts-pill">继续观看 ${continueCount}</span>` : ""}
         ${FAVS.size > 0 ? `<span class="ts-pill">收藏 ${FAVS.size}</span>` : ""}
@@ -456,9 +469,11 @@ function setSlide(i, force) {
   bannerIdx = next;
   const h = pool[bannerIdx];
   $("hl-text").innerHTML = `
-    <div class="kick">今日头条 · ${esc(DATA.sourceName)} 最新收录</div>
+    <div class="kick">${DATA.tmdb ? "今日头条 · TMDB /trending/all/day 每日趋势" : `今日头条 · ${esc(DATA.sourceName)} 最新收录`}</div>
     <h1>${esc(h.title)}</h1>
-    <p class="deck">${esc(h.content || `${h.cls || "影视"} · ${h.year} 年作品${h.remarks ? "，已更新至「" + h.remarks + "」" : ""}。本条来自项目内置 CMS 源实时接口，简介为原始 vod_content。`)}</p>
+    <p class="deck">${esc(h.content || (DATA.tmdb
+      ? `${h.cls || "影视"} · ${h.year} 年作品，来自 TMDB 每日趋势榜，简介为中文 overview。`
+      : `${h.cls || "影视"} · ${h.year} 年作品${h.remarks ? "，已更新至「" + h.remarks + "」" : ""}。本条来自项目内置 CMS 源实时接口，简介为原始 vod_content。`))}</p>
     <div class="meta">
       <span>${esc(h.year)}</span><span>${esc(h.cls || "")}</span>
       ${h.remarks ? `<span>${esc(h.remarks)}</span>` : ""}
@@ -568,6 +583,12 @@ function renderContinue() {
 
 /* ---------- 收录统计（footer 行内降级版分类计数：真实 total） ---------- */
 function renderFootStats() {
+  if (DATA.tmdb) {
+    const n = (DATA.rows || []).reduce((s, r) => s + r.items.length, 0);
+    $("foot-stats").innerHTML =
+      `TMDB 快照 ${esc(DATA.snapDate)} · 趋势 ${(DATA.trending || []).length} 条 · 7 行 ${n} 条（已跨行去重）`;
+    return;
+  }
   const c = DATA.counts || {};
   const L = { movie: "电影", series: "剧集", variety: "综艺", anime: "动漫" };
   $("foot-stats").innerHTML = DATA.offline
@@ -577,7 +598,9 @@ function renderFootStats() {
 
 /* ---------- 02 今日趋势榜（融合左栏 rail 趋势榜：海报 + 热度，10 条报刊双栏） ---------- */
 function renderTrend() {
-  const pool = uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL]).slice(0, 10);
+  const pool = (DATA.trending && DATA.trending.length
+    ? DATA.trending
+    : uniq([...(DATA.rows.find((r) => r.key === "today")?.items || []), ...POOL])).slice(0, 10);
   $("trend-table").innerHTML = pool.map((t, i) => {
     const heat = (98.4 - i * 1.1 - (hash(t.title) % 10) / 10).toFixed(1);
     return `<div class="trow">
@@ -595,7 +618,7 @@ function renderRows() {
     <section class="sec">
       <div class="sec-head">
         <span class="no">${String(i + 3).padStart(2, "0")}</span><h2>${esc(r.title)}</h2>
-        <span class="sub">${esc(r.en || "")} · ${r.items.length} 条真实收录</span>
+        <span class="sub">${esc(r.en || "")}${r.en ? " · " : ""}${r.items.length} 条</span>
         <a class="more" href="#">更多 →</a>
       </div>
       <div class="hrow-wrap">
@@ -677,13 +700,52 @@ function renderAll() {
   renderRows();
 }
 
-/* ---------- 启动（kinoLoad 永不 reject，内部已带离线兜底） ---------- */
+/* ---------- TMDB 快照组装（_data-e-tmdb.js：与首页同口径 + 7 行跨行去重） ---------- */
+const ROW_ORDER = ["nowPlaying", "popularMovies", "topRatedMovies", "upcomingMovies", "popularTv", "topRatedTv", "airingTodayTv"];
+const ROW_EN = {
+  nowPlaying: "NOW PLAYING", popularMovies: "POPULAR MOVIES", topRatedMovies: "TOP RATED MOVIES",
+  upcomingMovies: "UPCOMING", popularTv: "POPULAR TV", topRatedTv: "TOP RATED TV", airingTodayTv: "AIRING TODAY",
+};
+function assembleTmdbSnapshot(S) {
+  const G = S.genres || {};
+  const fix = (x) => ({
+    ...x,
+    cls: (G[x.mediaType === "tv" ? "tv" : "movie"] || {})[(x.genreIds || [])[0]] || (x.mediaType === "tv" ? "剧集" : "电影"),
+    remarks: "",
+  });
+  // 行间去重（评审方案⑥）：行序 = 真实首页 homeRows 顺序，贪心消费已用 id；行短不回填不重复
+  const used = new Set();
+  const rows = ROW_ORDER.map((k) => ({
+    key: k,
+    title: (S.rowTitles || {})[k] || k,
+    en: ROW_EN[k],
+    items: (S.rows[k] || []).map(fix).filter((x) => { if (used.has(x.id)) return false; used.add(x.id); return true; }),
+  }));
+  const trending = (S.trending || []).map(fix);
+  return {
+    offline: false, tmdb: true, snapDate: S.snapDate,
+    sourceName: `TMDB 快照 ${S.snapDate}`,
+    featured: trending[0] || null,
+    heroSide: trending.slice(1, 9),      // banner=POOL[0..5]、右卡=POOL[6..8]（真实：同 trending 池）
+    trending,
+    continue_: trending.slice(13, 19),   // 与 banner/右卡错开（真实为本地历史记录，demo 演示）
+    rows,
+    counts: null, genres: G,             // TMDB 无分类 total → foot-stats 走快照口径
+  };
+}
+
+/* ---------- 启动（快照优先；kinoLoad 永不 reject，内部已带离线兜底） ---------- */
 async function boot(skeleton) {
   if (skeleton) renderSkeletons();
-  try {
-    DATA = await window.kinoLoad();
-  } catch (e) {
-    DATA = { offline: true, sourceName: "离线", featured: { title: "演示条目" }, heroSide: [], continue_: [], rows: [], counts: {} };
+  const S = window.KINO_E_TMDB;
+  if (S && S.trending && S.rows && Object.keys(S.rows).length) {
+    DATA = assembleTmdbSnapshot(S);
+  } else {
+    try {
+      DATA = await window.kinoLoad();
+    } catch (e) {
+      DATA = { offline: true, sourceName: "离线", featured: { title: "演示条目" }, heroSide: [], continue_: [], rows: [], counts: {} };
+    }
   }
   const all = DATA.rows.flatMap((r) => r.items);
   POOL = uniq([DATA.featured, ...(DATA.heroSide || []), ...(DATA.continue_ || []), ...all]);
