@@ -130,8 +130,9 @@
   border-color: var(--color-primary);
 }
 .skin-btn__swatch {
-  width: var(--layout-logo-size);
-  height: var(--layout-logo-size);
+  /* 2026-09-28 第二轮：皮肤方块偏大 → 定点 ×0.8（第三轮加码；不动全局 --layout-logo-size/TV logo） */
+  width: calc(var(--layout-logo-size) * 0.8);
+  height: calc(var(--layout-logo-size) * 0.8);
   border-radius: var(--radius-md);
   background-color: var(--color-hover-bg);
   background-size: cover;
@@ -472,6 +473,7 @@ body.skin-transitioning .skin-btn.active {
   justify-content: flex-start;
   width: 100%;
   height: auto;
+  /* 2026-09-28 第三轮（用户拍板「左栏不改」）：内边距回原档 md/sm */
   padding: var(--space-md) var(--space-sm);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -556,6 +558,7 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
+  /* 2026-09-28 第三轮（用户拍板「左栏不改、只改右侧」）：横排 tab 内边距回原档 */
   padding: var(--space-xs) var(--space-md);
   /* 方案 B（2026-08-30）：tab 从「主色实心胶囊」改为「透明按钮 + 激活态浅底
      （白）+ 底部 2px 主色指示条」，与收藏/历史页 tab 语言一致；圆角改 md（原 full），
@@ -1843,6 +1846,31 @@ html .settings-page {
   --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale) * 0.93);
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * 0.93);
   --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * 0.93);
+
+  /* 2026-09-28 第二轮（用户拍板「按钮、图标、tab、方型按钮尺寸过大」）：
+     控件高度族同乘 0.8（第三轮从 0.93 加码——7% 不可感知）—— theme-btn/back-btn
+     方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
+     Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄
+     （thumb-size）全部连锁缩。输入框宽度 --comp-input-min-w 不缩。 */
+  --comp-btn-min-height: calc(clamp(44px, 36.434px + 1.94vw, 51.333px) * var(--ui-scale) * 0.8);
+  --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale) * 0.8);
+  --comp-tab-height: calc(clamp(36px, 18.545px + 4.479vw, 38.667px) * var(--ui-scale) * 0.8);
+  --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale) * 0.8);
+  --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale) * 0.8);
+}
+
+/* 2026-09-28 第三轮（用户拍板「左栏不改，只改右侧内容区」）：
+   左栏 text 档豁免 0.93 → 回全站原式；--icon-* 的 calc 延迟解析在左栏元素
+   处自动取回原字号 → 图标同步回原值。特异性 0,2,1 > 0,1,1。 */
+html .settings-page .settings-sidenav {
+  --text-2xs: calc(11px * var(--ui-scale));
+  --text-xs: calc(12px * var(--ui-scale));
+  --text-sm: calc(13px * var(--ui-scale));
+  --text-base: calc(14px * var(--ui-scale));
+  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale));
+  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale));
+  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale));
+  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale));
 }
 
 /* ≥768 桌面档（:root 在 variables.css 用大屏 clamp 覆盖 lg/xl/2xl → 同步缩档保持大屏形态） */
@@ -1851,6 +1879,20 @@ html .settings-page {
     --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * 0.93);
     --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * 0.93);
     --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * 0.93);
+    /* 桌面递减档同理（variables.css 段2 :root 覆盖 → 同步 ×0.8，第三轮加码） */
+    --comp-btn-min-height: calc(clamp(48.212px, 54.061px - 0.35521vw, 51.333px) * var(--ui-scale) * 0.8);
+    --comp-btn-min-width: calc(clamp(49.136px, 57.27471px - 0.51324vw, 53.333px) * var(--ui-scale) * 0.8);
+    --comp-input-height: calc(clamp(40.54px, 50.10557px - 0.62143vw, 45.333px) * var(--ui-scale) * 0.8);
+    --comp-tab-height: calc(clamp(35.827px, 41.28871px - 0.34137vw, 38.667px) * var(--ui-scale) * 0.8);
+    --comp-thumb-size: calc(clamp(22.212px, 24.22786px - 0.11652vw, 23.333px) * var(--ui-scale) * 0.8);
+  }
+
+  /* 2026-09-28 第三轮：左栏桌面档豁免（回原式，与上方缩档块平级——嵌套会展开成
+     永不匹配的 html…html… 选择器） */
+  html .settings-page .settings-sidenav {
+    --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale));
+    --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale));
+    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale));
   }
 }
 
