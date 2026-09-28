@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="day">
+<html lang="zh-CN" data-theme="day" class="booting">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,13 +12,13 @@
      banner/右卡/趋势榜 = /trending/all/day，7 行 = 首页 7 端点，行间跨行去重）；
      快照缺失时回退 demos/_data.js（kinoLoad CMS 源 + 离线兜底）
     - 首页元素融合映射（结构照搬、皮肤换报刊）：
-      ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 主题 + 搜索）
-        （搜索按 SearchBox 逻辑：点击展开 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起）
-      ② HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池）
+      ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 主题 + 搜索，无底线）
+        （搜索按 SearchBox 逻辑：点击「就地展开」成输入条 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起）
+      ② HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池；历史命中 CTA=「继续播放」）
       ③ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换：图标转圈 0.6s 锁 + 整批推进，HeroBili 同款）
       ④ rail 今日趋势榜     → 02 今日趋势榜（trending 10 条 + 海报 + 热度）
-      ⑤ 继续观看行           → 01 继续观看（进度条格，--cont-n 单行截断，进度为演示值）
-      ⑥ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚）
+      ⑤ 继续观看行           → 01 继续观看（横版 16:9 + 进度条 + hover ▶ 继续播放，--cont-n 列，进度为演示值）
+      ⑥ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚 + 封面四角标：★评分/收藏心/年份/类型，镜像 .video-card）
       ⑦ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」
       ⑧ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
       ⑨ 收录统计计数         → footer 行内（TMDB 快照口径；公告带 HomeTopStrip 已按评审删除）
@@ -57,10 +57,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .brand em{color:var(--accent);font-style:normal}
 .edition{font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-2);text-align:right;line-height:1.7}
 .mast-nav{display:flex;gap:clamp(16px,1.6vw,32px);padding:clamp(8px,1.2vh,12px) 0;
-  border-bottom:1px solid var(--rule);font-size:clamp(13px,.85vw,15px);align-items:center;flex-wrap:wrap}
+  font-size:clamp(13px,.85vw,15px);align-items:center;flex-wrap:wrap}
 .mast-nav a{color:var(--ink-2);transition:.2s}
 .mast-nav a.on,.mast-nav a:hover{color:var(--ink);font-weight:700}
 .mast-nav .nav-fn{margin-left:auto;display:flex;gap:clamp(14px,1.3vw,26px);align-items:center;flex-wrap:wrap}
+.mast-nav .nav-fn.searching{flex-wrap:nowrap}   /* 搜索就地展开期间防换行（收起后恢复 wrap） */
 .mast-nav .search{color:var(--ink-3)}
 .mast-nav .theme-btn{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-2);border:1px solid var(--rule);
   border-radius:99px;padding:3px 12px;transition:.2s;white-space:nowrap}
@@ -69,16 +70,24 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   border-radius:99px;padding:2px 10px;white-space:nowrap}
 .data-badge b{color:var(--accent);font-weight:700}
 
-/* ---------- 搜索（对齐 SearchBox 逻辑：点击展开 → 输入建议下拉 → 回车/放大镜出结果面板） ---------- */
+/* ---------- 搜索（对齐 SearchBox：点击「就地展开」成输入条 → 建议下拉 → 回车/放大镜出结果） ---------- */
 .mast-nav .search{color:var(--ink-3);cursor:pointer;transition:.2s;border:0;background:none;font:inherit;padding:0}
 .mast-nav .search:hover{color:var(--ink)}
-.search-wrap{position:relative}
-.search-form{display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--ink);padding-bottom:2px}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-form{display:flex;align-items:center;gap:9px;
+  width:0;max-width:0;overflow:hidden;opacity:0;
+  border-bottom:0 solid var(--ink);padding-bottom:0;
+  transition:width .32s cubic-bezier(.16,1,.3,1),max-width .32s cubic-bezier(.16,1,.3,1),
+    opacity .16s,padding .32s cubic-bezier(.16,1,.3,1),border-width 0s .32s}
+.search-wrap.open .search-form{width:clamp(220px,21vw,320px);max-width:min(52vw,320px);opacity:1;
+  border-bottom-width:1px;padding-bottom:3px;
+  transition:width .32s cubic-bezier(.16,1,.3,1),max-width .32s cubic-bezier(.16,1,.3,1),
+    opacity .16s .05s,padding .32s cubic-bezier(.16,1,.3,1),border-width 0s}
 .search-form input{border:0;background:transparent;font:inherit;color:var(--ink);outline:none;
-  width:clamp(130px,11vw,210px);min-width:0}
+  flex:1;min-width:0;transition:none}
 .search-form input::placeholder{color:var(--ink-3)}
-.search-form .go{color:var(--ink);font-size:15px;line-height:1;padding:0;border:0;background:none;cursor:pointer}
-.search-form .close{color:var(--ink-3);font-size:13px;line-height:1;padding:0;border:0;background:none;cursor:pointer}
+.search-form .go{color:var(--ink);font-size:15px;line-height:1;padding:0;border:0;background:none;cursor:pointer;flex:none}
+.search-form .close{color:var(--ink-3);font-size:13px;line-height:1;padding:0;border:0;background:none;cursor:pointer;flex:none}
 .search-form .go:hover,.search-form .close:hover{color:var(--accent)}
 .search-drop{position:absolute;top:calc(100% + 9px);right:0;z-index:40;width:clamp(290px,26vw,390px);
   background:var(--paper);border:1px solid var(--ink);box-shadow:0 10px 30px rgba(12,12,14,.16);
@@ -174,8 +183,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cont-cell .th .kpic{position:absolute;inset:0}
 .cont-cell .th .kpic img{transition:transform .5s}
 .cont-cell:hover .th .kpic img{transform:scale(1.05)}
-.cont-cell .th .time{position:absolute;right:7px;bottom:7px;z-index:2;font-size:clamp(10px,.66vw,11.5px);color:#fff;
+.cont-cell .th .time{position:absolute;left:7px;top:7px;z-index:2;font-size:clamp(10px,.66vw,11.5px);color:#fff;
   background:rgba(12,12,14,.6);padding:2px 7px;border-radius:4px}
+.cont-cell .th .resume{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
+  background:rgba(12,12,14,.4);color:#fff;font-size:clamp(15px,1.3vw,22px);opacity:0;transition:.22s}
+.cont-cell:hover .th .resume{opacity:1}
 .cont-cell .prog{height:2px;background:var(--rule);position:relative;margin-top:clamp(6px,.9vh,10px)}
 .cont-cell .prog b{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
 .cont-cell h4{font-family:var(--serif);font-size:clamp(14px,.95vw,17px);font-weight:900;margin-top:clamp(6px,1vh,11px);
@@ -225,9 +237,22 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .rc-cover .kpic{position:absolute;inset:0}
 .rc-cover .kpic img{transition:transform .5s}
 .rcard:hover .rc-cover .kpic img{transform:scale(1.05)}
-.rc-cover .sc{position:absolute;top:clamp(6px,.55vw,10px);right:clamp(6px,.55vw,10px);z-index:2;
-  font-size:clamp(10.5px,.7vw,12px);font-weight:800;background:#fff;color:#141416;padding:2px 7px;border-radius:4px;
-  max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 封面四角标（镜像 .video-card portrait：左上评分 / 右上收藏 / 左下年份 / 右下类型） */
+.rc-cover .b-tl{position:absolute;left:6px;top:6px;z-index:2;display:flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:4px;background:rgba(0,0,0,.72);color:#f5c518;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:700;line-height:1.35;backdrop-filter:blur(6px)}
+.rc-cover .b-bl,.rc-cover .b-br{position:absolute;bottom:6px;z-index:2;padding:2px 7px;border-radius:4px;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:600;line-height:1.4;backdrop-filter:blur(6px);
+  max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-cover .b-bl{left:6px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.8)}
+.rc-cover .b-br{right:6px;background:rgba(0,0,0,.72);color:#fff}
+.rc-cover .b-tr{position:absolute;right:6px;top:6px;z-index:3;width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;padding:0;border:0;cursor:pointer;
+  background:rgba(0,0,0,.45);color:rgba(255,255,255,.85);font-size:13px;line-height:1;
+  opacity:0;transform:scale(.8);transition:.22s}
+.rcard:hover .b-tr{opacity:1;transform:scale(1)}
+.rc-cover .b-tr.on{opacity:1;transform:scale(1);color:#e50914}   /* 已收藏常驻红心 */
+.rc-cover .b-tr:hover{background:rgba(0,0,0,.65);transform:scale(1.1)}
 .rcard h4{font-family:var(--serif);font-size:clamp(13.5px,.92vw,16.5px);font-weight:900;margin-top:clamp(6px,.9vh,10px);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rcard p{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px;
@@ -247,6 +272,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
 @keyframes shimmer{to{transform:translateX(100%)}}
 .skl-line{height:13px;border-radius:4px;margin-top:8px}
+/* 骨架期（<html class="booting">，boot 完成移除）：功能元素不显真身 → 横条占位且禁点 */
+.booting #edition::before{content:"";display:block;width:150px;height:30px;background:var(--fill);border-radius:4px}
+.booting .mast-nav a,.booting .theme-btn,.booting .search,.booting #data-badge,
+.booting .hl-side-head .t,.booting .sec-head .sub,.booting .sec-head .more{
+  color:transparent;background:var(--fill);border-color:transparent;border-radius:4px;pointer-events:none}
+.booting #foot-stats::before{content:"";display:inline-block;width:200px;height:13px;
+  background:var(--fill);border-radius:4px;vertical-align:-2px}
 
 /* ---------- FAB（融合 BackToTopButton：回顶 + 刷新） ---------- */
 .fab{position:fixed;right:clamp(14px,1.6vw,28px);bottom:clamp(14px,2vh,26px);z-index:9000;
@@ -303,7 +335,7 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
     </div>
     <nav class="mast-nav" id="mast-nav">
       <a class="on" href="#">首页</a><a href="#">剧集</a><a href="#">电影</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">榜单</a><a href="#">IPTV</a>
-      <span class="nav-fn">
+      <span class="nav-fn" id="nav-fn">
         <span class="data-badge" id="data-badge">真实接口拉取中…</span>
         <a href="#">收藏</a><a href="#">历史</a><a href="#">设置</a>
         <button class="theme-btn" id="theme-btn" type="button">夜刊</button>
@@ -400,6 +432,8 @@ const favSave = () => { try { localStorage.setItem(FAV_KEY, JSON.stringify([...F
 
 /* ---------- 骨架（与真实布局同尺寸，含新增块） ---------- */
 function renderSkeletons() {
+  document.documentElement.classList.add("booting");
+  ["shuffle", "search-btn", "theme-btn"].forEach((id) => { const b = $(id); if (b) b.disabled = true; });
   $("headline").innerHTML = `
     <div class="hl-text">
       <div class="skl skl-line" style="width:90px"></div>
@@ -477,7 +511,7 @@ function setSlide(i, force) {
       <span>来源：${esc(DATA.sourceName)}</span>
     </div>
     <div class="hl-actions">
-      <a class="play">▶ 立即播放</a>
+      <a class="play">${(DATA.continue_ || []).some((c) => String(c.id) === String(h.id)) ? "▶ 继续播放" : "▶ 立即播放"}</a>
       <a class="ghost" data-fav-hero="${esc(h.id)}">${FAVS.has(String(h.id)) ? "♥ 已收藏" : "＋ 收藏"}</a>
       <a class="ghost">查看详情</a>
     </div>`;
@@ -563,6 +597,7 @@ function renderContinue() {
     return `
     <div class="cont-cell">
       <div class="th">${pic(c, 480)}
+        <span class="resume">▶</span>
         <span class="time">${esc(c.remarks || c.cls || "HD")}</span></div>
       <div class="prog"><b style="width:${prog}%"></b></div>
       <h4>${esc(c.title)}</h4><p>${esc(c.cls || "")} · ${esc(c.year)} · ${esc(DATA.sourceName)}</p>
@@ -602,6 +637,21 @@ function renderTrend() {
 }
 
 /* ---------- 03–09 七行横滚（首页 .home-rows 同序同标题：横滚 + 分页箭头） ---------- */
+function rcardHTML(it) {
+  const on = FAVS.has(String(it.id));
+  const score = it.score ? "★ " + (Math.round(Number(it.score) * 10) / 10).toFixed(1) : "";
+  return `
+    <div class="rcard">
+      <div class="rc-cover">${pic(it, 342)}
+        ${score ? `<span class="b-tl">${score}</span>` : ""}
+        <button class="b-tr${on ? " on" : ""}" type="button" data-fav="${esc(it.id)}" aria-label="收藏">${on ? "♥" : "♡"}</button>
+        ${it.year ? `<span class="b-bl">${esc(it.year)}</span>` : ""}
+        ${it.cls ? `<span class="b-br">${esc(it.cls)}</span>` : ""}
+      </div>
+      <h4>${esc(it.title)}</h4>
+      <p>${esc(it.cls || "影视")}${it.year ? " · " + esc(it.year) : ""}</p>
+    </div>`;
+}
 function renderRows() {
   $("home-rows").innerHTML = DATA.rows.map((r, i) => `
     <section class="sec">
@@ -613,18 +663,29 @@ function renderRows() {
       <div class="hrow-wrap">
         <button class="hrw-arrow left" type="button" aria-label="上一页" disabled>‹</button>
         <div class="hrow-track" data-track>
-          ${r.items.map((it) => `
-            <div class="rcard">
-              <div class="rc-cover">${pic(it, 342)}<span class="sc">${esc(it.remarks || it.score || it.year)}</span></div>
-              <h4>${esc(it.title)}</h4>
-              <p>${esc(it.cls || "影视")}${it.year ? " · " + esc(it.year) : ""}</p>
-            </div>`).join("")}
+          ${r.items.map(rcardHTML).join("")}
         </div>
         <button class="hrw-arrow right" type="button" aria-label="下一页">›</button>
       </div>
     </section>`).join("");
   window.kinoBindPics($("home-rows"));
   initRowScroll();
+}
+/* 七行 + 搜索结果卡的封面收藏（delegation 绑静态容器） */
+function initRowFav() {
+  const h = (e) => {
+    const f = e.target.closest("[data-fav]");
+    if (!f) return;
+    e.stopPropagation();
+    const id = f.dataset.fav;
+    FAVS.has(id) ? FAVS.delete(id) : FAVS.add(id);
+    favSave();
+    const on = FAVS.has(id);
+    f.classList.toggle("on", on);
+    f.textContent = on ? "♥" : "♡";
+  };
+  $("home-rows").addEventListener("click", h);
+  $("search-grid").addEventListener("click", h);
 }
 
 function initRowScroll() {
@@ -672,22 +733,34 @@ function runSearch(q) {
   if (!q) { panel.hidden = true; $("search-drop").hidden = true; return; }   // handleSearch：空 query 不动作
   const list = searchFilter(q);
   $("search-count").textContent = `「${q}」· ${list.length} 条`;
-  $("search-grid").innerHTML = list.length ? list.map((it) => `
-    <div class="rcard">
-      <div class="rc-cover">${pic(it, 342)}<span class="sc">${esc(it.remarks || it.score || it.year)}</span></div>
-      <h4>${esc(it.title)}</h4>
-      <p>${esc(it.cls || "影视")}${it.year ? " · " + esc(it.year) : ""}</p>
-    </div>`).join("")
+  $("search-grid").innerHTML = list.length ? list.map(rcardHTML).join("")
     : `<div class="empty">无匹配「${esc(q)}」</div>`;
   window.kinoBindPics($("search-grid"));
   $("search-drop").hidden = true;
   panel.hidden = false;
+  collapseSearch();                                   // 结果面板 = 跳转语义，收起输入浮条
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+let collapseSearch = () => {};
 function initSearch() {
-  const btn = $("search-btn"), form = $("search-form"), input = $("search-input"), drop = $("search-drop");
-  const open = () => { btn.hidden = true; form.hidden = false; input.focus(); };
-  const shut = () => { form.hidden = true; btn.hidden = false; drop.hidden = true; input.value = ""; $("search-panel").hidden = true; };
+  const wrap = $("search-wrap"), navFn = $("nav-fn"), btn = $("search-btn"), form = $("search-form"), input = $("search-input"), drop = $("search-drop");
+  const open = () => {                                   // 就地展开：按钮原位换成输入条
+    btn.hidden = true;
+    navFn.classList.add("searching");                    // 展开期间 nav-fn 禁止换行
+    form.hidden = false;
+    requestAnimationFrame(() => { wrap.classList.add("open"); input.focus(); });
+  };
+  collapseSearch = () => {                               // 收起浮条（保留结果面板）
+    wrap.classList.remove("open");
+    drop.hidden = true;
+    setTimeout(() => {                                   // 等收缩动画结束再恢复按钮（同帧切换防叠加）
+      if (!wrap.classList.contains("open")) {
+        form.hidden = true; btn.hidden = false;
+        navFn.classList.remove("searching");
+      }
+    }, 340);
+  };
+  const shut = () => { collapseSearch(); input.value = ""; $("search-panel").hidden = true; };
   btn.addEventListener("click", open);
   $("search-close").addEventListener("click", shut);
   input.addEventListener("input", () => renderDrop(input.value, searchFilter(input.value)));
@@ -706,8 +779,11 @@ function initSearch() {
   addEventListener("keydown", (e) => {                             // ⌘K / Ctrl+K 唤起
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
-      if (btn.hidden) input.focus(); else open();
+      if (wrap.classList.contains("open")) input.focus(); else open();
     }
+  });
+  document.addEventListener("click", (e) => {                      // 点浮条外部 → 收起
+    if (wrap.classList.contains("open") && !wrap.contains(e.target)) collapseSearch();
   });
 }
 
@@ -783,7 +859,7 @@ function assembleTmdbSnapshot(S) {
     featured: trending[0] || null,
     heroSide: trending.slice(1, 9),      // banner=POOL[0..5]、右卡=POOL[6..8]（真实：同 trending 池）
     trending,
-    continue_: trending.slice(13, 19),   // 与 banner/右卡错开（真实为本地历史记录，demo 演示）
+    continue_: trending.slice(0, 6),    // 与 banner 池重叠 → banner CTA 命中「继续播放」（HeroBili historyMap 同款；真实为本地历史）
     rows,
     counts: null, genres: G,             // TMDB 无分类 total → foot-stats 走快照口径
   };
@@ -813,12 +889,15 @@ async function boot(skeleton) {
   }
   renderAll();
   window.kinoBindPics(document);
+  document.documentElement.classList.remove("booting");
+  ["shuffle", "search-btn", "theme-btn"].forEach((id) => { const b = $(id); if (b) b.disabled = false; });
 }
 
 /* 事件绑定挂静态容器（与数据无关），启动即挂；renderAll 只换 innerHTML */
 initCarousel();
 initSide();
 initSearch();
+initRowFav();
 initFab();
 initTheme();
 boot(true);
