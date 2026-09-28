@@ -1829,6 +1829,31 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-xs);
 }
 
+/* 2026-09-28 设置页字号/图标缩档（用户拍板「各个字体、图标尺寸有点大」）：
+   在 .settings-page 作用域重定义 --text-* 为全站值 ×0.93（响应式公式保持原档形态）；
+   --icon-* 的 calc(var(--text-*) × 系数) 在元素处延迟解析 → 图标随文字连锁缩 ~7%。
+   仅字号/图标，--space-*（间距）与 --card-size 不动；作用域外全站不受影响。
+   html 前缀压过 :root 的桌面档覆盖（特异性 0,1,1 > 0,1,0）。 */
+html .settings-page {
+  --text-2xs: calc(11px * var(--ui-scale) * 0.93);
+  --text-xs: calc(12px * var(--ui-scale) * 0.93);
+  --text-sm: calc(13px * var(--ui-scale) * 0.93);
+  --text-base: calc(14px * var(--ui-scale) * 0.93);
+  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale) * 0.93);
+  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale) * 0.93);
+  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * 0.93);
+  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * 0.93);
+}
+
+/* ≥768 桌面档（:root 在 variables.css 用大屏 clamp 覆盖 lg/xl/2xl → 同步缩档保持大屏形态） */
+@media (width >= 768px) {
+  html .settings-page {
+    --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * 0.93);
+    --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * 0.93);
+    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * 0.93);
+  }
+}
+
 /* 2026-09-28 修「设置子项标题左侧黑点」（全端，含移动端）：
    List.tsx 的 tailwind `list-item` 类 = display:list-item + UA 默认
    list-style-type:disc → 标题左侧渲染 disc marker。置 none 即消；
@@ -1894,26 +1919,16 @@ body.skin-transitioning .skin-btn.active {
 
   html:not([data-device="app"]) /* ============================================================
      源管理（视频源 / IPTV 源 / EPG 源）面板
-     2026-09-28：恢复卡片样式（边框/圆角/背景/hover/transition）——
-     三个源面板保留卡片感（用户拍板），与去卡前规则逐字一致。
+     2026-09-28 去卡片化（用户拍板：source-manager 不使用卡片式布局）：
+     边框/圆角/底色与面板/条目 hover 反馈一并移除，
+     仅保留折叠 grid-rows 过渡所需的 gap transition。
+     条目与 popover 的桌面去卡见 SourceManager.css 覆盖块。
      ============================================================ */
   .settings-content .source-manager, html:not([data-device="app"]) .settings-subpage__body .source-manager {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease,
-      gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
-  }
-
-  html:not([data-device="app"]) .settings-content .source-manager:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
-  }
-
-  html:not([data-device="app"]) /* 面板内 item hover：边框加深 + 阴影，对齐 .list-item 卡片 hover */
-  .settings-content .source-manager .source-manager__item:hover, html:not([data-device="app"]) .settings-subpage__body .source-manager .source-manager__item:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-card-hover);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    transition: gap var(--dur-lg) var(--ease-in-out-quart);
   }
 
   html:not([data-device="app"]) /* PersonalTab 卡片内行：桌面端不使用分割线（移动端行式保留） */

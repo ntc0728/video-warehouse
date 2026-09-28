@@ -137,8 +137,10 @@ test.describe('6.5 IPTV 配置', () => {
     const panel = page.locator('.source-manager-block[data-scene="iptv"]');
     if (await panel.isVisible().catch(() => false)) {
       const title = await panel.locator('.source-manager__title').textContent();
-      const itemCount = await panel.locator('.source-manager__item').count();
-      expect(itemCount).toBeGreaterThan(0);
+      // 2026-09-28：源列表异步加载，一次性 count() 在数据未到时读到 0（同 home.spec
+      // LazyImage 重试期教训）→ 改 web-first 断言内部轮询等待条目挂载。
+      await expect(panel.locator('.source-manager__item').first()).toBeAttached({ timeout: 5000 });
+      expect(title).toBeTruthy();
     }
 
     // SET-052: 逐个停用已启用源，最后一个被拒 → 仍保留 1 个启用
