@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 播放 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 播放页专属：16:9 播放区（高度由视频派生，不加 min-height）+ 信息区 + 右侧列表 */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) clamp(240px,24vw,400px);
+  gap:clamp(18px,2.2vw,40px);margin-top:clamp(14px,2vh,24px);align-items:start}
+@media (width<=1023px){ .stage{grid-template-columns:1fr} }
+@media (width<=767px){ .screen{aspect-ratio:16/10} }   /* 真实 Player.css:845 移动端 16/10 */
+.screen{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0b0b0d;border-radius:clamp(4px,.4vw,8px)}
+.screen .kpic{position:absolute;inset:0;opacity:.85}
+.screen .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,13,.35),rgba(11,11,13,.72))}
+.screen .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:3}
+.screen .play-big{width:clamp(56px,5vw,84px);height:clamp(56px,5vw,84px);border-radius:50%;
+  background:rgba(251,250,247,.92);color:#141416;font-size:clamp(22px,2vw,32px);display:flex;
+  align-items:center;justify-content:center;transition:.2s}
+.screen .play-big:hover{transform:scale(1.06)}
+.screen .play-big.playing{opacity:0;pointer-events:none}
+.screen .badge{position:absolute;left:clamp(10px,1.2vw,18px);top:clamp(10px,1.2vw,18px);z-index:4;
+  font-size:clamp(10.5px,.7vw,12px);color:#f2efe8;background:rgba(11,11,13,.55);padding:3px 10px;border-radius:99px;
+  letter-spacing:.08em}
+.ctrl{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:clamp(10px,1.4vw,18px);
+  background:linear-gradient(180deg,transparent,rgba(11,11,13,.86));color:#f2efe8}
+.bar{position:relative;height:4px;background:rgba(242,239,232,.28);cursor:pointer}
+.bar b{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+.bar i{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:var(--accent);transform:scale(0);transition:.18s}
+.bar:hover i{transform:scale(1)}
+.ctrl-row{display:flex;align-items:center;gap:clamp(10px,1.2vw,18px);margin-top:10px;
+  font-size:clamp(11.5px,.76vw,13.5px)}
+.ctrl-row .t{font-variant-numeric:tabular-nums;color:rgba(242,239,232,.85)}
+.ctrl-row .sp{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ctrl-row button{color:#f2efe8;font-size:clamp(13px,.86vw,15px);transition:.18s}
+.ctrl-row button:hover{color:var(--accent)}
+.screen.playing .veil{opacity:.35}
+.info{margin-top:clamp(14px,2vh,22px);border-bottom:2px solid var(--ink);padding-bottom:clamp(10px,1.6vh,18px)}
+.info h1{font-family:var(--serif);font-size:clamp(20px,2.4vw,38px);font-weight:900;line-height:1.16}
+.info .sub{font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+.side{border-top:2px solid var(--ink);padding-top:clamp(10px,1.4vh,16px)}
+/* 右侧面板 = 真实 PlayerSidebar 三块可折叠面板（CMS源 / 选季 / 选集） */
+.panel{border-top:1px solid var(--rule)}
+.panel:first-of-type{border-top:0}
+.panel-head{display:flex;align-items:center;gap:8px;width:100%;padding:clamp(8px,1.1vh,12px) 2px;
+  font-size:clamp(12.5px,.82vw,14.5px);cursor:pointer}
+.panel-ico{font-family:var(--serif);font-weight:900;color:var(--accent);width:1.8ch;flex:none}
+.panel-title{font-weight:800}
+.panel-info{margin-left:auto;font-size:clamp(10.5px,.7vw,12px);color:var(--ink-3)}
+.panel-arrow{font-size:10px;color:var(--ink-3);transition:transform .2s}
+.panel.open .panel-arrow{transform:rotate(180deg)}
+.panel:not(.open) .panel-body{display:none}
+.panel-body{border-top:1px solid var(--rule)}
+.cms-item,.season-item{display:flex;align-items:center;gap:8px;padding:clamp(7px,1vh,10px) 4px;
+  border-bottom:1px solid var(--rule);cursor:pointer;transition:background .18s;font-size:clamp(12px,.78vw,14px)}
+.cms-item:hover,.season-item:hover{background:var(--band)}
+.cms-item.on,.season-item.on{font-weight:800}
+.cms-item .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3);flex:none}
+.cms-item.on .dot{background:var(--accent)}
+.season-item .n{font-family:var(--serif);font-weight:900;color:var(--ink-3);flex:none}
+.season-item.on .n,.season-item.on .c{color:var(--accent)}
+.season-item .c{margin-left:auto;font-size:clamp(10.5px,.7vw,12px);color:var(--ink-3)}
+.ep-tools{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--rule);
+  font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3)}
+.ep-tools button{border:1px solid var(--rule);padding:2px 8px;font-size:inherit;color:var(--ink-2)}
+.ep-tools select{margin-left:auto;border:0;border-bottom:1px solid var(--rule);background:transparent;
+  font:inherit;font-size:inherit;color:var(--ink);outline:none}
+.ep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(40px,4vw,54px),1fr));gap:6px;
+  padding:clamp(8px,1.1vh,12px) 2px}
+.ep-btn{height:clamp(28px,2.4vw,34px);border:1px solid var(--rule);font-size:clamp(11px,.74vw,13px);
+  color:var(--ink-2);font-variant-numeric:tabular-nums;transition:.18s}
+.ep-btn:hover{border-color:var(--ink)}
+.ep-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:800}
+.src-item{display:flex;align-items:center;gap:8px;padding:clamp(7px,1vh,10px) 4px;border-bottom:1px solid var(--rule);
+  cursor:pointer;font-size:clamp(12px,.78vw,14px)}
+.src-item:hover{background:var(--band)}
+.src-item.on{font-weight:800;color:var(--accent)}
+.plot{font-size:clamp(12px,.8vw,14px);line-height:1.9;color:var(--ink-2);margin-top:10px;max-width:82ch}
+.plot.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.plot-toggle{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:4px}
+.plot-toggle:hover{color:var(--accent)}
+.hint{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:10px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <div class="stage">
+    <div>
+      <div class="screen" id="screen">
+        <div id="screen-pic"></div>
+        <div class="veil"></div>
+        <span class="badge" id="badge">演示画面 · 非真实流媒体</span>
+        <div class="center"><button class="play-big" id="play-big" type="button" aria-label="播放">▶</button></div>
+        <div class="ctrl">
+          <div class="bar" id="bar"><b id="bar-fill" style="width:0%"></b><i id="bar-dot" style="left:0%"></i></div>
+          <div class="ctrl-row">
+            <button id="btn-play" type="button" aria-label="播放/暂停">▶</button>
+            <span class="t" id="time">00:00 / 00:00</span>
+            <span class="sp">
+              <button id="btn-rate" type="button">1.0×</button>
+              <button id="btn-back" type="button" title="后退 10 秒">« 10s</button>
+              <button id="btn-fwd" type="button" title="前进 10 秒">10s »</button>
+              <button id="btn-fs" type="button" title="全屏">⛶</button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info" id="info"></div>
+
+      <section class="sec">
+        <div class="sec-cap"><h2>相关推荐</h2><span class="sub">真实 TMDB 快照 · 同类型条目</span></div>
+        <div class="pgrid" id="rec"></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <div class="rail-title">播放面板<span class="en">PANELS</span></div>
+      <div id="panels"></div>
+      <p class="hint">面板分块与标题对齐 PlayerSidebar（CMS源 / 选季 / 选集，均可折叠）。CMS 源名为 <code>public/data/video-sources.json</code> 真实源名，播放地址未接入；季数与集数为演示值。播放控件（播放 / 暂停 / 进度 / 倍速 / 快退快进 / 全屏）均为真实生效的前端行为。</p>
+    </aside>
+  </div>
+
+  <footer>
+    <span>KinoTV — Demo E · 播放页 · 报刊排版式；播放区高度由 16:9 派生（不加 min-height），留白用 margin:auto；右侧为 CMS源 / 选季 / 选集 三块可折叠面板（源名取自 video-sources.json），下方为详情 + 相关推荐；演示画面占位，控件真实生效</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 真实口径：PlayerSidebar = CMS源 / 选季(仅剧集) / 选集(电影为「线路」) 三块可折叠面板；
+   选集每页 12 条（PlayerEpisodesPanel PAGE_SIZE=12），页内可升 / 降序 + 分页选择。 */
+var CMS_SOURCES = ['爱奇艺资源','豆瓣资源','茅台资源','卧龙资源','iKun资源','电影天堂'];
+var PAGE_SIZE = 12;
+var ITEM = null, SRC = 0, SEASON = 1, SEASONS = 3, EP = 1, EPS = 24;
+var ASC = true, EPPAGE = 0, LINE = 1;
+var OPEN = { cms:true, season:true, ep:true };
+var RATES = [1, 1.25, 1.5, 2, 0.75], RATE = 0;
+var playing = false, dur = 3600, cur = 0, timer = null;
+
+function fmt(s){ s=Math.max(0,Math.round(s)); var m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
+
+function sync(){
+  var p = cur/dur*100;
+  document.getElementById('bar-fill').style.width = p+'%';
+  document.getElementById('bar-dot').style.left = p+'%';
+  document.getElementById('time').textContent = fmt(cur)+' / '+fmt(dur);
+  document.getElementById('screen').classList.toggle('playing', playing);
+  document.getElementById('play-big').classList.toggle('playing', playing);
+  document.getElementById('btn-play').textContent = playing ? '❙❙' : '▶';
+}
+function tick(){
+  clearInterval(timer);
+  if(!playing) return;
+  timer = setInterval(function(){
+    cur += RATES[RATE];
+    if(cur >= dur){ cur = dur; playing = false; }
+    sync();
+  }, 1000);
+}
+function togglePlay(){ playing = !playing; sync(); tick(); }
+
+function renderInfo(){
+  var it = ITEM, fav = KINO_E.fav.is(it.id);
+  document.getElementById('screen-pic').innerHTML = '<div class="kpic" style="position:absolute;inset:0" data-raw="'+KINO_E.esc(it.backdrop||it.pic)+'" data-w="1280" data-alt="'+KINO_E.esc(it.title)+'"></div>';
+  var isTV = it.mediaType==='tv';
+  document.getElementById('info').innerHTML =
+    '<h1>'+KINO_E.esc(it.title)+(isTV?' · 第 '+EP+' 集':'')+'</h1>'+
+    '<div class="sub"><span>★ '+(+it.score||0).toFixed(1)+'</span><span>'+KINO_E.esc(it.year||'—')+'</span>'+
+    '<span>'+KINO_E.esc(KINO_E.genreName(it))+'</span>'+
+    (isTV?'<span>'+SEASONS+' 季 / '+EPS+' 集（演示值）</span>':'')+
+    '<span>🔥 '+Math.round(it.popularity||0)+'</span>'+
+    '<button id="fav-btn" style="color:'+(fav?'var(--accent)':'var(--ink-2)')+';font-weight:'+(fav?'700':'400')+'">'+(fav?'已收藏':'收藏')+'</button>'+
+    '<a href="e-detail.html?id='+KINO_E.esc(it.id)+'" style="color:var(--ink-2)">详情 →</a></div>'+
+    (it.content?'<p class="plot clamp" id="plot">'+KINO_E.esc(it.content)+'</p>'+
+      '<button class="plot-toggle" id="plot-toggle" type="button">展开全文</button>':'');
+  document.getElementById('badge').textContent = (isTV?'第 '+SEASON+' 季 第 '+EP+' 集 · ':'')+CMS_SOURCES[SRC]+' · 演示画面';
+
+  EPS = isTV ? 24 : 1;
+  renderPanels();
+
+  /* 推荐 */
+  var rel = KINO_E.all().filter(function(x){
+    return x.id!==it.id && (x.genreIds||[]).some(function(g){ return (it.genreIds||[]).indexOf(g)>=0; });
+  }).slice(0,7);
+  if(!rel.length) rel = KINO_E.all().filter(function(x){return x.id!==it.id}).slice(0,7);
+  document.getElementById('rec').innerHTML = rel.map(function(x){
+    return '<article class="rcard" data-id="'+KINO_E.esc(x.id)+'"><div class="rc-cover">'+
+      KINO_E.pic(x,480,(x.score?'<span class="b-tl">★'+(+x.score).toFixed(1)+'</span>':'')+
+      '<span class="b-bl">'+KINO_E.esc(x.year||'—')+'</span><span class="b-br">'+KINO_E.esc(KINO_E.genreName(x))+'</span>')+
+      '</div><h4>'+KINO_E.esc(x.title)+'</h4></article>';
+  }).join('');
+  KINO_E.bindPics(document);
+}
+
+/* 右侧面板：CMS源 / 选季 / 选集（对齐 PlayerSidebar 的分块与折叠交互） */
+function panelHead(key, ico, title, info){
+  return '<button class="panel-head" data-toggle="'+key+'" type="button">'+
+    '<span class="panel-ico">'+ico+'</span><span class="panel-title">'+title+'</span>'+
+    '<span class="panel-info">'+info+'</span><span class="panel-arrow">▾</span></button>';
+}
+function renderPanels(){
+  var it = ITEM, isTV = it.mediaType==='tv', html = '';
+
+  /* ① CMS源：真实源名（public/data/video-sources.json，启用上限 6） */
+  html += '<div class="panel'+(OPEN.cms?' open':'')+'">'+panelHead('cms','源','CMS源',CMS_SOURCES.length+'个源')+
+    '<div class="panel-body">'+CMS_SOURCES.map(function(n,i){
+      return '<div class="cms-item'+(i===SRC?' on':'')+'" data-src="'+i+'"><span class="dot"></span><span>'+KINO_E.esc(n)+'</span></div>';
+    }).join('')+'</div></div>';
+
+  /* ② 选季（仅剧集） */
+  if(isTV){
+    var ss = '';
+    for(var s=1;s<=SEASONS;s++){
+      ss += '<div class="season-item'+(s===SEASON?' on':'')+'" data-season="'+s+'">'+
+        '<span class="n">第 '+s+' 季</span><span class="c">'+EPS+' 集</span></div>';
+    }
+    html += '<div class="panel'+(OPEN.season?' open':'')+'">'+panelHead('season','季','选季',SEASONS+'季')+
+      '<div class="panel-body">'+ss+'</div></div>';
+  }
+
+  /* ③ 选集（剧集）/ 线路（电影） */
+  if(isTV){
+    var nums = []; for(var i=1;i<=EPS;i++) nums.push(i);
+    if(!ASC) nums.reverse();
+    var pages = Math.max(1, Math.ceil(EPS/PAGE_SIZE));
+    if(EPPAGE>pages-1) EPPAGE = pages-1;
+    var vis = nums.slice(EPPAGE*PAGE_SIZE, (EPPAGE+1)*PAGE_SIZE);
+    var opts = '';
+    for(var p=0;p<pages;p++){
+      var a = p*PAGE_SIZE+1, b = Math.min((p+1)*PAGE_SIZE, EPS);
+      opts += '<option value="'+p+'"'+(p===EPPAGE?' selected':'')+'>'+a+'-'+b+'</option>';
+    }
+    html += '<div class="panel'+(OPEN.ep?' open':'')+'">'+panelHead('ep','集','选集','第'+EP+'集/共'+EPS+'集')+
+      '<div class="panel-body"><div class="ep-tools">'+
+      '<button data-sort="1" type="button">'+(ASC?'升序':'降序')+'</button>'+
+      '<select id="ep-page" aria-label="选集分页">'+opts+'</select></div>'+
+      '<div class="ep-grid">'+vis.map(function(n){
+        return '<button class="ep-btn'+(n===EP?' on':'')+'" data-ep="'+n+'" type="button">'+n+'</button>';
+      }).join('')+'</div></div></div>';
+  } else {
+    var ls = ''; for(var l=1;l<=3;l++){ ls += '<div class="src-item'+(l===LINE?' on':'')+'" data-line="'+l+'"><span>线路 '+l+'</span></div>'; }
+    html += '<div class="panel'+(OPEN.ep?' open':'')+'">'+panelHead('ep','线','线路','共3条线路')+
+      '<div class="panel-body">'+ls+'</div></div>';
+  }
+  document.getElementById('panels').innerHTML = html;
+}
+
+function bind(){
+  document.getElementById('play-big').addEventListener('click', togglePlay);
+  document.getElementById('btn-play').addEventListener('click', togglePlay);
+  document.getElementById('btn-fwd').addEventListener('click', function(){ cur=Math.min(dur,cur+10); sync(); });
+  document.getElementById('btn-back').addEventListener('click', function(){ cur=Math.max(0,cur-10); sync(); });
+  document.getElementById('btn-rate').addEventListener('click', function(){
+    RATE = (RATE+1)%RATES.length;
+    this.textContent = RATES[RATE].toFixed(2).replace(/0$/,'')+'×';
+    tick();
+  });
+  document.getElementById('btn-fs').addEventListener('click', function(){
+    var s = document.getElementById('screen');
+    if(document.fullscreenElement) document.exitFullscreen();
+    else if(s.requestFullscreen) s.requestFullscreen();
+  });
+  var bar = document.getElementById('bar');
+  bar.addEventListener('click', function(e){
+    var r = bar.getBoundingClientRect();
+    cur = Math.max(0, Math.min(1, (e.clientX-r.left)/r.width)) * dur;
+    sync();
+  });
+  document.addEventListener('click', function(e){
+    var tg = e.target.closest('[data-toggle]');
+    if(tg){ var k = tg.getAttribute('data-toggle'); OPEN[k] = !OPEN[k]; renderPanels(); return; }
+    var s = e.target.closest('[data-src]');
+    if(s){ SRC = +s.getAttribute('data-src'); cur = 0; renderInfo(); return; }
+    var se = e.target.closest('[data-season]');
+    if(se){ SEASON = +se.getAttribute('data-season'); EP = 1; EPPAGE = 0; cur = 0; renderInfo(); return; }
+    var ep = e.target.closest('[data-ep]');
+    if(ep){ EP = +ep.getAttribute('data-ep'); cur = 0; renderInfo(); return; }
+    var l = e.target.closest('[data-line]');
+    if(l){ LINE = +l.getAttribute('data-line'); cur = 0; renderInfo(); return; }
+    if(e.target.closest('[data-sort]')){ ASC = !ASC; EPPAGE = 0; renderPanels(); return; }
+    if(e.target.closest('#plot-toggle')){
+      var p = document.getElementById('plot'), b2 = document.getElementById('plot-toggle');
+      var on = p.classList.toggle('clamp');
+      b2.textContent = on ? '展开全文' : '收起';
+      return;
+    }
+    if(e.target.closest('#fav-btn')){
+      var f = KINO_E.fav.toggle(ITEM.id);
+      var b = document.getElementById('fav-btn');
+      b.textContent = f?'已收藏':'收藏'; b.style.color = f?'var(--accent)':'var(--ink-2)';
+      return;
+    }
+    var c = e.target.closest('.rcard');
+    if(c){ location.href = 'e-detail.html?id='+encodeURIComponent(c.getAttribute('data-id')); }
+  });
+  document.addEventListener('change', function(e){
+    if(e.target.id==='ep-page'){ EPPAGE = +e.target.value; renderPanels(); }
+  });
+}
+
+KINO_E.boot({ key:'player', title:'正在播放' }).then(function(){
+  var id = new URLSearchParams(location.search).get('id');
+  var all = KINO_E.all();
+  ITEM = all.filter(function(x){return x.id===id})[0] || all[0];
+  document.title = ITEM.title + ' · KinoTV Demo E 播放';
+  dur = ITEM.mediaType==='tv' ? 2700 : 5400;
+  cur = 0;
+  renderInfo(); sync(); bind();
+});
+</script>
+</body>
+</html>

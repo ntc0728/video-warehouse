@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 历史 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 历史页专属：桌面算珠轴（≥768，口径 History.css:157）+ 记录卡网格（--history-cols，
+   口径 History.css:312 / layout-tokens.css）+ <480 横版（RecordCard.css:287） */
+.grid-wrap{display:grid;grid-template-columns:1fr}
+@media (width>=768px){
+  .grid-wrap{grid-template-columns:clamp(72px,6vw,96px) minmax(0,1fr);
+    column-gap:clamp(10px,1vw,18px);align-items:start}
+  .beads{position:sticky;top:clamp(12px,2vh,20px);align-self:start;padding-top:clamp(12px,1.6vh,18px)}
+  /* 桌面：时间信息由左侧算珠轴承担，隐藏内联节点（History.css:291 同口径） */
+  .day-head{display:none}
+}
+/* 移动端：隐藏算珠面板、保留内联时间节点（History.css:157 段互补口径） */
+@media (width<=767px){ .beads{display:none} }
+.beads{display:flex;flex-direction:column;gap:clamp(8px,1.2vh,16px)}
+.bead{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:clamp(10.5px,.7vw,12.5px);
+  color:var(--ink-3);cursor:pointer;transition:.2s;text-align:center;line-height:1.3}
+.bead .dot{width:clamp(9px,.7vw,13px);height:clamp(9px,.7vw,13px);border-radius:50%;
+  border:1px solid var(--rule);background:var(--paper);transition:.2s;flex:none}
+.bead .ln{width:1px;flex:1;min-height:clamp(12px,1.8vh,22px);background:var(--rule)}
+.bead:last-child .ln{display:none}
+.bead.on{color:var(--ink);font-weight:800}
+.bead.on .dot{background:var(--accent);border-color:var(--accent);transform:scale(1.15)}
+.bead:hover{color:var(--ink)}
+@media (width<=1023px){ .beads{flex-direction:row;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .bead{flex-direction:row}.bead .ln{display:none} }
+.day-head{display:flex;align-items:baseline;gap:14px;padding:clamp(10px,1.4vh,16px) 2px;
+  border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:10}
+.day-head b{font-family:var(--serif);font-size:clamp(17px,1.4vw,26px);font-weight:900}
+.day-head span{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3)}
+/* 记录卡（对齐 RecordCard：≥480 竖版 16:9 封面通铺 + 封面下 2 行文字；
+   <480 横版封面 124px、比例 132:92（RecordCard.css:287）；
+   网格 = --history-cols（1→2(480)→3(768)→4(1024)→5(1440)→6(1920)，History.css:312 口径） */
+.history-grid{display:grid;grid-template-columns:repeat(var(--history-cols,1),minmax(0,1fr));gap:var(--gap)}
+.rc{position:relative;cursor:pointer;min-width:0}
+.rc-media{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);background:var(--fill)}
+.rc-media .kpic{position:absolute;inset:0}
+.rc-media .logo-fb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;color:var(--ink-3)}
+.rc-media .logo-fb b{font-family:var(--serif);font-size:clamp(16px,1.4vw,24px);font-weight:900;letter-spacing:.04em}
+.rc-media .logo-fb b em{color:var(--accent);font-style:normal}
+.rc-media .logo-fb span{font-size:10.5px}
+.rc-media .live{position:absolute;left:8px;top:8px;z-index:4;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  color:#fff;background:rgba(22,163,110,.9);border-radius:4px;padding:2px 8px}
+.rc .pick{position:absolute;left:8px;top:8px;z-index:5;width:22px;height:22px;border-radius:6px;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.7);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;opacity:0;transition:.18s;cursor:pointer}
+.rc.batch .pick{opacity:1}
+.rc .pick.on{background:var(--accent);border-color:var(--accent)}
+.rc .del{position:absolute;right:8px;top:8px;z-index:4;width:26px;height:26px;border-radius:6px;
+  background:rgba(0,0,0,.55);color:#fff;font-size:12px;opacity:0;transition:.18s}
+.rc:hover .del{opacity:1}
+.rc .del:hover{color:var(--accent)}
+.rc-prog{position:absolute;left:0;right:0;bottom:0;z-index:3;pointer-events:none}
+.rc-prog .bar{height:5px;background:rgba(255,255,255,.16)}
+.rc-prog .bar b{display:block;height:100%;background:var(--accent)}
+.rc-prog .txt{position:absolute;right:8px;bottom:10px;color:rgba(255,255,255,.92);
+  font-size:clamp(10.5px,.7vw,12px);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.rc-body{padding:clamp(7px,1vh,10px) 2px 2px;min-width:0}
+.rc-title{display:block;font-size:clamp(12.5px,.82vw,14.5px);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-meta{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:clamp(10.5px,.7vw,12px);color:var(--ink-3)}
+.rc-meta .badge{flex:none;font-style:normal;font-size:clamp(9.5px,.64vw,11px);font-weight:600;border-radius:4px;padding:1px 7px}
+.rc-meta .badge--video{background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent)}
+.rc-meta .badge--live{background:rgba(34,197,94,.14);color:#16a36e}
+.rc-meta .badge--src{background:rgba(0,0,0,.55);color:#fff}
+.rc-meta .tm{margin-left:auto;white-space:nowrap}
+/* <480 横版（RecordCard.css:287：封面 124px 左置 + 右信息） */
+@media (width<480px){
+  .history-grid{grid-template-columns:1fr;gap:0}
+  .rc{display:grid;grid-template-columns:124px minmax(0,1fr);gap:10px;align-items:start;
+    padding-bottom:12px;border-bottom:1px solid var(--rule)}
+  .rc-media{width:124px;height:87px;aspect-ratio:132/92}
+  .rc-body{padding:0}
+}
+@media (width<=767px){ .rc .del{opacity:1} }   /* 触屏无 hover：删除钮常驻（Collections.css:80 同口径） */
+.batch-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:clamp(8px,1.2vh,12px) 0;
+  border-bottom:1px solid var(--rule);margin-bottom:clamp(12px,1.8vh,20px);font-size:clamp(12px,.78vw,14px);color:var(--ink-2)}
+.batch-bar .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <div class="rail-aside" style="margin-top:clamp(14px,2vh,24px)">
+
+    <aside class="rail">
+      <div class="rail-group">
+        <div class="rail-title">记录分类<span class="en">TABS</span></div>
+        <div class="rail-list" id="tabs">
+          <button class="rail-item on" data-tab="all" type="button"><span class="ic">▦</span>综合<span class="cnt" id="c-all">0</span></button>
+          <button class="rail-item" data-tab="video" type="button"><span class="ic">▶</span>视频<span class="cnt" id="c-video">0</span></button>
+          <button class="rail-item" data-tab="iptv" type="button"><span class="ic">📺</span>IPTV<span class="cnt" id="c-iptv">0</span></button>
+        </div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-title">更多筛选<span class="en">FILTERS</span></div>
+        <div class="rail-search"><input id="q" type="search" placeholder="搜索历史标题…"><span style="color:var(--ink-3);font-size:12px">⌕</span></div>
+        <div class="chips" style="margin-top:10px" id="status">
+          <button class="chip on" data-st="all" type="button">全部</button>
+          <button class="chip" data-st="unfinished" type="button">未看完</button>
+          <button class="chip" data-st="finished" type="button">已看完</button>
+        </div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-title">排序<span class="en">SORT</span></div>
+        <div class="chips" id="sort">
+          <button class="chip on chip--full" data-so="recent" type="button">最近观看</button>
+          <button class="chip chip--full" data-so="oldest" type="button">最早观看</button>
+          <button class="chip chip--full" data-so="name-asc" type="button">名称 A-Z</button>
+          <button class="chip chip--full" data-so="name-desc" type="button">名称 Z-A</button>
+          <button class="chip chip--full" data-so="rating-desc" type="button">评分高到低</button>
+          <button class="chip chip--full" data-so="rating-asc" type="button">评分低到高</button>
+        </div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-actions">
+          <button class="rail-btn" id="batch-btn" type="button">批量管理</button>
+          <button class="rail-btn danger" id="clear-btn" type="button">清除全部</button>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <section class="sec" style="margin-top:0">
+        <div class="sec-cap">
+          <h2 id="title">观看历史</h2>
+          <span class="sub" id="sub">记录写入 localStorage · 进度与时间为演示值</span>
+          <span class="more" id="count"></span>
+        </div>
+
+        <div class="batch-bar" id="batch-bar" hidden>
+          <span id="batch-n">已选择 0 项</span>
+          <span class="sp">
+            <button class="btn" id="sel-all" type="button">全选</button>
+            <button class="btn btn--accent" id="del-sel" type="button">删除所选</button>
+            <button class="btn" id="exit-batch" type="button">退出管理</button>
+          </span>
+        </div>
+
+        <div class="grid-wrap">
+          <div class="beads" id="beads"></div>
+          <div id="list"></div>
+        </div>
+        <div class="empty" id="empty" hidden><b>暂无观看记录</b><span>去播放页看一会儿，记录会出现在这里</span></div>
+      </section>
+    </main>
+
+  </div>
+
+  <footer>
+    <span>KinoTV — Demo E · 历史页 · 报刊排版式；左栏对齐真实 History（融合 Tab + 状态 chips + 排序 + 批量管理），主区含桌面算珠时间轴与竖版 RecordCard 网格（16:9 封面 + 进度条，--history-cols；<480 横版 124px）；条目标题海报真实，观看进度与时间为演示值</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 历史数据源：localStorage kino-demo-history（首次按确定性种子播种，之后持久）。
+   删除 / 清空 / 批量 均为真实生效；进度与观看时刻为演示值。 */
+var KEY = 'kino-demo-history';
+var GROUPS = ['今天','昨天','本周','本月','更早'];
+var CHANNELS = [
+  {id:'iptv-cctv1',title:'CCTV-1 综合',group:'央视 CCTV'},
+  {id:'iptv-cctv5',title:'CCTV-5 体育',group:'央视 CCTV'},
+  {id:'iptv-hunan',title:'湖南卫视',group:'主流卫视'},
+];
+var S = { tab:'all', st:'all', so:'recent', q:'', batch:false, sel:new Set() };
+var HIST = [];
+
+function load(){
+  try { HIST = JSON.parse(localStorage.getItem(KEY)||'[]'); } catch(e) { HIST = []; }
+  if(!HIST.length && !localStorage.getItem('kino-demo-hist-seeded')){
+    var items = KINO_E.pick(KINO_E.all(), 12, 'history');
+    HIST = items.map(function(it,i){
+      return { id: it.id, kind:'video', prog: Math.round(KINO_E.seeded(it.id,17)*95)+'%',
+               group: GROUPS[Math.floor(KINO_E.seeded(it.id,19)*GROUPS.length)] };
+    });
+    CHANNELS.forEach(function(c){
+      HIST.push({ id:c.id, kind:'iptv', prog:'直播', group:'今天', title:c.title, groupName:c.group });
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(HIST)); localStorage.setItem('kino-demo-hist-seeded','1'); } catch(e) {}
+  }
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(HIST)); } catch(e) {} }
+function itemOf(h){
+  if(h.kind==='iptv') return { id:h.id, title:h.title, pic:'', cls:h.groupName||'直播', year:'', score:0 };
+  return KINO_E.all().filter(function(x){ return String(x.id)===String(h.id); })[0] || { id:h.id, title:'（条目已不可用）', pic:'' };
+}
+function finished(h){
+  if(h.kind==='iptv') return true;
+  return parseInt(h.prog,10) >= 90;
+}
+
+function render(){
+  var list = HIST.slice();
+  if(S.tab==='video') list = list.filter(function(h){ return h.kind!=='iptv'; });
+  if(S.tab==='iptv') list = list.filter(function(h){ return h.kind==='iptv'; });
+  if(S.st==='finished') list = list.filter(finished);
+  if(S.st==='unfinished') list = list.filter(function(h){ return !finished(h); });
+  if(S.q) list = list.filter(function(h){ var it=itemOf(h); return (it.title||'').indexOf(S.q)>=0; });
+  /* 排序键对齐 src/pages/History/index.tsx:158 SORT_OPTIONS（6 项）；时间与评分为演示值，标题真实 */
+  var byTimeDesc = function(a,b){ return GROUPS.indexOf(b.group)-GROUPS.indexOf(a.group); };
+  list.sort(function(a,b){
+    if(S.so==='oldest') return GROUPS.indexOf(a.group)-GROUPS.indexOf(b.group);
+    if(S.so==='rating-desc') return ((+(itemOf(b).score)||0)-(+(itemOf(a).score)||0)) || byTimeDesc(a,b);
+    if(S.so==='rating-asc') return ((+(itemOf(a).score)||0)-(+(itemOf(b).score)||0)) || byTimeDesc(a,b);
+    if(S.so==='name-asc') return String(itemOf(a).title||'').localeCompare(String(itemOf(b).title||''),'zh-Hans-CN') || byTimeDesc(a,b);
+    if(S.so==='name-desc') return String(itemOf(b).title||'').localeCompare(String(itemOf(a).title||''),'zh-Hans-CN') || byTimeDesc(a,b);
+    return byTimeDesc(a,b);
+  });
+
+  document.getElementById('c-all').textContent = HIST.length;
+  document.getElementById('c-video').textContent = HIST.filter(function(h){return h.kind!=='iptv'}).length;
+  document.getElementById('c-iptv').textContent = HIST.filter(function(h){return h.kind==='iptv'}).length;
+  document.getElementById('count').textContent = '共 '+list.length+' 条';
+  document.getElementById('title').textContent = S.tab==='video'?'视频历史':S.tab==='iptv'?'IPTV 历史':'观看历史';
+  document.getElementById('empty').hidden = list.length>0;
+
+  var byGroup = {};
+  list.forEach(function(h){ (byGroup[h.group] = byGroup[h.group]||[]).push(h); });
+  var order = GROUPS.filter(function(g){ return byGroup[g]; });
+
+  document.getElementById('list').innerHTML = order.map(function(g){
+    return '<div class="day-head"><b>'+g+'</b><span>'+byGroup[g].length+' 条记录</span></div>'+
+      '<div class="history-grid">'+byGroup[g].map(function(h){
+        var it = itemOf(h), sel = S.sel.has(h.id+h.kind), iptv = h.kind==='iptv';
+        var pct = Math.min(100, iptv ? 100 : parseInt(h.prog,10)||0);
+        var label = iptv ? '直播' : (pct>=90 ? '已看完' : '观看至 '+pct+'%');
+        var media = iptv
+          ? '<span class="logo-fb"><b>kino<em>TV</em></b><span>台标占位</span></span>'
+          : KINO_E.pic(it,480);
+        return '<div class="rc'+(S.batch?' batch':'')+'" data-key="'+KINO_E.esc(h.id+h.kind)+'">'+
+          '<div class="rc-media">'+media+
+            (iptv?'<span class="live">● LIVE</span>':'')+
+            '<span class="pick'+(sel?' on':'')+'" data-pick="'+KINO_E.esc(h.id+h.kind)+'">✓</span>'+
+            '<button class="del" data-del="'+KINO_E.esc(h.id+h.kind)+'" type="button" aria-label="删除">🗑</button>'+
+            '<div class="rc-prog"><div class="bar"><b style="width:'+pct+'%"></b></div><span class="txt">'+label+'</span></div>'+
+          '</div>'+
+          '<div class="rc-body"><b class="rc-title">'+KINO_E.esc(it.title)+'</b>'+
+            '<div class="rc-meta">'+
+              '<em class="badge '+(iptv?'badge--live':'badge--video')+'">'+(iptv?'IPTV':(it.mediaType==='tv'?'剧集':'电影'))+'</em>'+
+              '<em class="badge badge--src">'+KINO_E.esc(iptv?(it.groupName||'直播'):'TMDB 快照')+'</em>'+
+              '<span class="tm">'+KINO_E.esc(g)+'</span>'+
+            '</div></div>'+
+        '</div>';
+      }).join('')+'</div>';
+  }).join('');
+
+  document.getElementById('beads').innerHTML = GROUPS.map(function(g,i){
+    var on = i===0;
+    return '<div class="bead'+(on?' on':'')+'" data-bead="'+KINO_E.esc(g)+'"><span class="dot"></span><span>'+g+'</span><span class="ln"></span></div>';
+  }).join('');
+
+  document.getElementById('batch-bar').hidden = !S.batch;
+  document.getElementById('batch-n').textContent = '已选择 '+S.sel.size+' 项';
+  document.getElementById('batch-btn').textContent = S.batch?'退出管理':'批量管理';
+  KINO_E.bindPics(document.getElementById('list'));
+}
+
+function keyOf(h){ return h.id + h.kind; }
+function delByKey(k){ HIST = HIST.filter(function(h){ return keyOf(h)!==k; }); save(); }
+
+function bind(){
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tab]'); if(!b) return;
+    Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x===b); });
+    S.tab = b.getAttribute('data-tab'); render();
+  });
+  document.getElementById('status').addEventListener('click', function(e){
+    var b = e.target.closest('[data-st]'); if(!b) return;
+    Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x===b); });
+    S.st = b.getAttribute('data-st'); render();
+  });
+  document.getElementById('sort').addEventListener('click', function(e){
+    var b = e.target.closest('[data-so]'); if(!b) return;
+    Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x===b); });
+    S.so = b.getAttribute('data-so'); render();
+  });
+  document.getElementById('q').addEventListener('input', function(){ S.q = this.value.trim(); render(); });
+  document.getElementById('beads').addEventListener('click', function(e){
+    var b = e.target.closest('[data-bead]'); if(!b) return;
+    Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x===b); });
+    var head = Array.prototype.filter.call(document.querySelectorAll('.day-head'), function(h){ return h.textContent.indexOf(b.getAttribute('data-bead'))===0; })[0];
+    if(head) head.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  document.addEventListener('click', function(e){
+    var d = e.target.closest('[data-del]');
+    if(d){ e.stopPropagation(); delByKey(d.getAttribute('data-del')); render(); return; }
+    var p = e.target.closest('[data-pick]');
+    if(p){ e.stopPropagation(); var k=p.getAttribute('data-pick'); if(S.sel.has(k)) S.sel.delete(k); else S.sel.add(k);
+      p.classList.toggle('on', S.sel.has(k)); document.getElementById('batch-n').textContent='已选择 '+S.sel.size+' 项'; return; }
+    if(e.target.closest('#batch-btn')){ S.batch=!S.batch; if(!S.batch) S.sel.clear(); render(); return; }
+    if(e.target.closest('#exit-batch')){ S.batch=false; S.sel.clear(); render(); return; }
+    if(e.target.closest('#sel-all')){ HIST.forEach(function(h){ S.sel.add(keyOf(h)); }); render(); return; }
+    if(e.target.closest('#del-sel')){
+      HIST = HIST.filter(function(h){ return !S.sel.has(keyOf(h)); }); S.sel.clear(); save(); render(); return; }
+    if(e.target.closest('#clear-btn')){ HIST = []; save(); render(); return; }
+    var row = e.target.closest('.rc');
+    if(row && !S.batch){
+      var k = row.getAttribute('data-key');
+      var h = HIST.filter(function(x){ return keyOf(x)===k; })[0];
+      if(h) location.href = h.kind==='iptv' ? 'e-iptv-player.html?ch='+encodeURIComponent(h.id) : 'e-player.html?id='+encodeURIComponent(h.id);
+    }
+  });
+}
+
+KINO_E.boot({ key:'history', title:'观看历史' }).then(function(){ load(); render(); bind(); });
+</script>
+</body>
+</html>

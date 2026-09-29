@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 源检测 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 源检测页专属：总览卡 + 分区检测卡 + 节点表 */
+.overview{border:2px solid var(--ink);padding:clamp(14px,2vh,24px) clamp(16px,2vw,32px);
+  display:flex;align-items:center;gap:clamp(16px,2vw,36px);flex-wrap:wrap;
+  margin-top:clamp(14px,2vh,24px)}
+.overview .big{font-family:var(--serif);font-size:clamp(22px,2.2vw,40px);font-weight:900;line-height:1.1}
+.overview .big em{font-style:normal;color:var(--accent)}
+.overview .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ov-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(120px,12vw,190px),1fr));
+  gap:clamp(10px,1.4vh,18px);margin-top:clamp(12px,1.8vh,20px)}
+@media (width<=767px){
+  .ov-list{grid-template-columns:repeat(2,minmax(0,1fr))}   /* ≤767 概览两列，防过密 */
+  .src-row{grid-template-columns:minmax(0,1fr) 60px 60px}  /* 表格窄列收紧 */
+}
+.ov-item{border-bottom:1px solid var(--rule);padding-bottom:8px}
+.ov-item span{display:block;font-size:clamp(10.5px,.7vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.ov-item b{display:block;font-size:clamp(13px,.88vw,16px);font-weight:800;margin-top:4px}
+.card{border-top:1px solid var(--rule);padding:clamp(14px,2vh,24px) 0}
+.card-head{display:flex;align-items:baseline;gap:clamp(12px,1.2vw,22px);flex-wrap:wrap}
+.card-head h3{font-family:var(--serif);font-size:clamp(16px,1.3vw,26px);font-weight:900}
+.card-head .sub{font-size:clamp(11px,.72vw,13px);color:var(--ink-3)}
+.card-head .act{margin-left:auto;display:flex;gap:12px;align-items:center}
+.bar{height:3px;background:var(--rule);position:relative;margin:clamp(10px,1.4vh,16px) 0;overflow:hidden}
+.bar b{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);transition:width .3s}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ink-3);margin-right:6px;vertical-align:1px}
+.dot.ok{background:#1f7a4d}
+.dot.bad{background:var(--accent)}
+.dot.wait{background:var(--ink-3)}
+.src-row{display:grid;grid-template-columns:minmax(0,1fr) clamp(70px,8vw,120px) clamp(70px,8vw,120px);
+  gap:clamp(10px,1.2vw,22px);align-items:center;padding:clamp(7px,1vh,11px) 2px;border-bottom:1px solid var(--rule);
+  font-size:clamp(12px,.78vw,14px)}
+.src-row .t{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-row .num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <section class="overview">
+    <span class="big" id="ov-big">未检测<em>.</em></span>
+    <span class="sp">
+      <button class="btn btn--solid" id="check-all" type="button">一键检测</button>
+      <span style="font-size:12px;color:var(--ink-3)" id="ov-time"></span>
+    </span>
+    <div class="ov-list" id="ov-list" style="flex-basis:100%"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-cap">
+      <h2>分区检测</h2>
+      <span class="sub">网络延迟为真实测量；源与代理为演示结果（无真实源可探测）</span>
+    </div>
+
+    <div class="card" id="card-network">
+      <div class="card-head"><h3>网络连通性</h3><span class="sub">真实请求 TMDB 图片资源测延迟</span>
+        <span class="act"><button class="btn" data-check="network" type="button">检测</button></span></div>
+      <div class="bar"><b id="bar-network"></b></div>
+      <div id="body-network"></div>
+    </div>
+
+    <div class="card" id="card-iptv">
+      <div class="card-head"><h3>IPTV 直播源</h3><span class="sub">演示结果 · 逐源进度</span>
+        <span class="act"><button class="btn" data-check="iptv" type="button">检测</button></span></div>
+      <div class="bar"><b id="bar-iptv"></b></div>
+      <div id="body-iptv"></div>
+    </div>
+
+    <div class="card" id="card-video">
+      <div class="card-head"><h3>视频源</h3><span class="sub">演示结果 · 逐源进度</span>
+        <span class="act"><button class="btn" data-check="video" type="button">检测</button></span></div>
+      <div class="bar"><b id="bar-video"></b></div>
+      <div id="body-video"></div>
+    </div>
+
+    <div class="card" id="card-iptvProxy">
+      <div class="card-head"><h3>IPTV 代理检测</h3><span class="sub">读设置页「流代理地址」· 未配置即显示未配置</span>
+        <span class="act"><button class="btn" data-check="iptvProxy" type="button">检测</button></span></div>
+      <div class="bar"><b id="bar-iptvProxy"></b></div>
+      <div id="body-iptvProxy"></div>
+    </div>
+
+    <div class="card" id="card-videoProxy">
+      <div class="card-head"><h3>视频代理检测</h3><span class="sub">读设置页「视频采集CORS 代理」· 未配置即显示未配置</span>
+        <span class="act"><button class="btn" data-check="videoProxy" type="button">检测</button></span></div>
+      <div class="bar"><b id="bar-videoProxy"></b></div>
+      <div id="body-videoProxy"></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>KinoTV — Demo E · 源检测页 · 报刊排版式；5 个检测块对齐真实 SourceChecker（网络 / IPTV 源 / 视频源 / IPTV 代理 / 视频代理）。网络延迟为真实测量（对 TMDB 图片发起带 cache-buster 的请求），IPTV 源 / 视频源为演示结果，代理项读设置页真实配置值、未配置则显示未配置——均已在界面标注</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 源检测：
+   · 网络 = 真实测量（真实 fetch TMDB 图片，取 performance.now 差值，失败显示不可达）
+   · IPTV 源 / 视频源 / 代理 = 演示结果（本 demo 无真实源与代理可探测），界面顶部已标注 */
+var NODES = [
+  ['TMDB 图片 · image.tmdb.org', 'https://image.tmdb.org/t/p/w92/5E6hS9faru2CDOXLrHhIyOUfC7a.jpg'],
+  ['TMDB API · api.themoviedb.org', 'https://api.themoviedb.org/3/configuration'],
+  ['weserv 图片代理', 'https://images.weserv.nl/?url=image.tmdb.org%2Ft%2Fp%2Fw92%2F5E6hS9faru2CDOXLrHhIyOUfC7a.jpg&w=92'],
+];
+var IPTV_SOURCES = ['聚合源 A · m3u','聚合源 B · m3u','聚合源 C · m3u','EPG · xmltv'];
+var VIDEO_SOURCES = ['豆瓣资源','茅台资源','备用资源'];
+/* 5 个检测块对齐 src/pages/SourceChecker/index.tsx（网络 / IPTV 源 / 视频源 / IPTV 代理 / 视频代理） */
+var STATE = { network:null, iptv:null, video:null, iptvProxy:null, videoProxy:null };
+var SETTINGS_KEY = 'kino-demo-settings';
+function cfgOf(){
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); } catch(e) { return {}; }
+}
+
+function dot(s){ return '<span class="dot '+(s||'wait')+'"></span>'; }
+
+async function checkNetwork(){
+  var box = document.getElementById('body-network'), bar = document.getElementById('bar-network');
+  box.innerHTML = '<p style="font-size:12.5px;color:var(--ink-3)">检测中…</p>';
+  var rows = [];
+  for(var i=0;i<NODES.length;i++){
+    var n = NODES[i], t0 = performance.now(), ok = false, lat = null, err = '';
+    try{
+      var ctl = new AbortController();
+      var to = setTimeout(function(){ ctl.abort(); }, 8000);
+      var res = await fetch(n[1] + (n[1].indexOf('?')>0?'&':'?') + '_t=' + Date.now(),
+        { mode:'cors', signal: ctl.signal, cache:'no-store' });
+      clearTimeout(to);
+      ok = res.ok; lat = Math.round(performance.now()-t0);
+      if(!ok) err = 'HTTP ' + res.status;
+    }catch(e){ err = (e && e.name==='AbortError') ? '超时（>8s）' : '连接失败'; }
+    rows.push({ name:n[0], ok:ok, lat:lat, err:err, host:n[1].split('/')[2] });
+    bar.style.width = ((i+1)/NODES.length*100)+'%';
+    box.innerHTML = table(rows);
+  }
+  var okN = rows.filter(function(r){ return r.ok; }).length;
+  STATE.network = okN ? { ok:true, text: okN+' / '+rows.length+' 个节点可达' } : { ok:false, text:'全部节点不可达' };
+  overview();
+  return rows;
+}
+function table(rows){
+  return '<div style="border-top:1px solid var(--rule)">'+
+    '<div class="src-row" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700;border-bottom:2px solid var(--ink)">'+
+    '<span>节点</span><span class="num">延迟</span><span class="num">状态</span></div>'+
+    rows.map(function(r){
+      return '<div class="src-row"><span class="t">'+dot(r.ok?'ok':'bad')+KINO_E.esc(r.name)+
+        '<span style="color:var(--ink-3);font-size:11px"> · '+KINO_E.esc(r.host)+'</span></span>'+
+        '<span class="num">'+(r.lat!=null?r.lat+'ms':'—')+'</span>'+
+        '<span class="num">'+(r.ok?'<span class="tag tag--ok">正常</span>':'<span class="tag tag--bad">'+KINO_E.esc(r.err||'不可达')+'</span>')+'</span></div>';
+    }).join('')+'</div>';
+}
+
+function demoProgress(key, sources, titleWord){
+  return new Promise(function(resolve){
+    var bar = document.getElementById('bar-'+key), box = document.getElementById('body-'+key);
+    var rows = sources.map(function(s){ return { name:s, ok:null, lat:null }; });
+    var i = 0;
+    box.innerHTML = '<p style="font-size:12.5px;color:var(--ink-3)">检测中 0/'+rows.length+'…</p>';
+    var timer = setInterval(function(){
+      if(i>=rows.length){
+        clearInterval(timer);
+        var okN = rows.filter(function(r){ return r.ok; }).length;
+        STATE[key] = { ok: okN>0, text: okN+' / '+rows.length+' 个'+titleWord+'可用' };
+        overview(); resolve(); return;
+      }
+      var s = KINO_E.seeded(rows[i].name, 3);
+      rows[i].ok = s > .25;
+      rows[i].lat = Math.round(80 + s*900);
+      i++;
+      bar.style.width = (i/rows.length*100)+'%';
+      box.innerHTML = '<p style="font-size:12.5px;color:var(--ink-3);margin-bottom:8px">检测中 '+i+'/'+rows.length+'</p>'+
+        '<div style="border-top:1px solid var(--rule)">'+rows.slice(0,i).map(function(r){
+          return '<div class="src-row"><span class="t">'+dot(r.ok?'ok':'bad')+KINO_E.esc(r.name)+'</span>'+
+            '<span class="num">'+(r.ok?r.lat+'ms':'—')+'</span>'+
+            '<span class="num">'+(r.ok?'<span class="tag tag--ok">可用</span>':'<span class="tag tag--bad">不可达</span>')+'</span></div>';
+        }).join('')+'</div>';
+    }, 260);
+  });
+}
+
+/* 代理检测：真实项目对已配置代理地址发起探测；本 demo 无代理可探测，
+   因此按真实 AboutTab/IptvTab 的文案口径显示「未配置」，不做虚构结果。 */
+function proxyRow(key, label, cfgKey, tip){
+  var url = (cfgOf()[cfgKey]||'').trim();
+  var box = document.getElementById('body-'+key), bar = document.getElementById('bar-'+key);
+  bar.style.width = '100%';
+  if(!url){
+    box.innerHTML = '<div class="src-row"><span class="t">'+dot('wait')+KINO_E.esc(label)+'</span>'+
+      '<span class="num">—</span><span class="num"><span class="tag tag--bad">未配置</span></span></div>'+
+      '<p style="font-size:12px;color:var(--ink-3);margin-top:8px">'+KINO_E.esc(tip)+'</p>';
+    STATE[key] = { ok:false, text:'未配置' };
+  } else {
+    box.innerHTML = '<div class="src-row"><span class="t">'+dot('wait')+KINO_E.esc(label)+
+      '<span style="color:var(--ink-3);font-size:11px"> · '+KINO_E.esc(url)+'</span></span>'+
+      '<span class="num">—</span><span class="num"><span class="tag">待真实探测</span></span></div>'+
+      '<p style="font-size:12px;color:var(--ink-3);margin-top:8px">已读到代理地址，但本 demo 不发起代理请求（避免虚构延迟与可用性结果）。</p>';
+    STATE[key] = { ok:true, text:'已配置（demo 不探测）' };
+  }
+  overview();
+  return Promise.resolve();
+}
+function checkIptvProxy(){ return proxyRow('iptvProxy','IPTV 代理','proxyUrl','请在设置中配置 IPTV 代理地址'); }
+function checkVideoProxy(){ return proxyRow('videoProxy','视频代理','corsProxy','请在设置中配置 CORS 代理地址'); }
+
+function overview(){
+  var items = [
+    ['网络', STATE.network], ['IPTV 源', STATE.iptv], ['视频源', STATE.video],
+    ['IPTV 代理', STATE.iptvProxy], ['视频代理', STATE.videoProxy],
+  ];
+  document.getElementById('ov-list').innerHTML = items.map(function(it){
+    var v = it[1];
+    var cls = !v ? 'wait' : (v.ok ? 'ok' : 'bad');
+    return '<div class="ov-item"><span>'+it[0]+'</span><b>'+dot(cls)+(v?v.text:'未检测')+'</b></div>';
+  }).join('');
+  var done = items.filter(function(x){ return x[1]; }).length;
+  var big = document.getElementById('ov-big');
+  big.innerHTML = done===0 ? '未检测<em>.</em>'
+    : done<items.length ? '检测中<em>…</em>'
+    : (items.filter(function(x){ return x[1] && x[1].ok; }).length + ' / ' + items.length + ' 项正常<em>.</em>');
+  if(done===items.length){
+    var d = new Date();
+    document.getElementById('ov-time').textContent = '最近检测 ' +
+      ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + ':' + ('0'+d.getSeconds()).slice(-2);
+  }
+}
+
+function bind(){
+  document.getElementById('check-all').addEventListener('click', async function(){
+    this.disabled = true;
+    var btn = this;
+    await checkNetwork();
+    await demoProgress('iptv', IPTV_SOURCES, '源');
+    await demoProgress('video', VIDEO_SOURCES, '源');
+    await checkIptvProxy();
+    await checkVideoProxy();
+    btn.disabled = false;
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-check]'); if(!b) return;
+    var k = b.getAttribute('data-check');
+    b.disabled = true;
+    var p = k==='network' ? checkNetwork()
+      : k==='iptv' ? demoProgress('iptv', IPTV_SOURCES, '源')
+      : k==='video' ? demoProgress('video', VIDEO_SOURCES, '源')
+      : k==='iptvProxy' ? checkIptvProxy()
+      : checkVideoProxy();
+    p.then(function(){ b.disabled = false; });
+  });
+}
+
+KINO_E.boot({ key:'settings', title:'源检测' }).then(function(){
+  overview(); bind();
+});
+</script>
+</body>
+</html>

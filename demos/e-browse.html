@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 浏览 / 搜索 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 浏览页专属：结果条 + 分页（项目契约：chips 恒 2 列；分页仅在 totalPages>1 时渲染） */
+.result-bar{display:flex;align-items:baseline;gap:clamp(12px,1.2vw,22px);flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding-bottom:clamp(8px,1.2vh,12px);margin-bottom:clamp(12px,1.8vh,20px)}
+.result-bar .n{font-family:var(--serif);font-size:clamp(15px,1.1vw,20px);font-weight:900}
+.result-bar .n em{font-style:normal;font-size:clamp(12px,.78vw,14px);color:var(--ink-3);font-weight:400;margin-left:8px}
+.result-bar .spacer{margin-left:auto}
+.pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:clamp(18px,3vh,34px);
+  padding-top:clamp(12px,1.8vh,20px);border-top:2px solid var(--ink)}
+.pager button{min-width:clamp(30px,2.2vw,38px);height:clamp(30px,2.2vw,38px);padding:0 8px;
+  font-size:clamp(12px,.78vw,14px);color:var(--ink-2);border:1px solid var(--rule);transition:.18s;
+  font-variant-numeric:tabular-nums}
+.pager button:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.pager button.on{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:800}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.pager .jump{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:clamp(11.5px,.76vw,13px);color:var(--ink-3)}
+.pager .jump input{width:clamp(48px,4vw,64px);text-align:center;border:0;border-bottom:1px solid var(--rule);
+  background:transparent;font:inherit;color:var(--ink);outline:none}
+.skel-grid{display:grid;grid-template-columns:repeat(var(--poster-n),minmax(0,1fr));gap:var(--gap)}
+.skel-cell .skl{aspect-ratio:2/3}
+.toast{position:fixed;left:50%;bottom:clamp(20px,4vh,44px);transform:translateX(-50%);z-index:9500;
+  background:var(--ink);color:var(--paper);font-size:clamp(12px,.8vw,14px);padding:8px 18px;border-radius:99px;
+  opacity:0;transition:.24s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <div class="rail-aside" style="margin-top:clamp(16px,2.4vh,28px)">
+
+    <!-- 左栏：筛选（对齐 FilterBar：类型 / 分类 / 地区 / 年份 / 排序，chips 恒 2 列，长词独占整行） -->
+    <aside class="rail" id="rail"></aside>
+
+    <!-- 主区 -->
+    <main>
+      <section class="sec" style="margin-top:0">
+        <div class="sec-cap">
+          <h2 id="page-title">全部结果</h2>
+          <span class="sub" id="page-sub">TMDB 快照 · 真实标题与海报</span>
+          <span class="more" id="crumb"></span>
+        </div>
+
+        <div class="result-bar">
+          <span class="n" id="res-n">—<em id="res-sub"></em></span>
+          <span class="spacer"></span>
+          <div class="seg" id="sort-seg">
+            <button data-sort="popularity" class="on" type="button">最热</button>
+            <button data-sort="date" type="button">最新</button>
+            <button data-sort="score" type="button">最高分</button>
+          </div>
+        </div>
+
+        <div class="pgrid" id="grid"></div>
+        <div class="empty" id="empty" hidden><b>没有符合条件的内容</b><span>试着放宽筛选条件，或点击左栏「全部」重置</span></div>
+        <div class="pager" id="pager"></div>
+      </section>
+    </main>
+
+  </div>
+
+  <footer>
+    <span>KinoTV — Demo E · 浏览 / 搜索页 · 报刊排版式；左栏对齐 FilterBar（类型/分类/地区/年份/排序，chips 恒 2 列），分页对齐逻辑分页契约（totalPages>1 才渲染）；标题海报评分年份类型为真实 TMDB 快照，地区与热度为演示值</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 真实口径常量（src/components/FilterBar/constants.ts + Browse/constants.ts） */
+var MEDIA_OPTIONS = [{label:'全部',value:'all'},{label:'电影',value:'movie'},{label:'剧集',value:'tv'}];
+var REGION_OPTIONS = [['内地','CN'],['中国香港','HK'],['中国台湾','TW'],['美国','US'],['韩国','KR'],['日本','JP'],
+  ['欧洲','EU'],['印度','IN'],['泰国','TH'],['丹麦','DK'],['英国','GB'],['其他','OTHER']];
+var YEAR_OPTIONS = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015];
+var SORTS = [{label:'最热',sortBy:'popularity'},{label:'最新',sortBy:'release_date'},{label:'最高分',sortBy:'vote_average'}];
+/* 长词独占整行（FilterBar isWideLabel：>4 字宽） */
+function isWide(s){var w=0;for(var i=0;i<s.length;i++){w+=/[⺀-鿿豈-￿]/.test(s[i])?1:0.5}return w>4}
+
+var F = { media:'all', genre:null, region:null, year:null, sort:'popularity', page:1 };
+var ITEMS = [];
+
+/* 地区：快照无该字段 → 演示值（确定性分配，刷新不变），界面已标注 */
+function regionOf(it){
+  var r = REGION_OPTIONS[Math.floor(KINO_E.seeded(it.id,7)*REGION_OPTIONS.length)];
+  return r[0];
+}
+
+function genreList(){
+  var G = (window.KINO_E_TMDB && window.KINO_E_TMDB.genres) || {movie:{},tv:{}};
+  var pool = F.media==='tv' ? G.tv : F.media==='movie' ? G.movie : Object.assign({},G.movie,G.tv);
+  var seen = {}, out = [];
+  Object.keys(pool).forEach(function(id){
+    var n = pool[id];
+    if(seen[n])return; seen[n]=1;
+    out.push({id:+id,name:n});
+  });
+  return out.slice(0,14);
+}
+
+function filtered(){
+  var list = ITEMS.filter(function(it){
+    if(F.media==='movie' && it.mediaType==='tv')return false;
+    if(F.media==='tv' && it.mediaType!=='tv')return false;
+    if(F.genre && (it.genreIds||[]).indexOf(F.genre)<0)return false;
+    if(F.region && regionOf(it)!==F.region)return false;
+    if(F.year){ var y=+(it.year||0); if(F.year!==2015 && y!==F.year) return false; if(F.year===2015 && y>2015) return false; }
+    return true;
+  });
+  var s = F.sort;
+  list.sort(function(a,b){
+    if(s==='score') return (+b.score||0)-(+a.score||0);
+    if(s==='date') return String(b.year||'').localeCompare(String(a.year||'')) || (+b.popularity||0)-(+a.popularity||0);
+    return (+b.popularity||0)-(+a.popularity||0);
+  });
+  return list;
+}
+
+function pageSize(){
+  var n = +getComputedStyle(document.documentElement).getPropertyValue('--poster-n') || 6;
+  return Math.max(12, n*5);                    /* 逻辑分页：每页恒 cols×5 行 */
+}
+
+function cardHTML(it){
+  var fav = KINO_E.fav.is(it.id);
+  return '<article class="rcard" data-id="'+KINO_E.esc(it.id)+'">'+
+    '<div class="rc-cover">'+
+      KINO_E.pic(it,480,
+        (it.score?'<span class="b-tl">★'+(+it.score).toFixed(1)+'</span>':'')+
+        '<button class="b-tr'+(fav?' on':'')+'" data-fav="'+KINO_E.esc(it.id)+'" type="button" aria-label="收藏">♥</button>'+
+        '<span class="b-bl">'+KINO_E.esc(it.year||'—')+'</span>'+
+        '<span class="b-br">'+KINO_E.esc(KINO_E.genreName(it))+'</span>')+
+    '</div>'+
+    '<h4>'+KINO_E.esc(it.title)+'</h4>'+
+    '<p>'+KINO_E.esc(KINO_E.genreName(it))+' · 热度 '+Math.round(it.popularity||0)+'</p>'+
+  '</article>';
+}
+
+var toastT;
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('on')},1600);
+}
+
+function renderRail(){
+  var gs = genreList();
+  var chip = function(label,on,extra){
+    return '<button class="chip'+(on?' on':'')+(isWide(label)?' chip--full':'')+'" '+extra+' type="button">'+KINO_E.esc(label)+'</button>';
+  };
+  document.getElementById('rail').innerHTML =
+    '<div class="rail-group">'+
+      '<div class="rail-title">类型<span class="en">MEDIA</span></div>'+
+      '<div class="chips">'+MEDIA_OPTIONS.map(function(o){
+        return chip(o.label,F.media===o.value,'data-media="'+o.value+'"');}).join('')+'</div>'+
+    '</div>'+
+    '<div class="rail-group">'+
+      '<div class="rail-title">分类<span class="en">GENRE</span></div>'+
+      '<div class="chips">'+chip('全部',!F.genre,'data-genre="0"')+
+        gs.map(function(g){return chip(g.name,F.genre===g.id,'data-genre="'+g.id+'"');}).join('')+'</div>'+
+    '</div>'+
+    '<div class="rail-group">'+
+      '<div class="rail-title">地区<span class="en">REGION</span><span style="margin-left:auto;font-size:11px;color:var(--ink-3)">演示值</span></div>'+
+      '<div class="chips">'+chip('全部',!F.region,'data-region=""')+
+        REGION_OPTIONS.map(function(r){return chip(r[0],F.region===r[0],'data-region="'+KINO_E.esc(r[0])+'"');}).join('')+'</div>'+
+    '</div>'+
+    '<div class="rail-group">'+
+      '<div class="rail-title">年份<span class="en">YEAR</span></div>'+
+      '<div class="chips">'+chip('全部',!F.year,'data-year="0"')+
+        YEAR_OPTIONS.map(function(y){return chip(String(y),F.year===y,'data-year="'+y+'"');}).join('')+
+        chip('其他',F.year===2015,'data-year="older"')+'</div>'+
+    '</div>'+
+    '<div class="rail-group">'+
+      '<div class="rail-actions">'+
+        '<button class="rail-btn" id="reset" type="button">重置全部筛选</button>'+
+        '<button class="rail-btn" id="clear-fav" type="button">查看我的收藏（'+KINO_E.fav.all().size+'）</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function renderPager(total,pages){
+  var el = document.getElementById('pager');
+  if(pages<=1){ el.innerHTML='<span style="font-size:13px;color:var(--ink-3)">共 '+total+' 条 · 单页展示</span>'; return; }
+  var cur = F.page, out = [];
+  var nums = [];
+  for(var i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-cur)<=1) nums.push(i);
+    else if(nums[nums.length-1]!=='…') nums.push('…');
+  }
+  out.push('<button data-page="'+(cur-1)+'"'+(cur===1?' disabled':'')+' type="button">‹</button>');
+  nums.forEach(function(n){
+    if(n==='…') out.push('<button disabled type="button">…</button>');
+    else out.push('<button class="'+(n===cur?'on':'')+'" data-page="'+n+'" type="button">'+n+'</button>');
+  });
+  out.push('<button data-page="'+(cur+1)+'"'+(cur===pages?' disabled':'')+' type="button">›</button>');
+  out.push('<span class="jump">跳至 <input id="jump" type="number" min="1" max="'+pages+'"> / '+pages+' 页</span>');
+  el.innerHTML = out.join('');
+}
+
+function render(){
+  var list = filtered();
+  var size = pageSize();
+  var pages = Math.max(1, Math.ceil(list.length/size));
+  if(F.page>pages) F.page = pages;
+  var slice = list.slice((F.page-1)*size, F.page*size);
+  var grid = document.getElementById('grid'), empty = document.getElementById('empty');
+  grid.innerHTML = slice.map(cardHTML).join('');
+  empty.hidden = list.length>0;
+  document.getElementById('pager').hidden = list.length===0;
+  document.getElementById('res-n').innerHTML = list.length+' 条<em id="res-sub"></em>';
+  document.getElementById('res-sub').textContent = '第 '+F.page+' / '+pages+' 页 · 每页 '+size+' 条';
+  document.getElementById('crumb').textContent = [
+    F.media!=='all' ? (F.media==='tv'?'剧集':'电影') : '',
+    F.genre ? (genreList().filter(function(g){return g.id===F.genre})[0]||{}).name : '',
+    F.region || '',
+    F.year ? (F.year+' 年') : '',
+  ].filter(Boolean).join(' · ') || '未设置筛选';
+  renderPager(list.length,pages);
+  renderRail();
+  KINO_E.bindPics(grid);
+}
+
+function bind(){
+  document.addEventListener('click', function(e){
+    var c = e.target.closest('[data-media],[data-genre],[data-region],[data-year],[data-fav],[data-page],.rcard');
+    if(!c) return;
+    if(c.hasAttribute('data-fav')){
+      e.stopPropagation();
+      var on = KINO_E.fav.toggle(c.getAttribute('data-fav'));
+      c.classList.toggle('on', on);
+      toast(on?'已加入收藏':'已取消收藏');
+      return;
+    }
+    if(c.hasAttribute('data-media')){ F.media=c.getAttribute('data-media'); F.genre=null; F.page=1; render(); return; }
+    if(c.hasAttribute('data-genre')){ var g=+c.getAttribute('data-genre'); F.genre=g||null; F.page=1; render(); return; }
+    if(c.hasAttribute('data-region')){ F.region=c.getAttribute('data-region')||null; F.page=1; render(); return; }
+    if(c.hasAttribute('data-year')){
+      var y=c.getAttribute('data-year');
+      F.year = y==='0'?null:(y==='older'?2015:+y); F.page=1; render(); return;
+    }
+    if(c.hasAttribute('data-page')){ F.page=+c.getAttribute('data-page'); render(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+    if(c.classList.contains('rcard')){ location.href='e-detail.html?id='+encodeURIComponent(c.getAttribute('data-id')); }
+  });
+  document.getElementById('sort-seg').addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    Array.prototype.forEach.call(this.children,function(x){x.classList.toggle('on',x===b)});
+    F.sort=b.getAttribute('data-sort'); F.page=1; render();
+  });
+  document.addEventListener('click', function(e){
+    if(e.target.closest('#reset')){ F={media:'all',genre:null,region:null,year:null,sort:F.sort,page:1}; render(); }
+    if(e.target.closest('#clear-fav')){ location.href='e-collections.html'; }
+  });
+  document.addEventListener('change', function(e){
+    if(e.target.id==='jump'){
+      var v=+e.target.value; if(!v)return;
+      var list=filtered(); var pages=Math.max(1,Math.ceil(list.length/pageSize()));
+      F.page=Math.min(Math.max(1,v),pages); render();
+    }
+  });
+  window.addEventListener('resize', function(){ render(); });
+}
+
+/* 骨架（数据到达前，与真实网格同尺寸） */
+function skeleton(){
+  var n = +getComputedStyle(document.documentElement).getPropertyValue('--poster-n') || 6;
+  document.getElementById('grid').innerHTML =
+    '<div class="skel-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(var(--poster-n),minmax(0,1fr));gap:var(--gap)">'+
+    Array.from({length:n*2}).map(function(){return '<div class="skel-cell"><div class="skl"></div><div class="skl skl-line" style="width:70%"></div><div class="skl skl-line" style="width:45%"></div></div>'}).join('')+
+    '</div>';
+}
+
+KINO_E.boot({ key:'browse', title:'浏览 · 全部结果' }).then(function(){
+  ITEMS = KINO_E.all();
+  var q = new URLSearchParams(location.search).get('q');
+  if(q){
+    ITEMS = ITEMS.filter(function(it){ return (it.title||'').indexOf(q)>=0 || (it.cls||'').indexOf(q)>=0; });
+    document.getElementById('page-title').textContent = '搜索：'+q;
+    var tp = document.getElementById('tb-page'); if(tp) tp.textContent = '搜索：'+q;
+    document.getElementById('page-sub').textContent = 'TMDB 快照 · 标题与类型匹配';
+  }
+  var cat = new URLSearchParams(location.search).get('cat');
+  var tp2 = document.getElementById('tb-page');
+  if(cat==='tv'){ F.media='tv'; document.getElementById('page-title').textContent='剧集'; if(tp2) tp2.textContent='剧集'; }
+  if(cat==='movie'){ F.media='movie'; document.getElementById('page-title').textContent='电影'; if(tp2) tp2.textContent='电影'; }
+  render(); bind();
+});
+skeleton();
+</script>
+</body>
+</html>

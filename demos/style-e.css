@@ -1,0 +1,438 @@
+/* ============================================================
+   Demo E · 报刊排版式 —— 共享皮肤层（除首页外的全站页面通用）
+   ------------------------------------------------------------
+   与 demos/home-style-e-typographic.html 同源：纸色底 / 墨色字 / 衬线标题 /
+   分区编号 / 规则线分隔 / 零卡片（无 border+bg+shadow+radius 四件套）。
+   本文件只放「通用层」：token、报头、导航、搜索、分区头、左栏 rail、
+   卡片网格、横版卡、趋势表、图片容器、骨架、表单控件、表格、FAB、页脚、
+   断点适配、TV/投影仪设备层。
+   页面专属样式写在各自 html 的 <style> 里，不进本文件。
+   ------------------------------------------------------------
+   口径来源（避免凭空造模块）：
+     · 左栏宽度 --rail-w = clamp(148px,10vw,248px)：src/assets/styles/layout-tokens.css:33
+     · 断点 768/1024/1280/1440/1920/2200/2560：项目断点宪法
+     · 留白 --pad-x 与首页 Demo E 同曲线（12–14.3 / 60@1440 / 100@1920 / 140@2560）
+   ============================================================ */
+:root{
+  --paper:#fbfaf7; --ink:#141416; --ink-2:#57575f; --ink-3:#98989f;
+  --rule:#d8d5cd; --accent:#b03a1e; --band:#f3f1ea; --fill:#eceade;
+  --serif:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --content-max:2200px;
+  --pad-x:clamp(12px, 9.77385px + 0.59364vw, 14.333px);
+  --gap:clamp(12px,1vw,20px);
+  /* ── 列数 token：口径逐条对齐 src/assets/styles/layout-tokens.css（单真源） ──
+     --poster-n   = --card-cols（影视卡网格：3/4/5/6/7/8，2200 封顶 8）
+     --iptv-cols  = IPTV 频道卡（收藏页 IPTV 卡同用它）：2/3/4/5
+     --iptv-page-cols = 仅 IPTV 页（桌面多了左栏，比 --iptv-cols 降一档）：2/3/3/4/5
+     --history-cols = 历史记录网格（横版卡更宽，独立分档）：1/2/3/4/5/6 */
+  --poster-n:3;
+  --iptv-cols:2;
+  --iptv-page-cols:2;
+  --history-cols:1;
+  --rail-w:clamp(148px,10vw,248px);              /* 桌面左栏统一宽（同 layout-tokens.css:33） */
+  --rail-gap:clamp(20px,2vw,40px);
+  --tabbar-h:clamp(52px,8vh,64px);               /* 移动端底部 TabBar 高度（对齐 TabBar.tsx） */
+}
+@media (width<768px){ :root{--pad-x:clamp(6px, 5.04581px + 0.25445vw, 7px)} }
+html[data-theme="night"]{
+  --paper:#16161a; --ink:#f2efe8; --ink-2:#b5b2aa; --ink-3:#7b7873;
+  --rule:#33333a; --accent:#e0653f; --band:#1d1d22; --fill:#232329;
+}
+/* --card-cols / --iptv-cols / --iptv-page-cols / --history-cols 断点阶梯（与项目同档） */
+@media (width>=480px){ :root{--history-cols:2} }
+@media (width>=768px){ :root{--poster-n:4; --iptv-cols:3; --iptv-page-cols:3; --history-cols:3} }
+@media (width>=1024px){ :root{--poster-n:5; --iptv-cols:4; --iptv-page-cols:3; --history-cols:4} }
+@media (width>=1280px){ :root{--poster-n:6} }
+@media (width>=1440px){ :root{--pad-x:60px; --poster-n:7; --iptv-cols:5; --iptv-page-cols:4; --history-cols:5} }
+@media (width>=1920px){ :root{--pad-x:100px; --poster-n:8; --history-cols:6} }
+@media (width>=2200px){ :root{--poster-n:8} }          /* 2200 封顶：内容停止变宽后才增列 */
+@media (width>=2560px){ :root{--pad-x:140px; --iptv-page-cols:5} }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;width:100%;height:100%;object-fit:cover}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.page{max-width:var(--content-max);margin:0 auto;padding:0 var(--pad-x)}
+
+/* ---------- 内页轻量页眉（对齐真实 StickyHeader 功能位：品牌 + 当前页名 + 首页/索引 + 搜索 + 主题；
+   首页大报头只属于首页头版，内页不复用） ---------- */
+.topbar{display:flex;align-items:center;gap:clamp(10px,1.1vw,18px);
+  padding:clamp(8px,1.2vh,13px) 0;border-bottom:1px solid var(--rule);
+  margin-bottom:clamp(10px,1.6vh,18px)}
+.topbar .tb-brand{font-family:var(--serif);font-size:clamp(15px,1.2vw,20px);font-weight:900;letter-spacing:.03em;flex:none}
+.topbar .tb-brand em{color:var(--accent);font-style:normal}
+.topbar .tb-page{font-size:clamp(12px,.8vw,14.5px);color:var(--ink-2);font-weight:700;
+  padding-left:clamp(10px,1.1vw,18px);border-left:1px solid var(--rule);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .tb-links{margin-left:auto;display:flex;gap:clamp(12px,1.2vw,22px);align-items:center;flex:none}
+.topbar .tb-links a{font-size:clamp(12px,.78vw,14px);color:var(--ink-2);transition:.2s}
+.topbar .tb-links a:hover{color:var(--ink)}
+.topbar .theme-btn{font-size:clamp(14px,1vw,16px);color:var(--ink-2);border:1px solid var(--rule);
+  border-radius:99px;padding:2px 9px;line-height:1.4;transition:.2s;white-space:nowrap}   /* 图标钮：☾/☀（对齐真实 StickyHeader 主题图标钮） */
+.topbar .theme-btn:hover{color:var(--ink);border-color:var(--ink)}
+.topbar .search{font-size:clamp(15px,1.1vw,18px);color:var(--ink-3);cursor:pointer;transition:.2s;
+  border:0;background:none;font:inherit;padding:0 2px;line-height:1}   /* 图标钮 ⌕ */
+.topbar .search:hover{color:var(--ink)}
+
+/* ---------- 移动端顶栏 ☰ + 导航抽屉（对齐真实 StickyHeader menu-btn + Sidebar isMobile：
+   真实移动端每页顶栏左侧都有 ☰（menu-btn），点开左侧滑入抽屉；样式与首页 Demo E 抽屉一致。
+   DOM 由 style-e-boot.js 注入，仅 ≤767 显示） ---------- */
+.topbar .menu-btn{display:none;align-items:center;justify-content:center;width:36px;height:36px;
+  flex:none;margin-left:-6px;border:0;background:none;color:var(--ink);cursor:pointer}
+.drawer-overlay{position:fixed;inset:0;z-index:9500;background:rgba(12,12,14,.45);opacity:0;transition:opacity .24s;pointer-events:none}
+.drawer-overlay.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;bottom:0;left:0;z-index:9600;width:240px;max-width:78vw;
+  background:var(--paper);border-right:2px solid var(--ink);transform:translateX(-102%);transition:transform .26s;
+  display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;
+  padding:clamp(12px,2vh,20px) clamp(14px,3vw,20px);border-bottom:1px solid var(--rule)}
+.drawer-head b{font-family:var(--serif);font-weight:900;font-size:18px}
+.drawer-head b em{color:var(--accent);font-style:normal}
+.drawer-close{padding:6px;font-size:15px;color:var(--ink-2)}
+.drawer-close:hover{color:var(--ink)}
+.drawer-nav{display:flex;flex-direction:column;padding:6px 0;overflow-y:auto}
+.drawer-nav a{padding:clamp(10px,1.6vh,14px) clamp(16px,3vw,22px);font-size:15px;font-weight:600;
+  color:var(--ink-2);border-bottom:1px solid var(--rule);transition:background .18s}
+.drawer-nav a:hover,.drawer-nav a:active{background:var(--band);color:var(--ink)}
+.drawer-nav a.on{color:var(--accent);font-weight:800}
+
+/* ---------- 搜索（对齐 SearchBox：就地展开 → 建议下拉 → 回车出结果） ---------- */
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-form{display:flex;align-items:center;gap:9px;
+  width:0;max-width:0;overflow:hidden;opacity:0;border-bottom:0 solid var(--ink);padding-bottom:0;
+  transition:width .32s cubic-bezier(.16,1,.3,1),max-width .32s cubic-bezier(.16,1,.3,1),
+    opacity .16s,padding .32s cubic-bezier(.16,1,.3,1),border-width 0s .32s}
+.search-wrap.open .search-form{width:clamp(220px,21vw,320px);max-width:min(52vw,320px);opacity:1;
+  border-bottom-width:1px;padding-bottom:3px;
+  transition:width .32s cubic-bezier(.16,1,.3,1),max-width .32s cubic-bezier(.16,1,.3,1),
+    opacity .16s .05s,padding .32s cubic-bezier(.16,1,.3,1),border-width 0s}
+.search-form input{border:0;background:transparent;font:inherit;color:var(--ink);outline:none;flex:1;min-width:0}
+.search-form input::placeholder{color:var(--ink-3)}
+.search-form .go,.search-form .close{line-height:1;padding:0;flex:none}
+.search-form .go{color:var(--ink);font-size:15px}
+.search-form .close{color:var(--ink-3);font-size:13px}
+.search-form .go:hover,.search-form .close:hover{color:var(--accent)}
+.search-drop{position:absolute;top:calc(100% + 9px);right:0;z-index:40;width:clamp(290px,26vw,390px);
+  background:var(--paper);border:1px solid var(--ink);box-shadow:0 10px 30px rgba(12,12,14,.16);
+  max-height:min(430px,62vh);overflow-y:auto}
+.search-drop .sd-item{display:flex;gap:10px;align-items:center;padding:8px 12px;cursor:pointer;
+  border-bottom:1px solid var(--rule)}
+.search-drop .sd-item:last-child{border-bottom:0}
+.search-drop .sd-item:hover{background:var(--band)}
+.search-drop .sd-pic{width:50px;height:72px;flex:none;position:relative;overflow:hidden;
+  background:var(--fill);border-radius:3px}
+.search-drop .sd-pic .kpic{position:absolute;inset:0}
+.search-drop .sd-t b{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-drop .sd-t span{font-size:11px;color:var(--ink-3)}
+.search-drop .empty{padding:15px 13px;font-size:12.5px;color:var(--ink-3)}
+.search-grid{display:grid;grid-template-columns:repeat(var(--poster-n),minmax(0,1fr));gap:var(--gap)}
+.search-grid .empty{grid-column:1/-1;padding:14px 0;font-size:13px;color:var(--ink-3)}
+
+/* ---------- 分区标题行（原报刊式 sec-head（编号+大字报头）已按用户要求删除；
+   真实页面均有普通标题/计数/口径说明，保留为紧凑标题行 .sec-cap） ---------- */
+.sec{margin-top:clamp(24px,4vh,48px)}
+.sec-cap{display:flex;align-items:baseline;gap:clamp(8px,.9vw,14px);flex-wrap:wrap;
+  margin-bottom:clamp(10px,1.4vh,16px)}
+.sec-cap h2{font-family:var(--serif);font-size:clamp(15px,1.15vw,19px);font-weight:800;margin:0}
+.sec-cap .sub{font-size:clamp(11px,.74vw,13px);color:var(--ink-3)}
+.sec-cap .more{margin-left:auto;font-size:clamp(12px,.8vw,14px);color:var(--ink-2)}
+.sec-cap .more:hover{color:var(--ink)}
+/* 次级小标题（栏内分组） */
+.kicker{font-size:clamp(10.5px,.7vw,12.5px);letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700}
+
+/* ---------- 左栏 rail（对齐 Browse/Collections/History/Settings/IPTV 桌面左栏） ---------- */
+.rail-aside{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+@media (width>=1024px){
+  .rail-aside{grid-template-columns:var(--rail-w) minmax(0,1fr);column-gap:var(--rail-gap);align-items:start}
+  .rail{position:sticky;top:clamp(12px,2vh,20px);align-self:start;
+    border-right:1px solid var(--rule);padding-right:clamp(12px,1.1vw,20px)}
+}
+.rail-group{padding-bottom:clamp(12px,1.6vh,18px);margin-bottom:clamp(12px,1.6vh,18px);
+  border-bottom:1px solid var(--rule)}
+.rail-group:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.rail-title{font-family:var(--serif);font-size:clamp(13.5px,.9vw,16px);font-weight:900;
+  margin-bottom:clamp(8px,1.1vh,12px);display:flex;align-items:baseline;gap:8px}
+.rail-title .en{font-family:var(--sans);font-size:clamp(9.5px,.62vw,11px);letter-spacing:.18em;
+  color:var(--ink-3);font-weight:700;text-transform:uppercase}
+/* 筛选 chips：恒 2 列（Browse 契约：长词 --full 独占整行） */
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(6px,.7vh,10px)}
+.chip{font-size:clamp(12px,.78vw,14px);color:var(--ink-2);text-align:left;
+  padding:clamp(5px,.7vh,8px) clamp(8px,.8vw,12px);border:1px solid var(--rule);border-radius:99px;
+  transition:.18s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.chip:hover{color:var(--ink);border-color:var(--ink)}
+.chip.on{color:var(--paper);background:var(--ink);border-color:var(--ink);font-weight:700}
+html[data-theme="night"] .chip.on{color:var(--paper)}
+.chip--full{grid-column:1/-1}
+/* 左栏竖排条目（设置 tab / 收藏分类 / IPTV 分组） */
+.rail-list{display:flex;flex-direction:column}
+.rail-item{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  font-size:clamp(12.5px,.82vw,14.5px);color:var(--ink-2);
+  padding:clamp(6px,.9vh,10px) clamp(8px,.8vw,12px);transition:.18s;border-left:2px solid transparent}
+.rail-item:hover{color:var(--ink);background:var(--band)}
+.rail-item.on{color:var(--ink);font-weight:800;border-left-color:var(--accent);background:var(--band)}
+.rail-item .cnt{margin-left:auto;font-size:clamp(10.5px,.68vw,12px);color:var(--ink-3);font-weight:600}
+.rail-item .ic{width:1.1em;text-align:center;flex:none}
+/* 左栏搜索框 */
+.rail-search{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--rule);padding-bottom:5px}
+.rail-search input{border:0;background:transparent;font:inherit;font-size:clamp(12px,.78vw,14px);
+  color:var(--ink);outline:none;flex:1;min-width:0}
+.rail-search input::placeholder{color:var(--ink-3)}
+.rail-actions{display:flex;flex-direction:column;gap:clamp(6px,.8vh,10px);margin-top:clamp(10px,1.4vh,14px)}
+.rail-btn{font-size:clamp(12px,.78vw,14px);color:var(--ink-2);text-align:left;transition:.18s;padding:2px 0}
+.rail-btn:hover{color:var(--accent)}
+.rail-btn.danger:hover{color:var(--accent)}
+
+/* ---------- 主区网格卡片（镜像 .video-card portrait：四角标） ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(var(--poster-n),minmax(0,1fr));gap:var(--gap)}
+.rcard{cursor:pointer;min-width:0}
+.rc-cover{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,7px);background:var(--fill)}
+.rc-cover .kpic{position:absolute;inset:0}
+.rc-cover .kpic img{transition:transform .5s}
+.rcard:hover .rc-cover .kpic img{transform:scale(1.05)}
+.rc-cover .b-tl{position:absolute;left:6px;top:6px;z-index:2;display:flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:4px;background:rgba(0,0,0,.72);color:#f5c518;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:700;line-height:1.35;backdrop-filter:blur(6px)}
+.rc-cover .b-bl,.rc-cover .b-br{position:absolute;bottom:6px;z-index:2;padding:2px 7px;border-radius:4px;
+  font-size:clamp(10.5px,.7vw,12px);font-weight:600;line-height:1.4;backdrop-filter:blur(6px);
+  max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-cover .b-bl{left:6px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.8)}
+.rc-cover .b-br{right:6px;background:rgba(0,0,0,.72);color:#fff}
+.rc-cover .b-tr{position:absolute;right:6px;top:6px;z-index:3;width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;padding:0;border:0;cursor:pointer;
+  background:rgba(0,0,0,.45);color:rgba(255,255,255,.85);font-size:13px;line-height:1;
+  opacity:0;transform:scale(.8);transition:.22s}
+.rcard:hover .b-tr,.rc-cover .b-tr.on{opacity:1;transform:scale(1)}
+.rc-cover .b-tr.on{color:#e50914}
+.rc-cover .b-tr:hover{background:rgba(0,0,0,.65);transform:scale(1.1)}
+.rcard h4{font-family:var(--serif);font-size:clamp(13.5px,.92vw,16.5px);font-weight:900;margin-top:clamp(6px,.9vh,10px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard p{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 横版卡（继续观看 / 历史 RecordCard：16:9 + 进度条 + hover ▶） ---------- */
+.cont-grid{display:flex;gap:var(--gap);overflow-x:auto;scroll-snap-type:x proximity;
+  scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px}
+.cont-grid::-webkit-scrollbar{display:none}
+.cont-cell{flex:0 0 calc((100% - 5*var(--gap)) / 6);scroll-snap-align:start;cursor:pointer;min-width:0}
+.cont-cell .th{aspect-ratio:16/9;overflow:hidden;border-radius:clamp(4px,.4vw,7px);position:relative;background:var(--fill)}
+.cont-cell .th .kpic{position:absolute;inset:0}
+.cont-cell .th .kpic img{transition:transform .5s}
+.cont-cell:hover .th .kpic img{transform:scale(1.05)}
+.cont-cell .th .time{position:absolute;left:7px;top:7px;z-index:2;font-size:clamp(10px,.66vw,11.5px);color:#fff;
+  background:rgba(12,12,14,.6);padding:2px 7px;border-radius:4px}
+.cont-cell .th .resume{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
+  background:rgba(12,12,14,.4);color:#fff;font-size:clamp(15px,1.3vw,22px);opacity:0;transition:.22s}
+.cont-cell:hover .th .resume{opacity:1}
+.cont-cell .prog{height:2px;background:var(--rule);position:relative;margin-top:clamp(6px,.9vh,10px)}
+.cont-cell .prog b{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+.cont-cell h4{font-family:var(--serif);font-size:clamp(14px,.95vw,17px);font-weight:900;margin-top:clamp(6px,1vh,11px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cont-cell p{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 排名表（热度榜 Chart：排名 + 海报 + 标题 + 热度，大屏双栏） ---------- */
+.trend-table{border-top:2px solid var(--ink)}
+.trow{display:grid;grid-template-columns:clamp(40px,3vw,64px) clamp(34px,2.6vw,46px) minmax(0,1fr) clamp(110px,9vw,180px);
+  gap:clamp(12px,1.2vw,24px);align-items:center;padding:clamp(9px,1.2vh,15px) 4px;
+  border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s}
+.trow:hover{background:var(--band)}
+.trow .rank{font-family:var(--serif);font-size:clamp(20px,1.8vw,32px);font-weight:900;color:var(--ink-3);line-height:1}
+.trow:nth-child(-n+3) .rank{color:var(--accent)}
+.trow .th{aspect-ratio:2/3;overflow:hidden;border-radius:3px;position:relative;background:var(--fill)}
+.trow .th .kpic{position:absolute;inset:0}
+.trow .ti b{font-size:clamp(14.5px,1vw,18px);font-weight:700;display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .ti span{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.trow .heat{text-align:right;font-size:clamp(13px,.9vw,16px);font-weight:800}
+@media (width>=1440px){
+  .trend-table{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(10,auto);
+    column-gap:clamp(28px,3vw,64px)}
+}
+
+/* ---------- 横滚行（首页同款：箭头 + 横滚 + 封面卡） ---------- */
+.hrow-wrap{position:relative}
+.hrow-track{display:flex;gap:var(--gap);overflow-x:auto;scroll-behavior:smooth;
+  scrollbar-width:none;padding-bottom:2px}
+.hrow-track::-webkit-scrollbar{display:none}
+.hrw-arrow{position:absolute;top:32%;transform:translateY(-50%);z-index:5;
+  width:clamp(30px,2.2vw,38px);height:clamp(30px,2.2vw,38px);display:flex;align-items:center;justify-content:center;
+  background:var(--paper);border:1px solid var(--ink);border-radius:50%;font-size:19px;line-height:1;
+  opacity:0;transition:.2s;pointer-events:none}
+.hrow-wrap:hover .hrw-arrow{opacity:1;pointer-events:auto}
+.hrw-arrow:hover{background:var(--ink);color:var(--paper)}
+.hrw-arrow.left{left:clamp(-6px,-.5vw,-2px)}
+.hrw-arrow.right{right:clamp(-6px,-.5vw,-2px)}
+.hrow-track .rcard{flex:0 0 calc((100% - (var(--poster-n) - 1)*var(--gap)) / var(--poster-n));scroll-snap-align:start}
+
+/* ---------- 图片容器（IO 懒渲染 + 淡入 + 无封面占位） ---------- */
+.kpic{position:relative;overflow:hidden;background:var(--fill)}
+.kpic img{position:relative;z-index:1;opacity:0;transition:opacity .45s}
+.kpic.is-loaded img{opacity:1}
+.kpic.is-empty::after,.kpic.is-broken::after{content:"无封面";position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+
+/* ---------- 骨架（与真实布局同尺寸） ---------- */
+.skl{position:relative;overflow:hidden;background:var(--fill);border-radius:4px}
+.skl::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.4s infinite}
+html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
+@keyframes shimmer{to{transform:translateX(100%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.skl-line{height:13px;margin-top:8px}
+.booting #foot-stats::before{content:"";display:inline-block;width:200px;height:13px;
+  background:var(--fill);border-radius:4px;vertical-align:-2px}
+.booting .topbar a,.booting .topbar .theme-btn,.booting .topbar .search,
+.booting .sec-cap .sub,.booting .sec-cap .more{
+  color:transparent;background:var(--fill);border-color:transparent;border-radius:4px;pointer-events:none}
+
+/* ---------- 通用控件：按钮 / 分段 / 开关 / 字段 ---------- */
+.btn{font-size:clamp(12.5px,.82vw,14.5px);color:var(--ink-2);border:1px solid var(--rule);
+  border-radius:99px;padding:clamp(5px,.7vh,8px) clamp(12px,1vw,18px);transition:.18s;white-space:nowrap}
+.btn:hover{color:var(--ink);border-color:var(--ink)}
+.btn--solid{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.btn--solid:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn--accent{color:var(--accent);border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.seg{display:flex;gap:0;border:1px solid var(--rule);border-radius:99px;overflow:hidden}
+.seg button{font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-2);padding:clamp(4px,.6vh,7px) clamp(10px,.9vw,16px);
+  transition:.18s;white-space:nowrap;border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--paper);font-weight:700}
+.seg button:not(.on):hover{color:var(--ink);background:var(--band)}
+.switch{display:flex;align-items:center;gap:clamp(10px,.9vw,16px);width:100%;text-align:left;
+  padding:clamp(7px,1vh,11px) 0;border-bottom:1px solid var(--rule)}
+.switch:last-child{border-bottom:0}
+.switch .sw-t{min-width:0;flex:1}
+.switch .sw-t b{display:block;font-size:clamp(13px,.85vw,15px);font-weight:700}
+.switch .sw-t span{display:block;font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px}
+.switch .sw{position:relative;flex:none;width:clamp(38px,2.6vw,46px);height:clamp(20px,1.4vw,24px);
+  border:1px solid var(--ink);border-radius:99px;background:transparent;transition:.22s}
+.switch .sw::after{content:"";position:absolute;top:50%;left:2px;transform:translateY(-50%);
+  width:calc(clamp(20px,1.4vw,24px) - 6px);height:calc(clamp(20px,1.4vw,24px) - 6px);border-radius:50%;
+  background:var(--ink-3);transition:.22s}
+.switch .sw[aria-checked="true"]{background:var(--ink)}
+.switch .sw[aria-checked="true"]::after{left:calc(100% - clamp(20px,1.4vw,24px) + 2px);background:var(--paper)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(9px,1.2vh,13px) 0;border-bottom:1px solid var(--rule)}
+.field:last-child{border-bottom:0}
+.field .f-t{min-width:0}
+.field .f-t b{display:block;font-size:clamp(13px,.85vw,15px);font-weight:700}
+.field .f-t span{display:block;font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:2px}
+.field .f-c{flex:none;display:flex;align-items:center;gap:8px}
+.input{border:0;border-bottom:1px solid var(--rule);background:transparent;font:inherit;
+  font-size:clamp(12.5px,.8vw,14px);color:var(--ink);outline:none;padding:3px 2px;min-width:0}
+.input:focus{border-bottom-color:var(--ink)}
+select.input{appearance:none;padding-right:14px;cursor:pointer}
+
+/* ---------- 表格（源检测 / IPTV 节目单） ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:clamp(12px,.8vw,14px)}
+.tbl th{text-align:left;font-size:clamp(10.5px,.7vw,12px);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;padding:0 clamp(8px,.8vw,12px) clamp(7px,1vh,10px);
+  border-bottom:2px solid var(--ink);white-space:nowrap}
+.tbl td{padding:clamp(8px,1.1vh,12px) clamp(8px,.8vw,12px);border-bottom:1px solid var(--rule);vertical-align:middle}
+.tbl tbody tr:hover{background:var(--band)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:clamp(10.5px,.68vw,12px);padding:1px 8px;border-radius:99px;
+  border:1px solid var(--rule);color:var(--ink-2);white-space:nowrap}
+.tag--ok{color:#1f7a4d;border-color:#1f7a4d}
+.tag--bad{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- FAB（回顶 + 刷新；>280px 立即显示 / ≤280 立即隐藏，无停止滚动延迟——2026-09-29 用户定稿；
+   <1024 只留回顶钮由各页/首页自行隐藏） ---------- */
+.fab{position:fixed;right:clamp(8px,1vw,14px);bottom:clamp(10px,1.6vh,22px);z-index:9000;
+  display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:.25s}
+.fab.on{opacity:1;transform:none;pointer-events:auto}
+.fab button{width:clamp(36px,2.3vw,42px);height:clamp(36px,2.3vw,42px);display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb, var(--paper) 80%, transparent);border:2px solid var(--ink);
+  border-radius:clamp(4px,.4vw,8px);font-size:16px;box-shadow:0 3px 12px rgba(12,12,14,.16);
+  backdrop-filter:blur(8px) saturate(160%);transition:background .18s,transform .18s,box-shadow .18s}
+.fab button:hover{background:color-mix(in srgb, var(--band) 94%, transparent);transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(12,12,14,.22)}
+.fab button:active{transform:translateY(0)}
+.fab button.spinning{animation:spin .7s linear}
+
+/* ---------- 页脚 ---------- */
+footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px,1.6vh,20px);
+  border-top:3px solid var(--ink);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-3)}
+
+/* ---------- 空态（不撑高容器，与项目 Empty 同文案口径） ---------- */
+.empty{padding:clamp(20px,4vh,44px) 0;text-align:center;color:var(--ink-3)}
+.empty b{display:block;font-family:var(--serif);font-size:clamp(15px,1.1vw,20px);font-weight:900;color:var(--ink-2);margin-bottom:6px}
+.empty span{font-size:clamp(12px,.78vw,13.5px)}
+
+/* ---------- 断点适配（≤1023 平板 / ≤767 手机） ---------- */
+@media (width<=1023px){
+  :root{--poster-n:4}
+  .masthead{padding-top:12px}
+  .mast-nav{gap:10px 14px;padding:6px 0}
+  .search-drop{width:clamp(260px,42vw,340px)}
+  .cont-cell{flex-basis:calc((100% - 3*var(--gap)) / 4)}
+  .rail-aside{grid-template-columns:1fr}
+  .rail{position:static;border-right:0;border-bottom:1px solid var(--rule);
+    padding:0 0 clamp(12px,1.6vh,18px);margin-bottom:clamp(14px,2vh,22px)}
+  .chips{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (width<=767px){
+  :root{--poster-n:3}
+  .mast-row{flex-wrap:wrap;gap:6px}
+  .brand{font-size:clamp(22px,6vw,30px)}
+  .trend-table{display:block}
+  .trow{grid-template-columns:clamp(34px,8vw,44px) clamp(30px,7vw,40px) minmax(0,1fr)}
+  .trow .heat{display:none}
+  .cont-grid{gap:10px}
+  .cont-cell{flex-basis:calc((100% - 2*var(--gap)) / 3)}
+  .search-wrap.open .search-form{max-width:min(80vw,320px)}
+  .fab{right:8px;bottom:12px;gap:6px}
+  .fab button{width:44px;height:44px}
+  .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  footer{flex-direction:column;gap:8px}
+}
+@media (hover:none){
+  .rc-cover .b-tr{opacity:1;transform:scale(1)}
+  .hrw-arrow{opacity:1;pointer-events:auto}
+}
+
+/* ---------- 移动端底部 TabBar（对齐 src/components/Layout/TabBar.tsx：
+   首页 / IPTV / 收藏 / 历史 / 设置 五项，仅移动端显示；桌面端导航走顶部 topbar） ---------- */
+.mtabbar{position:fixed;left:0;right:0;bottom:0;z-index:8000;display:none;
+  background:color-mix(in srgb, var(--paper) 94%, transparent);backdrop-filter:blur(10px);
+  border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom,0)}
+.mtabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;height:var(--tabbar-h);font-size:clamp(10px,2.6vw,11.5px);color:var(--ink-3);transition:.18s}
+.mtabbar a .ic{font-size:clamp(15px,4vw,18px);line-height:1}
+.mtabbar a.on{color:var(--accent);font-weight:700}
+@media (width<=767px){
+  .mtabbar{display:flex}
+  body{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
+  .fab{bottom:calc(var(--tabbar-h) + clamp(10px,1.6vh,22px))}
+  /* 顶栏精简：移动端导航由底部 TabBar 承担（真实项目同结构） */
+  .topbar{position:sticky;top:0;z-index:500;background:var(--paper);
+    box-shadow:0 1px 0 var(--rule)}                       /* 顶栏吸顶：☰ 滚动全程可达（真实 StickyHeader 同口径） */
+  .topbar .menu-btn{display:flex}
+  .topbar .tb-links a{display:none}
+  .topbar .tb-page{font-size:clamp(12px,3.4vw,14px);max-width:44vw}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* ==== 设备适配层：TV 10-foot / 投影仪 / 超宽（?device= 触发） ==== */
+html[data-device="tv"]{--poster-n:6;--content-max:2200px}
+html[data-device="tv"] body{zoom:1.5;padding:3.5vh 3.5vw!important;box-sizing:border-box}
+html[data-device="tv"] :focus{outline:3px solid #d4a24e!important;outline-offset:3px;border-radius:4px}
+html[data-device="beamer"]{--poster-n:7}
+html[data-device="beamer"] body{zoom:1.4}
+html[data-device="beamer"][data-invert="1"] body{filter:invert(1) hue-rotate(180deg);background:#fff}
+html[data-device="beamer"][data-invert="1"] img,
+html[data-device="beamer"][data-invert="1"] video{filter:invert(1) hue-rotate(180deg)}
+@media (width>=2560px){:root{--content-max:2600px;--poster-n:9}}
+@media (min-aspect-ratio:21/9){:root{--content-max:min(3000px,92vw);--poster-n:10}}
+.xdev-badge{position:fixed;right:14px;top:12px;z-index:99999;font:600 11px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.12em;color:#d4a24e;background:rgba(16,16,20,.82);border:1px solid rgba(212,162,78,.5);
+  border-radius:999px;padding:6px 12px;pointer-events:none}

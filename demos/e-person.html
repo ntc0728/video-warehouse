@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 人物 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 人物页专属：档案对开 + 作品 Tab（电影 / 剧集）+ 作品网格
+   —— 结构对齐 src/pages/Person/index.tsx:364（.person-tabs + .person-work-grid） */
+.person{display:grid;grid-template-columns:clamp(140px,16vw,280px) minmax(0,1fr);
+  gap:clamp(20px,2.6vw,52px);margin-top:clamp(16px,2.4vh,30px);
+  padding-bottom:clamp(16px,2.4vh,28px);border-bottom:2px solid var(--ink)}
+.avatar{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,8px);background:var(--fill)}
+.avatar .kpic{position:absolute;inset:0}
+.person h1{font-family:var(--serif);font-size:clamp(24px,3.2vw,50px);font-weight:900;line-height:1.12}
+.person .en{font-size:clamp(11.5px,.74vw,13.5px);letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:700;margin-top:8px}
+.person .bio{font-size:clamp(12.5px,.86vw,15.5px);line-height:2;color:var(--ink-2);margin-top:clamp(10px,1.6vh,18px);
+  max-width:72ch}
+/* 作品 Tab（电影 / 剧集，带条数）——真实 Person 页同结构 */
+.ptabs{display:flex;gap:clamp(16px,2vw,34px);border-bottom:1px solid var(--rule);
+  margin-top:clamp(16px,2.4vh,30px)}
+.ptab{position:relative;font-size:clamp(13.5px,.95vw,17px);color:var(--ink-3);font-weight:700;
+  padding:clamp(8px,1.2vh,14px) 2px;transition:.18s}
+.ptab:hover{color:var(--ink)}
+.ptab.on{color:var(--ink);font-weight:900}
+.ptab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--ink)}
+.works{margin-top:clamp(14px,2vh,24px)}
+.notice{display:flex;gap:10px;align-items:baseline;margin-top:clamp(14px,2vh,22px);
+  border-left:3px solid var(--accent);padding-left:12px;font-size:clamp(11.5px,.76vw,13.5px);color:var(--ink-2);line-height:1.85}
+@media (width<=767px){
+  /* 对齐真实 Person 移动端：hero 内容纵向堆叠（Person.css:264 flex column） */
+  .person{grid-template-columns:1fr;gap:14px}
+  .avatar{width:clamp(110px,36vw,150px)}
+  .ptabs{gap:18px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <section class="person" id="person"></section>
+  <div class="notice" id="notice"></div>
+
+  <section class="sec">
+    <div class="ptabs" id="tabs"></div>
+    <div class="works"><div class="pgrid" id="works"></div></div>
+    <div class="empty" id="empty" hidden><b>暂无作品</b><span>该分类下没有真实快照条目</span></div>
+  </section>
+
+  <footer>
+    <span>KinoTV — Demo E · 人物页 · 报刊排版式；结构对齐真实 Person（档案 + 电影 / 剧集 Tab + 作品网格），作品卡片全部为真实 TMDB 快照条目（标题 / 海报 / 评分 / 年份 / 类型真实）；人物档案为演示值（快照不含 person 端点）</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 人物档案：TMDB 快照只含影视条目（无 person / credits 端点），
+   故档案区为「演示档案」并在界面明确标注；作品卡片全部使用真实条目，
+   按真实 Person 页口径分为「电影 / 剧集」两个 Tab（带条数）。 */
+var TAB = 'movies';
+var CREDITS = { movies:[], tv:[] };
+
+function renderWorks(){
+  var movies = CREDITS.movies, tv = CREDITS.tv;
+  var list = TAB==='tv' ? tv : movies;
+  document.getElementById('tabs').innerHTML =
+    (movies.length ? '<button class="ptab'+(TAB==='movies'?' on':'')+'" data-tab="movies" type="button">电影（'+movies.length+'）</button>' : '')+
+    (tv.length ? '<button class="ptab'+(TAB==='tv'?' on':'')+'" data-tab="tv" type="button">剧集（'+tv.length+'）</button>' : '');
+  document.getElementById('empty').hidden = list.length>0;
+  document.getElementById('works').innerHTML = list.map(function(it){
+    return '<article class="rcard" data-id="'+KINO_E.esc(it.id)+'"><div class="rc-cover">'+
+      KINO_E.pic(it,480,
+        (it.score?'<span class="b-tl">★'+(+it.score).toFixed(1)+'</span>':'')+
+        '<span class="b-bl">'+KINO_E.esc(it.year||'—')+'</span>'+
+        '<span class="b-br">'+KINO_E.esc(KINO_E.genreName(it))+'</span>')+
+      '</div><h4>'+KINO_E.esc(it.title)+'</h4><p>'+KINO_E.esc(KINO_E.genreName(it))+'</p></article>';
+  }).join('');
+  KINO_E.bindPics(document.getElementById('works'));
+}
+
+function renderPerson(){
+  var all = KINO_E.all();
+  var seed = new URLSearchParams(location.search).get('id') || 'demo';
+  var credits = KINO_E.pick(all, 18, seed).slice();
+  CREDITS.movies = credits.filter(function(x){ return x.mediaType!=='tv'; });
+  CREDITS.tv = credits.filter(function(x){ return x.mediaType==='tv'; });
+  if(!CREDITS.movies.length && CREDITS.tv.length) TAB = 'tv';
+
+  var head = credits[0] || all[0];
+  document.getElementById('person').innerHTML =
+    '<div class="avatar">'+KINO_E.pic(head,480)+'</div>'+
+    '<div>'+
+      '<div class="kicker">人物档案 · PROFILE（演示）</div>'+
+      '<h1>'+KINO_E.esc(head.title)+' 主创档案</h1>'+
+      '<div class="en">DEMO PROFILE · SNAPSHOT '+KINO_E.esc(KINO_E.data().snapDate||'')+'</div>'+
+      '<p class="bio">本页用于评审「人物页」的报刊排版形态：左侧档案对开（头像 + 姓名 + 外文 + 生平），下方为电影 / 剧集两个作品 Tab 与作品网格（与真实 Person 页同结构），点封面直达详情。档案正文为占位文案，作品卡片数据全部真实。</p>'+
+      '<div class="cta" style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap">'+
+        '<a class="btn btn--solid" href="e-detail.html?id='+KINO_E.esc(head.id)+'">查看代表作 →</a>'+
+        '<a class="btn" href="e-browse.html">浏览全部条目 →</a>'+
+      '</div>'+
+    '</div>';
+
+  document.getElementById('notice').innerHTML =
+    '<b>口径说明</b>　作品卡片的标题 / 海报 / 年份 / 评分 / 类型均来自真实 TMDB 快照（'+KINO_E.esc(KINO_E.data().snapDate||'')+
+    '）；档案姓名与生平为演示值——快照不含 person 与 credits 端点，本 demo 不虚构真实人名、职务与合作关系。';
+  renderWorks();
+  KINO_E.bindPics(document.getElementById('person'));
+}
+
+function bind(){
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tab]'); if(!b) return;
+    TAB = b.getAttribute('data-tab'); renderWorks();
+  });
+  document.addEventListener('click', function(e){
+    var c = e.target.closest('.rcard'); if(!c) return;
+    location.href = 'e-detail.html?id='+encodeURIComponent(c.getAttribute('data-id'));
+  });
+}
+
+KINO_E.boot({ key:'person', title:'人物档案' }).then(function(){ renderPerson(); bind(); });
+</script>
+</body>
+</html>

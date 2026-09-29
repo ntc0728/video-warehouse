@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>首页重设计 · 调研 + 用户画册 + 四风格总览 · 2026-09-28</title>
+<style>
+/* 首页重设计提案总览页（调研汇总 / 用户画像 / 4 款风格 Demo 索引 / 大屏适配总表）
+   仅 Demo，未改动 src。iframe 预览为同目录相对路径。 */
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --bg: #f6f7fb; --surface: #fff; --surface-2: #eef0f7;
+  --ink: #101319; --ink-2: #565f70; --ink-3: #8b94a5;
+  --line: #e3e6ef; --line-2: #ccd2de;
+  --brand: #3b5bdb; --heat: #ff6a1a; --rating: #e8a400;
+  --pad: clamp(16px, 3vw, 44px); --cap: 2200px;
+  --fs: clamp(14px, .55vw + 12px, 17px);
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 var(--fs)/1.65 "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { letter-spacing: -.03em; line-height: 1.25; }
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { width: min(100%, var(--cap)); margin-inline: auto; padding-inline: var(--pad); }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+.top { background: #101319; color: #fff; padding-block: clamp(26px, 5vh, 56px) clamp(20px, 4vh, 44px); }
+.top .eyebrow { color: #93a7ff; letter-spacing: .3em; font-size: calc(var(--fs) - 3px); text-transform: uppercase; }
+.top h1 { margin: 10px 0 0; font-size: clamp(26px, 3.4vw, 52px); }
+.top p { color: #b7becb; max-width: 78ch; margin: 14px 0 0; }
+.top .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.top .tags span { padding: 5px 13px; border: 1px solid #333a4a; border-radius: 999px; font-size: calc(var(--fs) - 3px); color: #d5dae4; }
+
+section { padding-block: clamp(24px, 4.5vh, 52px); }
+.sec-h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.sec-h h2 { margin: 0; font-size: clamp(20px, 2vw, 32px); }
+.sec-h .idx { color: var(--heat); font-weight: 800; }
+.sec-lead { color: var(--ink-2); margin: 0 0 20px; max-width: 92ch; }
+
+.cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+.card .k { color: var(--ink-3); font-size: calc(var(--fs) - 4px); letter-spacing: .16em; text-transform: uppercase; }
+.card .v { font-size: clamp(22px, 2.4vw, 34px); font-weight: 800; letter-spacing: -.03em; margin-top: 4px; }
+.card .v small { font-size: .5em; color: var(--heat); margin-left: 6px; }
+.card p { color: var(--ink-2); font-size: calc(var(--fs) - 1px); margin: 8px 0 0; }
+
+.persona { position: relative; overflow: hidden; }
+.persona .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+.persona h3 { margin: 0; font-size: clamp(17px, 1.4vw, 22px); }
+.persona .who { color: var(--ink-3); font-size: calc(var(--fs) - 3px); margin: 4px 0 10px; }
+.persona ul { margin: 0; padding-left: 1.15em; color: var(--ink-2); font-size: calc(var(--fs) - 1px); }
+.persona li { margin: 4px 0; }
+.persona .fit { display: inline-block; margin-top: 12px; padding: 5px 13px; border-radius: 999px; font-size: calc(var(--fs) - 4px); font-weight: 800; color: #fff; }
+
+/* 演示卡 */
+.demo { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.demo__shot { position: relative; aspect-ratio: 16/9; background: var(--surface-2); }
+.demo__shot iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.demo__shot .veil { position: absolute; inset: 0; z-index: 2; }
+.demo__shot .veil:hover { background: transparent; }
+.demo__open { position: absolute; right: 10px; bottom: 10px; z-index: 3; background: rgba(16, 19, 25, .88); color: #fff; padding: 7px 14px; border-radius: 999px; font-size: calc(var(--fs) - 4px); font-weight: 700; }
+.demo__open:hover { background: #101319; text-decoration: none; }
+.demo__b { padding: 15px 18px 18px; }
+.demo__b h3 { margin: 0; font-size: clamp(17px, 1.5vw, 23px); }
+.demo__b .sub { color: var(--ink-3); font-size: calc(var(--fs) - 4px); letter-spacing: .1em; margin-top: 3px; }
+.demo__b p { color: var(--ink-2); font-size: calc(var(--fs) - 1px); margin: 10px 0 0; }
+.demo__b .adv { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.demo__b .adv span { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; font-size: calc(var(--fs) - 5px); color: var(--ink-2); }
+
+/* 适配总表 */
+.tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: calc(var(--fs) - 1px); }
+th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 800; white-space: nowrap; position: sticky; top: 0; }
+td:not(:first-child) { color: var(--ink-2); }
+tbody tr:last-child td { border-bottom: 0; }
+td .mono { color: var(--ink); }
+
+.note { color: var(--ink-3); font-size: calc(var(--fs) - 4px); }
+.ftr { border-top: 1px solid var(--line); padding-block: 22px 40px; color: var(--ink-3); font-size: calc(var(--fs) - 4px); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">KinoTV · 首页重设计提案 · 2026-09-28</p>
+    <h1>调研 + 用户画册 + 四款风格 Demo</h1>
+    <p>本页是四款首页重设计 demo 的总览：市场调研结论、四类目标用户画像、每款风格的主张与内嵌预览、以及大屏/超大屏适配总表。四个 demo 均为独立单文件 HTML（仅用 CSS 渐变占位海报，无网络依赖），右下角有视口读数 chip 可直接核对断点档位。全部内容未改动 <span class="mono">src</span>，页面数据为演示占位。</p>
+    <div class="tags">
+      <span>断点 768 / 1024 / 1280 / 1440 / 1920 / 2200 / 2560</span>
+      <span>内容封顶 min(100vw, 2200px)</span>
+      <span>pad 16 → 60 → 100 → 140</span>
+      <span>行列 3→4→5→6→7→8</span>
+      <span>尊重 prefers-reduced-motion</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" id="research">
+    <div class="sec-h"><span class="idx mono">01</span><h2>市场调研 · 用户与客厅大屏的现状</h2></div>
+    <p class="sec-lead">数据来自 2026-09 检索的公开报道与行业统计，用于回答一个前置问题：重设计要把「谁、在什么屏幕、什么时间」放在第一优先级。</p>
+    <div class="cards">
+      <div class="card"><div class="k">Roku · 2026</div><div class="v">十年首次</div><p>Roku 十年来首次改版首页：个性化 Top Picks、快捷入口、继续观看置顶——行业信号是「决策路径压缩」，让第 1 屏就回答「接下来看什么」。</p></div>
+      <div class="card"><div class="k">Hub · 退订归因</div><div class="v">36%<small>因 UX 退订</small></div><p>36% 用户因体验（而非内容）退订，25 岁以下升至 43%；用户在 90 秒内找不到内容即流失。首页必须在一次注视内给出「继续看 / 今晚推荐 / 筛选入口」。</p></div>
+      <div class="card"><div class="k">10-foot · 客厅规范</div><div class="v">≥14pt</div><p>电视端正文 ≥14pt、单屏 8–15 条横滚行、遥控器焦点必须高对比可见——决定大屏字号与密度的地板，不是审美偏好。</p></div>
+      <div class="card"><div class="k">网络视听 · 用户</div><div class="v">10.99 亿<small>日均 201 分钟</small></div><p>全国网络视听用户 10.99 亿，人均单日使用 201 分钟；在线视频 App 活跃 8.15 亿，长视频 7.52 亿，20–29 岁与本科以上占约 86%。</p></div>
+      <div class="card"><div class="k">智能电视 · 客厅</div><div class="v">3.36 亿<small>日均 331 分钟</small></div><p>智能电视激活 3.36 亿台、日均开机 331 分钟，超六成用户表示大屏时长在增加；TV 端留存比移动端高 30–40%。大屏不是「小屏的放大」，是第一战场。</p></div>
+      <div class="card"><div class="k">微短剧 · 增量</div><div class="v">6.62 亿<small>日均 129 分钟</small></div><p>微短剧用户 6.62 亿、人均单日 129 分钟，下沉市场是主战场；竖屏 9:16 内容需要与横版长视频同屏共存的入口。</p></div>
+      <div class="card"><div class="k">面板 · 分辨率</div><div class="v">4K &gt;60%</div><p>4K 电视出货占比已超 60%，2200/2560 宽的桌面与大屏浏览器不再是边缘场景；CSS 增列、字号抬档、留白放大必须是系统性规则。</p></div>
+      <div class="card"><div class="k">内容结构 · 用户</div><div class="v">下沉 62%</div><p>下沉市场用户占比约 62%，设备与网络条件参差——渐变占位、可降级的动效、无网络依赖的骨架比远程大图更稳。</p></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="personas">
+    <div class="sec-h"><span class="idx mono">02</span><h2>用户画册 · 四类目标用户</h2></div>
+    <p class="sec-lead">每个画像对应一款 demo：谁的痛点最尖锐，谁就决定那款风格的信息架构（不是换配色）。</p>
+    <div class="cards">
+      <div class="card persona"><span class="bar" style="background:#3d7dff"></span>
+        <h3>客厅主理人</h3><p class="who">42 岁 · 三四线 · 55" 4K + IPTV · 日均开机 331 分钟</p>
+        <ul><li>遥控器操作，讨厌细小目标与隐藏菜单</li><li>先「继续上次的」，再「全家都能看的」</li><li>对频繁改版最敏感，要稳定的位置记忆</li></ul>
+        <span class="fit" style="background:#3d7dff">→ S2 磁贴控制台</span></div>
+      <div class="card persona"><span class="bar" style="background:#0f1319"></span>
+        <h3>片库收藏家</h3><p class="who">27 岁 · 21:9 + 4K 双屏 · 重度索引与筛选</p>
+        <ul><li>要列数、密度、榜单、评分一眼可扫</li><li>键盘/焦点可达，宽屏宁可多列不留白</li><li>习惯「工具型」界面而非杂志式排版</li></ul>
+        <span class="fit" style="background:#0f1319">→ S3 片库工作台</span></div>
+      <div class="card persona"><span class="bar" style="background:#ff6a1a"></span>
+        <h3>下班追剧族</h3><p class="who">24 岁 · 笔记本 1440/1920 · 21:00–24:00</p>
+        <ul><li>90 秒内决定看什么，失败就切平台</li><li>「今晚看什么」比「海量片库」更值钱</li><li>继续观看进度跨设备要准确</li></ul>
+        <span class="fit" style="background:#ff6a1a">→ S1 放映室</span></div>
+      <div class="card persona"><span class="bar" style="background:#ff3d7f"></span>
+        <h3>短剧原住民</h3><p class="who">下沉市场 · 手机为主 + 电视投屏 · 日均 129 分钟</p>
+        <ul><li>竖屏 9:16、单集 2–8 分钟、按集连播</li><li>类型即口味，靠色/标签快速联想</li><li>更新追更提示比编辑推荐更有驱动力</li></ul>
+        <span class="fit" style="background:#ff3d7f">→ S4 光谱</span></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="demos">
+    <div class="sec-h"><span class="idx mono">03</span><h2>四款风格 Demo</h2></div>
+    <p class="sec-lead">四种信息架构，而非四种配色。点右下角「打开」在新标签查看完整大屏效果，回来再调窗口宽度观察断点。</p>
+    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(min(440px,100%),1fr))">
+      <article class="demo">
+        <div class="demo__shot"><iframe loading="lazy" src="demo-home-redesign-s1-cinema-2026-09-28.html" title="S1 放映室 预览"></iframe><span class="veil"></span><a class="demo__open" href="demo-home-redesign-s1-cinema-2026-09-28.html" target="_blank">打开 ↗</a></div>
+        <div class="demo__b">
+          <h3>S1 · 放映室 Cinema</h3>
+          <p class="sub">暗色 · 决策式影院 · 对应「下班追剧族」</p>
+          <p>主张：首页 = 一次决策。Hero 舞台给「继续观看」，右侧「今晚决策栏」给三选一，横滚行只做候选而不是主角。首屏填满不留空，暗色对齐片源画面本身。</p>
+          <div class="adv"><span>暗色 #0b0b0e</span><span>Hero + 决策栏</span><span>进度跨端提示</span><span>决策 90 秒</span></div>
+        </div>
+      </article>
+      <article class="demo">
+        <div class="demo__shot"><iframe loading="lazy" src="demo-home-redesign-s2-tiles-2026-09-28.html" title="S2 磁贴控制台 预览"></iframe><span class="veil"></span><a class="demo__open" href="demo-home-redesign-s2-tiles-2026-09-28.html" target="_blank">打开 ↗</a></div>
+        <div class="demo__b">
+          <h3>S2 · 磁贴控制台 Tiles</h3>
+          <p class="sub">亮色 · 遥控器友好 · 对应「客厅主理人」</p>
+          <p>主张：大目标 + 稳定位置。磁贴即导航，基础字号 16 → 21 随大屏抬档，焦点环 3px，数字键 1–9 直达任意磁贴——把 10-foot 规范落成可验证的规则。</p>
+          <div class="adv"><span>大磁贴</span><span>字号 16→21</span><span>数字键直达</span><span>焦点高对比</span></div>
+        </div>
+      </article>
+      <article class="demo">
+        <div class="demo__shot"><iframe loading="lazy" src="demo-home-redesign-s3-library-2026-09-28.html" title="S3 片库工作台 预览"></iframe><span class="veil"></span><a class="demo__open" href="demo-home-redesign-s3-library-2026-09-28.html" target="_blank">打开 ↗</a></div>
+        <div class="demo__b">
+          <h3>S3 · 片库工作台 Library</h3>
+          <p class="sub">亮色 · 高密度三栏 · 对应「片库收藏家」</p>
+          <p>主张：超宽屏是资产。左 rail（≥1024 图标 / ≥1440 展开文字）+ 中片库 auto-fill 增列 + ≥1920 右榜单栏同屏在场；舒适/紧凑密度切换，右下 chip 显示实测列数。</p>
+          <div class="adv"><span>三栏</span><span>auto-fill 增列</span><span>密度切换</span><span>实测列数读数</span></div>
+        </div>
+      </article>
+      <article class="demo">
+        <div class="demo__shot"><iframe loading="lazy" src="demo-home-redesign-s4-spectrum-2026-09-28.html" title="S4 光谱 预览"></iframe><span class="veil"></span><a class="demo__open" href="demo-home-redesign-s4-spectrum-2026-09-28.html" target="_blank">打开 ↗</a></div>
+        <div class="demo__b">
+          <h3>S4 · 光谱 Spectrum</h3>
+          <p class="sub">亮色 · 类型色 + 竖屏短剧 · 对应「短剧原住民」</p>
+          <p>主张：类型色即导航。色谱 chips 直接过滤精选行，横版长视频与 9:16 短剧同屏并存（≥1920 竖版 3→4 张），一行回答「我今晚的口味」。</p>
+          <div class="adv"><span>类型色谱</span><span>9:16 短剧位</span><span>色即过滤</span><span>横竖混排</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" id="bigscreen">
+    <div class="sec-h"><span class="idx mono">04</span><h2>大屏 / 超大屏适配总表</h2></div>
+    <p class="sec-lead">四款 demo 共用同一套断点宪法（与 <span class="mono">layout-tokens.css</span> 单真源对齐），差异只在「这一档上多做什么」。</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>档位</th><th>共用规则</th><th>S1 放映室</th><th>S2 磁贴</th><th>S3 工作台</th><th>S4 光谱</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">&lt;768</td><td>pad 16 · 单列</td><td>决策栏折叠到行下</td><td>磁贴 2 列 · 数字键保留</td><td>顶部横向 rail</td><td>竖版卡 3 张横滚</td></tr>
+          <tr><td class="mono">≥768</td><td>pad 32 · 行列 4</td><td>决策栏横排</td><td>磁贴 4 列</td><td>卡片基准 152</td><td>行列 4</td></tr>
+          <tr><td class="mono">≥1024</td><td>行列 5</td><td>Hero 填满首屏高</td><td>大磁贴 2×2</td><td>图标 rail 出现</td><td>hero 双栏</td></tr>
+          <tr><td class="mono">≥1440</td><td>pad 60 · 行列 7 · 字号抬一档</td><td>决策栏 3 列</td><td>字号 17 · 磁贴 6</td><td>文字 rail + 两栏</td><td>行列 7</td></tr>
+          <tr><td class="mono">≥1920</td><td>pad 100 · 行列 8 · 2K</td><td>舞台高度按 vh 回收</td><td>字号 19 · 磁贴 8</td><td>右榜单栏出现</td><td>竖版 4 张 · 字号 16</td></tr>
+          <tr><td class="mono">≥2200</td><td>内容封顶 2200（增列停止点）</td><td>居中收口 · 左右留白</td><td>磁贴不再增列</td><td>auto-fill 自然停列</td><td>行内封顶居中</td></tr>
+          <tr><td class="mono">≥2560</td><td>pad 140 · 字号再抬一档</td><td>决策栏加宽不加行</td><td>字号 21 · 目标 ≥56px</td><td>紧凑档实测 10+ 列</td><td>字号 17 · hero 收高</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:12px">校验方式：打开任一 demo → 右下角视口 chip（宽×高 · 断点档 · 列数/字号/内边距）实时读数；拖动窗口宽度即可逐档核对上表。已知约束：页面高度用 <span class="mono">min-height:100vh</span> 流式布局，不写死 px 高度、不用 100dvh；动效在 <span class="mono">prefers-reduced-motion</span> 下全部关闭。</p>
+  </section>
+</main>
+
+<footer class="ftr">
+  <div class="wrap">
+    <p>KinoTV 首页重设计提案总览 · 2026-09-28 · 仅 Demo，未改动 src；调研数据为公开报道摘录，画像为归纳建模，均用于设计论证。</p>
+    <p>文件：demo-home-redesign-s1-cinema / s2-tiles / s3-library / s4-spectrum / guide -2026-09-28.html（同目录）。</p>
+  </div>
+</footer>
+
+</body>
+</html>

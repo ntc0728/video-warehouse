@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="day" class="booting">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-theme="day" class="booting" data-page-node-id="lDkOYUDOXAhJSVWSRvFkmg">
+<head data-page-node-id="Oc1vhnSZDAF8uiP2OGpkV4">
+<meta charset="UTF-8" data-page-node-id="XsabluGcByhxzTZTGVfRQL">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="GJ2GdwbkAfahB8sVeVcUdT">
 <title>KinoTV Demo E — 报刊排版式 · 融合现有首页元素版</title>
-<script>try{var t=localStorage.getItem('kino-demo-theme');if(t==='night')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
 <style>
 /* ============================================================
    Demo E · 报刊排版式 · 融合现有首页元素版
@@ -13,16 +13,17 @@
      快照缺失时回退 demos/_data.js（kinoLoad CMS 源 + 离线兜底）
     - 首页元素融合映射（结构照搬、皮肤换报刊）：
       ① StickyHeader 顶栏   → mast-nav（分类导航 + IPTV/收藏/历史/设置 + 主题 + 搜索，无底线）
-        （搜索按 SearchBox 逻辑：点击「就地展开」成输入条 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起）
-        （移动端 ≤767：☰ 常驻左侧（原项目 sticky-header__menu-btn 同款）+ 品牌居中，版次/搜索并入 nav 右列，
-          栏目链接与收藏/历史/设置/夜刊隐藏——由原项目移动 Sidebar/TabBar 承担导航）
+        （搜索按 SearchBox 逻辑：点击 ⌕ 图标「就地展开」成输入条 → 输入建议下拉 → 回车/放大镜出结果面板，⌘K 唤起；
+          2026-09-29 定稿：⌕ 置导航最右、右侧新增 ☾/☀ 主题图标钮）
+        （移动端 ≤767：报头吸顶 sticky 单行 = 真实移动 header 同构（☰ + 品牌 + 右侧 ⌕/☾ 图标钮）；
+          版次为报头专属版次位，不进吸顶导航栏（≤767 隐藏）；栏目链接与收藏/历史/设置由 ☰ 抽屉/TabBar 承担）
       ② HeroBili 头条       → .headline（banner 5s 轮播+圆点+箭头+双CTA，trending 池；历史命中 CTA=「继续播放」）
       ③ HeroSideCard 右卡   → .hl-side 图片索引条（16:9 × 6 + 收藏心 + 换一换：图标转圈 0.6s 锁 + 整批推进，HeroBili 同款）
       ④ rail 今日趋势榜     → 02 今日趋势榜（trending 桌面 10 条 · 移动 5 条 + 横图 backdrop + 热度）
       ⑤ 继续观看行           → 01 继续观看（横版 16:9 + 进度条 + hover ▶ 继续播放，单行横滚 6 卡恒一行，进度为演示值）
       ⑥ 7 行横滚             → 03–09 七行（首页 7 端点 + 行间去重 + 分区编号 + 横滚 + 封面四角标：★评分/收藏心/年份/类型，镜像 .video-card）
       ⑦ 收藏（HeroSide 心 + Hero CTA）→ FAVS localStorage：图片索引心 + 头条「＋收藏」
-      ⑧ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新）
+      ⑧ BackToTop/Refresh FAB → 右下 .fab（回顶 + 刷新；>280px 立即显示 / ≤280 立即隐藏，<1024 只留回顶钮）
       ⑨ 收录统计计数         → footer 行内（TMDB 快照口径；公告带 HomeTopStrip 已按评审删除）
    - 全模块零卡片；大屏规则沿用：首屏预算制 / hero ≤48vh / 列数梯度 / 封顶 2200
    - 演示值口径：播放进度 / 热度值 / 收藏种子为演示；标题/海报/类型/年份/评分为真实 TMDB
@@ -68,17 +69,35 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mast-nav .nav-fn{margin-left:auto;display:flex;gap:clamp(14px,1.3vw,26px);align-items:center;flex-wrap:wrap}
 .mast-nav .nav-fn.searching{flex-wrap:nowrap}   /* 搜索就地展开期间防换行（收起后恢复 wrap） */
 .mast-nav .search{color:var(--ink-3)}
-.mast-nav .theme-btn{font-size:clamp(11.5px,.74vw,13px);color:var(--ink-2);border:1px solid var(--rule);
-  border-radius:99px;padding:3px 12px;transition:.2s;white-space:nowrap}
+.mast-nav .theme-btn{font-size:clamp(14px,1vw,16px);color:var(--ink-2);border:1px solid var(--rule);
+  border-radius:99px;padding:2px 9px;line-height:1.4;transition:.2s;white-space:nowrap;background:none;cursor:pointer}   /* 图标钮：☾/☀（对齐真实 StickyHeader 主题图标钮） */
 .mast-nav .theme-btn:hover{color:var(--ink);border-color:var(--ink)}
 /* 移动端报头：☰ 菜单（原项目 sticky-header__menu-btn 同款位置，仅 ≤767 由 JS 解除 hidden）+ nav 右列容器 */
 .menu-btn{display:flex;align-items:center;justify-content:center;padding:8px;margin-left:-8px;
   border:0;background:none;color:var(--ink);cursor:pointer}
-.nav-aside{display:flex;flex-direction:column;align-items:flex-end;gap:5px}  /* 版次右对齐 + 搜索图标在其下方 */
+.nav-aside{display:flex;flex-direction:row;align-items:center;gap:6px}  /* 移动端右列：搜索 + 主题图标并排 */
 .menu-btn[hidden],.nav-aside[hidden],.nav-fn[hidden]{display:none}   /* 恢复 hidden 属性（作者 display:flex 会压过 UA） */
 
+/* ---------- 移动端导航抽屉（对齐 Sidebar isMobile：overlay + 左滑入；6 项与真实 tabs 同序） ---------- */
+.drawer-overlay{position:fixed;inset:0;z-index:9500;background:rgba(12,12,14,.45);opacity:0;transition:opacity .24s}
+.drawer-overlay.on{opacity:1}
+.drawer{position:fixed;top:0;bottom:0;left:0;z-index:9600;width:240px;max-width:78vw;
+  background:var(--paper);border-right:2px solid var(--ink);transform:translateX(-102%);transition:transform .26s;
+  display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;
+  padding:clamp(12px,2vh,20px) clamp(14px,3vw,20px);border-bottom:1px solid var(--rule)}
+.drawer-head b{font-family:var(--serif);font-weight:900;font-size:18px}
+.drawer-head b em{color:var(--accent);font-style:normal}
+.drawer-close{padding:6px;font-size:15px;color:var(--ink-2)}
+.drawer-close:hover{color:var(--ink)}
+.drawer-nav{display:flex;flex-direction:column;padding:6px 0;overflow-y:auto}
+.drawer-nav a{padding:clamp(10px,1.6vh,14px) clamp(16px,3vw,22px);font-size:15px;font-weight:600;
+  color:var(--ink-2);border-bottom:1px solid var(--rule);transition:background .18s}
+.drawer-nav a:hover,.drawer-nav a:active{background:var(--band);color:var(--ink)}
+
 /* ---------- 搜索（对齐 SearchBox：点击「就地展开」成输入条 → 建议下拉 → 回车/放大镜出结果） ---------- */
-.mast-nav .search{color:var(--ink-3);cursor:pointer;transition:.2s;border:0;background:none;font:inherit;padding:0}
+.mast-nav .search{font-size:clamp(16px,1.2vw,19px);color:var(--ink-3);cursor:pointer;transition:.2s;border:0;background:none;font:inherit;padding:0 2px;line-height:1}   /* 图标钮 ⌕（2026-09-29 用户定稿：搜索图标置于导航最右） */
 .mast-nav .search:hover{color:var(--ink)}
 .search-wrap{position:relative;display:flex;align-items:center}
 .search-form{display:flex;align-items:center;gap:9px;
@@ -288,10 +307,11 @@ html[data-theme="night"] .skl::after{background:linear-gradient(90deg,transparen
 .booting #foot-stats::before{content:"";display:inline-block;width:200px;height:13px;
   background:var(--fill);border-radius:4px;vertical-align:-2px}
 
-/* ---------- FAB（融合 BackToTopButton + fab-stack：回顶 + 刷新，贴视口缘恒显 + 玻璃半透弱化压内容） ---------- */
+/* ---------- FAB（>280px 立即显示 / ≤280 立即隐藏，无停止滚动延迟——2026-09-29 用户定稿；<1024 只留回顶钮） ---------- */
 .fab{position:fixed;right:clamp(8px,1vw,14px);bottom:clamp(10px,1.6vh,22px);z-index:9000;
-  display:flex;flex-direction:column;gap:8px;opacity:1;transform:none;pointer-events:auto;transition:.28s}
+  display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:.25s}
 .fab.on{opacity:1;transform:none;pointer-events:auto}
+@media (width<1024px){ .fab #fab-refresh{display:none} }   /* 真实口径：刷新钮仅 ≥1024（fab-stack） */
 .fab button{width:clamp(36px,2.3vw,42px);height:clamp(36px,2.3vw,42px);display:flex;align-items:center;justify-content:center;
   background:color-mix(in srgb, var(--paper) 80%, transparent);border:2px solid var(--ink);border-radius:clamp(4px,.4vw,8px);font-size:16px;
   box-shadow:0 3px 12px rgba(12,12,14,.16);backdrop-filter:blur(8px) saturate(160%);
@@ -325,12 +345,13 @@ footer{margin:clamp(28px,5vh,56px) 0 clamp(22px,3vh,40px);padding-top:clamp(12px
 }
 @media (width<=767px){
   :root{--poster-n:3}
-  .mast-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:0}  /* ☰ 左 / 品牌居中 / 右留白对称 */
-  .mast-row .menu-btn{grid-column:1;justify-self:start}
-  .mast-row .brand{grid-column:2;justify-self:center;font-size:clamp(22px,6vw,30px)}
-  .mast-row .edition{grid-column:3}      /* JS 搬入 nav-aside 前的占位（搬走后该格留空保持对称） */
-  .mast-nav{justify-content:flex-end}    /* 版次 + 搜索图标右列靠右 */
-  .nav-aside .edition{white-space:nowrap} /* 版次单行（· 串联日期与周次） */
+  .masthead{position:sticky;top:0;z-index:500;background:var(--paper);padding-top:10px;
+    box-shadow:0 1px 0 var(--rule)}                        /* 报头吸顶：☰ 滚动全程可达（对齐真实 StickyHeader） */
+  .mast-row{display:flex;align-items:center;gap:6px}   /* 单行 = 真实移动 header：☰ + 品牌 + 右侧图标钮（StickyHeader ≤767 同构） */
+  .mast-row .brand{font-size:clamp(22px,6vw,30px)}
+  .mast-row .edition{display:none}       /* 版次不进吸顶导航栏：真实移动端 header 无版次位；桌面报头原位不动 */
+  .mast-row .nav-aside{margin-left:auto}
+  .mast-nav{display:none}                /* 栏目/功能链接 ≤767 收进 ☰ 抽屉 + 底部 TabBar */
   .hl-side-track{grid-auto-columns:minmax(132px,46%)}
   .hl-actions{flex-wrap:wrap;gap:14px}
   .trend-table{display:block}
@@ -366,90 +387,107 @@ html[data-device="beamer"][data-invert="1"] img,html[data-device="beamer"][data-
 .xdev-badge{position:fixed;right:14px;bottom:12px;z-index:99999;font:600 11px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.12em;color:#d4a24e;background:rgba(16,16,20,.82);border:1px solid rgba(212,162,78,.5);border-radius:999px;padding:6px 12px;pointer-events:none}
 </style>
 </head>
-<body>
-<div class="page">
+<body data-page-node-id="VGGlGhH82xuxgYyRVZOn2l">
+<div class="page" data-page-node-id="cXt9wA6G2FzCSAcQK77GTk">
 
-  <header class="masthead">
-    <div class="mast-row" id="mast-row">
-      <button class="menu-btn" id="menu-btn" type="button" hidden aria-label="导航菜单" title="导航菜单">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  <header class="masthead" data-page-node-id="rNSq1pBQNOYFqqSqzSs3jQ">
+    <div class="mast-row" id="mast-row" data-page-node-id="2FbJdyFbCxxtsYJtiqAcGs">
+      <button class="menu-btn" id="menu-btn" type="button" hidden aria-label="导航菜单" title="导航菜单" data-page-node-id="zbXS65GWXLXAhxCIz1CGWt">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" data-page-node-id="XjbxJ2NjfLg8yEubDAYuF2"><path d="M4 6h16M4 12h16M4 18h16" data-page-node-id="yYYIoEEj5FvQeEPDy7BQom"/></svg>
       </button>
-      <div class="brand">Kino<em>TV</em> 影视日报</div>
-      <div class="edition" id="edition"></div>
+      <div class="brand" data-page-node-id="w1D9TvVqWatUTmR7SDplBZ">Kino<em data-page-node-id="MMMFVUhlBpTyB4yqUaxF4p">TV</em> 影视日报</div>
+      <div class="edition" id="edition" data-page-node-id="UxFGnIeMqpyyuiyWZJGFJb"></div>
     </div>
-    <nav class="mast-nav" id="mast-nav">
-      <a class="on" href="#">首页</a><a href="#">剧集</a><a href="#">电影</a><a href="#">综艺</a><a href="#">动漫</a><a href="#">榜单</a><a href="#">IPTV</a>
-      <span class="nav-fn" id="nav-fn">
-        <a href="#">收藏</a><a href="#">历史</a><a href="#">设置</a>
-        <button class="theme-btn" id="theme-btn" type="button">夜刊</button>
-        <span class="search-wrap" id="search-wrap">
-          <button class="search" id="search-btn" type="button">搜索 ⌘K</button>
-          <form class="search-form" id="search-form" hidden>
-            <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
-            <button class="go" type="submit" aria-label="搜索">⌕</button>
-            <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+    <nav class="mast-nav" id="mast-nav" data-page-node-id="QWlqnQtQZo4PfAXnFZgWvp">
+      <a class="on" href="home-style-e-typographic.html" data-page-node-id="dDGQiX7ldJSynFx1jv97cO">首页</a><a href="e-browse.html?cat=tv" data-page-node-id="zrzIxMjwFIhCfcJTx6m5db">剧集</a><a href="e-browse.html?cat=movie" data-page-node-id="Frd3Seivm8R40MxKHuhkff">电影</a><a href="e-chart.html?category=variety" data-page-node-id="AYmPg5MlfSGPtCE9xRukWL">综艺</a><a href="e-chart.html?category=anime" data-page-node-id="FH4VtBrmejb2NulydORmOy">动漫</a><a href="e-chart.html" data-page-node-id="A2H3svFu2K75M2n4PZPTz1">榜单</a><a href="e-iptv.html" data-page-node-id="0Nlkje0lYaUE3rNF6U2Qjt">IPTV</a>
+      <span class="nav-fn" id="nav-fn" data-page-node-id="emX9tY6Zr3lTaljr6DKaz0">
+        <a href="e-collections.html" data-page-node-id="gqgyl5dyS5TCCrNAPO19gu">收藏</a><a href="e-history.html" data-page-node-id="PNY69UdQLqEfJxwPFvc617">历史</a><a href="e-settings.html" data-page-node-id="SFKxpOgrHuZ1xOpC8CBHiy">设置</a>
+        <span class="search-wrap" id="search-wrap" data-page-node-id="E1OZOTKfKrhIwrrkF2FtEQ">
+          <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)" data-page-node-id="nYovdY9vjH11BqPWdUbfAD">⌕</button>
+          <form class="search-form" id="search-form" hidden data-page-node-id="RsK1776yTwviCWVIHkXbCy">
+            <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off" data-page-node-id="P0oRdZYqVjmz2HnqUKmoxj">
+            <button class="go" type="submit" aria-label="搜索" data-page-node-id="c42m1h2fAXwCbf5AUf6ZDd">⌕</button>
+            <button class="close" id="search-close" type="button" aria-label="关闭" data-page-node-id="RyUDoVj4N3nVQqVHJHmG1j">✕</button>
           </form>
-          <div class="search-drop" id="search-drop" hidden></div>
+          <div class="search-drop" id="search-drop" hidden data-page-node-id="htXn6hlBNXNT3TgWhdwSDE"></div>
         </span>
+        <button class="theme-btn" id="theme-btn" type="button" aria-label="切换日刊 / 夜刊" title="切换日刊 / 夜刊" data-page-node-id="4pKZShTIyIZP8TiizcvQfu">☾</button>
       </span>
-      <span class="nav-aside" id="nav-aside" hidden></span>   <!-- 移动端右列：版次 + 搜索图标（JS 搬入） -->
+      <span class="nav-aside" id="nav-aside" hidden data-page-node-id="jRxSxKm1mE2wVw3MusiNSE"></span>   <!-- 移动端右列：⌕ + ☾ 图标钮（edition 不入内，≤767 版次隐藏） -->
     </nav>
   </header>
 
-  <!-- 搜索结果面板（对齐 SearchBox → browse 页语义；默认 hidden） -->
-  <section class="sec" id="search-panel" hidden>
-    <div class="sec-head">
-      <span class="no">⌕</span><h2>搜索结果</h2><span class="sub" id="search-count"></span>
-      <a class="more" href="#" id="search-shut">关闭 ✕</a>
+  <!-- 移动端导航抽屉（对齐 Sidebar isMobile：☰ 开合 + overlay / Esc 关闭；6 项与真实 tabs 同序） -->
+  <div class="drawer-overlay" id="drawer-overlay" hidden data-page-node-id="CjLR29zhB1TP1Ks9RHAJ3J"></div>
+  <aside class="drawer" id="drawer" hidden aria-label="导航菜单" data-page-node-id="v8EKH0DInvYcoFxR7Bp6du">
+    <div class="drawer-head" data-page-node-id="rL41NRdbcCPehe7aWuYlh1">
+      <b data-page-node-id="ERmsF6WWY4bYHm6n6hZmBl">Kino<em data-page-node-id="GLFsHLx19ZI020G7DSIuS4">TV</em></b>
+      <button class="drawer-close" id="drawer-close" type="button" aria-label="关闭导航菜单" data-page-node-id="fakdOyBOqJOAJSddu3qu1p">✕</button>
     </div>
-    <div class="search-grid" id="search-grid"></div>
+    <nav class="drawer-nav" data-page-node-id="7MzZEFHWNX2VKvVfS4k2ad">
+      <a href="home-style-e-typographic.html" data-page-node-id="Yetq4DiEcBEpowkKcY1cmm">首页</a>
+      <a href="e-browse.html" data-page-node-id="qi7Ovlf72FRg5nHfBBzFtC">搜索中心</a>
+      <a href="e-iptv.html" data-page-node-id="Rw3FySQOa6H57YN3701Lj0">IPTV</a>
+      <a href="e-collections.html" data-page-node-id="vkc8rt5ND7tLaQ7AmvIo41">收藏</a>
+      <a href="e-history.html" data-page-node-id="aeQCOPivEi3bjDwNYMk2PB">历史记录</a>
+      <a href="e-settings.html" data-page-node-id="bWo7DYUliFbGbcHQEoofP0">设置</a>
+    </nav>
+  </aside>
+
+  <!-- 搜索结果面板（对齐 SearchBox → browse 页语义；默认 hidden） -->
+  <section class="sec" id="search-panel" hidden data-page-node-id="sHvBhhoTJWSHV7FIQfe1qV">
+    <div class="sec-head" data-page-node-id="DGmcUXZm4lxhkSV7RN5hst">
+      <span class="no" data-page-node-id="vHiygtDT1NopsuBpEsTujl">⌕</span><h2 data-page-node-id="L3koeVJ726M3Wp0tVXUe5B">搜索结果</h2><span class="sub" id="search-count" data-page-node-id="ur5Ff8w8bH5JiXGCpOk8Cm"></span>
+      <a class="more" href="#" id="search-shut" data-page-node-id="nSGY2OvxsXS5P5Q4WXwe5d">关闭 ✕</a>
+    </div>
+    <div class="search-grid" id="search-grid" data-page-node-id="JpCTMiK4juxvZ1cDO04rOB"></div>
   </section>
 
   <!-- 头条对开（HeroBili：轮播 banner + 双 CTA） -->
-  <section class="headline" id="headline"></section>
+  <section class="headline" id="headline" data-page-node-id="rqTMcEy2IMxq1ytXmrD6us"></section>
 
   <!-- 图片索引条（HeroSideCard × 6 + 换一换） -->
-  <section class="hl-side" id="hl-side">
-    <div class="hl-side-head">
-      <span class="t">图片索引 · IMAGE INDEX</span>
-      <button class="shuffle" id="shuffle" type="button"><span class="sh-ic">↻</span>换一换</button>
+  <section class="hl-side" id="hl-side" data-page-node-id="BZZ32wadmPg2Rti35dIxFh">
+    <div class="hl-side-head" data-page-node-id="hXKTHLHUhIzrONDDByvD6F">
+      <span class="t" data-page-node-id="VFgyvbhjb82HphISdIDq9y">图片索引 · IMAGE INDEX</span>
+      <button class="shuffle" id="shuffle" type="button" data-page-node-id="cj2GRcfn3emYhPpp2vIDD7"><span class="sh-ic" data-page-node-id="UmoDMawGrbS51Lxjzaluz8">↻</span>换一换</button>
     </div>
-    <div class="hl-side-track" id="hl-side-track"></div>
+    <div class="hl-side-track" id="hl-side-track" data-page-node-id="eCSIcUVjBlg4woNn92InXU"></div>
   </section>
 
   <!-- 01 继续观看（首页继续观看行） -->
-  <section class="sec">
-    <div class="sec-head">
-      <span class="no">01</span><h2>继续观看</h2>
-      <a class="more" href="#">全部记录 →</a>
+  <section class="sec" data-page-node-id="hkAXYK1Bw86ao5a39XtMME">
+    <div class="sec-head" data-page-node-id="pHcUEiFkefS4q31TRqDs4X">
+      <span class="no" data-page-node-id="3aSWcfIqpGBDz0GA6XWPN0">01</span><h2 data-page-node-id="RiAOjjxIEE9BAuu8XZ4JIa">继续观看</h2>
+      <a class="more" href="e-history.html" data-page-node-id="hr8BC0TUtWmXUzED1UUdV3">全部记录 →</a>
     </div>
-    <div class="cont-grid" id="cont-grid"></div>
+    <div class="cont-grid" id="cont-grid" data-page-node-id="lxuD3OsG1uGmqc3Z1BArjg"></div>
   </section>
 
   <!-- 02 今日趋势榜（左栏 rail 趋势榜 · 报刊双栏横图，桌面 10 条 / 移动 5 条） -->
-  <section class="sec" id="sec-trend">
-    <div class="sec-head">
-      <span class="no">02</span><h2>今日趋势榜</h2><span class="sub" id="trend-sub">TMDB /trending/all/day · 10 条</span>
-      <a class="more" href="#">完整榜单 →</a>
+  <section class="sec" id="sec-trend" data-page-node-id="B9fshMODLEk1jwLObi9ggW">
+    <div class="sec-head" data-page-node-id="2vm0Yoxl4TPXLCLixOzpcl">
+      <span class="no" data-page-node-id="KHymrKVyjFXpyQLgffqm6n">02</span><h2 data-page-node-id="Boup8Yy71zi07QcSVTcEau">今日趋势榜</h2><span class="sub" id="trend-sub" data-page-node-id="mbuVMyA7zaOBJIF0QED6te">TMDB /trending/all/day · 10 条</span>
+      <a class="more" href="e-chart.html" data-page-node-id="gFTka5xTdMcOd2LHJkxFtK">完整榜单 →</a>
     </div>
-    <div class="trend-table" id="trend-table"></div>
+    <div class="trend-table" id="trend-table" data-page-node-id="6M8YAbLobD7EBnPkTdQ6Dz"></div>
   </section>
 
   <!-- 03–09 七行横滚（首页 .home-rows 同序） -->
-  <div id="home-rows"></div>
+  <div id="home-rows" data-page-node-id="F0MlkUOnDPTYAEkWrfYQfi"></div>
 
-  <footer>
-    <span>KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏搜索/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据 = 真实 TMDB 快照（demos/_data-e-tmdb.js，与首页同口径），快照缺失回退 demos/_data.js CMS</span>
-    <span id="foot-stats"></span>
-    <span>仅供风格评审</span>
+  <footer data-page-node-id="2J5D0skTObqi30heLzwXGU">
+    <span data-page-node-id="AJ88pzuj1ht5bzpZPs87GJ">KinoTV — Demo E · 报刊排版式 · 融合现有首页元素（顶栏搜索/Hero 轮播/图片索引/趋势榜/继续观看/七行横滚/FAB）；数据 = 真实 TMDB 快照（demos/_data-e-tmdb.js，与首页同口径），快照缺失回退 demos/_data.js CMS</span>
+    <span id="foot-stats" data-page-node-id="ixJgl4j5dpkw00xG7miTCS"></span>
+    <span data-page-node-id="B3ze9M6ymqvO3RZeqsFZyQ">仅供风格评审</span>
   </footer>
 
 </div>
 
 <!-- FAB：返回顶部 + 刷新（融合 BackToTopButton） -->
-<div class="fab" id="fab">
-  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
-  <button id="fab-top" type="button" title="返回顶部">↑</button>
+<div class="fab" id="fab" data-page-node-id="HXYbHEdCsM97WyYSFNzbjN">
+  <button id="fab-refresh" type="button" title="刷新数据" data-page-node-id="KXksiAVcUOUQKslWzttY1q">↻</button>
+  <button id="fab-top" type="button" title="返回顶部" data-page-node-id="x7vc1ENYzOnsbgTx9cZsq9">↑</button>
 </div>
 
 <script src="_data.js"></script>
@@ -507,27 +545,22 @@ function renderMasthead() {
   const weekCN = "日一二三四五六"[d.getDay()];
   const l1 = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekCN}`;
   const l2 = `第 ${week} 周 · 总第 1,204 期`;
-  // 移动端（nav 右列）单行显示；桌面保持右上两行
-  $("edition").innerHTML = mqHead.matches ? `${l1} · ${l2}` : `${l1}<br>${l2}`;
+  // 版次固定桌面两行（≤767 由 CSS 隐藏，不进吸顶导航栏）
+  $("edition").innerHTML = `${l1}<br>${l2}`;
 }
 
-/* ---------- 移动端报头同步（≤767：☰ 常驻左侧 + 品牌居中；版次/搜索搬入 nav 右列；栏目与功能项隐藏） ---------- */
+/* ---------- 移动端报头同步（≤767：☰ 常驻左 + 品牌居中 + 版次右；搜索 / 主题图标并排于导航右列；栏目与功能项隐藏） ---------- */
 const mqHead = window.matchMedia("(max-width:767px)");
-const searchBtnHTML = $("search-btn").innerHTML;      // 保存桌面文案「搜索 ⌘K」供还原
 function syncMobileHead() {
   const m = mqHead.matches;
   $("menu-btn").hidden = !m;
   $("nav-aside").hidden = !m;
-  document.querySelectorAll(".mast-nav > a").forEach((a) => { a.hidden = m; });   // 栏目链接
   if (m) {
-    $("nav-aside").append($("edition"), $("search-wrap"));   // 版次右对齐 + 搜索图标在其下方
-    $("search-btn").textContent = "⌕";
-    $("nav-fn").hidden = true;                                // 收藏/历史/设置/夜刊（search-wrap 已先搬出）
+    // 只搬 ⌕/☾ 的容器（nav-aside）进报头行拼成单行；edition 属报头版次位，任何断点都不搬移（≤767 由 CSS 隐藏）
+    $("nav-aside").append($("search-wrap"), $("theme-btn"));
+    $("mast-row").append($("nav-aside"));
   } else {
-    $("nav-fn").hidden = false;
-    $("nav-fn").append($("search-wrap"));
-    $("mast-row").append($("edition"));
-    $("search-btn").innerHTML = searchBtnHTML;
+    $("nav-fn").append($("search-wrap"), $("theme-btn"));      // 桌面顺序：收藏 历史 设置 ⌕ ☾
   }
 }
 syncMobileHead();
@@ -577,9 +610,9 @@ function setSlide(i, force) {
       <span>来源：${esc(DATA.sourceName)}</span>
     </div>
     <div class="hl-actions">
-      <a class="play">${(DATA.continue_ || []).some((c) => String(c.id) === String(h.id)) ? "▶ 继续播放" : "▶ 立即播放"}</a>
+      <a class="play" data-go="e-player.html?id=${esc(h.id)}">${(DATA.continue_ || []).some((c) => String(c.id) === String(h.id)) ? "▶ 继续播放" : "▶ 立即播放"}</a>
       <a class="ghost" data-fav-hero="${esc(h.id)}">${FAVS.has(String(h.id)) ? "♥ 已收藏" : "＋ 收藏"}</a>
-      <a class="ghost">查看详情</a>
+      <a class="ghost" data-go="e-detail.html?id=${esc(h.id)}">查看详情</a>
     </div>`;
   document.querySelectorAll(".hl-slide").forEach((el) =>
     el.classList.toggle("on", +el.dataset.slide === bannerIdx));
@@ -600,6 +633,8 @@ function initCarousel() {
   hl.addEventListener("click", (e) => {
     if (e.target.closest(".hl-arr.prev")) return bannerStep(-1);
     if (e.target.closest(".hl-arr.next")) return bannerStep(1);
+    const go = e.target.closest("[data-go]");
+    if (go) { location.href = go.dataset.go; return; }
     const fh = e.target.closest("[data-fav-hero]");
     if (fh) {
       const id = String(fh.dataset.favHero);
@@ -623,7 +658,7 @@ function renderSide() {
   $("hl-side-track").innerHTML = cards.map((it) => {
     const faved = FAVS.has(String(it.id));
     return `
-    <div class="hl-card">
+    <div class="hl-card" data-go="e-detail.html?id=${esc(it.id)}">
       <div class="cov">${pic(it, 640, `<span class="noimg">${esc((it.title || "?").slice(0, 1))}</span>`)}
         <button class="fav${faved ? " on" : ""}" type="button" data-fav="${esc(it.id)}" aria-label="收藏">${faved ? "♥" : "♡"}</button>
       </div>
@@ -644,13 +679,17 @@ function initSide() {
   });
   $("hl-side-track").addEventListener("click", (e) => {
     const f = e.target.closest("[data-fav]");
-    if (!f) return;
-    e.stopPropagation();
-    const id = f.dataset.fav;
-    FAVS.has(id) ? FAVS.delete(id) : FAVS.add(id);
-    favSave();
-    f.classList.toggle("on", FAVS.has(id));
-    f.textContent = FAVS.has(id) ? "♥" : "♡";
+    if (f) {
+      e.stopPropagation();
+      const id = f.dataset.fav;
+      FAVS.has(id) ? FAVS.delete(id) : FAVS.add(id);
+      favSave();
+      f.classList.toggle("on", FAVS.has(id));
+      f.textContent = FAVS.has(id) ? "♥" : "♡";
+      return;
+    }
+    const card = e.target.closest(".hl-card[data-go]");
+    if (card) location.href = card.dataset.go;
   });
 }
 
@@ -660,7 +699,7 @@ function renderContinue() {
   $("cont-grid").innerHTML = picks.map((c) => {
     const prog = 20 + (hash(c.title) % 70);
     return `
-    <div class="cont-cell">
+    <div class="cont-cell" data-go="e-player.html?id=${esc(c.id)}">
       <div class="th">${pic(c, 480)}
         <span class="resume">▶</span>
         <span class="time">${esc(c.remarks || c.cls || "HD")}</span></div>
@@ -694,7 +733,7 @@ function renderTrend() {
   $("trend-sub").textContent = `TMDB /trending/all/day · ${n} 条`;
   $("trend-table").innerHTML = pool.map((t, i) => {
     const heat = (98.4 - i * 1.1 - (hash(t.title) % 10) / 10).toFixed(1);
-    return `<div class="trow">
+    return `<div class="trow" data-go="e-detail.html?id=${esc(t.id)}">
       <span class="rank">${i + 1}</span>
       <div class="th">${pic(t, 342, "", t.backdrop || t.pic)}</div>
       <div class="ti"><b>${esc(t.title)}</b><span>${esc(t.cls || "影视")} · ${esc(t.year)} · ${esc(t.remarks || "正片")}</span></div>
@@ -707,8 +746,8 @@ function renderTrend() {
 function rcardHTML(it) {
   const on = FAVS.has(String(it.id));
   const score = it.score ? "★ " + (Math.round(Number(it.score) * 10) / 10).toFixed(1) : "";
-  return `
-    <div class="rcard">
+    return `
+    <div class="rcard" data-go="e-detail.html?id=${esc(it.id)}">
       <div class="rc-cover">${pic(it, 342)}
         ${score ? `<span class="b-tl">${score}</span>` : ""}
         <button class="b-tr${on ? " on" : ""}" type="button" data-fav="${esc(it.id)}" aria-label="收藏">${on ? "♥" : "♡"}</button>
@@ -725,7 +764,7 @@ function renderRows() {
       <div class="sec-head">
         <span class="no">${String(i + 3).padStart(2, "0")}</span><h2>${esc(r.title)}</h2>
         <span class="sub">${esc(r.en || "")}${r.en ? " · " : ""}${r.items.length} 条</span>
-        <a class="more" href="#">更多 →</a>
+        <a class="more" href="e-browse.html">更多 →</a>
       </div>
       <div class="hrow-wrap">
         <button class="hrw-arrow left" type="button" aria-label="上一页" disabled>‹</button>
@@ -753,6 +792,14 @@ function initRowFav() {
   };
   $("home-rows").addEventListener("click", h);
   $("search-grid").addEventListener("click", h);
+  /* 点击卡片 → 对应 demo 页（真实首页卡点击进详情 / 播放） */
+  const nav = (e) => {
+    if (e.target.closest("[data-fav]")) return;        // 收藏心已自带 stopPropagation
+    const go = e.target.closest("[data-go]");
+    if (go) location.href = go.dataset.go;
+  };
+  $("trend-table").addEventListener("click", nav);
+  $("cont-grid").addEventListener("click", nav);
 }
 
 function initRowScroll() {
@@ -856,8 +903,10 @@ function initSearch() {
   });
 }
 
-/* ---------- FAB（融合 BackToTopButton：回顶 + 刷新，右下恒显——原「>280 且停 800ms 淡入」被用户判为「看不到」） ---------- */
+/* ---------- FAB（对齐 BackToTopButton 真实口径：滚动 >280px 且停止 800ms 后淡入，滚动中隐藏；<1024 无刷新钮） ---------- */
+const FAB_THRESHOLD = 280;   // 真实常量（BackToTopButton.tsx 默认阈值）；2026-09-29 用户定稿去掉 800ms 停止滚动延迟
 function initFab() {
+  const fab = $("fab");
   $("fab-top").addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
   $("fab-refresh").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
@@ -865,19 +914,57 @@ function initFab() {
     await boot(false);
     setTimeout(() => btn.classList.remove("spinning"), 700);
   });
+  addEventListener("scroll", () => {
+    const y = window.scrollY || document.documentElement.scrollTop;
+    fab.classList.toggle("on", y > FAB_THRESHOLD);                 // 过阈值立即显示，回页首立即隐藏（无延迟）
+  }, { passive: true });
+  const y0 = window.scrollY || document.documentElement.scrollTop;
+  fab.classList.toggle("on", y0 > FAB_THRESHOLD);
 }
 
-/* ---------- 夜刊主题切换（StickyHeader 主题按钮融合） ---------- */
+/* ---------- 移动端导航抽屉（对齐 Sidebar isMobile：☰ 开合 + overlay / Esc / 关闭钮） ---------- */
+function initDrawer() {
+  const btn = $("menu-btn"), ov = $("drawer-overlay"), dw = $("drawer");
+  if (!btn || btn.hidden === undefined) return;
+  const open = () => {
+    ov.hidden = false; dw.hidden = false;
+    requestAnimationFrame(() => { ov.classList.add("on"); dw.classList.add("on"); });
+  };
+  const close = () => {
+    ov.classList.remove("on"); dw.classList.remove("on");
+    setTimeout(() => { ov.hidden = true; dw.hidden = true; }, 260);
+  };
+  btn.addEventListener("click", open);
+  $("drawer-close").addEventListener("click", close);
+  ov.addEventListener("click", close);
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !dw.hidden) close(); });
+}
+
+/* ---------- 主题三态循环（对齐真实 StickyHeader：浅色 → 深色 → 跟随系统，☾/☀/◐ 图标） ---------- */
 function initTheme() {
   const btn = $("theme-btn");
-  const sync = () => { btn.textContent = document.documentElement.getAttribute("data-theme") === "night" ? "日刊" : "夜刊"; };
+  const MODES = ["light", "dark", "system"];
+  const ICON = { light: "☀", dark: "☾", system: "◐" };
+  const LABEL = { light: "浅色", dark: "深色", system: "跟随系统" };
+  const mode = () => { try { return localStorage.getItem("kino-demo-theme-mode") || "light"; } catch (e) { return "light"; } };
+  const apply = (m) => {
+    const night = m === "dark" || (m === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", night ? "night" : "day");
+    btn.textContent = ICON[m] || "☀";
+    btn.title = `当前主题：${LABEL[m] || m}，点击切换`;
+    btn.setAttribute("aria-label", btn.title);
+  };
+  const sync = () => apply(mode());
+  sync();
   btn.addEventListener("click", () => {
-    const next = document.documentElement.getAttribute("data-theme") === "night" ? "day" : "night";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("kino-demo-theme", next); } catch (e) { /* ignore */ }
+    const next = MODES[(MODES.indexOf(mode()) + 1) % MODES.length];
+    try { localStorage.setItem("kino-demo-theme-mode", next); } catch (e) { /* ignore */ }
     sync();
   });
-  sync();
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  const onSys = () => { if (mode() === "system") sync(); };
+  if (mq.addEventListener) mq.addEventListener("change", onSys);
+  else if (mq.addListener) mq.addListener(onSys);
 }
 
 /* ---------- 渲染总装 ---------- */
@@ -960,6 +1047,7 @@ initSide();
 initSearch();
 initRowFav();
 initFab();
+initDrawer();
 initTheme();
 boot(true);
 </script>

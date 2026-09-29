@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>S4 光谱 · 首页重设计 Demo · 2026-09-28</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   S4 · 光谱 Spectrum — 亮色 · 类型色贯穿 · 竖屏短剧入口（年轻 / 碎片向）
+   主张：用「类型色谱」把色彩变成导航；长视频横版 + 短剧竖版同屏并存。
+   大屏规则：内容封顶 2200 / pad 16→60→100→140 / 行列 3→4→5→6→7→8；
+   ≥1920 竖版卡 3→4 张、hero 副栏加宽；≥2560 hero 高度回收、字号抬一档。
+   ═══════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --bg: #fcfcfe;
+  --surface: #ffffff;
+  --surface-2: #f4f5fa;
+  --ink: #13151c;
+  --ink-2: #565f70;
+  --ink-3: #8c95a6;
+  --line: #e6e8f0;
+  --line-2: #cfd3de;
+  --grad: linear-gradient(118deg, #ff3d7f 0%, #ff7a4d 52%, #ffb03a 100%);
+  --rating: #e8a400;
+  --pad: 16px;
+  --cap: 2200px;
+  --gap: 14px;
+  --row-n: 2.4;
+  --fs: 15px;
+  --v-n: 3;
+  --r-md: 16px;
+  --r-lg: 22px;
+}
+@media (width >= 768px)  { :root { --pad: 32px; --row-n: 4; --gap: 16px; } }
+@media (width >= 1024px) { :root { --row-n: 5; } }
+@media (width >= 1280px) { :root { --row-n: 6; } }
+@media (width >= 1440px) { :root { --pad: 60px; --row-n: 7; --gap: 18px; } }
+@media (width >= 1920px) { :root { --pad: 100px; --row-n: 8; --fs: 16px; --v-n: 4; } }
+@media (width >= 2560px) { :root { --pad: 140px; --fs: 17px; } }
+
+html { background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 var(--fs)/1.62 "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid #ff3d7f; outline-offset: 3px; border-radius: 8px; }
+.wrap { width: min(100%, var(--cap)); margin-inline: auto; padding-inline: var(--pad); }
+
+/* ── 顶栏 ─────────────────────────────────────────────────────────── */
+.hdr { position: sticky; top: 0; z-index: 40; background: rgba(252, 252, 254, .9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.hdr__in { display: flex; align-items: center; gap: clamp(12px, 2vw, 30px); height: clamp(58px, 5.6vh, 72px); }
+.logo { font-weight: 800; font-size: calc(var(--fs) + 5px); letter-spacing: -.02em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo em { font-style: normal; font-weight: 600; font-size: .68em; letter-spacing: .2em; }
+.nav { display: flex; gap: clamp(8px, 1vw, 18px); color: var(--ink-2); font-size: calc(var(--fs) + 1px); }
+.nav a { padding: 6px 2px; border-bottom: 2.5px solid transparent; }
+.nav a:hover { color: var(--ink); }
+.nav a.on { color: var(--ink); font-weight: 700; border-bottom-color: #ff3d7f; }
+.hdr__sp { flex: 1 1 auto; }
+.search {
+  display: flex; align-items: center; gap: 8px; width: clamp(150px, 22vw, 340px); padding: 9px 15px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--ink-3); font-size: calc(var(--fs) - 1px);
+}
+.search:hover { border-color: var(--line-2); }
+
+/* ── Hero：主推大卡 + 竖版短剧 ────────────────────────────────────── */
+.hero { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); padding-block: clamp(16px, 2.4vh, 30px) clamp(6px, 1.4vh, 16px); }
+@media (width >= 1024px) { .hero { grid-template-columns: minmax(0, 1.7fr) minmax(300px, .95fr); } }
+
+.stage {
+  position: relative; overflow: hidden; border-radius: var(--r-lg); min-height: clamp(300px, 42vh, 440px);
+  display: flex; align-items: flex-end; border: 1px solid var(--line);
+}
+@media (width >= 1440px) { .stage { min-height: clamp(380px, 46vh, 560px); } }
+.stage__bg { position: absolute; inset: 0; background: var(--grad); }
+.stage__bg::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(60% 80% at 85% 15%, rgba(255, 255, 255, .35), transparent 60%),
+              linear-gradient(0deg, rgba(10, 8, 16, .82) 0%, rgba(10, 8, 16, .28) 52%, transparent 100%);
+}
+.stage__body { position: relative; z-index: 2; padding: clamp(20px, 3vw, 44px); color: #fff; max-width: min(740px, 94%); }
+.stage__chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 999px; background: rgba(255, 255, 255, .2); border: 1px solid rgba(255, 255, 255, .45); font-size: calc(var(--fs) - 3px); letter-spacing: .1em; backdrop-filter: blur(4px); }
+.stage__chip i { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+.stage h1 { margin: 12px 0 0; font-size: clamp(32px, 4.4vw, 70px); line-height: 1.05; letter-spacing: -.03em; font-weight: 800; }
+.stage__meta { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 12px; color: rgba(255, 255, 255, .92); font-size: calc(var(--fs) + 1px); }
+.stage__meta b { color: #ffe27a; }
+.stage__desc { margin: 12px 0 0; color: rgba(255, 255, 255, .88); max-width: 54ch; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.acts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: clamp(16px, 2.2vh, 24px); }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 12px 26px; border-radius: 999px; border: 0; font-weight: 800; font-size: calc(var(--fs) + 2px); transition: transform .16s ease, filter .16s ease; }
+.btn--w { background: #fff; color: #14161c; }
+.btn--w:hover { transform: translateY(-2px); filter: brightness(.96); }
+.btn--o { background: rgba(255, 255, 255, .16); color: #fff; border: 1px solid rgba(255, 255, 255, .5); }
+.btn--o:hover { background: rgba(255, 255, 255, .28); transform: translateY(-2px); }
+
+/* 竖版短剧副栏 */
+.vcol { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+.vcol__hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.vcol__hd h2 { margin: 0; font-size: calc(var(--fs) + 4px); letter-spacing: -.02em; }
+.vcol__hd .up { font-size: calc(var(--fs) - 3px); color: var(--ink-3); }
+.vcol__hd .up b { color: #ff3d7f; }
+.vlist { display: grid; grid-template-columns: repeat(var(--v-n), minmax(0, 1fr)); gap: var(--gap); }
+@media (width >= 1024px) and (width < 1920px) { .vlist { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.vc { position: relative; border-radius: var(--r-md); overflow: hidden; aspect-ratio: 9/16; border: 1px solid var(--line); transition: transform .18s ease, box-shadow .18s ease; }
+.vc:hover { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(19, 21, 28, .18); }
+.vc__art { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; color: #fff; }
+.vc__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(8, 8, 14, .8) 0%, transparent 55%); }
+.vc__bar { position: absolute; left: 0; right: 0; top: 0; height: 5px; z-index: 2; }
+.vc__t { position: relative; z-index: 2; font-weight: 800; font-size: calc(var(--fs) + 1px); line-height: 1.3; }
+.vc__m { position: relative; z-index: 2; font-size: calc(var(--fs) - 4px); color: rgba(255, 255, 255, .82); margin-top: 4px; }
+.vc__ep { position: absolute; z-index: 2; right: 8px; top: 10px; background: rgba(8, 8, 14, .7); color: #fff; padding: 2px 8px; border-radius: 999px; font-size: calc(var(--fs) - 5px); }
+/* ── 类型色谱（签名元素）───────────────────────────────────────────── */
+.spectrum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: clamp(12px, 1.8vh, 20px) 0 clamp(6px, 1.2vh, 14px); }
+.spectrum .lab { font-size: calc(var(--fs) - 2px); letter-spacing: .24em; color: var(--ink-3); text-transform: uppercase; margin-right: 4px; }
+.sc {
+  display: inline-flex; align-items: center; gap: 9px; padding: 9px 18px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); font-size: calc(var(--fs) - 1px); font-weight: 700; color: var(--ink-2);
+  transition: border-color .16s ease, transform .16s ease, color .16s ease;
+}
+.sc i { width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+.sc:hover { transform: translateY(-2px); color: var(--ink); border-color: var(--line-2); }
+.sc.on { color: #fff; border-color: transparent; }
+.sc.on i { background: #fff !important; box-shadow: 0 0 0 3px rgba(255, 255, 255, .32); }
+
+/* ── 行 ───────────────────────────────────────────────────────────── */
+.rows { display: flex; flex-direction: column; gap: clamp(22px, 3.2vh, 40px); padding-bottom: clamp(30px, 5vh, 60px); }
+.row-hd { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+.row-hd .dot { width: 12px; height: 12px; border-radius: 50%; align-self: center; flex: 0 0 auto; }
+.row-hd h2 { margin: 0; font-size: calc(var(--fs) + 7px); letter-spacing: -.03em; font-weight: 800; }
+.row-hd .sub { color: var(--ink-3); font-size: calc(var(--fs) - 1px); }
+.row-hd .more { margin-left: auto; color: var(--ink-2); font-size: calc(var(--fs) - 1px); font-weight: 700; }
+.row-hd .more:hover { color: #ff3d7f; }
+.row { display: flex; gap: var(--gap); overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.card { flex: 0 0 calc((100% - (var(--row-n) - 1) * var(--gap)) / var(--row-n)); scroll-snap-align: start; min-width: 0; }
+.card__c { position: relative; border-radius: var(--r-md); overflow: hidden; aspect-ratio: 2/3; border: 1px solid var(--line); transition: transform .18s ease, box-shadow .18s ease; }
+.card:hover .card__c { transform: translateY(-5px); box-shadow: 0 18px 36px rgba(19, 21, 28, .16); }
+.card__art { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 13px; color: #fff; }
+.card__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(8, 8, 14, .72) 0%, transparent 52%); }
+.card__k { position: relative; z-index: 2; font-size: calc(var(--fs) - 5px); letter-spacing: .18em; color: rgba(255, 255, 255, .8); margin-bottom: 4px; }
+.card__t { position: relative; z-index: 2; font-weight: 800; font-size: calc(var(--fs) + 2px); line-height: 1.3; text-shadow: 0 2px 10px rgba(0, 0, 0, .45); }
+.card__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 3; }
+.card__r { position: absolute; z-index: 3; right: 9px; top: 9px; background: rgba(255, 255, 255, .94); color: #14161c; border-radius: 999px; padding: 3px 9px; font-size: calc(var(--fs) - 5px); font-weight: 800; }
+.card__p { position: absolute; z-index: 3; left: 0; right: 0; bottom: 6px; height: 5px; background: rgba(0, 0, 0, .35); }
+.card__p i { display: block; height: 100%; background: #fff; }
+.card h3 { margin: 10px 0 0; font-size: calc(var(--fs) + 1px); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card p { margin: 3px 0 0; color: var(--ink-3); font-size: calc(var(--fs) - 3px); display: flex; gap: 9px; }
+
+.ftr { border-top: 1px solid var(--line); padding-block: 22px 36px; color: var(--ink-3); font-size: calc(var(--fs) - 3px); }
+.ftr p { margin: 0 0 7px; max-width: 110ch; }
+
+.vp {
+  position: fixed; right: 14px; bottom: 14px; z-index: 90; padding: 7px 13px; border-radius: 10px;
+  background: rgba(19, 21, 28, .92); color: #ff8fb3; font: 600 12px/1.4 ui-monospace, Consolas, monospace;
+  letter-spacing: .04em; cursor: pointer; border: 1px solid rgba(255, 255, 255, .16);
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="wrap hdr__in">
+    <div class="logo">KinoTV <em>SPECTRUM</em></div>
+    <nav class="nav" aria-label="主导航">
+      <a href="#" class="on">首页</a><a href="#">电影</a><a href="#">剧集</a><a href="#">短剧</a><a href="#">榜单</a><a href="#">IPTV</a>
+    </nav>
+    <span class="hdr__sp"></span>
+    <div class="search" role="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>搜片名 / 演员 / 类型</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero" aria-label="主推与短剧">
+    <div class="stage">
+      <span class="stage__bg"></span>
+      <div class="stage__body">
+        <span class="stage__chip"><i></i>悬疑色谱 · 本周主推</span>
+        <h1>漫长的季节</h1>
+        <div class="stage__meta"><span><b>★ 9.4</b></span><span>2023</span><span>剧情 / 悬疑</span><span>12 集全</span><span>4K · 多线路</span></div>
+        <p class="stage__desc">一场横跨二十年的旧案，把三个中年人的命运重新拽回那个漫长的秋天。慢节奏、重人物，适合一晚连看。</p>
+        <div class="acts">
+          <button class="btn btn--w"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>播放第 1 集</button>
+          <button class="btn btn--o">加入片单</button>
+          <button class="btn btn--o">看预告</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="vcol" aria-label="竖屏短剧速看">
+      <div class="vcol__hd"><h2>竖屏短剧 · 速看</h2><span class="up">今日更新 <b>12</b> 集</span></div>
+      <div class="vlist" id="vlist"></div>
+    </aside>
+  </section>
+
+  <nav class="spectrum" id="spectrum" aria-label="类型色谱筛选"><span class="lab">类型色谱</span></nav>
+
+  <div class="rows" id="rows"></div>
+</main>
+
+<footer class="ftr">
+  <div class="wrap">
+    <p>KinoTV 首页重设计提案 · S4 光谱 · 2026-09-28 · 仅 Demo，未改动 src · 数据为演示占位。</p>
+    <p>大屏规则：内容封顶 2200；page-pad 16 / 60 / 100 / 140；行内列 3→4→5→6→7→8；≥1920 竖版短剧卡 3→4 张、正文字号抬一档；≥2560 字号再抬一档、hero 高度按 vh 回收。</p>
+  </div>
+</footer>
+
+<div class="vp" id="vp" title="点击隐藏">--</div>
+
+<script>
+(function () {
+  "use strict";
+  var TYPES = [
+    { n: "悬疑", c: "#7c5cff", d: "#241a52" },
+    { n: "剧情", c: "#4d94ff", d: "#12275c" },
+    { n: "爱情", c: "#ff3d7f", d: "#5c1030" },
+    { n: "喜剧", c: "#ffb03a", d: "#5c3a06" },
+    { n: "动作", c: "#ff5a3c", d: "#5c1a10" },
+    { n: "动画", c: "#14c2a0", d: "#073f37" }
+  ];
+  var PICK = [
+    { t: "沙丘2", ty: 1 }, { t: "周处除三害", ty: 4 }, { t: "机器人之梦", ty: 5 },
+    { t: "年会不能停！", ty: 3 }, { t: "走走停停", ty: 1 }, { t: "热辣滚烫", ty: 3 },
+    { t: "异形：夺命舰", ty: 0 }, { t: "九龙城寨之围城", ty: 4 }, { t: "抓娃娃", ty: 3 },
+    { t: "默杀", ty: 0 }, { t: "第二十条", ty: 1 }, { t: "飞驰人生2", ty: 3 }
+  ];
+  var DRAMA = [
+    { t: "长街灯火", ty: 2, ep: "更新至 24 集" }, { t: "夜色暗涌", ty: 0, ep: "全 60 集" },
+    { t: "回到民国当影后", ty: 2, ep: "更新至 18 集" }, { t: "我本将心向明月", ty: 1, ep: "全 72 集" },
+    { t: "春风不问路人", ty: 3, ep: "更新至 30 集" }, { t: "刀锋之上", ty: 4, ep: "全 48 集" }
+  ];
+  var SCORE = [
+    { t: "漫长的季节", ty: 0 }, { t: "繁花", ty: 1 }, { t: "三体", ty: 0 }, { t: "狂飙", ty: 4 },
+    { t: "庆余年 第二季", ty: 1 }, { t: "墨雨云间", ty: 2 }, { t: "双城之战 第二季", ty: 5 },
+    { t: "幕府将军", ty: 1 }, { t: "追风者", ty: 4 }, { t: "与凤行", ty: 2 },
+    { t: "显微镜下的大明", ty: 3 }, { t: "唐朝诡事录", ty: 0 }
+  ];
+
+  function art(ty, seed) {
+    var T = TYPES[ty];
+    return "background-image:linear-gradient(155deg," + T.c + " 0%," + T.d + " 88%)";
+  }
+
+  document.getElementById("vlist").innerHTML = DRAMA.map(function (d, i) {
+    return '<a class="vc" href="#" tabindex="0"><span class="vc__bar" style="background:' + TYPES[d.ty].c + '"></span>' +
+      '<span class="vc__art" style="' + art(d.ty, i) + '"><span class="vc__t">' + d.t + '</span>' +
+      '<span class="vc__m">' + TYPES[d.ty].n + " · " + (8 + (i % 5)) + " 分钟/集</span></span>" +
+      '<span class="vc__ep">' + d.ep + "</span></a>";
+  }).join("");
+
+  var active = -1;
+  var sp = document.getElementById("spectrum");
+  TYPES.forEach(function (T, i) {
+    var b = document.createElement("button");
+    b.className = "sc"; b.type = "button"; b.dataset.i = i;
+    b.innerHTML = '<i style="background:' + T.c + ';color:' + T.c + '"></i>' + T.n;
+    b.addEventListener("click", function () {
+      active = active === i ? -1 : i;
+      document.querySelectorAll(".sc").forEach(function (x, xi) {
+        var on = xi === active;
+        x.classList.toggle("on", on);
+        if (on) { x.style.background = TYPES[xi].c; x.style.borderColor = TYPES[xi].c; }
+        else { x.style.background = ""; x.style.borderColor = ""; }
+      });
+      renderRows();
+    });
+    sp.appendChild(b);
+  });
+
+  function card(item, i, opts) {
+    opts = opts || {};
+    var T = TYPES[item.ty];
+    return '<article class="card" tabindex="0" data-ty="' + item.ty + '">' +
+      '<div class="card__c"><div class="card__art" style="' + art(item.ty, i) + '">' +
+      '<span class="card__k">' + T.n + '</span><span class="card__t">' + item.t + "</span></div>" +
+      '<span class="card__r">★ ' + (7.2 + ((i * 5) % 20) / 10).toFixed(1) + "</span>" +
+      (opts.prog != null ? '<span class="card__p"><i style="width:' + opts.prog + '%"></i></span>' : "") +
+      '<span class="card__bar" style="background:' + T.c + '"></span></div>' +
+      "<h3>" + item.t + '</h3><p><span>' + (2018 + (i % 8)) + "</span><span>" + T.n + "</span></p></article>";
+  }
+  function row(title, sub, list, dot) {
+    return '<section><div class="row-hd"><span class="dot" style="background:' + dot + '"></span>' +
+      "<h2>" + title + '</h2><span class="sub">' + sub + '</span><a class="more" href="#">全部</a></div>' +
+      '<div class="row" tabindex="0" aria-label="' + title + '，可横向滚动">' + list.map(card).join("") + "</div></section>";
+  }
+  function renderRows() {
+    var f = active === -1 ? PICK : PICK.filter(function (x) { return x.ty === active; });
+    var name = active === -1 ? "为你精选" : TYPES[active].n + "精选";
+    var dot = active === -1 ? "linear-gradient(118deg,#ff3d7f,#ffb03a)" : TYPES[active].c;
+    var body = row(name, active === -1 ? "按你的口味排序 · 12 部" : "仅显示该类型 · " + f.length + " 部",
+      f.length ? f : [{ t: "暂无更多，看看其他类型", ty: active }], dot);
+    body += row("高分剧集", "9 分以上 · 12 部", SCORE, "#4d94ff");
+    document.getElementById("rows").innerHTML = body;
+  }
+  renderRows();
+
+  document.querySelectorAll(".row").forEach(function (r) {
+    r.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { r.scrollBy({ left: r.clientWidth * 0.6, behavior: "smooth" }); e.preventDefault(); }
+      if (e.key === "ArrowLeft") { r.scrollBy({ left: -r.clientWidth * 0.6, behavior: "smooth" }); e.preventDefault(); }
+    });
+  });
+
+  var vp = document.getElementById("vp");
+  function tier(w) {
+    if (w >= 2560) return "≥2560 超大屏"; if (w >= 2200) return "≥2200 封顶";
+    if (w >= 1920) return "≥1920 2K"; if (w >= 1440) return "≥1440 大屏";
+    if (w >= 1280) return "≥1280"; if (w >= 1024) return "≥1024"; if (w >= 768) return "≥768"; return "<768";
+  }
+  function n(w) { if (w >= 1920) return 8; if (w >= 1440) return 7; if (w >= 1280) return 6; if (w >= 1024) return 5; if (w >= 768) return 4; return 3; }
+  function pad(w) { if (w >= 2560) return 140; if (w >= 1920) return 100; if (w >= 1440) return 60; if (w >= 768) return 32; return 16; }
+  function paint() {
+    var w = window.innerWidth, h = window.innerHeight;
+    vp.textContent = w + "x" + h + " | " + tier(w) + " | cols " + n(w) + " | pad " + pad(w);
+  }
+  paint();
+  window.addEventListener("resize", paint);
+  vp.addEventListener("click", function () { vp.style.display = "none"; });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 设置 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 设置页专属：左栏 6 tab（对齐 SettingsTabBar）+ 右栏分组字段。
+   控件全部为报刊版：规则线分隔 / 衬线小标题 / 无卡片。 */
+.set-head{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--ink);
+  padding-bottom:clamp(10px,1.4vh,16px);margin-bottom:clamp(14px,2vh,24px)}
+.set-head h2{font-family:var(--serif);font-size:clamp(19px,1.7vw,32px);font-weight:900}
+.set-head span{font-size:clamp(11px,.72vw,13px);color:var(--ink-3);letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+.group{margin-bottom:clamp(20px,3vh,38px)}
+.group .rail-title{border-bottom:1px solid var(--rule);padding-bottom:8px}
+.note{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:8px;line-height:1.6}
+/* 计数器（− 值 +）：对齐 settings-counter（片头/片尾时长、更新间隔、刷新间隔） */
+.counter{display:flex;align-items:center;gap:clamp(8px,.8vw,12px)}
+.counter button{width:clamp(24px,1.8vw,30px);height:clamp(24px,1.8vw,30px);border:1px solid var(--rule);
+  border-radius:50%;font-size:14px;line-height:1;transition:.18s}
+.counter button:hover:not(:disabled){border-color:var(--ink);background:var(--band)}
+.counter button:disabled{opacity:.35;cursor:not-allowed}
+.counter .v{min-width:2.2em;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.counter .u{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3)}
+/* 滑块（TV 过扫描安全区 0–20 step5） */
+.slider{display:flex;align-items:center;gap:clamp(8px,.8vw,12px);min-width:clamp(150px,18vw,240px)}
+.slider input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.slider .v{min-width:3.2em;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+/* 皮肤选择（默认 / 卡通 / 机械 / 复古） */
+.skins{display:flex;gap:clamp(8px,.9vw,14px);flex-wrap:wrap}
+.skin-btn{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:clamp(11px,.74vw,12.5px);color:var(--ink-2)}
+.skin-btn .sw{width:clamp(40px,3.4vw,58px);height:clamp(28px,2.4vw,40px);border:1px solid var(--rule);border-radius:4px;transition:.18s}
+.skin-btn.on{color:var(--ink);font-weight:800}
+.skin-btn.on .sw{border:2px solid var(--ink)}
+/* 源管理表格（视频源 / IPTV 源 / EPG 源） */
+.src-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--rule);
+  padding-bottom:8px;margin-bottom:8px}
+.src-head b{font-family:var(--serif);font-size:clamp(14px,1vw,18px);font-weight:900}
+.src-head .cap{font-size:clamp(10.5px,.7vw,12px);color:var(--ink-3)}
+.src-head .ops{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.tbl-wrap{overflow-x:auto}
+.tbl-wrap .tbl{min-width:clamp(420px,52vw,720px)}
+.tbl .u{color:var(--ink-3);font-size:clamp(10.5px,.68vw,12px);word-break:break-all}
+.tbl .ops{display:flex;gap:8px;white-space:nowrap}
+.tbl .ops button{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-2)}
+.tbl .ops button:hover{color:var(--accent)}
+.tbl .ops .del{color:var(--accent)}
+/* 个人资料（头像 + 昵称，点击编辑） */
+.profile{display:flex;align-items:center;gap:clamp(14px,1.6vw,26px);width:100%;text-align:left;
+  padding:clamp(10px,1.4vh,16px) 0;border-bottom:1px solid var(--rule);transition:background .18s}
+.profile:hover{background:var(--band)}
+.avatar{width:clamp(56px,5vw,84px);height:clamp(56px,5vw,84px);border-radius:50%;overflow:hidden;
+  background:var(--fill);position:relative;flex:none}
+.avatar .kpic{position:absolute;inset:0}
+.avatar-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:clamp(18px,1.8vw,30px);font-weight:900;color:var(--ink-3)}
+.profile .meta b{font-family:var(--serif);font-size:clamp(16px,1.3vw,24px);font-weight:900;display:block}
+.profile .meta span{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);display:block;margin-top:3px}
+/* 个人设置的两张卡（配置管理 / 恢复默认配置） */
+.card-desc{font-size:clamp(11.5px,.76vw,13px);color:var(--ink-3);line-height:1.6;margin-bottom:10px}
+.card-ops{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+/* 关于：版本 / 更新日志 / 隐藏入口 + 免责声明 */
+.about-list{border-top:1px solid var(--rule)}
+.about-row{display:flex;align-items:center;gap:16px;padding:clamp(9px,1.2vh,14px) 2px;
+  border-bottom:1px solid var(--rule);font-size:clamp(12.5px,.82vw,15px);cursor:pointer}
+.about-row:hover{background:var(--band)}
+.about-row .k{color:var(--ink-3);min-width:clamp(80px,9vw,130px)}
+.about-row b{font-weight:700}
+.about-row .go{margin-left:auto;color:var(--ink-3);font-size:16px}
+.disclaimer{margin-top:clamp(14px,2vh,22px);border-top:2px solid var(--ink);padding-top:clamp(10px,1.4vh,16px)}
+.disclaimer h3{font-family:var(--serif);font-size:clamp(14px,1vw,18px);font-weight:900;margin-bottom:8px}
+.disclaimer p{font-size:clamp(11.5px,.76vw,13px);color:var(--ink-2);line-height:1.8}
+/* 弹窗（配置输入 / 确认 / 资料编辑） */
+.modal{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;
+  background:rgba(12,12,14,.44);padding:clamp(14px,3vw,28px)}
+.modal .panel{width:100%;max-width:min(520px,94vw);background:var(--paper);border:1px solid var(--ink);
+  padding:clamp(16px,2.4vh,26px);box-shadow:0 18px 48px rgba(12,12,14,.24);max-height:88vh;overflow-y:auto}
+.modal h3{font-family:var(--serif);font-size:clamp(16px,1.3vw,22px);font-weight:900;margin-bottom:6px}
+.modal .desc{font-size:clamp(11.5px,.76vw,13px);color:var(--ink-3);line-height:1.6;margin-bottom:14px}
+.modal .mf{margin-bottom:12px}
+.modal .mf .lbl{display:block;font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-bottom:4px}
+.modal .mf .input{width:100%}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+/* toast（对齐项目 toastBus：成功/错误/提示） */
+.toast{position:fixed;left:50%;bottom:clamp(18px,4vh,40px);transform:translateX(-50%);z-index:9800;
+  background:var(--ink);color:var(--paper);font-size:clamp(12px,.8vw,14px);padding:9px 18px;border-radius:99px;
+  box-shadow:0 8px 24px rgba(12,12,14,.24);max-width:88vw}
+@media (width<=767px){
+  .set-head{gap:10px}
+  .about-row{flex-wrap:wrap;gap:6px}
+  .about-row .k{min-width:0;width:100%}
+  .src-head{flex-wrap:wrap}
+  .src-head .ops{margin-left:0;width:100%}
+  .modal .panel{max-height:92vh}
+}
+/* ---------- 移动端菜单列表 + 子页（真实 Settings 移动形态；桌面不受影响） ---------- */
+.m-menu,.m-back{display:none}
+.m-item{display:flex;align-items:center;gap:12px;width:100%;padding:clamp(12px,2.2vh,16px) 2px;
+  border-bottom:1px solid var(--rule);font:inherit;color:var(--ink);background:none;border-top:0;border-left:0;border-right:0;
+  cursor:pointer;text-align:left}
+.m-item:hover{background:var(--band)}
+.m-item .m-ic{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule);border-radius:50%;font-size:15px;overflow:hidden}
+.m-item .m-ic img{width:100%;height:100%;object-fit:cover}
+.m-item b{font-size:clamp(14px,3.8vw,16px);font-weight:700;flex:1}
+.m-item .en{font-size:10.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.m-item .arr{color:var(--ink-3);font-size:15px}
+@media (width<=767px){
+  .rail-aside > .rail{display:none}      /* 左栏 tab 收起（由菜单列表承担导航） */
+  .rail-aside > main{display:none}
+  .m-menu{display:block}
+  .rail-aside.sub > main{display:block}
+  .rail-aside.sub > .m-menu{display:none}
+  .m-back{display:inline-flex;align-items:center;gap:4px;margin-bottom:6px;padding:6px 10px 6px 0;
+    border:0;background:none;font:inherit;font-size:clamp(13px,3.4vw,15px);font-weight:700;color:var(--ink-2);cursor:pointer}
+  .m-back:hover{color:var(--accent)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <div class="rail-aside" style="margin-top:clamp(14px,2vh,24px)">
+
+    <aside class="rail">
+      <div class="rail-group">
+        <div class="rail-search"><input id="tab-q" type="search" placeholder="搜索设置项…"><span style="color:var(--ink-3);font-size:12px">⌕</span></div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-list" id="tabs"></div>
+      </div>
+    </aside>
+
+    <!-- 移动端（≤767）：菜单列表 + 全屏子页（对齐真实 Settings 移动形态 SettingsMobileProfile + SettingsMenuList + SettingsSubPage） -->
+    <div class="m-menu" id="m-menu"></div>
+
+    <main>
+      <button class="m-back" id="m-back" type="button">‹ 设置</button>
+      <div class="set-head"><h2 id="tab-title">外观</h2><span id="tab-en">APPEARANCE</span></div>
+      <div id="pane"></div>
+    </main>
+
+  </div>
+
+  <footer>
+    <span>KinoTV — Demo E · 设置页 · 报刊排版式；6 个 tab 与全部设置项逐条对齐 src/pages/Settings（SettingsTabBar + tabs/*.tsx），源列表取自 public/data/*-sources.json 真实配置；开关 / 计数 / 配置 / 导入导出 / 清空数据真实生效（写 localStorage 或下载 JSON）。源延迟不测速——本 demo 不发起真实网络请求，避免虚构结果</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   设置页内容逐条对齐真实项目（src/pages/Settings）：
+     · 6 tab            ← SettingsTabBar.tsx SETTINGS_TABS
+     · 外观             ← tabs/AppearanceTab.tsx
+     · 视频设置         ← tabs/VideoTab.tsx（TMDB / CORS 代理 / 音量记忆 / 翻译 / 源管理）
+     · 播放设置         ← tabs/PlaybackTab.tsx
+     · IPTV设置         ← tabs/IptvTab.tsx（EPG 间隔 / 流代理 / 代理规则 / 刷新 / EPG+IPTV 源管理）
+     · 个人设置         ← tabs/PersonalTab.tsx + ProfileHeader.tsx（资料 / 配置管理 / 恢复默认）
+     · 关于             ← tabs/AboutTab.tsx（版本 / 更新日志 / 隐藏入口 / 免责声明）
+   默认值取自 src/stores/useSettingsStore.ts DEFAULT_SETTINGS 与 useIPTVStore.ts defaultSettings；
+   源列表取自 public/data/video-sources.json（28）/ iptv-sources.json（26）/ epg-sources.json（3），
+   启用上限 6 / 3 / 3（useSourceManagerStore MAX_ENABLED）。版本 v1.29.0 取自 package.json。
+   皮肤资源（/art-skins/*）在本 demo 目录不可用，仅做选中态示意，不伪造美术效果。
+   ══════════════════════════════════════════════════════════════════════ */
+
+var TABS = [
+  {key:'appearance',label:'外观',en:'APPEARANCE',icon:'◐'},
+  {key:'video',label:'视频设置',en:'VIDEO',icon:'▤'},
+  {key:'playback',label:'播放设置',en:'PLAYBACK',icon:'▶'},
+  {key:'iptv',label:'IPTV设置',en:'IPTV',icon:'📺'},
+  {key:'personal',label:'个人设置',en:'PERSONAL',icon:'☺'},
+  {key:'about',label:'关于',en:'ABOUT',icon:'ⓘ'},
+];
+
+var KEY = 'kino-demo-settings';
+var DEF = {
+  /* 外观 */
+  theme:'light', skin:'default', tvMode:false, tvOverscan:5, uiScale:0,
+  /* 视频设置 */
+  tmdbAccessToken:'', tmdbLanguage:'zh-CN', corsProxy:'', rememberVolume:false,
+  autoTranslate:true, translationAppId:'', translationApiKey:'',
+  /* 播放设置 */
+  skipIntro:false, skipIntroDuration:90, skipOutro:false, skipOutroDuration:90, autoPlay:true,
+  /* IPTV 设置 */
+  epgUpdateInterval:6, proxyUrl:'', proxyPattern:'liveplay\\.(miguvideo|myqcloud)|miguvideo|livecdn\\.aliyun|oss-cn-.*aliyuncs|qiniucdn|upaiyun|bdstatic|raw\\.githubusercontent|github\\.io|jsdelivr|gitee\\.(com|io)|freetv\\.fun|tv1288|4666888',
+  autoRefresh:false, refreshIntervalHours:24,
+  /* 个人设置 */
+  username:'', avatar:'',
+};
+var CFG = Object.assign({}, DEF);
+try { CFG = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY)||'{}')); } catch(e) {}
+/* 与全 demo 统一：顶栏三态钮写 kino-demo-theme-mode；设置页打开时采纳它（以顶栏最近操作为准） */
+try { var __m = localStorage.getItem('kino-demo-theme-mode'); if(__m==='light'||__m==='dark'||__m==='system') CFG.theme = __m; } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(CFG)); } catch(e) {} }
+var CUR = 'appearance';
+
+/* 真实内置源（public/data/*.json 快照；本 demo 静态内联，与仓库配置一致） */
+var VIDEO_SOURCES = [
+  ['爱奇艺资源','https://iqiyizyapi.com/api.php/provide/vod'],
+  ['豆瓣资源','https://caiji.dbzy5.com/api.php/provide/vod'],
+  ['茅台资源','https://caiji.maotaizy.cc/api.php/provide/vod'],
+  ['卧龙资源','https://wolongzyw.com/api.php/provide/vod'],
+  ['iKun资源','https://ikunzyapi.com/api.php/provide/vod'],
+  ['电影天堂','http://caiji.dyttzyapi.com/api.php/provide/vod'],
+  ['猫眼资源','https://api.maoyanapi.top/api.php/provide/vod'],
+  ['量子资源','https://cj.lzcaiji.com/api.php/provide/vod'],
+  ['360资源','https://360zyzz.com/api.php/provide/vod'],
+  ['极速资源','https://jszyapi.com/api.php/provide/vod'],
+  ['魔都资源','https://www.mdzyapi.com/api.php/provide/vod'],
+  ['非凡资源','https://api.ffzyapi.com/api.php/provide/vod'],
+  ['暴风资源','https://bfzyapi.com/api.php/provide/vod'],
+  ['最大资源','https://api.zuidapi.com/api.php/provide/vod'],
+  ['无尽资源','https://api.wujinapi.me/api.php/provide/vod'],
+  ['新浪资源','https://api.xinlangapi.com/xinlangapi.php/provide/vod'],
+  ['旺旺资源','https://api.wwzy.tv/api.php/provide/vod'],
+  ['速播资源','https://subocaiji.com/api.php/provide/vod'],
+  ['金鹰点播','https://jinyingzy.com/api.php/provide/vod'],
+  ['飘零资源','https://p2100.net/api.php/provide/vod'],
+  ['U酷影视','https://api.ukuapi88.com/api.php/provide/vod'],
+  ['光速资源','https://api.guangsuapi.com/api.php/provide/vod'],
+  ['红牛资源','https://www.hongniuzy2.com/api.php/provide/vod'],
+  ['魔都动漫','https://caiji.moduapi.cc/api.php/provide/vod'],
+  ['如意资源','https://cj.rycjapi.com/api.php/provide/vod'],
+  ['豪华资源','https://hhzyapi.com/api.php/provide/vod'],
+  ['百度云zy','https://api.apibdzy.com/api.php/provide/vod'],
+  ['艾旦影视','https://lovedan.net/api.php/provide/vod'],
+];
+var IPTV_SOURCES = [
+  ['IPTV','https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u'],
+  ['尼古拉斯','https://gh-proxy.com/raw.githubusercontent.com/develop202/migu_video/refs/heads/main/interface.txt'],
+  ['猫影视TV','http://rihou.cc:555/gggg.nzk'],
+  ['易发TV','http://tvv.tw/github.com/fafa002/yf2025/blob/main/yiyifafa.txt'],
+  ['酒店源','https://d.kstore.dev/download/8344/1电信酒店.txt'],
+  ['组播','https://40.tv1288.xyz/'],
+  ['杰克TV3','https://php.946985.filegear-sg.me/jackTV.m3u'],
+  ['风云TV4','http://iptv.4666888.xyz/FYTV.txt'],
+  ['LLTV5','https://gh-proxy.com/raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg1.m3u'],
+  ['黄蚂蚁TV6','http://ge.html-5.me//ii/黄蚂蚁先锋推流源.txt'],
+];
+var EPG_SOURCES = [
+  ['51zmt','http://epg.51zmt.top:8000/e.xml'],
+  ['112114','https://epg.112114.me/pp.xml.gz'],
+  ['zsdc','https://epg.zsdc.eu.org/t.xml.gz'],
+];
+var MAX_ENABLED = { video:6, iptv:3, epg:3 };
+/* 启用集合（默认：视频前 6 / IPTV 前 3 / EPG 前 3，与「上限」口径一致；可在 demo 内切换） */
+var ENABLED = { video:null, iptv:null, epg:null };
+function enabledSet(k){
+  if(!ENABLED[k]){
+    var all = k==='video'?VIDEO_SOURCES:k==='iptv'?IPTV_SOURCES:EPG_SOURCES;
+    ENABLED[k] = all.slice(0, MAX_ENABLED[k]).map(function(x){ return x[1]; });
+  }
+  return ENABLED[k];
+}
+var SHOW_ALL = { video:false, iptv:false };
+
+/* ---------- 控件工厂 ---------- */
+function sw(label, desc, key){
+  return '<button class="switch" data-sw="'+key+'" type="button"><span class="sw-t"><b>'+label+'</b><span>'+desc+'</span></span>'+
+    '<span class="sw" role="switch" aria-checked="'+(CFG[key]?'true':'false')+'"></span></button>';
+}
+function sel(label, desc, key, opts){
+  return '<div class="field"><span class="f-t"><b>'+label+'</b><span>'+desc+'</span></span>'+
+    '<span class="f-c"><select class="input" data-sel="'+key+'">'+
+    opts.map(function(o){ return '<option value="'+KINO_E.esc(o[0])+'"'+(String(CFG[key])===o[0]?' selected':'')+'>'+KINO_E.esc(o[1])+'</option>'; }).join('')+
+    '</select></span></div>';
+}
+function cfgRow(label, desc, key, btn){
+  var has = !!CFG[key];
+  return '<div class="field"><span class="f-t"><b>'+label+' <span class="tag '+(has?'tag--ok':'tag--bad')+'">'+(has?'已配置':'未配置')+'</span></b>'+
+    '<span>'+KINO_E.esc(has?CFG[key]:desc)+'</span></span>'+
+    '<span class="f-c"><button class="btn" data-cfg="'+key+'" type="button">'+(has?'修改':'配置')+'</button></span></div>';
+}
+function counter(label, desc, key, min, max, step, unit){
+  var v = CFG[key];
+  return '<div class="field"><span class="f-t"><b>'+label+'</b><span>'+desc+'</span></span>'+
+    '<span class="f-c"><span class="counter">'+
+      '<button data-inc="'+key+'" data-by="-'+step+'" data-min="'+min+'" data-max="'+max+'" type="button" aria-label="减少"'+(v<=min?' disabled':'')+'>−</button>'+
+      '<span class="v">'+v+'</span><span class="u">'+unit+'</span>'+
+      '<button data-inc="'+key+'" data-by="'+step+'" data-min="'+min+'" data-max="'+max+'" type="button" aria-label="增加"'+(v>=max?' disabled':'')+'>+</button>'+
+    '</span></span></div>';
+}
+function status(v){ return '<span class="tag '+(v?'tag--ok':'tag--bad')+'">'+(v?'已配置':'未配置')+'</span>'; }
+
+/* ---------- 源管理表（视频 / IPTV / EPG） ---------- */
+function srcTable(kind, title, cap, list, limit){
+  var on = enabledSet(kind);
+  var show = list;
+  if(!SHOW_ALL[kind] && list.length > limit) show = list.slice(0, limit);
+  return '<div class="group"><div class="src-head"><b>'+title+'</b><span class="cap">'+cap+' · 已启用 '+on.length+'/'+limit+'</span>'+
+    '<span class="ops">'+
+      '<button class="btn" data-add="'+kind+'" type="button">新增</button>'+
+      '<button class="btn" data-import="'+kind+'" type="button">导入</button>'+
+      '<button class="btn" data-export="'+kind+'" type="button">导出</button>'+
+      (list.length>limit ? '<button class="btn" data-more="'+kind+'" type="button">'+(SHOW_ALL[kind]?'收起':'展开全部 '+list.length+' 个')+'</button>' : '')+
+    '</span></div>'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr>'+
+      '<th>名称</th><th>地址</th><th>启用</th><th class="num">延迟</th><th>操作</th></tr></thead><tbody>'+
+      show.map(function(x){
+        var isOn = on.indexOf(x[1])>=0;
+        return '<tr><td><b>'+KINO_E.esc(x[0])+'</b></td>'+
+          '<td class="u">'+KINO_E.esc(x[1])+'</td>'+
+          '<td><button class="tag'+(isOn?' tag--ok':'')+'" data-tog="'+kind+'" data-url="'+KINO_E.esc(x[1])+'" type="button">'+(isOn?'已启用':'已停用')+'</button></td>'+
+          '<td class="num">—</td>'+
+          '<td class="ops"><button data-edit="'+kind+'" data-url="'+KINO_E.esc(x[1])+'" type="button">编辑</button></td></tr>';
+      }).join('')+
+    '</tbody></table></div>'+
+    '<p class="note">延迟列为真实测速位（项目内 <code>formatLatency</code> 输出）；本 demo 不发起网络请求，故恒为「—」，不伪造毫秒值。'+
+    (kind==='video'?'视频源最多启用 6 个；':'IPTV / EPG 源各最多启用 3 个；')+'内置源可停用不可删除。</p></div>';
+}
+
+/* ---------- 各 tab 面板 ---------- */
+function paneAppearance(){
+  return '<div class="group"><div class="rail-title">主题模式<span class="en">THEME</span></div>'+
+      '<div class="seg" id="theme-seg">'+
+        [['light','浅色'],['dark','深色'],['system','跟随系统']].map(function(t){
+          return '<button class="'+(CFG.theme===t[0]?'on':'')+'" data-theme="'+t[0]+'" type="button">'+t[1]+'</button>';
+        }).join('')+'</div>'+
+      '<p class="note">浅色 / 深色 / 跟随系统自动切换。本 demo 的「跟随系统」读取 <code>prefers-color-scheme</code>；深色即报刊皮肤夜刊态。</p></div>'+
+    '<div class="group"><div class="rail-title">皮肤<span class="en">SKIN</span></div>'+
+      '<div class="skins">'+
+      [['default','默认','var(--paper)'],['cartoon','卡通','#f7e6c8'],['mechanical','机械','#d8dde3'],['retro','复古','#e0cfae']].map(function(s){
+        return '<button class="skin-btn'+(CFG.skin===s[0]?' on':'')+'" data-skin="'+s[0]+'" type="button">'+
+          '<span class="sw" style="background:'+s[2]+'"></span><span>'+s[1]+'</span></button>';
+      }).join('')+'</div>'+
+      '<p class="note">为页面叠加美术资源（项目内为 <code>/art-skins/{cartoon,mechanical,retro}/bg.svg</code>）。demo 目录不含该资源，此处仅呈现选中态，不伪造美术效果。</p></div>'+
+    '<div class="group"><div class="rail-title">TV 模式<span class="en">TV MODE</span></div>'+
+      sw('TV 模式','启用方向键 / 数字键遥控器导航','tvMode')+
+      (CFG.tvMode
+        ? '<div class="field"><span class="f-t"><b>TV 过扫描安全区</b><span>为电视边缘裁切预留安全边距（仅 TV 模式生效，0 = 铺满）</span></span>'+
+          '<span class="f-c"><span class="slider"><input type="range" min="0" max="20" step="5" value="'+CFG.tvOverscan+'" data-rng="tvOverscan" aria-label="TV 过扫描安全区">'+
+          '<span class="v">'+(CFG.tvOverscan===0?'铺满':CFG.tvOverscan+'%')+'</span></span></span></div>'
+        : '')+
+      (!CFG.tvMode
+        ? sel('界面缩放','大屏（≥1920px 且系统缩放 <150%）默认自动适配；可手动覆盖','uiScale',
+            [['0','自动'],['1','100%（不缩放）'],['1.1','110%'],['1.15','115%'],['1.3','130%'],['1.5','150%']])
+        : '')+
+      '<p class="note">TV 模式下显示「过扫描安全区」并隐藏「界面缩放」（TV 走独立 2× 曲线）——与 AppearanceTab 的条件渲染一致。</p>'+
+    '</div>';
+}
+function paneVideo(){
+  return '<div class="group"><div class="rail-title">TMDB<span class="en">TMDB</span></div>'+
+      '<div class="field"><span class="f-t"><b>TMDB Access Token '+status(CFG.tmdbAccessToken)+'</b>'+
+        '<span>'+(CFG.tmdbAccessToken?'已配置（首页 TMDB 发现可用）':'未配置（首页 TMDB 发现将不可用）')+'</span></span>'+
+        '<span class="f-c"><button class="btn" data-cfg="tmdbAccessToken" type="button">'+(CFG.tmdbAccessToken?'修改':'配置')+'</button></span></div>'+
+      sel('TMDB 语言','影响影片标题、简介等信息的显示语言','tmdbLanguage',
+        [['zh-CN','简体中文'],['zh-TW','繁體中文'],['en-US','English'],['ja-JP','日本語'],['ko-KR','한국어']])+
+    '</div>'+
+    '<div class="group"><div class="rail-title">视频源<span class="en">VIDEO SOURCE</span></div>'+
+      cfgRow('视频采集CORS 代理','默认: 不使用代理（跨域受限时配置代理地址）','corsProxy')+
+      sw('音量记忆','记住上次播放时的音量大小，下次打开播放器时自动恢复','rememberVolume')+
+      sw('自动翻译字幕','开启后自动调用百度翻译 API 将字幕翻译成目标语言（需先配置 API）','autoTranslate')+
+      '<div class="field"><span class="f-t"><b>百度翻译 API '+status(CFG.translationAppId && CFG.translationApiKey)+'</b>'+
+        '<span>配置百度翻译开放平台的 App ID 和密钥</span></span>'+
+        '<span class="f-c"><button class="btn" data-cfg="baidu" type="button">'+(CFG.translationAppId && CFG.translationApiKey?'修改':'配置')+'</button></span></div>'+
+    '</div>'+
+    srcTable('video','视频源','内置 28 个',VIDEO_SOURCES,MAX_ENABLED.video);
+}
+function panePlayback(){
+  return '<div class="group"><div class="rail-title">跳过片头<span class="en">SKIP INTRO</span></div>'+
+      sw('跳过片头','播放时自动跳过片头','skipIntro')+
+      counter('片头跳过时长','范围 10–300 秒，步进 10 秒','skipIntroDuration',10,300,10,'秒')+
+    '</div>'+
+    '<div class="group"><div class="rail-title">跳过片尾<span class="en">SKIP OUTRO</span></div>'+
+      sw('跳过片尾','播放接近结尾时自动跳转到下一集或结束播放','skipOutro')+
+      counter('片尾跳过时长','范围 10–300 秒，步进 10 秒','skipOutroDuration',10,300,10,'秒')+
+    '</div>'+
+    '<div class="group"><div class="rail-title">连播<span class="en">AUTO PLAY</span></div>'+
+      sw('自动连播','剧集播放结束后自动播放下一集','autoPlay')+
+    '</div>';
+}
+function paneIptv(){
+  return '<div class="group"><div class="rail-title">IPTV<span class="en">IPTV</span></div>'+
+      counter('节目单更新间隔','节目单数据的自动更新间隔（1–24 小时，建议 6–12）','epgUpdateInterval',1,24,1,'小时')+
+      cfgRow('流代理地址','未配置将可能无法播放（如 https://your-worker.workers.dev）','proxyUrl')+
+      cfgRow('代理规则','留空则所有地址都走代理；默认：内置直连白名单（咪咕/腾讯云/阿里 CDN 等直连）','proxyPattern')+
+      sw('自动刷新频道','定期自动更新频道列表','autoRefresh')+
+      counter('刷新间隔','频道列表的自动刷新间隔（1–24 小时，建议 6–24）','refreshIntervalHours',1,24,1,'小时')+
+    '</div>'+
+    srcTable('epg','节目单（EPG）源','内置 3 个',EPG_SOURCES,MAX_ENABLED.epg)+
+    srcTable('iptv','IPTV 源','内置 26 个（此处内联前 10 个）',IPTV_SOURCES,MAX_ENABLED.iptv);
+}
+function panePersonal(){
+  var favN = 0, hisN = 0;
+  try { favN = JSON.parse(localStorage.getItem('kino-demo-favs')||'[]').length; } catch(e) {}
+  try { hisN = JSON.parse(localStorage.getItem('kino-demo-history')||'[]').length; } catch(e) {}
+  var name = CFG.username.trim() || '未设置昵称';
+  return '<div class="group"><div class="rail-title">个人资料<span class="en">PROFILE</span></div>'+
+      '<button class="profile" id="profile-btn" type="button">'+
+        '<span class="avatar">'+(CFG.avatar?'<span class="kpic" data-raw="'+KINO_E.esc(CFG.avatar)+'" data-w="200" data-alt="头像"></span>':'')+
+          '<span class="avatar-fallback">'+KINO_E.esc(name.slice(0,1))+'</span></span>'+
+        '<span class="meta"><b>'+KINO_E.esc(name)+'</b><span>点击编辑头像与昵称</span></span>'+
+      '</button>'+
+    '</div>'+
+    '<div class="group"><div class="rail-title">配置管理<span class="en">BACKUP</span></div>'+
+      '<p class="card-desc">导入 / 导出「设置页内容」以及「我的收藏、观看历史记录」，支持一键导入恢复数据。</p>'+
+      '<div class="card-ops"><button class="btn btn--solid" id="import-btn" type="button">一键导入恢复数据</button></div>'+
+      '<div class="about-list">'+
+        '<div class="about-row" data-act="export"><span class="k">导出设置与数据</span><b>含收藏、观看历史</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-act="import"><span class="k">导入设置与数据</span><b>从备份文件恢复</b><span class="go">›</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="group"><div class="rail-title">恢复默认配置<span class="en">RESET</span></div>'+
+      '<p class="card-desc">将设置页内容全部恢复默认，并可清空收藏、历史记录等操作。</p>'+
+      '<div class="card-ops"><button class="btn btn--accent" data-confirm="all" type="button">一键全部恢复默认</button></div>'+
+      '<div class="about-list">'+
+        '<div class="about-row" data-confirm="reset"><span class="k">恢复设置默认</span><b>仅重置设置项</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-confirm="collections"><span class="k">清空我的收藏</span><b>共 '+favN+' 条 · 不可恢复</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-confirm="history"><span class="k">清空观看历史</span><b>共 '+hisN+' 条 · 不可恢复</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-confirm="cache"><span class="k">清除全部缓存</span><b>频道、节目单、首页数据等 · 下次访问自动重载</b><span class="go">›</span></div>'+
+      '</div>'+
+    '</div>';
+}
+function paneAbout(){
+  return '<div class="group"><div class="rail-title">关于<span class="en">ABOUT</span></div>'+
+      '<div class="about-list">'+
+        '<div class="about-row" data-act="version"><span class="k">版本</span>'+
+          '<b>v1.29.0 · Web · 正式版，点击检测更新</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-act="changelog"><span class="k">更新日志</span><b>查看历史版本更新记录</b><span class="go">›</span></div>'+
+        '<div class="about-row" data-act="hidden"><span class="k">KinoTV</span><b>聚合影视剧和IPTV资源</b><span class="go">›</span></div>'+
+      '</div>'+
+      '<p class="note">版本号取自 <code>package.json</code>（v1.29.0）；平台 / 通道按真实 AboutTab 的判定展示（Web · 正式版）。</p>'+
+    '</div>'+
+    '<div class="disclaimer"><h3>免责声明</h3>'+
+      '<p>本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。</p>'+
+    '</div>';
+}
+
+var PANES = { appearance:paneAppearance, video:paneVideo, playback:panePlayback, iptv:paneIptv, personal:panePersonal, about:paneAbout };
+
+/* ---------- toast / 弹窗 ---------- */
+var toastTimer = null;
+function toast(msg){
+  var old = document.querySelector('.toast'); if(old) old.remove();
+  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.remove(); }, 2200);
+}
+function modal(html){
+  var m = document.createElement('div');
+  m.className = 'modal';
+  m.innerHTML = '<div class="panel">'+html+'</div>';
+  m.addEventListener('click', function(e){ if(e.target===m) m.remove(); });
+  document.body.appendChild(m);
+  return m;
+}
+function confirmBox(title, desc, onOk){
+  var m = modal('<h3>'+KINO_E.esc(title)+'</h3><p class="desc">'+KINO_E.esc(desc)+'</p>'+
+    '<div class="acts"><button class="btn" data-no type="button">取消</button>'+
+    '<button class="btn btn--accent" data-yes type="button">确认</button></div>');
+  m.querySelector('[data-no]').addEventListener('click', function(){ m.remove(); });
+  m.querySelector('[data-yes]').addEventListener('click', function(){ m.remove(); onOk(); });
+}
+function inputBox(title, desc, fields, onOk){
+  var body = fields.map(function(f){
+    return '<div class="mf"><span class="lbl">'+KINO_E.esc(f.label)+'</span>'+
+      '<input class="input" data-f="'+f.key+'" type="'+(f.type||'text')+'" value="'+KINO_E.esc(f.value||'')+'" placeholder="'+KINO_E.esc(f.ph||'')+'"></div>';
+  }).join('');
+  var m = modal('<h3>'+KINO_E.esc(title)+'</h3><p class="desc">'+KINO_E.esc(desc)+'</p>'+body+
+    '<div class="acts"><button class="btn" data-no type="button">取消</button>'+
+    '<button class="btn btn--solid" data-yes type="button">保存</button></div>');
+  var first = m.querySelector('input'); if(first) first.focus();
+  m.querySelector('[data-no]').addEventListener('click', function(){ m.remove(); });
+  m.querySelector('[data-yes]').addEventListener('click', function(){
+    var out = {};
+    Array.prototype.forEach.call(m.querySelectorAll('input[data-f]'), function(i){ out[i.getAttribute('data-f')] = i.value.trim(); });
+    m.remove(); onOk(out);
+  });
+}
+
+/* ---------- 主题 / 缩放（三态：light / dark / system，与顶栏钮、真实 StickyHeader 同契约） ---------- */
+function applyTheme(){
+  var t = CFG.theme;
+  if(t==='system') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var v = t==='dark' ? 'night' : 'day';
+  document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('kino-demo-theme-mode', CFG.theme); } catch(e) {}
+  var ICON = { light:'☀', dark:'☾', system:'◐' };
+  var b = document.getElementById('theme-btn'); if(b) b.textContent = ICON[CFG.theme] || '☀';
+}
+function applyScale(){
+  var s = Number(CFG.uiScale) || 0;
+  document.body.style.fontSize = s ? (s*100)+'%' : '';
+}
+
+/* ---------- 备份（对齐 settingsBackup.ts：{version,exportedAt,settings,collections,history}） ---------- */
+function collectBackup(){
+  var favs = [], hist = [];
+  try { favs = JSON.parse(localStorage.getItem('kino-demo-favs')||'[]'); } catch(e) {}
+  try { hist = JSON.parse(localStorage.getItem('kino-demo-history')||'[]'); } catch(e) {}
+  return { version:1, exportedAt:new Date().toISOString(), settings:CFG,
+    collections:favs, history:hist };
+}
+function exportBackup(){
+  var data = collectBackup();
+  var blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'kinotv-backup-' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast('已导出设置与数据');
+}
+function applyBackup(obj){
+  if(!obj || typeof obj!=='object' || !obj.settings || typeof obj.settings!=='object') throw new Error('文件格式不正确：缺少设置数据');
+  Object.keys(DEF).forEach(function(k){ if(k in obj.settings) CFG[k] = obj.settings[k]; });
+  save();
+  if(Array.isArray(obj.collections)) try { localStorage.setItem('kino-demo-favs', JSON.stringify(obj.collections)); } catch(e) {}
+  if(Array.isArray(obj.history)) try { localStorage.setItem('kino-demo-history', JSON.stringify(obj.history)); } catch(e) {}
+}
+var importInput = null;
+function ensureImportInput(){
+  if(importInput) return importInput;
+  importInput = document.createElement('input');
+  importInput.type = 'file'; importInput.accept = 'application/json,.json'; importInput.style.display = 'none';
+  importInput.addEventListener('change', function(){
+    var f = importInput.files && importInput.files[0]; importInput.value = '';
+    if(!f) return;
+    f.text().then(function(txt){
+      try { applyBackup(JSON.parse(txt)); toast('已导入并恢复数据'); render(); }
+      catch(err){ toast('导入失败：' + (err.message||'文件解析错误')); }
+    }, function(){ toast('导入失败：文件读取错误'); });
+  });
+  document.body.appendChild(importInput);
+  return importInput;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  var t = TABS.filter(function(x){ return x.key===CUR; })[0];
+  document.getElementById('tab-title').textContent = t.label;
+  document.getElementById('tab-en').textContent = t.en;
+  document.getElementById('pane').innerHTML = PANES[CUR]();
+  document.getElementById('tabs').innerHTML = TABS.map(function(x){
+    return '<button class="rail-item'+(x.key===CUR?' on':'')+'" data-tab="'+x.key+'" type="button">'+
+      '<span class="ic">'+x.icon+'</span>'+x.label+'</button>';
+  }).join('');
+  KINO_E.bindPics(document.getElementById('pane'));
+}
+
+/* ---------- 交互 ---------- */
+var TAPS = 0, TAP_TIMER = null;
+var mqM = window.matchMedia('(max-width:767px)');
+function mEnter(){                                   /* 移动端：选完 tab 进入子页（真实 SettingsSubPage 同交互） */
+  if (mqM.matches) {
+    document.querySelector('.rail-aside').classList.add('sub');
+    window.scrollTo(0, 0);
+  }
+}
+function renderMMenu(){                              /* 菜单列表 = 资料卡（个人设置入口）+ 6 个 tab 项（SettingsMenuList 同序） */
+  var el = document.getElementById('m-menu');
+  var rows = TABS.map(function(x){
+    return '<button class="m-item" data-m="'+x.key+'" type="button">'+
+      '<span class="m-ic">'+x.icon+'</span><b>'+x.label+'</b><span class="en">'+x.en+'</span><span class="arr">›</span></button>';
+  }).join('');
+  var avatar = CFG.avatar ? '<img src="'+KINO_E.esc(CFG.avatar)+'" alt="">' : '☺';
+  el.innerHTML = '<div class="rail-title">设置<span class="en">SETTINGS</span></div>'+
+    '<button class="m-item" data-m="personal" type="button" style="padding-top:clamp(14px,2.6vh,20px)">'+
+      '<span class="m-ic">'+avatar+'</span><b>'+KINO_E.esc(CFG.username||'未设置昵称')+'</b>'+
+      '<span class="en">PERSONAL</span><span class="arr">›</span></button>'+rows;
+}
+function bind(){
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tab]'); if(!b) return;
+    CUR = b.getAttribute('data-tab'); render(); mEnter();
+  });
+  document.getElementById('m-menu').addEventListener('click', function(e){
+    var b = e.target.closest('[data-m]'); if(!b) return;
+    CUR = b.getAttribute('data-m'); render(); mEnter();
+  });
+  document.getElementById('m-back').addEventListener('click', function(){
+    document.querySelector('.rail-aside').classList.remove('sub');
+  });
+  document.getElementById('tab-q').addEventListener('input', function(){
+    var q = this.value.trim();
+    document.getElementById('tabs').innerHTML = TABS.filter(function(x){ return !q || x.label.indexOf(q)>=0; })
+      .map(function(x){ return '<button class="rail-item'+(x.key===CUR?' on':'')+'" data-tab="'+x.key+'" type="button"><span class="ic">'+x.icon+'</span>'+x.label+'</button>'; }).join('');
+  });
+
+  document.addEventListener('click', function(e){
+    var s = e.target.closest('[data-sw]');
+    if(s){ var k = s.getAttribute('data-sw'); CFG[k] = !CFG[k]; save();
+      s.querySelector('.sw').setAttribute('aria-checked', CFG[k]?'true':'false');
+      if(k==='tvMode') render();          /* TV 模式切换会增删「过扫描 / 界面缩放」两行 */
+      return; }
+
+    var th = e.target.closest('[data-theme]');
+    if(th){ CFG.theme = th.getAttribute('data-theme'); save(); applyTheme();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-theme]'), function(x){
+        x.classList.toggle('on', x.getAttribute('data-theme')===CFG.theme); });
+      return; }
+
+    var sk = e.target.closest('[data-skin]');
+    if(sk){ CFG.skin = sk.getAttribute('data-skin'); save();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-skin]'), function(x){
+        x.classList.toggle('on', x.getAttribute('data-skin')===CFG.skin); });
+      toast('皮肤已切换为「'+sk.textContent.trim()+'」（美术资源在本 demo 不可用）');
+      return; }
+
+    var inc = e.target.closest('[data-inc]');
+    if(inc){
+      var key = inc.getAttribute('data-inc'), by = parseInt(inc.getAttribute('data-by'),10);
+      var min = parseInt(inc.getAttribute('data-min'),10), max = parseInt(inc.getAttribute('data-max'),10);
+      var v = Math.min(max, Math.max(min, (parseInt(CFG[key],10)||0) + by));
+      CFG[key] = v; save(); render(); return; }
+
+    var tog = e.target.closest('[data-tog]');
+    if(tog){
+      var kind = tog.getAttribute('data-tog'), url = tog.getAttribute('data-url');
+      var set = enabledSet(kind), i = set.indexOf(url);
+      if(i>=0){
+        if(set.length<=1){ toast('至少保留一个启用源'); return; }
+        set.splice(i,1);
+      } else {
+        if(set.length>=MAX_ENABLED[kind]){ toast('最多启用 '+MAX_ENABLED[kind]+' 个'+kind+'源'); return; }
+        set.push(url);
+      }
+      render(); return; }
+
+    var more = e.target.closest('[data-more]');
+    if(more){ var kd = more.getAttribute('data-more'); SHOW_ALL[kd] = !SHOW_ALL[kd]; render(); return; }
+
+    var add = e.target.closest('[data-add]');
+    if(add){ toast('新增自定义源（真实项目打开 SourceModal：名称 / 地址 / 详情 / 超时 / 重试）'); return; }
+    var ed = e.target.closest('[data-edit]');
+    if(ed){ toast('编辑源（真实项目打开 SourceModal，内置源可停用不可删除）'); return; }
+    var im = e.target.closest('[data-import]');
+    if(im){ toast('源导入支持 文件 / URL / 文本 三种方式（本 demo 不发起网络请求）'); return; }
+    var ex = e.target.closest('[data-export]');
+    if(ex){
+      var kk = ex.getAttribute('data-export');
+      var list = kk==='video'?VIDEO_SOURCES:kk==='iptv'?IPTV_SOURCES:EPG_SOURCES;
+      var blob = new Blob([JSON.stringify(list.map(function(x){ return {name:x[0], url:x[1]}; }),null,2)], {type:'application/json'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'kino-'+kk+'-sources.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      toast('已导出 '+list.length+' 个'+kk+'源'); return; }
+
+    var cfg = e.target.closest('[data-cfg]');
+    if(cfg){
+      var key2 = cfg.getAttribute('data-cfg');
+      if(key2==='baidu'){
+        inputBox('百度翻译 API','配置百度翻译开放平台的 App ID 和密钥，用于自动翻译字幕功能。',
+          [{key:'translationAppId',label:'App ID',value:CFG.translationAppId},{key:'translationApiKey',label:'密钥',value:CFG.translationApiKey,type:'password'}],
+          function(v){ CFG.translationAppId = v.translationAppId||''; CFG.translationApiKey = v.translationApiKey||''; save(); render(); toast('已保存'); });
+      } else {
+        var tips = {
+          tmdbAccessToken:'配置后首页 TMDB 发现可用（真实项目内该字段加密存储）',
+          corsProxy:'CORS 代理用于绕过浏览器跨域限制，留空则直连。',
+          proxyUrl:'IPTV 播放依赖此代理绕过跨域限制，格式如 https://your-worker.workers.dev',
+          proxyPattern:'匹配正则的 URL 不走代理，其余走代理；留空则所有地址都走代理。',
+        };
+        inputBox(cfg.textContent.trim()==='修改' ? '修改配置' : '配置', tips[key2]||'',
+          [{key:key2,label:key2,value:CFG[key2],ph:'https://…'}],
+          function(v){ CFG[key2] = v[key2]||''; save(); render(); toast('已保存'); });
+      }
+      return; }
+
+    if(e.target.closest('#profile-btn')){
+      inputBox('编辑个人资料','设置昵称与头像地址（真实项目内点头像打开 ProfileEditModal）。',
+        [{key:'username',label:'昵称',value:CFG.username,ph:'未设置昵称'},{key:'avatar',label:'头像 URL',value:CFG.avatar,ph:'https://…'}],
+        function(v){ CFG.username = v.username||''; CFG.avatar = v.avatar||''; save(); render(); toast('已保存'); });
+      return; }
+
+    var act = e.target.closest('[data-act]');
+    if(act){
+      var a2 = act.getAttribute('data-act');
+      if(a2==='export'){ exportBackup(); return; }
+      if(a2==='import'){ ensureImportInput().click(); return; }
+      if(a2==='version'){ toast('当前 v1.29.0（demo 不发起更新检测）'); return; }
+      if(a2==='changelog'){ location.href = '../CHANGELOG.md'; return; }
+      if(a2==='hidden'){
+        /* 隐藏入口：连续点击 3 次（真实项目进入 /proxy-setup 一键配置代理页） */
+        TAPS++; clearTimeout(TAP_TIMER); TAP_TIMER = setTimeout(function(){ TAPS = 0; }, 3000);
+        if(TAPS < 3){ toast('再点击 ' + (3-TAPS) + ' 次进入一键配置代理页'); }
+        else { TAPS = 0; toast('真实项目跳转 /proxy-setup；本 demo 打开「源检测」页'); location.href = 'e-source-checker.html'; }
+        return; }
+    }
+
+    var cf = e.target.closest('[data-confirm]');
+    if(cf){
+      var kind2 = cf.getAttribute('data-confirm');
+      var favN = 0, hisN = 0;
+      try { favN = JSON.parse(localStorage.getItem('kino-demo-favs')||'[]').length; } catch(e) {}
+      try { hisN = JSON.parse(localStorage.getItem('kino-demo-history')||'[]').length; } catch(e) {}
+      var T = { all:'恢复默认并清空数据', reset:'恢复设置默认', collections:'清空我的收藏', history:'清空观看历史', cache:'清除全部缓存' };
+      var D = {
+        all:'将设置页内容全部恢复默认，并清空收藏与观看历史，此操作不可恢复。',
+        reset:'仅重置设置项，收藏与观看历史不受影响。',
+        collections:'将清空全部 '+favN+' 条收藏，此操作不可恢复。',
+        history:'将清空全部 '+hisN+' 条观看历史，此操作不可恢复。',
+        cache:'将清除频道列表、节目单、首页与类目数据、源检测结果等缓存，清除后将在下次访问时自动重新加载。不影响设置、收藏、历史等个人数据。',
+      };
+      confirmBox(T[kind2], D[kind2], function(){
+        if(kind2==='reset' || kind2==='all'){ CFG = Object.assign({}, DEF); save(); applyTheme(); applyScale(); }
+        if(kind2==='collections' || kind2==='all'){ try { localStorage.setItem('kino-demo-favs','[]'); } catch(e) {} }
+        if(kind2==='history' || kind2==='all'){ try { localStorage.setItem('kino-demo-history','[]'); } catch(e) {} }
+        if(kind2==='cache'){
+          try { localStorage.removeItem('kino-demo-hist-seeded'); localStorage.removeItem('kino-demo-coll-seeded'); } catch(e) {}
+        }
+        render();
+        toast({reset:'设置已恢复默认',collections:'收藏已清空',history:'观看历史已清空',cache:'已清除全部缓存',all:'已恢复默认并清空收藏、历史'}[kind2]);
+      });
+      return; }
+  });
+
+  document.addEventListener('change', function(e){
+    var s2 = e.target.closest('[data-sel]');
+    if(s2){ CFG[s2.getAttribute('data-sel')] = s2.value; save();
+      if(s2.getAttribute('data-sel')==='uiScale') applyScale();
+      return; }
+    var r = e.target.closest('[data-rng]');
+    if(r){ CFG[r.getAttribute('data-rng')] = parseInt(r.value,10); save(); render(); return; }
+  });
+}
+
+KINO_E.boot({ key:'settings', title:'设置' }).then(function(){
+  applyTheme(); applyScale();
+  render(); renderMMenu(); bind();
+  if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if(CFG.theme==='system') applyTheme(); });
+});
+</script>
+</body>
+</html>

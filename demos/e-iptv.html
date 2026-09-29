@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · IPTV — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* IPTV 页专属：左栏（频道分类 + 更多台勾选）+ 内容条 + 分节频道网格
+   结构对齐 src/pages/IPTV/index.tsx 桌面 rail 形态（iptv-rail / iptv-content-bar / iptv-sec）。 */
+.chan-grid{display:grid;grid-template-columns:repeat(var(--iptv-page-cols,2),minmax(0,1fr));gap:var(--gap)}
+/* 内容条（对齐 iptv-content-bar：计数 + 刷新） */
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:clamp(8px,1.2vh,12px);
+  border-bottom:1px solid var(--rule);margin-bottom:clamp(12px,1.8vh,20px);font-size:clamp(12px,.78vw,14px);color:var(--ink-2)}
+.bar .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
+.bar .refresh{border:1px solid var(--rule);padding:4px 14px;color:var(--ink-2)}
+.bar .refresh:hover{color:var(--ink);border-color:var(--ink)}
+/* 频道卡（对齐 IPTVChannelCard：3:2 封面 + LIVE 角标 + 源角标 + 分组角标 + 标题） */
+.chan-card{cursor:pointer;min-width:0}
+.chan-card .cov{position:relative;aspect-ratio:3/2;overflow:hidden;border-radius:clamp(4px,.4vw,7px);background:var(--fill)}
+.chan-card .cov .logo-fb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;color:var(--ink-3)}
+.chan-card .cov .logo-fb b{font-family:var(--serif);font-size:clamp(15px,1.3vw,22px);font-weight:900;letter-spacing:.04em}
+.chan-card .cov .logo-fb b em{color:var(--accent);font-style:normal}
+.chan-card .cov .logo-fb span{font-size:10.5px}
+.chan-card .cov .live{position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  color:#fff;background:rgba(22,163,110,.9);border-radius:4px;padding:2px 8px}
+.chan-card .cov .badge-src{position:absolute;right:8px;top:8px;z-index:3;font-size:10.5px;font-weight:600;
+  color:#fff;background:#7c5cd6;border-radius:4px;padding:2px 8px}   /* 「更多台」来源角标（紫） */
+.chan-card .cov .grp{position:absolute;left:8px;bottom:8px;z-index:3;font-size:10.5px;color:#fff;
+  background:rgba(0,0,0,.55);border-radius:4px;padding:2px 8px}
+.chan-card .b-tr{position:absolute;right:6px;bottom:6px;z-index:4;width:26px;height:26px;border-radius:50%;
+  background:rgba(0,0,0,.45);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:.85}
+.chan-card .b-tr.on{color:#ff5a6e}
+@media (hover:none){ .chan-card .b-tr{opacity:1} }   /* 触屏收藏心常驻 */
+.chan-card b{display:block;font-size:clamp(12.5px,.82vw,15px);font-weight:700;margin-top:clamp(6px,.9vh,9px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 「更多台」勾选项（对齐 iptv-rail__item + iptv-rail__box） */
+.src-item{display:flex;align-items:center;gap:8px}
+.src-item .box{width:14px;height:14px;border:1px solid var(--ink-3);border-radius:3px;flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:.15s}
+.src-item.on .box{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.src-item .cnt{margin-left:auto;font-size:clamp(10.5px,.7vw,12px);color:var(--ink-3)}
+.rail-sep{border-top:1px solid var(--rule);margin:clamp(10px,1.4vh,16px) 0}
+/* ── ≤767 移动端（口径同 IPTV.css:256：工具条换行；卡片触屏收藏心常驻） ── */
+@media (width<=767px){
+  .chan-grid{gap:clamp(10px,1.6vh,14px) var(--gap)}
+  .bar{font-size:clamp(11.5px,.78vw,13px)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <section class="sec" style="margin-top:clamp(14px,2vh,24px)">
+    <div class="sec-cap">
+      <h2>IPTV 直播</h2>
+      <span class="sub" id="sub">频道为演示数据（本 demo 不请求真实 M3U）</span>
+      <span class="more" id="count"></span>
+    </div>
+  </section>
+
+  <div class="rail-aside">
+    <aside class="rail">
+      <div class="rail-group">
+        <div class="rail-search"><input id="q" type="search" placeholder="搜索频道…"><span style="color:var(--ink-3);font-size:12px">⌕</span></div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-title">频道分类<span class="en">CATEGORIES</span></div>
+        <div class="rail-list" id="cats"></div>
+      </div>
+      <div class="rail-sep"></div>
+      <div class="rail-group">
+        <div class="rail-title">更多台<span class="en">SOURCES</span><span style="margin-left:auto;font-size:10.5px;color:var(--ink-3)">演示：源 1–3</span></div>
+        <div class="rail-list" id="srcs"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="bar">
+        <span id="count-in">共 0 个频道</span>
+        <span class="sp"><button class="refresh" id="reload" type="button">刷新</button></span>
+      </div>
+      <div id="list"></div>
+      <div class="empty" id="empty" hidden><b>暂无频道</b><span>尝试切换分类或清空搜索关键词</span></div>
+    </main>
+  </div>
+
+  <footer>
+    <span>KinoTV — Demo E · IPTV 列表页 · 报刊排版式；左栏 = 固定文本「频道分类」（全部 / 央视 CCTV / 主流卫视 / 地方卫视 / 港澳台 / 体育 / 影视 / 少儿 / 新闻 / 我的收藏）+「更多台」源勾选（categories.ts 同款归类规则）；主区 = 内容条 + 分节频道网格（IPTVChannelCard 同构：3:2 封面 + LIVE / 源 / 分组角标）；节目单（EPG）在播放页内，不在本页；频道名为演示数据，收藏真实写入 localStorage</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 频道为静态演示数据（本 demo 不请求真实 M3U），已按 src/pages/IPTV/categories.ts 的固定文本
+   规则归类（判定顺序 CCTV → 新闻 → 港澳台 → 体育 → 影视 → 少儿 → 卫视（主流/地方）→ 其他）；
+   来源 = 源 1–3（真实 UI 用 sourceNames?.[i] || 「源 ${i+1}」，此处取默认名）；收藏、搜索、
+   分类切换、源勾选为真实前端行为。EPG 节目单属播放页能力，本页不渲染。 */
+var CHANNELS = [
+  ['CCTV-1 综合',1],['CCTV-2 财经',2],['CCTV-3 综艺',3],
+  ['CCTV-5 体育',5],['CCTV-6 电影',6],['CCTV-8 电视剧',8],
+  ['CCTV-13 新闻',13],['CCTV-14 少儿',14],
+  ['湖南卫视',21],['浙江卫视',22],['东方卫视',23],
+  ['江苏卫视',24],['北京卫视',25],['广东卫视',26],
+  ['深圳卫视',27],['成都电视台',31],['杭州电视台',32],
+  ['凤凰卫视中文台',41],['中国香港无线台',42],['中国澳门澳亚台',43],
+  ['NHK 综合',51],['BBC One',52],['CNN 国际',53],
+  ['CHC 动作电影',61],['CHC 家庭影院',62],['风云音乐',63],
+].map(function(c,i){ return { name:c[0], no:c[1], src:(i%3)+1 }; });
+
+/* 固定文本分类（categories.ts IPTV_CATEGORIES 同序同文案） */
+var CATS = [
+  ['__all__','全部频道'],['cctv','央视 CCTV'],['mainstream','主流卫视'],['local','地方卫视'],
+  ['hmt','港澳台'],['sports','体育'],['movie','影视'],['kids','少儿'],['news','新闻'],
+  ['__fav__','我的收藏'],
+];
+var MAINSTREAM = ['湖南','浙江','江苏','东方','北京','广东','山东','深圳'];
+function catOf(name){
+  if(/^CCTV/i.test(name)) return 'cctv';
+  if(/新闻|资讯/.test(name)) return 'news';
+  if(/凤凰|无线|澳亚|翡翠|港澳/.test(name)) return 'hmt';
+  if(/体育|赛事/.test(name)) return 'sports';
+  if(/电影|影院|影视/.test(name)) return 'movie';
+  if(/少儿|动画|卡通/.test(name)) return 'kids';
+  for(var i=0;i<MAINSTREAM.length;i++){ if(name.indexOf(MAINSTREAM[i]+'卫视')===0) return 'mainstream'; }
+  if(/卫视$/.test(name)) return 'local';
+  return '__other__';
+}
+CHANNELS.forEach(function(c){ c.cat = catOf(c.name); });
+
+var S = { cat:'__all__', q:'', srcs:{1:true,2:true,3:true}, cur:null };
+
+function enabled(){
+  return CHANNELS.filter(function(c){ return S.srcs[c.src]; });
+}
+function list(){
+  return enabled().filter(function(c){
+    if(S.cat==='__fav__') return KINO_E.fav.is('iptv-'+c.no);
+    if(S.cat!=='__all__' && S.cat!=='__other__' && c.cat!==S.cat) return false;
+    if(S.cat==='__other__' && CATS.some(function(k){ return k[0]===c.cat; })) return false;
+    if(S.q && c.name.indexOf(S.q)<0) return false;
+    return true;
+  });
+}
+
+function cardHTML(c){
+  var fav = KINO_E.fav.is('iptv-'+c.no);
+  return '<div class="chan-card'+(S.cur===c.no?' on':'')+'" data-ch="'+c.no+'">'+
+    '<div class="cov">'+
+      '<span class="logo-fb"><b>kino<em>TV</em></b><span>台标占位</span></span>'+
+      '<span class="live">● LIVE</span>'+
+      '<span class="badge-src">源 '+c.src+'</span>'+
+      '<span class="grp">'+KINO_E.esc(labelOf(c.cat))+'</span>'+
+      '<button class="b-tr'+(fav?' on':'')+'" data-fav="iptv-'+c.no+'" type="button" aria-label="收藏">'+(fav?'♥':'♡')+'</button>'+
+    '</div>'+
+    '<b>'+KINO_E.esc(c.name)+'</b>'+
+  '</div>';
+}
+function labelOf(key){
+  for(var i=0;i<CATS.length;i++){ if(CATS[i][0]===key) return CATS[i][1]; }
+  return '其他';
+}
+
+function render(){
+  /* 左栏：频道分类（计数 = 启用源内频道） */
+  var en = enabled();
+  document.getElementById('cats').innerHTML = CATS.map(function(k){
+    var n = k[0]==='__all__' ? en.length
+      : k[0]==='__fav__' ? en.filter(function(c){ return KINO_E.fav.is('iptv-'+c.no); }).length
+      : k[0]==='__other__' ? en.filter(function(c){ return !CATS.some(function(x){ return x[0]===c.cat; }); }).length
+      : en.filter(function(c){ return c.cat===k[0]; }).length;
+    return '<button class="rail-item'+(S.cat===k[0]?' on':'')+'" data-cat="'+k[0]+'" type="button">'+
+      '<span class="ic">▸</span>'+k[1]+'<span class="cnt">'+n+'</span></button>';
+  }).join('');
+
+  /* 左栏：更多台（源勾选，计数 = 该源频道总数） */
+  document.getElementById('srcs').innerHTML = [1,2,3].map(function(i){
+    var n = CHANNELS.filter(function(c){ return c.src===i; }).length;
+    return '<button class="rail-item src-item'+(S.srcs[i]?' on':'')+'" data-src="'+i+'" type="button">'+
+      '<span class="box">✓</span>源 '+i+'<span class="cnt">+'+n+'</span></button>';
+  }).join('');
+
+  /* 内容条 + 分节网格 */
+  var l = list();
+  document.getElementById('count-in').textContent = '共 '+l.length+' 个频道';
+  document.getElementById('count').textContent = '共 '+l.length+' 个频道';
+  document.getElementById('empty').hidden = l.length>0;
+
+  var sections;
+  if(S.cat==='__all__'){
+    sections = CATS.filter(function(k){ return k[0]!=='__all__' && k[0]!=='__fav__'; })
+      .map(function(k){ return { title:k[1], items:l.filter(function(c){ return c.cat===k[0]; }) }; })
+      .filter(function(s){ return s.items.length; });
+    var others = l.filter(function(c){ return !CATS.some(function(k){ return k[0]===c.cat; }); });
+    if(others.length) sections.push({ title:'其他', items:others });
+  } else {
+    sections = [{ title:labelOf(S.cat)==='我的收藏'?'我的收藏':(S.cat==='__other__'?'其他':labelOf(S.cat)), items:l }];
+  }
+  document.getElementById('list').innerHTML = sections.map(function(s){
+    return '<div class="group-head"><b>'+KINO_E.esc(s.title)+'</b><span>'+s.items.length+' 个频道</span></div>'+
+      '<div class="chan-grid">'+s.items.map(cardHTML).join('')+'</div>';
+  }).join('');
+}
+
+function bind(){
+  document.getElementById('cats').addEventListener('click', function(e){
+    var b = e.target.closest('[data-cat]'); if(!b) return;
+    S.cat = b.getAttribute('data-cat'); render();
+  });
+  document.getElementById('srcs').addEventListener('click', function(e){
+    var b = e.target.closest('[data-src]'); if(!b) return;
+    var i = +b.getAttribute('data-src');
+    var on = Object.keys(S.srcs).filter(function(k){ return S.srcs[k]; }).length;
+    if(on===1 && S.srcs[i]) { render(); return; }   /* 至少保留一个源 */
+    S.srcs[i] = !S.srcs[i]; render();
+  });
+  document.getElementById('q').addEventListener('input', function(){ S.q = this.value.trim(); render(); });
+  document.getElementById('reload').addEventListener('click', function(){ render(); });
+  document.getElementById('list').addEventListener('click', function(e){
+    var f = e.target.closest('[data-fav]');
+    if(f){
+      e.stopPropagation();
+      var on = KINO_E.fav.toggle(f.getAttribute('data-fav'));
+      f.classList.toggle('on', on); f.textContent = on?'♥':'♡';
+      return;
+    }
+    var c = e.target.closest('[data-ch]');
+    if(c){ location.href = 'e-iptv-player.html?ch='+encodeURIComponent(c.getAttribute('data-ch')); }
+  });
+}
+
+KINO_E.boot({ key:'iptv', title:'IPTV 直播' }).then(function(){ render(); bind(); });
+</script>
+</body>
+</html>

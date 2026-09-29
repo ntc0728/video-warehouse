@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页 UI 布局调整建议 · Demo v2（2026-09-29）</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-hover: #f0f2f5;
+    --text: #1a1d21;
+    --text-2: #5a6270;
+    --text-3: #98a0ad;
+    --border: #e5e8ec;
+    --accent: #e8590c;
+    --radius: 8px;
+  }
+  html[data-theme="dark"] {
+    --bg: #101214;
+    --surface: #1a1d21;
+    --surface-hover: #23262b;
+    --text: #e8eaed;
+    --text-2: #a8b0ba;
+    --text-3: #6b7280;
+    --border: #2a2e33;
+    --accent: #ff7a33;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px;
+    transition: background .2s, color .2s;
+  }
+
+  /* ═══ Demo 工具条（非页面内容） ═══ */
+  .demo-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  }
+  .demo-bar h1 { font-size: 14px; font-weight: 700; }
+  .demo-bar .group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .demo-bar label { font-size: 12px; color: var(--text-2); display: flex; gap: 5px; align-items: center; cursor: pointer; user-select: none; }
+  .demo-bar input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+  .demo-bar input[type="range"] { width: 140px; accent-color: var(--accent); }
+  .demo-bar .vw-label { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 52px; }
+  .demo-bar button {
+    border: 1px solid var(--border); background: var(--surface-hover); color: var(--text);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .demo-bar button:hover { border-color: var(--accent); }
+  .demo-note {
+    padding: 8px 16px; font-size: 12px; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--surface); line-height: 1.7;
+  }
+  .demo-note b { color: var(--text-2); font-weight: 600; }
+
+  /* ═══ 舞台：模拟视口 ═══ */
+  #stage-wrap { overflow-x: auto; padding: 16px 0 40px; }
+  #stage {
+    width: 1440px; margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-height: 900px;
+    transition: width .15s ease;
+    overflow: hidden;
+  }
+
+  /* ═══ App 顶栏（示意；原 CQA chips 已随左栏合并下移，顶栏不再有 chip） ═══ */
+  .app-header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 16px; height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+  }
+  .app-header .logo { font-weight: 800; font-size: 16px; color: var(--accent); }
+  .app-header .nav { display: flex; gap: 4px; }
+  .app-header .nav span {
+    padding: 5px 12px; border-radius: 999px; font-size: 13px; color: var(--text-2); cursor: pointer;
+  }
+  .app-header .nav span.on { background: var(--surface-hover); color: var(--text); }
+  /* ── 搜索框：对齐原项目 SearchBox（icon+input+clear 左半胶囊 + 主色 submit 右半胶囊） ── */
+  .sb-field {
+    display: flex; align-items: stretch; height: 38px;
+    width: 100%; max-width: 440px; margin-left: auto; flex: 1 1 auto; min-width: 160px;
+  }
+  .sb-box {
+    flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border); border-right: none;
+    border-radius: 999px 0 0 999px;
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    transition: border-color .15s;
+  }
+  .sb-box:focus-within { border-color: var(--accent); }
+  .sb-box > svg { flex-shrink: 0; color: var(--text-3); }
+  .sb-box:focus-within > svg { color: var(--accent); }
+  .sb-box input {
+    flex: 1 1 0; width: 0; min-width: 0; height: 100%;
+    border: none; background: transparent; outline: none;
+    color: var(--text); font-size: 13px; font-family: inherit;
+  }
+  .sb-box input::placeholder { color: var(--text-3); }
+  .sb-clear {
+    flex-shrink: 0; width: 20px; height: 20px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 50%; background: transparent;
+    color: var(--text-3); cursor: pointer;
+  }
+  .sb-clear:hover { background: var(--surface-hover); color: var(--text); }
+  .sb-clear[data-empty="true"] { opacity: 0; pointer-events: none; }
+  .sb-submit {
+    flex-shrink: 0; padding: 0 16px;
+    border: 1px solid var(--accent); border-radius: 0 999px 999px 0;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+    transition: opacity .1s;
+  }
+  .sb-submit:hover:not(:disabled) { opacity: .92; }
+  .sb-submit:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ── 搜索框右侧图标组：设置 + 主题切换（对齐 sticky-header__theme-btn） ── */
+  .hdr-icons { display: flex; gap: 4px; margin-left: 8px; flex-shrink: 0; }
+  .hdr-icon-btn {
+    width: 36px; height: 36px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 8px; background: transparent;
+    color: var(--text-2); cursor: pointer;
+    transition: background .1s, color .1s;
+  }
+  .hdr-icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+  .page { padding: 12px 24px 40px; max-width: 2200px; margin: 0 auto; }
+
+  /* ═══ 顶部过渡带 ═══ */
+  .topstrip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 6px 12px; margin-bottom: 12px;
+    font-size: 12px; color: var(--text-2);
+  }
+  .topstrip .sep { width: 1px; height: 12px; background: var(--border); }
+  .topstrip b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .topstrip .pill {
+    padding: 2px 10px; border-radius: 999px; background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  /* ═══ Hero 区（banner + 右卡 + 换一换） ═══ */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56%;
+    gap: 10px;
+  }
+  #stage[data-w="mid"] .hero { grid-template-columns: minmax(0, 1fr) 48%; }
+  .banner {
+    position: relative; border-radius: 10px; overflow: hidden;
+    background:
+      radial-gradient(120% 140% at 85% 10%, rgba(232,89,12,.35), transparent 55%),
+      radial-gradient(100% 120% at 10% 90%, rgba(64,86,161,.5), transparent 60%),
+      linear-gradient(135deg, #2b3140, #3d4457);
+  }
+  html[data-theme="dark"] .banner {
+    background:
+      radial-gradient(120% 140% at 85% 10%, rgba(255,122,51,.28), transparent 55%),
+      radial-gradient(100% 120% at 10% 90%, rgba(47,64,120,.55), transparent 60%),
+      linear-gradient(135deg, #191d26, #262c3a);
+  }
+  #stage[data-w="wide"] .banner { aspect-ratio: 16 / 7.4; }
+  #stage[data-w="mid"] .banner { aspect-ratio: 16 / 8.6; }
+  .banner-content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 20px 22px; gap: 8px; max-width: 62%;
+    color: #fff;
+    background: linear-gradient(90deg, rgba(0,0,0,.42), transparent 70%);
+  }
+  #stage.opt-hero-grad .banner-content {
+    background: linear-gradient(0deg, rgba(0,0,0,.68) 0%, rgba(0,0,0,.28) 45%, transparent 75%);
+  }
+  .banner-content .b-title { font-size: 22px; font-weight: 800; }
+  .banner-content .b-meta { font-size: 12px; opacity: .85; display: flex; gap: 10px; }
+  .banner-content .b-desc {
+    font-size: 12px; opacity: .75; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .banner-chips { display: none; gap: 6px; }
+  #stage.opt-hero-grad .banner-chips { display: flex; }
+  .banner-chips span {
+    font-size: 11px; padding: 2px 9px; border-radius: 999px;
+    background: rgba(255,255,255,.16); color: #fff; backdrop-filter: blur(4px);
+  }
+  .banner-chips span.score { color: #ffd28a; font-weight: 700; }
+
+  .hero-right { display: flex; gap: 8px; min-width: 0; }
+  .hero-cards {
+    flex: 1 1 0; min-width: 0;
+    display: grid; gap: 8px;
+  }
+  #stage[data-w="wide"] .hero-cards { grid-template-columns: repeat(3, 1fr); }
+  #stage[data-w="mid"] .hero-cards { grid-template-columns: repeat(2, 1fr); }
+  .hero-card { cursor: pointer; }
+  .hero-card .cover {
+    aspect-ratio: 16 / 9; border-radius: 8px;
+    transition: transform .15s ease;
+  }
+  .hero-card:hover .cover { transform: translateY(-2px); }
+  .hero-card .t {
+    margin-top: 6px; font-size: 12px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shuffle {
+    flex: 0 0 34px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text-2);
+    writing-mode: vertical-rl; letter-spacing: 4px;
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color .15s, border-color .15s;
+  }
+  .shuffle:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ═══ 内容行 ═══ */
+  .rows { margin-top: 14px; }
+  .row { padding: 10px 0 6px; }
+  .row-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 10px; padding: 0 2px;
+  }
+  .row-head h2 { font-size: 16px; font-weight: 700; }
+  .row-more {
+    font-size: 12px; color: var(--text-3); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 3px;
+    border: none; background: none; font-family: inherit;
+  }
+  .row-more:hover { color: var(--accent); }
+  #stage:not(.opt-row-more) .row-more { visibility: hidden; }
+  .row-scroll {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .card { flex: 0 0 150px; cursor: pointer; }
+  .card .poster {
+    width: 100%; aspect-ratio: 2 / 3; border-radius: 8px;
+    transition: transform .15s ease;
+    position: relative;
+  }
+  .card:hover .poster { transform: translateY(-3px); }
+  .card .t {
+    margin-top: 6px; font-size: 12px; color: var(--text-2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .card--land { flex-basis: 220px; }
+  .card--land .poster { aspect-ratio: 16 / 9; }
+  /* 继续观看：进度条 */
+  .card .progress {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: rgba(0,0,0,.35);
+  }
+  .card .progress i { display: block; height: 100%; background: var(--accent); }
+
+  /* ═══ CQA：chip 行 + 常驻面板（原左栏合并体，位于继续观看下方） ═══ */
+  .cqa-block { margin-top: 12px; padding: 4px 0 6px; }
+  .cqa-chips {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    padding: 2px 2px 12px;
+  }
+  .cqa-chip {
+    display: inline-flex; gap: 7px; align-items: center;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-2); font-size: 13px; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s, transform .15s;
+    user-select: none;
+  }
+  .cqa-chip .dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+  .cqa-chip:hover { color: var(--text); border-color: var(--text-3); transform: translateY(-1px); }
+  .cqa-chip.on {
+    background: var(--surface-hover); color: var(--text);
+    border-color: var(--text); font-weight: 700;
+  }
+  /* 面板：常驻显示，不再 hover 弹出 */
+  /* 布局对齐真实 cqa-panel（用户 2026-09-29 截图口径）：头部行 + 子类型 chips +
+     3 列 × 3 行列向排名卡（grid-auto-flow:column）+ 右下分页 */
+  .cqa-panel { min-height: 380px; }
+  .cqa-panel-head {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 0 2px 10px;
+  }
+  .cqa-panel-head h3 { font-size: 15px; font-weight: 700; }
+  .cqa-panel-head .heat { font-size: 13px; color: var(--text); display: inline-flex; gap: 3px; align-items: center; }
+  .cqa-panel-head .heat b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .cqa-panel-head .sub { font-size: 12px; color: var(--text-3); }
+  .cqa-info-tip {
+    margin-left: auto; width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: 50%;
+    color: var(--text-3); font-size: 10px; font-style: normal;
+    cursor: help; align-self: center;
+  }
+  /* 子类型 chips：选中 = 深色实心胶囊（对齐截图） */
+  .cqa-genres {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 0 2px 14px;
+  }
+  .cqa-genre {
+    padding: 3px 12px; border-radius: 999px;
+    border: none; background: none;
+    color: var(--text-2); font-size: 12px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    transition: background .15s, color .15s;
+  }
+  .cqa-genre:hover { color: var(--text); }
+  .cqa-genre.on { background: var(--text); color: var(--bg); font-weight: 700; }
+  /* 3 列 × 3 行，列向排名：DOM 按名次 1..9 输出，auto-flow:column 竖排 */
+  .cqa-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    gap: 10px;
+  }
+  /* 排名卡（截图口径，适当放大）：名次 + 16:9 封面 + 标题/年份评分/热度 */
+  .cqa-item {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .15s, transform .15s;
+  }
+  .cqa-item:hover { border-color: var(--text-3); transform: translateY(-1px); }
+  .cqa-item .rk {
+    flex: 0 0 22px; text-align: center;
+    font-size: 18px; font-weight: 800; font-style: italic;
+    color: var(--text-3); font-variant-numeric: tabular-nums;
+  }
+  .cqa-item .cv {
+    flex: 0 0 200px; aspect-ratio: 16 / 9; border-radius: 6px;
+  }
+  /* 1024–1280：横版封面收缩，保住右侧信息区宽度 */
+  #stage[data-w="mid"] .cqa-item .cv { flex-basis: 150px; }
+  .cqa-item .info { flex: 1 1 0; min-width: 0; }
+  .cqa-item .info .t {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cqa-item .info .meta {
+    margin-top: 4px; font-size: 12px; color: var(--text-3);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .cqa-item .info .meta .star { color: var(--text-2); }
+  .cqa-item .info .heatline {
+    margin-top: 4px; font-size: 12px; color: var(--text-2);
+    display: flex; gap: 4px; align-items: center;
+  }
+  .cqa-item .info .heatline svg { flex: 0 0 auto; }
+  .cqa-item .info .heatline b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .cqa-panel-foot {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    padding: 14px 2px 0;
+  }
+  .cqa-pager-btn {
+    display: inline-flex; gap: 4px; align-items: center;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+    border-radius: 999px; padding: 5px 14px; font-size: 12px; cursor: pointer;
+    font-family: inherit;
+    transition: color .15s, border-color .15s;
+  }
+  .cqa-pager-btn:hover:not(:disabled) { color: var(--text); border-color: var(--text-3); }
+  .cqa-pager-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .cqa-pager-ind { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .cqa-pager-more {
+    margin-left: auto; border: none; background: none; color: var(--text-2);
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    display: inline-flex; gap: 3px; align-items: center;
+  }
+  .cqa-pager-more:hover { color: var(--accent); }
+
+  /* ═══ TV 模拟（对齐真实 .home-page--tv：全宽、无 chip 面板/过渡带、经典 16:9 banner） ═══ */
+  #stage.mode-tv .topstrip { display: none; }
+  #stage.mode-tv .cqa-block { display: none; }
+  #stage.mode-tv .hero { grid-template-columns: 1fr; }
+  #stage.mode-tv .hero-right { display: none; }
+  #stage.mode-tv .banner { aspect-ratio: 16 / 9; }
+  #stage.mode-tv .banner-content { padding: 28px 32px; max-width: 70%; }
+  #stage.mode-tv .b-title { font-size: 30px; }
+  #stage.mode-tv .b-desc { font-size: 14px; }
+  #stage.mode-tv .card { flex-basis: 200px; }
+  #stage.mode-tv .row-head h2 { font-size: 18px; }
+  #stage.mode-tv .row-head .row-more { display: none; }
+
+  /* 建议6：TV 焦点态 + 行内焦点自动滚入可视区 */
+  #stage.mode-tv .card:focus-visible .poster,
+  #stage.mode-tv .card.tv-focus .poster {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* 封面占位渐变色板 */
+  .g0 { background: linear-gradient(135deg,#5b6b8c,#8d9bbd); }
+  .g1 { background: linear-gradient(135deg,#a8674b,#d29b7e); }
+  .g2 { background: linear-gradient(135deg,#4a7d6d,#82b3a0); }
+  .g3 { background: linear-gradient(135deg,#7b5a86,#b18ec0); }
+  .g4 { background: linear-gradient(135deg,#8c7a4b,#c9b87e); }
+  .g5 { background: linear-gradient(135deg,#4b6c8c,#7ea3c9); }
+  .g6 { background: linear-gradient(135deg,#8c4b5e,#c97e93); }
+  .g7 { background: linear-gradient(135deg,#5d8c7b,#9ec9b4); }
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <h1>首页布局建议 Demo v2</h1>
+  <div class="group">
+    <label>设备模拟
+      <select id="deviceSel" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface-hover);color:var(--text);">
+        <option value="desktop">桌面（≥1024 非 TV）</option>
+        <option value="tv">TV（遥控器焦点导航）</option>
+      </select>
+    </label>
+    <label>模拟视口 <input type="range" id="vw" min="1024" max="2560" step="8" value="1440"></label>
+    <span class="vw-label" id="vwLabel">1440px</span>
+  </div>
+  <div class="group">
+    <label><input type="checkbox" id="opt2" checked>行「查看全部」 <i style="color:var(--text-3);font-size:11px;">[已采纳]</i></label>
+    <label><input type="checkbox" id="opt4" checked>换一换自动轮播 <i style="color:var(--text-3);font-size:11px;">[已采纳]</i></label>
+    <label><input type="checkbox" id="opt5" checked>Banner信息层增强 <i style="color:var(--text-3);font-size:11px;">[已采纳]</i></label>
+    <label><input type="checkbox" id="opt6" checked>TV焦点自动滚入 <i style="color:var(--text-3);font-size:11px;">[已采纳·TV]</i></label>
+  </div>
+  <button id="themeBtn">切换深浅色</button>
+</div>
+<div class="demo-note">
+  <b>本版已按你的新要求重构默认布局</b>：① 左栏「今日趋势 TOP 20」与顶部左侧 chip 合并——左栏内容整改为 chip 样式（分类 chip + 面板），整体移到「继续观看」下方；② chip 下方面板<b>常驻显示</b>（不再 hover 弹出、不遮挡 Hero）；③ chip 切换从 hover 改为<b>点击</b>（点 chip 切面板，面板带分页，上一页/下一页可用）。<br>
+  移动端不变（本 demo 仅模拟桌面大屏 / TV）；TV 分支无 chip 面板（维持全宽经典 banner + 行）。你保留的四条建议已<b>默认勾选</b>（行「查看全部」/ 换一换自动轮播 / Banner信息层增强 / TV焦点自动滚入），可取消勾选对比；「行间分隔线」已按要求移除。
+</div>
+
+<div id="stage-wrap">
+  <div id="stage" data-w="wide">
+    <div class="app-header">
+      <span class="logo">KinoTV</span>
+      <nav class="nav"><span class="on">首页</span><span>浏览</span><span>热度榜</span><span>IPTV</span><span>历史</span><span>收藏</span></nav>
+      <div class="sb-field">
+        <div class="sb-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="sbInput" type="text" placeholder="搜索影片、剧集…" aria-label="搜索">
+          <button class="sb-clear" id="sbClear" data-empty="true" aria-label="清空搜索" tabindex="-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <button class="sb-submit" id="sbSubmit" disabled>搜索</button>
+      </div>
+      <div class="hdr-icons">
+        <button class="hdr-icon-btn" title="设置" aria-label="设置">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="hdr-icon-btn" id="hdrThemeBtn" title="主题：light" aria-label="切换主题"></button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="topstrip">
+        <span>继续观看 <b>3</b></span><span class="sep"></span>
+        <span>收藏 <b>12</b></span><span class="sep"></span>
+        <span>今日最热分类 <span class="pill">动作</span></span>
+        <span style="margin-left:auto; color:var(--text-3);">热度数据 09-29 更新</span>
+      </div>
+
+      <main>
+        <section class="hero">
+          <div class="banner">
+            <div class="banner-content">
+              <div class="banner-chips">
+                <span class="score">8.7 分</span><span>科幻</span><span>2026</span><span>动作 / 冒险</span>
+              </div>
+              <div class="b-title">主推影片标题占位</div>
+              <div class="b-meta"><span>2026</span><span>科幻 · 动作</span><span>2h 18m</span></div>
+              <div class="b-desc">这里是简介占位文本，用于评估 Banner 底部信息层的可读性与渐变遮罩强度，勾选建议后对比渐变与评分徽章的呈现效果。</div>
+            </div>
+          </div>
+          <div class="hero-right" id="heroRight">
+            <div class="hero-cards" id="heroCards"></div>
+            <button class="shuffle" id="shuffleBtn">换一换</button>
+          </div>
+        </section>
+
+        <div class="rows" id="rows"></div>
+
+        <!-- 原左栏 + 顶部 chip 合并体：chip 行 + 常驻面板，位于继续观看下方 -->
+        <section class="cqa-block" id="cqaBlock">
+          <div class="cqa-chips" id="cqaChips"></div>
+          <div class="cqa-panel">
+            <div class="cqa-panel-head" id="cqaPanelHead"></div>
+            <div class="cqa-genres" id="cqaGenres"></div>
+            <div class="cqa-panel-grid" id="cqaPanelGrid"></div>
+            <div class="cqa-panel-foot">
+              <button class="cqa-pager-btn" id="cqaPrev">‹ 上一页</button>
+              <span class="cqa-pager-ind" id="cqaInd">1 / 3</span>
+              <button class="cqa-pager-btn" id="cqaNext">下一页 ›</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ── 通用 ── */
+  function posterCls(n) { return 'g' + (n % 8); }
+  var SIDE_ROWS = 2;
+
+  /* ── Hero 右卡（可换一换） ── */
+  var heroPool = [];
+  for (var j = 0; j < 18; j++) heroPool.push({ title: '推荐影片 ' + (j + 1) });
+  var heroOffset = 0;
+  function heroCols() { return stage.getAttribute('data-w') === 'wide' ? 3 : 2; }
+  function renderHeroCards() {
+    var cols = heroCols(), n = cols * SIDE_ROWS;
+    var html = '';
+    for (var k = 0; k < n; k++) {
+      var item = heroPool[(heroOffset + k) % heroPool.length];
+      html += '<div class="hero-card"><div class="cover ' + posterCls(heroOffset + k) + '"></div>'
+        + '<div class="t">' + item.title + '</div></div>';
+    }
+    $('heroCards').innerHTML = html;
+  }
+  function shuffleHero() { heroOffset = (heroOffset + heroCols() * SIDE_ROWS) % heroPool.length; renderHeroCards(); }
+  $('shuffleBtn').addEventListener('click', shuffleHero);
+  renderHeroCards();
+
+  /* 建议4：自动轮播（8s，悬停 Hero 右栏暂停） */
+  var autoplayTimer = null;
+  var heroRight = $('heroRight');
+  function stopAutoplay() { if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; } }
+  function startAutoplay() {
+    stopAutoplay();
+    if (!$('opt4').checked) return;
+    autoplayTimer = setInterval(function () {
+      if (!heroRight.matches(':hover')) shuffleHero();
+    }, 8000);
+  }
+  $('opt4').addEventListener('change', startAutoplay);
+  startAutoplay();
+
+  /* ── 内容行（首行 = 继续观看；chip 合并体在其后、7 行推荐行之前） ── */
+  var rowNames = ['正在热映', '热门电影', '高分电影', '即将上映', '热门剧集', '高分剧集', '今日播出'];
+  var cardCount = 12;
+  var rowsEl = $('rows');
+
+  /* 继续观看行（横版卡 + 进度条） */
+  var contHtml = '<section class="row"><div class="row-head"><h2>继续观看</h2></div><div class="row-scroll">';
+  var contProgress = [72, 35, 88, 12, 56, 41];
+  for (var c0 = 0; c0 < 6; c0++) {
+    contHtml += '<div class="card card--land"><div class="poster ' + posterCls(c0) + '">'
+      + '<span class="progress"><i style="width:' + contProgress[c0] + '%"></i></span></div>'
+      + '<div class="t">观看记录占位 ' + (c0 + 1) + ' · 还剩 ' + (100 - contProgress[c0]) + '%</div></div>';
+  }
+  contHtml += '</div></section>';
+
+  var recommendHtml = '';
+  rowNames.forEach(function (name, r) {
+    var cards = '';
+    for (var c = 0; c < cardCount; c++) {
+      cards += '<div class="card"><div class="poster ' + posterCls(r * 3 + c) + '"></div>'
+        + '<div class="t">' + name + ' · 片名占位 ' + (c + 1) + '</div></div>';
+    }
+    recommendHtml += '<section class="row">'
+      + '<div class="row-head"><h2>' + name + '</h2>'
+      + '<button class="row-more">查看全部 →</button></div>'
+      + '<div class="row-scroll">' + cards + '</div>'
+      + '</section>';
+  });
+  /* DOM 顺序：继续观看 → CQA 合并体占位 → 推荐行。
+     CQA 区块是 HTML 里独立节点（#cqaBlock），需插到继续观看行之后：先渲染推荐行，
+     再把 #cqaBlock 移动到 rows 容器内第一个 .row 之后。 */
+  rowsEl.innerHTML = contHtml + recommendHtml;
+  rowsEl.insertBefore(document.getElementById('cqaBlock'), rowsEl.children[1]);
+
+  /* ── CQA 合并体：chip（点击切换）+ 常驻面板 ──
+     一级 chip 配色对齐真实 CategoryQuickAccess.tsx:67-73。
+     面板对齐真实 cqa-panel UI（用户 2026-09-29 截图口径）：
+     头部行 + 子类型 chips + 3×3 列向排名卡（每页 9）+ 右下分页。 */
+  var CQA_CATS = [
+    { key: 'all',          label: '全部',   color: 'linear-gradient(135deg, #6366f1, #818cf8)' },
+    { key: 'movie',        label: '电影',   color: 'linear-gradient(135deg, #ff4757, #ff6b81)' },
+    { key: 'tv',           label: '剧集',   color: 'linear-gradient(135deg, #7c3aed, #a78bfa)' },
+    { key: 'variety',      label: '综艺',   color: 'linear-gradient(135deg, #f97316, #fb923c)' },
+    { key: 'anime',        label: '动漫',   color: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
+    { key: 'documentary',  label: '纪录片', color: 'linear-gradient(135deg, #16a34a, #4ade80)' },
+    { key: 'top',          label: '排行榜', color: 'linear-gradient(135deg, #eab308, #facc15)' }
+  ];
+  /* 子类型 chips（对齐截图电影口径，demo 全分类共用一套示意） */
+  var CQA_GENRES = ['全部', '动作', '冒险', '动画', '喜剧', '犯罪', '纪录', '剧情', '家庭',
+    '奇幻', '历史', '恐怖', '音乐', '悬疑', '爱情', '科幻', '电视电影', '惊悚', '战争', '西部'];
+  var CQA_PAGE_SIZE = 9; /* 3 列 × 3 行 */
+  var FLAME_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="#e8590c">'
+    + '<path d="M13.5 0.7c0 0 1.8 3.6-0.9 6.9c-2.1 2.6-4.3 4.1-4.3 7.1c0 1.4 0.5 2.7 1.3 3.6'
+    + 'c-0.3-1.9 0.4-4.2 2.5-5.9c-0.4 2.3 0.9 3.6 2 4.9c1 1.2 1.4 2.4 1.1 3.8'
+    + 'c1.9-1.3 3.3-3.6 3.3-6.4c0-4.4-3-6.1-3-9.6c0-1.7 0.7-3.3 0.7-3.3'
+    + 'c-1.2 0.2-2.2 0.9-2.7 1.4c0-0.9 0-2.5 0-2.5z" transform="translate(-4.5,1)"/></svg>';
+  var cqaActive = 'all';
+  var cqaGenre = '全部';
+  var cqaPage = 1;
+
+  /* 确定性伪随机（同 cat+genre+序号 恒定，翻页/切类不跳变） */
+  function pseudo(seed) {
+    var x = Math.sin(seed * 9973.7) * 10000;
+    return x - Math.floor(x);
+  }
+  function cqaItems(catKey, catLabel, genre) {
+    var items = [];
+    for (var n = 0; n < 27; n++) { /* 27 = 3 页 × 9 */
+      var s = pseudo(catKey.length * 131 + genre.length * 37 + n);
+      items.push({
+        title: (genre === '全部' ? catLabel : genre) + ' · 片名占位 ' + (n + 1),
+        year: 2024 + Math.floor(pseudo(n + 7) * 3),
+        rating: (6.8 + pseudo(n + 13) * 1.9).toFixed(1),
+        heat: (660 - n * 22 + Math.floor(s * 18)).toFixed(1),
+        g: posterCls(catKey.length * 3 + n)
+      });
+    }
+    return items;
+  }
+
+  function renderCqaChips() {
+    $('cqaChips').innerHTML = CQA_CATS.map(function (cat) {
+      return '<button class="cqa-chip' + (cat.key === cqaActive ? ' on' : '') + '" data-key="' + cat.key + '">'
+        + '<span class="dot" style="background:' + cat.color + '"></span>' + cat.label + '</button>';
+    }).join('');
+  }
+
+  function renderCqaGenres() {
+    $('cqaGenres').innerHTML = CQA_GENRES.map(function (g) {
+      return '<button class="cqa-genre' + (g === cqaGenre ? ' on' : '') + '">' + g + '</button>';
+    }).join('');
+  }
+
+  function renderCqaPanel() {
+    var cat = CQA_CATS.filter(function (c) { return c.key === cqaActive; })[0];
+    var items = cqaItems(cqaActive, cat.label, cqaGenre);
+    var total = Math.ceil(items.length / CQA_PAGE_SIZE);
+    var start = (cqaPage - 1) * CQA_PAGE_SIZE;
+    var pageItems = items.slice(start, start + CQA_PAGE_SIZE);
+    var heatSum = items.reduce(function (s, it) { return s + parseFloat(it.heat); }, 0);
+
+    $('cqaPanelHead').innerHTML = '<h3>' + cat.label + ' · 今日最热</h3>'
+      + '<span class="heat">' + FLAME_SVG + '<b>' + heatSum.toFixed(0) + '</b></span>'
+      + '<span class="sub">按热度排序 · 点卡片看详情</span>'
+      + '<i class="cqa-info-tip" title="热度为演示值：真实面板按 TMDB popularity 聚合">i</i>';
+
+    $('cqaPanelGrid').innerHTML = pageItems.map(function (it, i) {
+      return '<div class="cqa-item">'
+        + '<span class="rk">' + (start + i + 1) + '</span>'
+        + '<span class="cv ' + it.g + '"></span>'
+        + '<span class="info">'
+        + '<span class="t">' + it.title + '</span>'
+        + '<span class="meta">' + it.year + ' <span class="star">★ ' + it.rating + '</span></span>'
+        + '<span class="heatline">' + FLAME_SVG + '<b>' + it.heat + '</b> 热度</span>'
+        + '</span>'
+        + '</div>';
+    }).join('');
+
+    $('cqaInd').textContent = cqaPage + ' / ' + total;
+    $('cqaPrev').disabled = cqaPage <= 1;
+    $('cqaNext').disabled = cqaPage >= total;
+  }
+
+  $('cqaChips').addEventListener('click', function (e) {
+    var chip = e.target.closest && e.target.closest('.cqa-chip');
+    if (!chip) return;
+    cqaActive = chip.getAttribute('data-key');
+    cqaGenre = '全部';
+    cqaPage = 1;
+    renderCqaChips();
+    renderCqaGenres();
+    renderCqaPanel();
+  });
+  $('cqaGenres').addEventListener('click', function (e) {
+    var g = e.target.closest && e.target.closest('.cqa-genre');
+    if (!g) return;
+    cqaGenre = g.textContent;
+    cqaPage = 1;
+    renderCqaGenres();
+    renderCqaPanel();
+  });
+  $('cqaPrev').addEventListener('click', function () { if (cqaPage > 1) { cqaPage--; renderCqaPanel(); } });
+  $('cqaNext').addEventListener('click', function () {
+    var total = Math.ceil(cqaItems(cqaActive, '', cqaGenre).length / CQA_PAGE_SIZE);
+    if (cqaPage < total) { cqaPage++; renderCqaPanel(); }
+  });
+
+  renderCqaChips();
+  renderCqaGenres();
+  renderCqaPanel();
+
+  /* ── 选项开关（2/5 走 CSS 类；4/6 已单独绑定；均默认勾选=已采纳） ── */
+  [['opt2', 'opt-row-more'], ['opt5', 'opt-hero-grad']]
+    .forEach(function (p) {
+      $(p[0]).addEventListener('change', function () {
+        stage.classList.toggle(p[1], this.checked);
+      });
+    });
+
+  /* ── 建议6：TV 焦点导航（方向键移动焦点，焦点卡自动滚入可视区） ── */
+  function applyTVFocus() {
+    var on = stage.classList.contains('mode-tv') && $('opt6').checked;
+    stage.querySelectorAll('.card').forEach(function (c) {
+      if (on) c.setAttribute('tabindex', '0'); else c.removeAttribute('tabindex');
+    });
+  }
+  stage.addEventListener('keydown', function (e) {
+    if (!$('opt6').checked || !stage.classList.contains('mode-tv')) return;
+    var card = e.target.closest && e.target.closest('.card');
+    if (!card) return;
+    var siblings = Array.prototype.slice.call(card.parentElement.children);
+    var idx = siblings.indexOf(card);
+    function go(el) {
+      if (!el) return;
+      e.preventDefault();
+      el.focus();
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+    if (e.key === 'ArrowRight') go(siblings[idx + 1]);
+    else if (e.key === 'ArrowLeft') go(siblings[idx - 1]);
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      var rows = Array.prototype.slice.call(stage.querySelectorAll('.row-scroll, .cqa-panel-grid'));
+      var ri = rows.indexOf(card.parentElement);
+      var target = e.key === 'ArrowDown' ? rows[ri + 1] : rows[ri - 1];
+      if (target) go(target.children[Math.min(idx, target.children.length - 1)]);
+    }
+  });
+  $('opt6').addEventListener('change', applyTVFocus);
+
+  /* ── 设备模拟：桌面 / TV ── */
+  $('deviceSel').addEventListener('change', function () {
+    var tv = this.value === 'tv';
+    stage.classList.toggle('mode-tv', tv);
+    applyTVFocus();
+  });
+
+  /* ── 模拟视口宽度 ── */
+  var vw = $('vw'), vwLabel = $('vwLabel');
+  function applyVW() {
+    var w = parseInt(vw.value, 10);
+    stage.style.width = w + 'px';
+    stage.setAttribute('data-w', w >= 1281 ? 'wide' : 'mid');
+    vwLabel.textContent = w + 'px';
+    var cols = heroCols();
+    if ($('heroCards').children.length !== cols * SIDE_ROWS) renderHeroCards();
+  }
+  vw.addEventListener('input', applyVW);
+  applyVW();
+
+  /* ── 搜索框交互（对齐原项目 SearchBox：有词才能搜、X 清空） ── */
+  $('sbInput').addEventListener('input', function () {
+    var has = this.value.trim().length > 0;
+    $('sbSubmit').disabled = !has;
+    $('sbClear').setAttribute('data-empty', has ? 'false' : 'true');
+  });
+  $('sbClear').addEventListener('click', function () {
+    $('sbInput').value = '';
+    $('sbSubmit').disabled = true;
+    this.setAttribute('data-empty', 'true');
+    $('sbInput').focus();
+  });
+  $('sbSubmit').addEventListener('click', function () {
+    var q = $('sbInput').value.trim();
+    if (q) $('sbInput').value = q; /* 真实项目：跳 /browse?q=…，demo 仅示意 */
+  });
+
+  /* ── 主题：三态循环 light → dark → system（对齐 StickyHeader THEME_CYCLE） ── */
+  var ICONS = {
+    light: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>',
+    dark: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    system: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>'
+  };
+  var THEME_CYCLE = ['light', 'dark', 'system'];
+  var themeIdx = 0;
+  function applyTheme() {
+    var t = THEME_CYCLE[themeIdx];
+    var effective = t === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : t;
+    document.documentElement.setAttribute('data-theme', effective);
+    var btn = $('hdrThemeBtn');
+    btn.innerHTML = ICONS[t];
+    btn.title = '主题：' + t;
+  }
+  $('hdrThemeBtn').addEventListener('click', function () {
+    themeIdx = (themeIdx + 1) % THEME_CYCLE.length;
+    applyTheme();
+  });
+  $('themeBtn').addEventListener('click', function () {
+    /* demo 工具条按钮：在 light/dark 间切换并同步三态指示 */
+    var cur = document.documentElement.getAttribute('data-theme');
+    themeIdx = cur === 'dark' ? 0 : 1;
+    applyTheme();
+  });
+  applyTheme();
+})();
+</script>
+</body>
+</html>

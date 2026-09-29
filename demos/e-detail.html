@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 详情 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 详情页专属：头图对开 + 资料表 + tab 面板（全站零卡片：只用规则线分区） */
+.hero{position:relative;margin-top:clamp(14px,2vh,24px);border-bottom:2px solid var(--ink);
+  padding-bottom:clamp(14px,2vh,24px)}
+.hero-bg{position:absolute;inset:0;overflow:hidden;opacity:.16;pointer-events:none}
+.hero-bg .kpic{position:absolute;inset:0}
+.hero-in{position:relative;display:grid;grid-template-columns:clamp(140px,15vw,260px) minmax(0,1fr);
+  gap:clamp(18px,2.4vw,44px);align-items:start}
+.poster{position:relative;aspect-ratio:2/3;overflow:hidden;border-radius:clamp(4px,.4vw,8px);background:var(--fill)}
+.poster .p-por,.poster .p-lan{display:block;position:absolute;inset:0}
+.poster .p-por .kpic,.poster .p-lan .kpic{position:absolute;inset:0}
+.poster .p-lan{display:none}   /* 移动端横条海报（backdrop），≤767 由媒体查询切换 */
+.poster .kpic{position:absolute;inset:0}
+.hero h1{font-family:var(--serif);font-size:clamp(24px,3.2vw,52px);font-weight:900;line-height:1.14}
+.hero .orig{font-size:clamp(11.5px,.74vw,13.5px);color:var(--ink-3);margin-top:6px;letter-spacing:.04em}
+.hero .meta{display:flex;gap:clamp(10px,1vw,18px);flex-wrap:wrap;align-items:center;
+  margin-top:clamp(10px,1.6vh,16px);font-size:clamp(12px,.8vw,14px);color:var(--ink-2)}
+.hero .meta .score{font-family:var(--serif);font-size:clamp(22px,2vw,36px);font-weight:900;color:var(--accent);line-height:1}
+.hero .deck{font-size:clamp(12.5px,.86vw,15.5px);line-height:1.9;color:var(--ink-2);
+  margin-top:clamp(10px,1.6vh,18px);max-width:70ch}
+.cta{display:flex;gap:clamp(14px,1.6vw,28px);align-items:center;margin-top:clamp(12px,2vh,22px);flex-wrap:wrap}
+.cta .play{font-weight:800;font-size:clamp(13.5px,.92vw,17px);border-bottom:2px solid var(--accent);padding-bottom:3px}
+.cta .ghost{font-size:clamp(12.5px,.82vw,15px);color:var(--ink-2)}
+.cta .ghost:hover{color:var(--ink)}
+.cta .ghost.on{color:var(--accent);font-weight:700}
+.tabs{display:flex;gap:clamp(16px,1.6vw,32px);border-bottom:2px solid var(--ink);
+  padding-bottom:clamp(8px,1.2vh,12px);margin-top:clamp(16px,2.4vh,30px);flex-wrap:wrap}
+.tabs button{font-family:var(--serif);font-size:clamp(14px,1.05vw,20px);font-weight:900;color:var(--ink-3);transition:.2s}
+.tabs button:hover{color:var(--ink-2)}
+.tabs button.on{color:var(--ink)}
+.pane{padding-top:clamp(14px,2vh,24px)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(150px,14vw,220px),1fr));
+  gap:clamp(12px,1.4vh,20px) clamp(16px,2vw,36px)}
+.fact{border-bottom:1px solid var(--rule);padding-bottom:clamp(6px,.9vh,10px)}
+.fact span{display:block;font-size:clamp(10.5px,.7vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.fact b{display:block;font-size:clamp(13px,.86vw,15.5px);font-weight:700;margin-top:3px}
+.line-list{border-top:1px solid var(--rule)}
+.line-row{display:grid;grid-template-columns:clamp(52px,5vw,90px) minmax(0,1fr) clamp(70px,7vw,120px) clamp(70px,7vw,110px);
+  gap:clamp(10px,1.2vw,22px);align-items:center;padding:clamp(9px,1.2vh,14px) 2px;border-bottom:1px solid var(--rule);
+  transition:background .18s}
+.line-row:hover{background:var(--band)}
+.line-row .n{font-family:var(--serif);font-weight:900;color:var(--ink-3);font-size:clamp(13px,.9vw,16px)}
+.line-row .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(12.5px,.82vw,15px)}
+.line-row .s{font-size:clamp(11px,.72vw,13px);color:var(--ink-3)}
+.line-row .go{text-align:right;font-size:clamp(12px,.78vw,14px);color:var(--ink-2)}
+.line-row:hover .go{color:var(--accent)}
+.hint{font-size:clamp(11px,.72vw,12.5px);color:var(--ink-3);margin-top:clamp(8px,1.2vh,14px);line-height:1.8}
+@media (width<=767px){
+  /* 对齐真实 Detail 移动端：hero 单列堆叠，海报横条用 backdrop（.detail-hero-info 网格单列同口径） */
+  .hero-in{grid-template-columns:1fr;gap:14px}
+  .poster .p-por{display:none}
+  .poster .p-lan{display:block}
+  .poster{aspect-ratio:16/9;max-height:40vh}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .line-row{grid-template-columns:clamp(24px,6vw,32px) minmax(0,1fr) clamp(60px,18vw,90px)}
+  .line-row .go{display:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <section class="hero" id="hero"></section>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="pane" id="pane"></div>
+
+  <footer>
+    <span>KinoTV — Demo E · 详情页 · 报刊排版式；头图对开 + 概览 / 播放列表 / 季信息 tab + 资料表；标题海报评分年份类型剧情为真实 TMDB 快照，播放线路与季信息为演示值</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+/* 详情页：数据来自真实 TMDB 快照；快照不含 credits / stills / 季信息 →
+   演职员以「真实可核验的内容」替代并标注，不虚构人名与职务；季数为演示值并已标注。 */
+var ITEM = null, TAB = 'info';
+
+var REGION_HINT = '内地';   /* 演示值：快照无产地字段 */
+
+function tabsOf(){
+  var t = [{key:'info',label:'概览'},{key:'sources',label:'播放列表'}];
+  /* 季信息仅 tv 有（真实 Detail/index.tsx:1000 同口径）；无「剧照」tab——真实详情页只有 3 个 */
+  if(ITEM && ITEM.mediaType==='tv') t.push({key:'seasons',label:'季信息'});
+  return t;
+}
+
+function renderHero(){
+  var it = ITEM;
+  var fav = KINO_E.fav.is(it.id);
+  document.getElementById('hero').innerHTML =
+    '<div class="hero-bg">'+KINO_E.pic({pic:it.backdrop,title:it.title},1280)+'</div>'+
+    '<div class="hero-in">'+
+      '<div class="poster"><span class="p-por">'+KINO_E.pic(it,480)+'</span>'+
+        '<span class="p-lan">'+KINO_E.pic({pic:it.backdrop,title:it.title},780)+'</span></div>'+
+      '<div>'+
+        '<div class="kicker">'+(it.mediaType==='tv'?'剧集':'电影')+' · '+KINO_E.esc(KINO_E.genreName(it))+'</div>'+
+        '<h1>'+KINO_E.esc(it.title)+'</h1>'+
+        '<div class="orig">TMDB ID '+KINO_E.esc(it.id)+' · 快照 '+KINO_E.esc(KINO_E.data().snapDate||'')+'</div>'+
+        '<div class="meta">'+
+          '<span class="score">'+(+it.score||0).toFixed(1)+'</span>'+
+          '<span>'+KINO_E.esc(it.year||'—')+'</span>'+
+          '<span>'+KINO_E.esc(KINO_E.genreName(it))+'</span>'+
+          '<span>热度 '+Math.round(it.popularity||0)+'</span>'+
+        '</div>'+
+        '<p class="deck">'+KINO_E.esc(it.content||'（该条目在快照中没有剧情简介）')+'</p>'+
+        '<div class="cta">'+
+          '<a class="play" href="e-player.html?id='+encodeURIComponent(it.id)+'">'+(KINO_E.seeded(it.id,3)>.5?'继续播放':'立即播放')+'</a>'+
+          '<button class="ghost'+(fav?' on':'')+'" id="fav-btn" type="button">'+(fav?'已收藏':'加入收藏')+'</button>'+
+          '<a class="ghost" href="e-browse.html?cat='+(it.mediaType==='tv'?'tv':'movie')+'">同类更多 →</a>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  KINO_E.bindPics(document.getElementById('hero'));
+}
+
+function paneInfo(){
+  var it = ITEM;
+  var facts = [
+    ['类型', KINO_E.genreName(it)],
+    ['首播 / 上映', (it.year||'—')+' 年'],
+    ['评分', (+it.score||0).toFixed(1)+' / 10'],
+    ['热度', String(Math.round(it.popularity||0))],
+    ['产地', REGION_HINT],
+    ['媒体类型', it.mediaType==='tv'?'剧集':'电影'],
+    ['状态', it.mediaType==='tv'?'连载中':'已上映'],
+    ['数据来源', 'TMDB 快照'],
+  ];
+  return '<section class="sec" style="margin-top:0">'+
+    '<p style="font-size:clamp(13px,.88vw,16px);line-height:2;color:var(--ink-2);max-width:76ch">'+
+      KINO_E.esc(it.content||'（该条目在快照中没有剧情简介）')+'</p>'+
+    '<div class="facts" style="margin-top:clamp(16px,2.4vh,28px)">'+
+      facts.map(function(f){return '<div class="fact"><span>'+KINO_E.esc(f[0])+'</span><b>'+KINO_E.esc(f[1])+'</b></div>';}).join('')+
+    '</div>'+
+    '<p class="hint">注：产地与状态为演示值（快照无对应字段）；TMDB 快照未包含 credits，故本 demo 不虚构演职员表，相关内容以「相似推荐」呈现。</p>'+
+  '</section>';
+}
+
+function paneSources(){
+  /* 源名取自 public/data/video-sources.json 真实配置（与播放页 CMS_SOURCES 同一份）；
+     集数为演示值（快照无播放源字段），条目本身真实 */
+  var it = ITEM;
+  var CMS_SOURCES = ['爱奇艺资源','豆瓣资源','茅台资源','卧龙资源','iKun资源','电影天堂'];
+  var rows = CMS_SOURCES.map(function(n,i){
+    var eps = it.mediaType==='tv' ? (12 + Math.floor(KINO_E.seeded(it.id,i)*60)) : 1;
+    return '<div class="line-row">'+
+      '<span class="n">'+(i+1)+'</span>'+
+      '<span class="t">'+KINO_E.esc(n)+' · '+KINO_E.esc(it.title)+(it.mediaType==='tv'?'（全 '+eps+' 集）':'')+'</span>'+
+      '<span class="s">'+(i===0?'推荐':'可用')+'</span>'+
+      '<span class="go"><a href="e-player.html?id='+encodeURIComponent(it.id)+'&line='+(i+1)+'">播放 →</a></span>'+
+    '</div>';
+  }).join('');
+  return '<section class="sec" style="margin-top:0">'+
+    '<div class="sec-cap"><span class="sub">源名真实 · 集数为演示值</span></div>'+
+    '<div class="line-list">'+rows+'</div>'+
+  '</section>';
+}
+
+function paneSeasons(){
+  var it = ITEM;
+  var n = 1 + Math.floor(KINO_E.seeded(it.id,11)*3);
+  var out = '';
+  for(var s=1;s<=n;s++){
+    var eps = 8 + Math.floor(KINO_E.seeded(it.id,s)*16);
+    out += '<div class="line-row">'+
+      '<span class="n">第 '+s+' 季</span>'+
+      '<span class="t">共 '+eps+' 集 · '+KINO_E.esc(it.title)+'</span>'+
+      '<span class="s">'+(+it.score||0).toFixed(1)+' 分</span>'+
+      '<span class="go"><a href="e-player.html?id='+encodeURIComponent(it.id)+'&season='+s+'">选集 →</a></span>'+
+    '</div>';
+  }
+  return '<section class="sec" style="margin-top:0">'+
+    '<div class="sec-cap"><span class="sub">季数与集数为演示值</span></div>'+
+    '<div class="line-list">'+out+'</div>'+
+  '</section>';
+}
+
+function renderPane(){
+  var html = TAB==='sources'?paneSources():TAB==='seasons'?paneSeasons():paneInfo();
+  document.getElementById('pane').innerHTML = html;
+  KINO_E.bindPics(document.getElementById('pane'));
+
+  /* 相似推荐（真实同类型条目） */
+  var rel = KINO_E.all().filter(function(x){
+    return x.id!==ITEM.id && (x.genreIds||[]).some(function(g){ return (ITEM.genreIds||[]).indexOf(g)>=0; });
+  }).slice(0,14);
+  if(!rel.length) rel = KINO_E.all().filter(function(x){return x.id!==ITEM.id}).slice(0,14);
+  document.getElementById('pane').innerHTML +=
+    '<section class="sec">'+
+      '<div class="sec-cap"><h2>相关推荐</h2><span class="sub">同类型真实条目 · 点封面进详情</span></div>'+
+      '<div class="pgrid">'+rel.map(function(it){
+        return '<article class="rcard" data-id="'+KINO_E.esc(it.id)+'"><div class="rc-cover">'+
+          KINO_E.pic(it,480,(it.score?'<span class="b-tl">★'+(+it.score).toFixed(1)+'</span>':'')+
+          '<span class="b-bl">'+KINO_E.esc(it.year||'—')+'</span><span class="b-br">'+KINO_E.esc(KINO_E.genreName(it))+'</span>')+
+          '</div><h4>'+KINO_E.esc(it.title)+'</h4><p>'+KINO_E.esc(KINO_E.genreName(it))+'</p></article>';
+      }).join('')+'</div>'+
+    '</section>';
+  KINO_E.bindPics(document.getElementById('pane'));
+}
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = tabsOf().map(function(t){
+    return '<button class="'+(t.key===TAB?'on':'')+'" data-tab="'+t.key+'" type="button">'+t.label+'</button>';
+  }).join('');
+}
+
+function bind(){
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tab]'); if(!b) return;
+    TAB = b.getAttribute('data-tab'); renderTabs(); renderPane();
+  });
+  document.addEventListener('click', function(e){
+    var f = e.target.closest('#fav-btn');
+    if(f){ var on = KINO_E.fav.toggle(ITEM.id); f.classList.toggle('on',on); f.textContent = on?'已收藏':'加入收藏'; return; }
+    var c = e.target.closest('.rcard');
+    if(c){ location.href = 'e-detail.html?id='+encodeURIComponent(c.getAttribute('data-id')); }
+  });
+}
+
+KINO_E.boot({ key:'detail', title:'影片详情' }).then(function(){
+  var id = new URLSearchParams(location.search).get('id');
+  var all = KINO_E.all();
+  ITEM = all.filter(function(x){return x.id===id})[0] || all[0];
+  document.title = ITEM.title + ' · KinoTV Demo E 详情';
+  renderHero(); renderTabs(); renderPane(); bind();
+});
+</script>
+</body>
+</html>

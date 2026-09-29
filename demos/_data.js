@@ -162,20 +162,32 @@
       img.decoding = 'async';
       img.loading = 'eager';
       img.alt = el.getAttribute('data-alt') || '';
-      img.onload = () => el.classList.add('is-loaded');
+      img.onload = () => { clearTimeout(img._t); el.classList.add('is-loaded'); };
       img.onerror = () => {
+        clearTimeout(img._t);
         // weserv 失败 → 回退原图一次
-        if (img.src.indexOf('weserv') > -1 && raw.startsWith('http')) { img.src = raw; }
+        if (img.src.indexOf('weserv') > -1 && raw.startsWith('http')) { img.src = raw; armRawTimeout(); }
         else el.classList.add('is-broken');
       };
+      // 超时自愈：weserv 偶发排队 >8s → 直接换原图
+      let fell = false;
+      function armRawTimeout() {
+        clearTimeout(img._t);
+        img._t = setTimeout(() => {
+          if (img.complete) return;
+          if (!fell && raw.startsWith('http')) { fell = true; img.src = raw; }
+          else el.classList.add('is-broken');
+        }, 8000);
+      }
+      armRawTimeout();
       img.src = window.kinoImg(raw, w);
       el.appendChild(img);
     });
   }, { rootMargin: '300px 400px' });
 
-  // 用法：<div class="kpic" data-raw="..." data-alt="..." data-w="480"></div>
+  // 用法：任意 <div data-raw="..." data-alt="..." data-w="480"> 容器（.kpic/.cpic 等类名不限）
   window.kinoBindPics = function (root) {
-    (root || document).querySelectorAll('.kpic[data-raw]:not([data-bound])').forEach((el) => {
+    (root || document).querySelectorAll('[data-raw]:not([data-bound])').forEach((el) => {
       el.setAttribute('data-bound', '1');
       io.observe(el);
     });
