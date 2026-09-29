@@ -86,6 +86,17 @@
   display: none;
 }
 
+/* ── 右下 FAB（刷新+返回顶部）全站统一让位（2026-09-28 用户拍板）──
+   ≥1024 非 TV 渲染方形 fab-stack（BackToTopButton.css：right: --space-md、
+   宽 --space-3xl），内容右缘原本距视口 ~12-16px，被按钮压住 ~36px。
+   共享滚动容器右侧内缩 = fab 宽 + 左右各一档 --space-md gap，按钮左侧与
+   页面主体之间留出完整间距。仅 fab-stack 存在的档位生效；<1024 / TV 不缩。 */
+@media (width >= 1024px) {
+  html:not([data-device="tv"]) .app-shell__scroll {
+    padding-right: calc(var(--space-3xl) + var(--space-md) * 2);
+  }
+}
+
 /* ── 页面统一左右内边距 ─────────────────────────────────
    所有页面通过 .page-padding 继承 var(--space-sm) 水平 padding，
    Player / IPTVPlayer 因 position:fixed 或 height:100%
