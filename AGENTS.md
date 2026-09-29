@@ -7,6 +7,32 @@
 **Video Warehouse (KinoTV)** — 影视聚合平台，支持多数据源视频浏览、IPTV 直播、收藏管理和智能搜索。  
 技术栈：React 18 + TypeScript + Vite 6 + Zustand + Tailwind CSS + HLS.js/DASH.js。
 
+## 🧭 找文件前必看（硬性第一动作，禁止跳过）
+
+> **硬性规定**：任何涉及 `src/pages/`、路由、导航、页面组件的任务，**第一个动作必须是 Read [docs/agents/pages.md](docs/agents/pages.md) 的「页面速查」表**，**禁止用 Glob/Grep 猜文件名**。本节是速查表的压缩版（注入即见，无需额外 Read）；细节、数据源视角、Keep-Alive 陷阱以 pages.md 为准。
+
+- **路由唯一事实源** = `src/components/Layout/routeConfig.ts` 的 `routeComponentMap`。⚠️ `src/routes.tsx` 的 children **全是占位 `<div />`**，别改它、别信它。
+- **13 条路由 / 12 个页面目录**，每目录配同名 `.css`（如 `Home/Home.css`）。入口文件速查：
+
+| 页面（路由） | 目录 / 入口 |
+| --- | --- |
+| 首页（`/`） | `Home/index.tsx`（`HomeRoute.tsx` 只是 16 行壳） |
+| 浏览（`/browse`） | `Browse/index.tsx`（分页在 `useLogicalPage.ts`） |
+| 热度榜（`/chart`） | `Chart/index.tsx` |
+| 详情（`/detail/:id`） | `Detail/index.tsx` |
+| 播放（`/play/:id` + `/player/:id` 双路由同页） | `Player/index.tsx`（⚠️ 目录叫 Player 不叫 Play） |
+| IPTV 列表（`/iptv`） | `IPTV/index.tsx` |
+| IPTV 播放（`/iptv/play` 独立顶层路由） | `IPTV/IPTVPlayer.tsx`（同目录第二入口） |
+| 设置（`/settings`） | `Settings/index.tsx`（tab 在 `tabs/`） |
+| 收藏（`/collections`） | `Collections/index.tsx` |
+| 历史（`/history`） | `History/index.tsx` |
+| 源检测（`/source-checker`） | `SourceChecker/index.tsx` |
+| 人物（`/person/:id`） | `Person/index.tsx` |
+| 代理配置（`/proxy-setup`） | `ProxySetup/ProxySetup.tsx`（⚠️ 唯一无 index.tsx） |
+
+- **⚠️ 四个命名陷阱**（猜文件名重灾区）：① `/play` 目录叫 `Player/`，无 `PlayPage.tsx`；② 首页路由入口 `HomeRoute.tsx` 只是壳，改首页动 `Home/index.tsx`；③ `IPTV/` 一目录两入口（列表 + 播放）；④ `ProxySetup.tsx` 无 `index.tsx`。
+- **子代理派发约定**：主代理派发任何子代理处理页面/路由任务时，**派发 prompt 必须自带本节指针**（「先 Read docs/agents/pages.md 页面速查表，路由映射以 routeConfig.ts 为准，禁止猜文件名」）——子代理看不到主代理的注入记忆，不写就靠 grep 瞎猜。**环境约束同理**：派发 prompt 必须自带 `check-environment.md` 末尾的「子代理派发 brief」代码块（pnpm/读写文件/CRLF/Edit前Read 等规则），否则子代理会用 `npm`、`Get-Content`、`Set-Content` 等违规命令。
+
 ## 不可协商红线（违反即回退）
 
 1. **改完必须 `npm run build` 验证**：禁止用 `npx tsc --noEmit --skipLibCheck` 替代（`--skipLibCheck` 跳过 `noUnusedLocals`，CI 会挂）。流程：改代码 → build 通过 → commit → push。
@@ -17,6 +43,7 @@
 6. **E2E 分级门禁**：按改动类型决定验证档位——**删除/文档/纯脚本类**改动：`npm run build` + `npm run lint:all` + 受影响 spec（临时档）即可；**行为类**改动（src 业务代码、播放链、布局/动画）才需要全量。**全量 E2E（`test:e2e` / `e2e-suite.mjs` / `e2e-skeleton.mjs --all` 及任何等效方式）未经用户明确允许不得运行**。全量硬预算仍为 ≤5 分钟（300s 看门狗超时即失败），超预算按 testing.md「预算取舍优先级」处理，禁止删断言凑时间。测试服务禁占用户端口（OS 动态分配）、禁按端口/镜像名杀进程（只杀带测试标记的自建进程）。**改动 `run-tests.ps1` 映射 / 加删用例后必须跑 `npm run test:count`**（`-- --write` 同步 `testing.md` 生成块）——它逐条校验「引用的 spec 存在 / pattern 基路径存在 / grep 片段真命中 / 档位恒等式」，已作为 `lint:all` 第 7 门（`lint:test-map`）；靠人眼维护映射会静默腐化（2026-09-23 一次查出 21 个死 grep 片段 + 2 个失效 pattern）。
 7. **临时/调试跑批硬规矩**（`e2e-skeleton.mjs` 已机制化）：ad-hoc 单轮墙钟 **≤120s**（跑批器看门狗到点按**进程树**击杀、退码 2）、`retries=0`、指定 spec 文件即调试档（不带 `--all`）；放宽只允许 `--budget/--retries` 显式声明且须在结论说明理由。诊断期间禁止反复跑全量。**凡要跑 playwright 都走 `e2e-skeleton.mjs`**（`test:e2e:*` / `e2e-suite.mjs` / `run-tests.ps1` 增量档共用），别裸调 `playwright test`——config 的 `webServer.command` 是字符串，Windows 下经 shell 启动，收尾只杀到 shell、vite 成孤儿占端口（2026-09-23 实测进程 632s 不返回）。
 8. **单步等待/超时 ≤10s（2026-09-21 用户定稿）**：脚本内任何单步等待（`waitForSelector` / `toBeVisible` / `expect.poll` / `waitForTimeout` 等）不得超过 10s；若某处必须 >10s 才能继续执行，**立即停止操作并向用户说明原因**，禁止自行放宽。封顶机制不在此列（用例级 testTimeout 45s/30s、整轮 globalTimeout、webServer 就绪 60s、跑批看门狗 120s/300s 属预算封顶，保留现值）。
+9. **疑问禁自答（2026-09-29 用户定稿）**：主代理与子代理执行中遇到歧义（需求歧义 / 方向多解 / 规格缺口）**禁止自行假设后继续**；先查代码库，查不到的**汇总成问题清单批量问用户**（每问附推荐答案，用 AskUserQuestion），答复后再继续。子代理派发 prompt 必须带此约束。细则与判界见 [docs/agents/collaboration.md](docs/agents/collaboration.md) §8。
 
 > 全站/多页面改动（视觉尺寸 · UX · 动画）未经明确许可不得擅自动手；提案需附可运行 demo。
 
