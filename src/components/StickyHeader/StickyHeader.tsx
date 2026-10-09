@@ -1,38 +1,36 @@
 /**
  * StickyHeader — 全局顶部导航栏
- * 半透明背景 + 阴影，Logo + 左右导航 + 主题切换 + 中央搜索框。
+ * 半透明背景 + 阴影，Logo + 主导航组 + 中央搜索框 + 图标组（设置/主题）。
  * 首页滚动距离 >= --header-height 时切换为实体背景（仅首页生效）。
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
-import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User } from 'lucide-react';
+import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User, House, Search, Flame } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
-import { useIsWideDesktop } from '@/hooks';
 import { useSettingsStore } from '@/stores';
 import { isNativePlatform } from '@/lib/platform';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import SearchBox from '@/components/SearchBox';
-import { CategoryQuickAccessNav } from '@/components/CategoryQuickAccess';
 import KinoTVLogo from '@/assets/icon/KinoTV.webp';
 import './StickyHeader.css';
 import { Icon } from "@/components/ui/Icon";
 
 interface NavItem { key: string; title: string; icon: LucideIcon; path: string; }
 
-const RIGHT_NAV_ITEMS: NavItem[] = [
-  { key: 'collections', title: '收藏', icon: Star, path: '/collections' },
+/** 主导航（demo 2026-09-29）：logo 右侧固定顺序，桌面 / TV 顶栏承载；
+ *  移动端导航由汉堡菜单（web）/ 底部 TabBar（app）承担，不渲染本组 */
+const PRIMARY_NAV_ITEMS: NavItem[] = [
+  { key: 'home', title: '首页', icon: House, path: '/' },
+  { key: 'browse', title: '浏览', icon: Search, path: '/browse' },
+  { key: 'chart', title: '热度榜', icon: Flame, path: '/chart' },
+  { key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' },
   { key: 'history', title: '历史', icon: Clock, path: '/history' },
+  { key: 'collections', title: '收藏', icon: Star, path: '/collections' },
 ];
-
-/** 桌面 web / TV：顶部导航栏补充 IPTV 入口（无左侧栏，需经顶栏可达） */
-const EXTRA_NAV_ITEMS: NavItem[] = [{ key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' }];
-
-/** 设置入口：桌面 web / TV 无左侧栏，经顶栏可达（移动 web / app 经侧栏 / TabBar） */
-const SETTINGS_NAV_ITEM: NavItem = { key: 'settings', title: '设置', icon: Settings, path: '/settings' };
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
@@ -72,8 +70,6 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
   // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
   // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
   const isMobile = useIsMobileLayout();
-  // 分类 chips 融合顶栏开关：宽屏桌面（>1280 非 TV）+ 当前在首页
-  const isWideDesktop = useIsWideDesktop();
   // 9.1：app 端导航由底部 TabBar 承担，汉堡菜单按钮（+ 移动 Sidebar）对 app 隐藏
   const isNative = isNativePlatform();
   const navigate = useCustomNavigate();
@@ -209,12 +205,16 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               <span className="sticky-header__brand-name">kinoTV</span>
             </div>
           </a>
+          {!isMobile && (
+            <nav className="sticky-header__nav sticky-header__nav--primary" aria-label="主导航">
+              {PRIMARY_NAV_ITEMS.map(renderNavItem)}
+            </nav>
+          )}
         </div>
         <div className="sticky-header__center">
-          {/* 分类 chips 融合顶栏（2026-09-06）：宽屏桌面（>1280 非 TV）全页面渲染；
-              首页 = hover 开 mega 面板（面板本体由 HeroBili 渲染）；
-              其他页面 = 仅视觉常驻（点分类不改 URL），「首页」chip 回首页 */}
-          {!isMobile && isWideDesktop && <CategoryQuickAccessNav />}
+          {/* 分类 chips 已合并进首页 CQA 常驻面板（CategoryInlineBoard，2026-09-29），
+              顶栏不再挂载 CategoryQuickAccessNav；mega 面板（AppLayout 全局挂载）
+              因 activeKey 恒空自门控不渲染。 */}
           {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
              原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
              造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname
@@ -229,37 +229,54 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             scope={searchScope}
           />
         </div>
-        <div className="sticky-header__right">
-          <nav className="sticky-header__nav" aria-label="次要导航">
-            {/* 桌面 web / TV 无左侧栏，经顶栏提供 IPTV + 设置入口 */}
-            {!isMobile && EXTRA_NAV_ITEMS.map(renderNavItem)}
-            {RIGHT_NAV_ITEMS.map(renderNavItem)}
-            {!isMobile && renderNavItem(SETTINGS_NAV_ITEM)}
-          </nav>
-          {/* 个人设置入口（移动 web 头像）→ /settings?tab=personal：
-             桌面端已有「设置」文字入口、无需重复；app 端导航由底部 TabBar 承担、
-             TV 端保留顶栏「设置」文字入口，均不渲染本按钮。仅移动 web
-             （isMobile && !isNative）显示头像作为个人设置入口。 */}
-          {isMobile && !isNative && (
-            <a
-              href="/settings?tab=personal"
-              className="sticky-header__profile hover-scale"
-              onClick={(e) => { e.preventDefault(); navigate('/settings?tab=personal'); }}
-              aria-label="个人设置"
-              title={username.trim() || '未设置昵称'}
+        {/* 搜索框右侧图标组（demo 2026-09-29 .hdr-icons）：设置 + 主题三态切换。
+            仅桌面 / TV 渲染；移动端维持右侧原主题按钮不变。 */}
+        {!isMobile && (
+          <div className="sticky-header__hdr-icons">
+            {/* 设置入口（2026-09-30 用户定稿「也改为胶囊样式」）：复用 nav-item 类体系
+                （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。 */}
+            <button
+              className={`sticky-header__nav-item hover-scale${isActive('/settings') ? ' sticky-header__nav-item--active' : ''}`}
+              onClick={() => navigate('/settings')}
+              aria-label="设置"
+              title="设置"
             >
-              <span className="sticky-header__profile-avatar">
-                {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="sm" />}
-              </span>
-              {!isMobile && (
-                <span className="sticky-header__profile-name">{username.trim() || '未设置昵称'}</span>
-              )}
-            </a>
-          )}
-          <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
-            <Icon icon={ThemeIcon} size="lg" />
-          </button>
-        </div>
+              <Icon icon={Settings} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">设置</span>
+            </button>
+            <button
+              className="sticky-header__hdr-btn hover-scale"
+              onClick={handleThemeToggle}
+              aria-label={`当前主题：${currentTheme}，点击切换`}
+              title={`主题：${currentTheme}`}
+            >
+              <Icon icon={ThemeIcon} size="lg" />
+            </button>
+          </div>
+        )}
+        {/* 右侧区（仅移动端保留）：移动 web 头像入口 + 主题按钮；桌面 / TV 已迁移 */}
+        {isMobile && (
+          <div className="sticky-header__right">
+            {/* 个人设置入口（移动 web 头像）→ /settings?tab=personal：
+               桌面 / TV 设置入口迁移至搜索框右侧图标组；app 端导航由底部 TabBar 承担。
+               仅移动 web（isMobile && !isNative）显示头像作为个人设置入口。 */}
+            {isMobile && !isNative && (
+              <a
+                href="/settings?tab=personal"
+                className="sticky-header__profile hover-scale"
+                onClick={(e) => { e.preventDefault(); navigate('/settings?tab=personal'); }}
+                aria-label="个人设置"
+                title={username.trim() || '未设置昵称'}
+              >
+                <span className="sticky-header__profile-avatar">
+                  {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="sm" />}
+                </span>
+              </a>
+            )}
+            <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
+              <Icon icon={ThemeIcon} size="lg" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

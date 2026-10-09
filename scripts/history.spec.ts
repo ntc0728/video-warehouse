@@ -403,7 +403,7 @@ test.describe('8.8 网格列数', () => {
       });
 
     // 每档视口切换后轮询 grid 列数，等布局重排稳定即返回（替代固定睡眠）
-    await expect.poll(cols, { timeout: 2800 }).toBe(4); // 桌面 ≥1024 rail 布局：内容区被 126px 左栏 + gap 压缩，1280 档实际 4 列（原 5 列断言基于无 rail 的旧布局）
+    await expect.poll(cols, { timeout: 2800 }).toBe(4); // ≥1280：4 列（2026-09-30 阶梯右移后，1280 恰是 4 列起点；1024–1279 为 3 列）
     await page.setViewportSize({ width: 900, height: 800 });
     await expect.poll(cols, { timeout: 2500 }).toBe(3); // 768–1023：3 列（2026-09-03 补档）
     await page.setViewportSize({ width: 600, height: 800 });

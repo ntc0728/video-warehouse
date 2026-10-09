@@ -39,6 +39,47 @@
   border-left-width: 6px;
 }
 
+/* ── 「查看全部」文字链接（行标题右侧，首页 7 推荐行） ──────────────
+   样式口径对齐 .cqa-heat-row__more（CategoryQuickAccess.css）：text-xs +
+   text-secondary，hover 提亮 + surface-hover 底。可见性分档：
+   · 桌面 ≥1024 非 TV（渲染侧已保证该档才传 onViewAll，故无需 media query）：
+     默认低透明度，hover 行 / 行内获得焦点时显现；
+   · TV：恒显（不依赖 hover），button 原生可聚焦，遥控焦点可达；
+   · 移动端（≤1023 / App）：不传 onViewAll，元素根本不渲染。 */
+.tmdb-movierow-viewall {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-2xs) var(--space-xs);
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  opacity: 0;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease, opacity var(--dur-fast) ease;
+  cursor: pointer;
+}
+
+/* 桌面非 TV：hover 行 / 行内聚焦（键盘可达）时显现；TV 由下方规则恒显，不受 hover 逻辑影响 */
+html:not([data-device="tv"]) .tmdb-movierow:hover .tmdb-movierow-viewall,
+html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall {
+  opacity: 1;
+}
+
+.tmdb-movierow-viewall:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* TV：恒显（焦点即见），焦点方框由全局 [data-device="tv"] :focus-visible outline 提供 */
+.tmdb-movierow[data-device-row="tv"] .tmdb-movierow-viewall,
+.tmdb-movierow-viewall:focus-visible {
+  opacity: 1;
+}
+
 .tmdb-movierow-error {
   max-width: var(--layout-panel-medium-w);
   color: var(--color-text-tertiary);
@@ -259,18 +300,23 @@
    TV 端 — 焦点可见 + 更大触控区 + 无 hover 箭头
    ============================================================ */
 
-[data-device="tv"] .tmdb-movierow-arrow {
+[data-device="tv"] .tmdb-movierow-arrow,
+[data-device="projector"] .tmdb-movierow-arrow {
   display: none !important;
 }
 
-/* TV 端卡片聚焦时放大（焦点方框由全局 [data-device="tv"] :focus-visible 的
-   outline 统一提供，绘制在卡片外侧、不被滚动容器裁切；此处不再叠 box-shadow） */
+/* TV/投影仪端卡片聚焦时放大（焦点方框由全局 [data-device="tv"] :focus-visible 的
+   outline 统一提供，绘制在卡片外侧、不被滚动容器裁切；此处不再叠 box-shadow；
+   projector 焦点交互视同 tv，成对追加） */
 [data-device="tv"] .tmdb-movierow-card:focus,
-[data-device="tv"] .tmdb-movierow-card:focus-within {
+[data-device="tv"] .tmdb-movierow-card:focus-within,
+[data-device="projector"] .tmdb-movierow-card:focus,
+[data-device="projector"] .tmdb-movierow-card:focus-within {
   outline: none;
 }
 
-[data-device="tv"] .tmdb-movierow-card:focus-within .video-card {
+[data-device="tv"] .tmdb-movierow-card:focus-within .video-card,
+[data-device="projector"] .tmdb-movierow-card:focus-within .video-card {
   transform: scale(1.03);
   transition: transform var(--dur-sm) ease;
 }

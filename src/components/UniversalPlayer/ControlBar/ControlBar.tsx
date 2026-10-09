@@ -28,7 +28,8 @@ interface ControlBarProps {
   visible: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   onTogglePlay: () => void;
-  onSeek: (time: number) => void;
+  /** @param opts.silent true = 拖拽类连续 seek，跳过「已跳转 xx:xx」提示（详见 ProgressBar 同字段注释） */
+  onSeek: (time: number, opts?: { silent?: boolean }) => void;
   onVolumeChange: (volume: number) => void;
   onToggleMute?: () => void;
   /** 音量变化时弹出 3s 音量条（G2：点播模式与 IPTV 一致） */

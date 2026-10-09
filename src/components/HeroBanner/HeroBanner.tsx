@@ -13,7 +13,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Play, MonitorPlay } from 'lucide-react';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsTV, useIsTVLike } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
 import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCache';
@@ -252,7 +252,10 @@ function HeroBannerClassic({
 }: HeroBannerProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
+  // isTV = 真 TV 判定：仅驱动 hero-banner--tv 字号几何；投影仪走桌面几何不加此类。
   const isTV = useIsTV();
+  // isTVLike = 焦点交互语义（tv || projector）：遥控器方向键轮播。
+  const isTVLike = useIsTVLike();
   // 2026-09-11：接口数据只取前 6 张驱动轮播（用户要求「<1024 / 移动端只取前 6 张」）。
   // ⚠️ 必须 useMemo：裸 slice() 每次渲染产生新数组引用，会让下方依赖 [displayItems]
   // 的 useLayoutEffect 每轮都执行，其中 setBgIndices([0]) 传新数组永不 Object.is 相等
@@ -559,9 +562,9 @@ function HeroBannerClassic({
     return () => window.clearInterval(timer);
   }, [paused, active, displayItems.length, autoPlayInterval, triggerSlide]);
 
-  // 遥控器方向键切换（仅 TV 端 + 页面激活时）：与手动滑动共用 triggerSlide
+  // 遥控器方向键切换（TV/投影仪端 + 页面激活时）：与手动滑动共用 triggerSlide
   useEffect(() => {
-    if (!isTV || !active || displayItems.length <= 1) return;
+    if (!isTVLike || !active || displayItems.length <= 1) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       e.preventDefault();
@@ -570,7 +573,7 @@ function HeroBannerClassic({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isTV, active, displayItems.length, triggerSlide]);
+  }, [isTVLike, active, displayItems.length, triggerSlide]);
 
   // 拖拽/滑动切换图片：桌面端鼠标拖拽 + 移动端触摸滑动
   // 三联 track 模式：拖拽/滑动动画期间渲染 [prev | current | next] 三张并排，

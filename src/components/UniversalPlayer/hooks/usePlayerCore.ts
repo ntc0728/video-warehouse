@@ -16,6 +16,25 @@ import { useMediaSession } from './useMediaSession';
 import type { MediaSessionInfo } from './useMediaSession';
 
 /**
+ * 已缓冲末端：取「包含当前播放位置的那个缓冲区间的末端」。
+ *
+ * 旧实现恒取最后一段（`video.buffered.end(length - 1)`）—— 一旦 seek 跳出已缓冲区间
+ * 变成多段（如 `[0,45min] ∪ [55min,57min]`），就会把更早的段落当成连续已缓冲一起上报，
+ * 配合进度条单条 width% 的画法，会把 45–55min 这段没有数据的空隙也涂成灰色。
+ * 落在任何区间之外（刚 seek 到未缓冲位置、新段还没下载出来）时回退到旧口径，
+ * 由渲染侧按「起点 = 圆点位置」裁剪为 0 宽度。
+ */
+function bufferedEndFromCurrent(video: HTMLVideoElement): number {
+  const ranges = video.buffered;
+  if (ranges.length === 0) return 0;
+  const time = video.currentTime;
+  for (let i = 0; i < ranges.length; i++) {
+    if (time >= ranges.start(i) - 0.5 && time <= ranges.end(i) + 0.5) return ranges.end(i);
+  }
+  return ranges.end(ranges.length - 1);
+}
+
+/**
  * 把当前已缓冲末端写入 store。
  *
  * 灰条原先只监听 video 的 `progress` 事件，而暂停 / 加载中不会有新的下载推进，
@@ -24,7 +43,7 @@ import type { MediaSessionInfo } from './useMediaSession';
  */
 function syncBufferedProgress(video: HTMLVideoElement | null): void {
   if (!video || video.buffered.length === 0) return;
-  const end = video.buffered.end(video.buffered.length - 1);
+  const end = bufferedEndFromCurrent(video);
   if (end > 0) usePlayerStore.getState().setBufferedProgress(end);
 }
 
@@ -670,34 +689,40 @@ useEffect(() => {
   /** seek 提示的待发通知（seeked 生效后才提示；连续 seek 只保留最后一次） */
   const seekToastRef = useRef<{ cleanup: () => void } | null>(null);
 
-  const seek = useCallback((time: number) => {
+  const seek = useCallback((time: number, opts?: { silent?: boolean }) => {
     const video = videoRef.current;
     if (!video || video.error) return;
 
-    // 提示在 seek 生效（seeked 事件）后再显示，避免「提示先于生效」的误导（审查报告 1.6）；
-    // 目标与当前位置一致时不触发 seeked，用超时兜底保证提示不丢失。
-    // 连续 seek（拖拽/连按方向键）时清理上一 pending 通知，防止监听器/定时器堆积。
-    const msg = `已跳转 ${formatSeekTime(time)}`;
+    // 清理上一次尚未生效的 seek 提示（连续 seek 时防止监听器/定时器堆积）
     if (seekToastRef.current) seekToastRef.current.cleanup();
-    let notified = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const onSeeked = () => {
-      if (notified) return;
-      notified = true;
-      video.removeEventListener('seeked', onSeeked);
-      if (timer) clearTimeout(timer);
-      playerToast(msg);
-    };
-    timer = setTimeout(onSeeked, 800);
-    video.addEventListener('seeked', onSeeked);
-    seekToastRef.current = {
-      cleanup: () => {
+
+    /**
+     * 拖拽类连续 seek（`silent`）不弹提示：拖拽过程中目标时间已经由进度条上的圆点 +
+     * 时间浮层实时反馈，seeked 之后再弹一条「已跳转 xx:xx」属重复打扰（2026-09-30 用户要求）。
+     * 键盘 ←/→ · Home/End · 单击定位等单次 seek 仍保留提示，作为操作反馈。
+     */
+    if (!opts?.silent) {
+      const msg = `已跳转 ${formatSeekTime(time)}`;
+      let notified = false;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const onSeeked = () => {
         if (notified) return;
         notified = true;
         video.removeEventListener('seeked', onSeeked);
         if (timer) clearTimeout(timer);
-      },
-    };
+        playerToast(msg);
+      };
+      timer = setTimeout(onSeeked, 800);
+      video.addEventListener('seeked', onSeeked);
+      seekToastRef.current = {
+        cleanup: () => {
+          if (notified) return;
+          notified = true;
+          video.removeEventListener('seeked', onSeeked);
+          if (timer) clearTimeout(timer);
+        },
+      };
+    }
 
     // 元数据未就绪（加载中 / 刚切源）时写 currentTime 可能被浏览器丢弃或在 load() 时清零，
     // 等 loadedmetadata 再落位——保证「加载中点击进度条也真的跳到该进度」。

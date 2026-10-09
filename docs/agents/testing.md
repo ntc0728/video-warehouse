@@ -325,6 +325,20 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
   **mock 数据形态必须支撑功能断言**：hermetic mock 若让条件断言用例如 5.10 台标链、G-05 封面回退
   恒走 skip 分支，等于砍掉覆盖——org 主干 mock 已按真实 cn.m3u 形态补 tvg-logo/tvg-id
   （含一条无 logo 频道支撑 EPG icon 二级回退）。加/改 mock 数据后必须 grep「跳过」日志确认可疑空转。
+- **「用例绿」≠「断言跑了」——断言落在哪条分支必须实证**（2026-09-30 DETAIL-062 事件）：
+  spec 选择器已全部改到真实 DOM、`--list` 与 `test:count` 校验一致、用例也确实 passed，
+  但断言实际落在 `if (!hasAllBtn) return` 的**降级分支**上，弹窗路径一行未执行。三条叠加根因：
+  ① `detail.spec` 的 fixture 无 CMS mock（`fixtures/cms-mock.ts` 只被 `player*.spec` 引用）；
+  ② 用例内 `**/*` abort route 把 CMS 请求一并拦掉；③ 即便放行，mock 数据只有 1 条线路 →
+  不满足渲染前置条件（`isSeries || lineCount>1 || episodeCount>1`，`Detail/index.tsx:1244`）→
+  「全部」按钮**根本不渲染**。**判据**：被断言元素**存在**才算覆盖；凡带 `if (…) return`
+  降级分支的用例，必须用临时探针（`console.log` 关键元素 count）跑一次、拿到非零计数再撤探针。
+  **选择器不存在 ≠ 用例会红**——它可能只是从没被执行。
+- **mock 要命中 = 注册顺序 + 数据前提，缺一即静默空转**（与上条同源）：Playwright route
+  **后注册优先** → 专项 mock 必须注册在兜底 abort route **之后**（范例 `detail.spec.ts:302-344`：
+  先 `**/*` abort，再 `page.route(/ac(?:=|%3D)videolist/i, route.fulfill(…))`）；且 mock 数据要满足
+  「被断言元素渲染」的**全部**前置条件（本例是线路数 ≥2），否则等于没 mock。
+  典型症状：**用例绿、覆盖为零、无任何告警**。
 - **临时/调试跑批硬规矩（2026-09-21；2026-09-23 按新跑批器校正）**：带 spec 文件位置参数或 `-g` 过滤
   即 ad-hoc 档——单轮预算 **120s**（`e2e-skeleton.mjs` 自建看门狗到点 **按进程树** `taskkill /T` 击杀、
   **退码 2**；原写法是 `spawnSync(timeout)`，Windows 上只杀 CLI、worker/浏览器留孤儿，已废弃）、

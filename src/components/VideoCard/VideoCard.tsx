@@ -8,7 +8,7 @@ import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Star, Heart } from 'lucide-react';
 import { useUserStore, useSettingsStore } from '@/stores';
-import { useIsTV } from '@/hooks/useMediaQuery';
+import { useIsTVLike } from '@/hooks/useMediaQuery';
 import { useHighlightedText } from '@/lib/highlight';
 import type { Video } from '@/types/video';
 import { searchMulti, buildImageUrl } from '@/services/tmdbService';
@@ -129,7 +129,8 @@ const VideoCard = memo(function VideoCard({
   const { addCollection, removeCollection } = useUserStore();
   const [isOverflow, setIsOverflow] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
-  const isTV = useIsTV();
+  // 焦点交互语义（tv || projector）：TV/投影仪下卡片可被遥控器/方向键聚焦
+  const isTV = useIsTVLike();
   // 横版卡（历史/继续观看）沿用 20 字截断；竖版卡改用完整标题 ——
   // 竖版标题溢出时走无缝跑马灯滚动，若先截断再滚动，滚动的仍是残缺文本，失去意义。
   const displayTitle = video.title.length > 20 ? video.title.slice(0, 20) + '…' : video.title;

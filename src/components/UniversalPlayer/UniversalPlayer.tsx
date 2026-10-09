@@ -37,7 +37,6 @@ import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import { PlayerContext } from './context/PlayerContext';
 import { useIPTVChannelInit, usePlayerClickHandler, useBufferMonitor } from './modules';
 import { useTouchGesture } from './hooks/useTouchGesture';
-import BrightnessVolumeIndicator from './MobileUI/BrightnessVolumeIndicator';
 import { resolveChannelLogoCandidates } from '@/services/channelLogo';
 import type { UniversalPlayerProps } from '@/types/player';
 import type { IPTVChannel } from '@/types/iptv';
@@ -395,13 +394,9 @@ export default function UniversalPlayer({
   });
 
   // 移动端手势（P0-1/P0-4/P0-5/P0-6：横向滑动 seek + 半屏亮度/音量 + 排除 UI 区 + 滚动分级）
-  const {
-    brightness,
-    volume: gestureVolume,
-    indicatorVisible: gestureIndicatorActive,
-    axis: gestureAxis,
-    seekHud,
-  } = useTouchGesture({
+  // 2026-09-30：纵向滑动的柱状指示器（BrightnessVolumeIndicator）已移除，故此处只取 seekHud；
+  // 亮度/音量手势本身保留（仍会写 store.colorFilter 与真实音量），只是不再有视觉反馈。
+  const { seekHud } = useTouchGesture({
     containerRef,
     // P4：原 `mode === 'video'` 迁到能力矩阵 `hasTouchGesture`（点播为 true）。
     // `!isDesktopWeb` 是平台/设备判定（非 mode 纯函数），保留在组件侧与运算，等价性不变。
@@ -420,7 +415,9 @@ export default function UniversalPlayer({
     canSeek: capabilitiesCatchup.canSeek,
     getDuration: () => videoElementRef.current?.duration ?? 0,
     getSeekBaseTime: () => videoElementRef.current?.currentTime ?? 0,
-    onSeekTarget: (t) => playerCore.seek(t),
+    // 拖拽类 seek 不弹「已跳转 xx:xx」：手势过程中已有 seekHud（目标时间 HUD）实时反馈，
+    // 与桌面端拖拽进度条同一口径
+    onSeekTarget: (t) => playerCore.seek(t, { silent: true }),
     verticalGestureActiveRef,
   });
 
@@ -1359,15 +1356,8 @@ skipHistory,
         onVolumeChange={playerCore.setVolume}
       />
 
-      {/* G7-G10：移动端纵向滑动亮度/音量指示器（仅真实移动设备/原生 App 点播模式启用时显示，Web 桌面端隐藏，Issue1） */}
-      {!isDesktopWeb && mode === 'video' && (
-        <BrightnessVolumeIndicator
-          visible={gestureIndicatorActive}
-          axis={gestureAxis}
-          brightness={brightness}
-          volume={gestureVolume}
-        />
-      )}
+      {/* G7-G10 的纵向滑动亮度/音量柱状指示器于 2026-09-30 移除（全端：移动 Web / App / TV）。
+          手势逻辑本身保留在 useTouchGesture 内（仍会调节亮度与音量），仅不再渲染柱子。 */}
 
       {/* EPG Program Guide overlay */}
       {mode === 'iptv' && showProgramGuide && (

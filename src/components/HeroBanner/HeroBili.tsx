@@ -14,8 +14,17 @@
  *   按卡片数整组推进——activeIndex 与 shuffleOffset 两个状态完全解耦
  * - banner 保留 继续播放（historyMap 命中时渲染）/ 查看详情 双按钮（沿用 hero-banner__cta token）
  * - 卡片点击跳详情；收藏按钮命中时 toggle 收藏 + 不冒泡（不触发跳转）
- * - 卡片标题不换行，溢出时悬浮跑马灯（双段等长无缝循环）
+ * - 卡标题默认单行 ellipsis 兜底（高度恒定，保 banner 齐平）；hover/focus 且
+ *   溢出时切跑马灯（方案 A，2026-09-30 用户确认 demos/hero-title-marquee-demo.html）
  * - 「换一换」防抖 = 动画锁：is-spinning（0.6s 转圈）未结束前点击直接 return
+ * - 「换一换」自动轮播（P3-A，8s，2026-09-30 用户确认）：定时触发同款推进；
+ *   暂停条件 = hover 右栏 / 焦点在右栏内 / document.hidden / Keep-Alive 非激活；
+ *   手动或自动切换后经 shuffleOffset 依赖重置 8s 计时器；仅桌面生效
+ *   （TV / ≤1023 由挂载条件 useIsWideDesktop 排除，Capacitor app 由
+ *   isNativePlatform 排除——宽屏平板虽渲染 HeroBili 但不自动轮播）
+ * - Banner 信息层：标题 + 评分/年份/类型 chips（P3-B，纯 token 化胶囊，仅有的
+ *   数据字段渲染，缺字段不渲染 chip）+ 加深底部渐变；caption 恒 absolute，
+ *   不参与布局流，banner 齐平不变量不受影响
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,6 +32,7 @@ import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play, MonitorPlay } from '
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
 import { useHeroSideCols } from '@/hooks';
+import { isNativePlatform } from '@/lib/platform';
 import { Icon } from '@/components/ui/Icon';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import './HeroBili.css';
@@ -67,6 +77,8 @@ const SIDE_ROWS = 2;
 const BANNER_POOL = 6;
 /** 换一换动画锁时长（= 转圈动画时长，防抖窗口） */
 const SHUFFLE_LOCK_MS = 600;
+/** 换一换自动轮播间隔（P3-A：8s，2026-09-30 用户确认） */
+const SHUFFLE_AUTO_MS = 8000;
 
 /** 条目标题 */
 function itemTitle(item: HeroBiliItem): string {
@@ -194,15 +206,43 @@ export default function HeroBili({
   const shuffleBatch = sideCards;
   const shuffleCycles = cardPoolSize > 0 ? Math.ceil(cardPoolSize / shuffleBatch) : 1;
 
-  // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
-  const handleShuffle = useCallback(() => {
-    if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
+  // 换一换推进核心（手动与自动共用）：转圈动画 + 整批推进 + 0.6s 动画锁重置。
+  // 切换为同步索引推进（无网络请求），无异步竞态面，天然无 loading 永驻隐患
+  const advanceShuffle = useCallback(() => {
     setSpinning(true);
     // 一次整批推进（= 当前列数 × 2 张）；新图耗尽后回到最初一轮（补位逻辑见 rightCards）
     setShuffleOffset((o) => (o + 1) % shuffleCycles);
     if (shuffleTimerRef.current) window.clearTimeout(shuffleTimerRef.current);
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
-  }, [spinning, shuffleCycles]);
+  }, [shuffleCycles]);
+
+  // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
+  const handleShuffle = useCallback(() => {
+    if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
+    advanceShuffle();
+  }, [spinning, advanceShuffle]);
+
+  // ── 换一换自动轮播（P3-A）：8s 间隔定时触发同款推进 ─────────────────────
+  // 启用条件：桌面 ≥1024 非 TV 非 app——TV / ≤1023 由挂载条件 useIsWideDesktop
+  // 排除（HeroBili 根本不渲染），Capacitor app（宽屏平板会渲染本组件）由
+  // isNativePlatform 显式排除（遥控/触屏场景静止，2026-09-30 用户口径）。
+  // 暂停：hover 右栏 / 焦点在右栏内（React onFocus/onBlur = focusin/focusout 冒泡）/
+  // document.hidden / Keep-Alive 非激活；池为空不轮播。
+  // 手动或自动切换都使 shuffleOffset 变化 → 依赖重建 interval = 计时器重置 8s。
+  const [rightHovered, setRightHovered] = useState(false);
+  const [rightFocused, setRightFocused] = useState(false);
+  const [docHidden, setDocHidden] = useState(() => document.hidden);
+  useEffect(() => {
+    const onVis = () => setDocHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+  useEffect(() => {
+    const disabled = rightHovered || rightFocused || docHidden || !active || cardPoolSize === 0;
+    if (disabled || isNativePlatform()) return;
+    const timer = window.setInterval(advanceShuffle, SHUFFLE_AUTO_MS);
+    return () => window.clearInterval(timer);
+  }, [rightHovered, rightFocused, docHidden, active, cardPoolSize, advanceShuffle, shuffleOffset]);
 
   // 右侧卡片：banner 池（前 6 张）之外的条目，取数循环也排除 banner 池——
   // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡。
@@ -344,7 +384,13 @@ export default function HeroBili({
       </div>
 
       {/* ── 右：3×2 竖版卡 + 脱标换一换浮层 ── */}
-      <div className="hero-bili__right">
+      <div
+        className="hero-bili__right"
+        onMouseEnter={() => setRightHovered(true)}
+        onMouseLeave={() => setRightHovered(false)}
+        onFocus={() => setRightFocused(true)}
+        onBlur={() => setRightFocused(false)}
+      >
         <div className="hero-bili__cards">
           {rightCards.map(({ item }) => (
             <HeroSideCard
@@ -372,7 +418,9 @@ export default function HeroBili({
  * HeroSideCard — 单张竖版卡（封面在上标题在下，四角信息）
  * - 左上评分 / 右上收藏（悬浮显现）/ 左下年份 / 右下类型
  * - 整卡为 <Link>（支持右键新标签页打开详情）；收藏命中时 toggle + preventDefault 不跳转
- * - 标题 nowrap，溢出时悬浮跑马灯（is-marquee，双段等长无缝 4.5s）
+ * - 标题方案 A（2026-09-30 用户确认）：默认单行 ellipsis 兜底（标题条高度恒定，
+ *   banner 齐平推导的单行基准不变）；hover 标题区 / 键盘聚焦整卡且文本溢出时，
+ *   切换为双段等长无缝跑马灯（4.5s），移出/失焦即停；reduced-motion 降级静态 ellipsis
  */
 function HeroSideCard({ item }: { item: HeroBiliItem }) {
   const location = useLocation();
@@ -387,9 +435,11 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
   const [marquee, setMarquee] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
 
-  // 跑马灯只在「悬浮 + 溢出」时启用，移出即停（不自动滚动）
+  // 跑马灯只在「悬浮/聚焦 + 溢出」时启用，移出/失焦即停（不自动滚动）。
+  // 溢出测量对象 = 兜底层（.hero-side-card__title-fallback，恒单行 nowrap），
+  // 与 demos/hero-title-marquee-demo.html 的判定一致
   const handleTitleEnter = useCallback(() => {
-    const el = titleRef.current;
+    const el = titleRef.current?.querySelector('.hero-side-card__title-fallback');
     if (el && el.scrollWidth > el.clientWidth) setMarquee(true);
   }, []);
   const handleTitleLeave = useCallback(() => setMarquee(false), []);
@@ -419,6 +469,9 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
       state={{ from: location.pathname + location.search }}
       className="hero-side-card"
       aria-label={title}
+      /* 键盘可达：聚焦整卡与悬浮标题区同语义触发跑马灯（失焦即停） */
+      onFocus={handleTitleEnter}
+      onBlur={handleTitleLeave}
     >
       <div className="hero-side-card__cover">
         {coverUrl ? (
@@ -460,12 +513,17 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
         onMouseEnter={handleTitleEnter}
         onMouseLeave={handleTitleLeave}
       >
-        <span className="hero-side-card__title-track">
-          <span className="hero-side-card__title-seg">{title}</span>
-          {/* 第二段只在与跑马灯时渲染——短标题不会出现「两个标题」 */}
-          {marquee && (
-            <span className="hero-side-card__title-seg" aria-hidden="true">{title}</span>
-          )}
+        {/* 兜底层：恒单行 ellipsis（标题条高度恒定，banner 齐平基准不受跑马灯影响） */}
+        <span className="hero-side-card__title-fallback">{title}</span>
+        {/* 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），跑马灯时才显示 */}
+        <span className="hero-side-card__title-marquee" aria-hidden="true">
+          <span className="hero-side-card__title-track">
+            <span className="hero-side-card__title-seg">{title}</span>
+            {/* 第二段只在跑马灯时渲染——短标题不会出现「两个标题」 */}
+            {marquee && (
+              <span className="hero-side-card__title-seg" aria-hidden="true">{title}</span>
+            )}
+          </span>
         </span>
       </div>
     </Link>

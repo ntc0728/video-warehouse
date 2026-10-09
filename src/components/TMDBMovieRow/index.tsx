@@ -14,7 +14,8 @@
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobileLayout, useIsTVLike } from '@/hooks/useMediaQuery';
+import { prefersReducedMotion } from '@/lib/pageTransition';
 import { useGridCols } from '@/hooks/useGridCols';
 import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
@@ -68,6 +69,12 @@ interface TMDBMovieRowProps {
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
   skipAnimations?: boolean;
+  /**
+   * 「查看全部」入口回调：传入时在行标题右侧渲染文字链接（仅首页 7 个推荐行使用；
+   * continueMode 恒不渲染）。可见性由 CSS 控制：桌面 ≥1024 非 TV hover 行时显现，
+   * TV 端恒显（焦点可达）；移动端 / App 由调用方不传本 prop 而整体不渲染。
+   */
+  onViewAll?: () => void;
 }
 
 /**
@@ -174,6 +181,7 @@ function TMDBMovieRow({
   scrollResetToken,
   crossfadeOnChange = false,
   skipAnimations = false,
+  onViewAll,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -186,7 +194,9 @@ function TMDBMovieRow({
   // 非手机 web 小视口（768–1023px 桌面窄窗 / 平板横竖屏）仍走桌面 UI，应显示左右箭头；
   // 只有真实手机 / App / <768px 窄窗（触摸布局）才隐藏箭头。
   const isMobile = useIsMobileLayout();
-  const isTV = useIsTV();
+  // 焦点交互语义（tv || projector）：TV/投影仪共用遥控器焦点导航（tabIndex、
+  // 方向键滚行、焦点卡滚入可视区、隐藏 hover 箭头、禁鼠标拖拽）。
+  const isTV = useIsTVLike();
 
   // 拖拽状态
   const isDraggingRef = useRef<boolean>(false);
@@ -245,21 +255,23 @@ function TMDBMovieRow({
     };
   }, [scrollResetToken]);
 
-  /** 焦点管理：TV 端卡片聚焦时自动滚动到可见区域 */
+  /** 焦点管理：TV/投影仪端卡片聚焦时自动滚动到可见区域 */
   const handleCardFocus = useCallback(
     (cardEl: HTMLElement) => {
       if (!isTV || !rowRef.current) return;
       const row = rowRef.current;
       const cardRect = cardEl.getBoundingClientRect();
       const rowRect = row.getBoundingClientRect();
+      // prefers-reduced-motion 下滚动降级为即时跳转（对齐全站 reduced-motion 口径）
+      const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
 
       // 卡片超出右侧 → 向右滚动
       if (cardRect.right > rowRect.right - 20) {
-        row.scrollBy({ left: cardRect.right - rowRect.right + 40, behavior: 'smooth' });
+        row.scrollBy({ left: cardRect.right - rowRect.right + 40, behavior });
       }
       // 卡片超出左侧 → 向左滚动
       else if (cardRect.left < rowRect.left + 20) {
-        row.scrollBy({ left: cardRect.left - rowRect.left - 40, behavior: 'smooth' });
+        row.scrollBy({ left: cardRect.left - rowRect.left - 40, behavior });
       }
     },
     [isTV],
@@ -461,6 +473,14 @@ function TMDBMovieRow({
     >
       <div className="tmdb-movierow-header" ref={headerRef}>
         <h2 className="tmdb-movierow-title">{title}</h2>
+        {/* 「查看全部」：仅普通推荐行渲染（continueMode 的「继续观看」无对应 Browse 分类）。
+            样式与可见性口径见 TMDBMovieRow.css .tmdb-movierow-viewall。 */}
+        {onViewAll && !continueMode && (
+          <button type="button" className="tmdb-movierow-viewall" onClick={onViewAll}>
+            查看全部
+            <Icon icon={ChevronRight} size="xs" />
+          </button>
+        )}
       </div>
 
       <div className="tmdb-movierow-wrapper">
@@ -590,5 +610,6 @@ export default memo(TMDBMovieRow, (prev, next) =>
   prev.error === next.error &&
   prev.items === next.items &&
   prev.continueMode === next.continueMode &&
-  prev.continueItems === next.continueItems,
+  prev.continueItems === next.continueItems &&
+  prev.onViewAll === next.onViewAll,
 );

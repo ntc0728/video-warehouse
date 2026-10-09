@@ -516,6 +516,16 @@ export default function PlayerPage() {
     setExpandedPanels(prev => {
       const next = { ...prev };
       if (prev[key]) {
+        // 桌面（≥1024，面板高度互斥分配）不允许把所有面板都收起 —— 至少保留一个展开，
+        // 否则侧栏只剩三条 header、播放器右侧空一大片（2026-09-30 用户定稿）。
+        // 移动端各面板独立展开/收起（不做此限制，保留原有行为）。
+        if (!isMobile) {
+          // 只统计「当前变体下真实存在」的面板：movie 变体没有选季面板，
+          // 不能拿隐藏的 season 当「仍有展开项」的挡箭牌。
+          const visibleKeys = playerVariant === 'tv' ? ['cms', 'season', 'episodes'] : ['cms', 'episodes'];
+          const hasOtherExpanded = visibleKeys.some(k => k !== key && prev[k]);
+          if (!hasOtherExpanded) return prev; // 已是最后展开项 → 忽略收起
+        }
         next[key] = false;
       } else if (isMobile) {
         next[key] = true;

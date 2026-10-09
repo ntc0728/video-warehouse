@@ -560,7 +560,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   box-shadow: none !important;
 }
 
-/* ── TV 模式焦点方框（方向键 / 遥控器导航）─────────────────────────────
+/* ── TV/投影仪模式焦点方框（方向键 / 遥控器导航）─────────────────────
    此前为「鼠标用户」在大量组件上做了 outline:none 屏蔽，导致 TV 模式下
    用方向键聚焦按钮 / tab / 卡片时没有任何聚焦框。TV 模式统一重新点亮：
    · 用 outline 画在边框【外侧】，不被元素自身 overflow:hidden /
@@ -568,8 +568,11 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
      表现为「方框被裁 / 只剩一个小圆点」）；
    · !important + 较高特异性覆盖各组件的 outline:none 屏蔽；
    · box-shadow:none 清掉组件自带焦点环，避免与 outline 叠成双框；
-   · 例外：.no-interaction-visual（logo / 品牌名）保持无聚焦框。 */
-[data-device="tv"] :focus-visible:not(.no-interaction-visual) {
+   · 例外：.no-interaction-visual（logo / 品牌名）保持无聚焦框。
+   projector（投影仪，设置项手动指定）：焦点交互视同 TV，与 tv 分支成对追加；
+   其几何仍走桌面档（见 html:not([data-device="tv"]) 各分档）。 */
+[data-device="tv"] :focus-visible:not(.no-interaction-visual),
+[data-device="projector"] :focus-visible:not(.no-interaction-visual) {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
   outline-offset: var(--tv-focus-offset, 2px) !important;
   box-shadow: none !important;
@@ -579,20 +582,25 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
    会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。覆盖上面的
    全局外侧 outline，确保这些控件的焦点框清晰可见且不被裁切。 */
 [data-device="tv"] .category-segmented__item:focus-visible,
-[data-device="tv"] .browse-search-tab:focus-visible {
+[data-device="tv"] .browse-search-tab:focus-visible,
+[data-device="projector"] .category-segmented__item:focus-visible,
+[data-device="projector"] .browse-search-tab:focus-visible {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
   outline-offset: calc(-1 * var(--tv-focus-width, 3px) - 2px) !important;
   box-shadow: none !important;
 }
 [data-device="tv"] .category-segmented__item.active:focus-visible,
-[data-device="tv"] .browse-search-tab.active:focus-visible {
+[data-device="tv"] .browse-search-tab.active:focus-visible,
+[data-device="projector"] .category-segmented__item.active:focus-visible,
+[data-device="projector"] .browse-search-tab.active:focus-visible {
   outline-color: var(--color-text-inverse) !important;
 }
 
-/* TV：导航栏 logo（.no-interaction-visual）是可聚焦的首页入口，遥控器导航下需显示
+/* TV/投影仪：导航栏 logo（.no-interaction-visual）是可聚焦的首页入口，遥控器导航下需显示
    焦点框——覆盖 .no-interaction-visual:focus-visible 的 outline:none 屏蔽。
    用外侧 outline（与全局 TV 规则一致）；logo 位于导航栏左侧、通常带左内边距，不会被裁切。 */
-[data-device="tv"] .no-interaction-visual:focus-visible {
+[data-device="tv"] .no-interaction-visual:focus-visible,
+[data-device="projector"] .no-interaction-visual:focus-visible {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
   outline-offset: var(--tv-focus-offset, 2px) !important;
   box-shadow: none !important;
@@ -605,8 +613,10 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
    不会命中，故历史上担心的「点一下留下焦点框」本就不会出现（旧屏蔽是过度防御）。
    用 outline 而非 box-shadow：box-shadow 会被 overflow:hidden / border-radius 祖先裁切。
    规则形态与上方 TV 块同源，仅参数不同（TV 3px 固定 / 非 TV 2px 流体）。
-   例外：.no-interaction-visual（logo / 品牌名）保持无框（其自身已 !important）。 */
-:root:not([data-device="tv"]) :focus-visible:not(.no-interaction-visual) {
+   例外：.no-interaction-visual（logo / 品牌名）保持无框（其自身已 !important）。
+   ⚠️ 同时排除 projector：投影仪走上方 TV 方框（焦点交互视同 TV），若命中本桌面
+   分支（特异性更高且源码顺序在后）会把 TV 3px 方框压回 2px 流体环。 */
+:root:not([data-device="tv"]):not([data-device="projector"]) :focus-visible:not(.no-interaction-visual) {
   outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
@@ -614,14 +624,14 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 
 /* 分段控件（收藏/历史 category-segmented、browse search-tabs）：容器 overflow:hidden
    会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。与 TV 侧同源。 */
-:root:not([data-device="tv"]) .category-segmented__item:focus-visible,
-:root:not([data-device="tv"]) .browse-search-tab:focus-visible {
+:root:not([data-device="tv"]):not([data-device="projector"]) .category-segmented__item:focus-visible,
+:root:not([data-device="tv"]):not([data-device="projector"]) .browse-search-tab:focus-visible {
   outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
   outline-offset: calc(-1 * var(--layout-outline-width, 2px) - 2px) !important;
   box-shadow: none !important;
 }
-:root:not([data-device="tv"]) .category-segmented__item.active:focus-visible,
-:root:not([data-device="tv"]) .browse-search-tab.active:focus-visible {
+:root:not([data-device="tv"]):not([data-device="projector"]) .category-segmented__item.active:focus-visible,
+:root:not([data-device="tv"]):not([data-device="projector"]) .browse-search-tab.active:focus-visible {
   outline-color: var(--color-text-inverse) !important;
 }
 
@@ -957,6 +967,7 @@ main {
    现把三处列数提到 :root 级 token，**页面 CSS 与骨架同读一处**：
      · --person-work-cols  人物页作品网格（768–1023 锁 5 列，其余等同 --card-cols）
      · --history-cols      历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5；已迁 layout-tokens.css）
+                           阶梯（2026-09-30）：1(<480) / 2(≥480) / 3(≥768) / 4(≥1280) / 5(≥1920) / 6(≥2560)
      · --chart-cols        榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列；已迁 layout-tokens.css）
    断点阶梯逐条对齐改前行为，视觉效果零变化；TV/App 覆盖靠 html[data-device] /
    :root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols 同一套做法。
@@ -1234,9 +1245,11 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 @media (width > 1440px) {
   /* ── 功能性描边守护（特异性高于组件默认规则，确保焦点/选中态可见） ── */
   /* 键盘焦点环（2026-09-15：改用 outline 口径，与全局规则同源同形，
-     消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切） */
-  html:not([data-device="tv"]) .video-card:focus-visible,
-  html:not([data-device="tv"]) .iptv-channel-card:focus-visible {
+     消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切）
+     ⚠️ 排除 projector：投影仪走 VideoCard.css 的 [data-device="projector"] TV 焦点
+     分支（3px 外框），本桌面 2px 环特异性更高会压过它。 */
+  html:not([data-device="tv"]):not([data-device="projector"]) .video-card:focus-visible,
+  html:not([data-device="tv"]):not([data-device="projector"]) .iptv-channel-card:focus-visible {
     outline: var(--layout-outline-width, 2px) solid var(--color-primary);
     outline-offset: 2px;
     box-shadow: none;

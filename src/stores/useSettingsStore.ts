@@ -51,6 +51,8 @@ interface SettingsState extends AppSettings {
   setAutoPlay: (value: boolean) => void;
   /** 强制 TV 模式（用于在非 TV 设备上体验遥控器交互） */
   setTvMode: (value: boolean) => void;
+  /** 投影仪模式（手动指定设备类型为投影仪；投影仪 UA 无可靠自动检测特征） */
+  setProjectorMode: (value: boolean) => void;
   /** TV 过扫描安全区大小（0–10） */
   setTvOverscan: (value: number) => void;
   /** 界面缩放（0=自动；>0 手动倍率，覆盖自动档） */
@@ -88,6 +90,7 @@ export const DEFAULT_SETTINGS = {
   skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
+  projectorMode: false,
   tvOverscan: 5,
   uiScale: 0,
   username: '',
@@ -190,6 +193,7 @@ export const useSettingsStore = create<SettingsState>()(
       skipOutroDuration: 90,
   autoPlay: true,
   tvMode: false,
+  projectorMode: false,
   tvOverscan: 5,
   uiScale: 0,
   username: '',
@@ -221,6 +225,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSkipOutroDuration: (skipOutroDuration) => set({ skipOutroDuration: Math.max(10, Math.min(300, skipOutroDuration)) }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
       setTvMode: (tvMode) => set({ tvMode }),
+      setProjectorMode: (projectorMode) => set({ projectorMode }),
       setTvOverscan: (tvOverscan) => set({ tvOverscan }),
       setUiScale: (uiScale) => set({ uiScale }),
       setUsername: (username) => set({ username }),
@@ -313,11 +318,11 @@ export const useSettingsStore = create<SettingsState>()(
 //   收敛性：接收页签仅在「值确实变化」时 set；set 后 persist 写回的内容与自身
 //   内存一致 → 对端再收到事件时逐键比对全相等 → 不再 set → 环自动断裂。
 //
-// 白名单排除（CROSS_TAB_EXCLUDED_KEYS）：tvMode / tvOverscan 属「播放布局类」，
-// 实时灌入会突变另一页签正在播放页的布局（TV 导航框架 + 过扫描安全区），不同步。
+// 白名单排除（CROSS_TAB_EXCLUDED_KEYS）：tvMode / tvOverscan / projectorMode 属「播放布局类」，
+// 实时灌入会突变另一页签正在播放页的布局（TV 导航框架 + 过扫描安全区 + 设备标识），不同步。
 // 每页签保留自己的值；excluded 键永远不会被写回覆盖，也不参与收敛。
 let settingsCrossTabSyncAttached = false;
-const CROSS_TAB_EXCLUDED_KEYS = new Set(['tvMode', 'tvOverscan']);
+const CROSS_TAB_EXCLUDED_KEYS = new Set(['tvMode', 'tvOverscan', 'projectorMode']);
 
 /** 解析另一页签写入的持久化载荷，白名单逐键比对合并（含敏感字段解密） */
 export async function mergeSettingsFromCrossTab(raw: string): Promise<void> {

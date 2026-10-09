@@ -9,7 +9,8 @@
      · 二级活跃序号           .up-channel-item-active …-num      → color(srgb 0 0 0/.65)
      · 一级活跃计数药丸        color-mix(in srgb, primary 12%)    → 比未选中的白 6% **更暗**
      · TV 焦点描边（3 处）与电视端焦点底色 color-mix(primary 15~20%)
-     · 手势指示条填充、进度条/时移滑块 accent-color、时移按钮描边与文字
+     · 进度条/时移滑块 accent-color、时移按钮描边与文字
+       （另列的手势指示条填充随 .up-gesture-indicator 于 2026-09-30 移除，已不在此列）
      另有一类「primary 作填充 + color:#fff」的消费点在**暗色主题**同样坏（primary = #fff
      → 白底白字）：错误态主按钮 `.up-error-actions-btn-primary`、音效预设
      `.up-settings-preset.is-active`、移动端抽屉 chip `.up-fs-drawer .up-ms-chip--on`、
@@ -18,7 +19,8 @@
      故把 primary 家族整体切到亮色强调蓝 #3b82f6。选它的依据是仓里已有的三处线索：
      ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary) }` 的**兜底就是
         #3b82f6** —— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
-     ② `.up-gesture-indicator__fill { background: var(--color-primary) }` 同款写法；
+     ② 手势指示条填充 `.up-gesture-indicator__fill { background: var(--color-primary) }` 同款
+        写法（该指示器已于 2026-09-30 移除，此处仅留作当初选色的历史依据）；
      ③ `.video-card-status.status--unwatched` 已用 rgba(59,130,246,.85)。
 
      同时补 --color-primary-rgb：IPTVOSDBar 的时移按钮写作
@@ -2406,46 +2408,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 
-.up-gesture-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-lg);
-  background: rgba(0, 0, 0, 0.65);
-  color: var(--color-on-image);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.up-gesture-indicator__bar {
-  position: relative;
-  width: 6px;
-  height: 120px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.25);
-  overflow: hidden;
-}
-
-.up-gesture-indicator__fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  transition: height 0.08s linear;
-}
-
-.up-gesture-indicator__value {
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-}
+/* 手势亮度/音量柱状指示器 .up-gesture-indicator* 已于 2026-09-30 随组件一并移除
+   （组件：MobileUI/BrightnessVolumeIndicator.tsx）；手势逻辑仍生效，仅无视觉反馈。 */
 
 .up-progress-tooltip .up-thumbnail-preview__fallback {
   font-size: var(--text-xs);

@@ -7,7 +7,8 @@ import { useMediaQuery, useIsTV, useIsRealPhone } from './useMediaQuery';
  * 同时服务两类首页宽屏特性：
  *  · HeroBili 分支（HeroBanner）：≥1024px 渲染 B 站风 HeroBili，<1024px 走 HeroBannerClassic；
  *  · 分类导航宽屏特性（CQA Nav/Panel/HeatRow）：≥1024px 分类 chips 上移进 header / mega 面板 / 热度榜；
- *  · 首页两栏（Home .home-two-col）：≥1024px 左栏「今日趋势」榜 + 右列 Hero/内容行。
+ *  · 首页大屏单列布局（2026-09-29 起，原 .home-two-col 两栏已删除）：≥1024px
+ *    HeroBili + CQA 合并体（CategoryInlineBoard）单列纵向流。
  * TV 端恒不启用（红线：不影响 TV）——TV UA / TV 模式开关命中时恒为 false，
  * 保持原 hero-banner__card 结构。
  * 2026-09-07 曾右移 1280 → 1440（全站大屏起点统一），同日二次修正回退 1440 → 1280。

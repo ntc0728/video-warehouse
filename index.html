@@ -105,14 +105,15 @@
          用户反馈「内容未撑满容器高度」）：填充行溢出由 overflow:hidden 裁剪。 */
       .bs-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 16px; min-height: 0; padding: 16px; }
       /* 内容盒对齐（2026-09-22 全站三态实测审计，非仅 home）：镜像 .page-padding 的
-         --page-pad-x 分档（≥768 起 ≈14.333px（space-lg clamp 顶）/ 60 / 100 / 140）与
+         --page-pad-x 分档（2026-09-30 60px 档起点 1440 → 1024：<1024 ≈14.333px
+         （space-lg clamp 顶）/ 1024–1919 = 60 / 1920–2559 = 100 / ≥2560 = 140）与
          主流页内容 2200 封顶居中。旧固定 16px 不封顶 → 各页主列宽普遍比真实页宽
          30–250px，React 挂载瞬间横缩抖动。play 形态（全屏播放器，不走 AppLayout）除外。
          ui-scale 自动档骨架读不到（bundle token），残余偏差为已知取舍。 */
       @media (width >= 768px) {
         #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 14.333px; }
       }
-      @media (width >= 1440px) {
+      @media (width >= 1024px) {
         #boot-splash:not([data-shape="play"]) .bs-body { padding-inline: 60px; }
       }
       @media (width >= 1920px) {
@@ -296,10 +297,13 @@
       /* 真实续看卡文字区是标题 + meta 两行（三态实测：单行会比真实矮 ≈40px） */
       .bs-contcard__bar--sm { width: 45%; }
 
-      /* HeroBili 融合卡（2026-09-22 单真源收敛）：banner 高 / 右栏宽直接消费
-         注入的 layout-tokens.css --hero-banner-h / --hero-side-w（与真实页同一份
-         分档公式，不再手抄第二套）；<1024 非宽屏档 banner 走 aspect-ratio，
-         不读这两个 token。卡壳 padding 镜像真实 .hero-bili（space-sm/md clamp 顶）。 */
+      /* HeroBili 融合卡（2026-09-22 单真源收敛）：右栏宽直接消费注入的
+         layout-tokens.css --hero-side-w（与真实页同一份分档公式，不再手抄第二套）；
+         <1024 非宽屏档 banner 走 aspect-ratio，不读该 token。
+         2026-09-30：banner 高改由 flex stretch 对齐右栏（宽屏档 flex row 内
+         align-items:stretch 天然等高，与真实页 .hero-bili__banner height:100%
+         同语义），不再消费 --hero-banner-h——其新公式引用 --space-xs 等 bundle
+         token，注入侧无定义，消费会 invalid。卡壳 padding 镜像真实 .hero-bili。 */
       .bs-herobili {
         padding: 7px 9.5px 9.5px;
         background: #fff;
@@ -329,21 +333,27 @@
       @media (width >= 1024px) {
         #boot-splash:not([data-cols="tv"]) .bs-home__cols { flex-direction: row; gap: 14.333px; align-items: flex-start; }
         #boot-splash:not([data-cols="tv"]) .bs-home .bs-rail { display: block; flex: 0 0 var(--home-rail-w, 240px); }
-        /* 宽屏档 hero：直接消费注入的 layout-tokens 分档 token（与真实页同一真源） */
+        /* 宽屏档 hero：右栏宽直接消费注入的 layout-tokens 分档 token（与真实页同一真源）；
+           banner 高走 flex stretch（见上注），不再消费 --hero-banner-h */
         #boot-splash:not([data-cols="tv"]) .bs-herobili {
           --bs-side-w: var(--hero-side-w);
-          --bs-banner-h: var(--hero-banner-h);
         }
-        #boot-splash:not([data-cols="tv"]) .bs-herobili__grid { flex-direction: row; }
-        #boot-splash:not([data-cols="tv"]) .bs-herobili__banner { flex: 1 1 0; min-width: 0; min-height: var(--bs-banner-h); max-height: none; aspect-ratio: auto; }
+        #boot-splash:not([data-cols="tv"]) .bs-herobili__grid { flex-direction: row; align-items: stretch; }
+        #boot-splash:not([data-cols="tv"]) .bs-herobili__banner { flex: 1 1 0; min-width: 0; max-height: none; aspect-ratio: auto; }
         #boot-splash:not([data-cols="tv"]) .bs-herobili__right {
+          position: relative;
           display: grid;
           flex: 0 0 var(--bs-side-w);
-          grid-template-columns: minmax(0, 1fr) auto;
-          column-gap: 8px;
-          align-items: start;
+          /* 2026-09-30 镜像真实布局：换一改脱标浮层，右栏卡网格独占全宽（单轨） */
+          grid-template-columns: minmax(0, 1fr);
         }
         #boot-splash:not([data-cols="tv"]) .bs-shuffle {
+          position: absolute;
+          top: 0;
+          /* 镜像真实统一公式 right = space-md − page-pad-x（全档进页面留白区，
+             2026-09-30 二次裁决；space-md 冻结 9.5px，--page-pad-x 注入分档
+             60/100/140 自动跟随，1024 起即进留白） */
+          right: calc(9.5px - var(--page-pad-x));
           display: flex;
           flex-direction: column;
           gap: 4px;

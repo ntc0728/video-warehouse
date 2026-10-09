@@ -69,7 +69,7 @@ A: 检查 M3U8 代理是否部署成功，确认频道 URL 有效。
   - `vite.config.ts` 新增 `server.warmup` 预热核心模块，缓解 dev 模式冷启动首次访问慢（首屏实测首次 ~400ms / 二次 ~176ms）
 
 - **v1.9.0** - 全格式播放器缓冲优化 + IPTV 纯前端整改（2026-09-02）：
-  - **HLS 缓冲 90MB 折中方案**：移除过度 300MB/3000s 配置与暂停轮询预加载 hack；`maxBufferSize` 改为 90MB（比默认 60MB 高 50%），`maxBufferLength`/`maxMaxBufferLength`/`backBufferLength` 走 hls.js 默认值；`abrEwmaDefaultEstimate=1.5Mbps` 改善初始选档。2Mbps 视频缓冲约 6 分钟、4Mbps 约 3 分钟，填满后停下载不再抢带宽。
+  - **HLS 缓冲上限**：移除过度 300MB/3000s 配置与暂停轮询预加载 hack；缓冲上限 = **`maxBufferSize` 60MB 与 `maxMaxBufferLength` 300s（5 分钟）取最小值**（2026-09-30 定稿：`maxBufferSize` 由 90MB 收回 60MB 降低常驻内存，同时显式补上 `maxMaxBufferLength=300` 压住时长侧 —— 依据 hls.js `getMaxBufferLength()` 的 `min(max(8×maxBufferSize/码率, 30), maxMaxBufferLength)`，两字段必须成对写，只写字节上限时低码率源会吃到默认 600s 兜底）；`maxBufferLength`/`backBufferLength` 走 hls.js 默认值；`abrEwmaDefaultEstimate=1.5Mbps` 改善初始选档。填满后停下载不再抢带宽。
   - **HLS 直播低延迟**：`LEVEL_LOADED` 直播分支经 `this.hls.config` 写入 `liveSyncDurationCount=3` / `liveMaxLatencyDurationCount=6` / `liveDurationInfinity=true`（延迟 5-10s）+ 缓冲收敛（60/120/20s）。修正了直接赋值 getter（`this.hls.maxBufferLength`）不生效的坑。
   - **Dash 缓冲提升**：`bufferTimeDefault=30s` / `bufferTimeAtTopQuality=45s` / `bufferTimeAtTopQualityLongForm=60s`，高码率 DASH 更抗波动。
   - **MPEGTS 点播 + 重连**：`isLive` 改为动态（`options.isLive ?? true`）；点播分支启用 stash 缓冲 + `seek()` 支持；`ERROR` 监听断流重连（2s × 最多 5 次），重连期间 toast，LOAD 成功重置计数。

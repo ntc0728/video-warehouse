@@ -1095,7 +1095,8 @@ body.skin-transitioning .skin-btn.active {
   width: min(94vw, calc(var(--layout-modal-max-width) + 280px));
 }
 
-/* 复用详情页 source-all-modal 的滚动隔离策略，保证弹窗内容可滚动且不溢出裁剪 */
+/* 复用播放列表弹窗（PlaylistModal，flex:1 1 auto + min-height:0 + overflow-y:auto）的滚动隔离策略，
+   保证弹窗内容可滚动且不溢出裁剪。注：旧类 .source-all-modal 已于 2026-09-30 从 Detail.css 清除 */
 .settings-modal > .custom-scrollbar-container {
   flex: 1 1 auto;
   min-height: 0;

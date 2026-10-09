@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero 卡标题共存方案 demo：默认单行 ellipsis 兜底 + hover 跑马灯</title>
+<!--
+  用途：HeroBili 右卡标题「截断兜底 + 跑马灯」共存方案的可视化确认（2026-09-30）。
+  本 demo 为独立单文件，不依赖项目源码；确认后再由主进程实施到
+  src/components/HeroBanner/HeroBili.{tsx,css}。当前 src 未做任何改动。
+-->
+<style>
+  /* ── 深浅色双主题（模拟项目 --color-* 语义） ─────────────────────── */
+  :root {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --text: #1f1f27;
+    --text-secondary: #6b6b76;
+    --border: #e4e4e9;
+    --border-light: #e8e8e8;
+    --surface-hover: #f2f2f4;
+    --primary: #3b82f6;
+    --cover-a: #c7d2fe;
+    --cover-b: #e0e7ff;
+    --badge-bg: rgba(0, 0, 0, 0.55);
+    --badge-text: #fff;
+  }
+  html[data-theme="dark"] {
+    --bg: #101014;
+    --surface: #1b1b21;
+    --text: #f2f2f5;
+    --text-secondary: #9a9aa5;
+    --border: #33333c;
+    --border-light: #2c2c35;
+    --surface-hover: #26262e;
+    --primary: #60a5fa;
+    --cover-a: #2c3050;
+    --cover-b: #23263e;
+    --badge-bg: rgba(255, 255, 255, 0.28);
+    --badge-text: #fff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    max-width: 1040px;
+    margin: 0 auto 18px;
+  }
+  .toolbar h1 { margin: 0; font-size: 17px; font-weight: 700; }
+  .toolbar button {
+    margin-left: auto;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { background: var(--surface-hover); }
+
+  .notes {
+    max-width: 1040px;
+    margin: 0 auto 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+  }
+  .notes b { color: var(--text); }
+  .notes code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--surface-hover);
+    font-size: 12px;
+  }
+
+  /* ── 模拟 hero 右栏：3 列 × 2 行横版卡 ──────────────────────────── */
+  .stage {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+  .card {
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .cover {
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, var(--cover-a), var(--cover-b));
+    position: relative;
+  }
+  .cover::after {
+    content: attr(data-label);
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-size: 11px;
+  }
+
+  /* ── 标题条：卡高恒定单行。双层结构 ────────────────────────────────
+     ① .t-fallback 默认兜底层：block + nowrap + ellipsis，永不外溢；
+     ② .t-marquee 跑马灯层：absolute 覆盖标题条（不参与布局，切换零跳动），
+        hover 且溢出时由 JS 开启（双段等长无缝循环，复刻 HeroBili 原跑马灯）。 */
+  .titlebar {
+    position: relative;
+    height: 32px;               /* 恒定：兜底/跑马灯两态卡高不变 → banner 齐平不破 */
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .t-fallback {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .t-marquee {
+    position: absolute;
+    inset: 0;
+    display: none;
+    padding: 0 10px;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    background: var(--surface);  /* 覆盖层垫底色，遮住底层 ellipsis 文本 */
+  }
+  .t-marquee.is-on { display: flex; }
+  .t-marquee .track { display: inline-flex; }
+  .t-marquee .seg { padding-right: 18px; }
+  .t-marquee.is-on .track { animation: demo-marquee 4.5s linear infinite; }
+  @keyframes demo-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-marquee.is-on .track { animation: none; }
+  }
+
+  .legend {
+    max-width: 1040px;
+    margin: 20px auto 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>Hero 卡标题共存方案：单行 ellipsis 兜底 + hover 跑马灯</h1>
+    <button id="themeBtn" type="button">切换深色</button>
+  </div>
+
+  <div class="notes">
+    <b>方案（推荐 A）</b>：默认态 <code>单行 ellipsis</code> 兜底——标题条高度恒定，
+    「banner 下沿 = 第二行卡下沿」的齐平推导（t = 标题条单行高）严格成立，任何断点永不外溢；
+    <b>hover 且文本溢出时</b>，标题区切换为跑马灯（双段等长无缝 4.5s）展示全名，移出即停。
+    <br>
+    <b>为何不用「两行截断 + hover 跑马灯」</b>：两行截断使卡高随标题长度在 1–2 行间变化，
+    同一网格行内出现参差空隙，banner 齐平的 t 基准失效；且「截断」与「跑马灯」同时存在语义冲突。
+    <br>
+    <b>观察方法</b>：每张卡左上角标注了该例的行为。把鼠标悬停到中长/极端标题卡上看跑马灯，
+    移出恢复 ellipsis；短标题卡 hover 无变化。右上角按钮切换深浅色检查两套主题下的可读性。
+  </div>
+
+  <div class="stage" id="stage">
+    <!-- 卡片由 JS 生成：短标题 / 中长标题 / 极端 20+ 字 三例 × 2 行 -->
+  </div>
+
+  <p class="legend">
+    示例数据与项目无关，仅为视觉验证；实际实施时跑马灯参数（4.5s / ease / 双段等长）
+    沿用 HeroBili 原实现，标题条高度 = padding(--space-xs × 2) + 1.4 × --hero-title-size，
+    与 layout-tokens.css 齐平推导一致。
+  </p>
+
+<script>
+  const samples = [
+    { label: '例① 正常短标题 · 兜底即完整，hover 无跑马灯', title: '星际穿越' },
+    { label: '例② 中长标题 · 默认 ellipsis，hover 跑马灯', title: '流浪地球 2：面对太阳系危机的再次抉择（特别纪念版）' },
+    { label: '例③ 极端 20+ 字 · 同上，注意无缝循环', title: '关于我把二十多个字以上的超长片名塞进首页横版卡标题条之后发生的可见与不可见的若干变化之完整记录' },
+    { label: '例① 正常短标题', title: '你的名字' },
+    { label: '例② 中长标题', title: '布达佩斯大饭店：糖果色对称构图下的旧欧洲挽歌（修复收藏版）' },
+    { label: '例③ 极端 20+ 字', title: '这是一条为了压测标题条溢出行为而拼接出来的超过二十个字的影视作品名称模拟文本' },
+  ];
+
+  const stage = document.getElementById('stage');
+  stage.innerHTML = samples.map((s) => `
+    <div class="card">
+      <div class="cover" data-label="${s.label}"></div>
+      <div class="titlebar" tabindex="0">
+        <span class="t-fallback">${s.title}</span>
+        <span class="t-marquee" aria-hidden="true">
+          <span class="track">
+            <span class="seg">${s.title}</span>
+          </span>
+        </span>
+      </div>
+    </div>
+  `).join('');
+
+  // hover（含键盘 focus）且溢出 → 开跑马灯；移出/失焦 → 恢复兜底
+  document.querySelectorAll('.titlebar').forEach((bar) => {
+    const fb = bar.querySelector('.t-fallback');
+    const mq = bar.querySelector('.t-marquee');
+    const start = () => {
+      if (fb.scrollWidth > fb.clientWidth) {
+        // 双段等长：第二段宽度须 ≥ 容器宽，追加一段保证无缝
+        const seg = mq.querySelector('.seg');
+        if (!mq.querySelector('.seg + .seg')) {
+          const seg2 = seg.cloneNode(true);
+          seg2.setAttribute('aria-hidden', 'true');
+          seg.after(seg2);
+        }
+        mq.classList.add('is-on');
+      }
+    };
+    const stop = () => mq.classList.remove('is-on');
+    bar.addEventListener('mouseenter', start);
+    bar.addEventListener('mouseleave', stop);
+    bar.addEventListener('focus', start);
+    bar.addEventListener('blur', stop);
+  });
+
+  // 深浅色切换
+  const btn = document.getElementById('themeBtn');
+  btn.addEventListener('click', () => {
+    const root = document.documentElement;
+    const dark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    btn.textContent = dark ? '切换深色' : '切换浅色';
+  });
+</script>
+</body>
+</html>

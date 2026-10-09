@@ -296,7 +296,9 @@ test.describe('3.6 播放列表 Tab', () => {
         .toBeTruthy();
     }
 
-    // 062 播放源"全部"弹框显示线路列表（拦截外部请求，使 CMS 搜索快速失败走统一提示分支）
+    // 062 播放源"全部"弹框显示线路列表（拦截外部请求使非 mock 流量快速失败；CMS 搜索随后再单独放行并返回「双线路」假数据 ——
+    // 单线路或空数据都不渲染「全部」按钮（index.tsx:1244：isSeries || lineCount>1 || episodeCount>1），
+    // 弹窗路径将无从验证。Playwright 后注册的 route 优先，故两条 route 的注册顺序不可颠倒）
     await page.route('**/*', (route) => {
       const url = route.request().url();
       if (
@@ -309,6 +311,38 @@ test.describe('3.6 播放列表 Tab', () => {
       }
       return route.abort();
     });
+
+    // CMS 搜索（ac=videolist，经代理时编码为 ac%3Dvideolist）→ 固定返回「双线路」电影条目，
+    // 使源卡渲染出 .detail-source-all-btn（lineCount=2 → 命中 index.tsx:1244 的 >1 分支）。
+    // vod_id / vod_name 与 tmdb-movie-550（Fight Club）对齐，保证详情页关键词匹配通过。
+    await page.route(/ac(?:=|%3D)videolist/i, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({
+          code: 1,
+          msg: 'ok',
+          page: 1,
+          pagecount: 1,
+          limit: 20,
+          total: 1,
+          list: [
+            {
+              vod_id: '550',
+              vod_name: 'Fight Club',
+              vod_type: 'movie',
+              type_id: '1',
+              type_name: '电影',
+              // $$$ 分隔两条线路，每组单段 → parsePlaySources 按电影产出 2 条 sources
+              vod_play_url:
+                '线路1$第1集$https://cms-mock.local/stream/index.m3u8$$$线路2$第1集$https://cms-mock.local/stream/index.m3u8',
+            },
+          ],
+        }),
+      }),
+    );
+
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
 
@@ -331,33 +365,55 @@ test.describe('3.6 播放列表 Tab', () => {
       .locator('.detail-sources-empty:has-text("所有视频源均未找到匹配资源")')
       .isVisible()
       .catch(() => false);
-    const errStatusCount = await page.locator('.detail-source-status--err').count();
-    expect(errStatusCount).toBe(0);
 
+    // 源区终态二选一：有源卡（.detail-source-group）或统一提示（.detail-sources-empty）。
+    // 2026-09-30 纠偏：原断言 '.detail-source-status--err' 在实现中不存在（只有 --ok，
+    // index.tsx:1217 / Detail.css:1000）→ count 恒为 0，属永真假绿，已删除。
+    const srcGroupCount = await page.locator('.detail-source-group').count();
+    if (srcGroupCount > 0) {
+      // 有源卡时状态标记不得出现非「可播放」值（实现只产出 --ok）
+      const badStatusCount = await page
+        .locator('.detail-source-group .detail-source-status:not(.detail-source-status--ok)')
+        .count();
+      expect(badStatusCount).toBe(0);
+    } else {
+      expect(unifiedMsgVisible, 'DETAIL-062: 无源卡且未显示统一提示').toBe(true);
+    }
+
+    // 「全部」按钮仅在 剧集 / 多线路 / 多集 时渲染（index.tsx:1244）
     const allBtn = page.locator('.detail-source-all-btn').first();
     const hasAllBtn = await allBtn.isVisible().catch(() => false);
     if (!hasAllBtn) {
-      if (!unifiedMsgVisible) {
-        throw new Error('DETAIL-062: 全部源不可用时未显示统一提示');
-      }
+      // 该源为单线路单片，无弹窗可验：仅校验源区没有落到「空且无提示」的异常终态
+      expect(
+        srcGroupCount > 0 || unifiedMsgVisible,
+        'DETAIL-062: 源区既无「全部」按钮，也无源卡与统一提示',
+      ).toBe(true);
       return;
     }
 
     await allBtn.click();
-    await expect(page.locator('.source-all-modal')).toBeVisible({ timeout: 5000 });
-    await expect
-      .poll(() => page.locator('.source-all-modal__row').count(), { ...POLL, timeout: 5000 })
-      .toBeGreaterThan(0);
-    const playBtnCount = await page.locator('.source-all-modal__play-btn').count();
-    expect(playBtnCount).toBeGreaterThan(0);
+    // 播放列表弹窗 = PlaylistModal（选择器基类 .playlist-modal playlist-modal--<center|sheet|drawer>）。
+    // 2026-09-30 纠偏：原 .source-all-modal* 已被 PlaylistModal 取代（PlaylistModal.tsx:750），
+    // 旧类在 Detail.css 清理后不存在 → 改用真实类名，并把「行」对应到 .playlist-cell。
+    await expect(page.locator('.playlist-modal')).toBeVisible({ timeout: 5000 });
 
-    if (playBtnCount > 0) {
-      await page.locator('.source-all-modal__play-btn').first().click();
-      // 2026-09-20 纠偏：原 waitForURL().catch(()=>{}) + 未使用的 onPlayer = 零断言悬挂段。
-      // 「弹框播放按钮 → 进播放器」是产品契约（CMS 数据已被 hermetic mock 固定），改为硬断言。
-      await expect(page).toHaveURL(/\/play\//, { timeout: 10000 });
-      await expect(page.locator('.up-universal-player, [class*="player"]')).toBeVisible({ timeout: 10000 });
-    }
+    // 弹窗条目：电影渲染线路格（.playlist-cell--line），剧集渲染选集格（.playlist-cell--ep），
+    // 二者共用 .playlist-cell 基类（PlaylistModal.tsx:545-547），故此处只断言基类非空。
+    await expect
+      .poll(() => page.locator('.playlist-cell').count(), { ...POLL, timeout: 5000 })
+      .toBeGreaterThan(0);
+
+    await page.locator('.playlist-cell').first().click({ timeout: 5000 });
+    // 2026-09-20 纠偏：原 waitForURL().catch(()=>{}) + 未使用的 onPlayer = 零断言悬挂段。
+    // 「弹窗条目 → 进播放器」是产品契约（点击走 Link/handleCellClick → onPlayLine/onPlayEpisode → navigate），
+    // CMS 数据已被 hermetic mock 固定，故改为硬断言。
+    await expect(page).toHaveURL(/\/play\//, { timeout: 10000 });
+    // 播放页容器（.up-universal-player / .player-*）：断言只到「容器已挂载可见」，
+    // 不依赖 cms-mock.local 这条假流能真拉起来（其 DNS 不可达时播放器落错误态，容器仍在）
+    await expect(page.locator('.up-universal-player, [class*="player"]').first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 

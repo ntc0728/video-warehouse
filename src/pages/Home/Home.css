@@ -47,6 +47,27 @@
   padding-bottom: 0;
 }
 
+/* ── 首页卡封面统一圆角（2026-09-29 用户要求）──────────────
+   口径：首页范围内所有卡的封面图统一带圆角，取项目卡封面通用档 --radius-md
+   （同 cqa-board__cover / cqa-catcard__poster / cqa-hotcard__poster 现值）。
+   仅补缺失处：
+   · .video-card-cover（推荐行 / 继续观看横版卡）：2026-09-28 去卡片化随卡容器
+     削掉了圆角（VideoCard.css:98），移动端 (<768 / app) 卡容器仍有 radius-md
+     且 overflow:hidden 裁切、封面已有圆角 → 仅补去卡片化桌面档；
+   · .hero-side-card__cover（HeroBili 右卡）：圆角随 .hero-bili 卡一并被削
+     （HeroBili.css:266 注释），HeroBili 仅 ≥1024 非 TV 渲染，直接补回。
+   · .cqa-board__cover（今日最热面板卡）已有 --radius-md，不重复声明。
+   TV 分支保持现状不动（:not(tv) 隔离）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .video-card-cover {
+    border-radius: var(--radius-md);
+  }
+}
+
+html:not([data-device="tv"]) .home-page .hero-side-card__cover {
+  border-radius: var(--radius-md);
+}
+
 /* ── 首页模块卡片化 → 2026-09-28 去卡片化（桌面端；移动端保持卡片） ─────
    原「全端四件套：surface 背景 + 1px border(--color-border-light) + radius-lg
    + shadow-sm」现仅在 <=767 / app 恒移动生效；>=768 桌面端删除四件套，
@@ -362,8 +383,10 @@ html[data-device="app"] .home-disclaimer {
 
 /* ═══════════════════════════════════════════════════════════════════════
    大屏骨架（≥1024，2026-09-11 用户要求「不同视口显示相应的 UI 骨架」）
-   与真实大屏布局同构：顶部过渡带 + 两栏（左「今日趋势」榜卡 + 右 HeroBili）。
-   ⚠️ 骨架**直接复用真实布局的类名**（.home-two-col / .hero-bili / .cqa-trend /
+   与真实大屏布局同构：顶部过渡带 + HeroBili + CQA 合并体 + 7 行卡片。
+   （2026-09-29 左栏「今日趋势 TOP 20」删除，两栏改单列纵向流，
+   .home-two-col 系列样式随之移除。）
+   ⚠️ 骨架**直接复用真实布局的类名**（.hero-bili / .cqa-board /
    .hero-side-card），几何全部由既有 token 派生 —— 这里只补「真实元素没有的
    骨架填充块」，避免出现第二套几何模型（历史上骨架/真实两套尺寸漂移过）。
    ═══════════════════════════════════════════════════════════════════════ */
@@ -435,7 +458,10 @@ html[data-device="app"] .home-disclaimer {
     white-space: normal;
   }
 
-  /* 换一换占位：镜像 .hero-bili__right 的第 2 列（auto），保证右卡列宽与真实一致 */
+  /* 换一换占位（2026-09-30 镜像更新）：真实 .hero-bili__shuffle 已改脱标浮层
+     （absolute 定位随基础类生效：top 与第一行卡顶对齐；1024–1439 卡面浮层 /
+      ≥1440 移入页面留白区，分档覆盖同在 HeroBili.css，骨架自动跟随），
+     此处只补骨架填充块外观，不再镜像「第 2 列」。 */
   .home-skeleton .home-skeleton-bili__shuffle {
     display: block;
     width: var(--space-xl);
@@ -556,73 +582,12 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   大屏两栏（2026-09-10 用户拍板「方案 C」结构 + 方案 B 左栏内容）
-   左栏 = 今日趋势 TOP 20 连续榜（sticky）；右列 = Hero + 内容行。
-   断点与 HeroBili / useIsWideDesktop 一致（≥1024），TV 与 <1024 不进入本块。
+   大屏布局（2026-09-29 整改）：单列纵向流 Hero → 继续观看 → CQA 合并体 → 推荐行。
+   原「方案 C 两栏」（.home-two-col 左栏「今日趋势 TOP 20」sticky + 右列）整块删除，
+   左栏角色并入 CategoryInlineBoard 常驻面板（CategoryInlineBoard.css）。
+   宽度收口全部由既有规则承担：HeroBili 走 `.home-page > .hero-bili` 2200 封顶居中，
+   过渡带 / .home-page__content 各自已有 max-width 封顶，此处无需新增规则。
    ═══════════════════════════════════════════════════════════════════════ */
-
-@media (width >= 1024px) {
-  html:not([data-device="tv"]) .home-two-col {
-    /* 左栏宽度 --home-rail-w 已移至 layout-tokens.css（单真源，2026-09-21；≥1024→240px）。
-       .home-two-col 靠继承读取；下方 grid-template-columns 的 var(--home-rail-w) 不变。 */
-    /* 栏间 gap（用户要求收紧：原 --space-2xl ≈31.5px 偏大 → --space-lg ≈16.5px）。
-       ⚠️ layout-tokens.css 的 --hero-banner-h/--hero-side-w 公式里引用同档 space-lg，
-       改本档位需与那边同步（2026-09-22 token 已迁至单真源）。 */
-    --home-rail-gap: var(--space-lg);
-    display: grid;
-    grid-template-columns: var(--home-rail-w) minmax(0, 1fr);
-    gap: var(--home-rail-gap);
-    align-items: start;
-    width: 100%;
-    max-width: var(--layout-content-max-width);
-    margin-inline: auto;
-  }
-
-  html:not([data-device="tv"]) .home-two-col__rail {
-    position: sticky;
-    /* 与 RecordShell / IPTV / 设置页 rail 同规格（参照系是滚动容器 scrollport，
-       header 的占位已在 .app-shell__scroll-wrapper 的 padding-top 里，小间距即可）。
-       2026-09-10 方案 B：左栏改「今日趋势 TOP 20」单榜，总高 ≈ 20 × (96 + 2×pad) ≈ 2100px，
-       必然高于 scrollport → 锁高内部滚动为必需项（不锁则 sticky 元素比滚动区还高，
-       底部内容永远滚不到，历史 bug 形态）。 */
-    top: var(--space-sm);
-    min-width: 0;
-    max-height: calc(100vh - var(--header-height) - var(--space-lg));
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  html:not([data-device="tv"]) .home-two-col__rail::-webkit-scrollbar {
-    display: none;
-  }
-
-  html:not([data-device="tv"]) .home-two-col__main {
-    /* ⚠️ 2026-09-22：--hero-banner-h / --hero-side-w 分档公式已移至 layout-tokens.css
-       （单真源）。旧实现在此按「右列宽」覆盖（特异性 0,2,1 压过 variables.css :root
-       兜底），但 Home.css 随 HomeRoute 懒 chunk 加载 → 骨架首帧吃全视口宽兜底 →
-       banner 瞬时超大闪跳（用户报障根因）。收敛后主 CSS / 骨架注入双路首帧可得。
-       断点/系数推导（齐平契约）见 layout-tokens.css 注释。改值请改那边。 */
-    min-width: 0;
-  }
-
-  /* 右列内的内容层：外层 .home-two-col 已做 2200 封顶，此处解除二次限宽/居中 */
-  html:not([data-device="tv"]) .home-two-col__main > .home-page__content {
-    max-width: none;
-    margin-inline: 0;
-  }
-
-  /* 2 列档（1024–1280）/ ≥1281 / ≥2560 的 --hero-banner-h / --hero-side-w 分档
-     已全部移至 layout-tokens.css（2026-09-22 单真源收敛，见上方生效点注释）。 */
-}
-
-@media (width >= 1920px) {
-  /* --home-rail-w 2K→260px 已移至 layout-tokens.css（单真源，2026-09-21）。
-     左栏 260px（内容宽 ≈228px）：竖版海报 64×96 → 72×108，行高 +12px，20 行 ≈2250px。 */
-  html:not([data-device="tv"]) .cqa-heat-row--rail {
-    --cqa-poster-w: 72px;
-    --cqa-poster-h: 108px;
-  }
-}
 
 /* ≥2560 档的 --hero-side-w(0.66) / --hero-banner-h(0.277) 已移至 layout-tokens.css
    （2026-09-22 单真源收敛；齐平契约推导注释见该文件）。 */

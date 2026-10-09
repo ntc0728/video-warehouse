@@ -46,7 +46,9 @@
   flex-wrap: nowrap;
   gap: var(--space-sm);
   align-items: center;
-  padding: var(--space-lg) var(--space-lg) 0;
+  /* 2026-09-30 用户定稿：页头不再设 padding-top（顶部留白由 .chart-tabs /
+     页面容器统一承担），仅保留左右留白。 */
+  padding: 0 var(--space-lg) 0;
 }
 .chart-head__title {
   color: var(--color-text);
@@ -454,14 +456,14 @@
 
 /* 移动端细粒度：窄屏再收一档（保持 2:3 比例）；简介隐藏 */
 @media (width <= 639px) {
-  .chart-head { padding: var(--space-md) var(--space-md) 0; }
+  .chart-head { padding: 0 var(--space-md) 0; }
   .chart-tabs { padding: var(--space-sm) var(--space-md); }
   .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
   .chart-row__desc { display: none; }
   .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
   .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 }
-html[data-device="app"] .chart-head { padding: var(--space-md) var(--space-md) 0; }
+html[data-device="app"] .chart-head { padding: 0 var(--space-md) 0; }
 html[data-device="app"] .chart-tabs { padding: var(--space-sm) var(--space-md); }
 /* .chart-list 列数由 --chart-cols 的 app 档（index.css）接管，此处只补 padding */
 html[data-device="app"] .chart-list {

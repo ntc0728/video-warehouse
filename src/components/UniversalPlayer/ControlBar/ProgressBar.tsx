@@ -7,7 +7,12 @@ interface ProgressBarProps {
   currentTime: number;
   duration: number;
   buffered: number;
-  onSeek: (time: number) => void;
+  /**
+   * @param opts.silent 拖拽/连续 seek 时置 true —— 跳过「已跳转 xx:xx」提示。
+   *   拖拽过程中 targetTime 已由 tooltip + 圆点实时反馈，再弹 toast 属重复打扰；
+   *   键盘 / 点击（单次）seek 仍为 false，保留操作反馈。
+   */
+  onSeek: (time: number, opts?: { silent?: boolean }) => void;
   /** G1：hover 缩略图源（可选）；缺省时 tooltip 仅显示时间戳 */
   thumbnails?: ThumbnailSource;
   /**
@@ -59,7 +64,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
     if (isDragging) {
       setPendingTime(time);
       setPendingPosition((time / duration) * 100);
-      onSeek(time);
+      onSeek(time, { silent: true });
     }
   }, [duration, isDragging, isBuffering, onSeek]);
 
@@ -74,7 +79,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
     setHoverPosition(ratio);
     setPendingTime(time);
     setPendingPosition(ratio);
-    onSeek(time);
+    onSeek(time, { silent: true });
   }, [isLive, duration, calcTime, onSeek]);
 
   const endDrag = useCallback(() => {
@@ -119,7 +124,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
             const time = ratio * duration;
             setPendingTime(time);
             setPendingPosition((time / duration) * 100);
-            onSeek(time);
+            onSeek(time, { silent: true });
           }
           mouseRafId = 0;
         });
@@ -136,7 +141,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
             const time = ratio * duration;
             setPendingTime(time);
             setPendingPosition((time / duration) * 100);
-            onSeek(time);
+            onSeek(time, { silent: true });
           }
           touchRafId = 0;
         });
@@ -174,15 +179,29 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   };
 
   const progress = duration > 0 && Number.isFinite(duration) ? (currentTime / duration) * 100 : 0;
-  const rawBufferedPercent = duration > 0 && Number.isFinite(duration) ? (buffered / duration) * 100 : 0;
-  // 灰条不短于已播放位置：向前 seek（尤其暂停中）后 store 里的缓冲末端可能还没跟上，
-  // 圆点跑到灰条之外会看起来像「灰条没跟随最新播放位置」
-  const bufferedPercent = Math.min(100, Math.max(rawBufferedPercent, progress));
   // 拖动中或松手后的过渡期内保持显示目标位置，不跳回旧值
   const showPending = isDragging || pendingTime !== null;
   const displayPercent = showPending
     ? (hoverTime !== null ? hoverPosition : (pendingTime !== null ? pendingPosition : progress))
     : progress;
+
+  /**
+   * 灰条 = 「从当前播放位置（圆点）向右延伸的已缓冲区间」。
+   *
+   * 旧实现恒从 0 画到「已缓冲末端」（再取 max(末端, progress) 兜底），有两个问题：
+   * ① 往回拖 / 快退后灰条与圆点脱节 —— 圆点回到 10 分，灰条仍从 0 画到 45 分，
+   *    看起来像「记住了最长播放记录」；
+   * ② 已缓冲区间多段时（如 [0,45min] ∪ [55min,57min]），单条 width% 会把中间
+   *    没有数据的 45–55min 空隙也涂成灰色，显示偏乐观。
+   *
+   * 改为「起点 = 圆点位置，宽度 = 末端 − 起点」后两者同时消失：
+   * 拖到哪灰条起点跟到哪；且只会画出圆点之后真实存在的那段缓冲。
+   */
+  const bufferedEndPercent = duration > 0 && Number.isFinite(duration)
+    ? Math.min(100, (buffered / duration) * 100)
+    : 0;
+  const bufferedStartPercent = Math.min(displayPercent, bufferedEndPercent);
+  const bufferedWidthPercent = Math.max(0, bufferedEndPercent - bufferedStartPercent);
   const displayTime = (displayPercent / 100) * duration;
 
   // P0-2：键盘操作进度（role=slider 标准交互；Shift 加速步长）
@@ -240,7 +259,10 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
         tabIndex={isLive || duration <= 0 ? -1 : 0}
         onKeyDown={handleKeyDown}
       >
-        <div className="up-progress-buffered" style={{ width: `${bufferedPercent}%` }} />
+        <div
+          className="up-progress-buffered"
+          style={{ left: `${bufferedStartPercent}%`, width: `${bufferedWidthPercent}%` }}
+        />
         <div className="up-progress-played" style={{ width: `${displayPercent}%` }} />
         {!isLive && (
           <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />

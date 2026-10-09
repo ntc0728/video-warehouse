@@ -71,8 +71,11 @@
 | `--iptv-cols` | 2(≤767) → 3(768) → 4(1024) → 5(≥1440) |
 | `--continue-cols` | 2(<768) → 3(768) → 5(1280) |
 
-- **历史页独立**：`.history-grid` 不走 `--card-cols`（≥1440→5、≥1920→6、1280–1439 回落 4、TV 恒 5）——
-  横版记录卡更宽。
+- **历史页独立**：`.history-grid` 不走 `--card-cols`，由 `--history-cols` 驱动 ——
+  阶梯要点：**每一档都比影视卡晚一档**（4 列要 ≥1280、5 列要 ≥1920、6 列要 ≥2560），TV 恒 5。
+  2026-09-30 用户定稿（旧档 ≥1024→4 / ≥1440→5 / ≥1920→6 各右移一档）。
+  理由：1024 起左栏（126px rail + gap）开始压缩内容区，此时给 4 列会让横版记录卡偏挤；
+  1440 给 5 列同理。右移后卡宽随视口单调递增，不再出现「视口变宽卡片反而变小」的档内回弹。
 - **增列铁律**：增列必须发生在**内容区停止变宽的那一刻**（2200 封顶），
   否则「视口变宽卡片反而缩小」。根治范式 = `repeat(auto-fill, var(--card-size))` + `justify-content: center`
   （History / Collections 在用）。N→N+1 卡宽降幅 ≈ **1/(N+1)**，加档只能摊薄不能归零。
@@ -244,3 +247,35 @@ flex 拉伸 + aspect-ratio 反算等）见 **`patterns.md` → 「页面骨架�
   小图标**不改成 `1em`**（会随父级字号放大，属未经许可的视觉变更）。
 - `npm run lint:all` = ESLint + Stylelint；单文件审查用
   `node_modules/stylelint/bin/stylelint.mjs <files> --formatter json`（`npx` 沙箱不可用）。
+
+---
+
+## 12. 去卡片化（de-card）生效范围（2026-09-30 用户定稿）
+
+**铁律：去卡片化只做桌面；移动端一律保留卡片。**
+
+- **标准写法**（2026-09-28 全站口径，新增去卡规则照此写）：
+
+  ```css
+  @media (width >= 768px) {
+    html:not([data-device="app"]):not([data-device="tv"]) .<容器类> {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+  ```
+
+- **手法**：基础规则（卡片四件套）保持全端生效，用「桌面档覆盖块」拆除。
+  **不要直接改基础规则** —— 那会连移动端 / App / TV 一起拆掉。
+- **生效档**：`≥768` 起；`≤767` 移动 web 保留卡片；`html[data-device="app"]` / `[data-device="tv"]` 恒保留。
+- **例外 1（不算违约）**：`Settings` 页 `≤767` 与 `html[data-device="app"]` 分支的 section 去卡
+  （`Settings.css` L55-70、L907-960 附近）属该页**移动端设计** —— 整页一张卡、section 用分割线/留白分隔、
+  `list-item` 各自成卡。与桌面去卡同表象不同因，**不要顺手还原**。
+- **例外 2**：`IPTV` 去卡走类名 `.iptv-page--rail`（JS `isDesktopRail` 判定），不是媒体查询 ——
+  移动 / App / TV 不渲染该修饰类，天然隔离。
+- **灰区（2026-09-30 已确认不处理）**：`768–1023` 夹在 `useIsMobile()`(≤1023) 与 CSS 断点之间 ——
+  JS 判为「移动」而 CSS 去卡已生效。用户选择只登记约定、不把去卡档抬到 1024。
+- **反面清单**：新增去卡块若 ① 改基础规则 ② 漏 `:not([data-device="app"])` ③ 挂到 `≤767` 档
+  —— 都会改到移动端 / App，属回归。

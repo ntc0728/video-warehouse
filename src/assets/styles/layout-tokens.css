@@ -2,8 +2,10 @@
    Layout Tokens — 网格列数 / 左栏宽度 单真源（2026-09-21 收敛建立）
    ---------------------------------------------------------------------------
    本文件是以下布局 token 的**唯一定义处**：
-     --card-cols / --iptv-cols / --iptv-page-cols / --history-cols / --rail-w / --home-rail-w / --chart-cols
+     --card-cols / --iptv-cols / --iptv-page-cols / --history-cols / --rail-w / --chart-cols
      以及 2026-09-22 自 variables.css / Home.css 迁入的 --page-pad-x / --hero-banner-h / --hero-side-w
+   （--home-rail-w 已于 2026-09-29 随首页左栏「今日趋势 TOP 20」删除一并移除，
+   hero 公式分母改为全内容宽，见下方 HeroBili 节。）
    由来：这些定义原先散落在 variables.css（--card-cols 基值+断点阶梯+TV、--rail-w）、
    index.css（--iptv-cols / --iptv-page-cols / --history-cols / --chart-cols 基值+阶梯+TV）、
    Home.css（--home-rail-w，原 scoped 在 .home-two-col）。启动骨架（index.html 内联，
@@ -31,7 +33,7 @@
   --history-cols: 1;                    /* 历史记录网格：默认 (<480) */
   --chart-cols: 2;                      /* 榜单页 .chart-list 布局列：桌面基准 2（≤1023 与 App 单列，见下方覆盖） */
   --rail-w: clamp(148px, 10vw, 248px);  /* 桌面左栏统一宽：1440→148 / 1920→192 / ≥2560→248 封顶 */
-  /* 页面全局左右留白（2026-09-22 自 variables.css 迁入）：<1440 档 =
+  /* 页面全局左右留白（2026-09-22 自 variables.css 迁入）：<1024 档 =
      var(--space-lg)（bundle 侧 fluid token）/ 14.333px（骨架侧 fallback = clamp 顶）；
      大屏分档覆盖见下方媒体查询 */
   --page-pad-x: var(--space-lg, 14.333px);
@@ -92,39 +94,42 @@
   html:not([data-device="app"]) { --iptv-page-cols: 5; }
 }
 
-/* ── --history-cols 断点阶梯（历史记录网格；用 :root 形式，与原 index.css 一致） ── */
+/* ── --history-cols 断点阶梯（历史记录网格；用 :root 形式，与原 index.css 一致）
+   档位（2026-09-30 用户定稿）：<480→1 / ≥480→2 / ≥768→3 / ≥1280→4 / ≥1920→5 / ≥2560→6。
+   ⚠️ 旧档是 ≥1024→4 / ≥1440→5 / ≥1920→6（1024–1279 就 4 列、1440–1919 就 5 列）；
+   改为「4 列起点右移到 1280、5 列起点右移到 1920、6 列起点右移到 2560」后，
+   1024–1279 保持 3 列、1440–1919 保持 4 列 —— 与「大屏才增列」的观感一致，
+   且全部档位仍落在断点宪法（768/1024/1280/1440/1920/2200/2560）内。 ── */
 @media (width >= 480px) { :root { --history-cols: 2; } }
 
 @media (width >= 768px) { :root { --history-cols: 3; } }
 
-@media (width >= 1024px) { :root { --history-cols: 4; } }
+@media (width >= 1280px) { :root { --history-cols: 4; } }
 
-@media (width >= 1440px) { :root { --history-cols: 5; } }
+@media (width >= 1920px) { :root { --history-cols: 5; } }
 
-@media (width >= 1920px) { :root { --history-cols: 6; } }
+@media (width >= 2560px) { :root { --history-cols: 6; } }
 
 /* ── --chart-cols 覆盖档（原在 index.css，2026-09-21 迁入单真源；基值 2 见顶部 :root） ──
    ≤1023 与 App 单列；App 覆盖用 :root[data-device]（特异性压过 @media 的 :root）。 */
 @media (width <= 1023px) { :root { --chart-cols: 1; } }
 :root[data-device="app"] { --chart-cols: 1; }
 
-/* ── --home-rail-w：Home 左栏宽 ──────────────────────────────────────────────
-   原 scoped 在 Home.css 的 `html:not([data-device="tv"]) .home-two-col`，启动骨架
-   （无 .home-two-col 祖先）读不到。现提升为 html 级全局：值不变，.home-two-col 仍
-   靠继承照拿，骨架首屏也能读。仅 Home 两栏与骨架 home 档消费，全局化无副作用。 */
-@media (width >= 1024px) {
-  html:not([data-device="tv"]) { --home-rail-w: 240px; }
-}
-
-@media (width >= 1920px) {
-  html:not([data-device="tv"]) { --home-rail-w: 260px; }
-}
+/* ── --home-rail-w：已删除（2026-09-29）──────────────────────────────────────
+   首页左栏「今日趋势 TOP 20」删除（两栏 .home-two-col 改单列纵向流，
+   左栏角色并入 CategoryInlineBoard 常驻面板），本 token 无剩余消费方，
+   定义随之移除；hero 公式分母同步去掉 rail + 栏间 gap 项（见下方 HeroBili 节）。 */
 
 /* ── --page-pad-x 分档覆盖（2026-09-22 自 variables.css 迁入）──────────────
    迁移动因：下方 --hero-banner-h/--hero-side-w 公式需消费它，且启动骨架（注入
    本文件）需要同档分档对齐内容盒宽。基值见顶部 :root。
+   2026-09-30 用户拍板：60px 档起点 1440 → 1024 —— 1024–1439 档原 --space-lg
+   流体（15.2–16.5px）放不下换一换浮层（按钮 ~30px + 呼吸），且该档 hero 卡
+   已全档进留白区（见 HeroBili.css），统一按 60px 与 1440 档连续衔接（零跳变）。
+   影响面：该档所有页面内容宽左右各收窄 ~45px（.page-padding / Player /
+   CategoryQuickAccess / Browse 弹层，见各消费方）。
    TV 红线：分档用 html:not(tv)，TV 恒 space-lg。 */
-@media (width >= 1440px) and (width < 1920px) {
+@media (width >= 1024px) and (width < 1920px) {
   html:not([data-device="tv"]) { --page-pad-x: 60px; }
 }
 
@@ -143,29 +148,64 @@
    chunk 加载 → 首页骨架首帧命中不到生效点时吃兜底 → **banner 瞬时超大、Home.css
    落地后回缩**（用户 2026-09-22 报「banner 骨架异常显示超大尺寸」的竞态根因）。
    收敛到本文件 = 主 CSS（variables @import）与骨架注入双路首帧可得，无特异性陷阱。
-   公式 = 原生效点（右列宽分母）：
-     main-w = min(100vw, 2200) − 2×page-pad-x − home-rail-w − rail-gap(=space-lg)
-     1024–1280：banner 0.31 / side 0.48；≥1281：0.24 / 0.56；≥2560：0.277 / 0.66。
-   ⚠️ 断点必须与 useHeroSideCols.ts / HeroBili.css 严格一致；系数由「banner 底边
-   与右栏两行 16:9 卡顶边齐平」条件反推（推导注释见 git 历史 / Home.css 原块）。 */
+   公式分母（2026-09-30 再更新）：
+     content-w = min(100vw, 2200px) − 2×page-pad-x（60px 档起点已扩到 1024，见上）
+   ══ 齐平推导（2026-09-30 重推为【完整表达式】，替代旧「常数系数」）══
+     右栏 = 卡网格独占 --hero-side-w，N 列 × 2 行，封面恒 16:9：
+       卡宽 w = (side-w − (N−1)·g)/N，卡高 h = 9w/16 + t
+       标题条 t = 2·space-xs + 1.4·hero-title-size（方案 A 单行 ellipsis 恒高）
+       齐平不变量：banner-h = 2h + g
+     展开为 --hero-side-w 与固定 px 项的线性式（g = --hero-side-gap）：
+       N=2：banner = (side-w − g)×9/16 + 2t + g
+       N=3：banner = (side-w − 2g)×3/8 + 2t + g
+   为什么弃用常数系数：旧策略「系数 = 档内最小实际比例」必须依赖
+   .hero-bili__banner 的 height:100%（stretched grid item 子元素百分比高）
+   拉伸补齐档内差额；该百分比链在真实页面未稳定生效 → banner 退化为恒 =
+   min-height，档内偏差直接暴露（旧 pad 下 1024 处实测差 ~8.6px）——即用户
+   反馈「未严格齐平」的根因。完整表达式把 g/t 的 px 项纳入 calc，min-height
+   在档内【任意宽度】精确等于右栏实际高（ui-scale 放大 g/t 时同步放大，
+   --hero-side-w 与右栏同分母同步缩放）→ 无论 height:100% 是否生效都齐平，
+   height:100% 退化为亚像素级保险。
+   各断点代入复核（新 pad-x：1024–1919 = 60px）：
+     档1 @1024: C=904  → banner 296.4（比例 0.3279）；@1280: C=1160 → 368.2（0.3174）
+     档2 @1281: C=1161 → 297.1（0.2559）；@1440: C=1320 → 332.0（0.2515）；
+         @1920: C=1720 → 420.6（0.2445）；@≥2200: C=2000 → 480.2（0.2401）
+     档3 ≥2560: C=1920 恒 → 535.4（0.2789）
+   ⚠️ var(...) 的 fallback 值仅服务注入侧（layout-tokens 随 vite 插件注入
+   index.html，--space-xs / --hero-title-size / --hero-side-gap 定义在
+   variables.css 不随注入；boot-splash 已不消费 banner-h，fallback 纯防御）。
+   ⚠️ 断点必须与 useHeroSideCols.ts / HeroBili.css 严格一致
+   （1024–1280 = N=2；≥1281 = N=3；≥2560 仅 side-w 收 0.66，公式同档2）。 */
 @media (width >= 1024px) {
   html:not([data-device="tv"]) {
-    --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.31);
-    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.48);
+    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x)) * 0.48);
+    --hero-banner-h: calc(
+      (var(--hero-side-w) - var(--hero-side-gap, 12px)) * 9 / 16
+      + 2 * (2 * var(--space-xs, 4.5px) + 1.4 * var(--hero-title-size, 14px))
+      + var(--hero-side-gap, 12px)
+    );
   }
 }
 
 @media (width >= 1281px) {
   html:not([data-device="tv"]) {
-    --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.24);
-    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.56);
+    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x)) * 0.56);
+    --hero-banner-h: calc(
+      (var(--hero-side-w) - 2 * var(--hero-side-gap, 12px)) * 3 / 8
+      + 2 * (2 * var(--space-xs, 4.5px) + 1.4 * var(--hero-title-size, 14px))
+      + var(--hero-side-gap, 12px)
+    );
   }
 }
 
 @media (width >= 2560px) {
   html:not([data-device="tv"]) {
-    --hero-banner-h: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.277);
-    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x) - var(--home-rail-w) - var(--space-lg, 14.333px)) * 0.66);
+    --hero-side-w: calc((min(100vw, 2200px) - 2 * var(--page-pad-x)) * 0.66);
+    --hero-banner-h: calc(
+      (var(--hero-side-w) - 2 * var(--hero-side-gap, 12px)) * 3 / 8
+      + 2 * (2 * var(--space-xs, 4.5px) + 1.4 * var(--hero-title-size, 14px))
+      + var(--hero-side-gap, 12px)
+    );
   }
 }
 

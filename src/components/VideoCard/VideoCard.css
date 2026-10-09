@@ -337,13 +337,16 @@
   }
 }
 
-/* TV 端：聚焦时按钮显形（遥控可达） */
-[data-device="tv"] .video-card-fav-btn.hover-visible {
+/* TV/投影仪端：聚焦时按钮显形（遥控可达；projector 焦点交互视同 tv，成对追加） */
+[data-device="tv"] .video-card-fav-btn.hover-visible,
+[data-device="projector"] .video-card-fav-btn.hover-visible {
   opacity: 0;
   transform: scale(0.8);
 }
 [data-device="tv"] .video-card:focus-within .video-card-fav-btn.hover-visible,
-[data-device="tv"] .video-card-fav-btn.hover-visible:focus-visible {
+[data-device="tv"] .video-card-fav-btn.hover-visible:focus-visible,
+[data-device="projector"] .video-card:focus-within .video-card-fav-btn.hover-visible,
+[data-device="projector"] .video-card-fav-btn.hover-visible:focus-visible {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
@@ -535,7 +538,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   font-size: var(--text-sm);
 }
 
-[data-device="tv"] .video-card:focus-visible {
+[data-device="tv"] .video-card:focus-visible,
+[data-device="projector"] .video-card:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
@@ -717,7 +721,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 [data-device="tv"] .video-card:focus-within .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible,
-[data-device="tv"] .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible:focus-visible {
+[data-device="tv"] .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible:focus-visible,
+[data-device="projector"] .video-card:focus-within .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible,
+[data-device="projector"] .video-card-cover:has(.lazy-image-placeholder) > .video-card-fav-btn.hover-visible:focus-visible {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);

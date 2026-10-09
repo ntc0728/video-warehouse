@@ -119,6 +119,34 @@ export function useIsTV(): boolean {
 }
 
 /**
+ * 投影仪设备检测 Hook。
+ * ⚠️ 投影仪 UA 无可靠特征（市面投影仪多伪装成普通浏览器 / Android TV UA，
+ * 且部分投影仪直接跑标准 Chromium），自动检测不可行 —— 仅提供设置/存储层
+ * 手动指定入口（useSettingsStore.projectorMode，对齐 tvMode 同款机制）。
+ */
+export function useIsProjector(): boolean {
+  return useSettingsStore((s) => s.projectorMode);
+}
+
+/**
+ * 「TV 类」设备语义封装（tv || projector）—— 焦点交互语义的唯一判定入口。
+ *
+ * 投影仪与 TV 共享同一套焦点交互（遥控器/方向键空间导航、卡片 tabIndex、
+ * 焦点滚动、TV 焦点方框），但布局几何走桌面档（≥1920，data-device="projector"
+ * 命中各 html:not([data-device="tv"]) 桌面分档、不命中 [data-device="tv"]
+ * 2× 几何覆盖块）。需要「焦点交互」语义时用本 Hook，禁止在调用方散布
+ * `useIsTV() || useIsProjector()` 组合判断。
+ *
+ * 注意：布局几何/宽度档语义（useHeroSideCols / useIsWideDesktop / isWideDetail /
+ * 播放器 platform 等）应继续使用 useIsTV（真 TV 判定），投影仪按桌面几何走。
+ */
+export function useIsTVLike(): boolean {
+  const isTV = useIsTV();
+  const isProjector = useIsProjector();
+  return isTV || isProjector;
+}
+
+/**
  * 通过 User-Agent 检测是否为真正的移动设备（手机/平板）
  * 不依赖视口宽度，避免桌面浏览器窗口调小时误判
  */
