@@ -105,6 +105,9 @@ export default function HomePage() {
   usePullToRefresh(
     async () => {
       await useTMDBStore.getState().fetchAllHomeData({ force: true });
+      // 合集行（2026-09-30 独立接口）跟随下拉刷新：force 绕过 60min TTL，
+      // 返回 Promise 让下拉浮层等到真实结束。
+      await useTMDBStore.getState().ensureHomeCollections({ force: true });
       // 2026-09-16：fetchAllHomeData 把各区块失败写进 errors 后**正常 resolve**（不 reject），
       // 且 TMDBMovieRow 只在 items 为空时才渲染错误行（TMDBMovieRow/index.tsx:437-448）——
       // 于是「已有旧数据 + 刷新整批失败」时用户完全看不到失败（浮层照样回弹「刷新成功」）。
@@ -117,8 +120,7 @@ export default function HomePage() {
     { toastOnError: '刷新失败，请检查网络后重试' },
   );
 
-  // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景）
-  // 2026-09-16 视口懒加载：只对「已加载（有数据）」的区块做 TTL 刷新（ensureHomeBlock 内部
+  // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景）  // 2026-09-16 视口懒加载：只对「已加载（有数据）」的区块做 TTL 刷新（ensureHomeBlock 内部
   // 按区块 TTL 判定），未滚入视口的区块保持空白、由 <LazyBlock> 触发 —— 否则整批刷新会把
   // 懒加载省下的请求立刻补回来。
   useEffect(() => {
@@ -279,6 +281,13 @@ export default function HomePage() {
     if (s.loading.trending || s.loading.nowPlaying) return;
     for (const k of need) void s.ensureHomeBlock(k);
   }, [hasToken, trending, nowPlaying, errors.trending, errors.nowPlaying]);
+
+  // 合集行数据拉取（2026-09-30 独立接口，用户定稿）：随首页挂载即取，
+  // **不等合集行滚入视口**；ensureHomeCollections 幂等（TTL 60min + 在飞去重）。
+  useEffect(() => {
+    if (!hasToken) return;
+    void useTMDBStore.getState().ensureHomeCollections();
+  }, [hasToken]);
 
   // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
@@ -476,7 +485,15 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            <span className="hero-bili__shuffle home-skeleton-bili__shuffle" />
+            {/* 换一换骨架（2026-10-10 镜像修复）：挂真实 .hero-bili__shuffle 基类，
+                盒模型（absolute 浮层定位/padding/border/flex-column/gap）全部继承，
+                内部补 icon 条 + 竖排文本条两根灰条 —— 上一版是 width:--space-xl 的
+                空 span（display:block 拍掉基类 flex、无内容无高）→ 塌成小圆点，
+                与真实按钮（icon+竖排「换一换」）相差甚远（用户截图质询）。 */}
+            <span className="hero-bili__shuffle home-skeleton-bili__shuffle" aria-hidden="true">
+              <span className="home-skeleton-bili__shuffle-icon" />
+              <span className="home-skeleton-bili__shuffle-text" />
+            </span>
           </div>
         </div>
       </section>
@@ -592,6 +609,7 @@ export default function HomePage() {
           <HomeTopStrip
             continueCount={continueItems.length}
             favoriteCount={collectionCount}
+            trending={trending}
           />
           <HeroBanner
             items={trending}
@@ -615,9 +633,9 @@ export default function HomePage() {
                 />
               </div>
             )}
-            {/* CQA 合集行（内部 useInViewport 懒加载；合集数据从首页缓存 8 桶
-                派生，零新增请求，跟随缓存自动更新；点击走 handleCategorySelect 跳转） */}
-            <CategoryInlineBoard onCollectionSelect={handleCategorySelect} />
+            {/* CQA 合集行（数据 = useTMDBStore 合集桶，随首页挂载拉取、全到齐才显示；
+                点击跳 /chart?collection=<key>，跳转在组件内完成） */}
+            <CategoryInlineBoard />
             {renderHomeRows()}
             <BackToTopButton />
           </div>

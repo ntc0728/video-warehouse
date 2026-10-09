@@ -1,14 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   RecordCard — 历史页统一记录卡（视频 / IPTV 同尺寸）
+   RecordCard — 历史页 / 收藏页统一记录卡（视频 / IPTV 同尺寸）
    默认竖版（≥480px，2 列起）：上封面（16:9，宽 = 卡内容宽）+ 下 2 行文字：
      第 1 行：标题独占整行（溢出无缝跑马灯，副本间距 var(--space-lg)）
      第 2 行：类型徽标 + 来源·集数（靠左成链）+ 观看时间（贴行尾右对齐，永不压缩）
    窄视口（<480px，1 列）自动切横版（见文末 @media width < 480px）：
      封面固定 124px 宽（比例沿用旧横版 132:92）+ 右信息逐行排布。
-   作用域收在 .history-page 下，避免影响收藏页共用全局 .record-card 的包裹布局。
+   作用域：.history-page / .collection-page（2026-10-10 收藏页 IPTV 改用本组件
+   后两页必须同款；:is() 特异性 = 单类，与原 .history-page 前缀完全一致）。
    ═══════════════════════════════════════════════════════════════════════ */
 
-.history-page .record-card {
+:is(.history-page, .collection-page) .record-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -29,28 +30,28 @@
 }
 
 /* hover：边框加强 + 悬浮阴影 */
-.history-page .record-card:hover {
+:is(.history-page, .collection-page) .record-card:hover {
   border-color: var(--color-border-strong);
   box-shadow: var(--shadow-card-hover);
 }
 
 /* 选中态：边框 + 外发光
    ⚠️ 必须连 :hover 一起声明：触屏 tap 后卡片残留 :hover 状态，
-   `.history-page .record-card:hover`（0,3,0）会压过单独的
-   `.history-page .record-card--selected`（0,2,0），border-color 被
+   `:is(.history-page, .collection-page) .record-card:hover`（0,3,0）会压过单独的
+   `:is(.history-page, .collection-page) .record-card--selected`（0,2,0），border-color 被
    强改为 border-strong —— 表现为「移动端批量管理第一次选中，
    card 边框未变成选中态颜色」（2026-09-08 修复） */
-.history-page .record-card--selected,
-.history-page .record-card--selected:hover {
+:is(.history-page, .collection-page) .record-card--selected,
+:is(.history-page, .collection-page) .record-card--selected:hover {
   border: 2px solid var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-soft, rgba(99, 102, 241, 0.12));
 }
-.history-page .record-card--selected::after {
+:is(.history-page, .collection-page) .record-card--selected::after {
   display: none;
 }
 
 /* ── 上封面区：占满卡内容宽，严格 16:9（高由宽推导） ── */
-.history-page .record-card__media {
+:is(.history-page, .collection-page) .record-card__media {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -58,38 +59,38 @@
   background: var(--color-placeholder);
   overflow: hidden;
 }
-.history-page .record-card__media .lazy-image-container,
-.history-page .record-card__media .record-card__media-img {
+:is(.history-page, .collection-page) .record-card__media .lazy-image-container,
+:is(.history-page, .collection-page) .record-card__media .record-card__media-img {
   width: 100%;
   height: 100%;
 }
 
 /* 视频封面：图片铺满（16:9 源图按 cover 裁切，保持容器严格 16:9） */
-.history-page .record-card__media--video .lazy-image,
-.history-page .record-card__media--video .record-card__media-img {
+:is(.history-page, .collection-page) .record-card__media--video .lazy-image,
+:is(.history-page, .collection-page) .record-card__media--video .record-card__media-img {
   object-fit: cover;
 }
 
 /* IPTV 台标：cover 占满容器（与 IPTVChannelCard 同一口径，2026-09-23 用户定稿）。
    原 contain + padding 四周留白松散，现改 cover 铺满、宁裁边不缩居中。
    lazy-image-fallback 是 Tv 图标兜底节点，保持 cover 不受影响（内含矢量图标，无裁切语义）。 */
-.history-page .record-card__media--logo {
+:is(.history-page, .collection-page) .record-card__media--logo {
   background: var(--color-surface-hover);
 }
-.history-page .record-card__media--logo .lazy-image,
-.history-page .record-card__media--logo .record-card__media-img {
+:is(.history-page, .collection-page) .record-card__media--logo .lazy-image,
+:is(.history-page, .collection-page) .record-card__media--logo .record-card__media-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.history-page .record-card__media--logo .lazy-image-fallback {
+:is(.history-page, .collection-page) .record-card__media--logo .lazy-image-fallback {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 /* 批量勾选框：悬浮在封面左上角 */
-.history-page .record-card__media .record-card__check {
+:is(.history-page, .collection-page) .record-card__media .record-card__check {
   position: absolute;
   top: var(--space-2xs);
   left: var(--space-2xs);
@@ -101,7 +102,7 @@
    批量模式下由 tsx 隐藏本角标，避免重叠）。曾漏 position 声明 → static 排入
    .lazy-image-container 之后被 media overflow:hidden 裁掉，历史页 iptv 角标
    一直不可见（2026-09-03 修复）；颜色由全局 .record-card__live-badge 控制 */
-.history-page .record-card__media .record-card__live-badge {
+:is(.history-page, .collection-page) .record-card__media .record-card__live-badge {
   position: absolute;
   top: var(--space-2xs);
   left: var(--space-2xs);
@@ -109,7 +110,7 @@
 }
 
 /* 视频底部进度条 */
-.history-page .record-card__progress-overlay {
+:is(.history-page, .collection-page) .record-card__progress-overlay {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -117,18 +118,18 @@
   z-index: 3;
   pointer-events: none;
 }
-.history-page .record-card__progress-bar-wrap {
+:is(.history-page, .collection-page) .record-card__progress-bar-wrap {
   width: 100%;
   height: var(--space-xs);
   background: rgba(255, 255, 255, 0.15);
   overflow: hidden;
 }
-.history-page .record-card__progress-bar {
+:is(.history-page, .collection-page) .record-card__progress-bar {
   height: 100%;
   background: var(--color-progress-fill);
   transition: width var(--dur-lg) ease;
 }
-.history-page .record-card__progress-text {
+:is(.history-page, .collection-page) .record-card__progress-text {
   position: absolute;
   right: var(--space-2xs);
   bottom: calc(var(--space-xs) + var(--space-3xs));
@@ -141,7 +142,7 @@
 }
 
 /* ── 封面下方 2 行文字：整行宽（媒体下方），行间紧凑 ── */
-.history-page .record-card__body {
+:is(.history-page, .collection-page) .record-card__body {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -155,7 +156,7 @@
 /* 第 1 行：标题独占整行（观看时间已并入第 2 行行尾），溢出时无缝跑马灯
    字号/字重/行高与全站通用 .video-card-title 对齐（--text-sm / 500 / 1.5），
    消除「历史页标题比其他页大一号」的观感差（2026-09-28 统一）。 */
-.history-page .record-card__title {
+:is(.history-page, .collection-page) .record-card__title {
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -168,25 +169,25 @@
   text-overflow: ellipsis;
 }
 /* TV 端与 [data-device="tv"] .video-card-title 同口径抬到 --text-base（大屏可读性） */
-[data-device="tv"] .history-page .record-card__title {
+[data-device="tv"] :is(.history-page, .collection-page) .record-card__title {
   font-size: var(--text-base);
 }
-.history-page .record-card__title.is-overflow {
+:is(.history-page, .collection-page) .record-card__title.is-overflow {
   text-overflow: clip;
 }
 /* 无缝跑马灯轨道：标题复制两份等宽、各带尾间距 → 平移 -50% 恰好回起点循环无跳变，
    两份副本之间保留 var(--space-lg) 间距（不与下一份贴死） */
-.history-page .record-card__title-track {
+:is(.history-page, .collection-page) .record-card__title-track {
   display: inline-flex;
 }
-.history-page .record-card__title.is-overflow .record-card__title-text {
+:is(.history-page, .collection-page) .record-card__title.is-overflow .record-card__title-text {
   margin-right: var(--space-lg);
 }
 /* 悬浮整卡即触发跑马灯（不只标题文字，避免"悬浮到 card 上却没反应"） */
-.history-page .record-card:hover .record-card__title.is-overflow .record-card__title-track {
+:is(.history-page, .collection-page) .record-card:hover .record-card__title.is-overflow .record-card__title-track {
   animation: rc-marquee var(--dur-marquee) linear infinite;
 }
-.history-page .record-card__title-text {
+:is(.history-page, .collection-page) .record-card__title-text {
   white-space: nowrap;
 }
 
@@ -202,7 +203,7 @@
 /* 第 2 行：类型徽标 + 来源·集数 靠左成链；观看时间贴行尾右对齐（两端对齐）。
    时间 flex:0 0 auto 永不压缩 + margin-left:auto 推至行尾；
    链中段过长仅 episode 允许收缩省略（source 徽标固定不缩）。 */
-.history-page .record-card__meta-row {
+:is(.history-page, .collection-page) .record-card__meta-row {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
@@ -212,7 +213,7 @@
   white-space: nowrap;
   overflow: hidden;
 }
-.history-page .record-card__meta-row .record-card__time-text {
+:is(.history-page, .collection-page) .record-card__meta-row .record-card__time-text {
   flex: 0 0 auto;
   flex-shrink: 0;
   margin-left: auto;
@@ -220,7 +221,7 @@
   font-size: var(--text-xs);
   font-weight: 500;
 }
-.history-page .record-card__badge-type {
+:is(.history-page, .collection-page) .record-card__badge-type {
   flex-shrink: 0;
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -228,15 +229,15 @@
   font-weight: 600;
   line-height: 1.5;
 }
-.history-page .record-card__badge-type--video {
+:is(.history-page, .collection-page) .record-card__badge-type--video {
   background: var(--color-primary-soft, rgba(99, 102, 241, 0.12));
   color: var(--color-primary);
 }
-.history-page .record-card__badge-type--live {
+:is(.history-page, .collection-page) .record-card__badge-type--live {
   background: rgba(34, 197, 94, 0.14);
   color: var(--color-success-text);
 }
-.history-page .record-card__badge-source {
+:is(.history-page, .collection-page) .record-card__badge-source {
   flex-shrink: 0;
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -245,32 +246,32 @@
   font-size: var(--text-2xs);
   line-height: 1.5;
 }
-.history-page .record-card__episode {
+:is(.history-page, .collection-page) .record-card__episode {
   flex-shrink: 1;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 /* 窄屏信息列（meta-col）：默认隐藏，仅 <480px 横版生效（见文末 media 块）——
    与 meta-row 为二选一结构，避免同屏重复渲染两套 meta 文本 */
-.history-page .record-card__meta-col {
+:is(.history-page, .collection-page) .record-card__meta-col {
   display: none;
 }
 
 /* 移动端删除按钮常驻（对齐收藏/历史既有规则） */
 @media (width <= 767px) {
-  .history-page .record-card__delete {
+  :is(.history-page, .collection-page) .record-card__delete {
     opacity: 1;
   }
   /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动） */
-  .history-page .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
+  :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
     animation: rc-marquee var(--dur-marquee) linear infinite;
   }
 }
 /* app / 移动端（data-device=app）：同样「进入视口」才播放 */
-html[data-device='app'] .history-page .record-card__delete {
+html[data-device='app'] :is(.history-page, .collection-page) .record-card__delete {
   opacity: 1;
 }
-html[data-device='app'] .history-page .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
+html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
   animation: rc-marquee var(--dur-marquee) linear infinite;
 }
 
@@ -285,13 +286,13 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
      各徽标盒子内容宽（不再撑满行），IPTV 无集数时 bottom 行仅时间、margin-left:auto 贴右。
    ═══════════════════════════════════════════════════════════════════════ */
 @media (width < 480px) {
-  .history-page .record-card {
+  :is(.history-page, .collection-page) .record-card {
     flex-direction: row; /* 竖版 column → 横版 row：封面左、信息右 */
     gap: var(--space-sm);
     align-items: stretch;
   }
 
-  .history-page .record-card__media {
+  :is(.history-page, .collection-page) .record-card__media {
     --record-card-media-w: 124px;
     flex: 0 0 var(--record-card-media-w);
     align-self: center;
@@ -299,7 +300,7 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
     aspect-ratio: 132 / 92; /* 比例沿用旧横版（非 16:9，历史观感） */
   }
 
-  .history-page .record-card__body {
+  :is(.history-page, .collection-page) .record-card__body {
     flex: 1 1 0;
     gap: var(--space-sm);
     justify-content: center;
@@ -307,10 +308,10 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
   }
 
   /* 宽屏单行 meta 隐藏，切换窄屏信息列 */
-  .history-page .record-card__meta-row {
+  :is(.history-page, .collection-page) .record-card__meta-row {
     display: none;
   }
-  .history-page .record-card__meta-col {
+  :is(.history-page, .collection-page) .record-card__meta-col {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
@@ -320,7 +321,7 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
     font-size: var(--text-xs);
   }
   /* 集数 + 时间同行两端对齐（IPTV 无集数 → 行内仅时间，margin-left:auto 贴右） */
-  .history-page .record-card__meta-bottom {
+  :is(.history-page, .collection-page) .record-card__meta-bottom {
     display: flex;
     gap: var(--space-sm);
     align-items: center;
@@ -329,12 +330,12 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
     white-space: nowrap;
     overflow: hidden;
   }
-  .history-page .record-card__meta-bottom .record-card__episode {
+  :is(.history-page, .collection-page) .record-card__meta-bottom .record-card__episode {
     flex-shrink: 1;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .history-page .record-card__meta-bottom .record-card__time-text {
+  :is(.history-page, .collection-page) .record-card__meta-bottom .record-card__time-text {
     flex: 0 0 auto;
     flex-shrink: 0;
     margin-left: auto;
@@ -344,13 +345,13 @@ html[data-device='app'] .history-page .record-card.is-in-view .record-card__titl
 /* ── 封面加载门控（2026-09-23）────────────────────────────────────────
    扫光中隐藏 LIVE 角标与底部进度；成功/失败兜底/空源显示。
    批量勾选框 .record-card__check 明确不门控（用户拍板）。 */
-.history-page .record-card__media .record-card__live-badge,
-.history-page .record-card__media .record-card__progress-overlay {
+:is(.history-page, .collection-page) .record-card__media .record-card__live-badge,
+:is(.history-page, .collection-page) .record-card__media .record-card__progress-overlay {
   transition: opacity var(--dur-base) var(--ease-out-expo);
 }
 
-.history-page .record-card__media:has(.lazy-image-placeholder) > .record-card__live-badge,
-.history-page .record-card__media:has(.lazy-image-placeholder) > .record-card__progress-overlay {
+:is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) > .record-card__live-badge,
+:is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) > .record-card__progress-overlay {
   opacity: 0;
   pointer-events: none;
 }

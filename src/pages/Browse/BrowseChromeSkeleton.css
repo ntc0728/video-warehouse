@@ -8,15 +8,26 @@
   pointer-events: none;
 }
 
-/* ── 左栏 chips：高度/圆角对齐真实 .filter-bar__chip ──
-   基础档（<1024 / 移动）：胶囊占满 2 列格宽。
-   桌面 ≥1024 非 app/tv：真实 chip 被 Browse.css 覆盖为
-   高 ≈ text-sm+space-xs×2、radius-md、贴文字宽 + justify-self:start；
-   骨架无文字，用 em 宽模拟 2 字 chip 形态，与真实并排观感一致。 */
+/* ── 左栏 chips：高度/圆角/左右对齐/间距全部继承真实规则 ──
+   基础档（<1024 / 移动）：胶囊占满 2 列格宽（width:100%）。
+   桌面 ≥1024 非 app/tv：chips 容器复用真实 .filter-bar__chips-* 类 →
+   display:grid 2 列、gap --space-xs/--space-2xs、margin-top --space-xs、
+   justify-self:start 左对齐，全部来自 Browse.css 真实规则（同一份真源）；
+   骨架只补宽度 —— var(--chip-w)（TSX 按真实标签「文本宽 + padding」注入，
+   地区/年份逐个还原；分类 genre 来自接口，按 2 字档近似 = 2em + 2×space-sm）。 */
 .browse-chrome-skeleton__chip {
   width: 100%;
   height: var(--comp-tab-height);
   border-radius: var(--radius-full);
+}
+
+/* 桌面专用「撑满」占位块（BrowseChromeSkeleton.tsx FILL_CHIPS + 超出
+   MOBILE_CHIPS 的真实标签）：<1024 移动端胶囊是整行大块，数量必须克制 →
+   直接不参与布局；≥1024 由下方媒体查询内 .browse-chrome-skeleton__chip 的
+   display:block 复活，富余部分被组容器 overflow:hidden 按视口高度裁掉
+   （任意大屏都铺满不露底）。 */
+.browse-chrome-skeleton__chip--fill {
+  display: none;
 }
 
 @media (width >= 1024px) {
@@ -24,16 +35,53 @@
     .browse-chrome-skeleton .browse-chrome-skeleton__chip {
     display: block;
     justify-self: start;
-    width: 3.2em;
+    /* 宽度 = 真实 chip 盒宽（文本 + 左右 padding，TSX 逐标签注入 --chip-w；
+       分类组无标签 → 2 字档兜底 2em + 2×space-sm）。高度/padding/圆角
+       与真实 .filter-bar__chip 同公式（text-sm + space-xs×2 / radius-md）。 */
+    width: var(--chip-w, calc(2em + 2 * var(--space-sm)));
     height: calc(var(--text-sm) + var(--space-xs) * 2);
     padding: 0;
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
   }
 
+  /* ── 左栏骨架占满剩余高度（2026-10-09 用户要求）──
+     真实 .filter-bar 是 align-self:start（内容自适应高），骨架期右列结果区远高
+     于三组 chips → 左栏下方空洞、右侧 1px 分割线中途截断
+     （agent-rule-violations #25「左栏分割线未充满容器高度」同型）。
+     修法：骨架根盒改 align-self:stretch 吃满 row2（1fr）剩余高度，
+     三组 .filter-bar__row flex-grow 均分多余高度（组内容顶对齐、组距随高度铺开）。
+     特异性 (0,4,1) 压过 Browse.css 的 .filter-bar (0,3,1)，与 import 顺序无关。 */
   html:not([data-device="app"]):not([data-device="tv"])
-    .browse-chrome-skeleton .browse-chrome-skeleton__chip:nth-child(2n) {
-    width: 2.6em;
+    .browse-page .browse-chrome-skeleton--filters {
+    align-self: stretch;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-chrome-skeleton--filters .filter-bar__row {
+    /* 组内撑满（2026-10-10 用户要求「胶囊数量要撑满容器」）：
+       上一步只把「组间」剩余高度均分，但真实 chips 容器是 flex:0 0 auto
+       （Browse.css ≥1024 块）→ 胶囊挤在顶部几行、组下半仍是空洞。
+       行改纵向 flex 后 chips 容器吃满本组高度，FILL_CHIPS 富余胶囊被
+       overflow:hidden 按视口裁剪（真实 chips 容器本就是滚动容器，观感一致）。 */
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    /* ⚠️ 必须显式 stretch：FilterBar.css 基础 .filter-bar__row 带
+       align-items:center（横向布局用），行改纵向后若不重置，
+       label 会水平居中、chips 容器收缩为 fit-content → 胶囊顶满格子
+       边缘（2 列贴死、看似无左对齐）。2026-10-09 用户截图实锤。 */
+    align-items: stretch;
+  }
+
+  /* 特异性 (0,5,1) 压过真实 .filter-bar__chips-* 的 flex:0 0 auto (0,3,1) */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-chrome-skeleton--filters .filter-bar__chips-wrap,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-chrome-skeleton--filters .filter-bar__chips-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
   }
 }
 

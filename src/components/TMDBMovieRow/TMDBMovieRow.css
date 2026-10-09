@@ -244,10 +244,14 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   50% { opacity: 0.8; }
 }
 
-/* 滚动箭头 — 圆形玻璃态 */
+/* 滚动箭头 — 圆形玻璃态
+   垂直锚点（2026-10-09 用户要求）：以封面图中心为参考，而非含标题信息的整卡 ——
+   封面中心 Y 随断点列数 / 卡片变体（竖版 2:3 / 继续观看横版）变化，CSS 无法静态
+   求值，由 TMDBMovieRow 实测首个 .video-card-cover 中心注入 --tmdb-arrow-cy；
+   未测量（SSR 首帧/骨架无封面）回退 50%。 */
 .tmdb-movierow-arrow {
   position: absolute;
-  top: 50%;
+  top: var(--tmdb-arrow-cy, 50%);
   z-index: 2;
   display: flex;
   justify-content: center;

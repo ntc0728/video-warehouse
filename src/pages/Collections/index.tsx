@@ -1,8 +1,8 @@
 /**
  * 收藏页面（重构）
  * 融合 Tab（综合/视频/IPTV）+「更多筛选」面板（状态 chips + 排序）+ 批量管理
- * 综合 = 「影视」竖版海报墙分区 + 「直播」原项目 IPTV 卡分区（各用原生网格，
- *       卡片出场动画保留：.video-card-grid / .iptv-channel-grid 子项 stagger + key 重挂载）。
+ * 综合 = 「影视」竖版海报墙分区 + 「直播」历史页同款 RecordCard 分区（2026-10-10
+ *       用户拍板 B：卡片+网格全对齐历史页，网格消费 --history-cols）。
  * 状态筛选（未观看/正在看/已看完）仅作用于影视分区；直播分区恒全量。
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -10,7 +10,9 @@ import { useLocation } from 'react-router-dom';
 import { useUserStore, useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { VideoCard } from '@/components/VideoCard';
-import IPTVChannelCard from '@/components/IPTVChannelCard';
+import { RecordCard, type RecordCardItem } from '@/components/RecordCard';
+import { resolveChannelLogoCandidates } from '@/services/channelLogo';
+import { buildChannelPlayUrl } from '@/services/iptvService';
 import { Empty, BackToTopButton } from '@/components/common';
 import { ConfirmDialog } from '@/components/ui';
 import { Trash2, CheckSquare, Square, LayoutGrid, PlayCircle, Tv, ListChecks, SlidersHorizontal } from 'lucide-react';
@@ -39,6 +41,29 @@ type VideoStatus = 'all' | 'unwatched' | 'watching' | 'watched';
 /** 实际观看状态（收藏页视频卡角标/筛选用），不含「全部」 */
 type ConcreteVideoStatus = Exclude<VideoStatus, 'all'>;
 type SortKey = 'recent' | 'oldest' | 'title-asc' | 'title-desc' | 'rating-desc' | 'rating-asc';
+
+/* 频道卡时间格式化（2026-10-10 对齐历史页 RecordCard）：口径镜像 History 的
+   formatPlayTime（今天→HH:mm / 昨天→昨天 HH:mm / 本周→周X HH:mm / 本月→M月D日 /
+   更早→YYYY年M月D日），但收藏频道无日期分组 → 按时间戳自行分档。 */
+const favFullTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+});
+const favShortTimeFormatter = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+function formatFavChannelTime(ts: number): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (ts >= startOfToday) return favShortTimeFormatter.format(ts);
+  if (ts >= startOfToday - dayMs) return `昨天 ${favShortTimeFormatter.format(ts)}`;
+  if (ts >= startOfToday - 6 * dayMs) {
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    return `${weekdays[d.getDay()]} ${favShortTimeFormatter.format(ts)}`;
+  }
+  if (ts >= startOfToday - (now.getDate() - 1) * dayMs) return `${d.getMonth() + 1}月${d.getDate()}日`;
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: '最近收藏' },
@@ -83,6 +108,9 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading, loadError } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
+  // 2026-10-10 收藏页 IPTV 卡片对齐历史页 RecordCard：直链代理参数与历史页 buildIptvNav 同源
+  const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
+  const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
   // CMS 源启用守卫：直链收藏点击跳转前校验所选源是否启用，未启用则拦截并弹窗
   const cmsSourceGuard = useCmsSourceGuard();
@@ -188,9 +216,10 @@ export default function CollectionsPage() {
     videoStatusMap.get(videoId) ?? 'unwatched',
   [videoStatusMap]);
 
-  /** 视频收藏：应用搜索（综合用 all 关键词、视频 tab 用 video 关键词）+ 状态筛选 + 排序。
-   *  状态筛选仅作用于影视项；直播分区恒全量。 */
-  const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
+  /** 视频收藏基底：应用搜索（综合用 all 关键词、视频 tab 用 video 关键词），
+   *  不含状态筛选与排序。2026-10-09 拆出：状态 chip 分面计数需要「状态筛选前」口径，
+   *  base（搜索）与 filtered（+状态筛选+排序）分两段 memo，避免同一逻辑双写漂移。 */
+  const collectedVideosBase = useMemo<CollectionVideoItem[]>(() => {
     let list: CollectionVideoItem[] = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
       .map((c: CollectionRecord): CollectionVideoItem => {
@@ -216,9 +245,25 @@ export default function CollectionsPage() {
       });
     const kw = searchByTab[mainTab === 'all' ? 'all' : 'video'] || '';
     if (kw.trim()) { const key = kw.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(key)); }
+    return list;
+  }, [collections, searchByTab, mainTab, getVideoStatus]);
+
+  /** 状态 chip 分面计数：基底（搜索后、状态筛选前）按状态计数 ——
+   *  每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
+   *  否则未选中的 chip 会被当前筛选清零成误导性 0）。仅影视项 —— IPTV 频道无观看状态概念。 */
+  const statusCounts = useMemo<Record<VideoStatus, number>>(() => {
+    const counts: Record<VideoStatus, number> = { all: collectedVideosBase.length, unwatched: 0, watching: 0, watched: 0 };
+    for (const v of collectedVideosBase) counts[v._status ?? 'unwatched']++;
+    return counts;
+  }, [collectedVideosBase]);
+
+  /** 视频收藏：基底 + 状态筛选 + 排序。
+   *  状态筛选仅作用于影视项；直播分区恒全量。
+   *  排序：默认最近收藏；名称按中文拼音序；评分缺失按 0 处理，同值时按收藏时间倒序兜底 */
+  const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
+    let list = [...collectedVideosBase];
     if (statusFilter !== 'all') { list = list.filter((v) => v._status === statusFilter); }
 
-    // 排序：默认最近收藏；名称按中文拼音序；评分缺失按 0 处理，同值时按收藏时间倒序兜底
     const byAddedDesc = (a: CollectionVideoItem, b: CollectionVideoItem) => (b._addedAt ?? 0) - (a._addedAt ?? 0);
     switch (sortBy) {
       case 'oldest':
@@ -240,7 +285,7 @@ export default function CollectionsPage() {
         list.sort(byAddedDesc);
     }
     return list;
-  }, [collections, searchByTab, mainTab, statusFilter, getVideoStatus, sortBy]);
+  }, [collectedVideosBase, statusFilter, sortBy]);
 
   /** 直播收藏：应用搜索（综合用 all 关键词、iptv tab 用 iptv 关键词），按最后播放时间倒序。 */
   const favoriteChannels = useMemo(() => {
@@ -344,6 +389,29 @@ export default function CollectionsPage() {
     setConfirmOpen(true);
   }, []);
 
+  /** 收藏频道 → 历史页同款 RecordCard 数据（2026-10-10 用户拍板 B：卡片+网格全对齐）。
+   *  台标候选链 / 直链代理跳转与 History.buildIptvNav 同口径；时间位显示最后播放时间
+   *  （无播放记录显示 —），来源位显示频道分组 —— 对齐 RecordCard 的 IPTV 信息排布。 */
+  const buildChannelCardItem = useCallback((ch: (typeof iptvChannels)[number]): RecordCardItem => {
+    const candidates = resolveChannelLogoCandidates(ch);
+    const playUrl = buildChannelPlayUrl(ch, proxyUrl, proxyPattern);
+    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    params.set('id', ch.id);
+    params.set('name', ch.name);
+    return {
+      id: ch.id,
+      kind: 'iptv',
+      title: ch.name,
+      media: candidates[0],
+      logoCandidates: candidates.slice(1),
+      source: ch.group,
+      timeText: ch.lastPlayed ? formatFavChannelTime(ch.lastPlayed) : '—',
+      timeTitle: ch.lastPlayed ? favFullTimeFormatter.format(ch.lastPlayed) : undefined,
+      navigateTo: `/iptv/play?${params.toString()}`,
+      navState: { from: location.pathname },
+    };
+  }, [proxyUrl, proxyPattern, location.pathname]);
+
   const handleBatchDelete = useCallback(() => {
     setConfirmType('batch');
     setConfirmOpen(true);
@@ -398,6 +466,7 @@ export default function CollectionsPage() {
           key: k,
           label: STATUS_CONFIG[k].label,
           color: STATUS_CONFIG[k].color,
+          count: statusCounts[k],
         })),
         statusFilter,
         onStatusChange: (k) => setStatusFilter(k as VideoStatus),
@@ -483,19 +552,14 @@ export default function CollectionsPage() {
               </div>
               <div className="iptv-channel-grid iptv-channel-grid--batch">
                 {displayedChannels.map((ch) => (
-                  <div
+                  <RecordCard
                     key={ch.id}
-                    className={`record-card ${batchMode && selected.has(ch.id) ? 'record-card--selected' : ''}`}
-                    onClick={batchMode ? () => toggleSelect(ch.id) : undefined}
-                  >
-                    {batchMode && (
-                      <button className="record-card__check" onClick={(e) => { e.stopPropagation(); toggleSelect(ch.id); }} aria-label={selected.has(ch.id) ? '取消选择' : '选择'} aria-pressed={selected.has(ch.id)}>
-                        {selected.has(ch.id) ? <Icon icon={CheckSquare} size="sm" /> : <Icon icon={Square} size="sm" />}
-                      </button>
-                    )}
-                    <button className="record-card__delete" onClick={(e) => handleSingleDelete(ch.id, 'iptv', e)} aria-label="删除"><Icon icon={Trash2} size="xs" /></button>
-                    <IPTVChannelCard channel={ch} hideFavorite batchMode={batchMode} />
-                  </div>
+                    item={buildChannelCardItem(ch)}
+                    batchMode={batchMode}
+                    selected={selected.has(ch.id)}
+                    onToggleSelect={() => toggleSelect(ch.id)}
+                    onDelete={(e) => handleSingleDelete(ch.id, 'iptv', e)}
+                  />
                 ))}
               </div>
             </section>

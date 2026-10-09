@@ -17,11 +17,7 @@
  * - 卡标题默认单行 ellipsis 兜底（高度恒定，保 banner 齐平）；hover/focus 且
  *   溢出时切跑马灯（方案 A，2026-09-30 用户确认 demos/hero-title-marquee-demo.html）
  * - 「换一换」防抖 = 动画锁：is-spinning（0.6s 转圈）未结束前点击直接 return
- * - 「换一换」自动轮播（P3-A，8s，2026-09-30 用户确认）：定时触发同款推进；
- *   暂停条件 = hover 右栏 / 焦点在右栏内 / document.hidden / Keep-Alive 非激活；
- *   手动或自动切换后经 shuffleOffset 依赖重置 8s 计时器；仅桌面生效
- *   （TV / ≤1023 由挂载条件 useIsWideDesktop 排除，Capacitor app 由
- *   isNativePlatform 排除——宽屏平板虽渲染 HeroBili 但不自动轮播）
+ * - 「换一换」仅手动触发（2026-10-09 用户要求取消自动轮换；原 P3-A 8s 自动轮播已删除）
  * - Banner 信息层：标题 + 评分/年份/类型 chips（P3-B，纯 token 化胶囊，仅有的
  *   数据字段渲染，缺字段不渲染 chip）+ 加深底部渐变；caption 恒 absolute，
  *   不参与布局流，banner 齐平不变量不受影响
@@ -32,7 +28,6 @@ import { RefreshCw, Heart, ChevronLeft, ChevronRight, Play, MonitorPlay } from '
 import { buildImageUrl } from '@/services/tmdbService';
 import { useUserStore } from '@/stores/useUserStore';
 import { useHeroSideCols } from '@/hooks';
-import { isNativePlatform } from '@/lib/platform';
 import { Icon } from '@/components/ui/Icon';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import './HeroBili.css';
@@ -77,8 +72,6 @@ const SIDE_ROWS = 2;
 const BANNER_POOL = 6;
 /** 换一换动画锁时长（= 转圈动画时长，防抖窗口） */
 const SHUFFLE_LOCK_MS = 600;
-/** 换一换自动轮播间隔（P3-A：8s，2026-09-30 用户确认） */
-const SHUFFLE_AUTO_MS = 8000;
 
 /** 条目标题 */
 function itemTitle(item: HeroBiliItem): string {
@@ -216,33 +209,12 @@ export default function HeroBili({
     shuffleTimerRef.current = window.setTimeout(() => setSpinning(false), SHUFFLE_LOCK_MS);
   }, [shuffleCycles]);
 
-  // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）
+  // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）。
+  // 2026-10-09 用户要求：取消 8s 自动轮换（原 P3-A 效果整块删除），仅手动点击触发。
   const handleShuffle = useCallback(() => {
     if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
     advanceShuffle();
   }, [spinning, advanceShuffle]);
-
-  // ── 换一换自动轮播（P3-A）：8s 间隔定时触发同款推进 ─────────────────────
-  // 启用条件：桌面 ≥1024 非 TV 非 app——TV / ≤1023 由挂载条件 useIsWideDesktop
-  // 排除（HeroBili 根本不渲染），Capacitor app（宽屏平板会渲染本组件）由
-  // isNativePlatform 显式排除（遥控/触屏场景静止，2026-09-30 用户口径）。
-  // 暂停：hover 右栏 / 焦点在右栏内（React onFocus/onBlur = focusin/focusout 冒泡）/
-  // document.hidden / Keep-Alive 非激活；池为空不轮播。
-  // 手动或自动切换都使 shuffleOffset 变化 → 依赖重建 interval = 计时器重置 8s。
-  const [rightHovered, setRightHovered] = useState(false);
-  const [rightFocused, setRightFocused] = useState(false);
-  const [docHidden, setDocHidden] = useState(() => document.hidden);
-  useEffect(() => {
-    const onVis = () => setDocHidden(document.hidden);
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, []);
-  useEffect(() => {
-    const disabled = rightHovered || rightFocused || docHidden || !active || cardPoolSize === 0;
-    if (disabled || isNativePlatform()) return;
-    const timer = window.setInterval(advanceShuffle, SHUFFLE_AUTO_MS);
-    return () => window.clearInterval(timer);
-  }, [rightHovered, rightFocused, docHidden, active, cardPoolSize, advanceShuffle, shuffleOffset]);
 
   // 右侧卡片：banner 池（前 6 张）之外的条目，取数循环也排除 banner 池——
   // 不依赖 activeIndex，轮播（自动/手动）绝不重建右卡。
@@ -384,13 +356,7 @@ export default function HeroBili({
       </div>
 
       {/* ── 右：3×2 竖版卡 + 脱标换一换浮层 ── */}
-      <div
-        className="hero-bili__right"
-        onMouseEnter={() => setRightHovered(true)}
-        onMouseLeave={() => setRightHovered(false)}
-        onFocus={() => setRightFocused(true)}
-        onBlur={() => setRightFocused(false)}
-      >
+      <div className="hero-bili__right">
         <div className="hero-bili__cards">
           {rightCards.map(({ item }) => (
             <HeroSideCard

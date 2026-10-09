@@ -785,9 +785,12 @@ html[data-device="app"] .action-btn__label {
     align-self: flex-start;
     /* 2026-09-10 用户拍板：宽度改用共享 token --rail-w（clamp(148px, 10vw, 248px)），
        替换原 max-content + min-width:124px —— 四处左栏统一宽度曲线后，
-       rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。 */
+       rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。
+       2026-10-09 用户要求：min-width 收回 max-content —— 选中「评分从高到低」等
+       长排序文案时 rail 自动加宽保证单行显示（--rail-w 仍是基准宽度，短文案时不撑宽，
+       不破坏四处左栏统一曲线）。 */
     width: var(--rail-w);
-    min-width: 0;
+    min-width: max-content;
     margin-top: 0;
     padding: 0 var(--space-sm) 0 0;
     /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
@@ -905,6 +908,14 @@ html[data-device="app"] .action-btn__label {
     display: none;
   }
 
+  /* 排序按钮文本不换行（2026-10-09 用户要求）：「排序：评分从高到低」等长文案
+     配合 .record-aside 的 min-width:max-content 保证 rail 加宽到单行宽度，
+     文本永不折行。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .record-inline-filter .record-sort-btn {
+    white-space: nowrap;
+  }
+
   /* hover 态：--color-surface-hover 浅灰底 + 文字主色 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab:hover,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab:hover,
@@ -949,6 +960,37 @@ html[data-device="app"] .action-btn__label {
   }
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip--status .record-filter-chip__dot {
     background-color: var(--chip-dot-color, var(--color-text-tertiary));
+  }
+  /* chip label：flex:1 撑满中段（镜像 .record-status--fused 的 status-tab
+     「> span:not(dot):not(count)」规则）→ 计数徽章被推到按钮右缘，
+     与 fused status-tabs 的「label 左 / count 右」布局完全一致。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* 状态 chip 分面计数（2026-10-09 用户要求：样式与 .status-tabs--fused 的
+     .status-tab__count 徽章一致）：min-width/padding/radius/底色/字号逐项对齐；
+     选中态徽章底色 = 该 chip 状态色（--chip-dot-color，对齐 status-tab 的
+     --status-tab-color 逻辑）。跟在标签后（同 flex gap），不右对齐、不做弱化。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip__count {
+    flex-shrink: 0;
+    min-width: var(--badge-size);
+    padding: var(--space-3xs) var(--space-2xs);
+    border-radius: var(--radius-full);
+    background: var(--color-hover-bg);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+  }
+  html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip--status.is-active .record-filter-chip__count {
+    background: var(--chip-dot-color, var(--color-primary));
+    color: var(--color-text-inverse);
   }
   /* 标签：flex:1 省略号（状态 tab 的未命名文本 span） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab > span:not(.status-tab__dot):not(.status-tab__count),

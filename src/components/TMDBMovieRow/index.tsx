@@ -301,6 +301,33 @@ function TMDBMovieRow({
     // 必须重新计算 hasOverflow，否则箭头在数据到达后不显示
   }, [items, continueItems, updateArrows]);
 
+  // 箭头垂直锚点 = 封面图中心（2026-10-09 用户要求：以封面为参考而非整卡）。
+  // 封面高度 = 卡宽 × 宽高比，随断点列数 / 变体（竖版 2:3 / 横版 16:9）变化，
+  // 纯 CSS 无法从 wrapper 高度反推 → 实测首个 .video-card-cover（两变体同根类名）
+  // 中心相对 wrapper 的 Y，注入 --tmdb-arrow-cy（TMDBMovieRow.css 消费）。
+  // wrapper 尺寸变化（断点/列数）由 ResizeObserver 覆盖；数据替换（骨架→真实、
+  // 分类切换）在 effect 重跑时重测。骨架态无封面 → 保持 50% 回退（此时箭头本就未显）。
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const measure = () => {
+      const cover = rowRef.current?.querySelector<HTMLElement>('.video-card-cover');
+      if (!cover) return;
+      const w = wrapper.getBoundingClientRect();
+      const c = cover.getBoundingClientRect();
+      wrapper.style.setProperty('--tmdb-arrow-cy', `${c.top + c.height / 2 - w.top}px`);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapper);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [items, continueItems, isLoading]);
+
   // 分类切换（scrollResetToken 变化）时行 scrollLeft 复位为 0：
   // 内容整体替换瞬间 scroll-snap 会把 scrollLeft 拉到 maxScroll（实测 0→2032），
   // 导致预加载覆盖的首屏卡（index 0..N）与可见卡错位 → 未命中缓存 → 骨架遮罩闪。
@@ -483,7 +510,7 @@ function TMDBMovieRow({
         )}
       </div>
 
-      <div className="tmdb-movierow-wrapper">
+      <div className="tmdb-movierow-wrapper" ref={wrapperRef}>
         {/* 左箭头（TV 端隐藏）。仅当内容溢出视口「且可向左滚动（未到头）」时渲染 */}
         {!isMobile && !isTV && hasOverflow && (continueMode ? (continueItems?.length ?? 0) > 0 : items.length > 0) && showLeftArrow && (
           <button

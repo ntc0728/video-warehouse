@@ -71,6 +71,16 @@
   gap: 0; /* 双卡片相连，与桌面端 .browse-card--search + .browse-card--results 一致 */
 }
 
+/* 封面圆角（2026-10-10 用户要求，与收藏/历史页 2026-10-09 同款补法）：
+   2026-09-28 去卡片化把卡容器 radius 削掉后（VideoCard.css:98），
+   封面在此恢复 --radius-md；仅补桌面非 app/tv 档
+   （≤767 / app 卡容器自带 radius-md + overflow 裁切，无需补）。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .browse-page .video-card-cover {
+    border-radius: var(--radius-md);
+  }
+}
+
 /* Card 1（命令栏 .bmb）：上半部，顶部圆角，底边与结果卡相连 */
 .browse-page.browse-page--mobile .bmb {
   flex-shrink: 0;
@@ -158,13 +168,6 @@
   border-radius: 0;
   box-shadow: none;
   background: transparent;
-}
-
-/* TMDB Access Token 未配置：智能检索结果区整块提示（TokenRequired 居中撑满） */
-.browse-results-body__token {
-  display: flex;
-  flex: 1 1 0;
-  min-height: 240px;
 }
 
 /* ── 排序栏（Card 2 顶部） ────────────────────────── */

@@ -85,14 +85,14 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 | 档位 | 命令 | 用例数 | spec 数 |
 | --- | --- | --- | --- |
-| 全仓枚举 | `npx playwright test --list` | **246** | 22 |
+| 全仓枚举 | `npx playwright test --list` | **244** | 22 |
 | 默认套 | `npm run test:e2e` | **132** | 16 |
 | ├ Stage A（dev 行为套） | `e2e-suite.mjs` 阶段 A | 108 | 12 |
 | └ Stage B（preview 播放器系） | `e2e-suite.mjs` 阶段 B | 24 | 4 |
 | 发版回归组 | `npm run test:regression` | **121** | 13 |
 | 冒烟组（与改动侦测取交集） | `npm run test:smoke` | 37 | 3 |
 | 按需 | `npm run test:e2e:shots` | 29 | 1 |
-| 按需 | `npm run test:e2e:skeleton` | 39 | 2 |
+| 按需 | `npm run test:e2e:skeleton` | 37 | 2 |
 | 按需 | `npm run test:e2e:boot-iso` | 42 | 1 |
 | 按需 | `npm run test:e2e:subpages` | 4 | 2 |
 
@@ -105,7 +105,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | `scripts/boot-splash-iso.spec.ts` | 42 | 按需 `test:e2e:boot-iso` |
 | `scripts/regression.spec.ts` | 30 | 默认套 A（dev 行为套） |
 | `scripts/boot-splash-shots.spec.ts` | 29 | 按需 `test:e2e:shots` |
-| `scripts/boot-splash.spec.ts` | 21 | 按需 `test:e2e:skeleton` |
+| `scripts/boot-splash.spec.ts` | 19 | 按需 `test:e2e:skeleton` |
 | `scripts/skeleton.spec.ts` | 18 | 按需 `test:e2e:skeleton` |
 | `scripts/browse.spec.ts` | 13 | 默认套 A（dev 行为套） |
 | `scripts/home.spec.ts` | 13 | 默认套 A（dev 行为套） |
@@ -132,7 +132,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 | 修改的源文件（pattern） | 跑的 spec（全量数） | 全量合计 | 精粒度 grep | grep 命中 |
 | --- | --- | --- | --- | --- |
-| `index.html` | `scripts/boot-splash.spec.ts`（21） | 21 | — | — |
+| `index.html` | `scripts/boot-splash.spec.ts`（19） | 19 | — | — |
 | `src/pages/Home/index.tsx` | `scripts/home.spec.ts`（13） | 13 | `1\.1|1\.2|1\.3|1\.4|1\.5|1\.7` | 13 |
 | `src/pages/Home/Home.css` | `scripts/home.spec.ts`（13） | 13 | `1\.[1-7]` | 13 |
 | `src/components/TMDBMovieRow/**` | `scripts/home.spec.ts`（13） | 13 | `1\.4` | 1 |

@@ -10,6 +10,7 @@ import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User, House, Se
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useSettingsStore } from '@/stores';
+import { findHomeCollectionDef } from '@/stores/useTMDBStore';
 import { isNativePlatform } from '@/lib/platform';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
 import { useScrollContainer } from '@/hooks/useScrollContext';
@@ -96,7 +97,18 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     }
   }, [navigate, goHome]);
 
-  const isActive = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    // 合集直达榜（/chart?collection=<key>）与热度榜共用路由，但不代表导航「热度榜」
+    // 被选中 —— 判定口径与 Chart 页 collectionDef 一致（findHomeCollectionDef 命中才算
+    // 合集模式），防止用户误解「进了合集榜 = 在看热度榜」（2026-10-09 用户拍板）
+    if (path === '/chart') {
+      if (!location.pathname.startsWith('/chart')) return false;
+      const colKey = new URLSearchParams(location.search).get('collection');
+      return !findHomeCollectionDef(colKey);
+    }
+    return location.pathname.startsWith(path);
+  };
 
   // ── 滚动检测：仅首页监听滚动距离，超过 --header-height 切换为实体背景 ──
   // 滚动容器是 AppLayout 的 CustomScrollbar（不是 window）；用 useScrollContainer 拿 ref
@@ -234,9 +246,11 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         {!isMobile && (
           <div className="sticky-header__hdr-icons">
             {/* 设置入口（2026-09-30 用户定稿「也改为胶囊样式」）：复用 nav-item 类体系
-                （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。 */}
+                （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。
+                --icon-only：2026-10-09 用户要求 —— ≤1280 窄视口顶栏通用规则是去图标保文本，
+                设置项单独反转（显图标、隐文本）：齿轮为全局通识符号，纯图标更省宽。 */}
             <button
-              className={`sticky-header__nav-item hover-scale${isActive('/settings') ? ' sticky-header__nav-item--active' : ''}`}
+              className={`sticky-header__nav-item sticky-header__nav-item--icon-only hover-scale${isActive('/settings') ? ' sticky-header__nav-item--active' : ''}`}
               onClick={() => navigate('/settings')}
               aria-label="设置"
               title="设置"
