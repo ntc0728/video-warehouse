@@ -24,6 +24,12 @@ export interface AppSettings {
   autoPlay: boolean;
   /** 强制 TV 模式（用于在非 TV 设备上体验遥控器交互） */
   tvMode: boolean;
+  /**
+   * 投影仪模式（手动指定设备类型为投影仪）。
+   * 投影仪 UA 无可靠特征可自动检测，仅提供设置/存储层手动入口。
+   * 下游语义：焦点交互视同 TV（useIsTVLike）+ ≥1920 桌面几何（data-device="projector"）。
+   */
+  projectorMode: boolean;
   /** TV 过扫描（overscan）安全区大小：预设挡位 0/5/10/15/20（单位 vw 左右 / vh 上下）；0 = 铺满到裁切边 */
   tvOverscan: number;
   /** 界面缩放（阶段 C 大屏手动档）：0 = 自动（按视口宽 + dpr 判定）；>0 = 手动倍率，覆盖自动档 */

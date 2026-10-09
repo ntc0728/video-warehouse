@@ -1379,3 +1379,22 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
   }
 }
 
+/* ═════════════════════════════════════════════════════════════════════
+   去卡片化（2026-09-30 用户指令）：播放页「详情信息」「推荐区」两个容器
+   去掉卡片四件套 —— border / border-radius / background / box-shadow。
+   口径与 Detail / Chart / SourceChecker 完全一致：
+   - 仅 ≥768 生效（用户原话「移动端不改」）；
+   - 排除 App / TV（两端卡片块承担触达边界与 TV 焦点框，保留）；
+   - 只去「卡片感」四件套，padding / margin / gap 一律不动（间距不属卡片化范畴）；
+   - 写在文件末尾以追加方式覆盖，原始两处规则（:645 / :807）保持原样便于回退。
+   ═════════════════════════════════════════════════════════════════════ */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .player-detail-info,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-recommend {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+

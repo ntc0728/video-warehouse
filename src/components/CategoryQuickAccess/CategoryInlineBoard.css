@@ -1,0 +1,142 @@
+/* ============================================================
+   CategoryInlineBoard — 首页「合集」推荐行（2026-09-29）
+   经用户多轮反馈由「chip + 今日最热排名面板」改造为「6 张合集卡」：
+   数据全部从首页缓存桶派生（零新增请求），单行 6 列网格撑满内容区，
+   合集卡 = 2×2 封面拼贴（16:9 真实封面）+ 合集名 + 条数徽标。
+   卡片去卡片化（对齐 2026-09-28 项目决策）：四件套移除直接铺页面底色，
+   hover 微反馈对齐首页既有口径（VideoCard 桌面 hover 保留上浮）。
+   生效范围双重隔离：仅 ≥1024 非 TV（组件由首页 isWide 分支渲染，
+   CSS 侧 media + :not(tv) 兜底）；TV 与 ≤1023 / app 不吃任何规则。
+   ============================================================ */
+
+@media (width >= 1024px) {
+  html:not([data-device="tv"]) .cqa-board {
+    display: block;
+    margin: var(--space-sm) 0;
+  }
+
+  /* ── 合集行：单行 6 列网格，宽度撑满内容区；
+     缓存不足 6 个桶时渲染实际数量（卡片仍按 1/6 等宽靠左）── */
+  html:not([data-device="tv"]) .cqa-board__collections {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-md);
+    padding: 0 var(--space-3xs);
+  }
+
+  /* 合集卡：无框（去卡片化四件套移除），hover 保留上浮微反馈
+     （对齐 VideoCard 桌面去卡片化后 hover 口径），无阴影 */
+  html:not([data-device="tv"]) .cqa-board__collection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform var(--dur-fast) ease;
+  }
+
+  html:not([data-device="tv"]) .cqa-board__collection:hover {
+    transform: translateY(-2px);
+  }
+
+  html:not([data-device="tv"]) .cqa-board__collection:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* 封面拼贴：2×2 网格（3 张时末张跨双列、2/1 张自动少行），
+     整体圆角裁切（对齐首页封面统一圆角口径 --radius-md） */
+  html:not([data-device="tv"]) .cqa-board__collage {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3xs);
+    border-radius: var(--radius-md);
+    background: var(--color-placeholder);
+    overflow: hidden;
+  }
+
+  html:not([data-device="tv"]) .cqa-board__collage-img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  /* 恰好 3 张封面时：末张跨双列（2 上 1 下，避免右侧空格） */
+  html:not([data-device="tv"]) .cqa-board__collage-img--span {
+    grid-column: 1 / -1;
+  }
+
+  /* 合集名 + 条数徽标 */
+  html:not([data-device="tv"]) .cqa-board__caption {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: baseline;
+    min-width: 0;
+    padding: 0 var(--space-3xs);
+  }
+
+  html:not([data-device="tv"]) .cqa-board__name {
+    flex: 0 1 auto;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html:not([data-device="tv"]) .cqa-board__count {
+    flex: 0 0 auto;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── 骨架（shimmer）：复用真实类名承载几何，仅补灰块/灰条，
+     与真实合集行（6 卡）等高，无固定 min-height ── */
+  html:not([data-device="tv"]) .cqa-board__sk {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--card-shimmer-duration) infinite;
+  }
+
+  html:not([data-device="tv"]) .cqa-board__sk-line {
+    display: block;
+    height: var(--text-sm);
+  }
+
+  /* 拼贴占位：与真实拼贴同高（两行 16:9 小图 + 缝隙） */
+  html:not([data-device="tv"]) .cqa-board__collection--skeleton .cqa-board__collage {
+    aspect-ratio: calc((32 * 9 + 16 * var(--space-3xs)) / (32 * 16 + 9 * var(--space-3xs)));
+  }
+
+  html:not([data-device="tv"]) .cqa-board__collection--skeleton .cqa-board__sk {
+    border-radius: var(--radius-md);
+  }
+
+  html:not([data-device="tv"]) .cqa-board--skeleton .cqa-board__sk-line--name {
+    width: 4.5em;
+  }
+
+  html:not([data-device="tv"]) .cqa-board--skeleton .cqa-board__sk-line--count {
+    width: 2.5em;
+  }
+
+  html:not([data-device="tv"]) .cqa-board--skeleton .cqa-board__collection {
+    pointer-events: none;
+  }
+}

@@ -170,19 +170,8 @@
   padding-inline: var(--space-xs);
 }
 
-/* 分类 chips 融合顶栏（2026-09-06，仅首页宽屏渲染）：chips 靠左、搜索框靠右，
-   间距与顶栏右侧图标统一为 --space-xs 档 */
-.sticky-header__center > .cqa-nav + .search-box-wrap--header {
-  margin-left: auto;
-}
-
-/* chips 与搜索框之间补一道空隙（2026-09-10 用户反馈「左侧 chip hover 过于灵敏」）：
-   除 JS 侧 200ms 展开延迟外，再给视觉层留 8px 物理隔离 ——
-   鼠标从 chip 移到搜索框的路径上不会贴着 chip 边缘擦过，
-   降低「想去点搜索框却先弹了面板」的误触概率（两处叠加，不是二选一）。 */
-.sticky-header__center > .cqa-nav {
-  margin-right: var(--space-xs-plus);
-}
+/* 分类 chips 顶栏挂载（.cqa-nav 相关覆盖规则）已随 CategoryQuickAccessNav
+   移除一并删除（2026-09-29）：chips 合并进首页 CQA 常驻面板 CategoryInlineBoard。 */
 
 /* ── Nav ───────────────────────────────────────────── */
 
@@ -238,6 +227,72 @@
 .sticky-header__theme-btn:hover {
   /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
   color: var(--color-text);
+}
+
+/* ── 搜索框右侧图标组（demo 2026-09-29 .hdr-icons / .hdr-icon-btn）───────
+   设置 + 主题三态切换，紧随 .sticky-header__center 之后、仅桌面 / TV 渲染。
+   尺寸沿用 --comp-btn-min-height（TV 端 token 自动放大，无需单独规则）；
+   hover 口径 = nav-item / 原版 theme-btn 同款（仅变色 + hover-scale 微放大，无背景色块）。 */
+.sticky-header__hdr-icons {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  align-items: center;
+  margin-left: var(--space-xs);
+}
+
+/* ── 搜索框紧贴图标组（2026-09-30 用户反馈「搜索框贴着 .sticky-header__hdr-icons」）──
+   .sticky-header__center 原 justify-content:center + 子项 .search-box-wrap 的
+   width:100%（受 max-width 封顶）→ 搜索框在剩余空间内居中，与其右侧图标组之间叠了
+   三段空白：① center 剩余空间（主轴居中两侧均分）② center 右 padding-inline(--space-xs)
+   ③ .sticky-header__hdr-icons 的 margin-left(--space-xs)。
+   现将搜索框推到 center 右端（flex-end）并清掉 ②③ → 两者边缘相接、间距 0（用户确认「紧贴」）。
+   仅桌面档（≥1024 = .sticky-header__hdr-icons 的渲染条件 !isMobile）且非 app；
+   TV 保持原间距（TV 端 token 放大、遥控焦点框需要呼吸位，未在本次范围）。
+   移动端（≤1023）不受影响：center 内仍是同一搜索框，但右侧为 .sticky-header__right，
+   且 hdr-icons 不渲染。 */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__center {
+    justify-content: flex-end;
+    padding-inline-end: 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__hdr-icons {
+    margin-left: 0;
+  }
+}
+
+/* 几何口径（2026-09-30 三次修订）：本类现仅服务主题按钮（图标方盒）。
+   设置入口已改复用 .sticky-header__nav-item 胶囊体系（2026-09-30 用户定稿
+   「设置也改为胶囊样式」，与主导航 <a> 同一套几何 / 断点收窄 / 选中态），
+   原 --active 胶囊规则随之移除（由 nav-item--active 承担）。 */
+.sticky-header__hdr-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease, scale 0.32s var(--ease-spring);
+  cursor: pointer;
+}
+
+.sticky-header__hdr-btn:hover {
+  /* hover 口径对齐 nav-item / 原版 theme-btn（:201/:228 同款注释）：
+     仅变色 + .hover-scale 微放大，无背景色块（2026-09-30 用户核对指正后修正） */
+  color: var(--color-text);
+}
+
+/* 按压反馈：对齐全局方案6语言（scale 0.92 spring 回弹，见 animations.css .btn-press 注） */
+.sticky-header__hdr-btn:active {
+  scale: 0.92;
+}
+
+/* ── 顶栏左侧主导航组：logo 之后、复用 .sticky-header__nav-item 既有样式 ── */
+.sticky-header__nav--primary {
+  margin-left: var(--space-xs);
 }
 
 /* ── 个人设置入口（移动 web 顶栏：头像 + 用户名）──────────────────
@@ -350,23 +405,14 @@
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item > svg {
     display: none;
   }
-  /* ①b 分类 chips（.cqa-nav__item）内的图标同样隐藏——**这是最占宽的一组**
-     （7 个分类 + 2 个 more = 9 个 ×19px ≈ 171px，比右侧 nav 图标还多）。
-     2026-09-10 修正：首版只处理了 .sticky-header__nav-item，
-     漏掉渲染在 .sticky-header__center 里的 .cqa-nav，导致用户仍看到「两侧还有图标」
-     且搜索框依旧被挤。chips 隐藏图标后剩纯文本，点击热区不缩（padding 另见下条）。
-     主题按钮（.sticky-header__theme-btn）是纯图标按钮、无文本可替代，
-     隐藏会导致主题功能不可达 —— 按红线「不裁元素」保持原样。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .cqa-nav__item > svg {
-    display: none;
-  }
-  /* ② 文本间距 + 选中胶囊（左 chips + 右 nav-item 一套规则）：
+  /* ①b 分类 chips（.cqa-nav）顶栏挂载已移除（2026-09-29），原「chips 图标隐藏」规则一并删除。
+     主题按钮（.sticky-header__theme-btn / .sticky-header__hdr-btn）是纯图标按钮、无文本可替代，
+     隐藏会导致功能不可达 —— 按红线「不裁元素」保持原样。 */
+  /* ② 文本间距 + 选中胶囊（nav-item）：
      用户反馈「左侧文本间距太小」+「选中背景高度要减小、太圆润」，一并处理：
-       · 竖向 padding 收 --space-2xs（压低胶囊高度；右侧 ≥1024 档原为 --space-xs-plus 撑高）；
+       · 竖向 padding 收 --space-2xs（压低胶囊高度；≥1024 档原为 --space-xs-plus 撑高）；
        · 横向 padding 放开到 --space-xs-plus（≈5px，上一版 2xs≈2px 过窄）；
-       · 高度 `auto` —— 覆盖 .cqa-nav__item 基础的 `--comp-tab-height - --space-sm`(≈30px)；
-       · 圆角 --radius-sm —— 覆盖 .cqa-nav__item 基础的 --radius-full(9999px) 全圆角。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .cqa-nav__item,
+       · 高度 `auto`、圆角 --radius-sm。 */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item {
     gap: 0;
     height: auto;
@@ -378,9 +424,6 @@
     font-size: var(--text-xs);
     letter-spacing: 0.02em;
   }
-  html:not([data-device="app"]):not([data-device="tv"]) .cqa-nav {
-    gap: var(--space-2xs);
-  }
   /* ③ 组间距 */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__left,
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right {
@@ -388,6 +431,13 @@
   }
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right .sticky-header__nav {
     gap: var(--space-xs);
+  }
+  /* ⑤ 左侧主导航组（2026-09-29）：≤1280 收窄——图标隐藏 / padding 收紧已由
+     上方 .sticky-header__nav-item 通用规则覆盖（本组复用同类名），
+     这里补组内 gap 收紧，防止挤压中央搜索框。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav--primary {
+    gap: var(--space-2xs);
+    margin-left: 0;
   }
   /* ④ logo 保持可见（2026-09-10 用户要求「视口 ≤1280 顶部导航栏 logo 不需要隐藏」）：
      纯文本态 + 上述 padding 放开后，左侧 logo（圆标 + kinoTV 文字）与右侧文本并存；
@@ -628,7 +678,8 @@
 @media (prefers-reduced-motion: reduce) {
   .sticky-header,
   .sticky-header__nav-item,
-  .sticky-header__theme-btn {
+  .sticky-header__theme-btn,
+  .sticky-header__hdr-btn {
   transition: none;
 }
 }

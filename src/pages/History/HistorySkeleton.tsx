@@ -13,7 +13,8 @@
  * 复用 .player-panel 的做法）。仅交互态（hover / 跑马灯 / 指针）在
  * HistorySkeleton.css 里关掉。
  *
- * 列数 = 运行时读 --history-cols token（index.css 分档 1/2/3/4/5/6，TV 恒 5），
+ * 列数 = 运行时读 --history-cols token（layout-tokens.css 分档，2026-09-30 起
+ * <480→1 / ≥480→2 / ≥768→3 / ≥1280→4 / ≥1920→5 / ≥2560→6，TV 恒 5），
  * 与真实 .history-grid 同源；行数由 useFillRows 按滚动容器可视高度实测推导
  * （2026-09-18：不再固定 2 行）。
  *

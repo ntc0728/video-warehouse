@@ -62,7 +62,7 @@ export class HLSAdapter extends BasePlayerAdapter {
 
   constructor(url: string, options?: { decoderMode?: DecoderMode; startLevel?: number; onError?: (error: Error) => void }) {
     super(url);
-    // decoderMode 仅作为 API 兼容保留（调用方仍会传入）；90MB 缓冲方案下 wasm/native
+    // decoderMode 仅作为 API 兼容保留（调用方仍会传入）；maxBufferSize 缓冲方案下 wasm/native
     // 统一走 hls.js 动态缓冲计算，不再按解码模式区分缓冲长度
     this.startLevel = options?.startLevel ?? -1;
     this.onError = options?.onError;
@@ -116,12 +116,19 @@ export class HLSAdapter extends BasePlayerAdapter {
         lowLatencyMode: false,
         startLevel: this.startLevel >= 0 ? this.startLevel : -1,
         preferManagedMediaSource: true,
-        // 缓冲内存上限：hls.js 默认 60MB，本次采用 90MB（折中最佳方案）。
-        // 比默认高 50%，高码率视频缓冲更充足（4Mbps 从 2 分钟→3 分钟，2Mbps 从 4 分钟→6 分钟），
-        // 又不会像旧 300MB 配置那样导致 2Mbps 视频 20 分钟缓冲永远填不满、持续下载抢带宽。
-        // maxBufferLength / maxMaxBufferLength / backBufferLength 不设置，走 hls.js 默认值
-        // （30s 下限 / 600s 上限 / Infinity 回看，受 maxBufferSize=90MB 自动管理）。
-        maxBufferSize: 90 * 1024 * 1024,
+        // 缓冲上限 = 「60MB 内存」与「300s（5 分钟）时长」两者取最小值（2026-09-30 定稿）。
+        // 实现依据 hls.js 1.6 的 getMaxBufferLength()（dist/hls.js 实测）：
+        //   maxBufLen = max(8 × maxBufferSize / levelBitrate, maxBufferLength)
+        //   最终量   = min(maxBufLen, maxMaxBufferLength)     ← 天然「取最小」语义
+        // 于是「60MB / 5 分钟谁先到就用谁」只需显式写 maxMaxBufferLength=300：
+        //   · 高码率：60MB 换算秒数 < 300s → 由 60MB 先行封顶；
+        //   · 低码率：60MB 换算秒数 > 300s → 由 maxMaxBufferLength 截到 300s。
+        // ⚠️ 历史教训：早期版本只写 maxBufferSize（90MB/60MB）而不写 maxMaxBufferLength，
+        //    于是低码率源上永远取默认值 600s（10 分钟），改 maxBufferSize 完全看不出效果
+        //    —— 「字节上限」管不住「时长上限」，两者必须成对写。
+        // maxBufferLength（下限 30s）/ backBufferLength（Infinity 回看）不设置，走默认值。
+        maxBufferSize: 60 * 1024 * 1024,
+        maxMaxBufferLength: 300,
         // ABR 初始带宽估算：默认 500kbps 偏低，设为 1.5Mbps 避免初始选档过低导致
         // 首帧画质差；同时避免初始估算过高选到 4K 档导致缓冲增长慢。
         abrEwmaDefaultEstimate: 1500000,
@@ -142,7 +149,7 @@ export class HLSAdapter extends BasePlayerAdapter {
       // 直播流（IPTV）manifest 加载后：收敛缓冲 + 低延迟参数（吸收自 player-iptv-frontend-refactor.md 整改1）
       this.hls.on(HlsJs.Events.LEVEL_LOADED, (_e: unknown, data: { details?: { live?: boolean } }) => {
         if (data.details?.live && this.hls) {
-          // 直播：收敛缓冲 + 低延迟参数。
+          // 直播：收敛缓冲 + 低延迟参数（点播的 300s 上限在此被更严的 120s 覆盖）。
           // 注意必须改 this.hls.config 而非直接赋值 this.hls.maxBufferLength ——
           // 后者是 stream-controller 的 getter（动态计算值），无 setter，直接赋值不生效；
           // hls.js 运行中实时读取 config，改 config 即时生效。

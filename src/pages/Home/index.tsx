@@ -14,13 +14,16 @@ import { BackToTopButton, LazyBlock } from '@/components/common';
 import TMDBMovieRow, { SkeletonCards } from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import CategoryQuickAccess, { CategoryHeatRow } from '@/components/CategoryQuickAccess';
+import CategoryQuickAccess, {
+  CategoryInlineBoard,
+  CategoryInlineBoardSkeleton,
+} from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
 import HomeTopStrip from './HomeTopStrip';
-import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsTV, useIsTVLike, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { useHeroSideCols } from '@/hooks/useHeroSideCols';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -40,6 +43,23 @@ const HOME_BLOCKS = [
 ] as const;
 const HOME_RETRY_COOLDOWN_MS = 10 * 60 * 1000;
 const homeRetryCooldown = new Map<string, number>();
+
+/**
+ * 7 个推荐行 → Browse 分类的映射（行标题「查看全部」入口用，demo 建议 2）。
+ * Browse 侧只有 movie / tv / variety / anime / documentary / top / all 七个分类
+ * （Browse/constants.ts CATEGORY_CONFIG），nowPlaying / upcoming / topRated /
+ * airingToday 等行没有一一对应的专属分类，统一归入其媒体类型大分类
+ * （电影 → movie，剧集 → tv），语义损耗记入问题清单。
+ */
+const HOME_ROW_BROWSE_CATEGORY = {
+  nowPlaying: 'movie',
+  popularMovies: 'movie',
+  topRatedMovies: 'movie',
+  upcomingMovies: 'movie',
+  popularTv: 'tv',
+  topRatedTv: 'tv',
+  airingTodayTv: 'tv',
+} as const;
 
 // ── 视口懒加载（2026-09-16）─────────────────────────────────────────
 // 首屏档：Hero 用的 trending + 第一排「正在热映」(nowPlaying) —— 进页面即取，保证首屏不闪骨架。
@@ -64,9 +84,17 @@ export default function HomePage() {
   const location = useLocation();
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  // isTV = 真 TV 判定：仅驱动「TV 全宽几何」（.home-page--tv，Home.css）；投影仪走桌面几何不加此类。
   const isTV = useIsTV();
+  // isTVLike = 焦点交互语义（tv || projector）：「查看全部」恒显、焦点行相邻预加载。
+  const isTVLike = useIsTVLike();
   // >1280 桌面（非 TV）：分类快捷入口上移到 Hero 上方（与 HeroBili 启用条件一致）
   const isWide = useIsWideDesktop();
+  // 移动端布局（App / 真机 / <768 窄窗）——「查看全部」入口的排除档之一
+  const isMobileLayout = useIsMobileLayout();
+  // 行标题「查看全部」渲染档位：桌面 ≥1024 非 TV（hover 行时显现）+ TV（恒显、
+  // 焦点可达）；移动端（≤1023 视口 / App）完全不渲染（demo 建议 2 的端上口径）。
+  const showRowViewAll = isTVLike || (!isMobile && !isMobileLayout);
 
   useScrollRestore('home');
 
@@ -177,6 +205,21 @@ export default function HomePage() {
     // fromCategory 标记：Browse 据此清空残留搜索词并立即刷新。
     navigate(buildBrowseUrl(cat, cfg.defaultGenreIds), { state: { fromCategory: true } });
   }, [navigate]);
+
+  // 「查看全部」 handlers：7 行复用分类卡同一跳转口径（buildBrowseUrl + fromCategory）。
+  // useMemo 保证 handler 引用稳定，不击穿 TMDBMovieRow 的 memo。
+  const rowViewAllHandlers = useMemo(
+    () => ({
+      nowPlaying: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.nowPlaying),
+      popularMovies: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.popularMovies),
+      topRatedMovies: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.topRatedMovies),
+      upcomingMovies: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.upcomingMovies),
+      popularTv: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.popularTv),
+      topRatedTv: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.topRatedTv),
+      airingTodayTv: () => handleCategorySelect(HOME_ROW_BROWSE_CATEGORY.airingTodayTv),
+    }),
+    [handleCategorySelect],
+  );
 
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
@@ -354,8 +397,8 @@ export default function HomePage() {
   // 2026-09-11（用户请求 6「不同视口显示相应的 UI 骨架」）：骨架按视口分两套——
   //   · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
   //     （缩略图列已删除，骨架不再有缩略图槽）。
-  //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + 两栏（左「今日趋势」榜卡 +
-  //     右 HeroBili「banner + 右卡网格 + 换一换」）+ 7 行卡片。
+  //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + HeroBili「banner + 右卡网格
+  //     + 换一换」+ CQA 合并体 + 7 行卡片（2026-09-29 左栏删除，改单列纵向流）。
   //
   // ⚠️ 2026-09-18（用户「骨架必须与页面正常显示的元素结构一致」）—— 三条收敛：
   //  ① 7 行**直接渲染真实组件** <TMDBMovieRow isLoading>：卡片模块外壳（padding /
@@ -363,8 +406,8 @@ export default function HomePage() {
   //     gap + padding、卡片 flex 宽度公式全部由 TMDBMovieRow.css / Home.css 唯一决定。
   //     旧实现把这整套手抄成 .home-skeleton-row / -card 系列（Home.css 里甚至写着
   //     「缺这层外壳会矮 26.6px」这类补偿注释）—— 第二套几何真源，改了真实行就漂移。
-  //  ② 左栏榜卡**直接渲染真实组件** <CategoryHeatRow variant="rail" />：trending 为空时
-  //     它自身渲染 CategoryTrendSkeleton（真实 .cqa-heat-row--rail > .cqa-trend 结构）。
+  //  ② CQA 合集行**直接渲染真实组件** <CategoryInlineBoardSkeleton />：与真实
+  //     合集行同类名同几何（6 张骨架卡，无固定高度自然等高）。
   //  ③ 补上「继续观看」行（此前骨架完全没有）：真实页在
   //     (userDataLoading || continueItems.length > 0) 时渲染，首屏必然存在，
   //     原骨架漏掉它 → 数据到达时凭空多出一整行。
@@ -415,39 +458,32 @@ export default function HomePage() {
         <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
         <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
       </div>
-      <div className="home-two-col">
-        {/* 左栏：今日趋势榜卡 —— 直接渲染真实组件（trending 为空时它自身渲染
-            CategoryTrendSkeleton：真实 .cqa-heat-row--rail > .cqa-trend 结构，
-            行数由该骨架按栏高推导），不再手搓 6 行假结构 */}
-        <aside className="home-two-col__rail">
-          <CategoryHeatRow variant="rail" />
-        </aside>
-        {/* 右列：HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位） */}
-        <div className="home-two-col__main">
-          <section className="hero-bili">
-            <div className="hero-bili__grid">
-              <div className="hero-bili__banner home-skeleton-bili__banner">
-                {homeSkeletonHeroContent}
-              </div>
-              <div className="hero-bili__right">
-                <div className="hero-bili__cards">
-                  {/* 张数 = useHeroSideCols() × 2 行（≥1281 为 3 列 = 6 张；
-                      1024–1280 为 2 列 = 4 张），与真实 HeroBili 右栏列数同源 */}
-                  {Array.from({ length: heroSideCols * 2 }).map((_, i) => (
-                    <div key={i} className="hero-side-card">
-                      <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg" />
-                      <span className="hero-side-card__title hero-side-card__title--skeleton thumbnail-skeleton-bg" />
-                    </div>
-                  ))}
+      {/* HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位）；直接子节点身份
+          命中 .home-page > .hero-bili 的 2200 封顶居中规则（与真实分支同构） */}
+      <section className="hero-bili">
+        <div className="hero-bili__grid">
+          <div className="hero-bili__banner home-skeleton-bili__banner">
+            {homeSkeletonHeroContent}
+          </div>
+          <div className="hero-bili__right">
+            <div className="hero-bili__cards">
+              {/* 张数 = useHeroSideCols() × 2 行（≥1281 为 3 列 = 6 张；
+                  1024–1280 为 2 列 = 4 张），与真实 HeroBili 右栏列数同源 */}
+              {Array.from({ length: heroSideCols * 2 }).map((_, i) => (
+                <div key={i} className="hero-side-card">
+                  <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg" />
+                  <span className="hero-side-card__title hero-side-card__title--skeleton thumbnail-skeleton-bg" />
                 </div>
-                <span className="hero-bili__shuffle home-skeleton-bili__shuffle" />
-              </div>
+              ))}
             </div>
-          </section>
-          {showContinueRow && homeSkeletonContinueRow}
-          {homeSkeletonRows}
+            <span className="hero-bili__shuffle home-skeleton-bili__shuffle" />
+          </div>
         </div>
-      </div>
+      </section>
+      {showContinueRow && homeSkeletonContinueRow}
+      {/* CQA 合集行骨架（与真实合集行等高） */}
+      <CategoryInlineBoardSkeleton />
+      {homeSkeletonRows}
     </>
   ) : (
     <>
@@ -509,7 +545,7 @@ export default function HomePage() {
         <LazyBlock
           key={row.key}
           enabled={i >= HOME_LAZY_FROM_ROW}
-          preload={isTV && tvFocusRow !== null && Math.abs(i - tvFocusRow) <= 1}
+          preload={isTVLike && tvFocusRow !== null && Math.abs(i - tvFocusRow) <= 1}
           onFocusRow={() => setTvFocusRow(i)}
           onEnter={() => void useTMDBStore.getState().ensureHomeBlock(row.key)}
         >
@@ -525,6 +561,7 @@ export default function HomePage() {
               skipAnimations
               scrollResetToken="home"
               crossfadeOnChange
+              onViewAll={showRowViewAll ? rowViewAllHandlers[row.key] : undefined}
             />
           )}
         </LazyBlock>
@@ -545,47 +582,44 @@ export default function HomePage() {
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}${coldSkeletonShownRef.current ? ' home-page--from-skeleton' : ''}`}>
         {isWide ? (
-          /* ── 大屏两栏（2026-09-10 用户拍板「方案 C」）──────────────
-             过渡带通栏横跨两栏；左栏 = 分类热度榜（sticky）；右列 = Hero + 内容行。
+          /* ── 大屏单列纵向流（2026-09-29 用户确认）：Hero → 继续观看 → CQA 合集行
+             → 推荐行。原「方案 C 两栏 + 左栏今日趋势」已删除，
+             左栏角色并入 CategoryInlineBoard（合集行，2026-09-30 用户确认改合集形态）。
              ⚠️ HeroBanner 的祖先绝不能带 transform 动画（其缩略图/背景是 GPU 合成层，
              祖先 transform 会触发重绘闪烁，见 docs/agents/patterns.md「页面进入过渡统一约定」）。
-             因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在 __main 内。 */
+             因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在外层。 */
           <>
           <HomeTopStrip
             continueCount={continueItems.length}
             favoriteCount={collectionCount}
           />
-          <div className="home-two-col">
-            <aside className="home-two-col__rail">
-              <CategoryHeatRow variant="rail" />
-            </aside>
-            <div className="home-two-col__main">
-              <HeroBanner
-                items={trending}
-                onItemClick={handleBannerItemClick}
-                onContinuePlay={handleContinuePlay}
-                historyMap={historyMap}
-                loading={loading.trending}
-                initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
-              />
-              <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-                {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
-                {showContinueRow && (
-                  <div className="home-continue-row">
-                    <TMDBMovieRow
-                      title="继续观看"
-                      items={[]}
-                      continueMode
-                      continueItems={continueItems}
-                      isLoading={userDataLoading}
-                      skipAnimations
-                    />
-                  </div>
-                )}
-                {renderHomeRows()}
-                <BackToTopButton />
+          <HeroBanner
+            items={trending}
+            onItemClick={handleBannerItemClick}
+            onContinuePlay={handleContinuePlay}
+            historyMap={historyMap}
+            loading={loading.trending}
+            initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
+          />
+          <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
+            {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
+            {showContinueRow && (
+              <div className="home-continue-row">
+                <TMDBMovieRow
+                  title="继续观看"
+                  items={[]}
+                  continueMode
+                  continueItems={continueItems}
+                  isLoading={userDataLoading}
+                  skipAnimations
+                />
               </div>
-            </div>
+            )}
+            {/* CQA 合集行（内部 useInViewport 懒加载；合集数据从首页缓存 8 桶
+                派生，零新增请求，跟随缓存自动更新；点击走 handleCategorySelect 跳转） */}
+            <CategoryInlineBoard onCollectionSelect={handleCategorySelect} />
+            {renderHomeRows()}
+            <BackToTopButton />
           </div>
           </>
         ) : (

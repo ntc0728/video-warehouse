@@ -11,7 +11,7 @@ import { AppLoading } from '@/components/common';
 import { PullToRefreshProvider, PullToRefreshOverlay } from '@/components/ui/PullToRefresh';
 import './Layout.css';
 import { useSettingsStore, useNavStore } from '@/stores';
-import { useIsTV, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
+import { useIsProjector, useIsTVLike, useIsRealMobile, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useVirtualKeyboardInset } from '@/hooks/useVirtualKeyboardInset';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
@@ -62,8 +62,11 @@ const RouteRenderer = memo(function RouteRenderer({ Component }: { Component: Co
 export default function AppLayout() {
   const isNative = isNativePlatform();
   const isRealMobile = useIsRealMobile();
-  const isTV = useIsTV();
-  const isMobileWeb = !isNative && !isTV && isRealMobile;
+  const isProjector = useIsProjector();
+  // 焦点交互语义（tv || projector）：空间导航 / 移动端排除共用；
+  // 布局几何仍由下方 data-device 分流（projector 走桌面档）。
+  const isTVLike = useIsTVLike();
+  const isMobileWeb = !isNative && !isTVLike && isRealMobile;
   // 移动端布局判断（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
   // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面端。
   const isCompactViewport = useIsMobileLayout();
@@ -103,7 +106,14 @@ export default function AppLayout() {
   const uiScale = useSettingsStore((s) => s.uiScale);
 
   useEffect(() => {
-    const device = isTV ? 'tv' : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
+    // 设备标识注入（CSS 消费方全走 html[data-device] 属性选择器）：
+    //  - tv：UA 命中或设置项强制 → TV 焦点交互 + TV 2× 几何覆盖块；
+    //  - projector：设置项手动指定（投影仪 UA 无可靠自动检测特征）→
+    //    焦点交互视同 tv（CSS 侧 [data-device="projector"] 与 tv 分支成对追加），
+    //    布局几何走桌面档（html:not([data-device="tv"]) 分档自动命中，不命中
+    //    [data-device="tv"] 几何覆盖块）；
+    //  - app / mobile-web / ''：原生、手机 web、桌面，维持原语义。
+    const device = isTVLike ? (isProjector ? 'projector' : 'tv') : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
     document.documentElement.setAttribute('data-device', device);
     // 移动端布局全局标记（useIsMobileLayout：App 恒真 / 真实手机 UA 恒真 / 视口 <768px）：
     // 供全局 CSS 以「布局」而非「视口宽度」区分桌面/移动 —— App 横屏/手机桌面模式等
@@ -111,7 +121,7 @@ export default function AppLayout() {
     const root = document.documentElement;
     if (isCompactViewport) root.dataset.mobileLayout = 'true';
     else delete root.dataset.mobileLayout;
-  }, [isTV, isNative, isMobileWeb, isCompactViewport]);
+  }, [isTVLike, isProjector, isNative, isMobileWeb, isCompactViewport]);
 
   // TV 过扫描（overscan）安全区：预设滑块（0/5/10/15/20，单位 vw/vh）写入 CSS 变量。
   // 0 = 铺满到裁切边；兼容旧版本持久化的布尔值（true→5，false→0）及任意旧数值（吸附到最近预设）。
@@ -141,8 +151,8 @@ export default function AppLayout() {
     }
   }, [uiScale]);
 
-  // TV 方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）
-  useSpatialNavigation({ containerRef: appShellRef, isTV });
+  // TV/投影仪方向键空间导航：全局接入（appShellRef 覆盖导航栏 + 页面内容区）
+  useSpatialNavigation({ containerRef: appShellRef, isTV: isTVLike });
 
   useEffect(() => {
     const applyTheme = () => {

@@ -7,7 +7,8 @@
    全部尺寸走 token（variables.css「--page-pad-x 分档 + HeroBili token」节）：
    右栏 = 内容宽 × 56%；banner 高度 = 内容宽 × 系数，**系数按右栏列数分档**
    （2026-09-10 第七轮简化为两档：2 列档 0.60 / 3 列档 0.40，
-   实际由 Home.css 的 .home-two-col__main 覆盖，见该处注释）。
+   实际由 layout-tokens.css 的 --hero-banner-h / --hero-side-w 分档提供
+   （2026-09-22 单真源收敛；2026-09-29 分母改为全内容宽，见该文件注释）。
    卡片封面恒 16:9，卡高由列宽派生 → 列数变化时卡片比例不变。
    ⚠️ ≤1023 档例外：网格改 1:1（各 50%）、右卡降为 2 列 × 2 行，见下方分档块。
    ═══════════════════════════════════════════════════════════════════════ */
@@ -142,7 +143,11 @@
   background: var(--color-on-image);
 }
 
-/* 底部渐变字幕：标题 + meta + 双按钮 */
+/* 底部渐变字幕：标题 + meta chips + 双按钮。
+   2026-09-30（P3-B）渐变加深一档（仅调既有黑色的 alpha：0.82→0.88 / 0.35→0.5、
+   延展点 60%→65%），保证 chips 与标题在任何 backdrop 上可读。
+   caption 恒 absolute inset-bottom，不参与布局流——banner 高度 calc
+   （layout-tokens.css 完整表达式）与「第二行卡下沿齐平」不变量不受影响。 */
 .hero-bili__caption {
   position: absolute;
   right: 0;
@@ -150,7 +155,7 @@
   left: 0;
   z-index: 2;
   padding: var(--space-2xl) var(--space-lg) var(--space-md);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.5) 65%, transparent 100%);
   color: var(--color-on-image);
   pointer-events: none;
 }
@@ -165,23 +170,28 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
+/* meta chips（2026-09-30 P3-B）：评分/年份/类型改为胶囊（背景取既有 on-image
+   黑 45%——与 .hero-bili__arrow 同值色板，文字 --color-on-image；评分保留
+   --color-on-image-rating 专用色）。TSX 侧缺字段不渲染对应 chip（无硬造）。 */
 .hero-bili__meta {
   display: flex;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   align-items: center;
   margin-top: var(--space-2xs);
   font-size: var(--text-base);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.hero-bili__meta > span {
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--color-on-image);
+  font-variant-numeric: tabular-nums;
 }
 
 .hero-bili__rating {
   color: var(--color-on-image-rating);
   font-weight: 600;
-}
-
-.hero-bili__year,
-.hero-bili__type {
-  color: rgba(255, 255, 255, 0.8);
 }
 
 /* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），
@@ -200,13 +210,10 @@
 /* ── 右：3×2 竖版卡 + 脱标换一换 ────────────────────────────────────── */
 
 .hero-bili__right {
+  /* 换一换浮层的定位参照系（2026-09-30：占位列已删除，右栏卡网格独占
+     --hero-side-w 全宽 —— 卡片右侧直接顶到内容宽右缘，不再被按钮列吃掉
+     space-sm gap + 按钮宽）。 */
   position: relative;
-  /* 融合卡内布局：卡网格 + 换一换占位列（2026-09-06，替代绝对定位外挂，
-     避免按钮贴/溢出 hero 卡右缘） */
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--space-sm);
-  align-items: start; /* 换一换与第一行 card 顶对齐（用户拍板） */
   min-width: 0;
 }
 
@@ -382,15 +389,45 @@
   color: var(--color-danger);
 }
 
-/* 标题条：不换行，溢出悬浮跑马灯（双段等长无缝循环） */
+/* 标题条 · 方案 A（2026-09-30 用户确认 demos/hero-title-marquee-demo.html）：
+   默认单行 ellipsis 兜底 + hover/focus 溢出时跑马灯，双层结构：
+   ① .hero-side-card__title 容器 + ② fallback 兜底层（block nowrap ellipsis，
+   恒单行 → 标题条高度 = 2×space-xs + 1.4×hero-title-size 恒定，layout-tokens.css
+   的 --hero-banner-h 三档系数（0.314/0.24/0.2788）按此单行基准推导，
+   齐平不变量「banner 下沿 = 第二行卡下沿」不受跑马灯影响；
+   ③ marquee 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），
+   .is-marquee 时显示，双段等长无缝循环 4.5s（复刻原跑马灯参数）。 */
 .hero-side-card__title {
+  position: relative;
   padding: var(--space-xs) var(--space-sm);
   color: var(--color-text);
   font-size: var(--hero-title-size);
   font-weight: 500;
   line-height: 1.4;
+}
+
+.hero-side-card__title-fallback {
+  display: block;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 覆盖层垫页面底色遮住兜底层 ellipsis 文本（去卡片化后标题区铺 --color-background） */
+.hero-side-card__title-marquee {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  padding: inherit;
+  background: var(--color-background);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.hero-side-card__title.is-marquee .hero-side-card__title-marquee {
+  display: flex;
 }
 
 .hero-side-card__title-track {
@@ -410,10 +447,23 @@
   to { transform: translateX(-50%); }
 }
 
-/* 换一换：脱标浮层（absolute 不占布局），与第一行对齐、高度 = 单卡一半
-   （单卡高 = (banner-h - gap)/2，一半 = /4）；图标上、竖排文本下 */
+/* 换一换：脱标浮层（absolute 不占布局）——锚定 .hero-bili__right（= 右栏全宽），
+   top: 0 与第一行卡顶对齐（2026-09-30 用户裁决，知晓并接受压住右列首卡
+   收藏按钮浮现区）。
+   水平（2026-09-30 二次裁决）：全档进页面留白区，统一
+   right = space-md − page-pad-x（按钮右缘距视口恒 space-md 呼吸）。
+   配套：layout-tokens.css 的 --page-pad-x 60px 档起点 1440 → 1024（原 1024–1439
+   的 --space-lg 流体 15.2–16.5px 放不下 ~30px 按钮，卡面浮层回退档已作废删除），
+   1024–1919 档留白恒 60px → 按钮左缘在 hero 右缘外 ~20px，完全不叠卡。
+   z-index 压过兄弟卡片封面（收藏钮 z-index:3 在其上，浮现时仍可点）；
+   图标上、竖排文本下。祖先裁切自查：.app-shell / .app-shell__scroll-wrapper /
+   .app-shell__scroll 三处 overflow 均在视口级 padding box，按钮右缘距视口
+   ≥ space-md > 0，不会被剪，hero 无需任何 overflow 改动。 */
 .hero-bili__shuffle {
-  position: static;
+  position: absolute;
+  top: 0;
+  right: calc(var(--space-md) - var(--page-pad-x));
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
@@ -463,6 +513,12 @@
   .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
     transition: none !important;
     animation: none !important;
+  }
+  /* 跑马灯降级为静态 ellipsis（2026-09-30 用户确认）：覆盖层不显示，
+     保留兜底层的单行 ellipsis。特异性与上方 is-marquee 开启规则相同，
+     靠本块后置源码顺序取胜。 */
+  .hero-side-card__title.is-marquee .hero-side-card__title-marquee {
+    display: none;
   }
 }
 
