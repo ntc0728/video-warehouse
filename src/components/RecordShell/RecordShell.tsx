@@ -23,7 +23,7 @@ export interface FusedCategories {
 
 /** 桌面端内嵌筛选条配置（方案 C，2026-09-06）：状态 chips 常驻 + 排序弹层 */
 export interface RecordInlineFilter {
-  statusOptions: { key: string; label: string; color?: string }[];
+  statusOptions: { key: string; label: string; color?: string; count?: number }[];
   statusFilter: string;
   onStatusChange: (key: string) => void;
   sortOptions: { value: string; label: string }[];
@@ -194,7 +194,14 @@ export default function RecordShell({
                         onClick={() => inlineFilter.onStatusChange(opt.key)}
                       >
                         <span className="record-filter-chip__dot" aria-hidden="true" />
-                        {opt.label}
+                        {/* label 包 span + flex:1（镜像 .record-status--fused 的 status-tab
+                            label 规则）：把计数推到按钮右缘 —— 「每个 tab 按钮内右侧显示数量」
+                            （2026-10-10 用户三次追平后定位：裸文本节点不会分配 flex，计数贴文字）。 */}
+                        <span className="record-filter-chip__label">{opt.label}</span>
+                        {/* 分面计数（2026-10-09 用户要求）：显示「点它会得到多少条」；0 条时隐藏（对齐 .status-tab__count 先例） */}
+                        {opt.count !== undefined && opt.count > 0 && (
+                          <span className="record-filter-chip__count">{opt.count}</span>
+                        )}
                       </button>
                     ))}
                     <SortMenu

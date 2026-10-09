@@ -3,6 +3,7 @@
  * 管理所有 TMDB API 数据：首页发现区块、搜索、Discover、Genre 缓存
  */
 import { create } from 'zustand';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import type {
   TMDBMovie,
   TMDBTVShow,
@@ -67,6 +68,14 @@ interface TMDBStoreState {
   homeFetchedAt: number;
   /** 启动时是否已从 localStorage 恢复首页数据（供「清除缓存」判定内存是否需要重置） */
   homeLSLoaded: boolean;
+
+  /**
+   * 首页「合集」行（2026-09-30 用户定稿）：genre 维度独立 discover 派生，
+   * **不复用**首页 8 桶（那与推荐行数据重复）。随首页挂载拉取（不等合集行滚入视口），
+   * 内存 TTL 60min，不落 localStorage。
+   */
+  homeCollections: HomeCollection[];
+  loadingHomeCollections: boolean;
 
   // ---- 搜索 ----
   /** 最近一次搜索词（仅供 store 内部追踪，UI 同步应直接读 URL ?q=） */
@@ -133,6 +142,8 @@ interface TMDBStoreState {
     discover: string | null;
     genres: string | null;
     recommendation: string | null;
+    /** 合集行：仅「全部 6 组都失败」时记错误（单组失败静默跳过） */
+    homeCollections: string | null;
   };
 
   // ---- 操作 ----
@@ -152,6 +163,15 @@ interface TMDBStoreState {
    * 只影响该区块，不触碰其它区块（与 fetchAllHomeData 的整批语义相对）。
    */
   ensureHomeBlock: (key: HomeBlockKey, opts?: { force?: boolean }) => Promise<void>;
+
+  /**
+   * 首页合集取数（2026-09-30）：随首页挂载触发（不等合集行滚入视口），
+   * 幂等（数据已在且 TTL 未过期 → 直接返回；正在请求 → 直接返回），
+   * force 供下拉刷新。6 组 discover 请求受限并发（mapWithConcurrency），
+   * **全到齐才一次写 state**（用户拍板「全到齐再显示」，期间组件恒显骨架）；
+   * 单组失败跳过不拖垮整组，全部失败才记错误态。
+   */
+  ensureHomeCollections: (opts?: { force?: boolean }) => Promise<void>;
 
   search: (query: string, page?: number, opts?: { reset?: boolean }) => Promise<void>;
   fetchDiscover: (page?: number, opts?: { reset?: boolean }) => Promise<void>;
@@ -331,6 +351,67 @@ export const HOME_BLOCK_KEYS: readonly HomeBlockKey[] = [
   'airingTodayTv',
 ];
 
+// ── 首页「合集」定义单真源（2026-09-30 用户定稿）──────────────────
+// 6 组 genre 维度合集，discover 口径与 CQA 面板/Chart 页一致（popularity 降序）。
+// 内容组 = 用户在 AskUserQuestion 中拍板的「推荐组」：
+// 动作电影 / 科幻电影 / 动漫 / 综艺 / 纪录片 / 高分电影（评分≥7.5 过滤，
+// vote_count 走 discoverMovie 封装既有口径 ≥50，非 row 接口）。
+// 首页合集行（CategoryInlineBoard）与 Chart 页合集榜（/chart?collection=<key>）
+// 共同消费本表——改内容组只动这里。
+export interface HomeCollectionDef {
+  /** 稳定 key：首页卡 key + Chart 页 ?collection= 参数值 */
+  key: string;
+  title: string;
+  mediaType: 'movie' | 'tv';
+  genreIds: number[];
+  /** 高分合集用（vote_average.gte）；其余组为 0 = 不过滤 */
+  minVoteAverage?: number;
+}
+
+export const HOME_COLLECTION_DEFS: readonly HomeCollectionDef[] = [
+  { key: 'action-movies', title: '动作电影合集', mediaType: 'movie', genreIds: [28] },
+  { key: 'sci-fi-movies', title: '科幻电影合集', mediaType: 'movie', genreIds: [878] },
+  { key: 'anime', title: '动漫合集', mediaType: 'tv', genreIds: [16] },
+  { key: 'variety', title: '综艺合集', mediaType: 'tv', genreIds: [10764] },
+  { key: 'documentary', title: '纪录片合集', mediaType: 'movie', genreIds: [99] },
+  { key: 'top-rated-movies', title: '高分电影合集', mediaType: 'movie', genreIds: [], minVoteAverage: 7.5 },
+];
+
+export function findHomeCollectionDef(key: string | null): HomeCollectionDef | undefined {
+  if (!key) return undefined;
+  return HOME_COLLECTION_DEFS.find((d) => d.key === key);
+}
+
+/** 合集榜单分页取数（Chart 页 ?collection= 直达榜用）：与 ensureHomeCollections 同口径 */
+export async function fetchHomeCollectionPage(
+  def: HomeCollectionDef,
+  page: number,
+  signal?: AbortSignal,
+): Promise<TMDBVideoItem[]> {
+  const filters = {
+    genreIds: def.genreIds,
+    minVoteAverage: def.minVoteAverage,
+  };
+  if (def.mediaType === 'movie') {
+    const resp = await discoverMovie(filters, page, { signal });
+    return resp.results.map(mapMovieToVideoItem);
+  }
+  const resp = await discoverTV(filters, page, { signal });
+  return resp.results.map(mapTVToVideoItem);
+}
+
+/** 单张合集卡数据（store 桶存形状；封面为 w300 backdrop 拼贴，占位性质）
+ *  不带条数字段（2026-10-09 用户拍板）：discover 首页仅 20 条，展示「N 部」是假数据，误导用户 */
+export interface HomeCollection {
+  key: string;
+  title: string;
+  /** 拼贴封面 URL（buildImageUrl 产物，最多 4 张；少于此数按实际渲染） */
+  covers: string[];
+}
+
+/** 合集拼贴封面张数（每组取前 4 张 16:9 backdrop；用户确认封面仅占位性质） */
+const HOME_COLLECTION_COVER_COUNT = 4;
+
 // ── 首页 8 区块 localStorage 持久化 ───────────────────────────
 // 冷启动（刷新页面）时先读 LS 立即展示旧数据（stale-while-revalidate），
 // 再按内存 TTL（60min）决定何时静默刷新。LS 本身带 24h 新鲜度校验，
@@ -395,6 +476,9 @@ let _homeFetchAbort: AbortController | null = null;
 // 与其旧行为一致——旧代码用 homeFetchedAt=0 表达同一语义）。
 const _homeBlockFetchedAt: Partial<Record<HomeBlockKey, number>> = {};
 
+// 合集行「最近一次全部成功取数时间」（0 = 从未取过）。仅内存态：不持久化、不参与渲染。
+let _homeCollectionsFetchedAt = 0;
+
 // discover 流（search / fetchDiscover / fetchTopRated）的请求序号：
 // 快速连续换词/换筛选时，仅「最新一次」请求允许写结果，过期响应（慢返回的旧请求）
 // 直接丢弃——否则旧词/旧筛选的结果会覆盖新结果（搜索结果错乱的历史根因）。
@@ -418,6 +502,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   homeFetchedAt: 0,
   /** 启动时是否已从 localStorage 恢复首页数据（供「清除缓存」判定内存是否需要重置） */
   homeLSLoaded: _homeLSData !== null,
+
+  // 首页合集（独立于 8 桶：genre discover 派生，内存 TTL，不落 LS）
+  homeCollections: [],
+  loadingHomeCollections: false,
 
   searchQuery: '',
 
@@ -446,6 +534,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     search: false,
     discover: false,
     genres: false,
+    homeCollections: false,
   },
 
   errors: {
@@ -461,6 +550,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
     discover: null,
     genres: null,
     recommendation: null,
+    homeCollections: null,
   },
 
   // ---- 操作 ----
@@ -713,7 +803,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       airingTodayTv: [],
       homeFetchedAt: 0,
       homeLSLoaded: false,
+      // 合集为纯内存态，「清除全部缓存」语义一并清（下次进首页重拉）
+      homeCollections: [],
     }));
+    _homeCollectionsFetchedAt = 0;
   },
 
   /**
@@ -753,6 +846,66 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     // 只有真拿到数据才记时间戳：失败保持原值（0）→ 下次触发（重新滚入视口 / 下拉刷新）会重试
     if (get()[key].length > 0) _homeBlockFetchedAt[key] = Date.now();
+  },
+
+  /**
+   * 首页合集取数（2026-09-30 用户定稿）：
+   *  · 触发时机 = 首页挂载（不等合集行滚入视口，用户明确「不要解锁合集行视口时才拉取」）；
+   *  · 6 组 genre discover 受限并发（mapWithConcurrency 3，项目并发约定），
+   *    单组失败静默跳过；**全到齐才一次写 state**（用户拍板「全到齐再显示」）；
+   *  · 内存 TTL 60min（HOME_TTL_MS），不落 localStorage；force 供下拉刷新；
+   *  · 封面 = 每组 popularity 前 4 张 backdrop（w300），占位性质（用户确认）。
+   */
+  ensureHomeCollections: async (opts) => {
+    const force = opts?.force === true;
+    const ttlExpired =
+      _homeCollectionsFetchedAt > 0 && Date.now() - _homeCollectionsFetchedAt > HOME_TTL_MS;
+    if (!force && get().homeCollections.length > 0 && !ttlExpired) return;
+    if (get().loadingHomeCollections) return;
+
+    set((s) => ({
+      loadingHomeCollections: true,
+      errors: { ...s.errors, homeCollections: null },
+    }));
+    try {
+      const settled = await mapWithConcurrency(HOME_COLLECTION_DEFS, 3, async (def) => {
+        try {
+          const items = await fetchHomeCollectionPage(def, 1);
+          // discover 口径统一本地按 popularity 降序（接口返回页内顺序有出入，与 Chart 同款重排）
+          const sorted = [...items].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+          const covers = sorted
+            .map((it) => buildImageUrl(it.backdropPath ?? null, 'w300'))
+            .filter((src): src is string => !!src)
+            .slice(0, HOME_COLLECTION_COVER_COUNT);
+          // 有数据但一张可拼贴封面都没有（极端脏数据）→ 该组跳过
+          if (covers.length === 0) return null;
+          return { key: def.key, title: def.title, covers } satisfies HomeCollection;
+        } catch {
+          // 单组失败跳过，不拖垮整组（网络抖动/某 genre 无数据时其余组照常展示）
+          return null;
+        }
+      });
+      const out = settled.filter((c): c is HomeCollection => c !== null);
+      // 只有全组拿到数据才刷新 TTL：部分失败保持原值 → 下次触发重试
+      if (out.length === HOME_COLLECTION_DEFS.length) _homeCollectionsFetchedAt = Date.now();
+      set((s) => ({
+        homeCollections: out,
+        loadingHomeCollections: false,
+        errors: {
+          ...s.errors,
+          homeCollections: out.length === 0 ? '合集数据拉取失败' : null,
+        },
+      }));
+    } catch (err) {
+      // mapWithConcurrency 快速失败路径（理论不可达：mapper 内部已吞错，兜底防泄漏 loading）
+      set((s) => ({
+        loadingHomeCollections: false,
+        errors: {
+          ...s.errors,
+          homeCollections: err instanceof Error ? err.message : '合集数据拉取失败',
+        },
+      }));
+    }
   },
 
   fetchAllHomeData: async (opts?: { force?: boolean }) => {

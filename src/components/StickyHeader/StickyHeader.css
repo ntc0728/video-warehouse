@@ -386,71 +386,37 @@
   }
 }
 
-/* ── Narrow desktop: 顶栏改为纯文本（≤1280，2026-09-10 用户拍板）───────
-   用户原话：「视口小于等于 1280 时，顶部导航栏左右两侧不再显示图标只显示文本，
-   调整文本间距，确保搜索框不被挤压」。
-
-   上一版只收 gap/padding，用户判定仍不够 → 本版直接**去掉图标**（图标 ~20px × 6 个
-   ≈ 120px 是最大头），把省下的宽度全给中央搜索框。图标隐藏只影响视觉，
-   nav-item 本身仍是 <a>，文字标签即入口，功能可达性不受影响（红线：不裁元素）。
-
-   三处收紧，逐层让出宽度：
-     ① 图标 display:none（本段最大收益，图标 ~20px × 6 个 ≈ 120px）
-     ② item 的 inline padding 收到 2xs + 标签字号降到 --text-xs
-     ③ 左右两组 gap 收到 2xs、右 nav gap 收到 2xs
-
-   与下方 ≤1023 的移动规则互补不重叠；app 端恒走移动分支，TV 有更高特异性覆盖。 */
+/* ── Narrow desktop: 顶栏去图标（≤1280）─────────────────────────────
+   2026-09-10 用户原话：「视口小于等于 1280 时，顶部导航栏左右两侧不再显示图标只显示文本」。
+   2026-10-09 用户二次强调「字号不要缩小，只去除图标」→ 本段收口为**只做图标显隐**：
+     ① 两侧 nav-item 内 svg display:none（设置入口单独反转：显图标、隐文本）；
+     ② logo 保持可见（防其它模块的隐藏规则误伤，强制恢复）。
+   原 ②③⑤（item padding 收 2xs / 组 gap 收 xs / 主导航 gap 收 2xs）已按
+   「只去除图标」口径整体移除 —— 1024-1280 的字号 / padding / gap / 圆角
+   与 >1280 完全同一套规则（上方 @media width>=1024 段），不再有任何降档。
+   主题按钮 / hdr 按钮为纯图标无文本可替代，按红线「不裁元素」保持原样；
+   移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
+   TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
 @media (width >= 1024px) and (width <= 1280px) {
   /* ① 图标隐藏：顶栏两组 nav-item 内的 svg 直接移除（只作用于顶栏，不影响其它 Icon） */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item > svg {
     display: none;
   }
-  /* ①b 分类 chips（.cqa-nav）顶栏挂载已移除（2026-09-29），原「chips 图标隐藏」规则一并删除。
-     主题按钮（.sticky-header__theme-btn / .sticky-header__hdr-btn）是纯图标按钮、无文本可替代，
-     隐藏会导致功能不可达 —— 按红线「不裁元素」保持原样。 */
-  /* ② 文本间距 + 选中胶囊（nav-item）：
-     用户反馈「左侧文本间距太小」+「选中背景高度要减小、太圆润」，一并处理：
-       · 竖向 padding 收 --space-2xs（压低胶囊高度；≥1024 档原为 --space-xs-plus 撑高）；
-       · 横向 padding 放开到 --space-xs-plus（≈5px，上一版 2xs≈2px 过窄）；
-       · 高度 `auto`、圆角 --radius-sm。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item {
-    gap: 0;
-    height: auto;
-    padding: var(--space-2xs) var(--space-xs-plus);
-    border-radius: var(--radius-sm);
+  /* ①c 设置入口单独反转（2026-10-09 用户要求）：显图标、隐文本。
+     与 ① 通用隐藏规则同特异性 (0,2,1)，靠源码顺序靠后取胜。 */
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item--icon-only > svg {
+    display: block;
   }
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item .sticky-header__nav-label {
-    /* 纯文本态：字号收小一档，进一步减宽（原 --text-sm） */
-    font-size: var(--text-xs);
-    letter-spacing: 0.02em;
+  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item--icon-only .sticky-header__nav-label {
+    display: none;
   }
-  /* ③ 组间距 */
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__left,
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right {
-    gap: var(--space-xs);
-  }
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right .sticky-header__nav {
-    gap: var(--space-xs);
-  }
-  /* ⑤ 左侧主导航组（2026-09-29）：≤1280 收窄——图标隐藏 / padding 收紧已由
-     上方 .sticky-header__nav-item 通用规则覆盖（本组复用同类名），
-     这里补组内 gap 收紧，防止挤压中央搜索框。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav--primary {
-    gap: var(--space-2xs);
-    margin-left: 0;
-  }
-  /* ④ logo 保持可见（2026-09-10 用户要求「视口 ≤1280 顶部导航栏 logo 不需要隐藏」）：
-     纯文本态 + 上述 padding 放开后，左侧 logo（圆标 + kinoTV 文字）与右侧文本并存；
-     防回归 —— 若有更高特异性的隐藏规则（如其它模块引入的 display:none）命中此处，
-     本行强制恢复。logo-group 未设 max-width，不会挤压中央搜索框（搜索框另有 420 封顶）。 */
+  /* ② logo 保持可见（2026-09-10 用户要求「视口 ≤1280 顶部导航栏 logo 不需要隐藏」）：
+     防回归 —— 若有更高特异性的隐藏规则命中此处，本行强制恢复。
+     logo-group 未设 max-width，不会挤压中央搜索框（搜索框另有 420 封顶）。 */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-group,
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-wrap,
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-group .sticky-header__brand {
     display: flex;
-  }
-  html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-group {
-    /* 纯文本态：logo 组与左侧文本拉近，避免视觉割裂 */
-    gap: var(--space-2xs);
   }
 }
 

@@ -154,6 +154,16 @@
    珠子横向布局：时间文本左对齐面板左、数量徽标右对齐面板右、圆点（rail 竖线）
    钉在面板中线——时间在轴线左侧、数量在轴线右侧。
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* 封面圆角（2026-10-09 用户确认与收藏页同步）：2026-09-28 去卡片化削掉
+   卡容器 radius 后在此补回 --radius-md；仅桌面非 app/tv（≤767/app 卡容器
+   自带圆角无需补）。横版（继续观看卡）/竖版封面同根类名 .video-card-cover。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .history-page .video-card-cover {
+    border-radius: var(--radius-md);
+  }
+}
+
 @media (width >= 768px) {
   html:not([data-device="app"]) .history-content {
     display: flex;

@@ -408,28 +408,8 @@
   font-size: var(--text-sm);
   text-align: center;
 }
-.chart-error {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--space-md);
-  justify-content: center;
-  align-items: center;
-  min-height: 320px;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  text-align: center;
-}
-.chart-error__retry {
-  padding: var(--space-xs) var(--space-lg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-.chart-error__retry:hover { background: var(--color-surface-hover); }
+/* 加载失败态复用公共 Empty（status="error"，对齐 Browse），
+   原 .chart-error / __retry 随页内重试按钮一并移除（2026-10-09 用户要求）。 */
 
 /* ── <1024：单列 + **竖版封面 112×168（2:3）** ──
    2026-09-10 用户要求「chart 页视口小于 1024，下方 card 封面显示竖版图」。

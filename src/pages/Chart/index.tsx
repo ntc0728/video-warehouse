@@ -32,11 +32,19 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { TMDBVideoItem } from '@/types/tmdb';
 import { BackToTopButton } from '@/components/common';
+import Empty from '@/components/common/Empty';
 import { Icon } from '@/components/ui/Icon';
 import { TvMascot } from '@/components/ui/TvMascot/TvMascot';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { buildImageUrl, discoverCategory, fetchTrending } from '@/services/tmdbService';
-import { mapMovieToVideoItem, mapTVToVideoItem, mapTrendingToVideoItem } from '@/stores/useTMDBStore';
+import {
+  mapMovieToVideoItem,
+  mapTVToVideoItem,
+  mapTrendingToVideoItem,
+  findHomeCollectionDef,
+  fetchHomeCollectionPage,
+} from '@/stores/useTMDBStore';
+import type { HomeCollectionDef } from '@/stores/useTMDBStore';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -83,8 +91,19 @@ interface ChartFeed {
   exhausted: boolean;
 }
 const feedCache = new Map<string, ChartFeed>();
-const feedKey = (tab: ChartCategoryKey, window: TrendWindow) =>
-  tab === 'trend' ? `trend:${window}` : tab;
+/** 合集模式（/chart?collection=<key>，2026-09-30 首页合集卡直达）feed 缓存与常驻 tab 同池，
+ *  key 前缀区分，永不与 tab key 冲突 */
+const feedKey = (tab: ChartCategoryKey, window: TrendWindow, collectionKey?: string) =>
+  collectionKey ? `collection:${collectionKey}` : tab === 'trend' ? `trend:${window}` : tab;
+
+/** 合集模式下的 tab 高亮匹配：mediaType + genreIds 精确命中（动漫/综艺/纪录片），
+ *  其余（动作/科幻/高分）落对应媒体类型大 tab —— 高亮仅作 UI 归属，数据走合集口径 */
+function matchTabForCollection(def: HomeCollectionDef): ChartCategoryKey {
+  const hit = CHART_TABS.find(
+    (t) => t.mediaType === def.mediaType && (t.genreIds ?? []).join(',') === def.genreIds.join(','),
+  );
+  return hit?.key ?? (def.mediaType === 'movie' ? 'movie' : 'tv');
+}
 
 /** 追加一页：按 id 去重；discover 口径按 popularity 降序重排（修正分页漂移乱序），趋势榜保留趋势序 */
 function mergePage(prev: TMDBVideoItem[], incoming: TMDBVideoItem[], tab: ChartCategoryKey): TMDBVideoItem[] {
@@ -99,7 +118,10 @@ async function fetchChartPage(
   window: TrendWindow,
   page: number,
   signal?: AbortSignal,
+  collectionDef?: HomeCollectionDef,
 ): Promise<TMDBVideoItem[]> {
+  // 合集直达榜：与首页合集行同一份定义真源（store HOME_COLLECTION_DEFS），discover 分页口径相同
+  if (collectionDef) return fetchHomeCollectionPage(collectionDef, page, signal);
   if (tab.key === 'trend') {
     const resp = await fetchTrending('all', window, { signal, page });
     return resp.results.map(mapTrendingToVideoItem);
@@ -135,9 +157,16 @@ export default function ChartPage() {
   const scrollContainer = useScrollContainer();
 
   // URL 驱动 tab：/chart?category=variety&window=week（可分享、可回退）
+  // 合集直达（2026-09-30）：/chart?collection=<key> 优先于 category —— 首页合集卡
+  // 跳入时按合集定义取数（独立 feed 缓存），tab 高亮只作 UI 归属、点 tab 即离开合集模式。
   const params = new URLSearchParams(location.search);
   const categoryParam = params.get('category');
-  const activeTab: ChartCategoryKey = isChartCategoryKey(categoryParam) ? categoryParam : 'movie';
+  const collectionDef = useMemo(() => findHomeCollectionDef(params.get('collection')), [location.search]);
+  const activeTab: ChartCategoryKey = collectionDef
+    ? matchTabForCollection(collectionDef)
+    : isChartCategoryKey(categoryParam)
+      ? categoryParam
+      : 'movie';
   const trendWindow: TrendWindow = params.get('window') === 'week' ? 'week' : 'day';
 
   const tabDef = useMemo(
@@ -160,8 +189,8 @@ export default function ChartPage() {
 
   // 切 tab/时间窗：优先命中缓存（零请求即显），否则拉第 1 页
   const loadFeed = useCallback(
-    (tabKey: ChartCategoryKey, window: TrendWindow, reset: boolean) => {
-      const key = feedKey(tabKey, window);
+    (tabKey: ChartCategoryKey, window: TrendWindow, reset: boolean, collDef?: HomeCollectionDef) => {
+      const key = feedKey(tabKey, window, collDef?.key);
       // 阻断在途请求：快速连点 tab 时，先前的 fetch 回来不得覆盖当前 tab 的 feed
       abortRef.current?.abort();
       const cached = feedCache.get(key);
@@ -178,13 +207,13 @@ export default function ChartPage() {
       setError(null);
       // 切 tab/时间窗 → 立即清空旧榜单（不保留降沉残影），由 showInitialLoading 接管居中态
       setFeed(null);
-      fetchChartPage(tab, window, 1, ctrl.signal)
+      fetchChartPage(tab, window, 1, ctrl.signal, collDef)
         .then((items) => {
           if (ctrl.signal.aborted) return;
           // 首页同样去重 + 热度重排：TMDB sort_by=popularity.desc 与返回的 popularity
           // 字段存在出入（实测页内即乱序），discover 口径必须本地重排保证热度值单调
           const next: ChartFeed = {
-            items: mergePage([], items, tabKey === 'trend' ? 'trend' : tabKey),
+            items: mergePage([], items, tabKey),
             page: 1,
             // 单页不足 20 条 = 接口已到底（真实接口末页可能 < 20）
             exhausted: items.length < 20,
@@ -206,9 +235,9 @@ export default function ChartPage() {
   );
 
   useEffect(() => {
-    loadFeed(activeTab, trendWindow, false);
+    loadFeed(activeTab, trendWindow, false, collectionDef);
     return () => abortRef.current?.abort();
-  }, [activeTab, trendWindow, loadFeed]);
+  }, [activeTab, trendWindow, collectionDef, loadFeed]);
 
   // 无缝滚动加载下一页：去重后 0 新增视为到底（mock/漂移场景防死循环）
   const loadMore = useCallback(() => {
@@ -217,7 +246,7 @@ export default function ChartPage() {
     abortRef.current = ctrl;
     const nextPage = feed.page + 1;
     setLoading(true);
-    fetchChartPage(tabDef, trendWindow, nextPage, ctrl.signal)
+    fetchChartPage(tabDef, trendWindow, nextPage, ctrl.signal, collectionDef)
       .then((incoming) => {
         if (ctrl.signal.aborted) return;
         setFeed((prev) => {
@@ -231,7 +260,7 @@ export default function ChartPage() {
             // 去重后 0 新增 = 无新数据（mock 恒返同页 / 接口分页漂移重复），防死循环
             exhausted: incoming.length < 20 || uniqueNew === 0,
           };
-          feedCache.set(feedKey(tabDef.key, trendWindow), next);
+          feedCache.set(feedKey(tabDef.key, trendWindow, collectionDef?.key), next);
           return next;
         });
       })
@@ -242,7 +271,7 @@ export default function ChartPage() {
       .finally(() => {
         if (!ctrl.signal.aborted) setLoading(false);
       });
-  }, [loading, feed, error, tabDef, trendWindow]);
+  }, [loading, feed, error, tabDef, trendWindow, collectionDef]);
 
   const { sentinelRef } = useInfiniteScroll({
     hasMore: !!feed && !feed.exhausted,
@@ -268,11 +297,6 @@ export default function ChartPage() {
     [navigate, trendWindow],
   );
 
-  const retry = useCallback(() => {
-    feedCache.delete(feedKey(activeTab, trendWindow));
-    loadFeed(activeTab, trendWindow, true);
-  }, [activeTab, trendWindow, loadFeed]);
-
   const items = feed?.items ?? [];
   const showInitialLoading = loading && items.length === 0 && !error;
   /** 仅「本次会话首载」走骨架；切 tab / 时间窗仍走下方居中态（见 everLoaded 注释） */
@@ -283,13 +307,15 @@ export default function ChartPage() {
     <div className="page-padding chart-page content-shell">
       <section className="chart-card">
         <div className="chart-head">
-          <h1 className="chart-head__title">热度榜</h1>
+          <h1 className="chart-head__title">{collectionDef ? collectionDef.title : '热度榜'}</h1>
           <InfoTip
             label="热度口径说明"
             text={
               isTrend
                 ? '趋势榜为 TMDB 趋势算法排序（/trending/all），非热度值排序；数据定期更新，非实时。'
-                : '热度值 = TMDB popularity 原始值（discover 按热度降序，可翻页加载）。数据定期更新，非实时。'
+                : collectionDef
+                  ? `合集榜单：TMDB discover 按热度降序${collectionDef.minVoteAverage ? `（评分 ≥ ${collectionDef.minVoteAverage} 过滤）` : ''}，可翻页加载。数据定期更新，非实时。`
+                  : '热度值 = TMDB popularity 原始值（discover 按热度降序，可翻页加载）。数据定期更新，非实时。'
             }
           />
           <span className="chart-head__sub">
@@ -297,32 +323,36 @@ export default function ChartPage() {
           </span>
         </div>
 
-        <nav className="chart-tabs" aria-label="榜单分类">
-          {CHART_TABS.map((t) => (
-            <button
-              key={t.key}
-              className={`chart-tabs__tab${activeTab === t.key ? ' chart-tabs__tab--on' : ''}`}
-              aria-current={activeTab === t.key ? 'page' : undefined}
-              onClick={() => switchTab(t.key)}
-            >
-              <Icon icon={t.icon} size="xs" />
-              <span>{t.label}</span>
-            </button>
-          ))}
-          {isTrend && (
-            <span className="chart-tabs__window" role="group" aria-label="趋势时间窗">
-              {TREND_WINDOWS.map((w) => (
-                <button
-                  key={w.key}
-                  className={trendWindow === w.key ? 'chart-tabs__window-btn--on' : 'chart-tabs__window-btn'}
-                  onClick={() => switchWindow(w.key)}
-                >
-                  {w.label}
-                </button>
-              ))}
-            </span>
-          )}
-        </nav>
+        {/* 合集直达榜（?collection=）不渲染分类 tabs：榜单口径由合集定义唯一决定，
+            展示 tabs 会让用户误以为本页是通用热度榜（2026-10-09 用户拍板） */}
+        {!collectionDef && (
+          <nav className="chart-tabs" aria-label="榜单分类">
+            {CHART_TABS.map((t) => (
+              <button
+                key={t.key}
+                className={`chart-tabs__tab${activeTab === t.key ? ' chart-tabs__tab--on' : ''}`}
+                aria-current={activeTab === t.key ? 'page' : undefined}
+                onClick={() => switchTab(t.key)}
+              >
+                <Icon icon={t.icon} size="xs" />
+                <span>{t.label}</span>
+              </button>
+            ))}
+            {isTrend && (
+              <span className="chart-tabs__window" role="group" aria-label="趋势时间窗">
+                {TREND_WINDOWS.map((w) => (
+                  <button
+                    key={w.key}
+                    className={trendWindow === w.key ? 'chart-tabs__window-btn--on' : 'chart-tabs__window-btn'}
+                    onClick={() => switchWindow(w.key)}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </span>
+            )}
+          </nav>
+        )}
 
         {showInitialSkeleton ? (
           /* 首载（本次会话尚无任何榜单数据）：与 Browse / Collections 同流派的
@@ -339,10 +369,9 @@ export default function ChartPage() {
             </div>
           </div>
         ) : error && items.length === 0 ? (
-          <div className="chart-error">
-            <p>{error}</p>
-            <button className="chart-error__retry" onClick={retry}>重试</button>
-          </div>
+          /* 加载失败：对齐 Browse 失败态（Empty error 图标 +「加载失败」标题 + 描述）。
+             2026-10-09 用户要求：去掉页内重试按钮（不提供页内恢复入口）。 */
+          <Empty status="error" title="加载失败" description={error} />
         ) : (
           <div className="chart-list" role="list">
             {items.map((item, i) => (

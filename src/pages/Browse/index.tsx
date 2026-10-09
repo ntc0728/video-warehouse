@@ -12,7 +12,6 @@ import { useLocation, useNavigationType, useSearchParams } from 'react-router-do
 import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
-import { toast } from '@/components/ui';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS } from '@/components/FilterBar/constants';
 
@@ -27,7 +26,6 @@ import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
-import TokenRequired from '@/components/TokenRequired';
 import type { TMDBGenre } from '@/types/tmdb';
 import { CATEGORY_CONFIG, CATEGORY_LABELS, PENDING_FEEDBACK_DELAY_MS } from './constants';
 import { useBrowseData, toStoreFilter, DISCOVER_CACHE_TTL_MS } from './useBrowseData';
@@ -502,22 +500,15 @@ export default function BrowsePage() {
    *   否则旧请求会把新请求的 loading 提前关掉；
    * - 抛错（网络层已由 store 兜成 error 态）→ 仍必须收尾，否则 loading 永驻。
    */
-  // 失败提示节流时间戳：连点分页 / 反复点重试时避免 toast 刷屏
-  const lastErrorToastRef = useRef(0);
   const runGoto = useCallback(async (page: number, opts?: { force?: boolean }) => {
     try {
       await logicalGotoRef.current(page, { force: opts?.force, onCommit: endRefresh });
     } catch {
       // goto 抛错 = 本次取页失败（store 已把原因写进 errors.discover），且它
       // 没提交任何状态 → 旧 items 原样保留、旧页缓存未被污染（2026-09-14 起）。
-      // 必须收尾 loading（否则遮罩永驻），并给出显式提示：旧页还在时错误态
-      // （Empty）不渲染（fixed 全屏空态会盖住网格），没有提示就只剩「点了没反应」。
+      // 必须收尾 loading（否则遮罩永驻）。不弹 toast（2026-10-10 用户拍板：
+      // 失败态由结果区 Empty「加载失败」承担，页内不再叠加浮层提示）。
       endRefresh();
-      const now = Date.now();
-      if (now - lastErrorToastRef.current > 1500) {
-        lastErrorToastRef.current = now;
-        toast.error('加载失败，请检查网络后重试');
-      }
     }
   }, [endRefresh]);
 
@@ -829,12 +820,9 @@ export default function BrowsePage() {
             <BrowseSkeleton />
           )}
 
-          {/* TMDB Access Token 未配置：智能检索结果区整块提示（配置后无需刷新即可搜） */}
-          {searchMode === 'smart' && !hasToken && (
-            <div className="browse-results-body__token">
-              <TokenRequired />
-            </div>
-          )}
+          {/* TMDB Access Token 未配置：不再展示 token 提示元素（2026-10-09 用户要求）——
+              未配置时 smart 检索请求自然失败，统一走下方「加载失败」Empty 失败态；
+              TokenRequired 全页拦截仅保留在 Detail / Person / Player。 */}
 
           {/* 加载失败 —— 与「搜不到」彻底分开（2026-09-14 语义分家；
               2026-09-24 拍板：结构对齐收藏/历史空态 Empty——保留 error 红叉

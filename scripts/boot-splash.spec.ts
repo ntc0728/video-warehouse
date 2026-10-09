@@ -90,20 +90,9 @@ test.describe('启动骨架：视口填充与路由感知', () => {
     expect(m.bottom).toBeGreaterThanOrEqual(m.vh - 60);
   });
 
-  test('BOOT: home ≥1024 带左栏（镜像 .home-two-col，栏宽 240）', async ({ page }) => {
-    await holdSplash(page, '/');
-    const rail = page.locator('#boot-splash .bs-home .bs-rail');
-    await expect(rail).toBeVisible();
-    const box = (await rail.boundingBox())!;
-    expect(Math.round(box.width)).toBe(240);
-  });
-
-  test('BOOT: home 1920 档栏宽 260（--home-rail-w 真源断点是 ≥1920 非 ≥2560）', async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await holdSplash(page, '/');
-    const box = (await page.locator('#boot-splash .bs-home .bs-rail').boundingBox())!;
-    expect(Math.round(box.width)).toBe(260);
-  });
+  // （2026-10-09 删除两条 home 左栏用例：「≥1024 带左栏栏宽 240」「1920 档栏宽 260」——
+  //   真实页左栏已于 2026-09-29 删除，boot-splash 的 .bs-rail/.bs-heat* 左栏骨架同日清理，
+  //   断言对象已不存在。）
 
   test('BOOT: home ≥1024 hero 带右卡网格（1024–1280 → 2 列×2 行 = 4 张）', async ({ page }) => {
     // 默认视口 1280×720 落在 2 列档（useHeroSideCols 同源断点）

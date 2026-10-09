@@ -283,9 +283,10 @@ export default function HistoryPage() {
     return map;
   }, [watchHistory]);
 
-  /** 视频历史：按 videoId 去重（同一剧集只保留最新一条），应用搜索 + 状态筛选。
-   *  状态筛选仅作用于视频项；IPTV 不涉及观看进度，恒显示。 */
-  const historyVideos = useMemo<HistoryVideoItem[]>(() => {
+  /** 视频历史基底：按 videoId 去重（同一剧集只保留最新一条），应用搜索。
+   *  2026-10-09 拆出：状态 chip 分面计数需要「状态筛选前」口径，
+   *  base（去重+搜索）与 filtered（+状态筛选）分两段 memo，避免同一逻辑双写漂移。 */
+  const historyVideosBase = useMemo<HistoryVideoItem[]>(() => {
     const seenVideo = new Set<string>();
     let list: HistoryVideoItem[] = [...watchHistory]
       .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -310,11 +311,28 @@ export default function HistoryPage() {
       });
     const kw = searchByTab[mainTab === 'all' ? 'all' : 'video'] || '';
     if (kw.trim()) { const key = kw.toLowerCase(); list = list.filter((v) => v.title?.toLowerCase().includes(key)); }
-    if (statusFilter !== 'all') {
-      list = list.filter((v) => statusMap.get(v.id) === statusFilter);
-    }
     return list;
-  }, [watchHistory, searchByTab, mainTab, statusFilter, statusMap]);
+  }, [watchHistory, searchByTab, mainTab]);
+
+  /** 状态 chip 分面计数：基底（去重+搜索后、状态筛选前）按状态计数 ——
+   *  每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
+   *  否则未选中的 chip 会被当前筛选清零成误导性 0）。仅视频项 —— IPTV 无观看进度概念。 */
+  const statusCounts = useMemo<Record<VideoStatus, number>>(() => {
+    const counts: Record<VideoStatus, number> = { all: historyVideosBase.length, unfinished: 0, finished: 0 };
+    for (const v of historyVideosBase) {
+      if (statusMap.get(v.id) === 'finished') counts.finished++;
+      else counts.unfinished++;
+    }
+    return counts;
+  }, [historyVideosBase, statusMap]);
+
+  /** 视频历史：基底 + 状态筛选（状态筛选仅作用于视频项；IPTV 不涉及观看进度，恒显示） */
+  const historyVideos = useMemo<HistoryVideoItem[]>(
+    () => (statusFilter === 'all'
+      ? historyVideosBase
+      : historyVideosBase.filter((v) => statusMap.get(v.id) === statusFilter)),
+    [historyVideosBase, statusFilter, statusMap],
+  );
 
   /** IPTV 历史：按 channelId 去重（同一频道只保留最新一条），应用搜索。 */
   const iptvHistory = useMemo<HistoryChannelItem[]>(() => {
@@ -775,6 +793,7 @@ export default function HistoryPage() {
           key: k,
           label: STATUS_CONFIG[k].label,
           color: STATUS_DOT[k],
+          count: statusCounts[k],
         })),
         statusFilter,
         onStatusChange: (k) => setStatusFilter(k as VideoStatus),

@@ -2,93 +2,102 @@
  * HomeTopStrip — 首页顶部过渡带（2026-09-10 大屏整改补强之二）
  *
  * 位置：StickyHeader 与 HeroBanner 之间，仅在宽屏桌面（≥1024，与 HeroBili 同条件）渲染。
- * 目的：原布局里 header 结束就直接顶上一张大图，导航与首屏内容之间没有任何缓冲；
- *       本组件补一条过渡带，同时给大屏一个信息锚点
- *       （今日趋势条数 / 最热分类 / 个人内容计数 / 热度榜入口）。
  *
- * 首项文案：2026-09-10 用户要求由「首页」改为「公告」
- *       （home-topstrip__crumb 类名沿用旧名，语义上已是「公告」标签而非面包屑；
- *        改类名会牵动 CSS 且无功能收益，故保留类名 + 此处说明）。
+ * 2026-10-09（用户需求，取代同日早先的「数据源状态」方案）：
+ * 公告位改为**当前热度 Top20 轮播** —— useTMDBStore.trending 按 popularity 降序
+ * 取前 20 条，单条显示，5s 自动切换，纵向（上下）滑动动画。
+ * 每条格式：热度值 + 标题 + 年份 + 类型(电影/剧集) + 评分。
+ * trending 为空时该位不渲染（右侧个人内容 pill 不受影响）。
+ *
+ * 首项文案：类名 home-topstrip__crumb 沿用旧名（语义已是「公告」标签）。
  *
  * 视觉：通栏底色 + 底边框，内容宽度与 `.home-page__content` 同为 2200 封顶居中
  *       （与「顶栏对齐」补强同一契约）。
  */
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Flame, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Flame, Star } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
-import { useTMDBStore } from '@/stores';
-import {
-  aggregateCategoryHeat,
-  InfoTip,
-  WIDE_CATEGORIES,
-} from '@/components/CategoryQuickAccess';
+import type { TMDBVideoItem } from '@/types/tmdb';
 
 interface HomeTopStripProps {
-  /** 「继续观看」条数（无则整块不渲染） */
+  /** 「继续观看」条数（0 则该 pill 不渲染） */
   continueCount: number;
-  /** 收藏条数（无则整块不渲染） */
+  /** 收藏条数（0 则该 pill 不渲染） */
   favoriteCount: number;
+  /** TMDB trending 列表（热度轮播数据源，内部按 popularity 降序取 Top20） */
+  trending: TMDBVideoItem[];
 }
 
-export default function HomeTopStrip({ continueCount, favoriteCount }: HomeTopStripProps) {
-  const trending = useTMDBStore((s) => s.trending);
+/** 轮播间隔（用户指定 5s） */
+const ROTATE_INTERVAL_MS = 5000;
 
-  // 最热分类：复用「分类热度榜」同一套桶聚合口径，避免两处热度算法漂移
-  const topCategoryLabel = useMemo(() => {
-    const first = aggregateCategoryHeat(trending)[0];
-    if (!first) return null;
-    return WIDE_CATEGORIES.find((c) => c.key === first.key)?.label ?? null;
-  }, [trending]);
+/** 热度值显示：≥100 取整（TMDB popularity 上不封顶），<100 保留 1 位小数 */
+function formatHeat(popularity: number): string {
+  return popularity >= 100 ? Math.round(popularity).toString() : popularity.toFixed(1);
+}
 
-  const hasPersonal = continueCount > 0 || favoriteCount > 0;
+export default function HomeTopStrip({ continueCount, favoriteCount, trending }: HomeTopStripProps) {
+  // 热度 Top20（用户需求 2026-10-09）：popularity 降序，轮播池
+  const heatTop20 = useMemo(
+    () => [...trending].sort((a, b) => b.popularity - a.popularity).slice(0, 20),
+    [trending],
+  );
+  const [heatIndex, setHeatIndex] = useState(0);
+
+  // 5s 自动轮换（上下切换）：数据集变化时归零重建定时器
+  useEffect(() => {
+    setHeatIndex(0);
+    if (heatTop20.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setHeatIndex((i) => (i + 1) % heatTop20.length);
+    }, ROTATE_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [heatTop20]);
 
   return (
     <div className="home-topstrip">
       <div className="home-topstrip__inner">
-        <span className="home-topstrip__crumb">公告</span>
-        {trending.length > 0 && (
-          <>
-            <span className="home-topstrip__sep" aria-hidden="true" />
-            <span className="home-topstrip__stat">
-              今日趋势 <b>{trending.length}</b> 条
-              {/* 2026-09-11（用户要求）：原左栏榜头 `.cqa-heat-row__head` 的口径说明 ⓘ
-                  迁到这里 —— 左栏榜单头已删除，趋势榜的「排名口径」提示随标题一起上移。 */}
-              <InfoTip
-                label="今日趋势口径说明"
-                text="取自 TMDB /trending/all/day 的每日趋势榜，按 TMDB 趋势算法排名（非 popularity 数值排序），每 6 小时更新。左栏「今日趋势」榜即此排名前 20 条；完整分类榜单见顶部导航分类入口。"
-              />
-            </span>
-          </>
-        )}
-        {topCategoryLabel && (
-          <>
-            <span className="home-topstrip__sep" aria-hidden="true" />
-            <span className="home-topstrip__stat">
-              <Icon icon={Flame} size="xs" className="home-topstrip__flame" />
-              最热分类 <b>{topCategoryLabel}</b>
-            </span>
-          </>
+        <span className="home-topstrip__crumb">今日热度趋势</span>
+        {heatTop20.length > 0 && (
+          <div className="home-topstrip__rotator" role="status" aria-label="今日热度趋势">
+            <div
+              className="home-topstrip__rotator-track"
+              /* 位移 = 条数 × 单条高（--rotator-h 定义在 Home.css .home-topstrip__rotator）。
+                 禁用 translateY(-N%)：百分比相对 track 自身总高（N 条堆叠），
+                 N% 一步会跳出整屏（2026-10-10 用户报「漂移后空白」根因）。 */
+              style={{ transform: `translateY(calc(-${heatIndex} * var(--rotator-h)))` }}
+            >
+              {heatTop20.map((item) => (
+                <span key={item.id} className="home-topstrip__rotator-item">
+                  {/* 热度/评分样式参考 chart 页 card（Chart.css .chart-row__heat .n/.v）：
+                     热度 = 暖橙 --color-warning-text 加粗 + Flame，评分 = 次级色 + Star，
+                     数字 tabular-nums（配色口径 2026-10-10 用户指定） */}
+                  <span className="home-topstrip__heat">
+                    <Icon icon={Flame} size="xs" />
+                    {formatHeat(item.popularity)}
+                  </span>
+                  <span className="home-topstrip__heat-title">{item.title}</span>
+                  {/* 年份/类型 = 胶囊（镜像 chart-row__badge：tag-bg + radius-sm） */}
+                  {item.year != null && <span className="home-topstrip__meta">{item.year}</span>}
+                  <span className="home-topstrip__meta">{item.mediaType === 'tv' ? '剧集' : '电影'}</span>
+                  {item.voteAverage > 0 && (
+                    <span className="home-topstrip__score">
+                      <Icon icon={Star} size="xs" />
+                      {item.voteAverage.toFixed(1)}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
         <div className="home-topstrip__right">
-          {hasPersonal && (
-            <>
-              {continueCount > 0 && (
-                <span className="home-topstrip__pill">继续观看 {continueCount}</span>
-              )}
-              {favoriteCount > 0 && (
-                <span className="home-topstrip__pill">收藏 {favoriteCount}</span>
-              )}
-            </>
+          {continueCount > 0 && (
+            <span className="home-topstrip__pill">继续观看 {continueCount}</span>
           )}
-          <Link
-            to="/chart"
-            className="home-topstrip__more"
-            aria-label="查看完整热度榜"
-          >
-            完整热度榜
-            <Icon icon={ChevronRight} size="xs" />
-          </Link>
+          {favoriteCount > 0 && (
+            <span className="home-topstrip__pill">收藏 {favoriteCount}</span>
+          )}
         </div>
       </div>
     </div>
