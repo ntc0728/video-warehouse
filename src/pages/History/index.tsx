@@ -538,12 +538,42 @@ export default function HistoryPage() {
     const panelRect = timeline.getBoundingClientRect();
     if (panelRect.width <= 0) return; // 面板隐藏（移动端）时跳过
 
+    // 面板高度贴合滚动容器底缘（Q1-A JS 精确测量，2026-10-10）：
+    // CSS 固定 height: calc(100vh - --header-height) 仅在 sticky 吸附后成立；
+    // 未吸附（scrollTop=0）时面板位于容器顶距 chromeTop 之下，固定高度会向下
+    // 溢出 chromeTop 像素 → 「只有一条观看记录也出现滚动条」的假滚动。
+    // 公式 height = 容器可视高 − chromeTop − 面板下方间隙 ⇒ 面板（连同其所在
+    // 内容列）底缘恒不越过容器底缘；吸附后 chromeTop=0，退化为原 calc 值。
+    // 下方间隙 = 祖先链 padding-bottom/margin-bottom（768–1023 档
+    // .record-content 有 padding-bottom 9.5px），随断点变化故逐帧现算。
+    // 先读全部几何/样式，再统一写入，避免读-写交替触发额外强制回流；
+    // 高度仅在结果变化时写，避免 ResizeObserver（observe timeline）回环。
+    const scroller = scrollContainerRef.current;
+    let nextH = -1;
+    if (scroller) {
+      const scRect = scroller.getBoundingClientRect();
+      const chromeTop = Math.max(0, panelRect.top - scRect.top);
+      let belowSpace = parseFloat(getComputedStyle(timeline).marginBottom) || 0;
+      let node = timeline.parentElement;
+      while (node && node !== scroller) {
+        const cs = getComputedStyle(node);
+        belowSpace += (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.marginBottom) || 0);
+        node = node.parentElement;
+      }
+      nextH = Math.floor(scRect.height - chromeTop - belowSpace);
+    }
+
     const keys = GROUP_ORDER.filter((k) => groupRefs.current[k] && beadRefs.current[k]);
     // 先批量读分组位置，再写 transform，避免读-写交替触发布局抖动
     const tops: number[] = keys.map((key) => {
       const g = groupRefs.current[key];
       return g ? g.getBoundingClientRect().top : 0;
     });
+
+    if (nextH > 0 && timeline.style.height !== `${nextH}px`) {
+      timeline.style.height = `${nextH}px`;
+    }
+
     const step = beadStepRef.current;
     keys.forEach((key, i) => {
       const bead = beadRefs.current[key];
@@ -552,7 +582,7 @@ export default function HistoryPage() {
       const trackY = tops[i] - panelRect.top;
       bead.style.transform = `translateY(${Math.max(pileY, trackY)}px)`;
     });
-  }, []);
+  }, [scrollContainerRef]);
 
   const scheduleBeadUpdate = useCallback(() => {
     if (beadRafRef.current != null) return;

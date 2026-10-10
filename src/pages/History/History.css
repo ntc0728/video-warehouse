@@ -185,6 +185,9 @@
     /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
     width: clamp(72px, 6vw, 96px);
     min-width: 0;
+    /* 固定高度仅在 sticky 吸附后与容器可视高相等；未吸附时会向下溢出顶距，
+       产生假滚动条。实际高度由 History/index.tsx updateBeadPositions 每帧按
+       「容器可视高 − 面板顶距」覆写（内联 style 优先），此处为 JS 未运行时的兜底。 */
     height: calc(100vh - var(--header-height));
   }
 
