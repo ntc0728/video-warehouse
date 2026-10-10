@@ -205,6 +205,12 @@ export default function DetailPage() {
   const [castExpanded, setCastExpanded] = useState(false);
   const [castOverflow, setCastOverflow] = useState(false);
   const castRowRef = useRef<HTMLDivElement>(null);
+  // hero logo 加载失败：不显示 <img>，回退到标题 <h1>（2026-10-10 用户要求）。
+  // 换片（id 变）时重置，避免上一片的失败态残留导致新 logo 不显示。
+  const [logoFailed, setLogoFailed] = useState(false);
+  // 发行公司 logo 加载失败集合：失败的公公司只隐图、保留公司名（2026-10-10 用户要求）。
+  const [failedCompanyLogos, setFailedCompanyLogos] = useState<Set<number>>(() => new Set());
+  useEffect(() => { setLogoFailed(false); setFailedCompanyLogos(new Set()); }, [id]);
   /** hero 文本区 ref：量其内容高反算海报列宽（--poster-w，见下方 effect 注释） */
   const heroInfoRef = useRef<HTMLDivElement>(null);
 
@@ -276,6 +282,12 @@ export default function DetailPage() {
     () => cmsResults.filter((r) => r.video),
     [cmsResults],
   );
+
+  // running 胶囊轮播文本（2026-10-10 用户要求：移入胶囊、末尾不再重复「资源」）。
+  // 源名如「豆瓣资源」已含「资源」，旧模板又追一个「资源」→ 「豆瓣资源资源」。
+  const runningText = querySourceNames.length > 0
+    ? `正在查询${querySourceNames[queryMsgIndex % querySourceNames.length]}…`
+    : '正在匹配播放源…';
 
   // 剧照网格：根据容器实际列数限制显示 2 行
   const stillsGridRef = useRef<HTMLDivElement | null>(null);
@@ -428,52 +440,79 @@ export default function DetailPage() {
     const videoYear = year;
 
     try {
-      let results: DetailSourceResult[];
+      // 增量上屏（2026-10-10 用户要求）：每源一返回即 setCmsResults 追加，
+      // 首条可用结果到达即停掉网格大转圈、显示数据，其余源陆续补上。
+      const pushOne = (r: DetailSourceResult) => {
+        if (ctrl.signal.aborted) return;
+        setCmsResults((prev) => [...prev, r]);
+      };
       if (tmdbMediaType === 'tv') {
-        // 剧集：获取 CMS 查到的所有季（所有结果）
-        const settled = await Promise.allSettled(
+        // 剧集：逐源并发查所有季，每源完成即上屏
+        await Promise.allSettled(
           indices.map(async (index) => {
-            if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-            const res = await searchVideoSeasonsFromSingleSource(index, videoTitle, videoYear, ctrl.signal);
-            const entries = Array.from(res.seasons.entries()).sort((a, b) => a[0] - b[0]);
-            let seasonVideos = entries.map(([, v]) => v);
-            let seasonNums = entries.map(([n]) => n);
-            // 降级：CMS 未按季拆分时，整剧作为单季
-            if (seasonVideos.length === 0) {
-              const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
-              const v0 = single[0]?.video;
-              if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
+            let r: DetailSourceResult;
+            try {
+              if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+              const res = await searchVideoSeasonsFromSingleSource(index, videoTitle, videoYear, ctrl.signal);
+              const entries = Array.from(res.seasons.entries()).sort((a, b) => a[0] - b[0]);
+              let seasonVideos = entries.map(([, v]) => v);
+              let seasonNums = entries.map(([n]) => n);
+              // 降级：CMS 未按季拆分时，整剧作为单季
+              if (seasonVideos.length === 0) {
+                const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
+                const v0 = single[0]?.video;
+                if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
+              }
+              r = {
+                sourceIndex: res.sourceIndex,
+                sourceId: res.sourceId,
+                sourceName: res.sourceName,
+                video: seasonVideos[0] ?? null,
+                seasons: seasonVideos,
+                seasonNumbers: seasonNums,
+                isSeries: seasonVideos.length > 0,
+                error: seasonVideos.length > 0 ? undefined : (res.error ?? '未找到匹配资源'),
+              };
+            } catch (e) {
+              r = {
+                sourceIndex: index, sourceId: '', sourceName: '未知',
+                video: null, seasons: [], seasonNumbers: [], isSeries: false,
+                error: e instanceof Error ? e.message : '请求失败',
+              };
             }
-            return {
-              sourceIndex: res.sourceIndex,
-              sourceId: res.sourceId,
-              sourceName: res.sourceName,
-              video: seasonVideos[0] ?? null,
-              seasons: seasonVideos,
-              seasonNumbers: seasonNums,
-              isSeries: seasonVideos.length > 0,
-              error: seasonVideos.length > 0 ? undefined : (res.error ?? '未找到匹配资源'),
-            } as DetailSourceResult;
+            pushOne(r);
           }),
         );
-        results = settled.map((r, i) => {
-          if (r.status === 'fulfilled') return r.value;
-          return {
-            sourceIndex: indices[i], sourceId: '', sourceName: '未知',
-            video: null, seasons: [], seasonNumbers: [], isSeries: false,
-            error: r.reason instanceof Error ? r.reason.message : '请求失败',
-          } as DetailSourceResult;
-        });
       } else {
-        // 电影：带年份限制搜索，取最佳匹配
-        const rs = await searchVideoFromMultipleSources(indices, videoTitle, videoYear, ctrl.signal);
-        results = rs.map((r) => ({ ...r, seasons: [], seasonNumbers: [], isSeries: false }) as DetailSourceResult);
+        // 电影：逐源并发（带年份限制），每源完成即上屏
+        await Promise.allSettled(
+          indices.map(async (index) => {
+            let r: DetailSourceResult;
+            try {
+              if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+              const rs = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
+              const one = rs[0];
+              r = one
+                ? ({ ...one, seasons: [], seasonNumbers: [], isSeries: false } as DetailSourceResult)
+                : {
+                  sourceIndex: index, sourceId: '', sourceName: '未知',
+                  video: null, seasons: [], seasonNumbers: [], isSeries: false, error: '未找到匹配资源',
+                };
+            } catch (e) {
+              r = {
+                sourceIndex: index, sourceId: '', sourceName: '未知',
+                video: null, seasons: [], seasonNumbers: [], isSeries: false,
+                error: e instanceof Error ? e.message : '请求失败',
+              };
+            }
+            pushOne(r);
+          }),
+        );
       }
       if (ctrl.signal.aborted) return;
-
-      setCmsResults(results);
       setCmsLoaded(true);
     } catch (err) {
+      // 每源已各自 catch，此处仅兜底整体异常（如 getEnabledVideoSourceIndices 失败）
       if (!ctrl.signal.aborted) setCmsError(err instanceof Error ? err.message : '获取播放源失败');
     } finally {
       if (!ctrl.signal.aborted) setCmsLoading(false);
@@ -752,7 +791,7 @@ export default function DetailPage() {
   if ((runtime ?? 0) > 0) factCells.push({ key: 'runtime', label: '时长', value: `${runtime} 分钟` });
   if (originalLanguage) factCells.push({ key: 'lang', label: '语言', value: `${originalLanguage.toUpperCase()}${spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}` });
   if (director) factCells.push({ key: 'director', label: '导演', value: director });
-  if (isTV && createdBy.length > 0) factCells.push({ key: 'createdBy', label: '主创', value: createdBy.join(' / ') });
+  // 主创（createdBy）移出普通格，改与下方「国家 / 发行」一致独占整行（2026-10-10 用户要求）。
   if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0) factCells.push({ key: 'budget', label: '预算', value: formatCurrency((d as TMDBMovieDetail).budget) });
   if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0) factCells.push({ key: 'revenue', label: '票房', value: formatCurrency((d as TMDBMovieDetail).revenue) });
   if (isTV) factCells.push({ key: 'seasonEp', label: '季 / 集', value: `${totalSeasons} 季 / ${totalEpisodes} 集` });
@@ -811,9 +850,9 @@ export default function DetailPage() {
                 </a>
               )}
             </div>
-            {/* Logo 或标题 */}
-            {logoPath ? (
-              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w342') || ''} alt={title} width={400} height={150} />
+            {/* Logo 或标题：logo 存在且未加载失败时显图，否则回退标题 */}
+            {logoPath && !logoFailed ? (
+              <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w342') || ''} alt={title} width={400} height={150} onError={() => setLogoFailed(true)} />
             ) : (
               <h1 className="detail-hero-title">{title}</h1>
             )}
@@ -936,6 +975,12 @@ export default function DetailPage() {
               ))}
               {/* 国家 / 发行：grid 内独占整行（grid-column 1/-1，行距与格同源由 gap 提供），
                   label 左·值右同行基线对齐，放不下自然换行（不折叠） */}
+            {isTV && createdBy.length > 0 && (
+              <div className="detail-fact detail-fact--full">
+                <span>主创</span>
+                <strong>{createdBy.join(' / ')}</strong>
+              </div>
+            )}
             {countries.length > 0 && (
               <div className="detail-fact detail-fact--full">
                 <span>国家</span>
@@ -948,7 +993,14 @@ export default function DetailPage() {
                 <strong className="detail-companies">
                   {companies.map((c) => (
                     <span key={c.id} className="detail-company">
-                      {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
+                      {c.logo_path && !failedCompanyLogos.has(c.id) && (
+                        <img
+                          src={buildImageUrl(c.logo_path, 'w92') || ''}
+                          alt={c.name}
+                          className="detail-company-logo"
+                          onError={() => setFailedCompanyLogos((prev) => new Set(prev).add(c.id))}
+                        />
+                      )}
                       {c.name}
                     </span>
                   ))}
@@ -968,11 +1020,14 @@ export default function DetailPage() {
                       state={{ from: `/detail/${id}` }}
                       className="detail-cast-item"
                     >
-                      {c.profile_path ? (
-                        <img src={buildImageUrl(c.profile_path, 'w185') || ''} alt={c.name} width={200} height={300} />
-                      ) : (
-                        <span className="detail-cast-avatar"><UsersIcon size="sm" /></span>
-                      )}
+                      {/* 演员头像：LazyImage 统一「加载中骨架 / 失败兜底 / 无图」三态，
+                          失败与无 profile_path 都落同一 UsersIcon 占位（与 video card 封面效果一致）。 */}
+                      <LazyImage
+                        src={c.profile_path ? buildImageUrl(c.profile_path, 'w185') || '' : ''}
+                        alt={c.name}
+                        className="detail-cast-img"
+                        fallback={<span className="detail-cast-avatar"><UsersIcon size="sm" /></span>}
+                      />
                       <span className="detail-cast-name">{c.name}</span>
                       <span className="detail-cast-role">{c.character}</span>
                     </Link>
@@ -1059,7 +1114,7 @@ export default function DetailPage() {
         {/* 播放列表 */}
         {activeTab === 'sources' && (
           <div className="detail-sources">
-            {cmsLoading ? (
+            {cmsLoading && availableResults.length === 0 ? (
               <div className="detail-sources-container">
                 <div className="detail-sources-header">
                   <div className="detail-sources-header-left">
@@ -1074,17 +1129,14 @@ export default function DetailPage() {
                       ok={srcDetect.ok}
                       fail={srcDetect.fail}
                       results={srcDetect.results}
+                      runningText={runningText}
                     />
                   </div>
                 </div>
                 <div className="detail-sources-grid">
+                  {/* 大转圈仅「loading 且首条结果未到」时显示；文案已移入胶囊（req2），此处不再重复 */}
                   <div className="playlist-query" aria-busy="true" aria-label="正在匹配播放源">
                     <div className="playlist-query-spinner" aria-hidden="true" />
-                    <p className="playlist-query-text">
-                      {querySourceNames.length > 0
-                        ? `正在查询${querySourceNames[queryMsgIndex % querySourceNames.length]}资源…`
-                        : '正在匹配播放源…'}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -1120,6 +1172,7 @@ export default function DetailPage() {
                       ok={srcDetect.ok}
                       fail={srcDetect.fail}
                       results={srcDetect.results}
+                      runningText={runningText}
                     />
                   </div>
                 </div>
@@ -1276,11 +1329,15 @@ export default function DetailPage() {
             {seasons.filter((s) => s.season_number > 0).map((s) => (
               <div key={s.id} className="detail-season-card">
                 <div className="detail-season-poster">
-                  {s.poster_path ? (
-                    <img src={buildImageUrl(s.poster_path, 'w300') || ''} alt={s.name} width={300} height={450} />
-                  ) : (
-                    <span className="detail-cast-avatar"><Icon icon={Layers} size="md" /></span>
-                  )}
+                  {/* 季海报：LazyImage 统一加载/失败/无图三态，失败与无图都落矩形占位（与 video card 封面一致）。 */}
+                  <LazyImage
+                    src={s.poster_path ? buildImageUrl(s.poster_path, 'w300') || '' : ''}
+                    alt={s.name}
+                    className="detail-season-poster-img"
+                    fallback={(
+                      <span className="detail-season-poster__ph"><Icon icon={Layers} size="md" /></span>
+                    )}
+                  />
                 </div>
                 <div className="detail-season-info">
                   <h4 title={s.name}>{s.name}</h4>

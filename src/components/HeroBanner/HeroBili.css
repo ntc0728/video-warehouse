@@ -15,7 +15,9 @@
 
 .hero-bili {
   display: none;
-  margin-bottom: var(--space-sm);
+  /* 2026-10-10 用户反馈「继续观看标题与上方模块间距有点大」：hero 底距从 --space-sm 收到
+     --space-xs，与行间节奏（movierow margin-bottom --space-xs + padding-top --space-2xs）对齐 */
+  margin-bottom: var(--space-xs);
 }
 
 @media (width >= 1024px) {
@@ -40,11 +42,12 @@
 
 .hero-bili__banner {
   position: relative;
-  /* 2026-09-23：1440 实测右栏两行卡 ≈266px > token 恒定值 ≈255px → banner 矮 ~11px。
-     height:100% 撑满网格行（行高取右栏内容高），token 降级为 min-height 兜底
-     （骨架 .hero-bili__banner 同类共用，boot-splash 同步 min-height 防交接跳变） */
-  height: 100%;
-  min-height: var(--hero-banner-h);
+  /* 2026-10-10 用户要求「图片与图片对齐」：banner 下沿对齐右栏第二行【封面】下沿
+     （而非第二行标题条下沿）。网格行高 = 右栏两行卡总高（2 封面 + 2 标题条 + 行gap），
+     banner 取 100% 再减一个标题条高 → 下沿正好落在第二行封面底，第二行标题条悬于其下。
+     token 降级为 min-height 兜底（同减一个标题条，与 height 口径一致；骨架共用本类）。 */
+  height: calc(100% - var(--hero-title-bar-h));
+  min-height: calc(var(--hero-banner-h) - var(--hero-title-bar-h));
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
   background: var(--color-media-surface);
@@ -175,23 +178,41 @@
    --color-on-image-rating 专用色）。TSX 侧缺字段不渲染对应 chip（无硬造）。 */
 .hero-bili__meta {
   display: flex;
+  /* 2026-10-10 用户要求：胶囊再收小、彼此间距稍拉大。gap --space-2xs → --space-xs */
   gap: var(--space-xs);
   align-items: center;
   margin-top: var(--space-2xs);
-  font-size: var(--text-base);
+  /* 字号再收一档：--text-xs → --text-2xs */
+  font-size: var(--text-2xs);
 }
 
+/* 胶囊配色（2026-10-10 用户交由定夺）：采用「单一强调 + 中性玻璃」同族——
+   caption 恒深色渐变底，基础胶囊用半透白玻璃 + 白字（年份），评分=金色强调（唯一亮点），
+   类型=淡翡翠玻璃（保留语义区分但不扎眼）。比三枚亮粉彩更收敛、与深色字幕更融。
+   尺寸同步收窄（padding 横向 --space-sm → --space-xs）。rgba 不走 hex，避开硬编码色 lint。
+   ⚠️ 变体选择器需 `.hero-bili__meta > .xxx`（0,2,0）才能压过基座 `.hero-bili__meta > span`（0,1,1）。 */
 .hero-bili__meta > span {
-  padding: var(--space-3xs) var(--space-sm);
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.45);
+  /* 2026-10-10 用户定稿「调扁、参看历史页 card 标签」：对齐 .record-card__badge-type ——
+     radius-full 胶囊 → radius-sm 小圆角扁标签；字号维持 --text-2xs（两处已一致）；
+     横向 padding 图上空间敏感用 --space-xs（历史页 --space-sm）。
+     行高 1.5 → 1.2（2026-10-10 用户追加「chip 高度再调小」）：高度 20.1 → ≈16.8px。 */
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.18);
   color: var(--color-on-image);
+  line-height: 1.2;
+  backdrop-filter: blur(6px);
   font-variant-numeric: tabular-nums;
 }
 
-.hero-bili__rating {
-  color: var(--color-on-image-rating);
+.hero-bili__meta > .hero-bili__rating {
+  background: rgba(250, 204, 21, 0.92);
+  color: rgba(0, 0, 0, 0.82);
   font-weight: 600;
+}
+
+.hero-bili__meta > .hero-bili__type {
+  background: rgba(52, 211, 153, 0.3);
 }
 
 /* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），

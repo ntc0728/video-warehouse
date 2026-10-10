@@ -157,6 +157,17 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   }
 }
 
+/* 首页推荐行上下间距收紧（2026-10-10 用户反馈偏大）：桌面去卡片化后行内 padding
+   不再服务卡片留白，纵向从 --space-sm 收到 --space-2xs、行间距 margin 收到 --space-xs
+   （行间隔由 ≈3×space-sm 降到 ≈space-xs+2×space-2xs）；横向 padding 维持 --space-sm
+   保证与页面内容左右对齐。移动端（≤767 / app）保留原卡片节奏。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .home-page .tmdb-movierow {
+    margin-bottom: var(--space-xs);
+    padding: var(--space-2xs) var(--space-sm);
+  }
+}
+
 /* ── Empty / Error ──────────────────────────────────── */
 
 .home-empty {
@@ -510,7 +521,11 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
-  margin-bottom: var(--space-sm);
+  /* 2026-10-10 用户要求：下方间距与上方一致。上方 = .home-page padding-top（--space-sm），
+     下方原本 = margin-bottom(--space-sm) + HeroBili 网格 padding-top(--space-sm) = 2×space-sm（偏大）。
+     去掉本行 margin-bottom → 下方视觉间距 = 网格 padding-top = --space-sm，与上方齐平。
+     （topstrip 仅宽屏渲染，此时 HeroBili 必在，网格 padding-top 恒存在。） */
+  margin-bottom: 0;
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -560,8 +575,24 @@ html[data-device="app"] .home-disclaimer {
   align-items: center;
   min-width: 0;
   height: var(--rotator-h);
+  /* 2026-10-10 用户要求：轮播条可点击跳详情（<Link>）+ hover 样式变化。
+     padding-inline 撑出 hover 背景呼吸区，margin-inline 负值抵消 → 文字位置不变。 */
+  margin-inline: calc(-1 * var(--space-2xs));
+  padding-inline: var(--space-2xs);
+  border-radius: var(--radius-sm);
   color: var(--color-text-tertiary);
+  text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-sm) ease, color var(--dur-sm) ease;
+}
+
+.home-topstrip__rotator-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.home-topstrip__rotator-item:hover .home-topstrip__heat-title {
+  color: var(--color-primary);
 }
 
 /* 热度（2026-10-10 用户指定参考 chart 页 card = Chart.css .chart-row__heat .n）：
@@ -639,7 +670,16 @@ html[data-device="app"] .home-disclaimer {
      pill 底色同值会隐形 → 改 surface（白）保持胶囊可辨 */
   background: var(--color-surface);
   color: var(--color-text-secondary);
+  /* 2026-10-10 用户要求：继续观看/收藏 pill 可点击跳对应页（<Link>） */
+  text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-sm) ease, background var(--dur-sm) ease;
+}
+
+.home-topstrip__pill:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

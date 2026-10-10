@@ -15,6 +15,7 @@
  *       （与「顶栏对齐」补强同一契约）。
  */
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Flame, Star } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import type { TMDBVideoItem } from '@/types/tmdb';
@@ -68,7 +69,13 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
               style={{ transform: `translateY(calc(-${heatIndex} * var(--rotator-h)))` }}
             >
               {heatTop20.map((item) => (
-                <span key={item.id} className="home-topstrip__rotator-item">
+                <Link
+                  key={item.id}
+                  to={`/detail/${item.id}`}
+                  state={{ from: '/' }}
+                  className="home-topstrip__rotator-item"
+                  aria-label={`查看 ${item.title} 详情`}
+                >
                   {/* 热度/评分样式参考 chart 页 card（Chart.css .chart-row__heat .n/.v）：
                      热度 = 暖橙 --color-warning-text 加粗 + Flame，评分 = 次级色 + Star，
                      数字 tabular-nums（配色口径 2026-10-10 用户指定） */}
@@ -86,17 +93,17 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
                       {item.voteAverage.toFixed(1)}
                     </span>
                   )}
-                </span>
+                </Link>
               ))}
             </div>
           </div>
         )}
         <div className="home-topstrip__right">
           {continueCount > 0 && (
-            <span className="home-topstrip__pill">继续观看 {continueCount}</span>
+            <Link to="/history" className="home-topstrip__pill" aria-label="前往历史（继续观看）">继续观看 {continueCount}</Link>
           )}
           {favoriteCount > 0 && (
-            <span className="home-topstrip__pill">收藏 {favoriteCount}</span>
+            <Link to="/collections" className="home-topstrip__pill" aria-label="前往收藏">收藏 {favoriteCount}</Link>
           )}
         </div>
       </div>

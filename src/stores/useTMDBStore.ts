@@ -1096,6 +1096,17 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       // hasMore 判断：API 未到最后一页就允许懒加载
       const hasMore = page < data.total_pages;
 
+      // total_results 修正（2026-10-10 修「搜到 1 条却显示很多页」）：
+      //   /search/multi 的 total_results 含人物/其它类型且未经客户端筛选，
+      //   而本页 items 已过滤到只剩 movie/tv。直接用原始 total 会把
+      //   「1 部电影 + 一堆人物」虚报成很多逻辑页 → 分页组件误显、翻页全空。
+      //   按本页「视频条数 / 原始条数」比例折算出视频口径的总数估计。
+      const rawCount = data.results.length;
+      const videoCount = items.length;
+      const estimatedTotalResults = rawCount > 0
+        ? Math.min(data.total_results, Math.round(data.total_results * (videoCount / rawCount)))
+        : videoCount;
+
       set((s) => {
         const mergedResults = page > 1 && !forceReset
           ? dedupeById([...s.discoverResults, ...items])
@@ -1106,8 +1117,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           discoverPagination: {
             page: data.page,
             totalPages: hasMore ? data.total_pages : data.page,
-            // 真实命中总数（不再用当前页条数，避免「共 40 条」误导）
-            totalResults: data.total_results,
+            // 折算后的视频口径总数（避免人物污染导致分页虚高）
+            totalResults: estimatedTotalResults,
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
