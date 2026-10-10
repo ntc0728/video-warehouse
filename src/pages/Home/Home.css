@@ -543,20 +543,37 @@ html[data-device="app"] .home-disclaimer {
   min-width: 0;
 }
 
+/* 今日热度趋势「整体」卡片（2026-10-11 用户澄清：卡片作用于标题+轮播整组）：
+   surface-elevated 底 + 发丝边框 + radius-md；右侧个人 pill 在卡外。 */
+.home-topstrip__trend {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--space-sm);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 标题锁定不压缩（2026-10-11 修 bug：rotator flex:1 抢曾宽把 crumb 挤扁） */
 .home-topstrip__crumb {
+  flex-shrink: 0;
   color: var(--color-text-tertiary);
+  white-space: nowrap;
 }
 
 /* ── 热度 Top20 轮播（2026-10-09 用户需求）──────────────────
-   公告位单条显示，5s 自动切换，纵向上下滑动（translateY 按 100% 步进）。
-   视口固定单行高（1.6em ≈ 条内 --text-xs 的行高位），overflow:hidden 裁掉其余条目；
-   track 纵向 flex，每条 flex-basis 100% = 一个视口高。切换过渡走 --dur-base。 */
+   公告位单条显示，5s 自动切换，纵向上下滑动（translateY 按单条高步进）。
+   rotator 占趋势卡内 crumb 之后的剩余宽度（flex:1 1 auto），track/item 铺满 100%。 */
 .home-topstrip__rotator {
   /* 单条高度收敛为本变量（2026-10-10）：轮播位移 = 条数 × 单条高，
      track（20 条堆叠）与 item 必须共读它 —— 曾用 translateY(-100%)，
-     百分比相对 track 自身总高（20 条）→ 一步跳 20 行滚出可视区（漂移空白） */
+     百分比相对 track 自身总高（20 条）→ 一步跳 20 行滚出可视区（漂移空白）。 */
   --rotator-h: 1.6em;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   height: var(--rotator-h);
   overflow: hidden;
@@ -565,18 +582,20 @@ html[data-device="app"] .home-disclaimer {
 .home-topstrip__rotator-track {
   display: flex;
   flex-direction: column;
+  width: 100%;
   transition: transform var(--dur-base) var(--ease-standard);
 }
 
 .home-topstrip__rotator-item {
   display: flex;
   flex: 0 0 var(--rotator-h);
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   align-items: center;
+  width: 100%;
   min-width: 0;
   height: var(--rotator-h);
-  /* 2026-10-10 用户要求：轮播条可点击跳详情（<Link>）+ hover 样式变化。
-     padding-inline 撑出 hover 背景呼吸区，margin-inline 负值抵消 → 文字位置不变。 */
+  /* 轮播项本身素净（卡片化在 .home-topstrip__trend 整体层）；hover 不变背景（2026-10-11 用户要求），
+     仅标题变色反馈。padding-inline + margin-inline 负值保持文字位置。 */
   margin-inline: calc(-1 * var(--space-2xs));
   padding-inline: var(--space-2xs);
   border-radius: var(--radius-sm);
@@ -584,11 +603,7 @@ html[data-device="app"] .home-disclaimer {
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--dur-sm) ease, color var(--dur-sm) ease;
-}
-
-.home-topstrip__rotator-item:hover {
-  background: var(--color-surface-hover);
+  transition: color var(--dur-sm) ease;
 }
 
 .home-topstrip__rotator-item:hover .home-topstrip__heat-title {
@@ -644,10 +659,21 @@ html[data-device="app"] .home-disclaimer {
 }
 
 .home-topstrip__heat-title {
-  flex: 0 1 auto;
-  min-width: 0;
+  /* 标题（电影/剧集名）不截断（2026-10-11 用户要求）：flex-shrink:0 保全整名，
+     空间不足时由简介（__desc）单独收缩 ellipsis。 */
+  flex: 0 0 auto;
   color: var(--color-text);
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 简介（2026-10-11 用户需求）：评分后新增，取 TMDB overview。占剩余宽度（flex:1 1 auto），
+   空间不足时溢出隐藏（min-width:0 + ellipsis）；次级色、字重弱于标题。 */
+.home-topstrip__desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
