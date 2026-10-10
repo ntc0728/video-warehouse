@@ -136,6 +136,14 @@ export default function ProxySetup() {
     toast.show({ content: '已写入项目设置，可跳转设置页确认', type: 'success' });
   }, [resultUrl, kind, setCorsProxy, setIptvSettings, appendLog]);
 
+  // 部署流水线（状态监控台改版 2026-10-10）：纯派生展示，不改变部署行为
+  const pipeCredDone = Boolean(token.trim() && accountId.trim());
+  const pipeEntryDone = kind !== null;
+  const pipeDeployDone = Boolean(resultUrl);
+  const pipeActive = !pipeCredDone ? 1 : !pipeEntryDone ? 2 : !pipeDeployDone ? 3 : 4;
+  const pipeCls = (p: number) =>
+    `proxy-setup__pipe-step${p < pipeActive ? ' is-done' : ''}${p === pipeActive ? ' is-on' : ''}`;
+
   const page = (
     <div className="proxy-setup">
       <div className="proxy-setup__inner">
@@ -149,116 +157,136 @@ export default function ProxySetup() {
           </p>
         </header>
 
-        {/* 两个独立入口 */}
-        <div className="proxy-setup__grid">
-          <button
-            type="button"
-            className={`proxy-setup__card${kind === 'cors' ? ' is-selected' : ''}`}
-            onClick={() => handleSelectKind('cors')}
-          >
-            <div className="proxy-setup__card-head">
-              <Icon icon={Wifi} size="md" />
-              <span>视频采集 CORS 代理</span>
-            </div>
-            <p className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</p>
-          </button>
-          <button
-            type="button"
-            className={`proxy-setup__card${kind === 'iptv' ? ' is-selected' : ''}`}
-            onClick={() => handleSelectKind('iptv')}
-          >
-            <div className="proxy-setup__card-head">
-              <Icon icon={Activity} size="md" />
-              <span>IPTV 流代理</span>
-            </div>
-            <p className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</p>
-          </button>
-        </div>
+        {/* 四步流水线：凭证 → 选择部署项 → 部署 → 完成 */}
+        <ol className="proxy-setup__pipe">
+          <li className={pipeCls(1)}>
+            <i>01</i><b>登录凭证</b><span>Token + Account</span>
+          </li>
+          <li className={pipeCls(2)}>
+            <i>02</i><b>选择部署项</b><span>CORS / 流代理</span>
+          </li>
+          <li className={pipeCls(3)}>
+            <i>03</i><b>部署 Worker</b><span>实时日志</span>
+          </li>
+          <li className={pipeCls(4)}>
+            <i>04</i><b>完成</b><span>回写设置</span>
+          </li>
+        </ol>
 
-        {/* 日志方框 */}
-        <div className="proxy-setup__console" ref={logRef}>
-          {logs.map((l, i) => (
-            <span key={i} className={`proxy-setup__log proxy-setup__log--${l.type}`}>
-              <span className="proxy-setup__log-time">[{l.time}]</span> {l.msg}
-            </span>
-          ))}
-        </div>
-
-        {/* 登录 Cloudflare */}
-        <div className="proxy-setup__panel">
-          <h3 className="proxy-setup__panel-title"><Icon icon={ShieldCheck} size="sm" /> 登录 Cloudflare</h3>
-          <button type="button" className="proxy-setup__btn proxy-setup__btn--link" onClick={openCloudflareLogin}>
-            <span className="proxy-setup__btn-label">打开 Cloudflare 登录 / 创建 API Token</span>
-          </button>
-          <div className="proxy-setup__field">
-            <label htmlFor="cf-token">Cloudflare API Token</label>
-            <div className="proxy-setup__input-row">
-              <input
-                id="cf-token"
-                type={showToken ? 'text' : 'password'}
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="粘贴 API Token（Workers Scripts → Edit 权限）"
-              />
-              <button type="button" className="proxy-setup__btn proxy-setup__btn--ghost" onClick={() => setShowToken((v) => !v)}>
-                {showToken ? '隐藏' : '显示'}
+        <div className="proxy-setup__body">
+          <div className="proxy-setup__form">
+            {/* 两个独立入口 */}
+            <div className="proxy-setup__grid">
+              <button
+                type="button"
+                className={`proxy-setup__card${kind === 'cors' ? ' is-selected' : ''}`}
+                onClick={() => handleSelectKind('cors')}
+              >
+                <div className="proxy-setup__card-head">
+                  <Icon icon={Wifi} size="md" />
+                  <span>视频采集 CORS 代理</span>
+                </div>
+                <p className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</p>
+              </button>
+              <button
+                type="button"
+                className={`proxy-setup__card${kind === 'iptv' ? ' is-selected' : ''}`}
+                onClick={() => handleSelectKind('iptv')}
+              >
+                <div className="proxy-setup__card-head">
+                  <Icon icon={Activity} size="md" />
+                  <span>IPTV 流代理</span>
+                </div>
+                <p className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</p>
               </button>
             </div>
-          </div>
-          <div className="proxy-setup__field">
-            <label htmlFor="cf-account">Cloudflare Account ID</label>
-            <input
-              id="cf-account"
-              type="text"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              placeholder="dash.cloudflare.com 右侧可查"
-            />
-          </div>
-        </div>
 
-        {/* 开始配置 */}
-        <div className="proxy-setup__panel">
-          <div className="proxy-setup__action-row">
-            <button
-              type="button"
-              className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--lg"
-              onClick={handleDeploy}
-              disabled={deploying}
-            >
-              {deploying ? <Icon icon={Activity} size="sm" className="spin" /> : <Icon icon={Rocket} size="sm" />}
-              {deploying ? '配置中...' : '开始一键配置 Worker'}
-            </button>
-            <span className="proxy-setup__action-hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
-          </div>
-        </div>
-
-        {/* 自定义域名 + 结果 */}
-        <div className="proxy-setup__panel">
-          <div className="proxy-setup__field">
-            <label htmlFor="cf-domain">自定义域名 <span className="proxy-setup__optional">（可选，留空则使用 Worker 默认链接）</span></label>
-            <input
-              id="cf-domain"
-              type="text"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）"
-            />
-          </div>
-          {resultUrl && (
-            <div className="proxy-setup__result">
-              <div className="proxy-setup__result-label">配置完成，复制以下链接到项目设置：</div>
-              <div className="proxy-setup__result-url">{resultUrl}</div>
-              <div className="proxy-setup__result-actions">
-                <button type="button" className="proxy-setup__btn" onClick={copyResult}>
-                  <Icon icon={Copy} size="sm" /> 复制链接
-                </button>
-                <button type="button" className="proxy-setup__btn proxy-setup__btn--primary" onClick={writeToSettings}>
-                  <Icon icon={Globe} size="sm" /> 自动写入设置
-                </button>
+            {/* 登录 Cloudflare */}
+            <div className="proxy-setup__panel">
+              <h3 className="proxy-setup__panel-title"><Icon icon={ShieldCheck} size="sm" /> 登录 Cloudflare</h3>
+              <button type="button" className="proxy-setup__btn proxy-setup__btn--link" onClick={openCloudflareLogin}>
+                <span className="proxy-setup__btn-label">打开 Cloudflare 登录 / 创建 API Token</span>
+              </button>
+              <div className="proxy-setup__field">
+                <label htmlFor="cf-token">Cloudflare API Token</label>
+                <div className="proxy-setup__input-row">
+                  <input
+                    id="cf-token"
+                    type={showToken ? 'text' : 'password'}
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    placeholder="粘贴 API Token（Workers Scripts → Edit 权限）"
+                  />
+                  <button type="button" className="proxy-setup__btn proxy-setup__btn--ghost" onClick={() => setShowToken((v) => !v)}>
+                    {showToken ? '隐藏' : '显示'}
+                  </button>
+                </div>
+              </div>
+              <div className="proxy-setup__field">
+                <label htmlFor="cf-account">Cloudflare Account ID</label>
+                <input
+                  id="cf-account"
+                  type="text"
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  placeholder="dash.cloudflare.com 右侧可查"
+                />
               </div>
             </div>
-          )}
+
+            {/* 开始配置 */}
+            <div className="proxy-setup__panel">
+              <div className="proxy-setup__action-row">
+                <button
+                  type="button"
+                  className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--lg"
+                  onClick={handleDeploy}
+                  disabled={deploying}
+                >
+                  {deploying ? <Icon icon={Activity} size="sm" className="spin" /> : <Icon icon={Rocket} size="sm" />}
+                  {deploying ? '配置中...' : '开始一键配置 Worker'}
+                </button>
+                <span className="proxy-setup__action-hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
+              </div>
+            </div>
+
+            {/* 自定义域名 + 结果 */}
+            <div className="proxy-setup__panel">
+              <div className="proxy-setup__field">
+                <label htmlFor="cf-domain">自定义域名 <span className="proxy-setup__optional">（可选，留空则使用 Worker 默认链接）</span></label>
+                <input
+                  id="cf-domain"
+                  type="text"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）"
+                />
+              </div>
+              {resultUrl && (
+                <div className="proxy-setup__result">
+                  <div className="proxy-setup__result-label">配置完成，复制以下链接到项目设置：</div>
+                  <div className="proxy-setup__result-url">{resultUrl}</div>
+                  <div className="proxy-setup__result-actions">
+                    <button type="button" className="proxy-setup__btn" onClick={copyResult}>
+                      <Icon icon={Copy} size="sm" /> 复制链接
+                    </button>
+                    <button type="button" className="proxy-setup__btn proxy-setup__btn--primary" onClick={writeToSettings}>
+                      <Icon icon={Globe} size="sm" /> 自动写入设置
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 深色控制台：全页唯一强对比锚点，与表单并排常驻 */}
+          <div className="proxy-setup__console" ref={logRef}>
+            {logs.map((l, i) => (
+              <span key={i} className={`proxy-setup__log proxy-setup__log--${l.type}`}>
+                <span className="proxy-setup__log-time">[{l.time}]</span> {l.msg}
+              </span>
+            ))}
+          </div>
         </div>
 
       </div>
