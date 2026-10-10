@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务流走查 · 状态监控台（源检测/代理配置改版方案）— 2026-10-10</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_console.css">
+</head>
+<body data-step="0" data-rail="closed" data-recheck="idle">
+
+<!-- ══════════ 走查顶栏 ══════════ -->
+<header class="wl-top">
+  <div class="wl-brand">
+    <span class="wl-brand-tag">走查 Demo</span>
+    <b>状态监控台</b>
+    <span class="wl-brand-sub">源检测 / 代理配置 · 任务流改版方案</span>
+  </div>
+  <ol class="wl-steps" id="wl-steps">
+    <li><button data-goto="0"><i>00</i>场景</button></li>
+    <li><button data-goto="1"><i>01</i>体检</button></li>
+    <li><button data-goto="2"><i>02</i>定位</button></li>
+    <li><button data-goto="3"><i>03</i>凭证</button></li>
+    <li><button data-goto="4"><i>04</i>部署</button></li>
+    <li><button data-goto="5"><i>05</i>复检</button></li>
+  </ol>
+  <div class="wl-note">2200 封顶 · <code>--page-pad-x</code> 侧距随视口真实生效</div>
+</header>
+
+<!-- ══════════ STEP 0 · 场景 ══════════ -->
+<section class="wl-scene wl-scene--intro" data-scene="0">
+  <div class="intro">
+    <p class="intro-kicker">场景 · 一个真实的运维时刻</p>
+    <h1 class="intro-title">「视频源突然挂了。<br>接下来的每一步，都该是同一个故事。」</h1>
+    <p class="intro-lede">现网两页是两个孤立的工具页：检测页只报问题不出口，配置页只出流程不接上下文。
+    本方案把它们串成一条<b>任务流走查</b>——同一套状态监控台语言，从发现到修复到复检闭环。</p>
+    <div class="intro-cards">
+      <button class="intro-card" data-goto="1">
+        <span class="intro-card-no">任务 A</span>
+        <b>查病</b>
+        <span>源检测 → 一键体检 → 异常定位</span>
+      </button>
+      <button class="intro-card" data-goto="3">
+        <span class="intro-card-no">任务 B</span>
+        <b>修病</b>
+        <span>代理配置 → 凭证 → 部署 → 复检</span>
+      </button>
+    </div>
+    <div class="intro-hint">或直接点顶部步骤条逐步走查 →</div>
+  </div>
+</section>
+
+<!-- ══════════ STEP 1/2/5 · 源检测（状态监控台） ══════════ -->
+<section class="wl-scene wl-scene--sc" data-scene="1">
+  <div class="mc mc--sc">
+    <header class="mc-head">
+      <div class="mc-headline">
+        <h1>源检测</h1>
+        <p>网络与数据源健康状态 · 结果缓存 30 分钟</p>
+      </div>
+      <div class="mc-headact">
+        <span class="mc-time">上次检测 <b>2 分钟前</b></span>
+        <button class="btn btn--ink" id="btn-recheck">一键检测</button>
+      </div>
+    </header>
+
+    <div class="mc-hero">
+      <div class="hero-verdict">
+        <div class="hero-num"><span id="hero-ok">3</span><em>/5</em></div>
+        <div class="hero-side">
+          <span class="hero-cap">检查域可用</span>
+          <b class="hero-state" id="hero-state">2 项待修复 · 备用源异常、代理未配置</b>
+        </div>
+      </div>
+      <ul class="hero-metrics" id="hero-metrics">
+        <li data-k="speed"><i class="dot dot--ok"></i><span>网速延迟</span><b>32ms</b></li>
+        <li data-k="iptv"><i class="dot dot--ok"></i><span>IPTV 源</span><b>4/5</b></li>
+        <li data-k="video" data-fixed="1"><i class="dot dot--err"></i><span>视频源</span><b>3/4</b></li>
+        <li data-k="cors" data-fixed="1"><i class="dot dot--err"></i><span>CORS 代理</span><b>未配置</b></li>
+        <li data-k="i-proxy" data-fixed="1"><i class="dot dot--idle"></i><span>IPTV 代理</span><b>未配置</b></li>
+      </ul>
+    </div>
+
+    <div class="mc-body">
+      <div class="mc-main">
+        <div class="mc-seg" id="sc-seg">
+          <button class="is-on" data-seg="all">全部 <i>7</i></button>
+          <button data-seg="iptv">IPTV 源 <i>2</i></button>
+          <button data-seg="video">视频源 <i>3</i></button>
+          <button data-seg="proxy">代理 <i>2</i></button>
+        </div>
+        <table class="mc-table" id="sc-table">
+          <thead>
+            <tr><th class="c-st">状态</th><th class="c-name">名称</th><th class="c-type">类型</th><th class="c-url">地址</th><th class="c-lat">延迟</th><th class="c-ago">最近</th></tr>
+          </thead>
+          <tbody>
+            <tr data-seg="iptv" data-id="iptv-a">
+              <td class="c-st"><span class="pill pill--ok">可用</span></td>
+              <td class="c-name">聚合源 IPTV-A</td><td class="c-type">IPTV</td>
+              <td class="c-url">https://example.com/iptv-a.m3u</td>
+              <td class="c-lat">32ms</td><td class="c-ago">2 分钟前</td>
+            </tr>
+            <tr data-seg="iptv" data-id="iptv-b">
+              <td class="c-st"><span class="pill pill--ok">可用</span></td>
+              <td class="c-name">聚合源 IPTV-B</td><td class="c-type">IPTV</td>
+              <td class="c-url">https://example.com/iptv-b.m3u</td>
+              <td class="c-lat">47ms</td><td class="c-ago">2 分钟前</td>
+            </tr>
+            <tr data-seg="video" data-id="video-a">
+              <td class="c-st"><span class="pill pill--ok">可用</span></td>
+              <td class="c-name">聚合源 A</td><td class="c-type">视频</td>
+              <td class="c-url">https://api.example.com/vod</td>
+              <td class="c-lat">45ms</td><td class="c-ago">2 分钟前</td>
+            </tr>
+            <tr data-seg="video" data-id="video-b">
+              <td class="c-st"><span class="pill pill--ok">可用</span></td>
+              <td class="c-name">聚合源 B</td><td class="c-type">视频</td>
+              <td class="c-url">https://api2.example.com/vod</td>
+              <td class="c-lat">58ms</td><td class="c-ago">2 分钟前</td>
+            </tr>
+            <tr class="is-bad" data-seg="video" data-id="video-fallback">
+              <td class="c-st"><span class="pill pill--err">异常</span></td>
+              <td class="c-name">备用源</td><td class="c-type">视频</td>
+              <td class="c-url">https://example.com/vod-c.m3u</td>
+              <td class="c-lat">—</td><td class="c-ago">2 分钟前</td>
+            </tr>
+            <tr class="is-idle" data-seg="proxy" data-id="proxy-cors">
+              <td class="c-st"><span class="pill pill--idle">未配置</span></td>
+              <td class="c-name">视频 CORS 代理</td><td class="c-type">代理</td>
+              <td class="c-url">—</td>
+              <td class="c-lat">—</td><td class="c-ago">—</td>
+            </tr>
+            <tr class="is-idle" data-seg="proxy" data-id="proxy-iptv">
+              <td class="c-st"><span class="pill pill--idle">未配置</span></td>
+              <td class="c-name">IPTV 流代理</td><td class="c-type">代理</td>
+              <td class="c-url">—</td>
+              <td class="c-lat">—</td><td class="c-ago">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="mc-tip" id="sc-tip">异常行点击可打开右侧详情 —— 试试「备用源」</p>
+      </div>
+
+      <aside class="mc-rail" id="sc-rail" aria-hidden="true">
+        <div class="rail-head">
+          <div>
+            <span class="pill pill--err" id="rail-pill">异常</span>
+            <h2 id="rail-name">备用源</h2>
+          </div>
+          <button class="rail-x" id="rail-close" aria-label="关闭">✕</button>
+        </div>
+        <dl class="rail-kv">
+          <div><dt>地址</dt><dd class="mono" id="rail-url">https://example.com/vod-c.m3u</dd></div>
+          <div><dt>最近错误</dt><dd class="mono is-err" id="rail-err">connect ETIMEDOUT (10s)</dd></div>
+          <div><dt>最近检测</dt><dd id="rail-ago">2 分钟前 · 连续失败 3 次</dd></div>
+          <div><dt>延迟</dt><dd id="rail-lat">—</dd></div>
+        </dl>
+        <div class="rail-advice">
+          <h3>建议动作</h3>
+          <p>该源直连不可达，符合「经代理回退」策略。部署视频 CORS 代理后，检测将自动切换代理链路复检。</p>
+          <button class="btn btn--ok" id="btn-to-px">去配置代理 →</button>
+        </div>
+        <div class="rail-history">
+          <h3>近 5 次</h3>
+          <ul class="mini-hist" id="rail-hist">
+            <li class="h-err"></li><li class="h-err"></li><li class="h-err"></li><li class="h-ok"></li><li class="h-ok"></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ STEP 3/4 · 代理配置（部署流水线） ══════════ -->
+<section class="wl-scene wl-scene--px" data-scene="3">
+  <div class="mc mc--px">
+    <header class="mc-head">
+      <div class="mc-headline">
+        <h1>一键配置代理</h1>
+        <p>Cloudflare Worker 部署向导 · Token 仅存内存不落盘</p>
+      </div>
+      <div class="mc-headact">
+        <span class="mc-time">入口上下文：<b id="px-context">备用源 · 视频 CORS</b></span>
+      </div>
+    </header>
+
+    <ol class="px-pipe" id="px-pipe">
+      <li data-p="1"><i>01</i><b>登录凭证</b><span>Token + Account</span></li>
+      <li data-p="2"><i>02</i><b>选择部署项</b><span>CORS / 流代理</span></li>
+      <li data-p="3"><i>03</i><b>部署 Worker</b><span>实时日志</span></li>
+      <li data-p="4"><i>04</i><b>完成</b><span>回写设置</span></li>
+    </ol>
+
+    <div class="px-grid">
+      <section class="px-form">
+        <div class="px-entries" id="px-entries">
+          <button class="entry is-selected" data-entry="cors">
+            <span class="entry-dot"></span>
+            <b>视频采集 CORS</b>
+            <span>解除浏览器跨域限制，恢复视频源可用性</span>
+          </button>
+          <button class="entry" data-entry="iptv">
+            <span class="entry-dot"></span>
+            <b>IPTV 流代理</b>
+            <span>转发 m3u8/hls 流，解决播放端防盗链</span>
+          </button>
+        </div>
+
+        <div class="px-field">
+          <label for="px-token">API Token</label>
+          <div class="px-input">
+            <input id="px-token" type="password" value="demo-token-xxxx-yyyy-zzzz" autocomplete="off">
+            <button id="px-eye" type="button">显示</button>
+          </div>
+          <p class="px-hint">仅在内存中使用，刷新即清除 · <a href="#" onclick="return false">打开 Cloudflare 创建 Token</a></p>
+        </div>
+
+        <div class="px-field">
+          <label for="px-acct">Account ID</label>
+          <div class="px-input"><input id="px-acct" type="text" value="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6" autocomplete="off"></div>
+        </div>
+
+        <div class="px-cta">
+          <button class="btn btn--ink" id="btn-deploy">开始一键配置 Worker</button>
+          <span class="px-cta-hint" id="deploy-hint">将创建/更新 <code>vod-cors-proxy</code>，并自动回写项目设置</span>
+        </div>
+      </section>
+
+      <aside class="px-console" aria-label="部署日志">
+        <div class="px-console-bar"><i></i><i></i><i></i><span>deploy.log</span></div>
+        <pre class="px-log" id="px-log"><code>[12:04:01] 等待部署指令…
+[12:04:01] 提示：Token 校验通过后开始</code></pre>
+      </aside>
+    </div>
+
+    <div class="px-result" id="px-result" hidden>
+      <div class="px-result-main">
+        <span class="pill pill--ok">部署成功</span>
+        <b class="mono" id="px-url">https://vod-cors-proxy.example.workers.dev</b>
+      </div>
+      <div class="px-result-act">
+        <button class="btn btn--sm" id="btn-copy">复制链接</button>
+        <button class="btn btn--sm btn--ok" id="btn-recheck-2">回源检测复检 →</button>
+      </div>
+      <p class="px-result-note">已自动写入「设置 → 代理」，下次检测将走代理链路。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 注释面板 ══════════ -->
+<aside class="wl-notes" id="wl-notes">
+  <div class="note" data-note="0">
+    <h3>00 · 场景</h3>
+    <p class="n-q"><b>问题</b>两页是孤立工具页，改版方向一直悬而未决（此前 iframe 四维对比壳形式被否）。</p>
+    <p class="n-o"><b>旧逻辑</b>壳层堆切换（页面×视口×A/B×旧新），评审对象反而被形式淹没。</p>
+    <p class="n-n"><b>新逻辑</b>任务流走查：按真实故障处理链，把两页作为同一台「状态监控台」连续演示。</p>
+  </div>
+  <div class="note" data-note="1">
+    <h3>01 · 一键体检</h3>
+    <p class="n-q"><b>问题</b>旧版 5 张 stat 卡 + 5 个胶囊 tab 平铺，没有统一的健康结论，异常被埋进多个 tab。</p>
+    <p class="n-o"><b>旧逻辑</b>卡片网格各自为政，用户要自己拼凑「到底几项是好的」。</p>
+    <p class="n-n"><b>新逻辑</b>Hero 先给结论（大号 3/5 + 待修复清单），指标条并排佐证；dense 表格一屏纵览，异常行红 tint 直接可点。</p>
+  </div>
+  <div class="note" data-note="2">
+    <h3>02 · 异常定位</h3>
+    <p class="n-q"><b>问题</b>旧版错误详情藏在 tab 深处的 result-card 文案里，看完没有出口。</p>
+    <p class="n-o"><b>旧逻辑</b>错误 = 面板内一段红字，用户得自己想「然后呢」。</p>
+    <p class="n-n"><b>新逻辑</b>行点击 → 右侧 inspector：错误、近 5 次、建议动作一站式，「去配置代理 →」直接接任务 B。</p>
+  </div>
+  <div class="note" data-note="3">
+    <h3>03 · 凭证与入口</h3>
+    <p class="n-q"><b>问题</b>旧版配置页两卡+表单顺排，用户不知道自己进行到哪、还剩几步。</p>
+    <p class="n-o"><b>旧逻辑</b>入口卡 / 登录 panel / 动作 panel / 结果块依次向下堆。</p>
+    <p class="n-n"><b>新逻辑</b>四步流水线常驻顶部（当前步高亮），首屏只放凭证+入口；深色控制台常驻右栏作强对比锚点，上下文回显「来自备用源」。</p>
+  </div>
+  <div class="note" data-note="4">
+    <h3>04 · 部署执行</h3>
+    <p class="n-q"><b>问题</b>旧版日志是页面下方一个孤立小黑框，与流程脱节。</p>
+    <p class="n-o"><b>旧逻辑</b>点按钮 → 下方小框滚字 → 再往下滚看结果。</p>
+    <p class="n-n"><b>新逻辑</b>部署 = 流水线 03→04 推进 + 控制台逐条日志 + 结果块收尾，一条视线看完；结果块直通「回源检测复检」。</p>
+  </div>
+  <div class="note" data-note="5">
+    <h3>05 · 复检闭环</h3>
+    <p class="n-q"><b>问题</b>旧版配完代理后要自己回检测页重新点一遍，无闭环叙事。</p>
+    <p class="n-o"><b>旧逻辑</b>两个页面各自为政，修没修好全靠用户记忆。</p>
+    <p class="n-n"><b>新逻辑</b>一键复检：异常行转绿、Hero 翻到 5/5 全绿——同一条任务流的终点即起点。</p>
+  </div>
+</aside>
+
+<!-- ══════════ 底部导航 ══════════ -->
+<footer class="wl-nav">
+  <button class="btn btn--ghost" id="btn-prev">← 上一步</button>
+  <span class="wl-nav-pos"><b id="nav-pos">1</b> / 6</span>
+  <button class="btn btn--ink" id="btn-next">下一步 →</button>
+</footer>
+
+<div class="wl-toast" id="wl-toast" hidden>已复制</div>
+<script src="./_steps.js"></script>
+</body>
+</html>

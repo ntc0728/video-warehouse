@@ -8,12 +8,15 @@ files:
   - src/pages/History/History.css（固定高兜底注释）
   - src/pages/SourceChecker/SourceChecker.css（2200 封顶 + 侧距）
   - src/pages/ProxySetup/ProxySetup.css（2200 封顶 + 侧距）
-  - changelogs/demos/demo-width-contract-2026-10-10/index.html（新增，壳）
-  - changelogs/demos/demo-width-contract-2026-10-10/a-source-checker.html（新增）
-  - changelogs/demos/demo-width-contract-2026-10-10/a-proxy-setup.html（新增）
+  - changelogs/demos/demo-width-contract-2026-10-10/index.html（新增，壳，已被整体重做取代、暂留）
+  - changelogs/demos/demo-width-contract-2026-10-10/a-source-checker.html（新增，候选 A v2，同上暂留）
+  - changelogs/demos/demo-width-contract-2026-10-10/a-proxy-setup.html（新增，候选 A v2，同上暂留）
+  - changelogs/demos/demo-status-console-2026-10-10/index.html（新增，任务流走查壳）
+  - changelogs/demos/demo-status-console-2026-10-10/_console.css（新增，监控台样式层）
+  - changelogs/demos/demo-status-console-2026-10-10/_steps.js（新增，步骤机与演示交互）
   - demos/e-proxy-setup.html（新增）
   - changelogs/README.md（Demo 索引登记一行）
-demo: changelogs/demos/demo-width-contract-2026-10-10/index.html
+demo: changelogs/demos/demo-status-console-2026-10-10/index.html
 ---
 
 # 历史页假滚动条修复 + 源检测/代理配置宽度契约接入 + 双候选 Demo
@@ -65,36 +68,33 @@ ProxySetup.css `padding: var(--space-xl) var(--space-md)`；两根容器均 `wid
 【验证】diag-width 实测 1440/1920/2560：A 根宽 1440/1920/2200、侧距 60/100/140，
 hScroll=0；2200 封顶命中徽章正确。
 
-## 三、双候选 UI 对比 Demo（阶段 3，待拍板）
+## 三、UI 改版 Demo（阶段 3 → 整体重做，待拍板）
 
-【问题】两页接入契约后，是否进一步换风格需对比评审。
+【问题】两页接入契约后，改版方向需评审；首轮「iframe 四维对比壳 + 候选 A/B」被用户
+拍板否决——「整个 demo 重来，换个思路」（A v1 保守合规版亦先被否「定位太保守」）。
 
-【旧逻辑】候选 A v1 曾以「现网真实结构 + 直链源码 CSS」为基准（保守合规版）；用户拍板
-「A 定位太保守」——A 必须是新 UI 设计方案，且选定风格方向 = 现代工具风 · 去卡片化。
+【旧逻辑】壳层 = 页面×视口×A/B×旧新四维切换，A/B 两份候选页各 ~150 行内绘样式；
+评审对象被形式淹没，且 A/B 均为「页面重排」思路、缺乏任务叙事。
 
-【新逻辑】壳页 = 页面切换（源检测/代理配置）× 视口切换（1440/1920/2200/2560/3440，
-iframe 宽=视口、媒体查询真实生效、`box-sizing:content-box` 保档位精确）× A/B 并排·单显 ×
-旧↔新切换 + 实测徽章（A/B 根宽、左右侧距、封顶命中）。
-- **候选 A 现代工具风 · 去卡片化版（a2-* 内绘，未落地）**：`a-source-checker.html` /
-  `a-proxy-setup.html` 已按 A v2 重写 —— 白底 + 现网绿色语言、报头 + 五统计横条竖分隔、
-  下划线 tab、分隔线分区、聚合源表格行；保留 2200 封顶 + `--page-pad-x` 侧距与「叠加改前」
-  对比，根类 `.source-checker-page`/`.proxy-setup` + `.page-padding` + old-mode override
-  兼容壳页徽章测量（链 variables.css，不链现网页面 CSS）。无论 A/B 落选与否，阶段 2 的
-  契约接入均保留。
-- **候选 B Demo E 报刊版**：`demos/e-source-checker.html`（已有）+ `demos/e-proxy-setup.html`
-  （本次新建，入口双卡/部署日志/Cloudflare 表单/结果四段对齐真实 ProxySetup，部署动作全为
-  演示日志不虚构结果，空 Token 出「演示提示」），自带 2200 封顶与同曲线留白天然符合契约。
-  B 页徽章在 ≥1920 档可能小于视口宽——iframe 高 760 触发 style-e 自身
-  `min-aspect-ratio:21/9 → 92vw` 超宽规则（真实 21:9 显示器同款行为），壳页已注明。
+【新逻辑】按拍板重做为**「任务流走查 × 状态监控台」**单 demo
+（`changelogs/demos/demo-status-console-2026-10-10/`，index.html + _console.css + _steps.js）：
+- **呈现形式**：6 步任务流走查（场景→体检→定位→凭证→部署→复检闭环），顶部步骤条 +
+  底部上/下一步 + 右下角每步「问题/旧逻辑/新逻辑」注释浮层；无 iframe、无多维切换。
+- **设计方向**：状态监控台——源检测页 Hero 大号 3/5 可用结论 + 五指标横条 + dense 状态
+  表格（异常行红 tint 直接可点）+ 右栏 inspector（错误/近 5 次/建议动作/「去配置代理→」
+  出口）；代理配置页四步流水线常驻顶部 + 凭证表单 + 深色控制台逐条日志 + 结果块直通复检。
+- **可玩交互**：一键检测扫描动画、行点击开 inspector、部署流水线自动推进 + 日志逐条、
+  复检 Hero 3→5 翻绿、键盘 ←/→ 步进。
+- 旧 demo `demo-width-contract-2026-10-10/`（含 A v2 现代工具风候选）暂留待拍板删否；
+  无论新方案落选与否，阶段 2 契约接入均保留。
 
-【预览】`changelogs/demos/demo-width-contract-2026-10-10/index.html`（dev server 3001 直开，
-已登记 changelogs/README.md 索引）。
+【预览】`http://127.0.0.1:3001/changelogs/demos/demo-status-console-2026-10-10/index.html`
+（dev server 直开，已登记 changelogs/README.md 索引）。
 
-【验证】diag-demo Playwright 全量：5 视口 × 两页面 × A/B/旧切换，徽章值全部符合预期
-（1920→1920/100、2560/3440→2200/140 封顶命中、1440→1440/60、旧模式侧距塌回 4px），
-切页/切视图/B 内交互出演示日志，0 pageerror/console error；A v2 重写后复跑 diag-demo
-全过（磁盘/HTTP 内容核对均为新版），截图 `A2-sc-1440-new`/`A2-sc-2560-new` 确认现代
-工具风渲染与封顶徽章正确。
+【验证】diag-console Playwright 冒烟 13 项全过：step0 场景可见、step1 表格 7 行 + Hero 3/5、
+行点击开 inspector、建议 CTA 跳 step3、流水线步态、部署自动完成（日志 ≥8 行 + 结果块）、
+复检 Hero 5/5 且无异常行、prev 可用、0 pageerror/console error；截图
+`sc-step1 / sc-step2 / px-step4 / sc-step5` 目检通过。
 
 ## 四、验证与后续
 
@@ -103,6 +103,7 @@ iframe 宽=视口、媒体查询真实生效、`box-sizing:content-box` 保档�
 - `node scripts/e2e-skeleton.mjs scripts/history.spec.ts scripts/collections.spec.ts
   scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts` → **13/13 passed（11s，retries=0，
   调试档 ≤120s 预算内）**，跑批进程零遗留。
-- **下一步**：① 用户拍板候选 A（现代工具风 v2）/ B / 组合 / 否决后才动两页 UI 风格；
-② 收藏页已拍板跳过（无复现条件不动手）；③ push 前跑 `node scripts/changelog-collect.mjs`
-（本轮片段勿与 `2026-10-10-1330-detail-layout-demos.md` 混并）。
+- **下一步**：① 用户拍板「任务流走查 × 状态监控台」demo（通过后才动两页真实 UI），
+并拍板旧 demo `demo-width-contract-2026-10-10/` 删否；② 收藏页已拍板跳过（无复现条件
+不动手）；③ push 前跑 `node scripts/changelog-collect.mjs`（本轮片段勿与
+`2026-10-10-1330-detail-layout-demos.md` 混并）。
