@@ -127,6 +127,38 @@ inspector/流水线/双栏控制台/选卡日志均正确）。
 `sc-1440 / sc-checked-rail / px-1440 / px-selected` 目检通过；截图用临时 preview 已杀、
 端口复检关闭。
 
+### 四·二 第二轮：全面对齐 demo + 标签整改（同日续，已落地）
+
+【问题】首轮落地后用户指出两处：① 与 demo 差距大（未选中行时右侧 280-340px 常驻空白、
+Hero 非 demo 单带形态、表格缺「类型/最近」列等）；② 标签使用不符合项目风格。
+
+【新逻辑 — 对齐 demo】
+- **右栏空白根因**：首轮 ≥1024px 无条件两栏（demo 是 `data-rail` 仅打开时切两栏）。
+  改为 body 条件类 `is-rail`（`selectedRow` 存在才加）→ 单栏/两栏切换，未选中右侧零空白。
+- **Hero 单带**：左 `N/5` 大号数字（`clamp(2.75rem,5vw,5.5rem)`）+ 右五指标内联横条
+  （圆点+分隔线，独立 5 列 grid 废弃）；header 动作横排（时间+按钮并列）。
+- **表格 6 列**：状态/名称/类型/地址/延迟/最近（最近 = lastCheckTime 相对时间，idle 行
+  `—`）；thead 底色、`c-url` mono、表下 tip「异常行点击可打开右侧详情」。
+- **分段 active 改黑底白字**（`--color-text`/`--color-text-inverse`）。
+- **代理配置**：入口卡 radio 圆点+绿描边、控制台 mac 三点标题栏 `deploy.log`（sticky 移至
+  wrap）、header 右侧回显当前部署项、结果块加 `Link to="/source-checker"`「回源检测复检 →」。
+
+【新逻辑 — 标签整改（用户点名，基准=现有页面惯例）】
+- `<i>` 装饰标签全清（stat-dot、控制台三点、流水线步骤号）→ 带类 `<span>`
+  （`stat-dot`/`console-dot`/`pipe-num`），CSS 选择器同步；`<b>` 入口名/流水线名 → span。
+- 指标横条 `<div>` 堆叠 → 语义 `<ul class="source-checker-stats">` + `<li class="stat-card">`
+  （ul reset: margin/padding/list-style）。
+- Hero 扁平化：删 `hero-verdict` 包裹层，num/side/stats 直接为 hero 子元素（stats
+  `margin-left:auto` 推右）。
+- 命名按页内既有 block 前缀风格（SourceChecker `-` 连字符族、ProxySetup `__` BEM），
+  态类统一 `is-*`；`stat-card` 等 spec 锚点类名不动。
+
+【验证】第二轮后：`npm run build` ✓；stylelint 两页 `--fix` exit 0；e2e 调试档
+`node scripts/e2e-skeleton.mjs scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts`
+**4/4 passed（2.5s，retries=0）**；截图 `sc-1440`（初态单栏无右侧空白）/
+`sc-checked-rail`（选中开栏+6列+tip）/ `px-selected`（流水线 01 active、选卡绿描边、
+控制台标题栏）目检通过；临时 preview 已杀、端口复检 closed。
+
 ## 五、验证与后续
 
 - `npm run build` ✓（tsc -b + vite build，含改版后两页）

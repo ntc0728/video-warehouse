@@ -10,7 +10,8 @@
  * - 走 AppLayout 常规路由（侧边栏保留）、Design Token 主题适配、宽度占容器剩余空间
  */
 import { useCallback, useRef, useState } from 'react';
-import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck, Wifi } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
@@ -148,56 +149,64 @@ export default function ProxySetup() {
     <div className="proxy-setup">
       <div className="proxy-setup__inner">
         <header className="proxy-setup__header">
-          <h2 className="proxy-setup__title">
-            <Icon icon={Cloud} size="md" /> 一键配置代理
-          </h2>
-          <p className="proxy-setup__sub">
-            无需手动部署 Cloudflare Worker，跟随向导即可完成视频采集 CORS 代理与 IPTV 流代理配置。
-            Token 仅保存在内存中，离开页面自动清除。
-          </p>
+          <div className="proxy-setup__headline">
+            <h2 className="proxy-setup__title">
+              <Icon icon={Cloud} size="md" /> 一键配置代理
+            </h2>
+            <p className="proxy-setup__sub">
+              Cloudflare Worker 部署向导 · Token 仅保存在内存中，离开页面自动清除。
+            </p>
+          </div>
+          <span className="proxy-setup__context">
+            当前部署项：<b>{kind === 'cors' ? '视频采集 CORS 代理' : kind === 'iptv' ? 'IPTV 流代理' : '未选择'}</b>
+          </span>
         </header>
 
         {/* 四步流水线：凭证 → 选择部署项 → 部署 → 完成 */}
         <ol className="proxy-setup__pipe">
           <li className={pipeCls(1)}>
-            <i>01</i><b>登录凭证</b><span>Token + Account</span>
+            <span className="proxy-setup__pipe-num">01</span>
+            <span className="proxy-setup__pipe-name">登录凭证</span>
+            <span className="proxy-setup__pipe-desc">Token + Account</span>
           </li>
           <li className={pipeCls(2)}>
-            <i>02</i><b>选择部署项</b><span>CORS / 流代理</span>
+            <span className="proxy-setup__pipe-num">02</span>
+            <span className="proxy-setup__pipe-name">选择部署项</span>
+            <span className="proxy-setup__pipe-desc">CORS / 流代理</span>
           </li>
           <li className={pipeCls(3)}>
-            <i>03</i><b>部署 Worker</b><span>实时日志</span>
+            <span className="proxy-setup__pipe-num">03</span>
+            <span className="proxy-setup__pipe-name">部署 Worker</span>
+            <span className="proxy-setup__pipe-desc">实时日志</span>
           </li>
           <li className={pipeCls(4)}>
-            <i>04</i><b>完成</b><span>回写设置</span>
+            <span className="proxy-setup__pipe-num">04</span>
+            <span className="proxy-setup__pipe-name">完成</span>
+            <span className="proxy-setup__pipe-desc">回写设置</span>
           </li>
         </ol>
 
         <div className="proxy-setup__body">
           <div className="proxy-setup__form">
-            {/* 两个独立入口 */}
+            {/* 两个独立入口（radio 圆点样式，对齐监控台 demo） */}
             <div className="proxy-setup__grid">
               <button
                 type="button"
                 className={`proxy-setup__card${kind === 'cors' ? ' is-selected' : ''}`}
                 onClick={() => handleSelectKind('cors')}
               >
-                <div className="proxy-setup__card-head">
-                  <Icon icon={Wifi} size="md" />
-                  <span>视频采集 CORS 代理</span>
-                </div>
-                <p className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</p>
+                <span className="proxy-setup__entry-dot" />
+                <span className="proxy-setup__entry-name">视频采集 CORS 代理</span>
+                <span className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</span>
               </button>
               <button
                 type="button"
                 className={`proxy-setup__card${kind === 'iptv' ? ' is-selected' : ''}`}
                 onClick={() => handleSelectKind('iptv')}
               >
-                <div className="proxy-setup__card-head">
-                  <Icon icon={Activity} size="md" />
-                  <span>IPTV 流代理</span>
-                </div>
-                <p className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</p>
+                <span className="proxy-setup__entry-dot" />
+                <span className="proxy-setup__entry-name">IPTV 流代理</span>
+                <span className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</span>
               </button>
             </div>
 
@@ -273,19 +282,30 @@ export default function ProxySetup() {
                     <button type="button" className="proxy-setup__btn proxy-setup__btn--primary" onClick={writeToSettings}>
                       <Icon icon={Globe} size="sm" /> 自动写入设置
                     </button>
+                    <Link className="proxy-setup__btn proxy-setup__btn--ok" to="/source-checker">
+                      回源检测复检 →
+                    </Link>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* 深色控制台：全页唯一强对比锚点，与表单并排常驻 */}
-          <div className="proxy-setup__console" ref={logRef}>
-            {logs.map((l, i) => (
-              <span key={i} className={`proxy-setup__log proxy-setup__log--${l.type}`}>
-                <span className="proxy-setup__log-time">[{l.time}]</span> {l.msg}
-              </span>
-            ))}
+          {/* 深色控制台：mac 标题栏 + 日志，全页唯一强对比锚点，与表单并排常驻 */}
+          <div className="proxy-setup__console-wrap">
+            <div className="proxy-setup__console-bar" aria-hidden="true">
+              <span className="proxy-setup__console-dot" />
+              <span className="proxy-setup__console-dot" />
+              <span className="proxy-setup__console-dot" />
+              <span className="proxy-setup__console-file">deploy.log</span>
+            </div>
+            <div className="proxy-setup__console" ref={logRef}>
+              {logs.map((l, i) => (
+                <span key={i} className={`proxy-setup__log proxy-setup__log--${l.type}`}>
+                  <span className="proxy-setup__log-time">[{l.time}]</span> {l.msg}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 

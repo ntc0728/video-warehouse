@@ -51,27 +51,26 @@
   border-left: 1px solid var(--color-border-light);
 }
 .proxy-setup__pipe-step:first-child { border-left: 0; }
-.proxy-setup__pipe-step i {
+.proxy-setup__pipe-num {
   color: var(--color-text-tertiary);
   font-family: "SF Mono", Consolas, monospace;
   font-size: var(--text-2xs);
-  font-style: normal;
 }
-.proxy-setup__pipe-step b {
+.proxy-setup__pipe-name {
   font-size: var(--text-xs);
   font-weight: 600;
 }
-.proxy-setup__pipe-step span {
+.proxy-setup__pipe-desc {
   color: var(--color-text-secondary);
   font-size: var(--text-2xs);
 }
 .proxy-setup__pipe-step.is-done { background: var(--color-success-bg); }
-.proxy-setup__pipe-step.is-done i { color: var(--color-success-text); }
-.proxy-setup__pipe-step.is-done i::after { content: " ✓"; }
+.proxy-setup__pipe-step.is-done .proxy-setup__pipe-num { color: var(--color-success-text); }
+.proxy-setup__pipe-step.is-done .proxy-setup__pipe-num::after { content: " ✓"; }
 .proxy-setup__pipe-step.is-on { background: var(--color-text); }
-.proxy-setup__pipe-step.is-on b { color: var(--color-text-inverse); }
-.proxy-setup__pipe-step.is-on i { color: var(--color-success); }
-.proxy-setup__pipe-step.is-on span { color: var(--color-text-disabled); }
+.proxy-setup__pipe-step.is-on .proxy-setup__pipe-name { color: var(--color-text-inverse); }
+.proxy-setup__pipe-step.is-on .proxy-setup__pipe-num { color: var(--color-success); }
+.proxy-setup__pipe-step.is-on .proxy-setup__pipe-desc { color: var(--color-text-disabled); }
 
 /* 表单 + 控制台双栏（桌面），移动端堆叠 */
 .proxy-setup__body {
@@ -97,13 +96,21 @@
   min-width: 0;
 }
 
-/* Header（状态监控台改版 2026-10-10：底部分隔线，去卡片化后的报头语言） */
+/* Header（状态监控台改版 2026-10-10：底部分隔线 + 左标题右上下文，对齐 demo mc-head） */
 .proxy-setup__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.proxy-setup__headline {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  padding-bottom: var(--space-md);
-  border-bottom: 1px solid var(--color-border-light);
+  min-width: 0;
 }
 .proxy-setup__title {
   display: flex;
@@ -120,8 +127,17 @@
   font-size: var(--text-sm);
   line-height: 1.6;
 }
+.proxy-setup__context {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.proxy-setup__context b {
+  color: var(--color-text);
+  font-weight: 600;
+}
 
-/* 入口卡片
+/* 入口卡（radio 圆点样式，对齐监控台 demo entry）
    注意：按压反馈由全局统一机制（index.css 的 button:active）处理，
    不在本地重复定义 transform/scale，避免与全局 `scale` 属性叠加导致跳动。 */
 .proxy-setup__grid {
@@ -135,69 +151,93 @@
  html[data-device="app"] .proxy-setup__grid { grid-template-columns: 1fr; } 
 
 .proxy-setup__card {
-  display: flex; flex-direction: column; gap: var(--space-2xs);
+  display: flex; flex-direction: column; gap: var(--space-2xs); align-items: flex-start;
   padding: var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
   text-align: left;
   transition: border-color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
-.proxy-setup__card:hover { border-color: var(--color-primary); }
+.proxy-setup__card:hover { border-color: var(--color-text-secondary); }
 .proxy-setup__card.is-selected {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+}
+.proxy-setup__entry-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-bottom: var(--space-2xs);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: border-color var(--dur-sm), background var(--dur-sm);
+}
+.proxy-setup__card.is-selected .proxy-setup__entry-dot {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  box-shadow: inset 0 0 0 2px var(--color-surface);
+}
+.proxy-setup__entry-name {
+  font-size: var(--text-base);
+  font-weight: 600;
 }
 
-/* 2026-09-28 去卡片化：桌面端选项卡/面板四件套移除，
-   hover 与选中态改由背景色表达（选中 color-mix 底保留）；
+/* 2026-09-28 去卡片化：桌面端面板四件套移除（入口卡保留 demo 式描边，它是选中语义不是装饰）；
    <=767 / app 恒移动保持上方卡片。 */
 @media (width >= 768px) {
-  html:not([data-device="app"]) .proxy-setup__card {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    transition: background var(--dur-sm);
-  }
-  html:not([data-device="app"]) .proxy-setup__card:hover {
-    border-color: transparent;
-    background: var(--color-surface-hover);
-  }
-  html:not([data-device="app"]) .proxy-setup__card.is-selected {
-    border-color: transparent;
-    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
-  }
   html:not([data-device="app"]) .proxy-setup__panel {
     border: none;
     border-radius: 0;
     background: transparent;
   }
 }
-.proxy-setup__card-head {
-  display: flex;
-  gap: var(--space-2xs);
-  align-items: center;
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-.proxy-setup__card-head svg { color: var(--color-primary); }
 .proxy-setup__card-desc {
-  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
+  font-weight: 400;
   line-height: 1.5;
 }
 
-/* 日志方框（深色控制台）——监控台改版：右栏常驻，高度加大，桌面 sticky */
+/* 深色控制台（mac 标题栏 + 日志）——监控台改版：右栏常驻，桌面 sticky 在 wrap 上 */
+.proxy-setup__console-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  background: var(--console-bg);
+  overflow: hidden;
+}
+.proxy-setup__console-bar {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  background: color-mix(in srgb, var(--console-bg) 82%, var(--color-text-inverse));
+  border-bottom: 1px solid var(--console-border);
+}
+.proxy-setup__console-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--radius-full);
+  background: var(--console-muted);
+}
+.proxy-setup__console-dot:nth-child(1) { background: var(--color-error); }
+.proxy-setup__console-dot:nth-child(2) { background: var(--color-warning); }
+.proxy-setup__console-dot:nth-child(3) { background: var(--color-success); }
+.proxy-setup__console-file {
+  margin-left: var(--space-xs);
+  color: var(--console-muted);
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: var(--text-2xs);
+}
 .proxy-setup__console {
   display: flex; flex-direction: column; gap: var(--space-2xs);
   min-height: 10rem; max-height: 16rem;
   padding: var(--space-md);
-  border: 1px solid var(--console-border);
-  border-radius: var(--radius-md);
-  background: var(--console-bg);
+  background: transparent;
   font-family: "SF Mono", Consolas, "Courier New", monospace;
   font-size: var(--text-xs);
   line-height: 1.7;
@@ -205,12 +245,14 @@
 }
 
 @media (width >= 1024px) {
-  html:not([data-device="app"]) .proxy-setup__console {
+  html:not([data-device="app"]) .proxy-setup__console-wrap {
     position: sticky;
     top: var(--space-md);
+    box-shadow: var(--shadow-md);
+  }
+  html:not([data-device="app"]) .proxy-setup__console {
     min-height: 18rem;
     max-height: 26rem;
-    box-shadow: var(--shadow-md);
   }
 }
 .proxy-setup__log { display: block; }
@@ -271,13 +313,14 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-family: inherit;
+  font-family: "SF Mono", Consolas, monospace;
   font-size: var(--text-sm);
   box-sizing: border-box;
 }
 .proxy-setup__field input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 14%, transparent);
 }
 
 /* 按钮（框体不位移，按压时仅图标/文本缩放反馈） */
@@ -317,13 +360,13 @@
   scale: none !important;
   transform: none !important;
 }
-/* 内容按压缩放：card-head（图标+文本整体）、btn-label（文本）微缩 */
-.proxy-setup__card-head,
+/* 内容按压缩放：entry-name（标题文本）、btn-label（文本）微缩 */
+.proxy-setup__entry-name,
 .proxy-setup__btn-label {
   transform-origin: center;
   transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
 }
-.proxy-setup__card:active:not(:disabled) .proxy-setup__card-head,
+.proxy-setup__card:active:not(:disabled) .proxy-setup__entry-name,
 .proxy-setup__btn--link:active:not(:disabled) .proxy-setup__btn-label {
   scale: 0.96;
 }
@@ -333,6 +376,13 @@
   color: var(--color-text-inverse);
 }
 .proxy-setup__btn--primary:hover { background: color-mix(in srgb, var(--color-text) 88%, transparent); }
+.proxy-setup__btn--ok {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+.proxy-setup__btn--ok:hover { background: color-mix(in srgb, var(--color-success) 88%, transparent); }
 .proxy-setup__btn--ghost {
   border-color: transparent;
   background: transparent;
