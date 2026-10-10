@@ -428,7 +428,11 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(7);
     await expect(sortChrome.locator('.browse-chrome-skeleton__pill--tab')).toHaveCount(3);
     await expect(sortChrome.locator('.browse-sort-bar__count')).toHaveCount(1);
-    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(6 + 8 + 8);
+    // chip 总数 = 分类(GENRE_CHIPS 6 + FILL_CHIPS 14) + 地区(REGION 12 + FILL 14)
+    //          + 年份(YEAR 12 + 其他 1 + FILL 14) = 20 + 26 + 27 = 73
+    // 2026-10-09 ff5930f 为 ≥1024 撑满加入 FILL_CHIPS=14×3 组后本行应 22 → 73，
+    // 当时漏同步（BrowseChromeSkeleton.tsx 单向变更）；2026-10-10 补上。
+    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(20 + 26 + 27);
     // 旧镜像类不得复活
     await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
