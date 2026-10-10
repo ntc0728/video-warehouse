@@ -178,51 +178,43 @@
    --color-on-image-rating 专用色）。TSX 侧缺字段不渲染对应 chip（无硬造）。 */
 .hero-bili__meta {
   display: flex;
-  /* 2026-10-10 用户要求：胶囊再收小、彼此间距稍拉大。gap --space-2xs → --space-xs */
-  gap: var(--space-xs);
+  /* 2026-10-10 用户要求：标签左右间距适当调大（xs≈3.9px → sm≈7.9px；纯文字标签无底色后更需间距分隔） */
+  gap: var(--space-sm);
   align-items: center;
-  margin-top: var(--space-2xs);
+  /* 2026-10-10 用户要求「标签上下间距稍微调大」：与标题拉开（2xs≈2px → sm≈8px） */
+  margin-top: var(--space-sm);
   /* 字号再收一档：--text-xs → --text-2xs */
   font-size: var(--text-2xs);
 }
 
-/* 胶囊配色（2026-10-10 用户交由定夺）：采用「单一强调 + 中性玻璃」同族——
-   caption 恒深色渐变底，基础胶囊用半透白玻璃 + 白字（年份），评分=金色强调（唯一亮点），
-   类型=淡翡翠玻璃（保留语义区分但不扎眼）。比三枚亮粉彩更收敛、与深色字幕更融。
-   尺寸同步收窄（padding 横向 --space-sm → --space-xs）。rgba 不走 hex，避开硬编码色 lint。
-   ⚠️ 变体选择器需 `.hero-bili__meta > .xxx`（0,2,0）才能压过基座 `.hero-bili__meta > span`（0,1,1）。 */
+/* 标签配色（2026-10-10 用户定稿：删除背景色与边框，纯文字标签）——
+   caption 恒深色渐变底保证可读：年份/类型白字，评分金色强调（唯一亮点）。
+   无底色后 padding/border-radius/backdrop-filter 均失义，一并移除；
+   间距仅由 .hero-bili__meta 的 gap 承担。行高 1.2（同日定稿压矮）。
+   变体选择器仍需 `.hero-bili__meta > .xxx`（0,2,0）压过基座。 */
 .hero-bili__meta > span {
-  /* 2026-10-10 用户定稿「调扁、参看历史页 card 标签」：对齐 .record-card__badge-type ——
-     radius-full 胶囊 → radius-sm 小圆角扁标签；字号维持 --text-2xs（两处已一致）；
-     横向 padding 图上空间敏感用 --space-xs（历史页 --space-sm）。
-     行高 1.5 → 1.2（2026-10-10 用户追加「chip 高度再调小」）：高度 20.1 → ≈16.8px。 */
-  padding: var(--space-3xs) var(--space-xs);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.18);
   color: var(--color-on-image);
   line-height: 1.2;
-  backdrop-filter: blur(6px);
   font-variant-numeric: tabular-nums;
 }
 
 .hero-bili__meta > .hero-bili__rating {
-  background: rgba(250, 204, 21, 0.92);
-  color: rgba(0, 0, 0, 0.82);
+  color: rgba(250, 204, 21, 0.95);
   font-weight: 600;
 }
 
-.hero-bili__meta > .hero-bili__type {
-  background: rgba(52, 211, 153, 0.3);
-}
-
 /* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），
-   仅需在此放开 pointer-events（caption 整体 none） */
+   仅需在此放开 pointer-events（caption 整体 none）；
+   margin-top sm → md（2026-10-10 用户要求标签上下间距稍大，见上方按钮节注释） */
 .hero-bili__caption .hero-banner__actions {
+  margin-top: var(--space-md);
   pointer-events: auto;
 }
 
 /* banner 双按钮：较 Classic 再收一档（2026-09-23 padding/字号微调，仅本组件）。
-   纵向用 xs 非 2xs——2xs 桌面仅 ~2px，胶囊会被压扁；横/字号维持收窄 */
+   纵向用 xs 非 2xs——2xs 桌面仅 ~2px，胶囊会被压扁；横/字号维持收窄。
+   2026-10-10 用户要求「标签上下间距稍微调大」：按钮行与标签行拉开 sm → md
+   （合并进下方 caption 作用域既有规则，不动 HeroBanner.css 共享规则）。 */
 .hero-bili__caption .hero-banner__cta {
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--text-xs);

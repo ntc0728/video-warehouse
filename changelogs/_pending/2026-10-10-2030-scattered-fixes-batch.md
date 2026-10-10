@@ -217,3 +217,10 @@ demo: 无（浏览器实测见下）
 - 根因：`handleHistoryClick`（建议项/回车同路径）先 `setIsDropdownOpen(false)`（dropdown 立即卸载）再手动 blur；200ms 后 `handleBlur` 定时器照旧 `setDropdownIsExiting(true)`，而渲染条件 `(showDropdown || dropdownIsExiting)` 让已收起的 dropdown 以退出动画状态重新挂载 → 150ms 后再卸载 = 「收起后又展开收起」。Playwright 采样实测修复前 reopen=1（收起后 ≈400ms 闪现 exiting 帧 6 帧再消失）。
 - 修正：`SearchBox.tsx` 新增 `isDropdownOpenRef`（effect 同步），`handleBlur` 定时器回调开头判断 dropdown 已关闭则直接 return（不补退出动画）。正常 blur 关闭路径（dropdown 还开着）退出动画保留（实测 exiting 6 帧正常播放后收起）。
 - 验证：修复后 reopen=0、exitingSeenAt=[]；`npm.cmd run build` 通过；`node scripts/e2e-skeleton.mjs -g "SearchBox" scripts/regression.spec.ts` 1 passed（8s，跑批器自动收尾零遗留）。
+
+## Y. hero 标签去背景改纯文字 + 上下间距
+- 用户反馈：①首页 banner 左侧标签删除背景色以及边框；②标签上下间距稍微调大。
+- 修正（HeroBili.css）：①基座删 background/backdrop-filter/padding/border-radius（无底色后均失义），年份/类型白字；rating 变体金底黑字 → 金色文字（rgba(250,204,21,0.95)）；type 变体整条删（仅剩 background）；间距仅由 meta gap 承担。②meta margin-top 2xs(≈2px) → sm(≈8px) 拉开与标题距离；按钮行 margin-top sm → md（合并进 caption 作用域既有 `.hero-bili__caption .hero-banner__actions` 规则，不动 HeroBanner.css 共享值）。
+- 实测：三标签 bg=rgba(0,0,0,0)、border=0；标签行上距 2→7.9px、下距 7.9→10.9px。
+- 验证：stylelint 绿（一次 no-duplicate-selectors，margin-top 并入既有 actions 规则）；`npm.cmd run build` 通过。
+- 追加（同日用户反馈「标签左右间距适当调大」）：meta gap --space-xs(≈3.9px) → --space-sm(≈7.9px)；stylelint 绿 + build 通过。
