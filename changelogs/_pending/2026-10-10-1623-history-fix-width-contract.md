@@ -40,8 +40,8 @@ scRect.top` 与祖先链 `belowSpace`（padding-bottom + margin-bottom 逐层累
 【验证】diag-sweep 8 视口（1024×640 ~ 390×844）range=0 无溢出；diag-hist-long 长列表
 多种子（今天/昨天/本周/本月/更早 各 8–10 条）3 视口 × 顶/中/底 9 组：贴底（overTl=false）、
 内联高=计算高、sticky 吸附 tlTop=0、5 组算珠 transform 正常、range>0 可滚、0 JS 错。
-【遗留提问】收藏页单条数据假滚动条标准视口无法复现，待用户提供复现条件（推荐答案：
-窗口尺寸/浏览器缩放）。
+【已拍板跳过】收藏页同类问题标准视口（≥1280×566）8 视口 sweep 无法复现，用户拍板
+暂不排查（无复现条件不动手）。
 
 ## 二、源检测/代理配置 接入 `--layout-content-max-width` 2200 封顶 + `--page-pad-x` 侧距（阶段 2，已落地）
 
@@ -67,15 +67,20 @@ hScroll=0；2200 封顶命中徽章正确。
 
 ## 三、双候选 UI 对比 Demo（阶段 3，待拍板）
 
-【问题】两页接入契约后，是否进一步换风格（Demo E 报刊版）需对比评审。
+【问题】两页接入契约后，是否进一步换风格需对比评审。
 
-【旧逻辑】现网两页布局（候选 A 基准）。
+【旧逻辑】候选 A v1 曾以「现网真实结构 + 直链源码 CSS」为基准（保守合规版）；用户拍板
+「A 定位太保守」——A 必须是新 UI 设计方案，且选定风格方向 = 现代工具风 · 去卡片化。
 
 【新逻辑】壳页 = 页面切换（源检测/代理配置）× 视口切换（1440/1920/2200/2560/3440，
 iframe 宽=视口、媒体查询真实生效、`box-sizing:content-box` 保档位精确）× A/B 并排·单显 ×
 旧↔新切换 + 实测徽章（A/B 根宽、左右侧距、封顶命中）。
-- **候选 A 保守合规版**：`a-source-checker.html` / `a-proxy-setup.html` —— 真实结构 +
-  直链真实源码 CSS（变量/布局 token/页面 CSS/`.page-padding` 摘录），观感即构建产物。
+- **候选 A 现代工具风 · 去卡片化版（a2-* 内绘，未落地）**：`a-source-checker.html` /
+  `a-proxy-setup.html` 已按 A v2 重写 —— 白底 + 现网绿色语言、报头 + 五统计横条竖分隔、
+  下划线 tab、分隔线分区、聚合源表格行；保留 2200 封顶 + `--page-pad-x` 侧距与「叠加改前」
+  对比，根类 `.source-checker-page`/`.proxy-setup` + `.page-padding` + old-mode override
+  兼容壳页徽章测量（链 variables.css，不链现网页面 CSS）。无论 A/B 落选与否，阶段 2 的
+  契约接入均保留。
 - **候选 B Demo E 报刊版**：`demos/e-source-checker.html`（已有）+ `demos/e-proxy-setup.html`
   （本次新建，入口双卡/部署日志/Cloudflare 表单/结果四段对齐真实 ProxySetup，部署动作全为
   演示日志不虚构结果，空 Token 出「演示提示」），自带 2200 封顶与同曲线留白天然符合契约。
@@ -87,7 +92,9 @@ iframe 宽=视口、媒体查询真实生效、`box-sizing:content-box` 保档�
 
 【验证】diag-demo Playwright 全量：5 视口 × 两页面 × A/B/旧切换，徽章值全部符合预期
 （1920→1920/100、2560/3440→2200/140 封顶命中、1440→1440/60、旧模式侧距塌回 4px），
-切页/切视图/B 内交互出演示日志，0 pageerror/console error。
+切页/切视图/B 内交互出演示日志，0 pageerror/console error；A v2 重写后复跑 diag-demo
+全过（磁盘/HTTP 内容核对均为新版），截图 `A2-sc-1440-new`/`A2-sc-2560-new` 确认现代
+工具风渲染与封顶徽章正确。
 
 ## 四、验证与后续
 
@@ -96,6 +103,6 @@ iframe 宽=视口、媒体查询真实生效、`box-sizing:content-box` 保档�
 - `node scripts/e2e-skeleton.mjs scripts/history.spec.ts scripts/collections.spec.ts
   scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts` → **13/13 passed（11s，retries=0，
   调试档 ≤120s 预算内）**，跑批进程零遗留。
-- **下一步**：① 用户拍板候选 A/B（或组合/否决）后才动两页 UI 风格；② 收藏页复现条件待答；
-③ push 前跑 `node scripts/changelog-collect.mjs`（本轮片段勿与
-`2026-10-10-1330-detail-layout-demos.md` 混并）。
+- **下一步**：① 用户拍板候选 A（现代工具风 v2）/ B / 组合 / 否决后才动两页 UI 风格；
+② 收藏页已拍板跳过（无复现条件不动手）；③ push 前跑 `node scripts/changelog-collect.mjs`
+（本轮片段勿与 `2026-10-10-1330-detail-layout-demos.md` 混并）。

@@ -151,7 +151,7 @@ a { color: #7cb7ff; }
 <div class="stage">
   <div class="frames">
     <div class="frame" id="frame-a">
-      <div class="cap"><span class="tag a">候选 A · 保守合规</span><span id="cap-a">源检测 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）</span></div>
+      <div class="cap"><span class="tag a">候选 A · 现代工具风</span><span id="cap-a">源检测 — 现代工具风 · 去卡片化（a2-* 内绘改版，未落地）</span></div>
       <iframe id="if-a" src="a-source-checker.html" title="候选A"></iframe>
     </div>
     <div class="frame" id="frame-b">
@@ -186,10 +186,12 @@ a { color: #7cb7ff; }
 
   <h2>【预览】</h2>
   <ul>
-    <li><b>候选 A（保守合规 · 已落地）</b>：上方左 iframe —— 真实页面结构 + 直链真实源码 CSS，观感即当前构建产物。
-      切「叠加改前」可在 A 上叠回改前样式（去封顶 + 回贴边侧距）做旧↔新对比。</li>
+    <li><b>候选 A（现代工具风 · 去卡片化 · 未落地）</b>：上方左 iframe —— 与现网同内容数据的改版设计：
+      报头+五统计横条（竖分隔线）+ 下划线 tab + 分隔线分区（成功横幅/测速行/节点列表）+ 聚合源表格行，
+      白底保留现网绿色语言，密度与层次升级（a2-* 内绘样式，契约 token 直链）。
+      切「叠加改前」在 A v2 上叠回改前容器条件（去封顶 + 回贴边侧距）做旧↔新对比。</li>
     <li><b>B（Demo E 报刊排版 · 未落地）</b>：上方右 iframe —— <code>demos/e-source-checker.html</code> / <code>demos/e-proxy-setup.html</code>（本次新建）。
-      报刊系自带 <code>--content-max: 2200px</code> 与 <code>--pad-x</code> 同曲线留白，天然符合契约；是否作为两页的 UI 改版方向由用户评审。</li>
+      报刊系自带 <code>--content-max: 2200px</code> 与 <code>--pad-x</code> 同曲线留白，天然符合契约；A/B 二方向待用户拍板。</li>
     <li>徽章区实时读出两候选的根容器宽/侧距/是否命中 2200 封顶，随视口切换刷新。</li>
   </ul>
 </div>
@@ -200,7 +202,7 @@ a { color: #7cb7ff; }
     sc: {
       a: 'a-source-checker.html',
       b: '../../../demos/e-source-checker.html',
-      capA: '源检测 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）',
+      capA: '源检测 — 现代工具风 · 去卡片化（a2-* 内绘改版，未落地）',
       capB: 'Demo E 风格版（demos/e-source-checker.html，仅风格参考未落地）',
       sel: '.source-checker-page, .page-padding',
       old: 'html.old-mode .source-checker-page { max-width: none !important; margin-inline: 0 !important; padding: var(--space-xs) !important; }',
@@ -208,7 +210,7 @@ a { color: #7cb7ff; }
     px: {
       a: 'a-proxy-setup.html',
       b: '../../../demos/e-proxy-setup.html',
-      capA: '代理配置 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）',
+      capA: '代理配置 — 现代工具风 · 去卡片化（a2-* 内绘改版，未落地）',
       capB: 'Demo E 报刊排版（demos/e-proxy-setup.html 本次新建，仅风格参考未落地）',
       sel: '.proxy-setup, .page',
       old: 'html.old-mode .proxy-setup { max-width: none !important; margin-inline: 0 !important; padding: var(--space-xl) var(--space-md) !important; }',

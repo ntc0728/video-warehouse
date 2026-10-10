@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>候选A · 一键配置代理（保守合规版 · 真实 CSS 直链）— 2026-10-10</title>
+<title>候选A · 一键配置代理（现代工具风 · 去卡片化）— 2026-10-10</title>
+<!-- 契约真源直链；A v2 为改版设计，页面样式内绘（a2-*），不再直链现网 ProxySetup.css -->
 <link rel="stylesheet" href="../../../src/assets/styles/variables.css">
-<link rel="stylesheet" href="../../../src/pages/ProxySetup/ProxySetup.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -18,70 +18,220 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 html { font-size: var(--root-font-size); }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input { font: inherit; }
+h2, h3, p { margin: 0; }
+
+/* ═══════════════════════════════════════════════
+   A v2 · 现代工具风（去卡片化）— 代理配置
+   契约：根容器 2200 封顶 + ≥768 --page-pad-x 侧距
+   （padding 写在根类上，供壳页「叠加改前」override）
+   ═══════════════════════════════════════════════ */
+.proxy-setup {
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+  min-height: 100%;
+  padding: var(--space-xl) var(--space-md);
+  --a2-line: var(--color-border);
+}
+@media (width >= 768px) {
+  .proxy-setup {
+    padding-right: var(--page-pad-x);
+    padding-left: var(--page-pad-x);
+  }
+}
+
+/* —— 报头 —— */
+.a2-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--a2-line);
+}
+.a2-head h2 { font-size: var(--text-2xl); font-weight: var(--fw-bold); letter-spacing: -0.01em; }
+.a2-head p {
+  max-width: 62ch;
+  margin-top: var(--space-2xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.a2-head__meta { flex-shrink: 0; font-size: var(--text-xs); color: var(--color-text-tertiary); }
+
+/* —— 入口行式选择（替代双卡：左主色条 + 底色 = 选中） —— */
+.a2-entries { border-bottom: 1px solid var(--a2-line); }
+.a2-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border-left: 3px solid transparent;
+  text-align: left;
+  transition: background-color var(--dur-xs, .12s);
+}
+.a2-entry + .a2-entry { border-top: 1px solid var(--a2-line); }
+.a2-entry:hover { background: var(--color-hover-bg); }
+.a2-entry.is-selected {
+  border-left-color: var(--color-primary);
+  background: rgba(0, 122, 255, 0.06);
+}
+.a2-entry__icon { font-size: var(--text-lg); line-height: 1; }
+.a2-entry__title { font-size: var(--text-sm); font-weight: var(--fw-semibold); }
+.a2-entry.is-selected .a2-entry__title { color: var(--color-primary); }
+.a2-entry__desc { font-size: var(--text-xs); color: var(--color-text-secondary); }
+.a2-entry__arrow { margin-left: auto; color: var(--color-text-tertiary); font-size: var(--text-sm); }
+
+/* —— 日志控制台（深底等宽，语义区非卡片） —— */
+.a2-console {
+  margin: var(--space-lg) 0;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: var(--text-xs);
+  line-height: 1.8;
+}
+.a2-console .t { color: rgba(255, 255, 255, 0.45); }
+
+/* —— 分区（分隔线切分） —— */
+.a2-sec { padding: var(--space-lg) 0; border-bottom: 1px solid var(--a2-line); }
+.a2-sec:last-child { border-bottom: 0; }
+.a2-sec h3 {
+  margin-bottom: var(--space-md);
+  font-size: var(--text-md);
+  font-weight: var(--fw-semibold);
+}
+.a2-sec__hint { margin-top: var(--space-xs); font-size: var(--text-xs); color: var(--color-text-tertiary); }
+
+/* —— 表单字段 —— */
+.a2-field { margin-bottom: var(--space-md); }
+.a2-field label {
+  display: block;
+  margin-bottom: var(--space-2xs);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+}
+.a2-field input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--a2-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  font-size: var(--text-sm);
+  outline: none;
+}
+.a2-field input:focus { border-color: var(--color-primary); }
+.a2-field input::placeholder { color: var(--color-text-tertiary); }
+.a2-input-row { display: flex; gap: var(--space-xs); }
+.a2-input-row input { flex: 1; min-width: 0; }
+.a2-optional { font-weight: var(--fw-regular); color: var(--color-text-tertiary); }
+
+.a2-btn {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+.a2-btn--primary { background: var(--color-primary); color: var(--color-text-inverse); }
+.a2-btn--primary:hover { filter: brightness(1.06); }
+.a2-btn--ghost { border: 1px solid var(--a2-line); color: var(--color-text-secondary); }
+.a2-btn--ghost:hover { background: var(--color-hover-bg); }
+.a2-btn--link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.a2-action { display: flex; align-items: center; gap: var(--space-md); }
+.a2-action__hint { font-size: var(--text-xs); color: var(--color-text-tertiary); }
 </style>
 </head>
 <body>
-<!-- 结构逐块对应 src/pages/ProxySetup/ProxySetup.tsx 渲染（header/grid/console/panel×3） -->
+<!-- A v2 · 现代工具风改版结构（内容对应现网 ProxySetup 渲染块：header/entries/console/form×3） -->
 <div class="proxy-setup">
-  <div class="proxy-setup__inner">
 
-    <header class="proxy-setup__header">
-      <h2 class="proxy-setup__title">☁ 一键配置代理</h2>
-      <p class="proxy-setup__sub">
-        无需手动部署 Cloudflare Worker，跟随向导即可完成视频采集 CORS 代理与 IPTV 流代理配置。
-        Token 仅保存在内存中，离开页面自动清除。
-      </p>
-    </header>
-
-    <div class="proxy-setup__grid">
-      <button type="button" class="proxy-setup__card is-selected">
-        <div class="proxy-setup__card-head"><span>⚡</span><span>视频采集 CORS 代理</span></div>
-        <p class="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</p>
-      </button>
-      <button type="button" class="proxy-setup__card">
-        <div class="proxy-setup__card-head"><span>📡</span><span>IPTV 流代理</span></div>
-        <p class="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</p>
-      </button>
+  <header class="a2-head">
+    <div>
+      <h2>☁ 一键配置代理</h2>
+      <p>无需手动部署 Cloudflare Worker，跟随向导即可完成视频采集 CORS 代理与 IPTV 流代理配置。
+        Token 仅保存在内存中，离开页面自动清除。</p>
     </div>
+    <span class="a2-head__meta">步骤 1 / 3</span>
+  </header>
 
-    <div class="proxy-setup__console">
-      <span class="proxy-setup__log proxy-setup__log--info"><span class="proxy-setup__log-time">[10:24:01]</span> &gt; 等待配置开始，请在上方选择一个配置入口...</span>
-      <span class="proxy-setup__log proxy-setup__log--info"><span class="proxy-setup__log-time">[10:24:03]</span> 已选择：视频采集 CORS 代理</span>
-    </div>
-
-    <div class="proxy-setup__panel">
-      <h3 class="proxy-setup__panel-title">🛡 登录 Cloudflare</h3>
-      <button type="button" class="proxy-setup__btn proxy-setup__btn--link">
-        <span class="proxy-setup__btn-label">打开 Cloudflare 登录 / 创建 API Token</span>
-      </button>
-      <div class="proxy-setup__field">
-        <label>Cloudflare API Token</label>
-        <div class="proxy-setup__input-row">
-          <input type="password" placeholder="粘贴 API Token（Workers Scripts → Edit 权限）" />
-          <button type="button" class="proxy-setup__btn proxy-setup__btn--ghost">显示</button>
-        </div>
-      </div>
-      <div class="proxy-setup__field">
-        <label>Cloudflare Account ID</label>
-        <input type="text" placeholder="dash.cloudflare.com 右侧可查" />
-      </div>
-    </div>
-
-    <div class="proxy-setup__panel">
-      <div class="proxy-setup__action-row">
-        <button type="button" class="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--lg">🚀 开始一键配置 Worker</button>
-        <span class="proxy-setup__action-hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
-      </div>
-    </div>
-
-    <div class="proxy-setup__panel">
-      <div class="proxy-setup__field">
-        <label>自定义域名 <span class="proxy-setup__optional">（可选，留空则使用 Worker 默认链接）</span></label>
-        <input type="text" placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）" />
-      </div>
-    </div>
-
+  <div class="a2-entries">
+    <button type="button" class="a2-entry is-selected">
+      <span class="a2-entry__icon">⚡</span>
+      <span>
+        <span class="a2-entry__title">视频采集 CORS 代理</span>
+        <span class="a2-entry__desc"> — 绕过浏览器跨域限制，访问 CMS 采集站数据</span>
+      </span>
+      <span class="a2-entry__arrow">→</span>
+    </button>
+    <button type="button" class="a2-entry">
+      <span class="a2-entry__icon">📡</span>
+      <span>
+        <span class="a2-entry__title">IPTV 流代理</span>
+        <span class="a2-entry__desc"> — 转发 IPTV 直播流（m3u8 / dash / ts）</span>
+      </span>
+      <span class="a2-entry__arrow">→</span>
+    </button>
   </div>
+
+  <div class="a2-console">
+    <div><span class="t">[10:24:01]</span> &gt; 等待配置开始，请在上方选择一个配置入口...</div>
+    <div><span class="t">[10:24:03]</span> 已选择：视频采集 CORS 代理</div>
+  </div>
+
+  <section class="a2-sec">
+    <h3>🛡 登录 Cloudflare</h3>
+    <p style="margin-bottom: var(--space-md);">
+      <button type="button" class="a2-btn--link">打开 Cloudflare 登录 / 创建 API Token ↗</button>
+    </p>
+    <div class="a2-field">
+      <label>Cloudflare API Token</label>
+      <div class="a2-input-row">
+        <input type="password" placeholder="粘贴 API Token（Workers Scripts → Edit 权限）" />
+        <button type="button" class="a2-btn a2-btn--ghost">显示</button>
+      </div>
+    </div>
+    <div class="a2-field" style="margin-bottom: 0;">
+      <label>Cloudflare Account ID</label>
+      <input type="text" placeholder="dash.cloudflare.com 右侧可查" />
+    </div>
+  </section>
+
+  <section class="a2-sec">
+    <div class="a2-action">
+      <button type="button" class="a2-btn a2-btn--primary">🚀 开始一键配置 Worker</button>
+      <span class="a2-action__hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
+    </div>
+  </section>
+
+  <section class="a2-sec">
+    <h3>自定义域名 <span class="a2-optional">（可选，留空则使用 Worker 默认链接）</span></h3>
+    <div class="a2-field" style="margin-bottom: 0;">
+      <input type="text" placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）" />
+    </div>
+  </section>
+
 </div>
+<script>
+// 演示交互：入口行切换选中态
+document.querySelectorAll('.a2-entry').forEach(function (e) {
+  e.addEventListener('click', function () {
+    document.querySelectorAll('.a2-entry').forEach(function (x) { x.classList.toggle('is-selected', x === e); });
+  });
+});
+</script>
 </body>
 </html>
