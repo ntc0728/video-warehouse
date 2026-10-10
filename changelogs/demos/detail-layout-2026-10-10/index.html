@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Detail 页 banner × 基础信息 布局候选总览 — 2026-10-10</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+.intro{max-width:960px;margin:0 auto;padding:var(--space-3xl) var(--space-2xl) 0}
+.intro h1{font-size:26px;font-weight:900;margin:0 0 var(--space-md)}
+.intro p{color:var(--color-text-secondary);font-size:var(--text-sm);line-height:2;margin:0 0 var(--space-md)}
+.cards{max-width:1100px;margin:0 auto;padding:var(--space-2xl) var(--space-2xl) 80px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:var(--space-xl)}
+.card{
+  background:var(--color-surface);border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-card);
+  padding:var(--space-xl);display:flex;flex-direction:column;gap:var(--space-md);
+  transition:transform .15s var(--ease-standard);
+}
+.card:hover{transform:translateY(-3px)}
+.card.rec{border-color:var(--color-accent);box-shadow:0 0 0 1px var(--color-accent),var(--shadow-card)}
+.card h2{margin:0;font-size:var(--text-xl);display:flex;align-items:center;gap:10px}
+.card h2 .star{font-size:var(--text-xs);color:var(--color-accent);font-weight:800}
+.card .wire{background:var(--color-background);border-radius:var(--radius-md);padding:14px}
+/* 迷你线框 */
+.wire .box{background:var(--color-border);border-radius:3px}
+.wire-row{display:flex;gap:8px;height:88px}
+.w1-poster{width:34px;background:var(--color-border-strong)!important}
+.w1-txt{flex:1;display:flex;flex-direction:column;gap:6px}
+.w1-txt .box{height:10px}
+.w1-facts{height:14px;margin-top:8px}
+.w2-hero{flex:1;height:88px;position:relative}
+.w2-band{height:22px;margin-top:8px}
+.w3-hero{flex:1.45;height:88px}
+.w3-side{flex:1;height:88px}
+.card ul{margin:0;padding-left:18px;font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.9}
+.card .enter{margin-top:auto}
+.prose{max-width:1100px;margin:0 auto;padding:0 var(--space-2xl) var(--space-3xl)}
+.prose h3{font-size:var(--text-lg)}
+.prose table{width:100%;border-collapse:collapse;font-size:var(--text-xs)}
+.prose td,.prose th{border:1px solid var(--color-border-light);padding:8px 10px;text-align:left;line-height:1.7}
+.prose th{background:var(--color-surface)}
+</style>
+</head>
+<body data-theme="day">
+
+<div class="demo-bar">
+  <span class="brand">Detail 布局候选 · <em>Demo 2026-10-10</em></span>
+  <a class="scheme is-on" href="index.html">总览</a>
+  <a class="scheme" href="scheme-a-poster-spread.html">A 海报对开</a>
+  <a class="scheme" href="scheme-b-fullbleed-band.html">B 全宽banner+信息带</a>
+  <a class="scheme" href="scheme-c-natural-side.html">C 双栏自然高</a>
+  <span class="spacer"></span>
+  <button class="theme" onclick="var b=document.body;b.dataset.theme=b.dataset.theme==='day'?'night':'day'">☾ 昼夜切换</button>
+</div>
+
+<div class="note">
+  <b>评审说明</b>：针对现网 Detail 页 ≥1024 的「左 16/9 banner（内含海报）| 右基础信息栏（高度锁死 hero + 栏内滚动）」两栏布局（C1，2026-09-10 拍板）的整改候选。
+  参考结构：<code>demos/e-detail.html</code>（海报对开 + 通栏资料表）。示例数据为《沙丘2》演示值；图片为渐变色块占位（离线可看）。点开各方案页可在同一页面骨架下对比顶部区形态，右上角可切昼夜。
+</div>
+
+<div class="intro">
+  <h1>Detail 页 · banner × 基本信息组 布局整改候选</h1>
+  <p><b>现状痛点</b>：① 右栏高度被 JS 锁死等于 hero，字段多时栏内滚动、内容被裁；② banner 与右栏抢横向空间（1440 下 hero 只剩 ~770px，海报再 ×0.78）；③ 双列 KV 卡放长字段（导演/发行/语言）挤半格换行，靠一段半宽 span 测量脚本兜底；④ 图内有海报、图旁又有信息栏，视觉元素重复、层级混乱。</p>
+  <p><b>三个候选从保守到重构排列</b>：B（只动栏目位置）→ C（只治右栏）→ A（结构对齐 e-detail）。<b>2026-10-10 拍板：整改方向 = 方案 A</b>（已经 v2 自查优化 + v2.1 用户反馈重排；原方案 D 已撤出并删除文件）。</p>
+</div>
+
+<main class="cards">
+
+  <article class="card">
+    <h2>方案 B · 全宽 banner + 信息带</h2>
+    <div class="wire"><div class="box w2-hero"></div><div class="box w2-band"></div></div>
+    <ul>
+      <li>hero 视觉零改动，撤右栏 → banner 回归全宽、更大更沉浸</li>
+      <li>基础信息降为 hero 下方横置「信息带」（auto-fit 多列 KV）</li>
+      <li>改动面最小、回归风险最低；但资料落首屏折叠线以下</li>
+    </ul>
+    <a class="btn ghost enter" href="scheme-b-fullbleed-band.html">查看方案 B →</a>
+  </article>
+
+  <article class="card">
+    <h2>方案 C · 双栏保留 + 右栏自然高</h2>
+    <div class="wire"><div class="wire-row"><div class="box w3-hero"></div><div class="box w3-side"></div></div></div>
+    <ul>
+      <li>左右关系不动；删「定高 + 滚动」锁死，右栏自然高度</li>
+      <li>双列 KV 改单列「label · value」数据行，长字段不再挤压</li>
+      <li>保守止痛：banner 仍被两栏限制宽度；右栏高出 hero 时下沿不齐</li>
+    </ul>
+    <a class="btn ghost enter" href="scheme-c-natural-side.html">查看方案 C →</a>
+  </article>
+
+  <article class="card rec">
+    <h2>方案 A · 海报对开 + 通栏资料表 <span class="star">★ 已选定（v2.1）</span></h2>
+    <div class="wire"><div class="wire-row"><div class="box w1-poster"></div><div class="w1-txt"><div class="box" style="width:70%"></div><div class="box" style="width:45%"></div><div class="box" style="width:90%"></div><div class="box" style="width:36%"></div></div></div><div class="box w1-facts"></div></div>
+    <ul>
+      <li>结构直接取自参考 demo e-detail：左竖海报 | 右片名/meta/简介，backdrop 淡化为底纹</li>
+      <li>基础信息通栏「资料表」，永不滚动、不被裁；长字段超 4 行折叠展开</li>
+      <li>v2.1：返回钮叠海报左上角、官方页面居文本区右上；播放/收藏/进度钉文本区底部贴齐海报下沿</li>
+      <li>可整段删除 --detail-hero-h 测高与半宽 span 测量脚本，复杂度净下降</li>
+    </ul>
+    <a class="btn primary enter" href="scheme-a-poster-spread.html">查看方案 A v2.1 →</a>
+  </article>
+
+</main>
+
+<section class="prose">
+  <h3>快速对比</h3>
+  <table>
+    <tr><th></th><th>banner 宽度</th><th>基础信息位置</th><th>右栏滚动问题</th><th>海报位置</th><th>改动风险</th></tr>
+    <tr><td><b>现状 C1</b></td><td>~1.4fr（窄）</td><td>右栏，定高滚动</td><td>存在</td><td>叠在 hero 图内</td><td>—</td></tr>
+    <tr><td><b>B</b></td><td>全宽</td><td>hero 下信息带</td><td>消失</td><td>hero 图内（不变）</td><td>低</td></tr>
+    <tr><td><b>C</b></td><td>~1.45fr（不变）</td><td>右栏，自然高单列行</td><td>消失</td><td>hero 图内（不变）</td><td>低-中</td></tr>
+    <tr><td><b>A v2.1 ★已选定</b></td><td>不再存在独立 banner</td><td>通栏资料表（长字段 4 行折叠）</td><td>消失</td><td>布局主轴（左列，返回钮叠其上）</td><td>中</td></tr>
+  </table>
+  <p style="font-size:var(--text-xs);color:var(--color-text-tertiary);margin-top:14px">
+    注：三案均只动桌面 ≥1024 的「上半部两栏」；移动端单列堆叠、tab 结构（概览/播放列表/季信息）、演员/剧照通栏、TV 端均不受影响。落地时同步清理 Detail.css 的 ≥1024 grid 注释块与 Detail.tsx 的 heroRef/--detail-hero-h 测量。
+  </p>
+</section>
+</body>
+</html>

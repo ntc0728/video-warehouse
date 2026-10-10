@@ -381,13 +381,13 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     const skeleton = page.locator('.detail-skeleton');
     await expect(skeleton).toBeVisible({ timeout: 10000 });
 
-    // hero + 右栏信息卡（≥1024 两栏；窄屏右栏隐藏，故只断言存在）
+    // hero 对开（方案 A 2026-10-10）：海报列 + 文本区（<768 海报列隐藏，只断言存在）
     await expect(page.locator('.detail-skeleton__hero')).toHaveCount(1);
-    await expect(page.locator('.detail-skeleton__side')).toHaveCount(1);
+    await expect(page.locator('.detail-skeleton__poster')).toHaveCount(1);
     await expect(page.locator('.detail-skeleton__chip')).toHaveCount(4);
-    // grid 内 7 卡（评分已改全宽行）+ 3 条 side-line（评分/国家/发行）
-    await expect(page.locator('.detail-skeleton__info-card')).toHaveCount(7);
-    await expect(page.locator('.detail-skeleton__side .detail-skeleton__side-line')).toHaveCount(3);
+    // 基础信息表：典型 7 格 + 国家/发行 2 条整行
+    await expect(page.locator('.detail-skeleton__facts-grid .detail-skeleton__fact')).toHaveCount(7);
+    await expect(page.locator('.detail-skeleton__fact-full')).toHaveCount(2);
 
     // tab 条复用真实 .tab-underline / .detail-tab（行盒与真实一致）
     await expect(page.locator('.detail-skeleton .tab-underline.detail-tab')).toHaveCount(2);

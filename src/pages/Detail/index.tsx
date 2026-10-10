@@ -1,8 +1,8 @@
 /**
- * 视频详情页面 — ouonnki 设计风格
+ * 视频详情页面 — 方案 A · 海报对开（2026-10-10 拍板，Demo 见 changelogs/demos/detail-layout-2026-10-10）
  *
- * Hero：全屏 backdrop + 双层渐变 + logo/标签/简介 + 毛玻璃按钮 + 桌面端右侧海报
- * 内容区：三 Tab（基础信息/播放列表/季信息）+ VideoCard 推荐行
+ * Hero：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 底纹 + kicker/标题/meta/简介折叠/CTA 钉底）
+ * 资料区：tab 行居中置顶（概览 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息同原逻辑）+ VideoCard 推荐行
  */
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigationType, Link } from 'react-router-dom';
@@ -17,9 +17,9 @@ import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { BackToTopButton } from '@/components/common';
 import { useDocumentTitle, useInViewport } from '@/hooks';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
-import { useIsMobile, useIsTV as useIsTVDevice } from '@/hooks/useMediaQuery';
 import { VideoCard } from '@/components/VideoCard';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
@@ -28,7 +28,7 @@ import PlaylistModal from './components/PlaylistModal';
 import SourceDetectPill, { type SourceDetectStatus } from './components/SourceDetectPill';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
-  Play, Heart, Star, Calendar, ArrowLeft,
+  Play, Heart, ArrowLeft,
   Info, ListVideo, Layers, AlertTriangle, WifiOff,
   RefreshCw, Server, ExternalLink,
 } from 'lucide-react';
@@ -175,12 +175,6 @@ export default function DetailPage() {
 
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
-  // 上半部两栏（C1）：断点与 Detail.css 的 @media (width >= 1024px) 一致
-  const isMobileLayout = useIsMobile();
-  const isTVDevice = useIsTVDevice();
-  const isWideDetail = !isMobileLayout && !isTVDevice;
-  /** hero 元素 ref：用于把 hero 实际高度写入 --detail-hero-h，锁死右栏高度 */
-  const heroRef = useRef<HTMLElement>(null);
   const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
   // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）
   const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
@@ -211,7 +205,8 @@ export default function DetailPage() {
   const [castExpanded, setCastExpanded] = useState(false);
   const [castOverflow, setCastOverflow] = useState(false);
   const castRowRef = useRef<HTMLDivElement>(null);
-  const infoGridRef = useRef<HTMLDivElement>(null);
+  /** hero 文本区 ref：量其内容高反算海报列宽（--poster-w，见下方 effect 注释） */
+  const heroInfoRef = useRef<HTMLDivElement>(null);
 
   // CMS
   const [cmsResults, setCmsResults] = useState<DetailSourceResult[]>([]);
@@ -644,75 +639,39 @@ export default function DetailPage() {
     return () => ro.disconnect();
   }, [cast.length]);
 
-  // hero 实际高度 → --detail-hero-h：两栏布局下右栏用它锁死 max-height，
-  // 保证「hero 与右栏下沿齐平」且右栏内容溢出时栏内滚动而不撑高整行。
+  // hero 两列等高且等比（2026-10-10 用户两轮反馈）：文本区为高度主（内容驱动），
+  // RO 量出其高写 --poster-w = 高×2/3 到 .detail-hero，左列轨道宽随变量走 →
+  // 海报盒永远 2:3、宽高同变零裁切（不是把盒机械拉高）。防振荡：取整 + 变化 >2px 才写。
+  // 上限 330（非 300）：真机实测 1024 展开简介后 info 高≈473，若顶在 300 会破坏 2:3（aspect 0.63）；
+  // 330 容下 h≤495 的展开态且宽屏折叠态（h≈450→w=300）不受影响。
+  // 路径迟滞修复：视口宽度变化时先清变量——轨道回落视口公式，info 宽高随之重排，
+  // RO 再触发 sync 从当前视口最优点重新收敛（否则双稳态下旧宽变量会残留）。
   useEffect(() => {
-    if (!isWideDetail) return;
-    const el = heroRef.current;
-    const host = el?.parentElement;
-    if (!el || !host) return;
-    const sync = () => host.style.setProperty('--detail-hero-h', `${el.offsetHeight}px`);
+    const info = heroInfoRef.current;
+    const hero = info?.closest('.detail-hero') as HTMLElement | null;
+    if (!info || !hero) return;
+    const sync = () => {
+      const h = info.clientHeight;
+      if (h <= 0) return;
+      const w = Math.round(Math.min(330, Math.max(160, (h * 2) / 3)));
+      const cur = parseInt(hero.style.getPropertyValue('--poster-w'), 10);
+      if (!Number.isFinite(cur) || Math.abs(cur - w) > 2) {
+        hero.style.setProperty('--poster-w', `${w}px`);
+      }
+    };
     sync();
     const ro = new ResizeObserver(sync);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isWideDetail, d]);
-
-  // 基础信息半宽格：值在半列放不下（单行自然宽 > 半列可用宽）→ 独占整行
-  // （grid-column: 1/-1）。判定恒用「半列基准宽」而非当前格宽，避免 span 后
-  // RO 再触发时判据漂移来回抖动；只在 class 真变化时写 DOM，稳定后零写入。
-  useEffect(() => {
-    const grid = infoGridRef.current;
-    if (!grid) return;
-    const probe = document.createElement('span');
-    probe.style.cssText = 'position:absolute;left:-99999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
-    document.body.appendChild(probe);
-    const measure = () => {
-      const cards = Array.from(grid.querySelectorAll<HTMLElement>('.detail-info-card'));
-      if (cards.length === 0) return;
-      const gs = getComputedStyle(grid);
-      const colCount = gs.gridTemplateColumns.split(' ').filter(Boolean).length;
-      if (colCount < 2) {
-        cards.forEach((c) => c.classList.remove('detail-info-card--span'));
-        return;
-      }
-      const colGap = parseFloat(gs.columnGap) || 0;
-      const halfW = (grid.clientWidth - colGap) / 2;
-      cards.forEach((card) => {
-        const strong = card.querySelector<HTMLElement>('strong');
-        if (!strong) return;
-        const label = card.querySelector<HTMLElement>(':scope > span');
-        const icon = card.querySelector<HTMLElement>(':scope > svg');
-        const cardGap = parseFloat(getComputedStyle(card).columnGap) || 0;
-        const iconW = icon ? icon.getBoundingClientRect().width : 0;
-        const labelW = label ? label.getBoundingClientRect().width : 0;
-        const strongMargin = parseFloat(getComputedStyle(strong).marginLeft) || 0;
-        // flex 间隙：icon | label | strong → 2 个 gap
-        const avail = halfW - iconW - labelW - strongMargin - cardGap * 2;
-        // probe 必须继承 strong 的字号/字族，否则自然宽量不准
-        const ss = getComputedStyle(strong);
-        probe.style.font = ss.font;
-        probe.style.letterSpacing = ss.letterSpacing;
-        probe.style.fontWeight = ss.fontWeight;
-        probe.replaceChildren(...Array.from(strong.childNodes).map((n) => n.cloneNode(true)));
-        const needed = probe.getBoundingClientRect().width;
-        const wantSpan = needed > avail + 1;
-        if (card.classList.contains('detail-info-card--span') !== wantSpan) {
-          card.classList.toggle('detail-info-card--span', wantSpan);
-        }
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(grid);
-    void document.fonts?.ready.then(measure).catch(() => undefined);
+    ro.observe(info);
+    const onResize = () => hero.style.removeProperty('--poster-w');
+    window.addEventListener('resize', onResize);
     return () => {
       ro.disconnect();
-      probe.remove();
+      window.removeEventListener('resize', onResize);
     };
-  }, [d, isWideDetail]);
-  const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
+  }, [d]);
+
   const genres = d?.genres || [];
+  const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const status = d?.status || '';
   const originalLanguage = d?.original_language || '';
   const spokenLanguages = d?.spoken_languages?.map((l) => l.name || l.english_name) || [];
@@ -783,110 +742,75 @@ export default function DetailPage() {
   }
 
   /* ── C1 排列（≥1024，2026-09-10 用户拍板）─────────────────────────
-     右栏只承载「文本类」信息：类型标签 / 基础信息 KV 网格 / 发行公司。
-     演员（横滚条）、简介、剧照属于「横向铺开」的内容，放窄栏会严重缩水，
-     保持通栏（理由与实测数据见 Detail.css 的「上半部两栏」注释块）。
-     同一份 JSX 由 isWideDetail 决定落在 hero 右侧（.detail-hero-side）
-     还是 info tab 内（原位置）—— 只渲染一处，不产生重复 DOM。 */
-  /* 简介块：2026-09-10 用户要求随基础信息一起上提到右栏（窄屏仍在 info tab 原位置）。
-     抽成变量保证只渲染一处。 */
-  const overviewNode = overview ? (
-    <>
-      <h3 className="detail-section-subtitle">简介</h3>
-      <p className="detail-overview-full">{overview}</p>
-    </>
-  ) : null;
-
-  const infoCoreNode = (
-    <>
-      <h2 className="detail-section-title">基础信息</h2>
-      {/* 类型标签 */}
-      {genres.length > 0 && (
-        <div className="detail-genres">
-          {genres.map((g) => (
-            <span key={g.id} className="detail-genre-tag">{g.name}</span>
-          ))}
-        </div>
-      )}
-      <div className="detail-info-grid" ref={infoGridRef}>
-        {releaseDateStr && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>发行时间</span><strong>{releaseDateStr}</strong></div>}
-        {status && <div className="detail-info-card"><Icon icon={Info} size="sm" /><span>状态</span><strong>{statusLabel(status)}</strong></div>}
-        {(runtime ?? 0) > 0 && <div className="detail-info-card"><ClockIcon size="sm" /><span>时长</span><strong>{runtime} 分钟</strong></div>}
-        {originalLanguage && <div className="detail-info-card"><GlobeIcon size="sm" /><span>语言</span><strong>{originalLanguage.toUpperCase()}{spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}</strong></div>}
-        {director && <div className="detail-info-card"><UsersIcon size="sm" /><span>导演</span><strong>{director}</strong></div>}
-        {isTV && createdBy.length > 0 && <div className="detail-info-card"><UsersIcon size="sm" /><span>主创</span><strong>{createdBy.join(' / ')}</strong></div>}
-        {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>预算</span><strong>{formatCurrency((d as TMDBMovieDetail).budget)}</strong></div>}
-        {d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0 && <div className="detail-info-card detail-info-card--money"><DollarIcon size="sm" /><span>票房</span><strong>{formatCurrency((d as TMDBMovieDetail).revenue)}</strong></div>}
-        {isTV && <div className="detail-info-card detail-info-card--media"><Icon icon={Layers} size="sm" /><span>季 / 集</span><strong>{totalSeasons} 季 / {totalEpisodes} 集</strong></div>}
-        {isTV && inProduction !== undefined && <div className="detail-info-card"><Icon icon={RefreshCw} size="sm" /><span>制作中</span><strong>{inProduction ? '是' : '已完结'}</strong></div>}
-        {isTV && lastAirDate && <div className="detail-info-card"><Icon icon={Calendar} size="sm" /><span>最后播出</span><strong>{lastAirDate}</strong></div>}
-      </div>
-
-      {/* 评分 / 国家 / 发行 — 各独占一行放末尾（2026-09-23 用户要求；半宽放不下的字段由 measure 脚本加 --span） */}
-      {voteAverage > 0 && (
-        <div className="detail-info-row detail-info-card--rating">
-          <Icon icon={Star} size="sm" />
-          <span>TMDB 评分</span>
-          <strong>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</strong>
-        </div>
-      )}
-      {countries.length > 0 && (
-        <div className="detail-info-row">
-          <GlobeIcon size="sm" />
-          <span>国家</span>
-          <strong>{countries.join(' / ')}</strong>
-        </div>
-      )}
-      {companies.length > 0 && (
-        <div className="detail-info-row">
-          <FilmIcon size="sm" />
-          <span>发行</span>
-          <strong className="detail-companies">
-            {companies.map((c) => (
-              <span key={c.id} className="detail-company">
-                {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
-                {c.name}
-              </span>
-            ))}
-          </strong>
-        </div>
-      )}
-    </>
-  );
+     方案 A · 资料区（2026-10-10 拍板，替换旧 C1 右栏方案）：tab 行居中于资料区头部；
+     概览面板 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息沿用原逻辑。
+     简介改在 hero 文本区 3 行折叠展开，不再单独成块。 */
+  const factCells: { key: string; label: string; value: ReactNode; hi?: boolean }[] = [];
+  if (voteAverage > 0) factCells.push({ key: 'rating', label: 'TMDB 评分', hi: true, value: <>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</> });
+  if (releaseDateStr) factCells.push({ key: 'release', label: '发行时间', value: releaseDateStr });
+  if (status) factCells.push({ key: 'status', label: '状态', value: statusLabel(status) });
+  if ((runtime ?? 0) > 0) factCells.push({ key: 'runtime', label: '时长', value: `${runtime} 分钟` });
+  if (originalLanguage) factCells.push({ key: 'lang', label: '语言', value: `${originalLanguage.toUpperCase()}${spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}` });
+  if (director) factCells.push({ key: 'director', label: '导演', value: director });
+  if (isTV && createdBy.length > 0) factCells.push({ key: 'createdBy', label: '主创', value: createdBy.join(' / ') });
+  if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0) factCells.push({ key: 'budget', label: '预算', value: formatCurrency((d as TMDBMovieDetail).budget) });
+  if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0) factCells.push({ key: 'revenue', label: '票房', value: formatCurrency((d as TMDBMovieDetail).revenue) });
+  if (isTV) factCells.push({ key: 'seasonEp', label: '季 / 集', value: `${totalSeasons} 季 / ${totalEpisodes} 集` });
+  if (isTV && inProduction !== undefined) factCells.push({ key: 'inProd', label: '制作中', value: inProduction ? '是' : '已完结' });
+  if (isTV && lastAirDate) factCells.push({ key: 'lastAir', label: '最后播出', value: lastAirDate });
 
   return (
     <div ref={pageRef} className="page-padding detail-page content-shell" key={id}>
-      {/* ══════════════════════════════════════════════
-          HERO：全屏 backdrop + 双层渐变
-          ══════════════════════════════════════════════ */}
-      {/* 上半部两栏容器（C1）：<1024 / TV 下 display:contents（零布局影响，与改造前一致）；
-          ≥1024 时 grid 两栏，右栏由下方 aside 提供 */}
-      <div className="detail-top">
-      <section ref={heroRef} className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
-        {backdropUrl && (
-          <img className="detail-hero-bg" src={backdropUrl} alt="" width={1920} height={1080} onLoad={() => setBgLoaded(true)} />
-        )}
-        {/* 双层渐变遮罩 */}
-        <div className="detail-hero-gradient detail-hero-gradient-1" />
-        <div className="detail-hero-gradient detail-hero-gradient-2" />
-
-        {/* 返回按钮 */}
-        <button className="detail-hero-back" onClick={handleBack} aria-label="返回">
-          <Icon icon={ArrowLeft} size="sm" />
-          <span>返回</span>
-        </button>
-
-        {/* 官网链接 */}
-        {homepage && (
-          <a href={homepage} target="_blank" rel="noreferrer" className="detail-official-link">
-            <Icon icon={ExternalLink} size="sm" />
-            <span>官方页面</span>
-          </a>
-        )}
-
-        {/* Hero 内容 */}
-        <div className="detail-hero-content">
-          <div className="detail-hero-left">
+      {/* ═════════════════════════════════════════
+          HERO（方案 A · 海报对开，2026-10-10 拍板）：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 作底纹）
+          ═════════════════════════════════════════ */}
+      <section className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
+        {/* 左列：竖海报（移动端整列隐藏，由 backdrop 底纹承担视觉） */}
+        <div className="detail-hero-poster">
+          <button className="detail-hero-back" onClick={handleBack} aria-label="返回">
+            <Icon icon={ArrowLeft} size="sm" />
+            <span>返回</span>
+          </button>
+          {posterUrl && (
+            <img
+              src={posterUrl}
+              alt={title}
+              width={300}
+              height={450}
+              onError={(e) => {
+                // 海报加载失败 → 统一中性灰占位（placeholder-gray.svg 纯色块，亮暗同款），
+                // 与卡片失败态一致；直接换 src 避免破图闪烁。
+                e.currentTarget.src = '/placeholder-gray.svg';
+                e.currentTarget.onerror = null;
+              }}
+            />
+          )}
+          {hasWatchingHistory && (
+            <div className="detail-hero-poster-progress">
+              <div
+                className="detail-hero-poster-progress-bar"
+                style={{ width: `${watchProgressPercent}%` }}
+              />
+            </div>
+          )}
+        </div>
+        {/* 右列：文本区（横板 backdrop 底纹 + 左侧渐变压色保可读） */}
+        <div ref={heroInfoRef} className="detail-hero-info">
+          {backdropUrl && (
+            <img className="detail-hero-bg" src={backdropUrl} alt="" width={1920} height={1080} onLoad={() => setBgLoaded(true)} />
+          )}
+          <div className="detail-hero-veil" aria-hidden="true" />
+          <div className="detail-hero-body">
+            {/* 顶行：媒体类型 + 官网链接（文本区右上角） */}
+            <div className="detail-hero-topline">
+              <span className="detail-hero-kicker">{typeLabels[tmdbMediaType]}</span>
+              {homepage && (
+                <a href={homepage} target="_blank" rel="noreferrer" className="detail-official-link">
+                  <Icon icon={ExternalLink} size="sm" />
+                  <span>官方页面</span>
+                </a>
+              )}
+            </div>
             {/* Logo 或标题 */}
             {logoPath ? (
               <img className="detail-hero-logo" src={buildImageUrl(logoPath, 'w342') || ''} alt={title} width={400} height={150} />
@@ -895,15 +819,10 @@ export default function DetailPage() {
             )}
             {/* 标语 */}
             {d?.tagline && <p className="detail-hero-tagline">{d.tagline}</p>}
-
-            {/* Meta 行（对齐轮播图风格） */}
+            {/* Meta 行（类型已由 kicker 承担，不重复渲染） */}
             <div className="detail-hero-meta">
-              {/* 评分：无值不显示（旧实现恒渲染，voteAverage=0 时会留下一个孤零零的 ★ 图标） */}
               {voteAverage > 0 && <span className="detail-hero-rating">★ {voteAverage.toFixed(1)}</span>}
               {year && <span className="detail-hero-meta-item">{year}</span>}
-              <span className="detail-hero-meta-item detail-hero-meta-item--type">
-                {typeLabels[tmdbMediaType]}
-              </span>
               {tmdbMediaType === 'tv' && totalSeasons > 0 && (
                 <span className="detail-hero-meta-item">{totalSeasons} 季 / {totalEpisodes} 集</span>
               )}
@@ -912,86 +831,60 @@ export default function DetailPage() {
                 <span className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</span>
               )}
             </div>
-
-            {/* 简介 */}
-            {overview && <p className="detail-hero-desc">{overview}</p>}
-
-            {/* 操作按钮 */}
-            <div className="detail-hero-actions">
-              <Link
-                to={{ pathname: `/play/${id}`, search: '' }}
-                state={{ from: playFrom }}
-                className="detail-btn detail-btn-play"
-              >
-                <Icon icon={Play} size="sm" fill="currentColor" />
-                {hasWatchingHistory ? '继续播放' : '立即播放'}
-              </Link>
-              {hasWatchingHistory && (
-                <Link
-                  to={{ pathname: `/play/${id}`, search: '?fresh=1' }}
-                  state={{ from: playFrom, skipHistory: true }}
-                  className="detail-btn detail-btn-play-from-start"
-                >
-                  从头播放
-                </Link>
-              )}
-              <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect} aria-pressed={collected}>
-                <Icon icon={Heart} size="sm" fill={collected ? 'var(--color-favorite-active)' : 'none'}
-                                                color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
-                {collected ? '已收藏' : '加入收藏'}
-              </button>
-            </div>
-
-            {/* 观看进度 */}
-            {hasWatchingHistory && (
-              <div className="detail-progress-row">
-                <span className="detail-progress-label">
-                  {lastEpisodeLabel && tmdbMediaType === 'tv'
-                    ? `已播放：${lastEpisodeLabel}`
-                    : '已播放'}
-                </span>
-                <span className="detail-progress-time">
-                  {watchProgressPercent}% · {formatProgressTime(historyRecord.progress)} / {formatProgressTime(historyRecord.duration)}
-                </span>
-              </div>
+            {/* 简介：3 行折叠 + 展开（与资料表长字段同一交互语言） */}
+            {overview && (
+              <p className="detail-hero-desc">
+                <CollapsibleValue lines={3} expandLabel="展开简介">{overview}</CollapsibleValue>
+              </p>
             )}
-          </div>
-
-          {/* 桌面端右侧海报 */}
-          {posterUrl && (
-            <div className="detail-hero-poster">
-              <img
-                src={posterUrl}
-                alt={title}
-                width={300}
-                height={450}
-                onError={(e) => {
-                  // 海报加载失败 → 统一中性灰占位（placeholder-gray.svg 纯色块，亮暗同款），
-                  // 与卡片失败态一致；直接换 src 避免破图闪烁。
-                  e.currentTarget.src = '/placeholder-gray.svg';
-                  e.currentTarget.onerror = null;
-                }}
-              />
+            {/* CTA 与观看进度：钉文本区底部（margin-top:auto），与海报下沿齐平 */}
+            <div className="detail-hero-cta-zone">
+              <div className="detail-hero-actions">
+                <Link
+                  to={{ pathname: `/play/${id}`, search: '' }}
+                  state={{ from: playFrom }}
+                  className="detail-btn detail-btn-play"
+                >
+                  <Icon icon={Play} size="sm" fill="currentColor" />
+                  {hasWatchingHistory ? '继续播放' : '立即播放'}
+                </Link>
+                {hasWatchingHistory && (
+                  <Link
+                    to={{ pathname: `/play/${id}`, search: '?fresh=1' }}
+                    state={{ from: playFrom, skipHistory: true }}
+                    className="detail-btn detail-btn-play-from-start"
+                  >
+                    从头播放
+                  </Link>
+                )}
+                <button className={`detail-btn detail-btn-collect ${collected ? 'active' : ''}`} onClick={handleCollect} aria-pressed={collected}>
+                  <Icon icon={Heart} size="sm" fill={collected ? 'var(--color-favorite-active)' : 'none'}
+                                                  color={collected ? 'var(--color-favorite-active)' : 'currentColor'} />
+                  {collected ? '已收藏' : '加入收藏'}
+                </button>
+              </div>
+              {/* 观看进度 */}
               {hasWatchingHistory && (
-                <div className="detail-hero-poster-progress">
-                  <div
-                    className="detail-hero-poster-progress-bar"
-                    style={{ width: `${watchProgressPercent}%` }}
-                  />
+                <div className="detail-progress-row">
+                  <span className="detail-progress-label">
+                    {lastEpisodeLabel && tmdbMediaType === 'tv'
+                      ? `已播放：${lastEpisodeLabel}`
+                      : '已播放'}
+                  </span>
+                  <span className="detail-progress-time">
+                    {watchProgressPercent}% · {formatProgressTime(historyRecord.progress)} / {formatProgressTime(historyRecord.duration)}
+                  </span>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </section>
-      {isWideDetail && (
-        <aside className="detail-hero-side">{infoCoreNode}</aside>
-      )}
-      </div>
 
-      {/* ══════════════════════════════════════════════
-          Tab 导航（-mt-px 与 hero 重叠）
-          ══════════════════════════════════════════════ */}
+      {/* ═════════════════════════════════════════
+          资料区（方案 A）：tab 行居中置顶；概览面板 = 基础信息表 + 演员 + 剧照
+          ═════════════════════════════════════════ */}
+      <section className="detail-facts">
       <div className="detail-tabs-wrap">
         <div className="detail-tabs">
           {([
@@ -1025,8 +918,44 @@ export default function DetailPage() {
         {/* 概览 */}
         {activeTab === 'info' && (
           <div className="detail-info">
-            {/* 基础信息：≥1024 时已在 hero 右侧的 .detail-hero-side 渲染，此处不重复 */}
-            {!isWideDetail && infoCoreNode}
+            {/* 基础信息表：label 上 / 值下，一行最多 4 列（CSS 25% 封顶）；值超 4 行折叠展开 */}
+            <h2 className="detail-section-title">基础信息</h2>
+            {genres.length > 0 && (
+              <div className="detail-genres">
+                {genres.map((g) => (
+                  <span key={g.id} className="detail-genre-tag">{g.name}</span>
+                ))}
+              </div>
+            )}
+            <div className="detail-facts-grid">
+              {factCells.map((f) => (
+                <div key={f.key} className={`detail-fact${f.hi ? ' detail-fact--hi' : ''}`}>
+                  <span>{f.label}</span>
+                  <b><CollapsibleValue lines={4}>{f.value}</CollapsibleValue></b>
+                </div>
+              ))}
+              {/* 国家 / 发行：grid 内独占整行（grid-column 1/-1，行距与格同源由 gap 提供），
+                  label 左·值右同行基线对齐，放不下自然换行（不折叠） */}
+            {countries.length > 0 && (
+              <div className="detail-fact detail-fact--full">
+                <span>国家</span>
+                <strong>{countries.join(' / ')}</strong>
+              </div>
+            )}
+            {companies.length > 0 && (
+              <div className="detail-fact detail-fact--full">
+                <span>发行</span>
+                <strong className="detail-companies">
+                  {companies.map((c) => (
+                    <span key={c.id} className="detail-company">
+                      {c.logo_path && <img src={buildImageUrl(c.logo_path, 'w92') || ''} alt={c.name} className="detail-company-logo" />}
+                      {c.name}
+                    </span>
+                  ))}
+                </strong>
+              </div>
+            )}
+            </div>
 
             {cast.length > 0 && (
               <>
@@ -1057,8 +986,7 @@ export default function DetailPage() {
               </>
             )}
 
-            {/* 简介：保持原位（演员之后、剧照之前）——2026-09-10 用户要求从右栏移回 */}
-            {overviewNode}
+            {/* 简介已并入 hero 文本区（3 行折叠展开），不再单独成块 */}
 
             {/* 剧照懒加载哨兵（2026-09-16）：常驻零高节点，不参与布局。
                 放在剧照区之前，元素接近视口（rootMargin 300px）时才触发 /images 请求；
@@ -1365,6 +1293,7 @@ export default function DetailPage() {
           </div>
         )}
       </div>
+      </section>
 
       {/* ══════════════════════════════════════════════
           你可能还喜欢（VideoCard 横向推荐行）
@@ -1455,6 +1384,51 @@ function formatProgressTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+// ── 长字段折叠（方案 A，2026-10-10）：clamp N 行，仅真溢出才出「展开/收起」按钮 ──
+// ⚠️ 两处实测坑（Demo 2026-10-10 验证）：① 不能用 scrollHeight 判溢出——Chromium 下
+// -webkit-line-clamp 的 scrollHeight 可能等于 clientHeight（漏检）；② 测量克隆节点必须挂在
+// 原父节点内——挂 document.body 会丢元素自身字号，自然高算大→假阳性。
+function CollapsibleValue({ lines, expandLabel = '展开', children }: { lines: number; expandLabel?: string; children?: ReactNode }) {
+  const txtRef = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = txtRef.current;
+    if (!el || open) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const clone = el.cloneNode(true) as HTMLElement;
+      clone.style.cssText = `position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${rect.width}px;display:block;-webkit-line-clamp:unset`;
+      const parent = el.parentNode;
+      if (!parent) return;
+      parent.appendChild(clone);
+      const full = clone.getBoundingClientRect().height;
+      parent.removeChild(clone);
+      setOverflow(full > rect.height + 2);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [open]);
+  return (
+    <span className="detail-collapse">
+      <span
+        ref={txtRef}
+        className={`detail-collapse-txt${open ? ' detail-collapse-txt--open' : ''}`}
+        style={{ '--collapse-lines': lines } as CSSProperties}
+      >
+        {children}
+      </span>
+      {overflow && (
+        <button type="button" className="detail-collapse-btn" onClick={() => setOpen((o) => !o)}>
+          {open ? '收起 ⌃' : `${expandLabel} ⌄`}
+        </button>
+      )}
+    </span>
+  );
+}
+
 // ── 播放源缩略图（CMS 原图优先，缺失/加载失败用 TMDB 兜底） ──
 
 function SourceThumb({
@@ -1488,20 +1462,10 @@ function SourceThumb({
   );
 }
 
-// ── 内联图标组件（避免过多 import） ──────────────
+// ── 内联图标组件（避免过多 import）──────────────
+// （方案 A 资料表无图标后，ClockIcon/GlobeIcon/FilmIcon/DollarIcon 已删；
+//  演员占位仍用 UsersIcon）
 
-function ClockIcon({ size = 'sm' }: { size?: IconSize }) {
-  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-}
 function UsersIcon({ size = 'sm' }: { size?: IconSize }) {
   return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-}
-function GlobeIcon({ size = 'sm' }: { size?: IconSize }) {
-  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>;
-}
-function FilmIcon({ size = 'sm' }: { size?: IconSize }) {
-  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></svg>;
-}
-function DollarIcon({ size = 'sm' }: { size?: IconSize }) {
-  return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
 }

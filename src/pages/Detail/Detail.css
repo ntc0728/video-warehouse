@@ -24,15 +24,16 @@
 
 /* ── Hero 区 ───────────────────────────────────── */
 
+/* 方案 A · 海报对开（2026-10-10 拍板）：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 底纹）。
+   基座 = 移动单列（隐藏海报列）；≥768 两列；app 恒单列；TV 视口 ≥1024 走桌面规则。
+   旧 16:9 全屏大图 / G1 全出血 / 双层渐变随 C1 一并移除——hero 高度改由内容驱动。 */
 .detail-hero {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  aspect-ratio: 16 / 9;
-  max-height: min(65vh, var(--layout-detail-hero-max-h));
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  align-items: stretch;
+  margin-top: var(--space-xs);
 }
 
 .detail-hero--skeleton {
@@ -41,23 +42,7 @@
   animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
-/* ═ G1 break-out（2026-09-07 定稿 T1）：.detail-page 接入 content-shell 后，
-   仅在内容壳真实封顶的视口（≥2200）让 hero 背景扩为全出血，
-   避免 2560 下 hero 左右出现「底色留白 + 收窄」的割裂观感。
-   <2200 视口壳为 100%，calc(50% - 50vw) 不启用 → 1440 基线零变化。
-   顶图高度问题本期不改（用户暂缓），此处仅处理壳收窄的副作用。 */
-@media (width >= 2200px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-page > .detail-hero {
-    /* 全出血（full-bleed）必须用视口单位：父容器已封顶 2200px，100% 无法撑到视口边缘。
-       stylelint 的 100vw 禁令针对「易致横向溢出」的常规场景，本处为正当豁免。 */
-    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-    width: 100vw;
-    margin-inline: calc(50% - 50vw);
-    border-radius: 0;
-  }
-}
-
-.detail-hero--skeleton .detail-hero-content {
+.detail-hero--skeleton .detail-hero-body {
   opacity: 0.4;
   transition: opacity 0.4s ease;
 }
@@ -72,6 +57,9 @@
 }
 
 .detail-hero-bg {
+  /* 底纹化：透明度由 --hero-bg-o 控制（⚠️ heroBgReveal 动画终点必须用同一变量——
+     旧写死 to{opacity:1} 会被 fill:both 冻结在全图实度，基础 0.12 形同虚设，真机实测回归此坑） */
+  --hero-bg-o: 0.12;
   position: absolute;
   inset: 0;
   width: 100%;
@@ -80,8 +68,13 @@
   /* 主体定位：与首页 banner 一致（见 HeroBanner.css），避免容器比 16:9 扁时
      cover 裁掉上下两端、只露中间「横条」；偏上 20% 保留人物/标题主体 */
   object-position: center 20%;
+  opacity: var(--hero-bg-o);
   animation: heroBgReveal 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   will-change: opacity, filter;
+}
+
+[data-theme="dark"] .detail-hero-bg {
+  --hero-bg-o: 0.16;
 }
 
 @keyframes heroBgReveal {
@@ -90,121 +83,129 @@
   filter: brightness(0.6);
 }
   to   {
-  opacity: 1;
+  opacity: var(--hero-bg-o, 0.12);
   filter: brightness(1);
 }
 }
 
-/* 噪声纹理层 */
-.detail-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  opacity: 0.03;
-  pointer-events: none;
+/* 右列文本区容器（底纹图 + 压色 + 内容的层叠基底）。
+   ⚠️ 可读性结构方案（用户 2026-10-10 反馈「降透明度仍不清晰」）：单靠压低 img 透明度不够——
+   backdrop 原图明暗不可控，文字对比度随条目图漂移。改为文本区先铺 surface 实色底，
+   底纹图 ×0.12 叠在实色上（氛围感保留、对比度恒定），veil 用同系实色渐变只补左侧文字带 */
+.detail-hero-info {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(var(--space-lg), 1.6vw, var(--space-xl));
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
 }
 
-/* 双层渐变叠加 */
-.detail-hero-gradient {
+/* 左侧渐变压色（与实色底同色系，左段实色右段透出底纹，无跨底色问题） */
+.detail-hero-veil {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
-  z-index: 3;
-}
-.detail-hero-gradient-1 {
-  background: linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.12) 100%);
-}
-.detail-hero-gradient-2 {
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 55%, rgba(0,0,0,0.02) 100%);
+  background: linear-gradient(115deg, var(--color-surface) 12%, transparent 68%);
 }
 
-/* ── Hero 内返回按钮 ────────────────────────────── */
+/* ── 返回按钮：叠海报列左上角（暗图/灰占位上均可读的半透暗玻璃）── */
 .detail-hero-back {
   position: absolute;
-  top: var(--space-md);
-  left: var(--space-md);
+  top: var(--space-sm);
+  left: var(--space-sm);
   z-index: 20;
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  height: var(--comp-btn-min-height);
-  padding: var(--space-xs) var(--space-md);
-  border: none;
+  min-height: var(--space-2xl);
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius-full);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: var(--text-sm);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: var(--text-xs);
   font-weight: 500;
-  transition: color var(--dur-sm);
+  transition: color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
 .detail-hero-back:hover {
+  background: rgba(0, 0, 0, 0.6);
   color: var(--color-on-image);
 }
 
-/* ── 官方页面链接 ────────────────────────────── */
+/* ── 官方页面链接：文本区右上角（topline 行右端，非绝对定位）── */
 .detail-official-link {
-  position: absolute;
-  top: var(--space-md);
-  right: var(--space-md);
-  z-index: 20;
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  height: var(--comp-btn-min-height);
-  padding: var(--space-xs) var(--space-md);
-  border: none;
+  min-height: var(--space-2xl);
+  margin-left: auto;
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: transparent;
-  color: rgba(255,255,255,0.9);
-  font-size: var(--text-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
   text-decoration: none;
-  transition: color var(--dur-sm);
+  transition: color var(--dur-sm), background var(--dur-sm);
   cursor: pointer;
 }
 .detail-official-link:hover {
-  color: var(--color-on-image);
+  /* hover 不换背景色——底纹区上 rgba 半透背景透图致对比度不稳（用户反馈 hover 文本看不清）；
+     只提实色边框 + 文字色，背景保持 surface 实底 */
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 /* ── Hero 内容 ─────────────────────────────────── */
 
-.detail-hero-content {
+.detail-hero-body {
   position: relative;
-  z-index: 10;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  justify-content: flex-end;
-  padding: var(--space-md) var(--space-md);
-}
-
-.detail-hero-left {
-  display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-md);
   min-width: 0;
-  max-width: var(--layout-modal-max-width);
-  overflow: hidden;
 }
 
-/* Hero 交错入场 */
-.detail-hero-left > *:nth-child(1) {
+/* 顶行：媒体类型 kicker | 官方页面（右端） */
+.detail-hero-topline {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+.detail-hero-kicker {
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+/* Hero 交错入场（作用于文本区各块；顶行/标题/tagline/meta/简介/CTA 区） */
+.detail-hero-body > *:nth-child(1) {
   animation: heroItemIn 0.6s 0.1s cubic-bezier(0.22,0.61,0.36,1) both;
 }
-.detail-hero-left > *:nth-child(2) {
+.detail-hero-body > *:nth-child(2) {
   animation: heroItemIn 0.6s 0.2s cubic-bezier(0.22,0.61,0.36,1) both;
 }
-.detail-hero-left > *:nth-child(3) {
+.detail-hero-body > *:nth-child(3) {
   animation: heroItemIn 0.6s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
 }
-.detail-hero-left > *:nth-child(4) {
+.detail-hero-body > *:nth-child(4) {
   animation: heroItemIn 0.6s 0.4s cubic-bezier(0.22,0.61,0.36,1) both;
 }
-.detail-hero-left > *:nth-child(5) {
+.detail-hero-body > *:nth-child(5) {
   animation: heroItemIn 0.6s 0.5s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.detail-hero-body > *:nth-child(6) {
+  animation: heroItemIn 0.6s 0.55s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 
 @keyframes heroItemIn {
@@ -233,22 +234,20 @@
 
 /* TMDB Logo：见 assets/styles/shared-hero.css（Play 页 / 首页 banner 共用） */
 
-/* 标题（无 logo 时的回落） */
+/* 标题（无 logo 时的回落；亮底底纹上改用主题色） */
 .detail-hero-title {
-  max-width: min(85%, var(--layout-modal-max-width));
-  margin: 0 0 var(--space-sm);
-  color: var(--color-on-image);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(var(--text-2xl), 2.4vw, var(--text-3xl));
+  font-weight: var(--fw-bold);
+  line-height: 1.18;
 }
 
 /* 标语 */
 .detail-hero-tagline {
-  margin: 0;
-  color: rgba(255,255,255,0.8);
-  font-size: var(--text-base);
+  margin: calc(-1 * var(--space-xs)) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
   font-style: italic;
 }
 
@@ -262,31 +261,46 @@
   font-size: var(--text-sm);
 }
 
+/* shared-hero 白字适用于 Play 沉浸 banner；Detail 亮底文本区改回主题色（复合选择器压过单类全局规则） */
+.detail-hero .detail-hero-meta {
+  color: var(--color-text-secondary);
+}
+.detail-hero .detail-hero-rating {
+  color: var(--color-warning-text);
+}
+.detail-hero .detail-hero-meta-item {
+  color: var(--color-text-secondary);
+  text-shadow: none;
+}
+
 /* .detail-hero-rating / .detail-hero-meta-item / --type：见 assets/styles/shared-hero.css
    （Play 页 player-detail-meta 复用同一套类，必须全局可用） */
 
 /* ── 简介 ──────────────────────────────────────── */
 
 .detail-hero-desc {
-  display: -webkit-box;
+  max-width: 65em;
   margin: 0;
-  color: rgba(255,255,255,0.9);
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  line-height: 1.5;
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  line-height: 1.9;
 }
 
 /* ── 按钮组 ────────────────────────────────────── */
+
+/* CTA 钉底区（margin-top:auto 撑开，贴齐海报下沿；与简介脱开由 padding-top 保底） */
+.detail-hero-cta-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: auto;
+  padding-top: clamp(var(--space-xl), 3vh, var(--space-2xl));
+}
 
 .detail-hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
-  margin-top: var(--space-md);
-  animation: heroItemIn 0.6s 0.55s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 
 .detail-btn {
@@ -322,39 +336,37 @@
 }
 
 .detail-btn-play {
-  background: var(--color-surface-elevated);
-  color: var(--color-text);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 .detail-btn-play:hover {
   filter: brightness(0.92);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-card);
 }
 
 .detail-btn-play-from-start {
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.12);
-  color: var(--color-on-image);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
 }
 .detail-btn-play-from-start:hover {
-  border-color: rgba(255,255,255,0.55);
-  background: rgba(255,255,255,0.22);
-  color: var(--color-on-image);
+  background: var(--color-hover-bg);
+  color: var(--color-text);
 }
 
 .detail-btn-collect {
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.12);
-  color: var(--color-on-image);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
 }
 .detail-btn-collect:hover {
-  border-color: rgba(255,255,255,0.55);
-  background: rgba(255,255,255,0.22);
-  color: var(--color-on-image);
+  background: var(--color-hover-bg);
+  color: var(--color-text);
 }
 .detail-btn-collect.active {
-  border-color: rgba(255,77,79,0.5);
-  background: rgba(255,77,79,0.15);
+  border-color: var(--color-favorite-active);
+  background: transparent;
   color: var(--color-favorite-active);
 }
 
@@ -370,32 +382,36 @@
 }
 
 .detail-progress-label {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-secondary);
   font-size: var(--text-xs);
   font-weight: 500;
 }
 
 .detail-progress-time {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
 /* ── 桌面端右侧海报 ────────────────────────────── */
 
+/* ⚠️ 两列等高方案（用户 2026-10-10 两轮反馈定稿）：不是把海报盒机械拉高（那样盒变窄、cover 裁图），
+   而是海报整体等比缩放——文本区为高度主（内容驱动），JS 量出其高写 --poster-w = 高×2/3 到本块，
+   左列轨道宽随该变量走 → 海报盒永远 2:3，宽高同变、零裁切；未写入前回退视口公式。
+   防振荡：index.tsx 侧 RO 仅在变化 >2px 时写入并取整；文本区行数（meta/CTA）跨阈值才变高，
+   属离散量，实测收敛。 */
 .detail-hero-poster {
   position: relative;
   display: none;
-  flex-shrink: 0;
-  align-self: flex-end;
-  width: var(--layout-detail-poster-w);
-  aspect-ratio: 2 / 3;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: var(--radius-lg);
+  width: 100%;
+  /* 上限 330：与 index.tsx sync 的 clamp 顶一致（展开态 h>450 时仍维持 2:3，真机实测 1024 展开 h≈473） */
+  max-width: 330px;
+  border-radius: var(--radius-md);
   background-color: var(--color-placeholder);
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-card);
   animation: heroPosterIn 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
+  transition: width var(--dur-md) var(--ease-standard);
 }
 
 .detail-hero-poster img {
@@ -411,7 +427,7 @@
   left: 0;
   width: 100%;
   height: var(--space-2xs);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -708,99 +724,95 @@
 }
 
 /* ── 基础信息：行距单一真源 ─────────────────────
-   卡片不再自带纵向 padding；行间距 = grid row-gap = 全宽行 margin-top = --space-md，
-   避免「2xs padding + 2xs gap + sm margin」三套值导致标签上下间距不一致。
-   标题（字段卡）之间 gap = --space-md（用户 2026-09-23 要求）。 */
-.detail-info-grid {
+   label 上 / 值下 + 底线分区；一行最多 4 列（列宽地板 25% 封顶，2560 下恒 4 列）；行距单一真源 = grid gap。
+   旧双列 info-card + 半宽 span 测量脚本随方案 A（2026-10-10）整体退役。 */
+.detail-facts {
+  margin-top: var(--space-xs);
+}
+
+.detail-facts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(max(clamp(150px, 13vw, 210px), calc(25% - 27px)), 1fr));
+  gap: var(--space-md) clamp(var(--space-lg), 2vw, var(--space-2xl));
+  margin-top: var(--space-sm);
 }
 
-.detail-info-card {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: center;
+.detail-fact {
   min-width: 0;
-  color: var(--color-text);
+  padding-bottom: var(--space-2xs);
+  border-bottom: 1px solid var(--color-border-light);
 }
-/* 半宽放不下 → 整行（JS measure 依据半列基准宽打 class；单列断点下 1/-1 无感） */
-.detail-info-card--span {
-  grid-column: 1 / -1;
+.detail-fact > span {
+  display: block;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
-.detail-info-card svg {
-  flex-shrink: 0;
-  color: var(--color-primary);
-  opacity: 0.7;
-}
-/* 语义化彩色图标（2026-09-10 用户要求「新增一些有颜色的图标」）：
-   只在三处高辨识度字段上着色 —— 评分（暖橙，与全站热度语义同色）、
-   金额类（绿，金钱语义）、季/集（蓝，结构信息）；其余保持主色，避免整栏花掉。
-   暗色主题下三个语义色在 variables.css 暗色段有独立取值，自动适配。 */
-.detail-info-card--rating svg {
-  color: var(--color-warning-text);
-  opacity: 1;
-}
-/* 评分改为全宽 .detail-info-row 后，需压过 .detail-info-row svg 的主色（同特异度、后写覆盖） */
-.detail-info-row.detail-info-card--rating svg {
-  color: var(--color-warning-text);
-  opacity: 1;
-}
-.detail-info-card--money svg {
-  color: var(--color-success-text);
-  opacity: 1;
-}
-.detail-info-card--media svg {
-  color: var(--color-info-text);
-  opacity: 1;
-}
-.detail-info-card span {
-  flex-shrink: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-}
-.detail-info-card strong {
-  margin-left: var(--space-sm);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-/* ── 全宽信息行（评分 / 国家 / 发行公司，末尾各独占一行） ──
-   数据在标题右侧同行显示；过长换行时 flex-start 保证值首行与标签对齐。
-   margin-top = grid row-gap = --space-md（与卡间标题行距同源）。 */
-
-.detail-info-row {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: flex-start;
+.detail-fact > b {
+  display: block;
   min-width: 0;
-  margin-top: var(--space-md);
-  color: var(--color-text);
-}
-.detail-info-row svg {
-  flex-shrink: 0;
-  margin-top: 0.125em;
-  color: var(--color-primary);
-  opacity: 0.7;
-}
-.detail-info-row > span:first-of-type {
-  flex-shrink: 0;
-  margin-top: 0.125em;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-}
-.detail-info-row strong {
-  flex: 1 1 0;
-  min-width: 0;
-  margin-left: var(--space-sm);
+  margin-top: var(--space-2xs);
   color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+/* TMDB 评分字段：暖橙唯一强调色（与全站热度语义同色，暗色自动适配） */
+.detail-fact--hi > b {
+  color: var(--color-warning-text);
+}
+/* 国家 / 发行：独占整行，label 左·值右同行基线对齐；放不下自然换行（不折叠）。
+   分割线/行距与上方格孪生：继承 .detail-fact 的 border-bottom + padding-bottom，行距统一由 grid gap 提供 */
+.detail-fact--full {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: var(--space-md);
+  align-items: baseline;
+}
+.detail-fact--full > span {
+  flex: 0 0 auto;
+}
+.detail-fact--full > strong {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ── 长字段折叠（CollapsibleValue）：clamp N 行，真溢出才出按钮；
+   行数经 --collapse-lines 传入，检测算法与两处 Chromium 坑见 index.tsx 注释。 */
+.detail-collapse {
+  display: block;
+}
+.detail-collapse-txt {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--collapse-lines, 4);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.detail-collapse-txt--open {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+.detail-collapse-btn {
+  display: block;
+  margin-left: auto;
+  padding: var(--space-2xs) 0 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.detail-collapse-btn:hover {
+  text-decoration: underline;
+}
+
+/* （旧全宽 .detail-info-row 已并入 .detail-fact--full；国家/发行行改用上方新规则） */
 
 /* 演员 — CSS Grid 自适应排列（11.4：头像/姓名/角色整体放大） */
 .detail-cast-row {
@@ -1310,37 +1322,29 @@
 
 
 @media (width <= 767px) {
-  .detail-hero {
-  min-height: var(--layout-card-daily-width);
-}
+  /* 移动端不启用横板底纹方案（用户 2026-10-10）：隐藏背景图 + 压色层，
+     文本区回归页底实色无卡形态，detail-hero-bg 在移动端不做变化 */
+  .detail-hero-bg,
+  .detail-hero-veil {
+    display: none;
+  }
 
-  .detail-hero-content {
-  padding: var(--space-xl) var(--space-md);
-}
+  .detail-hero-info {
+    padding: var(--space-md) 0;
+    border-radius: 0;
+    background: none;
+  }
 
   .detail-hero-logo {
   max-width: min(65%, var(--layout-popover-wide-min-w));
   max-height: var(--layout-tabbar-height);
 }
-  .detail-hero-title {
-  font-size: var(--text-xl);
-}
-  /* .detail-hero-logo 响应式：见 assets/styles/shared-hero.css */
-  .detail-hero-left {
-  gap: var(--space-sm);
-  max-width: 100%;
-}
   .detail-hero-meta {
   gap: var(--space-sm);
   font-size: var(--text-xs);
 }
-  .detail-hero-desc {
-  font-size: var(--text-xs);
-  -webkit-line-clamp: 2;
-}
   .detail-hero-actions {
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
 }
 
   .detail-btn {
@@ -1357,10 +1361,6 @@
   .detail-tab {
   padding: var(--space-sm) var(--space-md);
   font-size: var(--text-xs);
-}
-
-  .detail-info-grid {
-  grid-template-columns: 1fr;
 }
 
   .detail-sources-grid {
@@ -1388,35 +1388,30 @@
   grid-template-columns: repeat(2, 1fr);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本（方案 A 后 hero 单列/海报列隐藏由基座提供；
+   底纹同移动端不启用） */
 
-  html[data-device="app"] .detail-hero {
-  min-height: var(--layout-card-daily-width);
-}
+  html[data-device="app"] .detail-hero-bg,
+  html[data-device="app"] .detail-hero-veil {
+    display: none;
+  }
 
-  html[data-device="app"] .detail-hero-content {
-  padding: var(--space-xl) var(--space-md);
-}
+  html[data-device="app"] .detail-hero-info {
+    padding: var(--space-md) 0;
+    border-radius: 0;
+    background: none;
+  }
 
-  /* html[data-device="app"] .detail-hero-logo：见 assets/styles/shared-hero.css */
-  html[data-device="app"] .detail-hero-title {
-  font-size: var(--text-xl);
-}
-  html[data-device="app"] .detail-hero-left {
-  gap: var(--space-sm);
-  max-width: 100%;
+  html[data-device="app"] .detail-hero-logo {
+  max-width: min(65%, var(--layout-popover-wide-min-w));
+  max-height: var(--layout-tabbar-height);
 }
   html[data-device="app"] .detail-hero-meta {
   gap: var(--space-sm);
   font-size: var(--text-xs);
 }
-  html[data-device="app"] .detail-hero-desc {
-  font-size: var(--text-xs);
-  -webkit-line-clamp: 2;
-}
   html[data-device="app"] .detail-hero-actions {
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
 }
 
   html[data-device="app"] .detail-btn {
@@ -1434,11 +1429,6 @@
   padding: var(--space-sm) var(--space-md);
   font-size: var(--text-xs);
 }
-
-  html[data-device="app"] .detail-info-grid {
-  grid-template-columns: 1fr;
-}
-
 
   html[data-device="app"] .detail-seasons {
   grid-template-columns: 1fr;
@@ -1464,32 +1454,23 @@
 
 
 /* ============================================================
-   Tablet (768–1023px)
+   ≥ 768px（非 app）— 方案 A 两列启用：海报列 + 文本列
    ============================================================ */
 
-@media (width >= 768px) and (width <= 1023px) {
-  html:not([data-device="app"]) .detail-hero-content {
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding: var(--space-lg) var(--space-md);
-}
-
-  html:not([data-device="app"]) .detail-hero-left {
-  flex: 1;
-  min-width: 0;
-  max-width: calc(100% - var(--layout-detail-poster-w) - var(--space-md));
-  padding: var(--space-2xs);
-}
-
-  html:not([data-device="app"]) .detail-hero-actions {
-  flex-wrap: nowrap;
-}
+@media (width >= 768px) {
+  html:not([data-device="app"]) .detail-hero {
+    grid-template-columns: var(--poster-w, clamp(160px, 17vw, 330px)) minmax(0, 1fr);
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 对开栏间距为布局比例值，随视口流体；px 地板/顶为刻意固定档（同 grid 列宽公式，grid-template 例外口径） */
+    gap: clamp(20px, 2.6vw, 44px);
+  }
 
   html:not([data-device="app"]) .detail-hero-poster {
-  display: block;
+    display: block;
+  }
 }
 
+/* Tablet (768–1023px)：播放列表两列 */
+@media (width >= 768px) and (width <= 1023px) {
   html:not([data-device="app"]) .detail-sources-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1507,58 +1488,8 @@
    ============================================================ */
 
 @media (width >= 1024px) {
-  /* 桌面端 hero 最小高度：防止详情区内容过多时 banner 被压扁。
-     ⚠️ 不要加 aspect-ratio: auto —— 那会让 hero 高度退回「纯内容高」，
-     比 16/9 的固有高度矮一大截（banner 明显变小）。
-     min-height 对 aspect-ratio 派生的高度同样生效（CSS 尺寸约束里
-     min 优先于计算值），即最终高度 = max(380px, min(宽×9/16, 65vh))。
-     不加 flex-shrink: 0 —— 内容超高时仍允许 hero 收缩到 min-height 为止，
-     把剩余空间让给下方详情区（min-height 本身已是收缩下限，无需再锁死）。 */
-  html:not([data-device="app"]) .detail-hero {
-    min-height: 380px;
-  }
-
-  html:not([data-device="app"]) .detail-hero-content {
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding: var(--space-xl) var(--space-lg);
-}
-
-  html:not([data-device="app"]) .detail-hero-left {
-  flex: 1;
-  /* 桌面端：左侧不再受 --layout-hero-height 限制（避免按钮组被迫换行）。
-     之前 calc(100% - 140px - 21px) 在 1024px 视口下会让按钮内
-     "立即播放" / "加入收藏" 中文被压缩换行（按钮内文字未在同一行显示）。
-     改为仅减右侧海报宽度，不再减 --space-lg，保证按钮内文字单行。 */
-  min-width: 0;
-  max-width: calc(100% - var(--layout-detail-poster-w));
-  /* 给一个很小的内边距，避免标题/按钮紧贴 hero 边缘 */
-  padding: var(--space-2xs);
-}
-
-  /* html:not([data-device="app"]) .detail-hero-logo：见 assets/styles/shared-hero.css */
-
-  html:not([data-device="app"]) /* 桌面端强制"立即播放" + "加入收藏" 同一行，不允许 wrap */
-  .detail-hero-actions {
-  flex-wrap: nowrap;
-}
-
-  html:not([data-device="app"]) /* 按钮层级：在 .detail-hero-content 内 DOM 顺序中
-     .detail-hero-poster 在 .detail-hero-left 之后，覆盖按钮。
-     给 .detail-btn 显式 z-index 让 hover 缩放时不被海报遮挡。 */
-  .detail-btn {
-  position: relative;
-  z-index: 2;
-}
-
-  html:not([data-device="app"]) .detail-hero-poster {
-  display: block;
-}
-
-  html:not([data-device="app"]) .detail-hero-desc {
-  -webkit-line-clamp: 3;
-}
+  /* （方案 A：旧 ≥1024 hero 16:9 最小高/横排 content/海报显隐等规则已移除，
+     两列形态统一由上方 ≥768 块提供） */
 
   html:not([data-device="app"]) .detail-seasons {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1587,18 +1518,14 @@
    TV 端
    ============================================================ */
 
-[data-device="tv"] .detail-hero-content {
-  padding: var(--space-2xl) var(--space-2xl);
+[data-device="tv"] .detail-hero-info {
+  padding: var(--space-2xl);
 }
 /* [data-device="tv"] .detail-hero-logo：见 assets/styles/shared-hero.css */
-[data-device="tv"] .detail-hero-poster {
-  width: var(--layout-detail-poster-w-tv);
-}
 [data-device="tv"] .detail-hero-title {
   font-size: var(--text-4xl);
 }
 [data-device="tv"] .detail-hero-desc {
-  -webkit-line-clamp: 4;
   font-size: var(--text-lg);
 }
 
@@ -1613,16 +1540,11 @@
   font-size: var(--text-base);
 }
 
-/* 上半部两栏容器：默认 display:contents —— <1024 / TV / app 下对布局零影响
-   （子元素直接提升到 .detail-page 的 flex 上下文，与改造前结构完全等价），
-   仅 ≥1024 切换为 grid 两栏（见下方 media 块）。 */
-.detail-top {
-  display: contents;
-}
+/* 旧上半部两栏容器 .detail-top（方案 A 后 DOM 已无此包裹层，规则移除 2026-10-10） */
 
 /* ═══════════════════════════════════════════════════════════════════════
-   上半部两栏 — C1 排列（2026-09-10 用户拍板，Demo 见
-   changelogs/demos/demo-widescreen-overhaul-2026-09-10.html 议题④）
+   【已退役 2026-10-10】上半部两栏 — C1 排列（被方案 A · 海报对开取代；原规则块已删除，注释留史）：
+   changelogs/demos/demo-widescreen-overhaul-2026-09-10.html 议题④
 
    为什么是「右栏只放文本类信息」：
    详情「概览」tab 的内容分两种形态 ——
@@ -1636,118 +1558,8 @@
    移动端/平板竖屏/ TV 端不进入本块，基础信息仍渲染在 info tab 内（行为不变）。
    ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 1024px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-top {
-    display: grid;
-    /* 2026-09-10 用户要求：右栏改为「分行」呈现并加入简介 → 需要更多横向空间，
-       故左列由 1.55fr 收到 1.4fr（1440 下 hero 797 → 771px，右栏 515 → 551px）。
-       hero 随之略窄，.detail-hero-bg 是 inset:0 自动跟随列宽的，无需单独改。 */
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: var(--space-sm);
-    /* ⚠️ 不能用 stretch（默认）：hero 带 aspect-ratio 16/9，一旦高度被行高拉伸确定，
-       浏览器会反过来用 ratio 反算宽度（实测高 453 → 宽 805 > 轨道 765），
-       hero 因此溢出到右栏与 .detail-hero-side 重叠。改为 start —— 让 hero 自己按
-       「轨道宽 × 9/16」定高，右栏再用 JS 写入的 --detail-hero-h 对齐下沿。 */
-    align-items: start;
-    margin-bottom: var(--space-sm);
-  }
-
-  /* hero 宽度显式取满轨道（防 aspect-ratio 反算 / 内容撑开） */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-top > .detail-hero {
-    width: 100%;
-  }
-
-  /* ⚠️ 两栏子项必须显式 min-width: 0：
-     grid item 默认 `min-width: auto` = 内容的 min-content 宽度，而 .detail-hero 内部
-     是 flex row（左信息区 + 右侧海报 + nowrap 的按钮行），实测 min-content 达 805px。
-     注意外层 grid-template-columns 的 minmax(0,…) 只管轨道，管不到子项自身的 min-width。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-top > * {
-    min-width: 0;
-  }
-
-  /* 左信息区同样要可收缩，否则标题 / meta / 按钮行会把 hero 重新顶宽 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-top .detail-hero-left {
-    min-width: 0;
-  }
-
-  /* hero 内的海报随 hero 变窄而缩小（用户要求「尺寸小一点」）：基准 ×0.78 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-top .detail-hero-poster {
-    flex: 0 0 calc(var(--layout-detail-poster-w) * 0.78);
-    width: calc(var(--layout-detail-poster-w) * 0.78);
-  }
-
-  /* 右栏：高度锁死为 hero 实际高度（--detail-hero-h 由 JS 测量写入），
-     内容超出时栏内滚动，保证两栏下沿始终齐平、不把 grid 行撑高。
-     行距单一真源 = flex gap --space-md（与 grid row-gap 同值，标题卡之间同距）：
-     旧 gap 与子元素 margin 叠加 → grid 内外不一致；
-     子元素纵向 margin 在右栏一律清零，间距只由 gap 提供。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    min-width: 0;
-    /* 高度强制等于 banner（用户 2026-09-10 要求「与 banner 高度保持一致」）：
-       变量由 JS 用 ResizeObserver 把 .detail-hero 的实测高度写到 .detail-top 上。
-       用 height 而非 max-height —— 后者在内容较少时会让右栏比 banner 矮、下沿不齐；
-       内容超出时由 overflow-y 兜底为栏内滚动（高度仍锁死，不撑破对齐）。 */
-    height: var(--detail-hero-h, 520px);
-    padding: var(--space-lg);
-    /* 2026-09-28 去卡片化：右栏四件套（border/radius/surface/shadow）移除，
-       内容直接落页底；height/padding/overflow-y 是布局与滚动所需，保留。 */
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* 右栏内的 section 标题与卡片网格按窄栏重排；
-     纵向 margin 清零 —— 行距只由父级 flex gap --space-md 提供（见上方单一真源注释） */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-section-title {
-    margin-bottom: 0;
-    font-size: var(--text-base);
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-genres {
-    margin-bottom: 0;
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row {
-    margin-top: 0;
-  }
-
-  /* 右栏基础信息：一行两列（用户 2026-09-10 要求）。
-     单列时 9 个字段纵向排到约 500px 必须滚动，两列后高度近乎减半、多数影片无需滚动。
-     行距 = 父级 flex gap --space-md = grid row-gap（标题卡之间同距；列距 --space-md），不再叠加卡片纵向 padding。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-md);
-  }
-
-  /* 每张卡：数据在标签同行右侧（2026-09-23 用户要求，替换旧「标签一行、值一行」）。
-     flex-start 保证值过长换行时，值的首行仍与标签/图标顶线对齐。 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card {
-    align-items: flex-start;
-    min-width: 0;
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card svg,
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card span {
-    margin-top: 0.125em;
-  }
-
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card strong {
-    flex: 1 1 0;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  /* 全宽行 / --span 卡在右栏同样首行对齐、吃满剩余宽度 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-row strong,
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side .detail-info-card--span strong {
-    flex: 1 1 0;
-    min-width: 0;
-  }
+  /* （旧 C1 两栏 / 右栏定高滚动 / 海报 ×0.78 规则已随方案 A 移除；
+     ≥768 两列见上方基础区 .detail-hero） */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

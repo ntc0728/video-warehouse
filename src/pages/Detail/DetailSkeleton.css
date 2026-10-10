@@ -1,16 +1,18 @@
-/* 详情页专属骨架 — 几何尽量继承 Detail.css / VideoCard.css 的真实类
-   （.detail-content / .detail-tabs-wrap / .detail-tabs / .tab-underline / .detail-tab /
-     .detail-cast-row / .detail-cast-row--collapsed / .detail-cast-item / .detail-stills-grid /
-     .detail-stills-skeleton / .detail-recommend / .detail-recommend-title /
-     .detail-recommend-row / .detail-recommend-card / .video-card 系列）。
-   本文件只写「骨架私有」的部分：hero/侧栏几何、灰块尺寸、交互态静默。 */
+/* 详情页专属骨架 — 几何继承真实类（方案 A · 海报对开，2026-10-10 重构）
+   真实结构类直接复用：.detail-hero / .detail-hero-poster / .detail-hero-info / .detail-hero-body /
+   .detail-hero-topline / .detail-facts / .detail-facts-grid / .detail-fact(--full) /
+   .detail-tabs-wrap / .detail-tabs / .tab-underline / .detail-tab /
+   .detail-cast-row(--collapsed) / .detail-cast-item / .detail-stills-grid / .detail-stills-skeleton /
+   .detail-recommend / .detail-recommend-title / .detail-recommend-row / .detail-recommend-card / .video-card。
+   ≥768 两列、列宽 clamp、海报 2:3 等布局由 Detail.css 基座单真源提供，本文件只写骨架私有灰块尺寸。
+   旧 .detail-top 两栏镜像 / .detail-hero-side 定高 stretch 段随方案 A 退役。 */
 
 .detail-skeleton {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-  /* 宿主 .detail-page--loading 是 align-items:center 的 flex 列（为居中旧 AppLoading 设计），
-     骨架必须显式撑满，否则整块收缩到内容宽（右侧信息卡定值宽），hero 会塌成 0 宽。 */
+  /* 宿主 .detail-page--loading 是 align-items:center 的 flex 列，骨架须显式撑满，
+     否则整块收缩到内容宽（真实 .detail-hero 的列宽公式也会失真）。 */
   width: 100%;
 }
 
@@ -23,110 +25,130 @@
   cursor: default;
 }
 
-.detail-skeleton__top {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+/* ── hero：真实 .detail-hero 两列几何；__poster-img 吃满 2:3 海报列 ── */
+.detail-skeleton__poster {
+  background: none;
 }
 
-/* hero：16:9 + 同款 max-height 曲线（.detail-hero 基础规则） */
-.detail-skeleton__hero {
-  position: relative;
+.detail-skeleton__poster-img {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: min(65vh, var(--layout-detail-hero-max-h));
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  height: 100%;
+  border-radius: var(--radius-md);
 }
 
-.detail-skeleton__hero-bg {
-  position: absolute;
-  inset: 0;
-  border-radius: 0;
+.detail-skeleton__hero-info .detail-hero-bg,
+.detail-skeleton__hero-info .detail-hero-veil {
+  display: none;
 }
 
-.detail-skeleton__hero-content {
-  position: absolute;
-  inset: auto 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md);
+.detail-skeleton__kicker {
+  width: 8em;
+  /* 真实 kicker：text-xs 行盒（line-height normal ≈1.35×） */
+  height: calc(var(--text-xs) * 1.35);
 }
 
 .detail-skeleton__title {
   width: 14em;
   max-width: 70%;
-  height: 1.75em;
-  border-radius: var(--radius-sm);
+  /* 真实标题：clamp(--text-2xl, 2.4vw, --text-3xl) × line-height 1.18（取上限档，与桌面典型一致） */
+  height: calc(var(--text-3xl) * 1.18);
 }
 
 .detail-skeleton__meta {
   width: 18em;
   max-width: 60%;
-  height: 0.875em;
+  /* 真实 meta：text-sm 行盒 */
+  height: calc(var(--text-sm) * 1.4);
 }
 
 .detail-skeleton__meta--short {
   width: 12em;
 }
 
-/* 右侧信息卡：外壳复用真实 .detail-hero-side（padding/边框/圆角/底色/阴影单真源），
-   本类只承担「<1024 隐藏」与「≥1024 取消定高改 stretch」两点差异 */
-.detail-skeleton__side {
-  display: none;
-}
-
-.detail-skeleton__chips {
+.detail-skeleton__overview-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-xs);
+  max-width: 65em;
 }
 
-.detail-skeleton__chip {
-  width: 4em;
-  height: 1.5em;
+.detail-skeleton__overview {
+  /* 真实简介：text-sm × line-height 1.9 */
+  height: calc(var(--text-sm) * 1.9);
+}
+
+.detail-skeleton__overview--short {
+  width: 55%;
+}
+
+/* CTA 行：镜像真实 .detail-hero-cta-zone（钉文本区底 + 与简介脱开的 padding-top 同源公式；
+   按钮高 = 真实 --comp-tab-height 胶囊） */
+.detail-skeleton__btn-row {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  margin-top: auto;
+  padding-top: clamp(var(--space-xl), 3vh, var(--space-2xl));
+}
+
+.detail-skeleton__btn {
+  width: 8em;
+  height: var(--comp-tab-height);
   border-radius: var(--radius-full);
 }
 
-.detail-skeleton__info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  /* 与真实 .detail-hero-side .detail-info-grid 同值：标题卡之间 row/col 均 --space-md */
-  gap: var(--space-md);
+.detail-skeleton__btn--play {
+  width: 9.5em;
 }
 
-.detail-skeleton__info-card {
-  /* 2026-09-24 用户要求：对齐真实 .detail-info-card 单行高（icon-sm/text-sm 行高量级），
-     旧 height 3.25em 远超真实（真实无固定 height，内容撑一行）→ 改为 --text-sm 行高 */
-  height: calc(var(--text-sm) * 1.5);
-  border-radius: var(--radius-sm);
+/* ── 资料区：chips / 基础信息表格 ── */
+.detail-skeleton__chip {
+  /* 真实 .detail-genre-tag：text-xs 行盒（真机实测 line-height ≈×1.5）+ 2xs 内边距 + 上下 1px 边框 */
+  width: 4em;
+  height: calc(var(--text-xs) * 1.5 + var(--space-2xs) * 2 + 2px);
+  border-radius: var(--radius-full);
+}
+
+.detail-skeleton__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.detail-skeleton__fact-label {
+  /* 真实 label：text-2xs 行盒 */
+  width: 5em;
+  height: calc(var(--text-2xs) * 1.35);
+}
+
+.detail-skeleton__fact-value {
+  /* 真实值：text-sm 行盒 */
+  width: 70%;
+  height: calc(var(--text-sm) * 1.4);
+}
+
+.detail-skeleton__fact-full {
+  align-items: baseline;
 }
 
 .detail-skeleton__side-line {
-  height: 0.875em;
-  /* 纵向间距由父级 .detail-hero-side flex gap --space-md 提供（与真实 info-row 同源），
-     此处不叠 margin —— 避免旧「gap + margin」两套叠加 */
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--text-sm) * 1.4);
 }
 
-.detail-skeleton__side-line--short {
-  width: 62%;
-}
-
-/* ── Tab：外壳复用真实 .tab-underline / .detail-tab（padding-sm/lg + 2px 下划线几何单真源）；
-    内部图标槽 + 标签槽为骨架方框，不渲染真实文字（2026-09-24 用户要求）。
-    槽高取真实内容行高：图标 = --icon-sm；标签 = text-sm 行高，保证 tab 总高与真实一致 ── */
+/* ── Tab：外壳复用真实 .tab-underline / .detail-tab（padding + 2px 下划线几何单真源）；
+   内部图标槽 + 标签槽为骨架方框，不渲染真实文字（2026-09-24 用户要求）。
+   槽高取真实内容行高：图标 = --icon-sm；标签 = text-sm 行高 ── */
 .detail-skeleton__tab-icon {
   flex-shrink: 0;
   width: var(--icon-sm);
   height: var(--icon-sm);
-  border-radius: var(--radius-sm);
 }
 
 .detail-skeleton__tab-label {
   width: 2.25em;
   height: calc(var(--text-sm) * 1.2);
-  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
 }
 
@@ -135,13 +157,11 @@
   width: 4.5em;
 }
 
-/* ── 概览：演员 / 简介 / 剧照（内壳 .detail-info 真实类，块级流 + 标题 margin 单真源）── */
-
+/* ── 演员 / 剧照（内壳 .detail-info 真实类：padding / 块级流 / 标题 margin 单真源）── */
 .detail-skeleton__cast {
   cursor: default;
 }
 
-/* 演员头像：与真实 .detail-cast-avatar 同尺寸（圆形），但用骨架灰块 */
 .detail-skeleton__cast-avatar {
   width: var(--layout-cast-avatar);
   height: var(--layout-cast-avatar);
@@ -160,22 +180,7 @@
   font-size: var(--text-xs);
 }
 
-.detail-skeleton__overview-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.detail-skeleton__overview {
-  height: 0.875em;
-}
-
-.detail-skeleton__overview--short {
-  width: 55%;
-}
-
 /* ── 推荐区：外壳 / 网格 / 标题全部复用真实类，只补卡内灰块 ── */
-
 .detail-skeleton__rec-cover {
   position: absolute;
   inset: 0;
@@ -186,29 +191,4 @@
   width: 78%;
   height: 1.5em;
   font-size: var(--text-sm);
-}
-
-/* ── ≥1024 桌面两栏（非 App/TV，与 Detail.css 上半部两栏同门控同列公式） ── */
-@media (width >= 1024px) {
-  /* 与真实 .detail-top 完全同款：1.4fr/1fr 网格 + align-items:start
-     （不能用 stretch 拉 hero——aspect-ratio 会被行高反算宽度而溢出轨道，见 Detail.css 注释） */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__top {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: var(--space-sm);
-    align-items: start;
-  }
-
-  /* hero 宽度显式取满轨道（防 aspect-ratio 反算 / 内容撑开），高度 = 轨道宽 × 9/16 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-skeleton__hero {
-    width: 100%;
-  }
-
-  /* 复合选择器压过真实 .detail-hero-side 的 height: var(--detail-hero-h, 520px)：
-     骨架态无 JS 量测，用 stretch 达成同样的「右栏高 = banner 高」视觉 */
-  html:not([data-device="app"]):not([data-device="tv"]) .detail-hero-side.detail-skeleton__side {
-    display: flex;
-    align-self: stretch;
-    height: auto;
-  }
 }

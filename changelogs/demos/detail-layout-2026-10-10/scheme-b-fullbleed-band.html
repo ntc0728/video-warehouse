@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 B · 全宽沉浸式 banner + 信息带 — Detail 布局候选</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+/* ══ 方案 B：撤销左右两栏，banner 回归全宽沉浸；基础信息改为 hero 下方横置「信息带」══
+   hero 内部结构完全沿用现网（16/9 backdrop + 双层渐变 + 左文右海报），
+   改动只有一处：.detail-top 不再 grid 两栏，右栏整体降为 hero 底部的横向 KV 条带。 */
+.hero{
+  position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+  width:100%;height:min(65vh,560px);
+  border-radius:var(--radius-lg);overflow:hidden;
+}
+.hero .bg{position:absolute;inset:0}
+.hero .g1{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.92) 0%,rgba(0,0,0,.6) 45%,rgba(0,0,0,.12) 100%)}
+.hero .g2{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.02) 100%)}
+.hero-content{
+  position:relative;z-index:5;display:flex;gap:var(--space-2xl);
+  align-items:flex-end;padding:var(--space-2xl) var(--space-3xl);color:#fff;
+}
+.hero-left{display:flex;flex-direction:column;gap:var(--space-md);min-width:0;flex:1 1 auto}
+.hero-left h1{font-size:34px;font-weight:900;margin:0;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.4)}
+.hero-left .tagline{font-size:var(--text-sm);color:rgba(255,255,255,.75);margin:-4px 0 0}
+.hero-meta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:var(--text-sm);color:rgba(255,255,255,.85)}
+.hero-meta .score{color:#ffd43b;font-weight:900;font-size:var(--text-lg)}
+.hero-desc{font-size:var(--text-sm);line-height:1.8;color:rgba(255,255,255,.82);max-width:62ch;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn.frost{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.35);color:#fff}
+.btn.solid{background:#fff;color:#111;border:none}
+.hero-poster{position:relative;flex:0 0 200px;aspect-ratio:2/3;border-radius:var(--radius-md);overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.hero-poster .ph{position:absolute;inset:0}
+
+/* 信息带：hero 正下方横置条带，4 列 KV，键上值下 */
+.band{
+  margin-top:var(--space-lg);padding:var(--space-lg) var(--space-xl);
+  background:var(--color-surface);border:1px solid var(--color-border-light);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-card);
+}
+.band .head{display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap;margin-bottom:var(--space-md)}
+.band .head h2{font-size:var(--text-base);font-weight:800;margin:0}
+.band .head .chip{font-size:var(--text-2xs)}
+.band .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md) var(--space-xl)}
+.band .cell b{display:block;font-size:var(--text-2xs);letter-spacing:.12em;color:var(--color-text-tertiary);font-weight:700}
+.band .cell span{display:block;font-size:var(--text-sm);font-weight:700;margin-top:3px;overflow-wrap:anywhere}
+.band .cell.hi span{color:var(--color-accent)}
+
+@media (width <= 900px){
+  .hero-content{flex-direction:column;align-items:flex-start;padding:var(--space-xl)}
+  .hero-poster{display:none}
+}
+</style>
+</head>
+<body data-theme="day">
+
+<div class="demo-bar">
+  <span class="brand">Detail 布局候选 · <em>Demo 2026-10-10</em></span>
+  <a class="scheme" href="index.html">总览</a>
+  <a class="scheme" href="scheme-a-poster-spread.html">A 海报对开</a>
+  <a class="scheme is-on" href="scheme-b-fullbleed-band.html">B 全宽banner+信息带</a>
+  <a class="scheme" href="scheme-c-natural-side.html">C 双栏自然高</a>
+  <span class="spacer"></span>
+  <button class="theme" onclick="var b=document.body;b.dataset.theme=b.dataset.theme==='day'?'night':'day'">☾ 昼夜切换</button>
+</div>
+
+<div class="note">
+  <b>方案 B · 全宽沉浸 banner + 信息带</b>（最小整改档）：hero 视觉与现网完全一致（16/9 大图 + 渐变 + 左文右海报），
+  唯一变化是<b>撤掉右侧信息栏</b> —— banner 从 1.4fr:1fr 两栏解放为全宽，基础信息组降为 hero 正下方一条横置「信息带」。
+  <ul>
+    <li><b>解决点</b>：①  banner 拿回整幅宽度，大图的沉浸氛围回到 C 位（两栏时 hero 被压到 ~770px）；② 右栏定高滚动问题消失，信息带通栏铺开、行数自适应；③ 与移动端「hero + 下方信息」结构同构，双端心智统一。</li>
+    <li><b>代价</b>：信息带位于 16/9 大图之下，1080p 首屏内「评分/导演/状态」等字段可能落到折叠线以下，需要滚一轮才看到；hero 上的文字信息密度不变（仍是叠图白字）。</li>
+    <li>改动面最小：Detail.tsx 只删 isWideDetail 分支与 --detail-hero-h 测量，CSS 删 ≥1024 grid 块。</li>
+  </ul>
+</div>
+
+<header class="site-hd">
+  <span class="logo">Kino<i>TV</i></span>
+  <nav><span>首页</span><span>浏览</span><span>热度榜</span><span class="on">详情</span><span>IPTV</span><span>收藏</span></nav>
+</header>
+
+<main class="shell">
+
+  <!-- ══ 全宽 hero（现网结构） ══ -->
+  <section class="hero">
+    <div class="bg ph" data-label=""></div>
+    <div class="g1"></div><div class="g2"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <h1>沙丘2</h1>
+        <p class="tagline">掌握你的命运</p>
+        <div class="hero-meta">
+          <span class="score">★ 8.1</span><span>2024</span><span>电影</span>
+          <span>167 分钟</span><span>🔥 1520</span>
+        </div>
+        <p class="hero-desc">保罗·厄崔迪与契妮和弗雷曼人联手，走上复仇与预言交织的圣战之路。沙漠星球的香料之争卷入帝国与各大家族，保罗必须在爱与星球的命运之间做出抉择。</p>
+        <div class="hero-actions">
+          <button class="btn solid">▶ 立即播放</button>
+          <button class="btn frost">↺ 从头播放</button>
+          <button class="btn frost">♥ 已收藏</button>
+        </div>
+      </div>
+      <div class="hero-poster"><div class="ph poster" data-label="海报"></div></div>
+    </div>
+  </section>
+
+  <!-- ══ 基础信息组：hero 下方横置信息带（原右栏内容） ══ -->
+  <section class="band">
+    <div class="head">
+      <h2>基础信息</h2>
+      <span class="chip">科幻</span><span class="chip">冒险</span><span class="chip">动作</span>
+      <span style="margin-left:auto;font-size:var(--text-xs);color:var(--color-text-tertiary)">已播放 42% · 1:11:23 / 2:47:12</span>
+    </div>
+    <div class="grid">
+      <div class="cell hi"><b>TMDB 评分</b><span>8.1 / 10 · 3.4k 人评价</span></div>
+      <div class="cell"><b>发行时间</b><span>2024-02-27</span></div>
+      <div class="cell"><b>状态</b><span>已上映</span></div>
+      <div class="cell"><b>时长</b><span>167 分钟</span></div>
+      <div class="cell"><b>导演</b><span>丹尼斯·维伦纽瓦</span></div>
+      <div class="cell"><b>语言</b><span>EN / 英语</span></div>
+      <div class="cell"><b>国家</b><span>美国 / 加拿大</span></div>
+      <div class="cell"><b>预算 / 票房</b><span>$190.0M / $715.0M</span></div>
+      <div class="cell"><b>发行</b><span>传奇影业 / 华纳兄弟</span></div>
+    </div>
+  </section>
+
+  <!-- ══ 下方既有结构不动，仅占位 ══ -->
+  <div class="tabs">
+    <button class="on">概览</button><button>播放列表</button>
+  </div>
+  <div class="pane-ph">
+    <b style="color:var(--color-text)">演员</b>（现状保留）
+    <div class="cast-strip">
+      <div class="cast-cell"><div class="ph"></div><b>提莫西·查拉梅</b><span>饰 保罗</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>赞达亚</b><span>饰 契妮</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>丽贝卡·弗格森</b><span>饰 杰西卡</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>奥斯卡·伊萨克</b><span>饰 雷托</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>杰森·莫玛</b><span>饰 邓肯</span></div>
+    </div>
+    <p style="margin-top:26px"><b style="color:var(--color-text)">剧照</b>（现状保留）</p>
+    <div class="stills">
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

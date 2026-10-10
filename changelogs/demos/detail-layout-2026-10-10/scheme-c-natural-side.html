@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 C · 双栏保留 + 右栏自然高「数据行」 — Detail 布局候选</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+/* ══ 方案 C：保留现网「左 banner | 右信息」两栏骨架，只治右栏 ══
+   ① 右栏不再高度锁死 hero、不再栏内滚动 —— 自然高度，顶对齐；
+   ② 双列 KV 卡改为单列「label 左 · value 右」数据行（参考 e-detail .fact 的下划线分行思路），
+      一屏可读、无换行挤压；hero 视觉零改动。 */
+.top{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:var(--space-xl);align-items:start}
+
+.hero{
+  position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+  aspect-ratio:16/9;border-radius:var(--radius-lg);overflow:hidden;
+}
+.hero .bg{position:absolute;inset:0}
+.hero .g1{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.92) 0%,rgba(0,0,0,.6) 45%,rgba(0,0,0,.12) 100%)}
+.hero .g2{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.02) 100%)}
+.hero-content{position:relative;z-index:5;display:flex;gap:var(--space-xl);align-items:flex-end;padding:var(--space-xl);color:#fff}
+.hero-left{display:flex;flex-direction:column;gap:var(--space-sm);min-width:0;flex:1}
+.hero-left h1{font-size:28px;font-weight:900;margin:0;line-height:1.15}
+.hero-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:var(--text-xs);color:rgba(255,255,255,.85)}
+.hero-meta .score{color:#ffd43b;font-weight:900}
+.hero-desc{font-size:var(--text-xs);line-height:1.8;color:rgba(255,255,255,.8);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn.sm{padding:7px 14px;font-size:var(--text-xs)}
+.btn.frost{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff}
+.btn.solid{background:#fff;color:#111;border:none}
+.hero-poster{position:relative;flex:0 0 132px;aspect-ratio:2/3;border-radius:var(--radius-sm);overflow:hidden}
+.hero-poster .ph{position:absolute;inset:0}
+
+/* 右栏：自然高度数据栏 */
+.side{display:flex;flex-direction:column;gap:var(--space-md);min-width:0;padding-top:2px}
+.side h2{font-size:var(--text-base);font-weight:800;margin:0}
+.side .genre-line{display:flex;gap:var(--space-xs);flex-wrap:wrap}
+.rows{display:flex;flex-direction:column}
+.row{
+  display:flex;align-items:baseline;gap:12px;
+  padding:8px 2px;border-bottom:1px solid var(--color-border-light);
+}
+.row .k{flex:0 0 74px;font-size:var(--text-xs);color:var(--color-text-tertiary)}
+.row .v{flex:1;min-width:0;font-size:var(--text-sm);font-weight:700;overflow-wrap:anywhere}
+.row.hi .v{color:var(--color-accent)}
+.row:last-child{border-bottom:none}
+.side-foot{font-size:var(--text-2xs);color:var(--color-text-tertiary);line-height:1.8}
+
+/* 右栏比 hero 高时，hero 下方留白由通栏「演员」自然补位（示意） */
+.under-cast{margin-top:var(--space-xl)}
+
+@media (width <= 1023px){
+  .top{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body data-theme="day">
+
+<div class="demo-bar">
+  <span class="brand">Detail 布局候选 · <em>Demo 2026-10-10</em></span>
+  <a class="scheme" href="index.html">总览</a>
+  <a class="scheme" href="scheme-a-poster-spread.html">A 海报对开</a>
+  <a class="scheme" href="scheme-b-fullbleed-band.html">B 全宽banner+信息带</a>
+  <a class="scheme is-on" href="scheme-c-natural-side.html">C 双栏自然高</a>
+  <span class="spacer"></span>
+  <button class="theme" onclick="var b=document.body;b.dataset.theme=b.dataset.theme==='day'?'night':'day'">☾ 昼夜切换</button>
+</div>
+
+<div class="note">
+  <b>方案 C · 双栏骨架保留 + 右栏自然高数据行</b>（保守整改档）：banner 与右栏的左右关系不动，专治右栏两个痛点。
+  <ul>
+    <li><b>解决点</b>：① 删「右栏高度 = hero 高度 + overflow 滚动」的锁死机制（<code>--detail-hero-h</code> JS 测量可整段移除），右栏改自然高度、顶部对齐——信息永不被裁；
+      ② 双列 KV 卡改<b>单列 label·value 数据行</b>（借 e-detail .fact 的分行线思路），长字段（导演/发行/语言）不再挤半格换行，也删掉半宽 span 测量脚本；
+      ③ hero 视觉与位置零变化，老用户无感知迁移成本。</li>
+    <li><b>代价</b>：字段 10 项 ×单列后右栏变长，多数条目右栏会<b>高出 hero 一截</b>（下沿不齐），页面右侧轮廓不如现在方正；两栏比例信息密度仍偏挤，本质是"止痛"不是"重构"。</li>
+    <li>可加一条规则缓解：右栏超出 hero 的部分自动通栏铺开（CSS 难以直接实现，需 JS；或接受不齐）。</li>
+  </ul>
+</div>
+
+<header class="site-hd">
+  <span class="logo">Kino<i>TV</i></span>
+  <nav><span>首页</span><span>浏览</span><span>热度榜</span><span class="on">详情</span><span>IPTV</span><span>收藏</span></nav>
+</header>
+
+<main class="shell">
+
+  <div class="top">
+    <!-- ══ 左列 hero（现网视觉不动） ══ -->
+    <section class="hero">
+      <div class="bg ph" data-label=""></div>
+      <div class="g1"></div><div class="g2"></div>
+      <div class="hero-content">
+        <div class="hero-left">
+          <h1>沙丘2</h1>
+          <div class="hero-meta">
+            <span class="score">★ 8.1</span><span>2024</span><span>电影</span><span>167 分钟</span><span>🔥 1520</span>
+          </div>
+          <p class="hero-desc">保罗·厄崔迪与契妮和弗雷曼人联手，走上复仇与预言交织的圣战之路。沙漠星球的香料之争卷入帝国与各大家族。</p>
+          <div class="hero-actions">
+            <button class="btn sm solid">▶ 立即播放</button>
+            <button class="btn sm frost">↺ 从头播放</button>
+            <button class="btn sm frost">♥ 已收藏</button>
+          </div>
+        </div>
+        <div class="hero-poster"><div class="ph poster" data-label=""></div></div>
+      </div>
+    </section>
+
+    <!-- ══ 右栏：自然高度，单列数据行 ══ -->
+    <aside class="side">
+      <h2>基础信息</h2>
+      <div class="genre-line"><span class="chip">科幻</span><span class="chip">冒险</span><span class="chip">动作</span></div>
+      <div class="rows">
+        <div class="row hi"><span class="k">TMDB 评分</span><span class="v">8.1 / 10（3,400 人评价）</span></div>
+        <div class="row"><span class="k">发行时间</span><span class="v">2024-02-27</span></div>
+        <div class="row"><span class="k">状态</span><span class="v">已上映</span></div>
+        <div class="row"><span class="k">时长</span><span class="v">167 分钟</span></div>
+        <div class="row"><span class="k">导演</span><span class="v">丹尼斯·维伦纽瓦</span></div>
+        <div class="row"><span class="k">语言</span><span class="v">EN / 英语</span></div>
+        <div class="row"><span class="k">国家</span><span class="v">美国 / 加拿大</span></div>
+        <div class="row"><span class="k">预算</span><span class="v">$190.0M</span></div>
+        <div class="row"><span class="k">票房</span><span class="v">$715.0M</span></div>
+        <div class="row"><span class="k">发行</span><span class="v">传奇影业 / 华纳兄弟</span></div>
+      </div>
+      <p class="side-foot">已播放 42% · 1:11:23 / 2:47:12 —— 继续播放将从上次进度继续。</p>
+    </aside>
+  </div>
+
+  <!-- ══ 下方既有结构不动，仅占位 ══ -->
+  <div class="tabs">
+    <button class="on">概览</button><button>播放列表</button>
+  </div>
+  <div class="pane-ph">
+    <b style="color:var(--color-text)">演员</b>（现状保留）
+    <div class="cast-strip">
+      <div class="cast-cell"><div class="ph"></div><b>提莫西·查拉梅</b><span>饰 保罗</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>赞达亚</b><span>饰 契妮</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>丽贝卡·弗格森</b><span>饰 杰西卡</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>奥斯卡·伊萨克</b><span>饰 雷托</span></div>
+      <div class="cast-cell"><div class="ph"></div><b>杰森·莫玛</b><span>饰 邓肯</span></div>
+    </div>
+    <p style="margin-top:26px"><b style="color:var(--color-text)">剧照</b>（现状保留）</p>
+    <div class="stills">
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+      <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

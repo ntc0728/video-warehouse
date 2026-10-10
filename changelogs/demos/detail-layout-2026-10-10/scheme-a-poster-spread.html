@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-demo-v="2.4">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 A · 海报对开 + 通栏资料表 — Detail 布局候选（拍板方向 v2.3）</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+/* ══ 方案 A（v2，2026-10-10 自查优化）══
+   v1 → v2 七处调整：
+   ① 资料表回归 e-detail 原版形态：label 上 / value 下 + 底线分区（通栏宽格下长值左对齐更好读）；
+   ② 新增「电影 / 剧集」示例切换，验证剧集专属字段（季/集、制作中、最后播出、单集时长）下的栏高；
+   ③ 长字段（导演/发行/国家等）值超 4 行折叠 +「展开/收起」按钮（站内长字段统一交互语言）；
+   ④ 补齐现网丢失元素：返回、官方页面、tagline、logo 标题位说明、简介 3 行展开；
+   ⑤ backdrop 存在感回升：透明度 17%→32% + 左侧渐变压色保文字可读；
+   ⑥ 去卡片化：撤 hero 块外框（border/圆角/surface），改 e-detail 的底部规则线分区，与站内 2026-09-28 去卡片化走向一致；
+   ⑦ 海报缺失兜底开关：poster 加载失败 → 中性灰占位（对应现网 placeholder-gray 回退链）。 */
+.hero{
+  position:relative;margin-top:var(--space-md);
+  padding-bottom:var(--space-xs);
+}
+/* v2.2：横板 backdrop 不再全块出血，改为 hero-txt 文本区背景：图片高透（透明度调大）+ 左侧渐变压色保可读 */
+#hero-txt{position:relative;display:flex;flex-direction:column;min-width:0;border-radius:var(--radius-md);overflow:hidden;padding:clamp(14px,1.6vw,24px);background:var(--color-surface)}
+#hero-frag{position:relative;z-index:2;display:flex;flex-direction:column;flex:1}
+.ht-bg{position:absolute;inset:0;z-index:1}
+/* v2.4：透明度大幅调低（真机反馈可读性） */
+.ht-bg .ph{position:absolute;inset:0;opacity:.12}
+body[data-theme="night"] .ht-bg .ph{opacity:.16}
+.ht-bg .veil{position:absolute;inset:0;background:linear-gradient(115deg,var(--color-surface) 12%,rgba(0,0,0,0) 68%)}
+.hero-in{
+  position:relative;display:grid;
+  /* v2.6：两列等高且等比——JS 量文本区高写 --poster-w=高×2/3，海报盒永远 2:3（同落地口径） */
+  grid-template-columns:var(--poster-w,clamp(180px,17vw,330px)) minmax(0,1fr);
+  gap:clamp(20px,2.6vw,44px);align-items:stretch;
+}
+#hero-txt{display:flex;flex-direction:column;min-width:0}
+/* v2.1：CTA+播放进度钉文本区底部，与简介脱开（行高不足海报高时 auto 撞开，贴齐海报下沿） */
+.cta-zone{margin-top:auto;padding-top:clamp(22px,3vh,36px)}
+.ht-top{display:flex;align-items:center;gap:10px}
+.ht-top .right{margin-left:auto}
+/* v2.5：去掉 align-self:start —— 海报列改 grid stretch 与文本区始终等高（视口变小两列不再脱节） */
+/* v2.6：去掉 aspect-ratio 固定 —— 宽度改随 --poster-w 变量（JS 量文本区高×2/3），宽高同变零裁切 */
+.poster{position:relative;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-card);transition:width .25s var(--ease-standard)}
+.poster .ph{position:absolute;inset:0;border-radius:var(--radius-md)}
+.poster.noimg .ph{background:var(--color-placeholder)}
+.poster.noimg .ph::before{content:none}
+.poster .cap{position:absolute;left:8px;bottom:8px;z-index:6;font-size:10px;color:#fff;background:rgba(0,0,0,.4);padding:1px 6px;border-radius:4px}
+/* v2.1：返回钮叠海报左上角（半透暗玻瑞底，深浅图/灰占位上都可读） */
+.poster-back{
+  position:absolute;left:8px;top:8px;z-index:9;display:inline-flex;align-items:center;gap:5px;
+  border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.45);backdrop-filter:blur(6px);
+  color:#fff;padding:4px 11px;border-radius:var(--radius-full);font-size:var(--text-xs);text-decoration:none;
+}
+/* v2.1：官方页面钮居 hero-txt 右上角（与 kicker 同行右端） */
+.ht-official{
+  display:inline-flex;align-items:center;gap:5px;
+  border:1px solid var(--color-border);background:var(--color-surface);
+  padding:4px 11px;border-radius:var(--radius-full);font-size:var(--text-xs);text-decoration:none;
+}
+.ht-official:hover{border-color:var(--color-border-strong);color:var(--color-text)}
+h1.title{font-size:30px;font-weight:900;line-height:1.18;margin:6px 0 0;letter-spacing:.01em}
+.tagline{font-size:var(--text-xs);color:var(--color-text-tertiary);margin:4px 0 0;font-style:italic}
+.orig{font-size:var(--text-xs);color:var(--color-text-tertiary);margin-top:6px;letter-spacing:.04em}
+.meta{
+  display:flex;gap:clamp(10px,1vw,18px);align-items:center;flex-wrap:wrap;
+  margin-top:14px;font-size:var(--text-sm);color:var(--color-text-secondary);
+}
+.meta .score{font-size:28px;font-weight:900;color:var(--color-accent);line-height:1}
+.meta .dot{color:var(--color-border-strong)}
+.deck{
+  font-size:var(--text-base);line-height:1.9;color:var(--color-text-secondary);
+  margin-top:14px;max-width:52em;
+}
+.deck .txt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.deck.open .txt{-webkit-line-clamp:unset}
+.deck .toggle{display:flex;justify-content:flex-start}
+.deck .toggle[hidden]{display:none}
+.cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.btn.frost{background:rgba(0,0,0,.06);border:1px solid var(--color-border-strong)}
+body[data-theme="night"] .btn.frost{background:rgba(255,255,255,.08)}
+.progress-inline{
+  margin-top:14px;display:flex;align-items:center;gap:10px;
+  font-size:var(--text-xs);color:var(--color-text-tertiary);
+}
+.progress-inline .track{flex:0 0 180px;height:4px;border-radius:2px;background:var(--color-border-light);overflow:hidden}
+.progress-inline .fill{height:100%;background:var(--color-accent)}
+
+/* 资料表：通栏，label 上 / value 下 + 底线（e-detail .fact 原版形态）。
+   v2.2：一行最多 4 列——列宽地板 = 25% 减 gap 折算（2560 视口下仍恰为 4 列），窄视口 auto-fit 自然降列 */
+.facts-wrap{margin-top:var(--space-xl)}
+.facts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(max(200px,calc(25% - 27px)),1fr));
+  gap:clamp(12px,1.4vh,20px) clamp(16px,2vw,36px);margin-top:var(--space-lg);
+}
+.fact{border-bottom:1px solid var(--color-border-light);padding-bottom:clamp(6px,.9vh,10px);min-width:0}
+.fact span{display:block;font-size:var(--text-2xs);letter-spacing:.12em;color:var(--color-text-tertiary);font-weight:700}
+.fact b{display:block;font-size:var(--text-sm);font-weight:700;margin-top:4px;min-width:0;overflow-wrap:anywhere}
+.fact b.txt{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.fact.open b.txt{-webkit-line-clamp:unset}
+.fact .toggle{display:flex;justify-content:flex-end;margin-top:2px}
+.fact .toggle[hidden]{display:none}
+.exp-btn{border:none;background:none;padding:0;color:var(--color-accent);font-size:var(--text-2xs);font-weight:700;line-height:16px}
+.exp-btn:hover{text-decoration:underline}
+.fact.hi b{color:var(--color-accent)}
+/* v2.2：国家 / 发行独占整行，label 左·值右同行，放不下自然换行；值首行与 label 基线对齐，换行部分左对齐值区（不折叠） */
+.fact.full{grid-column:1/-1;display:flex;align-items:baseline;gap:14px}
+.fact.full span{flex:0 0 auto}
+.fact.full b{flex:1;min-width:0;margin-top:0}
+.fact.full b.txt{-webkit-line-clamp:unset;display:block;overflow:visible}
+.genre-line{display:flex;gap:var(--space-sm);flex-wrap:wrap;margin-top:var(--space-lg)}
+
+/* 示例切换 */
+.demo-switch{display:flex;gap:8px;align-items:center;padding:10px 18px;background:var(--color-surface);border-bottom:1px solid var(--color-border-light);font-size:12.3px;color:var(--color-text-secondary)}
+.demo-switch button{border:1px solid var(--color-border-strong);background:var(--color-background);color:var(--color-text);border-radius:6px;padding:4px 12px;font-size:12.3px}
+.demo-switch button.on{background:var(--color-primary);color:var(--color-text-inverse);border-color:var(--color-primary);font-weight:700}
+
+@media (width <= 900px){
+  .hero-in{grid-template-columns:1fr;gap:14px}
+  .poster{aspect-ratio:16/9;max-height:34vh;width:100%}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* v2.4：移动端不启用底纹（同落地口径 <768/app） */
+  .ht-bg{display:none}
+  #hero-txt{padding:0;background:none;border-radius:0}
+}
+
+/* v2.3：tab 栏移入资料区头部居中；概览 = 基础信息+演员+剧照，播放列表/季信息沿用原逻辑 */
+.facts-wrap .tabs{justify-content:center;border-bottom:2px solid var(--color-border-strong);margin-top:var(--space-lg)}
+.pane{display:none}
+.pane.on{display:block}
+/* 播放列表线路行 / 季信息行（现网 detail-source-group 语义的表格化形态） */
+.line-list{border-top:1px solid var(--color-border-light);margin-top:var(--space-md)}
+.line-row{display:grid;grid-template-columns:clamp(40px,4vw,72px) minmax(0,1fr) clamp(70px,7vw,110px) clamp(60px,6vw,88px);gap:clamp(10px,1.2vw,22px);align-items:center;padding:clamp(9px,1.2vh,13px) 2px;border-bottom:1px solid var(--color-border-light);font-size:var(--text-sm)}
+.line-row .n{color:var(--color-text-tertiary);font-weight:700;font-size:var(--text-xs)}
+.line-row .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.line-row .s{font-size:var(--text-xs);color:var(--color-text-tertiary)}
+.line-row .go{text-align:right;color:var(--color-accent);font-weight:700;font-size:var(--text-sm)}
+</style>
+</head>
+<body data-theme="day">
+
+<div class="demo-bar">
+  <span class="brand">Detail 布局候选 · <em>Demo 2026-10-10</em> · A v2.3（拍板方向）</span>
+  <a class="scheme" href="index.html">总览</a>
+  <a class="scheme is-on" href="scheme-a-poster-spread.html">A 海报对开</a>
+  <a class="scheme" href="scheme-b-fullbleed-band.html">B 全宽banner+信息带</a>
+  <a class="scheme" href="scheme-c-natural-side.html">C 双栏自然高</a>
+  <span class="spacer"></span>
+  <button class="theme" onclick="var b=document.body;b.dataset.theme=b.dataset.theme==='day'?'night':'day'">☾ 昼夜切换</button>
+</div>
+
+<div class="note">
+  <b>方案 A · v2（自查优化）</b>：骨架不变（左竖海报 | 右片名/meta/简介/CTA 对开 + 通栏资料表），七处调整——
+  <ul>
+    <li>① 资料表回归 e-detail 原版「label 上 / value 下 + 底线分区」，长值左对齐不再右端参差；</li>
+    <li>② 加「电影 / 剧集」示例切换（下方黄条），验证剧集 4 个专属字段（季/集、制作中、最后播出、单集时长）+ 导演多值场景；</li>
+    <li>③ 资料值<b>超 4 行自动折叠</b>，出「展开/收起」按钮（站内长字段统一交互语言）；简介 3 行折叠同理；</li>
+    <li>④ 补回现网元素：tagline、logo 标题位（见下方说明）、简介 3 行展开；v2.1 按用户反馈重排——返回钮叠<b>海报左上角</b>、官方页面钮居<b>文本区右上角</b>；</li>
+    <li>⑤ v2.2：横板 backdrop 不再全块出血，改为 <b>hero-txt 文本区背景</b>（图片透明度 .25 高透 + 左侧渐变压色，保文本可读）；</li>
+    <li>⑥ hero 块撤卡片外框，改底部 2px 规则线分区（对齐 e-detail 与站内去卡片化走向）；</li>
+    <li>⑦ 「无海报」开关演示兜底：poster 缺失 → 中性灰占位块（对应现网 placeholder-gray 回退链），版式不塌。</li>
+    <li>⑧ v2.1：立即播放/从头播放/收藏与观看进度<b>钉在文本区底部</b>（margin-top:auto 撞开），与简介脱开、贴齐海报下沿。</li>
+    <li>⑨ v2.2：资料表<b>一行最多 4 列</b>（列宽地板 25% 封顶，2560 视口下仍为 4 列；窄视口 auto-fit 自然降列）。</li>
+    <li>⑩ v2.2：<b>国家、发行独占整行</b>，label 左·值右同行，放不下自然换行（不折叠），值首行与 label 基线对齐。</li>
+    <li>⑪ v2.3：<b>概览/播放列表/季信息 tab 移入资料区头部居中</b>；概览面板 = 基础信息 + 演员 + 剧照；播放列表/季信息沿用原逻辑（示意：源卡换行式列表，真实落地保留现网源组卡/检测 pill/选集弹框）。季信息 tab 仅剧集出现。</li>
+    <li>⑫ v2.4（真机反馈）：单降透明度不够——backdrop 原图明暗不可控致对比度漂移；改文本区铺 surface 实色底 + 底纹图叠 0.12（氛围保留、对比恒定），veil 同系渐变；官方页面 hover 不换半透背景改提实色边框；国家/发行整行保留底线与格行距同源。</li>
+    <li>⑬ v2.4：<b>移动端（≤900 演示档 / 落地 <768+app）不启用底纹</b>——隐藏背景图与压色层，文本区回归页底无卡形态（detail-hero-bg 移动端不做变化）。</li>
+    <li>⑭ v2.6：视口变小时两列等高且<b>海报整体等比缩放</b>——非把盒机械拉高：JS 量文本区高写 --poster-w=高×2/3，海报宽随高同变、恒 2:3 零裁切。</li>
+  </ul>
+  <b>落地预告</b>：DetailSkeleton 的 ≥1024 两栏骨架需按 A 重构（hero 对开骨架 + 通栏资料表骨架）；logoPath 存在时以 logo 图替换 h1 标题位（现网逻辑平移）。
+</div>
+
+<div class="demo-switch">
+  <span>示例条目：</span>
+  <button id="sw-movie" class="on" type="button">电影《沙丘2》</button>
+  <button id="sw-tv" type="button">剧集《绝命毒师》</button>
+  <span style="margin-left:14px">海报：</span>
+  <button id="sw-poster" type="button">无海报兜底</button>
+</div>
+
+<header class="site-hd">
+  <span class="logo">Kino<i>TV</i></span>
+  <nav><span>首页</span><span>浏览</span><span>热度榜</span><span class="on">详情</span><span>IPTV</span><span>收藏</span></nav>
+</header>
+
+<main class="shell">
+
+  <!-- ══ 顶部区：海报 | 文本 对开（文本内容由 JS 按示例渲染） ══ -->
+  <section class="hero">
+    <div class="hero-in">
+      <div class="poster" id="poster">
+        <div class="ph poster" data-label=""></div>
+        <a class="poster-back" href="javascript:;">← 返回</a>
+        <span class="cap">海报 2/3</span>
+      </div>
+      <div id="hero-txt">
+        <div class="ht-bg" aria-hidden="true"><div class="ph" data-label="backdrop 横板（演示占位）"></div><div class="veil"></div></div>
+        <div id="hero-frag"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 资料区：tab 栏居中置顶（v2.3），概览 = 基础信息 + 演员 + 剧照 ══ -->
+  <section class="facts-wrap">
+    <div class="tabs" id="tabs"></div>
+
+    <div class="pane on" id="pane-info">
+      <h2 class="sec-title" style="margin-top:var(--space-lg)">基础信息</h2>
+      <div class="genre-line" id="genres"></div>
+      <div class="facts" id="facts"></div>
+      <h2 class="sec-title" style="margin-top:var(--space-2xl)">演员</h2>
+      <div class="cast-strip" id="cast"></div>
+      <h2 class="sec-title" style="margin-top:var(--space-2xl)">剧照</h2>
+      <div class="stills">
+        <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+        <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+        <div class="ph" data-label=""></div><div class="ph" data-label=""></div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-sources">
+      <h2 class="sec-title" style="margin-top:var(--space-lg)">匹配结果　<span style="font-weight:400;font-size:var(--text-xs);color:var(--color-text-tertiary)">关键词：“<span id="src-keyword"></span>”（源名真实 · 集数为演示值；现网源卡/检测 pill/全部弹框逻辑不变）</span></h2>
+      <div class="line-list" id="src-list"></div>
+    </div>
+
+    <div class="pane" id="pane-seasons">
+      <h2 class="sec-title" style="margin-top:var(--space-lg)">季信息　<span style="font-weight:400;font-size:var(--text-xs);color:var(--color-text-tertiary)">演示值；现网季卡逻辑不变</span></h2>
+      <div class="line-list" id="season-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* 示例数据（《沙丘2》《绝命毒师》公开资料；播放进度为演示值）。季信息 tab 仅剧集出现，同真实 Detail 口径。 */
+var DATA = {
+  movie: {
+    kicker:'电影 · 科幻', title:'沙丘2', orig:'Dune: Part Two · 2024', tagline:'掌握你的命运',
+    score:'8.1', meta:['2024','167 分钟','科幻 / 冒险 / 动作','热度 1520'],
+    deck:'保罗·厄崔迪为血仇与预言所驱，与契妮和弗雷曼人携手登上厄拉科斯的权力之巅。亚崔迪家族覆灭之恨未消，帝国皇帝的猜忌与各大家族的围堵步步紧逼，Bene Gesserit 的百年布局与蒸馏器的阴谋相继浮出水面。香料战争吞噬整颗沙漠星球，一场以他之名蔓延银河的圣战狂潮已然启程；而保罗早已预见那条未来之路的尽头——在爱与全知之间，在自由意志与既定命运之间，他必须亲自走进最黑暗的那段未来。',
+    progress:'已播放 42% · 1:11:23 / 2:47:12',
+    playLabel:'继续播放', seasons:false,
+    genres:['科幻','冒险','动作'],
+    facts:[
+      ['TMDB 评分','8.1 / 10（3,400 人评价）',true],
+      ['发行时间','2024-02-27'],
+      ['状态','已上映'],
+      ['时长','167 分钟'],
+      ['导演','丹尼斯·维伦纽瓦'],
+      ['语言','EN / 英语'],
+      ['国家','美国 / 加拿大'],
+      ['预算','$190.0M'],
+      ['票房','$715.0M'],
+      ['发行','传奇影业 / 华纳兄弟 / 环球影业 / 索尼影视发行 / RatPac-Dune Entertainment / FilmNation Entertainment / Anonymous Content']
+    ]
+  },
+  tv: {
+    kicker:'剧集 · 犯罪', title:'绝命毒师', orig:'Breaking Bad · 2008–2013', tagline:'',
+    score:'8.9', meta:['2008 首播','5 季 / 62 集','犯罪 / 剧情 / 惊悚','热度 980'],
+    deck:'新墨西哥州高中化学老师沃尔特·怀特确诊肺癌后，为给家人留下积蓄，与昔日学生杰西·平克曼制毒贩毒，一步步从老实人滑向毒枭深渊。',
+    progress:'已看至 第5季 第14集 · 62%',
+    playLabel:'继续播放', seasons:true,
+    genres:['犯罪','剧情','惊悚'],
+    facts:[
+      ['TMDB 评分','8.9 / 10（12,800 人评价）',true],
+      ['首播','2008-01-20'],
+      ['最后播出','2013-09-29'],
+      ['状态','已完结'],
+      ['季 / 集','5 季 / 62 集'],
+      ['单集时长','45–55 分钟'],
+      ['主创','文斯·吉里根'],
+      ['导演','文斯·吉里根 / 米歇尔·迈克拉伦 / 亚当·伯恩斯坦 / 斯科特·温南特 / 布莱恩·科兰斯顿 / 菲尔·亚伯拉罕 / 约翰·达尔姆 / 吉尔·安内斯 / 彼得·古尔德 / 莱恩·约翰逊 / 梅丽莎·伯恩斯坦 / 泰瑞·麦克多诺 等 15 位（按执导集数排序，完整名单见 TMDB credits）'],
+      ['语言','EN / 英语 / 西班牙语'],
+      ['国家','美国'],
+      ['发行','索尼影业电视 / AMC / High Bridge Productions / Gran Via Productions / Left Right Hand Productions']
+    ],
+    cast:[['布莱恩·科兰斯顿','饰 沃尔特'],['亚伦·保尔','饰 杰西'],['安娜·冈','饰 斯凯勒'],['迪恩·诺里斯','饰 汉克'],['贝琪·勃兰特','饰 玛丽']]
+  }
+};
+var CAST_MOVIE = [['提莫西·查拉梅','饰 保罗'],['赞达亚','饰 契妮'],['丽贝卡·弗格森','饰 杰西卡'],['奥斯卡·伊萨克','饰 雷托'],['杰森·莫玛','饰 邓肯'],['哈维尔·巴登','饰 费德']];
+var KEY='movie', NOPOSTER=false, TAB='info';
+/* v2.3：tab 移入资料区头部居中；播放列表/季信息为现网逻辑的静态示意（源名真实、集数演示值） */
+var CMS_SOURCES=['爱奇艺资源','豆瓣资源','茅台资源','卧龙资源','iKun资源','电影天堂'];
+var SEASONS_TV=[['第1季','7 集','2008-01-20'],['第2季','13 集','2009-02-08'],['第3季','13 集','2010-03-21'],['第4季','13 集','2011-07-17'],['第5季','16 集','2012–2013']];
+function tabsOf(){
+  var t=[{k:'info',l:'概览'},{k:'sources',l:'播放列表'}];
+  if(DATA[KEY].seasons) t.push({k:'seasons',l:'季信息'});
+  return t;
+}
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = tabsOf().map(function(t){
+    return '<button class="'+(t.k===TAB?'on':'')+'" data-tab="'+t.k+'" type="button">'+t.l+'</button>';
+  }).join('');
+  ['info','sources','seasons'].forEach(function(k){
+    var el=document.getElementById('pane-'+k); if(el) el.classList.toggle('on',k===TAB);
+  });
+}
+function renderSources(){
+  var it=DATA[KEY];
+  document.getElementById('src-keyword').textContent=it.title;
+  document.getElementById('src-list').innerHTML=CMS_SOURCES.map(function(n,i){
+    var eps=it.seasons?(12+((i*7+3)%36)):1;
+    return '<div class="line-row"><span class="n">'+(i+1)+'</span><span class="t">'+esc(n)+' · '+esc(it.title)+(it.seasons?'（全 '+eps+' 集）':'（正片）')+'</span><span class="s">'+(i===0?'推荐':'可用')+'</span><span class="go">播放 →</span></div>';
+  }).join('');
+}
+function renderSeasons(){
+  var el=document.getElementById('season-list');
+  if(!DATA[KEY].seasons){el.innerHTML='';return;}
+  el.innerHTML=SEASONS_TV.map(function(s){
+    return '<div class="line-row"><span class="n">'+s[0]+'</span><span class="t">共 '+s[1]+' · '+esc(DATA[KEY].title)+'</span><span class="s">'+s[2]+'</span><span class="go">选集 →</span></div>';
+  }).join('');
+}
+
+function esc(s){return String(s)}
+function render(){
+  var it = DATA[KEY];
+  document.getElementById('hero-frag').innerHTML =
+    '<div class="ht-top"><div class="kicker">'+esc(it.kicker)+'</div>'+
+      '<a class="ht-official right" href="javascript:;">⌗ 官方页面</a></div>'+
+    '<h1 class="title">'+esc(it.title)+'</h1>'+   /* 落地：有 logoPath 时此处替换为 logo 图（现网 detail-hero-logo 逻辑平移） */
+    (it.tagline?'<p class="tagline">'+esc(it.tagline)+'</p>':'')+
+    '<div class="orig">'+esc(it.orig)+'</div>'+
+    '<div class="meta"><span class="score">'+esc(it.score)+'</span>'+
+      it.meta.map(function(m){return '<span class="dot">·</span><span>'+esc(m)+'</span>'}).join('')+'</div>'+
+    '<div class="deck" id="deck"><span class="txt">'+esc(it.deck)+'</span><div class="toggle" hidden><button class="exp-btn" type="button">展开简介 ⌄</button></div></div>'+
+    '<div class="cta-zone">'+
+    '<div class="cta">'+
+      '<button class="btn primary">▶ '+esc(it.playLabel)+'</button>'+
+      '<button class="btn frost">↺ 从头播放</button>'+
+      '<button class="btn ghost on">♥ 已收藏</button>'+
+    '</div>'+
+    '<div class="progress-inline"><span class="track"><span class="fill" style="width:'+(KEY==='movie'?42:62)+'%"></span></span><span>'+esc(it.progress)+'（上次的进度将自动续播）</span></div>'+
+    '</div>';
+  document.getElementById('genres').innerHTML = it.genres.map(function(g){return '<span class="chip">'+esc(g)+'</span>'}).join('');
+  document.getElementById('facts').innerHTML = it.facts.map(function(f){
+    var isFull = f[0]==='国家' || f[0]==='发行';            /* v2.2：国家/发行独占整行自然换行，不折叠 */
+    var isLong = !isFull && ['导演','发行','语言','国家','主创'].indexOf(f[0])>=0;
+    return '<div class="fact'+(isFull?' full':'')+(f[2]?' hi':'')+'"><span>'+esc(f[0])+'</span>'+
+      '<b class="txt">'+esc(f[1])+'</b>'+
+      (isLong?'<div class="toggle" hidden><button class="exp-btn" type="button">展开 ⌄</button></div>':'')+'</div>';
+  }).join('');
+  var cast = KEY==='tv' ? it.cast : CAST_MOVIE;
+  document.getElementById('cast').innerHTML = cast.map(function(c){
+    return '<div class="cast-cell"><div class="ph"></div><b>'+esc(c[0])+'</b><span>'+esc(c[1])+'</span></div>';
+  }).join('');
+  if(TAB==='seasons' && !it.seasons) TAB='info';   /* 电影无季信息 tab */
+  renderTabs(); renderSources(); renderSeasons();
+  document.getElementById('poster').classList.toggle('noimg',NOPOSTER);
+  document.getElementById('poster').querySelector('.cap').textContent = NOPOSTER?'无海报 → 灰占位':'海报 2/3';
+  bindCollapse();
+  syncPosterW();
+}
+
+/* v2.6：量文本区高（内容驱动高度主）→ 海报列宽 = 高×2/3，两列等高且海报恒 2:3；
+   RO 跟踪简介/资料展开、示例切换引起的高度变化（同落地 index.tsx 逻辑） */
+function syncPosterW(){
+  var info=document.getElementById('hero-txt'), heroIn=document.querySelector('.hero-in');
+  if(!info||!heroIn) return;
+  var h=info.clientHeight; if(h<=0) return;
+  heroIn.style.setProperty('--poster-w', Math.round(Math.min(330,Math.max(160,h*2/3)))+'px');
+}
+window.addEventListener('resize',function(){ /* 清残留变量，回视口公式起步重新收敛（同落地） */
+  var heroIn=document.querySelector('.hero-in'); if(heroIn) heroIn.style.removeProperty('--poster-w');
+  syncPosterW();
+});
+if(window.ResizeObserver){ new ResizeObserver(syncPosterW).observe(document.getElementById('hero-txt')); }
+window.addEventListener('resize',syncPosterW);
+
+/* 折叠通用：clamp 元素真超出才出按钮（资料值 4 行、简介 3 行同口径）。
+   ⚠️ 两处实测坑：① 不能用 scrollHeight——Chromium 下 -webkit-line-clamp 的 scrollHeight 可能
+   等于 clientHeight（漏检）；② 克隆节点必须挂在**原父节点内**——挂 document.body 会丢元素自身
+   字号（.fact b 12.22px vs body 13.2px），自然高算大→假阳性（实测剧集「导演」3 行误出按钮）。 */
+function isOverflow(txt){
+  var r = txt.getBoundingClientRect();
+  if(r.width <= 0) return false;
+  var clone = txt.cloneNode(true);
+  clone.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;'+
+    'width:'+r.width+'px;display:block;-webkit-line-clamp:unset';
+  var parent = txt.parentNode;
+  parent.appendChild(clone);
+  var full = clone.getBoundingClientRect().height;
+  parent.removeChild(clone);
+  return full > r.height + 2;
+}
+function bindCollapse(){
+  Array.prototype.forEach.call(document.querySelectorAll('.fact, .deck'),function(host){
+    var txt=host.querySelector('.txt'), tog=host.querySelector('.toggle'), btn=host.querySelector('.exp-btn');
+    if(!tog||!btn) return;
+    if(host.classList.contains('open')) return;
+    tog.hidden = !isOverflow(txt);
+    btn.onclick = function(){
+      var open = host.classList.toggle('open');
+      btn.textContent = open ? '收起 ⌃' : (host.classList.contains('deck') ? '展开简介 ⌄' : '展开 ⌄');
+    };
+  });
+}
+
+function sw(id){return document.getElementById(id)}
+sw('sw-movie').onclick=function(){KEY='movie';this.classList.add('on');sw('sw-tv').classList.remove('on');render()};
+sw('sw-tv').onclick=function(){KEY='tv';this.classList.add('on');sw('sw-movie').classList.remove('on');render()};
+sw('sw-poster').onclick=function(){NOPOSTER=!NOPOSTER;this.classList.toggle('on',NOPOSTER);render()};
+document.getElementById('tabs').addEventListener('click',function(e){
+  var b=e.target.closest('[data-tab]'); if(!b) return;
+  TAB=b.getAttribute('data-tab'); renderTabs();
+});
+render();
+</script>
+</body>
+</html>
