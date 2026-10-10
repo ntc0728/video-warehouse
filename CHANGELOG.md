@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.30.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.29.0...kinotv-v1.30.0) (2026-10-10)
+
+
+### Features
+
+* **demo-e:** 分类 chip 面板方案 B — chip 行 + 子分类列表（CategoryQuickAccess 降级） ([ba989d8](https://github.com/ntc0728/video-warehouse/commit/ba989d8e6c90b265a31f9f368e1bfbf016bdfd66))
+* **demo-e:** 移动端报头重设计 + 趋势榜 5 条横图 + 删演示值提示 ([22fcb4e](https://github.com/ntc0728/video-warehouse/commit/22fcb4ebe356464a629713956760893cd87cbbae))
+* **detail:** 方案 A 海报对开布局落地（tab 居中资料区 + 两列等比等高） ([5fe9e54](https://github.com/ntc0728/video-warehouse/commit/5fe9e5418b8368bd68eb98cb4a780c219bdd97ce))
+* **home:** 今日热度趋势 topstrip 卡片化 + 简介 ([051506a](https://github.com/ntc0728/video-warehouse/commit/051506a374943ea4bd00dd2e72530a2058633a5c))
+* **layout:** 源检测/代理配置接入 2200 封顶 + --page-pad-x 侧距 ([636042d](https://github.com/ntc0728/video-warehouse/commit/636042d09bff705fb94cf2816d983b0381fc6faa))
+* **source-checker,proxy-setup:** 全面对齐监控台 demo + 标签整改 ([9a9c615](https://github.com/ntc0728/video-warehouse/commit/9a9c6151065ed22581282dfc0f6829ad3a265dc0))
+* **source-checker,proxy-setup:** 监控台改版落地真实页面 ([465fc7d](https://github.com/ntc0728/video-warehouse/commit/465fc7d44e0f58fa678b73ae2feb1ff555b22be3))
+* **source-checker,proxy-setup:** 落地己·三栏+健康带布局并加单源重测 ([8fe5eb1](https://github.com/ntc0728/video-warehouse/commit/8fe5eb177d2068a6af10c80e673bd682b341854e))
+* **style:** 桌面端全站去卡片化 + 封面三态背景与页底色区分 ([cb2636b](https://github.com/ntc0728/video-warehouse/commit/cb2636b32a53863580da0d67f8f8d657affefc20))
+* **style:** 页面级去卡片化第二批（Chart/Person/Detail/SourceChecker/SourceManager 条目） ([d2bdd96](https://github.com/ntc0728/video-warehouse/commit/d2bdd9611f392ed0f138d00ad3d62df2ad3bbe10))
+
+
+### Bug Fixes
+
+* **batch:** UI 细节整改六批收口——首页左栏清理/热度轮播公告/骨架镜像/Browse 收尾 ([ff5930f](https://github.com/ntc0728/video-warehouse/commit/ff5930fe14a3c774a619e94bf6d839e909bad4f4))
+* **demo-e:** 删公告带 / 搜索可点击按 SearchBox 链路 / 换一换对齐 HeroBili ([0ae3003](https://github.com/ntc0728/video-warehouse/commit/0ae30036071c17c99cc8d9892fedec027e0af567))
+* **demo-e:** 方案C — FAB 外扩与 hover 修正 / 主体留白对齐项目 / 小视口·移动端适配 ([220ea83](https://github.com/ntc0728/video-warehouse/commit/220ea83304ef58095b22375c5bdcffe9057ee26a))
+* **demo-e:** 方案C 收口 — cqa 回滚静态链接 / FAB 恒显 / 继续观看单行 / 删 data-badge / 移动端 banner 图上文下 ([5be2e2e](https://github.com/ntc0728/video-warehouse/commit/5be2e2e18820aeb384752598f9806306b008ebaa))
+* **demo-e:** 继续播放语义 / 骨架期横条禁点 / 搜索就地展开 / 去导航底线 / 封面四角标 ([b712017](https://github.com/ntc0728/video-warehouse/commit/b7120176319daeaeea16ff16b3ade285ab00cd0b))
+* **history:** 卡片标题对齐全站口径（--text-sm/500/1.5），修「历史页标题大一号」 ([d5c6666](https://github.com/ntc0728/video-warehouse/commit/d5c66663f69eb52acaa81318d1e5895de8a1ebec))
+* **history:** 时间轴贴底测量修复单条数据假滚动条 ([7620c07](https://github.com/ntc0728/video-warehouse/commit/7620c07eff930790d315306f4c5492f19a2c963b))
+* **searchbox:** iOS web 点搜索框聚焦局部放大——mobile-web 字号抬回 16px ([78ce6e2](https://github.com/ntc0728/video-warehouse/commit/78ce6e2639c517d60fdda398336cb9944bcd37fe))
+* **settings:** source-manager 面板去卡+条目保留卡片；设置页字号图标缩档 ×0.93；SET-050 改 web-first 断言 ([f59967d](https://github.com/ntc0728/video-warehouse/commit/f59967d67dc6dd02dcf230f167b0ca64c397e93e))
+* **settings:** 三源面板恢复卡片、设置项间距收紧、消子项标题黑点（含移动端）、hover 不再变背景 ([604611e](https://github.com/ntc0728/video-warehouse/commit/604611eba31e7b834e5bac5216401b75b9d0a868))
+* **settings:** 个人页一键按钮方框再降至 29.5px 对齐 Select trigger；同步 testing.md 生成块 ([6643fad](https://github.com/ntc0728/video-warehouse/commit/6643fad8b755b72123cbd264efa789603cc635b8))
+* **settings:** 左栏字号/内边距豁免回原值，仅右侧内容区缩档；按钮族系数 0.93→0.8 ([d7b437a](https://github.com/ntc0728/video-warehouse/commit/d7b437a47e0f4d60bc6f867ba742697cb8b3f7cf))
+* **settings:** 界面缩放换 Select 组件对齐 TMDB 下拉；个人设置行标题字号对齐；一键按钮方框缩至 40px ([26a9e1e](https://github.com/ntc0728/video-warehouse/commit/26a9e1e12a952a1896c9a4e8df8de5295e270af4))
+* **test:** SKEL-014 chip 期望 22 → 73 补同步 ff5930f 漏改 ([6bf6d6e](https://github.com/ntc0728/video-warehouse/commit/6bf6d6ed54350b7b24a2e617cd19ee32f35e2420))
+* **ui:** 首页/详情/播放/搜索零散修复批次（hero对齐与胶囊·detail veil与检测胶囊·play侧栏·搜索防抖动） ([c529f74](https://github.com/ntc0728/video-warehouse/commit/c529f743104c19b91eb5533ea252c434895f3624))
+
+
+### Performance Improvements
+
+* **vite:** dev 冷启动 early-HTML — document hold 2.1s/8.6s → ~1s ([4a49d44](https://github.com/ntc0728/video-warehouse/commit/4a49d445844f7fd90c6a080f37375a3d33945e5f))
+
 ## [1.29.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.28.0...kinotv-v1.29.0) (2026-09-24)
 
 
