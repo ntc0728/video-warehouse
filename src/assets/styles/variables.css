@@ -1212,6 +1212,10 @@ html[data-device="tv"] {
   --hero-main-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));      /* 10@1440 → 12@1920 */
   --hero-side-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));
   --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
+  /* 右卡单行标题条高（HeroBili 方案 A）：= 2×space-xs + 1.4×hero-title-size。
+     banner 高度 = 右栏两行卡总高 − 一个标题条（2026-10-10 用户要求「图片与图片对齐」：
+     banner 下沿对齐第二行【封面】下沿，第二行标题条悬于 banner 下方）。 */
+  --hero-title-bar-h: calc(2 * var(--space-xs) + 1.4 * var(--hero-title-size));
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
 

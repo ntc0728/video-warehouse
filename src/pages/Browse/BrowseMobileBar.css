@@ -35,8 +35,11 @@
   white-space: nowrap;
 }
 .bmb-seg {
-  min-height: var(--comp-tab-height);
-  padding: var(--space-xs) var(--space-sm);
+  /* 2026-10-10 用户反馈移动端模式段钮太高：本组件仅 <768px 生效，
+     与同文件紧凑档对齐（filter-trigger 28px / chip 26px），不再吃
+     --comp-tab-height（移动端≈36–38px）。固定 px 无流体需求。 */
+  min-height: 30px;
+  padding: var(--space-2xs) var(--space-sm);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);

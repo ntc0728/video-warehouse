@@ -66,6 +66,13 @@ function isHotSearchDisabled(pathname: string): boolean {
   return HOT_SEARCH_DISABLED_PAGES.some((base) => p === base || p.startsWith(base + '/'));
 }
 
+/** 这些页面顶部搜索框禁用「实时联网搜索建议」（纯本地页，输入只做页内筛选，不打 TMDB） */
+const LIVE_SEARCH_DISABLED_PAGES = ['/collections', '/history', '/settings', '/source-checker', '/proxy-setup'];
+function isLiveSearchDisabled(pathname: string): boolean {
+  const p = pathname.split('?')[0];
+  return LIVE_SEARCH_DISABLED_PAGES.some((base) => p === base || p.startsWith(base + '/'));
+}
+
 export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const isTV = useIsTV();
   // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
@@ -185,9 +192,10 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     }
   }, [location.pathname]);
 
-  // 顶部搜索框历史作用域 + 热门搜索开关（按当前路由派生）
+  // 顶部搜索框历史作用域 + 热门搜索开关 + 联网建议开关（按当前路由派生）
   const searchScope = getSearchScope(location.pathname);
   const showHotSearch = !isHotSearchDisabled(location.pathname);
+  const allowLiveSearch = !isLiveSearchDisabled(location.pathname);
 
   return (
     <header
@@ -238,6 +246,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             onSearch={pageSearch.onSearch ?? undefined}
             placeholder={pageSearch.placeholder}
             showHotSearch={showHotSearch}
+            allowLiveSearch={allowLiveSearch}
             scope={searchScope}
           />
         </div>
@@ -263,7 +272,8 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               aria-label={`当前主题：${currentTheme}，点击切换`}
               title={`主题：${currentTheme}`}
             >
-              <Icon icon={ThemeIcon} size="lg" />
+              {/* 2026-10-10 用户要求：主题切换图标尺寸与左侧设置图标一致（原 lg 偏大）。 */}
+              <Icon icon={ThemeIcon} size={isTV ? 'md' : 'sm'} />
             </button>
           </div>
         )}

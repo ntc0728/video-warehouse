@@ -831,6 +831,14 @@
   padding: 0 var(--space-md);
 }
 
+/* 推荐卡封面圆角（2026-10-10 用户反馈）：与 Detail 页 .detail-recommend 同口径，
+   桌面去卡片化后补回 --radius-md。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .player-recommend .video-card-cover {
+    border-radius: var(--radius-md);
+  }
+}
+
 /* ── 窄屏（<1024px）：纵向堆叠。起点 1024 依据 ADR-023「rail/侧栏类布局例外，
       （2026-09-08 用户拍板）」，与 Browse BR-C 侧栏筛选、RecordShell rail 同口径。 ── */
 @media (width < 1024px) {
@@ -1241,21 +1249,35 @@
   /* 面板栏：第二列宽度固定；align-self: stretch 让侧栏自动填满 grid row 高度，
      与播放器同高，不再需要 height:100% 循环依赖。 */
   html:not([data-device="app"]) .player-sidebar {
-    display: grid;
+    /* 2026-10-10 修「选集/线路面板未占满剩余高度」：
+       原为 grid + `grid-template-rows: var(--panel-rows)`（PlayerSidebar 按 variant 硬编码
+       行数：tv=3 行 auto auto 1fr / movie=2 行 auto 1fr）。但 PlayerSeasonPanel 在单季/无季时
+       return null → 实际只渲染 2 个子项，而 hasSeasonPanel（据 cmsSeasons + id 前缀）仍判 tv
+       → 3 行模板与 2 子项错位：1fr 落到第 3 行（幽灵空行），选集被压成第 2 行 auto（内容高）
+       → 面板矮、下方大片空白（宽视口 16:9 播放器越高越明显）。
+       改 flex 列：按【实际渲染子项】分配，展开面板 flex:1 撑满、收起面板 flex:0 只留 header，
+       天然免疫子项数 ≠ 行数的错位。容器高度恒定（min-height:100% == 播放器高），
+       flex:1 在恒定高内分配自由空间，与旧 grid 1fr 等价、无内容↔容器过冲。 */
+    display: flex;
     flex: 0 0 var(--player-sidebar-w, var(--layout-sidebar-width));
-    grid-template-columns: minmax(0, 1fr);
-    /* 行模板由 PlayerSidebar 按各面板展开态注入（值集合：1fr / auto） */
-    grid-template-rows: var(--panel-rows, 1fr);
+    flex-direction: column;
     grid-column: 2;
     gap: var(--space-sm);
     min-width: var(--player-sidebar-min-w, 220px);
-    /* 高度契约：height:0 → 侧栏（含骨架/面板内容）不参与 .player-main 行高计算，
-       行高只由播放器 16:9 决定；行高确定后 min-height:100% 撑满 == 与播放器同高。
-       旧 height:100% 在不定行高下退化为内容高 → 骨架内容（14 行扫光块）撑出
-       高于播放器的行 → 骨架侧栏比播放器高一截。overflow:hidden 裁掉超出部分。 */
+    /* 高度契约：height:0 → 侧栏不参与 .player-main 行高计算，行高只由播放器 16:9 决定；
+       行高确定后 min-height:100% 撑满 == 与播放器同高。overflow:hidden 裁掉超出部分。 */
     height: 0;
     min-height: 100%;
     overflow: hidden;
+  }
+
+  /* 面板高度分配（桌面）：收起只占 header 高，展开撑满剩余。 */
+  html:not([data-device="app"]) .player-sidebar > .player-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+  html:not([data-device="app"]) .player-sidebar > .player-panel:not(.collapsed) {
+    flex: 1 1 auto;
   }
 
   html:not([data-device="app"]) .player-panel-arrow {
@@ -1280,13 +1302,11 @@
   }
 
   /* 所有面板收起时：sidebar 高度由各面板 header 内容决定，不再撑满播放器高度。
-     ⚠️ 两行缺一不可（旧实现只写 height/min-height:auto，对 stretch 无效）：
-     · align-self:start —— .player-sidebar 是 .player-main 的 grid item，默认
-       align-self:stretch；height:auto 时 stretch 生效 → 侧栏仍被拉到播放器满高；
-     · align-content:start —— .player-sidebar 自身是 grid 容器，行模板此时全为
-       auto（无 1fr 吸收剩余空间），默认 align-content:stretch 会把 3 条 auto 行
-       平分剩余高度 → 三面板变成「header + 大片空白」而不是三条收起态。
-     有面板展开时行模板含 1fr，剩余空间被 1fr 吸收，auto 行不会被拉伸，故无此症状。 */
+     ⚠️ align-self:start + height:auto + min-height:auto 三者缺一不可：
+     .player-sidebar 是 .player-main 的 grid item，默认 align-self:stretch；
+     若只写 height:auto 而 min-height:100% 仍在 → 仍被拉到播放器满高。收起态一并放开
+     min-height → 侧栏 = 各 header 内容高（flex 子项均 flex:0 0 auto）。
+     （align-content 为旧 grid 写法残留，flex 下无害。） */
   html:not([data-device="app"]) .player-sidebar--all-collapsed {
     align-content: start;
     align-self: start;

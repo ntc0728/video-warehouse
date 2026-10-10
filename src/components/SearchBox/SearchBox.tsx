@@ -49,6 +49,13 @@ export interface SearchBoxProps {
   /** 是否显示热门搜索 */
   showHotSearch?: boolean;
   /**
+   * 是否允许「实时联网搜索建议」（输入时防抖调 /search/multi）。
+   * 收藏 / 历史 / 设置 / 源检测 / 代理配置等纯本地页应传 false——
+   * 这些页顶部搜索框只做页内本地筛选，输入时不该打 TMDB 网络请求。
+   * 默认 true（首页 / 浏览 / 详情等联网页）。
+   */
+  allowLiveSearch?: boolean;
+  /**
    * 搜索回调。不传则默认跳转到 /browse?q=<query>。
    * 已 trim 空白的 query 作为参数。
    */
@@ -73,6 +80,7 @@ export default function SearchBox({
   autoFocus = false,
   className = '',
   showHotSearch = true,
+  allowLiveSearch = true,
   onSearch,
   onValueChange,
   scope = 'global',
@@ -106,6 +114,12 @@ export default function SearchBox({
   // ── Dropdown 状态 ──────────────────────────────────
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownIsExiting, setDropdownIsExiting] = useState(false);
+  // 同步 ref：handleBlur 的延迟回调里读（闭包 state 会过期），
+  // 用于判断「blur 时 dropdown 是否仍开着」。
+  const isDropdownOpenRef = useRef(false);
+  useEffect(() => {
+    isDropdownOpenRef.current = isDropdownOpen;
+  }, [isDropdownOpen]);
   const visibleHotItems = showHotSearch ? hotItems : [];
 
   // 懒加载热门搜索：仅当下拉打开且需要展示热门搜索时才拉取 trending。
@@ -134,7 +148,8 @@ export default function SearchBox({
   useEffect(() => {
     const q = value.trim();
     if (suggestDebounceRef.current) window.clearTimeout(suggestDebounceRef.current);
-    if (!q || !hasToken) {
+    // 本地页（allowLiveSearch=false）或空词或无 token：不联网，回到 idle
+    if (!q || !hasToken || !allowLiveSearch) {
       setSuggestStatus('idle');
       setSuggestions([]);
       return;
@@ -152,7 +167,7 @@ export default function SearchBox({
         setSuggestStatus('error');
       }
     }, 300);
-  }, [value, hasToken]);
+  }, [value, hasToken, allowLiveSearch]);
 
   // 卸载清理防抖定时器
   useEffect(() => {
@@ -164,7 +179,9 @@ export default function SearchBox({
   const suggestionTypeLabel = (t: TMDBMultiSearchResult['media_type']): string =>
     t === 'tv' ? '剧集' : t === 'person' ? '人物' : '电影';
 
-  const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0 || hotLoading || hotError || hasQuery);
+  // 联网建议仅在 allowLiveSearch 时展示；本地页输入时下拉仍显历史/热门（不切空的建议分支）
+  const showSuggestions = allowLiveSearch && hasQuery;
+  const showDropdown = isDropdownOpen && (history.length > 0 || visibleHotItems.length > 0 || hotLoading || hotError || showSuggestions);
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined);
   const [dropdownAbove, setDropdownAbove] = useState(false);
 
@@ -282,6 +299,15 @@ export default function SearchBox({
 
   const handleBlur = useCallback(() => {
     blurTimerRef.current = setTimeout(() => {
+      // 2026-10-10 抙动修复：选中历史/建议项或回车搜索会先 setIsDropdownOpen(false)
+      // （dropdown 立即卸载）再手动 blur；200ms 后本回调若照旧 setDropdownIsExiting(true)，
+      // 渲染条件 (showDropdown || dropdownIsExiting) 会让已收起的 dropdown 以退出动画
+      // 状态重新挂载→再卸载，用户看到「收起后又快速展开收起」的抙动。
+      // 故 blur 时 dropdown 已关闭则直接跳过，不补退出动画。
+      if (!isDropdownOpenRef.current) {
+        blurTimerRef.current = null;
+        return;
+      }
       setDropdownIsExiting(true);
       setTimeout(() => {
         setIsDropdownOpen(false);
@@ -416,7 +442,7 @@ export default function SearchBox({
           onMouseDown={handleDropdownMouseDown}
           style={{ '--dropdown-avail-h': dropdownMaxHeight != null ? `${dropdownMaxHeight}px` : undefined } as CSSProperties}
         >
-          {hasQuery ? (
+          {showSuggestions ? (
             /* ── 实时搜索建议（输入词时优先展示，历史/热门让位） ── */
             <>
               {suggestStatus === 'loading' && (

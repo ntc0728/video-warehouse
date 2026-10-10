@@ -12,6 +12,8 @@ export interface SourceDetectPillProps {
   ok: number;
   fail: number;
   results: SelectedSourceCheckResult[];
+  /** running 态胶囊内轮播文本（如「正在查询豆瓣资源…」），替换旧「检测中」+进度条 */
+  runningText?: string;
 }
 
 const statusLabel: Record<SourceDetectStatus, string> = {
@@ -27,15 +29,16 @@ export function SourceDetectPill({
   ok,
   fail,
   results,
+  runningText,
 }: SourceDetectPillProps) {
-  const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  const open = status === 'done' && (pinned || hovered);
+  // 结果浮层仅 hover 展开（2026-10-10 用户要求：去掉点击钉住）
+  const open = status === 'done' && hovered;
 
   const recompute = () => {
     if (!anchorRef.current) return;
@@ -81,40 +84,44 @@ export function SourceDetectPill({
     closeTimer.current = setTimeout(() => setHovered(false), 120);
   };
 
-  const handleClick = () => {
-    // idle / running 不响应点击：源检测由「重新匹配」按钮或首次进入播放列表 tab 触发，
-    // 而非点击 idle pill 本身；仅 done 态点击用于固定/收起结果浮层。
-    if (status !== 'done') return;
-    setPinned((v) => !v);
-  };
-
   return (
     <>
       <div
         ref={anchorRef}
-        className={`sdp ${status === 'done' ? 'is-done' : ''} ${pinned ? 'is-pinned' : ''}`}
+        className={`sdp ${status === 'done' ? 'is-done' : ''}`}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
       >
         <button
           type="button"
           className={`sdp-pill ${status}`}
-          onClick={handleClick}
-          aria-label={statusLabel[status]}
+          aria-label={status === 'running' ? (runningText || statusLabel.running) : statusLabel[status]}
         >
           {status === 'running' && <span className="sdp-spin" />}
           {status === 'done' && <span className="sdp-dot is-ok" />}
           {status === 'idle' && <span className="sdp-dot" />}
-          <span className="sdp-label">{statusLabel[status]}</span>
-          {total > 0 && (
-            <>
-              <span className="sdp-mini" aria-hidden>
-                <i style={{ width: `${pct}%` }} />
-              </span>
+          <span className={`sdp-label${status === 'running' ? ' sdp-label--run' : ''}`}>
+            {status === 'running' ? (runningText || statusLabel.running) : statusLabel[status]}
+          </span>
+          {status === 'running' ? (
+            /* running：小转圈 + 轮播文本 + 计数，去掉进度条（2026-10-10） */
+            total > 0 && (
               <span className="sdp-count">
                 {done}/{total}
               </span>
-            </>
+            )
+          ) : (
+            /* done / idle：保持原 UI（进度条 + 计数） */
+            total > 0 && (
+              <>
+                <span className="sdp-mini" aria-hidden>
+                  <i style={{ width: `${pct}%` }} />
+                </span>
+                <span className="sdp-count">
+                  {done}/{total}
+                </span>
+              </>
+            )
           )}
         </button>
       </div>
