@@ -32,26 +32,93 @@ import viteCompression from 'vite-plugin-compression'
  */
 const projectRoot = fs.realpathSync.native(__dirname)
 
+/**
+ * 注入布局 token 单真源（2026-09-21；2026-10-10 抽成函数供两条路径复用）：
+ * 把 src/assets/styles/layout-tokens.css 全文填入 index.html 的 <!--@layout-tokens--> 占位。
+ * 为什么必需：启动骨架（index.html 内联）在 React 挂载前首屏即可见，此刻 bundle CSS
+ * （含 --card-cols 等定义）尚未加载 —— 骨架要读到 var(--card-cols) 并与真实页在任意视口
+ * 同构，token 必须随 index.html 一起到达。单真源 = layout-tokens.css（见其头注）；
+ * variables.css 另 @import 同一文件供 bundle，两路同源、值恒同。dev / build 均生效。
+ * 消费方：① inject-layout-tokens 插件（transformIndexHtml 链）② early-index-html 中间件
+ * （dev 冷启动 hold 窗口内直读磁盘时兜底注入）—— 两路共用本函数，无双真源。
+ */
+const injectLayoutTokensHtml = (html: string): string => {
+  const tokensPath = path.resolve(projectRoot, 'src/assets/styles/layout-tokens.css')
+  const tokens = fs.readFileSync(tokensPath, 'utf-8')
+  return html.replace(
+    '<!--@layout-tokens-->',
+    `<style id="layout-tokens">\n${tokens}\n</style>`,
+  )
+}
+
 export default defineConfig({
   root: projectRoot,
   plugins: [
-    /**
-     * 注入布局 token 单真源（2026-09-21）：
-     * 把 src/assets/styles/layout-tokens.css 全文填入 index.html 的 <!--@layout-tokens--> 占位。
-     * 为什么必需：启动骨架（index.html 内联）在 React 挂载前首屏即可见，此刻 bundle CSS
-     * （含 --card-cols 等定义）尚未加载 —— 骨架要读到 var(--card-cols) 并与真实页在任意视口
-     * 同构，token 必须随 index.html 一起到达。单真源 = layout-tokens.css（见其头注）；
-     * variables.css 另 @import 同一文件供 bundle，两路同源、值恒同。dev / build 均生效。
-     */
     {
       name: 'inject-layout-tokens',
       transformIndexHtml(html) {
-        const tokensPath = path.resolve(projectRoot, 'src/assets/styles/layout-tokens.css')
-        const tokens = fs.readFileSync(tokensPath, 'utf-8')
-        return html.replace(
-          '<!--@layout-tokens-->',
-          `<style id="layout-tokens">\n${tokens}\n</style>`,
-        )
+        return injectLayoutTokensHtml(html)
+      },
+    },
+    /**
+     * dev 冷启动 early-HTML（2026-10-10）：
+     * Vite 6 启动后 depsOptimizer.init() 完成前，HTTP 层 hold 所有请求不返回
+     * index.html —— 实测端口 ~400ms 即 bind，但缓存命中 document 被 hold 至
+     * ~2.1s；缓存失效（re-optimize）hold ~8.6s。期间浏览器 document 挂起 →
+     * 纯白屏且 Network 无任何 JS/API 请求（boot-splash 骨架救不了：HTML 本身没到）。
+     * 根因拆解（实测探针）：① 请求进入 connect 栈即被事件循环排队（init scan 占用
+     * 主线程，enter 延迟 ~500ms）；② server.transformIndexHtml 内部 preTransform
+     * warmup 与 init 争抢事件循环再耗 ~1.3s。故 early 路径绕过 transformIndexHtml，
+     * 手动注入与 Vite dev 输出等价的三要素后立即返回：
+     *   ① layout-tokens（复用 injectLayoutTokensHtml 单真源）
+     *   ② /@vite/client（Vite dev 公开约定，devHtmlHook head-prepend 同款）
+     *   ③ react preamble（@vitejs/plugin-react 公开约定：其导出的 preambleCode
+     *      同款内容，__vite_plugin_react_preamble_installed__ 为插件检测变量）
+     * 三者均为 Vite / plugin-react 长期稳定公开约定；若未来注入过时，症状仅是
+     * HMR 降级（console 警告 + 整页刷新），页面功能不受影响。
+     * 模块请求（/src/*.tsx、/@vite/client 等）不被接管，仍由 Vite 正常排队至
+     * init 完成后返回；React 挂载后按原逻辑摘除 boot-splash。
+     * 实测：冷启动 document 首字节 2147ms → ~1s（受事件循环排队下限约束），
+     * 缓存失效场景 8630ms → ~1.2s。
+     */
+    {
+      name: 'early-index-html',
+      configureServer(server) {
+        const indexHtmlPath = path.resolve(projectRoot, 'index.html')
+        server.middlewares.use((req, res, next) => {
+          const DBG = !!process.env.VITE_EARLY_HTML_DEBUG
+          if (req.method !== 'GET') return next()
+          const url = (req.url || '/').split('?')[0]
+          // 只接管 SPA document：无扩展名、非 Vite 内部路径、Accept 声明 html
+          // （/@vite/client、/src/*.tsx 等模块请求 Accept 不含 text/html，天然排除）
+          if (path.posix.extname(url) || url.startsWith('/@')) return next()
+          if (!String(req.headers.accept || '').includes('text/html')) return next()
+          const t0 = DBG ? Date.now() : 0
+          if (DBG) console.log(`[early-html] enter ${url}`)
+          try {
+            const base = server.config.base || '/'
+            let html = fs.readFileSync(indexHtmlPath, 'utf-8')
+            html = injectLayoutTokensHtml(html)
+            const clientTag = `<script type="module" src="${base}@vite/client"></script>`
+            const preambleTag = `<script type="module">
+import { injectIntoGlobalHook } from "${base}@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+</script>`
+            html = html.replace('</head>', `  ${clientTag}\n    ${preambleTag}\n  </head>`)
+            if (DBG) console.log(`[early-html] served in ${Date.now() - t0}ms`)
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'text/html')
+            res.setHeader('Cache-Control', 'no-cache')
+            res.end(html)
+          } catch (e) {
+            if (DBG) console.log(`[early-html] fail in ${Date.now() - t0}ms: ${(e as Error).message}`)
+            // 读取/注入异常时退回 Vite 正常路径，不阻断请求
+            next()
+          }
+        })
       },
     },
     react(),
