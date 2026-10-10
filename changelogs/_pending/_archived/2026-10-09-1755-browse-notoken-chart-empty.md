@@ -1,3 +1,7 @@
+---
+date: 2026-10-09 17:55
+---
+
 # 2026-10-09 17:55 — Browse 去 token 提示 + Chart 失败态对齐 Empty（去重试）
 
 ## ① Browse：未配置 TMDB token 不再显示提示元素（用户截图需求）
